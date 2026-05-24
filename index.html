@@ -3910,6 +3910,8 @@ body.dark-mode #screen-company {
     padding: 0 0 80px 0;
     overflow: visible;
 }
+/* Скрываем тайлы IMOEX/USD/BTC — они уже в тонкой полоске выше */
+#marketPanelContent .market-tiles-grid { display: none !important; }
 
 body.dark-mode #marketPanelContent {
     background: var(--bg-base);
@@ -13036,6 +13038,13 @@ body.dark-mode .portfolio-echelons-total-row {
     /* Calc panel — full single column */
     #panel-calc {
         padding: 0;
+        display: flex;
+        flex-direction: column;
+        min-height: 100%;
+    }
+    #calcPane {
+        flex: 1;
+        min-height: 0;
     }
     
     @keyframes tabFadeIn {
@@ -13116,7 +13125,9 @@ body.dark-mode .portfolio-echelons-total-row {
     }
     
     #panel-calc.active {
-        display: block;
+        display: flex;
+        flex-direction: column;
+        min-height: 100%;
     }
     
     /* Calc pane — full width, no own scroll, flows into contentArea */
@@ -13124,9 +13135,10 @@ body.dark-mode .portfolio-echelons-total-row {
         width: 100%;
         max-width: 560px;
         margin: 0 auto;
-        padding: 4px 16px 24px;
+        padding: 0 16px 0;
         box-sizing: border-box;
         position: relative;
+        flex: 1;
     }
     
     #calcPane::-webkit-scrollbar { display: none; }
@@ -13135,9 +13147,54 @@ body.dark-mode .portfolio-echelons-total-row {
 
     /* CTA bar — simple block at bottom of calc form */
     #calcCtaBar {
-        margin-top: 20px;
-        padding: 0 0 20px;
+        padding: 12px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+        display: none;
+        flex-shrink: 0;
+        position: sticky;
+        bottom: 0;
+        background: transparent;
     }
+    body.tab-calc #calcCtaBar {
+        display: block;
+    }
+    @keyframes nd-cta-shimmer {
+        0% { transform: translateX(-120%) skewX(-15deg); }
+        100% { transform: translateX(320%) skewX(-15deg); }
+    }
+    .nd-btn-cta-g {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 18px 32px;
+        background: #2C364C;
+        border: none;
+        border-radius: 16px;
+        cursor: pointer;
+        font-family: 'Inter', sans-serif;
+        font-size: 12px;
+        font-weight: 700;
+        color: #fff;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        -webkit-tap-highlight-color: transparent;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 12px 35px rgba(44,54,76,.25);
+        transition: all .2s ease;
+    }
+    .nd-btn-cta-g::before { display: none; }
+    .nd-btn-cta-g:active {
+        transform: scale(.97);
+        box-shadow: 0 6px 20px rgba(44,54,76,.3);
+    }
+    .nd-cta-g-left { display: flex; align-items: center; gap: 10px; }
+    .nd-cta-g-icon { display: none; }
+    .nd-cta-g-title { font-size: 12px; font-weight: 700; color: #fff; }
+    .nd-cta-g-sub { display: none; }
+    .nd-cta-g-arrow { display: none; }
+    body.dark-mode .nd-btn-cta-g { background: #2C364C; }
     
     /* ===== BACKTEST TAB ===== */
     #panel-backtest {
@@ -14928,14 +14985,13 @@ body.dark-mode .portfolio-echelons-total-row {
             <div id="calcPane">
                 <!-- CALC CONTENT GOES HERE — injected from screen-app -->
                 <div id="calcPaneContent"></div>
-                <!-- Sticky CTA -->
-                <div id="calcCtaBar">
-                    <button class="nd-btn-cta" onclick="calculateAndShowPortfolio()" style="width:100%;">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
-                        Рассчитать портфель
-                    </button>
-                    <p class="nd-cta-hint" style="text-align:center;margin-top:6px;">8 ОФЗ и 12 акций с учётом вашей стратегии</p>
-                </div>
+            </div>
+
+            <!-- CTA -->
+            <div id="calcCtaBar">
+                <button class="nd-btn-cta-g" onclick="calculateAndShowPortfolio()">
+                    РАССЧИТАТЬ ПОРТФЕЛЬ
+                </button>
             </div>
 
 <!-- Portfolio moved to dedicated tab -->
@@ -14977,9 +15033,50 @@ body.dark-mode .portfolio-echelons-total-row {
 
         <!-- ===== TAB: РЫНОК ===== -->
         <div id="panel-market" class="tab-panel">
-            <div class="panel-section-header">Рынок и ставки</div>
-            <!-- MARKET CONTENT — injected from screen-interesting -->
+
+            <!-- Тихая полоска -->
+            <div class="dash-quiet-strip" id="marketQuietStrip" style="margin-top:0;margin-bottom:12px;">
+                <div class="dqs-item">
+                    <span class="dqs-dot" style="background:#3B82F6;"></span>
+                    <span class="dqs-label">IMOEX</span>
+                    <span class="dqs-value" id="mqs-imoex">—</span>
+                </div>
+                <div class="dqs-sep"></div>
+                <div class="dqs-item">
+                    <span class="dqs-dot" style="background:#10B981;"></span>
+                    <span class="dqs-label">USD</span>
+                    <span class="dqs-value" id="mqs-usd">—</span>
+                </div>
+                <div class="dqs-sep"></div>
+                <div class="dqs-item">
+                    <span class="dqs-dot" style="background:#F97316;"></span>
+                    <span class="dqs-label">BTC</span>
+                    <span class="dqs-value" id="mqs-btc">—</span>
+                </div>
+            </div>
+
+            <!-- MARKET CONTENT — injected from screen-interesting (содержит баннер дохода) -->
             <div id="marketPanelContent"></div>
+
+            <!-- Баннер Vanguard — внизу -->
+            <div class="nd-vg-banner nd-vg-market" onclick="openVanguardTest()" style="margin-top:12px;">
+                <div class="nd-vg-glow"></div>
+                <div class="nd-vg-inner">
+                    <div class="nd-vg-tag"><span class="nd-vg-tag-dot"></span> Интересно</div>
+                    <div class="nd-vg-title">Не знаете какую<br>стратегию выбрать?</div>
+                    <div class="nd-vg-desc">Пройдите тест Vanguard — 11 вопросов определят ваш инвестиционный профиль и подберут оптимальное распределение активов.</div>
+                    <button class="nd-vg-btn" onclick="event.stopPropagation(); openVanguardTest()">
+                        Пройти тест
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </button>
+                    <div class="nd-vg-stat">
+                        <div class="nd-vg-stat-item"><div class="nd-vg-stat-num">~2 мин</div><div class="nd-vg-stat-lbl">Длительность</div></div>
+                        <div class="nd-vg-stat-item"><div class="nd-vg-stat-num">11</div><div class="nd-vg-stat-lbl">Вопросов</div></div>
+                        <div class="nd-vg-stat-item"><div class="nd-vg-stat-num">8</div><div class="nd-vg-stat-lbl">Профилей</div></div>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         <!-- ===== TAB: ТЕСТ ПОРТФЕЛЯ (BACKTEST) ===== -->
@@ -15260,85 +15357,94 @@ body.dark-mode .portfolio-echelons-total-row {
         <span id="currencySymbol" style="display:none">₽</span>
         <span id="currencyPlaceholder" style="display:none">₽</span>
 
-        <!-- Broker fee pill row -->
-        <div class="fee-selector-unified">
-            <div class="nd-broker-row" id="feeDropdownTrigger" onclick="event.stopPropagation(); toggleFeeDropdown()">
-                <div class="nd-broker-left">
+        <!-- ЕДИНЫЙ БЛОК ПАРАМЕТРОВ: комиссия + стратегия -->
+        <div class="nd-params-card">
+
+            <!-- Комиссия брокера — оригинальный дропдаун -->
+            <div class="fee-selector-unified" onclick="event.stopPropagation()">
+                <div class="nd-fee-trigger" id="feeDropdownTrigger" onclick="event.stopPropagation(); toggleFeeDropdown()">
                     <svg class="nd-broker-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8a2 2 0 0 0-2 2v2h12V5a2 2 0 0 0-2-2z"/></svg>
                     <span class="nd-broker-lbl">Комиссия брокера</span>
-                </div>
-                <div class="nd-broker-right">
-                    <span class="nd-broker-val" id="feeSelectedText">Выбрать</span>
+                    <span class="nd-fee-pill" id="feeSelectedText">Выбрать</span>
                     <svg class="nd-broker-chev fee-dropdown-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
                 </div>
-            </div>
-            <!-- Fee dropdown -->
-            <div class="nd-fee-dd" id="feeDropdownMenu">
-                <div class="fee-dropdown-item" onclick="event.stopPropagation(); ndSelectFee(0.0001,'0.01%',this)"><span class="nd-fee-rate">0.01%</span><div class="nd-fee-chk"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div></div>
-                <div class="fee-dropdown-item" onclick="event.stopPropagation(); ndSelectFee(0.0003,'0.03%',this)"><span class="nd-fee-rate">0.03%</span><div class="nd-fee-chk"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div></div>
-                <div class="fee-dropdown-item" onclick="event.stopPropagation(); ndSelectFee(0.0005,'0.05%',this)"><span class="nd-fee-rate">0.05%</span><div class="nd-fee-chk"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div></div>
-                <div class="fee-dropdown-item" onclick="event.stopPropagation(); ndSelectFee(0.001,'0.1%',this)"><span class="nd-fee-rate">0.1%</span><div class="nd-fee-chk"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div></div>
-                <div class="fee-dropdown-item" onclick="event.stopPropagation(); ndSelectFee(0.003,'0.3%',this)"><span class="nd-fee-rate">0.3%</span><div class="nd-fee-chk"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div></div>
-                <div class="fee-dropdown-item" onclick="event.stopPropagation(); ndSelectFee(0.005,'0.5%',this)"><span class="nd-fee-rate">0.5%</span><div class="nd-fee-chk"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div></div>
-            </div>
-        </div>
-
-        <!-- Strategy — единый блок-карточка, раскрывается изнутри -->
-        <div class="nd-strat-unified" id="ndStratCard" onclick="event.stopPropagation(); ndToggleStratBlock()">
-            <!-- Заголовок-триггер (всегда виден) -->
-            <div class="nd-broker-left">
-                <svg class="nd-broker-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
-                <span class="nd-broker-lbl">Стратегия</span>
-            </div>
-            <div class="nd-broker-right">
-                <span class="nd-broker-val" id="ndStratCardVal">Гармония</span>
-                <svg class="nd-broker-chev" id="ndStratChev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
-            </div>
-
-            <!-- Раскрывающаяся часть — скрыта по умолчанию -->
-            <div class="nd-strat-expand" id="ndStratBlock" style="display:none" onclick="event.stopPropagation()">
-                <div class="nd-strat-divider"></div>
-                <!-- Выбранная стратегия — клик открывает список снова -->
-                <div class="nd-strat-header-row" onclick="ndToggleWF()">
-                    <div class="nd-strat-header-left">
-                        <div class="nd-sbar" id="mainCardIndicator" style="background:linear-gradient(180deg,#5B7C99 0%,#5B7C99 50%,#94A8B8 50%,#94A8B8 100%)"></div>
-                        <div>
-                            <div class="nd-strat-header-name" id="mainCardTitle">Гармония</div>
-                            <div class="nd-strat-header-sub" id="mainCardSubtitle">Классический баланс</div>
+                <div class="nd-fee-dd" id="feeDropdownMenu">
+                    <div class="fee-dropdown-item" onclick="event.stopPropagation(); ndSelectFee(0.0001,'0.01%',this)"><span class="nd-fee-rate">0.01%</span><div class="nd-fee-chk"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+                    <div class="fee-dropdown-item" onclick="event.stopPropagation(); ndSelectFee(0.0003,'0.03%',this)"><span class="nd-fee-rate">0.03%</span><div class="nd-fee-chk"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+                    <div class="fee-dropdown-item" onclick="event.stopPropagation(); ndSelectFee(0.0005,'0.05%',this)"><span class="nd-fee-rate">0.05%</span><div class="nd-fee-chk"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+                    <div class="fee-dropdown-item" onclick="event.stopPropagation(); ndSelectFee(0.001,'0.1%',this)"><span class="nd-fee-rate">0.1%</span><div class="nd-fee-chk"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+                    <div class="fee-dropdown-item" onclick="event.stopPropagation(); ndSelectFee(0.003,'0.3%',this)"><span class="nd-fee-rate">0.3%</span><div class="nd-fee-chk"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+                    <div class="fee-dropdown-item" onclick="event.stopPropagation(); ndSelectFee(0.005,'0.5%',this)"><span class="nd-fee-rate">0.5%</span><div class="nd-fee-chk"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+                    <!-- Своя комиссия с карандашом -->
+                    <div class="fee-dropdown-item fee-custom-row" id="feeCustomRow" onclick="event.stopPropagation()">
+                        <span class="nd-fee-rate fee-custom-label" id="feeCustomLabel">Своя</span>
+                        <div class="fee-custom-inp-wrap" id="feeCustomInpWrap" style="display:none">
+                            <input class="fee-custom-inp" id="feeCustomInp" type="number" min="0.001" max="5" step="0.001" placeholder="0.07" onclick="event.stopPropagation()" />
+                            <span class="fee-custom-unit">%</span>
+                            <button class="fee-custom-ok" onclick="event.stopPropagation(); applyCustomFee()">Готово</button>
                         </div>
-                    </div>
-                    <div class="nd-strat-header-right">
-                        <div class="nd-sp">
-                            <div class="nd-sb2" id="mainCardBonds">Обл. 50%</div>
-                            <div class="nd-ss2" id="mainCardStocks">Акц. 50%</div>
+                        <div class="nd-fee-chk" id="feeCustomChk" onclick="showCustomFeeInput()">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--graphite-btn)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
                         </div>
-                        <svg class="nd-strat-chev" id="ndStratChevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
-                    </div>
-                </div>
-                <!-- Waterfall -->
-                <div class="nd-wf" id="waterfallContainer">
-                    <div class="nd-wf-inner" id="ndWfInner"></div>
-                </div>
-                <!-- Custom block -->
-                <div class="nd-cust" id="customStrategyExpanded" onclick="event.stopPropagation()">
-                    <div class="nd-cnums">
-                        <button class="nd-cadj" onclick="event.stopPropagation(); adjustCustomRatio(-5)">−</button>
-                        <div class="nd-cdisp">
-                            <span class="nd-cvb" id="customBondsDisplay">50</span>
-                            <span class="nd-cvsep">/</span>
-                            <span class="nd-cvs" id="customStocksDisplay">50</span>
-                        </div>
-                        <button class="nd-cadj" onclick="event.stopPropagation(); adjustCustomRatio(5)">+</button>
-                    </div>
-                    <input type="range" class="nd-cslider" id="customRatioSlider" min="0" max="100" value="50" step="5" oninput="updateCustomSlider(this.value)">
-                    <div class="nd-cacts">
-                        <button class="nd-breset" onclick="event.stopPropagation(); resetCustomTo50()">Сбросить</button>
-                        <button class="nd-bdone" onclick="event.stopPropagation(); ndSaveCustom()">Готово</button>
                     </div>
                 </div>
             </div>
-        </div>
 
+            <!-- Стратегия -->
+            <div class="nd-strat-unified" id="ndStratCard" onclick="event.stopPropagation(); ndToggleStratBlock()">
+                <div class="nd-broker-left">
+                    <svg class="nd-broker-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+                    <span class="nd-broker-lbl">Стратегия</span>
+                </div>
+                <div class="nd-broker-right">
+                    <span class="nd-fee-pill" id="ndStratCardVal">Гармония</span>
+                    <svg class="nd-broker-chev" id="ndStratChev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+
+                <div class="nd-strat-expand" id="ndStratBlock" style="display:none" onclick="event.stopPropagation()">
+                    <div class="nd-strat-divider"></div>
+                    <div class="nd-strat-selected-row" id="ndStratSelectedRow" onclick="ndToggleWF()">
+                        <div class="nd-strat-header-left">
+                            <div class="nd-sbar" id="mainCardIndicator" style="background:linear-gradient(180deg,#5B7C99 0%,#5B7C99 50%,#94A8B8 50%,#94A8B8 100%)"></div>
+                            <div>
+                                <div class="nd-strat-header-name" id="mainCardTitle">Гармония</div>
+                                <div class="nd-strat-header-sub" id="mainCardSubtitle">Классический баланс</div>
+                            </div>
+                        </div>
+                        <div class="nd-strat-header-right">
+                            <div class="nd-strat-vdiv"></div>
+                            <div class="nd-sp">
+                                <div class="nd-sb2" id="mainCardBonds">Обл. 50%</div>
+                                <div class="nd-ss2" id="mainCardStocks">Акц. 50%</div>
+                            </div>
+                            <div class="nd-strat-change-btn" id="ndStratChangeBtn">
+                                <svg id="ndStratChangeBtnIcon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="nd-wf" id="waterfallContainer">
+                        <div class="nd-wf-inner" id="ndWfInner"></div>
+                    </div>
+                    <div class="nd-cust" id="customStrategyExpanded" onclick="event.stopPropagation()">
+                        <div class="nd-cnums">
+                            <button class="nd-cadj" onclick="event.stopPropagation(); adjustCustomRatio(-5)">−</button>
+                            <div class="nd-cdisp">
+                                <span class="nd-cvb" id="customBondsDisplay">50</span>
+                                <span class="nd-cvsep">/</span>
+                                <span class="nd-cvs" id="customStocksDisplay">50</span>
+                            </div>
+                            <button class="nd-cadj" onclick="event.stopPropagation(); adjustCustomRatio(5)">+</button>
+                        </div>
+                        <input type="range" class="nd-cslider" id="customRatioSlider" min="0" max="100" value="50" step="5" oninput="updateCustomSlider(this.value)">
+                        <div class="nd-cacts">
+                            <button class="nd-breset" onclick="event.stopPropagation(); resetCustomTo50()">Сбросить</button>
+                            <button class="nd-bdone" onclick="event.stopPropagation(); ndSaveCustom()">Готово</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /nd-params-card -->
         <!-- MOEX divider strip -->
         <div class="nd-moex-strip">
             <div style="flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(44,54,76,0.08))"></div>
@@ -15349,21 +15455,21 @@ body.dark-mode .portfolio-echelons-total-row {
             <div style="flex:1;height:1px;background:linear-gradient(90deg,rgba(44,54,76,0.08),transparent)"></div>
         </div>
 
-        <!-- Vanguard dark banner -->
-        <div class="nd-vg-banner" onclick="openVanguardTest()">
-            <div class="nd-vg-glow"></div>
+        <!-- Vanguard light banner -->
+        <div class="nd-vg-banner nd-vg-light" onclick="openVanguardTest()" style="margin-bottom:12px;">
+            <div class="nd-vg-glow nd-vg-light-glow"></div>
             <div class="nd-vg-inner">
-                <div class="nd-vg-tag"><span class="nd-vg-tag-dot"></span> Интересно</div>
-                <div class="nd-vg-title">Не знаете какую<br>стратегию выбрать?</div>
-                <div class="nd-vg-desc">Пройдите тест Vanguard — 11 вопросов определят ваш инвестиционный профиль и подберут оптимальное распределение активов.</div>
-                <button class="nd-vg-btn" onclick="event.stopPropagation(); openVanguardTest()">
+                <div class="nd-vg-tag nd-vg-light-tag"><span class="nd-vg-tag-dot nd-vg-light-dot"></span> Интересно</div>
+                <div class="nd-vg-title nd-vg-light-title">Не знаете какую<br>стратегию выбрать?</div>
+                <div class="nd-vg-desc nd-vg-light-desc">Пройдите тест Vanguard — 11 вопросов определят ваш инвестиционный профиль и подберут оптимальное распределение активов.</div>
+                <button class="nd-vg-btn nd-vg-light-btn" onclick="event.stopPropagation(); openVanguardTest()">
                     Пройти тест
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                 </button>
-                <div class="nd-vg-stat">
-                    <div class="nd-vg-stat-item"><div class="nd-vg-stat-num">~2 мин</div><div class="nd-vg-stat-lbl">Длительность</div></div>
-                    <div class="nd-vg-stat-item"><div class="nd-vg-stat-num">11</div><div class="nd-vg-stat-lbl">Вопросов</div></div>
-                    <div class="nd-vg-stat-item"><div class="nd-vg-stat-num">8</div><div class="nd-vg-stat-lbl">Профилей</div></div>
+                <div class="nd-vg-stat nd-vg-light-stat">
+                    <div class="nd-vg-stat-item"><div class="nd-vg-stat-num nd-vg-light-num">~2 мин</div><div class="nd-vg-stat-lbl nd-vg-light-lbl">Длительность</div></div>
+                    <div class="nd-vg-stat-item"><div class="nd-vg-stat-num nd-vg-light-num">11</div><div class="nd-vg-stat-lbl nd-vg-light-lbl">Вопросов</div></div>
+                    <div class="nd-vg-stat-item"><div class="nd-vg-stat-num nd-vg-light-num">8</div><div class="nd-vg-stat-lbl nd-vg-light-lbl">Профилей</div></div>
                 </div>
             </div>
         </div>
@@ -15376,13 +15482,10 @@ body.dark-mode .portfolio-echelons-total-row {
     <span id="labelBondsPct" style="display:none">50</span>
     <span id="labelStocksPct" style="display:none">50</span>
 
-    <!-- Bottom CTA (keep id stickyPanel; shown/hidden by showScreen) -->
     <div class="nd-bottom-bar" id="stickyPanel">
-        <button class="nd-btn-cta" onclick="calculateAndShowPortfolio()">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
-            Рассчитать портфель
+        <button class="nd-btn-cta-g" onclick="calculateAndShowPortfolio()">
+            РАССЧИТАТЬ ПОРТФЕЛЬ
         </button>
-        <p class="nd-cta-hint">8 ОФЗ и 12 акций с учётом вашей стратегии</p>
     </div>
 </div> <!-- /screen-app -->
 
@@ -16117,17 +16220,65 @@ body.dark-mode .portfolio-echelons-total-row {
             </div>
         </div>
         
-        <!-- Превью дохода (видно в свёрнутом состоянии) -->
-        <div class="income-preview-strip is-empty" id="incomePreviewStrip">
-            <div class="income-preview-next">
-                <div class="income-preview-accent"></div>
-                <div class="income-preview-info">
-                    <div class="income-preview-label">Средний доход в месяц</div>
-                    <div class="income-preview-value" id="incomePreviewValue">—</div>
+        <!-- Превью дохода — новый баннер -->
+        <div class="income-preview-strip is-empty" id="incomePreviewStrip" style="display:none;">
+            <!-- скрыт, данные перехватываются баннером -->
+            <div class="income-preview-value" id="incomePreviewValue" style="display:none;">—</div>
+            <div class="income-preview-pct" id="incomePreviewPct" style="display:none;">—</div>
+        </div>
+
+        <!-- Баннер Г·1·А с новыми карточками метрик -->
+        <div class="nd-income-banner" id="ndIncomeBanner" onclick="toggleCalcAccordion()">
+            <div class="nd-ib-spot nd-ib-spot1"></div>
+            <div class="nd-ib-spot nd-ib-spot2"></div>
+            <div class="nd-ib-spot nd-ib-spot3"></div>
+            <div class="nd-ib-content">
+                <!-- Шапка -->
+                <div class="nd-ib-header">
+                    <div class="nd-ib-header-left">
+                        <div class="nd-ib-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#2C364C" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        </div>
+                        <div>
+                            <div class="nd-ib-title">Доход с портфеля</div>
+                            <div class="nd-ib-sub" id="ndIbSub">1 000 000 ₽ · ОФЗ</div>
+                        </div>
+                    </div>
+                    <div class="nd-ib-chevron">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    </div>
                 </div>
-                <div class="income-preview-right">
-                    <div class="income-preview-pct" id="incomePreviewPct">—</div>
-                    <div class="income-preview-pct-label">годовых</div>
+                <!-- Главная цифра -->
+                <div class="nd-ib-main">
+                    <div class="nd-ib-main-label">Средний доход в месяц</div>
+                    <div class="nd-ib-main-val">
+                        <span class="nd-ib-num" id="ndIbMonthly">~573</span>
+                        <span class="nd-ib-rub">₽</span>
+                    </div>
+                    <div class="nd-ib-main-hint">по купонам ОФЗ</div>
+                </div>
+                <!-- Метрики -->
+                <div class="nd-ib-metrics">
+                    <div class="nd-ib-metric">
+                        <div class="nd-ib-metric-left">
+                            <div class="nd-ib-metric-lbl">В год</div>
+                            <div class="nd-ib-metric-sub">суммарно</div>
+                        </div>
+                        <div class="nd-ib-metric-right">
+                            <span class="nd-ib-metric-num" id="ndIbYearly">~6 876</span>
+                            <span class="nd-ib-metric-unit nd-ib-rub-sm">₽</span>
+                        </div>
+                    </div>
+                    <div class="nd-ib-metric">
+                        <div class="nd-ib-metric-left">
+                            <div class="nd-ib-metric-lbl">Доходность</div>
+                            <div class="nd-ib-metric-sub">годовых</div>
+                        </div>
+                        <div class="nd-ib-metric-right">
+                            <span class="nd-ib-metric-num" id="ndIbYield">6.9</span>
+                            <span class="nd-ib-metric-unit nd-ib-pct">%</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -17357,6 +17508,14 @@ function toggleCalcAccordion() {
     
     accordion.classList.toggle('collapsed');
     
+    // Вращаем шеврон баннера
+    const chevron = document.querySelector('#ndIncomeBanner .nd-ib-chevron svg');
+    if (chevron) {
+        const isOpen = !accordion.classList.contains('collapsed');
+        chevron.style.transform = isOpen ? 'rotate(90deg)' : 'rotate(0deg)';
+        chevron.style.transition = 'transform .25s';
+    }
+    
     // Haptic feedback
     if (window.Telegram?.WebApp?.HapticFeedback) {
         window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
@@ -17702,9 +17861,13 @@ function ndApplyStrategy(bonds, title, subtitle) {
     updateMainCardUI(bonds, title, subtitle);
     const slider = document.getElementById('ratioSlider');
     if (slider) slider.value = bonds;
-    // Закрываем waterfall, но блок стратегии остаётся видимым
+    // Закрываем waterfall, кружок возвращается к галочке
     const wf = document.getElementById('waterfallContainer');
     if (wf) wf.classList.remove('show');
+    const changeBtn = document.getElementById('ndStratChangeBtn');
+    if (changeBtn) changeBtn.classList.remove('open');
+    const icon = document.getElementById('ndStratChangeBtnIcon');
+    if (icon) icon.innerHTML = '<polyline points="20 6 9 17 4 12"/>';
     // Перестраиваем список чтобы обновить выделение
     ndBuildWF();
     draw();
@@ -17735,6 +17898,104 @@ function ndSaveCustom() {
     draw();
     if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
 }
+
+// ===== FEE DROPDOWN =====
+function toggleFeeDropdown() {
+    try {
+        const trigger = document.getElementById('feeDropdownTrigger');
+        const menu = document.getElementById('feeDropdownMenu');
+        if (!menu) return;
+        const isNowOpen = menu.classList.toggle('show');
+        const arrow = trigger ? trigger.querySelector('.fee-dropdown-arrow') : null;
+        if (arrow) arrow.style.transform = isNowOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+        if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    } catch(e) { console.error(e); }
+}
+
+function ndSelectFee(value, rateText, el) {
+    brokerFee = value;
+    isFeeSelected = true;
+    const txt = document.getElementById('feeSelectedText');
+    if (txt) { txt.textContent = rateText; txt.classList.remove('placeholder'); }
+    document.querySelectorAll('.fee-dropdown-item').forEach(i => i.classList.remove('selected'));
+    if (el) el.classList.add('selected');
+    toggleFeeDropdown();
+    draw();
+}
+
+function showCustomFeeInput() {
+    const label = document.getElementById('feeCustomLabel');
+    const wrap  = document.getElementById('feeCustomInpWrap');
+    const chk   = document.getElementById('feeCustomChk');
+    if (label) label.style.display = 'none';
+    if (chk)   chk.style.display   = 'none';
+    if (wrap)  { wrap.style.display = 'flex'; document.getElementById('feeCustomInp').focus(); }
+    document.getElementById('feeCustomInp').onkeydown = function(e) {
+        if (e.key === 'Enter') applyCustomFee();
+        if (e.key === 'Escape') closeCustomFeeInput();
+    };
+}
+
+function closeCustomFeeInput() {
+    const label = document.getElementById('feeCustomLabel');
+    const wrap  = document.getElementById('feeCustomInpWrap');
+    const chk   = document.getElementById('feeCustomChk');
+    if (label) label.style.display = '';
+    if (chk)   chk.style.display   = '';
+    if (wrap)  wrap.style.display   = 'none';
+}
+
+function applyCustomFee() {
+    const raw = parseFloat(document.getElementById('feeCustomInp').value);
+    if (!isNaN(raw) && raw > 0 && raw <= 100) {
+        brokerFee = raw / 100;
+        isFeeSelected = true;
+        const label = raw < 1 ? raw.toFixed(2) + '%' : raw.toFixed(1) + '%';
+        const txt = document.getElementById('feeSelectedText');
+        if (txt) { txt.textContent = label; txt.classList.remove('placeholder'); }
+        const trigger = document.getElementById('feeDropdownTrigger');
+        if (trigger) trigger.classList.add('nd-sel-has-value');
+        // Отметить «Своя» как selected
+        document.querySelectorAll('.fee-dropdown-item').forEach(i => i.classList.remove('selected'));
+        const row = document.getElementById('feeCustomRow');
+        if (row) row.classList.add('selected');
+        draw();
+    }
+    closeCustomFeeInput();
+    toggleFeeDropdown();
+}
+
+// Закрытие по клику вне
+document.addEventListener('click', function(e) {
+    const wrap = document.querySelector('.fee-selector-unified');
+    const menu = document.getElementById('feeDropdownMenu');
+    const trigger = document.getElementById('feeDropdownTrigger');
+    if (wrap && !wrap.contains(e.target)) {
+        if (menu) menu.classList.remove('show');
+        if (trigger) { trigger.classList.remove('open'); const arr = trigger.querySelector('.fee-dropdown-arrow'); if(arr) arr.style.transform = ''; }
+    }
+});
+// ===== END FEE DROPDOWN (cleanup) =====
+
+// ===== MARKET TAB QUIET STRIP =====
+function syncMarketQuietStrip() {
+    const map = [
+        ['val-imoex',  'mqs-imoex'],
+        ['val-usdrub', 'mqs-usd'],
+        ['val-btc',    'mqs-btc'],
+        ['val-ofz',    'mqs-ofz'],
+    ];
+    map.forEach(([srcId, dstId]) => {
+        const src = document.getElementById(srcId);
+        const dst = document.getElementById(dstId);
+        if (src && dst && src.textContent && src.textContent !== '---' && src.textContent !== '—') {
+            dst.textContent = src.textContent;
+        }
+    });
+}
+setInterval(syncMarketQuietStrip, 2000);
+document.addEventListener('DOMContentLoaded', syncMarketQuietStrip);
+// ===== END MARKET QUIET STRIP =====
 
 // Toggle entire strategy block (called from selector card)
 function ndToggleStratBlock() {
@@ -17773,8 +18034,16 @@ function ndToggleWF() {
     const wf = document.getElementById('waterfallContainer');
     if (!wf) return;
     const isOpen = wf.classList.toggle('show');
-    const chev = document.getElementById('ndStratChevron');
-    if (chev) chev.classList.toggle('open', isOpen);
+    const btn = document.getElementById('ndStratChangeBtn');
+    const icon = document.getElementById('ndStratChangeBtnIcon');
+    if (btn) btn.classList.toggle('open', isOpen);
+    if (icon) {
+        // Открыт → шеврон вниз; закрыт → галочка
+        icon.setAttribute('viewBox', '0 0 24 24');
+        icon.innerHTML = isOpen
+            ? '<polyline points="6 9 12 15 18 9"/>'
+            : '<polyline points="20 6 9 17 4 12"/>';
+    }
     const custom = document.getElementById('customStrategyExpanded');
     if (!isOpen && custom) custom.classList.remove('show');
 }
@@ -17821,92 +18090,7 @@ function ndOnBlur() {
 }
 
 // Fee selection for new design
-function ndSelectFee(value, rateText, el) {
-    brokerFee = value;
-    isFeeSelected = true;
-    const txt = document.getElementById('feeSelectedText');
-    if (txt) { txt.textContent = rateText; txt.classList.remove('placeholder'); }
-    document.querySelectorAll('.fee-dropdown-item').forEach(i => i.classList.remove('selected'));
-    if (el) el.classList.add('selected');
-    // Add value indicator to card
-    const trigger = document.getElementById('feeDropdownTrigger');
-    if (trigger) trigger.classList.add('nd-sel-has-value');
-    toggleFeeDropdown();
-    draw();
-}
-
-// ── End ND-functions ─────────────────────────────────────────────────────────
-
-function toggleFeeDropdown() {
-    try {
-        const trigger = document.getElementById('feeDropdownTrigger');
-        const menu = document.getElementById('feeDropdownMenu');
-        
-        if (!menu) {
-            console.error('Menu not found!');
-            return;
-        }
-
-        // Переключаем классы
-        const isNowOpen = trigger.classList.toggle('open');
-        menu.classList.toggle('show'); // Этот класс активирует display: block !important
-        
-        // Вращаем стрелку
-        const arrow = trigger.querySelector('.fee-dropdown-arrow');
-        if(arrow) arrow.style.transform = isNowOpen ? 'rotate(180deg)' : 'rotate(0deg)';
-
-        if (window.Telegram?.WebApp?.HapticFeedback) {
-            window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-        }
-    } catch (e) {
-        console.error(e);
-    }
-}
-
-function selectFee(value, rateText, nameText) {
-    const sumInput = document.getElementById('sumInput');
-    if (sumInput) sumInput.blur();
-    
-    brokerFee = value;
-    
-    // ВАЖНО: Запоминаем, что выбор сделан
-    isFeeSelected = true; 
-    
-    // Обновляем текст
-    const selectedText = document.getElementById('feeSelectedText');
-    if (selectedText) {
-        selectedText.textContent = rateText;
-        selectedText.classList.remove('placeholder');
-    }
-    
-    // Логика галочек
-    document.querySelectorAll('.fee-dropdown-item').forEach(item => {
-        item.classList.remove('selected');
-    });
-    if (event && event.currentTarget) {
-        event.currentTarget.classList.add('selected');
-    }
-    
-    toggleFeeDropdown();
-    draw();
-}
-
-// Закрытие dropdown при клике вне его
-document.addEventListener('click', function(event) {
-    const container = document.querySelector('.fee-selector-unified');
-    const menu = document.getElementById('feeDropdownMenu');
-    const trigger = document.getElementById('feeDropdownTrigger');
-    
-    // Если клик НЕ внутри контейнера комиссии - закрываем
-    if (container && !container.contains(event.target)) {
-        if(menu) menu.classList.remove('show');
-        if(trigger) trigger.classList.remove('open');
-        const arrow = trigger?.querySelector('.fee-dropdown-arrow');
-        if(arrow) arrow.style.transform = 'rotate(0deg)';
-    }
-});
-
-
+// ndSelectFee — совместимость со state restore (теперь обновляет слайдер)
         function setTax(val, btn) {
             currentTax = val;
             document.querySelectorAll('#taxGroupV2 .tax-ui-btn').forEach(b => b.classList.remove('active')); 
@@ -19087,6 +19271,16 @@ function recalcCustomCoupons() {
                 incomeStrip.classList.add('is-empty');
             }
         }
+
+        // Обновляем новый баннер дохода
+        const ibMonthly = document.getElementById('ndIbMonthly');
+        const ibYearly  = document.getElementById('ndIbYearly');
+        const ibYield   = document.getElementById('ndIbYield');
+        const ibSub     = document.getElementById('ndIbSub');
+        if (ibMonthly) ibMonthly.textContent = monthlyAvg > 0 ? '~' + monthlyAvg.toLocaleString('ru-RU') : '—';
+        if (ibYearly)  ibYearly.textContent  = monthlyAvg > 0 ? '~' + Math.round(totalAmount).toLocaleString('ru-RU') : '—';
+        if (ibYield)   ibYield.textContent   = monthlyAvg > 0 ? yearlyPercent : '—';
+        if (ibSub && investSum > 0) ibSub.textContent = investSum.toLocaleString('ru-RU') + ' ₽ · ОФЗ';
 
         // Обновляем строки футера
         var elMonth = document.getElementById('incomeStatMonth');
@@ -24856,7 +25050,7 @@ body.compact-nav .nav-wrapper {
 body.dark-mode #screen-app .aurora-container .aurora-spot.blue { background: rgba(59,130,246,0.22); }
 body.dark-mode #screen-app .aurora-container .aurora-spot.green { background: rgba(16,185,129,0.14); }
 /* Scroll area takes remaining height; header is sticky inside it */
-.nd-scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 20px 20px; box-sizing: border-box; }
+.nd-scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 24px 20px 20px; box-sizing: border-box; }
 /* Sticky header with frosted glass — shows aurora through it, hides scrolled content */
 .nd-hdr { position: sticky; top: 0; z-index: 2; background: transparent; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); padding: calc(96px + env(safe-area-inset-top,0px)) 0 12px; display: flex; align-items: center; justify-content: space-between; }
 @supports not (padding-top: env(safe-area-inset-top)) {
@@ -24872,7 +25066,8 @@ body.dark-mode #screen-app .aurora-container .aurora-spot.green { background: rg
 #screen-app input#sumInput { text-align: right !important; width: 1ch !important; min-width: 1ch !important; max-width: none !important; font-size: 64px !important; font-weight: 300 !important; letter-spacing: -0.04em !important; padding: 0 !important; margin: 0 !important; height: 1em !important; line-height: 1 !important; vertical-align: middle !important; transition: font-size .15s ease !important; caret-color: transparent !important; }
 
 /* Input hero */
-.nd-input-hero { display: flex; flex-direction: column; align-items: center; padding: 16px 0 20px; }
+.nd-input-hero { display: flex; flex-direction: column; align-items: center; padding: 56px 0 24px !important; }
+#ndInputHero { padding: 56px 0 24px !important; }
 /* Remove ::after line inherited from .input-wrapper class */
 .nd-input-hero.input-wrapper::after { display: none !important; }
 /* gap:0 — цифра и ₽ вплотную; align-items:center + height:1em нормализует высоты input и span */
@@ -24881,22 +25076,22 @@ body.dark-mode #screen-app .aurora-container .aurora-spot.green { background: rg
 .dark-mode .nd-sum-field { color: var(--text-main); }
 #screen-app input#sumInput::placeholder { color: #CBD5E1 !important; font-size: 64px !important; font-weight: 300 !important; letter-spacing: -0.04em !important; text-align: right !important; opacity: 1 !important; }
 .nd-ruble { font-family: 'JetBrains Mono', monospace; font-size: 64px; font-weight: 300; letter-spacing: -0.04em; color: #b5985a; opacity: 0.35; transition: font-size .15s ease, opacity .3s; flex-shrink: 0; line-height: 1; display: block; margin-left: 2px; }
-.nd-input-hint { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .12em; color: var(--text-secondary); margin-top: 10px; }
+.nd-input-hint { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 400; text-transform: none; letter-spacing: .01em; color: rgba(44,54,76,.35); margin-top: 10px; }
 .nd-input-line { width: 48px; height: 2px; border-radius: 2px; margin-top: 16px; background: rgba(52,152,219,.25); transition: width .4s cubic-bezier(.2,.8,.2,1), background .3s; }
 .nd-input-hero.focused .nd-input-line { width: 120px; background: rgba(52,152,219,.55); }
 
 /* Selectors row */
 .nd-selectors-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.nd-sel-card { background: var(--card-bg); border-radius: 18px; padding: 14px 16px; border: 1.5px solid var(--border-color); cursor: pointer; display: flex; flex-direction: column; gap: 5px; box-shadow: 0 1px 8px rgba(44,54,76,.04); transition: border-color .2s, background .2s; -webkit-tap-highlight-color: transparent; }
-.nd-sel-card:active { transform: scale(.97); }
+.nd-sel-card { background: var(--card-bg); border-radius: 14px; padding: 11px 16px; border: 1px solid var(--border-color); cursor: pointer; display: flex; flex-direction: row; align-items: center; gap: 8px; box-shadow: none; transition: border-color .2s; -webkit-tap-highlight-color: transparent; }
+.nd-sel-card:active { opacity: .85; }
 .nd-sel-card.open { border-color: rgba(52,152,219,.5); }
 .nd-sel-has-value { border-color: rgba(52,152,219,.3) !important; }
 .dark-mode .nd-sel-card { border-color: rgba(255,255,255,.08); }
-.nd-sel-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text-secondary); }
-.nd-sel-val { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 600; color: var(--graphite-btn); }
+.nd-sel-lbl { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text-secondary); }
+.nd-sel-val { font-size: 13px; font-weight: 700; color: var(--graphite-btn); margin-left: auto; font-family: 'JetBrains Mono', monospace; }
 .dark-mode .nd-sel-val { color: var(--text-main); }
-.nd-sel-val.placeholder { color: #CBD5E1; font-weight: 400; font-size: 14px; font-family: 'Inter', sans-serif; }
-.nd-sel-chev { width: 14px; height: 14px; stroke: var(--text-secondary); fill: none; stroke-width: 2.5; stroke-linecap: round; align-self: flex-end; margin-top: auto; transition: transform .3s; }
+.nd-sel-val.placeholder { color: #CBD5E1; font-weight: 400; font-size: 12px; font-family: 'Inter', sans-serif; }
+.nd-sel-chev { width: 13px; height: 13px; stroke: var(--text-secondary); fill: none; stroke-width: 2.5; stroke-linecap: round; flex-shrink: 0; transition: transform .25s; align-self: auto; margin-top: 0; }
 .nd-sel-card.open .nd-sel-chev { transform: rotate(180deg); }
 
 /* Fee dropdown — uses .show toggled by existing toggleFeeDropdown() */
@@ -24917,6 +25112,189 @@ body.dark-mode #topBarCrumb svg circle { stroke: rgba(255,255,255,0.3); }
 body.dark-mode #topBarCrumbText { color: rgba(255,255,255,0.35); }
 .nd-strat-chev.open { transform: rotate(180deg); }
 
+/* ===== ЕДИНЫЙ БЛОК ПАРАМЕТРОВ ===== */
+.nd-params-card {
+    background: var(--card-bg, #fff);
+    border-radius: 20px;
+    border: 1px solid var(--border-color, rgba(44,54,76,.08));
+    box-shadow: 0 2px 12px rgba(44,54,76,.06);
+    padding: 14px 16px 12px;
+    margin-bottom: 16px;
+}
+body.dark-mode .nd-params-card {
+    background: rgba(255,255,255,.05);
+    border-color: rgba(255,255,255,.08);
+}
+.nd-params-divider {
+    height: 1px;
+    background: var(--border-color, rgba(44,54,76,.08));
+    margin: 14px 0;
+}
+body.dark-mode .nd-params-divider { background: rgba(255,255,255,.06); }
+
+/* Убираем внешние отступы у дочерних блоков внутри карточки */
+.nd-params-card .fee-selector-unified { margin: 0; }
+.nd-params-card .nd-fee-slider-block { padding: 0; }
+.nd-params-card .nd-strat-unified { padding: 0; margin-bottom: 0; margin-top: 0; padding-top: 10px; }
+/* ===== END ЕДИНЫЙ БЛОК ПАРАМЕТРОВ ===== */
+
+/* ===== FEE DROPDOWN (оригинал) ===== */
+.nd-fee-slider-block { padding: 0; }
+
+/* Триггер комиссии — в стиле строки стратегии */
+.nd-fee-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 0;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+/* Пилюля — значение комиссии и стратегии */
+.nd-fee-pill {
+    background: rgba(44,54,76,.07);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--graphite-btn, #2C364C);
+    margin-left: auto;
+    white-space: nowrap;
+    transition: background .15s;
+}
+/* Комиссия — моноширинный */
+#feeSelectedText.nd-fee-pill { font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+/* nd-fee-pill одинаковый для комиссии и стратегии */
+.nd-fee-pill.placeholder {
+    background: transparent;
+    font-weight: 400;
+    color: #CBD5E1;
+}
+body.dark-mode .nd-fee-pill {
+    background: rgba(255,255,255,.1);
+    color: var(--text-main, #e2e8f0);
+}
+.nd-fee-trigger-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--graphite-btn, #2C364C);
+    margin-left: auto;
+}
+.nd-fee-trigger-val.placeholder {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 400;
+    color: #CBD5E1;
+}
+body.dark-mode .nd-fee-trigger-val { color: var(--text-main); }
+.fee-dropdown-arrow { transition: transform .3s; }
+/* Dropdown */
+.nd-fee-dd { background: var(--card-bg); border-radius: 16px; border: 0px solid var(--border-color); box-shadow: 0 8px 30px rgba(44,54,76,.08); max-height: 0; overflow: hidden; transition: max-height .4s cubic-bezier(.2,.8,.2,1), border-width 0s .4s; margin-top: 0; }
+.nd-fee-dd.show { max-height: 400px; margin-top: 8px; margin-bottom: 4px; border-width: 1px; transition: max-height .4s cubic-bezier(.2,.8,.2,1), border-width 0s; }
+.dark-mode .nd-fee-dd { border-color: rgba(255,255,255,.08); }
+.fee-dropdown-item { display: flex; align-items: center; justify-content: space-between; padding: 13px 18px; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background .15s; }
+.fee-dropdown-item:last-child { border-bottom: none; }
+.fee-dropdown-item:active { background: rgba(52,152,219,.04); }
+.fee-dropdown-item.selected { background: rgba(52,152,219,.04); }
+.nd-fee-rate { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 500; color: var(--graphite-btn); }
+.dark-mode .nd-fee-rate { color: var(--text-main); }
+.nd-fee-chk { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid #D1D9E2; display: flex; align-items: center; justify-content: center; transition: all .25s; flex-shrink: 0; cursor: pointer; }
+.fee-dropdown-item.selected .nd-fee-chk { background: var(--graphite-btn); border-color: var(--graphite-btn); }
+/* Строка «Своя» */
+.fee-custom-row { cursor: default; }
+.fee-custom-label { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 500; color: var(--graphite-btn); flex: 1; }
+.fee-custom-inp-wrap { display: flex; align-items: center; gap: 6px; flex: 1; }
+.fee-custom-inp { width: 64px; background: transparent; border: none; border-bottom: 1.5px solid var(--graphite-btn); border-radius: 0; padding: 1px 4px; font-size: 14px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--graphite-btn); text-align: center; outline: none; }
+.fee-custom-unit { font-size: 12px; color: var(--text-secondary); }
+.fee-custom-ok { background: var(--graphite-btn); border: none; border-radius: 8px; padding: 4px 10px; font-size: 12px; font-weight: 700; color: #fff; cursor: pointer; white-space: nowrap; }
+/* ===== END FEE DROPDOWN ===== */
+
+/* ===== INCOME BANNER ===== */
+.nd-income-banner {
+    background: #F1F6FB;
+    border-radius: 20px;
+    border: 1px solid rgba(44,54,76,.07);
+    padding: 18px 16px 16px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(44,54,76,.06);
+    margin-bottom: 12px;
+    transition: opacity .15s;
+}
+.nd-income-banner:active { opacity: .85; }
+body.dark-mode .nd-income-banner { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.08); }
+.nd-ib-spot { position:absolute; border-radius:50%; pointer-events:none; filter:blur(50px); }
+.nd-ib-spot1 { width:180px; height:180px; top:-70px; right:-50px; background:rgba(52,211,153,.16); }
+.nd-ib-spot2 { width:150px; height:150px; bottom:-60px; left:-30px; background:rgba(56,189,248,.13); }
+.nd-ib-spot3 { width:100px; height:100px; top:30%; left:35%; background:rgba(180,130,60,.07); }
+.nd-ib-content { position:relative; z-index:1; }
+.nd-ib-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+.nd-ib-header-left { display:flex; align-items:center; gap:10px; }
+.nd-ib-icon { width:34px; height:34px; border-radius:10px; background:#fff; border:0.5px solid rgba(44,54,76,.08); box-shadow:0 2px 8px rgba(44,54,76,.06); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.nd-ib-icon svg { width:15px; height:15px; }
+body.dark-mode .nd-ib-icon { background:rgba(255,255,255,.08); }
+body.dark-mode .nd-ib-icon svg { stroke:#e2e8f0; }
+.nd-ib-title { font-size:13px; font-weight:700; color:#2C364C; letter-spacing:-.02em; }
+body.dark-mode .nd-ib-title { color:#e2e8f0; }
+.nd-ib-sub { font-size:11px; color:#94A3B8; margin-top:1px; }
+.nd-ib-chevron { width:26px; height:26px; border-radius:50%; background:rgba(44,54,76,.06); border:0.5px solid rgba(44,54,76,.1); display:flex; align-items:center; justify-content:center; }
+.nd-ib-chevron svg { width:11px; height:11px; }
+.nd-ib-main { text-align:center; padding:16px 0 18px; border-top:1px solid rgba(44,54,76,.06); border-bottom:1px solid rgba(44,54,76,.06); margin-bottom:14px; }
+.nd-ib-main-label { font-size:10px; font-weight:600; color:#94A3B8; letter-spacing:.07em; text-transform:uppercase; margin-bottom:10px; }
+.nd-ib-main-val { display:inline-flex; align-items:baseline; gap:8px; }
+.nd-ib-num { font-size:48px; font-weight:800; color:#2C364C; font-family:'JetBrains Mono',monospace; letter-spacing:-.05em; line-height:1; }
+body.dark-mode .nd-ib-num { color:#e2e8f0; }
+.nd-ib-rub { font-size:30px; font-weight:700; color:#B8906A; font-family:'JetBrains Mono',monospace; line-height:1; }
+.nd-ib-main-hint { font-size:11px; color:#94A3B8; margin-top:6px; }
+.nd-ib-metrics { display:flex; gap:8px; }
+.nd-ib-metric { flex:1; background:#fff; border-radius:14px; border:0.5px solid rgba(44,54,76,.07); box-shadow:0 2px 8px rgba(44,54,76,.04); padding:11px 12px; display:flex; align-items:flex-end; justify-content:space-between; gap:6px; }
+body.dark-mode .nd-ib-metric { background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.08); }
+.nd-ib-metric-lbl { font-size:12px; font-weight:700; color:#2C364C; margin-bottom:2px; }
+body.dark-mode .nd-ib-metric-lbl { color:#e2e8f0; }
+.nd-ib-metric-sub { font-size:9px; color:#CBD5E1; }
+.nd-ib-metric-right { display:flex; align-items:baseline; gap:2px; flex-shrink:0; }
+.nd-ib-metric-num { font-size:22px; font-weight:800; color:#2C364C; font-family:'JetBrains Mono',monospace; letter-spacing:-.04em; line-height:1; }
+body.dark-mode .nd-ib-metric-num { color:#e2e8f0; }
+.nd-ib-metric-unit { font-family:'JetBrains Mono',monospace; font-weight:700; line-height:1; }
+.nd-ib-rub-sm { font-size:14px; color:#B8906A; }
+.nd-ib-pct { font-size:16px; color:#5B7C99; }
+/* ===== END INCOME BANNER ===== */
+
+/* Старый заголовок аккордеона скрыт — заменён баннером */
+#marketPanelContent .calc-accordion-header { display: none !important; }
+/* Контент аккордеона — скрыт по умолчанию, открывается по клику на баннер */
+#marketPanelContent .calc-accordion.collapsed .calc-content-wrapper { display: none; }
+#marketPanelContent .calc-accordion:not(.collapsed) .calc-content-wrapper { display: block; }
+
+/* Вертикальный разделитель | в карточке стратегии */
+.nd-strat-vdiv {
+    width: 1px;
+    height: 24px;
+    background: rgba(44,54,76,.12);
+    flex-shrink: 0;
+    margin-right: 4px;
+}
+body.dark-mode .nd-strat-vdiv { background: rgba(255,255,255,.1); }
+
+/* Отступ между процентами и кружком */
+.nd-strat-header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.nd-strat-header-right .nd-strat-change-btn {
+    margin-left: 8px;
+}
+
+/* Воздух между блоком комиссии и стратегией */
+.fee-selector-unified { margin-bottom: 0; }
+
+/* Воздух внутри карточки стратегии */
+.nd-strat-selected-row { padding: 10px 0; }
+
 /* Broker fee pill row */
 .nd-broker-row { display: flex; align-items: center; justify-content: space-between; background: var(--card-bg); border-radius: 14px; padding: 11px 16px; border: 1px solid var(--border-color); cursor: pointer; transition: border-color .2s, background .2s; -webkit-tap-highlight-color: transparent; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(44,54,76,.04); }
 .nd-broker-row:active { transform: scale(.98); }
@@ -24929,17 +25307,28 @@ body.dark-mode #topBarCrumbText { color: rgba(255,255,255,0.35); }
 .nd-broker-val { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; color: var(--graphite-btn); }
 .nd-broker-val.placeholder { color: #CBD5E1; font-weight: 400; font-family: 'Inter', sans-serif; font-size: 12px; }
 .dark-mode .nd-broker-val { color: var(--text-main); }
-.nd-broker-chev { width: 13px; height: 13px; stroke: var(--text-secondary); fill: none; stroke-width: 2.5; stroke-linecap: round; transition: transform .3s; flex-shrink: 0; }
+.nd-broker-chev { width: 13px; height: 13px; stroke: var(--text-secondary, #94A3B8); fill: none; stroke-width: 2.5; stroke-linecap: round; transition: transform .3s; flex-shrink: 0; }
 .nd-broker-row.open .nd-broker-chev { transform: rotate(180deg); }
+
+/* Скрываем верхний шеврон когда блок открыт */
+.nd-strat-unified.open #ndStratChev { display: none; }
+/* Скрываем пилюлю когда блок открыт — название уже видно внутри */
+.nd-strat-unified.open #ndStratCardVal { display: none; }
+
+
+/* В waterfall убираем дублирующую выбранную карточку — она показана выше */
+.nd-wfc-selected { display: none !important; }
+
+/* Галочку тоже убираем — не нужна раз карточка скрыта */
+.nd-wf-check { display: none; }
 
 /* Strategy compact header row */
 .nd-strat-header-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: opacity .15s; }
 .nd-strat-header-row:active { opacity: .7; }
-.nd-strat-header-left { display: flex; align-items: center; gap: 12px; }
+.nd-strat-header-left { display: flex; align-items: center; gap: 12px; overflow: visible; }
 .nd-strat-header-name { font-size: 15px; font-weight: 700; color: var(--graphite-btn); letter-spacing: -.01em; }
 .nd-strat-header-sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
 .dark-mode .nd-strat-header-name { color: var(--text-main); }
-.nd-strat-header-right { display: flex; align-items: center; gap: 10px; }
 .nd-strat-chev { width: 14px; height: 14px; stroke: var(--text-secondary); fill: none; stroke-width: 2.5; stroke-linecap: round; transition: transform .3s; flex-shrink: 0; }
 .nd-strat-chev.open { transform: rotate(180deg); }
 
@@ -24950,42 +25339,94 @@ body.dark-mode #topBarCrumbText { color: rgba(255,255,255,0.35); }
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    background: var(--card-bg);
-    border-radius: 14px;
-    padding: 11px 16px;
-    border: 1px solid var(--border-color);
+    background: transparent;
+    border-radius: 0;
+    padding: 0 8px;
+    border: none;
     cursor: pointer;
-    transition: border-color .2s;
+    transition: opacity .15s;
     -webkit-tap-highlight-color: transparent;
     margin-bottom: 10px;
-    box-shadow: 0 1px 4px rgba(44,54,76,.04);
+    box-shadow: none;
     position: relative;
 }
 .nd-strat-unified.open {
-    border-color: rgba(52,152,219,.5);
-    border-radius: 14px;
+    border: none;
+    border-radius: 0;
+    background: transparent;
 }
 .dark-mode .nd-strat-unified { border-color: rgba(255,255,255,.08); }
 
-/* Раскрывающаяся часть — занимает всю ширину карточки */
+/* Раскрывающаяся часть — без рамки, в тон со слайдером */
 .nd-strat-expand {
     width: 100%;
     flex-basis: 100%;
+    box-sizing: border-box;
 }
-
 /* Разделитель между триггером и содержимым */
 .nd-strat-divider {
     height: 1px;
-    background: var(--border-color);
-    margin: 10px -16px 0;
+    background: rgba(44,54,76,.08);
+    margin: 6px 0 0;
+    width: 100%;
 }
 .dark-mode .nd-strat-divider { background: rgba(255,255,255,.06); }
 
-/* Strategy block */
-.nd-strat-block { margin-bottom: 12px; margin-top: 0; background: var(--card-bg); border-radius: 20px; border: 1.5px solid rgba(52,152,219,.3); box-shadow: 0 4px 20px rgba(52,152,219,.06); }
+/* Строка выбранной стратегии */
+.nd-strat-selected-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.nd-strat-selected-row:active { opacity: .7; }
+
+/* Кружок — галочка (состояние по умолчанию: выбрано) */
+.nd-strat-change-btn {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: #2C364C;
+    border: none;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background .2s, transform .2s;
+}
+.nd-strat-change-btn svg {
+    width: 11px; height: 11px;
+    stroke: #fff;
+    fill: none;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform .25s cubic-bezier(.4,0,.2,1);
+}
+/* Когда waterfall открыт — кружок становится шевроном вниз */
+.nd-strat-change-btn.open {
+    background: rgba(44, 54, 76, 0.08);
+    border: 1px solid rgba(44, 54, 76, 0.12);
+}
+.nd-strat-change-btn.open svg {
+    stroke: var(--text-secondary, #94A3B8);
+    transform: rotate(180deg);
+}
+.nd-strat-selected-row:active .nd-strat-change-btn {
+    transform: scale(.9);
+}
+body.dark-mode .nd-strat-change-btn {
+    background: #38BDF8;
+}
+body.dark-mode .nd-strat-change-btn.open {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.14);
+}
+body.dark-mode .nd-strat-change-btn.open svg {
+    stroke: rgba(255,255,255,0.4);
+}
 
 .nd-sl { display: flex; align-items: center; gap: 14px; }
-.nd-sbar { width: 4px; height: 36px; border-radius: 3px; flex-shrink: 0; transition: background .4s; }
+.nd-sbar { width: 4px; min-width: 4px; height: 36px; border-radius: 3px; flex-shrink: 0; align-self: center; transition: background .4s; display: block; }
 .nd-sr { display: flex; align-items: center; gap: 12px; }
 .nd-sp { display: flex; flex-direction: column; align-items: flex-end; }
 .nd-sb2 { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; color: var(--bonds-color); }
@@ -25038,13 +25479,21 @@ body.dark-mode #topBarCrumbText { color: rgba(255,255,255,0.35); }
 .nd-bdone:active { transform: scale(.98); }
 
 /* MOEX divider */
-.nd-moex-strip { display: flex; align-items: center; gap: 12px; padding: 8px 4px 14px; }
+.nd-moex-strip { display: flex; align-items: center; gap: 12px; padding: 8px 4px 16px; }
 .nd-moex-dot { width: 5px; height: 5px; border-radius: 50%; background: #10B981; box-shadow: 0 0 6px #10B981; animation: ndBlink 2s infinite; flex-shrink: 0; }
 @keyframes ndBlink { 0%,100%{opacity:1}50%{opacity:.4} }
 .nd-moex-text { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; color: var(--text-secondary); letter-spacing: .08em; text-transform: uppercase; }
 
 /* Vanguard dark banner */
 .nd-vg-banner { border-radius: 24px; overflow: hidden; background: linear-gradient(135deg,#1a2744 0%,#0d1529 100%); position: relative; cursor: pointer; transition: transform .2s; box-shadow: 0 16px 48px rgba(13,21,41,.25); }
+.nd-vg-banner.nd-vg-compact { border-radius: 20px; box-shadow: 0 6px 28px rgba(13,21,41,.22); padding: 0; overflow: hidden; }
+.nd-vg-compact-inner { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 14px; padding: 18px 16px; }
+.nd-vg-icon-wrap { width: 44px; height: 44px; border-radius: 13px; background: rgba(52,152,219,.18); border: 1px solid rgba(52,152,219,.25); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.nd-vg-compact-text { flex: 1; min-width: 0; }
+.nd-vg-compact-title { font-size: 15px; font-weight: 700; color: #fff; letter-spacing: -.02em; line-height: 1.2; }
+.nd-vg-compact-sub { font-size: 11px; color: rgba(255,255,255,.38); margin-top: 3px; letter-spacing: .01em; }
+.nd-vg-compact-btn { background: rgba(52,152,219,.22); border: 1px solid rgba(52,152,219,.35); border-radius: 12px; padding: 9px 14px; font-size: 12px; font-weight: 700; color: #5eb8ff; cursor: pointer; white-space: nowrap; flex-shrink: 0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; transition: background .15s, opacity .15s; letter-spacing: -.01em; }
+.nd-vg-compact-btn:active { opacity: .8; background: rgba(52,152,219,.35); }
 .nd-vg-banner:active { transform: scale(.98); }
 .nd-vg-banner::after { content:''; position: absolute; top:0; right:0; width:180px; height:100%; background: radial-gradient(circle,rgba(52,152,219,.18) 1px,transparent 1px); background-size:14px 14px; pointer-events:none; }
 .nd-vg-glow { position: absolute; width:200px; height:200px; border-radius:50%; background: radial-gradient(circle,rgba(52,152,219,.35) 0%,transparent 70%); top:-60px; right:-40px; pointer-events:none; }
@@ -25055,15 +25504,65 @@ body.dark-mode #topBarCrumbText { color: rgba(255,255,255,0.35); }
 .nd-vg-desc { font-size: 12px; color: rgba(255,255,255,.55); line-height: 1.45; margin-bottom: 12px; }
 .nd-vg-btn { display: inline-flex; align-items: center; gap: 7px; background: #3498db; border: none; border-radius: 11px; padding: 9px 16px; font-size: 13px; font-weight: 700; color: #fff; cursor: pointer; font-family: 'Inter', sans-serif; transition: background .2s; -webkit-tap-highlight-color: transparent; }
 .nd-vg-btn:active { background: #2980b9; }
-.nd-vg-stat { display: flex; gap: 16px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.08); }
-.nd-vg-stat-item { display: flex; flex-direction: column; gap: 1px; }
-.nd-vg-stat-num { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: #fff; }
-.nd-vg-stat-lbl { font-size: 10px; color: rgba(255,255,255,.4); font-weight: 500; }
+.nd-vg-stat { display: flex; gap: 20px; margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.08); align-items: center; }
+.nd-vg-stat-item { display: flex; align-items: baseline; gap: 5px; }
+.nd-vg-stat-num { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: rgba(255,255,255,.9); }
+.nd-vg-stat-lbl { font-size: 11px; color: rgba(255,255,255,.35); font-weight: 400; }
+
+/* ===== VANGUARD LIGHT BANNER (calc screen) ===== */
+.nd-vg-light {
+    background: #ffffff;
+    box-shadow: 0 2px 16px rgba(44,54,76,.08), 0 1px 3px rgba(44,54,76,.04);
+    border: 1px solid rgba(44,54,76,.07);
+    border-radius: 20px;
+}
+body.dark-mode .nd-vg-light {
+    background: rgba(255,255,255,.05);
+    border-color: rgba(255,255,255,.08);
+    box-shadow: 0 2px 16px rgba(0,0,0,.2);
+}
+.nd-vg-light-glow { background: radial-gradient(circle, rgba(52,152,219,.12) 0%, transparent 70%); }
+body.dark-mode .nd-vg-light-glow { background: radial-gradient(circle, rgba(52,152,219,.2) 0%, transparent 70%); }
+.nd-vg-light-tag {
+    background: rgba(52,152,219,.1);
+    border-color: rgba(52,152,219,.2);
+    color: #3498db;
+}
+body.dark-mode .nd-vg-light-tag { color: #60a9d6; background: rgba(52,152,219,.15); border-color: rgba(52,152,219,.25); }
+.nd-vg-light-dot { background: #3498db; box-shadow: 0 0 5px rgba(52,152,219,.6); }
+.nd-vg-light-title { color: #1a2744; }
+body.dark-mode .nd-vg-light-title { color: rgba(255,255,255,.92); }
+.nd-vg-light-desc { color: rgba(44,54,76,.5); }
+body.dark-mode .nd-vg-light-desc { color: rgba(255,255,255,.45); }
+.nd-vg-light-btn {
+    background: #2C364C;
+    color: #fff;
+}
+.nd-vg-light-btn:active { background: #1e2840; }
+body.dark-mode .nd-vg-light-btn { background: rgba(255,255,255,.12); }
+.nd-vg-light-stat { border-top-color: rgba(44,54,76,.08); }
+body.dark-mode .nd-vg-light-stat { border-top-color: rgba(255,255,255,.08); }
+.nd-vg-light-num { color: #2C364C; }
+body.dark-mode .nd-vg-light-num { color: rgba(255,255,255,.9); }
+.nd-vg-light-lbl { color: rgba(44,54,76,.4); }
+body.dark-mode .nd-vg-light-lbl { color: rgba(255,255,255,.35); }
 
 /* Bottom CTA bar */
 .nd-bottom-bar { flex-shrink: 0; padding: 14px 20px calc(14px + env(safe-area-inset-bottom,0px)); background: transparent; z-index: 10; }
 @keyframes nd-pulse { 0%,100%{box-shadow:0 10px 30px rgba(44,54,76,.18)}50%{box-shadow:0 14px 38px rgba(44,54,76,.28)} }
 .nd-btn-cta { width: 100%; padding: 18px; background: var(--graphite-btn); color: #fff; border: none; border-radius: 18px; font-size: 17px; font-weight: 700; cursor: pointer; letter-spacing: -.1px; display: flex; align-items: center; justify-content: center; gap: 10px; animation: nd-pulse 4s ease-in-out infinite; font-family: 'Inter', sans-serif; transition: transform .2s; }
+
+/* Вариант Г — карточка-кнопка */
+
+.nd-cta-g-arrow {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: var(--graphite-btn, #2C364C);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.nd-cta-g-arrow svg { width: 15px; height: 15px; }
+body.dark-mode .nd-cta-g-arrow { background: rgba(255,255,255,.15); }
 .nd-btn-cta:active { transform: scale(.98); animation: none; }
 .nd-cta-hint { text-align: center; font-size: 11px; color: var(--text-secondary); margin-top: 8px; line-height: 1.5; }
 body.input-focused .nd-bottom-bar { opacity: 0; pointer-events: none; transition: opacity .2s ease; }
@@ -25725,6 +26224,9 @@ function switchTab(tabId) {
             crumb.style.display = 'none';
         }
     }
+
+    // Показываем кнопку расчёта только на вкладке calc
+    document.body.classList.toggle('tab-calc', tabId === 'calc' || tabId === 'portfolio');
     
     // Update panels
     document.querySelectorAll('.tab-panel, #panel-calc').forEach(panel => {
@@ -27017,6 +27519,8 @@ window.calculateAndShowPortfolio = function() {
 
 // ===== HEADER SCROLL SHADOW =====
 (function() {
+    // Инициализация класса для CTA кнопки
+    document.body.classList.add('tab-calc');
     function initHeaderScroll() {
         var contentArea = document.getElementById('contentArea');
         var headerWrapper = document.getElementById('headerWrapper');
