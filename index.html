@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=0.75, maximum-scale=0.75, minimum-scale=0.75, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=0.85, maximum-scale=0.85, minimum-scale=0.85, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Terminal">
@@ -12694,36 +12694,61 @@ body.dark-mode .portfolio-echelons-total-row {
         box-shadow: 0 -4px 24px -4px rgba(0, 0, 0, 0.3);
     }
 
-    /* === HOME TAB: таббар вшит в фон === */
+    /* === HOME TAB: таббар вшит в фон — position absolute, zero visual weight === */
+    #appShell {
+        position: relative;
+    }
+    #bottomTabBar {
+        transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, opacity 0.25s ease;
+    }
     body.tab-home #bottomTabBar {
+        position: absolute !important;
+        bottom: 0;
+        left: 0;
+        right: 0;
         background: transparent !important;
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
-        border-top-color: transparent !important;
+        border-top: none !important;
         box-shadow: none !important;
+        z-index: 10;
     }
     body.tab-home.dark-mode #bottomTabBar {
         background: transparent !important;
-        border-top-color: transparent !important;
+        border-top: none !important;
         box-shadow: none !important;
     }
     body.tab-home .btab {
-        color: rgba(44, 54, 76, 0.45);
+        color: rgba(44, 54, 76, 0.35) !important;
     }
     body.tab-home .btab svg {
-        stroke: rgba(44, 54, 76, 0.35);
+        stroke: rgba(44, 54, 76, 0.28) !important;
+    }
+    body.tab-home .btab span {
+        display: none !important;
+    }
+    body.tab-home #bottomTabBar {
+        justify-content: center;
+        gap: 32px;
+    }
+    body.tab-home .btab {
+        flex: 0 !important;
+        padding: 8px 0 !important;
     }
     body.tab-home .btab.active {
-        color: #2C364C;
+        color: rgba(44, 54, 76, 0.55) !important;
     }
     body.tab-home .btab.active svg {
-        stroke: #2C364C;
+        stroke: rgba(44, 54, 76, 0.45) !important;
+    }
+    body.tab-home .btab.active::after {
+        display: none !important;
     }
     body.tab-home.dark-mode .btab {
-        color: rgba(255,255,255,0.35);
+        color: rgba(255,255,255,0.28) !important;
     }
     body.tab-home.dark-mode .btab svg {
-        stroke: rgba(255,255,255,0.3);
+        stroke: rgba(255,255,255,0.22) !important;
     }
 
     .btab {
@@ -13050,6 +13075,7 @@ body.dark-mode .portfolio-echelons-total-row {
     /* ===== CONTENT AREA ===== */
     #contentArea {
         flex: 1;
+        min-height: 0;
         overflow-y: auto;
         overflow-x: hidden;
         -webkit-overflow-scrolling: touch;
@@ -14290,15 +14316,20 @@ body.dark-mode .portfolio-echelons-total-row {
         padding: 0;
         min-height: 100%;
     }
+
+    /* Home: contentArea fills full screen since tabbar is position:absolute */
+    body.tab-home #contentArea {
+        overflow: hidden;
+    }
     
     #panel-home .welcome-screen {
-        min-height: calc(100vh - 100px); /* вычитаем topBar + tabBar */
+        min-height: 100%;
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
         background: transparent;
-        padding: 60px 30px;
+        padding: 40px 30px;
         text-align: center;
         animation: welcomeFadeIn 0.8s ease-out;
         box-sizing: border-box;
@@ -25083,7 +25114,7 @@ body.dark-mode #screen-app .aurora-container .aurora-spot.green { background: rg
 .dark-mode .nd-hdr { background: transparent; }
 
 /* Override global input#sumInput rules that would clash with new design */
-#screen-app input#sumInput { text-align: right !important; width: 1ch !important; min-width: 1ch !important; max-width: none !important; font-size: 64px !important; font-weight: 300 !important; letter-spacing: -0.04em !important; padding: 0 !important; margin: 0 !important; height: 1em !important; line-height: 1 !important; vertical-align: middle !important; transition: font-size .15s ease !important; caret-color: transparent !important; }
+#screen-app input#sumInput { text-align: right !important; width: 1ch !important; min-width: 1ch !important; max-width: none !important; font-size: 64px !important; font-weight: 300 !important; letter-spacing: -0.04em !important; padding: 0 !important; margin: 0 !important; height: auto !important; line-height: 1 !important; vertical-align: baseline !important; transition: font-size .15s ease !important; caret-color: transparent !important; }
 
 /* Input hero */
 .nd-input-hero { display: flex; flex-direction: column; align-items: center; padding: 56px 0 24px !important; }
@@ -25091,11 +25122,11 @@ body.dark-mode #screen-app .aurora-container .aurora-spot.green { background: rg
 /* Remove ::after line inherited from .input-wrapper class */
 .nd-input-hero.input-wrapper::after { display: none !important; }
 /* gap:0 — цифра и ₽ вплотную; align-items:center + height:1em нормализует высоты input и span */
-.nd-input-row { display: flex; align-items: center; justify-content: center; gap: 0; line-height: 1; min-width: 0; }
-.nd-sum-field { font-family: 'JetBrains Mono', monospace; font-size: 64px; font-weight: 300; letter-spacing: -0.04em; color: #2C364C; background: none; border: none; outline: none; text-align: right; width: 1ch; min-width: 1ch; caret-color: transparent; padding: 0; line-height: 1; display: block; box-sizing: content-box; }
+.nd-input-row { display: flex; align-items: baseline; justify-content: center; gap: 0; line-height: 1; min-width: 0; }
+.nd-sum-field { font-family: 'JetBrains Mono', monospace; font-size: 64px; font-weight: 300; letter-spacing: -0.04em; color: #2C364C; background: none; border: none; outline: none; text-align: right; width: 1ch; min-width: 1ch; caret-color: transparent; padding: 0; line-height: 1; display: inline-block; box-sizing: content-box; vertical-align: baseline; }
 .dark-mode .nd-sum-field { color: var(--text-main); }
 #screen-app input#sumInput::placeholder { color: #CBD5E1 !important; font-size: 64px !important; font-weight: 300 !important; letter-spacing: -0.04em !important; text-align: right !important; opacity: 1 !important; }
-.nd-ruble { font-family: 'JetBrains Mono', monospace; font-size: 64px; font-weight: 300; letter-spacing: -0.04em; color: #b5985a; opacity: 0.35; transition: font-size .15s ease, opacity .3s; flex-shrink: 0; line-height: 1; display: block; margin-left: 2px; }
+.nd-ruble { font-family: 'JetBrains Mono', monospace; font-size: 64px; font-weight: 300; letter-spacing: -0.04em; color: #b5985a; opacity: 0.35; transition: font-size .15s ease, opacity .3s; flex-shrink: 0; line-height: 1; display: inline-block; margin-left: 4px; vertical-align: baseline; }
 .nd-input-hint { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 400; text-transform: none; letter-spacing: .01em; color: rgba(44,54,76,.35); margin-top: 10px; }
 .nd-input-line { width: 48px; height: 2px; border-radius: 2px; margin-top: 16px; background: rgba(52,152,219,.25); transition: width .4s cubic-bezier(.2,.8,.2,1), background .3s; }
 .nd-input-hero.focused .nd-input-line { width: 120px; background: rgba(52,152,219,.55); }
