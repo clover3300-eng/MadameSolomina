@@ -2,7 +2,11 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=0.75, maximum-scale=0.75, minimum-scale=0.75, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Terminal">
+    <meta name="theme-color" content="#F1F6FB">
     <title>Terminal Madame Solomi'na</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12679,7 +12683,8 @@ body.dark-mode .portfolio-echelons-total-row {
         -webkit-backdrop-filter: blur(24px) saturate(180%);
         border-top: 0.5px solid rgba(255, 255, 255, 0.8);
         box-shadow: 0 -4px 24px -4px rgba(15, 23, 42, 0.08);
-        padding-bottom: env(safe-area-inset-bottom, 0px);
+        padding-bottom: max(env(safe-area-inset-bottom, 0px), 16px);
+        padding-bottom: max(env(safe-area-inset-bottom, 16px), 16px);
         z-index: 100;
     }
 
@@ -12809,7 +12814,7 @@ body.dark-mode .portfolio-echelons-total-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 18px 16px 8px;
+        padding: calc(env(safe-area-inset-top, 20px) + 14px) 16px 8px;
         background: transparent;
         position: relative;
         z-index: 100;
@@ -15456,20 +15461,20 @@ body.dark-mode .portfolio-echelons-total-row {
         </div>
 
         <!-- Vanguard light banner -->
-        <div class="nd-vg-banner nd-vg-light" onclick="openVanguardTest()" style="margin-bottom:12px;">
-            <div class="nd-vg-glow nd-vg-light-glow"></div>
+        <div class="nd-vg-banner nd-vg-compact" onclick="openVanguardTest()" style="margin-bottom:12px;">
+            <div class="nd-vg-glow"></div>
             <div class="nd-vg-inner">
-                <div class="nd-vg-tag nd-vg-light-tag"><span class="nd-vg-tag-dot nd-vg-light-dot"></span> Интересно</div>
-                <div class="nd-vg-title nd-vg-light-title">Не знаете какую<br>стратегию выбрать?</div>
-                <div class="nd-vg-desc nd-vg-light-desc">Пройдите тест Vanguard — 11 вопросов определят ваш инвестиционный профиль и подберут оптимальное распределение активов.</div>
-                <button class="nd-vg-btn nd-vg-light-btn" onclick="event.stopPropagation(); openVanguardTest()">
+                <div class="nd-vg-tag"><span class="nd-vg-tag-dot"></span> Интересно</div>
+                <div class="nd-vg-title">Не знаете какую<br>стратегию выбрать?</div>
+                <div class="nd-vg-desc">Пройдите тест Vanguard — 11 вопросов определят ваш инвестиционный профиль и подберут оптимальное распределение активов.</div>
+                <button class="nd-vg-btn" onclick="event.stopPropagation(); openVanguardTest()">
                     Пройти тест
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                 </button>
-                <div class="nd-vg-stat nd-vg-light-stat">
-                    <div class="nd-vg-stat-item"><div class="nd-vg-stat-num nd-vg-light-num">~2 мин</div><div class="nd-vg-stat-lbl nd-vg-light-lbl">Длительность</div></div>
-                    <div class="nd-vg-stat-item"><div class="nd-vg-stat-num nd-vg-light-num">11</div><div class="nd-vg-stat-lbl nd-vg-light-lbl">Вопросов</div></div>
-                    <div class="nd-vg-stat-item"><div class="nd-vg-stat-num nd-vg-light-num">8</div><div class="nd-vg-stat-lbl nd-vg-light-lbl">Профилей</div></div>
+                <div class="nd-vg-stat">
+                    <div class="nd-vg-stat-item"><div class="nd-vg-stat-num">~2 мин</div><div class="nd-vg-stat-lbl">Длительность</div></div>
+                    <div class="nd-vg-stat-item"><div class="nd-vg-stat-num">11</div><div class="nd-vg-stat-lbl">Вопросов</div></div>
+                    <div class="nd-vg-stat-item"><div class="nd-vg-stat-num">8</div><div class="nd-vg-stat-lbl">Профилей</div></div>
                 </div>
             </div>
         </div>
@@ -25509,6 +25514,15 @@ body.dark-mode .nd-strat-change-btn.open svg {
 .nd-vg-stat-num { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: rgba(255,255,255,.9); }
 .nd-vg-stat-lbl { font-size: 11px; color: rgba(255,255,255,.35); font-weight: 400; }
 
+/* ===== PWA STANDALONE SAFE AREA ===== */
+@media all and (display-mode: standalone) {
+    #topBar {
+        padding-top: calc(env(safe-area-inset-top, 44px) + 14px) !important;
+    }
+    #bottomTabBar {
+        padding-bottom: max(env(safe-area-inset-bottom, 20px), 20px) !important;
+    }
+}
 /* ===== VANGUARD LIGHT BANNER (calc screen) ===== */
 .nd-vg-light {
     background: #ffffff;
