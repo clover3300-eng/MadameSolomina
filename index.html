@@ -12694,6 +12694,38 @@ body.dark-mode .portfolio-echelons-total-row {
         box-shadow: 0 -4px 24px -4px rgba(0, 0, 0, 0.3);
     }
 
+    /* === HOME TAB: таббар вшит в фон === */
+    body.tab-home #bottomTabBar {
+        background: transparent !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        border-top-color: transparent !important;
+        box-shadow: none !important;
+    }
+    body.tab-home.dark-mode #bottomTabBar {
+        background: transparent !important;
+        border-top-color: transparent !important;
+        box-shadow: none !important;
+    }
+    body.tab-home .btab {
+        color: rgba(44, 54, 76, 0.45);
+    }
+    body.tab-home .btab svg {
+        stroke: rgba(44, 54, 76, 0.35);
+    }
+    body.tab-home .btab.active {
+        color: #2C364C;
+    }
+    body.tab-home .btab.active svg {
+        stroke: #2C364C;
+    }
+    body.tab-home.dark-mode .btab {
+        color: rgba(255,255,255,0.35);
+    }
+    body.tab-home.dark-mode .btab svg {
+        stroke: rgba(255,255,255,0.3);
+    }
+
     .btab {
         flex: 1;
         display: flex;
@@ -14933,7 +14965,7 @@ body.dark-mode .portfolio-echelons-total-row {
     <div id="topBar">
         <div id="topBarBrand">
             <div style="display:flex;align-items:center;gap:0;">
-                <div id="topBarTitle" style="font-size:16px;">
+                <div id="topBarTitle" style="font-size:16px;cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="switchTab('home')" title="На главную">
                     <span class="light" style="font-weight:300;">Madame </span><span style="font-weight:800;">Solomi'na</span>
                 </div>
                 <!-- Breadcrumb — показывается JS при переключении вкладок -->
@@ -15063,24 +15095,7 @@ body.dark-mode .portfolio-echelons-total-row {
             <!-- MARKET CONTENT — injected from screen-interesting (содержит баннер дохода) -->
             <div id="marketPanelContent"></div>
 
-            <!-- Баннер Vanguard — внизу -->
-            <div class="nd-vg-banner nd-vg-market" onclick="openVanguardTest()" style="margin-top:12px;">
-                <div class="nd-vg-glow"></div>
-                <div class="nd-vg-inner">
-                    <div class="nd-vg-tag"><span class="nd-vg-tag-dot"></span> Интересно</div>
-                    <div class="nd-vg-title">Не знаете какую<br>стратегию выбрать?</div>
-                    <div class="nd-vg-desc">Пройдите тест Vanguard — 11 вопросов определят ваш инвестиционный профиль и подберут оптимальное распределение активов.</div>
-                    <button class="nd-vg-btn" onclick="event.stopPropagation(); openVanguardTest()">
-                        Пройти тест
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                    </button>
-                    <div class="nd-vg-stat">
-                        <div class="nd-vg-stat-item"><div class="nd-vg-stat-num">~2 мин</div><div class="nd-vg-stat-lbl">Длительность</div></div>
-                        <div class="nd-vg-stat-item"><div class="nd-vg-stat-num">11</div><div class="nd-vg-stat-lbl">Вопросов</div></div>
-                        <div class="nd-vg-stat-item"><div class="nd-vg-stat-num">8</div><div class="nd-vg-stat-lbl">Профилей</div></div>
-                    </div>
-                </div>
-            </div>
+
 
         </div>
 
@@ -15194,7 +15209,7 @@ body.dark-mode .portfolio-echelons-total-row {
 
     <!-- BOTTOM TAB BAR (iOS-style) -->
     <div id="bottomTabBar">
-        <button class="btab active" data-tab="home" onclick="switchTab('home')">
+        <button class="btab active" data-tab="home" onclick="switchTab('home')" id="homeTabBtn" style="display:none;">
             <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             <span>Главная</span>
         </button>
@@ -26241,6 +26256,8 @@ function switchTab(tabId) {
 
     // Показываем кнопку расчёта только на вкладке calc
     document.body.classList.toggle('tab-calc', tabId === 'calc' || tabId === 'portfolio');
+    // Прозрачный таббар на главной
+    document.body.classList.toggle('tab-home', tabId === 'home');
     
     // Update panels
     document.querySelectorAll('.tab-panel, #panel-calc').forEach(panel => {
@@ -26316,6 +26333,7 @@ function closeScreenOverlay(screenId) {
 // Override goHomeScreen
 window.goHomeScreen = function() {
     switchTab('home');
+    document.body.classList.add('tab-home');
 };
 
 // Override openTerminal/openTerminalOrRegister
