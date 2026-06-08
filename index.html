@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=0.85, maximum-scale=0.85, minimum-scale=0.85, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9, minimum-scale=0.9, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Terminal">
@@ -89,6 +89,7 @@
         body {
             overscroll-behavior: none;
             min-height: 100%;
+            background: #F1F6FB; /* match appShell — prevents white strip bleed-through */
         }
         /* ================================================= */
 
@@ -96,7 +97,7 @@
 
         body.dark-mode {
             --bg-color: #0f172a;
-            background: linear-gradient(180deg, #0f172a 0%, #1a2234 100%);
+            background: #0f172a; /* solid fallback so no white strip under tabbar */
             --card-bg: #1e293b;
             --text-main: #f1f5f9;
             --text-secondary: #94a3b8;
@@ -4364,7 +4365,7 @@ body.dark-mode #marketPanelContent .calc-accordion-title {
 
 #marketPanelContent .calc-accordion-content {
     overflow: hidden;
-    padding: 0 20px 24px;
+    padding: 16px 20px 24px;
 }
 
 #marketPanelContent .calc-accordion.collapsed .calc-accordion-content {
@@ -10536,12 +10537,12 @@ body.dark-mode .tab-btn {
 .smart-replace-card {
     position: relative;
     display: flex;
-    align-items: center; /* ЦЕНТРИРОВАНИЕ ПО ВЫСОТЕ */
-    gap: 16px;
-    padding: 24px;
+    align-items: flex-start;
+    gap: 18px;
+    padding: 28px 24px;
     background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-    border-radius: 20px;
-    margin-top: 16px; /* ОТСТУП ОТ ЗАГОЛОВКА */
+    border-radius: 22px;
+    margin-top: 0;
     margin-bottom: 24px;
     box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.3);
     overflow: hidden;
@@ -10572,22 +10573,23 @@ body.dark-mode .tab-btn {
 
 /* Иконка */
 .smart-replace-icon {
-    width: 52px;
-    height: 52px;
-    min-width: 52px;
+    width: 58px;
+    height: 58px;
+    min-width: 58px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border-radius: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    margin-top: 2px; /* лёгкое смещение вниз чтобы совпадало с заголовком */
 }
 
 .smart-replace-icon svg {
-    width: 24px;
-    height: 24px;
+    width: 26px;
+    height: 26px;
 }
 
 /* Текст */
@@ -10597,19 +10599,19 @@ body.dark-mode .tab-btn {
 
 .smart-replace-title {
     font-family: 'Inter', sans-serif;
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 700;
     color: white;
-    margin: 0 0 6px 0;
+    margin: 0 0 8px 0;
     letter-spacing: -0.02em;
 }
 
 .smart-replace-desc {
     font-family: 'Inter', sans-serif;
-    font-size: 13px;
+    font-size: 13.5px;
     font-weight: 400;
-    color: rgba(255, 255, 255, 0.7);
-    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.65);
+    line-height: 1.55;
     margin: 0;
 }
 
@@ -12677,14 +12679,13 @@ body.dark-mode .portfolio-echelons-total-row {
     #bottomTabBar {
         flex-shrink: 0;
         display: flex;
-        align-items: stretch;
+        align-items: flex-end;
         background: rgba(241, 246, 251, 0.88);
         backdrop-filter: blur(24px) saturate(180%);
         -webkit-backdrop-filter: blur(24px) saturate(180%);
         border-top: 0.5px solid rgba(255, 255, 255, 0.8);
         box-shadow: 0 -4px 24px -4px rgba(15, 23, 42, 0.08);
-        padding-bottom: max(env(safe-area-inset-bottom, 0px), 16px);
-        padding-bottom: max(env(safe-area-inset-bottom, 16px), 16px);
+        padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
         z-index: 100;
     }
 
@@ -12703,7 +12704,7 @@ body.dark-mode .portfolio-echelons-total-row {
     }
     body.tab-home #bottomTabBar {
         position: absolute !important;
-        bottom: 0;
+        bottom: max(env(safe-area-inset-bottom, 16px), 16px);
         left: 0;
         right: 0;
         background: transparent !important;
@@ -12712,6 +12713,7 @@ body.dark-mode .portfolio-echelons-total-row {
         border-top: none !important;
         box-shadow: none !important;
         z-index: 10;
+        padding-bottom: 0 !important;
     }
     body.tab-home.dark-mode #bottomTabBar {
         background: transparent !important;
@@ -14309,6 +14311,64 @@ body.dark-mode .portfolio-echelons-total-row {
     #rebalancePanelContent {
         padding: 0;
     }
+
+    /* ===== MARKET TAB: ритм и порядок ===== */
+
+    /* Quiet strip — компактный, без лишних отступов */
+    #panel-market .dash-quiet-strip {
+        margin-top: 4px !important;
+        margin-bottom: 4px !important;
+        padding: 6px 0 !important;
+    }
+
+    /* Секция ставок — оборачиваем в стеклянную карточку */
+    #marketPanelContent .rates-glass-card {
+        background: rgba(255,255,255,0.72) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        border: 1px solid rgba(255,255,255,0.6) !important;
+        border-radius: 20px !important;
+        padding: 16px 0 4px !important;
+        margin-bottom: 12px !important;
+        box-shadow: 0 2px 16px rgba(44,54,76,.05) !important;
+    }
+    body.dark-mode #marketPanelContent .rates-glass-card {
+        background: rgba(30,41,59,0.7) !important;
+        border-color: rgba(255,255,255,0.08) !important;
+    }
+
+    /* Заголовок ставок — внутри карточки, с паддингом */
+    #marketPanelContent .rates-glass-card .rv-title {
+        padding: 0 16px 4px !important;
+        margin-bottom: 8px !important;
+    }
+
+    /* Строки ставок — равномерный паддинг */
+    #marketPanelContent .rate-row-item {
+        padding: 12px 16px !important;
+    }
+    #marketPanelContent .rate-row-item:first-child {
+        padding-top: 8px !important;
+    }
+    #marketPanelContent .rate-row-item:last-child {
+        padding-bottom: 12px !important;
+    }
+
+    /* Баннер дохода — плавный отступ до ставок */
+    #marketPanelContent .nd-income-banner {
+        margin-bottom: 12px !important;
+    }
+
+    /* Аккордеон калькулятора — чуть меньше отступ снизу */
+    #marketPanelContent .calc-accordion {
+        margin-bottom: 0 !important;
+    }
+
+    /* Скрываем старый пустой заголовок screen-interesting */
+    #marketPanelContent .header {
+        display: none !important;
+    }
+    /* ===== END MARKET TAB ===== *
     
 
     /* ===== WELCOME SCREEN (HOME TAB) ===== */
@@ -14320,6 +14380,7 @@ body.dark-mode .portfolio-echelons-total-row {
     /* Home: contentArea fills full screen since tabbar is position:absolute */
     body.tab-home #contentArea {
         overflow: hidden;
+        height: 100%; /* required so min-height:100% on children resolves correctly */
     }
     
     #panel-home .welcome-screen {
@@ -14715,6 +14776,7 @@ body.dark-mode .portfolio-echelons-total-row {
         flex-direction: column;
         gap: 0;
         border-top: 1px solid rgba(0,0,0,0.05);
+        border-bottom: none;
         background: rgba(248,250,252,0.6);
     }
 
@@ -14869,39 +14931,32 @@ body.dark-mode .portfolio-echelons-total-row {
     }
 
 
-    /* Кнопка "График выплат" */
+    /* Кнопка "График выплат" — акцентный тёмный CTA внизу аккордеона */
     #marketPanelContent .income-cal-chart-btn {
         width: 100%;
-        padding: 8px 14px;
-        background: transparent;
+        padding: 15px 16px;
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
         border: none;
-        border-bottom: 1px solid rgba(0,0,0,0.05);
+        border-radius: 0;
         font-family: 'Inter', sans-serif;
-        font-size: 11px;
-        font-weight: 500;
-        color: var(--text-muted);
+        font-size: 13px;
+        font-weight: 600;
+        color: rgba(255,255,255,0.9);
         cursor: pointer;
         display: flex;
         align-items: center;
-        justify-content: center;
-        gap: 6px;
-        transition: all 0.15s;
-        letter-spacing: 0.01em;
-        justify-content: center;
-    }
-
-    #marketPanelContent .income-cal-chart-btn:hover {
-        color: var(--text-slate);
-        background: rgba(0,0,0,0.02);
+        gap: 8px;
+        transition: opacity 0.15s;
+        letter-spacing: -0.01em;
+        margin-top: 0;
     }
 
     #marketPanelContent .income-cal-chart-btn:active {
-        background: rgba(0,0,0,0.04);
+        opacity: 0.8;
     }
 
     body.dark-mode #marketPanelContent .income-cal-chart-btn {
-        border-bottom-color: rgba(255,255,255,0.06);
-        color: rgba(255,255,255,0.3);
+        background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
     }
 
     /* Тёмный вид */
@@ -14929,23 +14984,27 @@ body.dark-mode .portfolio-echelons-total-row {
     #marketPanelContent .income-chart-back {
         display: flex;
         align-items: center;
-        gap: 5px;
+        justify-content: center;
+        gap: 6px;
+        width: 100%;
         border: none;
-        background: rgba(255,255,255,0.08);
-        color: rgba(255,255,255,0.55);
+        background: rgba(255,255,255,0.07);
+        border-top: 1px solid rgba(255,255,255,0.06);
+        color: rgba(255,255,255,0.5);
         font-family: 'Inter', sans-serif;
         font-size: 12px;
         font-weight: 600;
-        padding: 6px 12px;
-        border-radius: 10px;
+        padding: 13px 16px;
+        border-radius: 0;
         cursor: pointer;
         transition: all 0.15s;
-        letter-spacing: 0.01em;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
     }
 
-    #marketPanelContent .income-chart-back:hover {
-        background: rgba(255,255,255,0.14);
-        color: white;
+    #marketPanelContent .income-chart-back:active {
+        background: rgba(255,255,255,0.12);
+        color: rgba(255,255,255,0.8);
     }
 
     #marketPanelContent .income-chart-list {
@@ -15094,40 +15153,14 @@ body.dark-mode .portfolio-echelons-total-row {
 
         <!-- ===== TAB: РЕБАЛАНС ===== -->
         <div id="panel-rebalance" class="tab-panel">
-            <div class="panel-section-header">Ребалансировка</div>
             <!-- REBALANCE CONTENT — injected from screen-assets -->
             <div id="rebalancePanelContent"></div>
         </div>
 
         <!-- ===== TAB: РЫНОК ===== -->
         <div id="panel-market" class="tab-panel">
-
-            <!-- Тихая полоска -->
-            <div class="dash-quiet-strip" id="marketQuietStrip" style="margin-top:0;margin-bottom:12px;">
-                <div class="dqs-item">
-                    <span class="dqs-dot" style="background:#3B82F6;"></span>
-                    <span class="dqs-label">IMOEX</span>
-                    <span class="dqs-value" id="mqs-imoex">—</span>
-                </div>
-                <div class="dqs-sep"></div>
-                <div class="dqs-item">
-                    <span class="dqs-dot" style="background:#10B981;"></span>
-                    <span class="dqs-label">USD</span>
-                    <span class="dqs-value" id="mqs-usd">—</span>
-                </div>
-                <div class="dqs-sep"></div>
-                <div class="dqs-item">
-                    <span class="dqs-dot" style="background:#F97316;"></span>
-                    <span class="dqs-label">BTC</span>
-                    <span class="dqs-value" id="mqs-btc">—</span>
-                </div>
-            </div>
-
             <!-- MARKET CONTENT — injected from screen-interesting (содержит баннер дохода) -->
             <div id="marketPanelContent"></div>
-
-
-
         </div>
 
         <!-- ===== TAB: ТЕСТ ПОРТФЕЛЯ (BACKTEST) ===== -->
@@ -16213,6 +16246,27 @@ body.dark-mode .portfolio-echelons-total-row {
         </div>
     </div>
 
+    <!-- Тихая полоска — между баннером дохода и вертикалью ставок -->
+    <div id="marketQuietStripInner" style="display:flex;align-items:center;justify-content:center;gap:0;padding:6px 0;margin:0 0 8px;">
+        <div class="dqs-item">
+            <span class="dqs-dot" style="background:#3B82F6;"></span>
+            <span class="dqs-label">IMOEX</span>
+            <span class="dqs-value" id="mqs-imoex">—</span>
+        </div>
+        <div class="dqs-sep"></div>
+        <div class="dqs-item">
+            <span class="dqs-dot" style="background:#10B981;"></span>
+            <span class="dqs-label">USD</span>
+            <span class="dqs-value" id="mqs-usd">—</span>
+        </div>
+        <div class="dqs-sep"></div>
+        <div class="dqs-item">
+            <span class="dqs-dot" style="background:#F97316;"></span>
+            <span class="dqs-label">BTC</span>
+            <span class="dqs-value" id="mqs-btc">—</span>
+        </div>
+    </div>
+
     <!-- Вертикаль ставок (Imprinted List) -->
     <div class="rates-glass-card">
         <div class="rv-title">Вертикаль ставок</div>
@@ -16250,24 +16304,21 @@ body.dark-mode .portfolio-echelons-total-row {
 
     <!-- Калькулятор ежемесячного дохода (Hero Card) -->
     <div class="calc-accordion collapsed" id="calcAccordion">
-        <!-- Заголовок аккордеона -->
-        <div class="calc-accordion-header" onclick="toggleCalcAccordion()">
-            <div class="calc-accordion-header-left">
-                <div class="calc-accordion-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 2v20"/>
-                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        <!-- Шапка открытого состояния — видна только когда калькулятор раскрыт -->
+        <div class="calc-open-header" id="calcOpenHeader" onclick="toggleCalcAccordion()">
+            <div class="calc-open-header-left">
+                <div class="calc-open-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#2C364C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M7 21V3h6a5 5 0 0 1 0 10H7"/>
+                        <path d="M7 13h8"/>
+                        <path d="M7 17h8"/>
                     </svg>
                 </div>
-                <div>
-                    <div class="calc-accordion-title">Ежемесячный доход</div>
-                    <div class="calc-accordion-subtitle">Рассчитайте выплаты по ОФЗ</div>
-                </div>
+                <span class="calc-open-title">Доход с Портфеля</span>
             </div>
-            <div style="display: flex; align-items: center;">
-                <svg class="calc-accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
+            <div class="calc-open-close">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="18 15 12 9 6 15"/></svg>
+                Свернуть
             </div>
         </div>
         
@@ -16288,10 +16339,14 @@ body.dark-mode .portfolio-echelons-total-row {
                 <div class="nd-ib-header">
                     <div class="nd-ib-header-left">
                         <div class="nd-ib-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="#2C364C" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#2C364C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M7 21V3h6a5 5 0 0 1 0 10H7"/>
+                                <path d="M7 13h8"/>
+                                <path d="M7 17h8"/>
+                            </svg>
                         </div>
                         <div>
-                            <div class="nd-ib-title">Доход с портфеля</div>
+                            <div class="nd-ib-title">Доход с Портфеля</div>
                             <div class="nd-ib-sub" id="ndIbSub">1 000 000 ₽ · ОФЗ</div>
                         </div>
                     </div>
@@ -16342,7 +16397,7 @@ body.dark-mode .portfolio-echelons-total-row {
                 <div class="glass-input-wrapper">
                     <span class="input-label">Сумма инвестиций</span>
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <input type="number" id="monthlySumInput" value="100000" 
+                        <input type="number" id="monthlySumInput" value="1000000" 
                                oninput="distributeMonthlyInvestment()" 
                                onclick="event.stopPropagation(); this.select()" 
                                onkeyup="if(event.keyCode===13) this.blur()" 
@@ -16354,19 +16409,16 @@ body.dark-mode .portfolio-echelons-total-row {
                     </div>
                 </div>
                 
-                <!-- Информационный текст -->
-                <div class="calc-info-text" style="display:flex;align-items:flex-start;gap:12px;border-left:none;background:linear-gradient(135deg,rgba(59,130,246,0.06),rgba(16,185,129,0.04));border:1px solid rgba(59,130,246,0.1);border-radius:14px;">
-                    <div style="min-width:32px;height:32px;background:rgba(59,130,246,0.1);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-                    </div>
-                    <span style="line-height:1.55;">Калькулятор подбирает ОФЗ с разными датами купонов, чтобы выплаты приходили каждый месяц.</span>
-                </div>
-                
                 <!-- Переключатель налога -->
                 <div class="tax-segmented-control">
                     <button class="tax-segment" id="tax-custom-0" onclick="setCustomTax(0, this)">Без налога</button>
                     <button class="tax-segment active" id="tax-custom-13" onclick="setCustomTax(0.13, this)">НДФЛ 13%</button>
                     <button class="tax-segment" id="tax-custom-15" onclick="setCustomTax(0.15, this)">НДФЛ 15%</button>
+                </div>
+                <div style="margin:-12px 0 16px;padding:0 2px;text-align:center;">
+                    <span style="font-family:'Inter',sans-serif;font-size:11px;color:#94A3B8;line-height:1.5;">
+                        ОФЗ с разными датами купонов — выплаты каждый месяц
+                    </span>
                 </div>
                 
                 <!-- Calendar layout -->
@@ -16377,13 +16429,6 @@ body.dark-mode .portfolio-echelons-total-row {
                     <div id="calc-results-list" class="income-cal-grid">
                         <div class="income-cal-empty">Введите количество облигаций</div>
                     </div>
-
-                    <!-- Кнопка — сразу под сеткой -->
-                    <button class="income-cal-chart-btn" onclick="incomeShowChart()">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                        График выплат
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="margin-left:auto;opacity:0.5"><polyline points="9 18 15 12 9 6"/></svg>
-                    </button>
 
                     <!-- Степперы -->
                     <div class="income-cal-steppers">
@@ -16399,13 +16444,13 @@ body.dark-mode .portfolio-echelons-total-row {
                     <div class="income-chart-view" id="incomeChartView" style="display:none;">
                         <div class="income-chart-hdr">
                             <span class="income-chart-title">График выплат</span>
-                            <button class="income-chart-back" onclick="incomeHideChart()">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-                                Свернуть
-                            </button>
                         </div>
                         <div id="calc-results-list-dark" class="income-chart-list"></div>
                         <div id="calc-results-footer-dark" class="income-chart-footer"></div>
+                        <button class="income-chart-back" onclick="incomeHideChart()">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+                            Свернуть
+                        </button>
                     </div>
 
                     <!-- Футер: статистика построчно -->
@@ -16423,24 +16468,23 @@ body.dark-mode .portfolio-echelons-total-row {
                             <span class="income-fstat-val green" id="incomeStatPct">—</span>
                         </div>
                     </div>
+
+                    <!-- Кнопка «График выплат» — акцентный CTA в нижней части -->
+                    <button class="income-cal-chart-btn" onclick="incomeShowChart()">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                        График выплат
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="margin-left:auto;"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Ghost Trigger - Смотреть далее -->
-    <div class="rebalance-ghost-trigger" id="interestingGhostTrigger" onclick="toggleInterestingMore()">
-        <div class="ghost-line"></div>
-        <div class="ghost-text" id="interestingGhostText">СМОТРЕТЬ ДАЛЕЕ</div>
-        <div class="ghost-dots">
-            <div class="ghost-dot"></div>
-            <div class="ghost-dot"></div>
-            <div class="ghost-dot"></div>
-        </div>
-    </div>
+    <!-- Ghost Trigger — скрыт (будущий функционал) -->
+    <div class="rebalance-ghost-trigger" id="interestingGhostTrigger" onclick="toggleInterestingMore()" style="display:none!important;"></div>
 
-    <!-- Блок Инфографика (скрыт по умолчанию) -->
-    <div class="infographic-section" id="infographicSection" style="display: none;">
+    <!-- Блок Инфографика — скрыт до готовности -->
+    <div class="infographic-section" id="infographicSection" style="display: none!important;">
         
         <!-- Карточка 1: Идеи для развития -->
         <div class="future-idea-card">
@@ -17559,10 +17603,30 @@ function toggleCalcAccordion() {
     
     accordion.classList.toggle('collapsed');
     
+    const isOpen = !accordion.classList.contains('collapsed');
+    
+    // Скрываем баннер когда калькулятор открыт, показываем когда свёрнут
+    const banner = document.getElementById('ndIncomeBanner');
+    if (banner) {
+        banner.style.display = isOpen ? 'none' : '';
+    }
+    
+    // При открытии — скроллим contentArea к аккордеону чтобы он не выглядел обрезанным
+    if (isOpen) {
+        var contentArea = document.getElementById('contentArea');
+        if (contentArea) {
+            // Небольшая задержка чтобы дать display:block сработать
+            setTimeout(function() {
+                var accTop = accordion.offsetTop;
+                // Скроллим так чтобы шапка аккордеона была у самого верха с небольшим отступом
+                contentArea.scrollTo({ top: accTop - 8, behavior: 'smooth' });
+            }, 30);
+        }
+    }
+    
     // Вращаем шеврон баннера
     const chevron = document.querySelector('#ndIncomeBanner .nd-ib-chevron svg');
     if (chevron) {
-        const isOpen = !accordion.classList.contains('collapsed');
         chevron.style.transform = isOpen ? 'rotate(90deg)' : 'rotate(0deg)';
         chevron.style.transition = 'transform .25s';
     }
@@ -18733,14 +18797,14 @@ function loadDemoData() {
 
     // Облигации (ОФЗ) — 8 реальных бумаг
     bonds = [
-        { t: 'SU26244RMFS2', n: 'ОФЗ-26244', p: 938.50, y: '16.2%', nkd: 12.3, matDate: '2034-03-15' },
-        { t: 'SU26243RMFS4', n: 'ОФЗ-26243', p: 961.20, y: '15.8%', nkd: 8.7,  matDate: '2033-05-19' },
-        { t: 'SU26240RMFS0', n: 'ОФЗ-26240', p: 979.40, y: '15.5%', nkd: 21.4, matDate: '2036-07-30' },
-        { t: 'SU26241RMFS8', n: 'ОФЗ-26241', p: 954.80, y: '16.0%', nkd: 5.2,  matDate: '2032-11-17' },
-        { t: 'SU26238RMFS4', n: 'ОФЗ-26238', p: 986.10, y: '15.3%', nkd: 18.9, matDate: '2041-05-15' },
-        { t: 'SU26239RMFS2', n: 'ОФЗ-26239', p: 971.30, y: '15.6%', nkd: 11.1, matDate: '2031-07-23' },
-        { t: 'SU26236RMFS8', n: 'ОФЗ-26236', p: 944.70, y: '16.1%', nkd: 3.8,  matDate: '2028-05-17' },
-        { t: 'SU26230RMFS1', n: 'ОФЗ-26230', p: 993.20, y: '15.1%', nkd: 24.6, matDate: '2039-03-16' },
+        { t: 'SU26244RMFS2', n: 'ОФЗ 26244', p: 938.50, y: '16.2%', nkd: 12.3, matDate: '2034-03-15' },
+        { t: 'SU26243RMFS4', n: 'ОФЗ 26243', p: 961.20, y: '15.8%', nkd: 8.7,  matDate: '2033-05-19' },
+        { t: 'SU26240RMFS0', n: 'ОФЗ 26240', p: 979.40, y: '15.5%', nkd: 21.4, matDate: '2036-07-30' },
+        { t: 'SU26241RMFS8', n: 'ОФЗ 26241', p: 954.80, y: '16.0%', nkd: 5.2,  matDate: '2032-11-17' },
+        { t: 'SU26238RMFS4', n: 'ОФЗ 26238', p: 986.10, y: '15.3%', nkd: 18.9, matDate: '2041-05-15' },
+        { t: 'SU26239RMFS2', n: 'ОФЗ 26239', p: 971.30, y: '15.6%', nkd: 11.1, matDate: '2031-07-23' },
+        { t: 'SU26236RMFS8', n: 'ОФЗ 26236', p: 944.70, y: '16.1%', nkd: 3.8,  matDate: '2028-05-17' },
+        { t: 'SU26230RMFS1', n: 'ОФЗ 26230', p: 993.20, y: '15.1%', nkd: 24.6, matDate: '2039-03-16' },
     ];
 
     // bondDetailsMap
@@ -18926,7 +18990,7 @@ async function loadData() {
                     if (rows[i] && rows[i].length > 13 && rows[i][10]) {
                         bondList.push({ 
                             t: rows[i][10], 
-                            n: rows[i][11], 
+                            n: (rows[i][11] || '').replace(/^(ОФЗ)-/, '$1 '), 
                             p: parseFloat(rows[i][12].replace(',', '.')) || 0, 
                             y: rows[i][13] || '0%',
                             nkd: 0,
@@ -18944,7 +19008,7 @@ async function loadData() {
                 for (let i = 2; i <= 13; i++) {
                     if (!rows[i]) continue;
                     const dateVal = rows[i][27] || "---"; 
-                    const nameVal = rows[i][28] || "---"; 
+                    const nameVal = (rows[i][28] || "---").replace(/^(ОФЗ)-/, '$1 '); 
                     const couponVal = parseFloat(String(rows[i][30]).replace(',', '.')) || 0; 
                     const ticker = rows[i][31] ? String(rows[i][31]).trim() : ''; 
 
@@ -19294,9 +19358,10 @@ function recalcCustomCoupons() {
       }
       var colorClass = window._calColorMap[payment.paymentTicker];
       var altClass = (idx % 2 === 1) ? ' alt' : '';
+      var calCellName = (payment.displayName || '').replace(/^(ОФЗ)-/, '$1 ');
       html += '<div class="income-cal-cell ' + colorClass + altClass + '">'
             + '<div class="income-cal-mo">' + moLabel + '</div>'
-            + '<div class="income-cal-name">' + payment.displayName + '</div>'
+            + '<div class="income-cal-name">' + calCellName + '</div>'
             + '<div class="income-cal-amt" style="' + (qty > 0 ? '' : 'color:var(--text-muted);opacity:0.4;') + '">' + sumStr + '</div>'
             + '</div>';
     });
@@ -25293,7 +25358,7 @@ body.dark-mode .nd-ib-title { color:#e2e8f0; }
 .nd-ib-sub { font-size:11px; color:#94A3B8; margin-top:1px; }
 .nd-ib-chevron { width:26px; height:26px; border-radius:50%; background:rgba(44,54,76,.06); border:0.5px solid rgba(44,54,76,.1); display:flex; align-items:center; justify-content:center; }
 .nd-ib-chevron svg { width:11px; height:11px; }
-.nd-ib-main { text-align:center; padding:16px 0 18px; border-top:1px solid rgba(44,54,76,.06); border-bottom:1px solid rgba(44,54,76,.06); margin-bottom:14px; }
+.nd-ib-main { text-align:center; padding:16px 0 18px; border-top:1px solid rgba(44,54,76,.06); margin-bottom:14px; }
 .nd-ib-main-label { font-size:10px; font-weight:600; color:#94A3B8; letter-spacing:.07em; text-transform:uppercase; margin-bottom:10px; }
 .nd-ib-main-val { display:inline-flex; align-items:baseline; gap:8px; }
 .nd-ib-num { font-size:48px; font-weight:800; color:#2C364C; font-family:'JetBrains Mono',monospace; letter-spacing:-.05em; line-height:1; }
@@ -25319,6 +25384,70 @@ body.dark-mode .nd-ib-metric-num { color:#e2e8f0; }
 /* Контент аккордеона — скрыт по умолчанию, открывается по клику на баннер */
 #marketPanelContent .calc-accordion.collapsed .calc-content-wrapper { display: none; }
 #marketPanelContent .calc-accordion:not(.collapsed) .calc-content-wrapper { display: block; }
+
+/* ===== Шапка открытого калькулятора ===== */
+#marketPanelContent .calc-open-header {
+    display: none; /* скрыта пока свёрнут */
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(44,54,76,.06);
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+body.dark-mode #marketPanelContent .calc-open-header {
+    border-bottom-color: rgba(255,255,255,.07);
+}
+/* Показываем когда открыт */
+#marketPanelContent .calc-accordion:not(.collapsed) .calc-open-header {
+    display: flex;
+}
+
+.calc-open-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.calc-open-icon {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: rgba(44,54,76,.06);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+body.dark-mode .calc-open-icon { background: rgba(255,255,255,.08); }
+.calc-open-icon svg { width: 14px; height: 14px; }
+body.dark-mode .calc-open-icon svg { stroke: #e2e8f0; }
+.calc-open-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #2C364C;
+    letter-spacing: -.01em;
+}
+body.dark-mode .calc-open-title { color: #e2e8f0; }
+.calc-open-close {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: #94A3B8;
+    background: rgba(44,54,76,.05);
+    border: 0.5px solid rgba(44,54,76,.1);
+    border-radius: 20px;
+    padding: 5px 12px 5px 10px;
+    transition: all .15s;
+}
+.calc-open-close:active { background: rgba(44,54,76,.1); }
+body.dark-mode .calc-open-close {
+    background: rgba(255,255,255,.07);
+    border-color: rgba(255,255,255,.1);
+    color: rgba(255,255,255,.45);
+}
+/* ===== END Шапка открытого калькулятора ===== */
 
 /* Вертикальный разделитель | в карточке стратегии */
 .nd-strat-vdiv {
@@ -26185,6 +26314,8 @@ let isPortfolioPanePopulated = false;
 // Initialize the app
 document.addEventListener('DOMContentLoaded', function() {
     initTheme();
+    // Set initial home state — class must be present from the very first paint
+    document.body.classList.add('tab-home');
     // Populate content panels from legacy screens
     populatePanels();
     // Start data loading
@@ -26589,28 +26720,32 @@ function renderIncomeDarkList(container, footer) {
         }
         var net = (payment.staticCouponVal * qty) * (1 - customTax);
         total += net;
-        var month = payment.dateStr.slice(0, 2);
-        var calMonths = ['ЯНВ','ФЕВ','МАР','АПР','МАЙ','ИЮН','ИЮЛ','АВГ','СЕН','ОКТ','НОЯ','ДЕК'];
-        var moLabel = calMonths[parseInt(month, 10) - 1] || month;
+        // Формат даты: DD.MM из dateStr вида "MM.YY"
+        var parts = payment.dateStr.split('.');
+        var mm = parts[0] || '01';
+        // Статичная дата купона из allScheduledPayments — берём реальный день если есть, иначе 15
+        var dd = payment.couponDay ? String(payment.couponDay).padStart(2,'0') : '15';
+        var dateLabel = dd + '.' + mm;
+        // Убираем дефис из названия ОФЗ: "ОФЗ-26238" → "ОФЗ 26238"
+        var bondName = (payment.displayName || '').replace(/^(ОФЗ)-/, '$1 ');
         var sumStr = qty > 0 ? ('+' + Math.round(net).toLocaleString('ru-RU') + ' ₽') : '—';
 
         var qtyBadge = qty > 0
             ? '<span style="display:inline-block;background:rgba(255,255,255,0.08);border-radius:6px;padding:2px 8px;font-family:monospace;font-size:12px;font-weight:600;color:rgba(255,255,255,0.65);">' + qty + '</span>'
             : '<span style="color:rgba(255,255,255,0.2);font-family:monospace;font-size:12px;">—</span>';
-        html += '<div style="display:flex;align-items:center;gap:8px;padding:10px 20px;border-bottom:1px solid rgba(255,255,255,0.04);">'
-            + '<span style="font-family:monospace;font-size:12px;font-weight:600;color:rgba(255,255,255,0.55);letter-spacing:0.02em;flex-shrink:0;width:36px;">' + moLabel + '</span>'
-            + '<span style="font-size:13px;font-weight:500;color:rgba(255,255,255,0.75);flex-shrink:0;">' + payment.displayName + '</span>'
-            + '<span style="flex:1;border-bottom:1px dashed rgba(255,255,255,0.08);margin-bottom:1px;"></span>'
-            + '<span style="flex-shrink:0;">' + qtyBadge + '</span>'
-            + '<span style="font-family:monospace;font-size:14px;font-weight:700;color:' + (qty > 0 ? '#10B981' : 'rgba(255,255,255,0.2)') + ';flex-shrink:0;min-width:72px;text-align:right;">' + sumStr + '</span>'
+        html += '<div style="display:flex;align-items:center;padding:11px 20px;border-bottom:1px solid rgba(255,255,255,0.04);gap:10px;">'
+            + '<span style="font-family:\'JetBrains Mono\',monospace;font-size:12px;font-weight:600;color:rgba(255,255,255,0.45);letter-spacing:0.01em;flex-shrink:0;min-width:44px;">' + dateLabel + '</span>'
+            + '<span style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.8);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + bondName + '</span>'
+            + '<span style="flex-shrink:0;margin-left:8px;">' + qtyBadge + '</span>'
+            + '<span style="font-family:\'JetBrains Mono\',monospace;font-size:13px;font-weight:700;color:' + (qty > 0 ? '#10B981' : 'rgba(255,255,255,0.2)') + ';flex-shrink:0;min-width:80px;text-align:right;">' + sumStr + '</span>'
             + '</div>';
     });
 
-    var hdrRow = '<div style="display:grid;grid-template-columns:52px 1fr 64px 80px;gap:0 8px;align-items:center;padding:8px 20px 7px;border-bottom:1px solid rgba(255,255,255,0.08);">'
-        + '<span style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.5);">ДАТА</span>'
-        + '<span style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.5);">ОБЛИГАЦИЯ</span>'
-        + '<span style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.5);text-align:right;">ШТ</span>'
-        + '<span style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.5);text-align:right;">СУММА</span>'
+    var hdrRow = '<div style="display:flex;align-items:center;padding:8px 20px 7px;border-bottom:1px solid rgba(255,255,255,0.08);gap:10px;">'
+        + '<span style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.35);flex-shrink:0;min-width:44px;">ДАТА</span>'
+        + '<span style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.35);flex:1;">ОБЛИГАЦИЯ</span>'
+        + '<span style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.35);flex-shrink:0;margin-left:8px;min-width:40px;text-align:right;">ШТ</span>'
+        + '<span style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.35);flex-shrink:0;min-width:80px;text-align:right;">СУММА</span>'
         + '</div>';
     container.innerHTML = hdrRow + (html || '<div style="text-align:center;padding:20px;color:rgba(255,255,255,0.2);font-size:12px;">Введите количество</div>');
 
