@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9, minimum-scale=0.9, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Terminal">
@@ -84,6 +84,7 @@
             overscroll-behavior: none;
             height: 100%;
             -webkit-overflow-scrolling: touch;
+            background: #F1F6FB; /* covers any gap below appShell in standalone PWA */
         }
         
         body {
@@ -12654,7 +12655,8 @@ body.dark-mode .portfolio-echelons-total-row {
     html { 
         overscroll-behavior: none; 
         height: 100%; 
-        -webkit-overflow-scrolling: touch; 
+        -webkit-overflow-scrolling: touch;
+        background: #F1F6FB;
     }
     
     body { 
@@ -13122,22 +13124,41 @@ body.dark-mode .portfolio-echelons-total-row {
         display: none;
         position: fixed;
         top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(15, 23, 42, 0.4);
-        backdrop-filter: blur(8px);
+        background: rgba(15, 23, 42, 0.5);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
         z-index: 500;
-        animation: fadeIn 0.2s ease;
+        animation: fadeIn 0.18s ease;
+        flex-direction: column;
+        justify-content: flex-end; /* прижимаем к низу */
     }
     
-    #searchOverlay.open { display: flex; flex-direction: column; }
+    #searchOverlay.open { display: flex; }
     
     #searchBox {
-        background: var(--card-glass-aurora, rgba(255,255,255,0.95));
+        background: rgba(255,255,255,0.98);
         backdrop-filter: blur(20px);
-        padding: 16px;
+        -webkit-backdrop-filter: blur(20px);
+        padding: 14px 16px calc(20px + env(safe-area-inset-bottom, 0px));
         display: flex;
         align-items: center;
         gap: 12px;
-        border-bottom: 1px solid rgba(0,0,0,0.06);
+        border-top: 1px solid rgba(0,0,0,0.07);
+        border-radius: 20px 20px 0 0;
+        box-shadow: 0 -8px 32px rgba(15,23,42,0.12);
+        width: 100%;
+        box-sizing: border-box;
+        animation: slideUpSearch 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    
+    body.dark-mode #searchBox {
+        background: rgba(22,27,39,0.98);
+        border-top-color: rgba(255,255,255,0.08);
+    }
+    
+    @keyframes slideUpSearch {
+        from { transform: translateY(100%); opacity: 0; }
+        to   { transform: translateY(0);    opacity: 1; }
     }
     
     #searchInput {
@@ -13212,12 +13233,18 @@ body.dark-mode .portfolio-echelons-total-row {
 
     /* CTA bar — simple block at bottom of calc form */
     #calcCtaBar {
-        padding: 12px 16px calc(16px + env(safe-area-inset-bottom, 0px));
-        display: none;
         flex-shrink: 0;
-        position: sticky;
-        bottom: 0;
-        background: transparent;
+        display: none;
+        padding: 10px 16px 8px;
+        background: rgba(241,246,251,0.97);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border-top: 0.5px solid rgba(44,54,76,0.07);
+        z-index: 50;
+    }
+    body.dark-mode #calcCtaBar {
+        background: rgba(15,23,42,0.97);
+        border-top-color: rgba(255,255,255,0.06);
     }
     body.tab-calc #calcCtaBar {
         display: block;
@@ -15113,15 +15140,6 @@ body.dark-mode .portfolio-echelons-total-row {
                 <!-- CALC CONTENT GOES HERE — injected from screen-app -->
                 <div id="calcPaneContent"></div>
             </div>
-
-            <!-- CTA -->
-            <div id="calcCtaBar">
-                <button class="nd-btn-cta-g" onclick="calculateAndShowPortfolio()">
-                    РАССЧИТАТЬ ПОРТФЕЛЬ
-                </button>
-            </div>
-
-<!-- Portfolio moved to dedicated tab -->
         </div>
 
         <!-- ===== TAB: ПОРТФЕЛЬ ===== -->
@@ -15270,6 +15288,13 @@ body.dark-mode .portfolio-echelons-total-row {
         </div>
 
     </div><!-- /contentArea -->
+
+    <!-- CTA: Рассчитать портфель — фиксированная кнопка над таббаром, только на вкладке Расчёт -->
+    <div id="calcCtaBar">
+        <button class="nd-btn-cta-g" onclick="calculateAndShowPortfolio()">
+            РАССЧИТАТЬ ПОРТФЕЛЬ
+        </button>
+    </div>
 
     <!-- BOTTOM TAB BAR (iOS-style) -->
     <div id="bottomTabBar">
@@ -15434,7 +15459,7 @@ body.dark-mode .portfolio-echelons-total-row {
                     onkeyup="if(event.keyCode===13) this.blur()">
                 <span class="nd-ruble" id="ndRuble">₽</span>
             </div>
-            <div class="nd-input-hint">Введите сумму</div>
+            <div class="nd-input-hint">введите сумму</div>
             <div class="nd-input-line" id="ndInputLine"></div>
         </div>
         <!-- Hidden currency elements for compat with existing JS -->
@@ -16884,10 +16909,10 @@ window._selectedPlan = 'trial';
         appScreen.classList.add('active');
     }
 
-    // Показываем sticky панель
+    // Показываем sticky панель — ОТКЛЮЧЕНО, используется calcCtaBar
     const stickyPanel = document.getElementById('stickyPanel');
     if (stickyPanel) {
-        stickyPanel.style.display = 'block';
+        stickyPanel.style.setProperty('display', 'none', 'important');
     }
     
     currentScreen = 'screen-app';
@@ -18169,6 +18194,7 @@ function ndFormatInput(input) {
     const num = parseInt(raw) || 0;
     input.value = num > 0 ? num.toLocaleString('ru-RU').replace(/\s/g, '.') : '';
     const ruble = document.getElementById('ndRuble');
+    const hero = document.getElementById('ndInputHero');
     const len = input.value.length;
     // 1-6 chars (up to 99 999) → 64px; 7-11 (100 000 … 99 999 999) → 46px — no jump at 999 999→1 000 000
     const size = len <= 6 ? 64 : len <= 11 ? 46 : len <= 15 ? 32 : 24;
@@ -18180,6 +18206,7 @@ function ndFormatInput(input) {
         ruble.style.fontSize = size + 'px';
         ruble.style.opacity = num > 0 ? '0.9' : '0.35';
     }
+    if (hero) hero.classList.toggle('has-value', num > 0);
     draw();
 }
 
@@ -25188,11 +25215,11 @@ body.dark-mode #screen-app .aurora-container .aurora-spot.green { background: rg
 .nd-input-hero.input-wrapper::after { display: none !important; }
 /* gap:0 — цифра и ₽ вплотную; align-items:center + height:1em нормализует высоты input и span */
 .nd-input-row { display: flex; align-items: baseline; justify-content: center; gap: 0; line-height: 1; min-width: 0; }
-.nd-sum-field { font-family: 'JetBrains Mono', monospace; font-size: 64px; font-weight: 300; letter-spacing: -0.04em; color: #2C364C; background: none; border: none; outline: none; text-align: right; width: 1ch; min-width: 1ch; caret-color: transparent; padding: 0; line-height: 1; display: inline-block; box-sizing: content-box; vertical-align: baseline; }
+.nd-sum-field { font-family: 'JetBrains Mono', monospace; font-size: 64px; font-weight: 300; letter-spacing: -0.04em; color: #2C364C; background: none; border: none; outline: none; text-align: right; width: 1ch; min-width: 40px; caret-color: transparent; padding: 0; line-height: 1; display: inline-block; box-sizing: content-box; vertical-align: baseline; }
 .dark-mode .nd-sum-field { color: var(--text-main); }
 #screen-app input#sumInput::placeholder { color: #CBD5E1 !important; font-size: 64px !important; font-weight: 300 !important; letter-spacing: -0.04em !important; text-align: right !important; opacity: 1 !important; }
 .nd-ruble { font-family: 'JetBrains Mono', monospace; font-size: 64px; font-weight: 300; letter-spacing: -0.04em; color: #b5985a; opacity: 0.35; transition: font-size .15s ease, opacity .3s; flex-shrink: 0; line-height: 1; display: inline-block; margin-left: 4px; vertical-align: baseline; }
-.nd-input-hint { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 400; text-transform: none; letter-spacing: .01em; color: rgba(44,54,76,.35); margin-top: 10px; }
+.nd-input-hint { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 400; letter-spacing: .06em; text-transform: lowercase; color: rgba(44,54,76,.3); margin-top: 12px; display: flex; align-items: center; gap: 5px; }
 .nd-input-line { width: 48px; height: 2px; border-radius: 2px; margin-top: 16px; background: rgba(52,152,219,.25); transition: width .4s cubic-bezier(.2,.8,.2,1), background .3s; }
 .nd-input-hero.focused .nd-input-line { width: 120px; background: rgba(52,152,219,.55); }
 
@@ -25696,6 +25723,17 @@ body.dark-mode .nd-strat-change-btn.open svg {
     }
     #bottomTabBar {
         padding-bottom: max(env(safe-area-inset-bottom, 20px), 20px) !important;
+    }
+    /* Ensure no white strip below appShell in standalone */
+    html, body {
+        background: #F1F6FB !important;
+    }
+    body.dark-mode, body.dark-mode html {
+        background: #0f172a !important;
+    }
+    #appShell {
+        min-height: 100dvh;
+        background: linear-gradient(180deg,#F1F6FB 0%,#F9FAFC 100%);
     }
 }
 /* ===== VANGUARD LIGHT BANNER (calc screen) ===== */
@@ -26318,6 +26356,20 @@ document.addEventListener('DOMContentLoaded', function() {
     document.body.classList.add('tab-home');
     // Populate content panels from legacy screens
     populatePanels();
+    // Init sum input display — positions ₽ correctly before any user interaction
+    // Don't call ndFormatInput (it would hide the hint for default value)
+    var sumEl = document.getElementById('sumInput');
+    if (sumEl) {
+        setTimeout(function() {
+            var len = sumEl.value ? sumEl.value.length : 1;
+            var size = len <= 6 ? 64 : len <= 11 ? 46 : 32;
+            sumEl.style.setProperty('font-size', size + 'px', 'important');
+            sumEl.style.setProperty('width', (len || 1) + 'ch', 'important');
+            sumEl.style.setProperty('min-width', '40px', 'important');
+            var ruble = document.getElementById('ndRuble');
+            if (ruble) ruble.style.fontSize = size + 'px';
+        }, 50);
+    }
     // Start data loading
     loadData();
     // Set default date for backtest (1 year ago)
@@ -26416,8 +26468,8 @@ function switchTab(tabId) {
         }
     }
 
-    // Показываем кнопку расчёта только на вкладке calc
-    document.body.classList.toggle('tab-calc', tabId === 'calc' || tabId === 'portfolio');
+    // Показываем кнопку расчёта только на вкладке calc (не на portfolio)
+    document.body.classList.toggle('tab-calc', tabId === 'calc');
     // Прозрачный таббар на главной
     document.body.classList.toggle('tab-home', tabId === 'home');
     
@@ -27717,8 +27769,6 @@ window.calculateAndShowPortfolio = function() {
 
 // ===== HEADER SCROLL SHADOW =====
 (function() {
-    // Инициализация класса для CTA кнопки
-    document.body.classList.add('tab-calc');
     function initHeaderScroll() {
         var contentArea = document.getElementById('contentArea');
         var headerWrapper = document.getElementById('headerWrapper');
