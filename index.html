@@ -12671,7 +12671,6 @@ body.dark-mode .portfolio-echelons-total-row {
         flex-direction: column;
         height: 100vh;
         height: 100dvh;
-        height: var(--app-height, 100dvh);
         position: relative;
         overflow: hidden;
     }
@@ -12686,7 +12685,7 @@ body.dark-mode .portfolio-echelons-total-row {
         -webkit-backdrop-filter: blur(24px) saturate(180%);
         border-top: 0.5px solid rgba(255, 255, 255, 0.8);
         box-shadow: 0 -4px 24px -4px rgba(15, 23, 42, 0.08);
-        padding-bottom: 0;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
         position: relative;
         z-index: 100;
     }
@@ -27880,30 +27879,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(checkRebalanceEmptyState, 1000);
 });
 
-// ===== ДИНАМИЧЕСКАЯ ВЫСОТА ДЛЯ PWA / iOS SAFARI =====
-// 100dvh в standalone PWA на iOS ненадёжен — измеряем реальную видимую высоту
-(function() {
-    function setAppHeight() {
-        // visualViewport точнее в PWA, fallback на innerHeight
-        var h = (window.visualViewport && window.visualViewport.height)
-            ? window.visualViewport.height
-            : window.innerHeight;
-        document.documentElement.style.setProperty('--app-height', h + 'px');
-    }
-    setAppHeight();
-    window.addEventListener('resize', setAppHeight);
-    window.addEventListener('orientationchange', function() {
-        setTimeout(setAppHeight, 100);
-    });
-    if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', setAppHeight);
-    }
-    // Повторяем после полной загрузки — PWA иногда сообщает высоту с задержкой
-    window.addEventListener('load', function() {
-        setAppHeight();
-        setTimeout(setAppHeight, 300);
-    });
-})();
+
 </script>
 
 </body>
