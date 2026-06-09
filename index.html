@@ -5933,103 +5933,97 @@ body.dark-mode .ofz-toggle-btn:hover {
 
 /* === Купонный дождь в стиле Aurora === */
 .portfolio-coupon-card {
-    background: var(--card-glass-aurora);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(94, 123, 163, 0.3);
-    border-radius: 20px;
+    background: linear-gradient(135deg, #FCFDFE 0%, #F4F8FC 100%);
+    border: 1px solid rgba(94, 123, 163, 0.14);
+    border-radius: 18px;
     overflow: hidden;
-    margin: 20px 0;
+    margin: 18px 0;
+    box-shadow: 0 2px 12px -4px rgba(44, 54, 76, 0.06);
+}
+body.dark-mode .portfolio-coupon-card {
+    background: linear-gradient(135deg, #1a2030 0%, #161b27 100%);
+    border-color: rgba(255,255,255,0.06);
 }
 
-/* Анимация дыхания рамки когда свернуто */
-.portfolio-coupon-card:not(.open) {
-    animation: couponBorderBreathe 3s ease-in-out infinite;
-}
+/* Без анимации дыхания — минимализм */
+.portfolio-coupon-card:not(.open) { animation: none; }
 
 @keyframes couponBorderBreathe {
-    0%, 100% { border-color: rgba(94, 123, 163, 0.3); }
-    50% { border-color: rgba(59, 130, 246, 0.4); }
+    0%, 100% { border-color: rgba(94, 123, 163, 0.14); }
+    50% { border-color: rgba(94, 123, 163, 0.14); }
 }
 
 .portfolio-coupon-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 18px 20px;
-    background: rgba(94, 123, 163, 0.08);
+    padding: 14px 16px;
+    background: transparent;
     cursor: pointer;
     transition: background 0.2s ease;
 }
 
 .portfolio-coupon-header:hover {
-    background: rgba(94, 123, 163, 0.12);
+    background: rgba(94, 123, 163, 0.04);
 }
 
 .portfolio-coupon-header-left {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 11px;
 }
 
 .portfolio-coupon-icon {
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    border-radius: 14px;
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.05));
-    border: 1px solid rgba(59, 130, 246, 0.2);
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    border-radius: 10px;
+    background: rgba(94, 123, 163, 0.1);
+    border: none;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: none;
 }
 
-/* Пульсация иконки когда свернуто */
-.portfolio-coupon-card:not(.open) .portfolio-coupon-icon {
-    animation: couponIconPulse 2s ease-in-out infinite;
-}
+/* Без пульсации — минимализм */
+.portfolio-coupon-card:not(.open) .portfolio-coupon-icon { animation: none; }
 
 @keyframes couponIconPulse {
-    0%, 100% { 
-        transform: scale(1);
-        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
-    }
-    50% { 
-        transform: scale(1.02);
-        box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.15);
-    }
+    0%, 100% { transform: scale(1); box-shadow: none; }
+    50% { transform: scale(1); box-shadow: none; }
 }
 
 .portfolio-coupon-icon svg {
-    width: 22px;
-    height: 22px;
-    color: #3b82f6;
+    width: 17px;
+    height: 17px;
+    color: #5E7BA3;
 }
 
 .portfolio-coupon-title-block {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 1px;
 }
 
 .portfolio-coupon-title {
     font-family: 'Inter', sans-serif;
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 700;
     color: var(--text-deep);
+    letter-spacing: -0.01em;
 }
 
 .portfolio-coupon-subtitle {
     font-family: 'Inter', sans-serif;
-    font-size: 11px;
+    font-size: 10.5px;
     color: var(--text-slate);
 }
 
 .portfolio-coupon-arrow {
-    width: 24px;
-    height: 24px;
-    color: #5E7BA3;
+    width: 20px;
+    height: 20px;
+    color: #94A3B8;
     transition: transform 0.3s ease;
 }
 
@@ -12656,18 +12650,17 @@ body.dark-mode .portfolio-echelons-total-row {
     html { 
         overscroll-behavior: none; 
         height: 100%; 
-        height: -webkit-fill-available;
         -webkit-overflow-scrolling: touch;
         background: #F1F6FB;
     }
     
     body { 
         overscroll-behavior: none; 
-        min-height: 100%; 
-        min-height: -webkit-fill-available;
+        height: 100%;
         margin: 0; 
         padding: 0;
         background: #F1F6FB;
+        overflow: hidden;
     }
     
     /* ===== NEW TAB NAVIGATION SYSTEM ===== */
@@ -12678,7 +12671,9 @@ body.dark-mode .portfolio-echelons-total-row {
         flex-direction: column;
         height: 100vh;
         height: 100dvh;
-        min-height: -webkit-fill-available;
+        max-height: 100vh;
+        max-height: 100dvh;
+        overflow: hidden;
         position: relative;
     }
     
@@ -12692,8 +12687,22 @@ body.dark-mode .portfolio-echelons-total-row {
         -webkit-backdrop-filter: blur(24px) saturate(180%);
         border-top: 0.5px solid rgba(255, 255, 255, 0.8);
         box-shadow: 0 -4px 24px -4px rgba(15, 23, 42, 0.08);
-        padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        position: relative;
         z-index: 100;
+    }
+    /* Подложка под таббар — заполняет home-indicator зону тем же фоном */
+    #bottomTabBar::after {
+        content: '';
+        position: absolute;
+        left: 0; right: 0;
+        top: 100%;
+        height: 100px;
+        background: rgba(241, 246, 251, 0.92);
+        pointer-events: none;
+    }
+    body.dark-mode #bottomTabBar::after {
+        background: rgba(15, 23, 42, 0.92);
     }
 
     body.dark-mode #bottomTabBar {
@@ -12767,6 +12776,7 @@ body.dark-mode .portfolio-echelons-total-row {
         align-items: center;
         justify-content: flex-start;
         padding-top: 8px;
+        padding-bottom: 8px;
         gap: 3px;
         border: none;
         background: transparent;
@@ -13240,8 +13250,8 @@ body.dark-mode .portfolio-echelons-total-row {
     /* CTA bar — в потоке, последний элемент формы */
     #calcCtaBar {
         display: none;
-        padding: 8px 0 24px;
-        margin-top: 8px;
+        padding: 28px 0 28px;
+        margin-top: 16px;
     }
     body.tab-calc #calcCtaBar {
         display: block;
@@ -13810,15 +13820,31 @@ body.dark-mode .portfolio-echelons-total-row {
     
     .bt-asset-row {
         display: grid;
-        grid-template-columns: 1fr auto auto auto auto;
-        gap: 8px;
+        grid-template-columns: minmax(0, 1fr) 64px 72px 72px;
+        gap: 6px;
         align-items: center;
-        padding: 11px 18px;
+        padding: 11px 16px;
         border-bottom: 1px solid rgba(0,0,0,0.03);
         transition: background 0.15s;
     }
     
     .bt-asset-row:last-child { border-bottom: none; }
+    .bt-asset-head {
+        background: rgba(0,0,0,0.02);
+        padding-top: 9px;
+        padding-bottom: 9px;
+    }
+    body.dark-mode .bt-asset-head { background: rgba(255,255,255,0.03); }
+    .bt-col-head {
+        font-family: 'Inter', sans-serif;
+        font-size: 9.5px;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+    .bt-col-head.right { text-align: right; }
+    .bt-asset-namecol { min-width: 0; overflow: hidden; }
     
     body.dark-mode .bt-asset-row {
         border-bottom-color: rgba(255,255,255,0.03);
@@ -13860,8 +13886,9 @@ body.dark-mode .portfolio-echelons-total-row {
         font-weight: 500;
         color: var(--text-slate);
         text-align: right;
-        min-width: 70px;
         white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     
     .bt-asset-price {
@@ -13870,8 +13897,9 @@ body.dark-mode .portfolio-echelons-total-row {
         font-weight: 700;
         color: var(--text-deep);
         text-align: right;
-        min-width: 70px;
         white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     
     .bt-asset-pnl {
@@ -13879,8 +13907,9 @@ body.dark-mode .portfolio-echelons-total-row {
         font-size: 12px;
         font-weight: 700;
         text-align: right;
-        min-width: 65px;
         white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     
     .bt-asset-pnl.pos  { color: #10B981; }
@@ -14153,6 +14182,9 @@ body.dark-mode .portfolio-echelons-total-row {
     
     body.dark-mode #topBarSuper { color: rgba(255,255,255,0.3); }
     body.dark-mode #topBarTitle { color: #f1f5f9; }
+    body.dark-mode #topBarCrumb line { stroke: rgba(255,255,255,0.22); }
+    body.dark-mode #topBarCrumb circle { stroke: rgba(255,255,255,0.4); }
+    body.dark-mode #topBarCrumbText { color: rgba(255,255,255,0.4) !important; }
     
     body.dark-mode #topSearchBtn {
         background: rgba(30, 41, 59, 0.75);
@@ -15083,12 +15115,13 @@ body.dark-mode .portfolio-echelons-total-row {
                     <span class="light" style="font-weight:300;">Madame </span><span style="font-weight:800;">Solomi'na</span>
                 </div>
                 <!-- Breadcrumb — показывается JS при переключении вкладок -->
-                <div id="topBarCrumb" style="display:none;align-items:center;gap:0;margin-left:2px;">
-                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" style="flex-shrink:0;">
-                        <line x1="4" y1="14" x2="22" y2="14" stroke="rgba(44,54,76,0.18)" stroke-width="1"/>
-                        <circle cx="14" cy="14" r="2.5" fill="none" stroke="rgba(44,54,76,0.35)" stroke-width="1.2"/>
+                <div id="topBarCrumb" style="display:none;align-items:center;gap:8px;margin-left:10px;">
+                    <svg width="22" height="10" viewBox="0 0 22 10" fill="none" style="flex-shrink:0;display:block;">
+                        <line x1="0" y1="5" x2="7" y2="5" stroke="rgba(44,54,76,0.2)" stroke-width="1.2"/>
+                        <circle cx="11" cy="5" r="2.2" fill="none" stroke="rgba(44,54,76,0.4)" stroke-width="1.2"/>
+                        <line x1="15" y1="5" x2="22" y2="5" stroke="rgba(44,54,76,0.2)" stroke-width="1.2"/>
                     </svg>
-                    <span id="topBarCrumbText" style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:rgba(44,54,76,0.45);letter-spacing:0.01em;white-space:nowrap;"></span>
+                    <span id="topBarCrumbText" style="font-family:'Inter',sans-serif;font-size:11px;font-weight:600;color:rgba(44,54,76,0.4);letter-spacing:0.04em;text-transform:uppercase;white-space:nowrap;"></span>
                 </div>
             </div>
         </div>
@@ -16117,9 +16150,9 @@ body.dark-mode .portfolio-echelons-total-row {
         </div>
         
         <!-- Ghost Trigger для ОФЗ -->
-        <div class="rebalance-ghost-trigger" id="ofzGhostTrigger" onclick="toggleAuroraOfzList()">
+        <div class="rebalance-ghost-trigger open" id="ofzGhostTrigger" onclick="toggleAuroraOfzList()">
             <div class="ghost-line"></div>
-            <div class="ghost-text" id="ofzGhostText">ОТКРЫТЬ СПИСОК</div>
+            <div class="ghost-text" id="ofzGhostText">СВЕРНУТЬ</div>
             <div class="ghost-dots">
                 <div class="ghost-dot"></div>
                 <div class="ghost-dot"></div>
@@ -16172,9 +16205,9 @@ body.dark-mode .portfolio-echelons-total-row {
             </div>
             
             <!-- Ghost Trigger для акций -->
-            <div class="rebalance-ghost-trigger" id="stocksGhostTrigger" onclick="toggleStocksTable()">
+            <div class="rebalance-ghost-trigger open" id="stocksGhostTrigger" onclick="toggleStocksTable()">
                 <div class="ghost-line"></div>
-                <div class="ghost-text" id="stocksGhostText">ОТКРЫТЬ СПИСОК</div>
+                <div class="ghost-text" id="stocksGhostText">СВЕРНУТЬ</div>
                 <div class="ghost-dots">
                     <div class="ghost-dot"></div>
                     <div class="ghost-dot"></div>
@@ -19724,7 +19757,7 @@ function renderOfzList() {
             curYield = ((details.couponValue * details.freq / parseFloat(priceFinal)) * 100).toFixed(2);
         }
 
-        const hiddenClass = index > 2 ? 'ofz-row-hidden' : '';
+        const hiddenClass = ''; // Раскрыто полностью
 
         ofzHtml += `
         <div class="ofz-row-container ${hiddenClass}" id="container-${b.t}">
@@ -19884,7 +19917,7 @@ function renderAuroraOfzList() {
             curYield = ((details.couponValue * details.freq / parseFloat(priceFinal)) * 100).toFixed(2);
         }
         
-        const hiddenClass = index > 2 ? 'aurora-hidden' : '';
+        const hiddenClass = ''; // Список ОФЗ раскрыт полностью изначально
         
         html += `
         <div class="ofz-aurora-item ${hiddenClass}" id="aurora-${b.t}" data-index="${index}">
@@ -20006,7 +20039,7 @@ function toggleAuroraOfzDetails(ticker) {
 }
 
 // Показать/скрыть все ОФЗ в Aurora стиле
-let ofzListExpanded = false;
+let ofzListExpanded = true;
 
 function toggleAuroraOfzList() {
     const items = document.querySelectorAll('.ofz-aurora-item');
@@ -20039,7 +20072,7 @@ function toggleAuroraOfzList() {
             item.style.animation = `staggerIn 0.4s ease forwards`;
             item.style.animationDelay = `${index * 0.05}s`;
         });
-        text.innerText = 'СКРЫТЬ';
+        text.innerText = 'СВЕРНУТЬ';
         trigger.classList.add('open');
     }
     
@@ -20198,7 +20231,7 @@ function renderAuroraStocksTable() {
     const maxVisibleRows = 3;
     
     for (let rowIndex = 0; rowIndex < maxRows; rowIndex++) {
-        const hiddenClass = rowIndex >= maxVisibleRows ? 'stocks-row-hidden' : '';
+        const hiddenClass = ''; // Список акций раскрыт полностью изначально
         
         html += `<div class="stocks-table-row ${hiddenClass}" data-row="${rowIndex}">`;
         
@@ -20502,7 +20535,7 @@ function goToCompanyPageFromTicker(ticker) {
 }
 
 // Показать/скрыть все акции
-let stocksExpanded = false;
+let stocksExpanded = true;
 
 function toggleStocksTable() {
     const rows = document.querySelectorAll('.stocks-table-row');
@@ -20525,7 +20558,7 @@ function toggleStocksTable() {
         }
     });
     
-    text.innerText = stocksExpanded ? 'СКРЫТЬ' : 'ОТКРЫТЬ СПИСОК';
+    text.innerText = stocksExpanded ? 'СВЕРНУТЬ' : 'ОТКРЫТЬ СПИСОК';
     trigger.classList.toggle('open', stocksExpanded);
 
     // === НОВОЕ: ПРОКРУТКА К НАЧАЛУ ПРИ СКРЫТИИ ===
@@ -22047,11 +22080,10 @@ function renderPortfolioBondsV2(opts) {
     // Сортируем по доходности (убывание) — топ показывается первым
     const sorted = [...bondCalculations].sort((a, b) => parseFloat(b.y) - parseFloat(a.y));
     const total = sorted.length;
-    const showAll = portfolioBondsExpanded || total <= PORTFOLIO_BONDS_VISIBLE;
-    const toShow = showAll ? sorted : sorted.slice(0, PORTFOLIO_BONDS_VISIBLE);
-    const hiddenCount = total - PORTFOLIO_BONDS_VISIBLE;
-    const hiddenSum = sorted.slice(PORTFOLIO_BONDS_VISIBLE)
-        .reduce((acc, b) => acc + Math.round(b.qty * b.fullCostPerUnit), 0);
+    const showAll = true; // Показываем полный список без кнопки
+    const toShow = sorted;
+    const hiddenCount = 0;
+    const hiddenSum = 0;
 
     let html = '';
     toShow.forEach((b, idx) => {
@@ -27290,13 +27322,12 @@ function renderBtResults(results, dateStr) {
         t += '<div class="bt-assets-title">' + title + '</div>';
         t += '<div class="bt-assets-date-pill">' + btFormatDate(dateStr) + '</div>';
         t += '</div><div>';
-        // Header row
-        t += '<div class="bt-asset-row" style="background:rgba(0,0,0,0.02);padding:8px 18px;">';
-        t += '<div style="font-family:Inter,sans-serif;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Бумага</div>';
-        t += '<div style="font-family:Inter,sans-serif;font-size:10px;font-weight:700;color:var(--text-muted);text-align:right;">Кол-во</div>';
-        t += '<div style="font-family:Inter,sans-serif;font-size:10px;font-weight:700;color:var(--text-muted);text-align:right;min-width:65px;">Покупка</div>';
-        t += '<div style="font-family:Inter,sans-serif;font-size:10px;font-weight:700;color:var(--text-muted);text-align:right;min-width:65px;">Сейчас</div>';
-        t += '<div style="font-family:Inter,sans-serif;font-size:10px;font-weight:700;color:var(--text-muted);text-align:right;min-width:65px;">P&L</div>';
+        // Header row — 4 columns: name, buy, now, pnl (qty moves under name)
+        t += '<div class="bt-asset-row bt-asset-head">';
+        t += '<div class="bt-col-head">Бумага</div>';
+        t += '<div class="bt-col-head right">Покупка</div>';
+        t += '<div class="bt-col-head right">Сейчас</div>';
+        t += '<div class="bt-col-head right">P&L</div>';
         t += '</div>';
         // Data rows
         for (var k = 0; k < items.length; k++) {
@@ -27311,9 +27342,8 @@ function renderBtResults(results, dateStr) {
                 : '—';
             var pnlStr = (b.error || b.pnl === null) ? '—' : rowSign + btFmtRub(b.pnl);
             t += '<div class="bt-asset-row">';
-            t += '<div><div class="bt-asset-name">' + (b.n || b.t) + '</div>';
-            t += '<div class="bt-asset-ticker">' + b.t + '</div></div>';
-            t += '<div class="bt-asset-qty">' + b.qty + ' шт.</div>';
+            t += '<div class="bt-asset-namecol"><div class="bt-asset-name">' + (b.n || b.t) + '</div>';
+            t += '<div class="bt-asset-ticker">' + b.t + ' · ' + b.qty + ' шт.</div></div>';
             t += '<div class="bt-asset-buy-price">' + buyStr + '</div>';
             t += '<div class="bt-asset-price">' + priceStr + '</div>';
             t += '<div class="bt-asset-pnl ' + rowPnlClass + '">' + pnlStr + '</div>';
