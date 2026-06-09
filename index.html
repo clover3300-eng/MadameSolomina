@@ -12671,6 +12671,7 @@ body.dark-mode .portfolio-echelons-total-row {
         flex-direction: column;
         height: 100vh;
         height: 100dvh;
+        height: var(--real-vh, 100dvh);
         position: relative;
         overflow: hidden;
     }
@@ -27879,7 +27880,18 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(checkRebalanceEmptyState, 1000);
 });
 
-
+// ===== РЕАЛЬНАЯ ВЫСОТА VIEWPORT ДЛЯ SAFARI PWA =====
+// 100dvh в standalone Safari завышает высоту → таббар уезжает, появляется зазор сверху него.
+// window.innerHeight даёт точную видимую высоту экрана.
+(function() {
+    function setRealVH() {
+        document.documentElement.style.setProperty('--real-vh', window.innerHeight + 'px');
+    }
+    setRealVH();
+    window.addEventListener('resize', setRealVH);
+    window.addEventListener('orientationchange', function() { setTimeout(setRealVH, 120); });
+    window.addEventListener('load', function() { setRealVH(); setTimeout(setRealVH, 300); });
+})();
 </script>
 
 </body>
