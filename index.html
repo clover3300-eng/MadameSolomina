@@ -12671,10 +12671,9 @@ body.dark-mode .portfolio-echelons-total-row {
         flex-direction: column;
         height: 100vh;
         height: 100dvh;
-        max-height: 100vh;
-        max-height: 100dvh;
-        overflow: hidden;
+        height: var(--app-height, 100dvh);
         position: relative;
+        overflow: hidden;
     }
     
     /* ===== BOTTOM TAB BAR (iOS-style) ===== */
@@ -12687,24 +12686,10 @@ body.dark-mode .portfolio-echelons-total-row {
         -webkit-backdrop-filter: blur(24px) saturate(180%);
         border-top: 0.5px solid rgba(255, 255, 255, 0.8);
         box-shadow: 0 -4px 24px -4px rgba(15, 23, 42, 0.08);
-        padding-bottom: env(safe-area-inset-bottom, 0px);
+        padding-bottom: 0;
         position: relative;
         z-index: 100;
     }
-    /* Подложка под таббар — заполняет home-indicator зону тем же фоном */
-    #bottomTabBar::after {
-        content: '';
-        position: absolute;
-        left: 0; right: 0;
-        top: 100%;
-        height: 100px;
-        background: rgba(241, 246, 251, 0.92);
-        pointer-events: none;
-    }
-    body.dark-mode #bottomTabBar::after {
-        background: rgba(15, 23, 42, 0.92);
-    }
-
     body.dark-mode #bottomTabBar {
         background: rgba(15, 23, 42, 0.92);
         border-top-color: rgba(255, 255, 255, 0.07);
@@ -27895,7 +27880,30 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(checkRebalanceEmptyState, 1000);
 });
 
-
+// ===== ДИНАМИЧЕСКАЯ ВЫСОТА ДЛЯ PWA / iOS SAFARI =====
+// 100dvh в standalone PWA на iOS ненадёжен — измеряем реальную видимую высоту
+(function() {
+    function setAppHeight() {
+        // visualViewport точнее в PWA, fallback на innerHeight
+        var h = (window.visualViewport && window.visualViewport.height)
+            ? window.visualViewport.height
+            : window.innerHeight;
+        document.documentElement.style.setProperty('--app-height', h + 'px');
+    }
+    setAppHeight();
+    window.addEventListener('resize', setAppHeight);
+    window.addEventListener('orientationchange', function() {
+        setTimeout(setAppHeight, 100);
+    });
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', setAppHeight);
+    }
+    // Повторяем после полной загрузки — PWA иногда сообщает высоту с задержкой
+    window.addEventListener('load', function() {
+        setAppHeight();
+        setTimeout(setAppHeight, 300);
+    });
+})();
 </script>
 
 </body>
