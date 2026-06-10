@@ -15197,39 +15197,38 @@ body.dark-mode .portfolio-echelons-total-row {
         /* On section pages the section badge IS the title (iOS pattern) */
         body:not(.tab-home) #topBarTitle { display: none; }
         #topBarCrumb { margin-left: 0 !important; }
-        .hdr-chip { width: 30px; height: 30px; border-radius: 9px; }
-        .hdr-chip svg { width: 16px; height: 16px; }
-        .hdr-sec { font-size: 16px; }
+        #topBarCrumb { padding: 8px 15px 8px 13px; }
+        .hdr-chip svg { width: 17px; height: 17px; }
+        .hdr-sec { font-size: 15px; }
     }
 
-    /* ===== Section badge in the header: one joint plaque ===== */
+    /* ===== Section badge: single sage plaque (icon + text inside) ===== */
     #topBarCrumb {
         align-items: center;
-        gap: 9px;
-        background: rgba(255,255,255,0.72);
-        border: 1px solid rgba(44,54,76,0.08);
-        border-radius: 12px;
-        padding: 4px 13px 4px 5px;
-        box-shadow: 0 2px 10px rgba(44,54,76,0.05);
-    }
-    body.dark-mode #topBarCrumb {
-        background: rgba(255,255,255,0.06);
-        border-color: rgba(255,255,255,0.1);
+        gap: 8px;
+        background: linear-gradient(135deg, rgba(91,124,153,0.10), rgba(34,200,122,0.12));
+        border: 1px solid rgba(91,124,153,0.16);
+        border-radius: 11px;
+        padding: 7px 14px 7px 12px;
         box-shadow: none;
     }
+    body.dark-mode #topBarCrumb {
+        background: rgba(255,255,255,0.07);
+        border-color: rgba(255,255,255,0.1);
+    }
     .hdr-chip {
-        width: 26px; height: 26px;
-        border-radius: 8px;
-        background: linear-gradient(135deg, rgba(91,124,153,0.14), rgba(34,200,122,0.14));
-        border: 1px solid rgba(91,124,153,0.15);
+        width: auto; height: auto;
+        border-radius: 0;
+        background: transparent;
+        border: none;
         display: flex; align-items: center; justify-content: center;
         flex-shrink: 0;
     }
     .hdr-chip svg {
-        width: 14px; height: 14px;
+        width: 15px; height: 15px;
         stroke: #2C364C; fill: none; stroke-width: 2;
         stroke-linecap: round; stroke-linejoin: round;
-        opacity: 0.8;
+        opacity: 0.85;
     }
     .hdr-sec {
         font-family: 'Inter', sans-serif;
@@ -15238,21 +15237,11 @@ body.dark-mode .portfolio-echelons-total-row {
         letter-spacing: -0.01em;
         white-space: nowrap;
     }
-    body.dark-mode .hdr-chip { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.1); }
     body.dark-mode .hdr-chip svg { stroke: #F1F6FB; }
     body.dark-mode .hdr-sec { color: #F1F6FB; }
 
-    /* Desktop: hairline divider between brand and badge */
     @media (min-width: 1024px) {
         #topBarCrumb { margin-left: 14px !important; }
-        #topBarCrumb::before {
-            content: '';
-            width: 1px; height: 18px;
-            background: rgba(44,54,76,0.12);
-            margin-right: 12px;
-            flex-shrink: 0;
-        }
-        body.dark-mode #topBarCrumb::before { background: rgba(255,255,255,0.12); }
     }
 
     /* Welcome page: brand centered over the hero, actions pinned right */
@@ -15446,6 +15435,78 @@ body.dark-mode .portfolio-echelons-total-row {
     #btConfigCol #btDateInput {
         max-width: 230px;
         text-align: left;
+    }
+
+    /* Content under the source switcher: one grouped inset panel */
+    #btConfigCol #btSourceCalcInfo,
+    #btConfigCol #btSourceManualBlock {
+        background: rgba(44,54,76,0.03);
+        border: 1px solid rgba(44,54,76,0.05);
+        border-radius: 14px;
+        padding: 12px;
+        box-sizing: border-box;
+    }
+    body.dark-mode #btConfigCol #btSourceCalcInfo,
+    body.dark-mode #btConfigCol #btSourceManualBlock {
+        background: rgba(255,255,255,0.04);
+        border-color: rgba(255,255,255,0.07);
+    }
+    /* The note loses its own box — the panel is the box now */
+    #btConfigCol .bt-portfolio-note {
+        background: transparent;
+        border: none;
+        padding: 0;
+    }
+    #btConfigCol .bt-ghost-btn { margin-top: 10px; padding: 2px; }
+    /* Add row: ticker stretches, qty fixed, button fixed */
+    #btConfigCol .bt-add-row { margin-bottom: 0; }
+    #btConfigCol .bt-ticker-input { flex: 1; min-width: 0; }
+    #btConfigCol .bt-qty-input { flex: 0 0 62px; width: 62px; }
+    #btConfigCol .bt-bulk-toggle {
+        margin-top: 10px;
+        background: rgba(255,255,255,0.7);
+        border-color: rgba(44,54,76,0.07);
+    }
+    body.dark-mode #btConfigCol .bt-bulk-toggle {
+        background: rgba(255,255,255,0.05);
+        border-color: rgba(255,255,255,0.08);
+    }
+    #btConfigCol .bt-ticker-list-empty {
+        margin-top: 10px;
+        padding: 12px;
+        border: 1.5px dashed rgba(91,124,153,0.22);
+        border-radius: 12px;
+        background: transparent;
+        font-family: 'Inter', sans-serif;
+        font-size: 11.5px;
+        color: var(--text-muted, #94A3B8);
+        text-align: center;
+        line-height: 1.4;
+    }
+    #btConfigCol #btTickerList { margin-top: 0 !important; }
+
+    /* "Тест не запущен": framed dashed panel instead of floating text */
+    #btResults .portfolio-empty-new {
+        border: 1.5px dashed rgba(91,124,153,0.25);
+        border-radius: 20px;
+        background: rgba(255,255,255,0.55);
+        padding: 56px 36px;
+        min-height: 320px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        box-sizing: border-box;
+    }
+    body.dark-mode #btResults .portfolio-empty-new {
+        background: rgba(255,255,255,0.03);
+        border-color: rgba(255,255,255,0.12);
+    }
+    #btResults .portfolio-empty-new .empty-text {
+        max-width: 340px;
+        margin: 0 auto;
+        line-height: 1.5;
     }
     /* Source status: tinted panel + status chip */
     #btConfigCol .bt-portfolio-note {
@@ -15648,7 +15709,11 @@ body.dark-mode .portfolio-echelons-total-row {
             overflow-x: hidden;
             scrollbar-width: none;
             box-shadow: 0 10px 30px rgba(22,27,39,0.18);
+            flex: 0 1 auto;            /* hug content, don't stretch */
+            max-height: 100%;
         }
+        #sbNav { flex: 0 0 auto; padding-bottom: 10px; }
+        #sbFoot { margin-top: auto; } /* collapse chip pinned to bottom */
         #sbPanel::-webkit-scrollbar { display: none; }
         #sbFoot {
             background: #161B27;
@@ -15936,7 +16001,7 @@ body.dark-mode .portfolio-echelons-total-row {
                     <!-- Добавить один тикер -->
                     <div class="bt-add-row">
                         <input type="text" id="btTickerInput" class="bt-ticker-input"
-                               placeholder="Тикер (SBER, SU26244...)"
+                               placeholder="Тикер: SBER…"
                                onkeyup="if(event.key==='Enter')btAddTicker()"
                                autocapitalize="characters" autocomplete="off" spellcheck="false">
                         <input type="number" id="btQtyInput" class="bt-qty-input"
