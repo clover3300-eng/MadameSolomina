@@ -15342,17 +15342,39 @@ body.dark-mode .portfolio-echelons-total-row {
     #marketPanelContent .nd-ib-rub-sm { font-size: 12px; }
     #marketPanelContent .nd-ib-pct { font-size: 13px; }
 
-    /* ===== UNIFIED AURORA BACKGROUND (all tabs) ===== */
-    #contentArea {
+    /* ===== VANGUARD QUIZ: desktop reading column ===== */
+    @media (min-width: 1024px) {
+        #screen-vanguard .view {
+            max-width: 640px;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            padding-top: 36px;
+        }
+        #screen-vanguard .w-header { padding-top: 8px; }
+        #screen-vanguard #bottom-welcome,
+        #screen-vanguard .quiz-footer,
+        #screen-vanguard [id^="bottom-"] {
+            max-width: 640px;
+            margin-left: auto;
+            margin-right: auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+    }
+
+    /* ===== UNIFIED AURORA BACKGROUND: one canvas for header, sidebar zone and content ===== */
+    #appShell {
         background:
             radial-gradient(640px 520px at 88% -6%, rgba(59,130,246,0.10), transparent 62%),
             radial-gradient(560px 480px at -12% 38%, rgba(16,185,129,0.085), transparent 62%),
-            radial-gradient(440px 400px at 72% 96%, rgba(249,115,22,0.05), transparent 65%);
+            radial-gradient(440px 400px at 72% 96%, rgba(249,115,22,0.05), transparent 65%),
+            linear-gradient(180deg, #F1F6FB 0%, #F9FAFC 100%) !important;
     }
-    body.dark-mode #contentArea {
+    body.dark-mode #appShell {
         background:
-            radial-gradient(640px 520px at 88% -6%, rgba(59,130,246,0.07), transparent 62%),
-            radial-gradient(560px 480px at -12% 38%, rgba(16,185,129,0.06), transparent 62%);
+            radial-gradient(640px 520px at 88% -6%, rgba(59,130,246,0.08), transparent 62%),
+            radial-gradient(560px 480px at -12% 38%, rgba(16,185,129,0.06), transparent 62%),
+            linear-gradient(180deg, #0f172a 0%, #111a2e 100%) !important;
     }
 
     /* ===== MOBILE DOCK ===== */
@@ -15381,7 +15403,7 @@ body.dark-mode .portfolio-echelons-total-row {
         transition: color 0.15s;
     }
     .dock-home svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
-    .dock-home.active { color: #22C87A; }
+    .dock-home.active { color: #F1F6FB; background: #222B3D; }
     .dock-bar {
         flex: 1;
         background: #161B27;
@@ -15407,7 +15429,7 @@ body.dark-mode .portfolio-echelons-total-row {
         transition: color 0.15s;
     }
     .dock-item svg { width: 19px; height: 19px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
-    .dock-item.active { color: #22C87A; }
+    .dock-item.active { color: #F1F6FB; background: rgba(255,255,255,0.08); }
     /* Content clears the dock */
     @media (max-width: 1023px) {
         .tab-panel { padding-bottom: 112px; }
@@ -27835,7 +27857,7 @@ function renderIncomeDarkList(container, footer) {
             ? '<span style="display:inline-block;background:rgba(255,255,255,0.08);border-radius:6px;padding:2px 8px;font-family:monospace;font-size:12px;font-weight:600;color:rgba(255,255,255,0.65);">' + qty + '</span>'
             : '<span style="color:rgba(255,255,255,0.2);font-family:monospace;font-size:12px;">—</span>';
         html += '<div style="display:flex;align-items:center;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.04);gap:9px;">'
-            + '<span style="font-family:\'JetBrains Mono\',monospace;font-size:12px;font-weight:600;color:rgba(255,255,255,0.45);letter-spacing:0.01em;flex-shrink:0;min-width:40px;">' + dateLabel + '</span>'
+            + '<span style="font-family:\'JetBrains Mono\',monospace;font-size:12px;font-weight:600;color:rgba(255,255,255,0.45);letter-spacing:0.01em;flex-shrink:0;min-width:58px;">' + dateLabel + '</span>'
             + '<span style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.8);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + bondName + '</span>'
             + '<span style="flex-shrink:0;margin-left:8px;">' + qtyBadge + '</span>'
             + '<span style="font-family:\'JetBrains Mono\',monospace;font-size:13px;font-weight:700;color:' + (qty > 0 ? '#10B981' : 'rgba(255,255,255,0.2)') + ';flex-shrink:0;min-width:72px;text-align:right;">' + sumStr + '</span>'
@@ -27843,7 +27865,7 @@ function renderIncomeDarkList(container, footer) {
     });
 
     var hdrRow = '<div style="display:flex;align-items:center;padding:8px 14px 7px;border-bottom:1px solid rgba(255,255,255,0.08);gap:9px;">'
-        + '<span style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.35);flex-shrink:0;min-width:44px;">ДАТА</span>'
+        + '<span style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.35);flex-shrink:0;min-width:58px;">ДАТА</span>'
         + '<span style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.35);flex:1;">ОБЛИГАЦИЯ</span>'
         + '<span style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.35);flex-shrink:0;margin-left:8px;min-width:40px;text-align:right;">ШТ</span>'
         + '<span style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.35);flex-shrink:0;min-width:80px;text-align:right;">СУММА</span>'
@@ -28904,6 +28926,17 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.classList.toggle('active', isActive);
         });
     }
+    var _origBrandHTML = null;
+    function updateHomeGreeting(tabId) {
+        var t = document.getElementById('topBarTitle');
+        if (!t) return;
+        if (_origBrandHTML === null) _origBrandHTML = t.innerHTML;
+        if (tabId === 'home') {
+            t.innerHTML = '<span style="font-weight:300;">Добро </span><span style="font-weight:800;">пожаловать!</span>';
+        } else {
+            t.innerHTML = _origBrandHTML;
+        }
+    }
     function renderHeaderBadge(tabId) {
         var crumb = document.getElementById('topBarCrumb');
         if (!crumb) return;
@@ -28925,6 +28958,7 @@ document.addEventListener('DOMContentLoaded', function() {
         window.closeSidebarDrawer();
         renderHeaderBadge(tabId);
         updateDockActive(tabId);
+        updateHomeGreeting(tabId);
     };
 
     // Esc closes the drawer
@@ -28937,6 +28971,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var ct = (typeof currentTab !== 'undefined' && currentTab) ? currentTab : 'home';
         renderHeaderBadge(ct);
         updateDockActive(ct);
+        updateHomeGreeting(ct);
         document.querySelectorAll('.sb-item[data-tab]').forEach(function(btn) {
             var isActive = btn.dataset.tab === ct ||
                            (btn.dataset.tab === 'calc' && ct === 'portfolio');
