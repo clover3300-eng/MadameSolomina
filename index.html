@@ -15186,7 +15186,26 @@ body.dark-mode .portfolio-echelons-total-row {
     /* Collapse control is desktop-only */
     @media (max-width: 1023px) {
         #sbCollapseBtn { display: none; }
+        /* Header: keep one tidy line — no crumb, compact brand, icon-only search */
+        #topBarCrumb { display: none !important; }
+        #topBarTitle { white-space: nowrap; font-size: 15px !important; }
+        #topSearchBtn { font-size: 0; gap: 0; padding: 9px; border-radius: 50%; }
+        #topSearchBtn svg { width: 16px; height: 16px; }
     }
+
+    /* Breadcrumb in top bar is redundant: sidebar shows the active section,
+       portfolio keeps its own back-link row */
+    #topBarCrumb { display: none !important; }
+
+    /* Welcome page: brand centered over the hero title */
+    body.tab-home #topBarBrand {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    /* Backtest config wrapper: invisible on mobile, column on desktop */
+    #btConfigCol { display: contents; }
 
     /* Tab panels: bottom tabbar removed -> less dead space */
     .tab-panel { padding-bottom: 40px; }
@@ -15223,8 +15242,9 @@ body.dark-mode .portfolio-echelons-total-row {
         body.sb-collapsed #sbFoot { padding: 10px 8px; }
 
         /* Panels: width + breathing room */
-        .tab-panel { max-width: 1240px; margin: 0 auto; padding: 28px 40px 64px; width: 100%; box-sizing: border-box; }
-        #calcPane { max-width: 720px; margin: 0 auto; width: 100%; }
+        .tab-panel { max-width: 1240px; margin: 0 auto; padding: 18px 40px 64px; width: 100%; box-sizing: border-box; }
+        #panel-portfolio .panel-section-header { margin: 0 0 12px; }
+        #calcPane { max-width: 580px; margin: 0 auto; width: 100%; }
 
         /* Market tab: two-column grid */
         #marketPanelContent { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; align-items: start; }
@@ -15232,12 +15252,11 @@ body.dark-mode .portfolio-echelons-total-row {
         #marketPanelContent > .rates-glass-card { grid-column: 1; }
         #marketPanelContent > #calcAccordion { grid-column: 2; }
 
-        /* Backtest: config left, results right */
+        /* Backtest: sticky config rail left, results right */
         #panel-backtest.active { display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: 0 28px; align-items: start; align-content: start; }
         #panel-backtest > .bt-header { grid-column: 1 / -1; }
-        #panel-backtest > .bt-config-card,
-        #panel-backtest > #btRunBtn { grid-column: 1; }
-        #panel-backtest > #btResults { grid-column: 2; grid-row: 2 / span 3; min-width: 0; }
+        #btConfigCol { display: block; grid-column: 1; grid-row: 2; position: sticky; top: 16px; }
+        #panel-backtest > #btResults { grid-column: 2; grid-row: 2; min-width: 0; }
 
         /* Rebalance & portfolio: comfortable reading width */
         #panel-rebalance, #panel-portfolio { max-width: 1000px; }
@@ -15435,6 +15454,8 @@ body.dark-mode .portfolio-echelons-total-row {
                 <div class="bt-subtitle">P&amp;L портфеля на выбранную историческую дату</div>
             </div>
 
+            <div id="btConfigCol">
+
             <!-- Шаг 1: Дата -->
             <div class="bt-config-card">
                 <div class="bt-config-label">
@@ -15518,6 +15539,7 @@ body.dark-mode .portfolio-echelons-total-row {
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg>
                 Запустить тест
             </button>
+            </div><!-- /btConfigCol -->
 
             <!-- Results -->
             <div id="btResults">
