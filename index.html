@@ -15199,11 +15199,10 @@ body.dark-mode .portfolio-echelons-total-row {
         #topBarCrumb { margin-left: 0 !important; }
         #topBar { position: relative; }
         body:not(.tab-home) #topBarCrumb {
-            position: absolute;
-            left: 50%; top: auto;
-            bottom: 27px; /* выравнивание по центру ряда с бургером (8px паддинг + 38/2) */
-            transform: translate(-50%, 50%);
-            margin-left: 0 !important;
+            position: static;
+            transform: none;
+            margin-left: 2px !important;
+            margin-right: auto;
         }
         #topBarCrumb { padding: 8px 15px 8px 13px; }
         .hdr-chip svg { width: 17px; height: 17px; }
@@ -15342,6 +15341,30 @@ body.dark-mode .portfolio-echelons-total-row {
     #marketPanelContent .nd-ib-rub-sm { font-size: 12px; }
     #marketPanelContent .nd-ib-pct { font-size: 13px; }
 
+    /* ===== Header: same canvas as the page (no glass band) ===== */
+    #headerWrapper {
+        background: transparent !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+    body.dark-mode #headerWrapper { background: transparent !important; }
+
+    /* ===== Legacy per-screen auroras inside panels: kill the load flash ===== */
+    #contentArea .aurora-container,
+    #contentArea .noise-overlay { display: none !important; }
+
+    /* ===== Collapsed income accordion: banner is the card, container is invisible ===== */
+    #marketPanelContent .calc-accordion.collapsed {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+
+    /* ===== No dock on the welcome page ===== */
+    body.tab-home #mobileDock { display: none !important; }
+
     /* ===== VANGUARD QUIZ: desktop reading column ===== */
     @media (min-width: 1024px) {
         #screen-vanguard .view {
@@ -15392,11 +15415,11 @@ body.dark-mode .portfolio-echelons-total-row {
     .dock-home {
         width: 60px; height: 60px;
         border-radius: 19px;
-        background: #161B27;
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
         border: none;
         display: flex; align-items: center; justify-content: center;
         color: rgba(241,246,251,0.55);
-        box-shadow: 0 10px 28px rgba(22,27,39,0.3);
+        box-shadow: 0 14px 32px -8px rgba(15,23,42,0.4);
         flex-shrink: 0;
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
@@ -15406,11 +15429,11 @@ body.dark-mode .portfolio-echelons-total-row {
     .dock-home.active { color: #F1F6FB; background: #222B3D; }
     .dock-bar {
         flex: 1;
-        background: #161B27;
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
         border-radius: 19px;
         display: flex;
         padding: 7px 6px;
-        box-shadow: 0 10px 28px rgba(22,27,39,0.3);
+        box-shadow: 0 14px 32px -8px rgba(15,23,42,0.4);
         min-width: 0;
     }
     .dock-item {
@@ -15528,7 +15551,37 @@ body.dark-mode .portfolio-echelons-total-row {
     }
     #btConfigCol .bt-bulk-toggle:hover { background: rgba(44,54,76,0.07); }
     body.dark-mode #btConfigCol .bt-bulk-toggle { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.07); }
-    .bt-bulk-txt { flex: 1; min-width: 0; }
+    .bt-mini-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-muted, #94A3B8);
+        margin: 2px 0 8px;
+    }
+    .bt-or-divider {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 12px 0 2px;
+    }
+    .bt-or-divider::before,
+    .bt-or-divider::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: rgba(44,54,76,0.08);
+    }
+    body.dark-mode .bt-or-divider::before,
+    body.dark-mode .bt-or-divider::after { background: rgba(255,255,255,0.08); }
+    .bt-or-divider span {
+        font-family: 'Inter', sans-serif;
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--text-muted, #94A3B8);
+    }
+        .bt-bulk-txt { flex: 1; min-width: 0; }
     .bt-bulk-title {
         font-family: 'Inter', sans-serif;
         font-size: 12px; font-weight: 600;
@@ -16024,7 +16077,7 @@ body.dark-mode .portfolio-echelons-total-row {
                 <div class="welcome-logo-block">
                     <span class="welcome-supratitle">W E A L T H &nbsp; M A N A G E M E N T</span>
                     <h1 class="welcome-title">
-                        <span class="welcome-title-light">Madame </span><span class="welcome-title-bold">Solomi'na</span>
+                        <span class="welcome-title-light">Добро </span><span class="welcome-title-bold">пожаловать!</span>
                     </h1>
                     <div class="welcome-divider"></div>
                     <span class="welcome-subtitle">ЧАСТНЫЙ ИНВЕСТИЦИОННЫЙ<br>TERMINAL</span>
@@ -16137,15 +16190,12 @@ body.dark-mode .portfolio-echelons-total-row {
                             Портфель из вкладки «Расчёт»<span id="btCalcSummary" class="bt-calc-status">Портфель не рассчитан</span>
                         </div>
                     </div>
-                    <button class="bt-ghost-btn" onclick="btLoadLastPortfolio()">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                        Загрузить последний сохранённый
-                    </button>
                 </div>
 
                 <!-- Вручную: добавление тикеров -->
                 <div id="btSourceManualBlock" style="display:none;margin-top:12px;">
                     <!-- Добавить один тикер -->
+                    <div class="bt-mini-label">Добавить по одному — тикер и количество</div>
                     <div class="bt-add-row">
                         <input type="text" id="btTickerInput" class="bt-ticker-input"
                                placeholder="Тикер: SBER…"
@@ -16160,11 +16210,12 @@ body.dark-mode .portfolio-echelons-total-row {
                     </div>
 
                     <!-- Импорт списком -->
+                    <div class="bt-or-divider"><span>или</span></div>
                     <div class="bt-bulk-toggle" onclick="btToggleBulk()">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B7C99" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
                         <div class="bt-bulk-txt">
-                            <div class="bt-bulk-title">Импорт списком</div>
-                            <div class="bt-bulk-sub">Несколько тикеров разом — каждая строка: ТИКЕР и количество</div>
+                            <div class="bt-bulk-title">Добавить списком</div>
+                            <div class="bt-bulk-sub">Вставьте несколько строк: ТИКЕР и количество</div>
                         </div>
                         <svg id="btBulkChev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
                     </div>
@@ -21887,14 +21938,32 @@ function searchCompanyInternal(ticker) {
         const url = MOEX_PROXY + '?path=' + encodeURIComponent(`/iss/engines/stock/markets/${isStock ? 'shares' : 'bonds'}/securities/${item.t}.json?iss.meta=off&iss.only=securities,marketdata`);
         const res = await fetch(url);
         const data = await res.json();
-        const marketdata = data.marketdata.data[0];
         const marketcols = data.marketdata.columns;
-        const last = marketdata[marketcols.indexOf('LAST')];
-        const open = marketdata[marketcols.indexOf('OPEN')];
+        const mrows = data.marketdata.data || [];
+        const liIdx = marketcols.indexOf('LAST');
+        const lcIdx = marketcols.indexOf('LCURRENTPRICE');
+        const mpIdx = marketcols.indexOf('MARKETPRICE');
+        // Берём строку борда, где есть актуальная цена
+        const marketdata = mrows.find(r => r[liIdx] || (lcIdx >= 0 && r[lcIdx])) || mrows[0] || [];
+        const seccols = data.securities.columns;
+        const srows = data.securities.data || [];
+        const paqIdx = seccols.indexOf('PREVADMITTEDQUOTE');
+        const ppIdx = seccols.indexOf('PREVPRICE');
+        // Закрытие предыдущей сессии (или последняя известная цена после выходных)
+        let prevClose = null;
+        for (const r of srows) {
+            let v = paqIdx >= 0 ? r[paqIdx] : null;
+            if (v === null || v === undefined) v = ppIdx >= 0 ? r[ppIdx] : null;
+            if (v) { prevClose = v; break; }
+        }
+        let last = marketdata[liIdx];
+        if (!last && lcIdx >= 0) last = marketdata[lcIdx];
+        if (!last && mpIdx >= 0) last = marketdata[mpIdx];
+        if (!last) last = prevClose;
         
-        if (last && open && open > 0) {
-            const change = last - open;
-            changePercent = (change / open) * 100;
+        if (last && prevClose && prevClose > 0) {
+            const change = last - prevClose;
+            changePercent = (change / prevClose) * 100;
             const sign = change > 0 ? '+' : '';
             
             if (change > 0) {
@@ -27053,7 +27122,8 @@ function openVanguardTest() {
 }
 
 function vgGoBack() {
-    showScreen('screen-app');
+    vgCloseOverlay();
+    if (typeof switchTab === 'function') switchTab('calc');
 }
 
 function vgCancel() {
@@ -27366,7 +27436,15 @@ function vgApplyStrategy() {
     if (window.Telegram?.WebApp?.HapticFeedback) {
         window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
     }
-    showScreen('screen-app');
+    // Закрываем оверлей теста и возвращаемся на «Расчёт»
+    vgCloseOverlay();
+    if (typeof switchTab === 'function') switchTab('calc');
+}
+
+function vgCloseOverlay() {
+    document.body.classList.remove('quiz-mode');
+    const vg = document.getElementById('screen-vanguard');
+    if (vg) vg.classList.remove('active');
 }
 </script>
 
@@ -28958,7 +29036,6 @@ document.addEventListener('DOMContentLoaded', function() {
         window.closeSidebarDrawer();
         renderHeaderBadge(tabId);
         updateDockActive(tabId);
-        updateHomeGreeting(tabId);
     };
 
     // Esc closes the drawer
@@ -28971,7 +29048,6 @@ document.addEventListener('DOMContentLoaded', function() {
         var ct = (typeof currentTab !== 'undefined' && currentTab) ? currentTab : 'home';
         renderHeaderBadge(ct);
         updateDockActive(ct);
-        updateHomeGreeting(ct);
         document.querySelectorAll('.sb-item[data-tab]').forEach(function(btn) {
             var isActive = btn.dataset.tab === ct ||
                            (btn.dataset.tab === 'calc' && ct === 'portfolio');
