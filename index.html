@@ -13754,9 +13754,11 @@ body.dark-mode .portfolio-echelons-total-row {
     
     .bt-pnl-stat-val {
         font-family: 'JetBrains Mono', monospace;
-        font-size: 15px;
+        font-size: 14px;
         font-weight: 700;
         color: white;
+        white-space: nowrap;
+        letter-spacing: -0.02em;
     }
     
     .bt-pnl-stat-val.pos { color: #4ADE80; }
@@ -13805,8 +13807,8 @@ body.dark-mode .portfolio-echelons-total-row {
     
     .bt-asset-row {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 64px 72px 72px;
-        gap: 6px;
+        grid-template-columns: minmax(0, 1fr) auto auto auto;
+        gap: 10px;
         align-items: center;
         padding: 11px 16px;
         border-bottom: 1px solid rgba(0,0,0,0.03);
@@ -13872,8 +13874,6 @@ body.dark-mode .portfolio-echelons-total-row {
         color: var(--text-slate);
         text-align: right;
         white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
     }
     
     .bt-asset-price {
@@ -13883,8 +13883,6 @@ body.dark-mode .portfolio-echelons-total-row {
         color: var(--text-deep);
         text-align: right;
         white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
     }
     
     .bt-asset-pnl {
@@ -13893,8 +13891,6 @@ body.dark-mode .portfolio-echelons-total-row {
         font-weight: 700;
         text-align: right;
         white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
     }
     
     .bt-asset-pnl.pos  { color: #10B981; }
@@ -15198,11 +15194,14 @@ body.dark-mode .portfolio-echelons-total-row {
         body:not(.tab-home) #topBarTitle { display: none; }
         #topBarCrumb { margin-left: 0 !important; }
         #topBar { position: relative; }
+        body:not(.tab-home) #topBarBrand {
+            margin-right: auto;   /* плашка прижата к бургеру, действия уходят вправо */
+            flex: 0 0 auto;
+        }
         body:not(.tab-home) #topBarCrumb {
             position: static;
             transform: none;
             margin-left: 2px !important;
-            margin-right: auto;
         }
         #topBarCrumb { padding: 8px 15px 8px 13px; }
         .hdr-chip svg { width: 17px; height: 17px; }
@@ -15304,6 +15303,20 @@ body.dark-mode .portfolio-echelons-total-row {
     #marketPanelContent .dqs-sep { display: none; }
 
     /* Rates vertical: proper card matching the income banner */
+    @media (min-width: 1024px) {
+        #marketPanelContent > .rates-glass-card {
+            align-self: stretch;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 0 !important;
+        }
+        #marketPanelContent > .rates-glass-card .rates-row-list {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+        }
+    }
     #marketPanelContent .rates-glass-card {
         background: var(--card-bg, #ffffff) !important;
         border: 1px solid rgba(44,54,76,0.07) !important;
@@ -15324,7 +15337,12 @@ body.dark-mode .portfolio-echelons-total-row {
         color: var(--text-slate, #475569) !important;
     }
     body.dark-mode #marketPanelContent .rate-row-value { color: #cbd5e1 !important; }
-    #marketPanelContent .rates-glass-card { margin-bottom: 24px !important; }
+    @media (max-width: 1023px) {
+        #marketPanelContent .rates-glass-card { margin-bottom: 24px !important; }
+    }
+    @media (min-width: 1024px) {
+        #marketPanelContent > .rates-glass-card { margin-bottom: 0 !important; }
+    }
     #marketPanelContent .rates-glass-card .rv-title { margin-bottom: 12px !important; }
     #marketPanelContent .rates-glass-card .rv-title::before { display: none !important; }
 
@@ -15340,6 +15358,79 @@ body.dark-mode .portfolio-echelons-total-row {
     #marketPanelContent .nd-ib-metric-num { font-size: 17px; font-weight: 700; }
     #marketPanelContent .nd-ib-rub-sm { font-size: 12px; }
     #marketPanelContent .nd-ib-pct { font-size: 13px; }
+
+    /* ===== CUSTOM DATEPICKER (backtest, desktop) ===== */
+    #btConfigCol { position: relative; }
+    @media (min-width: 1024px) {
+        #btConfigCol #btDateInput::-webkit-calendar-picker-indicator { display: none; }
+        #btConfigCol #btDateInput { cursor: pointer; }
+    }
+    .btcal {
+        position: absolute;
+        z-index: 60;
+        width: 272px;
+        background: #ffffff;
+        border: 1px solid rgba(44,54,76,0.09);
+        border-radius: 16px;
+        box-shadow: 0 18px 44px -10px rgba(22,27,39,0.25);
+        padding: 14px;
+        font-family: 'Inter', sans-serif;
+        animation: btcalIn 0.16s ease;
+    }
+    @keyframes btcalIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+    body.dark-mode .btcal { background: #1e293b; border-color: rgba(255,255,255,0.1); }
+    .btcal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .btcal-title {
+        font-size: 13px; font-weight: 700;
+        color: var(--text-deep, #2C364C);
+        text-transform: capitalize;
+    }
+    body.dark-mode .btcal-title { color: #F1F6FB; }
+    .btcal-nav {
+        width: 28px; height: 28px;
+        border: none; border-radius: 9px;
+        background: rgba(44,54,76,0.05);
+        color: var(--text-slate, #64748B);
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+    .btcal-nav:hover { background: rgba(44,54,76,0.1); }
+    body.dark-mode .btcal-nav { background: rgba(255,255,255,0.08); color: #cbd5e1; }
+    .btcal-nav svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .btcal-dow {
+        display: grid; grid-template-columns: repeat(7, 1fr);
+        margin-bottom: 4px;
+    }
+    .btcal-dow span {
+        text-align: center;
+        font-size: 9.5px; font-weight: 700;
+        letter-spacing: 0.06em;
+        color: var(--text-muted, #94A3B8);
+        text-transform: uppercase;
+        padding: 4px 0;
+    }
+    .btcal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+    .btcal-day {
+        height: 32px;
+        border: none; border-radius: 9px;
+        background: transparent;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px; font-weight: 500;
+        color: var(--text-deep, #2C364C);
+        cursor: pointer;
+        transition: background 0.12s;
+    }
+    body.dark-mode .btcal-day { color: #F1F6FB; }
+    .btcal-day:hover { background: rgba(91,124,153,0.12); }
+    .btcal-day.out { color: var(--text-muted, #C2CAD6); }
+    .btcal-day.dis { color: rgba(148,163,184,0.4); cursor: default; background: transparent !important; }
+    .btcal-day.today { box-shadow: inset 0 0 0 1.5px rgba(91,124,153,0.4); }
+    .btcal-day.sel {
+        background: #2C364C !important;
+        color: #F1F6FB;
+        font-weight: 700;
+    }
 
     /* ===== Header: same canvas as the page (no glass band) ===== */
     #headerWrapper {
@@ -15923,8 +16014,9 @@ body.dark-mode .portfolio-echelons-total-row {
         /* Rebalance & portfolio: comfortable reading width */
         #panel-rebalance, #panel-portfolio { max-width: 1000px; }
         #rebalancePanelContent .echelon-wrapper,
-        #rebalancePanelContent .echelon-table-styled {
-            max-width: 860px;
+        #rebalancePanelContent .echelon-table-styled,
+        #rebalancePanelContent .stocks-aurora-container {
+            max-width: 720px;
             margin-left: auto;
             margin-right: auto;
         }
@@ -16077,7 +16169,7 @@ body.dark-mode .portfolio-echelons-total-row {
                 <div class="welcome-logo-block">
                     <span class="welcome-supratitle">W E A L T H &nbsp; M A N A G E M E N T</span>
                     <h1 class="welcome-title">
-                        <span class="welcome-title-light">Добро </span><span class="welcome-title-bold">пожаловать!</span>
+                        <span class="welcome-title-light">Добро </span><span class="welcome-title-bold">Пожаловать!</span>
                     </h1>
                     <div class="welcome-divider"></div>
                     <span class="welcome-subtitle">ЧАСТНЫЙ ИНВЕСТИЦИОННЫЙ<br>TERMINAL</span>
@@ -20532,7 +20624,7 @@ const companyName = asset.n || asset.t;
             <span class="et-detail-value" style="cursor:pointer; color:var(--accent-blue);" onclick="copyTicker(event, '${asset.t}')">${asset.t} 📋</span>
         </div>
         <div class="et-detail-item">
-            <span class="et-detail-label">Цель:</span>
+            <span class="et-detail-label">Потенциал:</span>
             <span class="et-detail-value">${asset.target}</span>
         </div>
         <div class="et-detail-item">
@@ -21961,6 +22053,10 @@ function searchCompanyInternal(ticker) {
         if (!last && mpIdx >= 0) last = marketdata[mpIdx];
         if (!last) last = prevClose;
         
+        // Актуальная цена с MOEX важнее переданной (поиск может дать 0)
+        if (last) item.p = last;
+        else if ((!item.p || item.p === 0) && prevClose) item.p = prevClose;
+        
         if (last && prevClose && prevClose > 0) {
             const change = last - prevClose;
             changePercent = (change / prevClose) * 100;
@@ -22097,7 +22193,7 @@ function searchCompanyInternal(ticker) {
             <div class="analytics-tile tile-forecast">
                 <div class="analytics-tile-label">Target Forecast</div>
                 <div class="analytics-tile-value">${isStock ? target.replace(' ₽', '') : item.y}</div>
-                <div class="analytics-tile-sub">${isStock ? 'Целевая цена' : 'Доходность к погашению'}</div>
+                <div class="analytics-tile-sub">${isStock ? 'Потенциал' : 'Доходность к погашению'}</div>
                 ${isStock ? `
                 <div class="forecast-progress">
                     <div class="forecast-progress-fill" style="width: ${progressPercent}%"></div>
@@ -22179,11 +22275,24 @@ async function toggleDivHistory(event, ticker, isStock) {
             const cols = data.dividends.columns;
             const di = cols.indexOf('registryclosedate');
             const vi = cols.indexOf('value');
+            // Известные объявленные, но ОТМЕНЁННЫЕ выплаты, которые MOEX держит в реестре
+            const CANCELLED_DIVS = {
+                'GAZP': { '2022-07-20': 52.53 } // дивиденд за 2021, отменён ГОСА 30.06.2022
+            };
             const byYear = {};
+            const seen = {};
             (data.dividends.data || []).forEach(function(r) {
-                const y = String(r[di] || '').slice(0, 4);
+                const date = String(r[di] || '');
+                const y = date.slice(0, 4);
                 const v = parseFloat(r[vi]) || 0;
                 if (y.length !== 4) return;
+                // дедупликация одинаковых записей реестра
+                const key = date + '|' + v;
+                if (seen[key]) return;
+                seen[key] = true;
+                // фильтр отменённых решений
+                const cancelled = CANCELLED_DIVS[ticker];
+                if (cancelled && cancelled[date] === v) return;
                 if (!byYear[y]) byYear[y] = { sum: 0, n: 0 };
                 byYear[y].sum += v;
                 byYear[y].n++;
@@ -22221,7 +22330,7 @@ function renderDivHistory(section, ticker, rows, isStock) {
             '</div>';
     }).join('');
     section.innerHTML = title +
-        '<div class="div-history-note">Суммарно на одну акцию за календарный год · реестровые даты MOEX</div>' + list;
+        '<div class="div-history-note">Суммарно на одну акцию за календарный год · реестр MOEX (фактически выплаченные)</div>' + list;
 }
 
 function divPlural(n, one, few, many) {
@@ -22724,7 +22833,7 @@ if(document.getElementById('listBonds')) {
                     <!-- Заголовки таблицы -->
                     <div class="echelon-columns-header">
                         <span>Компания</span>
-                        <span>Цель</span>
+                        <span>Потенциал</span>
                         <span>Кол-во</span>
                         <span>Сумма</span>
                     </div>`;
@@ -22767,7 +22876,7 @@ if(document.getElementById('listBonds')) {
                                 <span class="details-row-value">${s.p} ₽</span>
                             </div>
                             <div class="details-row">
-                                <span class="details-row-label">Цель</span>
+                                <span class="details-row-label">Потенциал</span>
                                 <span class="details-row-value">${s.target}</span>
                             </div>
                             <!-- Примечание статичное -->
@@ -22935,7 +23044,7 @@ if(totalRow) {
                             <div class="portfolio-echelon-content">
                                 <div class="portfolio-echelon-columns-header">
                                     <span>ТИКЕР</span>
-                                    <span>ЦЕЛЬ</span>
+                                    <span>ПОТЕНЦИАЛ</span>
                                     <span>ШТ</span>
                                     <span>РАСХОДЫ</span>
                                 </div>
@@ -22959,7 +23068,7 @@ if(totalRow) {
                                                         <span class="portfolio-stock-detail-value">${s.p} ₽</span>
                                                     </div>
                                                     <div class="portfolio-stock-detail-row">
-                                                        <span class="portfolio-stock-detail-label">Цель</span>
+                                                        <span class="portfolio-stock-detail-label">Потенциал</span>
                                                         <span class="portfolio-stock-detail-value" style="color: #10B981;">${s.target}</span>
                                                     </div>
                                                     <div class="portfolio-stock-detail-row">
@@ -29042,6 +29151,101 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') window.closeSidebarDrawer();
     });
+
+    // ===== Красивый календарь для даты бэктеста (десктоп) =====
+    (function() {
+        var mq = window.matchMedia ? window.matchMedia('(min-width: 1024px)') : { matches: false };
+        var MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+        var DOW = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+        var pop = null, vY = 0, vM = 0;
+        function pad(n) { return n < 10 ? '0' + n : '' + n; }
+        function getInput() { return document.getElementById('btDateInput'); }
+        function closeCal() { if (pop) { pop.remove(); pop = null; } }
+        function selDate() {
+            var inp = getInput();
+            if (inp && inp.value) {
+                var p = inp.value.split('-');
+                return { y: +p[0], m: +p[1] - 1, d: +p[2] };
+            }
+            return null;
+        }
+        function render() {
+            var today = new Date(); today.setHours(0,0,0,0);
+            var sel = selDate();
+            var h = '<div class="btcal-head">'
+                + '<button class="btcal-nav" data-nav="-1"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>'
+                + '<div class="btcal-title">' + MONTHS[vM] + ' ' + vY + '</div>'
+                + '<button class="btcal-nav" data-nav="1"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>'
+                + '</div><div class="btcal-dow">';
+            DOW.forEach(function(d) { h += '<span>' + d + '</span>'; });
+            h += '</div><div class="btcal-grid">';
+            var first = new Date(vY, vM, 1);
+            var offset = (first.getDay() + 6) % 7;
+            var dim = new Date(vY, vM + 1, 0).getDate();
+            var dimPrev = new Date(vY, vM, 0).getDate();
+            for (var i = 0; i < 42; i++) {
+                var dnum, cy = vY, cm = vM, out = false;
+                if (i < offset) { dnum = dimPrev - offset + 1 + i; cm = vM - 1; out = true; }
+                else if (i >= offset + dim) { dnum = i - offset - dim + 1; cm = vM + 1; out = true; }
+                else { dnum = i - offset + 1; }
+                var dt = new Date(cy, cm, dnum); dt.setHours(0,0,0,0);
+                var dis = dt > today;
+                var isSel = sel && dt.getFullYear() === sel.y && dt.getMonth() === sel.m && dt.getDate() === sel.d;
+                var isToday = dt.getTime() === today.getTime();
+                var cls = 'btcal-day' + (out ? ' out' : '') + (dis ? ' dis' : '') + (isSel ? ' sel' : '') + (isToday ? ' today' : '');
+                h += '<button class="' + cls + '"' + (dis ? '' : ' data-date="' + dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate()) + '"') + '>' + dnum + '</button>';
+            }
+            h += '</div>';
+            pop.innerHTML = h;
+        }
+        function openCal() {
+            var inp = getInput();
+            var col = document.getElementById('btConfigCol');
+            if (!inp || !col) return;
+            closeCal();
+            var sel = selDate();
+            var base = sel ? new Date(sel.y, sel.m, 1) : new Date();
+            vY = base.getFullYear(); vM = base.getMonth();
+            pop = document.createElement('div');
+            pop.className = 'btcal';
+            col.appendChild(pop);
+            var ir = inp.getBoundingClientRect();
+            var cr = col.getBoundingClientRect();
+            pop.style.top = (ir.bottom - cr.top + 8) + 'px';
+            pop.style.left = Math.max(8, ir.left - cr.left) + 'px';
+            render();
+            pop.addEventListener('click', function(e) {
+                var nav = e.target.closest('[data-nav]');
+                if (nav) {
+                    vM += parseInt(nav.dataset.nav, 10);
+                    if (vM < 0) { vM = 11; vY--; }
+                    if (vM > 11) { vM = 0; vY++; }
+                    render();
+                    return;
+                }
+                var day = e.target.closest('[data-date]');
+                if (day) {
+                    var inp2 = getInput();
+                    inp2.value = day.dataset.date;
+                    if (typeof onBtDateChange === 'function') onBtDateChange();
+                    closeCal();
+                }
+            });
+        }
+        document.addEventListener('mousedown', function(e) {
+            var inp = getInput();
+            if (!inp) return;
+            if (e.target === inp && mq.matches) {
+                e.preventDefault();
+                if (pop) closeCal(); else openCal();
+                return;
+            }
+            if (pop && !pop.contains(e.target)) closeCal();
+        });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeCal();
+        });
+    })();
 
     // Initial active state sync (switchTab may have run before this script)
     document.addEventListener('DOMContentLoaded', function() {
