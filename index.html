@@ -15200,8 +15200,9 @@ body.dark-mode .portfolio-echelons-total-row {
         #topBar { position: relative; }
         body:not(.tab-home) #topBarCrumb {
             position: absolute;
-            left: 50%; top: 50%;
-            transform: translate(-50%, -50%);
+            left: 50%; top: auto;
+            bottom: 27px; /* выравнивание по центру ряда с бургером (8px паддинг + 38/2) */
+            transform: translate(-50%, 50%);
             margin-left: 0 !important;
         }
         #topBarCrumb { padding: 8px 15px 8px 13px; }
@@ -15341,11 +15342,24 @@ body.dark-mode .portfolio-echelons-total-row {
     #marketPanelContent .nd-ib-rub-sm { font-size: 12px; }
     #marketPanelContent .nd-ib-pct { font-size: 13px; }
 
+    /* ===== UNIFIED AURORA BACKGROUND (all tabs) ===== */
+    #contentArea {
+        background:
+            radial-gradient(640px 520px at 88% -6%, rgba(59,130,246,0.10), transparent 62%),
+            radial-gradient(560px 480px at -12% 38%, rgba(16,185,129,0.085), transparent 62%),
+            radial-gradient(440px 400px at 72% 96%, rgba(249,115,22,0.05), transparent 65%);
+    }
+    body.dark-mode #contentArea {
+        background:
+            radial-gradient(640px 520px at 88% -6%, rgba(59,130,246,0.07), transparent 62%),
+            radial-gradient(560px 480px at -12% 38%, rgba(16,185,129,0.06), transparent 62%);
+    }
+
     /* ===== MOBILE DOCK ===== */
     #mobileDock {
         position: fixed;
         left: 14px; right: 14px;
-        bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+        bottom: max(env(safe-area-inset-bottom, 0px), 12px);
         display: flex;
         gap: 10px;
         z-index: 900;
@@ -15840,8 +15854,6 @@ body.dark-mode .portfolio-echelons-total-row {
             margin-right: auto;
         }
 
-        /* Income calculator: full width when expanded (payment schedule needs room) */
-        #marketPanelContent > #calcAccordion:not(.collapsed) { grid-column: 1 / -1; }
 
         /* Home hero: centered in viewport */
         #panel-home.active { display: flex; align-items: center; justify-content: center; max-width: none; }
@@ -20002,6 +20014,8 @@ async function loadData() {
                         const processAsset = (tickerIndex, targetIndex, echelonArrIndex) => {
                             if(rows[i][tickerIndex]) {
                                 const rawTicker = String(rows[i][tickerIndex]).trim();
+                                // Защита: настоящий тикер — одно слово до 12 символов, без пробелов
+                                if (!/^[A-Za-z0-9.\-@]{1,12}$/.test(rawTicker)) return;
                                 // Ищем в справочнике
                                 const info = tickerInfo[rawTicker] || { n: rawTicker, sector: '' };
                                 
@@ -27820,15 +27834,15 @@ function renderIncomeDarkList(container, footer) {
         var qtyBadge = qty > 0
             ? '<span style="display:inline-block;background:rgba(255,255,255,0.08);border-radius:6px;padding:2px 8px;font-family:monospace;font-size:12px;font-weight:600;color:rgba(255,255,255,0.65);">' + qty + '</span>'
             : '<span style="color:rgba(255,255,255,0.2);font-family:monospace;font-size:12px;">—</span>';
-        html += '<div style="display:flex;align-items:center;padding:11px 20px;border-bottom:1px solid rgba(255,255,255,0.04);gap:10px;">'
-            + '<span style="font-family:\'JetBrains Mono\',monospace;font-size:12px;font-weight:600;color:rgba(255,255,255,0.45);letter-spacing:0.01em;flex-shrink:0;min-width:44px;">' + dateLabel + '</span>'
+        html += '<div style="display:flex;align-items:center;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.04);gap:9px;">'
+            + '<span style="font-family:\'JetBrains Mono\',monospace;font-size:12px;font-weight:600;color:rgba(255,255,255,0.45);letter-spacing:0.01em;flex-shrink:0;min-width:40px;">' + dateLabel + '</span>'
             + '<span style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.8);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + bondName + '</span>'
             + '<span style="flex-shrink:0;margin-left:8px;">' + qtyBadge + '</span>'
-            + '<span style="font-family:\'JetBrains Mono\',monospace;font-size:13px;font-weight:700;color:' + (qty > 0 ? '#10B981' : 'rgba(255,255,255,0.2)') + ';flex-shrink:0;min-width:80px;text-align:right;">' + sumStr + '</span>'
+            + '<span style="font-family:\'JetBrains Mono\',monospace;font-size:13px;font-weight:700;color:' + (qty > 0 ? '#10B981' : 'rgba(255,255,255,0.2)') + ';flex-shrink:0;min-width:72px;text-align:right;">' + sumStr + '</span>'
             + '</div>';
     });
 
-    var hdrRow = '<div style="display:flex;align-items:center;padding:8px 20px 7px;border-bottom:1px solid rgba(255,255,255,0.08);gap:10px;">'
+    var hdrRow = '<div style="display:flex;align-items:center;padding:8px 14px 7px;border-bottom:1px solid rgba(255,255,255,0.08);gap:9px;">'
         + '<span style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.35);flex-shrink:0;min-width:44px;">ДАТА</span>'
         + '<span style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.35);flex:1;">ОБЛИГАЦИЯ</span>'
         + '<span style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.35);flex-shrink:0;margin-left:8px;min-width:40px;text-align:right;">ШТ</span>'
