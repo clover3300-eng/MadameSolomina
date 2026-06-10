@@ -15107,8 +15107,8 @@ body.dark-mode .portfolio-echelons-total-row {
     #sbLogo { display: flex; align-items: center; gap: 11px; cursor: pointer; min-width: 0; -webkit-tap-highlight-color: transparent; }
     .sb-logo-mark {
         width: 34px; height: 34px; border-radius: 10px;
-        background: linear-gradient(135deg, #5B7C99 0%, #22C87A 100%);
-        color: #F1F6FB; display: flex; align-items: center; justify-content: center;
+        background: linear-gradient(180deg, #F1F6FB 0%, #F9FAFC 100%);
+        color: #2C364C; display: flex; align-items: center; justify-content: center;
         font-weight: 800; font-size: 15px; flex-shrink: 0;
     }
     .sb-logo-text { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
@@ -15190,34 +15190,52 @@ body.dark-mode .portfolio-echelons-total-row {
         #topBarTitle { white-space: nowrap; font-size: 15px !important; }
         #topSearchBtn { font-size: 0; gap: 0; padding: 9px; border-radius: 50%; }
         #topSearchBtn svg { width: 16px; height: 16px; }
-        /* On section pages the section name IS the title (iOS pattern) */
+        /* On section pages the section badge IS the title (iOS pattern) */
         body:not(.tab-home) #topBarTitle { display: none; }
         #topBarCrumb { margin-left: 0 !important; }
-        #topBarCrumb svg { display: none !important; }
-        #topBarCrumbText {
-            font-size: 16px !important;
-            font-weight: 700 !important;
-            color: var(--text-deep, #2C364C) !important;
-            text-transform: none !important;
-            letter-spacing: -0.01em !important;
-        }
-        body.dark-mode #topBarCrumbText { color: #F1F6FB !important; }
+        .hdr-chip { width: 30px; height: 30px; border-radius: 9px; }
+        .hdr-chip svg { width: 16px; height: 16px; }
+        .hdr-sec { font-size: 16px; }
     }
 
-    /* Desktop: brand + section pill */
+    /* ===== Section badge in the header (chip + name) ===== */
+    #topBarCrumb { align-items: center; gap: 9px; }
+    .hdr-chip {
+        width: 26px; height: 26px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, rgba(91,124,153,0.14), rgba(34,200,122,0.14));
+        border: 1px solid rgba(91,124,153,0.15);
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+    .hdr-chip svg {
+        width: 14px; height: 14px;
+        stroke: #2C364C; fill: none; stroke-width: 2;
+        stroke-linecap: round; stroke-linejoin: round;
+        opacity: 0.8;
+    }
+    .hdr-sec {
+        font-family: 'Inter', sans-serif;
+        font-size: 13px; font-weight: 700;
+        color: var(--text-deep, #2C364C);
+        letter-spacing: -0.01em;
+        white-space: nowrap;
+    }
+    body.dark-mode .hdr-chip { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.1); }
+    body.dark-mode .hdr-chip svg { stroke: #F1F6FB; }
+    body.dark-mode .hdr-sec { color: #F1F6FB; }
+
+    /* Desktop: hairline divider between brand and badge */
     @media (min-width: 1024px) {
-        #topBarCrumb svg { display: none !important; }
-        #topBarCrumbText {
-            background: rgba(44,54,76,0.07);
-            padding: 5px 12px;
-            border-radius: 8px;
-            font-size: 11px !important;
-            color: rgba(44,54,76,0.55) !important;
+        #topBarCrumb { margin-left: 14px !important; }
+        #topBarCrumb::before {
+            content: '';
+            width: 1px; height: 18px;
+            background: rgba(44,54,76,0.12);
+            margin-right: 12px;
+            flex-shrink: 0;
         }
-        body.dark-mode #topBarCrumbText {
-            background: rgba(255,255,255,0.08);
-            color: rgba(255,255,255,0.6) !important;
-        }
+        body.dark-mode #topBarCrumb::before { background: rgba(255,255,255,0.12); }
     }
 
     /* Welcome page: brand centered over the hero title */
@@ -15225,6 +15243,138 @@ body.dark-mode .portfolio-echelons-total-row {
         position: absolute;
         left: 50%;
         transform: translateX(-50%);
+    }
+
+    /* ===== MARKET TAB: balanced hierarchy ===== */
+    /* Quote strip -> visible mini-tiles */
+    #marketPanelContent #marketQuietStripInner {
+        gap: 10px !important;
+        padding: 0 !important;
+        margin: 0 0 18px !important;
+        justify-content: flex-start !important;
+    }
+    #marketPanelContent .dqs-item {
+        flex: 1;
+        min-width: 0;
+        justify-content: center;
+        gap: 8px;
+        padding: 11px 12px;
+        background: var(--card-bg, #ffffff);
+        border: 1px solid rgba(44,54,76,0.07);
+        border-radius: 14px;
+        box-shadow: 0 2px 10px rgba(44,54,76,0.05);
+    }
+    body.dark-mode #marketPanelContent .dqs-item {
+        background: rgba(255,255,255,0.05);
+        border-color: rgba(255,255,255,0.08);
+        box-shadow: none;
+    }
+    #marketPanelContent .dqs-dot { width: 6px; height: 6px; opacity: 1; }
+    #marketPanelContent .dqs-label { font-size: 10px; }
+    #marketPanelContent .dqs-value {
+        font-size: 14px;
+        font-weight: 600;
+        opacity: 1;
+        color: var(--text-deep, #2C364C);
+    }
+    body.dark-mode #marketPanelContent .dqs-value { color: #F1F6FB; }
+    #marketPanelContent .dqs-sep { display: none; }
+
+    /* Rates vertical: numbers calmer, rows tighter */
+    #marketPanelContent .rate-row-item { padding: 11px 0 !important; }
+    #marketPanelContent .rate-row-value {
+        font-size: 13px !important;
+        font-weight: 500 !important;
+        color: var(--text-slate, #475569) !important;
+    }
+    body.dark-mode #marketPanelContent .rate-row-value { color: #cbd5e1 !important; }
+    #marketPanelContent .rates-glass-card { margin-bottom: 24px !important; }
+    #marketPanelContent .rates-glass-card .rv-title { margin-bottom: 12px !important; }
+
+    /* Income banner: compact */
+    #marketPanelContent .nd-income-banner { padding: 14px 14px 12px; }
+    #marketPanelContent .nd-ib-header { margin-bottom: 12px; }
+    #marketPanelContent .nd-ib-icon { width: 30px; height: 30px; border-radius: 9px; }
+    #marketPanelContent .nd-ib-main { padding: 10px 0 12px; margin-bottom: 10px; }
+    #marketPanelContent .nd-ib-main-label { margin-bottom: 6px; }
+    #marketPanelContent .nd-ib-num { font-size: 32px; font-weight: 700; }
+    #marketPanelContent .nd-ib-rub { font-size: 20px; }
+    #marketPanelContent .nd-ib-metric { padding: 9px 11px; border-radius: 12px; }
+    #marketPanelContent .nd-ib-metric-num { font-size: 17px; font-weight: 700; }
+    #marketPanelContent .nd-ib-rub-sm { font-size: 12px; }
+    #marketPanelContent .nd-ib-pct { font-size: 13px; }
+
+    /* ===== BACKTEST: clearer source navigation ===== */
+    #btConfigCol .bt-source-switcher {
+        background: rgba(44,54,76,0.06);
+        border-radius: 12px;
+        padding: 3px;
+        gap: 3px;
+    }
+    body.dark-mode #btConfigCol .bt-source-switcher { background: rgba(255,255,255,0.07); }
+    #btConfigCol .bt-source-btn {
+        border: none;
+        border-radius: 9px;
+        background: transparent;
+        color: var(--text-slate, #64748B);
+        padding: 10px 14px;
+        box-shadow: none;
+    }
+    #btConfigCol .bt-source-btn.active {
+        background: #fff;
+        color: var(--text-deep, #2C364C);
+        box-shadow: 0 2px 8px rgba(44,54,76,0.12);
+        border: none;
+    }
+    body.dark-mode #btConfigCol .bt-source-btn.active {
+        background: rgba(255,255,255,0.14);
+        color: #F1F6FB;
+    }
+    .bt-ghost-btn {
+        margin-top: 8px;
+        width: 100%;
+        padding: 8px 2px;
+        background: transparent;
+        border: none;
+        font-family: 'Inter', sans-serif;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: #94A3B8;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        box-sizing: border-box;
+        transition: color 0.15s;
+    }
+    .bt-ghost-btn:hover { color: var(--bonds-color, #5B7C99); }
+    #btConfigCol .bt-bulk-toggle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 10px;
+        padding: 10px 12px;
+        background: rgba(44,54,76,0.04);
+        border: 1px solid rgba(44,54,76,0.05);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+    #btConfigCol .bt-bulk-toggle:hover { background: rgba(44,54,76,0.07); }
+    body.dark-mode #btConfigCol .bt-bulk-toggle { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.07); }
+    .bt-bulk-txt { flex: 1; min-width: 0; }
+    .bt-bulk-title {
+        font-family: 'Inter', sans-serif;
+        font-size: 12px; font-weight: 600;
+        color: var(--text-deep, #2C364C);
+    }
+    body.dark-mode .bt-bulk-title { color: #F1F6FB; }
+    .bt-bulk-sub {
+        font-family: 'Inter', sans-serif;
+        font-size: 10.5px;
+        color: var(--text-muted, #94A3B8);
+        margin-top: 2px;
+        line-height: 1.35;
     }
 
     /* ===== COMPANY: dividends by year ===== */
@@ -15644,7 +15794,7 @@ body.dark-mode .portfolio-echelons-total-row {
                             Используется портфель из вкладки «Расчёт». <span id="btCalcSummary" style="font-weight:600;color:var(--bonds-color,#5B7C99);">Портфель не рассчитан.</span>
                         </div>
                     </div>
-                    <button onclick="btLoadLastPortfolio()" style="margin-top:10px;width:100%;padding:10px 14px;background:transparent;border:1.5px dashed rgba(91,124,153,0.3);border-radius:12px;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:var(--bonds-color,#5B7C99);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;box-sizing:border-box;" onmouseover="this.style.background='rgba(91,124,153,0.06)'" onmouseout="this.style.background='transparent'">
+                    <button class="bt-ghost-btn" onclick="btLoadLastPortfolio()">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         Загрузить последний сохранённый
                     </button>
@@ -15668,9 +15818,12 @@ body.dark-mode .portfolio-echelons-total-row {
 
                     <!-- Импорт списком -->
                     <div class="bt-bulk-toggle" onclick="btToggleBulk()">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-                        Вставить список
-                        <svg id="btBulkChev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left:auto;transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B7C99" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                        <div class="bt-bulk-txt">
+                            <div class="bt-bulk-title">Импорт списком</div>
+                            <div class="bt-bulk-sub">Несколько тикеров разом — каждая строка: ТИКЕР и количество</div>
+                        </div>
+                        <svg id="btBulkChev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
                     </div>
                     <div id="btBulkBlock" style="display:none;margin-top:8px;">
                         <textarea id="btBulkInput" class="bt-bulk-textarea"
@@ -28400,11 +28553,34 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.classList.remove('sb-open');
     };
 
+    // Section badges in the header: icon chip + name
+    var hdrSections = {
+        calc:      { name: 'Расчёт',         icon: '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>' },
+        portfolio: { name: 'Портфель',       icon: '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>' },
+        rebalance: { name: 'Ребаланс',       icon: '<path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/>' },
+        market:    { name: 'Рынок',          icon: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>' },
+        backtest:  { name: 'Тест портфеля',  icon: '<path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/>' }
+    };
+    function renderHeaderBadge(tabId) {
+        var crumb = document.getElementById('topBarCrumb');
+        if (!crumb) return;
+        var s = hdrSections[tabId];
+        if (s) {
+            crumb.innerHTML = '<span class="hdr-chip"><svg viewBox="0 0 24 24">' + s.icon + '</svg></span>' +
+                              '<span class="hdr-sec">' + s.name + '</span>';
+            crumb.style.display = 'flex';
+        } else {
+            crumb.style.display = 'none';
+        }
+    }
+    window.renderHeaderBadge = renderHeaderBadge;
+
     // Close mobile drawer after navigation
     var _sbPrevSwitchTab = switchTab;
     switchTab = function(tabId) {
         _sbPrevSwitchTab(tabId);
         window.closeSidebarDrawer();
+        renderHeaderBadge(tabId);
     };
 
     // Esc closes the drawer
@@ -28415,6 +28591,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initial active state sync (switchTab may have run before this script)
     document.addEventListener('DOMContentLoaded', function() {
         var ct = (typeof currentTab !== 'undefined' && currentTab) ? currentTab : 'home';
+        renderHeaderBadge(ct);
         document.querySelectorAll('.sb-item[data-tab]').forEach(function(btn) {
             var isActive = btn.dataset.tab === ct ||
                            (btn.dataset.tab === 'calc' && ct === 'portfolio');
