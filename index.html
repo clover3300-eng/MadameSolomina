@@ -15107,8 +15107,8 @@ body.dark-mode .portfolio-echelons-total-row {
     #sbLogo { display: flex; align-items: center; gap: 11px; cursor: pointer; min-width: 0; -webkit-tap-highlight-color: transparent; }
     .sb-logo-mark {
         width: 34px; height: 34px; border-radius: 10px;
-        background: linear-gradient(135deg, #C9A178, #B8906A);
-        color: #161B27; display: flex; align-items: center; justify-content: center;
+        background: linear-gradient(135deg, #5B7C99 0%, #22C87A 100%);
+        color: #F1F6FB; display: flex; align-items: center; justify-content: center;
         font-weight: 800; font-size: 15px; flex-shrink: 0;
     }
     .sb-logo-text { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
@@ -15186,16 +15186,39 @@ body.dark-mode .portfolio-echelons-total-row {
     /* Collapse control is desktop-only */
     @media (max-width: 1023px) {
         #sbCollapseBtn { display: none; }
-        /* Header: keep one tidy line — no crumb, compact brand, icon-only search */
-        #topBarCrumb { display: none !important; }
+        /* Header: one tidy line — compact brand, icon-only search */
         #topBarTitle { white-space: nowrap; font-size: 15px !important; }
         #topSearchBtn { font-size: 0; gap: 0; padding: 9px; border-radius: 50%; }
         #topSearchBtn svg { width: 16px; height: 16px; }
+        /* On section pages the section name IS the title (iOS pattern) */
+        body:not(.tab-home) #topBarTitle { display: none; }
+        #topBarCrumb { margin-left: 0 !important; }
+        #topBarCrumb svg { display: none !important; }
+        #topBarCrumbText {
+            font-size: 16px !important;
+            font-weight: 700 !important;
+            color: var(--text-deep, #2C364C) !important;
+            text-transform: none !important;
+            letter-spacing: -0.01em !important;
+        }
+        body.dark-mode #topBarCrumbText { color: #F1F6FB !important; }
     }
 
-    /* Breadcrumb in top bar is redundant: sidebar shows the active section,
-       portfolio keeps its own back-link row */
-    #topBarCrumb { display: none !important; }
+    /* Desktop: brand + section pill */
+    @media (min-width: 1024px) {
+        #topBarCrumb svg { display: none !important; }
+        #topBarCrumbText {
+            background: rgba(44,54,76,0.07);
+            padding: 5px 12px;
+            border-radius: 8px;
+            font-size: 11px !important;
+            color: rgba(44,54,76,0.55) !important;
+        }
+        body.dark-mode #topBarCrumbText {
+            background: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.6) !important;
+        }
+    }
 
     /* Welcome page: brand centered over the hero title */
     body.tab-home #topBarBrand {
@@ -15204,8 +15227,134 @@ body.dark-mode .portfolio-echelons-total-row {
         transform: translateX(-50%);
     }
 
-    /* Backtest config wrapper: invisible on mobile, column on desktop */
-    #btConfigCol { display: contents; }
+    /* ===== COMPANY: dividends by year ===== */
+    .div-history-section { margin-bottom: 16px; }
+    .div-history-note {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        color: var(--text-muted, #94A3B8);
+        margin: -4px 0 14px;
+    }
+    .div-history-loading, .div-history-empty {
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        color: var(--text-muted, #94A3B8);
+        padding: 6px 0 4px;
+        line-height: 1.5;
+    }
+    .div-year-row {
+        display: grid;
+        grid-template-columns: 44px minmax(40px, 1fr) auto auto;
+        align-items: center;
+        gap: 12px;
+        padding: 9px 0;
+        border-bottom: 1px solid rgba(44,54,76,0.05);
+    }
+    .div-year-row:last-child { border-bottom: none; }
+    body.dark-mode .div-year-row { border-bottom-color: rgba(255,255,255,0.06); }
+    .div-year {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 13px; font-weight: 500;
+        color: var(--text-deep, #2C364C);
+    }
+    body.dark-mode .div-year { color: #F1F6FB; }
+    .div-bar-wrap { height: 6px; border-radius: 3px; background: rgba(44,54,76,0.05); overflow: hidden; }
+    body.dark-mode .div-bar-wrap { background: rgba(255,255,255,0.07); }
+    .div-bar {
+        height: 100%;
+        border-radius: 3px;
+        background: linear-gradient(90deg, #5B7C99, #22C87A);
+        transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .div-meta {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        color: var(--text-muted, #94A3B8);
+        white-space: nowrap;
+    }
+    .div-sum {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 13px; font-weight: 500;
+        color: var(--text-deep, #2C364C);
+        text-align: right;
+        min-width: 84px;
+        white-space: nowrap;
+    }
+    body.dark-mode .div-sum { color: #F1F6FB; }
+    .div-rub { color: #B8906A; }
+
+    /* Rebalance lists: always expanded, collapse triggers removed */
+    #ofzGhostTrigger, #stocksGhostTrigger { display: none !important; }
+
+    /* ===== BACKTEST CONFIG: guided step-by-step card ===== */
+    #btConfigCol {
+        background: var(--card-bg, #ffffff);
+        border: 1px solid rgba(44,54,76,0.07);
+        border-radius: 20px;
+        padding: 20px 18px 18px;
+        box-shadow: 0 2px 16px rgba(44,54,76,0.06);
+        counter-reset: btstep;
+        margin-bottom: 16px;
+    }
+    body.dark-mode #btConfigCol {
+        background: rgba(30,41,59,0.5);
+        border-color: rgba(255,255,255,0.08);
+        box-shadow: 0 2px 16px rgba(0,0,0,0.2);
+    }
+    #btConfigCol .bt-config-card {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        border-radius: 0;
+        padding: 0 0 20px 42px !important;
+        margin: 0 !important;
+        position: relative;
+    }
+    #btConfigCol .bt-config-card::before {
+        counter-increment: btstep;
+        content: counter(btstep);
+        position: absolute;
+        left: 0; top: -4px;
+        width: 28px; height: 28px;
+        border-radius: 50%;
+        background: rgba(91,124,153,0.1);
+        border: 1px solid rgba(91,124,153,0.18);
+        color: #5B7C99;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 13px; font-weight: 500;
+        display: flex; align-items: center; justify-content: center;
+        box-sizing: border-box;
+    }
+    #btConfigCol .bt-config-card:first-child::after {
+        content: '';
+        position: absolute;
+        left: 13.5px; top: 28px; bottom: -2px;
+        width: 1px;
+        background: linear-gradient(180deg, rgba(91,124,153,0.25), rgba(91,124,153,0.06));
+    }
+    #btConfigCol .bt-config-label {
+        font-size: 12px !important;
+        color: var(--text-deep, #2C364C) !important;
+        letter-spacing: 0.05em;
+        margin-bottom: 10px;
+    }
+    #btConfigCol .bt-config-label svg { display: none; }
+    #btConfigCol #btRunBtn {
+        width: 100% !important;
+        margin: 2px 0 0 !important;
+        padding: 16px 22px;
+        border-radius: 14px;
+        font-size: 14px;
+    }
+    #btConfigCol #btRunBtn:disabled {
+        background: rgba(44,54,76,0.12);
+        box-shadow: none;
+        cursor: not-allowed;
+        transform: none;
+    }
+    body.dark-mode #btConfigCol #btRunBtn:disabled { background: rgba(255,255,255,0.08); }
 
     /* Tab panels: bottom tabbar removed -> less dead space */
     .tab-panel { padding-bottom: 40px; }
@@ -15263,6 +15412,9 @@ body.dark-mode .portfolio-echelons-total-row {
 
         /* Home hero: centered in viewport */
         #panel-home.active { display: flex; align-items: center; justify-content: center; max-width: none; }
+
+        /* Company overlay: centered reading column instead of full-bleed stretch */
+        #company-content { max-width: 760px; margin: 0 auto; padding: 24px 24px 80px; }
     }
 
     @media (min-width: 1440px) {
@@ -21334,11 +21486,14 @@ function searchCompanyInternal(ticker) {
                 <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg>
                 График
             </button>
-            <button class="company-action-btn" onclick="copyTicker(event, '${item.t}')">
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                История див.
+            <button class="company-action-btn" id="divHistoryBtn" onclick="toggleDivHistory(event, '${item.t}', ${isStock})">
+                <svg viewBox="0 0 24 24"><path d="M9 19V5h5a3.5 3.5 0 0 1 0 7H9"/><line x1="7" y1="15" x2="13" y2="15"/></svg>
+                Дивиденды
             </button>
         </div>
+
+        <!-- Дивиденды по годам (загружается по клику) -->
+        <div class="glass-card div-history-section" id="divHistorySection" style="display:none;"></div>
         
         <!-- Описание актива -->
         ${companyDescriptions[item.t] ? `
@@ -21423,6 +21578,88 @@ function searchCompanyInternal(ticker) {
     loadAndDisplayNews(item.t);
     showScreen('screen-company');
 }
+
+// ===== ДИВИДЕНДЫ ПО ГОДАМ (MOEX ISS) =====
+var divHistoryCache = {};
+var divTitleSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19V5h5a3.5 3.5 0 0 1 0 7H9"/><line x1="7" y1="15" x2="13" y2="15"/></svg>';
+
+async function toggleDivHistory(event, ticker, isStock) {
+    if (event) event.stopPropagation();
+    const section = document.getElementById('divHistorySection');
+    if (!section) return;
+    // Повторный клик — сворачиваем
+    if (section.style.display !== 'none') {
+        section.style.display = 'none';
+        return;
+    }
+    section.style.display = 'block';
+    section.innerHTML = '<div class="company-section-title">' + divTitleSvg + 'Дивиденды по годам</div>' +
+        '<div class="div-history-loading">Загружаем историю выплат с MOEX…</div>';
+    try { section.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) {}
+
+    try {
+        let rows = divHistoryCache[ticker];
+        if (!rows) {
+            const url = MOEX_PROXY + '?path=' + encodeURIComponent('/iss/securities/' + ticker + '/dividends.json?iss.meta=off');
+            const res = await fetch(url);
+            const data = await res.json();
+            const cols = data.dividends.columns;
+            const di = cols.indexOf('registryclosedate');
+            const vi = cols.indexOf('value');
+            const byYear = {};
+            (data.dividends.data || []).forEach(function(r) {
+                const y = String(r[di] || '').slice(0, 4);
+                const v = parseFloat(r[vi]) || 0;
+                if (y.length !== 4) return;
+                if (!byYear[y]) byYear[y] = { sum: 0, n: 0 };
+                byYear[y].sum += v;
+                byYear[y].n++;
+            });
+            rows = Object.keys(byYear).sort().reverse().map(function(y) {
+                return { year: y, sum: byYear[y].sum, n: byYear[y].n };
+            });
+            divHistoryCache[ticker] = rows;
+        }
+        renderDivHistory(section, ticker, rows, isStock);
+    } catch (e) {
+        const l = section.querySelector('.div-history-loading');
+        if (l) l.textContent = 'Не удалось загрузить данные MOEX. Попробуйте позже.';
+    }
+}
+
+function renderDivHistory(section, ticker, rows, isStock) {
+    const title = '<div class="company-section-title">' + divTitleSvg + 'Дивиденды по годам</div>';
+    if (!rows.length) {
+        const msg = isStock
+            ? 'MOEX не вернула историю дивидендных выплат по тикеру ' + ticker + '.'
+            : 'По облигациям выплачиваются купоны — история дивидендов для них не ведётся.';
+        section.innerHTML = title + '<div class="div-history-empty">' + msg + '</div>';
+        return;
+    }
+    const maxSum = Math.max.apply(null, rows.map(function(r) { return r.sum; }));
+    const fmt = function(v) { return v.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+    const list = rows.map(function(r) {
+        const w = maxSum > 0 ? Math.max(4, Math.round(r.sum / maxSum * 100)) : 4;
+        return '<div class="div-year-row">' +
+            '<div class="div-year">' + r.year + '</div>' +
+            '<div class="div-bar-wrap"><div class="div-bar" style="width:' + w + '%"></div></div>' +
+            '<div class="div-meta">' + r.n + ' ' + divPlural(r.n, 'выплата', 'выплаты', 'выплат') + '</div>' +
+            '<div class="div-sum">' + fmt(r.sum) + ' <span class="div-rub">₽</span></div>' +
+            '</div>';
+    }).join('');
+    section.innerHTML = title +
+        '<div class="div-history-note">Суммарно на одну акцию за календарный год · реестровые даты MOEX</div>' + list;
+}
+
+function divPlural(n, one, few, many) {
+    n = Math.abs(n) % 100;
+    var n1 = n % 10;
+    if (n > 10 && n < 20) return many;
+    if (n1 > 1 && n1 < 5) return few;
+    if (n1 === 1) return one;
+    return many;
+}
+window.toggleDivHistory = toggleDivHistory;
 
     // Функция загрузки и отображения новостей
 async function loadAndDisplayNews(ticker) {
