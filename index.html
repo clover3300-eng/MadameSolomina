@@ -15076,6 +15076,182 @@ body.dark-mode .portfolio-echelons-total-row {
     }
     
     </style>
+
+    <style id="siteLayoutCSS">
+    /* ===================================================== */
+    /* ===== SITE LAYOUT: LEFT SIDEBAR + RESPONSIVE ======== */
+    /* ===================================================== */
+    :root { --sb-w: 236px; }
+
+    /* Bottom tab bar fully replaced by sidebar/burger */
+    #bottomTabBar { display: none !important; }
+
+    /* ---------- Sidebar base ---------- */
+    #sideBar {
+        background: #161B27;
+        display: flex;
+        flex-direction: column;
+        font-family: 'Inter', sans-serif;
+        box-sizing: border-box;
+        overflow-y: auto;
+        overflow-x: hidden;
+        scrollbar-width: none;
+    }
+    #sideBar::-webkit-scrollbar { display: none; }
+    #sbHead {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: calc(env(safe-area-inset-top, 0px) + 22px) 14px 16px;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        margin-bottom: 10px; flex-shrink: 0; gap: 8px;
+    }
+    #sbLogo { display: flex; align-items: center; gap: 11px; cursor: pointer; min-width: 0; -webkit-tap-highlight-color: transparent; }
+    .sb-logo-mark {
+        width: 34px; height: 34px; border-radius: 10px;
+        background: linear-gradient(135deg, #C9A178, #B8906A);
+        color: #161B27; display: flex; align-items: center; justify-content: center;
+        font-weight: 800; font-size: 15px; flex-shrink: 0;
+    }
+    .sb-logo-text { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+    .sb-logo-name { color: #F1F6FB; font-size: 13.5px; white-space: nowrap; }
+    .sb-logo-sub { color: rgba(241,246,251,0.38); font-size: 9.5px; letter-spacing: 0.16em; text-transform: uppercase; margin-top: 2px; }
+    #sbNav { display: flex; flex-direction: column; gap: 3px; padding: 4px 10px; flex: 1; }
+    .sb-item {
+        display: flex; align-items: center; gap: 12px;
+        width: 100%; border: none; background: transparent;
+        padding: 11px 12px; border-radius: 10px;
+        color: rgba(241,246,251,0.55);
+        font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 500; letter-spacing: 0.01em;
+        cursor: pointer; text-align: left;
+        transition: background 0.15s ease, color 0.15s ease;
+        -webkit-tap-highlight-color: transparent;
+        position: relative;
+    }
+    .sb-item svg { width: 19px; height: 19px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .sb-item:hover { background: rgba(255,255,255,0.05); color: rgba(241,246,251,0.85); }
+    .sb-item.active { background: rgba(34,200,122,0.1); color: #22C87A; }
+    .sb-item.active::before {
+        content: ''; position: absolute; left: -10px; top: 50%; transform: translateY(-50%);
+        width: 3px; height: 20px; border-radius: 0 3px 3px 0; background: #22C87A;
+    }
+    .sb-label { white-space: nowrap; overflow: hidden; }
+    #sbFoot { padding: 10px; border-top: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; }
+    #sbFoot .sb-item { color: rgba(241,246,251,0.4); font-size: 12.5px; }
+    #sbFoot .sb-item:hover { color: rgba(241,246,251,0.75); background: rgba(255,255,255,0.05); }
+    #sbCollapseBtn svg { transition: transform 0.25s ease; }
+    body.sb-collapsed #sbCollapseBtn svg { transform: rotate(180deg); }
+
+    /* ---------- Burger & close buttons ---------- */
+    #sbBurgerBtn {
+        display: flex; align-items: center; justify-content: center;
+        width: 38px; height: 38px; border: none; border-radius: 11px;
+        background: rgba(44,54,76,0.06); color: #2C364C;
+        cursor: pointer; margin-right: 12px; flex-shrink: 0;
+        -webkit-tap-highlight-color: transparent;
+        transition: background 0.15s ease;
+    }
+    #sbBurgerBtn:active { background: rgba(44,54,76,0.12); }
+    #sbBurgerBtn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+    body.dark-mode #sbBurgerBtn { background: rgba(255,255,255,0.08); color: #F1F6FB; }
+    #sbCloseBtn {
+        display: flex; align-items: center; justify-content: center;
+        width: 32px; height: 32px; border: none; border-radius: 9px;
+        background: rgba(255,255,255,0.06); color: rgba(241,246,251,0.6);
+        cursor: pointer; flex-shrink: 0; -webkit-tap-highlight-color: transparent;
+    }
+    #sbCloseBtn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+
+    /* topBar holds burger on the left */
+    #topBar > #topBarBrand { min-width: 0; }
+
+    /* ---------- Mobile: off-canvas drawer ---------- */
+    #sideBar {
+        position: fixed; top: 0; left: 0; bottom: 0;
+        width: min(290px, 84vw);
+        z-index: 1200;
+        transform: translateX(-105%);
+        transition: transform 0.28s cubic-bezier(0.32, 0.72, 0.28, 1), box-shadow 0.28s ease;
+        box-shadow: 12px 0 40px rgba(10,14,24,0);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    body.sb-open #sideBar { transform: none; box-shadow: 12px 0 40px rgba(10,14,24,0.35); }
+    #sbOverlay {
+        position: fixed; inset: 0;
+        background: rgba(13,18,30,0.5);
+        backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+        z-index: 1199; opacity: 0; pointer-events: none;
+        transition: opacity 0.25s ease;
+    }
+    body.sb-open #sbOverlay { opacity: 1; pointer-events: auto; }
+
+    /* Collapse control is desktop-only */
+    @media (max-width: 1023px) {
+        #sbCollapseBtn { display: none; }
+    }
+
+    /* Tab panels: bottom tabbar removed -> less dead space */
+    .tab-panel { padding-bottom: 40px; }
+
+    /* ---------- Desktop: static sidebar + grid shell ---------- */
+    @media (min-width: 1024px) {
+        #sbBurgerBtn, #sbCloseBtn, #sbOverlay { display: none !important; }
+        #appShell {
+            display: grid !important;
+            grid-template-columns: var(--sb-w) minmax(0, 1fr);
+            grid-template-rows: auto minmax(0, 1fr);
+        }
+        #sideBar {
+            position: static;
+            transform: none !important;
+            width: auto;
+            grid-column: 1; grid-row: 1 / 3;
+            box-shadow: none !important;
+            transition: none;
+            padding-bottom: 0;
+        }
+        #sbHead { padding-top: 22px; }
+        #headerWrapper { grid-column: 2; grid-row: 1; min-width: 0; }
+        #contentArea { grid-column: 2; grid-row: 2; min-width: 0; }
+        #topBar { padding: 18px 32px 10px; }
+
+        body.sb-collapsed { --sb-w: 76px; }
+        body.sb-collapsed .sb-label,
+        body.sb-collapsed .sb-logo-text { display: none; }
+        body.sb-collapsed #sbHead { justify-content: center; padding-left: 8px; padding-right: 8px; }
+        body.sb-collapsed #sbNav { padding: 4px 8px; }
+        body.sb-collapsed .sb-item { justify-content: center; padding: 12px 0; gap: 0; }
+        body.sb-collapsed .sb-item.active::before { left: -8px; }
+        body.sb-collapsed #sbFoot { padding: 10px 8px; }
+
+        /* Panels: width + breathing room */
+        .tab-panel { max-width: 1240px; margin: 0 auto; padding: 28px 40px 64px; width: 100%; box-sizing: border-box; }
+        #calcPane { max-width: 720px; margin: 0 auto; width: 100%; }
+
+        /* Market tab: two-column grid */
+        #marketPanelContent { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; align-items: start; }
+        #marketPanelContent > * { grid-column: 1 / -1; min-width: 0; }
+        #marketPanelContent > .rates-glass-card { grid-column: 1; }
+        #marketPanelContent > #calcAccordion { grid-column: 2; }
+
+        /* Backtest: config left, results right */
+        #panel-backtest.active { display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: 0 28px; align-items: start; align-content: start; }
+        #panel-backtest > .bt-header { grid-column: 1 / -1; }
+        #panel-backtest > .bt-config-card,
+        #panel-backtest > #btRunBtn { grid-column: 1; }
+        #panel-backtest > #btResults { grid-column: 2; grid-row: 2 / span 3; min-width: 0; }
+
+        /* Rebalance & portfolio: comfortable reading width */
+        #panel-rebalance, #panel-portfolio { max-width: 1000px; }
+
+        /* Home hero: centered in viewport */
+        #panel-home.active { display: flex; align-items: center; justify-content: center; max-width: none; }
+    }
+
+    @media (min-width: 1440px) {
+        .tab-panel { padding: 36px 56px 72px; }
+        body:not(.sb-collapsed) { --sb-w: 252px; }
+    }
+    </style>
+
 </head>
 <body onclick="hideAllTips(event)">
 
@@ -15090,10 +15266,59 @@ body.dark-mode .portfolio-echelons-total-row {
 <!-- ===================== APP SHELL ===================== -->
 <div id="appShell" style="position:relative;z-index:2;background:linear-gradient(180deg,#F1F6FB 0%,#F9FAFC 100%);">
 
+    <!-- ===== LEFT SIDEBAR (desktop) / DRAWER (mobile) ===== -->
+    <nav id="sideBar" aria-label="Основная навигация">
+        <div id="sbHead">
+            <div id="sbLogo" onclick="switchTab('home')" title="На главную">
+                <div class="sb-logo-mark">M</div>
+                <div class="sb-logo-text">
+                    <span class="sb-logo-name"><span style="font-weight:300;">Madame </span><span style="font-weight:800;">Solomi'na</span></span>
+                    <span class="sb-logo-sub">Terminal</span>
+                </div>
+            </div>
+            <button id="sbCloseBtn" onclick="closeSidebarDrawer()" aria-label="Закрыть меню">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div id="sbNav">
+            <button class="sb-item" data-tab="home" onclick="switchTab('home')" title="Главная">
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <span class="sb-label">Главная</span>
+            </button>
+            <button class="sb-item" data-tab="calc" onclick="switchToCalcOrPortfolio()" title="Расчёт">
+                <svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+                <span class="sb-label">Расчёт</span>
+            </button>
+            <button class="sb-item" data-tab="rebalance" onclick="switchTab('rebalance')" title="Ребаланс">
+                <svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                <span class="sb-label">Ребаланс</span>
+            </button>
+            <button class="sb-item" data-tab="market" onclick="switchTab('market')" title="Рынок">
+                <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                <span class="sb-label">Рынок</span>
+            </button>
+            <button class="sb-item" data-tab="backtest" onclick="switchTab('backtest')" title="Тест портфеля">
+                <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg>
+                <span class="sb-label">Тест</span>
+            </button>
+        </div>
+        <div id="sbFoot">
+            <button class="sb-item" id="sbCollapseBtn" onclick="toggleSidebarCollapse()" title="Свернуть меню">
+                <svg viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
+                <span class="sb-label">Свернуть</span>
+            </button>
+        </div>
+    </nav>
+    <div id="sbOverlay" onclick="closeSidebarDrawer()"></div>
+
+
     <!-- HEADER WRAPPER (glassmorphism + scroll shadow) -->
     <div id="headerWrapper">
     <!-- TOP BAR -->
     <div id="topBar">
+        <button id="sbBurgerBtn" onclick="openSidebarDrawer()" aria-label="Открыть меню">
+            <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
         <div id="topBarBrand">
             <div style="display:flex;align-items:center;gap:0;">
                 <div id="topBarTitle" style="font-size:16px;cursor:pointer;-webkit-tap-highlight-color:transparent;" onclick="switchTab('home')" title="На главную">
@@ -26524,7 +26749,7 @@ function switchTab(tabId) {
     currentTab = tabId;
     
     // Update tab buttons (top bar legacy + bottom bar)
-    document.querySelectorAll('.tab-btn-new, .btab').forEach(btn => {
+    document.querySelectorAll('.tab-btn-new, .btab, .sb-item[data-tab]').forEach(btn => {
         // Кнопка "Расчёт" остаётся активной когда открыт Портфель
         var isActive = btn.dataset.tab === tabId || 
                        (btn.dataset.tab === 'calc' && tabId === 'portfolio');
@@ -27894,5 +28119,50 @@ document.addEventListener('DOMContentLoaded', function() {
 })();
 </script>
 
+
+<script>
+// ===== SITE SIDEBAR CONTROLLER =====
+(function() {
+    // Restore collapsed state ASAP (avoid flash)
+    try {
+        if (localStorage.getItem('sbCollapsed') === '1') {
+            document.body.classList.add('sb-collapsed');
+        }
+    } catch (e) {}
+
+    window.toggleSidebarCollapse = function() {
+        var collapsed = document.body.classList.toggle('sb-collapsed');
+        try { localStorage.setItem('sbCollapsed', collapsed ? '1' : '0'); } catch (e) {}
+    };
+    window.openSidebarDrawer = function() {
+        document.body.classList.add('sb-open');
+    };
+    window.closeSidebarDrawer = function() {
+        document.body.classList.remove('sb-open');
+    };
+
+    // Close mobile drawer after navigation
+    var _sbPrevSwitchTab = switchTab;
+    switchTab = function(tabId) {
+        _sbPrevSwitchTab(tabId);
+        window.closeSidebarDrawer();
+    };
+
+    // Esc closes the drawer
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') window.closeSidebarDrawer();
+    });
+
+    // Initial active state sync (switchTab may have run before this script)
+    document.addEventListener('DOMContentLoaded', function() {
+        var ct = (typeof currentTab !== 'undefined' && currentTab) ? currentTab : 'home';
+        document.querySelectorAll('.sb-item[data-tab]').forEach(function(btn) {
+            var isActive = btn.dataset.tab === ct ||
+                           (btn.dataset.tab === 'calc' && ct === 'portfolio');
+            btn.classList.toggle('active', isActive);
+        });
+    });
+})();
+</script>
 </body>
 </html>
