@@ -15098,6 +15098,10 @@ body.dark-mode .portfolio-echelons-total-row {
         scrollbar-width: none;
     }
     #sideBar::-webkit-scrollbar { display: none; }
+    #sbPanel { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+    @media (max-width: 1023px) {
+        #sbFoot { display: none; }
+    }
     #sbHead {
         display: flex; align-items: center; justify-content: space-between;
         padding: calc(env(safe-area-inset-top, 0px) + 22px) 14px 16px;
@@ -15198,8 +15202,21 @@ body.dark-mode .portfolio-echelons-total-row {
         .hdr-sec { font-size: 16px; }
     }
 
-    /* ===== Section badge in the header (chip + name) ===== */
-    #topBarCrumb { align-items: center; gap: 9px; }
+    /* ===== Section badge in the header: one joint plaque ===== */
+    #topBarCrumb {
+        align-items: center;
+        gap: 9px;
+        background: rgba(255,255,255,0.72);
+        border: 1px solid rgba(44,54,76,0.08);
+        border-radius: 12px;
+        padding: 4px 13px 4px 5px;
+        box-shadow: 0 2px 10px rgba(44,54,76,0.05);
+    }
+    body.dark-mode #topBarCrumb {
+        background: rgba(255,255,255,0.06);
+        border-color: rgba(255,255,255,0.1);
+        box-shadow: none;
+    }
     .hdr-chip {
         width: 26px; height: 26px;
         border-radius: 8px;
@@ -15238,12 +15255,13 @@ body.dark-mode .portfolio-echelons-total-row {
         body.dark-mode #topBarCrumb::before { background: rgba(255,255,255,0.12); }
     }
 
-    /* Welcome page: brand centered over the hero title */
+    /* Welcome page: brand centered over the hero, actions pinned right */
     body.tab-home #topBarBrand {
         position: absolute;
         left: 50%;
         transform: translateX(-50%);
     }
+    body.tab-home #topBarActions { margin-left: auto; }
 
     /* ===== MARKET TAB: balanced hierarchy ===== */
     /* Quote strip -> visible mini-tiles */
@@ -15280,8 +15298,21 @@ body.dark-mode .portfolio-echelons-total-row {
     body.dark-mode #marketPanelContent .dqs-value { color: #F1F6FB; }
     #marketPanelContent .dqs-sep { display: none; }
 
-    /* Rates vertical: numbers calmer, rows tighter */
+    /* Rates vertical: proper card matching the income banner */
+    #marketPanelContent .rates-glass-card {
+        background: var(--card-bg, #ffffff) !important;
+        border: 1px solid rgba(44,54,76,0.07) !important;
+        border-radius: 20px !important;
+        padding: 16px 16px 8px !important;
+        box-shadow: 0 4px 20px rgba(44,54,76,0.06) !important;
+    }
+    body.dark-mode #marketPanelContent .rates-glass-card {
+        background: rgba(255,255,255,0.05) !important;
+        border-color: rgba(255,255,255,0.08) !important;
+        box-shadow: none !important;
+    }
     #marketPanelContent .rate-row-item { padding: 11px 0 !important; }
+    #marketPanelContent .rate-row-item:last-child { padding-bottom: 13px !important; }
     #marketPanelContent .rate-row-value {
         font-size: 13px !important;
         font-weight: 500 !important;
@@ -15303,6 +15334,40 @@ body.dark-mode .portfolio-echelons-total-row {
     #marketPanelContent .nd-ib-metric-num { font-size: 17px; font-weight: 700; }
     #marketPanelContent .nd-ib-rub-sm { font-size: 12px; }
     #marketPanelContent .nd-ib-pct { font-size: 13px; }
+
+    /* ===== Back pill (portfolio -> calc) ===== */
+    .back-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 15px 8px 11px;
+        background: var(--card-bg, #ffffff);
+        border: 1px solid rgba(44,54,76,0.08);
+        border-radius: 999px;
+        box-shadow: 0 2px 10px rgba(44,54,76,0.05);
+        font-family: 'Inter', sans-serif;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0;
+        text-transform: none;
+        color: var(--text-slate, #64748B);
+        cursor: pointer;
+        transition: color 0.15s, transform 0.15s, box-shadow 0.15s;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .back-pill:hover {
+        color: var(--text-deep, #2C364C);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px rgba(44,54,76,0.09);
+    }
+    .back-pill svg { flex-shrink: 0; }
+    body.dark-mode .back-pill {
+        background: rgba(255,255,255,0.06);
+        border-color: rgba(255,255,255,0.1);
+        color: #cbd5e1;
+        box-shadow: none;
+    }
+    body.dark-mode .back-pill:hover { color: #F1F6FB; }
 
     /* ===== BACKTEST: clearer source navigation ===== */
     #btConfigCol .bt-source-switcher {
@@ -15374,6 +15439,53 @@ body.dark-mode .portfolio-echelons-total-row {
         font-size: 10.5px;
         color: var(--text-muted, #94A3B8);
         margin-top: 2px;
+        line-height: 1.35;
+    }
+
+    /* Date: compact, anchored left */
+    #btConfigCol #btDateInput {
+        max-width: 230px;
+        text-align: left;
+    }
+    /* Source status: tinted panel + status chip */
+    #btConfigCol .bt-portfolio-note {
+        display: flex;
+        align-items: flex-start;
+        gap: 9px;
+        background: rgba(91,124,153,0.06);
+        border: 1px solid rgba(91,124,153,0.1);
+        border-radius: 12px;
+        padding: 11px 12px;
+    }
+    body.dark-mode #btConfigCol .bt-portfolio-note {
+        background: rgba(255,255,255,0.05);
+        border-color: rgba(255,255,255,0.08);
+    }
+    #btConfigCol .bt-portfolio-note svg {
+        flex-shrink: 0;
+        margin-top: 1px;
+        stroke: var(--bonds-color, #5B7C99);
+    }
+    #btConfigCol .bt-portfolio-note-text {
+        font-family: 'Inter', sans-serif;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text-deep, #2C364C);
+        line-height: 1.4;
+        min-width: 0;
+    }
+    body.dark-mode #btConfigCol .bt-portfolio-note-text { color: #F1F6FB; }
+    .bt-calc-status {
+        display: block;
+        margin-top: 7px;
+        padding: 4px 10px;
+        width: fit-content;
+        background: rgba(91,124,153,0.1);
+        border-radius: 8px;
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--bonds-color, #5B7C99);
         line-height: 1.35;
     }
 
@@ -15514,7 +15626,7 @@ body.dark-mode .portfolio-echelons-total-row {
         #sbBurgerBtn, #sbCloseBtn, #sbOverlay { display: none !important; }
         #appShell {
             display: grid !important;
-            grid-template-columns: var(--sb-w) minmax(0, 1fr);
+            grid-template-columns: calc(var(--sb-w) + 14px) minmax(0, 1fr);
             grid-template-rows: auto minmax(0, 1fr);
         }
         #sideBar {
@@ -15524,14 +15636,34 @@ body.dark-mode .portfolio-echelons-total-row {
             grid-column: 1; grid-row: 1 / 3;
             box-shadow: none !important;
             transition: none;
-            padding-bottom: 0;
+            background: transparent;
+            padding: 14px 0 14px 14px;
+            gap: 10px;
+            overflow: visible;
+        }
+        #sbPanel {
+            background: #161B27;
+            border-radius: 20px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: none;
+            box-shadow: 0 10px 30px rgba(22,27,39,0.18);
+        }
+        #sbPanel::-webkit-scrollbar { display: none; }
+        #sbFoot {
+            background: #161B27;
+            border-radius: 16px;
+            border-top: none;
+            padding: 8px;
+            box-shadow: 0 8px 22px rgba(22,27,39,0.16);
+            flex-shrink: 0;
         }
         #sbHead { padding-top: 22px; }
         #headerWrapper { grid-column: 2; grid-row: 1; min-width: 0; }
         #contentArea { grid-column: 2; grid-row: 2; min-width: 0; }
         #topBar { padding: 18px 32px 10px; }
 
-        body.sb-collapsed { --sb-w: 76px; }
+        body.sb-collapsed { --sb-w: 78px; }
         body.sb-collapsed .sb-label,
         body.sb-collapsed .sb-logo-text { display: none; }
         body.sb-collapsed #sbHead { justify-content: center; padding-left: 8px; padding-right: 8px; }
@@ -15552,7 +15684,8 @@ body.dark-mode .portfolio-echelons-total-row {
         #marketPanelContent > #calcAccordion { grid-column: 2; }
 
         /* Backtest: sticky config rail left, results right */
-        #panel-backtest.active { display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: 0 28px; align-items: start; align-content: start; }
+        #panel-backtest { max-width: 1040px !important; }
+        #panel-backtest.active { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 0 24px; align-items: start; align-content: start; }
         #panel-backtest > .bt-header { grid-column: 1 / -1; }
         #btConfigCol { display: block; grid-column: 1; grid-row: 2; position: sticky; top: 16px; }
         #panel-backtest > #btResults { grid-column: 2; grid-row: 2; min-width: 0; }
@@ -15589,6 +15722,7 @@ body.dark-mode .portfolio-echelons-total-row {
 
     <!-- ===== LEFT SIDEBAR (desktop) / DRAWER (mobile) ===== -->
     <nav id="sideBar" aria-label="Основная навигация">
+        <div id="sbPanel">
         <div id="sbHead">
             <div id="sbLogo" onclick="switchTab('home')" title="На главную">
                 <div class="sb-logo-mark">M</div>
@@ -15623,6 +15757,7 @@ body.dark-mode .portfolio-echelons-total-row {
                 <span class="sb-label">Тест</span>
             </button>
         </div>
+        </div><!-- /sbPanel -->
         <div id="sbFoot">
             <button class="sb-item" id="sbCollapseBtn" onclick="toggleSidebarCollapse()" title="Свернуть меню">
                 <svg viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
@@ -15712,14 +15847,10 @@ body.dark-mode .portfolio-echelons-total-row {
         <!-- ===== TAB: ПОРТФЕЛЬ ===== -->
         <div id="panel-portfolio" class="tab-panel">
             <div class="panel-section-header" style="display:flex;align-items:center;justify-content:space-between;">
-                <div style="display:flex;align-items:center;gap:10px;">
-                    <button onclick="switchTab('calc')" style="display:flex;align-items:center;gap:5px;border:none;background:transparent;padding:0;cursor:pointer;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:var(--text-muted);transition:color 0.2s;" onmouseover="this.style.color='var(--text-deep)'" onmouseout="this.style.color='var(--text-muted)'">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-                        Расчёт
-                    </button>
-                    <span style="color:var(--text-muted);opacity:0.4;">·</span>
-                    <span>Портфель</span>
-                </div>
+                <button class="back-pill" onclick="switchTab('calc')">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                    К расчёту
+                </button>
                 <div id="portfolioTabActionBtns" style="display:none;gap:8px;align-items:center;"></div>
             </div>
             <!-- Empty state — 1в1 из оригинала -->
@@ -15791,7 +15922,7 @@ body.dark-mode .portfolio-echelons-total-row {
                     <div class="bt-portfolio-note">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
                         <div class="bt-portfolio-note-text">
-                            Используется портфель из вкладки «Расчёт». <span id="btCalcSummary" style="font-weight:600;color:var(--bonds-color,#5B7C99);">Портфель не рассчитан.</span>
+                            Портфель из вкладки «Расчёт»<span id="btCalcSummary" class="bt-calc-status">Портфель не рассчитан</span>
                         </div>
                     </div>
                     <button class="bt-ghost-btn" onclick="btLoadLastPortfolio()">
@@ -27289,9 +27420,16 @@ window.calculateAndShowPortfolio = function() {
         showLuxuryNotification();
         return;
     }
-    // 2. Проверка комиссии — если не выбрана, ставим 0.05% автоматически
+    // 2. Проверка комиссии — алерт, как при недостаточной сумме
     if (!isFeeSelected) {
-        if (typeof ndSelectFee === 'function') ndSelectFee(0.0005, '0.05%', null);
+        showLuxuryNotification('Комиссия брокера', 'Выберите тариф брокера');
+        const feeBlock = document.querySelector('#feeDropdownTrigger');
+        if (feeBlock) {
+            feeBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            feeBlock.classList.add('shake-error');
+            setTimeout(() => feeBlock.classList.remove('shake-error'), 500);
+        }
+        return;
     }
     // 3. Расчёт
     try {
