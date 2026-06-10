@@ -15197,6 +15197,13 @@ body.dark-mode .portfolio-echelons-total-row {
         /* On section pages the section badge IS the title (iOS pattern) */
         body:not(.tab-home) #topBarTitle { display: none; }
         #topBarCrumb { margin-left: 0 !important; }
+        #topBar { position: relative; }
+        body:not(.tab-home) #topBarCrumb {
+            position: absolute;
+            left: 50%; top: 50%;
+            transform: translate(-50%, -50%);
+            margin-left: 0 !important;
+        }
         #topBarCrumb { padding: 8px 15px 8px 13px; }
         .hdr-chip svg { width: 17px; height: 17px; }
         .hdr-sec { font-size: 15px; }
@@ -15241,7 +15248,16 @@ body.dark-mode .portfolio-echelons-total-row {
     body.dark-mode .hdr-sec { color: #F1F6FB; }
 
     @media (min-width: 1024px) {
-        #topBarCrumb { margin-left: 14px !important; }
+        #topBarCrumb { margin-left: 29px !important; position: relative; }
+        #topBarCrumb::before {
+            content: '';
+            position: absolute;
+            left: -15px; top: 50%;
+            transform: translateY(-50%);
+            width: 1px; height: 18px;
+            background: rgba(44,54,76,0.13);
+        }
+        body.dark-mode #topBarCrumb::before { background: rgba(255,255,255,0.13); }
     }
 
     /* Welcome page: brand centered over the hero, actions pinned right */
@@ -15310,6 +15326,7 @@ body.dark-mode .portfolio-echelons-total-row {
     body.dark-mode #marketPanelContent .rate-row-value { color: #cbd5e1 !important; }
     #marketPanelContent .rates-glass-card { margin-bottom: 24px !important; }
     #marketPanelContent .rates-glass-card .rv-title { margin-bottom: 12px !important; }
+    #marketPanelContent .rates-glass-card .rv-title::before { display: none !important; }
 
     /* Income banner: compact */
     #marketPanelContent .nd-income-banner { padding: 14px 14px 12px; }
@@ -15323,6 +15340,65 @@ body.dark-mode .portfolio-echelons-total-row {
     #marketPanelContent .nd-ib-metric-num { font-size: 17px; font-weight: 700; }
     #marketPanelContent .nd-ib-rub-sm { font-size: 12px; }
     #marketPanelContent .nd-ib-pct { font-size: 13px; }
+
+    /* ===== MOBILE DOCK ===== */
+    #mobileDock {
+        position: fixed;
+        left: 14px; right: 14px;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+        display: flex;
+        gap: 10px;
+        z-index: 900;
+    }
+    @media (min-width: 1024px) { #mobileDock { display: none; } }
+    /* Hide the dock while the company overlay is open */
+    body:has(#screen-company.active) #mobileDock { display: none; }
+    .dock-home {
+        width: 60px; height: 60px;
+        border-radius: 19px;
+        background: #161B27;
+        border: none;
+        display: flex; align-items: center; justify-content: center;
+        color: rgba(241,246,251,0.55);
+        box-shadow: 0 10px 28px rgba(22,27,39,0.3);
+        flex-shrink: 0;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        transition: color 0.15s;
+    }
+    .dock-home svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+    .dock-home.active { color: #22C87A; }
+    .dock-bar {
+        flex: 1;
+        background: #161B27;
+        border-radius: 19px;
+        display: flex;
+        padding: 7px 6px;
+        box-shadow: 0 10px 28px rgba(22,27,39,0.3);
+        min-width: 0;
+    }
+    .dock-item {
+        flex: 1;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 4px;
+        border: none; background: transparent;
+        color: rgba(241,246,251,0.5);
+        font-family: 'Inter', sans-serif;
+        font-size: 9.5px; font-weight: 600; letter-spacing: 0.01em;
+        cursor: pointer;
+        padding: 5px 0 3px;
+        border-radius: 13px;
+        min-width: 0;
+        -webkit-tap-highlight-color: transparent;
+        transition: color 0.15s;
+    }
+    .dock-item svg { width: 19px; height: 19px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+    .dock-item.active { color: #22C87A; }
+    /* Content clears the dock */
+    @media (max-width: 1023px) {
+        .tab-panel { padding-bottom: 112px; }
+        #calcPane { padding-bottom: 96px; }
+    }
 
     /* ===== Back pill (portfolio -> calc) ===== */
     .back-pill {
@@ -15712,7 +15788,7 @@ body.dark-mode .portfolio-echelons-total-row {
             flex: 0 1 auto;            /* hug content, don't stretch */
             max-height: 100%;
         }
-        #sbNav { flex: 0 0 auto; padding-bottom: 10px; }
+        #sbNav { flex: 0 0 auto; padding-bottom: 20px; }
         #sbFoot { margin-top: auto; } /* collapse chip pinned to bottom */
         #sbPanel::-webkit-scrollbar { display: none; }
         #sbFoot {
@@ -15757,12 +15833,24 @@ body.dark-mode .portfolio-echelons-total-row {
 
         /* Rebalance & portfolio: comfortable reading width */
         #panel-rebalance, #panel-portfolio { max-width: 1000px; }
+        #rebalancePanelContent .echelon-wrapper,
+        #rebalancePanelContent .echelon-table-styled {
+            max-width: 860px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Income calculator: full width when expanded (payment schedule needs room) */
+        #marketPanelContent > #calcAccordion:not(.collapsed) { grid-column: 1 / -1; }
 
         /* Home hero: centered in viewport */
         #panel-home.active { display: flex; align-items: center; justify-content: center; max-width: none; }
 
         /* Company overlay: centered reading column instead of full-bleed stretch */
         #company-content { max-width: 760px; margin: 0 auto; padding: 24px 24px 80px; }
+    }
+    @media (max-width: 1023px) {
+        #company-content { padding: 8px 20px 48px; }
     }
 
     @media (min-width: 1440px) {
@@ -15831,6 +15919,31 @@ body.dark-mode .portfolio-echelons-total-row {
         </div>
     </nav>
     <div id="sbOverlay" onclick="closeSidebarDrawer()"></div>
+
+    <!-- ===== MOBILE DOCK: floating bottom navigation ===== -->
+    <div id="mobileDock">
+        <button class="dock-home" data-tab="home" onclick="switchTab('home')" aria-label="Главная">
+            <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </button>
+        <div class="dock-bar">
+            <button class="dock-item" data-tab="calc" onclick="switchToCalcOrPortfolio()">
+                <svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+                <span>Расчёт</span>
+            </button>
+            <button class="dock-item" data-tab="rebalance" onclick="switchTab('rebalance')">
+                <svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                <span>Ребаланс</span>
+            </button>
+            <button class="dock-item" data-tab="market" onclick="switchTab('market')">
+                <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                <span>Рынок</span>
+            </button>
+            <button class="dock-item" data-tab="backtest" onclick="switchTab('backtest')">
+                <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg>
+                <span>Тест</span>
+            </button>
+        </div>
+    </div>
 
 
     <!-- HEADER WRAPPER (glassmorphism + scroll shadow) -->
@@ -17206,9 +17319,9 @@ body.dark-mode .portfolio-echelons-total-row {
                 
                 <!-- Переключатель налога -->
                 <div class="tax-segmented-control">
-                    <button class="tax-segment" id="tax-custom-0" onclick="setCustomTax(0, this)">Без налога</button>
-                    <button class="tax-segment active" id="tax-custom-13" onclick="setCustomTax(0.13, this)">НДФЛ 13%</button>
-                    <button class="tax-segment" id="tax-custom-15" onclick="setCustomTax(0.15, this)">НДФЛ 15%</button>
+                    <button class="tax-segment" id="tax-custom-0" data-tax="0" onclick="setCustomTax(0, this)">Без налога</button>
+                    <button class="tax-segment active" id="tax-custom-13" data-tax="0.13" onclick="setCustomTax(0.13, this)">НДФЛ 13%</button>
+                    <button class="tax-segment" id="tax-custom-15" data-tax="0.15" onclick="setCustomTax(0.15, this)">НДФЛ 15%</button>
                 </div>
                 <div style="margin:-12px 0 16px;padding:0 2px;text-align:center;">
                     <span style="font-family:'Inter',sans-serif;font-size:11px;color:#94A3B8;line-height:1.5;">
@@ -19035,6 +19148,12 @@ function ndOnBlur() {
     }
     
     distributeMonthlyInvestment();
+
+    // Если открыт «График выплат» — перерисовываем его с новым налогом
+    var _chartView = document.getElementById('incomeChartView');
+    if (_chartView && _chartView.style.display !== 'none' && typeof incomeShowChart === 'function') {
+        incomeShowChart();
+    }
 }
 
         function shortenTicker(t) { return t.length > 7 ? t.substring(0, 7) : t; }
@@ -28764,6 +28883,13 @@ document.addEventListener('DOMContentLoaded', function() {
         market:    { name: 'Рынок',          icon: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>' },
         backtest:  { name: 'Тест портфеля',  icon: '<path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/>' }
     };
+    function updateDockActive(tabId) {
+        document.querySelectorAll('#mobileDock [data-tab]').forEach(function(btn) {
+            var isActive = btn.dataset.tab === tabId ||
+                           (btn.dataset.tab === 'calc' && tabId === 'portfolio');
+            btn.classList.toggle('active', isActive);
+        });
+    }
     function renderHeaderBadge(tabId) {
         var crumb = document.getElementById('topBarCrumb');
         if (!crumb) return;
@@ -28784,6 +28910,7 @@ document.addEventListener('DOMContentLoaded', function() {
         _sbPrevSwitchTab(tabId);
         window.closeSidebarDrawer();
         renderHeaderBadge(tabId);
+        updateDockActive(tabId);
     };
 
     // Esc closes the drawer
@@ -28795,6 +28922,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('DOMContentLoaded', function() {
         var ct = (typeof currentTab !== 'undefined' && currentTab) ? currentTab : 'home';
         renderHeaderBadge(ct);
+        updateDockActive(ct);
         document.querySelectorAll('.sb-item[data-tab]').forEach(function(btn) {
             var isActive = btn.dataset.tab === ct ||
                            (btn.dataset.tab === 'calc' && ct === 'portfolio');
