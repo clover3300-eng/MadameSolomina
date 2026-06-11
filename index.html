@@ -6173,6 +6173,7 @@ body.dark-mode .coupon-preview-meta {
 .coupon-preview-time-pill {
     display: inline-flex;
     align-items: center;
+    align-self: flex-start;
     gap: 5px;
     padding: 4px 9px;
     background: rgba(59, 130, 246, 0.08);
@@ -15392,8 +15393,9 @@ body.dark-mode .portfolio-echelons-total-row {
         /* капитал-карта: компактная типографика под узкий рельс */
         #pfLeftRail .portfolio-capital-card { margin-bottom: 0 !important; box-shadow: none !important; }
         #pfLeftRail .capital-dark-top { padding: 20px 20px 18px !important; }
-        #pfLeftRail .capital-value { font-size: 24px !important; letter-spacing: -0.01em; }
-        #pfLeftRail .capital-fee-corner { font-size: 10px !important; }
+        #pfLeftRail .capital-hero { gap: 10px; }
+        #pfLeftRail .capital-value { font-size: 23px !important; letter-spacing: -0.02em; display: inline-block; max-width: 100%; }
+        #pfLeftRail .capital-fee-corner { font-size: 10px !important; margin-top: 24px; padding: 4px 8px; }
         /* Легенда: табличная раскладка — слева точка+название, справа % и сумма столбцами */
         #pfLeftRail .capital-legend { display: flex; flex-direction: column; align-items: stretch; gap: 7px; }
         #pfLeftRail .capital-legend-item {
@@ -15409,10 +15411,39 @@ body.dark-mode .portfolio-echelons-total-row {
         #pfLeftRail .capital-legend-item .legend-sep { display: none; }
         #pfLeftRail .capital-legend-item .legend-pct { grid-column: 2; text-align: right; min-width: 34px; }
         #pfLeftRail .capital-legend-item .legend-sum { grid-column: 3; text-align: right; min-width: 96px; font-size: 10.5px !important; }
-        #pfLeftRail .capital-forecast-light { padding: 18px 20px 18px !important; }
-        #pfLeftRail .forecast-main-row { flex-wrap: wrap; gap: 6px 8px; }
-        #pfLeftRail .forecast-data-total { font-size: 19px !important; }
-        #pfLeftRail .forecast-pct-display { font-size: 11px !important; padding: 3px 8px !important; }
+        /* Прогноз: белый фон как у иконки M, без серого перехода и тени */
+        #pfLeftRail .capital-forecast-light {
+            padding: 18px 20px 18px !important;
+            background: linear-gradient(180deg, #F1F6FB 0%, #F9FAFC 100%) !important;
+            box-shadow: none !important;
+        }
+        /* Число прогноза — на всю ширину строки, бейдж % в правом верхнем углу */
+        #pfLeftRail .forecast-main-row { display: block !important; position: relative; margin-bottom: 12px; }
+        #pfLeftRail .forecast-data-line { gap: 9px; }
+        #pfLeftRail .forecast-label-text { padding-right: 66px; }
+        #pfLeftRail .forecast-data-total { font-size: 20px !important; display: inline-block; max-width: 100%; }
+        #pfLeftRail .forecast-pct-display {
+            position: absolute; top: 0; right: 0;
+            margin-top: 0 !important; font-size: 0; line-height: 0;
+        }
+        #pfLeftRail .forecast-pct-display::before {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11.5px; font-weight: 700;
+            padding: 4px 9px;
+            transform: none;
+            border-radius: 8px;
+            background: rgba(34,200,122,0.12);
+            color: #1A9D5F;
+            border: 1px solid rgba(34,200,122,0.22);
+            box-shadow: none;
+            letter-spacing: 0;
+            backdrop-filter: none; -webkit-backdrop-filter: none;
+        }
+        body.dark-mode #pfLeftRail .forecast-pct-display::before {
+            background: rgba(34,200,122,0.18);
+            color: #34D399;
+            border-color: rgba(52,211,153,0.3);
+        }
         /* Прогноз-разбивка: табличная раскладка как у легенды */
         #pfLeftRail .forecast-breakdown-row {
             display: flex !important;
@@ -15439,7 +15470,31 @@ body.dark-mode .portfolio-echelons-total-row {
             gap: 10px;
             margin: 0 !important;
         }
-        #pfLeftRail .back-pill { justify-content: center; }
+        #pfLeftRail .back-pill {
+            justify-content: center;
+            width: 100%;
+            padding: 11px 16px;
+            border-radius: 14px;
+            background: var(--card-bg, #ffffff);
+            border: 1px solid rgba(44,54,76,0.08);
+            box-shadow: 0 2px 12px rgba(44,54,76,0.05);
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--text-deep, #2C364C);
+            gap: 8px;
+        }
+        #pfLeftRail .back-pill svg { width: 16px; height: 16px; opacity: 0.7; }
+        #pfLeftRail .back-pill:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(44,54,76,0.1);
+            color: var(--text-deep, #2C364C);
+        }
+        body.dark-mode #pfLeftRail .back-pill {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.08);
+            color: #F1F6FB;
+            box-shadow: none;
+        }
         #pfLeftRail #portfolioTabActionBtns { justify-content: stretch; flex-direction: column; }
         #pfLeftRail #portfolioTabActionBtns > * { width: 100%; box-sizing: border-box; }
     }
@@ -16131,7 +16186,7 @@ body.dark-mode .portfolio-echelons-total-row {
 
         /* Panels: width + breathing room */
         .tab-panel { max-width: 1240px; margin: 0 auto; padding: 18px 40px 64px; width: 100%; box-sizing: border-box; }
-        #panel-portfolio { padding-left: 0; }
+        #panel-portfolio { padding-left: 0; padding-top: 4px; }
         #panel-portfolio .panel-section-header { margin: 0 0 12px; }
         #calcPane { max-width: 580px; margin: 0 auto; width: 100%; }
 
@@ -16174,6 +16229,44 @@ body.dark-mode .portfolio-echelons-total-row {
             grid-template-columns: 1fr 54px 66px 118px;
             padding-left: 18px;
             padding-right: 18px;
+        }
+
+        /* Десктоп: шапка таблицы Акций (эшелоны) как «крышка» */
+        #pfRightCol .portfolio-echelons-headers {
+            background: rgba(44,54,76,0.045);
+            border: 1px solid var(--card-border-aurora);
+            border-bottom: none;
+            border-radius: 18px 18px 0 0;
+            margin-top: 0;
+            margin-bottom: 0;
+            height: auto;
+            padding: 14px 44px 12px 16px;
+        }
+        body.dark-mode #pfRightCol .portfolio-echelons-headers {
+            background: rgba(255,255,255,0.045);
+            border-color: rgba(255,255,255,0.08);
+        }
+        #pfRightCol #echelonContainerV2 {
+            background: var(--card-glass-aurora);
+            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border-aurora);
+            border-top: none;
+            border-radius: 0 0 18px 18px;
+            box-shadow: var(--shadow-luxury);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        body.dark-mode #pfRightCol #echelonContainerV2 {
+            background: rgba(30,41,59,0.6);
+            border-color: rgba(255,255,255,0.08);
+        }
+        /* фейд свёрнутого списка эшелонов — к цвету карточки, без серого шва */
+        #pfRightCol .echelon-wrapper.collapsed::after {
+            background: linear-gradient(to bottom, transparent, #ffffff);
+        }
+        body.dark-mode #pfRightCol .echelon-wrapper.collapsed::after {
+            background: linear-gradient(to bottom, transparent, #1e293b);
         }
         #rebalancePanelContent .echelon-wrapper,
         #rebalancePanelContent .echelon-table-styled,
@@ -17038,8 +17131,7 @@ body.dark-mode .portfolio-echelons-total-row {
                                 </svg>
                             </div>
                             <div class="portfolio-coupon-title-block">
-                                <div class="portfolio-coupon-title">Купонный дождь</div>
-                                <div class="portfolio-coupon-subtitle">Ближайшие выплаты по купонам</div>
+                                <div class="portfolio-coupon-title">Ближайшие выплаты по купонам</div>
                             </div>
                         </div>
                         <svg class="portfolio-coupon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -17052,22 +17144,19 @@ body.dark-mode .portfolio-echelons-total-row {
                         <div class="coupon-preview-next">
                             <div class="coupon-preview-accent"></div>
                             <div class="coupon-preview-info">
-                                <div class="coupon-preview-meta">
-                                    <span>Ближайшая выплата</span>
-                                </div>
                                 <div class="coupon-preview-bond">
                                     <span class="coupon-preview-name" id="cpName">—</span>
                                     <span class="coupon-preview-dot">·</span>
                                     <span class="coupon-preview-qty" id="cpQty">—</span>
                                 </div>
-                            </div>
-                            <div class="coupon-preview-right">
-                                <span class="coupon-preview-sum" id="cpSum">+0 ₽</span>
                                 <span class="coupon-preview-time-pill">
                                     <span class="cp-pill-rel" id="cpDay">—</span>
                                     <span class="cp-pill-sep">·</span>
                                     <span class="cp-pill-date" id="cpRealDate">—</span>
                                 </span>
+                            </div>
+                            <div class="coupon-preview-right">
+                                <span class="coupon-preview-sum" id="cpSum">+0 ₽</span>
                             </div>
                         </div>
                     </div>
@@ -27793,12 +27882,14 @@ document.addEventListener('DOMContentLoaded', function() {
         window.pfSyncLeftEdge && window.pfSyncLeftEdge();
         window.pfSyncLeftWidth && window.pfSyncLeftWidth();
         window.pfCenterTables && window.pfCenterTables();
+            window.pfFitNumbers && window.pfFitNumbers();
     });
     window.addEventListener('load', function() {
         setTimeout(function() {
             window.pfSyncLeftEdge && window.pfSyncLeftEdge();
             window.pfSyncLeftWidth && window.pfSyncLeftWidth();
             window.pfCenterTables && window.pfCenterTables();
+            window.pfFitNumbers && window.pfFitNumbers();
         }, 100);
     });
     // Init sum input — 64px, width so it's tappable
@@ -27929,7 +28020,27 @@ function populatePanels() {
         const shift = Math.round(desiredLeft - curLeft);
         right.style.transform = 'translateX(' + shift + 'px)';
     };
-    window.addEventListener('resize', function() { window.pfSyncLeftEdge(); window.pfSyncLeftWidth(); window.pfCenterTables(); });
+    // Авто-подгонка размера крупных сумм (капитал и прогноз), чтобы все цифры и ₽ вмещались
+    window.pfFitNumbers = function() {
+        const rail = document.getElementById('pfLeftRail');
+        if (!rail) return;
+        function reset(sel) { rail.querySelectorAll(sel).forEach(function(el){ el.style.fontSize = ''; }); }
+        if (window.innerWidth < 1024) { reset('.capital-value'); reset('.forecast-data-total'); return; }
+        function fit(el, maxPx, minPx) {
+            if (!el || !el.parentElement) return;
+            const avail = el.parentElement.clientWidth;
+            if (!avail) return;
+            let size = maxPx;
+            el.style.fontSize = size + 'px';
+            let guard = 0;
+            while (el.scrollWidth > avail && size > minPx && guard < 60) {
+                size -= 0.5; el.style.fontSize = size + 'px'; guard++;
+            }
+        }
+        rail.querySelectorAll('.capital-value').forEach(function(el){ fit(el, 23, 14); });
+        rail.querySelectorAll('.forecast-data-total').forEach(function(el){ fit(el, 20, 13); });
+    };
+    window.addEventListener('resize', function() { window.pfSyncLeftEdge(); window.pfSyncLeftWidth(); window.pfCenterTables(); window.pfFitNumbers(); });
     // Also move the portfolio header row (action btns) to our tab
     const portfolioHeaderRow = document.querySelector('#screen-portfolio .portfolio-header-row');
     if (portfolioHeaderRow) portfolioHeaderRow.style.display = 'none'; // hide old header
@@ -28160,6 +28271,7 @@ window.calculateAndShowPortfolio = function() {
             window.pfSyncLeftEdge && window.pfSyncLeftEdge();
             window.pfSyncLeftWidth && window.pfSyncLeftWidth();
             window.pfCenterTables && window.pfCenterTables();
+            window.pfFitNumbers && window.pfFitNumbers();
         }, 60);
 
         if (window.Telegram?.WebApp?.HapticFeedback) {
@@ -29365,6 +29477,7 @@ document.addEventListener('DOMContentLoaded', function() {
             window.pfSyncLeftEdge && window.pfSyncLeftEdge();
             window.pfSyncLeftWidth && window.pfSyncLeftWidth();
             window.pfCenterTables && window.pfCenterTables();
+            window.pfFitNumbers && window.pfFitNumbers();
         });
     };
     window.openSidebarDrawer = function() {
@@ -29426,6 +29539,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.pfSyncLeftEdge && window.pfSyncLeftEdge();
                 window.pfSyncLeftWidth();
                 window.pfCenterTables && window.pfCenterTables();
+            window.pfFitNumbers && window.pfFitNumbers();
             });
         }
     };
