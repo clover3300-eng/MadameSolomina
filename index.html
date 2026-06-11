@@ -5480,8 +5480,7 @@ body.dark-mode .forecast-pct-display::before {
 }
 
 .portfolio-tab-switcher {
-    display: flex;
-    width: 100%;
+    display: inline-flex;
     gap: 4px;
     background: rgba(0,0,0,0.04);
     border-radius: 12px;
@@ -5499,8 +5498,7 @@ body.dark-mode .portfolio-tab-switcher {
 
 .portfolio-tab-btn {
     position: relative;
-    flex: 1;
-    justify-content: center;
+    flex: none;
     padding: 7px 16px;
     border: none;
     background: transparent;
@@ -15390,23 +15388,47 @@ body.dark-mode .portfolio-echelons-total-row {
             gap: 14px;
             min-width: 0;
         }
-        #pfRightCol { grid-column: 2; grid-row: 1; min-width: 0; max-width: 720px; }
+        #pfRightCol { grid-column: 2; grid-row: 1; min-width: 0; max-width: 720px; margin: 0 auto; width: 100%; }
         /* капитал-карта: компактная типографика под узкий рельс */
         #pfLeftRail .portfolio-capital-card { margin-bottom: 0 !important; }
         #pfLeftRail .capital-dark-top { padding: 20px 20px 18px !important; }
         #pfLeftRail .capital-value { font-size: 24px !important; letter-spacing: -0.01em; }
         #pfLeftRail .capital-fee-corner { font-size: 10px !important; }
-        #pfLeftRail .capital-legend { flex-direction: column; gap: 8px; }
-        #pfLeftRail .capital-legend-item { font-size: 10px !important; white-space: nowrap; justify-content: flex-end; gap: 5px; }
-        #pfLeftRail .legend-sum { font-size: 10px !important; text-align: right; min-width: 80px; }
-        #pfLeftRail .legend-pct { min-width: 32px; text-align: right; }
+        /* Легенда: табличная раскладка — слева точка+название, справа % и сумма столбцами */
+        #pfLeftRail .capital-legend { display: flex; flex-direction: column; gap: 7px; }
+        #pfLeftRail .capital-legend-item {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            align-items: center;
+            column-gap: 10px;
+            font-size: 10.5px !important;
+            white-space: nowrap;
+        }
+        #pfLeftRail .capital-legend-item .legend-dot { grid-column: 1; grid-row: 1; align-self: center; }
+        #pfLeftRail .capital-legend-item .legend-name { grid-column: 1; grid-row: 1; padding-left: 11px; }
+        #pfLeftRail .capital-legend-item .legend-sep { display: none; }
+        #pfLeftRail .capital-legend-item .legend-pct { grid-column: 2; text-align: right; min-width: 34px; }
+        #pfLeftRail .capital-legend-item .legend-sum { grid-column: 3; text-align: right; min-width: 96px; font-size: 10.5px !important; }
         #pfLeftRail .capital-forecast-light { padding: 18px 20px 18px !important; }
         #pfLeftRail .forecast-main-row { flex-wrap: wrap; gap: 6px 8px; }
         #pfLeftRail .forecast-data-total { font-size: 19px !important; }
         #pfLeftRail .forecast-pct-display { font-size: 11px !important; padding: 3px 8px !important; }
-        #pfLeftRail .forecast-breakdown-row { flex-wrap: wrap; gap: 4px 10px; margin-top: 8px; }
-        #pfLeftRail .fb-value { font-size: 10.5px !important; }
-        #pfLeftRail .fb-label { font-size: 10px !important; }
+        /* Прогноз-разбивка: табличная раскладка как у легенды */
+        #pfLeftRail .forecast-breakdown-row {
+            display: flex !important;
+            flex-direction: column;
+            gap: 7px;
+            margin-top: 12px;
+        }
+        #pfLeftRail .forecast-breakdown-divider { display: none; }
+        #pfLeftRail .forecast-breakdown-item {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            column-gap: 10px;
+        }
+        #pfLeftRail .forecast-breakdown-item .fb-label { grid-column: 1; font-size: 10.5px !important; }
+        #pfLeftRail .forecast-breakdown-item .fb-value { grid-column: 2; text-align: right; min-width: 110px; font-size: 10.5px !important; }
         /* пилл и действия: колонкой */
         #pfLeftRail .panel-section-header {
             display: flex !important;
@@ -15419,7 +15441,8 @@ body.dark-mode .portfolio-echelons-total-row {
         #pfLeftRail #portfolioTabActionBtns { justify-content: stretch; flex-direction: column; }
         #pfLeftRail #portfolioTabActionBtns > * { width: 100%; box-sizing: border-box; }
     }
-    /* Премиальный переключатель Облигации/Акции */
+    /* Премиальный переключатель Облигации/Акции — ТОЛЬКО десктоп */
+    @media (min-width: 1024px) {
     #pfLeftRail .portfolio-content-tabs { margin: 0 !important; padding: 0 !important; }
     #pfLeftRail .portfolio-tab-switcher {
         width: 100%;
@@ -15467,6 +15490,7 @@ body.dark-mode .portfolio-echelons-total-row {
     body.dark-mode #pfLeftRail .portfolio-tab-btn.active {
         background: #F1F6FB;
         color: #2C364C;
+    }
     }
 
     /* ===== CUSTOM DATEPICKER (backtest, desktop) ===== */
@@ -27741,6 +27765,17 @@ document.addEventListener('DOMContentLoaded', function() {
     document.body.classList.add('tab-home');
     // Populate content panels from legacy screens
     populatePanels();
+    // Первичное выравнивание левого края портфеля под логотип
+    requestAnimationFrame(function() {
+        window.pfSyncLeftEdge && window.pfSyncLeftEdge();
+        window.pfSyncLeftWidth && window.pfSyncLeftWidth();
+    });
+    window.addEventListener('load', function() {
+        setTimeout(function() {
+            window.pfSyncLeftEdge && window.pfSyncLeftEdge();
+            window.pfSyncLeftWidth && window.pfSyncLeftWidth();
+        }, 100);
+    });
     // Init sum input — 64px, width so it's tappable
     var sumEl = document.getElementById('sumInput');
     if (sumEl) {
@@ -27830,7 +27865,25 @@ function populatePanels() {
         const w = Math.round(cr.right - pr.left);
         if (w > 240 && w < 600) pageBuy.style.setProperty('--pfL', w + 'px');
     };
-    window.addEventListener('resize', function() { window.pfSyncLeftWidth(); });
+    // Выравнивание левого края портфеля точно под буквой «M» логотипа
+    window.pfSyncLeftEdge = function() {
+        const panel = document.getElementById('panel-portfolio');
+        const logoMark = document.querySelector('.sb-logo-mark');
+        if (!panel) return;
+        if (window.innerWidth < 1024 || !logoMark) {
+            panel.style.paddingLeft = '';
+            return;
+        }
+        // временно обнуляем, чтобы измерить «естественный» левый край контента
+        panel.style.paddingLeft = '0px';
+        const logoLeft = logoMark.getBoundingClientRect().left;
+        const panelInnerLeft = panel.getBoundingClientRect().left; // уже без padding
+        const delta = Math.round(logoLeft - panelInnerLeft);
+        if (delta > 0 && delta < 400) {
+            panel.style.paddingLeft = delta + 'px';
+        }
+    };
+    window.addEventListener('resize', function() { window.pfSyncLeftWidth(); window.pfSyncLeftEdge(); });
     // Also move the portfolio header row (action btns) to our tab
     const portfolioHeaderRow = document.querySelector('#screen-portfolio .portfolio-header-row');
     if (portfolioHeaderRow) portfolioHeaderRow.style.display = 'none'; // hide old header
@@ -29255,6 +29308,11 @@ document.addEventListener('DOMContentLoaded', function() {
     window.toggleSidebarCollapse = function() {
         var collapsed = document.body.classList.toggle('sb-collapsed');
         try { localStorage.setItem('sbCollapsed', collapsed ? '1' : '0'); } catch (e) {}
+        // ширина сайдбара изменилась → пересчитываем левый край портфеля
+        requestAnimationFrame(function() {
+            window.pfSyncLeftEdge && window.pfSyncLeftEdge();
+            window.pfSyncLeftWidth && window.pfSyncLeftWidth();
+        });
     };
     window.openSidebarDrawer = function() {
         document.body.classList.add('sb-open');
@@ -29311,7 +29369,10 @@ document.addEventListener('DOMContentLoaded', function() {
         renderHeaderBadge(tabId);
         updateDockActive(tabId);
         if (tabId === 'portfolio' && window.pfSyncLeftWidth) {
-            requestAnimationFrame(function() { window.pfSyncLeftWidth(); });
+            requestAnimationFrame(function() {
+                window.pfSyncLeftEdge && window.pfSyncLeftEdge();
+                window.pfSyncLeftWidth();
+            });
         }
     };
 
