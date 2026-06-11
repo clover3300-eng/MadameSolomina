@@ -15359,6 +15359,112 @@ body.dark-mode .portfolio-echelons-total-row {
     #marketPanelContent .nd-ib-rub-sm { font-size: 12px; }
     #marketPanelContent .nd-ib-pct { font-size: 13px; }
 
+    /* ===== PORTFOLIO: 3-section desktop layout ===== */
+    @media (max-width: 1023px) {
+        /* мобильный порядок прежний: пилл сверху, капитал, табы, списки */
+        #pfLeftRail { display: flex; flex-direction: column; }
+        #pfLeftRail .panel-section-header { order: -1; margin-bottom: 14px; }
+        #pfLeftRail .portfolio-content-tabs { order: 2; }
+        #pfLeftRail #shareContainer { order: 1; }
+    }
+    @media (min-width: 1024px) {
+        #panel-portfolio { max-width: none !important; }
+        #portfolio-page-buy.active {
+            display: grid !important;
+            grid-template-columns: var(--pfL, 330px) minmax(0, 700px);
+            gap: 0 32px;
+            align-items: start;
+            align-content: start;
+            justify-content: start;
+        }
+        #pfLeftRail {
+            grid-column: 1;
+            grid-row: 1;
+            position: sticky;
+            top: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            min-width: 0;
+        }
+        #pfRightCol { grid-column: 2; grid-row: 1; min-width: 0; }
+        /* капитал-карта: компактная типографика под узкий рельс */
+        #pfLeftRail .portfolio-capital-card { margin-bottom: 0 !important; }
+        #pfLeftRail .capital-dark-top { padding: 16px 16px 14px !important; }
+        #pfLeftRail .capital-value { font-size: 24px !important; letter-spacing: -0.01em; }
+        #pfLeftRail .capital-fee-corner { font-size: 10px !important; }
+        #pfLeftRail .capital-legend { flex-wrap: wrap; gap: 4px 10px; }
+        #pfLeftRail .capital-legend-item { font-size: 10px !important; white-space: nowrap; }
+        #pfLeftRail .legend-sum { font-size: 10px !important; }
+        #pfLeftRail .capital-forecast-light { padding: 13px 16px 14px !important; }
+        #pfLeftRail .forecast-main-row { flex-wrap: wrap; gap: 6px 8px; }
+        #pfLeftRail .forecast-data-total { font-size: 19px !important; }
+        #pfLeftRail .forecast-pct-display { font-size: 11px !important; padding: 3px 8px !important; }
+        #pfLeftRail .forecast-breakdown-row { flex-wrap: wrap; gap: 4px 10px; }
+        #pfLeftRail .fb-value { font-size: 10.5px !important; }
+        #pfLeftRail .fb-label { font-size: 10px !important; }
+        /* пилл и действия: колонкой */
+        #pfLeftRail .panel-section-header {
+            display: flex !important;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+            margin: 0 !important;
+        }
+        #pfLeftRail .back-pill { justify-content: center; }
+        #pfLeftRail #portfolioTabActionBtns { justify-content: stretch; flex-direction: column; }
+        #pfLeftRail #portfolioTabActionBtns > * { width: 100%; box-sizing: border-box; }
+    }
+    /* Премиальный переключатель Облигации/Акции */
+    #pfLeftRail .portfolio-content-tabs { margin: 0 !important; padding: 0 !important; }
+    #pfLeftRail .portfolio-tab-switcher {
+        width: 100%;
+        background: var(--card-bg, #ffffff);
+        border: 1px solid rgba(44,54,76,0.07);
+        border-radius: 14px;
+        padding: 4px;
+        gap: 4px;
+        box-shadow: 0 2px 12px rgba(44,54,76,0.05);
+        display: flex;
+        position: relative;
+    }
+    body.dark-mode #pfLeftRail .portfolio-tab-switcher {
+        background: rgba(255,255,255,0.05);
+        border-color: rgba(255,255,255,0.08);
+        box-shadow: none;
+    }
+    #pfLeftRail .portfolio-tab-glider { display: none; }
+    #pfLeftRail .portfolio-tab-btn {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        padding: 11px 10px;
+        border: none;
+        border-radius: 10px;
+        background: transparent;
+        font-family: 'Inter', sans-serif;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        color: var(--text-muted, #94A3B8);
+        cursor: pointer;
+        transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+        position: relative;
+        z-index: 1;
+    }
+    #pfLeftRail .portfolio-tab-btn svg { width: 14px; height: 14px; }
+    #pfLeftRail .portfolio-tab-btn.active {
+        background: #2C364C;
+        color: #F1F6FB;
+        box-shadow: 0 4px 14px -4px rgba(44,54,76,0.45);
+    }
+    body.dark-mode #pfLeftRail .portfolio-tab-btn.active {
+        background: #F1F6FB;
+        color: #2C364C;
+    }
+
     /* ===== CUSTOM DATEPICKER (backtest, desktop) ===== */
     #btConfigCol { position: relative; }
     @media (min-width: 1024px) {
@@ -21973,7 +22079,21 @@ function searchCompanyInternal(ticker) {
     openCompanyPage(results[0] || null, query);
 }
         
-        async function openCompanyPage(item, searchQuery = '') {
+        // Потенциал всегда в процентах: абсолютную цель пересчитываем от текущей цены
+function fmtPotential(target, price) {
+    if (!target || target === '-') return target;
+    const s = String(target);
+    if (s.includes('%')) return s;
+    const tp = parseFloat(s.replace(/[^\d.,-]/g, '').replace(',', '.')) || 0;
+    const p = parseFloat(price) || 0;
+    if (tp > 0 && p > 0) {
+        const pct = (tp / p - 1) * 100;
+        return (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+    }
+    return s;
+}
+
+async function openCompanyPage(item, searchQuery = '') {
     const content = document.getElementById('company-content');
     const screenCompany = document.getElementById('screen-company');
     
@@ -22192,7 +22312,7 @@ function searchCompanyInternal(ticker) {
         <div class="analytics-grid">
             <div class="analytics-tile tile-forecast">
                 <div class="analytics-tile-label">Target Forecast</div>
-                <div class="analytics-tile-value">${isStock ? target.replace(' ₽', '') : item.y}</div>
+                <div class="analytics-tile-value">${isStock ? fmtPotential(target, item.p) : item.y}</div>
                 <div class="analytics-tile-sub">${isStock ? 'Потенциал' : 'Доходность к погашению'}</div>
                 ${isStock ? `
                 <div class="forecast-progress">
@@ -23069,7 +23189,7 @@ if(totalRow) {
                                                     </div>
                                                     <div class="portfolio-stock-detail-row">
                                                         <span class="portfolio-stock-detail-label">Потенциал</span>
-                                                        <span class="portfolio-stock-detail-value" style="color: #10B981;">${s.target}</span>
+                                                        <span class="portfolio-stock-detail-value" style="color: #10B981;">${fmtPotential(s.target, s.p)}</span>
                                                     </div>
                                                     <div class="portfolio-stock-detail-row">
                                                         <span class="portfolio-stock-detail-label">Прогноз</span>
@@ -27666,6 +27786,40 @@ function populatePanels() {
         portfolioTabContent.appendChild(portfolioContent);
         portfolioContent.style.display = 'none'; // shown after calculation
     }
+    // === 3-секционный портфель: левый рельс (капитал + переключатель + действия) и правая колонка ===
+    (function() {
+        const pageBuy = document.getElementById('portfolio-page-buy');
+        if (!pageBuy || document.getElementById('pfLeftRail')) return;
+        const left = document.createElement('div');
+        left.id = 'pfLeftRail';
+        const right = document.createElement('div');
+        right.id = 'pfRightCol';
+        const share = document.getElementById('shareContainer');
+        const tabs = pageBuy.querySelector('.portfolio-content-tabs');
+        // переносим всё остальное в правую колонку
+        [...pageBuy.children].forEach(function(c) {
+            if (c !== share && c !== tabs) right.appendChild(c);
+        });
+        if (share) left.appendChild(share);
+        if (tabs) left.appendChild(tabs);
+        // пилл «К расчёту» и кнопки действий — в левую колонку под переключатель
+        const hdr = document.querySelector('#panel-portfolio .panel-section-header');
+        if (hdr) left.appendChild(hdr);
+        pageBuy.appendChild(left);
+        pageBuy.appendChild(right);
+    })();
+    // Точная ширина левой колонки: правый край = правый край плашки «Портфель»
+    window.pfSyncLeftWidth = function() {
+        if (window.innerWidth < 1024) return;
+        const crumb = document.getElementById('topBarCrumb');
+        const pageBuy = document.getElementById('portfolio-page-buy');
+        if (!crumb || !pageBuy) return;
+        const cr = crumb.getBoundingClientRect();
+        const pr = pageBuy.getBoundingClientRect();
+        const w = Math.round(cr.right - pr.left);
+        if (w > 240 && w < 600) pageBuy.style.setProperty('--pfL', w + 'px');
+    };
+    window.addEventListener('resize', function() { window.pfSyncLeftWidth(); });
     // Also move the portfolio header row (action btns) to our tab
     const portfolioHeaderRow = document.querySelector('#screen-portfolio .portfolio-header-row');
     if (portfolioHeaderRow) portfolioHeaderRow.style.display = 'none'; // hide old header
@@ -29145,6 +29299,9 @@ document.addEventListener('DOMContentLoaded', function() {
         window.closeSidebarDrawer();
         renderHeaderBadge(tabId);
         updateDockActive(tabId);
+        if (tabId === 'portfolio' && window.pfSyncLeftWidth) {
+            requestAnimationFrame(function() { window.pfSyncLeftWidth(); });
+        }
     };
 
     // Esc closes the drawer
