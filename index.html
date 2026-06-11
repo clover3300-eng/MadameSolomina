@@ -15427,8 +15427,9 @@ body.dark-mode .portfolio-echelons-total-row {
             align-items: center;
             column-gap: 10px;
         }
-        #pfLeftRail .forecast-breakdown-item .fb-label { grid-column: 1; font-size: 10.5px !important; }
-        #pfLeftRail .forecast-breakdown-item .fb-value { grid-column: 2; text-align: right; min-width: 110px; font-size: 10.5px !important; }
+        #pfLeftRail .forecast-breakdown-item .fb-dot { grid-column: 1; grid-row: 1; align-self: center; }
+        #pfLeftRail .forecast-breakdown-item .fb-label { grid-column: 1; grid-row: 1; padding-left: 14px; font-size: 10.5px !important; }
+        #pfLeftRail .forecast-breakdown-item .fb-value { grid-column: 2; grid-row: 1; text-align: right; min-width: 110px; font-size: 10.5px !important; }
         /* пилл и действия: колонкой */
         #pfLeftRail .panel-section-header {
             display: flex !important;
@@ -23369,6 +23370,8 @@ function switchPortfolioContentTab(tab) {
     if (window.Telegram?.WebApp?.HapticFeedback) {
         window.Telegram.WebApp.HapticFeedback.selectionChanged();
     }
+    // Ширина блока могла измениться → пересчитываем центрирование таблиц
+    if (window.pfCenterTables) requestAnimationFrame(window.pfCenterTables);
 }
 
 // === Список ОФЗ: рендер с возможностью свернуть/развернуть (топ-3 по доходности) ===
@@ -27769,11 +27772,13 @@ document.addEventListener('DOMContentLoaded', function() {
     requestAnimationFrame(function() {
         window.pfSyncLeftEdge && window.pfSyncLeftEdge();
         window.pfSyncLeftWidth && window.pfSyncLeftWidth();
+        window.pfCenterTables && window.pfCenterTables();
     });
     window.addEventListener('load', function() {
         setTimeout(function() {
             window.pfSyncLeftEdge && window.pfSyncLeftEdge();
             window.pfSyncLeftWidth && window.pfSyncLeftWidth();
+            window.pfCenterTables && window.pfCenterTables();
         }, 100);
     });
     // Init sum input — 64px, width so it's tappable
@@ -27883,7 +27888,28 @@ function populatePanels() {
             panel.style.paddingLeft = delta + 'px';
         }
     };
-    window.addEventListener('resize', function() { window.pfSyncLeftWidth(); window.pfSyncLeftEdge(); });
+    // Центрирование таблиц по середине контентной области (с клампом, чтобы не залезть под карточку)
+    window.pfCenterTables = function() {
+        const right = document.getElementById('pfRightCol');
+        const page = document.getElementById('portfolio-page-buy');
+        const rail = document.getElementById('pfLeftRail');
+        if (!right || !page || !rail) return;
+        if (window.innerWidth < 1024) { right.style.transform = ''; return; }
+        // сбрасываем сдвиг для чистого измерения
+        right.style.transform = '';
+        const tableW = right.offsetWidth;            // ширина блока таблиц (макс. 720)
+        const pageRect = page.getBoundingClientRect();
+        const railRect = rail.getBoundingClientRect();
+        // желаемая левая граница: таблица по центру всей панели
+        let desiredLeft = pageRect.left + (pageRect.width - tableW) / 2;
+        // кламп: таблица не должна перекрывать карточку
+        const minLeft = railRect.right + 24;
+        if (desiredLeft < minLeft) desiredLeft = minLeft;
+        const curLeft = right.getBoundingClientRect().left;
+        const shift = Math.round(desiredLeft - curLeft);
+        right.style.transform = 'translateX(' + shift + 'px)';
+    };
+    window.addEventListener('resize', function() { window.pfSyncLeftEdge(); window.pfSyncLeftWidth(); window.pfCenterTables(); });
     // Also move the portfolio header row (action btns) to our tab
     const portfolioHeaderRow = document.querySelector('#screen-portfolio .portfolio-header-row');
     if (portfolioHeaderRow) portfolioHeaderRow.style.display = 'none'; // hide old header
@@ -28109,6 +28135,12 @@ window.calculateAndShowPortfolio = function() {
 
         // Переходим на вкладку Портфель
         switchTab('portfolio');
+        // Контент таблиц только что отрисован — пересчитываем геометрию ещё раз
+        setTimeout(function() {
+            window.pfSyncLeftEdge && window.pfSyncLeftEdge();
+            window.pfSyncLeftWidth && window.pfSyncLeftWidth();
+            window.pfCenterTables && window.pfCenterTables();
+        }, 60);
 
         if (window.Telegram?.WebApp?.HapticFeedback) {
             window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
@@ -29312,6 +29344,7 @@ document.addEventListener('DOMContentLoaded', function() {
         requestAnimationFrame(function() {
             window.pfSyncLeftEdge && window.pfSyncLeftEdge();
             window.pfSyncLeftWidth && window.pfSyncLeftWidth();
+            window.pfCenterTables && window.pfCenterTables();
         });
     };
     window.openSidebarDrawer = function() {
@@ -29372,6 +29405,7 @@ document.addEventListener('DOMContentLoaded', function() {
             requestAnimationFrame(function() {
                 window.pfSyncLeftEdge && window.pfSyncLeftEdge();
                 window.pfSyncLeftWidth();
+                window.pfCenterTables && window.pfCenterTables();
             });
         }
     };
