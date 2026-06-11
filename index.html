@@ -14338,7 +14338,9 @@ body.dark-mode .portfolio-echelons-total-row {
     }
     
     /* Reset negative margins from original screen layout */
-    #marketPanelContent > * {
+    #marketPanelContent > *,
+    #mkLeftRail > *,
+    #mkRightCol > * {
         margin-left: 0 !important;
         margin-right: 0 !important;
     }
@@ -15307,13 +15309,13 @@ body.dark-mode .portfolio-echelons-total-row {
 
     /* Rates vertical: proper card matching the income banner */
     @media (min-width: 1024px) {
-        #marketPanelContent > .rates-glass-card {
+        #marketPanelContent .rates-glass-card {
             align-self: stretch;
             display: flex;
             flex-direction: column;
             margin-bottom: 0 !important;
         }
-        #marketPanelContent > .rates-glass-card .rates-row-list {
+        #marketPanelContent .rates-glass-card .rates-row-list {
             flex: 1;
             display: flex;
             flex-direction: column;
@@ -15344,7 +15346,7 @@ body.dark-mode .portfolio-echelons-total-row {
         #marketPanelContent .rates-glass-card { margin-bottom: 24px !important; }
     }
     @media (min-width: 1024px) {
-        #marketPanelContent > .rates-glass-card { margin-bottom: 0 !important; }
+        #marketPanelContent .rates-glass-card { margin-bottom: 0 !important; }
     }
     #marketPanelContent .rates-glass-card .rv-title { margin-bottom: 12px !important; }
     #marketPanelContent .rates-glass-card .rv-title::before { display: none !important; }
@@ -15369,6 +15371,9 @@ body.dark-mode .portfolio-echelons-total-row {
         #pfLeftRail .panel-section-header { order: -1; margin-bottom: 14px; }
         #pfLeftRail .portfolio-content-tabs { order: 2; }
         #pfLeftRail #shareContainer { order: 1; }
+        /* ребаланс: заголовок остаётся первым на мобилке */
+        #rbLeftRail { display: flex; flex-direction: column; }
+        #rbLeftRail .header { order: -1; }
     }
     @media (min-width: 1024px) {
         #panel-portfolio { max-width: none !important; }
@@ -15401,46 +15406,48 @@ body.dark-mode .portfolio-echelons-total-row {
         body.dark-mode #pfLeftRail .portfolio-capital-card {
             border-color: rgba(255,255,255,0.1) !important;
         }
-        #pfLeftRail .capital-dark-top { padding: 20px 20px 18px !important; }
-        #pfLeftRail .capital-hero { gap: 10px; }
+        #pfLeftRail .capital-dark-top { padding: 24px 22px 22px !important; }
+        #pfLeftRail .capital-hero { gap: 10px; margin-bottom: 20px; }
+        #pfLeftRail .capital-label-text { margin-top: 0; margin-bottom: 14px; }
         #pfLeftRail .capital-value { font-size: 23px !important; letter-spacing: -0.02em; display: inline-block; max-width: 100%; }
-        #pfLeftRail .capital-fee-corner { font-size: 10px !important; margin-top: 24px; padding: 4px 8px; }
+        #pfLeftRail .capital-fee-corner { font-size: 10px !important; margin-top: 20px; padding: 4px 9px; }
+        #pfLeftRail .capital-thin-bar { margin-bottom: 16px; }
         /* Легенда: табличная раскладка — слева точка+название, справа % и сумма столбцами */
-        #pfLeftRail .capital-legend { display: flex; flex-direction: column; align-items: stretch; gap: 7px; }
+        #pfLeftRail .capital-legend { display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
         #pfLeftRail .capital-legend-item {
             display: grid;
             grid-template-columns: 1fr auto auto;
             align-items: center;
-            column-gap: 10px;
-            font-size: 10.5px !important;
+            column-gap: 12px;
+            font-size: 12px !important;
             white-space: nowrap;
         }
         #pfLeftRail .capital-legend-item .legend-dot { grid-column: 1; grid-row: 1; align-self: center; }
-        #pfLeftRail .capital-legend-item .legend-name { grid-column: 1; grid-row: 1; padding-left: 11px; }
+        #pfLeftRail .capital-legend-item .legend-name { grid-column: 1; grid-row: 1; padding-left: 12px; }
         #pfLeftRail .capital-legend-item .legend-sep { display: none; }
-        #pfLeftRail .capital-legend-item .legend-pct { grid-column: 2; text-align: right; min-width: 34px; }
-        #pfLeftRail .capital-legend-item .legend-sum { grid-column: 3; text-align: right; min-width: 96px; font-size: 10.5px !important; }
+        #pfLeftRail .capital-legend-item .legend-pct { grid-column: 2; text-align: right; min-width: 36px; font-size: 12px !important; }
+        #pfLeftRail .capital-legend-item .legend-sum { grid-column: 3; text-align: right; min-width: 104px; font-size: 12px !important; }
         /* Прогноз: белый фон как у иконки M, без серого перехода и тени */
         #pfLeftRail .capital-forecast-light {
-            padding: 18px 20px 18px !important;
+            padding: 22px 22px 22px !important;
             background: linear-gradient(180deg, #F1F6FB 0%, #F9FAFC 100%) !important;
             box-shadow: none !important;
         }
         /* Число прогноза — на всю ширину строки, бейдж % в правом верхнем углу */
-        #pfLeftRail .forecast-main-row { display: block !important; position: relative; margin-bottom: 12px; }
+        #pfLeftRail .forecast-main-row { display: block !important; position: relative; margin-bottom: 16px; }
         #pfLeftRail .forecast-data-line { gap: 14px; }
-        #pfLeftRail .forecast-label-text { padding-right: 66px; }
+        #pfLeftRail .forecast-label-text { padding-right: 76px; }
         #pfLeftRail .forecast-data-total { font-size: 20px !important; display: inline-block; max-width: 100%; }
         #pfLeftRail .forecast-pct-display {
-            position: absolute; top: 0; right: 0;
+            position: absolute; top: -4px; right: 0;
             margin-top: 0 !important; font-size: 0; line-height: 0;
         }
         #pfLeftRail .forecast-pct-display::before {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 11px; font-weight: 700;
-            padding: 5px 11px;
+            font-size: 10px; font-weight: 700;
+            padding: 4px 9px;
             transform: none;
-            border-radius: 11px;
+            border-radius: 8px;
             background: linear-gradient(135deg, rgba(91,124,153,0.10), rgba(34,200,122,0.12));
             color: #2C364C;
             border: 1px solid rgba(91,124,153,0.16);
@@ -15458,19 +15465,19 @@ body.dark-mode .portfolio-echelons-total-row {
             display: flex !important;
             flex-direction: column;
             align-items: stretch !important;
-            gap: 7px;
-            margin-top: 12px;
+            gap: 10px;
+            margin-top: 16px;
         }
         #pfLeftRail .forecast-breakdown-divider { display: none; }
         #pfLeftRail .forecast-breakdown-item {
             display: grid;
             grid-template-columns: 1fr auto;
             align-items: center;
-            column-gap: 10px;
+            column-gap: 12px;
         }
         #pfLeftRail .forecast-breakdown-item .fb-dot { grid-column: 1; grid-row: 1; align-self: center; }
-        #pfLeftRail .forecast-breakdown-item .fb-label { grid-column: 1; grid-row: 1; padding-left: 14px; font-size: 10.5px !important; }
-        #pfLeftRail .forecast-breakdown-item .fb-value { grid-column: 2; grid-row: 1; text-align: right; min-width: 110px; font-size: 10.5px !important; }
+        #pfLeftRail .forecast-breakdown-item .fb-label { grid-column: 1; grid-row: 1; padding-left: 14px; font-size: 12px !important; }
+        #pfLeftRail .forecast-breakdown-item .fb-value { grid-column: 2; grid-row: 1; text-align: right; min-width: 118px; font-size: 12px !important; }
         /* пилл и действия: колонкой */
         #pfLeftRail .panel-section-header {
             display: flex !important;
@@ -16199,21 +16206,89 @@ body.dark-mode .portfolio-echelons-total-row {
         #panel-portfolio .panel-section-header { margin: 0 0 12px; }
         #calcPane { max-width: 580px; margin: 0 auto; width: 100%; }
 
-        /* Market tab: two-column grid */
-        #marketPanelContent { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; align-items: start; }
-        #marketPanelContent > * { grid-column: 1 / -1; min-width: 0; }
-        #marketPanelContent > .rates-glass-card { grid-column: 1; }
-        #marketPanelContent > #calcAccordion { grid-column: 2; }
+        /* Market: принцип портфеля — рельса слева (котировки + ставки), справа калькулятор */
+        #panel-market { max-width: none !important; }
+        #marketPanelContent {
+            display: grid;
+            grid-template-columns: var(--pfL, 372px) minmax(0, 720px);
+            column-gap: var(--pfGap, 28px);
+            row-gap: 0;
+            align-items: start;
+            align-content: start;
+            justify-content: start;
+            padding-bottom: 64px;
+        }
+        #mkLeftRail { grid-column: 1; grid-row: 1; position: sticky; top: 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+        #mkRightCol { grid-column: 2; grid-row: 1; min-width: 0; max-width: 720px; width: 100%; }
+        #mkLeftRail .header { display: none; }
+        #mkLeftRail #marketQuietStripInner {
+            margin: 0 !important;
+            padding: 12px 14px !important;
+            background: var(--card-bg, #ffffff);
+            border: 1px solid rgba(44,54,76,0.07);
+            border-radius: 14px;
+            box-shadow: 0 2px 12px rgba(44,54,76,0.05);
+        }
+        body.dark-mode #mkLeftRail #marketQuietStripInner {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.08);
+            box-shadow: none;
+        }
+        #mkLeftRail .rates-glass-card { margin: 0 !important; }
+        #mkRightCol #calcAccordion { margin-top: 0 !important; }
 
-        /* Backtest: sticky config rail left, results right */
-        #panel-backtest { max-width: 1040px !important; }
-        #panel-backtest.active { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 0 24px; align-items: start; align-content: start; }
+        /* Backtest: единая геометрия с портфелем */
+        #panel-backtest { max-width: none !important; }
+        #panel-backtest.active { display: grid; grid-template-columns: var(--pfL, 372px) minmax(0, 720px); column-gap: var(--pfGap, 28px); row-gap: 0; align-items: start; align-content: start; justify-content: start; }
         #panel-backtest > .bt-header { grid-column: 1 / -1; }
         #btConfigCol { display: block; grid-column: 1; grid-row: 2; position: sticky; top: 16px; }
-        #panel-backtest > #btResults { grid-column: 2; grid-row: 2; min-width: 0; }
+        #panel-backtest > #btResults { grid-column: 2; grid-row: 2; min-width: 0; max-width: 720px; width: 100%; }
 
-        /* Rebalance & portfolio: comfortable reading width */
-        #panel-rebalance, #panel-portfolio { max-width: 1080px; }
+        /* Rebalance: принцип портфеля — рельса слева (умная замена + переключатель), справа списки */
+        #panel-rebalance { max-width: none !important; padding-top: 4px; }
+        #panel-market { padding-top: 4px; }
+        #rebalancePanelContent {
+            display: grid;
+            grid-template-columns: var(--pfL, 372px) minmax(0, 720px);
+            column-gap: var(--pfGap, 28px);
+            row-gap: 0;
+            align-items: start;
+            align-content: start;
+            justify-content: start;
+        }
+        #rbLeftRail { grid-column: 1; grid-row: 1; position: sticky; top: 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+        #rbRightCol { grid-column: 2; grid-row: 1; min-width: 0; max-width: 720px; width: 100%; }
+        /* Заголовок «Ребаланс» дублирует крошку в шапке — скрываем, кнопку-инфо оставляем в рельсе */
+        #rbLeftRail .header { padding: 0 !important; margin: 0 !important; display: flex; justify-content: flex-end; }
+        #rbLeftRail .header h1 { display: none; }
+        #rbLeftRail .smart-replace-card { margin: 0 !important; }
+        /* Переключатель ОФЗ/Акции в рельсе — как в портфеле */
+        #rbLeftRail .rebalance-tabs-container { margin: 0 !important; padding: 0 !important; }
+        #rbLeftRail .tab-switcher {
+            width: 100%;
+            display: flex;
+            background: var(--card-bg, #ffffff);
+            border: 1px solid rgba(44,54,76,0.07);
+            border-radius: 14px;
+            padding: 4px;
+            gap: 4px;
+            box-shadow: 0 2px 12px rgba(44,54,76,0.05);
+            box-sizing: border-box;
+        }
+        body.dark-mode #rbLeftRail .tab-switcher {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.08);
+            box-shadow: none;
+        }
+        #rbLeftRail .tab-btn { flex: 1; justify-content: center; padding: 11px 10px; border-radius: 10px; }
+        /* списки в правой колонке — на всю её ширину */
+        #rbRightCol .echelon-wrapper,
+        #rbRightCol .echelon-table-styled,
+        #rbRightCol .stocks-aurora-container {
+            max-width: none;
+            margin-left: 0;
+            margin-right: 0;
+        }
 
         /* Десктоп: шапка таблицы как «крышка» списка + единая ширина колонок */
         #pfRightCol .portfolio-list-headers {
@@ -16294,13 +16369,7 @@ body.dark-mode .portfolio-echelons-total-row {
         body.dark-mode #pfRightCol .echelon-wrapper.collapsed::after {
             background: linear-gradient(to bottom, transparent, #1e293b);
         }
-        #rebalancePanelContent .echelon-wrapper,
-        #rebalancePanelContent .echelon-table-styled,
-        #rebalancePanelContent .stocks-aurora-container {
-            max-width: 720px;
-            margin-left: auto;
-            margin-right: auto;
-        }
+        /* (центрирование списков ребаланса убрано — теперь они в правой колонке) */
 
 
         /* Home hero: centered in viewport */
@@ -27996,33 +28065,78 @@ function populatePanels() {
         pageBuy.appendChild(left);
         pageBuy.appendChild(right);
     })();
-    // Равные отступы: grid-gap (карточка→таблица) = зазор сайдбар→карточка
+    // === Ребаланс: рельса (умная замена + переключатель) и правая колонка ===
+    (function() {
+        const host = document.getElementById('rebalancePanelContent');
+        if (!host || document.getElementById('rbLeftRail')) return;
+        const left = document.createElement('div'); left.id = 'rbLeftRail';
+        const right = document.createElement('div'); right.id = 'rbRightCol';
+        const hdr = host.querySelector('.header');
+        const card = host.querySelector('.smart-replace-card');
+        const tabs = host.querySelector('.rebalance-tabs-container');
+        [...host.children].forEach(function(c) {
+            if (c === hdr || c === card || c === tabs) return;
+            if (c.classList && (c.classList.contains('aurora-container') || c.classList.contains('noise-overlay'))) return;
+            right.appendChild(c);
+        });
+        if (card) left.appendChild(card);
+        if (tabs) left.appendChild(tabs);
+        if (hdr) left.appendChild(hdr);
+        host.appendChild(left);
+        host.appendChild(right);
+    })();
+    // === Рынок: рельса (котировки + ставки) и правая колонка (калькулятор) ===
+    (function() {
+        const host = document.getElementById('marketPanelContent');
+        if (!host || document.getElementById('mkLeftRail')) return;
+        const left = document.createElement('div'); left.id = 'mkLeftRail';
+        const right = document.createElement('div'); right.id = 'mkRightCol';
+        const hdr = host.querySelector('.header');
+        const strip = host.querySelector('#marketQuietStripInner');
+        const rates = host.querySelector('.rates-glass-card');
+        [...host.children].forEach(function(c) {
+            if (c === hdr || c === strip || c === rates) return;
+            if (c.classList && (c.classList.contains('aurora-container') || c.classList.contains('noise-overlay'))) return;
+            right.appendChild(c);
+        });
+        if (hdr) left.appendChild(hdr);
+        if (strip) left.appendChild(strip);
+        if (rates) left.appendChild(rates);
+        host.appendChild(left);
+        host.appendChild(right);
+    })();
+    // Равные отступы: grid-gap (рельса→контент) = зазор сайдбар→рельса. Для всех страниц с рельсой.
     window.pfSyncLeftWidth = function() {
-        const pageBuy = document.getElementById('portfolio-page-buy');
+        const ids = ['portfolio-page-buy', 'rebalancePanelContent', 'marketPanelContent', 'panel-backtest'];
+        const els = ids.map(function(id){ return document.getElementById(id); }).filter(Boolean);
         const sb = document.getElementById('sbPanel');
-        if (!pageBuy) return;
-        if (window.innerWidth < 1024) { pageBuy.style.removeProperty('--pfGap'); return; }
-        const pr = pageBuy.getBoundingClientRect();
-        const sbRight = sb ? sb.getBoundingClientRect().right : pr.left;
-        const gap = Math.round(Math.max(20, pr.left - sbRight));
-        if (gap < 200) pageBuy.style.setProperty('--pfGap', gap + 'px');
+        if (window.innerWidth < 1024) { els.forEach(function(g){ g.style.removeProperty('--pfGap'); }); return; }
+        const vis = els.find(function(g){ return g.offsetParent !== null; });
+        if (!vis || !sb) return;
+        const gap = Math.round(Math.max(20, vis.getBoundingClientRect().left - sb.getBoundingClientRect().right));
+        if (gap < 200) els.forEach(function(g){ g.style.setProperty('--pfGap', gap + 'px'); });
     };
-    // Выравнивание левого края портфеля под началом текста «Madame Solomi'na» в шапке
+    // Выравнивание левого края контента под началом «Madame Solomi'na». Для всех страниц с рельсой.
     window.pfSyncLeftEdge = function() {
-        const panel = document.getElementById('panel-portfolio');
+        const ids = ['panel-portfolio', 'panel-rebalance', 'panel-market', 'panel-backtest'];
+        const els = ids.map(function(id){ return document.getElementById(id); }).filter(Boolean);
         const brand = document.getElementById('topBarTitle');
-        if (!panel) return;
         if (window.innerWidth < 1024 || !brand) {
-            panel.style.paddingLeft = '';
+            els.forEach(function(p){ p.style.paddingLeft = ''; });
             return;
         }
+        const vis = els.find(function(p){ return p.offsetParent !== null; });
+        if (!vis) return;
         // временно обнуляем, чтобы измерить «естественный» левый край контента
-        panel.style.paddingLeft = '0px';
+        vis.style.paddingLeft = '0px';
         const brandLeft = brand.getBoundingClientRect().left;
-        const panelInnerLeft = panel.getBoundingClientRect().left; // уже без padding
+        const panelInnerLeft = vis.getBoundingClientRect().left;
         const delta = Math.round(brandLeft - panelInnerLeft);
         if (delta > 0 && delta < 400) {
-            panel.style.paddingLeft = delta + 'px';
+            const pad = delta + 'px';
+            els.forEach(function(p){ p.style.paddingLeft = pad; });
+        } else {
+            vis.style.paddingLeft = '';
         }
     };
     // Центрирование отключено — таблица идёт сразу после карточки с равным отступом
@@ -29544,7 +29658,7 @@ document.addEventListener('DOMContentLoaded', function() {
         window.closeSidebarDrawer();
         renderHeaderBadge(tabId);
         updateDockActive(tabId);
-        if (tabId === 'portfolio' && window.pfSyncLeftWidth) {
+        if (['portfolio','rebalance','market','backtest'].indexOf(tabId) !== -1 && window.pfSyncLeftWidth) {
             requestAnimationFrame(function() {
                 window.pfSyncLeftEdge && window.pfSyncLeftEdge();
                 window.pfSyncLeftWidth();
