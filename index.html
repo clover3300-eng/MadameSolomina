@@ -5480,13 +5480,15 @@ body.dark-mode .forecast-pct-display::before {
 }
 
 .portfolio-tab-switcher {
-    display: inline-flex;
+    display: flex;
+    width: 100%;
     gap: 4px;
     background: rgba(0,0,0,0.04);
     border-radius: 12px;
     padding: 4px;
     border: none;
     box-shadow: none;
+    box-sizing: border-box;
 }
 
 body.dark-mode .portfolio-tab-switcher {
@@ -5497,7 +5499,8 @@ body.dark-mode .portfolio-tab-switcher {
 
 .portfolio-tab-btn {
     position: relative;
-    flex: none;
+    flex: 1;
+    justify-content: center;
     padding: 7px 16px;
     border: none;
     background: transparent;
@@ -15371,11 +15374,11 @@ body.dark-mode .portfolio-echelons-total-row {
         #panel-portfolio { max-width: none !important; }
         #portfolio-page-buy.active {
             display: grid !important;
-            grid-template-columns: var(--pfL, 330px) minmax(0, 700px);
-            gap: 0 32px;
+            grid-template-columns: var(--pfL, 310px) minmax(0, 1fr);
+            gap: 0 28px;
             align-items: start;
             align-content: start;
-            justify-content: start;
+            justify-content: stretch;
         }
         #pfLeftRail {
             grid-column: 1;
@@ -15387,20 +15390,21 @@ body.dark-mode .portfolio-echelons-total-row {
             gap: 14px;
             min-width: 0;
         }
-        #pfRightCol { grid-column: 2; grid-row: 1; min-width: 0; }
+        #pfRightCol { grid-column: 2; grid-row: 1; min-width: 0; max-width: 720px; }
         /* капитал-карта: компактная типографика под узкий рельс */
         #pfLeftRail .portfolio-capital-card { margin-bottom: 0 !important; }
-        #pfLeftRail .capital-dark-top { padding: 16px 16px 14px !important; }
+        #pfLeftRail .capital-dark-top { padding: 20px 20px 18px !important; }
         #pfLeftRail .capital-value { font-size: 24px !important; letter-spacing: -0.01em; }
         #pfLeftRail .capital-fee-corner { font-size: 10px !important; }
-        #pfLeftRail .capital-legend { flex-wrap: wrap; gap: 4px 10px; }
-        #pfLeftRail .capital-legend-item { font-size: 10px !important; white-space: nowrap; }
-        #pfLeftRail .legend-sum { font-size: 10px !important; }
-        #pfLeftRail .capital-forecast-light { padding: 13px 16px 14px !important; }
+        #pfLeftRail .capital-legend { flex-direction: column; gap: 8px; }
+        #pfLeftRail .capital-legend-item { font-size: 10px !important; white-space: nowrap; justify-content: flex-end; gap: 5px; }
+        #pfLeftRail .legend-sum { font-size: 10px !important; text-align: right; min-width: 80px; }
+        #pfLeftRail .legend-pct { min-width: 32px; text-align: right; }
+        #pfLeftRail .capital-forecast-light { padding: 18px 20px 18px !important; }
         #pfLeftRail .forecast-main-row { flex-wrap: wrap; gap: 6px 8px; }
         #pfLeftRail .forecast-data-total { font-size: 19px !important; }
         #pfLeftRail .forecast-pct-display { font-size: 11px !important; padding: 3px 8px !important; }
-        #pfLeftRail .forecast-breakdown-row { flex-wrap: wrap; gap: 4px 10px; }
+        #pfLeftRail .forecast-breakdown-row { flex-wrap: wrap; gap: 4px 10px; margin-top: 8px; }
         #pfLeftRail .fb-value { font-size: 10.5px !important; }
         #pfLeftRail .fb-label { font-size: 10px !important; }
         /* пилл и действия: колонкой */
@@ -16101,6 +16105,7 @@ body.dark-mode .portfolio-echelons-total-row {
 
         /* Panels: width + breathing room */
         .tab-panel { max-width: 1240px; margin: 0 auto; padding: 18px 40px 64px; width: 100%; box-sizing: border-box; }
+        #panel-portfolio { padding-left: 0 !important; }
         #panel-portfolio .panel-section-header { margin: 0 0 12px; }
         #calcPane { max-width: 580px; margin: 0 auto; width: 100%; }
 
@@ -16118,7 +16123,13 @@ body.dark-mode .portfolio-echelons-total-row {
         #panel-backtest > #btResults { grid-column: 2; grid-row: 2; min-width: 0; }
 
         /* Rebalance & portfolio: comfortable reading width */
-        #panel-rebalance, #panel-portfolio { max-width: 1000px; }
+        #panel-rebalance, #panel-portfolio { max-width: 1080px; }
+        #pfRightCol .portfolio-list-headers,
+        #pfRightCol .portfolio-ofz-list,
+        #pfRightCol .portfolio-stocks-list,
+        #pfRightCol .portfolio-ofz-summary-row,
+        #pfRightCol .coupon-rain-card,
+        #pfRightCol .coupon-rain-banner { max-width: 680px; }
         #rebalancePanelContent .echelon-wrapper,
         #rebalancePanelContent .echelon-table-styled,
         #rebalancePanelContent .stocks-aurora-container {
