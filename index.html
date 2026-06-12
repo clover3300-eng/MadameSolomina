@@ -16410,81 +16410,195 @@ body.dark-mode .portfolio-echelons-total-row {
         #panel-portfolio .panel-section-header { margin: 0 0 12px; }
         #calcPane { max-width: 580px; margin: 0 auto; width: 100%; }
 
-        /* Market: принцип портфеля — рельса слева (котировки + ставки), справа калькулятор */
+        /* ===== РЫНОК V3 «Зеркало»: калькулятор слева, котировки + ставки справа ===== */
         #panel-market { max-width: none !important; }
         #marketPanelContent {
             display: grid;
-            grid-template-columns: var(--pfL, 372px) minmax(0, 720px);
-            column-gap: var(--pfGap, 28px);
+            grid-template-columns: minmax(0, 1fr) 396px;
+            column-gap: 22px;
             row-gap: 0;
             align-items: start;
             align-content: start;
-            justify-content: start;
+            justify-content: center;
+            max-width: 1180px;
+            margin: 0 auto;
             padding-bottom: 64px;
         }
-        #mkLeftRail { grid-column: 1; grid-row: 1; position: sticky; top: 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
-        #mkRightCol { grid-column: 2; grid-row: 1; min-width: 0; max-width: 720px; width: 100%; }
+        #mkRightCol { grid-column: 1; grid-row: 1; min-width: 0; max-width: none; width: 100%; }
+        #mkLeftRail {
+            grid-column: 2; grid-row: 1;
+            position: sticky; top: 16px;
+            display: flex; flex-direction: column; gap: 16px; min-width: 0;
+        }
         #mkLeftRail .header { display: none; }
+        /* Котировки — белая V3-карточка */
         #mkLeftRail #marketQuietStripInner {
             margin: 0 !important;
-            padding: 12px 14px !important;
-            background: var(--card-bg, #ffffff);
-            border: 1px solid rgba(44,54,76,0.07);
-            border-radius: 14px;
-            box-shadow: 0 2px 12px rgba(44,54,76,0.05);
+            padding: 16px 18px !important;
+            background: #ffffff;
+            border: none;
+            border-radius: 22px;
+            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
         }
         body.dark-mode #mkLeftRail #marketQuietStripInner {
-            background: rgba(255,255,255,0.05);
-            border-color: rgba(255,255,255,0.08);
-            box-shadow: none;
+            background: #1d2734;
+            border: none;
+            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
         }
-        #mkLeftRail .rates-glass-card { margin: 0 !important; }
-        #mkRightCol #calcAccordion { margin-top: 0 !important; }
+        /* Вертикаль ставок — тёмная карточка как капитал в портфеле */
+        #mkLeftRail .rates-glass-card {
+            margin: 0 !important;
+            background: linear-gradient(135deg, #10161f 0%, #222e3f 100%) !important;
+            border: none !important;
+            border-radius: 22px !important;
+            box-shadow: 0 16px 36px rgba(24,38,60,0.08) !important;
+            backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+            padding: 24px 26px !important;
+        }
+        #mkLeftRail .rates-glass-card .rv-title {
+            font-family: 'Manrope', sans-serif;
+            font-size: 12.5px !important; letter-spacing: 0.14em !important; font-weight: 700 !important;
+            color: #76849a !important; text-transform: uppercase;
+        }
+        #mkLeftRail .rates-glass-card .rate-row-label { color: #b9c4d4 !important; font-family: 'Manrope', sans-serif; }
+        #mkLeftRail .rates-glass-card .rate-row-value { color: #ffffff !important; font-family: 'JetBrains Mono', monospace; }
+        #mkLeftRail .rates-glass-card .rate-row-item { border-color: rgba(255,255,255,0.08) !important; }
+        /* Калькулятор — белая V3-карточка */
+        #mkRightCol #calcAccordion {
+            margin-top: 0 !important;
+            background: #ffffff;
+            border: none;
+            border-radius: 22px;
+            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
+        }
+        body.dark-mode #mkRightCol #calcAccordion { background: #1d2734; }
 
-        /* Backtest: единая геометрия с портфелем */
+        /* ===== ТЕСТ V3 «Зеркало»: результаты слева, конфигурация справа ===== */
         #panel-backtest { max-width: none !important; }
-        #panel-backtest.active { display: grid; grid-template-columns: var(--pfL, 372px) minmax(0, 720px); column-gap: var(--pfGap, 28px); row-gap: 0; align-items: start; align-content: start; justify-content: start; }
-        #panel-backtest > .bt-header { grid-column: 1 / -1; }
-        #btConfigCol { display: block; grid-column: 1; grid-row: 2; position: sticky; top: 16px; }
-        #panel-backtest > #btResults { grid-column: 2; grid-row: 2; min-width: 0; max-width: 720px; width: 100%; }
+        #panel-backtest.active {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 396px;
+            column-gap: 22px;
+            row-gap: 0;
+            align-items: start;
+            align-content: start;
+            justify-content: center;
+            max-width: 1180px;
+            margin: 0 auto;
+        }
+        /* Заголовок дублирует крошку в шапке — скрываем */
+        #panel-backtest > .bt-header { display: none; }
+        #btConfigCol { display: block; grid-column: 2; grid-row: 1; position: sticky; top: 16px; }
+        #panel-backtest > #btResults { grid-column: 1; grid-row: 1; min-width: 0; max-width: none; width: 100%; }
+        /* Карточки конфигурации — белые V3 */
+        #btConfigCol .bt-config-card {
+            background: #ffffff;
+            border: none;
+            border-radius: 22px;
+            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
+            backdrop-filter: none; -webkit-backdrop-filter: none;
+            padding: 22px;
+            margin-bottom: 16px;
+        }
+        body.dark-mode #btConfigCol .bt-config-card { background: #1d2734; }
+        #btConfigCol .bt-config-label {
+            font-family: 'Manrope', sans-serif;
+            font-size: 12.5px; letter-spacing: 0.12em; font-weight: 700;
+            color: #97a3b4; text-transform: uppercase;
+        }
+        /* CTA запуска — тёмная V3-кнопка */
+        #btConfigCol .bt-run-btn {
+            background: #141b26;
+            border-radius: 18px;
+            padding: 18px;
+            font-family: 'Manrope', sans-serif;
+            font-size: 15px; font-weight: 700;
+            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        #btConfigCol .bt-run-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 20px 42px rgba(24,38,60,0.14); }
+        #btConfigCol .bt-run-btn svg { stroke: #7ee2a8; }
+        body.dark-mode #btConfigCol .bt-run-btn { background: #ffffff; color: #141b26; }
+        body.dark-mode #btConfigCol .bt-run-btn svg { stroke: #119d5c; }
 
-        /* Rebalance: принцип портфеля — рельса слева (умная замена + переключатель), справа списки */
+        /* ===== РЕБАЛАНС V3 «Зеркало»: списки слева, умная замена справа ===== */
         #panel-rebalance { max-width: none !important; padding-top: 4px; }
         #panel-market { padding-top: 4px; }
         #rebalancePanelContent {
             display: grid;
-            grid-template-columns: var(--pfL, 372px) minmax(0, 720px);
-            column-gap: var(--pfGap, 28px);
+            grid-template-columns: minmax(0, 1fr) 396px;
+            column-gap: 22px;
             row-gap: 0;
             align-items: start;
             align-content: start;
-            justify-content: start;
+            justify-content: center;
+            max-width: 1180px;
+            margin: 0 auto;
         }
-        #rbLeftRail { grid-column: 1; grid-row: 1; position: sticky; top: 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
-        #rbRightCol { grid-column: 2; grid-row: 1; min-width: 0; max-width: 720px; width: 100%; }
-        /* Заголовок «Ребаланс» дублирует крошку в шапке — скрываем, кнопку-инфо оставляем в рельсе */
+        #rbRightCol { grid-column: 1; grid-row: 1; min-width: 0; max-width: none; width: 100%; }
+        #rbLeftRail {
+            grid-column: 2; grid-row: 1;
+            position: sticky; top: 16px;
+            display: flex; flex-direction: column; gap: 16px; min-width: 0;
+        }
+        /* Заголовок «Ребаланс» дублирует крошку в шапке — скрываем, кнопку-инфо оставляем */
         #rbLeftRail .header { padding: 0 !important; margin: 0 !important; display: flex; justify-content: flex-end; }
         #rbLeftRail .header h1 { display: none; }
-        #rbLeftRail .smart-replace-card { margin: 0 !important; }
-        /* Переключатель ОФЗ/Акции в рельсе — как в портфеле */
+        /* Умная замена — тёмный градиент V3 */
+        #rbLeftRail .smart-replace-card {
+            margin: 0 !important;
+            background: linear-gradient(135deg, #10161f 0%, #222e3f 100%);
+            border-radius: 22px;
+            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
+        }
+        /* Переключатель ОФЗ/Акции — белая V3-карточка, активная тёмная (как в референсе) */
         #rbLeftRail .rebalance-tabs-container { margin: 0 !important; padding: 0 !important; }
         #rbLeftRail .tab-switcher {
             width: 100%;
             display: flex;
-            background: var(--card-bg, #ffffff);
-            border: 1px solid rgba(44,54,76,0.07);
-            border-radius: 14px;
-            padding: 4px;
-            gap: 4px;
-            box-shadow: 0 2px 12px rgba(44,54,76,0.05);
+            background: #ffffff;
+            border: none;
+            border-radius: 18px;
+            padding: 7px;
+            gap: 10px;
+            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
             box-sizing: border-box;
         }
-        body.dark-mode #rbLeftRail .tab-switcher {
-            background: rgba(255,255,255,0.05);
-            border-color: rgba(255,255,255,0.08);
-            box-shadow: none;
+        body.dark-mode #rbLeftRail .tab-switcher { background: #1d2734; }
+        #rbLeftRail .tab-glider { display: none; }
+        #rbLeftRail .tab-btn {
+            flex: 1; justify-content: center;
+            padding: 13px 18px;
+            border-radius: 13px;
+            border: none; background: transparent;
+            font-family: 'Manrope', sans-serif;
+            font-size: 15px; font-weight: 700;
+            color: #5f6d80;
+            transition: background 0.18s, color 0.18s;
         }
-        #rbLeftRail .tab-btn { flex: 1; justify-content: center; padding: 11px 10px; border-radius: 10px; }
+        #rbLeftRail .tab-btn svg { width: 17px; height: 17px; }
+        #rbLeftRail .tab-btn.active { background: #141b26; color: #ffffff; box-shadow: none; }
+        body.dark-mode #rbLeftRail .tab-btn { color: #9aa7ba; }
+        body.dark-mode #rbLeftRail .tab-btn.active { background: #ffffff; color: #141b26; }
+        /* Списки ребаланса — белая V3-карточка */
+        #rbRightCol .rebalance-tab-content.active {
+            background: #ffffff;
+            border-radius: 22px;
+            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
+            padding: 6px 0 12px;
+            overflow: visible;
+        }
+        body.dark-mode #rbRightCol .rebalance-tab-content.active { background: #1d2734; }
+        #rbRightCol .list-headers { padding: 14px 26px 10px; margin: 0; }
+        #rbRightCol .list-headers .list-header-text,
+        #rbRightCol .list-header-percent,
+        #rbRightCol .list-header-price {
+            font-family: 'Manrope', sans-serif;
+            font-size: 12.5px; font-weight: 700; letter-spacing: 0.12em;
+            color: #97a3b4; text-transform: uppercase;
+        }
+        #rbRightCol .ofz-aurora-list { gap: 0; padding: 0; }
+        #rbRightCol .ofz-aurora-list > * { border-radius: 0; }
         /* списки в правой колонке — на всю её ширину */
         #rbRightCol .echelon-wrapper,
         #rbRightCol .echelon-table-styled,
@@ -28448,46 +28562,6 @@ function populatePanels() {
         pageBuy.appendChild(left);
         pageBuy.appendChild(right);
     })();
-    // === Ребаланс: рельса (умная замена + переключатель) и правая колонка ===
-    (function() {
-        const host = document.getElementById('rebalancePanelContent');
-        if (!host || document.getElementById('rbLeftRail')) return;
-        const left = document.createElement('div'); left.id = 'rbLeftRail';
-        const right = document.createElement('div'); right.id = 'rbRightCol';
-        const hdr = host.querySelector('.header');
-        const card = host.querySelector('.smart-replace-card');
-        const tabs = host.querySelector('.rebalance-tabs-container');
-        [...host.children].forEach(function(c) {
-            if (c === hdr || c === card || c === tabs) return;
-            if (c.classList && (c.classList.contains('aurora-container') || c.classList.contains('noise-overlay'))) return;
-            right.appendChild(c);
-        });
-        if (card) left.appendChild(card);
-        if (tabs) left.appendChild(tabs);
-        if (hdr) left.appendChild(hdr);
-        host.appendChild(left);
-        host.appendChild(right);
-    })();
-    // === Рынок: рельса (котировки + ставки) и правая колонка (калькулятор) ===
-    (function() {
-        const host = document.getElementById('marketPanelContent');
-        if (!host || document.getElementById('mkLeftRail')) return;
-        const left = document.createElement('div'); left.id = 'mkLeftRail';
-        const right = document.createElement('div'); right.id = 'mkRightCol';
-        const hdr = host.querySelector('.header');
-        const strip = host.querySelector('#marketQuietStripInner');
-        const rates = host.querySelector('.rates-glass-card');
-        [...host.children].forEach(function(c) {
-            if (c === hdr || c === strip || c === rates) return;
-            if (c.classList && (c.classList.contains('aurora-container') || c.classList.contains('noise-overlay'))) return;
-            right.appendChild(c);
-        });
-        if (hdr) left.appendChild(hdr);
-        if (strip) left.appendChild(strip);
-        if (rates) left.appendChild(rates);
-        host.appendChild(left);
-        host.appendChild(right);
-    })();
     // === V3 «Зеркало»: десктопная сборка портфеля (таблица слева, панель справа) ===
     (function() {
         const share = document.getElementById('shareContainer');
@@ -28666,10 +28740,12 @@ function populatePanels() {
     };
     // Выравнивание левого края контента под началом «Madame Solomi'na». Для всех страниц с рельсой.
     window.pfSyncLeftEdge = function() {
-        // panel-portfolio исключён: V3-сетка центрируется сама (margin:auto)
-        const ids = ['panel-rebalance', 'panel-market', 'panel-backtest'];
-        const pf = document.getElementById('panel-portfolio');
-        if (pf) pf.style.paddingLeft = '';
+        // V3: все страницы с рельсой центрируются сами (margin:auto) — сбрасываем паддинги
+        const ids = [];
+        ['panel-portfolio', 'panel-rebalance', 'panel-market', 'panel-backtest'].forEach(function(id) {
+            const p = document.getElementById(id);
+            if (p) p.style.paddingLeft = '';
+        });
         const els = ids.map(function(id){ return document.getElementById(id); }).filter(Boolean);
         const brand = document.getElementById('topBarTitle');
         if (window.innerWidth < 1024 || !brand) {
@@ -28743,6 +28819,48 @@ function populatePanels() {
             }
         });
     }
+
+    // === V3: рельсы Ребаланса и Рынка собираем ПОСЛЕ переноса контента ===
+    // === Ребаланс: рельса (умная замена + переключатель) и правая колонка ===
+    (function() {
+        const host = document.getElementById('rebalancePanelContent');
+        if (!host || document.getElementById('rbLeftRail')) return;
+        const left = document.createElement('div'); left.id = 'rbLeftRail';
+        const right = document.createElement('div'); right.id = 'rbRightCol';
+        const hdr = host.querySelector('.header');
+        const card = host.querySelector('.smart-replace-card');
+        const tabs = host.querySelector('.rebalance-tabs-container');
+        [...host.children].forEach(function(c) {
+            if (c === hdr || c === card || c === tabs) return;
+            if (c.classList && (c.classList.contains('aurora-container') || c.classList.contains('noise-overlay'))) return;
+            right.appendChild(c);
+        });
+        if (card) left.appendChild(card);
+        if (tabs) left.appendChild(tabs);
+        if (hdr) left.appendChild(hdr);
+        host.appendChild(left);
+        host.appendChild(right);
+    })();
+    // === Рынок: рельса (котировки + ставки) и правая колонка (калькулятор) ===
+    (function() {
+        const host = document.getElementById('marketPanelContent');
+        if (!host || document.getElementById('mkLeftRail')) return;
+        const left = document.createElement('div'); left.id = 'mkLeftRail';
+        const right = document.createElement('div'); right.id = 'mkRightCol';
+        const hdr = host.querySelector('.header');
+        const strip = host.querySelector('#marketQuietStripInner');
+        const rates = host.querySelector('.rates-glass-card');
+        [...host.children].forEach(function(c) {
+            if (c === hdr || c === strip || c === rates) return;
+            if (c.classList && (c.classList.contains('aurora-container') || c.classList.contains('noise-overlay'))) return;
+            right.appendChild(c);
+        });
+        if (hdr) left.appendChild(hdr);
+        if (strip) left.appendChild(strip);
+        if (rates) left.appendChild(rates);
+        host.appendChild(left);
+        host.appendChild(right);
+    })();
 }
 
 function switchTab(tabId) {
