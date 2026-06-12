@@ -15217,15 +15217,16 @@ body.dark-mode .portfolio-echelons-total-row {
     #topBarCrumb {
         align-items: center;
         gap: 8px;
-        background: linear-gradient(135deg, rgba(91,124,153,0.10), rgba(34,200,122,0.12));
-        border: 1px solid rgba(91,124,153,0.16);
-        border-radius: 11px;
-        padding: 7px 14px 7px 12px;
-        box-shadow: none;
+        background: #ffffff;
+        border: 1px solid rgba(44,54,76,0.06);
+        border-radius: 13px;
+        padding: 8px 16px 8px 14px;
+        box-shadow: 0 2px 8px rgba(24,38,60,0.06);
     }
     body.dark-mode #topBarCrumb {
-        background: rgba(255,255,255,0.07);
-        border-color: rgba(255,255,255,0.1);
+        background: rgba(255,255,255,0.1);
+        border-color: rgba(255,255,255,0.08);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
     .hdr-chip {
         width: auto; height: auto;
@@ -15387,7 +15388,7 @@ body.dark-mode .portfolio-echelons-total-row {
             grid-template-columns: minmax(0, 1fr) 396px;
             column-gap: 22px;
             row-gap: 0;
-            align-items: stretch;
+            align-items: start;
             align-content: start;
             justify-content: center;
             max-width: 1180px;
@@ -15396,22 +15397,12 @@ body.dark-mode .portfolio-echelons-total-row {
         #pfRightCol {
             grid-column: 1; grid-row: 1;
             min-width: 0; max-width: none; margin: 0; width: 100%;
-            display: flex; flex-direction: column;
         }
         #pfLeftRail {
             grid-column: 2; grid-row: 1;
-            align-self: stretch;
             display: flex; flex-direction: column;
             gap: 16px; min-width: 0;
         }
-        /* Карточка капитала растягивается на всю высоту рельсы */
-        #pfLeftRail .portfolio-capital-card {
-            flex: 1;
-            display: flex !important;
-            flex-direction: column;
-        }
-        /* Прогноз внутри карточки тоже растягивается */
-        #pfLeftRail .capital-forecast-light { flex: 1; }
         /* Пилл «К расчёту» и иконки действий заменены кнопками V3 */
         #pfLeftRail .panel-section-header { display: none !important; }
 
