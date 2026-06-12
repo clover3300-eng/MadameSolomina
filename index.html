@@ -13810,10 +13810,10 @@ body.dark-mode .portfolio-echelons-total-row {
     
     .bt-asset-row {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) auto auto auto;
-        gap: 10px;
+        grid-template-columns: minmax(0, 1fr) 88px 88px 120px;
+        gap: 20px;
         align-items: center;
-        padding: 11px 16px;
+        padding: 11px 20px;
         border-bottom: 1px solid rgba(0,0,0,0.03);
         transition: background 0.15s;
     }
@@ -15398,7 +15398,7 @@ body.dark-mode .portfolio-echelons-total-row {
             grid-column: 2;
             grid-row: 1;
             position: sticky;
-            top: 16px;
+            top: 0;
             display: flex;
             flex-direction: column;
             gap: 16px;
@@ -16291,6 +16291,38 @@ body.dark-mode .portfolio-echelons-total-row {
         border-color: rgba(255,255,255,0.08);
         box-shadow: 0 2px 16px rgba(0,0,0,0.2);
     }
+        /* Тест: секции таблицы — V3-карточки */
+        #btResults .bt-assets-card {
+            background: #ffffff;
+            border-radius: 22px;
+            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
+            overflow: hidden;
+            margin-bottom: 16px;
+            padding: 0;
+        }
+        body.dark-mode #btResults .bt-assets-card { background: #1d2734; }
+        #btResults .bt-assets-header {
+            padding: 16px 20px 12px;
+            border-bottom: 1px solid #eef2f7;
+        }
+        body.dark-mode #btResults .bt-assets-header { border-bottom-color: rgba(255,255,255,0.07); }
+        #btResults .bt-assets-title {
+            font-family: 'Manrope', sans-serif;
+            font-weight: 800; font-size: 15px; color: #111927;
+        }
+        body.dark-mode #btResults .bt-assets-title { color: #f1f6fb; }
+        #btResults .bt-asset-row { padding: 11px 20px; }
+        #btResults .bt-asset-head { background: transparent; padding: 12px 20px 8px; }
+        body.dark-mode #btResults .bt-asset-row { border-bottom-color: rgba(255,255,255,0.05); }
+        #btResults .bt-asset-name {
+            font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 15px; color: #111927;
+        }
+        body.dark-mode #btResults .bt-asset-name { color: #f1f6fb; }
+        #btResults .bt-asset-isin { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #8593a6; }
+        #btResults .bt-asset-buy,
+        #btResults .bt-asset-now { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #5f6d80; text-align: right; }
+        #btResults .bt-asset-pnl { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; text-align: right; }
+
     #btConfigCol .bt-config-card {
         background: transparent !important;
         border: none !important;
@@ -16417,19 +16449,27 @@ body.dark-mode .portfolio-echelons-total-row {
             grid-template-columns: minmax(0, 1fr) 396px;
             column-gap: 22px;
             row-gap: 0;
-            align-items: start;
+            align-items: stretch;
             align-content: start;
             justify-content: center;
             max-width: 1180px;
             margin: 0 auto;
             padding-bottom: 64px;
         }
-        #mkRightCol { grid-column: 1; grid-row: 1; min-width: 0; max-width: none; width: 100%; }
+        #mkRightCol {
+            grid-column: 1; grid-row: 1;
+            min-width: 0; max-width: none; width: 100%;
+            display: flex; flex-direction: column;
+        }
         #mkLeftRail {
             grid-column: 2; grid-row: 1;
-            position: sticky; top: 16px;
+            position: sticky; top: 0;
             display: flex; flex-direction: column; gap: 16px; min-width: 0;
+            align-self: start;
         }
+        /* Баннер-калькулятор растягивается на всю высоту правой колонки */
+        #mkRightCol #calcAccordion { flex: 1; display: flex; flex-direction: column; }
+        #mkRightCol #calcAccordion .calc-accordion-body { flex: 1; }
         #mkLeftRail .header { display: none; }
         /* Котировки — белая V3-карточка */
         #mkLeftRail #marketQuietStripInner {
@@ -16466,12 +16506,16 @@ body.dark-mode .portfolio-echelons-total-row {
         /* Калькулятор — белая V3-карточка */
         #mkRightCol #calcAccordion {
             margin-top: 0 !important;
-            background: #ffffff;
-            border: none;
+            background: linear-gradient(145deg, #f0f7ff 0%, #e8f0fb 40%, #f5efe8 100%);
+            border: 1.5px solid rgba(184,144,106,0.18);
             border-radius: 22px;
-            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
+            box-shadow: 0 16px 36px rgba(24,38,60,0.07);
+            overflow: hidden;
         }
-        body.dark-mode #mkRightCol #calcAccordion { background: #1d2734; }
+        body.dark-mode #mkRightCol #calcAccordion {
+            background: linear-gradient(145deg, #1a2535 0%, #1e2d3d 50%, #271f18 100%);
+            border-color: rgba(184,144,106,0.15);
+        }
 
         /* ===== ТЕСТ V3 «Зеркало»: результаты слева, конфигурация справа ===== */
         #panel-backtest { max-width: none !important; }
@@ -16488,10 +16532,42 @@ body.dark-mode .portfolio-echelons-total-row {
         }
         /* Заголовок дублирует крошку в шапке — скрываем */
         #panel-backtest > .bt-header { display: none; }
-        #btConfigCol { display: block; grid-column: 2; grid-row: 1; position: sticky; top: 16px; }
+        #btConfigCol { display: block; grid-column: 2; grid-row: 1; position: sticky; top: 0; }
         #panel-backtest > #btResults { grid-column: 1; grid-row: 1; min-width: 0; max-width: none; width: 100%; }
         /* Карточки конфигурации — белые V3 */
-        #btConfigCol .bt-config-card {
+            /* Тест: секции таблицы — V3-карточки */
+        #btResults .bt-assets-card {
+            background: #ffffff;
+            border-radius: 22px;
+            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
+            overflow: hidden;
+            margin-bottom: 16px;
+            padding: 0;
+        }
+        body.dark-mode #btResults .bt-assets-card { background: #1d2734; }
+        #btResults .bt-assets-header {
+            padding: 16px 20px 12px;
+            border-bottom: 1px solid #eef2f7;
+        }
+        body.dark-mode #btResults .bt-assets-header { border-bottom-color: rgba(255,255,255,0.07); }
+        #btResults .bt-assets-title {
+            font-family: 'Manrope', sans-serif;
+            font-weight: 800; font-size: 15px; color: #111927;
+        }
+        body.dark-mode #btResults .bt-assets-title { color: #f1f6fb; }
+        #btResults .bt-asset-row { padding: 11px 20px; }
+        #btResults .bt-asset-head { background: transparent; padding: 12px 20px 8px; }
+        body.dark-mode #btResults .bt-asset-row { border-bottom-color: rgba(255,255,255,0.05); }
+        #btResults .bt-asset-name {
+            font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 15px; color: #111927;
+        }
+        body.dark-mode #btResults .bt-asset-name { color: #f1f6fb; }
+        #btResults .bt-asset-isin { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #8593a6; }
+        #btResults .bt-asset-buy,
+        #btResults .bt-asset-now { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #5f6d80; text-align: right; }
+        #btResults .bt-asset-pnl { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; text-align: right; }
+
+    #btConfigCol .bt-config-card {
             background: #ffffff;
             border: none;
             border-radius: 22px;
@@ -16538,7 +16614,7 @@ body.dark-mode .portfolio-echelons-total-row {
         #rbRightCol { grid-column: 1; grid-row: 1; min-width: 0; max-width: none; width: 100%; }
         #rbLeftRail {
             grid-column: 2; grid-row: 1;
-            position: sticky; top: 16px;
+            position: sticky; top: 0;
             display: flex; flex-direction: column; gap: 16px; min-width: 0;
         }
         /* Заголовок «Ребаланс» дублирует крошку в шапке — скрываем, кнопку-инфо оставляем */
@@ -16582,23 +16658,12 @@ body.dark-mode .portfolio-echelons-total-row {
         body.dark-mode #rbLeftRail .tab-btn.active { background: #ffffff; color: #141b26; }
         /* Списки ребаланса — белая V3-карточка */
         #rbRightCol .rebalance-tab-content.active {
-            background: #ffffff;
-            border-radius: 22px;
-            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
-            padding: 6px 0 12px;
-            overflow: visible;
+            background: transparent;
+            border-radius: 0;
+            box-shadow: none;
+            padding: 0;
         }
-        body.dark-mode #rbRightCol .rebalance-tab-content.active { background: #1d2734; }
-        #rbRightCol .list-headers { padding: 14px 26px 10px; margin: 0; }
-        #rbRightCol .list-headers .list-header-text,
-        #rbRightCol .list-header-percent,
-        #rbRightCol .list-header-price {
-            font-family: 'Manrope', sans-serif;
-            font-size: 12.5px; font-weight: 700; letter-spacing: 0.12em;
-            color: #97a3b4; text-transform: uppercase;
-        }
-        #rbRightCol .ofz-aurora-list { gap: 0; padding: 0; }
-        #rbRightCol .ofz-aurora-list > * { border-radius: 0; }
+        /* Обёртка из оригинальных стилей остаётся — просто без визуала */
         /* списки в правой колонке — на всю её ширину */
         #rbRightCol .echelon-wrapper,
         #rbRightCol .echelon-table-styled,
