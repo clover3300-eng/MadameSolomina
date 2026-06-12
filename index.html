@@ -13677,10 +13677,10 @@ body.dark-mode .portfolio-echelons-total-row {
     
     /* P&L summary card */
     .bt-pnl-card {
-        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-        border-radius: 20px;
-        padding: 22px;
-        margin-bottom: 14px;
+        background: linear-gradient(135deg, #141b26 0%, #1a2535 100%);
+        border-radius: 22px;
+        padding: 22px 24px;
+        margin-bottom: 16px;
         position: relative;
         overflow: hidden;
     }
@@ -13810,10 +13810,10 @@ body.dark-mode .portfolio-echelons-total-row {
     
     .bt-asset-row {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 88px 88px 120px;
-        gap: 20px;
+        grid-template-columns: minmax(0, 1fr) 76px 76px 108px;
+        gap: 16px;
         align-items: center;
-        padding: 11px 20px;
+        padding: 10px 22px;
         border-bottom: 1px solid rgba(0,0,0,0.03);
         transition: background 0.15s;
     }
@@ -15387,23 +15387,31 @@ body.dark-mode .portfolio-echelons-total-row {
             grid-template-columns: minmax(0, 1fr) 396px;
             column-gap: 22px;
             row-gap: 0;
-            align-items: start;
+            align-items: stretch;
             align-content: start;
             justify-content: center;
             max-width: 1180px;
             margin: 0 auto;
         }
-        #pfRightCol { grid-column: 1; grid-row: 1; min-width: 0; max-width: none; margin: 0; width: 100%; }
-        #pfLeftRail {
-            grid-column: 2;
-            grid-row: 1;
-            position: sticky;
-            top: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            min-width: 0;
+        #pfRightCol {
+            grid-column: 1; grid-row: 1;
+            min-width: 0; max-width: none; margin: 0; width: 100%;
+            display: flex; flex-direction: column;
         }
+        #pfLeftRail {
+            grid-column: 2; grid-row: 1;
+            align-self: stretch;
+            display: flex; flex-direction: column;
+            gap: 16px; min-width: 0;
+        }
+        /* Карточка капитала растягивается на всю высоту рельсы */
+        #pfLeftRail .portfolio-capital-card {
+            flex: 1;
+            display: flex !important;
+            flex-direction: column;
+        }
+        /* Прогноз внутри карточки тоже растягивается */
+        #pfLeftRail .capital-forecast-light { flex: 1; }
         /* Пилл «К расчёту» и иконки действий заменены кнопками V3 */
         #pfLeftRail .panel-section-header { display: none !important; }
 
@@ -16463,13 +16471,15 @@ body.dark-mode .portfolio-echelons-total-row {
         }
         #mkLeftRail {
             grid-column: 2; grid-row: 1;
-            position: sticky; top: 0;
-            display: flex; flex-direction: column; gap: 16px; min-width: 0;
             align-self: start;
+            display: flex; flex-direction: column; gap: 16px; min-width: 0;
         }
-        /* Баннер-калькулятор растягивается на всю высоту правой колонки */
+        /* Аккордеон занимает всю высоту правой колонки */
         #mkRightCol #calcAccordion { flex: 1; display: flex; flex-direction: column; }
-        #mkRightCol #calcAccordion .calc-accordion-body { flex: 1; }
+        /* Свёрнутый: nd-income-banner растягивается на всё */
+        #mkRightCol #calcAccordion.collapsed .nd-income-banner { flex: 1; }
+        /* Развёрнутый: calc-content-wrapper занимает место */
+        #mkRightCol #calcAccordion:not(.collapsed) .calc-content-wrapper { flex: 1; }
         #mkLeftRail .header { display: none; }
         /* Котировки — белая V3-карточка */
         #mkLeftRail #marketQuietStripInner {
@@ -16506,15 +16516,23 @@ body.dark-mode .portfolio-echelons-total-row {
         /* Калькулятор — белая V3-карточка */
         #mkRightCol #calcAccordion {
             margin-top: 0 !important;
-            background: linear-gradient(145deg, #f0f7ff 0%, #e8f0fb 40%, #f5efe8 100%);
-            border: 1.5px solid rgba(184,144,106,0.18);
+            background: #ffffff;
+            border: none;
             border-radius: 22px;
-            box-shadow: 0 16px 36px rgba(24,38,60,0.07);
+            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
             overflow: hidden;
         }
-        body.dark-mode #mkRightCol #calcAccordion {
-            background: linear-gradient(145deg, #1a2535 0%, #1e2d3d 50%, #271f18 100%);
-            border-color: rgba(184,144,106,0.15);
+        body.dark-mode #mkRightCol #calcAccordion { background: #1d2734; }
+        /* Свёрнутый баннер — тёплый градиент поверх фона карточки */
+        #mkRightCol #calcAccordion.collapsed .nd-income-banner {
+            background: linear-gradient(145deg, #f0f7ff 0%, #e8f0fb 45%, #f5ede3 100%) !important;
+            border-radius: 22px;
+        }
+        #mkRightCol #calcAccordion.collapsed .nd-ib-spot1 { background: radial-gradient(circle, rgba(91,124,153,0.18) 0%, transparent 70%) !important; }
+        #mkRightCol #calcAccordion.collapsed .nd-ib-spot2 { background: radial-gradient(circle, rgba(184,144,106,0.14) 0%, transparent 70%) !important; }
+        #mkRightCol #calcAccordion.collapsed .nd-ib-spot3 { background: radial-gradient(circle, rgba(34,200,122,0.10) 0%, transparent 70%) !important; }
+        body.dark-mode #mkRightCol #calcAccordion.collapsed .nd-income-banner {
+            background: linear-gradient(145deg, #1a2535 0%, #1e2d3d 50%, #271f18 100%) !important;
         }
 
         /* ===== ТЕСТ V3 «Зеркало»: результаты слева, конфигурация справа ===== */
@@ -16533,7 +16551,7 @@ body.dark-mode .portfolio-echelons-total-row {
         /* Заголовок дублирует крошку в шапке — скрываем */
         #panel-backtest > .bt-header { display: none; }
         #btConfigCol { display: block; grid-column: 2; grid-row: 1; position: sticky; top: 0; }
-        #panel-backtest > #btResults { grid-column: 1; grid-row: 1; min-width: 0; max-width: none; width: 100%; }
+        #panel-backtest > #btResults { grid-column: 1; grid-row: 1; min-width: 0; max-width: 640px; width: 100%; }
         /* Карточки конфигурации — белые V3 */
             /* Тест: секции таблицы — V3-карточки */
         #btResults .bt-assets-card {
