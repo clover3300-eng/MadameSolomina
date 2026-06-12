@@ -15389,8 +15389,9 @@ body.dark-mode .portfolio-echelons-total-row {
             row-gap: 0;
             align-items: start;
             align-content: start;
-            justify-content: start;
+            justify-content: center;
             max-width: 1180px;
+            margin: 0 auto;
         }
         #pfRightCol { grid-column: 1; grid-row: 1; min-width: 0; max-width: none; margin: 0; width: 100%; }
         #pfLeftRail {
@@ -15632,6 +15633,141 @@ body.dark-mode .portfolio-echelons-total-row {
         body.dark-mode .v3-buylist-btn .count { background: #ffffff; color: #141b26; }
         body.dark-mode .v3-recalc-btn { background: #ffffff; color: #141b26; }
         body.dark-mode .v3-recalc-btn .ic { color: #119d5c; }
+    }
+
+    /* ===== V3: встроенная панель «Список к покупке» (вместо таблицы) ===== */
+    #v3BuyPanel { display: none; }
+    @media (min-width: 1024px) {
+        #pfRightCol.v3-buy-open .portfolio-tab-content { display: none !important; }
+        #pfRightCol.v3-buy-open #v3BuyPanel { display: flex; }
+        #v3BuyPanel {
+            flex-direction: column;
+            background: #ffffff;
+            border-radius: 22px;
+            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
+            font-family: 'Manrope', sans-serif;
+        }
+        body.dark-mode #v3BuyPanel { background: #1d2734; }
+        .v3bl-head {
+            display: flex; align-items: center; gap: 14px;
+            padding: 14px 20px 14px 16px;
+            border-bottom: 1px solid #eef2f7;
+        }
+        body.dark-mode .v3bl-head { border-bottom-color: rgba(255,255,255,0.07); }
+        .v3bl-iconbtn {
+            width: 40px; height: 40px; min-width: 40px;
+            border-radius: 12px; background: #eef2f8; border: none;
+            display: grid; place-items: center; color: #5f6d80;
+            cursor: pointer; transition: background 0.15s ease;
+        }
+        .v3bl-iconbtn:hover { background: #e3ebf5; }
+        body.dark-mode .v3bl-iconbtn { background: rgba(255,255,255,0.07); color: #c4cedd; }
+        .v3bl-iconbtn svg { width: 18px; height: 18px; }
+        .v3bl-title { font-weight: 800; font-size: 15px; color: #111927; white-space: nowrap; }
+        body.dark-mode .v3bl-title { color: #f1f6fb; }
+        .v3bl-count {
+            font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 700;
+            background: #141b26; color: #ffffff; padding: 3px 10px; border-radius: 999px;
+        }
+        body.dark-mode .v3bl-count { background: #ffffff; color: #141b26; }
+        .v3bl-head .sp { flex: 1; }
+        .v3bl-toast {
+            font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #119d5c;
+            opacity: 0; transition: opacity 0.2s ease; white-space: nowrap;
+        }
+        .v3bl-toast.show { opacity: 1; }
+
+        #v3BuyBody { padding: 2px 0 0; }
+        #v3BuyBody .sl-section-label {
+            padding: 16px 26px 8px; margin: 0;
+            font-family: 'Manrope', sans-serif;
+            font-size: 12.5px; font-weight: 700; letter-spacing: 0.12em;
+            text-transform: uppercase; color: #97a3b4;
+        }
+        #v3BuyBody .sl-card-group {
+            background: transparent; border: none; box-shadow: none;
+            border-radius: 0; margin: 0; padding: 0; overflow: visible;
+        }
+        #v3BuyBody .sl-item {
+            display: flex; align-items: center; gap: 16px;
+            padding: 9px 26px; min-height: 60px;
+            border: none; border-top: 1px solid #eef2f7; border-radius: 0;
+            margin: 0; background: transparent; box-shadow: none;
+            cursor: pointer; transition: background 0.12s ease;
+        }
+        body.dark-mode #v3BuyBody .sl-item { border-top-color: rgba(255,255,255,0.07); }
+        #v3BuyBody .sl-item:hover { background: #f8fafc; }
+        body.dark-mode #v3BuyBody .sl-item:hover { background: rgba(255,255,255,0.03); }
+        #v3BuyBody .sl-checkbox {
+            width: 22px; height: 22px; min-width: 22px;
+            border-radius: 7px; border: 1.5px solid #cfd9e6; background: #ffffff;
+            display: grid; place-items: center; transition: all 0.15s ease;
+        }
+        #v3BuyBody .sl-item.filled .sl-checkbox { background: #141b26; border-color: #141b26; }
+        body.dark-mode #v3BuyBody .sl-checkbox { background: transparent; border-color: rgba(255,255,255,0.25); }
+        body.dark-mode #v3BuyBody .sl-item.filled .sl-checkbox { background: #3ad08a; border-color: #3ad08a; }
+        #v3BuyBody .sl-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        #v3BuyBody .sl-info-top { display: flex; align-items: center; gap: 8px; }
+        #v3BuyBody .sl-badge {
+            font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 700;
+            padding: 2px 7px; border-radius: 7px;
+            background: #eef2f8; color: #5f6d80; letter-spacing: 0.04em;
+        }
+        body.dark-mode #v3BuyBody .sl-badge { background: rgba(255,255,255,0.08); color: #c4cedd; }
+        #v3BuyBody .sl-ticker {
+            font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 15px; color: #111927;
+        }
+        body.dark-mode #v3BuyBody .sl-ticker { color: #f1f6fb; }
+        #v3BuyBody .sl-name {
+            font-size: 12.5px; color: #8593a6;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 380px;
+        }
+        #v3BuyBody .sl-right { margin-left: auto; text-align: right; display: flex; flex-direction: column; gap: 2px; }
+        #v3BuyBody .sl-qty { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: #5f6d80; }
+        #v3BuyBody .sl-sum { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: #111927; }
+        body.dark-mode #v3BuyBody .sl-sum { color: #f1f6fb; }
+        #v3BuyBody .sl-item.filled .sl-ticker,
+        #v3BuyBody .sl-item.filled .sl-sum {
+            color: #9aa7b8;
+            text-decoration: line-through;
+            text-decoration-color: rgba(154,167,184,0.55);
+        }
+        #v3BuyBody .sl-item.filled .sl-checkbox svg { width: 12px; height: 12px; }
+        #v3BuyBody .sl-group-total {
+            display: flex; align-items: center; justify-content: space-between;
+            margin: 0; padding: 12px 26px;
+            background: #f6f9fc; border: none; border-top: 1px solid #eef2f7; border-radius: 0;
+        }
+        body.dark-mode #v3BuyBody .sl-group-total { background: rgba(255,255,255,0.03); border-top-color: rgba(255,255,255,0.07); }
+        #v3BuyBody .sl-group-total-label {
+            font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 12.5px;
+            color: #5f6d80; letter-spacing: 0.08em; text-transform: uppercase;
+        }
+        #v3BuyBody .sl-group-total-value {
+            font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; color: #111927;
+        }
+        body.dark-mode #v3BuyBody .sl-group-total-value { color: #f1f6fb; }
+
+        /* Тёмный футер прогресса — в стиле «Итого ОФЗ» */
+        .v3bl-foot {
+            margin: 12px 16px 16px;
+            background: #141b26; border-radius: 16px; color: #ffffff;
+            padding: 14px 18px;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        body.dark-mode .v3bl-foot { background: #0d131c; }
+        .v3bl-foot-row { display: flex; align-items: flex-end; gap: 14px; }
+        .v3bl-foot .lb {
+            font-family: 'Manrope', sans-serif;
+            font-size: 11px; letter-spacing: 0.12em; font-weight: 700;
+            color: #76849a; text-transform: uppercase; margin-bottom: 4px;
+        }
+        .v3bl-foot .vl { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 16px; white-space: nowrap; }
+        .v3bl-foot .plan { margin-left: auto; text-align: right; }
+        .v3bl-foot .plan .vl { color: #c4cedd; font-size: 13px; }
+        .v3bl-track { height: 5px; border-radius: 99px; background: rgba(255,255,255,0.12); overflow: hidden; }
+        .v3bl-bar { height: 100%; width: 0%; background: #3ad08a; border-radius: 99px; transition: width 0.25s ease; }
+        .v3bl-pct { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #3ad08a; text-align: right; }
     }
 
     /* ===== CUSTOM DATEPICKER (backtest, desktop) ===== */
@@ -28384,7 +28520,7 @@ function populatePanels() {
             buyBtn.type = 'button';
             buyBtn.className = 'v3-buylist-btn';
             buyBtn.innerHTML = '<span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="16" rx="2.5"/><path d="M9 5V4a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 4v1"/><path d="M8.5 11l1.6 1.6L13.5 9"/><path d="M8.5 16.5h5"/></svg></span>Список к покупке<span class="count" id="v3BuyCount">0</span>';
-            buyBtn.onclick = function() { if (typeof openShoppingList === 'function') openShoppingList(); };
+            buyBtn.onclick = function() { if (typeof window.v3OpenBuyList === 'function') window.v3OpenBuyList(); else if (typeof openShoppingList === 'function') openShoppingList(); };
             fcLight.appendChild(buyBtn);
         }
         // 3) Кнопка «Рассчитать заново» под панелью — возврат на вкладку Расчёт
@@ -28394,6 +28530,81 @@ function populatePanels() {
         recalc.innerHTML = '<span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 0 1 14.4-6.1L21 8"/><path d="M21 3.5V8.2h-4.7"/><path d="M20.5 12a8.5 8.5 0 0 1-14.4 6.1L3 16"/><path d="M3 20.5V15.8h4.7"/></svg></span>Рассчитать заново';
         recalc.onclick = function() { switchTab('calc'); };
         rail.appendChild(recalc);
+        // 3.5) Встроенная панель «Список к покупке» — открывается вместо таблицы
+        const pfRight = document.getElementById('pfRightCol');
+        if (pfRight) {
+            const buyPanel = document.createElement('div');
+            buyPanel.id = 'v3BuyPanel';
+            buyPanel.innerHTML =
+                '<div class="v3bl-head">' +
+                    '<button type="button" class="v3bl-iconbtn" onclick="v3CloseBuyList()" title="К портфелю">' +
+                        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg>' +
+                    '</button>' +
+                    '<span class="v3bl-title">Список к покупке</span>' +
+                    '<span class="v3bl-count" id="v3BuyCount2">0</span>' +
+                    '<span class="sp"></span>' +
+                    '<span class="v3bl-toast" id="v3BuyToast">Скопировано ✓</span>' +
+                    '<button type="button" class="v3bl-iconbtn" onclick="v3CopyBuyList()" title="Скопировать список">' +
+                        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2.5"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
+                    '</button>' +
+                '</div>' +
+                '<div id="v3BuyBody"></div>' +
+                '<div class="v3bl-foot">' +
+                    '<div class="v3bl-foot-row">' +
+                        '<div><div class="lb">Осталось купить</div><div class="vl" id="v3SlRemaining">0 ₽</div></div>' +
+                        '<div class="plan"><div class="lb">План</div><div class="vl" id="v3SlPlan">0 ₽</div></div>' +
+                    '</div>' +
+                    '<div class="v3bl-track"><div class="v3bl-bar" id="v3SlBar"></div></div>' +
+                    '<div class="v3bl-pct" id="v3SlPct">0%</div>' +
+                '</div>';
+            pfRight.insertBefore(buyPanel, pfRight.firstChild);
+        }
+        // Прогресс панели: считаем по DOM (общий стейт с toggleShopItem через data-sum/.filled)
+        function v3MirrorSlFooter() {
+            const items = document.querySelectorAll('#v3BuyBody .sl-item');
+            let total = 0, done = 0;
+            items.forEach(function(it) {
+                const s = parseFloat(it.dataset.sum) || 0;
+                total += s;
+                if (it.classList.contains('filled')) done += s;
+            });
+            const pct = total > 0 ? Math.round(done / total * 100) : 0;
+            const fmt = function(n) { return Math.max(0, Math.round(n)).toLocaleString('ru-RU') + ' ₽'; };
+            const a = document.getElementById('v3SlRemaining'); if (a) a.textContent = fmt(total - done);
+            const b = document.getElementById('v3SlPlan'); if (b) b.textContent = fmt(total);
+            const bar = document.getElementById('v3SlBar'); if (bar) bar.style.width = pct + '%';
+            const p = document.getElementById('v3SlPct'); if (p) p.textContent = pct + '%';
+        }
+        if (typeof window.updateSlFooter === 'function') {
+            const _origUpdateSlFooter = window.updateSlFooter;
+            window.updateSlFooter = function() { _origUpdateSlFooter(); v3MirrorSlFooter(); };
+        }
+        window.v3OpenBuyList = function() {
+            if (!mqV3.matches) { if (typeof openShoppingList === 'function') openShoppingList(); return; }
+            if (typeof openShoppingList === 'function') openShoppingList();
+            const ov = document.getElementById('shoppingListOverlay');
+            if (ov) ov.style.display = 'none';
+            const srcBody = document.getElementById('shoppingListBody');
+            const host = document.getElementById('v3BuyBody');
+            if (srcBody && host) { host.innerHTML = srcBody.innerHTML; srcBody.innerHTML = ''; }
+            const c1 = document.getElementById('v3BuyCount');
+            const c2 = document.getElementById('v3BuyCount2');
+            if (c1 && c2) c2.textContent = c1.textContent;
+            if (pfRight) pfRight.classList.add('v3-buy-open');
+            v3MirrorSlFooter();
+        };
+        window.v3CloseBuyList = function() {
+            if (pfRight) pfRight.classList.remove('v3-buy-open');
+        };
+        window.v3CopyBuyList = function() {
+            if (typeof copyShoppingList === 'function') copyShoppingList();
+            const t = document.getElementById('v3BuyToast');
+            if (t) { t.classList.add('show'); setTimeout(function() { t.classList.remove('show'); }, 1600); }
+        };
+        // Переключение ОФЗ/Акции возвращает таблицу
+        document.querySelectorAll('.portfolio-tab-btn').forEach(function(b) {
+            b.addEventListener('click', function() { window.v3CloseBuyList(); });
+        });
         // 4) Счётчик позиций к покупке (облигации + акции из данных списка)
         window.v3UpdateBuyCount = function() {
             const el = document.getElementById('v3BuyCount');
@@ -28410,7 +28621,11 @@ function populatePanels() {
         };
         const lbObserved = document.getElementById('listBondsV2');
         if (lbObserved && window.MutationObserver) {
-            new MutationObserver(function() { window.v3UpdateBuyCount(); }).observe(lbObserved, { childList: true });
+            new MutationObserver(function() {
+                window.v3UpdateBuyCount();
+                // если встроенный список открыт — перегенерируем его свежими данными
+                if (pfRight && pfRight.classList.contains('v3-buy-open')) window.v3OpenBuyList();
+            }).observe(lbObserved, { childList: true });
         }
         window.v3UpdateBuyCount();
         // 5) Десктоп: табы внутрь карточки капитала (между тёмным блоком и прогнозом);
@@ -28431,6 +28646,7 @@ function populatePanels() {
                     share.insertAdjacentElement('afterend', tabs);
                 }
                 if (couponTitle) couponTitle.textContent = couponTitleMobile;
+                if (window.v3CloseBuyList) window.v3CloseBuyList();
             }
         }
         if (mqV3.addEventListener) mqV3.addEventListener('change', v3Place);
@@ -28450,7 +28666,10 @@ function populatePanels() {
     };
     // Выравнивание левого края контента под началом «Madame Solomi'na». Для всех страниц с рельсой.
     window.pfSyncLeftEdge = function() {
-        const ids = ['panel-portfolio', 'panel-rebalance', 'panel-market', 'panel-backtest'];
+        // panel-portfolio исключён: V3-сетка центрируется сама (margin:auto)
+        const ids = ['panel-rebalance', 'panel-market', 'panel-backtest'];
+        const pf = document.getElementById('panel-portfolio');
+        if (pf) pf.style.paddingLeft = '';
         const els = ids.map(function(id){ return document.getElementById(id); }).filter(Boolean);
         const brand = document.getElementById('topBarTitle');
         if (window.innerWidth < 1024 || !brand) {
