@@ -1,0 +1,398 @@
+        /* ===== PORTFOLIO MAIN CARD - ORIGINAL DESIGN ===== */
+.portfolio-main-card {
+    background: var(--card-bg) !important;
+    border-radius: 28px !important;
+    padding: 0 !important;
+    margin-bottom: 20px !important;
+    box-shadow: 0 8px 25px var(--card-shadow) !important;
+    border: 1px solid var(--border-color) !important;
+    overflow: visible !important;
+    position: relative !important;
+}
+
+.stm-header {
+    padding: 24px 20px 10px !important;
+    text-align: center !important;
+    background: transparent !important;
+    display: block !important;
+}
+
+.stm-header-label {
+    font-size: 10px !important;
+    color: var(--text-secondary) !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1.2px !important;
+    margin-bottom: 10px !important;
+    display: block !important;
+    opacity: 0.7 !important;
+}
+
+.stm-val-big {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 36px !important;
+    font-weight: 700 !important;
+    color: var(--text-main) !important;
+    line-height: 1 !important;
+    display: block !important;
+    letter-spacing: -0.02em !important;
+}
+
+.stm-bar-container {
+    display: flex !important;
+    height: 8px !important;
+    margin: 16px 24px 0 24px !important;
+    border-radius: 4px !important;
+    overflow: hidden !important;
+}
+
+
+.stm-bar-bonds {
+    background: linear-gradient(90deg, #5E7BA3, #7B9BBF) !important;
+    transition: width 0.5s ease !important;
+}
+
+.stm-bar-stocks {
+    background: linear-gradient(90deg, #E8956A, #D97757) !important;
+    transition: width 0.5s ease !important;
+}
+
+.stm-meta-row {
+    padding: 10px 24px 16px !important;
+    display: block !important;
+}
+
+
+.stm-pct-labels {
+    display: flex !important;
+    justify-content: space-between !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.stm-pl-bond {
+    color: #5E7BA3 !important;
+    display: block !important;
+}
+
+.stm-pl-stock {
+    color: #D97757 !important;
+    display: block !important;
+}
+
+.portfolio-forecast {
+    background: rgba(46, 139, 87, 0.06) !important;
+    border: 1px solid rgba(46, 139, 87, 0.12) !important;
+    border-radius: 16px !important;
+    padding: 16px !important;
+    margin: 0 20px 20px 20px !important;
+}
+
+.forecast-title {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 9px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.15em !important;
+    color: #2E8B57 !important;
+    margin-bottom: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    opacity: 0.8 !important;
+}
+
+.forecast-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 16px !important;
+    margin-bottom: 14px !important;
+}
+
+/* Цифры внутри карточек (Купоны, Переоценка) */
+.forecast-item-value {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-weight: 600 !important;
+    margin-bottom: 4px !important;
+    letter-spacing: -0.03em !important; /* Чуть сжимаем расстояние между буквами */
+    
+    /* ДИНАМИЧЕСКИЙ РАЗМЕР: */
+    /* Минимум 11px, в идеале 4% от ширины экрана, Максимум 17px */
+    font-size: clamp(11px, 4vw, 17px) !important;
+    
+    /* ЗАПРЕТ ПЕРЕНОСА СТРОК: */
+    white-space: nowrap !important; 
+    
+    /* Если цифра всё равно гигантская, она не вылезет за рамки, а обрежется (опционально) */
+    overflow: hidden; 
+    text-overflow: clip; 
+}
+
+.forecast-item-label {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 10px !important;
+    color: var(--text-secondary) !important;
+    margin-top: 6px !important;
+    margin-bottom: 1px !important;
+    font-weight: 500 !important;
+}
+
+.forecast-item-sub {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 9px !important;
+    color: var(--text-secondary) !important;
+    opacity: 0.7 !important;
+}
+
+.forecast-total {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding-top: 12px !important;
+    border-top: 1px dashed rgba(46, 139, 87, 0.2) !important;
+}
+
+.forecast-total-label {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: var(--text-main) !important;
+}
+
+/* Итоговая цифра "Цель" */
+.forecast-total-value {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-weight: 800 !important; /* Сделали чуть жирнее */
+    color: #2E8B57 !important;
+    letter-spacing: -0.03em !important;
+    
+    /* ДИНАМИЧЕСКИЙ РАЗМЕР: */
+    /* Минимум 13px, в идеале 5% от ширины экрана, Максимум 20px */
+    font-size: clamp(13px, 5vw, 20px) !important;
+    
+    white-space: nowrap !important;
+}
+
+                /* ========== НОВЫЕ СТИЛИ ДЛЯ ГЛАВНОЙ СТРАНИЦЫ (ВШИТОЕ МЕНЮ) ========== */
+
+         body.home-mode {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: hidden !important;
+            padding: 0 !important; 
+            margin: 0 !important;
+            background: transparent !important; /* На всякий случай убираем фон у body */
+        }
+
+        /* Исправление белой полосы тут: min-height: 100vh */
+        body.home-mode .welcome-screen {
+            margin: 0 !important;
+            width: 100% !important;
+            min-height: 100vh !important; /* Растягиваем фон на ВЕСЬ экран */
+            height: 100% !important;
+            border-radius: 0 !important;
+            box-sizing: border-box;
+            padding-bottom: 0 !important; /* Убираем нижний отступ, если был */
+        }
+
+         /* --- МАГИЯ ЗДЕСЬ: ДВИГАЕМ ТОЛЬКО ВЕРХ --- */
+        body.home-mode .welcome-logo-block {
+            /* Поднимаем логотип вверх визуально */
+            /* -15vh означает "поднять на 15% высоты экрана" */
+            /* Кнопка при этом останется на месте, так как transform не толкает соседей */
+            transform: translateY(-8vh) !important; 
+        }
+
+        /* Кнопку оставляем как есть */
+        body.home-mode .welcome-cta-block {
+            margin: 0 !important; 
+            transform: none !important; /* Гарантируем, что кнопка не сдвинется */
+        }
+        
+        /* Когда мы на главной (home-mode), убираем фон, границы и тени у "дока" с кнопками */
+        body.home-mode .nav-dock {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            gap: 25px; /* Немного увеличим расстояние между кнопками для красоты */
+        }
+
+        /* То же самое для кнопки поиска (Лупы) */
+        body.home-mode .nav-search-btn {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            backdrop-filter: none !important;
+        }
+
+        /* Скрываем кнопку "Домик" на главной странице */
+        body.home-mode #nav-home {
+            display: none !important;
+        }
+
+        /* Делаем иконки чуть более явными на фоне, если нужно (опционально) */
+        body.home-mode .nav-item, 
+        body.home-mode .nav-search-btn {
+            color: var(--text-secondary); /* Или любой цвет, который хорошо смотрится на твоем фоне */
+            opacity: 0.8;
+        }
+        
+        /* Активная иконка на главной пусть выделяется */
+        body.home-mode .nav-item.active {
+            background: transparent !important;
+            color: var(--text-main) !important;
+            transform: scale(1.1);
+        }
+        /* ========== КОМПАКТНОЕ МЕНЮ ДЛЯ НЕ-ГЛАВНЫХ СТРАНИЦ ========== */
+        body.compact-nav .nav-wrapper {
+            bottom: 30px;
+            gap: 6px;
+        }
+
+        body.compact-nav .nav-dock {
+            background: rgba(255, 255, 255, 0.55) !important;
+            backdrop-filter: blur(16px) saturate(180%) !important;
+            -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+            border: 1px solid rgba(255, 255, 255, 0.7) !important;
+            border-radius: 20px !important;
+            padding: 4px 10px !important;
+            gap: 4px !important;
+            box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.08), 
+                        0 2px 8px rgba(0, 0, 0, 0.04) !important;
+        }
+
+        body.compact-nav .nav-item {
+            width: 38px !important;
+            height: 38px !important;
+            border-radius: 14px !important;
+            color: rgba(100, 116, 139, 0.6) !important;
+        }
+        body.compact-nav .nav-item svg {
+            width: 19px !important;
+            height: 19px !important;
+        }
+        body.compact-nav .nav-item.active {
+            color: var(--accent-blue) !important;
+            background: rgba(52, 152, 219, 0.1) !important;
+        }
+
+        body.compact-nav .nav-search-btn {
+            width: 42px !important;
+            height: 42px !important;
+            border-radius: 16px !important;
+            background: rgba(255, 255, 255, 0.55) !important;
+            backdrop-filter: blur(16px) saturate(180%) !important;
+            -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+            border: 1px solid rgba(255, 255, 255, 0.7) !important;
+            box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.08),
+                        0 2px 8px rgba(0, 0, 0, 0.04) !important;
+            color: rgba(100, 116, 139, 0.6) !important;
+        }
+        body.compact-nav .nav-search-btn svg {
+            width: 20px !important;
+            height: 20px !important;
+        }
+        body.compact-nav .nav-search-btn.active {
+            background: var(--accent-blue) !important;
+            color: white !important;
+            border-color: var(--accent-blue) !important;
+        }
+
+        body.compact-nav .theme-toggle-mini {
+            top: -8px !important;
+            right: -10px !important;
+            width: 22px !important;
+            height: 22px !important;
+        }
+        body.compact-nav .theme-toggle-mini svg {
+            width: 12px !important;
+            height: 12px !important;
+        }
+
+        /* === COMPACT NAV DARK MODE === */
+        body.dark-mode.compact-nav .nav-dock {
+            background: rgba(30, 41, 59, 0.65) !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.3),
+                        0 2px 8px rgba(0, 0, 0, 0.2) !important;
+        }
+
+        body.dark-mode.compact-nav .nav-item {
+            color: rgba(148, 163, 184, 0.5) !important;
+        }
+        body.dark-mode.compact-nav .nav-item.active {
+            color: #38bdf8 !important;
+            background: rgba(56, 189, 248, 0.12) !important;
+        }
+
+        body.dark-mode.compact-nav .nav-search-btn {
+            background: rgba(30, 41, 59, 0.65) !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.3),
+                        0 2px 8px rgba(0, 0, 0, 0.2) !important;
+            color: rgba(148, 163, 184, 0.5) !important;
+        }
+
+        /* === COMPACT NAV: EXPANDED SEARCH BAR === */
+        body.compact-nav .nav-search-expanded {
+            height: 50px !important;
+            background: rgba(255, 255, 255, 0.55) !important;
+            backdrop-filter: blur(16px) saturate(180%) !important;
+            -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+            border: 1px solid rgba(255, 255, 255, 0.7) !important;
+            border-radius: 20px !important;
+            box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.08),
+                        0 2px 8px rgba(0, 0, 0, 0.04) !important;
+            padding: 0 4px !important;
+            gap: 4px !important;
+        }
+        body.compact-nav .nav-search-expanded .nav-search-input-bar {
+            height: 36px !important;
+            border-radius: 14px !important;
+            font-size: 13px !important;
+            background: rgba(0, 0, 0, 0.04) !important;
+        }
+        body.compact-nav .nav-search-expanded .nav-back-island {
+            width: 36px !important;
+            height: 36px !important;
+            border-radius: 12px !important;
+            background: rgba(255, 255, 255, 0.6) !important;
+            border: 1px solid rgba(255, 255, 255, 0.5) !important;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+        }
+        body.compact-nav .nav-search-expanded .nav-back-island svg {
+            width: 18px !important;
+            height: 18px !important;
+        }
+        body.compact-nav .nav-search-expanded .nav-item {
+            width: 36px !important;
+            height: 36px !important;
+        }
+        body.compact-nav .nav-search-expanded .nav-item svg {
+            width: 18px !important;
+            height: 18px !important;
+        }
+
+        /* Compact search bar dark mode */
+        body.dark-mode.compact-nav .nav-search-expanded {
+            background: rgba(30, 41, 59, 0.65) !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.3),
+                        0 2px 8px rgba(0, 0, 0, 0.2) !important;
+        }
+        body.dark-mode.compact-nav .nav-search-expanded .nav-search-input-bar {
+            background: rgba(255, 255, 255, 0.08) !important;
+        }
+        body.dark-mode.compact-nav .nav-search-expanded .nav-back-island {
+            background: rgba(255, 255, 255, 0.08) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+        /* ========== КОНЕЦ КОМПАКТНОГО МЕНЮ ========== */
+
+        /* ========== КОНЕЦ НОВЫХ СТИЛЕЙ ========== */
+

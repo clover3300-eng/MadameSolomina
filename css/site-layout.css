@@ -1,0 +1,1893 @@
+    /* ===================================================== */
+    /* ===== SITE LAYOUT: LEFT SIDEBAR + RESPONSIVE ======== */
+    /* ===================================================== */
+    :root { --sb-w: 236px; }
+
+    /* Bottom tab bar fully replaced by sidebar/burger */
+    #bottomTabBar { display: none !important; }
+
+    /* ---------- Sidebar base ---------- */
+    #sideBar {
+        background: #161B27;
+        display: flex;
+        flex-direction: column;
+        font-family: 'Inter', sans-serif;
+        box-sizing: border-box;
+        overflow-y: auto;
+        overflow-x: hidden;
+        scrollbar-width: none;
+    }
+    #sideBar::-webkit-scrollbar { display: none; }
+    #sbPanel { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+    @media (max-width: 1023px) {
+        #sbFoot { display: none; }
+    }
+    #sbHead {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: calc(env(safe-area-inset-top, 0px) + 22px) 14px 16px;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        margin-bottom: 10px; flex-shrink: 0; gap: 8px;
+    }
+    #sbLogo { display: flex; align-items: center; gap: 11px; cursor: pointer; min-width: 0; -webkit-tap-highlight-color: transparent; }
+    .sb-logo-mark {
+        width: 34px; height: 34px; border-radius: 10px;
+        background: linear-gradient(180deg, #F1F6FB 0%, #F9FAFC 100%);
+        color: #2C364C; display: flex; align-items: center; justify-content: center;
+        font-weight: 800; font-size: 15px; flex-shrink: 0;
+    }
+    .sb-logo-text { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+    .sb-logo-name { color: #F1F6FB; font-size: 13.5px; white-space: nowrap; }
+    .sb-logo-sub { color: rgba(241,246,251,0.38); font-size: 9.5px; letter-spacing: 0.16em; text-transform: uppercase; margin-top: 2px; }
+    #sbNav { display: flex; flex-direction: column; gap: 3px; padding: 4px 10px; flex: 1; }
+    .sb-item {
+        display: flex; align-items: center; gap: 12px;
+        width: 100%; border: none; background: transparent;
+        padding: 11px 12px; border-radius: 10px;
+        color: rgba(241,246,251,0.55);
+        font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 500; letter-spacing: 0.01em;
+        cursor: pointer; text-align: left;
+        transition: background 0.15s ease, color 0.15s ease;
+        -webkit-tap-highlight-color: transparent;
+        position: relative;
+    }
+    .sb-item svg { width: 19px; height: 19px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .sb-item:hover { background: rgba(255,255,255,0.05); color: rgba(241,246,251,0.85); }
+    .sb-item.active { background: rgba(143,179,160,0.14); color: #A7C7B5; }
+    .sb-item.active::before {
+        content: ''; position: absolute; left: -10px; top: 50%; transform: translateY(-50%);
+        width: 3px; height: 20px; border-radius: 0 3px 3px 0; background: #8FB3A0;
+    }
+    .sb-label { white-space: nowrap; overflow: hidden; }
+    #sbFoot { padding: 10px; border-top: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; }
+    #sbFoot .sb-item { color: rgba(241,246,251,0.4); font-size: 12.5px; }
+    #sbFoot .sb-item:hover { color: rgba(241,246,251,0.75); background: rgba(255,255,255,0.05); }
+    #sbCollapseBtn svg { transition: transform 0.25s ease; }
+    body.sb-collapsed #sbCollapseBtn svg { transform: rotate(180deg); }
+
+    /* ---------- Burger & close buttons ---------- */
+    #sbBurgerBtn {
+        display: flex; align-items: center; justify-content: center;
+        width: 38px; height: 38px; border: none; border-radius: 11px;
+        background: rgba(44,54,76,0.06); color: #2C364C;
+        cursor: pointer; margin-right: 12px; flex-shrink: 0;
+        -webkit-tap-highlight-color: transparent;
+        transition: background 0.15s ease;
+    }
+    #sbBurgerBtn:active { background: rgba(44,54,76,0.12); }
+    #sbBurgerBtn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+    body.dark-mode #sbBurgerBtn { background: rgba(255,255,255,0.08); color: #F1F6FB; }
+    #sbCloseBtn {
+        display: flex; align-items: center; justify-content: center;
+        width: 32px; height: 32px; border: none; border-radius: 9px;
+        background: rgba(255,255,255,0.06); color: rgba(241,246,251,0.6);
+        cursor: pointer; flex-shrink: 0; -webkit-tap-highlight-color: transparent;
+    }
+    #sbCloseBtn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+
+    /* topBar holds burger on the left */
+    #topBar > #topBarBrand { min-width: 0; }
+
+    /* ---------- Mobile: off-canvas drawer ---------- */
+    #sideBar {
+        position: fixed; top: 0; left: 0; bottom: 0;
+        width: min(290px, 84vw);
+        z-index: 1200;
+        transform: translateX(-105%);
+        transition: transform 0.28s cubic-bezier(0.32, 0.72, 0.28, 1), box-shadow 0.28s ease;
+        box-shadow: 12px 0 40px rgba(10,14,24,0);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    body.sb-open #sideBar { transform: none; box-shadow: 12px 0 40px rgba(10,14,24,0.35); }
+    #sbOverlay {
+        position: fixed; inset: 0;
+        background: rgba(13,18,30,0.5);
+        backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+        z-index: 1199; opacity: 0; pointer-events: none;
+        transition: opacity 0.25s ease;
+    }
+    body.sb-open #sbOverlay { opacity: 1; pointer-events: auto; }
+
+    /* Collapse control is desktop-only */
+    @media (max-width: 1023px) {
+        #sbCollapseBtn { display: none; }
+        /* Header: one tidy line — compact brand, icon-only search */
+        #topBarTitle { white-space: nowrap; font-size: 15px !important; }
+        #topSearchBtn { font-size: 0; gap: 0; padding: 9px; border-radius: 50%; }
+        #topSearchBtn svg { width: 16px; height: 16px; }
+        /* On section pages the section badge IS the title (iOS pattern) */
+        body:not(.tab-home) #topBarTitle { display: none; }
+        #topBarCrumb { margin-left: 0 !important; }
+        #topBar { position: relative; }
+        body:not(.tab-home) #topBarBrand {
+            margin-right: auto;   /* плашка прижата к бургеру, действия уходят вправо */
+            flex: 0 0 auto;
+        }
+        body:not(.tab-home) #topBarCrumb {
+            position: static;
+            transform: none;
+            margin-left: 2px !important;
+        }
+        #topBarCrumb { padding: 8px 15px 8px 13px; }
+        .hdr-chip svg { width: 17px; height: 17px; }
+        .hdr-sec { font-size: 15px; }
+    }
+
+    /* ===== Section badge: single sage plaque (icon + text inside) ===== */
+    #topBarCrumb {
+        align-items: center;
+        gap: 8px;
+        background: #ffffff;
+        border: 1px solid rgba(44,54,76,0.06);
+        border-radius: 13px;
+        padding: 8px 16px 8px 14px;
+        box-shadow: 0 2px 8px rgba(24,38,60,0.06);
+    }
+    body.dark-mode #topBarCrumb {
+        background: rgba(255,255,255,0.1);
+        border-color: rgba(255,255,255,0.08);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .hdr-chip {
+        width: auto; height: auto;
+        border-radius: 0;
+        background: transparent;
+        border: none;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+    .hdr-chip svg {
+        width: 15px; height: 15px;
+        stroke: #2C364C; fill: none; stroke-width: 2;
+        stroke-linecap: round; stroke-linejoin: round;
+        opacity: 0.85;
+    }
+    .hdr-sec {
+        font-family: 'Inter', sans-serif;
+        font-size: 13px; font-weight: 700;
+        color: var(--text-deep, #2C364C);
+        letter-spacing: -0.01em;
+        white-space: nowrap;
+    }
+    body.dark-mode .hdr-chip svg { stroke: #F1F6FB; }
+    body.dark-mode .hdr-sec { color: #F1F6FB; }
+
+    @media (min-width: 1024px) {
+        #topBarCrumb { margin-left: 29px !important; position: relative; }
+        #topBarCrumb::before {
+            content: '';
+            position: absolute;
+            left: -15px; top: 50%;
+            transform: translateY(-50%);
+            width: 1px; height: 18px;
+            background: rgba(44,54,76,0.13);
+        }
+        body.dark-mode #topBarCrumb::before { background: rgba(255,255,255,0.13); }
+    }
+
+    /* Welcome page: brand centered over the hero, actions pinned right */
+    body.tab-home #topBarBrand {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+    body.tab-home #topBarActions { margin-left: auto; }
+
+    /* ===== MARKET TAB: balanced hierarchy ===== */
+    /* Quote strip -> visible mini-tiles */
+    #marketPanelContent #marketQuietStripInner {
+        gap: 10px !important;
+        padding: 0 !important;
+        margin: 0 0 18px !important;
+        justify-content: flex-start !important;
+    }
+    #marketPanelContent .dqs-item {
+        flex: 1;
+        min-width: 0;
+        justify-content: center;
+        gap: 8px;
+        padding: 11px 12px;
+        background: var(--card-bg, #ffffff);
+        border: 1px solid rgba(44,54,76,0.07);
+        border-radius: 14px;
+        box-shadow: 0 2px 10px rgba(44,54,76,0.05);
+    }
+    body.dark-mode #marketPanelContent .dqs-item {
+        background: rgba(255,255,255,0.05);
+        border-color: rgba(255,255,255,0.08);
+        box-shadow: none;
+    }
+    #marketPanelContent .dqs-dot { width: 6px; height: 6px; opacity: 1; }
+    #marketPanelContent .dqs-label { font-size: 10px; }
+    #marketPanelContent .dqs-value {
+        font-size: 14px;
+        font-weight: 600;
+        opacity: 1;
+        color: var(--text-deep, #2C364C);
+    }
+    body.dark-mode #marketPanelContent .dqs-value { color: #F1F6FB; }
+    #marketPanelContent .dqs-sep { display: none; }
+
+    /* Rates vertical: proper card matching the income banner */
+    @media (min-width: 1024px) {
+        #marketPanelContent .rates-glass-card {
+            align-self: stretch;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 0 !important;
+        }
+        #marketPanelContent .rates-glass-card .rates-row-list {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+        }
+    }
+    #marketPanelContent .rates-glass-card {
+        background: var(--card-bg, #ffffff) !important;
+        border: 1px solid rgba(44,54,76,0.07) !important;
+        border-radius: 20px !important;
+        padding: 16px 16px 8px !important;
+        box-shadow: 0 4px 20px rgba(44,54,76,0.06) !important;
+    }
+    body.dark-mode #marketPanelContent .rates-glass-card {
+        background: rgba(255,255,255,0.05) !important;
+        border-color: rgba(255,255,255,0.08) !important;
+        box-shadow: none !important;
+    }
+    #marketPanelContent .rate-row-item { padding: 11px 0 !important; }
+    #marketPanelContent .rate-row-item:last-child { padding-bottom: 13px !important; }
+    #marketPanelContent .rate-row-value {
+        font-size: 13px !important;
+        font-weight: 500 !important;
+        color: var(--text-slate, #475569) !important;
+    }
+    body.dark-mode #marketPanelContent .rate-row-value { color: #cbd5e1 !important; }
+    @media (max-width: 1023px) {
+        #marketPanelContent .rates-glass-card { margin-bottom: 24px !important; }
+    }
+    @media (min-width: 1024px) {
+        #marketPanelContent .rates-glass-card { margin-bottom: 0 !important; }
+    }
+    #marketPanelContent .rates-glass-card .rv-title { margin-bottom: 12px !important; }
+    #marketPanelContent .rates-glass-card .rv-title::before { display: none !important; }
+
+    /* Income banner: compact */
+    #marketPanelContent .nd-income-banner { padding: 14px 14px 12px; }
+    #marketPanelContent .nd-ib-header { margin-bottom: 12px; }
+    #marketPanelContent .nd-ib-icon { width: 30px; height: 30px; border-radius: 9px; }
+    #marketPanelContent .nd-ib-main { padding: 10px 0 12px; margin-bottom: 10px; }
+    #marketPanelContent .nd-ib-main-label { margin-bottom: 6px; }
+    #marketPanelContent .nd-ib-num { font-size: 32px; font-weight: 700; }
+    #marketPanelContent .nd-ib-rub { font-size: 20px; }
+    #marketPanelContent .nd-ib-metric { padding: 9px 11px; border-radius: 12px; }
+    #marketPanelContent .nd-ib-metric-num { font-size: 17px; font-weight: 700; }
+    #marketPanelContent .nd-ib-rub-sm { font-size: 12px; }
+    #marketPanelContent .nd-ib-pct { font-size: 13px; }
+
+    /* ===== PORTFOLIO: 3-section desktop layout ===== */
+    @media (max-width: 1023px) {
+        /* мобильный порядок прежний: пилл сверху, капитал, табы, списки */
+        #pfLeftRail { display: flex; flex-direction: column; }
+        #pfLeftRail .panel-section-header { order: -1; margin-bottom: 14px; }
+        #pfLeftRail .portfolio-content-tabs { order: 2; }
+        #pfLeftRail #shareContainer { order: 1; }
+        /* ребаланс: заголовок остаётся первым на мобилке */
+        #rbLeftRail { display: flex; flex-direction: column; }
+        #rbLeftRail .header { order: -1; }
+    }
+    /* ===== PORTFOLIO V3 «Зеркало»: новые элементы скрыты на мобиле, обёртки прозрачны ===== */
+    .v3-buylist-btn, .v3-recalc-btn { display: none; }
+    .v3-table-card { display: contents; }
+
+    @media (min-width: 1024px) {
+        #panel-portfolio { max-width: none !important; }
+        /* Сетка-зеркало: таблица слева (1fr), сводная панель справа 396px */
+        #portfolio-page-buy.active {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) 396px;
+            column-gap: 22px;
+            row-gap: 0;
+            align-items: start;
+            align-content: start;
+            justify-content: center;
+            max-width: 1180px;
+            margin: 0 auto;
+        }
+        #pfRightCol {
+            grid-column: 1; grid-row: 1;
+            min-width: 0; max-width: none; margin: 0; width: 100%;
+            display: flex; flex-direction: column;
+        }
+        #pfLeftRail {
+            grid-column: 2; grid-row: 1;
+            display: flex; flex-direction: column; min-width: 0;
+        }
+        /* Таблица ОФЗ естественной высоты, купонный стрип с зазором 16px */
+        #pfRightCol .v3-table-card { flex: 0 0 auto; }
+        #pfRightCol .portfolio-coupon-card { margin: 16px 0 0 !important; flex: 0 0 auto; }
+        /* Карточка капитала: высота синхронизируется с таблицей через JS,
+           кнопка идёт за ней с тем же зазором 16px → низ кнопки = низ стрипа */
+        #pfLeftRail .portfolio-capital-card {
+            flex: 0 0 auto;
+            display: flex !important;
+            flex-direction: column;
+            margin: 0 !important;
+        }
+        #pfLeftRail .capital-forecast-light { flex: 1; }
+        .v3-recalc-btn { flex: 0 0 auto; margin-top: 16px; }
+        /* Пилл «К расчёту» и иконки действий заменены кнопками V3 */
+        #pfLeftRail .panel-section-header { display: none !important; }
+
+        /* ===== Правая панель: единая карточка ===== */
+        #pfLeftRail .portfolio-capital-card {
+            background: #ffffff !important;
+            border: none !important;
+            border-radius: 22px !important;
+            box-shadow: 0 16px 36px rgba(24,38,60,0.08) !important;
+            overflow: hidden;
+            margin-bottom: 0 !important;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Manrope', sans-serif;
+        }
+        #pfLeftRail .capital-decoration { display: none; }
+        /* Тёмный блок капитала */
+        #pfLeftRail .capital-dark-top {
+            background: linear-gradient(135deg, #10161f 0%, #222e3f 100%) !important;
+            border-radius: 22px 22px 0 0;
+            padding: 28px 28px 26px !important;
+        }
+        #pfLeftRail .capital-hero { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 0; }
+        #pfLeftRail .capital-hero-left { flex: 1; min-width: 0; }
+        #pfLeftRail .capital-label-text {
+            font-family: 'Manrope', sans-serif;
+            font-size: 12.5px; letter-spacing: 0.14em; font-weight: 700;
+            color: #76849a; text-transform: uppercase; white-space: nowrap;
+            margin: 0 0 10px;
+        }
+        #pfLeftRail .capital-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 32px; font-weight: 700; letter-spacing: -0.01em;
+            color: #ffffff; white-space: nowrap; display: inline-block; max-width: 100%;
+        }
+        #pfLeftRail .capital-fee-corner {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12.5px !important; font-weight: 600;
+            padding: 5px 11px !important; border-radius: 999px;
+            background: rgba(255,255,255,0.1) !important;
+            color: #c4cedd !important;
+            border: none !important; margin-top: 2px;
+        }
+        #pfLeftRail .capital-thin-bar { height: 5px; border-radius: 99px; margin: 32px 0 20px; overflow: hidden; }
+        /* Легенда: точка + имя слева, % и сумма справа */
+        #pfLeftRail .capital-legend { display: flex; flex-direction: column; align-items: stretch; gap: 0; }
+        #pfLeftRail .capital-legend-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 5px 0; font-size: 15px !important; white-space: nowrap;
+            font-family: 'Manrope', sans-serif;
+        }
+        #pfLeftRail .capital-legend-item .legend-dot { width: 7px; height: 7px; border-radius: 99px; flex: 0 0 auto; position: static; }
+        #pfLeftRail .capital-legend-item .legend-name { color: #b9c4d4; font-weight: 600; padding: 0; font-size: 15px; }
+        #pfLeftRail .capital-legend-item .legend-pct {
+            margin-left: auto; font-family: 'JetBrains Mono', monospace;
+            font-weight: 700; color: #ffffff; font-size: 15px !important; min-width: 0; text-align: right;
+        }
+        #pfLeftRail .capital-legend-item .legend-sep { display: none; }
+        #pfLeftRail .capital-legend-item .legend-sum {
+            font-family: 'JetBrains Mono', monospace; color: #76849a;
+            font-size: 14px !important; min-width: 150px; text-align: right;
+        }
+
+        /* Табы внутри карточки (между тёмным блоком и прогнозом) */
+        #pfLeftRail .portfolio-capital-card .portfolio-content-tabs {
+            margin: 0 !important;
+            padding: 16px 20px !important;
+            border-bottom: 1px solid #e3e9f1;
+            background: #ffffff;
+        }
+        #pfLeftRail .portfolio-tab-switcher {
+            width: 100%;
+            background: #eef2f8;
+            border: none;
+            border-radius: 18px;
+            padding: 7px;
+            gap: 10px;
+            box-shadow: none;
+            display: flex;
+            position: relative;
+        }
+        #pfLeftRail .portfolio-tab-glider { display: none; }
+        #pfLeftRail .portfolio-tab-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            padding: 13px 18px;
+            border: none;
+            border-radius: 13px;
+            background: transparent;
+            font-family: 'Manrope', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0;
+            color: #5f6d80;
+            cursor: pointer;
+            transition: background 0.18s, color 0.18s;
+            position: relative;
+            z-index: 1;
+        }
+        #pfLeftRail .portfolio-tab-btn svg { width: 17px; height: 17px; }
+        #pfLeftRail .portfolio-tab-btn.active {
+            background: #141b26;
+            color: #ffffff;
+            box-shadow: none;
+        }
+
+        /* Прогноз (светлая часть карточки) */
+        #pfLeftRail .capital-forecast-light {
+            background: #ffffff !important;
+            box-shadow: none !important;
+            padding: 22px 26px 22px !important;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+        #pfLeftRail .forecast-main-row {
+            display: grid !important;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            position: static;
+            margin-bottom: 0;
+        }
+        #pfLeftRail .forecast-data-line { display: contents; }
+        #pfLeftRail .forecast-label-text {
+            grid-column: 1; grid-row: 1;
+            font-family: 'Manrope', sans-serif;
+            font-size: 12.5px; letter-spacing: 0.14em; font-weight: 700;
+            color: #9aa7b8; text-transform: uppercase; white-space: nowrap;
+            padding: 0;
+        }
+        #pfLeftRail .forecast-pct-display {
+            grid-column: 2; grid-row: 1;
+            position: static;
+            margin: 0 !important;
+        }
+        #pfLeftRail .forecast-pct-display::before {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12.5px; font-weight: 600;
+            padding: 5px 11px;
+            transform: none;
+            border-radius: 999px;
+            background: rgba(22,181,107,0.12);
+            color: #119d5c;
+            border: none;
+            box-shadow: none;
+            letter-spacing: 0;
+            backdrop-filter: none; -webkit-backdrop-filter: none;
+        }
+        #pfLeftRail .forecast-data-total {
+            grid-column: 1 / -1; grid-row: 2;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 27px; font-weight: 700;
+            color: #111927;
+            margin: 12px 0 16px;
+            white-space: nowrap; display: block; max-width: 100%;
+        }
+        #pfLeftRail .forecast-breakdown-row {
+            display: flex !important;
+            flex-direction: column;
+            align-items: stretch !important;
+            gap: 0;
+            margin-top: 0;
+            border-top: 1px solid #e3e9f1;
+            padding-top: 14px;
+        }
+        #pfLeftRail .forecast-breakdown-divider { display: none; }
+        #pfLeftRail .forecast-breakdown-item { display: flex; align-items: center; gap: 10px; padding: 4px 0; }
+        #pfLeftRail .forecast-breakdown-item .fb-dot { width: 7px; height: 7px; border-radius: 99px; position: static; }
+        #pfLeftRail .forecast-breakdown-item .fb-label {
+            font-family: 'Manrope', sans-serif; color: #5f6d80;
+            font-size: 14.5px !important; padding: 0;
+        }
+        #pfLeftRail .forecast-breakdown-item .fb-value {
+            margin-left: auto; font-family: 'JetBrains Mono', monospace;
+            color: #38465a; font-size: 14px !important; text-align: right;
+        }
+
+        /* Кнопка «Список к покупке» внизу карточки */
+        .v3-buylist-btn {
+            margin-top: 22px;
+            display: flex; align-items: center; gap: 12px;
+            background: #eef3f9; border: none; border-radius: 14px;
+            padding: 15px 18px;
+            font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 15px;
+            color: #111927; white-space: nowrap; cursor: pointer;
+            width: 100%; text-align: left;
+            transition: background 0.15s ease;
+        }
+        .v3-buylist-btn:hover { background: #e3ebf5; }
+        .v3-buylist-btn .ic { display: inline-flex; color: #5f6d80; }
+        .v3-buylist-btn .count {
+            margin-left: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12.5px; font-weight: 700;
+            background: #141b26; color: #ffffff;
+            padding: 3px 10px; border-radius: 999px;
+        }
+
+        /* Кнопка «Рассчитать заново» под панелью */
+        .v3-recalc-btn {
+            display: flex; align-items: center; justify-content: center; gap: 11px;
+            background: #141b26; color: #ffffff;
+            border: none; border-radius: 18px; padding: 23px 18px;
+            font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 15px;
+            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
+            white-space: nowrap; cursor: pointer; width: 100%;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .v3-recalc-btn:hover { transform: translateY(-1px); box-shadow: 0 20px 42px rgba(24,38,60,0.14); }
+        .v3-recalc-btn .ic { display: inline-flex; color: #7ee2a8; }
+
+        /* Тёмная тема: панель остаётся тёмной по духу приложения */
+        body.dark-mode #pfLeftRail .portfolio-capital-card { background: #1d2734 !important; }
+        body.dark-mode #pfLeftRail .portfolio-capital-card .portfolio-content-tabs { background: #1d2734; border-bottom-color: rgba(255,255,255,0.08); }
+        body.dark-mode #pfLeftRail .portfolio-tab-switcher { background: rgba(255,255,255,0.07); }
+        body.dark-mode #pfLeftRail .portfolio-tab-btn.active { background: #ffffff; color: #141b26; }
+        body.dark-mode #pfLeftRail .capital-forecast-light { background: #1d2734 !important; }
+        body.dark-mode #pfLeftRail .forecast-data-total { color: #ffffff; }
+        body.dark-mode #pfLeftRail .forecast-breakdown-row { border-top-color: rgba(255,255,255,0.08); }
+        body.dark-mode #pfLeftRail .forecast-breakdown-item .fb-value { color: #c4cedd; }
+        body.dark-mode .v3-buylist-btn { background: rgba(255,255,255,0.07); color: #f1f6fb; }
+        body.dark-mode .v3-buylist-btn:hover { background: rgba(255,255,255,0.1); }
+        body.dark-mode .v3-buylist-btn .count { background: #ffffff; color: #141b26; }
+        body.dark-mode .v3-recalc-btn { background: #ffffff; color: #141b26; }
+        body.dark-mode .v3-recalc-btn .ic { color: #119d5c; }
+    }
+
+    /* ===== V3: встроенная панель «Список к покупке» (вместо таблицы) ===== */
+    #v3BuyPanel { display: none; }
+    @media (min-width: 1024px) {
+        #pfRightCol.v3-buy-open .portfolio-tab-content { display: none !important; }
+        #pfRightCol.v3-buy-open #v3BuyPanel { display: flex; }
+        #v3BuyPanel {
+            flex-direction: column;
+            background: #ffffff;
+            border-radius: 22px;
+            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
+            font-family: 'Manrope', sans-serif;
+        }
+        body.dark-mode #v3BuyPanel { background: #1d2734; }
+        .v3bl-head {
+            display: flex; align-items: center; gap: 14px;
+            padding: 14px 20px 14px 16px;
+            border-bottom: 1px solid #eef2f7;
+        }
+        body.dark-mode .v3bl-head { border-bottom-color: rgba(255,255,255,0.07); }
+        .v3bl-iconbtn {
+            width: 40px; height: 40px; min-width: 40px;
+            border-radius: 12px; background: #eef2f8; border: none;
+            display: grid; place-items: center; color: #5f6d80;
+            cursor: pointer; transition: background 0.15s ease;
+        }
+        .v3bl-iconbtn:hover { background: #e3ebf5; }
+        body.dark-mode .v3bl-iconbtn { background: rgba(255,255,255,0.07); color: #c4cedd; }
+        .v3bl-iconbtn svg { width: 18px; height: 18px; }
+        .v3bl-title { font-weight: 800; font-size: 15px; color: #111927; white-space: nowrap; }
+        body.dark-mode .v3bl-title { color: #f1f6fb; }
+        .v3bl-count {
+            font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 700;
+            background: #141b26; color: #ffffff; padding: 3px 10px; border-radius: 999px;
+        }
+        body.dark-mode .v3bl-count { background: #ffffff; color: #141b26; }
+        .v3bl-head .sp { flex: 1; }
+        .v3bl-toast {
+            font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #119d5c;
+            opacity: 0; transition: opacity 0.2s ease; white-space: nowrap;
+        }
+        .v3bl-toast.show { opacity: 1; }
+
+        #v3BuyBody { padding: 2px 0 0; }
+        #v3BuyBody .sl-section-label {
+            padding: 16px 26px 8px; margin: 0;
+            font-family: 'Manrope', sans-serif;
+            font-size: 12.5px; font-weight: 700; letter-spacing: 0.12em;
+            text-transform: uppercase; color: #97a3b4;
+        }
+        #v3BuyBody .sl-card-group {
+            background: transparent; border: none; box-shadow: none;
+            border-radius: 0; margin: 0; padding: 0; overflow: visible;
+        }
+        #v3BuyBody .sl-item {
+            display: flex; align-items: center; gap: 16px;
+            padding: 9px 26px; min-height: 60px;
+            border: none; border-top: 1px solid #eef2f7; border-radius: 0;
+            margin: 0; background: transparent; box-shadow: none;
+            cursor: pointer; transition: background 0.12s ease;
+        }
+        body.dark-mode #v3BuyBody .sl-item { border-top-color: rgba(255,255,255,0.07); }
+        #v3BuyBody .sl-item:hover { background: #f8fafc; }
+        body.dark-mode #v3BuyBody .sl-item:hover { background: rgba(255,255,255,0.03); }
+        #v3BuyBody .sl-checkbox {
+            width: 22px; height: 22px; min-width: 22px;
+            border-radius: 7px; border: 1.5px solid #cfd9e6; background: #ffffff;
+            display: grid; place-items: center; transition: all 0.15s ease;
+        }
+        #v3BuyBody .sl-item.filled .sl-checkbox { background: #141b26; border-color: #141b26; }
+        body.dark-mode #v3BuyBody .sl-checkbox { background: transparent; border-color: rgba(255,255,255,0.25); }
+        body.dark-mode #v3BuyBody .sl-item.filled .sl-checkbox { background: #3ad08a; border-color: #3ad08a; }
+        #v3BuyBody .sl-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        #v3BuyBody .sl-info-top { display: flex; align-items: center; gap: 8px; }
+        #v3BuyBody .sl-badge {
+            font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 700;
+            padding: 2px 7px; border-radius: 7px;
+            background: #eef2f8; color: #5f6d80; letter-spacing: 0.04em;
+        }
+        body.dark-mode #v3BuyBody .sl-badge { background: rgba(255,255,255,0.08); color: #c4cedd; }
+        #v3BuyBody .sl-ticker {
+            font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 15px; color: #111927;
+        }
+        body.dark-mode #v3BuyBody .sl-ticker { color: #f1f6fb; }
+        #v3BuyBody .sl-name {
+            font-size: 12.5px; color: #8593a6;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 380px;
+        }
+        #v3BuyBody .sl-right { margin-left: auto; text-align: right; display: flex; flex-direction: column; gap: 2px; }
+        #v3BuyBody .sl-qty { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: #5f6d80; }
+        #v3BuyBody .sl-sum { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: #111927; }
+        body.dark-mode #v3BuyBody .sl-sum { color: #f1f6fb; }
+        #v3BuyBody .sl-item.filled .sl-ticker,
+        #v3BuyBody .sl-item.filled .sl-sum {
+            color: #9aa7b8;
+            text-decoration: line-through;
+            text-decoration-color: rgba(154,167,184,0.55);
+        }
+        #v3BuyBody .sl-item.filled .sl-checkbox svg { width: 12px; height: 12px; }
+        #v3BuyBody .sl-group-total {
+            display: flex; align-items: center; justify-content: space-between;
+            margin: 0; padding: 12px 26px;
+            background: #f6f9fc; border: none; border-top: 1px solid #eef2f7; border-radius: 0;
+        }
+        body.dark-mode #v3BuyBody .sl-group-total { background: rgba(255,255,255,0.03); border-top-color: rgba(255,255,255,0.07); }
+        #v3BuyBody .sl-group-total-label {
+            font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 12.5px;
+            color: #5f6d80; letter-spacing: 0.08em; text-transform: uppercase;
+        }
+        #v3BuyBody .sl-group-total-value {
+            font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; color: #111927;
+        }
+        body.dark-mode #v3BuyBody .sl-group-total-value { color: #f1f6fb; }
+
+        /* Тёмный футер прогресса — в стиле «Итого ОФЗ» */
+        .v3bl-foot {
+            margin: 12px 16px 16px;
+            background: #141b26; border-radius: 16px; color: #ffffff;
+            padding: 14px 18px;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        body.dark-mode .v3bl-foot { background: #0d131c; }
+        .v3bl-foot-row { display: flex; align-items: flex-end; gap: 14px; }
+        .v3bl-foot .lb {
+            font-family: 'Manrope', sans-serif;
+            font-size: 11px; letter-spacing: 0.12em; font-weight: 700;
+            color: #76849a; text-transform: uppercase; margin-bottom: 4px;
+        }
+        .v3bl-foot .vl { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 16px; white-space: nowrap; }
+        .v3bl-foot .plan { margin-left: auto; text-align: right; }
+        .v3bl-foot .plan .vl { color: #c4cedd; font-size: 13px; }
+        .v3bl-track { height: 5px; border-radius: 99px; background: rgba(255,255,255,0.12); overflow: hidden; }
+        .v3bl-bar { height: 100%; width: 0%; background: #3ad08a; border-radius: 99px; transition: width 0.25s ease; }
+        .v3bl-pct { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #3ad08a; text-align: right; }
+    }
+
+    /* ===== CUSTOM DATEPICKER (backtest, desktop) ===== */
+    #btConfigCol { position: relative; }
+    @media (min-width: 1024px) {
+        #btConfigCol #btDateInput::-webkit-calendar-picker-indicator { display: none; }
+        #btConfigCol #btDateInput { cursor: pointer; }
+    }
+    .btcal {
+        position: absolute;
+        z-index: 60;
+        width: 272px;
+        background: #ffffff;
+        border: 1px solid rgba(44,54,76,0.09);
+        border-radius: 16px;
+        box-shadow: 0 18px 44px -10px rgba(22,27,39,0.25);
+        padding: 14px;
+        font-family: 'Inter', sans-serif;
+        animation: btcalIn 0.16s ease;
+    }
+    @keyframes btcalIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+    body.dark-mode .btcal { background: #1e293b; border-color: rgba(255,255,255,0.1); }
+    .btcal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .btcal-title {
+        font-size: 13px; font-weight: 700;
+        color: var(--text-deep, #2C364C);
+        text-transform: capitalize;
+    }
+    body.dark-mode .btcal-title { color: #F1F6FB; }
+    .btcal-nav {
+        width: 28px; height: 28px;
+        border: none; border-radius: 9px;
+        background: rgba(44,54,76,0.05);
+        color: var(--text-slate, #64748B);
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+    .btcal-nav:hover { background: rgba(44,54,76,0.1); }
+    body.dark-mode .btcal-nav { background: rgba(255,255,255,0.08); color: #cbd5e1; }
+    .btcal-nav svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .btcal-dow {
+        display: grid; grid-template-columns: repeat(7, 1fr);
+        margin-bottom: 4px;
+    }
+    .btcal-dow span {
+        text-align: center;
+        font-size: 9.5px; font-weight: 700;
+        letter-spacing: 0.06em;
+        color: var(--text-muted, #94A3B8);
+        text-transform: uppercase;
+        padding: 4px 0;
+    }
+    .btcal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+    .btcal-day {
+        height: 32px;
+        border: none; border-radius: 9px;
+        background: transparent;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px; font-weight: 500;
+        color: var(--text-deep, #2C364C);
+        cursor: pointer;
+        transition: background 0.12s;
+    }
+    body.dark-mode .btcal-day { color: #F1F6FB; }
+    .btcal-day:hover { background: rgba(91,124,153,0.12); }
+    .btcal-day.out { color: var(--text-muted, #C2CAD6); }
+    .btcal-day.dis { color: rgba(148,163,184,0.4); cursor: default; background: transparent !important; }
+    .btcal-day.today { box-shadow: inset 0 0 0 1.5px rgba(91,124,153,0.4); }
+    .btcal-day.sel {
+        background: #2C364C !important;
+        color: #F1F6FB;
+        font-weight: 700;
+    }
+
+    /* ===== Header: same canvas as the page (no glass band) ===== */
+    #headerWrapper {
+        background: transparent !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+    body.dark-mode #headerWrapper { background: transparent !important; }
+
+    /* ===== Legacy per-screen auroras inside panels: kill the load flash ===== */
+    #contentArea .aurora-container,
+    #contentArea .noise-overlay { display: none !important; }
+
+    /* ===== Collapsed income accordion: banner is the card, container is invisible ===== */
+    #marketPanelContent .calc-accordion.collapsed {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+
+    /* ===== No dock on the welcome page ===== */
+    body.tab-home #mobileDock { display: none !important; }
+
+    /* ===== VANGUARD QUIZ: desktop reading column ===== */
+    @media (min-width: 1024px) {
+        #screen-vanguard .view {
+            max-width: 640px;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            padding-top: 36px;
+        }
+        #screen-vanguard .w-header { padding-top: 8px; }
+        #screen-vanguard #bottom-welcome,
+        #screen-vanguard .quiz-footer,
+        #screen-vanguard [id^="bottom-"] {
+            max-width: 640px;
+            margin-left: auto;
+            margin-right: auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+    }
+
+    /* ===== UNIFIED AURORA BACKGROUND: one canvas for header, sidebar zone and content ===== */
+    #appShell {
+        background:
+            radial-gradient(640px 520px at 88% -6%, rgba(59,130,246,0.10), transparent 62%),
+            radial-gradient(560px 480px at -12% 38%, rgba(16,185,129,0.085), transparent 62%),
+            radial-gradient(440px 400px at 72% 96%, rgba(249,115,22,0.05), transparent 65%),
+            linear-gradient(180deg, #F1F6FB 0%, #F9FAFC 100%) !important;
+    }
+    body.dark-mode #appShell {
+        background:
+            radial-gradient(640px 520px at 88% -6%, rgba(59,130,246,0.08), transparent 62%),
+            radial-gradient(560px 480px at -12% 38%, rgba(16,185,129,0.06), transparent 62%),
+            linear-gradient(180deg, #0f172a 0%, #111a2e 100%) !important;
+    }
+
+    /* ===== MOBILE DOCK ===== */
+    #mobileDock {
+        position: fixed;
+        left: 14px; right: 14px;
+        bottom: max(env(safe-area-inset-bottom, 0px), 12px);
+        display: flex;
+        gap: 10px;
+        z-index: 900;
+    }
+    @media (min-width: 1024px) { #mobileDock { display: none; } }
+    /* Hide the dock while the company overlay is open */
+    body:has(#screen-company.active) #mobileDock { display: none; }
+    .dock-home {
+        width: 60px; height: 60px;
+        border-radius: 19px;
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: none;
+        display: flex; align-items: center; justify-content: center;
+        color: rgba(241,246,251,0.55);
+        box-shadow: 0 14px 32px -8px rgba(15,23,42,0.4);
+        flex-shrink: 0;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        transition: color 0.15s;
+    }
+    .dock-home svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+    .dock-home.active { color: #F1F6FB; background: #222B3D; }
+    .dock-bar {
+        flex: 1;
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border-radius: 19px;
+        display: flex;
+        padding: 7px 6px;
+        box-shadow: 0 14px 32px -8px rgba(15,23,42,0.4);
+        min-width: 0;
+    }
+    .dock-item {
+        flex: 1;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 4px;
+        border: none; background: transparent;
+        color: rgba(241,246,251,0.5);
+        font-family: 'Inter', sans-serif;
+        font-size: 9.5px; font-weight: 600; letter-spacing: 0.01em;
+        cursor: pointer;
+        padding: 5px 0 3px;
+        border-radius: 13px;
+        min-width: 0;
+        -webkit-tap-highlight-color: transparent;
+        transition: color 0.15s;
+    }
+    .dock-item svg { width: 19px; height: 19px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+    .dock-item.active { color: #F1F6FB; background: rgba(255,255,255,0.08); }
+    /* Content clears the dock */
+    @media (max-width: 1023px) {
+        .tab-panel { padding-bottom: 112px; }
+        #calcPane { padding-bottom: 96px; }
+    }
+
+    /* ===== Back pill (portfolio -> calc) ===== */
+    .back-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 15px 8px 11px;
+        background: var(--card-bg, #ffffff);
+        border: 1px solid rgba(44,54,76,0.08);
+        border-radius: 999px;
+        box-shadow: 0 2px 10px rgba(44,54,76,0.05);
+        font-family: 'Inter', sans-serif;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0;
+        text-transform: none;
+        color: var(--text-slate, #64748B);
+        cursor: pointer;
+        transition: color 0.15s, transform 0.15s, box-shadow 0.15s;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .back-pill:hover {
+        color: var(--text-deep, #2C364C);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px rgba(44,54,76,0.09);
+    }
+    .back-pill svg { flex-shrink: 0; }
+    body.dark-mode .back-pill {
+        background: rgba(255,255,255,0.06);
+        border-color: rgba(255,255,255,0.1);
+        color: #cbd5e1;
+        box-shadow: none;
+    }
+    body.dark-mode .back-pill:hover { color: #F1F6FB; }
+
+    /* ===== BACKTEST: clearer source navigation ===== */
+    #btConfigCol .bt-source-switcher {
+        background: rgba(44,54,76,0.06);
+        border-radius: 12px;
+        padding: 3px;
+        gap: 3px;
+    }
+    body.dark-mode #btConfigCol .bt-source-switcher { background: rgba(255,255,255,0.07); }
+    #btConfigCol .bt-source-btn {
+        border: none;
+        border-radius: 9px;
+        background: transparent;
+        color: var(--text-slate, #64748B);
+        padding: 10px 14px;
+        box-shadow: none;
+    }
+    #btConfigCol .bt-source-btn.active {
+        background: #fff;
+        color: var(--text-deep, #2C364C);
+        box-shadow: 0 2px 8px rgba(44,54,76,0.12);
+        border: none;
+    }
+    body.dark-mode #btConfigCol .bt-source-btn.active {
+        background: rgba(255,255,255,0.14);
+        color: #F1F6FB;
+    }
+    .bt-ghost-btn {
+        margin-top: 8px;
+        width: 100%;
+        padding: 8px 2px;
+        background: transparent;
+        border: none;
+        font-family: 'Inter', sans-serif;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: #94A3B8;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        box-sizing: border-box;
+        transition: color 0.15s;
+    }
+    .bt-ghost-btn:hover { color: var(--bonds-color, #5B7C99); }
+    #btConfigCol .bt-bulk-toggle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 10px;
+        padding: 10px 12px;
+        background: rgba(44,54,76,0.04);
+        border: 1px solid rgba(44,54,76,0.05);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+    #btConfigCol .bt-bulk-toggle:hover { background: rgba(44,54,76,0.07); }
+    body.dark-mode #btConfigCol .bt-bulk-toggle { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.07); }
+    .bt-mini-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-muted, #94A3B8);
+        margin: 2px 0 8px;
+    }
+    .bt-or-divider {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 12px 0 2px;
+    }
+    .bt-or-divider::before,
+    .bt-or-divider::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: rgba(44,54,76,0.08);
+    }
+    body.dark-mode .bt-or-divider::before,
+    body.dark-mode .bt-or-divider::after { background: rgba(255,255,255,0.08); }
+    .bt-or-divider span {
+        font-family: 'Inter', sans-serif;
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--text-muted, #94A3B8);
+    }
+        .bt-bulk-txt { flex: 1; min-width: 0; }
+    .bt-bulk-title {
+        font-family: 'Inter', sans-serif;
+        font-size: 12px; font-weight: 600;
+        color: var(--text-deep, #2C364C);
+    }
+    body.dark-mode .bt-bulk-title { color: #F1F6FB; }
+    .bt-bulk-sub {
+        font-family: 'Inter', sans-serif;
+        font-size: 10.5px;
+        color: var(--text-muted, #94A3B8);
+        margin-top: 2px;
+        line-height: 1.35;
+    }
+
+    /* Date: compact, anchored left */
+    #btConfigCol #btDateInput {
+        max-width: 230px;
+        text-align: left;
+    }
+
+    /* Content under the source switcher: one grouped inset panel */
+    #btConfigCol #btSourceCalcInfo,
+    #btConfigCol #btSourceManualBlock {
+        background: rgba(44,54,76,0.03);
+        border: 1px solid rgba(44,54,76,0.05);
+        border-radius: 14px;
+        padding: 12px;
+        box-sizing: border-box;
+    }
+    body.dark-mode #btConfigCol #btSourceCalcInfo,
+    body.dark-mode #btConfigCol #btSourceManualBlock {
+        background: rgba(255,255,255,0.04);
+        border-color: rgba(255,255,255,0.07);
+    }
+    /* The note loses its own box — the panel is the box now */
+    #btConfigCol .bt-portfolio-note {
+        background: transparent;
+        border: none;
+        padding: 0;
+    }
+    #btConfigCol .bt-ghost-btn { margin-top: 10px; padding: 2px; }
+    /* Add row: ticker stretches, qty fixed, button fixed */
+    #btConfigCol .bt-add-row { margin-bottom: 0; }
+    #btConfigCol .bt-ticker-input { flex: 1; min-width: 0; }
+    #btConfigCol .bt-qty-input { flex: 0 0 62px; width: 62px; }
+    #btConfigCol .bt-bulk-toggle {
+        margin-top: 10px;
+        background: rgba(255,255,255,0.7);
+        border-color: rgba(44,54,76,0.07);
+    }
+    body.dark-mode #btConfigCol .bt-bulk-toggle {
+        background: rgba(255,255,255,0.05);
+        border-color: rgba(255,255,255,0.08);
+    }
+    #btConfigCol .bt-ticker-list-empty {
+        margin-top: 10px;
+        padding: 12px;
+        border: 1.5px dashed rgba(91,124,153,0.22);
+        border-radius: 12px;
+        background: transparent;
+        font-family: 'Inter', sans-serif;
+        font-size: 11.5px;
+        color: var(--text-muted, #94A3B8);
+        text-align: center;
+        line-height: 1.4;
+    }
+    #btConfigCol #btTickerList { margin-top: 0 !important; }
+
+    /* "Тест не запущен": framed dashed panel instead of floating text */
+    #btResults .portfolio-empty-new {
+        border: 1.5px dashed rgba(91,124,153,0.25);
+        border-radius: 20px;
+        background: rgba(255,255,255,0.55);
+        padding: 56px 36px;
+        min-height: 320px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        box-sizing: border-box;
+    }
+    body.dark-mode #btResults .portfolio-empty-new {
+        background: rgba(255,255,255,0.03);
+        border-color: rgba(255,255,255,0.12);
+    }
+    #btResults .portfolio-empty-new .empty-text {
+        max-width: 340px;
+        margin: 0 auto;
+        line-height: 1.5;
+    }
+    /* Source status: tinted panel + status chip */
+    #btConfigCol .bt-portfolio-note {
+        display: flex;
+        align-items: flex-start;
+        gap: 9px;
+        background: rgba(91,124,153,0.06);
+        border: 1px solid rgba(91,124,153,0.1);
+        border-radius: 12px;
+        padding: 11px 12px;
+    }
+    body.dark-mode #btConfigCol .bt-portfolio-note {
+        background: rgba(255,255,255,0.05);
+        border-color: rgba(255,255,255,0.08);
+    }
+    #btConfigCol .bt-portfolio-note svg {
+        flex-shrink: 0;
+        margin-top: 1px;
+        stroke: var(--bonds-color, #5B7C99);
+    }
+    #btConfigCol .bt-portfolio-note-text {
+        font-family: 'Inter', sans-serif;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text-deep, #2C364C);
+        line-height: 1.4;
+        min-width: 0;
+    }
+    body.dark-mode #btConfigCol .bt-portfolio-note-text { color: #F1F6FB; }
+    .bt-calc-status {
+        display: block;
+        margin-top: 7px;
+        padding: 4px 10px;
+        width: fit-content;
+        background: rgba(91,124,153,0.1);
+        border-radius: 8px;
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--bonds-color, #5B7C99);
+        line-height: 1.35;
+    }
+
+    /* ===== COMPANY: dividends by year ===== */
+    .div-history-section { margin-bottom: 16px; }
+    .div-history-note {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        color: var(--text-muted, #94A3B8);
+        margin: -4px 0 14px;
+    }
+    .div-history-loading, .div-history-empty {
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        color: var(--text-muted, #94A3B8);
+        padding: 6px 0 4px;
+        line-height: 1.5;
+    }
+    .div-year-row {
+        display: grid;
+        grid-template-columns: 44px minmax(40px, 1fr) auto auto;
+        align-items: center;
+        gap: 12px;
+        padding: 9px 0;
+        border-bottom: 1px solid rgba(44,54,76,0.05);
+    }
+    .div-year-row:last-child { border-bottom: none; }
+    body.dark-mode .div-year-row { border-bottom-color: rgba(255,255,255,0.06); }
+    .div-year {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 13px; font-weight: 500;
+        color: var(--text-deep, #2C364C);
+    }
+    body.dark-mode .div-year { color: #F1F6FB; }
+    .div-bar-wrap { height: 6px; border-radius: 3px; background: rgba(44,54,76,0.05); overflow: hidden; }
+    body.dark-mode .div-bar-wrap { background: rgba(255,255,255,0.07); }
+    .div-bar {
+        height: 100%;
+        border-radius: 3px;
+        background: linear-gradient(90deg, #5B7C99, #22C87A);
+        transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .div-meta {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        color: var(--text-muted, #94A3B8);
+        white-space: nowrap;
+    }
+    .div-sum {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 13px; font-weight: 500;
+        color: var(--text-deep, #2C364C);
+        text-align: right;
+        min-width: 84px;
+        white-space: nowrap;
+    }
+    body.dark-mode .div-sum { color: #F1F6FB; }
+    .div-rub { color: #B8906A; }
+
+    /* Rebalance lists: always expanded, collapse triggers removed */
+    #ofzGhostTrigger, #stocksGhostTrigger { display: none !important; }
+
+    /* ===== BACKTEST CONFIG: guided step-by-step card ===== */
+    #btConfigCol {
+        background: var(--card-bg, #ffffff);
+        border: 1px solid rgba(44,54,76,0.07);
+        border-radius: 20px;
+        padding: 20px 18px 18px;
+        box-shadow: 0 2px 16px rgba(44,54,76,0.06);
+        counter-reset: btstep;
+        margin-bottom: 16px;
+    }
+    body.dark-mode #btConfigCol {
+        background: rgba(30,41,59,0.5);
+        border-color: rgba(255,255,255,0.08);
+        box-shadow: 0 2px 16px rgba(0,0,0,0.2);
+    }
+        /* Тест: секции таблицы — V3-карточки */
+        #btResults .bt-assets-card {
+            background: #ffffff;
+            border-radius: 22px;
+            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
+            overflow: hidden;
+            margin-bottom: 16px;
+            padding: 0;
+        }
+        body.dark-mode #btResults .bt-assets-card { background: #1d2734; }
+        #btResults .bt-assets-header {
+            padding: 16px 20px 12px;
+            border-bottom: 1px solid #eef2f7;
+        }
+        body.dark-mode #btResults .bt-assets-header { border-bottom-color: rgba(255,255,255,0.07); }
+        #btResults .bt-assets-title {
+            font-family: 'Manrope', sans-serif;
+            font-weight: 800; font-size: 15px; color: #111927;
+        }
+        body.dark-mode #btResults .bt-assets-title { color: #f1f6fb; }
+        #btResults .bt-asset-row { padding: 11px 20px; }
+        #btResults .bt-asset-head { background: transparent; padding: 12px 20px 8px; }
+        body.dark-mode #btResults .bt-asset-row { border-bottom-color: rgba(255,255,255,0.05); }
+        #btResults .bt-asset-name {
+            font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 15px; color: #111927;
+        }
+        body.dark-mode #btResults .bt-asset-name { color: #f1f6fb; }
+        #btResults .bt-asset-isin { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #8593a6; }
+        #btResults .bt-asset-buy,
+        #btResults .bt-asset-now { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #5f6d80; text-align: right; }
+        #btResults .bt-asset-pnl { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; text-align: right; }
+
+    #btConfigCol .bt-config-card {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        border-radius: 0;
+        padding: 0 0 20px 42px !important;
+        margin: 0 !important;
+        position: relative;
+    }
+    #btConfigCol .bt-config-card::before {
+        counter-increment: btstep;
+        content: counter(btstep);
+        position: absolute;
+        left: 0; top: -4px;
+        width: 28px; height: 28px;
+        border-radius: 50%;
+        background: rgba(91,124,153,0.1);
+        border: 1px solid rgba(91,124,153,0.18);
+        color: #5B7C99;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 13px; font-weight: 500;
+        display: flex; align-items: center; justify-content: center;
+        box-sizing: border-box;
+    }
+    #btConfigCol .bt-config-card:first-child::after {
+        content: '';
+        position: absolute;
+        left: 13.5px; top: 28px; bottom: -2px;
+        width: 1px;
+        background: linear-gradient(180deg, rgba(91,124,153,0.25), rgba(91,124,153,0.06));
+    }
+    #btConfigCol .bt-config-label {
+        font-size: 12px !important;
+        color: var(--text-deep, #2C364C) !important;
+        letter-spacing: 0.05em;
+        margin-bottom: 10px;
+    }
+    #btConfigCol .bt-config-label svg { display: none; }
+    #btConfigCol #btRunBtn {
+        width: 100% !important;
+        margin: 2px 0 0 !important;
+        padding: 16px 22px;
+        border-radius: 14px;
+        font-size: 14px;
+    }
+    #btConfigCol #btRunBtn:disabled {
+        background: rgba(44,54,76,0.12);
+        box-shadow: none;
+        cursor: not-allowed;
+        transform: none;
+    }
+    body.dark-mode #btConfigCol #btRunBtn:disabled { background: rgba(255,255,255,0.08); }
+
+    /* Tab panels: bottom tabbar removed -> less dead space */
+    .tab-panel { padding-bottom: 40px; }
+
+    /* ---------- Desktop: static sidebar + grid shell ---------- */
+    @media (min-width: 1024px) {
+        #sbBurgerBtn, #sbCloseBtn, #sbOverlay { display: none !important; }
+        #appShell {
+            display: grid !important;
+            grid-template-columns: calc(var(--sb-w) + 14px) minmax(0, 1fr);
+            grid-template-rows: auto minmax(0, 1fr);
+        }
+        #sideBar {
+            position: static;
+            transform: none !important;
+            width: auto;
+            grid-column: 1; grid-row: 1 / 3;
+            box-shadow: none !important;
+            transition: none;
+            background: transparent;
+            padding: 14px 0 14px 14px;
+            gap: 10px;
+            overflow: visible;
+        }
+        #sbPanel {
+            background: #161B27;
+            border-radius: 20px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: none;
+            box-shadow: 0 10px 30px rgba(22,27,39,0.18);
+            flex: 0 1 auto;            /* hug content, don't stretch */
+            max-height: 100%;
+        }
+        #sbNav { flex: 0 0 auto; padding-bottom: 20px; }
+        #sbFoot { margin-top: auto; } /* collapse chip pinned to bottom */
+        #sbPanel::-webkit-scrollbar { display: none; }
+        #sbFoot {
+            background: #161B27;
+            border-radius: 16px;
+            border-top: none;
+            padding: 8px;
+            box-shadow: 0 8px 22px rgba(22,27,39,0.16);
+            flex-shrink: 0;
+        }
+        #sbHead { padding-top: 22px; }
+        #headerWrapper { grid-column: 2; grid-row: 1; min-width: 0; }
+        #contentArea { grid-column: 2; grid-row: 2; min-width: 0; }
+        #topBar { padding: 18px 32px 10px; }
+
+        body.sb-collapsed { --sb-w: 78px; }
+        body.sb-collapsed .sb-label,
+        body.sb-collapsed .sb-logo-text { display: none; }
+        body.sb-collapsed #sbHead { justify-content: center; padding-left: 8px; padding-right: 8px; }
+        body.sb-collapsed #sbNav { padding: 4px 8px; }
+        body.sb-collapsed .sb-item { justify-content: center; padding: 12px 0; gap: 0; }
+        body.sb-collapsed .sb-item.active::before { left: -8px; }
+        body.sb-collapsed #sbFoot { padding: 10px 8px; }
+
+        /* Panels: width + breathing room */
+        .tab-panel { max-width: 1240px; margin: 0 auto; padding: 18px 40px 64px; width: 100%; box-sizing: border-box; }
+        #panel-portfolio { padding-left: 0; padding-top: 4px; }
+        #panel-portfolio .panel-section-header { margin: 0 0 12px; }
+        #calcPane { max-width: 580px; margin: 0 auto; width: 100%; }
+
+        /* ===== РЫНОК V3 «Зеркало»: калькулятор слева, котировки + ставки справа ===== */
+        #panel-market { max-width: none !important; }
+        #marketPanelContent {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 396px;
+            column-gap: 22px;
+            row-gap: 0;
+            align-items: stretch;
+            align-content: start;
+            justify-content: center;
+            max-width: 1180px;
+            margin: 0 auto;
+            padding-bottom: 64px;
+        }
+        #mkRightCol {
+            grid-column: 1; grid-row: 1;
+            min-width: 0; max-width: none; width: 100%;
+            display: flex; flex-direction: column;
+        }
+        #mkLeftRail {
+            grid-column: 2; grid-row: 1;
+            align-self: start;
+            display: flex; flex-direction: column; gap: 16px; min-width: 0;
+        }
+        /* Аккордеон занимает всю высоту правой колонки */
+        #mkRightCol #calcAccordion { flex: 1; display: flex; flex-direction: column; }
+        /* Свёрнутый: nd-income-banner растягивается на всё */
+        #mkRightCol #calcAccordion.collapsed .nd-income-banner { flex: 1; }
+        /* Развёрнутый: calc-content-wrapper занимает место */
+        #mkRightCol #calcAccordion:not(.collapsed) .calc-content-wrapper { flex: 1; }
+        #mkLeftRail .header { display: none; }
+        /* Котировки — белая V3-карточка */
+        #mkLeftRail #marketQuietStripInner {
+            margin: 0 !important;
+            padding: 16px 18px !important;
+            background: #ffffff;
+            border: none;
+            border-radius: 22px;
+            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
+        }
+        body.dark-mode #mkLeftRail #marketQuietStripInner {
+            background: #1d2734;
+            border: none;
+            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
+        }
+        /* Вертикаль ставок — тёмная карточка как капитал в портфеле */
+        #mkLeftRail .rates-glass-card {
+            margin: 0 !important;
+            background: linear-gradient(135deg, #10161f 0%, #222e3f 100%) !important;
+            border: none !important;
+            border-radius: 22px !important;
+            box-shadow: 0 16px 36px rgba(24,38,60,0.08) !important;
+            backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+            padding: 24px 26px !important;
+        }
+        #mkLeftRail .rates-glass-card .rv-title {
+            font-family: 'Manrope', sans-serif;
+            font-size: 12.5px !important; letter-spacing: 0.14em !important; font-weight: 700 !important;
+            color: #76849a !important; text-transform: uppercase;
+        }
+        #mkLeftRail .rates-glass-card .rate-row-label { color: #b9c4d4 !important; font-family: 'Manrope', sans-serif; }
+        #mkLeftRail .rates-glass-card .rate-row-value { color: #ffffff !important; font-family: 'JetBrains Mono', monospace; }
+        #mkLeftRail .rates-glass-card .rate-row-item { border-color: rgba(255,255,255,0.08) !important; }
+        /* Калькулятор — белая V3-карточка */
+        #mkRightCol #calcAccordion {
+            margin-top: 0 !important;
+            background: #ffffff;
+            border: none;
+            border-radius: 22px;
+            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
+            overflow: hidden;
+        }
+        body.dark-mode #mkRightCol #calcAccordion { background: #1d2734; }
+        /* Свёрнутый баннер — тёплый градиент поверх фона карточки */
+        #mkRightCol #calcAccordion.collapsed .nd-income-banner {
+            background: linear-gradient(145deg, #f0f7ff 0%, #e8f0fb 45%, #f5ede3 100%) !important;
+            border-radius: 22px;
+        }
+        #mkRightCol #calcAccordion.collapsed .nd-ib-spot1 { background: radial-gradient(circle, rgba(91,124,153,0.18) 0%, transparent 70%) !important; }
+        #mkRightCol #calcAccordion.collapsed .nd-ib-spot2 { background: radial-gradient(circle, rgba(184,144,106,0.14) 0%, transparent 70%) !important; }
+        #mkRightCol #calcAccordion.collapsed .nd-ib-spot3 { background: radial-gradient(circle, rgba(34,200,122,0.10) 0%, transparent 70%) !important; }
+        body.dark-mode #mkRightCol #calcAccordion.collapsed .nd-income-banner {
+            background: linear-gradient(145deg, #1a2535 0%, #1e2d3d 50%, #271f18 100%) !important;
+        }
+
+        /* ===== ТЕСТ V3 «Зеркало»: результаты слева, конфигурация справа ===== */
+        #panel-backtest { max-width: none !important; padding-left: 0 !important; padding-right: 0 !important; padding-bottom: 64px !important; }
+        #panel-backtest.active {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 396px;
+            column-gap: 22px;
+            row-gap: 0;
+            align-items: start;
+            align-content: start;
+            justify-content: center;
+            width: 1118px;
+            max-width: 100% !important;
+            margin: 0 auto;
+        }
+        /* Заголовок дублирует крошку в шапке — скрываем */
+        #panel-backtest > .bt-header { display: none; }
+        #btConfigCol { display: block; grid-column: 2; grid-row: 1; position: sticky; top: 0; }
+        #panel-backtest > #btResults { grid-column: 1; grid-row: 1; min-width: 0; max-width: none; width: 100%; }
+        /* Карточки конфигурации — белые V3 */
+            /* Тест: секции таблицы — V3-карточки */
+        #btResults .bt-assets-card {
+            background: #ffffff;
+            border-radius: 22px;
+            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
+            overflow: hidden;
+            margin-bottom: 16px;
+            padding: 0;
+        }
+        body.dark-mode #btResults .bt-assets-card { background: #1d2734; }
+        #btResults .bt-assets-header {
+            padding: 16px 20px 12px;
+            border-bottom: 1px solid #eef2f7;
+        }
+        body.dark-mode #btResults .bt-assets-header { border-bottom-color: rgba(255,255,255,0.07); }
+        #btResults .bt-assets-title {
+            font-family: 'Manrope', sans-serif;
+            font-weight: 800; font-size: 15px; color: #111927;
+        }
+        body.dark-mode #btResults .bt-assets-title { color: #f1f6fb; }
+        #btResults .bt-asset-row { padding: 11px 20px; }
+        #btResults .bt-asset-head { background: transparent; padding: 12px 20px 8px; }
+        body.dark-mode #btResults .bt-asset-row { border-bottom-color: rgba(255,255,255,0.05); }
+        #btResults .bt-asset-name {
+            font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 15px; color: #111927;
+        }
+        body.dark-mode #btResults .bt-asset-name { color: #f1f6fb; }
+        #btResults .bt-asset-isin { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #8593a6; }
+        #btResults .bt-asset-buy,
+        #btResults .bt-asset-now { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #5f6d80; text-align: right; }
+        #btResults .bt-asset-pnl { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; text-align: right; }
+
+    #btConfigCol .bt-config-card {
+            background: #ffffff;
+            border: none;
+            border-radius: 22px;
+            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
+            backdrop-filter: none; -webkit-backdrop-filter: none;
+            padding: 22px;
+            margin-bottom: 16px;
+        }
+        body.dark-mode #btConfigCol .bt-config-card { background: #1d2734; }
+        #btConfigCol .bt-config-label {
+            font-family: 'Manrope', sans-serif;
+            font-size: 12.5px; letter-spacing: 0.12em; font-weight: 700;
+            color: #97a3b4; text-transform: uppercase;
+        }
+        /* CTA запуска — тёмная V3-кнопка */
+        #btConfigCol .bt-run-btn {
+            background: #141b26;
+            border-radius: 18px;
+            padding: 18px;
+            font-family: 'Manrope', sans-serif;
+            font-size: 15px; font-weight: 700;
+            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        #btConfigCol .bt-run-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 20px 42px rgba(24,38,60,0.14); }
+        #btConfigCol .bt-run-btn svg { stroke: #7ee2a8; }
+        body.dark-mode #btConfigCol .bt-run-btn { background: #ffffff; color: #141b26; }
+        body.dark-mode #btConfigCol .bt-run-btn svg { stroke: #119d5c; }
+
+        /* ===== РЕБАЛАНС V3 «Зеркало»: списки слева, умная замена справа ===== */
+        #panel-rebalance { max-width: none !important; padding-top: 4px; }
+        #panel-market { padding-top: 4px; }
+        #rebalancePanelContent {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 396px;
+            column-gap: 22px;
+            row-gap: 0;
+            align-items: start;
+            align-content: start;
+            justify-content: center;
+            max-width: 1180px;
+            margin: 0 auto;
+        }
+        #rbRightCol { grid-column: 1; grid-row: 1; min-width: 0; max-width: none; width: 100%; }
+        #rbLeftRail {
+            grid-column: 2; grid-row: 1;
+            position: sticky; top: 0;
+            display: flex; flex-direction: column; gap: 16px; min-width: 0;
+        }
+        /* Заголовок «Ребаланс» дублирует крошку в шапке — скрываем, кнопку-инфо оставляем */
+        #rbLeftRail .header { padding: 0 !important; margin: 0 !important; display: flex; justify-content: flex-end; }
+        #rbLeftRail .header h1 { display: none; }
+        /* Умная замена — тёмный градиент V3 */
+        #rbLeftRail .smart-replace-card {
+            margin: 0 !important;
+            background: linear-gradient(135deg, #10161f 0%, #222e3f 100%);
+            border-radius: 22px;
+            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
+        }
+        /* Переключатель ОФЗ/Акции — белая V3-карточка, активная тёмная (как в референсе) */
+        #rbLeftRail .rebalance-tabs-container { margin: 0 !important; padding: 0 !important; }
+        #rbLeftRail .tab-switcher {
+            width: 100%;
+            display: flex;
+            background: #ffffff;
+            border: none;
+            border-radius: 18px;
+            padding: 7px;
+            gap: 10px;
+            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
+            box-sizing: border-box;
+        }
+        body.dark-mode #rbLeftRail .tab-switcher { background: #1d2734; }
+        #rbLeftRail .tab-glider { display: none; }
+        #rbLeftRail .tab-btn {
+            flex: 1; justify-content: center;
+            padding: 13px 18px;
+            border-radius: 13px;
+            border: none; background: transparent;
+            font-family: 'Manrope', sans-serif;
+            font-size: 15px; font-weight: 700;
+            color: #5f6d80;
+            transition: background 0.18s, color 0.18s;
+        }
+        #rbLeftRail .tab-btn svg { width: 17px; height: 17px; }
+        #rbLeftRail .tab-btn.active { background: #141b26; color: #ffffff; box-shadow: none; }
+        body.dark-mode #rbLeftRail .tab-btn { color: #9aa7ba; }
+        body.dark-mode #rbLeftRail .tab-btn.active { background: #ffffff; color: #141b26; }
+        /* Списки ребаланса — белая V3-карточка */
+        #rbRightCol .rebalance-tab-content.active {
+            background: transparent;
+            border-radius: 0;
+            box-shadow: none;
+            padding: 0;
+        }
+        /* Обёртка из оригинальных стилей остаётся — просто без визуала */
+        /* списки в правой колонке — на всю её ширину */
+        #rbRightCol .echelon-wrapper,
+        #rbRightCol .echelon-table-styled,
+        #rbRightCol .stocks-aurora-container {
+            max-width: none;
+            margin-left: 0;
+            margin-right: 0;
+        }
+
+        /* ===== V3: таблица ОФЗ — белая карточка с интегрированным тёмным «Итого» ===== */
+        #pfRightCol .v3-table-card {
+            display: flex;
+            flex-direction: column;
+            background: #ffffff;
+            border-radius: 22px;
+            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
+            position: relative;
+        }
+        body.dark-mode #pfRightCol .v3-table-card { background: #1d2734; }
+
+        #pfRightCol .portfolio-list-headers {
+            grid-template-columns: minmax(0,1fr) 110px 130px 190px;
+            gap: 8px;
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            padding: 18px 26px 14px;
+            margin: 0;
+        }
+        #pfRightCol .portfolio-list-header-text {
+            font-family: 'Manrope', sans-serif;
+            font-size: 12.5px; font-weight: 700;
+            color: #97a3b4; opacity: 1;
+            letter-spacing: 0.12em;
+        }
+        body.dark-mode #pfRightCol .portfolio-list-header-text { color: #76849a; }
+        #pfRightCol .portfolio-list-header-text.center { justify-content: flex-end !important; text-align: right; }
+        #pfRightCol .portfolio-list-header-text.right { text-align: right; }
+
+        #pfRightCol .portfolio-ofz-list {
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0;
+            backdrop-filter: none; -webkit-backdrop-filter: none;
+        }
+        #pfRightCol .portfolio-ofz-item {
+            background: transparent;
+            border: none;
+            border-top: 1px solid #eef2f7;
+            border-radius: 0;
+            margin: 0;
+            box-shadow: none;
+        }
+        body.dark-mode #pfRightCol .portfolio-ofz-item { border-top-color: rgba(255,255,255,0.07); }
+        #pfRightCol .portfolio-ofz-item:hover { background: #f8fafc; transform: none; box-shadow: none; }
+        body.dark-mode #pfRightCol .portfolio-ofz-item:hover { background: rgba(255,255,255,0.03); }
+        #pfRightCol .portfolio-ofz-item.expanded { background: #f8fafc; }
+        body.dark-mode #pfRightCol .portfolio-ofz-item.expanded { background: rgba(255,255,255,0.03); }
+        #pfRightCol .portfolio-ofz-summary {
+            grid-template-columns: minmax(0,1fr) 110px 130px 190px;
+            gap: 8px;
+            padding: 0 26px;
+            min-height: 56px;
+            align-items: center;
+        }
+        #pfRightCol .portfolio-ofz-name {
+            font-family: 'Manrope', sans-serif;
+            font-weight: 800; font-size: 16px;
+            color: #111927;
+            display: flex; align-items: center; gap: 8px;
+        }
+        body.dark-mode #pfRightCol .portfolio-ofz-name { color: #f1f6fb; }
+        #pfRightCol .portfolio-ofz-name .ofz-number { font-family: 'Manrope', sans-serif; font-weight: 800; }
+        #pfRightCol .ofz-expand-badge { color: #b6c1cf; background: transparent; border: none; }
+        #pfRightCol .ofz-expand-badge svg { width: 15px; height: 15px; }
+        #pfRightCol .portfolio-ofz-yield {
+            font-family: 'JetBrains Mono', monospace;
+            color: #16b56b; font-weight: 600; font-size: 15px; text-align: right;
+        }
+        #pfRightCol .portfolio-ofz-qty {
+            font-family: 'JetBrains Mono', monospace;
+            color: #5f6d80; font-size: 15px; font-weight: 400; text-align: right;
+        }
+        #pfRightCol .portfolio-ofz-sum {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700; font-size: 15px; color: #111927; text-align: right;
+        }
+        body.dark-mode #pfRightCol .portfolio-ofz-sum { color: #f1f6fb; }
+
+        /* Интегрированный тёмный футер «Итого» внутри карточки таблицы */
+        #pfRightCol .portfolio-echelons-total-row {
+            margin: 12px 16px 16px;
+            background: #141b26 !important;
+            color: #ffffff;
+            border: none !important;
+            border-radius: 16px;
+            box-shadow: none !important;
+            display: flex; align-items: center; gap: 14px;
+            padding: 13px 18px;
+        }
+        body.dark-mode #pfRightCol .portfolio-echelons-total-row { background: #0d131c !important; }
+        #pfRightCol .portfolio-echelons-total-row .total-left { display: flex; align-items: center; gap: 12px; }
+        #pfRightCol .portfolio-echelons-total-row .total-icon {
+            width: 20px; height: 20px;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0;
+            color: #ffffff;
+            display: inline-flex; align-items: center; justify-content: center;
+        }
+        #pfRightCol .portfolio-echelons-total-row .total-icon svg { width: 17px; height: 17px; stroke: #ffffff; }
+        #pfRightCol .portfolio-echelons-total-row .total-label {
+            font-family: 'Manrope', sans-serif;
+            font-weight: 800; font-size: 15px; letter-spacing: 0.04em;
+            color: #ffffff; white-space: nowrap; text-transform: none;
+        }
+        #pfRightCol .portfolio-echelons-total-row .total-value-col { margin-left: auto; }
+        #pfRightCol .portfolio-echelons-total-row .total-sum {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 16px; font-weight: 700; color: #ffffff; white-space: nowrap;
+        }
+        #pfRightCol .portfolio-echelons-total-row .total-percent {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12.5px; font-weight: 600;
+            padding: 5px 11px; border-radius: 999px;
+            background: rgba(255,255,255,0.14); color: #ffffff;
+        }
+
+        /* ===== V3: «Ближайшие выплаты» — одна строка-стрип ===== */
+        #pfRightCol .portfolio-coupon-card {
+            margin: 16px 0 0;
+            background: #ffffff;
+            border: none;
+            border-radius: 22px;
+            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
+            display: flex; flex-wrap: wrap; align-items: center;
+            position: relative;
+            overflow: visible;
+        }
+        body.dark-mode #pfRightCol .portfolio-coupon-card { background: #1d2734; border: none; }
+        #pfRightCol .portfolio-coupon-header {
+            flex: 0 0 auto;
+            padding: 14px 10px 14px 22px;
+            background: transparent !important;
+        }
+        #pfRightCol .portfolio-coupon-header-left { gap: 14px; }
+        #pfRightCol .portfolio-coupon-icon {
+            width: 40px; height: 40px; min-width: 40px;
+            border-radius: 12px;
+            background: #eef2f8;
+        }
+        body.dark-mode #pfRightCol .portfolio-coupon-icon { background: rgba(255,255,255,0.07); }
+        #pfRightCol .portfolio-coupon-icon svg { width: 19px; height: 19px; color: #5f6d80; }
+        #pfRightCol .portfolio-coupon-title {
+            font-family: 'Manrope', sans-serif;
+            font-size: 15px; font-weight: 800; color: #111927; white-space: nowrap;
+        }
+        body.dark-mode #pfRightCol .portfolio-coupon-title { color: #f1f6fb; }
+        #pfRightCol .portfolio-coupon-arrow {
+            position: absolute; right: 22px; top: 25px;
+            width: 18px; height: 18px; color: #aab5c4;
+        }
+        #pfRightCol .coupon-preview-strip {
+            flex: 1; min-width: 0;
+            padding: 0 52px 0 0;
+            border: none; background: transparent;
+        }
+        #pfRightCol .portfolio-coupon-card.open .coupon-preview-strip { padding: 0; }
+        #pfRightCol .coupon-preview-next {
+            display: flex; align-items: center; gap: 12px;
+            padding: 0; margin: 0;
+            background: transparent !important;
+            border: none !important; box-shadow: none !important;
+        }
+        #pfRightCol .coupon-preview-accent { display: none; }
+        #pfRightCol .coupon-preview-info {
+            display: flex; flex-direction: row; align-items: center; gap: 10px;
+            flex: 1; min-width: 0; overflow: hidden;
+        }
+        #pfRightCol .coupon-preview-bond { display: inline-flex; align-items: center; }
+        #pfRightCol .coupon-preview-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px; color: #8593a6; font-weight: 400; white-space: nowrap;
+        }
+        #pfRightCol .coupon-preview-dot, #pfRightCol .coupon-preview-qty { display: none; }
+        #pfRightCol .coupon-preview-time-pill {
+            display: inline-flex; align-items: center; gap: 6px;
+            border: none; background: transparent; padding: 0; margin: 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px; color: #8593a6; white-space: nowrap;
+        }
+        #pfRightCol .coupon-preview-time-pill::before { content: '·'; color: #8593a6; }
+        #pfRightCol .cp-pill-rel, #pfRightCol .cp-pill-sep, #pfRightCol .cp-pill-date {
+            font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #8593a6; font-weight: 400;
+        }
+        #pfRightCol .coupon-preview-right { margin-left: auto; flex: 0 0 auto; }
+        #pfRightCol .coupon-preview-sum {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700; color: #16b56b; font-size: 16px; white-space: nowrap;
+        }
+        #pfRightCol .portfolio-coupon-content { flex-basis: 100%; }
+
+        /* ===== V3: таблица Акций (эшелоны) — та же белая карточка ===== */
+        #pfRightCol .portfolio-echelons-headers {
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            margin: 0;
+            height: auto;
+            padding: 18px 26px 14px;
+            gap: 18px;
+        }
+        /* Купонная таблица: просторные колонки на широкой карточке */
+        #pfRightCol .coupon-table-head,
+        #pfRightCol .coupon-row {
+            grid-template-columns: 110px 1fr 120px 140px;
+            gap: 12px;
+        }
+        #pfRightCol .coupon-table-head { font-size: 11px; letter-spacing: 0.08em; }
+        #pfRightCol .coupon-row { font-size: 13px; padding: 12px 0; }
+        #pfRightCol .coupon-row div:nth-child(3) { text-align: right; }
+        #pfRightCol .coupon-row div:nth-child(4), #pfRightCol .coupon-row b:last-child { text-align: right; }
+        #pfRightCol .portfolio-echelons-headers .portfolio-echelon-h-text span {
+            font-family: 'Manrope', sans-serif;
+            font-size: 12.5px; font-weight: 700;
+            color: #97a3b4; letter-spacing: 0.12em;
+        }
+        #pfRightCol #echelonContainerV2 {
+            background: transparent;
+            -webkit-backdrop-filter: none;
+            backdrop-filter: none;
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
+            overflow: hidden;
+            margin-bottom: 0;
+        }
+        body.dark-mode #pfRightCol #echelonContainerV2 { background: transparent; border: none; }
+        /* эшелоны — плоские строки с разделителями внутри единой карточки */
+        #pfRightCol .portfolio-echelon-card {
+            background: transparent;
+            border: none;
+            border-top: 1px solid #eef2f7;
+            border-radius: 0;
+            margin-bottom: 0;
+            box-shadow: none;
+        }
+        #pfRightCol .portfolio-echelon-card:hover { transform: none; box-shadow: none; background: #f8fafc; }
+        #pfRightCol .portfolio-echelon-card.expanded { background: #f8fafc; }
+        body.dark-mode #pfRightCol .portfolio-echelon-card {
+            background: transparent;
+            border-top-color: rgba(255,255,255,0.07);
+        }
+        body.dark-mode #pfRightCol .portfolio-echelon-card:hover { background: rgba(255,255,255,0.03); }
+        body.dark-mode #pfRightCol .portfolio-echelon-card.expanded { background: rgba(255,255,255,0.03); }
+        /* фейд свёрнутого списка эшелонов — к цвету карточки */
+        #pfRightCol .echelon-wrapper.collapsed::after {
+            background: linear-gradient(to bottom, transparent, #ffffff);
+        }
+        body.dark-mode #pfRightCol .echelon-wrapper.collapsed::after {
+            background: linear-gradient(to bottom, transparent, #1d2734);
+        }
+        /* Блок «Важно знать» — вне карточки, отдельно снизу */
+        #pfRightCol .portfolio-important-aurora { margin-top: 16px; }
+
+        /* (центрирование списков ребаланса убрано — теперь они в правой колонке) */
+
+
+        /* Home hero: centered in viewport */
+        #panel-home.active { display: flex; align-items: center; justify-content: center; max-width: none; }
+
+        /* Company overlay: centered reading column instead of full-bleed stretch */
+        #company-content { max-width: 760px; margin: 0 auto; padding: 24px 24px 80px; }
+    }
+    @media (max-width: 1023px) {
+        #company-content { padding: 8px 20px 48px; }
+    }
+
+    @media (min-width: 1440px) {
+        .tab-panel { padding: 36px 56px 72px; }
+        body:not(.sb-collapsed) { --sb-w: 252px; }
+    }
+

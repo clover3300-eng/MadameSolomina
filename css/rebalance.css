@@ -1,0 +1,1054 @@
+/* === УНИВЕРСАЛЬНЫЙ AURORA ФОН ДЛЯ ВСЕХ ЭКРАНОВ === */
+.screen {
+    position: relative;
+    background: var(--bg-base);
+}
+
+.screen > .aurora-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.screen > .aurora-spot {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    animation: auroraFloat 15s ease-in-out infinite;
+}
+
+.screen > .aurora-spot.blue,
+.screen .aurora-container .aurora-spot.blue {
+    width: 400px;
+    height: 400px;
+    background: var(--aurora-blue);
+    top: -10%;
+    right: -10%;
+    animation-delay: 0s;
+}
+
+.screen > .aurora-spot.green,
+.screen .aurora-container .aurora-spot.green {
+    width: 350px;
+    height: 350px;
+    background: var(--aurora-green);
+    bottom: 20%;
+    left: -15%;
+    animation-delay: -5s;
+}
+
+.screen > .aurora-spot.orange,
+.screen .aurora-container .aurora-spot.orange {
+    width: 300px;
+    height: 300px;
+    background: var(--aurora-orange);
+    top: 40%;
+    right: 10%;
+    animation-delay: -10s;
+}
+
+.screen > .noise-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: -1;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 256px 256px;
+}
+
+body.dark-mode .screen > .noise-overlay {
+    opacity: 0.04;
+}
+
+.screen > *:not(.aurora-container):not(.noise-overlay):not(.aurora-spot) {
+    position: relative;
+}
+
+/* === 1. ОСНОВНОЙ КОНТЕЙНЕР ЭКРАНА === */
+#rebalancePanelContent {
+    position: relative;
+    background: transparent;
+    min-height: 100%;
+    margin: 0;
+    padding: 0 0 80px 0;
+    overflow: visible;
+}
+
+/* === 2. AURORA MESH GRADIENT BACKGROUND === */
+#rebalancePanelContent::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-base);
+    z-index: -2;
+}
+
+#rebalancePanelContent::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* Aurora Floating Spots */
+.aurora-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.aurora-spot {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    animation: auroraFloat 15s ease-in-out infinite;
+}
+
+.aurora-spot.blue {
+    width: 400px;
+    height: 400px;
+    background: var(--aurora-blue);
+    top: -10%;
+    right: -10%;
+    animation-delay: 0s;
+}
+
+.aurora-spot.green {
+    width: 350px;
+    height: 350px;
+    background: var(--aurora-green);
+    bottom: 20%;
+    left: -15%;
+    animation-delay: -5s;
+}
+
+.aurora-spot.orange {
+    width: 300px;
+    height: 300px;
+    background: var(--aurora-orange);
+    top: 40%;
+    right: 10%;
+    animation-delay: -10s;
+}
+
+@keyframes auroraFloat {
+    0%, 100% {
+        transform: translate(0, 0) scale(1);
+        opacity: 0.6;
+    }
+    25% {
+        transform: translate(30px, -20px) scale(1.1);
+        opacity: 0.8;
+    }
+    50% {
+        transform: translate(-20px, 30px) scale(0.95);
+        opacity: 0.7;
+    }
+    75% {
+        transform: translate(15px, 15px) scale(1.05);
+        opacity: 0.75;
+    }
+}
+
+/* === 3. NOISE OVERLAY === */
+.noise-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: -1;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 256px 256px;
+}
+
+body.dark-mode .noise-overlay {
+    opacity: 0.04;
+}
+
+/* === 4. КОНТЕНТ ПОВЕРХ ФОНА === */
+#rebalancePanelContent > *:not(.aurora-container):not(.noise-overlay) {
+    position: relative;
+    z-index: 2;
+}
+
+/* === 5. ЗАГОЛОВОК ЭКРАНА === */
+#rebalancePanelContent .header {
+    display: none !important;
+}
+
+#rebalancePanelContent .header h1 {
+    font-family: 'Inter', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--text-deep);
+    margin: 0;
+}
+
+/* === 6. LIQUID TAB SWITCHER (Evolution Luxury) === */
+.rebalance-tabs-container {
+    margin: 0 0 18px;
+    padding: 0;
+}
+
+/* === Underline tab switcher (rebalance) === */
+.tab-switcher {
+    display: inline-flex;
+    gap: 4px;
+    background: rgba(0,0,0,0.04);
+    border-radius: 12px;
+    padding: 4px;
+    border: none;
+    box-shadow: none;
+}
+
+body.dark-mode .tab-switcher {
+    background: rgba(255,255,255,0.06);
+}
+
+.tab-glider { display: none; }
+
+.tab-btn {
+    position: relative;
+    flex: none;
+    padding: 7px 16px;
+    border: none;
+    background: transparent;
+    border-radius: 9px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--text-muted, #94A3B8);
+    cursor: pointer;
+    transition: all 0.18s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tab-btn svg {
+    stroke: currentColor;
+    flex-shrink: 0;
+    transition: stroke 0.2s;
+}
+
+.tab-btn::after { display: none; }
+
+.tab-btn.active {
+    background: white;
+    color: var(--text-deep, #0F172A);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+}
+
+body.dark-mode .tab-btn.active {
+    background: rgba(255,255,255,0.12);
+    color: #f1f5f9;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+}
+
+body.dark-mode .tab-btn {
+    color: rgba(255,255,255,0.3);
+}
+
+.tab-switcher.show-stocks .tab-glider { display: none; }
+
+/* tab count removed */
+
+/* === 7. КАРТОЧКА "УМНАЯ ЗАМЕНА" (Dark Premium Glass) === */
+.smart-replace-card {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    padding: 28px 24px;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border-radius: 22px;
+    margin-top: 0;
+    margin-bottom: 24px;
+    box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.3);
+    overflow: hidden;
+    cursor: default;
+}
+
+/* Spotlight эффект при наведении */
+.smart-replace-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(
+        circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+        rgba(255, 255, 255, 0.1) 0%,
+        transparent 50%
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.smart-replace-card:hover::before {
+    opacity: 1;
+}
+
+/* Иконка */
+.smart-replace-icon {
+    width: 58px;
+    height: 58px;
+    min-width: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    margin-top: 2px; /* лёгкое смещение вниз чтобы совпадало с заголовком */
+}
+
+.smart-replace-icon svg {
+    width: 26px;
+    height: 26px;
+}
+
+/* Текст */
+.smart-replace-content {
+    flex: 1;
+}
+
+.smart-replace-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: white;
+    margin: 0 0 8px 0;
+    letter-spacing: -0.02em;
+}
+
+.smart-replace-desc {
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.65);
+    line-height: 1.55;
+    margin: 0;
+}
+
+/* === 8. ЗАГОЛОВКИ СПИСКА (List Headers) === */
+.list-headers {
+    display: grid;
+    grid-template-columns: 1fr 60px 60px;
+    align-items: center;
+    gap: 8px;
+    padding: 0 16px 12px;
+    margin-bottom: 0;
+}
+
+.list-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.list-header-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-deep);
+    opacity: 0.5;
+}
+
+.list-header-text.center {
+    text-align: center;
+}
+
+.list-header-text.right {
+    text-align: right;
+}
+
+/* Кликабельный заголовок процента */
+.list-header-percent {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-deep);
+    opacity: 0.5;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 4px 8px;
+    border-radius: 4px;
+    animation: headerHintPulse 3s ease-in-out infinite;
+}
+
+.list-header-percent.clicked {
+    animation: none;
+}
+
+.list-header-percent:hover {
+    opacity: 0.8;
+    background: rgba(0, 0, 0, 0.05);
+}
+
+/* Кликабельный заголовок цены - центрируем */
+.list-header-price {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-deep);
+    opacity: 0.5;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 4px 8px;
+    border-radius: 4px;
+    animation: headerHintPulse 3s ease-in-out 0.5s infinite;
+}
+
+.list-header-price.clicked {
+    animation: none;
+}
+
+.list-header-price:hover {
+    opacity: 0.8;
+    background: rgba(0, 0, 0, 0.05);
+}
+
+@keyframes headerHintPulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    15% { opacity: 1; transform: scale(1.12); }
+    30% { opacity: 0.7; transform: scale(1); }
+    45% { opacity: 1; transform: scale(1.08); }
+    60% { opacity: 0.5; transform: scale(1); }
+}
+
+/* Галочка сворачивания списка - справа от ИНСТРУМЕНТ */
+.list-collapse-toggle {
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 4px;
+}
+
+.list-collapse-toggle:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.list-collapse-toggle svg {
+    width: 10px;
+    height: 10px;
+    stroke: var(--text-muted);
+    transition: stroke 0.2s ease, transform 0.3s ease;
+}
+
+.list-collapse-toggle:hover svg {
+    stroke: var(--text-deep);
+}
+
+.list-collapse-toggle.collapsed svg {
+    /* deprecated — теперь используем .expanded */
+}
+
+.list-collapse-toggle.expanded svg {
+    transform: rotate(180deg);
+}
+
+/* Элемент "открыть список" рядом с галочкой */
+.list-open-trigger {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 12px;
+    background: rgba(59, 130, 246, 0.08);
+    transition: all 0.2s ease;
+    margin-left: 8px;
+}
+
+.list-open-trigger:hover {
+    background: rgba(59, 130, 246, 0.15);
+}
+
+.list-open-trigger span {
+    font-family: 'Inter', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent-blue);
+}
+
+.list-open-trigger svg {
+    width: 10px;
+    height: 10px;
+    stroke: var(--accent-blue);
+    transition: transform 0.2s ease;
+}
+
+.list-open-trigger.open svg {
+    transform: rotate(180deg);
+}
+
+body.dark-mode .list-open-trigger {
+    background: rgba(56, 189, 248, 0.12);
+}
+
+body.dark-mode .list-open-trigger span,
+body.dark-mode .list-open-trigger svg {
+    color: var(--accent-blue);
+    stroke: var(--accent-blue);
+}
+
+/* Общий тултип */
+.header-tooltip {
+    position: fixed;
+    background: #2C364C;
+    color: white;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    z-index: 1000;
+    max-width: 260px;
+    line-height: 1.5;
+    animation: tooltipFadeIn 0.2s ease;
+    pointer-events: none;
+}
+
+@keyframes tooltipFadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Раскрывающееся пояснение под заголовком (вместо всплывающего) */
+.header-dropdown-tooltip {
+    display: none;
+    background: rgba(44, 54, 76, 0.95);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    line-height: 1.5;
+    animation: dropdownOpen 0.25s ease;
+    margin: 8px 0 12px 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.header-dropdown-tooltip.show {
+    display: block;
+}
+
+@keyframes dropdownOpen {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+body.dark-mode .header-dropdown-tooltip {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+/* Вопросик для НКД и Текущей купонной доходности */
+.ofz-help-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--accent-blue);
+    font-size: 9px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-left: 4px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.ofz-help-icon:hover {
+    background: rgba(59, 130, 246, 0.25);
+    transform: scale(1.1);
+}
+
+body.dark-mode .ofz-help-icon {
+    background: rgba(56, 189, 248, 0.2);
+    color: var(--accent-blue);
+}
+
+/* Раскрывающаяся подсказка внутри подстроки */
+.ofz-inline-help {
+    display: none;
+    background: rgba(59, 130, 246, 0.08);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-top: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--text-slate);
+    animation: helpSlideDown 0.25s ease;
+    grid-column: 1 / -1;
+}
+
+.ofz-inline-help.show {
+    display: block;
+}
+
+@keyframes helpSlideDown {
+    from { opacity: 0; max-height: 0; }
+    to { opacity: 1; max-height: 100px; }
+}
+
+body.dark-mode .ofz-inline-help {
+    background: rgba(56, 189, 248, 0.1);
+}
+
+/* === 9. КОНТЕНТ ВКЛАДОК === */
+.rebalance-tab-content {
+    display: none;
+    animation: tabFadeIn 0.4s ease;
+}
+
+.rebalance-tab-content.active {
+    display: block;
+}
+
+@keyframes tabFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* === 10. НОВЫЙ ДИЗАЙН СПИСКА ОФЗ (отдельные боксы) === */
+.ofz-aurora-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* Скрытый список */
+.ofz-aurora-list.collapsed {
+    display: none;
+}
+
+/* Строка ОФЗ - ОТДЕЛЬНЫЙ БОКС */
+.ofz-aurora-item {
+    background: var(--card-glass-aurora);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--card-border-aurora);
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(15,23,42,0.04);
+    transition: all 0.2s ease;
+    opacity: 0;
+    transform: translateY(6px);
+    animation: staggerIn 0.3s ease forwards;
+    overflow: hidden;
+}
+
+body.dark-mode .ofz-aurora-item {
+    background: rgba(30, 41, 59, 0.6);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Stagger Animation */
+@keyframes staggerIn {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.ofz-aurora-item:nth-child(1) { animation-delay: 0.05s; }
+.ofz-aurora-item:nth-child(2) { animation-delay: 0.1s; }
+.ofz-aurora-item:nth-child(3) { animation-delay: 0.15s; }
+.ofz-aurora-item:nth-child(4) { animation-delay: 0.2s; }
+.ofz-aurora-item:nth-child(5) { animation-delay: 0.25s; }
+.ofz-aurora-item:nth-child(6) { animation-delay: 0.3s; }
+.ofz-aurora-item:nth-child(7) { animation-delay: 0.35s; }
+.ofz-aurora-item:nth-child(8) { animation-delay: 0.4s; }
+.ofz-aurora-item:nth-child(9) { animation-delay: 0.45s; }
+.ofz-aurora-item:nth-child(10) { animation-delay: 0.5s; }
+
+/* Hover эффект */
+.ofz-aurora-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px -8px rgba(15, 23, 42, 0.12);
+}
+
+/* Свернутая строка (Summary) - GRID для выравнивания */
+.ofz-aurora-summary {
+    display: grid;
+    grid-template-columns: 1fr 60px 60px;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.ofz-aurora-name {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-deep);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Иконка expand в варианте 4 */
+.ofz-expand-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 5px;
+    background: rgba(0,0,0,0.05);
+    flex-shrink: 0;
+    opacity: 0.45;
+    transition: all 0.18s;
+}
+
+.ofz-expand-badge svg {
+    width: 10px;
+    height: 10px;
+    stroke: var(--text-deep);
+    fill: none;
+    stroke-width: 2;
+    transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+
+.ofz-aurora-item:hover .ofz-expand-badge {
+    opacity: 0.85;
+    background: rgba(91,124,153,0.12);
+}
+
+.ofz-aurora-item.expanded .ofz-expand-badge {
+    opacity: 1;
+    background: rgba(91,124,153,0.15);
+}
+
+.ofz-aurora-item.expanded .ofz-expand-badge svg {
+    transform: rotate(180deg);
+}
+
+body.dark-mode .ofz-expand-badge {
+    background: rgba(255,255,255,0.06);
+}
+
+body.dark-mode .ofz-aurora-item:hover .ofz-expand-badge {
+    background: rgba(91,124,153,0.2);
+}
+
+body.dark-mode .ofz-expand-badge svg {
+    stroke: #94A8B8;
+}
+
+/* Стиль для цифр в названии ОФЗ - моношрифт */
+.ofz-aurora-name .mono-digit-span,
+.mono-digit-span {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+}
+
+/* Доходность - по центру ЗЕЛЕНАЯ */
+.ofz-aurora-yield {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: #10B981;
+    text-align: center;
+}
+
+/* Цена - справа */
+.ofz-aurora-price {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-slate);
+    text-align: right;
+}
+
+/* Раскрытые детали (Аккордеон) - ПОСТРОЧНО */
+.ofz-aurora-details {
+    display: none;
+    padding: 0 20px 20px;
+    animation: accordionOpen 0.3s ease;
+}
+
+.ofz-aurora-item.expanded .ofz-aurora-details {
+    display: block;
+}
+
+@keyframes accordionOpen {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Детали - ПОСТРОЧНО */
+.ofz-aurora-details-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+body.dark-mode .ofz-aurora-details-list {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.ofz-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+body.dark-mode .ofz-detail-row {
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.ofz-detail-row:last-child {
+    border-bottom: none;
+}
+
+.ofz-detail-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.ofz-detail-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-deep);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Код с иконкой копирования */
+.ofz-copy-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    padding: 4px 10px;
+    background: rgba(59, 130, 246, 0.08);
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.ofz-copy-wrapper:hover {
+    background: rgba(59, 130, 246, 0.15);
+}
+
+.ofz-copy-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-blue);
+}
+
+.ofz-copy-icon {
+    width: 14px;
+    height: 14px;
+    stroke: var(--accent-blue);
+    opacity: 0.7;
+}
+
+/* Кнопка графика - новый цвет */
+.ofz-aurora-chart-btn {
+    margin-top: 12px;
+    padding: 14px;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border: none;
+    border-radius: 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.ofz-aurora-chart-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.25);
+}
+
+.ofz-aurora-chart-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* === 11. GHOST TRIGGER для ОФЗ и АКЦИИ === */
+.rebalance-ghost-trigger {
+    margin: 20px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 12px;
+    transition: opacity 0.3s;
+}
+
+.rebalance-ghost-trigger:active {
+    opacity: 0.6;
+}
+
+.rebalance-ghost-trigger .ghost-line {
+    width: 50px;
+    height: 4px;
+    background: linear-gradient(90deg, #E2E8F0, #CBD5E1, #E2E8F0);
+    border-radius: 2px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+body.dark-mode .rebalance-ghost-trigger .ghost-line {
+    background: linear-gradient(90deg, #334155, #475569, #334155);
+}
+
+.rebalance-ghost-trigger .ghost-line::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.9) 50%, transparent 100%);
+    transform: translateX(-100%);
+    animation: ghostShimmerBright 1.8s infinite;
+}
+
+@keyframes ghostShimmerBright {
+    0% { transform: translateX(-100%); }
+    60% { transform: translateX(100%); }
+    100% { transform: translateX(100%); }
+}
+
+.rebalance-ghost-trigger .ghost-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #94A3B8;
+    margin-bottom: 6px;
+    transition: color 0.3s;
+}
+
+.rebalance-ghost-trigger.open .ghost-text {
+    color: var(--accent-blue);
+}
+
+/* Точки под текстом */
+.rebalance-ghost-trigger .ghost-dots {
+    display: flex;
+    gap: 4px;
+}
+
+.rebalance-ghost-trigger .ghost-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #CBD5E1;
+    animation: dotPulse 1.5s infinite;
+}
+
+.rebalance-ghost-trigger .ghost-dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.rebalance-ghost-trigger .ghost-dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes dotPulse {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.2); }
+}
+
+.rebalance-ghost-trigger.open .ghost-dot {
+    background: var(--accent-blue);
+}
+
+body.dark-mode .rebalance-ghost-trigger .ghost-dot {
+    background: #475569;
+}
+
+/* === 12. СКРЫТИЕ СТРОК ОФЗ === */
+.ofz-aurora-item.aurora-hidden {
+    display: none !important;
+}
+

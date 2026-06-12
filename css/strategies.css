@@ -1,0 +1,1345 @@
+         /* ========== ФОН ДЛЯ СТРАНИЦЫ РЕБАЛАНСИРОВКИ (КАК НА ГЛАВНОЙ) ========== */
+        
+        #rebalancePanelContent {
+            /* 1. Копируем градиент с главной страницы (Светлая тема) */
+            background: linear-gradient(90deg, #F5F1EE 0%, #F9FAFC 100%);
+            
+            /* 2. Растягиваем фон на весь экран (компенсируем отступы body) */
+            margin: -16px; /* "Вылезаем" за границы стандартного отступа */
+            min-height: 100vh; /* Высота на весь экран */
+            
+            /* 3. Добавляем внутренние отступы, чтобы контент не прилипал к краям */
+            padding: 20px 16px 120px 16px; /* Сверху 20, бока 16, снизу 120 (место для меню) */
+            
+            /* Убеждаемся, что этот фон перекрывает всё */
+            position: relative;
+            z-index: 1;
+        }
+
+        /* 4. Копируем градиент для ТЕМНОЙ темы */
+        body.dark-mode #rebalancePanelContent {
+            background: linear-gradient(90deg, #1a2234 0%, #0f172a 100%);
+        }
+        
+        /* ====================================================================== */
+
+                                      /* ========== ЦЕНТРОВКА И РУБЛИ (CLEANED) ========== */
+        
+        .input-wrapper {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            position: relative;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 12px 0 14px 0 !important;
+        }
+
+        /* Линия подчеркивания — тонкая анимированная */
+        .input-wrapper::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 56px !important;
+            height: 2px !important;
+            border-radius: 1px;
+            background: rgba(59, 130, 246, 0.18) !important;
+            transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+        }
+
+        .input-wrapper:focus-within::after {
+            width: 100px !important;
+            background: rgba(59, 130, 246, 0.45) !important;
+        }
+
+        /* Поле ввода */
+        input#sumInput {
+            caret-color: transparent !important;
+            color: var(--text-main) !important;
+            background: transparent !important;
+            border: none !important;
+            outline: none !important;
+            width: auto !important;
+            min-width: 10px; 
+            max-width: 200px;
+            text-align: right !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            line-height: 1 !important;
+            letter-spacing: -0.03em !important;
+        }
+
+        /* Плейсхолдер */
+        input#sumInput::placeholder {
+            color: #D1D5DB !important;
+            font-family: 'JetBrains Mono', monospace !important;
+            font-size: 42px !important;
+            font-weight: 300 !important;
+            letter-spacing: -0.02em;
+            opacity: 1 !important;
+            text-align: center !important;
+        }
+        input#sumInput:not(:placeholder-shown) {
+            text-align: right !important;
+        }
+
+        /* КУРСОР */
+        .custom-cursor {
+            width: 3px !important;
+            height: 42px !important;
+            border-radius: 2px !important;
+            background: linear-gradient(to bottom, #FFD700, #0ea5e9, #b5985a) !important;
+            background-size: 100% 200% !important;
+            margin: 0 3px 0 1px !important; 
+            display: none;
+            animation: shimmerBlink 1s infinite !important;
+            flex-shrink: 0 !important;
+        }
+
+        input#sumInput:placeholder-shown + #customCursor {
+            display: block !important;
+        }
+        input#sumInput:focus + #customCursor {
+            display: block !important;
+        }
+
+        /* ЗОЛОТОЙ РУБЛЬ ₽ — поджат к цифрам */
+        .currency { 
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 42px; 
+            color: #b5985a !important;
+            text-shadow: 0 0 12px rgba(181, 152, 90, 0.25) !important;
+            font-weight: 400 !important;
+            opacity: 1 !important;
+            display: none;
+            margin-left: 2px !important;
+            transition: color 0.4s ease, text-shadow 0.4s ease, font-size 0.2s ease !important;
+        }
+        
+        /* СЕРЫЙ РУБЛЬ — поджат */
+        .currency-placeholder {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 42px; 
+            color: #D1D5DB !important;
+            font-weight: 300 !important;
+            opacity: 1 !important;
+            display: block;
+            margin-left: 2px !important;
+            transition: color 0.3s ease, font-size 0.2s ease !important;
+        }
+
+        body.dark-mode .currency { color: #d4af37 !important; text-shadow: 0 0 14px rgba(212, 175, 55, 0.3) !important; }
+        body.dark-mode .currency-placeholder { color: #475569 !important; }
+        /* ===================================================== */
+
+        /* ========== АНИМАЦИЯ КУРСОРА ========== */
+        @keyframes shimmerBlink {
+            0% { opacity: 1; }
+            40% { opacity: 1; }
+            50% { opacity: 0.15; }
+            60% { opacity: 0.15; }
+            100% { opacity: 1; }
+        }
+/* =========================================
+   GHOST SLIDER & WATERFALL STYLES (NEW)
+   ========================================= */
+
+/* 1. Контейнер с перспективой для 3D эффекта */
+.strategy-perspective-wrapper {
+    perspective: 1000px;
+    margin-top: 0;
+    position: relative;
+    z-index: 10;
+}
+
+/* 2. Основная (выбранная) карточка */
+.main-selected-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.04);
+    border: 1.5px solid var(--accent-blue);
+    position: relative;
+    z-index: 20;
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease;
+    cursor: default;
+}
+
+/* Эффект нажатия на главную карточку */
+.main-selected-card:active {
+    transform: scale(0.98);
+}
+
+.dark-mode .main-selected-card {
+    background: #1e293b;
+    border-color: var(--accent-blue);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* 3. Контейнер для скрытых карточек (Waterfall) */
+.waterfall-container {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+    margin-top: 0; /* Прижато к верхней карте */
+    position: relative;
+}
+
+.waterfall-container.show {
+    grid-template-rows: 1fr;
+    margin-top: 12px;
+}
+
+.waterfall-inner {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Стили скрытых карточек */
+.strategy-option-card {
+    opacity: 0;
+    transform: translateY(-24px) scale(0.96) rotateX(-4deg);
+    filter: blur(6px);
+    transition: all 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 16px;
+    padding: 14px 18px;
+    border: 1px solid rgba(0,0,0,0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+.dark-mode .strategy-option-card {
+    background: rgba(30, 41, 59, 0.6);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Активное состояние опции в списке */
+.strategy-option-card.selected-in-list {
+    background: #fff;
+    border-color: var(--accent-blue);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.15);
+}
+
+.dark-mode .strategy-option-card.selected-in-list {
+    background: #2d3748;
+}
+
+/* Анимация появления (Waterfall delay) */
+.waterfall-container.show .strategy-option-card {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotateX(0);
+    filter: blur(0);
+}
+
+/* Задержки для каждой карточки */
+.waterfall-container.show .strategy-option-card:nth-child(1) { transition-delay: 0.05s; }
+.waterfall-container.show .strategy-option-card:nth-child(2) { transition-delay: 0.1s; }
+.waterfall-container.show .strategy-option-card:nth-child(3) { transition-delay: 0.15s; }
+.waterfall-container.show .strategy-option-card:nth-child(4) { transition-delay: 0.2s; }
+.waterfall-container.show .strategy-option-card:nth-child(5) { transition-delay: 0.25s; }
+
+/* 4. GHOST SLIDER (Триггер) */
+.ghost-trigger-wrapper {
+    margin-top: 16px;
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 10px;
+    transition: opacity 0.3s;
+}
+
+.ghost-trigger-wrapper:active {
+    opacity: 0.6;
+}
+
+/* Линия с шиммером */
+.ghost-line {
+    width: 36px;
+    height: 3px;
+    background: #E2E8F0;
+    border-radius: 2px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 7px;
+}
+
+.dark-mode .ghost-line { background: #334155; }
+
+/* Анимация блика */
+.ghost-line::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+    transform: translateX(-100%);
+    animation: ghostShimmer 2.5s infinite;
+}
+
+@keyframes ghostShimmer {
+    0% { transform: translateX(-100%); }
+    50% { transform: translateX(100%); }
+    100% { transform: translateX(100%); }
+}
+
+.ghost-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px; /* Увеличенный трекинг */
+    color: #94A3B8;
+    margin-bottom: 4px;
+    transition: color 0.3s;
+}
+
+.ghost-dots {
+    display: flex;
+    gap: 4px;
+}
+
+.ghost-dot {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: #CBD5E1;
+    transition: all 0.3s;
+}
+
+/* Состояние "Открыто" для триггера */
+.ghost-trigger-wrapper.open .ghost-text {
+    color: var(--accent-blue);
+}
+.ghost-trigger-wrapper.open .ghost-dot {
+    background: var(--accent-blue);
+    transform: scale(1.2);
+}
+
+/* Внутренности карточек (тексты и бары) */
+.card-left-part { display: flex; align-items: center; gap: 14px; }
+.card-indicator { width: 4px; height: 32px; border-radius: 2px; flex-shrink: 0; }
+.card-titles { display: flex; flex-direction: column; }
+.card-main-title { font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 700; color: var(--text-main); }
+.card-sub-title { font-family: 'Inter', sans-serif; font-size: 11px; color: #8A9AB0; margin-top: 2px; }
+
+/* Правая часть с разделителем */
+.card-right-part { 
+    display: flex; 
+    align-items: center; 
+    gap: 12px;
+}
+
+/* Тонкий вертикальный разделитель */
+.card-divider {
+    width: 1px;
+    height: 28px;
+    background: linear-gradient(180deg, transparent 0%, rgba(148, 163, 184, 0.3) 20%, rgba(148, 163, 184, 0.3) 80%, transparent 100%);
+    flex-shrink: 0;
+}
+
+/* Контейнер для процентов */
+.card-pct-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 75px;
+}
+
+.card-pct-bonds { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: var(--bonds-color); white-space: nowrap; }
+.card-pct-stocks { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: var(--stocks-color); white-space: nowrap; }
+
+/* Скрытие старых элементов, если они где-то остались */
+.strategy-cards-container, .strategy-expand-trigger { display: none !important; }
+
+        /* =================================================================
+   FEE SELECTOR - QUIET LUXURY DESIGN (CLEAN)
+   ================================================================= */
+
+/* 1. Основной контейнер (Слой выше стратегий) */
+.fee-selector-unified {
+    position: relative;
+    margin-top: 8px;
+    margin-bottom: 10px;
+    z-index: 200;
+}
+
+/* 2. Стеклянная подложка кнопки */
+.fee-unified-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: none;
+    border-radius: 22px;
+    box-shadow: none;
+    transition: transform 0.2s ease;
+}
+
+.fee-unified-wrapper:active {
+    transform: scale(0.995);
+}
+
+.fee-unified-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+/* 3. Триггер (сама кнопка "Выбрать") */
+.fee-unified-trigger {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    padding: 8px 16px;
+    background: rgba(59, 130, 246, 0.06);
+    border: 1px solid rgba(59, 130, 246, 0.1);
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+.fee-unified-trigger:hover {
+    background: rgba(59, 130, 246, 0.1);
+}
+.dark-mode .fee-unified-trigger {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.15);
+}
+
+.fee-selected-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    color: #2C364C;
+}
+
+.fee-dropdown-arrow {
+    color: #94A3B8;
+    transition: transform 0.3s ease;
+}
+
+/* 4. Выпадающее меню (Парящее) */
+/* 4. Выпадающее меню (Исправленное выравнивание) */
+.fee-dropdown-menu {
+    position: absolute;
+    top: 4px;
+    left: 0;
+    right: 0;
+    width: auto;
+    margin: 0;
+    box-sizing: border-box;
+    
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 20px;
+    padding: 6px;
+    
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12), 0 5px 15px rgba(0,0,0,0.02);
+    
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px) scale(0.98);
+    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    
+    z-index: 1000;
+}
+
+
+/* Состояние: Открыто */
+.fee-dropdown-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+
+/* 5. Пункты меню */
+.fee-dropdown-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    margin-bottom: 2px;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.fee-dropdown-item:hover {
+    background: rgba(44, 54, 76, 0.04);
+}
+
+/* Выбранный пункт - Белая плашка */
+.fee-dropdown-item.selected {
+    background: #FFFFFF;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+}
+
+.fee-item-rate {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    font-weight: 500;
+    color: #2C364C;
+}
+
+/* 6. ЛОГИКА ГАЛОЧЕК (Круги) */
+
+/* Базовый: Пустой круг */
+.fee-item-check {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    
+    /* Тонкая серая линия */
+    border: 1.5px solid #CBD5E1;
+    background: transparent;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Галочка внутри (скрыта) */
+.fee-item-check svg {
+    width: 14px;
+    height: 14px;
+    stroke: white;
+    stroke-width: 2.5;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.2s ease;
+}
+
+/* Выбрано: Залитый круг */
+.fee-dropdown-item.selected .fee-item-check {
+    background: #2C364C; /* Графит */
+    border-color: #2C364C;
+    transform: scale(1.1);
+    box-shadow: 0 4px 10px rgba(44, 54, 76, 0.2);
+}
+
+/* Выбрано: Галочка видна */
+.fee-dropdown-item.selected .fee-item-check svg {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* 7. Темная тема */
+body.dark-mode .fee-unified-wrapper {
+    background: transparent;
+    border-color: transparent;
+}
+body.dark-mode .fee-unified-trigger {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+body.dark-mode .fee-selected-text { color: #F1F5F9; }
+body.dark-mode .fee-dropdown-menu {
+    background: rgba(30, 41, 59, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+body.dark-mode .fee-dropdown-item:hover { background: rgba(255, 255, 255, 0.05); }
+body.dark-mode .fee-dropdown-item.selected {
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: none;
+}
+body.dark-mode .fee-item-rate { color: #F1F5F9; }
+body.dark-mode .fee-item-check { border-color: #475569; }
+body.dark-mode .fee-dropdown-item.selected .fee-item-check {
+    background: #38BDF8;
+    border-color: #38BDF8;
+}
+body.dark-mode .fee-dropdown-item.selected .fee-item-check svg { stroke: #0F172A; }
+
+        /* =================================================================
+   FIX FOR FULLSCREEN MODE (ОТСТУПЫ СВЕРХУ)
+   ================================================================= */
+
+/* 1. Заголовки экранов: Портфель, Ребалансировка, Интересное */
+.header {
+    /* calc(X + Y) складывает наши пиксели и системный отступ телефона */
+    padding-top: calc(80px + env(safe-area-inset-top)) !important; 
+    padding-bottom: 20px !important;
+}
+
+/* 2. Заголовок Терминала (где калькулятор) */
+.terminal-header-v2 {
+    /* Делаем побольше, чтобы не прилипало к статус-бару */
+    padding-top: calc(80px + env(safe-area-inset-top)) !important;
+}
+
+/* 3. Экран компании (стрелка назад и тикер) */
+.company-top-bar {
+    /* Отступ для кнопок навигации внутри компании */
+    padding-top: calc(30px + env(safe-area-inset-top)) !important;
+    padding-bottom: 10px !important;
+}
+
+/* 4. На всякий случай: если на Android safe-area не сработает,
+   эти стили гарантируют минимальный отступ */
+@supports not (padding-top: env(safe-area-inset-top)) {
+    .header { padding-top: 50px !important; }
+    .terminal-header-v2 { padding-top: 60px !important; }
+    .company-top-bar { padding-top: 30px !important; }
+}
+ /* ================================================================== */
+
+        /* Подтягиваем нижнюю панель выше */
+.bottom-sticky-panel {
+    margin-top: 0 !important;
+    padding-top: 8px !important;
+    padding-bottom: 20px !important;
+}
+
+/* Если нужно подтянуть текст подсказки ближе к кнопке */
+.sticky-hint {
+    margin-top: 8px !important;
+}
+
+        /* Стилизация заголовка "Инвестиционная стратегия" — скрыт */
+.strategy-section .fee-label {
+    display: none !important;
+}
+
+        /* =================================================================
+   ЕДИНЫЙ СТИЛЬ ЗАГОЛОВКОВ (КАК В ТЕРМИНАЛЕ)
+   ================================================================= */
+
+/* 1. Контейнер заголовка */
+.header {
+    text-align: left !important; /* Выравнивание влево */
+    background: transparent !important;
+    margin: 0 !important;
+    
+    /* Точные отступы как у .terminal-header-v2 */
+    padding: 40px 10px 10px 10px !important;
+    
+    /* Учет "челки" телефона (как в терминале) */
+    padding-top: calc(80px + env(safe-area-inset-top)) !important;
+}
+
+/* 2. Сам текст заголовка (h1) */
+.header h1 {
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 800 !important;
+    font-size: 32px !important; /* Размер как у слова Terminal */
+    color: #2C364C !important;
+    letter-spacing: -0.5px !important;
+    line-height: 1.1 !important;
+    margin: 0 !important;
+    margin-bottom: 6px !important;
+}
+
+/* 3. Темная тема */
+body.dark-mode .header h1 {
+    color: #f1f5f9 !important;
+}
+
+        /* Индивидуальный отступ только для вкладки "Интересное" */
+#marketPanelContent .header {
+    /* Меняйте 100px на любое число - чем больше, тем ниже */
+    padding-top: calc(100px + env(safe-area-inset-top)) !important;
+}
+ 
+/* =================================================================
+   LUXURY NOTIFICATION PILL (REVOLUTIONARY DESIGN)
+   ================================================================= */
+
+.luxury-notify-pill {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    /* Скрыто за верхней границей экрана */
+    transform: translate(-50%, -150%);
+    
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 24px 10px 10px; /* Слева меньше отступ из-за иконки */
+    
+    /* Материал: Глубокий матовый графит */
+    background: rgba(30, 41, 59, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    
+    /* Границы и форма */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 100px; /* Идеальная капсула */
+    
+    /* Тень: Глубокая и мягкая */
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    
+    z-index: 20000; /* Поверх всего */
+    
+    /* Физическая анимация (Пружина) */
+    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    max-width: 85%; /* Чтобы не касаться краев экрана */
+    white-space: nowrap; /* Текст в одну строку */
+
+}
+
+/* Состояние ПОКАЗАНО (Исправленный отступ) */
+.luxury-notify-pill.show {
+    /* 
+       env(safe-area-inset-top) = высота "челки"
+       + 60px = высота кнопок Telegram + небольшой отступ
+    */
+    transform: translate(-50%, calc(env(safe-area-inset-top) + 85px)) !important;
+}
+
+/* Иконка в кружке */
+.notify-icon-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #F87171; /* Элегантный красный */
+    flex-shrink: 0;
+}
+
+/* Текстовый блок */
+.notify-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+}
+
+.notify-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #94A3B8; /* Серый субитог */
+}
+
+.notify-message {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #FFFFFF; /* Белый текст */
+    white-space: nowrap;
+}
+
+/* Адаптация для Светлой темы (делаем капсулу контрастной) */
+/* В светлой теме капсула остается темной для "премиум" акцента */
+
+/* =================================================================
+   АНИМАЦИЯ ОШИБКИ (LUXURY SHAKE)
+   ================================================================= */
+
+@keyframes shakeLux {
+    0%, 100% { transform: translateX(0); }
+    15% { transform: translateX(-6px); }
+    30% { transform: translateX(6px); }
+    45% { transform: translateX(-4px); }
+    60% { transform: translateX(4px); }
+    75% { transform: translateX(-2px); }
+}
+
+.shake-error {
+    animation: shakeLux 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    
+    /* ЗОЛОТАЯ РАМКА (Цвет вашего рубля) */
+    border-color: #b5985a !important; 
+    
+    /* Мягкое золотое свечение вокруг */
+    box-shadow: 0 0 0 4px rgba(181, 152, 90, 0.2) !important;
+    
+    /* Легкое затемнение фона для акцента */
+    background: rgba(181, 152, 90, 0.05) !important;
+}
+
+/* =================================================================
+   HEAVY PHYSICS SWIPE (3D PARALLAX)
+   ================================================================= */
+
+/* 1. Контейнер всего индикатора */
+.luxury-swipe-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 0; /* Изначально ширины нет */
+    z-index: 9999; /* Поверх всего, кроме overlay */
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+/* 2. Линза (Стрелка) */
+.ls-lens {
+    width: 50px;
+    height: 80px;
+    
+    /* Форма: Полуовал, выезжающий слева */
+    border-radius: 0 40px 40px 0;
+    
+    /* Материал: "Жидкое" стекло */
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    
+    /* Свечение */
+    box-shadow: 10px 0 40px rgba(255, 255, 255, 0.4), inset -2px 0 5px rgba(255,255,255,0.5);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-left: none;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* Изначально скрыта слева */
+    transform: translateX(-100%);
+    opacity: 0;
+    transition: transform 0.1s linear, opacity 0.1s linear;
+}
+
+/* Стрелка внутри */
+.ls-arrow {
+    color: #2C364C;
+    width: 28px;
+    height: 28px;
+    transform: scale(0.8);
+    transition: transform 0.2s ease;
+}
+
+/* Темная тема */
+body.dark-mode .ls-lens {
+    background: rgba(30, 41, 59, 0.7);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 10px 0 40px rgba(0, 0, 0, 0.3);
+}
+body.dark-mode .ls-arrow { color: #FFFFFF; }
+
+/* 3. Экраны */
+.screen {
+    transform-origin: center left;
+    will-change: transform;
+    position: relative;
+}
+
+/* Текущий экран при свайпе (скрыт) */
+.screen.swipe-active {
+    z-index: 100;
+}
+
+/* Предыдущий экран, показываемый на фоне */
+.screen.swipe-prev {
+    display: block !important;
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 99;
+    padding: 16px;
+    padding-bottom: 40px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    animation: none !important;
+    background: var(--bg-base, #F1F6FB);
+}
+
+body.dark-mode .screen.swipe-prev {
+    background: var(--bg-base, #0f172a);
+}
+
+        
+/* ==================================================================== */
+
+        /* =================================================================
+   LUXURY BRAND PAPER BACKGROUND
+   ================================================================= */
+
+.luxury-depth-layer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1; /* На заднем плане */
+    
+    /* Глубокий, дорогой цвет фона */
+    background: radial-gradient(circle at 50% 50%, #2C364C 0%, #111827 100%);
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden; /* Обрезаем лишнее */
+}
+
+/* Контейнер для текста (его мы будем двигать параллаксом) */
+.luxury-pattern-container {
+    display: flex;
+    flex-direction: column;
+    gap: 40px; /* Расстояние между строками */
+    
+    /* Слегка наклоняем весь паттерн для динамики */
+    transform: rotate(-10deg) scale(1.2); 
+    
+    width: 150%; /* Шире экрана, чтобы не было дырок при повороте */
+    opacity: 0.6; /* Общая прозрачность текстуры */
+}
+
+/* Сама строка текста */
+.pattern-line {
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: 11px; /* Мелкий, аккуратный шрифт */
+    text-transform: uppercase;
+    letter-spacing: 4px; /* Широкая разрядка - признак люкса */
+    
+    /* Цвет "вдавленной" бумаги */
+    color: rgba(255, 255, 255, 0.04); 
+    
+    white-space: nowrap; /* Текст не переносится */
+    user-select: none;
+}
+
+
+/* =================================================================
+   ХАОТИЧНЫЙ ПАТТЕРН (ЦИКЛ ИЗ 5 СТРОК)
+   ================================================================= */
+
+/* Строка 1: Чуть левее */
+.pattern-line:nth-child(5n+1) {
+    margin-left: -40px;
+    opacity: 0.5; /* Чуть ярче */
+}
+
+/* Строка 2: Сильно влево */
+.pattern-line:nth-child(5n+2) {
+    margin-left: -250px;
+    opacity: 0.3; /* Тусклее (глубже) */
+}
+
+/* Строка 3: Сдвиг вправо */
+.pattern-line:nth-child(5n+3) {
+    margin-left: 80px;
+    opacity: 0.4;
+}
+
+/* Строка 4: Средний сдвиг влево */
+.pattern-line:nth-child(5n+4) {
+    margin-left: -120px;
+    opacity: 0.6; /* Самая яркая */
+}
+
+/* Строка 5: Очень далеко влево */
+.pattern-line:nth-child(5n+5) {
+    margin-left: -300px;
+    opacity: 0.25; /* Еле заметная */
+}
+
+
+/* Адаптация для Светлой темы */
+body:not(.dark-mode) .luxury-depth-layer {
+    /* Светлая дорогая бумага */
+    background: #F1F5F9;
+}
+body:not(.dark-mode) .pattern-line {
+    /* Текст чуть темнее фона (эффект тиснения) */
+    color: rgba(44, 54, 76, 0.06);
+    font-weight: 900;
+}
+
+
+/* ==================================================================== */
+
+        /* =================================================================
+   THE GLASS EDGE (ОБРАБОТКА ЛЕВОГО КРАЯ ПРИ СВАЙПЕ)
+   ================================================================= */
+
+/* 1. Базовый переход для границ */
+.screen {
+    /* Добавляем transition для радиуса и тени */
+    transition: 
+        transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), 
+        border-radius 0.3s ease,
+        box-shadow 0.3s ease !important;
+}
+
+/* 2. Стиль АКТИВНОГО СВАЙПА (Класс .swiping добавляется JS-ом) */
+.screen.swiping {
+    /* Скругляем левые углы, превращая экран в "Карточку" */
+    border-top-left-radius: 32px !important;
+    border-bottom-left-radius: 32px !important;
+    
+    /* Обрезаем контент, чтобы он не вылезал за скругления */
+    overflow: hidden !important; 
+    
+    /* МАГИЯ СВЕТА И ТЕНИ */
+    box-shadow: 
+        /* 1. Внутренний белый блик (Торец стекла) - тонкая линия */
+        inset 1px 0 0 0 rgba(255, 255, 255, 0.6),
+        
+        /* 2. Внутреннее мягкое свечение (Объем) */
+        inset 10px 0 20px -5px rgba(255, 255, 255, 0.3),
+        
+        /* 3. Тень близкая (Контур) */
+        -5px 0 15px rgba(0, 0, 0, 0.1),
+        
+        /* 4. Тень далекая (Глубина) - создает ощущение полета */
+        -30px 0 60px -10px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 3. Адаптация для ТЕМНОЙ ТЕМЫ */
+body.dark-mode .screen.swiping {
+    box-shadow: 
+        /* Тонкий светлый блик (контраст с темным фоном) */
+        inset 1px 0 0 0 rgba(255, 255, 255, 0.15),
+        
+        /* Внутренний темный градиент */
+        inset 20px 0 30px -10px rgba(0, 0, 0, 0.5),
+        
+        /* Глубокая черная тень */
+        -30px 0 70px -5px rgba(0, 0, 0, 0.6) !important;
+        
+    /* Чтобы край не сливался, можно добавить едва заметную золотую кайму */
+    border-left: 1px solid rgba(181, 152, 90, 0.1) !important;
+}
+        
+/* ==================================================================== */
+
+      /* =================================================================
+   REVOLUTIONARY SWIPE EFFECTS: SHEEN & SCALE
+   ================================================================= */
+
+/* 1. Слой блика (изначально невидим) */
+.screen::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 200%; /* Шире экрана, чтобы двигаться */
+    height: 100%;
+    
+    /* Градиент: Прозрачный -> Белый луч -> Прозрачный */
+    background: linear-gradient(
+        110deg, 
+        transparent 30%, 
+        rgba(255, 255, 255, 0.4) 45%, 
+        rgba(255, 255, 255, 0.0) 60%
+    );
+    
+    transform: translateX(-100%); /* Спрятан слева */
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+/* 2. Темная тема (Блик должен быть деликатнее) */
+body.dark-mode .screen::after {
+    background: linear-gradient(
+        110deg, 
+        transparent 30%, 
+        rgba(255, 255, 255, 0.1) 45%, 
+        rgba(255, 255, 255, 0.0) 60%
+    );
+}
+
+/* 3. Активация блика при свайпе */
+.screen.swiping::after {
+    opacity: 1;
+    /* Позиция управляется через JS, но здесь база */
+}
+  /* ==================================================================== */
+
+        /* ========== НОВЫЙ ДИЗАЙН ОФЗ (QUIET LUXURY) ========== */
+
+        /* 1. Заголовок перед списком */
+.ofz-analogs-title {
+    position: relative;
+    font-family: 'Inter', sans-serif;
+    font-size: 18px; /* Значительный размер */
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--text-main);
+    margin: 50px 0 30px 10px !important;
+    display: flex;
+    align-items: center;
+}
+        /* Градиентный шлейф под заголовком */
+.ofz-analogs-title::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, #3498db, transparent);
+    border-radius: 2px;
+}
+
+/* "Живая" точка рядом */
+.ofz-analogs-title::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: #3498db;
+    border-radius: 50%;
+    margin-right: 12px;
+    box-shadow: 0 0 15px rgba(52, 152, 219, 0.6);
+}
+        /* 2. ИНСТРУМЕНТ И ДИНАМИЧЕСКИЙ ЗНАЧОК */
+.h-label-instrument-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer; /* Делаем кликабельным */
+    user-select: none;
+}
+       
+
+/* Динамическая стрелочка */
+.instrument-toggle-icon {
+    width: 14px;
+    height: 14px;
+    color: #94A3B8;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Класс для поворота (будет добавляться через JS) */
+.is-expanded .instrument-toggle-icon {
+    transform: rotate(180deg);
+    color: var(--accent-blue);
+}
+
+/* 1. Контейнер списка (убираем старые ограничения) */
+#ofz-wrapper {
+    transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+    opacity: 1;
+}
+
+#ofz-wrapper.collapsed {
+    display: none; /* Полностью скрываем, когда закрыто */
+    opacity: 0;
+}
+
+/* 2. Революционный дизайн строки с "мостиком" */
+.ofz-luxury-item {
+    display: flex;
+    align-items: baseline; /* Выравнивание по базовой линии текста */
+    padding: 14px 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    overflow: hidden;
+}
+
+.ofz-luxury-item:active {
+    background: rgba(0,0,0,0.02);
+}
+
+.dark-mode .ofz-luxury-item {
+    border-bottom-color: rgba(255,255,255,0.05);
+}
+
+.dark-mode .ofz-luxury-item:active {
+    background: rgba(255,255,255,0.03);
+}
+
+/* Левая часть: Название и Тикер */
+.ofz-lux-left {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.ofz-lux-name {
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--text-main);
+    flex-shrink: 0; /* Название не сжимается */
+}
+
+        /* Тот самый "Мостик" - пунктирная линия */
+.ofz-lux-bridge {
+    flex-grow: 1; /* Линия забирает всё свободное место */
+    border-bottom: 1px dotted rgba(0,0,0,0.15); 
+    margin: 0 10px;
+    position: relative;
+    top: -4px; /* Приподнимаем к центру текста */
+}
+
+.dark-mode .ofz-lux-bridge {
+    border-bottom-color: rgba(255,255,255,0.1);
+}
+
+.ofz-lux-ticker {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: rgba(0,0,0,0.04);
+    padding: 2px 6px;
+    border-radius: 6px;
+    width: fit-content;
+}
+
+.dark-mode .ofz-lux-ticker {
+    background: rgba(255,255,255,0.1);
+}
+
+/* Правая часть: Доходность и Цена */
+.ofz-lux-right {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.ofz-lux-yield {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent-green);
+}
+
+.ofz-lux-price {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-secondary);
+    width: 45px;
+    text-align: right;
+}
+
+        /* 3. Логика скрытия строк (после 3-й) */
+.ofz-row-hidden {
+    display: none !important;
+}
+
+/* 4. Раскрыватель (Ghost Trigger) внизу */
+.ghost-trigger-wrapper.footer-trigger {
+    margin-top: 10px;
+    margin-bottom: 30px;
+}
+
+/* Детали (выпадающая панель) - Стиль стекла */
+.ofz-lux-details {
+    display: none;
+    background: rgba(52, 152, 219, 0.04); /* Легкий голубой оттенок */
+    padding: 15px 20px;
+    border-radius: 12px;
+    margin: 0 10px 15px 10px;
+    animation: fadeIn 0.3s ease;
+}
+
+.ofz-lux-details.active {
+    display: block;
+}
+
+.ofz-lux-detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px dashed rgba(0,0,0,0.05);
+}
+
+.ofz-lux-detail-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.ofz-lux-detail-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+        
+  /* ==================================================================== */
+/* --- ФИНАЛЬНЫЙ БЛОК ОФЗ (ЗАМЕНА ВСЕГО ПРЕДЫДУЩЕГО) --- */
+
+/* 1. ПРИНУДИТЕЛЬНЫЙ ГРАДИЕНТ (Раз и навсегда) */
+.force-gradient-bg {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%) !important;
+    color: white !important;
+    border: none !important;
+}
+.force-gradient-bg * { color: white !important; }
+
+
+/* 3. ШАПКА ТАБЛИЦЫ */
+.ofz-headers-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    margin-top: 20px;
+}
+.h-label-instrument {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #94A3B8;
+}
+/* 2. ИДЕАЛЬНОЕ ЦЕНТРИРОВАНИЕ ПЛАШЕК */
+.headers-right-group {
+    display: flex;
+    align-items: center;
+    /* Теперь мы жестко привязываемся к ширине колонок данных */
+    width: 135px; 
+    justify-content: space-between;
+    margin-right: 5px;
+}
+/* Стеклянные плашки теперь центрируют содержимое */
+.header-glass-pill {
+    width: 55px; /* Ширина плашки */
+    height: 28px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05); /* Эффект стекла */
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; /* ТУТ РЕГУЛИРУЕТСЯ РАЗМЕР % и ₽ */
+    color: #94a3b8;
+    font-weight: 600;
+}
+.dark-mode .header-glass-pill {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ========================================================================
+   AURORA REBALANCE DESIGN - НОВЫЙ ДИЗАЙН ВКЛАДКИ РЕБАЛАНСИРОВКА
+   ======================================================================== */
+

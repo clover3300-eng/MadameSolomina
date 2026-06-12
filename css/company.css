@@ -1,0 +1,431 @@
+/* ========== BLOOMBERG/HUD COMPANY CARD DESIGN ========== */
+
+/* Динамическое свечение фона для страницы компании */
+#screen-company {
+    position: relative;
+    background: var(--bg-base);
+    min-height: 100vh;
+    margin: -16px;
+    padding: 16px;
+}
+
+body.dark-mode #screen-company {
+    background: var(--bg-base);
+}
+
+/* Динамическое свечение в зависимости от цены */
+#screen-company.company-screen-active::before {
+    content: '';
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 30% 20%, var(--glow-color, rgba(46, 204, 113, 0.15)) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+    animation: glowPulse 5s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 0.9; transform: scale(1.03); }
+}
+
+#screen-company > *:not(.aurora-container):not(.noise-overlay) {
+    position: relative;
+    z-index: 2;
+}
+
+/* Верхняя панель навигации */
+.company-top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 0;
+    margin-bottom: 20px;
+}
+
+.company-back-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-main);
+    transition: all 0.2s ease;
+}
+
+.company-back-btn:active {
+    transform: scale(0.95);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.company-ticker-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-main);
+    letter-spacing: 0.5px;
+}
+
+.company-ticker-badge .ticker-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--accent-green);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--accent-green);
+}
+
+/* Hero секция с названием и ценой */
+.company-hero {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 20px 0;
+}
+
+.company-hero-name {
+    font-family: 'Inter', sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--text-main);
+    letter-spacing: -0.06em;
+    line-height: 1.1;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+}
+
+.company-hero-price {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 56px;
+    font-weight: 500;
+    color: var(--text-main);
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+    line-height: 1;
+}
+
+.company-hero-change {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    border-radius: 30px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.company-hero-change.positive {
+    background: rgba(46, 204, 113, 0.2);
+    color: #2ecc71;
+}
+
+.company-hero-change.negative {
+    background: rgba(231, 76, 60, 0.2);
+    color: #e74c3c;
+}
+
+.company-hero-change.neutral {
+    background: rgba(127, 140, 141, 0.2);
+    color: var(--text-secondary);
+}
+
+/* SVG мини-тренд */
+.company-trend-svg {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.trend-line {
+    stroke-dasharray: 300;
+    stroke-dashoffset: 300;
+    animation: drawLine 2s ease forwards;
+}
+
+@keyframes drawLine {
+    to { stroke-dashoffset: 0; }
+}
+
+/* Кнопки действий */
+.company-actions {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 30px;
+}
+
+.company-action-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 18px 20px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.company-action-btn:active {
+    transform: scale(0.98);
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.company-action-btn svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+}
+
+.company-action-btn.primary {
+    background: var(--accent-blue);
+    border-color: var(--accent-blue);
+    color: white;
+}
+
+/* Glassmorphism карточки */
+.glass-card {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+.dark-mode .glass-card {
+    background: rgba(30, 41, 59, 0.6);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Секция описания */
+.company-deion-section {
+    margin-bottom: 24px;
+}
+
+.company-section-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.company-section-title svg {
+    width: 16px;
+    height: 16px;
+    stroke: var(--accent-blue);
+}
+
+.company-deion-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text-main);
+}
+
+.company-deion-text .highlight {
+    background: linear-gradient(120deg, rgba(52, 152, 219, 0.2) 0%, rgba(52, 152, 219, 0.1) 100%);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+/* Сетка аналитики */
+.analytics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.analytics-tile {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+}
+
+.analytics-tile::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+}
+
+.analytics-tile.tile-forecast::before { background: linear-gradient(90deg, #3498db, #2ecc71); }
+.analytics-tile.tile-dividends::before { background: linear-gradient(90deg, #2ecc71, #27ae60); }
+.analytics-tile.tile-risk::before { background: linear-gradient(90deg, #f1c40f, #e67e22); }
+.analytics-tile.tile-cap::before { background: linear-gradient(90deg, #9b59b6, #8e44ad); }
+
+.analytics-tile-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.analytics-tile-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 8px;
+}
+
+.analytics-tile-sub {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+/* Прогресс-бар для Target Forecast */
+.forecast-progress {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.forecast-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3498db, #2ecc71);
+    border-radius: 3px;
+    transition: width 1s ease;
+}
+
+/* Секция событий */
+.events-section {
+    margin-bottom: 24px;
+}
+
+.event-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.event-item:last-child {
+    border-bottom: none;
+}
+
+.event-date {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 50px;
+}
+
+.event-date-day {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--accent-blue);
+    line-height: 1;
+}
+
+.event-date-month {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+.event-content {
+    flex: 1;
+}
+
+.event-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 4px;
+}
+
+.event-deion {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+/* Dark mode адаптация */
+.dark-mode .company-back-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .company-ticker-badge {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .company-action-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .analytics-tile {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* ========== END: BLOOMBERG/HUD COMPANY CARD DESIGN ========== */
+
+        /* ========================================================================
+   ИНТЕРЕСНОЕ - GLASSMORPHISM REDESIGN (Claude AI Style)
+   ======================================================================== */
+
+/* ============================================
+   ИНТЕРЕСНОЕ - Evolution Design System
+   Quiet Luxury / Evolution Terminal
+   Философия: Приборная панель из дорогого 
+   матового стекла и оптики
+   ============================================ */
+

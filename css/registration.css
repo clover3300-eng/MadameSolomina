@@ -1,0 +1,559 @@
+/* ========== REGISTRATION SCREEN ========== */
+#screen-register {
+    background: var(--bg-base);
+    margin: -16px;
+    padding: 0 0 120px 0;
+    min-height: 100vh;
+    position: relative;
+    z-index: 1;
+    overflow-x: hidden;
+}
+/* Force hide ALL navigation on register screen */
+body.register-mode .nav-wrapper,
+body.register-mode #navWrapper,
+body.register-mode #portfolioModeSwitcher {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+/* Force hide navigation during Vanguard quiz */
+body.quiz-mode .nav-wrapper,
+body.quiz-mode #navWrapper {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+/* Full-screen overlay for Vanguard quiz */
+body.quiz-mode #screen-vanguard {
+    position: fixed !important;
+    top: 0; left: 0; right: 0; bottom: 0;
+    overflow: hidden !important;
+    z-index: 200;
+    margin: 0 !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+#screen-register > *:not(.aurora-container):not(.noise-overlay) {
+    position: relative;
+}
+
+.reg-header {
+    padding: 50px 24px 20px;
+    text-align: center;
+}
+.reg-supratitle {
+    font-family: 'Inter', sans-serif;
+    font-size: 9px; font-weight: 600;
+    color: #94A3B8; text-transform: uppercase;
+    letter-spacing: 0.3em; margin-bottom: 10px;
+}
+.reg-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 26px; font-weight: 800;
+    color: #2C364C; line-height: 1.2; margin: 0 0 6px;
+}
+.dark-mode .reg-title { color: #F1F5F9; }
+.reg-subtitle {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px; font-weight: 500;
+    color: #8A9AB0; letter-spacing: 0.3px;
+}
+.dark-mode .reg-subtitle { color: #64748B; }
+
+.reg-form { padding: 0 20px; }
+
+.reg-section {
+    margin-bottom: 24px;
+}
+.reg-section-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: #94A3B8; margin-bottom: 10px;
+    padding-left: 4px;
+}
+.dark-mode .reg-section-label { color: #64748B; }
+
+.reg-input-group {
+    display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px;
+}
+.reg-input {
+    width: 100%; padding: 14px 16px;
+    background: rgba(255,255,255,0.65);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 14px; font-size: 15px;
+    font-family: 'Inter', sans-serif; font-weight: 500;
+    color: var(--text-main); outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+    box-sizing: border-box;
+}
+.reg-input:focus {
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+.reg-input::placeholder { color: #B0BEC5; font-weight: 400; }
+.dark-mode .reg-input {
+    background: rgba(30, 41, 59, 0.65);
+    border-color: rgba(255,255,255,0.08);
+    color: #F1F5F9;
+}
+.dark-mode .reg-input::placeholder { color: #475569; }
+
+/* --- Broker Accordion Cards --- */
+.broker-accordion { display: flex; flex-direction: column; gap: 8px; }
+
+.broker-card {
+    background: rgba(255,255,255,0.6);
+    backdrop-filter: blur(10px);
+    border-radius: 16px; padding: 14px 18px;
+    border: 1.5px solid rgba(0,0,0,0.05);
+    display: flex; align-items: center;
+    justify-content: space-between;
+    cursor: pointer; transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    opacity: 0;
+    transform: translateY(-20px) scale(0.97);
+    filter: blur(4px);
+}
+.broker-card.visible {
+    opacity: 1; transform: translateY(0) scale(1); filter: blur(0);
+}
+.broker-card:nth-child(1) { transition-delay: 0.05s; }
+.broker-card:nth-child(2) { transition-delay: 0.1s; }
+.broker-card:nth-child(3) { transition-delay: 0.15s; }
+.broker-card:nth-child(4) { transition-delay: 0.2s; }
+.broker-card:nth-child(5) { transition-delay: 0.25s; }
+
+.dark-mode .broker-card {
+    background: rgba(30, 41, 59, 0.6);
+    border-color: rgba(255,255,255,0.05);
+}
+
+.broker-card.selected {
+    background: #fff;
+    border-color: var(--accent-blue);
+    box-shadow: 0 4px 16px rgba(52, 152, 219, 0.15);
+}
+.dark-mode .broker-card.selected {
+    background: #2d3748;
+    border-color: var(--accent-blue);
+}
+
+.broker-card-left {
+    display: flex; align-items: center; gap: 14px;
+}
+.broker-logo {
+    width: 42px; height: 42px; border-radius: 13px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+}
+.broker-logo span {
+    font-family: 'Inter', sans-serif;
+    font-size: 18px; font-weight: 500;
+    letter-spacing: -0.01em;
+    color: inherit;
+    line-height: 1;
+}
+.broker-logo.t-invest { 
+    background: linear-gradient(145deg, #FFDD2D, #E8C400); 
+    color: #1A1A1A; 
+}
+.broker-logo.finam { 
+    background: linear-gradient(145deg, #2A5082, #0D2240); 
+    color: white;
+}
+.broker-logo.bcs { 
+    background: linear-gradient(145deg, #00B85C, #007A3D); 
+    color: white;
+}
+.broker-logo.alfa { 
+    background: linear-gradient(145deg, #EF1C25, #B50A12); 
+    color: white;
+}
+
+.broker-logo-placeholder {
+    width: 40px; height: 40px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    background: rgba(52, 152, 219, 0.08);
+    color: #94A3B8;
+    transition: all 0.3s;
+}
+.dark-mode .broker-logo-placeholder {
+    background: rgba(56, 189, 248, 0.1);
+    color: #64748B;
+}
+
+.broker-info { display: flex; flex-direction: column; gap: 2px; }
+.broker-name {
+    font-family: 'Inter', sans-serif; font-size: 14px;
+    font-weight: 700; color: var(--text-main);
+}
+.broker-api-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; font-weight: 500; color: #94A3B8;
+    letter-spacing: 0.02em;
+}
+.dark-mode .broker-api-label { color: #64748B; }
+
+.broker-check {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid #D1D5DB;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; flex-shrink: 0;
+}
+.broker-card.selected .broker-check {
+    background: var(--accent-blue); border-color: var(--accent-blue);
+}
+.dark-mode .broker-check { border-color: #475569; }
+
+/* --- Broker Main Card (Strategy Accordion style) --- */
+.broker-main-card {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    border: 1.5px solid rgba(0,0,0,0.06);
+    position: relative;
+    z-index: 20;
+    cursor: pointer;
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.broker-main-card:active { transform: scale(0.98); }
+.dark-mode .broker-main-card {
+    background: #1e293b;
+    border-color: rgba(255,255,255,0.08);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+.broker-main-card.has-selection {
+    border-color: var(--accent-blue);
+}
+.broker-main-arrow {
+    color: #94A3B8;
+    transition: transform 0.3s;
+}
+.broker-main-arrow.open {
+    transform: rotate(180deg);
+}
+
+/* Broker waterfall cards use existing strategy-option-card styles */
+#brokerWaterfall .strategy-option-card {
+    padding: 14px 18px;
+}
+#brokerWaterfall .strategy-option-card .broker-check {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid #D1D5DB;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; flex-shrink: 0;
+}
+.dark-mode #brokerWaterfall .strategy-option-card .broker-check { border-color: #475569; }
+#brokerWaterfall .strategy-option-card.selected-in-list .broker-check {
+    background: var(--accent-blue); border-color: var(--accent-blue);
+}
+
+/* --- Subscription Plan Cards — REVOLUTIONARY TIER DESIGN --- */
+.plan-cards { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 10px;
+}
+
+.plan-card {
+    background: rgba(255,255,255,0.55);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 20px; 
+    padding: 0;
+    border: 1.5px solid rgba(255,255,255,0.5);
+    cursor: pointer; 
+    transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    position: relative; 
+    overflow: hidden;
+}
+.dark-mode .plan-card {
+    background: rgba(30, 41, 59, 0.6);
+    border-color: rgba(255,255,255,0.06);
+}
+.plan-card.selected {
+    border-color: transparent;
+    box-shadow: 0 8px 32px -4px rgba(59, 130, 246, 0.18),
+                0 2px 8px rgba(59, 130, 246, 0.08);
+}
+.dark-mode .plan-card.selected { 
+    background: rgba(30, 41, 59, 0.85);
+    box-shadow: 0 8px 32px -4px rgba(59, 130, 246, 0.25);
+}
+
+/* Gradient accent border for selected */
+.plan-card.selected::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    padding: 1.5px;
+    background: linear-gradient(135deg, #3B82F6, #8B5CF6, #EC4899);
+    -webkit-mask: 
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+}
+
+/* Inner layout */
+.plan-card-inner {
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+}
+
+.plan-card-top { 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+    margin-bottom: 0;
+}
+.plan-name {
+    font-family: 'Inter', sans-serif; 
+    font-size: 15px;
+    font-weight: 700; 
+    color: var(--text-main);
+    flex: 1;
+}
+.plan-badge {
+    font-family: 'JetBrains Mono', monospace; 
+    font-size: 8px;
+    font-weight: 700; 
+    text-transform: uppercase;
+    letter-spacing: 0.1em; 
+    padding: 3px 8px;
+    border-radius: 6px;
+}
+.plan-badge.free { background: rgba(16, 185, 129, 0.12); color: #10B981; }
+.plan-badge.popular { background: rgba(59, 130, 246, 0.12); color: #3B82F6; }
+.plan-badge.best { background: rgba(249, 115, 22, 0.12); color: #F97316; }
+
+/* Price row */
+.plan-price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+.plan-price {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px; 
+    font-weight: 800; 
+    color: var(--text-main);
+    margin-bottom: 0;
+    line-height: 1;
+    letter-spacing: -0.03em;
+}
+.plan-price span {
+    font-size: 12px; 
+    font-weight: 400; 
+    color: #94A3B8;
+    letter-spacing: 0;
+}
+.plan-detail {
+    font-family: 'Inter', sans-serif; 
+    font-size: 11px;
+    color: #94A3B8; 
+    font-weight: 500;
+    line-height: 1.4;
+}
+.dark-mode .plan-detail { color: #64748B; }
+
+/* Custom radio — animated check */
+.plan-radio {
+    width: 22px; 
+    height: 22px; 
+    border-radius: 50%;
+    border: 2px solid #D1D5DB; 
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    flex-shrink: 0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.plan-card.selected .plan-radio {
+    background: linear-gradient(135deg, #3B82F6, #8B5CF6); 
+    border-color: transparent;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+.plan-card.selected .plan-radio::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: white;
+    animation: radioPopIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes radioPopIn {
+    from { transform: scale(0); }
+    to { transform: scale(1); }
+}
+.dark-mode .plan-radio { border-color: #475569; }
+
+/* Feature pills for each plan */
+.plan-features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 2px;
+}
+.plan-feature-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(0,0,0,0.03);
+    color: #94A3B8;
+}
+.dark-mode .plan-feature-pill {
+    background: rgba(255,255,255,0.05);
+    color: #64748B;
+}
+
+/* Savings highlight for yearly */
+.plan-savings {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    color: #F97316;
+    margin-top: 2px;
+}
+.plan-savings svg {
+    width: 12px; height: 12px;
+    stroke: #F97316; fill: none;
+    stroke-width: 2.5;
+}
+
+/* Stagger entrance */
+.plan-card {
+    animation: planSlideUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+.plan-card:nth-child(1) { animation-delay: 0.1s; }
+.plan-card:nth-child(2) { animation-delay: 0.2s; }
+.plan-card:nth-child(3) { animation-delay: 0.3s; }
+@keyframes planSlideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Plan Main Card (waterfall accordion) --- */
+.plan-main-card {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    border: 1.5px solid rgba(0,0,0,0.06);
+    position: relative; z-index: 20;
+    cursor: pointer;
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.plan-main-card:active { transform: scale(0.98); }
+.dark-mode .plan-main-card {
+    background: #1e293b;
+    border-color: rgba(255,255,255,0.08);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+.plan-main-card.has-selection { border-color: var(--accent-blue); }
+.plan-main-left { display: flex; align-items: center; gap: 12px; }
+.plan-main-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(135deg, #3B82F6, #2563EB);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.plan-main-icon svg { stroke: white; }
+.plan-main-name {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px; font-weight: 700; color: var(--text-main);
+}
+.plan-main-price {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 500; color: #94A3B8;
+    margin-top: 1px;
+}
+.plan-option-left { flex: 1; }
+.plan-option-name {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px; font-weight: 700; color: var(--text-main);
+}
+.plan-option-price {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; font-weight: 600; color: var(--text-main);
+    margin-top: 2px;
+}
+.plan-option-price span { font-size: 10px; font-weight: 400; color: #94A3B8; }
+.plan-option-detail {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px; font-weight: 500; color: #94A3B8;
+    margin-top: 2px;
+}
+#planWaterfall .strategy-option-card {
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+#planWaterfall .strategy-option-card.selected-in-list {
+    border-left: 3px solid #3B82F6;
+}
+
+/* --- Register Button --- */
+.reg-submit-wrapper {
+    padding: 20px 20px 40px;
+}
+.btn-register {
+    width: 100%; padding: 18px;
+    background: #2C364C; color: white;
+    border: none; border-radius: 16px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.12em;
+    cursor: pointer;
+    box-shadow: 0 12px 35px rgba(44, 54, 76, 0.25);
+    transition: all 0.2s; position: relative; overflow: hidden;
+}
+.btn-register:active { transform: scale(0.97); }
+.btn-register:disabled {
+    opacity: 0.4; pointer-events: none;
+}
+.dark-mode .btn-register { background: #2C364C; }
+
+.reg-back-btn {
+    position: absolute; top: 50px; left: 20px;
+    width: 38px; height: 38px; border-radius: 12px;
+    background: rgba(255,255,255,0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.4);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--text-main); z-index: 5;
+}
+.dark-mode .reg-back-btn {
+    background: rgba(30, 41, 59, 0.65);
+    border-color: rgba(255,255,255,0.08);
+    color: #F1F5F9;
+}
+

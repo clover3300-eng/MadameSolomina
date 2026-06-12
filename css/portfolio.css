@@ -1,0 +1,1792 @@
+/* === Переключатель страниц К ПОКУПКЕ / МОИ АКТИВЫ === */
+.portfolio-page-switcher {
+    display: flex;
+    gap: 0;
+    margin: 16px 0 24px;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 14px;
+    padding: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+body.dark-mode .portfolio-page-switcher {
+    background: rgba(30, 41, 59, 0.5);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.portfolio-page-btn {
+    flex: 1;
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-slate);
+    cursor: pointer;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.portfolio-page-btn.active {
+    background: white;
+    color: var(--text-deep);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+body.dark-mode .portfolio-page-btn.active {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+}
+
+/* === Капитал + Прогноз (Refined Hierarchy Design) === */
+.portfolio-capital-card {
+    position: relative;
+    border-radius: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.35);
+    overflow: hidden;
+    border: 1px solid rgba(148, 163, 184, 0.08);
+}
+
+body.dark-mode .portfolio-capital-card {
+    border: 1px solid rgba(56, 189, 248, 0.18);
+    box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.6),
+                0 0 0 1px rgba(56, 189, 248, 0.08),
+                0 0 32px -8px rgba(56, 189, 248, 0.15);
+}
+
+/* Тёмная верхняя часть (капитал + распределение) */
+.capital-dark-top {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+    padding: 22px 22px 18px;
+    position: relative;
+    color: #ffffff;
+}
+
+.capital-dark-top::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 22px; right: 22px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+}
+
+.capital-decoration {
+    position: absolute;
+    top: -30%; right: -10%;
+    width: 280px; height: 280px;
+    background: radial-gradient(circle, rgba(217, 119, 87, 0.16) 0%, transparent 65%);
+    pointer-events: none;
+    filter: blur(20px);
+}
+
+/* === HERO === */
+.capital-hero {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    position: relative;
+    z-index: 1;
+    margin-bottom: 16px;
+}
+
+.capital-hero-left {
+    flex: 1;
+    min-width: 0;
+}
+
+.capital-label-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: rgba(148, 163, 184, 0.65);
+    margin-top: 6px;
+    margin-bottom: 9px;
+}
+
+.capital-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 30px;
+    font-weight: 700;
+    color: #FFFFFF;
+    letter-spacing: -0.025em;
+    line-height: 1;
+    background: linear-gradient(180deg, #FFFFFF 0%, rgba(255,255,255,0.85) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    white-space: nowrap;
+}
+
+.capital-fee-corner {
+    flex-shrink: 0;
+    padding: 5px 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(148, 163, 184, 0.7);
+    letter-spacing: -0.01em;
+    margin-top: 26px;
+}
+
+/* === Thin distribution bar === */
+.capital-thin-bar {
+    display: flex;
+    height: 4px;
+    border-radius: 100px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    position: relative;
+    z-index: 1;
+}
+
+.capital-thin-bar-bonds {
+    background: linear-gradient(90deg, #5E7BA3, #7B9BBF);
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    box-shadow: 0 0 12px rgba(123, 155, 191, 0.4);
+}
+
+.capital-thin-bar-bonds::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 100%);
+}
+
+.capital-thin-bar-stocks {
+    background: linear-gradient(90deg, #D97757, #E8956A);
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    box-shadow: 0 0 12px rgba(232, 149, 106, 0.4);
+}
+
+.capital-thin-bar-stocks::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 100%);
+}
+
+/* === Distribution legend (minimal inline under bar) === */
+.capital-legend {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    position: relative;
+    z-index: 1;
+}
+
+.capital-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.legend-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.legend-dot.bonds { background: #7B9BBF; }
+.legend-dot.stocks { background: #E8956A; }
+
+.legend-name {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    color: rgba(226, 232, 240, 0.8);
+    letter-spacing: 0.02em;
+}
+
+.legend-pct {
+    font-weight: 700;
+    color: rgba(226, 232, 240, 0.95);
+}
+
+.legend-sep {
+    color: rgba(148, 163, 184, 0.3);
+    font-weight: 400;
+}
+
+.legend-sum {
+    font-weight: 500;
+    color: rgba(148, 163, 184, 0.55);
+    letter-spacing: -0.01em;
+}
+
+/* === Divider (hidden — forecast block has its own border) === */
+.capital-divider {
+    display: none;
+}
+
+/* === Forecast (светлая нижняя часть: бесшовно из тёмной с inset-тенью) === */
+.capital-forecast-light {
+    background:
+        linear-gradient(180deg, rgba(15, 23, 42, 0.12) 0%, rgba(15, 23, 42, 0.03) 6%, transparent 14%),
+        radial-gradient(circle at 0% 0%, rgba(30, 41, 59, 0.10) 0%, transparent 55%),
+        linear-gradient(180deg, #D4DEE9 0%, #E2EAF2 6%, #EEF3F9 22%, #F8FAFC 60%, #FFFFFF 100%);
+    padding: 20px 22px 18px;
+    position: relative;
+    z-index: 1;
+    box-shadow: inset 0 10px 14px -10px rgba(15, 23, 42, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    border-top: none;
+}
+
+body.dark-mode .capital-forecast-light {
+    background:
+        linear-gradient(180deg, rgba(2, 6, 23, 0.25) 0%, rgba(2, 6, 23, 0.06) 8%, transparent 18%),
+        radial-gradient(circle at 0% 0%, rgba(15, 23, 42, 0.32) 0%, transparent 55%),
+        linear-gradient(180deg, #B6C2D0 0%, #C8D4E1 6%, #DDE7F2 22%, #EEF3F8 60%, #F8FAFC 100%);
+    box-shadow: inset 0 10px 14px -10px rgba(0, 0, 0, 0.45),
+                inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+/* Top row: label LEFT, % corner badge RIGHT — mirrors hero structure */
+.forecast-main-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.forecast-data-line {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.forecast-label-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: rgba(71, 85, 105, 0.7);
+    line-height: 1;
+}
+
+.forecast-data-total {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1;
+    color: #0F172A;
+    background: linear-gradient(180deg, #1e293b 0%, #475569 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    white-space: nowrap;
+}
+
+.forecast-data-total #summ-total-value-v2 {
+    font-weight: 700;
+}
+
+/* % delta — скошенная зелёная метка (читает значение из data-pct) */
+.forecast-pct-display {
+    font-size: 0;
+    line-height: 0;
+    flex-shrink: 0;
+    margin-top: 18px;
+}
+
+.forecast-pct-display::before {
+    content: attr(data-pct);
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: #ffffff;
+    background: linear-gradient(135deg, #10B981, #059669);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 4px;
+    padding: 6px 14px;
+    transform: skewX(-10deg);
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+    letter-spacing: 0.02em;
+}
+
+body.dark-mode .forecast-pct-display::before {
+    background: linear-gradient(135deg, #34D399, #10B981);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #0F172A;
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+}
+
+.forecast-breakdown-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.forecast-breakdown-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+}
+
+.fb-dot {
+    width: 6px; height: 6px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.fb-dot.bonds { background: #5E7BA3; }
+.fb-dot.stocks { background: #D97757; }
+
+.fb-label {
+    color: rgba(71, 85, 105, 0.75);
+    font-weight: 500;
+}
+
+.fb-value {
+    font-family: 'JetBrains Mono', monospace;
+    color: rgba(71, 85, 105, 0.65);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+}
+
+.forecast-breakdown-divider {
+    width: 1px;
+    height: 12px;
+    background: rgba(15, 23, 42, 0.12);
+}
+
+/* === Переключатель ОФЗ / Акции в портфеле — Underline style === */
+.portfolio-content-tabs {
+    margin: 0 0 18px;
+    padding: 0;
+}
+
+.portfolio-tab-switcher {
+    display: inline-flex;
+    gap: 4px;
+    background: rgba(0,0,0,0.04);
+    border-radius: 12px;
+    padding: 4px;
+    border: none;
+    box-shadow: none;
+    box-sizing: border-box;
+}
+
+body.dark-mode .portfolio-tab-switcher {
+    background: rgba(255,255,255,0.06);
+}
+
+.portfolio-tab-glider { display: none; }
+
+.portfolio-tab-btn {
+    position: relative;
+    flex: none;
+    padding: 7px 16px;
+    border: none;
+    background: transparent;
+    border-radius: 9px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--text-muted, #94A3B8);
+    cursor: pointer;
+    transition: all 0.18s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.portfolio-tab-btn svg {
+    stroke: currentColor;
+    flex-shrink: 0;
+}
+
+.portfolio-tab-btn::after { display: none; }
+
+.portfolio-tab-btn.active {
+    background: white;
+    color: var(--text-deep, #0F172A);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+}
+
+body.dark-mode .portfolio-tab-btn.active {
+    background: rgba(255,255,255,0.12);
+    color: #f1f5f9;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+}
+
+body.dark-mode .portfolio-tab-btn {
+    color: rgba(255,255,255,0.3);
+}
+
+.portfolio-tab-switcher.show-stocks .portfolio-tab-glider { display: none; }
+
+/* === Скрытие/показ контента вкладок === */
+.portfolio-tab-content {
+    display: none;
+}
+
+.portfolio-tab-content.active {
+    display: block;
+}
+
+/* === Список ОФЗ в стиле Aurora === */
+.portfolio-ofz-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-bottom: 20px;
+    background: var(--card-glass-aurora);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--card-border-aurora);
+    border-radius: 18px;
+    box-shadow: var(--shadow-luxury);
+    overflow: hidden;
+}
+
+body.dark-mode .portfolio-ofz-list {
+    background: rgba(30, 41, 59, 0.6);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.portfolio-ofz-item {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: 0;
+    box-shadow: none;
+    transition: background 0.15s ease;
+    overflow: hidden;
+}
+
+body.dark-mode .portfolio-ofz-item {
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.portfolio-ofz-item:last-child {
+    border-bottom: none;
+}
+
+.portfolio-ofz-item:hover {
+    background: rgba(0, 0, 0, 0.018);
+    transform: none;
+    box-shadow: none;
+}
+
+body.dark-mode .portfolio-ofz-item:hover {
+    background: rgba(255, 255, 255, 0.025);
+}
+
+.portfolio-ofz-summary {
+    display: grid;
+    grid-template-columns: 1fr 60px 50px 70px;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 16px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.portfolio-ofz-name {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-deep);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.portfolio-ofz-yield {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: #10B981;
+    text-align: center;
+}
+
+.portfolio-ofz-qty {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-slate);
+    text-align: center;
+}
+
+.portfolio-ofz-sum {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-deep);
+    text-align: right;
+}
+
+/* Детали ОФЗ при раскрытии */
+.portfolio-ofz-details {
+    display: none;
+    padding: 0 16px 16px;
+}
+
+.portfolio-ofz-item.expanded {
+    background: rgba(52, 152, 219, 0.03);
+}
+
+body.dark-mode .portfolio-ofz-item.expanded {
+    background: rgba(91, 124, 153, 0.08);
+}
+
+.portfolio-ofz-item.expanded .ofz-expand-badge svg {
+    transform: rotate(180deg);
+}
+
+.portfolio-ofz-item .ofz-expand-badge {
+    flex-shrink: 0;
+}
+
+.portfolio-ofz-item.expanded .portfolio-ofz-details {
+    display: block;
+    animation: accordionOpen 0.3s ease;
+}
+
+.portfolio-ofz-details-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+body.dark-mode .portfolio-ofz-details-grid {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.portfolio-ofz-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+body.dark-mode .portfolio-ofz-detail-row {
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.portfolio-ofz-detail-row:last-child {
+    border-bottom: none;
+}
+
+.portfolio-ofz-detail-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--text-slate);
+}
+
+.portfolio-ofz-detail-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-deep);
+}
+
+/* Стили для копирования кода в портфеле */
+#screen-portfolio .ofz-copy-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    padding: 4px 10px;
+    background: rgba(59, 130, 246, 0.08);
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+#screen-portfolio .ofz-copy-wrapper:hover {
+    background: rgba(59, 130, 246, 0.15);
+}
+
+#screen-portfolio .ofz-copy-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-blue);
+}
+
+#screen-portfolio .ofz-copy-icon {
+    width: 14px;
+    height: 14px;
+    stroke: var(--accent-blue);
+    opacity: 0.7;
+}
+
+/* Кнопка графика в портфеле */
+#screen-portfolio .ofz-aurora-chart-btn {
+    margin-top: 12px;
+    padding: 14px;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border: none;
+    border-radius: 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+}
+
+#screen-portfolio .ofz-aurora-chart-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.25);
+}
+
+#screen-portfolio .ofz-aurora-chart-btn:active {
+    transform: scale(0.98);
+}
+
+#screen-portfolio .ofz-aurora-chart-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Заголовки списка ОФЗ */
+.portfolio-list-headers {
+    display: grid;
+    grid-template-columns: 1fr 60px 50px 70px;
+    align-items: center;
+    gap: 8px;
+    padding: 0 16px 12px;
+    margin-bottom: 0;
+}
+
+.portfolio-list-header-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-deep);
+    opacity: 0.5;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.portfolio-list-header-text.center {
+    text-align: center;
+}
+
+.portfolio-list-header-text.right {
+    text-align: right;
+}
+
+/* === OFZ collapse / expand toggle button === */
+.ofz-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    margin-top: 4px;
+    padding: 14px 18px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.4) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    color: var(--text-deep);
+    -webkit-tap-highlight-color: transparent;
+    position: relative;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                background 0.3s ease;
+    box-shadow:
+        0 10px 24px -8px rgba(15, 23, 42, 0.12),
+        0 4px 12px -4px rgba(15, 23, 42, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    animation: togglePulse 3s ease-in-out infinite;
+}
+@keyframes togglePulse {
+    0%, 100% {
+        box-shadow:
+            0 10px 24px -8px rgba(15, 23, 42, 0.12),
+            0 4px 12px -4px rgba(15, 23, 42, 0.06),
+            inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+    50% {
+        box-shadow:
+            0 14px 30px -8px rgba(59, 130, 246, 0.18),
+            0 6px 16px -4px rgba(59, 130, 246, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+}
+.ofz-toggle-btn:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.6) 100%);
+    box-shadow:
+        0 16px 32px -8px rgba(15, 23, 42, 0.18),
+        0 6px 16px -4px rgba(15, 23, 42, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    animation: none;
+}
+.ofz-toggle-btn:active { transform: translateY(0); transition: transform 0.1s ease; }
+body.dark-mode .ofz-toggle-btn {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.5) 100%);
+    color: var(--text-deep);
+    box-shadow:
+        0 10px 24px -8px rgba(0, 0, 0, 0.4),
+        0 4px 12px -4px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+body.dark-mode .ofz-toggle-btn:hover {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.65) 100%);
+    box-shadow:
+        0 16px 32px -8px rgba(56, 189, 248, 0.25),
+        0 6px 16px -4px rgba(56, 189, 248, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.ofz-toggle-chevrons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 14px;
+    height: 18px;
+    flex-shrink: 0;
+    overflow: hidden;
+    color: var(--accent-blue);
+}
+.ofz-toggle-chevrons svg {
+    width: 14px;
+    height: 7px;
+    flex-shrink: 0;
+    margin-top: -1px;
+    animation: chevronWave 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+.ofz-toggle-chevrons svg:nth-child(1) { animation-delay: 0s; opacity: 0.3; }
+.ofz-toggle-chevrons svg:nth-child(2) { animation-delay: 0.2s; opacity: 0.6; }
+.ofz-toggle-chevrons svg:nth-child(3) { animation-delay: 0.4s; opacity: 1; }
+@keyframes chevronWave {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(2px); }
+}
+.ofz-toggle-collapse .ofz-toggle-chevrons { transform: rotate(180deg); }
+.ofz-toggle-text-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    text-align: left;
+    min-width: 0;
+}
+.ofz-toggle-main {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-deep);
+    letter-spacing: -0.005em;
+    line-height: 1.2;
+}
+.ofz-toggle-sub {
+    font-family: 'Inter', sans-serif;
+    font-size: 10.5px;
+    font-weight: 500;
+    color: var(--text-slate);
+    letter-spacing: 0.01em;
+    line-height: 1.2;
+}
+@keyframes ofzRevealStagger {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.ofz-just-revealed {
+    animation: ofzRevealStagger 0.35s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+}
+.ofz-just-revealed:nth-of-type(4) { animation-delay: 0ms; }
+.ofz-just-revealed:nth-of-type(5) { animation-delay: 50ms; }
+.ofz-just-revealed:nth-of-type(6) { animation-delay: 100ms; }
+.ofz-just-revealed:nth-of-type(7) { animation-delay: 150ms; }
+.ofz-just-revealed:nth-of-type(8) { animation-delay: 200ms; }
+
+/* === Купонный дождь в стиле Aurora === */
+.portfolio-coupon-card {
+    background: linear-gradient(135deg, #FCFDFE 0%, #F4F8FC 100%);
+    border: 1px solid rgba(94, 123, 163, 0.14);
+    border-radius: 18px;
+    overflow: hidden;
+    margin: 18px 0;
+    box-shadow: 0 2px 12px -4px rgba(44, 54, 76, 0.06);
+}
+body.dark-mode .portfolio-coupon-card {
+    background: linear-gradient(135deg, #1a2030 0%, #161b27 100%);
+    border-color: rgba(255,255,255,0.06);
+}
+
+/* Без анимации дыхания — минимализм */
+.portfolio-coupon-card:not(.open) { animation: none; }
+
+@keyframes couponBorderBreathe {
+    0%, 100% { border-color: rgba(94, 123, 163, 0.14); }
+    50% { border-color: rgba(94, 123, 163, 0.14); }
+}
+
+.portfolio-coupon-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: transparent;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.portfolio-coupon-header:hover {
+    background: rgba(94, 123, 163, 0.04);
+}
+
+.portfolio-coupon-header-left {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+}
+
+.portfolio-coupon-icon {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    border-radius: 10px;
+    background: rgba(94, 123, 163, 0.1);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: none;
+}
+
+/* Без пульсации — минимализм */
+.portfolio-coupon-card:not(.open) .portfolio-coupon-icon { animation: none; }
+
+@keyframes couponIconPulse {
+    0%, 100% { transform: scale(1); box-shadow: none; }
+    50% { transform: scale(1); box-shadow: none; }
+}
+
+.portfolio-coupon-icon svg {
+    width: 17px;
+    height: 17px;
+    color: #5E7BA3;
+}
+
+.portfolio-coupon-title-block {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.portfolio-coupon-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-deep);
+    letter-spacing: -0.01em;
+}
+
+.portfolio-coupon-subtitle {
+    font-family: 'Inter', sans-serif;
+    font-size: 10.5px;
+    color: var(--text-slate);
+}
+
+.portfolio-coupon-arrow {
+    width: 20px;
+    height: 20px;
+    color: #94A3B8;
+    transition: transform 0.3s ease;
+}
+
+.portfolio-coupon-card.open .portfolio-coupon-arrow {
+    transform: rotate(180deg);
+}
+
+.portfolio-coupon-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease, padding 0.4s ease;
+    padding: 0 20px;
+}
+
+.portfolio-coupon-card.open .portfolio-coupon-content {
+    max-height: 1500px;
+    padding: 0 20px 20px;
+}
+
+/* === Coupon preview strip (виден только при свёрнутом состоянии) === */
+.coupon-preview-strip {
+    overflow: hidden;
+    max-height: 200px;
+    opacity: 1;
+    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.25s ease,
+                padding 0.35s ease;
+}
+.portfolio-coupon-card.open .coupon-preview-strip {
+    max-height: 0;
+    opacity: 0;
+}
+.coupon-preview-strip.is-empty { display: none; }
+
+.coupon-preview-next {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px 16px;
+    border-top: 1px solid rgba(94, 123, 163, 0.12);
+    background: linear-gradient(180deg,
+        rgba(59, 130, 246, 0.04) 0%,
+        rgba(59, 130, 246, 0.0) 100%);
+}
+body.dark-mode .coupon-preview-next {
+    border-top-color: rgba(94, 123, 163, 0.18);
+    background: linear-gradient(180deg,
+        rgba(56, 189, 248, 0.06) 0%,
+        rgba(56, 189, 248, 0.0) 100%);
+}
+
+/* Левый цветной акцент (как «капля» дождя) */
+.coupon-preview-accent {
+    position: relative;
+    width: 4px;
+    align-self: stretch;
+    border-radius: 100px;
+    background: linear-gradient(180deg, #60A5FA 0%, #34D399 100%);
+    flex-shrink: 0;
+    box-shadow: 0 0 12px rgba(52, 211, 153, 0.35);
+}
+.coupon-preview-accent::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 100px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.35), transparent 60%);
+}
+
+.coupon-preview-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* Маленький лейбл "Ближайшая выплата" */
+.coupon-preview-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 9.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(100, 116, 139, 0.85);
+}
+body.dark-mode .coupon-preview-meta {
+    color: rgba(148, 163, 184, 0.75);
+}
+/* Имя облигации + кол-во */
+.coupon-preview-bond {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+    min-width: 0;
+}
+.coupon-preview-name {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-deep);
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.coupon-preview-dot {
+    color: var(--text-slate);
+    opacity: 0.4;
+    font-size: 11px;
+    flex-shrink: 0;
+}
+.coupon-preview-qty {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-slate);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Правая колонка: сумма + дата */
+.coupon-preview-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.coupon-preview-sum {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    background: linear-gradient(135deg, #34D399 0%, #10B981 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    white-space: nowrap;
+}
+.coupon-preview-time-pill {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: 5px;
+    padding: 4px 9px;
+    background: rgba(59, 130, 246, 0.08);
+    border: 1px solid rgba(59, 130, 246, 0.16);
+    border-radius: 100px;
+    white-space: nowrap;
+}
+body.dark-mode .coupon-preview-time-pill {
+    background: rgba(96, 165, 250, 0.12);
+    border-color: rgba(96, 165, 250, 0.22);
+}
+.cp-pill-rel {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--accent-blue);
+    letter-spacing: -0.01em;
+}
+.cp-pill-sep {
+    color: rgba(59, 130, 246, 0.35);
+    font-size: 8px;
+}
+.cp-pill-date {
+    font-family: 'Inter', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--text-slate);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* === Блок Важно в стиле Aurora === */
+.portfolio-important-card {
+    background: linear-gradient(135deg, rgba(46, 139, 87, 0.08), rgba(46, 139, 87, 0.03));
+    border: 1px solid rgba(46, 139, 87, 0.15);
+    border-left: 4px solid #2E8B57;
+    border-radius: 16px;
+    padding: 20px;
+    margin: 24px 0;
+}
+
+.portfolio-important-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.portfolio-important-header svg {
+    width: 20px;
+    height: 20px;
+    stroke: #2E8B57;
+}
+
+.portfolio-important-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #2E8B57;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.portfolio-important-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-deep);
+}
+
+/* === Заглушка для Активов === */
+.portfolio-assets-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.placeholder-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 24px;
+    background: var(--card-glass-aurora);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+    border: 1px solid var(--card-border-aurora);
+}
+
+.placeholder-icon svg {
+    width: 40px;
+    height: 40px;
+    stroke: var(--text-slate);
+}
+
+.placeholder-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-deep);
+    margin-bottom: 8px;
+}
+
+.placeholder-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: var(--text-slate);
+    line-height: 1.5;
+    max-width: 280px;
+}
+
+/* === Контент страниц портфеля === */
+.portfolio-page-content {
+    display: none;
+}
+
+.portfolio-page-content.active {
+    display: block;
+}
+
+/* === Заголовки таблицы эшелонов (как в Ребалансировке) === */
+.portfolio-echelons-headers {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    
+    /* Отступы — padding-right: 16px + 20px(стрелка) + 8px(gap) = 44px */
+    padding: 0 44px 0 16px;       
+    margin-top: 24px;      
+    margin-bottom: 12px;   
+    height: 24px; 
+}
+
+/* === 2. ОБЩИЙ СТИЛЬ ТЕКСТА (ИСПРАВЛЕН ЦВЕТ) === */
+.portfolio-echelon-h-text {
+    font-family: 'Inter', sans-serif; 
+    font-size: 11px;
+    font-weight: 600;              
+    letter-spacing: 0.05em;        
+    text-transform: uppercase;     
+    
+    /* ВАЖНО: Меняем цвет на переменную темы */
+    color: var(--text-secondary, #9ca3af); /* Если переменной нет, будет красивый серый #9ca3af */
+    
+    /* Сброс стилей */
+    background: transparent;
+    border: none;
+    padding: 0;
+    
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+/* === 3. НАСТРОЙКИ СТОЛБЦОВ === */
+
+/* ЭШЕЛОН + ? */
+.portfolio-echelon-h-text:nth-child(1) {
+    justify-content: flex-start; 
+    gap: 6px;                    
+    padding-left: 28px; /* 16px padding echelon + 12px gap = 28px — центр иконки и текста */
+    flex: 1;
+}
+/* Стиль кнопки "?" (Элегантный стиль в тон дизайну) */
+.h-help-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* Размеры кружка */
+    width: 18px; 
+    height: 18px;
+    
+    /* ОФОРМЛЕНИЕ: Тонкий нейтральный стиль */
+    background: rgba(0, 0, 0, 0.06);
+    color: rgba(100, 116, 139, 0.7);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    
+    /* Форма */
+    border-radius: 50%;
+    
+    /* Шрифт */
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s ease;
+    animation: helpPulse 3s ease-in-out infinite;
+}
+
+@keyframes helpPulse {
+    0%, 100% { transform: scale(1); opacity: 0.7; }
+    50% { transform: scale(1.08); opacity: 1; }
+}
+
+/* Усиленная анимация для ? кнопок — привлекает внимание */
+.h-help-animated {
+    animation: helpAttention 3s ease-in-out infinite !important;
+    position: relative;
+}
+
+@keyframes helpAttention {
+    0%, 100% { transform: scale(1); opacity: 0.6; box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    15% { transform: scale(1.15); opacity: 1; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2); }
+    30% { transform: scale(1); opacity: 0.8; box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    45% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
+    60% { transform: scale(1); opacity: 0.6; box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+}
+
+.h-help-animated:hover,
+.h-help-animated:active {
+    animation: none !important;
+    transform: scale(1.15);
+    opacity: 1;
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.3);
+    color: #3B82F6;
+}
+
+body.dark-mode .h-help-animated:hover,
+body.dark-mode .h-help-animated:active {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.35);
+    color: #60A5FA;
+}
+
+/* Эффект при наведении */
+.h-help-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: rgba(15, 23, 42, 0.8);
+    border-color: rgba(0, 0, 0, 0.15);
+    animation: none;
+    transform: scale(1.1);
+}
+
+/* Эффект при нажатии */
+.h-help-btn:active {
+    transform: scale(0.95);
+    animation: none;
+}
+
+/* Темная тема (Dark Mode) */
+body.dark-mode .h-help-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: rgba(148, 163, 184, 0.6);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+body.dark-mode .h-help-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: rgba(241, 245, 249, 0.85);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+/* ВЫДЕЛИТЬ */
+.portfolio-echelon-h-text:nth-child(2) {
+    justify-content: center; 
+}
+
+/* % */
+.portfolio-echelon-h-text:nth-child(3) {
+    justify-content: center; 
+    cursor: pointer;
+    transition: color 0.2s ease;
+    gap: 6px;
+    background: transparent !important;
+    border: none !important;
+}
+
+/* === СТИЛЬ КНОПКИ ВОПРОСА (?) === */
+/* Ховеры для кнопки % — убираем фон, оставляем только на h-help-btn */
+.portfolio-echelon-h-text:nth-child(3):hover {
+    background: transparent !important;
+    transform: none;
+}
+.portfolio-echelon-h-text:nth-child(3):active {
+    background: transparent !important;
+    color: inherit;
+}
+
+/* === АДАПТАЦИЯ ДЛЯ ТЕМНОЙ ТЕМЫ === */
+body.dark-mode .portfolio-echelon-h-text:nth-child(3) {
+    background: transparent !important;
+    border: none !important;
+    color: var(--text-secondary);
+}
+
+body.dark-mode .portfolio-echelon-h-text:nth-child(3):hover {
+    background: transparent !important;
+    border: none !important;
+    color: var(--text-secondary);
+}
+
+/* Подсказка для % - убираем */
+.echelon-percent-help {
+    display: none;
+    margin: 0 16px 16px;
+    padding: 12px 16px;
+    background: rgba(59, 130, 246, 0.08);
+    border: 1px solid rgba(59, 130, 246, 0.15);
+    border-radius: 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--text-deep);
+    line-height: 1.5;
+    animation: fadeInSlide 0.3s ease;
+}
+
+.echelon-percent-help.show {
+    display: block;
+}
+
+@keyframes fadeInSlide {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* === Информационная панель эшелонов === */
+.echelons-info-panel {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+}
+
+.echelons-info-panel.show {
+    max-height: 300px;
+}
+
+.echelons-info-content {
+    margin: 0 16px 20px;
+    padding: 16px;
+    background: var(--card-glass-aurora);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--card-border-aurora);
+    border-radius: 16px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: var(--text-deep);
+    line-height: 1.6;
+}
+
+.echelons-info-content p {
+    margin: 0 0 8px;
+}
+
+.echelons-info-content p:last-child {
+    margin-bottom: 0;
+}
+
+/* === Раскрывающийся блок ЭШЕЛОНЫ (как в Ребалансировке) === */
+.echelons-explainer-card {
+    background: var(--card-glass-aurora);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--card-border-aurora);
+    border-radius: 16px;
+    margin: 20px 0;
+    overflow: hidden;
+}
+
+.echelons-explainer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.echelons-explainer-header:hover {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+body.dark-mode .echelons-explainer-header:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.echelons-explainer-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.echelons-explainer-icon {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 10px;
+}
+
+.echelons-explainer-icon svg {
+    width: 18px;
+    height: 18px;
+    stroke: var(--accent-blue);
+}
+
+.echelons-explainer-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-deep);
+}
+
+.echelons-explainer-arrow {
+    width: 20px;
+    height: 20px;
+    stroke: var(--text-slate);
+    transition: transform 0.3s ease;
+}
+
+.echelons-explainer-card.open .echelons-explainer-arrow {
+    transform: rotate(180deg);
+}
+
+.echelons-explainer-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+}
+
+.echelons-explainer-card.open .echelons-explainer-content {
+    max-height: 400px;
+}
+
+/* Элемент объяснения эшелона */
+.echelon-explain-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+body.dark-mode .echelon-explain-item {
+    border-top-color: rgba(255, 255, 255, 0.05);
+}
+
+.echelon-explain-badge {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 800;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+.echelon-explain-badge.e1 {
+    color: #27ae60;
+    border-color: #2ecc71;
+}
+
+.echelon-explain-badge.e2 {
+    color: #2980b9;
+    border-color: #3498db;
+}
+
+.echelon-explain-badge.e3 {
+    color: #f39c12;
+    border-color: #f1c40f;
+}
+
+.echelon-explain-badge.e4 {
+    color: #d35400;
+    border-color: #e67e22;
+}
+
+body.dark-mode .echelon-explain-badge {
+    background: rgba(30, 41, 59, 0.9);
+}
+
+.echelon-explain-text {
+    flex: 1;
+}
+
+.echelon-explain-name {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-deep);
+    margin-bottom: 2px;
+}
+
+.echelon-explain-desc {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--text-slate);
+    line-height: 1.4;
+}
+
+/* === Блок Важно - Aurora Design с маркером === */
+.portfolio-important-aurora {
+    display: flex;
+    gap: 14px;
+    margin: 24px 0;
+    padding: 18px;
+    background: var(--card-glass-aurora);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(251, 191, 36, 0.2);
+    border-radius: 16px;
+}
+
+.important-aurora-icon {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(251, 191, 36, 0.15);
+    border: 1px solid rgba(251, 191, 36, 0.25);
+    border-radius: 12px;
+}
+
+.important-aurora-icon svg {
+    width: 20px;
+    height: 20px;
+    stroke: #F59E0B;
+}
+
+.important-aurora-content {
+    flex: 1;
+}
+
+.important-aurora-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-deep);
+    margin-bottom: 6px;
+}
+
+.important-aurora-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: var(--text-slate);
+    line-height: 1.5;
+}
+
+.important-aurora-text strong {
+    color: var(--text-deep);
+}
+
+/* Выделение маркером */
+.important-aurora-text .highlight-marker {
+    background: linear-gradient(120deg, rgba(251, 191, 36, 0.3) 0%, rgba(251, 191, 36, 0.3) 100%);
+    background-repeat: no-repeat;
+    background-size: 100% 40%;
+    background-position: 0 85%;
+    padding: 0 2px;
+    font-weight: 700;
+    color: var(--text-deep);
+}
+
+/* === Динамические столбцы для ОФЗ === */
+.portfolio-ofz-summary {
+    display: grid;
+    grid-template-columns: 1fr 50px 55px 90px;
+    gap: 16px;
+    align-items: center;
+}
+
+.portfolio-ofz-name {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-deep);
+    /* Полное отображение названия */
+    white-space: nowrap;
+    word-break: break-word;
+    line-height: 1.3;
+}
+
+/* Цифры в названии ОФЗ - моноширинный шрифт */
+.portfolio-ofz-name .ofz-number {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.portfolio-ofz-yield {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent-green);
+    white-space: nowrap;
+    text-align: center;
+}
+
+.portfolio-ofz-qty {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-slate);
+    white-space: nowrap;
+    text-align: right;
+}
+
+.portfolio-ofz-sum {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-deep);
+    white-space: nowrap;
+    text-align: right;
+}
+
+/* Заголовки списка ОФЗ */
+.portfolio-list-headers {
+    display: grid;
+    grid-template-columns: 1fr 50px 55px 90px;
+    gap: 16px;
+    padding: 8px 16px;
+    margin-bottom: 8px;
+}
+
+.portfolio-list-header-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-slate);
+}
+
+.portfolio-list-header-text.center {
+    text-align: center;
+}
+
+.portfolio-list-header-text.right {
+    text-align: right;
+}
+
+.portfolio-list-header-text.clickable {
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.portfolio-list-header-text.clickable:hover {
+    color: var(--accent-blue);
+}
+
+/* Подсказка для % (Простая доходность) */
+.yield-help-tooltip {
+    display: none;
+    margin: 0 16px 16px;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    animation: fadeInSlide 0.3s ease;
+}
+
+.yield-help-tooltip.show {
+    display: block;
+}
+
+.yield-help-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: #F1F5F9;
+    margin-bottom: 6px;
+}
+
+.yield-help-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    color: rgba(148, 163, 184, 0.9);
+    line-height: 1.5;
+}
+
+/* Подсказка для % эшелонов */
+.echelon-percent-tooltip {
+    display: none;
+    margin: 0 16px 16px;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: rgba(148, 163, 184, 0.9);
+    line-height: 1.5;
+    animation: fadeInSlide 0.3s ease;
+}
+
+.echelon-percent-tooltip.show {
+    display: block;
+}
+

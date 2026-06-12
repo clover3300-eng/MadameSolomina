@@ -1,0 +1,1343 @@
+/* === 13. ВКЛАДКА АКЦИИ - НОВЫЙ ДИЗАЙН "ТИХАЯ РОСКОШЬ" === */
+.stocks-aurora-container {
+    /* Без белого бокса - впечатано в фон */
+}
+
+/* Заголовок ЭШЕЛОНЫ - красивый дизайн */
+.echelons-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 20px 16px;
+    margin-bottom: 20px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+/* Декоративные линии по бокам */
+.echelons-header::before,
+.echelons-header::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(44, 54, 76, 0.2), transparent);
+    max-width: 80px;
+}
+
+body.dark-mode .echelons-header::before,
+body.dark-mode .echelons-header::after {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+}
+
+.echelons-header:hover .echelons-title {
+    color: var(--text-deep);
+}
+
+.echelons-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--text-slate);
+    transition: color 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Иконка вопроса - более красивая версия */
+.echelons-title::after {
+    content: none;
+}
+
+.echelons-help-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15));
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.echelons-help-icon svg {
+    width: 12px;
+    height: 12px;
+    stroke: var(--accent-blue);
+    stroke-width: 2.5;
+}
+
+.echelons-header:hover .echelons-help-icon {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(139, 92, 246, 0.25));
+    transform: scale(1.1);
+}
+
+.echelons-header.open .echelons-help-icon {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+.echelons-header.open .echelons-help-icon svg {
+    stroke: #EF4444;
+}
+
+body.dark-mode .echelons-help-icon {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(167, 139, 250, 0.15));
+    border-color: rgba(56, 189, 248, 0.2);
+}
+
+.echelons-toggle-icon {
+    width: 14px;
+    height: 14px;
+    stroke: var(--text-muted);
+    transition: transform 0.3s ease, stroke 0.3s ease;
+}
+
+.echelons-header:hover .echelons-toggle-icon {
+    stroke: var(--text-deep);
+}
+
+.echelons-header.open .echelons-toggle-icon {
+    transform: rotate(180deg);
+}
+
+/* Описания эшелонов - скрытые по умолчанию */
+.stocks-echelon-info {
+    max-height: 0;
+    overflow: hidden;
+    margin-bottom: 0;
+    transition: max-height 0.4s ease, margin 0.4s ease;
+}
+
+.stocks-echelon-info.open {
+    max-height: 500px;
+    margin-bottom: 20px;
+}
+
+.echelon-info-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 12px;
+    margin-bottom: 8px;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.stocks-echelon-info.open .echelon-info-card {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.stocks-echelon-info.open .echelon-info-card:nth-child(1) { transition-delay: 0.05s; }
+.stocks-echelon-info.open .echelon-info-card:nth-child(2) { transition-delay: 0.1s; }
+.stocks-echelon-info.open .echelon-info-card:nth-child(3) { transition-delay: 0.15s; }
+.stocks-echelon-info.open .echelon-info-card:nth-child(4) { transition-delay: 0.2s; }
+
+body.dark-mode .echelon-info-card {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.echelon-info-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.echelon-info-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.echelon-info-icon.icon-e1 {
+    background: rgba(16, 185, 129, 0.15);
+}
+.echelon-info-icon.icon-e1 svg {
+    stroke: #10B981;
+}
+
+.echelon-info-icon.icon-e2 {
+    background: rgba(59, 130, 246, 0.15);
+}
+.echelon-info-icon.icon-e2 svg {
+    stroke: #3B82F6;
+}
+
+.echelon-info-icon.icon-e3 {
+    background: rgba(245, 158, 11, 0.15);
+}
+.echelon-info-icon.icon-e3 svg {
+    stroke: #F59E0B;
+}
+
+.echelon-info-icon.icon-e4 {
+    background: rgba(239, 68, 68, 0.15);
+}
+.echelon-info-icon.icon-e4 svg {
+    stroke: #EF4444;
+}
+
+.echelon-info-text {
+    flex: 1;
+}
+
+.echelon-info-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-deep);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.echelon-badge {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 3px 8px;
+    border-radius: 20px;
+}
+
+.echelon-badge.e1 {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10B981;
+}
+
+.echelon-badge.e2 {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3B82F6;
+}
+
+.echelon-badge.e3 {
+    background: rgba(245, 158, 11, 0.15);
+    color: #F59E0B;
+}
+
+.echelon-badge.e4 {
+    background: rgba(239, 68, 68, 0.15);
+    color: #EF4444;
+}
+
+.echelon-info-desc {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    color: var(--text-slate);
+    line-height: 1.5;
+}
+
+/* Таблица эшелонов - ТИХАЯ РОСКОШЬ */
+.stocks-aurora-table {
+    /* Без фона - впечатана */
+}
+
+.stocks-table-header {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    margin-bottom: 16px;
+    padding: 0 2px;
+}
+
+/* Светящиеся иконки эшелонов в кружках */
+.stocks-header-pill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+}
+
+.echelon-icon-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 800;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid;
+    transition: all 0.3s ease;
+}
+
+body.dark-mode .echelon-icon-circle {
+    background: rgba(30, 41, 59, 0.9);
+}
+
+.echelon-icon-circle.e1 {
+    color: #10B981;
+    border-color: #10B981;
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+}
+
+.echelon-icon-circle.e2 {
+    color: #3B82F6;
+    border-color: #3B82F6;
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
+}
+
+.echelon-icon-circle.e3 {
+    color: #F59E0B;
+    border-color: #F59E0B;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+}
+
+.echelon-icon-circle.e4 {
+    color: #EF4444;
+    border-color: #EF4444;
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+}
+
+/* Подсветка столбца эшелона при клике */
+.stocks-cell.column-highlight-1 {
+    background: rgba(16, 185, 129, 0.12);
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.stocks-cell.column-highlight-2 {
+    background: rgba(59, 130, 246, 0.12);
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+.stocks-cell.column-highlight-3 {
+    background: rgba(245, 158, 11, 0.12);
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+.stocks-cell.column-highlight-4 {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+body.dark-mode .stocks-cell.column-highlight-1 {
+    background: rgba(16, 185, 129, 0.15);
+}
+
+body.dark-mode .stocks-cell.column-highlight-2 {
+    background: rgba(59, 130, 246, 0.15);
+}
+
+body.dark-mode .stocks-cell.column-highlight-3 {
+    background: rgba(245, 158, 11, 0.15);
+}
+
+body.dark-mode .stocks-cell.column-highlight-4 {
+    background: rgba(239, 68, 68, 0.15);
+}
+
+/* Активный кружок эшелона */
+.echelon-icon-circle.active {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px currentColor;
+}
+
+.stocks-table-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.stocks-table-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    opacity: 0;
+    animation: staggerIn 0.3s ease forwards;
+}
+
+.stocks-table-row:nth-child(1) { animation-delay: 0.1s; }
+.stocks-table-row:nth-child(2) { animation-delay: 0.15s; }
+.stocks-table-row:nth-child(3) { animation-delay: 0.2s; }
+.stocks-table-row:nth-child(4) { animation-delay: 0.25s; }
+.stocks-table-row:nth-child(5) { animation-delay: 0.3s; }
+.stocks-table-row:nth-child(6) { animation-delay: 0.35s; }
+
+/* Ячейка тикера - минималистичный стиль */
+.stocks-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    padding: 8px 3px;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+body.dark-mode .stocks-cell {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.stocks-cell:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+.stocks-cell:empty {
+    background: transparent;
+    border: none;
+    cursor: default;
+    backdrop-filter: none;
+}
+
+.stocks-cell:empty:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.stocks-cell-ticker {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-deep);
+}
+
+.stocks-cell-change {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.stocks-cell-change.positive { color: #10B981; }
+.stocks-cell-change.negative { color: #EF4444; }
+.stocks-cell-change.neutral { color: var(--text-muted); }
+
+/* Ячейка активная */
+.stocks-cell.active {
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Карточка деталей тикера - ТИХАЯ РОСКОШЬ */
+.stock-detail-card {
+    display: none;
+    margin: 6px 0;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 14px;
+    animation: accordionOpen 0.3s ease;
+    position: relative;
+}
+
+body.dark-mode .stock-detail-card {
+    background: rgba(30, 41, 59, 0.9);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.stock-detail-card.open {
+    display: block;
+}
+
+/* Стрелочка закрытия карточки */
+.stock-detail-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.stock-detail-close:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.stock-detail-close svg {
+    width: 14px;
+    height: 14px;
+    stroke: var(--text-muted);
+    transition: stroke 0.2s ease, transform 0.2s ease;
+    transform: rotate(180deg);
+}
+
+.stock-detail-close:hover svg {
+    stroke: var(--text-deep);
+}
+
+.stock-detail-header {
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    padding-right: 30px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+body.dark-mode .stock-detail-header {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.stock-detail-main {
+    flex: 1;
+}
+
+.stock-detail-ticker {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text-deep);
+    margin-bottom: 4px;
+}
+
+.stock-detail-name {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-slate);
+    margin-bottom: 6px;
+}
+
+.stock-detail-sector {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--accent-blue);
+    background: rgba(59, 130, 246, 0.1);
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+.stock-detail-echelon {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 4px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+.stock-detail-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-bottom: 16px;
+}
+
+.stock-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+body.dark-mode .stock-detail-row {
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.stock-detail-row:last-child {
+    border-bottom: none;
+}
+
+.stock-detail-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.stock-detail-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-deep);
+}
+
+.stock-detail-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.stock-btn {
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.stock-btn-chart {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    color: white;
+}
+
+.stock-btn-chart:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.25);
+}
+
+.stock-btn-info {
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--text-deep);
+}
+
+body.dark-mode .stock-btn-info {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.stock-btn-info:hover {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.stock-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Ghost trigger для акций */
+.stocks-ghost-trigger {
+    margin: 20px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 10px;
+    transition: opacity 0.3s;
+}
+
+.stocks-ghost-trigger:active {
+    opacity: 0.6;
+}
+
+/* Скрытие строк */
+.stocks-table-row.stocks-row-hidden {
+    display: none !important;
+}
+
+        /* 3. ФИКС ПРЕВЬЮ РЕБАЛАНСИРОВКИ (Luxury Glow) */
+.rebalance-preview-box, .rebalance-intro-modern {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%) !important;
+    border-radius: 20px !important;
+    padding: 25px !important;
+    color: white !important;
+    box-shadow: 0 15px 35px rgba(30, 58, 138, 0.3) !important;
+    border: none !important;
+}
+
+
+
+
+
+/* ЭЛЕГАНТНАЯ СВЯЗКА (ТОЧКИ) */
+.ofz-lux-bridge {
+    flex-grow: 1;
+    border-bottom: 1px dotted rgba(0,0,0,0.15);
+    margin: 0 12px;
+    position: relative;
+    top: -4px;
+}
+.dark-mode .ofz-lux-bridge { border-bottom-color: rgba(255,255,255,0.15); }
+
+.ofz-lux-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-shrink: 0;
+}
+.ofz-lux-yield {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent-green);
+    width: 55px;
+    text-align: right;
+}
+.ofz-price-pill {
+    background: rgba(0,0,0,0.05);
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+.dark-mode .ofz-price-pill { background: rgba(255,255,255,0.08); }
+
+/* 5. ДЕТАЛИ И КНОПКА */
+.copy-code-blue {
+    color: #3498db;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    cursor: pointer;
+}
+.btn-luxury-chart {
+    width: 100%;
+    margin-top: 20px;
+    padding: 14px;
+    background: transparent;
+    border: 1px solid rgba(52, 152, 219, 0.3);
+    border-radius: 14px;
+    color: var(--accent-blue);
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+         /* ==================================================================== */
+
+        /* Дисплей значений - Минимализм */
+.custom-value-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    padding: 0;
+    background: transparent;
+    margin-bottom: 0;
+}
+
+.custom-value-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.custom-value-bonds, .custom-value-stocks {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 48px;
+    font-weight: 300; /* Тонкий шрифт = дорого */
+    line-height: 1;
+    letter-spacing: -0.04em;
+}
+
+.custom-value-bonds { color: #5B7C99; }
+.custom-value-stocks { color: #94A8B8; }
+
+.custom-value-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: #A0AEC0;
+    margin-top: 6px;
+}
+
+.custom-value-divider {
+    font-size: 32px;
+    font-weight: 200;
+    color: #CBD5E1;
+    margin-top: -15px;
+}
+
+/* Слайдер "Нить" */
+.custom-slider-block {
+    margin: 30px 0;
+    position: relative;
+    height: 30px;
+    display: flex;
+    align-items: center;
+}
+
+.custom-ratio-slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 2px; /* Очень тонкая линия */
+    background: #E2E8F0;
+    outline: none;
+    border-radius: 1px;
+    z-index: 2;
+    position: relative;
+}
+
+.custom-ratio-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #FFFFFF;
+    border: 1px solid rgba(0,0,0,0.08);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15); /* Мягкая тень */
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.custom-ratio-slider::-webkit-slider-thumb:active {
+    transform: scale(1.15);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Кнопки +/- в стиле Soft UI */
+.custom-controls-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 25px;
+}
+
+.custom-adjust-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #FFFFFF;
+    border: 1px solid #F1F5F9;
+    color: #2C364C;
+    font-size: 24px;
+    font-weight: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+    transition: all 0.2s;
+    margin-top: 2px; /* Центрируем по середине цифр (48px высота цифр, 44px кнопка) */
+    flex-shrink: 0;
+}
+
+.custom-adjust-btn:active {
+    transform: scale(0.92);
+    background: #F8FAFC;
+}
+
+/* Кнопки действий - Премиум */
+.custom-actions-row {
+    display: flex;
+    gap: 12px;
+}
+
+/* Кнопка сброса - минимализм */
+.custom-reset-btn {
+    flex: 1;
+    padding: 16px;
+    background: transparent;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 16px;
+    color: #94A3B8;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.custom-reset-btn:hover {
+    background: rgba(0,0,0,0.02);
+    color: #64748B;
+}
+
+/* Кнопка Готово - Глубокий Графит */
+.custom-done-btn {
+    flex: 1.5; /* Чуть шире */
+    padding: 16px;
+    background: #2C364C; /* Luxury Graphite */
+    border: none;
+    border-radius: 16px;
+    color: white;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 10px 25px rgba(44, 54, 76, 0.25); /* Тень в цвет */
+    transition: all 0.2s;
+}
+
+.custom-done-btn:active {
+    transform: scale(0.98);
+    box-shadow: 0 5px 15px rgba(44, 54, 76, 0.2);
+}
+
+/* Развернутый блок настройки */
+.custom-strategy-expanded {
+    max-height: 0;
+    overflow: hidden;
+    background: transparent;
+    border: none;
+    margin-top: 10px;
+    transition: max-height 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+    padding: 0;
+}
+
+.custom-strategy-expanded.show {
+    max-height: 400px;
+}
+
+.custom-strategy-inner {
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.04);
+}
+
+/* Темная тема */
+.dark-mode .custom-strategy-inner {
+    background: rgba(30, 41, 59, 0.4);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .custom-adjust-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #F1F5F9;
+}
+
+.dark-mode .custom-value-bonds { color: #38BDF8; }
+.dark-mode .custom-value-stocks { color: #94A3B8; }
+.dark-mode .custom-done-btn { background: #38BDF8; color: #0F172A; box-shadow: 0 10px 25px rgba(56, 189, 248, 0.2); }
+          /* ==================================================================== */
+
+   /* === Строка ИТОГО (Фон как у эшелонов + меньше отступ) === */
+.portfolio-echelons-total-row {
+    display: grid;
+    grid-template-columns: 1fr auto 60px; 
+    gap: 12px;
+    padding: 12px 16px;
+    
+    /* 1. УМЕНЬШИЛ ОТСТУП (было 35px -> стало 20px) */
+    margin-top: 20px; 
+    margin-bottom: 25px;
+    
+    /* 2. ФОН КАК У ЭШЕЛОНОВ (Стеклянный эффект) */
+    background: var(--card-glass-aurora);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    
+    /* Рамка Smart Replace (темно-синяя) */
+    border: 1px solid #1e293b; 
+    border-radius: 16px;
+    
+    align-items: center;
+    box-shadow: 0 8px 20px rgba(30, 41, 59, 0.1);
+}
+
+/* ... (Внутренние элементы остаются без изменений, но убедитесь, что они есть) ... */
+.total-left { display: flex; align-items: center; gap: 10px; overflow: hidden; }
+.total-icon {
+    min-width: 32px; width: 32px; height: 32px; border-radius: 8px;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); /* Фон иконки */
+    display: flex; align-items: center; justify-content: center;
+    color: white; box-shadow: 0 4px 10px rgba(15, 23, 42, 0.3);
+}
+.total-icon svg { width: 18px; height: 18px; }
+.total-label {
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 800;
+    color: var(--text-main); text-transform: uppercase; letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+.total-value-col { text-align: right; padding-right: 5px; }
+.total-sum {
+    font-family: 'JetBrains Mono', monospace; font-size: 13px;
+    font-weight: 800; color: var(--text-main); display: block;
+    white-space: nowrap;
+}
+.total-percent-col { text-align: right; }
+.total-percent {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); /* Фон процента */
+    color: white; padding: 4px 6px; border-radius: 6px;
+    display: inline-block; box-shadow: 0 2px 5px rgba(15, 23, 42, 0.2);
+}
+
+/* Темная тема */
+body.dark-mode .portfolio-echelons-total-row {
+    /* Фон автоматически подтянется из переменной var(--card-glass-aurora) для темной темы */
+    border-color: #334155; /* Светлее, чтобы рамка была видна на темном фоне */
+}
+        /* ==================================================================== */
+
+        /* === Итоговая строка внутри Эшелона === */
+.portfolio-echelon-total-line {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end; /* Прижимаем всё вправо */
+    gap: 12px; /* Расстояние между словом ИТОГО и цифрой */
+    
+    padding: 12px 16px; /* Такой же отступ как у строк, чтобы выровняться */
+    margin-top: 4px;
+    
+    /* Линия в стиле дизайна */
+    border-top: 1px solid var(--item-border);
+}
+
+.echelon-total-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.echelon-total-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; /* Чуть крупнее обычных цифр */
+    font-weight: 700;
+    color: var(--text-main);
+    text-align: right;
+    /* Мин. ширина не нужна, если выравнивание справа, но можно добавить для страховки */
+}
+         /* ==================================================================== */
+
+        /* Кнопка Info в заголовке */
+.info-trigger-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--text-main);
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.8);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Класс видимости (добавляется JS) */
+.info-trigger-btn.visible {
+    opacity: 1;
+    pointer-events: all;
+    transform: scale(1);
+}
+
+.dark-mode .info-trigger-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Затемнение фона (Backdrop) */
+/* --- СТИЛИ ДЛЯ ШТОРКИ (Вставить в основной CSS) --- */
+
+/* Фон шторки */
+.info-modal-backdrop {
+    /* Фиксируем относительно окна браузера */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw; /* На всю ширину окна */
+    height: 100vh; /* На всю высоту окна */
+    z-index: 999999; /* Самый высокий слой */
+    
+    /* Скрыто по умолчанию */
+    display: none; 
+    opacity: 0;
+    
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    
+    /* Выравнивание содержимого */
+    align-items: flex-end; /* Прижать к низу */
+    justify-content: center;
+    
+    transition: opacity 0.3s ease;
+}
+
+/* Активное состояние (когда открыто) */
+.info-modal-backdrop.active {
+    opacity: 1;
+}
+
+/* Сама белая/темная карточка */
+.info-modal-content {
+    width: 100%;
+    max-width: 500px;
+    background: #1c1c1e;
+    border-radius: 24px 24px 0 0;
+    padding: 24px;
+    padding-bottom: 40px; /* Safe area снизу */
+    
+    /* Начальное положение - сдвинуто вниз */
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    
+    max-height: 85vh;
+    overflow-y: auto;
+    color: white;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Когда активно - карточка выезжает */
+.info-modal-backdrop.active .info-modal-content {
+    transform: translateY(0);
+}
+    * Фиксы для текста внутри */
+.echelon-explain-name { color: white !important; }
+.echelon-explain-desc { color: #aaa !important; }
+.info-modal-header h3 { color: white !important; margin: 0; }
+.close-modal-btn { background: none; border: none; font-size: 28px; color: #888; cursor: pointer;}
+
+/* Кнопка закрытия */
+.close-modal-btn {
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 28px;
+    padding: 0;
+    cursor: pointer;
+}
+/* Карточки внутри */
+.info-card {
+    background: rgba(0,0,0,0.03);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 12px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+}
+.dark-mode .info-card { background: rgba(255,255,255,0.05); }
+
+.info-icon {
+    width: 40px; height: 40px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+}
+
+.info-text h4 {
+    margin: 0 0 6px 0;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+}
+.info-text p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+
+        /* --- Стили для контента внутри модалки --- */
+
+/* Контейнер списка */
+.echelon-explain-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px; /* Отступ между карточками */
+}
+
+/* Карточка одного эшелона */
+#rebalance-info-modal .echelon-explain-item {
+    display: flex;
+    align-items: flex-start; /* Выравнивание по верху */
+    gap: 14px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.03); /* Очень легкий фон */
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* --- ВАШИ ИКОНКИ (Строго 28px) --- */
+#rebalance-info-modal .echelon-explain-badge {
+    width: 28px;        /* Точный размер */
+    height: 28px;       /* Точный размер */
+    min-width: 28px;    /* Чтобы не сжимались */
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 800;
+    background: #fff;   /* Белый фон кружка */
+    color: #000;        /* Черная цифра */
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    margin-top: 2px;    /* Чуть опустить для визуального центра с текстом */
+}
+
+/* Цветовые акценты (если нужно) */
+/* Если у вас в CSS уже есть цвета для .e1, .e2 - они подтянутся. 
+   Если нет - раскомментируйте код ниже, чтобы кружки были цветными: */
+
+/*
+#rebalance-info-modal .e1 { border: 2px solid #4CAF50; color: #4CAF50; background: #fff; }
+#rebalance-info-modal .e2 { border: 2px solid #2196F3; color: #2196F3; background: #fff; }
+#rebalance-info-modal .e3 { border: 2px solid #FF9800; color: #FF9800; background: #fff; }
+#rebalance-info-modal .e4 { border: 2px solid #F44336; color: #F44336; background: #fff; }
+*/
+
+/* Текстовая часть */
+#rebalance-info-modal .echelon-explain-name {
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-main, #fff);
+    margin-bottom: 4px;
+}
+
+#rebalance-info-modal .echelon-explain-desc {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--text-secondary, #aaa); /* Серый цвет описания */
+}
+         /* ==================================================================== */
+
+    /* === НИЖНИЕ БЛОКИ В ШТОРКЕ === */
+
+/* ==============================================
+   ФИНАЛЬНЫЕ СТИЛИ ДЛЯ НИЖНИХ БЛОКОВ (FIX)
+   ============================================== */
+
+/* 1. Блок "ВАЖНО" (Зеленый) - Делаем прозрачным */
+.portfolio-important-aurora {
+    /* Оригинальный glassmorphism фон */
+    background: var(--card-glass-aurora) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    
+    /* Жёлтая рамка вокруг всего блока */
+    border: 1px solid rgba(251, 191, 36, 0.2) !important;
+    border-radius: 16px !important;
+    
+    /* Отступы */
+    padding: 18px !important;
+    margin-top: 24px !important;
+    
+    display: flex !important;
+    gap: 16px !important;
+    align-items: flex-start !important;
+}
+
+/* Элементы внутри блока "Важно" */
+.important-aurora-icon {
+    color: #F59E0B !important;
+    width: 24px; 
+    height: 24px;
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    margin-top: 2px;
+}
+.important-aurora-title {
+    color: #F59E0B !important;
+    font-weight: 700; 
+    font-size: 13px; 
+    text-transform: uppercase; 
+    margin-bottom: 4px;
+    font-family: 'Inter', sans-serif !important;
+}
+.important-aurora-text {
+    color: #aaa !important; /* Серый текст */
+    font-size: 13px !important; 
+    line-height: 1.5 !important;
+    font-family: 'Inter', sans-serif !important;
+}
+
+
+/* 2. Блок "РЕБАЛАНСИРОВКА" (Синий) - Возвращаем рамку */
+.info-rebalance-block {
+    margin-top: 24px !important;
+    padding: 16px !important;
+    
+    /* Фон и РАМКА */
+    background: rgba(59, 130, 246, 0.1) !important;
+    border: 1px solid rgba(59, 130, 246, 0.3) !important; /* Явная рамка */
+    border-radius: 16px !important;
+    
+    /* Текст */
+    color: #fff !important;
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+    font-family: 'JetBrains Mono', monospace !important;
+}
+
+/* Жирный текст внутри синего блока */
+.info-rebalance-block b {
+    color: #60A5FA !important;
+    font-weight: 700 !important;
+}
+
+/* 2. Блок "РЕБАЛАНСИРОВКА" (Синий) - Возвращаем его */
+.info-rebalance-block {
+    margin-top: 24px !important;
+    padding: 16px !important;
+    background: rgba(59, 130, 246, 0.1) !important; /* Синий фон */
+    border: 1px solid rgba(59, 130, 246, 0.2) !important;
+    border-radius: 16px !important;
+    color: #fff !important;
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+    font-family: 'JetBrains Mono', monospace !important;
+}
+.info-rebalance-block b { color: #60A5FA !important; }
+
+/* 3. Подсказка "%" (Растягиваем как строку) */
+/* === ПОДСКАЗКА ДЛЯ % (ФИНАЛ) === */
+#echelonPercentTooltip {
+    /* Используем стили yield-help-tooltip */
+}
+
+#echelonPercentTooltip.show {
+    display: block !important;
+}
+        /* ==================================================================== */
+
+/* === Sharing-mode (PDF) overrides for refined capital card === */
+#shareContainer.sharing-mode .forecast-pct-display {
+    animation: none !important;
+    opacity: 1 !important;
+}
+#shareContainer.sharing-mode .forecast-breakdown-row {
+    display: none !important;
+}
+

@@ -1,0 +1,501 @@
+        :root {
+            --bg-color: #f4f7f9;
+            --card-bg: #ffffff;
+            --text-main: #2c3e50;
+            --text-secondary: #7f8c8d;
+            --accent-blue: #3498db;
+            --accent-green: #2ecc71;
+            --accent-yellow: #f1c40f;
+            --accent-orange: #e67e22;
+            --accent-red: #e74c3c;
+            --accent-gradient: linear-gradient(135deg, #3498db, #2980b9);
+            --header-gradient: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            --header-light-gradient: linear-gradient(135deg, #e3f2fd, #f0f9ff); 
+            --graphite-color: #303D4F;
+            --input-color: #3a506b;
+            --card-shadow: rgba(0,0,0,0.06);
+            --border-color: rgba(0,0,0,0.04);
+            --item-border: #f0f0f0;
+            --nav-bg: rgba(255, 255, 255, 0.95);
+            --nav-border: rgba(255, 255, 255, 0.5);
+            --nav-icon-inactive: #bdc3c7;
+            --coupon-blue-bg: rgba(52, 152, 219, 0.08);
+            --badge-blue-bg: rgba(52, 152, 219, 0.15);
+            --badge-green-bg: rgba(46, 204, 113, 0.15);
+            --terminal-gradient: linear-gradient(90deg, #F1F6FB 0%, #F9FAFC 100%);
+            --graphite-btn: #2C364C;
+            --bg-gradient-start: #F1F6FB;
+            --bg-gradient-end: #F9FAFC;
+            --bonds-color: #5B7C99;
+            --stocks-color: #94A8B8;
+            /* === Claude AI Glassmorphism Variables === */
+            --claude-bg-base: #F7F5F3;
+            --claude-glass: rgba(255, 255, 255, 0.65);
+            --claude-glass-border: rgba(255, 255, 255, 0.8);
+            --claude-glass-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.04);
+            --claude-accent: #D97757;
+            --claude-accent-subtle: rgba(217, 119, 87, 0.1);
+            --claude-text-primary: #1a1a1a;
+            --claude-text-secondary: #6b6b6b;
+            
+            /* === AURORA DESIGN TOKENS === */
+            --bg-base: #F3F4F6;
+            --aurora-blue: rgba(59, 130, 246, 0.15);
+            --aurora-green: rgba(16, 185, 129, 0.1);
+            --aurora-orange: rgba(249, 115, 22, 0.08);
+            --text-deep: #0F172A;
+            --text-slate: #64748B;
+            --text-muted: #94A3B8;
+            --card-glass-aurora: rgba(255, 255, 255, 0.65);
+            --card-border-aurora: rgba(255, 255, 255, 0.4);
+            --shadow-luxury: 0 20px 40px -10px rgba(15, 23, 42, 0.05);
+            --accent-purple: #8B5CF6;
+            --bg: #F3F4F6;
+            --card: #fff;
+            --graphite: #2C364C;
+            --blue: #3498db;
+            --muted: #94A3B8;
+            --profile-color: #2C364C;
+        }
+
+                /* ========== ОТКЛЮЧЕНИЕ ЭФФЕКТА РЕЗИНКИ ========== */
+        html {
+            overscroll-behavior: none;
+            height: 100%;
+            -webkit-overflow-scrolling: touch;
+            background: #F1F6FB; /* covers any gap below appShell in standalone PWA */
+        }
+        
+        body {
+            overscroll-behavior: none;
+            min-height: 100%;
+            background: #F1F6FB; /* match appShell — prevents white strip bleed-through */
+        }
+        /* ================================================= */
+
+    
+
+        body.dark-mode {
+            --bg-color: #0f172a;
+            background: #0f172a; /* solid fallback so no white strip under tabbar */
+            --card-bg: #1e293b;
+            --text-main: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --accent-blue: #38bdf8;
+            --accent-green: #4ade80;
+            --accent-yellow: #fcd34d;
+            --accent-orange: #fb923c;
+            --accent-red: #f87171;
+            --accent-gradient: linear-gradient(135deg, #38bdf8, #0ea5e9);
+            --header-gradient: linear-gradient(135deg, #1e293b, #2d3748);
+            --header-light-gradient: linear-gradient(135deg, #1e293b, #334155);
+            --graphite-color: #303D4F;
+            --input-color: #f8fafc;
+            --card-shadow: rgba(0,0,0,0.4);
+            --border-color: rgba(255,255,255,0.05);
+            --item-border: #334155;
+            --nav-bg: rgba(30, 41, 59, 0.95);
+            --nav-border: rgba(255, 255, 255, 0.1);
+            --nav-icon-inactive: #475569;
+            --coupon-blue-bg: rgba(56, 189, 248, 0.1);
+            --badge-blue-bg: rgba(56, 189, 248, 0.15);
+            --badge-green-bg: rgba(74, 222, 128, 0.15);
+            /* === Claude AI Dark Mode Variables === */
+            --claude-bg-base: #1a1a2e;
+            --claude-glass: rgba(30, 41, 59, 0.75);
+            --claude-glass-border: rgba(255, 255, 255, 0.1);
+            --claude-glass-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.3);
+            --claude-accent: #E8956A;
+            --claude-accent-subtle: rgba(232, 149, 106, 0.15);
+            --claude-text-primary: #f1f5f9;
+            --claude-text-secondary: #94a3b8;
+            
+            /* === AURORA DARK MODE TOKENS === */
+            --bg-base: #0f172a;
+            --aurora-blue: rgba(59, 130, 246, 0.12);
+            --aurora-green: rgba(16, 185, 129, 0.08);
+            --aurora-orange: rgba(249, 115, 22, 0.06);
+            --text-deep: #f1f5f9;
+            --text-slate: #94a3b8;
+            --text-muted: #64748B;
+            --card-glass-aurora: rgba(30, 41, 59, 0.75);
+            --card-border-aurora: rgba(255, 255, 255, 0.1);
+            --shadow-luxury: 0 20px 40px -10px rgba(0, 0, 0, 0.3);
+            --accent-purple: #A78BFA;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(180deg, #F1F6FB 0%, #F9FAFC 100%);
+            color: var(--text-main);
+            margin: 0; padding: 0; line-height: 1.4;
+            -webkit-tap-highlight-color: transparent;
+            padding-bottom: 40px;
+            transition: background 0.3s, color 0.3s;
+            overflow-x: hidden;
+            overscroll-behavior-y: none;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px; left: 50%; transform: translateX(-50%);
+            background: #2ecc71; color: white; padding: 10px 20px; border-radius: 20px;
+            font-size: 12px; font-weight: bold;
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+            z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s;
+        }
+        .toast.show { opacity: 1; visibility: visible; }
+
+        .screen { display: none; animation: fadeIn 0.4s ease; }
+        .screen.active { display: block; }
+        .screen.no-animate,
+        .screen.no-animate * { animation: none !important; }
+        .screen.swipe-prev,
+        .screen.swipe-prev * { animation: none !important; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ========== SKELETON LOADER SYSTEM ========== */
+        @keyframes skeletonShimmer {
+            0% { background-position: -400px 0; }
+            100% { background-position: 400px 0; }
+        }
+        @keyframes skeletonPulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 0.3; }
+        }
+
+        .skeleton-bone {
+            background: linear-gradient(90deg, 
+                rgba(0,0,0,0.04) 25%, 
+                rgba(0,0,0,0.08) 50%, 
+                rgba(0,0,0,0.04) 75%);
+            background-size: 800px 100%;
+            animation: skeletonShimmer 1.8s ease-in-out infinite;
+            border-radius: 8px;
+        }
+        body.dark-mode .skeleton-bone {
+            background: linear-gradient(90deg, 
+                rgba(255,255,255,0.04) 25%, 
+                rgba(255,255,255,0.08) 50%, 
+                rgba(255,255,255,0.04) 75%);
+            background-size: 800px 100%;
+        }
+
+        /* Skeleton для market tiles */
+        .skeleton-tile {
+            background: var(--card-glass-aurora, rgba(255,255,255,0.65));
+            border: 1px solid var(--card-border-aurora, rgba(255,255,255,0.4));
+            border-radius: 16px;
+            padding: 14px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            backdrop-filter: blur(12px);
+        }
+        .skeleton-tile .s-label { width: 60%; height: 10px; border-radius: 4px; }
+        .skeleton-tile .s-value { width: 80%; height: 18px; border-radius: 6px; }
+        .skeleton-tile .s-change { width: 50%; height: 14px; border-radius: 10px; }
+
+        /* Skeleton для rates */
+        .skeleton-rate-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 13px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.03);
+        }
+        body.dark-mode .skeleton-rate-row { border-color: rgba(255,255,255,0.04); }
+        .skeleton-rate-row:last-child { border-bottom: none; }
+        .skeleton-rate-row .s-label { width: 55%; height: 12px; border-radius: 4px; }
+        .skeleton-rate-row .s-value { width: 22%; height: 16px; border-radius: 6px; }
+
+        /* Skeleton для списка ОФЗ/облигаций */
+        .skeleton-list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            background: var(--card-glass-aurora, rgba(255,255,255,0.65));
+            border: 1px solid var(--card-border-aurora, rgba(255,255,255,0.4));
+            border-radius: 14px;
+            margin-bottom: 8px;
+            backdrop-filter: blur(8px);
+        }
+        .skeleton-list-item .s-left { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+        .skeleton-list-item .s-title { width: 65%; height: 13px; border-radius: 5px; }
+        .skeleton-list-item .s-sub { width: 40%; height: 10px; border-radius: 4px; }
+        .skeleton-list-item .s-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+        .skeleton-list-item .s-price { width: 60px; height: 14px; border-radius: 5px; }
+        .skeleton-list-item .s-yield { width: 40px; height: 12px; border-radius: 4px; }
+
+        /* Skeleton для таблицы акций (4 колонки) */
+        .skeleton-stocks-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2px;
+        }
+        .skeleton-stock-cell {
+            padding: 12px 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            background: var(--card-glass-aurora, rgba(255,255,255,0.65));
+        }
+        .skeleton-stock-cell .s-ticker { width: 70%; height: 13px; border-radius: 4px; }
+        .skeleton-stock-cell .s-sector { width: 50%; height: 9px; border-radius: 3px; margin-top: 2px; }
+
+        /* Skeleton для карточки портфеля */
+        .skeleton-portfolio-card {
+            background: var(--card-glass-aurora, rgba(255,255,255,0.65));
+            border: 1px solid var(--card-border-aurora, rgba(255,255,255,0.4));
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 12px;
+            backdrop-filter: blur(12px);
+        }
+        .skeleton-portfolio-card .s-header { display: flex; justify-content: space-between; margin-bottom: 16px; }
+        .skeleton-portfolio-card .s-capital-label { width: 100px; height: 11px; border-radius: 4px; }
+        .skeleton-portfolio-card .s-capital-value { width: 140px; height: 24px; border-radius: 6px; }
+        .skeleton-portfolio-card .s-badge { width: 50px; height: 20px; border-radius: 8px; }
+        .skeleton-portfolio-card .s-bar { width: 100%; height: 8px; border-radius: 4px; margin: 12px 0; }
+        .skeleton-portfolio-card .s-labels { display: flex; justify-content: space-between; }
+        .skeleton-portfolio-card .s-label-item { width: 70px; height: 10px; border-radius: 4px; }
+        .skeleton-portfolio-card .s-divider { width: 100%; height: 1px; background: rgba(0,0,0,0.04); margin: 16px 0; }
+        body.dark-mode .skeleton-portfolio-card .s-divider { background: rgba(255,255,255,0.06); }
+        .skeleton-portfolio-card .s-forecast { display: flex; gap: 12px; align-items: center; }
+        .skeleton-portfolio-card .s-forecast-icon { width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0; }
+        .skeleton-portfolio-card .s-forecast-lines { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+        .skeleton-portfolio-card .s-forecast-title { width: 130px; height: 11px; border-radius: 4px; }
+        .skeleton-portfolio-card .s-forecast-value { width: 100px; height: 18px; border-radius: 6px; }
+
+        /* Skeleton для company page */
+        .skeleton-company {
+            padding: 20px 16px;
+        }
+        .skeleton-company .s-back { width: 36px; height: 36px; border-radius: 12px; margin-bottom: 24px; }
+        .skeleton-company .s-name { width: 70%; height: 22px; border-radius: 6px; margin-bottom: 10px; }
+        .skeleton-company .s-price-big { width: 50%; height: 30px; border-radius: 8px; margin-bottom: 8px; }
+        .skeleton-company .s-change { width: 35%; height: 16px; border-radius: 10px; margin-bottom: 24px; }
+        .skeleton-company .s-trend { width: 100%; height: 50px; border-radius: 10px; margin-bottom: 24px; }
+        .skeleton-company .s-actions { display: flex; gap: 10px; margin-bottom: 24px; }
+        .skeleton-company .s-action-btn { flex: 1; height: 44px; border-radius: 14px; }
+        .skeleton-company .s-section-title { width: 40%; height: 14px; border-radius: 5px; margin-bottom: 14px; }
+        .skeleton-company .s-analytics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .skeleton-company .s-analytics-tile { height: 80px; border-radius: 16px; }
+
+        /* Skeleton для monthly income cards */
+        .skeleton-income-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px;
+            background: var(--card-glass-aurora, rgba(255,255,255,0.65));
+            border: 1px solid var(--card-border-aurora, rgba(255,255,255,0.4));
+            border-radius: 14px;
+            margin-bottom: 8px;
+            backdrop-filter: blur(8px);
+        }
+        .skeleton-income-card .s-icon { width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0; }
+        .skeleton-income-card .s-info { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+        .skeleton-income-card .s-name { width: 70%; height: 13px; border-radius: 5px; }
+        .skeleton-income-card .s-yield { width: 40%; height: 10px; border-radius: 4px; }
+        .skeleton-income-card .s-controls { width: 80px; height: 28px; border-radius: 8px; }
+
+        /* Skeleton для news */
+        .skeleton-news-item {
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+        }
+        body.dark-mode .skeleton-news-item { border-color: rgba(255,255,255,0.04); }
+        .skeleton-news-item:last-child { border-bottom: none; }
+        .skeleton-news-item .s-news-title { width: 90%; height: 13px; border-radius: 4px; margin-bottom: 8px; }
+        .skeleton-news-item .s-news-date { width: 30%; height: 10px; border-radius: 4px; }
+
+        /* Fade-out transition для скелетонов */
+        .skeleton-container {
+            transition: opacity 0.3s ease;
+        }
+        .skeleton-container.hiding {
+            opacity: 0;
+        }
+        /* ========== END: SKELETON LOADER SYSTEM ========== */
+
+         /* Фон с цветным свечением для эффекта стекла */
+        #screen-app {
+            background: var(--bg-base);
+            margin: -16px;
+            padding: 16px;
+            min-height: 100vh;
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        /* Фон для темной темы */
+        body.dark-mode #screen-app {
+            background: var(--bg-base);
+        }
+
+        /* ========== NEW: Welcome Screen Styles ========== */
+.welcome-screen {
+    min-height: calc(100vh - 32px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: transparent;
+    margin: -16px;
+    padding: 60px 30px;
+    text-align: center;
+    animation: welcomeFadeIn 0.8s ease-out;
+    box-sizing: border-box;
+}
+
+@keyframes welcomeFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.welcome-logo-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 80px;
+}
+
+.welcome-supratitle {
+    font-family: 'Inter', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    color: #94A3B8;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+}
+
+.welcome-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 32px;
+    color: #2C364C;
+    line-height: 1.2;
+    margin: 0;
+}
+
+.welcome-title-light {
+    font-weight: 300;
+}
+
+.welcome-title-bold {
+    font-weight: 800;
+}
+
+.welcome-divider {
+    width: 50px;
+    height: 1px;
+    background: rgba(44, 54, 76, 0.2);
+    margin: 8px 0;
+}
+
+.welcome-subtitle {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    color: #8A9AB0;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    line-height: 1.8;
+}
+
+.welcome-cta-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    max-width: 280px;
+}
+
+.btn-welcome {
+    width: 100%;
+    padding: 18px 32px;
+    background: #2C364C;
+    color: white;
+    border: none;
+    border-radius: 16px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    box-shadow: 0 12px 35px rgba(44, 54, 76, 0.25);
+    transition: all 0.2s ease;
+}
+
+.btn-welcome:active {
+    transform: scale(0.97);
+    box-shadow: 0 6px 20px rgba(44, 54, 76, 0.3);
+}
+
+.welcome-secure-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-family: 'Inter', sans-serif;
+    font-size: 9px;
+    font-weight: 500;
+    color: #A0AEC0;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.welcome-secure-text svg {
+    width: 11px;
+    height: 11px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+}
+
+.dark-mode .welcome-screen {
+    background: linear-gradient(90deg, #1a2234 0%, #0f172a 100%);
+}
+
+.dark-mode .welcome-supratitle {
+    color: #64748B;
+}
+
+.dark-mode .welcome-title {
+    color: #F1F5F9;
+}
+
+.dark-mode .welcome-divider {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.dark-mode .welcome-subtitle {
+    color: #64748B;
+}
+
+.dark-mode .btn-welcome {
+    background: #2C364C;
+    color: #ffffff;
+}
+
+.dark-mode .welcome-secure-text {
+    color: #64748B;
+}
+/* ========== END: Welcome Screen Styles ========== */
+

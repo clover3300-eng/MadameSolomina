@@ -1,0 +1,1625 @@
+/* === Action Panel V2 === */
+.portfolio-action-panel-v2 {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 92%;
+    max-width: 400px;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--card-glass-aurora);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--card-border-aurora);
+    border-radius: 20px;
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.1);
+    z-index: 800;
+}
+
+.portfolio-action-btn {
+    flex: 1;
+    max-width: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 16px;
+    border: none;
+    border-radius: 14px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.portfolio-action-btn.primary {
+    background: linear-gradient(135deg, #2C364C, #3a4a66);
+    color: white;
+    box-shadow: 0 4px 15px rgba(44, 54, 76, 0.3);
+}
+
+.portfolio-action-btn.primary:hover {
+    box-shadow: 0 6px 20px rgba(44, 54, 76, 0.4);
+    transform: translateY(-1px);
+}
+
+.portfolio-action-btn.primary:active {
+    transform: scale(0.97);
+    box-shadow: 0 2px 10px rgba(44, 54, 76, 0.3);
+}
+
+.portfolio-action-btn.secondary {
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--text-deep);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.portfolio-action-btn.secondary:hover {
+    background: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+}
+
+.portfolio-action-btn.secondary:active {
+    transform: scale(0.97);
+}
+
+body.dark-mode .portfolio-action-btn.secondary {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: white;
+}
+
+body.dark-mode .portfolio-action-btn.secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.portfolio-action-btn svg {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    flex-shrink: 0;
+}
+
+/* === Эшелоны в портфеле - стиль Aurora === */
+.portfolio-echelon-card {
+    background: var(--card-glass-aurora);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--card-border-aurora);
+    border-radius: 16px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.portfolio-echelon-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+}
+
+body.dark-mode .portfolio-echelon-card {
+    background: rgba(30, 41, 59, 0.6);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.portfolio-echelon-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.portfolio-echelon-header:hover {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+body.dark-mode .portfolio-echelon-header:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.portfolio-echelon-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Номер эшелона - белые как в Ребалансировке */
+.portfolio-echelon-number {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 800;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0,0,0,0.1);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.portfolio-echelon-number.e1 {
+    color: #27ae60;
+    border-color: #2ecc71;
+    box-shadow: 0 2px 8px rgba(46, 204, 113, 0.2);
+}
+
+.portfolio-echelon-number.e2 {
+    color: #2980b9;
+    border-color: #3498db;
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
+}
+
+.portfolio-echelon-number.e3 {
+    color: #f39c12;
+    border-color: #f1c40f;
+    box-shadow: 0 2px 8px rgba(241, 196, 15, 0.2);
+}
+
+.portfolio-echelon-number.e4 {
+    color: #d35400;
+    border-color: #e67e22;
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.2);
+}
+
+body.dark-mode .portfolio-echelon-number {
+    background: rgba(30, 41, 59, 0.9);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.portfolio-echelon-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-deep);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.portfolio-echelon-header-right {
+    display: grid;
+    grid-template-columns: auto auto 20px;
+    gap: 8px;
+    align-items: center;
+}
+
+.portfolio-echelon-sum {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-deep);
+    text-align: right;
+    white-space: nowrap;
+}
+
+.portfolio-echelon-percent {
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-slate);
+    text-align: center;
+    white-space: nowrap;
+}
+
+body.dark-mode .portfolio-echelon-percent {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.portfolio-echelon-arrow {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    color: var(--text-slate);
+    transition: transform 0.3s ease;
+}
+
+.portfolio-echelon-card.expanded .portfolio-echelon-arrow {
+    transform: rotate(180deg);
+}
+
+/* Stock row expand badge */
+.portfolio-stock-wrapper.expanded .ofz-expand-badge svg {
+    transform: rotate(180deg);
+}
+
+.portfolio-stock-ticker .ofz-expand-badge {
+    flex-shrink: 0;
+}
+
+.portfolio-echelon-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+}
+
+.portfolio-echelon-card.expanded .portfolio-echelon-content {
+    max-height: 2000px;
+}
+
+/* Заголовки столбцов - впечатаны в фон */
+.portfolio-echelon-columns-header {
+    display: grid;
+    grid-template-columns: 1fr 75px 55px 90px;
+    gap: 16px;
+    padding: 10px 16px;
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-slate);
+}
+
+.portfolio-echelon-columns-header span:nth-child(2) {
+    text-align: center;
+}
+
+.portfolio-echelon-columns-header span:nth-child(3),
+.portfolio-echelon-columns-header span:nth-child(4) {
+    text-align: right;
+}
+
+.portfolio-echelon-list {
+    padding: 0 16px 16px;
+}
+
+/* Строка акции с подстроками */
+.portfolio-stock-wrapper {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+body.dark-mode .portfolio-stock-wrapper {
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.portfolio-stock-wrapper:last-child {
+    border-bottom: none;
+}
+
+.portfolio-stock-item {
+    display: grid;
+    grid-template-columns: 1fr 75px 55px 90px;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 0;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.portfolio-stock-item:hover {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+body.dark-mode .portfolio-stock-item:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.portfolio-stock-ticker {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-deep);
+}
+
+.portfolio-stock-yield {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-green);
+    text-align: center;
+}
+
+.portfolio-stock-qty {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-slate);
+    text-align: right;
+    white-space: nowrap;
+}
+
+.portfolio-stock-sum {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-deep);
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* Подстрока деталей акции */
+.portfolio-stock-details {
+    display: none;
+    padding: 0 0 12px;
+    animation: fadeInSlide 0.3s ease;
+}
+
+.portfolio-stock-wrapper.expanded .portfolio-stock-details {
+    display: block;
+}
+
+.portfolio-stock-detail-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+body.dark-mode .portfolio-stock-detail-grid {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.portfolio-stock-detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+body.dark-mode .portfolio-stock-detail-row {
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.portfolio-stock-detail-row:last-child {
+    border-bottom: none;
+}
+
+.portfolio-stock-detail-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--text-slate);
+}
+
+.portfolio-stock-detail-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-deep);
+}
+
+/* Кнопки График и О компании */
+.portfolio-stock-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.portfolio-stock-btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.portfolio-stock-btn.chart {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    color: white;
+}
+
+.portfolio-stock-btn.info {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--accent-blue);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.portfolio-stock-btn:active {
+    transform: scale(0.97);
+}
+
+.portfolio-stock-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.portfolio-stock-sum {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-deep);
+    text-align: right;
+}
+
+/* Заголовки столбцов эшелонов */
+.portfolio-echelon-columns-header {
+    display: grid;
+    grid-template-columns: 1fr 75px 55px 90px;
+    gap: 16px;
+    padding: 8px 16px;
+    font-family: 'Inter', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-slate);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    opacity: 0.7;
+}
+
+body.dark-mode .portfolio-echelon-columns-header {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.portfolio-echelon-columns-header span:nth-child(2) {
+    text-align: center;
+}
+
+.portfolio-echelon-columns-header span:nth-child(3),
+.portfolio-echelon-columns-header span:nth-child(4) {
+    text-align: right;
+}
+
+/* === Основной контейнер экрана Портфель === */
+#screen-portfolio {
+    position: relative;
+    background: var(--bg-base);
+    min-height: 100vh;
+    margin: -16px;
+    padding: 20px 16px 140px 16px;
+    touch-action: pan-y;
+    overscroll-behavior-x: none;
+    overflow-x: clip;
+}
+
+/* === Заголовок Портфель с меню три точки === */
+.portfolio-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    padding: 10px 0 20px;
+    padding-top: calc(80px + env(safe-area-inset-top));
+    z-index: 10;
+}
+
+@supports not (padding-top: env(safe-area-inset-top)) {
+    .portfolio-header-row { padding-top: 50px; }
+}
+
+.portfolio-header-row h1 {
+    font-family: 'Inter', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--text-deep);
+    margin: 0;
+}
+
+.portfolio-dots-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 12px;
+    color: var(--text-slate, #64748B);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+    flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+}
+.portfolio-dots-btn.hint-animate {
+    animation: bentoHint 3s ease-in-out 2;
+}
+@keyframes bentoHint {
+    0%, 100% { transform: rotate(0deg); }
+    20% { transform: rotate(-8deg); }
+    40% { transform: rotate(8deg); }
+    60% { transform: rotate(-4deg); }
+    80% { transform: rotate(0deg); }
+}
+.portfolio-dots-btn svg {
+    width: 18px;
+    height: 18px;
+}
+.portfolio-dots-btn:active {
+    transform: scale(0.92);
+    background: rgba(255, 255, 255, 0.7);
+}
+
+body.dark-mode .portfolio-dots-btn {
+    background: rgba(30, 41, 59, 0.6);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-slate);
+}
+
+/* === 3 Action Buttons === */
+.portfolio-action-btns {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.portfolio-action-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.portfolio-action-icon-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 12px;
+    color: var(--text-slate, #64748B);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+    flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.portfolio-action-icon-btn.active-hint {
+    background: rgba(255, 255, 255, 0.75);
+    border-color: rgba(59, 130, 246, 0.3);
+    color: #3B82F6;
+    transform: scale(1.05);
+}
+
+.portfolio-action-icon-btn svg {
+    width: 17px;
+    height: 17px;
+}
+
+.portfolio-action-icon-btn:active {
+    transform: scale(0.92);
+}
+
+.portfolio-action-label {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) translateY(-4px);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-deep, #0F172A);
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 10px;
+    padding: 8px 14px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    z-index: 50;
+}
+
+.portfolio-action-wrapper.show-label .portfolio-action-label {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+}
+
+body.dark-mode .portfolio-action-icon-btn {
+    background: rgba(30, 41, 59, 0.6);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-slate);
+}
+
+body.dark-mode .portfolio-action-icon-btn.active-hint {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.3);
+    color: #60A5FA;
+}
+
+body.dark-mode .portfolio-action-icon-btn:active {
+    background: rgba(30, 41, 59, 0.8);
+}
+
+body.dark-mode .portfolio-action-label {
+    background: rgba(30, 41, 59, 0.9);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #E2E8F0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Выпадающее меню */
+.portfolio-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 200px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 16px;
+    padding: 6px;
+    box-shadow: 0 12px 40px -8px rgba(0, 0, 0, 0.15),
+                0 4px 12px rgba(0, 0, 0, 0.05);
+    z-index: 1000;
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95);
+    pointer-events: none;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.portfolio-dropdown-menu.open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+body.dark-mode .portfolio-dropdown-menu {
+    background: rgba(30, 41, 59, 0.9);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 12px 40px -8px rgba(0, 0, 0, 0.4),
+                0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.portfolio-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-deep, #0F172A);
+    -webkit-tap-highlight-color: transparent;
+}
+.portfolio-dropdown-item svg {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    flex-shrink: 0;
+    opacity: 0.6;
+}
+.portfolio-dropdown-item:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+.portfolio-dropdown-item:active {
+    background: rgba(0, 0, 0, 0.08);
+    transform: scale(0.98);
+}
+
+body.dark-mode .portfolio-dropdown-item {
+    color: #f1f5f9;
+}
+body.dark-mode .portfolio-dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.portfolio-dropdown-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.08), transparent);
+    margin: 2px 12px;
+}
+body.dark-mode .portfolio-dropdown-divider {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+}
+
+body.dark-mode #screen-portfolio {
+    background: var(--bg-base);
+}
+
+#screen-portfolio > *:not(.aurora-container):not(.noise-overlay):not(.portfolio-header-row) {
+    position: relative;
+    z-index: 2;
+}
+#screen-portfolio > .portfolio-header-row {
+    position: relative;
+    z-index: 100;
+}
+
+/* === Заголовок экрана === */
+#screen-portfolio .header {
+    padding: 10px 0 25px;
+    text-align: left;
+}
+
+#screen-portfolio .header h1 {
+    font-family: 'Inter', sans-serif;
+    font-size: 38px;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    color: var(--claude-text-primary);
+    margin: 0;
+}
+
+
+
+
+/* === Section Headers (Заголовки разделов) === */
+.portfolio-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    margin: 24px 0 12px;
+    background: var(--claude-glass);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--claude-glass-border);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.portfolio-section-header:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+}
+
+.portfolio-section-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.portfolio-section-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+/* 1. Скрываем иконку (щит) только для раздела Облигаций (Денежный поток) */
+.portfolio-section-icon.bonds {
+    display: none !important;
+}
+
+
+.portfolio-section-icon.stocks {
+    background: rgba(46, 139, 87, 0.15);
+}
+
+.portfolio-section-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--claude-text-primary);
+}
+
+.portfolio-section-subtitle {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    color: var(--claude-text-secondary);
+    margin-top: 2px;
+}
+
+.portfolio-section-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.portfolio-section-badge.bonds {
+    background: rgba(94, 123, 163, 0.12);
+    color: #5E7BA3;
+}
+
+.portfolio-section-badge.stocks {
+    background: rgba(46, 139, 87, 0.12);
+    color: #2E8B57;
+}
+
+/* === Accordion Lists (Интерактивные списки) === */
+.portfolio-list {
+    background: var(--claude-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--claude-glass-border);
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+
+.portfolio-list-item {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    transition: background 0.2s ease;
+}
+
+body.dark-mode .portfolio-list-item {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.portfolio-list-item:last-child {
+    border-bottom: none;
+}
+
+.portfolio-list-item:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+body.dark-mode .portfolio-list-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Свёрнутая строка */
+.list-item-summary {
+    display: grid;
+    /* Grid-шаблон по промту: 85px, гибкая, 75px, 80px */
+    grid-template-columns: 85px 1fr 75px 80px;
+    align-items: center;
+    gap: 0; /* Убираем gap, так как ширину задаем колонками */
+    padding: 12px; /* Отступы по промту */
+    cursor: pointer;
+    user-select: none;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.list-item-ticker {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px; /* По промту */
+    font-weight: 700; /* Bold */
+    color: var(--claude-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Троеточие */
+    text-align: left;
+}
+
+.list-item-yield {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 8px; /* Внутренние отступы */
+    border-radius: 8px; /* Скругление */
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; /* По промту */
+    font-weight: 800; /* Extra Bold */
+    justify-self: center; /* Центрирование внутри grid-ячейки */
+    width: fit-content;
+}
+
+.list-item-yield.bonds {
+    background: rgba(94, 123, 163, 0.15);
+    color: #5E7BA3;
+}
+
+.list-item-yield.stocks {
+    background: rgba(46, 139, 87, 0.15);
+    color: #2E8B57;
+}
+
+.list-item-qty {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700; /* Bold */
+    color: var(--claude-accent);
+    text-align: right;
+    padding-right: 8px; /* Отступ справа */
+}
+
+.list-item-sum {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 500; /* Medium */
+    color: var(--claude-text-primary);
+    text-align: right;
+}
+/* Развёрнутая детальная карточка */
+.list-item-details {
+            grid-column: 1 / -1; /* Занимает всю ширину */
+            display: none;
+            padding: 12px !important; /* Отступ 12px */
+            border-top: 1px solid rgba(0,0,0,0.05) !important; /* Линия сверху */
+            font-size: 11px !important;
+            line-height: 1.8 !important;
+            animation: slideDown 0.3s ease;
+            cursor: default; /* Чтобы клик по деталям не сворачивал их случайно */
+        }
+body.dark-mode .list-item-details {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.portfolio-list-item.expanded .list-item-details {
+    display: block;
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+ /* Строка данных */
+        .details-row {
+            display: flex !important;
+            justify-content: space-between !important;
+            padding: 2px 0 !important; /* Вертикальный отступ */
+            border-bottom: 1px dashed rgba(0,0,0,0.05) !important; /* Пунктир снизу */
+            background: transparent !important; /* Убираем фон */
+            border-radius: 0 !important;
+        }
+
+body.dark-mode .details-row {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Левая часть (Метка) */
+        .details-row-label {
+            font-family: 'Inter', sans-serif;
+            font-weight: 400 !important; /* Обычное начертание */
+            color: var(--claude-text-secondary);
+        }
+
+/* Правая часть (Значение) */
+        .details-row-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600 !important; /* Semi-Bold */
+            color: var(--claude-text-primary);
+            text-align: right;
+        }
+
+.details-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* Кнопка действия */
+        .details-btn {
+            width: 100% !important;
+            margin-top: 8px !important;
+            padding: 6px 12px !important;
+            border-radius: 6px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 4px !important;
+            font-size: 10px !important;
+            font-weight: 700 !important; /* Bold */
+            border: none !important;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            
+            /* Цвета берем из переменных, не меняем жестко */
+            background: var(--claude-accent) !important; 
+            color: white !important;
+        }
+        
+        .details-btn:active {
+            opacity: 0.8;
+            transform: scale(0.98);
+        }
+
+.details-btn.primary {
+    background: var(--claude-accent);
+    color: white;
+}
+
+.details-btn.secondary {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--claude-text-primary);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body.dark-mode .details-btn.secondary {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.details-btn svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+}
+
+                /* ========== СТИЛЬ ДЛЯ ПОДСВЕТКИ ТИКЕРА/ISIN ========== */
+        .detail-ticker-highlight {
+            color: var(--accent-blue) !important;
+            font-weight: 700 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: flex-end !important;
+            gap: 6px !important;
+            cursor: pointer !important;
+            transition: opacity 0.2s;
+        }
+        
+        .detail-ticker-highlight:active {
+            opacity: 0.6;
+            transform: scale(0.98);
+        }
+
+        .detail-ticker-highlight svg {
+            width: 12px; 
+            height: 12px;
+            stroke-width: 2.5;
+        }
+        /* ===================================================== */
+
+
+
+/* === Echelon Headers (Заголовки эшелонов) === */
+.echelon-header-new {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    margin: 20px 0 8px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(255,255,255,0.5));
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--claude-glass-border);
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+body.dark-mode .echelon-header-new {
+    background: linear-gradient(135deg, rgba(30,41,59,0.8), rgba(30,41,59,0.5));
+}
+
+.echelon-header-new:hover {
+    transform: translateY(-1px);
+}
+
+.echelon-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* ========== НОВЫЙ СТИЛЬ ЭШЕЛОНОВ (КАК В РЕБАЛАНСИРОВКЕ) ========== */
+        .echelon-number {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px !important;
+            font-weight: 800 !important;
+            
+            /* Делаем их белыми с рамкой, как "таблетки" в таблице */
+            background: rgba(255, 255, 255, 0.9) !important;
+            border: 1px solid rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        /* Цвета для каждого эшелона (текст + рамка + тень) */
+        .echelon-number.e1 { 
+            color: #27ae60 !important; 
+            border-color: #2ecc71 !important; 
+            box-shadow: 0 2px 8px rgba(46, 204, 113, 0.2); 
+        }
+        
+        .echelon-number.e2 { 
+            color: #2980b9 !important; 
+            border-color: #3498db !important; 
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2); 
+        }
+        
+        .echelon-number.e3 { 
+            color: #f39c12 !important; /* Желтый потемнее для читаемости */
+            border-color: #f1c40f !important; 
+            box-shadow: 0 2px 8px rgba(241, 196, 15, 0.2); 
+        }
+        
+        .echelon-number.e4 { 
+            color: #d35400 !important; 
+            border-color: #e67e22 !important; 
+            box-shadow: 0 2px 8px rgba(231, 76, 60, 0.2); 
+        }
+
+        /* Адаптация для темной темы */
+        body.dark-mode .echelon-number {
+            background: rgba(30, 41, 59, 0.9) !important;
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        /* ========================================================= */
+
+.echelon-title-new {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--claude-text-primary);
+}
+
+* Правый контейнер внутри строки эшелона */
+.echelon-header-right {
+    display: grid;
+    /* ВАЖНО: Ширина колонок один-в-один как в шапке (115px и 60px) */
+    grid-template-columns: 115px 60px; 
+    gap: 8px; /* Тот же gap, что в шапке */
+    align-items: center;
+}
+
+/* Сама сумма */
+.echelon-sum {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    
+    text-align: right;   /* <--- Прижимаем сумму вправо, как вы просили */
+    padding-right: 12px; /* <-- ВАЖНО: Сдвигаем цифры от края ближе к центру */
+    width: 100%;
+    white-space: nowrap; /* Запрет переноса строк */
+}
+
+/* Бейдж с процентами */
+.echelon-percent-badge {
+    /* ... ваши старые настройки шрифта и цвета ... */
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    
+    /* ВАЖНОЕ ИЗМЕНЕНИЕ: */
+    justify-self: center; /* Было end -> Ставим center */
+    
+    min-width: 45px;
+    text-align: center;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: var(--text-slate);
+}
+
+.echelon-info-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--claude-text-secondary);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* Подсказка эшелона */
+.echelon-info-tooltip {
+    display: none;
+    background: var(--claude-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--claude-accent);
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin-bottom: 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--claude-text-primary);
+    animation: fadeIn 0.3s ease;
+}
+
+.echelon-info-tooltip.show {
+    display: block;
+}
+
+/* Заголовки столбцов для эшелона */
+.echelon-columns-header {
+    display: grid;
+    /* Сетка должна совпадать со строками: 85px 1fr 75px 80px */
+    grid-template-columns: 85px 1fr 75px 80px;
+    gap: 0;
+    padding: 10px 12px; /* Паддинг как у строк */
+    font-family: 'Inter', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--claude-text-secondary);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Выравнивание заголовков */
+.echelon-columns-header span:nth-child(1) { text-align: left; }
+.echelon-columns-header span:nth-child(2) { text-align: center; justify-self: center; }
+.echelon-columns-header span:nth-child(3) { text-align: right; padding-right: 8px; }
+.echelon-columns-header span:nth-child(4) { text-align: right; }
+
+body.dark-mode .echelon-columns-header {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.echelon-columns-header span:nth-child(2) {
+    text-align: center;
+}
+
+.echelon-columns-header span:nth-child(3) {
+    text-align: right;
+    padding-right: 8px;
+}
+
+.echelon-columns-header span:last-child {
+    text-align: right;
+}
+
+/* === Action Panel (Sticky панель действий) === */
+        .portfolio-action-panel {
+            position: fixed;
+            bottom: 90px;
+            
+            /* ЖЕСТКОЕ ЦЕНТРИРОВАНИЕ */
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            width: 92% !important; /* Ширина 92% от экрана */
+            max-width: 400px !important; /* Но не шире 400px */
+            right: auto !important; /* Сбрасываем right */
+            
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            padding: 12px;
+            
+            background: var(--claude-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--claude-glass-border);
+            border-radius: 20px;
+            box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.1);
+            z-index: 800;
+        }
+
+
+        .action-btn {
+            flex: 0 1 150px; /* Фиксированная ширина вместо растягивания */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 12px; /* Сделали кнопку тоньше (было 16px) */
+            border: none;
+            border-radius: 14px;
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+
+.action-btn.primary {
+    background: linear-gradient(135deg, #2C364C, #3a4a66);
+    color: white;
+    box-shadow: 0 4px 15px rgba(44, 54, 76, 0.3);
+}
+
+.action-btn.secondary {
+    background: rgba(255, 255, 255, 0.8);
+    color: var(--claude-text-primary);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body.dark-mode .action-btn.secondary {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.action-btn svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+}
+
+.action-btn:active {
+    transform: scale(0.98);
+}
+
+/* === Coupon Rain Box (Купонный дождь) - обновлённый стиль === */
+.coupon-box-new {
+    background: var(--claude-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(94, 123, 163, 0.3);
+    border-radius: 20px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.coupon-header-new {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px;
+    background: rgba(94, 123, 163, 0.08);
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.coupon-header-new:hover {
+    background: rgba(94, 123, 163, 0.12);
+}
+
+.coupon-header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.coupon-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #5E7BA3, #7B9BBF);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+}
+
+.coupon-title-block {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.coupon-title-new {
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--claude-text-primary);
+}
+
+.coupon-subtitle-new {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    color: var(--claude-text-secondary);
+}
+
+.coupon-arrow-new {
+    width: 24px;
+    height: 24px;
+    color: #5E7BA3;
+    transition: transform 0.3s ease;
+}
+
+.coupon-box-new.open .coupon-arrow-new {
+    transform: rotate(180deg);
+}
+
+.coupon-content-new {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease, padding 0.4s ease;
+    padding: 0 20px;
+}
+
+.coupon-box-new.open .coupon-content-new {
+    max-height: 1000px;
+    padding: 0 20px 20px;
+}
+
+/* === Footer Disclaimer (обновлённый) === */
+.portfolio-disclaimer {
+    background: linear-gradient(135deg, rgba(46, 139, 87, 0.08), rgba(46, 139, 87, 0.03));
+    border: 1px solid rgba(46, 139, 87, 0.15);
+    border-left: 4px solid #2E8B57;
+    border-radius: 16px;
+    padding: 20px;
+    margin: 24px 0;
+}
+
+.disclaimer-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.disclaimer-header svg {
+    width: 20px;
+    height: 20px;
+    stroke: #2E8B57;
+}
+
+.disclaimer-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #2E8B57;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.disclaimer-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--claude-text-primary);
+}
+
+/* === Empty State === */
+.portfolio-empty-new {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.empty-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 24px;
+    background: var(--claude-glass);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    margin-bottom: 24px;
+    border: 1px solid var(--claude-glass-border);
+}
+
+.empty-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--claude-text-primary);
+    margin-bottom: 8px;
+}
+
+.empty-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: var(--claude-text-secondary);
+    line-height: 1.6;
+    margin-bottom: 24px;
+}
+
+.empty-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 32px;
+    background: linear-gradient(135deg, #2C364C, #3a4a66);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(44, 54, 76, 0.3);
+    transition: all 0.2s ease;
+}
+
+.empty-btn:active {
+    transform: scale(0.98);
+}
+
+.empty-btn svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+}
+        /* =========================================
+   ГЛОБАЛЬНЫЙ СТИЛЬ ДЛЯ ЦИФР (JetBrains Mono)
+   ========================================= */
+
+/* 1. Поля ввода */
+input, 
+.calc-input,
+textarea {
+    font-family: 'JetBrains Mono', monospace !important;
+}
+
+/* 2. Рыночные данные и дашборд (Интересное) */
+.mk-val, 
+.mk-dynamics,
+.market-tile-value,
+.market-tile-change,
+.rv-item b,
+.rate-row-value,
+.rate-item-glass b {
+    font-family: 'JetBrains Mono', monospace !important;
+    letter-spacing: -0.03em;
+}
+
+/* 3. Калькулятор и Стратегии */
+.strategy-percent-row,
+.custom-value-bonds,
+.custom-value-stocks,
+.custom-slider-label span, /* проценты в слайдере */
+.fee-item-rate,
+.fee-selected-text:not(.placeholder), /* выбранная комиссия */
+#sumInput,
+#monthlySumInput,
+.currency {
+    font-family: 'JetBrains Mono', monospace !important;
+}
+
+/* 4. Портфель: Главная карточка и Прогноз */
+.portfolio-card-value,
+.portfolio-fee-badge,
+.forecast-item-value,
+.forecast-total-value,
+.portfolio-section-badge,
+#summ-invested,
+#summ-total-3y,
+#summ-bond-income,
+#summ-stock-growth {
+    font-family: 'JetBrains Mono', monospace !important;
+}
+
+/* 5. Списки (Облигации, Акции, Купоны) */
+.list-item-yield,
+.list-item-qty,
+.list-item-sum,
+.details-row-value,
+.ofz-price,
+.ofz-nkd-badge,
+.ofz-yield-badge,
+.ofz-detail-val,
+.ub-yield,
+.ub-price,
+.echelon-sum,
+.echelon-percent-badge,
+.et-price,
+.et-detail-value,
+.et-target {
+    font-family: 'JetBrains Mono', monospace !important;
+}
+
+/* 6. Таблицы (Купонный дождь, Выплаты) */
+.coupon-row b,
+.coupon-row div:nth-child(3), /* Колонка количества */
+.coupon-row div:nth-child(4), /* Колонка суммы */
+#couponTotalHeader,
+.echelon-number {
+    font-family: 'JetBrains Mono', monospace !important;
+}
+
+
+
