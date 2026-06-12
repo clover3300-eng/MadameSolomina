@@ -15386,22 +15386,35 @@ body.dark-mode .portfolio-echelons-total-row {
         #portfolio-page-buy.active {
             display: grid !important;
             grid-template-columns: minmax(0, 1fr) 396px;
+            grid-template-rows: auto auto;
             column-gap: 22px;
-            row-gap: 0;
+            row-gap: 16px;
             align-items: start;
             align-content: start;
             justify-content: center;
             max-width: 1180px;
             margin: 0 auto;
         }
-        #pfRightCol {
-            grid-column: 1; grid-row: 1;
-            min-width: 0; max-width: none; margin: 0; width: 100%;
-        }
-        #pfLeftRail {
+        /* Распускаем колонки-обёртки: их дети раскладываются прямо в grid */
+        #pfRightCol, #pfLeftRail { display: contents; }
+        /* Ряд 1: таблица ОФЗ слева, карточка капитала справа */
+        #pfRightCol .v3-table-card { grid-column: 1; grid-row: 1; }
+        #pfLeftRail .portfolio-capital-card {
             grid-column: 2; grid-row: 1;
-            display: flex; flex-direction: column;
-            gap: 16px; min-width: 0;
+            display: flex !important;
+            flex-direction: column;
+            margin: 0 !important;
+        }
+        #pfLeftRail .capital-forecast-light { flex: 1; }
+        /* Ряд 2: купонный стрип слева, кнопка «Рассчитать заново» справа */
+        #pfRightCol .portfolio-coupon-card {
+            grid-column: 1; grid-row: 2;
+            margin: 0 !important;
+            align-self: center;
+        }
+        .v3-recalc-btn {
+            grid-column: 2; grid-row: 2;
+            align-self: center;
         }
         /* Пилл «К расчёту» и иконки действий заменены кнопками V3 */
         #pfLeftRail .panel-section-header { display: none !important; }
@@ -16527,7 +16540,7 @@ body.dark-mode .portfolio-echelons-total-row {
         }
 
         /* ===== ТЕСТ V3 «Зеркало»: результаты слева, конфигурация справа ===== */
-        #panel-backtest { max-width: none !important; }
+        #panel-backtest { max-width: none !important; padding-left: 0 !important; padding-right: 0 !important; padding-bottom: 64px !important; }
         #panel-backtest.active {
             display: grid;
             grid-template-columns: minmax(0, 1fr) 396px;
@@ -16536,13 +16549,14 @@ body.dark-mode .portfolio-echelons-total-row {
             align-items: start;
             align-content: start;
             justify-content: center;
-            max-width: 1180px;
+            width: 1118px;
+            max-width: 100% !important;
             margin: 0 auto;
         }
         /* Заголовок дублирует крошку в шапке — скрываем */
         #panel-backtest > .bt-header { display: none; }
         #btConfigCol { display: block; grid-column: 2; grid-row: 1; position: sticky; top: 0; }
-        #panel-backtest > #btResults { grid-column: 1; grid-row: 1; min-width: 0; max-width: 640px; width: 100%; }
+        #panel-backtest > #btResults { grid-column: 1; grid-row: 1; min-width: 0; max-width: none; width: 100%; }
         /* Карточки конфигурации — белые V3 */
             /* Тест: секции таблицы — V3-карточки */
         #btResults .bt-assets-card {
@@ -28800,6 +28814,32 @@ function populatePanels() {
         if (mqV3.addEventListener) mqV3.addEventListener('change', v3Place);
         else if (mqV3.addListener) mqV3.addListener(v3Place);
         v3Place();
+
+        // Синхронизация высоты: карточка капитала = высота таблицы ОФЗ/акций
+        // (чтобы низ карточки совпадал с низом таблицы, а не растягивался ниже)
+        window.v3SyncCapHeight = function() {
+            const capCard = document.querySelector('#pfLeftRail .portfolio-capital-card');
+            const tableCard = document.querySelector('#portfolio-tab-bonds.active .v3-table-card, #portfolio-tab-stocks.active .v3-table-card');
+            if (!capCard) return;
+            if (!mqV3.matches) { capCard.style.height = ''; return; }
+            if (!tableCard) { capCard.style.height = ''; return; }
+            const h = tableCard.getBoundingClientRect().height;
+            // карточка не короче своего естественного контента
+            capCard.style.height = '';
+            const natural = capCard.getBoundingClientRect().height;
+            capCard.style.height = Math.max(h, natural) + 'px';
+        };
+        // Запускаем после отрисовки и на ресайз/смену таба
+        requestAnimationFrame(function(){ requestAnimationFrame(window.v3SyncCapHeight); });
+        window.addEventListener('resize', function(){ if (window.v3SyncCapHeight) window.v3SyncCapHeight(); });
+        document.querySelectorAll('.portfolio-tab-btn').forEach(function(b){
+            b.addEventListener('click', function(){ setTimeout(window.v3SyncCapHeight, 60); });
+        });
+        // при перестройке таблицы ОФЗ (перерасчёт) — пересинхронизировать
+        const lbForHeight = document.getElementById('listBondsV2');
+        if (lbForHeight && window.MutationObserver) {
+            new MutationObserver(function(){ setTimeout(window.v3SyncCapHeight, 60); }).observe(lbForHeight, { childList: true });
+        }
     })();
     // Равные отступы: grid-gap (рельса→контент) = зазор сайдбар→рельса. Для всех страниц с рельсой.
     window.pfSyncLeftWidth = function() {
@@ -28984,6 +29024,9 @@ function switchTab(tabId) {
     }
     if (tabId === 'market') {
         initInterestingAnimations && initInterestingAnimations();
+    }
+    if (tabId === 'portfolio' && window.v3SyncCapHeight) {
+        setTimeout(window.v3SyncCapHeight, 80);
     }
     
     // Scroll content area to top
