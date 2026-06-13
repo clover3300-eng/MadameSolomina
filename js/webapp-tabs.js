@@ -393,15 +393,15 @@ function populatePanels() {
         const left = document.createElement('div'); left.id = 'rbLeftRail';
         const right = document.createElement('div'); right.id = 'rbRightCol';
         const hdr = host.querySelector('.header');
+        // Переключатель ОФЗ/Акции теперь живёт внутри .smart-replace-card (R4),
+        // поэтому отдельно его не переносим — он уедет в рельсу вместе с картой.
         const card = host.querySelector('.smart-replace-card');
-        const tabs = host.querySelector('.rebalance-tabs-container');
         [...host.children].forEach(function(c) {
-            if (c === hdr || c === card || c === tabs) return;
+            if (c === hdr || c === card) return;
             if (c.classList && (c.classList.contains('aurora-container') || c.classList.contains('noise-overlay'))) return;
             right.appendChild(c);
         });
         if (card) left.appendChild(card);
-        if (tabs) left.appendChild(tabs);
         if (hdr) left.appendChild(hdr);
         host.appendChild(left);
         host.appendChild(right);

@@ -29,6 +29,7 @@
     <link id="siteLayoutCSS" rel="stylesheet" href="css/site-layout.css">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/backtest.css">
+    <link rel="stylesheet" href="css/rebalance-r4.css">
     <link rel="stylesheet" href="css/desktop-zoom.css">
     
     <!-- Telegram WebApp API (fallback — works both in TG and browser) -->
@@ -1120,61 +1121,83 @@
     </button>
 </div>
     
-    <!-- Карточка "Умная замена" (Dark Premium Glass) -->
+    <!-- Тёмная боковая панель «Умная замена» (стиль R4) -->
     <div class="smart-replace-card" id="smartReplaceCard">
-        <div class="smart-replace-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                <path d="M12 2v20M2 12h20M4.9 4.9l14.2 14.2M4.9 19.1L19.1 4.9"/>
-            </svg>
+        <div class="sr-head">
+            <div class="smart-replace-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3l1.7 5.1a3 3 0 0 0 1.9 1.9L20.7 11.7l-5.1 1.7a3 3 0 0 0-1.9 1.9L12 20.4l-1.7-5.1a3 3 0 0 0-1.9-1.9L3.3 11.7l5.1-1.7a3 3 0 0 0 1.9-1.9z"/>
+                    <path d="M19 3.5l.6 1.8 1.8.6-1.8.6-.6 1.8-.6-1.8-1.8-.6 1.8-.6z"/>
+                </svg>
+            </div>
+            <div class="smart-replace-content">
+                <h2 class="smart-replace-title">Умная замена</h2>
+            </div>
         </div>
-        <div class="smart-replace-content">
-            <h2 class="smart-replace-title">Умная замена</h2>
-            <p class="smart-replace-desc">
-                Пересмотр состава активов. Продаём то, что выросло или имеет низкий потенциал, покупаем недооценённые инструменты из списков ниже.
-            </p>
+        <p class="smart-replace-desc">
+            Алгоритм пересматривает портфель и предлагает замены: фиксирует прибыль по выросшим и слабым позициям и докупает недооценённые бумаги с наибольшим потенциалом роста.
+        </p>
+        <div class="sr-points">
+            <div class="sr-point"><span class="sr-dot sell"></span><span><b>Продаём</b> — выросшее и бумаги с низким потенциалом</span></div>
+            <div class="sr-point"><span class="sr-dot buy"></span><span><b>Покупаем</b> — недооценённое из списка</span></div>
         </div>
-    </div>
+        <div class="sr-hr"></div>
 
-    <!-- LIQUID TAB SWITCHER (без иконок) -->
-    <div class="rebalance-tabs-container">
-        <div class="tab-switcher" id="tabSwitcher">
-            <div class="tab-glider"></div>
-            <button class="tab-btn active" onclick="switchRebalanceTab('ofz')" data-tab="ofz">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
-                ОФЗ
-            </button>
-            <button class="tab-btn" onclick="switchRebalanceTab('stocks')" data-tab="stocks">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                Акции
+        <!-- Переключатель ОФЗ / Акции -->
+        <div class="rebalance-tabs-container">
+            <div class="tab-switcher" id="tabSwitcher">
+                <div class="tab-glider"></div>
+                <button class="tab-btn active" onclick="switchRebalanceTab('ofz')" data-tab="ofz">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+                    ОФЗ
+                </button>
+                <button class="tab-btn" onclick="switchRebalanceTab('stocks')" data-tab="stocks">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    Акции
+                </button>
+            </div>
+        </div>
+
+        <!-- Статистика по активной вкладке (обновляется из JS) -->
+        <div class="sr-stats" id="rbStats">
+            <div class="sr-stat"><span class="k" id="rbStatK1">Кандидатов</span><span class="v" id="rbStatV1">—</span></div>
+            <div class="sr-stat"><span class="k" id="rbStatK2">Средняя доходность</span><span class="v up" id="rbStatV2">—</span></div>
+            <div class="sr-stat"><span class="k" id="rbStatK3">Лучшая доходность</span><span class="v" id="rbStatV3">—</span></div>
+        </div>
+        <div class="sr-foot">
+            <div class="sr-hr"></div>
+            <button type="button" class="sr-recos" onclick="rebalanceShowRecos()">
+                <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"/></svg></span>
+                Показать рекомендации
             </button>
         </div>
     </div>
 
     <!-- КОНТЕНТ ВКЛАДКИ ОФЗ -->
     <div id="rebalance-tab-ofz" class="rebalance-tab-content active">
-        <!-- Заголовки списка с галочкой -->
-        <div class="list-headers" id="ofzListHeaders">
-            <div class="list-header-left">
-                <span class="list-header-text">ИНСТРУМЕНТ</span>
-                <div class="list-collapse-toggle" id="ofzCollapseToggle" onclick="toggleOfzListCollapse()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <polyline points="6 9 12 15 18 9"/>
-                    </svg>
+        <div class="rb-card">
+            <!-- Заголовок карточки: название + счётчик + сортировка -->
+            <div class="rb-thead">
+                <div class="ti">
+                    <div class="row"><b>Кандидаты на покупку</b><span class="cnt" id="ofzCount">8</span></div>
+                    <span class="sub">Недооценённые ОФЗ — нажмите строку для деталей</span>
+                </div>
+                <div class="sortbar">
+                    <span class="scap">Сорт</span>
+                    <span class="rb-sc act" id="ofzSortYield" onclick="setOfzSort('yield')">Доходность <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9l4-4 4 4"/><path d="M8 15l4 4 4-4"/></svg></i></span>
+                    <span class="rb-sc" id="ofzSortPrice" onclick="setOfzSort('price')">Цена <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9l4-4 4 4"/><path d="M8 15l4 4 4-4"/></svg></i></span>
                 </div>
             </div>
-            <span class="list-header-percent" onclick="this.classList.add('clicked'); toggleYieldDropdown(event)">%</span>
-            <span class="list-header-price" onclick="this.classList.add('clicked'); togglePriceDropdown(event)">₽</span>
-        </div>
-        <!-- Раскрывающееся пояснение для % -->
-        <div class="header-dropdown-tooltip" id="yieldDropdown">
-            <b>Простая доходность к погашению</b> — показывает, сколько процентов годовых вы получите, если будете держать облигацию до погашения.
-        </div>
-        <!-- Раскрывающееся пояснение для ₽ -->
-        <div class="header-dropdown-tooltip" id="priceDropdown">
-            <b>Цена формируется как:</b><br>Текущая цена + НКД (накопленный купонный доход)
-        </div>
-        
-        <div id="ofz-aurora-list" class="ofz-aurora-list">
+            <!-- Шапка столбцов: ранг | инструмент | доходность | цена -->
+            <div class="ofz-aurora-colhead">
+                <span></span>
+                <span class="ch-left">Инструмент</span>
+                <span>Доходность</span>
+                <span>Цена</span>
+                <span></span>
+            </div>
+
+            <div id="ofz-aurora-list" class="ofz-aurora-list">
             <!-- Skeleton для ОФЗ -->
             <div class="skeleton-container" id="skeleton-ofz-list">
                 <div class="skeleton-list-item" style="animation-delay: 0s"><div class="s-left"><div class="skeleton-bone s-title"></div><div class="skeleton-bone s-sub"></div></div><div class="s-right"><div class="skeleton-bone s-price"></div><div class="skeleton-bone s-yield"></div></div></div>
@@ -1183,8 +1206,9 @@
                 <div class="skeleton-list-item" style="animation-delay: 0.15s"><div class="s-left"><div class="skeleton-bone s-title"></div><div class="skeleton-bone s-sub"></div></div><div class="s-right"><div class="skeleton-bone s-price"></div><div class="skeleton-bone s-yield"></div></div></div>
             </div>
             <!-- Динамически заполняется через JS -->
-        </div>
-        
+            </div>
+        </div><!-- /rb-card -->
+
         <!-- Ghost Trigger для ОФЗ -->
         <div class="rebalance-ghost-trigger open" id="ofzGhostTrigger" onclick="toggleAuroraOfzList()">
             <div class="ghost-line"></div>
@@ -1199,15 +1223,22 @@
 
     <!-- КОНТЕНТ ВКЛАДКИ АКЦИИ -->
     <div id="rebalance-tab-stocks" class="rebalance-tab-content">
-        <div class="stocks-aurora-container">
+        <div class="rb-card stocks-aurora-container">
+            <div class="rb-thead">
+                <div class="ti">
+                    <div class="row"><b>Кандидаты на покупку</b><span class="cnt" id="stocksCount">24</span></div>
+                    <span class="sub">Недооценённые акции по эшелонам риска — нажмите карточку</span>
+                </div>
+            </div>
+            <div class="esh">
 
-            <!-- Таблица эшелонов -->
+            <!-- Таблица эшелонов: 4 колонки эшелонов -->
             <div class="stocks-aurora-table">
                 <div class="stocks-table-header">
-                    <div class="stocks-header-pill" onclick="toggleEchelonColumnHighlight(1, event)"><div class="echelon-icon-circle e1" id="echelonCircle1">I</div></div>
-                    <div class="stocks-header-pill" onclick="toggleEchelonColumnHighlight(2, event)"><div class="echelon-icon-circle e2" id="echelonCircle2">II</div></div>
-                    <div class="stocks-header-pill" onclick="toggleEchelonColumnHighlight(3, event)"><div class="echelon-icon-circle e3" id="echelonCircle3">III</div></div>
-                    <div class="stocks-header-pill" onclick="toggleEchelonColumnHighlight(4, event)"><div class="echelon-icon-circle e4" id="echelonCircle4">IV</div></div>
+                    <div class="esh-colhead e1" onclick="toggleEchelonColumnHighlight(1, event)"><span class="num" id="echelonCircle1">I</span></div>
+                    <div class="esh-colhead e2" onclick="toggleEchelonColumnHighlight(2, event)"><span class="num" id="echelonCircle2">II</span></div>
+                    <div class="esh-colhead e3" onclick="toggleEchelonColumnHighlight(3, event)"><span class="num" id="echelonCircle3">III</span></div>
+                    <div class="esh-colhead e4" onclick="toggleEchelonColumnHighlight(4, event)"><span class="num" id="echelonCircle4">IV</span></div>
                 </div>
                 <div class="stocks-table-body" id="stocks-aurora-body">
                     <!-- Skeleton для акций -->
@@ -1239,20 +1270,24 @@
             <div class="stock-detail-card" id="stockDetailCard">
                 <!-- Динамически заполняется -->
             </div>
-            
-            <!-- Ghost Trigger для акций -->
-            <div class="rebalance-ghost-trigger open" id="stocksGhostTrigger" onclick="toggleStocksTable()">
-                <div class="ghost-line"></div>
-                <div class="ghost-text" id="stocksGhostText">СВЕРНУТЬ</div>
-                <div class="ghost-dots">
-                    <div class="ghost-dot"></div>
-                    <div class="ghost-dot"></div>
-                    <div class="ghost-dot"></div>
-                </div>
-            </div>
-     
 
-            
+            <!-- Подсказка «Что такое эшелоны?» -->
+            <button type="button" class="esh-hint-btn esh-hint-stocks" onclick="toggleEchelonGuide(true,'rebalance')">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle cx="12" cy="8" r="0.5"/></svg>
+                Что такое эшелоны?
+            </button>
+            </div><!-- /esh -->
+        </div><!-- /rb-card -->
+
+        <!-- Ghost Trigger для акций -->
+        <div class="rebalance-ghost-trigger open" id="stocksGhostTrigger" onclick="toggleStocksTable()">
+            <div class="ghost-line"></div>
+            <div class="ghost-text" id="stocksGhostText">СВЕРНУТЬ</div>
+            <div class="ghost-dots">
+                <div class="ghost-dot"></div>
+                <div class="ghost-dot"></div>
+                <div class="ghost-dot"></div>
+            </div>
         </div>
     </div>
     

@@ -2,6 +2,65 @@
 // AURORA REBALANCE - НОВЫЕ ФУНКЦИИ ДЛЯ ВКЛАДОК
 // ========================================================================
 
+// ----- R4: сортировка списка ОФЗ, цветовая шкала, статистика рельсы -----
+
+// Текущий ключ сортировки списка ОФЗ: 'yield' (доходность) | 'price' (цена)
+let rebalanceOfzSortKey = 'yield';
+
+// Плавная зелёная шкала: чем выше доходность в диапазоне, тем насыщеннее цвет.
+function ofzYieldColor(y, minY, maxY) {
+    if (!isFinite(y)) return '#10B981';
+    const t = (maxY === minY) ? 1 : Math.max(0, Math.min(1, (y - minY) / (maxY - minY)));
+    return `oklch(${(62 - t * 4).toFixed(1)}% ${(0.08 + t * 0.13).toFixed(3)} 152)`;
+}
+
+// Переключение сортировки списка ОФЗ (кнопки в шапке карточки)
+function setOfzSort(key) {
+    if (rebalanceOfzSortKey === key) return;
+    rebalanceOfzSortKey = key;
+    const y = document.getElementById('ofzSortYield');
+    const p = document.getElementById('ofzSortPrice');
+    if (y) y.classList.toggle('act', key === 'yield');
+    if (p) p.classList.toggle('act', key === 'price');
+    renderAuroraOfzList();
+    if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.selectionChanged();
+}
+
+// Кнопка «Показать рекомендации» (плейсхолдер)
+function rebalanceShowRecos() {
+    if (typeof showToast === 'function') showToast('Рекомендации скоро будут доступны');
+    if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+}
+
+// Статистика в тёмной рельсе зависит от активной вкладки
+function updateRebalanceStats(mode) {
+    const v1 = document.getElementById('rbStatV1');
+    if (!v1) return;
+    const k1 = document.getElementById('rbStatK1');
+    const k2 = document.getElementById('rbStatK2'), v2 = document.getElementById('rbStatV2');
+    const k3 = document.getElementById('rbStatK3'), v3 = document.getElementById('rbStatV3');
+    const num = (s) => parseFloat(String(s == null ? '' : s).replace('%', '').replace(',', '.'));
+
+    if (mode === 'stocks') {
+        const cols = (typeof echelonTableData !== 'undefined' && echelonTableData) ? echelonTableData : [[], [], [], []];
+        const all = cols.flat();
+        const sectors = new Set(all.map(a => (a.sector || '').trim()).filter(Boolean));
+        const pots = all.map(a => num(a.target)).filter(n => isFinite(n));
+        if (k1) k1.textContent = 'Кандидатов'; v1.textContent = all.length || '—';
+        if (k2) k2.textContent = 'Макс. потенциал'; v2.textContent = pots.length ? '+' + Math.max(...pots).toFixed(2) + '%' : '—'; v2.className = 'v up';
+        if (k3) k3.textContent = 'Секторов'; v3.textContent = sectors.size || '—'; v3.className = 'v';
+        const sc = document.getElementById('stocksCount'); if (sc) sc.textContent = all.length;
+    } else {
+        const arr = (typeof bonds !== 'undefined' && bonds) ? bonds : [];
+        const ys = arr.map(b => num(b.y)).filter(n => isFinite(n));
+        const avg = ys.length ? ys.reduce((s, n) => s + n, 0) / ys.length : 0;
+        if (k1) k1.textContent = 'Кандидатов'; v1.textContent = arr.length || '—';
+        if (k2) k2.textContent = 'Средняя доходность'; v2.textContent = ys.length ? avg.toFixed(2) + '%' : '—'; v2.className = 'v up';
+        if (k3) k3.textContent = 'Лучшая доходность'; v3.textContent = ys.length ? Math.max(...ys).toFixed(2) + '%' : '—'; v3.className = 'v';
+        const oc = document.getElementById('ofzCount'); if (oc) oc.textContent = arr.length;
+    }
+}
+
 // Переключение вкладок ОФЗ / АКЦИИ (Liquid Tab Switcher)
 function switchRebalanceTab(tabName) {
     const tabSwitcher = document.getElementById('tabSwitcher');
@@ -43,6 +102,7 @@ function switchRebalanceTab(tabName) {
         renderAuroraStocksTable();
     }
     updateInfoBtnState(tabName);
+    updateRebalanceStats(tabName);
 }
 
 // Инициализация Spotlight эффекта для карточки "Умная замена"
@@ -83,8 +143,22 @@ function renderAuroraOfzList() {
     }
     
     let html = '';
-    
-    bonds.forEach((b, index) => {
+
+    // Сортировка списка: по доходности (убыв.) или по цене (возр.)
+    const parseYield = (b) => parseFloat(String(b.y || '0').replace('%', '').replace(',', '.')) || 0;
+    const parsePriceFull = (b) => {
+        const p = parseFloat(String(b.p).replace(',', '.')) || 0;
+        return p + (parseFloat(b.nkd || 0) || 0);
+    };
+    const sorted = bonds.slice().sort((a, b) =>
+        rebalanceOfzSortKey === 'price' ? parsePriceFull(a) - parsePriceFull(b) : parseYield(b) - parseYield(a));
+
+    // Диапазон доходностей для цветовой шкалы
+    const ysAll = sorted.map(parseYield);
+    const maxY = Math.max(...ysAll), minY = Math.min(...ysAll);
+
+    sorted.forEach((b, index) => {
+        const rank = index + 1;
         const details = bondDetailsMap[b.t] || { matDate: '—', couponValue: 0, nextCoupon: '—', freq: 0 };
         const priceFinal = parseFloat(String(b.p).replace(',', '.')).toFixed(2);
         const nkd = parseFloat(b.nkd || 0).toFixed(2);
@@ -104,12 +178,11 @@ function renderAuroraOfzList() {
         html += `
         <div class="ofz-aurora-item ${hiddenClass}" id="aurora-${b.t}" data-index="${index}">
             <div class="ofz-aurora-summary" onclick="toggleAuroraOfzDetails('${b.t}')">
-                <span class="ofz-aurora-name">
-                    ${formatNameWithMonoDigits(limitName(b.n))}
-                    <span class="ofz-expand-badge"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
-                </span>
-                <span class="ofz-aurora-yield">${sheetYield}%</span>
-                <span class="ofz-aurora-price">${priceWithNkd}</span>
+                <span class="rb-rank">#${rank}</span>
+                <span class="ofz-aurora-name">${formatNameWithMonoDigits(limitName(b.n))}</span>
+                <span class="ofz-aurora-yield" style="color:${ofzYieldColor(parseFloat(sheetYield), minY, maxY)}">${sheetYield}%</span>
+                <span class="ofz-aurora-price">${priceWithNkd} ₽</span>
+                <span class="ofz-expand-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></span>
             </div>
             
             <div class="ofz-aurora-details" id="aurora-details-${b.t}">
@@ -175,6 +248,8 @@ function renderAuroraOfzList() {
     
     container.innerHTML = html;
     hideSkeleton('skeleton-ofz-list');
+    const _at = document.querySelector('.tab-btn.active')?.dataset.tab || 'ofz';
+    updateRebalanceStats(_at);
 }
 
 // Раскрытие/скрытие деталей ОФЗ в Aurora стиле с прокруткой
@@ -411,37 +486,50 @@ function renderAuroraStocksTable() {
     let html = '';
     const maxRows = Math.max(...echelonTableData.map(col => col.length));
     const maxVisibleRows = 3;
-    
+
+    // Глобальный максимум потенциала — общая шкала для полосок всех эшелонов
+    const toPot = (s) => parseFloat(String(s == null ? '' : s).replace('%', '').replace(',', '.'));
+    const allPots = echelonTableData.flat().map(a => toPot(a.target)).filter(n => isFinite(n));
+    const maxPot = allPots.length ? Math.max(...allPots) : 0;
+
     for (let rowIndex = 0; rowIndex < maxRows; rowIndex++) {
         const hiddenClass = ''; // Список акций раскрыт полностью изначально
-        
+
         html += `<div class="stocks-table-row ${hiddenClass}" data-row="${rowIndex}">`;
-        
+
         for (let colIndex = 0; colIndex < 4; colIndex++) {
             const asset = echelonTableData[colIndex][rowIndex];
-            
+
             if (asset && asset.t) {
                 const ticker = asset.t;
-                const price = asset.target || '';
+                const rawTarget = asset.target || '';
                 const echelonNum = colIndex + 1;
-                
-                // Определяем изменение цены
-                const changeClass = price.includes('+') ? 'positive' : (price.includes('-') ? 'negative' : 'neutral');
-                
-                html += `<div class="stocks-cell" onclick="openStockDetail('${ticker}', ${echelonNum}, this)">
-                    <span class="stocks-cell-ticker">${ticker}</span>
-                    <span class="stocks-cell-change ${changeClass}">${price}</span>
+                const name = asset.n || ticker;
+
+                // Потенциал в %: приводим к виду «+125.86%», полоска — доля от максимума
+                const potNum = toPot(rawTarget);
+                const potStr = isFinite(potNum) ? ((potNum >= 0 ? '+' : '') + potNum.toFixed(2) + '%') : rawTarget;
+                const changeClass = isFinite(potNum) ? (potNum >= 0 ? 'positive' : 'negative') : 'neutral';
+                const barPct = (isFinite(potNum) && maxPot > 0) ? Math.max(7, Math.min(100, potNum / maxPot * 100)) : 0;
+                const barHtml = barPct > 0 ? `<div class="ec-bar"><i style="width:${barPct.toFixed(1)}%"></i></div>` : '';
+
+                html += `<div class="stocks-cell esh-card" onclick="openStockDetail('${ticker}', ${echelonNum}, this)">
+                    <div class="ec-top"><span class="stocks-cell-ticker">${ticker}</span><span class="stocks-cell-change ${changeClass}">${potStr}</span></div>
+                    <div class="ec-name">${name}</div>
+                    ${barHtml}
                 </div>`;
             } else {
-                html += `<div class="stocks-cell"></div>`;
+                html += `<div class="stocks-cell empty"></div>`;
             }
         }
-        
+
         html += '</div>';
     }
-    
+
     container.innerHTML = html;
     hideSkeleton('skeleton-stocks-table');
+    const _at = document.querySelector('.tab-btn.active')?.dataset.tab || 'ofz';
+    updateRebalanceStats(_at);
     
     // Проверяем что карточка деталей существует и в правильном месте
     let card = document.getElementById('stockDetailCard');
@@ -514,71 +602,76 @@ function openStockDetail(ticker, echelon, clickedCell = null) {
         }
     }
     
-    const echelonColors = {
-        1: { bg: 'rgba(16, 185, 129, 0.15)', color: '#10B981', name: 'I Эшелон' },
-        2: { bg: 'rgba(59, 130, 246, 0.15)', color: '#3B82F6', name: 'II Эшелон' },
-        3: { bg: 'rgba(245, 158, 11, 0.15)', color: '#F59E0B', name: 'III Эшелон' },
-        4: { bg: 'rgba(239, 68, 68, 0.15)', color: '#EF4444', name: 'IV Эшелон' }
+    const tierMap = {
+        1: { color: '#1d9d6c', roman: 'I',   name: 'I эшелон' },
+        2: { color: '#3d6fd1', roman: 'II',  name: 'II эшелон' },
+        3: { color: '#d07b2a', roman: 'III', name: 'III эшелон' },
+        4: { color: '#d8434f', roman: 'IV',  name: 'IV эшелон' }
     };
-    
-    const echelonStyle = echelonColors[echelon] || echelonColors[1];
-    
-    // Сектор HTML
+    const tier = tierMap[echelon] || tierMap[1];
+
+    // Потенциал роста (target) для этого тикера
+    let potentialStr = '';
+    if (typeof echelonTableData !== 'undefined') {
+        for (let i = 0; i < echelonTableData.length; i++) {
+            const f = echelonTableData[i].find(it => it.t === ticker) ||
+                      (ticker !== baseTicker ? echelonTableData[i].find(it => it.t === baseTicker || it.t === baseTicker.toUpperCase()) : null);
+            if (f) { potentialStr = f.target || ''; break; }
+        }
+    }
+    const potNum = parseFloat(String(potentialStr).replace('%', '').replace(',', '.'));
+    const potDisplay = isFinite(potNum) ? ((potNum >= 0 ? '+' : '') + potNum.toFixed(2) + '%') : (potentialStr || '—');
+
+    // Сектор
     const sectorHtml = companySector ? `
-        <div class="stock-detail-sector">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-                <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
-            </svg>
+        <span class="sd-sector">
+            <span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg></span>
             ${companySector}
-        </div>
-    ` : '';
-    
+        </span>` : '';
+
     card.innerHTML = `
-        <div class="stock-detail-close" onclick="closeStockDetail()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <polyline points="6 9 12 15 18 9"/>
-            </svg>
-        </div>
-        <div class="stock-detail-header">
-            <div class="stock-detail-main">
-                <div class="stock-detail-ticker">${ticker}</div>
-                <div class="stock-detail-name">${companyName}</div>
-                ${sectorHtml}
+        <div class="sd">
+            <div class="sd-close" onclick="closeStockDetail()" title="Закрыть">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
             </div>
-            <span class="stock-detail-echelon" style="background: ${echelonStyle.bg}; color: ${echelonStyle.color};">${echelonStyle.name}</span>
-        </div>
-        <div class="stock-detail-grid">
-            <div class="stock-detail-row">
-                <span class="stock-detail-label">Код (тикер)</span>
-                <div class="ofz-copy-wrapper" onclick="copyTickerNew('${ticker}')">
-                    <span class="ofz-copy-code">${ticker}</span>
-                    <svg class="ofz-copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                    </svg>
+            <div class="sd-top">
+                <div class="sd-id">
+                    <div class="tk">${ticker}</div>
+                    <div class="nm">${companyName}</div>
+                </div>
+                <span class="sd-tier-circle" style="color:${tier.color};border-color:${tier.color}">${tier.roman}</span>
+            </div>
+            ${sectorHtml}
+            <div class="sd-hr"></div>
+            <div class="sd-pot">
+                <div>
+                    <div class="sd-pot-label">Потенциал</div>
+                    <div class="sd-pot-val">${potDisplay}</div>
+                </div>
+                <div class="sd-pot-horizon">
+                    <span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="16" height="14" rx="3"/><path d="M4 10.5h16M9 4v3M15 4v3"/></svg></span>
+                    горизонт до 36 мес.
                 </div>
             </div>
-            <div class="stock-detail-row">
-                <span class="stock-detail-label">Эшелон риска</span>
-                <span class="stock-detail-value">${echelonStyle.name}</span>
+            <div class="sd-hr"></div>
+            <div class="kv">
+                <span class="k">Код (тикер)</span>
+                <span class="v"><span class="isin-pill" onclick="copyTickerNew('${ticker}')">${ticker}<span class="cp"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg></span></span></span>
             </div>
-        </div>
-        <div class="stock-detail-actions">
-            <button class="stock-btn stock-btn-chart" onclick="openTradingViewDirect('${ticker}')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                </svg>
-                График
-            </button>
-            <button class="stock-btn stock-btn-info" onclick="goToCompanyPageFromTicker('${ticker}')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="16" x2="12" y2="12"></line>
-                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                </svg>
-                О компании
-            </button>
+            <div class="kv">
+                <span class="k">Эшелон риска</span>
+                <span class="v">${tier.name}</span>
+            </div>
+            <div class="sd-btns">
+                <div class="sd-btn dark" onclick="openTradingViewDirect('${ticker}')">
+                    <span class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12c2-5 4-5 6 0s4 5 6 0 4-5 6 0"/></svg></span>
+                    График
+                </div>
+                <div class="sd-btn light" onclick="goToCompanyPageFromTicker('${ticker}')">
+                    <span class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle cx="12" cy="8" r="0.5"/></svg></span>
+                    О компании
+                </div>
+            </div>
         </div>
     `;
     

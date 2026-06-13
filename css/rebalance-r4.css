@@ -1,0 +1,863 @@
+/* ============================================================
+   REBALANCE · R4 SKIN
+   Переделка вкладки «Ребаланс» в стиле эталона R4:
+   светлая тема, Manrope + JetBrains Mono, белые карточки-таблицы,
+   ранг + центрированные числовые колонки, цветовая шкала доходности,
+   тёмная боковая рельса со статистикой, эшелоны с полосками потенциала.
+
+   Подключается ПОСЛЕ rebalance.css / rebalance-stocks.css / site-layout.css,
+   но ДО desktop-zoom.css — чтобы перебить старый «glass»-вид, не трогая zoom.
+   Всё ограничено #rebalancePanelContent, чтобы не задеть другие экраны.
+   ============================================================ */
+
+#rebalancePanelContent {
+    --r4-card: #ffffff;
+    --r4-line: #eef2f7;
+    --r4-line2: #e3e9f1;
+    --r4-text: #111927;
+    --r4-muted: #97a3b4;
+    --r4-muted2: #5f6d80;
+    --r4-dark: #141b26;
+    --r4-green: #16b56b;
+    --r4-shadow: 0 16px 36px rgba(24, 38, 60, 0.08);
+    font-family: 'Manrope', sans-serif;
+    color: var(--r4-text);
+}
+body.dark-mode #rebalancePanelContent {
+    --r4-card: #1d2734;
+    --r4-line: rgba(255, 255, 255, 0.07);
+    --r4-line2: rgba(255, 255, 255, 0.1);
+    --r4-text: #eef2f7;
+    --r4-muted: #76849a;
+    --r4-muted2: #9aa7ba;
+    --r4-shadow: 0 16px 36px rgba(0, 0, 0, 0.32);
+}
+
+/* Фон вкладки «Ребаланс»: мягкий сине-серый градиент (ядро #e7edf5 — как в эталоне R4).
+   Тёплый кремовый из эталона убран: на высокой панели он выглядел почти белым.
+   Кладём прямо на скролл-панель (без position:fixed — фон не «слетает» под zoom). */
+#panel-rebalance {
+    background: linear-gradient(160deg, #ebf0f8 0%, #e7edf5 50%, #e0e8f2 100%) !important;
+}
+body.dark-mode #panel-rebalance {
+    background: linear-gradient(160deg, #0f141c 0%, #141b26 100%) !important;
+}
+
+/* ============================================================
+   1. ТЁМНАЯ БОКОВАЯ РЕЛЬСА «Умная замена»
+   ============================================================ */
+#rebalancePanelContent .smart-replace-card {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 24px 22px;
+    background: linear-gradient(150deg, #10161f 0%, #222e3f 100%);
+    border-radius: 22px;
+    box-shadow: var(--r4-shadow);
+    color: #fff;
+    overflow: hidden;
+}
+#rebalancePanelContent .smart-replace-card .sr-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+#rebalancePanelContent .smart-replace-icon {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    margin: 0;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    display: grid;
+    place-items: center;
+    color: #7ee2a8;
+}
+#rebalancePanelContent .smart-replace-icon svg { width: 23px; height: 23px; }
+#rebalancePanelContent .smart-replace-title {
+    font-family: 'Manrope', sans-serif;
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: #fff;
+    margin: 0;
+}
+#rebalancePanelContent .smart-replace-desc {
+    font-size: 13.5px;
+    font-weight: 500;
+    color: #aab6c6;
+    line-height: 1.55;
+    margin: 16px 0 0;
+    max-width: none;
+}
+#rebalancePanelContent .sr-points {
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+    margin-top: 18px;
+}
+#rebalancePanelContent .sr-point {
+    display: flex;
+    align-items: baseline;
+    gap: 11px;
+    font-size: 13px;
+    color: #aab6c6;
+    line-height: 1.4;
+}
+#rebalancePanelContent .sr-point b { font-weight: 700; color: #fff; }
+#rebalancePanelContent .sr-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 99px;
+    flex: 0 0 7px;
+    transform: translateY(-1px);
+}
+#rebalancePanelContent .sr-dot.sell { background: #f0884a; }
+#rebalancePanelContent .sr-dot.buy { background: #3ad08a; }
+#rebalancePanelContent .sr-hr {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 18px 0;
+}
+
+/* Сегментированный переключатель ОФЗ / Акции внутри тёмной рельсы */
+#rebalancePanelContent .smart-replace-card .rebalance-tabs-container {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+#rebalancePanelContent .smart-replace-card .tab-switcher {
+    display: flex;
+    width: 100%;
+    gap: 5px;
+    padding: 5px;
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    border-radius: 13px;
+    box-shadow: none;
+    box-sizing: border-box;
+}
+#rebalancePanelContent .smart-replace-card .tab-glider { display: none; }
+#rebalancePanelContent .smart-replace-card .tab-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 11px 14px;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #9aa7ba;
+    white-space: nowrap;
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow: none;
+    transition: flex .28s cubic-bezier(.4, 0, .2, 1), background .16s, color .16s;
+}
+#rebalancePanelContent .smart-replace-card .tab-btn svg { width: 15px; height: 15px; }
+/* Активный сегмент удлиняется (как в эталоне R4) */
+#rebalancePanelContent .smart-replace-card .tab-btn.active {
+    flex: 1.9;
+    background: #fff;
+    color: #141b26;
+    box-shadow: none;
+}
+
+/* Статистика по активной вкладке */
+#rebalancePanelContent .sr-stats {
+    display: flex;
+    flex-direction: column;
+    margin-top: 16px;
+}
+#rebalancePanelContent .sr-stat {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 11px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+#rebalancePanelContent .sr-stat:first-child { border-top: none; }
+#rebalancePanelContent .sr-stat .k { font-size: 13px; color: #aab6c6; font-weight: 600; }
+#rebalancePanelContent .sr-stat .v {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 17px;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+}
+#rebalancePanelContent .sr-stat .v.up { color: #3ad08a; }
+#rebalancePanelContent .sr-foot { margin-top: 4px; }
+#rebalancePanelContent .sr-recos {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 18px;
+    border: none;
+    border-radius: 14px;
+    background: #fff;
+    color: #141b26;
+    font-family: 'Manrope', sans-serif;
+    font-size: 14.5px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform .15s, box-shadow .15s;
+}
+#rebalancePanelContent .sr-recos .ic { display: inline-flex; color: var(--r4-green); }
+#rebalancePanelContent .sr-recos:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18); }
+
+/* ============================================================
+   2. БЕЛАЯ КАРТОЧКА-ТАБЛИЦА (общая для ОФЗ и Акций)
+   ============================================================ */
+#rebalancePanelContent .rb-card {
+    background: var(--r4-card);
+    border-radius: 22px;
+    box-shadow: var(--r4-shadow);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Шапка карточки: название + счётчик + подзаголовок + сортировка */
+#rebalancePanelContent .rb-thead {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 18px 20px 16px;
+    border-bottom: 1px solid var(--r4-line);
+}
+#rebalancePanelContent .rb-thead .ti { flex: 1 1 auto; min-width: 0; }
+#rebalancePanelContent .rb-thead .ti .row { display: flex; align-items: center; gap: 10px; }
+#rebalancePanelContent .rb-thead .ti b {
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--r4-text);
+    white-space: nowrap;
+}
+#rebalancePanelContent .rb-thead .ti .cnt {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    font-weight: 700;
+    background: #eef2f8;
+    color: var(--r4-muted2);
+    padding: 3px 10px;
+    border-radius: 999px;
+}
+body.dark-mode #rebalancePanelContent .rb-thead .ti .cnt { background: rgba(255, 255, 255, 0.08); color: #c4cedd; }
+#rebalancePanelContent .rb-thead .ti .sub {
+    display: block;
+    margin-top: 5px;
+    font-size: 13px;
+    color: var(--r4-muted);
+    font-weight: 600;
+}
+
+/* Сортировка */
+#rebalancePanelContent .rb-thead .sortbar { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+#rebalancePanelContent .rb-thead .scap {
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #aab6c7;
+    font-weight: 700;
+    margin-right: 2px;
+}
+#rebalancePanelContent .rb-sc {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--r4-muted2);
+    background: #f2f6fa;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+}
+body.dark-mode #rebalancePanelContent .rb-sc { background: rgba(255, 255, 255, 0.06); }
+#rebalancePanelContent .rb-sc.act { background: var(--r4-dark); color: #fff; }
+body.dark-mode #rebalancePanelContent .rb-sc.act { background: #fff; color: var(--r4-dark); }
+#rebalancePanelContent .rb-sc i { display: inline-flex; opacity: .5; }
+#rebalancePanelContent .rb-sc i svg { width: 13px; height: 13px; }
+#rebalancePanelContent .rb-sc.act i { opacity: .85; }
+
+/* ============================================================
+   3. СПИСОК ОФЗ — таблица с рангом и центрированными колонками
+   ============================================================ */
+/* Шапка столбцов */
+#rebalancePanelContent .ofz-aurora-colhead {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr) 80px 100px 22px;
+    align-items: center;
+    gap: 8px;
+    padding: 13px 18px 12px;
+    background: #f6f9fc;
+    border-bottom: 1px solid var(--r4-line);
+    color: #8593a6;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+body.dark-mode #rebalancePanelContent .ofz-aurora-colhead { background: rgba(255, 255, 255, 0.03); color: #76849a; }
+#rebalancePanelContent .ofz-aurora-colhead span { text-align: center; white-space: nowrap; }
+#rebalancePanelContent .ofz-aurora-colhead .ch-left { text-align: left; }
+
+/* Список без внешних отступов — он внутри карточки */
+#rebalancePanelContent .ofz-aurora-list { display: flex; flex-direction: column; gap: 0; }
+
+/* Строка-бокс превращается в строку таблицы */
+#rebalancePanelContent .ofz-aurora-item {
+    background: transparent !important;
+    border: none !important;
+    border-top: 1px solid var(--r4-line) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    overflow: hidden;
+    transition: background .15s;
+}
+#rebalancePanelContent .ofz-aurora-item:first-child { border-top: none !important; }
+#rebalancePanelContent .ofz-aurora-item:hover { background: #f7fafd; transform: none; box-shadow: none; }
+body.dark-mode #rebalancePanelContent .ofz-aurora-item:hover { background: rgba(255, 255, 255, 0.03); }
+#rebalancePanelContent .ofz-aurora-item.expanded { background: #f7fafd; }
+body.dark-mode #rebalancePanelContent .ofz-aurora-item.expanded { background: rgba(255, 255, 255, 0.03); }
+
+/* Свёрнутая строка: ранг | инструмент | доходность | цена | шеврон */
+#rebalancePanelContent .ofz-aurora-summary {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr) 80px 100px 22px;
+    align-items: center;
+    gap: 8px;
+    padding: 0 18px;
+    height: 58px;
+    cursor: pointer;
+}
+#rebalancePanelContent .ofz-aurora-summary .rb-rank {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: #c0ccd9;
+    text-align: left;
+}
+body.dark-mode #rebalancePanelContent .ofz-aurora-summary .rb-rank { color: #5a6b80; }
+#rebalancePanelContent .ofz-aurora-name {
+    font-family: 'Manrope', sans-serif;
+    font-size: 15.5px;
+    font-weight: 800;
+    color: var(--r4-text);
+    letter-spacing: -0.01em;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+#rebalancePanelContent .ofz-aurora-name .mono-digit-span { font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+#rebalancePanelContent .ofz-aurora-yield {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: center;
+    color: var(--r4-green);
+}
+#rebalancePanelContent .ofz-aurora-price {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--r4-muted2);
+    text-align: center;
+}
+body.dark-mode #rebalancePanelContent .ofz-aurora-price { color: #c4cedd; }
+#rebalancePanelContent .ofz-aurora-summary .ofz-expand-badge {
+    width: 22px;
+    height: 22px;
+    border-radius: 7px;
+    background: transparent;
+    justify-self: end;
+    opacity: 1;
+    color: #aebacb;
+}
+#rebalancePanelContent .ofz-aurora-summary .ofz-expand-badge svg {
+    width: 15px;
+    height: 15px;
+    stroke: currentColor;
+    transition: transform .22s;
+}
+#rebalancePanelContent .ofz-aurora-item.expanded .ofz-expand-badge { background: transparent; color: var(--r4-text); }
+#rebalancePanelContent .ofz-aurora-item.expanded .ofz-expand-badge svg { transform: rotate(90deg); }
+
+/* Раскрытые детали → key-value (стиль R4) */
+#rebalancePanelContent .ofz-aurora-details { padding: 0 22px 20px; }
+#rebalancePanelContent .ofz-aurora-details-list {
+    background: transparent;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+}
+#rebalancePanelContent .ofz-detail-row {
+    padding: 12px 2px;
+    border-bottom: none;
+    border-top: 1px solid var(--r4-line);
+}
+#rebalancePanelContent .ofz-detail-row:first-child { border-top: none; }
+#rebalancePanelContent .ofz-detail-label {
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--r4-muted2);
+}
+#rebalancePanelContent .ofz-detail-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--r4-text);
+}
+/* ISIN / код — «pill» с копированием */
+#rebalancePanelContent .ofz-copy-wrapper {
+    gap: 9px;
+    padding: 6px 12px;
+    background: #eaf1fb;
+    border-radius: 10px;
+}
+body.dark-mode #rebalancePanelContent .ofz-copy-wrapper { background: rgba(74, 141, 240, 0.14); }
+#rebalancePanelContent .ofz-copy-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #2f6fd6;
+}
+#rebalancePanelContent .ofz-copy-icon { width: 15px; height: 15px; stroke: #7ba0dd; }
+/* Помощь-вопрос рядом с НКД / доходностью */
+#rebalancePanelContent .ofz-help-icon {
+    width: 16px; height: 16px;
+    background: #e8eef6; color: #8aa0bd;
+    font-size: 10px; font-weight: 800;
+}
+body.dark-mode #rebalancePanelContent .ofz-help-icon { background: rgba(255,255,255,0.08); color: #9aa7ba; }
+/* Кнопка «Открыть график» */
+#rebalancePanelContent .ofz-aurora-chart-btn {
+    margin-top: 16px;
+    padding: 15px;
+    border-radius: 15px;
+    background: var(--r4-dark);
+    font-family: 'Manrope', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+}
+#rebalancePanelContent .ofz-aurora-chart-btn svg { color: #7ee2a8; stroke: #7ee2a8; }
+
+/* ============================================================
+   4. АКЦИИ — сетка эшелонов с карточками и полосками потенциала
+   ============================================================ */
+#rebalancePanelContent .stocks-aurora-container.rb-card { padding: 0; }
+#rebalancePanelContent .esh {
+    padding: 18px 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+/* Таблица эшелонов: зазор между шапкой (I–IV) и первым рядом карточек */
+#rebalancePanelContent .stocks-aurora-table {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Тёмные шапки колонок-эшелонов (I–IV) */
+#rebalancePanelContent .stocks-table-header {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+}
+#rebalancePanelContent .esh-colhead {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 11px 12px;
+    background: var(--r4-dark);
+    border-radius: 12px;
+    box-shadow: 0 6px 16px rgba(20, 27, 38, .16);
+    cursor: pointer;
+    transition: transform .15s;
+}
+#rebalancePanelContent .esh-colhead:hover { transform: translateY(-1px); }
+#rebalancePanelContent .esh-colhead .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 800;
+    transition: text-shadow .2s, transform .2s;
+}
+#rebalancePanelContent .esh-colhead.e1 .num { color: #3ad08a; }
+#rebalancePanelContent .esh-colhead.e2 .num { color: #5b91f5; }
+#rebalancePanelContent .esh-colhead.e3 .num { color: #f0a04a; }
+#rebalancePanelContent .esh-colhead.e4 .num { color: #f06a72; }
+#rebalancePanelContent .esh-colhead .num.active { text-shadow: 0 0 14px currentColor; transform: scale(1.12); }
+
+/* Тело таблицы — ряды по 4 карточки */
+#rebalancePanelContent .stocks-table-body { gap: 10px; }
+#rebalancePanelContent .stocks-table-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+}
+
+/* Карточка тикера */
+#rebalancePanelContent .stocks-cell.esh-card {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 13px 14px;
+    background: var(--r4-card);
+    border: 1px solid #e7edf4;
+    border-radius: 14px;
+    box-shadow: 0 2px 6px rgba(24, 38, 60, .04);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    cursor: pointer;
+    transition: transform .15s, box-shadow .16s, border-color .15s;
+}
+body.dark-mode #rebalancePanelContent .stocks-cell.esh-card { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.08); }
+#rebalancePanelContent .stocks-cell.esh-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(24, 38, 60, .1);
+    border-color: #d3dde9;
+}
+#rebalancePanelContent .stocks-cell.esh-card.active {
+    border-color: var(--r4-dark);
+    box-shadow: 0 0 0 1.5px var(--r4-dark), 0 12px 24px rgba(24, 38, 60, .12);
+}
+body.dark-mode #rebalancePanelContent .stocks-cell.esh-card.active { border-color: #fff; box-shadow: 0 0 0 1.5px #fff; }
+#rebalancePanelContent .esh-card .ec-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+}
+#rebalancePanelContent .esh-card .stocks-cell-ticker {
+    font-family: 'Manrope', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: .02em;
+    color: var(--r4-text);
+}
+#rebalancePanelContent .esh-card .stocks-cell-change {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+#rebalancePanelContent .esh-card .stocks-cell-change.positive { color: var(--r4-green); }
+#rebalancePanelContent .esh-card .stocks-cell-change.negative { color: #e0556a; }
+#rebalancePanelContent .esh-card .stocks-cell-change.neutral { color: var(--r4-muted); }
+#rebalancePanelContent .esh-card .ec-name {
+    margin-top: 4px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #8c98a8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+#rebalancePanelContent .esh-card .ec-bar {
+    margin-top: 11px;
+    height: 5px;
+    border-radius: 99px;
+    background: #eef2f7;
+    overflow: hidden;
+}
+body.dark-mode #rebalancePanelContent .esh-card .ec-bar { background: rgba(255, 255, 255, 0.08); }
+#rebalancePanelContent .esh-card .ec-bar > i {
+    display: block;
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, #2fc985, #16b56b);
+}
+/* Пустые ячейки эшелона */
+#rebalancePanelContent .stocks-cell.empty,
+#rebalancePanelContent .stocks-cell:empty {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    cursor: default;
+    pointer-events: none;
+}
+
+/* Подсветка столбца эшелона */
+#rebalancePanelContent .stocks-cell.column-highlight-1 { border-color: rgba(29, 157, 108, .5); box-shadow: 0 0 0 1px rgba(29, 157, 108, .35); }
+#rebalancePanelContent .stocks-cell.column-highlight-2 { border-color: rgba(61, 111, 209, .5); box-shadow: 0 0 0 1px rgba(61, 111, 209, .35); }
+#rebalancePanelContent .stocks-cell.column-highlight-3 { border-color: rgba(208, 123, 42, .5); box-shadow: 0 0 0 1px rgba(208, 123, 42, .35); }
+#rebalancePanelContent .stocks-cell.column-highlight-4 { border-color: rgba(216, 67, 79, .5); box-shadow: 0 0 0 1px rgba(216, 67, 79, .35); }
+
+/* ============================================================
+   5. КАРТОЧКА ДЕТАЛЕЙ АКЦИИ (.sd)
+   ============================================================ */
+#rebalancePanelContent .stock-detail-card {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    padding: 0;
+    margin: 2px 0;
+}
+#rebalancePanelContent .sd {
+    position: relative;
+    border: 1.5px solid var(--r4-line2);
+    border-radius: 18px;
+    padding: 20px 22px;
+    background: var(--r4-card);
+}
+body.dark-mode #rebalancePanelContent .sd { background: rgba(255, 255, 255, 0.03); }
+#rebalancePanelContent .sd-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    color: var(--r4-muted);
+    cursor: pointer;
+    transition: background .15s, color .15s;
+}
+#rebalancePanelContent .sd-close:hover { background: rgba(0, 0, 0, .05); color: var(--r4-text); }
+#rebalancePanelContent .sd-close svg { width: 15px; height: 15px; }
+#rebalancePanelContent .sd-top { display: flex; align-items: flex-start; gap: 12px; padding-right: 30px; }
+#rebalancePanelContent .sd-id { flex: 1; min-width: 0; }
+#rebalancePanelContent .sd-top .tk { font-size: 21px; font-weight: 800; letter-spacing: .01em; color: var(--r4-text); }
+#rebalancePanelContent .sd-top .nm { margin-top: 3px; font-size: 14px; font-weight: 600; color: var(--r4-muted2); }
+#rebalancePanelContent .sd-tier-circle {
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    border-radius: 999px;
+    border: 2.5px solid;
+    display: grid;
+    place-items: center;
+    background: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 800;
+}
+body.dark-mode #rebalancePanelContent .sd-tier-circle { background: #141b26; }
+#rebalancePanelContent .sd-sector {
+    margin-top: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 12px;
+    background: #eaf1fb;
+    color: #2f6fd6;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 700;
+}
+body.dark-mode #rebalancePanelContent .sd-sector { background: rgba(74, 141, 240, 0.14); color: #7ba6e8; }
+#rebalancePanelContent .sd-sector .ic { display: inline-flex; }
+#rebalancePanelContent .sd-hr { height: 1px; background: var(--r4-line); margin: 16px 0 4px; }
+/* Блок потенциала — зелёный градиент */
+#rebalancePanelContent .sd-pot {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 15px 18px;
+    background: linear-gradient(135deg, #edfaf3 0%, #f0fdf6 100%);
+    border-radius: 14px;
+}
+body.dark-mode #rebalancePanelContent .sd-pot { background: rgba(22, 181, 107, 0.1); }
+#rebalancePanelContent .sd-pot-label {
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #5a9a78;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+#rebalancePanelContent .sd-pot-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 28px;
+    font-weight: 800;
+    color: #1a9d68;
+    letter-spacing: -0.01em;
+}
+#rebalancePanelContent .sd-pot-horizon {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #5a8a72;
+    white-space: nowrap;
+}
+#rebalancePanelContent .sd-pot-horizon .ic { display: inline-flex; }
+/* key-value внутри детали акции */
+#rebalancePanelContent .sd .kv {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 2px;
+    border-top: 1px solid var(--r4-line);
+}
+#rebalancePanelContent .sd .kv .k { font-size: 14px; font-weight: 600; color: var(--r4-muted2); }
+#rebalancePanelContent .sd .kv .v { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: var(--r4-text); }
+#rebalancePanelContent .sd-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
+#rebalancePanelContent .sd-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 15px;
+    border-radius: 14px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor: pointer;
+}
+#rebalancePanelContent .sd-btn .ic { display: inline-flex; }
+#rebalancePanelContent .sd-btn.dark { background: var(--r4-dark); color: #fff; }
+#rebalancePanelContent .sd-btn.dark .ic { color: #7ee2a8; }
+#rebalancePanelContent .sd-btn.light { background: #f0f4f9; color: var(--r4-text); }
+body.dark-mode #rebalancePanelContent .sd-btn.light { background: rgba(255, 255, 255, 0.08); }
+#rebalancePanelContent .sd-btn.light .ic { color: var(--r4-muted2); }
+
+/* «ISIN»-pill общая (используется и в детали акции) */
+#rebalancePanelContent .isin-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 6px 12px;
+    background: #eaf1fb;
+    color: #2f6fd6;
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+}
+body.dark-mode #rebalancePanelContent .isin-pill { background: rgba(74, 141, 240, 0.14); color: #7ba6e8; }
+#rebalancePanelContent .isin-pill .cp { display: inline-flex; color: #7ba0dd; }
+
+/* Кнопка-подсказка «Что такое эшелоны?» */
+#rebalancePanelContent .esh-hint-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    align-self: flex-start;
+    padding: 9px 15px;
+    border: none;
+    border-radius: 10px;
+    background: #eef2f8;
+    color: var(--r4-muted2);
+    font-family: 'Manrope', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+}
+body.dark-mode #rebalancePanelContent .esh-hint-btn { background: rgba(255, 255, 255, 0.06); color: #9aa7ba; }
+#rebalancePanelContent .esh-hint-btn:hover { background: #e2eaf5; color: #2f3b4d; }
+#rebalancePanelContent .esh-hint-btn svg { flex-shrink: 0; }
+
+/* ============================================================
+   6. GHOST TRIGGER (свернуть/развернуть) — лёгкая подгонка
+   ============================================================ */
+#rebalancePanelContent .rebalance-ghost-trigger { margin: 16px 0 4px; }
+
+/* ============================================================
+   7. ДЕСКТОП (>=1024px): рельса-сайдбар + карточки во всю ширину
+   ============================================================ */
+@media (min-width: 1024px) {
+    /* Раскладка как в эталоне R4: тёмная рельса СЛЕВА (фикс. ширина),
+       таблица справа. Перебиваем сетку из site-layout.css. */
+    #rebalancePanelContent {
+        grid-template-columns: 320px minmax(0, 1fr);
+        column-gap: 22px;
+    }
+    #rbLeftRail { grid-column: 1; grid-row: 1; }
+    #rbRightCol { grid-column: 2; grid-row: 1; }
+
+    #rbRightCol .rb-card { width: 100%; }
+    #rbRightCol .rebalance-tab-content.active { padding: 0; background: transparent; box-shadow: none; }
+    /* Чуть крупнее колонки на широком экране */
+    #rebalancePanelContent .ofz-aurora-colhead,
+    #rebalancePanelContent .ofz-aurora-summary {
+        grid-template-columns: 30px minmax(0, 1fr) 118px 150px 28px;
+        padding-left: 24px;
+        padding-right: 24px;
+    }
+    #rebalancePanelContent .rb-thead { padding: 19px 26px 18px; }
+    #rebalancePanelContent .esh { padding: 20px 22px 24px; }
+}
+
+/* ============================================================
+   8. МОБИЛЬНЫЙ (<1024px): тёмная рельса компактнее
+   ============================================================ */
+@media (max-width: 1023px) {
+    /* На узком экране прячем статистику и рекомендации, оставляя
+       суть: описание, что продаём/покупаем и переключатель. */
+    #rebalancePanelContent .sr-stats,
+    #rebalancePanelContent .sr-foot { display: none; }
+    #rebalancePanelContent .smart-replace-card { margin-bottom: 20px; }
+
+    /* Узкие колонки, чтобы название ОФЗ не обрезалось и шапка не наезжала */
+    #rebalancePanelContent .ofz-aurora-colhead,
+    #rebalancePanelContent .ofz-aurora-summary {
+        grid-template-columns: 22px minmax(0, 1fr) 78px 84px 18px;
+        gap: 6px;
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+    #rebalancePanelContent .ofz-aurora-colhead {
+        font-size: 9.5px;
+        letter-spacing: 0;
+    }
+    #rebalancePanelContent .ofz-aurora-colhead span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    #rebalancePanelContent .ofz-aurora-yield { font-size: 14px; }
+    #rebalancePanelContent .ofz-aurora-price { font-size: 13px; }
+    #rebalancePanelContent .ofz-aurora-name { font-size: 15px; }
+
+    /* Эшелоны остаются в 4 колонки (как столбцы I–IV), но компактнее */
+    #rebalancePanelContent .esh { padding: 14px 12px 18px; gap: 12px; }
+    #rebalancePanelContent .stocks-table-header,
+    #rebalancePanelContent .stocks-table-body { gap: 6px; }
+    #rebalancePanelContent .stocks-table-row { gap: 6px; }
+    #rebalancePanelContent .esh-colhead { padding: 9px 6px; }
+    #rebalancePanelContent .stocks-cell.esh-card { padding: 9px 8px; }
+    #rebalancePanelContent .esh-card .ec-top { flex-direction: column; align-items: flex-start; gap: 2px; }
+    #rebalancePanelContent .esh-card .stocks-cell-ticker { font-size: 12.5px; }
+    #rebalancePanelContent .esh-card .stocks-cell-change { font-size: 11px; }
+    #rebalancePanelContent .esh-card .ec-name { font-size: 9.5px; margin-top: 3px; }
+    #rebalancePanelContent .esh-card .ec-bar { margin-top: 8px; }
+    #rebalancePanelContent .sd-btns { grid-template-columns: 1fr 1fr; gap: 10px; }
+}
