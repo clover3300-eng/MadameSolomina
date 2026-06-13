@@ -116,7 +116,7 @@ body.dark-mode .bt2-step:not(.is-last) .bt2-rail::after {
 .bt2-badge.is-active {
     color: #16B56B;
     border-color: rgba(22, 181, 107, 0.55);
-    background: rgba(22, 181, 107, 0.06);
+    background: #ffffff;
 }
 body.dark-mode .bt2-badge {
     background: #1d2734;
@@ -132,8 +132,11 @@ body.dark-mode .bt2-badge.is-active {
 /* ---------- Тело шага ---------- */
 .bt2-body { min-width: 0; padding-top: 5px; }
 .bt2-label {
+    font-family: 'Manrope', sans-serif;
     font-size: 12.5px;
     font-weight: 700;
+    letter-spacing: 1.75px;
+    text-transform: uppercase;
     color: #6C7A8D;
     margin-bottom: 11px;
 }
@@ -219,10 +222,14 @@ body.dark-mode #btConfigCol.bt2-card .bt-source-btn.active {
 }
 .bt2-empty {
     background: #F8FAFC;
+    border: 1.5px dashed #CCD8E5;
     border-radius: 14px;
-    padding: 18px;
+    padding: 14px 16px;
 }
-body.dark-mode .bt2-empty { background: rgba(15, 23, 42, 0.35); }
+body.dark-mode .bt2-empty {
+    background: rgba(15, 23, 42, 0.35);
+    border-color: rgba(255, 255, 255, 0.14);
+}
 .bt2-empty-head {
     display: flex;
     align-items: center;
@@ -319,11 +326,16 @@ body.dark-mode #btConfigCol #btRunBtn:disabled {
 .bt2-feat {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
+    gap: 9px;
+    padding: 9px 16px;
+    border: 1.5px dashed #CCD8E5;
+    border-radius: 999px;
+    background: transparent;
     font-size: 13px;
     font-weight: 700;
     color: #8593A6;
 }
+body.dark-mode .bt2-feat { border-color: rgba(255, 255, 255, 0.14); }
 .bt2-feat svg { width: 15px; height: 15px; color: #AAB8C9; flex-shrink: 0; }
 
 /* ---------- Результаты ---------- */
