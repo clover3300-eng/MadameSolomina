@@ -84,27 +84,23 @@ body.dark-mode .screen > .noise-overlay {
     overflow: visible;
 }
 
-/* === 2. AURORA MESH GRADIENT BACKGROUND === */
-#rebalancePanelContent::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: var(--bg-base);
-    z-index: -2;
+/* === 2. ФОН ВКЛАДКИ РЕБАЛАНС ===
+   Раньше фон рисовался через position:fixed псевдоэлементы. Внутри
+   скролл-контейнера #contentArea и под body{zoom} на десктопе fixed
+   ломается и фон «слетает» при прокрутке. Теперь фон задаётся прямо
+   на скролл-панель (#panel-rebalance ниже) — она растёт вместе с
+   контентом, фиксироваться нечему, слетать нечему. */
+#rebalancePanelContent::before,
+#rebalancePanelContent::after {
+    content: none;
 }
 
-#rebalancePanelContent::after {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: -1;
+/* Стабильный фон вкладки: на самой скролл-панели, без fixed */
+#panel-rebalance {
+    background: var(--bg-base);
+}
+body.dark-mode #panel-rebalance {
+    background: var(--bg-base);
 }
 
 /* Aurora Floating Spots */

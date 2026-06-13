@@ -1,0 +1,330 @@
+/* ============================================================
+   ВКЛАДКА «ТЕСТ ПОРТФЕЛЯ» — редизайн по референсу (степпер)
+   ============================================================
+   Подключается ПОСЛЕ webapp-layout.css / site-layout.css, чтобы
+   перебивать старые .bt-* стили. Функциональные классы и id
+   (#btDateInput, #btSourceCalc/Manual, #btRunBtn, #btResults,
+   ручной ввод тикеров) сохранены — логика в js/webapp-tabs.js. */
+
+/* ---------- Контейнер: одна центрированная колонка ---------- */
+.bt2-wrap {
+    max-width: 660px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* На десктопе перебиваем старую двухколоночную grid-раскладку */
+@media (min-width: 1024px) {
+    #panel-backtest.active {
+        display: block;
+        width: auto;
+        max-width: none !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    #btConfigCol {
+        position: static;
+        grid-column: auto;
+        grid-row: auto;
+    }
+    #panel-backtest > .bt2-wrap > #btResults { grid-column: auto; width: auto; }
+}
+
+/* ---------- Шапка ---------- */
+.bt2-head { margin-bottom: 22px; }
+.bt2-eyebrow {
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 2.25px;
+    text-transform: uppercase;
+    color: #8593A6;
+}
+.bt2-h1 {
+    margin: 8px 0 6px;
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    color: #111927;
+    line-height: 1.1;
+}
+.bt2-sub {
+    margin: 0;
+    font-size: 15.5px;
+    color: #6C7A8D;
+    line-height: 1.4;
+}
+body.dark-mode .bt2-h1 { color: #F1F6FB; }
+body.dark-mode .bt2-sub { color: #9AA8BC; }
+
+/* ---------- Карточка степпера ---------- */
+#btConfigCol.bt2-card {
+    background: #ffffff;
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 16px 36px rgba(24, 38, 60, 0.08);
+    padding: 30px;
+    margin: 0;
+    counter-reset: none;
+}
+body.dark-mode #btConfigCol.bt2-card {
+    background: #1d2734;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+}
+
+/* ---------- Шаг: бейдж-рельса + тело ---------- */
+.bt2-step {
+    display: grid;
+    grid-template-columns: 34px 1fr;
+    column-gap: 16px;
+}
+.bt2-step:not(.is-last) { padding-bottom: 26px; }
+
+.bt2-rail {
+    position: relative;
+    display: flex;
+    justify-content: center;
+}
+/* Соединительная линия между бейджами */
+.bt2-step:not(.is-last) .bt2-rail::after {
+    content: '';
+    position: absolute;
+    top: 40px;
+    bottom: -22px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    background: rgba(133, 147, 166, 0.2);
+}
+body.dark-mode .bt2-step:not(.is-last) .bt2-rail::after {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.bt2-badge {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 1.5px solid rgba(133, 147, 166, 0.4);
+    color: #8593A6;
+    font-size: 13.5px;
+    font-weight: 700;
+    box-sizing: border-box;
+}
+.bt2-badge.is-active {
+    color: #16B56B;
+    border-color: rgba(22, 181, 107, 0.55);
+    background: rgba(22, 181, 107, 0.06);
+}
+body.dark-mode .bt2-badge {
+    background: #1d2734;
+    border-color: rgba(255, 255, 255, 0.18);
+    color: #9AA8BC;
+}
+body.dark-mode .bt2-badge.is-active {
+    color: #4ADE80;
+    border-color: rgba(74, 222, 128, 0.5);
+    background: rgba(74, 222, 128, 0.1);
+}
+
+/* ---------- Тело шага ---------- */
+.bt2-body { min-width: 0; padding-top: 5px; }
+.bt2-label {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #6C7A8D;
+    margin-bottom: 11px;
+}
+body.dark-mode .bt2-label { color: #9AA8BC; }
+
+/* ---------- Поле даты ---------- */
+#btConfigCol.bt2-card .bt-date-input {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 13px 16px;
+    border: 1px solid rgba(133, 147, 166, 0.28);
+    border-radius: 12px;
+    background: #ffffff;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    color: #111927;
+}
+#btConfigCol.bt2-card .bt-date-input:focus {
+    outline: none;
+    border-color: rgba(22, 181, 107, 0.55);
+    box-shadow: 0 0 0 3px rgba(22, 181, 107, 0.12);
+}
+body.dark-mode #btConfigCol.bt2-card .bt-date-input {
+    background: rgba(15, 23, 42, 0.4);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #F1F6FB;
+}
+/* site-layout ограничивает дату 230px — растягиваем на всю ширину карточки */
+#btConfigCol #btDateInput { max-width: none; text-align: left; }
+
+/* ---------- Сегментный переключатель источника ---------- */
+#btConfigCol.bt2-card .bt-source-switcher {
+    display: flex;
+    gap: 0;
+    padding: 5px;
+    background: #EEF2F8;
+    border: none;
+    border-radius: 12px;
+    margin: 0 0 12px;
+}
+body.dark-mode #btConfigCol.bt2-card .bt-source-switcher {
+    background: rgba(255, 255, 255, 0.06);
+}
+#btConfigCol.bt2-card .bt-source-btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 11px 12px;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    color: #5F6D80;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: none;
+    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+}
+#btConfigCol.bt2-card .bt-source-btn svg { width: 15px; height: 15px; }
+#btConfigCol.bt2-card .bt-source-btn.active {
+    background: #ffffff;
+    color: #111927;
+    box-shadow: 0 3px 10px rgba(24, 38, 60, 0.08);
+}
+body.dark-mode #btConfigCol.bt2-card .bt-source-btn { color: #9AA8BC; }
+body.dark-mode #btConfigCol.bt2-card .bt-source-btn.active {
+    background: #2a3547;
+    color: #F1F6FB;
+}
+
+/* ---------- Пустое состояние (Из расчёта) ---------- */
+/* site-layout оборачивает #btSourceCalcInfo в свой серый инсет-бокс —
+   убираем его, единственная рамка — у .bt2-empty ниже */
+#btConfigCol #btSourceCalcInfo {
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+.bt2-empty {
+    background: #F8FAFC;
+    border-radius: 14px;
+    padding: 18px;
+}
+body.dark-mode .bt2-empty { background: rgba(15, 23, 42, 0.35); }
+.bt2-empty-head {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+.bt2-empty-head svg { width: 16px; height: 16px; color: #97A3B4; flex-shrink: 0; }
+.bt2-empty-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #38465A;
+}
+body.dark-mode .bt2-empty-title { color: #DCE3EC; }
+.bt2-empty-desc {
+    margin: 8px 0 14px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #8593A6;
+}
+.bt2-goto {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 10px;
+    background: #141B26;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.bt2-goto svg { color: #7EE2A8; }
+.bt2-goto:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(20, 27, 38, 0.25); }
+.bt2-goto:active { transform: translateY(0); }
+body.dark-mode .bt2-goto { background: #0f172a; }
+
+/* ---------- Кнопка запуска (2 id, чтобы перебить site-layout) ---------- */
+#btConfigCol #btRunBtn {
+    width: 100% !important;
+    margin: 0 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 15px;
+    border: none;
+    border-radius: 14px;
+    background: #141B26;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+}
+#btConfigCol #btRunBtn svg { width: 18px; height: 18px; stroke: currentColor; }
+#btConfigCol #btRunBtn:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px rgba(20, 27, 38, 0.25);
+}
+#btConfigCol #btRunBtn:disabled {
+    background: #E4EAF2;
+    color: #97A3B4;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+body.dark-mode #btConfigCol #btRunBtn:disabled {
+    background: rgba(255, 255, 255, 0.07);
+    color: #6B7890;
+}
+.bt2-run-note {
+    margin-top: 10px;
+    font-size: 13px;
+    color: #8593A6;
+}
+
+/* ---------- Футер «После запуска» ---------- */
+.bt2-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px 20px;
+    margin-top: 18px;
+    padding: 0 4px;
+}
+.bt2-footer-label {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #8593A6;
+}
+.bt2-feat {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #8593A6;
+}
+.bt2-feat svg { width: 15px; height: 15px; color: #AAB8C9; flex-shrink: 0; }
+
+/* ---------- Результаты ---------- */
+#btResults:not(:empty) { margin-top: 18px; }

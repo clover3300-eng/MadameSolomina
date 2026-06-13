@@ -28,6 +28,7 @@
     <link rel="stylesheet" href="css/webapp-layout.css">
     <link id="siteLayoutCSS" rel="stylesheet" href="css/site-layout.css">
     <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/backtest.css">
     <link rel="stylesheet" href="css/desktop-zoom.css">
     
     <!-- Telegram WebApp API (fallback — works both in TG and browser) -->
@@ -237,53 +238,61 @@
 
         <!-- ===== TAB: ТЕСТ ПОРТФЕЛЯ (BACKTEST) ===== -->
         <div id="panel-backtest" class="tab-panel">
+          <div class="bt2-wrap">
 
-            <div class="bt-header">
-                <div class="bt-title">Тест портфеля</div>
-                <div class="bt-subtitle">P&amp;L портфеля на выбранную историческую дату</div>
+            <!-- Header -->
+            <div class="bt2-head">
+                <div class="bt2-eyebrow">Тест портфеля</div>
+                <h1 class="bt2-h1">Проверьте портфель на истории</h1>
+                <p class="bt2-sub">Узнайте, как выбранный состав вёл бы себя в прошлом</p>
             </div>
 
-            <div id="btConfigCol">
+            <!-- Stepper card -->
+            <div id="btConfigCol" class="bt2-card">
 
             <!-- Шаг 1: Дата -->
-            <div class="bt-config-card">
-                <div class="bt-config-label">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;vertical-align:middle;margin-right:4px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                    Дата оценки
+            <div class="bt2-step">
+                <div class="bt2-rail"><span class="bt2-badge is-active">1</span></div>
+                <div class="bt2-body">
+                    <div class="bt2-label">Дата оценки</div>
+                    <input type="date" id="btDateInput" class="bt-date-input" onchange="onBtDateChange()">
                 </div>
-                <input type="date" id="btDateInput" class="bt-date-input" style="width:100%;box-sizing:border-box;" onchange="onBtDateChange()">
             </div>
 
-            <!-- Шаг 2: Источник тикеров -->
-            <div class="bt-config-card" style="padding-bottom:8px;">
-                <div class="bt-config-label" style="margin-bottom:12px;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;vertical-align:middle;margin-right:4px;"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-                    Состав портфеля
-                </div>
+            <!-- Шаг 2: Состав портфеля -->
+            <div class="bt2-step">
+                <div class="bt2-rail"><span class="bt2-badge">2</span></div>
+                <div class="bt2-body">
+                    <div class="bt2-label">Состав портфеля</div>
 
-                <!-- Switcher: из расчёта / вручную -->
-                <div class="bt-source-switcher">
-                    <button class="bt-source-btn active" id="btSourceCalc" onclick="btSetSource('calc')">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
-                        Из расчёта
-                    </button>
-                    <button class="bt-source-btn" id="btSourceManual" onclick="btSetSource('manual')">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        Вручную
-                    </button>
-                </div>
+                    <!-- Switcher: из расчёта / вручную -->
+                    <div class="bt-source-switcher">
+                        <button class="bt-source-btn active" id="btSourceCalc" onclick="btSetSource('calc')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+                            Из расчёта
+                        </button>
+                        <button class="bt-source-btn" id="btSourceManual" onclick="btSetSource('manual')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Вручную
+                        </button>
+                    </div>
 
-                <!-- Из расчёта: инфо -->
-                <div id="btSourceCalcInfo" style="margin-top:12px;">
-                    <div class="bt-portfolio-note">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-                        <div class="bt-portfolio-note-text">
-                            Портфель из вкладки «Расчёт»<span id="btCalcSummary" class="bt-calc-status">Портфель не рассчитан</span>
+                    <!-- Из расчёта: пустое состояние -->
+                    <div id="btSourceCalcInfo">
+                        <div class="bt2-empty">
+                            <div class="bt2-empty-head">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                                <span id="btCalcSummary" class="bt2-empty-title">Портфель не рассчитан</span>
+                            </div>
+                            <div class="bt2-empty-desc">Соберите портфель во вкладке «Расчёт» — он подставится сюда автоматически.</div>
+                            <button class="bt2-goto" onclick="switchToCalcOrPortfolio()">
+                                Перейти к расчёту
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            </button>
                         </div>
                     </div>
-                </div>
 
-                <!-- Вручную: добавление тикеров -->
+                    <!-- Вручную: добавление тикеров -->
                 <div id="btSourceManualBlock" style="display:none;margin-top:12px;">
                     <!-- Добавить один тикер -->
                     <div class="bt-mini-label">Добавить по одному — тикер и количество</div>
@@ -322,27 +331,36 @@
                     <!-- Список тикеров -->
                     <div id="btTickerList" style="margin-top:4px;"></div>
                 </div>
-            </div>
+                </div><!-- /bt2-body -->
+            </div><!-- /bt2-step 2 -->
 
-            <!-- Кнопка запуска -->
-            <button class="bt-run-btn" id="btRunBtn" onclick="runBacktest()" disabled style="width:100%;margin-bottom:16px;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg>
-                Запустить тест
-            </button>
-            </div><!-- /btConfigCol -->
-
-            <!-- Results -->
-            <div id="btResults">
-                <div class="portfolio-empty-new" id="btEmpty">
-                    <div class="empty-icon" style="background:linear-gradient(135deg,rgba(44,54,76,0.08),rgba(91,124,153,0.08));border:1px solid rgba(91,124,153,0.15);">
-                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#5B7C99" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-                        </svg>
-                    </div>
-                    <div class="empty-title">Тест не запущен</div>
-                    <div class="empty-text">Выберите дату, добавьте тикеры или скопируйте портфель из расчёта и нажмите «Запустить тест».</div>
+            <!-- Шаг 3: Запуск -->
+            <div class="bt2-step is-last">
+                <div class="bt2-rail"><span class="bt2-badge">3</span></div>
+                <div class="bt2-body">
+                    <div class="bt2-label">Запуск</div>
+                    <button class="bt-run-btn" id="btRunBtn" onclick="runBacktest()" disabled>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg>
+                        Запустить тест
+                    </button>
+                    <div class="bt2-run-note">Станет доступно после расчёта портфеля</div>
                 </div>
             </div>
+
+            </div><!-- /btConfigCol -->
+
+            <!-- После запуска -->
+            <div class="bt2-footer">
+                <span class="bt2-footer-label">После запуска:</span>
+                <span class="bt2-feat"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>график доходности</span>
+                <span class="bt2-feat"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>макс. просадка</span>
+                <span class="bt2-feat"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>сравнение с MOEX</span>
+            </div>
+
+            <!-- Results -->
+            <div id="btResults"></div>
+
+          </div><!-- /bt2-wrap -->
         </div>
 
     </div><!-- /contentArea -->
