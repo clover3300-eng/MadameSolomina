@@ -95,12 +95,13 @@ body.dark-mode .screen > .noise-overlay {
     content: none;
 }
 
-/* Стабильный фон вкладки: на самой скролл-панели, без fixed */
+/* Фон вкладки: как на «Главной» — панель прозрачна, виден градиент #appShell.
+   Раньше тут лежал flat var(--bg-base), перебивавший градиент шелла. */
 #panel-rebalance {
-    background: var(--bg-base);
+    background: transparent;
 }
 body.dark-mode #panel-rebalance {
-    background: var(--bg-base);
+    background: transparent;
 }
 
 /* Aurora Floating Spots */
