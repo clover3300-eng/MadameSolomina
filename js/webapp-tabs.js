@@ -427,9 +427,11 @@ function switchTab(tabId) {
     
     // Update tab buttons (top bar legacy + bottom bar)
     document.querySelectorAll('.tab-btn-new, .btab, .sb-item[data-tab]').forEach(btn => {
-        // Кнопка "Расчёт" остаётся активной когда открыт Портфель
-        var isActive = btn.dataset.tab === tabId || 
-                       (btn.dataset.tab === 'calc' && tabId === 'portfolio');
+        // Кнопка "Расчёт" остаётся активной когда открыт Портфель,
+        // кнопка "Главная" (домик) — когда открыт Дашборд
+        var isActive = btn.dataset.tab === tabId ||
+                       (btn.dataset.tab === 'calc' && tabId === 'portfolio') ||
+                       (btn.dataset.tab === 'home' && tabId === 'dashboard');
         btn.classList.toggle('active', isActive);
     });
 
@@ -473,7 +475,10 @@ function switchTab(tabId) {
     if (tabId === 'portfolio' && window.v3SyncCapHeight) {
         setTimeout(window.v3SyncCapHeight, 80);
     }
-    
+    if (tabId === 'dashboard' && window.renderDashboard) {
+        window.renderDashboard();
+    }
+
     // Scroll content area to top
     const ca = document.getElementById('contentArea');
     if (ca) ca.scrollTop = 0;
@@ -529,6 +534,16 @@ function closeScreenOverlay(screenId) {
 window.goHomeScreen = function() {
     switchTab('home');
     document.body.classList.add('tab-home');
+};
+
+// Домик в навигации: на десктопе открывает Дашборд, на мобиле — приветствие.
+// Логотип «Madame Solomi'na» в шапке/сайдбаре всегда ведёт на приветствие (switchTab('home')).
+window.goHome = function() {
+    if (window.matchMedia && window.matchMedia('(min-width: 1024px)').matches) {
+        switchTab('dashboard');
+    } else {
+        switchTab('home');
+    }
 };
 
 // Override openTerminal/openTerminalOrRegister

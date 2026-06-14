@@ -30,6 +30,7 @@
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/backtest.css">
     <link rel="stylesheet" href="css/rebalance-r4.css">
+    <link rel="stylesheet" href="css/dashboard-panel.css">
     <link rel="stylesheet" href="css/desktop-zoom.css">
     
     <!-- Telegram WebApp API (fallback — works both in TG and browser) -->
@@ -69,7 +70,7 @@
             </button>
         </div>
         <div id="sbNav">
-            <button class="sb-item" data-tab="home" onclick="switchTab('home')" title="Главная">
+            <button class="sb-item" data-tab="home" onclick="goHome()" title="Главная">
                 <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                 <span class="sb-label">Главная</span>
             </button>
@@ -184,6 +185,30 @@
                         Secure Access
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- ===== TAB: ДАШБОРД (desktop home) ===== -->
+        <div id="panel-dashboard" class="tab-panel">
+            <div class="dash2-wrap">
+                <div class="dash2-head">
+                    <div class="dash2-head-text">
+                        <div class="dash2-eyebrow">Дашборд</div>
+                        <h1 class="dash2-title">Обзор портфеля</h1>
+                    </div>
+                </div>
+
+                <!-- Рыночные данные: IMOEX / USD / BTC -->
+                <div class="dash2-market" id="dash2Market"></div>
+
+                <!-- Основная сетка: портфель + ставки -->
+                <div class="dash2-grid">
+                    <div class="dash2-card dash2-portfolio" id="dash2Portfolio"></div>
+                    <div class="dash2-card dash2-rates" id="dash2Rates"></div>
+                </div>
+
+                <!-- Лучшее для ребаланса: ОФЗ + эшелоны -->
+                <div class="dash2-card dash2-rebal" id="dash2Rebal"></div>
             </div>
         </div>
 
@@ -1882,6 +1907,7 @@
 <script src="js/menu-controller.js" defer></script>
 <script src="js/vanguard-test.js" defer></script>
 <script src="js/webapp-tabs.js" defer></script>
+<script src="js/dashboard.js" defer></script>
 <script src="js/sidebar.js" defer></script>
 </body>
 </html>

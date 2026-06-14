@@ -1372,6 +1372,31 @@
         body.sb-collapsed .sb-item.active::before { left: -8px; }
         body.sb-collapsed #sbFoot { padding: 10px 8px; }
 
+        /* ===== HOVER-PEEK: collapsed rail expands as a floating overlay ===== */
+        /* The grid track stays at the collapsed width (content & header never
+           shift); only the inner panels widen and float over the content. */
+        #sbPanel, #sbFoot {
+            transition: width 0.24s cubic-bezier(0.32, 0.72, 0.28, 1),
+                        box-shadow 0.24s ease;
+        }
+        body.sb-collapsed.sb-peek #sideBar { z-index: 60; }
+        body.sb-collapsed.sb-peek #sbPanel,
+        body.sb-collapsed.sb-peek #sbFoot { width: 222px; }
+        body.sb-collapsed.sb-peek #sbPanel { box-shadow: 0 22px 50px -8px rgba(22,27,39,0.45); }
+        body.sb-collapsed.sb-peek #sbFoot { box-shadow: 0 18px 40px -10px rgba(22,27,39,0.4); }
+        body.sb-collapsed.sb-peek .sb-label { display: inline; }
+        body.sb-collapsed.sb-peek .sb-logo-text { display: flex; }
+        body.sb-collapsed.sb-peek #sbHead {
+            justify-content: space-between;
+            padding-left: 14px; padding-right: 14px;
+        }
+        body.sb-collapsed.sb-peek #sbNav { padding: 4px 10px; }
+        body.sb-collapsed.sb-peek .sb-item {
+            justify-content: flex-start; padding: 11px 12px; gap: 12px;
+        }
+        body.sb-collapsed.sb-peek .sb-item.active::before { left: -10px; }
+        body.sb-collapsed.sb-peek #sbFoot { padding: 8px; }
+
         /* Panels: width + breathing room */
         .tab-panel { max-width: 1240px; margin: 0 auto; padding: 18px 40px 64px; width: 100%; box-sizing: border-box; }
         #panel-portfolio { padding-left: 0; padding-top: 4px; }

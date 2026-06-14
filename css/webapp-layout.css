@@ -1801,7 +1801,11 @@
         flex-direction: column;
         align-items: center;
         gap: 16px;
-        margin-bottom: 60px;
+        margin-bottom: 44px;
+        /* На вкладке-приветствии центрируем как единый блок:
+           гасим устаревший -8vh сдвиг из home-mode, чтобы герой
+           был выровнен по центру, а не «уезжал» вверх. */
+        transform: none !important;
     }
     
     /* Кнопка ОТКРЫТЬ Terminal — при клике переключает на вкладку Расчёт */

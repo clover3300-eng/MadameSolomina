@@ -1,15 +1,61 @@
 // ===== SITE SIDEBAR CONTROLLER =====
 (function() {
-    // Restore collapsed state ASAP (avoid flash)
-    try {
-        if (localStorage.getItem('sbCollapsed') === '1') {
-            document.body.classList.add('sb-collapsed');
-        }
-    } catch (e) {}
+    var sbMqDesktop = window.matchMedia ? window.matchMedia('(min-width: 1024px)') : { matches: false };
+    var sbIsDesktop = function() { return sbMqDesktop.matches; };
+
+    // Default state: on desktop the sidebar rests collapsed (icon rail) and
+    // expands on hover; on mobile it's an off-canvas drawer. The user can pin
+    // it open via the collapse toggle, which we remember in localStorage ('0').
+    // We (re)apply this whenever the viewport crosses the desktop breakpoint so
+    // it survives resizes and late viewport sizing.
+    function applySidebarDefault() {
+        try {
+            if (localStorage.getItem('sbCollapsed') === null) {
+                document.body.classList.toggle('sb-collapsed', sbIsDesktop());
+            }
+        } catch (e) {}
+        if (window.updateCollapseLabel) window.updateCollapseLabel();
+    }
+    applySidebarDefault();
+    if (sbMqDesktop.addEventListener) sbMqDesktop.addEventListener('change', applySidebarDefault);
+    else if (sbMqDesktop.addListener) sbMqDesktop.addListener(applySidebarDefault);
+    window.addEventListener('load', applySidebarDefault);
+
+    // Desktop hover-to-peek: while the cursor is over the collapsed rail the
+    // sidebar expands as a floating overlay (content/header never shift); moving
+    // the cursor away (into the content) collapses it again.
+    document.addEventListener('DOMContentLoaded', function() {
+        applySidebarDefault();
+
+        var sb = document.getElementById('sideBar');
+        if (!sb) return;
+        sb.addEventListener('mouseenter', function() {
+            if (sbIsDesktop() && document.body.classList.contains('sb-collapsed')) {
+                document.body.classList.add('sb-peek');
+            }
+        });
+        sb.addEventListener('mouseleave', function() {
+            document.body.classList.remove('sb-peek');
+        });
+    });
+
+    // Keep the footer toggle's label honest: collapsed → it pins the menu open,
+    // expanded → it collapses back to the icon rail.
+    function updateCollapseLabel() {
+        var btn = document.getElementById('sbCollapseBtn');
+        if (!btn) return;
+        var collapsed = document.body.classList.contains('sb-collapsed');
+        var lbl = btn.querySelector('.sb-label');
+        if (lbl) lbl.textContent = collapsed ? 'Закрепить' : 'Свернуть';
+        btn.title = collapsed ? 'Закрепить меню' : 'Свернуть меню';
+    }
+    window.updateCollapseLabel = updateCollapseLabel;
 
     window.toggleSidebarCollapse = function() {
         var collapsed = document.body.classList.toggle('sb-collapsed');
+        document.body.classList.remove('sb-peek');
         try { localStorage.setItem('sbCollapsed', collapsed ? '1' : '0'); } catch (e) {}
+        updateCollapseLabel();
         // ширина сайдбара изменилась → пересчитываем левый край портфеля
         requestAnimationFrame(function() {
             window.pfSyncLeftEdge && window.pfSyncLeftEdge();
@@ -36,7 +82,8 @@
     function updateDockActive(tabId) {
         document.querySelectorAll('#mobileDock [data-tab]').forEach(function(btn) {
             var isActive = btn.dataset.tab === tabId ||
-                           (btn.dataset.tab === 'calc' && tabId === 'portfolio');
+                           (btn.dataset.tab === 'calc' && tabId === 'portfolio') ||
+                           (btn.dataset.tab === 'home' && tabId === 'dashboard');
             btn.classList.toggle('active', isActive);
         });
     }
@@ -189,7 +236,8 @@
         updateDockActive(ct);
         document.querySelectorAll('.sb-item[data-tab]').forEach(function(btn) {
             var isActive = btn.dataset.tab === ct ||
-                           (btn.dataset.tab === 'calc' && ct === 'portfolio');
+                           (btn.dataset.tab === 'calc' && ct === 'portfolio') ||
+                           (btn.dataset.tab === 'home' && ct === 'dashboard');
             btn.classList.toggle('active', isActive);
         });
     });
