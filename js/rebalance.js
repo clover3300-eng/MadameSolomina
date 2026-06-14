@@ -636,7 +636,10 @@ function openStockDetail(ticker, echelon, clickedCell = null) {
             </div>
             <div class="sd-top">
                 <div class="sd-id">
-                    <div class="tk">${ticker}</div>
+                    <div class="sd-tk-row">
+                        <div class="tk">${ticker}</div>
+                        <button class="sd-copy" onclick="copyTickerNew('${ticker}')" title="Скопировать тикер" aria-label="Скопировать тикер"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg></button>
+                    </div>
                     <div class="nm">${companyName}</div>
                 </div>
                 <span class="sd-tier-circle" style="color:${tier.color};border-color:${tier.color}">${tier.roman}</span>
@@ -653,23 +656,33 @@ function openStockDetail(ticker, echelon, clickedCell = null) {
                     горизонт до 36 мес.
                 </div>
             </div>
-            <div class="sd-hr"></div>
-            <div class="kv">
-                <span class="k">Код (тикер)</span>
-                <span class="v"><span class="isin-pill" onclick="copyTickerNew('${ticker}')">${ticker}<span class="cp"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg></span></span></span>
+            <div class="sd-block sd-desc-block" id="sdDescBlock" style="display:none;">
+                <div class="sd-hr"></div>
+                <div class="company-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Описание актива</div>
+                <div class="sd-desc" id="sdDesc"></div>
             </div>
-            <div class="kv">
-                <span class="k">Эшелон риска</span>
-                <span class="v">${tier.name}</span>
-            </div>
-            <div class="sd-btns">
+            <div class="sd-btns sd-btns-single">
                 <div class="sd-btn dark" onclick="openTradingViewDirect('${ticker}')">
                     <span class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12c2-5 4-5 6 0s4 5 6 0 4-5 6 0"/></svg></span>
-                    График
+                    Открыть график
                 </div>
-                <div class="sd-btn light" onclick="goToCompanyPageFromTicker('${ticker}')">
-                    <span class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle cx="12" cy="8" r="0.5"/></svg></span>
-                    О компании
+            </div>
+
+            <div class="sd-hr"></div>
+            <div class="sd-block" id="sdDivHistory">
+                <div class="company-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19V5h5a3.5 3.5 0 0 1 0 7H9"/><line x1="7" y1="15" x2="13" y2="15"/></svg>Дивиденды по годам</div>
+                <div class="div-history-loading">Загружаем историю выплат с MOEX…</div>
+            </div>
+
+            <div class="sd-hr"></div>
+            <div class="sd-block events-section">
+                <div class="company-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Новости Smart-Lab</div>
+                <div id="sdNewsList">
+                    <div class="skeleton-container">
+                        <div class="skeleton-news-item"><div class="skeleton-bone s-news-title"></div><div class="skeleton-bone s-news-date"></div></div>
+                        <div class="skeleton-news-item"><div class="skeleton-bone s-news-title" style="width:75%"></div><div class="skeleton-bone s-news-date"></div></div>
+                        <div class="skeleton-news-item"><div class="skeleton-bone s-news-title" style="width:85%"></div><div class="skeleton-bone s-news-date"></div></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -677,39 +690,22 @@ function openStockDetail(ticker, echelon, clickedCell = null) {
     
     card.dataset.ticker = ticker;
     card.dataset.echelon = echelon;
-    
-    // Вставляем карточку сразу под строкой с тикером
-    if (clickedCell) {
-        const row = clickedCell.closest('.stocks-table-row');
-        if (row && row.parentNode) {
-            // Перемещаем карточку после строки (insertBefore с nextSibling)
-            row.parentNode.insertBefore(card, row.nextSibling);
-        }
-    }
-    
+
+    // Панель выезжает справа поверх всего. Выносим её в <body>, чтобы position:fixed
+    // считался от окна, а не от трансформированных предков вкладки (tabFadeIn).
+    if (card.parentElement !== document.body) document.body.appendChild(card);
+
+    // Выезжающая панель справа: подложка + открытие, прокрутку панели — в начало
+    ensureStockDetailBackdrop().classList.add('open');
+    document.body.classList.add('sd-drawer-open');
     card.classList.add('open');
-    
-    // Прокручиваем так чтобы карточка была видна между кнопкой телеграм и навигацией
-    setTimeout(() => {
-        const navHeight = 80;
-        const topOffset = 60;
-        const cardRect = card.getBoundingClientRect();
-        const viewportHeight = window.innerHeight;
-        const bottomOfCard = cardRect.top + card.offsetHeight;
-        const topOfCard = cardRect.top;
-        
-        // Если верх карточки выше зоны видимости — прокручиваем вниз
-        if (topOfCard < topOffset) {
-            const scrollBy = topOfCard - topOffset;
-            window.scrollBy({ top: scrollBy, behavior: 'smooth' });
-        }
-        // Если низ карточки ниже навигации — прокручиваем вверх
-        else if (bottomOfCard > viewportHeight - navHeight) {
-            const scrollBy = bottomOfCard - (viewportHeight - navHeight) + 20;
-            window.scrollBy({ top: scrollBy, behavior: 'smooth' });
-        }
-    }, 100);
-    
+    card.scrollTop = 0;
+
+    // Подгружаем описание, дивиденды и новости Smart-Lab (как во вкладке «О компании»)
+    loadStockCardDescription(ticker);
+    loadStockCardDividends(ticker);
+    loadAndDisplayNews(ticker, 'sdNewsList');
+
     // Вибрация
     if (window.Telegram?.WebApp?.HapticFeedback) {
         window.Telegram.WebApp.HapticFeedback.selectionChanged();
@@ -722,21 +718,84 @@ function closeStockDetail() {
     if (card) {
         card.classList.remove('open');
         card.dataset.ticker = '';
-        
-        // Возвращаем карточку на исходное место (после таблицы)
-        const tableContainer = document.querySelector('.stocks-aurora-table');
-        if (tableContainer && card.parentNode !== tableContainer.parentNode) {
-            const ghostTrigger = document.getElementById('stocksGhostTrigger');
-            if (ghostTrigger) {
-                ghostTrigger.before(card);
-            } else {
-                tableContainer.after(card);
-            }
-        }
     }
+    const backdrop = document.getElementById('stockDetailBackdrop');
+    if (backdrop) backdrop.classList.remove('open');
+    document.body.classList.remove('sd-drawer-open');
     // Снимаем активный класс со всех ячеек
     document.querySelectorAll('.stocks-cell.active').forEach(c => c.classList.remove('active'));
 }
+
+// Подложка-затемнение за выезжающей карточкой (создаётся один раз)
+function ensureStockDetailBackdrop() {
+    let backdrop = document.getElementById('stockDetailBackdrop');
+    if (!backdrop) {
+        backdrop = document.createElement('div');
+        backdrop.id = 'stockDetailBackdrop';
+        backdrop.addEventListener('click', closeStockDetail);
+        document.body.appendChild(backdrop);
+    }
+    return backdrop;
+}
+
+// Описание актива в карточке тикера. Справочник companyDescriptions грузится из
+// Google Sheets асинхронно, а демо-список акций отрисовывается мгновенно — поэтому
+// карточку можно открыть раньше, чем приедут описания. Ждём их и заполняем блок.
+function loadStockCardDescription(ticker, attempt = 0) {
+    const card = document.getElementById('stockDetailCard');
+    const block = document.getElementById('sdDescBlock');
+    // карточку могли закрыть или переоткрыть на другом тикере
+    if (!block || !card || card.dataset.ticker !== ticker) return;
+
+    const hasDesc = typeof companyDescriptions !== 'undefined';
+    // если справочник пуст — на всякий случай инициируем его загрузку
+    if (attempt === 0 && (!hasDesc || !Object.keys(companyDescriptions).length)
+        && typeof loadCompanyDescriptions === 'function') {
+        try { loadCompanyDescriptions(); } catch (e) {}
+    }
+
+    const base = ticker.toLowerCase().endsWith('p') ? ticker.slice(0, -1) : ticker;
+    let desc = '';
+    if (hasDesc) {
+        desc = companyDescriptions[ticker] || companyDescriptions[base]
+            || companyDescriptions[base.toUpperCase()] || '';
+    }
+
+    if (desc) {
+        const target = document.getElementById('sdDesc');
+        if (target) target.innerHTML = highlightKeywords(desc);
+        block.style.display = '';
+        return;
+    }
+    // описания ещё не подъехали — подождём и попробуем снова (до ~5 c)
+    if (attempt < 10) {
+        setTimeout(() => loadStockCardDescription(ticker, attempt + 1), 500);
+    } else {
+        block.style.display = 'none';
+    }
+}
+
+// Дивиденды по годам в карточке тикера — переиспользуем загрузку и рендер
+// со страницы «О компании» (MOEX ISS)
+async function loadStockCardDividends(ticker) {
+    const section = document.getElementById('sdDivHistory');
+    if (!section) return;
+    try {
+        const rows = await fetchDividendRows(ticker);
+        renderDivHistory(section, ticker, rows, true);
+    } catch (e) {
+        const l = section.querySelector('.div-history-loading');
+        if (l) l.textContent = 'Не удалось загрузить данные MOEX. Попробуйте позже.';
+    }
+}
+
+// Закрытие выезжающей карточки по Esc
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const card = document.getElementById('stockDetailCard');
+        if (card && card.classList.contains('open')) closeStockDetail();
+    }
+});
 
 // Переход на страницу компании (из карточки деталей акции)
 function goToCompanyPage(ticker) {

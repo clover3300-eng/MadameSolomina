@@ -608,25 +608,139 @@ body.dark-mode #rebalancePanelContent .esh-card .ec-bar { background: rgba(255, 
 /* ============================================================
    5. КАРТОЧКА ДЕТАЛЕЙ АКЦИИ (.sd)
    ============================================================ */
-#rebalancePanelContent .stock-detail-card {
-    background: transparent;
+/* Выезжающая справа панель-шторка с деталями тикера.
+   position:fixed + inset (top/right/bottom) — устойчиво под desktop zoom. */
+#stockDetailCard {
+    /* Карточка живёт в <body> (вне #rebalancePanelContent), поэтому R4-переменные
+       определяем прямо на ней — иначе вложенные .sd* их не унаследуют */
+    --r4-card: #ffffff;
+    --r4-line: #eef2f7;
+    --r4-line2: #e3e9f1;
+    --r4-text: #111927;
+    --r4-muted: #97a3b4;
+    --r4-muted2: #5f6d80;
+    --r4-dark: #141b26;
+    --r4-green: #16b56b;
+    font-family: 'Manrope', sans-serif;
+    color: var(--r4-text);
+    display: block;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: auto;
+    width: min(440px, 92vw);
+    max-width: 92vw;
+    margin: 0;
+    padding: 0;
+    background: var(--r4-card);
     border: none;
+    border-left: 1px solid var(--r4-line2);
     border-radius: 0;
-    box-shadow: none;
+    box-shadow: -24px 0 60px rgba(20, 30, 50, 0.20);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    padding: 0;
-    margin: 2px 0;
+    z-index: 4000;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    transform: translateX(104%);
+    visibility: hidden;
+    pointer-events: none;
+    animation: none;
+    transition: transform .42s cubic-bezier(.22, 1, .36, 1), visibility 0s linear .42s;
 }
-#rebalancePanelContent .sd {
+body.dark-mode #stockDetailCard {
+    --r4-card: #1d2734;
+    --r4-line: rgba(255, 255, 255, 0.07);
+    --r4-line2: rgba(255, 255, 255, 0.1);
+    --r4-text: #eef2f7;
+    --r4-muted: #76849a;
+    --r4-muted2: #9aa7ba;
+}
+#stockDetailCard.open {
+    transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
+    transition: transform .42s cubic-bezier(.22, 1, .36, 1), visibility 0s;
+}
+/* Контент внутри панели — без рамки/радиуса, во всю высоту */
+#stockDetailCard .sd {
     position: relative;
-    border: 1.5px solid var(--r4-line2);
-    border-radius: 18px;
-    padding: 20px 22px;
-    background: var(--r4-card);
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    padding: 22px 22px 40px;
+    min-height: 100%;
+    box-sizing: border-box;
 }
-body.dark-mode #rebalancePanelContent .sd { background: rgba(255, 255, 255, 0.03); }
-#rebalancePanelContent .sd-close {
+/* Подложка-затемнение (живёт в body, поэтому селектор не scoped) */
+#stockDetailBackdrop {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: rgba(15, 23, 42, 0.42);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    z-index: 3990;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .32s ease, visibility 0s linear .32s;
+}
+#stockDetailBackdrop.open {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity .32s ease;
+}
+body.sd-drawer-open { overflow: hidden; }
+/* Единственная кнопка «График» — во всю ширину */
+#stockDetailCard .sd-btns.sd-btns-single { grid-template-columns: 1fr; }
+/* Блоки дивидендов и новостей внутри панели */
+#stockDetailCard .sd-block { margin-top: 16px; }
+#stockDetailCard .sd-block.events-section { margin-bottom: 0; }
+#stockDetailCard .sd-block .company-section-title { margin-bottom: 12px; }
+/* Разделители новостей видимы в обеих темах */
+#stockDetailCard .event-item { border-bottom: 1px solid var(--r4-line); }
+#stockDetailCard .event-item:last-child { border-bottom: none; }
+/* Тикер в шапке + кнопка копирования (заменяет строку «Код (тикер)») */
+#stockDetailCard .sd-tk-row { display: flex; align-items: center; gap: 9px; }
+#stockDetailCard .sd-copy {
+    flex-shrink: 0;
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    background: #eaf1fb;
+    color: #2f6fd6;
+    cursor: pointer;
+    transition: background .15s, transform .12s;
+}
+body.dark-mode #stockDetailCard .sd-copy { background: rgba(74, 141, 240, 0.14); color: #7ba6e8; }
+#stockDetailCard .sd-copy:hover { background: #dce8fa; }
+#stockDetailCard .sd-copy:active { transform: scale(0.92); }
+#stockDetailCard .sd-copy svg { width: 15px; height: 15px; }
+/* Описание актива */
+#stockDetailCard .sd-desc {
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px;
+    line-height: 1.65;
+    color: var(--r4-muted2);
+}
+#stockDetailCard .sd-desc .highlight {
+    background: linear-gradient(120deg, rgba(47, 111, 214, 0.16) 0%, rgba(47, 111, 214, 0.08) 100%);
+    padding: 1px 5px;
+    border-radius: 5px;
+    font-weight: 600;
+    color: var(--r4-text);
+}
+body.dark-mode #stockDetailCard .sd-desc .highlight { background: rgba(74, 141, 240, 0.18); color: #cdddf5; }
+body.dark-mode #stockDetailCard .sd { background: rgba(255, 255, 255, 0.03); }
+#stockDetailCard .sd-close {
     position: absolute;
     top: 14px;
     right: 14px;
@@ -639,13 +753,13 @@ body.dark-mode #rebalancePanelContent .sd { background: rgba(255, 255, 255, 0.03
     cursor: pointer;
     transition: background .15s, color .15s;
 }
-#rebalancePanelContent .sd-close:hover { background: rgba(0, 0, 0, .05); color: var(--r4-text); }
-#rebalancePanelContent .sd-close svg { width: 15px; height: 15px; }
-#rebalancePanelContent .sd-top { display: flex; align-items: flex-start; gap: 12px; padding-right: 30px; }
-#rebalancePanelContent .sd-id { flex: 1; min-width: 0; }
-#rebalancePanelContent .sd-top .tk { font-size: 21px; font-weight: 800; letter-spacing: .01em; color: var(--r4-text); }
-#rebalancePanelContent .sd-top .nm { margin-top: 3px; font-size: 14px; font-weight: 600; color: var(--r4-muted2); }
-#rebalancePanelContent .sd-tier-circle {
+#stockDetailCard .sd-close:hover { background: rgba(0, 0, 0, .05); color: var(--r4-text); }
+#stockDetailCard .sd-close svg { width: 15px; height: 15px; }
+#stockDetailCard .sd-top { display: flex; align-items: flex-start; gap: 12px; padding-right: 30px; }
+#stockDetailCard .sd-id { flex: 1; min-width: 0; }
+#stockDetailCard .sd-top .tk { font-size: 21px; font-weight: 800; letter-spacing: .01em; color: var(--r4-text); }
+#stockDetailCard .sd-top .nm { margin-top: 3px; font-size: 14px; font-weight: 600; color: var(--r4-muted2); }
+#stockDetailCard .sd-tier-circle {
     flex-shrink: 0;
     width: 42px;
     height: 42px;
@@ -658,8 +772,8 @@ body.dark-mode #rebalancePanelContent .sd { background: rgba(255, 255, 255, 0.03
     font-size: 13px;
     font-weight: 800;
 }
-body.dark-mode #rebalancePanelContent .sd-tier-circle { background: #141b26; }
-#rebalancePanelContent .sd-sector {
+body.dark-mode #stockDetailCard .sd-tier-circle { background: #141b26; }
+#stockDetailCard .sd-sector {
     margin-top: 12px;
     display: inline-flex;
     align-items: center;
@@ -671,11 +785,11 @@ body.dark-mode #rebalancePanelContent .sd-tier-circle { background: #141b26; }
     font-size: 13px;
     font-weight: 700;
 }
-body.dark-mode #rebalancePanelContent .sd-sector { background: rgba(74, 141, 240, 0.14); color: #7ba6e8; }
-#rebalancePanelContent .sd-sector .ic { display: inline-flex; }
-#rebalancePanelContent .sd-hr { height: 1px; background: var(--r4-line); margin: 16px 0 4px; }
+body.dark-mode #stockDetailCard .sd-sector { background: rgba(74, 141, 240, 0.14); color: #7ba6e8; }
+#stockDetailCard .sd-sector .ic { display: inline-flex; }
+#stockDetailCard .sd-hr { height: 1px; background: var(--r4-line); margin: 16px 0 4px; }
 /* Блок потенциала — зелёный градиент */
-#rebalancePanelContent .sd-pot {
+#stockDetailCard .sd-pot {
     margin-top: 12px;
     display: flex;
     align-items: center;
@@ -685,8 +799,8 @@ body.dark-mode #rebalancePanelContent .sd-sector { background: rgba(74, 141, 240
     background: linear-gradient(135deg, #edfaf3 0%, #f0fdf6 100%);
     border-radius: 14px;
 }
-body.dark-mode #rebalancePanelContent .sd-pot { background: rgba(22, 181, 107, 0.1); }
-#rebalancePanelContent .sd-pot-label {
+body.dark-mode #stockDetailCard .sd-pot { background: rgba(22, 181, 107, 0.1); }
+#stockDetailCard .sd-pot-label {
     font-size: 11px;
     letter-spacing: .1em;
     text-transform: uppercase;
@@ -694,14 +808,14 @@ body.dark-mode #rebalancePanelContent .sd-pot { background: rgba(22, 181, 107, 0
     font-weight: 700;
     margin-bottom: 4px;
 }
-#rebalancePanelContent .sd-pot-val {
+#stockDetailCard .sd-pot-val {
     font-family: 'JetBrains Mono', monospace;
     font-size: 28px;
     font-weight: 800;
     color: #1a9d68;
     letter-spacing: -0.01em;
 }
-#rebalancePanelContent .sd-pot-horizon {
+#stockDetailCard .sd-pot-horizon {
     display: flex;
     align-items: center;
     gap: 7px;
@@ -710,9 +824,9 @@ body.dark-mode #rebalancePanelContent .sd-pot { background: rgba(22, 181, 107, 0
     color: #5a8a72;
     white-space: nowrap;
 }
-#rebalancePanelContent .sd-pot-horizon .ic { display: inline-flex; }
+#stockDetailCard .sd-pot-horizon .ic { display: inline-flex; }
 /* key-value внутри детали акции */
-#rebalancePanelContent .sd .kv {
+#stockDetailCard .sd .kv {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -720,10 +834,10 @@ body.dark-mode #rebalancePanelContent .sd-pot { background: rgba(22, 181, 107, 0
     padding: 12px 2px;
     border-top: 1px solid var(--r4-line);
 }
-#rebalancePanelContent .sd .kv .k { font-size: 14px; font-weight: 600; color: var(--r4-muted2); }
-#rebalancePanelContent .sd .kv .v { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: var(--r4-text); }
-#rebalancePanelContent .sd-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
-#rebalancePanelContent .sd-btn {
+#stockDetailCard .sd .kv .k { font-size: 14px; font-weight: 600; color: var(--r4-muted2); }
+#stockDetailCard .sd .kv .v { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: var(--r4-text); }
+#stockDetailCard .sd-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
+#stockDetailCard .sd-btn {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -735,15 +849,15 @@ body.dark-mode #rebalancePanelContent .sd-pot { background: rgba(22, 181, 107, 0
     font-weight: 700;
     cursor: pointer;
 }
-#rebalancePanelContent .sd-btn .ic { display: inline-flex; }
-#rebalancePanelContent .sd-btn.dark { background: var(--r4-dark); color: #fff; }
-#rebalancePanelContent .sd-btn.dark .ic { color: #7ee2a8; }
-#rebalancePanelContent .sd-btn.light { background: #f0f4f9; color: var(--r4-text); }
-body.dark-mode #rebalancePanelContent .sd-btn.light { background: rgba(255, 255, 255, 0.08); }
-#rebalancePanelContent .sd-btn.light .ic { color: var(--r4-muted2); }
+#stockDetailCard .sd-btn .ic { display: inline-flex; }
+#stockDetailCard .sd-btn.dark { background: var(--r4-dark); color: #fff; }
+#stockDetailCard .sd-btn.dark .ic { color: #7ee2a8; }
+#stockDetailCard .sd-btn.light { background: #f0f4f9; color: var(--r4-text); }
+body.dark-mode #stockDetailCard .sd-btn.light { background: rgba(255, 255, 255, 0.08); }
+#stockDetailCard .sd-btn.light .ic { color: var(--r4-muted2); }
 
 /* «ISIN»-pill общая (используется и в детали акции) */
-#rebalancePanelContent .isin-pill {
+#stockDetailCard .isin-pill {
     display: inline-flex;
     align-items: center;
     gap: 9px;
@@ -756,8 +870,8 @@ body.dark-mode #rebalancePanelContent .sd-btn.light { background: rgba(255, 255,
     font-weight: 700;
     cursor: pointer;
 }
-body.dark-mode #rebalancePanelContent .isin-pill { background: rgba(74, 141, 240, 0.14); color: #7ba6e8; }
-#rebalancePanelContent .isin-pill .cp { display: inline-flex; color: #7ba0dd; }
+body.dark-mode #stockDetailCard .isin-pill { background: rgba(74, 141, 240, 0.14); color: #7ba6e8; }
+#stockDetailCard .isin-pill .cp { display: inline-flex; color: #7ba0dd; }
 
 /* Кнопка-подсказка «Что такое эшелоны?» */
 #rebalancePanelContent .esh-hint-btn {
@@ -853,5 +967,5 @@ body.dark-mode #rebalancePanelContent .esh-hint-btn { background: rgba(255, 255,
     #rebalancePanelContent .esh-card .stocks-cell-change { font-size: 11px; }
     #rebalancePanelContent .esh-card .ec-name { font-size: 9.5px; margin-top: 3px; }
     #rebalancePanelContent .esh-card .ec-bar { margin-top: 8px; }
-    #rebalancePanelContent .sd-btns { grid-template-columns: 1fr 1fr; gap: 10px; }
+    #stockDetailCard .sd-btns { grid-template-columns: 1fr 1fr; gap: 10px; }
 }

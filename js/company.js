@@ -483,6 +483,45 @@ async function openCompanyPage(item, searchQuery = '') {
 var divHistoryCache = {};
 var divTitleSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19V5h5a3.5 3.5 0 0 1 0 7H9"/><line x1="7" y1="15" x2="13" y2="15"/></svg>';
 
+// Загрузка и агрегация дивидендов по годам с MOEX (с кэшем). Используется и на
+// странице «О компании», и в выезжающей карточке тикера в ребалансе.
+async function fetchDividendRows(ticker) {
+    if (divHistoryCache[ticker]) return divHistoryCache[ticker];
+    const url = MOEX_PROXY + '?path=' + encodeURIComponent('/iss/securities/' + ticker + '/dividends.json?iss.meta=off');
+    const res = await fetch(url);
+    const data = await res.json();
+    const cols = data.dividends.columns;
+    const di = cols.indexOf('registryclosedate');
+    const vi = cols.indexOf('value');
+    // Известные объявленные, но ОТМЕНЁННЫЕ выплаты, которые MOEX держит в реестре
+    const CANCELLED_DIVS = {
+        'GAZP': { '2022-07-20': 52.53 } // дивиденд за 2021, отменён ГОСА 30.06.2022
+    };
+    const byYear = {};
+    const seen = {};
+    (data.dividends.data || []).forEach(function(r) {
+        const date = String(r[di] || '');
+        const y = date.slice(0, 4);
+        const v = parseFloat(r[vi]) || 0;
+        if (y.length !== 4) return;
+        // дедупликация одинаковых записей реестра
+        const key = date + '|' + v;
+        if (seen[key]) return;
+        seen[key] = true;
+        // фильтр отменённых решений
+        const cancelled = CANCELLED_DIVS[ticker];
+        if (cancelled && cancelled[date] === v) return;
+        if (!byYear[y]) byYear[y] = { sum: 0, n: 0 };
+        byYear[y].sum += v;
+        byYear[y].n++;
+    });
+    const rows = Object.keys(byYear).sort().reverse().map(function(y) {
+        return { year: y, sum: byYear[y].sum, n: byYear[y].n };
+    });
+    divHistoryCache[ticker] = rows;
+    return rows;
+}
+
 async function toggleDivHistory(event, ticker, isStock) {
     if (event) event.stopPropagation();
     const section = document.getElementById('divHistorySection');
@@ -498,41 +537,7 @@ async function toggleDivHistory(event, ticker, isStock) {
     try { section.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) {}
 
     try {
-        let rows = divHistoryCache[ticker];
-        if (!rows) {
-            const url = MOEX_PROXY + '?path=' + encodeURIComponent('/iss/securities/' + ticker + '/dividends.json?iss.meta=off');
-            const res = await fetch(url);
-            const data = await res.json();
-            const cols = data.dividends.columns;
-            const di = cols.indexOf('registryclosedate');
-            const vi = cols.indexOf('value');
-            // Известные объявленные, но ОТМЕНЁННЫЕ выплаты, которые MOEX держит в реестре
-            const CANCELLED_DIVS = {
-                'GAZP': { '2022-07-20': 52.53 } // дивиденд за 2021, отменён ГОСА 30.06.2022
-            };
-            const byYear = {};
-            const seen = {};
-            (data.dividends.data || []).forEach(function(r) {
-                const date = String(r[di] || '');
-                const y = date.slice(0, 4);
-                const v = parseFloat(r[vi]) || 0;
-                if (y.length !== 4) return;
-                // дедупликация одинаковых записей реестра
-                const key = date + '|' + v;
-                if (seen[key]) return;
-                seen[key] = true;
-                // фильтр отменённых решений
-                const cancelled = CANCELLED_DIVS[ticker];
-                if (cancelled && cancelled[date] === v) return;
-                if (!byYear[y]) byYear[y] = { sum: 0, n: 0 };
-                byYear[y].sum += v;
-                byYear[y].n++;
-            });
-            rows = Object.keys(byYear).sort().reverse().map(function(y) {
-                return { year: y, sum: byYear[y].sum, n: byYear[y].n };
-            });
-            divHistoryCache[ticker] = rows;
-        }
+        const rows = await fetchDividendRows(ticker);
         renderDivHistory(section, ticker, rows, isStock);
     } catch (e) {
         const l = section.querySelector('.div-history-loading');
@@ -575,8 +580,8 @@ function divPlural(n, one, few, many) {
 window.toggleDivHistory = toggleDivHistory;
 
     // Функция загрузки и отображения новостей
-async function loadAndDisplayNews(ticker) {
-    const newsContainer = document.getElementById('company-news-list');
+async function loadAndDisplayNews(ticker, containerId = 'company-news-list') {
+    const newsContainer = document.getElementById(containerId);
     if (!newsContainer) return;
     
     // Показываем skeleton для новостей
