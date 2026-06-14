@@ -724,33 +724,21 @@ body.dark-mode #stockDetailCard .sd-copy { background: rgba(74, 141, 240, 0.14);
 #stockDetailCard .sd-copy:hover { background: #dce8fa; }
 #stockDetailCard .sd-copy:active { transform: scale(0.92); }
 #stockDetailCard .sd-copy svg { width: 15px; height: 15px; }
-/* Описание актива — мягкая note-карточка с акцентом слева */
+/* Описание актива */
 #stockDetailCard .sd-desc {
-    position: relative;
     font-family: 'Inter', sans-serif;
     font-size: 13.5px;
-    line-height: 1.62;
+    line-height: 1.65;
     color: var(--r4-muted2);
-    padding: 13px 16px 13px 17px;
-    background: linear-gradient(180deg, rgba(47, 111, 214, 0.05) 0%, rgba(47, 111, 214, 0.025) 100%);
-    border: 1px solid rgba(47, 111, 214, 0.10);
-    border-left: 3px solid #4a8df0;
-    border-radius: 5px 14px 14px 5px;
-}
-body.dark-mode #stockDetailCard .sd-desc {
-    background: rgba(74, 141, 240, 0.07);
-    border-color: rgba(74, 141, 240, 0.14);
-    border-left-color: #4a8df0;
-    color: #aeb9cb;
 }
 #stockDetailCard .sd-desc .highlight {
-    background: rgba(47, 111, 214, 0.14);
-    padding: 1px 6px;
-    border-radius: 6px;
+    background: linear-gradient(120deg, rgba(47, 111, 214, 0.16) 0%, rgba(47, 111, 214, 0.08) 100%);
+    padding: 1px 5px;
+    border-radius: 5px;
     font-weight: 600;
-    color: #2f6fd6;
+    color: var(--r4-text);
 }
-body.dark-mode #stockDetailCard .sd-desc .highlight { background: rgba(74, 141, 240, 0.22); color: #9cc0f5; }
+body.dark-mode #stockDetailCard .sd-desc .highlight { background: rgba(74, 141, 240, 0.18); color: #cdddf5; }
 body.dark-mode #stockDetailCard .sd { background: rgba(255, 255, 255, 0.03); }
 #stockDetailCard .sd-close {
     position: absolute;
