@@ -372,10 +372,10 @@
         }
         #pfLeftRail .capital-fee-corner {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 12.5px !important; font-weight: 600;
+            font-size: 12.5px !important; font-weight: 700;
             padding: 5px 11px !important; border-radius: 999px;
             background: rgba(255,255,255,0.1) !important;
-            color: #c4cedd !important;
+            color: #ffffff !important;
             border: none !important; margin-top: 2px;
         }
         #pfLeftRail .capital-thin-bar { height: 5px; border-radius: 99px; margin: 32px 0 20px; overflow: hidden; }
@@ -544,10 +544,10 @@
 
         /* Кнопка «Рассчитать заново» под панелью */
         .v3-recalc-btn {
-            display: flex; align-items: center; justify-content: center; gap: 11px;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
             background: #141b26; color: #ffffff;
-            border: none; border-radius: 18px; padding: 23px 18px;
-            font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 15px;
+            border: none; border-radius: 14px; padding: 15px 18px;
+            font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 14.5px;
             box-shadow: 0 16px 36px rgba(24,38,60,0.08);
             white-space: nowrap; cursor: pointer; width: 100%;
             transition: transform 0.15s ease, box-shadow 0.15s ease;

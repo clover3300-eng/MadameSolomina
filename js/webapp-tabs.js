@@ -268,19 +268,13 @@ function populatePanels() {
         else if (mqV3.addListener) mqV3.addListener(v3Place);
         v3Place();
 
-        // Высота карточки капитала = высота таблицы ОФЗ/акций.
-        // Тогда низ карточки = низ таблицы, а стрип и кнопка (с одинаковым
-        // отступом 16px) выходят на один уровень.
+        // Карточка капитала зафиксирована по своей естественной высоте (как в
+        // состоянии «Акции») и НЕ растягивается под высоту таблицы при переключении
+        // ОФЗ/Акции — рельса остаётся фиксированной, как в Ребалансе.
         window.v3SyncCapHeight = function() {
             const capCard = document.querySelector('#pfLeftRail .portfolio-capital-card');
-            const tableCard = document.querySelector('#portfolio-tab-bonds.active .v3-table-card, #portfolio-tab-stocks.active .v3-table-card');
             if (!capCard) return;
-            if (!mqV3.matches || !tableCard) { capCard.style.height = ''; return; }
             capCard.style.height = '';
-            const tableH = Math.round(tableCard.getBoundingClientRect().height);
-            const natural = Math.round(capCard.getBoundingClientRect().height);
-            // карточка тянется до низа таблицы, но не сжимается ниже своего контента
-            capCard.style.height = Math.max(tableH, natural) + 'px';
         };
         requestAnimationFrame(function(){ requestAnimationFrame(window.v3SyncCapHeight); });
         window.addEventListener('resize', function(){ if (window.v3SyncCapHeight) window.v3SyncCapHeight(); });
