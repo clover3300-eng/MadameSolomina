@@ -375,44 +375,42 @@ body.dark-mode .bt2-feat { border-color: rgba(255, 255, 255, 0.14); }
    РЕЖИМ РЕЗУЛЬТАТОВ: карточка слева + таблица справа
    ============================================================ */
 
-/* Шапка с финальными данными теста — в верхней части левой карточки */
+/* Шапка с финальными данными теста — ТЁМНАЯ карточка вверху левой карточки */
 .bt-res-summary {
-    padding-bottom: 20px;
-    margin-bottom: 22px;
-    border-bottom: 1px solid rgba(133, 147, 166, 0.18);
+    margin: -30px -30px 26px;
+    padding: 22px 24px;
+    background: linear-gradient(160deg, #1f2a3b 0%, #131a25 100%);
+    border-radius: 20px 20px 0 0;
+    color: #F1F6FB;
 }
-body.dark-mode .bt-res-summary { border-color: rgba(255, 255, 255, 0.1); }
 .bt-res-sum-top {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
 }
 .bt-res-sum-eyebrow {
     font-size: 11.5px; font-weight: 700;
     letter-spacing: 1.5px; text-transform: uppercase;
-    color: #8593A6;
+    color: rgba(255, 255, 255, 0.5);
 }
 .bt-res-date-pill {
     display: inline-flex; align-items: center; gap: 5px;
     font-size: 11.5px; font-weight: 700;
-    color: #5B7C99;
-    background: rgba(91, 124, 153, 0.1);
+    color: #CDD9E8;
+    background: rgba(255, 255, 255, 0.09);
     padding: 4px 9px; border-radius: 999px;
     white-space: nowrap;
 }
-body.dark-mode .bt-res-date-pill { color: #9AA8BC; background: rgba(255, 255, 255, 0.07); }
 .bt-res-date-pill svg { width: 12px; height: 12px; flex-shrink: 0; }
-.bt-res-sum-label { font-size: 12.5px; color: #8593A6; margin-bottom: 5px; }
-body.dark-mode .bt-res-sum-label { color: #9AA8BC; }
+.bt-res-sum-label { font-size: 12.5px; color: rgba(255, 255, 255, 0.55); margin-bottom: 5px; }
 .bt-res-sum-value {
     font-family: 'JetBrains Mono', monospace;
     font-size: 27px; font-weight: 800;
     letter-spacing: -0.5px; line-height: 1.1;
-    color: #111927;
+    color: #ffffff;
 }
-body.dark-mode .bt-res-sum-value { color: #F1F6FB; }
 .bt-res-sum-change {
     display: inline-flex; align-items: center; gap: 4px;
     margin-top: 8px;
@@ -420,29 +418,40 @@ body.dark-mode .bt-res-sum-value { color: #F1F6FB; }
     font-size: 13.5px; font-weight: 700;
 }
 .bt-res-sum-change svg { width: 14px; height: 14px; }
-.bt-res-sum-change.pos { color: #0E9F63; }
-.bt-res-sum-change.neg { color: #E5484D; }
+.bt-res-sum-change.pos { color: #34D399; }
+.bt-res-sum-change.neg { color: #F87171; }
 .bt-res-sum-stats {
     display: grid; grid-template-columns: 1fr 1fr;
-    gap: 12px 14px;
+    gap: 14px;
     margin-top: 18px;
 }
 .bt-res-stat { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.bt-res-stat span { font-size: 11px; color: #8593A6; }
-body.dark-mode .bt-res-stat span { color: #9AA8BC; }
+.bt-res-stat span { font-size: 11px; color: rgba(255, 255, 255, 0.5); }
 .bt-res-stat b {
     font-family: 'JetBrains Mono', monospace;
     font-size: 14px; font-weight: 700;
-    color: #2C364C;
+    color: #EAF1F8;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-body.dark-mode .bt-res-stat b { color: #E8EEF5; }
-.bt-res-stat b.pos { color: #0E9F63; }
-.bt-res-stat b.neg { color: #E5484D; }
-body.dark-mode .bt-res-sum-change.pos,
-body.dark-mode .bt-res-stat b.pos { color: #34D399; }
-body.dark-mode .bt-res-sum-change.neg,
-body.dark-mode .bt-res-stat b.neg { color: #F87171; }
+.bt-res-stat b.pos { color: #34D399; }
+.bt-res-stat b.neg { color: #F87171; }
+
+/* Кнопка «Сравнить с IMOEX» */
+.bt-imoex-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; margin-top: 18px;
+    padding: 11px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 11px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #EAF1F8;
+    font-family: inherit; font-size: 13px; font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+.bt-imoex-btn:hover { background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.28); }
+.bt-imoex-btn svg { width: 15px; height: 15px; }
+.bt-imoex-btn.is-open { background: rgba(126, 226, 168, 0.16); border-color: rgba(126, 226, 168, 0.42); color: #9EE6BD; }
 
 /* Раскрытие таблицы результатов */
 .bt2-wrap.bt-results-mode #btResults {
@@ -466,7 +475,61 @@ body.dark-mode .bt-res-stat b.neg { color: #F87171; }
         align-items: start;
     }
     .bt2-wrap.bt-results-mode .bt2-head    { grid-area: head; }
-    .bt2-wrap.bt-results-mode #btConfigCol { grid-area: config; }
+    .bt2-wrap.bt-results-mode #btConfigCol {
+        grid-area: config;
+        position: sticky;
+        top: 16px;
+        align-self: start;
+    }
     .bt2-wrap.bt-results-mode #btResults   { grid-area: results; margin-top: 0 !important; }
     .bt2-wrap.bt-results-mode .bt2-footer  { display: none; }
 }
+
+/* ---------- Сравнение с IMOEX: график доходности ---------- */
+.bt-imoex-card {
+    background: #ffffff;
+    border-radius: 18px;
+    box-shadow: 0 12px 30px rgba(24, 38, 60, 0.08);
+    padding: 18px 20px;
+    margin-bottom: 14px;
+    animation: btResIn 0.32s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+body.dark-mode .bt-imoex-card { background: #1d2734; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28); }
+.bt-imoex-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-bottom: 6px;
+}
+.bt-imoex-title { font-size: 14px; font-weight: 800; color: #111927; }
+body.dark-mode .bt-imoex-title { color: #F1F6FB; }
+.bt-imoex-sub { font-size: 12px; color: #8593A6; margin-bottom: 14px; }
+/* Бейдж «опережение / отставание» */
+.bt-imoex-delta {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: 999px;
+    font-size: 13px; font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+}
+.bt-imoex-delta.pos { color: #0E9F63; background: rgba(22, 181, 107, 0.1); }
+.bt-imoex-delta.neg { color: #E5484D; background: rgba(229, 72, 77, 0.1); }
+body.dark-mode .bt-imoex-delta.pos { color: #34D399; background: rgba(52, 211, 153, 0.12); }
+body.dark-mode .bt-imoex-delta.neg { color: #F87171; background: rgba(248, 113, 113, 0.12); }
+.bt-imoex-chart { width: 100%; display: block; }
+.bt-imoex-legend {
+    display: flex; flex-wrap: wrap; gap: 18px;
+    margin-top: 14px;
+}
+.bt-imoex-leg { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; color: #5B7C99; }
+body.dark-mode .bt-imoex-leg { color: #9AA8BC; }
+.bt-imoex-leg i { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+.bt-imoex-leg b { font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+.bt-imoex-leg .v.pos { color: #0E9F63; }
+.bt-imoex-leg .v.neg { color: #E5484D; }
+body.dark-mode .bt-imoex-leg .v.pos { color: #34D399; }
+body.dark-mode .bt-imoex-leg .v.neg { color: #F87171; }
+/* Загрузка / ошибка графика */
+.bt-imoex-state {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px; padding: 40px 16px; text-align: center;
+    font-size: 13px; color: #8593A6;
+}
+.bt-imoex-state .bt-spinner { width: 30px; height: 30px; }

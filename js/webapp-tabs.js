@@ -1214,6 +1214,8 @@ function btFmtRub(v) {
 function btRenderSummary(results, dateStr) {
     var el = document.getElementById('btResultSummary');
     if (!el) return;
+    window._btLastResults = results;
+    window._btLastDate = dateStr;
     var totalPnl = results.totalPnl;
     var pct = results.totalPnlPct !== null ? parseFloat(results.totalPnlPct) : null;
     var hasPnl = totalPnl !== null;
@@ -1236,11 +1238,14 @@ function btRenderSummary(results, dateStr) {
         h += '<div class="bt-res-sum-change ' + cls + '">' + arrow + '<span>' + pctSign + (pct !== null ? pct : '') + '% · ' + pnlSign + btFmtRub(totalPnl) + '</span></div>';
     }
     h += '<div class="bt-res-sum-stats">';
-    h += '<div class="bt-res-stat"><span>Вложено на дату</span><b>' + (results.totalBuyPrice > 0 ? btFmtRub(results.totalBuyPrice) : '—') + '</b></div>';
+    h += '<div class="bt-res-stat"><span>Стартовая сумма</span><b>' + (results.totalBuyPrice > 0 ? btFmtRub(results.totalBuyPrice) : '—') + '</b></div>';
     h += '<div class="bt-res-stat"><span>P&L</span><b class="' + cls + '">' + (hasPnl ? pnlSign + btFmtRub(totalPnl) : '—') + '</b></div>';
     h += '<div class="bt-res-stat"><span>Доходность</span><b class="' + cls + '">' + (pct !== null ? pctSign + pct + '%' : '—') + '</b></div>';
     h += '<div class="bt-res-stat"><span>Позиций</span><b>' + positions + '</b></div>';
     h += '</div>';
+    h += '<button type="button" class="bt-imoex-btn" id="btImoexBtn" onclick="btCompareImoex()">'
+        + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>'
+        + 'Сравнить с IMOEX</button>';
     el.innerHTML = h;
     el.style.display = 'block';
 }
@@ -1257,12 +1262,224 @@ function btExitResultsMode() {
     if (sum) { sum.style.display = 'none'; sum.innerHTML = ''; }
     var res = document.getElementById('btResults');
     if (res) res.innerHTML = '';
+    _btImoexOpen = false;
+}
+
+// ============================================================
+// СРАВНЕНИЕ С ИНДЕКСОМ МОСБИРЖИ (IMOEX)
+// ============================================================
+var _btImoexOpen = false;
+
+function btCompareImoex() {
+    var btn = document.getElementById('btImoexBtn');
+    var res = document.getElementById('btResults');
+    if (!res) return;
+    var panel = document.getElementById('btImoexPanel');
+    if (!panel) {
+        panel = document.createElement('div');
+        panel.id = 'btImoexPanel';
+        res.insertBefore(panel, res.firstChild);
+    }
+    // Повторное нажатие — сворачиваем
+    if (_btImoexOpen) {
+        _btImoexOpen = false;
+        panel.style.display = 'none';
+        panel.innerHTML = '';
+        if (btn) btn.classList.remove('is-open');
+        return;
+    }
+    _btImoexOpen = true;
+    panel.style.display = 'block';
+    if (btn) btn.classList.add('is-open');
+    panel.innerHTML = '<div class="bt-imoex-card"><div class="bt-imoex-state">'
+        + '<div class="bt-spinner"></div><div>Загружаем индекс Московской биржи…</div></div></div>';
+    btLoadImoexCompare(panel);
+}
+
+async function btLoadImoexCompare(panel) {
+    var results = window._btLastResults;
+    var dateStr = window._btLastDate;
+    if (!results || !dateStr) {
+        panel.innerHTML = '<div class="bt-imoex-card"><div class="bt-imoex-state">Нет данных теста для сравнения.</div></div>';
+        return;
+    }
+    try {
+        var todayStr = new Date().toISOString().split('T')[0];
+        var imoexRaw = await btFetchHistorySeries('/iss/history/engines/stock/markets/index/securities/IMOEX.json', dateStr, todayStr);
+        if (!imoexRaw.length) throw new Error('NO_IMOEX');
+        var pf = await btBuildPortfolioSeries(results, dateStr, todayStr);
+        var data = btAlignReturns(pf, imoexRaw);
+        if (!data || data.points.length < 2) throw new Error('NO_ALIGN');
+        if (!_btImoexOpen) return; // пользователь успел закрыть
+        btRenderImoexChart(panel, data, dateStr, todayStr);
+    } catch(e) {
+        console.warn('[BT] IMOEX compare failed:', e && e.message);
+        if (!_btImoexOpen) return;
+        panel.innerHTML = '<div class="bt-imoex-card"><div class="bt-imoex-state">'
+            + '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+            + '<div>Не удалось получить данные индекса IMOEX с Московской биржи. Попробуйте позже.</div></div></div>';
+    }
+}
+
+// Постраничная загрузка дневной истории закрытий (MOEX ISS)
+async function btFetchHistorySeries(path, fromStr, tillStr) {
+    var out = [];
+    var start = 0;
+    for (var page = 0; page < 40; page++) {
+        var url = MOEX_PROXY + '?path=' + encodeURIComponent(
+            path + '?from=' + fromStr + '&till=' + tillStr +
+            '&iss.meta=off&iss.only=history&sort_order=asc&start=' + start);
+        var res = await fetch(url);
+        if (!res.ok) break;
+        var data = await res.json();
+        if (!data.history || !data.history.data || !data.history.data.length) break;
+        var cols = data.history.columns;
+        var dIdx = cols.indexOf('TRADEDATE');
+        var cIdx = cols.indexOf('CLOSE');
+        var rows = data.history.data;
+        for (var i = 0; i < rows.length; i++) {
+            var d = rows[i][dIdx], c = rows[i][cIdx];
+            if (d && c != null && c > 0) out.push({ d: d, c: c });
+        }
+        if (rows.length < 100) break;
+        start += rows.length;
+    }
+    return out;
+}
+
+// Стоимость портфеля по датам = сумма (цена*кол-во) с forward-fill
+async function btBuildPortfolioSeries(results, fromStr, tillStr) {
+    var assets = [];
+    results.bonds.forEach(function(b) { assets.push({ t: b.t, qty: b.qty, market: 'bonds', mult: 10 }); });
+    results.stocks.forEach(function(s) { assets.push({ t: s.t, qty: s.qty, market: 'shares', mult: 1 }); });
+    var maps = [], firstDates = [];
+    for (var i = 0; i < assets.length; i++) {
+        var a = assets[i];
+        var path = '/iss/history/engines/stock/markets/' + a.market + '/securities/' + a.t + '.json';
+        var ser;
+        try { ser = await btFetchHistorySeries(path, fromStr, tillStr); } catch(e) { ser = []; }
+        if (!ser.length) continue;
+        var map = {}, dates = [];
+        ser.forEach(function(p) { map[p.d] = p.c * a.mult; dates.push(p.d); });
+        dates.sort();
+        maps.push({ dates: dates, map: map, qty: a.qty });
+        firstDates.push(dates[0]);
+    }
+    if (!maps.length) return [];
+    firstDates.sort();
+    var baseDate = firstDates[firstDates.length - 1];   // когда уже торгуются все активы
+    var dateSet = {};
+    maps.forEach(function(m) { m.dates.forEach(function(d) { if (d >= baseDate) dateSet[d] = 1; }); });
+    var union = Object.keys(dateSet).sort();
+    var series = [];
+    var ptr = maps.map(function() { return 0; });
+    var lastPrice = maps.map(function() { return 0; });
+    for (var u = 0; u < union.length; u++) {
+        var day = union[u], total = 0;
+        for (var mi = 0; mi < maps.length; mi++) {
+            var m = maps[mi];
+            while (ptr[mi] < m.dates.length && m.dates[ptr[mi]] <= day) { lastPrice[mi] = m.map[m.dates[ptr[mi]]]; ptr[mi]++; }
+            total += lastPrice[mi] * m.qty;
+        }
+        if (total > 0) series.push({ d: day, c: total });
+    }
+    return series;
+}
+
+// Выравнивание двух серий к общему старту → доходность в %
+function btAlignReturns(pfSeries, imoexSeries) {
+    if (!pfSeries.length || !imoexSeries.length) return null;
+    var imap = {}, idates = [];
+    imoexSeries.forEach(function(p) { imap[p.d] = p.c; idates.push(p.d); });
+    idates.sort();
+    function imoexAt(day) {
+        var lo = 0, hi = idates.length - 1, ans = -1;
+        while (lo <= hi) { var mid = (lo + hi) >> 1; if (idates[mid] <= day) { ans = mid; lo = mid + 1; } else hi = mid - 1; }
+        return ans >= 0 ? imap[idates[ans]] : null;
+    }
+    var base0 = null, ibase = null;
+    for (var i = 0; i < pfSeries.length; i++) {
+        var iv = imoexAt(pfSeries[i].d);
+        if (iv != null) { base0 = pfSeries[i]; ibase = iv; break; }
+    }
+    if (!base0) return null;
+    var pfBase = base0.c, points = [];
+    for (var j = 0; j < pfSeries.length; j++) {
+        var p = pfSeries[j];
+        if (p.d < base0.d) continue;
+        var iv2 = imoexAt(p.d);
+        if (iv2 == null) continue;
+        points.push({ d: p.d, pf: (p.c / pfBase - 1) * 100, im: (iv2 / ibase - 1) * 100 });
+    }
+    if (points.length < 2) return null;
+    var last = points[points.length - 1];
+    return { points: points, pfFinal: last.pf, imFinal: last.im, delta: last.pf - last.im };
+}
+
+// SVG-график доходности портфеля vs IMOEX
+function btRenderImoexChart(panel, data, fromStr, tillStr) {
+    var pts = data.points;
+    var step = Math.max(1, Math.ceil(pts.length / 90));
+    var s = [];
+    for (var i = 0; i < pts.length; i += step) s.push(pts[i]);
+    if (s[s.length - 1] !== pts[pts.length - 1]) s.push(pts[pts.length - 1]);
+
+    var W = 640, H = 280, padL = 48, padR = 14, padT = 16, padB = 26;
+    var allV = [];
+    s.forEach(function(p) { allV.push(p.pf, p.im); });
+    var minV = Math.min.apply(null, allV), maxV = Math.max.apply(null, allV);
+    if (minV === maxV) { minV -= 1; maxV += 1; }
+    var rng = maxV - minV; minV -= rng * 0.08; maxV += rng * 0.08;
+    var n = s.length;
+    function X(i) { return padL + (W - padL - padR) * (i / (n - 1)); }
+    function Y(v) { return padT + (H - padT - padB) * (1 - (v - minV) / (maxV - minV)); }
+    function line(key) { var d = ''; for (var i = 0; i < n; i++) d += (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(s[i][key]).toFixed(1) + ' '; return d.trim(); }
+    function area(key) { var d = 'M' + X(0).toFixed(1) + ' ' + Y(s[0][key]).toFixed(1) + ' '; for (var i = 1; i < n; i++) d += 'L' + X(i).toFixed(1) + ' ' + Y(s[i][key]).toFixed(1) + ' '; d += 'L' + X(n - 1).toFixed(1) + ' ' + (H - padB).toFixed(1) + ' L' + X(0).toFixed(1) + ' ' + (H - padB).toFixed(1) + ' Z'; return d; }
+
+    var zeroY = (minV <= 0 && maxV >= 0) ? Y(0) : null;
+    var yTicks = [maxV, (maxV + minV) / 2, minV];
+    var svg = '<svg class="bt-imoex-chart" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet">';
+    yTicks.forEach(function(v) {
+        var y = Y(v);
+        svg += '<line x1="' + padL + '" y1="' + y.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + y.toFixed(1) + '" stroke="rgba(133,147,166,0.16)" stroke-width="1"/>';
+        svg += '<text x="' + (padL - 8) + '" y="' + (y + 3).toFixed(1) + '" text-anchor="end" font-size="10" fill="#94A3B8" font-family="JetBrains Mono, monospace">' + (v >= 0 ? '+' : '') + v.toFixed(0) + '%</text>';
+    });
+    if (zeroY !== null) svg += '<line x1="' + padL + '" y1="' + zeroY.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + zeroY.toFixed(1) + '" stroke="rgba(133,147,166,0.45)" stroke-width="1" stroke-dasharray="3 3"/>';
+    svg += '<path d="' + area('pf') + '" fill="rgba(22,181,107,0.10)"/>';
+    svg += '<path d="' + line('im') + '" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+    svg += '<path d="' + line('pf') + '" fill="none" stroke="#16B56B" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>';
+    svg += '<circle cx="' + X(n - 1).toFixed(1) + '" cy="' + Y(s[n - 1].pf).toFixed(1) + '" r="3.5" fill="#16B56B"/>';
+    svg += '<circle cx="' + X(n - 1).toFixed(1) + '" cy="' + Y(s[n - 1].im).toFixed(1) + '" r="3.5" fill="#94A3B8"/>';
+    svg += '<text x="' + padL + '" y="' + (H - 7) + '" font-size="10" fill="#94A3B8" font-family="Inter">' + btFormatDateShort(fromStr) + '</text>';
+    svg += '<text x="' + (W - padR) + '" y="' + (H - 7) + '" text-anchor="end" font-size="10" fill="#94A3B8" font-family="Inter">' + btFormatDateShort(tillStr) + '</text>';
+    svg += '</svg>';
+
+    var beat = data.delta >= 0;
+    var deltaCls = beat ? 'pos' : 'neg';
+    var deltaTxt = (beat ? '+' : '') + data.delta.toFixed(1) + ' пп';
+    var pfCls = data.pfFinal >= 0 ? 'pos' : 'neg', imCls = data.imFinal >= 0 ? 'pos' : 'neg';
+    var html = '<div class="bt-imoex-card">';
+    html += '<div class="bt-imoex-head"><div class="bt-imoex-title">Доходность vs рынок (IMOEX)</div>';
+    html += '<span class="bt-imoex-delta ' + deltaCls + '">' + (beat ? 'обгоняем рынок ' : 'отстаём ') + deltaTxt + '</span></div>';
+    html += '<div class="bt-imoex-sub">Рост портфеля и индекса Мосбиржи с даты теста, нормировано к 0%</div>';
+    html += svg;
+    html += '<div class="bt-imoex-legend">';
+    html += '<span class="bt-imoex-leg"><i style="background:#16B56B"></i>Ваш портфель <b class="v ' + pfCls + '">' + (data.pfFinal >= 0 ? '+' : '') + data.pfFinal.toFixed(1) + '%</b></span>';
+    html += '<span class="bt-imoex-leg"><i style="background:#94A3B8"></i>IMOEX <b class="v ' + imCls + '">' + (data.imFinal >= 0 ? '+' : '') + data.imFinal.toFixed(1) + '%</b></span>';
+    html += '</div></div>';
+    panel.innerHTML = html;
+}
+
+function btFormatDateShort(dateStr) {
+    try { return new Date(dateStr + 'T12:00:00').toLocaleDateString('ru-RU', { month: 'short', year: 'numeric' }); }
+    catch(e) { return dateStr; }
 }
 
 function renderBtResults(results, dateStr) {
     var container = document.getElementById('btResults');
     if (!container) return;
 
+    _btImoexOpen = false;   // новый прогон — закрываем прошлый график
     // Финальные данные — в левую карточку-шапку
     btRenderSummary(results, dateStr);
     var html = '';

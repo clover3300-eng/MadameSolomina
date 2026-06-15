@@ -1134,7 +1134,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 14px 18px;
+        padding: 14px 26px;
         border-bottom: 1px solid rgba(0,0,0,0.05);
     }
     
@@ -1161,10 +1161,10 @@
     
     .bt-asset-row {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 76px 76px 108px;
-        gap: 16px;
+        grid-template-columns: minmax(0, 1fr) 78px 80px 108px;
+        gap: 14px;
         align-items: center;
-        padding: 10px 22px;
+        padding: 10px 26px;
         border-bottom: 1px solid rgba(0,0,0,0.03);
         transition: background 0.15s;
     }
