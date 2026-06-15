@@ -1308,12 +1308,11 @@ async function btLoadImoexCompare(panel) {
         var imoexRaw = await btFetchHistorySeries('/iss/history/engines/stock/markets/index/securities/IMOEX.json', dateStr, todayStr);
         if (!imoexRaw.length) throw new Error('NO_IMOEX');
         var pf = await btBuildPortfolioSeries(results, dateStr, todayStr);
-        var data = btAlignReturns(pf, imoexRaw);
+        // Нормируем доходность портфеля относительно стоимости на дату теста из карточки —
+        // и цена «сейчас», и база берутся из тех же данных MOEX, поэтому итог графика
+        // совпадает с карточкой без искусственной подгонки.
+        var data = btAlignReturns(pf, imoexRaw, results.totalBuyPrice);
         if (!data || data.points.length < 2) throw new Error('NO_ALIGN');
-        // Доходность портфеля на графике приводим к доходности из расчёта,
-        // чтобы итоговое число совпадало с карточкой результата.
-        var sumRet = results.totalPnlPct !== null ? parseFloat(results.totalPnlPct) : null;
-        if (sumRet !== null && !isNaN(sumRet)) btAnchorPortfolioReturn(data, sumRet);
         if (!_btImoexOpen) return; // пользователь успел закрыть
         btRenderImoexChart(panel, data, dateStr, todayStr);
     } catch(e) {
@@ -1390,8 +1389,11 @@ async function btBuildPortfolioSeries(results, fromStr, tillStr) {
     return series;
 }
 
-// Выравнивание двух серий к общему старту → доходность в %
-function btAlignReturns(pfSeries, imoexSeries) {
+// Выравнивание двух серий к общему старту → доходность в %.
+// pfBaseRub (необязательно) — стоимость портфеля на дату теста из карточки;
+// если задана, нормируем доходность портфеля относительно неё, чтобы итог графика
+// совпадал с карточкой результата (равномерный масштаб, форма кривой сохраняется).
+function btAlignReturns(pfSeries, imoexSeries, pfBaseRub) {
     if (!pfSeries.length || !imoexSeries.length) return null;
     var imap = {}, idates = [];
     imoexSeries.forEach(function(p) { imap[p.d] = p.c; idates.push(p.d); });
@@ -1407,7 +1409,7 @@ function btAlignReturns(pfSeries, imoexSeries) {
         if (iv != null) { base0 = pfSeries[i]; ibase = iv; break; }
     }
     if (!base0) return null;
-    var pfBase = base0.c, points = [];
+    var pfBase = (pfBaseRub && pfBaseRub > 0) ? pfBaseRub : base0.c, points = [];
     for (var j = 0; j < pfSeries.length; j++) {
         var p = pfSeries[j];
         if (p.d < base0.d) continue;
@@ -1418,22 +1420,6 @@ function btAlignReturns(pfSeries, imoexSeries) {
     if (points.length < 2) return null;
     var last = points[points.length - 1];
     return { points: points, pfFinal: last.pf, imFinal: last.im, delta: last.pf - last.im };
-}
-
-// Приводим итоговую доходность портфеля на графике к значению из расчёта.
-// Разница накапливается линейно (старт = 0%, конец = доходность из расчёта),
-// чтобы форма кривой сохранялась, а число совпадало с карточкой.
-function btAnchorPortfolioReturn(data, targetPct) {
-    var pts = data.points;
-    var n = pts.length;
-    if (n < 2) return;
-    var rawFinal = pts[n - 1].pf;
-    var diff = targetPct - rawFinal;
-    for (var i = 0; i < n; i++) {
-        pts[i].pf += diff * (i / (n - 1));
-    }
-    data.pfFinal = targetPct;
-    data.delta = data.pfFinal - data.imFinal;
 }
 
 // SVG-график доходности портфеля vs IMOEX
@@ -1900,9 +1886,10 @@ btFetchPrices = async function(dateStr, assets) {
         var histPrice = await btGetBondPriceSafe(bond.t, dateStr);
         done++;
         if (histPrice === -1) { failed++; histPrice = 0; }
-        // Текущая цена: из портфеля (bond.p) или с MOEX за сегодня (режим тикеров)
-        var nowPrice = bond.p > 0 ? bond.p : await btGetBondPriceSafe(bond.t, todayStr);
-        if (nowPrice === -1) nowPrice = 0;
+        // Цена «сейчас» — всегда живое закрытие с MOEX (тот же источник, что и
+        // конец графика сравнения), цена из расчёта (bond.p) только как запасной вариант.
+        var nowPrice = await btGetBondPriceSafe(bond.t, todayStr);
+        if (nowPrice <= 0) nowPrice = bond.p > 0 ? bond.p : 0;
         var buyTotal = histPrice > 0 ? histPrice * bond.qty : 0;
         var nowTotal = nowPrice > 0 ? nowPrice * bond.qty : 0;
         results.bonds.push({
@@ -1923,8 +1910,9 @@ btFetchPrices = async function(dateStr, assets) {
         var sHistPrice = await btGetStockPriceSafe(stock.t, dateStr);
         done++;
         if (sHistPrice === -1) { failed++; sHistPrice = 0; }
-        var sNowPrice = stock.p > 0 ? stock.p : await btGetStockPriceSafe(stock.t, todayStr);
-        if (sNowPrice === -1) sNowPrice = 0;
+        // Цена «сейчас» — живое закрытие с MOEX (как и конец графика сравнения).
+        var sNowPrice = await btGetStockPriceSafe(stock.t, todayStr);
+        if (sNowPrice <= 0) sNowPrice = stock.p > 0 ? stock.p : 0;
         var sBuyTotal = sHistPrice > 0 ? sHistPrice * stock.qty : 0;
         var sNowTotal = sNowPrice > 0 ? sNowPrice * stock.qty : 0;
         results.stocks.push({

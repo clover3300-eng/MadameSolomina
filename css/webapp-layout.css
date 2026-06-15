@@ -733,43 +733,76 @@
     }
     
     /* Стартовый капитал (ручной режим) */
-    .bt-capital-field { position: relative; margin-bottom: 6px; }
+    .bt-capital-field { position: relative; margin-bottom: 9px; }
     .bt-capital-input {
         width: 100%;
         box-sizing: border-box;
-        padding: 12px 34px 12px 14px;
-        border: 1.5px solid rgba(0,0,0,0.08);
-        border-radius: 12px;
-        background: rgba(255,255,255,0.8);
+        padding: 13px 58px 13px 52px;
+        border: 1.5px solid rgba(44,54,76,0.10);
+        border-radius: 13px;
+        background: #fff;
         font-family: 'JetBrains Mono', monospace;
-        font-size: 15px;
+        font-size: 17px;
         font-weight: 700;
+        letter-spacing: 0.01em;
         color: var(--text-deep);
         outline: none;
-        transition: border-color 0.2s, box-shadow 0.2s;
+        transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+    .bt-capital-input::placeholder {
+        color: #B6C1CE;
+        font-weight: 600;
+        letter-spacing: 0;
     }
     .bt-capital-input:focus {
         border-color: var(--accent-blue, #3498db);
-        box-shadow: 0 0 0 3px rgba(52,152,219,0.1);
+        box-shadow: 0 0 0 3px rgba(52,152,219,0.12);
+    }
+    /* Левый знак рубля — мягкий «жетон» */
+    .bt-capital-sym {
+        position: absolute;
+        left: 9px; top: 50%; transform: translateY(-50%);
+        width: 30px; height: 30px;
+        display: flex; align-items: center; justify-content: center;
+        border-radius: 9px;
+        background: linear-gradient(135deg, rgba(52,152,219,0.16), rgba(52,152,219,0.06));
+        color: var(--accent-blue, #3498db);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 15px; font-weight: 700;
+        pointer-events: none;
     }
     .bt-capital-cur {
         position: absolute;
-        right: 14px; top: 50%; transform: translateY(-50%);
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 14px; font-weight: 700;
-        color: var(--text-muted);
+        right: 15px; top: 50%; transform: translateY(-50%);
+        font-family: 'Inter', sans-serif;
+        font-size: 12px; font-weight: 600;
+        color: var(--text-muted, #94A3B8);
         pointer-events: none;
     }
     body.dark-mode .bt-capital-input {
-        background: rgba(15,23,42,0.5);
-        border-color: rgba(255,255,255,0.1);
+        background: rgba(15,23,42,0.55);
+        border-color: rgba(255,255,255,0.12);
         color: #F1F6FB;
     }
+    body.dark-mode .bt-capital-input::placeholder { color: rgba(255,255,255,0.35); }
+    body.dark-mode .bt-capital-sym {
+        background: linear-gradient(135deg, rgba(96,165,250,0.22), rgba(96,165,250,0.08));
+        color: #7DB9F0;
+    }
     .bt-capital-hint {
-        font-size: 11.5px;
-        color: var(--text-muted, #8593A6);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        color: var(--text-muted, #94A3B8);
         margin: 0 0 14px;
-        line-height: 1.4;
+        line-height: 1.35;
+    }
+    .bt-capital-hint svg {
+        width: 13px; height: 13px;
+        flex-shrink: 0;
+        stroke: currentColor;
+        opacity: 0.65;
     }
 
     /* Ticker add row */

@@ -336,13 +336,17 @@
                     <!-- Стартовый капитал -->
                     <div class="bt-mini-label">Стартовый капитал на дату теста</div>
                     <div class="bt-capital-field">
+                        <span class="bt-capital-sym">₽</span>
                         <input type="text" id="btManualCapital" class="bt-capital-input"
                                placeholder="например, 1 000 000"
                                inputmode="numeric" autocomplete="off"
                                oninput="btFormatCapital(this)">
-                        <span class="bt-capital-cur">₽</span>
+                        <span class="bt-capital-cur">руб.</span>
                     </div>
-                    <div class="bt-capital-hint">Сумма вложится в указанные тикеры пропорционально их долям</div>
+                    <div class="bt-capital-hint">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        <span>Сумма распределится по тикерам пропорционально их долям</span>
+                    </div>
 
                     <!-- Добавить один тикер -->
                     <div class="bt-mini-label">Добавить по одному — тикер и количество</div>
