@@ -10,8 +10,11 @@
     // it survives resizes and late viewport sizing.
     function applySidebarDefault() {
         try {
-            if (localStorage.getItem('sbCollapsed') === null) {
+            var stored = localStorage.getItem('sbCollapsed');
+            if (stored === null) {
                 document.body.classList.toggle('sb-collapsed', sbIsDesktop());
+            } else {
+                document.body.classList.toggle('sb-collapsed', stored === '1');
             }
         } catch (e) {}
         if (window.updateCollapseLabel) window.updateCollapseLabel();

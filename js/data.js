@@ -247,6 +247,7 @@ function loadDemoData() {
     renderAuroraOfzList();
     renderAuroraStocksTable();
     distributeMonthlyInvestment();
+    updateMonthlySumFromQuantities();
     updateEchelonTable();
     renderOfzList();
 
@@ -442,6 +443,7 @@ async function loadData() {
                 }
                 
                 distributeMonthlyInvestment();
+                updateMonthlySumFromQuantities();
                 updateEchelonTable();
                 renderOfzList();
                 
@@ -639,6 +641,7 @@ async function fetchPricesForMonthlyIncome() {
     
     renderMonthlyIncomeCards();
     distributeMonthlyInvestment(); // Пересчет (как мы добавили ранее)
+    updateMonthlySumFromQuantities();
 }
 // ===== ФУНКЦИЯ 3: Пересчёт выплат (ИСПРАВЛЕННАЯ) =====
 function recalcCustomCoupons() {
