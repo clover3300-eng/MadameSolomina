@@ -465,7 +465,6 @@ function ndOnBlur() {
     }
     
     distributeMonthlyInvestment();
-    updateMonthlySumFromQuantities();
 
     // Если открыт «График выплат» — перерисовываем его с новым налогом
     var _chartView = document.getElementById('incomeChartView');
