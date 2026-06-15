@@ -191,6 +191,10 @@
         <!-- ===== TAB: ДАШБОРД (desktop home) ===== -->
         <div id="panel-dashboard" class="tab-panel">
             <div class="dash2-wrap">
+
+                <!-- Верхняя LIVE-полоска: рыночные данные + часы МСК -->
+                <div class="dash2-livebar" id="dash2LiveBar"></div>
+
                 <div class="dash2-head">
                     <div class="dash2-head-text">
                         <div class="dash2-eyebrow">Дашборд</div>
@@ -198,16 +202,13 @@
                     </div>
                 </div>
 
-                <!-- Рыночные данные: IMOEX / USD / BTC -->
-                <div class="dash2-market" id="dash2Market"></div>
-
-                <!-- Основная сетка: портфель + ставки -->
+                <!-- Основная сетка: портфель (с пересчётом) + вертикаль ставок -->
                 <div class="dash2-grid">
                     <div class="dash2-card dash2-portfolio" id="dash2Portfolio"></div>
                     <div class="dash2-card dash2-rates" id="dash2Rates"></div>
                 </div>
 
-                <!-- Лучшее для ребаланса: ОФЗ + эшелоны -->
+                <!-- Рекомендации для ребаланса: вертикально ОФЗ + акции -->
                 <div class="dash2-card dash2-rebal" id="dash2Rebal"></div>
             </div>
         </div>
