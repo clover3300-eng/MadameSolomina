@@ -1366,10 +1366,21 @@
         body.sb-collapsed { --sb-w: 78px; }
         /* Collapsed rail keeps an EXPLICIT width so the hover reveal animates
            the width itself. (An `auto`/flex width can't be transitioned — it
-           snaps — which is what made the open feel abrupt.) */
+           snaps — which is what made the open feel abrupt.)
+           Rail is 78px (per reference). The icons/logo are centred inside this
+           width by their own offsets below (not by shrinking the rail), so the
+           highlight + green active bar keep their comfortable margins. */
         body.sb-collapsed #sbPanel,
         body.sb-collapsed #sbFoot { width: 78px; }
         body.sb-collapsed .sb-item.active::before { left: -8px; }
+
+        /* Centre the icons/logo within the 78px rail. The nav item box (and so
+           the active highlight) stays where it is; only the icon is nudged to
+           the rail's centre via padding, and the logo likewise. Constant in
+           both collapsed and peek → no shift when the rail opens. */
+        #sbNav .sb-item { padding-left: 20px; }   /* icon centre ≈ rail centre (53) */
+        #sbHead { padding-left: 22px; }            /* logo (34px) centred */
+        #sbFoot .sb-item { padding-left: 22px; }   /* collapse chevron centred */
 
         /* ===== HOVER-PEEK: collapsed rail expands as a floating overlay =====
            The grid track stays narrow (content & header never shift); only the
@@ -1379,6 +1390,9 @@
            secondary squish/jump. Labels are only faded (cheap, no reflow) and
            clipped by the panel until it is wide enough to show them. */
         #sbPanel, #sbFoot {
+            box-sizing: border-box;        /* width includes padding → foot edge
+                                              stays flush with the panel (no
+                                              bulge on the right of the rail) */
             transition: width 0.3s ease, box-shadow 0.3s ease;
         }
         .sb-label, .sb-logo-text {
@@ -1395,6 +1409,17 @@
         body.sb-collapsed.sb-peek .sb-label,
         body.sb-collapsed.sb-peek .sb-logo-text { opacity: 1; transition-delay: 0.08s; }
         body.sb-collapsed.sb-peek .sb-item.active::before { left: -10px; }
+
+        /* ===== HEADER FOLLOWS THE RAIL (app pages only) =====
+           On hover-peek the panel floats over the content (content stays put),
+           which would otherwise cover the header brand. So the brand slides
+           right by the same amount the rail grows (92px → 236px ⇒ +144px),
+           keeping a constant gap from the rail's right edge — it "moves with"
+           the sidebar. transform = no reflow, so the right-side actions
+           (search / theme) stay exactly where they are. Welcome page is
+           excluded — its brand stays centred over the hero. */
+        body:not(.tab-home) #topBarBrand { transition: transform 0.3s ease; }
+        body:not(.tab-home).sb-collapsed.sb-peek #topBarBrand { transform: translateX(144px); }
 
         /* ===== HOME TAB: «закрепить/свернуть» тоже не двигает контент =====
            На главной grid-колонка сайдбара всегда остаётся узкой (как у
@@ -1927,6 +1952,10 @@
            #panel-home.active уже центрирует .welcome-screen целиком,
            поэтому даём ей естественную высоту по контенту. */
         #panel-home .welcome-screen { min-height: auto; height: auto; }
+        /* Raise the welcome hero above the vertical centre — extra bottom
+           padding shifts the centred content upward so it sits in the upper
+           third instead of feeling pinned to the button. */
+        body.tab-home #panel-home .welcome-screen { padding-bottom: 220px; }
 
         /* Company overlay: centered reading column instead of full-bleed stretch */
         #company-content { max-width: 760px; margin: 0 auto; padding: 24px 24px 80px; }
