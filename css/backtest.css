@@ -370,3 +370,103 @@ body.dark-mode .bt2-feat { border-color: rgba(255, 255, 255, 0.14); }
 
 /* ---------- Результаты ---------- */
 #btResults:not(:empty) { margin-top: 18px; }
+
+/* ============================================================
+   РЕЖИМ РЕЗУЛЬТАТОВ: карточка слева + таблица справа
+   ============================================================ */
+
+/* Шапка с финальными данными теста — в верхней части левой карточки */
+.bt-res-summary {
+    padding-bottom: 20px;
+    margin-bottom: 22px;
+    border-bottom: 1px solid rgba(133, 147, 166, 0.18);
+}
+body.dark-mode .bt-res-summary { border-color: rgba(255, 255, 255, 0.1); }
+.bt-res-sum-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+.bt-res-sum-eyebrow {
+    font-size: 11.5px; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    color: #8593A6;
+}
+.bt-res-date-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11.5px; font-weight: 700;
+    color: #5B7C99;
+    background: rgba(91, 124, 153, 0.1);
+    padding: 4px 9px; border-radius: 999px;
+    white-space: nowrap;
+}
+body.dark-mode .bt-res-date-pill { color: #9AA8BC; background: rgba(255, 255, 255, 0.07); }
+.bt-res-date-pill svg { width: 12px; height: 12px; flex-shrink: 0; }
+.bt-res-sum-label { font-size: 12.5px; color: #8593A6; margin-bottom: 5px; }
+body.dark-mode .bt-res-sum-label { color: #9AA8BC; }
+.bt-res-sum-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 27px; font-weight: 800;
+    letter-spacing: -0.5px; line-height: 1.1;
+    color: #111927;
+}
+body.dark-mode .bt-res-sum-value { color: #F1F6FB; }
+.bt-res-sum-change {
+    display: inline-flex; align-items: center; gap: 4px;
+    margin-top: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13.5px; font-weight: 700;
+}
+.bt-res-sum-change svg { width: 14px; height: 14px; }
+.bt-res-sum-change.pos { color: #0E9F63; }
+.bt-res-sum-change.neg { color: #E5484D; }
+.bt-res-sum-stats {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 12px 14px;
+    margin-top: 18px;
+}
+.bt-res-stat { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.bt-res-stat span { font-size: 11px; color: #8593A6; }
+body.dark-mode .bt-res-stat span { color: #9AA8BC; }
+.bt-res-stat b {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px; font-weight: 700;
+    color: #2C364C;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+body.dark-mode .bt-res-stat b { color: #E8EEF5; }
+.bt-res-stat b.pos { color: #0E9F63; }
+.bt-res-stat b.neg { color: #E5484D; }
+body.dark-mode .bt-res-sum-change.pos,
+body.dark-mode .bt-res-stat b.pos { color: #34D399; }
+body.dark-mode .bt-res-sum-change.neg,
+body.dark-mode .bt-res-stat b.neg { color: #F87171; }
+
+/* Раскрытие таблицы результатов */
+.bt2-wrap.bt-results-mode #btResults {
+    animation: btResIn 0.38s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+@keyframes btResIn {
+    from { opacity: 0; transform: translateX(14px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* Десктоп: две колонки — настройки+шапка слева, таблица справа */
+@media (min-width: 1024px) {
+    .bt2-wrap.bt-results-mode {
+        max-width: 1200px;
+        display: grid;
+        grid-template-columns: 380px minmax(0, 1fr);
+        grid-template-areas:
+            "head    head"
+            "config  results";
+        column-gap: 22px;
+        align-items: start;
+    }
+    .bt2-wrap.bt-results-mode .bt2-head    { grid-area: head; }
+    .bt2-wrap.bt-results-mode #btConfigCol { grid-area: config; }
+    .bt2-wrap.bt-results-mode #btResults   { grid-area: results; margin-top: 0 !important; }
+    .bt2-wrap.bt-results-mode .bt2-footer  { display: none; }
+}

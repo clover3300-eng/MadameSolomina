@@ -140,8 +140,10 @@
         var MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
         var MONTHS_SHORT = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
         var DOW = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
-        var pop = null, vY = 0, vM = 0, view = 'days';
+        var pop = null, vY = 0, vM = 0, view = 'days', vYPageEnd = 0;
+        var MIN_YEAR = 2014;
         function pad(n) { return n < 10 ? '0' + n : '' + n; }
+        function chevron() { return '<svg class="btcal-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>'; }
         function getInput() { return document.getElementById('btDateInput'); }
         function getField() { var i = getInput(); return i ? i.closest('.bt-date-field') : null; }
         function closeCal() { if (pop) { pop.remove(); pop = null; } }
@@ -163,7 +165,10 @@
             var nextDis = monthInFuture(ny, nm, tY, tM);
             var h = '<div class="btcal-head">'
                 + '<button type="button" class="btcal-nav" data-nav="-1"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>'
-                + '<button type="button" class="btcal-title" data-title>' + MONTHS[vM] + ' ' + vY + '</button>'
+                + '<div class="btcal-sel">'
+                + '<button type="button" class="btcal-pick" data-pick="months">' + MONTHS[vM] + chevron() + '</button>'
+                + '<button type="button" class="btcal-pick" data-pick="years">' + vY + chevron() + '</button>'
+                + '</div>'
                 + '<button type="button" class="btcal-nav" data-nav="1"' + (nextDis ? ' disabled' : '') + '><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>'
                 + '</div><div class="btcal-dow">';
             DOW.forEach(function(d) { h += '<span>' + d + '</span>'; });
@@ -193,9 +198,10 @@
             var tY = today.getFullYear(), tM = today.getMonth();
             var sel = selDate();
             var nextDis = vY >= tY;
+            var prevDis = vY <= MIN_YEAR;
             var h = '<div class="btcal-head">'
-                + '<button type="button" class="btcal-nav" data-nav="-1"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>'
-                + '<button type="button" class="btcal-title" data-title>' + vY + '</button>'
+                + '<button type="button" class="btcal-nav" data-nav="-1"' + (prevDis ? ' disabled' : '') + '><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>'
+                + '<button type="button" class="btcal-title" data-pick="years">' + vY + chevron() + '</button>'
                 + '<button type="button" class="btcal-nav" data-nav="1"' + (nextDis ? ' disabled' : '') + '><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>'
                 + '</div><div class="btcal-months">';
             for (var m = 0; m < 12; m++) {
@@ -209,9 +215,33 @@
             return h;
         }
 
+        function renderYears() {
+            var today = new Date();
+            var tY = today.getFullYear();
+            var sel = selDate();
+            var end = vYPageEnd, start = end - 11;
+            var prevDis = start <= MIN_YEAR;
+            var nextDis = end >= tY;
+            var h = '<div class="btcal-head">'
+                + '<button type="button" class="btcal-nav" data-nav="-1"' + (prevDis ? ' disabled' : '') + '><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>'
+                + '<div class="btcal-title btcal-title-static">' + Math.max(MIN_YEAR, start) + ' – ' + end + '</div>'
+                + '<button type="button" class="btcal-nav" data-nav="1"' + (nextDis ? ' disabled' : '') + '><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>'
+                + '</div><div class="btcal-years">';
+            for (var y = start; y <= end; y++) {
+                if (y < MIN_YEAR) { h += '<span class="btcal-yr empty"></span>'; continue; }
+                var dis = y > tY;
+                var isSel = sel && sel.y === y;
+                var isCur = y === tY;
+                var cls = 'btcal-yr' + (dis ? ' dis' : '') + (isSel ? ' sel' : '') + (isCur ? ' today' : '');
+                h += '<button type="button" class="' + cls + '"' + (dis ? '' : ' data-year="' + y + '"') + '>' + y + '</button>';
+            }
+            h += '</div>';
+            return h;
+        }
+
         function render() {
             if (!pop) return;
-            pop.innerHTML = (view === 'months') ? renderMonths() : renderDays();
+            pop.innerHTML = view === 'years' ? renderYears() : (view === 'months' ? renderMonths() : renderDays());
         }
 
         function openCal() {
@@ -227,11 +257,19 @@
             field.appendChild(pop);
             render();
             pop.addEventListener('click', function(e) {
+                var t = new Date(), tY = t.getFullYear(), tM = t.getMonth();
                 var nav = e.target.closest('[data-nav]');
                 if (nav) {
+                    if (nav.disabled) return;
                     var d = parseInt(nav.dataset.nav, 10);
-                    if (view === 'months') {
+                    if (view === 'years') {
+                        vYPageEnd += d * 12;
+                        if (vYPageEnd > tY) vYPageEnd = tY;
+                        if (vYPageEnd < MIN_YEAR + 11) vYPageEnd = MIN_YEAR + 11;
+                    } else if (view === 'months') {
                         vY += d;
+                        if (vY < MIN_YEAR) vY = MIN_YEAR;
+                        if (vY > tY) vY = tY;
                     } else {
                         vM += d;
                         if (vM < 0) { vM = 11; vY--; }
@@ -240,14 +278,30 @@
                     render();
                     return;
                 }
-                if (e.target.closest('[data-title]')) {
-                    view = (view === 'days') ? 'months' : 'days';
+                var pick = e.target.closest('[data-pick]');
+                if (pick) {
+                    if (pick.dataset.pick === 'years') {
+                        view = 'years';
+                        vYPageEnd = tY;
+                        if (vY < vYPageEnd - 11) vYPageEnd = vY + 11;
+                        if (vYPageEnd < MIN_YEAR + 11) vYPageEnd = MIN_YEAR + 11;
+                    } else {
+                        view = 'months';
+                    }
                     render();
                     return;
                 }
                 var mo = e.target.closest('[data-month]');
                 if (mo) {
                     vM = parseInt(mo.dataset.month, 10);
+                    view = 'days';
+                    render();
+                    return;
+                }
+                var yr = e.target.closest('[data-year]');
+                if (yr) {
+                    vY = parseInt(yr.dataset.year, 10);
+                    if (monthInFuture(vY, vM, tY, tM)) vM = tM;
                     view = 'days';
                     render();
                     return;

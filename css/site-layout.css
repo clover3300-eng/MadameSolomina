@@ -777,6 +777,42 @@
     .btcal-mo.dis { color: rgba(148,163,184,0.4); cursor: default; background: transparent !important; }
     .btcal-mo.today { box-shadow: inset 0 0 0 1.5px rgba(91,124,153,0.4); }
     .btcal-mo.sel { background: #2C364C !important; color: #F1F6FB; font-weight: 700; }
+    /* Заголовок дней: отдельные «дропдауны» месяца и года */
+    .btcal-sel { display: flex; align-items: center; gap: 6px; }
+    .btcal-pick {
+        display: inline-flex; align-items: center; gap: 4px;
+        border: none; cursor: pointer;
+        background: rgba(44,54,76,0.06);
+        color: var(--text-deep, #2C364C);
+        font-family: inherit; font-size: 13px; font-weight: 700;
+        padding: 6px 9px; border-radius: 9px;
+        transition: background 0.15s;
+    }
+    .btcal-pick:hover { background: rgba(44,54,76,0.12); }
+    body.dark-mode .btcal-pick { background: rgba(255,255,255,0.08); color: #F1F6FB; }
+    body.dark-mode .btcal-pick:hover { background: rgba(255,255,255,0.14); }
+    .btcal-chev { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.6; }
+    .btcal-title .btcal-chev { margin-left: 3px; }
+    .btcal-title-static { cursor: default; }
+    .btcal-title-static:hover { background: transparent; }
+    /* Сетка выбора года */
+    .btcal-years { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .btcal-yr {
+        height: 46px;
+        border: none; border-radius: 10px;
+        background: transparent;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 13px; font-weight: 600;
+        color: var(--text-deep, #2C364C);
+        cursor: pointer;
+        transition: background 0.12s;
+    }
+    .btcal-yr.empty { background: transparent !important; pointer-events: none; }
+    body.dark-mode .btcal-yr { color: #F1F6FB; }
+    .btcal-yr:hover { background: rgba(91,124,153,0.12); }
+    .btcal-yr.dis { color: rgba(148,163,184,0.4); cursor: default; background: transparent !important; }
+    .btcal-yr.today { box-shadow: inset 0 0 0 1.5px rgba(91,124,153,0.4); }
+    .btcal-yr.sel { background: #2C364C !important; color: #F1F6FB; font-weight: 700; }
     .btcal-dow {
         display: grid; grid-template-columns: repeat(7, 1fr);
         margin-bottom: 4px;

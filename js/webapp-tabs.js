@@ -1187,6 +1187,7 @@ function showBtLoading(dateStr) {
 }
 
 function showBtError(title, msg) {
+    if (typeof btExitResultsMode === 'function') btExitResultsMode();
     var el = document.getElementById('btResults');
     if (!el) return;
     el.innerHTML = '<div class="bt-error-card">'
@@ -1209,49 +1210,62 @@ function btFmtRub(v) {
     return Math.round(v).toLocaleString('ru-RU').replace(/\s/g, '.') + ' ₽';
 }
 
+// Левая карточка-«шапка» с финальными данными теста
+function btRenderSummary(results, dateStr) {
+    var el = document.getElementById('btResultSummary');
+    if (!el) return;
+    var totalPnl = results.totalPnl;
+    var pct = results.totalPnlPct !== null ? parseFloat(results.totalPnlPct) : null;
+    var hasPnl = totalPnl !== null;
+    var cls = hasPnl ? (totalPnl >= 0 ? 'pos' : 'neg') : '';
+    var pnlSign = hasPnl && totalPnl >= 0 ? '+' : '';
+    var pctSign = pct !== null && pct >= 0 ? '+' : '';
+    var arrow = hasPnl ? (totalPnl >= 0
+        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>'
+        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>') : '';
+    var positions = results.bonds.length + results.stocks.length;
+
+    var h = '';
+    h += '<div class="bt-res-sum-top">';
+    h += '<span class="bt-res-sum-eyebrow">Результат теста</span>';
+    h += '<span class="bt-res-date-pill"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' + btFormatDate(dateStr) + '</span>';
+    h += '</div>';
+    h += '<div class="bt-res-sum-label">Стоимость портфеля сейчас</div>';
+    h += '<div class="bt-res-sum-value ' + cls + '">' + (results.totalTestPrice > 0 ? btFmtRub(results.totalTestPrice) : '—') + '</div>';
+    if (hasPnl) {
+        h += '<div class="bt-res-sum-change ' + cls + '">' + arrow + '<span>' + pctSign + (pct !== null ? pct : '') + '% · ' + pnlSign + btFmtRub(totalPnl) + '</span></div>';
+    }
+    h += '<div class="bt-res-sum-stats">';
+    h += '<div class="bt-res-stat"><span>Вложено на дату</span><b>' + (results.totalBuyPrice > 0 ? btFmtRub(results.totalBuyPrice) : '—') + '</b></div>';
+    h += '<div class="bt-res-stat"><span>P&L</span><b class="' + cls + '">' + (hasPnl ? pnlSign + btFmtRub(totalPnl) : '—') + '</b></div>';
+    h += '<div class="bt-res-stat"><span>Доходность</span><b class="' + cls + '">' + (pct !== null ? pctSign + pct + '%' : '—') + '</b></div>';
+    h += '<div class="bt-res-stat"><span>Позиций</span><b>' + positions + '</b></div>';
+    h += '</div>';
+    el.innerHTML = h;
+    el.style.display = 'block';
+}
+
+// Переключение раскладки в режим результатов (карточка слева + таблица справа)
+function btEnterResultsMode() {
+    var wrap = document.querySelector('#panel-backtest .bt2-wrap');
+    if (wrap) wrap.classList.add('bt-results-mode');
+}
+function btExitResultsMode() {
+    var wrap = document.querySelector('#panel-backtest .bt2-wrap');
+    if (wrap) wrap.classList.remove('bt-results-mode');
+    var sum = document.getElementById('btResultSummary');
+    if (sum) { sum.style.display = 'none'; sum.innerHTML = ''; }
+    var res = document.getElementById('btResults');
+    if (res) res.innerHTML = '';
+}
+
 function renderBtResults(results, dateStr) {
     var container = document.getElementById('btResults');
     if (!container) return;
 
-    var totalPnl = results.totalPnl;
-    var totalPnlPct = results.totalPnlPct !== null ? parseFloat(results.totalPnlPct) : null;
-    var hasPnl = totalPnl !== null;
-    var pnlSign = hasPnl && totalPnl >= 0 ? '+' : '';
-    var pctSign = totalPnlPct !== null && totalPnlPct >= 0 ? '+' : '';
-    var pnlClass = hasPnl ? (totalPnl >= 0 ? 'positive' : 'negative') : '';
-
-    // Summary card
-    var html = '<div class="bt-pnl-card">';
-    html += '<div class="bt-pnl-date-tag">';
-    html += '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">';
-    html += '<rect x="3" y="4" width="18" height="18" rx="2"/>';
-    html += '<line x1="16" y1="2" x2="16" y2="6"/>';
-    html += '<line x1="8" y1="2" x2="8" y2="6"/>';
-    html += '<line x1="3" y1="10" x2="21" y2="10"/></svg>';
-    html += btFormatDate(dateStr) + '</div>';
-
-    html += '<div class="bt-pnl-label">Стоимость портфеля на дату</div>';
-    html += '<div class="bt-pnl-value ' + pnlClass + '">';
-    html += results.totalTestPrice > 0 ? btFmtRub(results.totalTestPrice) : '—';
-    html += '</div>';
-
-    html += '<div class="bt-pnl-grid">';
-    html += '<div class="bt-pnl-stat"><div class="bt-pnl-stat-label">Цена покупки</div>';
-    html += '<div class="bt-pnl-stat-val">' + (results.totalBuyPrice > 0 ? btFmtRub(results.totalBuyPrice) : '—') + '</div></div>';
-
-    html += '<div class="bt-pnl-stat"><div class="bt-pnl-stat-label">P&L</div>';
-    html += '<div class="bt-pnl-stat-val ' + (hasPnl ? (totalPnl >= 0 ? 'pos' : 'neg') : '') + '">';
-    html += hasPnl ? pnlSign + btFmtRub(totalPnl) : '—';
-    html += '</div></div>';
-
-    html += '<div class="bt-pnl-stat"><div class="bt-pnl-stat-label">Доходность</div>';
-    html += '<div class="bt-pnl-stat-val ' + (totalPnlPct !== null ? (totalPnlPct >= 0 ? 'pos' : 'neg') : '') + '">';
-    html += totalPnlPct !== null ? pctSign + totalPnlPct + '%' : '—';
-    html += '</div></div>';
-
-    html += '<div class="bt-pnl-stat"><div class="bt-pnl-stat-label">Позиций</div>';
-    html += '<div class="bt-pnl-stat-val">' + (results.bonds.length + results.stocks.length) + '</div></div>';
-    html += '</div></div>';
+    // Финальные данные — в левую карточку-шапку
+    btRenderSummary(results, dateStr);
+    var html = '';
 
     // Asset tables helper
     function renderTable(items, title) {
@@ -1315,6 +1329,7 @@ function renderBtResults(results, dateStr) {
     }
 
     container.innerHTML = html;
+    btEnterResultsMode();
     if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
         window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
     }
