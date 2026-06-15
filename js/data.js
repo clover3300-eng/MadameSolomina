@@ -561,10 +561,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const perBondBudget = totalInvestment / 6;
     console.log(`[CALC] Бюджет на одну бумагу: ${perBondBudget.toFixed(2)}`); // ЛОГ
 
-    monthlyIncomeBonds.forEach(bond => {
+    const priced = monthlyIncomeBonds.map(bond => ({ bond, fullPrice: bond.p + bond.nkd }));
+
+    priced.forEach(({ bond, fullPrice }) => {
         // Полная стоимость покупки = Цена + НКД
-        const fullPrice = bond.p + bond.nkd;
-        
         let count = 0;
         if (fullPrice > 0) {
             count = Math.floor(perBondBudget / fullPrice);
@@ -581,6 +581,23 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log(`       Расчет: ${perBondBudget.toFixed(2)} / ${fullPrice.toFixed(2)} = ${count} шт.`);
         console.log('---');
     });
+
+    // Остаток от деления "на 6 равных частей" добираем самыми дешёвыми бумагами,
+    // чтобы итоговая сумма была максимально близка к введённой (а не к 1/6 от неё)
+    let leftover = totalInvestment - priced.reduce((sum, { bond, fullPrice }) => sum + bondQtyMap[bond.t] * fullPrice, 0);
+    const byPrice = priced.filter(p => p.fullPrice > 0).sort((a, b) => a.fullPrice - b.fullPrice);
+    let added = true;
+    while (added) {
+        added = false;
+        for (const { bond, fullPrice } of byPrice) {
+            if (fullPrice <= leftover) {
+                bondQtyMap[bond.t]++;
+                leftover -= fullPrice;
+                added = true;
+            }
+        }
+    }
+    console.log(`[CALC] Остаток после добора: ${leftover.toFixed(2)}`);
 
     renderMonthlyIncomeCards();
     recalcCustomCoupons();
