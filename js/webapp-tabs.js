@@ -866,82 +866,154 @@ function btToggleBulk() {
     if (chev) chev.style.transform = btState.bulkOpen ? 'rotate(180deg)' : '';
 }
 
+// Текущая дата теста (YYYY-MM-DD) или ''
+function btCurrentDate() {
+    var el = document.getElementById('btDateInput');
+    return el && el.value ? el.value : '';
+}
+
 function btAddTicker() {
     var tickerEl = document.getElementById('btTickerInput');
-    var qtyEl = document.getElementById('btQtyInput');
-    var ticker = tickerEl.value.trim().toUpperCase();
-    var qty = parseInt(qtyEl.value) || 1;
+    var ticker = (tickerEl.value || '').trim().toUpperCase().replace(/\s+/g, '');
     if (!ticker) { tickerEl.focus(); return; }
-    var existing = btState.tickers.find(function(t) { return t.t === ticker; });
-    if (existing) {
-        existing.qty += qty;
-    } else {
+    if (!btState.tickers.find(function(t) { return t.t === ticker; })) {
         var type = ticker.startsWith('SU') ? 'bond' : 'stock';
-        btState.tickers.push({ t: ticker, qty: qty, type: type });
+        var item = { t: ticker, type: type, price: 0, qty: 0, status: 'loading' };
+        btState.tickers.push(item);
+        btFetchTickerPrice(item);   // async: цена на дату теста → пересчёт количества
     }
     tickerEl.value = '';
-    qtyEl.value = '1';
     tickerEl.focus();
+    btRecomputeManualQty();
     btRenderTickerList();
     btUpdateRunBtn();
+    lsScheduleSave();
 }
 
 function btApplyBulk() {
     var ta = document.getElementById('btBulkInput');
-    var rawText = ta.value.trim();
-    var lines = rawText.split('\n');
-    var added = 0;
+    var lines = (ta.value || '').trim().split('\n');
+    var added = [];
     lines.forEach(function(line) {
-        var parts = line.trim().split(/\s+/);
-        if (!parts[0]) return;
-        var ticker = parts[0].toUpperCase();
-        var qty = parseInt(parts[1]) || 1;
-        var existing = btState.tickers.find(function(t) { return t.t === ticker; });
-        if (existing) {
-            existing.qty = qty;
-        } else {
-            var type = ticker.startsWith('SU') ? 'bond' : 'stock';
-            btState.tickers.push({ t: ticker, qty: qty, type: type });
-        }
-        added++;
+        var ticker = line.trim().split(/\s+/)[0];
+        if (!ticker) return;
+        ticker = ticker.toUpperCase();
+        if (btState.tickers.find(function(t) { return t.t === ticker; })) return;
+        var type = ticker.startsWith('SU') ? 'bond' : 'stock';
+        var item = { t: ticker, type: type, price: 0, qty: 0, status: 'loading' };
+        btState.tickers.push(item);
+        added.push(item);
     });
     ta.value = '';
     if (btState.bulkOpen) btToggleBulk();
+    btRecomputeManualQty();
     btRenderTickerList();
     btUpdateRunBtn();
-    if (added > 0 && window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
+    added.forEach(function(item) { btFetchTickerPrice(item); });
+    if (added.length > 0 && window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
         window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
     }
+    lsScheduleSave();
 }
 
 function btRemoveTicker(ticker) {
     btState.tickers = btState.tickers.filter(function(t) { return t.t !== ticker; });
+    btRecomputeManualQty();
     btRenderTickerList();
     btUpdateRunBtn();
+    lsScheduleSave();
 }
 
-function btUpdateQty(ticker, val) {
-    var item = btState.tickers.find(function(t) { return t.t === ticker; });
-    if (item) item.qty = parseInt(val) || 1;
+// Загрузка цены бумаги на дату теста (для авто-расчёта количества)
+async function btFetchTickerPrice(item) {
+    var dateStr = btCurrentDate();
+    if (!dateStr) { item.status = 'nodate'; item.price = 0; btRenderTickerList(); return; }
+    item.status = 'loading';
+    item.priceDate = dateStr;
+    var p = item.type === 'bond'
+        ? await btGetBondPriceSafe(item.t, dateStr)
+        : await btGetStockPriceSafe(item.t, dateStr);
+    if (btCurrentDate() !== dateStr) return;   // дата сменилась — результат устарел
+    if (p > 0) { item.price = p; item.status = 'ok'; }
+    else { item.price = 0; item.status = 'error'; }
+    btRecomputeManualQty();
+    btRenderTickerList();
+    btUpdateRunBtn();
+    lsScheduleSave();
+}
+
+// Догрузить недостающие цены на текущую дату (перед запуском теста)
+async function btEnsureManualPrices() {
+    var dateStr = btCurrentDate();
+    var pending = btState.tickers.filter(function(t) { return t.status !== 'ok' || t.priceDate !== dateStr; });
+    await Promise.all(pending.map(function(t) { return btFetchTickerPrice(t); }));
+    btRecomputeManualQty();
+}
+
+// Капитал делится поровну: каждая бумага = капитал / N, количество = floor(доля / цена)
+function btRecomputeManualQty() {
+    var cap = btGetManualCapital();
+    var n = btState.tickers.length;
+    var per = (cap > 0 && n > 0) ? cap / n : 0;
+    btState.tickers.forEach(function(t) {
+        t.qty = (t.status === 'ok' && t.price > 0 && per > 0) ? Math.floor(per / t.price) : 0;
+    });
+}
+
+// Склонение «бумага / бумаги / бумаг»
+function btPluralPapers(n) {
+    var d = n % 10, dd = n % 100;
+    if (d === 1 && dd !== 11) return n + ' бумага';
+    if (d >= 2 && d <= 4 && (dd < 10 || dd >= 20)) return n + ' бумаги';
+    return n + ' бумаг';
+}
+
+// Цена за штуку: десятичные для дешёвых бумаг, точки-разделители для дорогих
+function btPriceStr(p) {
+    if (!(p > 0)) return '—';
+    return p < 100 ? (p.toFixed(2) + ' ₽') : btFmtRub(p);
 }
 
 function btRenderTickerList() {
     var container = document.getElementById('btTickerList');
+    var countEl = document.getElementById('btManualCount');
+    if (countEl) countEl.textContent = btState.tickers.length ? btPluralPapers(btState.tickers.length) : 'пусто';
     if (!container) return;
     if (btState.tickers.length === 0) {
-        container.innerHTML = '<div class="bt-ticker-list-empty">Список пуст. Добавьте тикеры выше.</div>';
+        container.innerHTML = '<div class="bt-ticker-list-empty">Пока пусто. Добавьте бумаги выше — количество посчитаем сами.</div>';
         return;
     }
+    var hasCap = btGetManualCapital() > 0;
     var html = '';
     btState.tickers.forEach(function(item) {
-        html += '<div class="bt-ticker-row">';
-        html += '<div class="bt-tr-ticker">' + item.t + '</div>';
-        html += '<div class="bt-tr-type">' + (item.type === 'bond' ? 'ОФЗ' : 'Акция') + '</div>';
-        html += '<input type="number" class="bt-tr-qty-input" value="' + item.qty + '" min="1"';
-        html += ' onchange="btUpdateQty(\'' + item.t + '\', this.value)"';
-        html += ' oninput="btUpdateQty(\'' + item.t + '\', this.value)">';
-        html += '<button class="bt-tr-del" onclick="btRemoveTicker(\'' + item.t + '\')">×</button>';
-        html += '</div>';
+        var badge = item.type === 'bond'
+            ? '<span class="bt-tr-badge bond">ОФЗ</span>'
+            : '<span class="bt-tr-badge stock">Акция</span>';
+        var calc;
+        if (item.status === 'loading') {
+            calc = '<span class="bt-tr-muted">загружаем цену…</span>';
+        } else if (item.status === 'error') {
+            calc = '<span class="bt-tr-err">нет цены на эту дату</span>';
+        } else if (item.status === 'nodate') {
+            calc = '<span class="bt-tr-muted">укажите дату оценки</span>';
+        } else if (!hasCap) {
+            calc = '<span class="bt-tr-muted">' + btPriceStr(item.price) + ' за шт. · укажите капитал</span>';
+        } else if (item.qty > 0) {
+            calc = '<b class="bt-tr-qty">' + item.qty + ' шт.</b>'
+                 + '<span class="bt-tr-sep">×</span>' + btPriceStr(item.price)
+                 + '<span class="bt-tr-sep">≈</span><span class="bt-tr-sub">' + btFmtRub(item.qty * item.price) + '</span>';
+        } else {
+            calc = '<span class="bt-tr-muted">' + btPriceStr(item.price) + ' за шт. · мало капитала</span>';
+        }
+        html += '<div class="bt-tr">'
+            + '<div class="bt-tr-main">'
+            +   '<div class="bt-tr-top"><span class="bt-tr-tk">' + item.t + '</span>' + badge + '</div>'
+            +   '<div class="bt-tr-calc">' + calc + '</div>'
+            + '</div>'
+            + '<button class="bt-tr-del" onclick="btRemoveTicker(\'' + item.t + '\')" aria-label="Удалить">'
+            +   '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+            + '</button>'
+            + '</div>';
     });
     container.innerHTML = html;
 }
@@ -951,7 +1023,9 @@ function btUpdateRunBtn() {
     if (!btn) return;
     var dateEl = document.getElementById('btDateInput');
     var dateOk = !!(dateEl && dateEl.value);
-    var portfolioOk = btState.source === 'calc' ? isPortfolioCalculated : btState.tickers.length > 0;
+    var portfolioOk = btState.source === 'calc'
+        ? isPortfolioCalculated
+        : (btState.tickers.length > 0 && btGetManualCapital() > 0);
     btn.disabled = !(dateOk && portfolioOk);
     // Подсказку под кнопкой показываем только пока тест недоступен
     var note = document.getElementById('btRunNote');
@@ -981,6 +1055,12 @@ function onBtDateChange() {
         var total = assets.bonds.length + assets.stocks.length;
         var sumEl = document.getElementById('btCalcSummary');
         if (sumEl) sumEl.textContent = total + ' позиций: ' + assets.bonds.length + ' ОФЗ, ' + assets.stocks.length + ' акций.';
+    }
+    // Ручной режим: цена покупки привязана к дате — пересчитываем при её смене
+    if (btState.source === 'manual' && btState.tickers.length > 0) {
+        btState.tickers.forEach(function(t) { t.status = 'loading'; });
+        btRenderTickerList();
+        btState.tickers.forEach(function(t) { btFetchTickerPrice(t); });
     }
     btUpdateRunBtn();
 }
@@ -1308,11 +1388,17 @@ async function btLoadImoexCompare(panel) {
         var imoexRaw = await btFetchHistorySeries('/iss/history/engines/stock/markets/index/securities/IMOEX.json', dateStr, todayStr);
         if (!imoexRaw.length) throw new Error('NO_IMOEX');
         var pf = await btBuildPortfolioSeries(results, dateStr, todayStr);
-        // Нормируем доходность портфеля относительно стоимости на дату теста из карточки —
-        // и цена «сейчас», и база берутся из тех же данных MOEX, поэтому итог графика
-        // совпадает с карточкой без искусственной подгонки.
-        var data = btAlignReturns(pf, imoexRaw, results.totalBuyPrice);
+        // Линия портфеля — настоящий ряд MOEX, нормированный к 0% на дату теста.
+        var data = btAlignReturns(pf, imoexRaw);
         if (!data || data.points.length < 2) throw new Error('NO_ALIGN');
+        // Число «Ваш портфель» в легенде = доходность из карточки: это тот же показатель
+        // и тот же источник (прямое закрытие MOEX на сегодня), поэтому подписи совпадают.
+        // Кривая может закончиться на ~0.1 пп иначе из-за forward-fill — на глаз незаметно.
+        var cardPct = results.totalPnlPct !== null ? parseFloat(results.totalPnlPct) : null;
+        if (cardPct !== null && !isNaN(cardPct)) {
+            data.pfFinal = cardPct;
+            data.delta = data.pfFinal - data.imFinal;
+        }
         if (!_btImoexOpen) return; // пользователь успел закрыть
         btRenderImoexChart(panel, data, dateStr, todayStr);
     } catch(e) {
@@ -1501,6 +1587,10 @@ function btGetManualCapital() {
 function btFormatCapital(el) {
     var d = (el.value || '').replace(/[^\d]/g, '');
     el.value = d.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    // Капитал меняет распределение → пересчитываем количества и список
+    btRecomputeManualQty();
+    btRenderTickerList();
+    btUpdateRunBtn();
     if (typeof lsScheduleSave === 'function') lsScheduleSave();
 }
 
@@ -1754,10 +1844,13 @@ function lsRestore() {
         if (btDateEl) btDateEl.value = state.btDate;
     }
 
-    // Тикеры бэктеста
+    // Тикеры бэктеста — нормализуем и подгружаем цены на дату теста заново
     if (state.btTickers && state.btTickers.length > 0 && btState) {
-        btState.tickers = state.btTickers;
+        btState.tickers = state.btTickers.map(function(t) {
+            return { t: t.t, type: t.type || (String(t.t).startsWith('SU') ? 'bond' : 'stock'), price: 0, qty: 0, status: 'loading' };
+        });
         btRenderTickerList();
+        btState.tickers.forEach(function(t) { btFetchTickerPrice(t); });
     }
 
     if (state.btSource && btState) {
@@ -1960,12 +2053,24 @@ runBacktest = async function() {
         }
     } else {
         if (btState.tickers.length === 0) {
-            showLuxuryNotification('Нет тикеров', 'Добавьте хотя бы один тикер');
+            showLuxuryNotification('Нет бумаг', 'Добавьте хотя бы одну бумагу');
+            return;
+        }
+        if (btGetManualCapital() <= 0) {
+            showLuxuryNotification('Нет капитала', 'Укажите стартовый капитал');
+            return;
+        }
+        // Цены на дату теста → количество (капитал поровну между бумагами)
+        showBtLoading(testDate);
+        await btEnsureManualPrices();
+        var picked = btState.tickers.filter(function(t) { return t.qty > 0; });
+        if (picked.length === 0) {
+            showBtError('Не удалось рассчитать', 'Нет цен на выбранную дату или капитала не хватает даже на одну бумагу.');
             return;
         }
         assets = {
-            bonds: btState.tickers.filter(function(t) { return t.type === 'bond'; }).map(function(t) { return { t: t.t, n: t.t, p: 0, qty: t.qty }; }),
-            stocks: btState.tickers.filter(function(t) { return t.type === 'stock'; }).map(function(t) { return { t: t.t, n: t.t, p: 0, qty: t.qty }; }),
+            bonds: picked.filter(function(t) { return t.type === 'bond'; }).map(function(t) { return { t: t.t, n: t.t, p: 0, qty: t.qty }; }),
+            stocks: picked.filter(function(t) { return t.type === 'stock'; }).map(function(t) { return { t: t.t, n: t.t, p: 0, qty: t.qty }; }),
         };
     }
 
@@ -1975,10 +2080,12 @@ runBacktest = async function() {
             // Частичные данные — показываем предупреждение в результатах
             results._partialWarning = results.failedCount + ' из ' + (results.bonds.length + results.stocks.length) + ' тикеров не загрузились';
         }
-        // «Стартовая сумма» = текущий капитал (из расчёта) или введённый вручную —
-        // покупка на дату теста в тех же пропорциях.
-        var _budget = (btState.source === 'calc') ? btGetCapital() : btGetManualCapital();
-        if (_budget > 0) btRebuyAtBudget(results, _budget);
+        // Calc-режим: «Стартовая сумма» = капитал из расчёта, перекупаем в тех же
+        // пропорциях. Ручной режим уже посчитал количество (капитал поровну) — не трогаем.
+        if (btState.source === 'calc') {
+            var _budget = btGetCapital();
+            if (_budget > 0) btRebuyAtBudget(results, _budget);
+        }
         renderBtResults(results, testDate);
         lsSave();
     } catch(e) {

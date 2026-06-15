@@ -333,6 +333,9 @@
 
                     <!-- Вручную: добавление тикеров -->
                 <div id="btSourceManualBlock" style="display:none;margin-top:12px;">
+
+                  <!-- ── Настройки: капитал + добавление бумаг ── -->
+                  <div class="bt-mn-setup">
                     <!-- Стартовый капитал -->
                     <div class="bt-mini-label">Стартовый капитал на дату теста</div>
                     <div class="bt-capital-field">
@@ -345,45 +348,48 @@
                     </div>
                     <div class="bt-capital-hint">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                        <span>Сумма распределится по тикерам пропорционально их долям</span>
+                        <span>Капитал разделим поровну между бумагами — количество посчитаем по ценам на дату теста</span>
                     </div>
 
-                    <!-- Добавить один тикер -->
-                    <div class="bt-mini-label">Добавить по одному — тикер и количество</div>
+                    <!-- Добавить бумагу -->
+                    <div class="bt-mini-label">Добавить бумагу</div>
                     <div class="bt-add-row">
                         <input type="text" id="btTickerInput" class="bt-ticker-input"
-                               placeholder="Тикер: SBER…"
+                               placeholder="Тикер: SBER, GAZP, SU26238RMFS4…"
                                onkeyup="if(event.key==='Enter')btAddTicker()"
                                autocapitalize="characters" autocomplete="off" spellcheck="false">
-                        <input type="number" id="btQtyInput" class="bt-qty-input"
-                               placeholder="Шт" min="1" value="1"
-                               onkeyup="if(event.key==='Enter')btAddTicker()">
                         <button class="bt-add-btn" onclick="btAddTicker()">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                         </button>
                     </div>
 
-                    <!-- Импорт списком -->
-                    <div class="bt-or-divider"><span>или</span></div>
+                    <!-- Импорт списком (тёмная кнопка) -->
                     <div class="bt-bulk-toggle" onclick="btToggleBulk()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B7C99" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
                         <div class="bt-bulk-txt">
                             <div class="bt-bulk-title">Добавить списком</div>
-                            <div class="bt-bulk-sub">Вставьте несколько строк: ТИКЕР и количество</div>
+                            <div class="bt-bulk-sub">Несколько тикеров — по одному в строке</div>
                         </div>
                         <svg id="btBulkChev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;transition:transform 0.2s;"><polyline points="6 9 12 15 18 9"/></svg>
                     </div>
                     <div id="btBulkBlock" style="display:none;margin-top:8px;">
                         <textarea id="btBulkInput" class="bt-bulk-textarea"
-                            placeholder="SBER 100&#10;LKOH 5&#10;SU26244RMFS2 20&#10;&#10;Каждый тикер с новой строки. Количество через пробел (необязательно)."></textarea>
+                            placeholder="SBER&#10;GAZP&#10;SU26238RMFS4&#10;&#10;Каждый тикер с новой строки."></textarea>
                         <button class="bt-bulk-apply-btn" onclick="btApplyBulk()">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                             Применить список
                         </button>
                     </div>
+                  </div>
 
-                    <!-- Список тикеров -->
-                    <div id="btTickerList" style="margin-top:4px;"></div>
+                  <!-- ── Разделитель: состав портфеля ── -->
+                  <div class="bt-mn-divider">
+                      <span class="bt-mn-divider-label">Состав портфеля</span>
+                      <span class="bt-mn-count" id="btManualCount">пусто</span>
+                  </div>
+
+                  <!-- Список добавленных бумаг -->
+                  <div id="btTickerList"></div>
                 </div>
                 </div><!-- /bt2-body -->
             </div><!-- /bt2-step 2 -->

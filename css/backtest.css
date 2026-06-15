@@ -539,3 +539,113 @@ body.dark-mode .bt-imoex-leg .v.neg { color: #F87171; }
     font-size: 13px; color: #8593A6;
 }
 .bt-imoex-state .bt-spinner { width: 30px; height: 30px; }
+
+/* ============================================================
+   РУЧНОЙ РЕЖИМ ТЕСТА — структура + авто-расчёт количества
+   ============================================================ */
+
+/* «или»-разделитель больше не используется в ручном режиме */
+
+/* Тёмная кнопка «Добавить списком» (перебивает светлый вариант из site-layout) */
+#btConfigCol .bt-bulk-toggle,
+.bt-bulk-toggle {
+    background: var(--graphite-btn, #2C364C);
+    border: 1px solid transparent;
+    color: #fff;
+    box-shadow: 0 5px 16px rgba(44,54,76,0.20);
+}
+#btConfigCol .bt-bulk-toggle:hover,
+.bt-bulk-toggle:hover { background: #353f57; }
+body.dark-mode #btConfigCol .bt-bulk-toggle,
+body.dark-mode .bt-bulk-toggle { background: #2a3346; border-color: rgba(255,255,255,0.06); }
+.bt-bulk-toggle .bt-bulk-title { color: #fff; }
+.bt-bulk-toggle .bt-bulk-sub { color: rgba(255,255,255,0.55); }
+.bt-bulk-toggle svg { stroke: currentColor; color: rgba(255,255,255,0.85); }
+body.dark-mode .bt-bulk-toggle .bt-bulk-title { color: #fff; }
+
+/* Разделитель «настройки ↓ состав портфеля» */
+.bt-mn-divider {
+    display: flex; align-items: center; justify-content: space-between;
+    margin: 16px 0 10px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(44,54,76,0.10);
+}
+body.dark-mode .bt-mn-divider { border-top-color: rgba(255,255,255,0.10); }
+.bt-mn-divider-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-slate, #64748B);
+}
+body.dark-mode .bt-mn-divider-label { color: #9AA8BC; }
+.bt-mn-count {
+    font-family: 'Inter', sans-serif;
+    font-size: 10.5px; font-weight: 600;
+    color: var(--accent-blue, #3498db);
+    background: rgba(52,152,219,0.10);
+    border-radius: 20px; padding: 3px 10px;
+}
+body.dark-mode .bt-mn-count { color: #7DB9F0; background: rgba(96,165,250,0.14); }
+
+/* Карточка добавленной бумаги с авто-количеством */
+.bt-tr {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 12px;
+    background: #fff;
+    border: 1px solid rgba(44,54,76,0.08);
+    border-radius: 12px;
+    margin-bottom: 8px;
+    box-shadow: 0 1px 2px rgba(44,54,76,0.04);
+}
+.bt-tr:last-child { margin-bottom: 0; }
+body.dark-mode .bt-tr { background: rgba(15,23,42,0.5); border-color: rgba(255,255,255,0.08); box-shadow: none; }
+.bt-tr-main { flex: 1; min-width: 0; }
+.bt-tr-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.bt-tr-tk {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13.5px; font-weight: 700; letter-spacing: 0.01em;
+    color: var(--text-deep, #2C364C);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+body.dark-mode .bt-tr-tk { color: #F1F6FB; }
+.bt-tr-badge {
+    flex-shrink: 0;
+    font-family: 'Inter', sans-serif;
+    font-size: 9.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+    padding: 2px 7px; border-radius: 6px;
+}
+.bt-tr-badge.stock { background: rgba(52,152,219,0.12); color: #2f88c8; }
+.bt-tr-badge.bond  { background: rgba(16,185,129,0.13); color: #0e9f6e; }
+body.dark-mode .bt-tr-badge.stock { background: rgba(96,165,250,0.16); color: #7DB9F0; }
+body.dark-mode .bt-tr-badge.bond  { background: rgba(52,211,153,0.16); color: #34D399; }
+.bt-tr-calc {
+    display: flex; align-items: baseline; gap: 5px; flex-wrap: wrap;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; font-weight: 600;
+    color: var(--text-slate, #64748B);
+}
+body.dark-mode .bt-tr-calc { color: #9AA8BC; }
+.bt-tr-qty { color: var(--text-deep, #2C364C); font-weight: 700; }
+body.dark-mode .bt-tr-qty { color: #F1F6FB; }
+.bt-tr-sep { color: var(--text-muted, #94A3B8); font-weight: 400; }
+.bt-tr-sub { color: var(--text-deep, #2C364C); font-weight: 700; }
+body.dark-mode .bt-tr-sub { color: #E6EEF7; }
+.bt-tr-muted {
+    font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 500;
+    color: var(--text-muted, #94A3B8);
+}
+.bt-tr-err {
+    font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600;
+    color: #E2674A;
+}
+body.dark-mode .bt-tr-err { color: #F2937B; }
+.bt-tr-del {
+    flex-shrink: 0;
+    width: 30px; height: 30px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    background: transparent; border: none; cursor: pointer;
+    color: var(--text-muted, #94A3B8);
+    transition: background 0.15s, color 0.15s;
+}
+.bt-tr-del:hover { background: rgba(226,103,74,0.10); color: #E2674A; }
+.bt-tr-del svg { stroke: currentColor; fill: none; }
