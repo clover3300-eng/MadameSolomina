@@ -2087,6 +2087,8 @@ runBacktest = async function() {
             if (_budget > 0) btRebuyAtBudget(results, _budget);
         }
         renderBtResults(results, testDate);
+        // Сразу показываем сравнение с IMOEX (renderBtResults сбросил _btImoexOpen)
+        if (typeof btCompareImoex === 'function') btCompareImoex();
         lsSave();
     } catch(e) {
         if (e.message === 'MOEX_UNAVAILABLE') {

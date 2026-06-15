@@ -649,3 +649,22 @@ body.dark-mode .bt-tr-err { color: #F2937B; }
 }
 .bt-tr-del:hover { background: rgba(226,103,74,0.10); color: #E2674A; }
 .bt-tr-del svg { stroke: currentColor; fill: none; }
+
+/* Развилка «один тикер ИЛИ список» в ручном режиме */
+#btConfigCol .bt-or-divider {
+    display: flex; align-items: center; gap: 12px;
+    margin: 13px 2px;
+}
+#btConfigCol .bt-or-divider::before,
+#btConfigCol .bt-or-divider::after {
+    content: ''; flex: 1; height: 1px;
+    background: rgba(44,54,76,0.10);
+}
+body.dark-mode #btConfigCol .bt-or-divider::before,
+body.dark-mode #btConfigCol .bt-or-divider::after { background: rgba(255,255,255,0.10); }
+#btConfigCol .bt-or-divider span {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.10em; text-transform: uppercase;
+    color: var(--text-muted, #94A3B8);
+}
