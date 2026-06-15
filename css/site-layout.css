@@ -1364,38 +1364,51 @@
         #topBar { padding: 18px 32px 10px; }
 
         body.sb-collapsed { --sb-w: 78px; }
-        body.sb-collapsed .sb-label,
-        body.sb-collapsed .sb-logo-text { display: none; }
-        body.sb-collapsed #sbHead { justify-content: center; padding-left: 8px; padding-right: 8px; }
-        body.sb-collapsed #sbNav { padding: 4px 8px; }
-        body.sb-collapsed .sb-item { justify-content: center; padding: 12px 0; gap: 0; }
+        /* Collapsed rail keeps an EXPLICIT width so the hover reveal animates
+           the width itself. (An `auto`/flex width can't be transitioned — it
+           snaps — which is what made the open feel abrupt.) */
+        body.sb-collapsed #sbPanel,
+        body.sb-collapsed #sbFoot { width: 78px; }
         body.sb-collapsed .sb-item.active::before { left: -8px; }
-        body.sb-collapsed #sbFoot { padding: 10px 8px; }
 
-        /* ===== HOVER-PEEK: collapsed rail expands as a floating overlay ===== */
-        /* The grid track stays at the collapsed width (content & header never
-           shift); only the inner panels widen and float over the content. */
+        /* ===== HOVER-PEEK: collapsed rail expands as a floating overlay =====
+           The grid track stays narrow (content & header never shift); only the
+           panel widens and floats over the content. Panel layout is kept
+           CONSTANT between rail and peek — icons never move and labels never
+           re-flow — so the reveal is a single clean width slide with no
+           secondary squish/jump. Labels are only faded (cheap, no reflow) and
+           clipped by the panel until it is wide enough to show them. */
         #sbPanel, #sbFoot {
-            transition: width 0.24s cubic-bezier(0.32, 0.72, 0.28, 1),
-                        box-shadow 0.24s ease;
+            transition: width 0.3s ease, box-shadow 0.3s ease;
         }
+        .sb-label, .sb-logo-text {
+            flex-shrink: 0;                 /* keep natural width → icons stay put */
+            transition: opacity 0.15s ease;
+        }
+        body.sb-collapsed .sb-label,
+        body.sb-collapsed .sb-logo-text { opacity: 0; }
         body.sb-collapsed.sb-peek #sideBar { z-index: 60; }
         body.sb-collapsed.sb-peek #sbPanel,
         body.sb-collapsed.sb-peek #sbFoot { width: 222px; }
         body.sb-collapsed.sb-peek #sbPanel { box-shadow: 0 22px 50px -8px rgba(22,27,39,0.45); }
         body.sb-collapsed.sb-peek #sbFoot { box-shadow: 0 18px 40px -10px rgba(22,27,39,0.4); }
-        body.sb-collapsed.sb-peek .sb-label { display: inline; }
-        body.sb-collapsed.sb-peek .sb-logo-text { display: flex; }
-        body.sb-collapsed.sb-peek #sbHead {
-            justify-content: space-between;
-            padding-left: 14px; padding-right: 14px;
-        }
-        body.sb-collapsed.sb-peek #sbNav { padding: 4px 10px; }
-        body.sb-collapsed.sb-peek .sb-item {
-            justify-content: flex-start; padding: 11px 12px; gap: 12px;
-        }
+        body.sb-collapsed.sb-peek .sb-label,
+        body.sb-collapsed.sb-peek .sb-logo-text { opacity: 1; transition-delay: 0.08s; }
         body.sb-collapsed.sb-peek .sb-item.active::before { left: -10px; }
-        body.sb-collapsed.sb-peek #sbFoot { padding: 8px; }
+
+        /* ===== HOME TAB: «закрепить/свернуть» тоже не двигает контент =====
+           На главной grid-колонка сайдбара всегда остаётся узкой (как у
+           свёрнутой рейки); закреплённое (развёрнутое) меню рисуется тем же
+           floating-оверлеем, что и hover-peek, поэтому контент/заголовок
+           не сдвигаются при клике «Закрепить/Свернуть». */
+        body.tab-home #appShell {
+            grid-template-columns: calc(78px + 14px) minmax(0, 1fr) !important;
+        }
+        body.tab-home:not(.sb-collapsed) #sideBar { z-index: 60; }
+        body.tab-home:not(.sb-collapsed) #sbPanel,
+        body.tab-home:not(.sb-collapsed) #sbFoot { width: 222px; }
+        body.tab-home:not(.sb-collapsed) #sbPanel { box-shadow: 0 22px 50px -8px rgba(22,27,39,0.45); }
+        body.tab-home:not(.sb-collapsed) #sbFoot { box-shadow: 0 18px 40px -10px rgba(22,27,39,0.4); }
 
         /* Panels: width + breathing room */
         .tab-panel { max-width: 1240px; margin: 0 auto; padding: 18px 40px 64px; width: 100%; box-sizing: border-box; }
@@ -1908,6 +1921,12 @@
 
         /* Home hero: centered in viewport */
         #panel-home.active { display: flex; align-items: center; justify-content: center; max-width: none; }
+        /* .welcome-screen само растягивается на 100% и центрируется внутри
+           себя (min-height:100% + flex), из-за чего получается «коробка
+           в коробке» и герой визуально смещается вниз. На десктопе
+           #panel-home.active уже центрирует .welcome-screen целиком,
+           поэтому даём ей естественную высоту по контенту. */
+        #panel-home .welcome-screen { min-height: auto; height: auto; }
 
         /* Company overlay: centered reading column instead of full-bleed stretch */
         #company-content { max-width: 760px; margin: 0 auto; padding: 24px 24px 80px; }

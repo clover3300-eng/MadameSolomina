@@ -38,6 +38,17 @@
     body.home-mode .welcome-screen {
         min-height: calc(var(--real-vh, 100vh) / 0.85) !important;
     }
+    /* На десктопе главная вкладка живёт внутри #contentArea (под хедером),
+       а не на весь экран как на мобильном fullscreen-режиме. Полноэкранная
+       min-height выше «раздувала» .welcome-screen за пределы #contentArea
+       и смещала герой-блок вниз. height:100% на #panel-home делает высоту
+       «определённой», чтобы min-height:100% у .welcome-screen считался
+       от реальной высоты #contentArea, а не от auto. */
+    body.tab-home #panel-home { height: 100%; }
+    body.tab-home #panel-home .welcome-screen {
+        min-height: 100% !important;
+        height: auto;
+    }
 
     /* Тест Vanguard занимает весь экран */
     #screen-vanguard.active {

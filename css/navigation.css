@@ -176,13 +176,16 @@
 }
 
                 /* ========== НОВЫЕ СТИЛИ ДЛЯ ГЛАВНОЙ СТРАНИЦЫ (ВШИТОЕ МЕНЮ) ========== */
-
+        /* Только мобильный/планшетный фуллскрин-режим: на десктопе вёрстка
+           главной задаётся в webapp-layout.css (#panel-home .welcome-screen)
+           и эти !important-правила её перетягивали (текст «уезжал» вниз). */
+        @media (max-width: 1023px) {
          body.home-mode {
             position: fixed;
             width: 100%;
             height: 100%;
             overflow: hidden !important;
-            padding: 0 !important; 
+            padding: 0 !important;
             margin: 0 !important;
             background: transparent !important; /* На всякий случай убираем фон у body */
         }
@@ -203,15 +206,16 @@
             /* Поднимаем логотип вверх визуально */
             /* -15vh означает "поднять на 15% высоты экрана" */
             /* Кнопка при этом останется на месте, так как transform не толкает соседей */
-            transform: translateY(-8vh) !important; 
+            transform: translateY(-8vh) !important;
         }
 
         /* Кнопку оставляем как есть */
         body.home-mode .welcome-cta-block {
-            margin: 0 !important; 
+            margin: 0 !important;
             transform: none !important; /* Гарантируем, что кнопка не сдвинется */
         }
-        
+        }
+
         /* Когда мы на главной (home-mode), убираем фон, границы и тени у "дока" с кнопками */
         body.home-mode .nav-dock {
             background: transparent !important;
