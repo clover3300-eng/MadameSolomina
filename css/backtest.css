@@ -71,32 +71,15 @@ body.dark-mode #btConfigCol.bt2-card {
     box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
 }
 
-/* ---------- Шаг: бейдж-рельса + тело ---------- */
-.bt2-step {
-    display: grid;
-    grid-template-columns: 34px 1fr;
-    column-gap: 16px;
-}
-.bt2-step:not(.is-last) { padding-bottom: 26px; }
+/* ---------- Шаг: бейдж + заголовок в строку, контент во всю ширину ---------- */
+.bt2-step:not(.is-last) { padding-bottom: 24px; }
 
-.bt2-rail {
-    position: relative;
+/* Строка-заголовок шага: номер + подпись */
+.bt2-shead {
     display: flex;
-    justify-content: center;
-}
-/* Соединительная линия между бейджами */
-.bt2-step:not(.is-last) .bt2-rail::after {
-    content: '';
-    position: absolute;
-    top: 40px;
-    bottom: -22px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 2px;
-    background: rgba(133, 147, 166, 0.2);
-}
-body.dark-mode .bt2-step:not(.is-last) .bt2-rail::after {
-    background: rgba(255, 255, 255, 0.1);
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 13px;
 }
 
 .bt2-badge {
@@ -129,8 +112,8 @@ body.dark-mode .bt2-badge.is-active {
     background: rgba(74, 222, 128, 0.1);
 }
 
-/* ---------- Тело шага ---------- */
-.bt2-body { min-width: 0; padding-top: 5px; }
+/* ---------- Тело шага (во всю ширину карточки) ---------- */
+.bt2-body { min-width: 0; }
 .bt2-label {
     font-family: 'Manrope', sans-serif;
     font-size: 12.5px;
@@ -138,16 +121,26 @@ body.dark-mode .bt2-badge.is-active {
     letter-spacing: 1.75px;
     text-transform: uppercase;
     color: #6C7A8D;
-    margin-bottom: 11px;
+    margin: 0;
 }
 body.dark-mode .bt2-label { color: #9AA8BC; }
 
 /* ---------- Поле даты ---------- */
+.bt-date-field { position: relative; }
+.bt-date-icon {
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    color: #97A3B4;
+    pointer-events: none;
+}
+body.dark-mode .bt-date-icon { color: #6B7890; }
 #btConfigCol.bt2-card .bt-date-input {
     width: 100%;
     box-sizing: border-box;
     margin: 0;
-    padding: 13px 16px;
+    padding: 13px 44px 13px 16px;
     border: 1px solid rgba(133, 147, 166, 0.28);
     border-radius: 12px;
     background: #ffffff;
@@ -235,6 +228,7 @@ body.dark-mode .bt2-empty {
     align-items: center;
     gap: 9px;
 }
+.bt2-empty-ico { display: inline-flex; flex-shrink: 0; }
 .bt2-empty-head svg { width: 16px; height: 16px; color: #97A3B4; flex-shrink: 0; }
 .bt2-empty-title {
     font-size: 14px;
@@ -248,6 +242,30 @@ body.dark-mode .bt2-empty-title { color: #DCE3EC; }
     line-height: 1.5;
     color: #8593A6;
 }
+
+/* ---------- «Из расчёта»: состояние ГОТОВ (портфель рассчитан) ---------- */
+.bt2-ready-note { display: none; }
+.bt2-empty.is-ready {
+    background: rgba(22, 181, 107, 0.06);
+    border-style: solid;
+    border-color: rgba(22, 181, 107, 0.32);
+}
+body.dark-mode .bt2-empty.is-ready {
+    background: rgba(74, 222, 128, 0.08);
+    border-color: rgba(74, 222, 128, 0.3);
+}
+.bt2-empty.is-ready .bt2-empty-ico svg { color: #16B56B; }
+body.dark-mode .bt2-empty.is-ready .bt2-empty-ico svg { color: #4ADE80; }
+.bt2-empty.is-ready .bt2-empty-desc,
+.bt2-empty.is-ready #btCalcGoto { display: none; }
+.bt2-empty.is-ready .bt2-ready-note {
+    display: block;
+    margin-top: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #5B7C99;
+}
+body.dark-mode .bt2-empty.is-ready .bt2-ready-note { color: #9AA8BC; }
 .bt2-goto {
     display: inline-flex;
     align-items: center;
@@ -307,14 +325,17 @@ body.dark-mode #btConfigCol #btRunBtn:disabled {
     margin-top: 10px;
     font-size: 13px;
     color: #8593A6;
+    text-align: center;
 }
+/* Скрываем подсказку, когда кнопка теста уже активна */
+.bt2-run-note.is-hidden { display: none; }
 
 /* ---------- Футер «После запуска» ---------- */
 .bt2-footer {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
-    gap: 16px 20px;
+    gap: 10px;
     margin-top: 18px;
     padding: 0 4px;
 }
@@ -322,21 +343,30 @@ body.dark-mode #btConfigCol #btRunBtn:disabled {
     font-size: 13.5px;
     font-weight: 600;
     color: #8593A6;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 .bt2-feat {
     display: inline-flex;
     align-items: center;
-    gap: 9px;
-    padding: 9px 16px;
+    gap: 8px;
+    padding: 9px 14px;
     border: 1.5px dashed #CCD8E5;
     border-radius: 999px;
     background: transparent;
     font-size: 13px;
     font-weight: 700;
     color: #8593A6;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 body.dark-mode .bt2-feat { border-color: rgba(255, 255, 255, 0.14); }
 .bt2-feat svg { width: 15px; height: 15px; color: #AAB8C9; flex-shrink: 0; }
+
+/* Узкие экраны: пилюли могут переноситься */
+@media (max-width: 620px) {
+    .bt2-footer { flex-wrap: wrap; gap: 12px 14px; }
+}
 
 /* ---------- Результаты ---------- */
 #btResults:not(:empty) { margin-top: 18px; }

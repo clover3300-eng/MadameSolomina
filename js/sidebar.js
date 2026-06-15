@@ -138,10 +138,12 @@
     (function() {
         var mq = window.matchMedia ? window.matchMedia('(min-width: 1024px)') : { matches: false };
         var MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+        var MONTHS_SHORT = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
         var DOW = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
-        var pop = null, vY = 0, vM = 0;
+        var pop = null, vY = 0, vM = 0, view = 'days';
         function pad(n) { return n < 10 ? '0' + n : '' + n; }
         function getInput() { return document.getElementById('btDateInput'); }
+        function getField() { var i = getInput(); return i ? i.closest('.bt-date-field') : null; }
         function closeCal() { if (pop) { pop.remove(); pop = null; } }
         function selDate() {
             var inp = getInput();
@@ -151,13 +153,18 @@
             }
             return null;
         }
-        function render() {
+        function monthInFuture(y, m, tY, tM) { return y > tY || (y === tY && m > tM); }
+
+        function renderDays() {
             var today = new Date(); today.setHours(0,0,0,0);
+            var tY = today.getFullYear(), tM = today.getMonth();
             var sel = selDate();
+            var nm = vM === 11 ? 0 : vM + 1, ny = vM === 11 ? vY + 1 : vY;
+            var nextDis = monthInFuture(ny, nm, tY, tM);
             var h = '<div class="btcal-head">'
-                + '<button class="btcal-nav" data-nav="-1"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>'
-                + '<div class="btcal-title">' + MONTHS[vM] + ' ' + vY + '</div>'
-                + '<button class="btcal-nav" data-nav="1"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>'
+                + '<button type="button" class="btcal-nav" data-nav="-1"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>'
+                + '<button type="button" class="btcal-title" data-title>' + MONTHS[vM] + ' ' + vY + '</button>'
+                + '<button type="button" class="btcal-nav" data-nav="1"' + (nextDis ? ' disabled' : '') + '><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>'
                 + '</div><div class="btcal-dow">';
             DOW.forEach(function(d) { h += '<span>' + d + '</span>'; });
             h += '</div><div class="btcal-grid">';
@@ -175,33 +182,73 @@
                 var isSel = sel && dt.getFullYear() === sel.y && dt.getMonth() === sel.m && dt.getDate() === sel.d;
                 var isToday = dt.getTime() === today.getTime();
                 var cls = 'btcal-day' + (out ? ' out' : '') + (dis ? ' dis' : '') + (isSel ? ' sel' : '') + (isToday ? ' today' : '');
-                h += '<button class="' + cls + '"' + (dis ? '' : ' data-date="' + dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate()) + '"') + '>' + dnum + '</button>';
+                h += '<button type="button" class="' + cls + '"' + (dis ? '' : ' data-date="' + dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate()) + '"') + '>' + dnum + '</button>';
             }
             h += '</div>';
-            pop.innerHTML = h;
+            return h;
         }
+
+        function renderMonths() {
+            var today = new Date();
+            var tY = today.getFullYear(), tM = today.getMonth();
+            var sel = selDate();
+            var nextDis = vY >= tY;
+            var h = '<div class="btcal-head">'
+                + '<button type="button" class="btcal-nav" data-nav="-1"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>'
+                + '<button type="button" class="btcal-title" data-title>' + vY + '</button>'
+                + '<button type="button" class="btcal-nav" data-nav="1"' + (nextDis ? ' disabled' : '') + '><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>'
+                + '</div><div class="btcal-months">';
+            for (var m = 0; m < 12; m++) {
+                var dis = monthInFuture(vY, m, tY, tM);
+                var isSel = sel && sel.y === vY && sel.m === m;
+                var isCur = vY === tY && m === tM;
+                var cls = 'btcal-mo' + (dis ? ' dis' : '') + (isSel ? ' sel' : '') + (isCur ? ' today' : '');
+                h += '<button type="button" class="' + cls + '"' + (dis ? '' : ' data-month="' + m + '"') + '>' + MONTHS_SHORT[m] + '</button>';
+            }
+            h += '</div>';
+            return h;
+        }
+
+        function render() {
+            if (!pop) return;
+            pop.innerHTML = (view === 'months') ? renderMonths() : renderDays();
+        }
+
         function openCal() {
             var inp = getInput();
-            var col = document.getElementById('btConfigCol');
-            if (!inp || !col) return;
+            var field = getField();
+            if (!inp || !field) return;
             closeCal();
             var sel = selDate();
             var base = sel ? new Date(sel.y, sel.m, 1) : new Date();
-            vY = base.getFullYear(); vM = base.getMonth();
+            vY = base.getFullYear(); vM = base.getMonth(); view = 'days';
             pop = document.createElement('div');
             pop.className = 'btcal';
-            col.appendChild(pop);
-            var ir = inp.getBoundingClientRect();
-            var cr = col.getBoundingClientRect();
-            pop.style.top = (ir.bottom - cr.top + 8) + 'px';
-            pop.style.left = Math.max(8, ir.left - cr.left) + 'px';
+            field.appendChild(pop);
             render();
             pop.addEventListener('click', function(e) {
                 var nav = e.target.closest('[data-nav]');
                 if (nav) {
-                    vM += parseInt(nav.dataset.nav, 10);
-                    if (vM < 0) { vM = 11; vY--; }
-                    if (vM > 11) { vM = 0; vY++; }
+                    var d = parseInt(nav.dataset.nav, 10);
+                    if (view === 'months') {
+                        vY += d;
+                    } else {
+                        vM += d;
+                        if (vM < 0) { vM = 11; vY--; }
+                        if (vM > 11) { vM = 0; vY++; }
+                    }
+                    render();
+                    return;
+                }
+                if (e.target.closest('[data-title]')) {
+                    view = (view === 'days') ? 'months' : 'days';
+                    render();
+                    return;
+                }
+                var mo = e.target.closest('[data-month]');
+                if (mo) {
+                    vM = parseInt(mo.dataset.month, 10);
+                    view = 'days';
                     render();
                     return;
                 }
@@ -214,6 +261,21 @@
                 }
             });
         }
+
+        // На десктопе делаем поле readonly — это полностью отключает нативный
+        // системный календарь, оставляя только наш кастомный.
+        function applyMode() {
+            var inp = getInput();
+            if (!inp) return;
+            if (mq.matches) { inp.readOnly = true; }
+            else { inp.readOnly = false; closeCal(); }
+        }
+        if (mq.addEventListener) mq.addEventListener('change', applyMode);
+        else if (mq.addListener) mq.addListener(applyMode);
+        window.addEventListener('resize', applyMode);
+        applyMode();
+        document.addEventListener('DOMContentLoaded', applyMode);
+
         document.addEventListener('mousedown', function(e) {
             var inp = getInput();
             if (!inp) return;

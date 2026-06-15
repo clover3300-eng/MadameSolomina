@@ -707,15 +707,20 @@
     }
 
     /* ===== CUSTOM DATEPICKER (backtest, desktop) ===== */
-    #btConfigCol { position: relative; }
+    /* Прячем нативный индикатор календаря на всех ширинах — на десктопе
+       поле делается readonly в JS, чтобы системный календарь не открывался. */
+    #btConfigCol #btDateInput::-webkit-calendar-picker-indicator { display: none; -webkit-appearance: none; }
     @media (min-width: 1024px) {
-        #btConfigCol #btDateInput::-webkit-calendar-picker-indicator { display: none; }
         #btConfigCol #btDateInput { cursor: pointer; }
     }
     .btcal {
         position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
         z-index: 60;
-        width: 272px;
+        width: 288px;
+        max-width: 100%;
+        box-sizing: border-box;
         background: #ffffff;
         border: 1px solid rgba(44,54,76,0.09);
         border-radius: 16px;
@@ -731,8 +736,17 @@
         font-size: 13px; font-weight: 700;
         color: var(--text-deep, #2C364C);
         text-transform: capitalize;
+        border: none;
+        background: transparent;
+        padding: 5px 10px;
+        border-radius: 9px;
+        cursor: pointer;
+        font-family: inherit;
+        transition: background 0.15s;
     }
+    .btcal-title:hover { background: rgba(44,54,76,0.07); }
     body.dark-mode .btcal-title { color: #F1F6FB; }
+    body.dark-mode .btcal-title:hover { background: rgba(255,255,255,0.08); }
     .btcal-nav {
         width: 28px; height: 28px;
         border: none; border-radius: 9px;
@@ -743,8 +757,26 @@
         transition: background 0.15s;
     }
     .btcal-nav:hover { background: rgba(44,54,76,0.1); }
+    .btcal-nav:disabled { opacity: 0.35; cursor: default; background: rgba(44,54,76,0.05); }
     body.dark-mode .btcal-nav { background: rgba(255,255,255,0.08); color: #cbd5e1; }
     .btcal-nav svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    /* Сетка выбора месяца (вид «год → месяцы») */
+    .btcal-months { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .btcal-mo {
+        height: 46px;
+        border: none; border-radius: 10px;
+        background: transparent;
+        font-family: 'Inter', sans-serif;
+        font-size: 12.5px; font-weight: 600;
+        color: var(--text-deep, #2C364C);
+        cursor: pointer;
+        transition: background 0.12s;
+    }
+    body.dark-mode .btcal-mo { color: #F1F6FB; }
+    .btcal-mo:hover { background: rgba(91,124,153,0.12); }
+    .btcal-mo.dis { color: rgba(148,163,184,0.4); cursor: default; background: transparent !important; }
+    .btcal-mo.today { box-shadow: inset 0 0 0 1.5px rgba(91,124,153,0.4); }
+    .btcal-mo.sel { background: #2C364C !important; color: #F1F6FB; font-weight: 700; }
     .btcal-dow {
         display: grid; grid-template-columns: repeat(7, 1fr);
         margin-bottom: 4px;

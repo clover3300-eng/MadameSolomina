@@ -278,18 +278,25 @@
 
             <!-- Шаг 1: Дата -->
             <div class="bt2-step">
-                <div class="bt2-rail"><span class="bt2-badge is-active">1</span></div>
-                <div class="bt2-body">
+                <div class="bt2-shead">
+                    <span class="bt2-badge is-active">1</span>
                     <div class="bt2-label">Дата оценки</div>
-                    <input type="date" id="btDateInput" class="bt-date-input" onchange="onBtDateChange()">
+                </div>
+                <div class="bt2-body">
+                    <div class="bt-date-field">
+                        <input type="date" id="btDateInput" class="bt-date-input" onchange="onBtDateChange()">
+                        <svg class="bt-date-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    </div>
                 </div>
             </div>
 
             <!-- Шаг 2: Состав портфеля -->
             <div class="bt2-step">
-                <div class="bt2-rail"><span class="bt2-badge">2</span></div>
-                <div class="bt2-body">
+                <div class="bt2-shead">
+                    <span class="bt2-badge">2</span>
                     <div class="bt2-label">Состав портфеля</div>
+                </div>
+                <div class="bt2-body">
 
                     <!-- Switcher: из расчёта / вручную -->
                     <div class="bt-source-switcher">
@@ -305,13 +312,16 @@
 
                     <!-- Из расчёта: пустое состояние -->
                     <div id="btSourceCalcInfo">
-                        <div class="bt2-empty">
+                        <div class="bt2-empty" id="btCalcEmpty">
                             <div class="bt2-empty-head">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                                <span class="bt2-empty-ico" id="btCalcIcon">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                                </span>
                                 <span id="btCalcSummary" class="bt2-empty-title">Портфель не рассчитан</span>
                             </div>
-                            <div class="bt2-empty-desc">Соберите портфель во вкладке «Расчёт» — он подставится сюда автоматически.</div>
-                            <button class="bt2-goto" onclick="switchToCalcOrPortfolio()">
+                            <div class="bt2-empty-desc" id="btCalcDesc">Соберите портфель во вкладке «Расчёт» — он подставится сюда автоматически.</div>
+                            <div class="bt2-ready-note" id="btCalcReadyNote">Состав подставлен из расчёта — можно запускать тест.</div>
+                            <button class="bt2-goto" id="btCalcGoto" onclick="switchToCalcOrPortfolio()">
                                 Перейти к расчёту
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                             </button>
@@ -362,14 +372,16 @@
 
             <!-- Шаг 3: Запуск -->
             <div class="bt2-step is-last">
-                <div class="bt2-rail"><span class="bt2-badge">3</span></div>
-                <div class="bt2-body">
+                <div class="bt2-shead">
+                    <span class="bt2-badge">3</span>
                     <div class="bt2-label">Запуск</div>
+                </div>
+                <div class="bt2-body">
                     <button class="bt-run-btn" id="btRunBtn" onclick="runBacktest()" disabled>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 4 20 12 6 20 6 4" fill="currentColor" stroke="none"/></svg>
                         Запустить тест
                     </button>
-                    <div class="bt2-run-note">Станет доступно после расчёта портфеля</div>
+                    <div class="bt2-run-note" id="btRunNote">Станет доступно после расчёта портфеля</div>
                 </div>
             </div>
 

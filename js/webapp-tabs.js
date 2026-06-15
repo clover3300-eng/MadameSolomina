@@ -953,6 +953,26 @@ function btUpdateRunBtn() {
     var dateOk = !!(dateEl && dateEl.value);
     var portfolioOk = btState.source === 'calc' ? isPortfolioCalculated : btState.tickers.length > 0;
     btn.disabled = !(dateOk && portfolioOk);
+    // Подсказку под кнопкой показываем только пока тест недоступен
+    var note = document.getElementById('btRunNote');
+    if (note) note.classList.toggle('is-hidden', !btn.disabled);
+    btSyncCalcInfo();
+}
+
+// Баннер «Из расчёта»: когда портфель уже рассчитан, переключаем его в
+// состояние «готов» — прячем описание и кнопку «Перейти к расчёту»,
+// чтобы не путать пользователя активной кнопкой.
+function btSyncCalcInfo() {
+    var box = document.getElementById('btCalcEmpty');
+    if (!box) return;
+    var ready = (btState.source === 'calc') && !!isPortfolioCalculated;
+    box.classList.toggle('is-ready', ready);
+    var icon = document.getElementById('btCalcIcon');
+    if (icon) {
+        icon.innerHTML = ready
+            ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+            : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>';
+    }
 }
 
 function onBtDateChange() {
@@ -1768,6 +1788,10 @@ switchTab = function(tabId) {
     }
     if (tabId === 'backtest' || tabId === 'calc') {
         lsScheduleSave();
+    }
+    if (tabId === 'backtest') {
+        // Синхронизируем баннер «Из расчёта», кнопку и подсказку при входе
+        if (typeof btUpdateRunBtn === 'function') btUpdateRunBtn();
     }
 };
 
