@@ -333,6 +333,17 @@
 
                     <!-- Вручную: добавление тикеров -->
                 <div id="btSourceManualBlock" style="display:none;margin-top:12px;">
+                    <!-- Стартовый капитал -->
+                    <div class="bt-mini-label">Стартовый капитал на дату теста</div>
+                    <div class="bt-capital-field">
+                        <input type="text" id="btManualCapital" class="bt-capital-input"
+                               placeholder="например, 1 000 000"
+                               inputmode="numeric" autocomplete="off"
+                               oninput="btFormatCapital(this)">
+                        <span class="bt-capital-cur">₽</span>
+                    </div>
+                    <div class="bt-capital-hint">Сумма вложится в указанные тикеры пропорционально их долям</div>
+
                     <!-- Добавить один тикер -->
                     <div class="bt-mini-label">Добавить по одному — тикер и количество</div>
                     <div class="bt-add-row">

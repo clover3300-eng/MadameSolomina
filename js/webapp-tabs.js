@@ -1310,6 +1310,10 @@ async function btLoadImoexCompare(panel) {
         var pf = await btBuildPortfolioSeries(results, dateStr, todayStr);
         var data = btAlignReturns(pf, imoexRaw);
         if (!data || data.points.length < 2) throw new Error('NO_ALIGN');
+        // Доходность портфеля на графике приводим к доходности из расчёта,
+        // чтобы итоговое число совпадало с карточкой результата.
+        var sumRet = results.totalPnlPct !== null ? parseFloat(results.totalPnlPct) : null;
+        if (sumRet !== null && !isNaN(sumRet)) btAnchorPortfolioReturn(data, sumRet);
         if (!_btImoexOpen) return; // пользователь успел закрыть
         btRenderImoexChart(panel, data, dateStr, todayStr);
     } catch(e) {
@@ -1416,6 +1420,22 @@ function btAlignReturns(pfSeries, imoexSeries) {
     return { points: points, pfFinal: last.pf, imFinal: last.im, delta: last.pf - last.im };
 }
 
+// Приводим итоговую доходность портфеля на графике к значению из расчёта.
+// Разница накапливается линейно (старт = 0%, конец = доходность из расчёта),
+// чтобы форма кривой сохранялась, а число совпадало с карточкой.
+function btAnchorPortfolioReturn(data, targetPct) {
+    var pts = data.points;
+    var n = pts.length;
+    if (n < 2) return;
+    var rawFinal = pts[n - 1].pf;
+    var diff = targetPct - rawFinal;
+    for (var i = 0; i < n; i++) {
+        pts[i].pf += diff * (i / (n - 1));
+    }
+    data.pfFinal = targetPct;
+    data.delta = data.pfFinal - data.imFinal;
+}
+
 // SVG-график доходности портфеля vs IMOEX
 function btRenderImoexChart(panel, data, fromStr, tillStr) {
     var pts = data.points;
@@ -1473,6 +1493,29 @@ function btRenderImoexChart(panel, data, fromStr, tillStr) {
 function btFormatDateShort(dateStr) {
     try { return new Date(dateStr + 'T12:00:00').toLocaleDateString('ru-RU', { month: 'short', year: 'numeric' }); }
     catch(e) { return dateStr; }
+}
+
+// Текущий капитал со страницы «Портфель» (#summ-invested) — он же бюджет теста
+function btGetCapital() {
+    var el = document.getElementById('summ-invested');
+    if (el) {
+        var n = parseInt(el.textContent.replace(/[^\d]/g, ''), 10);
+        if (n > 0) return n;
+    }
+    return (typeof getSumInputValue === 'function') ? getSumInputValue() : 0;
+}
+// Стартовый капитал в ручном режиме (поле #btManualCapital)
+function btGetManualCapital() {
+    var el = document.getElementById('btManualCapital');
+    if (!el) return 0;
+    var n = parseInt((el.value || '').replace(/[^\d]/g, ''), 10);
+    return n > 0 ? n : 0;
+}
+// Форматирование ввода капитала с разделителями тысяч
+function btFormatCapital(el) {
+    var d = (el.value || '').replace(/[^\d]/g, '');
+    el.value = d.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    if (typeof lsScheduleSave === 'function') lsScheduleSave();
 }
 
 // «Покупка на стартовую сумму»: вместо переоценки текущих количеств по ценам
@@ -1674,6 +1717,7 @@ function lsSave() {
             btDate: btDate ? btDate.value : '',
             btTickers: btState ? btState.tickers : [],
             btSource: btState ? btState.source : 'calc',
+            btManualCapital: (document.getElementById('btManualCapital') || {}).value || '',
             lastTab: currentTab || 'home',
             theme: document.body.classList.contains('dark-mode') ? 'dark' : 'light',
             ts: Date.now()
@@ -1732,6 +1776,11 @@ function lsRestore() {
 
     if (state.btSource && btState) {
         btSetSource(state.btSource);
+    }
+
+    if (state.btManualCapital) {
+        var btCapEl = document.getElementById('btManualCapital');
+        if (btCapEl) btCapEl.value = state.btManualCapital;
     }
 
     // Тема
@@ -1938,11 +1987,10 @@ runBacktest = async function() {
             // Частичные данные — показываем предупреждение в результатах
             results._partialWarning = results.failedCount + ' из ' + (results.bonds.length + results.stocks.length) + ' тикеров не загрузились';
         }
-        // Из расчёта: «стартовая сумма» = бюджет из расчёта (покупка на дату теста)
-        if (btState.source === 'calc') {
-            var _budget = (typeof getSumInputValue === 'function') ? getSumInputValue() : 0;
-            if (_budget > 0) btRebuyAtBudget(results, _budget);
-        }
+        // «Стартовая сумма» = текущий капитал (из расчёта) или введённый вручную —
+        // покупка на дату теста в тех же пропорциях.
+        var _budget = (btState.source === 'calc') ? btGetCapital() : btGetManualCapital();
+        if (_budget > 0) btRebuyAtBudget(results, _budget);
         renderBtResults(results, testDate);
         lsSave();
     } catch(e) {
