@@ -546,6 +546,11 @@ body.dark-mode .bt-imoex-leg .v.neg { color: #F87171; }
 
 /* «или»-разделитель больше не используется в ручном режиме */
 
+/* Воздух между подсказкой о капитале и блоком «Добавить бумагу» */
+#btConfigCol .bt-capital-hint {
+    margin-bottom: 22px;
+}
+
 /* Тёмная кнопка «Добавить списком» (перебивает светлый вариант из site-layout) */
 #btConfigCol .bt-bulk-toggle,
 .bt-bulk-toggle {
