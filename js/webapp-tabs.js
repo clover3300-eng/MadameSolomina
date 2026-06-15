@@ -1233,15 +1233,15 @@ function btRenderSummary(results, dateStr) {
     h += '<span class="bt-res-date-pill"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' + btFormatDate(dateStr) + '</span>';
     h += '</div>';
     h += '<div class="bt-res-sum-label">Стоимость портфеля сейчас</div>';
-    h += '<div class="bt-res-sum-value ' + cls + '">' + (results.totalTestPrice > 0 ? btFmtRub(results.totalTestPrice) : '—') + '</div>';
-    if (hasPnl) {
-        h += '<div class="bt-res-sum-change ' + cls + '">' + arrow + '<span>' + pctSign + (pct !== null ? pct : '') + '% · ' + pnlSign + btFmtRub(totalPnl) + '</span></div>';
+    h += '<div class="bt-res-sum-valrow">';
+    h += '<div class="bt-res-sum-value">' + (results.totalTestPrice > 0 ? btFmtRub(results.totalTestPrice) : '—') + '</div>';
+    if (pct !== null) {
+        h += '<span class="bt-res-pct-badge ' + cls + '">' + arrow + pctSign + pct + '%</span>';
     }
+    h += '</div>';
     h += '<div class="bt-res-sum-stats">';
     h += '<div class="bt-res-stat"><span>Стартовая сумма</span><b>' + (results.totalBuyPrice > 0 ? btFmtRub(results.totalBuyPrice) : '—') + '</b></div>';
     h += '<div class="bt-res-stat"><span>P&L</span><b class="' + cls + '">' + (hasPnl ? pnlSign + btFmtRub(totalPnl) : '—') + '</b></div>';
-    h += '<div class="bt-res-stat"><span>Доходность</span><b class="' + cls + '">' + (pct !== null ? pctSign + pct + '%' : '—') + '</b></div>';
-    h += '<div class="bt-res-stat"><span>Позиций</span><b>' + positions + '</b></div>';
     h += '</div>';
     h += '<button type="button" class="bt-imoex-btn" id="btImoexBtn" onclick="btCompareImoex()">'
         + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>'
@@ -1475,6 +1475,38 @@ function btFormatDateShort(dateStr) {
     catch(e) { return dateStr; }
 }
 
+// «Покупка на стартовую сумму»: вместо переоценки текущих количеств по ценам
+// прошлого считаем, что на дату теста инвестируется бюджет из расчёта в той же
+// пропорции. Тогда «Стартовая сумма» ≈ сумме из расчёта, а не историческая стоимость.
+function btRebuyAtBudget(results, budget) {
+    if (!budget || budget <= 0) return;
+    var all = results.bonds.concat(results.stocks);
+    var vNow = 0;
+    all.forEach(function(a) { if (a.testPrice > 0) vNow += a.testPrice * a.qty; });
+    if (vNow <= 0) return;
+    function rebuild(arr) {
+        arr.forEach(function(a) {
+            var w = (a.testPrice > 0 ? a.testPrice * a.qty : 0) / vNow;   // текущий вес
+            var alloc = budget * w;
+            var q = a.buyPrice > 0 ? Math.floor(alloc / a.buyPrice) : 0;
+            a.qty = q;
+            a.buyTotal = a.buyPrice > 0 ? a.buyPrice * q : 0;
+            a.testTotal = a.testPrice > 0 ? a.testPrice * q : 0;
+            a.pnl = (a.buyTotal > 0 && a.testTotal > 0) ? a.testTotal - a.buyTotal : null;
+            a.pnlPct = (a.buyTotal > 0 && a.testTotal > 0) ? ((a.testTotal - a.buyTotal) / a.buyTotal * 100).toFixed(1) : null;
+        });
+    }
+    rebuild(results.bonds);
+    rebuild(results.stocks);
+    var tb = 0, tt = 0;
+    results.bonds.concat(results.stocks).forEach(function(a) { tb += a.buyTotal; tt += a.testTotal; });
+    results.totalBuyPrice = tb;
+    results.totalTestPrice = tt;
+    var both = tb > 0 && tt > 0;
+    results.totalPnl = both ? tt - tb : null;
+    results.totalPnlPct = both ? ((tt - tb) / tb * 100).toFixed(1) : null;
+}
+
 function renderBtResults(results, dateStr) {
     var container = document.getElementById('btResults');
     if (!container) return;
@@ -1492,7 +1524,7 @@ function renderBtResults(results, dateStr) {
         t += '<div class="bt-assets-title">' + title + '</div>';
         t += '<div class="bt-assets-date-pill">' + btFormatDate(dateStr) + '</div>';
         t += '</div><div>';
-        // Header row — 4 columns: name, buy, now, pnl (qty moves under name)
+        // Header row — 4 колонки: бумага (с рангом), покупка, сейчас, P&L
         t += '<div class="bt-asset-row bt-asset-head">';
         t += '<div class="bt-col-head">Бумага</div>';
         t += '<div class="bt-col-head right">Покупка</div>';
@@ -1512,8 +1544,9 @@ function renderBtResults(results, dateStr) {
                 : '—';
             var pnlStr = (b.error || b.pnl === null) ? '—' : rowSign + btFmtRub(b.pnl);
             t += '<div class="bt-asset-row">';
-            t += '<div class="bt-asset-namecol"><div class="bt-asset-name">' + (b.n || b.t) + '</div>';
-            t += '<div class="bt-asset-ticker">' + b.t + ' · ' + b.qty + ' шт.</div></div>';
+            t += '<div class="bt-asset-namecol"><span class="bt-asset-rank">' + (k + 1) + '</span>';
+            t += '<div class="bt-asset-nameblock"><div class="bt-asset-name">' + (b.n || b.t) + '</div>';
+            t += '<div class="bt-asset-ticker">' + b.t + ' · ' + b.qty + ' шт.</div></div></div>';
             t += '<div class="bt-asset-buy-price">' + buyStr + '</div>';
             t += '<div class="bt-asset-price">' + priceStr + '</div>';
             t += '<div class="bt-asset-pnl ' + rowPnlClass + '">' + pnlStr + '</div>';
@@ -1904,6 +1937,11 @@ runBacktest = async function() {
         if (results.failedCount > 0 && results.failedCount < results.bonds.length + results.stocks.length) {
             // Частичные данные — показываем предупреждение в результатах
             results._partialWarning = results.failedCount + ' из ' + (results.bonds.length + results.stocks.length) + ' тикеров не загрузились';
+        }
+        // Из расчёта: «стартовая сумма» = бюджет из расчёта (покупка на дату теста)
+        if (btState.source === 'calc') {
+            var _budget = (typeof getSumInputValue === 'function') ? getSumInputValue() : 0;
+            if (_budget > 0) btRebuyAtBudget(results, _budget);
         }
         renderBtResults(results, testDate);
         lsSave();
