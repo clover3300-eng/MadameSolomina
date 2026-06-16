@@ -50,14 +50,6 @@
     ];
     var TOTAL_COLS = COLS.length + 1; // +1 — закреплённая колонка Тикер/Название
 
-    // Столбцы основной таблицы, раскрашиваемые по знаку (зелёный/красный):
-    // «Изменение *» и маржи. В карточке изм. раскрашиваются всегда.
-    var HL_KEYS = {
-        'Изменение СК': 1, 'Изменение Выручки': 1, 'Изменение Валовой прибыли': 1,
-        'Изменение Операционной прибыли': 1, 'Изменение Чистой прибыли': 1,
-        'Маржа Валовой прибыли': 1, 'Маржа Операционной прибыли': 1, 'Маржа Чистой прибыли': 1
-    };
-
     // ---------- СОСТОЯНИЕ (в памяти, без localStorage) ----------
     var state = {
         companies: null,   // распарсенные компании (кеш на сессию)
@@ -67,6 +59,7 @@
         sortType: 'text',
         sortDir: 1,        // 1 — по возрастанию, -1 — по убыванию
         query: '',         // строка поиска по тикеру/названию
+        sectors: [],       // выбранные секторы (пусто = все)
         expanded: {}       // ticker -> true (раскрытые карточки)
     };
 
@@ -248,10 +241,13 @@
     // =========================================================
     function filterList(list) {
         var q = state.query.trim().toLowerCase();
-        if (!q) return list;
+        var secs = state.sectors;
+        if (!q && !secs.length) return list;
         return list.filter(function (co) {
-            return co.ticker.toLowerCase().indexOf(q) !== -1 ||
-                   (co.name || '').toLowerCase().indexOf(q) !== -1;
+            if (secs.length && secs.indexOf(co.sector) === -1) return false;
+            if (q && co.ticker.toLowerCase().indexOf(q) === -1 &&
+                     (co.name || '').toLowerCase().indexOf(q) === -1) return false;
+            return true;
         });
     }
 
@@ -319,7 +315,7 @@
         var cntEl = el.querySelector('.stk-count');
         if (cntEl) {
             if (!state.companies) { cntEl.textContent = ''; }
-            else if (state.query.trim()) {
+            else if (state.query.trim() || state.sectors.length) {
                 var f = filterList(state.companies).length;
                 cntEl.textContent = 'найдено ' + f + ' из ' + state.companies.length;
             } else {
@@ -373,12 +369,8 @@
             var empty = isEmptyVal(raw);
             var cls = col.type === 'num' ? 'stk-num' : '';
             if (empty) cls += ' stk-empty-cell';
-            // подсветка по знаку для «Изменение *» и маржей
-            else if (HL_KEYS[col.key]) {
-                var sc = signClass(raw);
-                if (sc === 'pos') cls += ' stk-pos-txt';
-                else if (sc === 'neg') cls += ' stk-neg-txt';
-            }
+            // условная подсветка ячейки (цвет сайдбара) по правилам isHighlightCell
+            else if (isHighlightCell(col.key, co)) cls += ' stk-hl';
             tds += '<td class="' + cls.trim() + '">' + (empty ? '—' : esc(raw)) + '</td>';
         }
         var rowHtml = '<tr class="stk-row" data-ticker="' + esc(co.ticker) + '">' + tds + '</tr>';
@@ -436,7 +428,36 @@
              + '<thead>' + thead + '</thead><tbody>' + body + '</tbody></table></div></div></div>';
     }
 
-    // Класс знака для подсветки изменений
+    // Условная подсветка ячейки главной таблицы (цвет сайдбара #8FB3A0).
+    // Возвращает true, если значение в столбце key удовлетворяет «хорошему» порогу.
+    function isHighlightCell(key, co) {
+        var v = parseNum(co.main[key]);
+        switch (key) {
+            case 'ОДХС':                            return v > 25;
+            case 'Изменение СК':                    return v > 5;
+            case 'ROE':                             return v > 20;
+            case 'Изменение Выручки':               return v > 5;
+            case 'Изменение Валовой прибыли':       return v > 5;
+            case 'Изменение Операционной прибыли':  return v > 5;
+            case 'Изменение Чистой прибыли':        return v > 5;
+            case 'Денежный Поток от ОД':            return v === 1;
+            case 'Процент Обязательств 2025г': {     // подсвечиваем, если долг снизился к 2024
+                var p24 = parseNum(co.main['Процент Обязательств 2024г']);
+                return !isNaN(v) && !isNaN(p24) && v < p24;
+            }
+            case 'Процент Обязательств 2024г':      return !isEmptyVal(co.main[key]); // все (если есть значение)
+            case 'BV/кол-во акций': {                // балансовая стоимость на акцию >= цены
+                var price = parseNum(co.main['Текущая Цена']);
+                return !isNaN(v) && !isNaN(price) && v >= price;
+            }
+            case 'Маржа Валовой прибыли':           return v >= 40;
+            case 'Маржа Операционной прибыли':      return v >= 25;
+            case 'Маржа Чистой прибыли':            return v >= 15;
+            default: return false;
+        }
+    }
+
+    // Класс знака для подсветки изменений (используется в карточке)
     function signClass(v) {
         if (isEmptyVal(v)) return 'neu';
         var n = parseNum(v);
@@ -449,6 +470,7 @@
         var el = root(); if (!el) return;
         if (state.status !== 'ready') { renderState(); return; }
         renderState(); // обновит счётчик и спрячет состояние
+        populateSectorMenu(); // наполнить меню секторов (один раз)
 
         var scEl = el.querySelector('.stk-scroll');
         var bodyHtml = '';
@@ -501,7 +523,8 @@
         var sc = el.querySelector('.stk-scroll'); if (!sc) return;
         var w = sc.clientWidth - 36; // минус горизонтальные паддинги .stk-card
         el.querySelectorAll('.stk-card').forEach(function (card) {
-            card.style.width = w + 'px';
+            // карточка шириной по контенту, но не шире видимой области (иначе уедет за экран)
+            card.style.maxWidth = w + 'px';
         });
     }
 
@@ -521,6 +544,21 @@
             el.querySelector('.stk-search-clear').hidden = true;
             if (state.status === 'ready') render();
             inp.focus();
+            return;
+        }
+
+        // открыть/закрыть меню секторов
+        if (e.target.closest('[data-act="sec-toggle"]')) {
+            var menu = el.querySelector('.stk-sec-menu');
+            if (menu) menu.hidden = !menu.hidden;
+            return;
+        }
+        // сбросить выбор секторов
+        if (e.target.closest('[data-act="sec-reset"]')) {
+            state.sectors = [];
+            el.querySelectorAll('.stk-sec-opt input').forEach(function (c) { c.checked = false; });
+            updateSecBadge();
+            if (state.status === 'ready') render();
             return;
         }
 
@@ -616,6 +654,19 @@
             + '      <input class="stk-search-input" type="text" placeholder="Поиск: тикер или название" autocomplete="off" spellcheck="false">'
             + '      <button class="stk-search-clear" type="button" data-act="clear-search" aria-label="Очистить" hidden>×</button>'
             + '    </label>'
+            + '    <div class="stk-secfilter">'
+            + '      <button class="stk-sec-btn" type="button" data-act="sec-toggle">'
+            + '        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18M6 12h12M10 19h4"/></svg>'
+            + '        <span class="stk-sec-label">Секторы</span>'
+            + '        <span class="stk-sec-badge" hidden></span>'
+            + '        <svg class="stk-sec-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>'
+            + '      </button>'
+            + '      <div class="stk-sec-menu" hidden>'
+            + '        <div class="stk-sec-menu-head"><span>Фильтр по секторам</span>'
+            + '          <button type="button" class="stk-sec-reset" data-act="sec-reset">Сбросить</button></div>'
+            + '        <div class="stk-sec-list"></div>'
+            + '      </div>'
+            + '    </div>'
             + '    <div class="stk-toggle" role="tablist">'
             + '      <button class="stk-tg-btn active" type="button" data-mode="sector">По секторам</button>'
             + '      <button class="stk-tg-btn" type="button" data-mode="flat">Общий список</button>'
@@ -633,7 +684,49 @@
             clearBtn.hidden = !input.value;
             if (state.status === 'ready') render();
         });
+        // выбор секторов (чекбоксы) — делегируем change
+        el.addEventListener('change', function (e) {
+            var cb = e.target.closest('.stk-sec-opt input');
+            if (!cb) return;
+            var sec = cb.value;
+            var idx = state.sectors.indexOf(sec);
+            if (cb.checked && idx === -1) state.sectors.push(sec);
+            else if (!cb.checked && idx !== -1) state.sectors.splice(idx, 1);
+            updateSecBadge();
+            if (state.status === 'ready') render();
+        });
+        // клик вне меню секторов — закрыть
+        document.addEventListener('click', function (e) {
+            var elr = root(); if (!elr) return;
+            var menu = elr.querySelector('.stk-sec-menu');
+            if (menu && !menu.hidden && !e.target.closest('.stk-secfilter')) menu.hidden = true;
+        });
         built = true;
+    }
+
+    // Наполнить меню секторов чекбоксами (один раз, после загрузки)
+    function populateSectorMenu() {
+        var el = root(); if (!el) return;
+        var listEl = el.querySelector('.stk-sec-list');
+        if (!listEl || listEl.childElementCount || !state.companies) return;
+        var set = {};
+        state.companies.forEach(function (co) { set[co.sector] = (set[co.sector] || 0) + 1; });
+        var sectors = Object.keys(set).sort(function (a, b) { return a.localeCompare(b, 'ru'); });
+        listEl.innerHTML = sectors.map(function (s) {
+            return '<label class="stk-sec-opt"><input type="checkbox" value="' + esc(s) + '">'
+                 + '<span class="stk-sec-opt-tx">' + esc(s) + '</span>'
+                 + '<span class="stk-sec-opt-n">' + set[s] + '</span></label>';
+        }).join('');
+    }
+
+    // Обновить бейдж с числом выбранных секторов + подсветку кнопки
+    function updateSecBadge() {
+        var el = root(); if (!el) return;
+        var badge = el.querySelector('.stk-sec-badge');
+        var btn = el.querySelector('.stk-sec-btn');
+        var n = state.sectors.length;
+        if (badge) { badge.hidden = n === 0; badge.textContent = n; }
+        if (btn) btn.classList.toggle('active', n > 0);
     }
 
     // Вызывается при входе на вкладку market-stocks

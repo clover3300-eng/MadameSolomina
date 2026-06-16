@@ -26,6 +26,8 @@
     --stk-neg: #C5221F;  --stk-neg-bg: rgba(197, 34, 31, 0.09);
     /* фон блоков мини-таблицы (зебра по показателям) */
     --stk-grp-a: #ffffff;  --stk-grp-b: #f4f6f9;
+    /* подсветка «хороших» ячеек — цвет сайдбара (#8FB3A0) */
+    --stk-good-bg: rgba(143, 179, 160, 0.30);  --stk-good-tx: #2c5e44;
 
     font-family: 'Inter', sans-serif;
     color: var(--stk-text);
@@ -92,6 +94,54 @@
     transition: color 0.15s ease;
 }
 .stk-search-clear:hover { color: var(--stk-text); }
+
+/* Фильтр по секторам (дропдаун с чекбоксами) */
+.stk-secfilter { position: relative; }
+.stk-sec-btn {
+    display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px;
+    background: var(--card, #fff); border: 1px solid var(--stk-border); border-radius: 11px;
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; color: var(--stk-slate);
+    cursor: pointer; white-space: nowrap;
+    transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+}
+.stk-sec-btn:hover { color: var(--stk-text); }
+.stk-sec-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+.stk-sec-chev { width: 13px !important; height: 13px !important; opacity: 0.65; transition: transform 0.2s ease; }
+.stk-sec-btn.active { color: #2c5e44; border-color: rgba(143,179,160,0.6); background: rgba(143,179,160,0.14); }
+.stk-sec-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 18px; padding: 0 5px; border-radius: 99px;
+    background: #8FB3A0; color: #fff; font-size: 11px; font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+}
+.stk-sec-menu {
+    position: absolute; top: calc(100% + 6px); right: 0; z-index: 60;
+    width: 300px; max-height: 380px; overflow-y: auto;
+    background: var(--card, #fff); border: 1px solid var(--stk-border); border-radius: 14px;
+    box-shadow: 0 16px 40px -12px rgba(15,23,42,0.28); padding: 8px;
+}
+.stk-sec-menu-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 8px 10px; border-bottom: 1px solid var(--stk-line); margin-bottom: 6px;
+    font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.03em;
+    text-transform: uppercase; color: var(--stk-muted);
+}
+.stk-sec-reset {
+    appearance: none; border: 0; background: transparent; cursor: pointer;
+    font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; text-transform: none; letter-spacing: 0;
+    color: var(--claude-accent, #D97757); padding: 2px 4px;
+}
+.stk-sec-reset:hover { text-decoration: underline; }
+.stk-sec-list { display: flex; flex-direction: column; }
+.stk-sec-opt {
+    display: flex; align-items: center; gap: 10px; padding: 8px 9px; border-radius: 9px;
+    cursor: pointer; font-family: 'Inter', sans-serif; font-size: 13px; color: var(--stk-text);
+    transition: background 0.13s ease;
+}
+.stk-sec-opt:hover { background: rgba(143,179,160,0.10); }
+.stk-sec-opt input { width: 15px; height: 15px; accent-color: #8FB3A0; cursor: pointer; flex-shrink: 0; }
+.stk-sec-opt-tx { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stk-sec-opt-n { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--stk-muted); }
 
 /* Строка «ничего не найдено» */
 .stk-noresult td {
@@ -190,9 +240,12 @@
 }
 .stk-num { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-variant-numeric: tabular-nums; }
 .stk-empty-cell { color: var(--stk-muted); }
-/* Подсветка по знаку «Изменение *» и маржей в главной таблице */
-.stk-pos-txt { color: var(--stk-pos); font-weight: 600; }
-.stk-neg-txt { color: var(--stk-neg); font-weight: 600; }
+/* Условная подсветка ячеек главной таблицы (цвет подсветки сайдбара #8FB3A0).
+   Селектор сильнее зебры/ховера, чтобы фон не перебивался. */
+.stk-table > tbody > tr > td.stk-hl {
+    /* !important — перебиваем зебру: :nth-child(odd of .stk-row) даёт спецификность (0,3,1) */
+    background-color: var(--stk-good-bg) !important; color: var(--stk-good-tx); font-weight: 600;
+}
 
 /* Строка компании */
 .stk-row { transition: background 0.13s ease; }
@@ -250,6 +303,7 @@
 /* Внутренняя карточка остаётся в зоне видимости при горизонтальном скролле */
 .stk-card {
     position: sticky; left: 0;
+    width: max-content; /* по контенту; верхний предел задаёт JS (maxWidth = ширина видимой области) */
     padding: 16px 18px 20px; box-sizing: border-box;
 }
 .stk-card-inner {
@@ -257,6 +311,8 @@
     background: var(--stk-card-bg, #fff);
     box-shadow: 0 10px 30px -14px rgba(15,23,42,0.22);
     overflow: hidden;
+    /* карточка по ширине содержимого (но не шире доступного места) — без пустоты справа */
+    width: max-content; max-width: 100%;
 }
 .stk-card-tablewrap { overflow-x: auto; }
 .stk-card-tablewrap::-webkit-scrollbar { height: 8px; }
@@ -266,16 +322,20 @@
     font-family: 'Inter', sans-serif;
 }
 
-/* Мини-таблица показателей внутри карточки */
-.stk-mini { border-collapse: separate; border-spacing: 0; width: max-content; min-width: 100%; }
+/* Мини-таблица показателей внутри карточки (по контенту — колонки плотнее) */
+.stk-mini { border-collapse: separate; border-spacing: 0; width: max-content; }
 .stk-mini th {
     position: sticky; top: 0; z-index: 2; background: var(--stk-head-bg);
     font-family: 'Inter', sans-serif; font-weight: 600; font-size: 11px; color: #fff;
     text-align: right; padding: 11px 16px; white-space: nowrap;
     font-variant-numeric: tabular-nums;
 }
+/* Первая колонка карточки — фиксированная и не широкая (общая ширина для всех 3 типов ячеек) */
+.stk-mini th.stk-m-th-first,
+.stk-mini td.stk-m-label,
+.stk-mini td.stk-m-clabel { width: 200px; min-width: 200px; max-width: 200px; }
 .stk-mini th.stk-m-th-first {
-    text-align: left; left: 0; z-index: 3; min-width: 230px;
+    text-align: left; left: 0; z-index: 3;
     text-transform: uppercase; letter-spacing: 0.04em; font-size: 10.5px; color: rgba(255,255,255,0.7);
 }
 
@@ -292,10 +352,11 @@
 .stk-mini tr.stk-m-row > td { padding: 10px 16px 5px; }
 .stk-mini tr.stk-m-solo > td { padding-bottom: 10px; }
 .stk-mini td.stk-m-label {
-    text-align: left; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 13px; color: var(--stk-text);
+    text-align: left; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 12.5px; color: var(--stk-text);
+    white-space: normal; line-height: 1.25;
     position: sticky; left: 0; z-index: 1; box-shadow: 1px 0 0 var(--stk-line);
 }
-.stk-m-val { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 12.5px; color: var(--stk-text); font-variant-numeric: tabular-nums; }
+.stk-m-val { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 12px; color: var(--stk-text); font-variant-numeric: tabular-nums; }
 .stk-m-dash { color: var(--stk-muted); }
 
 /* строка изменений «↳ изм.» — прижата к показателю, без верхней линии */
@@ -305,8 +366,8 @@
     font-size: 10.5px; color: var(--stk-muted) !important;
     position: sticky; left: 0; z-index: 1; box-shadow: 1px 0 0 var(--stk-line);
 }
-.stk-chg { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 11.5px; }
-.stk-chg .stk-chg-pill { display: inline-block; min-width: 52px; padding: 3px 9px; border-radius: 7px; text-align: right; }
+.stk-chg { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 10px; }
+.stk-chg .stk-chg-pill { display: inline-block; min-width: 40px; padding: 2px 6px; border-radius: 6px; text-align: right; }
 .stk-chg.pos .stk-chg-pill { color: var(--stk-pos); background: var(--stk-pos-bg); }
 .stk-chg.neg .stk-chg-pill { color: var(--stk-neg); background: var(--stk-neg-bg); }
 .stk-chg.neu .stk-chg-pill { color: var(--stk-muted); background: transparent; min-width: 0; }
@@ -337,6 +398,7 @@ body.dark-mode .stk-root {
     --stk-pos: #4ade80; --stk-pos-bg: rgba(74,222,128,0.14);
     --stk-neg: #f87171; --stk-neg-bg: rgba(248,113,113,0.14);
     --stk-grp-a: #1e293b; --stk-grp-b: #243144;
+    --stk-good-bg: rgba(143,179,160,0.22); --stk-good-tx: #A7C7B5;
 }
 body.dark-mode .stk-row:nth-child(odd of .stk-row) td.stk-first { background-color: #1b2536; }
 body.dark-mode .stk-row:hover td.stk-first { background-color: #233148; }
@@ -348,6 +410,9 @@ body.dark-mode .stk-mini th.stk-m-th-first { background: #1b2536; }
     .stk-toolbar { align-items: stretch; }
     .stk-tools { width: 100%; flex-direction: column; align-items: stretch; }
     .stk-search { width: 100%; min-width: 0; }
+    .stk-secfilter { width: 100%; }
+    .stk-sec-btn { width: 100%; justify-content: space-between; }
+    .stk-sec-menu { width: 100%; left: 0; right: auto; }
     .stk-toggle { width: 100%; }
     .stk-tg-btn { flex: 1; text-align: center; }
     .stk-scroll { max-height: calc(var(--real-vh, 100vh) - 230px); border-radius: 14px; }
