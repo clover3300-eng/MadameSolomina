@@ -34,7 +34,7 @@
         { key: 'Денежный Поток от ОД',           label: 'ДП от ОД',       type: 'num' },
         { key: 'Процент Обязательств 2025г',     label: '% Обяз. 2025',   type: 'num' },
         { key: 'Процент Обязательств 2024г',     label: '% Обяз. 2024',   type: 'num' },
-        { key: 'Сектор',                         label: 'Сектор',         type: 'text' },
+        { key: 'Сектор',                         label: 'Сектор',         type: 'text', align: 'center' },
         { key: 'P/BV',                           label: 'P/BV',           type: 'num' },
         { key: 'BV/кол-во акций',                label: 'BV/акц.',        type: 'num' },
         { key: 'P/E',                            label: 'P/E',            type: 'num' },
@@ -50,6 +50,27 @@
     ];
     var TOTAL_COLS = COLS.length + 1; // +1 — закреплённая колонка Тикер/Название
 
+    // Правила условной подсветки ячеек (цвет сайдбара #8FB3A0).
+    // op: '>','>=','<','==' — числовой порог (val, редактируется);
+    //     'always' — всегда; '<col'/'>=col' — сравнение с другим столбцом (col).
+    var DEFAULT_RULES = [
+        { key: 'EPS',                            label: 'EPS',            op: '>',  val: 0 },
+        { key: 'ОДХС',                           label: 'ОДХС',           op: '>',  val: 25 },
+        { key: 'Изменение СК',                   label: 'Изм. СК',        op: '>',  val: 5 },
+        { key: 'ROE',                            label: 'ROE',            op: '>',  val: 20 },
+        { key: 'Изменение Выручки',              label: 'Изм. Выручки',   op: '>',  val: 5 },
+        { key: 'Изменение Валовой прибыли',      label: 'Изм. Вал. приб.',op: '>',  val: 5 },
+        { key: 'Изменение Операционной прибыли', label: 'Изм. Опер. приб.',op: '>', val: 5 },
+        { key: 'Изменение Чистой прибыли',       label: 'Изм. Чист. приб.',op: '>', val: 5 },
+        { key: 'Денежный Поток от ОД',           label: 'ДП от ОД',       op: '==', val: 1 },
+        { key: 'Процент Обязательств 2025г',     label: '% Обяз. 2025',   op: '<col', col: 'Процент Обязательств 2024г', colLabel: '% Обяз. 2024' },
+        { key: 'Процент Обязательств 2024г',     label: '% Обяз. 2024',   op: 'always' },
+        { key: 'BV/кол-во акций',                label: 'BV/акц.',        op: '>=col', col: 'Текущая Цена', colLabel: 'Цены' },
+        { key: 'Маржа Валовой прибыли',          label: 'Маржа Вал.',     op: '>=', val: 40 },
+        { key: 'Маржа Операционной прибыли',     label: 'Маржа Опер.',    op: '>=', val: 25 },
+        { key: 'Маржа Чистой прибыли',           label: 'Маржа Чист.',    op: '>=', val: 15 }
+    ];
+
     // ---------- СОСТОЯНИЕ (в памяти, без localStorage) ----------
     var state = {
         companies: null,   // распарсенные компании (кеш на сессию)
@@ -60,6 +81,7 @@
         sortDir: 1,        // 1 — по возрастанию, -1 — по убыванию
         query: '',         // строка поиска по тикеру/названию
         sectors: [],       // выбранные секторы (пусто = все)
+        rules: DEFAULT_RULES.map(function (r) { return Object.assign({}, r); }), // правила окраски (редактируемые)
         expanded: {}       // ticker -> true (раскрытые карточки)
     };
 
@@ -340,7 +362,8 @@
         for (var i = 0; i < COLS.length; i++) {
             var col = COLS[i];
             var sorted = state.sortKey === col.key ? ' stk-sorted' : '';
-            ths += '<th class="' + sorted + '" data-sort="' + esc(col.key) + '" data-type="' + col.type + '">'
+            var align = col.align === 'center' ? ' stk-col-center' : '';
+            ths += '<th class="' + (sorted + align).trim() + '" data-sort="' + esc(col.key) + '" data-type="' + col.type + '">'
                  + esc(col.label) + arrow(col.key) + '</th>';
         }
         return '<thead><tr>' + ths + '</tr></thead>';
@@ -350,15 +373,16 @@
         return '<span class="stk-arrow">' + (state.sortDir === 1 ? '▲' : '▼') + '</span>';
     }
 
-    // Одна строка компании + строка-аккордеон под ней
-    function renderCompanyRow(co) {
+    // Одна строка компании + строка-аккордеон под ней.
+    // rank — порядковый номер в текущем отображении (1..N), чтобы нумерация была сквозной.
+    function renderCompanyRow(co, rank) {
         var idOpen = state.expanded[co.ticker] ? ' open' : '';
         var tds = '';
         // закреплённая ячейка Тикер/Название (кликабельная)
         tds += '<td class="stk-first">'
              + '<span class="stk-ident' + idOpen + '" data-act="toggle" data-ticker="' + esc(co.ticker) + '">'
              + '<svg class="stk-chev-mini" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>'
-             + '<span class="stk-num-badge">' + esc(co.num) + '</span>'
+             + '<span class="stk-num-badge">' + esc(rank) + '</span>'
              + '<span class="stk-id-text"><span class="stk-tkr">' + esc(co.ticker) + '</span>'
              + '<span class="stk-name">' + esc(co.name) + '</span></span>'
              + '</span></td>';
@@ -368,6 +392,7 @@
             var raw = co.main[col.key];
             var empty = isEmptyVal(raw);
             var cls = col.type === 'num' ? 'stk-num' : '';
+            if (col.align === 'center') cls += ' stk-col-center';
             if (empty) cls += ' stk-empty-cell';
             // условная подсветка ячейки (цвет сайдбара) по правилам isHighlightCell
             else if (isHighlightCell(col.key, co)) cls += ' stk-hl';
@@ -428,31 +453,26 @@
              + '<thead>' + thead + '</thead><tbody>' + body + '</tbody></table></div></div></div>';
     }
 
+    function ruleFor(key) {
+        for (var i = 0; i < state.rules.length; i++) if (state.rules[i].key === key) return state.rules[i];
+        return null;
+    }
+
     // Условная подсветка ячейки главной таблицы (цвет сайдбара #8FB3A0).
-    // Возвращает true, если значение в столбце key удовлетворяет «хорошему» порогу.
+    // Возвращает true, если значение в столбце key удовлетворяет правилу из state.rules.
     function isHighlightCell(key, co) {
+        var rule = ruleFor(key);
+        if (!rule) return false;
+        if (rule.op === 'always') return !isEmptyVal(co.main[key]);
         var v = parseNum(co.main[key]);
-        switch (key) {
-            case 'ОДХС':                            return v > 25;
-            case 'Изменение СК':                    return v > 5;
-            case 'ROE':                             return v > 20;
-            case 'Изменение Выручки':               return v > 5;
-            case 'Изменение Валовой прибыли':       return v > 5;
-            case 'Изменение Операционной прибыли':  return v > 5;
-            case 'Изменение Чистой прибыли':        return v > 5;
-            case 'Денежный Поток от ОД':            return v === 1;
-            case 'Процент Обязательств 2025г': {     // подсвечиваем, если долг снизился к 2024
-                var p24 = parseNum(co.main['Процент Обязательств 2024г']);
-                return !isNaN(v) && !isNaN(p24) && v < p24;
-            }
-            case 'Процент Обязательств 2024г':      return !isEmptyVal(co.main[key]); // все (если есть значение)
-            case 'BV/кол-во акций': {                // балансовая стоимость на акцию >= цены
-                var price = parseNum(co.main['Текущая Цена']);
-                return !isNaN(v) && !isNaN(price) && v >= price;
-            }
-            case 'Маржа Валовой прибыли':           return v >= 40;
-            case 'Маржа Операционной прибыли':      return v >= 25;
-            case 'Маржа Чистой прибыли':            return v >= 15;
+        if (isNaN(v)) return false;
+        switch (rule.op) {
+            case '>':  return v > rule.val;
+            case '>=': return v >= rule.val;
+            case '<':  return v < rule.val;
+            case '==': return v === rule.val;
+            case '<col':  { var o = parseNum(co.main[rule.col]);  return !isNaN(o) && v < o; }
+            case '>=col': { var o2 = parseNum(co.main[rule.col]); return !isNaN(o2) && v >= o2; }
             default: return false;
         }
     }
@@ -471,12 +491,14 @@
         if (state.status !== 'ready') { renderState(); return; }
         renderState(); // обновит счётчик и спрячет состояние
         populateSectorMenu(); // наполнить меню секторов (один раз)
+        populateRulesPanel(); // наполнить панель правил окраски (один раз)
 
         var scEl = el.querySelector('.stk-scroll');
         var bodyHtml = '';
 
         // фильтр поиска применяем ДО группировки/сортировки
         var visible = filterList(state.companies);
+        var rank = 0; // сквозная нумерация в порядке отображения
 
         if (!visible.length) {
             // ничего не найдено по запросу
@@ -494,12 +516,12 @@
                 bodyHtml += '<tr class="stk-sector-row"><td colspan="' + TOTAL_COLS + '">'
                     + '<span class="stk-sector-inner"><span class="stk-sector-name">' + esc(sec) + '</span>'
                     + '<span class="stk-sector-count">' + list.length + '</span></span></td></tr>';
-                list.forEach(function (co) { bodyHtml += renderCompanyRow(co); });
+                list.forEach(function (co) { bodyHtml += renderCompanyRow(co, ++rank); });
             });
         } else {
             // общий плоский список
             var flat = sortList(visible);
-            flat.forEach(function (co) { bodyHtml += renderCompanyRow(co); });
+            flat.forEach(function (co) { bodyHtml += renderCompanyRow(co, ++rank); });
         }
 
         scEl.innerHTML = '<table class="stk-table">' + renderHead() + '<tbody>' + bodyHtml + '</tbody></table>';
@@ -558,6 +580,23 @@
             state.sectors = [];
             el.querySelectorAll('.stk-sec-opt input').forEach(function (c) { c.checked = false; });
             updateSecBadge();
+            if (state.status === 'ready') render();
+            return;
+        }
+
+        // открыть/закрыть меню правил окраски
+        if (e.target.closest('[data-act="rules-toggle"]')) {
+            var rmenu = el.querySelector('.stk-rules-menu');
+            if (rmenu) rmenu.hidden = !rmenu.hidden;
+            return;
+        }
+        // сбросить правила к значениям по умолчанию
+        if (e.target.closest('[data-act="rules-reset"]')) {
+            state.rules = DEFAULT_RULES.map(function (r) { return Object.assign({}, r); });
+            el.querySelectorAll('.stk-rule-val').forEach(function (inp) {
+                var rule = ruleFor(inp.getAttribute('data-rule'));
+                if (rule) inp.value = rule.val;
+            });
             if (state.status === 'ready') render();
             return;
         }
@@ -667,6 +706,18 @@
             + '        <div class="stk-sec-list"></div>'
             + '      </div>'
             + '    </div>'
+            + '    <div class="stk-rulesfilter">'
+            + '      <button class="stk-rules-btn" type="button" data-act="rules-toggle" title="Правила окраски ячеек">'
+            + '        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>'
+            + '        <span class="stk-rules-label">Правила</span>'
+            + '      </button>'
+            + '      <div class="stk-rules-menu" hidden>'
+            + '        <div class="stk-sec-menu-head"><span>Правила окраски</span>'
+            + '          <button type="button" class="stk-sec-reset" data-act="rules-reset">По умолчанию</button></div>'
+            + '        <p class="stk-rules-hint">Ячейка подсвечивается <b>зелёным</b>, если условие выполнено. Значения порогов можно менять.</p>'
+            + '        <div class="stk-rules-list"></div>'
+            + '      </div>'
+            + '    </div>'
             + '    <div class="stk-toggle" role="tablist">'
             + '      <button class="stk-tg-btn active" type="button" data-mode="sector">По секторам</button>'
             + '      <button class="stk-tg-btn" type="button" data-mode="flat">Общий список</button>'
@@ -695,13 +746,49 @@
             updateSecBadge();
             if (state.status === 'ready') render();
         });
-        // клик вне меню секторов — закрыть
+        // изменение порога правила окраски — делегируем input
+        el.addEventListener('input', function (e) {
+            var inp = e.target.closest('.stk-rule-val');
+            if (!inp) return;
+            var rule = ruleFor(inp.getAttribute('data-rule'));
+            if (!rule) return;
+            var n = parseFloat(inp.value);
+            rule.val = isFinite(n) ? n : 0;
+            if (state.status === 'ready') render();
+        });
+        // клик вне выпадающих меню — закрыть
         document.addEventListener('click', function (e) {
             var elr = root(); if (!elr) return;
-            var menu = elr.querySelector('.stk-sec-menu');
-            if (menu && !menu.hidden && !e.target.closest('.stk-secfilter')) menu.hidden = true;
+            var sm = elr.querySelector('.stk-sec-menu');
+            if (sm && !sm.hidden && !e.target.closest('.stk-secfilter')) sm.hidden = true;
+            var rm = elr.querySelector('.stk-rules-menu');
+            if (rm && !rm.hidden && !e.target.closest('.stk-rulesfilter')) rm.hidden = true;
         });
         built = true;
+    }
+
+    // Наполнить панель правил окраски (один раз)
+    function populateRulesPanel() {
+        var el = root(); if (!el) return;
+        var listEl = el.querySelector('.stk-rules-list');
+        if (!listEl || listEl.childElementCount) return;
+        var opSym = { '>': '>', '>=': '≥', '<': '<', '==': '=' };
+        listEl.innerHTML = state.rules.map(function (r) {
+            var unit = (r.key === 'EPS' || r.op === '==') ? '' : '%';
+            if (r.op === 'always' || r.op === '<col' || r.op === '>=col') {
+                var desc = r.op === 'always' ? 'подсвечивается всегда'
+                         : (r.op === '<col' ? '&lt; ' + esc(r.colLabel) : '≥ ' + esc(r.colLabel));
+                return '<div class="stk-rule stk-rule-info"><span class="stk-rule-sw"></span>'
+                     + '<span class="stk-rule-name">' + esc(r.label) + '</span>'
+                     + '<span class="stk-rule-desc">' + desc + '</span></div>';
+            }
+            return '<div class="stk-rule"><span class="stk-rule-sw"></span>'
+                 + '<span class="stk-rule-name">' + esc(r.label) + '</span>'
+                 + '<span class="stk-rule-op">' + opSym[r.op] + '</span>'
+                 + '<input class="stk-rule-val" type="number" step="any" data-rule="' + esc(r.key) + '" value="' + esc(r.val) + '">'
+                 + (unit ? '<span class="stk-rule-unit">' + unit + '</span>' : '<span class="stk-rule-unit"></span>')
+                 + '</div>';
+        }).join('');
     }
 
     // Наполнить меню секторов чекбоксами (один раз, после загрузки)

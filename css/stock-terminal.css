@@ -26,6 +26,7 @@
     --stk-neg: #C5221F;  --stk-neg-bg: rgba(197, 34, 31, 0.09);
     /* фон блоков мини-таблицы (зебра по показателям) */
     --stk-grp-a: #ffffff;  --stk-grp-b: #f4f6f9;
+    --stk-mini-head-bg: #eceff4;  /* светлая шапка карточки (не как тёмная шапка таблицы) */
     /* подсветка «хороших» ячеек — цвет сайдбара (#8FB3A0) */
     --stk-good-bg: rgba(143, 179, 160, 0.30);  --stk-good-tx: #2c5e44;
 
@@ -143,6 +144,40 @@
 .stk-sec-opt-tx { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .stk-sec-opt-n { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--stk-muted); }
 
+/* Кнопка и панель «Правила окраски» */
+.stk-rulesfilter { position: relative; }
+.stk-rules-btn {
+    display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px;
+    background: var(--card, #fff); border: 1px solid var(--stk-border); border-radius: 11px;
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; color: var(--stk-slate);
+    cursor: pointer; white-space: nowrap; transition: border-color 0.18s ease, color 0.18s ease;
+}
+.stk-rules-btn:hover { color: var(--stk-text); }
+.stk-rules-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+.stk-rules-menu {
+    position: absolute; top: calc(100% + 6px); right: 0; z-index: 60;
+    width: 320px; max-height: 420px; overflow-y: auto;
+    background: var(--card, #fff); border: 1px solid var(--stk-border); border-radius: 14px;
+    box-shadow: 0 16px 40px -12px rgba(15,23,42,0.28); padding: 8px;
+}
+.stk-rules-hint { margin: 2px 8px 10px; font-family: 'Inter', sans-serif; font-size: 11.5px; line-height: 1.45; color: var(--stk-muted); }
+.stk-rules-hint b { color: var(--stk-good-tx); }
+.stk-rules-list { display: flex; flex-direction: column; gap: 2px; }
+.stk-rule { display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 9px; font-family: 'Inter', sans-serif; font-size: 12.5px; color: var(--stk-text); }
+.stk-rule:hover { background: rgba(143,179,160,0.08); }
+.stk-rule-sw { width: 12px; height: 12px; border-radius: 4px; flex-shrink: 0; background: var(--stk-good-bg); border: 1px solid rgba(143,179,160,0.55); }
+.stk-rule-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.stk-rule-op { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: var(--stk-slate); }
+.stk-rule-val {
+    width: 58px; height: 30px; text-align: right; padding: 0 7px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 600; color: var(--stk-text);
+    background: var(--bg-color, #f4f7f9); border: 1px solid var(--stk-border); border-radius: 8px; outline: none;
+    transition: border-color 0.15s ease;
+}
+.stk-rule-val:focus { border-color: rgba(143,179,160,0.7); }
+.stk-rule-unit { width: 14px; font-size: 12px; color: var(--stk-muted); }
+.stk-rule-info .stk-rule-desc { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: var(--stk-muted); white-space: nowrap; }
+
 /* Строка «ничего не найдено» */
 .stk-noresult td {
     padding: 36px 16px !important; text-align: center !important;
@@ -246,6 +281,9 @@
     /* !important — перебиваем зебру: :nth-child(odd of .stk-row) даёт спецификность (0,3,1) */
     background-color: var(--stk-good-bg) !important; color: var(--stk-good-tx); font-weight: 600;
 }
+/* Столбцы с центрированием (напр. «Сектор») — заголовок и ячейки по центру */
+.stk-table > thead th.stk-col-center,
+.stk-table > tbody > tr > td.stk-col-center { text-align: center; }
 
 /* Строка компании */
 .stk-row { transition: background 0.13s ease; }
@@ -324,19 +362,21 @@
 
 /* Мини-таблица показателей внутри карточки (по контенту — колонки плотнее) */
 .stk-mini { border-collapse: separate; border-spacing: 0; width: max-content; }
+/* Шапка карточки — светлая (НЕ как тёмная шапка главной таблицы), года по центру */
 .stk-mini th {
-    position: sticky; top: 0; z-index: 2; background: var(--stk-head-bg);
-    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 11px; color: #fff;
-    text-align: right; padding: 11px 16px; white-space: nowrap;
+    position: sticky; top: 0; z-index: 2; background: var(--stk-mini-head-bg, #eceff4);
+    font-family: 'Inter', sans-serif; font-weight: 700; font-size: 11px; color: var(--stk-slate);
+    text-align: center; padding: 10px 16px; white-space: nowrap;
+    text-transform: uppercase; letter-spacing: 0.03em;
     font-variant-numeric: tabular-nums;
+    border-bottom: 1px solid var(--stk-line);
 }
 /* Первая колонка карточки — фиксированная и не широкая (общая ширина для всех 3 типов ячеек) */
 .stk-mini th.stk-m-th-first,
 .stk-mini td.stk-m-label,
 .stk-mini td.stk-m-clabel { width: 200px; min-width: 200px; max-width: 200px; }
 .stk-mini th.stk-m-th-first {
-    text-align: left; left: 0; z-index: 3;
-    text-transform: uppercase; letter-spacing: 0.04em; font-size: 10.5px; color: rgba(255,255,255,0.7);
+    text-align: left; left: 0; z-index: 3; font-size: 10.5px; letter-spacing: 0.04em;
 }
 
 /* Зебра по БЛОКАМ (показатель + его «↳ изм.» делят один фон) — глазу легче «вести» строку */
@@ -399,10 +439,10 @@ body.dark-mode .stk-root {
     --stk-neg: #f87171; --stk-neg-bg: rgba(248,113,113,0.14);
     --stk-grp-a: #1e293b; --stk-grp-b: #243144;
     --stk-good-bg: rgba(143,179,160,0.22); --stk-good-tx: #A7C7B5;
+    --stk-mini-head-bg: #2a3850;
 }
 body.dark-mode .stk-row:nth-child(odd of .stk-row) td.stk-first { background-color: #1b2536; }
 body.dark-mode .stk-row:hover td.stk-first { background-color: #233148; }
-body.dark-mode .stk-mini th.stk-m-th-first { background: #1b2536; }
 
 /* ---------- Мобильная адаптация ---------- */
 @media (max-width: 640px) {
@@ -413,6 +453,9 @@ body.dark-mode .stk-mini th.stk-m-th-first { background: #1b2536; }
     .stk-secfilter { width: 100%; }
     .stk-sec-btn { width: 100%; justify-content: space-between; }
     .stk-sec-menu { width: 100%; left: 0; right: auto; }
+    .stk-rulesfilter { width: 100%; }
+    .stk-rules-btn { width: 100%; justify-content: center; }
+    .stk-rules-menu { width: 100%; left: 0; right: auto; }
     .stk-toggle { width: 100%; }
     .stk-tg-btn { flex: 1; text-align: center; }
     .stk-scroll { max-height: calc(var(--real-vh, 100vh) - 230px); border-radius: 14px; }
