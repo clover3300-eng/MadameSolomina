@@ -430,13 +430,14 @@ function switchTab(tabId) {
         // Кнопка "Расчёт" остаётся активной когда открыт Портфель,
         // кнопка "Главная" (домик) — когда открыт Дашборд
         var isActive = btn.dataset.tab === tabId ||
-                       (btn.dataset.tab === 'calc' && tabId === 'portfolio') ||
+                       (btn.dataset.tab === 'calc' && (tabId === 'portfolio' || tabId === 'monthly')) ||
+                       (btn.dataset.tab === 'market' && (tabId === 'market-bonds' || tabId === 'market-stocks')) ||
                        (btn.dataset.tab === 'home' && tabId === 'dashboard');
         btn.classList.toggle('active', isActive);
     });
 
     // Update breadcrumb in top bar
-    var crumbMap = { calc: 'Параметры', portfolio: 'Портфель', rebalance: 'Ребаланс', market: 'Рынок', backtest: 'Тест портфеля' };
+    var crumbMap = { calc: 'Параметры', portfolio: 'Портфель', rebalance: 'Ребаланс', market: 'Рынок', 'market-bonds': 'Облигации', 'market-stocks': 'Акции', monthly: 'Ежемесячный доход', backtest: 'Тест портфеля' };
     var crumb = document.getElementById('topBarCrumb');
     var crumbText = document.getElementById('topBarCrumbText');
     if (crumb && crumbText) {

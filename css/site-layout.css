@@ -64,6 +64,51 @@
     #sbCollapseBtn svg { transition: transform 0.25s ease; }
     body.sb-collapsed #sbCollapseBtn svg { transform: rotate(180deg); }
 
+    /* ---------- Раскрывающиеся подразделы (Расчёт / Рынок) ---------- */
+    .sb-group { display: flex; flex-direction: column; }
+    /* Шеврон у родителя: прижат вправо, поворачивается при раскрытии */
+    .sb-chev {
+        margin-left: auto; display: flex; align-items: center; justify-content: center;
+        width: 22px; height: 22px; flex-shrink: 0; border-radius: 6px;
+        color: rgba(241,246,251,0.38);
+        transition: transform 0.25s ease, color 0.15s ease, background 0.15s ease, opacity 0.2s ease;
+    }
+    .sb-chev svg { width: 14px; height: 14px; stroke-width: 2.2; }
+    .sb-chev:hover { color: rgba(241,246,251,0.85); background: rgba(255,255,255,0.07); }
+    .sb-group.open > .sb-parent .sb-chev { transform: rotate(90deg); color: rgba(241,246,251,0.7); }
+
+    /* Контейнер подпунктов: плавное раскрытие точно по высоте контента через
+       grid-template-rows 0fr→1fr — синхронно с раскрытием панели (0.3s), без
+       «перелёта» max-height, который давал резкий скачок высоты. */
+    .sb-subs { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease; }
+    .sb-group.open > .sb-subs { grid-template-rows: 1fr; }
+    /* padding НЕ на wrap (иначе при 0fr остаётся полоска) — отступы дают сами .sb-sub */
+    .sb-subs-wrap { display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+
+    .sb-sub {
+        display: flex; align-items: center;
+        width: 100%; border: none; background: transparent;
+        padding: 8px 12px 8px 43px;          /* текст под лейблом родителя */
+        border-radius: 9px;
+        color: rgba(241,246,251,0.42);
+        font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 500; letter-spacing: 0.01em;
+        cursor: pointer; text-align: left; position: relative;
+        transition: background 0.15s ease, color 0.15s ease;
+        -webkit-tap-highlight-color: transparent;
+    }
+    /* Вертикальная направляющая-полоска слева; зелёная у активного подпункта */
+    .sb-sub-bar {
+        position: absolute; left: 21px; top: 0; bottom: 0;
+        width: 2px; border-radius: 2px;
+        background: rgba(241,246,251,0.10);
+        transition: background 0.15s ease;
+    }
+    .sb-sub-tx { white-space: nowrap; overflow: hidden; }
+    .sb-sub:hover { color: rgba(241,246,251,0.82); }
+    .sb-sub:hover .sb-sub-bar { background: rgba(241,246,251,0.22); }
+    .sb-sub.active { color: #A7C7B5; font-weight: 600; }
+    .sb-sub.active .sb-sub-bar { background: #8FB3A0; }
+
     /* ---------- Burger & close buttons ---------- */
     #sbBurgerBtn {
         display: flex; align-items: center; justify-content: center;
@@ -1469,6 +1514,10 @@
         }
         body.sb-collapsed .sb-label,
         body.sb-collapsed .sb-logo-text { opacity: 0; }
+        /* На свёрнутом «рельсе» (без hover-peek) подразделы и шевроны скрыты —
+           показываются только когда панель раскрыта (peek или закреплено). */
+        body.sb-collapsed:not(.sb-peek) .sb-chev { opacity: 0; pointer-events: none; }
+        body.sb-collapsed:not(.sb-peek) .sb-subs { grid-template-rows: 0fr !important; }
         body.sb-collapsed.sb-peek #sideBar { z-index: 60; }
         body.sb-collapsed.sb-peek #sbPanel,
         body.sb-collapsed.sb-peek #sbFoot { width: 222px; }

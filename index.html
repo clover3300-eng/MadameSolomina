@@ -74,18 +74,44 @@
                 <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                 <span class="sb-label">Главная</span>
             </button>
-            <button class="sb-item" data-tab="calc" onclick="switchToCalcOrPortfolio()" title="Расчёт">
-                <svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
-                <span class="sb-label">Расчёт</span>
-            </button>
+            <div class="sb-group" data-group="calc">
+                <button class="sb-item sb-parent" data-tab="calc" onclick="sbNavParent('calc', event)" title="Расчёт">
+                    <svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+                    <span class="sb-label">Расчёт</span>
+                    <span class="sb-chev" onclick="sbToggleGroup('calc', event)" aria-label="Развернуть"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span>
+                </button>
+                <div class="sb-subs" id="sbSubs-calc">
+                    <div class="sb-subs-wrap">
+                        <button class="sb-sub" data-sub="calc-portfolio" onclick="sbNavSub('calc-portfolio', event)">
+                            <span class="sb-sub-bar"></span><span class="sb-sub-tx">Расчёт портфеля</span>
+                        </button>
+                        <button class="sb-sub" data-sub="monthly" onclick="sbNavSub('monthly', event)">
+                            <span class="sb-sub-bar"></span><span class="sb-sub-tx">Ежемесячный доход</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
             <button class="sb-item" data-tab="rebalance" onclick="switchTab('rebalance')" title="Ребаланс">
                 <svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg>
                 <span class="sb-label">Ребаланс</span>
             </button>
-            <button class="sb-item" data-tab="market" onclick="switchTab('market')" title="Рынок">
-                <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                <span class="sb-label">Рынок</span>
-            </button>
+            <div class="sb-group" data-group="market">
+                <button class="sb-item sb-parent" data-tab="market" onclick="sbNavParent('market', event)" title="Рынок">
+                    <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    <span class="sb-label">Рынок</span>
+                    <span class="sb-chev" onclick="sbToggleGroup('market', event)" aria-label="Развернуть"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span>
+                </button>
+                <div class="sb-subs" id="sbSubs-market">
+                    <div class="sb-subs-wrap">
+                        <button class="sb-sub" data-sub="market-bonds" onclick="sbNavSub('market-bonds', event)">
+                            <span class="sb-sub-bar"></span><span class="sb-sub-tx">Облигации</span>
+                        </button>
+                        <button class="sb-sub" data-sub="market-stocks" onclick="sbNavSub('market-stocks', event)">
+                            <span class="sb-sub-bar"></span><span class="sb-sub-tx">Акции</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
             <button class="sb-item" data-tab="backtest" onclick="switchTab('backtest')" title="Тест портфеля">
                 <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg>
                 <span class="sb-label">Тест</span>
@@ -258,6 +284,39 @@
         <div id="panel-market" class="tab-panel">
             <!-- MARKET CONTENT — injected from screen-interesting (содержит баннер дохода) -->
             <div id="marketPanelContent"></div>
+        </div>
+
+        <!-- ===== TAB: ЕЖЕМЕСЯЧНЫЙ ДОХОД (заглушка) ===== -->
+        <div id="panel-monthly" class="tab-panel">
+            <div class="stub-screen">
+                <div class="stub-icon">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M12 13v4"/><path d="M10 15h4"/></svg>
+                </div>
+                <h2 class="stub-title">Ежемесячный доход</h2>
+                <p class="stub-sub">Раздел в разработке — скоро здесь появится календарь выплат по месяцам.</p>
+            </div>
+        </div>
+
+        <!-- ===== TAB: РЫНОК · ОБЛИГАЦИИ (заглушка) ===== -->
+        <div id="panel-market-bonds" class="tab-panel">
+            <div class="stub-screen">
+                <div class="stub-icon">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10"/><path d="M7 13h6"/></svg>
+                </div>
+                <h2 class="stub-title">Облигации</h2>
+                <p class="stub-sub">Раздел в разработке — скоро здесь появится рынок облигаций.</p>
+            </div>
+        </div>
+
+        <!-- ===== TAB: РЫНОК · АКЦИИ (заглушка) ===== -->
+        <div id="panel-market-stocks" class="tab-panel">
+            <div class="stub-screen">
+                <div class="stub-icon">
+                    <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><polyline points="7 14 11 10 14 13 20 7"/><polyline points="16 7 20 7 20 11"/></svg>
+                </div>
+                <h2 class="stub-title">Акции</h2>
+                <p class="stub-sub">Раздел в разработке — скоро здесь появится рынок акций.</p>
+            </div>
         </div>
 
         <!-- ===== TAB: ТЕСТ ПОРТФЕЛЯ (BACKTEST) ===== -->

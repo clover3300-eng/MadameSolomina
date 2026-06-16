@@ -456,7 +456,21 @@
     .tab-panel.active {
         display: block;
     }
-    
+
+    /* Экран-заглушка (раздел в разработке) */
+    .stub-screen {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        text-align: center; min-height: 60vh; gap: 14px; padding: 40px 24px;
+    }
+    .stub-icon {
+        width: 76px; height: 76px; border-radius: 22px;
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(143,179,160,0.12); color: #8FB3A0; margin-bottom: 4px;
+    }
+    .stub-icon svg { width: 34px; height: 34px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+    .stub-title { font-family: 'Inter', sans-serif; font-size: 22px; font-weight: 700; color: #2C364C; margin: 0; }
+    .stub-sub { font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 400; color: rgba(44,54,76,0.55); margin: 0; max-width: 360px; line-height: 1.5; }
+
     /* Calc panel — full single column */
     #panel-calc {
         padding: 0;
