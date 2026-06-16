@@ -24,6 +24,8 @@
     /* акценты изменений (ориентир из исходной Google-таблицы) */
     --stk-pos: #137333;  --stk-pos-bg: rgba(19, 115, 51, 0.10);
     --stk-neg: #C5221F;  --stk-neg-bg: rgba(197, 34, 31, 0.09);
+    /* фон блоков мини-таблицы (зебра по показателям) */
+    --stk-grp-a: #ffffff;  --stk-grp-b: #f4f6f9;
 
     font-family: 'Inter', sans-serif;
     color: var(--stk-text);
@@ -147,7 +149,7 @@
 /* ---------- Основная таблица ---------- */
 .stk-table {
     border-collapse: separate; border-spacing: 0; width: max-content; min-width: 100%;
-    font-size: 13px;
+    font-size: 12.5px;
 }
 
 /* Шапка таблицы — тёмная, sticky сверху.
@@ -156,9 +158,9 @@
 .stk-table > thead th {
     position: sticky; top: 0; z-index: 3;
     background: var(--stk-head-bg); color: #fff;
-    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 12px;
+    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 11.5px;
     text-align: right; white-space: nowrap;
-    padding: 12px 14px; cursor: pointer; user-select: none;
+    padding: 10px 9px; cursor: pointer; user-select: none;
     border-bottom: 1px solid rgba(255,255,255,0.10);
     transition: background 0.15s ease;
 }
@@ -183,7 +185,7 @@
 
 /* Тело таблицы */
 .stk-table > tbody > tr > td {
-    padding: 11px 14px; text-align: right; white-space: nowrap;
+    padding: 8px 9px; text-align: right; white-space: nowrap;
     border-bottom: 1px solid var(--stk-line); color: var(--stk-text);
 }
 .stk-num { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-variant-numeric: tabular-nums; }
@@ -200,7 +202,7 @@
 .stk-row:hover td.stk-first { background-color: #eef5fb; }
 
 /* Кликабельная ячейка Тикер/Название */
-.stk-ident { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; min-width: 170px; }
+.stk-ident { display: inline-flex; align-items: center; gap: 9px; cursor: pointer; min-width: 148px; }
 .stk-ident:hover .stk-tkr { color: var(--claude-accent, #D97757); }
 .stk-ident:hover .stk-name { color: var(--stk-text); }
 .stk-chev-mini {
@@ -214,8 +216,8 @@
     color: var(--stk-text); transition: color 0.15s ease;
 }
 .stk-name {
-    font-family: 'Inter', sans-serif; font-weight: 400; font-size: 11.5px;
-    color: var(--stk-slate); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-family: 'Inter', sans-serif; font-weight: 400; font-size: 11px;
+    color: var(--stk-slate); max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     transition: color 0.15s ease;
 }
 .stk-num-badge { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--stk-muted); min-width: 22px; text-align: right; }
@@ -242,31 +244,19 @@
 }
 
 /* ---------- Аккордеон-карточка показателей ---------- */
-.stk-table tbody tr.stk-card-row > td { padding: 0; text-align: left; border-bottom: 1px solid var(--stk-line); background: rgba(15,23,42,0.015); }
+.stk-table tbody tr.stk-card-row > td { padding: 0; text-align: left; border-bottom: 1px solid var(--stk-line); background: rgba(15,23,42,0.02); }
 .stk-acc { max-height: 0; overflow: hidden; opacity: 0; transition: max-height 0.36s ease, opacity 0.3s ease; }
 .stk-acc.open { opacity: 1; }
 /* Внутренняя карточка остаётся в зоне видимости при горизонтальном скролле */
 .stk-card {
     position: sticky; left: 0;
-    padding: 18px; box-sizing: border-box;
+    padding: 16px 18px 20px; box-sizing: border-box;
 }
 .stk-card-inner {
     border: 1px solid var(--stk-border); border-radius: 14px;
-    background: var(--card-glass-aurora, rgba(255,255,255,0.72));
-    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-    box-shadow: var(--claude-glass-shadow, 0 4px 24px -1px rgba(0,0,0,0.04));
+    background: var(--stk-card-bg, #fff);
+    box-shadow: 0 10px 30px -14px rgba(15,23,42,0.22);
     overflow: hidden;
-}
-.stk-card-head {
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    padding: 14px 16px; border-bottom: 1px solid var(--stk-line);
-}
-.stk-card-tkr { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 15px; color: var(--stk-text); }
-.stk-card-name { font-family: 'Inter', sans-serif; font-weight: 500; font-size: 13px; color: var(--stk-slate); }
-.stk-card-sector {
-    margin-left: auto; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600;
-    color: var(--graphite, #2C364C); background: rgba(44,54,76,0.07);
-    padding: 4px 11px; border-radius: 99px;
 }
 .stk-card-tablewrap { overflow-x: auto; }
 .stk-card-tablewrap::-webkit-scrollbar { height: 8px; }
@@ -279,40 +269,60 @@
 /* Мини-таблица показателей внутри карточки */
 .stk-mini { border-collapse: separate; border-spacing: 0; width: max-content; min-width: 100%; }
 .stk-mini th {
-    position: sticky; top: 0; background: rgba(44,54,76,0.04);
-    font-family: 'Inter', sans-serif; font-weight: 700; font-size: 11px; color: var(--stk-slate);
-    text-align: right; padding: 9px 14px; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.03em;
-    border-bottom: 1px solid var(--stk-line);
+    position: sticky; top: 0; z-index: 2; background: var(--stk-head-bg);
+    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 11px; color: #fff;
+    text-align: right; padding: 11px 16px; white-space: nowrap;
+    font-variant-numeric: tabular-nums;
 }
-.stk-mini th.stk-m-th-first { text-align: left; position: sticky; left: 0; z-index: 1; background: rgba(248,249,251,1); }
-.stk-mini td { padding: 8px 14px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--stk-line); }
-.stk-mini td.stk-m-label {
-    text-align: left; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 12.5px; color: var(--stk-text);
-    position: sticky; left: 0; background: var(--stk-card-bg); box-shadow: 1px 0 0 var(--stk-line);
+.stk-mini th.stk-m-th-first {
+    text-align: left; left: 0; z-index: 3; min-width: 230px;
+    text-transform: uppercase; letter-spacing: 0.04em; font-size: 10.5px; color: rgba(255,255,255,0.7);
 }
-.stk-m-val { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 12px; color: var(--stk-text); font-variant-numeric: tabular-nums; }
 
-/* Строка изменений «↳ изм.» */
-.stk-mini tr.stk-m-chg td { border-bottom: 1px solid var(--stk-line); padding-top: 4px; padding-bottom: 9px; }
+/* Зебра по БЛОКАМ (показатель + его «↳ изм.» делят один фон) — глазу легче «вести» строку */
+.stk-mini tr.stk-mg-a > td { background: var(--stk-grp-a, #ffffff); }
+.stk-mini tr.stk-mg-b > td { background: var(--stk-grp-b, #f4f6f9); }
+
+.stk-mini td { text-align: right; white-space: nowrap; border-bottom: none; }
+/* нижняя граница только в КОНЦЕ блока (после изм. или у показателя без изм.) */
+.stk-mini tr.stk-m-chg > td,
+.stk-mini tr.stk-m-solo > td { border-bottom: 1px solid var(--stk-line); }
+
+/* строка показателя */
+.stk-mini tr.stk-m-row > td { padding: 10px 16px 5px; }
+.stk-mini tr.stk-m-solo > td { padding-bottom: 10px; }
+.stk-mini td.stk-m-label {
+    text-align: left; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 13px; color: var(--stk-text);
+    position: sticky; left: 0; z-index: 1; box-shadow: 1px 0 0 var(--stk-line);
+}
+.stk-m-val { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 12.5px; color: var(--stk-text); font-variant-numeric: tabular-nums; }
+.stk-m-dash { color: var(--stk-muted); }
+
+/* строка изменений «↳ изм.» — прижата к показателю, без верхней линии */
+.stk-mini tr.stk-m-chg > td { padding: 0 16px 9px; }
 .stk-m-clabel {
     text-align: right !important; font-family: 'Inter', sans-serif; font-style: italic;
-    font-size: 11px; color: var(--stk-muted) !important;
-    position: sticky; left: 0; background: var(--stk-card-bg) !important; box-shadow: 1px 0 0 var(--stk-line);
+    font-size: 10.5px; color: var(--stk-muted) !important;
+    position: sticky; left: 0; z-index: 1; box-shadow: 1px 0 0 var(--stk-line);
 }
-.stk-chg {
-    font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 11.5px;
-    border-radius: 6px;
-}
-.stk-chg .stk-chg-pill { display: inline-block; padding: 2px 8px; border-radius: 6px; }
+.stk-chg { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 11.5px; }
+.stk-chg .stk-chg-pill { display: inline-block; min-width: 52px; padding: 3px 9px; border-radius: 7px; text-align: right; }
 .stk-chg.pos .stk-chg-pill { color: var(--stk-pos); background: var(--stk-pos-bg); }
 .stk-chg.neg .stk-chg-pill { color: var(--stk-neg); background: var(--stk-neg-bg); }
-.stk-chg.neu .stk-chg-pill { color: var(--stk-muted); background: transparent; }
+.stk-chg.neu .stk-chg-pill { color: var(--stk-muted); background: transparent; min-width: 0; }
 
 /* ---------- Десктоп: учитываем zoom 0.85 (см. desktop-zoom.css) ----------
    --real-vh задаётся из JS в px; под zoom px сжимаются, поэтому делим
    обратно на фактор, как и остальные полноэкранные правила проекта. */
 @media (min-width: 1024px) {
     .stk-scroll { max-height: calc(var(--real-vh, 100vh) / 0.85 - 210px); }
+    /* Вкладка Акции — таблица во всю ширину контентной области.
+       Базовое правило .tab-panel ограничивает её 1240px с авто-центрированием
+       (css/site-layout.css) — переопределяем по id, чтобы убрать пустые поля. */
+    #panel-market-stocks.tab-panel {
+        max-width: none; margin: 0; width: 100%;
+        padding: 20px 24px 64px;
+    }
 }
 
 /* ---------- Тёмная тема ---------- */
@@ -326,6 +336,7 @@ body.dark-mode .stk-root {
     --stk-card-bg: var(--card-bg, #1e293b);
     --stk-pos: #4ade80; --stk-pos-bg: rgba(74,222,128,0.14);
     --stk-neg: #f87171; --stk-neg-bg: rgba(248,113,113,0.14);
+    --stk-grp-a: #1e293b; --stk-grp-b: #243144;
 }
 body.dark-mode .stk-row:nth-child(odd of .stk-row) td.stk-first { background-color: #1b2536; }
 body.dark-mode .stk-row:hover td.stk-first { background-color: #233148; }

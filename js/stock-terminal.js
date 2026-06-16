@@ -391,15 +391,12 @@
         return rowHtml + accHtml;
     }
 
-    // Внутренность карточки показателей
+    // Внутренность карточки показателей.
+    // Заголовок не дублируем (тикер/название/сектор уже видны в строке выше).
+    // Показатель и его «↳ изм.» объединяем в один визуальный блок (зебра по блокам).
     function renderCardInner(co) {
-        var head = '<div class="stk-card-head">'
-            + '<span class="stk-card-tkr">' + esc(co.ticker) + '</span>'
-            + '<span class="stk-card-name">' + esc(co.name) + '</span>'
-            + '<span class="stk-card-sector">' + esc(co.sector) + '</span></div>';
-
         if (!co.metrics.length || !co.years.length) {
-            return '<div class="stk-card"><div class="stk-card-inner">' + head
+            return '<div class="stk-card"><div class="stk-card-inner">'
                  + '<div class="stk-card-empty">Нет данных по показателям</div></div></div>';
         }
 
@@ -412,14 +409,17 @@
         var body = '';
         for (var m = 0; m < co.metrics.length; m++) {
             var met = co.metrics[m];
-            body += '<tr class="stk-m-row"><td class="stk-m-label">' + esc(met.label) + '</td>';
+            var grp = (m % 2 === 0) ? 'stk-mg-a' : 'stk-mg-b'; // зебра по блокам показателей
+            var hasChg = !!met.changes;
+            body += '<tr class="stk-m-row ' + grp + (hasChg ? '' : ' stk-m-solo') + '">'
+                 + '<td class="stk-m-label">' + esc(met.label) + '</td>';
             for (var v = 0; v < co.years.length; v++) {
                 var val = met.values[v];
-                body += '<td class="stk-m-val">' + (isEmptyVal(val) ? '—' : esc(val)) + '</td>';
+                body += '<td class="stk-m-val">' + (isEmptyVal(val) ? '<span class="stk-m-dash">—</span>' : esc(val)) + '</td>';
             }
             body += '</tr>';
-            if (met.changes) {
-                body += '<tr class="stk-m-chg"><td class="stk-m-clabel">↳ изм.</td>';
+            if (hasChg) {
+                body += '<tr class="stk-m-chg ' + grp + '"><td class="stk-m-clabel">↳ изм.</td>';
                 for (var ch = 0; ch < co.years.length; ch++) {
                     var cv = met.changes[ch];
                     var sign = signClass(cv);
@@ -431,7 +431,7 @@
             }
         }
 
-        return '<div class="stk-card"><div class="stk-card-inner">' + head
+        return '<div class="stk-card"><div class="stk-card-inner">'
              + '<div class="stk-card-tablewrap"><table class="stk-mini">'
              + '<thead>' + thead + '</thead><tbody>' + body + '</tbody></table></div></div></div>';
     }
