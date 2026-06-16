@@ -366,12 +366,19 @@
         var host = dq('dash2Rates');
         if (!host) return;
         var rd = window.ratesData || (typeof ratesData !== 'undefined' ? ratesData : {});
+        var keyV  = rd.keyRate     != null ? rd.keyRate     : txt('val-key-rate');
+        var depV  = rd.depositRate != null ? rd.depositRate : txt('val-deposit-rate');
+        var inflV = rd.inflation   != null ? rd.inflation   : txt('val-inflation');
+        var ofzV  = rd.ofz10       != null ? rd.ofz10       : txt('val-ofz10');
         var rows = [
-            { label: 'Ключевая ставка',       val: rd.keyRate     != null ? rd.keyRate     : txt('val-key-rate'),     accent: true },
-            { label: 'Ставка по вкладам',     val: rd.depositRate != null ? rd.depositRate : txt('val-deposit-rate') },
-            { label: 'Инфляция год',          val: rd.inflation   != null ? rd.inflation   : txt('val-inflation') },
-            { label: 'Доходность ОФЗ 10 лет', val: rd.ofz10       != null ? rd.ofz10       : txt('val-ofz10') }
+            { label: 'Ключевая ставка',       val: keyV, accent: true },
+            { label: 'Ставка по вкладам',     val: depV },
+            { label: 'Инфляция год',          val: inflV },
+            { label: 'Доходность ОФЗ 10 лет', val: ofzV }
         ];
+        // Реальная ставка = ключевая − инфляция (заполняет карточку и полезна)
+        var k = toNum(keyV), inf = toNum(inflV), realStr = '—', realNeg = false;
+        if (isFinite(k) && isFinite(inf)) { var r = k - inf; realNeg = r < 0; realStr = (r >= 0 ? '+' : '') + r.toFixed(2) + '%'; }
         host.innerHTML =
             '<div class="dr-head"><div class="dr-title">Ставки рынка</div><span class="dr-tag">Россия</span></div>' +
             '<div class="dr-list">' + rows.map(function(r) {
@@ -379,28 +386,40 @@
                     '<span class="dr-label">' + esc(r.label) + '</span>' +
                     '<span class="dr-val">' + esc(r.val) + '</span>' +
                 '</div>';
-            }).join('') + '</div>';
+            }).join('') + '</div>' +
+            '<div class="dr-foot">' +
+                '<div class="dr-foot-l"><div class="dr-foot-title">Реальная ставка</div><div class="dr-foot-sub">ключевая − инфляция</div></div>' +
+                '<div class="dr-foot-v' + (realNeg ? ' neg' : '') + '">' + esc(realStr) + '</div>' +
+            '</div>';
     }
 
     // ====================================================================
-    //  РЕКОМЕНДАЦИИ ДЛЯ РЕБАЛАНСА (вертикально: ОФЗ + акции)
+    //  РЕКОМЕНДАЦИИ ДЛЯ РЕБАЛАНСА (вертикально: ОФЗ + акции, с сортировкой)
     // ====================================================================
-    function topOfz(limit) {
+    var rebalSort = { bond: 'yield', stock: 'potential' };
+
+    var TIERS = [ { roman: 'I' }, { roman: 'II' }, { roman: 'III' }, { roman: 'IV' } ];
+
+    function dfmt(dateStr) {
+        if (!dateStr || dateStr === '—') return '—';
+        var p = String(dateStr).split('T')[0].split('-');
+        return p.length === 3 ? p[2] + '.' + p[1] + '.' + p[0] : String(dateStr);
+    }
+
+    // ОФЗ: считаем YTM (из Sheets) и текущую купонную доходность (купон·частота / цена)
+    function ofzList() {
         if (typeof bonds === 'undefined' || !bonds || !bonds.length) return [];
-        return bonds.slice().sort(function(a, b) { return (toNum(b.y) || 0) - (toNum(a.y) || 0); })
-            .slice(0, limit).map(function(b) {
-                var p = parseFloat(String(b.p).replace(',', '.')) || 0;
-                var nkd = parseFloat(b.nkd || 0) || 0;
-                return { ticker: b.t, name: b.n, metric: (b.y ? String(b.y).replace('%', '') + '%' : '—'), sub: (p + nkd).toFixed(2) + ' ₽' };
-            });
+        var list = bonds.map(function(b) {
+            var price = parseFloat(String(b.p).replace(',', '.')) || 0;
+            var nkd = parseFloat(b.nkd || 0) || 0;
+            var d = (typeof bondDetailsMap !== 'undefined' && bondDetailsMap[b.t]) ? bondDetailsMap[b.t] : {};
+            var cur = (d.couponValue > 0 && d.freq > 0 && price > 0) ? (d.couponValue * d.freq / price * 100) : NaN;
+            return { ticker: b.t, name: b.n, ytm: toNum(b.y), cur: cur, price: price, nkd: nkd, total: price + nkd, d: d };
+        });
+        if (rebalSort.bond === 'coupon') list.sort(function(a, b) { return (isFinite(b.cur) ? b.cur : -1e9) - (isFinite(a.cur) ? a.cur : -1e9); });
+        else list.sort(function(a, b) { return (isFinite(b.ytm) ? b.ytm : -1e9) - (isFinite(a.ytm) ? a.ytm : -1e9); });
+        return list.slice(0, 5);
     }
-
-    var TIERS = [
-        { roman: 'I',   color: '#1d9d6c' },
-        { roman: 'II',  color: '#3d6fd1' },
-        { roman: 'III', color: '#d07b2a' },
-        { roman: 'IV',  color: '#d8434f' }
-    ];
 
     function topStocks(limit) {
         if (typeof echelonTableData === 'undefined' || !echelonTableData) return [];
@@ -415,13 +434,47 @@
                 }
             });
         });
-        return all.sort(function(a, b) { return b.pot - a.pot; }).slice(0, limit);
+        if (rebalSort.stock === 'echelon') all.sort(function(a, b) { return (a.echelon - b.echelon) || (b.pot - a.pot); });
+        else all.sort(function(a, b) { return b.pot - a.pot; });
+        return all.slice(0, limit);
+    }
+
+    // Строка ОФЗ с инлайн-раскрытием деталей (как во вкладке «Ребаланс»)
+    function renderOfzItem(it, i, metric) {
+        var d = it.d || {};
+        var cur = isFinite(it.cur) ? it.cur.toFixed(2) + '%' : '—';
+        var t = it.ticker;
+        var rows = [
+            ['Код (ISIN)', '<span class="drb-od-code" onclick="event.stopPropagation();copyTickerNew(\'' + esc(t) + '\')">' + esc(t) + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span>'],
+            ['Текущая цена', it.price.toFixed(2) + ' ₽'],
+            ['НКД', it.nkd.toFixed(2) + ' ₽'],
+            ['Итого (цена + НКД)', '<b>' + it.total.toFixed(2) + ' ₽</b>'],
+            ['Погашение', dfmt(d.matDate)],
+            ['Размер купона', (d.couponValue != null ? d.couponValue : '—') + ' ₽'],
+            ['Ближайший купон', dfmt(d.nextCoupon)],
+            ['Текущая купонная доходность', '<span style="color:#16b56b">' + cur + '</span>'],
+            ['Выплат в год', (d.freq != null ? d.freq : '—')]
+        ];
+        var detailRows = rows.map(function(r) {
+            return '<div class="drb-od-row"><span class="drb-od-l">' + r[0] + '</span><span class="drb-od-v">' + r[1] + '</span></div>';
+        }).join('');
+        return '<div class="drb-ofz" id="dofz-' + esc(t) + '">' +
+            '<button class="drb-item drb-ofz-sum" onclick="dashToggleOfz(\'' + esc(t) + '\')">' +
+                '<span class="drb-rank">' + (i + 1) + '</span>' +
+                '<span class="drb-info"><span class="drb-ticker">' + esc(it.name) + '</span><span class="drb-tsub">' + it.total.toFixed(2) + ' ₽</span></span>' +
+                '<span class="drb-metric">' + esc(metric) + '</span>' +
+                '<svg class="drb-go drb-ofz-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>' +
+            '</button>' +
+            '<div class="drb-ofz-det"><div class="drb-od-list">' + detailRows + '</div>' +
+                '<button class="drb-od-chart" onclick="event.stopPropagation();openTradingViewDirect(\'' + esc(t) + '\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Открыть график</button>' +
+            '</div>' +
+        '</div>';
     }
 
     function renderRebal() {
         var host = dq('dash2Rebal');
         if (!host) return;
-        var ofz = topOfz(5);
+        var ofz = ofzList();
         var stocks = topStocks(6);
 
         var ready = ofz.length || stocks.length;
@@ -433,113 +486,69 @@
         }
 
         var ofzRows = ofz.length ? ofz.map(function(it, i) {
-            return '<button class="drb-item" onclick="dashOpenTicker(\'' + esc(it.ticker) + '\',\'bond\',0)">' +
-                '<span class="drb-rank">' + (i + 1) + '</span>' +
-                '<span class="drb-info"><span class="drb-ticker">' + esc(it.name) + '</span><span class="drb-tsub">' + esc(it.sub) + '</span></span>' +
-                '<span class="drb-metric">' + esc(it.metric) + '</span>' +
-                '<svg class="drb-go" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>' +
-            '</button>';
+            var metric = rebalSort.bond === 'coupon'
+                ? (isFinite(it.cur) ? it.cur.toFixed(2) + '%' : '—')
+                : (isFinite(it.ytm) ? it.ytm.toFixed(2) + '%' : '—');
+            return renderOfzItem(it, i, metric);
         }).join('') : '<div class="drb-empty">нет данных</div>';
 
         var stockRows = stocks.length ? stocks.map(function(it, i) {
-            var tier = TIERS[it.echelon - 1] || TIERS[0];
-            return '<button class="drb-item" onclick="dashOpenTicker(\'' + esc(it.ticker) + '\',\'stock\',' + it.echelon + ')">' +
+            return '<button class="drb-item" onclick="dashOpenTicker(\'' + esc(it.ticker) + '\',' + it.echelon + ')">' +
                 '<span class="drb-rank">' + (i + 1) + '</span>' +
                 '<span class="drb-info"><span class="drb-ticker">' + esc(it.ticker) +
-                    '<span class="drb-tier" style="--c:' + tier.color + '">' + tier.roman + '</span></span>' +
+                    '<span class="drb-tier tier-' + it.echelon + '">' + (TIERS[it.echelon - 1] || TIERS[0]).roman + '</span></span>' +
                     '<span class="drb-tsub">' + esc(it.name) + '</span></span>' +
                 '<span class="drb-metric ' + (/-/.test(it.metric) ? 'neg' : '') + '">' + esc(it.metric) + '</span>' +
                 '<svg class="drb-go" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>' +
             '</button>';
         }).join('') : '<div class="drb-empty">нет данных</div>';
 
+        function sortToggle(group, opts) {
+            return '<div class="drb-sort">' + opts.map(function(o) {
+                return '<button class="drb-sort-btn' + (rebalSort[group] === o.k ? ' active' : '') + '" onclick="' +
+                    (group === 'bond' ? 'dashSetBondSort' : 'dashSetStockSort') + '(\'' + o.k + '\')">' + o.t + '</button>';
+            }).join('') + '</div>';
+        }
+
         host.innerHTML =
-            '<div class="drb-title">Лучшее для ребаланса <span class="drb-sub">нажмите на тикер — откроется панель</span></div>' +
+            '<div class="drb-title">Лучшее для ребаланса <span class="drb-sub">нажмите на тикер — детали</span></div>' +
             '<div class="drb-cols">' +
                 '<div class="drb-col">' +
-                    '<div class="drb-col-head" style="--c:#5B7C99"><span class="drb-dot"></span>Облигации · ОФЗ<span class="drb-col-meta">по доходности</span></div>' +
-                    ofzRows +
+                    '<div class="drb-col-head"><span class="drb-dot" style="--c:#5B7C99"></span><span class="drb-col-name">Облигации · ОФЗ</span>' +
+                        sortToggle('bond', [{ k: 'yield', t: 'Доходность' }, { k: 'coupon', t: 'Купонная' }]) +
+                    '</div>' + ofzRows +
                 '</div>' +
                 '<div class="drb-col">' +
-                    '<div class="drb-col-head" style="--c:#D97757"><span class="drb-dot"></span>Акции · по эшелонам<span class="drb-col-meta">по потенциалу</span></div>' +
-                    stockRows +
+                    '<div class="drb-col-head"><span class="drb-dot" style="--c:#D97757"></span><span class="drb-col-name">Акции</span>' +
+                        sortToggle('stock', [{ k: 'potential', t: 'Потенциал' }, { k: 'echelon', t: 'Эшелон' }]) +
+                    '</div>' + stockRows +
                 '</div>' +
             '</div>';
     }
 
-    // ====================================================================
-    //  КЛИК ПО ТИКЕРУ → выезжающая панель справа
-    // ====================================================================
-    window.dashOpenTicker = function(ticker, kind, echelon) {
-        if (kind === 'bond') { dashOpenBond(ticker); return; }
-        if (typeof openStockDetail === 'function') openStockDetail(ticker, echelon || 1);
-        else if (typeof goToCompanyPageFromTicker === 'function') goToCompanyPageFromTicker(ticker);
-    };
+    window.dashSetBondSort = function(m) { if (rebalSort.bond === m) return; rebalSort.bond = m; renderRebal(); };
+    window.dashSetStockSort = function(m) { if (rebalSort.stock === m) return; rebalSort.stock = m; renderRebal(); };
 
-    // Карточка-панель деталей (создаём при отсутствии — как в ребалансе)
-    function dashEnsureCard() {
-        var card = dq('stockDetailCard');
-        if (!card) {
-            card = document.createElement('div');
-            card.className = 'stock-detail-card';
-            card.id = 'stockDetailCard';
-            document.body.appendChild(card);
-        }
-        return card;
-    }
-
-    function dashOpenBond(ticker) {
-        var card = dashEnsureCard();
-        if (!card) return;
-        if (card.classList.contains('open') && card.dataset.ticker === ticker) {
-            if (typeof closeStockDetail === 'function') closeStockDetail();
-            return;
-        }
-        var b = (typeof bonds !== 'undefined' && bonds) ? bonds.filter(function(x) { return x.t === ticker; })[0] : null;
-        var name = b ? b.n : ticker;
-        var yield_ = b && b.y ? String(b.y) : '—';
-        var price = b && b.p != null ? (parseFloat(b.p).toFixed(2) + ' ₽') : '—';
-        var nkd = b && b.nkd != null ? (parseFloat(b.nkd).toFixed(2) + ' ₽') : '—';
-        var mat = b && b.matDate ? b.matDate.split('-').reverse().join('.') : '—';
-
-        card.innerHTML =
-            '<div class="sd">' +
-                '<div class="sd-close" onclick="closeStockDetail()" title="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></div>' +
-                '<div class="sd-top">' +
-                    '<div class="sd-id">' +
-                        '<div class="sd-tk-row"><div class="tk">' + esc(name) + '</div>' +
-                        '<button class="sd-copy" onclick="copyTickerNew(\'' + esc(ticker) + '\')" title="Скопировать код"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg></button></div>' +
-                        '<div class="nm">' + esc(ticker) + '</div>' +
-                    '</div>' +
-                    '<span class="sd-tier-circle" style="color:#5B7C99;border-color:#5B7C99;font-size:12px;font-weight:800">ОФЗ</span>' +
-                '</div>' +
-                '<span class="sd-sector"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg></span>Государственная облигация · Минфин РФ</span>' +
-                '<div class="sd-hr"></div>' +
-                '<div class="dbf-grid">' +
-                    '<div class="dbf"><div class="dbf-l">Доходность</div><div class="dbf-v" style="color:#16b56b">' + esc(yield_) + '</div></div>' +
-                    '<div class="dbf"><div class="dbf-l">Цена</div><div class="dbf-v">' + esc(price) + '</div></div>' +
-                    '<div class="dbf"><div class="dbf-l">НКД</div><div class="dbf-v">' + esc(nkd) + '</div></div>' +
-                    '<div class="dbf"><div class="dbf-l">Погашение</div><div class="dbf-v">' + esc(mat) + '</div></div>' +
-                '</div>' +
-                '<div class="sd-btns sd-btns-single"><div class="sd-btn dark" onclick="openTradingViewDirect(\'' + esc(ticker) + '\')"><span class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12c2-5 4-5 6 0s4 5 6 0 4-5 6 0"/></svg></span>Открыть график</div></div>' +
-                '<div class="sd-hr"></div>' +
-                '<div class="sd-block events-section"><div class="company-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Новости Smart-Lab</div>' +
-                    '<div id="sdNewsList"><div class="skeleton-container"><div class="skeleton-news-item"><div class="skeleton-bone s-news-title"></div><div class="skeleton-bone s-news-date"></div></div><div class="skeleton-news-item"><div class="skeleton-bone s-news-title" style="width:75%"></div><div class="skeleton-bone s-news-date"></div></div></div></div>' +
-                '</div>' +
-            '</div>';
-
-        card.dataset.ticker = ticker;
-        card.dataset.echelon = 0;
-        if (card.parentElement !== document.body) document.body.appendChild(card);
-        if (typeof ensureStockDetailBackdrop === 'function') ensureStockDetailBackdrop().classList.add('open');
-        document.body.classList.add('sd-drawer-open');
-        card.classList.add('open');
-        card.scrollTop = 0;
-        if (typeof loadAndDisplayNews === 'function') loadAndDisplayNews(ticker, 'sdNewsList');
+    // Инлайн-раскрытие деталей ОФЗ (одно открыто за раз)
+    window.dashToggleOfz = function(ticker) {
+        var item = dq('dofz-' + ticker);
+        if (!item) return;
+        var open = item.classList.contains('open');
+        var host = dq('dash2Rebal');
+        if (host) Array.prototype.forEach.call(host.querySelectorAll('.drb-ofz.open'), function(el) { el.classList.remove('open'); });
+        if (!open) item.classList.add('open');
         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
             window.Telegram.WebApp.HapticFeedback.selectionChanged();
         }
-    }
+    };
+
+    // ====================================================================
+    //  КЛИК ПО АКЦИИ → выезжающая панель справа (как в ребалансе)
+    // ====================================================================
+    window.dashOpenTicker = function(ticker, echelon) {
+        if (typeof openStockDetail === 'function') openStockDetail(ticker, echelon || 1);
+        else if (typeof goToCompanyPageFromTicker === 'function') goToCompanyPageFromTicker(ticker);
+    };
 
     // ====================================================================
     //  ГЛАВНЫЙ РЕНДЕР

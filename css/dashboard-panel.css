@@ -17,18 +17,17 @@
     font-family: 'Manrope', 'Inter', sans-serif;
 }
 
-/* ---------- Header ---------- */
-.dash2-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
+/* ---------- Header: слово «Дашборд» как разделитель ---------- */
+.dash2-head { display: flex; align-items: center; gap: 14px; margin: 2px 0; }
 .dash2-eyebrow {
-    font-size: 12px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
-    color: #9aa7b8; margin-bottom: 6px;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
+    color: #9aa7b8; flex-shrink: 0;
 }
-.dash2-title {
-    font-family: 'Inter', sans-serif;
-    font-size: 28px; font-weight: 800; letter-spacing: -0.01em;
-    color: #111927; margin: 0; line-height: 1.1;
+.dash2-head::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(90deg, rgba(44,54,76,0.14), transparent);
 }
-body.dark-mode .dash2-title { color: #f1f6fb; }
+body.dark-mode .dash2-head::after { background: linear-gradient(90deg, rgba(255,255,255,0.12), transparent); }
 
 /* ---------- Card base ---------- */
 .dash2-card {
@@ -297,6 +296,14 @@ body.dark-mode .dr-val { color: #f1f6fb; }
 .dr-row.accent .dr-label { color: #111927; font-weight: 700; }
 body.dark-mode .dr-row.accent .dr-label { color: #f1f6fb; }
 .dr-row.accent .dr-val { color: #119d5c; font-size: 18px; }
+/* Footer: реальная ставка (key − inflation) — заполняет карточку */
+.dr-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; padding: 14px 16px; border-radius: 14px; background: rgba(91,124,153,0.07); }
+body.dark-mode .dr-foot { background: rgba(255,255,255,0.04); }
+.dr-foot-title { font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 700; color: #111927; }
+body.dark-mode .dr-foot-title { color: #f1f6fb; }
+.dr-foot-sub { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #9aa7b8; margin-top: 2px; }
+.dr-foot-v { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; color: #119d5c; background: rgba(17,157,92,0.1); padding: 6px 12px; border-radius: 10px; white-space: nowrap; }
+.dr-foot-v.neg { color: #d8434f; background: rgba(216,67,79,0.1); }
 
 /* ============================================================
    РЕКОМЕНДАЦИИ ДЛЯ РЕБАЛАНСА (вертикально)
@@ -313,13 +320,29 @@ body.dark-mode .drb-title { color: #f1f6fb; }
 .drb-col { display: flex; flex-direction: column; gap: 8px; }
 .drb-col-head {
     display: flex; align-items: center; gap: 8px;
-    font-family: 'Manrope', sans-serif; font-size: 12.5px; font-weight: 800; letter-spacing: 0.03em;
-    text-transform: uppercase; color: #5f6d80; padding-bottom: 6px; margin-bottom: 2px;
+    padding-bottom: 10px; margin-bottom: 4px;
     border-bottom: 1px solid rgba(44,54,76,0.07);
 }
-body.dark-mode .drb-col-head { color: #c4cedd; border-bottom-color: rgba(255,255,255,0.07); }
+body.dark-mode .drb-col-head { border-bottom-color: rgba(255,255,255,0.07); }
+.drb-col-name {
+    font-family: 'Manrope', sans-serif; font-size: 12.5px; font-weight: 800; letter-spacing: 0.03em;
+    text-transform: uppercase; color: #5f6d80; white-space: nowrap;
+}
+body.dark-mode .drb-col-name { color: #c4cedd; }
 .drb-dot { width: 8px; height: 8px; border-radius: 99px; background: var(--c, #5B7C99); flex-shrink: 0; }
-.drb-col-meta { margin-left: auto; font-size: 10px; font-weight: 600; letter-spacing: 0; text-transform: none; color: #9aa7b8; }
+
+/* Сегментированный переключатель сортировки */
+.drb-sort { margin-left: auto; display: inline-flex; background: rgba(44,54,76,0.06); border-radius: 9px; padding: 2px; gap: 2px; flex-shrink: 0; }
+body.dark-mode .drb-sort { background: rgba(255,255,255,0.06); }
+.drb-sort-btn {
+    border: none; background: transparent; cursor: pointer;
+    font-family: 'Manrope', sans-serif; font-size: 10.5px; font-weight: 700; letter-spacing: 0;
+    color: #8593a8; padding: 4px 10px; border-radius: 7px; white-space: nowrap; transition: all 0.15s ease;
+}
+.drb-sort-btn:hover { color: #5f6d80; }
+.drb-sort-btn.active { background: #fff; color: #111927; box-shadow: 0 1px 3px rgba(24,38,60,0.14); }
+body.dark-mode .drb-sort-btn { color: #76849a; }
+body.dark-mode .drb-sort-btn.active { background: #2c3a4d; color: #f1f6fb; }
 
 .drb-item {
     display: flex; align-items: center; gap: 11px; width: 100%; text-align: left;
@@ -337,10 +360,18 @@ body.dark-mode .drb-item:hover { background: rgba(255,255,255,0.09); }
 .drb-ticker { display: flex; align-items: center; gap: 7px; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 14px; color: #111927; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 body.dark-mode .drb-ticker { color: #f1f6fb; }
 .drb-tier {
-    display: inline-grid; place-items: center; min-width: 18px; height: 16px; padding: 0 4px;
+    display: inline-grid; place-items: center; min-width: 17px; height: 16px; padding: 0 5px;
     border-radius: 5px; font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700;
-    color: #fff; background: var(--c, #5B7C99); flex-shrink: 0;
+    letter-spacing: 0.03em; flex-shrink: 0;
 }
+.tier-1 { color: #1d9d6c; background: rgba(29,157,108,0.12); }
+.tier-2 { color: #3d6fd1; background: rgba(61,111,209,0.12); }
+.tier-3 { color: #d07b2a; background: rgba(208,123,42,0.13); }
+.tier-4 { color: #d8434f; background: rgba(216,67,79,0.13); }
+body.dark-mode .tier-1 { color: #44d18f; background: rgba(68,209,143,0.16); }
+body.dark-mode .tier-2 { color: #7aa2f0; background: rgba(122,162,240,0.16); }
+body.dark-mode .tier-3 { color: #e8a24f; background: rgba(232,162,79,0.16); }
+body.dark-mode .tier-4 { color: #f2868f; background: rgba(242,134,143,0.16); }
 .drb-tsub { font-size: 11.5px; color: #8593a6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .drb-metric {
     font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700;
@@ -351,6 +382,32 @@ body.dark-mode .drb-ticker { color: #f1f6fb; }
 .drb-item:hover .drb-go { stroke: #5B7C99; transform: translateX(2px); }
 body.dark-mode .drb-go { stroke: #4a5666; }
 .drb-empty { font-size: 12px; color: #b3bdca; padding: 10px 2px; }
+
+/* ОФЗ: инлайн-раскрытие деталей (как во вкладке «Ребаланс») */
+.drb-ofz { display: flex; flex-direction: column; }
+.drb-ofz-sum:hover { transform: none; }
+.drb-ofz-chev { transition: transform 0.28s ease; }
+.drb-ofz-sum:hover .drb-ofz-chev { transform: none; }
+.drb-ofz.open .drb-ofz-chev { transform: rotate(180deg); }
+.drb-ofz.open .drb-ofz-sum { background: #eef3f9; }
+body.dark-mode .drb-ofz.open .drb-ofz-sum { background: rgba(255,255,255,0.09); }
+.drb-ofz-det { max-height: 0; overflow: hidden; transition: max-height 0.38s cubic-bezier(0.4,0,0.2,1); }
+.drb-ofz.open .drb-ofz-det { max-height: 540px; }
+.drb-od-list { padding: 8px 4px 2px; }
+.drb-od-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 10px; border-bottom: 1px solid rgba(44,54,76,0.06); }
+.drb-od-row:last-child { border-bottom: none; }
+body.dark-mode .drb-od-row { border-bottom-color: rgba(255,255,255,0.06); }
+.drb-od-l { font-size: 12px; color: #8593a8; }
+.drb-od-v { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 600; color: #111927; white-space: nowrap; }
+.drb-od-v b { font-weight: 800; }
+body.dark-mode .drb-od-v { color: #eef2f7; }
+.drb-od-code { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 600; color: #5B7C99; background: rgba(91,124,153,0.1); padding: 4px 9px; border-radius: 8px; transition: background 0.15s ease; }
+.drb-od-code:hover { background: rgba(91,124,153,0.18); }
+.drb-od-code svg { width: 12px; height: 12px; flex-shrink: 0; }
+.drb-od-chart { display: flex; align-items: center; justify-content: center; gap: 8px; width: calc(100% - 12px); margin: 8px 6px 6px; padding: 11px; border: none; border-radius: 12px; background: #141b26; color: #fff; font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 12.5px; cursor: pointer; transition: transform 0.15s ease; }
+.drb-od-chart:hover { transform: translateY(-1px); }
+.drb-od-chart svg { width: 15px; height: 15px; }
+body.dark-mode .drb-od-chart { background: #0e1621; }
 
 /* ============================================================
    ПАНЕЛЬ ОБЛИГАЦИИ — сетка фактов внутри выезжающей карточки
@@ -378,11 +435,13 @@ body.dark-mode #stockDetailCard .dbf { background: rgba(255,255,255,0.04); }
     .drb-cols { grid-template-columns: 1fr; gap: 22px; }
 }
 @media (max-width: 720px) {
-    .dash2-title { font-size: 23px; }
     .dash2-livebar { padding: 0 14px; height: 54px; }
     .dlv-vsep { margin: 14px 14px; }
     .dlv-item { padding: 0 14px; }
     .dlv-time { padding-left: 14px; }
     .dp-chips { grid-template-columns: repeat(2, 1fr); }
     .dp-capital { font-size: 28px; }
+    .drb-col-head { flex-wrap: wrap; }
+    .drb-sort { margin-left: 0; margin-top: 2px; width: 100%; }
+    .drb-sort-btn { flex: 1; text-align: center; }
 }
