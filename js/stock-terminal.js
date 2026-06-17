@@ -290,6 +290,7 @@
                 state.companies = companies;
                 state.status = companies.length ? 'ready' : 'empty';
                 render();
+                if (typeof window.onStkCompaniesLoaded === 'function') { try { window.onStkCompaniesLoaded(); } catch (e) {} }
             })
             .catch(function (err) {
                 console.warn('[stock-terminal] ошибка загрузки:', err);
@@ -297,6 +298,15 @@
                 renderState();
             });
     }
+
+    // Подтянуть таблицу акций в фоне (нужно дашборду для колонки ОДХС в избранном)
+    window.stkEnsureLoaded = function () {
+        if (state.companies && state.companies.length) {
+            if (typeof window.onStkCompaniesLoaded === 'function') { try { window.onStkCompaniesLoaded(); } catch (e) {} }
+            return;
+        }
+        if (state.status !== 'loading') loadData();
+    };
 
     // =========================================================
     //  ФИЛЬТР (поиск по тикеру/названию)
