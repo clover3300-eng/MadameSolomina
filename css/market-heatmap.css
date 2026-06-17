@@ -1,0 +1,136 @@
+/* ============================================================
+   МОДУЛЬ «ТЕПЛОВАЯ КАРТА ИНДЕКСА МОСБИРЖИ» — вкладка Рынок
+   ------------------------------------------------------------
+   Squarified-treemap по составу индекса IMOEX (данные ISS API
+   Московской биржи). Размер плитки — вес в индексе или объём
+   торгов; цвет — дневное изменение цены (зелёный/красный).
+   Всё заскоплено под #mhCard / префикс .mh-, цвета и фон гэпа
+   собраны в локальных токенах (как в .mk-chart-card и .stk-root).
+   ============================================================ */
+
+.mh-card {
+    /* --- локальные токены (фон карточки = фон «гэпа» между плитками) --- */
+    --mh-bg: #ffffff;
+    --mh-line: rgba(44, 54, 76, 0.06);
+    --mh-text: #2C364C;
+    --mh-muted: #8593a6;
+
+    max-width: 1180px;
+    margin: 0 auto 18px;
+    background: var(--mh-bg);
+    border: 1px solid rgba(44, 54, 76, 0.06);
+    border-radius: 22px;
+    box-shadow: 0 16px 36px rgba(24, 38, 60, 0.08);
+    overflow: hidden;
+    font-family: 'Inter', sans-serif;
+}
+body.dark-mode .mh-card {
+    --mh-bg: #1d2734;
+    --mh-line: rgba(255, 255, 255, 0.07);
+    --mh-text: #F1F6FB;
+    --mh-muted: #9aa6b6;
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+}
+
+/* ---------- Шапка ---------- */
+.mh-head {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 14px 18px; border-bottom: 1px solid var(--mh-line);
+}
+.mh-title {
+    font-weight: 800; font-size: 14px; color: var(--mh-text); letter-spacing: -0.01em;
+    background: rgba(143, 179, 160, 0.18); padding: 7px 14px; border-radius: 13px;
+}
+body.dark-mode .mh-title { background: rgba(143, 179, 160, 0.20); }
+.mh-sym {
+    font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 11.5px;
+    color: var(--mh-muted); letter-spacing: 0.02em;
+}
+.mh-spacer { flex: 1 1 auto; }
+
+/* Легенда цветовой шкалы */
+.mh-legend { display: inline-flex; align-items: center; gap: 7px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--mh-muted); }
+.mh-legend-bar { width: 116px; height: 9px; border-radius: 5px;
+    background: linear-gradient(90deg, #d63e3c 0%, #7b818d 50%, #16a05a 100%); }
+
+/* Сегментированный переключатель «размер плитки» */
+.mh-seg { display: inline-flex; height: 34px; padding: 3px; box-sizing: border-box;
+    border-radius: 10px; background: rgba(44, 54, 76, 0.05); }
+body.dark-mode .mh-seg { background: rgba(255, 255, 255, 0.06); }
+.mh-seg-btn { appearance: none; border: 0; cursor: pointer; background: transparent;
+    font: 600 12px 'Inter', sans-serif; color: var(--mh-muted); padding: 0 13px;
+    border-radius: 7px; transition: background .18s ease, color .18s ease; }
+.mh-seg-btn:hover { color: var(--mh-text); }
+.mh-seg-btn.active { background: var(--mh-bg); color: var(--mh-text); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+body.dark-mode .mh-seg-btn.active { background: #2b3a4d; color: #fff; }
+
+/* Кнопка ручного обновления */
+.mh-refresh { width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--mh-line);
+    background: transparent; color: var(--mh-muted); cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; transition: color .18s ease; }
+.mh-refresh:hover { color: var(--mh-text); }
+.mh-refresh svg { width: 16px; height: 16px; }
+.mh-refresh.spin svg { animation: mhSpin .8s linear infinite; }
+@keyframes mhSpin { to { transform: rotate(360deg); } }
+
+/* ---------- Подпись под шапкой (источник/время) ---------- */
+.mh-meta { padding: 9px 18px 0; font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--mh-muted); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.mh-dot { width: 6px; height: 6px; border-radius: 50%; background: #16a05a; display: inline-block; }
+.mh-dot.live { animation: mhPulse 1.8s ease-in-out infinite; }
+@keyframes mhPulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+
+/* ---------- Поле карты ---------- */
+.mh-plot { position: relative; width: 100%; height: 560px; box-sizing: border-box;
+    margin: 12px 0 6px; }
+
+.mh-tile { position: absolute; overflow: hidden; cursor: pointer; color: #fff;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    text-align: center; line-height: 1.04; user-select: none;
+    box-shadow: inset 0 0 0 1.5px var(--mh-bg);
+    transition: filter .12s ease; }
+.mh-tile:hover { filter: brightness(1.08) saturate(1.08);
+    box-shadow: inset 0 0 0 1.5px var(--mh-bg), inset 0 0 0 3px rgba(255, 255, 255, .42); z-index: 4; }
+.mh-tk { font-weight: 800; letter-spacing: -0.02em; text-shadow: 0 1px 2px rgba(0, 0, 0, .3); }
+.mh-pc { font-family: 'JetBrains Mono', monospace; font-weight: 600; opacity: .96; text-shadow: 0 1px 2px rgba(0, 0, 0, .32); }
+.mh-pr { font-family: 'JetBrains Mono', monospace; font-weight: 500; opacity: .82; margin-top: 1px; }
+
+/* Подпись сектора (в зарезервированной полосе сверху блока) */
+.mh-sec { position: absolute; display: flex; align-items: center; gap: 6px; padding: 0 8px;
+    pointer-events: none; z-index: 2; overflow: hidden; white-space: nowrap; }
+.mh-sec-name { font-size: 10.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--mh-text); opacity: .6; }
+.mh-sec-chg { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; }
+
+/* ---------- Тултип ---------- */
+.mh-tip { position: absolute; z-index: 30; pointer-events: none; min-width: 176px; max-width: 244px;
+    background: var(--mh-bg); color: var(--mh-text); border: 1px solid var(--mh-line);
+    border-radius: 12px; box-shadow: 0 14px 32px rgba(16, 24, 40, .2); padding: 11px 13px;
+    opacity: 0; transform: translateY(4px); transition: opacity .12s ease, transform .12s ease; }
+.mh-tip.show { opacity: 1; transform: none; }
+.mh-tip-name { font-weight: 800; font-size: 13px; letter-spacing: -.01em; }
+.mh-tip-sub { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--mh-muted); margin: 1px 0 8px; }
+.mh-tip-row { display: flex; align-items: baseline; justify-content: space-between; gap: 14px;
+    font-size: 12px; padding: 2px 0; }
+.mh-tip-row span:first-child { color: var(--mh-muted); }
+.mh-tip-row b { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+.mh-tip-hint { margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--mh-line);
+    font-size: 10.5px; color: var(--mh-muted); }
+
+/* ---------- Состояния (загрузка / ошибка) ---------- */
+.mh-state { display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100%; gap: 13px; color: var(--mh-muted); font-size: 13px; text-align: center; padding: 0 24px; }
+.mh-spinner { width: 30px; height: 30px; border-radius: 50%;
+    border: 3px solid var(--mh-line); border-top-color: #8FB3A0; animation: mhSpin .8s linear infinite; }
+.mh-retry { appearance: none; cursor: pointer; font: 600 13px 'Inter', sans-serif;
+    color: #fff; background: #2C364C; border: 0; border-radius: 10px; padding: 9px 18px; }
+body.dark-mode .mh-retry { background: #8FB3A0; color: #11251a; }
+
+@media (max-width: 720px) {
+    .mh-card { border-radius: 18px; margin-bottom: 14px; }
+    .mh-head { padding: 12px 14px; gap: 9px; }
+    .mh-plot { height: 460px; }
+    .mh-legend { display: none; }
+}

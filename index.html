@@ -32,6 +32,7 @@
     <link rel="stylesheet" href="css/rebalance-r4.css">
     <link rel="stylesheet" href="css/dashboard-panel.css">
     <link rel="stylesheet" href="css/stock-terminal.css">
+    <link rel="stylesheet" href="css/market-heatmap.css">
     <link rel="stylesheet" href="css/desktop-zoom.css">
     
     <!-- Telegram WebApp API (fallback — works both in TG and browser) -->
@@ -304,6 +305,8 @@
                 </div>
                 <div class="mk-chart-body" id="mkChartBody"></div>
             </section>
+            <!-- Тепловая карта индекса МосБиржи — ISS API (рендерится из js/market-heatmap.js) -->
+            <section class="mh-card" id="mhCard" aria-label="Тепловая карта индекса МосБиржи"></section>
             <!-- MARKET CONTENT — injected from screen-interesting (содержит баннер дохода) -->
             <div id="marketPanelContent"></div>
         </div>
@@ -2024,5 +2027,6 @@
 <script src="js/sidebar.js" defer></script>
 <script src="js/stock-terminal.js" defer></script>
 <script src="js/market-chart.js" defer></script>
+<script src="js/market-heatmap.js" defer></script>
 </body>
 </html>
