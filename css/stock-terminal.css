@@ -35,6 +35,10 @@
     max-width: 100%;
 }
 
+/* Атрибут hidden должен прятать элемент даже у flex/inline-flex —
+   иначе бейджи и чипы (display:*flex) перебивают [hidden] из UA-стилей */
+.stk-root [hidden] { display: none !important; }
+
 /* ---------- Тулбар: заголовок + тумблер режима ---------- */
 .stk-toolbar {
     display: flex; align-items: flex-end; justify-content: space-between;
@@ -67,6 +71,35 @@
 .stk-tg-btn.active {
     background: var(--graphite, #2C364C); color: #fff;
 }
+
+/* Кнопка «Избранное» — фильтр «только избранное» (золотой акцент при активном режиме) */
+.stk-fav-btn {
+    display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px;
+    background: var(--card, #fff); border: 1px solid var(--stk-border); border-radius: 11px;
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; color: var(--stk-slate);
+    cursor: pointer; white-space: nowrap;
+    transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+}
+.stk-fav-btn:hover { color: var(--stk-text); }
+.stk-fav-btn svg { width: 15px; height: 15px; flex-shrink: 0; fill: none; }
+.stk-fav-btn.active { color: #9a6a00; border-color: rgba(239, 170, 16, 0.6); background: rgba(239, 170, 16, 0.12); }
+.stk-fav-btn.active svg { fill: #efaa10; color: #efaa10; }
+.stk-fav-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 18px; padding: 0 5px; border-radius: 99px;
+    background: #efaa10; color: #fff; font-size: 11px; font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* Чип сброса сортировки — виден только при активной сортировке */
+.stk-sortreset {
+    display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 12px;
+    background: rgba(217, 119, 87, 0.08); border: 1px solid rgba(217, 119, 87, 0.35); border-radius: 11px;
+    font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 600; color: var(--claude-accent, #D97757);
+    cursor: pointer; white-space: nowrap; transition: background 0.15s ease;
+}
+.stk-sortreset:hover { background: rgba(217, 119, 87, 0.15); }
+.stk-sortreset svg { width: 13px; height: 13px; }
 
 /* Правый блок инструментов: поиск + тумблер */
 .stk-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -256,6 +289,13 @@
 }
 .stk-table > thead th:hover { background: #36405a; }
 .stk-table > thead th .stk-arrow { margin-left: 5px; opacity: 0.95; font-size: 10px; }
+/* Номер приоритета при многоуровневой сортировке (1, 2, 3 …) */
+.stk-sort-prio {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 14px; height: 14px; margin-left: 4px; padding: 0 3px; border-radius: 99px;
+    background: var(--claude-accent, #D97757); color: #fff;
+    font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; vertical-align: middle;
+}
 .stk-table > thead th.stk-sorted { color: #fff; }
 .stk-table > thead th.stk-sorted::after {
     content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
@@ -289,6 +329,10 @@
 /* Столбцы с центрированием (напр. «Сектор») — заголовок и ячейки по центру */
 .stk-table > thead th.stk-col-center,
 .stk-table > tbody > tr > td.stk-col-center { text-align: center; }
+/* Центрирование ТОЛЬКО заголовка (данные-числа остаются справа).
+   Для первой колонки нужен комбинированный селектор — перебить text-align:left */
+.stk-table > thead th.stk-head-center,
+.stk-table > thead th.stk-first.stk-head-center { text-align: center; }
 
 /* Строка компании */
 .stk-row { transition: background 0.13s ease; }
@@ -297,15 +341,35 @@
 .stk-row:hover td { background-color: var(--stk-hover); }
 .stk-row:hover td.stk-first { background-color: #eef5fb; }
 
+/* Первая ячейка: иконка-вызов карточки + идентификатор (слева) и звезда (справа) */
+.stk-first-cell { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+
 /* Кликабельная ячейка Тикер/Название */
 .stk-ident { display: inline-flex; align-items: center; gap: 9px; cursor: pointer; min-width: 148px; }
 .stk-ident:hover .stk-tkr { color: var(--claude-accent, #D97757); }
 .stk-ident:hover .stk-name { color: var(--stk-text); }
-.stk-chev-mini {
-    flex-shrink: 0; width: 16px; height: 16px; color: var(--stk-muted);
-    transition: transform 0.25s ease; transform: rotate(0deg);
+/* Иконка-кнопка вызова карточки компании (шеврон в рамке) */
+.stk-chev-btn {
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+    width: 24px; height: 24px; border-radius: 7px;
+    border: 1px solid var(--stk-border); background: rgba(15, 23, 42, 0.025); color: var(--stk-slate);
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
-.stk-ident.open .stk-chev-mini { transform: rotate(90deg); color: var(--claude-accent, #D97757); }
+.stk-chev-mini { width: 15px; height: 15px; transition: transform 0.25s ease; transform: rotate(0deg); }
+.stk-ident:hover .stk-chev-btn { border-color: rgba(217, 119, 87, 0.45); background: rgba(217, 119, 87, 0.08); color: var(--claude-accent, #D97757); }
+.stk-ident.open .stk-chev-btn { background: var(--claude-accent, #D97757); border-color: var(--claude-accent, #D97757); color: #fff; }
+.stk-ident.open .stk-chev-mini { transform: rotate(90deg); }
+
+/* Звезда «в избранное» в строке */
+.stk-fav {
+    appearance: none; border: 0; background: transparent; cursor: pointer; padding: 4px;
+    flex-shrink: 0; line-height: 0; border-radius: 7px; color: var(--stk-muted);
+    transition: color 0.15s ease, background 0.15s ease;
+}
+.stk-fav svg { width: 16px; height: 16px; fill: none; transition: fill 0.15s ease; }
+.stk-fav:hover { color: #e8a200; background: rgba(240, 165, 0, 0.12); }
+.stk-fav.active { color: #efaa10; }
+.stk-fav.active svg { fill: #efaa10; }
 .stk-id-text { display: flex; flex-direction: column; gap: 1px; line-height: 1.2; text-align: left; }
 .stk-tkr {
     font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px;
@@ -401,7 +465,10 @@
     white-space: normal; line-height: 1.25;
     position: sticky; left: 0; z-index: 1; box-shadow: 1px 0 0 var(--stk-line);
 }
-.stk-m-val { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 12px; color: var(--stk-text); font-variant-numeric: tabular-nums; }
+/* Ячейки значений/изменений по годам: единая мин. ширина столбца, выравнивание
+   по правому краю — даже если в году стоит прочерк, он встаёт ровно под свой год */
+.stk-mini td.stk-m-val, .stk-mini td.stk-chg { min-width: 84px; }
+.stk-m-val { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 12px; color: var(--stk-text); font-variant-numeric: tabular-nums; text-align: right; }
 .stk-m-dash { color: var(--stk-muted); }
 
 /* строка изменений «↳ изм.» — прижата к показателю, без верхней линии */
@@ -416,7 +483,8 @@
 .stk-chg .stk-chg-pill { display: inline-block; min-width: 40px; padding: 2px 6px; border-radius: 6px; text-align: right; }
 .stk-chg.pos .stk-chg-pill { color: var(--stk-pos); background: var(--stk-pos-bg); }
 .stk-chg.neg .stk-chg-pill { color: var(--stk-neg); background: var(--stk-neg-bg); }
-.stk-chg.neu .stk-chg-pill { color: var(--stk-muted); background: transparent; min-width: 0; }
+/* нейтральный прочерк держит ту же мин. ширину — встаёт ровно под значения года */
+.stk-chg.neu .stk-chg-pill { color: var(--stk-muted); background: transparent; }
 
 /* ---------- Десктоп: учитываем zoom 0.85 (см. desktop-zoom.css) ----------
    --real-vh задаётся из JS в px; под zoom px сжимаются, поэтому делим
@@ -462,6 +530,8 @@ body.dark-mode .stk-row:hover td.stk-first { background-color: #233148; }
     .stk-rulesfilter { width: 100%; }
     .stk-rules-btn { width: 100%; justify-content: center; }
     .stk-rules-menu { width: 100%; left: 0; right: auto; }
+    .stk-fav-btn { width: 100%; justify-content: center; }
+    .stk-sortreset { width: 100%; justify-content: center; }
     .stk-toggle { width: 100%; }
     .stk-tg-btn { flex: 1; text-align: center; }
     .stk-scroll { max-height: calc(var(--real-vh, 100vh) - 230px); border-radius: 14px; }

@@ -20,13 +20,15 @@
 
     // Столбцы основной таблицы (key — точное имя заголовка из CSV).
     // type: 'num' — сортировка по распарсенному числу; 'text' — по строке (ru).
+    // align: 'center'   — центрируем И заголовок, И данные (категориальные столбцы);
+    // headCenter: true  — центрируем ТОЛЬКО заголовок (данные-числа остаются справа).
     var COLS = [
         { key: 'РСБУ/МСФО',                      label: 'Учёт',           type: 'text' },
-        { key: 'Текущая Цена',                   label: 'Цена',           type: 'num' },
-        { key: 'EPS',                            label: 'EPS',            type: 'num' },
+        { key: 'Текущая Цена',                   label: 'Цена',           type: 'num', headCenter: true },
+        { key: 'EPS',                            label: 'EPS',            type: 'num', headCenter: true },
         { key: 'ОДХС',                           label: 'ОДХС',           type: 'num' },
         { key: 'Изменение СК',                   label: 'Изм. СК',        type: 'num' },
-        { key: 'ROE',                            label: 'ROE',            type: 'num' },
+        { key: 'ROE',                            label: 'ROE',            type: 'num', headCenter: true },
         { key: 'Изменение Выручки',              label: 'Изм. Выручки',   type: 'num' },
         { key: 'Изменение Валовой прибыли',      label: 'Изм. Вал.приб.', type: 'num' },
         { key: 'Изменение Операционной прибыли', label: 'Изм. Опер.приб.',type: 'num' },
@@ -35,20 +37,23 @@
         { key: 'Процент Обязательств 2025г',     label: '% Обяз. 2025',   type: 'num' },
         { key: 'Процент Обязательств 2024г',     label: '% Обяз. 2024',   type: 'num' },
         { key: 'Сектор',                         label: 'Сектор',         type: 'text', align: 'center' },
-        { key: 'P/BV',                           label: 'P/BV',           type: 'num' },
+        { key: 'P/BV',                           label: 'P/BV',           type: 'num', headCenter: true },
         { key: 'BV/кол-во акций',                label: 'BV/акц.',        type: 'num' },
-        { key: 'P/E',                            label: 'P/E',            type: 'num' },
+        { key: 'P/E',                            label: 'P/E',            type: 'num', headCenter: true },
         { key: 'Маржа Валовой прибыли',          label: 'Маржа Вал.',     type: 'num' },
         { key: 'Маржа Операционной прибыли',     label: 'Маржа Опер.',    type: 'num' },
         { key: 'Маржа Чистой прибыли',           label: 'Маржа Чист.',    type: 'num' },
         { key: 'Объем выпуска, шт.',             label: 'Объём выпуска',  type: 'num' },
-        { key: 'Платят дивиденды',               label: 'Дивиденды',      type: 'text' },
-        { key: 'Количество в год',               label: 'Выплат/год',     type: 'num' },
-        { key: 'ЭШЕЛОН',                         label: 'Эшелон',         type: 'text' },
-        { key: 'ПРИВИЛЕГИРОВАННЫЕ АКЦИИ',        label: 'Преф',           type: 'text' },
+        { key: 'Платят дивиденды',               label: 'Дивиденды',      type: 'text', align: 'center' },
+        { key: 'Количество в год',               label: 'Выплат/год',     type: 'num',  align: 'center' },
+        { key: 'ЭШЕЛОН',                         label: 'Эшелон',         type: 'text', align: 'center' },
+        { key: 'ПРИВИЛЕГИРОВАННЫЕ АКЦИИ',        label: 'Привилегированные акции', type: 'text', align: 'center' },
         { key: 'СОСТОЯНИЕ',                      label: 'Состояние',      type: 'text', align: 'center' }
     ];
     var TOTAL_COLS = COLS.length + 1; // +1 — закреплённая колонка Тикер/Название
+
+    // Звезда «в избранное» (заливка управляется классом .active через CSS)
+    var STAR_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><polygon points="12 3 14.85 8.78 21.23 9.71 16.61 14.21 17.7 20.56 12 17.56 6.3 20.56 7.39 14.21 2.77 9.71 9.15 8.78 12 3"/></svg>';
 
     // Правила условной подсветки ячеек (цвет сайдбара #8FB3A0).
     // op: '>','>=','<','==' — числовой порог (val, редактируется);
@@ -71,16 +76,28 @@
         { key: 'Маржа Чистой прибыли',           label: 'Маржа Чист.',    op: '>=', val: 15 }
     ];
 
-    // ---------- СОСТОЯНИЕ (в памяти, без localStorage) ----------
+    // Избранное — единственное, что переживает перезагрузку (localStorage)
+    var FAV_KEY = 'stk_fav_v1';
+    function loadFavs() {
+        try { var a = JSON.parse(localStorage.getItem(FAV_KEY)); return Array.isArray(a) ? a : []; }
+        catch (e) { return []; }
+    }
+    function saveFavs() {
+        try { localStorage.setItem(FAV_KEY, JSON.stringify(state.favorites)); } catch (e) {}
+    }
+
+    // ---------- СОСТОЯНИЕ (в памяти; кроме избранного) ----------
     var state = {
         companies: null,   // распарсенные компании (кеш на сессию)
         status: 'idle',    // idle | loading | error | empty | ready
         mode: 'sector',    // 'sector' | 'flat'
-        sortKey: null,     // ключ активного столбца ('__ticker' для первой колонки)
-        sortType: 'text',
-        sortDir: 1,        // 1 — по возрастанию, -1 — по убыванию
+        // Многоуровневая сортировка: массив { key, type, dir }. Порядок = приоритет.
+        // key '__ticker' — закреплённая первая колонка. Пустой массив = без сортировки.
+        sort: [],
         query: '',         // строка поиска по тикеру/названию
         sectors: [],       // выбранные секторы (пусто = все)
+        favorites: loadFavs(), // тикеры в избранном (localStorage)
+        favOnly: false,    // показывать только избранное
         rules: DEFAULT_RULES.map(function (r) { return Object.assign({}, r); }), // правила окраски (редактируемые)
         expanded: {}       // ticker -> true (раскрытые карточки)
     };
@@ -93,10 +110,16 @@
     // US-формате (запятая — тысячи, точка — десятичная: «23,640.00») или
     // EU-формате (пробел/  — тысячи, запятая — десятичная). Возвращаем
     // NaN для пустых/«—». Используется для сортировки и знака (±).
+    // Ошибки формул таблицы (#DIV/0!, #N/A, #REF! …) — трактуем как пусто
+    function isErr(s) {
+        s = (s == null ? '' : String(s)).trim();
+        return /^#(div\/0!|n\/a|name\?|null!|num!|ref!|value!|error!|calc!|spill!|getting_data)/i.test(s);
+    }
+
     function parseNum(s) {
         if (s == null) return NaN;
         s = String(s).trim();
-        if (!s || s === '—' || s === '-' || s === 'N/A' || s === 'n/a') return NaN;
+        if (!s || s === '—' || s === '-' || s === 'N/A' || s === 'n/a' || isErr(s)) return NaN;
         // убираем все виды пробелов (вкл. неразрывный/узкий) и знак процента
         s = s.replace(/[\s  ]/g, '').replace(/%/g, '');
         var hasComma = s.indexOf(',') !== -1;
@@ -121,7 +144,24 @@
 
     function isEmptyVal(s) {
         s = (s == null ? '' : String(s)).trim();
-        return s === '' || s === '—' || s === '-';
+        return s === '' || s === '—' || s === '-' || s === 'N/A' || s.toLowerCase() === 'n/a' || isErr(s);
+    }
+
+    // Подготовка значения ячейки к показу: пусто/ошибка → «—»;
+    // «Количество в год» приходит испорченным датой из Google Sheets
+    // (дробь 1/2 превращается в 1/2/2023) — отрезаем фальшивый год;
+    // булевы true/false приводим к ВЕРХНЕМУ регистру.
+    function displayCell(key, raw) {
+        if (isEmptyVal(raw)) return '—';
+        var s = String(raw).trim();
+        if (key === 'Количество в год') {
+            var m = s.match(/^(\d+)\/(\d+)\/\d{2,4}$/);
+            if (m) return esc(m[1] + '/' + m[2]);
+        }
+        var low = s.toLowerCase();
+        if (low === 'true') return 'TRUE';
+        if (low === 'false') return 'FALSE';
+        return esc(s);
     }
 
     function esc(s) {
@@ -264,8 +304,10 @@
     function filterList(list) {
         var q = state.query.trim().toLowerCase();
         var secs = state.sectors;
-        if (!q && !secs.length) return list;
+        var favOnly = state.favOnly;
+        if (!q && !secs.length && !favOnly) return list;
         return list.filter(function (co) {
+            if (favOnly && state.favorites.indexOf(co.ticker) === -1) return false;
             if (secs.length && secs.indexOf(co.sector) === -1) return false;
             if (q && co.ticker.toLowerCase().indexOf(q) === -1 &&
                      (co.name || '').toLowerCase().indexOf(q) === -1) return false;
@@ -276,33 +318,47 @@
     // =========================================================
     //  СОРТИРОВКА
     // =========================================================
+    // Многоуровневая сортировка: проходим по state.sort по приоритету,
+    // первое ненулевое сравнение определяет порядок. Пустые/«—»/ошибки —
+    // всегда в конец (независимо от направления).
     function sortList(list) {
-        if (!state.sortKey) return list; // без активной сортировки — исходный порядок
-        var key = state.sortKey, type = state.sortType, dir = state.sortDir;
+        if (!state.sort.length) return list; // без активной сортировки — исходный порядок
+        var S = state.sort;
         var arr = list.slice();
         arr.sort(function (x, y) {
-            var av, bv;
-            if (key === '__ticker') { av = x.ticker; bv = y.ticker; }
-            else { av = x.main[key]; bv = y.main[key]; }
-
-            if (type === 'num') {
-                var an = parseNum(av), bn = parseNum(bv);
-                var ae = isNaN(an), be = isNaN(bn);
-                if (ae && be) return 0;
-                if (ae) return 1;   // пустые/«—» — всегда в конец
-                if (be) return -1;
-                return (an - bn) * dir;
+            for (var i = 0; i < S.length; i++) {
+                var s = S[i], key = s.key, r;
+                var av = key === '__ticker' ? x.ticker : x.main[key];
+                var bv = key === '__ticker' ? y.ticker : y.main[key];
+                if (s.type === 'num') {
+                    var an = parseNum(av), bn = parseNum(bv);
+                    var ae = isNaN(an), be = isNaN(bn);
+                    if (ae && be) r = 0;
+                    else if (ae) return 1;   // пустые всегда в конец
+                    else if (be) return -1;
+                    else r = (an < bn ? -1 : (an > bn ? 1 : 0)) * s.dir;
+                } else {
+                    var ax = (av == null ? '' : String(av)).trim();
+                    var bx = (bv == null ? '' : String(bv)).trim();
+                    var aE = isEmptyVal(ax), bE = isEmptyVal(bx);
+                    if (aE && bE) r = 0;
+                    else if (aE) return 1;
+                    else if (bE) return -1;
+                    else r = ax.localeCompare(bx, 'ru') * s.dir;
+                }
+                if (r !== 0) return r;
             }
-            // текст
-            var ax = (av == null ? '' : String(av)).trim();
-            var bx = (bv == null ? '' : String(bv)).trim();
-            var aE = isEmptyVal(ax), bE = isEmptyVal(bx);
-            if (aE && bE) return 0;
-            if (aE) return 1;
-            if (bE) return -1;
-            return ax.localeCompare(bx, 'ru') * dir;
+            return 0;
         });
         return arr;
+    }
+
+    // Информация о сортировке столбца: { idx, dir } или null
+    function sortInfo(key) {
+        for (var i = 0; i < state.sort.length; i++) {
+            if (state.sort[i].key === key) return { idx: i, dir: state.sort[i].dir };
+        }
+        return null;
     }
 
     // =========================================================
@@ -337,7 +393,7 @@
         var cntEl = el.querySelector('.stk-count');
         if (cntEl) {
             if (!state.companies) { cntEl.textContent = ''; }
-            else if (state.query.trim() || state.sectors.length) {
+            else if (state.query.trim() || state.sectors.length || state.favOnly) {
                 var f = filterList(state.companies).length;
                 cntEl.textContent = 'найдено ' + f + ' из ' + state.companies.length;
             } else {
@@ -354,38 +410,48 @@
     }
 
     // Шапка таблицы со стрелками сортировки
+    var SORT_HINT = 'Клик — сортировка по столбцу · Shift+клик — добавить столбец';
     function renderHead() {
         var ths = '';
-        // первая закреплённая колонка
-        ths += '<th class="stk-first' + (state.sortKey === '__ticker' ? ' stk-sorted' : '')
-             + '" data-sort="__ticker" data-type="text">Тикер / Название' + arrow('__ticker') + '</th>';
+        // первая закреплённая колонка (заголовок по центру по просьбе)
+        ths += '<th class="stk-first stk-head-center' + (sortInfo('__ticker') ? ' stk-sorted' : '')
+             + '" data-sort="__ticker" data-type="text" title="' + esc(SORT_HINT) + '">Тикер / Название' + arrow('__ticker') + '</th>';
         for (var i = 0; i < COLS.length; i++) {
             var col = COLS[i];
-            var sorted = state.sortKey === col.key ? ' stk-sorted' : '';
-            var align = col.align === 'center' ? ' stk-col-center' : '';
-            ths += '<th class="' + (sorted + align).trim() + '" data-sort="' + esc(col.key) + '" data-type="' + col.type + '">'
+            var cls = ['stk-th'];
+            if (sortInfo(col.key)) cls.push('stk-sorted');
+            if (col.align === 'center') cls.push('stk-col-center');     // заголовок И данные
+            else if (col.headCenter) cls.push('stk-head-center');       // только заголовок
+            ths += '<th class="' + cls.join(' ') + '" data-sort="' + esc(col.key) + '" data-type="' + col.type + '" title="' + esc(SORT_HINT) + '">'
                  + esc(col.label) + arrow(col.key) + '</th>';
         }
         return '<thead><tr>' + ths + '</tr></thead>';
     }
+    // Стрелка направления + (при многоуровневой сортировке) номер приоритета
     function arrow(key) {
-        if (state.sortKey !== key) return '';
-        return '<span class="stk-arrow">' + (state.sortDir === 1 ? '▲' : '▼') + '</span>';
+        var s = sortInfo(key);
+        if (!s) return '';
+        var prio = state.sort.length > 1 ? '<span class="stk-sort-prio">' + (s.idx + 1) + '</span>' : '';
+        return '<span class="stk-arrow">' + (s.dir === 1 ? '▲' : '▼') + '</span>' + prio;
     }
 
     // Одна строка компании + строка-аккордеон под ней.
     // rank — порядковый номер в текущем отображении (1..N), чтобы нумерация была сквозной.
     function renderCompanyRow(co, rank) {
         var idOpen = state.expanded[co.ticker] ? ' open' : '';
+        var isFav = state.favorites.indexOf(co.ticker) !== -1;
         var tds = '';
-        // закреплённая ячейка Тикер/Название (кликабельная)
-        tds += '<td class="stk-first">'
-             + '<span class="stk-ident' + idOpen + '" data-act="toggle" data-ticker="' + esc(co.ticker) + '">'
-             + '<svg class="stk-chev-mini" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>'
+        // закреплённая ячейка Тикер/Название: слева — кнопка-иконка вызова карточки,
+        // справа — звезда «в избранное».
+        tds += '<td class="stk-first"><div class="stk-first-cell">'
+             + '<span class="stk-ident' + idOpen + '" data-act="toggle" data-ticker="' + esc(co.ticker) + '" title="Открыть карточку компании">'
+             + '<span class="stk-chev-btn" aria-hidden="true"><svg class="stk-chev-mini" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></span>'
              + '<span class="stk-num-badge">' + esc(rank) + '</span>'
              + '<span class="stk-id-text"><span class="stk-tkr">' + esc(co.ticker) + '</span>'
              + '<span class="stk-name">' + esc(co.name) + '</span></span>'
-             + '</span></td>';
+             + '</span>'
+             + '<button class="stk-fav' + (isFav ? ' active' : '') + '" type="button" data-act="fav" data-ticker="' + esc(co.ticker) + '" title="' + (isFav ? 'Убрать из избранного' : 'В избранное') + '" aria-label="Избранное">' + STAR_SVG + '</button>'
+             + '</div></td>';
         // остальные колонки
         for (var i = 0; i < COLS.length; i++) {
             var col = COLS[i];
@@ -396,7 +462,7 @@
             if (empty) cls += ' stk-empty-cell';
             // условная подсветка ячейки (цвет сайдбара) по правилам isHighlightCell
             else if (isHighlightCell(col.key, co)) cls += ' stk-hl';
-            tds += '<td class="' + cls.trim() + '">' + (empty ? '—' : esc(raw)) + '</td>';
+            tds += '<td class="' + cls.trim() + '">' + displayCell(col.key, raw) + '</td>';
         }
         var rowHtml = '<tr class="stk-row" data-ticker="' + esc(co.ticker) + '">' + tds + '</tr>';
         // аккордеон-строка (рендерим содержимое только если раскрыта — иначе лёгкая заглушка)
@@ -492,6 +558,8 @@
         renderState(); // обновит счётчик и спрячет состояние
         populateSectorMenu(); // наполнить меню секторов (один раз)
         populateRulesPanel(); // наполнить панель правил окраски (один раз)
+        updateSortReset();    // показать/скрыть кнопку сброса сортировки
+        updateFavBtn();       // состояние кнопки «Избранное»
 
         var scEl = el.querySelector('.stk-scroll');
         var bodyHtml = '';
@@ -501,9 +569,13 @@
         var rank = 0; // сквозная нумерация в порядке отображения
 
         if (!visible.length) {
-            // ничего не найдено по запросу
-            bodyHtml = '<tr class="stk-noresult"><td colspan="' + TOTAL_COLS + '">'
-                + 'Ничего не найдено по запросу «' + esc(state.query.trim()) + '»</td></tr>';
+            // пустой результат — сообщение зависит от активного фильтра
+            var msg;
+            if (state.favOnly && !state.favorites.length) msg = 'В избранном пока пусто — добавьте акции звёздочкой ★ в строке.';
+            else if (state.favOnly) msg = 'Среди избранного ничего не найдено по текущему фильтру.';
+            else if (state.query.trim()) msg = 'Ничего не найдено по запросу «' + esc(state.query.trim()) + '»';
+            else msg = 'Нет компаний под выбранный фильтр.';
+            bodyHtml = '<tr class="stk-noresult"><td colspan="' + TOTAL_COLS + '">' + msg + '</td></tr>';
         } else if (state.mode === 'sector') {
             // группируем по сектору; группы — по алфавиту (ru); внутри — сортировка
             var groups = {};
@@ -601,6 +673,23 @@
             return;
         }
 
+        // показать только избранное (тумблер в тулбаре)
+        if (e.target.closest('[data-act="fav-toggle"]')) {
+            state.favOnly = !state.favOnly;
+            updateFavBtn();
+            if (state.status === 'ready') render();
+            return;
+        }
+        // сбросить сортировку
+        if (e.target.closest('[data-act="sort-reset"]')) {
+            state.sort = [];
+            if (state.status === 'ready') render();
+            return;
+        }
+        // звезда «в избранное» в строке (проверяем ДО клика по тикеру)
+        var favBtn = e.target.closest('[data-act="fav"]');
+        if (favBtn) { toggleFav(favBtn.getAttribute('data-ticker')); return; }
+
         // тумблер режима
         var tg = e.target.closest('.stk-tg-btn');
         if (tg) {
@@ -615,13 +704,30 @@
             return;
         }
 
-        // сортировка по заголовку
+        // сортировка по заголовку. Обычный клик — одиночная сортировка
+        // (▲ → ▼ → выкл). Shift+клик — добавить/переключить столбец в списке.
         var th = e.target.closest('th[data-sort]');
         if (th) {
             var key = th.getAttribute('data-sort');
             var type = th.getAttribute('data-type') || 'text';
-            if (state.sortKey === key) state.sortDir = -state.sortDir; // повтор → реверс
-            else { state.sortKey = key; state.sortType = type; state.sortDir = 1; }
+            var arr = state.sort;
+            var pos = -1;
+            for (var si = 0; si < arr.length; si++) { if (arr[si].key === key) { pos = si; break; } }
+            if (e.shiftKey) {
+                // многоуровневая: нет → ▲, ▲ → ▼, ▼ → убрать уровень
+                if (pos === -1) arr.push({ key: key, type: type, dir: 1 });
+                else if (arr[pos].dir === 1) arr[pos].dir = -1;
+                else arr.splice(pos, 1);
+            } else {
+                // одиночная: если это единственный активный столбец — цикл ▲/▼/выкл,
+                // иначе заменяем весь список этим столбцом (▲)
+                if (arr.length === 1 && pos === 0) {
+                    if (arr[0].dir === 1) arr[0].dir = -1;
+                    else state.sort = [];
+                } else {
+                    state.sort = [{ key: key, type: type, dir: 1 }];
+                }
+            }
             render();
             return;
         }
@@ -718,6 +824,15 @@
             + '        <div class="stk-rules-list"></div>'
             + '      </div>'
             + '    </div>'
+            + '    <button class="stk-sortreset" type="button" data-act="sort-reset" hidden>'
+            + '      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>'
+            + '      <span>Сбросить сортировку</span>'
+            + '    </button>'
+            + '    <button class="stk-fav-btn" type="button" data-act="fav-toggle" title="Показать только избранное">'
+            + '      ' + STAR_SVG
+            + '      <span class="stk-fav-label">Избранное</span>'
+            + '      <span class="stk-fav-badge" hidden></span>'
+            + '    </button>'
             + '    <div class="stk-toggle" role="tablist">'
             + '      <button class="stk-tg-btn active" type="button" data-mode="sector">По секторам</button>'
             + '      <button class="stk-tg-btn" type="button" data-mode="flat">Общий список</button>'
@@ -804,6 +919,41 @@
                  + '<span class="stk-sec-opt-tx">' + esc(s) + '</span>'
                  + '<span class="stk-sec-opt-n">' + set[s] + '</span></label>';
         }).join('');
+    }
+
+    // Переключить тикер в избранном (с сохранением в localStorage)
+    function toggleFav(ticker) {
+        if (!ticker) return;
+        var idx = state.favorites.indexOf(ticker);
+        if (idx === -1) state.favorites.push(ticker); else state.favorites.splice(idx, 1);
+        saveFavs();
+        updateFavBtn();
+        // если показываем только избранное — состав строк меняется, перерисовываем
+        if (state.favOnly) { if (state.status === 'ready') render(); return; }
+        // иначе обновляем только звезду в текущей строке (без перерисовки)
+        var el = root(); if (!el) return;
+        var on = state.favorites.indexOf(ticker) !== -1;
+        el.querySelectorAll('.stk-fav[data-ticker="' + cssEscape(ticker) + '"]').forEach(function (b) {
+            b.classList.toggle('active', on);
+            b.title = on ? 'Убрать из избранного' : 'В избранное';
+        });
+    }
+
+    // Состояние кнопки «Избранное» в тулбаре (счётчик + подсветка активного режима)
+    function updateFavBtn() {
+        var el = root(); if (!el) return;
+        var btn = el.querySelector('.stk-fav-btn');
+        var badge = el.querySelector('.stk-fav-badge');
+        var n = state.favorites.length;
+        if (badge) { badge.hidden = n === 0; badge.textContent = n; }
+        if (btn) btn.classList.toggle('active', state.favOnly);
+    }
+
+    // Показать/скрыть кнопку сброса сортировки
+    function updateSortReset() {
+        var el = root(); if (!el) return;
+        var b = el.querySelector('.stk-sortreset');
+        if (b) b.hidden = state.sort.length === 0;
     }
 
     // Обновить бейдж с числом выбранных секторов + подсветку кнопки
