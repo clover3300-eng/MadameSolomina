@@ -966,6 +966,22 @@
         if (btn) btn.classList.toggle('active', n > 0);
     }
 
+    // ---- Внешний доступ для дашборда (блок «Избранное») ----
+    // Дашборд читает избранное и данные компаний отсюда, чтобы был
+    // единый источник правды (без рассинхрона с localStorage).
+    window.stkGetFavorites = function () { return state.favorites.slice(); };
+    window.stkFindCompany = function (ticker) {
+        if (!ticker || !state.companies) return null;
+        for (var i = 0; i < state.companies.length; i++) {
+            if (state.companies[i].ticker === ticker) return state.companies[i];
+        }
+        return null;
+    };
+    window.stkToggleFav = function (ticker) {
+        toggleFav(ticker);
+        return state.favorites.indexOf(ticker) !== -1;
+    };
+
     // Вызывается при входе на вкладку market-stocks
     window.renderStockTerminal = function () {
         buildShell();

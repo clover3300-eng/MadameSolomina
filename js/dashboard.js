@@ -106,8 +106,21 @@
             fcPct: pctEl ? (pctEl.getAttribute('data-pct') || (pctEl.textContent || '').trim()) : '',
             strategy: txt('mainCardTitle', ''),
             fee: fee,
+            composition: dashCaptureComposition(),
             ts: Date.now()
         };
+    }
+
+    // Состав рассчитанного портфеля (тикеры) — берём готовые данные из draw()
+    function dashCaptureComposition() {
+        var sl = window._shoppingListData;
+        if (!sl || (!(sl.bonds && sl.bonds.length) && !(sl.stocks && sl.stocks.length))) return null;
+        function trim(arr) {
+            return (arr || []).filter(function(x) { return x && x.ticker; }).map(function(x) {
+                return { ticker: x.ticker, name: x.name || x.ticker, qty: x.qty || 0, sum: x.sum || 0, echelon: x.echelon || 0 };
+            });
+        }
+        return { bonds: trim(sl.bonds), stocks: trim(sl.stocks) };
     }
 
     function dashSaveSnapshot(snap) {
@@ -119,6 +132,15 @@
 
     // Состояние инлайн-пересчёта (сумма / стратегия / комиссия)
     var recalc = { open: false, bondPct: 50, fee: 0.0005, feeText: '0.05%', strat: 'Гармония', customFee: false };
+    var compOpen = true; // раскрыт ли блок «Состав портфеля»
+
+    function plural(n, one, few, many) {
+        n = Math.abs(n) % 100; var n1 = n % 10;
+        if (n > 10 && n < 20) return many;
+        if (n1 > 1 && n1 < 5) return few;
+        if (n1 === 1) return one;
+        return many;
+    }
 
     function dashStrategies() {
         if (typeof ND_STRATEGIES !== 'undefined' && ND_STRATEGIES && ND_STRATEGIES.length) return ND_STRATEGIES;
@@ -188,6 +210,7 @@
 
         host.innerHTML =
             summaryHtml +
+            (snap ? renderComposition(snap) : '') +
             '<button class="dp-recalc-toggle' + (recalc.open ? ' open' : '') + '" onclick="dashToggleRecalc()">' +
                 '<span class="dp-rt-left"><svg viewBox="0 0 24 24">' + ICONS.recalc + '</svg>' + (snap ? 'Пересчитать портфель' : 'Сформировать портфель') + '</span>' +
                 '<svg class="dp-rt-chev" viewBox="0 0 24 24">' + ICONS.chevron + '</svg>' +
@@ -196,6 +219,52 @@
 
         bindRecalcInputs();
     }
+
+    // ---- Состав рассчитанного портфеля (тикеры, сохраняются в снапшоте) ----
+    function compChip(it, kind) {
+        var click = kind === 'stock'
+            ? 'dashOpenTicker(\'' + esc(it.ticker) + '\',' + (it.echelon || 1) + ')'
+            : 'dashOpenComp(\'' + esc(it.ticker) + '\')';
+        var qty = it.qty ? '<span class="dpc-qty">' + it.qty + '</span>' : '';
+        return '<button class="dpc-chip" onclick="' + click + '" title="' + esc(it.name) + '">' +
+            '<span class="dpc-tk">' + esc(it.ticker) + '</span>' + qty + '</button>';
+    }
+
+    function renderComposition(snap) {
+        var c = snap && snap.composition;
+        if (!c) return '';
+        var bonds = c.bonds || [], stocks = c.stocks || [];
+        var total = bonds.length + stocks.length;
+        if (!total) return '';
+        var groups = '';
+        if (bonds.length) {
+            groups += '<div class="dpc-group">' +
+                '<div class="dpc-glabel"><span class="dp-dot bond"></span>ОФЗ<span class="dpc-gn">' + bonds.length + '</span></div>' +
+                '<div class="dpc-chips">' + bonds.map(function(b) { return compChip(b, 'bond'); }).join('') + '</div>' +
+            '</div>';
+        }
+        if (stocks.length) {
+            groups += '<div class="dpc-group">' +
+                '<div class="dpc-glabel"><span class="dp-dot stock"></span>Акции<span class="dpc-gn">' + stocks.length + '</span></div>' +
+                '<div class="dpc-chips">' + stocks.map(function(s) { return compChip(s, 'stock'); }).join('') + '</div>' +
+            '</div>';
+        }
+        return '<div class="dp-comp' + (compOpen ? ' open' : '') + '">' +
+            '<button class="dp-comp-head" onclick="dashToggleComp()">' +
+                '<span class="dp-comp-title">Состав портфеля</span>' +
+                '<span class="dp-comp-count">' + total + ' ' + plural(total, 'бумага', 'бумаги', 'бумаг') + '</span>' +
+                '<svg class="dp-comp-chev" viewBox="0 0 24 24">' + ICONS.chevron + '</svg>' +
+            '</button>' +
+            '<div class="dp-comp-body">' + groups + '</div>' +
+        '</div>';
+    }
+
+    window.dashToggleComp = function() { compOpen = !compOpen; renderPortfolio(); };
+    // Клик по облигации из состава → график (детальная панель — только для акций)
+    window.dashOpenComp = function(ticker) {
+        if (typeof openTradingViewDirect === 'function') openTradingViewDirect(ticker);
+        else if (typeof openStockDetail === 'function') openStockDetail(ticker, 1);
+    };
 
     function renderRecalcPanel() {
         var stratChips = dashStrategies().map(function(s) {
@@ -394,6 +463,89 @@
     }
 
     // ====================================================================
+    //  ИЗБРАННОЕ (звёздочки из раздела «Рынок · Акции»)
+    // ====================================================================
+    function loadFavsRaw() {
+        try { var a = JSON.parse(localStorage.getItem('stk_fav_v1')); return Array.isArray(a) ? a : []; }
+        catch (e) { return []; }
+    }
+
+    // Достаём имя / эшелон / метрику для тикера из доступных данных
+    function resolveTickerMeta(tk) {
+        if (typeof echelonTableData !== 'undefined' && echelonTableData) {
+            for (var ci = 0; ci < echelonTableData.length; ci++) {
+                var col = echelonTableData[ci] || [];
+                for (var i = 0; i < col.length; i++) {
+                    if (col[i] && col[i].t === tk) {
+                        var pot = toNum(col[i].target);
+                        return { name: col[i].n || tk, echelon: ci + 1,
+                            metric: isFinite(pot) ? ((pot >= 0 ? '+' : '') + pot.toFixed(1) + '%') : '',
+                            neg: isFinite(pot) && pot < 0 };
+                    }
+                }
+            }
+        }
+        if (typeof bonds !== 'undefined' && bonds) {
+            for (var b = 0; b < bonds.length; b++) {
+                if (bonds[b].t === tk) {
+                    var y = toNum(bonds[b].y);
+                    return { name: bonds[b].n || tk, echelon: 0, metric: isFinite(y) ? y.toFixed(2) + '%' : '', neg: false };
+                }
+            }
+        }
+        if (typeof window.stkFindCompany === 'function') {
+            var co = window.stkFindCompany(tk);
+            if (co) return { name: co.name || tk, echelon: 0, metric: '', neg: false };
+        }
+        return { name: tk, echelon: 0, metric: '', neg: false };
+    }
+
+    function renderFavorites() {
+        var host = dq('dash2Fav');
+        if (!host) return;
+        var favs = (typeof window.stkGetFavorites === 'function') ? window.stkGetFavorites() : loadFavsRaw();
+        var head = '<div class="dfv-head"><div class="dfv-title">Избранное</div>' +
+            (favs.length ? '<span class="dfv-count">' + favs.length + '</span>' : '') + '</div>';
+
+        if (!favs.length) {
+            host.innerHTML = head +
+                '<div class="dfv-empty">' +
+                    '<div class="dfv-empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>' +
+                    '<div class="dfv-empty-text">Отмечайте акции звёздочкой ★ в разделе «Рынок · Акции» — они появятся здесь.</div>' +
+                    '<button class="dfv-empty-btn" onclick="switchTab(\'market-stocks\')">Перейти к акциям</button>' +
+                '</div>';
+            return;
+        }
+
+        var rows = favs.map(function(tk) {
+            var meta = resolveTickerMeta(tk);
+            var metric = meta.metric ? '<span class="dfv-metric ' + (meta.neg ? 'neg' : '') + '">' + esc(meta.metric) + '</span>' : '';
+            var tier = meta.echelon ? '<span class="drb-tier tier-' + meta.echelon + '">' + (TIERS[meta.echelon - 1] || TIERS[0]).roman + '</span>' : '';
+            return '<div class="dfv-item" onclick="dashOpenFav(\'' + esc(tk) + '\',' + (meta.echelon || 1) + ')">' +
+                '<span class="dfv-info"><span class="dfv-tk">' + esc(tk) + tier + '</span>' +
+                    '<span class="dfv-name">' + esc(meta.name) + '</span></span>' +
+                metric +
+                '<button class="dfv-x" title="Убрать из избранного" onclick="event.stopPropagation();dashUnfav(\'' + esc(tk) + '\')">' +
+                    '<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
+            '</div>';
+        }).join('');
+        host.innerHTML = head + '<div class="dfv-list">' + rows + '</div>';
+    }
+
+    window.dashOpenFav = function(tk, ech) {
+        if (typeof openStockDetail === 'function') openStockDetail(tk, ech || 1);
+        else if (typeof goToCompanyPageFromTicker === 'function') goToCompanyPageFromTicker(tk);
+    };
+    window.dashUnfav = function(tk) {
+        if (typeof window.stkToggleFav === 'function') window.stkToggleFav(tk);
+        else {
+            var a = loadFavsRaw(); var i = a.indexOf(tk); if (i >= 0) a.splice(i, 1);
+            try { localStorage.setItem('stk_fav_v1', JSON.stringify(a)); } catch (e) {}
+        }
+        renderFavorites();
+    };
+
+    // ====================================================================
     //  РЕКОМЕНДАЦИИ ДЛЯ РЕБАЛАНСА (вертикально: ОФЗ + акции, с сортировкой)
     // ====================================================================
     var rebalSort = { bond: 'yield', stock: 'potential' };
@@ -558,6 +710,7 @@
         renderLiveBar();
         renderPortfolio();
         renderRates();
+        renderFavorites();
         renderRebal();
         ensureClock();
     }
