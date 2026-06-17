@@ -46,7 +46,7 @@
         { key: 'Количество в год',               label: 'Выплат/год',     type: 'num' },
         { key: 'ЭШЕЛОН',                         label: 'Эшелон',         type: 'text' },
         { key: 'ПРИВИЛЕГИРОВАННЫЕ АКЦИИ',        label: 'Преф',           type: 'text' },
-        { key: 'СОСТОЯНИЕ',                      label: 'Состояние',      type: 'text' }
+        { key: 'СОСТОЯНИЕ',                      label: 'Состояние',      type: 'text', align: 'center' }
     ];
     var TOTAL_COLS = COLS.length + 1; // +1 — закреплённая колонка Тикер/Название
 

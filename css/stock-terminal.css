@@ -21,9 +21,9 @@
     --stk-line: rgba(15, 23, 42, 0.06);        /* тонкие границы строк */
     --stk-zebra: rgba(15, 23, 42, 0.022);      /* зебра */
     --stk-hover: rgba(52, 152, 219, 0.06);     /* ховер строки */
-    /* акценты изменений (ориентир из исходной Google-таблицы) */
-    --stk-pos: #137333;  --stk-pos-bg: rgba(19, 115, 51, 0.10);
-    --stk-neg: #C5221F;  --stk-neg-bg: rgba(197, 34, 31, 0.09);
+    /* акценты изменений (ориентир из исходной Google-таблицы) — фон бейджей приглушён */
+    --stk-pos: #2c7a4d;  --stk-pos-bg: rgba(19, 115, 51, 0.07);
+    --stk-neg: #cc5b53;  --stk-neg-bg: rgba(197, 34, 31, 0.06);
     /* фон блоков мини-таблицы (зебра по показателям) */
     --stk-grp-a: #ffffff;  --stk-grp-b: #f4f6f9;
     --stk-mini-head-bg: #eceff4;  /* светлая шапка карточки (не как тёмная шапка таблицы) */
@@ -50,22 +50,22 @@
     color: var(--stk-muted);
 }
 
-/* Тумблер «По секторам / Общий список» */
+/* Тумблер «По секторам / Общий список» — в стиле тулбара: бордер-пилюля,
+   активный сегмент графитовый (как тёмная шапка таблицы и сайдбар) */
 .stk-toggle {
-    display: inline-flex; padding: 3px; gap: 2px; border-radius: 12px;
-    background: rgba(15, 23, 42, 0.05);
+    display: inline-flex; height: 38px; padding: 3px; box-sizing: border-box;
+    border-radius: 11px; background: var(--card, #fff);
     border: 1px solid var(--stk-border);
 }
 .stk-tg-btn {
     appearance: none; border: 0; cursor: pointer; background: transparent;
     font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600;
-    color: var(--stk-slate); padding: 7px 14px; border-radius: 9px;
-    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    color: var(--stk-slate); padding: 0 15px; border-radius: 8px;
+    transition: background 0.2s ease, color 0.2s ease;
 }
 .stk-tg-btn:hover { color: var(--stk-text); }
 .stk-tg-btn.active {
-    background: var(--stk-card-bg); color: var(--stk-text);
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.10);
+    background: var(--graphite, #2C364C); color: #fff;
 }
 
 /* Правый блок инструментов: поиск + тумблер */
@@ -163,20 +163,25 @@
 .stk-rules-hint { margin: 2px 8px 10px; font-family: 'Inter', sans-serif; font-size: 11.5px; line-height: 1.45; color: var(--stk-muted); }
 .stk-rules-hint b { color: var(--stk-good-tx); }
 .stk-rules-list { display: flex; flex-direction: column; gap: 2px; }
-.stk-rule { display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 9px; font-family: 'Inter', sans-serif; font-size: 12.5px; color: var(--stk-text); }
+/* единая сетка колонок: свотч | название | оператор | поле | единица — всё выравнивается */
+.stk-rule {
+    display: grid; grid-template-columns: 14px 1fr 16px 56px 14px; align-items: center; column-gap: 9px;
+    padding: 6px 8px; border-radius: 9px; font-family: 'Inter', sans-serif; font-size: 12.5px; color: var(--stk-text);
+}
 .stk-rule:hover { background: rgba(143,179,160,0.08); }
-.stk-rule-sw { width: 12px; height: 12px; border-radius: 4px; flex-shrink: 0; background: var(--stk-good-bg); border: 1px solid rgba(143,179,160,0.55); }
-.stk-rule-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
-.stk-rule-op { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: var(--stk-slate); }
+.stk-rule-sw { width: 13px; height: 13px; border-radius: 4px; background: rgba(143,179,160,0.5); border: 1px solid #8FB3A0; }
+.stk-rule-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.stk-rule-op { text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: var(--stk-slate); }
 .stk-rule-val {
-    width: 58px; height: 30px; text-align: right; padding: 0 7px;
+    width: 56px; height: 30px; text-align: right; padding: 0 7px; box-sizing: border-box;
     font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 600; color: var(--stk-text);
     background: var(--bg-color, #f4f7f9); border: 1px solid var(--stk-border); border-radius: 8px; outline: none;
     transition: border-color 0.15s ease;
 }
 .stk-rule-val:focus { border-color: rgba(143,179,160,0.7); }
-.stk-rule-unit { width: 14px; font-size: 12px; color: var(--stk-muted); }
-.stk-rule-info .stk-rule-desc { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: var(--stk-muted); white-space: nowrap; }
+.stk-rule-unit { font-size: 12px; color: var(--stk-muted); text-align: left; }
+/* информационные правила (без поля) — описание занимает колонки оператор..единица */
+.stk-rule-info .stk-rule-desc { grid-column: 3 / -1; text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: var(--stk-muted); white-space: nowrap; }
 
 /* Строка «ничего не найдено» */
 .stk-noresult td {
@@ -406,7 +411,8 @@
     font-size: 10.5px; color: var(--stk-muted) !important;
     position: sticky; left: 0; z-index: 1; box-shadow: 1px 0 0 var(--stk-line);
 }
-.stk-chg { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 10px; }
+/* изм.-бейджи второстепенны: лёгкий шрифт + тонкий фон, чтобы не перетягивать внимание с основных значений */
+.stk-chg { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 10px; }
 .stk-chg .stk-chg-pill { display: inline-block; min-width: 40px; padding: 2px 6px; border-radius: 6px; text-align: right; }
 .stk-chg.pos .stk-chg-pill { color: var(--stk-pos); background: var(--stk-pos-bg); }
 .stk-chg.neg .stk-chg-pill { color: var(--stk-neg); background: var(--stk-neg-bg); }
