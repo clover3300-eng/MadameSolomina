@@ -18,42 +18,69 @@
     // URL опубликованного листа в формате CSV (доступ без авторизации)
     var CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQOS1fww8td_IIjlZL7uiD3-7aDF6BVDFPC6jSUv92fisIdnud4lS9MfWoyovN803yll-zOWbipEMig/pub?gid=535001813&single=true&output=csv';
 
+    // Год для столбцов «% Обязательств» обновляется в начале мая каждого года:
+    // до мая показываем позапрошлый год, с мая — прошлый (годовые отчёты к этому
+    // времени уже опубликованы). Пример: май 2026 → 2025 и 2024; май 2027 → 2026 и 2025.
+    // Ключи строим динамически, чтобы они совпадали с заголовками CSV, когда
+    // владелец таблицы добавит колонки нового года.
+    function obligationYears() {
+        var d = new Date(), y = d.getFullYear();
+        var primary = d.getMonth() >= 4 ? y - 1 : y - 2; // getMonth(): май = 4
+        return { primary: primary, secondary: primary - 1 };
+    }
+    var OBL = obligationYears();
+    var OBL_KEY_1 = 'Процент Обязательств ' + OBL.primary + 'г';
+    var OBL_KEY_2 = 'Процент Обязательств ' + OBL.secondary + 'г';
+    var OBL_LBL_1 = '% Обяз. ' + OBL.primary;
+    var OBL_LBL_2 = '% Обяз. ' + OBL.secondary;
+
     // Столбцы основной таблицы (key — точное имя заголовка из CSV).
     // type: 'num' — сортировка по распарсенному числу; 'text' — по строке (ru).
-    // align: 'center'   — центрируем И заголовок, И данные (категориальные столбцы);
-    // headCenter: true  — центрируем ТОЛЬКО заголовок (данные-числа остаются справа).
+    // align: 'center' — у всех столбцов после закреплённого: центрируем И заголовок,
+    // И данные (по просьбе — единое выравнивание начиная со столбца «Учёт»).
     var COLS = [
-        { key: 'РСБУ/МСФО',                      label: 'Учёт',           type: 'text' },
-        { key: 'Текущая Цена',                   label: 'Цена',           type: 'num', headCenter: true },
-        { key: 'EPS',                            label: 'EPS',            type: 'num', headCenter: true },
-        { key: 'ОДХС',                           label: 'ОДХС',           type: 'num' },
-        { key: 'Изменение СК',                   label: 'Изм. СК',        type: 'num' },
-        { key: 'ROE',                            label: 'ROE',            type: 'num', headCenter: true },
-        { key: 'Изменение Выручки',              label: 'Изм. Выручки',   type: 'num' },
-        { key: 'Изменение Валовой прибыли',      label: 'Изм. Вал.приб.', type: 'num' },
-        { key: 'Изменение Операционной прибыли', label: 'Изм. Опер.приб.',type: 'num' },
-        { key: 'Изменение Чистой прибыли',       label: 'Изм. Чист.приб.',type: 'num' },
-        { key: 'Денежный Поток от ОД',           label: 'ДП от ОД',       type: 'num' },
-        { key: 'Процент Обязательств 2025г',     label: '% Обяз. 2025',   type: 'num' },
-        { key: 'Процент Обязательств 2024г',     label: '% Обяз. 2024',   type: 'num' },
+        { key: 'РСБУ/МСФО',                      label: 'Учёт',           type: 'text', align: 'center' },
+        { key: 'Текущая Цена',                   label: 'Цена',           type: 'num',  align: 'center' },
+        { key: 'EPS',                            label: 'EPS',            type: 'num',  align: 'center' },
+        { key: 'ОДХС',                           label: 'ОДХС',           type: 'num',  align: 'center' },
+        { key: 'Изменение СК',                   label: 'Изм. СК',        type: 'num',  align: 'center' },
+        { key: 'ROE',                            label: 'ROE',            type: 'num',  align: 'center' },
+        { key: 'Изменение Выручки',              label: 'Изм. Выручки',   type: 'num',  align: 'center' },
+        { key: 'Изменение Валовой прибыли',      label: 'Изм. Вал.приб.', type: 'num',  align: 'center' },
+        { key: 'Изменение Операционной прибыли', label: 'Изм. Опер.приб.',type: 'num',  align: 'center' },
+        { key: 'Изменение Чистой прибыли',       label: 'Изм. Чист.приб.',type: 'num',  align: 'center' },
+        { key: 'Денежный Поток от ОД',           label: 'ДП от ОД',       type: 'num',  align: 'center' },
+        { key: OBL_KEY_1,                        label: OBL_LBL_1,        type: 'num',  align: 'center' },
+        { key: OBL_KEY_2,                        label: OBL_LBL_2,        type: 'num',  align: 'center' },
         { key: 'Сектор',                         label: 'Сектор',         type: 'text', align: 'center' },
-        { key: 'P/BV',                           label: 'P/BV',           type: 'num', headCenter: true },
-        { key: 'BV/кол-во акций',                label: 'BV/акц.',        type: 'num' },
-        { key: 'P/E',                            label: 'P/E',            type: 'num', headCenter: true },
-        { key: 'Маржа Валовой прибыли',          label: 'Маржа Вал.',     type: 'num' },
-        { key: 'Маржа Операционной прибыли',     label: 'Маржа Опер.',    type: 'num' },
-        { key: 'Маржа Чистой прибыли',           label: 'Маржа Чист.',    type: 'num' },
-        { key: 'Объем выпуска, шт.',             label: 'Объём выпуска',  type: 'num' },
+        { key: 'P/BV',                           label: 'P/BV',           type: 'num',  align: 'center' },
+        { key: 'BV/кол-во акций',                label: 'BV/акц.',        type: 'num',  align: 'center' },
+        { key: 'P/E',                            label: 'P/E',            type: 'num',  align: 'center' },
+        { key: 'Маржа Валовой прибыли',          label: 'Маржа Вал.',     type: 'num',  align: 'center' },
+        { key: 'Маржа Операционной прибыли',     label: 'Маржа Опер.',    type: 'num',  align: 'center' },
+        { key: 'Маржа Чистой прибыли',           label: 'Маржа Чист.',    type: 'num',  align: 'center' },
+        { key: 'Объем выпуска, шт.',             label: 'Объём выпуска',  type: 'num',  align: 'center' },
         { key: 'Платят дивиденды',               label: 'Дивиденды',      type: 'text', align: 'center' },
         { key: 'Количество в год',               label: 'Выплат/год',     type: 'num',  align: 'center' },
         { key: 'ЭШЕЛОН',                         label: 'Эшелон',         type: 'text', align: 'center' },
         { key: 'ПРИВИЛЕГИРОВАННЫЕ АКЦИИ',        label: 'Привилегированные акции', type: 'text', align: 'center' },
         { key: 'СОСТОЯНИЕ',                      label: 'Состояние',      type: 'text', align: 'center' }
     ];
-    var TOTAL_COLS = COLS.length + 1; // +1 — закреплённая колонка Тикер/Название
 
     // Звезда «в избранное» (заливка управляется классом .active через CSS)
     var STAR_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><polygon points="12 3 14.85 8.78 21.23 9.71 16.61 14.21 17.7 20.56 12 17.56 6.3 20.56 7.39 14.21 2.77 9.71 9.15 8.78 12 3"/></svg>';
+
+    // Иконка «открыть боковую карточку компании» (новости + дивиденды).
+    // Не ₽ — это полная карточка о компании; рисуем «панель сбоку».
+    var CARD_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M14 4v16"/><path d="M17 9h1M17 13h1"/></svg>';
+
+    // Видимые столбцы (с учётом скрытых пользователем) и общее число колонок
+    // (включая закреплённую Тикер/Название) — для colspan секций и аккордеона.
+    function visibleCols() {
+        if (!state.hiddenCols.length) return COLS;
+        return COLS.filter(function (c) { return state.hiddenCols.indexOf(c.key) === -1; });
+    }
+    function totalCols() { return visibleCols().length + 1; }
 
     // Правила условной подсветки ячеек (цвет сайдбара #8FB3A0).
     // op: '>','>=','<','==' — числовой порог (val, редактируется);
@@ -68,8 +95,8 @@
         { key: 'Изменение Операционной прибыли', label: 'Изм. Опер. приб.',op: '>', val: 5 },
         { key: 'Изменение Чистой прибыли',       label: 'Изм. Чист. приб.',op: '>', val: 5 },
         { key: 'Денежный Поток от ОД',           label: 'ДП от ОД',       op: '==', val: 1 },
-        { key: 'Процент Обязательств 2025г',     label: '% Обяз. 2025',   op: '<col', col: 'Процент Обязательств 2024г', colLabel: '% Обяз. 2024' },
-        { key: 'Процент Обязательств 2024г',     label: '% Обяз. 2024',   op: 'always' },
+        { key: OBL_KEY_1,                        label: OBL_LBL_1,        op: '<col', col: OBL_KEY_2, colLabel: OBL_LBL_2 },
+        { key: OBL_KEY_2,                        label: OBL_LBL_2,        op: 'always' },
         { key: 'BV/кол-во акций',                label: 'BV/акц.',        op: '>=col', col: 'Текущая Цена', colLabel: 'Цены' },
         { key: 'Маржа Валовой прибыли',          label: 'Маржа Вал.',     op: '>=', val: 40 },
         { key: 'Маржа Операционной прибыли',     label: 'Маржа Опер.',    op: '>=', val: 25 },
@@ -99,6 +126,7 @@
         favorites: loadFavs(), // тикеры в избранном (localStorage)
         favOnly: false,    // показывать только избранное
         rules: DEFAULT_RULES.map(function (r) { return Object.assign({}, r); }), // правила окраски (редактируемые)
+        hiddenCols: [],    // ключи скрытых столбцов (сбрасывается кнопкой «Сбросить сортировку»)
         expanded: {}       // ticker -> true (раскрытые карточки)
     };
 
@@ -430,12 +458,11 @@
         // первая закреплённая колонка (заголовок по центру по просьбе)
         ths += '<th class="stk-first stk-head-center' + (sortInfo('__ticker') ? ' stk-sorted' : '')
              + '" data-sort="__ticker" data-type="text" title="' + esc(SORT_HINT) + '">Тикер / Название' + arrow('__ticker') + '</th>';
-        for (var i = 0; i < COLS.length; i++) {
-            var col = COLS[i];
-            var cls = ['stk-th'];
+        var cols = visibleCols();
+        for (var i = 0; i < cols.length; i++) {
+            var col = cols[i];
+            var cls = ['stk-th', 'stk-col-center']; // все столбцы центрируем (заголовок и данные)
             if (sortInfo(col.key)) cls.push('stk-sorted');
-            if (col.align === 'center') cls.push('stk-col-center');     // заголовок И данные
-            else if (col.headCenter) cls.push('stk-head-center');       // только заголовок
             ths += '<th class="' + cls.join(' ') + '" data-sort="' + esc(col.key) + '" data-type="' + col.type + '" title="' + esc(SORT_HINT) + '">'
                  + esc(col.label) + arrow(col.key) + '</th>';
         }
@@ -454,25 +481,30 @@
     function renderCompanyRow(co, rank) {
         var idOpen = state.expanded[co.ticker] ? ' open' : '';
         var isFav = state.favorites.indexOf(co.ticker) !== -1;
+        var ech = parseInt(co.main['ЭШЕЛОН'], 10);
         var tds = '';
-        // закреплённая ячейка Тикер/Название: слева — кнопка-иконка вызова карточки,
-        // справа — звезда «в избранное».
+        // закреплённая ячейка Тикер/Название: слева — раскрытие аккордеона показателей,
+        // справа — кластер действий: кнопка боковой карточки компании + звезда «в избранное».
         tds += '<td class="stk-first"><div class="stk-first-cell">'
-             + '<span class="stk-ident' + idOpen + '" data-act="toggle" data-ticker="' + esc(co.ticker) + '" title="Открыть карточку компании">'
+             + '<span class="stk-ident' + idOpen + '" data-act="toggle" data-ticker="' + esc(co.ticker) + '" title="Развернуть показатели по годам">'
              + '<span class="stk-chev-btn" aria-hidden="true"><svg class="stk-chev-mini" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></span>'
              + '<span class="stk-num-badge">' + esc(rank) + '</span>'
              + '<span class="stk-id-text"><span class="stk-tkr">' + esc(co.ticker) + '</span>'
              + '<span class="stk-name">' + esc(co.name) + '</span></span>'
              + '</span>'
+             + '<span class="stk-first-actions">'
+             + '<button class="stk-cardbtn" type="button" data-act="card" data-ticker="' + esc(co.ticker) + '" data-echelon="' + (isFinite(ech) ? ech : 1) + '" title="Карточка компании: новости и дивиденды" aria-label="Карточка компании">' + CARD_SVG + '</button>'
              + '<button class="stk-fav' + (isFav ? ' active' : '') + '" type="button" data-act="fav" data-ticker="' + esc(co.ticker) + '" title="' + (isFav ? 'Убрать из избранного' : 'В избранное') + '" aria-label="Избранное">' + STAR_SVG + '</button>'
+             + '</span>'
              + '</div></td>';
-        // остальные колонки
-        for (var i = 0; i < COLS.length; i++) {
-            var col = COLS[i];
+        // остальные колонки (только видимые) — все центрированы
+        var cols = visibleCols();
+        for (var i = 0; i < cols.length; i++) {
+            var col = cols[i];
             var raw = co.main[col.key];
             var empty = isEmptyVal(raw);
-            var cls = col.type === 'num' ? 'stk-num' : '';
-            if (col.align === 'center') cls += ' stk-col-center';
+            var cls = 'stk-col-center';
+            if (col.type === 'num') cls += ' stk-num';
             if (empty) cls += ' stk-empty-cell';
             // условная подсветка ячейки (цвет сайдбара) по правилам isHighlightCell
             else if (isHighlightCell(col.key, co)) cls += ' stk-hl';
@@ -483,7 +515,7 @@
         var open = !!state.expanded[co.ticker];
         var accInner = open ? renderCardInner(co) : '';
         var accHtml = '<tr class="stk-card-row" data-card="' + esc(co.ticker) + '">'
-            + '<td colspan="' + TOTAL_COLS + '"><div class="stk-acc' + (open ? ' open' : '') + '">'
+            + '<td colspan="' + totalCols() + '"><div class="stk-acc' + (open ? ' open' : '') + '">'
             + accInner + '</div></td></tr>';
         return rowHtml + accHtml;
     }
@@ -572,10 +604,15 @@
         renderState(); // обновит счётчик и спрячет состояние
         populateSectorMenu(); // наполнить меню секторов (один раз)
         populateRulesPanel(); // наполнить панель правил окраски (один раз)
+        populateColsPanel();  // наполнить меню видимости столбцов (один раз)
         updateSortReset();    // показать/скрыть кнопку сброса сортировки
         updateFavBtn();       // состояние кнопки «Избранное»
 
         var scEl = el.querySelector('.stk-scroll');
+        // Shell ещё не построен (автозагрузка завершилась раньше захода на вкладку):
+        // ничего не рендерим — статус остаётся 'ready', и renderStockTerminal
+        // при входе на вкладку построит shell и вызовет render() повторно.
+        if (!scEl) return;
         var bodyHtml = '';
 
         // фильтр поиска применяем ДО группировки/сортировки
@@ -589,7 +626,7 @@
             else if (state.favOnly) msg = 'Среди избранного ничего не найдено по текущему фильтру.';
             else if (state.query.trim()) msg = 'Ничего не найдено по запросу «' + esc(state.query.trim()) + '»';
             else msg = 'Нет компаний под выбранный фильтр.';
-            bodyHtml = '<tr class="stk-noresult"><td colspan="' + TOTAL_COLS + '">' + msg + '</td></tr>';
+            bodyHtml = '<tr class="stk-noresult"><td colspan="' + totalCols() + '">' + msg + '</td></tr>';
         } else if (state.mode === 'sector') {
             // группируем по сектору; группы — по алфавиту (ru); внутри — сортировка
             var groups = {};
@@ -599,7 +636,7 @@
             var sectors = Object.keys(groups).sort(function (a, b) { return a.localeCompare(b, 'ru'); });
             sectors.forEach(function (sec) {
                 var list = sortList(groups[sec]);
-                bodyHtml += '<tr class="stk-sector-row"><td colspan="' + TOTAL_COLS + '">'
+                bodyHtml += '<tr class="stk-sector-row"><td colspan="' + totalCols() + '">'
                     + '<span class="stk-sector-inner"><span class="stk-sector-name">' + esc(sec) + '</span>'
                     + '<span class="stk-sector-count">' + list.length + '</span></span></td></tr>';
                 list.forEach(function (co) { bodyHtml += renderCompanyRow(co, ++rank); });
@@ -687,6 +724,22 @@
             return;
         }
 
+        // открыть/закрыть меню видимости столбцов
+        if (e.target.closest('[data-act="cols-toggle"]')) {
+            var cmenu = el.querySelector('.stk-cols-menu');
+            if (cmenu) cmenu.hidden = !cmenu.hidden;
+            return;
+        }
+        // показать все столбцы (сброс скрытия — только столбцы)
+        if (e.target.closest('[data-act="cols-reset"]')) {
+            state.hiddenCols = [];
+            el.querySelectorAll('.stk-col-opt input').forEach(function (c) { c.checked = true; });
+            updateColsBadge();
+            updateSortReset();
+            if (state.status === 'ready') render();
+            return;
+        }
+
         // показать только избранное (тумблер в тулбаре)
         if (e.target.closest('[data-act="fav-toggle"]')) {
             state.favOnly = !state.favOnly;
@@ -694,12 +747,18 @@
             if (state.status === 'ready') render();
             return;
         }
-        // сбросить сортировку
+        // сбросить сортировку + восстановить скрытые столбцы
         if (e.target.closest('[data-act="sort-reset"]')) {
             state.sort = [];
+            state.hiddenCols = [];
+            el.querySelectorAll('.stk-col-opt input').forEach(function (c) { c.checked = true; });
+            updateColsBadge();
             if (state.status === 'ready') render();
             return;
         }
+        // открыть боковую карточку компании (новости + дивиденды) — общий drawer из ребаланса
+        var cardBtn = e.target.closest('[data-act="card"]');
+        if (cardBtn) { openCompanyCard(cardBtn.getAttribute('data-ticker'), cardBtn.getAttribute('data-echelon')); return; }
         // звезда «в избранное» в строке (проверяем ДО клика по тикеру)
         var favBtn = e.target.closest('[data-act="fav"]');
         if (favBtn) { toggleFav(favBtn.getAttribute('data-ticker')); return; }
@@ -797,6 +856,25 @@
         return null;
     }
 
+    // Открыть боковую карточку компании (новости + дивиденды + описание).
+    // Переиспользуем общий drawer #stockDetailCard из вкладки «Ребаланс»
+    // (функция openStockDetail глобальна; имя/сектор подтягиваются из
+    // echelonTableData, а при отсутствии — из терминала через stkFindCompany).
+    function openCompanyCard(ticker, echelon) {
+        if (!ticker) return;
+        // drawer создаётся при рендере ребаланса; если на «Акции» зашли первыми — создаём пустой
+        if (!document.getElementById('stockDetailCard')) {
+            var c = document.createElement('div');
+            c.className = 'stock-detail-card';
+            c.id = 'stockDetailCard';
+            document.body.appendChild(c);
+        }
+        var ech = parseInt(echelon, 10);
+        if (typeof window.openStockDetail === 'function') {
+            window.openStockDetail(ticker, isFinite(ech) ? ech : 1);
+        }
+    }
+
     // =========================================================
     //  ИНИЦИАЛИЗАЦИЯ / ТОЧКА ВХОДА
     // =========================================================
@@ -838,7 +916,24 @@
             + '        <div class="stk-rules-list"></div>'
             + '      </div>'
             + '    </div>'
-            + '    <button class="stk-sortreset" type="button" data-act="sort-reset" hidden>'
+            + '    <div class="stk-colsfilter">'
+            + '      <button class="stk-cols-btn" type="button" data-act="cols-toggle" title="Показать/скрыть столбцы">'
+            + '        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16"/></svg>'
+            + '        <span class="stk-cols-label">Столбцы</span>'
+            + '        <span class="stk-cols-badge" hidden></span>'
+            + '        <svg class="stk-sec-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>'
+            + '      </button>'
+            + '      <div class="stk-cols-menu" hidden>'
+            + '        <div class="stk-sec-menu-head"><span>Видимость столбцов</span>'
+            + '          <button type="button" class="stk-sec-reset" data-act="cols-reset">Показать все</button></div>'
+            + '        <div class="stk-cols-list"></div>'
+            + '      </div>'
+            + '    </div>'
+            + '    <span class="stk-multisort-hint" hidden>'
+            + '      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14M5 12h9M5 17h5"/><path d="M16 14l3 3-3 3"/></svg>'
+            + '      <span><b>Shift</b> + клик по столбцу — сортировка сразу по нескольким</span>'
+            + '    </span>'
+            + '    <button class="stk-sortreset" type="button" data-act="sort-reset" hidden title="Сбросить сортировку и показать все столбцы">'
             + '      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>'
             + '      <span>Сбросить сортировку</span>'
             + '    </button>'
@@ -864,16 +959,30 @@
             clearBtn.hidden = !input.value;
             if (state.status === 'ready') render();
         });
-        // выбор секторов (чекбоксы) — делегируем change
+        // выбор секторов и видимости столбцов (чекбоксы) — делегируем change
         el.addEventListener('change', function (e) {
             var cb = e.target.closest('.stk-sec-opt input');
-            if (!cb) return;
-            var sec = cb.value;
-            var idx = state.sectors.indexOf(sec);
-            if (cb.checked && idx === -1) state.sectors.push(sec);
-            else if (!cb.checked && idx !== -1) state.sectors.splice(idx, 1);
-            updateSecBadge();
-            if (state.status === 'ready') render();
+            if (cb) {
+                var sec = cb.value;
+                var idx = state.sectors.indexOf(sec);
+                if (cb.checked && idx === -1) state.sectors.push(sec);
+                else if (!cb.checked && idx !== -1) state.sectors.splice(idx, 1);
+                updateSecBadge();
+                if (state.status === 'ready') render();
+                return;
+            }
+            var colcb = e.target.closest('.stk-col-opt input');
+            if (colcb) {
+                var key = colcb.value;
+                var hidx = state.hiddenCols.indexOf(key);
+                // checked = столбец видим; снятая галочка = скрыт
+                if (!colcb.checked && hidx === -1) state.hiddenCols.push(key);
+                else if (colcb.checked && hidx !== -1) state.hiddenCols.splice(hidx, 1);
+                updateColsBadge();
+                updateSortReset();
+                if (state.status === 'ready') render();
+                return;
+            }
         });
         // изменение порога правила окраски — делегируем input
         el.addEventListener('input', function (e) {
@@ -892,6 +1001,8 @@
             if (sm && !sm.hidden && !e.target.closest('.stk-secfilter')) sm.hidden = true;
             var rm = elr.querySelector('.stk-rules-menu');
             if (rm && !rm.hidden && !e.target.closest('.stk-rulesfilter')) rm.hidden = true;
+            var cm = elr.querySelector('.stk-cols-menu');
+            if (cm && !cm.hidden && !e.target.closest('.stk-colsfilter')) cm.hidden = true;
         });
         built = true;
     }
@@ -917,6 +1028,19 @@
                  + '<input class="stk-rule-val" type="number" step="any" data-rule="' + esc(r.key) + '" value="' + esc(r.val) + '">'
                  + (unit ? '<span class="stk-rule-unit">' + unit + '</span>' : '<span class="stk-rule-unit"></span>')
                  + '</div>';
+        }).join('');
+    }
+
+    // Наполнить меню видимости столбцов чекбоксами (один раз).
+    // Закреплённую колонку Тикер/Название скрывать нельзя — её в списке нет.
+    function populateColsPanel() {
+        var el = root(); if (!el) return;
+        var listEl = el.querySelector('.stk-cols-list');
+        if (!listEl || listEl.childElementCount) return;
+        listEl.innerHTML = COLS.map(function (c) {
+            var checked = state.hiddenCols.indexOf(c.key) === -1 ? ' checked' : '';
+            return '<label class="stk-col-opt"><input type="checkbox" value="' + esc(c.key) + '"' + checked + '>'
+                 + '<span class="stk-col-opt-tx">' + esc(c.label) + '</span></label>';
         }).join('');
     }
 
@@ -963,11 +1087,24 @@
         if (btn) btn.classList.toggle('active', state.favOnly);
     }
 
-    // Показать/скрыть кнопку сброса сортировки
+    // Показать/скрыть кнопку сброса (сортировка + скрытые столбцы) и подсказку мультисортировки
     function updateSortReset() {
         var el = root(); if (!el) return;
         var b = el.querySelector('.stk-sortreset');
-        if (b) b.hidden = state.sort.length === 0;
+        if (b) b.hidden = state.sort.length === 0 && state.hiddenCols.length === 0;
+        // подсказка про Shift+клик показывается, когда уже есть активная сортировка
+        var hint = el.querySelector('.stk-multisort-hint');
+        if (hint) hint.hidden = state.sort.length === 0;
+    }
+
+    // Бейдж с числом скрытых столбцов + подсветка кнопки «Столбцы»
+    function updateColsBadge() {
+        var el = root(); if (!el) return;
+        var badge = el.querySelector('.stk-cols-badge');
+        var btn = el.querySelector('.stk-cols-btn');
+        var n = state.hiddenCols.length;
+        if (badge) { badge.hidden = n === 0; badge.textContent = n; }
+        if (btn) btn.classList.toggle('active', n > 0);
     }
 
     // Обновить бейдж с числом выбранных секторов + подсветку кнопки

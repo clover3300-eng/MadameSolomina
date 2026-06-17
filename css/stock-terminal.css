@@ -101,6 +101,49 @@
 .stk-sortreset:hover { background: rgba(217, 119, 87, 0.15); }
 .stk-sortreset svg { width: 13px; height: 13px; }
 
+/* Подсказка про многоуровневую сортировку — видна, когда уже есть активная сортировка */
+.stk-multisort-hint {
+    display: inline-flex; align-items: center; gap: 6px; max-width: 280px;
+    font-family: 'Inter', sans-serif; font-size: 11.5px; line-height: 1.25; color: var(--stk-muted);
+}
+.stk-multisort-hint svg { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.8; }
+.stk-multisort-hint b { color: var(--stk-text); font-weight: 700; }
+
+/* Дропдаун «Столбцы» (видимость столбцов) — в стиле фильтра секторов */
+.stk-colsfilter { position: relative; }
+.stk-cols-btn {
+    display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px;
+    background: var(--card, #fff); border: 1px solid var(--stk-border); border-radius: 11px;
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; color: var(--stk-slate);
+    cursor: pointer; white-space: nowrap;
+    transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+}
+.stk-cols-btn:hover { color: var(--stk-text); }
+.stk-cols-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+.stk-cols-btn.active { color: #2c5e44; border-color: rgba(143,179,160,0.6); background: rgba(143,179,160,0.14); }
+.stk-cols-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 18px; padding: 0 5px; border-radius: 99px;
+    background: #8FB3A0; color: #fff; font-size: 11px; font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+}
+.stk-cols-menu {
+    position: absolute; top: calc(100% + 6px); right: 0; z-index: 60;
+    width: 360px; max-height: 420px; overflow-y: auto;
+    background: var(--card, #fff); border: 1px solid var(--stk-border); border-radius: 14px;
+    box-shadow: 0 16px 40px -12px rgba(15,23,42,0.28); padding: 8px;
+}
+/* две колонки — 26 столбцов помещаются компактно без длинной прокрутки */
+.stk-cols-list { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 6px; }
+.stk-col-opt {
+    display: flex; align-items: center; gap: 9px; padding: 7px 9px; border-radius: 9px;
+    cursor: pointer; font-family: 'Inter', sans-serif; font-size: 12.5px; color: var(--stk-text);
+    transition: background 0.13s ease;
+}
+.stk-col-opt:hover { background: rgba(143,179,160,0.10); }
+.stk-col-opt input { width: 15px; height: 15px; accent-color: #8FB3A0; cursor: pointer; flex-shrink: 0; }
+.stk-col-opt-tx { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 /* Правый блок инструментов: поиск + тумблер */
 .stk-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
@@ -213,8 +256,14 @@
 }
 .stk-rule-val:focus { border-color: rgba(143,179,160,0.7); }
 .stk-rule-unit { font-size: 12px; color: var(--stk-muted); text-align: left; }
-/* информационные правила (без поля) — описание занимает колонки оператор..единица */
-.stk-rule-info .stk-rule-desc { grid-column: 3 / -1; text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: var(--stk-muted); white-space: nowrap; }
+/* информационные правила (без поля порога): описание идёт сразу за названием,
+   а не прижимается к правому краю (иначе «болтается» далеко справа от названия) */
+.stk-rule-info { grid-template-columns: 14px auto 1fr; }
+.stk-rule-info .stk-rule-desc {
+    grid-column: 3; justify-self: start; text-align: left;
+    font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: var(--stk-muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 
 /* Строка «ничего не найдено» */
 .stk-noresult td {
@@ -370,6 +419,23 @@
 .stk-fav:hover { color: #e8a200; background: rgba(240, 165, 0, 0.12); }
 .stk-fav.active { color: #efaa10; }
 .stk-fav.active svg { fill: #efaa10; }
+
+/* Кластер действий справа в первой ячейке: карточка компании + звезда */
+.stk-first-actions { display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0; }
+
+/* Кнопка боковой карточки компании — видна при наведении на строку (не засоряет таблицу).
+   Держим её в потоке (opacity, не display), чтобы не было скачка ширины. */
+.stk-cardbtn {
+    appearance: none; border: 0; background: transparent; cursor: pointer; padding: 4px;
+    flex-shrink: 0; line-height: 0; border-radius: 7px; color: var(--stk-muted);
+    opacity: 0; transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.stk-cardbtn svg { width: 16px; height: 16px; }
+.stk-row:hover .stk-cardbtn,
+.stk-cardbtn:focus-visible { opacity: 1; }
+.stk-cardbtn:hover { color: var(--claude-accent, #D97757); background: rgba(217,119,87,0.10); }
+/* На тач-устройствах наведения нет — показываем постоянно */
+@media (hover: none) { .stk-cardbtn { opacity: 1; } }
 .stk-id-text { display: flex; flex-direction: column; gap: 1px; line-height: 1.2; text-align: left; }
 .stk-tkr {
     font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px;
@@ -530,6 +596,11 @@ body.dark-mode .stk-row:hover td.stk-first { background-color: #233148; }
     .stk-rulesfilter { width: 100%; }
     .stk-rules-btn { width: 100%; justify-content: center; }
     .stk-rules-menu { width: 100%; left: 0; right: auto; }
+    .stk-colsfilter { width: 100%; }
+    .stk-cols-btn { width: 100%; justify-content: space-between; }
+    .stk-cols-menu { width: 100%; left: 0; right: auto; }
+    .stk-cols-list { grid-template-columns: 1fr; }
+    .stk-multisort-hint { display: none !important; }
     .stk-fav-btn { width: 100%; justify-content: center; }
     .stk-sortreset { width: 100%; justify-content: center; }
     .stk-toggle { width: 100%; }

@@ -622,6 +622,18 @@ function openStockDetail(ticker, echelon, clickedCell = null) {
     const potNum = parseFloat(String(potentialStr).replace('%', '').replace(',', '.'));
     const potDisplay = isFinite(potNum) ? ((potNum >= 0 ? '+' : '') + potNum.toFixed(2) + '%') : (potentialStr || '—');
 
+    // Fallback: в ребалансе лишь кураторский список тикеров, а карточку можно открыть
+    // из терминала «Рынок · Акции» (221 компания). Если имя/сектор не нашлись —
+    // берём их из терминала через stkFindCompany.
+    if ((companyName === ticker || !companySector) && typeof window.stkFindCompany === 'function') {
+        const stk = window.stkFindCompany(ticker) ||
+                    (ticker !== baseTicker ? window.stkFindCompany(baseTicker) : null);
+        if (stk) {
+            if (companyName === ticker && stk.name) companyName = stk.name;
+            if (!companySector && stk.sector) companySector = stk.sector;
+        }
+    }
+
     // Сектор
     const sectorHtml = companySector ? `
         <span class="sd-sector">
