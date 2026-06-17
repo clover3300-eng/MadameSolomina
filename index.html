@@ -215,23 +215,40 @@
             </div>
         </div>
 
-        <!-- ===== TAB: ДАШБОРД (desktop home) ===== -->
+        <!-- ===== TAB: ДАШБОРД (desktop home) — full-bleed редизайн ===== -->
         <div id="panel-dashboard" class="tab-panel">
-            <div class="dash2-wrap">
+            <div class="dash3">
 
                 <!-- Верхняя LIVE-полоска: рыночные данные + часы МСК -->
                 <div class="dash2-livebar" id="dash2LiveBar"></div>
 
-                <div class="dash2-head">
-                    <span class="dash2-eyebrow">Дашборд</span>
+                <!-- Заголовок страницы -->
+                <div class="d3-head">
+                    <div class="d3-head-l">
+                        <h1 class="d3-title">Главная</h1>
+                        <span class="d3-sub">Обзор портфеля и рынка</span>
+                    </div>
+                    <div class="d3-head-actions">
+                        <button class="d3-quick" onclick="switchTab('calc')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Новый расчёт
+                        </button>
+                        <button class="d3-quick ghost" onclick="switchTab('rebalance')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                            Ребаланс
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Основная сетка: портфель (с пересчётом) слева, справа стопкой ставки + избранное -->
-                <div class="dash2-grid">
+                <!-- HERO BENTO: портфель (с пересчётом) + ставки + избранное -->
+                <div class="d3-bento">
                     <div class="dash2-card dash2-portfolio" id="dash2Portfolio"></div>
                     <div class="dash2-card dash2-rates" id="dash2Rates"></div>
                     <div class="dash2-card dash2-fav" id="dash2Fav"></div>
                 </div>
+
+                <!-- СОСТАВ ПОРТФЕЛЯ — отдельной полосой, вне карточки -->
+                <section class="d3-holdings" id="dash2Holdings"></section>
 
                 <!-- Рекомендации для ребаланса: вертикально ОФЗ + акции -->
                 <div class="dash2-card dash2-rebal" id="dash2Rebal"></div>

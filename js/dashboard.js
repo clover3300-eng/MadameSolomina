@@ -132,7 +132,6 @@
 
     // Состояние инлайн-пересчёта (сумма / стратегия / комиссия)
     var recalc = { open: false, bondPct: 50, fee: 0.0005, feeText: '0.05%', strat: 'Гармония', customFee: false };
-    var compOpen = true; // раскрыт ли блок «Состав портфеля»
 
     function plural(n, one, few, many) {
         n = Math.abs(n) % 100; var n1 = n % 10;
@@ -185,19 +184,36 @@
         var summaryHtml;
         if (snap) {
             var bondNum = toNum(snap.bondPct) || 0;
-            summaryHtml =
-                '<div class="dp-eyebrow">Текущий капитал' + (snap.strategy ? ' · <span class="dp-strat">' + esc(snap.strategy) + '</span>' : '') + '</div>' +
-                '<div class="dp-capital">' + esc(snap.cap) + '</div>' +
-                '<div class="dp-bar"><i class="dp-bar-bond" style="width:' + bondNum + '%"></i><i class="dp-bar-stock" style="width:' + (100 - bondNum) + '%"></i></div>' +
-                '<div class="dp-legend">' +
-                    '<div class="dp-leg"><span class="dp-dot bond"></span><span class="dp-leg-name">ОФЗ</span><span class="dp-leg-pct">' + esc(snap.bondPct) + '</span><span class="dp-leg-sum">' + esc(snap.bondSum) + '</span></div>' +
-                    '<div class="dp-leg"><span class="dp-dot stock"></span><span class="dp-leg-name">Акции</span><span class="dp-leg-pct">' + esc(snap.stockPct) + '</span><span class="dp-leg-sum">' + esc(snap.stockSum) + '</span></div>' +
-                '</div>' +
-                '<div class="dp-forecast">' +
-                    '<span class="dp-fc-label">Прогноз через 3 года</span>' +
-                    '<span class="dp-fc-row"><span class="dp-fc-total">' + esc(snap.fcTotal) + '</span>' +
-                    (snap.fcPct ? '<span class="dp-fc-pct ' + (/-/.test(snap.fcPct) ? 'neg' : '') + '">' + esc(snap.fcPct) + '</span>' : '') + '</span>' +
+            var holdCount = 0;
+            if (snap.composition) holdCount = ((snap.composition.bonds || []).length) + ((snap.composition.stocks || []).length);
+            var statsHtml =
+                '<div class="dp-stats">' +
+                    '<div class="dp-stat"><div class="dp-stat-l">Стратегия</div><div class="dp-stat-v">' + esc(snap.strategy || '—') + '</div></div>' +
+                    '<div class="dp-stat"><div class="dp-stat-l">Комиссия</div><div class="dp-stat-v">' + esc(snap.fee || '—') + '</div></div>' +
+                    '<div class="dp-stat"><div class="dp-stat-l">Бумаг</div><div class="dp-stat-v">' + (holdCount || '—') + '</div></div>' +
                 '</div>';
+            summaryHtml =
+                '<div class="dp-top">' +
+                    '<div class="dp-top-l">' +
+                        '<div class="dp-eyebrow">Текущий капитал</div>' +
+                        '<div class="dp-capital">' + esc(snap.cap) + '</div>' +
+                        '<div class="dp-forecast">' +
+                            '<span class="dp-fc-label">Прогноз 3 года</span>' +
+                            '<span class="dp-fc-row"><span class="dp-fc-total">' + esc(snap.fcTotal) + '</span>' +
+                            (snap.fcPct ? '<span class="dp-fc-pct ' + (/-/.test(snap.fcPct) ? 'neg' : '') + '">' + esc(snap.fcPct) + '</span>' : '') + '</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="dp-ring-wrap">' +
+                        '<div class="dp-ring" style="--bp:' + bondNum + '">' +
+                            '<div class="dp-ring-center"><span class="dp-ring-c-top">Баланс</span><span class="dp-ring-c-val">' + bondNum + '/' + (100 - bondNum) + '</span></div>' +
+                        '</div>' +
+                        '<div class="dp-legend">' +
+                            '<div class="dp-leg"><span class="dp-leg-top"><span class="dp-dot bond"></span><span class="dp-leg-name">ОФЗ</span></span><span class="dp-leg-pct">' + esc(snap.bondPct) + '</span><span class="dp-leg-sum">' + esc(snap.bondSum) + '</span></div>' +
+                            '<div class="dp-leg"><span class="dp-leg-top"><span class="dp-dot stock"></span><span class="dp-leg-name">Акции</span></span><span class="dp-leg-pct">' + esc(snap.stockPct) + '</span><span class="dp-leg-sum">' + esc(snap.stockSum) + '</span></div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+                statsHtml;
         } else {
             summaryHtml =
                 '<div class="dp-eyebrow">Портфель</div>' +
@@ -210,7 +226,6 @@
 
         host.innerHTML =
             summaryHtml +
-            (snap ? renderComposition(snap) : '') +
             '<button class="dp-recalc-toggle' + (recalc.open ? ' open' : '') + '" onclick="dashToggleRecalc()">' +
                 '<span class="dp-rt-left"><svg viewBox="0 0 24 24">' + ICONS.recalc + '</svg>' + (snap ? 'Пересчитать портфель' : 'Сформировать портфель') + '</span>' +
                 '<svg class="dp-rt-chev" viewBox="0 0 24 24">' + ICONS.chevron + '</svg>' +
@@ -220,46 +235,6 @@
         bindRecalcInputs();
     }
 
-    // ---- Состав рассчитанного портфеля (тикеры, сохраняются в снапшоте) ----
-    function compChip(it, kind) {
-        var click = kind === 'stock'
-            ? 'dashOpenTicker(\'' + esc(it.ticker) + '\',' + (it.echelon || 1) + ')'
-            : 'dashOpenComp(\'' + esc(it.ticker) + '\')';
-        var qty = it.qty ? '<span class="dpc-qty">' + it.qty + '</span>' : '';
-        return '<button class="dpc-chip" onclick="' + click + '" title="' + esc(it.name) + '">' +
-            '<span class="dpc-tk">' + esc(it.ticker) + '</span>' + qty + '</button>';
-    }
-
-    function renderComposition(snap) {
-        var c = snap && snap.composition;
-        if (!c) return '';
-        var bonds = c.bonds || [], stocks = c.stocks || [];
-        var total = bonds.length + stocks.length;
-        if (!total) return '';
-        var groups = '';
-        if (bonds.length) {
-            groups += '<div class="dpc-group">' +
-                '<div class="dpc-glabel"><span class="dp-dot bond"></span>ОФЗ<span class="dpc-gn">' + bonds.length + '</span></div>' +
-                '<div class="dpc-chips">' + bonds.map(function(b) { return compChip(b, 'bond'); }).join('') + '</div>' +
-            '</div>';
-        }
-        if (stocks.length) {
-            groups += '<div class="dpc-group">' +
-                '<div class="dpc-glabel"><span class="dp-dot stock"></span>Акции<span class="dpc-gn">' + stocks.length + '</span></div>' +
-                '<div class="dpc-chips">' + stocks.map(function(s) { return compChip(s, 'stock'); }).join('') + '</div>' +
-            '</div>';
-        }
-        return '<div class="dp-comp' + (compOpen ? ' open' : '') + '">' +
-            '<button class="dp-comp-head" onclick="dashToggleComp()">' +
-                '<span class="dp-comp-title">Состав портфеля</span>' +
-                '<span class="dp-comp-count">' + total + ' ' + plural(total, 'бумага', 'бумаги', 'бумаг') + '</span>' +
-                '<svg class="dp-comp-chev" viewBox="0 0 24 24">' + ICONS.chevron + '</svg>' +
-            '</button>' +
-            '<div class="dp-comp-body">' + groups + '</div>' +
-        '</div>';
-    }
-
-    window.dashToggleComp = function() { compOpen = !compOpen; renderPortfolio(); };
     // Клик по облигации из состава → график (детальная панель — только для акций)
     window.dashOpenComp = function(ticker) {
         if (typeof openTradingViewDirect === 'function') openTradingViewDirect(ticker);
@@ -546,6 +521,58 @@
     };
 
     // ====================================================================
+    //  СОСТАВ ПОРТФЕЛЯ (holdings) — отдельная полоса вне карточки
+    // ====================================================================
+    function fmtSum(n) { n = Math.round(Number(n) || 0); return n.toLocaleString('ru-RU').replace(/\s/g, '.') + ' ₽'; }
+
+    function renderHoldings() {
+        var host = dq('dash2Holdings');
+        if (!host) return;
+        var snap = (window.isPortfolioCalculated ? dashCaptureLive() : null) || dashLoadSnapshot();
+        var c = snap && snap.composition;
+        var bonds = (c && c.bonds) || [], stocks = (c && c.stocks) || [];
+        var total = bonds.length + stocks.length;
+        if (!total) { host.className = 'd3-holdings'; host.innerHTML = ''; return; }
+        host.className = 'd3-holdings has';
+
+        var grand = 0;
+        bonds.concat(stocks).forEach(function(x) { grand += (x.sum || 0); });
+        if (!grand) grand = 1;
+
+        function cell(it, kind) {
+            var ac = kind === 'bond' ? '#5B7C99' : '#D97757';
+            var w = Math.max(3, Math.round((it.sum || 0) / grand * 100));
+            var pot = '';
+            if (kind === 'stock') {
+                var meta = resolveTickerMeta(it.ticker);
+                if (meta.metric) pot = '<span class="d3h-pot ' + (meta.neg ? 'neg' : '') + '">' + esc(meta.metric) + '</span>';
+            }
+            var click = kind === 'stock'
+                ? 'dashOpenTicker(\'' + esc(it.ticker) + '\',' + (it.echelon || 1) + ')'
+                : 'dashOpenComp(\'' + esc(it.ticker) + '\')';
+            return '<button class="d3h-cell" style="--ac:' + ac + '" onclick="' + click + '">' +
+                '<div class="d3h-c-top"><span class="d3h-tk">' + esc(it.ticker) + '</span>' + pot + '</div>' +
+                '<div class="d3h-name">' + esc(it.name || it.ticker) + '</div>' +
+                '<div class="d3h-bar"><i style="width:' + w + '%"></i></div>' +
+                '<div class="d3h-foot"><span class="d3h-qty">' + (it.qty || 0) + ' шт.</span><span class="d3h-sum">' + fmtSum(it.sum) + '</span></div>' +
+            '</button>';
+        }
+        var cells = bonds.map(function(b) { return cell(b, 'bond'); }).join('') +
+                    stocks.map(function(s) { return cell(s, 'stock'); }).join('');
+
+        host.innerHTML =
+            '<div class="d3h-head">' +
+                '<div class="d3h-title">Состав портфеля</div>' +
+                '<div class="d3h-meta"><span>' + total + ' ' + plural(total, 'бумага', 'бумаги', 'бумаг') + '</span><b>' + fmtSum(grand) + '</b></div>' +
+                '<div class="d3h-legend">' +
+                    '<span class="d3h-leg"><span class="dp-dot bond"></span>ОФЗ · ' + bonds.length + '</span>' +
+                    '<span class="d3h-leg"><span class="dp-dot stock"></span>Акции · ' + stocks.length + '</span>' +
+                '</div>' +
+            '</div>' +
+            '<div class="d3h-grid">' + cells + '</div>';
+    }
+
+    // ====================================================================
     //  РЕКОМЕНДАЦИИ ДЛЯ РЕБАЛАНСА (вертикально: ОФЗ + акции, с сортировкой)
     // ====================================================================
     var rebalSort = { bond: 'yield', stock: 'potential' };
@@ -711,6 +738,7 @@
         renderPortfolio();
         renderRates();
         renderFavorites();
+        renderHoldings();
         renderRebal();
         ensureClock();
     }
