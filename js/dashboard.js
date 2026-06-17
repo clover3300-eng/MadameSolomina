@@ -399,6 +399,7 @@
             dashSyncRecalcOpenClass();
             document.removeEventListener('mousedown', dashRecalcOutside);
             renderHoldings();   // обновляем состав сразу после пересчёта
+            requestAnimationFrame(dashSyncTopRowHeights);
             dashToast('Портфель пересчитан');
         } catch (e) {
             console.error('dashRunRecalc error', e);
@@ -431,18 +432,19 @@
         var depV  = rd.depositRate != null ? rd.depositRate : txt('val-deposit-rate');
         var inflV = rd.inflation   != null ? rd.inflation   : txt('val-inflation');
         var ofzV  = rd.ofz10       != null ? rd.ofz10       : txt('val-ofz10');
-        var rows = [
-            { label: 'Ключевая ставка',       val: keyV, accent: true },
-            { label: 'Ставка по вкладам',     val: depV },
-            { label: 'Инфляция год',          val: inflV },
-            { label: 'Доходность ОФЗ 10 лет', val: ofzV }
+        var tiles = [
+            { l: 'Ключевая ставка',       v: keyV,  ac: '#119d5c', ic: '<line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>' },
+            { l: 'Ставка по вкладам',     v: depV,  ac: '#5B7C99', ic: '<polygon points="12 2 21 7 3 7"/><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="12" y1="18" x2="12" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/>' },
+            { l: 'Инфляция, год',         v: inflV, ac: '#D97757', ic: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>' },
+            { l: 'Доходность ОФЗ 10 лет', v: ofzV,  ac: '#3d6fd1', ic: '<path d="M3 3v18h18"/><polyline points="7 14 11 10 14 13 20 7"/>' }
         ];
+        host.className = 'd3-ratesband';
         host.innerHTML =
-            '<div class="dr-head"><div class="dr-title">Ставки рынка</div><span class="dr-tag">Россия</span></div>' +
-            '<div class="dr-list">' + rows.map(function(r) {
-                return '<div class="dr-row' + (r.accent ? ' accent' : '') + '">' +
-                    '<span class="dr-label">' + esc(r.label) + '</span>' +
-                    '<span class="dr-val">' + esc(r.val) + '</span>' +
+            '<div class="drt-head"><div class="drt-title">Ставки рынка</div><span class="drt-tag">Россия · ЦБ РФ</span></div>' +
+            '<div class="drt-grid">' + tiles.map(function(t) {
+                return '<div class="drt-tile" style="--ac:' + t.ac + '">' +
+                    '<div class="drt-ic"><svg viewBox="0 0 24 24">' + t.ic + '</svg></div>' +
+                    '<div class="drt-body"><div class="drt-l">' + esc(t.l) + '</div><div class="drt-v">' + esc(t.v) + '</div></div>' +
                 '</div>';
             }).join('') + '</div>';
     }
@@ -485,12 +487,24 @@
         return { name: tk, echelon: 0, metric: '', neg: false };
     }
 
+    var favCollapsed = false;
+    window.dashToggleFavCollapse = function() {
+        favCollapsed = !favCollapsed;
+        renderFavorites();
+        dashSyncTopRowHeights();
+    };
+
     function renderFavorites() {
         var host = dq('dash2Fav');
         if (!host) return;
         var favs = (typeof window.stkGetFavorites === 'function') ? window.stkGetFavorites() : loadFavsRaw();
+        host.className = 'dash2-card dash2-fav' + (favCollapsed ? ' collapsed' : '');
+
+        var collapseBtn = favs.length
+            ? '<button class="dfv-collapse" title="Свернуть / развернуть" onclick="dashToggleFavCollapse()"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button>'
+            : '';
         var head = '<div class="dfv-head"><div class="dfv-title">Избранное</div>' +
-            (favs.length ? '<span class="dfv-count">' + favs.length + '</span>' : '') + '</div>';
+            (favs.length ? '<span class="dfv-count">' + favs.length + '</span>' : '') + collapseBtn + '</div>';
 
         if (!favs.length) {
             host.innerHTML = head +
@@ -502,19 +516,22 @@
             return;
         }
 
+        // Единый формат: тикер + название + одна метрика (всегда есть, «—» если данных нет).
+        // Эшелон в избранном не показываем — чтобы строки были одинаковыми.
         var rows = favs.map(function(tk) {
             var meta = resolveTickerMeta(tk);
-            var metric = meta.metric ? '<span class="dfv-metric ' + (meta.neg ? 'neg' : '') + '">' + esc(meta.metric) + '</span>' : '';
-            var tier = meta.echelon ? '<span class="drb-tier tier-' + meta.echelon + '">' + (TIERS[meta.echelon - 1] || TIERS[0]).roman + '</span>' : '';
+            var metric = meta.metric
+                ? '<span class="dfv-metric ' + (meta.neg ? 'neg' : '') + '">' + esc(meta.metric) + '</span>'
+                : '<span class="dfv-metric muted">—</span>';
             return '<div class="dfv-item" onclick="dashOpenFav(\'' + esc(tk) + '\',' + (meta.echelon || 1) + ')">' +
-                '<span class="dfv-info"><span class="dfv-tk">' + esc(tk) + tier + '</span>' +
+                '<span class="dfv-info"><span class="dfv-tk">' + esc(tk) + '</span>' +
                     '<span class="dfv-name">' + esc(meta.name) + '</span></span>' +
                 metric +
                 '<button class="dfv-x" title="Убрать из избранного" onclick="event.stopPropagation();dashUnfav(\'' + esc(tk) + '\')">' +
                     '<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
             '</div>';
         }).join('');
-        var note = '<div class="dfv-foot-note"><b>I–IV</b> — эшелон акции (надёжность) · <b>%</b> — потенциал роста к цели; у облигаций — доходность.</div>';
+        var note = '<div class="dfv-foot-note"><b>%</b> — потенциал роста (акции) или доходность (облигации); <b>—</b> — нет данных аналитики.</div>';
         host.innerHTML = head + '<div class="dfv-list">' + rows + '</div>' + note;
     }
 
@@ -529,6 +546,7 @@
             try { localStorage.setItem('stk_fav_v1', JSON.stringify(a)); } catch (e) {}
         }
         renderFavorites();
+        dashSyncTopRowHeights();
     };
 
     // ====================================================================
@@ -772,6 +790,34 @@
     };
 
     // ====================================================================
+    //  СИНХРОНИЗАЦИЯ ВЫСОТ ВЕРХНЕГО РЯДА
+    //  Высоту задаёт блок капитала; состав и избранное подгоняются под него
+    //  и скроллятся внутри (а не растягивают строку).
+    // ====================================================================
+    function dashSyncTopRowHeights() {
+        var cap = dq('dash2Portfolio'), hold = dq('dash2Holdings'), fav = dq('dash2Fav');
+        if (!cap) return;
+        // сброс перед измерением естественной высоты капитала
+        if (hold) hold.style.height = '';
+        if (fav) fav.style.height = '';
+        var threeCol = window.matchMedia('(min-width: 1041px)').matches;
+        var twoCol = !threeCol && window.matchMedia('(min-width: 721px)').matches;
+        if (!threeCol && !twoCol) return;   // узкий экран — карточки естественной высоты
+        var h = cap.offsetHeight;
+        if (h <= 0) return;
+        if (hold) hold.style.height = h + 'px';                       // состав всегда рядом с капиталом
+        if (fav && threeCol && !favCollapsed) fav.style.height = h + 'px';  // избранное — только в 3 колонки
+    }
+    window.dashSyncTopRowHeights = dashSyncTopRowHeights;
+
+    var _dashResizeT = null;
+    window.addEventListener('resize', function() {
+        if (currentTab !== 'dashboard') return;
+        clearTimeout(_dashResizeT);
+        _dashResizeT = setTimeout(dashSyncTopRowHeights, 120);
+    });
+
+    // ====================================================================
     //  ГЛАВНЫЙ РЕНДЕР
     // ====================================================================
     function renderDashboard() {
@@ -783,6 +829,7 @@
         renderHoldings();
         renderRebal();
         ensureClock();
+        requestAnimationFrame(dashSyncTopRowHeights);
     }
     window.renderDashboard = renderDashboard;
 

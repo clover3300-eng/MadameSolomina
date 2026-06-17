@@ -52,17 +52,12 @@ body.dark-mode .d3-title { color: #f4f8fd; }
 body.dark-mode .d3-quick.ghost { background: rgba(255,255,255,0.07); color: #cdd8e6; }
 body.dark-mode .d3-quick.ghost:hover { background: rgba(255,255,255,0.12); }
 
-/* ---------- ВЕРХНИЙ РЯД: капитал · состав · ставки (равная высота) ---------- */
+/* ---------- ВЕРХНИЙ РЯД: капитал · состав · избранное ----------
+   Высоту задаёт блок капитала; состав и избранное синхронизируются
+   по высоте через JS (dashSyncTopRowHeights) и скроллятся внутри. */
 .d3-bento {
     display: grid;
-    grid-template-columns: minmax(0,1.35fr) minmax(0,1.55fr) minmax(0,1fr);
-    gap: 16px;
-    align-items: stretch;   /* все три карточки одной высоты — состав и ставки тянутся под капитал */
-}
-/* ---------- НИЖНИЙ РЯД: избранное · ребаланс ---------- */
-.d3-row2 {
-    display: grid;
-    grid-template-columns: minmax(0,1fr) minmax(0,2.5fr);
+    grid-template-columns: minmax(0,1.3fr) minmax(0,1.55fr) minmax(0,1fr);
     gap: 16px;
     align-items: start;
 }
@@ -147,15 +142,17 @@ body.dark-mode .dash2-card {
 /* ============================================================
    ОСНОВНАЯ СЕТКА: портфель + ставки
    ============================================================ */
-/* Адаптив верхнего/нижнего ряда */
+/* Адаптив верхнего ряда */
 @media (max-width: 1280px) {
-    .d3-bento { grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
-    .dash2-rates { grid-column: 1 / -1; }   /* ставки во всю ширину под капиталом и составом */
-    .d3-row2 { grid-template-columns: minmax(0,1fr) minmax(0,1.7fr); }
+    .d3-bento { grid-template-columns: minmax(0,1.2fr) minmax(0,1.5fr) minmax(0,1fr); }
 }
-@media (max-width: 860px) {
-    .d3-bento, .d3-row2 { grid-template-columns: 1fr; }
-    .dash2-rates { grid-column: auto; }
+@media (max-width: 1040px) {
+    .d3-bento { grid-template-columns: 1fr 1fr; }
+    .dash2-fav { grid-column: 1 / -1; }
+}
+@media (max-width: 720px) {
+    .d3-bento { grid-template-columns: 1fr; }
+    .dash2-fav { grid-column: auto; }
 }
 
 /* ---------- Портфель: тёмная hero-карточка с донат-кольцом ---------- */
@@ -367,34 +364,53 @@ body.dark-mode .dash2-portfolio {
 .dp-run-hint { text-align: center; font-size: 10.5px; color: #6b7d93; margin-top: 8px; font-family: 'JetBrains Mono', monospace; }
 
 /* ============================================================
-   ВЕРТИКАЛЬ СТАВОК
+   СТАВКИ РЫНКА — горизонтальная полоса-пульс (плитки)
    ============================================================ */
-.dash2-rates { padding: 22px 22px 18px; display: flex; flex-direction: column; }
-.dr-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-.dr-title { font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 800; color: #111927; }
-body.dark-mode .dr-title { color: #f1f6fb; }
-.dr-tag {
+.d3-ratesband { display: flex; flex-direction: column; gap: 11px; }
+.drt-head { display: flex; align-items: center; gap: 10px; padding: 0 2px; }
+.drt-title { font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 800; color: #111927; }
+body.dark-mode .drt-title { color: #f1f6fb; }
+.drt-tag {
     font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
     text-transform: uppercase; color: #8593a8; background: rgba(91,124,153,0.12);
     padding: 3px 9px; border-radius: 999px;
 }
-.dr-list { display: flex; flex-direction: column; flex: 1; justify-content: space-between; }
-.dr-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 0; border-bottom: 1px solid rgba(44,54,76,0.07); }
-.dr-row:last-child { border-bottom: none; }
-body.dark-mode .dr-row { border-bottom-color: rgba(255,255,255,0.07); }
-.dr-label { font-size: 13.5px; font-weight: 500; color: #5f6d80; }
-body.dark-mode .dr-label { color: #c4cedd; }
-.dr-val { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; color: #111927; white-space: nowrap; }
-body.dark-mode .dr-val { color: #f1f6fb; }
-.dr-row.accent .dr-label { color: #111927; font-weight: 700; }
-body.dark-mode .dr-row.accent .dr-label { color: #f1f6fb; }
-.dr-row.accent .dr-val { color: #119d5c; font-size: 18px; }
+.drt-asof { margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #97a3b4; }
+.drt-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+
+.drt-tile {
+    position: relative; overflow: hidden;
+    display: flex; align-items: center; gap: 14px;
+    background: #fff; border: 1px solid rgba(24,38,60,0.05); border-radius: 18px;
+    padding: 18px 20px; box-shadow: 0 12px 30px -16px rgba(24,38,60,0.16);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.drt-tile:hover { transform: translateY(-2px); box-shadow: 0 18px 36px -18px rgba(24,38,60,0.26); }
+body.dark-mode .drt-tile { background: #1a232f; border-color: rgba(255,255,255,0.05); box-shadow: 0 18px 40px -20px rgba(0,0,0,0.5); }
+/* мягкое цветное свечение из угла */
+.drt-tile::before {
+    content: ''; position: absolute; right: -30%; top: -60%; width: 120px; height: 120px; border-radius: 50%;
+    background: var(--ac, #5B7C99); opacity: 0.1; filter: blur(8px); pointer-events: none;
+}
+.drt-ic {
+    width: 42px; height: 42px; flex-shrink: 0; border-radius: 13px; display: grid; place-items: center;
+    background: rgba(91,124,153,0.12);
+    background: color-mix(in srgb, var(--ac, #5B7C99) 14%, transparent);
+}
+.drt-ic svg { width: 21px; height: 21px; fill: none; stroke: var(--ac, #5B7C99); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.drt-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; position: relative; }
+.drt-l { font-family: 'Manrope', sans-serif; font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #8593a8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.dark-mode .drt-l { color: #97a7bb; }
+.drt-v { font-family: 'JetBrains Mono', monospace; font-size: 25px; font-weight: 700; letter-spacing: -0.02em; color: #111927; line-height: 1; }
+body.dark-mode .drt-v { color: #f4f8fd; }
+@media (max-width: 1040px) { .drt-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px)  { .drt-grid { grid-template-columns: 1fr; } }
 
 /* ============================================================
    ИЗБРАННОЕ
    ============================================================ */
-.dash2-fav { padding: 20px 20px 16px; display: flex; flex-direction: column; }
-.dfv-head { display: flex; align-items: center; gap: 9px; margin-bottom: 14px; }
+.dash2-fav { padding: 18px 8px 14px 18px; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.dfv-head { display: flex; align-items: center; gap: 9px; margin-bottom: 12px; padding-right: 10px; }
 .dfv-title { font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 800; color: #111927; }
 body.dark-mode .dfv-title { color: #f1f6fb; }
 .dfv-count {
@@ -402,12 +418,23 @@ body.dark-mode .dfv-title { color: #f1f6fb; }
     background: rgba(91,124,153,0.12); padding: 2px 9px; border-radius: 999px;
 }
 body.dark-mode .dfv-count { color: #c4cedd; background: rgba(255,255,255,0.07); }
-.dfv-list { display: flex; flex-direction: column; gap: 6px; max-height: 430px; overflow-y: auto; padding-right: 4px; margin-right: -2px; }
+/* Кнопка сворачивания списка */
+.dfv-collapse {
+    margin-left: auto; width: 26px; height: 26px; display: grid; place-items: center; flex-shrink: 0;
+    border: none; background: rgba(44,54,76,0.06); border-radius: 8px; cursor: pointer; transition: background 0.15s ease;
+}
+.dfv-collapse:hover { background: rgba(44,54,76,0.12); }
+body.dark-mode .dfv-collapse { background: rgba(255,255,255,0.06); }
+body.dark-mode .dfv-collapse:hover { background: rgba(255,255,255,0.12); }
+.dfv-collapse svg { width: 15px; height: 15px; fill: none; stroke: #8593a8; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.28s ease; }
+.dash2-fav.collapsed .dfv-collapse svg { transform: rotate(-90deg); }
+.dfv-list { display: flex; flex-direction: column; gap: 5px; flex: 1; min-height: 0; overflow-y: auto; padding-right: 8px; }
 .dfv-list::-webkit-scrollbar { width: 6px; }
 .dfv-list::-webkit-scrollbar-thumb { background: rgba(44,54,76,0.18); border-radius: 99px; }
 body.dark-mode .dfv-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.16); }
-/* Сноска: что значат бейдж эшелона и проценты */
-.dfv-foot-note { font-size: 10.5px; color: #97a3b4; padding-top: 11px; margin-top: 10px; line-height: 1.45; border-top: 1px solid rgba(44,54,76,0.06); }
+.dash2-fav.collapsed .dfv-list, .dash2-fav.collapsed .dfv-foot-note { display: none; }
+/* Сноска: что значит метрика */
+.dfv-foot-note { font-size: 10.5px; color: #97a3b4; padding: 10px 10px 0 0; margin-top: 8px; line-height: 1.45; border-top: 1px solid rgba(44,54,76,0.06); flex-shrink: 0; }
 body.dark-mode .dfv-foot-note { color: #8593a6; border-top-color: rgba(255,255,255,0.06); }
 .dfv-foot-note b { color: #5f6d80; font-weight: 700; }
 body.dark-mode .dfv-foot-note b { color: #aebbcc; }
@@ -423,8 +450,10 @@ body.dark-mode .dfv-item:hover { background: rgba(255,255,255,0.09); }
 .dfv-tk { display: flex; align-items: center; gap: 6px; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 13.5px; color: #111927; }
 body.dark-mode .dfv-tk { color: #f1f6fb; }
 .dfv-name { font-size: 11px; color: #8593a6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dfv-metric { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 700; color: #119d5c; flex-shrink: 0; }
+.dfv-metric { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 700; color: #119d5c; flex-shrink: 0; min-width: 52px; text-align: right; }
 .dfv-metric.neg { color: #d8434f; }
+.dfv-metric.muted { color: #c2ccd8; font-weight: 600; }
+body.dark-mode .dfv-metric.muted { color: #5b6878; }
 .dfv-x {
     width: 24px; height: 24px; flex-shrink: 0; display: grid; place-items: center;
     border: none; background: transparent; border-radius: 7px; cursor: pointer; opacity: 0; transition: all 0.15s ease;
@@ -451,7 +480,7 @@ body.dark-mode .dfv-empty-text { color: #9aa7b8; }
    СОСТАВ ПОРТФЕЛЯ (holdings) — карточка справа от капитала,
    компактный сгруппированный список со скроллом внутри
    ============================================================ */
-.dash2-holdings { padding: 20px 8px 14px 20px; display: flex; flex-direction: column; min-height: 0; }
+.dash2-holdings { padding: 20px 8px 14px 20px; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
 .dash2-holdings.empty { padding: 0; }
 .d3h-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; padding-right: 12px; flex-wrap: wrap; }
 .d3h-title { font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 800; letter-spacing: -0.01em; color: #111927; }
