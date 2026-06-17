@@ -301,12 +301,26 @@
     }
 
     // ---- Управление инлайн-пересчётом ----
+    function dashSyncRecalcOpenClass() {
+        var card = dq('dash2Portfolio');
+        if (card) card.classList.toggle('recalc-open', recalc.open);
+    }
+    function dashRecalcOutside(e) {
+        var card = dq('dash2Portfolio');
+        if (card && card.contains(e.target)) return;   // клики внутри карточки/панели — не закрываем
+        recalc.open = false;
+        renderPortfolio();
+        dashSyncRecalcOpenClass();
+        document.removeEventListener('mousedown', dashRecalcOutside);
+    }
     window.dashToggleRecalc = function() {
         recalc.open = !recalc.open;
         renderPortfolio();
+        dashSyncRecalcOpenClass();
         if (recalc.open) {
-            var p = dq('dashRecalcPanel');
-            if (p) setTimeout(function() { p.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 120);
+            setTimeout(function() { document.addEventListener('mousedown', dashRecalcOutside); }, 0);
+        } else {
+            document.removeEventListener('mousedown', dashRecalcOutside);
         }
     };
     window.dashPickStrategy = function(bonds, title) {
@@ -382,6 +396,9 @@
             window.isPortfolioCalculated = true;
             recalc.open = false;
             renderPortfolio();
+            dashSyncRecalcOpenClass();
+            document.removeEventListener('mousedown', dashRecalcOutside);
+            renderHoldings();   // обновляем состав сразу после пересчёта
             dashToast('Портфель пересчитан');
         } catch (e) {
             console.error('dashRunRecalc error', e);
@@ -420,9 +437,6 @@
             { label: 'Инфляция год',          val: inflV },
             { label: 'Доходность ОФЗ 10 лет', val: ofzV }
         ];
-        // Реальная ставка = ключевая − инфляция (заполняет карточку и полезна)
-        var k = toNum(keyV), inf = toNum(inflV), realStr = '—', realNeg = false;
-        if (isFinite(k) && isFinite(inf)) { var r = k - inf; realNeg = r < 0; realStr = (r >= 0 ? '+' : '') + r.toFixed(2) + '%'; }
         host.innerHTML =
             '<div class="dr-head"><div class="dr-title">Ставки рынка</div><span class="dr-tag">Россия</span></div>' +
             '<div class="dr-list">' + rows.map(function(r) {
@@ -430,11 +444,7 @@
                     '<span class="dr-label">' + esc(r.label) + '</span>' +
                     '<span class="dr-val">' + esc(r.val) + '</span>' +
                 '</div>';
-            }).join('') + '</div>' +
-            '<div class="dr-foot">' +
-                '<div class="dr-foot-l"><div class="dr-foot-title">Реальная ставка</div><div class="dr-foot-sub">ключевая − инфляция</div></div>' +
-                '<div class="dr-foot-v' + (realNeg ? ' neg' : '') + '">' + esc(realStr) + '</div>' +
-            '</div>';
+            }).join('') + '</div>';
     }
 
     // ====================================================================
@@ -504,7 +514,8 @@
                     '<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
             '</div>';
         }).join('');
-        host.innerHTML = head + '<div class="dfv-list">' + rows + '</div>';
+        var note = '<div class="dfv-foot-note"><b>I–IV</b> — эшелон акции (надёжность) · <b>%</b> — потенциал роста к цели; у облигаций — доходность.</div>';
+        host.innerHTML = head + '<div class="dfv-list">' + rows + '</div>' + note;
     }
 
     window.dashOpenFav = function(tk, ech) {
@@ -528,48 +539,74 @@
     function renderHoldings() {
         var host = dq('dash2Holdings');
         if (!host) return;
+        host.className = 'dash2-card dash2-holdings';
+
         var snap = (window.isPortfolioCalculated ? dashCaptureLive() : null) || dashLoadSnapshot();
         var c = snap && snap.composition;
         var bonds = (c && c.bonds) || [], stocks = (c && c.stocks) || [];
         var total = bonds.length + stocks.length;
-        if (!total) { host.className = 'd3-holdings'; host.innerHTML = ''; return; }
-        host.className = 'd3-holdings has';
+
+        if (!total) {
+            host.innerHTML =
+                '<div class="d3h-head"><div class="d3h-title">Состав портфеля</div></div>' +
+                '<div class="d3h-empty">' +
+                    '<div class="d3h-empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>' +
+                    '<div class="d3h-empty-text">Здесь появится состав рассчитанного портфеля — облигации и акции с их долями.</div>' +
+                '</div>';
+            return;
+        }
 
         var grand = 0;
         bonds.concat(stocks).forEach(function(x) { grand += (x.sum || 0); });
         if (!grand) grand = 1;
 
-        function cell(it, kind) {
+        var hasMetric = false;
+        function row(it, kind) {
             var ac = kind === 'bond' ? '#5B7C99' : '#D97757';
-            var w = Math.max(3, Math.round((it.sum || 0) / grand * 100));
-            var pot = '';
+            var w = Math.max(2, Math.round((it.sum || 0) / grand * 100));
+            var tier = '', pot = '';
             if (kind === 'stock') {
                 var meta = resolveTickerMeta(it.ticker);
-                if (meta.metric) pot = '<span class="d3h-pot ' + (meta.neg ? 'neg' : '') + '">' + esc(meta.metric) + '</span>';
+                if (it.echelon) tier = '<span class="drb-tier tier-' + it.echelon + '">' + ((TIERS[it.echelon - 1] || TIERS[0]).roman) + '</span>';
+                if (meta.metric) { pot = '<span class="d3h-r-pot ' + (meta.neg ? 'neg' : '') + '">' + esc(meta.metric) + '</span>'; hasMetric = true; }
             }
             var click = kind === 'stock'
                 ? 'dashOpenTicker(\'' + esc(it.ticker) + '\',' + (it.echelon || 1) + ')'
                 : 'dashOpenComp(\'' + esc(it.ticker) + '\')';
-            return '<button class="d3h-cell" style="--ac:' + ac + '" onclick="' + click + '">' +
-                '<div class="d3h-c-top"><span class="d3h-tk">' + esc(it.ticker) + '</span>' + pot + '</div>' +
-                '<div class="d3h-name">' + esc(it.name || it.ticker) + '</div>' +
-                '<div class="d3h-bar"><i style="width:' + w + '%"></i></div>' +
-                '<div class="d3h-foot"><span class="d3h-qty">' + (it.qty || 0) + ' шт.</span><span class="d3h-sum">' + fmtSum(it.sum) + '</span></div>' +
+            return '<button class="d3h-row" style="--ac:' + ac + ';--w:' + w + '%" onclick="' + click + '">' +
+                '<span class="d3h-r-main">' +
+                    '<span class="d3h-r-tk">' + esc(it.ticker) + tier + '</span>' +
+                    '<span class="d3h-r-name">' + esc(it.name || it.ticker) + '</span>' +
+                '</span>' +
+                '<span class="d3h-r-side">' +
+                    '<span class="d3h-r-sum">' + fmtSum(it.sum) + '</span>' +
+                    '<span class="d3h-r-sub"><span class="d3h-r-w">' + w + '%</span>' +
+                        (it.qty ? '<span>·</span><span>' + it.qty + ' шт</span>' : '') + pot + '</span>' +
+                '</span>' +
             '</button>';
         }
-        var cells = bonds.map(function(b) { return cell(b, 'bond'); }).join('') +
-                    stocks.map(function(s) { return cell(s, 'stock'); }).join('');
+
+        var groups = '';
+        if (bonds.length) {
+            groups += '<div class="d3h-grp"><span class="dp-dot bond"></span>Облигации · ОФЗ <b>' + bonds.length + '</b></div>' +
+                bonds.map(function(b) { return row(b, 'bond'); }).join('');
+        }
+        if (stocks.length) {
+            groups += '<div class="d3h-grp"><span class="dp-dot stock"></span>Акции <b>' + stocks.length + '</b></div>' +
+                stocks.map(function(s) { return row(s, 'stock'); }).join('');
+        }
+
+        var note = hasMetric
+            ? '<div class="d3h-foot-note"><b>%</b> слева — доля бумаги в портфеле. У акций: <b>I–IV</b> — эшелон, цветной <b>%</b> — потенциал роста к цели.</div>'
+            : '<div class="d3h-foot-note"><b>%</b> у бумаги — её доля в портфеле.</div>';
 
         host.innerHTML =
             '<div class="d3h-head">' +
                 '<div class="d3h-title">Состав портфеля</div>' +
                 '<div class="d3h-meta"><span>' + total + ' ' + plural(total, 'бумага', 'бумаги', 'бумаг') + '</span><b>' + fmtSum(grand) + '</b></div>' +
-                '<div class="d3h-legend">' +
-                    '<span class="d3h-leg"><span class="dp-dot bond"></span>ОФЗ · ' + bonds.length + '</span>' +
-                    '<span class="d3h-leg"><span class="dp-dot stock"></span>Акции · ' + stocks.length + '</span>' +
-                '</div>' +
             '</div>' +
-            '<div class="d3h-grid">' + cells + '</div>';
+            '<div class="d3h-scroll">' + groups + '</div>' +
+            note;
     }
 
     // ====================================================================
@@ -689,18 +726,23 @@
             }).join('') + '</div>';
         }
 
+        var bondMetricLabel = rebalSort.bond === 'coupon' ? 'Купонная дох.' : 'Доходность (YTM)';
         host.innerHTML =
             '<div class="drb-title">Лучшее для ребаланса <span class="drb-sub">нажмите на тикер — детали</span></div>' +
             '<div class="drb-cols">' +
                 '<div class="drb-col">' +
                     '<div class="drb-col-head"><span class="drb-dot" style="--c:#5B7C99"></span><span class="drb-col-name">Облигации · ОФЗ</span>' +
                         sortToggle('bond', [{ k: 'yield', t: 'Доходность' }, { k: 'coupon', t: 'Купонная' }]) +
-                    '</div>' + ofzRows +
+                    '</div>' +
+                    '<div class="drb-colsub"><span class="drb-colsub-l">Бумага</span><span class="drb-colsub-r">' + bondMetricLabel + '</span></div>' +
+                    ofzRows +
                 '</div>' +
                 '<div class="drb-col">' +
                     '<div class="drb-col-head"><span class="drb-dot" style="--c:#D97757"></span><span class="drb-col-name">Акции</span>' +
                         sortToggle('stock', [{ k: 'potential', t: 'Потенциал' }, { k: 'echelon', t: 'Эшелон' }]) +
-                    '</div>' + stockRows +
+                    '</div>' +
+                    '<div class="drb-colsub"><span class="drb-colsub-l">Бумага</span><span class="drb-colsub-r">Потенциал роста</span></div>' +
+                    stockRows +
                 '</div>' +
             '</div>';
     }

@@ -217,16 +217,21 @@
     body.dark-mode .hdr-sec { color: #F1F6FB; }
 
     @media (min-width: 1024px) {
-        #topBarCrumb { margin-left: 29px !important; position: relative; }
+        /* На десктопе раздел — чистый «Madame Solomi'na | Раздел» через тонкую вертикальную черту, без плашки */
+        #topBarCrumb {
+            margin-left: 18px !important; position: relative;
+            background: transparent; border: none; box-shadow: none; padding: 0 0 0 18px;
+        }
         #topBarCrumb::before {
             content: '';
             position: absolute;
-            left: -15px; top: 50%;
+            left: 0; top: 50%;
             transform: translateY(-50%);
-            width: 1px; height: 18px;
-            background: rgba(44,54,76,0.13);
+            width: 1.5px; height: 17px; border-radius: 2px;
+            background: rgba(44,54,76,0.18);
         }
-        body.dark-mode #topBarCrumb::before { background: rgba(255,255,255,0.13); }
+        body.dark-mode #topBarCrumb::before { background: rgba(255,255,255,0.18); }
+        #topBarCrumb .hdr-sec { font-size: 14px; font-weight: 700; }
     }
 
     /* Welcome page: brand centered over the hero, actions pinned right */

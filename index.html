@@ -167,13 +167,8 @@
                     <span class="light" style="font-weight:300;">Madame </span><span style="font-weight:800;">Solomi'na</span>
                 </div>
                 <!-- Breadcrumb — показывается JS при переключении вкладок -->
-                <div id="topBarCrumb" style="display:none;align-items:center;gap:8px;margin-left:10px;">
-                    <svg width="22" height="10" viewBox="0 0 22 10" fill="none" style="flex-shrink:0;display:block;">
-                        <line x1="0" y1="5" x2="7" y2="5" stroke="rgba(44,54,76,0.2)" stroke-width="1.2"/>
-                        <circle cx="11" cy="5" r="2.2" fill="none" stroke="rgba(44,54,76,0.4)" stroke-width="1.2"/>
-                        <line x1="15" y1="5" x2="22" y2="5" stroke="rgba(44,54,76,0.2)" stroke-width="1.2"/>
-                    </svg>
-                    <span id="topBarCrumbText" style="font-family:'Inter',sans-serif;font-size:11px;font-weight:600;color:rgba(44,54,76,0.4);letter-spacing:0.04em;text-transform:uppercase;white-space:nowrap;"></span>
+                <div id="topBarCrumb" style="display:none;align-items:center;">
+                    <span id="topBarCrumbText" class="hdr-sec"></span>
                 </div>
             </div>
         </div>
@@ -240,18 +235,18 @@
                     </div>
                 </div>
 
-                <!-- HERO BENTO: портфель (с пересчётом) + ставки + избранное -->
+                <!-- ВЕРХНИЙ РЯД: капитал · состав портфеля · ставки рынка (равная высота) -->
                 <div class="d3-bento">
                     <div class="dash2-card dash2-portfolio" id="dash2Portfolio"></div>
+                    <div class="dash2-card dash2-holdings" id="dash2Holdings"></div>
                     <div class="dash2-card dash2-rates" id="dash2Rates"></div>
-                    <div class="dash2-card dash2-fav" id="dash2Fav"></div>
                 </div>
 
-                <!-- СОСТАВ ПОРТФЕЛЯ — отдельной полосой, вне карточки -->
-                <section class="d3-holdings" id="dash2Holdings"></section>
-
-                <!-- Рекомендации для ребаланса: вертикально ОФЗ + акции -->
-                <div class="dash2-card dash2-rebal" id="dash2Rebal"></div>
+                <!-- НИЖНИЙ РЯД: избранное · лучшее для ребаланса -->
+                <div class="d3-row2">
+                    <div class="dash2-card dash2-fav" id="dash2Fav"></div>
+                    <div class="dash2-card dash2-rebal" id="dash2Rebal"></div>
+                </div>
             </div>
         </div>
 
