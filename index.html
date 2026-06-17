@@ -296,6 +296,14 @@
 
         <!-- ===== TAB: РЫНОК ===== -->
         <div id="panel-market" class="tab-panel">
+            <!-- Индекс МосБиржи — интерактивный график TradingView (рендерится из js/market-chart.js) -->
+            <section class="mk-chart-card" id="mkChartCard" aria-label="График индекса МосБиржи">
+                <div class="mk-chart-head">
+                    <span class="mk-chart-title">Индекс МосБиржи</span>
+                    <span class="mk-chart-sym">IMOEX · RUS:IRUS</span>
+                </div>
+                <div class="mk-chart-body" id="mkChartBody"></div>
+            </section>
             <!-- MARKET CONTENT — injected from screen-interesting (содержит баннер дохода) -->
             <div id="marketPanelContent"></div>
         </div>
@@ -2015,5 +2023,6 @@
 <script src="js/dashboard.js" defer></script>
 <script src="js/sidebar.js" defer></script>
 <script src="js/stock-terminal.js" defer></script>
+<script src="js/market-chart.js" defer></script>
 </body>
 </html>

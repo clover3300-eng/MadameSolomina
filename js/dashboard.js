@@ -620,10 +620,13 @@
     }
     window.dashCopyFavs = function() {
         var favs = (typeof window.stkGetFavorites === 'function') ? window.stkGetFavorites() : loadFavsRaw();
-        var lines = favs.map(function(tk) {
-            var m = resolveFavMeta(tk);
-            return tk + (m.name && m.name !== tk ? (' — ' + m.name) : '') + (m.metric ? ('  ' + m.metric) : '');
-        });
+        // Копируем ТОЛЬКО тикеры, с разделением на облигации и акции
+        // (тикер из списка облигаций → «Облигации», иначе → «Акции»).
+        var bondsArr = [], stocksArr = [];
+        favs.forEach(function(tk) { (findBondByT(tk) ? bondsArr : stocksArr).push(tk); });
+        var lines = [];
+        if (bondsArr.length) { lines.push('Облигации'); bondsArr.forEach(function(t) { lines.push(t); }); }
+        if (stocksArr.length) { if (lines.length) lines.push(''); lines.push('Акции'); stocksArr.forEach(function(t) { lines.push(t); }); }
         dashCopyText(lines.join('\n'), favs.length + ' ' + plural(favs.length, 'тикер', 'тикера', 'тикеров') + ' скопировано');
     };
 
@@ -804,11 +807,10 @@
         var snap = (window.isPortfolioCalculated ? dashCaptureLive() : null) || dashLoadSnapshot();
         var c = snap && snap.composition;
         if (!c) return;
-        var grand = 0; (c.bonds || []).concat(c.stocks || []).forEach(function(x) { grand += (x.sum || 0); }); if (!grand) grand = 1;
-        function ln(x) { var w = Math.round((x.sum || 0) / grand * 100); return x.ticker + '\t' + (x.name || '') + '\t' + (x.qty || 0) + ' шт\t' + fmtSum(x.sum) + '\t' + w + '%'; }
+        // Копируем ТОЛЬКО тикеры, с разделением на облигации и акции.
         var lines = [];
-        if (c.bonds && c.bonds.length) { lines.push('ОБЛИГАЦИИ · ОФЗ'); c.bonds.forEach(function(b) { lines.push(ln(b)); }); }
-        if (c.stocks && c.stocks.length) { if (lines.length) lines.push(''); lines.push('АКЦИИ'); c.stocks.forEach(function(s) { lines.push(ln(s)); }); }
+        if (c.bonds && c.bonds.length) { lines.push('Облигации'); c.bonds.forEach(function(b) { lines.push(b.ticker); }); }
+        if (c.stocks && c.stocks.length) { if (lines.length) lines.push(''); lines.push('Акции'); c.stocks.forEach(function(s) { lines.push(s.ticker); }); }
         dashCopyText(lines.join('\n'), 'Состав портфеля скопирован');
     };
 

@@ -549,8 +549,13 @@
 .stk-chg .stk-chg-pill { display: inline-block; min-width: 40px; padding: 2px 6px; border-radius: 6px; text-align: right; }
 .stk-chg.pos .stk-chg-pill { color: var(--stk-pos); background: var(--stk-pos-bg); }
 .stk-chg.neg .stk-chg-pill { color: var(--stk-neg); background: var(--stk-neg-bg); }
-/* нейтральный прочерк держит ту же мин. ширину — встаёт ровно под значения года */
-.stk-chg.neu .stk-chg-pill { color: var(--stk-muted); background: transparent; }
+/* нейтральный прочерк «—»: без фона/паддинга/мин-ширины пилюли, чтобы его правый
+   край встал РОВНО под прочерки и числа строки-показателя (тоже у правого края),
+   а не уезжал на 6px влево из-за внутреннего паддинга пилюли. */
+.stk-chg.neu .stk-chg-pill {
+    color: var(--stk-muted); background: transparent;
+    min-width: 0; padding: 0;
+}
 
 /* ---------- Десктоп: учитываем zoom 0.85 (см. desktop-zoom.css) ----------
    --real-vh задаётся из JS в px; под zoom px сжимаются, поэтому делим

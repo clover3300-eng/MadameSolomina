@@ -217,20 +217,13 @@
     body.dark-mode .hdr-sec { color: #F1F6FB; }
 
     @media (min-width: 1024px) {
-        /* На десктопе раздел — чистый «Madame Solomi'na | Раздел» через тонкую вертикальную черту, без плашки */
+        /* На десктопе раздел снова в «плашке-пилюле» (как раньше) — иконка + название
+           внутри белой капсулы с тонкой рамкой и мягкой тенью, на всех вкладках. */
         #topBarCrumb {
-            margin-left: 18px !important; position: relative;
-            background: transparent; border: none; box-shadow: none; padding: 0 0 0 18px;
+            margin-left: 18px !important;
         }
-        #topBarCrumb::before {
-            content: '';
-            position: absolute;
-            left: 0; top: 50%;
-            transform: translateY(-50%);
-            width: 1.5px; height: 17px; border-radius: 2px;
-            background: rgba(44,54,76,0.18);
-        }
-        body.dark-mode #topBarCrumb::before { background: rgba(255,255,255,0.18); }
+        /* Чёрточка-разделитель убрана — вернулись к пилюле */
+        #topBarCrumb::before { content: none; }
         #topBarCrumb .hdr-sec { font-size: 14px; font-weight: 700; }
     }
 

@@ -220,7 +220,7 @@ body.dark-mode .dash2-portfolio {
 .dp-dot.stock { background: #D97757; }
 .dp-leg-name { color: #aebbcc; font-weight: 700; font-size: 12.5px; }
 .dp-leg-pct { margin-left: auto; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #fff; font-size: 15px; }
-.dp-leg-sum { font-family: 'JetBrains Mono', monospace; color: #8493a6; font-size: 11px; min-width: 88px; text-align: right; }
+.dp-leg-sum { font-family: 'JetBrains Mono', monospace; color: #8493a6; font-size: 11px; min-width: 88px; text-align: right; white-space: nowrap; /* ₽ не переносится */ }
 .dp-fc-pct.neg { color: #f87171; background: rgba(248,113,113,0.14); }
 
 /* Мини-статистика портфеля */

@@ -231,6 +231,7 @@ body.dark-mode .portfolio-capital-card {
     font-weight: 500;
     color: rgba(148, 163, 184, 0.55);
     letter-spacing: -0.01em;
+    white-space: nowrap; /* символ ₽ не отрывается на новую строку */
 }
 
 /* === Divider (hidden — forecast block has its own border) === */
