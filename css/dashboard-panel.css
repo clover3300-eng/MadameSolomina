@@ -201,7 +201,7 @@ body.dark-mode .dash2-portfolio {
 }
 
 /* Донат-кольцо распределения */
-.dp-ring-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; flex-shrink: 0; }
+.dp-ring-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; flex-shrink: 0; width: 196px; }
 .dp-ring {
     --bp: 50; width: 116px; height: 116px; border-radius: 50%; position: relative; flex-shrink: 0;
     background: conic-gradient(#7B9BBF 0 calc(var(--bp) * 1%), #D97757 calc(var(--bp) * 1%) 100%);
@@ -213,15 +213,14 @@ body.dark-mode .dash2-portfolio {
 }
 .dp-ring-c-top { font-family: 'Manrope', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #8ea0b6; }
 .dp-ring-c-val { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: #fff; }
-.dp-legend { display: flex; gap: 18px; }
-.dp-leg { display: flex; flex-direction: column; gap: 2px; }
-.dp-leg-top { display: flex; align-items: center; gap: 6px; }
-.dp-dot { width: 8px; height: 8px; border-radius: 99px; flex-shrink: 0; }
+.dp-legend { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+.dp-leg { display: flex; align-items: center; gap: 8px; }
+.dp-dot { width: 9px; height: 9px; border-radius: 99px; flex-shrink: 0; }
 .dp-dot.bond { background: #7B9BBF; }
 .dp-dot.stock { background: #D97757; }
-.dp-leg-name { color: #aebbcc; font-weight: 700; font-size: 11.5px; }
-.dp-leg-pct { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #fff; font-size: 15px; }
-.dp-leg-sum { font-family: 'JetBrains Mono', monospace; color: #7a889e; font-size: 11px; }
+.dp-leg-name { color: #aebbcc; font-weight: 700; font-size: 12.5px; }
+.dp-leg-pct { margin-left: auto; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #fff; font-size: 15px; }
+.dp-leg-sum { font-family: 'JetBrains Mono', monospace; color: #8493a6; font-size: 11px; min-width: 88px; text-align: right; }
 .dp-fc-pct.neg { color: #f87171; background: rgba(248,113,113,0.14); }
 
 /* Мини-статистика портфеля */
@@ -414,7 +413,7 @@ body.dark-mode .drt-v { color: #f4f8fd; }
 /* ============================================================
    ИЗБРАННОЕ
    ============================================================ */
-.dash2-fav { padding: 18px 8px 12px 18px; display: flex; flex-direction: column; min-height: 0; overflow: visible; position: relative; }
+.dash2-fav { padding: 20px 8px 12px 20px; display: flex; flex-direction: column; min-height: 0; overflow: visible; position: relative; }
 .dash2-fav.fav-open { z-index: 65; }
 .dfv-head { display: flex; align-items: center; gap: 9px; margin-bottom: 10px; padding-right: 10px; }
 .dfv-title { font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 800; color: #111927; display: flex; align-items: center; gap: 8px; }
@@ -443,17 +442,19 @@ body.dark-mode .dfv-colhead span, body.dark-mode .d3h-colhead span { color: #768
 .dfv-list::-webkit-scrollbar, .dfv-ov-list::-webkit-scrollbar { width: 6px; }
 .dfv-list::-webkit-scrollbar-thumb, .dfv-ov-list::-webkit-scrollbar-thumb { background: rgba(44,54,76,0.18); border-radius: 99px; }
 body.dark-mode .dfv-list::-webkit-scrollbar-thumb, body.dark-mode .dfv-ov-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.16); }
-/* Аккуратный переход к таблице акций */
+/* Аккуратный переход к таблице акций (высота = сноске в составе, чтобы линии совпадали) */
 .dfv-foot-link {
-    flex-shrink: 0; margin-top: 8px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;
-    border: none; background: transparent; cursor: pointer; padding: 9px;
-    font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 700; color: #5B7C99;
-    border-top: 1px solid rgba(44,54,76,0.06); border-radius: 0; transition: color 0.15s ease;
+    flex-shrink: 0; margin-top: 0; box-sizing: border-box; min-height: 46px; width: 100%;
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    border: none; border-top: 1px solid rgba(44,54,76,0.06); background: transparent; cursor: pointer; padding: 0 10px;
+    font-family: 'Manrope', sans-serif; font-size: 12.5px; font-weight: 700; color: #5B7C99;
+    transition: color 0.15s ease, background 0.15s ease;
 }
-.dfv-foot-link svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.15s ease; }
-.dfv-foot-link:hover { color: #46637f; }
+.dfv-foot-link svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.15s ease; }
+.dfv-foot-link:hover { color: #46637f; background: rgba(91,124,153,0.06); }
 .dfv-foot-link:hover svg { transform: translateX(3px); }
 body.dark-mode .dfv-foot-link { color: #8fb0d4; border-top-color: rgba(255,255,255,0.06); }
+body.dark-mode .dfv-foot-link:hover { background: rgba(255,255,255,0.05); }
 /* Оверлей: весь список поверх нижнего контента */
 .dfv-overlay {
     position: absolute; top: 0; left: 0; right: 0; z-index: 80;
@@ -481,7 +482,7 @@ body.dark-mode .dfv-item:hover { background: rgba(255,255,255,0.09); }
 .dfv-tk { display: flex; align-items: center; gap: 6px; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 13.5px; color: #111927; }
 body.dark-mode .dfv-tk { color: #f1f6fb; }
 .dfv-name { font-size: 11px; color: #8593a6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dfv-metric { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 700; color: #119d5c; flex-shrink: 0; min-width: 52px; text-align: right; }
+.dfv-metric { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: #119d5c; flex-shrink: 0; min-width: 60px; text-align: right; letter-spacing: -0.01em; }
 .dfv-metric.neg { color: #d8434f; }
 .dfv-metric.muted { color: #c2ccd8; font-weight: 600; }
 body.dark-mode .dfv-metric.muted { color: #5b6878; }
@@ -580,8 +581,8 @@ body.dark-mode .d3h-r-sum { color: #eef3f9; }
 .d3h-r-pot.neg { color: #d8434f; }
 .d3h-r-w { color: #b3bdca; }
 
-/* Сноска-пояснение про метрики */
-.d3h-foot-note { font-size: 10.5px; color: #97a3b4; padding: 9px 12px 2px; line-height: 1.4; border-top: 1px solid rgba(44,54,76,0.06); margin-top: 6px; margin-right: 8px; }
+/* Сноска-пояснение про метрики (высота = ссылке в избранном — линии совпадают) */
+.d3h-foot-note { box-sizing: border-box; min-height: 46px; display: flex; align-items: center; font-size: 10.5px; color: #97a3b4; padding: 8px 12px; line-height: 1.4; border-top: 1px solid rgba(44,54,76,0.06); margin: 0 8px 0 0; }
 body.dark-mode .d3h-foot-note { border-top-color: rgba(255,255,255,0.06); color: #8593a6; }
 .d3h-foot-note b { color: #5f6d80; font-weight: 700; }
 body.dark-mode .d3h-foot-note b { color: #aebbcc; }
@@ -623,6 +624,17 @@ body.dark-mode .d3h-overlay { background: #1a232f; border-color: rgba(255,255,25
 .d3h-ov-list::-webkit-scrollbar { width: 6px; }
 .d3h-ov-list::-webkit-scrollbar-thumb { background: rgba(44,54,76,0.18); border-radius: 99px; }
 body.dark-mode .d3h-ov-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.16); }
+
+/* Карточка облигации поверх контента */
+.d3h-bondpop { padding: 16px 12px 14px 20px; }
+.d3h-bondpop-body { overflow-y: auto; padding-right: 8px; }
+.d3h-bondpop-body::-webkit-scrollbar { width: 6px; }
+.d3h-bondpop-body::-webkit-scrollbar-thumb { background: rgba(44,54,76,0.18); border-radius: 99px; }
+
+/* Стрелка-индикатор справа в строке состава */
+.d3h-go { width: 15px; height: 15px; flex-shrink: 0; fill: none; stroke: #c2ccd8; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.14s ease, stroke 0.14s ease; }
+.d3h-row:hover .d3h-go { stroke: #5B7C99; transform: translateX(2px); }
+body.dark-mode .d3h-go { stroke: #4a5666; }
 
 /* ============================================================
    РЕКОМЕНДАЦИИ ДЛЯ РЕБАЛАНСА (вертикально)
