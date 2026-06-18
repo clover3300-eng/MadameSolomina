@@ -220,10 +220,19 @@
         /* На десктопе раздел снова в «плашке-пилюле» (как раньше) — иконка + название
            внутри белой капсулы с тонкой рамкой и мягкой тенью, на всех вкладках. */
         #topBarCrumb {
-            margin-left: 18px !important;
+            position: relative;
+            margin-left: 26px !important;
         }
-        /* Чёрточка-разделитель убрана — вернулись к пилюле */
-        #topBarCrumb::before { content: none; }
+        /* Чёрточка-разделитель | между брендом и разделом (как было) */
+        #topBarCrumb::before {
+            content: '';
+            position: absolute;
+            left: -14px; top: 50%;
+            transform: translateY(-50%);
+            width: 1.5px; height: 17px; border-radius: 2px;
+            background: rgba(44,54,76,0.18);
+        }
+        body.dark-mode #topBarCrumb::before { background: rgba(255,255,255,0.22); }
         #topBarCrumb .hdr-sec { font-size: 14px; font-weight: 700; }
     }
 

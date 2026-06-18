@@ -18,6 +18,9 @@
     --mh-hover: rgba(52, 152, 219, 0.06);
     --mh-up: #1f9d57;
     --mh-down: #d6473c;
+    /* Тёмный «биржевой» холст карты (фон плота и «гэп» между плитками) — одинаков
+       в обеих темах, как экран терминала */
+    --mh-plot-bg: #0c1019;
 
     max-width: 1180px;
     margin: 0 auto 18px;
@@ -129,47 +132,74 @@ body.dark-mode .mh-seg-btn.active { background: #2b3a4d; color: #fff; }
 .mh-bread-sep { color: var(--mh-muted); opacity: .6; }
 .mh-bread-cur { font-weight: 800; color: var(--mh-text); }
 
-/* ---------- Поле карты ---------- */
+/* ============================================================
+   ПРЕМИУМ-ТЕРМИНАЛ: тёмный холст-«экран» + стеклянные плитки
+   ============================================================ */
+/* плавный перелив цвета плитки при обновлении (тикер var(--tile)) */
+@property --tile { syntax: '<color>'; inherits: false; initial-value: #6e7684; }
+
+/* ---------- Поле карты (тёмный экран) ---------- */
 .mh-plot { position: relative; width: 100%; height: 560px; box-sizing: border-box;
-    margin: 12px 0 6px; }
+    margin: 14px 14px 8px; width: calc(100% - 28px); border-radius: 16px; overflow: hidden;
+    background:
+        radial-gradient(130% 120% at 50% -25%, rgba(143,179,160,.10) 0%, rgba(143,179,160,0) 55%),
+        linear-gradient(180deg, #16263a 0%, #0c131e 62%, #080d16 100%);
+    box-shadow: inset 0 2px 18px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.05); }
 
 .mh-tile { position: absolute; overflow: hidden; cursor: pointer; color: #fff; opacity: 1;
+    --tile: #6e7684;
     display: flex; flex-direction: column; justify-content: center; align-items: center;
-    text-align: center; line-height: 1.04; user-select: none;
-    box-shadow: inset 0 0 0 1.5px var(--mh-bg);
-    border-radius: 3px;
+    text-align: center; line-height: 1.04; user-select: none; border-radius: 6px;
+    background:
+        linear-gradient(168deg, rgba(255,255,255,.20) 0%, rgba(255,255,255,.04) 34%, rgba(0,0,0,.05) 62%, rgba(0,0,0,.20) 100%),
+        var(--tile);
+    box-shadow: inset 0 0 0 1.5px var(--mh-plot-bg), inset 0 1px 0 0 rgba(255,255,255,.22),
+        inset 0 -8px 16px -8px rgba(0,0,0,.4);
     transition: left .55s cubic-bezier(.4,0,.2,1), top .55s cubic-bezier(.4,0,.2,1),
         width .55s cubic-bezier(.4,0,.2,1), height .55s cubic-bezier(.4,0,.2,1),
-        background-color .5s ease, opacity .35s ease, filter .15s ease; }
+        --tile .5s ease, box-shadow .35s ease, opacity .35s ease, filter .15s ease; }
 /* Появление плитки: базовая opacity всегда 1 (видна и при паузе анимаций в скрытой
    вкладке); анимируем только scale-«поп», чтобы не залипнуть на opacity:0. */
-.mh-tile.mh-enter { animation: mhTileIn .38s ease; }
-@keyframes mhTileIn { from { transform: scale(.93); } to { transform: none; } }
-.mh-tile:hover { filter: brightness(1.08) saturate(1.08);
-    box-shadow: inset 0 0 0 1.5px var(--mh-bg), inset 0 0 0 3px rgba(255, 255, 255, .42); z-index: 5; }
-.mh-tk { font-weight: 800; letter-spacing: -0.02em; text-shadow: 0 1px 2px rgba(0, 0, 0, .3); position: relative; z-index: 1; }
-.mh-pc { font-family: 'JetBrains Mono', monospace; font-weight: 600; opacity: .96; text-shadow: 0 1px 2px rgba(0, 0, 0, .32); position: relative; z-index: 1; }
-.mh-pr { font-family: 'JetBrains Mono', monospace; font-weight: 500; opacity: .82; margin-top: 1px; position: relative; z-index: 1; }
+.mh-tile.mh-enter { animation: mhTileIn .42s cubic-bezier(.34,1.4,.5,1); }
+@keyframes mhTileIn { from { transform: scale(.9); } to { transform: none; } }
+
+/* Крупное движение (|изм.| ≥ 2%) — свечение цветом изменения (глубина/«поп») */
+.mh-tile.mh-mover { box-shadow: inset 0 0 0 1.5px var(--mh-plot-bg), inset 0 1px 0 0 rgba(255,255,255,.28),
+    inset 0 -8px 16px -8px rgba(0,0,0,.4), 0 0 16px 0 var(--glow, transparent); z-index: 2; }
+
+.mh-tile:hover { filter: brightness(1.1) saturate(1.12); z-index: 6;
+    box-shadow: inset 0 0 0 1.5px var(--mh-plot-bg), inset 0 0 0 2px rgba(255,255,255,.6),
+        0 0 26px 2px var(--glow, rgba(255,255,255,.18)); }
+.mh-tk { font-weight: 800; letter-spacing: -0.02em; text-shadow: 0 1px 3px rgba(0, 0, 0, .45); position: relative; z-index: 2; }
+.mh-pc { font-family: 'JetBrains Mono', monospace; font-weight: 600; opacity: .97; text-shadow: 0 1px 3px rgba(0, 0, 0, .45); position: relative; z-index: 2; }
+.mh-pr { font-family: 'JetBrains Mono', monospace; font-weight: 500; opacity: .85; margin-top: 1px; text-shadow: 0 1px 2px rgba(0,0,0,.4); position: relative; z-index: 2; }
+
+/* Блик-«проблеск» по плитке при наведении (анимированный sheen) */
+.mh-tile::before { content: ''; position: absolute; top: 0; left: -65%; width: 55%; height: 100%; z-index: 1;
+    pointer-events: none; transform: skewX(-18deg); opacity: 0;
+    background: linear-gradient(105deg, transparent, rgba(255,255,255,.30), transparent); }
+.mh-tile:hover::before { animation: mhSheen .72s ease; }
+@keyframes mhSheen { 0% { left: -65%; opacity: 0; } 28% { opacity: .9; } 100% { left: 135%; opacity: 0; } }
 
 /* Вспышка при изменении цены (как в торговом терминале) */
-.mh-tile::after { content: ''; position: absolute; inset: 0; opacity: 0; z-index: 0; pointer-events: none; }
-.mh-tile.mh-flash-up::after { background: #37d27f; animation: mhFlash .9s ease-out; }
-.mh-tile.mh-flash-down::after { background: #ff5a5a; animation: mhFlash .9s ease-out; }
-@keyframes mhFlash { 0% { opacity: .55; } 100% { opacity: 0; } }
+.mh-tile::after { content: ''; position: absolute; inset: 0; opacity: 0; z-index: 1; pointer-events: none; }
+.mh-tile.mh-flash-up::after { background: #3be389; animation: mhFlash .9s ease-out; }
+.mh-tile.mh-flash-down::after { background: #ff5f57; animation: mhFlash .9s ease-out; }
+@keyframes mhFlash { 0% { opacity: .6; } 100% { opacity: 0; } }
 
 /* Спотлайт: при наведении соседние плитки притухают */
-.mh-plot.mh-spot .mh-tile:not(:hover) { filter: brightness(.6) saturate(.8); }
+.mh-plot.mh-spot .mh-tile:not(:hover) { filter: brightness(.55) saturate(.7); }
 
-/* Подпись сектора (кликабельна → drill-down) */
+/* Подпись сектора (кликабельна → drill-down) — светлый текст на тёмном холсте */
 .mh-sec { position: absolute; display: flex; align-items: center; gap: 6px; padding: 0 8px;
-    z-index: 3; overflow: hidden; white-space: nowrap; cursor: pointer; border-radius: 4px;
+    z-index: 3; overflow: hidden; white-space: nowrap; cursor: pointer; border-radius: 5px;
     transition: left .55s cubic-bezier(.4,0,.2,1), top .55s cubic-bezier(.4,0,.2,1),
         width .55s cubic-bezier(.4,0,.2,1), background .15s ease; }
-.mh-sec:hover { background: var(--mh-line); }
-.mh-sec-name { font-size: 10.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
-    color: var(--mh-text); opacity: .62; }
-.mh-sec-chg { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; }
-.mh-sec-zoom { margin-left: auto; font-size: 11px; color: var(--mh-muted); opacity: 0; transition: opacity .15s; }
+.mh-sec:hover { background: rgba(255,255,255,.08); }
+.mh-sec-name { font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+    color: rgba(255,255,255,.78); text-shadow: 0 1px 3px rgba(0,0,0,.5); }
+.mh-sec-chg { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; text-shadow: 0 1px 2px rgba(0,0,0,.5); }
+.mh-sec-zoom { margin-left: auto; font-size: 11px; color: rgba(255,255,255,.6); opacity: 0; transition: opacity .15s; }
 .mh-sec:hover .mh-sec-zoom { opacity: .9; }
 
 /* ---------- Тултип ---------- */
@@ -219,6 +249,12 @@ body.dark-mode .mh-retry { background: #8FB3A0; color: #11251a; }
 .mh-table td { padding: 9px 14px; font-size: 12.5px; color: var(--mh-text); border-bottom: 1px solid var(--mh-line);
     white-space: nowrap; }
 .mh-table td.num { text-align: right; font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+.mh-th-rank { width: 38px; text-align: center !important; cursor: default !important; }
+.mh-rank { width: 38px; text-align: center; font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; font-weight: 700; color: var(--mh-muted); }
+.mh-table tbody tr:nth-child(1) .mh-rank,
+.mh-table tbody tr:nth-child(2) .mh-rank,
+.mh-table tbody tr:nth-child(3) .mh-rank { color: #c79a3a; }
 .mh-td-tk { font-weight: 800; letter-spacing: -.01em; }
 .mh-td-name { color: var(--mh-muted); max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
 .mh-td-sec { display: inline-flex; align-items: center; gap: 7px; color: var(--mh-muted); font-size: 11.5px; }

@@ -619,7 +619,17 @@ function openStockDetail(ticker, echelon, clickedCell = null) {
             if (f) { potentialStr = f.target || ''; break; }
         }
     }
-    const potNum = parseFloat(String(potentialStr).replace('%', '').replace(',', '.'));
+    let potNum = parseFloat(String(potentialStr).replace('%', '').replace(',', '.'));
+    // «Потенциал» в приложении = показатель ОДХС из терминала «Рынок · Акции»
+    // (US-формат чисел). Берём значение из ОДХС, подпись поля остаётся «Потенциал».
+    if (typeof window.stkEnsureLoaded === 'function') { try { window.stkEnsureLoaded(); } catch (e) {} }
+    if (typeof window.stkFindCompany === 'function') {
+        const stkCo = window.stkFindCompany(ticker) ||
+                      (ticker !== baseTicker ? window.stkFindCompany(baseTicker) : null);
+        const odRaw = stkCo && stkCo.main ? stkCo.main['ОДХС'] : null;
+        const odNum = odRaw != null ? parseFloat(String(odRaw).replace(/[^0-9.\-]/g, '')) : NaN;
+        if (isFinite(odNum)) potNum = odNum;
+    }
     const potDisplay = isFinite(potNum) ? ((potNum >= 0 ? '+' : '') + potNum.toFixed(2) + '%') : (potentialStr || '—');
 
     // Fallback: в ребалансе лишь кураторский список тикеров, а карточку можно открыть

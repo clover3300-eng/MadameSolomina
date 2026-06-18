@@ -102,13 +102,16 @@
     }
 
     // Цвет плитки по дневному изменению (нейтральный slate → зелёный/красный)
-    var C_NEU = [123, 129, 141], C_POS = [22, 160, 90], C_NEG = [214, 62, 60];
+    var C_NEU = [110, 118, 132], C_POS = [22, 178, 98], C_NEG = [224, 60, 58];
     function lerp(a, b, t) { return Math.round(a + (b - a) * t); }
-    function tileColor(p) {
+    function rgbOf(p) {
         if (p == null || isNaN(p)) p = 0;
         var t = clamp(-CAP, p, CAP) / CAP, to = t >= 0 ? C_POS : C_NEG, k = Math.abs(t);
-        return 'rgb(' + lerp(C_NEU[0], to[0], k) + ',' + lerp(C_NEU[1], to[1], k) + ',' + lerp(C_NEU[2], to[2], k) + ')';
+        return [lerp(C_NEU[0], to[0], k), lerp(C_NEU[1], to[1], k), lerp(C_NEU[2], to[2], k)];
     }
+    function tileColor(p) { var c = rgbOf(p); return 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')'; }
+    function glowColor(p) { var c = rgbOf(p); return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',.6)'; }
+    var MOVER = 2; // |изм.%| ≥ этого → плитка «светится» (крупное движение)
     // Устойчивый приглушённый цвет сектора (для точки в таблице)
     function secHue(name) { var h = 0, i; for (i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360; return h; }
     function secDot(name) { return 'hsl(' + secHue(name) + ',42%,55%)'; }
@@ -219,7 +222,17 @@
     // ====================================================================
     //  РЕНДЕР КАРТЫ (diff-реконсиляция → плавные переходы + вспышки)
     // ====================================================================
-    function sizeValue(row) { return state.sizeMode === 'value' ? Math.max(row.value || 0, 1) : Math.max(row.weight || 0, 0.01); }
+    function sizeValue(row) {
+        if (state.sizeMode === 'value') return Math.max(row.value || 0, 1);
+        if (state.sizeMode === 'change') return Math.max(Math.abs(row.chg || 0), 0.05);
+        return Math.max(row.weight || 0, 0.01);
+    }
+    function applyTileLook(el, r) {
+        el.style.setProperty('--tile', tileColor(r.chg));
+        var mover = r.chg != null && Math.abs(r.chg) >= MOVER;
+        el.classList.toggle('mh-mover', mover);
+        if (mover) el.style.setProperty('--glow', glowColor(r.chg)); else el.style.removeProperty('--glow');
+    }
 
     function tileText(row, w, h) {
         if (w < 22 || h < 14) return '';
@@ -283,7 +296,7 @@
         tiles.forEach(function (t) {
             var r = t.row, tk = r.ticker, rc = t.rect;
             var x = rc.x + GAP, y = rc.y + GAP, w = Math.max(0, rc.w - GAP * 2), h = Math.max(0, rc.h - GAP * 2);
-            var el = state.tileEls[tk], color = tileColor(r.chg);
+            var el = state.tileEls[tk];
             seen[tk] = true;
             if (!el) {
                 // Свежая плитка: геометрию ставим с выключенным transition (без «роста от
@@ -292,7 +305,7 @@
                 el = document.createElement('div'); el.className = 'mh-tile mh-enter'; el.setAttribute('data-tk', tk);
                 el.style.transition = 'none';
                 el.style.left = x + 'px'; el.style.top = y + 'px'; el.style.width = w + 'px'; el.style.height = h + 'px';
-                el.style.background = color;
+                applyTileLook(el, r);
                 el.innerHTML = tileText(r, w, h);
                 plotEl.appendChild(el); state.tileEls[tk] = el;
                 void el.offsetWidth;        // коммитим геометрию при transition:none
@@ -301,7 +314,8 @@
             }
             // Существующая плитка: меняем геометрию/цвет → CSS-переход анимирует (FLIP)
             el.style.left = x + 'px'; el.style.top = y + 'px'; el.style.width = w + 'px'; el.style.height = h + 'px';
-            el.style.background = color; el.style.opacity = '1';
+            el.style.opacity = '1';
+            applyTileLook(el, r);
             el.innerHTML = tileText(r, w, h);
             var prev = state.prevPrices[tk];
             if (prev != null && r.last != null && r.last !== prev) flash(el, r.last > prev);
@@ -410,9 +424,10 @@
         });
         var body = c.querySelector('.mh-table tbody'); if (!body) return;
         var html = '';
-        tableRows().forEach(function (r) {
+        tableRows().forEach(function (r, i) {
             var cls = r.chg > 0 ? 'up' : (r.chg < 0 ? 'down' : 'flat');
             html += '<tr data-tk="' + esc(r.ticker) + '">' +
+                '<td class="mh-rank">' + (i + 1) + '</td>' +
                 '<td class="mh-td-tk">' + esc(r.ticker) + '</td>' +
                 '<td class="mh-td-name">' + esc(r.name) + '</td>' +
                 '<td><span class="mh-td-sec"><i style="background:' + secDot(r.sector) + '"></i>' + esc(r.sector) + '</span></td>' +
@@ -435,7 +450,8 @@
         meta.innerHTML = '<span class="mh-dot' + (live ? ' live' : '') + '"></span>' +
             (state.updated ? 'Обновлено ' + esc(state.updated) + ' (МСК)' : 'Загрузка…') +
             ' · данные ISS Московской биржи, задержка ~15 мин · размер плитки — ' +
-            (state.sizeMode === 'value' ? 'объём торгов' : 'вес в индексе') + ', цвет — изменение за день';
+            (state.sizeMode === 'value' ? 'объём торгов' : state.sizeMode === 'change' ? 'модуль изменения' : 'вес в индексе') +
+            ', цвет — изменение за день';
     }
     function overlay() { return $('.mh-overlay'); }
     function hideOverlay() { var o = overlay(); if (o) o.hidden = true; }
@@ -530,6 +546,7 @@
             '  <span class="mh-seg" role="tablist">' +
             '    <button class="mh-seg-btn active" type="button" data-size="weight">Вес</button>' +
             '    <button class="mh-seg-btn" type="button" data-size="value">Объём</button>' +
+            '    <button class="mh-seg-btn" type="button" data-size="change">% изм.</button>' +
             '  </span>' +
             '  <button class="mh-refresh" type="button" title="Обновить" aria-label="Обновить">' + REFRESH_SVG + '</button>' +
             '</div>' +
@@ -542,6 +559,7 @@
             '<div class="mh-bread" hidden></div>' +
             '<div class="mh-plot"><div class="mh-tip"></div><div class="mh-overlay" hidden></div></div>' +
             '<div class="mh-table-wrap"><table class="mh-table"><thead><tr>' +
+            '<th class="mh-th-rank">#</th>' +
             COLS.map(function (col) {
                 return '<th data-sort="' + col.key + '" class="' + (col.num ? 'num ' : '') + (col.cls || '') + '">' +
                     esc(col.label) + '<span class="mh-arrow"></span></th>';
@@ -596,7 +614,11 @@
     // ====================================================================
     function startPolling() { if (!state.timer) state.timer = setInterval(function () { if (!document.hidden) refresh(); }, POLL_MS); }
     function stopPolling() { if (state.timer) { clearInterval(state.timer); state.timer = null; } }
-    function onEnter() { build(); refresh(); startPolling(); }
+    function onEnter() {
+        build(); refresh(); startPolling();
+        // фоном тянем таблицу терминала — нужна для ОДХС в карточке компании по клику
+        if (typeof window.stkEnsureLoaded === 'function') { try { window.stkEnsureLoaded(); } catch (e) {} }
+    }
     function onLeave() { stopPolling(); hideTip(); }
 
     var relayoutTimer = null;
