@@ -102,12 +102,17 @@
         return Math.round(v).toLocaleString('ru-RU');
     }
 
-    // Цвет плитки по дневному изменению (нейтральный slate → зелёный/красный)
-    var C_NEU = [110, 118, 132], C_POS = [22, 178, 98], C_NEG = [224, 60, 58];
+    // Цвет плитки по дневному изменению. Тёмно-нейтральный центр (глубокий
+    // графит, а не блёклый slate) → насыщенный зелёный/красный. Гамма-кривая
+    // (k^0.68) поднимает цвет даже на небольших движениях, чтобы карта не
+    // «расплывалась» в серый при типичных дневных колебаниях ±1%.
+    var C_NEU = [48, 56, 70], C_POS = [29, 194, 117], C_NEG = [235, 70, 70];
+    var GAMMA = 0.68;
     function lerp(a, b, t) { return Math.round(a + (b - a) * t); }
     function rgbOf(p) {
         if (p == null || isNaN(p)) p = 0;
-        var t = clamp(-CAP, p, CAP) / CAP, to = t >= 0 ? C_POS : C_NEG, k = Math.abs(t);
+        var t = clamp(-CAP, p, CAP) / CAP, to = t >= 0 ? C_POS : C_NEG;
+        var k = Math.pow(Math.abs(t), GAMMA);
         return [lerp(C_NEU[0], to[0], k), lerp(C_NEU[1], to[1], k), lerp(C_NEU[2], to[2], k)];
     }
     function tileColor(p) { var c = rgbOf(p); return 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')'; }

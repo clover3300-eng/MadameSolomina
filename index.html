@@ -298,6 +298,9 @@
 
         <!-- ===== TAB: РЫНОК (дашборд) ===== -->
         <div id="panel-market" class="tab-panel">
+            <!-- Рыночные данные — тёмная LIVE-полоска (рендерится из js/market-livebar.js).
+                 Стоит выше заголовка и переключателей — первой строкой страницы. -->
+            <div class="dash2-livebar" id="mkLiveBar" aria-label="Рыночные данные в реальном времени"></div>
             <!-- Заголовок страницы — в стиле дашборда («Главная») -->
             <div class="d3-head mkd-head">
                 <div class="d3-head-l">
@@ -315,8 +318,6 @@
                     </button>
                 </div>
             </div>
-            <!-- Рыночные данные — тёмная LIVE-полоска (рендерится из js/market-livebar.js) -->
-            <div class="dash2-livebar" id="mkLiveBar" aria-label="Рыночные данные в реальном времени"></div>
             <!-- Индекс МосБиржи — интерактивный график TradingView (рендерится из js/market-chart.js) -->
             <section class="mk-chart-card" id="mkChartCard" aria-label="График индекса МосБиржи">
                 <div class="mk-chart-head">

@@ -28,7 +28,7 @@
         return {
             autosize: true,
             symbol: 'RUS:IRUS',
-            interval: 'D',
+            interval: 'W',
             timezone: 'Europe/Moscow',
             theme: dark ? 'dark' : 'light',
             style: '1',
