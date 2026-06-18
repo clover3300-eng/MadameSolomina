@@ -29,6 +29,7 @@
             autosize: true,
             symbol: 'RUS:IRUS',
             interval: 'W',
+            range: '60M',   // фиксированный диапазон (5 лет) → график заполняет всю ширину виджета (не «прижат» вправо)
             timezone: 'Europe/Moscow',
             theme: dark ? 'dark' : 'light',
             style: '1',

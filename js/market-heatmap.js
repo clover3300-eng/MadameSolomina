@@ -33,8 +33,9 @@
 
     var POLL_MS = 30000;     // период автообновления котировок
     var CAP = 3;             // насыщение цвета при изменении ±3% за день
-    var HEADER_H = 19;       // высота полосы с названием сектора
-    var GAP = 1.5;           // «гэп» между плитками
+    var HEADER_H = 22;       // высота полосы с названием сектора
+    var GAP = 2;             // «гэп» между плитками (по GAP с каждой стороны → ~4px между)
+    var SECGAP = 8;          // «гэп»-жёлоб вокруг каждого сектора (бенто-разделение)
 
     // Отраслевые индексы Мосбиржи → сектор. Состав каждого = тикеры сектора;
     // тянем динамически (порядок задаёт приоритет при пересечениях).
@@ -102,21 +103,27 @@
         return Math.round(v).toLocaleString('ru-RU');
     }
 
-    // Цвет плитки по дневному изменению. Тёмно-нейтральный центр (глубокий
-    // графит, а не блёклый slate) → насыщенный зелёный/красный. Гамма-кривая
-    // (k^0.68) поднимает цвет даже на небольших движениях, чтобы карта не
-    // «расплывалась» в серый при типичных дневных колебаниях ±1%.
-    var C_NEU = [48, 56, 70], C_POS = [29, 194, 117], C_NEG = [235, 70, 70];
-    var GAMMA = 0.68;
-    function lerp(a, b, t) { return Math.round(a + (b - a) * t); }
-    function rgbOf(p) {
+    // Цвет плитки по дневному изменению — диверг-палитра OKLCH (бренд):
+    // рост — мята (hue 158), падение — клэй/терракота (hue 44). В светлой теме
+    // нейтраль почти белая (L .955) → насыщенный, но всё ещё светлый цвет
+    // (тёмный текст поверх); в тёмной теме — тёмная нейтраль → насыщенный (светлый
+    // текст). Гамма + «мёртвая зона» поднимают цвет даже на небольших движениях.
+    var COLOR_LIGHT = { neutralL: 0.955, neutralC: 0.012, strongL: 0.74, strongC: 0.115, gamma: 0.80, dead: 0.05 };
+    var COLOR_DARK  = { neutralL: 0.300, neutralC: 0.016, strongL: 0.55, strongC: 0.135, gamma: 0.85, dead: 0.04 };
+    var POS_HUE = 158, NEG_HUE = 44;
+    function colorCfg() { return document.body.classList.contains('dark-mode') ? COLOR_DARK : COLOR_LIGHT; }
+    function oklchOf(p) {
         if (p == null || isNaN(p)) p = 0;
-        var t = clamp(-CAP, p, CAP) / CAP, to = t >= 0 ? C_POS : C_NEG;
-        var k = Math.pow(Math.abs(t), GAMMA);
-        return [lerp(C_NEU[0], to[0], k), lerp(C_NEU[1], to[1], k), lerp(C_NEU[2], to[2], k)];
+        var cfg = colorCfg();
+        var a = clamp(-CAP, p, CAP) / CAP, m = Math.abs(a), hue = a >= 0 ? POS_HUE : NEG_HUE;
+        var t = m < cfg.dead ? 0 : (m - cfg.dead) / (1 - cfg.dead);
+        var ease = Math.pow(t, cfg.gamma);
+        var L = cfg.neutralL + (cfg.strongL - cfg.neutralL) * ease;
+        var C = cfg.neutralC + (cfg.strongC - cfg.neutralC) * ease;
+        return { L: L, C: C, hue: hue };
     }
-    function tileColor(p) { var c = rgbOf(p); return 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')'; }
-    function glowColor(p) { var c = rgbOf(p); return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',.6)'; }
+    function tileColor(p) { var c = oklchOf(p); return 'oklch(' + c.L.toFixed(3) + ' ' + c.C.toFixed(3) + ' ' + c.hue + ')'; }
+    function glowColor(p) { var hue = (p != null && p < 0) ? NEG_HUE : POS_HUE; return 'oklch(0.62 0.17 ' + hue + ' / 0.55)'; }
     var MOVER = 2; // |изм.%| ≥ этого → плитка «светится» (крупное движение)
     // Устойчивый приглушённый цвет сектора (для точки в таблице)
     function secHue(name) { var h = 0, i; for (i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360; return h; }
@@ -278,9 +285,14 @@
         var sectors = [], tiles = [];
         secRects.forEach(function (sr) {
             var g = sr.node.node, avg = sr.node.avg;
-            var withHead = sr.h > 42 && sr.w > 62;
-            sectors.push({ name: g.name, rect: sr, avg: avg, withHead: withHead });
-            var inner = withHead ? { x: sr.x, y: sr.y + HEADER_H, w: sr.w, h: sr.h - HEADER_H } : sr;
+            // жёлоб вокруг сектора (бенто-разделение): ужимаем прямоугольник на SECGAP
+            var inset = SECGAP / 2;
+            var bx = sr.x + inset, by = sr.y + inset,
+                bw = Math.max(0, sr.w - SECGAP), bh = Math.max(0, sr.h - SECGAP);
+            var withHead = bh > 42 && bw > 62;
+            var box = { x: bx, y: by, w: bw, h: bh };
+            sectors.push({ name: g.name, rect: box, avg: avg, withHead: withHead });
+            var inner = withHead ? { x: bx, y: by + HEADER_H, w: bw, h: bh - HEADER_H } : box;
             var items = g.rows.map(function (r) { return { value: sizeValue(r), row: r }; });
             squarify(items, inner).forEach(function (t) { tiles.push({ rect: t, row: t.node.row }); });
         });
@@ -343,10 +355,13 @@
             el.style.display = s.withHead ? 'flex' : 'none';
             el.style.left = s.rect.x + 'px'; el.style.top = s.rect.y + 'px';
             el.style.width = s.rect.w + 'px'; el.style.height = HEADER_H + 'px';
-            var showChg = s.rect.w > 130;
-            el.innerHTML = '<span class="mh-sec-name">' + esc(s.name) + '</span>' +
-                (showChg ? '<span class="mh-sec-chg" style="color:' + tileColor(s.avg) + '">' + fmtPct(s.avg) + '</span>' : '') +
-                '<span class="mh-sec-zoom">⤢</span>';
+            // адаптив заголовка: размер шрифта и состав под ширину сектора, имя усекается
+            var sw = s.rect.w;
+            var nmSize = sw < 96 ? 9.5 : (sw < 150 ? 10.5 : 11.5);
+            var showChg = sw >= 92, showZoom = sw >= 118;
+            el.innerHTML = '<span class="mh-sec-name" style="font-size:' + nmSize + 'px">' + esc(s.name) + '</span>' +
+                (showChg ? '<span class="mh-sec-chg ' + (s.avg >= 0 ? 'up' : 'down') + '">' + fmtPct(s.avg) + '</span>' : '') +
+                (showZoom ? '<span class="mh-sec-zoom">⤢</span>' : '');
             if (fresh) { void el.offsetWidth; el.style.transition = ''; } // коммит геометрии → дальше плавно
             seen[s.name] = true;
         });
@@ -377,6 +392,7 @@
             chgEl.textContent = (p != null ? (p >= 0 ? '▲ ' : '▼ ') + Math.abs(p).toFixed(2) + '%' : '—');
             chgEl.className = 'mh-idx-chg' + (p > 0 ? ' up' : p < 0 ? ' down' : '');
         }
+        // ширина рынка — соотношение + метр + проценты
         var up = 0, down = 0, flat = 0;
         state.rows.forEach(function (r) { if (r.chg > 0) up++; else if (r.chg < 0) down++; else flat++; });
         var tot = up + down + flat || 1;
@@ -386,16 +402,30 @@
             bar.querySelector('i.flat').style.width = (flat / tot * 100) + '%';
             bar.querySelector('i.down').style.width = (down / tot * 100) + '%';
         }
+        var ratio = c.querySelector('.mh-brd-ratio');
+        if (ratio) ratio.innerHTML = '<b class="up">' + up + '</b> / <b class="down">' + down + '</b>';
         var lbl = c.querySelector('.mh-breadth-lbl');
-        if (lbl) lbl.innerHTML = '<b class="up">' + up + ' ↑</b><b>' + flat + ' →</b><b class="down">' + down + ' ↓</b>';
-        var withChg = state.rows.filter(function (r) { return r.chg != null; }).slice().sort(function (a, b) { return b.chg - a.chg; });
-        var top = withChg[0], bot = withChg[withChg.length - 1];
-        var lead = c.querySelector('.mh-pulse-leaders');
-        if (lead && top && bot) {
-            lead.innerHTML =
-                '<span class="mh-leader up"><span class="tk">' + esc(top.ticker) + '</span> ' + fmtPct(top.chg) + '</span>' +
-                '<span class="mh-leader down"><span class="tk">' + esc(bot.ticker) + '</span> ' + fmtPct(bot.chg) + '</span>';
+        if (lbl) lbl.innerHTML = '<span class="up">' + Math.round(up / tot * 100) + '% растут</span>' +
+            '<span class="flat">' + flat + ' нейтр.</span>' +
+            '<span class="down">' + Math.round(down / tot * 100) + '% падают</span>';
+        // лидеры дня — always-on двухколоночный лидерборд (top-3 рост / top-3 падение)
+        // с пропорциональными барами (ширина ∝ |изм.| / макс. по рынку), без выпадашки
+        var withChg = state.rows.filter(function (r) { return r.chg != null; });
+        var gain = withChg.filter(function (r) { return r.chg > 0; }).sort(function (a, b) { return b.chg - a.chg; }).slice(0, 3);
+        var lose = withChg.filter(function (r) { return r.chg < 0; }).sort(function (a, b) { return a.chg - b.chg; }).slice(0, 3);
+        var maxAbs = 0; withChg.forEach(function (r) { var a = Math.abs(r.chg); if (a > maxAbs) maxAbs = a; });
+        maxAbs = maxAbs || 1;
+        function moverRow(r, dir) {
+            if (!r) return '<div class="mh-mv ghost"></div>';
+            var w = Math.max(8, Math.abs(r.chg) / maxAbs * 100);
+            return '<div class="mh-mv ' + dir + '" style="--w:' + w.toFixed(1) + '%">' +
+                '<span class="mh-mv-fill"></span>' +
+                '<span class="mh-mv-tk">' + esc(r.ticker) + '</span>' +
+                '<span class="mh-mv-pc">' + fmtPct(r.chg) + '</span></div>';
         }
+        var upCol = c.querySelector('.mh-mv-col.up'), dnCol = c.querySelector('.mh-mv-col.down');
+        if (upCol) upCol.innerHTML = [0, 1, 2].map(function (i) { return moverRow(gain[i], 'up'); }).join('');
+        if (dnCol) dnCol.innerHTML = [0, 1, 2].map(function (i) { return moverRow(lose[i], 'down'); }).join('');
     }
 
     // ---------- Хлебные крошки (drill-down) ----------
@@ -451,12 +481,15 @@
     //  СОСТОЯНИЯ / ПОДПИСЬ
     // ====================================================================
     function setMeta() {
-        var meta = $('.mh-meta'); if (!meta) return;
-        var live = state.status === 'ready';
-        meta.innerHTML = '<span class="mh-dot' + (live ? ' live' : '') + '"></span>' +
-            (state.updated ? 'Обновлено ' + esc(state.updated) + ' (МСК)' : 'Загрузка…') +
-            ' · данные ISS Московской биржи, задержка ~15 мин · размер плитки — ' +
-            (state.sizeMode === 'value' ? 'объём торгов' : state.sizeMode === 'change' ? 'модуль изменения' : 'вес в индексе') +
+        var c = card(); if (!c) return;
+        // LIVE-капсула в шапке: пульс + время последнего апдейта
+        var liveEl = c.querySelector('.mh-live'), tEl = c.querySelector('.mh-live-time');
+        if (liveEl) liveEl.className = 'mh-live' + (state.status === 'ready' ? ' live' : state.status === 'error' ? ' stale' : '');
+        if (tEl) tEl.textContent = state.updated ? state.updated : '—';
+        // тонкая подпись-источник под статбаром
+        var meta = c.querySelector('.mh-meta-txt');
+        if (meta) meta.textContent = 'Данные ISS Московской биржи · задержка ~15 мин · ' +
+            'размер плитки — ' + (state.sizeMode === 'value' ? 'объём торгов' : state.sizeMode === 'change' ? 'модуль изменения' : 'вес в индексе') +
             ', цвет — изменение за день';
     }
     function overlay() { return $('.mh-overlay'); }
@@ -509,7 +542,7 @@
             '<div class="mh-tip-name">' + esc(r.name) + '</div>' +
             '<div class="mh-tip-sub">' + esc(r.ticker) + ' · ' + esc(r.sector) + '</div>' +
             '<div class="mh-tip-row"><span>Цена</span><b>' + fmtPrice(r.last) + ' ₽</b></div>' +
-            '<div class="mh-tip-row"><span>Изм. за день</span><b style="color:' + tileColor(r.chg) + '">' + fmtPct(r.chg) + '</b></div>' +
+            '<div class="mh-tip-row"><span>Изм. за день</span><b style="color:' + (r.chg >= 0 ? 'var(--mh-up)' : 'var(--mh-down)') + '">' + fmtPct(r.chg) + '</b></div>' +
             '<div class="mh-tip-row"><span>Вес в индексе</span><b>' + (r.weight != null ? r.weight.toFixed(2) + '%' : '—') + '</b></div>' +
             '<div class="mh-tip-row"><span>Объём за день</span><b>' + fmtValue(r.value) + ' ₽</b></div>' +
             '<div class="mh-tip-hint">Клик — карточка компании</div>';
@@ -553,7 +586,7 @@
             '    </div>' +
             '  </div>' +
             '  <div class="mh-head-ctrl">' +
-            '    <span class="mh-legend"><span>−' + CAP + '%</span><span class="mh-legend-bar"></span><span>+' + CAP + '%</span></span>' +
+            '    <span class="mh-live"><i class="mh-live-dot"></i><b>LIVE</b><span class="mh-live-time">—</span></span>' +
             '    <span class="mh-seg" role="tablist">' +
             '      <button class="mh-seg-btn active" type="button" data-size="weight">Вес</button>' +
             '      <button class="mh-seg-btn" type="button" data-size="value">Объём</button>' +
@@ -564,21 +597,27 @@
             '</div>' +
             '<div class="mh-pulse">' +
             '  <div class="mh-kpi mh-kpi-idx">' +
-            '    <span class="mh-kpi-lbl">Индекс IMOEX</span>' +
+            '    <div class="mh-idx-top"><span class="mh-idx-tag">IMOEX</span><span class="mh-idx-lbl">Индекс МосБиржи</span></div>' +
             '    <div class="mh-pulse-idx"><span class="mh-idx-val">—</span><span class="mh-idx-chg">—</span></div>' +
             '  </div>' +
             '  <div class="mh-kpi mh-kpi-breadth">' +
-            '    <span class="mh-kpi-lbl">Ширина рынка</span>' +
-            '    <div class="mh-pulse-breadth"><div class="mh-breadth-bar"><i class="up"></i><i class="flat"></i><i class="down"></i></div><div class="mh-breadth-lbl"></div></div>' +
+            '    <div class="mh-brd-top"><span class="mh-kpi-lbl">Ширина рынка</span><span class="mh-brd-ratio"></span></div>' +
+            '    <div class="mh-breadth-bar"><i class="up"></i><i class="flat"></i><i class="down"></i></div>' +
+            '    <div class="mh-breadth-lbl"></div>' +
             '  </div>' +
             '  <div class="mh-kpi mh-kpi-leaders">' +
             '    <span class="mh-kpi-lbl">Лидеры дня</span>' +
-            '    <div class="mh-pulse-leaders"></div>' +
+            '    <div class="mh-movers"><div class="mh-mv-col up"></div><div class="mh-mv-col down"></div></div>' +
             '  </div>' +
             '</div>' +
-            '<div class="mh-meta"><span class="mh-dot"></span>Загрузка…</div>' +
+            '<div class="mh-meta">' +
+            '  <span class="mh-legend"><span>−' + CAP + '%</span><span class="mh-legend-bar"></span><span>+' + CAP + '%</span></span>' +
+            '  <span class="mh-meta-txt"></span>' +
+            '</div>' +
             '<div class="mh-bread" hidden></div>' +
-            '<div class="mh-plot"><div class="mh-tip"></div><div class="mh-overlay" hidden></div></div>' +
+            '<div class="mh-plot">' +
+            '  <div class="mh-tip"></div><div class="mh-overlay" hidden></div>' +
+            '</div>' +
             '<div class="mh-table-wrap"><table class="mh-table"><thead><tr>' +
             '<th class="mh-th-rank">#</th>' +
             COLS.map(function (col) {
@@ -659,6 +698,16 @@
     });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && state.zoom && isMarketActive()) exitZoom(); });
     window.addEventListener('resize', relayout);
+    // Перерисовка при смене темы — цвета плиток (OKLCH) зависят от dark-mode
+    var _lastDark = document.body.classList.contains('dark-mode');
+    if (window.MutationObserver) {
+        new MutationObserver(function () {
+            var d = document.body.classList.contains('dark-mode');
+            if (d === _lastDark) return;
+            _lastDark = d;
+            if (state.rows && isMarketActive()) { renderPlot(); renderPulse(); renderTable(); }
+        }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    }
     document.addEventListener('DOMContentLoaded', function () {
         if (window.ResizeObserver) { var c = card(); if (c) new ResizeObserver(relayout).observe(c); }
         if (isMarketActive()) setTimeout(onEnter, 300);
