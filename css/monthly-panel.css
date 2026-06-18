@@ -1,0 +1,93 @@
+/* ============================================================
+   ВКЛАДКА «ЕЖЕМЕСЯЧНЫЙ ДОХОД» (#panel-monthly)
+   ------------------------------------------------------------
+   Сюда переехал блок «Доход с Портфеля» (бывш. вкладка «Рынок»):
+   #marketPanelContent с баннером дохода + калькулятором. Здесь они
+   показываются РАЗДЕЛЬНО — баннер отдельной карточкой и калькулятор
+   отдельной карточкой (без сворачивания-аккордеона).
+   Рельса с котировками/ставками (#mkLeftRail) скрыта — её элементы
+   остаются в DOM как источники данных для дашборда.
+   Загружается ПОСЛЕ site-layout.css, чтобы перебить «рыночную» сетку.
+   ============================================================ */
+
+#panel-monthly { width: 100%; max-width: none !important; }
+#panel-monthly.active { display: flex; flex-direction: column; gap: 16px; }
+@media (min-width: 1024px) {
+    #panel-monthly { max-width: none !important; padding: 20px 30px 84px !important; margin: 0 !important; }
+}
+@media (min-width: 1440px) {
+    #panel-monthly { padding: 24px 40px 84px !important; }
+}
+#panel-monthly .mkd-head { margin-bottom: 0; }
+
+/* Контейнер контента — одна центрированная колонка (вместо «зеркальной» сетки) */
+#panel-monthly #marketPanelContent {
+    display: block !important;
+    grid-template-columns: none !important;
+    max-width: 920px;
+    width: 100%;
+    margin: 0 auto !important;
+    padding: 0 !important;
+}
+
+/* Рельса котировок/ставок скрыта — данные остаются источником для дашборда */
+#panel-monthly #mkLeftRail { display: none !important; }
+#panel-monthly #mkRightCol { display: block !important; width: 100%; min-width: 0; }
+/* Служебные/скрытые блоки экрана «Интересное» */
+#panel-monthly .market-tiles-grid,
+#panel-monthly #interestingGhostTrigger,
+#panel-monthly .infographic-section { display: none !important; }
+
+/* ---------- Аккордеон → прозрачный стек из двух карточек ---------- */
+#panel-monthly #calcAccordion {
+    display: flex !important;
+    flex-direction: column;
+    gap: 16px;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+    animation: none !important;
+}
+/* Заголовок открытого состояния + шеврон баннера не нужны — оба блока всегда видны */
+#panel-monthly #calcAccordion .calc-open-header { display: none !important; }
+#panel-monthly .nd-ib-chevron { display: none !important; }
+
+/* ---------- Карточка 1: баннер дохода ---------- */
+#panel-monthly .nd-income-banner {
+    display: block !important;
+    margin: 0 !important;
+    cursor: default !important;
+    border-radius: 20px;
+    box-shadow: 0 16px 36px rgba(24, 38, 60, 0.08);
+}
+#panel-monthly .nd-income-banner:active { opacity: 1 !important; }
+
+/* ---------- Карточка 2: калькулятор ---------- */
+#panel-monthly #calcAccordion .calc-content-wrapper {
+    display: block !important;
+    grid-template-rows: 1fr !important;
+}
+#panel-monthly #calcAccordion .calc-accordion-content {
+    display: block !important;
+    overflow: visible;
+    padding: 20px 20px 24px !important;
+    background: #ffffff;
+    border: 1px solid rgba(44, 54, 76, 0.07);
+    border-radius: 20px;
+    box-shadow: 0 16px 36px rgba(24, 38, 60, 0.08);
+}
+body.dark-mode #panel-monthly #calcAccordion .calc-accordion-content {
+    background: #1d2734;
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+}
+
+/* Узкие экраны: контент во всю ширину */
+@media (max-width: 1023px) {
+    #panel-monthly #marketPanelContent { max-width: none; }
+}

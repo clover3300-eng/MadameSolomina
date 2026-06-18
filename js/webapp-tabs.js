@@ -420,6 +420,20 @@ function populatePanels() {
         host.appendChild(left);
         host.appendChild(right);
     })();
+
+    // === Ежемесячный доход: баннер + калькулятор показываем РАЗДЕЛЬНО ===
+    // marketPanelContent теперь живёт во вкладке «Ежемесячный доход». Аккордеон
+    // больше не сворачивается: баннер и калькулятор видны одновременно как две
+    // отдельные карточки. Снимаем интерактивные обработчики сворачивания.
+    (function() {
+        const acc = document.getElementById('calcAccordion');
+        if (!acc) return;
+        acc.classList.remove('collapsed');                 // калькулятор всегда раскрыт
+        const banner = document.getElementById('ndIncomeBanner');
+        if (banner) { banner.onclick = null; banner.removeAttribute('onclick'); banner.style.display = ''; }
+        const openHdr = document.getElementById('calcOpenHeader');
+        if (openHdr) { openHdr.onclick = null; openHdr.removeAttribute('onclick'); }
+    })();
 }
 
 function switchTab(tabId) {
@@ -470,8 +484,12 @@ function switchTab(tabId) {
         renderAuroraOfzList();
         setTimeout(updateRebalanceTabCounts, 300);
     }
-    if (tabId === 'market') {
+    if (tabId === 'monthly') {
+        // Анимация ставок + пересчёт дохода (баннер + калькулятор переехали сюда)
         initInterestingAnimations && initInterestingAnimations();
+        if (typeof distributeMonthlyInvestment === 'function') {
+            setTimeout(function() { try { distributeMonthlyInvestment(); } catch (e) {} }, 60);
+        }
     }
     if (tabId === 'portfolio' && window.v3SyncCapHeight) {
         setTimeout(window.v3SyncCapHeight, 80);
