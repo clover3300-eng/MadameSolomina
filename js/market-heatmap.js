@@ -32,10 +32,19 @@
     }
 
     var POLL_MS = 30000;     // период автообновления котировок
-    var CAP = 3;             // насыщение цвета при изменении ±3% за день
     var HEADER_H = 22;       // высота полосы с названием сектора
-    var GAP = 2;             // «гэп» между плитками (по GAP с каждой стороны → ~4px между)
-    var SECGAP = 8;          // «гэп»-жёлоб вокруг каждого сектора (бенто-разделение)
+    var GAP = 3;             // «гэп» между плитками (по GAP с каждой стороны → ~6px между)
+    var SECGAP = 10;         // «гэп»-жёлоб вокруг каждого сектора (бенто-разделение)
+
+    // Периоды тепловой карты: насыщение цвета (±cap%) и порог «мувера» подобраны
+    // под типичный размах изменений за день/неделю/месяц.
+    var PERIODS = {
+        day:   { cap: 3,  mover: 2,  word: 'день',   short: 'День' },
+        week:  { cap: 8,  mover: 5,  word: 'неделю', short: 'Неделя' },
+        month: { cap: 15, mover: 10, word: 'месяц',  short: 'Месяц' }
+    };
+    function pcfg() { return PERIODS[state.period] || PERIODS.day; }
+    var CAP = PERIODS.day.cap;  // дефолтное насыщение (для статичной легенды в build)
 
     // Отраслевые индексы Мосбиржи → сектор. Состав каждого = тикеры сектора;
     // тянем динамически (порядок задаёт приоритет при пересечениях).
@@ -73,7 +82,10 @@
         sectorsMap: null,    // { TICKER: sector }
         rows: null,          // [{ticker,name,sector,weight,last,chg,value}]
         index: null,         // { value, chg }
-        sizeMode: 'weight',  // 'weight' | 'value'
+        sizeMode: 'weight',  // 'weight' | 'value' | 'change'
+        period: 'day',       // 'day' | 'week' | 'month' — период изменения (цвет/таблица)
+        refCloses: {},       // { week: {TICKER:close}, month: {...} } — закрытие на опорную дату
+        refIndex: {},        // { week: closeIMOEX, month: ... }
         zoom: null,          // имя сектора при drill-down или null
         sortKey: 'weight', sortDir: -1,
         prevPrices: {},      // последняя цена по тикеру (для вспышек)
@@ -114,8 +126,8 @@
     function colorCfg() { return document.body.classList.contains('dark-mode') ? COLOR_DARK : COLOR_LIGHT; }
     function oklchOf(p) {
         if (p == null || isNaN(p)) p = 0;
-        var cfg = colorCfg();
-        var a = clamp(-CAP, p, CAP) / CAP, m = Math.abs(a), hue = a >= 0 ? POS_HUE : NEG_HUE;
+        var cfg = colorCfg(), cap = pcfg().cap;
+        var a = clamp(-cap, p, cap) / cap, m = Math.abs(a), hue = a >= 0 ? POS_HUE : NEG_HUE;
         var t = m < cfg.dead ? 0 : (m - cfg.dead) / (1 - cfg.dead);
         var ease = Math.pow(t, cfg.gamma);
         var L = cfg.neutralL + (cfg.strongL - cfg.neutralL) * ease;
@@ -124,7 +136,7 @@
     }
     function tileColor(p) { var c = oklchOf(p); return 'oklch(' + c.L.toFixed(3) + ' ' + c.C.toFixed(3) + ' ' + c.hue + ')'; }
     function glowColor(p) { var hue = (p != null && p < 0) ? NEG_HUE : POS_HUE; return 'oklch(0.62 0.17 ' + hue + ' / 0.55)'; }
-    var MOVER = 2; // |изм.%| ≥ этого → плитка «светится» (крупное движение)
+    function moverNow() { return pcfg().mover; } // |изм.%| ≥ этого → плитка «светится»
     // Устойчивый приглушённый цвет сектора (для точки в таблице)
     function secHue(name) { var h = 0, i; for (i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360; return h; }
     function secDot(name) { return 'hsl(' + secHue(name) + ',42%,55%)'; }
@@ -226,10 +238,74 @@
         for (var t in cons) {
             if (!cons.hasOwnProperty(t)) continue;
             var q = md[t] || {};
+            var dchg = q.chg != null ? q.chg : null;
             rows.push({ ticker: t, name: cons[t].name || t, sector: sectorOf(t), weight: cons[t].weight,
-                last: q.last != null ? q.last : null, chg: q.chg != null ? q.chg : null, value: q.value || 0 });
+                last: q.last != null ? q.last : null, chgDay: dchg, chg: dchg, value: q.value || 0 });
         }
         return rows;
+    }
+
+    // ----- Историческое закрытие для периодов «неделя/месяц» (ISS history) -----
+    function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+    function dateStr(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+    function targetDate(period) {
+        var d = new Date(); d.setHours(12, 0, 0, 0);
+        if (period === 'week') d.setDate(d.getDate() - 7); else d.setDate(d.getDate() - 30);
+        return d;
+    }
+    // Все акции TQBR за дату (с пагинацией) → { SECID: close } или null, если торгов не было
+    function histDay(ds) {
+        var map = {}, got = false;
+        function page(start) {
+            return jget(ISS + 'history/engines/stock/markets/shares/boards/TQBR/securities.json' +
+                '?iss.meta=off&iss.only=history&history.columns=SECID,CLOSE&date=' + ds + '&start=' + start)
+                .then(function (j) {
+                    var h = j.history, c = h.columns, d = h.data, si = c.indexOf('SECID'), ci = c.indexOf('CLOSE');
+                    for (var i = 0; i < d.length; i++) { if (d[i][ci] != null) { map[d[i][si]] = d[i][ci]; got = true; } }
+                    if (d.length >= 100 && start < 500) return page(start + 100);
+                    return null;
+                });
+        }
+        return page(0).then(function () { return got ? map : null; });
+    }
+    function histIndex(ds) {
+        // per-security path: возвращает историю ТОЛЬКО IMOEX (общий /securities эндпоинт
+        // не фильтрует по securities= и пагинирует, IMOEX уезжает за первую страницу)
+        return jget(ISS + 'history/engines/stock/markets/index/securities/IMOEX.json' +
+            '?iss.meta=off&iss.only=history&history.columns=CLOSE&from=' + ds + '&till=' + ds)
+            .then(function (j) { var d = j.history.data; return d.length ? d[0][0] : null; })
+            .catch(function () { return null; });
+    }
+    // Находит ближайший торговый день ≤ target (ретрай назад по будням/праздникам)
+    function fetchRefCloses(period) {
+        if (state.refCloses[period]) return Promise.resolve();
+        var base = targetDate(period);
+        function tryDay(back) {
+            if (back > 7) return Promise.reject(new Error('no trading day for ' + period));
+            var dd = new Date(base); dd.setDate(dd.getDate() - back); var ds = dateStr(dd);
+            return histDay(ds).then(function (m) { return m ? { map: m, ds: ds } : tryDay(back + 1); });
+        }
+        return tryDay(0).then(function (res) {
+            state.refCloses[period] = res.map;
+            return histIndex(res.ds).then(function (ic) { state.refIndex[period] = ic; });
+        });
+    }
+    // Пересчёт r.chg под выбранный период (дневное — из marketdata, иначе от опорного закрытия)
+    function applyPeriod() {
+        if (!state.rows) return;
+        var p = state.period;
+        if (p === 'day') { state.rows.forEach(function (r) { r.chg = r.chgDay; }); return; }
+        var ref = state.refCloses[p] || {};
+        state.rows.forEach(function (r) {
+            var rc = ref[r.ticker];
+            r.chg = (rc && r.last != null && rc > 0) ? (r.last - rc) / rc * 100 : r.chgDay;
+        });
+    }
+    function indexChgNow() {
+        if (!state.index) return null;
+        if (state.period === 'day') return state.index.chg;
+        var ri = state.refIndex[state.period];
+        return (ri && state.index.value != null && ri > 0) ? (state.index.value - ri) / ri * 100 : state.index.chg;
     }
 
     // ====================================================================
@@ -242,21 +318,30 @@
     }
     function applyTileLook(el, r) {
         el.style.setProperty('--tile', tileColor(r.chg));
-        var mover = r.chg != null && Math.abs(r.chg) >= MOVER;
+        var mover = r.chg != null && Math.abs(r.chg) >= moverNow();
         el.classList.toggle('mh-mover', mover);
         if (mover) el.style.setProperty('--glow', glowColor(r.chg)); else el.style.removeProperty('--glow');
     }
 
     function tileText(row, w, h) {
-        if (w < 22 || h < 14) return '';
-        var base = Math.min(w / 4.2, h / 2.7), tkFs = clamp(8.5, base, 16);
-        var html = '<span class="mh-tk" style="font-size:' + tkFs.toFixed(1) + 'px">' + esc(row.ticker) + '</span>';
-        if (h >= 30 && w >= 40) {
-            var pcFs = clamp(8, tkFs * 0.78, 12.5);
+        if (Math.min(w, h) < 13 || (w < 20 && h < 38)) return '';
+        var tk = esc(row.ticker), len = row.ticker.length;
+        // Узкая, но высокая плитка → пишем тикер вертикально (сверху вниз)
+        if (w < 34 && h >= w * 1.5 && h >= 44) {
+            var vFs = clamp(8.5, Math.min(w / 2.0, h / (len * 0.92), 15), 15);
+            return '<span class="mh-tk mh-tk-vert" style="font-size:' + vFs.toFixed(1) + 'px">' + tk + '</span>';
+        }
+        // Горизонтально: размер шрифта так, чтобы тикер влезал по ширине (len символов),
+        // дополнительно ограничен высотой; padding учтён множителем 0.86.
+        var fit = (w * 0.86) / (len * 0.62);
+        var tkFs = clamp(7.5, Math.min(fit, h / 2.8, 18), 18);
+        var html = '<span class="mh-tk" style="font-size:' + tkFs.toFixed(1) + 'px">' + tk + '</span>';
+        if (h >= 30 && w >= 38) {
+            var pcFs = clamp(8, tkFs * 0.74, 12.5);
             html += '<span class="mh-pc" style="font-size:' + pcFs.toFixed(1) + 'px">' + fmtPct(row.chg) + '</span>';
         }
-        if (h >= 62 && w >= 74) {
-            var prFs = clamp(8, tkFs * 0.68, 11.5);
+        if (h >= 60 && w >= 70) {
+            var prFs = clamp(8, tkFs * 0.64, 11.5);
             html += '<span class="mh-pr" style="font-size:' + prFs.toFixed(1) + 'px">' + fmtPrice(row.last) + ' ₽</span>';
         }
         return html;
@@ -388,7 +473,7 @@
         var valEl = c.querySelector('.mh-idx-val'), chgEl = c.querySelector('.mh-idx-chg');
         if (valEl) valEl.textContent = iv ? fmtIdx(iv.value) : '—';
         if (chgEl) {
-            var p = iv ? iv.chg : null;
+            var p = indexChgNow();
             chgEl.textContent = (p != null ? (p >= 0 ? '▲ ' : '▼ ') + Math.abs(p).toFixed(2) + '%' : '—');
             chgEl.className = 'mh-idx-chg' + (p > 0 ? ' up' : p < 0 ? ' down' : '');
         }
@@ -456,7 +541,8 @@
         if (head) head.querySelectorAll('th').forEach(function (th) {
             var sorted = th.getAttribute('data-sort') === state.sortKey;
             th.classList.toggle('sorted', sorted);
-            var ar = th.querySelector('.mh-arrow'); if (ar) ar.textContent = sorted ? (state.sortDir < 0 ? '▼' : '▲') : '';
+            var ar = th.querySelector('.mh-arrow');
+            if (ar) ar.textContent = sorted ? (state.sortDir < 0 ? '▼' : '▲') : (th.classList.contains('mh-th-rank') ? '' : '↕');
         });
         var body = c.querySelector('.mh-table tbody'); if (!body) return;
         var html = '';
@@ -490,7 +576,7 @@
         var meta = c.querySelector('.mh-meta-txt');
         if (meta) meta.textContent = 'Данные ISS Московской биржи · задержка ~15 мин · ' +
             'размер плитки — ' + (state.sizeMode === 'value' ? 'объём торгов' : state.sizeMode === 'change' ? 'модуль изменения' : 'вес в индексе') +
-            ', цвет — изменение за день';
+            ', цвет — изменение за ' + pcfg().word;
     }
     function overlay() { return $('.mh-overlay'); }
     function hideOverlay() { var o = overlay(); if (o) o.hidden = true; }
@@ -519,6 +605,7 @@
                 state.rows = buildRows(state.constituents, res[0].map);
                 state.updated = res[0].upd;
                 if (res[1]) state.index = res[1];
+                applyPeriod();   // переложить дневное изм. на выбранный период (если не «день»)
                 state.status = 'ready'; hideOverlay();
                 render();
             }).catch(function (e) {
@@ -571,6 +658,22 @@
     function enterZoom(name) { if (state.zoom === name) return; state.zoom = name; hideTip(); render(); }
     function exitZoom() { if (!state.zoom) return; state.zoom = null; hideTip(); render(); }
 
+    // Обновляет подписи легенды ±cap% под выбранный период
+    function updateLegend() {
+        var lg = $('.mh-legend'); if (!lg) return;
+        var cap = pcfg().cap, kids = lg.children;
+        if (kids[0]) kids[0].textContent = '−' + cap + '%';
+        if (kids[2]) kids[2].textContent = '+' + cap + '%';
+    }
+    // Смена периода: при «неделя/месяц» лениво подтягивает опорные закрытия (кэш на сессию)
+    function selectPeriod(p) {
+        state.period = p; updateLegend();
+        if (p === 'day' || state.refCloses[p]) { applyPeriod(); render(); return; }
+        spin(true);
+        fetchRefCloses(p).catch(function (e) { if (window.console) console.warn('[market-heatmap] period', e); })
+            .then(function () { applyPeriod(); render(); spin(false); });
+    }
+
     // ====================================================================
     //  ПОСТРОЕНИЕ ОБОЛОЧКИ
     // ====================================================================
@@ -587,7 +690,12 @@
             '  </div>' +
             '  <div class="mh-head-ctrl">' +
             '    <span class="mh-live"><i class="mh-live-dot"></i><b>LIVE</b><span class="mh-live-time">—</span></span>' +
-            '    <span class="mh-seg" role="tablist">' +
+            '    <span class="mh-seg mh-seg-period" role="tablist" title="Период изменения (цвет карты)">' +
+            '      <button class="mh-seg-btn active" type="button" data-period="day">День</button>' +
+            '      <button class="mh-seg-btn" type="button" data-period="week">Неделя</button>' +
+            '      <button class="mh-seg-btn" type="button" data-period="month">Месяц</button>' +
+            '    </span>' +
+            '    <span class="mh-seg mh-seg-size" role="tablist" title="Размер плитки">' +
             '      <button class="mh-seg-btn active" type="button" data-size="weight">Вес</button>' +
             '      <button class="mh-seg-btn" type="button" data-size="value">Объём</button>' +
             '      <button class="mh-seg-btn" type="button" data-size="change">% изм.</button>' +
@@ -628,13 +736,21 @@
 
         plotEl = c.querySelector('.mh-plot');
 
-        // Переключатель размера
-        c.querySelectorAll('.mh-seg-btn').forEach(function (b) {
+        // Переключатель размера плитки (вес / объём / % изм.)
+        c.querySelectorAll('.mh-seg-size .mh-seg-btn').forEach(function (b) {
             b.addEventListener('click', function () {
                 if (b.classList.contains('active')) return;
-                c.querySelectorAll('.mh-seg-btn').forEach(function (x) { x.classList.remove('active'); });
+                c.querySelectorAll('.mh-seg-size .mh-seg-btn').forEach(function (x) { x.classList.remove('active'); });
                 b.classList.add('active'); state.sizeMode = b.getAttribute('data-size');
                 render();
+            });
+        });
+        // Переключатель периода (день / неделя / месяц) — меняет базу изменения (цвет/таблица)
+        c.querySelectorAll('.mh-seg-period .mh-seg-btn').forEach(function (b) {
+            b.addEventListener('click', function () {
+                if (b.classList.contains('active')) return;
+                c.querySelectorAll('.mh-seg-period .mh-seg-btn').forEach(function (x) { x.classList.remove('active'); });
+                b.classList.add('active'); selectPeriod(b.getAttribute('data-period'));
             });
         });
         c.querySelector('.mh-refresh').addEventListener('click', refresh);
