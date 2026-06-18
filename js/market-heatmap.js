@@ -52,6 +52,7 @@
 
     var REFRESH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>';
     var BACK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>';
+    var GRID_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/></svg>';
 
     // Колонки таблицы под картой
     var COLS = [
@@ -539,21 +540,36 @@
         var c = card(); if (!c || state.built) return;
         c.innerHTML =
             '<div class="mh-head">' +
-            '  <span class="mh-title">Тепловая карта</span>' +
-            '  <span class="mh-sym">Индекс МосБиржи · IMOEX</span>' +
-            '  <span class="mh-spacer"></span>' +
-            '  <span class="mh-legend"><span>−' + CAP + '%</span><span class="mh-legend-bar"></span><span>+' + CAP + '%</span></span>' +
-            '  <span class="mh-seg" role="tablist">' +
-            '    <button class="mh-seg-btn active" type="button" data-size="weight">Вес</button>' +
-            '    <button class="mh-seg-btn" type="button" data-size="value">Объём</button>' +
-            '    <button class="mh-seg-btn" type="button" data-size="change">% изм.</button>' +
-            '  </span>' +
-            '  <button class="mh-refresh" type="button" title="Обновить" aria-label="Обновить">' + REFRESH_SVG + '</button>' +
+            '  <div class="mh-head-title">' +
+            '    <span class="mh-head-ico" aria-hidden="true">' + GRID_SVG + '</span>' +
+            '    <div class="mh-head-tt">' +
+            '      <span class="mh-title">Тепловая карта</span>' +
+            '      <span class="mh-sym">Индекс МосБиржи · IMOEX</span>' +
+            '    </div>' +
+            '  </div>' +
+            '  <div class="mh-head-ctrl">' +
+            '    <span class="mh-legend"><span>−' + CAP + '%</span><span class="mh-legend-bar"></span><span>+' + CAP + '%</span></span>' +
+            '    <span class="mh-seg" role="tablist">' +
+            '      <button class="mh-seg-btn active" type="button" data-size="weight">Вес</button>' +
+            '      <button class="mh-seg-btn" type="button" data-size="value">Объём</button>' +
+            '      <button class="mh-seg-btn" type="button" data-size="change">% изм.</button>' +
+            '    </span>' +
+            '    <button class="mh-refresh" type="button" title="Обновить" aria-label="Обновить">' + REFRESH_SVG + '</button>' +
+            '  </div>' +
             '</div>' +
             '<div class="mh-pulse">' +
-            '  <div class="mh-pulse-idx"><span class="mh-idx-name">IMOEX</span><span class="mh-idx-val">—</span><span class="mh-idx-chg">—</span></div>' +
-            '  <div class="mh-pulse-breadth"><div class="mh-breadth-bar"><i class="up"></i><i class="flat"></i><i class="down"></i></div><div class="mh-breadth-lbl"></div></div>' +
-            '  <div class="mh-pulse-leaders"></div>' +
+            '  <div class="mh-kpi mh-kpi-idx">' +
+            '    <span class="mh-kpi-lbl">Индекс IMOEX</span>' +
+            '    <div class="mh-pulse-idx"><span class="mh-idx-val">—</span><span class="mh-idx-chg">—</span></div>' +
+            '  </div>' +
+            '  <div class="mh-kpi mh-kpi-breadth">' +
+            '    <span class="mh-kpi-lbl">Ширина рынка</span>' +
+            '    <div class="mh-pulse-breadth"><div class="mh-breadth-bar"><i class="up"></i><i class="flat"></i><i class="down"></i></div><div class="mh-breadth-lbl"></div></div>' +
+            '  </div>' +
+            '  <div class="mh-kpi mh-kpi-leaders">' +
+            '    <span class="mh-kpi-lbl">Лидеры дня</span>' +
+            '    <div class="mh-pulse-leaders"></div>' +
+            '  </div>' +
             '</div>' +
             '<div class="mh-meta"><span class="mh-dot"></span>Загрузка…</div>' +
             '<div class="mh-bread" hidden></div>' +

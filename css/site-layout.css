@@ -1565,19 +1565,29 @@
         #panel-portfolio .panel-section-header { margin: 0 0 12px; }
         #calcPane { max-width: 580px; margin: 0 auto; width: 100%; }
 
-        /* ===== РЫНОК V3 «Зеркало»: калькулятор слева, котировки + ставки справа ===== */
+        /* ===== РЫНОК (дашборд): full-bleed, вертикальный ритм как у «Главной» ===== */
         #panel-market { max-width: none !important; }
+        #panel-market.active {
+            display: flex; flex-direction: column; gap: 18px;
+        }
+        /* Карточки занимают всю ширину контент-области (как блоки дашборда) */
+        #panel-market .mk-chart-card,
+        #panel-market .mh-card {
+            max-width: none !important;
+            margin: 0 !important;
+            width: 100%;
+        }
+        /* Нижний «зеркальный» блок (доход + котировки/ставки) — тоже full-bleed */
         #marketPanelContent {
             display: grid;
             grid-template-columns: minmax(0, 1fr) 396px;
-            column-gap: 22px;
+            column-gap: 18px;
             row-gap: 0;
             align-items: stretch;
             align-content: start;
-            justify-content: center;
-            max-width: 1180px;
-            margin: 0 auto;
-            padding-bottom: 64px;
+            max-width: none;
+            margin: 0;
+            padding-bottom: 0;
         }
         #mkRightCol {
             grid-column: 1; grid-row: 1;
@@ -1733,7 +1743,10 @@
 
         /* ===== РЕБАЛАНС V3 «Зеркало»: списки слева, умная замена справа ===== */
         #panel-rebalance { max-width: none !important; padding-top: 4px; }
-        #panel-market { padding-top: 4px; }
+        /* Рынок-дашборд: верхний отступ под заголовок (как у «Главной») */
+        #panel-market { padding-top: 20px; padding-bottom: 84px; }
+        /* Заголовок страницы рынка — чуть плотнее к карточкам */
+        #panel-market .mkd-head { margin-bottom: 0; }
         #rebalancePanelContent {
             display: grid;
             grid-template-columns: minmax(0, 1fr) 396px;

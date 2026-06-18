@@ -22,8 +22,11 @@
        в обеих темах, как экран терминала */
     --mh-plot-bg: #0c1019;
 
-    max-width: 1180px;
-    margin: 0 auto 18px;
+    --mh-kpi-bg: rgba(15, 23, 42, 0.025);
+
+    max-width: none;
+    margin: 0;
+    width: 100%;
     background: var(--mh-bg);
     border: 1px solid rgba(44, 54, 76, 0.06);
     border-radius: 22px;
@@ -40,25 +43,37 @@ body.dark-mode .mh-card {
     --mh-hover: rgba(143, 179, 160, 0.08);
     --mh-up: #34c97c;
     --mh-down: #f06a62;
+    --mh-kpi-bg: rgba(255, 255, 255, 0.03);
     border-color: rgba(255, 255, 255, 0.08);
     box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
 }
 
-/* ---------- Шапка ---------- */
+/* ============================================================
+   ШАПКА (редизайн): иконка-плашка + заголовок слева, контролы справа
+   ============================================================ */
 .mh-head {
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    padding: 14px 18px; border-bottom: 1px solid var(--mh-line);
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    flex-wrap: wrap; padding: 16px 20px 14px;
 }
+.mh-head-title { display: flex; align-items: center; gap: 13px; min-width: 0; }
+.mh-head-ico {
+    width: 42px; height: 42px; border-radius: 13px; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, rgba(143, 179, 160, 0.24), rgba(143, 179, 160, 0.08));
+    color: #2f9e63;
+}
+body.dark-mode .mh-head-ico { color: var(--mh-up);
+    background: linear-gradient(135deg, rgba(143, 179, 160, 0.22), rgba(143, 179, 160, 0.06)); }
+.mh-head-ico svg { width: 21px; height: 21px; }
+.mh-head-tt { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .mh-title {
-    font-weight: 800; font-size: 14px; color: var(--mh-text); letter-spacing: -0.01em;
-    background: rgba(143, 179, 160, 0.18); padding: 7px 14px; border-radius: 13px;
+    font-weight: 800; font-size: 17px; color: var(--mh-text); letter-spacing: -0.02em; line-height: 1.05;
 }
-body.dark-mode .mh-title { background: rgba(143, 179, 160, 0.20); }
 .mh-sym {
     font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 11.5px;
     color: var(--mh-muted); letter-spacing: 0.02em;
 }
-.mh-spacer { flex: 1 1 auto; }
+.mh-head-ctrl { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 
 .mh-legend { display: inline-flex; align-items: center; gap: 7px;
     font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--mh-muted); }
@@ -75,26 +90,42 @@ body.dark-mode .mh-seg { background: rgba(255, 255, 255, 0.06); }
 .mh-seg-btn.active { background: var(--mh-bg); color: var(--mh-text); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
 body.dark-mode .mh-seg-btn.active { background: #2b3a4d; color: #fff; }
 
-.mh-refresh { width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--mh-line);
+.mh-refresh { width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--mh-line);
     background: transparent; color: var(--mh-muted); cursor: pointer;
-    display: inline-flex; align-items: center; justify-content: center; transition: color .18s ease; }
-.mh-refresh:hover { color: var(--mh-text); }
+    display: inline-flex; align-items: center; justify-content: center; transition: color .18s ease, background .18s ease; }
+.mh-refresh:hover { color: var(--mh-text); background: var(--mh-kpi-bg); }
 .mh-refresh svg { width: 16px; height: 16px; }
 .mh-refresh.spin svg { animation: mhSpin .8s linear infinite; }
 @keyframes mhSpin { to { transform: rotate(360deg); } }
 
-/* ---------- Шапка-пульс рынка ---------- */
-.mh-pulse { display: flex; align-items: center; gap: 26px; flex-wrap: wrap;
-    padding: 13px 18px 3px; }
-.mh-pulse-idx { display: flex; align-items: baseline; gap: 9px; }
-.mh-idx-name { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12px;
-    color: var(--mh-muted); letter-spacing: .04em; }
-.mh-idx-val { font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 23px;
-    color: var(--mh-text); letter-spacing: -.01em; }
-.mh-idx-chg { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px; }
-.mh-idx-chg.up { color: var(--mh-up); } .mh-idx-chg.down { color: var(--mh-down); }
+/* ============================================================
+   ПУЛЬС РЫНКА (редизайн): KPI-стрип в стиле дашборда
+   ============================================================ */
+.mh-pulse {
+    display: flex; align-items: stretch; flex-wrap: wrap;
+    margin: 0 20px; padding: 4px;
+    background: var(--mh-kpi-bg);
+    border: 1px solid var(--mh-line);
+    border-radius: 16px;
+}
+.mh-kpi { display: flex; flex-direction: column; justify-content: center; gap: 7px;
+    padding: 13px 22px; flex: 1 1 auto; min-width: 0; position: relative; }
+.mh-kpi + .mh-kpi::before { content: ''; position: absolute; left: 0; top: 14px; bottom: 14px;
+    width: 1px; background: var(--mh-line); }
+.mh-kpi-lbl { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700;
+    letter-spacing: .12em; text-transform: uppercase; color: var(--mh-muted); }
+.mh-kpi-idx { flex: 0 0 auto; }
+.mh-kpi-leaders { flex: 1 1 220px; }
 
-.mh-pulse-breadth { display: flex; flex-direction: column; gap: 5px; min-width: 188px; }
+.mh-pulse-idx { display: flex; align-items: center; gap: 11px; }
+.mh-idx-val { font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 26px;
+    color: var(--mh-text); letter-spacing: -.02em; line-height: 1; }
+.mh-idx-chg { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12.5px;
+    padding: 3px 9px; border-radius: 8px; white-space: nowrap; }
+.mh-idx-chg.up { color: var(--mh-up); background: rgba(31, 157, 87, .10); }
+.mh-idx-chg.down { color: var(--mh-down); background: rgba(214, 71, 60, .09); }
+
+.mh-pulse-breadth { display: flex; flex-direction: column; gap: 6px; min-width: 188px; }
 .mh-breadth-bar { display: flex; height: 8px; border-radius: 5px; overflow: hidden;
     background: var(--mh-line); }
 .mh-breadth-bar i { display: block; height: 100%; transition: width .5s ease; }
@@ -102,27 +133,27 @@ body.dark-mode .mh-seg-btn.active { background: #2b3a4d; color: #fff; }
 .mh-breadth-bar i.flat { background: var(--mh-muted); opacity: .5; }
 .mh-breadth-bar i.down { background: var(--mh-down); }
 .mh-breadth-lbl { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--mh-muted);
-    display: flex; gap: 9px; }
+    display: flex; gap: 12px; }
 .mh-breadth-lbl b { font-weight: 700; }
 .mh-breadth-lbl .up { color: var(--mh-up); } .mh-breadth-lbl .down { color: var(--mh-down); }
 
 .mh-pulse-leaders { display: flex; gap: 8px; flex-wrap: wrap; }
-.mh-leader { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px;
-    border-radius: 8px; font: 600 11.5px 'JetBrains Mono', monospace;
+.mh-leader { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px;
+    border-radius: 9px; font: 600 11.5px 'JetBrains Mono', monospace;
     border: 1px solid var(--mh-line); }
 .mh-leader .tk { font-weight: 800; color: var(--mh-text); }
 .mh-leader.up { background: rgba(31, 157, 87, .08); color: var(--mh-up); }
 .mh-leader.down { background: rgba(214, 71, 60, .07); color: var(--mh-down); }
 
 /* ---------- Подпись (источник/время) ---------- */
-.mh-meta { padding: 4px 18px 0; font-family: 'JetBrains Mono', monospace;
+.mh-meta { padding: 10px 20px 0; font-family: 'JetBrains Mono', monospace;
     font-size: 11px; color: var(--mh-muted); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .mh-dot { width: 6px; height: 6px; border-radius: 50%; background: #16a05a; display: inline-block; }
 .mh-dot.live { animation: mhPulse 1.8s ease-in-out infinite; }
 @keyframes mhPulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
 
 /* ---------- Хлебные крошки (drill-down) ---------- */
-.mh-bread { display: flex; align-items: center; gap: 8px; padding: 9px 18px 0;
+.mh-bread { display: flex; align-items: center; gap: 8px; padding: 9px 20px 0;
     font-family: 'Inter', sans-serif; font-size: 12px; }
 .mh-bread[hidden] { display: none; }
 .mh-bread-root { appearance: none; border: 0; background: transparent; cursor: pointer;
@@ -139,8 +170,8 @@ body.dark-mode .mh-seg-btn.active { background: #2b3a4d; color: #fff; }
 @property --tile { syntax: '<color>'; inherits: false; initial-value: #6e7684; }
 
 /* ---------- Поле карты (тёмный экран) ---------- */
-.mh-plot { position: relative; width: 100%; height: 560px; box-sizing: border-box;
-    margin: 14px 14px 8px; width: calc(100% - 28px); border-radius: 16px; overflow: hidden;
+.mh-plot { position: relative; width: 100%; height: 580px; box-sizing: border-box;
+    margin: 14px 20px 14px; width: calc(100% - 40px); border-radius: 16px; overflow: hidden;
     background:
         radial-gradient(130% 120% at 50% -25%, rgba(143,179,160,.10) 0%, rgba(143,179,160,0) 55%),
         linear-gradient(180deg, #16263a 0%, #0c131e 62%, #080d16 100%);
@@ -265,13 +296,22 @@ body.dark-mode .mh-retry { background: #8FB3A0; color: #11251a; }
 .mh-chg-pill.down { color: var(--mh-down); background: rgba(214, 71, 60, .08); }
 .mh-chg-pill.flat { color: var(--mh-muted); background: var(--mh-line); }
 
+@media (max-width: 1040px) {
+    /* KPI-ячейки складываются в столбик — вертикальный делитель меняем на горизонтальный */
+    .mh-kpi { flex: 1 1 100%; }
+    .mh-kpi + .mh-kpi::before { display: none; }
+    .mh-kpi + .mh-kpi { border-top: 1px solid var(--mh-line); }
+}
 @media (max-width: 720px) {
     .mh-card { border-radius: 18px; margin-bottom: 14px; }
-    .mh-head { padding: 12px 14px; gap: 9px; }
+    .mh-head { padding: 14px 14px 12px; gap: 12px; }
+    .mh-head-ctrl { width: 100%; justify-content: space-between; }
     .mh-legend { display: none; }
-    .mh-pulse { gap: 16px; padding: 12px 14px 2px; }
-    .mh-idx-val { font-size: 20px; }
-    .mh-plot { height: 470px; }
+    .mh-pulse { margin: 0 14px; }
+    .mh-kpi { padding: 11px 14px; }
+    .mh-idx-val { font-size: 22px; }
+    .mh-plot { height: 470px; margin: 12px 14px; width: calc(100% - 28px); }
+    .mh-meta { padding: 10px 14px 0; }
     .mh-table td.mh-td-name, .mh-table th.mh-th-name { display: none; }
     .mh-table-wrap { max-height: 360px; }
 }
