@@ -35,6 +35,7 @@
     max-width: none;
     margin: 0;
     width: 100%;
+    position: relative; /* offsetParent для .mh-tip (тултип вынесен из .mh-plot) */
     background: var(--mh-bg);
     border: 1px solid var(--mh-line);
     border-radius: 24px;
@@ -90,14 +91,17 @@ body.dark-mode .mh-card {
 }
 .mh-head-ctrl { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
-/* LIVE-капсула: пульсирующая точка + время (заменяет блёклое «Обновлено…») */
+/* Капсула актуальности: пульсирующая точка + явная подпись «обновлено HH:MM».
+   Раньше тут было «LIVE HH:MM» — время путали с текущим; теперь подпись прямо
+   говорит, что это время последнего обновления данных Мосбиржи (задержка ~15 мин). */
 .mh-live {
-    display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px;
+    display: inline-flex; align-items: center; gap: 9px; height: 38px; padding: 0 14px;
     border-radius: 11px; background: var(--mh-well);
-    font-size: 12px; font-weight: 700; color: var(--mh-muted); white-space: nowrap;
+    font-size: 12px; font-weight: 700; color: var(--mh-muted); white-space: nowrap; cursor: default;
 }
-.mh-live b { font-size: 10.5px; letter-spacing: 0.14em; color: var(--mh-muted2); }
-.mh-live-time { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12px; color: var(--mh-text); }
+.mh-live-meta { display: inline-flex; align-items: baseline; gap: 7px; }
+.mh-live-cap { font-size: 10px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mh-muted); }
+.mh-live-time { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12.5px; color: var(--mh-text); }
 .mh-live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--mh-accent); flex: 0 0 auto;
     box-shadow: 0 0 0 0 var(--mh-accent); }
 .mh-live.live .mh-live-dot { animation: mhPulse 1.8s ease-in-out infinite; }
@@ -156,13 +160,37 @@ body.dark-mode .mh-idx-tag { color: #fff; background: rgba(255, 255, 255, 0.10);
 .mh-brd-ratio { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: var(--mh-muted2); }
 .mh-brd-ratio b { font-size: 15px; }
 .mh-brd-ratio b.up { color: var(--mh-up); } .mh-brd-ratio b.down { color: var(--mh-down); }
-.mh-breadth-bar { display: flex; height: 14px; border-radius: 99px; overflow: hidden; gap: 2px;
-    background: var(--mh-line); box-shadow: inset 0 1px 2px rgba(16, 24, 38, .08); }
-.mh-breadth-bar i { display: block; height: 100%; min-width: 0;
-    transition: width .55s cubic-bezier(.4,0,.2,1); }
-.mh-breadth-bar i.up { background: linear-gradient(180deg, rgba(255,255,255,.32), rgba(255,255,255,0) 65%), var(--mh-up); }
-.mh-breadth-bar i.down { background: linear-gradient(180deg, rgba(255,255,255,.30), rgba(255,255,255,0) 65%), var(--mh-down); }
-.mh-breadth-bar i.flat { background: var(--mh-muted2); opacity: .4; }
+/* «Сентимент-метр»: капсула-трек с двумя залитыми сторонами (рост/падение),
+   проценты вшиты прямо в сегменты, глянцевый блик сверху, светлый стык посередине,
+   тонкий 50%-маркер и мягкое свечение под доминирующей стороной. Цвета — из токенов
+   --mh-up/--mh-down (color-mix), адаптируются к светлой/тёмной теме. */
+.mh-breadth-bar { position: relative; display: flex; height: 22px; border-radius: 99px; overflow: hidden;
+    background: var(--mh-well); isolation: isolate;
+    box-shadow: inset 0 1px 3px rgba(16, 24, 38, .16), inset 0 0 0 1px var(--mh-line), 0 1px 0 rgba(255,255,255,.5); }
+.mh-breadth-bar i { position: relative; display: flex; align-items: center; height: 100%; min-width: 0;
+    overflow: hidden; transition: width .55s cubic-bezier(.4,0,.2,1); }
+/* глянцевый блик в верхней половине */
+.mh-breadth-bar i::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 52%;
+    background: linear-gradient(180deg, rgba(255,255,255,.42), rgba(255,255,255,0)); pointer-events: none; }
+.mh-breadth-bar i.up { justify-content: flex-start; padding-left: 11px;
+    background: linear-gradient(180deg, color-mix(in oklab, var(--mh-up) 80%, #fff), var(--mh-up)); }
+.mh-breadth-bar i.down { justify-content: flex-end; padding-right: 11px;
+    background: linear-gradient(180deg, color-mix(in oklab, var(--mh-down) 80%, #fff), var(--mh-down)); }
+.mh-breadth-bar i.flat { background: var(--mh-muted2); opacity: .26; }
+.mh-breadth-bar i.flat::after { display: none; }
+/* светлый стык между сегментами */
+.mh-breadth-bar i + i { box-shadow: inset 1.5px 0 0 rgba(255,255,255,.6); }
+/* вшитые проценты */
+.mh-breadth-bar i span { position: relative; z-index: 1; font: 800 11px 'JetBrains Mono', monospace;
+    color: #fff; letter-spacing: .02em; white-space: nowrap; text-shadow: 0 1px 1.5px rgba(12,20,30,.28); }
+/* тонкий 50%-маркер-ориентир */
+.mh-breadth-bar::before { content: ''; position: absolute; left: 50%; top: 4px; bottom: 4px; width: 1px;
+    transform: translateX(-.5px); background: rgba(255,255,255,.5); z-index: 2; pointer-events: none; }
+/* мягкое свечение под доминирующей стороной */
+.mh-breadth-bar::after { content: ''; position: absolute; bottom: -1px; height: 7px; width: 42%; z-index: 0;
+    border-radius: 99px; filter: blur(7px); opacity: .5; transition: left .55s ease, background .3s ease; pointer-events: none; }
+.mh-breadth-bar.lead-up::after { left: 4%; background: var(--mh-up); }
+.mh-breadth-bar.lead-down::after { left: 54%; background: var(--mh-down); }
 .mh-breadth-lbl { display: flex; align-items: center; justify-content: space-between; gap: 8px;
     font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 700; }
 .mh-breadth-lbl span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
@@ -247,6 +275,9 @@ body.dark-mode .mh-tile:hover { box-shadow: 0 0 0 2px rgba(255,255,255,.85), 0 1
     overflow: hidden; text-overflow: clip; white-space: nowrap; }
 .mh-tk-vert { writing-mode: vertical-rl; text-orientation: mixed; letter-spacing: .04em; line-height: 1;
     max-height: 100%; }
+/* очень мелкие плитки: ужимаем паддинг и трекинг, чтобы тикер всё же поместился (пусть и едва) */
+.mh-tile.mh-mini { padding: 1px; border-radius: 2px; }
+.mh-tile.mh-mini .mh-tk { letter-spacing: -.04em; }
 .mh-pc { font-family: 'JetBrains Mono', monospace; font-weight: 600; opacity: .85; position: relative; z-index: 2; margin-top: 1px; }
 .mh-pr { font-family: 'JetBrains Mono', monospace; font-weight: 500; opacity: .62; margin-top: 1px; position: relative; z-index: 2; }
 

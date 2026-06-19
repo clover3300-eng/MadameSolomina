@@ -323,28 +323,47 @@
         if (mover) el.style.setProperty('--glow', glowColor(r.chg)); else el.style.removeProperty('--glow');
     }
 
+    function tileMini(w, h) { return Math.min(w, h) < 24; }
     function tileText(row, w, h) {
-        if (Math.min(w, h) < 13 || (w < 20 && h < 38)) return '';
         var tk = esc(row.ticker), len = row.ticker.length;
-        // Узкая, но высокая плитка → пишем тикер вертикально (сверху вниз)
-        if (w < 34 && h >= w * 1.5 && h >= 44) {
-            var vFs = clamp(8.5, Math.min(w / 2.0, h / (len * 0.92), 15), 15);
+        // Доступная ширина под текст (минус паддинг плитки: мелкие — 4px, обычные — 13px).
+        var availW = Math.max(2, w - (tileMini(w, h) ? 4 : 13));
+        // Предв. кегль по ширине (символ ~0.66 кегля, с запасом).
+        var fitW = availW / (len * 0.66);
+        // Узкая «портретная» плитка, где тикер по ширине влезает только мелко → пишем
+        // ВЕРТИКАЛЬНО и только тикер (без % и цены). Решение по ГЕОМЕТРИИ (а не по факту
+        // переполнения) — чтобы похожие плитки (RTKM/VKCO/BSPB…) вели себя одинаково.
+        // Широкие плитки (CBOM/DOMRF) остаются горизонтальными — там тикер влезает.
+        if (fitW < 13 && h >= w * 1.2 && h >= 32 && h >= len * 8) {
+            var vFs = clamp(7, Math.min(w / 2.0, (h - 4) / (len * 0.92), 15), 15);
             return '<span class="mh-tk mh-tk-vert" style="font-size:' + vFs.toFixed(1) + 'px">' + tk + '</span>';
         }
-        // Горизонтально: размер шрифта так, чтобы тикер влезал по ширине (len символов),
-        // дополнительно ограничен высотой; padding учтён множителем 0.86.
-        var fit = (w * 0.86) / (len * 0.62);
-        var tkFs = clamp(7.5, Math.min(fit, h / 2.8, 18), 18);
+        var showPc = h >= 30 && w >= 40, showPr = h >= 58 && w >= 72;
+        var tkFs = clamp(6, Math.min(fitW, h / 2.7, 17), 17);
         var html = '<span class="mh-tk" style="font-size:' + tkFs.toFixed(1) + 'px">' + tk + '</span>';
-        if (h >= 30 && w >= 38) {
+        if (showPc) {
             var pcFs = clamp(8, tkFs * 0.74, 12.5);
             html += '<span class="mh-pc" style="font-size:' + pcFs.toFixed(1) + 'px">' + fmtPct(row.chg) + '</span>';
         }
-        if (h >= 60 && w >= 70) {
+        if (showPr) {
             var prFs = clamp(8, tkFs * 0.64, 11.5);
             html += '<span class="mh-pr" style="font-size:' + prFs.toFixed(1) + 'px">' + fmtPrice(row.last) + ' ₽</span>';
         }
         return html;
+    }
+
+    // Страховка ПО ФАКТУ (после вставки в DOM): если горизонтальный тикер всё же не влез
+    // по ширине (оценка кегля бывает оптимистичной для широких букв) — ужимаем кегль до
+    // влезания. Ориентацию (гориз./вертик.) уже решил tileText по геометрии. scrollWidth —
+    // интринсик-ширина текста (стабильна во время FLIP-анимации ширины плитки).
+    function fitTicker(el, w, h) {
+        var tk = el.querySelector('.mh-tk');
+        if (!tk || tk.classList.contains('mh-tk-vert')) return;
+        var avail = w - (tileMini(w, h) ? 4 : 13);
+        var need = tk.scrollWidth;
+        if (need <= avail + 0.5) return; // влезает — ничего не трогаем
+        var curFs = parseFloat(tk.style.fontSize) || 12;
+        tk.style.fontSize = Math.max(5, curFs * avail / need - 0.2).toFixed(1) + 'px';
     }
 
     function rowsOfSector(name) { return state.rows.filter(function (r) { return r.sector === name; }); }
@@ -374,10 +393,13 @@
             var inset = SECGAP / 2;
             var bx = sr.x + inset, by = sr.y + inset,
                 bw = Math.max(0, sr.w - SECGAP), bh = Math.max(0, sr.h - SECGAP);
-            var withHead = bh > 42 && bw > 62;
+            // Заголовок показываем даже у мелких секторов (Транспорт, Холдинги, Химия…),
+            // ужимая его высоту под небольшой бокс, чтобы плитки не «съедались».
+            var withHead = bh > 28 && bw > 44;
+            var headH = withHead ? clamp(14, Math.round(bh * 0.42), HEADER_H) : 0;
             var box = { x: bx, y: by, w: bw, h: bh };
-            sectors.push({ name: g.name, rect: box, avg: avg, withHead: withHead });
-            var inner = withHead ? { x: bx, y: by + HEADER_H, w: bw, h: bh - HEADER_H } : box;
+            sectors.push({ name: g.name, rect: box, avg: avg, withHead: withHead, headH: headH });
+            var inner = withHead ? { x: bx, y: by + headH, w: bw, h: bh - headH } : box;
             var items = g.rows.map(function (r) { return { value: sizeValue(r), row: r }; });
             squarify(items, inner).forEach(function (t) { tiles.push({ rect: t, row: t.node.row }); });
         });
@@ -410,8 +432,10 @@
                 el.style.left = x + 'px'; el.style.top = y + 'px'; el.style.width = w + 'px'; el.style.height = h + 'px';
                 applyTileLook(el, r);
                 el.innerHTML = tileText(r, w, h);
+                el.classList.toggle('mh-mini', Math.min(w, h) < 24);
                 plotEl.appendChild(el); state.tileEls[tk] = el;
                 void el.offsetWidth;        // коммитим геометрию при transition:none
+                fitTicker(el, w, h);        // точная подгонка/вертикаль по реальной ширине
                 el.style.transition = '';   // дальше — плавные переходы (FLIP)
                 return;
             }
@@ -420,6 +444,8 @@
             el.style.opacity = '1';
             applyTileLook(el, r);
             el.innerHTML = tileText(r, w, h);
+            el.classList.toggle('mh-mini', Math.min(w, h) < 24);
+            fitTicker(el, w, h);        // точная подгонка/вертикаль по реальной ширине
             var prev = state.prevPrices[tk];
             if (prev != null && r.last != null && r.last !== prev) flash(el, r.last > prev);
         });
@@ -439,10 +465,10 @@
             }
             el.style.display = s.withHead ? 'flex' : 'none';
             el.style.left = s.rect.x + 'px'; el.style.top = s.rect.y + 'px';
-            el.style.width = s.rect.w + 'px'; el.style.height = HEADER_H + 'px';
+            el.style.width = s.rect.w + 'px'; el.style.height = (s.headH || HEADER_H) + 'px';
             // адаптив заголовка: размер шрифта и состав под ширину сектора, имя усекается
             var sw = s.rect.w;
-            var nmSize = sw < 96 ? 9.5 : (sw < 150 ? 10.5 : 11.5);
+            var nmSize = sw < 58 ? 8.5 : (sw < 96 ? 9.5 : (sw < 150 ? 10.5 : 11.5));
             var showChg = sw >= 92, showZoom = sw >= 118;
             el.innerHTML = '<span class="mh-sec-name" style="font-size:' + nmSize + 'px">' + esc(s.name) + '</span>' +
                 (showChg ? '<span class="mh-sec-chg ' + (s.avg >= 0 ? 'up' : 'down') + '">' + fmtPct(s.avg) + '</span>' : '') +
@@ -477,22 +503,27 @@
             chgEl.textContent = (p != null ? (p >= 0 ? '▲ ' : '▼ ') + Math.abs(p).toFixed(2) + '%' : '—');
             chgEl.className = 'mh-idx-chg' + (p > 0 ? ' up' : p < 0 ? ' down' : '');
         }
-        // ширина рынка — соотношение + метр + проценты
+        // ширина рынка — «сентимент-метр»: проценты вшиты прямо в сегменты бара
         var up = 0, down = 0, flat = 0;
         state.rows.forEach(function (r) { if (r.chg > 0) up++; else if (r.chg < 0) down++; else flat++; });
         var tot = up + down + flat || 1;
+        var upPct = Math.round(up / tot * 100), dnPct = Math.round(down / tot * 100);
         var bar = c.querySelector('.mh-breadth-bar');
         if (bar) {
-            bar.querySelector('i.up').style.width = (up / tot * 100) + '%';
-            bar.querySelector('i.flat').style.width = (flat / tot * 100) + '%';
-            bar.querySelector('i.down').style.width = (down / tot * 100) + '%';
+            var iu = bar.querySelector('i.up'), ifl = bar.querySelector('i.flat'), idn = bar.querySelector('i.down');
+            iu.style.width = (up / tot * 100) + '%'; ifl.style.width = (flat / tot * 100) + '%'; idn.style.width = (down / tot * 100) + '%';
+            iu.innerHTML = '<span>' + upPct + '%</span>';
+            idn.innerHTML = '<span>' + dnPct + '%</span>';
+            // подсветка-свечение под доминирующей стороной
+            bar.classList.toggle('lead-up', up >= down);
+            bar.classList.toggle('lead-down', down > up);
         }
         var ratio = c.querySelector('.mh-brd-ratio');
         if (ratio) ratio.innerHTML = '<b class="up">' + up + '</b> / <b class="down">' + down + '</b>';
         var lbl = c.querySelector('.mh-breadth-lbl');
-        if (lbl) lbl.innerHTML = '<span class="up">' + Math.round(up / tot * 100) + '% растут</span>' +
+        if (lbl) lbl.innerHTML = '<span class="up">растут</span>' +
             '<span class="flat">' + flat + ' нейтр.</span>' +
-            '<span class="down">' + Math.round(down / tot * 100) + '% падают</span>';
+            '<span class="down">падают</span>';
         // лидеры дня — always-on двухколоночный лидерборд (top-3 рост / top-3 падение)
         // с пропорциональными барами (ширина ∝ |изм.| / макс. по рынку), без выпадашки
         var withChg = state.rows.filter(function (r) { return r.chg != null; });
@@ -637,12 +668,28 @@
     }
     function moveTip(e) {
         var tip = $('.mh-tip'); if (!tip || !tip.classList.contains('show')) return;
-        var pr = plotEl.getBoundingClientRect(), tw = tip.offsetWidth, th = tip.offsetHeight;
-        var x = e.clientX - pr.left + 14, y = e.clientY - pr.top + 14;
-        if (x + tw > pr.width) x = e.clientX - pr.left - tw - 14;
-        if (y + th > pr.height) y = pr.height - th - 4;
-        tip.style.left = clamp(0, x, Math.max(0, pr.width - tw)) + 'px';
-        tip.style.top = clamp(0, y, Math.max(0, pr.height - th)) + 'px';
+        var tile = e.target.closest && e.target.closest('.mh-tile');
+        if (!tile) return; // вне плитки позицию не трогаем
+        // Курсор как ДОЛЯ внутри плитки (инвариантна к body{zoom:.85}), затем переводим
+        // в координаты КАРТОЧКИ (offsetParent тултипа) через offset* плитки и плота.
+        var tr = tile.getBoundingClientRect();
+        var fx = tr.width ? (e.clientX - tr.left) / tr.width : 0.5;
+        var fy = tr.height ? (e.clientY - tr.top) / tr.height : 0.5;
+        var plotL = plotEl.offsetLeft, plotT = plotEl.offsetTop, plotW = plotEl.clientWidth;
+        var mx = plotL + tile.offsetLeft + fx * tile.offsetWidth;
+        var my = plotT + tile.offsetTop + fy * tile.offsetHeight;
+        var host = tip.offsetParent || plotEl, hostH = host.clientHeight;
+        var tw = tip.offsetWidth, th = tip.offsetHeight;
+        // Рядом с курсором: чуть НИЖЕ уровня курсора и со смещением влево (не накрывает плитку).
+        // По бокам держим в пределах плота; вниз можем заходить под карту (в область
+        // таблицы) — не клипается, поэтому почти всегда остаёмся НИЖЕ курсора, а не выше.
+        var x = mx - tw - 12, y = my + 16;
+        if (x < plotL + 2) x = mx + 14;                      // нет места слева → справа от курсора
+        if (x + tw > plotL + plotW) x = plotL + plotW - tw - 2;
+        x = clamp(2, x, Math.max(2, host.clientWidth - tw - 2));
+        if (y + th > hostH - 2) y = Math.max(plotT, my - th - 14); // упёрлись в самый низ карты → выше
+        tip.style.left = Math.round(x) + 'px';
+        tip.style.top = Math.round(y) + 'px';
     }
     function hideTip() { var tip = $('.mh-tip'); if (tip) tip.classList.remove('show'); }
 
@@ -689,7 +736,10 @@
             '    </div>' +
             '  </div>' +
             '  <div class="mh-head-ctrl">' +
-            '    <span class="mh-live"><i class="mh-live-dot"></i><b>LIVE</b><span class="mh-live-time">—</span></span>' +
+            '    <span class="mh-live" title="Время последнего обновления данных Мосбиржи (задержка ~15 мин)">' +
+            '      <i class="mh-live-dot"></i>' +
+            '      <span class="mh-live-meta"><span class="mh-live-cap">обновлено</span><span class="mh-live-time">—</span></span>' +
+            '    </span>' +
             '    <span class="mh-seg mh-seg-period" role="tablist" title="Период изменения (цвет карты)">' +
             '      <button class="mh-seg-btn active" type="button" data-period="day">День</button>' +
             '      <button class="mh-seg-btn" type="button" data-period="week">Неделя</button>' +
@@ -724,8 +774,11 @@
             '</div>' +
             '<div class="mh-bread" hidden></div>' +
             '<div class="mh-plot">' +
-            '  <div class="mh-tip"></div><div class="mh-overlay" hidden></div>' +
+            '  <div class="mh-overlay" hidden></div>' +
             '</div>' +
+            // тултип ВНЕ .mh-plot (у плота overflow:hidden) — чтобы карточка могла
+            // уходить НИЖЕ курсора, не упираясь в нижний край карты и не клипаясь.
+            '<div class="mh-tip"></div>' +
             '<div class="mh-table-wrap"><table class="mh-table"><thead><tr>' +
             '<th class="mh-th-rank">#</th>' +
             COLS.map(function (col) {

@@ -249,11 +249,15 @@
 .stk-rule-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .stk-rule-op { text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: var(--stk-slate); }
 .stk-rule-val {
-    width: 56px; height: 30px; text-align: right; padding: 0 7px; box-sizing: border-box;
+    width: 56px; height: 30px; text-align: center; padding: 0 7px; box-sizing: border-box;
     font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 600; color: var(--stk-text);
     background: var(--bg-color, #f4f7f9); border: 1px solid var(--stk-border); border-radius: 8px; outline: none;
     transition: border-color 0.15s ease;
+    /* убираем стрелки-спиннеры у number-инпута — портят вид, значение вводится с клавиатуры */
+    -moz-appearance: textfield; appearance: textfield;
 }
+.stk-rule-val::-webkit-outer-spin-button,
+.stk-rule-val::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .stk-rule-val:focus { border-color: rgba(143,179,160,0.7); }
 .stk-rule-unit { font-size: 12px; color: var(--stk-muted); text-align: left; }
 /* информационные правила (без поля порога): описание идёт сразу за названием,

@@ -302,6 +302,21 @@
         return companies;
     }
 
+    // Порог правила «ОДХС» берём прямо из таблицы — ячейка AE2 (столбец
+    // «Доходность для Инвестирования в Акции», хранится в процентах, напр. «26%»).
+    // Так порог редактируется в самой Google-таблице, а не хардкодом в коде.
+    var ODHS_CELL = { row: 1, col: 30 }; // AE2 → строка 2, столбец AE (0-индексы)
+    function applyOdhsThreshold(rows) {
+        var raw = (rows && rows[ODHS_CELL.row]) ? rows[ODHS_CELL.row][ODHS_CELL.col] : null;
+        var n = parseNum(raw); // parseNum срезает «%» → число
+        if (isNaN(n)) return;
+        // обновляем и текущее правило, и дефолт — чтобы «По умолчанию» тоже брал из таблицы
+        DEFAULT_RULES.forEach(function (r) { if (r.key === 'ОДХС') r.val = n; });
+        var rule = ruleFor('ОДХС'); if (rule) rule.val = n;
+        var el = root();
+        if (el) { var inp = el.querySelector('.stk-rule-val[data-rule="ОДХС"]'); if (inp) inp.value = n; }
+    }
+
     // Загрузка CSV (кеш на сессию в state.companies)
     function loadData() {
         if (state.status === 'loading') return;
@@ -315,6 +330,7 @@
             .then(function (text) {
                 var rows = parseCSV(text);
                 var companies = buildCompanies(rows);
+                applyOdhsThreshold(rows); // порог ОДХС из ячейки AE2 таблицы
                 state.companies = companies;
                 state.status = companies.length ? 'ready' : 'empty';
                 render();
