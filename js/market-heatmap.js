@@ -100,8 +100,8 @@
     // Колонки таблицы под картой
     var COLS = [
         { key: 'ticker', label: 'Тикер', num: false, cls: 'mh-th-id' },
-        { key: 'sector', label: 'Сектор', num: false, cls: 'mh-th-sec' },
         { key: 'last',   label: 'Цена ₽', num: true },
+        { key: 'sector', label: 'Сектор', num: false, cls: 'mh-th-sec' },
         { key: 'chg',    label: 'Изм.', num: true },
         { key: 'weight', label: 'Вес', num: true, cls: 'mh-th-wt' },
         { key: 'value',  label: 'Объём', num: true, cls: 'mh-th-vol' }
@@ -641,8 +641,8 @@
                         '<button class="mh-tk-fav' + (isFav ? ' active' : '') + '" type="button" data-act="fav" data-tk="' + esc(r.ticker) + '" title="' + (isFav ? 'Убрать из избранного' : 'В избранное') + '" aria-label="Избранное">' + STAR_SVG + '</button>' +
                     '</span>' +
                 '</span></td>' +
-                '<td class="mh-td-sec-col"><span class="mh-td-sec"><i style="background:' + secDot(r.sector) + '"></i>' + esc(r.sector) + '</span></td>' +
                 '<td class="num">' + fmtPrice(r.last) + '</td>' +
+                '<td class="mh-td-sec-col"><span class="mh-td-sec">' + esc(r.sector) + '</span></td>' +
                 '<td class="num">' + chgPill(r.chg) + '</td>' +
                 '<td class="num mh-td-wt">' + (r.weight != null
                     ? '<span class="mh-wt"><span class="mh-wt-track"><i style="width:' + wPct.toFixed(1) + '%"></i></span>' +

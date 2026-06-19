@@ -328,7 +328,8 @@
 /* Звезда сразу после текста (а не у дальнего края колонки) — компактнее */
 .bnd-first-cell { justify-content: flex-start; }
 .bnd-first-actions { margin-left: 10px; }
-.bnd-id-text { display: flex; flex-direction: column; gap: 3px; line-height: 1.25; text-align: left; }
+/* min-width даёт названию/ISIN комфортный простор (колонка чуть шире, не впритык) */
+.bnd-id-text { display: flex; flex-direction: column; gap: 3px; line-height: 1.25; text-align: left; min-width: 124px; }
 .bnd-tkr {
     font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px; color: var(--bnd-text);
 }
