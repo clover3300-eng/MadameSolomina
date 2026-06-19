@@ -143,16 +143,13 @@ function searchCompanyInternal(ticker) {
     performSearch(ticker);
 }
 
-        function performSearch(query) {
-    if(!query || query.length < 2) {
-        openCompanyPage(null, query);
-        return;
-    }
-    
+        // Возвращает массив совпадений по тикеру/названию (акции портфеля, ОФЗ, таблица эшелонов)
+        function searchAssets(query) {
+    if(!query) return [];
     const q = query.toUpperCase();
     let results = [];
-    
-    // 1. Ищем в акциях портфеля (12 шт)
+
+    // 1. Акции портфеля
     echelons.forEach(e => {
         e.assets.forEach(a => {
             if(a.t.toUpperCase().includes(q) || a.n.toUpperCase().includes(q)) {
@@ -160,35 +157,111 @@ function searchCompanyInternal(ticker) {
             }
         });
     });
-    
-    // 2. Ищем в ОФЗ портфеля (8 шт)
+
+    // 2. ОФЗ портфеля
     bonds.forEach(b => {
         if(b.t.toUpperCase().includes(q) || b.n.toUpperCase().includes(q)) {
             results.push({...b, type: 'Облигация'});
         }
     });
-    
-    // 3. НОВОЕ: Ищем в таблице эшелонов (до 48 акций)
-    echelonTableData.forEach((column, echelonIndex) => {
+
+    // 3. Таблица эшелонов (до 48 акций)
+    echelonTableData.forEach((column) => {
         column.forEach(asset => {
-            // Проверяем, что актив ещё не добавлен
             const alreadyAdded = results.some(r => r.t === asset.t);
             if (!alreadyAdded && (asset.t.toUpperCase().includes(q) || asset.n.toUpperCase().includes(q))) {
-                results.push({
-                    ...asset,
-                    type: 'Акция',
-                    p: 0 // Цена будет загружена в openCompanyPage
-                });
+                results.push({ ...asset, type: 'Акция', p: 0 });
             }
         });
     });
-    
+
+    return results;
+}
+        window.searchAssets = searchAssets;
+
+        function performSearch(query) {
+    if(!query || query.length < 2) {
+        openCompanyPage(null, query);
+        return;
+    }
+
+    const results = searchAssets(query);
+
     const input = document.getElementById('tickerSearchInput');
-    input.value = '';
-    input.blur();
-    
+    if (input) { input.value = ''; input.blur(); }
+
     openCompanyPage(results[0] || null, query);
 }
+
+        // Боковая панель для облигации — переиспользует тот же drawer #stockDetailCard
+        function openBondDetail(bond) {
+    const card = document.getElementById('stockDetailCard');
+    if (!card || !bond) return;
+    const isin = bond.t || '';
+
+    // Повторный клик по той же облигации — закрываем
+    if (card.classList.contains('open') && card.dataset.ticker === isin) {
+        closeStockDetail();
+        return;
+    }
+
+    const name = bond.n || isin;
+    const yld  = bond.y || '—';
+    const fmtRub = v => (v != null && isFinite(v))
+        ? Number(v).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₽'
+        : '—';
+    const priceStr = fmtRub(bond.p);
+    const nkdStr   = fmtRub(bond.nkd);
+
+    let mat = '—';
+    if (bond.matDate) {
+        const p = String(bond.matDate).split('-');
+        mat = (p.length === 3) ? (p[2] + '.' + p[1] + '.' + p[0]) : bond.matDate;
+    }
+
+    card.innerHTML = `
+        <div class="sd">
+            <div class="sd-close" onclick="closeStockDetail()" title="Закрыть">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+            </div>
+            <div class="sd-top">
+                <div class="sd-id">
+                    <div class="sd-tk-row">
+                        <div class="tk">${name}</div>
+                        <button class="sd-copy" onclick="copyTickerNew('${isin}')" title="Скопировать ISIN" aria-label="Скопировать ISIN"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg></button>
+                    </div>
+                    <div class="nm">${isin}</div>
+                </div>
+                <span class="sd-tier-circle" style="color:#16b56b;border-color:#16b56b;font-size:10px;font-weight:800;letter-spacing:0;">ОФЗ</span>
+            </div>
+            <div class="sd-hr"></div>
+            <div class="dbf-grid">
+                <div class="dbf"><div class="dbf-l">Доходность</div><div class="dbf-v">${yld}</div></div>
+                <div class="dbf"><div class="dbf-l">Цена</div><div class="dbf-v">${priceStr}</div></div>
+                <div class="dbf"><div class="dbf-l">Погашение</div><div class="dbf-v">${mat}</div></div>
+                <div class="dbf"><div class="dbf-l">НКД</div><div class="dbf-v">${nkdStr}</div></div>
+            </div>
+            <div class="sd-btns sd-btns-single">
+                <div class="sd-btn dark" onclick="openTradingViewDirect('${isin}')">
+                    <span class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12c2-5 4-5 6 0s4 5 6 0 4-5 6 0"/></svg></span>
+                    Открыть график
+                </div>
+            </div>
+        </div>
+    `;
+
+    card.dataset.ticker = isin;
+    card.dataset.echelon = '';
+
+    if (card.parentElement !== document.body) document.body.appendChild(card);
+    if (typeof ensureStockDetailBackdrop === 'function') ensureStockDetailBackdrop().classList.add('open');
+    document.body.classList.add('sd-drawer-open');
+    card.classList.add('open');
+    card.scrollTop = 0;
+
+    if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.selectionChanged();
+}
+        window.openBondDetail = openBondDetail;
         
         // Потенциал всегда в процентах: абсолютную цель пересчитываем от текущей цены
 function fmtPotential(target, price) {

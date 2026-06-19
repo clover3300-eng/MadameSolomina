@@ -488,69 +488,226 @@
         to { opacity: 1; transform: translateY(0); }
     }
     
-    /* ===== SEARCH OVERLAY ===== */
+    /* ===== SEARCH — ARC-STYLE FLOATING PALETTE ===== */
+    /* Прозрачный слой: НЕ затемняет контент, только ловит клик мимо для закрытия */
     #searchOverlay {
         display: none;
         position: fixed;
         top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(15, 23, 42, 0.5);
-        backdrop-filter: blur(6px);
-        -webkit-backdrop-filter: blur(6px);
-        z-index: 500;
-        animation: fadeIn 0.18s ease;
+        background: transparent;
+        z-index: 1200;
         flex-direction: column;
-        justify-content: flex-end; /* прижимаем к низу */
+        align-items: center;
+        justify-content: flex-start;
+        /* чуть выше середины экрана */
+        padding-top: 20vh;
+        padding-left: 16px;
+        padding-right: 16px;
+        box-sizing: border-box;
     }
-    
+
     #searchOverlay.open { display: flex; }
-    
+
+    /* Компактная колонка: поле ввода + выпадающие результаты */
+    #searchPalette {
+        width: 100%;
+        max-width: 540px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        animation: searchPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes searchPop {
+        from { transform: translateY(-10px) scale(0.98); opacity: 0; }
+        to   { transform: translateY(0) scale(1);        opacity: 1; }
+    }
+
     #searchBox {
-        background: rgba(255,255,255,0.98);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        padding: 14px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+        background: rgba(255,255,255,0.92);
+        backdrop-filter: blur(24px) saturate(180%);
+        -webkit-backdrop-filter: blur(24px) saturate(180%);
+        padding: 12px 14px;
         display: flex;
         align-items: center;
-        gap: 12px;
-        border-top: 1px solid rgba(0,0,0,0.07);
-        border-radius: 20px 20px 0 0;
-        box-shadow: 0 -8px 32px rgba(15,23,42,0.12);
+        gap: 11px;
+        border: 1px solid rgba(0,0,0,0.06);
+        border-radius: 16px;
+        box-shadow: 0 14px 40px rgba(15,23,42,0.18), 0 2px 8px rgba(15,23,42,0.08);
         width: 100%;
         box-sizing: border-box;
-        animation: slideUpSearch 0.22s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    
+
     body.dark-mode #searchBox {
-        background: rgba(22,27,39,0.98);
-        border-top-color: rgba(255,255,255,0.08);
+        background: rgba(28,33,46,0.92);
+        border-color: rgba(255,255,255,0.08);
+        box-shadow: 0 14px 40px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.3);
     }
-    
-    @keyframes slideUpSearch {
-        from { transform: translateY(100%); opacity: 0; }
-        to   { transform: translateY(0);    opacity: 1; }
-    }
-    
+
+    .search-lead-icon { flex-shrink: 0; }
+
     #searchInput {
         flex: 1;
+        min-width: 0;
         border: none;
         background: transparent;
         font-family: 'Inter', sans-serif;
-        font-size: 15px;
+        font-size: 16px;
         font-weight: 500;
         color: var(--text-deep);
         outline: none;
     }
-    
+
     #searchInput::placeholder { color: var(--text-muted); }
-    
+
     #searchCloseBtn {
-        padding: 8px;
+        flex-shrink: 0;
+        padding: 6px;
         border: none;
-        background: transparent;
+        background: rgba(0,0,0,0.04);
+        border-radius: 8px;
         cursor: pointer;
         color: var(--text-slate);
         display: flex;
+        transition: background 0.15s ease;
     }
+    #searchCloseBtn:hover { background: rgba(0,0,0,0.08); }
+    body.dark-mode #searchCloseBtn { background: rgba(255,255,255,0.06); }
+    body.dark-mode #searchCloseBtn:hover { background: rgba(255,255,255,0.12); }
+
+    /* Живые результаты под полем ввода */
+    #searchResults {
+        width: 100%;
+        box-sizing: border-box;
+        background: rgba(255,255,255,0.96);
+        backdrop-filter: blur(24px) saturate(180%);
+        -webkit-backdrop-filter: blur(24px) saturate(180%);
+        border: 1px solid rgba(0,0,0,0.06);
+        border-radius: 16px;
+        box-shadow: 0 14px 40px rgba(15,23,42,0.16), 0 2px 8px rgba(15,23,42,0.06);
+        padding: 6px;
+        max-height: 52vh;
+        overflow-y: auto;
+        display: none;
+        animation: searchPop 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    #searchResults.show { display: block; }
+
+    body.dark-mode #searchResults {
+        background: rgba(28,33,46,0.96);
+        border-color: rgba(255,255,255,0.08);
+        box-shadow: 0 14px 40px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .search-res-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        border-radius: 11px;
+        cursor: pointer;
+        transition: background 0.12s ease;
+    }
+    .search-res-item:hover,
+    .search-res-item.active {
+        background: rgba(99,102,241,0.10);
+    }
+    body.dark-mode .search-res-item:hover,
+    body.dark-mode .search-res-item.active {
+        background: rgba(129,140,248,0.16);
+    }
+
+    .search-res-badge {
+        flex-shrink: 0;
+        width: 38px; height: 38px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Inter', sans-serif;
+        font-weight: 800;
+        font-size: 13px;
+        letter-spacing: -0.3px;
+        background: linear-gradient(135deg, #6366F1, #8B5CF6);
+        color: #fff;
+    }
+    .search-res-badge.bond {
+        background: linear-gradient(135deg, #10B981, #059669);
+    }
+
+    .search-res-main { flex: 1; min-width: 0; }
+    .search-res-ticker {
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        font-size: 14px;
+        color: var(--text-deep);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .search-res-name {
+        font-size: 12px;
+        color: var(--text-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-top: 1px;
+    }
+    .search-res-type {
+        flex-shrink: 0;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-slate);
+        padding: 3px 9px;
+        border-radius: 999px;
+        background: rgba(0,0,0,0.04);
+    }
+    body.dark-mode .search-res-type { background: rgba(255,255,255,0.06); }
+
+    .search-res-fav {
+        flex-shrink: 0;
+        width: 32px; height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        background: transparent;
+        border-radius: 8px;
+        cursor: pointer;
+        color: var(--text-muted);
+        transition: background 0.12s ease, color 0.12s ease, transform 0.1s ease;
+    }
+    .search-res-fav svg { width: 18px; height: 18px; }
+    .search-res-fav:hover { background: rgba(0,0,0,0.06); color: var(--text-slate); }
+    .search-res-fav:active { transform: scale(0.85); }
+    .search-res-fav.active { color: #F59E0B; }
+    .search-res-fav.active svg { fill: #F59E0B; stroke: #F59E0B; }
+    body.dark-mode .search-res-fav:hover { background: rgba(255,255,255,0.08); }
+
+    .search-res-empty {
+        padding: 22px 14px;
+        text-align: center;
+        font-size: 13px;
+        color: var(--text-muted);
+    }
+    .search-res-hint {
+        padding: 7px 12px 9px;
+        font-size: 11px;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .search-res-hint kbd {
+        font-family: 'Inter', sans-serif;
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 5px;
+        background: rgba(0,0,0,0.06);
+        color: var(--text-slate);
+    }
+    body.dark-mode .search-res-hint kbd { background: rgba(255,255,255,0.08); }
     
     /* ===== LEGACY SCREEN COMPAT LAYER ===== */
     /* Screens that open as overlays (company, vanguard) */
