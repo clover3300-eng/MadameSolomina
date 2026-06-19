@@ -1,0 +1,388 @@
+/* ============================================================
+   МОДУЛЬ «ТАБЛИЦА ТЕРМИНАЛА» — Рынок · Облигации (#panel-market-bonds)
+   ------------------------------------------------------------
+   Плоская интерактивная таблица облигаций: сортировка, поиск,
+   правила окраски ячеек, видимость столбцов, избранное.
+   БЕЗ раскрывающихся карточек и группировки по секторам (в отличие
+   от вкладки «Акции»). Всё под .bnd-root + префикс .bnd-, чтобы не
+   конфликтовать с .stk- (вкладка Акции) и остальными стилями.
+   Структура и токены повторяют css/stock-terminal.css.
+   ============================================================ */
+
+.bnd-root {
+    --bnd-radius: 16px;
+    --bnd-head-bg: var(--graphite, #2C364C);
+    --bnd-card-bg: var(--card, #ffffff);
+    --bnd-text: var(--text-deep, #0F172A);
+    --bnd-slate: var(--text-slate, #64748B);
+    --bnd-muted: var(--text-muted, #94A3B8);
+    --bnd-border: var(--border-color, rgba(0,0,0,0.06));
+    --bnd-line: rgba(15, 23, 42, 0.06);
+    --bnd-zebra: rgba(15, 23, 42, 0.022);
+    --bnd-hover: rgba(52, 152, 219, 0.06);
+    /* подсветка «хороших» ячеек — цвет сайдбара (#8FB3A0) */
+    --bnd-good-bg: rgba(143, 179, 160, 0.30);  --bnd-good-tx: #2c5e44;
+
+    font-family: 'Inter', sans-serif;
+    color: var(--bnd-text);
+    max-width: 100%;
+}
+
+/* hidden должен прятать даже flex/inline-flex (перебиваем авторский display) */
+.bnd-root [hidden] { display: none !important; }
+
+/* ---------- Тулбар: заголовок + инструменты ---------- */
+.bnd-toolbar {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    flex-wrap: wrap; gap: 14px; margin-bottom: 16px;
+}
+.bnd-title-wrap { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.bnd-title {
+    font-family: 'Inter', sans-serif; font-size: 22px; font-weight: 800;
+    color: var(--bnd-text); margin: 0; letter-spacing: -0.01em;
+}
+.bnd-count {
+    font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500;
+    color: var(--bnd-muted);
+}
+.bnd-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* Поле поиска по названию/ISIN */
+.bnd-search {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--card, #fff); border: 1px solid var(--bnd-border);
+    border-radius: 11px; padding: 0 10px; height: 38px; min-width: 230px;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.bnd-search:focus-within {
+    border-color: rgba(217, 119, 87, 0.55);
+    box-shadow: 0 0 0 3px var(--claude-accent-subtle, rgba(217, 119, 87, 0.1));
+}
+.bnd-search svg { width: 16px; height: 16px; color: var(--bnd-muted); flex-shrink: 0; }
+.bnd-search-input {
+    appearance: none; border: 0; outline: 0; background: transparent;
+    font-family: 'Inter', sans-serif; font-size: 13px; color: var(--bnd-text);
+    width: 100%; min-width: 0;
+}
+.bnd-search-input::placeholder { color: var(--bnd-muted); }
+.bnd-search-clear {
+    appearance: none; border: 0; cursor: pointer; background: transparent;
+    color: var(--bnd-muted); font-size: 18px; line-height: 1; padding: 0 2px; flex-shrink: 0;
+    transition: color 0.15s ease;
+}
+.bnd-search-clear:hover { color: var(--bnd-text); }
+
+/* Кнопка «Избранное» — фильтр «только избранное» (золотой акцент при активном режиме) */
+.bnd-fav-btn {
+    display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px;
+    background: var(--card, #fff); border: 1px solid var(--bnd-border); border-radius: 11px;
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; color: var(--bnd-slate);
+    cursor: pointer; white-space: nowrap;
+    transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+}
+.bnd-fav-btn:hover { color: var(--bnd-text); }
+.bnd-fav-btn svg { width: 15px; height: 15px; flex-shrink: 0; fill: none; }
+.bnd-fav-btn.active { color: #9a6a00; border-color: rgba(239, 170, 16, 0.6); background: rgba(239, 170, 16, 0.12); }
+.bnd-fav-btn.active svg { fill: #efaa10; color: #efaa10; }
+.bnd-fav-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 18px; padding: 0 5px; border-radius: 99px;
+    background: #efaa10; color: #fff; font-size: 11px; font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* Чип сброса сортировки — виден только при активной сортировке/скрытых столбцах */
+.bnd-sortreset {
+    display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 12px;
+    background: rgba(217, 119, 87, 0.08); border: 1px solid rgba(217, 119, 87, 0.35); border-radius: 11px;
+    font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 600; color: var(--claude-accent, #D97757);
+    cursor: pointer; white-space: nowrap; transition: background 0.15s ease;
+}
+.bnd-sortreset:hover { background: rgba(217, 119, 87, 0.15); }
+.bnd-sortreset svg { width: 13px; height: 13px; }
+
+/* Подсказка про многоуровневую сортировку */
+.bnd-multisort-hint {
+    display: inline-flex; align-items: center; gap: 6px; max-width: 280px;
+    font-family: 'Inter', sans-serif; font-size: 11.5px; line-height: 1.25; color: var(--bnd-muted);
+}
+.bnd-multisort-hint svg { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.8; }
+.bnd-multisort-hint b { color: var(--bnd-text); font-weight: 700; }
+
+/* Дропдаун «Столбцы» (видимость столбцов) */
+.bnd-colsfilter { position: relative; }
+.bnd-cols-btn {
+    display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px;
+    background: var(--card, #fff); border: 1px solid var(--bnd-border); border-radius: 11px;
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; color: var(--bnd-slate);
+    cursor: pointer; white-space: nowrap;
+    transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+}
+.bnd-cols-btn:hover { color: var(--bnd-text); }
+.bnd-cols-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+.bnd-cols-chev { width: 13px !important; height: 13px !important; opacity: 0.65; transition: transform 0.2s ease; }
+.bnd-cols-btn.active { color: #2c5e44; border-color: rgba(143,179,160,0.6); background: rgba(143,179,160,0.14); }
+.bnd-cols-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 18px; padding: 0 5px; border-radius: 99px;
+    background: #8FB3A0; color: #fff; font-size: 11px; font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+}
+.bnd-cols-menu {
+    position: absolute; top: calc(100% + 6px); right: 0; z-index: 60;
+    width: 300px; max-height: 420px; overflow-y: auto;
+    background: var(--card, #fff); border: 1px solid var(--bnd-border); border-radius: 14px;
+    box-shadow: 0 16px 40px -12px rgba(15,23,42,0.28); padding: 8px;
+}
+.bnd-cols-list { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 6px; }
+.bnd-col-opt {
+    display: flex; align-items: center; gap: 9px; padding: 7px 9px; border-radius: 9px;
+    cursor: pointer; font-family: 'Inter', sans-serif; font-size: 12.5px; color: var(--bnd-text);
+    transition: background 0.13s ease;
+}
+.bnd-col-opt:hover { background: rgba(143,179,160,0.10); }
+.bnd-col-opt input { width: 15px; height: 15px; accent-color: #8FB3A0; cursor: pointer; flex-shrink: 0; }
+.bnd-col-opt-tx { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Заголовок и кнопка-сброс выпадающих меню (общие для «Правил» и «Столбцов») */
+.bnd-menu-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 8px 10px; border-bottom: 1px solid var(--bnd-line); margin-bottom: 6px;
+    font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.03em;
+    text-transform: uppercase; color: var(--bnd-muted);
+}
+.bnd-reset {
+    appearance: none; border: 0; background: transparent; cursor: pointer;
+    font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; text-transform: none; letter-spacing: 0;
+    color: var(--claude-accent, #D97757); padding: 2px 4px;
+}
+.bnd-reset:hover { text-decoration: underline; }
+
+/* Кнопка и панель «Правила окраски» */
+.bnd-rulesfilter { position: relative; }
+.bnd-rules-btn {
+    display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px;
+    background: var(--card, #fff); border: 1px solid var(--bnd-border); border-radius: 11px;
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; color: var(--bnd-slate);
+    cursor: pointer; white-space: nowrap; transition: border-color 0.18s ease, color 0.18s ease;
+}
+.bnd-rules-btn:hover { color: var(--bnd-text); }
+.bnd-rules-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+.bnd-rules-menu {
+    position: absolute; top: calc(100% + 6px); right: 0; z-index: 60;
+    width: 320px; max-height: 420px; overflow-y: auto;
+    background: var(--card, #fff); border: 1px solid var(--bnd-border); border-radius: 14px;
+    box-shadow: 0 16px 40px -12px rgba(15,23,42,0.28); padding: 8px;
+}
+.bnd-rules-hint { margin: 2px 8px 10px; font-family: 'Inter', sans-serif; font-size: 11.5px; line-height: 1.45; color: var(--bnd-muted); }
+.bnd-rules-hint b { color: var(--bnd-good-tx); }
+.bnd-rules-list { display: flex; flex-direction: column; gap: 2px; }
+.bnd-rule {
+    display: grid; grid-template-columns: 14px 1fr 16px 56px 14px; align-items: center; column-gap: 9px;
+    padding: 6px 8px; border-radius: 9px; font-family: 'Inter', sans-serif; font-size: 12.5px; color: var(--bnd-text);
+}
+.bnd-rule:hover { background: rgba(143,179,160,0.08); }
+.bnd-rule-sw { width: 13px; height: 13px; border-radius: 4px; background: rgba(143,179,160,0.5); border: 1px solid #8FB3A0; }
+.bnd-rule-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.bnd-rule-op { text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: var(--bnd-slate); }
+.bnd-rule-val {
+    width: 56px; height: 30px; text-align: center; padding: 0 7px; box-sizing: border-box;
+    font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 600; color: var(--bnd-text);
+    background: var(--bg-color, #f4f7f9); border: 1px solid var(--bnd-border); border-radius: 8px; outline: none;
+    transition: border-color 0.15s ease;
+    -moz-appearance: textfield; appearance: textfield;
+}
+.bnd-rule-val::-webkit-outer-spin-button,
+.bnd-rule-val::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.bnd-rule-val:focus { border-color: rgba(143,179,160,0.7); }
+.bnd-rule-unit { font-size: 12px; color: var(--bnd-muted); text-align: left; }
+.bnd-rule-info { grid-template-columns: 14px auto 1fr; }
+.bnd-rule-info .bnd-rule-desc {
+    grid-column: 3; justify-self: start; text-align: left;
+    font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: var(--bnd-muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Строка «ничего не найдено» */
+.bnd-noresult td {
+    padding: 36px 16px !important; text-align: center !important;
+    font-family: 'Inter', sans-serif; font-size: 13px; color: var(--bnd-muted);
+}
+
+/* ---------- Состояния: загрузка / ошибка / пусто ---------- */
+.bnd-state {
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; gap: 12px; padding: 48px 24px; min-height: 240px;
+    border: 1px solid var(--bnd-border); border-radius: var(--bnd-radius);
+    background: var(--card-glass-aurora, rgba(255,255,255,0.65));
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+.bnd-state.show { display: flex; }
+.bnd-spinner {
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 3px solid rgba(15, 23, 42, 0.10);
+    border-top-color: var(--claude-accent, #D97757);
+    animation: bndSpin 0.8s linear infinite;
+}
+@keyframes bndSpin { to { transform: rotate(360deg); } }
+.bnd-state-title { font-size: 16px; font-weight: 700; color: var(--bnd-text); margin: 0; }
+.bnd-state-sub { font-size: 13px; color: var(--bnd-muted); margin: 0; max-width: 360px; line-height: 1.5; }
+.bnd-retry {
+    appearance: none; cursor: pointer; margin-top: 6px;
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; color: #fff;
+    background: var(--graphite-btn, #2C364C); border: 0; border-radius: 10px;
+    padding: 9px 18px; transition: opacity 0.2s ease;
+}
+.bnd-retry:hover { opacity: 0.88; }
+
+/* ---------- Контейнер скролла (sticky-шапка + sticky-первая колонка) ---------- */
+.bnd-scroll {
+    position: relative;
+    overflow: auto;
+    max-height: calc(var(--real-vh, 100vh) - 168px);
+    border: 1px solid var(--bnd-border);
+    border-radius: var(--bnd-radius);
+    background: var(--bnd-card-bg);
+    box-shadow: var(--shadow-luxury, 0 20px 40px -10px rgba(15,23,42,0.05));
+    -webkit-overflow-scrolling: touch;
+}
+.bnd-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
+.bnd-scroll::-webkit-scrollbar-thumb {
+    background: rgba(15, 23, 42, 0.18); border-radius: 99px;
+    border: 2px solid transparent; background-clip: padding-box;
+}
+.bnd-scroll::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.32); background-clip: padding-box; }
+
+/* ---------- Основная таблица ---------- */
+.bnd-table {
+    border-collapse: separate; border-spacing: 0; width: max-content; min-width: 100%;
+    font-size: 12.5px;
+}
+
+/* Шапка — тёмная, sticky сверху */
+.bnd-table > thead th {
+    position: sticky; top: 0; z-index: 3;
+    background: var(--bnd-head-bg); color: #fff;
+    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 11.5px;
+    text-align: center; white-space: nowrap;
+    padding: 10px 11px; cursor: pointer; user-select: none;
+    border-bottom: 1px solid rgba(255,255,255,0.10);
+    transition: background 0.15s ease;
+}
+.bnd-table > thead th:hover { background: #36405a; }
+.bnd-table > thead th .bnd-arrow { margin-left: 5px; opacity: 0.95; font-size: 10px; }
+.bnd-sort-prio {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 14px; height: 14px; margin-left: 4px; padding: 0 3px; border-radius: 99px;
+    background: var(--claude-accent, #D97757); color: #fff;
+    font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; vertical-align: middle;
+}
+.bnd-table > thead th.bnd-sorted { color: #fff; }
+.bnd-table > thead th.bnd-sorted::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
+    background: var(--claude-accent, #D97757);
+}
+
+/* Первая колонка (Название/ISIN) — sticky слева, левое выравнивание */
+.bnd-table > thead th.bnd-first,
+.bnd-table > tbody > tr > td.bnd-first {
+    position: sticky; left: 0; text-align: left;
+}
+.bnd-table > thead th.bnd-first { z-index: 4; text-align: center; }
+.bnd-table > tbody > tr > td.bnd-first {
+    z-index: 1; background: var(--bnd-card-bg);
+    box-shadow: 1px 0 0 var(--bnd-line);
+}
+
+/* Тело таблицы */
+.bnd-table > tbody > tr > td {
+    padding: 8px 11px; text-align: center; white-space: nowrap;
+    border-bottom: 1px solid var(--bnd-line); color: var(--bnd-text);
+}
+.bnd-num { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-variant-numeric: tabular-nums; }
+.bnd-date { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--bnd-slate); }
+.bnd-empty-cell { color: var(--bnd-muted); }
+/* Условная подсветка ячеек (цвет сайдбара #8FB3A0) — сильнее зебры/ховера */
+.bnd-table > tbody > tr > td.bnd-hl {
+    background-color: var(--bnd-good-bg) !important; color: var(--bnd-good-tx); font-weight: 600;
+}
+.bnd-table > thead th.bnd-col-center,
+.bnd-table > tbody > tr > td.bnd-col-center { text-align: center; }
+
+/* Строка облигации */
+.bnd-row { transition: background 0.13s ease; }
+.bnd-row:nth-child(odd of .bnd-row) td { background-color: var(--bnd-zebra); }
+.bnd-row:nth-child(odd of .bnd-row) td.bnd-first { background-color: #fbfbfc; }
+.bnd-row:hover td { background-color: var(--bnd-hover); }
+.bnd-row:hover td.bnd-first { background-color: #eef5fb; }
+
+/* Первая ячейка: идентификатор (слева) + звезда (справа) */
+.bnd-first-cell { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+/* Идентификатор НЕ кликабельный (нет раскрытия деталей) — обычный курсор */
+.bnd-ident { display: inline-flex; align-items: center; gap: 10px; min-width: 150px; }
+.bnd-id-text { display: flex; flex-direction: column; gap: 1px; line-height: 1.2; text-align: left; }
+.bnd-tkr {
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px; color: var(--bnd-text);
+}
+.bnd-name {
+    font-family: 'JetBrains Mono', monospace; font-weight: 400; font-size: 10.5px;
+    color: var(--bnd-slate); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    letter-spacing: 0.01em;
+}
+.bnd-num-badge { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--bnd-muted); min-width: 22px; text-align: right; }
+
+/* Кластер действий справа в первой ячейке (звезда) */
+.bnd-first-actions { display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0; }
+.bnd-fav {
+    appearance: none; border: 0; background: transparent; cursor: pointer; padding: 4px;
+    flex-shrink: 0; line-height: 0; border-radius: 7px; color: var(--bnd-muted);
+    transition: color 0.15s ease, background 0.15s ease;
+}
+.bnd-fav svg { width: 16px; height: 16px; fill: none; transition: fill 0.15s ease; }
+.bnd-fav:hover { color: #e8a200; background: rgba(240, 165, 0, 0.12); }
+.bnd-fav.active { color: #efaa10; }
+.bnd-fav.active svg { fill: #efaa10; }
+
+/* ---------- Десктоп: учитываем zoom 0.85 (см. desktop-zoom.css) ---------- */
+@media (min-width: 1024px) {
+    .bnd-scroll { max-height: calc(var(--real-vh, 100vh) / 0.85 - 210px); }
+    /* Вкладка Облигации — таблица во всю ширину контентной области
+       (перебиваем .tab-panel max-width:1240px из css/site-layout.css) */
+    #panel-market-bonds.tab-panel {
+        max-width: none; margin: 0; width: 100%;
+        padding: 20px 24px 64px;
+    }
+}
+
+/* ---------- Тёмная тема ---------- */
+body.dark-mode .bnd-root {
+    --bnd-text: var(--text-main, #f1f5f9);
+    --bnd-slate: #94a3b8;
+    --bnd-muted: #64748b;
+    --bnd-line: rgba(255,255,255,0.07);
+    --bnd-zebra: rgba(255,255,255,0.02);
+    --bnd-hover: rgba(56,189,248,0.08);
+    --bnd-card-bg: var(--card-bg, #1e293b);
+    --bnd-good-bg: rgba(143,179,160,0.22); --bnd-good-tx: #A7C7B5;
+}
+body.dark-mode .bnd-row:nth-child(odd of .bnd-row) td.bnd-first { background-color: #1b2536; }
+body.dark-mode .bnd-row:hover td.bnd-first { background-color: #233148; }
+
+/* ---------- Мобильная адаптация ---------- */
+@media (max-width: 640px) {
+    .bnd-title { font-size: 19px; }
+    .bnd-toolbar { align-items: stretch; }
+    .bnd-tools { width: 100%; flex-direction: column; align-items: stretch; }
+    .bnd-search { width: 100%; min-width: 0; }
+    .bnd-rulesfilter { width: 100%; }
+    .bnd-rules-btn { width: 100%; justify-content: center; }
+    .bnd-rules-menu { width: 100%; left: 0; right: auto; }
+    .bnd-colsfilter { width: 100%; }
+    .bnd-cols-btn { width: 100%; justify-content: space-between; }
+    .bnd-cols-menu { width: 100%; left: 0; right: auto; }
+    .bnd-cols-list { grid-template-columns: 1fr; }
+    .bnd-multisort-hint { display: none !important; }
+    .bnd-fav-btn { width: 100%; justify-content: center; }
+    .bnd-sortreset { width: 100%; justify-content: center; }
+    .bnd-scroll { max-height: calc(var(--real-vh, 100vh) - 230px); border-radius: 14px; }
+}
