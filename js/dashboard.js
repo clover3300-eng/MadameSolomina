@@ -555,10 +555,41 @@
         '</div>';
     }
 
+    // Единый список избранного: акции (stk_fav_v1) + облигации (bnd_fav_v1).
+    // Каждый элемент { id, type } — id для акции это тикер, для облигации ISIN.
+    function getFavItems() {
+        var items = [];
+        var stk = (typeof window.stkGetFavorites === 'function') ? window.stkGetFavorites() : loadFavsRaw();
+        stk.forEach(function (tk) { items.push({ id: tk, type: 'stock' }); });
+        if (typeof window.bndGetFavorites === 'function') {
+            window.bndGetFavorites().forEach(function (isin) { items.push({ id: isin, type: 'bond' }); });
+        }
+        return items;
+    }
+    function favItemHtml(item) {
+        return item.type === 'bond' ? favBondRowHtml(item.id) : favRowHtml(item.id);
+    }
+    // Строка избранной облигации: название + ISIN + среднегодовая доходность.
+    function favBondRowHtml(isin) {
+        var b = (typeof window.bndFindBond === 'function') ? window.bndFindBond(isin) : null;
+        var nm = b ? b.name : isin;
+        var yld = (b && b.main) ? String(b.main['Среднегодовая Простая Доходность'] || '').trim() : '';
+        var metric = yld
+            ? '<span class="dfv-metric">' + esc(yld) + '</span>'
+            : '<span class="dfv-metric muted">—</span>';
+        return '<div class="dfv-item" onclick="dashOpenFavBond(\'' + esc(isin) + '\')">' +
+            '<span class="dfv-info"><span class="dfv-tk">' + esc(nm) + '</span>' +
+                '<span class="dfv-name">' + esc(isin) + '</span></span>' +
+            metric +
+            '<button class="dfv-x" title="Убрать из избранного" onclick="event.stopPropagation();dashUnfavBond(\'' + esc(isin) + '\')">' +
+                '<svg viewBox="0 0 24 24">' + ICO_CLOSE + '</svg></button>' +
+        '</div>';
+    }
+
     function renderFavorites() {
         var host = dq('dash2Fav');
         if (!host) return;
-        var favs = (typeof window.stkGetFavorites === 'function') ? window.stkGetFavorites() : loadFavsRaw();
+        var favs = getFavItems();
         host.className = 'dash2-card dash2-fav' + (favExpanded ? ' fav-open' : '');
 
         // ----- пустое состояние (новый дизайн) -----
@@ -585,7 +616,7 @@
         '</div>';
         var head = '<div class="dfv-head"><div class="dfv-title">Избранное</div><span class="dfv-count">' + favs.length + '</span>' + actions + '</div>';
         var colhead = '<div class="dfv-colhead"><span>Тикер</span><span>Потенциал</span></div>';
-        var rows = favs.map(favRowHtml).join('');
+        var rows = favs.map(favItemHtml).join('');
         var footLink = '<button class="dfv-foot-link" onclick="switchTab(\'market-stocks\')">Все акции в таблице<svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>';
 
         var overlay =
@@ -619,15 +650,23 @@
         document.removeEventListener('mousedown', dashFavOutside);
     }
     window.dashCopyFavs = function() {
-        var favs = (typeof window.stkGetFavorites === 'function') ? window.stkGetFavorites() : loadFavsRaw();
-        // Копируем ТОЛЬКО тикеры, с разделением на облигации и акции
-        // (тикер из списка облигаций → «Облигации», иначе → «Акции»).
+        // Копируем с разделением на облигации и акции. Облигации из таблицы
+        // терминала (type:'bond') → по названию; тикеры из старого списка
+        // облигаций (findBondByT) → тоже «Облигации», остальное → «Акции».
+        var items = getFavItems();
         var bondsArr = [], stocksArr = [];
-        favs.forEach(function(tk) { (findBondByT(tk) ? bondsArr : stocksArr).push(tk); });
+        items.forEach(function(it) {
+            if (it.type === 'bond') {
+                var b = (typeof window.bndFindBond === 'function') ? window.bndFindBond(it.id) : null;
+                bondsArr.push(b ? b.name : it.id);
+            } else {
+                (findBondByT(it.id) ? bondsArr : stocksArr).push(it.id);
+            }
+        });
         var lines = [];
         if (bondsArr.length) { lines.push('Облигации'); bondsArr.forEach(function(t) { lines.push(t); }); }
         if (stocksArr.length) { if (lines.length) lines.push(''); lines.push('Акции'); stocksArr.forEach(function(t) { lines.push(t); }); }
-        dashCopyText(lines.join('\n'), favs.length + ' ' + plural(favs.length, 'тикер', 'тикера', 'тикеров') + ' скопировано');
+        dashCopyText(lines.join('\n'), items.length + ' ' + plural(items.length, 'тикер', 'тикера', 'тикеров') + ' скопировано');
     };
 
     window.dashOpenFav = function(tk, ech) {
@@ -640,6 +679,16 @@
             var a = loadFavsRaw(); var i = a.indexOf(tk); if (i >= 0) a.splice(i, 1);
             try { localStorage.setItem('stk_fav_v1', JSON.stringify(a)); } catch (e) {}
         }
+        renderFavorites();
+        dashSyncTopRowHeights();
+    };
+    // Клик по избранной облигации — открыть вкладку «Облигации»
+    window.dashOpenFavBond = function(isin) {
+        if (typeof switchTab === 'function') switchTab('market-bonds');
+    };
+    // Убрать облигацию из избранного (через API модуля облигаций)
+    window.dashUnfavBond = function(isin) {
+        if (typeof window.bndToggleFav === 'function') window.bndToggleFav(isin);
         renderFavorites();
         dashSyncTopRowHeights();
     };
@@ -1019,12 +1068,17 @@
         renderRebal();
         ensureClock();
         if (typeof window.stkEnsureLoaded === 'function') window.stkEnsureLoaded();  // подтянуть таблицу акций (для ОДХС в избранном)
+        if (typeof window.bndEnsureLoaded === 'function') window.bndEnsureLoaded();  // подтянуть таблицу облигаций (имя/доходность в избранном)
         requestAnimationFrame(dashSyncTopRowHeights);
     }
     window.renderDashboard = renderDashboard;
 
     // Когда таблица акций догрузилась — обновляем избранное (потенциал ОДХС)
     window.onStkCompaniesLoaded = function() {
+        if (currentTab === 'dashboard') { renderFavorites(); dashSyncTopRowHeights(); }
+    };
+    // Когда таблица облигаций догрузилась — обновляем избранное (имя/доходность)
+    window.onBndBondsLoaded = function() {
         if (currentTab === 'dashboard') { renderFavorites(); dashSyncTopRowHeights(); }
     };
 

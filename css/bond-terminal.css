@@ -283,10 +283,14 @@
     background: var(--claude-accent, #D97757);
 }
 
-/* Первая колонка (Название/ISIN) — sticky слева, левое выравнивание */
+/* Первая колонка (Название/ISIN) — sticky слева, левое выравнивание.
+   width:1% + nowrap = колонка ужимается под контент, а лишняя ширина таблицы
+   (min-width:100% растягивает её на узких списках) уходит в дата-колонки —
+   иначе авто-раскладка раздувала первую колонку и отбрасывала звезду вправо. */
 .bnd-table > thead th.bnd-first,
 .bnd-table > tbody > tr > td.bnd-first {
     position: sticky; left: 0; text-align: left;
+    width: 1%; white-space: nowrap;
 }
 .bnd-table > thead th.bnd-first { z-index: 4; text-align: center; }
 .bnd-table > tbody > tr > td.bnd-first {
@@ -318,16 +322,20 @@
 
 /* Первая ячейка: идентификатор (слева) + звезда (справа) */
 .bnd-first-cell { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-/* Идентификатор НЕ кликабельный (нет раскрытия деталей) — обычный курсор */
-.bnd-ident { display: inline-flex; align-items: center; gap: 10px; min-width: 150px; }
-.bnd-id-text { display: flex; flex-direction: column; gap: 1px; line-height: 1.2; text-align: left; }
+/* Идентификатор НЕ кликабельный (нет раскрытия деталей) — обычный курсор.
+   min-width:0 — колонка ужимается под контент, звезда не отрывается от текста. */
+.bnd-ident { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
+/* Звезда сразу после текста (а не у дальнего края колонки) — компактнее */
+.bnd-first-cell { justify-content: flex-start; }
+.bnd-first-actions { margin-left: 10px; }
+.bnd-id-text { display: flex; flex-direction: column; gap: 3px; line-height: 1.25; text-align: left; }
 .bnd-tkr {
     font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px; color: var(--bnd-text);
 }
 .bnd-name {
     font-family: 'JetBrains Mono', monospace; font-weight: 400; font-size: 10.5px;
-    color: var(--bnd-slate); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    letter-spacing: 0.01em;
+    color: var(--bnd-muted); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    letter-spacing: 0.02em;
 }
 .bnd-num-badge { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--bnd-muted); min-width: 22px; text-align: right; }
 

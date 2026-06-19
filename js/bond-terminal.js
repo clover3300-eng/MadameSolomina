@@ -230,6 +230,7 @@
                 state.bonds = bonds;
                 state.status = bonds.length ? 'ready' : 'empty';
                 render();
+                if (typeof window.onBndBondsLoaded === 'function') { try { window.onBndBondsLoaded(); } catch (e) {} }
             })
             .catch(function (err) {
                 console.warn('[bond-terminal] ошибка загрузки:', err);
@@ -733,6 +734,34 @@
         if (badge) { badge.hidden = n === 0; badge.textContent = n; }
         if (btn) btn.classList.toggle('active', n > 0);
     }
+
+    // ---- Внешний доступ для дашборда (блок «Избранное») ----
+    // Дашборд читает избранное и данные облигаций отсюда, чтобы был единый
+    // источник правды (без рассинхрона с localStorage). Ключ избранного — ISIN.
+    window.bndGetFavorites = function () { return state.favorites.slice(); };
+    window.bndFindBond = function (isin) {
+        if (!isin || !state.bonds) return null;
+        for (var i = 0; i < state.bonds.length; i++) {
+            if (state.bonds[i].isin === isin) return state.bonds[i];
+        }
+        return null;
+    };
+    window.bndToggleFav = function (isin) {
+        toggleFav(isin);
+        return state.favorites.indexOf(isin) !== -1;
+    };
+    // Подтянуть таблицу облигаций в фоне (нужно дашборду для имён/доходности в избранном)
+    window.bndEnsureLoaded = function () {
+        if (state.bonds && state.bonds.length) {
+            if (typeof window.onBndBondsLoaded === 'function') { try { window.onBndBondsLoaded(); } catch (e) {} }
+            return;
+        }
+        if (state.status !== 'loading') loadData();
+    };
+
+    // Автозагрузка при старте — чтобы избранные облигации показывались в дашборде,
+    // даже если пользователь ещё не открывал вкладку «Облигации».
+    setTimeout(function () { if (state.status === 'idle' && (!state.bonds || !state.bonds.length)) loadData(); }, 700);
 
     // Вызывается при входе на вкладку market-bonds
     window.renderBondTerminal = function () {

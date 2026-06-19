@@ -388,6 +388,11 @@ body.dark-mode .mh-retry { color: #10201a; }
 
 .mh-td-sec { display: inline-flex; align-items: center; gap: 8px; color: var(--mh-muted); font-weight: 600; font-size: 13px; }
 .mh-td-sec i { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+/* Колонки «Тикер» и «Сектор» — по контенту (width:1% + nowrap), чтобы свободная
+   ширина 100%-таблицы уходила РАВНОМЕРНО в числовые колонки, а не раздувала
+   одну колонку «Сектор» (она забирала весь простор при авто-раскладке). */
+.mh-table th.mh-th-id, .mh-table td.mh-td-id,
+.mh-table th.mh-th-sec, .mh-table td.mh-td-sec-col { width: 1%; white-space: nowrap; }
 
 /* пилюля изменения: стрелка-направление + модуль % */
 .mh-chg-pill { display: inline-flex; align-items: center; justify-content: center; gap: 4px;
