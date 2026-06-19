@@ -862,6 +862,21 @@ window.toggleSearchFav = toggleSearchFav;
 window.handleTopSearchInput = handleTopSearchInput;
 window.handleTopSearchKeydown = handleTopSearchKeydown;
 
+// Глобальный хоткей: Cmd/Ctrl+T (как просили) и Cmd/Ctrl+K (надёжный фолбэк —
+// Cmd+T часто перехватывается браузером под «новую вкладку») открывают/закрывают поиск.
+if (!window._searchHotkeyBound) {
+    window._searchHotkeyBound = true;
+    document.addEventListener('keydown', function (e) {
+        if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey) return;
+        const k = (e.key || '').toLowerCase();
+        if (k !== 't' && k !== 'k') return;
+        e.preventDefault();
+        const overlay = document.getElementById('searchOverlay');
+        if (overlay && overlay.classList.contains('open')) closeTopSearch();
+        else openTopSearch();
+    });
+}
+
 // Обновляем счётчики позиций в переключателе ОФЗ/Акции
 function updateRebalanceTabCounts() {
     var ofzItems = document.querySelectorAll('#ofz-aurora-list .ofz-aurora-item');
