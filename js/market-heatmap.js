@@ -63,6 +63,39 @@
     var REFRESH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>';
     var BACK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>';
     var GRID_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/></svg>';
+    // Звезда «в избранное» и иконка «боковая карточка компании» — те же, что в таблице «Акции»,
+    // чтобы поведение строки тикера совпадало между вкладками (заливка звезды — класс .active).
+    var STAR_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><polygon points="12 3 14.85 8.78 21.23 9.71 16.61 14.21 17.7 20.56 12 17.56 6.3 20.56 7.39 14.21 2.77 9.71 9.15 8.78 12 3"/></svg>';
+    var CARD_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M14 4v16"/><path d="M17 9h1M17 13h1"/></svg>';
+
+    // ---------- Избранное ----------
+    // Делегируем единому списку избранного из таблицы «Акции» (localStorage stk_fav_v1),
+    // чтобы звезда была общей для всего приложения (Акции + дашборд). Если модуль «Акции»
+    // ещё не подгружен — читаем/пишем тот же ключ напрямую.
+    var FAV_KEY = 'stk_fav_v1';
+    function loadFavs() {
+        try { var a = JSON.parse(localStorage.getItem(FAV_KEY)); return Array.isArray(a) ? a : []; }
+        catch (e) { return []; }
+    }
+    function getFavs() {
+        return (typeof window.stkGetFavorites === 'function') ? window.stkGetFavorites() : loadFavs();
+    }
+    function toggleFav(tk) {
+        if (typeof window.stkToggleFav === 'function') return window.stkToggleFav(tk);
+        var a = loadFavs(), i = a.indexOf(tk);
+        if (i === -1) a.push(tk); else a.splice(i, 1);
+        try { localStorage.setItem(FAV_KEY, JSON.stringify(a)); } catch (e) {}
+        return a.indexOf(tk) !== -1;
+    }
+    // Тоггл избранного из таблицы карты + синхронная подсветка звезды(звёзд) в строке.
+    function toggleHeatFav(tk) {
+        var on = toggleFav(tk);
+        var c = card(); if (!c) return;
+        c.querySelectorAll('.mh-tk-fav[data-tk="' + tk + '"]').forEach(function (b) {
+            b.classList.toggle('active', on);
+            b.title = on ? 'Убрать из избранного' : 'В избранное';
+        });
+    }
 
     // Колонки таблицы под картой
     var COLS = [
@@ -512,18 +545,14 @@
         if (bar) {
             var iu = bar.querySelector('i.up'), ifl = bar.querySelector('i.flat'), idn = bar.querySelector('i.down');
             iu.style.width = (up / tot * 100) + '%'; ifl.style.width = (flat / tot * 100) + '%'; idn.style.width = (down / tot * 100) + '%';
-            iu.innerHTML = '<span>' + upPct + '%</span>';
-            idn.innerHTML = '<span>' + dnPct + '%</span>';
-            // подсветка-свечение под доминирующей стороной
-            bar.classList.toggle('lead-up', up >= down);
-            bar.classList.toggle('lead-down', down > up);
         }
         var ratio = c.querySelector('.mh-brd-ratio');
         if (ratio) ratio.innerHTML = '<b class="up">' + up + '</b> / <b class="down">' + down + '</b>';
+        // проценты вынесены в подписи под баром — плоско и читаемо, в стиле остального дашборда
         var lbl = c.querySelector('.mh-breadth-lbl');
-        if (lbl) lbl.innerHTML = '<span class="up">растут</span>' +
+        if (lbl) lbl.innerHTML = '<span class="up"><b>' + upPct + '%</b> растут</span>' +
             '<span class="flat">' + flat + ' нейтр.</span>' +
-            '<span class="down">падают</span>';
+            '<span class="down"><b>' + dnPct + '%</b> падают</span>';
         // лидеры дня — always-on двухколоночный лидерборд (top-3 рост / top-3 падение)
         // с пропорциональными барами (ширина ∝ |изм.| / макс. по рынку), без выпадашки
         var withChg = state.rows.filter(function (r) { return r.chg != null; });
@@ -576,12 +605,20 @@
             if (ar) ar.textContent = sorted ? (state.sortDir < 0 ? '▼' : '▲') : (th.classList.contains('mh-th-rank') ? '' : '↕');
         });
         var body = c.querySelector('.mh-table tbody'); if (!body) return;
+        var favs = getFavs();
         var html = '';
         tableRows().forEach(function (r, i) {
             var cls = r.chg > 0 ? 'up' : (r.chg < 0 ? 'down' : 'flat');
+            var isFav = favs.indexOf(r.ticker) !== -1;
             html += '<tr data-tk="' + esc(r.ticker) + '">' +
                 '<td class="mh-rank">' + (i + 1) + '</td>' +
-                '<td class="mh-td-tk">' + esc(r.ticker) + '</td>' +
+                '<td class="mh-td-tk"><span class="mh-tk-cell">' +
+                    '<span class="mh-tk-sym">' + esc(r.ticker) + '</span>' +
+                    '<span class="mh-tk-actions">' +
+                        '<button class="mh-tk-card" type="button" data-act="card" data-tk="' + esc(r.ticker) + '" title="Карточка компании" aria-label="Карточка компании">' + CARD_SVG + '</button>' +
+                        '<button class="mh-tk-fav' + (isFav ? ' active' : '') + '" type="button" data-act="fav" data-tk="' + esc(r.ticker) + '" title="' + (isFav ? 'Убрать из избранного' : 'В избранное') + '" aria-label="Избранное">' + STAR_SVG + '</button>' +
+                    '</span>' +
+                '</span></td>' +
                 '<td class="mh-td-name">' + esc(r.name) + '</td>' +
                 '<td><span class="mh-td-sec"><i style="background:' + secDot(r.sector) + '"></i>' + esc(r.sector) + '</span></td>' +
                 '<td class="num">' + fmtPrice(r.last) + '</td>' +
@@ -668,26 +705,28 @@
     }
     function moveTip(e) {
         var tip = $('.mh-tip'); if (!tip || !tip.classList.contains('show')) return;
-        var tile = e.target.closest && e.target.closest('.mh-tile');
-        if (!tile) return; // вне плитки позицию не трогаем
-        // Курсор как ДОЛЯ внутри плитки (инвариантна к body{zoom:.85}), затем переводим
-        // в координаты КАРТОЧКИ (offsetParent тултипа) через offset* плитки и плота.
-        var tr = tile.getBoundingClientRect();
-        var fx = tr.width ? (e.clientX - tr.left) / tr.width : 0.5;
-        var fy = tr.height ? (e.clientY - tr.top) / tr.height : 0.5;
+        if (!plotEl) return;
+        var host = tip.offsetParent || plotEl;       // карточка (.mh-card) — система координат тултипа
+        var hr = host.getBoundingClientRect();
+        var pr = plotEl.getBoundingClientRect();
+        // Эффективный zoom самокалибруем из плота: getBoundingClientRect отдаёт ЭКРАННЫЕ
+        // пиксели (layout × zoom), а clientWidth — layout. На десктопе body{zoom:.85}, иначе 1.
+        var z = plotEl.clientWidth ? (pr.width / plotEl.clientWidth) : 1;
+        if (!z) z = 1;
+        // Курсор (clientX/Y — экранные пиксели, та же система, что и getBoundingClientRect)
+        // → в LAYOUT-координаты карточки, где живут left/top тултипа.
+        var mx = (e.clientX - hr.left) / z;
+        var my = (e.clientY - hr.top) / z;
+        var tw = tip.offsetWidth, th = tip.offsetHeight, hostH = host.clientHeight;
         var plotL = plotEl.offsetLeft, plotT = plotEl.offsetTop, plotW = plotEl.clientWidth;
-        var mx = plotL + tile.offsetLeft + fx * tile.offsetWidth;
-        var my = plotT + tile.offsetTop + fy * tile.offsetHeight;
-        var host = tip.offsetParent || plotEl, hostH = host.clientHeight;
-        var tw = tip.offsetWidth, th = tip.offsetHeight;
-        // Рядом с курсором: чуть НИЖЕ уровня курсора и со смещением влево (не накрывает плитку).
-        // По бокам держим в пределах плота; вниз можем заходить под карту (в область
-        // таблицы) — не клипается, поэтому почти всегда остаёмся НИЖЕ курсора, а не выше.
-        var x = mx - tw - 12, y = my + 16;
-        if (x < plotL + 2) x = mx + 14;                      // нет места слева → справа от курсора
-        if (x + tw > plotL + plotW) x = plotL + plotW - tw - 2;
-        x = clamp(2, x, Math.max(2, host.clientWidth - tw - 2));
-        if (y + th > hostH - 2) y = Math.max(plotT, my - th - 14); // упёрлись в самый низ карты → выше
+        // По умолчанию — СЛЕВА от курсора, ближняя грань в 4px: карточка вплотную рядом,
+        // но НЕ перекрывает точку клика (плитку под курсором). Если слева не помещается
+        // (курсор у левого края карты) — отражаем вправо с тем же зазором 4px.
+        var GAP = 4;
+        var x = mx - tw - GAP, y = my + GAP;
+        if (x < plotL + 2) x = mx + GAP;
+        x = clamp(plotL + 2, x, Math.max(plotL + 2, plotL + plotW - tw - 2));
+        if (y + th > hostH - 2) y = Math.max(plotT, my - th - 14); // упёрлись в низ карты → выше курсора
         tip.style.left = Math.round(x) + 'px';
         tip.style.top = Math.round(y) + 'px';
     }
@@ -818,10 +857,15 @@
             });
         });
 
-        // Делегированные клики: ретрай, крошки, сектор-зум, плитка, строка таблицы
+        // Делегированные клики: ретрай, крошки, сектор-зум, плитка, действия/строка таблицы
         c.addEventListener('click', function (e) {
             if (e.target.closest('[data-act="retry"]')) { refresh(); return; }
             if (e.target.closest('[data-act="bread-root"]')) { exitZoom(); return; }
+            // действия в ячейке тикера — проверяем ДО клика по строке
+            var favBtn = e.target.closest('[data-act="fav"]');
+            if (favBtn) { toggleHeatFav(favBtn.getAttribute('data-tk')); return; }
+            var cardBtn = e.target.closest('[data-act="card"]');
+            if (cardBtn) { openCompany(cardBtn.getAttribute('data-tk')); return; }
             var sec = e.target.closest('.mh-sec'); if (sec) { enterZoom(sec.getAttribute('data-sec')); return; }
             var tile = e.target.closest('.mh-tile'); if (tile) { openCompany(tile.getAttribute('data-tk')); return; }
             var tr = e.target.closest('.mh-table tbody tr'); if (tr) { openCompany(tr.getAttribute('data-tk')); }
