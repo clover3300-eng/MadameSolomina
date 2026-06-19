@@ -100,9 +100,9 @@
     // Колонки таблицы под картой
     var COLS = [
         { key: 'ticker', label: 'Тикер', num: false, cls: 'mh-th-id' },
-        { key: 'last',   label: 'Цена ₽', num: true },
+        { key: 'last',   label: 'Цена ₽', num: true, cls: 'mh-th-price' },
         { key: 'sector', label: 'Сектор', num: false, cls: 'mh-th-sec' },
-        { key: 'chg',    label: 'Изм.', num: true },
+        { key: 'chg',    label: 'Изм.', num: true, cls: 'mh-th-chg' },
         { key: 'weight', label: 'Вес', num: true, cls: 'mh-th-wt' },
         { key: 'value',  label: 'Объём', num: true, cls: 'mh-th-vol' }
     ];

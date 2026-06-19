@@ -386,13 +386,20 @@ body.dark-mode .mh-retry { color: #10201a; }
 .mh-tk-fav.active { color: #efaa10; }
 .mh-tk-fav.active svg { fill: #efaa10; }
 
-.mh-td-sec { display: inline-flex; align-items: center; color: var(--mh-muted); font-weight: 600; font-size: 13px; }
-/* Колонки «Тикер», «Сектор», «Вес» — по контенту (width:1% + nowrap), чтобы
-   свободная ширина 100%-таблицы уходила в числовые колонки (Цена/Изм./Объём),
-   а не раздувала текстовую «Сектор» и не растаскивала бар+число «Веса». */
-.mh-table th.mh-th-id, .mh-table td.mh-td-id,
-.mh-table th.mh-th-sec, .mh-table td.mh-td-sec-col,
-.mh-table th.mh-th-wt, .mh-table td.mh-td-wt { width: 1%; white-space: nowrap; }
+.mh-td-sec { display: inline-flex; align-items: center; color: var(--mh-muted); font-weight: 600; font-size: 13px;
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* ГАРМОНИЧНАЯ РАСКЛАДКА: table-layout:fixed + явные доли колонок — браузер
+   соблюдает ширины точно, а не раздувает одну колонку при авто-раскладке.
+   «Тикер» оставлен как был (~16%); «Вес» широкий (22%) под тянущуюся полосу;
+   остальные сбалансированы (Цена/Изм. 13%, Сектор/Объём 16/15%). */
+.mh-table { table-layout: fixed; }
+.mh-table th.mh-th-rank  { width: 5%; }
+.mh-table th.mh-th-id    { width: 16%; }
+.mh-table th.mh-th-price { width: 13%; }
+.mh-table th.mh-th-sec   { width: 16%; }
+.mh-table th.mh-th-chg   { width: 13%; }
+.mh-table th.mh-th-wt    { width: 22%; }
+.mh-table th.mh-th-vol   { width: 15%; }
 /* «Сектор» — по центру (заголовок и ячейки), без цветного кружка */
 .mh-table th.mh-th-sec, .mh-table td.mh-td-sec-col { text-align: center; }
 .mh-td-sec { justify-content: center; }
@@ -407,11 +414,12 @@ body.dark-mode .mh-retry { color: #10201a; }
 .mh-chg-pill.flat { color: var(--mh-muted2); background: var(--mh-line-soft); }
 
 /* «Вес» — число + пропорциональный мини-бар (длина ∝ макс. весу в выборке) */
-.mh-wt { display: inline-flex; align-items: center; justify-content: flex-end; gap: 10px; width: 100%; }
-.mh-wt-track { width: 64px; height: 6px; border-radius: 3px; background: var(--mh-line-soft);
-    overflow: hidden; flex-shrink: 0; }
-.mh-wt-track i { display: block; height: 100%; border-radius: 3px; background: var(--mh-accent); opacity: .85; }
-.mh-wt-num { min-width: 52px; text-align: right; }
+/* Полоса «Веса» тянется на всю ширину (широкой) колонки: трек flex:1, число — справа */
+.mh-wt { display: flex; align-items: center; gap: 12px; width: 100%; }
+.mh-wt-track { flex: 1 1 auto; min-width: 0; height: 7px; border-radius: 4px; background: var(--mh-line-soft);
+    overflow: hidden; }
+.mh-wt-track i { display: block; height: 100%; border-radius: 4px; background: var(--mh-accent); opacity: .85; }
+.mh-wt-num { flex: 0 0 auto; min-width: 46px; text-align: right; }
 
 /* «Объём» — единица (млрд/млн) приглушена и мельче числа */
 .mh-vol-unit { margin-left: 4px; font-size: 11px; font-weight: 600; color: var(--mh-muted2); }
