@@ -207,17 +207,31 @@ function searchCompanyInternal(ticker) {
 
     const name = bond.n || isin;
     const yld  = bond.y || '—';
-    const fmtRub = v => (v != null && isFinite(v))
-        ? Number(v).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₽'
-        : '—';
-    const priceStr = fmtRub(bond.p);
-    const nkdStr   = fmtRub(bond.nkd);
 
-    let mat = '—';
-    if (bond.matDate) {
-        const p = String(bond.matDate).split('-');
-        mat = (p.length === 3) ? (p[2] + '.' + p[1] + '.' + p[0]) : bond.matDate;
-    }
+    // Детали купона — тот же источник, что и в карточке облигации на дашборде
+    const d = (typeof bondDetailsMap !== 'undefined' && bondDetailsMap[isin]) ? bondDetailsMap[isin] : {};
+
+    const price = parseFloat(String(bond.p).replace(',', '.')) || 0;
+    const nkd   = parseFloat(bond.nkd || 0) || 0;
+    const total = price + nkd;
+
+    const fmtRub = v => (v != null && isFinite(v) && v !== 0)
+        ? Number(v).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₽'
+        : (v === 0 ? '0,00 ₽' : '—');
+
+    // Дата DD.MM.YYYY (учитываем ISO-формат с 'T')
+    const fmtDate = s => {
+        if (!s || s === '—') return '—';
+        const p = String(s).split('T')[0].split('-');
+        return (p.length === 3) ? (p[2] + '.' + p[1] + '.' + p[0]) : String(s);
+    };
+
+    // Текущая купонная доходность = купон · частота / цена
+    const curCoupon = (d.couponValue > 0 && d.freq > 0 && price > 0)
+        ? (d.couponValue * d.freq / price * 100).toFixed(2) + '%'
+        : '—';
+
+    const matStr = fmtDate(d.matDate || bond.matDate);
 
     card.innerHTML = `
         <div class="sd">
@@ -236,10 +250,18 @@ function searchCompanyInternal(ticker) {
             </div>
             <div class="sd-hr"></div>
             <div class="dbf-grid">
-                <div class="dbf"><div class="dbf-l">Доходность</div><div class="dbf-v">${yld}</div></div>
-                <div class="dbf"><div class="dbf-l">Цена</div><div class="dbf-v">${priceStr}</div></div>
-                <div class="dbf"><div class="dbf-l">Погашение</div><div class="dbf-v">${mat}</div></div>
-                <div class="dbf"><div class="dbf-l">НКД</div><div class="dbf-v">${nkdStr}</div></div>
+                <div class="dbf"><div class="dbf-l">Доходность (YTM)</div><div class="dbf-v">${yld}</div></div>
+                <div class="dbf"><div class="dbf-l">Тек. купон. дох.</div><div class="dbf-v" style="color:#16b56b">${curCoupon}</div></div>
+                <div class="dbf"><div class="dbf-l">Цена</div><div class="dbf-v">${fmtRub(price)}</div></div>
+                <div class="dbf"><div class="dbf-l">НКД</div><div class="dbf-v">${fmtRub(nkd)}</div></div>
+            </div>
+            <div class="drb-od-list">
+                <div class="drb-od-row"><span class="drb-od-l">Итого (цена + НКД)</span><span class="drb-od-v"><b>${fmtRub(total)}</b></span></div>
+                <div class="drb-od-row"><span class="drb-od-l">Размер купона</span><span class="drb-od-v">${d.couponValue != null ? d.couponValue + ' ₽' : '—'}</span></div>
+                <div class="drb-od-row"><span class="drb-od-l">Выплат в год</span><span class="drb-od-v">${d.freq != null ? d.freq : '—'}</span></div>
+                <div class="drb-od-row"><span class="drb-od-l">Погашение</span><span class="drb-od-v">${matStr}</span></div>
+                <div class="drb-od-row"><span class="drb-od-l">Ближайший купон</span><span class="drb-od-v">${fmtDate(d.nextCoupon)}</span></div>
+                <div class="drb-od-row"><span class="drb-od-l">Код (ISIN)</span><span class="drb-od-v"><span class="drb-od-code" onclick="event.stopPropagation();copyTickerNew('${isin}')">${isin}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span></span></div>
             </div>
             <div class="sd-btns sd-btns-single">
                 <div class="sd-btn dark" onclick="openTradingViewDirect('${isin}')">
