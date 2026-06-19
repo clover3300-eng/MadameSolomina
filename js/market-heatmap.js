@@ -99,13 +99,12 @@
 
     // Колонки таблицы под картой
     var COLS = [
-        { key: 'ticker', label: 'Тикер', num: false },
-        { key: 'name',   label: 'Компания', num: false, cls: 'mh-th-name' },
-        { key: 'sector', label: 'Сектор', num: false },
+        { key: 'ticker', label: 'Тикер', num: false, cls: 'mh-th-id' },
+        { key: 'sector', label: 'Сектор', num: false, cls: 'mh-th-sec' },
         { key: 'last',   label: 'Цена ₽', num: true },
         { key: 'chg',    label: 'Изм.', num: true },
-        { key: 'weight', label: 'Вес', num: true },
-        { key: 'value',  label: 'Объём', num: true }
+        { key: 'weight', label: 'Вес', num: true, cls: 'mh-th-wt' },
+        { key: 'value',  label: 'Объём', num: true, cls: 'mh-th-vol' }
     ];
 
     // ---------- Состояние ----------
@@ -146,6 +145,20 @@
         if (v >= 1e9) return (v / 1e9).toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' млрд';
         if (v >= 1e6) return (v / 1e6).toLocaleString('ru-RU', { maximumFractionDigits: 0 }) + ' млн';
         return Math.round(v).toLocaleString('ru-RU');
+    }
+    // Объём для таблицы — число и единица раздельно (единица приглушена в CSS)
+    function volParts(v) {
+        if (!v) return { num: '—', unit: '' };
+        if (v >= 1e9) return { num: (v / 1e9).toLocaleString('ru-RU', { maximumFractionDigits: 2 }), unit: 'млрд' };
+        if (v >= 1e6) return { num: (v / 1e6).toLocaleString('ru-RU', { maximumFractionDigits: 0 }), unit: 'млн' };
+        return { num: Math.round(v).toLocaleString('ru-RU'), unit: '' };
+    }
+    // Пилюля изменения для таблицы: стрелка-направление + модуль %
+    function chgPill(p) {
+        var cls = p > 0 ? 'up' : (p < 0 ? 'down' : 'flat');
+        var ar = p > 0 ? '▲' : (p < 0 ? '▼' : '·');
+        var val = (p == null || isNaN(p)) ? '—' : Math.abs(p).toFixed(2) + '%';
+        return '<span class="mh-chg-pill ' + cls + '"><span class="mh-chg-ar">' + ar + '</span>' + val + '</span>';
     }
 
     // Цвет плитки по дневному изменению — диверг-палитра OKLCH (бренд):
@@ -606,25 +619,37 @@
         });
         var body = c.querySelector('.mh-table tbody'); if (!body) return;
         var favs = getFavs();
+        var rows = tableRows();
+        // макс. вес среди видимых строк → длина мини-баров «Веса» (пропорция)
+        var maxW = 0;
+        rows.forEach(function (r) { if (r.weight != null && r.weight > maxW) maxW = r.weight; });
+        if (!maxW) maxW = 1;
         var html = '';
-        tableRows().forEach(function (r, i) {
-            var cls = r.chg > 0 ? 'up' : (r.chg < 0 ? 'down' : 'flat');
+        rows.forEach(function (r, i) {
             var isFav = favs.indexOf(r.ticker) !== -1;
+            var vp = volParts(r.value);
+            var wPct = r.weight != null ? Math.max(3, r.weight / maxW * 100) : 0;
             html += '<tr data-tk="' + esc(r.ticker) + '">' +
                 '<td class="mh-rank">' + (i + 1) + '</td>' +
-                '<td class="mh-td-tk"><span class="mh-tk-cell">' +
-                    '<span class="mh-tk-sym">' + esc(r.ticker) + '</span>' +
+                '<td class="mh-td-id"><span class="mh-id-cell">' +
+                    '<span class="mh-id-text">' +
+                        '<span class="mh-id-tkr">' + esc(r.ticker) + '</span>' +
+                        '<span class="mh-id-name">' + esc(r.name) + '</span>' +
+                    '</span>' +
                     '<span class="mh-tk-actions">' +
                         '<button class="mh-tk-card" type="button" data-act="card" data-tk="' + esc(r.ticker) + '" title="Карточка компании" aria-label="Карточка компании">' + CARD_SVG + '</button>' +
                         '<button class="mh-tk-fav' + (isFav ? ' active' : '') + '" type="button" data-act="fav" data-tk="' + esc(r.ticker) + '" title="' + (isFav ? 'Убрать из избранного' : 'В избранное') + '" aria-label="Избранное">' + STAR_SVG + '</button>' +
                     '</span>' +
                 '</span></td>' +
-                '<td class="mh-td-name">' + esc(r.name) + '</td>' +
-                '<td><span class="mh-td-sec"><i style="background:' + secDot(r.sector) + '"></i>' + esc(r.sector) + '</span></td>' +
+                '<td class="mh-td-sec-col"><span class="mh-td-sec"><i style="background:' + secDot(r.sector) + '"></i>' + esc(r.sector) + '</span></td>' +
                 '<td class="num">' + fmtPrice(r.last) + '</td>' +
-                '<td class="num"><span class="mh-chg-pill ' + cls + '">' + fmtPct(r.chg) + '</span></td>' +
-                '<td class="num">' + (r.weight != null ? r.weight.toFixed(2) + '%' : '—') + '</td>' +
-                '<td class="num">' + fmtValue(r.value) + '</td></tr>';
+                '<td class="num">' + chgPill(r.chg) + '</td>' +
+                '<td class="num mh-td-wt">' + (r.weight != null
+                    ? '<span class="mh-wt"><span class="mh-wt-track"><i style="width:' + wPct.toFixed(1) + '%"></i></span>' +
+                      '<span class="mh-wt-num">' + r.weight.toFixed(2) + '%</span></span>'
+                    : '—') + '</td>' +
+                '<td class="num mh-td-vol"><span class="mh-vol-num">' + vp.num + '</span>' +
+                    (vp.unit ? '<span class="mh-vol-unit">' + vp.unit + '</span>' : '') + '</td></tr>';
         });
         body.innerHTML = html;
     }
