@@ -664,7 +664,7 @@ function openStockDetail(ticker, echelon, clickedCell = null) {
                     </div>
                     <div class="nm">${companyName}</div>
                 </div>
-                <span class="sd-tier-circle" style="color:${tier.color};border-color:${tier.color}">${tier.roman}</span>
+                <span class="sd-tier-pill" style="color:${tier.color};background:color-mix(in srgb, ${tier.color} 13%, transparent)"><span class="rom" style="background:${tier.color}">${tier.roman}</span>эшелон</span>
             </div>
             ${sectorHtml}
             <div class="sd-hr"></div>

@@ -246,7 +246,7 @@ function searchCompanyInternal(ticker) {
                     </div>
                     <div class="nm">${isin}</div>
                 </div>
-                <span class="sd-tier-circle" style="color:#16b56b;border-color:#16b56b;font-size:10px;font-weight:800;letter-spacing:0;">ОФЗ</span>
+                <span class="sd-tier-pill" style="color:#16b56b;background:color-mix(in srgb, #16b56b 13%, transparent)"><span class="sd-tier-ic" style="background:#16b56b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10"/><path d="M19 21V10"/><path d="M9 21v-7h6v7"/><path d="M12 3l8 5H4l8-5z"/></svg></span>ОФЗ</span>
             </div>
             <div class="sd-hr"></div>
             <div class="dbf-grid">
