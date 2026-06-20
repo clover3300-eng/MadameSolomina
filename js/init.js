@@ -339,172 +339,180 @@ initSwipeBack();
 /* === ФИНАЛ: ВАШИ СТИЛИ (Aurora Yellow + Marker) === */
 /* === ФИНАЛ: Стиль "Silver Aurora" (Серебряное стекло) === */
  /* === FINAL: "Silver Aurora" Style === */
- function toggleEchelonGuide(show, context = 'rebalance') {
-            let oldModal = document.getElementById('rebalance-info-modal');
-            if (oldModal && show) oldModal.remove(); 
+ // === Поповер «Стратегия эшелонов» ===
+ // Всплывает рядом с кнопкой-триггером (над/под ней), без затемнения фона
+ // и без выезда снизу. Закрывается по ×, клику вне, Esc или прокрутке.
+ // var (не let): верхний уровень init.js может прерваться раньше из-за loadData(),
+ // поэтому используем hoisted-объявление без TDZ, доступное из функций ниже.
+ var echPopTrigger = null;
 
-            let modal = document.getElementById('rebalance-info-modal');
+ function toggleEchelonGuide(show, context = 'rebalance', triggerEl = null) {
+     const ID = 'rebalance-info-modal';
+     const existing = document.getElementById(ID);
 
-            if (!modal) {
-                modal = document.createElement('div');
-                modal.id = 'rebalance-info-modal';
-                
-                modal.innerHTML = `
-                    <div class="info-modal-content" onclick="event.stopPropagation()">
-                        <div class="info-modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
-                            <h3 style="margin:0; color:#0F172A; font-size:20px; font-weight:800; font-family:'Inter', sans-serif;">Стратегия Эшелонов</h3>
-                            <button onclick="toggleEchelonGuide(false)" style="background:none; border:none; color:#94a3b8; font-size:28px; cursor:pointer; transition: color 0.2s;">×</button>
-                        </div>
-                        <div class="info-scroll-area">
-                            <div style="display:flex; flex-direction:column; gap:12px;">
-                                ${createEchelonItem('I', 'Надёжный', 'Компании, которые платят дивиденды и стараются их повышать', 'e1')}
-                                ${createEchelonItem('II', 'Стабильный', 'Компании, которые платят дивиденды, но выплаты разнятся', 'e2')}
-                                ${createEchelonItem('III', 'Рисковый', 'Компании, которые могут платить, но не платят, так как предпочитают реинвестировать средства в рост', 'e3')}
-                                ${createEchelonItem('IV', 'Венчурный', 'Компании, которые не платят дивидендов, но имеют большой потенциал', 'e4')}
-                            </div>
-                            
-                            <!-- Bottom Block -->
-                            <div id="info-dynamic-footer"></div>
-                        </div>
-                    </div>
-                `;
+     // --- Закрытие ---
+     if (!show) {
+         if (existing) {
+             existing.classList.remove('open');
+             setTimeout(() => { if (existing.parentNode) existing.remove(); }, 200);
+         }
+         document.removeEventListener('keydown', echPopOnKey);
+         document.removeEventListener('mousedown', echPopOnOutside, true);
+         window.removeEventListener('scroll', echPopOnScroll, true);
+         window.removeEventListener('resize', echPopOnScroll);
+         echPopTrigger = null;
+         return;
+     }
 
-                // Backdrop styles
-                Object.assign(modal.style, {
-                    position: 'fixed', top: '0', left: '0', width: '100%', height: '100%',
-                    zIndex: '9999999', display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-                    background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', webkitBackdropFilter: 'blur(8px)',
-                    opacity: '0', transition: 'opacity 0.3s ease', pointerEvents: 'none'
-                });
-                document.body.appendChild(modal);
+     // --- Открытие: пересоздаём заново ---
+     if (existing) existing.remove();
+     ensureEchPopStyles();
 
-                // CSS styles injection - AURORA DESIGN (как главная страница)
-                if (!document.getElementById('base-modal-styles')) {
-                    const style = document.createElement('style');
-                    style.id = 'base-modal-styles';
-                    style.innerHTML = `
-                        /* Aurora Modal Background - стиль главной страницы */
-                        .info-modal-content { 
-                            width: 100%; 
-                            max-width: 500px; 
-                            /* Aurora gradient background */
-                            background: linear-gradient(180deg, #F3F4F6 0%, #F9FAFC 100%);
-                            border-radius: 28px 28px 0 0; 
-                            padding: 28px; 
-                            padding-bottom: 40px; 
-                            transform: translateY(100%); 
-                            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); 
-                            color: #0F172A; /* Dark text for light bg */
-                            border-top: 1px solid rgba(255,255,255,0.8);
-                            max-height: 85vh; 
-                            overflow-y: auto; 
-                            box-sizing: border-box; 
-                            box-shadow: 0 -10px 40px rgba(0,0,0,0.15);
-                            position: relative;
-                        }
-                        
-                        /* Aurora spots inside modal */
-                        .info-modal-content::before {
-                            content: '';
-                            position: absolute;
-                            top: 0; left: 0; right: 0; bottom: 0;
-                            background: 
-                                radial-gradient(ellipse 50% 30% at 20% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 70%),
-                                radial-gradient(ellipse 40% 35% at 80% 60%, rgba(16, 185, 129, 0.06) 0%, transparent 70%),
-                                radial-gradient(ellipse 35% 25% at 60% 90%, rgba(249, 115, 22, 0.05) 0%, transparent 70%);
-                            pointer-events: none;
-                            border-radius: 28px 28px 0 0;
-                        }
-                        
-                        .info-modal-content > * {
-                            position: relative;
-                            z-index: 1;
-                        }
-                        
-                        .info-modal-backdrop-active .info-modal-content { transform: translateY(0); }
-                        
-                        /* Modal Header for light theme */
-                        .info-modal-header h3 {
-                            color: #0F172A !important;
-                            background: linear-gradient(90deg, #1e293b 0%, #334155 100%);
-                            -webkit-background-clip: text;
-                            -webkit-text-fill-color: transparent;
-                        }
-                        
-                        /* Close button for light theme */
-                        .info-modal-header button {
-                            color: #64748B !important;
-                        }
-                        .info-modal-header button:hover {
-                            color: #0F172A !important;
-                        }
-                        
-                        /* Updated Badge Styles - Glass effect for light bg */
-                        .modal-badge { 
-                            width: 28px !important; 
-                            height: 28px !important; 
-                            min-width: 28px !important; 
-                            border-radius: 50% !important; 
-                            display: flex !important; 
-                            align-items: center !important; 
-                            justify-content: center !important; 
-                            background: rgba(255, 255, 255, 0.8) !important; 
-                            backdrop-filter: blur(8px) !important;
-                            font-family: 'JetBrains Mono', monospace !important; 
-                            font-size: 12px !important; 
-                            font-weight: 800 !important; 
-                            border: 2px solid !important; 
-                            box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important; 
-                            margin-top: 2px !important; 
-                        }
-                        
-                        .modal-badge.e1 { color: #10B981 !important; border-color: #10B981 !important; }
-                        .modal-badge.e2 { color: #3B82F6 !important; border-color: #3B82F6 !important; }
-                        .modal-badge.e3 { color: #F59E0B !important; border-color: #F59E0B !important; }
-                        .modal-badge.e4 { color: #EF4444 !important; border-color: #EF4444 !important; }
-                        
-                        /* Aurora Animation */
-                        @keyframes aurora-shift {
-                            0% { background-position: 0% 50%; }
-                            50% { background-position: 100% 50%; }
-                            100% { background-position: 0% 50%; }
-                        }
-                    `;
-                    document.head.appendChild(style);
-                }
-            }
+     const pop = document.createElement('div');
+     pop.id = ID;
+     pop.className = 'ech-pop';
+     pop.setAttribute('role', 'dialog');
+     pop.setAttribute('aria-label', 'Стратегия эшелонов');
+     pop.innerHTML = `
+         <div class="ech-pop-head">
+             <h3>Стратегия эшелонов</h3>
+             <button type="button" class="ech-pop-close" aria-label="Закрыть" onclick="toggleEchelonGuide(false)">&times;</button>
+         </div>
+         <div class="ech-pop-sub">Группы акций по надёжности выплат и потенциалу роста</div>
+         <div class="ech-pop-body">
+             ${createEchelonItem('I', 'Надёжный', 'Платят дивиденды и стараются их повышать', 'e1')}
+             ${createEchelonItem('II', 'Стабильный', 'Платят дивиденды, но размер выплат меняется', 'e2')}
+             ${createEchelonItem('III', 'Рисковый', 'Могут платить, но реинвестируют прибыль в рост', 'e3')}
+             ${createEchelonItem('IV', 'Венчурный', 'Не платят дивидендов, но имеют большой потенциал', 'e4')}
+         </div>
+     `;
+     document.body.appendChild(pop);
 
-            // === BOTTOM BLOCK (LIGHT AURORA / ICE) ===
-            const footer = document.getElementById('info-dynamic-footer');
-            if (footer) {
-                // Убираем блок "Важно знать" из шторки - теперь footer всегда пустой
-                footer.innerHTML = '';
-                footer.style.display = 'none';
-            }
+     echPopTrigger = triggerEl || null;
+     positionEchPop(pop, triggerEl);
+     requestAnimationFrame(() => pop.classList.add('open'));
 
-            if (show) {
-                modal.style.display = 'flex';
-                setTimeout(() => {
-                    modal.style.opacity = '1';
-                    modal.style.pointerEvents = 'all';
-                    modal.classList.add('info-modal-backdrop-active');
-                }, 10);
-            } else {
-                modal.style.opacity = '0';
-                modal.style.pointerEvents = 'none';
-                modal.classList.remove('info-modal-backdrop-active');
-                setTimeout(() => { modal.style.display = 'none'; }, 300);
-            }
-        }
-    
-// Генератор строки - AURORA LIGHT DESIGN
+     // Слушатели закрытия — на следующий тик, чтобы текущий клик не закрыл сразу
+     setTimeout(() => {
+         document.addEventListener('keydown', echPopOnKey);
+         document.addEventListener('mousedown', echPopOnOutside, true);
+         window.addEventListener('scroll', echPopOnScroll, true);
+         window.addEventListener('resize', echPopOnScroll);
+     }, 0);
+
+     if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.selectionChanged();
+ }
+
+ function echPopOnKey(e) { if (e.key === 'Escape') toggleEchelonGuide(false); }
+ function echPopOnOutside(e) {
+     const pop = document.getElementById('rebalance-info-modal');
+     if (!pop) return;
+     if (pop.contains(e.target)) return;
+     if (echPopTrigger && echPopTrigger.contains(e.target)) return;
+     toggleEchelonGuide(false);
+ }
+ // При скролле/ресайзе не закрываем, а держим поповер приклеенным к кнопке
+ function echPopOnScroll() {
+     const pop = document.getElementById('rebalance-info-modal');
+     if (pop && echPopTrigger) positionEchPop(pop, echPopTrigger);
+ }
+
+ // Позиционируем поповер у триггера. Учитываем body{zoom:0.85} на десктопе:
+ // fixed-элемент внутри зума масштабируется, поэтому делим координаты на zoom.
+ function positionEchPop(pop, triggerEl) {
+     const zoom = parseFloat(getComputedStyle(document.body).zoom) || 1;
+     const vw = window.innerWidth, vh = window.innerHeight;
+     const margin = 12;
+     const rect = pop.getBoundingClientRect();
+     const pw = rect.width, ph = rect.height;
+     let left, top;
+
+     if (triggerEl) {
+         const r = triggerEl.getBoundingClientRect();
+         // По горизонтали: левый край у кнопки, но не вылезаем за экран
+         left = r.left;
+         if (left + pw > vw - margin) left = vw - margin - pw;
+         if (left < margin) left = margin;
+         // По вертикали: по умолчанию НАД кнопкой; если сверху мало места — снизу
+         const spaceAbove = r.top - margin;
+         const spaceBelow = vh - r.bottom - margin;
+         if (spaceAbove >= ph || spaceAbove >= spaceBelow) {
+             top = r.top - ph - margin;
+         } else {
+             top = r.bottom + margin;
+         }
+         if (top < margin) top = margin;
+         if (top + ph > vh - margin) top = vh - margin - ph;
+     } else {
+         left = (vw - pw) / 2;
+         top = (vh - ph) / 2;
+     }
+
+     pop.style.left = (left / zoom) + 'px';
+     pop.style.top  = (top  / zoom) + 'px';
+ }
+
+ // Инъекция стилей поповера (один раз)
+ function ensureEchPopStyles() {
+     if (document.getElementById('ech-pop-styles')) return;
+     const style = document.createElement('style');
+     style.id = 'ech-pop-styles';
+     style.textContent = `
+     .ech-pop {
+         position: fixed; z-index: 99999;
+         width: min(380px, calc(100vw - 24px));
+         max-height: 78vh; overflow-y: auto;
+         background: #ffffff;
+         border: 1px solid #e6ecf3;
+         border-radius: 18px;
+         box-shadow: 0 20px 54px rgba(20, 30, 50, 0.22);
+         padding: 18px 18px 20px;
+         font-family: 'Manrope', 'Inter', sans-serif;
+         opacity: 0;
+         transform: translateY(8px) scale(0.97);
+         transform-origin: top center;
+         transition: opacity .18s ease, transform .2s cubic-bezier(.2,.8,.2,1);
+     }
+     .ech-pop.open { opacity: 1; transform: translateY(0) scale(1); }
+     body.dark-mode .ech-pop { background: #1d2734; border-color: rgba(255,255,255,.1); box-shadow: 0 20px 54px rgba(0,0,0,.5); }
+     .ech-pop-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+     .ech-pop-head h3 { margin:0; font-size:16px; font-weight:800; letter-spacing:-0.01em; color:#0f172a; }
+     body.dark-mode .ech-pop-head h3 { color:#eef2f7; }
+     .ech-pop-close { background:none; border:none; font-size:24px; line-height:1; color:#94a3b8; cursor:pointer; padding:0 4px; border-radius:8px; transition: color .15s, background .15s; }
+     .ech-pop-close:hover { color:#0f172a; background:#eef2f7; }
+     body.dark-mode .ech-pop-close:hover { color:#fff; background: rgba(255,255,255,.08); }
+     .ech-pop-sub { margin:4px 0 14px; font-size:12.5px; font-weight:600; color:#8593a6; }
+     .ech-pop-body { display:flex; flex-direction:column; gap:9px; }
+     .ech-row { display:flex; gap:12px; align-items:flex-start; padding:11px 12px; border-radius:13px; background:#f6f9fc; border:1px solid #eef2f7; }
+     body.dark-mode .ech-row { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.07); }
+     .ech-row-title { font-weight:700; font-size:14px; color:#0f172a; margin-bottom:3px; }
+     body.dark-mode .ech-row-title { color:#eef2f7; }
+     .ech-row-desc { font-size:12.5px; line-height:1.4; color:#64748b; }
+     body.dark-mode .ech-row-desc { color:#9aa7ba; }
+     .ech-pop .modal-badge {
+         width:28px; height:28px; min-width:28px; border-radius:50%;
+         display:flex; align-items:center; justify-content:center;
+         font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:800;
+         border:2px solid; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-top:1px;
+     }
+     body.dark-mode .ech-pop .modal-badge { background: rgba(255,255,255,.06); }
+     .ech-pop .modal-badge.e1 { color:#10B981; border-color:#10B981; }
+     .ech-pop .modal-badge.e2 { color:#3B82F6; border-color:#3B82F6; }
+     .ech-pop .modal-badge.e3 { color:#F59E0B; border-color:#F59E0B; }
+     .ech-pop .modal-badge.e4 { color:#EF4444; border-color:#EF4444; }
+     @media (max-width: 1023px) { .ech-pop { width: calc(100vw - 24px); } }
+     `;
+     document.head.appendChild(style);
+ }
+
+// Генератор строки эшелона для поповера
 function createEchelonItem(num, title, desc, colorClass) {
     return `
-    <div style="display:flex; gap:14px; padding:12px; background: rgba(255,255,255,0.6); backdrop-filter: blur(8px); border-radius:16px; align-items: flex-start; border: 1px solid rgba(255,255,255,0.8); box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+    <div class="ech-row">
         <div class="modal-badge ${colorClass}">${num}</div>
-        <div>
-            <div style="font-weight:700; font-size:15px; margin-bottom:4px; color:#0F172A;">${title}</div>
-            <div style="font-size:13px; color:#64748B; line-height:1.4;">${desc}</div>
+        <div class="ech-row-txt">
+            <div class="ech-row-title">${title}</div>
+            <div class="ech-row-desc">${desc}</div>
         </div>
     </div>`;
 }

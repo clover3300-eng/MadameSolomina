@@ -1126,7 +1126,7 @@
               <div class="portfolio-echelons-headers">
     <div class="portfolio-echelon-h-text">
         <span>ЭШЕЛОН</span>
-        <div class="h-help-btn h-help-animated" onclick="this.classList.remove('h-help-animated'); toggleEchelonGuide(true, 'portfolio')">
+        <div class="h-help-btn h-help-animated" onclick="this.classList.remove('h-help-animated'); toggleEchelonGuide(true, 'portfolio', this)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 10px; height: 10px;">
                 <circle cx="12" cy="12" r="10"/>
                 <line x1="12" y1="16" x2="12" y2="12"/>
@@ -1274,7 +1274,7 @@
    <div class="header" style="display: flex; justify-content: space-between; align-items: center;">
     <h1>Ребаланс</h1>
     
-    <button id="stocksInfoBtn" class="info-trigger-btn" onclick="this.classList.remove('h-help-animated'); this.dataset.clicked='1'; if(window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('medium'); else if(navigator.vibrate) navigator.vibrate(10); toggleEchelonGuide(true, 'rebalance')">
+    <button id="stocksInfoBtn" class="info-trigger-btn" onclick="this.classList.remove('h-help-animated'); this.dataset.clicked='1'; if(window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('medium'); else if(navigator.vibrate) navigator.vibrate(10); toggleEchelonGuide(true, 'rebalance', this)">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="12" y1="16" x2="12" y2="12"></line>
@@ -1453,7 +1453,7 @@
             </div>
 
             <!-- Подсказка «Что такое эшелоны?» -->
-            <button type="button" class="esh-hint-btn esh-hint-stocks" onclick="toggleEchelonGuide(true,'rebalance')">
+            <button type="button" class="esh-hint-btn esh-hint-stocks" onclick="toggleEchelonGuide(true,'rebalance',this)">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle cx="12" cy="8" r="0.5"/></svg>
                 Что такое эшелоны?
             </button>
@@ -2061,7 +2061,7 @@
 <script src="js/rebalance.js?v=4" defer></script>
 <script src="js/company.js?v=2" defer></script>
 <script src="js/portfolio.js" defer></script>
-<script src="js/init.js" defer></script>
+<script src="js/init.js?v=4" defer></script>
 <script src="js/registration.js" defer></script>
 <script src="js/menu-controller.js" defer></script>
 <script src="js/vanguard-test.js" defer></script>
