@@ -992,7 +992,7 @@
                 <div class="portfolio-list-headers">
                     <span class="portfolio-list-header-text pf-rank-head"></span>
                     <span class="portfolio-list-header-text">ОБЛИГАЦИЯ</span>
-                    <span class="portfolio-list-header-text center clickable" onclick="toggleYieldHelp()" style="display:flex;align-items:center;justify-content:center;gap:4px;"><span class="ofz-hdr-full">ДОХОДНОСТЬ</span><span class="ofz-hdr-short">%</span>
+                    <span class="portfolio-list-header-text center clickable" onclick="toggleYieldHelp()" style="display:flex;align-items:center;gap:4px;">
                         <div class="h-help-btn h-help-animated" onclick="event.stopPropagation(); this.classList.remove('h-help-animated'); toggleYieldHelp()">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 10px; height: 10px;">
                                 <circle cx="12" cy="12" r="10"/>
@@ -1000,9 +1000,11 @@
                                 <line x1="12" y1="8" x2="12.01" y2="8"/>
                             </svg>
                         </div>
+                        <span class="ofz-hdr-full">ДОХОДНОСТЬ</span><span class="ofz-hdr-short">%</span>
                     </span>
-                    <span class="portfolio-list-header-text right">ШТ</span>
+                    <span class="portfolio-list-header-text right"><span class="qty-hdr-full">КОЛ-ВО</span><span class="qty-hdr-short">ШТ</span></span>
                     <span class="portfolio-list-header-text right">РАСХОДЫ</span>
+                    <span class="portfolio-list-header-text"></span>
                 </div>
                 
                 <!-- Подсказка для % (Простая доходность) -->
@@ -1099,7 +1101,7 @@
                         <div class="coupon-table-head">
                             <span>ДАТА</span>
                             <span>НАЗВАНИЕ</span>
-                            <span style="text-align:center">КОЛ-ВО</span>
+                            <span style="text-align:right">КОЛ-ВО</span>
                             <span style="text-align:right">СУММА</span>
                         </div>
                         

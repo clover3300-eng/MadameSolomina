@@ -570,11 +570,12 @@ body.dark-mode .portfolio-ofz-item.expanded {
 }
 
 .portfolio-ofz-item.expanded .ofz-expand-badge svg {
-    transform: rotate(180deg);
+    transform: rotate(90deg);
 }
 
 .portfolio-ofz-item .ofz-expand-badge {
     flex-shrink: 0;
+    justify-self: end;
 }
 
 .portfolio-ofz-item.expanded .portfolio-ofz-details {
@@ -1657,8 +1658,8 @@ body.dark-mode .echelon-explain-badge {
 /* === Динамические столбцы для ОФЗ === */
 .portfolio-ofz-summary {
     display: grid;
-    grid-template-columns: 1fr 50px 55px 90px;
-    gap: 16px;
+    grid-template-columns: minmax(0,1fr) 44px 38px 82px 16px;
+    gap: 8px;
     align-items: center;
 }
 
@@ -1710,8 +1711,8 @@ body.dark-mode .echelon-explain-badge {
 /* Заголовки списка ОФЗ */
 .portfolio-list-headers {
     display: grid;
-    grid-template-columns: 1fr 50px 55px 90px;
-    gap: 16px;
+    grid-template-columns: minmax(0,1fr) 44px 38px 82px 16px;
+    gap: 8px;
     padding: 8px 16px;
     margin-bottom: 8px;
 }
@@ -1720,9 +1721,15 @@ body.dark-mode .echelon-explain-badge {
    широкая), компактное «%» на мобиле/в Telegram, где места мало */
 .ofz-hdr-full { display: none; }
 .ofz-hdr-short { display: inline; }
+/* Заголовок количества: «КОЛ-ВО» на десктопе (колонка широкая),
+   компактное «ШТ» на мобиле/в Telegram, где места мало */
+.qty-hdr-full { display: none; }
+.qty-hdr-short { display: inline; }
 @media (min-width: 1024px) {
     .ofz-hdr-full { display: inline; }
     .ofz-hdr-short { display: none; }
+    .qty-hdr-full { display: inline; }
+    .qty-hdr-short { display: none; }
 }
 
 .portfolio-list-header-text {
@@ -1736,6 +1743,7 @@ body.dark-mode .echelon-explain-badge {
 
 .portfolio-list-header-text.center {
     text-align: center;
+    justify-content: center;
 }
 
 .portfolio-list-header-text.right {

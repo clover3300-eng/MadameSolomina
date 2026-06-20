@@ -231,13 +231,14 @@ body.dark-mode .portfolio-echelon-percent {
     transform: rotate(180deg);
 }
 
-/* Stock row expand badge */
+/* Stock row expand badge — теперь отдельной колонкой справа, как в ОФЗ */
 .portfolio-stock-wrapper.expanded .ofz-expand-badge svg {
-    transform: rotate(180deg);
+    transform: rotate(90deg);
 }
 
-.portfolio-stock-ticker .ofz-expand-badge {
+.portfolio-stock-item .ofz-expand-badge {
     flex-shrink: 0;
+    justify-self: end;
 }
 
 .portfolio-echelon-content {
@@ -253,8 +254,8 @@ body.dark-mode .portfolio-echelon-percent {
 /* Заголовки столбцов - впечатаны в фон */
 .portfolio-echelon-columns-header {
     display: grid;
-    grid-template-columns: 1fr 75px 55px 90px;
-    gap: 16px;
+    grid-template-columns: minmax(0,1fr) 64px 46px 80px 16px;
+    gap: 10px;
     padding: 10px 16px;
     font-family: 'Inter', sans-serif;
     font-size: 10px;
@@ -292,9 +293,9 @@ body.dark-mode .portfolio-stock-wrapper {
 
 .portfolio-stock-item {
     display: grid;
-    grid-template-columns: 1fr 75px 55px 90px;
+    grid-template-columns: minmax(0,1fr) 64px 46px 80px 16px;
     align-items: center;
-    gap: 16px;
+    gap: 10px;
     padding: 12px 0;
     cursor: pointer;
     transition: background 0.2s ease;
@@ -1619,6 +1620,12 @@ textarea {
 #couponTotalHeader,
 .echelon-number {
     font-family: 'JetBrains Mono', monospace !important;
+}
+
+/* Сумма ближайшей выплаты — зелёная (купонный доход), с «+» из разметки */
+.coupon-c-sum,
+.coupon-c-sum b {
+    color: #16b56b;
 }
 
 

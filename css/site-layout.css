@@ -418,7 +418,7 @@
             font-family: 'Manrope', sans-serif;
             font-size: 12.5px; letter-spacing: 0.14em; font-weight: 700;
             color: #76849a; text-transform: uppercase; white-space: nowrap;
-            margin: 0 0 10px;
+            margin: 0 0 18px;
         }
         #pfLeftRail .capital-value {
             font-family: 'JetBrains Mono', monospace;
@@ -1853,8 +1853,8 @@
 
         /* Шапка столбцов — как в Ребалансе: серая плашка, ранг, заглавные подписи */
         #pfRightCol .portfolio-list-headers {
-            grid-template-columns: 26px minmax(0,1fr) 130px 120px 180px;
-            gap: 8px;
+            grid-template-columns: 26px minmax(0,1fr) 120px 96px 150px 24px;
+            gap: 10px;
             background: #f6f9fc;
             border: none;
             border-bottom: 1px solid #eef2f7;
@@ -1899,8 +1899,8 @@
         #pfRightCol .portfolio-ofz-item.expanded { background: #f8fafc; }
         body.dark-mode #pfRightCol .portfolio-ofz-item.expanded { background: rgba(255,255,255,0.03); }
         #pfRightCol .portfolio-ofz-summary {
-            grid-template-columns: 26px minmax(0,1fr) 130px 120px 180px;
-            gap: 8px;
+            grid-template-columns: 26px minmax(0,1fr) 120px 96px 150px 24px;
+            gap: 10px;
             padding: 0 26px;
             min-height: 56px;
             align-items: center;
@@ -1913,8 +1913,13 @@
         }
         body.dark-mode #pfRightCol .portfolio-ofz-name { color: #f1f6fb; }
         #pfRightCol .portfolio-ofz-name .ofz-number { font-family: 'Manrope', sans-serif; font-weight: 800; }
-        #pfRightCol .ofz-expand-badge { color: #b6c1cf; background: transparent; border: none; }
-        #pfRightCol .ofz-expand-badge svg { width: 15px; height: 15px; }
+        #pfRightCol .ofz-expand-badge {
+            color: #b6c1cf; background: transparent; border: none;
+            width: 22px; height: 22px; border-radius: 0;
+            justify-self: end; opacity: 1;
+        }
+        #pfRightCol .portfolio-ofz-item:hover .ofz-expand-badge { color: #8f9caf; }
+        #pfRightCol .ofz-expand-badge svg { width: 15px; height: 15px; stroke: currentColor; }
         #pfRightCol .portfolio-ofz-yield {
             font-family: 'JetBrains Mono', monospace;
             color: #16b56b; font-weight: 600; font-size: 15px; text-align: right;
@@ -1929,43 +1934,62 @@
         }
         body.dark-mode #pfRightCol .portfolio-ofz-sum { color: #f1f6fb; }
 
-        /* Интегрированный тёмный футер «Итого» внутри карточки таблицы */
+        /* Раскрытая карточка ОФЗ — крупнее цифры/подписи, читабельно на десктопе */
+        #pfRightCol .portfolio-ofz-details { padding: 0 26px 18px; }
+        #pfRightCol .portfolio-ofz-detail-row { padding: 13px 0; }
+        #pfRightCol .portfolio-ofz-detail-label { font-size: 14.5px; }
+        #pfRightCol .portfolio-ofz-detail-value { font-size: 15.5px; font-weight: 700; }
+        #pfRightCol .ofz-copy-code { font-size: 14.5px; }
+        #pfRightCol .ofz-aurora-chart-btn { font-size: 14px; padding: 13px 18px; }
+
+        /* Футер «Итого» внутри карточки таблицы — лёгкий: только контур, белый фон */
         #pfRightCol .portfolio-echelons-total-row {
             margin: 12px 16px 16px;
-            background: #141b26 !important;
-            color: #ffffff;
-            border: none !important;
+            background: #ffffff !important;
+            color: #111927;
+            border: 1.5px solid #141b26 !important;
             border-radius: 16px;
             box-shadow: none !important;
             display: flex; align-items: center; gap: 14px;
             padding: 13px 18px;
         }
-        body.dark-mode #pfRightCol .portfolio-echelons-total-row { background: #0d131c !important; }
+        body.dark-mode #pfRightCol .portfolio-echelons-total-row {
+            background: #1d2734 !important;
+            border-color: rgba(255,255,255,0.28) !important;
+            color: #f1f6fb;
+        }
         #pfRightCol .portfolio-echelons-total-row .total-left { display: flex; align-items: center; gap: 12px; }
         #pfRightCol .portfolio-echelons-total-row .total-icon {
             width: 20px; height: 20px;
             background: transparent !important;
             border: none !important;
             border-radius: 0;
-            color: #ffffff;
+            color: #97a3b5;
             display: inline-flex; align-items: center; justify-content: center;
         }
-        #pfRightCol .portfolio-echelons-total-row .total-icon svg { width: 17px; height: 17px; stroke: #ffffff; }
+        #pfRightCol .portfolio-echelons-total-row .total-icon svg { width: 17px; height: 17px; stroke: #97a3b5; }
+        body.dark-mode #pfRightCol .portfolio-echelons-total-row .total-icon,
+        body.dark-mode #pfRightCol .portfolio-echelons-total-row .total-icon svg { color: #76849a; stroke: #76849a; }
         #pfRightCol .portfolio-echelons-total-row .total-label {
             font-family: 'Manrope', sans-serif;
             font-weight: 800; font-size: 15px; letter-spacing: 0.04em;
-            color: #ffffff; white-space: nowrap; text-transform: none;
+            color: #111927; white-space: nowrap; text-transform: none;
         }
+        body.dark-mode #pfRightCol .portfolio-echelons-total-row .total-label { color: #f1f6fb; }
         #pfRightCol .portfolio-echelons-total-row .total-value-col { margin-left: auto; }
         #pfRightCol .portfolio-echelons-total-row .total-sum {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 16px; font-weight: 700; color: #ffffff; white-space: nowrap;
+            font-size: 16px; font-weight: 700; color: #111927; white-space: nowrap;
         }
+        body.dark-mode #pfRightCol .portfolio-echelons-total-row .total-sum { color: #f1f6fb; }
         #pfRightCol .portfolio-echelons-total-row .total-percent {
             font-family: 'JetBrains Mono', monospace;
             font-size: 12.5px; font-weight: 600;
             padding: 5px 11px; border-radius: 999px;
-            background: rgba(255,255,255,0.14); color: #ffffff;
+            background: rgba(22,181,107,0.1); color: #16b56b;
+        }
+        body.dark-mode #pfRightCol .portfolio-echelons-total-row .total-percent {
+            background: rgba(126,226,168,0.14); color: #7ee2a8;
         }
 
         /* ===== V3: «Ближайшие выплаты» — одна строка-стрип ===== */
@@ -2058,16 +2082,43 @@
             background: rgba(255,255,255,0.03);
             border-bottom-color: rgba(255,255,255,0.07);
         }
-        /* Купонная таблица: просторные колонки на широкой карточке */
+        /* Купонная таблица: пропорциональные колонки + отступы от краёв карточки,
+           чтобы данные не липли к бортам и не «разбегались» по углам */
+        #pfRightCol .portfolio-coupon-content { padding: 0 22px 18px; }
+        #pfRightCol .tax-selector-ui { margin: 14px 0 4px !important; }
         #pfRightCol .coupon-table-head,
         #pfRightCol .coupon-row {
-            grid-template-columns: 110px 1fr 120px 140px;
-            gap: 12px;
+            grid-template-columns: 1.1fr 2.2fr 1fr 1.4fr;
+            gap: 16px;
+            padding-left: 0; padding-right: 0;
         }
-        #pfRightCol .coupon-table-head { font-size: 11px; letter-spacing: 0.08em; }
-        #pfRightCol .coupon-row { font-size: 13px; padding: 12px 0; }
+        #pfRightCol .coupon-table-head {
+            font-size: 11px; letter-spacing: 0.08em; font-weight: 800;
+            color: #8593a6; padding: 4px 0 12px;
+        }
+        body.dark-mode #pfRightCol .coupon-table-head { color: #76849a; }
+        #pfRightCol .coupon-row { font-size: 14px; padding: 13px 0; }
+        #pfRightCol .coupon-table-head span:nth-child(3),
         #pfRightCol .coupon-row div:nth-child(3) { text-align: right; }
-        #pfRightCol .coupon-row div:nth-child(4), #pfRightCol .coupon-row b:last-child { text-align: right; }
+        #pfRightCol .coupon-table-head span:nth-child(4),
+        #pfRightCol .coupon-row div:nth-child(4),
+        #pfRightCol .coupon-row b:last-child { text-align: right; }
+        /* Цифры — моноширинные, как в таблице ОФЗ */
+        #pfRightCol .coupon-c-date, #pfRightCol .coupon-c-date b,
+        #pfRightCol .coupon-c-qty,
+        #pfRightCol .coupon-c-sum, #pfRightCol .coupon-c-sum b {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        #pfRightCol .coupon-c-date, #pfRightCol .coupon-c-date b { font-weight: 600; color: #111927; }
+        body.dark-mode #pfRightCol .coupon-c-date,
+        body.dark-mode #pfRightCol .coupon-c-date b { color: #e7edf5; }
+        #pfRightCol .coupon-c-qty { color: #5f6d80; font-weight: 500; }
+        #pfRightCol .coupon-c-name {
+            font-family: 'Manrope', sans-serif; font-size: 14px; font-weight: 600;
+            color: #5f6d80 !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        /* Сумма выплаты — зелёная с «+» */
+        #pfRightCol .coupon-c-sum, #pfRightCol .coupon-c-sum b { color: #16b56b; font-weight: 700; }
         #pfRightCol .portfolio-echelons-headers .portfolio-echelon-h-text span {
             font-family: 'Manrope', sans-serif;
             font-size: 11px; font-weight: 800;
@@ -2112,22 +2163,23 @@
            выровнены по краям карточки (не прижаты к правому борту, крупные
            числа не наслаиваются друг на друга) */
         #pfRightCol .portfolio-echelon-columns-header {
-            grid-template-columns: 26px minmax(0,1fr) 130px 120px 170px;
-            gap: 12px;
-            padding: 12px 16px 10px 26px;
-            font-size: 10.5px; font-weight: 800;
+            grid-template-columns: 26px minmax(0,1fr) 120px 96px 150px 24px;
+            gap: 10px;
+            padding: 14px 26px 12px 26px;
+            font-size: 11px; font-weight: 800;
             color: #8593a6; letter-spacing: 0.1em;
         }
-        #pfRightCol .portfolio-echelon-list { padding: 0 16px 14px 26px; }
+        #pfRightCol .portfolio-echelon-list { padding: 0 26px 16px 26px; }
         #pfRightCol .portfolio-stock-item {
-            grid-template-columns: 26px minmax(0,1fr) 130px 120px 170px;
-            gap: 12px;
-            padding: 13px 0;
+            grid-template-columns: 26px minmax(0,1fr) 120px 96px 150px 24px;
+            gap: 10px;
+            padding: 15px 0;
         }
-        #pfRightCol .portfolio-stock-ticker,
+        #pfRightCol .portfolio-stock-ticker { font-size: 15px; font-weight: 700; }
         #pfRightCol .portfolio-stock-yield,
         #pfRightCol .portfolio-stock-qty,
-        #pfRightCol .portfolio-stock-sum { font-size: 13px; }
+        #pfRightCol .portfolio-stock-sum { font-size: 14.5px; }
+        #pfRightCol .portfolio-stock-item .ofz-expand-badge { justify-self: end; }
 
         /* Ранг (#N) — как в Ребалансе: моноширинный, приглушённый, по левому краю */
         #pfRightCol .pf-rank, #pfRightCol .pf-rank-head { display: block; }
@@ -2137,6 +2189,22 @@
             color: #c0ccd9; text-align: left;
         }
         body.dark-mode #pfRightCol .pf-rank { color: #5a6b80; }
+
+        /* Эшелоны крупнее — в свёрнутом виде таблица не выглядит куцей */
+        #pfRightCol .portfolio-echelon-header { padding: 19px 26px; }
+        #pfRightCol .portfolio-echelon-header-left { gap: 14px; }
+        #pfRightCol .portfolio-echelon-number {
+            width: 33px; height: 33px; font-size: 13px;
+        }
+        #pfRightCol .portfolio-echelon-title { font-size: 15px; letter-spacing: 0.02em; }
+        #pfRightCol .portfolio-echelon-header-right { grid-template-columns: auto auto 22px; gap: 12px; }
+        #pfRightCol .portfolio-echelon-sum { font-size: 15.5px; font-weight: 700; }
+        #pfRightCol .portfolio-echelon-percent { font-size: 12.5px; padding: 5px 11px; }
+        #pfRightCol .portfolio-echelon-arrow { width: 22px; height: 22px; }
+        /* Строка «ИТОГО» внутри раскрытого эшелона — крупнее */
+        #pfRightCol .portfolio-echelon-total-line { padding: 14px 26px; }
+        #pfRightCol .echelon-total-label { font-size: 11px; }
+        #pfRightCol .echelon-total-value { font-size: 15px; }
 
         /* Блок «Важно знать» — вне карточки, отдельно снизу */
         #pfRightCol .portfolio-important-aurora { margin-top: 16px; }

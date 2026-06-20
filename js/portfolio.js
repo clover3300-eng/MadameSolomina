@@ -258,11 +258,11 @@ if(document.getElementById('listBonds')) {
                         couponTotal += r.amount; 
                         couponHtml += `
                         <div class="coupon-row">
-                            <div><b>${new Date(r.date).toLocaleDateString('ru-RU')}</b></div>
-                            <div style="color:#8e8e93">${limitName(r.name)}</div>
-                            <div style="text-align:center">${r.qty}шт.</div>
-                            <div style="text-align:right"><b>${Math.round(r.amount).toLocaleString()}₽</b></div>
-                        </div>`; 
+                            <div class="coupon-c-date"><b>${new Date(r.date).toLocaleDateString('ru-RU')}</b></div>
+                            <div class="coupon-c-name" style="color:#8e8e93">${limitName(r.name)}</div>
+                            <div class="coupon-c-qty" style="text-align:right">${r.qty} шт.</div>
+                            <div class="coupon-c-sum" style="text-align:right"><b>+${Math.round(r.amount).toLocaleString()} ₽</b></div>
+                        </div>`;
                     }); 
                 }
                 document.getElementById('couponList').innerHTML = couponHtml;
@@ -565,18 +565,20 @@ if(totalRow) {
                                     <span class="pf-rank-head"></span>
                                     <span>ТИКЕР</span>
                                     <span>ДОХОДНОСТЬ</span>
-                                    <span>ШТ</span>
+                                    <span><span class="qty-hdr-full">КОЛ-ВО</span><span class="qty-hdr-short">ШТ</span></span>
                                     <span>РАСХОДЫ</span>
+                                    <span></span>
                                 </div>
                                 <div class="portfolio-echelon-list">
                                     ${stocksInEchelon.map((s, idx) => `
                                         <div class="portfolio-stock-wrapper" onclick="event.stopPropagation(); this.classList.toggle('expanded')">
                                             <div class="portfolio-stock-item">
                                                 <div class="pf-rank">#${idx + 1}</div>
-                                                <div class="portfolio-stock-ticker" style="display:flex;align-items:center;gap:5px;">${s.t}<span class="ofz-expand-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span></div>
+                                                <div class="portfolio-stock-ticker">${s.t}</div>
                                                 <div class="portfolio-stock-yield">${s.target.replace(' ₽', '')}</div>
                                                 <div class="portfolio-stock-qty">${s.qty}</div>
                                                 <div class="portfolio-stock-sum">${Math.round(s.sum).toLocaleString()} ₽</div>
+                                                <span class="ofz-expand-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></span>
                                             </div>
                                             <div class="portfolio-stock-details">
                                                 <div class="portfolio-stock-detail-grid">
@@ -769,10 +771,11 @@ function renderPortfolioBondsV2(opts) {
         <div class="portfolio-ofz-item${isJustRevealed ? ' ofz-just-revealed' : ''}" onclick="this.classList.toggle('expanded')">
             <div class="portfolio-ofz-summary">
                 <div class="pf-rank">#${idx + 1}</div>
-                <div class="portfolio-ofz-name">${formattedName}<span class="ofz-expand-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span></div>
+                <div class="portfolio-ofz-name">${formattedName}</div>
                 <div class="portfolio-ofz-yield">${b.y}</div>
                 <div class="portfolio-ofz-qty">${qty}</div>
                 <div class="portfolio-ofz-sum">${Math.round(qty * b.fullCostPerUnit).toLocaleString()} ₽</div>
+                <span class="ofz-expand-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></span>
             </div>
             <div class="portfolio-ofz-details">
                 <div class="portfolio-ofz-details-grid">
