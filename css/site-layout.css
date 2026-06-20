@@ -350,6 +350,9 @@
     /* ===== PORTFOLIO V3 «Зеркало»: новые элементы скрыты на мобиле, обёртки прозрачны ===== */
     .v3-buylist-btn, .v3-recalc-btn { display: none; }
     .v3-table-card { display: contents; }
+    /* Ранги (#N) показываем только на десктопной «зеркальной» раскладке;
+       на мобиле колонок нет, поэтому ячейка ранга скрыта */
+    .pf-rank, .pf-rank-head { display: none; }
 
     @media (min-width: 1024px) {
         #panel-portfolio { max-width: none !important; }
@@ -558,6 +561,11 @@
             font-family: 'JetBrains Mono', monospace;
             font-size: 27px; font-weight: 700;
             color: #ffffff;
+            /* сбрасываем градиент-обрезку текста из базовых стилей (она делала
+               цифру тёмной/невидимой на тёмной карточке) */
+            background: none;
+            -webkit-background-clip: border-box; background-clip: border-box;
+            -webkit-text-fill-color: #ffffff;
             margin: 12px 0 16px;
             white-space: nowrap; display: block; max-width: 100%;
         }
@@ -1573,7 +1581,7 @@
         .tab-panel { max-width: 1240px; margin: 0 auto; padding: 18px 40px 64px; width: 100%; box-sizing: border-box; }
         /* Отступ от сайдбара слева — как во вкладке «Ребаланс» (наследуется
            боковой padding .tab-panel, контент больше не прижат к сайдбару) */
-        #panel-portfolio { padding-top: 4px; }
+        #panel-portfolio { padding-top: 24px; }
         #panel-portfolio .panel-section-header { margin: 0 0 12px; }
         #calcPane { max-width: 580px; margin: 0 auto; width: 100%; }
 
@@ -1843,20 +1851,27 @@
         }
         body.dark-mode #pfRightCol .v3-table-card { background: #1d2734; }
 
+        /* Шапка столбцов — как в Ребалансе: серая плашка, ранг, заглавные подписи */
         #pfRightCol .portfolio-list-headers {
-            grid-template-columns: minmax(0,1fr) 130px 120px 180px;
+            grid-template-columns: 26px minmax(0,1fr) 130px 120px 180px;
             gap: 8px;
-            background: transparent;
+            background: #f6f9fc;
             border: none;
-            border-radius: 0;
-            padding: 18px 26px 14px;
+            border-bottom: 1px solid #eef2f7;
+            border-radius: 22px 22px 0 0;
+            padding: 14px 26px 13px;
             margin: 0;
+            align-items: center;
+        }
+        body.dark-mode #pfRightCol .portfolio-list-headers {
+            background: rgba(255,255,255,0.03);
+            border-bottom-color: rgba(255,255,255,0.07);
         }
         #pfRightCol .portfolio-list-header-text {
             font-family: 'Manrope', sans-serif;
-            font-size: 12.5px; font-weight: 700;
-            color: #97a3b4; opacity: 1;
-            letter-spacing: 0.12em;
+            font-size: 11px; font-weight: 800;
+            color: #8593a6; opacity: 1;
+            letter-spacing: 0.1em; text-transform: uppercase;
         }
         body.dark-mode #pfRightCol .portfolio-list-header-text { color: #76849a; }
         #pfRightCol .portfolio-list-header-text.center { justify-content: flex-end !important; text-align: right; }
@@ -1884,7 +1899,7 @@
         #pfRightCol .portfolio-ofz-item.expanded { background: #f8fafc; }
         body.dark-mode #pfRightCol .portfolio-ofz-item.expanded { background: rgba(255,255,255,0.03); }
         #pfRightCol .portfolio-ofz-summary {
-            grid-template-columns: minmax(0,1fr) 130px 120px 180px;
+            grid-template-columns: 26px minmax(0,1fr) 130px 120px 180px;
             gap: 8px;
             padding: 0 26px;
             min-height: 56px;
@@ -2029,13 +2044,19 @@
 
         /* ===== V3: таблица Акций (эшелоны) — та же белая карточка ===== */
         #pfRightCol .portfolio-echelons-headers {
-            background: transparent;
+            background: #f6f9fc;
             border: none;
-            border-radius: 0;
+            border-bottom: 1px solid #eef2f7;
+            border-radius: 22px 22px 0 0;
             margin: 0;
             height: auto;
-            padding: 18px 26px 14px;
+            padding: 14px 26px 13px;
             gap: 18px;
+            align-items: center;
+        }
+        body.dark-mode #pfRightCol .portfolio-echelons-headers {
+            background: rgba(255,255,255,0.03);
+            border-bottom-color: rgba(255,255,255,0.07);
         }
         /* Купонная таблица: просторные колонки на широкой карточке */
         #pfRightCol .coupon-table-head,
@@ -2049,8 +2070,8 @@
         #pfRightCol .coupon-row div:nth-child(4), #pfRightCol .coupon-row b:last-child { text-align: right; }
         #pfRightCol .portfolio-echelons-headers .portfolio-echelon-h-text span {
             font-family: 'Manrope', sans-serif;
-            font-size: 12.5px; font-weight: 700;
-            color: #97a3b4; letter-spacing: 0.12em;
+            font-size: 11px; font-weight: 800;
+            color: #8593a6; letter-spacing: 0.1em; text-transform: uppercase;
         }
         #pfRightCol #echelonContainerV2 {
             background: transparent;
@@ -2091,14 +2112,15 @@
            выровнены по краям карточки (не прижаты к правому борту, крупные
            числа не наслаиваются друг на друга) */
         #pfRightCol .portfolio-echelon-columns-header {
-            grid-template-columns: minmax(0,1fr) 130px 120px 170px;
+            grid-template-columns: 26px minmax(0,1fr) 130px 120px 170px;
             gap: 12px;
             padding: 12px 16px 10px 26px;
-            font-size: 10.5px;
+            font-size: 10.5px; font-weight: 800;
+            color: #8593a6; letter-spacing: 0.1em;
         }
         #pfRightCol .portfolio-echelon-list { padding: 0 16px 14px 26px; }
         #pfRightCol .portfolio-stock-item {
-            grid-template-columns: minmax(0,1fr) 130px 120px 170px;
+            grid-template-columns: 26px minmax(0,1fr) 130px 120px 170px;
             gap: 12px;
             padding: 13px 0;
         }
@@ -2106,6 +2128,15 @@
         #pfRightCol .portfolio-stock-yield,
         #pfRightCol .portfolio-stock-qty,
         #pfRightCol .portfolio-stock-sum { font-size: 13px; }
+
+        /* Ранг (#N) — как в Ребалансе: моноширинный, приглушённый, по левому краю */
+        #pfRightCol .pf-rank, #pfRightCol .pf-rank-head { display: block; }
+        #pfRightCol .pf-rank {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px; font-weight: 700;
+            color: #c0ccd9; text-align: left;
+        }
+        body.dark-mode #pfRightCol .pf-rank { color: #5a6b80; }
 
         /* Блок «Важно знать» — вне карточки, отдельно снизу */
         #pfRightCol .portfolio-important-aurora { margin-top: 16px; }

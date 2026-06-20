@@ -562,15 +562,17 @@ if(totalRow) {
                             </div>
                             <div class="portfolio-echelon-content">
                                 <div class="portfolio-echelon-columns-header">
+                                    <span class="pf-rank-head"></span>
                                     <span>ТИКЕР</span>
                                     <span>ДОХОДНОСТЬ</span>
                                     <span>ШТ</span>
                                     <span>РАСХОДЫ</span>
                                 </div>
                                 <div class="portfolio-echelon-list">
-                                    ${stocksInEchelon.map(s => `
+                                    ${stocksInEchelon.map((s, idx) => `
                                         <div class="portfolio-stock-wrapper" onclick="event.stopPropagation(); this.classList.toggle('expanded')">
                                             <div class="portfolio-stock-item">
+                                                <div class="pf-rank">#${idx + 1}</div>
                                                 <div class="portfolio-stock-ticker" style="display:flex;align-items:center;gap:5px;">${s.t}<span class="ofz-expand-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span></div>
                                                 <div class="portfolio-stock-yield">${s.target.replace(' ₽', '')}</div>
                                                 <div class="portfolio-stock-qty">${s.qty}</div>
@@ -766,6 +768,7 @@ function renderPortfolioBondsV2(opts) {
         html += `
         <div class="portfolio-ofz-item${isJustRevealed ? ' ofz-just-revealed' : ''}" onclick="this.classList.toggle('expanded')">
             <div class="portfolio-ofz-summary">
+                <div class="pf-rank">#${idx + 1}</div>
                 <div class="portfolio-ofz-name">${formattedName}<span class="ofz-expand-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span></div>
                 <div class="portfolio-ofz-yield">${b.y}</div>
                 <div class="portfolio-ofz-qty">${qty}</div>
