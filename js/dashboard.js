@@ -233,6 +233,7 @@
             renderRecalcPanel(snap);
 
         bindRecalcInputs();
+        if (snap) requestAnimationFrame(dashFitBigNumbers);   // подгонка крупных сумм под ширину
     }
 
     // Клик по облигации из состава → график (детальная панель — только для акций)
@@ -1034,9 +1035,42 @@
     //  Высоту задаёт блок капитала; состав и избранное подгоняются под него
     //  и скроллятся внутри (а не растягивают строку).
     // ====================================================================
+    // Подгоняем размер шрифта крупных сумм (капитал + прогноз) под ширину колонки,
+    // чтобы очень большие числа не вылезали за карточку и не налезали на кольцо.
+    function dashFitBigNumbers() {
+        var host = dq('dash2Portfolio'); if (!host) return;
+        var topL = host.querySelector('.dp-top-l'); if (!topL) return;
+
+        // Капитал — блок во всю ширину колонки: переполнение ловим через scrollWidth.
+        var capEl = host.querySelector('.dp-capital');
+        if (capEl) {
+            capEl.style.fontSize = '';                 // вернуть базовый размер из CSS
+            var cw = capEl.clientWidth, sw = capEl.scrollWidth;
+            if (cw && sw > cw) {
+                var b = parseFloat(getComputedStyle(capEl).fontSize) || 38;
+                capEl.style.fontSize = Math.max(16, Math.floor(b * cw / sw * 0.97)) + 'px';
+            }
+        }
+        // Прогноз — инлайн-значение рядом с пилюлей %: бюджет = ширина колонки минус пилюля.
+        var fcEl = host.querySelector('.dp-fc-total');
+        if (fcEl) {
+            fcEl.style.fontSize = '';
+            var pctEl = host.querySelector('.dp-fc-pct');
+            var pctW = pctEl ? pctEl.getBoundingClientRect().width : 0;
+            var budget = topL.getBoundingClientRect().width - pctW - 16;
+            var w = fcEl.getBoundingClientRect().width;
+            if (budget > 0 && w > budget) {
+                var bf = parseFloat(getComputedStyle(fcEl).fontSize) || 21;
+                fcEl.style.fontSize = Math.max(12, Math.floor(bf * budget / w * 0.97)) + 'px';
+            }
+        }
+    }
+    window.dashFitBigNumbers = dashFitBigNumbers;
+
     function dashSyncTopRowHeights() {
         var cap = dq('dash2Portfolio'), hold = dq('dash2Holdings'), fav = dq('dash2Fav');
         if (!cap) return;
+        dashFitBigNumbers();   // сначала подгоняем шрифт сумм (влияет на высоту блока капитала)
         // сброс перед измерением естественной высоты капитала
         if (hold) hold.style.height = '';
         if (fav) fav.style.height = '';
