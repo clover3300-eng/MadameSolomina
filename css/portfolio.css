@@ -1772,6 +1772,26 @@ body.dark-mode .echelon-explain-badge {
     line-height: 1.5;
 }
 
+/* Подсказка «%» — компактный поповер, заякоренный под иконкой,
+   а не баннер на всю ширину таблицы. Якорем служит ячейка «%». */
+.portfolio-echelon-h-text.clickable { position: relative; }
+.yield-help-tooltip.yield-help-anchored {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    left: auto;
+    width: 260px;
+    max-width: min(260px, calc(100vw - 32px));
+    margin: 0;
+    z-index: 60;
+    text-align: left;
+    text-transform: none;
+    letter-spacing: normal;
+    white-space: normal;
+    cursor: default;
+    box-shadow: 0 16px 40px rgba(8, 15, 30, 0.45);
+}
+
 /* Подсказка для % эшелонов */
 .echelon-percent-tooltip {
     display: none;
