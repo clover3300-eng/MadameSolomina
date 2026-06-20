@@ -563,7 +563,7 @@ if(totalRow) {
                             <div class="portfolio-echelon-content">
                                 <div class="portfolio-echelon-columns-header">
                                     <span>ТИКЕР</span>
-                                    <span>ПОТЕНЦИАЛ</span>
+                                    <span>ДОХОДНОСТЬ</span>
                                     <span>ШТ</span>
                                     <span>РАСХОДЫ</span>
                                 </div>

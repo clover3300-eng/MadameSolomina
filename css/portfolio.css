@@ -1716,6 +1716,15 @@ body.dark-mode .echelon-explain-badge {
     margin-bottom: 8px;
 }
 
+/* Заголовок столбца доходности: полное «ДОХОДНОСТЬ» на десктопе (там колонка
+   широкая), компактное «%» на мобиле/в Telegram, где места мало */
+.ofz-hdr-full { display: none; }
+.ofz-hdr-short { display: inline; }
+@media (min-width: 1024px) {
+    .ofz-hdr-full { display: inline; }
+    .ofz-hdr-short { display: none; }
+}
+
 .portfolio-list-header-text {
     font-family: 'Inter', sans-serif;
     font-size: 10px;
