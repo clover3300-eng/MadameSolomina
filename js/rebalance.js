@@ -651,6 +651,10 @@ function openStockDetail(ticker, echelon, clickedCell = null) {
             ${companySector}
         </span>` : '';
 
+    // В избранном ли тикер (единый список stk_fav_v1)
+    const isFav = (typeof window.stkGetFavorites === 'function') &&
+                  window.stkGetFavorites().indexOf(ticker) !== -1;
+
     card.innerHTML = `
         <div class="sd">
             <div class="sd-close" onclick="closeStockDetail()" title="Закрыть">
@@ -661,6 +665,7 @@ function openStockDetail(ticker, echelon, clickedCell = null) {
                     <div class="sd-tk-row">
                         <div class="tk">${ticker}</div>
                         <button class="sd-copy" onclick="copyTickerNew('${ticker}')" title="Скопировать тикер" aria-label="Скопировать тикер"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg></button>
+                        <button class="sd-fav${isFav ? ' active' : ''}" onclick="toggleStockCardFav('${ticker}', this)" title="${isFav ? 'Убрать из избранного' : 'В избранное'}" aria-label="Избранное"><svg viewBox="0 0 24 24" stroke-linejoin="round"><polygon points="12 3 14.85 8.78 21.23 9.71 16.61 14.21 17.7 20.56 12 17.56 6.3 20.56 7.39 14.21 2.77 9.71 9.15 8.78 12 3"/></svg></button>
                     </div>
                     <div class="nm">${companyName}</div>
                 </div>
@@ -735,6 +740,23 @@ function openStockDetail(ticker, echelon, clickedCell = null) {
 }
 
 // Закрыть карточку деталей
+// Добавить/убрать тикер из избранного прямо из карточки компании
+function toggleStockCardFav(ticker, btn) {
+    let nowFav = false;
+    if (typeof window.stkToggleFav === 'function') nowFav = window.stkToggleFav(ticker);
+    if (btn) {
+        btn.classList.toggle('active', nowFav);
+        btn.title = nowFav ? 'Убрать из избранного' : 'В избранное';
+        if (nowFav) {
+            btn.classList.remove('just-faved');
+            void btn.offsetWidth; // рестарт анимации
+            btn.classList.add('just-faved');
+        }
+    }
+    if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.selectionChanged();
+}
+window.toggleStockCardFav = toggleStockCardFav;
+
 function closeStockDetail() {
     const card = document.getElementById('stockDetailCard');
     if (card) {
