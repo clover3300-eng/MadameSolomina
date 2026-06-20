@@ -6,6 +6,8 @@
 
 // Текущий ключ сортировки списка ОФЗ: 'yield' (доходность) | 'price' (цена)
 let rebalanceOfzSortKey = 'yield';
+// Направление сортировки: 'desc' (убыв., ▼) | 'asc' (возр., ▲)
+let rebalanceOfzSortDir = 'desc';
 
 // Плавная зелёная шкала: чем выше доходность в диапазоне, тем насыщеннее цвет.
 function ofzYieldColor(y, minY, maxY) {
@@ -14,16 +16,32 @@ function ofzYieldColor(y, minY, maxY) {
     return `oklch(${(62 - t * 4).toFixed(1)}% ${(0.08 + t * 0.13).toFixed(3)} 152)`;
 }
 
-// Переключение сортировки списка ОФЗ (кнопки в шапке карточки)
+// Переключение сортировки списка ОФЗ (кнопки в шапке карточки).
+// Повторный клик по активной кнопке — меняет направление (возр./убыв.).
 function setOfzSort(key) {
-    if (rebalanceOfzSortKey === key) return;
-    rebalanceOfzSortKey = key;
-    const y = document.getElementById('ofzSortYield');
-    const p = document.getElementById('ofzSortPrice');
-    if (y) y.classList.toggle('act', key === 'yield');
-    if (p) p.classList.toggle('act', key === 'price');
+    if (rebalanceOfzSortKey === key) {
+        rebalanceOfzSortDir = (rebalanceOfzSortDir === 'desc') ? 'asc' : 'desc';
+    } else {
+        rebalanceOfzSortKey = key;
+        // Дефолт: доходность — по убыванию (лучшая сверху), цена — по возрастанию (дешевле сверху)
+        rebalanceOfzSortDir = (key === 'price') ? 'asc' : 'desc';
+    }
+    updateOfzSortUI();
     renderAuroraOfzList();
     if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.selectionChanged();
+}
+
+// Подсветка активной кнопки сортировки и направление стрелки
+function updateOfzSortUI() {
+    [['yield', document.getElementById('ofzSortYield')],
+     ['price', document.getElementById('ofzSortPrice')]].forEach(function(pair) {
+        const k = pair[0], el = pair[1];
+        if (!el) return;
+        const active = (rebalanceOfzSortKey === k);
+        el.classList.toggle('act', active);
+        el.classList.toggle('asc', active && rebalanceOfzSortDir === 'asc');
+        el.classList.toggle('desc', active && rebalanceOfzSortDir === 'desc');
+    });
 }
 
 // Кнопка «Показать рекомендации» (плейсхолдер)
@@ -150,8 +168,9 @@ function renderAuroraOfzList() {
         const p = parseFloat(String(b.p).replace(',', '.')) || 0;
         return p + (parseFloat(b.nkd || 0) || 0);
     };
-    const sorted = bonds.slice().sort((a, b) =>
-        rebalanceOfzSortKey === 'price' ? parsePriceFull(a) - parsePriceFull(b) : parseYield(b) - parseYield(a));
+    const sortVal = (b) => rebalanceOfzSortKey === 'price' ? parsePriceFull(b) : parseYield(b);
+    const dirSign = (rebalanceOfzSortDir === 'asc') ? 1 : -1;
+    const sorted = bonds.slice().sort((a, b) => (sortVal(a) - sortVal(b)) * dirSign);
 
     // Диапазон доходностей для цветовой шкалы
     const ysAll = sorted.map(parseYield);

@@ -271,21 +271,96 @@ body.dark-mode #rebalancePanelContent .rb-thead .ti .cnt { background: rgba(255,
     display: inline-flex;
     align-items: center;
     gap: 7px;
-    padding: 8px 14px;
+    margin: 0;
+    padding: 8px 12px 8px 14px;
+    border: 1px solid var(--r4-line2);
     border-radius: 10px;
+    font-family: 'Manrope', sans-serif;
     font-size: 13px;
     font-weight: 700;
+    line-height: 1;
     color: var(--r4-muted2);
     background: #f2f6fa;
     cursor: pointer;
-    transition: background .15s, color .15s;
+    transition: background .15s, color .15s, border-color .15s, box-shadow .15s;
 }
-body.dark-mode #rebalancePanelContent .rb-sc { background: rgba(255, 255, 255, 0.06); }
-#rebalancePanelContent .rb-sc.act { background: var(--r4-dark); color: #fff; }
-body.dark-mode #rebalancePanelContent .rb-sc.act { background: #fff; color: var(--r4-dark); }
-#rebalancePanelContent .rb-sc i { display: inline-flex; opacity: .5; }
-#rebalancePanelContent .rb-sc i svg { width: 13px; height: 13px; }
-#rebalancePanelContent .rb-sc.act i { opacity: .85; }
+#rebalancePanelContent .rb-sc:hover { background: #e7eef6; border-color: #d4deea; color: var(--r4-text); }
+body.dark-mode #rebalancePanelContent .rb-sc { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.1); }
+body.dark-mode #rebalancePanelContent .rb-sc:hover { background: rgba(255, 255, 255, 0.12); }
+#rebalancePanelContent .rb-sc.act { background: var(--r4-dark); border-color: var(--r4-dark); color: #fff; box-shadow: 0 6px 16px rgba(20, 27, 38, 0.22); }
+body.dark-mode #rebalancePanelContent .rb-sc.act { background: #fff; border-color: #fff; color: var(--r4-dark); box-shadow: none; }
+/* Иконка-индикатор: нейтральный «⇅» когда не активна, стрелка направления когда активна */
+#rebalancePanelContent .rb-sc .rb-sc-ico { display: inline-flex; align-items: center; }
+#rebalancePanelContent .rb-sc .rb-sc-ico svg { width: 13px; height: 13px; }
+#rebalancePanelContent .rb-sc .ic-neutral { opacity: .45; }
+#rebalancePanelContent .rb-sc .ic-dir { display: none; transition: transform .18s ease; }
+#rebalancePanelContent .rb-sc.act .ic-neutral { display: none; }
+#rebalancePanelContent .rb-sc.act .ic-dir { display: inline-flex; opacity: .9; }
+/* asc → стрелка вверх (▲), desc → стрелка вниз (▼, дефолт SVG) */
+#rebalancePanelContent .rb-sc.act.asc .ic-dir { transform: rotate(180deg); }
+
+/* ============================================================
+   2b. ЛЕГЕНДА таблицы ОФЗ (внизу карточки)
+   ============================================================ */
+#rebalancePanelContent .rb-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 22px;
+    padding: 14px 20px 16px;
+    border-top: 1px solid var(--r4-line);
+    background: #f9fbfd;
+}
+body.dark-mode #rebalancePanelContent .rb-legend { background: rgba(255, 255, 255, 0.02); }
+#rebalancePanelContent .rb-leg-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--r4-muted2);
+    white-space: nowrap;
+}
+#rebalancePanelContent .rb-leg-grad {
+    width: 34px;
+    height: 11px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    background: linear-gradient(90deg,
+        oklch(62% 0.08 152) 0%,
+        oklch(58% 0.21 152) 100%);
+}
+#rebalancePanelContent .rb-leg-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 6px;
+    background: #eef2f8;
+    color: var(--r4-muted2);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+body.dark-mode #rebalancePanelContent .rb-leg-chip { background: rgba(255, 255, 255, 0.08); color: #c4cedd; }
+#rebalancePanelContent .rb-leg-ic {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 6px;
+    background: #eef2f8;
+    color: var(--r4-muted2);
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+body.dark-mode #rebalancePanelContent .rb-leg-ic { background: rgba(255, 255, 255, 0.08); color: #c4cedd; }
+#rebalancePanelContent .rb-leg-ic.rb-leg-arrow svg { width: 11px; height: 11px; }
 
 /* ============================================================
    3. СПИСОК ОФЗ — таблица с рангом и центрированными колонками
@@ -994,6 +1069,11 @@ body.dark-mode #rebalancePanelContent .esh-hint-btn { background: rgba(255, 255,
     #rebalancePanelContent {
         grid-template-columns: 320px minmax(0, 1fr);
         column-gap: 22px;
+        /* Контент во всю ширину панели: снимаем кап 1180px и центрирование
+           из site-layout.css, чтобы рельса+таблица занимали всю страницу. */
+        max-width: none;
+        margin: 0;
+        justify-content: stretch;
     }
     #rbLeftRail { grid-column: 1; grid-row: 1; }
     #rbRightCol { grid-column: 2; grid-row: 1; }

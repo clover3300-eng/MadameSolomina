@@ -26,10 +26,10 @@
     <link rel="stylesheet" href="css/rebalance.css">
     <link rel="stylesheet" href="css/rebalance-stocks.css">
     <link rel="stylesheet" href="css/webapp-layout.css?v=2">
-    <link id="siteLayoutCSS" rel="stylesheet" href="css/site-layout.css?v=3">
+    <link id="siteLayoutCSS" rel="stylesheet" href="css/site-layout.css?v=4">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/backtest.css">
-    <link rel="stylesheet" href="css/rebalance-r4.css?v=2">
+    <link rel="stylesheet" href="css/rebalance-r4.css?v=3">
     <link rel="stylesheet" href="css/dashboard-panel.css?v=4">
     <link rel="stylesheet" href="css/monthly-panel.css?v=1">
     <link rel="stylesheet" href="css/stock-terminal.css?v=3">
@@ -1344,10 +1344,21 @@
                     <div class="row"><b>Кандидаты на покупку</b><span class="cnt" id="ofzCount">8</span></div>
                     <span class="sub">Недооценённые ОФЗ — нажмите строку для деталей</span>
                 </div>
-                <div class="sortbar">
-                    <span class="scap">Сорт</span>
-                    <span class="rb-sc act" id="ofzSortYield" onclick="setOfzSort('yield')">Доходность <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9l4-4 4 4"/><path d="M8 15l4 4 4-4"/></svg></i></span>
-                    <span class="rb-sc" id="ofzSortPrice" onclick="setOfzSort('price')">Цена <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9l4-4 4 4"/><path d="M8 15l4 4 4-4"/></svg></i></span>
+                <div class="sortbar" role="group" aria-label="Сортировка списка">
+                    <button type="button" class="rb-sc act desc" id="ofzSortYield" onclick="setOfzSort('yield')" title="Сортировать по доходности">
+                        Доходность
+                        <i class="rb-sc-ico">
+                            <svg class="ic-neutral" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9l4-4 4 4"/><path d="M8 15l4 4 4-4"/></svg>
+                            <svg class="ic-dir" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M6 13l6 6 6-6"/></svg>
+                        </i>
+                    </button>
+                    <button type="button" class="rb-sc" id="ofzSortPrice" onclick="setOfzSort('price')" title="Сортировать по цене">
+                        Цена
+                        <i class="rb-sc-ico">
+                            <svg class="ic-neutral" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9l4-4 4 4"/><path d="M8 15l4 4 4-4"/></svg>
+                            <svg class="ic-dir" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M6 13l6 6 6-6"/></svg>
+                        </i>
+                    </button>
                 </div>
             </div>
             <!-- Шапка столбцов: ранг | инструмент | доходность | цена -->
@@ -1368,6 +1379,14 @@
                 <div class="skeleton-list-item" style="animation-delay: 0.15s"><div class="s-left"><div class="skeleton-bone s-title"></div><div class="skeleton-bone s-sub"></div></div><div class="s-right"><div class="skeleton-bone s-price"></div><div class="skeleton-bone s-yield"></div></div></div>
             </div>
             <!-- Динамически заполняется через JS -->
+            </div>
+
+            <!-- Легенда таблицы ОФЗ -->
+            <div class="rb-legend">
+                <span class="rb-leg-item"><span class="rb-leg-grad" aria-hidden="true"></span>Цвет доходности — ярче зелёный = выше в выборке</span>
+                <span class="rb-leg-item"><span class="rb-leg-chip">#</span>Ранг по выбранной сортировке</span>
+                <span class="rb-leg-item"><span class="rb-leg-ic">₽</span>Цена указана с учётом НКД</span>
+                <span class="rb-leg-item"><span class="rb-leg-ic rb-leg-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></span>Нажмите строку — детали выпуска</span>
             </div>
         </div><!-- /rb-card -->
 
@@ -2039,7 +2058,7 @@
 <script src="js/core.js" defer></script>
 <script src="js/calculator-ui.js" defer></script>
 <script src="js/data.js" defer></script>
-<script src="js/rebalance.js?v=3" defer></script>
+<script src="js/rebalance.js?v=4" defer></script>
 <script src="js/company.js?v=2" defer></script>
 <script src="js/portfolio.js" defer></script>
 <script src="js/init.js" defer></script>

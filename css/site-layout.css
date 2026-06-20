@@ -1742,7 +1742,7 @@
         body.dark-mode #btConfigCol .bt-run-btn svg { stroke: #119d5c; }
 
         /* ===== РЕБАЛАНС V3 «Зеркало»: списки слева, умная замена справа ===== */
-        #panel-rebalance { max-width: none !important; padding-top: 4px; }
+        #panel-rebalance { max-width: none !important; padding-top: 24px; }
         /* Рынок-дашборд: верхний отступ под заголовок (как у «Главной») */
         #panel-market { padding-top: 20px; padding-bottom: 84px; }
         /* Заголовок страницы рынка — чуть плотнее к карточкам */
