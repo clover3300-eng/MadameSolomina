@@ -26,6 +26,7 @@
     // align:'center' — у всех столбцов после закреплённого (единое выравнивание).
     // Закреплённая первая колонка — Название + ISIN (см. renderBondRow).
     var COLS = [
+        { key: 'isin',                             label: 'ISIN',        type: 'text', align: 'center', title: 'Международный идентификатор ценной бумаги' },
         { key: 'кп',                               label: 'КП',          type: 'num',  align: 'center', title: 'Купонный период, дней' },
         { key: 'Текущая Цена',                     label: 'Цена',        type: 'num',  align: 'center' },
         { key: 'Текущая Купонная Доходность',      label: 'Куп. дох.',   type: 'num',  align: 'center', title: 'Текущая купонная доходность' },
@@ -266,8 +267,8 @@
         arr.sort(function (x, y) {
             for (var i = 0; i < S.length; i++) {
                 var s = S[i], key = s.key, r;
-                var av = key === '__name' ? x.name : x.main[key];
-                var bv = key === '__name' ? y.name : y.main[key];
+                var av = key === '__name' ? x.name : (key === 'isin' ? x.isin : x.main[key]);
+                var bv = key === '__name' ? y.name : (key === 'isin' ? y.isin : y.main[key]);
                 if (s.type === 'num' || s.type === 'date') {
                     var conv = s.type === 'date' ? parseDate : parseNum;
                     var an = conv(av), bn = conv(bv);
@@ -352,7 +353,7 @@
     function renderHead() {
         var ths = '';
         ths += '<th class="bnd-first bnd-head-center' + (sortInfo('__name') ? ' bnd-sorted' : '')
-             + '" data-sort="__name" data-type="text" title="' + esc(SORT_HINT) + '">Название / ISIN' + arrow('__name') + '</th>';
+             + '" data-sort="__name" data-type="text" title="' + esc(SORT_HINT) + '">Название' + arrow('__name') + '</th>';
         var cols = visibleCols();
         for (var i = 0; i < cols.length; i++) {
             var col = cols[i];
@@ -374,12 +375,12 @@
     // Одна строка облигации. rank — порядковый номер в текущем отображении (1..N).
     function renderBondRow(b, rank) {
         var isFav = state.favorites.indexOf(b.isin) !== -1;
-        // закреплённая ячейка Название/ISIN: номер + название/ISIN, справа — звезда «в избранное»
+        // закреплённая ячейка Название: номер + название, справа — звезда «в избранное»
+        // (ISIN вынесен в отдельную колонку — см. COLS)
         var tds = '<td class="bnd-first"><div class="bnd-first-cell">'
              + '<span class="bnd-ident">'
              + '<span class="bnd-num-badge">' + esc(rank) + '</span>'
-             + '<span class="bnd-id-text"><span class="bnd-tkr">' + esc(b.name) + '</span>'
-             + '<span class="bnd-name">' + esc(b.isin) + '</span></span>'
+             + '<span class="bnd-id-text"><span class="bnd-tkr">' + esc(b.name) + '</span></span>'
              + '</span>'
              + '<span class="bnd-first-actions">'
              + '<button class="bnd-fav' + (isFav ? ' active' : '') + '" type="button" data-act="fav" data-isin="' + esc(b.isin) + '" title="' + (isFav ? 'Убрать из избранного' : 'В избранное') + '" aria-label="Избранное">' + STAR_SVG + '</button>'
@@ -389,11 +390,13 @@
         var cols = visibleCols();
         for (var i = 0; i < cols.length; i++) {
             var col = cols[i];
-            var raw = b.main[col.key];
+            // ISIN берём из готового поля b.isin (с fallback на имя), остальное — из main
+            var raw = col.key === 'isin' ? b.isin : b.main[col.key];
             var empty = isEmptyVal(raw);
             var cls = 'bnd-col-center';
             if (col.type === 'num') cls += ' bnd-num';
             if (col.type === 'date') cls += ' bnd-date';
+            if (col.key === 'isin') cls += ' bnd-isin';
             if (empty) cls += ' bnd-empty-cell';
             else if (isHighlightCell(col.key, b)) cls += ' bnd-hl';
             var disp = col.type === 'date' ? displayDate(raw) : displayCell(raw);
@@ -410,7 +413,7 @@
     // Условная подсветка ячейки (цвет сайдбара #8FB3A0) по правилам из state.rules.
     function isHighlightCell(key, b) {
         var rule = ruleFor(key);
-        if (!rule) return false;
+        if (!rule || rule.off) return false; // off — выделение по этому столбцу выключено
         if (rule.op === 'always') return !isEmptyVal(b.main[key]);
         var v = parseNum(b.main[key]);
         if (isNaN(v)) return false;
@@ -482,12 +485,36 @@
             if (rmenu) rmenu.hidden = !rmenu.hidden;
             return;
         }
+        // выключить/включить выделение по одному правилу (клик по квадратику-свотчу)
+        var swBtn = e.target.closest('[data-act="rule-toggle"]');
+        if (swBtn) {
+            var rk = swBtn.getAttribute('data-rule');
+            var rl = ruleFor(rk);
+            if (rl) {
+                rl.off = !rl.off;
+                swBtn.setAttribute('aria-pressed', rl.off ? 'false' : 'true');
+                var row = el.querySelector('.bnd-rule[data-rule-row="' + cssEscape(rk) + '"]');
+                if (row) row.classList.toggle('is-off', !!rl.off);
+                if (state.status === 'ready') render();
+            }
+            return;
+        }
+        // снять все выделения (выключить все правила)
+        if (e.target.closest('[data-act="rules-clear"]')) {
+            state.rules.forEach(function (r) { r.off = true; });
+            el.querySelectorAll('.bnd-rule').forEach(function (row) { row.classList.add('is-off'); });
+            el.querySelectorAll('.bnd-rule-sw').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
+            if (state.status === 'ready') render();
+            return;
+        }
         if (e.target.closest('[data-act="rules-reset"]')) {
             state.rules = DEFAULT_RULES.map(function (r) { return Object.assign({}, r); });
             el.querySelectorAll('.bnd-rule-val').forEach(function (inp) {
                 var rule = ruleFor(inp.getAttribute('data-rule'));
                 if (rule) inp.value = rule.val;
             });
+            el.querySelectorAll('.bnd-rule').forEach(function (row) { row.classList.remove('is-off'); });
+            el.querySelectorAll('.bnd-rule-sw').forEach(function (b) { b.setAttribute('aria-pressed', 'true'); });
             if (state.status === 'ready') render();
             return;
         }
@@ -576,8 +603,9 @@
             + '      </button>'
             + '      <div class="bnd-rules-menu" hidden>'
             + '        <div class="bnd-menu-head"><span>Правила окраски</span>'
-            + '          <button type="button" class="bnd-reset" data-act="rules-reset">По умолчанию</button></div>'
-            + '        <p class="bnd-rules-hint">Ячейка подсвечивается <b>зелёным</b>, если условие выполнено. Значения порогов можно менять.</p>'
+            + '          <span class="bnd-rules-head-acts"><button type="button" class="bnd-reset" data-act="rules-clear">Снять все</button>'
+            + '          <button type="button" class="bnd-reset" data-act="rules-reset">По умолчанию</button></span></div>'
+            + '        <p class="bnd-rules-hint">Ячейка подсвечивается <b>зелёным</b>, если условие выполнено. Клик по <b>квадратику</b> слева — выключить выделение, значения порогов можно менять.</p>'
             + '        <div class="bnd-rules-list"></div>'
             + '      </div>'
             + '    </div>'
@@ -662,14 +690,16 @@
         var opSym = { '>': '>', '>=': '≥', '<': '<', '==': '=' };
         listEl.innerHTML = state.rules.map(function (r) {
             var unit = (r.op === '==') ? '' : '%';
+            var off = r.off ? ' is-off' : '';
+            var sw = '<button type="button" class="bnd-rule-sw" data-act="rule-toggle" data-rule="' + esc(r.key) + '" title="Включить/выключить выделение" aria-pressed="' + (r.off ? 'false' : 'true') + '"></button>';
             if (r.op === 'always' || r.op === '<col' || r.op === '>=col') {
                 var desc = r.op === 'always' ? 'подсвечивается всегда'
                          : (r.op === '<col' ? '&lt; ' + esc(r.colLabel) : '≥ ' + esc(r.colLabel));
-                return '<div class="bnd-rule bnd-rule-info"><span class="bnd-rule-sw"></span>'
+                return '<div class="bnd-rule bnd-rule-info' + off + '" data-rule-row="' + esc(r.key) + '">' + sw
                      + '<span class="bnd-rule-name">' + esc(r.label) + '</span>'
                      + '<span class="bnd-rule-desc">' + desc + '</span></div>';
             }
-            return '<div class="bnd-rule"><span class="bnd-rule-sw"></span>'
+            return '<div class="bnd-rule' + off + '" data-rule-row="' + esc(r.key) + '">' + sw
                  + '<span class="bnd-rule-name">' + esc(r.label) + '</span>'
                  + '<span class="bnd-rule-op">' + opSym[r.op] + '</span>'
                  + '<input class="bnd-rule-val" type="number" step="any" data-rule="' + esc(r.key) + '" value="' + esc(r.val) + '">'

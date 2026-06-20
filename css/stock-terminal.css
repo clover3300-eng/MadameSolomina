@@ -245,7 +245,14 @@
     padding: 6px 8px; border-radius: 9px; font-family: 'Inter', sans-serif; font-size: 12.5px; color: var(--stk-text);
 }
 .stk-rule:hover { background: rgba(143,179,160,0.08); }
-.stk-rule-sw { width: 13px; height: 13px; border-radius: 4px; background: rgba(143,179,160,0.5); border: 1px solid #8FB3A0; }
+.stk-rule-sw { width: 13px; height: 13px; padding: 0; border-radius: 4px; background: rgba(143,179,160,0.5); border: 1px solid #8FB3A0; cursor: pointer; transition: background 0.15s ease, border-color 0.15s ease; }
+.stk-rule-sw:hover { background: rgba(143,179,160,0.8); }
+/* выключенное правило: пустой квадратик, приглушённая строка */
+.stk-rule.is-off .stk-rule-sw { background: transparent; border-color: var(--stk-border); }
+.stk-rule.is-off .stk-rule-name,
+.stk-rule.is-off .stk-rule-op,
+.stk-rule.is-off .stk-rule-desc { opacity: 0.45; }
+.stk-rules-head-acts { display: inline-flex; gap: 8px; }
 .stk-rule-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .stk-rule-op { text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: var(--stk-slate); }
 .stk-rule-val {

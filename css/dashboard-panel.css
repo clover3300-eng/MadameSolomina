@@ -213,14 +213,15 @@ body.dark-mode .dash2-portfolio {
 }
 .dp-ring-c-top { font-family: 'Manrope', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #8ea0b6; }
 .dp-ring-c-val { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: #fff; }
-.dp-legend { display: flex; flex-direction: column; gap: 10px; width: 100%; }
-.dp-leg { display: flex; align-items: center; gap: 8px; }
+.dp-legend { display: flex; flex-direction: column; gap: 9px; width: 100%; }
+/* Одна строка на пункт, колонки выровнены: точка · название · % · сумма */
+.dp-leg { display: grid; grid-template-columns: 9px minmax(40px, 1fr) auto auto; align-items: center; column-gap: 8px; }
 .dp-dot { width: 9px; height: 9px; border-radius: 99px; flex-shrink: 0; }
 .dp-dot.bond { background: #7B9BBF; }
 .dp-dot.stock { background: #D97757; }
-.dp-leg-name { color: #aebbcc; font-weight: 700; font-size: 12.5px; }
-.dp-leg-pct { margin-left: auto; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #fff; font-size: 15px; }
-.dp-leg-sum { font-family: 'JetBrains Mono', monospace; color: #8493a6; font-size: 11px; min-width: 88px; text-align: right; white-space: nowrap; /* ₽ не переносится */ }
+.dp-leg-name { color: #aebbcc; font-weight: 700; font-size: 12.5px; white-space: nowrap; }
+.dp-leg-pct { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #fff; font-size: 15px; text-align: right; min-width: 40px; }
+.dp-leg-sum { font-family: 'JetBrains Mono', monospace; color: #8493a6; font-size: 11px; min-width: 92px; text-align: right; white-space: nowrap; /* ₽ не переносится */ }
 .dp-fc-pct.neg { color: #f87171; background: rgba(248,113,113,0.14); }
 
 /* Мини-статистика портфеля */

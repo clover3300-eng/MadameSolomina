@@ -590,7 +590,7 @@
     // Возвращает true, если значение в столбце key удовлетворяет правилу из state.rules.
     function isHighlightCell(key, co) {
         var rule = ruleFor(key);
-        if (!rule) return false;
+        if (!rule || rule.off) return false; // off — выделение по этому столбцу выключено
         if (rule.op === 'always') return !isEmptyVal(co.main[key]);
         var v = parseNum(co.main[key]);
         if (isNaN(v)) return false;
@@ -729,6 +729,28 @@
             if (rmenu) rmenu.hidden = !rmenu.hidden;
             return;
         }
+        // выключить/включить выделение по одному правилу (клик по квадратику-свотчу)
+        var swBtn = e.target.closest('[data-act="rule-toggle"]');
+        if (swBtn) {
+            var rk = swBtn.getAttribute('data-rule');
+            var rl = ruleFor(rk);
+            if (rl) {
+                rl.off = !rl.off;
+                swBtn.setAttribute('aria-pressed', rl.off ? 'false' : 'true');
+                var row = el.querySelector('.stk-rule[data-rule-row="' + cssEscape(rk) + '"]');
+                if (row) row.classList.toggle('is-off', !!rl.off);
+                if (state.status === 'ready') render();
+            }
+            return;
+        }
+        // снять все выделения (выключить все правила)
+        if (e.target.closest('[data-act="rules-clear"]')) {
+            state.rules.forEach(function (r) { r.off = true; });
+            el.querySelectorAll('.stk-rule').forEach(function (row) { row.classList.add('is-off'); });
+            el.querySelectorAll('.stk-rule-sw').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
+            if (state.status === 'ready') render();
+            return;
+        }
         // сбросить правила к значениям по умолчанию
         if (e.target.closest('[data-act="rules-reset"]')) {
             state.rules = DEFAULT_RULES.map(function (r) { return Object.assign({}, r); });
@@ -736,6 +758,8 @@
                 var rule = ruleFor(inp.getAttribute('data-rule'));
                 if (rule) inp.value = rule.val;
             });
+            el.querySelectorAll('.stk-rule').forEach(function (row) { row.classList.remove('is-off'); });
+            el.querySelectorAll('.stk-rule-sw').forEach(function (b) { b.setAttribute('aria-pressed', 'true'); });
             if (state.status === 'ready') render();
             return;
         }
@@ -927,8 +951,9 @@
             + '      </button>'
             + '      <div class="stk-rules-menu" hidden>'
             + '        <div class="stk-sec-menu-head"><span>Правила окраски</span>'
-            + '          <button type="button" class="stk-sec-reset" data-act="rules-reset">По умолчанию</button></div>'
-            + '        <p class="stk-rules-hint">Ячейка подсвечивается <b>зелёным</b>, если условие выполнено. Значения порогов можно менять.</p>'
+            + '          <span class="stk-rules-head-acts"><button type="button" class="stk-sec-reset" data-act="rules-clear">Снять все</button>'
+            + '          <button type="button" class="stk-sec-reset" data-act="rules-reset">По умолчанию</button></span></div>'
+            + '        <p class="stk-rules-hint">Ячейка подсвечивается <b>зелёным</b>, если условие выполнено. Клик по <b>квадратику</b> слева — выключить выделение, значения порогов можно менять.</p>'
             + '        <div class="stk-rules-list"></div>'
             + '      </div>'
             + '    </div>'
@@ -1031,14 +1056,16 @@
         var opSym = { '>': '>', '>=': '≥', '<': '<', '==': '=' };
         listEl.innerHTML = state.rules.map(function (r) {
             var unit = (r.key === 'EPS' || r.op === '==') ? '' : '%';
+            var off = r.off ? ' is-off' : '';
+            var sw = '<button type="button" class="stk-rule-sw" data-act="rule-toggle" data-rule="' + esc(r.key) + '" title="Включить/выключить выделение" aria-pressed="' + (r.off ? 'false' : 'true') + '"></button>';
             if (r.op === 'always' || r.op === '<col' || r.op === '>=col') {
                 var desc = r.op === 'always' ? 'подсвечивается всегда'
                          : (r.op === '<col' ? '&lt; ' + esc(r.colLabel) : '≥ ' + esc(r.colLabel));
-                return '<div class="stk-rule stk-rule-info"><span class="stk-rule-sw"></span>'
+                return '<div class="stk-rule stk-rule-info' + off + '" data-rule-row="' + esc(r.key) + '">' + sw
                      + '<span class="stk-rule-name">' + esc(r.label) + '</span>'
                      + '<span class="stk-rule-desc">' + desc + '</span></div>';
             }
-            return '<div class="stk-rule"><span class="stk-rule-sw"></span>'
+            return '<div class="stk-rule' + off + '" data-rule-row="' + esc(r.key) + '">' + sw
                  + '<span class="stk-rule-name">' + esc(r.label) + '</span>'
                  + '<span class="stk-rule-op">' + opSym[r.op] + '</span>'
                  + '<input class="stk-rule-val" type="number" step="any" data-rule="' + esc(r.key) + '" value="' + esc(r.val) + '">'

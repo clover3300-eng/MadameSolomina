@@ -545,7 +545,14 @@ async function openCompanyPage(item, searchQuery = '') {
                 <div class="analytics-tile-sub">${isStock ? 'Капитализация' : 'Государственная'}</div>
             </div>
         </div>
-        
+        ${isStock ? `
+        <!-- Оговорка о характере потенциала -->
+        <div class="analytics-note">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span>Потенциал носит условный характер и служит мерой приоритета одной акции над другой, а не прогнозом доходности.</span>
+        </div>
+        ` : ''}
+
        <!-- События терминала (новости) -->
         <div class="glass-card events-section">
             <div class="company-section-title">

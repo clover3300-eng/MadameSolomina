@@ -196,10 +196,10 @@
                 '<div class="dp-top">' +
                     '<div class="dp-top-l">' +
                         '<div class="dp-eyebrow">Текущий капитал</div>' +
-                        '<div class="dp-capital">' + esc(snap.cap) + '</div>' +
+                        '<div class="dp-capital">' + esc(bindRub(snap.cap)) + '</div>' +
                         '<div class="dp-forecast">' +
                             '<span class="dp-fc-label">Прогноз 3 года</span>' +
-                            '<span class="dp-fc-row"><span class="dp-fc-total">' + esc(snap.fcTotal) + '</span>' +
+                            '<span class="dp-fc-row"><span class="dp-fc-total">' + esc(bindRub(snap.fcTotal)) + '</span>' +
                             (snap.fcPct ? '<span class="dp-fc-pct ' + (/-/.test(snap.fcPct) ? 'neg' : '') + '">' + esc(snap.fcPct) + '</span>' : '') + '</span>' +
                         '</div>' +
                     '</div>' +
@@ -208,8 +208,8 @@
                             '<div class="dp-ring-center"><span class="dp-ring-c-top">Баланс</span><span class="dp-ring-c-val">' + bondNum + '/' + (100 - bondNum) + '</span></div>' +
                         '</div>' +
                         '<div class="dp-legend">' +
-                            '<div class="dp-leg"><span class="dp-dot bond"></span><span class="dp-leg-name">ОФЗ</span><span class="dp-leg-pct">' + esc(snap.bondPct) + '</span><span class="dp-leg-sum">' + esc(snap.bondSum) + '</span></div>' +
-                            '<div class="dp-leg"><span class="dp-dot stock"></span><span class="dp-leg-name">Акции</span><span class="dp-leg-pct">' + esc(snap.stockPct) + '</span><span class="dp-leg-sum">' + esc(snap.stockSum) + '</span></div>' +
+                            '<div class="dp-leg"><span class="dp-dot bond"></span><span class="dp-leg-name">ОФЗ</span><span class="dp-leg-pct">' + esc(snap.bondPct) + '</span><span class="dp-leg-sum">' + esc(bindRub(snap.bondSum)) + '</span></div>' +
+                            '<div class="dp-leg"><span class="dp-dot stock"></span><span class="dp-leg-name">Акции</span><span class="dp-leg-pct">' + esc(snap.stockPct) + '</span><span class="dp-leg-sum">' + esc(bindRub(snap.stockSum)) + '</span></div>' +
                         '</div>' +
                     '</div>' +
                 '</div>' +
@@ -696,7 +696,9 @@
     // ====================================================================
     //  СОСТАВ ПОРТФЕЛЯ (holdings) — отдельная полоса вне карточки
     // ====================================================================
-    function fmtSum(n) { n = Math.round(Number(n) || 0); return n.toLocaleString('ru-RU').replace(/\s/g, '.') + ' ₽'; }
+    function fmtSum(n) { n = Math.round(Number(n) || 0); return n.toLocaleString('ru-RU').replace(/\s/g, '.') + ' ₽'; }
+    // Привязываем символ ₽ к числу неразрывным пробелом, чтобы он не переносился на новую строку
+    function bindRub(s) { return String(s == null ? '' : s).replace(/\s*₽/g, ' ₽'); }
 
     function findBondByT(t) {
         if (typeof bonds !== 'undefined' && bonds) for (var i = 0; i < bonds.length; i++) if (bonds[i].t === t) return bonds[i];

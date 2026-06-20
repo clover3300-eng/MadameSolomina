@@ -182,7 +182,14 @@
     padding: 6px 8px; border-radius: 9px; font-family: 'Inter', sans-serif; font-size: 12.5px; color: var(--bnd-text);
 }
 .bnd-rule:hover { background: rgba(143,179,160,0.08); }
-.bnd-rule-sw { width: 13px; height: 13px; border-radius: 4px; background: rgba(143,179,160,0.5); border: 1px solid #8FB3A0; }
+.bnd-rule-sw { width: 13px; height: 13px; padding: 0; border-radius: 4px; background: rgba(143,179,160,0.5); border: 1px solid #8FB3A0; cursor: pointer; transition: background 0.15s ease, border-color 0.15s ease; }
+.bnd-rule-sw:hover { background: rgba(143,179,160,0.8); }
+/* выключенное правило: пустой квадратик, приглушённая строка */
+.bnd-rule.is-off .bnd-rule-sw { background: transparent; border-color: var(--bnd-border); }
+.bnd-rule.is-off .bnd-rule-name,
+.bnd-rule.is-off .bnd-rule-op,
+.bnd-rule.is-off .bnd-rule-desc { opacity: 0.45; }
+.bnd-rules-head-acts { display: inline-flex; gap: 8px; }
 .bnd-rule-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .bnd-rule-op { text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: var(--bnd-slate); }
 .bnd-rule-val {
@@ -305,6 +312,7 @@
 }
 .bnd-num { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-variant-numeric: tabular-nums; }
 .bnd-date { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--bnd-slate); }
+.bnd-isin { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 12px; letter-spacing: 0.02em; color: var(--bnd-slate); white-space: nowrap; }
 .bnd-empty-cell { color: var(--bnd-muted); }
 /* Условная подсветка ячеек (цвет сайдбара #8FB3A0) — сильнее зебры/ховера */
 .bnd-table > tbody > tr > td.bnd-hl {
