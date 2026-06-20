@@ -1089,6 +1089,10 @@ body.dark-mode #rebalancePanelContent .esh-hint-btn { background: rgba(255, 255,
     }
     #rebalancePanelContent .rb-thead { padding: 19px 26px 18px; }
     #rebalancePanelContent .esh { padding: 20px 22px 24px; }
+    /* Акции: 4 узкие колонки эшелонов не растягиваем на всю ширину —
+       ограничиваем карточку и прижимаем влево к рельсе, чтобы тикеры
+       и потенциал не «расползались» с пустотами (ОФЗ остаётся full-width). */
+    #rbRightCol .stocks-aurora-container { max-width: 1040px; margin-right: auto; }
 }
 
 /* ============================================================
