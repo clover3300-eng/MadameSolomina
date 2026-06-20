@@ -643,7 +643,7 @@
                 '</span></td>' +
                 '<td class="num">' + fmtPrice(r.last) + '</td>' +
                 '<td class="mh-td-sec-col"><span class="mh-td-sec">' + esc(r.sector) + '</span></td>' +
-                '<td class="num">' + chgPill(r.chg) + '</td>' +
+                '<td class="num mh-td-chg">' + chgPill(r.chg) + '</td>' +
                 '<td class="num mh-td-wt">' + (r.weight != null
                     ? '<span class="mh-wt"><span class="mh-wt-track"><i style="width:' + wPct.toFixed(1) + '%"></i></span>' +
                       '<span class="mh-wt-num">' + r.weight.toFixed(2) + '%</span></span>'

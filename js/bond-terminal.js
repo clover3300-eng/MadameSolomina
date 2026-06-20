@@ -26,7 +26,6 @@
     // align:'center' — у всех столбцов после закреплённого (единое выравнивание).
     // Закреплённая первая колонка — Название + ISIN (см. renderBondRow).
     var COLS = [
-        { key: 'isin',                             label: 'ISIN',        type: 'text', align: 'center', title: 'Международный идентификатор ценной бумаги' },
         { key: 'кп',                               label: 'КП',          type: 'num',  align: 'center', title: 'Купонный период, дней' },
         { key: 'Текущая Цена',                     label: 'Цена',        type: 'num',  align: 'center' },
         { key: 'Текущая Купонная Доходность',      label: 'Куп. дох.',   type: 'num',  align: 'center', title: 'Текущая купонная доходность' },
@@ -267,8 +266,8 @@
         arr.sort(function (x, y) {
             for (var i = 0; i < S.length; i++) {
                 var s = S[i], key = s.key, r;
-                var av = key === '__name' ? x.name : (key === 'isin' ? x.isin : x.main[key]);
-                var bv = key === '__name' ? y.name : (key === 'isin' ? y.isin : y.main[key]);
+                var av = key === '__name' ? x.name : x.main[key];
+                var bv = key === '__name' ? y.name : y.main[key];
                 if (s.type === 'num' || s.type === 'date') {
                     var conv = s.type === 'date' ? parseDate : parseNum;
                     var an = conv(av), bn = conv(bv);
@@ -353,7 +352,7 @@
     function renderHead() {
         var ths = '';
         ths += '<th class="bnd-first bnd-head-center' + (sortInfo('__name') ? ' bnd-sorted' : '')
-             + '" data-sort="__name" data-type="text" title="' + esc(SORT_HINT) + '">Название' + arrow('__name') + '</th>';
+             + '" data-sort="__name" data-type="text" title="' + esc(SORT_HINT) + '">Название / ISIN' + arrow('__name') + '</th>';
         var cols = visibleCols();
         for (var i = 0; i < cols.length; i++) {
             var col = cols[i];
@@ -375,12 +374,12 @@
     // Одна строка облигации. rank — порядковый номер в текущем отображении (1..N).
     function renderBondRow(b, rank) {
         var isFav = state.favorites.indexOf(b.isin) !== -1;
-        // закреплённая ячейка Название: номер + название, справа — звезда «в избранное»
-        // (ISIN вынесен в отдельную колонку — см. COLS)
+        // закреплённая ячейка Название/ISIN: номер + название/ISIN, справа — звезда «в избранное»
         var tds = '<td class="bnd-first"><div class="bnd-first-cell">'
              + '<span class="bnd-ident">'
              + '<span class="bnd-num-badge">' + esc(rank) + '</span>'
-             + '<span class="bnd-id-text"><span class="bnd-tkr">' + esc(b.name) + '</span></span>'
+             + '<span class="bnd-id-text"><span class="bnd-tkr">' + esc(b.name) + '</span>'
+             + '<span class="bnd-name">' + esc(b.isin) + '</span></span>'
              + '</span>'
              + '<span class="bnd-first-actions">'
              + '<button class="bnd-fav' + (isFav ? ' active' : '') + '" type="button" data-act="fav" data-isin="' + esc(b.isin) + '" title="' + (isFav ? 'Убрать из избранного' : 'В избранное') + '" aria-label="Избранное">' + STAR_SVG + '</button>'
@@ -390,13 +389,11 @@
         var cols = visibleCols();
         for (var i = 0; i < cols.length; i++) {
             var col = cols[i];
-            // ISIN берём из готового поля b.isin (с fallback на имя), остальное — из main
-            var raw = col.key === 'isin' ? b.isin : b.main[col.key];
+            var raw = b.main[col.key];
             var empty = isEmptyVal(raw);
             var cls = 'bnd-col-center';
             if (col.type === 'num') cls += ' bnd-num';
             if (col.type === 'date') cls += ' bnd-date';
-            if (col.key === 'isin') cls += ' bnd-isin';
             if (empty) cls += ' bnd-empty-cell';
             else if (isHighlightCell(col.key, b)) cls += ' bnd-hl';
             var disp = col.type === 'date' ? displayDate(raw) : displayCell(raw);

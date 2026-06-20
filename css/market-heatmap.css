@@ -403,6 +403,8 @@ body.dark-mode .mh-retry { color: #10201a; }
 /* «Сектор» — по центру (заголовок и ячейки), без цветного кружка */
 .mh-table th.mh-th-sec, .mh-table td.mh-td-sec-col { text-align: center; }
 .mh-td-sec { justify-content: center; }
+/* Столбец «Изм.» — по центру ячеек (переопределяем правый align от .num) */
+.mh-table thead th.mh-th-chg, .mh-table td.mh-td-chg { text-align: center; }
 
 /* пилюля изменения: стрелка-направление + модуль % */
 .mh-chg-pill { display: inline-flex; align-items: center; justify-content: center; gap: 4px;

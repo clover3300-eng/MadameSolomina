@@ -312,7 +312,6 @@
 }
 .bnd-num { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-variant-numeric: tabular-nums; }
 .bnd-date { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--bnd-slate); }
-.bnd-isin { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 12px; letter-spacing: 0.02em; color: var(--bnd-slate); white-space: nowrap; }
 .bnd-empty-cell { color: var(--bnd-muted); }
 /* Условная подсветка ячеек (цвет сайдбара #8FB3A0) — сильнее зебры/ховера */
 .bnd-table > tbody > tr > td.bnd-hl {
@@ -342,7 +341,7 @@
     font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px; color: var(--bnd-text);
 }
 .bnd-name {
-    font-family: 'JetBrains Mono', monospace; font-weight: 400; font-size: 10.5px;
+    font-family: 'JetBrains Mono', monospace; font-weight: 400; font-size: 9px;
     color: var(--bnd-muted); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     letter-spacing: 0.02em;
 }
