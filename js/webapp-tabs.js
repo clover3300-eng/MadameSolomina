@@ -1708,7 +1708,12 @@ function btRenderImoexChart(panel, data, fromStr, tillStr) {
     for (var i = 0; i < pts.length; i += step) s.push(pts[i]);
     if (s[s.length - 1] !== pts[pts.length - 1]) s.push(pts[pts.length - 1]);
 
-    var W = 640, H = 280, padL = 48, padR = 14, padT = 16, padB = 26;
+    // Размеры адаптивно под ширину контейнера: на десктопе (full-width) —
+    // широкая невысокая лента ~1:4, на мобильном — компактнее, но не «сплющенная».
+    var cw = (panel && panel.clientWidth) ? Math.round(panel.clientWidth) : 900;
+    cw = Math.max(280, cw - 4);
+    var W = cw, H = Math.round(Math.min(260, Math.max(195, cw * 0.25)));
+    var padL = 48, padR = 16, padT = 16, padB = 26;
     var allV = [];
     s.forEach(function(p) { allV.push(p.pf, p.im); });
     var minV = Math.min.apply(null, allV), maxV = Math.max.apply(null, allV);
@@ -1827,22 +1832,27 @@ function renderBtResults(results, dateStr) {
     btRenderSummary(results, dateStr);
     var html = '';
 
-    // Asset tables helper
-    function renderTable(items, title) {
+    // Asset tables helper — лекало таблицы ОФЗ из вкладки «Ребаланс»
+    function renderTable(items, title, subtitle) {
         if (!items.length) return '';
         var t = '<div class="bt-assets-card">';
+        // Шапка: название + счётчик + подзаголовок | дата теста
         t += '<div class="bt-assets-header">';
-        t += '<div class="bt-assets-title">' + title + '</div>';
+        t += '<div class="bt-assets-ti"><div class="bt-assets-titlerow">';
+        t += '<b class="bt-assets-title">' + title + '</b>';
+        t += '<span class="bt-assets-cnt">' + items.length + '</span></div>';
+        t += '<span class="bt-assets-sub">' + subtitle + '</span></div>';
         t += '<div class="bt-assets-date-pill">' + btFormatDate(dateStr) + '</div>';
-        t += '</div><div>';
-        // Header row — 4 колонки: бумага (с рангом), покупка, сейчас, P&L
+        t += '</div>';
+        // Шапка столбцов — 5 колонок: ранг | бумага | покупка | сейчас | P&L
         t += '<div class="bt-asset-row bt-asset-head">';
+        t += '<span class="bt-col-head"></span>';
         t += '<div class="bt-col-head">Бумага</div>';
         t += '<div class="bt-col-head right">Покупка</div>';
         t += '<div class="bt-col-head right">Сейчас</div>';
         t += '<div class="bt-col-head right">P&L</div>';
         t += '</div>';
-        // Data rows
+        // Строки данных
         for (var k = 0; k < items.length; k++) {
             var b = items[k];
             var rowPnlClass = b.pnl !== null ? (b.pnl > 0 ? 'pos' : b.pnl < 0 ? 'neg' : 'neutral') : 'neutral';
@@ -1855,20 +1865,20 @@ function renderBtResults(results, dateStr) {
                 : '—';
             var pnlStr = (b.error || b.pnl === null) ? '—' : rowSign + btFmtRub(b.pnl);
             t += '<div class="bt-asset-row">';
-            t += '<div class="bt-asset-namecol"><span class="bt-asset-rank">' + (k + 1) + '</span>';
+            t += '<span class="bt-asset-rank">#' + (k + 1) + '</span>';
             t += '<div class="bt-asset-nameblock"><div class="bt-asset-name">' + (b.n || b.t) + '</div>';
-            t += '<div class="bt-asset-ticker">' + b.t + ' · ' + b.qty + ' шт.</div></div></div>';
+            t += '<div class="bt-asset-ticker">' + b.t + ' · ' + b.qty + ' шт.</div></div>';
             t += '<div class="bt-asset-buy-price">' + buyStr + '</div>';
             t += '<div class="bt-asset-price">' + priceStr + '</div>';
             t += '<div class="bt-asset-pnl ' + rowPnlClass + '">' + pnlStr + '</div>';
             t += '</div>';
         }
-        t += '</div></div>';
+        t += '</div>';
         return t;
     }
 
-    html += renderTable(results.bonds, 'Облигации (ОФЗ)');
-    html += renderTable(results.stocks, 'Акции');
+    html += renderTable(results.bonds, 'Облигации (ОФЗ)', 'Цена входа на дату теста и текущая стоимость');
+    html += renderTable(results.stocks, 'Акции', 'Цена входа на дату теста и текущая стоимость');
 
     if (!results.bonds.length && !results.stocks.length) {
         html += '<div class="bt-error-card">'

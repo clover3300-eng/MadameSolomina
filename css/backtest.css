@@ -428,15 +428,28 @@ body.dark-mode .bt2-feat { border-color: rgba(255, 255, 255, 0.14); }
 .bt-res-pct-badge.neg { color: #F87171; background: rgba(248, 113, 113, 0.15); }
 .bt-res-sum-stats {
     display: grid; grid-template-columns: 1fr 1fr;
-    gap: 14px;
+    gap: 10px;
     margin-top: 20px;
 }
-.bt-res-stat { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.bt-res-stat span { font-size: 11px; color: rgba(255, 255, 255, 0.5); }
+/* Стартовая сумма / P&L — аккуратные карточки-плашки */
+.bt-res-stat {
+    display: flex; flex-direction: column; gap: 6px;
+    min-width: 0;
+    padding: 11px 13px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 13px;
+}
+.bt-res-stat span {
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.07em; text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.45);
+}
 .bt-res-stat b {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 14px; font-weight: 700;
+    font-size: 14.5px; font-weight: 800;
     color: #EAF1F8;
+    line-height: 1.05;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .bt-res-stat b.pos { color: #34D399; }
@@ -468,10 +481,16 @@ body.dark-mode .bt2-feat { border-color: rgba(255, 255, 255, 0.14); }
     to   { opacity: 1; transform: none; }
 }
 
-/* Десктоп: две колонки — настройки+шапка слева, таблица справа */
+/* Десктоп: две колонки — настройки+шапка слева, таблицы справа.
+   После расчёта раскрываемся на ВСЮ ширину панели (как «Ребаланс»):
+   снимаем кап 1200px и центрирование, добавляем боковые поля. */
 @media (min-width: 1024px) {
     .bt2-wrap.bt-results-mode {
-        max-width: 1200px;
+        max-width: none;
+        margin: 0;
+        padding: 0 40px;
+        box-sizing: border-box;
+        width: 100%;
         display: grid;
         grid-template-columns: 380px minmax(0, 1fr);
         grid-template-areas:
@@ -489,6 +508,222 @@ body.dark-mode .bt2-feat { border-color: rgba(255, 255, 255, 0.14); }
     }
     .bt2-wrap.bt-results-mode #btResults   { grid-area: results; margin-top: 0 !important; }
     .bt2-wrap.bt-results-mode .bt2-footer  { display: none; }
+}
+
+/* ============================================================
+   ТАБЛИЦЫ РЕЗУЛЬТАТОВ (Облигации / Акции) — лекало вкладки
+   «Ребаланс» (список ОФЗ): белая карточка, ранг-колонка, тонкие
+   разделители строк, Manrope-названия + JetBrains-Mono цифры.
+   Перебивают старые .bt-assets-* из webapp-layout.css / site-layout.css
+   (backtest.css грузится позже, селекторы #btResults .bt-* выигрывают).
+   ============================================================ */
+#btResults .bt-assets-card {
+    background: #ffffff;
+    border: none;
+    border-radius: 22px;
+    box-shadow: 0 16px 36px rgba(24, 38, 60, 0.08);
+    overflow: hidden;
+    margin-bottom: 16px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+body.dark-mode #btResults .bt-assets-card {
+    background: #1d2734;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+}
+
+/* Шапка карточки: название + счётчик + подзаголовок | дата-пилюля */
+#btResults .bt-assets-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 18px 24px 16px;
+    border-bottom: 1px solid #eef2f7;
+}
+body.dark-mode #btResults .bt-assets-header { border-bottom-color: rgba(255, 255, 255, 0.07); }
+#btResults .bt-assets-ti { flex: 1 1 auto; min-width: 0; }
+#btResults .bt-assets-titlerow { display: flex; align-items: center; gap: 10px; }
+#btResults .bt-assets-title {
+    font-family: 'Manrope', sans-serif;
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: #111927;
+    white-space: nowrap;
+}
+body.dark-mode #btResults .bt-assets-title { color: #f1f6fb; }
+#btResults .bt-assets-cnt {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    font-weight: 700;
+    background: #eef2f8;
+    color: #6c7a8d;
+    padding: 3px 10px;
+    border-radius: 999px;
+}
+body.dark-mode #btResults .bt-assets-cnt { background: rgba(255, 255, 255, 0.08); color: #c4cedd; }
+#btResults .bt-assets-sub {
+    display: block;
+    margin-top: 5px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #6c7a8d;
+}
+body.dark-mode #btResults .bt-assets-sub { color: #9aa8bc; }
+#btResults .bt-assets-date-pill {
+    flex-shrink: 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #6c7a8d;
+    background: #eef2f8;
+    padding: 5px 11px;
+    border-radius: 999px;
+}
+body.dark-mode #btResults .bt-assets-date-pill { background: rgba(255, 255, 255, 0.06); color: #c4cedd; }
+
+/* Строка — 5 колонок: ранг | бумага | покупка | сейчас | P&L */
+#btResults .bt-asset-row {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr) 84px 92px 110px;
+    align-items: center;
+    gap: 8px;
+    padding: 0 24px;
+    height: 58px;
+    border: none;
+    border-top: 1px solid #eef2f7;
+    transition: background 0.15s;
+}
+body.dark-mode #btResults .bt-asset-row { border-top-color: rgba(255, 255, 255, 0.06); }
+#btResults .bt-asset-row:hover { background: #f7fafd; }
+body.dark-mode #btResults .bt-asset-row:hover { background: rgba(255, 255, 255, 0.03); }
+
+/* Шапка столбцов */
+#btResults .bt-asset-head {
+    height: auto;
+    padding: 13px 24px 12px;
+    background: #f6f9fc;
+    border-top: none;
+    border-bottom: 1px solid #eef2f7;
+}
+#btResults .bt-asset-head:hover { background: #f6f9fc; }
+body.dark-mode #btResults .bt-asset-head { background: rgba(255, 255, 255, 0.03); border-bottom-color: rgba(255, 255, 255, 0.07); }
+body.dark-mode #btResults .bt-asset-head:hover { background: rgba(255, 255, 255, 0.03); }
+#btResults .bt-col-head {
+    font-family: 'Manrope', sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #8593a6;
+    white-space: nowrap;
+}
+body.dark-mode #btResults .bt-col-head { color: #76849a; }
+/* Числовые колонки — заголовок по центру ячейки (как в лекале «Ребаланса») */
+#btResults .bt-col-head.right { text-align: center; }
+
+/* Ранг — серый «#N» вместо круглого бейджа */
+#btResults .bt-asset-rank {
+    width: auto; height: auto;
+    background: none;
+    border-radius: 0;
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: #c0ccd9;
+    text-align: left;
+}
+body.dark-mode #btResults .bt-asset-rank { color: #5a6b80; }
+
+/* Название + тикер */
+#btResults .bt-asset-nameblock { min-width: 0; overflow: hidden; }
+#btResults .bt-asset-name {
+    font-family: 'Manrope', sans-serif;
+    font-size: 15.5px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: #111927;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+body.dark-mode #btResults .bt-asset-name { color: #f1f6fb; }
+#btResults .bt-asset-ticker {
+    margin-top: 2px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #8593a6;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+body.dark-mode #btResults .bt-asset-ticker { color: #76849a; }
+
+/* Цифровые колонки */
+#btResults .bt-asset-buy-price {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #5f6d80;
+    text-align: center;
+    white-space: nowrap;
+}
+body.dark-mode #btResults .bt-asset-buy-price { color: #9aa8bc; }
+#btResults .bt-asset-price {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: #111927;
+    text-align: center;
+    white-space: nowrap;
+}
+body.dark-mode #btResults .bt-asset-price { color: #f1f6fb; }
+#btResults .bt-asset-pnl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: center;
+    white-space: nowrap;
+}
+#btResults .bt-asset-pnl.pos { color: #16a34a; }
+#btResults .bt-asset-pnl.neg { color: #ef4444; }
+#btResults .bt-asset-pnl.neutral { color: #8593a6; }
+body.dark-mode #btResults .bt-asset-pnl.pos { color: #34d399; }
+body.dark-mode #btResults .bt-asset-pnl.neg { color: #f87171; }
+body.dark-mode #btResults .bt-asset-pnl.neutral { color: #76849a; }
+
+/* Десктоп: просторнее колонки и поля (как ОФЗ-таблица в «Ребалансе») */
+@media (min-width: 1024px) {
+    #btResults .bt-asset-row,
+    #btResults .bt-asset-head {
+        grid-template-columns: 30px minmax(0, 1fr) 120px 130px 150px;
+        padding-left: 26px;
+        padding-right: 26px;
+    }
+    #btResults .bt-assets-header { padding: 19px 26px 18px; }
+}
+
+/* Мобайл: прячем колонку «Покупка» — остаются ранг | бумага | сейчас | P&L
+   (две колонки значений, как в ОФЗ-таблице «Ребаланса»), иначе название
+   сжимается до многоточия на узком экране. */
+@media (max-width: 1023px) {
+    #btResults .bt-asset-buy-price { display: none; }
+    #btResults .bt-asset-head .bt-col-head:nth-child(3) { display: none; }
+    #btResults .bt-asset-row,
+    #btResults .bt-asset-head {
+        grid-template-columns: 20px minmax(0, 1fr) 84px 104px;
+        gap: 8px;
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+    #btResults .bt-assets-header { padding: 16px 16px 14px; }
+    #btResults .bt-asset-name { font-size: 14.5px; }
+    #btResults .bt-asset-price,
+    #btResults .bt-asset-pnl { font-size: 13.5px; }
+    #btResults .bt-col-head { font-size: 10px; letter-spacing: 0.04em; }
 }
 
 /* ---------- Сравнение с IMOEX: график доходности ---------- */
