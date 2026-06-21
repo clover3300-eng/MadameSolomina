@@ -545,7 +545,7 @@
         }
         #pfLeftRail .forecast-pct-display::before {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 12.5px; font-weight: 600;
+            font-size: 12.5px; font-weight: 600; line-height: 1.3;
             padding: 5px 11px;
             transform: none;
             border-radius: 999px;
@@ -623,6 +623,20 @@
         }
         .v3-recalc-btn:hover { transform: translateY(-1px); box-shadow: 0 20px 42px rgba(24,38,60,0.14); }
         .v3-recalc-btn .ic { display: inline-flex; color: #7ee2a8; }
+        /* «Новый расчёт» внутри тёмной карточки капитала — призрачная кнопка
+           под белым «Список к покупке»; карточка становится выше */
+        #pfLeftRail .capital-forecast-light .v3-recalc-btn {
+            margin-top: 10px;
+            background: rgba(255,255,255,0.07) !important;
+            color: #e7edf5 !important;
+            border: 1px solid rgba(255,255,255,0.14);
+            box-shadow: none !important;
+        }
+        #pfLeftRail .capital-forecast-light .v3-recalc-btn:hover {
+            background: rgba(255,255,255,0.12) !important;
+            transform: none; box-shadow: none !important;
+        }
+        #pfLeftRail .capital-forecast-light .v3-recalc-btn .ic { color: #7ee2a8; }
 
         /* Тёмная тема: карточка идентична светлой (всегда тёмный градиент
            «Умной замены»), поэтому переопределения сводятся к тому же виду */
@@ -645,19 +659,26 @@
     #v3BuyPanel { display: none; }
     @media (min-width: 1024px) {
         #pfRightCol.v3-buy-open .portfolio-tab-content { display: none !important; }
-        #pfRightCol.v3-buy-open #v3BuyPanel { display: flex; }
+        /* Панель ограничена по высоте: шапка, заголовки столбцов и футер «Осталось
+           купить» закреплены, прокручивается только список — итог виден сразу */
+        #pfRightCol.v3-buy-open #v3BuyPanel {
+            display: flex;
+            max-height: calc(var(--real-vh, 100vh) / 0.85 - 110px);
+        }
         #v3BuyPanel {
             flex-direction: column;
             background: #ffffff;
             border-radius: 22px;
             box-shadow: 0 16px 36px rgba(24,38,60,0.08);
             font-family: 'Manrope', sans-serif;
+            overflow: hidden;
         }
         body.dark-mode #v3BuyPanel { background: #1d2734; }
         .v3bl-head {
             display: flex; align-items: center; gap: 14px;
             padding: 14px 20px 14px 16px;
             border-bottom: 1px solid #eef2f7;
+            flex-shrink: 0;
         }
         body.dark-mode .v3bl-head { border-bottom-color: rgba(255,255,255,0.07); }
         .v3bl-iconbtn {
@@ -683,7 +704,20 @@
         }
         .v3bl-toast.show { opacity: 1; }
 
-        #v3BuyBody { padding: 2px 0 0; }
+        /* Заголовки столбцов — закреплены над прокручиваемым списком */
+        .v3bl-colhead {
+            display: flex; align-items: center; gap: 16px;
+            padding: 11px 26px; flex-shrink: 0;
+            border-bottom: 1px solid #eef2f7;
+            font-family: 'Manrope', sans-serif; font-size: 11px; font-weight: 800;
+            letter-spacing: 0.08em; text-transform: uppercase; color: #97a3b4;
+        }
+        body.dark-mode .v3bl-colhead { border-bottom-color: rgba(255,255,255,0.07); color: #76849a; }
+        .v3bl-colhead .ch-asset { flex: 1; padding-left: 38px; }
+        .v3bl-colhead .ch-qty { width: 64px; text-align: right; }
+        .v3bl-colhead .ch-sum { width: 140px; text-align: right; }
+
+        #v3BuyBody { padding: 2px 0 0; flex: 1 1 auto; overflow-y: auto; min-height: 0; }
         #v3BuyBody .sl-section-label {
             padding: 16px 26px 8px; margin: 0;
             font-family: 'Manrope', sans-serif;
@@ -728,9 +762,10 @@
             font-size: 12.5px; color: #8593a6;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 380px;
         }
-        #v3BuyBody .sl-right { margin-left: auto; text-align: right; display: flex; flex-direction: column; gap: 2px; }
-        #v3BuyBody .sl-qty { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: #5f6d80; }
-        #v3BuyBody .sl-sum { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: #111927; }
+        /* Кол-во и сумма в один ряд (как столбцы) — выровнены под заголовки */
+        #v3BuyBody .sl-right { margin-left: auto; display: flex; flex-direction: row; align-items: baseline; gap: 16px; }
+        #v3BuyBody .sl-qty { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #5f6d80; width: 64px; text-align: right; }
+        #v3BuyBody .sl-sum { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: #111927; width: 140px; text-align: right; }
         body.dark-mode #v3BuyBody .sl-sum { color: #f1f6fb; }
         #v3BuyBody .sl-item.filled .sl-ticker,
         #v3BuyBody .sl-item.filled .sl-sum {
@@ -760,6 +795,7 @@
             background: #141b26; border-radius: 16px; color: #ffffff;
             padding: 14px 18px;
             display: flex; flex-direction: column; gap: 10px;
+            flex-shrink: 0;
         }
         body.dark-mode .v3bl-foot { background: #0d131c; }
         .v3bl-foot-row { display: flex; align-items: flex-end; gap: 14px; }
@@ -2094,23 +2130,31 @@
         /* Купонная таблица: пропорциональные колонки + отступы от краёв карточки,
            чтобы данные не липли к бортам и не «разбегались» по углам */
         #pfRightCol .portfolio-coupon-content { padding: 0 26px 18px; }
+        /* Таблица выплат: ранг (#N) + строки во всю ширину карточки с подсветкой
+           при наведении — как в таблице ОФЗ. Отрицательные margin'ы выводят строку
+           из паддинга контента, внутренний паддинг возвращает выравнивание. */
         #pfRightCol .coupon-table-head,
         #pfRightCol .coupon-row {
-            grid-template-columns: 110px 168px minmax(0,1fr) 150px;
-            gap: 14px;
-            padding-left: 0; padding-right: 0;
+            grid-template-columns: 26px 110px 168px minmax(0,1fr) 150px;
+            gap: 12px;
+            margin: 0 -26px;
+            padding-left: 26px; padding-right: 26px;
             align-items: center;
         }
         #pfRightCol .coupon-table-head {
             font-size: 11px; letter-spacing: 0.08em; font-weight: 800;
-            color: #8593a6; padding: 4px 0 12px;
+            color: #8593a6; padding-top: 4px; padding-bottom: 12px;
+            border-bottom: 1px solid #eef2f7;
         }
-        body.dark-mode #pfRightCol .coupon-table-head { color: #76849a; }
-        #pfRightCol .coupon-row { font-size: 14px; padding: 13px 0; }
-        #pfRightCol .coupon-table-head span:nth-child(3),
-        #pfRightCol .coupon-row div:nth-child(3) { text-align: right; }
+        body.dark-mode #pfRightCol .coupon-table-head { color: #76849a; border-bottom-color: rgba(255,255,255,0.07); }
+        #pfRightCol .coupon-row { font-size: 14px; padding-top: 13px; padding-bottom: 13px; transition: background .12s ease; }
+        #pfRightCol .coupon-row:hover { background: #f8fafc; }
+        body.dark-mode #pfRightCol .coupon-row:hover { background: rgba(255,255,255,0.03); }
+        /* КОЛ-ВО и СУММА по правому краю (после ранга это 4-я и 5-я колонки) */
         #pfRightCol .coupon-table-head span:nth-child(4),
-        #pfRightCol .coupon-row div:nth-child(4),
+        #pfRightCol .coupon-row div:nth-child(4) { text-align: right; }
+        #pfRightCol .coupon-table-head span:nth-child(5),
+        #pfRightCol .coupon-row div:nth-child(5),
         #pfRightCol .coupon-row b:last-child { text-align: right; }
         /* Цифры — моноширинные, как в таблице ОФЗ */
         #pfRightCol .coupon-c-date, #pfRightCol .coupon-c-date b,
@@ -2157,6 +2201,9 @@
         body.dark-mode #pfRightCol .tax-ui-btn { color: #aab6c6 !important; }
         body.dark-mode #pfRightCol .tax-ui-btn.active { background: #2c3a4d !important; color: #ffffff !important; box-shadow: none !important; }
 
+        /* Свёрнутая карточка: убираем нижний паддинг контента (он переживает
+           max-height:0 и раздувает бокс), чтобы высота = только строка-заголовок */
+        #pfRightCol .portfolio-coupon-card:not(.open) .portfolio-coupon-content { padding-bottom: 0; }
         /* Свёрнутая строка выплат: превью+сумма группируются справа, заголовок — слева */
         #pfRightCol .portfolio-coupon-card:not(.open) .coupon-preview-info { flex: 0 1 auto; margin-left: auto; }
         #pfRightCol .portfolio-coupon-card:not(.open) .coupon-preview-right { margin-left: 14px; }

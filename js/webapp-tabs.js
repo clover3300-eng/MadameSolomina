@@ -135,16 +135,23 @@ function populatePanels() {
             buyBtn.type = 'button';
             buyBtn.className = 'v3-buylist-btn';
             buyBtn.innerHTML = '<span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="16" rx="2.5"/><path d="M9 5V4a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 4v1"/><path d="M8.5 11l1.6 1.6L13.5 9"/><path d="M8.5 16.5h5"/></svg></span>Список к покупке<span class="count" id="v3BuyCount">0</span>';
-            buyBtn.onclick = function() { if (typeof window.v3OpenBuyList === 'function') window.v3OpenBuyList(); else if (typeof openShoppingList === 'function') openShoppingList(); };
+            // Повторное нажатие сворачивает встроенную панель (десктоп)
+            buyBtn.onclick = function() {
+                var pfR = document.getElementById('pfRightCol');
+                if (pfR && pfR.classList.contains('v3-buy-open')) { if (typeof window.v3CloseBuyList === 'function') window.v3CloseBuyList(); return; }
+                if (typeof window.v3OpenBuyList === 'function') window.v3OpenBuyList();
+                else if (typeof openShoppingList === 'function') openShoppingList();
+            };
             fcLight.appendChild(buyBtn);
         }
-        // 3) Кнопка «Рассчитать заново» под панелью — возврат на вкладку Расчёт
+        // 3) Кнопка «Новый расчёт» — внутри карточки капитала (увеличивает её),
+        //    возврат на вкладку Расчёт
         const recalc = document.createElement('button');
         recalc.type = 'button';
         recalc.className = 'v3-recalc-btn';
-        recalc.innerHTML = '<span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 0 1 14.4-6.1L21 8"/><path d="M21 3.5V8.2h-4.7"/><path d="M20.5 12a8.5 8.5 0 0 1-14.4 6.1L3 16"/><path d="M3 20.5V15.8h4.7"/></svg></span>Рассчитать заново';
+        recalc.innerHTML = '<span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 0 1 14.4-6.1L21 8"/><path d="M21 3.5V8.2h-4.7"/><path d="M20.5 12a8.5 8.5 0 0 1-14.4 6.1L3 16"/><path d="M3 20.5V15.8h4.7"/></svg></span>Новый расчёт';
         recalc.onclick = function() { switchTab('calc'); };
-        rail.appendChild(recalc);
+        if (fcLight) fcLight.appendChild(recalc); else rail.appendChild(recalc);
         // 3.5) Встроенная панель «Список к покупке» — открывается вместо таблицы
         const pfRight = document.getElementById('pfRightCol');
         if (pfRight) {
@@ -162,6 +169,11 @@ function populatePanels() {
                     '<button type="button" class="v3bl-iconbtn" onclick="v3CopyBuyList()" title="Скопировать список">' +
                         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2.5"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
                     '</button>' +
+                '</div>' +
+                '<div class="v3bl-colhead">' +
+                    '<span class="ch-asset">Актив</span>' +
+                    '<span class="ch-qty">Кол-во</span>' +
+                    '<span class="ch-sum">Сумма</span>' +
                 '</div>' +
                 '<div id="v3BuyBody"></div>' +
                 '<div class="v3bl-foot">' +

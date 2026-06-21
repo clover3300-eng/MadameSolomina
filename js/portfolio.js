@@ -254,10 +254,11 @@ if(document.getElementById('listBonds')) {
                 if(rainData.length === 0) { 
                     couponHtml = '<div style="text-align:center; padding:15px; color:#aaa; font-size:12px;">Нет ближайших выплат для выбранных активов.</div>';
                 } else { 
-                    rainData.forEach(r => { 
-                        couponTotal += r.amount; 
+                    rainData.forEach((r, i) => {
+                        couponTotal += r.amount;
                         couponHtml += `
                         <div class="coupon-row">
+                            <div class="pf-rank">#${i + 1}</div>
                             <div class="coupon-c-date"><b>${new Date(r.date).toLocaleDateString('ru-RU')}</b></div>
                             <div class="coupon-c-name" style="color:#8e8e93">${limitName(r.name)}</div>
                             <div class="coupon-c-qty" style="text-align:right">${r.qty} шт.</div>
@@ -1061,7 +1062,7 @@ function openShoppingList() {
         const bondsTotal = data.bonds.reduce((a, b) => a + b.sum, 0);
         _slTotalSum += bondsTotal;
         
-        html += `<div class="sl-section-label">Облигации / OFZ</div>`;
+        html += `<div class="sl-section-label">Облигации</div>`;
         html += `<div class="sl-card-group">`;
         data.bonds.forEach(b => {
             html += `
@@ -1091,7 +1092,7 @@ function openShoppingList() {
         const stocksTotal = data.stocks.reduce((a, s) => a + s.sum, 0);
         _slTotalSum += stocksTotal;
         
-        html += `<div class="sl-section-label">Акции / Stocks</div>`;
+        html += `<div class="sl-section-label">Акции</div>`;
         html += `<div class="sl-card-group">`;
         data.stocks.forEach(s => {
             const tier = s.echelon || 1;
