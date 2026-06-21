@@ -627,14 +627,16 @@
            под белым «Список к покупке»; карточка становится выше */
         #pfLeftRail .capital-forecast-light .v3-recalc-btn {
             margin-top: 10px;
+            padding: 15px 18px;
+            font-size: 15px;
             background: rgba(255,255,255,0.07) !important;
             color: #e7edf5 !important;
-            border: 1px solid rgba(255,255,255,0.14);
-            box-shadow: none !important;
+            border: none;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14) !important;
         }
         #pfLeftRail .capital-forecast-light .v3-recalc-btn:hover {
             background: rgba(255,255,255,0.12) !important;
-            transform: none; box-shadow: none !important;
+            transform: none; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2) !important;
         }
         #pfLeftRail .capital-forecast-light .v3-recalc-btn .ic { color: #7ee2a8; }
 
@@ -2295,8 +2297,54 @@
         #pfRightCol .echelon-total-label { font-size: 11px; }
         #pfRightCol .echelon-total-value { font-size: 15px; }
 
-        /* Блок «Важно знать» — вне карточки, отдельно снизу */
-        #pfRightCol .portfolio-important-aurora { margin-top: 16px; }
+        /* Блок «Важно знать» — утончённый стиль вместо amber-предупреждения */
+        #pfRightCol .portfolio-important-aurora {
+            margin-top: 20px;
+            padding: 20px 24px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px;
+            gap: 16px;
+            align-items: flex-start;
+        }
+        #pfRightCol .important-aurora-icon {
+            width: 34px; height: 34px; min-width: 34px;
+            background: rgba(126,226,168,0.10);
+            border: 1px solid rgba(126,226,168,0.15);
+            border-radius: 10px;
+        }
+        #pfRightCol .important-aurora-icon svg { stroke: #7ee2a8; width: 16px; height: 16px; }
+        #pfRightCol .important-aurora-title {
+            font-family: 'Manrope', sans-serif;
+            font-size: 11px; font-weight: 800;
+            letter-spacing: 0.1em; text-transform: uppercase;
+            color: #7ee2a8; margin-bottom: 6px;
+        }
+        #pfRightCol .important-aurora-text {
+            font-family: 'Manrope', sans-serif;
+            font-size: 13px; line-height: 1.6;
+            color: #8a99b0;
+        }
+        #pfRightCol .important-aurora-text .highlight-marker {
+            background: linear-gradient(120deg, rgba(126,226,168,0.18) 0%, rgba(126,226,168,0.18) 100%);
+            color: #c4cedd; font-weight: 700;
+        }
+        /* Светлая тема */
+        body:not(.dark-mode) #pfRightCol .portfolio-important-aurora {
+            background: #f6f9fc;
+            border-color: #e8eef5;
+        }
+        body:not(.dark-mode) #pfRightCol .important-aurora-icon {
+            background: rgba(17,157,92,0.08);
+            border-color: rgba(17,157,92,0.12);
+        }
+        body:not(.dark-mode) #pfRightCol .important-aurora-icon svg { stroke: #119d5c; }
+        body:not(.dark-mode) #pfRightCol .important-aurora-title { color: #119d5c; }
+        body:not(.dark-mode) #pfRightCol .important-aurora-text { color: #5f6d80; }
+        body:not(.dark-mode) #pfRightCol .important-aurora-text .highlight-marker {
+            background: linear-gradient(120deg, rgba(17,157,92,0.12) 0%, rgba(17,157,92,0.12) 100%);
+            color: #111927;
+        }
 
         /* (центрирование списков ребаланса убрано — теперь они в правой колонке) */
 
