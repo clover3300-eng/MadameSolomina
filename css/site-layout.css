@@ -359,7 +359,7 @@
         /* Сетка как в Ребалансе: карточка слева (фикс. 320px), таблица справа (1fr) */
         #portfolio-page-buy.active {
             display: grid !important;
-            grid-template-columns: minmax(0, 1fr) 320px;
+            grid-template-columns: 320px minmax(0, 1fr);
             column-gap: 22px;
             row-gap: 0;
             align-items: start;
@@ -369,11 +369,11 @@
             margin: 0;
         }
         #pfLeftRail {
-            grid-column: 2; grid-row: 1;   /* карточка капитала — справа */
+            grid-column: 1; grid-row: 1;   /* карточка капитала — слева */
             display: flex; flex-direction: column; min-width: 0;
         }
         #pfRightCol {
-            grid-column: 1; grid-row: 1;   /* таблица — слева */
+            grid-column: 2; grid-row: 1;   /* таблица — справа */
             min-width: 0; max-width: none; margin: 0; width: 100%;
             display: flex; flex-direction: column;
         }
@@ -530,11 +530,11 @@
             box-shadow: none;
         }
 
-        /* Прогноз (светлая часть карточки) */
+        /* Прогноз (светлая часть карточки) — белый «подвал» под тёмным верхом */
         #pfLeftRail .capital-forecast-light {
-            background: transparent !important;
+            background: #ffffff !important;
             box-shadow: none !important;
-            padding: 4px 22px 22px !important;
+            padding: 20px 22px 20px !important;
             flex: 1;
             display: flex;
             flex-direction: column;
@@ -552,7 +552,7 @@
             grid-column: 1; grid-row: 1;
             font-family: 'Manrope', sans-serif;
             font-size: 12.5px; letter-spacing: 0.14em; font-weight: 700;
-            color: #9aa7b8; text-transform: uppercase; white-space: nowrap;
+            color: #64748b; text-transform: uppercase; white-space: nowrap;
             padding: 0;
         }
         #pfLeftRail .forecast-pct-display {
@@ -566,8 +566,8 @@
             padding: 5px 11px;
             transform: none;
             border-radius: 999px;
-            background: rgba(58,208,138,0.16);
-            color: #3ad08a;
+            background: #e7f7ee;
+            color: #119d5c;
             border: none;
             box-shadow: none;
             letter-spacing: 0;
@@ -576,13 +576,13 @@
         #pfLeftRail .forecast-data-total {
             grid-column: 1 / -1; grid-row: 2;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 27px; font-weight: 700;
-            color: #ffffff;
-            /* сбрасываем градиент-обрезку текста из базовых стилей (она делала
-               цифру тёмной/невидимой на тёмной карточке) */
+            font-size: 27px; font-weight: 600;
+            color: #1e293b;
+            /* сбрасываем градиент-обрезку текста из базовых стилей; мягкий слейт
+               средней насыщенности, не жирный — гармоничнее на белом «подвале» */
             background: none;
             -webkit-background-clip: border-box; background-clip: border-box;
-            -webkit-text-fill-color: #ffffff;
+            -webkit-text-fill-color: #1e293b;
             margin: 12px 0 16px;
             white-space: nowrap; display: block; max-width: 100%;
         }
@@ -592,39 +592,39 @@
             align-items: stretch !important;
             gap: 0;
             margin-top: 0;
-            border-top: 1px solid rgba(255,255,255,0.08);
+            border-top: 1px solid rgba(15,23,42,0.08);
             padding-top: 14px;
         }
         #pfLeftRail .forecast-breakdown-divider { display: none; }
         #pfLeftRail .forecast-breakdown-item { display: flex; align-items: center; gap: 10px; padding: 4px 0; }
         #pfLeftRail .forecast-breakdown-item .fb-dot { width: 7px; height: 7px; border-radius: 99px; position: static; }
         #pfLeftRail .forecast-breakdown-item .fb-label {
-            font-family: 'Manrope', sans-serif; color: #aab6c6;
+            font-family: 'Manrope', sans-serif; color: #5f6d80;
             font-size: 14.5px !important; padding: 0;
         }
         #pfLeftRail .forecast-breakdown-item .fb-value {
             margin-left: auto; font-family: 'JetBrains Mono', monospace;
-            color: #c4cedd; font-size: 14px !important; text-align: right;
+            color: #334155; font-size: 14px !important; text-align: right;
         }
 
-        /* Кнопка «Список к покупке» внизу карточки */
+        /* Кнопка «Список к покупке» — основное действие на белом «подвале» */
         .v3-buylist-btn {
-            margin-top: 22px;
+            margin-top: 18px;
             display: flex; align-items: center; gap: 12px;
-            background: #ffffff; border: none; border-radius: 14px;
+            background: #141b26; border: none; border-radius: 14px;
             padding: 15px 18px;
             font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 15px;
-            color: #111927; white-space: nowrap; cursor: pointer;
+            color: #ffffff; white-space: nowrap; cursor: pointer;
             width: 100%; text-align: left;
             transition: background 0.15s ease;
         }
-        .v3-buylist-btn:hover { background: #eef2f8; }
-        .v3-buylist-btn .ic { display: inline-flex; color: #5f6d80; }
+        .v3-buylist-btn:hover { background: #1f2937; }
+        .v3-buylist-btn .ic { display: inline-flex; color: #9aa7bd; }
         .v3-buylist-btn .count {
             margin-left: auto;
             font-family: 'JetBrains Mono', monospace;
             font-size: 12.5px; font-weight: 700;
-            background: #141b26; color: #ffffff;
+            background: rgba(255,255,255,0.16); color: #ffffff;
             padding: 3px 10px; border-radius: 999px;
         }
 
@@ -640,38 +640,53 @@
         }
         .v3-recalc-btn:hover { transform: translateY(-1px); box-shadow: 0 20px 42px rgba(24,38,60,0.14); }
         .v3-recalc-btn .ic { display: inline-flex; color: #7ee2a8; }
-        /* «Новый расчёт» внутри тёмной карточки капитала — призрачная кнопка
-           под белым «Список к покупке»; карточка становится выше */
+        /* «Новый расчёт» под белым «Список к покупке» — лёгкая текстовая кнопка
+           без заливки и рамки, чтобы низ карточки не выглядел тяжёлым */
         #pfLeftRail .capital-forecast-light .v3-recalc-btn {
-            margin-top: 10px;
-            padding: 15px 18px;
-            font-size: 15px;
-            background: rgba(255,255,255,0.07) !important;
-            color: #e7edf5 !important;
+            margin-top: 6px;
+            padding: 11px 18px;
+            font-size: 14px;
+            font-weight: 600;
+            background: transparent !important;
+            color: #5f6d80 !important;
             border: none;
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14) !important;
+            box-shadow: none !important;
         }
         #pfLeftRail .capital-forecast-light .v3-recalc-btn:hover {
-            background: rgba(255,255,255,0.12) !important;
-            transform: none; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2) !important;
+            background: rgba(15,23,42,0.045) !important;
+            transform: none; box-shadow: none !important;
+            color: #111927 !important;
         }
-        #pfLeftRail .capital-forecast-light .v3-recalc-btn .ic { color: #7ee2a8; }
+        #pfLeftRail .capital-forecast-light .v3-recalc-btn .ic { color: #119d5c; }
 
-        /* Тёмная тема: карточка идентична светлой (всегда тёмный градиент
-           «Умной замены»), поэтому переопределения сводятся к тому же виду */
+        /* Тёмная тема: тёмный верх карточки тот же; «подвал» прогноза в тёмной
+           теме остаётся ТЁМНЫМ (прозрачный — виден градиент), текст/кнопки светлые */
         body.dark-mode #pfLeftRail .portfolio-capital-card { background: linear-gradient(150deg, #10161f 0%, #222e3f 100%) !important; }
         body.dark-mode #pfLeftRail .portfolio-capital-card .portfolio-content-tabs { background: transparent; border-bottom: none; }
         body.dark-mode #pfLeftRail .portfolio-tab-switcher { background: rgba(255,255,255,0.08); }
         body.dark-mode #pfLeftRail .portfolio-tab-btn.active { background: #ffffff; color: #141b26; }
         body.dark-mode #pfLeftRail .capital-forecast-light { background: transparent !important; }
-        body.dark-mode #pfLeftRail .forecast-data-total { color: #ffffff; }
+        body.dark-mode #pfLeftRail .forecast-label-text { color: #9aa7b8; }
+        body.dark-mode #pfLeftRail .forecast-pct-display::before { background: rgba(58,208,138,0.16); color: #3ad08a; }
+        body.dark-mode #pfLeftRail .forecast-data-total { color: #ffffff; -webkit-text-fill-color: #ffffff; }
         body.dark-mode #pfLeftRail .forecast-breakdown-row { border-top-color: rgba(255,255,255,0.08); }
+        body.dark-mode #pfLeftRail .forecast-breakdown-item .fb-label { color: #aab6c6; }
         body.dark-mode #pfLeftRail .forecast-breakdown-item .fb-value { color: #c4cedd; }
+        /* Кнопки на тёмном «подвале»: «Список» снова белый, «Новый расчёт» — призрачный */
         body.dark-mode .v3-buylist-btn { background: #ffffff; color: #111927; }
         body.dark-mode .v3-buylist-btn:hover { background: #eef2f8; }
+        body.dark-mode .v3-buylist-btn .ic { color: #5f6d80; }
         body.dark-mode .v3-buylist-btn .count { background: #141b26; color: #ffffff; }
-        body.dark-mode .v3-recalc-btn { background: #ffffff; color: #141b26; }
-        body.dark-mode .v3-recalc-btn .ic { color: #119d5c; }
+        body.dark-mode #pfLeftRail .capital-forecast-light .v3-recalc-btn {
+            background: rgba(255,255,255,0.07) !important;
+            color: #e7edf5 !important;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14) !important;
+        }
+        body.dark-mode #pfLeftRail .capital-forecast-light .v3-recalc-btn:hover {
+            background: rgba(255,255,255,0.12) !important;
+            color: #ffffff !important;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2) !important;
+        }
     }
 
     /* ===== V3: встроенная панель «Список к покупке» (вместо таблицы) ===== */
@@ -808,27 +823,29 @@
         }
         body.dark-mode #v3BuyBody .sl-group-total-value { color: #f1f6fb; }
 
-        /* Тёмный футер прогресса — в стиле «Итого ОФЗ» */
+        /* Футер прогресса «Осталось купить» — компактный итог в стиле «Итого ОФЗ»:
+           метрики сверху, прогресс-бар и % — одной строкой снизу */
         .v3bl-foot {
             margin: 12px 16px 16px;
-            background: #141b26; border-radius: 16px; color: #ffffff;
-            padding: 14px 18px;
-            display: flex; flex-direction: column; gap: 10px;
+            background: #141b26; border-radius: 18px; color: #ffffff;
+            padding: 16px 18px 15px;
+            display: flex; flex-wrap: wrap; align-items: center;
+            column-gap: 14px; row-gap: 13px;
             flex-shrink: 0;
         }
         body.dark-mode .v3bl-foot { background: #0d131c; }
-        .v3bl-foot-row { display: flex; align-items: flex-end; gap: 14px; }
+        .v3bl-foot-row { flex: 1 1 100%; display: flex; align-items: flex-end; gap: 14px; }
         .v3bl-foot .lb {
             font-family: 'Manrope', sans-serif;
-            font-size: 11px; letter-spacing: 0.12em; font-weight: 700;
-            color: #76849a; text-transform: uppercase; margin-bottom: 4px;
+            font-size: 10.5px; letter-spacing: 0.12em; font-weight: 700;
+            color: #76849a; text-transform: uppercase; margin-bottom: 6px;
         }
-        .v3bl-foot .vl { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 16px; white-space: nowrap; }
+        .v3bl-foot .vl { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 18px; white-space: nowrap; line-height: 1; }
         .v3bl-foot .plan { margin-left: auto; text-align: right; }
-        .v3bl-foot .plan .vl { color: #c4cedd; font-size: 13px; }
-        .v3bl-track { height: 5px; border-radius: 99px; background: rgba(255,255,255,0.12); overflow: hidden; }
-        .v3bl-bar { height: 100%; width: 0%; background: #3ad08a; border-radius: 99px; transition: width 0.25s ease; }
-        .v3bl-pct { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #3ad08a; text-align: right; }
+        .v3bl-foot .plan .vl { color: #8a97ad; font-size: 13px; font-weight: 600; }
+        .v3bl-track { flex: 1 1 auto; height: 7px; border-radius: 99px; background: rgba(255,255,255,0.1); overflow: hidden; }
+        .v3bl-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #2bb87a, #3ad08a); border-radius: 99px; transition: width 0.3s ease; }
+        .v3bl-pct { flex: 0 0 auto; min-width: 36px; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: #3ad08a; text-align: right; }
     }
 
     /* ===== CUSTOM DATEPICKER (backtest, desktop) ===== */
