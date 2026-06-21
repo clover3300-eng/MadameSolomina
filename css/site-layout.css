@@ -783,7 +783,7 @@
         }
         /* Кол-во и сумма в один ряд (как столбцы) — выровнены под заголовки */
         #v3BuyBody .sl-right { margin-left: auto; display: flex; flex-direction: row; align-items: baseline; gap: 16px; }
-        #v3BuyBody .sl-qty { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #5f6d80; width: 64px; text-align: right; }
+        #v3BuyBody .sl-qty { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 600; color: #5f6d80; width: 64px; text-align: right; }
         #v3BuyBody .sl-sum { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: #111927; width: 140px; text-align: right; }
         body.dark-mode #v3BuyBody .sl-sum { color: #f1f6fb; }
         #v3BuyBody .sl-item.filled .sl-ticker,
