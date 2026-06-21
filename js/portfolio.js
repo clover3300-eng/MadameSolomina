@@ -170,7 +170,7 @@
                         <div class="list-item-summary">
                             <span class="list-item-ticker">${limitName(b.n)}</span>
                             <span class="list-item-yield bonds">${b.y}</span>
-                            <span class="list-item-qty">${b.qty} шт.</span>
+                            <span class="list-item-qty">${b.qty}</span>
                             <span class="list-item-sum">${Math.round(b.qty * b.p).toLocaleString()} ₽</span>
                         </div>
                         <div class="list-item-details" onclick="event.stopPropagation()">
@@ -261,7 +261,7 @@ if(document.getElementById('listBonds')) {
                             <div class="pf-rank">#${i + 1}</div>
                             <div class="coupon-c-date"><b>${new Date(r.date).toLocaleDateString('ru-RU')}</b></div>
                             <div class="coupon-c-name" style="color:#8e8e93">${limitName(r.name)}</div>
-                            <div class="coupon-c-qty" style="text-align:right">${r.qty} шт.</div>
+                            <div class="coupon-c-qty" style="text-align:right">${r.qty}</div>
                             <div class="coupon-c-sum" style="text-align:right"><b>+${Math.round(r.amount).toLocaleString()} ₽</b></div>
                         </div>`;
                     }); 
@@ -376,7 +376,7 @@ if(document.getElementById('listBonds')) {
                         <div class="list-item-summary">
                             <span class="list-item-ticker">${s.t}</span>
                             <span class="list-item-yield stocks">${s.target.replace(' ₽','')}</span>
-                            <span class="list-item-qty">${s.qty} шт.</span>
+                            <span class="list-item-qty">${s.qty}</span>
                             <span class="list-item-sum">${Math.round(s.qty * s.p).toLocaleString()} ₽</span>
                         </div>
                         <div class="list-item-details" onclick="event.stopPropagation()">
@@ -1076,7 +1076,7 @@ function openShoppingList() {
                     <div class="sl-name">${b.name}</div>
                 </div>
                 <div class="sl-right">
-                    <div class="sl-qty">${b.qty} шт</div>
+                    <div class="sl-qty">${b.qty}</div>
                     <div class="sl-sum">${b.sum.toLocaleString('ru-RU')} ₽</div>
                 </div>
             </div>`;
@@ -1108,7 +1108,7 @@ function openShoppingList() {
                     <div class="sl-name">${s.name}</div>
                 </div>
                 <div class="sl-right">
-                    <div class="sl-qty">${s.qty} шт</div>
+                    <div class="sl-qty">${s.qty}</div>
                     <div class="sl-sum">${s.sum.toLocaleString('ru-RU')} ₽</div>
                 </div>
             </div>`;

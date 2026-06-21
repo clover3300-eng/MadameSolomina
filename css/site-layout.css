@@ -426,12 +426,29 @@
             color: #ffffff; white-space: nowrap; display: inline-block; max-width: 100%;
         }
         #pfLeftRail .capital-fee-corner {
+            position: relative; cursor: help;
             font-family: 'JetBrains Mono', monospace;
             font-size: 12.5px !important; font-weight: 700;
             padding: 5px 11px !important; border-radius: 999px;
             background: rgba(255,255,255,0.1) !important;
             color: #ffffff !important;
             border: none !important; margin-top: 2px;
+        }
+        #pfLeftRail .capital-fee-corner::after {
+            content: 'Комиссия брокера';
+            position: absolute; left: 50%; top: calc(100% + 8px);
+            transform: translateX(-50%);
+            white-space: nowrap;
+            font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 600;
+            color: #e7edf5; background: #2a3548;
+            padding: 6px 12px; border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.15s ease;
+        }
+        #pfLeftRail .capital-fee-corner:hover::after { opacity: 1; }
+        body:not(.dark-mode) #pfLeftRail .capital-fee-corner::after {
+            color: #ffffff; background: #1d2734;
         }
         #pfLeftRail .capital-thin-bar { height: 5px; border-radius: 99px; margin: 32px 0 20px; overflow: hidden; }
         /* Легенда-распределение: общая сетка для обеих строк, чтобы колонки
