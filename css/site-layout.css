@@ -1960,16 +1960,19 @@
         }
         #pfRightCol .portfolio-echelons-total-row .total-left { display: flex; align-items: center; gap: 12px; }
         #pfRightCol .portfolio-echelons-total-row .total-icon {
-            width: 20px; height: 20px;
+            width: 30px; height: 30px;
             background: transparent !important;
-            border: none !important;
-            border-radius: 0;
-            color: #97a3b5;
+            border: 1.5px solid #141b26 !important;
+            border-radius: 9px;
+            color: #141b26;
             display: inline-flex; align-items: center; justify-content: center;
         }
-        #pfRightCol .portfolio-echelons-total-row .total-icon svg { width: 17px; height: 17px; stroke: #97a3b5; }
-        body.dark-mode #pfRightCol .portfolio-echelons-total-row .total-icon,
-        body.dark-mode #pfRightCol .portfolio-echelons-total-row .total-icon svg { color: #76849a; stroke: #76849a; }
+        #pfRightCol .portfolio-echelons-total-row .total-icon svg { width: 16px; height: 16px; stroke: #141b26; }
+        body.dark-mode #pfRightCol .portfolio-echelons-total-row .total-icon {
+            border-color: rgba(255,255,255,0.45) !important;
+            color: #e7edf5;
+        }
+        body.dark-mode #pfRightCol .portfolio-echelons-total-row .total-icon svg { stroke: #e7edf5; }
         #pfRightCol .portfolio-echelons-total-row .total-label {
             font-family: 'Manrope', sans-serif;
             font-weight: 800; font-size: 15px; letter-spacing: 0.04em;
@@ -2068,6 +2071,8 @@
 
         /* ===== V3: таблица Акций (эшелоны) — та же белая карточка ===== */
         #pfRightCol .portfolio-echelons-headers {
+            display: grid;
+            grid-template-columns: minmax(0,1fr) 150px 56px 22px;
             background: #f6f9fc;
             border: none;
             border-bottom: 1px solid #eef2f7;
@@ -2075,22 +2080,26 @@
             margin: 0;
             height: auto;
             padding: 14px 26px 13px;
-            gap: 18px;
+            gap: 12px;
             align-items: center;
         }
+        /* РАСХОДЫ выравнивается над суммой эшелона, % — над бейджем процента */
+        #pfRightCol .portfolio-echelons-headers .portfolio-echelon-h-text:nth-child(1) { justify-content: flex-start; padding-left: 0; }
+        #pfRightCol .portfolio-echelons-headers .portfolio-echelon-h-text:nth-child(2),
+        #pfRightCol .portfolio-echelons-headers .portfolio-echelon-h-text:nth-child(3) { justify-content: flex-end; }
         body.dark-mode #pfRightCol .portfolio-echelons-headers {
             background: rgba(255,255,255,0.03);
             border-bottom-color: rgba(255,255,255,0.07);
         }
         /* Купонная таблица: пропорциональные колонки + отступы от краёв карточки,
            чтобы данные не липли к бортам и не «разбегались» по углам */
-        #pfRightCol .portfolio-coupon-content { padding: 0 22px 18px; }
-        #pfRightCol .tax-selector-ui { margin: 14px 0 4px !important; }
+        #pfRightCol .portfolio-coupon-content { padding: 0 26px 18px; }
         #pfRightCol .coupon-table-head,
         #pfRightCol .coupon-row {
-            grid-template-columns: 1.1fr 2.2fr 1fr 1.4fr;
-            gap: 16px;
+            grid-template-columns: 110px 168px minmax(0,1fr) 150px;
+            gap: 14px;
             padding-left: 0; padding-right: 0;
+            align-items: center;
         }
         #pfRightCol .coupon-table-head {
             font-size: 11px; letter-spacing: 0.08em; font-weight: 800;
@@ -2119,6 +2128,39 @@
         }
         /* Сумма выплаты — зелёная с «+» */
         #pfRightCol .coupon-c-sum, #pfRightCol .coupon-c-sum b { color: #16b56b; font-weight: 700; }
+        /* Итоговая строка под таблицей выплат */
+        #pfRightCol .coupon-total-foot { color: #6b7787; }
+        #pfRightCol #couponTotalHeaderV2 { font-family: 'JetBrains Mono', monospace; }
+        body.dark-mode #pfRightCol .coupon-total-foot { color: #aab6c6; border-top-color: rgba(255,255,255,0.08) !important; }
+
+        /* Тумблер налогов — сегмент-контрол под общий стиль (как переключатели в приложении) */
+        #pfRightCol .tax-selector-ui {
+            display: flex; gap: 4px;
+            margin: 16px 0 6px !important;
+            padding: 4px !important;
+            background: #eef2f7 !important;
+            border-radius: 12px !important;
+        }
+        body.dark-mode #pfRightCol .tax-selector-ui { background: rgba(255,255,255,0.06) !important; }
+        #pfRightCol .tax-ui-btn {
+            flex: 1; padding: 9px 0 !important;
+            border: none !important; border-radius: 9px !important;
+            background: transparent !important; box-shadow: none !important;
+            font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 700;
+            color: #6b7787 !important; cursor: pointer;
+            transition: background .18s, color .18s, box-shadow .18s;
+        }
+        #pfRightCol .tax-ui-btn.active {
+            background: #ffffff !important; color: #111927 !important;
+            box-shadow: 0 2px 8px rgba(24,38,60,0.12) !important;
+        }
+        body.dark-mode #pfRightCol .tax-ui-btn { color: #aab6c6 !important; }
+        body.dark-mode #pfRightCol .tax-ui-btn.active { background: #2c3a4d !important; color: #ffffff !important; box-shadow: none !important; }
+
+        /* Свёрнутая строка выплат: превью+сумма группируются справа, заголовок — слева */
+        #pfRightCol .portfolio-coupon-card:not(.open) .coupon-preview-info { flex: 0 1 auto; margin-left: auto; }
+        #pfRightCol .portfolio-coupon-card:not(.open) .coupon-preview-right { margin-left: 14px; }
+        #pfRightCol .portfolio-coupon-card:not(.open) .coupon-preview-strip { padding-right: 56px; }
         #pfRightCol .portfolio-echelons-headers .portfolio-echelon-h-text span {
             font-family: 'Manrope', sans-serif;
             font-size: 11px; font-weight: 800;
@@ -2197,9 +2239,9 @@
             width: 33px; height: 33px; font-size: 13px;
         }
         #pfRightCol .portfolio-echelon-title { font-size: 15px; letter-spacing: 0.02em; }
-        #pfRightCol .portfolio-echelon-header-right { grid-template-columns: auto auto 22px; gap: 12px; }
+        #pfRightCol .portfolio-echelon-header-right { grid-template-columns: 150px 56px 22px; gap: 12px; }
         #pfRightCol .portfolio-echelon-sum { font-size: 15.5px; font-weight: 700; }
-        #pfRightCol .portfolio-echelon-percent { font-size: 12.5px; padding: 5px 11px; }
+        #pfRightCol .portfolio-echelon-percent { font-size: 12.5px; padding: 5px 11px; justify-self: end; }
         #pfRightCol .portfolio-echelon-arrow { width: 22px; height: 22px; }
         /* Строка «ИТОГО» внутри раскрытого эшелона — крупнее */
         #pfRightCol .portfolio-echelon-total-line { padding: 14px 26px; }

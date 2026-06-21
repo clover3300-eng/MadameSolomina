@@ -265,12 +265,12 @@ body.dark-mode .portfolio-echelon-percent {
     color: var(--text-slate);
 }
 
-.portfolio-echelon-columns-header span:nth-last-child(3) {
+.portfolio-echelon-columns-header span:nth-last-child(4) {
     text-align: center;
 }
 
-.portfolio-echelon-columns-header span:nth-last-child(2),
-.portfolio-echelon-columns-header span:nth-last-child(1) {
+.portfolio-echelon-columns-header span:nth-last-child(3),
+.portfolio-echelon-columns-header span:nth-last-child(2) {
     text-align: right;
 }
 
@@ -465,12 +465,12 @@ body.dark-mode .portfolio-echelon-columns-header {
     border-bottom-color: rgba(255, 255, 255, 0.08);
 }
 
-.portfolio-echelon-columns-header span:nth-last-child(3) {
+.portfolio-echelon-columns-header span:nth-last-child(4) {
     text-align: center;
 }
 
-.portfolio-echelon-columns-header span:nth-last-child(2),
-.portfolio-echelon-columns-header span:nth-last-child(1) {
+.portfolio-echelon-columns-header span:nth-last-child(3),
+.portfolio-echelon-columns-header span:nth-last-child(2) {
     text-align: right;
 }
 
