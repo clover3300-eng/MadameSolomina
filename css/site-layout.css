@@ -426,7 +426,7 @@
             color: #ffffff; white-space: nowrap; display: inline-block; max-width: 100%;
         }
         #pfLeftRail .capital-fee-corner {
-            position: relative; cursor: help;
+            position: relative; cursor: default;
             font-family: 'JetBrains Mono', monospace;
             font-size: 12.5px !important; font-weight: 700;
             padding: 5px 11px !important; border-radius: 999px;
@@ -434,11 +434,14 @@
             color: #ffffff !important;
             border: none !important; margin-top: 2px;
         }
+        /* Подсказка прижата правым краём к бейджу и уходит влево внутрь карточки —
+           иначе её обрезает overflow:hidden; z-index держит её поверх контента */
         #pfLeftRail .capital-fee-corner::after {
             content: 'Комиссия брокера';
-            position: absolute; left: 50%; top: calc(100% + 8px);
-            transform: translateX(-50%);
+            position: absolute; right: 0; left: auto; top: calc(100% + 8px);
+            transform: none;
             white-space: nowrap;
+            z-index: 6;
             font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 600;
             color: #e7edf5; background: #2a3548;
             padding: 6px 12px; border-radius: 8px;
@@ -2350,13 +2353,13 @@
         #pfRightCol .important-aurora-icon svg { stroke: #7ee2a8; width: 16px; height: 16px; }
         #pfRightCol .important-aurora-title {
             font-family: 'Manrope', sans-serif;
-            font-size: 11px; font-weight: 800;
+            font-size: 12px; font-weight: 800;
             letter-spacing: 0.1em; text-transform: uppercase;
-            color: #7ee2a8; margin-bottom: 6px;
+            color: #7ee2a8; margin-bottom: 7px;
         }
         #pfRightCol .important-aurora-text {
             font-family: 'Manrope', sans-serif;
-            font-size: 13px; line-height: 1.6;
+            font-size: 15px !important; line-height: 1.65 !important;
             color: #8a99b0;
         }
         #pfRightCol .important-aurora-text .highlight-marker {

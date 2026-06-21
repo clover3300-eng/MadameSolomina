@@ -1038,6 +1038,17 @@ function closePortfolioMenuOnClick(e) {
 let _slTotalSum = 0;
 let _slExecutedSum = 0;
 
+// Сохранение отмеченных позиций между открытиями списка (localStorage).
+// Ключ позиции — тип:тикер:кол-во, чтобы при изменении плана старые отметки
+// не «прилипали» к новым количествам.
+function slLoadChecked() {
+    try { return new Set(JSON.parse(localStorage.getItem('sl_checked_v1') || '[]')); }
+    catch (e) { return new Set(); }
+}
+function slSaveChecked(set) {
+    try { localStorage.setItem('sl_checked_v1', JSON.stringify([...set])); } catch (e) {}
+}
+
 function openShoppingList() {
     const overlay = document.getElementById('shoppingListOverlay');
     const body = document.getElementById('shoppingListBody');
@@ -1056,7 +1067,8 @@ function openShoppingList() {
     let html = '';
     _slTotalSum = 0;
     _slExecutedSum = 0;
-    
+    const checked = slLoadChecked();
+
     // Облигации
     if (data.bonds.length > 0) {
         const bondsTotal = data.bonds.reduce((a, b) => a + b.sum, 0);
@@ -1065,9 +1077,12 @@ function openShoppingList() {
         html += `<div class="sl-section-label">Облигации</div>`;
         html += `<div class="sl-card-group">`;
         data.bonds.forEach(b => {
+            const key = 'b:' + b.ticker + ':' + b.qty;
+            const isOn = checked.has(key);
+            if (isOn) _slExecutedSum += b.sum;
             html += `
-            <div class="sl-item" data-sum="${b.sum}" onclick="toggleShopItem(this)">
-                <div class="sl-checkbox"></div>
+            <div class="sl-item${isOn ? ' filled' : ''}" data-slkey="${key}" data-sum="${b.sum}" onclick="toggleShopItem(this)">
+                <div class="sl-checkbox">${isOn ? svgCheck : ''}</div>
                 <div class="sl-info">
                     <div class="sl-info-top">
                         <span class="sl-badge sl-badge-ofz">OFZ</span>
@@ -1097,9 +1112,12 @@ function openShoppingList() {
         data.stocks.forEach(s => {
             const tier = s.echelon || 1;
             const badgeClass = tier <= 3 ? `sl-badge-t${tier}` : 'sl-badge-t3';
+            const key = 's:' + s.ticker + ':' + s.qty;
+            const isOn = checked.has(key);
+            if (isOn) _slExecutedSum += s.sum;
             html += `
-            <div class="sl-item" data-sum="${s.sum}" onclick="toggleShopItem(this)">
-                <div class="sl-checkbox"></div>
+            <div class="sl-item${isOn ? ' filled' : ''}" data-slkey="${key}" data-sum="${s.sum}" onclick="toggleShopItem(this)">
+                <div class="sl-checkbox">${isOn ? svgCheck : ''}</div>
                 <div class="sl-info">
                     <div class="sl-info-top">
                         <span class="sl-badge ${badgeClass}">${roman[tier-1]}</span>
@@ -1133,17 +1151,22 @@ function toggleShopItem(row) {
     if (!checkbox) return;
     const sum = parseFloat(row.dataset.sum) || 0;
     const isFilled = row.classList.contains('filled');
-    
+    const key = row.dataset.slkey;
+    const checked = slLoadChecked();
+
     if (isFilled) {
         row.classList.remove('filled');
         checkbox.innerHTML = '';
         _slExecutedSum -= sum;
+        if (key) checked.delete(key);
     } else {
         row.classList.add('filled');
         checkbox.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;"><polyline points="20 6 9 17 4 12"/></svg>';
         _slExecutedSum += sum;
+        if (key) checked.add(key);
     }
-    
+    slSaveChecked(checked);
+
     _slExecutedSum = Math.max(0, _slExecutedSum);
     updateSlFooter();
     
