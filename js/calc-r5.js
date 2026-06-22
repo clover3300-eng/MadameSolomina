@@ -61,16 +61,17 @@
       strat.onclick = function (e) { e.stopPropagation(); };
       dist.body.appendChild(strat);
       forceOpenStrategy(strat);
-      // Панель «Своя» вынимаем из глубины стратегии — она станет оверлеем НА ВСЮ карточку
-      // (кладём как прямого ребёнка карточки, чтобы absolute inset:0 покрывал её целиком,
-      //  при этом список под ним остаётся в потоке и держит высоту карточки неизменной)
+      // Панель «Своя» вынимаем из глубины стратегии — она станет оверлеем над телом карточки.
+      // Кладём в .ct (body), а НЕ на саму карточку: inset:0 покрывает только контент-зону,
+      //  при этом шапка карточки (РАСПРЕДЕЛЕНИЕ / Стратегия) остаётся видимой, а список под
+      //  оверлеем держит высоту .ct — карточка не меняет размер.
       var custom = document.getElementById('customStrategyExpanded');
-      if (custom) { enhanceCustom(custom); dist.card.appendChild(custom); }
+      if (custom) { enhanceCustom(custom); dist.body.appendChild(custom); }
     }
     // Точка входа в квиз — в потоке (часть высоты карточки)
     dist.body.appendChild(buildQuizEntry());
-    // Сам квиз — оверлей на всю карточку
-    dist.card.appendChild(buildQuiz());
+    // Сам квиз — оверлей над телом карточки (под шапкой)
+    dist.body.appendChild(buildQuiz());
 
     // Прячем старьё
     [hdr, banner].forEach(function (n) { if (n) n.style.display = 'none'; });
@@ -167,8 +168,16 @@
       '<span class="pd">' + esc(t.long) + '</span>' +
       '<span class="pm">' + t.meta.map(function (m) { return '<span>' + esc(m) + '</span>'; }).join('') + '</span>';
     term.appendChild(pop);
-    // у верхних строк раскрываем поповер вниз, чтобы не уезжал за край
-    if (term.getBoundingClientRect().top < 230) pop.classList.add('below');
+    // Позиционируем так, чтобы поповер не уезжал за края экрана/карточки.
+    // getBoundingClientRect и innerWidth — оба в отрисованных px (учёт zoom), поэтому
+    //  сравнение корректно. Подбираем вертикаль (вверх/вниз) и горизонталь (центр/лево/право).
+    var r = term.getBoundingClientRect();
+    if (r.top < 240) pop.classList.add('below');     // у верхних строк раскрываем вниз
+    var half = pop.getBoundingClientRect().width / 2;
+    var center = r.left + r.width / 2;
+    var pad = 14;
+    if (center - half < pad)                          pop.classList.add('pop-l'); // прижать к левому краю термина
+    else if (center + half > window.innerWidth - pad) pop.classList.add('pop-r'); // прижать к правому
     _pop = pop; _popFor = term;
   }
   function r5BindTerms() {
@@ -215,7 +224,7 @@
             '<div class="r-prog"><i id="r5QuizProg"></i></div>' +
             '<span class="qno" id="r5QuizNo"></span>' +
           '</div>' +
-          '<button type="button" class="q-close" id="r5QuizClose">Закрыть</button>' +
+          '<button type="button" class="q-close" id="r5QuizClose" aria-label="Закрыть тест">' + XMARK + '</button>' +
         '</div>' +
         '<h3 class="qq" id="r5QuizQ"></h3>' +
         '<div class="qopts" id="r5QuizOpts"></div>' +
