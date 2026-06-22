@@ -165,22 +165,37 @@ function ndBuildWF() {
     if (!inner) return;
     inner.innerHTML = '';
     const currentTitle = document.getElementById('ndStratCardVal')?.textContent?.trim() || '';
+    const hasCustom = (typeof savedCustomBonds !== 'undefined' && savedCustomBonds !== null);
+    // Термины «Обл.»/«Акц.» оборачиваем в .r5-term — поповер вешает js/calc-r5.js
+    const obT = '<span class="r5-term ob" data-term="ob">Обл.</span>';
+    const acT = '<span class="r5-term ac" data-term="ac">Акц.</span>';
     ND_STRATEGIES.forEach(s => {
         const card = document.createElement('div');
-        const isSelected = s.title === currentTitle;
         const isCustom = s.bonds === -1;
-        card.className = 'nd-wfc' + (isCustom ? ' nd-wfc-custom' : '') + (isSelected ? ' nd-wfc-selected' : '');
-        const bondGrad = isCustom ? 50 : s.bonds;
-        const rightSide = isCustom
+        // «Своя» после сохранения соотношения превращается в «Индивидуальная»
+        const customSaved = isCustom && hasCustom;
+        const title    = customSaved ? 'Индивидуальная' : s.title;
+        const subtitle = customSaved ? 'Ваша настройка'  : s.subtitle;
+        const bonds    = customSaved ? savedCustomBonds   : s.bonds;
+        const stocks   = customSaved ? savedCustomStocks  : s.stocks;
+        const isSelected = isCustom
+            ? (customSaved && currentTitle === 'Индивидуальная')
+            : (s.title === currentTitle);
+        card.className = 'nd-wfc'
+            + (isCustom ? ' nd-wfc-custom' : '')
+            + (customSaved ? ' nd-wfc-custom-saved' : '')
+            + (isSelected ? ' nd-wfc-selected' : '');
+        const bondGrad = (isCustom && !customSaved) ? 50 : bonds;
+        const rightSide = (isCustom && !customSaved)
             ? `<div class="nd-wf-pencil">
                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                </div>`
             : `<div class="nd-wfdiv"></div>
-               <div class="nd-wfp"><div class="nd-wfb">Обл. ${s.bonds}%</div><div class="nd-wfst">Акц. ${s.stocks}%</div></div>`;
+               <div class="nd-wfp"><div class="nd-wfb">${obT} ${bonds}%</div><div class="nd-wfst">${acT} ${stocks}%</div></div>`;
         card.innerHTML = `
             <div class="nd-wfl">
                 <div class="nd-wfbar" style="background:linear-gradient(180deg,#5B7C99 0%,#5B7C99 ${bondGrad}%,#94A8B8 ${bondGrad}%,#94A8B8 100%)"></div>
-                <div><div class="nd-wfn">${s.title}</div><div class="nd-wfs">${s.subtitle}</div></div>
+                <div><div class="nd-wfn">${title}</div><div class="nd-wfs">${subtitle}</div></div>
             </div>
             <div class="nd-wfr">${rightSide}${isSelected ? '<div class="nd-wf-check"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>' : ''}</div>`;
         card.onclick = () => {
@@ -192,6 +207,8 @@ function ndBuildWF() {
         };
         inner.appendChild(card);
     });
+    // даём шанс calc-r5.js навесить поповеры на свежие .r5-term
+    if (typeof window.r5BindTerms === 'function') { try { window.r5BindTerms(); } catch (e) {} }
 }
 
 function ndApplyStrategy(bonds, title, subtitle) {
@@ -235,6 +252,8 @@ function ndSaveCustom() {
     if (cardVal) cardVal.textContent = 'Индивидуальная';
     const custom = document.getElementById('customStrategyExpanded');
     if (custom) custom.classList.remove('show');
+    // перестраиваем список: «Своя» → «Индивидуальная» с долями и галочкой
+    if (typeof ndBuildWF === 'function') { try { ndBuildWF(); } catch (e) {} }
     draw();
     if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
 }

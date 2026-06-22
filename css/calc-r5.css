@@ -29,16 +29,22 @@
 .cx-rows.r5 .cx-split { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: stretch; }
 
 @media (min-width: 1024px) {
-  #calcPane { max-width: 1180px !important; padding: 6px 36px 40px !important; }
+  /* верхний отступ от шапки — как на вкладке «Ребаланс» */
+  #calcPane { max-width: 1180px !important; padding: 28px 36px 40px !important; }
   .cx-rows.r5 .cx-split { grid-template-columns: 1fr 1fr; gap: 22px; }
+}
+@media (max-width: 1023px) {
+  #calcPane { padding-top: 18px !important; }
 }
 
 /* ── Карточка pk-card ─────────────────────────────────────── */
 .cx-rows.r5 .pk-card {
   position: relative; background: var(--r5-card); border-radius: var(--r5-radius);
   box-shadow: var(--r5-shadow); padding: 30px; display: flex; flex-direction: column;
-  min-height: 0; overflow: hidden; box-sizing: border-box;
+  min-height: 0; overflow: visible; box-sizing: border-box;
 }
+/* водяной знак клипуется своей обёрткой — карточке clip больше не нужен,
+   чтобы поповеры терминов и оверлеи могли выходить за её край */
 .cx-rows.r5 .pk-card.act { box-shadow: 0 0 0 1.5px rgba(20,27,38,.85), var(--r5-shadow); }
 .cx-rows.r5 .pk-card .wm-clip { position: absolute; inset: 0; border-radius: var(--r5-radius); overflow: hidden; pointer-events: none; }
 .cx-rows.r5 .pk-card .wm {
@@ -62,10 +68,27 @@
 
 /* Сумма (#ndInputHero перекрашен) */
 .cx-rows.r5 .nd-input-hero.cx-amount-host { padding: 6px 0 0 !important; gap: 0; }
-.cx-rows.r5 .nd-input-hero .nd-input-row { justify-content: center; }
-.cx-rows.r5 .nd-sum-field { font-weight: 600; color: var(--r5-text); caret-color: var(--r5-blue); }
+.cx-rows.r5 .nd-input-hero .nd-input-row { justify-content: center; position: relative; }
+.cx-rows.r5 .nd-sum-field { font-weight: 600; color: var(--r5-text); }
 .cx-rows.r5 .nd-ruble { color: var(--r5-orange) !important; }
 .cx-rows.r5 .nd-input-hero.has-value .nd-ruble { opacity: 1 !important; }
+
+/* «0»-плейсхолдер центрируем относительно линии: зеркалим ₽ слева невидимым
+   спейсером, чтобы группа «[₽] 0 ₽» центрировалась по самому «0» */
+.cx-rows.r5 .nd-input-hero:not(.has-value) .nd-input-row::before {
+  content: '₽'; font-family: var(--r5-mono); font-size: 64px; font-weight: 300;
+  letter-spacing: -0.04em; line-height: 1; visibility: hidden; margin-right: 4px; flex: 0 0 auto;
+}
+/* Мигающая каретка: видна при фокусе на пустом поле (клик по «0» или ₽) */
+.cx-rows.r5 .cx-caret {
+  display: none; position: absolute; left: 100%; top: 50%; transform: translate(3px, -50%);
+  width: 2px; height: 46px; background: var(--r5-blue); border-radius: 2px;
+  animation: cx-blink 1.1s steps(1) infinite;
+}
+@keyframes cx-blink { 50% { opacity: 0; } }
+.cx-rows.r5 .nd-input-hero:not(.has-value) .nd-sum-field { caret-color: transparent; }
+.cx-rows.r5 .nd-input-hero.has-value .nd-sum-field { caret-color: var(--r5-blue); }
+.cx-rows.r5 .nd-input-hero.focused:not(.has-value) .cx-caret { display: block; }
 .cx-rows.r5 .nd-input-hint {
   font-family: var(--r5-mono); font-size: 11px; letter-spacing: .26em; text-transform: uppercase;
   color: var(--r5-muted); margin-top: 14px;
@@ -112,7 +135,7 @@
 .cx-rows.r5 #ndStratSelectedRow { display: none !important; }
 
 /* Водопад — всегда открыт, как чистый список */
-.cx-rows.r5 .nd-wf { grid-template-rows: 1fr !important; margin-top: 0 !important; }
+.cx-rows.r5 .nd-wf { grid-template-rows: 1fr !important; margin-top: 0 !important; overflow: visible !important; }
 .cx-rows.r5 .nd-wf-inner { overflow: visible; gap: 0; }
 .cx-rows.r5 .nd-wfc {
   opacity: 1 !important; transform: none !important; transition: background .15s !important;
@@ -131,18 +154,84 @@
 .cx-rows.r5 .nd-wfr { display: flex; align-items: center; gap: 14px; }
 .cx-rows.r5 .nd-wfp { padding-left: 16px; border-left: 1px solid var(--r5-line); gap: 4px; }
 .cx-rows.r5 .nd-wfb, .cx-rows.r5 .nd-wfst { font-size: 13px; font-weight: 700; white-space: nowrap; }
-/* Пустой кружок-«радио» у невыбранных стандартных стратегий */
-.cx-rows.r5 .nd-wfc:not(.nd-wfc-selected):not(.nd-wfc-custom) .nd-wfr::after {
+/* Пустой кружок-«радио» у невыбранных стратегий (вкл. сохранённую «Индивидуальную») */
+.cx-rows.r5 .nd-wfc:not(.nd-wfc-selected):not(.nd-wfc-custom) .nd-wfr::after,
+.cx-rows.r5 .nd-wfc-custom-saved:not(.nd-wfc-selected) .nd-wfr::after {
   content: ''; width: 32px; height: 32px; border-radius: 999px; border: 1.5px solid var(--r5-line); flex: 0 0 auto;
 }
 .cx-rows.r5 .nd-wfc-selected .nd-wf-check { display: flex !important; width: 32px; height: 32px; background: var(--r5-dark); }
-/* «Своя» */
+/* «Своя» / «Индивидуальная» */
 .cx-rows.r5 .nd-wfc-custom .nd-wfn { color: var(--r5-blue); }
 .cx-rows.r5 .nd-wf-pencil { background: #e7f0fd; color: var(--r5-blue); width: 34px; height: 34px; }
 
-/* Кастомный слайдер */
-.cx-rows.r5 .nd-cust { background: #f7faff !important; border: 1px solid var(--r5-line) !important; border-radius: 16px; margin-top: 8px; }
-.cx-rows.r5 .nd-cust.show { border-width: 1px; }
+/* ── Термины «Обл.»/«Акц.» + поповер (как в референсе) ──────── */
+.cx-rows.r5 .r5-term {
+  position: relative; cursor: help; font-weight: 700; border-bottom: 1.5px dotted currentColor;
+  padding-bottom: 1px; transition: filter .15s;
+}
+.cx-rows.r5 .r5-term.ob { color: var(--r5-ofz); }
+.cx-rows.r5 .r5-term.ac { color: var(--r5-orange); }
+.cx-rows.r5 .r5-term:hover { filter: brightness(.9); }
+.cx-rows.r5 .r5-pop {
+  position: absolute; bottom: calc(100% + 11px); left: 50%; transform: translateX(-50%);
+  width: 248px; background: var(--r5-card); border: 1px solid var(--r5-line); border-radius: 16px;
+  box-shadow: 0 18px 44px rgba(20,30,48,.20); padding: 15px 17px; z-index: 60; text-align: left;
+  cursor: default; white-space: normal; animation: r5-pop-in .14s ease both;
+}
+.cx-rows.r5 .r5-pop.below { bottom: auto; top: calc(100% + 11px); }
+@keyframes r5-pop-in { from { opacity: 0; transform: translateX(-50%) translateY(4px); } }
+.cx-rows.r5 .r5-pop::after {
+  content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%) rotate(45deg);
+  width: 12px; height: 12px; background: var(--r5-card); border-right: 1px solid var(--r5-line);
+  border-bottom: 1px solid var(--r5-line); margin-top: -6px; border-radius: 0 0 3px 0;
+}
+.cx-rows.r5 .r5-pop.below::after {
+  top: auto; bottom: 100%; margin-top: 0; margin-bottom: -6px; border: none;
+  border-left: 1px solid var(--r5-line); border-top: 1px solid var(--r5-line); border-radius: 3px 0 0 0;
+}
+.cx-rows.r5 .r5-pop .ph { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 15px; color: var(--r5-text); }
+.cx-rows.r5 .r5-pop .ph .dot { width: 11px; height: 11px; border-radius: 99px; flex: 0 0 auto; }
+.cx-rows.r5 .r5-pop .ph .tg { font-family: var(--r5-mono); font-size: 12px; font-weight: 700; color: var(--r5-muted); margin-left: auto; }
+.cx-rows.r5 .r5-pop .pd { display: block; font-size: 13px; line-height: 1.55; color: var(--r5-muted2); font-weight: 500; margin-top: 8px; }
+.cx-rows.r5 .r5-pop .pm { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; font-family: var(--r5-mono); font-size: 11px; }
+.cx-rows.r5 .r5-pop .pm span { background: #f1f5fa; border-radius: 7px; padding: 4px 9px; color: var(--r5-muted2); font-weight: 600; }
+body.dark-mode .cx-rows.r5 .r5-pop .pm span { background: rgba(255,255,255,.06); }
+
+/* ── Панель «Своя» — оверлей поверх карточки (не меняет её размер) ── */
+.cx-rows.r5 .nd-cust {
+  position: absolute !important; inset: 0 !important; z-index: 7;
+  display: none; flex-direction: column; justify-content: center;
+  background: var(--r5-card) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  border: none !important; border-radius: var(--r5-radius) !important;
+  margin: 0 !important; padding: 30px !important; max-height: none !important; overflow-y: auto;
+}
+.cx-rows.r5 .nd-cust.show { display: flex; animation: r5-fade .2s ease both; }
+@keyframes r5-fade { from { opacity: 0; } }
+/* шапка панели */
+.cx-rows.r5 .cx-cust-head { display: flex; align-items: center; margin-bottom: 22px; }
+.cx-rows.r5 .cx-cust-ttl { font-size: 19px; font-weight: 800; color: var(--r5-text); letter-spacing: -.01em; }
+.cx-rows.r5 .cx-cust-x {
+  margin-left: auto; width: 34px; height: 34px; border-radius: 10px; flex: 0 0 auto;
+  display: grid; place-items: center; background: #eef2f8; border: none; color: var(--r5-muted2);
+  cursor: pointer; transition: background .15s, color .15s;
+}
+.cx-rows.r5 .cx-cust-x:hover { background: #e3e9f2; color: var(--r5-text); }
+body.dark-mode .cx-rows.r5 .cx-cust-x { background: rgba(255,255,255,.07); }
+/* подсказка про +/- */
+.cx-rows.r5 .cx-cust-hint {
+  text-align: center; font-family: var(--r5-mono); font-size: 11px; letter-spacing: .04em;
+  color: var(--r5-muted); margin: 0 0 12px;
+}
+/* легенда под цифрами */
+.cx-rows.r5 .cx-cust-legend { display: flex; justify-content: center; gap: 64px; margin: -8px 0 22px; }
+.cx-rows.r5 .cx-cust-legend span { font-size: 12px; font-weight: 700; letter-spacing: .02em; }
+.cx-rows.r5 .cx-cust-legend .ob { color: var(--r5-ofz); }
+.cx-rows.r5 .cx-cust-legend .ac { color: var(--r5-orange); }
+/* кнопка «Сбросить» теперь с анимацией нажатия, как «Готово» */
+.cx-rows.r5 .nd-breset { transition: transform .12s ease, background .15s, border-color .15s; }
+.cx-rows.r5 .nd-breset:hover { border-color: #c9d6ea; }
+.cx-rows.r5 .nd-breset:active { transform: scale(.96); }
+.cx-rows.r5 .nd-bdone { transition: transform .12s ease, box-shadow .15s; }
 
 /* ── Точка входа в квиз (.r-cta) ──────────────────────────── */
 .cx-rows.r5 .r-cta {
@@ -163,19 +252,27 @@
 }
 .cx-rows.r5 .r-cta .btn.ghost { background: #eef2f8; color: var(--r5-muted2); box-shadow: none; }
 
-/* ── Встроенный квиз (.r-quiz) ────────────────────────────── */
-/* Квиз — в потоке внутри .ct: карточка растёт под число вариантов,
-   соседняя карточка тянется по высоте (align-items:stretch). */
+/* ── Встроенный квиз (.r-quiz) — оверлей поверх карточки ───── */
+/* Квиз раскрывается абсолютным слоем над .ct и скроллится внутри себя,
+   поэтому размеры карточек не меняются (align-items:stretch держит высоту). */
 .cx-rows.r5 .r-quiz {
-  position: relative; flex: 1; min-height: 0; background: transparent;
-  display: flex; flex-direction: column;
+  position: absolute; inset: 0; z-index: 6; min-height: 0; overflow-y: auto; padding: 30px;
+  background: var(--r5-card); border-radius: var(--r5-radius);
+  display: flex; flex-direction: column; animation: r5-fade .22s ease both;
 }
-.cx-rows.r5 .pk-card.quiz-on .k,
-.cx-rows.r5 .pk-card.quiz-on .t,
-.cx-rows.r5 .pk-card.quiz-on .wm { display: none; }
-.cx-rows.r5 .pk-card.quiz-on .ct > .cx-strat-host,
-.cx-rows.r5 .pk-card.quiz-on .ct > .r-cta { display: none !important; }
+.cx-rows.r5 .r-quiz .qbody,
+.cx-rows.r5 .r-quiz .qresult { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+/* Оверлеи (квиз/«Своя») кладутся прямо на карточку и непрозрачны — содержимое под
+   ними не прячем (оно держит высоту карточки), просто перекрываем сверху. */
 .cx-rows.r5 .r-quiz .qhead { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+/* Аккуратная, ненавязчивая кнопка «Закрыть тест» в шапке вопроса */
+.cx-rows.r5 .r-quiz .q-close {
+  margin-left: auto; flex: 0 0 auto; background: none; border: none; cursor: pointer;
+  font-family: inherit; font-size: 12.5px; font-weight: 600; color: var(--r5-muted);
+  padding: 6px 8px; border-radius: 8px; transition: color .15s, background .15s;
+}
+.cx-rows.r5 .r-quiz .q-close:hover { color: var(--r5-muted2); background: #f1f5fa; }
+body.dark-mode .cx-rows.r5 .r-quiz .q-close:hover { background: rgba(255,255,255,.05); }
 .cx-rows.r5 .r-back {
   align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
   font-size: 13px; font-weight: 700; color: var(--r5-muted2); padding: 8px; border-radius: 10px;
@@ -183,8 +280,11 @@
 }
 .cx-rows.r5 .r-back:hover { color: var(--r5-text); border-color: #c9d6ea; }
 .cx-rows.r5 .r-quiz .qprog { flex: 1; display: flex; flex-direction: column; gap: 7px; }
-.cx-rows.r5 .r-prog { height: 6px; border-radius: 99px; background: #eef2f7; overflow: hidden; }
-.cx-rows.r5 .r-prog i { display: block; height: 100%; width: 9%; background: var(--r5-blue); border-radius: 99px; transition: width .3s ease; }
+/* Линия прогресса — как в оригинальном тесте: тонкая, графитовая */
+.cx-rows.r5 .r-prog { height: 3px; border-radius: 2px; background: rgba(44,54,76,.08); overflow: hidden; }
+.cx-rows.r5 .r-prog i { display: block; height: 100%; width: 9%; background: #2C364C; border-radius: 2px; transition: width .45s cubic-bezier(.2,.8,.2,1); }
+body.dark-mode .cx-rows.r5 .r-prog { background: rgba(255,255,255,.1); }
+body.dark-mode .cx-rows.r5 .r-prog i { background: #cdd8e6; }
 .cx-rows.r5 .r-quiz .qno { font-family: var(--r5-mono); font-size: 11.5px; font-weight: 600; color: var(--r5-muted); letter-spacing: .04em; }
 .cx-rows.r5 .r-quiz .qq { font-size: 22px; font-weight: 800; color: var(--r5-text); letter-spacing: -.01em; line-height: 1.22; margin-bottom: 18px; text-wrap: balance; }
 .cx-rows.r5 .r-quiz .qopts { display: flex; flex-direction: column; gap: 10px; }
@@ -207,6 +307,41 @@
 @keyframes r5-up { from { transform: translateY(8px); opacity: 0; } }
 .cx-rows.r5 .r-quiz.q-anim .qq,
 .cx-rows.r5 .r-quiz.q-anim .qopts { animation: r5-up .26s cubic-bezier(.2,.7,.3,1) both; }
+
+/* ── Экран результата теста (.qresult) ────────────────────── */
+.cx-rows.r5 .qresult { justify-content: center; gap: 18px; animation: r5-up .28s cubic-bezier(.2,.7,.3,1) both; }
+.cx-rows.r5 .qr-badge {
+  border-radius: 18px; padding: 20px 22px; color: #fff; display: flex; flex-direction: column; gap: 2px;
+  position: relative; overflow: hidden; box-shadow: 0 14px 30px rgba(16,24,38,.18);
+}
+.cx-rows.r5 .qr-badge .qr-k { font-family: var(--r5-mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; opacity: .85; }
+.cx-rows.r5 .qr-badge .qr-name { font-size: 28px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; margin-top: 4px; }
+.cx-rows.r5 .qr-badge .qr-sub { font-size: 14px; font-weight: 600; opacity: .9; }
+.cx-rows.r5 .qr-badge .qr-score {
+  align-self: flex-start; margin-top: 12px; background: rgba(255,255,255,.22); backdrop-filter: blur(4px);
+  font-family: var(--r5-mono); font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 999px;
+}
+.cx-rows.r5 .qr-desc { font-size: 14px; line-height: 1.55; color: var(--r5-muted2); font-weight: 500; margin: 0; text-wrap: pretty; }
+.cx-rows.r5 .qr-strat {
+  display: flex; align-items: center; gap: 16px; padding: 16px 18px;
+  border: 1px solid var(--r5-line); border-radius: 16px; background: #f7faff;
+}
+body.dark-mode .cx-rows.r5 .qr-strat { background: rgba(255,255,255,.03); }
+.cx-rows.r5 .qr-strat .qr-bar { width: 3px; align-self: stretch; border-radius: 99px; flex: 0 0 auto; }
+.cx-rows.r5 .qr-strat .qr-st-tx { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cx-rows.r5 .qr-strat .qr-st-k { font-size: 11.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--r5-muted); font-weight: 700; }
+.cx-rows.r5 .qr-strat .qr-st-n { font-size: 18px; font-weight: 800; color: var(--r5-text); letter-spacing: -.01em; }
+.cx-rows.r5 .qr-strat .qr-alloc {
+  margin-left: auto; display: flex; flex-direction: column; gap: 4px; padding-left: 16px;
+  border-left: 1px solid var(--r5-line); font-family: var(--r5-mono); font-size: 13px; font-weight: 700; white-space: nowrap; text-align: right;
+}
+.cx-rows.r5 .qr-acts { display: flex; gap: 10px; margin-top: 4px; }
+.cx-rows.r5 .qr-btn { flex: 1; padding: 15px; border-radius: 14px; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer; transition: transform .12s ease, box-shadow .15s, background .15s; border: 1px solid transparent; }
+.cx-rows.r5 .qr-btn:active { transform: scale(.98); }
+.cx-rows.r5 .qr-btn.ghost { flex: 0 0 auto; padding: 15px 18px; background: transparent; border-color: var(--r5-line); color: var(--r5-muted2); }
+.cx-rows.r5 .qr-btn.ghost:hover { border-color: #c9d6ea; color: var(--r5-text); }
+.cx-rows.r5 .qr-btn.primary { background: linear-gradient(180deg,#1d2734,#141b26); color: #fff; box-shadow: 0 12px 26px rgba(16,24,38,.28); }
+.cx-rows.r5 .qr-btn.primary:hover { box-shadow: 0 16px 32px rgba(16,24,38,.36); }
 
 /* ── CTA «Рассчитать портфель» (.nd-btn-cta-g → .cx-calc) ── */
 #calcCtaBar { max-width: 1180px; margin-left: auto; margin-right: auto; }
@@ -238,14 +373,17 @@ body.dark-mode .cx-rows.r5 .r-quiz { background: #1d2734; }
 body.dark-mode .cx-rows.r5 .r-opt { background: rgba(255,255,255,.02); }
 body.dark-mode .cx-rows.r5 .r-opt.sel { background: rgba(74,141,240,.12); }
 body.dark-mode .cx-rows.r5 .r-back { background: rgba(255,255,255,.03); }
-body.dark-mode .cx-rows.r5 .r-prog,
-body.dark-mode .cx-rows.r5 .nd-cust { background: rgba(255,255,255,.05) !important; }
+/* квиз и панель «Своя» — непрозрачные оверлеи (фон карточки), чтобы список под ними не просвечивал */
+body.dark-mode .cx-rows.r5 .r-quiz,
+body.dark-mode .cx-rows.r5 .nd-cust.show { background: var(--r5-card) !important; }
 
 /* ── Мобайл ───────────────────────────────────────────────── */
 @media (max-width: 1023px) {
   .cx-rows.r5 .pk-card { padding: 22px 20px; }
   .cx-rows.r5 .pk-card .wm { font-size: 110px; top: -18px; }
   .cx-rows.r5 .pk-card .t { font-size: 20px; margin-bottom: 16px; }
-  .cx-rows.r5 .r-quiz { padding: 22px 20px; }
+  .cx-rows.r5 .r-quiz,
+  .cx-rows.r5 .nd-cust { padding: 22px 20px !important; }
   .cx-rows.r5 .r-quiz .qq { font-size: 19px; }
+  .cx-rows.r5 .qr-badge .qr-name { font-size: 24px; }
 }

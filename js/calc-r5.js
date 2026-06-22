@@ -46,7 +46,7 @@
 
     // ── Карточка 01 · Капитал ──
     var capCenter = el('div', 'cx-cap-center');
-    if (hero) { hero.classList.add('cx-amount-host'); capCenter.appendChild(hero); }
+    if (hero) { hero.classList.add('cx-amount-host'); enhanceAmount(hero); capCenter.appendChild(hero); }
     var capParams = el('div', 'cx-cap-params');
     if (fee)  capParams.appendChild(fee);
     if (moex) capParams.appendChild(moex);
@@ -61,20 +61,63 @@
       strat.onclick = function (e) { e.stopPropagation(); };
       dist.body.appendChild(strat);
       forceOpenStrategy(strat);
+      // Панель «Своя» вынимаем из глубины стратегии — она станет оверлеем НА ВСЮ карточку
+      // (кладём как прямого ребёнка карточки, чтобы absolute inset:0 покрывал её целиком,
+      //  при этом список под ним остаётся в потоке и держит высоту карточки неизменной)
+      var custom = document.getElementById('customStrategyExpanded');
+      if (custom) { enhanceCustom(custom); dist.card.appendChild(custom); }
     }
-    // Точка входа в квиз + сам квиз
+    // Точка входа в квиз — в потоке (часть высоты карточки)
     dist.body.appendChild(buildQuizEntry());
-    dist.body.appendChild(buildQuiz());
+    // Сам квиз — оверлей на всю карточку
+    dist.card.appendChild(buildQuiz());
 
     // Прячем старьё
     [hdr, banner].forEach(function (n) { if (n) n.style.display = 'none'; });
-    // Пустую обёртку параметров (из неё забрали комиссию и стратегию) — схлопываем
-    var oldParams = section.querySelector('.nd-params-card');
-    if (oldParams && oldParams.children.length === 0) oldParams.style.display = 'none';
     section.classList.add('r5-drained');
+    // Осушённую секцию-источник убираем целиком (всё рабочее уже перенесено) —
+    // иначе между карточками и кнопкой остаётся пустая белая полоса.
+    section.style.display = 'none';
 
     return true;
   }
+
+  // Каретка-курсор в поле суммы (мигает при фокусе на пустом поле)
+  function enhanceAmount(hero) {
+    var zone = hero.querySelector('.nd-input-zone');
+    if (zone && !zone.querySelector('.cx-caret')) zone.appendChild(el('span', 'cx-caret'));
+  }
+
+  // Шапка с заголовком/крестиком + легенда «Облигации/Акции» для панели «Своя»
+  function enhanceCustom(custom) {
+    if (custom.querySelector('.cx-cust-head')) return;
+    var head = el('div', 'cx-cust-head');
+    head.innerHTML = '<span class="cx-cust-ttl">Своя стратегия</span>';
+    var x = el('button', 'cx-cust-x'); x.type = 'button'; x.setAttribute('aria-label', 'Закрыть');
+    x.innerHTML = XMARK;
+    x.addEventListener('click', function (e) { e.stopPropagation(); closeCustomOverlay(); });
+    head.appendChild(x);
+    custom.insertBefore(head, custom.firstChild);
+    // легенда под крупными цифрами: какая доля облигаций, какая — акций
+    var nums = custom.querySelector('.nd-cnums');
+    if (nums && !custom.querySelector('.cx-cust-legend')) {
+      var leg = el('div', 'cx-cust-legend');
+      leg.innerHTML = '<span class="ob">Облигации</span><span class="ac">Акции</span>';
+      nums.parentNode.insertBefore(leg, nums.nextSibling);
+    }
+    // подсказка, что меняют кнопки +/−
+    if (!custom.querySelector('.cx-cust-hint')) {
+      var hint = el('div', 'cx-cust-hint');
+      hint.innerHTML = '«+» больше облигаций · «−» больше акций';
+      nums.parentNode.insertBefore(hint, nums);
+    }
+  }
+
+  function closeCustomOverlay() {
+    var custom = document.getElementById('customStrategyExpanded');
+    if (custom) custom.classList.remove('show');
+  }
+  window.r5CloseCustom = closeCustomOverlay;
 
   // Раскрыть блок стратегии и держать водопад всегда видимым
   function forceOpenStrategy(strat) {
@@ -103,6 +146,51 @@
   var ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>';
   var SPARK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M12 3l1.9 5.2L19 10l-5.1 1.8L12 17l-1.9-5.2L5 10l5.1-1.8z"/></svg>';
   var BACK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/></svg>';
+  var XMARK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+
+  // Термины «Обл.»/«Акц.» — кликабельные/наводимые с поповером (как в референсе)
+  var OB_T = '<span class="r5-term ob" data-term="ob">Обл.</span>';
+  var AC_T = '<span class="r5-term ac" data-term="ac">Акц.</span>';
+  var TERMS = {
+    ob: { nm: 'Облигации', tag: 'Обл.', col: 'var(--r5-ofz)',    long: 'Облигации федерального займа — долговые бумаги государства. Дают фиксированный купонный доход и возврат номинала в срок.', meta: ['Низкий риск', 'Купоны', 'ОФЗ'] },
+    ac: { nm: 'Акции',     tag: 'Акц.', col: 'var(--r5-orange)', long: 'Доли компаний с Московской биржи. Доход — от роста цены и дивидендов. Доходнее облигаций, но заметно волатильнее.',   meta: ['Выше риск', 'Дивиденды', 'МосБиржа'] }
+  };
+  var _pop = null, _popFor = null;
+  function r5ClosePop() { if (_pop && _pop.parentNode) _pop.parentNode.removeChild(_pop); _pop = null; _popFor = null; }
+  function r5ShowPop(term) {
+    r5ClosePop();
+    var t = TERMS[term.getAttribute('data-term')];
+    if (!t) return;
+    var pop = el('div', 'r5-pop');
+    pop.innerHTML =
+      '<span class="ph"><span class="dot" style="background:' + t.col + '"></span>' + t.nm + '<span class="tg">' + t.tag + '</span></span>' +
+      '<span class="pd">' + esc(t.long) + '</span>' +
+      '<span class="pm">' + t.meta.map(function (m) { return '<span>' + esc(m) + '</span>'; }).join('') + '</span>';
+    term.appendChild(pop);
+    // у верхних строк раскрываем поповер вниз, чтобы не уезжал за край
+    if (term.getBoundingClientRect().top < 230) pop.classList.add('below');
+    _pop = pop; _popFor = term;
+  }
+  function r5BindTerms() {
+    if (r5BindTerms._done) return; r5BindTerms._done = true;
+    document.addEventListener('mouseover', function (e) {
+      var t = e.target.closest && e.target.closest('.r5-term'); if (!t) return;
+      if (_popFor !== t) r5ShowPop(t);
+    });
+    document.addEventListener('mouseout', function (e) {
+      var t = e.target.closest && e.target.closest('.r5-term'); if (!t) return;
+      var to = e.relatedTarget;
+      if (to && to.closest && (to.closest('.r5-term') === t || to.closest('.r5-pop'))) return;
+      r5ClosePop();
+    });
+    document.addEventListener('click', function (e) {
+      var t = e.target.closest && e.target.closest('.r5-term');
+      if (t) { e.stopPropagation(); if (_popFor === t) r5ClosePop(); else r5ShowPop(t); return; }
+      if (!(e.target.closest && e.target.closest('.r5-pop'))) r5ClosePop();
+    });
+    window.addEventListener('scroll', r5ClosePop, true);
+  }
+  window.r5BindTerms = r5BindTerms;
 
   function buildQuizEntry() {
     var cta = el('div', 'r-cta');
@@ -120,16 +208,20 @@
     q.id = 'r5Quiz';
     q.style.display = 'none';
     q.innerHTML =
-      '<div class="qhead">' +
-        '<span class="r-back sm" id="r5QuizBack">' + BACK + '</span>' +
-        '<div class="qprog">' +
-          '<div class="r-prog"><i id="r5QuizProg"></i></div>' +
-          '<span class="qno" id="r5QuizNo"></span>' +
+      '<div class="qbody" id="r5QuizBody">' +
+        '<div class="qhead">' +
+          '<span class="r-back sm" id="r5QuizBack">' + BACK + '</span>' +
+          '<div class="qprog">' +
+            '<div class="r-prog"><i id="r5QuizProg"></i></div>' +
+            '<span class="qno" id="r5QuizNo"></span>' +
+          '</div>' +
+          '<button type="button" class="q-close" id="r5QuizClose">Закрыть</button>' +
         '</div>' +
+        '<h3 class="qq" id="r5QuizQ"></h3>' +
+        '<div class="qopts" id="r5QuizOpts"></div>' +
+        '<div class="qfoot"><span class="r-go" id="r5QuizNext"></span></div>' +
       '</div>' +
-      '<h3 class="qq" id="r5QuizQ"></h3>' +
-      '<div class="qopts" id="r5QuizOpts"></div>' +
-      '<div class="qfoot"><span class="r-go" id="r5QuizNext"></span></div>';
+      '<div class="qresult" id="r5QuizResult" style="display:none"></div>';
     return q;
   }
 
@@ -147,6 +239,11 @@
     var card = quiz && quiz.closest('.pk-card');
     if (card) card.classList.add('quiz-on');
     if (quiz) quiz.style.display = 'flex';
+    // показываем вопросы, прячем результат
+    var body = document.getElementById('r5QuizBody');
+    var res = document.getElementById('r5QuizResult');
+    if (body) body.style.display = 'flex';
+    if (res) { res.style.display = 'none'; res.innerHTML = ''; }
     renderQ();
     bindQuizControls();
     haptic('light');
@@ -157,6 +254,11 @@
     var card = quiz && quiz.closest('.pk-card');
     if (card) card.classList.remove('quiz-on');
     if (quiz) quiz.style.display = 'none';
+    // сбрасываем в исходное состояние, чтобы следующее открытие было чистым
+    var body = document.getElementById('r5QuizBody');
+    var res = document.getElementById('r5QuizResult');
+    if (body) body.style.display = 'flex';
+    if (res) { res.style.display = 'none'; res.innerHTML = ''; }
   }
 
   var _bound = false;
@@ -164,8 +266,10 @@
     if (_bound) return; _bound = true;
     var back = document.getElementById('r5QuizBack');
     var next = document.getElementById('r5QuizNext');
+    var close = document.getElementById('r5QuizClose');
     if (back) back.addEventListener('click', onBack);
     if (next) next.addEventListener('click', onNext);
+    if (close) close.addEventListener('click', closeQuiz);
   }
 
   function renderQ() {
@@ -233,10 +337,50 @@
     var profile = (typeof vgGetProfile === 'function')
       ? vgGetProfile()
       : { name: 'Сбалансированный' };
-    applyProfileStrategy(profile);
-    closeQuiz();
-    flashResult(profile);
+    // сначала показываем карточку результата с объяснением и двумя кнопками
+    renderResult(profile);
     haptic('success');
+  }
+
+  // Экран результата теста: профиль + объяснение + «Закрыть тест» / «Применить стратегию»
+  function renderResult(profile) {
+    var body = document.getElementById('r5QuizBody');
+    var res = document.getElementById('r5QuizResult');
+    if (body) body.style.display = 'none';
+    if (!res) return;
+    var map = (typeof VG_STRAT_MAP !== 'undefined') ? VG_STRAT_MAP : {};
+    var s = map[profile.name] || { t: 'Гармония', bonds: 50 };
+    var bonds  = (typeof profile.bonds === 'number') ? profile.bonds : (s.bonds || 50);
+    var stocks = (typeof profile.stocks === 'number') ? profile.stocks : (100 - bonds);
+    var grad = profile.grad || 'linear-gradient(135deg,#10b981,#059669)';
+    var scoreTxt = (typeof _vgScore !== 'undefined') ? (_vgScore + ' баллов') : '';
+    res.style.display = 'flex';
+    res.innerHTML =
+      '<div class="qr-badge" style="background:' + grad + '">' +
+        '<span class="qr-k">Ваш инвестпрофиль</span>' +
+        '<span class="qr-name">' + esc(profile.name || '') + '</span>' +
+        (profile.sub ? '<span class="qr-sub">' + esc(profile.sub) + '</span>' : '') +
+        (scoreTxt ? '<span class="qr-score">' + scoreTxt + '</span>' : '') +
+      '</div>' +
+      (profile.desc ? '<p class="qr-desc">' + esc(profile.desc) + '</p>' : '') +
+      '<div class="qr-strat">' +
+        '<div class="qr-bar" style="background:linear-gradient(180deg,#5B7C99 0%,#5B7C99 ' + bonds + '%,#94A8B8 ' + bonds + '%,#94A8B8 100%)"></div>' +
+        '<div class="qr-st-tx"><span class="qr-st-k">Рекомендуем стратегию</span><span class="qr-st-n">' + esc(s.t) + '</span></div>' +
+        '<div class="qr-alloc"><span>' + OB_T + ' ' + bonds + '%</span><span>' + AC_T + ' ' + stocks + '%</span></div>' +
+      '</div>' +
+      '<div class="qr-acts">' +
+        '<button type="button" class="qr-btn ghost" id="r5ResClose">Закрыть тест</button>' +
+        '<button type="button" class="qr-btn primary" id="r5ResApply">Применить стратегию</button>' +
+      '</div>';
+    var bc = document.getElementById('r5ResClose');
+    var ba = document.getElementById('r5ResApply');
+    if (bc) bc.addEventListener('click', function () { closeQuiz(); });
+    if (ba) ba.addEventListener('click', function () {
+      applyProfileStrategy(profile);
+      closeQuiz();
+      flashResult(profile);
+      haptic('success');
+    });
   }
 
   // Применить стратегию профиля к существующему селектору стратегий
@@ -306,6 +450,7 @@
       // на случай гонки — повторить разок
       setTimeout(assembleCalcR5, 60);
     }
+    r5BindTerms();
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function () { setTimeout(init, 0); });
