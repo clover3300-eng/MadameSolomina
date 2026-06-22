@@ -180,10 +180,14 @@
 .cx-rows.r5 .r5-term:hover { filter: brightness(.9); }
 .cx-rows.r5 .r5-pop {
   position: absolute; bottom: calc(100% + 11px); left: 50%; transform: translateX(-50%);
-  width: 248px; background: var(--r5-card); border: 1px solid var(--r5-line); border-radius: 16px;
+  width: 248px; border-radius: 16px;
+  /* подложка как в исходном референсе — матовое стекло */
+  background: rgba(255,255,255,0.72); border: 1px solid rgba(255,255,255,0.5);
+  backdrop-filter: blur(14px) saturate(1.4); -webkit-backdrop-filter: blur(14px) saturate(1.4);
   box-shadow: 0 18px 44px rgba(20,30,48,.20); padding: 15px 17px; z-index: 60; text-align: left;
   cursor: default; white-space: normal; animation: r5-pop-in .14s ease both;
 }
+body.dark-mode .cx-rows.r5 .r5-pop { background: rgba(29,39,52,0.74); border-color: rgba(255,255,255,0.12); }
 .cx-rows.r5 .r5-pop.below { bottom: auto; top: calc(100% + 11px); }
 @keyframes r5-pop-in { from { opacity: 0; transform: translateX(-50%) translateY(4px); } }
 @keyframes r5-pop-in2 { from { opacity: 0; transform: translateY(4px); } }
@@ -192,9 +196,11 @@
 .cx-rows.r5 .r5-pop.pop-r { left: auto; right: 0; transform: none; animation-name: r5-pop-in2; }
 .cx-rows.r5 .r5-pop::after {
   content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%) rotate(45deg);
-  width: 12px; height: 12px; background: var(--r5-card); border-right: 1px solid var(--r5-line);
-  border-bottom: 1px solid var(--r5-line); margin-top: -6px; border-radius: 0 0 3px 0;
+  width: 12px; height: 12px; background: rgba(255,255,255,0.72); backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4); border-right: 1px solid rgba(255,255,255,0.5);
+  border-bottom: 1px solid rgba(255,255,255,0.5); margin-top: -6px; border-radius: 0 0 3px 0;
 }
+body.dark-mode .cx-rows.r5 .r5-pop::after { background: rgba(29,39,52,0.74); border-color: rgba(255,255,255,0.12); }
 .cx-rows.r5 .r5-pop.pop-l::after { left: 26px; transform: rotate(45deg); }
 .cx-rows.r5 .r5-pop.pop-r::after { left: auto; right: 26px; transform: rotate(45deg); }
 .cx-rows.r5 .r5-pop.below::after {
@@ -219,8 +225,18 @@ body.dark-mode .cx-rows.r5 .r5-pop .pm span { background: rgba(255,255,255,.06);
 }
 .cx-rows.r5 .nd-cust.show { display: flex; animation: r5-fade .2s ease both; }
 /* контент распределён по высоте: шапка сверху, регуляторы по центру, кнопки внизу */
-.cx-rows.r5 .nd-cust .cx-cust-hint { margin-top: auto !important; }
+.cx-rows.r5 .nd-cust .nd-cnums { margin-top: auto !important; margin-bottom: 14px !important; }
 .cx-rows.r5 .nd-cust .nd-cacts { margin-top: auto !important; }
+/* крупнее контент — на десктопе мелко читалось */
+.cx-rows.r5 .nd-cust .nd-cnums { gap: 30px; }
+.cx-rows.r5 .nd-cust .nd-cadj { width: 58px; height: 58px; font-size: 30px; }
+.cx-rows.r5 .nd-cust .nd-cvb, .cx-rows.r5 .nd-cust .nd-cvs { font-size: 64px; }
+.cx-rows.r5 .nd-cust .nd-cvsep { font-size: 40px; }
+.cx-rows.r5 .nd-cust .cx-cust-legend span { font-size: 14px; }
+.cx-rows.r5 .nd-cust .nd-cslider { height: 3px; margin: 0 0 6px; }
+.cx-rows.r5 .nd-cust .nd-cslider::-webkit-slider-thumb { width: 30px; height: 30px; }
+.cx-rows.r5 .nd-cust .nd-cacts { gap: 14px; }
+.cx-rows.r5 .nd-cust .nd-breset, .cx-rows.r5 .nd-cust .nd-bdone { padding: 17px; font-size: 15px; }
 @keyframes r5-fade { from { opacity: 0; } }
 /* шапка панели */
 .cx-rows.r5 .cx-cust-head { display: flex; align-items: center; margin-bottom: 22px; }
@@ -232,13 +248,8 @@ body.dark-mode .cx-rows.r5 .r5-pop .pm span { background: rgba(255,255,255,.06);
 }
 .cx-rows.r5 .cx-cust-x:hover { background: #e3e9f2; color: var(--r5-text); }
 body.dark-mode .cx-rows.r5 .cx-cust-x { background: rgba(255,255,255,.07); }
-/* подсказка про +/- */
-.cx-rows.r5 .cx-cust-hint {
-  text-align: center; font-family: var(--r5-mono); font-size: 11px; letter-spacing: .04em;
-  color: var(--r5-muted); margin: 0 0 12px;
-}
 /* легенда под цифрами */
-.cx-rows.r5 .cx-cust-legend { display: flex; justify-content: center; gap: 64px; margin: -8px 0 22px; }
+.cx-rows.r5 .cx-cust-legend { display: flex; justify-content: center; gap: 80px; margin: 0 0 8px; }
 .cx-rows.r5 .cx-cust-legend span { font-size: 12px; font-weight: 700; letter-spacing: .02em; }
 .cx-rows.r5 .cx-cust-legend .ob { color: var(--r5-ofz); }
 .cx-rows.r5 .cx-cust-legend .ac { color: var(--r5-orange); }
@@ -271,7 +282,7 @@ body.dark-mode .cx-rows.r5 .cx-cust-x { background: rgba(255,255,255,.07); }
 /* Квиз раскрывается абсолютным слоем над .ct и скроллится внутри себя,
    поэтому размеры карточек не меняются (align-items:stretch держит высоту). */
 .cx-rows.r5 .r-quiz {
-  position: absolute; inset: 0; z-index: 6; min-height: 0; overflow-y: auto; padding: 30px;
+  position: absolute; inset: 0; z-index: 6; min-height: 0; overflow: visible; padding: 4px 2px;
   background: var(--r5-card); border-radius: var(--r5-radius);
   display: flex; flex-direction: column; animation: r5-fade .22s ease both;
 }
@@ -279,7 +290,7 @@ body.dark-mode .cx-rows.r5 .cx-cust-x { background: rgba(255,255,255,.07); }
 .cx-rows.r5 .r-quiz .qresult { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 /* Оверлеи (квиз/«Своя») кладутся прямо на карточку и непрозрачны — содержимое под
    ними не прячем (оно держит высоту карточки), просто перекрываем сверху. */
-.cx-rows.r5 .r-quiz .qhead { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+.cx-rows.r5 .r-quiz .qhead { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
 /* Кнопка «Закрыть тест» — иконка-крестик, как × на панели «Своя» (единый дизайн) */
 .cx-rows.r5 .r-quiz .q-close {
   margin-left: auto; flex: 0 0 auto; width: 34px; height: 34px; border-radius: 10px;
@@ -302,9 +313,9 @@ body.dark-mode .cx-rows.r5 .r-quiz .q-close:hover { background: rgba(255,255,255
 body.dark-mode .cx-rows.r5 .r-prog { background: rgba(255,255,255,.1); }
 body.dark-mode .cx-rows.r5 .r-prog i { background: #cdd8e6; }
 .cx-rows.r5 .r-quiz .qno { font-family: var(--r5-mono); font-size: 11.5px; font-weight: 600; color: var(--r5-muted); letter-spacing: .04em; }
-.cx-rows.r5 .r-quiz .qq { font-size: 22px; font-weight: 800; color: var(--r5-text); letter-spacing: -.01em; line-height: 1.22; margin-bottom: 18px; text-wrap: balance; }
-.cx-rows.r5 .r-quiz .qopts { display: flex; flex-direction: column; gap: 10px; }
-.cx-rows.r5 .r-opt { display: flex; align-items: center; gap: 14px; padding: 15px 18px; border: 1.5px solid var(--r5-line); border-radius: 14px; cursor: pointer; transition: border-color .15s, background .15s; }
+.cx-rows.r5 .r-quiz .qq { font-size: 20px; font-weight: 800; color: var(--r5-text); letter-spacing: -.01em; line-height: 1.2; margin-bottom: 12px; text-wrap: balance; }
+.cx-rows.r5 .r-quiz .qopts { display: flex; flex-direction: column; gap: 7px; }
+.cx-rows.r5 .r-opt { display: flex; align-items: center; gap: 13px; padding: 11px 16px; border: 1.5px solid var(--r5-line); border-radius: 13px; cursor: pointer; transition: border-color .15s, background .15s; }
 .cx-rows.r5 .r-opt:hover { border-color: #c9d6ea; }
 .cx-rows.r5 .r-opt.sel { border-color: var(--r5-blue); background: #f4f8ff; }
 .cx-rows.r5 .r-opt .rd { width: 22px; height: 22px; border-radius: 99px; border: 2px solid #cdd8e6; flex: 0 0 auto; display: grid; place-items: center; transition: border-color .15s, background .15s; }
@@ -312,7 +323,7 @@ body.dark-mode .cx-rows.r5 .r-prog i { background: #cdd8e6; }
 .cx-rows.r5 .r-opt.sel .rd::after { content: ''; width: 8px; height: 8px; border-radius: 99px; background: #fff; }
 .cx-rows.r5 .r-opt .otx { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .cx-rows.r5 .r-opt .ot { font-size: 15.5px; font-weight: 700; color: var(--r5-text); }
-.cx-rows.r5 .r-quiz .qfoot { margin-top: auto; padding-top: 20px; display: flex; justify-content: flex-end; }
+.cx-rows.r5 .r-quiz .qfoot { margin-top: auto; padding-top: 12px; display: flex; justify-content: flex-end; }
 .cx-rows.r5 .r-go {
   display: inline-flex; align-items: center; gap: 10px; cursor: pointer; background: var(--r5-blue);
   color: #fff; font-weight: 700; font-size: 15px; padding: 13px 22px; border-radius: 14px;
@@ -400,8 +411,10 @@ body.dark-mode .cx-rows.r5 .nd-cust.show { background: var(--r5-card) !important
   .cx-rows.r5 .pk-card { padding: 22px 20px; }
   .cx-rows.r5 .pk-card .wm { font-size: 110px; top: -18px; }
   .cx-rows.r5 .pk-card .t { font-size: 20px; margin-bottom: 16px; }
-  .cx-rows.r5 .r-quiz,
-  .cx-rows.r5 .nd-cust { padding: 22px 20px !important; }
+  /* на мобиле контент может не уместиться — разрешаем скролл внутри оверлея */
+  .cx-rows.r5 .r-quiz { overflow-y: auto; }
   .cx-rows.r5 .r-quiz .qq { font-size: 19px; }
+  .cx-rows.r5 .nd-cust .nd-cvb, .cx-rows.r5 .nd-cust .nd-cvs { font-size: 52px; }
+  .cx-rows.r5 .nd-cust .nd-cadj { width: 50px; height: 50px; }
   .cx-rows.r5 .qr-badge .qr-name { font-size: 24px; }
 }

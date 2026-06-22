@@ -213,6 +213,9 @@ function ndBuildWF() {
 
 function ndApplyStrategy(bonds, title, subtitle) {
     _ndCurrentBonds = bonds;
+    // Выбор именованной стратегии сбрасывает сохранённую «Индивидуальную» —
+    // строка возвращается к «Своя» с карандашом
+    try { if (typeof savedCustomBonds !== 'undefined') { savedCustomBonds = null; savedCustomStocks = null; } } catch (e) {}
     const cardVal = document.getElementById('ndStratCardVal');
     if (cardVal) cardVal.textContent = title;
     updateMainCardUI(bonds, title, subtitle);

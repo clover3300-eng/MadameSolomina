@@ -93,7 +93,7 @@
   function enhanceCustom(custom) {
     if (custom.querySelector('.cx-cust-head')) return;
     var head = el('div', 'cx-cust-head');
-    head.innerHTML = '<span class="cx-cust-ttl">Своя стратегия</span>';
+    head.innerHTML = '<span class="cx-cust-ttl">Настройка</span>';
     var x = el('button', 'cx-cust-x'); x.type = 'button'; x.setAttribute('aria-label', 'Закрыть');
     x.innerHTML = XMARK;
     x.addEventListener('click', function (e) { e.stopPropagation(); closeCustomOverlay(); });
@@ -105,12 +105,6 @@
       var leg = el('div', 'cx-cust-legend');
       leg.innerHTML = '<span class="ob">Облигации</span><span class="ac">Акции</span>';
       nums.parentNode.insertBefore(leg, nums.nextSibling);
-    }
-    // подсказка, что меняют кнопки +/−
-    if (!custom.querySelector('.cx-cust-hint')) {
-      var hint = el('div', 'cx-cust-hint');
-      hint.innerHTML = '«+» больше облигаций · «−» больше акций';
-      nums.parentNode.insertBefore(hint, nums);
     }
   }
 
