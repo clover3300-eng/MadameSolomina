@@ -181,8 +181,9 @@
 .cx-rows.r5 .r5-pop {
   position: absolute; bottom: calc(100% + 11px); left: 50%; transform: translateX(-50%);
   width: 248px; border-radius: 16px;
-  /* белый непрозрачный фон — как на референсе */
+  /* белый непрозрачный фон + обычный (не моноширинный) шрифт — как на референсе */
   background: #ffffff; border: 1px solid var(--r5-line);
+  font-family: 'Inter', -apple-system, sans-serif;
   box-shadow: 0 18px 44px rgba(20,30,48,.18); padding: 15px 17px; z-index: 60; text-align: left;
   cursor: default; white-space: normal; animation: r5-pop-in .14s ease both;
 }
@@ -207,10 +208,10 @@ body.dark-mode .cx-rows.r5 .r5-pop::after { background: #222d3c; border-color: r
 }
 .cx-rows.r5 .r5-pop .ph { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 15px; color: var(--r5-text); }
 .cx-rows.r5 .r5-pop .ph .dot { width: 11px; height: 11px; border-radius: 99px; flex: 0 0 auto; }
-.cx-rows.r5 .r5-pop .ph .tg { font-family: var(--r5-mono); font-size: 12px; font-weight: 700; color: var(--r5-muted); margin-left: auto; }
+.cx-rows.r5 .r5-pop .ph .tg { font-size: 12.5px; font-weight: 700; color: var(--r5-muted); margin-left: auto; }
 .cx-rows.r5 .r5-pop .pd { display: block; font-size: 13px; line-height: 1.55; color: var(--r5-muted2); font-weight: 500; margin-top: 8px; }
-.cx-rows.r5 .r5-pop .pm { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; font-family: var(--r5-mono); font-size: 11px; }
-.cx-rows.r5 .r5-pop .pm span { background: #f1f5fa; border-radius: 7px; padding: 4px 9px; color: var(--r5-muted2); font-weight: 600; }
+.cx-rows.r5 .r5-pop .pm { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; font-size: 12px; }
+.cx-rows.r5 .r5-pop .pm span { background: #f1f5fa; border-radius: 7px; padding: 4px 10px; color: var(--r5-muted2); font-weight: 600; }
 body.dark-mode .cx-rows.r5 .r5-pop .pm span { background: rgba(255,255,255,.06); }
 
 /* ── Панель «Своя» — оверлей поверх карточки (не меняет её размер) ── */
