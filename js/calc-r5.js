@@ -89,16 +89,9 @@
     if (zone && !zone.querySelector('.cx-caret')) zone.appendChild(el('span', 'cx-caret'));
   }
 
-  // Шапка с заголовком/крестиком + легенда «Облигации/Акции» для панели «Своя»
+  // Легенда «Облигации/Акции» + крестик на уровне карточки; заголовок карточки
+  // «Стратегия» подменяется на «Настройка», пока панель открыта.
   function enhanceCustom(custom) {
-    if (custom.querySelector('.cx-cust-head')) return;
-    var head = el('div', 'cx-cust-head');
-    head.innerHTML = '<span class="cx-cust-ttl">Настройка</span>';
-    var x = el('button', 'cx-cust-x'); x.type = 'button'; x.setAttribute('aria-label', 'Закрыть');
-    x.innerHTML = XMARK;
-    x.addEventListener('click', function (e) { e.stopPropagation(); closeCustomOverlay(); });
-    head.appendChild(x);
-    custom.insertBefore(head, custom.firstChild);
     // легенда под крупными цифрами: какая доля облигаций, какая — акций
     var nums = custom.querySelector('.nd-cnums');
     if (nums && !custom.querySelector('.cx-cust-legend')) {
@@ -106,6 +99,24 @@
       leg.innerHTML = '<span class="ob">Облигации</span><span class="ac">Акции</span>';
       nums.parentNode.insertBefore(leg, nums.nextSibling);
     }
+    var card = custom.closest('.pk-card');
+    if (!card || card._custBound) return;
+    card._custBound = true;
+    var tEl = card.querySelector('.t');
+    var baseTitle = tEl ? tEl.textContent : 'Стратегия';
+    // крестик у верхней кромки карточки (выше, на уровне заголовка)
+    var x = el('button', 'cx-card-x'); x.type = 'button'; x.setAttribute('aria-label', 'Закрыть');
+    x.innerHTML = XMARK;
+    x.addEventListener('click', function (e) { e.stopPropagation(); closeCustomOverlay(); });
+    card.appendChild(x);
+    // подмена заголовка и показ крестика, пока custom открыт
+    var sync = function () {
+      var on = custom.classList.contains('show');
+      card.classList.toggle('cust-on', on);
+      if (tEl) tEl.textContent = on ? 'Настройка' : baseTitle;
+    };
+    new MutationObserver(sync).observe(custom, { attributes: true, attributeFilter: ['class'] });
+    sync();
   }
 
   function closeCustomOverlay() {
@@ -186,11 +197,13 @@
       if (to && to.closest && (to.closest('.r5-term') === t || to.closest('.r5-pop'))) return;
       r5ClosePop();
     });
+    // ВАЖНО: capture-фаза — гасим клик ДО того, как он дойдёт до строки стратегии
+    // (.nd-wfc onclick), иначе тап по «Обл./Акц.» заодно выбирал бы стратегию.
     document.addEventListener('click', function (e) {
       var t = e.target.closest && e.target.closest('.r5-term');
-      if (t) { e.stopPropagation(); if (_popFor === t) r5ClosePop(); else r5ShowPop(t); return; }
+      if (t) { e.stopPropagation(); e.preventDefault(); if (_popFor === t) r5ClosePop(); else r5ShowPop(t); return; }
       if (!(e.target.closest && e.target.closest('.r5-pop'))) r5ClosePop();
-    });
+    }, true);
     window.addEventListener('scroll', r5ClosePop, true);
   }
   window.r5BindTerms = r5BindTerms;
