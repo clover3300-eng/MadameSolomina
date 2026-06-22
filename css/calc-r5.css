@@ -1,0 +1,251 @@
+/* ============================================================
+   calc-r5.css — редизайн вкладки «Расчёт» (референс R5)
+   Двухкарточный layout (Капитал / Распределение) + мини-квиз.
+   Все стили скоупятся под .cx-rows.r5 / #calcPaneContent, чтобы
+   не задеть остальной интерфейс. Рабочие nd-* блоки переносятся
+   в каркас из js/calc-r5.js и здесь только перекрашиваются.
+   ============================================================ */
+
+/* ── Токены (скоуп) ───────────────────────────────────────── */
+.cx-rows.r5 {
+  --r5-card:   #ffffff;
+  --r5-line:   #e6ecf4;
+  --r5-text:   #1b2433;
+  --r5-muted:  #97a3b4;
+  --r5-muted2: #5f6d80;
+  --r5-green:  #16b56b;
+  --r5-blue:   #4a8df0;
+  --r5-orange: #f08c3a;
+  --r5-ofz:    #7C93B4;
+  --r5-dark:   #141b26;
+  --r5-dark2:  #1d2734;
+  --r5-radius: 22px;
+  --r5-shadow: 0 16px 36px rgba(24,38,60,.08);
+  --r5-mono: 'JetBrains Mono', monospace;
+}
+
+/* ── Раскладка калькуляторной области ─────────────────────── */
+.cx-rows.r5 { display: flex; flex-direction: column; gap: 20px; width: 100%; }
+.cx-rows.r5 .cx-split { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: stretch; }
+
+@media (min-width: 1024px) {
+  #calcPane { max-width: 1180px !important; padding: 6px 36px 40px !important; }
+  .cx-rows.r5 .cx-split { grid-template-columns: 1fr 1fr; gap: 22px; }
+}
+
+/* ── Карточка pk-card ─────────────────────────────────────── */
+.cx-rows.r5 .pk-card {
+  position: relative; background: var(--r5-card); border-radius: var(--r5-radius);
+  box-shadow: var(--r5-shadow); padding: 30px; display: flex; flex-direction: column;
+  min-height: 0; overflow: hidden; box-sizing: border-box;
+}
+.cx-rows.r5 .pk-card.act { box-shadow: 0 0 0 1.5px rgba(20,27,38,.85), var(--r5-shadow); }
+.cx-rows.r5 .pk-card .wm-clip { position: absolute; inset: 0; border-radius: var(--r5-radius); overflow: hidden; pointer-events: none; }
+.cx-rows.r5 .pk-card .wm {
+  position: absolute; top: -28px; right: -6px; font-family: var(--r5-mono);
+  font-weight: 800; font-size: 150px; line-height: 1; color: rgba(17,25,39,.045); letter-spacing: -0.04em;
+}
+.cx-rows.r5 .pk-card.act .wm { color: rgba(22,181,107,.10); }
+.cx-rows.r5 .pk-card .k {
+  position: relative; font-size: 11.5px; letter-spacing: .16em; text-transform: uppercase;
+  font-weight: 700; color: var(--r5-muted);
+}
+.cx-rows.r5 .pk-card .t {
+  position: relative; font-size: 22px; font-weight: 800; color: var(--r5-text);
+  letter-spacing: -0.01em; margin: 4px 0 20px;
+}
+.cx-rows.r5 .pk-card .ct { position: relative; flex: 1; display: flex; flex-direction: column; min-height: 0; }
+
+/* ════════ КАРТОЧКА 01 · КАПИТАЛ ════════ */
+.cx-rows.r5 .cx-cap-center { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 26px; }
+.cx-rows.r5 .cx-cap-params { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 360px; }
+
+/* Сумма (#ndInputHero перекрашен) */
+.cx-rows.r5 .nd-input-hero.cx-amount-host { padding: 6px 0 0 !important; gap: 0; }
+.cx-rows.r5 .nd-input-hero .nd-input-row { justify-content: center; }
+.cx-rows.r5 .nd-sum-field { font-weight: 600; color: var(--r5-text); caret-color: var(--r5-blue); }
+.cx-rows.r5 .nd-ruble { color: var(--r5-orange) !important; }
+.cx-rows.r5 .nd-input-hero.has-value .nd-ruble { opacity: 1 !important; }
+.cx-rows.r5 .nd-input-hint {
+  font-family: var(--r5-mono); font-size: 11px; letter-spacing: .26em; text-transform: uppercase;
+  color: var(--r5-muted); margin-top: 14px;
+}
+.cx-rows.r5 .nd-input-line { background: var(--r5-blue); opacity: .5; width: 64px; margin-top: 16px; }
+.cx-rows.r5 .nd-input-hero.focused .nd-input-line { background: var(--r5-blue); opacity: .8; }
+
+/* Комиссия (.nd-fee-trigger → .cx-comm) */
+.cx-rows.r5 .fee-selector-unified { width: 100%; }
+.cx-rows.r5 .nd-fee-trigger {
+  display: flex; align-items: center; gap: 12px; padding: 15px 18px;
+  border-radius: 14px; background: #fff; border: 1px solid var(--r5-line);
+  font-size: 15px; font-weight: 600; color: var(--r5-text); cursor: pointer; transition: border-color .15s;
+}
+.cx-rows.r5 .nd-fee-trigger:hover { border-color: #d4deec; }
+.cx-rows.r5 .nd-broker-icon { stroke: var(--r5-muted); width: 18px; height: 18px; }
+.cx-rows.r5 .nd-broker-lbl { font-size: 15px; font-weight: 600; color: var(--r5-text); }
+.cx-rows.r5 #feeSelectedText.nd-fee-pill {
+  margin-left: auto; background: #eef2f8; color: var(--r5-text); padding: 6px 12px;
+  border-radius: 999px; font-size: 13px; font-weight: 700;
+}
+.cx-rows.r5 #feeSelectedText.nd-fee-pill.placeholder { color: var(--r5-muted); }
+.cx-rows.r5 .nd-broker-chev { stroke: var(--r5-muted); }
+/* Выпадашка комиссии — оставляем рабочей, чуть аккуратнее */
+.cx-rows.r5 .nd-fee-dd.show { border: 1px solid var(--r5-line); }
+
+/* Плашка MOEX (.nd-moex-strip → .cx-moex) */
+.cx-rows.r5 .nd-moex-strip { justify-content: center; gap: 9px; padding: 2px 0 0; }
+.cx-rows.r5 .nd-moex-strip > div:first-child,
+.cx-rows.r5 .nd-moex-strip > div:last-child { display: none !important; }
+.cx-rows.r5 .nd-moex-text { font-family: var(--r5-mono); font-size: 11px; letter-spacing: .2em; color: var(--r5-muted2); }
+.cx-rows.r5 .nd-moex-dot { background: var(--r5-green); box-shadow: 0 0 6px var(--r5-green); }
+
+/* ════════ КАРТОЧКА 02 · РАСПРЕДЕЛЕНИЕ ════════ */
+/* Распрямляем перенесённый #ndStratCard: без рамки/паддинга, шапка скрыта */
+.cx-rows.r5 .nd-strat-unified { padding: 0 !important; margin: 0 !important; border: none !important; background: none !important; }
+.cx-rows.r5 .nd-strat-unified > .nd-broker-icon,
+.cx-rows.r5 .nd-strat-unified > .nd-broker-lbl,
+.cx-rows.r5 .nd-strat-unified > #ndStratCardVal,
+.cx-rows.r5 .nd-strat-unified > #ndStratChev,
+.cx-rows.r5 .nd-strat-collapse-hint,
+.cx-rows.r5 .nd-strat-collapse-chev { display: none !important; }
+.cx-rows.r5 #ndStratBlock { display: block !important; }
+.cx-rows.r5 #ndStratSelectedRow { display: none !important; }
+
+/* Водопад — всегда открыт, как чистый список */
+.cx-rows.r5 .nd-wf { grid-template-rows: 1fr !important; margin-top: 0 !important; }
+.cx-rows.r5 .nd-wf-inner { overflow: visible; gap: 0; }
+.cx-rows.r5 .nd-wfc {
+  opacity: 1 !important; transform: none !important; transition: background .15s !important;
+  background: transparent !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  border: none !important; border-radius: 14px; padding: 15px 16px; gap: 18px;
+}
+.cx-rows.r5 .nd-wfc + .nd-wfc { border-top: 1px solid #eef2f7 !important; border-radius: 0; }
+.cx-rows.r5 .nd-wfc:hover { background: #f5f8fc !important; }
+.cx-rows.r5 .nd-wfc-selected { display: flex !important; background: #f2f6fc !important; border-radius: 14px; }
+.cx-rows.r5 .nd-wfc-selected + .nd-wfc { border-top-color: transparent !important; }
+
+.cx-rows.r5 .nd-wfl { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.cx-rows.r5 .nd-wfbar { width: 3px; height: auto; align-self: stretch; border-radius: 99px; }
+.cx-rows.r5 .nd-wfn { font-size: 16px; font-weight: 800; color: var(--r5-text); letter-spacing: -.01em; }
+.cx-rows.r5 .nd-wfs { font-size: 13px; color: var(--r5-muted); margin-top: 2px; }
+.cx-rows.r5 .nd-wfr { display: flex; align-items: center; gap: 14px; }
+.cx-rows.r5 .nd-wfp { padding-left: 16px; border-left: 1px solid var(--r5-line); gap: 4px; }
+.cx-rows.r5 .nd-wfb, .cx-rows.r5 .nd-wfst { font-size: 13px; font-weight: 700; white-space: nowrap; }
+/* Пустой кружок-«радио» у невыбранных стандартных стратегий */
+.cx-rows.r5 .nd-wfc:not(.nd-wfc-selected):not(.nd-wfc-custom) .nd-wfr::after {
+  content: ''; width: 32px; height: 32px; border-radius: 999px; border: 1.5px solid var(--r5-line); flex: 0 0 auto;
+}
+.cx-rows.r5 .nd-wfc-selected .nd-wf-check { display: flex !important; width: 32px; height: 32px; background: var(--r5-dark); }
+/* «Своя» */
+.cx-rows.r5 .nd-wfc-custom .nd-wfn { color: var(--r5-blue); }
+.cx-rows.r5 .nd-wf-pencil { background: #e7f0fd; color: var(--r5-blue); width: 34px; height: 34px; }
+
+/* Кастомный слайдер */
+.cx-rows.r5 .nd-cust { background: #f7faff !important; border: 1px solid var(--r5-line) !important; border-radius: 16px; margin-top: 8px; }
+.cx-rows.r5 .nd-cust.show { border-width: 1px; }
+
+/* ── Точка входа в квиз (.r-cta) ──────────────────────────── */
+.cx-rows.r5 .r-cta {
+  margin-top: 16px; display: flex; align-items: center; gap: 15px; padding: 15px 16px;
+  border-radius: 18px; cursor: pointer; background: linear-gradient(180deg, #fbfdff, #eff5ff);
+  border: 1px solid #e1ebfa; transition: border-color .15s, box-shadow .15s, transform .15s;
+}
+.cx-rows.r5 .r-cta:hover { border-color: var(--r5-blue); box-shadow: 0 12px 28px rgba(74,141,240,.16); }
+.cx-rows.r5 .r-cta .ic { width: 46px; height: 46px; border-radius: 14px; flex: 0 0 auto; display: grid; place-items: center; background: #e2edfd; color: var(--r5-blue); }
+.cx-rows.r5 .r-cta .ic.ok { background: #e7f7ef; color: var(--r5-green); }
+.cx-rows.r5 .r-cta .tx { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cx-rows.r5 .r-cta .tx b { font-size: 15px; font-weight: 800; color: var(--r5-text); letter-spacing: -.01em; }
+.cx-rows.r5 .r-cta .tx span { font-size: 12.5px; color: var(--r5-muted2); }
+.cx-rows.r5 .r-cta .btn {
+  margin-left: auto; flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px;
+  background: var(--r5-blue); color: #fff; font-weight: 700; font-size: 13.5px; padding: 11px 16px;
+  border-radius: 12px; box-shadow: 0 8px 18px rgba(74,141,240,.3);
+}
+.cx-rows.r5 .r-cta .btn.ghost { background: #eef2f8; color: var(--r5-muted2); box-shadow: none; }
+
+/* ── Встроенный квиз (.r-quiz) ────────────────────────────── */
+/* Квиз — в потоке внутри .ct: карточка растёт под число вариантов,
+   соседняя карточка тянется по высоте (align-items:stretch). */
+.cx-rows.r5 .r-quiz {
+  position: relative; flex: 1; min-height: 0; background: transparent;
+  display: flex; flex-direction: column;
+}
+.cx-rows.r5 .pk-card.quiz-on .k,
+.cx-rows.r5 .pk-card.quiz-on .t,
+.cx-rows.r5 .pk-card.quiz-on .wm { display: none; }
+.cx-rows.r5 .pk-card.quiz-on .ct > .cx-strat-host,
+.cx-rows.r5 .pk-card.quiz-on .ct > .r-cta { display: none !important; }
+.cx-rows.r5 .r-quiz .qhead { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+.cx-rows.r5 .r-back {
+  align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+  font-size: 13px; font-weight: 700; color: var(--r5-muted2); padding: 8px; border-radius: 10px;
+  background: #fff; border: 1px solid var(--r5-line); transition: color .15s, border-color .15s;
+}
+.cx-rows.r5 .r-back:hover { color: var(--r5-text); border-color: #c9d6ea; }
+.cx-rows.r5 .r-quiz .qprog { flex: 1; display: flex; flex-direction: column; gap: 7px; }
+.cx-rows.r5 .r-prog { height: 6px; border-radius: 99px; background: #eef2f7; overflow: hidden; }
+.cx-rows.r5 .r-prog i { display: block; height: 100%; width: 9%; background: var(--r5-blue); border-radius: 99px; transition: width .3s ease; }
+.cx-rows.r5 .r-quiz .qno { font-family: var(--r5-mono); font-size: 11.5px; font-weight: 600; color: var(--r5-muted); letter-spacing: .04em; }
+.cx-rows.r5 .r-quiz .qq { font-size: 22px; font-weight: 800; color: var(--r5-text); letter-spacing: -.01em; line-height: 1.22; margin-bottom: 18px; text-wrap: balance; }
+.cx-rows.r5 .r-quiz .qopts { display: flex; flex-direction: column; gap: 10px; }
+.cx-rows.r5 .r-opt { display: flex; align-items: center; gap: 14px; padding: 15px 18px; border: 1.5px solid var(--r5-line); border-radius: 14px; cursor: pointer; transition: border-color .15s, background .15s; }
+.cx-rows.r5 .r-opt:hover { border-color: #c9d6ea; }
+.cx-rows.r5 .r-opt.sel { border-color: var(--r5-blue); background: #f4f8ff; }
+.cx-rows.r5 .r-opt .rd { width: 22px; height: 22px; border-radius: 99px; border: 2px solid #cdd8e6; flex: 0 0 auto; display: grid; place-items: center; transition: border-color .15s, background .15s; }
+.cx-rows.r5 .r-opt.sel .rd { border-color: var(--r5-blue); background: var(--r5-blue); }
+.cx-rows.r5 .r-opt.sel .rd::after { content: ''; width: 8px; height: 8px; border-radius: 99px; background: #fff; }
+.cx-rows.r5 .r-opt .otx { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.cx-rows.r5 .r-opt .ot { font-size: 15.5px; font-weight: 700; color: var(--r5-text); }
+.cx-rows.r5 .r-quiz .qfoot { margin-top: auto; padding-top: 20px; display: flex; justify-content: flex-end; }
+.cx-rows.r5 .r-go {
+  display: inline-flex; align-items: center; gap: 10px; cursor: pointer; background: var(--r5-blue);
+  color: #fff; font-weight: 700; font-size: 15px; padding: 13px 22px; border-radius: 14px;
+  box-shadow: 0 12px 26px rgba(74,141,240,.32); transition: transform .12s, box-shadow .15s, opacity .15s;
+}
+.cx-rows.r5 .r-go:hover { transform: translateY(-1px); box-shadow: 0 16px 30px rgba(74,141,240,.4); }
+.cx-rows.r5 .r-go.is-off { opacity: .45; pointer-events: none; box-shadow: none; }
+@keyframes r5-up { from { transform: translateY(8px); opacity: 0; } }
+.cx-rows.r5 .r-quiz.q-anim .qq,
+.cx-rows.r5 .r-quiz.q-anim .qopts { animation: r5-up .26s cubic-bezier(.2,.7,.3,1) both; }
+
+/* ── CTA «Рассчитать портфель» (.nd-btn-cta-g → .cx-calc) ── */
+#calcCtaBar { max-width: 1180px; margin-left: auto; margin-right: auto; }
+#calcCtaBar .nd-btn-cta-g {
+  gap: 12px; padding: 20px; border-radius: 18px;
+  background: linear-gradient(180deg, #1d2734, #141b26);
+  font-size: 13px; letter-spacing: .14em; box-shadow: 0 18px 40px rgba(16,24,38,.30);
+}
+#calcCtaBar .nd-btn-cta-g:hover { box-shadow: 0 22px 48px rgba(16,24,38,.40); }
+#calcCtaBar .nd-btn-cta-g .cta-ic { color: #7ee2a8; display: inline-flex; align-items: center; }
+
+/* ── Тёмная тема ──────────────────────────────────────────── */
+body.dark-mode .cx-rows.r5 {
+  --r5-card: #1d2734; --r5-line: rgba(255,255,255,.09); --r5-text: #eef3fb;
+  --r5-muted: #7e8ba0; --r5-muted2: #aab8cc;
+}
+body.dark-mode .cx-rows.r5 .pk-card { box-shadow: 0 16px 36px rgba(0,0,0,.32); }
+body.dark-mode .cx-rows.r5 .pk-card.act { box-shadow: 0 0 0 1.5px rgba(126,226,168,.5), 0 16px 36px rgba(0,0,0,.32); }
+body.dark-mode .cx-rows.r5 .pk-card .wm { color: rgba(255,255,255,.04); }
+body.dark-mode .cx-rows.r5 .pk-card.act .wm { color: rgba(126,226,168,.10); }
+body.dark-mode .cx-rows.r5 .nd-fee-trigger { background: rgba(255,255,255,.03); }
+body.dark-mode .cx-rows.r5 #feeSelectedText.nd-fee-pill { background: rgba(255,255,255,.08); }
+body.dark-mode .cx-rows.r5 .nd-wfc + .nd-wfc { border-top-color: rgba(255,255,255,.07) !important; }
+body.dark-mode .cx-rows.r5 .nd-wfc:hover { background: rgba(255,255,255,.04) !important; }
+body.dark-mode .cx-rows.r5 .nd-wfc-selected { background: rgba(74,141,240,.14) !important; }
+body.dark-mode .cx-rows.r5 .nd-wfc-selected .nd-wf-check { background: #38BDF8; color: #0f172a; }
+body.dark-mode .cx-rows.r5 .r-cta { background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(74,141,240,.06)); border-color: rgba(255,255,255,.08); }
+body.dark-mode .cx-rows.r5 .r-quiz { background: #1d2734; }
+body.dark-mode .cx-rows.r5 .r-opt { background: rgba(255,255,255,.02); }
+body.dark-mode .cx-rows.r5 .r-opt.sel { background: rgba(74,141,240,.12); }
+body.dark-mode .cx-rows.r5 .r-back { background: rgba(255,255,255,.03); }
+body.dark-mode .cx-rows.r5 .r-prog,
+body.dark-mode .cx-rows.r5 .nd-cust { background: rgba(255,255,255,.05) !important; }
+
+/* ── Мобайл ───────────────────────────────────────────────── */
+@media (max-width: 1023px) {
+  .cx-rows.r5 .pk-card { padding: 22px 20px; }
+  .cx-rows.r5 .pk-card .wm { font-size: 110px; top: -18px; }
+  .cx-rows.r5 .pk-card .t { font-size: 20px; margin-bottom: 16px; }
+  .cx-rows.r5 .r-quiz { padding: 22px 20px; }
+  .cx-rows.r5 .r-quiz .qq { font-size: 19px; }
+}
