@@ -805,12 +805,38 @@ body.dark-mode .bt-bulk-toggle .bt-bulk-title { color: #fff; }
 
 /* Разделитель «настройки ↓ состав портфеля» */
 .bt-mn-divider {
-    display: flex; align-items: center; justify-content: space-between;
+    display: flex; align-items: center; gap: 8px;
     margin: 16px 0 10px;
     padding-top: 14px;
     border-top: 1px solid rgba(44,54,76,0.10);
 }
 body.dark-mode .bt-mn-divider { border-top-color: rgba(255,255,255,0.10); }
+.bt-mn-divider .bt-mn-count { margin-left: auto; }
+
+/* Кнопка «Очистить список» — аккуратная, неброская */
+.bt-clear-all {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: 'Inter', sans-serif;
+    font-size: 10.5px; font-weight: 600;
+    color: var(--text-slate, #64748B);
+    background: transparent;
+    border: 1px solid rgba(44,54,76,0.14);
+    border-radius: 20px; padding: 3px 10px 3px 8px;
+    cursor: pointer;
+    transition: color .15s, border-color .15s, background .15s;
+}
+.bt-clear-all svg { width: 13px; height: 13px; flex-shrink: 0; }
+.bt-clear-all:hover {
+    color: #e74c3c;
+    border-color: rgba(231,76,60,0.40);
+    background: rgba(231,76,60,0.06);
+}
+body.dark-mode .bt-clear-all { color: #9AA8BC; border-color: rgba(255,255,255,0.16); }
+body.dark-mode .bt-clear-all:hover {
+    color: #ff6b5e;
+    border-color: rgba(255,107,94,0.45);
+    background: rgba(255,107,94,0.10);
+}
 .bt-mn-divider-label {
     font-family: 'Inter', sans-serif;
     font-size: 10px; font-weight: 700;

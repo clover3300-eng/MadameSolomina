@@ -487,14 +487,20 @@
                     </div>
                   </div>
 
-                  <!-- ── Разделитель: состав портфеля ── -->
-                  <div class="bt-mn-divider">
-                      <span class="bt-mn-divider-label">Состав портфеля</span>
-                      <span class="bt-mn-count" id="btManualCount">пусто</span>
-                  </div>
+                  <!-- ── Состав портфеля (появляется после добавления бумаг) ── -->
+                  <div id="btManualComposition" style="display:none;">
+                      <div class="bt-mn-divider">
+                          <span class="bt-mn-divider-label">Состав портфеля</span>
+                          <span class="bt-mn-count" id="btManualCount">пусто</span>
+                          <button class="bt-clear-all" id="btClearAll" onclick="btClearTickers()" type="button">
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                              Очистить список
+                          </button>
+                      </div>
 
-                  <!-- Список добавленных бумаг -->
-                  <div id="btTickerList"></div>
+                      <!-- Список добавленных бумаг -->
+                      <div id="btTickerList"></div>
+                  </div>
                 </div>
                 </div><!-- /bt2-body -->
             </div><!-- /bt2-step 2 -->

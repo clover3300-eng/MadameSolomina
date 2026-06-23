@@ -1116,6 +1116,16 @@ function btRemoveTicker(ticker) {
     lsScheduleSave();
 }
 
+// Очистить весь список добавленных бумаг разом
+function btClearTickers() {
+    if (!btState.tickers.length) return;
+    btState.tickers = [];
+    btRecomputeManualQty();
+    btRenderTickerList();
+    btUpdateRunBtn();
+    lsScheduleSave();
+}
+
 // Загрузка цены бумаги на дату теста (для авто-расчёта количества)
 async function btFetchTickerPrice(item) {
     var dateStr = btCurrentDate();
@@ -1169,10 +1179,13 @@ function btPriceStr(p) {
 function btRenderTickerList() {
     var container = document.getElementById('btTickerList');
     var countEl = document.getElementById('btManualCount');
+    // Раздел «Состав портфеля» виден только когда есть добавленные бумаги
+    var comp = document.getElementById('btManualComposition');
+    if (comp) comp.style.display = btState.tickers.length ? 'block' : 'none';
     if (countEl) countEl.textContent = btState.tickers.length ? btPluralPapers(btState.tickers.length) : 'пусто';
     if (!container) return;
     if (btState.tickers.length === 0) {
-        container.innerHTML = '<div class="bt-ticker-list-empty">Пока пусто. Добавьте бумаги выше — количество посчитаем сами.</div>';
+        container.innerHTML = '';
         return;
     }
     var hasCap = btGetManualCapital() > 0;
