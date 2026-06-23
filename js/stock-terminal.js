@@ -38,33 +38,34 @@
     // type: 'num' — сортировка по распарсенному числу; 'text' — по строке (ru).
     // align: 'center' — у всех столбцов после закреплённого: центрируем И заголовок,
     // И данные (по просьбе — единое выравнивание начиная со столбца «Учёт»).
+    // tip — краткое пояснение столбца (показывается тултипом при наведении на заголовок)
     var COLS = [
-        { key: 'РСБУ/МСФО',                      label: 'Учёт',           type: 'text', align: 'center' },
-        { key: 'Текущая Цена',                   label: 'Цена',           type: 'num',  align: 'center' },
-        { key: 'EPS',                            label: 'EPS',            type: 'num',  align: 'center' },
-        { key: 'ОДХС',                           label: 'ОДХС',           type: 'num',  align: 'center' },
-        { key: 'Изменение СК',                   label: 'Изм. СК',        type: 'num',  align: 'center' },
-        { key: 'ROE',                            label: 'ROE',            type: 'num',  align: 'center' },
-        { key: 'Изменение Выручки',              label: 'Изм. Выручки',   type: 'num',  align: 'center' },
-        { key: 'Изменение Валовой прибыли',      label: 'Изм. Вал.приб.', type: 'num',  align: 'center' },
-        { key: 'Изменение Операционной прибыли', label: 'Изм. Опер.приб.',type: 'num',  align: 'center' },
-        { key: 'Изменение Чистой прибыли',       label: 'Изм. Чист.приб.',type: 'num',  align: 'center' },
-        { key: 'Денежный Поток от ОД',           label: 'ДП от ОД',       type: 'num',  align: 'center' },
-        { key: OBL_KEY_1,                        label: OBL_LBL_1,        type: 'num',  align: 'center' },
-        { key: OBL_KEY_2,                        label: OBL_LBL_2,        type: 'num',  align: 'center' },
-        { key: 'Сектор',                         label: 'Сектор',         type: 'text', align: 'center' },
-        { key: 'P/BV',                           label: 'P/BV',           type: 'num',  align: 'center' },
-        { key: 'BV/кол-во акций',                label: 'BV/акц.',        type: 'num',  align: 'center' },
-        { key: 'P/E',                            label: 'P/E',            type: 'num',  align: 'center' },
-        { key: 'Маржа Валовой прибыли',          label: 'Маржа Вал.',     type: 'num',  align: 'center' },
-        { key: 'Маржа Операционной прибыли',     label: 'Маржа Опер.',    type: 'num',  align: 'center' },
-        { key: 'Маржа Чистой прибыли',           label: 'Маржа Чист.',    type: 'num',  align: 'center' },
-        { key: 'Объем выпуска, шт.',             label: 'Объём выпуска',  type: 'num',  align: 'center' },
-        { key: 'Платят дивиденды',               label: 'Дивиденды',      type: 'text', align: 'center' },
-        { key: 'Количество в год',               label: 'Выплат/год',     type: 'num',  align: 'center' },
-        { key: 'ЭШЕЛОН',                         label: 'Эшелон',         type: 'text', align: 'center' },
-        { key: 'ПРИВИЛЕГИРОВАННЫЕ АКЦИИ',        label: 'Привилегированные акции', type: 'text', align: 'center' },
-        { key: 'СОСТОЯНИЕ',                      label: 'Состояние',      type: 'text', align: 'center' }
+        { key: 'РСБУ/МСФО',                      label: 'Учёт',           type: 'text', align: 'center', tip: 'Стандарт отчётности компании: РСБУ или МСФО' },
+        { key: 'Текущая Цена',                   label: 'Цена',           type: 'num',  align: 'center', tip: 'Текущая рыночная цена одной акции' },
+        { key: 'EPS',                            label: 'EPS',            type: 'num',  align: 'center', tip: 'Прибыль на акцию (Earnings Per Share)' },
+        { key: 'ОДХС',                           label: 'ОДХС',           type: 'num',  align: 'center', tip: 'Доходность для инвестирования в акции, %' },
+        { key: 'Изменение СК',                   label: 'Изм. СК',        type: 'num',  align: 'center', tip: 'Изменение собственного капитала за период, %' },
+        { key: 'ROE',                            label: 'ROE',            type: 'num',  align: 'center', tip: 'Рентабельность собственного капитала (ROE), %' },
+        { key: 'Изменение Выручки',              label: 'Изм. Выручки',   type: 'num',  align: 'center', tip: 'Изменение выручки за период, %' },
+        { key: 'Изменение Валовой прибыли',      label: 'Изм. Вал.приб.', type: 'num',  align: 'center', tip: 'Изменение валовой прибыли за период, %' },
+        { key: 'Изменение Операционной прибыли', label: 'Изм. Опер.приб.',type: 'num',  align: 'center', tip: 'Изменение операционной прибыли за период, %' },
+        { key: 'Изменение Чистой прибыли',       label: 'Изм. Чист.приб.',type: 'num',  align: 'center', tip: 'Изменение чистой прибыли за период, %' },
+        { key: 'Денежный Поток от ОД',           label: 'ДП от ОД',       type: 'num',  align: 'center', tip: 'Денежный поток от операционной деятельности (1 — положительный)' },
+        { key: OBL_KEY_1,                        label: OBL_LBL_1,        type: 'num',  align: 'center', tip: 'Доля обязательств в активах за ' + OBL.primary + ' год, %' },
+        { key: OBL_KEY_2,                        label: OBL_LBL_2,        type: 'num',  align: 'center', tip: 'Доля обязательств в активах за ' + OBL.secondary + ' год, %' },
+        { key: 'Сектор',                         label: 'Сектор',         type: 'text', align: 'center', tip: 'Отрасль / сектор экономики компании' },
+        { key: 'P/BV',                           label: 'P/BV',           type: 'num',  align: 'center', tip: 'Цена к балансовой стоимости (Price / Book Value)' },
+        { key: 'BV/кол-во акций',                label: 'BV/акц.',        type: 'num',  align: 'center', tip: 'Балансовая стоимость на одну акцию' },
+        { key: 'P/E',                            label: 'P/E',            type: 'num',  align: 'center', tip: 'Цена к прибыли (Price / Earnings)' },
+        { key: 'Маржа Валовой прибыли',          label: 'Маржа Вал.',     type: 'num',  align: 'center', tip: 'Маржа валовой прибыли, %' },
+        { key: 'Маржа Операционной прибыли',     label: 'Маржа Опер.',    type: 'num',  align: 'center', tip: 'Маржа операционной прибыли, %' },
+        { key: 'Маржа Чистой прибыли',           label: 'Маржа Чист.',    type: 'num',  align: 'center', tip: 'Маржа чистой прибыли, %' },
+        { key: 'Объем выпуска, шт.',             label: 'Объём выпуска',  type: 'num',  align: 'center', tip: 'Общее количество выпущенных акций, шт.' },
+        { key: 'Платят дивиденды',               label: 'Дивиденды',      type: 'text', align: 'center', tip: 'Платит ли компания дивиденды' },
+        { key: 'Количество в год',               label: 'Выплат/год',     type: 'num',  align: 'center', tip: 'Количество дивидендных выплат в год' },
+        { key: 'ЭШЕЛОН',                         label: 'Эшелон',         type: 'text', align: 'center', tip: 'Эшелон ликвидности акции (1 — голубые фишки)' },
+        { key: 'ПРИВИЛЕГИРОВАННЫЕ АКЦИИ',        label: 'Привилегированные акции', type: 'text', align: 'center', tip: 'Наличие привилегированных акций у компании' },
+        { key: 'СОСТОЯНИЕ',                      label: 'Состояние',      type: 'text', align: 'center', tip: 'Текущее состояние / статус компании' }
     ];
 
     // Звезда «в избранное» (заливка управляется классом .active через CSS)
@@ -173,6 +174,34 @@
     function isEmptyVal(s) {
         s = (s == null ? '' : String(s)).trim();
         return s === '' || s === '—' || s === '-' || s === 'N/A' || s.toLowerCase() === 'n/a' || isErr(s);
+    }
+
+    // Сокращённая запись больших чисел для карточек: 1 000 → «1 тыс.»,
+    // 1 500 000 → «1,5 млн», 2 000 000 000 → «2 млрд». Возвращает null, если
+    // значение не число, меньше 1000 по модулю или содержит «%» (проценты не
+    // сокращаем — они и так компактны). Знак сохраняем.
+    var ABBR_UNITS = [
+        { v: 1e12, s: ' трлн' },
+        { v: 1e9,  s: ' млрд' },
+        { v: 1e6,  s: ' млн'  },
+        { v: 1e3,  s: ' тыс.' }
+    ];
+    function abbrevNum(raw) {
+        var s = String(raw == null ? '' : raw).trim();
+        if (s.indexOf('%') !== -1) return null; // проценты не сокращаем
+        var n = parseNum(s);
+        if (isNaN(n)) return null;
+        var abs = Math.abs(n);
+        if (abs < 1000) return null;            // мелкие числа оставляем как есть
+        for (var i = 0; i < ABBR_UNITS.length; i++) {
+            if (abs >= ABBR_UNITS[i].v) {
+                var x = n / ABBR_UNITS[i].v;
+                var r = Math.round(x * 10) / 10; // один знак после запятой
+                var num = (r % 1 === 0) ? String(r) : String(r).replace('.', ',');
+                return num + ABBR_UNITS[i].s;
+            }
+        }
+        return null;
     }
 
     // Подготовка значения ячейки к показу: пусто/ошибка → «—»;
@@ -473,13 +502,15 @@
         var ths = '';
         // первая закреплённая колонка (заголовок по центру по просьбе)
         ths += '<th class="stk-first stk-head-center' + (sortInfo('__ticker') ? ' stk-sorted' : '')
-             + '" data-sort="__ticker" data-type="text" title="' + esc(SORT_HINT) + '">Тикер / Название' + arrow('__ticker') + '</th>';
+             + '" data-sort="__ticker" data-type="text" title="' + esc('Биржевой тикер и название компании') + '\n' + esc(SORT_HINT) + '">Тикер / Название' + arrow('__ticker') + '</th>';
         var cols = visibleCols();
         for (var i = 0; i < cols.length; i++) {
             var col = cols[i];
             var cls = ['stk-th', 'stk-col-center']; // все столбцы центрируем (заголовок и данные)
             if (sortInfo(col.key)) cls.push('stk-sorted');
-            ths += '<th class="' + cls.join(' ') + '" data-sort="' + esc(col.key) + '" data-type="' + col.type + '" title="' + esc(SORT_HINT) + '">'
+            // тултип: пояснение столбца + подсказка про сортировку (на отдельной строке)
+            var tip = col.tip ? esc(col.tip) + '\n' + esc(SORT_HINT) : esc(SORT_HINT);
+            ths += '<th class="' + cls.join(' ') + '" data-sort="' + esc(col.key) + '" data-type="' + col.type + '" title="' + tip + '">'
                  + esc(col.label) + arrow(col.key) + '</th>';
         }
         return '<thead><tr>' + ths + '</tr></thead>';
@@ -520,7 +551,12 @@
             var raw = co.main[col.key];
             var empty = isEmptyVal(raw);
             var cls = 'stk-col-center';
-            if (col.type === 'num') cls += ' stk-num';
+            if (col.type === 'num') {
+                cls += ' stk-num';
+                // отрицательные числовые значения — красным шрифтом (только в таблице, не в карточке)
+                var nv = parseNum(raw);
+                if (!isNaN(nv) && nv < 0) cls += ' stk-neg-val';
+            }
             if (empty) cls += ' stk-empty-cell';
             // условная подсветка ячейки (цвет сайдбара) по правилам isHighlightCell
             else if (isHighlightCell(col.key, co)) cls += ' stk-hl';
@@ -560,7 +596,15 @@
                  + '<td class="stk-m-label">' + esc(met.label) + '</td>';
             for (var v = 0; v < co.years.length; v++) {
                 var val = met.values[v];
-                body += '<td class="stk-m-val">' + (isEmptyVal(val) ? '<span class="stk-m-dash">—</span>' : esc(val)) + '</td>';
+                var cell;
+                if (isEmptyVal(val)) {
+                    cell = '<span class="stk-m-dash">—</span>';
+                } else {
+                    var ab = abbrevNum(val);
+                    // сокращённую запись показываем с тултипом полного значения
+                    cell = ab ? '<span title="' + esc(val) + '">' + esc(ab) + '</span>' : esc(val);
+                }
+                body += '<td class="stk-m-val">' + cell + '</td>';
             }
             body += '</tr>';
             if (hasChg) {
@@ -568,9 +612,15 @@
                 for (var ch = 0; ch < co.years.length; ch++) {
                     var cv = met.changes[ch];
                     var sign = signClass(cv);
-                    body += '<td class="stk-chg ' + sign + '">'
-                          + (isEmptyVal(cv) ? '<span class="stk-chg-pill">—</span>' : '<span class="stk-chg-pill">' + esc(cv) + '</span>')
-                          + '</td>';
+                    var pill;
+                    if (isEmptyVal(cv)) {
+                        pill = '<span class="stk-chg-pill">—</span>';
+                    } else {
+                        var cab = abbrevNum(cv); // проценты не трогаем (abbrevNum вернёт null)
+                        pill = cab ? '<span class="stk-chg-pill" title="' + esc(cv) + '">' + esc(cab) + '</span>'
+                                   : '<span class="stk-chg-pill">' + esc(cv) + '</span>';
+                    }
+                    body += '<td class="stk-chg ' + sign + '">' + pill + '</td>';
                 }
                 body += '</tr>';
             }
@@ -654,7 +704,8 @@
                 var list = sortList(groups[sec]);
                 bodyHtml += '<tr class="stk-sector-row"><td colspan="' + totalCols() + '">'
                     + '<span class="stk-sector-inner"><span class="stk-sector-name">' + esc(sec) + '</span>'
-                    + '<span class="stk-sector-count">' + list.length + '</span></span></td></tr>';
+                    + '<span class="stk-sector-count"><b>' + list.length + '</b> '
+                    + plural(list.length, 'компания', 'компании', 'компаний') + '</span></span></td></tr>';
                 list.forEach(function (co) { bodyHtml += renderCompanyRow(co, ++rank); });
             });
         } else {

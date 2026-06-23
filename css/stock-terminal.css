@@ -386,6 +386,9 @@
     /* !important — перебиваем зебру: :nth-child(odd of .stk-row) даёт спецификность (0,3,1) */
     background-color: var(--stk-good-bg) !important; color: var(--stk-good-tx); font-weight: 600;
 }
+/* Отрицательные числовые значения в таблице — красным шрифтом (в карточке не применяется).
+   Идёт после .stk-hl: если ячейка и «хорошая», и отрицательная — красный важнее для чтения знака. */
+.stk-table > tbody > tr > td.stk-neg-val { color: var(--stk-neg); }
 /* Столбцы с центрированием (напр. «Сектор») — заголовок и ячейки по центру */
 .stk-table > thead th.stk-col-center,
 .stk-table > tbody > tr > td.stk-col-center { text-align: center; }
@@ -408,15 +411,16 @@
 .stk-ident { display: inline-flex; align-items: center; gap: 9px; cursor: pointer; min-width: 148px; }
 .stk-ident:hover .stk-tkr { color: var(--claude-accent, #D97757); }
 .stk-ident:hover .stk-name { color: var(--stk-text); }
-/* Иконка-кнопка вызова карточки компании (шеврон в рамке) */
+/* Иконка-кнопка раскрытия показателей (шеврон).
+   Без квадратной обводки в обычном состоянии; оранжевая заливка — при раскрытии. */
 .stk-chev-btn {
     display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
     width: 24px; height: 24px; border-radius: 7px;
-    border: 1px solid var(--stk-border); background: rgba(15, 23, 42, 0.025); color: var(--stk-slate);
+    border: 1px solid transparent; background: transparent; color: var(--stk-slate);
     transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 .stk-chev-mini { width: 15px; height: 15px; transition: transform 0.25s ease; transform: rotate(0deg); }
-.stk-ident:hover .stk-chev-btn { border-color: rgba(217, 119, 87, 0.45); background: rgba(217, 119, 87, 0.08); color: var(--claude-accent, #D97757); }
+.stk-ident:hover .stk-chev-btn { background: rgba(217, 119, 87, 0.08); color: var(--claude-accent, #D97757); }
 .stk-ident.open .stk-chev-btn { background: var(--claude-accent, #D97757); border-color: var(--claude-accent, #D97757); color: #fff; }
 .stk-ident.open .stk-chev-mini { transform: rotate(90deg); }
 
@@ -457,7 +461,7 @@
     color: var(--stk-slate); max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     transition: color 0.15s ease;
 }
-.stk-num-badge { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--stk-muted); min-width: 22px; text-align: right; }
+.stk-num-badge { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--stk-muted); min-width: 22px; text-align: center; }
 
 /* Заголовок-строка сектора (повышаем специфичность над базовым tbody td) */
 .stk-table tbody tr.stk-sector-row td {
@@ -474,10 +478,17 @@
     font-family: 'Inter', sans-serif; font-weight: 800; font-size: 13px;
     color: var(--graphite, #2C364C); letter-spacing: 0.02em; text-transform: uppercase;
 }
+/* Бейдж количества компаний рядом с названием сектора: «N компаний» в стиле
+   зелёного акцента сайдбара — число моноширинным, слово приглушённым. */
 .stk-sector-count {
-    font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500;
-    color: var(--stk-muted); background: rgba(15,23,42,0.05);
-    padding: 2px 8px; border-radius: 99px;
+    display: inline-flex; align-items: baseline; gap: 4px;
+    font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 600;
+    color: var(--stk-good-tx); background: var(--stk-good-bg);
+    padding: 3px 10px; border-radius: 99px; letter-spacing: 0.01em;
+    text-transform: none;
+}
+.stk-sector-count b {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700;
 }
 
 /* ---------- Аккордеон-карточка показателей ---------- */
