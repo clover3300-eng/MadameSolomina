@@ -103,7 +103,7 @@
 
 /* ===== Две колонки ===== */
 #panel-monthly .mi5-cols {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: stretch;
 }
 #panel-monthly .mi5-calc { display: flex; flex-direction: column; }
 
@@ -202,10 +202,13 @@
 
 /* ===== 04 — график выплат (таймлайн) ===== */
 #panel-monthly .mi5-sch { display: flex; flex-direction: column; }
-#panel-monthly .mi5-sched { margin-top: 18px; flex: 1; }
+#panel-monthly .mi5-sched {
+    margin-top: 18px; flex: 1 1 auto;
+    display: flex; flex-direction: column; justify-content: space-between;
+}
 #panel-monthly .mi5-pay {
     position: relative; display: grid; grid-template-columns: 24px 1fr; gap: 13px;
-    padding: 8px 12px 8px 0; border-radius: 13px;
+    padding: 6px 12px 6px 0; border-radius: 13px;
 }
 #panel-monthly .mi5-pay.is-next { background: linear-gradient(90deg, rgba(22, 181, 107, .07), rgba(22, 181, 107, 0) 78%); }
 #panel-monthly .mi5-pay-rail { position: relative; display: flex; justify-content: center; }
