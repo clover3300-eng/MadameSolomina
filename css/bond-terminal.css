@@ -343,7 +343,7 @@
     font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px; color: var(--bnd-text);
 }
 .bnd-name {
-    font-family: 'JetBrains Mono', monospace; font-weight: 400; font-size: 9px;
+    font-family: 'JetBrains Mono', monospace; font-weight: 400; font-size: 8px;
     color: var(--bnd-muted); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     letter-spacing: 0.02em;
 }

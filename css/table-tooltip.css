@@ -1,0 +1,42 @@
+/* Кастомный тултип для таблиц-терминалов (см. js/table-tooltip.js).
+   Заменяет нативную серую подсказку браузера стилизованным блоком. */
+.tbl-tip {
+    position: fixed;
+    z-index: 99999;
+    max-width: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 8px 11px;
+    border-radius: 9px;
+    background: var(--graphite, #2C364C);
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.28);
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(-2px);
+    transition: opacity 0.12s ease, transform 0.12s ease;
+    font-family: 'Inter', sans-serif;
+    text-align: left;
+}
+.tbl-tip.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+.tbl-tip-line {
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.35;
+    letter-spacing: 0.01em;
+}
+.tbl-tip-line.tbl-tip-sub {
+    font-size: 10.5px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.62);
+}
+
+body.dark-mode .tbl-tip {
+    background: #0f1726;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+}
