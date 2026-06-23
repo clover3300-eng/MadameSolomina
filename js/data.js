@@ -177,10 +177,12 @@ function loadDemoData() {
         { month: '09', bondIdx: 2 }, { month: '10', bondIdx: 3 },
         { month: '11', bondIdx: 4 }, { month: '12', bondIdx: 5 },
     ];
+    // Реалистичные дни выплат по 6 ОФЗ (один день для обоих купонов выпуска) — формат DD.MM.YYYY
+    const couponDays = ['12', '19', '07', '24', '16', '28'];
     allScheduledPayments = couponSchedule.map(({ month, bondIdx }) => {
         const b = bonds[bondIdx];
         return {
-            dateStr: month + '.25',
+            dateStr: (couponDays[bondIdx] || '15') + '.' + month + '.2026',
             displayName: b.n,
             paymentTicker: b.t,
             staticCouponVal: 35 + bondIdx * 2
@@ -694,12 +696,14 @@ function recalcCustomCoupons() {
             monthNum = parseInt(parts[1], 10) - 1;
             dm = parts[0] + '.' + parts[1];
         } else {
+            // Формат MM.YY без дня — подставляем день 15, чтобы в датах всегда было число
             monthNum = parseInt(parts[0], 10) - 1;
-            dm = MON[monthNum] || '';
+            day = '15';
+            dm = '15.' + (parts[0] || '');
         }
         const mo = MON[monthNum] || '';
         const name = (payment.displayName || '').replace(/^(ОФЗ)-/, '$1 ');
-        return { day: day, mo: mo, dm: dm, name: name, qty: qty, net: net };
+        return { day: day, mo: mo, dm: dm, mn: monthNum, name: name, qty: qty, net: net };
     });
 
     // Второй проход — рисуем таймлайн выплат
@@ -716,6 +720,26 @@ function recalcCustomCoupons() {
             + '</div></div>';
     });
     resultList.innerHTML = html;
+
+    // --- Мини-график: поступления по месяцам (баннер дохода) ---
+    const chartWrap = document.getElementById('miMonthlyChart');
+    if (chartWrap) {
+        const monthly = new Array(12).fill(0);
+        rows.forEach(function(r) { if (r.qty > 0 && r.mn >= 0 && r.mn < 12) monthly[r.mn] += r.net; });
+        let maxM = 0;
+        monthly.forEach(function(v) { if (v > maxM) maxM = v; });
+        const LET = 'ЯФМАМИИАСОНД';
+        let ch = '';
+        for (let m = 0; m < 12; m++) {
+            const has = monthly[m] > 0;
+            const hPct = (maxM > 0 && has) ? Math.max(10, Math.round(monthly[m] / maxM * 100)) : 0;
+            ch += '<div class="mi5-mbar' + (has ? '' : ' is-empty') + '" title="' + MON[m] + ' · ' + Math.round(monthly[m]).toLocaleString('ru-RU') + ' ₽">'
+                + '<div class="mi5-mbar-track"><span class="mi5-mbar-fill" style="height:' + hPct + '%"></span></div>'
+                + '<span class="mi5-mbar-l">' + LET[m] + '</span>'
+                + '</div>';
+        }
+        chartWrap.innerHTML = ch;
+    }
 
     // --- Сводка: баннер + итоги + ближайшая выплата ---
     const monthlyAvg = totalAmount > 0 ? Math.round(totalAmount / 12) : 0;
@@ -769,6 +793,22 @@ function miPreset(btn) {
     document.querySelectorAll('.mi5-preset').forEach(function(b) { b.classList.remove('act'); });
     btn.classList.add('act');
     distributeMonthlyInvestment();
+    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.selectionChanged();
+    }
+}
+
+// Переключение правой колонки: баннер дохода ↔ график выплат
+function toggleScheduleView(btn) {
+    var banner = document.getElementById('miBannerCard');
+    var sch = document.getElementById('miSchCard');
+    if (!banner || !sch) return;
+    var show = sch.classList.contains('is-hidden'); // сейчас скрыт → показываем
+    sch.classList.toggle('is-hidden', !show);
+    banner.classList.toggle('is-hidden', show);
+    btn.classList.toggle('is-open', show);
+    var tx = btn.querySelector('.mi5-next-act-tx');
+    if (tx) tx.textContent = show ? 'Скрыть график' : 'Показать график';
     if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
         window.Telegram.WebApp.HapticFeedback.selectionChanged();
     }

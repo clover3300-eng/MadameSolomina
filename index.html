@@ -1620,26 +1620,7 @@
     <div class="calc-accordion" id="calcAccordion">
       <div class="mi5">
 
-        <!-- 01 — баннер-полоса дохода -->
-        <div class="mi5-card mi5-banner">
-          <span class="mi5-wm">01</span>
-          <div class="mi5-cb-l">
-            <span class="mi5-ic">₽</span>
-            <div class="mi5-cb-l-txt">
-              <span class="mi5-cb-k">Сумма в ОФЗ</span>
-              <span class="mi5-cb-v"><span id="ndIbSub">1 000 000</span> <i>₽</i></span>
-              <span class="mi5-cb-m">6 выпусков · купоны ежемесячно</span>
-            </div>
-          </div>
-          <span class="mi5-cb-div"></span>
-          <div class="mi5-cb-hero">
-            <div class="mi5-cb-hk">Средний доход в месяц</div>
-            <div class="mi5-cb-amt"><span id="ndIbMonthly">~573</span><span class="mi5-rub">₽</span></div>
-            <div class="mi5-cb-sub"><b><span id="ndIbYearly">~6 876</span> ₽</b> в год · <span id="ndIbYield">6.9</span>% годовых</div>
-          </div>
-        </div>
-
-        <!-- Две колонки: калькулятор + график выплат -->
+        <!-- Две карточки: калькулятор + (баннер дохода ↔ график выплат) -->
         <div class="mi5-cols">
 
           <!-- 02 — калькулятор -->
@@ -1672,15 +1653,62 @@
             <div class="mi5-bondsub"><span class="l">Облигации</span><span class="r">6 выпусков · купоны ежемесячно</span></div>
             <div id="calc-bonds-input-list" class="mi5-bonds"></div>
             <div class="mi5-foot">
-              <div class="mi5-next">
-                <div class="mi5-next-l"><span class="mi5-next-k">Ближайшая выплата</span><span class="mi5-next-nm" id="miNextName">—</span></div>
-                <span class="mi5-next-am" id="miNextAmt">—</span>
+              <div class="mi5-next" id="miSchToggle" role="button" tabindex="0"
+                   onclick="toggleScheduleView(this)"
+                   onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleScheduleView(this);}">
+                <div class="mi5-next-l">
+                  <span class="mi5-next-k">Ближайшая выплата</span>
+                  <span class="mi5-next-nm" id="miNextName">—</span>
+                </div>
+                <div class="mi5-next-r">
+                  <span class="mi5-next-am" id="miNextAmt">—</span>
+                  <span class="mi5-next-act">
+                    <span class="mi5-next-act-tx">Показать график</span>
+                    <svg class="mi5-next-chev" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+                  </span>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- 04 — график выплат -->
-          <div class="mi5-card mi5-sch">
+          <!-- Правая колонка: баннер дохода ↔ график выплат -->
+          <div class="mi5-right">
+
+            <!-- 01 — баннер дохода (вертикальный, по умолчанию) -->
+            <div class="mi5-card mi5-banner mi5-banner-v" id="miBannerCard">
+              <span class="mi5-wm">01</span>
+              <div class="mi5-cb-head">
+                <span class="mi5-ic">₽</span>
+                <div class="mi5-cb-head-txt">
+                  <span class="mi5-cb-k">Купоны ОФЗ</span>
+                  <span class="mi5-cb-m">6 выпусков · выплаты ежемесячно</span>
+                </div>
+              </div>
+              <div class="mi5-cb-lead">
+                <div class="mi5-cb-hk">Средний доход в месяц</div>
+                <div class="mi5-cb-amt"><span id="ndIbMonthly">~573</span><span class="mi5-rub">₽</span></div>
+                <div class="mi5-cb-ctx">с <b><span id="ndIbSub">1 000 000</span> ₽</b> вложений</div>
+              </div>
+              <div class="mi5-cb-mini">
+                <div class="mi5-cb-mk">Поступления по месяцам</div>
+                <div class="mi5-cb-chart" id="miMonthlyChart"></div>
+              </div>
+              <div class="mi5-foot">
+                <div class="mi5-cb-stats">
+                  <div class="mi5-cb-stat">
+                    <span class="mi5-cb-sv"><span id="ndIbYearly">~6 876</span> ₽</span>
+                    <span class="mi5-cb-sl">в год</span>
+                  </div>
+                  <div class="mi5-cb-stat">
+                    <span class="mi5-cb-sv mi5-green"><span id="ndIbYield">6.9</span>%</span>
+                    <span class="mi5-cb-sl">годовых</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          <!-- 04 — график выплат (скрыт по умолчанию) -->
+          <div class="mi5-card mi5-sch is-hidden" id="miSchCard">
             <span class="mi5-kick">График выплат</span>
             <div class="mi5-ttl">Все купоны за год</div>
             <div id="calc-results-list" class="mi5-sched"></div>
@@ -1694,6 +1722,8 @@
               </div>
             </div>
           </div>
+
+          </div><!-- /.mi5-right -->
 
         </div>
       </div>
