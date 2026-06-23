@@ -191,6 +191,7 @@
 #panel-monthly .mi5-next {
     display: flex; align-items: center; gap: 14px; background: #f4f7fb;
     border: 1px solid var(--mi-line); border-radius: 14px; padding: 14px 18px;
+    min-height: 84px; box-sizing: border-box;
 }
 #panel-monthly .mi5-next-l { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 #panel-monthly .mi5-next-k {
@@ -230,14 +231,17 @@
 #panel-monthly .mi5-pay-info .mi5-pay-bn { font-weight: 600; font-size: 15px; letter-spacing: -.01em; color: var(--mi-muted2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #panel-monthly .mi5-pay-info .mi5-pay-q { font-family: var(--mi-mono); font-size: 11.5px; color: var(--mi-muted); font-weight: 600; margin-top: 3px; }
 #panel-monthly .mi5-pay-amt { text-align: right; min-width: 116px; }
-#panel-monthly .mi5-pay-amt .am { font-family: var(--mi-mono); font-weight: 700; font-size: 16px; color: var(--mi-green); white-space: nowrap; }
+#panel-monthly .mi5-pay-amt .am { font-family: var(--mi-mono); font-weight: 700; font-size: 15px; color: var(--mi-muted2); white-space: nowrap; }
 #panel-monthly .mi5-pay-amt.is-zero .am { color: var(--mi-muted); }
-#panel-monthly .mi5-pay-amt .bar { display: block; height: 4px; border-radius: 99px; background: #eef2f7; margin-top: 7px; overflow: hidden; }
-#panel-monthly .mi5-pay-amt .bar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #74d8a6, var(--mi-green)); }
+#panel-monthly .mi5-pay.is-next .mi5-pay-amt .am { color: var(--mi-green); }
+#panel-monthly .mi5-pay-amt .bar { display: block; height: 3px; border-radius: 99px; background: #eef2f7; margin-top: 7px; overflow: hidden; }
+#panel-monthly .mi5-pay-amt .bar i { display: block; height: 100%; border-radius: 99px; background: rgba(22, 181, 107, .32); }
+#panel-monthly .mi5-pay.is-next .mi5-pay-amt .bar i { background: rgba(22, 181, 107, .6); }
 
 #panel-monthly .mi5-total {
-    margin-top: 16px; display: flex; align-items: center; justify-content: space-between;
-    gap: 14px; padding: 16px 20px; background: #f4f7fb; border: 1px solid var(--mi-line); border-radius: 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 14px; padding: 14px 18px; background: #f4f7fb; border: 1px solid var(--mi-line); border-radius: 14px;
+    min-height: 84px; box-sizing: border-box;
 }
 #panel-monthly .mi5-total-l { display: flex; flex-direction: column; gap: 4px; }
 #panel-monthly .mi5-total-k {
