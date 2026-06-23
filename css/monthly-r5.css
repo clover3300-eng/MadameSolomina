@@ -84,6 +84,7 @@
 }
 #panel-monthly .mi5-cb-v i { color: var(--mi-orange); font-style: normal; margin-left: 3px; }
 #panel-monthly .mi5-cb-m { font-family: var(--mi-mono); font-size: 12px; color: var(--mi-muted); font-weight: 600; }
+#panel-monthly .mi5-cb-m b { color: var(--mi-text); font-weight: 700; }
 #panel-monthly .mi5-cb-div { width: 1px; align-self: stretch; background: var(--mi-line); margin: 8px 0 8px auto; }
 #panel-monthly .mi5-cb-hero {
     position: relative; margin-left: auto; display: flex; flex-direction: column;
@@ -146,7 +147,7 @@
 #panel-monthly .mi5-cb-head { display: flex; align-items: center; gap: 14px; flex: 0 0 auto; }
 #panel-monthly .mi5-cb-head-txt { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 #panel-monthly .mi5-cb-lead {
-    flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-top: 24px;
+    flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; text-align: right; gap: 8px; margin-top: 18px;
 }
 #panel-monthly .mi5-banner-v .mi5-cb-hk { display: flex; align-items: center; gap: 8px; }
 #panel-monthly .mi5-banner-v .mi5-cb-hk::before {
@@ -163,16 +164,76 @@
     font-family: var(--mi-mono); font-size: 10.5px; letter-spacing: .16em;
     text-transform: uppercase; font-weight: 700; color: var(--mi-muted); flex: 0 0 auto;
 }
-#panel-monthly .mi5-cb-chart { flex: 1 1 auto; display: flex; align-items: stretch; gap: 6px; margin-top: 16px; min-height: 60px; }
-#panel-monthly .mi5-mbar { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: default; }
-#panel-monthly .mi5-mbar-track { flex: 1 1 auto; width: 100%; display: flex; align-items: flex-end; justify-content: center; min-height: 24px; }
-#panel-monthly .mi5-mbar-fill {
-    width: 100%; max-width: 15px; min-height: 4px; border-radius: 6px;
-    background: linear-gradient(180deg, #ffc491, var(--mi-orange));
-    transition: height .35s cubic-bezier(.4, 0, .2, 1);
+/* Линейный график поступлений */
+#panel-monthly .mi5-cb-chart { position: relative; flex: 1 1 auto; margin-top: 16px; min-height: 96px; }
+#panel-monthly .mi5-line-svg {
+    position: absolute; left: 0; right: 0; top: 0; bottom: 0;
+    width: 100%; height: 100%; overflow: visible;
 }
-#panel-monthly .mi5-mbar.is-empty .mi5-mbar-fill { background: var(--mi-line); }
-#panel-monthly .mi5-mbar-l { flex: 0 0 auto; font-family: var(--mi-mono); font-size: 9px; letter-spacing: .02em; color: var(--mi-muted); font-weight: 700; }
+
+/* Точка-маркер + зона наведения (вертикальная полоса) */
+#panel-monthly .mi5-lp {
+    position: absolute; top: 0; bottom: 0; width: 9%;
+    transform: translateX(-50%);
+    cursor: pointer; z-index: 2;
+}
+#panel-monthly .mi5-lp-dot {
+    position: absolute; left: 50%; top: var(--y);
+    width: 9px; height: 9px; border-radius: 50%;
+    background: #fff; border: 2.4px solid var(--mi-orange);
+    transform: translate(-50%, -50%) scale(.62);
+    opacity: .85;
+    transition: transform .18s ease, opacity .18s ease, box-shadow .18s ease;
+    box-shadow: 0 1px 4px rgba(240, 140, 58, .25);
+}
+#panel-monthly .mi5-lp.is-empty .mi5-lp-dot { border-color: var(--mi-line); box-shadow: none; opacity: .6; }
+#panel-monthly .mi5-lp:hover .mi5-lp-dot {
+    transform: translate(-50%, -50%) scale(1.15);
+    opacity: 1; box-shadow: 0 0 0 5px rgba(240, 140, 58, .16), 0 2px 8px rgba(240, 140, 58, .35);
+}
+/* Вертикальная направляющая при наведении */
+#panel-monthly .mi5-lp::before {
+    content: ''; position: absolute; left: 50%; top: 8px; bottom: 18px;
+    width: 1px; transform: translateX(-50%);
+    background: linear-gradient(180deg, rgba(240, 140, 58, .35), rgba(240, 140, 58, 0));
+    opacity: 0; transition: opacity .18s ease;
+}
+#panel-monthly .mi5-lp:hover::before { opacity: 1; }
+
+/* Подпись месяца */
+#panel-monthly .mi5-lp-x {
+    position: absolute; left: 50%; bottom: 0; transform: translateX(-50%);
+    font-family: var(--mi-mono); font-size: 9px; letter-spacing: .02em;
+    color: var(--mi-muted); font-weight: 700; transition: color .2s ease;
+}
+#panel-monthly .mi5-lp:hover .mi5-lp-x { color: var(--mi-orange); }
+
+/* Тултип с суммой и датой выплаты */
+#panel-monthly .mi5-lp-tip {
+    position: absolute; left: 50%; top: var(--y);
+    transform: translate(-50%, calc(-100% - 14px)) scale(.96);
+    transform-origin: center bottom;
+    z-index: 6;
+    display: flex; flex-direction: column; align-items: center; gap: 1px;
+    padding: 6px 10px; border-radius: 8px;
+    background: #161e29; border: 1px solid rgba(255, 255, 255, .12); color: #fff;
+    white-space: nowrap; pointer-events: none;
+    opacity: 0; visibility: hidden;
+    transition: opacity .18s ease, transform .18s ease, visibility .18s;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, .35);
+}
+#panel-monthly .mi5-lp.flip .mi5-lp-tip {
+    transform: translate(-50%, 14px) scale(.96);
+    transform-origin: center top;
+}
+#panel-monthly .mi5-lp-tip b { font-size: 12px; font-weight: 800; color: #ffcf9e; }
+#panel-monthly .mi5-lp-tip span { font-family: var(--mi-mono); font-size: 10px; opacity: .8; }
+#panel-monthly .mi5-lp:hover .mi5-lp-tip {
+    opacity: 1; visibility: visible; transform: translate(-50%, calc(-100% - 10px)) scale(1);
+}
+#panel-monthly .mi5-lp.flip:hover .mi5-lp-tip {
+    transform: translate(-50%, 10px) scale(1);
+}
 
 /* Мини-статистика дохода (в год / годовых) — симметрична блоку «Ближайшая выплата» (84px) */
 #panel-monthly .mi5-cb-stats {
@@ -180,7 +241,7 @@
     background: #f4f7fb; border: 1px solid var(--mi-line); border-radius: 14px; overflow: hidden;
     min-height: 84px; box-sizing: border-box;
 }
-#panel-monthly .mi5-cb-stat { padding: 13px 16px; display: flex; flex-direction: column; justify-content: center; gap: 5px; }
+#panel-monthly .mi5-cb-stat { padding: 13px 16px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: 6px; }
 #panel-monthly .mi5-cb-stat + .mi5-cb-stat { border-left: 1px solid var(--mi-line); }
 #panel-monthly .mi5-cb-sv { font-family: var(--mi-mono); font-weight: 700; font-size: 19px; color: var(--mi-text); letter-spacing: -.01em; line-height: 1; }
 #panel-monthly .mi5-cb-sv.mi5-green { color: var(--mi-green); }
@@ -318,18 +379,21 @@
 #panel-monthly .mi5-pay.is-next .mi5-pay-amt .bar i { background: rgba(22, 181, 107, .6); }
 
 #panel-monthly .mi5-total {
-    display: flex; align-items: center; justify-content: space-between;
+    display: flex; align-items: flex-end; justify-content: space-between;
     gap: 14px; padding: 14px 18px; background: #f4f7fb; border: 1px solid var(--mi-line); border-radius: 14px;
     min-height: 84px; box-sizing: border-box;
 }
-#panel-monthly .mi5-total-l { display: flex; flex-direction: column; gap: 4px; }
+#panel-monthly .mi5-total-l { display: flex; flex-direction: column; gap: 6px; }
 #panel-monthly .mi5-total-k {
     font-family: var(--mi-mono); font-size: 10.5px; letter-spacing: .13em;
     text-transform: uppercase; font-weight: 700; color: var(--mi-muted);
 }
-#panel-monthly .mi5-total-big { font-family: var(--mi-mono); font-weight: 700; font-size: 25px; color: var(--mi-text); letter-spacing: -.01em; white-space: nowrap; }
-#panel-monthly .mi5-total-sub { font-family: var(--mi-mono); font-size: 12px; color: var(--mi-muted2); font-weight: 600; text-align: right; white-space: nowrap; }
-#panel-monthly .mi5-total-sub b { display: block; color: var(--mi-green); font-weight: 700; font-size: 14.5px; margin-bottom: 3px; }
+#panel-monthly .mi5-total-big { font-family: var(--mi-mono); font-weight: 700; font-size: 25px; color: var(--mi-text); letter-spacing: -.01em; line-height: 1; white-space: nowrap; }
+#panel-monthly .mi5-total-sub {
+    display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
+    font-family: var(--mi-mono); font-size: 12px; color: var(--mi-muted2); font-weight: 600; text-align: right; white-space: nowrap;
+}
+#panel-monthly .mi5-total-sub b { color: var(--mi-green); font-weight: 700; font-size: 14.5px; line-height: 1; }
 
 /* ===== Адаптив ===== */
 @media (max-width: 900px) {

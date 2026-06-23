@@ -724,21 +724,104 @@ function recalcCustomCoupons() {
     // --- Мини-график: поступления по месяцам (баннер дохода) ---
     const chartWrap = document.getElementById('miMonthlyChart');
     if (chartWrap) {
-        const monthly = new Array(12).fill(0);
-        rows.forEach(function(r) { if (r.qty > 0 && r.mn >= 0 && r.mn < 12) monthly[r.mn] += r.net; });
+        const monthly = new Array(12).fill(0);   // сумма выплат по месяцам
+        const monthDay = new Array(12).fill('');  // день ближайшей выплаты в месяце (DD)
+        rows.forEach(function(r) {
+            if (r.qty > 0 && r.mn >= 0 && r.mn < 12) {
+                monthly[r.mn] += r.net;
+                if (!monthDay[r.mn] && r.day) monthDay[r.mn] = r.day;
+            }
+        });
         let maxM = 0;
         monthly.forEach(function(v) { if (v > maxM) maxM = v; });
+
+        // Определяем месяц старта = ближайшая будущая выплата (от текущего месяца, по кругу)
+        const now = new Date();
+        const curMonth = now.getMonth();
+        const curYear = now.getFullYear();
+        let startMonth = curMonth;
+        for (let i = 0; i < 12; i++) {
+            const m = (curMonth + i) % 12;
+            if (monthly[m] > 0) { startMonth = m; break; }
+        }
+
         const LET = 'ЯФМАМИИАСОНД';
-        let ch = '';
-        for (let m = 0; m < 12; m++) {
-            const has = monthly[m] > 0;
-            const hPct = (maxM > 0 && has) ? Math.max(10, Math.round(monthly[m] / maxM * 100)) : 0;
-            ch += '<div class="mi5-mbar' + (has ? '' : ' is-empty') + '" title="' + MON[m] + ' · ' + Math.round(monthly[m]).toLocaleString('ru-RU') + ' ₽">'
-                + '<div class="mi5-mbar-track"><span class="mi5-mbar-fill" style="height:' + hPct + '%"></span></div>'
-                + '<span class="mi5-mbar-l">' + LET[m] + '</span>'
+
+        // Геометрия (в координатах viewBox 0..100, SVG растягивается на контейнер)
+        const N = 12, padX = 5, topY = 22, botY = 86;
+        const xAt = function (i) { return padX + (i / (N - 1)) * (100 - 2 * padX); };
+        const yAt = function (v) { return maxM > 0 ? (botY - (v / maxM) * (botY - topY)) : botY; };
+
+        const pts = [];
+        for (let i = 0; i < N; i++) {
+            const m = (startMonth + i) % 12;
+            pts.push({ i: i, m: m, x: xAt(i), y: yAt(monthly[m]) });
+        }
+
+        // Плавная кривая (Catmull-Rom → кубические безье)
+        const smooth = function (p) {
+            if (p.length < 2) return '';
+            let d = 'M' + p[0].x.toFixed(2) + ',' + p[0].y.toFixed(2);
+            for (let i = 0; i < p.length - 1; i++) {
+                const p0 = p[i - 1] || p[i], p1 = p[i], p2 = p[i + 1], p3 = p[i + 2] || p[i + 1];
+                const c1x = p1.x + (p2.x - p0.x) / 6, c1y = p1.y + (p2.y - p0.y) / 6;
+                const c2x = p2.x - (p3.x - p1.x) / 6, c2y = p2.y - (p3.y - p1.y) / 6;
+                d += ' C' + c1x.toFixed(2) + ',' + c1y.toFixed(2) + ' ' + c2x.toFixed(2) + ',' + c2y.toFixed(2) + ' ' + p2.x.toFixed(2) + ',' + p2.y.toFixed(2);
+            }
+            return d;
+        };
+        const lineD = smooth(pts);
+        const areaD = lineD + ' L' + pts[N - 1].x.toFixed(2) + ',' + botY + ' L' + pts[0].x.toFixed(2) + ',' + botY + ' Z';
+
+        let svg = '<svg class="mi5-line-svg" viewBox="0 0 100 100" preserveAspectRatio="none">'
+            + '<defs><linearGradient id="miLineGrad" x1="0" y1="0" x2="0" y2="1">'
+            + '<stop offset="0" stop-color="#ffb37a" stop-opacity="0.42"/>'
+            + '<stop offset="1" stop-color="#ffb37a" stop-opacity="0"/>'
+            + '</linearGradient></defs>'
+            + '<path class="mi5-line-area" d="' + areaD + '" fill="url(#miLineGrad)"/>'
+            + '<path class="mi5-line-path" d="' + lineD + '" fill="none" stroke="var(--mi-orange)" stroke-width="2.4" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>'
+            + '</svg>';
+
+        // Накладной слой: точки + тултипы + подписи месяцев
+        let overlay = '';
+        for (let i = 0; i < N; i++) {
+            const p = pts[i];
+            const slotYear = curYear + (startMonth + i >= 12 ? 1 : 0);
+            const has = monthly[p.m] > 0;
+            const sumTxt = has ? ('+' + Math.round(monthly[p.m]).toLocaleString('ru-RU') + ' ₽') : 'нет выплат';
+            const dateTxt = has
+                ? ((monthDay[p.m] || '15') + '.' + String(p.m + 1).padStart(2, '0') + '.' + slotYear)
+                : (MON[p.m] + ' ' + slotYear);
+            const flip = p.y < 42 ? ' flip' : '';   // верхние точки — тултип снизу
+            overlay += '<div class="mi5-lp' + (has ? '' : ' is-empty') + flip + '" style="left:' + p.x.toFixed(2) + '%;--y:' + p.y.toFixed(2) + '%">'
+                + '<span class="mi5-lp-dot"></span>'
+                + '<div class="mi5-lp-tip"><b>' + sumTxt + '</b><span>' + dateTxt + '</span></div>'
+                + '<span class="mi5-lp-x">' + LET[p.m] + '</span>'
                 + '</div>';
         }
-        chartWrap.innerHTML = ch;
+
+        chartWrap.innerHTML = svg + overlay;
+
+        // Анимация прорисовки линии — только при первом показе
+        if (!window._miLineAnimated) {
+            const path = chartWrap.querySelector('.mi5-line-path');
+            const area = chartWrap.querySelector('.mi5-line-area');
+            if (path) {
+                const len = path.getTotalLength();
+                path.style.strokeDasharray = len;
+                path.style.strokeDashoffset = len;
+                path.getBoundingClientRect(); // reflow
+                path.style.transition = 'stroke-dashoffset 1s cubic-bezier(.4,0,.2,1)';
+                path.style.strokeDashoffset = '0';
+            }
+            if (area) {
+                area.style.opacity = '0';
+                area.getBoundingClientRect();
+                area.style.transition = 'opacity .9s ease .25s';
+                area.style.opacity = '1';
+            }
+            window._miLineAnimated = true;
+        }
     }
 
     // --- Сводка: баннер + итоги + ближайшая выплата ---
