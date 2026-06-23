@@ -24,6 +24,8 @@
     /* акценты изменений (ориентир из исходной Google-таблицы) — фон бейджей приглушён */
     --stk-pos: #2c7a4d;  --stk-pos-bg: rgba(19, 115, 51, 0.07);
     --stk-neg: #cc5b53;  --stk-neg-bg: rgba(197, 34, 31, 0.06);
+    /* приглушённый красный для отрицательных значений в таблице — мягче, чем у бейджей */
+    --stk-neg-soft: #c07b74;
     /* фон блоков мини-таблицы (зебра по показателям) */
     --stk-grp-a: #ffffff;  --stk-grp-b: #f4f6f9;
     --stk-mini-head-bg: #eceff4;  /* светлая шапка карточки (не как тёмная шапка таблицы) */
@@ -252,7 +254,9 @@
 .stk-rule.is-off .stk-rule-name,
 .stk-rule.is-off .stk-rule-op,
 .stk-rule.is-off .stk-rule-desc { opacity: 0.45; }
-.stk-rules-head-acts { display: inline-flex; gap: 8px; }
+/* «Снять все» + «По умолчанию» держим в одну строку, без переноса */
+.stk-rules-head-acts { display: inline-flex; gap: 8px; flex-shrink: 0; white-space: nowrap; }
+.stk-rules-head-acts .stk-sec-reset { white-space: nowrap; }
 .stk-rule-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .stk-rule-op { text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: var(--stk-slate); }
 .stk-rule-val {
@@ -388,7 +392,7 @@
 }
 /* Отрицательные числовые значения в таблице — красным шрифтом (в карточке не применяется).
    Идёт после .stk-hl: если ячейка и «хорошая», и отрицательная — красный важнее для чтения знака. */
-.stk-table > tbody > tr > td.stk-neg-val { color: var(--stk-neg); }
+.stk-table > tbody > tr > td.stk-neg-val { color: var(--stk-neg-soft); }
 /* Столбцы с центрированием (напр. «Сектор») — заголовок и ячейки по центру */
 .stk-table > thead th.stk-col-center,
 .stk-table > tbody > tr > td.stk-col-center { text-align: center; }
@@ -607,6 +611,7 @@ body.dark-mode .stk-root {
     --stk-grp-a: #1e293b; --stk-grp-b: #243144;
     --stk-good-bg: rgba(143,179,160,0.22); --stk-good-tx: #A7C7B5;
     --stk-mini-head-bg: #2a3850;
+    --stk-neg-soft: #d99a94;
 }
 body.dark-mode .stk-row:nth-child(odd of .stk-row) td.stk-first { background-color: #1b2536; }
 body.dark-mode .stk-row:hover td.stk-first { background-color: #233148; }

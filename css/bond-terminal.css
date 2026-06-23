@@ -189,7 +189,9 @@
 .bnd-rule.is-off .bnd-rule-name,
 .bnd-rule.is-off .bnd-rule-op,
 .bnd-rule.is-off .bnd-rule-desc { opacity: 0.45; }
-.bnd-rules-head-acts { display: inline-flex; gap: 8px; }
+/* «Снять все» + «По умолчанию» держим в одну строку, без переноса */
+.bnd-rules-head-acts { display: inline-flex; gap: 8px; flex-shrink: 0; white-space: nowrap; }
+.bnd-rules-head-acts .bnd-reset { white-space: nowrap; }
 .bnd-rule-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .bnd-rule-op { text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: var(--bnd-slate); }
 .bnd-rule-val {
@@ -345,7 +347,7 @@
     color: var(--bnd-muted); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     letter-spacing: 0.02em;
 }
-.bnd-num-badge { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--bnd-muted); min-width: 22px; text-align: right; }
+.bnd-num-badge { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--bnd-muted); min-width: 22px; text-align: center; }
 
 /* Кластер действий справа в первой ячейке (звезда) */
 .bnd-first-actions { display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0; }
