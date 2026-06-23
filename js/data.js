@@ -606,24 +606,23 @@ function renderMonthlyIncomeCards() {
     var container = document.getElementById('calc-bonds-input-list');
     if (!container) return;
 
-    var calColors = ['#10B981','#94A3B8','#94A8B8','#3498db','#60A5FA','#4ADE80'];
     var html = '';
 
     monthlyIncomeBonds.forEach(function(b, i) {
         var qty = bondQtyMap[b.t] || 0;
-        var color = calColors[i % calColors.length];
-        var yld = b.y ? b.y.replace('%','') + '%' : '';
+        var yld = b.y ? String(b.y).replace('%','') + '%' : '';
         var ticker = b.t;
-        html += '<div class="income-sr">'
-            + '<div class="income-sr-left">'
-            + '<span class="income-sr-name">' + styledName(b.n) + '</span>'
-            + '<span class="income-sr-yield">' + yld + '</span>'
+        html += '<div class="mi5-bond">'
+            + '<span class="mi5-bond-rk">#' + (i + 1) + '</span>'
+            + '<div class="mi5-bond-info">'
+            + '<div class="mi5-bond-nm">' + styledName(b.n) + '</div>'
+            + '<div class="mi5-bond-pct">' + yld + '</div>'
             + '</div>'
-            + '<div class="income-sr-step">'
-            + '<button class="income-sr-btn" onclick="changeQty(this.dataset.t,-1)" data-t="' + ticker + '">−</button>'
-            + '<input type="number" id="input-' + ticker + '" class="income-sr-val" data-ticker="' + ticker + '" value="' + qty + '" min="0"'
+            + '<div class="mi5-step">'
+            + '<button type="button" onclick="changeQty(this.dataset.t,-1)" data-t="' + ticker + '">−</button>'
+            + '<input type="number" id="input-' + ticker + '" class="mi5-step-q" data-ticker="' + ticker + '" value="' + qty + '" min="0"'
             + ' oninput="updateMonthlySumFromQuantities(); recalcCustomCoupons()">'
-            + '<button class="income-sr-btn" onclick="changeQty(this.dataset.t,1)" data-t="' + ticker + '">+</button>'
+            + '<button type="button" onclick="changeQty(this.dataset.t,1)" data-t="' + ticker + '">+</button>'
             + '</div></div>';
     });
 
@@ -660,110 +659,118 @@ async function fetchPricesForMonthlyIncome() {
 // ===== ФУНКЦИЯ 3: Пересчёт выплат (ИСПРАВЛЕННАЯ) =====
 function recalcCustomCoupons() {
     const resultList = document.getElementById('calc-results-list');
-    const footer = document.getElementById('calc-results-footer');
     if (!resultList) return;
-    
-    let html = '';
-    bondQtyMap = {};
-    let totalAmount = 0;
-    
+
     // Собираем количества из полей ввода
+    bondQtyMap = {};
     monthlyIncomeBonds.forEach(bond => {
         const input = document.getElementById(`input-${bond.t}`);
         bondQtyMap[bond.t] = input ? (parseInt(input.value) || 0) : 0;
     });
 
-    // Выводим все 12 строк выплат
-   allScheduledPayments.forEach(function(payment, idx) {
-    // --- НАЧАЛО БЛОКА ПОИСКА КОЛИЧЕСТВА ---
-    
-    // 1. Сначала пробуем найти количество по Тикеру (коду)
-    let qty = bondQtyMap[payment.paymentTicker];
+    const MON = ['ЯНВ','ФЕВ','МАР','АПР','МАЙ','ИЮН','ИЮЛ','АВГ','СЕН','ОКТ','НОЯ','ДЕК'];
+    let totalAmount = 0;
+    let maxNet = 0;
+    let nextIdx = -1;
 
-    // 2. Если по тикеру пусто (или 0), ищем "Родителя" среди 6 облигаций по Имени
-    if (!qty) {
-        // Ищем в списке monthlyIncomeBonds ту облигацию, чье имя совпадает с именем выплаты
-        const parentBond = monthlyIncomeBonds.find(b => b.n === payment.displayName);
-        if (parentBond) {
-            // Если нашли родителя, берем его количество из карты
-            qty = bondQtyMap[parentBond.t];
+    // Первый проход — считаем суммы и максимум (для ширины полос)
+    const rows = allScheduledPayments.map(function(payment, idx) {
+        let qty = bondQtyMap[payment.paymentTicker];
+        if (!qty) {
+            const parentBond = monthlyIncomeBonds.find(b => b.n === payment.displayName);
+            if (parentBond) qty = bondQtyMap[parentBond.t];
+        }
+        qty = qty || 0;
+        const net = (payment.staticCouponVal * qty) * (1 - customTax);
+        totalAmount += net;
+        if (net > maxNet) maxNet = net;
+        if (qty > 0 && nextIdx === -1) nextIdx = idx;
+
+        // Формат даты: DD.MM.YYYY (реальные данные) либо MM.YY (демо)
+        const parts = String(payment.dateStr).split('.');
+        let day = '', monthNum, dm = '';
+        if (parts.length >= 3) {
+            day = parts[0];
+            monthNum = parseInt(parts[1], 10) - 1;
+            dm = parts[0] + '.' + parts[1];
+        } else {
+            monthNum = parseInt(parts[0], 10) - 1;
+            dm = MON[monthNum] || '';
+        }
+        const mo = MON[monthNum] || '';
+        const name = (payment.displayName || '').replace(/^(ОФЗ)-/, '$1 ');
+        return { day: day, mo: mo, dm: dm, name: name, qty: qty, net: net };
+    });
+
+    // Второй проход — рисуем таймлайн выплат
+    let html = '';
+    rows.forEach(function(r, idx) {
+        const w = maxNet > 0 ? Math.round(r.net / maxNet * 100) : 0;
+        const sumStr = r.qty > 0 ? ('+' + Math.round(r.net).toLocaleString('ru-RU') + ' ₽') : '—';
+        html += '<div class="mi5-pay' + (idx === nextIdx ? ' is-next' : '') + '">'
+            + '<div class="mi5-pay-rail"><span class="dot"></span></div>'
+            + '<div class="mi5-pay-main">'
+            + '<div class="mi5-pay-date"><b>' + (r.day || r.mo) + '</b><span>' + (r.day ? r.mo : '') + '</span></div>'
+            + '<div class="mi5-pay-info"><div class="mi5-pay-bn">' + r.name + '</div><div class="mi5-pay-q">' + r.qty + ' шт</div></div>'
+            + '<div class="mi5-pay-amt' + (r.qty > 0 ? '' : ' is-zero') + '"><span class="am">' + sumStr + '</span><span class="bar"><i style="width:' + w + '%"></i></span></div>'
+            + '</div></div>';
+    });
+    resultList.innerHTML = html;
+
+    // --- Сводка: баннер + итоги + ближайшая выплата ---
+    const monthlyAvg = totalAmount > 0 ? Math.round(totalAmount / 12) : 0;
+    const investInput = document.getElementById('monthlySumInput');
+    const investSum = investInput ? (parseFloat(String(investInput.value).replace(/\s/g, '')) || 0) : 0;
+    const yearlyPercent = investSum > 0 ? ((totalAmount / investSum) * 100).toFixed(1) : '0.0';
+
+    // Баннер дохода (01)
+    const ibMonthly = document.getElementById('ndIbMonthly');
+    const ibYearly  = document.getElementById('ndIbYearly');
+    const ibYield   = document.getElementById('ndIbYield');
+    const ibSub     = document.getElementById('ndIbSub');
+    if (ibMonthly) ibMonthly.textContent = monthlyAvg > 0 ? ('~' + monthlyAvg.toLocaleString('ru-RU')) : '—';
+    if (ibYearly)  ibYearly.textContent  = monthlyAvg > 0 ? ('~' + Math.round(totalAmount).toLocaleString('ru-RU')) : '—';
+    if (ibYield)   ibYield.textContent   = monthlyAvg > 0 ? yearlyPercent : '—';
+    if (ibSub)     ibSub.textContent     = (investSum > 0 ? investSum : 0).toLocaleString('ru-RU');
+
+    // Итоги в карточке графика
+    const elMonth = document.getElementById('incomeStatMonth');
+    const elYear  = document.getElementById('incomeStatYear');
+    const elPct   = document.getElementById('incomeStatPct');
+    if (elMonth) elMonth.textContent = monthlyAvg > 0 ? ('~' + monthlyAvg.toLocaleString('ru-RU') + ' ₽') : '—';
+    if (elYear)  elYear.textContent  = monthlyAvg > 0 ? (Math.round(totalAmount).toLocaleString('ru-RU') + ' ₽') : '—';
+    if (elPct)   elPct.textContent   = monthlyAvg > 0 ? (yearlyPercent + '%') : '—';
+
+    // Ближайшая выплата
+    const nextName = document.getElementById('miNextName');
+    const nextAmt  = document.getElementById('miNextAmt');
+    if (nextName && nextAmt) {
+        if (nextIdx >= 0) {
+            const rn = rows[nextIdx];
+            nextName.textContent = rn.name + (rn.dm ? (' · ' + rn.dm) : '');
+            nextAmt.textContent = '+' + Math.round(rn.net).toLocaleString('ru-RU') + ' ₽';
+        } else {
+            nextName.textContent = '—';
+            nextAmt.textContent = '—';
         }
     }
 
-    // Если всё равно ничего не нашли, ставим 0
-    qty = qty || 0;
-    
-    // --- КОНЕЦ БЛОКА ПОИСКА ---
-
-    const netAmount = (payment.staticCouponVal * qty) * (1 - customTax);
-    console.log(`[CALC ROW] ${payment.displayName} (${payment.paymentTicker}): coupon=${payment.staticCouponVal} × qty=${qty} × (1-${customTax}) = ${netAmount.toFixed(2)}`);
-    totalAmount += netAmount;
-      // Адаптивный размер шрифта для кол-ва и суммы
-      const qtyStr = `${qty} шт`;
-      const qtyFontSize = qtyStr.length > 11 ? 5 : qtyStr.length > 9 ? 6 : qtyStr.length > 7 ? 7 : qtyStr.length > 6 ? 8 : qtyStr.length > 4 ? 9 : 11;
-      const sumStr = qty > 0 ? '+' + Math.round(netAmount).toLocaleString('ru-RU') + ' ₽' : '—';
-      const sumFontSize = sumStr.length > 12 ? 8 : sumStr.length > 10 ? 9 : sumStr.length > 8 ? 10 : sumStr.length > 6 ? 11 : 13;
-      
-      // Цвет точки — по индексу bond среди уникальных
-      var calColors = ['c0','c1','c2','c3','c4','c5'];
-      var calMonths = ['ЯНВ','ФЕВ','МАР','АПР','МАЙ','ИЮН','ИЮЛ','АВГ','СЕН','ОКТ','НОЯ','ДЕК'];
-      var monthNum = parseInt(payment.dateStr.slice(0,2), 10) - 1;
-      var moLabel = calMonths[monthNum] || payment.dateStr.slice(0,2);
-      // Определяем colorClass по тикеру через уникальный индекс
-      if (!window._calColorMap) window._calColorMap = {};
-      if (!window._calColorMap[payment.paymentTicker]) {
-          var existingCount = Object.keys(window._calColorMap).length;
-          window._calColorMap[payment.paymentTicker] = calColors[existingCount % calColors.length];
-      }
-      var colorClass = window._calColorMap[payment.paymentTicker];
-      var altClass = (idx % 2 === 1) ? ' alt' : '';
-      var calCellName = (payment.displayName || '').replace(/^(ОФЗ)-/, '$1 ');
-      html += '<div class="income-cal-cell ' + colorClass + altClass + '">'
-            + '<div class="income-cal-mo">' + moLabel + '</div>'
-            + '<div class="income-cal-name">' + calCellName + '</div>'
-            + '<div class="income-cal-amt" style="' + (qty > 0 ? '' : 'color:var(--text-muted);opacity:0.4;') + '">' + sumStr + '</div>'
-            + '</div>';
+    // Подсветка активного пресета по текущей сумме
+    document.querySelectorAll('.mi5-preset').forEach(function(b) {
+        b.classList.toggle('act', parseFloat(b.dataset.amt) === investSum);
     });
+}
 
-    resultList.innerHTML = html || '<div class="income-cal-empty">Введите количество облигаций</div>';
-    
-    if (footer) {
-        const monthlyAvg = totalAmount > 0 ? Math.round(totalAmount / 12) : 0;
-        const investInput = document.getElementById('monthlySumInput');
-        const investSum = investInput ? (parseFloat(investInput.value.replace(/\s/g, '')) || 0) : 0;
-        const yearlyPercent = investSum > 0 ? ((totalAmount / investSum) * 100).toFixed(1) : '0.0';
-        
-        // Обновляем income preview strip (как купонный дождь)
-        const incomeStrip = document.getElementById('incomePreviewStrip');
-        const incomeValEl = document.getElementById('incomePreviewValue');
-        const incomePctEl = document.getElementById('incomePreviewPct');
-        if (incomeStrip && incomeValEl && incomePctEl) {
-            if (monthlyAvg > 0) {
-                incomeValEl.textContent = '~' + monthlyAvg.toLocaleString('ru-RU') + ' ₽/мес';
-                incomePctEl.textContent = yearlyPercent + '%';
-                incomeStrip.classList.remove('is-empty');
-            } else {
-                incomeStrip.classList.add('is-empty');
-            }
-        }
-
-        // Обновляем новый баннер дохода
-        const ibMonthly = document.getElementById('ndIbMonthly');
-        const ibYearly  = document.getElementById('ndIbYearly');
-        const ibYield   = document.getElementById('ndIbYield');
-        const ibSub     = document.getElementById('ndIbSub');
-        if (ibMonthly) ibMonthly.textContent = monthlyAvg > 0 ? '~' + monthlyAvg.toLocaleString('ru-RU') : '—';
-        if (ibYearly)  ibYearly.textContent  = monthlyAvg > 0 ? '~' + Math.round(totalAmount).toLocaleString('ru-RU') : '—';
-        if (ibYield)   ibYield.textContent   = monthlyAvg > 0 ? yearlyPercent : '—';
-        if (ibSub && investSum > 0) ibSub.textContent = investSum.toLocaleString('ru-RU') + ' ₽ · ОФЗ';
-
-        // Обновляем строки футера
-        var elMonth = document.getElementById('incomeStatMonth');
-        var elYear = document.getElementById('incomeStatYear');
-        var elPct = document.getElementById('incomeStatPct');
-        if (elMonth) elMonth.textContent = monthlyAvg > 0 ? ('~' + monthlyAvg.toLocaleString('ru-RU') + ' ₽') : '—';
-        if (elYear) elYear.textContent = monthlyAvg > 0 ? (Math.round(totalAmount).toLocaleString('ru-RU') + ' ₽') : '—';
-        if (elPct) elPct.textContent = monthlyAvg > 0 ? (yearlyPercent + '%') : '—';
+// Установка суммы из пресета (250 тыс / 500 тыс / 1 млн / 3 млн / 5 млн)
+function miPreset(btn) {
+    var input = document.getElementById('monthlySumInput');
+    if (!input || !btn) return;
+    input.value = parseFloat(btn.dataset.amt) || 0;
+    document.querySelectorAll('.mi5-preset').forEach(function(b) { b.classList.remove('act'); });
+    btn.classList.add('act');
+    distributeMonthlyInvestment();
+    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.selectionChanged();
     }
 }
 

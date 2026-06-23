@@ -32,6 +32,7 @@
     <link rel="stylesheet" href="css/rebalance-r4.css?v=4">
     <link rel="stylesheet" href="css/dashboard-panel.css?v=4">
     <link rel="stylesheet" href="css/monthly-panel.css?v=1">
+    <link rel="stylesheet" href="css/monthly-r5.css?v=1">
     <link rel="stylesheet" href="css/stock-terminal.css?v=3">
     <link rel="stylesheet" href="css/bond-terminal.css?v=6">
     <link rel="stylesheet" href="css/market-heatmap.css?v=22">
@@ -1614,182 +1615,85 @@
         </div>
     </div>
 
-    <!-- Калькулятор ежемесячного дохода (Hero Card) -->
-    <div class="calc-accordion collapsed" id="calcAccordion">
-        <!-- Шапка открытого состояния — видна только когда калькулятор раскрыт -->
-        <div class="calc-open-header" id="calcOpenHeader" onclick="toggleCalcAccordion()">
-            <div class="calc-open-header-left">
-                <div class="calc-open-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#2C364C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M7 21V3h6a5 5 0 0 1 0 10H7"/>
-                        <path d="M7 13h8"/>
-                        <path d="M7 17h8"/>
-                    </svg>
-                </div>
-                <span class="calc-open-title">Доход с Портфеля</span>
+    <!-- Калькулятор ежемесячного дохода — редизайн «компактный R5» -->
+    <div class="calc-accordion" id="calcAccordion">
+      <div class="mi5">
+
+        <!-- 01 — баннер-полоса дохода -->
+        <div class="mi5-card mi5-banner">
+          <span class="mi5-wm">01</span>
+          <div class="mi5-cb-l">
+            <span class="mi5-ic">₽</span>
+            <div class="mi5-cb-l-txt">
+              <span class="mi5-cb-k">Сумма в ОФЗ</span>
+              <span class="mi5-cb-v"><span id="ndIbSub">1 000 000</span> <i>₽</i></span>
+              <span class="mi5-cb-m">6 выпусков · купоны ежемесячно</span>
             </div>
-            <div class="calc-open-close">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="18 15 12 9 6 15"/></svg>
-                Свернуть
-            </div>
-        </div>
-        
-        <!-- Превью дохода — новый баннер -->
-        <div class="income-preview-strip is-empty" id="incomePreviewStrip" style="display:none;">
-            <!-- скрыт, данные перехватываются баннером -->
-            <div class="income-preview-value" id="incomePreviewValue" style="display:none;">—</div>
-            <div class="income-preview-pct" id="incomePreviewPct" style="display:none;">—</div>
+          </div>
+          <span class="mi5-cb-div"></span>
+          <div class="mi5-cb-hero">
+            <div class="mi5-cb-hk">Средний доход в месяц</div>
+            <div class="mi5-cb-amt"><span id="ndIbMonthly">~573</span><span class="mi5-rub">₽</span></div>
+            <div class="mi5-cb-sub"><b><span id="ndIbYearly">~6 876</span> ₽</b> в год · <span id="ndIbYield">6.9</span>% годовых</div>
+          </div>
         </div>
 
-        <!-- Баннер Г·1·А с новыми карточками метрик -->
-        <div class="nd-income-banner" id="ndIncomeBanner" onclick="toggleCalcAccordion()">
-            <div class="nd-ib-spot nd-ib-spot1"></div>
-            <div class="nd-ib-spot nd-ib-spot2"></div>
-            <div class="nd-ib-spot nd-ib-spot3"></div>
-            <div class="nd-ib-content">
-                <!-- Шапка -->
-                <div class="nd-ib-header">
-                    <div class="nd-ib-header-left">
-                        <div class="nd-ib-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="#2C364C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M7 21V3h6a5 5 0 0 1 0 10H7"/>
-                                <path d="M7 13h8"/>
-                                <path d="M7 17h8"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <div class="nd-ib-title">Доход с Портфеля</div>
-                            <div class="nd-ib-sub" id="ndIbSub">1 000 000 ₽ · ОФЗ</div>
-                        </div>
-                    </div>
-                    <div class="nd-ib-chevron">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-                    </div>
-                </div>
-                <!-- Главная цифра -->
-                <div class="nd-ib-main">
-                    <div class="nd-ib-main-label">Средний доход в месяц</div>
-                    <div class="nd-ib-main-val">
-                        <span class="nd-ib-num" id="ndIbMonthly">~573</span>
-                        <span class="nd-ib-rub">₽</span>
-                    </div>
-                    <div class="nd-ib-main-hint">по купонам ОФЗ</div>
-                </div>
-                <!-- Метрики -->
-                <div class="nd-ib-metrics">
-                    <div class="nd-ib-metric">
-                        <div class="nd-ib-metric-left">
-                            <div class="nd-ib-metric-lbl">В год</div>
-                            <div class="nd-ib-metric-sub">суммарно</div>
-                        </div>
-                        <div class="nd-ib-metric-right">
-                            <span class="nd-ib-metric-num" id="ndIbYearly">~6 876</span>
-                            <span class="nd-ib-metric-unit nd-ib-rub-sm">₽</span>
-                        </div>
-                    </div>
-                    <div class="nd-ib-metric">
-                        <div class="nd-ib-metric-left">
-                            <div class="nd-ib-metric-lbl">Доходность</div>
-                            <div class="nd-ib-metric-sub">годовых</div>
-                        </div>
-                        <div class="nd-ib-metric-right">
-                            <span class="nd-ib-metric-num" id="ndIbYield">6.9</span>
-                            <span class="nd-ib-metric-unit nd-ib-pct">%</span>
-                        </div>
-                    </div>
-                </div>
+        <!-- Две колонки: калькулятор + график выплат -->
+        <div class="mi5-cols">
+
+          <!-- 02 — калькулятор -->
+          <div class="mi5-card mi5-calc">
+            <span class="mi5-kick">Калькулятор</span>
+            <div class="mi5-ttl">Сумма инвестиций</div>
+            <div class="mi5-field">
+              <div class="mi5-box">
+                <input type="number" id="monthlySumInput" class="mi5-input" value="1000000"
+                       oninput="distributeMonthlyInvestment()"
+                       onclick="this.select()"
+                       onkeyup="if(event.keyCode===13) this.blur()"
+                       inputmode="numeric" pattern="[0-9]*" enterkeyhint="done"
+                       placeholder="0">
+                <span class="mi5-rub">₽</span>
+              </div>
+              <div class="mi5-presets">
+                <button type="button" class="mi5-preset" data-amt="250000" onclick="miPreset(this)">250 тыс</button>
+                <button type="button" class="mi5-preset" data-amt="500000" onclick="miPreset(this)">500 тыс</button>
+                <button type="button" class="mi5-preset act" data-amt="1000000" onclick="miPreset(this)">1 млн</button>
+                <button type="button" class="mi5-preset" data-amt="3000000" onclick="miPreset(this)">3 млн</button>
+                <button type="button" class="mi5-preset" data-amt="5000000" onclick="miPreset(this)">5 млн</button>
+              </div>
             </div>
-        </div>
-
-        <!-- Обертка для плавного сворачивания -->
-        <div class="calc-content-wrapper">
-            <!-- Контент аккордеона -->
-            <div class="calc-accordion-content">
-                <!-- Поле ввода суммы -->
-                <div class="glass-input-wrapper">
-                    <span class="input-label">Сумма инвестиций</span>
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <input type="number" id="monthlySumInput" value="1000000" 
-                               oninput="distributeMonthlyInvestment()" 
-                               onclick="event.stopPropagation(); this.select()" 
-                               onkeyup="if(event.keyCode===13) this.blur()" 
-                               inputmode="numeric" 
-                               pattern="[0-9]*" 
-                               enterkeyhint="done"
-                               placeholder="Введите сумму...">
-                        <span class="currency-symbol">₽</span>
-                    </div>
-                </div>
-                
-                <!-- Переключатель налога -->
-                <div class="tax-segmented-control">
-                    <button class="tax-segment" id="tax-custom-0" data-tax="0" onclick="setCustomTax(0, this)">Без налога</button>
-                    <button class="tax-segment active" id="tax-custom-13" data-tax="0.13" onclick="setCustomTax(0.13, this)">НДФЛ 13%</button>
-                    <button class="tax-segment" id="tax-custom-15" data-tax="0.15" onclick="setCustomTax(0.15, this)">НДФЛ 15%</button>
-                </div>
-                <div style="margin:-12px 0 16px;padding:0 2px;text-align:center;">
-                    <span style="font-family:'Inter',sans-serif;font-size:11px;color:#94A3B8;line-height:1.5;">
-                        ОФЗ с разными датами купонов — выплаты каждый месяц
-                    </span>
-                </div>
-                
-                <!-- Calendar layout -->
-                <div class="income-cal-wrap">
-                    <!-- Заголовок убран, статистика будет в футере -->
-
-                    <!-- Сетка 4×3 -->
-                    <div id="calc-results-list" class="income-cal-grid">
-                        <div class="income-cal-empty">Введите количество облигаций</div>
-                    </div>
-
-                    <!-- Степперы -->
-                    <div class="income-cal-steppers">
-                        <div class="skeleton-container" id="skeleton-income-cards">
-                            <div class="skeleton-income-card"><div class="skeleton-bone s-icon"></div><div class="s-info"><div class="skeleton-bone s-name"></div><div class="skeleton-bone s-yield"></div></div><div class="skeleton-bone s-controls"></div></div>
-                            <div class="skeleton-income-card"><div class="skeleton-bone s-icon"></div><div class="s-info"><div class="skeleton-bone s-name"></div><div class="skeleton-bone s-yield"></div></div><div class="skeleton-bone s-controls"></div></div>
-                            <div class="skeleton-income-card"><div class="skeleton-bone s-icon"></div><div class="s-info"><div class="skeleton-bone s-name"></div><div class="skeleton-bone s-yield"></div></div><div class="skeleton-bone s-controls"></div></div>
-                        </div>
-                        <div id="calc-bonds-input-list"></div>
-                    </div>
-
-                    <!-- Тёмный вид: полный список выплат (скрыт по умолчанию) -->
-                    <div class="income-chart-view" id="incomeChartView" style="display:none;">
-                        <div class="income-chart-hdr">
-                            <span class="income-chart-title">График выплат</span>
-                        </div>
-                        <div id="calc-results-list-dark" class="income-chart-list"></div>
-                        <div id="calc-results-footer-dark" class="income-chart-footer"></div>
-                        <button class="income-chart-back" onclick="incomeHideChart()">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-                            Свернуть
-                        </button>
-                    </div>
-
-                    <!-- Футер: статистика построчно -->
-                    <div class="income-cal-footer-stats" id="calc-results-footer">
-                        <div class="income-fstat-row">
-                            <span class="income-fstat-lbl">Среднемесячный доход</span>
-                            <span class="income-fstat-val green" id="incomeStatMonth">—</span>
-                        </div>
-                        <div class="income-fstat-row">
-                            <span class="income-fstat-lbl">Итого в год</span>
-                            <span class="income-fstat-val" id="incomeStatYear">—</span>
-                        </div>
-                        <div class="income-fstat-row">
-                            <span class="income-fstat-lbl">Доходность годовая</span>
-                            <span class="income-fstat-val green" id="incomeStatPct">—</span>
-                        </div>
-                    </div>
-
-                    <!-- Кнопка «График выплат» — акцентный CTA в нижней части -->
-                    <button class="income-cal-chart-btn" onclick="incomeShowChart()">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                        График выплат
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="margin-left:auto;"><polyline points="9 18 15 12 9 6"/></svg>
-                    </button>
-                </div>
+            <div class="mi5-tax">
+              <button class="tax-segment" id="tax-custom-0" data-tax="0" onclick="setCustomTax(0, this)">Без налога</button>
+              <button class="tax-segment active" id="tax-custom-13" data-tax="0.13" onclick="setCustomTax(0.13, this)">НДФЛ 13%</button>
+              <button class="tax-segment" id="tax-custom-15" data-tax="0.15" onclick="setCustomTax(0.15, this)">НДФЛ 15%</button>
             </div>
+            <div class="mi5-bondsub"><span class="l">Облигации</span><span class="r">6 выпусков · купоны ежемесячно</span></div>
+            <div id="calc-bonds-input-list" class="mi5-bonds"></div>
+            <div class="mi5-foot">
+              <div class="mi5-next">
+                <div class="mi5-next-l"><span class="mi5-next-k">Ближайшая выплата</span><span class="mi5-next-nm" id="miNextName">—</span></div>
+                <span class="mi5-next-am" id="miNextAmt">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 04 — график выплат -->
+          <div class="mi5-card mi5-sch">
+            <span class="mi5-kick">График выплат</span>
+            <div class="mi5-ttl">Все купоны за год</div>
+            <div id="calc-results-list" class="mi5-sched"></div>
+            <div class="mi5-total">
+              <div class="mi5-total-l">
+                <span class="mi5-total-k">Итого за год</span>
+                <span class="mi5-total-big" id="incomeStatYear">—</span>
+              </div>
+              <span class="mi5-total-sub"><b><span id="incomeStatMonth">—</span>/мес</b><span id="incomeStatPct">—</span> годовых</span>
+            </div>
+          </div>
+
         </div>
+      </div>
     </div>
 
     <!-- Ghost Trigger — скрыт (будущий функционал) -->
@@ -2055,7 +1959,7 @@
 
 <script src="js/core.js" defer></script>
 <script src="js/calculator-ui.js?v=3" defer></script>
-<script src="js/data.js" defer></script>
+<script src="js/data.js?v=3" defer></script>
 <script src="js/rebalance.js?v=4" defer></script>
 <script src="js/company.js?v=2" defer></script>
 <script src="js/portfolio.js?v=4" defer></script>
