@@ -24,7 +24,7 @@
 #panel-monthly #marketPanelContent {
     display: block !important;
     grid-template-columns: none !important;
-    max-width: 920px;
+    max-width: 1280px;
     width: 100%;
     margin: 0 auto !important;
     padding: 0 !important;

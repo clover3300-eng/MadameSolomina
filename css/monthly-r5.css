@@ -26,7 +26,7 @@
 /* Контейнер R5 заменяет прежний «стек из двух карточек» */
 #panel-monthly #calcAccordion .mi5 {
     width: 100%;
-    max-width: 1120px;
+    max-width: 1280px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
