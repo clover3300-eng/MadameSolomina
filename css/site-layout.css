@@ -1535,7 +1535,11 @@
         #sbBurgerBtn, #sbCloseBtn, #sbOverlay { display: none !important; }
         #appShell {
             display: grid !important;
-            grid-template-columns: calc(var(--sb-w) + 14px) minmax(0, 1fr);
+            /* Колонка сайдбара ВСЕГДА узкая (как у свёрнутой рейки). Развёрнутое
+               меню — и по hover, и закреплённое — рисуется floating-оверлеем,
+               поэтому контент/заголовок не сдвигаются ни при наведении, ни при
+               клике «Закрепить». */
+            grid-template-columns: calc(78px + 14px) minmax(0, 1fr);
             grid-template-rows: auto minmax(0, 1fr);
         }
         #sideBar {
@@ -1620,7 +1624,7 @@
         body.sb-collapsed:not(.sb-peek) .sb-subs { grid-template-rows: 0fr !important; }
         body.sb-collapsed.sb-peek #sideBar { z-index: 60; }
         body.sb-collapsed.sb-peek #sbPanel,
-        body.sb-collapsed.sb-peek #sbFoot { width: 222px; }
+        body.sb-collapsed.sb-peek #sbFoot { width: 252px; }
         body.sb-collapsed.sb-peek #sbPanel { box-shadow: 0 22px 50px -8px rgba(22,27,39,0.45); }
         body.sb-collapsed.sb-peek #sbFoot { box-shadow: 0 18px 40px -10px rgba(22,27,39,0.4); }
         body.sb-collapsed.sb-peek .sb-label,
@@ -1636,21 +1640,19 @@
            (search / theme) stay exactly where they are. Welcome page is
            excluded — its brand stays centred over the hero. */
         body:not(.tab-home) #topBarBrand { transition: transform 0.3s ease; }
-        body:not(.tab-home).sb-collapsed.sb-peek #topBarBrand { transform: translateX(144px); }
+        body:not(.tab-home).sb-collapsed.sb-peek #topBarBrand,
+        body:not(.tab-home):not(.sb-collapsed) #topBarBrand { transform: translateX(174px); }
 
-        /* ===== HOME TAB: «закрепить/свернуть» тоже не двигает контент =====
-           На главной grid-колонка сайдбара всегда остаётся узкой (как у
-           свёрнутой рейки); закреплённое (развёрнутое) меню рисуется тем же
-           floating-оверлеем, что и hover-peek, поэтому контент/заголовок
-           не сдвигаются при клике «Закрепить/Свернуть». */
-        body.tab-home #appShell {
-            grid-template-columns: calc(78px + 14px) minmax(0, 1fr) !important;
-        }
-        body.tab-home:not(.sb-collapsed) #sideBar { z-index: 60; }
-        body.tab-home:not(.sb-collapsed) #sbPanel,
-        body.tab-home:not(.sb-collapsed) #sbFoot { width: 222px; }
-        body.tab-home:not(.sb-collapsed) #sbPanel { box-shadow: 0 22px 50px -8px rgba(22,27,39,0.45); }
-        body.tab-home:not(.sb-collapsed) #sbFoot { box-shadow: 0 18px 40px -10px rgba(22,27,39,0.4); }
+        /* ===== ЗАКРЕПЛЕНО («Закрепить») = тот же floating-оверлей, что и hover =====
+           На всех вкладках grid-колонка сайдбара остаётся узкой; закреплённое
+           (развёрнутое) меню рисуется тем же floating-оверлеем шириной 252px,
+           что и hover-peek, поэтому контент/заголовок не сдвигаются при клике
+           «Закрепить/Свернуть» и совпадают по размеру с раскрытием по наведению. */
+        body:not(.sb-collapsed) #sideBar { z-index: 60; }
+        body:not(.sb-collapsed) #sbPanel,
+        body:not(.sb-collapsed) #sbFoot { width: 252px; }
+        body:not(.sb-collapsed) #sbPanel { box-shadow: 0 22px 50px -8px rgba(22,27,39,0.45); }
+        body:not(.sb-collapsed) #sbFoot { box-shadow: 0 18px 40px -10px rgba(22,27,39,0.4); }
 
         /* Panels: width + breathing room */
         .tab-panel { max-width: 1240px; margin: 0 auto; padding: 18px 40px 64px; width: 100%; box-sizing: border-box; }
