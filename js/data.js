@@ -200,6 +200,7 @@ function loadDemoData() {
         return { t: b.t, n: b.n, y: b.y, p: b.p, nkd: b.nkd };
     });
 
+    window.pfMonthlyBonds = monthlyIncomeBonds.slice();   // экспорт для вкладки «Портфели» (импорт)
     renderMonthlyIncomeCards();
     recalcCustomCoupons();
     hideSkeleton('skeleton-income-cards');
@@ -374,6 +375,7 @@ async function loadData() {
                 }
 
                 monthlyIncomeBonds = Array.from(uniqueBondsMap.values());
+                window.pfMonthlyBonds = monthlyIncomeBonds.slice();   // экспорт для вкладки «Портфели»
                 renderMonthlyIncomeCards();
                 recalcCustomCoupons();
                 fetchPricesForMonthlyIncome();

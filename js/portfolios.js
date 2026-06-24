@@ -179,8 +179,9 @@
             bondVal: bondVal, stockVal: stockVal, count: hs.length };
     }
 
-    // ---------- состав из расчёта ----------
-    function getCalcComposition() {
+    // ---------- состав из расчёта / избранного / ежемесячного дохода ----------
+    // filter: 'all' | 'stock' | 'bond'
+    function getCalcComposition(filter) {
         var sl = window._shoppingListData;
         var has = sl && ((sl.bonds && sl.bonds.length) || (sl.stocks && sl.stocks.length));
         if (!has) { try { var snap = JSON.parse(localStorage.getItem('dash_portfolio_v1')); if (snap && snap.composition) sl = snap.composition; } catch (e) {} }
@@ -191,9 +192,59 @@
                 echelon: x.echelon || 0, buyDate: todayStr(), buyPrice: Math.round(price * 100) / 100, qty: qty, priceFromApi: false };
         }
         var holds = [];
-        (sl.bonds || []).forEach(function (b) { if (b.ticker) holds.push(toHold(b, 'bond')); });
-        (sl.stocks || []).forEach(function (s) { if (s.ticker) holds.push(toHold(s, 'stock')); });
+        if (filter !== 'stock') (sl.bonds || []).forEach(function (b) { if (b.ticker) holds.push(toHold(b, 'bond')); });
+        if (filter !== 'bond') (sl.stocks || []).forEach(function (s) { if (s.ticker) holds.push(toHold(s, 'stock')); });
         return holds.length ? holds : null;
+    }
+    // Избранные акции (звёздочки в «Рынок · Акции») → позиции с кол-вом 0
+    function getFavComposition() {
+        var favs = (typeof window.stkGetFavorites === 'function') ? window.stkGetFavorites() : favTickers();
+        if (!favs || !favs.length) return null;
+        var holds = favs.map(function (tk) {
+            var co = (typeof window.stkFindCompany === 'function') ? window.stkFindCompany(tk) : null;
+            var price = 0;
+            if (co && co.main) { var pp = toNum(co.main['Текущая Цена']); if (isFinite(pp) && pp > 0) price = Math.round(pp * 100) / 100; }
+            return { id: genId('h'), ticker: tk, name: (co && co.name) ? co.name : tk, type: 'stock',
+                buyDate: todayStr(), buyPrice: price, qty: 0, priceFromApi: false };
+        }).filter(function (h) { return h.ticker; });
+        return holds.length ? holds : null;
+    }
+    // Облигации из калькулятора «Ежемесячный доход» (экспорт window.pfMonthlyBonds из data.js)
+    function getMonthlyComposition() {
+        var src = window.pfMonthlyBonds;
+        if (!src || !src.length) return null;
+        var holds = src.map(function (b) {
+            var price = toNum(b.p); if (!isFinite(price) || price <= 0) price = 0;
+            return { id: genId('h'), ticker: b.t, name: b.n || b.t, type: 'bond',
+                buyDate: todayStr(), buyPrice: Math.round(price * 100) / 100, qty: 0, priceFromApi: false };
+        }).filter(function (h) { return h.ticker; });
+        return holds.length ? holds : null;
+    }
+    function compositionFrom(source, sub) {
+        if (source === 'fav') return getFavComposition();
+        if (source === 'monthly') return getMonthlyComposition();
+        return getCalcComposition(sub || 'all');
+    }
+    function importName(source) {
+        return source === 'fav' ? 'Избранное' : source === 'monthly' ? 'Ежемесячный доход' : 'Расчётный портфель';
+    }
+
+    // ---------- историческая цена на дату (механизм вкладки «Тест») ----------
+    // btGetStockPriceSafe/btGetBondPriceSafe (webapp-tabs.js) тянут цену закрытия MOEX
+    // на конкретную дату; облигации уже в рублях (×10 от % номинала). Возвращают >0,
+    // 0 (нет данных) или -1 (ошибка) — нам годится только >0.
+    function histPriceFn(type) {
+        var name = type === 'bond' ? 'btGetBondPriceSafe' : 'btGetStockPriceSafe';
+        if (typeof window[name] === 'function') return window[name];
+        return null;
+    }
+    function lookupHistPrice(ticker, type, dateStr, cb) {
+        var fn = histPriceFn(type);
+        if (fn) {
+            Promise.resolve(fn(ticker, dateStr)).then(function (p) { cb(p > 0 ? p : null); }).catch(function () { cb(null); });
+            return;
+        }
+        lookupPrice(ticker, type, cb);   // фолбэк на живую котировку, если Тест не загружен
     }
 
     // ====================================================================
@@ -202,6 +253,7 @@
     var openMenu = null;     // id портфеля с раскрытыми настройками
     var clockTimer = null;
     var rendering = false;   // защита от повторного входа (см. ниже)
+    var loadStatus = {};     // hid -> { state:'loading'|'ok'|'err'|'nodate', date } для кнопки «Загрузить на дату»
 
     function renderPortfolios() {
         var host = dq('pfWrap'); if (!host) return;
@@ -215,13 +267,16 @@
         rendering = true;
         try {
             ensureQuotes();
+            // 1 портфель → карточка + сводка «справа от портфеля» (.pf-solo);
+            // несколько → сводка-полоса сверху, ниже сетка карточек.
+            var body;
+            if (store.items.length === 1) body = soloHtml(store.items[0]);
+            else body = (store.items.length ? summaryHtml(false) : '') + gridHtml();
             host.innerHTML =
                 liveBarHtml() +
                 headHtml() +
-                (store.items.length ? summaryHtml() : '') +
-                gridHtml() +
-                (store.items.length > 1 ? compareHtml() : '') +
-                favHtml() +
+                body +
+                pairHtml() +
                 ratesHtml();
             tickLive();
             renderFavNews();
@@ -236,6 +291,7 @@
     function softRerender() {
         if (currentTab !== 'portfolios' || !dq('pfWrap')) return;
         if (openMenu) return;   // не сбиваем открытый редактор
+        if (document.querySelector('.pf-impmenu.open')) return;   // не сбиваем открытое меню «Импорт»
         renderPortfolios();
     }
 
@@ -267,24 +323,60 @@
     function ensureClock() { if (clockTimer) return; clockTimer = setInterval(function () {
         if (currentTab === 'portfolios' && dq('pfClock')) tickLive(); }, 1000); }
 
+    // ---- SVG-иконки ----
+    var PLUS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+    var DL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+    var CHEV_SVG = '<svg class="pf-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+    var CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+    // ---- меню «Импорт» (расчёт / избранное / ежемесячный доход) ----
+    function impMenuHtml(key, pid) {
+        var up = key !== 'head';                                   // в шапке — вниз, иначе — вверх (не обрезается)
+        var calc = !!getCalcComposition('all'), calcS = !!getCalcComposition('stock'),
+            calcB = !!getCalcComposition('bond'), fav = !!getFavComposition(), mon = !!getMonthlyComposition();
+        function oc(src, sub) { return "pfImport('" + src + "'," + (sub ? "'" + sub + "'" : 'null') + ',' + (pid ? "'" + pid + "'" : 'null') + ')'; }
+        function item(src, sub, label, avail, cls) {
+            return '<button class="pf-impitem' + (cls ? ' ' + cls : '') + (avail ? '' : ' off') + '"' +
+                (avail ? '' : ' disabled') + ' onclick="' + oc(src, sub) + '">' + label + '</button>';
+        }
+        return '<div class="pf-impmenu' + (up ? ' up' : '') + '" id="pfImp-' + key + '">' +
+            '<div class="pf-impgrp">Из расчёта</div>' +
+            item('calc', 'all', 'Весь расчёт', calc) +
+            item('calc', 'stock', 'Только акции', calcS, 'sub') +
+            item('calc', 'bond', 'Только облигации', calcB, 'sub') +
+            '<div class="pf-impgrp">Другое</div>' +
+            item('fav', null, 'Из избранного', fav) +
+            item('monthly', null, 'Из ежемесячного дохода', mon) +
+            '</div>';
+    }
+    function impWrapHtml(key, pid) {
+        return '<div class="pf-impwrap">' +
+            '<button class="d3-quick ghost pf-impbtn" onclick="pfToggleImp(event,\'' + key + '\')">' +
+                DL_SVG + 'Импорт' + CHEV_SVG + '</button>' +
+            impMenuHtml(key, pid) + '</div>';
+    }
+
     // ---- заголовок ----
     function headHtml() {
-        var canImport = !!getCalcComposition();
         return '<div class="d3-head">' +
             '<div class="d3-head-l"><h1 class="d3-title">Портфели</h1>' +
             '<span class="d3-sub">Отслеживание и сравнение нескольких портфелей</span></div>' +
             '<div class="d3-head-actions">' +
-                '<button class="d3-quick" onclick="pfAddPortfolio()">' +
-                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
-                    'Добавить портфель</button>' +
-                '<button class="d3-quick ghost" onclick="pfImportNew()"' + (canImport ? '' : ' title="Сначала выполните расчёт"') + '>' +
-                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
-                    'Импорт из расчёта</button>' +
+                '<button class="d3-quick" onclick="pfAddPortfolio()">' + PLUS_SVG + 'Добавить портфель</button>' +
+                impWrapHtml('head', null) +
             '</div></div>';
     }
 
-    // ---- сводка по всем портфелям ----
-    function summaryHtml() {
+    // 1 портфель: карточка слева + сводка-капитал справа (aside)
+    function soloHtml(p) {
+        return '<div class="pf-solo">' +
+            '<div class="pf-solo-main">' + cardHtml(p, 0) + '</div>' +
+            '<div class="pf-solo-side">' + summaryHtml(true) + '</div>' +
+        '</div>';
+    }
+
+    // ---- сводка по всем портфелям (aside=true — вертикальная колонка справа от 1 портфеля) ----
+    function summaryHtml(aside) {
         var inv = 0, val = 0, bondVal = 0, stockVal = 0, best = null, worst = null;
         store.items.forEach(function (p) {
             var c = calcPf(p); inv += c.invested; val += c.value; bondVal += c.bondVal; stockVal += c.stockVal;
@@ -303,7 +395,7 @@
             '<span class="pfs-bw-n"><i style="background:' + colorVal(worst.color) + '"></i>' + esc(worst.name) + '</span>' +
             '<span class="pfs-bw-v ' + (worst.pct >= 0 ? 'pos' : 'neg') + '">' + fmtPct(worst.pct) + '</span></div>';
 
-        return '<div class="dash2-card pf-summary">' +
+        return '<div class="dash2-card pf-summary' + (aside ? ' pf-summary--aside' : '') + '">' +
             '<div class="pfs-main">' +
                 '<div class="pfs-eyebrow">Суммарный капитал · ' + store.items.length + ' ' + plural(store.items.length, 'портфель', 'портфеля', 'портфелей') + '</div>' +
                 '<div class="pfs-capital">' + fmtRub(val) + '</div>' +
@@ -334,24 +426,17 @@
     function gridHtml() {
         if (!store.items.length) return emptyHtml();
         var cards = store.items.slice(0, MAX_CARDS).map(function (p, i) { return cardHtml(p, i); }).join('');
-        if (store.items.length < MAX_CARDS) cards += addCardHtml();
         return '<div class="pf-grid">' + cards + '</div>';
     }
     function emptyHtml() {
-        var canImport = !!getCalcComposition();
         return '<div class="dash2-card pf-empty">' +
             '<div class="pf-empty-art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="13" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></div>' +
             '<div class="pf-empty-t">Пока нет портфелей</div>' +
-            '<div class="pf-empty-s">Создайте портфель вручную или импортируйте состав из последнего расчёта.</div>' +
+            '<div class="pf-empty-s">Создайте портфель вручную или импортируйте состав из расчёта, избранного или ежемесячного дохода.</div>' +
             '<div class="pf-empty-cta">' +
                 '<button class="d3-quick" onclick="pfAddPortfolio()">Создать вручную</button>' +
-                '<button class="d3-quick ghost" onclick="pfImportNew()"' + (canImport ? '' : ' disabled') + '>Импорт из расчёта</button>' +
+                impWrapHtml('empty', null) +
             '</div></div>';
-    }
-    function addCardHtml() {
-        return '<button class="pf-add" onclick="pfAddPortfolio()">' +
-            '<span class="pf-add-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>' +
-            '<span class="pf-add-tt"><span class="pf-add-t">Новый портфель</span><span class="pf-add-s">Вручную или из расчёта</span></span></button>';
     }
 
     var GEAR_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
@@ -418,57 +503,57 @@
                 '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>';
         }).join('');
         var rows = (p.holdings || []).map(function (h) { return editRowHtml(p.id, h); }).join('');
-        var canImport = !!getCalcComposition();
         var n = (p.holdings || []).length;
+        // Оверлей на всю карточку: шапка (имя + цвет напротив + Готово) · состав (скролл) · добавление/действия
         return '<div class="pfc-menu" id="pfMenu-' + p.id + '">' +
             '<div class="pfm-top">' +
-                '<div class="pfm-top-l">' +
-                    '<span class="pfm-top-ic">' + GEAR_SVG + '</span>' +
-                    '<span class="pfm-top-tt"><span class="pfm-top-k">Настройки портфеля</span>' +
-                        '<span class="pfm-top-s">' + n + ' ' + plural(n, 'актив в составе', 'актива в составе', 'активов в составе') + '</span></span>' +
-                '</div>' +
-                '<button class="pfm-done" onclick="pfCloseMenu()">' +
-                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Готово</button>' +
-            '</div>' +
-            '<div class="pfm-scroll">' +
-            '<div class="pfm-field">' +
-                '<label class="pfm-lbl">Название</label>' +
                 '<input class="pfm-name" value="' + attr(p.name) + '" onchange="pfRename(\'' + p.id + '\',this.value)" placeholder="Название портфеля">' +
-            '</div>' +
-            '<div class="pfm-field">' +
-                '<label class="pfm-lbl">Цвет акцента</label>' +
                 '<div class="pfm-colors">' + sw + '</div>' +
+                '<button class="pfm-done" onclick="pfCloseMenu()">' + CHECK_SVG + 'Готово</button>' +
             '</div>' +
-            '<div class="pfm-sec"><span>Состав портфеля</span></div>' +
-            (rows ? '<div class="pfm-cols"><span>Актив</span><span>Дата покупки</span><span>Цена покупки</span><span>Кол-во</span><span class="pfm-cols-x"></span></div>' : '') +
-            '<div class="pfm-rows">' + (rows || '<div class="pfm-none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M12 8v8M8 12h8"/></svg>Активов пока нет — добавьте первый ниже</div>') + '</div>' +
-            '<div class="pfm-sec"><span>Добавить актив</span></div>' +
-            '<div class="pfm-add">' +
-                '<input class="pfm-in pfm-in-tk" id="pfNewTk-' + p.id + '" placeholder="Тикер / ISIN" maxlength="14">' +
-                '<select class="pfm-in pfm-in-type" id="pfNewType-' + p.id + '"><option value="stock">Акция</option><option value="bond">Облигация</option></select>' +
-                '<button class="pfm-addbtn" onclick="pfAddHolding(\'' + p.id + '\')">' +
-                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Добавить</button>' +
+            '<div class="pfm-mid">' +
+                '<div class="pfm-sec"><span>Состав · ' + n + ' ' + plural(n, 'актив', 'актива', 'активов') + '</span></div>' +
+                '<div class="pfm-rows">' + (rows || '<div class="pfm-none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M12 8v8M8 12h8"/></svg>Активов пока нет — добавьте первый ниже</div>') + '</div>' +
             '</div>' +
-            '<div class="pfm-foot">' +
-                '<button class="pfm-act" onclick="pfImportInto(\'' + p.id + '\')"' + (canImport ? '' : ' disabled') + '>' +
-                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Импорт из расчёта</button>' +
-                '<button class="pfm-act danger" onclick="pfDelete(\'' + p.id + '\')">' +
-                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Удалить портфель</button>' +
+            '<div class="pfm-bottom">' +
+                '<div class="pfm-add">' +
+                    '<input class="pfm-in pfm-in-tk" id="pfNewTk-' + p.id + '" placeholder="Тикер / ISIN" maxlength="14">' +
+                    '<select class="pfm-in pfm-in-type" id="pfNewType-' + p.id + '"><option value="stock">Акция</option><option value="bond">Облигация</option></select>' +
+                    '<button class="pfm-addbtn" onclick="pfAddHolding(\'' + p.id + '\')">' + PLUS_SVG + 'Добавить</button>' +
+                '</div>' +
+                '<div class="pfm-foot">' +
+                    impWrapHtml('imp-' + p.id, p.id) +
+                    '<button class="pfm-act danger" onclick="pfDelete(\'' + p.id + '\')">' +
+                        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Удалить</button>' +
+                '</div>' +
             '</div>' +
-            '</div>' +   // /pfm-scroll
         '</div>';
+    }
+    function priceStatusHtml(h) {
+        var st = loadStatus[h.id], state = st && st.state;
+        if (state === 'loading') return '<span class="pfm-loadst loading">загрузка цены…</span>';
+        if (state === 'ok') return '<span class="pfm-loadst ok">цена закрытия на ' + ruDate(st.date) + '</span>';
+        if (state === 'err') return '<span class="pfm-loadst err">нет цены на ' + ruDate(st.date) + '</span>';
+        if (state === 'nodate') return '<span class="pfm-loadst err">укажите дату покупки</span>';
+        if (h.priceFromApi) return '<span class="pfm-loadst ok">цена закрытия на ' + ruDate(h.buyDate) + '</span>';
+        return '<span class="pfm-loadst muted">цена закрытия MOEX на дату покупки</span>';
     }
     function editRowHtml(pid, h) {
         var tag = h.type === 'bond' ? 'обл' : 'акц';
         return '<div class="pfm-row">' +
-            '<span class="pfm-tk-cell"><span class="pfm-tag ' + h.type + '">' + tag + '</span>' +
-                '<input class="pfm-in pfm-in-tk" value="' + attr(h.ticker) + '" onchange="pfEdit(\'' + pid + '\',\'' + h.id + '\',\'ticker\',this.value)"></span>' +
-            '<input class="pfm-in pfm-in-date" type="date" value="' + attr(h.buyDate) + '" onchange="pfEdit(\'' + pid + '\',\'' + h.id + '\',\'buyDate\',this.value)">' +
-            '<span class="pfm-price"><input class="pfm-in pfm-in-num" type="number" step="0.01" min="0" value="' + (h.buyPrice || '') + '" onchange="pfEdit(\'' + pid + '\',\'' + h.id + '\',\'buyPrice\',this.value)" placeholder="цена">' +
-                '<button class="pfm-api" onclick="pfFetchPrice(\'' + pid + '\',\'' + h.id + '\')" title="Взять цену по API">API</button></span>' +
-            '<input class="pfm-in pfm-in-num" type="number" step="1" min="0" value="' + (h.qty || '') + '" onchange="pfEdit(\'' + pid + '\',\'' + h.id + '\',\'qty\',this.value)" placeholder="кол-во">' +
-            '<button class="pfm-del" onclick="pfRemoveHolding(\'' + pid + '\',\'' + h.id + '\')" aria-label="Удалить">' +
-                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
+            '<div class="pfm-row-main">' +
+                '<span class="pfm-tk-cell"><span class="pfm-tag ' + h.type + '">' + tag + '</span>' +
+                    '<input class="pfm-in pfm-in-tk" value="' + attr(h.ticker) + '" onchange="pfEdit(\'' + pid + '\',\'' + h.id + '\',\'ticker\',this.value)" placeholder="Тикер"></span>' +
+                '<input class="pfm-in pfm-in-date" type="date" value="' + attr(h.buyDate) + '" onchange="pfEdit(\'' + pid + '\',\'' + h.id + '\',\'buyDate\',this.value)">' +
+                '<input class="pfm-in pfm-in-num" type="number" step="0.01" min="0" value="' + (h.buyPrice || '') + '" onchange="pfEdit(\'' + pid + '\',\'' + h.id + '\',\'buyPrice\',this.value)" placeholder="цена ₽">' +
+                '<input class="pfm-in pfm-in-num" type="number" step="1" min="0" value="' + (h.qty || '') + '" onchange="pfEdit(\'' + pid + '\',\'' + h.id + '\',\'qty\',this.value)" placeholder="кол-во">' +
+                '<button class="pfm-del" onclick="pfRemoveHolding(\'' + pid + '\',\'' + h.id + '\')" aria-label="Удалить">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
+            '</div>' +
+            '<div class="pfm-row-load">' +
+                '<button class="pfm-loadbtn" onclick="pfFetchPrice(\'' + pid + '\',\'' + h.id + '\')">' + DL_SVG + 'Загрузить цену на дату</button>' +
+                priceStatusHtml(h) +
+            '</div>' +
         '</div>';
     }
 
@@ -489,6 +574,13 @@
         return '<div class="dash2-card pf-card2 pf-compare">' +
             pfCardHead('Аналитика', 'Сравнение доходности', 'годовых по всем портфелям', '') +
             '<div class="pfcmp-list">' + body + '</div></div>';
+    }
+
+    // Парный блок: «Сравнение доходности» + «Избранное» рядом (лекало «Ежемесячный доход»)
+    function pairHtml() {
+        var hasCompare = store.items.length > 1;
+        var inner = (hasCompare ? compareHtml() : '') + favHtml();
+        return '<div class="pf-pair' + (hasCompare ? '' : ' single') + '">' + inner + '</div>';
     }
 
     // Шапка вторичной карточки в стиле calc-карточек (.k eyebrow + .t заголовок)
@@ -577,18 +669,33 @@
         if (store.items.length >= MAX_CARDS) { toast('Максимум ' + MAX_CARDS + ' портфеля на странице', true); return; }
         var p = makePortfolio(); store.items.push(p); saveStore(); openMenu = p.id; renderPortfolios();
     };
-    window.pfImportNew = function () {
-        var holds = getCalcComposition();
-        if (!holds) { toast('Сначала выполните расчёт портфеля', true); return; }
+    // Импорт: pid задан → добавить в портфель; pid null → новый портфель.
+    // source: 'calc' (sub: all/stock/bond) | 'fav' | 'monthly'
+    window.pfImport = function (source, sub, pid) {
+        closeImpMenus();
+        var holds = compositionFrom(source, sub);
+        if (!holds || !holds.length) { toast('Нет данных для импорта — выполните расчёт / добавьте избранное', true); return; }
+        if (pid) {
+            var p = findPf(pid); if (!p) return;
+            p.holdings = (p.holdings || []).concat(holds); saveStore(); ensureQuotes(true); renderPortfolios();
+            toast('Добавлено: ' + holds.length); return;
+        }
         if (store.items.length >= MAX_CARDS) { toast('Максимум ' + MAX_CARDS + ' портфеля', true); return; }
-        var p = makePortfolio('Расчётный портфель'); p.holdings = holds; store.items.push(p); saveStore();
-        ensureQuotes(true); renderPortfolios(); toast('Импортировано активов: ' + holds.length);
+        var np = makePortfolio(importName(source)); np.holdings = holds; store.items.push(np); saveStore();
+        openMenu = null; ensureQuotes(true); renderPortfolios(); toast('Импортировано: ' + holds.length);
     };
-    window.pfImportInto = function (pid) {
-        var p = findPf(pid); if (!p) return; var holds = getCalcComposition();
-        if (!holds) { toast('Сначала выполните расчёт портфеля', true); return; }
-        p.holdings = (p.holdings || []).concat(holds); saveStore(); ensureQuotes(true); renderPortfolios();
-        toast('Добавлено из расчёта: ' + holds.length);
+    function closeImpMenus() {
+        var any = document.querySelectorAll('.pf-impmenu.open');
+        for (var i = 0; i < any.length; i++) any[i].classList.remove('open');
+        document.removeEventListener('click', pfImpOutside);
+    }
+    function pfImpOutside(e) { if (!e.target.closest('.pf-impwrap')) closeImpMenus(); }
+    window.pfToggleImp = function (ev, key) {
+        if (ev) ev.stopPropagation();
+        var menu = dq('pfImp-' + key); if (!menu) return;
+        var willOpen = !menu.classList.contains('open');
+        closeImpMenus();
+        if (willOpen) { menu.classList.add('open'); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); }
     };
     window.pfToggleMenu = function (pid) { openMenu = (openMenu === pid) ? null : pid; renderPortfolios(); };
     window.pfCloseMenu = function () { openMenu = null; renderPortfolios(); };
@@ -615,19 +722,28 @@
     };
     window.pfEdit = function (pid, hid, field, val) {
         var p = findPf(pid); if (!p) return; var h = findHold(p, hid); if (!h) return;
-        if (field === 'ticker') { h.ticker = (val || '').trim().toUpperCase(); h.name = h.ticker; }
-        else if (field === 'buyDate') { h.buyDate = val; }
-        else if (field === 'buyPrice') { h.buyPrice = Math.max(0, toNum(val) || 0); h.priceFromApi = false; }
+        if (field === 'ticker') { h.ticker = (val || '').trim().toUpperCase(); h.name = h.ticker; h.priceFromApi = false; delete loadStatus[hid]; }
+        else if (field === 'buyDate') { h.buyDate = val; h.priceFromApi = false; delete loadStatus[hid]; }
+        else if (field === 'buyPrice') { h.buyPrice = Math.max(0, toNum(val) || 0); h.priceFromApi = false; delete loadStatus[hid]; }
         else if (field === 'qty') { h.qty = Math.max(0, Math.round(toNum(val) || 0)); }
         saveStore(); ensureQuotes(); renderPortfolios();
     };
+    // Цена покупки = историческая цена закрытия MOEX на h.buyDate (механизм вкладки «Тест»)
     window.pfFetchPrice = function (pid, hid) {
-        var p = findPf(pid); if (!p) return; var h = findHold(p, hid); if (!h || !h.ticker) { toast('Сначала укажите тикер', true); return; }
-        var btn = event && event.target; if (btn) { btn.textContent = '…'; btn.disabled = true; }
-        lookupPrice(h.ticker, h.type, function (price) {
-            if (price && price > 0) { h.buyPrice = Math.round(price * 100) / 100; h.priceFromApi = true; saveStore(); renderPortfolios();
-                toast(h.ticker + ': ' + fmtPrice(price)); }
-            else { toast('Не нашли котировку ' + h.ticker, true); if (btn) { btn.textContent = 'API'; btn.disabled = false; } }
+        var p = findPf(pid); if (!p) return; var h = findHold(p, hid);
+        if (!h || !h.ticker) { toast('Сначала укажите тикер', true); return; }
+        if (!h.buyDate) { loadStatus[hid] = { state: 'nodate' }; renderPortfolios(); return; }
+        loadStatus[hid] = { state: 'loading' }; renderPortfolios();
+        lookupHistPrice(h.ticker, h.type, h.buyDate, function (price) {
+            var cur = findHold(findPf(pid) || {}, hid); if (!cur) return;
+            if (price && price > 0) {
+                cur.buyPrice = Math.round(price * 100) / 100; cur.priceFromApi = true;
+                loadStatus[hid] = { state: 'ok', date: cur.buyDate }; saveStore(); renderPortfolios();
+                toast(cur.ticker + ': ' + fmtPrice(price) + ' на ' + ruDate(cur.buyDate));
+            } else {
+                loadStatus[hid] = { state: 'err', date: cur.buyDate }; renderPortfolios();
+                toast('Нет цены ' + cur.ticker + ' на ' + ruDate(cur.buyDate), true);
+            }
         });
     };
     window.pfOpenTicker = function (tk) { if (typeof window.openStockDetail === 'function') { try { window.openStockDetail(tk, 1); } catch (e) {} } };
