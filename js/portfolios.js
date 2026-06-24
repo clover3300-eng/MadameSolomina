@@ -201,22 +201,35 @@
     // ====================================================================
     var openMenu = null;     // id портфеля с раскрытыми настройками
     var clockTimer = null;
+    var rendering = false;   // защита от повторного входа (см. ниже)
 
     function renderPortfolios() {
         var host = dq('pfWrap'); if (!host) return;
-        ensureQuotes();
-        host.innerHTML =
-            liveBarHtml() +
-            headHtml() +
-            (store.items.length ? summaryHtml() : '') +
-            gridHtml() +
-            (store.items.length > 1 ? compareHtml() : '') +
-            favHtml() +
-            ratesHtml();
-        tickLive();
-        renderFavNews();
-        ensureClock();
-        if (openMenu) { var m = dq('pfMenu-' + openMenu); if (m) m.scrollTop = 0; }
+        // favHtml() синхронно дёргает stkEnsureLoaded(): если таблица акций уже
+        // загружена, та сразу вызывает onStkCompaniesLoaded()→renderPortfolios(),
+        // т.е. рендер вызывает сам себя. Без этого guard'а получается бесконечная
+        // рекурсия — главный поток виснет, а каждый виток ещё и шлёт запросы
+        // (ensureQuotes/renderFavNews), забивая пул соединений → не грузятся даже
+        // другие сайты. Повторный вход просто игнорируем.
+        if (rendering) return;
+        rendering = true;
+        try {
+            ensureQuotes();
+            host.innerHTML =
+                liveBarHtml() +
+                headHtml() +
+                (store.items.length ? summaryHtml() : '') +
+                gridHtml() +
+                (store.items.length > 1 ? compareHtml() : '') +
+                favHtml() +
+                ratesHtml();
+            tickLive();
+            renderFavNews();
+            ensureClock();
+            if (openMenu) { var m = dq('pfMenu-' + openMenu); if (m) m.scrollTop = 0; }
+        } finally {
+            rendering = false;
+        }
     }
     window.renderPortfolios = renderPortfolios;
 
