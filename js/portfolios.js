@@ -189,7 +189,8 @@
         function toHold(x, type) {
             var qty = +x.qty || 0, price = +x.price || (qty > 0 && x.sum ? x.sum / qty : 0);
             return { id: genId('h'), ticker: x.ticker, name: x.name || x.ticker, type: type,
-                echelon: x.echelon || 0, buyDate: todayStr(), buyPrice: Math.round(price * 100) / 100, qty: qty, priceFromApi: false };
+                echelon: x.echelon || 0, buyDate: todayStr(), buyPrice: Math.round(price * 100) / 100, qty: qty,
+                nkd: 0, priceFromApi: false, nkdFromApi: false };
         }
         var holds = [];
         if (filter !== 'stock') (sl.bonds || []).forEach(function (b) { if (b.ticker) holds.push(toHold(b, 'bond')); });
@@ -205,7 +206,7 @@
             var price = 0;
             if (co && co.main) { var pp = toNum(co.main['Текущая Цена']); if (isFinite(pp) && pp > 0) price = Math.round(pp * 100) / 100; }
             return { id: genId('h'), ticker: tk, name: (co && co.name) ? co.name : tk, type: 'stock',
-                buyDate: todayStr(), buyPrice: price, qty: 0, priceFromApi: false };
+                buyDate: todayStr(), buyPrice: price, qty: 0, nkd: 0, priceFromApi: false, nkdFromApi: false };
         }).filter(function (h) { return h.ticker; });
         return holds.length ? holds : null;
     }
@@ -216,7 +217,9 @@
         var holds = src.map(function (b) {
             var price = toNum(b.p); if (!isFinite(price) || price <= 0) price = 0;
             return { id: genId('h'), ticker: b.t, name: b.n || b.t, type: 'bond',
-                buyDate: todayStr(), buyPrice: Math.round(price * 100) / 100, qty: 0, priceFromApi: false };
+                buyDate: todayStr(), buyPrice: Math.round(price * 100) / 100, qty: 0,
+                nkd: toNum(b.nkd) > 0 ? Math.round(toNum(b.nkd) * 100) / 100 : 0,
+                priceFromApi: false, nkdFromApi: toNum(b.nkd) > 0 };
         }).filter(function (h) { return h.ticker; });
         return holds.length ? holds : null;
     }
@@ -245,6 +248,67 @@
             return;
         }
         lookupPrice(ticker, type, cb);   // фолбэк на живую котировку, если Тест не загружен
+    }
+    // НКД облигации на дату (колонка ACCINT в истории MOEX). cb(>=0) при успехе (0 — валидно,
+    // НКД может обнулиться сразу после купона), cb(null) при ошибке/отсутствии данных.
+    function lookupHistNkd(ticker, dateStr, cb) {
+        if (typeof window.btGetBondNkdSafe === 'function') {
+            Promise.resolve(window.btGetBondNkdSafe(ticker, dateStr))
+                .then(function (v) { cb(v != null && v >= 0 ? v : null); })
+                .catch(function () { cb(null); });
+            return;
+        }
+        cb(null);
+    }
+    // Доход по облигациям: по каждой бумаге (сумма купонов до погашения + номинал) / дней
+    // до погашения = ₽/день; ×кол-во; суммируем по всем. Нужно для будущих ребалансировок
+    // (отслеживать, растёт ли ₽/день после замены бумаги). Данные — из fetchBondData,
+    // которая попутно наполняет bondDetailsMap (купон, частота, погашение).
+    function bondDetail(isin) {
+        try { if (typeof bondDetailsMap !== 'undefined' && bondDetailsMap[isin]) return bondDetailsMap[isin]; } catch (e) {}
+        return null;
+    }
+    function parseBondDate(s) {
+        if (!s || s === '—') return null;
+        var d = new Date(s + 'T00:00:00'); return isNaN(d.getTime()) ? null : d;
+    }
+    function bondPerDay(h, det) {
+        if (!det) return null;
+        var mat = parseBondDate(det.matDate); if (!mat) return null;
+        var days = (mat.getTime() - Date.now()) / 86400000;
+        if (!(days > 0)) return null;
+        var coupon = +det.couponValue || 0;
+        var freq = +det.freq || 0;                       // выплат в год
+        var remain = freq > 0 ? days * freq / 365 : 0;   // оставшихся купонов до погашения
+        var couponsSum = coupon * remain;
+        var nominal = 1000;                              // номинал ОФЗ/корп по умолчанию
+        var perBond = (couponsSum + nominal) / days;     // ₽/день на одну облигацию
+        var qty = +h.qty || 0;
+        return { perBondDay: perBond, total: perBond * qty, days: Math.round(days), qty: qty, coupon: coupon, freq: freq };
+    }
+    // Считает суммарный ₽/день по всем облигациям портфеля; догружает недостающие данные
+    // (fetchBondData) и зовёт cb повторно по мере готовности.
+    function computeBondIncome(p, cb) {
+        var bonds = (p.holdings || []).filter(function (h) { return h.type === 'bond' && h.ticker && (+h.qty || 0) > 0; });
+        if (!bonds.length) { cb({ total: 0, items: [], pending: false, hasBonds: false }); return; }
+        function build(pending) {
+            var total = 0, items = [];
+            bonds.forEach(function (h) {
+                var r = bondPerDay(h, bondDetail(h.ticker));
+                if (r) { total += r.total; items.push({ ticker: h.ticker, name: h.name, total: r.total, days: r.days, qty: r.qty }); }
+            });
+            cb({ total: total, items: items, pending: pending, hasBonds: true });
+        }
+        var need = bonds.filter(function (h) { return !bondDetail(h.ticker); });
+        build(need.length > 0);
+        if (need.length && typeof fetchBondData === 'function') {
+            var left = need.length;
+            need.forEach(function (h) {
+                Promise.resolve(fetchBondData(h.ticker)).catch(function () {}).then(function () {
+                    left--; if (left <= 0) build(false);
+                });
+            });
+        }
     }
 
     // ====================================================================
@@ -356,6 +420,9 @@
     var DL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
     var CHEV_SVG = '<svg class="pf-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
     var CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    // «Подтянуть на дату» — календарь со стрелкой загрузки (в полях цены/НКД)
+    var FETCH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2.5"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2.5" x2="8" y2="6"/><line x1="16" y1="2.5" x2="16" y2="6"/><polyline points="9.5 14 12 16.5 14.5 14"/><line x1="12" y1="12" x2="12" y2="16.5"/></svg>';
+    var INFO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="11" x2="12" y2="16"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
 
     // ---- меню «Импорт» (расчёт / избранное / ежемесячный доход) ----
     function impMenuHtml(key, pid) {
@@ -395,24 +462,41 @@
     }
 
     // ---- сводка по всем портфелям (aside=true — карточка-ячейка слева от первого портфеля) ----
+    // Кольцо распределения убрано. Градация портфелей (1–4) показывается ранжированным
+    // лидербордом с диверг-барами от нуля: при 2 это «лучший / худший», при 3–4 —
+    // полноценный рейтинг. Распределение акции/облигации — тонкой полосой в шапке.
     function summaryHtml(aside) {
-        var inv = 0, val = 0, bondVal = 0, stockVal = 0, best = null, worst = null;
+        var inv = 0, val = 0, bondVal = 0, stockVal = 0;
+        var rows = [];
         store.items.forEach(function (p) {
             var c = calcPf(p); inv += c.invested; val += c.value; bondVal += c.bondVal; stockVal += c.stockVal;
-            if (c.invested > 0) {
-                if (!best || c.pnlPct > best.pct) best = { name: p.name, pct: c.pnlPct, color: p.color };
-                if (!worst || c.pnlPct < worst.pct) worst = { name: p.name, pct: c.pnlPct, color: p.color };
-            }
+            rows.push({ name: p.name, color: p.color, pct: c.pnlPct, has: c.invested > 0 });
         });
         var pnl = val - inv, pnlPct = inv > 0 ? pnl / inv * 100 : 0;
-        var bondPct = val > 0 ? bondVal / val * 100 : 0;
-        var bw = '';
-        if (best) bw += '<div class="pfs-bw"><span class="pfs-bw-l">Лучший</span>' +
-            '<span class="pfs-bw-n"><i style="background:' + colorVal(best.color) + '"></i>' + esc(best.name) + '</span>' +
-            '<span class="pfs-bw-v ' + (best.pct >= 0 ? 'pos' : 'neg') + '">' + fmtPct(best.pct) + '</span></div>';
-        if (worst && store.items.length > 1) bw += '<div class="pfs-bw"><span class="pfs-bw-l">Худший</span>' +
-            '<span class="pfs-bw-n"><i style="background:' + colorVal(worst.color) + '"></i>' + esc(worst.name) + '</span>' +
-            '<span class="pfs-bw-v ' + (worst.pct >= 0 ? 'pos' : 'neg') + '">' + fmtPct(worst.pct) + '</span></div>';
+        var bondPct = val > 0 ? bondVal / val * 100 : 0, stockPct = 100 - bondPct;
+
+        var ranked = rows.slice().sort(function (a, b) {
+            if (a.has !== b.has) return a.has ? -1 : 1; return b.pct - a.pct; });
+        var maxAbs = 1;
+        ranked.forEach(function (r) { if (r.has) maxAbs = Math.max(maxAbs, Math.abs(r.pct)); });
+        var board = ranked.map(function (r, i) {
+            var pos = r.has && r.pct >= 0;
+            var w = r.has ? clamp(Math.abs(r.pct) / maxAbs * 50, 2.5, 50) : 0;
+            var fill = r.has
+                ? '<span class="pfs-lb-fill ' + (pos ? 'pos' : 'neg') + '" style="width:' + w.toFixed(1) + '%;' + (pos ? 'left:50%' : 'right:50%') + '"></span>'
+                : '';
+            return '<div class="pfs-lb-row">' +
+                '<span class="pfs-lb-rk">' + (i + 1) + '</span>' +
+                '<span class="pfs-lb-n"><i style="background:' + colorVal(r.color) + '"></i>' + esc(r.name) + '</span>' +
+                '<span class="pfs-lb-track"><span class="pfs-lb-zero"></span>' + fill + '</span>' +
+                '<span class="pfs-lb-v ' + (r.has ? (r.pct >= 0 ? 'pos' : 'neg') : 'muted') + '">' + (r.has ? fmtPct(r.pct) : '—') + '</span>' +
+            '</div>';
+        }).join('');
+
+        var alloc = '<div class="pfs-alloc">' +
+            '<div class="pfs-alloc-bar"><span class="pfs-alloc-stock" style="width:' + stockPct.toFixed(1) + '%"></span><span class="pfs-alloc-bond" style="width:' + bondPct.toFixed(1) + '%"></span></div>' +
+            '<div class="pfs-alloc-leg"><span><i class="stock"></i>Акции ' + Math.round(stockPct) + '%</span><span><i class="bond"></i>Облигации ' + Math.round(bondPct) + '%</span></div>' +
+        '</div>';
 
         return '<div class="dash2-card pf-summary' + (aside ? ' pf-summary--aside' : '') + '">' +
             '<div class="pfs-main">' +
@@ -420,14 +504,13 @@
                 '<div class="pfs-capital">' + fmtRub(val) + '</div>' +
                 '<div class="pfs-sub">Вложено ' + fmtRub(inv) + ' · ' +
                     '<span class="pfs-pnl ' + (pnl >= 0 ? 'pos' : 'neg') + '">' + (pnl >= 0 ? '▲ ' : '▼ ') + fmtRub(Math.abs(pnl)) + ' (' + fmtPct(pnlPct) + ')</span></div>' +
+                alloc +
             '</div>' +
-            '<div class="pfs-mid">' + bw + '</div>' +
-            '<div class="pfs-ring">' + donutHtml(bondPct, aside ? 104 : 92) +
-                '<div class="pfs-legend">' +
-                    '<span><i class="stock"></i>Акции ' + Math.round(100 - bondPct) + '%</span>' +
-                    '<span><i class="bond"></i>Облигации ' + Math.round(bondPct) + '%</span>' +
-                '</div></div>' +
-            '</div>';
+            '<div class="pfs-board">' +
+                '<div class="pfs-board-h">Доходность по портфелям</div>' +
+                board +
+            '</div>' +
+        '</div>';
     }
     function plural(n, one, few, many) { n = Math.abs(n) % 100; var n1 = n % 10;
         if (n > 10 && n < 20) return many; if (n1 > 1 && n1 < 5) return few; if (n1 === 1) return one; return many; }
@@ -441,21 +524,6 @@
         return '<div class="pf-ring-wrap" style="width:' + size + 'px;height:' + size + 'px">' +
             '<div class="pf-ring" style="--bp:' + bp.toFixed(1) + '"></div>' +
             (centerHtml ? '<div class="pf-ring-c">' + centerHtml + '</div>' : '') + '</div>';
-    }
-    // Эшелон (ранг) актива: у акций — из таблицы (ЭШЕЛОН, 1 = голубые фишки),
-    // иначе сохранённый h.echelon (импорт из расчёта). null → бейдж не рисуем.
-    function echelonOf(h) {
-        var e = parseInt(h.echelon, 10);
-        if (isFinite(e) && e > 0) return e > 3 ? 3 : e;
-        if (h.type !== 'bond' && typeof window.stkFindCompany === 'function') {
-            var co = window.stkFindCompany(h.ticker);
-            if (co && co.main) { var ce = parseInt(co.main['ЭШЕЛОН'], 10); if (isFinite(ce) && ce > 0) return ce > 3 ? 3 : ce; }
-        }
-        return null;
-    }
-    function rankBadge(rk) {
-        if (!rk) return '';
-        return '<span class="pf-rank r' + rk + '" title="Эшелон ' + rk + '">' + rk + '</span>';
     }
 
     // ---- сетка карточек (withAside → первой ячейкой сводка «слева от 1-го портфеля») ----
@@ -484,14 +552,12 @@
         var holdsRows = c.hs.length ? c.hs.map(function (x) { return holdRowHtml(x); }).join('')
             : '<div class="pfc-empty">Состав пуст — добавьте активы в настройках ⚙</div>';
         var menu = (openMenu === p.id) ? menuHtml(p) : '';
-        var wm = ('0' + (((idx || 0) + 1))).slice(-2);
         var tall = (openMenu === p.id && menuTall) ? ' pf-card--tall' : '';
 
         return '<div class="dash2-card pf-card' + (openMenu === p.id ? ' menu-open' : '') + tall + '" style="--pf-accent:' + ac + '">' +
-            '<div class="pf-wm-clip"><span class="pf-wm">' + wm + '</span></div>' +
             '<div class="pfc-top">' +
                 '<div class="pfc-titles">' +
-                    '<span class="pfc-name" title="' + attr(p.name) + '"><i class="pfc-namedot"></i>' + esc(p.name) + '</span>' +
+                    '<span class="pfc-name" onclick="pfNameEdit(\'' + p.id + '\',event)" title="Нажмите, чтобы переименовать"><span class="pfc-name-ink">' + esc(p.name) + '</span></span>' +
                 '</div>' +
                 '<div class="pfc-ctrls">' +
                     '<span class="pfc-pnl ' + pnlCls + '">' + fmtPct(c.pnlPct) + '</span>' +
@@ -500,7 +566,7 @@
             '</div>' +
             menu +
             '<div class="pfc-body">' +
-                cardRingHtml(c) +
+                cardRingHtml(c, idx) +
                 '<div class="pfc-kv">' +
                     kv('Стоимость', fmtRub(c.value)) +
                     kv('Вложено', fmtRub(c.invested)) +
@@ -521,11 +587,12 @@
     }
     function kv(l, v, cls) { return '<div class="pfc-kvi"><span class="pfc-kl">' + esc(l) + '</span><span class="pfc-kvv ' + (cls || '') + '">' + v + '</span></div>'; }
 
-    // Кольцо распределения карточки: donut без подписи в центре + легенда «что есть что»
-    function cardRingHtml(c) {
+    // Кольцо распределения карточки: donut + красивый номер портфеля в центре + легенда
+    function cardRingHtml(c, idx) {
         var bondP = Math.round(clamp(c.bondPct, 0, 100)), stockP = 100 - bondP;
+        var num = '<span class="pfc-ringnum">' + (((idx || 0) + 1)) + '</span>';
         return '<div class="pfc-ring">' +
-            donutHtml(c.bondPct, 92) +
+            donutHtml(c.bondPct, 92, num) +
             '<div class="pfc-ringleg">' +
                 '<span class="pfc-lg"><i class="stock"></i>Акции<b>' + stockP + '%</b></span>' +
                 '<span class="pfc-lg"><i class="bond"></i>Облигации<b>' + bondP + '%</b></span>' +
@@ -535,7 +602,7 @@
     function holdRowHtml(x) {
         var h = x.h, c = x.c, ac = c.annual;
         return '<div class="pfc-row">' +
-            '<span class="pfc-tk">' + rankBadge(echelonOf(h)) + '<b>' + esc(h.ticker) + '</b><i>' + esc(h.type === 'bond' ? 'обл' : 'акц') + '</i></span>' +
+            '<span class="pfc-tk"><b>' + esc(h.ticker) + '</b><i>' + esc(h.type === 'bond' ? 'обл' : 'акц') + '</i></span>' +
             '<span class="pfc-cell">' + ruDate(h.buyDate) + '</span>' +
             '<span class="pfc-cell">' + fmtPrice(c.buy) + '</span>' +
             '<span class="pfc-cell">' + (c.qty || 0) + '</span>' +
@@ -573,7 +640,9 @@
                 '<button class="pfm-done" onclick="pfCloseMenu()">' + CHECK_SVG + 'Готово</button>' +
             '</div>' +
             '<div class="pfm-mid">' +
-                '<div class="pfm-sec"><span>Состав · ' + n + ' ' + plural(n, 'актив', 'актива', 'активов') + '</span><i class="pfm-sec-rule"></i>' + tallBtn + '</div>' +
+                '<div class="pfm-sec"><span>Состав · ' + n + ' ' + plural(n, 'актив', 'актива', 'активов') + '</span>' +
+                    '<span class="pfm-hint" title="В полях «цена» и «НКД» иконка-календарь подтягивает значение закрытия с MOEX на дату покупки. После загрузки иконка гаснет; сотрите значение — и она снова загорится для повторного запроса.">' + INFO_SVG + '</span>' +
+                    '<i class="pfm-sec-rule"></i>' + tallBtn + '</div>' +
                 '<div class="pfm-rows">' + (rows || noneBox) + '</div>' +
             '</div>' +
             '<div class="pfm-bottom">' +
@@ -591,30 +660,40 @@
             '</div>' +
         '</div>';
     }
-    function priceStatusHtml(h) {
-        var st = loadStatus[h.id], state = st && st.state;
-        if (state === 'loading') return '<span class="pfm-loadst loading">загрузка цены…</span>';
-        if (state === 'ok') return '<span class="pfm-loadst ok">цена закрытия на ' + ruDate(st.date) + '</span>';
-        if (state === 'err') return '<span class="pfm-loadst err">нет цены на ' + ruDate(st.date) + '</span>';
-        if (state === 'nodate') return '<span class="pfm-loadst err">укажите дату покупки</span>';
-        if (h.priceFromApi) return '<span class="pfm-loadst ok">цена закрытия на ' + ruDate(h.buyDate) + '</span>';
-        return '<span class="pfm-loadst muted">цена закрытия MOEX на дату покупки</span>';
+    // Иконка «подтянуть на дату» внутри поля: горит (lit) пока не подтянуто с API,
+    // затухает (done) после загрузки — с тултипом «… на дату ДД.ММ.ГГГГ», крутится при загрузке.
+    function fieldFx(pid, hid, field, fromApi, dateStr, loading) {
+        var what = field === 'nkd' ? 'НКД' : 'цену';
+        var title = loading ? 'Загрузка…'
+            : (fromApi ? (field === 'nkd' ? 'НКД' : 'Цена') + ' закрытия на ' + ruDate(dateStr) + ' · нажмите, чтобы обновить'
+                       : 'Подтянуть ' + what + ' закрытия MOEX на дату покупки');
+        var cls = 'pfm-fx ' + (loading ? 'loading' : (fromApi ? 'done' : 'lit'));
+        var inner = loading ? '<span class="pfm-fx-sp"></span>' : FETCH_SVG;
+        return '<button class="' + cls + '" type="button" tabindex="-1" title="' + attr(title) + '" ' +
+            'onclick="pfFetchField(\'' + pid + '\',\'' + hid + '\',\'' + field + '\')">' + inner + '</button>';
     }
     function editRowHtml(pid, h) {
-        var tag = h.type === 'bond' ? 'обл' : 'акц';
+        var isBond = h.type === 'bond';
+        var tag = isBond ? 'обл' : 'акц';
+        var priceFx = fieldFx(pid, h.id, 'price', !!h.priceFromApi, h.buyDate, loadStatus[h.id + ':price'] === 'loading');
+        var nkdCell = isBond
+            ? '<span class="pfm-field has-fx">' +
+                '<input class="pfm-in pfm-in-num" type="number" step="0.01" min="0" value="' + (h.nkd || '') + '" placeholder="НКД ₽" onchange="pfEdit(\'' + pid + '\',\'' + h.id + '\',\'nkd\',this.value)">' +
+                fieldFx(pid, h.id, 'nkd', !!h.nkdFromApi, h.buyDate, loadStatus[h.id + ':nkd'] === 'loading') +
+              '</span>'
+            : '';
         return '<div class="pfm-row">' +
-            '<div class="pfm-row-main">' +
+            '<div class="pfm-row-main ' + (isBond ? 'pfm-row-main--bond' : 'pfm-row-main--stock') + '">' +
                 '<span class="pfm-tk-cell"><span class="pfm-tag ' + h.type + '">' + tag + '</span>' +
                     '<input class="pfm-in pfm-in-tk" value="' + attr(h.ticker) + '" onchange="pfEdit(\'' + pid + '\',\'' + h.id + '\',\'ticker\',this.value)" placeholder="Тикер"></span>' +
                 '<input class="pfm-in pfm-in-date" type="date" value="' + attr(h.buyDate) + '" onchange="pfEdit(\'' + pid + '\',\'' + h.id + '\',\'buyDate\',this.value)">' +
-                '<input class="pfm-in pfm-in-num" type="number" step="0.01" min="0" value="' + (h.buyPrice || '') + '" onchange="pfEdit(\'' + pid + '\',\'' + h.id + '\',\'buyPrice\',this.value)" placeholder="цена ₽">' +
+                '<span class="pfm-field has-fx">' +
+                    '<input class="pfm-in pfm-in-num" type="number" step="0.01" min="0" value="' + (h.buyPrice || '') + '" onchange="pfEdit(\'' + pid + '\',\'' + h.id + '\',\'buyPrice\',this.value)" placeholder="цена ₽">' +
+                    priceFx + '</span>' +
+                nkdCell +
                 '<input class="pfm-in pfm-in-num" type="number" step="1" min="0" value="' + (h.qty || '') + '" onchange="pfEdit(\'' + pid + '\',\'' + h.id + '\',\'qty\',this.value)" placeholder="кол-во">' +
                 '<button class="pfm-del" onclick="pfRemoveHolding(\'' + pid + '\',\'' + h.id + '\')" aria-label="Удалить">' +
                     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
-            '</div>' +
-            '<div class="pfm-row-load">' +
-                '<button class="pfm-loadbtn" onclick="pfFetchPrice(\'' + pid + '\',\'' + h.id + '\')">' + DL_SVG + 'Загрузить цену на дату</button>' +
-                priceStatusHtml(h) +
             '</div>' +
         '</div>';
     }
@@ -733,6 +812,21 @@
         if (store.items.length >= MAX_CARDS) { toast('Максимум ' + MAX_CARDS + ' портфеля на странице', true); return; }
         var p = makePortfolio(); store.items.push(p); saveStore(); openMenu = p.id; renderPortfolios();
     };
+    // НКД при импорте из расчёта/ежемесячного дохода: дата покупки = сегодня, поэтому
+    // подтягиваем ТЕКУЩИЙ НКД (ACCRUEDINT) из живых данных MOEX и помечаем как «с API»
+    // (иконка в поле сразу гаснет). Цена в импорте — чистая, НКД отдельной величиной.
+    function autofillNkd(holds) {
+        if (typeof fetchBondData !== 'function') return;
+        (holds || []).forEach(function (h) {
+            if (h.type !== 'bond' || !h.ticker || h.nkdFromApi || (h.nkd > 0)) return;
+            Promise.resolve(fetchBondData(h.ticker)).then(function (r) {
+                if (r && r.nkd != null && r.nkd >= 0 && !h.nkdFromApi) {
+                    h.nkd = Math.round(r.nkd * 100) / 100; h.nkdFromApi = true; saveStore();
+                    if (currentTab === 'portfolios' && dq('pfWrap')) renderPortfolios();
+                }
+            }).catch(function () {});
+        });
+    }
     // Импорт: pid задан → добавить в портфель; pid null → новый портфель.
     // source: 'calc' (sub: all/stock/bond) | 'fav' | 'monthly'
     window.pfImport = function (source, sub, pid) {
@@ -742,11 +836,11 @@
         if (pid) {
             var p = findPf(pid); if (!p) return;
             p.holdings = (p.holdings || []).concat(holds); saveStore(); ensureQuotes(true); renderPortfolios();
-            toast('Добавлено: ' + holds.length); return;
+            autofillNkd(holds); toast('Добавлено: ' + holds.length); return;
         }
         if (store.items.length >= MAX_CARDS) { toast('Максимум ' + MAX_CARDS + ' портфеля', true); return; }
         var np = makePortfolio(importName(source)); np.holdings = holds; store.items.push(np); saveStore();
-        openMenu = null; ensureQuotes(true); renderPortfolios(); toast('Импортировано: ' + holds.length);
+        openMenu = null; ensureQuotes(true); renderPortfolios(); autofillNkd(holds); toast('Импортировано: ' + holds.length);
     };
     function closeImpMenus() {
         var any = document.querySelectorAll('.pf-impmenu.open');
@@ -782,7 +876,7 @@
         var tk = (tkEl && tkEl.value || '').trim().toUpperCase(); if (!tk) { toast('Введите тикер', true); return; }
         var type = (tyEl && tyEl.value) === 'bond' ? 'bond' : 'stock';
         p.holdings = p.holdings || [];
-        p.holdings.push({ id: genId('h'), ticker: tk, name: tk, type: type, buyDate: todayStr(), buyPrice: 0, qty: 0, priceFromApi: false });
+        p.holdings.push({ id: genId('h'), ticker: tk, name: tk, type: type, buyDate: todayStr(), buyPrice: 0, qty: 0, nkd: 0, priceFromApi: false, nkdFromApi: false });
         saveStore(); ensureQuotes(true); renderPortfolios();
     };
     window.pfRemoveHolding = function (pid, hid) {
@@ -791,31 +885,64 @@
     };
     window.pfEdit = function (pid, hid, field, val) {
         var p = findPf(pid); if (!p) return; var h = findHold(p, hid); if (!h) return;
-        if (field === 'ticker') { h.ticker = (val || '').trim().toUpperCase(); h.name = h.ticker; h.priceFromApi = false; delete loadStatus[hid]; }
-        else if (field === 'buyDate') { h.buyDate = val; h.priceFromApi = false; delete loadStatus[hid]; }
-        else if (field === 'buyPrice') { h.buyPrice = Math.max(0, toNum(val) || 0); h.priceFromApi = false; delete loadStatus[hid]; }
+        // «relit» — сбрасываем «подтянуто с API», чтобы иконка в поле снова загорелась
+        function relit(which) {
+            if (which === 'price' || which === 'all') { h.priceFromApi = false; delete loadStatus[hid + ':price']; }
+            if (which === 'nkd'   || which === 'all') { h.nkdFromApi   = false; delete loadStatus[hid + ':nkd']; }
+        }
+        if (field === 'ticker') { h.ticker = (val || '').trim().toUpperCase(); h.name = h.ticker; relit('all'); }
+        else if (field === 'buyDate') { h.buyDate = val; relit('all'); }   // дата сменилась → старые цена/НКД не на эту дату
+        else if (field === 'buyPrice') { h.buyPrice = Math.max(0, toNum(val) || 0); relit('price'); }
+        else if (field === 'nkd') { h.nkd = Math.max(0, toNum(val) || 0); relit('nkd'); }
         else if (field === 'qty') { h.qty = Math.max(0, Math.round(toNum(val) || 0)); }
         saveStore(); ensureQuotes(); renderPortfolios();
     };
-    // Цена покупки = историческая цена закрытия MOEX на h.buyDate (механизм вкладки «Тест»)
-    window.pfFetchPrice = function (pid, hid) {
+    // Подтянуть цену (акция/облигация — чистая цена закрытия) или НКД (облигация) на дату покупки.
+    window.pfFetchField = function (pid, hid, field) {
         var p = findPf(pid); if (!p) return; var h = findHold(p, hid);
         if (!h || !h.ticker) { toast('Сначала укажите тикер', true); return; }
-        if (!h.buyDate) { loadStatus[hid] = { state: 'nodate' }; renderPortfolios(); return; }
-        loadStatus[hid] = { state: 'loading' }; renderPortfolios();
-        lookupHistPrice(h.ticker, h.type, h.buyDate, function (price) {
+        if (!h.buyDate) { toast('Укажите дату покупки', true); return; }
+        if (field === 'nkd' && h.type !== 'bond') return;
+        loadStatus[hid + ':' + field] = 'loading'; renderPortfolios();
+        var done = function (v) {
             var cur = findHold(findPf(pid) || {}, hid); if (!cur) return;
-            if (price && price > 0) {
-                cur.buyPrice = Math.round(price * 100) / 100; cur.priceFromApi = true;
-                loadStatus[hid] = { state: 'ok', date: cur.buyDate }; saveStore(); renderPortfolios();
-                toast(cur.ticker + ': ' + fmtPrice(price) + ' на ' + ruDate(cur.buyDate));
+            delete loadStatus[hid + ':' + field];
+            if (v != null && v >= 0) {
+                if (field === 'nkd') { cur.nkd = Math.round(v * 100) / 100; cur.nkdFromApi = true; }
+                else { cur.buyPrice = Math.round(v * 100) / 100; cur.priceFromApi = true; }
+                saveStore(); renderPortfolios();
+                toast(cur.ticker + ': ' + (field === 'nkd' ? 'НКД ' : '') + fmtPrice(v) + ' на ' + ruDate(cur.buyDate));
             } else {
-                loadStatus[hid] = { state: 'err', date: cur.buyDate }; renderPortfolios();
-                toast('Нет цены ' + cur.ticker + ' на ' + ruDate(cur.buyDate), true);
+                renderPortfolios();
+                toast('Нет ' + (field === 'nkd' ? 'НКД' : 'цены') + ' ' + cur.ticker + ' на ' + ruDate(cur.buyDate), true);
             }
-        });
+        };
+        if (field === 'nkd') lookupHistNkd(h.ticker, h.buyDate, done);
+        else lookupHistPrice(h.ticker, h.type, h.buyDate, function (price) { done(price && price > 0 ? price : null); });
     };
     window.pfOpenTicker = function (tk) { if (typeof window.openStockDetail === 'function') { try { window.openStockDetail(tk, 1); } catch (e) {} } };
+    // Инлайн-правка имени портфеля: клик по названию → поле ввода на месте (Enter/blur — сохранить, Esc — отмена)
+    window.pfNameEdit = function (pid, ev) {
+        if (ev) { ev.stopPropagation(); }
+        var p = findPf(pid); if (!p) return;
+        var host = ev && ev.currentTarget; if (!host || host._editing) return;
+        host._editing = true;
+        var inp = document.createElement('input');
+        inp.className = 'pfc-name-edit'; inp.value = p.name; inp.maxLength = 40;
+        host.innerHTML = ''; host.appendChild(inp);
+        try { inp.focus(); inp.select(); } catch (e) {}
+        var committed = false;
+        function commit(save) {
+            if (committed) return; committed = true;
+            if (save) { var v = (inp.value || '').trim(); if (v) { p.name = v; saveStore(); } }
+            renderPortfolios();
+        }
+        inp.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); commit(true); }
+            else if (e.key === 'Escape') { e.preventDefault(); commit(false); }
+        });
+        inp.addEventListener('blur', function () { commit(true); });
+    };
 
     // ====================================================================
     //  РАЗВОРОТ ПОРТФЕЛЯ — модалка поверх контента (в <body>)
@@ -828,9 +955,23 @@
             ov.addEventListener('click', function (e) { if (e.target === ov) window.pfCloseOverlay(); }); }
         ov.dataset.pid = pid;
         ov.innerHTML = overlayHtml(p);
+        fillBondIncome(p);
         ov.classList.add('show'); document.body.classList.add('pf-modal-open');
         document.addEventListener('keydown', pfEscClose);
     };
+    // Асинхронно заполняем блок «Доход по облигациям» (данные купонов догружаются)
+    function fillBondIncome(p) {
+        if (!dq('pfoIncome')) return;
+        computeBondIncome(p, function (res) {
+            var band = dq('pfoIncome'); if (!band) return;   // оверлей мог закрыться
+            if (!res.hasBonds) { band.style.display = 'none'; return; }
+            band.style.display = '';
+            var day = dq('pfoIncDay'), mo = dq('pfoIncMo');
+            if (day) day.textContent = res.total.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            if (mo) mo.textContent = res.pending ? 'уточняем данные купонов…'
+                : '≈ ' + fmtRub(res.total * 30) + ' / мес · ' + fmtRub(res.total * 365) + ' / год · ' + res.items.length + ' ' + plural(res.items.length, 'выпуск', 'выпуска', 'выпусков');
+        });
+    }
     window.pfCloseOverlay = function () {
         var ov = dq('pfOverlay'); if (ov) ov.classList.remove('show');
         document.body.classList.remove('pf-modal-open'); document.removeEventListener('keydown', pfEscClose);
@@ -842,10 +983,11 @@
         var rows = c.hs.length ? c.hs.map(function (x) {
             var h = x.h, cc = x.c;
             return '<tr>' +
-                '<td class="pfo-tk"><span class="pfo-tkline">' + rankBadge(echelonOf(h)) + '<b>' + esc(h.ticker) + '</b></span><span class="pfo-nm">' + esc(h.name || '') + '</span></td>' +
+                '<td class="pfo-tk"><span class="pfo-tkline"><b>' + esc(h.ticker) + '</b></span><span class="pfo-nm">' + esc(h.name || '') + '</span></td>' +
                 '<td><span class="pfo-tag ' + h.type + '">' + (h.type === 'bond' ? 'обл' : 'акц') + '</span></td>' +
                 '<td>' + ruDate(h.buyDate) + '</td>' +
-                '<td>' + fmtPrice(cc.buy) + (h.priceFromApi ? ' <i class="pfo-api">API</i>' : '') + '</td>' +
+                '<td>' + fmtPrice(cc.buy) + (h.priceFromApi ? ' <i class="pfo-api">API</i>' : '') +
+                    (h.type === 'bond' && h.nkd > 0 ? '<small class="pfo-nkd">+ НКД ' + fmtPrice(h.nkd) + '</small>' : '') + '</td>' +
                 '<td>' + (cc.qty || 0) + '</td>' +
                 '<td>' + fmtRub(cc.invested) + '</td>' +
                 '<td class="' + (cc.live ? 'pfo-live' : '') + '">' + fmtPrice(cc.cur) + '</td>' +
@@ -871,6 +1013,15 @@
                     pfoStat('Доход', fmtRub(c.pnl) + '  (' + fmtPct(c.pnlPct) + ')', pnlCls) +
                     pfoStat('Доходность годовых', c.annual == null ? '—' : fmtPct(c.annual), c.annual == null ? '' : (c.annual >= 0 ? 'pos' : 'neg')) +
                 '</div>' +
+            '</div>' +
+            '<div class="pfo-income" id="pfoIncome" style="display:none">' +
+                '<div class="pfo-income-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>' +
+                '<div class="pfo-income-main">' +
+                    '<div class="pfo-income-l">Доход по облигациям до погашения</div>' +
+                    '<div class="pfo-income-v"><b id="pfoIncDay">—</b><span class="pfo-income-unit">₽ / день</span></div>' +
+                    '<div class="pfo-income-sub" id="pfoIncMo">считаем…</div>' +
+                '</div>' +
+                '<div class="pfo-income-note">Купоны до погашения + номинал ÷ дни до погашения, по каждому выпуску × кол-во. Метрика для контроля ребалансировок.</div>' +
             '</div>' +
             '<div class="pfo-tablewrap"><table class="pfo-table"><thead><tr>' +
                 '<th>Актив</th><th>Тип</th><th>Дата покупки</th><th>Цена покупки</th><th>Кол-во</th><th>Вложено</th><th>Цена сейчас</th><th>Стоимость</th><th>Доход</th><th>Годовых</th>' +

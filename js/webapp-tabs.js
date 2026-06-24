@@ -1440,6 +1440,37 @@ async function btGetBondPrice(ticker, dateStr) {
     return price > 0 ? price * 10 : 0;
 }
 
+// НКД (накопленный купонный доход) облигации на дату — колонка ACCINT в истории MOEX.
+// Цена закрытия (CLOSE) приходит «чистой» (без НКД), поэтому НКД тянем отдельно.
+async function btGetBondNkd(ticker, dateStr) {
+    var fromDate = new Date(dateStr);
+    fromDate.setDate(fromDate.getDate() - 7);
+    var from = fromDate.toISOString().split('T')[0];
+
+    var url = MOEX_PROXY + '?path=' + encodeURIComponent(
+        '/iss/history/engines/stock/markets/bonds/securities/' + ticker +
+        '.json?from=' + from + '&till=' + dateStr + '&iss.meta=off&iss.only=history&sort_order=desc&limit=1'
+    );
+    var res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var data = await res.json();
+    if (!data.history || !data.history.data || data.history.data.length === 0) return -1;
+    var cols = data.history.columns;
+    var row = data.history.data[0];
+    var idx = cols.indexOf('ACCINT');
+    if (idx < 0) return -1;
+    var nkd = row[idx];
+    return (nkd != null && nkd !== '' && isFinite(nkd)) ? +nkd : -1;
+}
+async function btGetBondNkdSafe(ticker, dateStr) {
+    try {
+        return await btGetBondNkd(ticker, dateStr);
+    } catch (e) {
+        console.warn('[BT] Bond NKD fetch failed for ' + ticker + ':', e.message);
+        return -1; // sentinel: failed
+    }
+}
+
 async function btGetStockPrice(ticker, dateStr) {
     var fromDate = new Date(dateStr);
     fromDate.setDate(fromDate.getDate() - 7);
