@@ -37,10 +37,10 @@ body.dark-mode .pf-wrap .neg { color: #f87171; }
 .pf-ring-top { font-size: 8.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #94a3b8; }
 .pf-ring-val { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: #0f172a; }
 body.dark-mode .pf-ring-val { color: #f4f8fd; }
-/* красивый номер портфеля в центре кольца распределения карточки */
-.pfc-ringnum { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 34px; line-height: 1; letter-spacing: -0.04em;
-    color: var(--pf-accent); -webkit-text-stroke: 0; text-shadow: 0 2px 6px color-mix(in srgb, var(--pf-accent) 22%, transparent); }
-body.dark-mode .pfc-ringnum { color: color-mix(in srgb, var(--pf-accent) 88%, #fff); }
+/* номер портфеля в центре кольца — нейтральный и неброский (одинаковый у всех) */
+.pfc-ringnum { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 29px; line-height: 1; letter-spacing: -0.04em;
+    color: #c4cedb; }
+body.dark-mode .pfc-ringnum { color: #45525f; }
 
 /* ============================================================
    СВОДКА ПО ВСЕМ ПОРТФЕЛЯМ
@@ -72,13 +72,19 @@ body.dark-mode .pf-summary {
 .pfs-alloc-leg i { width: 9px; height: 9px; border-radius: 99px; }
 .pfs-alloc-leg i.stock { background: #D97757; } .pfs-alloc-leg i.bond { background: #7B9BBF; }
 
-/* лидерборд: рейтинг портфелей по доходности с диверг-баром от нуля (хорош для 1–4) */
-.pfs-board { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
-.pfs-board-h { font-size: 10px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: #8ea0b6; margin-bottom: 2px; }
-.pfs-lb-row { display: grid; grid-template-columns: 16px minmax(60px, 1.1fr) minmax(70px, 1.4fr) auto; align-items: center; gap: 10px; }
-.pfs-lb-rk { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; color: #6b7d92; text-align: center; }
-.pfs-lb-n { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 12.5px; font-weight: 700; color: #e7eef6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* лидерборд: рейтинг портфелей с капиталом + диверг-баром от нуля (хорош для 1–4).
+   Бар капается по ширине (minmax max), чтобы в широкой полосе не «растягивался». */
+.pfs-board { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.pfs-board-h { font-size: 10px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: #8ea0b6; margin-bottom: 4px; }
+.pfs-lb-row { display: grid; grid-template-columns: 18px minmax(64px, 1fr) auto minmax(90px, 180px) 56px; align-items: center; gap: 12px; padding: 4px 0; }
+.pfs-lb-row + .pfs-lb-row { border-top: 1px solid rgba(255,255,255,0.05); }
+.pfs-lb-row.empty { opacity: 0.55; }
+.pfs-lb-rk { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 800; color: #6b7d92; text-align: center; }
+.pfs-lb-row.lead .pfs-lb-rk { color: #f5c451; }
+.pfs-lb-n { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 12.5px; font-weight: 700; color: #e7eef6; }
 .pfs-lb-n i { width: 9px; height: 9px; border-radius: 99px; flex-shrink: 0; }
+.pfs-lb-nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pfs-lb-cap { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 700; color: #9fb1c6; text-align: right; white-space: nowrap; }
 .pfs-lb-track { position: relative; height: 8px; border-radius: 99px; background: rgba(255,255,255,0.07); }
 .pfs-lb-zero { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: rgba(255,255,255,0.22); }
 .pfs-lb-fill { position: absolute; top: 0; bottom: 0; border-radius: 99px; }
@@ -88,10 +94,11 @@ body.dark-mode .pf-summary {
 .pfs-lb-v.pos { color: #34d399; } .pfs-lb-v.neg { color: #f87171; } .pfs-lb-v.muted { color: #6b7d92; }
 @media (max-width: 880px) { .pf-summary { grid-template-columns: 1fr; } }
 
-/* aside-вариант: вертикальная колонка слева от единственного портфеля */
+/* aside-вариант: узкая колонка слева от 1-го портфеля — прячем капитал, бар компактнее */
 .pf-summary--aside { grid-template-columns: 1fr; align-content: start; align-items: stretch; gap: 18px; padding: 24px 24px; }
 .pf-summary--aside .pfs-capital { font-size: 30px; }
 .pf-summary--aside .pfs-board { margin-top: 2px; }
+.pf-summary--aside .pfs-lb-row { grid-template-columns: 16px minmax(54px, 1fr) auto minmax(70px, 140px) 52px; gap: 10px; }
 
 /* ============================================================
    СЕТКА КАРТОЧЕК (до 4 = 2×2)
@@ -221,11 +228,17 @@ body.dark-mode .pfc-kvv.pos { color: #34d399; } body.dark-mode .pfc-kvv.neg { co
 /* ---- превью состава (скролл, тянется на остаток высоты карточки) ---- */
 .pfc-holds { border-top: 1px solid rgba(24,38,60,0.06); flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
 body.dark-mode .pfc-holds { border-color: rgba(255,255,255,0.05); }
-.pfc-cols, .pfc-row { display: grid; grid-template-columns: 1.4fr 0.95fr 1fr 0.6fr 1fr 0.8fr; align-items: center; gap: 6px; }
-.pfc-cols { padding: 9px 24px; font-size: 9.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #94a3b8; flex-shrink: 0; }
+.pfc-cols, .pfc-row { display: grid; grid-template-columns: 1.25fr 0.92fr 0.9fr 0.78fr 0.5fr 0.9fr 0.72fr; align-items: center; gap: 5px; }
+.pfc-cols { padding: 9px 18px; font-size: 9px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #94a3b8; flex-shrink: 0; }
 .pfc-cols span:nth-child(n+2), .pfc-row .pfc-cell { text-align: right; }
 .pfc-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
-.pfc-row { padding: 8px 24px; border-top: 1px solid rgba(24,38,60,0.04); font-size: 12px; }
+.pfc-row { padding: 8px 18px; border-top: 1px solid rgba(24,38,60,0.04); font-size: 11.5px; }
+/* НКД-колонка — синий акцент (как облигации); для акций приглушённый прочерк */
+.pfc-nkd { color: #5f86ad; }
+.pfc-nkd.muted { color: #c8d2de; }
+body.dark-mode .pfc-nkd { color: #9bb4d0; }
+body.dark-mode .pfc-nkd.muted { color: #46525f; }
+.pfc-cell[title], .pfo-table td[title] { cursor: help; }
 body.dark-mode .pfc-row { border-color: rgba(255,255,255,0.04); }
 .pfc-tk { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
 .pfc-tk b { font-weight: 800; color: #0f172a; font-size: 12.5px; }
@@ -408,8 +421,35 @@ body.dark-mode .pfm-bottom { border-color: rgba(255,255,255,0.06); }
 .pfm-addlbl { display: flex; align-items: center; gap: 6px; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 800; letter-spacing: 0.02em; color: #64748b; }
 .pfm-addlbl svg { width: 14px; height: 14px; color: var(--pf-accent); }
 body.dark-mode .pfm-addlbl { color: #aab8c8; }
-.pfm-add { display: grid; grid-template-columns: 1.3fr 1fr auto; gap: 7px; align-items: stretch; border-radius: 11px; }
-.pfm-add--hl { box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--pf-accent) 40%, transparent), 0 0 0 6px color-mix(in srgb, var(--pf-accent) 8%, transparent); }
+/* форма добавления «за один подход»: тикер·тип / дата·цена·(нкд)·кол-во / Добавить.
+   Поле НКД появляется только для облигаций (data-type на форме). */
+.pfm-addform { border-radius: 12px; transition: box-shadow 0.18s; }
+.pfm-addform.pfm-add--hl { padding: 8px;
+    box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--pf-accent) 40%, transparent), 0 0 0 6px color-mix(in srgb, var(--pf-accent) 8%, transparent); }
+.pfm-addgrid { display: grid; gap: 7px; align-items: stretch; }
+.pfm-addform[data-type="stock"] .pfm-addgrid {
+    grid-template-columns: 1.5fr 1fr 1fr;
+    grid-template-areas: "tk tk type" "date price qty" "add add add"; }
+.pfm-addform[data-type="bond"] .pfm-addgrid {
+    grid-template-columns: 1.4fr 1fr 1fr;
+    grid-template-areas: "tk tk type" "date price nkd" "qty add add"; }
+.pfaf-tk { grid-area: tk; } .pfaf-type { grid-area: type; } .pfaf-date { grid-area: date; }
+.pfaf-price { grid-area: price; } .pfaf-nkd { grid-area: nkd; } .pfaf-qty { grid-area: qty; } .pfaf-add { grid-area: add; }
+.pfm-addform[data-type="stock"] .pfaf-nkd { display: none; }
+.pfm-addgrid .pfm-in { min-height: 38px; box-sizing: border-box; }
+.pfm-addgrid .pfm-in-date { font-size: 12px; padding-left: 8px; }
+.pfaf-add { min-height: 38px; }
+
+/* заголовки групп состава (Акции / Облигации) */
+.pfm-grp { display: flex; align-items: center; gap: 8px; margin: 3px 2px 1px; }
+.pfm-grp:first-child { margin-top: 0; }
+.pfm-grp-l { font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; }
+.pfm-grp-l--stock { color: #b45309; } .pfm-grp-l--bond { color: #3a5d80; }
+body.dark-mode .pfm-grp-l--stock { color: #fbbf24; } body.dark-mode .pfm-grp-l--bond { color: #93c5fd; }
+.pfm-grp-n { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; color: #94a3b8; background: rgba(24,38,60,0.06); padding: 1px 6px; border-radius: 6px; }
+body.dark-mode .pfm-grp-n { background: rgba(255,255,255,0.07); }
+.pfm-grp-rule { flex: 1; height: 1px; background: linear-gradient(90deg, rgba(24,38,60,0.1), transparent); }
+body.dark-mode .pfm-grp-rule { background: linear-gradient(90deg, rgba(255,255,255,0.12), transparent); }
 .pfm-addbtn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; flex-shrink: 0; border: none; background: var(--pf-accent); color: #fff; border-radius: 10px; padding: 0 15px; min-height: 36px; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 12.5px; cursor: pointer; white-space: nowrap; box-shadow: 0 8px 18px -9px color-mix(in srgb, var(--pf-accent) 90%, transparent); transition: filter 0.15s, transform 0.12s; }
 .pfm-addbtn svg { width: 15px; height: 15px; }
 .pfm-addbtn:hover { filter: brightness(1.07); }
@@ -498,14 +538,30 @@ body.pf-modal-open { overflow: hidden; }
 .pfo-card { --pf-accent: #3b82f6; width: min(1480px, 94vw); max-width: 94vw; max-height: 90vh; display: flex; flex-direction: column; background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 40px 90px -30px rgba(0,0,0,0.6); border-top: 4px solid var(--pf-accent); animation: pfCardIn 0.2s ease; }
 @keyframes pfCardIn { from { transform: translateY(14px) scale(0.98); opacity: 0; } to { transform: none; opacity: 1; } }
 body.dark-mode .pfo-card { background: #141c27; }
-.pfo-head { display: flex; align-items: center; gap: 12px; padding: 18px 22px; border-bottom: 1px solid rgba(24,38,60,0.06); }
-body.dark-mode .pfo-head { border-color: rgba(255,255,255,0.06); }
-.pfo-head-l { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.pfo-dot { width: 14px; height: 14px; border-radius: 99px; background: var(--pf-accent); flex-shrink: 0; }
-.pfo-name { font-family: 'Inter', sans-serif; font-size: 19px; font-weight: 800; color: #0f172a; }
-body.dark-mode .pfo-name { color: #f4f8fd; }
-.pfo-meta { font-size: 11.5px; color: #94a3b8; margin-top: 1px; }
-.pfo-x { margin-left: auto; width: 38px; height: 38px; border-radius: 10px; border: 1px solid rgba(24,38,60,0.1); background: rgba(24,38,60,0.03); color: #64748b; cursor: pointer; display: grid; place-items: center; flex-shrink: 0; }
+/* шапка большой карточки — с весом: акцентный фон, крупное имя, капитал + P&L справа */
+.pfo-head { display: flex; align-items: center; gap: 14px; padding: 20px 24px; border-bottom: 1px solid rgba(24,38,60,0.07);
+    background: linear-gradient(100deg, color-mix(in srgb, var(--pf-accent) 13%, transparent), transparent 60%); }
+body.dark-mode .pfo-head { border-color: rgba(255,255,255,0.07);
+    background: linear-gradient(100deg, color-mix(in srgb, var(--pf-accent) 22%, transparent), transparent 60%); }
+.pfo-head-l { display: flex; align-items: center; gap: 13px; min-width: 0; }
+.pfo-dot { width: 16px; height: 16px; border-radius: 99px; background: var(--pf-accent); flex-shrink: 0;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--pf-accent) 18%, transparent); }
+.pfo-head-tt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.pfo-eyebrow { font-size: 9.5px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--pf-accent) 65%, #8a99ab); }
+.pfo-name { font-family: 'Inter', sans-serif; font-size: 24px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.dark-mode .pfo-name { color: #f7fbff; }
+.pfo-meta { font-size: 11.5px; color: #94a3b8; margin-top: 2px; }
+.pfo-head-r { margin-left: auto; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+.pfo-headcap { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+.pfo-headcap-l { font-size: 9px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #94a3b8; }
+.pfo-headcap-v { font-family: 'JetBrains Mono', monospace; font-size: 17px; font-weight: 700; color: #0f172a; }
+body.dark-mode .pfo-headcap-v { color: #f4f8fd; }
+.pfo-headpnl { font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 14px; padding: 8px 15px; border-radius: 999px; white-space: nowrap; }
+.pfo-headpnl.pos { color: #16a34a; background: rgba(22,163,74,0.13); }
+.pfo-headpnl.neg { color: #dc2626; background: rgba(220,38,38,0.13); }
+body.dark-mode .pfo-headpnl.pos { color: #34d399; background: rgba(52,211,153,0.16); }
+body.dark-mode .pfo-headpnl.neg { color: #f87171; background: rgba(248,113,113,0.16); }
+.pfo-x { width: 38px; height: 38px; border-radius: 10px; border: 1px solid rgba(24,38,60,0.1); background: rgba(255,255,255,0.6); color: #64748b; cursor: pointer; display: grid; place-items: center; flex-shrink: 0; }
 .pfo-x svg { width: 18px; height: 18px; }
 .pfo-x:hover { background: rgba(220,38,38,0.1); color: #dc2626; }
 body.dark-mode .pfo-x { border-color: rgba(255,255,255,0.08); background: rgba(255,255,255,0.04); color: #9fb0c4; }
@@ -558,6 +614,11 @@ body.dark-mode .pfo-table tbody tr:nth-child(even) td { background: rgba(255,255
 .pfo-table tbody tr:hover td { background: color-mix(in srgb, var(--pf-accent) 7%, transparent); }
 body.dark-mode .pfo-table tbody tr:hover td { background: color-mix(in srgb, var(--pf-accent) 14%, transparent); }
 .pfo-nkd { display: block; font-size: 9.5px; opacity: 0.75; color: #7B9BBF; font-style: normal; }
+/* выделенная колонка НКД в большой карточке */
+.pfo-nkdcol { color: #5f86ad; }
+.pfo-nkdcol.muted { color: #c8d2de; }
+body.dark-mode .pfo-nkdcol { color: #9bb4d0; }
+body.dark-mode .pfo-nkdcol.muted { color: #46525f; }
 .pfo-tk { display: flex; flex-direction: column; gap: 2px; }
 .pfo-tkline { display: flex; align-items: center; gap: 7px; }
 .pfo-tk b { font-family: 'Inter', sans-serif; font-weight: 800; color: #0f172a; font-size: 13px; }
