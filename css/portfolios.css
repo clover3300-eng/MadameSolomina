@@ -84,12 +84,11 @@ body.dark-mode .pf-summary {
    ============================================================ */
 .pf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: stretch; }
 @media (max-width: 1040px) { .pf-grid { grid-template-columns: 1fr; } }
+/* нечётное число портфелей → сводка первой ячейкой (слева от 1-го портфеля) */
+.pf-grid--aside > .pf-summary { min-width: 0; height: 100%; }
 
-/* ---- 1 портфель: карточка + сводка-капитал справа ---- */
-.pf-solo { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(290px, 1fr); gap: 16px; align-items: stretch; }
-.pf-solo-main, .pf-solo-side { min-width: 0; display: flex; }
-.pf-solo-main > .pf-card, .pf-solo-side > .pf-summary { width: 100%; }
-@media (max-width: 1040px) { .pf-solo { grid-template-columns: 1fr; } }
+/* выровнять заголовок «Портфели» по вертикали (подзаголовок убран) */
+.pf-head { align-items: center; }
 
 /* ---- карточка портфеля (дизайн-язык карточек «Расчёт» / .pk-card) ---- */
 .pf-card, .pf-card2 {
@@ -105,6 +104,11 @@ body.dark-mode .pf-summary {
 body.dark-mode .pf-card, body.dark-mode .pf-card2 { box-shadow: 0 16px 36px rgba(0,0,0,0.32); }
 .pf-card.menu-open { z-index: 50; box-shadow: 0 0 0 1.5px var(--pf-accent), 0 28px 60px -18px rgba(24,38,60,0.34); }
 body.dark-mode .pf-card.menu-open { box-shadow: 0 0 0 1.5px var(--pf-accent), 0 28px 60px -18px rgba(0,0,0,0.5); }
+/* «Показать все» — карточка настроек растёт вниз (показать все тикеры без скролла) */
+.pf-card--tall { height: auto; min-height: 480px; }
+.pf-card--tall > .pfc-top, .pf-card--tall > .pfc-body, .pf-card--tall > .pfc-holds, .pf-card--tall > .pfc-foot { display: none; }
+.pf-card--tall .pfc-menu { position: relative; inset: auto; box-shadow: none; animation: none; }
+.pf-card--tall .pfm-rows { overflow: visible; }
 
 /* водяной номер 01/02 (как в «Расчёте») */
 .pf-wm-clip { position: absolute; inset: 0; border-radius: 22px; overflow: hidden; pointer-events: none; }
@@ -116,8 +120,9 @@ body.dark-mode .pf-wm { color: color-mix(in srgb, var(--pf-accent) 13%, transpar
 .pfc-titles { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 .pfc-k { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #97a3b4; white-space: nowrap; }
 .pfc-dot { width: 9px; height: 9px; border-radius: 99px; background: var(--pf-accent); flex-shrink: 0; box-shadow: 0 0 0 3px color-mix(in srgb, var(--pf-accent) 16%, transparent); }
-.pfc-name { font-family: 'Inter', sans-serif; font-size: 21px; font-weight: 800; color: #1b2433; letter-spacing: -0.015em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; line-height: 1.1; }
+.pfc-name { font-family: 'Inter', sans-serif; font-size: 20px; font-weight: 800; color: #1b2433; letter-spacing: -0.015em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; line-height: 1.15; padding-top: 2px; }
 body.dark-mode .pfc-name { color: #f4f8fd; }
+.pfc-namedot { display: inline-block; vertical-align: 2px; width: 9px; height: 9px; border-radius: 99px; background: var(--pf-accent); margin-right: 9px; box-shadow: 0 0 0 3px color-mix(in srgb, var(--pf-accent) 16%, transparent); }
 .pfc-ctrls { display: flex; align-items: center; gap: 9px; flex-shrink: 0; }
 .pfc-pnl { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px; padding: 5px 11px; border-radius: 999px; }
 .pfc-pnl.pos { color: #16a34a; background: rgba(22,163,74,0.12); }
@@ -148,6 +153,15 @@ body.dark-mode .pf-ch-go:hover { background: rgba(255,255,255,0.12); color: #fff
 /* контент над водяным номером (как .k/.t/.ct в «Расчёте») */
 .pfc-body, .pfc-holds, .pfc-foot { position: relative; }
 .pfc-body { display: flex; align-items: center; gap: 18px; padding: 16px 24px 16px; }
+/* кольцо распределения + легенда «что есть что» (соотношение акций/облигаций) */
+.pfc-ring { display: flex; flex-direction: column; align-items: center; gap: 10px; flex-shrink: 0; }
+.pfc-ringleg { display: flex; flex-direction: column; gap: 4px; width: 100%; min-width: 108px; }
+.pfc-lg { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #64748b; white-space: nowrap; }
+body.dark-mode .pfc-lg { color: #aab8c8; }
+.pfc-lg i { width: 9px; height: 9px; border-radius: 99px; flex-shrink: 0; }
+.pfc-lg i.stock { background: #D97757; } .pfc-lg i.bond { background: #7B9BBF; }
+.pfc-lg b { margin-left: auto; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #0f172a; }
+body.dark-mode .pfc-lg b { color: #eef3f9; }
 .pfc-kv { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; flex: 1; border: 1px solid rgba(24,38,60,0.07); border-radius: 13px; overflow: hidden; background: rgba(24,38,60,0.07); }
 body.dark-mode .pfc-kv { border-color: rgba(255,255,255,0.06); background: rgba(255,255,255,0.06); }
 .pfc-kvi { background: #fff; padding: 9px 12px; }
@@ -172,6 +186,11 @@ body.dark-mode .pfc-row { border-color: rgba(255,255,255,0.04); }
 body.dark-mode .pfc-tk b { color: #eef3f9; }
 .pfc-tk i { font-style: normal; font-size: 9px; font-weight: 700; text-transform: uppercase; color: #94a3b8; background: rgba(24,38,60,0.06); padding: 1px 5px; border-radius: 5px; }
 body.dark-mode .pfc-tk i { background: rgba(255,255,255,0.07); }
+/* ранг (эшелон) перед тикером */
+.pf-rank { flex-shrink: 0; align-self: center; display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 5px; font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 800; line-height: 1; color: #fff; }
+.pf-rank.r1 { background: #16a34a; }
+.pf-rank.r2 { background: #d97706; }
+.pf-rank.r3 { background: #64748b; }
 .pfc-cell { font-family: 'JetBrains Mono', monospace; font-weight: 600; color: #475569; white-space: nowrap; }
 body.dark-mode .pfc-cell { color: #aab8c8; }
 .pfc-cell.live { color: #0f172a; position: relative; }
@@ -260,14 +279,26 @@ body.dark-mode .pfm-sw { border-color: #18222e; box-shadow: 0 0 0 1px rgba(255,2
 /* середина — только список состава скроллится */
 .pfm-mid { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: 13px 15px 4px; }
 .pfm-sec { display: flex; align-items: center; gap: 10px; font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #94a3b8; margin: 0 2px 9px; flex-shrink: 0; }
-.pfm-sec::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(24,38,60,0.1), transparent); }
-body.dark-mode .pfm-sec::after { background: linear-gradient(90deg, rgba(255,255,255,0.12), transparent); }
+.pfm-sec > span { white-space: nowrap; }
+.pfm-sec-rule { flex: 1; height: 1px; background: linear-gradient(90deg, rgba(24,38,60,0.1), transparent); }
+body.dark-mode .pfm-sec-rule { background: linear-gradient(90deg, rgba(255,255,255,0.12), transparent); }
+.pfm-tall { flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; border: 1px solid rgba(24,38,60,0.12); background: #fff; border-radius: 8px; padding: 4px 9px; font-family: 'Manrope', sans-serif; font-size: 10px; font-weight: 800; letter-spacing: 0.02em; text-transform: none; color: var(--pf-accent); cursor: pointer; transition: background 0.15s; }
+.pfm-tall:hover { background: color-mix(in srgb, var(--pf-accent) 10%, transparent); }
+.pfm-tall-i { width: 13px; height: 13px; transition: transform 0.2s; }
+.pfm-tall-i.up { transform: rotate(180deg); }
+body.dark-mode .pfm-tall { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
 .pfm-rows { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; display: flex; flex-direction: column; gap: 6px; padding-right: 2px; }
-.pfm-none { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; font-size: 12px; font-weight: 600; color: #94a3b8;
-    padding: 20px 12px; border: 1.5px dashed rgba(24,38,60,0.12); border-radius: 13px; background: rgba(24,38,60,0.015); }
-body.dark-mode .pfm-none { border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.02); }
-.pfm-none svg { width: 26px; height: 26px; color: #cbd5e1; }
-body.dark-mode .pfm-none svg { color: #44566b; }
+.pfm-none { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
+    padding: 22px 16px 14px; border: 1.5px dashed color-mix(in srgb, var(--pf-accent) 32%, rgba(24,38,60,0.12)); border-radius: 14px; background: color-mix(in srgb, var(--pf-accent) 4%, transparent); }
+body.dark-mode .pfm-none { background: color-mix(in srgb, var(--pf-accent) 9%, transparent); }
+.pfm-none-art { width: 30px; height: 30px; color: color-mix(in srgb, var(--pf-accent) 55%, #cbd5e1); }
+.pfm-none-t { font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 800; color: #1b2433; }
+body.dark-mode .pfm-none-t { color: #f4f8fd; }
+.pfm-none-s { font-size: 11.5px; font-weight: 600; color: #94a3b8; line-height: 1.45; max-width: 290px; }
+.pfm-none-arrow { color: var(--pf-accent); margin-top: 2px; animation: pfBounce 1.3s ease-in-out infinite; }
+.pfm-none-arrow svg { width: 22px; height: 22px; }
+@keyframes pfBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(5px); } }
+@media (prefers-reduced-motion: reduce) { .pfm-none-arrow { animation: none; } }
 
 /* строка состава — поля + кнопка «Загрузить цену на дату» со статусом */
 .pfm-row { display: flex; flex-direction: column; gap: 7px; padding: 9px 10px; border-radius: 12px; background: rgba(24,38,60,0.025); border: 1px solid transparent; transition: background 0.15s, border-color 0.15s; }
@@ -310,7 +341,11 @@ body.dark-mode .pfm-del { background: rgba(255,255,255,0.06); }
 /* низ: добавление актива + действия (импорт / удалить) */
 .pfm-bottom { flex-shrink: 0; display: flex; flex-direction: column; gap: 9px; padding: 10px 15px 14px; border-top: 1px solid rgba(24,38,60,0.06); }
 body.dark-mode .pfm-bottom { border-color: rgba(255,255,255,0.06); }
-.pfm-add { display: grid; grid-template-columns: 1.3fr 1fr auto; gap: 7px; align-items: stretch; }
+.pfm-addlbl { display: flex; align-items: center; gap: 6px; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 800; letter-spacing: 0.02em; color: #64748b; }
+.pfm-addlbl svg { width: 14px; height: 14px; color: var(--pf-accent); }
+body.dark-mode .pfm-addlbl { color: #aab8c8; }
+.pfm-add { display: grid; grid-template-columns: 1.3fr 1fr auto; gap: 7px; align-items: stretch; border-radius: 11px; }
+.pfm-add--hl { box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--pf-accent) 40%, transparent), 0 0 0 6px color-mix(in srgb, var(--pf-accent) 8%, transparent); }
 .pfm-addbtn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; flex-shrink: 0; border: none; background: var(--pf-accent); color: #fff; border-radius: 10px; padding: 0 15px; min-height: 36px; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 12.5px; cursor: pointer; white-space: nowrap; box-shadow: 0 8px 18px -9px color-mix(in srgb, var(--pf-accent) 90%, transparent); transition: filter 0.15s, transform 0.12s; }
 .pfm-addbtn svg { width: 15px; height: 15px; }
 .pfm-addbtn:hover { filter: brightness(1.07); }
@@ -351,71 +386,43 @@ body.dark-mode .pf-impitem:hover { background: rgba(255,255,255,0.07); }
 body.dark-mode .pf-impitem.sub { color: #aab8c8; }
 
 /* ============================================================
-   ПАРНЫЙ БЛОК (Сравнение + Избранное рядом, лекало «Ежемесячный доход»)
+   ИЗБРАННОЕ — плитки (тикер · потенциал · кликабельная новость-ссылка)
    ============================================================ */
-.pf-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
-.pf-pair.single { grid-template-columns: 1fr; }
-@media (max-width: 1040px) { .pf-pair { grid-template-columns: 1fr; } }
-.pf-pair > .pf-card2 { min-width: 0; }
-/* компактнее, чтобы оба блока смотрелись «рядом и собранно» */
-.pf-pair .pf-ch { padding: 18px 20px 12px; }
-.pf-pair .pf-ch-t { font-size: 18px; }
-.pf-pair .pfcmp-list { padding: 12px 20px 18px; gap: 11px; }
-.pf-pair .pfcmp-row { grid-template-columns: minmax(96px, 1fr) 1.8fr auto; gap: 11px; }
-.pf-pair .pfcmp-v { font-size: 13px; min-width: 54px; }
-.pf-pair .pff-row { grid-template-columns: minmax(96px, 0.85fr) minmax(0, 1.7fr) auto; padding: 10px 18px; gap: 11px; }
-.pf-pair .pff-pot { font-size: 14px; }
-.pf-pair .pff-news-t { font-size: 11.5px; }
-@media (max-width: 760px) { .pf-pair .pff-row { grid-template-columns: 1fr auto; } .pf-pair .pff-news { display: none; } }
-
-/* ============================================================
-   ЗАГОЛОВКИ КАРТОЧЕК (compare / fav)
-   ============================================================ */
-.pf-cardhead { display: flex; align-items: baseline; gap: 10px; padding: 16px 20px 12px; border-bottom: 1px solid rgba(24,38,60,0.05); }
-body.dark-mode .pf-cardhead { border-color: rgba(255,255,255,0.05); }
-.pf-cardhead-t { font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 800; color: #0f172a; }
-body.dark-mode .pf-cardhead-t { color: #f4f8fd; }
-.pf-cardhead-s { font-size: 11.5px; color: #94a3b8; font-weight: 600; }
-.pf-cardhead-go { margin-left: auto; border: none; background: none; cursor: pointer; font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 700; color: #3b82f6; }
-.pf-cardhead-go:hover { text-decoration: underline; }
-
-/* ---- сравнение доходности ---- */
-.pfcmp-list { padding: 14px 24px 20px; display: flex; flex-direction: column; gap: 13px; }
-.pfcmp-row { display: grid; grid-template-columns: minmax(120px, 1.1fr) 2.4fr auto; align-items: center; gap: 14px; }
-.pfcmp-n { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: #0f172a; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-body.dark-mode .pfcmp-n { color: #eef3f9; }
-.pfcmp-n i { width: 10px; height: 10px; border-radius: 99px; flex-shrink: 0; }
-.pfcmp-track { height: 10px; border-radius: 99px; background: rgba(24,38,60,0.07); overflow: hidden; }
-body.dark-mode .pfcmp-track { background: rgba(255,255,255,0.06); }
-.pfcmp-bar { display: block; height: 100%; border-radius: 99px; min-width: 3px; transition: width 0.4s ease; }
-.pfcmp-v { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; text-align: right; min-width: 64px; }
-.pfcmp-v.pos { color: #16a34a; } .pfcmp-v.neg { color: #dc2626; }
-body.dark-mode .pfcmp-v.pos { color: #34d399; } body.dark-mode .pfcmp-v.neg { color: #f87171; }
-
-/* ---- избранное ---- */
-.pff-list { padding: 6px 0 8px; }
-.pff-row { display: grid; grid-template-columns: minmax(110px, 0.9fr) minmax(0, 2fr) auto; align-items: center; gap: 14px; padding: 12px 24px; cursor: pointer; border-top: 1px solid rgba(24,38,60,0.04); transition: background 0.12s; }
-.pff-row:first-child { border-top: none; }
-.pff-row:hover { background: rgba(24,38,60,0.025); }
-body.dark-mode .pff-row { border-color: rgba(255,255,255,0.04); }
-body.dark-mode .pff-row:hover { background: rgba(255,255,255,0.03); }
-.pff-l { min-width: 0; }
-.pff-tk { display: block; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 13.5px; color: #0f172a; }
+.pff-body { padding: 6px 22px 22px; }
+.pff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 1300px) { .pff-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 900px) { .pff-grid { grid-template-columns: 1fr; } }
+.pff-tile { --pf-accent: #3b82f6; display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border-radius: 14px; border: 1px solid rgba(24,38,60,0.08); background: rgba(24,38,60,0.018); transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s; }
+body.dark-mode .pff-tile { border-color: rgba(255,255,255,0.06); background: rgba(255,255,255,0.025); }
+.pff-tile:hover { border-color: color-mix(in srgb, var(--pf-accent) 35%, rgba(24,38,60,0.1)); box-shadow: 0 12px 26px -18px rgba(24,38,60,0.45); transform: translateY(-1px); }
+.pff-thead { display: flex; align-items: flex-start; gap: 12px; }
+.pff-id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; align-items: flex-start; text-align: left; border: none; background: none; padding: 0; cursor: pointer; }
+.pff-tk { max-width: 100%; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 14.5px; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 body.dark-mode .pff-tk { color: #f4f8fd; }
-.pff-nm { display: block; font-size: 11px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pff-news { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.pff-news-t { font-size: 12px; color: #475569; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-body.dark-mode .pff-news-t { color: #b6c3d3; }
-.pff-news-m { font-size: 10px; color: #94a3b8; }
-.pff-news-m i { font-style: normal; color: #3b82f6; font-weight: 700; }
-.pff-news-load, .pff-news-none { font-size: 11px; color: #b6c0cc; font-style: italic; }
-.pff-r { text-align: right; }
-.pff-pot-l { display: block; font-size: 9px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #94a3b8; }
+.pff-id:hover .pff-tk { color: var(--pf-accent); }
+.pff-nm { max-width: 100%; font-size: 11px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pff-pot-wrap { text-align: right; flex-shrink: 0; }
+.pff-pot-l { display: block; font-size: 8.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #94a3b8; }
 .pff-pot { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 15px; }
 .pff-pot.pos { color: #16a34a; } .pff-pot.neg { color: #dc2626; } .pff-pot.muted { color: #94a3b8; }
 body.dark-mode .pff-pot.pos { color: #34d399; } body.dark-mode .pff-pot.neg { color: #f87171; }
-.pff-empty { padding: 28px 24px; text-align: center; font-size: 12.5px; color: #94a3b8; }
-@media (max-width: 620px) { .pff-row { grid-template-columns: 1fr auto; } .pff-news { display: none; } }
+.pff-news { min-width: 0; display: flex; flex-direction: column; gap: 3px; padding-top: 10px; border-top: 1px solid rgba(24,38,60,0.06); }
+body.dark-mode .pff-news { border-color: rgba(255,255,255,0.06); }
+.pff-news.link { cursor: pointer; margin: 0 -8px -6px; padding: 10px 8px 6px; border-radius: 8px; transition: background 0.12s; }
+.pff-news.link:hover { background: color-mix(in srgb, var(--pf-accent) 8%, transparent); }
+.pff-news.link:hover .pff-news-t { color: var(--pf-accent); }
+.pff-news-t { font-size: 12px; font-weight: 600; color: #334155; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; transition: color 0.12s; }
+body.dark-mode .pff-news-t { color: #c3d0e0; }
+.pff-news-m { display: flex; align-items: center; gap: 5px; font-size: 10px; color: #94a3b8; }
+.pff-news-m i { font-style: normal; color: var(--pf-accent); font-weight: 700; }
+.pff-news-go { width: 11px; height: 11px; margin-left: auto; color: var(--pf-accent); opacity: 0.75; flex-shrink: 0; }
+.pff-news-load, .pff-news-none { font-size: 11px; color: #b6c0cc; font-style: italic; }
+.pff-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 34px 24px; }
+.pff-empty-art { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; background: linear-gradient(135deg, rgba(245,158,11,0.16), rgba(217,119,87,0.16)); color: #d97706; }
+.pff-empty-art svg { width: 26px; height: 26px; }
+.pff-empty-t { font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 800; color: #0f172a; }
+body.dark-mode .pff-empty-t { color: #f4f8fd; }
+.pff-empty-s { font-size: 12.5px; color: #94a3b8; max-width: 380px; line-height: 1.5; }
 
 /* ============================================================
    РАЗВОРОТ ПОРТФЕЛЯ — модалка поверх контента (в <body>)
@@ -424,7 +431,7 @@ body.pf-modal-open { overflow: hidden; }
 #pfOverlay { position: fixed; inset: 0; z-index: 4000; display: none; align-items: center; justify-content: center; padding: 28px; background: rgba(8,13,20,0.6); backdrop-filter: blur(4px); }
 #pfOverlay.show { display: flex; animation: pfOvIn 0.18s ease; }
 @keyframes pfOvIn { from { opacity: 0; } to { opacity: 1; } }
-.pfo-card { --pf-accent: #3b82f6; width: 100%; max-width: 960px; max-height: 88vh; display: flex; flex-direction: column; background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 40px 90px -30px rgba(0,0,0,0.6); border-top: 4px solid var(--pf-accent); animation: pfCardIn 0.2s ease; }
+.pfo-card { --pf-accent: #3b82f6; width: 100%; max-width: 1180px; max-height: 90vh; display: flex; flex-direction: column; background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 40px 90px -30px rgba(0,0,0,0.6); border-top: 4px solid var(--pf-accent); animation: pfCardIn 0.2s ease; }
 @keyframes pfCardIn { from { transform: translateY(14px) scale(0.98); opacity: 0; } to { transform: none; opacity: 1; } }
 body.dark-mode .pfo-card { background: #141c27; }
 .pfo-head { display: flex; align-items: center; gap: 12px; padding: 18px 22px; border-bottom: 1px solid rgba(24,38,60,0.06); }
@@ -462,10 +469,11 @@ body.dark-mode .pfo-table thead th { background: #141c27; border-color: rgba(255
 .pfo-table tbody td { text-align: right; padding: 11px 14px; border-bottom: 1px solid rgba(24,38,60,0.04); font-family: 'JetBrains Mono', monospace; color: #475569; white-space: nowrap; }
 body.dark-mode .pfo-table tbody td { color: #aab8c8; border-color: rgba(255,255,255,0.04); }
 .pfo-table tbody tr:hover td { background: rgba(24,38,60,0.02); }
-.pfo-tk { display: flex; flex-direction: column; }
+.pfo-tk { display: flex; flex-direction: column; gap: 2px; }
+.pfo-tkline { display: flex; align-items: center; gap: 7px; }
 .pfo-tk b { font-family: 'Inter', sans-serif; font-weight: 800; color: #0f172a; font-size: 13px; }
 body.dark-mode .pfo-tk b { color: #f4f8fd; }
-.pfo-tk span { font-family: 'Manrope', sans-serif; font-size: 10.5px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+.pfo-nm { font-family: 'Manrope', sans-serif; font-size: 10.5px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
 .pfo-tag { font-family: 'Manrope', sans-serif; font-size: 9.5px; font-weight: 800; text-transform: uppercase; padding: 2px 7px; border-radius: 6px; }
 .pfo-tag.stock { color: #b45309; background: rgba(217,119,87,0.14); }
 .pfo-tag.bond { color: #3a5d80; background: rgba(123,155,191,0.18); }
