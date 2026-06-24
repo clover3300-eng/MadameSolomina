@@ -110,10 +110,15 @@
     function ensureQuotes(force) {
         var held = collectTickers();
         held.bonds.forEach(fetchBondQuote);
-        if (!force && Object.keys(quotes).length && Date.now() - quotesTs < QUOTE_TTL) return;
+        // TTL по времени последней ПОПЫТКИ (а не по наличию данных): иначе при
+        // неудачном/пустом ответе MOEX quotes остаётся пустым, guard не срабатывает
+        // и softRerender→ensureQuotes→fetch зацикливаются, подвешивая вкладку.
+        if (!force && quotesTs && Date.now() - quotesTs < QUOTE_TTL) return;
         if (quotesLoading) return;
         quotesLoading = true;
-        fetchStockQuotes().catch(function () {}).then(function () { quotesLoading = false; softRerender(); });
+        fetchStockQuotes().catch(function () {}).then(function () {
+            quotesLoading = false; quotesTs = Date.now(); softRerender();
+        });
     }
 
     // Цена «сейчас»: живой MOEX → таблица акций (ОДХС) → цена покупки
@@ -396,41 +401,61 @@
     // ---- настройки/редактор (дропдаун ⚙) ----
     function menuHtml(p) {
         var sw = COLORS.map(function (cc) {
-            return '<button class="pfm-sw' + (p.color === cc.id ? ' on' : '') + '" style="background:' + cc.v + '" onclick="pfSetColor(\'' + p.id + '\',\'' + cc.id + '\')" aria-label="' + cc.id + '"></button>';
+            return '<button class="pfm-sw' + (p.color === cc.id ? ' on' : '') + '" style="--sw:' + cc.v + ';background:' + cc.v + '" onclick="pfSetColor(\'' + p.id + '\',\'' + cc.id + '\')" aria-label="' + cc.id + '">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>';
         }).join('');
         var rows = (p.holdings || []).map(function (h) { return editRowHtml(p.id, h); }).join('');
         var canImport = !!getCalcComposition();
+        var n = (p.holdings || []).length;
         return '<div class="pfc-menu" id="pfMenu-' + p.id + '">' +
             '<div class="pfm-top">' +
-                '<span class="pfm-top-k">Настройки портфеля</span>' +
+                '<div class="pfm-top-l">' +
+                    '<span class="pfm-top-ic">' + GEAR_SVG + '</span>' +
+                    '<span class="pfm-top-tt"><span class="pfm-top-k">Настройки портфеля</span>' +
+                        '<span class="pfm-top-s">' + n + ' ' + plural(n, 'актив в составе', 'актива в составе', 'активов в составе') + '</span></span>' +
+                '</div>' +
                 '<button class="pfm-done" onclick="pfCloseMenu()">' +
-                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Готово</button>' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Готово</button>' +
             '</div>' +
             '<div class="pfm-scroll">' +
-            '<input class="pfm-name" value="' + attr(p.name) + '" onchange="pfRename(\'' + p.id + '\',this.value)" placeholder="Название портфеля">' +
-            '<div class="pfm-colors">' + sw + '</div>' +
-            '<div class="pfm-sec">Состав</div>' +
-            '<div class="pfm-rows">' + (rows || '<div class="pfm-none">Активов пока нет</div>') + '</div>' +
+            '<div class="pfm-field">' +
+                '<label class="pfm-lbl">Название</label>' +
+                '<input class="pfm-name" value="' + attr(p.name) + '" onchange="pfRename(\'' + p.id + '\',this.value)" placeholder="Название портфеля">' +
+            '</div>' +
+            '<div class="pfm-field">' +
+                '<label class="pfm-lbl">Цвет акцента</label>' +
+                '<div class="pfm-colors">' + sw + '</div>' +
+            '</div>' +
+            '<div class="pfm-sec"><span>Состав портфеля</span></div>' +
+            (rows ? '<div class="pfm-cols"><span>Актив</span><span>Дата покупки</span><span>Цена покупки</span><span>Кол-во</span><span class="pfm-cols-x"></span></div>' : '') +
+            '<div class="pfm-rows">' + (rows || '<div class="pfm-none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M12 8v8M8 12h8"/></svg>Активов пока нет — добавьте первый ниже</div>') + '</div>' +
+            '<div class="pfm-sec"><span>Добавить актив</span></div>' +
             '<div class="pfm-add">' +
                 '<input class="pfm-in pfm-in-tk" id="pfNewTk-' + p.id + '" placeholder="Тикер / ISIN" maxlength="14">' +
                 '<select class="pfm-in pfm-in-type" id="pfNewType-' + p.id + '"><option value="stock">Акция</option><option value="bond">Облигация</option></select>' +
-                '<button class="pfm-addbtn" onclick="pfAddHolding(\'' + p.id + '\')">+ Добавить актив</button>' +
+                '<button class="pfm-addbtn" onclick="pfAddHolding(\'' + p.id + '\')">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Добавить</button>' +
             '</div>' +
             '<div class="pfm-foot">' +
-                '<button class="pfm-act" onclick="pfImportInto(\'' + p.id + '\')"' + (canImport ? '' : ' disabled') + '>↓ Импорт из расчёта</button>' +
-                '<button class="pfm-act danger" onclick="pfDelete(\'' + p.id + '\')">🗑 Удалить портфель</button>' +
+                '<button class="pfm-act" onclick="pfImportInto(\'' + p.id + '\')"' + (canImport ? '' : ' disabled') + '>' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Импорт из расчёта</button>' +
+                '<button class="pfm-act danger" onclick="pfDelete(\'' + p.id + '\')">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Удалить портфель</button>' +
             '</div>' +
             '</div>' +   // /pfm-scroll
         '</div>';
     }
     function editRowHtml(pid, h) {
+        var tag = h.type === 'bond' ? 'обл' : 'акц';
         return '<div class="pfm-row">' +
-            '<input class="pfm-in pfm-in-tk" value="' + attr(h.ticker) + '" onchange="pfEdit(\'' + pid + '\',\'' + h.id + '\',\'ticker\',this.value)">' +
+            '<span class="pfm-tk-cell"><span class="pfm-tag ' + h.type + '">' + tag + '</span>' +
+                '<input class="pfm-in pfm-in-tk" value="' + attr(h.ticker) + '" onchange="pfEdit(\'' + pid + '\',\'' + h.id + '\',\'ticker\',this.value)"></span>' +
             '<input class="pfm-in pfm-in-date" type="date" value="' + attr(h.buyDate) + '" onchange="pfEdit(\'' + pid + '\',\'' + h.id + '\',\'buyDate\',this.value)">' +
             '<span class="pfm-price"><input class="pfm-in pfm-in-num" type="number" step="0.01" min="0" value="' + (h.buyPrice || '') + '" onchange="pfEdit(\'' + pid + '\',\'' + h.id + '\',\'buyPrice\',this.value)" placeholder="цена">' +
                 '<button class="pfm-api" onclick="pfFetchPrice(\'' + pid + '\',\'' + h.id + '\')" title="Взять цену по API">API</button></span>' +
             '<input class="pfm-in pfm-in-num" type="number" step="1" min="0" value="' + (h.qty || '') + '" onchange="pfEdit(\'' + pid + '\',\'' + h.id + '\',\'qty\',this.value)" placeholder="кол-во">' +
-            '<button class="pfm-del" onclick="pfRemoveHolding(\'' + pid + '\',\'' + h.id + '\')" aria-label="Удалить">✕</button>' +
+            '<button class="pfm-del" onclick="pfRemoveHolding(\'' + pid + '\',\'' + h.id + '\')" aria-label="Удалить">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
         '</div>';
     }
 
