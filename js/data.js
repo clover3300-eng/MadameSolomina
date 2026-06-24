@@ -690,11 +690,12 @@ function recalcCustomCoupons() {
 
         // Формат даты: DD.MM.YYYY (реальные данные) либо MM.YY (демо)
         const parts = String(payment.dateStr).split('.');
-        let day = '', monthNum, dm = '';
+        let day = '', monthNum, dm = '', year = new Date().getFullYear();
         if (parts.length >= 3) {
             day = parts[0];
             monthNum = parseInt(parts[1], 10) - 1;
             dm = parts[0] + '.' + parts[1];
+            year = parseInt(parts[2], 10) || year;
         } else {
             // Формат MM.YY без дня — подставляем день 15, чтобы в датах всегда было число
             monthNum = parseInt(parts[0], 10) - 1;
@@ -703,7 +704,7 @@ function recalcCustomCoupons() {
         }
         const mo = MON[monthNum] || '';
         const name = (payment.displayName || '').replace(/^(ОФЗ)-/, '$1 ');
-        return { day: day, mo: mo, dm: dm, mn: monthNum, name: name, qty: qty, net: net };
+        return { day: day, mo: mo, dm: dm, mn: monthNum, year: year, name: name, qty: qty, net: net };
     });
 
     // Второй проход — рисуем таймлайн выплат
@@ -724,26 +725,25 @@ function recalcCustomCoupons() {
     // --- Мини-график: поступления по месяцам (баннер дохода) ---
     const chartWrap = document.getElementById('miMonthlyChart');
     if (chartWrap) {
-        const monthly = new Array(12).fill(0);   // сумма выплат по месяцам
-        const monthDay = new Array(12).fill('');  // день ближайшей выплаты в месяце (DD)
+        const monthly = new Array(12).fill(0);    // сумма выплат по месяцам
+        const monthDay = new Array(12).fill('');   // день ближайшей выплаты в месяце (DD)
+        const monthYear = new Array(12).fill(0);   // год выплаты в этом месяце
         rows.forEach(function(r) {
             if (r.qty > 0 && r.mn >= 0 && r.mn < 12) {
                 monthly[r.mn] += r.net;
                 if (!monthDay[r.mn] && r.day) monthDay[r.mn] = r.day;
+                if (!monthYear[r.mn] && r.year) monthYear[r.mn] = r.year;
             }
         });
         let maxM = 0;
         monthly.forEach(function(v) { if (v > maxM) maxM = v; });
 
-        // Определяем месяц старта = ближайшая будущая выплата (от текущего месяца, по кругу)
-        const now = new Date();
-        const curMonth = now.getMonth();
-        const curYear = now.getFullYear();
-        let startMonth = curMonth;
-        for (let i = 0; i < 12; i++) {
-            const m = (curMonth + i) % 12;
-            if (monthly[m] > 0) { startMonth = m; break; }
-        }
+        // Месяц старта = месяц ближайшей выплаты (тот же, что в блоке «Ближайшая выплата»).
+        // allScheduledPayments отсортирован от ближайшей выплаты, поэтому rows[nextIdx]
+        // указывает на корректную следующую выплату (с учётом дня, а не только месяца).
+        const curYear = new Date().getFullYear();
+        let startMonth = (nextIdx >= 0 && rows[nextIdx]) ? rows[nextIdx].mn : new Date().getMonth();
+        const baseYear = (nextIdx >= 0 && rows[nextIdx] && rows[nextIdx].year) ? rows[nextIdx].year : curYear;
 
         const LET = 'ЯФМАМИИАСОНД';
 
@@ -786,7 +786,8 @@ function recalcCustomCoupons() {
         let overlay = '';
         for (let i = 0; i < N; i++) {
             const p = pts[i];
-            const slotYear = curYear + (startMonth + i >= 12 ? 1 : 0);
+            // Реальный год выплаты из данных; для пустых месяцев — расчётный (с учётом перехода через декабрь)
+            const slotYear = monthYear[p.m] || (baseYear + (startMonth + i >= 12 ? 1 : 0));
             const has = monthly[p.m] > 0;
             const sumTxt = has ? ('+' + Math.round(monthly[p.m]).toLocaleString('ru-RU') + ' ₽') : 'нет выплат';
             const dateTxt = has
