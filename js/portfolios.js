@@ -212,14 +212,18 @@
         }).filter(function (h) { return h.ticker; });
         return holds.length ? holds : null;
     }
-    // Облигации из калькулятора «Ежемесячный доход» (экспорт window.pfMonthlyBonds из data.js)
+    // Облигации из калькулятора «Ежемесячный доход» (экспорт window.pfMonthlyBonds из data.js).
+    // Кол-во берём из живой карты калькулятора bondQtyMap (глобальная в core.js): если в
+    // калькуляторе уже введены/рассчитаны количества — переносим их в портфель.
     function getMonthlyComposition() {
         var src = window.pfMonthlyBonds;
         if (!src || !src.length) return null;
+        var qm = {}; try { if (typeof bondQtyMap !== 'undefined' && bondQtyMap) qm = bondQtyMap; } catch (e) {}
         var holds = src.map(function (b) {
             var price = toNum(b.p); if (!isFinite(price) || price <= 0) price = 0;
+            var q = Math.max(0, Math.round(+qm[b.t] || 0));
             return { id: genId('h'), ticker: b.t, name: b.n || b.t, type: 'bond',
-                buyDate: todayStr(), buyPrice: Math.round(price * 100) / 100, qty: 0,
+                buyDate: todayStr(), buyPrice: Math.round(price * 100) / 100, qty: q,
                 nkd: toNum(b.nkd) > 0 ? Math.round(toNum(b.nkd) * 100) / 100 : 0,
                 priceFromApi: false, nkdFromApi: toNum(b.nkd) > 0 };
         }).filter(function (h) { return h.ticker; });
@@ -468,6 +472,8 @@
     // лидербордом с диверг-барами от нуля: при 2 это «лучший / худший», при 3–4 —
     // полноценный рейтинг. Распределение акции/облигации — тонкой полосой в шапке.
     function summaryHtml(aside) {
+        // один портфель → специальный «персональный» режим (лидерборд из 1 строки выглядел пусто)
+        if (store.items.length === 1) return summaryOneHtml(store.items[0]);
         var inv = 0, val = 0, bondVal = 0, stockVal = 0;
         var rows = [];
         store.items.forEach(function (p) {
@@ -519,6 +525,75 @@
     function plural(n, one, few, many) { n = Math.abs(n) % 100; var n1 = n % 10;
         if (n > 10 && n < 20) return many; if (n1 > 1 && n1 < 5) return few; if (n1 === 1) return one; return many; }
 
+    // Сводка для ОДНОГО портфеля: персональный режим (лидерборд из одной строки выглядел пусто).
+    // Имя · капитал · вложено/доход · распределение · мини-показатели · лучшая/слабейшая позиция · CTA.
+    function summaryOneHtml(p) {
+        var c = calcPf(p), ac = colorVal(p.color);
+        var val = c.value, inv = c.invested, pnl = c.pnl, pnlPct = c.pnlPct;
+        var stockPct = Math.round(clamp(c.stockPct, 0, 100)), bondPct = 100 - stockPct;
+        var GO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>';
+        var head =
+            '<div class="pfs-one-head">' +
+                '<div class="pfs-one-eyebrow"><i class="pfs-one-dot" style="background:' + ac + '"></i>Капитал портфеля</div>' +
+                '<div class="pfs-one-name">' + esc(p.name) + '</div>' +
+                '<div class="pfs-capital">' + fmtRub(val) + '</div>' +
+                '<div class="pfs-sub">Вложено ' + fmtRub(inv) + ' · ' +
+                    '<span class="pfs-pnl ' + (pnl >= 0 ? 'pos' : 'neg') + '">' + (pnl >= 0 ? '▲ ' : '▼ ') + fmtRub(Math.abs(pnl)) + ' (' + fmtPct(pnlPct) + ')</span></div>' +
+            '</div>';
+        var cta = '<button class="pfs-one-cta" onclick="pfExpand(\'' + p.id + '\')">Подробнее по портфелю' + GO + '</button>';
+
+        if (!c.count) {
+            return '<div class="dash2-card pf-summary pf-summary--aside pf-summary--one">' + head +
+                '<div class="pfs-one-empty">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M12 8v8M8 12h8"/></svg>' +
+                    '<span>Портфель пуст. Добавьте активы через ⚙ — здесь появятся доходность, распределение и лучшие позиции.</span>' +
+                '</div></div>';
+        }
+
+        var alloc = '<div class="pfs-alloc">' +
+            '<div class="pfs-alloc-bar"><span class="pfs-alloc-stock" style="width:' + stockPct + '%"></span><span class="pfs-alloc-bond" style="width:' + bondPct + '%"></span></div>' +
+            '<div class="pfs-alloc-leg"><span><i class="stock"></i>Акции ' + stockPct + '%</span><span><i class="bond"></i>Облигации ' + bondPct + '%</span></div>' +
+        '</div>';
+
+        function statTile(l, v, cls) {
+            return '<div class="pfs-one-stat"><span class="pfs-one-stat-l">' + esc(l) + '</span>' +
+                '<span class="pfs-one-stat-v ' + (cls || '') + '">' + v + '</span></div>';
+        }
+        var stats = '<div class="pfs-one-stats">' +
+            statTile('Доход', fmtRub(pnl) + ' <small>' + fmtPct(pnlPct) + '</small>', pnl >= 0 ? 'pos' : 'neg') +
+            statTile('Годовых', c.annual == null ? '—' : fmtPct(c.annual), c.annual == null ? '' : (c.annual >= 0 ? 'pos' : 'neg')) +
+            statTile('Акции', fmtRub(c.stockVal)) +
+            statTile('Облигации', fmtRub(c.bondVal)) +
+        '</div>';
+
+        // лучшая / слабейшая позиция (только при ≥2 позициях с вложением)
+        var withInv = c.hs.filter(function (x) { return x.c.invested > 0; });
+        var movers = '';
+        if (withInv.length >= 2) {
+            var best = null, worst = null;
+            withInv.forEach(function (x) {
+                if (best == null || x.c.pnlPct > best.c.pnlPct) best = x;
+                if (worst == null || x.c.pnlPct < worst.c.pnlPct) worst = x;
+            });
+            if (best && worst && best !== worst) {
+                movers = '<div class="pfs-one-movers">' +
+                    moverRow('Лучшая', best) + moverRow('Слабее всех', worst) + '</div>';
+            }
+        }
+
+        return '<div class="dash2-card pf-summary pf-summary--aside pf-summary--one">' +
+            head + alloc + stats + movers + cta +
+        '</div>';
+    }
+    function moverRow(label, x) {
+        var pos = x.c.pnlPct >= 0;
+        return '<div class="pfs-one-mov">' +
+            '<span class="pfs-one-mov-l">' + esc(label) + '</span>' +
+            '<span class="pfs-one-mov-tk">' + esc(x.h.ticker) + '</span>' +
+            '<span class="pfs-one-mov-v ' + (pos ? 'pos' : 'neg') + '">' + fmtPct(x.c.pnlPct) + '</span>' +
+        '</div>';
+    }
+
     // ---- donut (conic). Центр — СОСЕД ring'а: CSS-mask клипает потомков ----
     // centerHtml опционален: для карточки/сводки центр оставляем пустым (соотношение
     // акций/облигаций показывает легенда рядом), для разворота — пишем капитал.
@@ -556,7 +631,8 @@
         var holdsRows = c.hs.length ? c.hs.map(function (x) { return holdRowHtml(x); }).join('')
             : '<div class="pfc-empty">Состав пуст — добавьте активы в настройках ⚙</div>';
         var menu = (openMenu === p.id) ? menuHtml(p) : '';
-        var tall = (openMenu === p.id && menuTall) ? ' pf-card--tall' : '';
+        // настройки всегда раскрыты «во всю высоту» — полный список без внутреннего скролла
+        var tall = (openMenu === p.id) ? ' pf-card--tall' : '';
 
         return '<div class="dash2-card pf-card' + (openMenu === p.id ? ' menu-open' : '') + tall + '" style="--pf-accent:' + ac + '">' +
             '<div class="pfc-top">' +
@@ -638,34 +714,36 @@
         var rows = grp('Акции', 'stock', stocks) + grp('Облигации', 'bond', bonds);
         var n = holds.length;
         var empty = !n;
-        var DOWN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="6 13 12 19 18 13"/></svg>';
-        // Тоггл «показать все» — раскрывает карточку вниз, чтобы видеть все тикеры без скролла
-        var tallBtn = n > 1 ? '<button class="pfm-tall" onclick="pfToggleMenuTall(\'' + p.id + '\')">' +
-            (menuTall ? 'Свернуть' : 'Показать все') +
-            '<svg class="pfm-tall-i' + (menuTall ? ' up' : '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>' : '';
+        // стрелка указывает ВВЕРХ на форму добавления (она теперь над списком)
+        var UP_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="6 11 12 5 18 11"/></svg>';
         var noneBox = '<div class="pfm-none">' +
+            '<span class="pfm-none-arrow up">' + UP_SVG + '</span>' +
             '<svg class="pfm-none-art" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M12 8v8M8 12h8"/></svg>' +
             '<span class="pfm-none-t">В портфеле пока нет активов</span>' +
-            '<span class="pfm-none-s">Введите тикер или ISIN в поле ниже и нажмите «Добавить»' +
+            '<span class="pfm-none-s">Заполните форму «Добавить актив» сверху и нажмите «Добавить»' +
             ' — либо подтяните готовый состав кнопкой «Импорт».</span>' +
-            '<span class="pfm-none-arrow">' + DOWN_SVG + '</span>' +
         '</div>';
-        // Оверлей на всю карточку: шапка (имя + цвет напротив + Готово) · состав (скролл) · добавление/действия
+        // Оверлей на всю карточку: шапка · ВЫДЕЛЕННАЯ форма добавления (сверху) ·
+        // полный список состава (без скролла, карточка растёт вниз) · действия (импорт/удалить)
         return '<div class="pfc-menu" id="pfMenu-' + p.id + '">' +
             '<div class="pfm-top">' +
                 '<input class="pfm-name" value="' + attr(p.name) + '" onchange="pfRename(\'' + p.id + '\',this.value)" placeholder="Название портфеля">' +
                 '<div class="pfm-colors">' + sw + '</div>' +
                 '<button class="pfm-done" onclick="pfCloseMenu()">' + CHECK_SVG + 'Готово</button>' +
             '</div>' +
+            '<div class="pfm-addpanel' + (empty ? ' is-empty' : '') + '">' +
+                '<div class="pfm-addhead"><span class="pfm-addhead-ic">' + PLUS_SVG + '</span>' +
+                    '<span class="pfm-addhead-t">Добавить актив</span>' +
+                    '<span class="pfm-addhead-s">все данные за один подход</span>' +
+                    '<span class="pfm-hint" title="В полях «цена» и «НКД» иконка-календарь подтягивает значение закрытия с MOEX на выбранную дату. После загрузки иконка гаснет; сотрите значение — и она снова загорится для повторного запроса.">' + INFO_SVG + '</span></div>' +
+                addFormHtml(p.id, empty) +
+            '</div>' +
             '<div class="pfm-mid">' +
                 '<div class="pfm-sec"><span>Состав · ' + n + ' ' + plural(n, 'актив', 'актива', 'активов') + '</span>' +
-                    '<span class="pfm-hint" title="В полях «цена» и «НКД» иконка-календарь подтягивает значение закрытия с MOEX на дату покупки. После загрузки иконка гаснет; сотрите значение — и она снова загорится для повторного запроса.">' + INFO_SVG + '</span>' +
-                    '<i class="pfm-sec-rule"></i>' + tallBtn + '</div>' +
+                    '<i class="pfm-sec-rule"></i></div>' +
                 '<div class="pfm-rows">' + (rows || noneBox) + '</div>' +
             '</div>' +
             '<div class="pfm-bottom">' +
-                '<div class="pfm-addlbl">' + PLUS_SVG + 'Добавить актив — все данные за один раз</div>' +
-                addFormHtml(p.id, empty) +
                 '<div class="pfm-foot">' +
                     impWrapHtml('imp-' + p.id, p.id) +
                     '<button class="pfm-act danger" onclick="pfDelete(\'' + p.id + '\')">' +
@@ -722,7 +800,7 @@
             'onclick="pfAddFetch(\'' + pid + '\',\'' + field + '\',event)">' + FETCH_SVG + '</button>';
     }
     function addFormHtml(pid, empty) {
-        return '<div class="pfm-addform' + (empty ? ' pfm-add--hl' : '') + '" id="pfAddForm-' + pid + '" data-type="stock">' +
+        return '<div class="pfm-addform" id="pfAddForm-' + pid + '" data-type="stock">' +
             '<div class="pfm-addgrid">' +
                 '<input class="pfm-in pfm-in-tk pfaf-tk" id="pfNewTk-' + pid + '" placeholder="Тикер / ISIN" maxlength="14" ' +
                     'onkeydown="if(event.key===\'Enter\')pfAddHolding(\'' + pid + '\')">' +
@@ -1096,8 +1174,16 @@
                 '<button class="pfo-x" onclick="pfCloseOverlay()" aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
             '</div>' +
             '<div class="pfo-top">' +
-                '<div class="pfo-ring">' + donutHtml(c.bondPct, 132, '<span class="pf-ring-top">Капитал</span><span class="pf-ring-val">' + esc(fmtRub(c.value).replace(' ₽', '')) + '</span>') +
-                    '<div class="pfo-legend"><span><i class="stock"></i>Акции · ' + fmtRub(c.stockVal) + '</span><span><i class="bond"></i>Облигации · ' + fmtRub(c.bondVal) + '</span></div></div>' +
+                '<div class="pfo-distrib">' +
+                    '<div class="pfo-distrib-h">Распределение активов</div>' +
+                    '<div class="pfo-distrib-row">' +
+                        '<div class="pfo-ring">' + donutHtml(c.bondPct, 124, '<span class="pf-ring-top">Капитал</span><span class="pf-ring-val">' + esc(fmtRub(c.value).replace(' ₽', '')) + '</span>') + '</div>' +
+                        '<div class="pfo-legend">' +
+                            pfoLeg('stock', 'Акции', c.stockVal, c.stockPct) +
+                            pfoLeg('bond', 'Облигации', c.bondVal, c.bondPct) +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
                 '<div class="pfo-stats">' +
                     pfoStat('Стоимость сейчас', fmtRub(c.value)) +
                     pfoStat('Вложено', fmtRub(c.invested)) +
@@ -1121,6 +1207,13 @@
         '</div>';
     }
     function pfoStat(l, v, cls) { return '<div class="pfo-stat"><div class="pfo-stat-l">' + esc(l) + '</div><div class="pfo-stat-v ' + (cls || '') + '">' + v + '</div></div>'; }
+    // строка легенды распределения: цвет · название · доля % · сумма ₽
+    function pfoLeg(kind, label, rub, pct) {
+        return '<div class="pfo-leg ' + kind + '"><span class="pfo-leg-dot"></span>' +
+            '<span class="pfo-leg-nm">' + esc(label) + '</span>' +
+            '<span class="pfo-leg-pct">' + Math.round(clamp(pct || 0, 0, 100)) + '%</span>' +
+            '<span class="pfo-leg-rub">' + fmtRub(rub) + '</span></div>';
+    }
 
     // ====================================================================
     //  ИНТЕГРАЦИЯ
