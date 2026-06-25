@@ -272,6 +272,11 @@ body.dark-mode .pfc-row { border-color: rgba(255,255,255,0.04); }
 body.dark-mode .pfc-tk b { color: #eef3f9; }
 .pfc-tk i { font-style: normal; font-size: 9px; font-weight: 700; text-transform: uppercase; color: #94a3b8; background: rgba(24,38,60,0.06); padding: 1px 5px; border-radius: 5px; }
 body.dark-mode .pfc-tk i { background: rgba(255,255,255,0.07); }
+/* акц/обл — разный цвет плашки (как в большой карточке: акции — терракот, облигации — синий) */
+.pfc-tk i.stock { color: #b45309; background: rgba(217,119,87,0.14); }
+.pfc-tk i.bond { color: #3a5d80; background: rgba(123,155,191,0.18); }
+body.dark-mode .pfc-tk i.stock { color: #f0a868; background: rgba(217,119,87,0.20); }
+body.dark-mode .pfc-tk i.bond { color: #9bc0e6; background: rgba(123,155,191,0.22); }
 /* чип «×N лотов» (усреднённая цена по нескольким покупкам) */
 .pfc-tk .pfc-lotn { font-size: 8.5px; font-weight: 800; color: var(--pf-accent); background: color-mix(in srgb, var(--pf-accent) 14%, transparent); text-transform: none; padding: 1px 4px; }
 /* ранг (эшелон) перед тикером */
@@ -297,13 +302,16 @@ body.dark-mode .pfc-an.pos { color: #34d399; } body.dark-mode .pfc-an.neg { colo
 body.dark-mode .pfc-chartbtn { border-color: rgba(255,255,255,0.09); background: rgba(255,255,255,0.04); color: #9fb0c4; }
 body.dark-mode .pfc-chartbtn:hover { background: rgba(255,255,255,0.09); color: #f4f8fd; }
 
-/* карточка в режиме графика — во всю ширину сетки */
-.pf-card.chart-open { grid-column: 1 / -1; }
+/* карточка в режиме графика — во всю ширину сетки; высота тянется под состав */
+.pf-card.chart-open { grid-column: 1 / -1; height: auto; min-height: 480px; }
 .pf-card.chart-open .pfc-normal { display: none; }
 .pfc-normal { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+/* чётное число портфелей (сетка без сводки-aside): раскрытая карточка поднимается
+   в свою строку наверх и тянется во всю ширину — не «уезжает» вниз отдельной строкой */
+.pf-grid:not(.pf-grid--aside) .pf-card.chart-open { order: -1; }
 
 /* две колонки: слева сводка, справа график (выезжает справа) */
-.pfc-chartview { display: flex; flex: 1 1 auto; min-height: 0; gap: 22px; padding: 14px 24px 20px; overflow: hidden;
+.pfc-chartview { display: flex; flex: 1 1 auto; min-height: 320px; gap: 22px; padding: 14px 24px 20px; overflow: hidden;
     animation: pfcvViewIn 0.4s cubic-bezier(.2,.7,.2,1) both; }
 .pfcv-left { flex: 0 0 280px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .pfcv-right { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0;
@@ -350,8 +358,16 @@ body.dark-mode .pfcv-imbtn.on { background: #64748b; color: #fff; }
 .pfcv-lgi b.pos { color: #16a34a; } .pfcv-lgi b.neg { color: #dc2626; }
 body.dark-mode .pfcv-lgi b.pos { color: #34d399; } body.dark-mode .pfcv-lgi b.neg { color: #f87171; }
 
-/* поле графика (mi5-стиль): площадь + плавная линия + точки/тултипы */
-.pfcv-chart { position: relative; flex: 1 1 auto; min-height: 150px; margin-top: 6px; }
+/* поле графика (mi5-стиль): слева шкала %, справа площадь + плавная линия + точки */
+.pfcv-chart { position: relative; flex: 1 1 auto; min-height: 150px; margin-top: 6px; display: flex; }
+/* шкала процентов: деления выровнены по кривой (top в % высоты поля) */
+.pfcv-yaxis { position: relative; flex: 0 0 40px; }
+.pfcv-ytick { position: absolute; right: 8px; transform: translateY(-50%); font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; color: #94a3b8; white-space: nowrap; }
+.pfcv-ytick.zero { color: #5f6b7a; }
+body.dark-mode .pfcv-ytick { color: #74828f; }
+body.dark-mode .pfcv-ytick.zero { color: #9aa7b6; }
+/* область построения — собственный контекст для inset-svg и точек (left в %) */
+.pfcv-plot { position: relative; flex: 1 1 auto; min-width: 0; }
 .pfcv-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .pfcv-zero { stroke: rgba(24,38,60,0.18); stroke-width: 1; stroke-dasharray: 3 4; vector-effect: non-scaling-stroke; }
 body.dark-mode .pfcv-zero { stroke: rgba(255,255,255,0.18); }
@@ -375,9 +391,31 @@ body.dark-mode .pfcv-zero { stroke: rgba(255,255,255,0.18); }
 body.dark-mode .pfcv-spin { border-color: rgba(255,255,255,0.12); border-top-color: var(--pf-accent); }
 @keyframes pfcvSpin { to { transform: rotate(360deg); } }
 
+/* кнопка «Показать активы» — низ левой колонки (прижата к низу через margin-top:auto) */
+.pfcv-assetbtn { margin-top: auto; display: inline-flex; align-items: center; gap: 9px; cursor: pointer;
+    border: 1px solid rgba(24,38,60,0.1); background: rgba(24,38,60,0.02); border-radius: 11px; padding: 10px 13px;
+    font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 12.5px; color: #46566e;
+    transition: background 0.15s, color 0.15s, border-color 0.15s; }
+.pfcv-assetbtn svg { width: 15px; height: 15px; flex-shrink: 0; }
+.pfcv-assetbtn-t { margin-right: auto; }
+.pfcv-assetbtn-ch { transition: transform 0.22s; }
+.pfcv-assetbtn-ch.up { transform: rotate(180deg); }
+.pfcv-assetbtn:hover { background: var(--pf-accent); color: #fff; border-color: transparent; }
+.pfcv-assetbtn.on { background: color-mix(in srgb, var(--pf-accent) 12%, transparent); color: var(--pf-accent); border-color: color-mix(in srgb, var(--pf-accent) 30%, transparent); }
+body.dark-mode .pfcv-assetbtn { border-color: rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); color: #cdd8e6; }
+body.dark-mode .pfcv-assetbtn.on { background: color-mix(in srgb, var(--pf-accent) 20%, transparent); color: #eaf1f8; }
+
+/* раскрывающаяся таблица состава под графиком (grid-rows 0fr→1fr — как в сайдбаре) */
+.pfcv-assets { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.38s cubic-bezier(.4,0,.2,1);
+    border-top: 1px solid transparent; }
+.pf-card.assets-open .pfcv-assets { grid-template-rows: 1fr; border-top-color: rgba(24,38,60,0.07); }
+body.dark-mode .pf-card.assets-open .pfcv-assets { border-top-color: rgba(255,255,255,0.06); }
+.pfcv-assets-in { min-height: 0; overflow: hidden; }
+.pfcv-assets .pfo-tablewrap { max-height: 340px; overflow: auto; padding: 6px 24px 18px; }
+
 @media (max-width: 1040px) {
     .pf-card.chart-open { height: auto; }
-    .pfc-chartview { flex-direction: column; gap: 16px; }
+    .pfc-chartview { flex-direction: column; gap: 16px; min-height: 0; }
     .pfcv-left { flex: 0 0 auto; }
     .pfcv-chart { min-height: 190px; }
 }

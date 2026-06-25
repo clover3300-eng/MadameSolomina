@@ -266,6 +266,7 @@
     // считаются асинхронно и кешируются. Можно наложить кривую индекса IMOEX за тот же период.
     var chartOpen = {};      // pid → график раскрыт (одновременно открыт только один)
     var chartImoex = {};     // pid → наложена кривая индекса IMOEX
+    var chartAssets = {};    // pid → раскрыта таблица состава под графиком
     var chartCache = {};     // pid → { imoex, points, pfFinal, imFinal, from, err }
     var chartRaw = {};       // pid → { from, series } — сырая серия стоимости (кеш под toggle IMOEX)
     var chartBusy = {};      // pid → идёт загрузка (защита от двойного запроса)
@@ -282,6 +283,16 @@
             d += ' C' + c1x.toFixed(2) + ',' + c1y.toFixed(2) + ' ' + c2x.toFixed(2) + ',' + c2y.toFixed(2) + ' ' + p2.x.toFixed(2) + ',' + p2.y.toFixed(2);
         }
         return d;
+    }
+    // «красивые» деления для шкалы процентов слева от графика (~count интервалов)
+    function niceTicks(min, max, count) {
+        var span = (max - min) || 1, raw = span / Math.max(1, count);
+        var mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
+        var norm = raw / mag, step = norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10;
+        step *= mag;
+        var ticks = [], start = Math.ceil(min / step) * step;
+        for (var v = start; v <= max + step * 0.001; v += step) ticks.push(Math.round(v * 1e6) / 1e6);
+        return ticks;
     }
     function dateToIso(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
     // средняя (взвешенная по вложенному) дата покупок портфеля — старт периода графика
@@ -417,7 +428,12 @@
                 (showLbl ? '<span class="pfcv-x">' + ruShortDate(q.d) + '</span>' : '') +
             '</div>';
         }).join('');
-        wrap.innerHTML = svg + overlay;
+        // шкала процентов слева: «красивые» деления между minV и maxV (выравнены по кривой)
+        var yaxis = niceTicks(minV, maxV, 4).map(function (v) {
+            var lbl = (Math.round(v) === v) ? String(v) : v.toFixed(1);
+            return '<span class="pfcv-ytick' + (v === 0 ? ' zero' : '') + '" style="top:' + yAt(v).toFixed(2) + '%">' + lbl + '%</span>';
+        }).join('');
+        wrap.innerHTML = '<div class="pfcv-yaxis">' + yaxis + '</div><div class="pfcv-plot">' + svg + overlay + '</div>';
         // анимация прорисовки линии (и индекса) — линия «рисуется» слева направо
         var path = wrap.querySelector('.pfcv-line');
         if (path) { try { var len = path.getTotalLength(); path.style.strokeDasharray = len; path.style.strokeDashoffset = len; path.getBoundingClientRect(); path.style.transition = 'stroke-dashoffset 1s cubic-bezier(.4,0,.2,1)'; path.style.strokeDashoffset = '0'; } catch (e) {} }
@@ -439,13 +455,15 @@
     }
     function pfcvStat(l, v, cls) { return '<div class="pfcv-stat"><span class="pfcv-stat-l">' + esc(l) + '</span><span class="pfcv-stat-v ' + (cls || '') + '">' + v + '</span></div>'; }
     // пейн графика в карточке: слева — сводка, справа — кривая доходности (выезжает справа)
-    function pfChartViewHtml(p, c) {
-        var pid = p.id, pnlCls = c.pnl >= 0 ? 'pos' : 'neg', imOn = !!chartImoex[pid];
+    function pfChartViewHtml(p, c, idx) {
+        var pid = p.id, pnlCls = c.pnl >= 0 ? 'pos' : 'neg', imOn = !!chartImoex[pid], asOn = !!chartAssets[pid];
         var fromTxt = ruDate(dateToIso(pfAvgBuyDate(p)));
+        // в центре кольца — номер портфеля (как в мини-карточке), не капитал
+        var ringNum = '<span class="pfc-ringnum">' + (((idx || 0) + 1)) + '</span>';
         return '<div class="pfc-chartview">' +
             '<div class="pfcv-left">' +
                 '<div class="pfcv-ring">' +
-                    donutHtml(c.bondPct, 104, '<span class="pf-ring-top">Капитал</span><span class="pf-ring-val">' + esc(fmtRub(c.value).replace(' ₽', '')) + '</span>') +
+                    donutHtml(c.bondPct, 104, ringNum) +
                     '<div class="pfcv-ringleg">' +
                         '<span class="pfc-lg"><i class="stock"></i>Акции<b>' + Math.round(c.stockPct) + '%</b></span>' +
                         '<span class="pfc-lg"><i class="bond"></i>Облигации<b>' + Math.round(c.bondPct) + '%</b></span>' +
@@ -456,6 +474,11 @@
                     pfcvStat('Доход', fmtRub(c.pnl) + ' · ' + fmtPct(c.pnlPct), pnlCls) +
                     '<div class="pfcv-stat pfcv-stat--dyn"><span class="pfcv-stat-l">Динамика за период</span><span class="pfcv-stat-v" id="pfcvDyn-' + pid + '">—</span></div>' +
                 '</div>' +
+                '<button class="pfcv-assetbtn' + (asOn ? ' on' : '') + '" data-pid="' + pid + '" onclick="pfToggleChartAssets(\'' + pid + '\')" title="Показать состав портфеля">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>' +
+                    '<span class="pfcv-assetbtn-t">' + (asOn ? 'Скрыть активы' : 'Показать активы') + '</span>' +
+                    '<svg class="pfcv-assetbtn-ch' + (asOn ? ' up' : '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
+                '</button>' +
             '</div>' +
             '<div class="pfcv-right">' +
                 '<div class="pfcv-rhead">' +
@@ -467,6 +490,39 @@
                 '<div class="pfcv-chart" id="pfcvChart-' + pid + '">' + pfChartLoadingHtml() + '</div>' +
             '</div>' +
         '</div>';
+    }
+    // раскрывающаяся таблица состава под графиком (та же, что в большой карточке портфеля)
+    function pfChartAssetsHtml(p, c) {
+        return '<div class="pfcv-assets"><div class="pfcv-assets-in">' + pfHoldsTableHtml(c) + '</div></div>';
+    }
+    // строки состава для таблицы большой карточки (переиспользуются разворотом и графиком)
+    function pfHoldsRowsHtml(c) {
+        if (!c.hs.length) return '<tr><td colspan="11" class="pfo-empty">Состав портфеля пуст</td></tr>';
+        return c.hs.map(function (x) {
+            var h = x.h, cc = x.c, isB = h.type === 'bond';
+            var ptip = isB ? ' title="' + attr(BOND_PRICE_TIP) + '"' : '';
+            var multi = cc.lotCount > 1;
+            var lotChip = multi ? ' <i class="pfo-lots" title="' + cc.lotCount + ' лота · средняя цена">×' + cc.lotCount + '</i>' : '';
+            var buyTip = multi ? ' title="Средняя цена по ' + cc.lotCount + ' лотам"' : ptip;
+            return '<tr>' +
+                '<td class="pfo-tk"><span class="pfo-tkline"><b>' + esc(h.ticker) + '</b></span><span class="pfo-nm">' + esc(h.name || '') + '</span></td>' +
+                '<td><span class="pfo-tag ' + h.type + '">' + (isB ? 'обл' : 'акц') + '</span></td>' +
+                '<td>' + ruDate(cc.firstDate) + lotChip + '</td>' +
+                '<td' + buyTip + '>' + fmtPrice(cc.buy) + '</td>' +
+                '<td class="pfo-nkdcol' + (isB ? '' : ' muted') + '"' + (isB ? ' title="Накопленный купонный доход (взвеш. по лотам)"' : '') + '>' + (isB ? fmtPrice(cc.nkd || 0) : '—') + '</td>' +
+                '<td>' + (cc.qty || 0) + '</td>' +
+                '<td>' + fmtRub(cc.invested) + '</td>' +
+                '<td class="' + (cc.live ? 'pfo-live' : '') + '"' + ptip + '>' + fmtPrice(cc.cur) + '</td>' +
+                '<td>' + fmtRub(cc.value) + '</td>' +
+                '<td class="' + (cc.pnl >= 0 ? 'pos' : 'neg') + '">' + fmtRub(cc.pnl) + '<small>' + fmtPct(cc.pnlPct) + '</small></td>' +
+                '<td class="' + (cc.annual == null ? '' : (cc.annual >= 0 ? 'pos' : 'neg')) + '">' + (cc.annual == null ? '—' : fmtPct(cc.annual)) + '</td>' +
+            '</tr>';
+        }).join('');
+    }
+    function pfHoldsTableHtml(c) {
+        return '<div class="pfo-tablewrap"><table class="pfo-table"><thead><tr>' +
+            '<th>Актив</th><th>Тип</th><th>Дата покупки</th><th>Цена покупки</th><th>НКД</th><th>Кол-во</th><th>Вложено</th><th>Цена сейчас</th><th>Стоимость</th><th>Доход</th><th>Годовых</th>' +
+            '</tr></thead><tbody>' + pfHoldsRowsHtml(c) + '</tbody></table></div>';
     }
 
     // ---------- состав из расчёта / избранного / ежемесячного дохода ----------
@@ -945,7 +1001,7 @@
         // настройки всегда раскрыты «во всю высоту» — полный список без внутреннего скролла
         var tall = (openMenu === p.id) ? ' pf-card--tall' : '';
 
-        return '<div class="dash2-card pf-card' + (openMenu === p.id ? ' menu-open' : '') + tall + (chartOn ? ' chart-open' : '') + '" style="--pf-accent:' + ac + '">' +
+        return '<div class="dash2-card pf-card' + (openMenu === p.id ? ' menu-open' : '') + tall + (chartOn ? ' chart-open' : '') + (chartOn && chartAssets[p.id] ? ' assets-open' : '') + '" style="--pf-accent:' + ac + '">' +
             '<div class="pfc-top">' +
                 '<div class="pfc-titles">' +
                     '<span class="pfc-name" onclick="pfNameEdit(\'' + p.id + '\',event)" title="Нажмите, чтобы переименовать"><span class="pfc-name-ink">' + esc(p.name) + '</span></span>' +
@@ -957,7 +1013,7 @@
                 '</div>' +
             '</div>' +
             menu +
-            (chartOn ? pfChartViewHtml(p, c) : '') +
+            (chartOn ? pfChartViewHtml(p, c, idx) + pfChartAssetsHtml(p, c) : '') +
             '<div class="pfc-normal">' +
             '<div class="pfc-body">' +
                 cardRingHtml(c, idx) +
@@ -1003,7 +1059,7 @@
         var lotChip = multi ? '<i class="pfc-lotn" title="' + c.lotCount + ' лота — средняя цена">×' + c.lotCount + '</i>' : '';
         var buyTip = multi ? ' title="Средняя цена по ' + c.lotCount + ' лотам"' : ptip;
         return '<div class="pfc-row">' +
-            '<span class="pfc-tk"><b>' + esc(h.ticker) + '</b><i>' + esc(isB ? 'обл' : 'акц') + '</i>' + lotChip + '</span>' +
+            '<span class="pfc-tk"><b>' + esc(h.ticker) + '</b><i class="' + (isB ? 'bond' : 'stock') + '">' + esc(isB ? 'обл' : 'акц') + '</i>' + lotChip + '</span>' +
             '<span class="pfc-cell">' + ruDate(c.firstDate) + '</span>' +
             '<span class="pfc-cell"' + buyTip + '>' + fmtPrice(c.buy) + '</span>' +
             '<span class="pfc-cell pfc-nkd' + (isB ? '' : ' muted') + '"' + (isB ? ' title="Накопленный купонный доход (НКД)"' : '') + '>' + nkdTxt + '</span>' +
@@ -1381,15 +1437,29 @@
     };
     window.pfToggleMenu = function (pid) {
         if (openMenu === pid) { openMenu = null; menuTall = false; }
-        else { openMenu = pid; menuTall = false; menuJustOpened = true; chartOpen = {}; }
+        else { openMenu = pid; menuTall = false; menuJustOpened = true; chartOpen = {}; chartAssets = {}; }
         renderPortfolios();
     };
     // график доходности: раскрыть/свернуть. Открыт может быть только один (и не вместе с ⚙).
     window.pfToggleChart = function (pid) {
-        if (chartOpen[pid]) { delete chartOpen[pid]; }
-        else { chartOpen = {}; chartOpen[pid] = true; openMenu = null; menuTall = false; }
+        if (chartOpen[pid]) { delete chartOpen[pid]; delete chartAssets[pid]; }
+        else { chartOpen = {}; chartAssets = {}; chartOpen[pid] = true; openMenu = null; menuTall = false; }
         renderPortfolios();
         if (chartOpen[pid]) loadPfChart(pid);
+    };
+    // «Показать активы»: раскрыть/свернуть таблицу состава под графиком.
+    // Тоггл через классы (без полного ре-рендера) — чтобы не сбивать анимацию графика.
+    window.pfToggleChartAssets = function (pid) {
+        chartAssets[pid] = !chartAssets[pid];
+        var on = !!chartAssets[pid];
+        var chartEl = dq('pfcvChart-' + pid), card = chartEl ? chartEl.closest('.pf-card') : null;
+        if (card) card.classList.toggle('assets-open', on);
+        var btn = document.querySelector('.pfcv-assetbtn[data-pid="' + pid + '"]');
+        if (btn) {
+            btn.classList.toggle('on', on);
+            var t = btn.querySelector('.pfcv-assetbtn-t'); if (t) t.textContent = on ? 'Скрыть активы' : 'Показать активы';
+            var ch = btn.querySelector('.pfcv-assetbtn-ch'); if (ch) ch.classList.toggle('up', on);
+        }
     };
     // наложить/убрать кривую индекса IMOEX за тот же период
     window.pfToggleChartImoex = function (pid) {
@@ -1604,26 +1674,6 @@
 
     function overlayHtml(p) {
         var c = calcPf(p), ac = colorVal(p.color), pnlCls = c.pnl >= 0 ? 'pos' : 'neg';
-        var rows = c.hs.length ? c.hs.map(function (x) {
-            var h = x.h, cc = x.c, isB = h.type === 'bond';
-            var ptip = isB ? ' title="' + attr(BOND_PRICE_TIP) + '"' : '';
-            var multi = cc.lotCount > 1;
-            var lotChip = multi ? ' <i class="pfo-lots" title="' + cc.lotCount + ' лота · средняя цена">×' + cc.lotCount + '</i>' : '';
-            var buyTip = multi ? ' title="Средняя цена по ' + cc.lotCount + ' лотам"' : ptip;
-            return '<tr>' +
-                '<td class="pfo-tk"><span class="pfo-tkline"><b>' + esc(h.ticker) + '</b></span><span class="pfo-nm">' + esc(h.name || '') + '</span></td>' +
-                '<td><span class="pfo-tag ' + h.type + '">' + (isB ? 'обл' : 'акц') + '</span></td>' +
-                '<td>' + ruDate(cc.firstDate) + lotChip + '</td>' +
-                '<td' + buyTip + '>' + fmtPrice(cc.buy) + '</td>' +
-                '<td class="pfo-nkdcol' + (isB ? '' : ' muted') + '"' + (isB ? ' title="Накопленный купонный доход (взвеш. по лотам)"' : '') + '>' + (isB ? fmtPrice(cc.nkd || 0) : '—') + '</td>' +
-                '<td>' + (cc.qty || 0) + '</td>' +
-                '<td>' + fmtRub(cc.invested) + '</td>' +
-                '<td class="' + (cc.live ? 'pfo-live' : '') + '"' + ptip + '>' + fmtPrice(cc.cur) + '</td>' +
-                '<td>' + fmtRub(cc.value) + '</td>' +
-                '<td class="' + (cc.pnl >= 0 ? 'pos' : 'neg') + '">' + fmtRub(cc.pnl) + '<small>' + fmtPct(cc.pnlPct) + '</small></td>' +
-                '<td class="' + (cc.annual == null ? '' : (cc.annual >= 0 ? 'pos' : 'neg')) + '">' + (cc.annual == null ? '—' : fmtPct(cc.annual)) + '</td>' +
-            '</tr>';
-        }).join('') : '<tr><td colspan="11" class="pfo-empty">Состав портфеля пуст</td></tr>';
 
         return '<div class="pfo-card" style="--pf-accent:' + ac + '">' +
             '<div class="pfo-head">' +
@@ -1664,9 +1714,7 @@
                 '</div>' +
                 '<div class="pfo-income-note">Купоны до погашения + номинал ÷ дни до погашения, по каждому выпуску × кол-во. Метрика для контроля ребалансировок.</div>' +
             '</div>' +
-            '<div class="pfo-tablewrap"><table class="pfo-table"><thead><tr>' +
-                '<th>Актив</th><th>Тип</th><th>Дата покупки</th><th>Цена покупки</th><th>НКД</th><th>Кол-во</th><th>Вложено</th><th>Цена сейчас</th><th>Стоимость</th><th>Доход</th><th>Годовых</th>' +
-            '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+            pfHoldsTableHtml(c) +
             '<div class="pfo-foot"><button class="pfo-edit" onclick="pfCloseOverlay();pfToggleMenu(\'' + p.id + '\')">⚙ Редактировать состав</button></div>' +
         '</div>';
     }
