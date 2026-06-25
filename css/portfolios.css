@@ -526,7 +526,7 @@ body.dark-mode .pfm-none-t { color: #f4f8fd; }
 @media (prefers-reduced-motion: reduce) { .pfm-none-arrow { animation: none; } }
 
 /* строка состава — поля; цена/НКД подтягиваются на дату иконкой внутри поля */
-.pfm-row { display: flex; flex-direction: column; gap: 7px; padding: 9px 10px; border-radius: 12px; background: rgba(24,38,60,0.025); border: 1px solid transparent; transition: background 0.15s, border-color 0.15s; }
+.pfm-row { display: flex; flex-direction: column; gap: 0; padding: 8px 10px; border-radius: 12px; background: rgba(24,38,60,0.025); border: 1px solid transparent; transition: background 0.15s, border-color 0.15s; }
 .pfm-row:hover { background: rgba(24,38,60,0.045); }
 .pfm-row:focus-within { background: #fff; border-color: color-mix(in srgb, var(--pf-accent) 40%, transparent); box-shadow: 0 4px 14px -8px rgba(24,38,60,0.4); }
 body.dark-mode .pfm-row { background: rgba(255,255,255,0.03); }
@@ -539,8 +539,14 @@ body.dark-mode .pfm-row:focus-within { background: #111925; }
 
 /* ---- журнал лотов (докупки): тулбар + раскрывающийся список доп. лотов ---- */
 .pfm-hold.has-lots { border-color: color-mix(in srgb, var(--pf-accent) 28%, transparent); }
-.pfm-lotbar { display: flex; align-items: center; gap: 8px; padding: 0 2px; }
+.pfm-lotbar { display: flex; align-items: center; gap: 8px; padding: 0 2px; margin-top: 7px; }
 .pfm-lotbar-sp { flex: 1 1 auto; }
+/* у актива с одной покупкой панель «Докупка» скрыта, пока строку не навели/не редактируют —
+   список активов остаётся чистым; у активов с лотами (.has-lots) панель всегда видна. */
+.pfm-hold:not(.has-lots) .pfm-lotbar { margin-top: 0; max-height: 0; opacity: 0; overflow: hidden; pointer-events: none; transition: max-height 0.2s ease, opacity 0.14s, margin-top 0.2s ease; }
+.pfm-hold:not(.has-lots):hover .pfm-lotbar,
+.pfm-hold:not(.has-lots):focus-within .pfm-lotbar { margin-top: 7px; max-height: 34px; opacity: 1; pointer-events: auto; }
+@media (prefers-reduced-motion: reduce) { .pfm-hold:not(.has-lots) .pfm-lotbar { transition: none; } }
 .pfm-lotsum { font-family: 'Manrope', sans-serif; font-size: 10.5px; font-weight: 600; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .pfm-lotsum b { font-family: 'Inter', sans-serif; font-weight: 800; color: #5f6b7d; }
 body.dark-mode .pfm-lotsum b { color: #c2cdda; }
@@ -653,6 +659,12 @@ body.dark-mode .pfm-grp-l--stock { color: #fbbf24; } body.dark-mode .pfm-grp-l--
 body.dark-mode .pfm-grp-n { background: rgba(255,255,255,0.07); }
 .pfm-grp-rule { flex: 1; height: 1px; background: linear-gradient(90deg, rgba(24,38,60,0.1), transparent); }
 body.dark-mode .pfm-grp-rule { background: linear-gradient(90deg, rgba(255,255,255,0.12), transparent); }
+/* строка подписей колонок над активами группы (сетка = .pfm-row-main) */
+.pfm-cols { display: grid; gap: 6px; align-items: center; padding: 1px 11px 3px; }
+.pfm-cols span { font-size: 8.5px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: #aab4c2; white-space: nowrap; overflow: hidden; }
+body.dark-mode .pfm-cols span { color: #69757f; }
+.pfm-cols--stock { grid-template-columns: 1.5fr 1.05fr 1fr 0.7fr 28px; }
+.pfm-cols--bond  { grid-template-columns: 1.35fr 0.9fr 0.95fr 0.95fr 0.58fr 28px; }
 /* кнопка «Добавить» — нейтральная (не в цвет карточки), но с акцентной +-иконкой = понятно, что добавление */
 .pfm-addbtn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex-shrink: 0; border: 1px solid rgba(24,38,60,0.14); background: rgba(24,38,60,0.04); color: #46566e; border-radius: 10px; padding: 0 15px; min-height: 36px; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 12.5px; cursor: pointer; white-space: nowrap; transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.12s; }
 .pfm-addbtn svg { width: 15px; height: 15px; color: var(--pf-accent); }
@@ -702,10 +714,12 @@ body.dark-mode .pf-impitem.sub { color: #aab8c8; }
 /* плотная авто-сетка: на широких экранах 4–5 плиток в ряд → блок ниже и компактнее */
 .pff-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(248px, 1fr)); gap: 10px; }
 @media (max-width: 560px) { .pff-grid { grid-template-columns: 1fr; } }
-.pff-tile { --pf-accent: #3b82f6; position: relative; display: flex; flex-direction: column; gap: 7px; padding: 11px 13px; border-radius: 13px; border: 1px solid rgba(24,38,60,0.08); background: rgba(24,38,60,0.018); transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s; }
+.pff-tile { --pf-accent: #3b82f6; position: relative; display: flex; flex-direction: column; gap: 7px; padding: 11px 13px; border-radius: 13px; border: 1px solid rgba(24,38,60,0.08); background: rgba(24,38,60,0.018); transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s, background 0.15s; }
 .pff-tile:hover { z-index: 30; }
 body.dark-mode .pff-tile { border-color: rgba(255,255,255,0.06); background: rgba(255,255,255,0.025); }
-.pff-tile:hover { border-color: color-mix(in srgb, var(--pf-accent) 35%, rgba(24,38,60,0.1)); box-shadow: 0 12px 26px -18px rgba(24,38,60,0.45); transform: translateY(-1px); }
+/* при наведении плитка становится сплошной — header и раскрытая новость = одна поверхность */
+.pff-tile:hover { border-color: color-mix(in srgb, var(--pf-accent) 35%, rgba(24,38,60,0.1)); box-shadow: 0 12px 26px -18px rgba(24,38,60,0.45); transform: translateY(-1px); background: #fff; }
+body.dark-mode .pff-tile:hover { background: #1c2735; }
 .pff-thead { display: flex; align-items: flex-start; gap: 10px; }
 .pff-id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; align-items: flex-start; text-align: left; border: none; background: none; padding: 0; cursor: pointer; }
 .pff-tk { max-width: 100%; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 13.5px; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -722,10 +736,12 @@ body.dark-mode .pff-pot.pos { color: #34d399; } body.dark-mode .pff-pot.neg { co
 .pff-news { position: relative; min-width: 0; min-height: 38px; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(24,38,60,0.06); }
 body.dark-mode .pff-news { border-color: rgba(255,255,255,0.06); }
 .pff-news.link { cursor: pointer; }
-.pff-news-inner { position: absolute; left: 0; right: 0; top: 8px; display: flex; flex-direction: column; gap: 2px; border-radius: 9px; transition: background 0.15s, box-shadow 0.15s, padding 0.15s, margin 0.15s, outline-color 0.15s; outline: 1px solid transparent; }
-.pff-tile:hover .pff-news-inner { background: #fff; box-shadow: 0 18px 38px -14px rgba(24,38,60,0.45); padding: 9px 11px; margin: -9px -11px; z-index: 30; }
-body.dark-mode .pff-tile:hover .pff-news-inner { background: #1c2735; box-shadow: 0 18px 38px -14px rgba(0,0,0,0.65); }
-.pff-tile:hover .pff-news.link .pff-news-inner { outline-color: color-mix(in srgb, var(--pf-accent) 32%, transparent); }
+/* при наведении новость не «всплывает» отдельным блоком, а РАСТЯГИВАЕТ карточку вниз:
+   слой уезжает к краям плитки (-13px = её паддинг), продолжает её рамку/тень и скругляет
+   только нижние углы — визуально это та же карточка, ставшая выше. */
+.pff-news-inner { position: absolute; left: 0; right: 0; top: 8px; display: flex; flex-direction: column; gap: 2px; border: 1px solid transparent; border-top: none; border-radius: 0 0 13px 13px; transition: background 0.15s, box-shadow 0.15s, padding 0.15s, left 0.15s, right 0.15s, border-color 0.15s; }
+.pff-tile:hover .pff-news-inner { left: -13px; right: -13px; padding: 2px 13px 12px; background: #fff; border-color: color-mix(in srgb, var(--pf-accent) 35%, rgba(24,38,60,0.1)); box-shadow: 0 16px 26px -18px rgba(24,38,60,0.5); z-index: 30; }
+body.dark-mode .pff-tile:hover .pff-news-inner { background: #1c2735; border-color: color-mix(in srgb, var(--pf-accent) 35%, rgba(255,255,255,0.12)); box-shadow: 0 16px 26px -18px rgba(0,0,0,0.6); }
 .pff-tile:hover .pff-news-t { -webkit-line-clamp: unset; }
 .pff-news.link:hover .pff-news-t { color: var(--pf-accent); }
 .pff-news-t { font-size: 12.5px; font-weight: 600; color: #2b3a4d; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; transition: color 0.12s; }
@@ -842,16 +858,15 @@ body.dark-mode .pfo-income-v b { color: #eaf1f8; }
 .pfo-tablewrap { overflow: auto; flex: 1; }
 .pfo-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 /* строка заголовков — заметно темнее тела таблицы (запрос: «линию с заголовками темнее») */
-.pfo-table thead th { position: sticky; top: 0; background: #e7ecf3; text-align: right; font-size: 10px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: #5a6675; padding: 11px 14px; border-bottom: 1px solid rgba(24,38,60,0.12); white-space: nowrap; z-index: 1; }
+.pfo-table thead th { position: sticky; top: 0; background: #e7ecf3; text-align: center; font-size: 10px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: #5a6675; padding: 11px 14px; border-bottom: 1px solid rgba(24,38,60,0.12); white-space: nowrap; z-index: 1; }
 body.dark-mode .pfo-table thead th { background: #1f2937; color: #9fb0c4; border-color: rgba(255,255,255,0.09); }
 /* «Актив»/«Тип»/«#» — заголовок ровно над контентом (ранг и тег левые, остальное справа) */
 .pfo-table thead th.pfo-c-as, .pfo-table tbody td.pfo-c-as,
-.pfo-table thead th.pfo-c-tp, .pfo-table tbody td.pfo-c-tp,
 .pfo-table thead th.pfo-c-rk, .pfo-table tbody td.pfo-c-rk { text-align: left; }
 /* ранг #№ — приглушённый моно, как в таблице ОФЗ-ребаланса (.rb-rank) */
 .pfo-table .pfo-c-rk { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #c0ccd9; padding-left: 16px; padding-right: 6px; }
 body.dark-mode .pfo-table .pfo-c-rk { color: #5a6b80; }
-.pfo-table tbody td { text-align: right; padding: 11px 16px; border-bottom: 1px solid rgba(24,38,60,0.04); font-family: 'JetBrains Mono', monospace; color: #475569; white-space: nowrap; }
+.pfo-table tbody td { text-align: center; padding: 11px 16px; border-bottom: 1px solid rgba(24,38,60,0.04); font-family: 'JetBrains Mono', monospace; color: #475569; white-space: nowrap; }
 body.dark-mode .pfo-table tbody td { color: #aab8c8; border-color: rgba(255,255,255,0.04); }
 /* зебра — чётные строки слегка подкрашены */
 .pfo-table tbody tr:nth-child(even) td { background: rgba(24,38,60,0.028); }

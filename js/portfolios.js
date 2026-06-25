@@ -529,6 +529,8 @@
             var lotChip = multi ? ' <i class="pfo-lots" title="' + cc.lotCount + ' лота · средняя цена">×' + cc.lotCount + '</i>' : '';
             var buyTip = multi ? ' title="Средняя цена по ' + cc.lotCount + ' лотам"' : ptip;
             var nkdNow = isB ? curNkdOf(h.ticker) : null;   // текущий НКД (ACCRUEDINT)
+            // «Изменение» = доход в % (cc.pnlPct) вместо годовых; для позиций без вложений (кол-во 0) — прочерк
+            var hasInv = cc.invested > 0;
             return '<tr>' +
                 '<td class="pfo-c-rk">#' + (i + 1) + '</td>' +
                 '<td class="pfo-tk pfo-c-as"><span class="pfo-tkline"><b>' + esc(h.ticker) + '</b></span><span class="pfo-nm">' + esc(h.name || '') + '</span></td>' +
@@ -536,19 +538,19 @@
                 '<td>' + ruDate(cc.firstDate) + lotChip + '</td>' +
                 '<td' + buyTip + '>' + fmtPrice(cc.buy) + '</td>' +
                 '<td class="pfo-nkdcol' + (isB ? '' : ' muted') + '"' + (isB ? ' title="НКД на дату покупки (взвеш. по лотам)"' : '') + '>' + (isB ? fmtPrice(cc.nkd || 0) : '—') + '</td>' +
-                '<td class="pfo-nkdcol' + (isB ? '' : ' muted') + '"' + (isB ? ' title="Текущий накопленный купонный доход — НКД сейчас (MOEX)"' : '') + '>' + (isB ? (nkdNow != null ? fmtPrice(nkdNow) : '—') : '—') + '</td>' +
                 '<td>' + (cc.qty || 0) + '</td>' +
                 '<td>' + fmtRub(cc.invested) + '</td>' +
                 '<td class="' + (cc.live ? 'pfo-live' : '') + '"' + ptip + '>' + fmtPrice(cc.cur) + '</td>' +
+                '<td class="pfo-nkdcol' + (isB ? '' : ' muted') + '"' + (isB ? ' title="Текущий накопленный купонный доход — НКД сейчас (MOEX)"' : '') + '>' + (isB ? (nkdNow != null ? fmtPrice(nkdNow) : '—') : '—') + '</td>' +
                 '<td>' + fmtRub(cc.value) + '</td>' +
                 '<td class="' + (cc.pnl >= 0 ? 'pos' : 'neg') + '">' + fmtRub(cc.pnl) + '</td>' +
-                '<td class="' + (cc.annual == null ? '' : (cc.annual >= 0 ? 'pos' : 'neg')) + '">' + (cc.annual == null ? '—' : fmtPct(cc.annual)) + '</td>' +
+                '<td class="' + (!hasInv ? '' : (cc.pnlPct >= 0 ? 'pos' : 'neg')) + '">' + (!hasInv ? '—' : fmtPct(cc.pnlPct)) + '</td>' +
             '</tr>';
         }).join('');
     }
     function pfHoldsTableHtml(c) {
         return '<div class="pfo-tablewrap"><table class="pfo-table"><thead><tr>' +
-            '<th class="pfo-c-rk">#</th><th class="pfo-c-as">Актив</th><th class="pfo-c-tp">Тип</th><th>Дата покупки</th><th>Цена покупки</th><th>НКД покупки</th><th>НКД сейчас</th><th>Кол-во</th><th>Вложено</th><th>Цена сейчас</th><th>Стоимость</th><th>Доход</th><th>Годовых</th>' +
+            '<th class="pfo-c-rk">#</th><th class="pfo-c-as">Актив</th><th class="pfo-c-tp">Тип</th><th>Дата покупки</th><th>Цена покупки</th><th>НКД покупки</th><th>Кол-во</th><th>Вложено</th><th>Цена сейчас</th><th>НКД сейчас</th><th>Стоимость</th><th>Доход</th><th>Изменение</th>' +
             '</tr></thead><tbody>' + pfHoldsRowsHtml(c) + '</tbody></table></div>';
     }
 
@@ -1116,11 +1118,19 @@
         var holds = p.holdings || [];
         var stocks = holds.filter(function (h) { return h.type !== 'bond'; });
         var bonds = holds.filter(function (h) { return h.type === 'bond'; });
-        // состав сгруппирован: отдельно «Акции», отдельно «Облигации» — с заголовками
+        // состав сгруппирован: отдельно «Акции», отдельно «Облигации» — с заголовком группы
+        // и строкой подписей колонок (тикер · дата · цена · [НКД] · кол-во), чтобы поля были
+        // понятны без фокуса. Сетка подписей совпадает с .pfm-row-main--stock/--bond.
+        function colsHead(kind) {
+            return kind === 'bond'
+                ? '<div class="pfm-cols pfm-cols--bond"><span>Тикер</span><span>Дата</span><span>Цена ₽</span><span>НКД ₽</span><span>Кол-во</span><span></span></div>'
+                : '<div class="pfm-cols pfm-cols--stock"><span>Тикер</span><span>Дата</span><span>Цена ₽</span><span>Кол-во</span><span></span></div>';
+        }
         function grp(label, kind, list) {
             if (!list.length) return '';
             return '<div class="pfm-grp"><span class="pfm-grp-l pfm-grp-l--' + kind + '">' + label + '</span>' +
                 '<span class="pfm-grp-n">' + list.length + '</span><i class="pfm-grp-rule"></i></div>' +
+                colsHead(kind) +
                 list.map(function (h) { return editRowHtml(p.id, h); }).join('');
         }
         var rows = grp('Акции', 'stock', stocks) + grp('Облигации', 'bond', bonds);
