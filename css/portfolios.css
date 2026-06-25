@@ -257,7 +257,9 @@ body.dark-mode .pfc-kvv.pos { color: #34d399; } body.dark-mode .pfc-kvv.neg { co
 body.dark-mode .pfc-holds { border-color: rgba(255,255,255,0.05); }
 .pfc-cols, .pfc-row { display: grid; grid-template-columns: 1.25fr 0.92fr 0.9fr 0.78fr 0.5fr 0.9fr 0.72fr; align-items: center; gap: 5px; }
 .pfc-cols { padding: 9px 18px; font-size: 9px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #94a3b8; flex-shrink: 0; }
-.pfc-cols span:nth-child(n+2), .pfc-row .pfc-cell { text-align: right; }
+/* колонки (кроме «Актив») выровнены по центру — заголовок ровно над контентом,
+   как в таблице ОФЗ-ребаланса (.ofz-aurora-colhead/.ofz-aurora-yield: text-align center) */
+.pfc-cols span:nth-child(n+2), .pfc-row .pfc-cell { text-align: center; }
 .pfc-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
 .pfc-row { padding: 8px 18px; border-top: 1px solid rgba(24,38,60,0.04); font-size: 11.5px; }
 /* НКД-колонка — синий акцент (как облигации); для акций приглушённый прочерк */
@@ -286,9 +288,10 @@ body.dark-mode .pfc-tk i.bond { color: #9bc0e6; background: rgba(123,155,191,0.2
 .pf-rank.r3 { background: #64748b; }
 .pfc-cell { font-family: 'JetBrains Mono', monospace; font-weight: 600; color: #475569; white-space: nowrap; }
 body.dark-mode .pfc-cell { color: #aab8c8; }
-.pfc-cell.live { color: #0f172a; position: relative; }
+.pfc-cell.live { color: #0f172a; }
 body.dark-mode .pfc-cell.live { color: #eef3f9; }
-.pfc-cell.live::after { content: ''; position: absolute; top: 50%; right: -2px; transform: translateY(-50%); width: 4px; height: 4px; border-radius: 99px; background: #34d399; }
+/* «live»-точка — инлайн после числа, чтобы при центрировании колонки они центрировались вместе */
+.pfc-cell.live::after { content: ''; display: inline-block; width: 4px; height: 4px; border-radius: 99px; background: #34d399; margin-left: 4px; vertical-align: middle; }
 .pfc-an.pos { color: #16a34a; font-weight: 700; } .pfc-an.neg { color: #dc2626; font-weight: 700; }
 body.dark-mode .pfc-an.pos { color: #34d399; } body.dark-mode .pfc-an.neg { color: #f87171; }
 .pfc-empty { padding: 22px 24px; text-align: center; font-size: 12.5px; color: #94a3b8; }
@@ -306,9 +309,9 @@ body.dark-mode .pfc-chartbtn:hover { background: rgba(255,255,255,0.09); color: 
 .pf-card.chart-open { grid-column: 1 / -1; height: auto; min-height: 480px; }
 .pf-card.chart-open .pfc-normal { display: none; }
 .pfc-normal { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
-/* чётное число портфелей (сетка без сводки-aside): раскрытая карточка поднимается
-   в свою строку наверх и тянется во всю ширину — не «уезжает» вниз отдельной строкой */
-.pf-grid:not(.pf-grid--aside) .pf-card.chart-open { order: -1; }
+/* раскрытая карточка тянется во всю ширину В СВОЕЙ строке: full-width-карточка стартует
+   с 1-й колонки, поэтому если она во 2-й — js/gridHtml меняет её местами с левым соседом
+   (а не поднимает наверх через order). Так график растёт на месте, без «переноса». */
 
 /* две колонки: слева сводка, справа график (выезжает справа) */
 .pfc-chartview { display: flex; flex: 1 1 auto; min-height: 320px; gap: 22px; padding: 14px 24px 20px; overflow: hidden;
@@ -838,9 +841,16 @@ body.dark-mode .pfo-income-v b { color: #eaf1f8; }
 
 .pfo-tablewrap { overflow: auto; flex: 1; }
 .pfo-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-.pfo-table thead th { position: sticky; top: 0; background: #fff; text-align: right; font-size: 10px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: #94a3b8; padding: 11px 14px; border-bottom: 1px solid rgba(24,38,60,0.08); white-space: nowrap; z-index: 1; }
-.pfo-table thead th:first-child, .pfo-table tbody td:first-child { text-align: left; }
-body.dark-mode .pfo-table thead th { background: #141c27; border-color: rgba(255,255,255,0.07); }
+/* строка заголовков — заметно темнее тела таблицы (запрос: «линию с заголовками темнее») */
+.pfo-table thead th { position: sticky; top: 0; background: #e7ecf3; text-align: right; font-size: 10px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: #5a6675; padding: 11px 14px; border-bottom: 1px solid rgba(24,38,60,0.12); white-space: nowrap; z-index: 1; }
+body.dark-mode .pfo-table thead th { background: #1f2937; color: #9fb0c4; border-color: rgba(255,255,255,0.09); }
+/* «Актив»/«Тип»/«#» — заголовок ровно над контентом (ранг и тег левые, остальное справа) */
+.pfo-table thead th.pfo-c-as, .pfo-table tbody td.pfo-c-as,
+.pfo-table thead th.pfo-c-tp, .pfo-table tbody td.pfo-c-tp,
+.pfo-table thead th.pfo-c-rk, .pfo-table tbody td.pfo-c-rk { text-align: left; }
+/* ранг #№ — приглушённый моно, как в таблице ОФЗ-ребаланса (.rb-rank) */
+.pfo-table .pfo-c-rk { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #c0ccd9; padding-left: 16px; padding-right: 6px; }
+body.dark-mode .pfo-table .pfo-c-rk { color: #5a6b80; }
 .pfo-table tbody td { text-align: right; padding: 11px 16px; border-bottom: 1px solid rgba(24,38,60,0.04); font-family: 'JetBrains Mono', monospace; color: #475569; white-space: nowrap; }
 body.dark-mode .pfo-table tbody td { color: #aab8c8; border-color: rgba(255,255,255,0.04); }
 /* зебра — чётные строки слегка подкрашены */

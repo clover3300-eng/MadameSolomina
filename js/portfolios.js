@@ -81,6 +81,8 @@
     var quotesTs = 0, quotesLoading = false;
     var bondQuotes = {};     // isin -> price (₽), 0 = «не нашли»
     var bondPending = {};
+    var bondNkdNow = {};     // isin -> текущий НКД ₽ (ACCRUEDINT), null/undefined = ещё не загружен
+    var bondNkdPending = {};
 
     function collectTickers() {
         var s = {}, b = {};
@@ -155,10 +157,32 @@
         });
     }
 
+    // Текущий НКД (ACCRUEDINT) облигаций — для колонки «НКД сейчас» в таблице состава.
+    // Цена идёт батчем отдельно (без НКД), поэтому НКД тянем через fetchBondData
+    // (она же кеширует в глобальный bondDataCache). Результат — в bondNkdNow.
+    function ensureBondNkd(isins) {
+        if (typeof fetchBondData !== 'function') return;
+        isins.forEach(function (x) {
+            if (!x || bondNkdNow[x] != null || bondNkdPending[x]) return;
+            try { if (typeof bondDataCache !== 'undefined' && bondDataCache[x] && bondDataCache[x].nkd != null) { bondNkdNow[x] = +bondDataCache[x].nkd || 0; return; } } catch (e) {}
+            bondNkdPending[x] = true;
+            Promise.resolve(fetchBondData(x))
+                .then(function (r) { bondNkdNow[x] = (r && r.nkd != null && r.nkd >= 0) ? +r.nkd : 0; })
+                .catch(function () { bondNkdNow[x] = 0; })
+                .then(function () { bondNkdPending[x] = false; softRerender(); });
+        });
+    }
+    function curNkdOf(isin) {
+        if (bondNkdNow[isin] != null) return bondNkdNow[isin];
+        try { if (typeof bondDataCache !== 'undefined' && bondDataCache[isin] && bondDataCache[isin].nkd != null) return +bondDataCache[isin].nkd; } catch (e) {}
+        return null;
+    }
+
     // Подтянуть котировки (акции — общий запрос с TTL, облигации — по требованию)
     function ensureQuotes(force) {
         var held = collectTickers();
         ensureBondQuotes(held.bonds);
+        ensureBondNkd(held.bonds);
         // TTL по времени последней ПОПЫТКИ (а не по наличию данных): иначе при
         // неудачном/пустом ответе MOEX quotes остаётся пустым, guard не срабатывает
         // и softRerender→ensureQuotes→fetch зацикливаются, подвешивая вкладку.
@@ -497,31 +521,34 @@
     }
     // строки состава для таблицы большой карточки (переиспользуются разворотом и графиком)
     function pfHoldsRowsHtml(c) {
-        if (!c.hs.length) return '<tr><td colspan="11" class="pfo-empty">Состав портфеля пуст</td></tr>';
-        return c.hs.map(function (x) {
+        if (!c.hs.length) return '<tr><td colspan="13" class="pfo-empty">Состав портфеля пуст</td></tr>';
+        return c.hs.map(function (x, i) {
             var h = x.h, cc = x.c, isB = h.type === 'bond';
             var ptip = isB ? ' title="' + attr(BOND_PRICE_TIP) + '"' : '';
             var multi = cc.lotCount > 1;
             var lotChip = multi ? ' <i class="pfo-lots" title="' + cc.lotCount + ' лота · средняя цена">×' + cc.lotCount + '</i>' : '';
             var buyTip = multi ? ' title="Средняя цена по ' + cc.lotCount + ' лотам"' : ptip;
+            var nkdNow = isB ? curNkdOf(h.ticker) : null;   // текущий НКД (ACCRUEDINT)
             return '<tr>' +
-                '<td class="pfo-tk"><span class="pfo-tkline"><b>' + esc(h.ticker) + '</b></span><span class="pfo-nm">' + esc(h.name || '') + '</span></td>' +
-                '<td><span class="pfo-tag ' + h.type + '">' + (isB ? 'обл' : 'акц') + '</span></td>' +
+                '<td class="pfo-c-rk">#' + (i + 1) + '</td>' +
+                '<td class="pfo-tk pfo-c-as"><span class="pfo-tkline"><b>' + esc(h.ticker) + '</b></span><span class="pfo-nm">' + esc(h.name || '') + '</span></td>' +
+                '<td class="pfo-c-tp"><span class="pfo-tag ' + h.type + '">' + (isB ? 'обл' : 'акц') + '</span></td>' +
                 '<td>' + ruDate(cc.firstDate) + lotChip + '</td>' +
                 '<td' + buyTip + '>' + fmtPrice(cc.buy) + '</td>' +
-                '<td class="pfo-nkdcol' + (isB ? '' : ' muted') + '"' + (isB ? ' title="Накопленный купонный доход (взвеш. по лотам)"' : '') + '>' + (isB ? fmtPrice(cc.nkd || 0) : '—') + '</td>' +
+                '<td class="pfo-nkdcol' + (isB ? '' : ' muted') + '"' + (isB ? ' title="НКД на дату покупки (взвеш. по лотам)"' : '') + '>' + (isB ? fmtPrice(cc.nkd || 0) : '—') + '</td>' +
+                '<td class="pfo-nkdcol' + (isB ? '' : ' muted') + '"' + (isB ? ' title="Текущий накопленный купонный доход — НКД сейчас (MOEX)"' : '') + '>' + (isB ? (nkdNow != null ? fmtPrice(nkdNow) : '—') : '—') + '</td>' +
                 '<td>' + (cc.qty || 0) + '</td>' +
                 '<td>' + fmtRub(cc.invested) + '</td>' +
                 '<td class="' + (cc.live ? 'pfo-live' : '') + '"' + ptip + '>' + fmtPrice(cc.cur) + '</td>' +
                 '<td>' + fmtRub(cc.value) + '</td>' +
-                '<td class="' + (cc.pnl >= 0 ? 'pos' : 'neg') + '">' + fmtRub(cc.pnl) + '<small>' + fmtPct(cc.pnlPct) + '</small></td>' +
+                '<td class="' + (cc.pnl >= 0 ? 'pos' : 'neg') + '">' + fmtRub(cc.pnl) + '</td>' +
                 '<td class="' + (cc.annual == null ? '' : (cc.annual >= 0 ? 'pos' : 'neg')) + '">' + (cc.annual == null ? '—' : fmtPct(cc.annual)) + '</td>' +
             '</tr>';
         }).join('');
     }
     function pfHoldsTableHtml(c) {
         return '<div class="pfo-tablewrap"><table class="pfo-table"><thead><tr>' +
-            '<th>Актив</th><th>Тип</th><th>Дата покупки</th><th>Цена покупки</th><th>НКД</th><th>Кол-во</th><th>Вложено</th><th>Цена сейчас</th><th>Стоимость</th><th>Доход</th><th>Годовых</th>' +
+            '<th class="pfo-c-rk">#</th><th class="pfo-c-as">Актив</th><th class="pfo-c-tp">Тип</th><th>Дата покупки</th><th>Цена покупки</th><th>НКД покупки</th><th>НКД сейчас</th><th>Кол-во</th><th>Вложено</th><th>Цена сейчас</th><th>Стоимость</th><th>Доход</th><th>Годовых</th>' +
             '</tr></thead><tbody>' + pfHoldsRowsHtml(c) + '</tbody></table></div>';
     }
 
@@ -972,7 +999,18 @@
     // ---- сетка карточек (withAside → первой ячейкой сводка «слева от 1-го портфеля») ----
     function gridHtml(withAside) {
         if (!store.items.length) return emptyHtml();
-        var cards = store.items.slice(0, MAX_CARDS).map(function (p, i) { return cardHtml(p, i); }).join('');
+        var items = store.items.slice(0, MAX_CARDS);
+        // Раскрытый график = карточка во всю ширину (grid-column:1/-1). В сетке без сводки
+        // (чётное число) full-width-карточка может стартовать только с 1-й колонки, поэтому
+        // если она во 2-й колонке — меняем её местами с левым соседом: тогда график тянется
+        // в СВОЕЙ строке, ничего не «переносится» вверх/вниз. Номер портфеля (idx) сохраняем.
+        var order = items.map(function (_, i) { return i; });
+        if (!withAside) {
+            var openIdx = -1;
+            for (var k = 0; k < items.length; k++) { if (chartOpen[items[k].id]) { openIdx = k; break; } }
+            if (openIdx >= 0 && openIdx % 2 === 1) { var t = order[openIdx]; order[openIdx] = order[openIdx - 1]; order[openIdx - 1] = t; }
+        }
+        var cards = order.map(function (origIdx) { return cardHtml(items[origIdx], origIdx); }).join('');
         var aside = withAside ? summaryHtml(true) : '';
         return '<div class="pf-grid' + (withAside ? ' pf-grid--aside' : '') + '">' + aside + cards + '</div>';
     }
