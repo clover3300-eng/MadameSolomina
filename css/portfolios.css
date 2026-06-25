@@ -414,7 +414,19 @@ body.dark-mode .pfcv-assetbtn.on { background: color-mix(in srgb, var(--pf-accen
 .pf-card.assets-open .pfcv-assets { grid-template-rows: 1fr; border-top-color: rgba(24,38,60,0.07); }
 body.dark-mode .pf-card.assets-open .pfcv-assets { border-top-color: rgba(255,255,255,0.06); }
 .pfcv-assets-in { min-height: 0; overflow: hidden; }
-.pfcv-assets .pfo-tablewrap { max-height: 340px; overflow: auto; padding: 6px 24px 18px; }
+.pfcv-assets .pfo-tablewrap { max-height: 340px; overflow: auto; padding: 6px 24px 14px; }
+.pfcv-assets.full .pfo-tablewrap { max-height: none; }
+/* кнопка «показать все активы» — снимает ограничение высоты таблицы под графиком */
+.pfcv-assets-more { display: flex; align-items: center; justify-content: center; gap: 6px; width: calc(100% - 48px);
+    margin: 0 24px 16px; padding: 8px; border-radius: 10px; border: 1px solid rgba(24,38,60,0.1);
+    background: rgba(24,38,60,0.025); color: #46566e; font-family: 'Manrope', sans-serif; font-weight: 800;
+    font-size: 11.5px; cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+.pfcv-assets-more:hover { background: color-mix(in srgb, var(--pf-accent) 10%, transparent);
+    border-color: color-mix(in srgb, var(--pf-accent) 35%, transparent); color: var(--pf-accent); }
+.pfcv-assets-more-ch { width: 13px; height: 13px; transition: transform 0.2s; }
+.pfcv-assets-more-ch.up { transform: rotate(180deg); }
+body.dark-mode .pfcv-assets-more { border-color: rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); color: #cdd8e6; }
+body.dark-mode .pfcv-assets-more:hover { color: #eaf1f8; }
 
 @media (max-width: 1040px) {
     .pf-card.chart-open { height: auto; }
@@ -590,6 +602,10 @@ body.dark-mode .pfm-fx.done { color: #6b7787; }
 .pfm-hint:hover { color: var(--pf-accent); }
 
 .pfm-tk-cell { display: flex; align-items: center; gap: 5px; min-width: 0; }
+/* номер актива #N в строке состава (как в карточке/таблице) */
+.pfm-rank { flex-shrink: 0; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 800; color: #aab4c2; letter-spacing: -0.02em; }
+.pfm-rank::before { content: '#'; opacity: 0.55; }
+body.dark-mode .pfm-rank { color: #69757f; }
 .pfm-tag { flex-shrink: 0; font-size: 8.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.02em; padding: 3px 5px; border-radius: 6px; line-height: 1; }
 .pfm-tag.stock { color: #b45309; background: rgba(245,158,11,0.16); }
 .pfm-tag.bond { color: #2563eb; background: rgba(59,130,246,0.16); }
@@ -614,14 +630,21 @@ body.dark-mode .pfm-del { background: rgba(255,255,255,0.06); }
 body.dark-mode .pfm-bottom { border-color: rgba(255,255,255,0.06); }
 
 /* ВЫДЕЛЕННАЯ панель добавления актива — над списком состава, своя акцентная рамка/фон/заголовок */
-.pfm-addpanel { flex-shrink: 0; margin: 12px 15px 6px; padding: 12px 13px 13px; border-radius: 15px;
-    border: 1px solid color-mix(in srgb, var(--pf-accent) 30%, rgba(24,38,60,0.1));
-    background: color-mix(in srgb, var(--pf-accent) 5%, #fff);
-    box-shadow: 0 12px 28px -22px color-mix(in srgb, var(--pf-accent) 85%, transparent); }
-body.dark-mode .pfm-addpanel { background: color-mix(in srgb, var(--pf-accent) 13%, #131c27);
-    border-color: color-mix(in srgb, var(--pf-accent) 36%, rgba(255,255,255,0.08)); }
+/* нейтральная чистая заливка в покое; акцент проступает только при фокусе (заполняешь форму)
+   или в пустом портфеле (приглашение) — без мутного цветного фона и тяжёлого цветного свечения */
+.pfm-addpanel { flex-shrink: 0; margin: 12px 15px 8px; padding: 12px 13px 13px; border-radius: 15px;
+    border: 1px solid rgba(24,38,60,0.09);
+    background: rgba(24,38,60,0.022);
+    box-shadow: 0 6px 16px -16px rgba(24,38,60,0.4);
+    transition: border-color 0.18s, box-shadow 0.18s, background 0.18s; }
+body.dark-mode .pfm-addpanel { background: rgba(255,255,255,0.022); border-color: rgba(255,255,255,0.07); box-shadow: none; }
+.pfm-addpanel:focus-within { border-color: color-mix(in srgb, var(--pf-accent) 34%, rgba(24,38,60,0.1));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--pf-accent) 7%, transparent); }
 .pfm-addpanel.is-empty { border-style: dashed; border-width: 1.5px;
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--pf-accent) 8%, transparent); }
+    border-color: color-mix(in srgb, var(--pf-accent) 30%, rgba(24,38,60,0.12));
+    background: color-mix(in srgb, var(--pf-accent) 3%, rgba(24,38,60,0.012)); }
+body.dark-mode .pfm-addpanel.is-empty { border-color: color-mix(in srgb, var(--pf-accent) 34%, rgba(255,255,255,0.08));
+    background: color-mix(in srgb, var(--pf-accent) 8%, rgba(255,255,255,0.022)); }
 .pfm-addhead { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 .pfm-addhead-ic { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 7px; flex-shrink: 0;
     color: #fff; background: var(--pf-accent); box-shadow: 0 6px 14px -7px color-mix(in srgb, var(--pf-accent) 90%, transparent); }
@@ -718,8 +741,8 @@ body.dark-mode .pf-impitem.sub { color: #aab8c8; }
 .pff-tile:hover { z-index: 30; }
 body.dark-mode .pff-tile { border-color: rgba(255,255,255,0.06); background: rgba(255,255,255,0.025); }
 /* при наведении плитка становится сплошной — header и раскрытая новость = одна поверхность */
-.pff-tile:hover { border-color: color-mix(in srgb, var(--pf-accent) 35%, rgba(24,38,60,0.1)); box-shadow: 0 12px 26px -18px rgba(24,38,60,0.45); transform: translateY(-1px); background: #fff; }
-body.dark-mode .pff-tile:hover { background: #1c2735; }
+.pff-tile:hover { border-color: color-mix(in srgb, var(--pf-accent) 35%, rgba(24,38,60,0.1)); box-shadow: 0 10px 22px -18px rgba(24,38,60,0.4); transform: translateY(-1px); background: #fff; }
+body.dark-mode .pff-tile:hover { box-shadow: 0 10px 22px -18px rgba(0,0,0,0.5); background: #1c2735; }
 .pff-thead { display: flex; align-items: flex-start; gap: 10px; }
 .pff-id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; align-items: flex-start; text-align: left; border: none; background: none; padding: 0; cursor: pointer; }
 .pff-tk { max-width: 100%; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 13.5px; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -740,7 +763,9 @@ body.dark-mode .pff-news { border-color: rgba(255,255,255,0.06); }
    слой уезжает к краям плитки (-13px = её паддинг), продолжает её рамку/тень и скругляет
    только нижние углы — визуально это та же карточка, ставшая выше. */
 .pff-news-inner { position: absolute; left: 0; right: 0; top: 8px; display: flex; flex-direction: column; gap: 2px; border: 1px solid transparent; border-top: none; border-radius: 0 0 13px 13px; transition: background 0.15s, box-shadow 0.15s, padding 0.15s, left 0.15s, right 0.15s, border-color 0.15s; }
-.pff-tile:hover .pff-news-inner { left: -13px; right: -13px; padding: 2px 13px 12px; background: #fff; border-color: color-mix(in srgb, var(--pf-accent) 35%, rgba(24,38,60,0.1)); box-shadow: 0 16px 26px -18px rgba(24,38,60,0.5); z-index: 30; }
+/* слой уезжает РОВНО на внешний край рамки плитки (-14 = -13 паддинг − 1 рамка): его боковые
+   рамки ложатся точно поверх рамки плитки → единый контур без двойной линии и ступенек */
+.pff-tile:hover .pff-news-inner { left: -14px; right: -14px; padding: 2px 13px 12px; background: #fff; border-color: color-mix(in srgb, var(--pf-accent) 35%, rgba(24,38,60,0.1)); box-shadow: 0 16px 26px -18px rgba(24,38,60,0.5); z-index: 30; }
 body.dark-mode .pff-tile:hover .pff-news-inner { background: #1c2735; border-color: color-mix(in srgb, var(--pf-accent) 35%, rgba(255,255,255,0.12)); box-shadow: 0 16px 26px -18px rgba(0,0,0,0.6); }
 .pff-tile:hover .pff-news-t { -webkit-line-clamp: unset; }
 .pff-news.link:hover .pff-news-t { color: var(--pf-accent); }
@@ -899,6 +924,140 @@ body.dark-mode .pfo-foot { border-color: rgba(255,255,255,0.06); }
 .pfo-edit:hover { background: var(--pf-accent); color: #fff; border-color: transparent; }
 body.dark-mode .pfo-edit { border-color: rgba(255,255,255,0.08); background: rgba(255,255,255,0.04); color: #cdd8e6; }
 @media (max-width: 720px) { .pfo-top { gap: 16px; } .pfo-stats { grid-template-columns: 1fr 1fr; } #pfOverlay { padding: 12px; } }
+
+/* ============================================================
+   КАРТОЧКА РЕБАЛАНСИРОВКИ (две колонки: облигации | акции)
+   ============================================================ */
+.pfrb-head-ctrls { gap: 12px; }
+/* тумблер НДФЛ — сегментированный контрол */
+.pfrb-tax { display: inline-flex; align-items: center; gap: 6px; padding: 4px 5px 4px 11px; border-radius: 999px;
+    background: rgba(24,38,60,0.05); border: 1px solid rgba(24,38,60,0.08); }
+body.dark-mode .pfrb-tax { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
+.pfrb-tax-l { font-size: 9.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #94a3b8; }
+.pfrb-tax-b { border: none; background: none; border-radius: 999px; padding: 5px 11px; font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; font-weight: 700; color: #64748b; cursor: pointer; transition: background 0.14s, color 0.14s; }
+.pfrb-tax-b:hover { color: #1b2433; }
+.pfrb-tax-b.on { background: var(--pf-accent); color: #fff; box-shadow: 0 4px 10px -5px color-mix(in srgb, var(--pf-accent) 90%, transparent); }
+body.dark-mode .pfrb-tax-b { color: #9fb0c4; } body.dark-mode .pfrb-tax-b:hover { color: #eaf1f8; }
+/* кнопка «методика расчёта» */
+.pfrb-mbtn { display: inline-flex; align-items: center; gap: 7px; border: 1px solid rgba(24,38,60,0.12); background: rgba(255,255,255,0.6);
+    border-radius: 999px; padding: 8px 14px 8px 11px; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 12px; color: #46566e; cursor: pointer; transition: background 0.14s, color 0.14s, border-color 0.14s; }
+.pfrb-mbtn svg { width: 15px; height: 15px; color: var(--pf-accent); }
+.pfrb-mbtn:hover, .pfrb-mbtn.on { background: color-mix(in srgb, var(--pf-accent) 12%, transparent); border-color: color-mix(in srgb, var(--pf-accent) 32%, transparent); color: var(--pf-accent); }
+.pfrb-mbtn.on svg { color: var(--pf-accent); }
+body.dark-mode .pfrb-mbtn { border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #cdd8e6; }
+@media (max-width: 760px) { .pfrb-mbtn span { display: none; } .pfrb-mbtn { padding: 8px 11px; } }
+
+/* панель «методика расчёта» */
+.pfrb-method { padding: 16px 24px 18px; background: linear-gradient(120deg, color-mix(in srgb, var(--pf-accent) 8%, transparent), transparent 70%);
+    border-bottom: 1px solid rgba(24,38,60,0.07); animation: pfMethIn 0.2s ease; }
+@keyframes pfMethIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+body.dark-mode .pfrb-method { border-color: rgba(255,255,255,0.06); }
+.pfrb-method-h { display: flex; align-items: center; justify-content: space-between; font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 800; color: #1b2433; margin-bottom: 12px; }
+body.dark-mode .pfrb-method-h { color: #f4f8fd; }
+.pfrb-method-x { width: 26px; height: 26px; border-radius: 8px; border: none; background: rgba(24,38,60,0.06); color: #64748b; cursor: pointer; display: grid; place-items: center; }
+.pfrb-method-x svg { width: 13px; height: 13px; }
+.pfrb-method-x:hover { background: rgba(24,38,60,0.12); color: #1b2433; }
+body.dark-mode .pfrb-method-x { background: rgba(255,255,255,0.07); color: #9fb0c4; }
+.pfrb-method-steps { list-style: none; counter-reset: m; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 22px; }
+@media (max-width: 760px) { .pfrb-method-steps { grid-template-columns: 1fr; } }
+.pfrb-method-steps li { counter-increment: m; position: relative; padding: 7px 10px 7px 38px; border-radius: 10px; background: rgba(255,255,255,0.6);
+    border: 1px solid rgba(24,38,60,0.06); font-size: 12px; font-weight: 600; color: #46566e; line-height: 1.45; }
+body.dark-mode .pfrb-method-steps li { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.05); color: #cdd8e6; }
+.pfrb-method-steps li::before { content: counter(m); position: absolute; left: 9px; top: 7px; width: 20px; height: 20px; border-radius: 7px;
+    display: grid; place-items: center; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; color: #fff; background: var(--pf-accent); }
+.pfrb-method-steps li b { color: #1b2433; font-weight: 800; } body.dark-mode .pfrb-method-steps li b { color: #f4f8fd; }
+.pfrb-method-steps li span { color: var(--pf-accent); font-weight: 800; }
+.pfrb-method-tax { display: block; margin-top: 4px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 700; color: #94a3b8 !important; }
+.pfrb-method-note { margin-top: 11px; font-size: 11px; line-height: 1.5; color: #94a3b8; }
+
+/* тело: две колонки, каждая прокручивается отдельно */
+.pfrb-body { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; }
+.pfrb-col { min-height: 0; overflow-y: auto; padding: 16px 20px 20px; display: flex; flex-direction: column; gap: 10px; scrollbar-width: thin; }
+.pfrb-col--bond { border-right: 1px solid rgba(24,38,60,0.07); }
+body.dark-mode .pfrb-col--bond { border-color: rgba(255,255,255,0.06); }
+@media (max-width: 860px) { .pfrb-body { grid-template-columns: 1fr; overflow-y: auto; } .pfrb-col { overflow: visible; }
+    .pfrb-col--bond { border-right: none; border-bottom: 1px solid rgba(24,38,60,0.07); } }
+/* шапка колонки */
+.pfrb-colhead { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px; padding: 4px 2px 9px;
+    margin: -16px -20px 0; padding-left: 22px; padding-right: 22px; padding-top: 14px; background: #fff; border-bottom: 1px solid rgba(24,38,60,0.06); }
+body.dark-mode .pfrb-colhead { background: #141c27; border-color: rgba(255,255,255,0.06); }
+.pfrb-cdot { width: 10px; height: 10px; border-radius: 99px; flex-shrink: 0; }
+.pfrb-cdot.bond { background: #7B9BBF; } .pfrb-cdot.stock { background: #D97757; }
+.pfrb-cname { font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 800; color: #0f172a; }
+body.dark-mode .pfrb-cname { color: #f4f8fd; }
+.pfrb-ccount { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #94a3b8; background: rgba(24,38,60,0.06); padding: 1px 7px; border-radius: 6px; }
+body.dark-mode .pfrb-ccount { background: rgba(255,255,255,0.07); }
+.pfrb-cval { margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; color: #475569; }
+body.dark-mode .pfrb-cval { color: #aebacc; }
+
+/* блок дохода по купонам (день/неделя/месяц) */
+.pfrb-income { border-radius: 14px; padding: 12px 14px; border: 1px solid color-mix(in srgb, #7B9BBF 30%, rgba(24,38,60,0.07));
+    background: linear-gradient(120deg, color-mix(in srgb, #7B9BBF 12%, transparent), transparent 75%); }
+body.dark-mode .pfrb-income { border-color: color-mix(in srgb, #7B9BBF 30%, rgba(255,255,255,0.06)); }
+.pfrb-inc-h { display: flex; align-items: center; gap: 7px; font-size: 10.5px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: #5f7791; margin-bottom: 10px; }
+.pfrb-inc-h svg { width: 15px; height: 15px; }
+body.dark-mode .pfrb-inc-h { color: #93a8c2; }
+.pfrb-inc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.pfrb-inc-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; border-radius: 10px; background: rgba(255,255,255,0.55); }
+body.dark-mode .pfrb-inc-cell { background: rgba(255,255,255,0.04); }
+.pfrb-inc-cell b { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; color: #2a3f57; }
+body.dark-mode .pfrb-inc-cell b { color: #eaf1f8; }
+.pfrb-inc-cell span { font-size: 9.5px; font-weight: 700; color: #7e93a8; }
+.pfrb-inc-sub { margin-top: 9px; text-align: center; font-size: 11px; font-weight: 600; color: #8195a9; }
+
+/* строки активов */
+.pfrb-rows { display: flex; flex-direction: column; gap: 9px; }
+.pfrb-row { padding: 11px 13px; border-radius: 13px; background: rgba(24,38,60,0.025); border: 1px solid rgba(24,38,60,0.06); }
+body.dark-mode .pfrb-row { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.05); }
+.pfrb-rmain { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.pfrb-rid { display: flex; flex-direction: column; gap: 1px; min-width: 0; align-items: flex-start; text-align: left; border: none; background: none; padding: 0; }
+.pfrb-rid.link { cursor: pointer; }
+.pfrb-tk { display: inline-flex; align-items: center; gap: 6px; font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 800; color: #0f172a; }
+body.dark-mode .pfrb-tk { color: #f4f8fd; }
+.pfrb-rid.link:hover .pfrb-tk { color: var(--pf-accent); }
+.pfrb-nm { font-size: 10.5px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+.pfrb-rmetric { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0; }
+.pfrb-ml { font-size: 8.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #94a3b8; }
+.pfrb-mv { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 800; }
+.pfrb-mv.pos { color: #16a34a; } .pfrb-mv.neg { color: #dc2626; } .pfrb-mv.muted { font-size: 12px; color: #b6c0cc; font-style: italic; }
+body.dark-mode .pfrb-mv.pos { color: #34d399; } body.dark-mode .pfrb-mv.neg { color: #f87171; }
+/* эшелон-чип */
+.pfrb-tier { font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 5px; line-height: 1; }
+.pfrb-tier.tier-1 { color: #2563eb; background: rgba(37,99,235,0.14); }
+.pfrb-tier.tier-2 { color: #0d9488; background: rgba(13,148,136,0.14); }
+.pfrb-tier.tier-3 { color: #d97706; background: rgba(217,119,6,0.16); }
+.pfrb-tier.tier-4 { color: #7c3aed; background: rgba(124,58,237,0.14); }
+/* полоса доли актива */
+.pfrb-bar { position: relative; height: 6px; margin: 9px 0 4px; border-radius: 99px; background: rgba(24,38,60,0.07); overflow: hidden; }
+body.dark-mode .pfrb-bar { background: rgba(255,255,255,0.07); }
+.pfrb-bar i { display: block; height: 100%; border-radius: 99px; }
+.pfrb-row--bond .pfrb-bar i { background: #7B9BBF; } .pfrb-row--stock .pfrb-bar i { background: #D97757; }
+.pfrb-bw { position: absolute; right: 0; top: -16px; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; font-weight: 700; color: #94a3b8; }
+.pfrb-rsub { font-family: 'Manrope', sans-serif; font-size: 10.5px; font-weight: 600; color: #94a3b8; }
+/* варианты замены по эшелону */
+.pfrb-swaps { margin-top: 9px; padding-top: 9px; border-top: 1px dashed rgba(24,38,60,0.1); display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+body.dark-mode .pfrb-swaps { border-color: rgba(255,255,255,0.08); }
+.pfrb-swaps-l { font-size: 8.5px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: #aab4c2; margin-right: 2px; }
+.pfrb-swap { display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(24,38,60,0.1); background: rgba(255,255,255,0.6);
+    border-radius: 8px; padding: 4px 8px; cursor: pointer; transition: border-color 0.14s, background 0.14s, transform 0.1s; }
+.pfrb-swap:hover { border-color: color-mix(in srgb, var(--pf-accent) 40%, transparent); background: color-mix(in srgb, var(--pf-accent) 8%, #fff); transform: translateY(-1px); }
+body.dark-mode .pfrb-swap { border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); }
+.pfrb-swap-tk { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 800; color: #1b2433; }
+body.dark-mode .pfrb-swap-tk { color: #eaf1f8; }
+.pfrb-swap-pot { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 700; }
+.pfrb-swap-pot.pos { color: #16a34a; } .pfrb-swap-pot.neg { color: #dc2626; }
+body.dark-mode .pfrb-swap-pot.pos { color: #34d399; } body.dark-mode .pfrb-swap-pot.neg { color: #f87171; }
+.pfrb-swaps-none { font-size: 10.5px; font-style: italic; color: #b6c0cc; }
+/* подпись-примечание под колонкой */
+.pfrb-cnote { margin-top: auto; padding-top: 10px; font-size: 10.5px; line-height: 1.5; color: #94a3b8; }
+.pfrb-cnote-lnk { border: none; background: none; padding: 0; font: inherit; font-weight: 800; color: var(--pf-accent); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+/* пустая колонка */
+.pfrb-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 7px; padding: 40px 18px; color: #94a3b8; }
+.pfrb-empty svg { width: 38px; height: 38px; opacity: 0.5; }
+.pfrb-empty-t { font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 800; color: #475569; }
+body.dark-mode .pfrb-empty-t { color: #cdd8e6; }
+.pfrb-empty-s { font-size: 11.5px; line-height: 1.5; max-width: 260px; }
 
 /* ============================================================
    TOAST

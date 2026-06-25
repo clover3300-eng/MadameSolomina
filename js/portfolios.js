@@ -291,6 +291,7 @@
     var chartOpen = {};      // pid → график раскрыт (одновременно открыт только один)
     var chartImoex = {};     // pid → наложена кривая индекса IMOEX
     var chartAssets = {};    // pid → раскрыта таблица состава под графиком
+    var chartAssetsFull = {}; // pid → таблица состава раскрыта на всю высоту (без скролла 340px)
     var chartCache = {};     // pid → { imoex, points, pfFinal, imFinal, from, err }
     var chartRaw = {};       // pid → { from, series } — сырая серия стоимости (кеш под toggle IMOEX)
     var chartBusy = {};      // pid → идёт загрузка (защита от двойного запроса)
@@ -515,9 +516,15 @@
             '</div>' +
         '</div>';
     }
-    // раскрывающаяся таблица состава под графиком (та же, что в большой карточке портфеля)
+    // раскрывающаяся таблица состава под графиком (та же, что в карточке ребалансировки)
+    // при многих активах под таблицей — кнопка «развернуть всю таблицу» (снимает скролл 340px)
     function pfChartAssetsHtml(p, c) {
-        return '<div class="pfcv-assets"><div class="pfcv-assets-in">' + pfHoldsTableHtml(c) + '</div></div>';
+        var full = !!chartAssetsFull[p.id];
+        var many = c.hs.length > 6;   // таблица упирается в скролл → предлагаем развернуть
+        var more = many ? '<button class="pfcv-assets-more' + (full ? ' on' : '') + '" data-pid="' + p.id + '" onclick="pfToggleAssetsFull(\'' + p.id + '\')">' +
+            '<span class="pfcv-assets-more-t">' + (full ? 'Свернуть таблицу' : 'Показать все активы · ' + c.hs.length) + '</span>' +
+            '<svg class="pfcv-assets-more-ch' + (full ? ' up' : '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>' : '';
+        return '<div class="pfcv-assets' + (full ? ' full' : '') + '"><div class="pfcv-assets-in">' + pfHoldsTableHtml(c) + more + '</div></div>';
     }
     // строки состава для таблицы большой карточки (переиспользуются разворотом и графиком)
     function pfHoldsRowsHtml(c) {
@@ -565,7 +572,7 @@
             var qty = +x.qty || 0, price = +x.price || (qty > 0 && x.sum ? x.sum / qty : 0);
             return { id: genId('h'), ticker: x.ticker, name: x.name || x.ticker, type: type,
                 echelon: x.echelon || 0, buyDate: todayStr(), buyPrice: Math.round(price * 100) / 100, qty: qty,
-                nkd: 0, priceFromApi: false, nkdFromApi: false };
+                nkd: 0, priceFromApi: false, nkdFromApi: false, potAtBuy: type === 'stock' ? potentialOf(x.ticker) : null };
         }
         var holds = [];
         if (filter !== 'stock') (sl.bonds || []).forEach(function (b) { if (b.ticker) holds.push(toHold(b, 'bond')); });
@@ -581,7 +588,7 @@
             var price = 0;
             if (co && co.main) { var pp = toNum(co.main['Текущая Цена']); if (isFinite(pp) && pp > 0) price = Math.round(pp * 100) / 100; }
             return { id: genId('h'), ticker: tk, name: (co && co.name) ? co.name : tk, type: 'stock',
-                buyDate: todayStr(), buyPrice: price, qty: 0, nkd: 0, priceFromApi: false, nkdFromApi: false };
+                buyDate: todayStr(), buyPrice: price, qty: 0, nkd: 0, priceFromApi: false, nkdFromApi: false, potAtBuy: potentialOf(tk) };
         }).filter(function (h) { return h.ticker; });
         return holds.length ? holds : null;
     }
@@ -933,7 +940,7 @@
                 '<div class="pfs-sub">Вложено ' + fmtRub(inv) + ' · ' +
                     '<span class="pfs-pnl ' + (pnl >= 0 ? 'pos' : 'neg') + '">' + (pnl >= 0 ? '▲ ' : '▼ ') + fmtRub(Math.abs(pnl)) + ' (' + fmtPct(pnlPct) + ')</span></div>' +
             '</div>';
-        var cta = '<button class="pfs-one-cta" onclick="pfExpand(\'' + p.id + '\')">Подробнее по портфелю' + GO + '</button>';
+        var cta = '<button class="pfs-one-cta" onclick="pfExpand(\'' + p.id + '\')">Ребалансировка портфеля' + GO + '</button>';
 
         if (!c.count) {
             return '<div class="dash2-card pf-summary pf-summary--aside pf-summary--one">' + head +
@@ -1070,8 +1077,8 @@
             '</div>' +
             '<div class="pfc-foot">' +
                 '<button class="pfc-expand" onclick="pfExpand(\'' + p.id + '\')">' +
-                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>' +
-                    'Развернуть</button>' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>' +
+                    'Ребалансировать</button>' +
             '</div>' +
             '</div>' +
         '</div>';
@@ -1131,7 +1138,7 @@
             return '<div class="pfm-grp"><span class="pfm-grp-l pfm-grp-l--' + kind + '">' + label + '</span>' +
                 '<span class="pfm-grp-n">' + list.length + '</span><i class="pfm-grp-rule"></i></div>' +
                 colsHead(kind) +
-                list.map(function (h) { return editRowHtml(p.id, h); }).join('');
+                list.map(function (h, i) { return editRowHtml(p.id, h, i + 1); }).join('');
         }
         var rows = grp('Акции', 'stock', stocks) + grp('Облигации', 'bond', bonds);
         var n = holds.length;
@@ -1221,13 +1228,15 @@
     // Строка состава = актив с ЖУРНАЛОМ ЛОТОВ. Главная строка правит ПЕРВЫЙ лот (+ тикер +
     // «удалить актив»); тулбар показывает среднюю/кол-во по лотам + «Докупка» + тоггл; доп.
     // лоты (со 2-го) раскрываются под строкой.
-    function editRowHtml(pid, h) {
+    function editRowHtml(pid, h, rank) {
         var isBond = h.type === 'bond';
         var tag = isBond ? 'обл' : 'акц';
         var lots = ensureLots(h), l0 = lots[0], agg = aggHolding(h);
         var multi = lots.length > 1, expanded = !!openLots[h.id];
         var main = '<div class="pfm-row-main ' + (isBond ? 'pfm-row-main--bond' : 'pfm-row-main--stock') + '">' +
-            '<span class="pfm-tk-cell"><span class="pfm-tag ' + h.type + '">' + tag + '</span>' +
+            '<span class="pfm-tk-cell">' +
+                (rank ? '<span class="pfm-rank">' + rank + '</span>' : '') +
+                '<span class="pfm-tag ' + h.type + '">' + tag + '</span>' +
                 '<input class="pfm-in pfm-in-tk" value="' + attr(h.ticker) + '" onchange="pfEdit(\'' + pid + '\',\'' + h.id + '\',\'ticker\',this.value)" placeholder="Тикер"></span>' +
             lotDateInput(pid, h, l0) +
             lotPriceCell(pid, h, l0) +
@@ -1485,13 +1494,13 @@
     };
     window.pfToggleMenu = function (pid) {
         if (openMenu === pid) { openMenu = null; menuTall = false; }
-        else { openMenu = pid; menuTall = false; menuJustOpened = true; chartOpen = {}; chartAssets = {}; }
+        else { openMenu = pid; menuTall = false; menuJustOpened = true; chartOpen = {}; chartAssets = {}; chartAssetsFull = {}; }
         renderPortfolios();
     };
     // график доходности: раскрыть/свернуть. Открыт может быть только один (и не вместе с ⚙).
     window.pfToggleChart = function (pid) {
-        if (chartOpen[pid]) { delete chartOpen[pid]; delete chartAssets[pid]; }
-        else { chartOpen = {}; chartAssets = {}; chartOpen[pid] = true; openMenu = null; menuTall = false; }
+        if (chartOpen[pid]) { delete chartOpen[pid]; delete chartAssets[pid]; delete chartAssetsFull[pid]; }
+        else { chartOpen = {}; chartAssets = {}; chartAssetsFull = {}; chartOpen[pid] = true; openMenu = null; menuTall = false; }
         renderPortfolios();
         if (chartOpen[pid]) loadPfChart(pid);
     };
@@ -1508,6 +1517,19 @@
             var t = btn.querySelector('.pfcv-assetbtn-t'); if (t) t.textContent = on ? 'Скрыть активы' : 'Показать активы';
             var ch = btn.querySelector('.pfcv-assetbtn-ch'); if (ch) ch.classList.toggle('up', on);
         }
+    };
+    // «Показать все активы»: снять ограничение высоты (скролл 340px) с таблицы состава под
+    // графиком. Тоггл классом (без ре-рендера) — чтобы не сбивать анимацию графика.
+    window.pfToggleAssetsFull = function (pid) {
+        chartAssetsFull[pid] = !chartAssetsFull[pid];
+        var on = !!chartAssetsFull[pid];
+        var btn = document.querySelector('.pfcv-assets-more[data-pid="' + pid + '"]');
+        if (!btn) return;
+        var assets = btn.closest('.pfcv-assets'); if (assets) assets.classList.toggle('full', on);
+        btn.classList.toggle('on', on);
+        var t = btn.querySelector('.pfcv-assets-more-t');
+        if (t) { var c = calcPf(findPf(pid) || { holdings: [] }); t.textContent = on ? 'Свернуть таблицу' : 'Показать все активы · ' + c.hs.length; }
+        var ch = btn.querySelector('.pfcv-assets-more-ch'); if (ch) ch.classList.toggle('up', on);
     };
     // наложить/убрать кривую индекса IMOEX за тот же период
     window.pfToggleChartImoex = function (pid) {
@@ -1541,7 +1563,11 @@
         // тот же тикер уже в портфеле (того же типа) → ДОКУПКА: добавляем лот к активу
         var exist = p.holdings.filter(function (x) { return x.ticker === tk && x.type === type; })[0];
         if (exist) { ensureLots(exist).push(lot); openLots[exist.id] = true; toast(tk + ': докуплено · +лот'); }
-        else { p.holdings.push({ id: genId('h'), ticker: tk, name: tk, type: type, lots: [lot] }); }
+        else {
+            // потенциал акции фиксируем на дату покупки (текущий ОДХС) — для карточки ребалансировки
+            var pot = type === 'stock' ? potentialOf(tk) : null;
+            p.holdings.push({ id: genId('h'), ticker: tk, name: tk, type: type, lots: [lot], potAtBuy: pot });
+        }
         saveStore(); ensureQuotes(true); renderPortfolios();
         // фокус обратно на поле тикера для быстрого ввода следующего актива
         var ni = dq('pfNewTk-' + pid); if (ni) try { ni.focus(); } catch (e) {}
@@ -1692,26 +1718,50 @@
     window.pfExpand = function (pid) {
         var p = findPf(pid); if (!p) return;
         ensureQuotes(true);
+        if (typeof window.stkEnsureLoaded === 'function') { try { window.stkEnsureLoaded(); } catch (e) {} }   // эшелоны/потенциал акций
         var ov = dq('pfOverlay');
         if (!ov) { ov = document.createElement('div'); ov.id = 'pfOverlay'; document.body.appendChild(ov);
             ov.addEventListener('click', function (e) { if (e.target === ov) window.pfCloseOverlay(); }); }
         ov.dataset.pid = pid;
         ov.innerHTML = overlayHtml(p);
         fillBondIncome(p);
+        // догружаем детали купонов (купон/частота/погашение) → пересобираем колонку облигаций
+        // с доходностью к погашению, когда данные пришли
+        ensureBondDetails(p, function () {
+            var o = dq('pfOverlay'); if (o && o.dataset.pid === pid && o.classList.contains('show')) { o.innerHTML = overlayHtml(p); fillBondIncome(p); }
+        });
         ov.classList.add('show'); document.body.classList.add('pf-modal-open');
         document.addEventListener('keydown', pfEscClose);
     };
-    // Асинхронно заполняем блок «Доход по облигациям» (данные купонов догружаются)
+    // Перерисовать карточку ребалансировки (смена налога/раскрытие методики — детали уже в кеше)
+    function rebalRepaint() {
+        var ov = dq('pfOverlay'); if (!ov || !ov.classList.contains('show')) return;
+        var p = findPf(ov.dataset.pid); if (!p) return;
+        ov.innerHTML = overlayHtml(p); fillBondIncome(p);
+    }
+    // Догрузка деталей купонов по всем облигациям портфеля (для доходности к погашению)
+    function ensureBondDetails(p, cb) {
+        var bonds = (p.holdings || []).filter(function (h) { return h.type === 'bond' && h.ticker && !bondDetail(h.ticker); });
+        if (!bonds.length || typeof fetchBondData !== 'function') { cb(); return; }
+        var left = bonds.length;
+        bonds.forEach(function (h) {
+            Promise.resolve(fetchBondData(h.ticker)).catch(function () {}).then(function () { if (--left <= 0) cb(); });
+        });
+    }
+    // Асинхронно заполняем блок «Доход по облигациям»: ₽/день · ₽/неделя · ₽/месяц (купоны догружаются)
     function fillBondIncome(p) {
         if (!dq('pfoIncome')) return;
         computeBondIncome(p, function (res) {
             var band = dq('pfoIncome'); if (!band) return;   // оверлей мог закрыться
             if (!res.hasBonds) { band.style.display = 'none'; return; }
             band.style.display = '';
-            var day = dq('pfoIncDay'), mo = dq('pfoIncMo');
-            if (day) day.textContent = res.total.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            if (mo) mo.textContent = res.pending ? 'уточняем данные купонов…'
-                : '≈ ' + fmtRub(res.total * 30) + ' / мес · ' + fmtRub(res.total * 365) + ' / год · ' + res.items.length + ' ' + plural(res.items.length, 'выпуск', 'выпуска', 'выпусков');
+            function f2(n) { return n.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+            var day = dq('pfoIncDay'), wk = dq('pfoIncWeek'), mo = dq('pfoIncMo'), sub = dq('pfoIncSub');
+            if (day) day.textContent = f2(res.total);
+            if (wk) wk.textContent = f2(res.total * 7);
+            if (mo) mo.textContent = f2(res.total * 30);
+            if (sub) sub.textContent = res.pending ? 'уточняем данные купонов…'
+                : '≈ ' + fmtRub(res.total * 365) + ' / год · ' + res.items.length + ' ' + plural(res.items.length, 'выпуск', 'выпуска', 'выпусков');
         });
     }
     window.pfCloseOverlay = function () {
@@ -1720,68 +1770,209 @@
     };
     function pfEscClose(e) { if (e.key === 'Escape') window.pfCloseOverlay(); }
 
+    // ---------- КАРТОЧКА РЕБАЛАНСИРОВКИ (две колонки: облигации | акции) ----------
+    var rebalTax = 0;          // ставка НДФЛ для расчёта доходности облигаций (0 / 0.13 / 0.15)
+    var rebalMethod = false;   // раскрыта ли панель «методика расчёта»
+    var ROMAN = ['I', 'II', 'III', 'IV'];
+
+    // Доходность облигации к погашению (по средней цене/НКД покупки):
+    //   доход   = Σ будущих купонов + номинал (1000 ₽)
+    //   расход  = средняя цена покупки + средний НКД
+    //   прибыль = доход − расход;  прибыль/день = прибыль ÷ дней до погашения
+    //   прибыль/год = прибыль/день × 365;  НДФЛ = ставка × max(0, прибыль)
+    //   доходность% = прибыль/год ÷ (расход + НДФЛ) × 100
+    function bondYTM(h, taxRate) {
+        var det = bondDetail(h.ticker); if (!det) return null;
+        var mat = parseBondDate(det.matDate); if (!mat) return null;
+        var days = (mat.getTime() - Date.now()) / 86400000; if (!(days > 0)) return null;
+        var a = aggHolding(h);
+        var price = a.avgPrice || 0, nkd = a.nkd || 0; if (!(price > 0)) return null;
+        var coupon = +det.couponValue || 0, freq = +det.freq || 0;
+        var remain = freq > 0 ? days * freq / 365 : 0;     // оставшихся купонов до погашения
+        var couponsSum = coupon * remain, nominal = 1000;
+        var income = couponsSum + nominal, cost = price + nkd, profit = income - cost;
+        var perYear = (profit / days) * 365;
+        var tax = Math.max(0, profit) * (taxRate || 0), denom = cost + tax;
+        var annual = denom > 0 ? perYear / denom * 100 : null;
+        return { annual: annual, income: income, cost: cost, profit: profit, days: Math.round(days),
+            couponsSum: couponsSum, coupon: coupon, freq: freq, nominal: nominal, tax: tax, denom: denom,
+            price: price, nkd: nkd, perYear: perYear, remain: remain, matDate: det.matDate };
+    }
+
+    // Эшелон тикера (1..4) из таблицы эшелонов; 0 — не определён
+    function echelonOf(ticker) {
+        try {
+            if (typeof echelonTableData !== 'undefined' && echelonTableData) {
+                for (var ci = 0; ci < echelonTableData.length; ci++) {
+                    var col = echelonTableData[ci] || [];
+                    for (var i = 0; i < col.length; i++) if (col[i] && col[i].t === ticker) return ci + 1;
+                }
+            }
+        } catch (e) {}
+        return 0;
+    }
+    // Лучшие по потенциалу бумаги того же эшелона (исключая уже купленные) — до limit вариантов
+    function echelonCandidates(ech, exclude, limit) {
+        if (!ech) return [];
+        try {
+            var col = (typeof echelonTableData !== 'undefined' && echelonTableData) ? (echelonTableData[ech - 1] || []) : [];
+            var arr = col.filter(function (a) { return a && a.t && !(exclude && exclude[a.t]); }).map(function (a) {
+                var pot = toNum(a.target);
+                return { ticker: a.t, name: a.n || a.t, pot: isFinite(pot) ? pot : -1e9,
+                    potTxt: isFinite(pot) ? ((pot >= 0 ? '+' : '') + pot.toFixed(1) + '%') : '—' };
+            });
+            arr.sort(function (a, b) { return b.pot - a.pot; });
+            return arr.slice(0, limit || 3);
+        } catch (e) { return []; }
+    }
+    // Потенциал акции: зафиксированный на дату покупки (h.potAtBuy) → иначе текущий ОДХС → target эшелона
+    function holdPotential(h) {
+        if (h.potAtBuy != null && isFinite(+h.potAtBuy)) return +h.potAtBuy;
+        var p = potentialOf(h.ticker); if (p != null) return p;
+        try {
+            if (typeof echelonTableData !== 'undefined' && echelonTableData) {
+                for (var ci = 0; ci < echelonTableData.length; ci++) {
+                    var col = echelonTableData[ci] || [];
+                    for (var i = 0; i < col.length; i++) if (col[i] && col[i].t === h.ticker) { var t = toNum(col[i].target); if (isFinite(t)) return t; }
+                }
+            }
+        } catch (e) {}
+        return null;
+    }
+
+    function rebalTaxToggle() {
+        var opts = [[0, '0%'], [0.13, '13%'], [0.15, '15%']];
+        return '<div class="pfrb-tax"><span class="pfrb-tax-l">НДФЛ</span>' + opts.map(function (o) {
+            return '<button class="pfrb-tax-b' + (rebalTax === o[0] ? ' on' : '') + '" onclick="pfSetRebalTax(' + o[0] + ')">' + o[1] + '</button>';
+        }).join('') + '</div>';
+    }
+    function rebalMethodPanel() {
+        var pct = Math.round(rebalTax * 100);
+        return '<div class="pfrb-method">' +
+            '<div class="pfrb-method-h"><span>Методика расчёта доходности облигаций</span>' +
+                '<button class="pfrb-method-x" onclick="pfToggleMethod()" aria-label="Скрыть">' + XMARK_SVG + '</button></div>' +
+            '<ol class="pfrb-method-steps">' +
+                '<li><b>Доход</b> = все будущие купоны (купон × осталось выплат до погашения) <span>+</span> номинал 1000 ₽</li>' +
+                '<li><b>Расход</b> = средняя цена покупки <span>+</span> средний НКД</li>' +
+                '<li><b>Прибыль</b> = Доход − Расход</li>' +
+                '<li><b>Прибыль в день</b> = Прибыль ÷ дней до погашения</li>' +
+                '<li><b>Прибыль в год</b> = Прибыль в день × 365</li>' +
+                '<li><b>Доходность</b> = Прибыль в год ÷ (Расход + НДФЛ) × 100%' +
+                    '<span class="pfrb-method-tax">НДФЛ сейчас: ' + pct + '%' + (pct ? ' · налог = ' + pct + '% от прибыли' : ' · без налога') + '</span></li>' +
+            '</ol>' +
+            '<div class="pfrb-method-note">Средние цена/НКД/дата — взвешенные по лотам. Кол-во купонов оценивается из частоты выплат и срока до погашения (данные MOEX).</div>' +
+        '</div>';
+    }
+    function pfrbEmptyCol(t, s) {
+        return '<div class="pfrb-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M12 8v8M8 12h8"/></svg>' +
+            '<span class="pfrb-empty-t">' + esc(t) + '</span><span class="pfrb-empty-s">' + esc(s) + '</span></div>';
+    }
+    // Колонка облигаций: доход по купонам (день/неделя/месяц) + доходность к погашению по каждой
+    function rebalBondCol(p, bonds, c) {
+        var head = '<div class="pfrb-colhead"><span class="pfrb-cdot bond"></span><span class="pfrb-cname">Облигации</span>' +
+            '<span class="pfrb-ccount">' + bonds.length + '</span>' +
+            '<span class="pfrb-cval">' + fmtRub(c.bondVal) + ' · ' + Math.round(c.bondPct) + '%</span></div>';
+        var income = '<div class="pfrb-income" id="pfoIncome" style="display:none">' +
+            '<div class="pfrb-inc-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Доход по купонам до погашения</div>' +
+            '<div class="pfrb-inc-grid">' +
+                '<div class="pfrb-inc-cell"><b id="pfoIncDay">—</b><span>₽ / день</span></div>' +
+                '<div class="pfrb-inc-cell"><b id="pfoIncWeek">—</b><span>₽ / неделя</span></div>' +
+                '<div class="pfrb-inc-cell"><b id="pfoIncMo">—</b><span>₽ / месяц</span></div>' +
+            '</div>' +
+            '<div class="pfrb-inc-sub" id="pfoIncSub">считаем…</div></div>';
+        var body;
+        if (!bonds.length) body = pfrbEmptyCol('Нет облигаций', 'Добавьте облигации — здесь появятся доходность к погашению и доход по купонам.');
+        else {
+            var sideTotal = c.bondVal || 1;
+            body = bonds.map(function (x) {
+                var h = x.h, cc = x.c, y = bondYTM(h, rebalTax);
+                var share = Math.max(2, Math.round(cc.value / sideTotal * 100));
+                var ready = y && y.annual != null;
+                var ytmTxt = ready ? fmtPct(y.annual) : 'считаем…';
+                var ytmCls = ready ? (y.annual >= 0 ? 'pos' : 'neg') : 'muted';
+                var sub = y ? ('цена+НКД ' + fmtPrice(y.cost) + ' · ' + y.days + ' дн до погашения · ' + ruDate2(y.matDate))
+                            : ('цена+НКД ' + fmtPrice((cc.buy || 0) + (cc.nkd || 0)) + ' · нет данных купонов');
+                return '<div class="pfrb-row pfrb-row--bond">' +
+                    '<div class="pfrb-rmain">' +
+                        '<div class="pfrb-rid"><span class="pfrb-tk">' + esc(h.ticker) + '</span><span class="pfrb-nm">' + esc(h.name || '') + '</span></div>' +
+                        '<div class="pfrb-rmetric"><span class="pfrb-ml">к погашению</span><span class="pfrb-mv ' + ytmCls + '">' + ytmTxt + '</span></div>' +
+                    '</div>' +
+                    '<div class="pfrb-bar"><i style="width:' + share + '%"></i><span class="pfrb-bw">' + share + '%</span></div>' +
+                    '<div class="pfrb-rsub">' + sub + '</div>' +
+                '</div>';
+            }).join('');
+        }
+        return '<div class="pfrb-col pfrb-col--bond">' + head + income + '<div class="pfrb-rows">' + body + '</div>' +
+            (bonds.length ? '<div class="pfrb-cnote">Доходность к погашению — по средней цене и НКД покупки, с учётом НДФЛ (тумблер сверху). <button class="pfrb-cnote-lnk" onclick="pfToggleMethod()">методика расчёта</button></div>' : '') +
+        '</div>';
+    }
+    // Колонка акций: тикер · эшелон · потенциал (на дату покупки) + до 3 замен в том же эшелоне
+    function rebalStockCol(p, stocks, c) {
+        var head = '<div class="pfrb-colhead"><span class="pfrb-cdot stock"></span><span class="pfrb-cname">Акции</span>' +
+            '<span class="pfrb-ccount">' + stocks.length + '</span>' +
+            '<span class="pfrb-cval">' + fmtRub(c.stockVal) + ' · ' + Math.round(c.stockPct) + '%</span></div>';
+        var body;
+        if (!stocks.length) body = pfrbEmptyCol('Нет акций', 'Добавьте акции — здесь появятся потенциал, эшелон и варианты для ребалансировки.');
+        else {
+            var held = {}; stocks.forEach(function (x) { held[x.h.ticker] = 1; });
+            var sideTotal = c.stockVal || 1;
+            body = stocks.map(function (x) {
+                var h = x.h, cc = x.c, ech = echelonOf(h.ticker), pot = holdPotential(h);
+                var potTxt = pot == null ? '—' : fmtPct(pot), potCls = pot == null ? 'muted' : (pot >= 0 ? 'pos' : 'neg');
+                var tier = ech ? '<span class="pfrb-tier tier-' + ech + '">' + (ROMAN[ech - 1] || '') + '</span>' : '';
+                var share = Math.max(2, Math.round(cc.value / sideTotal * 100));
+                var cands = echelonCandidates(ech, held, 3);
+                var swaps = ech
+                    ? '<div class="pfrb-swaps"><span class="pfrb-swaps-l">замена · ' + (ROMAN[ech - 1] || '') + ' эшелон</span>' +
+                        (cands.length ? cands.map(function (cn) {
+                            return '<button class="pfrb-swap" onclick="pfOpenTicker(\'' + esc(cn.ticker) + '\')" title="' + attr(cn.name) + '">' +
+                                '<span class="pfrb-swap-tk">' + esc(cn.ticker) + '</span>' +
+                                '<span class="pfrb-swap-pot ' + (cn.pot >= 0 ? 'pos' : 'neg') + '">' + esc(cn.potTxt) + '</span></button>';
+                        }).join('') : '<span class="pfrb-swaps-none">нет вариантов в эшелоне</span>') + '</div>'
+                    : '<div class="pfrb-swaps"><span class="pfrb-swaps-none">эшелон не определён</span></div>';
+                return '<div class="pfrb-row pfrb-row--stock">' +
+                    '<div class="pfrb-rmain">' +
+                        '<button class="pfrb-rid link" onclick="pfOpenTicker(\'' + esc(h.ticker) + '\')"><span class="pfrb-tk">' + esc(h.ticker) + tier + '</span><span class="pfrb-nm">' + esc(h.name || '') + '</span></button>' +
+                        '<div class="pfrb-rmetric"><span class="pfrb-ml">потенциал · покупка</span><span class="pfrb-mv ' + potCls + '">' + potTxt + '</span></div>' +
+                    '</div>' +
+                    '<div class="pfrb-bar"><i style="width:' + share + '%"></i><span class="pfrb-bw">' + share + '%</span></div>' +
+                    swaps +
+                '</div>';
+            }).join('');
+        }
+        return '<div class="pfrb-col pfrb-col--stock">' + head + '<div class="pfrb-rows">' + body + '</div>' +
+            (stocks.length ? '<div class="pfrb-cnote">Потенциал зафиксирован на дату покупки. Замены — лучшие по потенциалу бумаги того же эшелона.</div>' : '') +
+        '</div>';
+    }
+
     function overlayHtml(p) {
         var c = calcPf(p), ac = colorVal(p.color), pnlCls = c.pnl >= 0 ? 'pos' : 'neg';
-
-        return '<div class="pfo-card" style="--pf-accent:' + ac + '">' +
+        var bonds = c.hs.filter(function (x) { return x.h.type === 'bond'; });
+        var stocks = c.hs.filter(function (x) { return x.h.type !== 'bond'; });
+        return '<div class="pfo-card pfrb-card" style="--pf-accent:' + ac + '">' +
             '<div class="pfo-head">' +
                 '<div class="pfo-head-l"><span class="pfo-dot"></span>' +
-                    '<div class="pfo-head-tt"><div class="pfo-eyebrow">Портфель</div>' +
+                    '<div class="pfo-head-tt"><div class="pfo-eyebrow">Ребалансировка портфеля</div>' +
                     '<div class="pfo-name">' + esc(p.name) + '</div>' +
-                    '<div class="pfo-meta">' + c.count + ' ' + plural(c.count, 'актив', 'актива', 'активов') + ' · создан ' + new Date(p.createdAt).toLocaleDateString('ru-RU') + '</div></div></div>' +
-                '<div class="pfo-head-r">' +
-                    '<div class="pfo-headcap"><span class="pfo-headcap-l">Стоимость</span><span class="pfo-headcap-v">' + fmtRub(c.value) + '</span></div>' +
-                    '<span class="pfo-headpnl ' + pnlCls + '">' + (c.pnl >= 0 ? '▲ ' : '▼ ') + fmtPct(c.pnlPct) + '</span>' +
+                    '<div class="pfo-meta">' + c.count + ' ' + plural(c.count, 'актив', 'актива', 'активов') + ' · стоимость ' + fmtRub(c.value) +
+                        ' · <span class="' + pnlCls + '">' + (c.pnl >= 0 ? '▲ ' : '▼ ') + fmtPct(c.pnlPct) + '</span></div></div></div>' +
+                '<div class="pfo-head-r pfrb-head-ctrls">' + rebalTaxToggle() +
+                    '<button class="pfrb-mbtn' + (rebalMethod ? ' on' : '') + '" onclick="pfToggleMethod()">' + INFO_SVG + '<span>Методика расчёта</span></button>' +
                 '</div>' +
                 '<button class="pfo-x" onclick="pfCloseOverlay()" aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
             '</div>' +
-            '<div class="pfo-top">' +
-                '<div class="pfo-distrib">' +
-                    '<div class="pfo-distrib-h">Распределение активов</div>' +
-                    '<div class="pfo-distrib-row">' +
-                        '<div class="pfo-ring">' + donutHtml(c.bondPct, 124, '<span class="pf-ring-top">Капитал</span><span class="pf-ring-val">' + esc(fmtRub(c.value).replace(' ₽', '')) + '</span>') + '</div>' +
-                        '<div class="pfo-legend">' +
-                            pfoLeg('stock', 'Акции', c.stockVal, c.stockPct) +
-                            pfoLeg('bond', 'Облигации', c.bondVal, c.bondPct) +
-                        '</div>' +
-                    '</div>' +
-                '</div>' +
-                '<div class="pfo-stats">' +
-                    pfoStat('Стоимость сейчас', fmtRub(c.value), '', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12a2 2 0 0 0 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>') +
-                    pfoStat('Вложено', fmtRub(c.invested), '', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M5 21h14"/></svg>') +
-                    pfoStat('Доход', fmtRub(c.pnl) + '  (' + fmtPct(c.pnlPct) + ')', pnlCls, '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="' + (c.pnl >= 0 ? '22 7 13.5 15.5 8.5 10.5 2 17' : '22 17 13.5 8.5 8.5 13.5 2 7') + '"/><polyline points="' + (c.pnl >= 0 ? '16 7 22 7 22 13' : '16 17 22 17 22 11') + '"/></svg>', pnlCls) +
-                    pfoStat('Доходность годовых', c.annual == null ? '—' : fmtPct(c.annual), c.annual == null ? '' : (c.annual >= 0 ? 'pos' : 'neg'), '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>') +
-                '</div>' +
+            (rebalMethod ? rebalMethodPanel() : '') +
+            '<div class="pfrb-body">' +
+                rebalBondCol(p, bonds, c) +
+                rebalStockCol(p, stocks, c) +
             '</div>' +
-            '<div class="pfo-income" id="pfoIncome" style="display:none">' +
-                '<div class="pfo-income-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>' +
-                '<div class="pfo-income-main">' +
-                    '<div class="pfo-income-l">Доход по облигациям до погашения</div>' +
-                    '<div class="pfo-income-v"><b id="pfoIncDay">—</b><span class="pfo-income-unit">₽ / день</span></div>' +
-                    '<div class="pfo-income-sub" id="pfoIncMo">считаем…</div>' +
-                '</div>' +
-                '<div class="pfo-income-note">Купоны до погашения + номинал ÷ дни до погашения, по каждому выпуску × кол-во. Метрика для контроля ребалансировок.</div>' +
-            '</div>' +
-            pfHoldsTableHtml(c) +
             '<div class="pfo-foot"><button class="pfo-edit" onclick="pfCloseOverlay();pfToggleMenu(\'' + p.id + '\')">⚙ Редактировать состав</button></div>' +
         '</div>';
     }
-    // показатель в разворот: иконка-чип + подпись + значение (tone = акцент чипа/фона)
-    function pfoStat(l, v, cls, icon, tone) {
-        return '<div class="pfo-stat' + (tone ? ' pfo-stat--' + tone : '') + '">' +
-            '<div class="pfo-stat-ic">' + (icon || '') + '</div>' +
-            '<div class="pfo-stat-tx"><div class="pfo-stat-l">' + esc(l) + '</div>' +
-            '<div class="pfo-stat-v ' + (cls || '') + '">' + v + '</div></div></div>';
-    }
-    // строка легенды распределения: цвет · название · доля % · полоса доли · сумма ₽
-    function pfoLeg(kind, label, rub, pct) {
-        var p = Math.round(clamp(pct || 0, 0, 100));
-        return '<div class="pfo-leg ' + kind + '"><span class="pfo-leg-dot"></span>' +
-            '<span class="pfo-leg-nm">' + esc(label) + '</span>' +
-            '<span class="pfo-leg-pct">' + p + '%</span>' +
-            '<span class="pfo-leg-bar"><i style="width:' + p + '%"></i></span>' +
-            '<span class="pfo-leg-rub">' + fmtRub(rub) + '</span></div>';
-    }
+    // короткая дата погашения ДД.ММ.ГГГГ из строки MOEX (YYYY-MM-DD)
+    function ruDate2(s) { if (!s || s === '—') return '—'; var pp = String(s).split('T')[0].split('-'); return pp.length === 3 ? pp[2] + '.' + pp[1] + '.' + pp[0] : s; }
+    window.pfSetRebalTax = function (rate) { rebalTax = rate; rebalRepaint(); };
+    window.pfToggleMethod = function () { rebalMethod = !rebalMethod; rebalRepaint(); };
 
     // ====================================================================
     //  ИНТЕГРАЦИЯ
