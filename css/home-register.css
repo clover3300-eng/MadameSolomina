@@ -1,0 +1,348 @@
+/* =========================================================
+   HOME REGISTER — стартовая страница со скроллом к форме
+   =========================================================
+   Загружается ПОСЛЕ site-layout.css и ПЕРЕД desktop-zoom.css.
+   Десктопные высоты (с делением на zoom 0.85) живут в
+   css/desktop-zoom.css — здесь только база (мобайл) и оформление. */
+
+/* ---- Главная превращается в вертикальный скролл: герой + форма ---- */
+/* Базовая раскладка делает #contentArea на главной overflow:hidden (один
+   экран). Возвращаем вертикальный скролл, чтобы открыть форму под героем. */
+body.tab-home #contentArea {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+body.tab-home #panel-home {
+    height: auto;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Герой (welcome-screen) занимает ровно один экран — форма «под сгибом». */
+body.tab-home #panel-home .welcome-screen {
+    position: relative;
+    min-height: calc(var(--real-vh, 100vh) - 32px);
+    flex: 0 0 auto;
+}
+
+/* Кнопка «Открыть Terminal» — цвет сайдбара (#161B27). */
+body.tab-home .btn-welcome {
+    background: #161B27;
+    box-shadow: 0 14px 38px rgba(22, 27, 39, 0.32);
+}
+body.tab-home .btn-welcome:active {
+    box-shadow: 0 8px 22px rgba(22, 27, 39, 0.38);
+}
+
+/* ---- Индикатор «прокрути вниз» ---- */
+.welcome-scrolldown {
+    position: absolute;
+    left: 50%;
+    bottom: 40px;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px 14px;
+    color: #3c4760;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.25s ease;
+}
+.welcome-scrolldown:hover { transform: translateX(-50%) translateY(-3px); }
+.welcome-scrolldown-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    white-space: nowrap;
+    text-shadow: 0 1px 10px rgba(255, 255, 255, 0.9), 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+/* Круглый бейдж со стрелкой — стекло поверх пейзажа */
+.welcome-scrolldown-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(10px) saturate(160%);
+    -webkit-backdrop-filter: blur(10px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    box-shadow: 0 10px 26px -6px rgba(44, 54, 76, 0.30);
+    animation: hrBounce 1.9s ease-in-out infinite;
+}
+.welcome-scrolldown-chevron {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: #2C364C;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+@keyframes hrBounce {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(7px); }
+}
+
+/* ===== Читаемость текста героя поверх светлой картинки ===== */
+/* Мягкий белый ореол под центральным блоком + усиление контраста
+   приглушённых надписей (только главная, светлая тема). */
+body.tab-home:not(.dark-mode) .welcome-screen .welcome-logo-block,
+body.tab-home:not(.dark-mode) .welcome-screen .welcome-cta-block {
+    position: relative;
+    z-index: 1;
+}
+body.tab-home:not(.dark-mode) .welcome-supratitle {
+    color: #5a6a86;
+    text-shadow: 0 1px 10px rgba(255, 255, 255, 0.85);
+}
+body.tab-home:not(.dark-mode) .welcome-title {
+    text-shadow: 0 2px 18px rgba(255, 255, 255, 0.75), 0 1px 2px rgba(255, 255, 255, 0.6);
+}
+body.tab-home:not(.dark-mode) .welcome-subtitle {
+    color: #5d6b84;
+    text-shadow: 0 1px 10px rgba(255, 255, 255, 0.9);
+}
+body.tab-home:not(.dark-mode) .welcome-divider {
+    background: rgba(44, 54, 76, 0.32);
+}
+body.tab-home:not(.dark-mode) .welcome-secure-text {
+    color: #6b7890;
+    text-shadow: 0 1px 8px rgba(255, 255, 255, 0.9);
+}
+
+/* ---- Секция регистрации ---- */
+.home-register {
+    flex: 0 0 auto;
+    min-height: calc(var(--real-vh, 100vh) - 32px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 0 72px;
+    box-sizing: border-box;
+}
+
+/* ---- Стеклянная карточка формы ---- */
+.hr-card {
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 36px 32px 30px;
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.66);
+    backdrop-filter: blur(22px) saturate(180%);
+    -webkit-backdrop-filter: blur(22px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    border-radius: 28px;
+    box-shadow:
+        0 30px 70px -24px rgba(44, 54, 76, 0.40),
+        0 2px 10px rgba(44, 54, 76, 0.06);
+    animation: hrCardIn 0.6s ease-out both;
+}
+@keyframes hrCardIn {
+    from { opacity: 0; transform: translateY(22px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.hr-head { text-align: center; margin-bottom: 24px; }
+.hr-eyebrow {
+    font-family: 'Inter', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    color: #94A3B8;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+}
+.hr-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    color: #2C364C;
+    margin: 10px 0 4px;
+}
+.hr-sub {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: #7d8aa0;
+    margin: 0;
+}
+
+/* ---- Поля формы ---- */
+.hr-form { display: flex; flex-direction: column; gap: 14px; }
+.hr-field { display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.hr-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    color: #6b7890;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding-left: 2px;
+}
+.hr-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 14px 16px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: #2C364C;
+    background: rgba(255, 255, 255, 0.78);
+    border: 1.5px solid rgba(44, 54, 76, 0.12);
+    border-radius: 14px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    outline: none;
+}
+.hr-input::placeholder { color: #aab4c4; }
+.hr-input:focus {
+    background: #fff;
+    border-color: #2C364C;
+    box-shadow: 0 0 0 4px rgba(44, 54, 76, 0.10);
+}
+
+.hr-error {
+    display: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: #d23b4e;
+    text-align: center;
+    padding: 2px 0;
+}
+.hr-error.show { display: block; }
+
+/* ---- Главная кнопка ---- */
+.hr-submit {
+    margin-top: 6px;
+    width: 100%;
+    padding: 16px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #fff;
+    background: #161B27;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    box-shadow: 0 14px 34px rgba(22, 27, 39, 0.30);
+    transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+.hr-submit:hover { box-shadow: 0 18px 42px rgba(22, 27, 39, 0.36); }
+.hr-submit:active { transform: scale(0.98); }
+.hr-submit.is-done { background: #1f9d63; box-shadow: 0 14px 34px rgba(31, 157, 99, 0.32); }
+
+/* ---- Разделитель «или» ---- */
+.hr-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 20px 0 16px;
+    color: #9aa6b8;
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+}
+.hr-divider::before,
+.hr-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: rgba(44, 54, 76, 0.14);
+}
+
+/* ---- Кнопка Telegram ---- */
+.hr-tg {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, #2AABEE 0%, #229ED9 100%);
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    box-shadow: 0 14px 34px rgba(34, 158, 217, 0.34);
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+.hr-tg:hover { box-shadow: 0 18px 42px rgba(34, 158, 217, 0.42); }
+.hr-tg:active { transform: scale(0.98); }
+.hr-tg-icon { width: 20px; height: 20px; fill: #fff; }
+
+/* ---- Подвал карточки ---- */
+.hr-foot {
+    margin: 18px 0 0;
+    text-align: center;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: #7d8aa0;
+}
+.hr-link { color: #229ED9; font-weight: 700; cursor: pointer; }
+.hr-link:hover { text-decoration: underline; }
+
+.hr-policy {
+    margin: 14px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-family: 'Inter', sans-serif;
+    font-size: 9px;
+    font-weight: 500;
+    color: #a0aec0;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.hr-policy svg {
+    width: 11px; height: 11px;
+    stroke: currentColor; fill: none; stroke-width: 2;
+}
+
+/* =====================  ТЁМНАЯ ТЕМА  ===================== */
+.dark-mode .welcome-scrolldown { color: #93a2bd; }
+
+.dark-mode .hr-card {
+    background: rgba(20, 28, 44, 0.72);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 30px 70px -24px rgba(0, 0, 0, 0.6);
+}
+.dark-mode .hr-title { color: #F1F5F9; }
+.dark-mode .hr-sub { color: #94a3b8; }
+.dark-mode .hr-eyebrow { color: #64748B; }
+.dark-mode .hr-label { color: #94a3b8; }
+.dark-mode .hr-input {
+    background: rgba(15, 23, 42, 0.6);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #e2e8f0;
+}
+.dark-mode .hr-input::placeholder { color: #64748b; }
+.dark-mode .hr-input:focus {
+    background: rgba(15, 23, 42, 0.9);
+    border-color: #5a7cff;
+    box-shadow: 0 0 0 4px rgba(90, 124, 255, 0.18);
+}
+.dark-mode .hr-submit { background: #2a3550; }
+.dark-mode .hr-divider { color: #64748b; }
+.dark-mode .hr-divider::before,
+.dark-mode .hr-divider::after { background: rgba(255, 255, 255, 0.12); }
+.dark-mode .hr-foot { color: #94a3b8; }
+
+/* ---- Узкие экраны ---- */
+@media (max-width: 480px) {
+    .hr-card { max-width: none; margin: 0 6px; padding: 30px 22px 26px; border-radius: 24px; }
+    .hr-title { font-size: 22px; }
+}

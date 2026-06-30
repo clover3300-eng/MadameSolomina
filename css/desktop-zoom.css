@@ -44,10 +44,20 @@
        и смещала герой-блок вниз. height:100% на #panel-home делает высоту
        «определённой», чтобы min-height:100% у .welcome-screen считался
        от реальной высоты #contentArea, а не от auto. */
-    body.tab-home #panel-home { height: 100%; }
+    /* Главная теперь скроллится: герой (1 экран) + форма регистрации
+       (1 экран). #panel-home должен расти под оба блока (height:auto),
+       иначе #contentArea не получит высоту для скролла. Высота экрана
+       компенсируется делением на zoom-фактор (px из --real-vh). */
+    /* Видимая высота #contentArea = экран минус шапка (~55px на десктопе →
+       /0.85 ≈ 66px в CSS-пикселях). Вычитаем её, чтобы герой и форма точно
+       заполняли видимую область, а индикатор «вниз» не уезжал под сгиб. */
+    body.tab-home #panel-home { height: auto; min-height: calc(var(--real-vh, 100vh) / 0.85 - 66px); }
     body.tab-home #panel-home .welcome-screen {
-        min-height: 100% !important;
+        min-height: calc(var(--real-vh, 100vh) / 0.85 - 66px) !important;
         height: auto;
+    }
+    body.tab-home #panel-home .home-register {
+        min-height: calc(var(--real-vh, 100vh) / 0.85 - 66px);
     }
 
     /* Тест Vanguard занимает весь экран */
