@@ -2413,3 +2413,46 @@
         body:not(.sb-collapsed) { --sb-w: 252px; }
     }
 
+    /* ===================================================== */
+    /* ===== HOME BACKGROUND IMAGE (стартовая страница) ===== */
+    /* ===================================================== */
+    /* Фоновая картинка вкладки «Главная»: единым полотном за шапкой
+       и контентом. Сайдбар НЕ затрагивается. position:fixed + inset
+       (top/right/bottom/left, без 100vw/100vh) — корректно под
+       body{zoom:0.85} на десктопе, как у прочих fixed-оверлеев. */
+    #homeBg {
+        display: none;
+        position: fixed;
+        top: 0; right: 0; bottom: 0; left: 0;
+        z-index: 1;                 /* над фоном #appShell, под шапкой/контентом */
+        background-image: url('../img/home-bg.jpg');
+        background-size: cover;
+        background-position: center top;
+        background-repeat: no-repeat;
+        pointer-events: none;
+    }
+    /* Картинку показываем только на главной и только в светлой теме
+       (в тёмной .welcome-screen имеет собственный градиент-фон). */
+    body.tab-home:not(.dark-mode) #homeBg { display: block; }
+
+    /* Шапка «вшита в фон»: на главной убираем стекло/блюр/тень,
+       чтобы картинка шла за шапкой непрерывно с контентом. */
+    body.tab-home:not(.dark-mode) #headerWrapper {
+        background: transparent !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Контент-область над картинкой (фон прозрачный, контент поверх #homeBg). */
+    body.tab-home:not(.dark-mode) #contentArea {
+        background: transparent !important;
+        z-index: 2;
+    }
+
+    @media (min-width: 1024px) {
+        /* Десктоп: левая колонка сайдбара = calc(78px + 14px). Картинка
+           начинается после неё, поэтому сайдбар остаётся ровно как есть. */
+        body.tab-home:not(.dark-mode) #homeBg { left: calc(78px + 14px); }
+    }
+
