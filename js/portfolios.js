@@ -686,13 +686,13 @@
         var couponsSum = coupon * remain;
         var nominal = 1000;                              // номинал ОФЗ/корп по умолчанию
         var perBond = (couponsSum + nominal) / days;     // ₽/день на одну облигацию
-        var qty = +h.qty || 0;
+        var qty = aggHolding(h).qty || 0;                // кол-во из лотов (h.qty в лот-модели пуст)
         return { perBondDay: perBond, total: perBond * qty, days: Math.round(days), qty: qty, coupon: coupon, freq: freq };
     }
     // Считает суммарный ₽/день по всем облигациям портфеля; догружает недостающие данные
     // (fetchBondData) и зовёт cb повторно по мере готовности.
     function computeBondIncome(p, cb) {
-        var bonds = (p.holdings || []).filter(function (h) { return h.type === 'bond' && h.ticker && (+h.qty || 0) > 0; });
+        var bonds = (p.holdings || []).filter(function (h) { return h.type === 'bond' && h.ticker && aggHolding(h).qty > 0; });
         if (!bonds.length) { cb({ total: 0, items: [], pending: false, hasBonds: false }); return; }
         function build(pending) {
             var total = 0, items = [];
