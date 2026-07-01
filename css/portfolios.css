@@ -1280,11 +1280,18 @@ body.dark-mode .pfrb-method-steps li { background: rgba(255,255,255,0.03); borde
 .pfrb-method-tax { display: block; margin-top: 4px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 700; color: #94a3b8 !important; }
 .pfrb-method-note { margin-top: 11px; font-size: 11px; line-height: 1.5; color: #94a3b8; }
 
-/* тело: вертикальный список из двух секций (облигации, затем акции), общий скролл */
+/* тело: облигации и акции — ДВА столбца рядом (слева/справа), общий скролл на .pfrb-body.
+   Ниже 1100px (уже не помещаются 2×2 колонки — секция+пикер внутри неё) складываем в 1 столбец. */
 .pfrb-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; display: flex; flex-direction: column; }
+.pfrb-cols { display: grid; grid-template-columns: 1fr 1fr; align-items: start; }
+@media (max-width: 1100px) { .pfrb-cols { grid-template-columns: 1fr; } }
 .pfrb-section { padding: 0 22px 20px; display: flex; flex-direction: column; gap: 12px; }
-.pfrb-section--bond { border-bottom: 7px solid rgba(24,38,60,0.045); }
-body.dark-mode .pfrb-section--bond { border-bottom-color: rgba(255,255,255,0.045); }
+.pfrb-section--bond { border-right: 1px solid rgba(24,38,60,0.06); }
+body.dark-mode .pfrb-section--bond { border-right-color: rgba(255,255,255,0.06); }
+@media (max-width: 1100px) {
+    .pfrb-section--bond { border-right: none; border-bottom: 7px solid rgba(24,38,60,0.045); }
+    body.dark-mode .pfrb-section--bond { border-bottom-color: rgba(255,255,255,0.045); }
+}
 /* липкая шапка секции */
 .pfrb-colhead { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: 8px;
     margin: 0 -22px; padding: 14px 22px 10px; background: #fff; border-bottom: 1px solid rgba(24,38,60,0.06); }
@@ -1324,7 +1331,12 @@ body.dark-mode .pfrb-stk { color: #f4f8fd; }
 .pfrb-syield span { font-size: 7.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #94a3b8; margin-top: 1px; }
 .pfrb-syield.pos b { color: #16a34a; } .pfrb-syield.neg b { color: #dc2626; } .pfrb-syield.muted b { font-size: 11px; color: #b6c0cc; font-style: italic; }
 body.dark-mode .pfrb-syield.pos b { color: #34d399; } body.dark-mode .pfrb-syield.neg b { color: #f87171; }
-.pfrb-smeta { grid-area: meta; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #8195a9; margin-top: 2px; }
+/* деталь (объём/изм./доходность к погашению) — шум, скрыт по умолчанию; раскрывается
+   подстрокой ТОЛЬКО у выбранной (.sel) бумаги — клик уже и выбирает, и показывает детали */
+.pfrb-smeta { grid-area: meta; display: none; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #8195a9;
+    margin-top: 3px; padding-top: 4px; border-top: 1px dashed rgba(24,38,60,0.1); }
+body.dark-mode .pfrb-smeta { border-top-color: rgba(255,255,255,0.08); }
+.pfrb-srow.sel .pfrb-smeta { display: block; }
 
 /* блок дохода по купонам (день/неделя/месяц) */
 .pfrb-income { border-radius: 14px; padding: 12px 14px; border: 1px solid color-mix(in srgb, #7B9BBF 30%, rgba(24,38,60,0.07));

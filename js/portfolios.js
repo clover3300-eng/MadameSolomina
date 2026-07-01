@@ -439,10 +439,11 @@
     // ERR (не смогли получить данные) — единственный настоящий сбой (тон предупреждения).
     var CHART_EMPTY_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>';
     var CHART_CLOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>';
+    var CHART_SPROUT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V12"/><path d="M12 12C12 8.5 9.5 6 6 6c0 3.5 2.5 6 6 6z"/><path d="M12 9c0-2.76 1.79-5 4.5-5C16.5 6.76 14.71 9 12 9z"/><path d="M4 21h16"/></svg>';
     var CHART_WARN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
     function pfChartMsgHtml(code) {
         var conf = code === 'NO_ASSETS' ? { icon: CHART_EMPTY_SVG, t: 'Пока нечего показывать', s: 'Добавьте позиции с количеством — и здесь появится кривая доходности.' }
-            : code === 'NO_PF' ? { icon: CHART_CLOCK_SVG, t: 'Мало истории', s: 'Портфель совсем свежий — накопится больше котировок, и появится график.' }
+            : code === 'NO_PF' ? { icon: CHART_SPROUT_SVG, t: 'График скоро появится', s: 'С первой покупки прошло мало дней — как накопится больше котировок, здесь построится кривая доходности.' }
             : code === 'NO_BT' ? { icon: CHART_CLOCK_SVG, t: 'Модуль ещё грузится', s: 'Данные исторических цен подгружаются — откройте график чуть позже.' }
             : { icon: CHART_WARN_SVG, t: 'Не удалось загрузить', s: 'Не получили данные Мосбиржи. Попробуйте обновить позже.', warn: true };
         return '<div class="pfcv-msg' + (conf.warn ? ' warn' : '') + '"><span class="pfcv-msg-art">' + conf.icon + '</span>' +
@@ -829,25 +830,24 @@
         rendering = true;
         try {
             ensureQuotes();
-            // Раскладка сводки «Суммарный капитал»:
-            //  • 1 или 3 портфеля (нечёт) → сводка-карточка первой ячейкой сетки,
-            //    т.е. СЛЕВА от первого портфеля (заполняет «дырку» в 2-колоночной сетке);
-            //    избранное остаётся ПОСЛЕ карточек (как раньше) — сводка тут узкая, карточка-
-            //    ячейка сетки, а не широкая полоса, рядом с ней нет места для колонки избранного;
-            //  • 2 или 4 портфеля (чёт) → сводка — широкая полоса сверху. На десктопе она
-            //    делит верхнюю строку с «Избранным» (.pf-topgrid: сводка слева, избранное
-            //    справа — раньше избранное уходило в самый низ, под ВСЕ карточки), карточки —
-            //    отдельной строкой ниже на всю ширину. Сама сводка (не aside-вариант) ещё и
-            //    «липнет» к верху при скролле, компактнее сжимаясь (см. pf-stuck в CSS) —
-            //    ensurePfStickyScroll/pfSyncStuck ниже.
+            // Раскладка: «Избранное» ВСЕГДА в правой колонке (.pf-topgrid-fav), независимо от
+            // числа портфелей — слева (.pf-topgrid-left) сводка+карточки, справа избранное.
+            // На узком экране (<1600px) колонка складывается в 1, избранное уходит вниз (см.
+            // @media в CSS) — порядок в DOM (left затем fav) уже даёт нужный порядок на мобиле.
+            //  • 0 портфелей → слева просто пустое состояние;
+            //  • 1 или 3 (нечёт) → сводка-карточка ПЕРВОЙ ЯЧЕЙКОЙ сетки карточек (заполняет
+            //    «дырку» в 2-колоночной сетке), календарь выплат — под сеткой;
+            //  • 2 или 4 (чёт) → сводка отдельной широкой полосой над сеткой, «липнет» к верху
+            //    при скролле и компактнее сжимается (см. pf-stuck в CSS) — ensurePfStickyScroll/
+            //    pfSyncStuck ниже.
             var n = store.items.length;
             var favStr = favHtml();
             var payCal = paymentCalendarHtml();
-            var body;
-            if (n === 0) body = gridHtml(false) + favStr;
-            else if (n % 2 === 1) body = gridHtml(true) + payCal + favStr;
-            else body = '<div class="pf-topgrid">' +
-                    '<div class="pf-topgrid-left">' + summaryHtml(false) + gridHtml(false) + '</div>' +
+            var left = n === 0 ? gridHtml(false)
+                : n % 2 === 1 ? gridHtml(true)
+                : summaryHtml(false) + gridHtml(false);
+            var body = '<div class="pf-topgrid">' +
+                    '<div class="pf-topgrid-left">' + left + '</div>' +
                     '<div class="pf-topgrid-fav">' + favStr + '</div>' +
                 '</div>' + payCal;
             host.innerHTML =
@@ -2507,7 +2507,7 @@
                 '<div class="pfrb-pcol"><div class="pfrb-pcol-h"><span>Рынок ОФЗ</span><i>доходность сейчас</i></div><div class="pfrb-plist">' + newRows + '</div></div>' +
             '</div>' +
             bondResultHtml(bonds, newOfz) +
-            '<div class="pfrb-cnote">Нажмите на свою облигацию слева и на облигацию из рынка справа — покажем выгоду обмена. <button class="pfrb-cnote-lnk" onclick="pfToggleMethod()">как считаем</button></div>' +
+            '<div class="pfrb-cnote">Нажмите на облигацию — раскроются детали (объём, изм. цены, доходность к погашению). Выберите свою слева и рыночную справа — покажем выгоду обмена. <button class="pfrb-cnote-lnk" onclick="pfToggleMethod()">как считаем</button></div>' +
         '</div>';
     }
     // ===== АКЦИИ: строка «моя акция» — кликабельна (выбор «продать»); ⚡ = темп ≥ порога =====
@@ -2566,7 +2566,7 @@
                 '<div class="pfrb-pcol"><div class="pfrb-pcol-h"><span>Рынок акций</span><i>потенциал</i></div><div class="pfrb-plist">' + mktRows + '</div></div>' +
             '</div>' +
             stockResultHtml(stocks, cands) +
-            '<div class="pfrb-cnote">Нажмите на свою акцию слева и на акцию из рынка справа — покажем выгоду обмена. <button class="pfrb-cnote-lnk" onclick="pfToggleMethod()">как считаем</button></div>' +
+            '<div class="pfrb-cnote">Нажмите на акцию — раскроются детали (изм. цены, потенциал). Выберите свою слева и рыночную справа — покажем выгоду обмена. <button class="pfrb-cnote-lnk" onclick="pfToggleMethod()">как считаем</button></div>' +
         '</div>';
     }
 
@@ -2587,8 +2587,10 @@
             (rebalMethod ? rebalMethodPanel() : '') +
             '<div class="pfrb-body">' +
                 targetAllocHtml(p, c) +
-                rebalBondSection(p, bonds, c) +
-                rebalStockSection(p, stocks, c) +
+                '<div class="pfrb-cols">' +
+                    rebalBondSection(p, bonds, c) +
+                    rebalStockSection(p, stocks, c) +
+                '</div>' +
             '</div>' +
             '<div class="pfo-foot"><button class="pfo-edit" onclick="pfCloseOverlay();pfToggleMenu(\'' + p.id + '\')">⚙ Редактировать состав</button></div>' +
         '</div>';
