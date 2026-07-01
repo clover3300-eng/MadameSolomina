@@ -336,7 +336,33 @@ body.dark-mode .pfc-mtable thead th { border-color: rgba(255,255,255,0.06); }
 .pfc-mtable tbody tr.pfc-mtr td { padding: 8px 0; font-size: 11.5px; border-bottom: 1px solid rgba(24,38,60,0.045); }
 body.dark-mode .pfc-mtable tbody tr.pfc-mtr td { border-color: rgba(255,255,255,0.045); }
 .pfc-mtable tbody tr.pfc-mtr:last-child td { border-bottom: none; }
-.pfc-mtk { display: inline-flex; align-items: baseline; gap: 4px; min-width: 0; font-weight: 700; cursor: default; }
+/* строка актива кликабельна → раскрывает субданные (.pfc-mdet). Убираем нижнюю границу у
+   строки, когда её субданные раскрыты, чтобы актив + детали читались единым блоком. */
+.pfc-mtable tbody tr.pfc-mtr { cursor: pointer; transition: background 0.12s; }
+.pfc-mtable tbody tr.pfc-mtr:hover td { background: rgba(24,38,60,0.02); }
+body.dark-mode .pfc-mtable tbody tr.pfc-mtr:hover td { background: rgba(255,255,255,0.03); }
+.pfc-mtable tbody tr.pfc-mtr.open td { border-bottom-color: transparent; }
+.pfc-mch { width: 11px; height: 11px; flex-shrink: 0; color: #b3bccb; transition: transform 0.18s; align-self: center; margin-right: 1px; }
+.pfc-mch.up { transform: rotate(90deg); color: var(--pf-accent); }
+body.dark-mode .pfc-mch { color: #667488; }
+.pfc-mtr.open .pfc-mtk b { color: var(--pf-accent); }
+/* строка субданных под активом (дата покупки · цена/средняя · НКД) */
+.pfc-mdet td { padding: 0 0 9px !important; border-bottom: 1px solid rgba(24,38,60,0.045) !important; }
+body.dark-mode .pfc-mdet td { border-bottom-color: rgba(255,255,255,0.045) !important; }
+.pfc-mtable tbody tr.pfc-mdet:last-child td { border-bottom: none !important; }
+.pfc-mdet-in { display: flex; flex-wrap: wrap; gap: 6px 8px; padding: 4px 2px 2px 16px; }
+.pfc-det-i { display: inline-flex; flex-direction: column; gap: 1px; padding: 4px 9px; border-radius: 8px; background: rgba(24,38,60,0.035); }
+body.dark-mode .pfc-det-i { background: rgba(255,255,255,0.045); }
+.pfc-det-l { font-family: 'Manrope', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: #94a3b8; }
+.pfc-det-v { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 800; color: #0f172a; }
+body.dark-mode .pfc-det-v { color: #eef3f9; }
+/* разделитель «2 лучших ↕ 2 худших» со счётчиком скрытых активов (мини-версия карточки) */
+.pfc-msplit td { padding: 3px 0 !important; border-bottom: none !important; }
+.pfc-msplit-in { display: flex; align-items: center; justify-content: center; gap: 5px; font-family: 'Manrope', sans-serif; font-size: 9.5px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; color: #a3adbc; }
+body.dark-mode .pfc-msplit-in { color: #66748a; }
+.pfc-msplit-ic { display: inline-flex; }
+.pfc-msplit-ic svg { width: 12px; height: 12px; }
+.pfc-mtk { display: inline-flex; align-items: baseline; gap: 4px; min-width: 0; font-weight: 700; }
 .pfc-mtk b { font-weight: 800; color: #0f172a; }
 body.dark-mode .pfc-mtk b { color: #eef3f9; }
 .pfc-mtk i { font-style: normal; font-size: 9px; font-weight: 700; text-transform: uppercase; color: #94a3b8; background: rgba(24,38,60,0.06); padding: 1px 5px; border-radius: 5px; }
@@ -750,6 +776,20 @@ body.dark-mode .pfaf-type.pfm-in-type { background: color-mix(in srgb, var(--pf-
 /* компактные поля даты/чисел, чтобы дата + цена + НКД помещались в одну строку */
 .pfm-in-date { font-size: 10.5px; padding-left: 6px; padding-right: 2px; }
 .pfm-row-main .pfm-in-num { font-size: 11px; padding-left: 7px; }
+/* поле даты «как во вкладке Тест»: иконка-календарь справа + нативный date-input под ней.
+   Штатный индикатор браузера скрыт (растянут прозрачно на всю ячейку → клик по всему полю
+   открывает системный календарь), а видимая иконка одинакова во всём приложении. */
+.pfm-datewrap { position: relative; display: block; width: 100%; min-width: 0; }
+.pfm-datewrap .pfm-in-date { width: 100%; padding-right: 24px; }
+.pfm-date-ic { position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
+    width: 14px; height: 14px; color: #97a3b4; pointer-events: none; }
+body.dark-mode .pfm-date-ic { color: #6b7890; }
+.pfm-datewrap:hover .pfm-date-ic { color: var(--pf-accent); }
+.pfm-datewrap .pfm-in-date::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: auto;
+    height: auto; margin: 0; padding: 0; opacity: 0; cursor: pointer; }
+.pfm-datewrap .pfm-in-date::-webkit-inner-spin-button,
+.pfm-datewrap .pfm-in-date::-webkit-clear-button { display: none; -webkit-appearance: none; }
+.pfm-addgrid .pfm-datewrap .pfm-in-date { padding-right: 26px; }
 /* действия актива (Докупка-иконка + Удалить) — в одну строку с активом */
 .pfm-acts { display: flex; align-items: center; justify-content: flex-end; gap: 3px; }
 .pfm-mini { width: 22px; height: 22px; border-radius: 7px; border: none; cursor: pointer; display: grid; place-items: center; transition: background 0.14s, color 0.14s, transform 0.1s; }

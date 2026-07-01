@@ -269,6 +269,14 @@
     }
     function calcPf(p) {
         var hs = (p.holdings || []).map(function (h) { return { h: h, c: calcHold(h) }; });
+        // состав всегда отсортирован по величине изменения (сначала те, что больше выросли);
+        // позиции без вложений (кол-во 0) — в самом конце. Порядок влияет только на ОТОБРАЖЕНИЕ
+        // (мини-таблица, оверлей, таблица ребаланса) — суммы ниже от порядка не зависят.
+        hs.sort(function (a, b) {
+            var ai = a.c.invested > 0, bi = b.c.invested > 0;
+            if (ai !== bi) return ai ? -1 : 1;
+            return b.c.pnlPct - a.c.pnlPct;
+        });
         var invested = 0, value = 0, bondVal = 0, stockVal = 0, asum = 0, wsum = 0;
         hs.forEach(function (x) {
             invested += x.c.invested; value += x.c.value;
@@ -432,7 +440,16 @@
         }
         var N = pts.length;
         var showIm = !!data.imoex && pts[0] && pts[0].im != null;
-        var allV = []; pts.forEach(function (q) { allV.push(q.pf); if (showIm) allV.push(q.im); });
+        // РАНЬШЕ подпись графика форсилась в живой pnlPct, а сама КРИВАЯ рисовалась от исторических
+        // закрытий MOEX со своей базой — из-за этого «доходность портфеля» (цифра) и конец линии на
+        // графике не совпадали. Теперь масштабируем весь ряд доходности так, чтобы КОНЕЦ кривой попал
+        // ровно в живой pnlPct: старт остаётся 0% (день покупки), а конец = число из карточки. Форма
+        // (относительные колебания) сохраняется. Индекс IMOEX не трогаем — это отдельный бенчмарк.
+        var pfEntity = findPf(pid), livePct = pfEntity ? calcPf(pfEntity).pnlPct : null;
+        var curveFinal = raw.length ? raw[raw.length - 1].pf : 0;
+        var pfK = (livePct != null && isFinite(livePct) && Math.abs(curveFinal) > 0.05) ? (livePct / curveFinal) : 1;
+        var pfv = function (q) { return q.pf * pfK; };
+        var allV = []; pts.forEach(function (q) { allV.push(pfv(q)); if (showIm) allV.push(q.im); });
         var minV = Math.min.apply(null, allV), maxV = Math.max.apply(null, allV);
         if (minV === maxV) { minV -= 1; maxV += 1; }
         if (minV > 0) minV = 0; if (maxV < 0) maxV = 0;   // 0% всегда в кадре — опорная линия
@@ -440,7 +457,7 @@
         var xAt = function (i) { return padX + (N === 1 ? 0 : (i / (N - 1))) * (100 - 2 * padX); };
         var yAt = function (v) { return botY - ((v - minV) / span) * (botY - topY); };
         var zeroY = yAt(0);
-        var pPts = pts.map(function (q, i) { return { x: xAt(i), y: yAt(q.pf), v: q.pf, d: q.d }; });
+        var pPts = pts.map(function (q, i) { var vv = pfv(q); return { x: xAt(i), y: yAt(vv), v: vv, d: q.d }; });
         var line = smoothD(pPts);
         var area = line + ' L' + pPts[N - 1].x.toFixed(2) + ',' + botY + ' L' + pPts[0].x.toFixed(2) + ',' + botY + ' Z';
         var imLine = '';
@@ -477,12 +494,9 @@
         if (ar) { ar.style.opacity = '0'; ar.getBoundingClientRect(); ar.style.transition = 'opacity .9s ease .2s'; ar.style.opacity = '1'; }
         var imp = wrap.querySelector('.pfcv-imline');
         if (imp) { try { var l2 = imp.getTotalLength(); imp.style.strokeDasharray = l2; imp.style.strokeDashoffset = l2; imp.getBoundingClientRect(); imp.style.transition = 'stroke-dashoffset 1.1s cubic-bezier(.4,0,.2,1) .12s'; imp.style.strokeDashoffset = '0'; } catch (e) {} }
-        // подпись «Портфель X%» — берём ЖИВОЙ pnlPct из calcPf (тот же расчёт invested/pnl,
-        // что и в шапке карточки/блоке Вложено-Доход), а не итог кривой (data.pfFinal): кривая
-        // строится от СРЕДНЕЙ даты покупок по историческим закрытиям MOEX и своей базой, поэтому
-        // её процент по конструкции не обязан совпадать с текущим pnlPct портфеля. Форма кривой
-        // не меняется — «плывёт» только цифра-подпись, как и в сравнении с IMOEX на вкладке «Тест».
-        var pfEntity = findPf(pid), livePct = pfEntity ? calcPf(pfEntity).pnlPct : null;
+        // подпись «Портфель X%» = живой pnlPct из calcPf (тот же расчёт, что и в шапке карточки).
+        // Кривая выше отмасштабирована так, что её КОНЕЦ = этот же livePct, поэтому цифра и график
+        // теперь сходятся. Фолбэк на итог кривой — если живого процента почему-то нет.
         var dispFinal = (livePct != null && isFinite(livePct)) ? livePct : data.pfFinal;
         if (dynEl) {
             var pos2 = dispFinal >= 0;
@@ -510,10 +524,10 @@
             '<div class="pfcv-left">' +
                 '<div class="pfcv-ring">' +
                     donutHtml(c.bondPct, 104, ringNum) +
-                    '<div class="pfcv-ringleg">' +
-                        '<span class="pfc-lg"><i class="stock"></i>Акции<b>' + Math.round(c.stockPct) + '%</b></span>' +
-                        '<span class="pfc-lg"><i class="bond"></i>Облигации<b>' + Math.round(c.bondPct) + '%</b></span>' +
-                    '</div>' +
+                    (function () { var bp = Math.round(clamp(c.bondPct, 0, 100)); return '<div class="pfcv-ringleg">' +
+                        '<span class="pfc-lg"><i class="stock"></i>Акции<b>' + (100 - bp) + '%</b></span>' +
+                        '<span class="pfc-lg"><i class="bond"></i>Облигации<b>' + bp + '%</b></span>' +
+                    '</div>'; })() +
                 '</div>' +
                 '<div class="pfcv-stats">' +
                     pfcvStat('Вложено', fmtRub(c.invested), '') +
@@ -726,6 +740,7 @@
     // ====================================================================
     var openMenu = null;     // id портфеля с раскрытыми настройками
     var openLots = {};       // hid -> true: раскрыт ли журнал лотов актива в редакторе
+    var openRows = {};       // hid -> true: раскрыты ли субданные актива в мини-таблице карточки
     var menuTall = false;    // раскрыта ли карточка настроек «вниз» (показать все тикеры без скролла)
     var menuJustOpened = false;
     var clockTimer = null;
@@ -932,7 +947,7 @@
 
         var alloc = '<div class="pfs-alloc">' +
             '<div class="pfs-alloc-bar"><span class="pfs-alloc-stock" style="width:' + stockPct.toFixed(1) + '%"></span><span class="pfs-alloc-bond" style="width:' + bondPct.toFixed(1) + '%"></span></div>' +
-            '<div class="pfs-alloc-leg"><span><i class="stock"></i>Акции ' + Math.round(stockPct) + '%</span><span><i class="bond"></i>Облигации ' + Math.round(bondPct) + '%</span></div>' +
+            '<div class="pfs-alloc-leg"><span><i class="stock"></i>Акции ' + (100 - Math.round(bondPct)) + '%</span><span><i class="bond"></i>Облигации ' + Math.round(bondPct) + '%</span></div>' +
         '</div>';
 
         return '<div class="dash2-card pf-summary' + (aside ? ' pf-summary--aside' : '') + '">' +
@@ -1065,9 +1080,16 @@
         // настройки всегда раскрыты «во всю высоту» — полный список без внутреннего скролла
         var tall = (openMenu === p.id) ? ' pf-card--tall' : '';
         var MANY = 4;
-        var assetsBody = c.hs.length
-            ? pfMiniTableHtml(c.hs.slice(0, MANY))
-            : '<div class="pfc-empty">Состав пуст — добавьте активы в настройках ⚙</div>';
+        // мини-версия показывает 2 ЛУЧШИХ и 2 ХУДШИХ актива по изменению (c.hs уже отсортирован
+        // по убыванию доходности), между ними — разделитель со счётчиком скрытых. Если активов
+        // ≤4 — просто все по порядку. Полный список — в оверлее «весь состав» и таблице ребаланса.
+        var assetsBody;
+        if (!c.hs.length) assetsBody = '<div class="pfc-empty">Состав пуст — добавьте активы в настройках ⚙</div>';
+        else if (c.hs.length <= MANY) assetsBody = pfMiniTableHtml(c.hs, p.id);
+        else {
+            var best2 = c.hs.slice(0, 2), worst2 = c.hs.slice(-2), hidden = c.hs.length - 4;
+            assetsBody = pfMiniTableHtml(best2.concat(worst2), p.id, { after: 2, hidden: hidden });
+        }
         // «раскрытие» вверху карточки (иконка со стрелками) ведёт в ту же панель, что и график,
         // но сразу с открытыми активами — отдельный оверлей «весь состав» больше не дублируется тут
         var assetsChartOn = chartOn && !!chartAssets[p.id];
@@ -1120,7 +1142,7 @@
     // Главной): высота карточки не меняется, оверлей продолжает ТУ ЖЕ мини-таблицу (те же
     // строки pfMiniRowHtml), просто без ограничения в 4 штуки — а не отдельную широкую таблицу.
     function holdsOverlayHtml(p, c) {
-        var body = c.hs.length ? pfMiniTableHtml(c.hs)
+        var body = c.hs.length ? pfMiniTableHtml(c.hs, p.id)
             : '<div class="pfc-empty">Состав пуст</div>';
         return '<div class="pfc-holdsover">' +
             '<div class="pfc-holdsover-h">' +
@@ -1149,29 +1171,43 @@
     // фиксированных px-колонок — так шапка и строки гарантированно совпадают по ширине колонок
     // и числа не «наезжают» друг на друга при длинных ценах. Переиспользуется и в оверлее
     // «весь состав» (тот визуально ПРОДОЛЖАЕТ ту же таблицу, просто без лимита в 4 строки).
-    function pfMiniTableHtml(list) {
+    function pfMiniTableHtml(list, pid, split) {
         var head = '<tr><th class="pfc-mc-as">Актив</th><th>Кол-во</th><th>Сейчас</th><th>Изм.</th></tr>';
-        return '<div class="pfc-mtablewrap"><table class="pfc-mtable"><thead>' + head + '</thead><tbody>' +
-            list.map(pfMiniRowHtml).join('') + '</tbody></table></div>';
+        var body = '';
+        list.forEach(function (x, i) {
+            body += pfMiniRowHtml(x, pid);
+            // разделитель «лучшие ↕ худшие» со счётчиком скрытых активов (мини-версия карточки)
+            if (split && i === (split.after - 1) && split.hidden > 0) {
+                body += '<tr class="pfc-msplit"><td colspan="4"><span class="pfc-msplit-in">' +
+                    '<i class="pfc-msplit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 13 12 18 17 13"/><polyline points="7 6 12 11 17 6"/></svg></i>' +
+                    'ещё ' + split.hidden + ' ' + plural(split.hidden, 'актив', 'актива', 'активов') + ' · показать все ниже</span></td></tr>';
+            }
+        });
+        return '<div class="pfc-mtablewrap"><table class="pfc-mtable"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>';
     }
-    // Раньше «Куплен / Цена / НКД» шли отдельной строкой под каждым активом всегда видимой —
-    // при многих активах (особенно в оверлее «весь состав») это превращалось в стену мелкого
-    // текста, в которой не за что зацепиться взглядом. Теперь строка одна: тикер + короткая
-    // дата покупки, а полная сводка (дата/цена/НКД) — во всплывающей подсказке при наведении.
-    function pfMiniRowHtml(x) {
+    // Строка актива: тикер · тип · кол-во · цена · изменение. По КЛИКУ строка раскрывает
+    // субданные (дата покупки, цена/средняя цена, НКД для облигаций) — отдельной строкой под ней.
+    function pfMiniRowHtml(x, pid) {
         var h = x.h, c = x.c, isB = h.type === 'bond';
-        var multi = c.lotCount > 1;
-        var lotChip = multi ? ' <i class="pfc-lotn" title="' + c.lotCount + ' лота — средняя цена">×' + c.lotCount + '</i>' : '';
-        var buyLbl = multi ? 'Средняя цена по ' + c.lotCount + ' лотам' : 'Цена покупки';
-        var detailTip = 'Куплен ' + ruDate(c.firstDate) + ' · ' + buyLbl + ' ' + fmtPrice(c.buy) +
-            (isB ? ' · НКД при покупке ' + (c.nkd > 0 ? fmtPrice(c.nkd) : '0 ₽') : '');
+        var multi = c.lotCount > 1, open = !!openRows[h.id];
+        var lotChip = multi ? ' <i class="pfc-lotn">×' + c.lotCount + '</i>' : '';
         var ptip = isB ? ' title="' + attr(BOND_PRICE_TIP) + '"' : '';
-        return '<tr class="pfc-mtr">' +
-                '<td class="pfc-mc-as"><span class="pfc-mtk" title="' + attr(detailTip) + '"><b>' + esc(h.ticker) + '</b><i class="' + (isB ? 'bond' : 'stock') + '">' + (isB ? 'обл' : 'акц') + '</i>' + lotChip + '<span class="pfc-mdate">' + ruShortDate(c.firstDate) + '</span></span></td>' +
+        var row = '<tr class="pfc-mtr' + (open ? ' open' : '') + '" data-hid="' + h.id + '" onclick="pfToggleAssetRow(\'' + pid + '\',\'' + h.id + '\')">' +
+                '<td class="pfc-mc-as"><span class="pfc-mtk"><svg class="pfc-mch' + (open ? ' up' : '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg><b>' + esc(h.ticker) + '</b><i class="' + (isB ? 'bond' : 'stock') + '">' + (isB ? 'обл' : 'акц') + '</i>' + lotChip + '</span></td>' +
                 '<td class="pfc-mqty">' + (c.qty || 0) + '</td>' +
                 '<td class="pfc-mnow' + (c.live ? ' live' : '') + '"' + ptip + '>' + fmtPrice(c.cur) + '</td>' +
                 '<td class="pfc-mchg ' + (c.invested > 0 ? (c.pnlPct >= 0 ? 'pos' : 'neg') : '') + '">' + (c.invested > 0 ? fmtPct(c.pnlPct) : '—') + '</td>' +
             '</tr>';
+        return open ? row + pfMiniDetailRowHtml(h, c) : row;
+    }
+    // строка субданных под активом: дата покупки · цена/средняя цена · НКД (для облигаций)
+    function pfMiniDetailRowHtml(h, c) {
+        var isB = h.type === 'bond', multi = c.lotCount > 1;
+        var priceLbl = multi ? 'Средняя цена · ' + c.lotCount + ' ' + plural(c.lotCount, 'лот', 'лота', 'лотов') : 'Цена покупки';
+        var det = '<span class="pfc-det-i"><span class="pfc-det-l">Куплен</span><span class="pfc-det-v">' + ruDate(c.firstDate) + '</span></span>' +
+            '<span class="pfc-det-i"><span class="pfc-det-l">' + priceLbl + '</span><span class="pfc-det-v">' + fmtPrice(c.buy) + '</span></span>' +
+            (isB ? '<span class="pfc-det-i"><span class="pfc-det-l">НКД при покупке</span><span class="pfc-det-v">' + (c.nkd > 0 ? fmtPrice(c.nkd) : '0 ₽') + '</span></span>' : '');
+        return '<tr class="pfc-mdet" data-hid="' + h.id + '"><td colspan="4"><div class="pfc-mdet-in">' + det + '</div></td></tr>';
     }
 
     // ---- настройки/редактор (дропдаун ⚙) ----
@@ -1266,9 +1302,14 @@
         return '<button class="' + cls + '" type="button" tabindex="-1" title="' + attr(title) + '" ' +
             'onclick="pfFetchLotField(\'' + pid + '\',\'' + hid + '\',\'' + lotId + '\',\'' + field + '\')">' + inner + '</button>';
     }
+    // календарь-иконка + нативный date-input — как поле даты во вкладке «Тест» (.bt-date-field):
+    // штатный индикатор браузера скрыт (растянут прозрачно на всю ячейку — клик открывает пикер),
+    // а видимая иконка одинаковая во всём приложении.
+    var CAL_SVG = '<svg class="pfm-date-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+    function dateFieldHtml(inputHtml) { return '<span class="pfm-datewrap">' + inputHtml + CAL_SVG + '</span>'; }
     function lotDateInput(pid, h, l) {
-        return '<input class="pfm-in pfm-in-date" type="date" value="' + attr(l.buyDate) + '" ' +
-            'onchange="pfEditLot(\'' + pid + '\',\'' + h.id + '\',\'' + l.id + '\',\'buyDate\',this.value)">';
+        return dateFieldHtml('<input class="pfm-in pfm-in-date" type="date" value="' + attr(l.buyDate) + '" ' +
+            'onchange="pfEditLot(\'' + pid + '\',\'' + h.id + '\',\'' + l.id + '\',\'buyDate\',this.value)">');
     }
     function lotPriceCell(pid, h, l) {
         return '<span class="pfm-field has-fx">' +
@@ -1355,7 +1396,7 @@
                     'onkeydown="if(event.key===\'Enter\')pfAddHolding(\'' + pid + '\')">' +
                 '<select class="pfm-in pfm-in-type pfaf-type" id="pfNewType-' + pid + '" onchange="pfAddTypeToggle(\'' + pid + '\')">' +
                     '<option value="stock">Акция</option><option value="bond">Облигация</option></select>' +
-                '<input class="pfm-in pfm-in-date pfaf-date" id="pfNewDate-' + pid + '" type="date" value="' + todayStr() + '" title="Дата покупки">' +
+                dateFieldHtml('<input class="pfm-in pfm-in-date pfaf-date" id="pfNewDate-' + pid + '" type="date" value="' + todayStr() + '" title="Дата покупки">') +
                 '<span class="pfm-field has-fx pfaf-price">' +
                     '<input class="pfm-in pfm-in-num" id="pfNewPrice-' + pid + '" type="number" step="0.01" min="0" placeholder="цена ₽">' +
                     addFetchBtn(pid, 'price') + '</span>' +
@@ -1575,6 +1616,32 @@
         if (openMenu === pid) { openMenu = null; menuTall = false; }
         else { openMenu = pid; menuTall = false; menuJustOpened = true; chartOpen = {}; chartAssets = {}; chartAssetsFull = {}; holdsExpand = {}; }
         renderPortfolios();
+    };
+    // клик по строке актива в мини-таблице → раскрыть/свернуть субданные (дата/цена/НКД).
+    // Правим DOM ТОЧЕЧНО (без renderPortfolios): полный ре-рендер заново «рисует» все мини-
+    // графики с 1-секундной анимацией линии — на простой разворот строки это выглядит как
+    // мигание всей вкладки. Один и тот же актив может быть в мини-таблице И в оверлее — обновляем
+    // все совпадающие строки. openRows синхронизирует состояние со следующим полным ре-рендером.
+    window.pfToggleAssetRow = function (pid, hid) {
+        var willOpen = !openRows[hid];
+        if (willOpen) openRows[hid] = true; else delete openRows[hid];
+        var p = findPf(pid); if (!p) return;
+        var h = findHold(p, hid); if (!h) return;
+        var c = calcHold(h);
+        var rows = document.querySelectorAll('.pfc-mtr[data-hid="' + hid + '"]');
+        Array.prototype.forEach.call(rows, function (row) {
+            row.classList.toggle('open', willOpen);
+            var ch = row.querySelector('.pfc-mch'); if (ch) ch.classList.toggle('up', willOpen);
+            var next = row.nextElementSibling;
+            var hasDet = next && next.classList && next.classList.contains('pfc-mdet');
+            if (willOpen && !hasDet) {
+                var tmp = document.createElement('tbody');
+                tmp.innerHTML = pfMiniDetailRowHtml(h, c);
+                row.parentNode.insertBefore(tmp.firstChild, row.nextSibling);
+            } else if (!willOpen && hasDet) {
+                next.parentNode.removeChild(next);
+            }
+        });
     };
     // график доходности: раскрыть/свернуть. Открыт может быть только один (и не вместе с ⚙).
     window.pfToggleChart = function (pid) {
