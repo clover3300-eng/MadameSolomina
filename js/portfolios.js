@@ -377,10 +377,11 @@
         });
         return { bonds: Object.keys(bonds).map(function (k) { return bonds[k]; }), stocks: Object.keys(stocks).map(function (k) { return stocks[k]; }) };
     }
-    // серия только портфеля (без индекса): доходность в % от стоимости на старте периода
+    // серия только портфеля (без индекса): доходность по time-weighted индексу (btTwrIndex,
+    // см. webapp-tabs.js) — простое отношение c[t]/c[0] тут не годится, докупки исказят %
     function pfOnlyPoints(pfSeries) {
-        var base = pfSeries[0].c || 1;
-        var points = pfSeries.map(function (q) { return { d: q.d, pf: (q.c / base - 1) * 100 }; });
+        var points = (typeof btTwrIndex === 'function') ? btTwrIndex(pfSeries)
+            : pfSeries.map(function (q) { return { d: q.d, pf: 0 }; });
         return { points: points, pfFinal: points[points.length - 1].pf, imFinal: null };
     }
     // асинхронная загрузка серии доходности (история MOEX) + перерисовка пейна графика
