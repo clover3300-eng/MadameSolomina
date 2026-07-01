@@ -1672,12 +1672,18 @@ async function btFetchHistorySeries(path, fromStr, tillStr) {
     return out;
 }
 
-// Стоимость портфеля по датам = сумма (цена*кол-во) с forward-fill
+// Стоимость портфеля по датам = сумма (цена*кол-во) с forward-fill.
+// Если для актива переданы lots ([{buyDate,qty}] — фактические докупки), кол-во на
+// каждый день НАРАСТАЕТ по датам лотов, а не считается «купленным целиком» с начала
+// периода текущим количеством — иначе доходность за давние даты (до реальной докупки)
+// завышается/занижается на объём, которого тогда ещё не было. Без lots (напр. вкладка
+// «Тест», где вся сумма покупается ОДНИМ днём fromStr) — старое поведение: qty фиксировано,
+// баз. дата = когда уже торгуются ВСЕ активы (актив не мог быть куплен до начала торгов).
 async function btBuildPortfolioSeries(results, fromStr, tillStr) {
     var assets = [];
-    results.bonds.forEach(function(b) { assets.push({ t: b.t, qty: b.qty, market: 'bonds', mult: 10 }); });
-    results.stocks.forEach(function(s) { assets.push({ t: s.t, qty: s.qty, market: 'shares', mult: 1 }); });
-    var maps = [], firstDates = [];
+    results.bonds.forEach(function(b) { assets.push({ t: b.t, qty: b.qty, lots: b.lots, market: 'bonds', mult: 10 }); });
+    results.stocks.forEach(function(s) { assets.push({ t: s.t, qty: s.qty, lots: s.lots, market: 'shares', mult: 1 }); });
+    var maps = [], hardDates = [], softDates = [];
     for (var i = 0; i < assets.length; i++) {
         var a = assets[i];
         var path = '/iss/history/engines/stock/markets/' + a.market + '/securities/' + a.t + '.json';
@@ -1687,24 +1693,33 @@ async function btBuildPortfolioSeries(results, fromStr, tillStr) {
         var map = {}, dates = [];
         ser.forEach(function(p) { map[p.d] = p.c * a.mult; dates.push(p.d); });
         dates.sort();
-        maps.push({ dates: dates, map: map, qty: a.qty });
-        firstDates.push(dates[0]);
+        var lots = (a.lots && a.lots.length) ? a.lots.slice().sort(function (x, y) { return x.buyDate < y.buyDate ? -1 : x.buyDate > y.buyDate ? 1 : 0; }) : null;
+        maps.push({ dates: dates, map: map, qty: a.qty, lots: lots });
+        if (lots) softDates.push(dates[0]); else hardDates.push(dates[0]);
     }
     if (!maps.length) return [];
-    firstDates.sort();
-    var baseDate = firstDates[firstDates.length - 1];   // когда уже торгуются все активы
+    var baseDate;
+    if (hardDates.length) { hardDates.sort(); baseDate = hardDates[hardDates.length - 1]; }
+    else { softDates.sort(); baseDate = softDates[0]; }
     var dateSet = {};
     maps.forEach(function(m) { m.dates.forEach(function(d) { if (d >= baseDate) dateSet[d] = 1; }); });
     var union = Object.keys(dateSet).sort();
     var series = [];
     var ptr = maps.map(function() { return 0; });
     var lastPrice = maps.map(function() { return 0; });
+    var lotPtr = maps.map(function() { return 0; });
+    var lotQty = maps.map(function() { return 0; });
     for (var u = 0; u < union.length; u++) {
         var day = union[u], total = 0;
         for (var mi = 0; mi < maps.length; mi++) {
             var m = maps[mi];
             while (ptr[mi] < m.dates.length && m.dates[ptr[mi]] <= day) { lastPrice[mi] = m.map[m.dates[ptr[mi]]]; ptr[mi]++; }
-            total += lastPrice[mi] * m.qty;
+            var q = m.qty;
+            if (m.lots) {
+                while (lotPtr[mi] < m.lots.length && m.lots[lotPtr[mi]].buyDate <= day) { lotQty[mi] += m.lots[lotPtr[mi]].qty; lotPtr[mi]++; }
+                q = lotQty[mi];
+            }
+            total += lastPrice[mi] * q;
         }
         if (total > 0) series.push({ d: day, c: total });
     }
