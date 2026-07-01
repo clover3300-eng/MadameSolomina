@@ -268,7 +268,8 @@
         return { qty: qty, buy: buy, cur: cur, invested: invested, value: value, pnl: pnl,
             pnlPct: invested > 0 ? pnl / invested * 100 : 0, days: a.effDays,
             annual: annualize(invested, value, a.effDays), live: isLive(h),
-            lots: a.lots, lotCount: a.count, nkd: a.nkd, firstDate: a.firstDate, anyApi: a.anyApi };
+            lots: a.lots, lotCount: a.count, nkd: a.nkd,
+            firstDate: a.firstDate, avgDate: a.avgDate, anyApi: a.anyApi };
     }
     function calcPf(p) {
         var hs = (p.holdings || []).map(function (h) { return { h: h, c: calcHold(h) }; });
@@ -347,6 +348,20 @@
         if (ms == null) ms = Date.now() - 365 * 864e5;
         return new Date(ms);
     }
+    // Дата ПЕРВОЙ покупки в портфеле (самый ранний лот любого актива) — с неё строится график
+    // доходности: раньше стартовали со взвешенной «средней даты покупок», из-за чего кривая
+    // начиналась в середине периода владения и выглядела странно. Теперь старт = первая сделка.
+    function pfFirstBuyDate(p) {
+        var earliest = null;
+        (p.holdings || []).forEach(function (h) {
+            ensureLots(h).forEach(function (l) {
+                var t = Date.parse(l.buyDate || ''); if (!isFinite(t)) return;
+                if (earliest == null || t < earliest) earliest = t;
+            });
+        });
+        if (earliest == null) earliest = Date.now() - 365 * 864e5;
+        return new Date(earliest);
+    }
     // состав портфеля для серии стоимости (только позиции с количеством)
     function pfChartAssets(p) {
         var bonds = [], stocks = [];
@@ -372,7 +387,7 @@
         if (typeof btBuildPortfolioSeries !== 'function') { chartCache[pid] = { imoex: wantImoex, err: 'NO_BT' }; repaintCharts(pid); return; }
         var assets = pfChartAssets(p);
         if (!assets.bonds.length && !assets.stocks.length) { chartCache[pid] = { imoex: wantImoex, err: 'NO_ASSETS' }; repaintCharts(pid); return; }
-        var fromStr = dateToIso(pfAvgBuyDate(p)), tillStr = todayStr();
+        var fromStr = dateToIso(pfFirstBuyDate(p)), tillStr = todayStr();
         chartBusy[pid] = true; repaintCharts(pid);   // показываем индикатор загрузки
         var raw = chartRaw[pid];
         var pfPromise = (raw && raw.from === fromStr && raw.series)
@@ -512,7 +527,8 @@
             // в шапке карточки (pfc-hero-inc) — повторять её тут не нужно, легенда несёт только
             // IMOEX (бенчмарк для сравнения), компактно поверх графика.
             var lgh = dynEl ? '<span class="pfcv-lgi"><i style="background:var(--pf-accent)"></i>Портфель <b class="' + (pf >= 0 ? 'pos' : 'neg') + '">' + (pf >= 0 ? '+' : '') + pf.toFixed(1) + '%</b></span>' : '';
-            if (showIm && data.imFinal != null) { var im = data.imFinal; lgh += '<span class="pfcv-lgi"><i class="pfcv-imdot"></i>IMOEX <b class="' + (im >= 0 ? 'pos' : 'neg') + '">' + (im >= 0 ? '+' : '') + im.toFixed(1) + '%</b></span>'; }
+            // в мини-легенде слово «IMOEX» опускаем — рядом уже есть тумблер IMOEX; показываем только %
+            if (showIm && data.imFinal != null) { var im = data.imFinal, imLbl = dynEl ? 'IMOEX ' : ''; lgh += '<span class="pfcv-lgi"><i class="pfcv-imdot"></i>' + imLbl + '<b class="' + (im >= 0 ? 'pos' : 'neg') + '">' + (im >= 0 ? '+' : '') + im.toFixed(1) + '%</b></span>'; }
             legEl.innerHTML = lgh;
         }
     }
@@ -523,7 +539,7 @@
     // пейн графика в карточке: слева — сводка, справа — кривая доходности (выезжает справа)
     function pfChartViewHtml(p, c, idx) {
         var pid = p.id, pnlCls = c.pnl >= 0 ? 'pos' : 'neg', imOn = !!chartImoex[pid], asOn = !!chartAssets[pid];
-        var fromTxt = ruDate(dateToIso(pfAvgBuyDate(p)));
+        var fromTxt = ruDate(dateToIso(pfFirstBuyDate(p)));
         // в центре кольца — номер портфеля (как в мини-карточке), не капитал
         var ringNum = '<span class="pfc-ringnum">' + (((idx || 0) + 1)) + '</span>';
         return '<div class="pfc-chartview">' +
@@ -548,7 +564,7 @@
             '</div>' +
             '<div class="pfcv-right">' +
                 '<div class="pfcv-rhead">' +
-                    '<div class="pfcv-rtt"><span class="pfcv-rk">Доходность портфеля</span><span class="pfcv-rsub">с ' + fromTxt + ' · средняя дата покупок</span></div>' +
+                    '<div class="pfcv-rtt"><span class="pfcv-rk">Доходность портфеля</span><span class="pfcv-rsub">с ' + fromTxt + ' · первая покупка</span></div>' +
                     '<button class="pfcv-imbtn' + (imOn ? ' on' : '') + '" onclick="pfToggleChartImoex(\'' + pid + '\')" title="Наложить кривую индекса Мосбиржи">' +
                         '<span class="pfcv-imdot"></span>IMOEX</button>' +
                     '<button class="pfcv-close" onclick="pfToggleChart(\'' + pid + '\')" aria-label="Свернуть график" title="Свернуть график"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
@@ -695,7 +711,13 @@
     // (отслеживать, растёт ли ₽/день после замены бумаги). Данные — из fetchBondData,
     // которая попутно наполняет bondDetailsMap (купон, частота, погашение).
     function bondDetail(isin) {
-        try { if (typeof bondDetailsMap !== 'undefined' && bondDetailsMap[isin]) return bondDetailsMap[isin]; } catch (e) {}
+        try {
+            if (typeof bondDetailsMap === 'undefined' || !bondDetailsMap) return null;
+            if (bondDetailsMap[isin]) return bondDetailsMap[isin];
+            // fetchBondData сохраняет детали под ПОЛНЫМ ISIN (SU26238RMFS4), а в портфеле тикер
+            // короткий (SU26238) — ищем ключ по префиксу, иначе «к погашению»/купоны не находятся.
+            if (isin) { var ks = Object.keys(bondDetailsMap); for (var i = 0; i < ks.length; i++) if (ks[i].indexOf(isin) === 0) return bondDetailsMap[ks[i]]; }
+        } catch (e) {}
         return null;
     }
     function parseBondDate(s) {
@@ -1000,10 +1022,10 @@
         '</div>';
 
         var imOn = !!chartImoex[pid];
-        var fromTxt = ruDate(dateToIso(pfAvgBuyDate(p)));
+        var fromTxt = ruDate(dateToIso(pfFirstBuyDate(p)));
         var chart = '<div class="pfsc-chart">' +
             '<div class="pfcv-rhead">' +
-                '<div class="pfcv-rtt"><span class="pfcv-rk">Доходность портфеля</span><span class="pfcv-rsub">с ' + fromTxt + ' · средняя дата покупок</span></div>' +
+                '<div class="pfcv-rtt"><span class="pfcv-rk">Доходность портфеля</span><span class="pfcv-rsub">с ' + fromTxt + ' · первая покупка</span></div>' +
                 '<div class="pfsc-dyn"><span class="pfsc-dyn-l">за период</span><span class="pfcv-stat-v" id="pfsvDyn-' + pid + '">—</span></div>' +
                 '<button class="pfcv-imbtn' + (imOn ? ' on' : '') + '" onclick="pfToggleChartImoex(\'' + pid + '\')" title="Наложить кривую индекса Мосбиржи"><span class="pfcv-imdot"></span>IMOEX</button>' +
             '</div>' +
@@ -1117,16 +1139,21 @@
                     '<span class="pfc-hero-val">' + fmtRub(c.value) + '</span>' +
                     '<span class="pfc-hero-inc ' + pnlCls + '">' + (c.pnl >= 0 ? '▲ ' : '▼ ') + fmtRub(Math.abs(c.pnl)) + ' · ' + fmtPct(c.pnlPct) + '</span>' +
                 '</div>' +
-                '<div class="pfc-mini-chart">' +
-                    '<div class="pfc-mchart-plot" id="pfmChart-' + p.id + '"></div>' +
-                    '<div class="pfc-mchart-leg" id="pfmLeg-' + p.id + '"></div>' +
-                '</div>' +
+                (function () {
+                    var imOn = !(p.id in chartImoex) || !!chartImoex[p.id];
+                    return '<div class="pfc-mini-chart">' +
+                        '<button class="pfc-imtgl' + (imOn ? ' on' : '') + '" data-pid="' + p.id + '" onclick="pfToggleMiniImoex(\'' + p.id + '\')" ' +
+                            'title="' + (imOn ? 'Скрыть индекс Мосбиржи' : 'Сравнить с индексом Мосбиржи') + '"><span class="pfc-imtgl-dot"></span>IMOEX</button>' +
+                        '<div class="pfc-mchart-plot" id="pfmChart-' + p.id + '"></div>' +
+                        '<div class="pfc-mchart-leg" id="pfmLeg-' + p.id + '"></div>' +
+                    '</div>';
+                })() +
             '</div>' +
             cardRingHtml(c, idx) +
             '<div class="pfc-stats2">' +
                 '<div class="pfc-stat2"><span class="pfc-stat2-l">Вложено</span><span class="pfc-stat2-v">' + fmtRub(c.invested) + '</span></div>' +
                 '<div class="pfc-stat2 pfc-stat2--inc"><span class="pfc-stat2-l">Доход</span><span class="pfc-stat2-v ' + pnlCls + '">' + fmtRub(c.pnl) + '</span></div>' +
-                '<div class="pfc-stat2 pfc-stat2--yield is-' + (c.annual >= 0 ? 'gn' : 'rd') + '" title="Доходность в пересчёте на год (может отличаться от «Дохода» и графика — те показывают фактическое изменение за весь срок, а не годовые)"><span class="pfc-stat2-l">Годовых</span><span class="pfc-stat2-v ' + (c.annual >= 0 ? 'pos' : 'neg') + '">' + fmtPct(c.annual) + '</span></div>' +
+                '<div class="pfc-stat2 pfc-stat2--yield is-' + (c.annual >= 0 ? 'gn' : 'rd') + '" title="Доходность в пересчёте на год (может отличаться от «Дохода» и графика — те показывают фактическое изменение за весь срок, а не годовые)"><span class="pfc-stat2-l">Доходность</span><span class="pfc-stat2-v ' + (c.annual >= 0 ? 'pos' : 'neg') + '">' + fmtPct(c.annual) + '</span></div>' +
             '</div>' +
             '<div class="pfc-sep"></div>' +
             '<div class="pfc-massets">' + assetsBody + '</div>' +
@@ -1194,10 +1221,13 @@
     // строка субданных под активом: дата покупки · цена/средняя цена · НКД (для облигаций)
     function pfMiniDetailRowHtml(h, c) {
         var isB = h.type === 'bond', multi = c.lotCount > 1;
+        // при нескольких лотах показываем СРЕДНИЕ (взвешенные) дату и цену покупки, при одном — фактические
+        var dateLbl = multi ? 'Средняя дата' : 'Куплен';
+        var dateVal = multi ? ruDate(c.avgDate) : ruDate(c.firstDate);
         var priceLbl = multi ? 'Средняя цена · ' + c.lotCount + ' ' + plural(c.lotCount, 'лот', 'лота', 'лотов') : 'Цена покупки';
-        var det = '<span class="pfc-det-i"><span class="pfc-det-l">Куплен</span><span class="pfc-det-v">' + ruDate(c.firstDate) + '</span></span>' +
+        var det = '<span class="pfc-det-i"><span class="pfc-det-l">' + dateLbl + '</span><span class="pfc-det-v">' + dateVal + '</span></span>' +
             '<span class="pfc-det-i"><span class="pfc-det-l">' + priceLbl + '</span><span class="pfc-det-v">' + fmtPrice(c.buy) + '</span></span>' +
-            (isB ? '<span class="pfc-det-i"><span class="pfc-det-l">НКД при покупке</span><span class="pfc-det-v">' + (c.nkd > 0 ? fmtPrice(c.nkd) : '0 ₽') + '</span></span>' : '');
+            (isB ? '<span class="pfc-det-i"><span class="pfc-det-l">' + (multi ? 'Средний НКД' : 'НКД при покупке') + '</span><span class="pfc-det-v">' + (c.nkd > 0 ? fmtPrice(c.nkd) : '0 ₽') + '</span></span>' : '');
         return '<tr class="pfc-mdet" data-hid="' + h.id + '"><td colspan="4"><div class="pfc-mdet-in">' + det + '</div></td></tr>';
     }
 
@@ -1687,6 +1717,16 @@
         renderPortfolios();
         loadPfChart(pid);
     };
+    // тумблер IMOEX прямо на мини-графике карточки: обновляем ТОЛЬКО эту карточку (класс кнопки
+    // + перерисовка её графика через loadPfChart) — без renderPortfolios, иначе заново «рисуются»
+    // все мини-графики вкладки и вся вкладка мигает.
+    window.pfToggleMiniImoex = function (pid) {
+        chartImoex[pid] = !(pid in chartImoex) ? false : !chartImoex[pid];
+        var on = !!chartImoex[pid];
+        var btn = document.querySelector('.pfc-imtgl[data-pid="' + pid + '"]');
+        if (btn) { btn.classList.toggle('on', on); btn.title = on ? 'Скрыть индекс Мосбиржи' : 'Сравнить с индексом Мосбиржи'; }
+        loadPfChart(pid);
+    };
     window.pfToggleMenuTall = function (pid) { if (openMenu === pid) { menuTall = !menuTall; renderPortfolios(); } };
     window.pfCloseMenu = function () { openMenu = null; menuTall = false; renderPortfolios(); };
     window.pfRename = function (pid, val) { var p = findPf(pid); if (!p) return; p.name = (val || '').trim() || p.name; saveStore(); renderPortfolios(); };
@@ -1926,7 +1966,98 @@
     // ---------- КАРТОЧКА РЕБАЛАНСИРОВКИ (две колонки: облигации | акции) ----------
     var rebalTax = 0;          // ставка НДФЛ для расчёта доходности облигаций (0 / 0.13 / 0.15)
     var rebalMethod = false;   // раскрыта ли панель «методика расчёта»
+    var rebalThreshold = 50;   // «по факту, годовых» ≥ этого → предлагаем зафиксировать прибыль (%/год)
+    var rebalSellPct = 50;     // какую долю позиции продавать в идее фиксации (% от кол-ва)
     var ROMAN = ['I', 'II', 'III', 'IV'];
+    try {
+        var _rp = JSON.parse(localStorage.getItem('pf_rebal_params') || '{}');
+        if (_rp.tax != null) rebalTax = +_rp.tax;
+        if (_rp.th != null && isFinite(+_rp.th)) rebalThreshold = +_rp.th;
+        if (_rp.sell != null && isFinite(+_rp.sell)) rebalSellPct = clamp(+_rp.sell, 1, 100);
+    } catch (e) {}
+    function saveRebalParams() { try { localStorage.setItem('pf_rebal_params', JSON.stringify({ tax: rebalTax, th: rebalThreshold, sell: rebalSellPct })); } catch (e) {} }
+
+    // «по факту, годовых» — ЛИНЕЙНАЯ экстраполяция фактического изменения цены на год:
+    //   изменение% ÷ дней владения × 365.
+    // Это НЕ прогноз, а темп текущего роста в годовом выражении: если он аномально высок
+    // (бумага быстро прибавила), доход разумно зафиксировать — дальше такой темп вряд ли сохранится.
+    function realizedAnnual(izmPct, days) { return izmPct / Math.max(1, days || 0) * 365; }
+    // цена акции для расчётов (не обязательно из портфеля): живой MOEX → таблица акций
+    function stkPriceOf(tk) {
+        if (quotes[tk] && quotes[tk].price > 0) return quotes[tk].price;
+        if (typeof window.stkFindCompany === 'function') {
+            var co = window.stkFindCompany(tk);
+            if (co && co.main) { var p = toNum(co.main['Текущая Цена']); if (isFinite(p) && p > 0) return p; }
+        }
+        return 0;
+    }
+    // доход в день на 1 бумагу при доходности yield% и вложении unit ₽: yield/100 × unit ÷ 365
+    function dayIncomeAt(yieldPct, unit) {
+        if (yieldPct == null || !isFinite(yieldPct) || !(unit > 0)) return 0;
+        return yieldPct / 100 * unit / 365;
+    }
+    // Фактические метрики облигации в портфеле: средние цена/дата/НКД, изменение (с НКД),
+    // «годовых по факту», выручка за 1 шт (цена+НКД сейчас), форвардная доходность к погашению.
+    function bondRealized(x) {
+        var h = x.h, cc = x.c, a = aggHolding(h);
+        var costUnit = (a.avgPrice || 0) + (a.nkd || 0);
+        var nowPrice = (bondQuotes[h.ticker] > 0) ? bondQuotes[h.ticker] : (cc.cur || a.avgPrice || 0);
+        var nowNkd = curNkdOf(h.ticker); if (nowNkd == null) nowNkd = a.nkd || 0;
+        var nowUnit = nowPrice + nowNkd;
+        var izm = costUnit > 0 ? (nowUnit - costUnit) / costUnit * 100 : 0;
+        var days = Math.max(1, Math.round(cc.days || daysHeld(a.avgDate)));
+        var y = bondYTM(h, rebalTax);
+        return { h: h, cc: cc, qty: a.qty || 0, avgPrice: a.avgPrice || 0, avgNkd: a.nkd || 0, avgDate: a.avgDate,
+            costUnit: costUnit, nowPrice: nowPrice, nowNkd: nowNkd, nowUnit: nowUnit,
+            izm: izm, days: days, annual: realizedAnnual(izm, days), fwdYield: (y && y.annual != null) ? y.annual : null };
+    }
+    // Идея фиксации прибыли по облигации: продать долю позиции → на выручку купить более доходную
+    // ОФЗ с рынка. Возвращает лучший вариант (макс. прирост дохода/день). heldSet — уже купленные ISIN.
+    function bondLockIdea(r, heldSet) {
+        if (!(r.qty > 0) || !(r.nowUnit > 0)) return null;
+        var cands = ofzBest(heldSet); if (!cands.length) return null;
+        var sellQty = clamp(Math.round(r.qty * rebalSellPct / 100), 1, r.qty);
+        var proceeds = sellQty * r.nowUnit;
+        var gross = sellQty * (r.nowUnit - r.costUnit);
+        var netProfit = gross > 0 ? gross * (1 - (rebalTax || 0)) : gross;
+        var dayIncHeldPer = dayIncomeAt(r.fwdYield, r.nowUnit);
+        var best = null;
+        cands.forEach(function (m) {
+            var unitN = m.price + m.nkd; if (!(unitN > 0)) return;
+            var buyQty = Math.floor(proceeds / unitN); if (buyQty <= 0) return;
+            var dayIncNew = buyQty * dayIncomeAt(m.yield, unitN);
+            var dayIncDelta = dayIncNew - sellQty * dayIncHeldPer;
+            if (!best || dayIncDelta > best.dayIncDelta) best = { m: m, buyQty: buyQty, dayIncNew: dayIncNew, dayIncDelta: dayIncDelta };
+        });
+        if (!best) return null;
+        return { sellQty: sellQty, proceeds: proceeds, netProfit: netProfit, newTk: best.m.t, newName: best.m.n,
+            newYield: best.m.yield, buyQty: best.buyQty, unitsDelta: best.buyQty - sellQty,
+            dayIncOld: sellQty * dayIncHeldPer, dayIncNew: best.dayIncNew, dayIncDelta: best.dayIncDelta };
+    }
+    // Фактические метрики акции + идея фиксации (продать долю → купить бумагу выше по потенциалу того же эшелона)
+    function stockRealized(x) {
+        var h = x.h, cc = x.c, a = aggHolding(h);
+        var days = Math.max(1, Math.round(cc.days || daysHeld(a.avgDate)));
+        var izm = cc.pnlPct || 0;
+        return { h: h, cc: cc, qty: a.qty || 0, avgPrice: a.avgPrice || 0, avgDate: a.avgDate, nowPrice: cc.cur || 0,
+            izm: izm, days: days, annual: realizedAnnual(izm, days), ech: echelonOf(h.ticker), pot: holdPotential(h) };
+    }
+    function stockLockIdea(r, heldSet) {
+        if (!(r.qty > 0) || !(r.nowPrice > 0) || !r.ech) return null;
+        var cands = betterEchelonSwaps(r.ech, heldSet, r.pot, 6); if (!cands.length) return null;
+        var sellQty = clamp(Math.round(r.qty * rebalSellPct / 100), 1, r.qty);
+        var proceeds = sellQty * r.nowPrice;
+        var gross = sellQty * (r.nowPrice - r.avgPrice);
+        var netProfit = gross > 0 ? gross * (1 - (rebalTax || 0)) : gross;
+        var best = null;
+        cands.forEach(function (cn) {
+            var priceN = stkPriceOf(cn.ticker), buyQty = priceN > 0 ? Math.floor(proceeds / priceN) : 0;
+            if (!best || cn.pot > best.cn.pot) best = { cn: cn, priceN: priceN, buyQty: buyQty };
+        });
+        if (!best) return null;
+        return { sellQty: sellQty, proceeds: proceeds, netProfit: netProfit, newTk: best.cn.ticker, newName: best.cn.name,
+            newPot: best.cn.pot, buyQty: best.buyQty, unitsDelta: best.buyQty - sellQty, potDelta: best.cn.pot - (r.pot || 0) };
+    }
 
     // Доходность облигации к погашению (по средней цене/НКД покупки):
     //   доход   = Σ будущих купонов + номинал (1000 ₽)
@@ -1999,21 +2130,39 @@
             return '<button class="pfrb-tax-b' + (rebalTax === o[0] ? ' on' : '') + '" onclick="pfSetRebalTax(' + o[0] + ')">' + o[1] + '</button>';
         }).join('') + '</div>';
     }
+    // интерактивная панель параметров расчёта: НДФЛ · порог фиксации (%/год) · доля продажи (%) · «как считаем»
+    function rebalParamsBar() {
+        return '<div class="pfrb-params">' +
+            rebalTaxToggle() +
+            '<label class="pfrb-param"><span>Фиксировать от</span>' +
+                '<input class="pfrb-param-in" type="number" min="0" step="5" value="' + rebalThreshold + '" onchange="pfSetRebalThreshold(this.value)"><i>%/год</i></label>' +
+            '<label class="pfrb-param"><span>Продавать</span>' +
+                '<input class="pfrb-param-in" type="number" min="1" max="100" step="5" value="' + rebalSellPct + '" onchange="pfSetRebalSellPct(this.value)"><i>% позиции</i></label>' +
+            '<button class="pfrb-mbtn' + (rebalMethod ? ' on' : '') + '" onclick="pfToggleMethod()">' + INFO_SVG + '<span>Как считаем</span></button>' +
+        '</div>';
+    }
+    // методичка простыми словами (отражает текущие параметры, их можно менять сверху)
     function rebalMethodPanel() {
         var pct = Math.round(rebalTax * 100);
         return '<div class="pfrb-method">' +
-            '<div class="pfrb-method-h"><span>Методика расчёта доходности облигаций</span>' +
+            '<div class="pfrb-method-h"><span>Как считается ребалансировка — простыми словами</span>' +
                 '<button class="pfrb-method-x" onclick="pfToggleMethod()" aria-label="Скрыть">' + XMARK_SVG + '</button></div>' +
-            '<ol class="pfrb-method-steps">' +
-                '<li><b>Доход</b> = все будущие купоны (купон × осталось выплат до погашения) <span>+</span> номинал 1000 ₽</li>' +
-                '<li><b>Расход</b> = средняя цена покупки <span>+</span> средний НКД</li>' +
-                '<li><b>Прибыль</b> = Доход − Расход</li>' +
-                '<li><b>Прибыль в день</b> = Прибыль ÷ дней до погашения</li>' +
-                '<li><b>Прибыль в год</b> = Прибыль в день × 365</li>' +
-                '<li><b>Доходность</b> = Прибыль в год ÷ (Расход + НДФЛ) × 100%' +
-                    '<span class="pfrb-method-tax">НДФЛ сейчас: ' + pct + '%' + (pct ? ' · налог = ' + pct + '% от прибыли' : ' · без налога') + '</span></li>' +
-            '</ol>' +
-            '<div class="pfrb-method-note">Средние цена/НКД/дата — взвешенные по лотам. Кол-во купонов оценивается из частоты выплат и срока до погашения (данные MOEX).</div>' +
+            '<div class="pfrb-method-body">' +
+                '<div class="pfrb-mblock"><h5>По вашим активам</h5><ul>' +
+                    '<li><b>Средняя цена / дата / НКД</b> — усреднённые по всем вашим покупкам (лотам), взвешенно по вложенной сумме.</li>' +
+                    '<li><b>Изменение</b> — на сколько выросла бумага с учётом НКД: (цена+НКД сейчас − средняя цена+НКД покупки) ÷ (средняя цена+НКД покупки).</li>' +
+                    '<li><b>По факту, годовых</b> = Изменение ÷ дней владения × 365. Это не прогноз, а текущий темп роста в пересчёте на год. Если он большой (например, +1% за неделю ≈ +52%/год) — бумага быстро отработала, прибыль разумно зафиксировать.</li>' +
+                    '<li><b>К погашению</b> (облигации) — доходность, если додержать до погашения по вашей цене: (купоны + номинал 1000 ₽) − ваши затраты, в годовых, с учётом НДФЛ.</li>' +
+                '</ul></div>' +
+                '<div class="pfrb-mblock"><h5>Рынок и идея обмена</h5><ul>' +
+                    '<li><b>Рынок ОФЗ / замены акций</b> — доходность выпусков и потенциал бумаг сейчас (из раздела «Ребаланс» и таблицы акций).</li>' +
+                    '<li>Если «по факту, годовых» вашей бумаги ≥ <b>' + rebalThreshold + '%/год</b> — предлагаем <b>зафиксировать</b>: продать <b>' + rebalSellPct + '%</b> позиции и на выручку купить более доходную бумагу.</li>' +
+                    '<li><b>Выручка</b> = продаваемые штуки × (цена+НКД сейчас). <b>Прибыль</b> = выручка − ваши затраты на эти штуки' + (pct ? ' − НДФЛ ' + pct + '%' : '') + '.</li>' +
+                    '<li><b>Сколько купим</b> = выручка ÷ цена новой бумаги (с НКД), округляя вниз. <b>+N бумаг</b> = купили − продали.</li>' +
+                    '<li><b>Доход в день</b> одной облигации = доходность годовых × вложенная сумма ÷ 365. Показываем, на сколько ₽/день вырастет доход после обмена.</li>' +
+                '</ul></div>' +
+            '</div>' +
+            '<div class="pfrb-method-note">Параметры сверху (НДФЛ, порог, доля продажи) можно менять — расчёт пересчитается сразу. Напишите, что поправить в формулах, и я обновлю.</div>' +
         '</div>';
     }
     function pfrbEmptyCol(t, s) {
@@ -2036,9 +2185,12 @@
         } catch (e) {}
         return [];
     }
-    // топ рыночных ОФЗ (не из портфеля) по доходности сейчас — правая колонка и идеи обмена
+    // короткий ключ ISIN: портфель хранит тикер «SU26238», рынок — полный «SU26238RMFS4».
+    // Приводим к общей форме (до «RMFS»), чтобы «уже в портфеле» корректно отсеивалось.
+    function isinKey(t) { return String(t || '').split('RMFS')[0]; }
+    // топ рыночных ОФЗ (НЕ из портфеля) по доходности сейчас — рынок ОФЗ и идеи обмена
     function ofzBest(heldSet, limit) {
-        var m = ofzMarket().filter(function (b) { return !(heldSet && heldSet[b.t]) && (b.price + b.nkd) > 0; });
+        var m = ofzMarket().filter(function (b) { return !(heldSet && heldSet[isinKey(b.t)]) && (b.price + b.nkd) > 0; });
         m.sort(function (a, b) { return b.yield - a.yield; });
         return limit ? m.slice(0, limit) : m;
     }
@@ -2082,16 +2234,44 @@
             .slice(0, limit || 3);
     }
 
-    // ===== ОБЛИГАЦИИ: слева — в портфеле (годовых в портфеле), справа — новые ОФЗ (сейчас) =====
-    function bondHeldRow(x) {
-        var h = x.h, cc = x.c, y = bondYTM(h, rebalTax);
-        var ready = y && y.annual != null;
-        var ytmTxt = ready ? fmtPct(y.annual) : 'считаем…', ytmCls = ready ? (y.annual >= 0 ? 'pos' : 'neg') : 'muted';
-        var cu = bondCurUnit(h, cc);
-        return '<div class="pfrb-srow">' +
-            '<div class="pfrb-srid"><span class="pfrb-stk">' + esc(h.ticker) + '</span><span class="pfrb-snm">' + esc(h.name || '') + '</span></div>' +
-            '<div class="pfrb-syield ' + ytmCls + '"><b>' + ytmTxt + '</b><span>годовых</span></div>' +
-            '<div class="pfrb-smeta">' + (cc.qty || 0) + ' шт · ' + fmtPrice(cu.unit) + ' с НКД</div>' +
+    // ===== ОБЛИГАЦИИ: карточка «мой актив» (средние цена/дата/НКД, изменение, годовых по факту,
+    //        к погашению) + встроенная идея фиксации прибыли, если «по факту годовых» ≥ порога =====
+    function bondHeldRow(x, heldSet) {
+        var r = bondRealized(x);
+        var izmCls = r.izm >= 0 ? 'pos' : 'neg', annCls = r.annual >= 0 ? 'pos' : 'neg';
+        var hot = r.izm > 0 && r.annual >= rebalThreshold;
+        var idea = hot ? bondLockIdea(r, heldSet) : null;
+        var fwd = (r.fwdYield != null)
+            ? '<div class="pfrb-am"><span class="pfrb-am-l">к погашению</span><span class="pfrb-am-v ' + (r.fwdYield >= 0 ? 'pos' : 'neg') + '">' + fmtPct(r.fwdYield) + '</span></div>'
+            : '<div class="pfrb-am"><span class="pfrb-am-l">к погашению</span><span class="pfrb-am-v muted">считаем…</span></div>';
+        return '<div class="pfrb-arow' + (hot ? ' hot' : '') + '">' +
+            '<div class="pfrb-arow-top">' +
+                '<div class="pfrb-arow-id"><span class="pfrb-stk">' + esc(r.h.ticker) + '</span><span class="pfrb-snm">' + esc(r.h.name || '') + '</span></div>' +
+                '<div class="pfrb-arow-metrics">' +
+                    '<div class="pfrb-am"><span class="pfrb-am-l">изменение</span><span class="pfrb-am-v ' + izmCls + '">' + fmtPct(r.izm) + '</span></div>' +
+                    '<div class="pfrb-am"><span class="pfrb-am-l">по факту, годовых</span><span class="pfrb-am-v ' + annCls + '">' + fmtPct(r.annual) + '</span></div>' +
+                    fwd +
+                '</div>' +
+            '</div>' +
+            '<div class="pfrb-arow-meta">ср. дата ' + ruDate(r.avgDate) + ' · ср. цена ' + fmtPrice(r.avgPrice) + ' · ср. НКД ' + fmtPrice(r.avgNkd) + ' · ' + r.qty + ' шт</div>' +
+            (idea ? bondLockIdeaHtml(idea) : '') +
+        '</div>';
+    }
+    var LOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+    var LOCK_ARR = '<svg class="pfrb-lock-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>';
+    function bondLockIdeaHtml(i) {
+        var uCls = i.unitsDelta >= 0 ? 'pos' : 'neg', dCls = i.dayIncDelta >= 0 ? 'pos' : 'neg';
+        return '<div class="pfrb-lock">' +
+            '<div class="pfrb-lock-h">' + LOCK_SVG + 'Зафиксировать прибыль</div>' +
+            '<div class="pfrb-lock-flow">' +
+                '<span class="pfrb-lock-side sell"><i>Продать</i><b>' + i.sellQty + ' шт</b><small>≈ ' + fmtRub(i.proceeds) + ' · прибыль ' + fmtRub(i.netProfit) + '</small></span>' +
+                LOCK_ARR +
+                '<span class="pfrb-lock-side buy"><i>Купить</i><b>' + esc(i.newName) + '</b><small>' + i.buyQty + ' шт' + (i.newYield ? ' · ' + fmtPct(i.newYield) + '/год' : '') + '</small></span>' +
+            '</div>' +
+            '<div class="pfrb-lock-gains">' +
+                '<span class="pfrb-lock-gain ' + uCls + '">' + (i.unitsDelta >= 0 ? '+' : '') + i.unitsDelta + ' ' + plural(Math.abs(i.unitsDelta), 'облигация', 'облигации', 'облигаций') + '</span>' +
+                '<span class="pfrb-lock-gain ' + dCls + '">доход ' + (i.dayIncDelta >= 0 ? '+' : '−') + fmtPrice(Math.abs(i.dayIncDelta)) + ' / день</span>' +
+            '</div>' +
         '</div>';
     }
     function ofzNewRow(b) {
@@ -2102,26 +2282,6 @@
             '<div class="pfrb-syield pos"><b>' + (b.yield ? '+' + b.yield.toFixed(1) + '%' : '—') + '</b><span>сейчас</span></div>' +
             '<div class="pfrb-smeta">' + fmtPrice(b.price + b.nkd) + ' с НКД' + (mat ? ' · до ' + mat : '') + '</div>' +
         '</div>';
-    }
-    function bondIdeasHtml(ideas) {
-        if (!ideas.length) return '';
-        var good = ideas.filter(function (i) { return i.delta > 0; });
-        var head = '<div class="pfrb-ideas-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Идеи обмена · можно купить больше облигаций</div>';
-        if (!good.length) {
-            return '<div class="pfrb-ideas">' + head +
-                '<div class="pfrb-idea-note">При текущих ценах и НКД обмен не увеличивает число облигаций — выгоднее держать имеющиеся выпуски.</div></div>';
-        }
-        var body = good.slice(0, 3).map(function (i) {
-            return '<div class="pfrb-idea">' +
-                '<div class="pfrb-idea-leg">' +
-                    '<span class="pfrb-idea-side sell"><span class="pfrb-idea-act">Продать</span><b>' + esc(i.h.ticker) + '</b><small>' + i.qty + ' шт · ≈ ' + fmtRub(i.cash) + ' с НКД</small></span>' +
-                    '<svg class="pfrb-idea-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>' +
-                    '<span class="pfrb-idea-side buy"><span class="pfrb-idea-act">Купить</span><b>' + esc(i.newName) + '</b><small>' + i.canBuy + ' шт' + (i.newYield ? ' · +' + i.newYield.toFixed(1) + '%' : '') + '</small></span>' +
-                '</div>' +
-                '<span class="pfrb-idea-badge">+' + i.delta + ' ' + plural(i.delta, 'облигация', 'облигации', 'облигаций') + '</span>' +
-            '</div>';
-        }).join('');
-        return '<div class="pfrb-ideas">' + head + body + '</div>';
     }
     function rebalBondSection(p, bonds, c) {
         var head = '<div class="pfrb-colhead"><span class="pfrb-cdot bond"></span><span class="pfrb-cname">Облигации</span>' +
@@ -2137,67 +2297,71 @@
             '<div class="pfrb-inc-sub" id="pfoIncSub">считаем…</div></div>';
         if (!bonds.length) {
             return '<div class="pfrb-section pfrb-section--bond">' + head +
-                pfrbEmptyCol('Нет облигаций', 'Добавьте облигации — здесь появятся доходность к погашению, доход по купонам и идеи обмена на более доходные ОФЗ.') + '</div>';
+                pfrbEmptyCol('Нет облигаций', 'Добавьте облигации — здесь появятся ваши средние цена/дата/НКД, доходность и идеи фиксации прибыли.') + '</div>';
         }
-        var heldSet = {}; bonds.forEach(function (x) { heldSet[x.h.ticker] = 1; });
-        var heldRows = bonds.map(bondHeldRow).join('');
-        var newOfz = ofzBest(heldSet, 6);
+        var heldSet = {}; bonds.forEach(function (x) { heldSet[isinKey(x.h.ticker)] = 1; });
+        var myRows = bonds.map(function (x) { return bondHeldRow(x, heldSet); }).join('');
+        var newOfz = ofzBest(heldSet, 8);
         var newRows = newOfz.length ? newOfz.map(ofzNewRow).join('')
             : '<div class="pfrb-side-empty">список ОФЗ появится из раздела «Ребаланс»</div>';
-        var duo = '<div class="pfrb-duo">' +
-            '<div class="pfrb-side"><div class="pfrb-side-h"><span>В портфеле</span><i>годовых в портфеле</i></div>' + heldRows + '</div>' +
-            '<div class="pfrb-side pfrb-side--new"><div class="pfrb-side-h"><span>Новые ОФЗ</span><i>доходность сейчас</i></div>' + newRows + '</div>' +
-        '</div>';
-        var ideas = bondIdeasHtml(bondSwapIdeas(bonds));
-        return '<div class="pfrb-section pfrb-section--bond">' + head + income + duo + ideas +
-            '<div class="pfrb-cnote">«Годовых в портфеле» — к погашению по вашей средней цене/НКД с учётом НДФЛ (тумблер сверху). «Новые ОФЗ» — актуальная доходность рынка. <button class="pfrb-cnote-lnk" onclick="pfToggleMethod()">методика расчёта</button></div>' +
+        return '<div class="pfrb-section pfrb-section--bond">' + head + income +
+            '<div class="pfrb-block"><div class="pfrb-block-h"><span>Мои облигации</span><i>факт · годовых</i></div>' + myRows + '</div>' +
+            '<div class="pfrb-block"><div class="pfrb-block-h"><span>Рынок ОФЗ</span><i>доходность сейчас</i></div><div class="pfrb-market">' + newRows + '</div></div>' +
+            '<div class="pfrb-cnote">«По факту, годовых» — темп вашего роста в пересчёте на год; при высоком темпе (≥ порога сверху) показываем идею фиксации. «Рынок ОФЗ» — доходность выпусков сейчас. <button class="pfrb-cnote-lnk" onclick="pfToggleMethod()">как считаем</button></div>' +
         '</div>';
     }
-    // ===== АКЦИИ: тикер · изменение за день · потенциал (на покупку) + замены ВЫШЕ по потенциалу =====
+    // ===== АКЦИИ: карточка «мой актив» (средние цена/дата, изменение, годовых по факту, потенциал,
+    //        сегодня) + встроенная идея фиксации (продать долю → купить выше по потенциалу того же эшелона) =====
+    function stockHeldRow(x, heldSet) {
+        var r = stockRealized(x);
+        var izmCls = r.izm >= 0 ? 'pos' : 'neg', annCls = r.annual >= 0 ? 'pos' : 'neg';
+        var potTxt = r.pot == null ? '—' : fmtPct(r.pot), potCls = r.pot == null ? 'muted' : (r.pot >= 0 ? 'pos' : 'neg');
+        var tier = r.ech ? '<span class="pfrb-tier tier-' + r.ech + '">' + (ROMAN[r.ech - 1] || '') + '</span>' : '';
+        var day = dayChangeChip(r.h.ticker);
+        var hot = r.izm > 0 && r.annual >= rebalThreshold;
+        var idea = hot ? stockLockIdea(r, heldSet) : null;
+        return '<div class="pfrb-arow' + (hot ? ' hot' : '') + '">' +
+            '<div class="pfrb-arow-top">' +
+                '<button class="pfrb-arow-id link" onclick="pfOpenTicker(\'' + esc(r.h.ticker) + '\')"><span class="pfrb-stk">' + esc(r.h.ticker) + tier + '</span><span class="pfrb-snm">' + esc(r.h.name || '') + '</span></button>' +
+                '<div class="pfrb-arow-metrics">' +
+                    '<div class="pfrb-am"><span class="pfrb-am-l">изменение</span><span class="pfrb-am-v ' + izmCls + '">' + fmtPct(r.izm) + '</span></div>' +
+                    '<div class="pfrb-am"><span class="pfrb-am-l">по факту, годовых</span><span class="pfrb-am-v ' + annCls + '">' + fmtPct(r.annual) + '</span></div>' +
+                    '<div class="pfrb-am"><span class="pfrb-am-l">потенциал</span><span class="pfrb-am-v ' + potCls + '">' + potTxt + '</span></div>' +
+                '</div>' +
+            '</div>' +
+            '<div class="pfrb-arow-meta">ср. дата ' + ruDate(r.avgDate) + ' · ср. цена ' + fmtPrice(r.avgPrice) + ' · ' + r.qty + ' шт' + (day ? ' · сегодня ' + day : '') + '</div>' +
+            (idea ? stockLockIdeaHtml(idea) : '') +
+        '</div>';
+    }
+    function stockLockIdeaHtml(i) {
+        // у акций «+N бумаг» бессмысленно (цены бумаг несопоставимы — грошовая бумага даст тысячи штук),
+        // поэтому в идее по акции показываем ВЫРУЧКУ и прирост ПОТЕНЦИАЛА, а не число бумаг.
+        var buyTxt = (i.buyQty > 0 ? 'на ' + fmtRub(i.proceeds) : 'выше по потенциалу') + (i.newPot == null ? '' : ' · потенциал ' + fmtPct(i.newPot));
+        var potBit = (i.potDelta != null && isFinite(i.potDelta) && i.potDelta !== 0)
+            ? '<span class="pfrb-lock-gain ' + (i.potDelta >= 0 ? 'pos' : 'neg') + '">потенциал ' + (i.potDelta >= 0 ? '+' : '') + i.potDelta.toFixed(1) + ' п.п.</span>' : '';
+        return '<div class="pfrb-lock">' +
+            '<div class="pfrb-lock-h">' + LOCK_SVG + 'Зафиксировать прибыль</div>' +
+            '<div class="pfrb-lock-flow">' +
+                '<span class="pfrb-lock-side sell"><i>Продать</i><b>' + i.sellQty + ' шт</b><small>≈ ' + fmtRub(i.proceeds) + ' · прибыль ' + fmtRub(i.netProfit) + '</small></span>' +
+                LOCK_ARR +
+                '<span class="pfrb-lock-side buy"><i>Купить</i><b>' + esc(i.newName) + '</b><small>' + buyTxt + '</small></span>' +
+            '</div>' +
+            (potBit ? '<div class="pfrb-lock-gains">' + potBit + '</div>' : '') +
+        '</div>';
+    }
     function rebalStockSection(p, stocks, c) {
         var head = '<div class="pfrb-colhead"><span class="pfrb-cdot stock"></span><span class="pfrb-cname">Акции</span>' +
             '<span class="pfrb-ccount">' + stocks.length + '</span>' +
             '<span class="pfrb-cval">' + fmtRub(c.stockVal) + ' · ' + Math.round(c.stockPct) + '%</span></div>';
         if (!stocks.length) {
             return '<div class="pfrb-section pfrb-section--stock">' + head +
-                pfrbEmptyCol('Нет акций', 'Добавьте акции — здесь появятся изменение за день, потенциал, эшелон и варианты ребалансировки.') + '</div>';
+                pfrbEmptyCol('Нет акций', 'Добавьте акции — здесь появятся ваши средние цена/дата, доходность, потенциал и идеи фиксации прибыли.') + '</div>';
         }
-        var held = {}; stocks.forEach(function (x) { held[x.h.ticker] = 1; });
-        // «самая доходная» под продажу части = макс. прибыль среди тех, у кого есть замена выше по потенциалу
-        var trimId = null, trimMax = -1e9;
-        stocks.forEach(function (x) {
-            var ech = echelonOf(x.h.ticker), pot = holdPotential(x.h);
-            if (x.c.invested > 0 && x.c.pnlPct > 0 && betterEchelonSwaps(ech, held, pot, 1).length && x.c.pnlPct > trimMax) { trimMax = x.c.pnlPct; trimId = x.h.id; }
-        });
-        var rows = stocks.map(function (x) {
-            var h = x.h, cc = x.c, ech = echelonOf(h.ticker), pot = holdPotential(h);
-            var potTxt = pot == null ? '—' : fmtPct(pot), potCls = pot == null ? 'muted' : (pot >= 0 ? 'pos' : 'neg');
-            var tier = ech ? '<span class="pfrb-tier tier-' + ech + '">' + (ROMAN[ech - 1] || '') + '</span>' : '';
-            var day = dayChangeChip(h.ticker);
-            var cands = betterEchelonSwaps(ech, held, pot, 3);
-            var isTrim = (h.id === trimId);
-            var swaps = ech
-                ? '<div class="pfrb-swaps"><span class="pfrb-swaps-l">' + (cands.length ? 'купить выше по потенциалу · ' + (ROMAN[ech - 1] || '') + ' эшелон' : 'нет вариантов выше в эшелоне') + '</span>' +
-                    cands.map(function (cn) {
-                        return '<button class="pfrb-swap" onclick="pfOpenTicker(\'' + esc(cn.ticker) + '\')" title="' + attr(cn.name) + '">' +
-                            '<span class="pfrb-swap-tk">' + esc(cn.ticker) + '</span>' +
-                            '<span class="pfrb-swap-pot ' + (cn.pot >= 0 ? 'pos' : 'neg') + '">' + esc(cn.potTxt) + '</span></button>';
-                    }).join('') + '</div>'
-                : '<div class="pfrb-swaps"><span class="pfrb-swaps-none">эшелон не определён</span></div>';
-            return '<div class="pfrb-row pfrb-row--stock' + (isTrim ? ' pfrb-row--trim' : '') + '">' +
-                '<div class="pfrb-rmain">' +
-                    '<button class="pfrb-rid link" onclick="pfOpenTicker(\'' + esc(h.ticker) + '\')"><span class="pfrb-tk">' + esc(h.ticker) + tier + '</span><span class="pfrb-nm">' + esc(h.name || '') + '</span></button>' +
-                    '<div class="pfrb-rmetrics">' +
-                        (day ? '<div class="pfrb-rmetric"><span class="pfrb-ml">сегодня</span>' + day + '</div>' : '') +
-                        '<div class="pfrb-rmetric"><span class="pfrb-ml">потенциал · покупка</span><span class="pfrb-mv ' + potCls + '">' + potTxt + '</span></div>' +
-                    '</div>' +
-                '</div>' +
-                (isTrim ? '<div class="pfrb-trim-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Самая доходная — можно продать часть и взять выше по потенциалу</div>' : '') +
-                swaps +
-            '</div>';
-        }).join('');
-        return '<div class="pfrb-section pfrb-section--stock">' + head + '<div class="pfrb-rows">' + rows + '</div>' +
-            '<div class="pfrb-cnote">Изменение — за сегодня (MOEX). Потенциал зафиксирован на дату покупки. Замены — бумаги того же эшелона с бóльшим потенциалом.</div>' +
+        var heldSet = {}; stocks.forEach(function (x) { heldSet[x.h.ticker] = 1; });
+        var rows = stocks.map(function (x) { return stockHeldRow(x, heldSet); }).join('');
+        return '<div class="pfrb-section pfrb-section--stock">' + head +
+            '<div class="pfrb-block">' + rows + '</div>' +
+            '<div class="pfrb-cnote">«По факту, годовых» — рост в пересчёте на год. Потенциал зафиксирован на дату покупки. Замена — бумага того же эшелона с бóльшим потенциалом. <button class="pfrb-cnote-lnk" onclick="pfToggleMethod()">как считаем</button></div>' +
         '</div>';
     }
 
@@ -2212,11 +2376,9 @@
                     '<div class="pfo-name">' + esc(p.name) + '</div>' +
                     '<div class="pfo-meta">' + c.count + ' ' + plural(c.count, 'актив', 'актива', 'активов') + ' · стоимость ' + fmtRub(c.value) +
                         ' · <span class="' + pnlCls + '">' + (c.pnl >= 0 ? '▲ ' : '▼ ') + fmtPct(c.pnlPct) + '</span></div></div></div>' +
-                '<div class="pfo-head-r pfrb-head-ctrls">' + rebalTaxToggle() +
-                    '<button class="pfrb-mbtn' + (rebalMethod ? ' on' : '') + '" onclick="pfToggleMethod()">' + INFO_SVG + '<span>Методика расчёта</span></button>' +
-                '</div>' +
-                '<button class="pfo-x" onclick="pfCloseOverlay()" aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
+                '<button class="pfo-x" style="margin-left:auto" onclick="pfCloseOverlay()" aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
             '</div>' +
+            rebalParamsBar() +
             (rebalMethod ? rebalMethodPanel() : '') +
             '<div class="pfrb-body">' +
                 rebalBondSection(p, bonds, c) +
@@ -2227,7 +2389,9 @@
     }
     // короткая дата погашения ДД.ММ.ГГГГ из строки MOEX (YYYY-MM-DD)
     function ruDate2(s) { if (!s || s === '—') return '—'; var pp = String(s).split('T')[0].split('-'); return pp.length === 3 ? pp[2] + '.' + pp[1] + '.' + pp[0] : s; }
-    window.pfSetRebalTax = function (rate) { rebalTax = rate; rebalRepaint(); };
+    window.pfSetRebalTax = function (rate) { rebalTax = rate; saveRebalParams(); rebalRepaint(); };
+    window.pfSetRebalThreshold = function (v) { var n = parseFloat(v); if (isFinite(n) && n >= 0) rebalThreshold = n; saveRebalParams(); rebalRepaint(); };
+    window.pfSetRebalSellPct = function (v) { var n = parseFloat(v); if (isFinite(n)) rebalSellPct = clamp(n, 1, 100); saveRebalParams(); rebalRepaint(); };
     window.pfToggleMethod = function () { rebalMethod = !rebalMethod; rebalRepaint(); };
 
     // ====================================================================

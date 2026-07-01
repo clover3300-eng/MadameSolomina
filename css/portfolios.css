@@ -298,6 +298,19 @@ body.dark-mode .pfc-hero-inc.pos { color: #34d399; } body.dark-mode .pfc-hero-in
 body.dark-mode .pfc-mchart-leg { color: #93a3b8; background: rgba(17,25,37,0.7); }
 .pfc-mchart-leg:empty { display: none; }
 .pfc-mchart-leg .pfcv-lgi { font-size: 10px; }
+/* тумблер IMOEX на мини-графике (левый верхний угол) — включает/выключает кривую индекса */
+.pfc-imtgl { position: absolute; top: 2px; left: 32px; z-index: 3; display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 7px; border-radius: 7px; border: 1px solid rgba(24,38,60,0.1); background: rgba(255,255,255,0.78);
+    font-family: 'Manrope', sans-serif; font-size: 9.5px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+    color: #a3adbc; cursor: pointer; transition: color .15s, border-color .15s, opacity .15s; }
+body.dark-mode .pfc-imtgl { background: rgba(17,25,37,0.7); border-color: rgba(255,255,255,0.12); color: #66748a; }
+.pfc-imtgl-dot { width: 12px; height: 3px; border-radius: 2px; background: #cbd5e1; transition: background .15s, border-color .15s; }
+.pfc-imtgl.on { color: #64748b; border-color: rgba(24,38,60,0.16); }
+.pfc-imtgl.on .pfc-imtgl-dot { background: #94a3b8; }
+body.dark-mode .pfc-imtgl.on { color: #9fb0c4; }
+.pfc-imtgl:not(.on) { opacity: 0.6; }
+.pfc-imtgl:not(.on) .pfc-imtgl-dot { background: transparent; box-shadow: inset 0 0 0 1px #cbd5e1; }
+.pfc-imtgl:hover { color: var(--pf-accent); border-color: color-mix(in srgb, var(--pf-accent) 45%, transparent); }
 
 /* ---- распределение: маленький donut + горизонтальная полоса-легенда ---- */
 .pfc-alloc { display: flex; align-items: center; gap: 12px; margin: 12px 24px 0; }
@@ -310,8 +323,8 @@ body.dark-mode .pfc-dist-bar { background: rgba(255,255,255,0.1); }
 body.dark-mode .pfc-dist-lbl { color: #aab8c8; }
 .pfc-dist-lbl i { display: inline-block; width: 6px; height: 6px; border-radius: 99px; margin-right: 4px; vertical-align: middle; }
 
-/* ---- три карточки-стата: вложено / доход (крупные, поровну) / доходность (компактнее) ---- */
-.pfc-stats2 { display: grid; grid-template-columns: 1fr 1fr 0.74fr; gap: 8px; margin: 12px 24px 0; }
+/* ---- три карточки-стата: вложено / доход / доходность — одинаковые по ширине и шрифтам ---- */
+.pfc-stats2 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 12px 24px 0; }
 .pfc-stat2 { min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: 8px 12px; background: rgba(24,38,60,0.035); border-radius: 11px; border: 1px solid rgba(24,38,60,0.06); }
 body.dark-mode .pfc-stat2 { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.06); }
 .pfc-stat2--yield.is-gn { background: color-mix(in srgb, var(--pf-gn) 8%, rgba(24,38,60,0.035)); border-color: color-mix(in srgb, var(--pf-gn) 18%, rgba(24,38,60,0.08)); }
@@ -322,9 +335,8 @@ body.dark-mode .pfc-stat2--yield.is-rd { background: color-mix(in srgb, var(--pf
 .pfc-stat2-v { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 800; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 body.dark-mode .pfc-stat2-v { color: #eef3f9; }
 .pfc-stat2-v.pos { color: #16a34a; } .pfc-stat2-v.neg { color: #dc2626; }
-.pfc-stat2--yield { padding: 8px 10px; }
-.pfc-stat2--yield .pfc-stat2-l { font-size: 8px; }
-.pfc-stat2--yield .pfc-stat2-v { font-size: 12px; }
+/* «Доходность» — те же шрифты/размеры/паддинги, что и «Вложено»/«Доход» (отличается только
+   лёгким цветным фоном is-gn/is-rd). Отдельных font-size переопределений больше нет. */
 body.dark-mode .pfc-stat2-v.pos { color: #34d399; } body.dark-mode .pfc-stat2-v.neg { color: #f87171; }
 .pfc-sep { height: 1px; background: rgba(24,38,60,0.07); margin: 12px 24px 0; flex-shrink: 0; }
 body.dark-mode .pfc-sep { background: rgba(255,255,255,0.06); }
@@ -1312,6 +1324,79 @@ body.dark-mode .pfrb-row--trim { border-color: color-mix(in srgb, #fbbf24 40%, r
     font-size: 11px; font-weight: 700; line-height: 1.35; color: #b45309; background: rgba(245,158,11,0.12); }
 .pfrb-trim-tag svg { width: 15px; height: 15px; flex-shrink: 0; }
 body.dark-mode .pfrb-trim-tag { color: #fbbf24; background: rgba(245,158,11,0.16); }
+
+/* ---- ребаланс R2: панель параметров (НДФЛ · порог · доля продажи · «как считаем») ---- */
+.pfrb-params { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; padding: 13px 24px;
+    border-bottom: 1px solid rgba(24,38,60,0.06); background: rgba(24,38,60,0.02); }
+body.dark-mode .pfrb-params { border-color: rgba(255,255,255,0.05); background: rgba(255,255,255,0.02); }
+.pfrb-param { display: inline-flex; align-items: center; gap: 7px; font-size: 10px; font-weight: 800;
+    letter-spacing: 0.05em; text-transform: uppercase; color: #94a3b8; }
+.pfrb-param i { font-style: normal; font-size: 9.5px; letter-spacing: 0.03em; color: #a3adbc; }
+.pfrb-param-in { width: 56px; padding: 6px 8px; border: 1px solid rgba(24,38,60,0.14); border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 800; color: #0f172a; background: #fff; text-align: center; }
+body.dark-mode .pfrb-param-in { background: #111925; border-color: rgba(255,255,255,0.12); color: #eef3f9; }
+.pfrb-param-in:focus { outline: none; border-color: var(--pf-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pf-accent) 15%, transparent); }
+.pfrb-params .pfrb-mbtn { margin-left: auto; }
+
+/* методичка простыми словами — два блока со списками */
+.pfrb-method-body { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 22px; }
+@media (max-width: 760px) { .pfrb-method-body { grid-template-columns: 1fr; } }
+.pfrb-mblock h5 { margin: 0 0 7px; font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 800;
+    letter-spacing: 0.02em; color: var(--pf-accent); }
+.pfrb-mblock ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.pfrb-mblock li { position: relative; padding: 7px 10px 7px 24px; border-radius: 9px; font-size: 11px; line-height: 1.5;
+    color: #5a6675; background: rgba(255,255,255,0.6); border: 1px solid rgba(24,38,60,0.05); }
+.pfrb-mblock li::before { content: ''; position: absolute; left: 10px; top: 13px; width: 5px; height: 5px; border-radius: 99px; background: var(--pf-accent); }
+body.dark-mode .pfrb-mblock li { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.05); color: #cdd8e6; }
+.pfrb-mblock li b { color: #1b2433; font-weight: 800; } body.dark-mode .pfrb-mblock li b { color: #f4f8fd; }
+
+/* ---- ребаланс R2: блок «Мои облигации/акции» и «Рынок» ---- */
+.pfrb-block { display: flex; flex-direction: column; gap: 8px; }
+.pfrb-block-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.pfrb-block-h span { font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 800; color: #1b2433; }
+body.dark-mode .pfrb-block-h span { color: #f4f8fd; }
+.pfrb-block-h i { font-style: normal; font-size: 8.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #94a3b8; }
+.pfrb-market { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: start; }
+@media (max-width: 720px) { .pfrb-market { grid-template-columns: 1fr; } }
+
+/* карточка «мой актив»: id + метрики (изменение / по факту годовых / к погашению|потенциал) + мета */
+.pfrb-arow { padding: 12px 13px; border-radius: 13px; background: rgba(24,38,60,0.025); border: 1px solid rgba(24,38,60,0.06); display: flex; flex-direction: column; gap: 8px; }
+body.dark-mode .pfrb-arow { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.05); }
+.pfrb-arow.hot { border-color: color-mix(in srgb, #16a34a 42%, rgba(24,38,60,0.06)); background: color-mix(in srgb, #16a34a 5%, rgba(24,38,60,0.02)); }
+body.dark-mode .pfrb-arow.hot { border-color: color-mix(in srgb, #34d399 38%, rgba(255,255,255,0.05)); background: color-mix(in srgb, #34d399 7%, rgba(255,255,255,0.03)); }
+.pfrb-arow-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.pfrb-arow-id { display: flex; flex-direction: column; gap: 1px; min-width: 0; align-items: flex-start; text-align: left; border: none; background: none; padding: 0; }
+.pfrb-arow-id.link { cursor: pointer; } .pfrb-arow-id.link:hover .pfrb-stk { color: var(--pf-accent); }
+.pfrb-arow-metrics { display: flex; align-items: flex-start; gap: 16px; flex-shrink: 0; }
+.pfrb-am { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+.pfrb-am-l { font-size: 8px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #94a3b8; white-space: nowrap; }
+.pfrb-am-v { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 800; color: #475569; }
+.pfrb-am-v.pos { color: #16a34a; } .pfrb-am-v.neg { color: #dc2626; } .pfrb-am-v.muted { font-size: 11px; color: #b6c0cc; font-style: italic; }
+body.dark-mode .pfrb-am-v { color: #cdd8e6; } body.dark-mode .pfrb-am-v.pos { color: #34d399; } body.dark-mode .pfrb-am-v.neg { color: #f87171; }
+.pfrb-arow-meta { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #8195a9; }
+.pfrb-arow-meta .pfrb-day { font-size: 10px; }
+
+/* встроенная идея фиксации прибыли: продать → купить · прирост бумаг и дохода/день */
+.pfrb-lock { display: flex; flex-direction: column; gap: 8px; margin-top: 2px; padding: 10px 11px; border-radius: 11px;
+    background: rgba(255,255,255,0.7); border: 1px dashed color-mix(in srgb, #16a34a 40%, rgba(24,38,60,0.12)); }
+body.dark-mode .pfrb-lock { background: rgba(255,255,255,0.04); border-color: color-mix(in srgb, #34d399 34%, rgba(255,255,255,0.1)); }
+.pfrb-lock-h { display: flex; align-items: center; gap: 7px; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 800;
+    letter-spacing: 0.02em; text-transform: uppercase; color: #16a34a; }
+.pfrb-lock-h svg { width: 15px; height: 15px; flex-shrink: 0; }
+body.dark-mode .pfrb-lock-h { color: #34d399; }
+.pfrb-lock-flow { display: flex; align-items: center; gap: 10px; }
+.pfrb-lock-side { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1 1 0; }
+.pfrb-lock-side i { font-style: normal; font-size: 8.5px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; }
+.pfrb-lock-side.sell i { color: #dc2626; } .pfrb-lock-side.buy i { color: #16a34a; }
+body.dark-mode .pfrb-lock-side.sell i { color: #f87171; } body.dark-mode .pfrb-lock-side.buy i { color: #34d399; }
+.pfrb-lock-side b { font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 800; color: #1b2433; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.dark-mode .pfrb-lock-side b { color: #f4f8fd; }
+.pfrb-lock-side small { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pfrb-lock-arr { width: 18px; height: 18px; flex-shrink: 0; color: var(--pf-accent); }
+.pfrb-lock-gains { display: flex; flex-wrap: wrap; gap: 6px; }
+.pfrb-lock-gain { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 800; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+.pfrb-lock-gain.pos { color: #16a34a; background: rgba(22,163,74,0.12); } .pfrb-lock-gain.neg { color: #dc2626; background: rgba(220,38,38,0.1); }
+body.dark-mode .pfrb-lock-gain.pos { color: #34d399; background: rgba(52,211,153,0.16); } body.dark-mode .pfrb-lock-gain.neg { color: #f87171; background: rgba(248,113,113,0.14); }
 
 /* ============================================================
    TOAST
