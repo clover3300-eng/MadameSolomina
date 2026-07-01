@@ -1690,8 +1690,21 @@ async function btBuildPortfolioSeries(results, fromStr, tillStr) {
         var ser;
         try { ser = await btFetchHistorySeries(path, fromStr, tillStr); } catch(e) { ser = []; }
         if (!ser.length) continue;
-        var map = {}, dates = [];
-        ser.forEach(function(p) { map[p.d] = p.c * a.mult; dates.push(p.d); });
+        // фильтр аномалий: одиночная «битая» котировка от MOEX ISS (сбойный CLOSE, задвоенный
+        // борд и т.п.) иначе через forward-fill портит ВСЮ доходность до конца графика — цена
+        // навсегда «залипает» на неверном уровне. Облигации внутридневно почти не двигаются
+        // (порог ×2), акции могут прыгать сильнее (порог ×10) — за пределами считаем точку
+        // сбойной и пропускаем её, оставляя предыдущую валидную цену через forward-fill.
+        var map = {}, dates = [], prevGood = null;
+        var lo = a.market === 'bonds' ? 0.5 : 0.1, hi = a.market === 'bonds' ? 2 : 10;
+        ser.forEach(function(p) {
+            var c = p.c * a.mult;
+            if (prevGood != null && prevGood > 0) {
+                var ratio = c / prevGood;
+                if (ratio < lo || ratio > hi) return;
+            }
+            map[p.d] = c; dates.push(p.d); prevGood = c;
+        });
         dates.sort();
         var lots = (a.lots && a.lots.length) ? a.lots.slice().sort(function (x, y) { return x.buyDate < y.buyDate ? -1 : x.buyDate > y.buyDate ? 1 : 0; }) : null;
         maps.push({ dates: dates, map: map, qty: a.qty, lots: lots });

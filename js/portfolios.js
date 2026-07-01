@@ -467,11 +467,20 @@
         var N = pts.length;
         var showIm = !!data.imoex && pts[0] && pts[0].im != null;
         // РАНЬШЕ подпись графика форсилась в живой pnlPct отдельным коэффициентом pfK, который
-        // растягивал (или, при большом расхождении, вовсе не трогал) кривую — сама кривая
-        // считалась по своей, другой формуле (простое отношение стоимости к стоимости на старте).
-        // Теперь кривая (btBuildPortfolioSeries → q.inv = себестоимость лотов на эту дату) и
-        // подпись — одно и то же значение (data.pfFinal, формула как у calcHold/calcPf: (стоимость
-        // − вложено)/вложено), поэтому расходиться им больше неоткуда — pfK не нужен.
+        // растягивал (или, при большом расхождении, вовсе не трогал) ВСЮ кривую — из-за этого
+        // форма могла исказиться или даже перевернуться знаком. Теперь кривая и подпись по
+        // построению — одна и та же формула (стоимость − вложено)/вложено, поэтому по всей длине
+        // они уже совпадают. Расходится может только САМАЯ последняя точка: она в q.pf — это
+        // «на дату последнего закрытия MOEX», а живой pnlPct — по текущей котировке (для
+        // облигаций особенно, у них дневной close может ощутимо отставать от реальной сделки).
+        // Поэтому просто подменяем pf только у последней точки на живой процент — это честно
+        // (последний отрезок кривой отражает реальное движение с последнего закрытия) и не трогает
+        // форму остальной кривой.
+        var pfEntity = findPf(pid), livePct = pfEntity ? calcPf(pfEntity).pnlPct : null;
+        if (N && livePct != null && isFinite(livePct) && pts[N - 1].pf !== livePct) {
+            var lastPt = pts[N - 1];
+            pts = pts.slice(0, N - 1).concat([{ d: lastPt.d, pf: livePct, im: lastPt.im }]);
+        }
         var pfv = function (q) { return q.pf; };
         var allV = []; pts.forEach(function (q) { allV.push(pfv(q)); if (showIm) allV.push(q.im); });
         var minV = Math.min.apply(null, allV), maxV = Math.max.apply(null, allV);
@@ -521,9 +530,10 @@
         // strokeDasharray анимации — иначе пунктир на миг схлопывается в сплошную линию.
         var imp = wrap.querySelector('.pfcv-imline');
         if (imp) { imp.style.opacity = '0'; imp.getBoundingClientRect(); imp.style.transition = 'opacity .9s ease .3s'; imp.style.opacity = ''; }
-        // подпись «Портфель X%» = data.pfFinal — то же самое число, которым заканчивается кривая
-        // (см. комментарий выше): расходиться им теперь просто неоткуда.
-        var dispFinal = data.pfFinal;
+        // подпись «Портфель X%» = то же значение, которым теперь заканчивается кривая (см. выше:
+        // либо data.pfFinal, либо подменённый на живой pnlPct последний пункт) — расходиться им
+        // неоткуда.
+        var dispFinal = pts.length ? pts[pts.length - 1].pf : data.pfFinal;
         if (dynEl) {
             var pos2 = dispFinal >= 0;
             dynEl.textContent = (pos2 ? '+' : '') + dispFinal.toFixed(1) + '%';
