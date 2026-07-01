@@ -373,15 +373,16 @@
             var bucket = h.type === 'bond' ? bonds : stocks;
             if (!bucket[h.ticker]) bucket[h.ticker] = { t: h.ticker, qty: 0, lots: [] };
             bucket[h.ticker].qty += a.qty;
-            a.lots.forEach(function (l) { var q = +l.qty || 0; if (q > 0 && l.buyDate) bucket[h.ticker].lots.push({ buyDate: l.buyDate, qty: q }); });
+            a.lots.forEach(function (l) { var q = +l.qty || 0; if (q > 0 && l.buyDate) bucket[h.ticker].lots.push({ buyDate: l.buyDate, qty: q, buyPrice: +l.buyPrice || 0 }); });
         });
         return { bonds: Object.keys(bonds).map(function (k) { return bonds[k]; }), stocks: Object.keys(stocks).map(function (k) { return stocks[k]; }) };
     }
-    // серия только портфеля (без индекса): доходность по time-weighted индексу (btTwrIndex,
-    // см. webapp-tabs.js) — простое отношение c[t]/c[0] тут не годится, докупки исказят %
+    // серия только портфеля (без индекса): доходность = (стоимость − вложено на эту дату) / вложено
+    // на эту дату (q.inv считает btBuildPortfolioSeries — та же формула, что и calcHold/calcPf,
+    // просто на каждый день, а не только на сегодня). Простое отношение c[t]/c[0] тут не годится:
+    // докупка увеличивает c[t] возросшим кол-вом, но это не доходность, а довнесение капитала.
     function pfOnlyPoints(pfSeries) {
-        var points = (typeof btTwrIndex === 'function') ? btTwrIndex(pfSeries)
-            : pfSeries.map(function (q) { return { d: q.d, pf: 0 }; });
+        var points = pfSeries.map(function (q) { return { d: q.d, pf: q.inv > 0 ? (q.c / q.inv - 1) * 100 : 0 }; });
         return { points: points, pfFinal: points[points.length - 1].pf, imFinal: null };
     }
     // асинхронная загрузка серии доходности (история MOEX) + перерисовка пейна графика
@@ -465,27 +466,13 @@
         }
         var N = pts.length;
         var showIm = !!data.imoex && pts[0] && pts[0].im != null;
-        // РАНЬШЕ подпись графика форсилась в живой pnlPct, а сама КРИВАЯ рисовалась от исторических
-        // закрытий MOEX со своей базой — из-за этого «доходность портфеля» (цифра) и конец линии на
-        // графике не совпадали. Теперь масштабируем весь ряд доходности так, чтобы КОНЕЦ кривой попал
-        // ровно в живой pnlPct: старт остаётся 0% (день покупки), а конец = число из карточки. Форма
-        // (относительные колебания) сохраняется. Индекс IMOEX не трогаем — это отдельный бенчмарк.
-        // pfK — лёгкая коррекция «конец кривой = живой pnlPct» (см. выше). Раньше коэффициент
-        // ничем не ограничивался: если реконструкция стоимости из истории (curveFinal) сильно
-        // расходилась с живым % (напр. из-за длинного периода в старой версии, качавшей qty
-        // «задним числом» с текущего кол-ва), pfK мог стать экстремальным (×20, ×0.02) и
-        // портфельная кривая схлопывалась почти в линию, а IMOEX (никем не масштабируемый)
-        // визуально становился «главным» графиком. Теперь коэффициент зажат — большое
-        // расхождение просто НЕ форсируем (оставляем pfK=1), это признак неполных данных,
-        // а не повод искажать форму кривой.
-        var pfEntity = findPf(pid), livePct = pfEntity ? calcPf(pfEntity).pnlPct : null;
-        var curveFinal = raw.length ? raw[raw.length - 1].pf : 0;
-        var pfK = 1;
-        if (livePct != null && isFinite(livePct) && Math.abs(curveFinal) > 0.05) {
-            var kRaw = livePct / curveFinal;
-            if (isFinite(kRaw) && kRaw > 0.3 && kRaw < 3) pfK = kRaw;
-        }
-        var pfv = function (q) { return q.pf * pfK; };
+        // РАНЬШЕ подпись графика форсилась в живой pnlPct отдельным коэффициентом pfK, который
+        // растягивал (или, при большом расхождении, вовсе не трогал) кривую — сама кривая
+        // считалась по своей, другой формуле (простое отношение стоимости к стоимости на старте).
+        // Теперь кривая (btBuildPortfolioSeries → q.inv = себестоимость лотов на эту дату) и
+        // подпись — одно и то же значение (data.pfFinal, формула как у calcHold/calcPf: (стоимость
+        // − вложено)/вложено), поэтому расходиться им больше неоткуда — pfK не нужен.
+        var pfv = function (q) { return q.pf; };
         var allV = []; pts.forEach(function (q) { allV.push(pfv(q)); if (showIm) allV.push(q.im); });
         var minV = Math.min.apply(null, allV), maxV = Math.max.apply(null, allV);
         if (minV === maxV) { minV -= 1; maxV += 1; }
@@ -534,10 +521,9 @@
         // strokeDasharray анимации — иначе пунктир на миг схлопывается в сплошную линию.
         var imp = wrap.querySelector('.pfcv-imline');
         if (imp) { imp.style.opacity = '0'; imp.getBoundingClientRect(); imp.style.transition = 'opacity .9s ease .3s'; imp.style.opacity = ''; }
-        // подпись «Портфель X%» = живой pnlPct из calcPf (тот же расчёт, что и в шапке карточки).
-        // Кривая выше отмасштабирована так, что её КОНЕЦ = этот же livePct, поэтому цифра и график
-        // теперь сходятся. Фолбэк на итог кривой — если живого процента почему-то нет.
-        var dispFinal = (livePct != null && isFinite(livePct)) ? livePct : data.pfFinal;
+        // подпись «Портфель X%» = data.pfFinal — то же самое число, которым заканчивается кривая
+        // (см. комментарий выше): расходиться им теперь просто неоткуда.
+        var dispFinal = data.pfFinal;
         if (dynEl) {
             var pos2 = dispFinal >= 0;
             dynEl.textContent = (pos2 ? '+' : '') + dispFinal.toFixed(1) + '%';

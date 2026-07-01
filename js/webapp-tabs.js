@@ -1709,45 +1709,37 @@ async function btBuildPortfolioSeries(results, fromStr, tillStr) {
     var lastPrice = maps.map(function() { return 0; });
     var lotPtr = maps.map(function() { return 0; });
     var lotQty = maps.map(function() { return 0; });
+    var lotCost = maps.map(function() { return 0; });   // накопленная себестоимость лотов (buyPrice*qty)
+    var baseInv = maps.map(function() { return null; }); // активы без lots: себестоимость = стоимость на baseDate (фикс.)
     for (var u = 0; u < union.length; u++) {
-        var day = union[u], total = 0, vnn = 0;
+        var day = union[u], total = 0, inv = 0;
         for (var mi = 0; mi < maps.length; mi++) {
             var m = maps[mi];
             while (ptr[mi] < m.dates.length && m.dates[ptr[mi]] <= day) { lastPrice[mi] = m.map[m.dates[ptr[mi]]]; ptr[mi]++; }
-            var prevQ = m.lots ? lotQty[mi] : m.qty;
             var q = m.qty;
             if (m.lots) {
-                while (lotPtr[mi] < m.lots.length && m.lots[lotPtr[mi]].buyDate <= day) { lotQty[mi] += m.lots[lotPtr[mi]].qty; lotPtr[mi]++; }
+                while (lotPtr[mi] < m.lots.length && m.lots[lotPtr[mi]].buyDate <= day) {
+                    var lot = m.lots[lotPtr[mi]];
+                    lotQty[mi] += lot.qty; lotCost[mi] += (lot.buyPrice || 0) * lot.qty; lotPtr[mi]++;
+                }
                 q = lotQty[mi];
+            } else if (baseInv[mi] == null) {
+                baseInv[mi] = lastPrice[mi] * q;
             }
             total += lastPrice[mi] * q;
-            vnn += lastPrice[mi] * prevQ;   // стоимость на сегодня БЕЗ учёта докупок этого дня (см. btTwrIndex)
+            inv += m.lots ? lotCost[mi] : (baseInv[mi] || 0);
         }
-        if (total > 0) series.push({ d: day, c: total, vnn: vnn });
+        if (total > 0) series.push({ d: day, c: total, inv: inv });
     }
     return series;
 }
 
-// Time-weighted индекс доходности портфеля (база = 100 в series[0]) — не искажается
-// докупками. Наивное отношение c[t]/c[0] завышает/занижает доходность, когда в процессе
-// добавляются новые лоты: возросшая стоимость от ДОКУПКИ (не от роста цены) засчитывалась
-// бы как доходность (напр. один портфель показывал +2000% при реальном −0.8%). Поэтому на
-// каждый день считаем доходность БЕЗ вклада новых покупок (vnn = стоимость на сегодняшних
-// ценах, но со вчерашним кол-вом) и сцепляем дневные доходности произведением (TWR).
-function btTwrIndex(pfSeries) {
-    var idx = 100, prevC = pfSeries[0].c, out = [{ d: pfSeries[0].d, pf: 0 }];
-    for (var i = 1; i < pfSeries.length; i++) {
-        var q = pfSeries[i];
-        var base = (q.vnn != null) ? q.vnn : q.c;
-        if (prevC > 0) idx *= (base / prevC);
-        out.push({ d: q.d, pf: idx - 100 });
-        prevC = q.c;
-    }
-    return out;
-}
-
-// Выравнивание двух серий к общему старту → доходность в % (портфель — по TWR-индексу,
-// индекс IMOEX — по простому отношению цены, т.к. у него нет докупок/cash-flow).
+// Выравнивание двух серий к общему старту → доходность в %. Портфель: (стоимость − вложено
+// на эту дату) / вложено на эту дату (q.inv — себестоимость накопленных на эту дату лотов,
+// см. выше) — та же формула, что и в calcHold/calcPf, просто на каждый день. Простое
+// отношение c[t]/c[0] тут не годится: докупка увеличивает c[t] возросшим кол-вом, и это
+// ошибочно засчитывалось бы как доходность (напр. один портфель показывал +2000% при
+// реальном −0.8%). Индекс IMOEX — по простому отношению цены (у него нет докупок).
 function btAlignReturns(pfSeries, imoexSeries) {
     if (!pfSeries.length || !imoexSeries.length) return null;
     var imap = {}, idates = [];
@@ -1758,21 +1750,19 @@ function btAlignReturns(pfSeries, imoexSeries) {
         while (lo <= hi) { var mid = (lo + hi) >> 1; if (idates[mid] <= day) { ans = mid; lo = mid + 1; } else hi = mid - 1; }
         return ans >= 0 ? imap[idates[ans]] : null;
     }
-    var twr = btTwrIndex(pfSeries), tmap = {};
-    twr.forEach(function (t) { tmap[t.d] = t.pf; });
     var base0 = null, ibase = null;
     for (var i = 0; i < pfSeries.length; i++) {
         var iv = imoexAt(pfSeries[i].d);
         if (iv != null) { base0 = pfSeries[i]; ibase = iv; break; }
     }
     if (!base0) return null;
-    var pfBaseIdx = tmap[base0.d] || 0, points = [];
+    var points = [];
     for (var j = 0; j < pfSeries.length; j++) {
         var p = pfSeries[j];
         if (p.d < base0.d) continue;
         var iv2 = imoexAt(p.d);
-        if (iv2 == null || tmap[p.d] == null) continue;
-        var pfPct = ((1 + tmap[p.d] / 100) / (1 + pfBaseIdx / 100) - 1) * 100;
+        if (iv2 == null) continue;
+        var pfPct = p.inv > 0 ? (p.c / p.inv - 1) * 100 : 0;
         points.push({ d: p.d, pf: pfPct, im: (iv2 / ibase - 1) * 100 });
     }
     if (points.length < 2) return null;
