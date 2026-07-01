@@ -432,12 +432,21 @@
     function pfChartLoadingHtml() {
         return '<div class="pfcv-load"><span class="pfcv-spin"></span><span>Загружаем котировки Мосбиржи…</span></div>';
     }
+    // Пустое/ошибочное состояние графика — оформлено как ОСОЗНАННЫЙ empty-state (иконка в
+    // тонированном кружке + заголовок + пояснение), как .pf-empty/.pff-empty/.pfm-none, а не
+    // одинокая серая строка текста (та выглядела как баг/ошибка загрузки, а не «так и задумано»).
+    // NO_ASSETS/NO_PF/NO_BT — нормальные, ожидаемые состояния (тон = акцент портфеля);
+    // ERR (не смогли получить данные) — единственный настоящий сбой (тон предупреждения).
+    var CHART_EMPTY_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>';
+    var CHART_CLOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>';
+    var CHART_WARN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
     function pfChartMsgHtml(code) {
-        var m = code === 'NO_ASSETS' ? 'Добавьте позиции с количеством — и здесь появится кривая доходности.'
-            : code === 'NO_PF' ? 'Недостаточно исторических данных по бумагам портфеля за выбранный период.'
-            : code === 'NO_BT' ? 'Модуль исторических цен ещё загружается — откройте график чуть позже.'
-            : 'Не удалось получить данные Мосбиржи. Попробуйте позже.';
-        return '<div class="pfcv-msg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg><span>' + m + '</span></div>';
+        var conf = code === 'NO_ASSETS' ? { icon: CHART_EMPTY_SVG, t: 'Пока нечего показывать', s: 'Добавьте позиции с количеством — и здесь появится кривая доходности.' }
+            : code === 'NO_PF' ? { icon: CHART_CLOCK_SVG, t: 'Мало истории', s: 'Портфель совсем свежий — накопится больше котировок, и появится график.' }
+            : code === 'NO_BT' ? { icon: CHART_CLOCK_SVG, t: 'Модуль ещё грузится', s: 'Данные исторических цен подгружаются — откройте график чуть позже.' }
+            : { icon: CHART_WARN_SVG, t: 'Не удалось загрузить', s: 'Не получили данные Мосбиржи. Попробуйте обновить позже.', warn: true };
+        return '<div class="pfcv-msg' + (conf.warn ? ' warn' : '') + '"><span class="pfcv-msg-art">' + conf.icon + '</span>' +
+            '<span class="pfcv-msg-t">' + conf.t + '</span><span class="pfcv-msg-s">' + conf.s + '</span></div>';
     }
     // рисуем серию в пейн графика (mi5-стиль): площадь + плавная линия + точки/тултипы
     // рисуем серию в ПЕРЕДАННЫЙ контейнер (uid — суффикс id градиента: два графика одного
@@ -823,21 +832,33 @@
             // Раскладка сводки «Суммарный капитал»:
             //  • 1 или 3 портфеля (нечёт) → сводка-карточка первой ячейкой сетки,
             //    т.е. СЛЕВА от первого портфеля (заполняет «дырку» в 2-колоночной сетке);
-            //  • 2 или 4 портфеля (чёт) → сводка-полоса сверху, ниже сетка карточек.
+            //    избранное остаётся ПОСЛЕ карточек (как раньше) — сводка тут узкая, карточка-
+            //    ячейка сетки, а не широкая полоса, рядом с ней нет места для колонки избранного;
+            //  • 2 или 4 портфеля (чёт) → сводка — широкая полоса сверху. На десктопе она
+            //    делит верхнюю строку с «Избранным» (.pf-topgrid: сводка слева, избранное
+            //    справа — раньше избранное уходило в самый низ, под ВСЕ карточки), карточки —
+            //    отдельной строкой ниже на всю ширину. Сама сводка (не aside-вариант) ещё и
+            //    «липнет» к верху при скролле, компактнее сжимаясь (см. pf-stuck в CSS) —
+            //    ensurePfStickyScroll/pfSyncStuck ниже.
             var n = store.items.length;
+            var favStr = favHtml();
+            var payCal = paymentCalendarHtml();
             var body;
-            if (n === 0) body = gridHtml(false);
-            else if (n % 2 === 1) body = gridHtml(true);
-            else body = summaryHtml(false) + gridHtml(false);
+            if (n === 0) body = gridHtml(false) + favStr;
+            else if (n % 2 === 1) body = gridHtml(true) + payCal + favStr;
+            else body = '<div class="pf-topgrid">' +
+                    '<div class="pf-topgrid-left">' + summaryHtml(false) + gridHtml(false) + '</div>' +
+                    '<div class="pf-topgrid-fav">' + favStr + '</div>' +
+                '</div>' + payCal;
             host.innerHTML =
                 liveBarHtml() +
                 headHtml() +
                 body +
-                favHtml() +
                 ratesHtml();
             tickLive();
             renderFavNews();
             ensureClock();
+            ensurePfStickyScroll(); pfSyncStuck();
             ensureDefaultImoexFlags(); // флаг IMOEX по умолчанию — ДО первого loadPfChart (см. комментарий выше)
             repaintOpenCharts();   // если какой-то график раскрыт — дорисовываем после ре-рендера
             repaintSummaryChart(); // одиночный портфель — встроенный график сводки
@@ -899,6 +920,26 @@
     }
     function ensureClock() { if (clockTimer) return; clockTimer = setInterval(function () {
         if (currentTab === 'portfolios' && dq('pfClock')) tickLive(); }, 1000); }
+
+    // ---- сводка «липнет» к верху при скролле и сжимается (только полноширинная — не aside) ----
+    // Скроллится #contentArea (не window, см. css/webapp-layout.css), поэтому слушаем именно его.
+    // Класс pf-stuck переключаем и по событию скролла, и сразу после каждого renderPortfolios —
+    // иначе после фонового ре-рендера (котировки/soft-rerender) класс слетает (innerHTML
+    // пересобирается с нуля), а новое событие scroll не придёт, пока пользователь не шевельнёт
+    // колесо — сводка «распухала» бы обратно, хотя страница всё ещё прокручена.
+    var pfScrollHooked = false;
+    function pfSyncStuck() {
+        var s = document.querySelector('.pf-summary:not(.pf-summary--aside)');
+        if (!s) return;
+        var sc = dq('contentArea');
+        var st = sc ? sc.scrollTop : (window.scrollY || 0);
+        s.classList.toggle('pf-stuck', st > 12);
+    }
+    function ensurePfStickyScroll() {
+        if (pfScrollHooked) return; pfScrollHooked = true;
+        var sc = dq('contentArea') || window;
+        sc.addEventListener('scroll', function () { if (currentTab === 'portfolios') pfSyncStuck(); }, { passive: true });
+    }
 
     // ---- SVG-иконки ----
     var PLUS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
@@ -1579,6 +1620,112 @@
             }).join('') + '</div></div>';
     }
 
+    // ============================================================
+    //  КАЛЕНДАРЬ ВЫПЛАТ — ближайшие купоны по облигациям ВСЕХ портфелей сразу
+    // ============================================================
+    // Дата купона у нас не хранится напрямую (MOEX её отдельным полем не отдаёт в уже
+    // используемых запросах) — приближаем её по периодической схеме «частота выплат в год»
+    // от даты ПОГАШЕНИЯ назад: это те же couponValue/freq/matDate, что уже тянет
+    // fetchBondData/bondDetailsMap для «Дохода по купонам» в карточке ребалансировки (см.
+    // bondPerDay выше). Реальный график может отличаться на несколько дней от факта MOEX —
+    // это приближение, а не официальный календарь выплат эмитента.
+    function nextCouponDate(det) {
+        var mat = parseBondDate(det && det.matDate); if (!mat) return null;
+        var freq = +det.freq || 0; if (!(freq > 0)) return null;
+        var stepMs = (365 / freq) * 86400000;
+        var t = mat.getTime(), now = Date.now();
+        if (t < now) return null;   // уже погашена
+        while (t - stepMs >= now) t -= stepMs;
+        return new Date(t);
+    }
+    function daysUntilText(d) {
+        var days = Math.round((d.getTime() - Date.now()) / 86400000);
+        if (days <= 0) return 'сегодня';
+        if (days === 1) return 'завтра';
+        if (days < 14) return 'через ' + days + ' ' + plural(days, 'день', 'дня', 'дней');
+        var w = Math.round(days / 7);
+        return 'через ' + w + ' ' + plural(w, 'неделю', 'недели', 'недель');
+    }
+    // все держащиеся сейчас облигации (qty>0) по всем портфелям — общий список для календаря
+    // и для догрузки недостающих деталей купонов разом (а не по одной при открытии каждого портфеля)
+    function allHeldBonds() {
+        var list = [];
+        store.items.forEach(function (p) { (p.holdings || []).forEach(function (h) {
+            if (h.type === 'bond' && h.ticker && aggHolding(h).qty > 0) list.push({ p: p, h: h });
+        }); });
+        return list;
+    }
+    function collectUpcomingCoupons() {
+        var evs = [];
+        allHeldBonds().forEach(function (x) {
+            var det = bondDetail(x.h.ticker); if (!det) return;
+            var nd = nextCouponDate(det); if (!nd) return;
+            var qty = aggHolding(x.h).qty, amount = (+det.couponValue || 0) * qty;
+            if (!(amount > 0)) return;
+            evs.push({ date: nd, ticker: x.h.ticker, name: x.h.name || x.h.ticker, amount: amount,
+                pfName: x.p.name, pfColor: colorVal(x.p.color) });
+        });
+        evs.sort(function (a, b) { return a.date - b.date; });
+        return evs;
+    }
+    // догрузка недостающих деталей купонов разом по ВСЕМ портфелям (де-дуп по тикеру —
+    // fetchBondData и так кеширует внутри себя, но незачем плодить повторные вызовы за один проход)
+    var payCalPending = false;
+    function ensureAllBondDetails(cb) {
+        if (typeof fetchBondData !== 'function') { cb(); return; }
+        var seen = {}, need = [];
+        allHeldBonds().forEach(function (x) { var tk = x.h.ticker;
+            if (!seen[tk] && !bondDetail(tk)) { seen[tk] = 1; need.push(tk); } });
+        if (!need.length || payCalPending) { cb(); return; }
+        payCalPending = true;
+        var left = need.length;
+        need.forEach(function (tk) {
+            Promise.resolve(fetchBondData(tk)).catch(function () {}).then(function () { if (--left <= 0) { payCalPending = false; cb(); } });
+        });
+    }
+    var payCalFull = false;
+    var CAL_ICO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2.5"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+    function payCalStateHtml(kind) {
+        if (kind === 'loading') return '<div class="pfpc-state"><span class="pfcv-spin"></span><span>Уточняем даты выплат на Мосбирже…</span></div>';
+        var conf = kind === 'nodata'
+            ? { t: 'Пока не считается', s: 'Не нашли даты погашения по вашим облигациям — попробуйте обновить страницу чуть позже.' }
+            : { t: 'Пока нечего показывать', s: 'Добавьте облигации в любой портфель — здесь появится график ближайших купонных выплат.' };
+        return '<div class="pfpc-state"><div class="pfpc-state-art">' + CAL_ICO_SVG + '</div>' +
+            '<div class="pfpc-state-t">' + conf.t + '</div><div class="pfpc-state-s">' + conf.s + '</div></div>';
+    }
+    function payCalRowHtml(ev, multiPf) {
+        return '<div class="pfpc-row">' +
+            '<div class="pfpc-date"><b>' + ruDate(dateToIso(ev.date)) + '</b><span>' + daysUntilText(ev.date) + '</span></div>' +
+            '<div class="pfpc-id"><span class="pfpc-tk">' + esc(ev.ticker) + '</span><span class="pfpc-nm">' + esc(ev.name) + '</span></div>' +
+            (multiPf ? '<span class="pfpc-pf" style="--c:' + ev.pfColor + '"><i></i>' + esc(ev.pfName) + '</span>' : '<span></span>') +
+            '<div class="pfpc-amt">+' + fmtRub(ev.amount) + '</div>' +
+        '</div>';
+    }
+    // Единый календарь: ближайшие купоны по облигациям ВСЕХ портфелей сразу (не по одному —
+    // раньше доход по купонам был виден только внутри карточки ребалансировки ОДНОГО портфеля).
+    function paymentCalendarHtml() {
+        if (!store.items.length) return '';
+        var held = allHeldBonds();
+        var head = pfCardHead('', 'Календарь выплат', 'ближайшие купоны по облигациям всех портфелей');
+        if (!held.length) return '<div class="dash2-card pf-card2 pf-paycal">' + head + payCalStateHtml('nobonds') + '</div>';
+        var missing = held.some(function (x) { return !bondDetail(x.h.ticker); });
+        if (missing) ensureAllBondDetails(function () { softRerender(); });
+        var evs = collectUpcomingCoupons();
+        if (!evs.length) return '<div class="dash2-card pf-card2 pf-paycal">' + head + payCalStateHtml(missing ? 'loading' : 'nodata') + '</div>';
+        var LIMIT = 6, multiPf = store.items.length > 1;
+        var shown = payCalFull ? evs : evs.slice(0, LIMIT);
+        var soonSum = evs.filter(function (e) { return (e.date.getTime() - Date.now()) <= 30 * 86400000; })
+            .reduce(function (s, e) { return s + e.amount; }, 0);
+        var soon = '<div class="pfpc-soon"><span class="pfpc-soon-l">за 30 дней</span><span class="pfpc-soon-v">+' + fmtRub(soonSum) + '</span></div>';
+        var more = evs.length > LIMIT ? '<button class="pfpc-more' + (payCalFull ? ' on' : '') + '" onclick="pfTogglePayCal()">' +
+            '<span>' + (payCalFull ? 'Свернуть' : 'Показать все · ' + evs.length) + '</span>' +
+            '<svg class="pfpc-more-ch' + (payCalFull ? ' up' : '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>' : '';
+        return '<div class="dash2-card pf-card2 pf-paycal">' + pfCardHead('', 'Календарь выплат', 'ближайшие купоны по облигациям всех портфелей', soon) +
+            '<div class="pfpc-body"><div class="pfpc-list">' + shown.map(function (e) { return payCalRowHtml(e, multiPf); }).join('') + '</div>' + more + '</div>' +
+        '</div>';
+    }
+    window.pfTogglePayCal = function () { payCalFull = !payCalFull; renderPortfolios(); };
+
     // ====================================================================
     //  ДЕЙСТВИЯ (inline onclick)
     // ====================================================================
@@ -2016,6 +2163,50 @@
     } catch (e) {}
     function saveRebalParams() { try { localStorage.setItem('pf_rebal_params', JSON.stringify({ tax: rebalTax, th: rebalThreshold, sell: rebalSellPct })); } catch (e) {} }
 
+    // ---- целевая аллокация (акции/облигации) — хранится НА ПОРТФЕЛЕ (p.target.stock, 0..100),
+    // не в глобальных параметрах ребаланса: у разных портфелей разная стратегия (например,
+    // «Спекулятивный» 100% акций — это и есть цель, а не отклонение). Без явно заданной цели —
+    // разумный дефолт 60/40 (классический баланс), который можно тут же поправить под себя.
+    function targetAlloc(p) {
+        var t = p.target && isFinite(+p.target.stock) ? clamp(+p.target.stock, 0, 100) : 60;
+        return { stock: t, bond: 100 - t };
+    }
+    window.pfSetTarget = function (pid, val) {
+        var p = findPf(pid); if (!p) return;
+        p.target = { stock: clamp(Math.round(toNum(val) || 0), 0, 100) };
+        saveStore(); rebalRepaint();
+    };
+    // строка сравнения бар-в-бар: «Сейчас» (факт по стоимости) / «Цель» (штрихованный бар-ориентир)
+    function targetBarRow(label, stockPct, bondPct, ghost) {
+        return '<div class="pfrb-tg-row' + (ghost ? ' ghost' : '') + '"><span class="pfrb-tg-lbl">' + esc(label) + '</span>' +
+            '<div class="pfrb-tg-bar"><span class="pfrb-tg-stock" style="width:' + stockPct + '%"></span><span class="pfrb-tg-bond" style="width:' + bondPct + '%"></span></div>' +
+            '<span class="pfrb-tg-pct">' + stockPct + '% / ' + bondPct + '%</span></div>';
+    }
+    // Отклонение факт vs цель: >5 п.п. — не «в пределах», показываем на сколько ₽ сдвинуть,
+    // чтобы вернуться к цели (грубая оценка: доля отклонения × текущая стоимость портфеля).
+    function targetAllocHtml(p, c) {
+        if (!(c.value > 0)) return '';
+        var t = targetAlloc(p);
+        var curStock = Math.round(clamp(c.stockPct, 0, 100)), curBond = 100 - curStock;
+        var diff = curStock - t.stock;
+        var within = Math.abs(diff) <= 5;
+        var amount = Math.abs(diff) / 100 * c.value;
+        var note = within
+            ? '<div class="pfrb-tg-note ok">' + CHECK_SVG + '<span>В пределах цели — отклонение ' + Math.abs(diff) + ' п.п., ребалансировка не требуется.</span></div>'
+            : '<div class="pfrb-tg-note warn">' + REBAL_SVG + '<span>Отклонение ' + Math.abs(diff) + ' п.п. — ' + (diff > 0 ? 'акций больше цели' : 'облигаций больше цели') +
+                '. Чтобы вернуться к цели, сдвиньте ≈' + fmtRub(amount) + ' в ' + (diff > 0 ? 'облигации' : 'акции') + '.</span></div>';
+        return '<div class="pfrb-target">' +
+            '<div class="pfrb-tg-head"><span class="pfrb-tg-ic">' + REBAL_SVG + '</span><span class="pfrb-tg-t">Целевая аллокация</span>' +
+                '<div class="pfrb-tg-set"><span>Акции</span>' +
+                    '<input class="pfrb-tg-in" type="number" min="0" max="100" step="5" value="' + t.stock + '" onchange="pfSetTarget(\'' + p.id + '\',this.value)">' +
+                    '<span>% · Облигации ' + t.bond + '%</span></div>' +
+            '</div>' +
+            targetBarRow('Сейчас', curStock, curBond, false) +
+            targetBarRow('Цель', t.stock, t.bond, true) +
+            note +
+        '</div>';
+    }
+
     // «по факту, годовых» — ЛИНЕЙНАЯ экстраполяция фактического изменения цены на год:
     //   изменение% ÷ дней владения × 365.
     // Это НЕ прогноз, а темп текущего роста в годовом выражении: если он аномально высок
@@ -2395,6 +2586,7 @@
             rebalParamsBar() +
             (rebalMethod ? rebalMethodPanel() : '') +
             '<div class="pfrb-body">' +
+                targetAllocHtml(p, c) +
                 rebalBondSection(p, bonds, c) +
                 rebalStockSection(p, stocks, c) +
             '</div>' +

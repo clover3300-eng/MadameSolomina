@@ -165,6 +165,44 @@ body.dark-mode .pfsc-chart { border-color: rgba(255,255,255,0.09); }
 /* нечётное число портфелей → сводка первой ячейкой (слева от 1-го портфеля) */
 .pf-grid--aside > .pf-summary { min-width: 0; height: 100%; }
 
+/* ============================================================
+   ЧЁТНОЕ ЧИСЛО ПОРТФЕЛЕЙ: сводка+карточки слева, «Избранное» — колонкой справа
+   (раньше избранное всегда уходило в самый низ страницы, под ВСЕ карточки).
+   Левая колонка = сводка + сетка карточек В ОДНОМ блоке (не отдельные grid-области) —
+   это нужно, чтобы sticky-сводка (см. ниже) имела «место для манёвра»: контейнер, внутри
+   которого она держится, должен быть выше её самой (иначе липнуть буквально некуда, sticky
+   молча не сработает). На узких экранах колонки складываются в исходном порядке
+   (сводка → карточки → избранное) — как было до этой правки.
+   ============================================================ */
+.pf-topgrid { display: grid; grid-template-columns: minmax(0,1fr) minmax(280px,340px); align-items: start; gap: 16px; }
+.pf-topgrid-left { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.pf-topgrid-fav { min-width: 0; }
+@media (max-width: 1600px) { .pf-topgrid { grid-template-columns: 1fr; } }
+/* «Избранное» в узкой колонке (~280–340px, ЛЮБАЯ ширина окна) — заголовок/кнопки рассчитаны
+   на полноширинную карточку (там же .pff-grid и по @media 620/560px), в колонке им тесно —
+   принудительно тот же компактный вид, но не по ширине окна, а потому что колонка узкая. */
+.pf-topgrid-fav .pf-ch { flex-wrap: wrap; padding: 18px 18px 10px; }
+.pf-topgrid-fav .pf-ch-t { font-size: 17px; }
+.pf-topgrid-fav .pff-head-r { margin-left: 0; width: 100%; justify-content: space-between; }
+.pf-topgrid-fav .pff-info span { display: none; }
+.pf-topgrid-fav .pff-info { padding: 8px 10px; }
+.pf-topgrid-fav .pff-body { padding: 4px 14px 16px; }
+.pf-topgrid-fav .pff-grid { grid-template-columns: 1fr; }
+
+/* сводка (полноширинный вариант, не aside-ячейка) липнет к верху при скролле и сжимается —
+   при 2/4 портфелях список карточек может быть длинным, а капитал/доходность полезно видеть
+   не прокручивая обратно наверх. aside-вариант (нечётное число) сюда не попадает: там сводка —
+   узкая ячейка сетки вперемешку с карточкой портфеля, «прилипание» смотрелось бы странно. */
+.pf-summary:not(.pf-summary--aside) { position: sticky; top: 0; z-index: 6;
+    transition: padding 0.22s ease, box-shadow 0.22s ease; }
+.pf-summary:not(.pf-summary--aside).pf-stuck { padding: 12px 26px; box-shadow: 0 16px 32px rgba(0,0,0,0.28); }
+.pf-summary:not(.pf-summary--aside).pf-stuck .pfs-eyebrow,
+.pf-summary:not(.pf-summary--aside).pf-stuck .pfs-alloc,
+.pf-summary:not(.pf-summary--aside).pf-stuck .pfs-board-h { display: none; }
+.pf-summary:not(.pf-summary--aside).pf-stuck .pfs-capital { font-size: 21px; transition: font-size 0.22s ease; }
+.pf-summary:not(.pf-summary--aside).pf-stuck .pfs-sub { margin-top: 0; }
+.pf-summary:not(.pf-summary--aside).pf-stuck .pfs-lb-row { padding: 2px 0; }
+
 /* выровнять заголовок «Портфели» по вертикали (подзаголовок убран) */
 .pf-head { align-items: center; }
 
@@ -287,8 +325,11 @@ body.dark-mode .pfc-hero-inc.pos { color: #34d399; } body.dark-mode .pfc-hero-in
 .pfc-mchart-plot .pfcv-tip { padding: 6px 9px; border-radius: 8px; }
 .pfc-mchart-plot .pfcv-tip b { font-size: 12px; }
 .pfc-mchart-plot .pfcv-tip span { font-size: 9px; }
-.pfc-mchart-plot .pfcv-load, .pfc-mchart-plot .pfcv-msg { padding: 6px; font-size: 10.5px; gap: 6px; }
-.pfc-mchart-plot .pfcv-msg svg { width: 20px; height: 20px; }
+.pfc-mchart-plot .pfcv-load, .pfc-mchart-plot .pfcv-msg { padding: 6px; font-size: 10.5px; gap: 3px; }
+.pfc-mchart-plot .pfcv-msg-art { width: 24px; height: 24px; border-radius: 8px; margin-bottom: 1px; }
+.pfc-mchart-plot .pfcv-msg-art svg { width: 13px; height: 13px; }
+.pfc-mchart-plot .pfcv-msg-t { font-size: 10.5px; }
+.pfc-mchart-plot .pfcv-msg-s { display: none; }
 .pfc-mchart-plot .pfcv-spin { width: 18px; height: 18px; }
 /* верхняя плашка мини-графика — ВСЕГДА в правом верхнем углу (не слева): сначала значение
    IMOEX (если наложен), затем сам тумблер включения — обе части одной группы, чтобы не
@@ -512,11 +553,21 @@ body.dark-mode .pfcv-x { color: #93a3b8; }
 .pfcv-lp.flip:hover .pfcv-tip { transform: translate(-50%, 8px) scale(1); }
 
 /* загрузка / сообщение в поле графика */
-.pfcv-load, .pfcv-msg { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; padding: 16px; color: #94a3b8; font-size: 12.5px; line-height: 1.5; }
-.pfcv-msg svg { width: 30px; height: 30px; color: var(--pf-accent); opacity: 0.7; }
+.pfcv-load, .pfcv-msg { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; padding: 16px; color: #94a3b8; font-size: 12.5px; line-height: 1.5; }
 .pfcv-spin { width: 26px; height: 26px; border-radius: 50%; border: 2.5px solid rgba(24,38,60,0.12); border-top-color: var(--pf-accent); animation: pfcvSpin 0.7s linear infinite; }
 body.dark-mode .pfcv-spin { border-color: rgba(255,255,255,0.12); border-top-color: var(--pf-accent); }
 @keyframes pfcvSpin { to { transform: rotate(360deg); } }
+/* пустое/ошибочное состояние графика — как ДРУГИЕ empty-state карточки приложения (иконка в
+   тонированном кружке + заголовок + пояснение), а не одинокая серая строка (та выглядела как
+   баг). Тон = акцент портфеля для «нормальных» состояний (нет данных/мало истории), .warn —
+   для настоящей ошибки загрузки (единственный случай, где это оправданно тревожный цвет). */
+.pfcv-msg-art { width: 40px; height: 40px; border-radius: 12px; margin-bottom: 4px; display: grid; place-items: center;
+    background: color-mix(in srgb, var(--pf-accent) 14%, transparent); color: var(--pf-accent); flex-shrink: 0; }
+.pfcv-msg-art svg { width: 21px; height: 21px; }
+.pfcv-msg.warn .pfcv-msg-art { background: rgba(217,119,6,0.14); color: #d97706; }
+.pfcv-msg-t { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #1b2433; }
+body.dark-mode .pfcv-msg-t { color: #f4f8fd; }
+.pfcv-msg-s { font-size: 11.5px; color: #94a3b8; max-width: 240px; }
 
 /* кнопка «Показать активы» — низ левой колонки (прижата к низу через margin-top:auto) */
 .pfcv-assetbtn { margin-top: auto; display: inline-flex; align-items: center; gap: 9px; cursor: pointer;
@@ -995,6 +1046,52 @@ body.dark-mode .pff-info { border-color: rgba(255,255,255,0.1); background: rgba
 .pff-tile:hover .pff-news.is-none .pff-news-inner { left: 0; right: 0; padding: 0; background: transparent; border-color: transparent; box-shadow: none; }
 
 /* ============================================================
+   КАЛЕНДАРЬ ВЫПЛАТ — ближайшие купоны по облигациям ВСЕХ портфелей сразу
+   ============================================================ */
+.pf-paycal { --pf-accent: #3b82f6; }
+.pfpc-soon { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; margin-left: auto; align-self: center; }
+.pfpc-soon-l { font-size: 8.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8; }
+.pfpc-soon-v { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 800; color: #16a34a; }
+body.dark-mode .pfpc-soon-v { color: #34d399; }
+.pfpc-body { padding: 4px 22px 20px; }
+.pfpc-list { display: flex; flex-direction: column; gap: 7px; }
+.pfpc-row { display: grid; grid-template-columns: 78px 1fr auto auto; align-items: center; gap: 12px;
+    padding: 10px 13px; border-radius: 12px; background: rgba(24,38,60,0.022); border: 1px solid rgba(24,38,60,0.05); }
+body.dark-mode .pfpc-row { background: rgba(255,255,255,0.025); border-color: rgba(255,255,255,0.05); }
+.pfpc-date { display: flex; flex-direction: column; gap: 1px; }
+.pfpc-date b { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 700; color: #1b2433; }
+body.dark-mode .pfpc-date b { color: #f4f8fd; }
+.pfpc-date span { font-size: 9.5px; font-weight: 700; color: var(--pf-accent); }
+.pfpc-id { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.pfpc-tk { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #0f172a; }
+body.dark-mode .pfpc-tk { color: #f4f8fd; }
+.pfpc-nm { font-size: 10.5px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pfpc-pf { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #64748b; white-space: nowrap; }
+body.dark-mode .pfpc-pf { color: #9fb0c4; }
+.pfpc-pf i { width: 8px; height: 8px; border-radius: 99px; background: var(--c); flex-shrink: 0; }
+.pfpc-amt { font-family: 'JetBrains Mono', monospace; font-size: 13.5px; font-weight: 800; color: #16a34a; white-space: nowrap; }
+body.dark-mode .pfpc-amt { color: #34d399; }
+.pfpc-more { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 10px;
+    padding: 9px; border-radius: 11px; border: 1px dashed rgba(24,38,60,0.16); background: none; color: #64748b;
+    font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; }
+.pfpc-more:hover { background: rgba(24,38,60,0.04); color: #1b2433; }
+body.dark-mode .pfpc-more { border-color: rgba(255,255,255,0.14); color: #9fb0c4; }
+body.dark-mode .pfpc-more:hover { background: rgba(255,255,255,0.05); color: #f4f8fd; }
+.pfpc-more-ch { width: 13px; height: 13px; transition: transform 0.15s; }
+.pfpc-more-ch.up { transform: rotate(180deg); }
+.pfpc-state { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 28px 24px 30px; color: #94a3b8; font-size: 12.5px; }
+.pfpc-state-art { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center;
+    background: color-mix(in srgb, var(--pf-accent) 13%, transparent); color: var(--pf-accent); }
+.pfpc-state-art svg { width: 23px; height: 23px; }
+.pfpc-state-t { font-family: 'Inter', sans-serif; font-size: 14.5px; font-weight: 800; color: #0f172a; }
+body.dark-mode .pfpc-state-t { color: #f4f8fd; }
+.pfpc-state-s { font-size: 12px; color: #94a3b8; max-width: 380px; line-height: 1.5; }
+@media (max-width: 560px) {
+    .pfpc-row { grid-template-columns: 58px 1fr auto; gap: 8px; padding: 9px 11px; }
+    .pfpc-pf { display: none; }
+}
+
+/* ============================================================
    РАЗВОРОТ ПОРТФЕЛЯ — модалка поверх контента (в <body>)
    ============================================================ */
 body.pf-modal-open { overflow: hidden; }
@@ -1342,6 +1439,43 @@ body.dark-mode .pfrb-params { border-color: rgba(255,255,255,0.05); background: 
 body.dark-mode .pfrb-param-in { background: #111925; border-color: rgba(255,255,255,0.12); color: #eef3f9; }
 .pfrb-param-in:focus { outline: none; border-color: var(--pf-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pf-accent) 15%, transparent); }
 .pfrb-params .pfrb-mbtn { margin-left: auto; }
+
+/* ---- целевая аллокация: факт vs цель, редактируемая тут же, отклонение в ₽ ---- */
+.pfrb-target { margin: 14px 22px; padding: 14px 16px; border-radius: 14px; display: flex; flex-direction: column; gap: 10px;
+    background: color-mix(in srgb, var(--pf-accent) 6%, transparent);
+    border: 1px solid color-mix(in srgb, var(--pf-accent) 20%, rgba(24,38,60,0.06)); }
+body.dark-mode .pfrb-target { background: color-mix(in srgb, var(--pf-accent) 10%, transparent);
+    border-color: color-mix(in srgb, var(--pf-accent) 26%, rgba(255,255,255,0.06)); }
+.pfrb-tg-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pfrb-tg-ic { width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; flex-shrink: 0;
+    background: color-mix(in srgb, var(--pf-accent) 16%, transparent); color: var(--pf-accent); }
+.pfrb-tg-ic svg { width: 12px; height: 12px; }
+.pfrb-tg-t { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #1b2433; }
+body.dark-mode .pfrb-tg-t { color: #f4f8fd; }
+.pfrb-tg-set { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; font-size: 11.5px; font-weight: 700; color: #64748b; }
+body.dark-mode .pfrb-tg-set { color: #9fb0c4; }
+.pfrb-tg-in { width: 48px; padding: 5px 6px; border: 1px solid rgba(24,38,60,0.14); border-radius: 7px; text-align: center;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; background: #fff; color: #1b2433; }
+body.dark-mode .pfrb-tg-in { background: #111925; border-color: rgba(255,255,255,0.12); color: #eef3f9; }
+.pfrb-tg-in:focus { outline: none; border-color: var(--pf-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pf-accent) 15%, transparent); }
+.pfrb-tg-row { display: grid; grid-template-columns: 52px 1fr 92px; align-items: center; gap: 10px; }
+.pfrb-tg-row.ghost { opacity: 0.8; }
+.pfrb-tg-lbl { font-size: 10.5px; font-weight: 700; color: #64748b; }
+body.dark-mode .pfrb-tg-lbl { color: #9fb0c4; }
+.pfrb-tg-bar { display: flex; height: 9px; border-radius: 99px; overflow: hidden; background: rgba(24,38,60,0.08); }
+body.dark-mode .pfrb-tg-bar { background: rgba(255,255,255,0.09); }
+.pfrb-tg-row.ghost .pfrb-tg-bar { background-image: repeating-linear-gradient(45deg, rgba(0,0,0,0.07) 0 4px, transparent 4px 8px); }
+.pfrb-tg-stock { background: #D97757; } .pfrb-tg-bond { background: #7B9BBF; }
+.pfrb-tg-pct { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #475569; text-align: right; white-space: nowrap; }
+body.dark-mode .pfrb-tg-pct { color: #aebacc; }
+.pfrb-tg-note { display: flex; align-items: flex-start; gap: 8px; font-size: 11.5px; line-height: 1.5;
+    padding-top: 8px; border-top: 1px dashed rgba(24,38,60,0.12); }
+body.dark-mode .pfrb-tg-note { border-color: rgba(255,255,255,0.1); }
+.pfrb-tg-note svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px; }
+.pfrb-tg-note span { color: #46566e; }
+body.dark-mode .pfrb-tg-note span { color: #cdd8e6; }
+.pfrb-tg-note.ok { color: #16a34a; } body.dark-mode .pfrb-tg-note.ok { color: #34d399; }
+.pfrb-tg-note.warn { color: #b45309; } body.dark-mode .pfrb-tg-note.warn { color: #fbbf24; }
 
 /* методичка простыми словами — два блока со списками */
 .pfrb-method-body { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 22px; }
