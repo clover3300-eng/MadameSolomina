@@ -477,13 +477,20 @@
         if (ar) { ar.style.opacity = '0'; ar.getBoundingClientRect(); ar.style.transition = 'opacity .9s ease .2s'; ar.style.opacity = '1'; }
         var imp = wrap.querySelector('.pfcv-imline');
         if (imp) { try { var l2 = imp.getTotalLength(); imp.style.strokeDasharray = l2; imp.style.strokeDashoffset = l2; imp.getBoundingClientRect(); imp.style.transition = 'stroke-dashoffset 1.1s cubic-bezier(.4,0,.2,1) .12s'; imp.style.strokeDashoffset = '0'; } catch (e) {} }
+        // подпись «Портфель X%» — берём ЖИВОЙ pnlPct из calcPf (тот же расчёт invested/pnl,
+        // что и в шапке карточки/блоке Вложено-Доход), а не итог кривой (data.pfFinal): кривая
+        // строится от СРЕДНЕЙ даты покупок по историческим закрытиям MOEX и своей базой, поэтому
+        // её процент по конструкции не обязан совпадать с текущим pnlPct портфеля. Форма кривой
+        // не меняется — «плывёт» только цифра-подпись, как и в сравнении с IMOEX на вкладке «Тест».
+        var pfEntity = findPf(pid), livePct = pfEntity ? calcPf(pfEntity).pnlPct : null;
+        var dispFinal = (livePct != null && isFinite(livePct)) ? livePct : data.pfFinal;
         if (dynEl) {
-            var pos2 = data.pfFinal >= 0;
-            dynEl.textContent = (pos2 ? '+' : '') + data.pfFinal.toFixed(1) + '%';
+            var pos2 = dispFinal >= 0;
+            dynEl.textContent = (pos2 ? '+' : '') + dispFinal.toFixed(1) + '%';
             dynEl.className = 'pfcv-stat-v ' + (pos2 ? 'pos' : 'neg');
         }
         if (legEl) {
-            var pf = data.pfFinal;
+            var pf = dispFinal;
             var lgh = '<span class="pfcv-lgi"><i style="background:var(--pf-accent)"></i>Портфель <b class="' + (pf >= 0 ? 'pos' : 'neg') + '">' + (pf >= 0 ? '+' : '') + pf.toFixed(1) + '%</b></span>';
             if (showIm && data.imFinal != null) { var im = data.imFinal; lgh += '<span class="pfcv-lgi"><i class="pfcv-imdot"></i>IMOEX <b class="' + (im >= 0 ? 'pos' : 'neg') + '">' + (im >= 0 ? '+' : '') + im.toFixed(1) + '%</b></span>'; }
             legEl.innerHTML = lgh;
@@ -1059,7 +1066,7 @@
         var tall = (openMenu === p.id) ? ' pf-card--tall' : '';
         var MANY = 4;
         var assetsBody = c.hs.length
-            ? (pfMiniHeadHtml() + c.hs.slice(0, MANY).map(pfMiniRowHtml).join(''))
+            ? pfMiniTableHtml(c.hs.slice(0, MANY))
             : '<div class="pfc-empty">Состав пуст — добавьте активы в настройках ⚙</div>';
         // «раскрытие» вверху карточки (иконка со стрелками) ведёт в ту же панель, что и график,
         // но сразу с открытыми активами — отдельный оверлей «весь состав» больше не дублируется тут
@@ -1096,8 +1103,8 @@
             cardRingHtml(c, idx) +
             '<div class="pfc-stats2">' +
                 '<div class="pfc-stat2"><span class="pfc-stat2-l">Вложено</span><span class="pfc-stat2-v">' + fmtRub(c.invested) + '</span></div>' +
-                '<div class="pfc-stat2 pfc-stat2--inc is-' + (pnlCls === 'pos' ? 'gn' : 'rd') + '"><span class="pfc-stat2-l">Доход</span><span class="pfc-stat2-v ' + pnlCls + '">' + fmtRub(c.pnl) + '</span></div>' +
-                '<div class="pfc-stat2 pfc-stat2--yield"><span class="pfc-stat2-l">Доходность</span><span class="pfc-stat2-v ' + (c.annual >= 0 ? 'pos' : 'neg') + '">' + fmtPct(c.annual) + '</span></div>' +
+                '<div class="pfc-stat2 pfc-stat2--inc"><span class="pfc-stat2-l">Доход</span><span class="pfc-stat2-v ' + pnlCls + '">' + fmtRub(c.pnl) + '</span></div>' +
+                '<div class="pfc-stat2 pfc-stat2--yield is-' + (c.annual >= 0 ? 'gn' : 'rd') + '"><span class="pfc-stat2-l">Доходность</span><span class="pfc-stat2-v ' + (c.annual >= 0 ? 'pos' : 'neg') + '">' + fmtPct(c.annual) + '</span></div>' +
             '</div>' +
             '<div class="pfc-sep"></div>' +
             '<div class="pfc-massets">' + assetsBody + '</div>' +
@@ -1113,7 +1120,7 @@
     // Главной): высота карточки не меняется, оверлей продолжает ТУ ЖЕ мини-таблицу (те же
     // строки pfMiniRowHtml), просто без ограничения в 4 штуки — а не отдельную широкую таблицу.
     function holdsOverlayHtml(p, c) {
-        var body = c.hs.length ? (pfMiniHeadHtml() + c.hs.map(pfMiniRowHtml).join(''))
+        var body = c.hs.length ? pfMiniTableHtml(c.hs)
             : '<div class="pfc-empty">Состав пуст</div>';
         return '<div class="pfc-holdsover">' +
             '<div class="pfc-holdsover-h">' +
@@ -1138,10 +1145,14 @@
             '</div></div>';
     }
 
-    // строка заголовков мини-таблицы состава (переиспользуется и в оверлее «весь состав» —
-    // оверлей визуально ПРОДОЛЖАЕТ ту же таблицу, а не показывает другую с иным набором колонок)
-    function pfMiniHeadHtml() {
-        return '<div class="pfc-mhead"><span>Актив</span><span>Кол-во</span><span>Сейчас</span><span>Изм.</span></div>';
+    // мини-таблица состава: НАСТОЯЩАЯ <table> (как pfo-table в ребалансе), а не css-grid из
+    // фиксированных px-колонок — так шапка и строки гарантированно совпадают по ширине колонок
+    // и числа не «наезжают» друг на друга при длинных ценах. Переиспользуется и в оверлее
+    // «весь состав» (тот визуально ПРОДОЛЖАЕТ ту же таблицу, просто без лимита в 4 строки).
+    function pfMiniTableHtml(list) {
+        var head = '<tr><th class="pfc-mc-as">Актив</th><th>Кол-во</th><th>Сейчас</th><th>Изм.</th></tr>';
+        return '<div class="pfc-mtablewrap"><table class="pfc-mtable"><thead>' + head + '</thead><tbody>' +
+            list.map(pfMiniRowHtml).join('') + '</tbody></table></div>';
     }
     function pfMiniRowHtml(x) {
         var h = x.h, c = x.c, isB = h.type === 'bond';
@@ -1152,15 +1163,13 @@
         var sub = '<span class="pfc-msub-i"><span class="pfc-msub-l">Куплен</span><span class="pfc-msub-v">' + ruDate(c.firstDate) + '</span></span>' +
             '<span class="pfc-msub-i"><span class="pfc-msub-l">Цена</span><span class="pfc-msub-v"' + buyTip + '>' + fmtPrice(c.buy) + '</span></span>' +
             (isB ? '<span class="pfc-msub-i"><span class="pfc-msub-l">НКД</span><span class="pfc-msub-v"' + ptip + '>' + (c.nkd > 0 ? fmtPrice(c.nkd) : '0 ₽') + '</span></span>' : '');
-        return '<div class="pfc-mrow">' +
-            '<div class="pfc-mrow-top">' +
-                '<span class="pfc-mtk"><b>' + esc(h.ticker) + '</b><i class="' + (isB ? 'bond' : 'stock') + '">' + (isB ? 'обл' : 'акц') + '</i>' + lotChip + '</span>' +
-                '<span class="pfc-mqty">' + (c.qty || 0) + '</span>' +
-                '<span class="pfc-mnow' + (c.live ? ' live' : '') + '"' + ptip + '>' + fmtPrice(c.cur) + '</span>' +
-                '<span class="pfc-mchg ' + (c.invested > 0 ? (c.pnlPct >= 0 ? 'pos' : 'neg') : '') + '">' + (c.invested > 0 ? fmtPct(c.pnlPct) : '—') + '</span>' +
-            '</div>' +
-            '<div class="pfc-mrow-sub">' + sub + '</div>' +
-        '</div>';
+        return '<tr class="pfc-mtr">' +
+                '<td class="pfc-mc-as"><span class="pfc-mtk"><b>' + esc(h.ticker) + '</b><i class="' + (isB ? 'bond' : 'stock') + '">' + (isB ? 'обл' : 'акц') + '</i>' + lotChip + '</span></td>' +
+                '<td class="pfc-mqty">' + (c.qty || 0) + '</td>' +
+                '<td class="pfc-mnow' + (c.live ? ' live' : '') + '"' + ptip + '>' + fmtPrice(c.cur) + '</td>' +
+                '<td class="pfc-mchg ' + (c.invested > 0 ? (c.pnlPct >= 0 ? 'pos' : 'neg') : '') + '">' + (c.invested > 0 ? fmtPct(c.pnlPct) : '—') + '</td>' +
+            '</tr>' +
+            '<tr class="pfc-mtr-sub"><td colspan="4"><div class="pfc-mrow-sub">' + sub + '</div></td></tr>';
     }
 
     // ---- настройки/редактор (дропдаун ⚙) ----
