@@ -481,6 +481,14 @@
             var lastPt = pts[N - 1];
             pts = pts.slice(0, N - 1).concat([{ d: lastPt.d, pf: livePct, im: lastPt.im }]);
         }
+        // старт кривой — день первой покупки, доходность в этот момент по определению 0% (ещё
+        // ничего не изменилось в цене). q.pf там обычно чуть отличается от нуля — это не
+        // реальное движение, а разница между ценой закрытия MOEX в тот день и фактической ценой
+        // сделки. Поджимаем первую точку к 0, как и последнюю — к живому pnlPct (см. выше).
+        if (N > 1 && pts[0].pf !== 0) {
+            var firstPt = pts[0];
+            pts = [{ d: firstPt.d, pf: 0, im: firstPt.im }].concat(pts.slice(1));
+        }
         var pfv = function (q) { return q.pf; };
         var allV = []; pts.forEach(function (q) { allV.push(pfv(q)); if (showIm) allV.push(q.im); });
         var minV = Math.min.apply(null, allV), maxV = Math.max.apply(null, allV);

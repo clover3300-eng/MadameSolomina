@@ -423,7 +423,9 @@ body.dark-mode .pfc-chartwrap { background: #141c27; box-shadow: 0 0 0 1.5px var
 body.dark-mode .pfcv-close { border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #9fb0c4; }
 
 /* две колонки: слева сводка, справа график (выезжает справа) */
-.pfc-chartview { display: flex; flex: 1 1 auto; min-height: 320px; gap: 22px; padding: 14px 24px 20px; overflow: hidden;
+/* overflow:visible — иначе тултип точки графика (всплывает НАД точкой) обрезается этим
+   контейнером и не виден для точек в верхней части кривой */
+.pfc-chartview { display: flex; flex: 1 1 auto; min-height: 320px; gap: 22px; padding: 14px 24px 20px; overflow: visible;
     animation: pfcvViewIn 0.4s cubic-bezier(.2,.7,.2,1) both; }
 .pfcv-left { flex: 0 0 280px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .pfcv-right { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0;
