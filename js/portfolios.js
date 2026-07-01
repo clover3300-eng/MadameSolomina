@@ -1104,7 +1104,7 @@
             '<div class="pfc-stats2">' +
                 '<div class="pfc-stat2"><span class="pfc-stat2-l">Вложено</span><span class="pfc-stat2-v">' + fmtRub(c.invested) + '</span></div>' +
                 '<div class="pfc-stat2 pfc-stat2--inc"><span class="pfc-stat2-l">Доход</span><span class="pfc-stat2-v ' + pnlCls + '">' + fmtRub(c.pnl) + '</span></div>' +
-                '<div class="pfc-stat2 pfc-stat2--yield is-' + (c.annual >= 0 ? 'gn' : 'rd') + '"><span class="pfc-stat2-l">Доходность</span><span class="pfc-stat2-v ' + (c.annual >= 0 ? 'pos' : 'neg') + '">' + fmtPct(c.annual) + '</span></div>' +
+                '<div class="pfc-stat2 pfc-stat2--yield is-' + (c.annual >= 0 ? 'gn' : 'rd') + '" title="Доходность в пересчёте на год (может отличаться от «Дохода» и графика — те показывают фактическое изменение за весь срок, а не годовые)"><span class="pfc-stat2-l">Годовых</span><span class="pfc-stat2-v ' + (c.annual >= 0 ? 'pos' : 'neg') + '">' + fmtPct(c.annual) + '</span></div>' +
             '</div>' +
             '<div class="pfc-sep"></div>' +
             '<div class="pfc-massets">' + assetsBody + '</div>' +
@@ -1154,22 +1154,24 @@
         return '<div class="pfc-mtablewrap"><table class="pfc-mtable"><thead>' + head + '</thead><tbody>' +
             list.map(pfMiniRowHtml).join('') + '</tbody></table></div>';
     }
+    // Раньше «Куплен / Цена / НКД» шли отдельной строкой под каждым активом всегда видимой —
+    // при многих активах (особенно в оверлее «весь состав») это превращалось в стену мелкого
+    // текста, в которой не за что зацепиться взглядом. Теперь строка одна: тикер + короткая
+    // дата покупки, а полная сводка (дата/цена/НКД) — во всплывающей подсказке при наведении.
     function pfMiniRowHtml(x) {
         var h = x.h, c = x.c, isB = h.type === 'bond';
-        var ptip = isB ? ' title="' + attr(BOND_PRICE_TIP) + '"' : '';
         var multi = c.lotCount > 1;
         var lotChip = multi ? ' <i class="pfc-lotn" title="' + c.lotCount + ' лота — средняя цена">×' + c.lotCount + '</i>' : '';
-        var buyTip = multi ? ' title="Средняя цена по ' + c.lotCount + ' лотам"' : ptip;
-        var sub = '<span class="pfc-msub-i"><span class="pfc-msub-l">Куплен</span><span class="pfc-msub-v">' + ruDate(c.firstDate) + '</span></span>' +
-            '<span class="pfc-msub-i"><span class="pfc-msub-l">Цена</span><span class="pfc-msub-v"' + buyTip + '>' + fmtPrice(c.buy) + '</span></span>' +
-            (isB ? '<span class="pfc-msub-i"><span class="pfc-msub-l">НКД</span><span class="pfc-msub-v"' + ptip + '>' + (c.nkd > 0 ? fmtPrice(c.nkd) : '0 ₽') + '</span></span>' : '');
+        var buyLbl = multi ? 'Средняя цена по ' + c.lotCount + ' лотам' : 'Цена покупки';
+        var detailTip = 'Куплен ' + ruDate(c.firstDate) + ' · ' + buyLbl + ' ' + fmtPrice(c.buy) +
+            (isB ? ' · НКД при покупке ' + (c.nkd > 0 ? fmtPrice(c.nkd) : '0 ₽') : '');
+        var ptip = isB ? ' title="' + attr(BOND_PRICE_TIP) + '"' : '';
         return '<tr class="pfc-mtr">' +
-                '<td class="pfc-mc-as"><span class="pfc-mtk"><b>' + esc(h.ticker) + '</b><i class="' + (isB ? 'bond' : 'stock') + '">' + (isB ? 'обл' : 'акц') + '</i>' + lotChip + '</span></td>' +
+                '<td class="pfc-mc-as"><span class="pfc-mtk" title="' + attr(detailTip) + '"><b>' + esc(h.ticker) + '</b><i class="' + (isB ? 'bond' : 'stock') + '">' + (isB ? 'обл' : 'акц') + '</i>' + lotChip + '<span class="pfc-mdate">' + ruShortDate(c.firstDate) + '</span></span></td>' +
                 '<td class="pfc-mqty">' + (c.qty || 0) + '</td>' +
                 '<td class="pfc-mnow' + (c.live ? ' live' : '') + '"' + ptip + '>' + fmtPrice(c.cur) + '</td>' +
                 '<td class="pfc-mchg ' + (c.invested > 0 ? (c.pnlPct >= 0 ? 'pos' : 'neg') : '') + '">' + (c.invested > 0 ? fmtPct(c.pnlPct) : '—') + '</td>' +
-            '</tr>' +
-            '<tr class="pfc-mtr-sub"><td colspan="4"><div class="pfc-mrow-sub">' + sub + '</div></td></tr>';
+            '</tr>';
     }
 
     // ---- настройки/редактор (дропдаун ⚙) ----
@@ -1210,7 +1212,11 @@
         '</div>';
         // Оверлей на всю карточку: шапка · ВЫДЕЛЕННАЯ форма добавления (сверху) ·
         // полный список состава (без скролла, карточка растёт вниз) · действия (импорт/удалить)
-        return '<div class="pfc-menu" id="pfMenu-' + p.id + '">' +
+        // menuJustOpened=true только на ПЕРВЫЙ рендер после открытия (⚙) — на всех
+        // последующих ре-рендерах (добавление/удаление лота, сворачивание журнала и т.п.
+        // тоже дёргают renderPortfolios и пересоздают весь .pfc-menu целиком) анимация
+        // pfMenuIn ПОВТОРНО не проигрывается, иначе вся панель настроек каждый раз мигает.
+        return '<div class="pfc-menu' + (menuJustOpened ? '' : ' no-anim') + '" id="pfMenu-' + p.id + '">' +
             '<div class="pfm-top">' +
                 '<input class="pfm-name" value="' + attr(p.name) + '" onchange="pfRename(\'' + p.id + '\',this.value)" placeholder="Название портфеля">' +
                 '<div class="pfm-colors">' + sw + '</div>' +
