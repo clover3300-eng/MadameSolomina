@@ -275,7 +275,7 @@ body.dark-mode .pfc-hero-val { color: #f4f8fd; }
 .pfc-hero-inc { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12px; white-space: nowrap; }
 .pfc-hero-inc.pos { color: #16a34a; } .pfc-hero-inc.neg { color: #dc2626; }
 body.dark-mode .pfc-hero-inc.pos { color: #34d399; } body.dark-mode .pfc-hero-inc.neg { color: #f87171; }
-.pfc-mini-chart { display: flex; flex-direction: column; gap: 4px; }
+.pfc-mini-chart { position: relative; display: flex; flex-direction: column; gap: 4px; }
 /* мини-график переиспользует drawPfChart (шкала процентов слева + наводимые точки с тултипом
    «дата+значение» — как в большом графике), поэтому .pfc-mchart-plot — это просто увеличенный
    и уплотнённый .pfcv-chart: те же .pfcv-yaxis/.pfcv-plot внутри, размеры подогнаны компактнее. */
@@ -290,8 +290,14 @@ body.dark-mode .pfc-hero-inc.pos { color: #34d399; } body.dark-mode .pfc-hero-in
 .pfc-mchart-plot .pfcv-load, .pfc-mchart-plot .pfcv-msg { padding: 6px; font-size: 10.5px; gap: 6px; }
 .pfc-mchart-plot .pfcv-msg svg { width: 20px; height: 20px; }
 .pfc-mchart-plot .pfcv-spin { width: 18px; height: 18px; }
-.pfc-mchart-leg { display: flex; gap: 12px; min-height: 14px; }
-body.dark-mode .pfc-mchart-leg { color: #93a3b8; }
+/* легенда мини-графика = только IMOEX (доходность портфеля уже стоит рядом, в шапке карточки
+   pfc-hero-inc — повторять её тут значит дублировать) — компактная плашка поверх графика,
+   в правом верхнем углу, а не отдельной строкой под ним. */
+.pfc-mchart-leg { position: absolute; top: 2px; right: 2px; z-index: 2; display: flex; gap: 8px;
+    min-height: 0; padding: 3px 7px; border-radius: 7px; background: rgba(255,255,255,0.78); }
+body.dark-mode .pfc-mchart-leg { color: #93a3b8; background: rgba(17,25,37,0.7); }
+.pfc-mchart-leg:empty { display: none; }
+.pfc-mchart-leg .pfcv-lgi { font-size: 10px; }
 
 /* ---- распределение: маленький donut + горизонтальная полоса-легенда ---- */
 .pfc-alloc { display: flex; align-items: center; gap: 12px; margin: 12px 24px 0; }
@@ -327,7 +333,9 @@ body.dark-mode .pfc-sep { background: rgba(255,255,255,0.06); }
    Настоящая <table> (как pfo-table в ребалансе), а не css-grid с фикс px-колонками —
    шапка и строки гарантированно совпадают по ширине, числа не «наезжают» друг на друга. */
 .pfc-massets { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; display: flex; flex-direction: column; padding: 4px 24px 0; }
-.pfc-mtablewrap { overflow: hidden; }
+/* flex-shrink:0 обязателен — иначе flex-контейнер сжимает эту обёртку (overflow:hidden даёт
+   automatic minimum size = 0) и обрезает список активов ВМЕСТО скролла в .pfc-massets */
+.pfc-mtablewrap { overflow: hidden; flex-shrink: 0; }
 .pfc-mtable { width: 100%; border-collapse: collapse; }
 .pfc-mtable thead th { text-align: right; padding: 0 0 6px; font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; letter-spacing: 0.08em; color: #94a3b8; text-transform: uppercase; border-bottom: 1px solid rgba(24,38,60,0.06); }
 body.dark-mode .pfc-mtable thead th { border-color: rgba(255,255,255,0.06); }
@@ -356,12 +364,6 @@ body.dark-mode .pfc-det-i { background: rgba(255,255,255,0.045); }
 .pfc-det-l { font-family: 'Manrope', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: #94a3b8; }
 .pfc-det-v { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 800; color: #0f172a; }
 body.dark-mode .pfc-det-v { color: #eef3f9; }
-/* разделитель «2 лучших ↕ 2 худших» со счётчиком скрытых активов (мини-версия карточки) */
-.pfc-msplit td { padding: 3px 0 !important; border-bottom: none !important; }
-.pfc-msplit-in { display: flex; align-items: center; justify-content: center; gap: 5px; font-family: 'Manrope', sans-serif; font-size: 9.5px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; color: #a3adbc; }
-body.dark-mode .pfc-msplit-in { color: #66748a; }
-.pfc-msplit-ic { display: inline-flex; }
-.pfc-msplit-ic svg { width: 12px; height: 12px; }
 .pfc-mtk { display: inline-flex; align-items: baseline; gap: 4px; min-width: 0; font-weight: 700; }
 .pfc-mtk b { font-weight: 800; color: #0f172a; }
 body.dark-mode .pfc-mtk b { color: #eef3f9; }
@@ -865,7 +867,8 @@ body.dark-mode .pfm-grp-n { background: rgba(255,255,255,0.07); }
 body.dark-mode .pfm-grp-rule { background: linear-gradient(90deg, rgba(255,255,255,0.12), transparent); }
 /* строка подписей колонок над активами группы (сетка = .pfm-row-main) */
 .pfm-cols { display: grid; gap: 6px; align-items: center; padding: 1px 11px 3px; }
-.pfm-cols span { font-size: 8.5px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: #aab4c2; white-space: nowrap; overflow: hidden; }
+.pfm-cols span { font-size: 8.5px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: #aab4c2; white-space: nowrap; overflow: hidden; text-align: center; }
+.pfm-cols span:first-child { text-align: left; }
 body.dark-mode .pfm-cols span { color: #69757f; }
 .pfm-cols--stock { grid-template-columns: 1.5fr 1.05fr 1fr 0.7fr 52px; }
 .pfm-cols--bond  { grid-template-columns: 1.35fr 0.9fr 0.95fr 0.95fr 0.58fr 52px; }

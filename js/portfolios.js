@@ -46,6 +46,8 @@
     function fmtPct(n) { if (n == null || !isFinite(n)) return '—'; return (n >= 0 ? '+' : '') + n.toFixed(1) + '%'; }
     function pad2(n) { return String(n).padStart(2, '0'); }
     function todayStr() { var d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+    function dateFromDaysAgo(days) { var d = new Date(); d.setDate(d.getDate() - Math.round(days || 0));
+        return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
     function ruDate(ds) { if (!ds) return '—'; var p = ds.split('-'); return p.length === 3 ? (p[2] + '.' + p[1] + '.' + p[0]) : ds; }
 
     // ---------- toast ----------
@@ -255,8 +257,9 @@
         var avg = qty > 0 ? invested / qty : (+l0.buyPrice || 0);
         var nkdAvg = qty > 0 ? nkdSum / qty : (+l0.nkd || 0);
         var effDays = invested > 0 ? daysW / invested : daysHeld(l0.buyDate);
+        var avgDate = invested > 0 ? dateFromDaysAgo(effDays) : (firstDate || l0.buyDate || '');
         return { lots: lots, qty: qty, avgPrice: avg, invested: invested, nkd: nkdAvg,
-            effDays: effDays, firstDate: firstDate || l0.buyDate || '', count: lots.length, anyApi: anyApi };
+            effDays: effDays, avgDate: avgDate, firstDate: firstDate || l0.buyDate || '', count: lots.length, anyApi: anyApi };
     }
     function calcHold(h) {
         var a = aggHolding(h);
@@ -505,7 +508,10 @@
         }
         if (legEl) {
             var pf = dispFinal;
-            var lgh = '<span class="pfcv-lgi"><i style="background:var(--pf-accent)"></i>Портфель <b class="' + (pf >= 0 ? 'pos' : 'neg') + '">' + (pf >= 0 ? '+' : '') + pf.toFixed(1) + '%</b></span>';
+            // мини-график в карточке (dynEl отсутствует): цифра «Портфель X%» уже показана рядом,
+            // в шапке карточки (pfc-hero-inc) — повторять её тут не нужно, легенда несёт только
+            // IMOEX (бенчмарк для сравнения), компактно поверх графика.
+            var lgh = dynEl ? '<span class="pfcv-lgi"><i style="background:var(--pf-accent)"></i>Портфель <b class="' + (pf >= 0 ? 'pos' : 'neg') + '">' + (pf >= 0 ? '+' : '') + pf.toFixed(1) + '%</b></span>' : '';
             if (showIm && data.imFinal != null) { var im = data.imFinal; lgh += '<span class="pfcv-lgi"><i class="pfcv-imdot"></i>IMOEX <b class="' + (im >= 0 ? 'pos' : 'neg') + '">' + (im >= 0 ? '+' : '') + im.toFixed(1) + '%</b></span>'; }
             legEl.innerHTML = lgh;
         }
@@ -1080,16 +1086,10 @@
         // настройки всегда раскрыты «во всю высоту» — полный список без внутреннего скролла
         var tall = (openMenu === p.id) ? ' pf-card--tall' : '';
         var MANY = 4;
-        // мини-версия показывает 2 ЛУЧШИХ и 2 ХУДШИХ актива по изменению (c.hs уже отсортирован
-        // по убыванию доходности), между ними — разделитель со счётчиком скрытых. Если активов
-        // ≤4 — просто все по порядку. Полный список — в оверлее «весь состав» и таблице ребаланса.
-        var assetsBody;
-        if (!c.hs.length) assetsBody = '<div class="pfc-empty">Состав пуст — добавьте активы в настройках ⚙</div>';
-        else if (c.hs.length <= MANY) assetsBody = pfMiniTableHtml(c.hs, p.id);
-        else {
-            var best2 = c.hs.slice(0, 2), worst2 = c.hs.slice(-2), hidden = c.hs.length - 4;
-            assetsBody = pfMiniTableHtml(best2.concat(worst2), p.id, { after: 2, hidden: hidden });
-        }
+        // мини-версия показывает ВЕСЬ состав по порядку (от лучших к худшим — c.hs уже
+        // отсортирован); список не режется — карточка скроллится внутри (.pfc-massets).
+        var assetsBody = c.hs.length ? pfMiniTableHtml(c.hs, p.id)
+            : '<div class="pfc-empty">Состав пуст — добавьте активы в настройках ⚙</div>';
         // «раскрытие» вверху карточки (иконка со стрелками) ведёт в ту же панель, что и график,
         // но сразу с открытыми активами — отдельный оверлей «весь состав» больше не дублируется тут
         var assetsChartOn = chartOn && !!chartAssets[p.id];
@@ -1171,18 +1171,9 @@
     // фиксированных px-колонок — так шапка и строки гарантированно совпадают по ширине колонок
     // и числа не «наезжают» друг на друга при длинных ценах. Переиспользуется и в оверлее
     // «весь состав» (тот визуально ПРОДОЛЖАЕТ ту же таблицу, просто без лимита в 4 строки).
-    function pfMiniTableHtml(list, pid, split) {
+    function pfMiniTableHtml(list, pid) {
         var head = '<tr><th class="pfc-mc-as">Актив</th><th>Кол-во</th><th>Сейчас</th><th>Изм.</th></tr>';
-        var body = '';
-        list.forEach(function (x, i) {
-            body += pfMiniRowHtml(x, pid);
-            // разделитель «лучшие ↕ худшие» со счётчиком скрытых активов (мини-версия карточки)
-            if (split && i === (split.after - 1) && split.hidden > 0) {
-                body += '<tr class="pfc-msplit"><td colspan="4"><span class="pfc-msplit-in">' +
-                    '<i class="pfc-msplit-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7 13 12 18 17 13"/><polyline points="7 6 12 11 17 6"/></svg></i>' +
-                    'ещё ' + split.hidden + ' ' + plural(split.hidden, 'актив', 'актива', 'активов') + ' · показать все ниже</span></td></tr>';
-            }
-        });
+        var body = list.map(function (x) { return pfMiniRowHtml(x, pid); }).join('');
         return '<div class="pfc-mtablewrap"><table class="pfc-mtable"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>';
     }
     // Строка актива: тикер · тип · кол-во · цена · изменение. По КЛИКУ строка раскрывает
@@ -1374,7 +1365,7 @@
                 (expanded ? 'Свернуть' : 'Показать лоты') +
                 '<svg class="pfm-lottgl-i' + (expanded ? ' up' : '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>';
             var sumTxt = '<span class="pfm-lotsum"><b>' + lots.length + ' ' + plural(lots.length, 'лот', 'лота', 'лотов') + '</b>' +
-                (agg.qty > 0 ? ' · ср. ' + fmtPrice(agg.avgPrice) + ' · ' + agg.qty + ' шт' : '') + '</span>';
+                (agg.qty > 0 ? ' · ср. ' + ruDate(agg.avgDate) + ' · ' + fmtPrice(agg.avgPrice) + ' · ' + agg.qty + ' шт' : '') + '</span>';
             bar = '<div class="pfm-lotbar">' + sumTxt + '<i class="pfm-lotbar-sp"></i>' + toggle + '</div>';
         }
         return '<div class="pfm-row pfm-hold' + (multi ? ' has-lots' : '') + '">' + main + extra + bar + '</div>';
