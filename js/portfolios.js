@@ -843,18 +843,36 @@
             var n = store.items.length;
             var favStr = favHtml();
             var payCal = paymentCalendarHtml();
-            var left = n === 0 ? gridHtml(false)
-                : n % 2 === 1 ? gridHtml(true)
-                : summaryHtml(false) + gridHtml(false);
-            var body = '<div class="pf-topgrid">' +
-                    '<div class="pf-topgrid-left">' + left + '</div>' +
-                    '<div class="pf-topgrid-fav">' + favStr + '</div>' +
-                '</div>' + payCal;
+            var rates = ratesHtml();
+            var body;
+            if (n === 1) {
+                // 1 портфель → без карточки «Капитал портфеля»: сама карточка портфеля,
+                // календарь выплат такой же высоты РЯДОМ с ней (не под ней), «Избранное» —
+                // колонкой справа во всю высоту (card+cal+ставки), см. .pf-topgrid--one в CSS.
+                var oneCard = cardHtml(store.items[0], 0, false);
+                body = '<div class="pf-topgrid pf-topgrid--one">' +
+                        '<div class="pf-topgrid-onecard">' + oneCard + '</div>' +
+                        '<div class="pf-topgrid-cal">' + payCal + '</div>' +
+                        '<div class="pf-topgrid-fav">' + favStr + '</div>' +
+                        '<div class="pf-topgrid-rates">' + rates + '</div>' +
+                    '</div>';
+            } else {
+                var gridPart = n === 0 ? gridHtml(false)
+                    : n % 2 === 1 ? gridHtml(true)
+                    : summaryHtml(false) + gridHtml(false);
+                // Календарь и ставки — ВНУТРИ левой колонки (не отдельным блоком во всю ширину
+                // страницы), чтобы их ширина совпадала с шириной карточек портфеля и они не
+                // «наезжали» визуально на колонку «Избранное» сбоку.
+                var left = gridPart + payCal + rates;
+                body = '<div class="pf-topgrid">' +
+                        '<div class="pf-topgrid-left">' + left + '</div>' +
+                        '<div class="pf-topgrid-fav">' + favStr + '</div>' +
+                    '</div>';
+            }
             host.innerHTML =
                 liveBarHtml() +
                 headHtml() +
-                body +
-                ratesHtml();
+                body;
             tickLive();
             renderFavNews();
             ensureClock();
@@ -1408,6 +1426,242 @@
         return dateFieldHtml('<input class="pfm-in pfm-in-date" type="date" value="' + attr(l.buyDate) + '" ' +
             'onchange="pfEditLot(\'' + pid + '\',\'' + h.id + '\',\'' + l.id + '\',\'buyDate\',this.value)">');
     }
+
+    // ===== Красивый календарь для дат в настройках портфеля — тот же виджет (.btcal),
+    // что и в поле даты вкладки «Тест» (см. js/sidebar.js), но без привязки к одному
+    // фиксированному input#btDateInput: тут таких полей много (дата лота × несколько
+    // строк на портфель) и они постоянно пересоздаются при ре-рендере (renderPortfolios
+    // перезаписывает host.innerHTML на каждое изменение) — поэтому вместо getElementById
+    // используется делегирование кликов на document и «текущий» инпут curInput. =====
+    (function () {
+        var mq = window.matchMedia ? window.matchMedia('(min-width: 1024px)') : { matches: false };
+        var MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+        var MONTHS_SHORT = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+        var DOW = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+        var pop = null, curInput = null, vY = 0, vM = 0, view = 'days', vYPageEnd = 0;
+        var MIN_YEAR = 2014;
+        function pad(n) { return n < 10 ? '0' + n : '' + n; }
+        function chevron() { return '<svg class="btcal-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>'; }
+        function closeCal() { if (pop) { pop.remove(); pop = null; } curInput = null; }
+        function selDate() {
+            if (curInput && curInput.value) {
+                var p = curInput.value.split('-');
+                return { y: +p[0], m: +p[1] - 1, d: +p[2] };
+            }
+            return null;
+        }
+        function monthInFuture(y, m, tY, tM) { return y > tY || (y === tY && m > tM); }
+
+        function renderDays() {
+            var today = new Date(); today.setHours(0, 0, 0, 0);
+            var tY = today.getFullYear(), tM = today.getMonth();
+            var sel = selDate();
+            var nm = vM === 11 ? 0 : vM + 1, ny = vM === 11 ? vY + 1 : vY;
+            var nextDis = monthInFuture(ny, nm, tY, tM);
+            var h = '<div class="btcal-head">'
+                + '<button type="button" class="btcal-nav" data-nav="-1"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>'
+                + '<div class="btcal-sel">'
+                + '<button type="button" class="btcal-pick" data-pick="months">' + MONTHS[vM] + chevron() + '</button>'
+                + '<button type="button" class="btcal-pick" data-pick="years">' + vY + chevron() + '</button>'
+                + '</div>'
+                + '<button type="button" class="btcal-nav" data-nav="1"' + (nextDis ? ' disabled' : '') + '><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>'
+                + '</div><div class="btcal-dow">';
+            DOW.forEach(function (d) { h += '<span>' + d + '</span>'; });
+            h += '</div><div class="btcal-grid">';
+            var first = new Date(vY, vM, 1);
+            var offset = (first.getDay() + 6) % 7;
+            var dim = new Date(vY, vM + 1, 0).getDate();
+            var dimPrev = new Date(vY, vM, 0).getDate();
+            for (var i = 0; i < 42; i++) {
+                var dnum, cy = vY, cm = vM, out = false;
+                if (i < offset) { dnum = dimPrev - offset + 1 + i; cm = vM - 1; out = true; }
+                else if (i >= offset + dim) { dnum = i - offset - dim + 1; cm = vM + 1; out = true; }
+                else { dnum = i - offset + 1; }
+                var dt = new Date(cy, cm, dnum); dt.setHours(0, 0, 0, 0);
+                var dis = dt > today;
+                var isSel = sel && dt.getFullYear() === sel.y && dt.getMonth() === sel.m && dt.getDate() === sel.d;
+                var isToday = dt.getTime() === today.getTime();
+                var cls = 'btcal-day' + (out ? ' out' : '') + (dis ? ' dis' : '') + (isSel ? ' sel' : '') + (isToday ? ' today' : '');
+                h += '<button type="button" class="' + cls + '"' + (dis ? '' : ' data-date="' + dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate()) + '"') + '>' + dnum + '</button>';
+            }
+            h += '</div>';
+            return h;
+        }
+
+        function renderMonths() {
+            var today = new Date();
+            var tY = today.getFullYear(), tM = today.getMonth();
+            var sel = selDate();
+            var nextDis = vY >= tY;
+            var prevDis = vY <= MIN_YEAR;
+            var h = '<div class="btcal-head">'
+                + '<button type="button" class="btcal-nav" data-nav="-1"' + (prevDis ? ' disabled' : '') + '><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>'
+                + '<button type="button" class="btcal-title" data-pick="years">' + vY + chevron() + '</button>'
+                + '<button type="button" class="btcal-nav" data-nav="1"' + (nextDis ? ' disabled' : '') + '><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>'
+                + '</div><div class="btcal-months">';
+            for (var m = 0; m < 12; m++) {
+                var dis = monthInFuture(vY, m, tY, tM);
+                var isSel = sel && sel.y === vY && sel.m === m;
+                var isCur = vY === tY && m === tM;
+                var cls = 'btcal-mo' + (dis ? ' dis' : '') + (isSel ? ' sel' : '') + (isCur ? ' today' : '');
+                h += '<button type="button" class="' + cls + '"' + (dis ? '' : ' data-month="' + m + '"') + '>' + MONTHS_SHORT[m] + '</button>';
+            }
+            h += '</div>';
+            return h;
+        }
+
+        function renderYears() {
+            var today = new Date();
+            var tY = today.getFullYear();
+            var sel = selDate();
+            var end = vYPageEnd, start = end - 11;
+            var prevDis = start <= MIN_YEAR;
+            var nextDis = end >= tY;
+            var h = '<div class="btcal-head">'
+                + '<button type="button" class="btcal-nav" data-nav="-1"' + (prevDis ? ' disabled' : '') + '><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>'
+                + '<div class="btcal-title btcal-title-static">' + Math.max(MIN_YEAR, start) + ' – ' + end + '</div>'
+                + '<button type="button" class="btcal-nav" data-nav="1"' + (nextDis ? ' disabled' : '') + '><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>'
+                + '</div><div class="btcal-years">';
+            for (var y = start; y <= end; y++) {
+                if (y < MIN_YEAR) { h += '<span class="btcal-yr empty"></span>'; continue; }
+                var dis = y > tY;
+                var isSel = sel && sel.y === y;
+                var isCur = y === tY;
+                var cls = 'btcal-yr' + (dis ? ' dis' : '') + (isSel ? ' sel' : '') + (isCur ? ' today' : '');
+                h += '<button type="button" class="' + cls + '"' + (dis ? '' : ' data-year="' + y + '"') + '>' + y + '</button>';
+            }
+            h += '</div>';
+            return h;
+        }
+
+        function render() {
+            if (!pop) return;
+            pop.innerHTML = view === 'years' ? renderYears() : (view === 'months' ? renderMonths() : renderDays());
+            if (curInput) positionPop(curInput);
+        }
+
+        // Список дат в настройках лежит в скроллящемся .pfm-rows — обычный position:absolute
+        // внутри поля обрезался бы этим overflow. Поэтому попап крепится к <body> как
+        // position:fixed и позиционируется координатами инпута (см. positionPop) — тот же приём,
+        // что и у выезжающей карточки stockDetailCard (см. память «Fixed overlays need body»).
+        function positionPop(inp) {
+            var r = inp.getBoundingClientRect();
+            var w = 288, h = pop.offsetHeight || 330;
+            var left = r.left;
+            if (left + w > window.innerWidth - 8) left = Math.max(8, window.innerWidth - w - 8);
+            var top = r.bottom + 8;
+            if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 8);
+            pop.style.left = left + 'px';
+            pop.style.top = top + 'px';
+        }
+        function openCal(inp) {
+            closeCal();
+            curInput = inp;
+            var sel = selDate();
+            var base = sel ? new Date(sel.y, sel.m, 1) : new Date();
+            vY = base.getFullYear(); vM = base.getMonth(); view = 'days';
+            pop = document.createElement('div');
+            pop.className = 'btcal';
+            pop.style.position = 'fixed';
+            document.body.appendChild(pop);
+            render();
+            positionPop(inp);
+            pop.addEventListener('click', function (e) {
+                var t = new Date(), tY = t.getFullYear(), tM = t.getMonth();
+                var nav = e.target.closest('[data-nav]');
+                if (nav) {
+                    if (nav.disabled) return;
+                    var d = parseInt(nav.dataset.nav, 10);
+                    if (view === 'years') {
+                        vYPageEnd += d * 12;
+                        if (vYPageEnd > tY) vYPageEnd = tY;
+                        if (vYPageEnd < MIN_YEAR + 11) vYPageEnd = MIN_YEAR + 11;
+                    } else if (view === 'months') {
+                        vY += d;
+                        if (vY < MIN_YEAR) vY = MIN_YEAR;
+                        if (vY > tY) vY = tY;
+                    } else {
+                        vM += d;
+                        if (vM < 0) { vM = 11; vY--; }
+                        if (vM > 11) { vM = 0; vY++; }
+                    }
+                    render();
+                    return;
+                }
+                var pick = e.target.closest('[data-pick]');
+                if (pick) {
+                    if (pick.dataset.pick === 'years') {
+                        view = 'years';
+                        vYPageEnd = tY;
+                        if (vY < vYPageEnd - 11) vYPageEnd = vY + 11;
+                        if (vYPageEnd < MIN_YEAR + 11) vYPageEnd = MIN_YEAR + 11;
+                    } else {
+                        view = 'months';
+                    }
+                    render();
+                    return;
+                }
+                var mo = e.target.closest('[data-month]');
+                if (mo) {
+                    vM = parseInt(mo.dataset.month, 10);
+                    view = 'days';
+                    render();
+                    return;
+                }
+                var yr = e.target.closest('[data-year]');
+                if (yr) {
+                    vY = parseInt(yr.dataset.year, 10);
+                    if (monthInFuture(vY, vM, tY, tM)) vM = tM;
+                    view = 'days';
+                    render();
+                    return;
+                }
+                var day = e.target.closest('[data-date]');
+                if (day) {
+                    curInput.value = day.dataset.date;
+                    curInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    closeCal();
+                }
+            });
+        }
+
+        // На десктопе поле делается readonly, чтобы нативный системный календарь не открывался
+        // (та же логика, что в «Тест»). Поля пересоздаются при каждом ре-рендере настроек —
+        // MutationObserver на #pfWrap переприменяет readonly к новым инпутам сразу после рендера.
+        function applyReadonly() {
+            document.querySelectorAll('.pfm-in-date').forEach(function (inp) { inp.readOnly = mq.matches; });
+        }
+        function onModeChange() { applyReadonly(); if (!mq.matches) closeCal(); }
+        if (mq.addEventListener) mq.addEventListener('change', onModeChange);
+        else if (mq.addListener) mq.addListener(onModeChange);
+        window.addEventListener('resize', applyReadonly);
+
+        function ensureObserver() {
+            var host = document.getElementById('pfWrap');
+            if (!host || host.__pfCalObserved) return;
+            host.__pfCalObserved = true;
+            new MutationObserver(applyReadonly).observe(host, { childList: true, subtree: true });
+            applyReadonly();
+        }
+        ensureObserver();
+        document.addEventListener('DOMContentLoaded', ensureObserver);
+
+        document.addEventListener('mousedown', function (e) {
+            var inp = e.target.closest('.pfm-in-date');
+            if (inp && mq.matches) {
+                e.preventDefault();
+                if (pop && curInput === inp) closeCal(); else openCal(inp);
+                return;
+            }
+            if (pop && !pop.contains(e.target)) closeCal();
+        });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeCal(); });
+        // скролл внутри .pfm-rows (или страницы) — попап зафиксирован на <body>, а не на поле,
+        // поэтому при скролле просто закрываем, а не тащим за собой (capture — ловит и вложенные контейнеры)
+        document.addEventListener('scroll', function (e) {
+            if (pop && !pop.contains(e.target)) closeCal();
+        }, true);
+    })();
     function lotPriceCell(pid, h, l) {
         return '<span class="pfm-field has-fx">' +
             '<input class="pfm-in pfm-in-num" type="number" step="0.01" min="0" value="' + (l.buyPrice || '') + '" placeholder="цена ₽" ' +
@@ -1527,7 +1781,12 @@
         'Плюс = есть запас роста, минус = бумага уже переоценена. Это ориентир, а не гарантия — рассчитан по модели, рынок может думать иначе.';
     function favHtml() {
         if (typeof window.stkEnsureLoaded === 'function') { try { window.stkEnsureLoaded(); } catch (e) {} }
-        var favs = favTickers();
+        var favs = favTickers().slice().sort(function (a, b) {
+            var pa = potentialOf(a), pb = potentialOf(b);
+            if (pa == null && pb == null) return 0;
+            if (pa == null) return 1; if (pb == null) return -1;
+            return pb - pa;
+        });
         var inner;
         if (!favs.length) {
             inner = '<div class="pff-empty"><div class="pff-empty-art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>' +

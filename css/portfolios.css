@@ -189,6 +189,32 @@ body.dark-mode .pfsc-chart { border-color: rgba(255,255,255,0.09); }
 .pf-topgrid-fav .pff-body { padding: 4px 14px 16px; }
 .pf-topgrid-fav .pff-grid { grid-template-columns: 1fr; }
 
+/* ============================================================
+   1 ПОРТФЕЛЬ: карточка портфеля и «Календарь выплат» — В ОДИН РЯД, одной высоты
+   (высоту задаёт .pf-card: 674px / 654px на узких — см. выше), «Избранное» — колонкой
+   справа во всю высоту (ряд карточек + ставки под ними). align-items:stretch (в отличие
+   от базового .pf-topgrid с align-items:start) растягивает соседей по высоте карточки
+   портфеля автоматически — без вычислений в JS.
+   ============================================================ */
+.pf-topgrid--one { grid-template-columns: 1fr 1fr minmax(280px,340px); align-items: stretch;
+    grid-template-areas: "card cal fav" "rates rates fav"; }
+.pf-topgrid-onecard { grid-area: card; min-width: 0; }
+.pf-topgrid-cal { grid-area: cal; min-width: 0; display: flex; }
+.pf-topgrid-cal .pf-paycal { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.pf-topgrid-cal .pf-paycal .pfpc-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+.pf-topgrid--one .pf-topgrid-fav { grid-area: fav; display: flex; }
+.pf-topgrid--one .pf-topgrid-fav .pf-fav { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.pf-topgrid--one .pf-topgrid-fav .pf-fav .pff-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+.pf-topgrid-rates { grid-area: rates; min-width: 0; }
+@media (max-width: 1600px) {
+    .pf-topgrid--one { grid-template-columns: 1fr 1fr;
+        grid-template-areas: "card cal" "rates rates" "fav fav"; }
+}
+@media (max-width: 1040px) {
+    .pf-topgrid--one { grid-template-columns: 1fr;
+        grid-template-areas: "card" "cal" "rates" "fav"; }
+}
+
 /* сводка (полноширинный вариант, не aside-ячейка) липнет к верху при скролле и сжимается —
    при 2/4 портфелях список карточек может быть длинным, а капитал/доходность полезно видеть
    не прокручивая обратно наверх. aside-вариант (нечётное число) сюда не попадает: там сводка —
