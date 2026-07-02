@@ -189,29 +189,6 @@ body.dark-mode .pfsc-chart { border-color: rgba(255,255,255,0.09); }
 .pf-topgrid-fav .pff-body { padding: 4px 14px 16px; }
 .pf-topgrid-fav .pff-grid { grid-template-columns: 1fr; }
 
-/* ============================================================
-   1 ПОРТФЕЛЬ: карточка портфеля и «Календарь выплат» — В ОДИН РЯД, одной высоты
-   (высоту задаёт .pf-card: 674px / 654px на узких — см. выше), ставки — строкой под
-   ними на всю ширину. align-items:stretch (в отличие от базового .pf-topgrid с
-   align-items:start) растягивает календарь по высоте карточки портфеля автоматически —
-   без вычислений в JS. «Избранное» — ПОЛНОШИРИННЫЙ блок НИЖЕ всей сетки (.pf-onefav,
-   отдельно от .pf-topgrid), с ограниченной высотой и внутренним скроллом.
-   ============================================================ */
-.pf-topgrid--one { grid-template-columns: 1fr 1fr; align-items: stretch;
-    grid-template-areas: "card cal" "rates rates"; }
-.pf-topgrid-onecard { grid-area: card; min-width: 0; }
-.pf-topgrid-cal { grid-area: cal; min-width: 0; display: flex; }
-.pf-topgrid-cal .pf-paycal { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-.pf-topgrid-cal .pf-paycal .pfpc-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
-.pf-topgrid-rates { grid-area: rates; min-width: 0; }
-.pf-onefav { margin-top: 16px; display: flex; }
-.pf-onefav .pf-fav { flex: 1; display: flex; flex-direction: column; min-width: 0; max-height: 420px; overflow: hidden; }
-.pf-onefav .pff-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
-@media (max-width: 1040px) {
-    .pf-topgrid--one { grid-template-columns: 1fr;
-        grid-template-areas: "card" "cal" "rates"; }
-}
-
 /* сводка (полноширинный вариант, не aside-ячейка) липнет к верху при скролле и сжимается —
    при 2/4 портфелях список карточек может быть длинным, а капитал/доходность полезно видеть
    не прокручивая обратно наверх. aside-вариант (нечётное число) сюда не попадает: там сводка —
@@ -1121,7 +1098,12 @@ body.pf-modal-open { overflow: hidden; }
 #pfOverlay { position: fixed; inset: 0; z-index: 4000; display: none; align-items: center; justify-content: center; padding: 28px; background: rgba(8,13,20,0.6); backdrop-filter: blur(4px); }
 #pfOverlay.show { display: flex; animation: pfOvIn 0.18s ease; }
 @keyframes pfOvIn { from { opacity: 0; } to { opacity: 1; } }
-.pfo-card { --pf-accent: #3b82f6; width: min(1480px, 94vw); max-width: 94vw; max-height: 90vh; display: flex; flex-direction: column; background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 40px 90px -30px rgba(0,0,0,0.6); border-top: 4px solid var(--pf-accent); animation: pfCardIn 0.2s ease; }
+.pfo-card { --pf-accent: #3b82f6; width: min(1480px, 94vw); max-width: 94vw; max-height: 90vh; display: flex; flex-direction: column; background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 40px 90px -30px rgba(0,0,0,0.6); border-top: 4px solid var(--pf-accent); }
+/* анимация появления — ТОЛЬКО при первом открытии карточки (.pfo-anim-in, см. overlayHtml
+   в JS). Ре-рендеры от выбора бумаги для обмена/смены параметров переиспользуют ту же
+   разметку БЕЗ этого класса — иначе каждый клик пересоздаёт .pfo-card и анимация
+   переигрывается заново, отчего вся карточка резко «мигает». */
+.pfo-card.pfo-anim-in { animation: pfCardIn 0.2s ease; }
 @keyframes pfCardIn { from { transform: translateY(14px) scale(0.98); opacity: 0; } to { transform: none; opacity: 1; } }
 body.dark-mode .pfo-card { background: #141c27; }
 /* шапка большой карточки — с весом: акцентный фон, крупное имя, капитал + P&L справа */
@@ -1522,15 +1504,23 @@ body.dark-mode .pfrb-mblock li { background: rgba(255,255,255,0.03); border-colo
    продать / что купить, результат обмена считается сразу под ними ---- */
 .pfrb-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start; }
 @media (max-width: 720px) { .pfrb-picker { grid-template-columns: 1fr; } }
-.pfrb-pcol { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.pfrb-pcol-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 0 2px; }
-.pfrb-pcol-h span { font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 800; color: #1b2433; }
+.pfrb-pcol { display: flex; flex-direction: column; gap: 0; min-width: 0; }
+/* заголовок колонки-пикера — акцентная «шапка таблицы», сросшаяся с .pfrb-plist ниже
+   (без зазора, скругление только сверху), чтобы «Мои облигации» и «Рынок ОФЗ» сразу
+   читались как подписи двух разных таблиц, а не терялись над списком строк. */
+.pfrb-pcol-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 8px 11px;
+    background: color-mix(in srgb, var(--pf-accent) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--pf-accent) 22%, rgba(24,38,60,0.07)); border-bottom: none;
+    border-radius: 10px 10px 0 0; }
+.pfrb-pcol-h span { font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 800; color: #1b2433;
+    text-transform: uppercase; letter-spacing: 0.02em; }
 body.dark-mode .pfrb-pcol-h span { color: #f4f8fd; }
-.pfrb-pcol-h i { font-style: normal; font-size: 8.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #94a3b8; }
+.pfrb-pcol-h i { font-style: normal; font-size: 8.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #5a6675; }
+body.dark-mode .pfrb-pcol-h i { color: #aebacc; }
 /* единая «таблица»-обёртка: рамка+скругление на весь список, ряды внутри — плоские
    полосы с разделителями (см. .pfrb-srow) вместо отдельных карточек-строк */
 .pfrb-plist { display: flex; flex-direction: column; max-height: 300px; overflow-y: auto; scrollbar-width: thin;
-    border: 1px solid rgba(24,38,60,0.07); border-radius: 12px; background: rgba(255,255,255,0.55); }
+    border: 1px solid rgba(24,38,60,0.07); border-radius: 0 0 12px 12px; background: rgba(255,255,255,0.55); }
 body.dark-mode .pfrb-plist { border-color: rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); }
 
 /* строка-кандидат в списке — кликабельна, подсвечивается при выборе */

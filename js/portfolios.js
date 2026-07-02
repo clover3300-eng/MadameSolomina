@@ -845,31 +845,17 @@
             var payCal = paymentCalendarHtml();
             var rates = ratesHtml();
             var body;
-            if (n === 1) {
-                // 1 портфель → без карточки «Капитал портфеля»: сама карточка портфеля,
-                // календарь выплат такой же высоты РЯДОМ с ней (не под ней), ставки —
-                // строкой под ними на всю ширину, «Избранное» — ПОЛНОШИРИННЫМ блоком ниже
-                // всего этого (со своим внутренним скроллом), см. .pf-topgrid--one в CSS.
-                var oneCard = cardHtml(store.items[0], 0, false);
-                body = '<div class="pf-topgrid pf-topgrid--one">' +
-                        '<div class="pf-topgrid-onecard">' + oneCard + '</div>' +
-                        '<div class="pf-topgrid-cal">' + payCal + '</div>' +
-                        '<div class="pf-topgrid-rates">' + rates + '</div>' +
-                    '</div>' +
-                    '<div class="pf-onefav">' + favStr + '</div>';
-            } else {
-                var gridPart = n === 0 ? gridHtml(false)
-                    : n % 2 === 1 ? gridHtml(true)
-                    : summaryHtml(false) + gridHtml(false);
-                // Календарь и ставки — ВНУТРИ левой колонки (не отдельным блоком во всю ширину
-                // страницы), чтобы их ширина совпадала с шириной карточек портфеля и они не
-                // «наезжали» визуально на колонку «Избранное» сбоку.
-                var left = gridPart + payCal + rates;
-                body = '<div class="pf-topgrid">' +
-                        '<div class="pf-topgrid-left">' + left + '</div>' +
-                        '<div class="pf-topgrid-fav">' + favStr + '</div>' +
-                    '</div>';
-            }
+            var gridPart = n === 0 ? gridHtml(false)
+                : n % 2 === 1 ? gridHtml(true)
+                : summaryHtml(false) + gridHtml(false);
+            // Календарь и ставки — ВНУТРИ левой колонки (не отдельным блоком во всю ширину
+            // страницы), чтобы их ширина совпадала с шириной карточек портфеля и они не
+            // «наезжали» визуально на колонку «Избранное» сбоку.
+            var left = gridPart + payCal + rates;
+            body = '<div class="pf-topgrid">' +
+                    '<div class="pf-topgrid-left">' + left + '</div>' +
+                    '<div class="pf-topgrid-fav">' + favStr + '</div>' +
+                '</div>';
             host.innerHTML =
                 liveBarHtml() +
                 headHtml() +
@@ -2356,7 +2342,7 @@
         if (!ov) { ov = document.createElement('div'); ov.id = 'pfOverlay'; document.body.appendChild(ov);
             ov.addEventListener('click', function (e) { if (e.target === ov) window.pfCloseOverlay(); }); }
         ov.dataset.pid = pid;
-        ov.innerHTML = overlayHtml(p);
+        ov.innerHTML = overlayHtml(p, true);
         fillBondIncome(p);
         // догружаем детали купонов (купон/частота/погашение) → пересобираем колонку облигаций
         // с доходностью к погашению, когда данные пришли
@@ -2824,11 +2810,14 @@
         '</div>';
     }
 
-    function overlayHtml(p) {
+    // animate=true — только для первого открытия карточки (см. pfExpand); ре-рендеры
+    // (выбор бумаги для обмена, смена параметров, догрузка данных) идут без анимации,
+    // иначе пересоздание .pfo-card на каждый клик заставляет её мигать целиком.
+    function overlayHtml(p, animate) {
         var c = calcPf(p), ac = colorVal(p.color), pnlCls = c.pnl >= 0 ? 'pos' : 'neg';
         var bonds = c.hs.filter(function (x) { return x.h.type === 'bond'; });
         var stocks = c.hs.filter(function (x) { return x.h.type !== 'bond'; });
-        return '<div class="pfo-card pfrb-card" style="--pf-accent:' + ac + '">' +
+        return '<div class="pfo-card pfrb-card' + (animate ? ' pfo-anim-in' : '') + '" style="--pf-accent:' + ac + '">' +
             '<div class="pfo-head">' +
                 '<div class="pfo-head-l"><span class="pfo-dot"></span>' +
                     '<div class="pfo-head-tt"><div class="pfo-eyebrow">Ребалансировка портфеля</div>' +
