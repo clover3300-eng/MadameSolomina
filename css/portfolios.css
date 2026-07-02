@@ -191,28 +191,25 @@ body.dark-mode .pfsc-chart { border-color: rgba(255,255,255,0.09); }
 
 /* ============================================================
    1 ПОРТФЕЛЬ: карточка портфеля и «Календарь выплат» — В ОДИН РЯД, одной высоты
-   (высоту задаёт .pf-card: 674px / 654px на узких — см. выше), «Избранное» — колонкой
-   справа во всю высоту (ряд карточек + ставки под ними). align-items:stretch (в отличие
-   от базового .pf-topgrid с align-items:start) растягивает соседей по высоте карточки
-   портфеля автоматически — без вычислений в JS.
+   (высоту задаёт .pf-card: 674px / 654px на узких — см. выше), ставки — строкой под
+   ними на всю ширину. align-items:stretch (в отличие от базового .pf-topgrid с
+   align-items:start) растягивает календарь по высоте карточки портфеля автоматически —
+   без вычислений в JS. «Избранное» — ПОЛНОШИРИННЫЙ блок НИЖЕ всей сетки (.pf-onefav,
+   отдельно от .pf-topgrid), с ограниченной высотой и внутренним скроллом.
    ============================================================ */
-.pf-topgrid--one { grid-template-columns: 1fr 1fr minmax(280px,340px); align-items: stretch;
-    grid-template-areas: "card cal fav" "rates rates fav"; }
+.pf-topgrid--one { grid-template-columns: 1fr 1fr; align-items: stretch;
+    grid-template-areas: "card cal" "rates rates"; }
 .pf-topgrid-onecard { grid-area: card; min-width: 0; }
 .pf-topgrid-cal { grid-area: cal; min-width: 0; display: flex; }
 .pf-topgrid-cal .pf-paycal { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .pf-topgrid-cal .pf-paycal .pfpc-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
-.pf-topgrid--one .pf-topgrid-fav { grid-area: fav; display: flex; }
-.pf-topgrid--one .pf-topgrid-fav .pf-fav { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-.pf-topgrid--one .pf-topgrid-fav .pf-fav .pff-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
 .pf-topgrid-rates { grid-area: rates; min-width: 0; }
-@media (max-width: 1600px) {
-    .pf-topgrid--one { grid-template-columns: 1fr 1fr;
-        grid-template-areas: "card cal" "rates rates" "fav fav"; }
-}
+.pf-onefav { margin-top: 16px; display: flex; }
+.pf-onefav .pf-fav { flex: 1; display: flex; flex-direction: column; min-width: 0; max-height: 420px; overflow: hidden; }
+.pf-onefav .pff-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
 @media (max-width: 1040px) {
     .pf-topgrid--one { grid-template-columns: 1fr;
-        grid-template-areas: "card" "cal" "rates" "fav"; }
+        grid-template-areas: "card" "cal" "rates"; }
 }
 
 /* сводка (полноширинный вариант, не aside-ячейка) липнет к верху при скролле и сжимается —
@@ -1253,11 +1250,6 @@ body.dark-mode .pfo-tk b { color: #f4f8fd; }
 body.dark-mode .pfo-table .pos { color: #34d399; } body.dark-mode .pfo-table .neg { color: #f87171; }
 .pfo-table td small { display: block; font-size: 10px; opacity: 0.8; }
 .pfo-empty { text-align: center; color: #94a3b8; padding: 30px; font-family: 'Manrope', sans-serif; }
-.pfo-foot { padding: 14px 22px; border-top: 1px solid rgba(24,38,60,0.06); }
-body.dark-mode .pfo-foot { border-color: rgba(255,255,255,0.06); }
-.pfo-edit { border: 1px solid rgba(24,38,60,0.12); background: rgba(24,38,60,0.03); border-radius: 11px; padding: 10px 16px; font-weight: 700; font-size: 13px; color: #46566e; cursor: pointer; }
-.pfo-edit:hover { background: var(--pf-accent); color: #fff; border-color: transparent; }
-body.dark-mode .pfo-edit { border-color: rgba(255,255,255,0.08); background: rgba(255,255,255,0.04); color: #cdd8e6; }
 @media (max-width: 720px) { .pfo-top { gap: 16px; } .pfo-stats { grid-template-columns: 1fr 1fr; } #pfOverlay { padding: 12px; } }
 
 /* ============================================================
@@ -1343,11 +1335,13 @@ body.dark-mode .pfrb-side--new { background: color-mix(in srgb, #34d399 9%, tran
 .pfrb-side-h span { font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 800; color: #1b2433; }
 body.dark-mode .pfrb-side-h span { color: #f4f8fd; }
 .pfrb-side-h i { font-style: normal; font-size: 8.5px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: #94a3b8; }
-.pfrb-side-empty { font-size: 11px; font-style: italic; color: #b6c0cc; padding: 8px 2px; }
-/* строка бумаги в колонке: id | доходность / снизу — meta */
+.pfrb-side-empty { font-size: 11px; font-style: italic; color: #b6c0cc; padding: 10px; }
+/* строка бумаги в колонке: id | доходность / снизу — meta. Ряды теперь без промежутков
+   и своих скруглений — единая «таблица» с тонкими разделителями, обёрнутая .pfrb-plist. */
 .pfrb-srow { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "id yield" "meta meta"; gap: 1px 8px;
-    padding: 8px 9px; border-radius: 10px; background: rgba(255,255,255,0.6); }
-body.dark-mode .pfrb-srow { background: rgba(255,255,255,0.03); }
+    padding: 9px 11px; border-bottom: 1px solid rgba(24,38,60,0.055); }
+.pfrb-srow:last-child { border-bottom: none; }
+body.dark-mode .pfrb-srow { border-bottom-color: rgba(255,255,255,0.05); }
 .pfrb-srid { grid-area: id; min-width: 0; display: flex; flex-direction: column; }
 .pfrb-stk { font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 800; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 body.dark-mode .pfrb-stk { color: #f4f8fd; }
@@ -1423,8 +1417,6 @@ body.dark-mode .pfrb-swap-tk { color: #eaf1f8; }
 body.dark-mode .pfrb-swap-pot.pos { color: #34d399; } body.dark-mode .pfrb-swap-pot.neg { color: #f87171; }
 .pfrb-swaps-none { font-size: 10.5px; font-style: italic; color: #b6c0cc; }
 /* подпись-примечание под колонкой */
-.pfrb-cnote { margin-top: auto; padding-top: 10px; font-size: 10.5px; line-height: 1.5; color: #94a3b8; }
-.pfrb-cnote-lnk { border: none; background: none; padding: 0; font: inherit; font-weight: 800; color: var(--pf-accent); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 /* пустая колонка */
 .pfrb-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 7px; padding: 40px 18px; color: #94a3b8; }
 .pfrb-empty svg { width: 38px; height: 38px; opacity: 0.5; }
@@ -1478,40 +1470,39 @@ body.dark-mode .pfrb-param-in { background: #111925; border-color: rgba(255,255,
 .pfrb-param-in:focus { outline: none; border-color: var(--pf-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pf-accent) 15%, transparent); }
 .pfrb-params .pfrb-mbtn { margin-left: auto; }
 
-/* ---- целевая аллокация: факт vs цель, редактируемая тут же, отклонение в ₽ ---- */
-.pfrb-target { margin: 14px 22px; padding: 14px 16px; border-radius: 14px; display: flex; flex-direction: column; gap: 10px;
+/* ---- целевая аллокация: факт vs цель, редактируемая тут же, отклонение в ₽ ----
+   Компактно: 1 полоса (факт) с меткой цели на границе + строка итога — вместо двух
+   развёрнутых рядов «Сейчас»/«Цель» (было слишком массивно). */
+.pfrb-target { margin: 10px 22px; padding: 10px 14px; border-radius: 12px; display: flex; flex-direction: column; gap: 7px;
     background: color-mix(in srgb, var(--pf-accent) 6%, transparent);
     border: 1px solid color-mix(in srgb, var(--pf-accent) 20%, rgba(24,38,60,0.06)); }
 body.dark-mode .pfrb-target { background: color-mix(in srgb, var(--pf-accent) 10%, transparent);
     border-color: color-mix(in srgb, var(--pf-accent) 26%, rgba(255,255,255,0.06)); }
-.pfrb-tg-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.pfrb-tg-ic { width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; flex-shrink: 0;
+.pfrb-tg-head { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.pfrb-tg-ic { width: 18px; height: 18px; border-radius: 6px; display: grid; place-items: center; flex-shrink: 0;
     background: color-mix(in srgb, var(--pf-accent) 16%, transparent); color: var(--pf-accent); }
-.pfrb-tg-ic svg { width: 12px; height: 12px; }
-.pfrb-tg-t { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #1b2433; }
+.pfrb-tg-ic svg { width: 10px; height: 10px; }
+.pfrb-tg-t { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 800; color: #1b2433; }
 body.dark-mode .pfrb-tg-t { color: #f4f8fd; }
-.pfrb-tg-set { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; font-size: 11.5px; font-weight: 700; color: #64748b; }
+.pfrb-tg-set { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; font-size: 10.5px; font-weight: 700; color: #64748b; }
 body.dark-mode .pfrb-tg-set { color: #9fb0c4; }
-.pfrb-tg-in { width: 48px; padding: 5px 6px; border: 1px solid rgba(24,38,60,0.14); border-radius: 7px; text-align: center;
-    font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; background: #fff; color: #1b2433; }
+.pfrb-tg-in { width: 40px; padding: 3px 5px; border: 1px solid rgba(24,38,60,0.14); border-radius: 6px; text-align: center;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; background: #fff; color: #1b2433; }
 body.dark-mode .pfrb-tg-in { background: #111925; border-color: rgba(255,255,255,0.12); color: #eef3f9; }
 .pfrb-tg-in:focus { outline: none; border-color: var(--pf-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pf-accent) 15%, transparent); }
-.pfrb-tg-row { display: grid; grid-template-columns: 52px 1fr 92px; align-items: center; gap: 10px; }
-.pfrb-tg-row.ghost { opacity: 0.8; }
-.pfrb-tg-lbl { font-size: 10.5px; font-weight: 700; color: #64748b; }
-body.dark-mode .pfrb-tg-lbl { color: #9fb0c4; }
-.pfrb-tg-bar { display: flex; height: 9px; border-radius: 99px; overflow: hidden; background: rgba(24,38,60,0.08); }
+.pfrb-tg-bar { position: relative; display: flex; height: 7px; border-radius: 99px; overflow: hidden; background: rgba(24,38,60,0.08); }
 body.dark-mode .pfrb-tg-bar { background: rgba(255,255,255,0.09); }
-.pfrb-tg-row.ghost .pfrb-tg-bar { background-image: repeating-linear-gradient(45deg, rgba(0,0,0,0.07) 0 4px, transparent 4px 8px); }
 .pfrb-tg-stock { background: #D97757; } .pfrb-tg-bond { background: #7B9BBF; }
-.pfrb-tg-pct { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #475569; text-align: right; white-space: nowrap; }
+/* метка цели — тонкая вертикальная риска на границе целевого % внутри полосы факта */
+.pfrb-tg-mark { position: absolute; top: -2px; bottom: -2px; width: 2px; margin-left: -1px;
+    background: #fff; box-shadow: 0 0 0 1px rgba(24,38,60,0.35); border-radius: 2px; }
+body.dark-mode .pfrb-tg-mark { background: #0d141e; box-shadow: 0 0 0 1px rgba(255,255,255,0.4); }
+.pfrb-tg-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.pfrb-tg-pct { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 700; color: #475569; white-space: nowrap; }
 body.dark-mode .pfrb-tg-pct { color: #aebacc; }
-.pfrb-tg-note { display: flex; align-items: flex-start; gap: 8px; font-size: 11.5px; line-height: 1.5;
-    padding-top: 8px; border-top: 1px dashed rgba(24,38,60,0.12); }
-body.dark-mode .pfrb-tg-note { border-color: rgba(255,255,255,0.1); }
-.pfrb-tg-note svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px; }
-.pfrb-tg-note span { color: #46566e; }
-body.dark-mode .pfrb-tg-note span { color: #cdd8e6; }
+.pfrb-tg-pct i { font-style: normal; font-weight: 600; color: #94a3b8; }
+.pfrb-tg-note { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 600; line-height: 1.3; white-space: nowrap; }
+.pfrb-tg-note svg { width: 12px; height: 12px; flex-shrink: 0; }
 .pfrb-tg-note.ok { color: #16a34a; } body.dark-mode .pfrb-tg-note.ok { color: #34d399; }
 .pfrb-tg-note.warn { color: #b45309; } body.dark-mode .pfrb-tg-note.warn { color: #fbbf24; }
 
@@ -1536,13 +1527,17 @@ body.dark-mode .pfrb-mblock li { background: rgba(255,255,255,0.03); border-colo
 .pfrb-pcol-h span { font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 800; color: #1b2433; }
 body.dark-mode .pfrb-pcol-h span { color: #f4f8fd; }
 .pfrb-pcol-h i { font-style: normal; font-size: 8.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #94a3b8; }
-.pfrb-plist { display: flex; flex-direction: column; gap: 6px; max-height: 300px; overflow-y: auto; scrollbar-width: thin; padding-right: 2px; }
+/* единая «таблица»-обёртка: рамка+скругление на весь список, ряды внутри — плоские
+   полосы с разделителями (см. .pfrb-srow) вместо отдельных карточек-строк */
+.pfrb-plist { display: flex; flex-direction: column; max-height: 300px; overflow-y: auto; scrollbar-width: thin;
+    border: 1px solid rgba(24,38,60,0.07); border-radius: 12px; background: rgba(255,255,255,0.55); }
+body.dark-mode .pfrb-plist { border-color: rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); }
 
 /* строка-кандидат в списке — кликабельна, подсвечивается при выборе */
-.pfrb-srow--pick { cursor: pointer; transition: border-color .15s, background .15s, transform .1s; }
-.pfrb-srow--pick:hover { border-color: color-mix(in srgb, var(--pf-accent) 40%, rgba(24,38,60,0.08)); }
-.pfrb-srow--pick:active { transform: scale(0.99); }
-.pfrb-srow.sel { border-color: var(--pf-accent); background: color-mix(in srgb, var(--pf-accent) 11%, #fff); box-shadow: 0 0 0 1px var(--pf-accent) inset; }
+.pfrb-srow--pick { cursor: pointer; transition: background .15s; }
+.pfrb-srow--pick:hover { background: rgba(24,38,60,0.035); }
+body.dark-mode .pfrb-srow--pick:hover { background: rgba(255,255,255,0.035); }
+.pfrb-srow.sel { background: color-mix(in srgb, var(--pf-accent) 11%, #fff); box-shadow: inset 3px 0 0 var(--pf-accent); }
 body.dark-mode .pfrb-srow.sel { background: color-mix(in srgb, var(--pf-accent) 18%, rgba(255,255,255,0.03)); }
 /* значок «темп ≥ порога» рядом с тикером своей бумаги (и в методичке, где на него ссылаются) */
 .pfrb-stk svg, .pfrb-hoticon svg { width: 11px; height: 11px; margin-right: 3px; vertical-align: -1px; color: #f59e0b; }

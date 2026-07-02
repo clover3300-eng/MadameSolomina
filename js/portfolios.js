@@ -847,15 +847,16 @@
             var body;
             if (n === 1) {
                 // 1 портфель → без карточки «Капитал портфеля»: сама карточка портфеля,
-                // календарь выплат такой же высоты РЯДОМ с ней (не под ней), «Избранное» —
-                // колонкой справа во всю высоту (card+cal+ставки), см. .pf-topgrid--one в CSS.
+                // календарь выплат такой же высоты РЯДОМ с ней (не под ней), ставки —
+                // строкой под ними на всю ширину, «Избранное» — ПОЛНОШИРИННЫМ блоком ниже
+                // всего этого (со своим внутренним скроллом), см. .pf-topgrid--one в CSS.
                 var oneCard = cardHtml(store.items[0], 0, false);
                 body = '<div class="pf-topgrid pf-topgrid--one">' +
                         '<div class="pf-topgrid-onecard">' + oneCard + '</div>' +
                         '<div class="pf-topgrid-cal">' + payCal + '</div>' +
-                        '<div class="pf-topgrid-fav">' + favStr + '</div>' +
                         '<div class="pf-topgrid-rates">' + rates + '</div>' +
-                    '</div>';
+                    '</div>' +
+                    '<div class="pf-onefav">' + favStr + '</div>';
             } else {
                 var gridPart = n === 0 ? gridHtml(false)
                     : n % 2 === 1 ? gridHtml(true)
@@ -2435,14 +2436,10 @@
         p.target = { stock: clamp(Math.round(toNum(val) || 0), 0, 100) };
         saveStore(); rebalRepaint();
     };
-    // строка сравнения бар-в-бар: «Сейчас» (факт по стоимости) / «Цель» (штрихованный бар-ориентир)
-    function targetBarRow(label, stockPct, bondPct, ghost) {
-        return '<div class="pfrb-tg-row' + (ghost ? ' ghost' : '') + '"><span class="pfrb-tg-lbl">' + esc(label) + '</span>' +
-            '<div class="pfrb-tg-bar"><span class="pfrb-tg-stock" style="width:' + stockPct + '%"></span><span class="pfrb-tg-bond" style="width:' + bondPct + '%"></span></div>' +
-            '<span class="pfrb-tg-pct">' + stockPct + '% / ' + bondPct + '%</span></div>';
-    }
     // Отклонение факт vs цель: >5 п.п. — не «в пределах», показываем на сколько ₽ сдвинуть,
     // чтобы вернуться к цели (грубая оценка: доля отклонения × текущая стоимость портфеля).
+    // Компактный вид: ОДНА полоса (факт), метка-риска на границе цели — вместо двух рядов
+    // «Сейчас»/«Цель» (было слишком массивно).
     function targetAllocHtml(p, c) {
         if (!(c.value > 0)) return '';
         var t = targetAlloc(p);
@@ -2451,18 +2448,17 @@
         var within = Math.abs(diff) <= 5;
         var amount = Math.abs(diff) / 100 * c.value;
         var note = within
-            ? '<div class="pfrb-tg-note ok">' + CHECK_SVG + '<span>В пределах цели — отклонение ' + Math.abs(diff) + ' п.п., ребалансировка не требуется.</span></div>'
-            : '<div class="pfrb-tg-note warn">' + REBAL_SVG + '<span>Отклонение ' + Math.abs(diff) + ' п.п. — ' + (diff > 0 ? 'акций больше цели' : 'облигаций больше цели') +
-                '. Чтобы вернуться к цели, сдвиньте ≈' + fmtRub(amount) + ' в ' + (diff > 0 ? 'облигации' : 'акции') + '.</span></div>';
+            ? '<span class="pfrb-tg-note ok">' + CHECK_SVG + '<span>в пределах цели</span></span>'
+            : '<span class="pfrb-tg-note warn">' + REBAL_SVG + '<span>сдвиньте ≈' + fmtRub(amount) + ' в ' + (diff > 0 ? 'облигации' : 'акции') + '</span></span>';
         return '<div class="pfrb-target">' +
             '<div class="pfrb-tg-head"><span class="pfrb-tg-ic">' + REBAL_SVG + '</span><span class="pfrb-tg-t">Целевая аллокация</span>' +
                 '<div class="pfrb-tg-set"><span>Акции</span>' +
                     '<input class="pfrb-tg-in" type="number" min="0" max="100" step="5" value="' + t.stock + '" onchange="pfSetTarget(\'' + p.id + '\',this.value)">' +
-                    '<span>% · Облигации ' + t.bond + '%</span></div>' +
+                    '<span>%</span></div>' +
             '</div>' +
-            targetBarRow('Сейчас', curStock, curBond, false) +
-            targetBarRow('Цель', t.stock, t.bond, true) +
-            note +
+            '<div class="pfrb-tg-bar"><span class="pfrb-tg-stock" style="width:' + curStock + '%"></span><span class="pfrb-tg-bond" style="width:' + curBond + '%"></span>' +
+                '<span class="pfrb-tg-mark" style="left:' + t.stock + '%"></span></div>' +
+            '<div class="pfrb-tg-foot"><span class="pfrb-tg-pct">Сейчас ' + curStock + '% / ' + curBond + '% <i>· цель ' + t.stock + '/' + t.bond + '</i></span>' + note + '</div>' +
         '</div>';
     }
 
@@ -2760,13 +2756,13 @@
         var newOfz = ofzBest(heldSet, 10);
         var newRows = newOfz.length ? newOfz.map(ofzNewRow).join('')
             : '<div class="pfrb-side-empty">список ОФЗ появится из раздела «Ребаланс»</div>';
-        return '<div class="pfrb-section pfrb-section--bond">' + head + income +
+        return '<div class="pfrb-section pfrb-section--bond">' + head +
             '<div class="pfrb-picker">' +
                 '<div class="pfrb-pcol"><div class="pfrb-pcol-h"><span>Мои облигации</span><i>факт · годовых</i></div><div class="pfrb-plist">' + myRows + '</div></div>' +
                 '<div class="pfrb-pcol"><div class="pfrb-pcol-h"><span>Рынок ОФЗ</span><i>доходность сейчас</i></div><div class="pfrb-plist">' + newRows + '</div></div>' +
             '</div>' +
             bondResultHtml(bonds, newOfz) +
-            '<div class="pfrb-cnote">Нажмите на облигацию — раскроются детали (объём, изм. цены, доходность к погашению). Выберите свою слева и рыночную справа — покажем выгоду обмена. <button class="pfrb-cnote-lnk" onclick="pfToggleMethod()">как считаем</button></div>' +
+            income +
         '</div>';
     }
     // ===== АКЦИИ: строка «моя акция» — кликабельна (выбор «продать»); ⚡ = темп ≥ порога =====
@@ -2825,7 +2821,6 @@
                 '<div class="pfrb-pcol"><div class="pfrb-pcol-h"><span>Рынок акций</span><i>потенциал</i></div><div class="pfrb-plist">' + mktRows + '</div></div>' +
             '</div>' +
             stockResultHtml(stocks, cands) +
-            '<div class="pfrb-cnote">Нажмите на акцию — раскроются детали (изм. цены, потенциал). Выберите свою слева и рыночную справа — покажем выгоду обмена. <button class="pfrb-cnote-lnk" onclick="pfToggleMethod()">как считаем</button></div>' +
         '</div>';
     }
 
@@ -2851,7 +2846,6 @@
                     rebalStockSection(p, stocks, c) +
                 '</div>' +
             '</div>' +
-            '<div class="pfo-foot"><button class="pfo-edit" onclick="pfCloseOverlay();pfToggleMenu(\'' + p.id + '\')">⚙ Редактировать состав</button></div>' +
         '</div>';
     }
     // короткая дата погашения ДД.ММ.ГГГГ из строки MOEX (YYYY-MM-DD)
