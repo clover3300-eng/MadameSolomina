@@ -43,57 +43,65 @@ body.dark-mode .pf-ring-val { color: #f4f8fd; }
 body.dark-mode .pfc-ringnum { color: #45525f; }
 
 /* ============================================================
-   СВОДКА ПО ВСЕМ ПОРТФЕЛЯМ — компактная полоса (только при 2+ портфелях).
-   Высота растёт с числом портфелей: лидерборд справа добавляет по строке.
+   СВОДКА ПО ВСЕМ ПОРТФЕЛЯМ (2+) — компактная тёмная карточка ПОД «Избранным»
+   в правой колонке: капитал, вложено/доход, распределение, мини-лидерборд
+   и кнопки быстрого перехода к таблицам «Рынок · Акции» / «Рынок · Облигации».
    ============================================================ */
-.pf-summary {
-    display: grid; grid-template-columns: minmax(0,0.9fr) minmax(0,1.25fr);
-    align-items: center; gap: 14px 26px; padding: 14px 24px;
+.pf-sumcard {
+    display: flex; flex-direction: column; gap: 0;
+    padding: 20px 20px 18px; border: 2px solid #131a2b; border-radius: 28px;
     background:
         radial-gradient(120% 140% at 100% 0%, rgba(91,124,153,0.20), transparent 55%),
-        linear-gradient(135deg, #0e141d 0%, #1e2a3a 100%);
-    color: #fff;
+        linear-gradient(150deg, #0e141d 0%, #1e2a3a 100%);
+    color: #fff; box-shadow: 0 16px 36px rgba(24,38,60,0.14);
 }
-body.dark-mode .pf-summary {
+body.dark-mode .pf-sumcard {
+    border-color: rgba(255,255,255,0.40);
     background:
         radial-gradient(120% 140% at 100% 0%, rgba(91,124,153,0.18), transparent 55%),
-        linear-gradient(135deg, #0a0f16 0%, #16202c 100%);
+        linear-gradient(150deg, #0a0f16 0%, #16202c 100%);
+    box-shadow: 0 16px 36px rgba(0,0,0,0.32);
 }
-.pfs-eyebrow { font-size: 10.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #8ea0b6; margin-bottom: 6px; }
-.pfs-capital { font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 700; letter-spacing: -0.025em; color: #fff; line-height: 1; }
-.pfs-sub { margin-top: 7px; font-size: 12.5px; font-weight: 600; color: #aebbcc; }
-.pfs-pnl.pos { color: #34d399; } .pfs-pnl.neg { color: #f87171; }
+.pfs2-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #8ea0b6; }
+.pfs2-capital { margin-top: 7px; font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 700; letter-spacing: -0.025em; color: #fff; line-height: 1; }
+.pfs2-sub { margin-top: 7px; display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; font-weight: 600; color: #aebbcc; }
+.pfs2-pnl { white-space: nowrap; }
+.pfs2-pnl.pos { color: #34d399; } .pfs2-pnl.neg { color: #f87171; }
 
-/* тонкая полоса распределения акции/облигации (вместо убранного кольца) */
-.pfs-alloc { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
-.pfs-alloc-bar { display: flex; height: 6px; border-radius: 99px; overflow: hidden; background: rgba(255,255,255,0.08); }
-.pfs-alloc-stock { background: #D97757; } .pfs-alloc-bond { background: #7B9BBF; }
-.pfs-alloc-leg { display: flex; gap: 16px; font-size: 11.5px; font-weight: 700; color: #aebbcc; }
-.pfs-alloc-leg span { display: inline-flex; align-items: center; gap: 6px; }
-.pfs-alloc-leg i { width: 9px; height: 9px; border-radius: 99px; }
-.pfs-alloc-leg i.stock { background: #D97757; } .pfs-alloc-leg i.bond { background: #7B9BBF; }
+/* тонкая полоса распределения акции/облигации */
+.pfs2-alloc { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.pfs2-alloc-bar { display: flex; height: 6px; border-radius: 99px; overflow: hidden; background: rgba(255,255,255,0.08); }
+.pfs2-alloc-stock { background: #D97757; } .pfs2-alloc-bond { background: #7B9BBF; }
+.pfs2-alloc-leg { display: flex; gap: 14px; font-size: 11px; font-weight: 700; color: #aebbcc; }
+.pfs2-alloc-leg span { display: inline-flex; align-items: center; gap: 6px; }
+.pfs2-alloc-leg i { width: 8px; height: 8px; border-radius: 99px; }
+.pfs2-alloc-leg i.stock { background: #D97757; } .pfs2-alloc-leg i.bond { background: #7B9BBF; }
 
-/* лидерборд: рейтинг портфелей с капиталом + диверг-баром от нуля (хорош для 1–4).
-   Бар капается по ширине (minmax max), чтобы в широкой полосе не «растягивался». */
-.pfs-board { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.pfs-board-h { font-size: 10px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: #8ea0b6; margin-bottom: 4px; }
-.pfs-lb-row { display: grid; grid-template-columns: 18px minmax(64px, 1fr) auto minmax(90px, 180px) 56px; align-items: center; gap: 12px; padding: 4px 0; }
-.pfs-lb-row + .pfs-lb-row { border-top: 1px solid rgba(255,255,255,0.05); }
-.pfs-lb-row.empty { opacity: 0.55; }
-.pfs-lb-rk { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 800; color: #6b7d92; text-align: center; }
-.pfs-lb-row.lead .pfs-lb-rk { color: #f5c451; }
-.pfs-lb-n { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 12.5px; font-weight: 700; color: #e7eef6; }
-.pfs-lb-n i { width: 9px; height: 9px; border-radius: 99px; flex-shrink: 0; }
-.pfs-lb-nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pfs-lb-cap { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 700; color: #9fb1c6; text-align: right; white-space: nowrap; }
-.pfs-lb-track { position: relative; height: 8px; border-radius: 99px; background: rgba(255,255,255,0.07); }
-.pfs-lb-zero { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: rgba(255,255,255,0.22); }
-.pfs-lb-fill { position: absolute; top: 0; bottom: 0; border-radius: 99px; }
-.pfs-lb-fill.pos { background: linear-gradient(90deg, rgba(52,211,153,0.5), #34d399); }
-.pfs-lb-fill.neg { background: linear-gradient(270deg, rgba(248,113,113,0.5), #f87171); }
-.pfs-lb-v { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px; text-align: right; }
-.pfs-lb-v.pos { color: #34d399; } .pfs-lb-v.neg { color: #f87171; } .pfs-lb-v.muted { color: #6b7d92; }
-@media (max-width: 880px) { .pf-summary { grid-template-columns: 1fr; } }
+/* мини-лидерборд: место · портфель · капитал · доходность */
+.pfs2-board { margin-top: 12px; padding-top: 4px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; }
+.pfs2-row { display: grid; grid-template-columns: 15px minmax(0,1fr) auto 52px; align-items: center; gap: 8px; padding: 6px 0; }
+.pfs2-row + .pfs2-row { border-top: 1px solid rgba(255,255,255,0.05); }
+.pfs2-row.empty { opacity: 0.55; }
+.pfs2-rk { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 800; color: #6b7d92; text-align: center; }
+.pfs2-row.lead .pfs2-rk { color: #f5c451; }
+.pfs2-n { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 12px; font-weight: 700; color: #e7eef6; }
+.pfs2-n i { width: 8px; height: 8px; border-radius: 99px; flex-shrink: 0; }
+.pfs2-nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pfs2-cap { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 700; color: #9fb1c6; text-align: right; white-space: nowrap; }
+.pfs2-v { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12px; text-align: right; white-space: nowrap; }
+.pfs2-v.pos { color: #34d399; } .pfs2-v.neg { color: #f87171; } .pfs2-v.muted { color: #6b7d92; }
+
+/* быстрый переход к терминалам: две кнопки в ряд */
+.pfs2-nav { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pfs2-go { display: inline-flex; align-items: center; gap: 7px; padding: 10px 12px; cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.14); border-radius: 12px; background: rgba(255,255,255,0.06);
+    font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 800; color: #e7eef6;
+    transition: background 0.15s, border-color 0.15s, color 0.15s; }
+.pfs2-go i { width: 8px; height: 8px; border-radius: 99px; flex-shrink: 0; }
+.pfs2-go i.stock { background: #D97757; } .pfs2-go i.bond { background: #7B9BBF; }
+.pfs2-go svg { width: 13px; height: 13px; margin-left: auto; opacity: 0.7; transition: transform 0.15s, opacity 0.15s; }
+.pfs2-go:hover { background: rgba(255,255,255,0.13); border-color: rgba(255,255,255,0.26); }
+.pfs2-go:hover svg { transform: translateX(2px); opacity: 1; }
 
 /* ============================================================
    СЕТКА КАРТОЧЕК (до 4 = 2×2)
@@ -107,20 +115,21 @@ body.dark-mode .pf-summary {
 @media (max-width: 1040px) { .pf-paycal--cell { height: auto; max-height: 654px; } }
 .pf-paycal--cell .pf-ch { flex-shrink: 0; }
 .pf-paycal--cell .pfpc-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+/* пока ниже есть ещё выплаты (класс has-more ставит pfPayCalScroll) — низ списка плавно
+   затухает вместо жёсткого среза последней видимой строки о край карточки */
+.pf-paycal--cell .pfpc-body.has-more {
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 36px), transparent 100%);
+            mask-image: linear-gradient(to bottom, #000 calc(100% - 36px), transparent 100%);
+}
 .pf-paycal--cell .pfpc-state { flex: 1 1 auto; display: flex; justify-content: center; }
 
 /* ============================================================
-   ЧЁТНОЕ ЧИСЛО ПОРТФЕЛЕЙ: сводка+карточки слева, «Избранное» — колонкой справа
-   (раньше избранное всегда уходило в самый низ страницы, под ВСЕ карточки).
-   Левая колонка = сводка + сетка карточек В ОДНОМ блоке (не отдельные grid-области) —
-   это нужно, чтобы sticky-сводка (см. ниже) имела «место для манёвра»: контейнер, внутри
-   которого она держится, должен быть выше её самой (иначе липнуть буквально некуда, sticky
-   молча не сработает). На узких экранах колонки складываются в исходном порядке
-   (сводка → карточки → избранное) — как было до этой правки.
+   Карточки портфелей — слева, «Избранное» + сводка (при 2+ портфелях) — колонкой
+   справа. На узких экранах колонки складываются: карточки → избранное → сводка.
    ============================================================ */
 .pf-topgrid { display: grid; grid-template-columns: minmax(0,1fr) minmax(280px,340px); align-items: start; gap: 16px; }
 .pf-topgrid-left { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-.pf-topgrid-fav { min-width: 0; }
+.pf-topgrid-fav { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
 @media (max-width: 1600px) { .pf-topgrid { grid-template-columns: 1fr; } }
 /* «Избранное» в узкой колонке (~280–340px, ЛЮБАЯ ширина окна) — заголовок/кнопки рассчитаны
    на полноширинную карточку (там же .pff-grid и по @media 620/560px), в колонке им тесно —
@@ -133,20 +142,6 @@ body.dark-mode .pf-summary {
 /* блок короче: список плиток скроллится ВНУТРИ карточки, а не тянет её на всю страницу */
 .pf-topgrid-fav .pff-body { padding: 4px 14px 16px; max-height: 486px; overflow-y: auto; scrollbar-width: thin; }
 .pf-topgrid-fav .pff-grid { grid-template-columns: 1fr; }
-
-/* сводка липнет к верху при скролле ПОВЕРХ карточек и сжимается ещё компактнее —
-   список карточек может быть длинным, а капитал/доходность полезно видеть
-   не прокручивая обратно наверх. z-index выше карточек и их оверлеев (график/состав),
-   но ниже открытого меню настроек (.pf-card.menu-open, z-index 50). */
-.pf-summary { position: sticky; top: 0; z-index: 40;
-    transition: padding 0.22s ease, box-shadow 0.22s ease; }
-.pf-summary.pf-stuck { padding: 10px 24px; box-shadow: 0 16px 32px rgba(0,0,0,0.28); }
-.pf-summary.pf-stuck .pfs-eyebrow,
-.pf-summary.pf-stuck .pfs-alloc,
-.pf-summary.pf-stuck .pfs-board-h { display: none; }
-.pf-summary.pf-stuck .pfs-capital { font-size: 20px; transition: font-size 0.22s ease; }
-.pf-summary.pf-stuck .pfs-sub { margin-top: 0; }
-.pf-summary.pf-stuck .pfs-lb-row { padding: 2px 0; }
 
 /* выровнять заголовок «Портфели» по вертикали (подзаголовок убран) */
 .pf-head { align-items: center; }
@@ -276,12 +271,13 @@ body.dark-mode .pfc-hero-inc.pos { color: #34d399; } body.dark-mode .pfc-hero-in
 .pfc-mchart-plot .pfcv-msg-t { font-size: 10.5px; }
 .pfc-mchart-plot .pfcv-msg-s { display: none; }
 .pfc-mchart-plot .pfcv-spin { width: 18px; height: 18px; }
-/* верхняя плашка мини-графика — ВСЕГДА в правом верхнем углу (не слева): сначала значение
-   IMOEX (если наложен), затем сам тумблер включения — обе части одной группы, чтобы не
-   раскидывать управление графиком по разным углам. */
-.pfc-mchart-top { position: absolute; top: 2px; right: 2px; z-index: 3; display: flex; align-items: center; gap: 6px; }
-.pfc-mchart-leg { display: flex; gap: 8px; min-height: 0; padding: 3px 7px; border-radius: 7px; background: rgba(255,255,255,0.78); }
-body.dark-mode .pfc-mchart-leg { color: #93a3b8; background: rgba(17,25,37,0.7); }
+/* верхняя плашка мини-графика — СВОЯ строка над полем графика (не поверх него):
+   раньше висела absolute в правом верхнем углу поля и перекрывала точки кривой —
+   тултип точки не открывался под кнопкой IMOEX. Справа значение IMOEX (если наложен)
+   и тумблер включения — одна группа, чтобы не раскидывать управление по углам. */
+.pfc-mchart-top { display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-height: 22px; }
+.pfc-mchart-leg { display: flex; gap: 8px; min-height: 0; }
+body.dark-mode .pfc-mchart-leg { color: #93a3b8; }
 .pfc-mchart-leg:empty { display: none; }
 .pfc-mchart-leg .pfcv-lgi { font-size: 10px; }
 /* тумблер IMOEX на мини-графике — включает/выключает кривую индекса (второстепенную —
@@ -363,6 +359,21 @@ body.dark-mode .pfc-det-i { background: rgba(255,255,255,0.045); }
 .pfc-det-l { font-family: 'Manrope', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: #94a3b8; }
 .pfc-det-v { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 800; color: #0f172a; }
 body.dark-mode .pfc-det-v { color: #eef3f9; }
+/* название актива в субданных — текст, а не число: обычный шрифт + перенос по словам */
+.pfc-det-i--nm { max-width: 100%; }
+.pfc-det-v--nm { font-family: 'Manrope', sans-serif; font-weight: 700; white-space: normal; overflow-wrap: anywhere; }
+/* строка-заголовок группы («Акции» / «Облигации») в мини-таблице оверлея «весь состав» */
+.pfc-mgrp td { padding: 12px 0 5px !important; border-bottom: 1px solid rgba(24,38,60,0.06); }
+body.dark-mode .pfc-mgrp td { border-bottom-color: rgba(255,255,255,0.06); }
+.pfc-mgrp-in { display: inline-flex; align-items: center; gap: 7px; font-family: 'Manrope', sans-serif;
+    font-size: 10px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: #7f8ea3; }
+body.dark-mode .pfc-mgrp-in { color: #93a3b8; }
+.pfc-mgrp-in b { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; font-weight: 700; color: #94a3b8;
+    background: rgba(24,38,60,0.06); padding: 1px 6px; border-radius: 99px; }
+body.dark-mode .pfc-mgrp-in b { background: rgba(255,255,255,0.07); }
+.pfc-mgrp-dot { width: 8px; height: 8px; border-radius: 99px; flex-shrink: 0; }
+.pfc-mgrp-dot.stock { background: #D97757; }
+.pfc-mgrp-dot.bond { background: #7B9BBF; }
 .pfc-mtk { display: inline-flex; align-items: baseline; gap: 4px; min-width: 0; font-weight: 700; }
 .pfc-mtk b { font-weight: 800; color: #0f172a; }
 body.dark-mode .pfc-mtk b { color: #eef3f9; }
@@ -972,9 +983,15 @@ body.dark-mode .pff-news { border-color: rgba(255,255,255,0.06); }
 .pff-news-inner { position: absolute; left: 0; right: 0; top: 8px; display: flex; flex-direction: column; gap: 2px; border: 1px solid transparent; border-top: none; border-radius: 0 0 13px 13px; transition: background 0.15s, box-shadow 0.15s, padding 0.15s, left 0.15s, right 0.15s, border-color 0.15s; }
 /* слой уезжает РОВНО на внешний край рамки плитки (-14 = -13 паддинг − 1 рамка): его боковые
    рамки ложатся точно поверх рамки плитки → единый контур без двойной линии и ступенек */
-.pff-tile:hover .pff-news-inner { left: -14px; right: -14px; padding: 2px 13px 12px; background: #fff; border-color: color-mix(in srgb, var(--pf-accent) 35%, rgba(24,38,60,0.1)); box-shadow: 0 16px 26px -18px rgba(24,38,60,0.5); z-index: 30; }
-body.dark-mode .pff-tile:hover .pff-news-inner { background: #1c2735; border-color: color-mix(in srgb, var(--pf-accent) 35%, rgba(255,255,255,0.12)); box-shadow: 0 16px 26px -18px rgba(0,0,0,0.6); }
-.pff-tile:hover .pff-news-t { -webkit-line-clamp: unset; }
+/* разворот полного заголовка на ховере — ТОЛЬКО когда новость загружена (.link):
+   для «загрузка новости…» / «нет свежих новостей» раскрывать нечего, а пустой
+   развёрнутый бокс давал вторую рамку впритык к границам плитки (задвоение линий) */
+.pff-tile:hover .pff-news.link .pff-news-inner { left: -14px; right: -14px; padding: 2px 13px 12px; background: #fff; border-color: color-mix(in srgb, var(--pf-accent) 35%, rgba(24,38,60,0.1)); box-shadow: 0 16px 26px -18px rgba(24,38,60,0.5); z-index: 30; }
+body.dark-mode .pff-tile:hover .pff-news.link .pff-news-inner { background: #1c2735; border-color: color-mix(in srgb, var(--pf-accent) 35%, rgba(255,255,255,0.12)); box-shadow: 0 16px 26px -18px rgba(0,0,0,0.6); }
+.pff-tile:hover .pff-news.link .pff-news-t { -webkit-line-clamp: unset; }
+/* и убираем линию-разделитель под шапкой плитки на время разворота — иначе она
+   висела бы отдельной чертой над развёрнутым боксом (то самое задвоение) */
+.pff-tile:hover .pff-news.link { border-top-color: transparent; }
 .pff-news.link:hover .pff-news-t { color: var(--pf-accent); }
 .pff-news-t { font-size: 12.5px; font-weight: 600; color: #2b3a4d; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; transition: color 0.12s; }
 body.dark-mode .pff-news-t { color: #d2ddea; }
@@ -996,9 +1013,21 @@ body.dark-mode .pff-empty-t { color: #f4f8fd; }
 .pff-info:hover { background: color-mix(in srgb, var(--pf-accent) 10%, #fff); border-color: color-mix(in srgb, var(--pf-accent) 32%, transparent); color: var(--pf-accent); }
 body.dark-mode .pff-info { border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #cdd8e6; }
 @media (max-width: 620px) { .pff-info span { display: none; } .pff-info { padding: 8px 10px; } }
-.pff-pot-l { cursor: help; }
-/* пустая новость — не раскрывать контур на ховере (убирает «двойную рамку») */
-.pff-tile:hover .pff-news.is-none .pff-news-inner { left: 0; right: 0; padding: 0; background: transparent; border-color: transparent; box-shadow: none; }
+/* кастомный поповер «что такое потенциал»: вместо нативного title (тот всплывает с
+   секундной задержкой и в системном стиле) — мгновенно, в тоне тултипов приложения */
+.pff-info-wrap { position: relative; display: inline-flex; }
+.pff-tipbox { position: absolute; top: calc(100% + 10px); right: 0; z-index: 90; width: 296px; box-sizing: border-box;
+    padding: 12px 14px; border-radius: 12px; background: #161e29; border: 1px solid rgba(255,255,255,0.12);
+    color: #dbe4ef; font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 500; line-height: 1.55; text-align: left;
+    box-shadow: 0 14px 34px rgba(0,0,0,0.38); pointer-events: none;
+    opacity: 0; visibility: hidden; transform: translateY(-4px);
+    transition: opacity 0.15s, transform 0.15s, visibility 0.15s; }
+.pff-tipbox::before { content: ''; position: absolute; top: -5px; right: 18px; width: 9px; height: 9px;
+    background: #161e29; border-left: 1px solid rgba(255,255,255,0.12); border-top: 1px solid rgba(255,255,255,0.12);
+    transform: rotate(45deg); }
+.pff-info-wrap:hover .pff-tipbox, .pff-info-wrap:focus-within .pff-tipbox { opacity: 1; visibility: visible; transform: none; }
+body.dark-mode .pff-tipbox { background: #0d141d; }
+body.dark-mode .pff-tipbox::before { background: #0d141d; }
 
 /* ============================================================
    КАЛЕНДАРЬ ВЫПЛАТ — ближайшие купоны по облигациям ВСЕХ портфелей сразу

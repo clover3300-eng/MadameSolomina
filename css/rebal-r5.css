@@ -8,7 +8,9 @@
 
 .pfo-card.rb5-card {
     width: min(1360px, 94vw);
-    background: rgba(255, 255, 255, 0.82);
+    /* почти непрозрачный белый: при 0.82 сквозь стекло просвечивал тёмный скрим
+       #pfOverlay — вся карточка отдавала грязно-серым вместо белого */
+    background: rgba(255, 255, 255, 0.97);
     backdrop-filter: blur(22px) saturate(180%);
     -webkit-backdrop-filter: blur(22px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.65);

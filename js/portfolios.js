@@ -790,9 +790,8 @@
             //  • 0 портфелей → слева просто пустое состояние;
             //  • 1 портфель → БЕЗ сводки: карточка портфеля первой ячейкой, «Календарь выплат»
             //    рядом (той же высоты) занимает вторую ячейку сетки;
-            //  • 2+ → сводка «Суммарный капитал» компактной полноширинной полосой над сеткой,
-            //    липнет к верху при скролле поверх контента (pf-stuck в CSS) — растёт по
-            //    высоте с числом портфелей (строки лидерборда);
+            //  • 2+ → сводка «Суммарный капитал» компактной карточкой в правой колонке
+            //    ПОД «Избранным» (см. summaryCardHtml);
             //  • нечётное число портфелей (1 или 3) → календарь в свободной ячейке сетки,
             //    чётное — отдельной полноширинной карточкой под сеткой.
             var n = store.items.length;
@@ -801,14 +800,16 @@
             var oddCal = n % 2 === 1;
             var payCal = paymentCalendarHtml(oddCal);
             var body;
-            var gridPart = (n >= 2 ? summaryHtml() : '') + gridHtml(oddCal ? payCal : '');
+            var gridPart = gridHtml(oddCal ? payCal : '');
             // Календарь и ставки — ВНУТРИ левой колонки (не отдельным блоком во всю ширину
             // страницы), чтобы их ширина совпадала с шириной карточек портфеля и они не
             // «наезжали» визуально на колонку «Избранное» сбоку.
             var left = gridPart + (oddCal ? '' : payCal) + rates;
+            // Сводка по всем портфелям (2+) — компактной карточкой ПОД «Избранным» в правой
+            // колонке (раньше — полноширинной sticky-полосой над сеткой, она мешала).
             body = '<div class="pf-topgrid">' +
                     '<div class="pf-topgrid-left">' + left + '</div>' +
-                    '<div class="pf-topgrid-fav">' + favStr + '</div>' +
+                    '<div class="pf-topgrid-fav">' + favStr + (n >= 2 ? summaryCardHtml() : '') + '</div>' +
                 '</div>';
             host.innerHTML =
                 liveBarHtml() +
@@ -817,7 +818,8 @@
             tickLive();
             renderFavNews();
             ensureClock();
-            ensurePfStickyScroll(); pfSyncStuck();
+            var payBody = document.querySelector('.pf-paycal--cell .pfpc-body');
+            if (payBody) window.pfPayCalScroll(payBody);   // начальное состояние затухания списка выплат
             ensureDefaultImoexFlags(); // флаг IMOEX по умолчанию — ДО первого loadPfChart (см. комментарий выше)
             repaintOpenCharts();   // если какой-то график раскрыт — дорисовываем после ре-рендера
             repaintMiniCharts();   // мини-график «портфель vs IMOEX» в каждой карточке
@@ -879,26 +881,6 @@
     }
     function ensureClock() { if (clockTimer) return; clockTimer = setInterval(function () {
         if (currentTab === 'portfolios' && dq('pfClock')) tickLive(); }, 1000); }
-
-    // ---- сводка «липнет» к верху при скролле и сжимается ----
-    // Скроллится #contentArea (не window, см. css/webapp-layout.css), поэтому слушаем именно его.
-    // Класс pf-stuck переключаем и по событию скролла, и сразу после каждого renderPortfolios —
-    // иначе после фонового ре-рендера (котировки/soft-rerender) класс слетает (innerHTML
-    // пересобирается с нуля), а новое событие scroll не придёт, пока пользователь не шевельнёт
-    // колесо — сводка «распухала» бы обратно, хотя страница всё ещё прокручена.
-    var pfScrollHooked = false;
-    function pfSyncStuck() {
-        var s = document.querySelector('.pf-summary');
-        if (!s) return;
-        var sc = dq('contentArea');
-        var st = sc ? sc.scrollTop : (window.scrollY || 0);
-        s.classList.toggle('pf-stuck', st > 12);
-    }
-    function ensurePfStickyScroll() {
-        if (pfScrollHooked) return; pfScrollHooked = true;
-        var sc = dq('contentArea') || window;
-        sc.addEventListener('scroll', function () { if (currentTab === 'portfolios') pfSyncStuck(); }, { passive: true });
-    }
 
     // ---- SVG-иконки ----
     var PLUS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
@@ -964,16 +946,14 @@
             '</div></div>';
     }
 
-    // ---- сводка по всем портфелям (только при 2+ портфелях, компактная sticky-полоса) ----
-    // Кольцо распределения убрано. Градация портфелей (2–4) показывается ранжированным
-    // лидербордом с диверг-барами от нуля: при 2 это «лучший / худший», при 3–4 —
-    // полноценный рейтинг. Распределение акции/облигации — тонкой полосой в шапке.
-    // Высота полосы растёт с числом портфелей (строки лидерборда добавляются по одной).
-    function summaryHtml() {
-        var inv = 0, val = 0, bondVal = 0, stockVal = 0;
+    // ---- сводка по всем портфелям (только при 2+ портфелях) — компактная карточка ПОД
+    // «Избранным» в правой колонке: капитал + вложено/доход + распределение + мини-лидерборд
+    // портфелей + кнопки быстрого перехода к таблицам «Рынок · Акции» и «Рынок · Облигации».
+    function summaryCardHtml() {
+        var inv = 0, val = 0, bondVal = 0;
         var rows = [];
         store.items.forEach(function (p) {
-            var c = calcPf(p); inv += c.invested; val += c.value; bondVal += c.bondVal; stockVal += c.stockVal;
+            var c = calcPf(p); inv += c.invested; val += c.value; bondVal += c.bondVal;
             rows.push({ name: p.name, color: p.color, pct: c.pnlPct, value: c.value, has: c.invested > 0 });
         });
         var pnl = val - inv, pnlPct = inv > 0 ? pnl / inv * 100 : 0;
@@ -981,40 +961,29 @@
 
         var ranked = rows.slice().sort(function (a, b) {
             if (a.has !== b.has) return a.has ? -1 : 1; return b.pct - a.pct; });
-        var maxAbs = 1;
-        ranked.forEach(function (r) { if (r.has) maxAbs = Math.max(maxAbs, Math.abs(r.pct)); });
         var hasMany = ranked.filter(function (r) { return r.has; }).length > 1;
         var board = ranked.map(function (r, i) {
-            var pos = r.has && r.pct >= 0;
-            var w = r.has ? clamp(Math.abs(r.pct) / maxAbs * 50, 3, 50) : 0;
-            var fill = r.has
-                ? '<span class="pfs-lb-fill ' + (pos ? 'pos' : 'neg') + '" style="width:' + w.toFixed(1) + '%;' + (pos ? 'left:50%' : 'right:50%') + '"></span>'
-                : '';
-            return '<div class="pfs-lb-row' + (i === 0 && r.has && hasMany ? ' lead' : '') + (r.has ? '' : ' empty') + '">' +
-                '<span class="pfs-lb-rk">' + (i + 1) + '</span>' +
-                '<span class="pfs-lb-n"><i style="background:' + colorVal(r.color) + '"></i><span class="pfs-lb-nm">' + esc(r.name) + '</span></span>' +
-                '<span class="pfs-lb-cap">' + (r.value > 0 ? fmtRub(r.value) : '—') + '</span>' +
-                '<span class="pfs-lb-track"><span class="pfs-lb-zero"></span>' + fill + '</span>' +
-                '<span class="pfs-lb-v ' + (r.has ? (r.pct >= 0 ? 'pos' : 'neg') : 'muted') + '">' + (r.has ? fmtPct(r.pct) : '—') + '</span>' +
+            return '<div class="pfs2-row' + (i === 0 && r.has && hasMany ? ' lead' : '') + (r.has ? '' : ' empty') + '">' +
+                '<span class="pfs2-rk">' + (i + 1) + '</span>' +
+                '<span class="pfs2-n"><i style="background:' + colorVal(r.color) + '"></i><span class="pfs2-nm">' + esc(r.name) + '</span></span>' +
+                '<span class="pfs2-cap">' + (r.value > 0 ? fmtRub(r.value) : '—') + '</span>' +
+                '<span class="pfs2-v ' + (r.has ? (r.pct >= 0 ? 'pos' : 'neg') : 'muted') + '">' + (r.has ? fmtPct(r.pct) : '—') + '</span>' +
             '</div>';
         }).join('');
 
-        var alloc = '<div class="pfs-alloc">' +
-            '<div class="pfs-alloc-bar"><span class="pfs-alloc-stock" style="width:' + stockPct.toFixed(1) + '%"></span><span class="pfs-alloc-bond" style="width:' + bondPct.toFixed(1) + '%"></span></div>' +
-            '<div class="pfs-alloc-leg"><span><i class="stock"></i>Акции ' + (100 - Math.round(bondPct)) + '%</span><span><i class="bond"></i>Облигации ' + Math.round(bondPct) + '%</span></div>' +
-        '</div>';
-
-        return '<div class="dash2-card pf-summary">' +
-            '<div class="pfs-main">' +
-                '<div class="pfs-eyebrow">Суммарный капитал · ' + store.items.length + ' ' + plural(store.items.length, 'портфель', 'портфеля', 'портфелей') + '</div>' +
-                '<div class="pfs-capital">' + fmtRub(val) + '</div>' +
-                '<div class="pfs-sub">Вложено ' + fmtRub(inv) + ' · ' +
-                    '<span class="pfs-pnl ' + (pnl >= 0 ? 'pos' : 'neg') + '">' + (pnl >= 0 ? '▲ ' : '▼ ') + fmtRub(Math.abs(pnl)) + ' (' + fmtPct(pnlPct) + ')</span></div>' +
-                alloc +
+        var GO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>';
+        return '<div class="dash2-card pf-sumcard">' +
+            '<div class="pfs2-eyebrow">Суммарный капитал · ' + store.items.length + ' ' + plural(store.items.length, 'портфель', 'портфеля', 'портфелей') + '</div>' +
+            '<div class="pfs2-capital">' + fmtRub(val) + '</div>' +
+            '<div class="pfs2-sub">Вложено ' + fmtRub(inv) + '<span class="pfs2-pnl ' + (pnl >= 0 ? 'pos' : 'neg') + '">' + (pnl >= 0 ? '▲ ' : '▼ ') + fmtRub(Math.abs(pnl)) + ' · ' + fmtPct(pnlPct) + '</span></div>' +
+            '<div class="pfs2-alloc">' +
+                '<div class="pfs2-alloc-bar"><span class="pfs2-alloc-stock" style="width:' + stockPct.toFixed(1) + '%"></span><span class="pfs2-alloc-bond" style="width:' + bondPct.toFixed(1) + '%"></span></div>' +
+                '<div class="pfs2-alloc-leg"><span><i class="stock"></i>Акции ' + (100 - Math.round(bondPct)) + '%</span><span><i class="bond"></i>Облигации ' + Math.round(bondPct) + '%</span></div>' +
             '</div>' +
-            '<div class="pfs-board">' +
-                '<div class="pfs-board-h">Доходность по портфелям</div>' +
-                board +
+            '<div class="pfs2-board">' + board + '</div>' +
+            '<div class="pfs2-nav">' +
+                '<button class="pfs2-go" onclick="switchTab(\'market-stocks\')"><i class="stock"></i>Акции' + GO_SVG + '</button>' +
+                '<button class="pfs2-go" onclick="switchTab(\'market-bonds\')"><i class="bond"></i>Облигации' + GO_SVG + '</button>' +
             '</div>' +
         '</div>';
     }
@@ -1152,7 +1121,7 @@
     // Главной): высота карточки не меняется, оверлей продолжает ТУ ЖЕ мини-таблицу (те же
     // строки pfMiniRowHtml), просто без ограничения в 4 штуки — а не отдельную широкую таблицу.
     function holdsOverlayHtml(p, c) {
-        var body = c.hs.length ? pfMiniTableHtml(c.hs, p.id)
+        var body = c.hs.length ? pfMiniTableGroupedHtml(c.hs, p.id)
             : '<div class="pfc-empty">Состав пуст</div>';
         return '<div class="pfc-holdsover">' +
             '<div class="pfc-holdsover-h">' +
@@ -1186,6 +1155,22 @@
         var body = list.map(function (x) { return pfMiniRowHtml(x, pid); }).join('');
         return '<div class="pfc-mtablewrap"><table class="pfc-mtable"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>';
     }
+    // та же мини-таблица, но состав разбит на группы «Акции» / «Облигации» (строка-заголовок
+    // группы внутри одной <table> — колонки групп остаются выровненными). Используется в
+    // оверлее «весь состав» (нижнее раскрытие карточки).
+    function pfMiniTableGroupedHtml(list, pid) {
+        var stocks = list.filter(function (x) { return x.h.type !== 'bond'; });
+        var bonds = list.filter(function (x) { return x.h.type === 'bond'; });
+        function grp(kind, label, arr) {
+            if (!arr.length) return '';
+            return '<tr class="pfc-mgrp"><td colspan="4"><span class="pfc-mgrp-in"><i class="pfc-mgrp-dot ' + kind + '"></i>' + label +
+                '<b>' + arr.length + '</b></span></td></tr>' +
+                arr.map(function (x) { return pfMiniRowHtml(x, pid); }).join('');
+        }
+        var head = '<tr><th class="pfc-mc-as">Актив</th><th>Кол-во</th><th>Сейчас</th><th>Изм.</th></tr>';
+        var body = grp('stock', 'Акции', stocks) + grp('bond', 'Облигации', bonds);
+        return '<div class="pfc-mtablewrap"><table class="pfc-mtable"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>';
+    }
     // Строка актива: тикер · тип · кол-во · цена · изменение. По КЛИКУ строка раскрывает
     // субданные (дата покупки, цена/средняя цена, НКД для облигаций) — отдельной строкой под ней.
     function pfMiniRowHtml(x, pid) {
@@ -1201,14 +1186,32 @@
             '</tr>';
         return open ? row + pfMiniDetailRowHtml(h, c) : row;
     }
-    // строка субданных под активом: дата покупки · цена/средняя цена · НКД (для облигаций)
+    // Полное название актива: своё имя (если отличается от тикера) → таблица акций →
+    // гугл-таблица облигаций (bonds из data.js; тикер портфеля может быть коротким ISIN).
+    function assetDisplayName(h) {
+        if (h.name && h.name !== h.ticker) return h.name;
+        if (h.type === 'bond') {
+            try {
+                if (typeof bonds !== 'undefined' && bonds) for (var i = 0; i < bonds.length; i++) {
+                    var t = bonds[i] && bonds[i].t;
+                    if (t && (t.indexOf(h.ticker) === 0 || String(h.ticker).indexOf(t) === 0)) return bonds[i].n || h.ticker;
+                }
+            } catch (e) {}
+        } else if (typeof window.stkFindCompany === 'function') {
+            var co = window.stkFindCompany(h.ticker);
+            if (co && co.name) return co.name;
+        }
+        return h.name || h.ticker;
+    }
+    // строка субданных под активом: название · дата покупки · цена/средняя цена · НКД (для облигаций)
     function pfMiniDetailRowHtml(h, c) {
         var isB = h.type === 'bond', multi = c.lotCount > 1;
         // при нескольких лотах показываем СРЕДНИЕ (взвешенные) дату и цену покупки, при одном — фактические
         var dateLbl = multi ? 'Средняя дата' : 'Куплен';
         var dateVal = multi ? ruDate(c.avgDate) : ruDate(c.firstDate);
         var priceLbl = multi ? 'Средняя цена · ' + c.lotCount + ' ' + plural(c.lotCount, 'лот', 'лота', 'лотов') : 'Цена покупки';
-        var det = '<span class="pfc-det-i"><span class="pfc-det-l">' + dateLbl + '</span><span class="pfc-det-v">' + dateVal + '</span></span>' +
+        var det = '<span class="pfc-det-i pfc-det-i--nm"><span class="pfc-det-l">Название</span><span class="pfc-det-v pfc-det-v--nm">' + esc(assetDisplayName(h)) + '</span></span>' +
+            '<span class="pfc-det-i"><span class="pfc-det-l">' + dateLbl + '</span><span class="pfc-det-v">' + dateVal + '</span></span>' +
             '<span class="pfc-det-i"><span class="pfc-det-l">' + priceLbl + '</span><span class="pfc-det-v">' + fmtPrice(c.buy) + '</span></span>' +
             (isB ? '<span class="pfc-det-i"><span class="pfc-det-l">' + (multi ? 'Средний НКД' : 'НКД при покупке') + '</span><span class="pfc-det-v">' + (c.nkd > 0 ? fmtPrice(c.nkd) : '0 ₽') + '</span></span>' : '');
         return '<tr class="pfc-mdet" data-hid="' + h.id + '"><td colspan="4"><div class="pfc-mdet-in">' + det + '</div></td></tr>';
@@ -1669,21 +1672,28 @@
     // пояснение «что такое потенциал» (показывается инфо-иконкой в карточке «Избранное»)
     var POT_TIP = 'Потенциал (ОДХС) — оценка недооценённости: на сколько процентов справедливая цена выше (или ниже) текущей. ' +
         'Плюс = есть запас роста, минус = бумага уже переоценена. Это ориентир, а не гарантия — рассчитан по модели, рынок может думать иначе.';
-    function favHtml() {
-        if (typeof window.stkEnsureLoaded === 'function') { try { window.stkEnsureLoaded(); } catch (e) {} }
-        var favs = favTickers().slice().sort(function (a, b) {
+    // Показанные плитки избранного: топ-12 по потенциалу. ЕДИНЫЙ список для favHtml и
+    // renderFavNews — раньше новости грузились для первых 12 тикеров ИЗ ХРАНИЛИЩА (без
+    // сортировки), и при >12 избранных часть видимых плиток (например SBER/VTBR) вечно
+    // висела в «загрузка новости…», т.к. их просто не было в очереди загрузки.
+    function favShown() {
+        return favTickers().slice().sort(function (a, b) {
             var pa = potentialOf(a), pb = potentialOf(b);
             if (pa == null && pb == null) return 0;
             if (pa == null) return 1; if (pb == null) return -1;
             return pb - pa;
-        });
+        }).slice(0, 12);
+    }
+    function favHtml() {
+        if (typeof window.stkEnsureLoaded === 'function') { try { window.stkEnsureLoaded(); } catch (e) {} }
+        var favs = favShown();
         var inner;
         if (!favs.length) {
             inner = '<div class="pff-empty"><div class="pff-empty-art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>' +
                 '<div class="pff-empty-t">Нет избранных акций</div>' +
                 '<div class="pff-empty-s">Отмечайте акции звёздочкой в разделе «Рынок · Акции» — здесь появятся их потенциал и свежие новости.</div></div>';
         } else {
-            inner = '<div class="pff-grid">' + favs.slice(0, 12).map(function (tk) {
+            inner = '<div class="pff-grid">' + favs.map(function (tk) {
                 var co = (typeof window.stkFindCompany === 'function') ? window.stkFindCompany(tk) : null;
                 var name = co && co.name ? co.name : tk;
                 var pot = potentialOf(tk);
@@ -1693,7 +1703,7 @@
                     '<div class="pff-thead">' +
                         '<button class="pff-id" onclick="pfOpenTicker(\'' + esc(tk) + '\')" title="Открыть карточку компании">' +
                             '<span class="pff-tk">' + esc(tk) + '</span><span class="pff-nm">' + esc(name) + '</span></button>' +
-                        '<div class="pff-pot-wrap"><span class="pff-pot-l" title="' + attr(POT_TIP) + '">потенциал</span>' + potHtml + '</div>' +
+                        '<div class="pff-pot-wrap"><span class="pff-pot-l">потенциал</span>' + potHtml + '</div>' +
                     '</div>' +
                     '<div class="pff-news" id="pf-news-' + esc(tk) + '"><div class="pff-news-inner"><span class="pff-news-load">загрузка новости…</span></div></div>' +
                 '</div>';
@@ -1702,7 +1712,10 @@
         return '<div class="dash2-card pf-card2 pf-fav">' +
             pfCardHead('', 'Избранное', 'потенциал и свежая новость по тикеру',
                 '<div class="pff-head-r">' +
-                    '<button class="pff-info" title="' + attr(POT_TIP) + '" aria-label="Что такое потенциал">' + INFO_SVG + '<span>Что такое потенциал?</span></button>' +
+                    // кастомный поповер вместо нативного title: тот всплывает с секундной
+                    // задержкой и в системном стиле — свой показывается мгновенно и в тоне приложения
+                    '<span class="pff-info-wrap"><button class="pff-info" type="button" aria-label="Что такое потенциал">' + INFO_SVG + '<span>Что такое потенциал?</span></button>' +
+                    '<span class="pff-tipbox" role="tooltip">' + esc(POT_TIP) + '</span></span>' +
                     '<button class="pf-ch-go" onclick="switchTab(\'market-stocks\')">Все акции ' +
                     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></button>' +
                 '</div>') +
@@ -1724,7 +1737,7 @@
     function fillNewsSlot(tk) {
         var slot = dq('pf-news-' + tk), e = newsHtmlCache[tk]; if (!slot || !e) return;
         slot.innerHTML = '<div class="pff-news-inner">' + e.html + '</div>';
-        slot.classList.toggle('is-none', !!e.none);   // нет новости → не раскрывать контур на ховере
+        slot.classList.toggle('is-none', !!e.none);   // маркер «новости нет» (разворот на ховере идёт только у .link)
         if (e.link) {
             slot.classList.add('link'); slot.setAttribute('role', 'link'); slot.title = 'Открыть новость';
             slot.onclick = function (ev) { ev.stopPropagation(); if (typeof openExternalLink === 'function') openExternalLink(e.link); else window.open(e.link, '_blank'); };
@@ -1742,8 +1755,9 @@
         }
     }
     function renderFavNews() {
-        var favs = favTickers(); if (!favs.length || typeof loadNewsForTicker !== 'function') return;
-        favs.slice(0, 12).forEach(function (tk) {
+        // тот же топ-12 по потенциалу, что и в favHtml — грузим новости ровно для видимых плиток
+        var favs = favShown(); if (!favs.length || typeof loadNewsForTicker !== 'function') return;
+        favs.forEach(function (tk) {
             if (newsHtmlCache[tk]) { fillNewsSlot(tk); return; }   // уже загружено → без сети
             if (!newsStarted[tk]) { newsStarted[tk] = true; newsQueue.push(tk); }
         });
@@ -1874,10 +1888,18 @@
             '<span>' + (payCalFull ? 'Свернуть' : 'Показать все · ' + evs.length) + '</span>' +
             '<svg class="pfpc-more-ch' + (payCalFull ? ' up' : '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>' : '';
         return '<div class="' + cls + '">' + pfCardHead('', 'Календарь выплат', 'ближайшие купоны по облигациям всех портфелей', soon) +
-            '<div class="pfpc-body"><div class="pfpc-list">' + shown.map(function (e) { return payCalRowHtml(e, multiPf); }).join('') + '</div>' + more + '</div>' +
+            '<div class="pfpc-body" onscroll="pfPayCalScroll(this)"><div class="pfpc-list">' + shown.map(function (e) { return payCalRowHtml(e, multiPf); }).join('') + '</div>' + more + '</div>' +
         '</div>';
     }
     window.pfTogglePayCal = function () { payCalFull = !payCalFull; renderPortfolios(); };
+    // В режиме ячейки список выплат скроллится внутри карточки — пока ниже есть ещё строки,
+    // низ списка плавно затухает (класс has-more + mask в CSS) вместо жёсткого среза
+    // последней видимой строки; доскроллили до конца — затухание снимается.
+    window.pfPayCalScroll = function (el) {
+        if (!el) return;
+        var more = el.scrollHeight - el.clientHeight - el.scrollTop > 4;
+        el.classList.toggle('has-more', more);
+    };
 
     // ====================================================================
     //  ДЕЙСТВИЯ (inline onclick)
