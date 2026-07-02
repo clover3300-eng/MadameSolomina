@@ -191,15 +191,28 @@ body.dark-mode .rb5-qty button:hover { border-color: #5a7cff; }
 body.dark-mode .rb5-qty input:focus { border-color: #5a7cff; box-shadow: 0 0 0 4px rgba(90, 124, 255, 0.18); }
 
 .rb5-note { font-size: 10.5px; line-height: 1.45; color: #9aa6b8; }
-.rb5-note.warn { color: #b07c22; }
+.rb5-note.warn {
+    display: flex; align-items: center; gap: 9px; padding: 10px 13px; border-radius: 13px;
+    font-size: 11.5px; font-weight: 600; line-height: 1.4;
+    color: #9a6a17; background: rgba(224, 158, 42, 0.12); border: 1px solid rgba(224, 158, 42, 0.22);
+}
+.rb5-note.warn svg { width: 16px; height: 16px; flex-shrink: 0; color: #e0a134; }
+body.dark-mode .rb5-note.warn { color: #f0c674; background: rgba(224, 158, 42, 0.14); border-color: rgba(224, 158, 42, 0.28); }
+body.dark-mode .rb5-note.warn svg { color: #f0c674; }
 
 /* итог до → после + вердикт */
-.rb5-vbox { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; border-top: 1px solid rgba(44, 54, 76, 0.08); }
+.rb5-vbox { display: flex; flex-direction: column; gap: 8px; padding-top: 10px; border-top: 1px solid rgba(44, 54, 76, 0.08); }
 body.dark-mode .rb5-vbox { border-top-color: rgba(255, 255, 255, 0.08); }
-.rb5-vrow { display: flex; align-items: baseline; gap: 8px; font-size: 12px; }
-.rb5-vrow > span { color: #7d8aa0; }
+.rb5-vrow { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.rb5-vrow > .rb5-vlabel { color: #7d8aa0; }
 .rb5-vrow > b { margin-left: auto; font-weight: 800; color: #2C364C; font-variant-numeric: tabular-nums; white-space: nowrap; }
 body.dark-mode .rb5-vrow > b { color: #F1F5F9; }
+.rb5-vico {
+    display: grid; place-items: center; flex-shrink: 0; width: 22px; height: 22px; border-radius: 8px;
+    color: #6b7890; background: rgba(44, 54, 76, 0.07);
+}
+.rb5-vico svg { width: 13px; height: 13px; }
+body.dark-mode .rb5-vico { color: #94a3b8; background: rgba(255, 255, 255, 0.08); }
 .rb5-dchip { font-size: 11px; font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .rb5-dchip.mut { color: #aab4c4; }
 body.dark-mode .rb5-dchip.pos { color: #34d399; }

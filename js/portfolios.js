@@ -2493,6 +2493,8 @@
 
     // ---------- рендер ----------
     var RB5_ARR = '<svg class="rb5-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>';
+    var UNITS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>';
+    var COIN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v10M9.5 9.3c0-1.3 1.1-2.1 2.5-2.1s2.5.8 2.5 1.9c0 2.6-5 1.4-5 4 0 1.1 1.1 1.9 2.5 1.9s2.5-.8 2.5-2.1"/></svg>';
     var RB5_CHECK = '<span class="rb5-chip">' + CHECK_SVG + '</span>';
     function rb5Head(p, c) {
         var taxes = [[0, '0%'], [0.13, '13%'], [0.15, '15%']];
@@ -2583,20 +2585,20 @@
                 '<small>' + (d.rest > 0.005 ? 'останется ' + fmtPrice(d.rest) : '&nbsp;') + '</small></div>' +
         '</div>';
         var note = d.suggest == null
-            ? '<div class="rb5-note warn">Новая бумага не дешевле вашей — купить больше штук, чем продали, не выйдет.</div>'
+            ? '<div class="rb5-note warn">' + CHART_WARN_SVG + '<span>Новая бумага не дешевле вашей — купить больше штук, чем продали, не выйдет.</span></div>'
             : (d.qty === d.suggest ? '<div class="rb5-note">Минимум для «купить больше, чем продал»: ' + d.suggest + ' шт.</div>' : '');
-        var rows = '<div class="rb5-vrow"><span>Облигаций всего</span><b>' + d.unitsBefore + ' → ' + d.unitsAfter + '</b>' +
+        var rows = '<div class="rb5-vrow"><span class="rb5-vico">' + UNITS_SVG + '</span><span class="rb5-vlabel">Облигаций всего</span><b>' + d.unitsBefore + ' → ' + d.unitsAfter + '</b>' +
             rb5Delta(d.unitsAfter - d.unitsBefore, ' шт', function (v) { return String(v); }) + '</div>';
         var verdict = '';
         if (d.dayBefore != null && d.dayAfter != null) {
             var per = perMul(), dd = (d.dayAfter - d.dayBefore) * per;
-            rows += '<div class="rb5-vrow"><span>Прибыль ' + perLbl() + '</span><b>' + f2(d.dayBefore * per) + ' → ' + f2(d.dayAfter * per) + ' ₽</b>' +
+            rows += '<div class="rb5-vrow"><span class="rb5-vico">' + COIN_SVG + '</span><span class="rb5-vlabel">Прибыль ' + perLbl() + '</span><b>' + f2(d.dayBefore * per) + ' → ' + f2(d.dayAfter * per) + ' ₽</b>' +
                 rb5Delta(dd, ' ₽', f2) + '</div>';
             verdict = dd > 0
                 ? '<div class="rb5-verdict ok">' + CHECK_SVG + '<span>Прибыль растёт — обмен имеет смысл, машина денег разгоняется</span></div>'
                 : '<div class="rb5-verdict bad">' + XMARK_SVG + '<span>Прибыль ' + perLbl() + ' снизится — такой обмен смысла не имеет</span></div>';
         } else {
-            rows += '<div class="rb5-vrow"><span>Прибыль ' + perLbl() + '</span><b>уточняем купоны…</b></div>';
+            rows += '<div class="rb5-vrow"><span class="rb5-vico">' + COIN_SVG + '</span><span class="rb5-vlabel">Прибыль ' + perLbl() + '</span><b>уточняем купоны…</b></div>';
         }
         return '<div class="rb5-deal">' + flow + note + '<div class="rb5-vbox">' + rows + '</div>' + verdict + '</div>';
     }
@@ -2663,7 +2665,7 @@
                 '<div class="rb5-deal-n">' + (d.buyQty > 0 ? d.buyQty + ' шт' : 'на ' + fmtRub(d.proceeds)) + '</div>' +
                 '<small>' + (d.priceN > 0 ? 'по ' + fmtPrice(d.priceN) : '&nbsp;') + '</small></div>' +
         '</div>';
-        var rows = '<div class="rb5-vrow"><span>Потенциал бумаги</span><b>' +
+        var rows = '<div class="rb5-vrow"><span class="rb5-vlabel">Потенциал бумаги</span><b>' +
             (d.potFrom == null ? '—' : fmtPct(d.potFrom)) + ' → ' + (d.potTo == null ? '—' : fmtPct(d.potTo)) + '</b>' +
             (d.potDelta != null ? rb5Delta(d.potDelta, ' п.п.', function (v) { return v.toFixed(1).replace('.', ','); }) : '') + '</div>';
         var verdict = d.potDelta == null ? ''
