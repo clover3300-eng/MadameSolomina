@@ -108,6 +108,10 @@ body.dark-mode .pf-sumcard {
    ============================================================ */
 .pf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: stretch; }
 @media (max-width: 1040px) { .pf-grid { grid-template-columns: 1fr; } }
+/* «узкий» вид карточки (без «Вложено») — 3 в ряд вместо 2 */
+.pf-grid--narrow { grid-template-columns: 1fr 1fr 1fr; }
+@media (max-width: 1520px) { .pf-grid--narrow { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 1040px) { .pf-grid--narrow { grid-template-columns: 1fr; } }
 
 /* «Календарь выплат» ячейкой сетки (нечётное число портфелей): высота = карточке
    портфеля, шапка фиксирована, список выплат скроллится внутри */
@@ -308,6 +312,8 @@ body.dark-mode .pfc-dist-lbl { color: #aab8c8; }
 
 /* ---- три карточки-стата: вложено / доход / доходность — одинаковые по ширине и шрифтам ---- */
 .pfc-stats2 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 12px 24px 0; }
+/* «узкий» вид карточки — без «Вложено», только доход/доходность */
+.pf-card--narrow .pfc-stats2 { grid-template-columns: 1fr 1fr; }
 .pfc-stat2 { min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: 8px 12px; background: rgba(24,38,60,0.035); border-radius: 11px; border: 1px solid rgba(24,38,60,0.06); }
 body.dark-mode .pfc-stat2 { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.06); }
 .pfc-stat2--yield.is-gn { background: color-mix(in srgb, var(--pf-gn) 8%, rgba(24,38,60,0.035)); border-color: color-mix(in srgb, var(--pf-gn) 18%, rgba(24,38,60,0.08)); }
@@ -643,7 +649,7 @@ body.dark-mode .pf-empty-t { color: #f4f8fd; }
 /* Оверлей настроек — перекрывает карточку целиком, тот же дизайн, что у карточки */
 .pfc-menu {
     position: absolute; inset: 0; z-index: 90;
-    display: flex; flex-direction: column; overflow: hidden;
+    display: flex; flex-direction: column; overflow: visible;
     background: #fff; border-radius: 26px;
     box-shadow: 0 0 0 1.5px var(--pf-accent), 0 24px 54px -20px rgba(24,38,60,0.34);
     animation: pfMenuIn 0.18s ease both;
@@ -1108,13 +1114,16 @@ body.dark-mode .pff-sort-b.on { background: rgba(255,255,255,0.14); color: #fff;
 .dlv-item.dlv-go { cursor: pointer; border-radius: 8px; margin: -3px -6px; padding: 3px 6px; transition: background 0.15s; }
 .dlv-item.dlv-go:hover { background: rgba(24,38,60,0.05); }
 body.dark-mode .dlv-item.dlv-go:hover { background: rgba(255,255,255,0.07); }
-.pfpc-soon { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; margin-left: auto; align-self: center; }
+/* сводка «за 30 дней» — горизонтальная плашка (не стопка мелкого текста в углу) */
+.pfpc-soon { display: flex; align-items: center; gap: 7px; margin-left: auto; align-self: center;
+    background: rgba(24,38,60,0.05); border-radius: 999px; padding: 6px 12px 6px 14px; white-space: nowrap; }
+body.dark-mode .pfpc-soon { background: rgba(255,255,255,0.06); }
 /* бейдж «N выплат» — виден в свёрнутом календаре (2/4 портфеля), чтобы не терять контекст */
-.pfpc-cnt { font-size: 10px; font-weight: 800; color: #46566e; background: rgba(24,38,60,0.06);
-    border-radius: 999px; padding: 2px 8px; margin-bottom: 2px; white-space: nowrap; }
-body.dark-mode .pfpc-cnt { color: #cdd8e6; background: rgba(255,255,255,0.08); }
-.pfpc-soon-l { font-size: 8.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8; }
-.pfpc-soon-v { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 800; color: #16a34a; }
+.pfpc-cnt { font-size: 10px; font-weight: 800; color: #46566e; background: rgba(24,38,60,0.08);
+    border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+body.dark-mode .pfpc-cnt { color: #cdd8e6; background: rgba(255,255,255,0.1); }
+.pfpc-soon-l { font-size: 10px; font-weight: 700; letter-spacing: 0.02em; color: #94a3b8; }
+.pfpc-soon-v { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 800; color: #16a34a; }
 body.dark-mode .pfpc-soon-v { color: #34d399; }
 .pfpc-body { padding: 4px 22px 20px; }
 .pfpc-list { display: flex; flex-direction: column; gap: 7px; }

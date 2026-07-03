@@ -13,6 +13,7 @@
     'use strict';
 
     var STORE_KEY = 'portfolios_v1';
+    var CARDVIEW_KEY = 'pf_cardview_v1';
     var MAX_CARDS = 4;
     var ISS = 'https://iss.moex.com/iss/';
     var SHARES_URL = ISS + 'engines/stock/markets/shares/boards/TQBR/securities.json' +
@@ -66,6 +67,10 @@
     }
     function saveStore() { try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch (e) {} }
     var store = loadStore();
+    // вид карточки портфеля: 'normal' (вложено · доход · доходность, 2 в ряд) |
+    // 'narrow' (доход · доходность, без «Вложено» — уже, 3 в ряд)
+    function loadCardView() { try { return localStorage.getItem(CARDVIEW_KEY) === 'narrow' ? 'narrow' : 'normal'; } catch (e) { return 'normal'; } }
+    var cardViewMode = loadCardView();
 
     function findPf(id) { for (var i = 0; i < store.items.length; i++) if (store.items[i].id === id) return store.items[i]; return null; }
     // скрытые портфели (p.hidden) не показываются в сетке карточек, но продолжают
@@ -1035,15 +1040,18 @@
             fav = getFavComposition(), mon = getMonthlyComposition();
         function oc(src, sub) { return "pfImport('" + src + "'," + (sub ? "'" + sub + "'" : 'null') + ',' + (pid ? "'" + pid + "'" : 'null') + ')'; }
         function posWord(n) { return n + ' ' + plural(n, 'позиция', 'позиции', 'позиций'); }
-        function card(src, sub, ico, title, emptyMsg, list) {
+        function card(src, sub, ico, title, emptyMsg, list, breakdown) {
             var n = list ? list.length : 0, avail = n > 0;
             return '<button class="pf-impitem' + (avail ? '' : ' off') + '"' + (avail ? '' : ' disabled') +
                 ' onclick="' + oc(src, sub) + '">' +
                 '<span class="pf-impico">' + ico + '</span>' +
-                '<span class="pf-impbody"><b>' + title + '</b><i>' + (avail ? posWord(n) : emptyMsg) + '</i></span>' +
+                '<span class="pf-impbody"><b>' + title + '</b><i>' + (avail ? (posWord(n) + (breakdown || '')) : emptyMsg) + '</i></span>' +
                 (avail ? '<span class="pf-impgo">' + CHEV_SVG + '</span>' : '') +
             '</button>';
         }
+        // явно показываем, что в расчёте учтены ТОЛЬКО акции и облигации (не весь состав калькулятора)
+        var calcBreakdown = (calcS && calcS.length) || (calcB && calcB.length)
+            ? ' · ' + (calcS ? calcS.length : 0) + ' акций, ' + (calcB ? calcB.length : 0) + ' облигаций' : '';
         var subRow = (calcS && calcS.length) || (calcB && calcB.length)
             ? '<div class="pf-impsubs">' +
                 ((calcS && calcS.length) ? '<button class="pf-impchip" onclick="' + oc('calc', 'stock') + '">Только акции · ' + calcS.length + '</button>' : '') +
@@ -1051,7 +1059,7 @@
             '</div>' : '';
         return '<div class="pf-impmenu' + (up ? ' up' : '') + '" id="pfImp-' + key + '">' +
             '<div class="pf-impgrp">Откуда перенести бумаги</div>' +
-            card('calc', 'all', IMPCALC_SVG, 'Из расчёта', 'нет сохранённого расчёта', calcAll) +
+            card('calc', 'all', IMPCALC_SVG, 'Из расчёта', 'нет сохранённого расчёта', calcAll, calcBreakdown) +
             subRow +
             card('fav', null, IMPFAV_SVG, 'Из избранного', 'нет отмеченных звёздочкой бумаг', fav) +
             card('monthly', null, IMPMON_SVG, 'Из ежемесячного дохода', 'нет облигаций в калькуляторе дохода', mon) +
@@ -1077,6 +1085,32 @@
         '</div>';
     }
 
+    var LAYOUT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="6" height="16" rx="1.6"/><rect x="9.5" y="4" width="6" height="16" rx="1.6"/><rect x="16.5" y="4" width="5" height="16" rx="1.6"/></svg>';
+    // ---- «Вид»: попап выбора вида карточки портфеля (обычный / узкий, 2 или 3 в ряд) ----
+    function viewWrapHtml() {
+        var narrow = cardViewMode === 'narrow';
+        function opt(mode, title, sub) {
+            var on = (mode === 'narrow') === narrow;
+            return '<button class="pf-impitem pf-eyeitem' + (on ? '' : ' off-eye') + '" onclick="pfSetCardView(\'' + mode + '\')">' +
+                '<span class="pf-impbody"><b>' + title + '</b><i>' + sub + '</i></span>' +
+                '<span class="pf-eyestate">' + (on ? CHECK_SVG : '') + '</span></button>';
+        }
+        return '<div class="pf-impwrap">' +
+            '<button class="d3-quick ghost pf-impbtn" onclick="pfToggleImp(event,\'view\')">' + LAYOUT_SVG + 'Вид' + CHEV_SVG + '</button>' +
+            '<div class="pf-impmenu" id="pfImp-view">' +
+                '<div class="pf-impgrp">Вид карточки портфеля</div>' +
+                opt('normal', 'Обычный', 'вложено · доход · доходность, 2 в ряд') +
+                opt('narrow', 'Узкий', 'доход · доходность, 3 в ряд') +
+            '</div></div>';
+    }
+    window.pfSetCardView = function (mode) {
+        if (mode !== 'normal' && mode !== 'narrow') return;
+        if (cardViewMode === mode) { closeImpMenus(); return; }
+        cardViewMode = mode;
+        try { localStorage.setItem(CARDVIEW_KEY, mode); } catch (e) {}
+        closeImpMenus(); renderPortfolios();
+    };
+
     // ---- заголовок ----
     function headHtml() {
         var title = store.items.length === 1 ? 'Портфель' : 'Портфели';
@@ -1085,6 +1119,7 @@
             '<div class="d3-head-actions">' +
                 '<button class="d3-quick" onclick="pfAddPortfolio()">' + PLUS_SVG + 'Добавить портфель</button>' +
                 (store.items.length > 1 ? eyeWrapHtml() : '') +
+                viewWrapHtml() +
                 backupWrapHtml() +
                 impWrapHtml('head', null) +
             '</div></div>';
@@ -1182,11 +1217,12 @@
         var vis = visibleItems();
         if (!vis.length) return allHiddenHtml();
         var items = vis.slice(0, MAX_CARDS);
+        var narrow = cardViewMode === 'narrow', cols = narrow ? 3 : 2;
         // Раскрытый график выезжает ОВЕРЛЕЕМ в сторону поверх контента (position:absolute) —
         // сетка НЕ перестраивается, карточка не смещается, соседи не «прыгают». Направление
-        // выезда зависит от колонки: правая колонка тянет влево (.col-right).
-        var cards = items.map(function (p, i) { return cardHtml(p, i, i % 2 === 1); }).join('');
-        return '<div class="pf-grid">' + cards + (calCell || '') + '</div>';
+        // выезда зависит от колонки: последняя в ряду тянет влево (.col-right).
+        var cards = items.map(function (p, i) { return cardHtml(p, i, i % cols === cols - 1, narrow); }).join('');
+        return '<div class="pf-grid' + (narrow ? ' pf-grid--narrow' : '') + '">' + cards + (calCell || '') + '</div>';
     }
     // все портфели скрыты — осознанное пустое состояние с кнопкой «показать все»
     function allHiddenHtml() {
@@ -1211,8 +1247,8 @@
 
     var GEAR_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="8" cy="7" r="2.5"/><circle cx="16" cy="17" r="2.5"/></svg>';
 
-    var CHART_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l5-5 4 3 7-7"/><path d="M16 8h4v4"/></svg>';
     var HOLDS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>';
+    var COPY_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
     var REBAL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 0 1 14.4-6.1L21 8"/><path d="M21 3.5V8.2h-4.7"/><path d="M20.5 12a8.5 8.5 0 0 1-14.4 6.1L3 16"/><path d="M3 20.5V15.8h4.7"/></svg>';
 
     // ---- мини-график доходности прямо в карточке (всегда виден, портфель vs IMOEX) ----
@@ -1233,7 +1269,7 @@
         });
     }
 
-    function cardHtml(p, idx, colRight) {
+    function cardHtml(p, idx, colRight, narrow) {
         var c = calcPf(p), ac = colorVal(p.color);
         var pnlCls = c.pnl >= 0 ? 'pos' : 'neg';
         var bench = pfBench(p);
@@ -1250,7 +1286,7 @@
         // но сразу с открытыми активами — отдельный оверлей «весь состав» больше не дублируется тут
         var assetsChartOn = chartOn && !!chartAssets[p.id];
 
-        return '<div class="dash2-card pf-card' + (openMenu === p.id ? ' menu-open' : '') + tall + (chartOn ? ' chart-open' : '') + (chartOn && chartAssets[p.id] ? ' assets-open' : '') + (holdsOn ? ' holds-open' : '') + (colRight ? ' col-right' : '') + '" style="--pf-accent:' + ac + '">' +
+        return '<div class="dash2-card pf-card' + (openMenu === p.id ? ' menu-open' : '') + tall + (chartOn ? ' chart-open' : '') + (chartOn && chartAssets[p.id] ? ' assets-open' : '') + (holdsOn ? ' holds-open' : '') + (colRight ? ' col-right' : '') + (narrow ? ' pf-card--narrow' : '') + '" style="--pf-accent:' + ac + '">' +
             '<div class="pfc-top">' +
                 '<div class="pfc-titles">' +
                     '<span class="pfc-name" onclick="pfNameEdit(\'' + p.id + '\',event)" title="Нажмите, чтобы переименовать"><span class="pfc-name-ink">' + esc(p.name) + '</span></span>' +
@@ -1258,8 +1294,9 @@
                 '<div class="pfc-ctrls">' +
                     '<span class="pfc-pnl ' + pnlCls + '">' + fmtPct(c.pnlPct) + '</span>' +
                     '<div class="pfc-acts">' +
-                        '<button class="pfc-act' + (chartOn ? ' on' : '') + '" onclick="pfToggleChart(\'' + p.id + '\')" aria-label="График доходности" title="' + (chartOn ? 'Свернуть график' : 'Сравнить с ' + bench.label)  + '">' + CHART_SVG + '</button>' +
+                        '<button class="pfc-act" onclick="pfCopyComposition(\'' + p.id + '\',event)" aria-label="Скопировать состав" title="Скопировать состав портфеля">' + COPY_SVG + '</button>' +
                         '<button class="pfc-act' + (assetsChartOn ? ' on' : '') + '" onclick="pfOpenChartAssets(\'' + p.id + '\')" aria-label="Полный состав" title="' + (assetsChartOn ? 'Свернуть' : 'Полный состав') + '">' + HOLDS_SVG + '</button>' +
+                        '<button class="pfc-act" onclick="pfToggleHidden(\'' + p.id + '\',event)" aria-label="Скрыть портфель" title="Скрыть карточку из сетки">' + EYEOFF_SVG + '</button>' +
                         '<button class="pfc-act' + (openMenu === p.id ? ' on' : '') + '" onclick="pfToggleMenu(\'' + p.id + '\')" aria-label="Настройки" title="Настройки">' + GEAR_SVG + '</button>' +
                     '</div>' +
                 '</div>' +
@@ -1287,7 +1324,7 @@
             '</div>' +
             cardRingHtml(c, idx) +
             '<div class="pfc-stats2">' +
-                '<div class="pfc-stat2"><span class="pfc-stat2-l">Вложено</span><span class="pfc-stat2-v">' + fmtRub(c.invested) + '</span></div>' +
+                (narrow ? '' : '<div class="pfc-stat2"><span class="pfc-stat2-l">Вложено</span><span class="pfc-stat2-v">' + fmtRub(c.invested) + '</span></div>') +
                 '<div class="pfc-stat2 pfc-stat2--inc"><span class="pfc-stat2-l">Доход</span><span class="pfc-stat2-v ' + pnlCls + '">' + fmtRub(c.pnl) + '</span></div>' +
                 '<div class="pfc-stat2 pfc-stat2--yield is-' + (c.annual >= 0 ? 'gn' : 'rd') + '" title="Доходность в пересчёте на год (может отличаться от «Дохода» и графика — те показывают фактическое изменение за весь срок, а не годовые)"><span class="pfc-stat2-l">Доходность</span><span class="pfc-stat2-v ' + (c.annual >= 0 ? 'pos' : 'neg') + '">' + fmtPct(c.annual) + '</span></div>' +
             '</div>' +
@@ -1992,7 +2029,7 @@
         slot.innerHTML = '<div class="pff-news-inner">' + e.html + '</div>';
         slot.classList.toggle('is-none', !!e.none);   // маркер «новости нет» (разворот на ховере идёт только у .link)
         if (e.link) {
-            slot.classList.add('link'); slot.setAttribute('role', 'link'); slot.title = 'Открыть новость';
+            slot.classList.add('link'); slot.setAttribute('role', 'link');
             slot.onclick = function (ev) { ev.stopPropagation(); if (typeof openExternalLink === 'function') openExternalLink(e.link); else window.open(e.link, '_blank'); };
         } else { slot.classList.remove('link'); slot.onclick = null; }
     }
@@ -2196,7 +2233,7 @@
         // сохраняет контекст «сколько ещё впереди», не разворачивая список
         var cntBadge = (collapseNext && !payCalFull && soonEvs.length > shown.length)
             ? '<span class="pfpc-cnt">' + soonEvs.length + ' ' + plural(soonEvs.length, 'выплата', 'выплаты', 'выплат') + '</span>' : '';
-        var soon = '<div class="pfpc-soon">' + cntBadge + '<span class="pfpc-soon-l">за 30 дней</span><span class="pfpc-soon-v">+' + fmtRub(soonSum) + '</span></div>';
+        var soon = '<div class="pfpc-soon"><span class="pfpc-soon-l">За 30 дней</span>' + cntBadge + '<span class="pfpc-soon-v">+' + fmtRub(soonSum) + '</span></div>';
         // при раскрытии shown === evs, поэтому evs.length > shown.length перестаёт быть true —
         // в развёрнутом виде кнопку показываем принудительно (иначе нельзя свернуть обратно)
         var more = (!asCell && (payCalFull || evs.length > shown.length)) ? '<button class="pfpc-more' + (payCalFull ? ' on' : '') + '" onclick="pfTogglePayCal()">' +
@@ -2241,6 +2278,37 @@
     window.pfAddPortfolio = function () {
         if (store.items.length >= MAX_CARDS) { toast('Максимум ' + MAX_CARDS + ' портфеля на странице', true); return; }
         var p = makePortfolio(); store.items.push(p); saveStore(); openMenu = p.id; renderPortfolios();
+    };
+    // Скопировать состав портфеля текстом (тикер · тип · кол-во · цена покупки · дата) — удобно
+    // вставить в заметки/другой сервис. Использует те же агрегированные лоты, что и мини-таблица.
+    function copyTextForPortfolio(p) {
+        var c = calcPf(p);
+        if (!c.hs.length) return '';
+        var lines = c.hs.map(function (x) {
+            var h = x.h, cc = x.c, isB = h.type === 'bond';
+            return h.ticker + '\t' + (isB ? 'облигация' : 'акция') + '\t' + (cc.qty || 0) + ' шт' +
+                '\t' + fmtPrice(cc.buy) + '\t' + ruDate(cc.firstDate);
+        });
+        return p.name + '\n' + lines.join('\n');
+    }
+    window.pfCopyComposition = function (pid, ev) {
+        if (ev) ev.stopPropagation();
+        var p = findPf(pid); if (!p) return;
+        var text = copyTextForPortfolio(p);
+        if (!text) { toast('Состав портфеля пуст', true); return; }
+        function ok() { toast('Состав «' + p.name + '» скопирован'); }
+        function fallback() {
+            try {
+                var ta = document.createElement('textarea');
+                ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                document.body.appendChild(ta); ta.focus(); ta.select();
+                document.execCommand('copy'); document.body.removeChild(ta); ok();
+            } catch (e) { toast('Не удалось скопировать', true); }
+        }
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(ok, fallback);
+            else fallback();
+        } catch (e) { fallback(); }
     };
     // Скрыть/показать карточку. Попап «Видимость» пересоздаётся рендером — если он был
     // открыт, возвращаем ему .open, чтобы можно было переключить несколько портфелей подряд.

@@ -76,6 +76,25 @@
     }
 }
 
+/* Портфели: колонка «Избранное» (.pf-topgrid) и «узкая» сетка карточек (.pf-grid--narrow)
+   схлопываются по @media max-width — а он меряет РЕАЛЬНЫЙ viewport, не сжатый zoom:0.85
+   layout. Из-за этого на обычном ноутбучном экране (100% нативного зума браузера)
+   колонки схлопывались раньше, чем реально не хватало места — помогало только вручную
+   зумить страницу браузером (Cmd+-), т.к. это меняет РЕАЛЬНЫЙ viewport в CSS-px.
+   Компенсация: пороги из portfolios.css умножены на 0.85 и восстановлены здесь. */
+@media (min-width: 1024px) and (max-width: 1600px) {
+    .pf-topgrid { grid-template-columns: minmax(0,1fr) minmax(280px,340px) !important; }
+}
+@media (min-width: 1024px) and (max-width: 1360px) {
+    .pf-topgrid { grid-template-columns: 1fr !important; }
+}
+@media (min-width: 1024px) and (max-width: 1520px) {
+    .pf-grid--narrow { grid-template-columns: 1fr 1fr 1fr !important; }
+}
+@media (min-width: 1024px) and (max-width: 1292px) {
+    .pf-grid--narrow { grid-template-columns: 1fr 1fr !important; }
+}
+
 /* PWA standalone на десктопе */
 @media all and (display-mode: standalone) and (min-width: 1024px) {
     #appShell {
