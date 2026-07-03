@@ -1911,9 +1911,13 @@
         } else {
             shown = (payCalFull || asCell) ? evs : evs.slice(0, LIMIT);
         }
-        var soonSum = evs.filter(function (e) { return (e.date.getTime() - Date.now()) <= 30 * 86400000; })
-            .reduce(function (s, e) { return s + e.amount; }, 0);
-        var soon = '<div class="pfpc-soon"><span class="pfpc-soon-l">за 30 дней</span><span class="pfpc-soon-v">+' + fmtRub(soonSum) + '</span></div>';
+        var soonEvs = evs.filter(function (e) { return (e.date.getTime() - Date.now()) <= 30 * 86400000; });
+        var soonSum = soonEvs.reduce(function (s, e) { return s + e.amount; }, 0);
+        // в свёрнутом виде показана только ближайшая дата — бейдж с числом выплат за 30 дней
+        // сохраняет контекст «сколько ещё впереди», не разворачивая список
+        var cntBadge = (collapseNext && !payCalFull && soonEvs.length > shown.length)
+            ? '<span class="pfpc-cnt">' + soonEvs.length + ' ' + plural(soonEvs.length, 'выплата', 'выплаты', 'выплат') + '</span>' : '';
+        var soon = '<div class="pfpc-soon">' + cntBadge + '<span class="pfpc-soon-l">за 30 дней</span><span class="pfpc-soon-v">+' + fmtRub(soonSum) + '</span></div>';
         var more = (!asCell && evs.length > shown.length) ? '<button class="pfpc-more' + (payCalFull ? ' on' : '') + '" onclick="pfTogglePayCal()">' +
             '<span>' + (payCalFull ? 'Свернуть' : 'Показать все · ' + evs.length) + '</span>' +
             '<svg class="pfpc-more-ch' + (payCalFull ? ' up' : '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>' : '';
@@ -2560,17 +2564,21 @@
             '<button type="button" onclick="pfRbQty(\'' + kind + '\',' + (qty + 1) + ',' + max + ')" aria-label="Больше">+</button>' +
             '<span>из ' + max + ' шт</span></div>';
     }
-    // «Машина денег»: суммарная прибыль по облигациям за выбранный период + переключатель
+    // «Машина денег»: суммарная прибыль по облигациям за выбранный период + переключатель.
+    // Компактный виджет-строка (не полноразмерная карточка) — чтобы не спорить за внимание
+    // с таблицей обмена ниже: значение слева, период и пояснение справа.
     function machineHtml(t) {
         var segs = [['day', 'день'], ['week', 'неделя'], ['month', 'месяц']];
         return '<div class="rb5-machine">' +
-            '<div class="rb5-mch-top"><span class="rb5-label">Прибыль по облигациям</span>' +
+            '<div class="rb5-mch-info"><span class="rb5-label">Прибыль по облигациям</span>' +
+                '<div class="rb5-mch-val"><b>' + (t.pending ? '…' : f2(t.total * perMul())) + '</b><span>₽ ' + perLbl() + '</span></div></div>' +
+            '<div class="rb5-mch-side">' +
                 '<div class="rb5-seg">' + segs.map(function (s) {
                     return '<button class="rb5-seg-b' + (rebalPeriod === s[0] ? ' on' : '') + '" onclick="pfSetRebalPeriod(\'' + s[0] + '\')">' + s[1] + '</button>';
-                }).join('') + '</div></div>' +
-            '<div class="rb5-mch-val"><b>' + (t.pending ? '…' : f2(t.total * perMul())) + '</b><span>₽ ' + perLbl() + '</span></div>' +
-            '<div class="rb5-mch-sub">' + (t.pending ? 'уточняем купоны на Мосбирже…'
-                : t.units + ' ' + plural(t.units, 'облигация', 'облигации', 'облигаций') + ' · купоны + номинал + НКД − затраты, на дни до погашения') + '</div>' +
+                }).join('') + '</div>' +
+                '<div class="rb5-mch-sub">' + (t.pending ? 'уточняем купоны на Мосбирже…'
+                    : t.units + ' ' + plural(t.units, 'облигация', 'облигации', 'облигаций') + ' · купоны + номинал + НКД − затраты') + '</div>' +
+            '</div>' +
         '</div>';
     }
     // строка моей облигации: имя + кол-во/погашение | доходность годовых из портфеля
@@ -2641,17 +2649,21 @@
             return (eb ? eb.annual : -1e9) - (ea ? ea.annual : -1e9);
         });
         var heldSet = {}; bs.forEach(function (x) { heldSet[isinKey(x.h.ticker)] = 1; });
-        // бумаги, уже лежащие в портфеле (в т.ч. выбранная слева на продажу), не должны
-        // попадать в список «Купить» справа — иначе можно «обменять» бумагу саму на себя
-        // (тот же баг был исправлен для акций через stockCands/heldSet выше)
-        var cands = ofzMarket().map(ofzCand).filter(function (cd) { return !heldSet[isinKey(cd.t)]; }).sort(function (a, b) {
+        // Список «Купить» показывается полностью (свои бумаги — с бейджем «в портфеле»),
+        // но когда слева выбрана бумага на продажу — именно она исчезает из кандидатов,
+        // иначе можно «обменять» бумагу саму на себя.
+        var sellSel = null; bs.forEach(function (x) { if (x.h.id === rebalPick.bond.sell) sellSel = isinKey(x.h.ticker); });
+        var cands = ofzMarket().map(ofzCand).filter(function (cd) { return !sellSel || isinKey(cd.t) !== sellSel; }).sort(function (a, b) {
             return (isFinite(b.sheetYield) ? b.sheetYield : -1e9) - (isFinite(a.sheetYield) ? a.sheetYield : -1e9);
         });
+        // выбранный ранее кандидат пропал из списка (его же выбрали на продажу) — сброс выбора
+        if (rebalPick.bond.buy && sellSel && isinKey(rebalPick.bond.buy) === sellSel) rebalPick.bond.buy = null;
         var candRows = cands.length ? cands.map(function (cd) { return ofzRowHtml(cd, heldSet); }).join('')
             : '<div class="rb5-list-empty">Список ОФЗ появится из гугл-таблицы (раздел «Ребаланс»)</div>';
         return '<div class="rb5-col">' + head + machineHtml(bondsTotal(bs)) +
             '<div class="rb5-duo">' +
                 '<div class="rb5-list"><div class="rb5-list-h"><b>Продать</b><i>мои · годовых</i></div><div class="rb5-list-scroll">' + mine.map(bondRowHtml).join('') + '</div></div>' +
+                '<div class="rb5-duo-arr">' + RB5_ARR + '</div>' +
                 '<div class="rb5-list rb5-list--buy"><div class="rb5-list-h"><b>Купить</b><i>таблица ОФЗ</i></div><div class="rb5-list-scroll">' + candRows + '</div></div>' +
             '</div>' +
             bondDealHtml(mine, cands) +
@@ -2720,6 +2732,7 @@
         return '<div class="rb5-col">' + head +
             '<div class="rb5-duo">' +
                 '<div class="rb5-list"><div class="rb5-list-h"><b>Продать</b><i>мои · динамика</i></div><div class="rb5-list-scroll">' + mine.map(stockRowHtml).join('') + '</div></div>' +
+                '<div class="rb5-duo-arr">' + RB5_ARR + '</div>' +
                 '<div class="rb5-list rb5-list--buy"><div class="rb5-list-h"><b>Купить</b><i>потенциальные' + (ech ? ' · эшелон ' + ROMAN[ech - 1] : '') + '</i></div><div class="rb5-list-scroll">' + candRows + '</div></div>' +
             '</div>' +
             stockDealHtml(mine, cands) +

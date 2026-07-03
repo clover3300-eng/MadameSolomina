@@ -1059,6 +1059,10 @@ body.dark-mode .pff-tipbox::before { background: #0d141d; }
    ============================================================ */
 .pf-paycal { --pf-accent: #3b82f6; }
 .pfpc-soon { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; margin-left: auto; align-self: center; }
+/* бейдж «N выплат» — виден в свёрнутом календаре (2/4 портфеля), чтобы не терять контекст */
+.pfpc-cnt { font-size: 10px; font-weight: 800; color: #46566e; background: rgba(24,38,60,0.06);
+    border-radius: 999px; padding: 2px 8px; margin-bottom: 2px; white-space: nowrap; }
+body.dark-mode .pfpc-cnt { color: #cdd8e6; background: rgba(255,255,255,0.08); }
 .pfpc-soon-l { font-size: 8.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8; }
 .pfpc-soon-v { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 800; color: #16a34a; }
 body.dark-mode .pfpc-soon-v { color: #34d399; }
