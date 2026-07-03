@@ -109,20 +109,46 @@ body.dark-mode .rb5-mch-val b { color: #F1F5F9; }
 .rb5-mch-val span { font-size: 11.5px; font-weight: 700; color: #7d8aa0; }
 .rb5-machine--head .rb5-mch-val b { font-size: 17px; }
 .rb5-machine--head .rb5-mch-val span { font-size: 10px; white-space: nowrap; }
+/* цветное значение (виджет «потенциал портфеля» для чисто акционного состава) */
+.rb5-mch-val b.pos { color: #1f9d63; }
+.rb5-mch-val b.neg { color: #d23b4e; }
+body.dark-mode .rb5-mch-val b.pos { color: #34d399; }
+body.dark-mode .rb5-mch-val b.neg { color: #f87171; }
+/* дельта после применённого обмена: «машина денег» наглядно показывает сдвиг прибыли */
+.rb5-mch-delta {
+    font-size: 11px; font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums;
+    padding: 1px 7px; border-radius: 999px; animation: rb5DeltaIn 0.45s ease;
+}
+.rb5-mch-delta.pos { color: #1f9d63; background: rgba(31, 157, 99, 0.12); }
+.rb5-mch-delta.neg { color: #d23b4e; background: rgba(210, 59, 78, 0.10); }
+body.dark-mode .rb5-mch-delta.pos { color: #34d399; background: rgba(52, 211, 153, 0.14); }
+body.dark-mode .rb5-mch-delta.neg { color: #f87171; background: rgba(248, 113, 113, 0.14); }
+@keyframes rb5DeltaIn { from { opacity: 0; transform: translateY(3px) scale(0.9); } }
+/* стойкая подсветка виджета после применённого обмена: зелёная — прибыль выросла,
+   красная — просела; живёт до закрытия карточки и не сбрасывается перерисовками */
+.rb5-machine--head.up { border-color: rgba(31, 157, 99, 0.45); box-shadow: 0 0 0 4px rgba(31, 157, 99, 0.10); }
+.rb5-machine--head.down { border-color: rgba(210, 59, 78, 0.40); box-shadow: 0 0 0 4px rgba(210, 59, 78, 0.08); }
+body.dark-mode .rb5-machine--head.up { border-color: rgba(52, 211, 153, 0.45); box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.10); }
+body.dark-mode .rb5-machine--head.down { border-color: rgba(248, 113, 113, 0.40); box-shadow: 0 0 0 4px rgba(248, 113, 113, 0.08); }
 
 /* ---- пара списков «продать | купить» ---- */
-/* стрелка между колонками делает механику обмена «А → Б» читаемой с первого взгляда */
+/* бейдж-«обмен» между колонками: тёмный градиентный кружок со встречными стрелками —
+   механика «продал → купил» читается с первого взгляда */
 .rb5-duo { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: start; }
-.rb5-duo-arr { display: flex; align-items: center; justify-content: center; align-self: center;
-    width: 26px; height: 26px; border-radius: 50%; background: rgba(44,54,76,0.06); color: #94A3B8; }
-.rb5-duo-arr .rb5-arr { width: 14px; height: 14px; }
-body.dark-mode .rb5-duo-arr { background: rgba(255,255,255,0.08); }
+.rb5-duo-arr {
+    display: flex; align-items: center; justify-content: center; align-self: center;
+    width: 36px; height: 36px; border-radius: 50%; color: #fff;
+    background: linear-gradient(135deg, #2C364C, #161B27);
+    box-shadow: 0 10px 22px -8px rgba(22, 27, 39, 0.55), 0 0 0 5px rgba(44, 54, 76, 0.06);
+}
+.rb5-duo-arr .rb5-swap { width: 17px; height: 17px; }
+body.dark-mode .rb5-duo-arr {
+    background: linear-gradient(135deg, #5a7cff, #3d5df0);
+    box-shadow: 0 10px 22px -8px rgba(0, 0, 0, 0.6), 0 0 0 5px rgba(255, 255, 255, 0.05);
+}
 @media (max-width: 720px) {
     .rb5-duo { grid-template-columns: 1fr; }
-    /* сам контейнер не вращаем — вложенную .rb5-arr уже поворачивает вниз общее
-       мобильное правило (см. блок узких экранов ниже), иначе выходит двойной поворот */
     .rb5-duo-arr { justify-self: center; }
-    .rb5-duo-arr .rb5-arr { align-self: center; margin-left: 0; }
 }
 .rb5-list { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
 .rb5-list-h { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 14px 18px 10px; }
@@ -180,17 +206,26 @@ body.dark-mode .rb5-info:hover { background: rgba(255, 255, 255, 0.10); color: #
 body.dark-mode .rb5-info.on { background: #5a7cff; color: #fff; }
 @media (hover: none) { .rb5-info { opacity: 0.55; } }
 
-/* панель деталей под строкой */
+/* панель деталей под строкой: сетка мини-чипов «подпись/значение» на тонированной подложке;
+   анимация раскрытия — только у панели, открытой последним кликом (.anim из rb5Det) */
 .rb5-det {
-    padding: 10px 18px 12px; border-top: 1px dashed rgba(44, 54, 76, 0.12);
-    background: rgba(44, 54, 76, 0.035);
-    display: flex; flex-direction: column; gap: 4px;
+    padding: 10px 14px 12px; border-top: 1px dashed rgba(44, 54, 76, 0.12);
+    background: linear-gradient(180deg, rgba(44, 54, 76, 0.05), rgba(44, 54, 76, 0.015));
 }
-body.dark-mode .rb5-det { border-top-color: rgba(255, 255, 255, 0.10); background: rgba(255, 255, 255, 0.04); }
-.rb5-det-r { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 10.5px; }
-.rb5-det-r span { color: #94A3B8; flex-shrink: 0; }
-.rb5-det-r b { font-weight: 700; color: #2C364C; font-variant-numeric: tabular-nums; text-align: right; }
-body.dark-mode .rb5-det-r b { color: #e2e8f0; }
+.rb5-det.anim { animation: rb5DetIn 0.2s ease; }
+@keyframes rb5DetIn { from { opacity: 0; transform: translateY(-4px); } }
+body.dark-mode .rb5-det { border-top-color: rgba(255, 255, 255, 0.10); background: rgba(255, 255, 255, 0.03); }
+.rb5-det-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.rb5-det-i {
+    display: flex; flex-direction: column; gap: 2px; min-width: 0;
+    padding: 7px 11px 8px; border-radius: 11px;
+    background: rgba(255, 255, 255, 0.8); border: 1px solid rgba(44, 54, 76, 0.08);
+    box-shadow: 0 1px 3px rgba(44, 54, 76, 0.04);
+}
+.rb5-det-i span { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: #94A3B8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rb5-det-i b { font-size: 11.5px; font-weight: 700; color: #2C364C; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.dark-mode .rb5-det-i { background: rgba(15, 23, 42, 0.55); border-color: rgba(255, 255, 255, 0.08); box-shadow: none; }
+body.dark-mode .rb5-det-i b { color: #e2e8f0; }
 .rb5-own { font-style: normal; font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7890; background: rgba(44, 54, 76, 0.08); padding: 1px 6px; border-radius: 999px; flex-shrink: 0; }
 body.dark-mode .rb5-own { color: #94a3b8; background: rgba(255, 255, 255, 0.08); }
 .rb5-tier { font-size: 8.5px; font-weight: 800; padding: 1px 6px; border-radius: 6px; flex-shrink: 0; letter-spacing: 0.04em; }
@@ -205,6 +240,14 @@ body.dark-mode .rb5-own { color: #94a3b8; background: rgba(255, 255, 255, 0.08);
 .rb5-deal--hint svg { width: 16px; height: 16px; color: #aab4c4; flex-shrink: 0; }
 .rb5-deal-flow { display: flex; align-items: stretch; gap: 12px; }
 .rb5-arr { width: 18px; height: 18px; align-self: center; color: #94A3B8; flex-shrink: 0; }
+/* стрелка расчёта обмена — в тонированном кружке, в тон бейджу между списками */
+.rb5-deal-arr {
+    display: grid; place-items: center; align-self: center; flex-shrink: 0;
+    width: 30px; height: 30px; border-radius: 50%;
+    background: rgba(44, 54, 76, 0.07); color: #6b7890;
+}
+.rb5-deal-arr .rb5-arr { width: 15px; height: 15px; }
+body.dark-mode .rb5-deal-arr { background: rgba(255, 255, 255, 0.08); color: #94a3b8; }
 .rb5-deal-side { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .rb5-deal-side i { font-style: normal; font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #94A3B8; }
 .rb5-deal-side b { font-size: 13px; font-weight: 800; color: #2C364C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -275,17 +318,127 @@ body.dark-mode .rb5-dchip.neg { color: #f87171; }
 body.dark-mode .rb5-verdict.ok { color: #34d399; background: rgba(52, 211, 153, 0.12); }
 body.dark-mode .rb5-verdict.bad { color: #f87171; background: rgba(248, 113, 113, 0.12); }
 
-/* ---- кнопка ⓘ «методика расчёта» в шапке ---- */
-.rb5-fml-btn {
+/* ---- кнопка «Применить обмен» — сделка записывается в портфель и историю ---- */
+.rb5-apply {
+    display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+    padding: 12px 18px; border: none; border-radius: 14px; cursor: pointer;
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #fff;
+    background: linear-gradient(135deg, #2C364C, #161B27);
+    box-shadow: 0 14px 30px -12px rgba(22, 27, 39, 0.55);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.rb5-apply svg { width: 15px; height: 15px; flex-shrink: 0; }
+.rb5-apply i { font-style: normal; font-size: 11px; font-weight: 700; color: rgba(255, 255, 255, 0.65); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rb5-apply:hover { transform: translateY(-1px); box-shadow: 0 18px 36px -12px rgba(22, 27, 39, 0.65); }
+.rb5-apply:active { transform: translateY(0); box-shadow: 0 10px 22px -10px rgba(22, 27, 39, 0.55); }
+body.dark-mode .rb5-apply { background: linear-gradient(135deg, #5a7cff, #3d5df0); box-shadow: 0 14px 30px -12px rgba(61, 93, 240, 0.55); }
+
+/* ---- панель «история сделок» ---- */
+.rb5-hist {
+    background: rgba(255, 255, 255, 0.72); border: 1.5px solid rgba(44, 54, 76, 0.10);
+    border-radius: 18px; margin-bottom: 24px; overflow: hidden;
+}
+body.dark-mode .rb5-hist { background: rgba(15, 23, 42, 0.55); border-color: rgba(255, 255, 255, 0.10); }
+.rb5-hist-h { display: flex; align-items: center; gap: 8px; padding: 13px 18px 9px; }
+.rb5-hist-h b { font-size: 12.5px; font-weight: 800; color: #2C364C; }
+body.dark-mode .rb5-hist-h b { color: #F1F5F9; }
+.rb5-hist-r { display: flex; align-items: center; gap: 10px; padding: 10px 18px; border-top: 1px solid rgba(44, 54, 76, 0.07); }
+body.dark-mode .rb5-hist-r { border-top-color: rgba(255, 255, 255, 0.06); }
+.rb5-hist-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.rb5-hist-main b { font-size: 12.5px; font-weight: 800; color: #2C364C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.dark-mode .rb5-hist-main b { color: #F1F5F9; }
+.rb5-hist-arr { color: #94A3B8; font-weight: 600; margin: 0 6px; }
+.rb5-hist-main > span { font-size: 10px; color: #94A3B8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.rb5-hist-eff { flex-shrink: 0; }
+.rb5-hist-x {
+    display: grid; place-items: center; flex-shrink: 0; width: 24px; height: 24px;
+    border: none; border-radius: 50%; cursor: pointer; padding: 0;
+    background: transparent; color: #aab4c4;
+    transition: background 0.13s ease, color 0.13s ease;
+}
+.rb5-hist-x svg { width: 12px; height: 12px; }
+.rb5-hist-x:hover { background: rgba(210, 59, 78, 0.12); color: #d23b4e; }
+.rb5-hist-empty { padding: 4px 18px 14px; font-size: 11.5px; line-height: 1.5; color: #9aa6b8; }
+
+/* ---- круглые кнопки шапки: история сделок и методика расчёта ---- */
+.rb5-hbtn {
+    position: relative;
     width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: grid; place-items: center;
     background: rgba(255, 255, 255, 0.55); border: 1px solid rgba(44, 54, 76, 0.12); color: #2C364C;
     transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    flex-shrink: 0;
 }
-.rb5-fml-btn svg { width: 17px; height: 17px; }
-.rb5-fml-btn:hover { border-color: #2C364C; background: #fff; }
-.rb5-fml-btn.on { background: #161B27; color: #fff; border-color: #161B27; }
-body.dark-mode .rb5-fml-btn { background: rgba(15, 23, 42, 0.6); border-color: rgba(255, 255, 255, 0.12); color: #cbd5e1; }
-body.dark-mode .rb5-fml-btn.on { background: #5a7cff; border-color: #5a7cff; color: #fff; }
+.rb5-hbtn svg { width: 17px; height: 17px; }
+.rb5-hbtn:hover { border-color: #2C364C; background: #fff; }
+.rb5-hbtn.on { background: #161B27; color: #fff; border-color: #161B27; }
+body.dark-mode .rb5-hbtn { background: rgba(15, 23, 42, 0.6); border-color: rgba(255, 255, 255, 0.12); color: #cbd5e1; }
+body.dark-mode .rb5-hbtn.on { background: #5a7cff; border-color: #5a7cff; color: #fff; }
+/* бейдж-счётчик записей истории на кнопке-часах */
+.rb5-hbadge {
+    position: absolute; top: -4px; right: -5px; font-style: normal;
+    min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px;
+    display: grid; place-items: center;
+    font-size: 9px; font-weight: 800; color: #fff; background: #161B27;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.95);
+}
+body.dark-mode .rb5-hbadge { background: #5a7cff; box-shadow: 0 0 0 2px rgba(20, 28, 44, 0.95); }
+
+/* ---- пилюля «параметры» (НДФЛ/комиссия) + попап ---- */
+.rb5-hwrap { position: relative; flex-shrink: 0; }
+.rb5-pill {
+    display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 13px 0 14px;
+    border-radius: 999px; cursor: pointer;
+    background: rgba(255, 255, 255, 0.55); border: 1px solid rgba(44, 54, 76, 0.12); color: #2C364C;
+    font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.rb5-pill > svg:first-child { width: 15px; height: 15px; color: #6b7890; flex-shrink: 0; }
+.rb5-pill .pf-chev { width: 12px; height: 12px; color: #94A3B8; transition: transform 0.15s ease; }
+.rb5-pill span { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.rb5-pill:hover { border-color: #2C364C; background: #fff; }
+.rb5-pill.on { background: #161B27; color: #fff; border-color: #161B27; }
+.rb5-pill.on > svg:first-child, .rb5-pill.on .pf-chev { color: rgba(255, 255, 255, 0.75); }
+.rb5-pill.on .pf-chev { transform: rotate(180deg); }
+body.dark-mode .rb5-pill { background: rgba(15, 23, 42, 0.6); border-color: rgba(255, 255, 255, 0.12); color: #cbd5e1; }
+body.dark-mode .rb5-pill.on { background: #5a7cff; border-color: #5a7cff; color: #fff; }
+.rb5-pop {
+    position: absolute; top: calc(100% + 10px); right: 0; z-index: 60;
+    width: min(360px, 88vw); padding: 16px 18px 15px; border-radius: 18px;
+    display: flex; flex-direction: column; gap: 14px;
+    background: rgba(255, 255, 255, 0.98);
+    border: 1px solid rgba(44, 54, 76, 0.12);
+    box-shadow: 0 26px 60px -18px rgba(44, 54, 76, 0.5), 0 2px 10px rgba(44, 54, 76, 0.08);
+    animation: rb5PopIn 0.16s ease;
+}
+@keyframes rb5PopIn { from { opacity: 0; transform: translateY(-5px); } }
+@keyframes rb5PopInM { from { opacity: 0; } }
+body.dark-mode .rb5-pop { background: #17202f; border-color: rgba(255, 255, 255, 0.10); box-shadow: 0 26px 60px -18px rgba(0, 0, 0, 0.7); }
+.rb5-pop-sec { display: flex; flex-direction: column; gap: 7px; align-items: flex-start; }
+.rb5-pop-l { font-size: 9.5px; font-weight: 700; color: #6b7890; text-transform: uppercase; letter-spacing: 0.12em; }
+body.dark-mode .rb5-pop-l { color: #94a3b8; }
+.rb5-pop-hint { font-size: 10px; line-height: 1.4; color: #9aa6b8; }
+.rb5-pop-feerow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+/* поле «своя комиссия»: подсвечивается, когда выбран нестандартный тариф */
+.rb5-pop-own {
+    display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px 3px 4px;
+    border-radius: 999px; background: rgba(44, 54, 76, 0.07);
+    font-size: 11px; font-weight: 700; color: #6b7890;
+}
+.rb5-pop-own input {
+    width: 56px; padding: 4px 6px; text-align: center; outline: none; border-radius: 999px;
+    font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 700; color: #2C364C;
+    background: rgba(255, 255, 255, 0.85); border: 1.5px solid transparent;
+    font-variant-numeric: tabular-nums; -moz-appearance: textfield; appearance: textfield;
+}
+.rb5-pop-own input::-webkit-outer-spin-button, .rb5-pop-own input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.rb5-pop-own input:focus { border-color: #2C364C; background: #fff; }
+.rb5-pop-own.on { background: rgba(22, 27, 39, 0.9); color: rgba(255, 255, 255, 0.8); }
+.rb5-pop-own.on input { background: rgba(255, 255, 255, 0.14); color: #fff; }
+body.dark-mode .rb5-pop-own { background: rgba(15, 23, 42, 0.6); color: #94a3b8; }
+body.dark-mode .rb5-pop-own input { background: rgba(255, 255, 255, 0.08); color: #e2e8f0; }
+body.dark-mode .rb5-pop-own input:focus { border-color: #5a7cff; }
+body.dark-mode .rb5-pop-own.on { background: #5a7cff; color: rgba(255, 255, 255, 0.85); }
+body.dark-mode .rb5-pop-own.on input { background: rgba(255, 255, 255, 0.16); color: #fff; }
 
 /* ---- панель «методика расчёта» ---- */
 .rb5-fml {
@@ -323,6 +476,12 @@ body.dark-mode .rb5-empty b { color: #F1F5F9; }
     .rb5-body { padding: 14px 14px 20px; }
     .rb5-title { font-size: 20px; }
     .rb5-deal-flow { flex-direction: column; gap: 10px; }
-    .rb5-arr { transform: rotate(90deg); align-self: flex-start; margin-left: 4px; }
+    .rb5-deal-arr { align-self: flex-start; margin-left: 4px; }
+    .rb5-deal-arr .rb5-arr { transform: rotate(90deg); }
+    .rb5-pill span { display: none; }   /* пилюля параметров сжимается до иконки */
+    /* попап от центра пилюли; анимацию оставляем только на прозрачности, чтобы
+       не конфликтовать с transform-центрированием */
+    .rb5-pop { right: auto; left: 50%; transform: translateX(-50%); animation: rb5PopInM 0.16s ease; }
+    .rb5-det-grid { grid-template-columns: 1fr; }
     #pfOverlay .pfo-card.rb5-card { border-radius: 22px; }
 }

@@ -965,6 +965,31 @@ body.dark-mode .pf-impbody b { color: #e7eef6; }
 body.dark-mode .pf-impbody i { color: #7c8aa0; }
 body.dark-mode .pf-impitem.off .pf-impbody b { color: #7c8aa0; }
 body.dark-mode .pf-impitem.off .pf-impbody i { color: #5a6577; }
+/* ---- попап «Видимость»: скрытие/показ карточек портфелей ---- */
+.pf-eyeitem .pf-eyedot { flex-shrink: 0; width: 11px; height: 11px; border-radius: 50%; box-shadow: 0 0 0 3px rgba(24,38,60,0.06); }
+.pf-eyestate { flex-shrink: 0; display: flex; color: #8a97a8; }
+.pf-eyestate svg { width: 16px; height: 16px; }
+.pf-eyeitem.off-eye .pf-eyedot { opacity: 0.35; box-shadow: none; }
+.pf-eyeitem.off-eye .pf-impbody b { color: #8a97a8; }
+.pf-eyeitem.off-eye .pf-eyestate { color: #c3ccd8; }
+body.dark-mode .pf-eyeitem .pf-eyedot { box-shadow: 0 0 0 3px rgba(255,255,255,0.06); }
+body.dark-mode .pf-eyestate { color: #7c8aa0; }
+body.dark-mode .pf-eyeitem.off-eye .pf-impbody b { color: #5a6577; }
+body.dark-mode .pf-eyeitem.off-eye .pf-eyestate { color: #5a6577; }
+/* счётчик «видимых/всего» на кнопке в шапке */
+.pf-eyecnt { font-style: normal; font-size: 10px; font-weight: 800; padding: 1px 7px; border-radius: 999px;
+    background: rgba(24,38,60,0.08); color: #46566e; font-variant-numeric: tabular-nums; }
+body.dark-mode .pf-eyecnt { background: rgba(255,255,255,0.1); color: #cdd8e6; }
+.pf-eyenote { padding: 6px 10px 8px; font-size: 10px; line-height: 1.45; color: #8a97a8; }
+body.dark-mode .pf-eyenote { color: #7c8aa0; }
+/* пометка «скрыт» в лидерборде сводки */
+.pfs2-hid { flex-shrink: 0; display: flex; color: #7c8aa0; opacity: 0.8; }
+.pfs2-hid svg { width: 12px; height: 12px; }
+/* пустое состояние «все портфели скрыты» */
+.pf-empty--hidden .pf-empty-art { background: rgba(24,38,60,0.06); color: #8a97a8; }
+body.dark-mode .pf-empty--hidden .pf-empty-art { background: rgba(255,255,255,0.07); color: #7c8aa0; }
+.pf-empty--hidden .d3-quick svg { width: 15px; height: 15px; }
+
 /* «Только акции/облигации» — подпункты расчёта в виде чипов под основной карточкой, не отдельными строками */
 .pf-impsubs { display: flex; gap: 6px; padding: 2px 10px 6px 53px; flex-wrap: wrap; }
 .pf-impchip { border: 1px solid rgba(24,38,60,0.12); background: rgba(24,38,60,0.03); border-radius: 8px;

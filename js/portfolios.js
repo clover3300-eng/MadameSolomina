@@ -68,6 +68,9 @@
     var store = loadStore();
 
     function findPf(id) { for (var i = 0; i < store.items.length; i++) if (store.items[i].id === id) return store.items[i]; return null; }
+    // скрытые портфели (p.hidden) не показываются в сетке карточек, но продолжают
+    // учитываться в суммарном капитале, сводке и календаре выплат — деньги не исчезают
+    function visibleItems() { return store.items.filter(function (p) { return !p.hidden; }); }
     function findHold(pf, hid) { var hs = pf.holdings || []; for (var i = 0; i < hs.length; i++) if (hs[i].id === hid) return hs[i]; return null; }
     function colorVal(c) { for (var i = 0; i < COLORS.length; i++) if (COLORS[i].id === c || COLORS[i].v === c) return COLORS[i].v; return c || COLORS[0].v; }
 
@@ -393,11 +396,20 @@
         return { points: points, pfFinal: points[points.length - 1].pf, imFinal: null };
     }
     // асинхронная загрузка серии доходности (история MOEX) + перерисовка пейна графика
+    // Бенчмарк портфеля: чисто облигационный сравниваем с индексом гособлигаций RGBI
+    // (IMOEX — индекс акций, для портфеля из ОФЗ сравнение ни о чём), иначе — IMOEX.
+    function pfBench(p) {
+        var hasS = false, hasB = false;
+        ((p && p.holdings) || []).forEach(function (h) { if (h.type === 'bond') hasB = true; else hasS = true; });
+        return (hasB && !hasS) ? { code: 'RGBI', label: 'RGBI', full: 'индекс гособлигаций RGBI' }
+                               : { code: 'IMOEX', label: 'IMOEX', full: 'индекс Мосбиржи IMOEX' };
+    }
     function loadPfChart(pid) {
         var p = findPf(pid); if (!p) return;
         var wantImoex = !!chartImoex[pid];
+        var bench = pfBench(p);
         var cached = chartCache[pid];
-        if (cached && cached.imoex === wantImoex && !cached.err) { repaintCharts(pid); return; }
+        if (cached && cached.imoex === wantImoex && cached.bench === bench.code && !cached.err) { repaintCharts(pid); return; }
         if (chartBusy[pid]) return;
         if (typeof btBuildPortfolioSeries !== 'function') { chartCache[pid] = { imoex: wantImoex, err: 'NO_BT' }; repaintCharts(pid); return; }
         var assets = pfChartAssets(p);
@@ -411,16 +423,16 @@
         pfPromise.then(function (pfSeries) {
             if (!pfSeries || pfSeries.length < 2) throw new Error('NO_PF');
             if (wantImoex && typeof btFetchHistorySeries === 'function' && typeof btAlignReturns === 'function') {
-                return btFetchHistorySeries('/iss/history/engines/stock/markets/index/securities/IMOEX.json', fromStr, tillStr).then(function (im) {
+                return btFetchHistorySeries('/iss/history/engines/stock/markets/index/securities/' + bench.code + '.json', fromStr, tillStr).then(function (im) {
                     var al = im && im.length ? btAlignReturns(pfSeries, im) : null;
                     return (al && al.points.length >= 2) ? { points: al.points, pfFinal: al.pfFinal, imFinal: al.imFinal } : pfOnlyPoints(pfSeries);
                 });
             }
             return pfOnlyPoints(pfSeries);
         }).then(function (res) {
-            res.imoex = wantImoex; res.from = fromStr; chartCache[pid] = res;
+            res.imoex = wantImoex; res.bench = bench.code; res.from = fromStr; chartCache[pid] = res;
         }, function (e) {
-            chartCache[pid] = { imoex: wantImoex, from: fromStr, err: (e && e.message) || 'ERR' };
+            chartCache[pid] = { imoex: wantImoex, bench: bench.code, from: fromStr, err: (e && e.message) || 'ERR' };
         }).then(function () {
             chartBusy[pid] = false; repaintCharts(pid);
         });
@@ -564,8 +576,8 @@
             // в шапке карточки (pfc-hero-inc) — повторять её тут не нужно, легенда несёт только
             // IMOEX (бенчмарк для сравнения), компактно поверх графика.
             var lgh = dynEl ? '<span class="pfcv-lgi"><i style="background:var(--pf-accent)"></i>Портфель <b class="' + (pf >= 0 ? 'pos' : 'neg') + '">' + (pf >= 0 ? '+' : '') + pf.toFixed(1) + '%</b></span>' : '';
-            // в мини-легенде слово «IMOEX» опускаем — рядом уже есть тумблер IMOEX; показываем только %
-            if (showIm && data.imFinal != null) { var im = data.imFinal, imLbl = dynEl ? 'IMOEX ' : ''; lgh += '<span class="pfcv-lgi"><i class="pfcv-imdot"></i>' + imLbl + '<b class="' + (im >= 0 ? 'pos' : 'neg') + '">' + (im >= 0 ? '+' : '') + im.toFixed(1) + '%</b></span>'; }
+            // в мини-легенде имя индекса опускаем — рядом уже есть тумблер с ним; показываем только %
+            if (showIm && data.imFinal != null) { var im = data.imFinal, imLbl = dynEl ? (data.bench === 'RGBI' ? 'RGBI ' : 'IMOEX ') : ''; lgh += '<span class="pfcv-lgi"><i class="pfcv-imdot"></i>' + imLbl + '<b class="' + (im >= 0 ? 'pos' : 'neg') + '">' + (im >= 0 ? '+' : '') + im.toFixed(1) + '%</b></span>'; }
             legEl.innerHTML = lgh;
         }
     }
@@ -575,6 +587,7 @@
     // пейн графика в карточке: слева — сводка, справа — кривая доходности (выезжает справа)
     function pfChartViewHtml(p, c, idx) {
         var pid = p.id, pnlCls = c.pnl >= 0 ? 'pos' : 'neg', imOn = !!chartImoex[pid], asOn = !!chartAssets[pid];
+        var bench = pfBench(p);
         var fromTxt = ruDate(dateToIso(pfFirstBuyDate(p)));
         // в центре кольца — номер портфеля (как в мини-карточке), не капитал
         var ringNum = '<span class="pfc-ringnum">' + (((idx || 0) + 1)) + '</span>';
@@ -601,8 +614,8 @@
             '<div class="pfcv-right">' +
                 '<div class="pfcv-rhead">' +
                     '<div class="pfcv-rtt"><span class="pfcv-rk">Доходность портфеля</span><span class="pfcv-rsub">с ' + fromTxt + ' · первая покупка</span></div>' +
-                    '<button class="pfcv-imbtn' + (imOn ? ' on' : '') + '" onclick="pfToggleChartImoex(\'' + pid + '\')" title="Наложить кривую индекса Мосбиржи">' +
-                        '<span class="pfcv-imdot"></span>IMOEX</button>' +
+                    '<button class="pfcv-imbtn' + (imOn ? ' on' : '') + '" onclick="pfToggleChartImoex(\'' + pid + '\')" title="Наложить кривую — ' + bench.full + '">' +
+                        '<span class="pfcv-imdot"></span>' + bench.label + '</button>' +
                     '<button class="pfcv-close" onclick="pfToggleChart(\'' + pid + '\')" aria-label="Свернуть график" title="Свернуть график"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
                 '</div>' +
                 '<div class="pfcv-leg" id="pfcvLeg-' + pid + '"></div>' +
@@ -852,7 +865,7 @@
             //    ПОД «Избранным» (см. summaryCardHtml);
             //  • нечётное число портфелей (1 или 3) → календарь в свободной ячейке сетки,
             //    чётное — отдельной полноширинной карточкой под сеткой.
-            var n = store.items.length;
+            var n = visibleItems().length;   // раскладка считает только ВИДИМЫЕ карточки
             var favStr = favHtml();
             var rates = ratesHtml();
             var oddCal = n % 2 === 1;
@@ -867,7 +880,7 @@
             // колонке (раньше — полноширинной sticky-полосой над сеткой, она мешала).
             body = '<div class="pf-topgrid">' +
                     '<div class="pf-topgrid-left">' + left + '</div>' +
-                    '<div class="pf-topgrid-fav">' + favStr + (n >= 2 ? summaryCardHtml() : '') + '</div>' +
+                    '<div class="pf-topgrid-fav">' + favStr + (store.items.length >= 2 ? summaryCardHtml() : '') + '</div>' +
                 '</div>';
             host.innerHTML =
                 liveBarHtml() +
@@ -959,6 +972,9 @@
     var IMPCALC_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2.5" width="16" height="19" rx="2.5"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="12" x2="8" y2="12.01"/><line x1="12" y1="12" x2="12" y2="12.01"/><line x1="16" y1="12" x2="16" y2="12.01"/><line x1="8" y1="16" x2="8" y2="16.01"/><line x1="12" y1="16" x2="12" y2="16.01"/><line x1="16" y1="16" x2="16" y2="16.01"/></svg>';
     var IMPFAV_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2.8 14.9 9 21.7 9.9 16.8 14.5 18 21.2 12 18 6 21.2 7.2 14.5 2.3 9.9 9.1 9"/></svg>';
     var IMPMON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/><circle cx="16.5" cy="15" r="1.4" fill="currentColor" stroke="none"/></svg>';
+    // глаз / перечёркнутый глаз — управление видимостью карточек портфелей
+    var EYE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+    var EYEOFF_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.4 10.4 0 0 1 12 19c-6.5 0-10-7-10-7a19.3 19.3 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.9 9.9 0 0 1 12 4c6.5 0 10 7 10 7a19.4 19.4 0 0 1-3.23 4.35"/><path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"/><line x1="2" y1="2" x2="22" y2="22"/></svg>';
 
     // ---- меню «Импорт» (расчёт / избранное / ежемесячный доход) ----
     // Каждый источник — карточка с иконкой, названием и подписью: если данные есть — сколько
@@ -1018,8 +1034,31 @@
             '<div class="d3-head-l"><h1 class="d3-title">' + title + '</h1></div>' +
             '<div class="d3-head-actions">' +
                 '<button class="d3-quick" onclick="pfAddPortfolio()">' + PLUS_SVG + 'Добавить портфель</button>' +
+                (store.items.length > 1 ? eyeWrapHtml() : '') +
                 backupWrapHtml() +
                 impWrapHtml('head', null) +
+            '</div></div>';
+    }
+
+    // ---- «Видимость»: попап управления скрытием карточек (инфраструктура «Импорта») ----
+    // Клик по строке прячет/возвращает карточку; попап при этом остаётся открытым, чтобы
+    // можно было переключить несколько портфелей подряд (см. pfToggleHidden).
+    function eyeWrapHtml() {
+        var vis = visibleItems().length, total = store.items.length;
+        var rows = store.items.map(function (p) {
+            var c = calcPf(p), off = !!p.hidden;
+            return '<button class="pf-impitem pf-eyeitem' + (off ? ' off-eye' : '') + '" onclick="pfToggleHidden(\'' + p.id + '\',event)">' +
+                '<span class="pf-eyedot" style="background:' + colorVal(p.color) + '"></span>' +
+                '<span class="pf-impbody"><b>' + esc(p.name) + '</b><i>' + fmtRub(c.value) + (off ? ' · скрыт' : '') + '</i></span>' +
+                '<span class="pf-eyestate">' + (off ? EYEOFF_SVG : EYE_SVG) + '</span>' +
+            '</button>';
+        }).join('');
+        return '<div class="pf-impwrap">' +
+            '<button class="d3-quick ghost pf-impbtn" onclick="pfToggleImp(event,\'eye\')">' + EYE_SVG + 'Видимость' +
+                (vis < total ? '<i class="pf-eyecnt">' + vis + '/' + total + '</i>' : '') + CHEV_SVG + '</button>' +
+            '<div class="pf-impmenu" id="pfImp-eye">' +
+                '<div class="pf-impgrp">Какие портфели показывать</div>' + rows +
+                '<div class="pf-eyenote">Скрытые карточки не показываются в сетке, но их капитал по-прежнему учитывается в сводке и календаре выплат.</div>' +
             '</div></div>';
     }
 
@@ -1031,7 +1070,7 @@
         var rows = [];
         store.items.forEach(function (p) {
             var c = calcPf(p); inv += c.invested; val += c.value; bondVal += c.bondVal;
-            rows.push({ name: p.name, color: p.color, pct: c.pnlPct, value: c.value, has: c.invested > 0 });
+            rows.push({ name: p.name, color: p.color, pct: c.pnlPct, value: c.value, has: c.invested > 0, hid: !!p.hidden });
         });
         var pnl = val - inv, pnlPct = inv > 0 ? pnl / inv * 100 : 0;
         var bondPct = val > 0 ? bondVal / val * 100 : 0, stockPct = 100 - bondPct;
@@ -1042,7 +1081,8 @@
         var board = ranked.map(function (r, i) {
             return '<div class="pfs2-row' + (i === 0 && r.has && hasMany ? ' lead' : '') + (r.has ? '' : ' empty') + '">' +
                 '<span class="pfs2-rk">' + (i + 1) + '</span>' +
-                '<span class="pfs2-n"><i style="background:' + colorVal(r.color) + '"></i><span class="pfs2-nm">' + esc(r.name) + '</span></span>' +
+                '<span class="pfs2-n"><i style="background:' + colorVal(r.color) + '"></i><span class="pfs2-nm">' + esc(r.name) + '</span>' +
+                    (r.hid ? '<span class="pfs2-hid" title="Карточка скрыта из сетки">' + EYEOFF_SVG + '</span>' : '') + '</span>' +
                 '<span class="pfs2-cap">' + (r.value > 0 ? fmtRub(r.value) : '—') + '</span>' +
                 '<span class="pfs2-v ' + (r.has ? (r.pct >= 0 ? 'pos' : 'neg') : 'muted') + '">' + (r.has ? fmtPct(r.pct) : '—') + '</span>' +
             '</div>';
@@ -1082,12 +1122,24 @@
     // сетки при нечётном числе портфелей: та же высота, что у карточки портфеля) ----
     function gridHtml(calCell) {
         if (!store.items.length) return emptyHtml();
-        var items = store.items.slice(0, MAX_CARDS);
+        var vis = visibleItems();
+        if (!vis.length) return allHiddenHtml();
+        var items = vis.slice(0, MAX_CARDS);
         // Раскрытый график выезжает ОВЕРЛЕЕМ в сторону поверх контента (position:absolute) —
         // сетка НЕ перестраивается, карточка не смещается, соседи не «прыгают». Направление
         // выезда зависит от колонки: правая колонка тянет влево (.col-right).
         var cards = items.map(function (p, i) { return cardHtml(p, i, i % 2 === 1); }).join('');
         return '<div class="pf-grid">' + cards + (calCell || '') + '</div>';
+    }
+    // все портфели скрыты — осознанное пустое состояние с кнопкой «показать все»
+    function allHiddenHtml() {
+        var n = store.items.length;
+        return '<div class="dash2-card pf-empty pf-empty--hidden">' +
+            '<div class="pf-empty-art">' + EYEOFF_SVG + '</div>' +
+            '<div class="pf-empty-t">Все портфели скрыты</div>' +
+            '<div class="pf-empty-s">' + (n === 1 ? 'Единственный портфель спрятан' : 'Все ' + n + ' ' + plural(n, 'портфель', 'портфеля', 'портфелей') + ' спрятаны') + ' — верните нужные через «Видимость» в шапке или покажите все разом.</div>' +
+            '<div class="pf-empty-cta"><button class="d3-quick" onclick="pfShowAllHidden()">' + EYE_SVG + 'Показать все</button></div>' +
+        '</div>';
     }
     function emptyHtml() {
         return '<div class="dash2-card pf-empty">' +
@@ -1118,11 +1170,11 @@
     // выставленным флагом (wantImoex=false), а пока тот запрос летит, chartBusy блокирует
     // повторный запрос — кривая IMOEX так и не подгрузится, пока не тронуть тумблер руками.
     function ensureDefaultImoexFlags() {
-        store.items.slice(0, MAX_CARDS).forEach(function (p) { if (!(p.id in chartImoex)) chartImoex[p.id] = true; });
+        visibleItems().slice(0, MAX_CARDS).forEach(function (p) { if (!(p.id in chartImoex)) chartImoex[p.id] = true; });
     }
     // на каждый видимый портфель — своя загрузка/перерисовка мини-графика (переиспользует loadPfChart)
     function repaintMiniCharts() {
-        store.items.slice(0, MAX_CARDS).forEach(function (p) {
+        visibleItems().slice(0, MAX_CARDS).forEach(function (p) {
             if (dq('pfmChart-' + p.id)) loadPfChart(p.id);
         });
     }
@@ -1130,6 +1182,7 @@
     function cardHtml(p, idx, colRight) {
         var c = calcPf(p), ac = colorVal(p.color);
         var pnlCls = c.pnl >= 0 ? 'pos' : 'neg';
+        var bench = pfBench(p);
         var chartOn = !!chartOpen[p.id], holdsOn = !!holdsExpand[p.id];
         var menu = (openMenu === p.id) ? menuHtml(p) : '';
         // настройки всегда раскрыты «во всю высоту» — полный список без внутреннего скролла
@@ -1151,7 +1204,7 @@
                 '<div class="pfc-ctrls">' +
                     '<span class="pfc-pnl ' + pnlCls + '">' + fmtPct(c.pnlPct) + '</span>' +
                     '<div class="pfc-acts">' +
-                        '<button class="pfc-act' + (chartOn ? ' on' : '') + '" onclick="pfToggleChart(\'' + p.id + '\')" aria-label="График доходности" title="' + (chartOn ? 'Свернуть график' : 'Сравнить с IMOEX')  + '">' + CHART_SVG + '</button>' +
+                        '<button class="pfc-act' + (chartOn ? ' on' : '') + '" onclick="pfToggleChart(\'' + p.id + '\')" aria-label="График доходности" title="' + (chartOn ? 'Свернуть график' : 'Сравнить с ' + bench.label)  + '">' + CHART_SVG + '</button>' +
                         '<button class="pfc-act' + (assetsChartOn ? ' on' : '') + '" onclick="pfOpenChartAssets(\'' + p.id + '\')" aria-label="Полный состав" title="' + (assetsChartOn ? 'Свернуть' : 'Полный состав') + '">' + HOLDS_SVG + '</button>' +
                         '<button class="pfc-act' + (openMenu === p.id ? ' on' : '') + '" onclick="pfToggleMenu(\'' + p.id + '\')" aria-label="Настройки" title="Настройки">' + GEAR_SVG + '</button>' +
                     '</div>' +
@@ -1172,7 +1225,7 @@
                         '<div class="pfc-mchart-top">' +
                             '<div class="pfc-mchart-leg" id="pfmLeg-' + p.id + '"></div>' +
                             '<button class="pfc-imtgl' + (imOn ? ' on' : '') + '" data-pid="' + p.id + '" onclick="pfToggleMiniImoex(\'' + p.id + '\')" ' +
-                                'title="' + (imOn ? 'Скрыть индекс Мосбиржи' : 'Сравнить с индексом Мосбиржи') + '"><span class="pfc-imtgl-dot"></span>IMOEX</button>' +
+                                'title="' + (imOn ? 'Скрыть — ' : 'Сравнить — ') + bench.full + '"><span class="pfc-imtgl-dot"></span>' + bench.label + '</button>' +
                         '</div>' +
                         '<div class="pfc-mchart-plot" id="pfmChart-' + p.id + '"></div>' +
                     '</div>';
@@ -1360,6 +1413,8 @@
             '<div class="pfm-bottom">' +
                 '<div class="pfm-foot">' +
                     impWrapHtml('imp-' + p.id, p.id) +
+                    '<button class="pfm-act" onclick="pfToggleHidden(\'' + p.id + '\')" title="Спрятать карточку из сетки — вернуть можно через «Видимость» в шапке">' +
+                        EYEOFF_SVG + 'Скрыть</button>' +
                     '<button class="pfm-act danger" onclick="pfDelete(\'' + p.id + '\')">' +
                         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Удалить</button>' +
                 '</div>' +
@@ -2052,6 +2107,29 @@
         if (store.items.length >= MAX_CARDS) { toast('Максимум ' + MAX_CARDS + ' портфеля на странице', true); return; }
         var p = makePortfolio(); store.items.push(p); saveStore(); openMenu = p.id; renderPortfolios();
     };
+    // Скрыть/показать карточку. Попап «Видимость» пересоздаётся рендером — если он был
+    // открыт, возвращаем ему .open, чтобы можно было переключить несколько портфелей подряд.
+    window.pfToggleHidden = function (pid, ev) {
+        if (ev) ev.stopPropagation();
+        var p = findPf(pid); if (!p) return;
+        p.hidden = !p.hidden;
+        if (p.hidden) {   // прибираем состояния скрытой карточки
+            if (openMenu === pid) { openMenu = null; menuTall = false; }
+            delete chartOpen[pid]; delete chartAssets[pid]; delete chartAssetsFull[pid]; delete holdsExpand[pid];
+        }
+        var eyeMenu = dq('pfImp-eye');
+        var keepOpen = !!(eyeMenu && eyeMenu.classList.contains('open'));
+        saveStore(); renderPortfolios();
+        if (keepOpen) {
+            var m = dq('pfImp-eye');
+            if (m) { m.classList.add('open'); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); }
+        }
+        toast(p.hidden ? 'Портфель «' + p.name + '» скрыт из сетки' : 'Портфель «' + p.name + '» снова показан');
+    };
+    window.pfShowAllHidden = function () {
+        store.items.forEach(function (p) { p.hidden = false; });
+        saveStore(); renderPortfolios();
+    };
     // НКД при импорте из расчёта/ежемесячного дохода: дата покупки = сегодня, поэтому
     // подтягиваем ТЕКУЩИЙ НКД (ACCRUEDINT) из живых данных MOEX и помечаем как «с API»
     // (иконка в поле сразу гаснет). Цена в импорте — чистая, НКД отдельной величиной.
@@ -2414,7 +2492,7 @@
     window.pfExpand = function (pid) {
         var p = findPf(pid); if (!p) return;
         rebalPick = { bond: { sell: null, buy: null, qty: null }, stock: { sell: null, buy: null, qty: null } };
-        rebalInfo = {}; rebalFormulas = false;
+        rebalInfo = {}; rebalFormulas = false; rebalParams = false; rebalHistory = false; rebalFlash = null;
         ensureQuotes(true);
         if (typeof window.stkEnsureLoaded === 'function') { try { window.stkEnsureLoaded(); } catch (e) {} }   // эшелоны/потенциал акций
         var ov = dq('pfOverlay');
@@ -2471,6 +2549,11 @@
     var rebalPick = { bond: { sell: null, buy: null, qty: null }, stock: { sell: null, buy: null, qty: null } };
     var rebalInfo = {};          // ключ строки → раскрыты ли детали бумаги (иконка ⓘ в строке)
     var rebalFormulas = false;   // раскрыта ли панель «методика расчёта» (иконка ⓘ в шапке)
+    var rebalParams = false;     // раскрыт ли попап «параметры» (НДФЛ/комиссия) в шапке
+    var rebalHistory = false;    // раскрыта ли панель «история сделок»
+    var rebalInfoAnim = null;    // ключ ⓘ-панели, открытой ПОСЛЕДНИМ кликом: анимацию играем только ей,
+                                 // иначе каждый repaint переигрывал бы её у всех открытых панелей
+    var rebalFlash = null;       // { delta, anim } — сдвиг «машины денег» после применённого обмена облигаций
     try {
         var _rp = JSON.parse(localStorage.getItem('pf_rebal_params') || '{}');
         if (_rp.tax != null) rebalTax = +_rp.tax;
@@ -2536,7 +2619,7 @@
     function ofzCand(b) {
         var unit = b.price + b.nkd;
         var econ = bondEconAt(bondDetail(b.t), unit, b.nkd);
-        return { t: b.t, n: b.n, unit: unit, sheetYield: b.sheetYield,
+        return { t: b.t, n: b.n, unit: unit, price: b.price, nkd: b.nkd, sheetYield: b.sheetYield,
             matDate: (econ && econ.matDate) || b.matDate, econ: econ };
     }
     // Суммарная прибыль в день по всем облигациям портфеля + штук; pending — купоны грузятся
@@ -2664,6 +2747,10 @@
 
     // ---------- рендер ----------
     var RB5_ARR = '<svg class="rb5-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>';
+    // иконка «обмен» (две встречные стрелки) — бейдж между списками «продать | купить»
+    var RB5_SWAP = '<svg class="rb5-swap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h14"/><path d="m14.5 3.5 3.5 3.5-3.5 3.5"/><path d="M20 17H6"/><path d="M9.5 13.5 6 17l3.5 3.5"/></svg>';
+    // иконка «история» (часы со стрелкой назад) — кнопка истории сделок в шапке
+    var RB5_HIST = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 2.8-6.5"/><path d="M3 4.5V9h4.5"/><polyline points="12 7.5 12 12 15.5 14"/></svg>';
     var UNITS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>';
     var COIN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v10M9.5 9.3c0-1.3 1.1-2.1 2.5-2.1s2.5.8 2.5 1.9c0 2.6-5 1.4-5 4 0 1.1 1.1 1.9 2.5 1.9s2.5-.8 2.5-2.1"/></svg>';
     var RB5_CHECK = '<span class="rb5-chip">' + CHECK_SVG + '</span>';
@@ -2671,29 +2758,68 @@
     // и НДФЛ (он влияет только на экономику облигаций) живут в шапке и показываются лишь
     // при наличии облигаций — так колонки внизу начинаются на одном уровне.
     // Комиссия брокера влияет и на облигации, и на акции — её выбор показывается всегда.
-    function rb5Head(p, c, bt) {
-        var taxes = [[0, '0%'], [0.13, '13%'], [0.15, '15%']];
-        var bondCtl = '';
-        if (bt) {
-            bondCtl = machineHtml(bt) +
-                '<div class="rb5-seg rb5-seg--tax"><span class="rb5-seg-l">НДФЛ</span>' + taxes.map(function (o) {
-                    return '<button class="rb5-seg-b' + (rebalTax === o[0] ? ' on' : '') + '" onclick="pfSetRebalTax(' + o[0] + ')">' + o[1] + '</button>';
-                }).join('') + '</div>';
-        }
-        var feeCtl = '<div class="rb5-seg rb5-seg--fee" title="Комиссия брокера за сделку — учитывается и при продаже, и при покупке">' +
-            '<span class="rb5-seg-l">Комиссия</span>' + REBAL_FEES.map(function (o) {
-                return '<button class="rb5-seg-b' + (rebalFee === o[0] ? ' on' : '') + '" onclick="pfSetRebalFee(' + o[0] + ')">' + o[1] + '</button>';
-            }).join('') + '</div>';
-        var fxBtn = '<button class="rb5-fml-btn' + (rebalFormulas ? ' on' : '') + '" onclick="pfRbFormulas()" aria-label="Методика расчёта" title="Методика расчёта — все формулы">' + INFO_SVG + '</button>';
+    // Шапка после чистки: слева заголовок, справа ОДИН сводный виджет (машина денег для
+    // облигаций / средний потенциал для чисто акционного портфеля) + компактная пилюля
+    // «параметры» (НДФЛ и комиссия живут в попапе, а не двумя сегментами в ряд) + круглые
+    // кнопки история/методика/закрыть. Так шапка выглядит ровно при любом составе портфеля.
+    function rb5Head(p, c, bt, ss) {
+        var statW = bt ? machineHtml(bt) : stockPulseHtml(ss);
+        var taxTxt = Math.round((rebalTax || 0) * 100) + '%';
+        var pill = '<div class="rb5-hwrap">' +
+            '<button class="rb5-pill' + (rebalParams ? ' on' : '') + '" onclick="pfRbParams()" title="Параметры расчёта — НДФЛ и комиссия брокера">' +
+                GEAR_SVG + '<span>' + (bt ? 'НДФЛ ' + taxTxt + ' · ' : 'Комиссия ') + feeLbl(rebalFee) + '</span>' + CHEV_SVG +
+            '</button>' + rb5ParamsPop(!!bt) + '</div>';
+        var histN = (p.trades || []).length;
+        var histBtn = '<button class="rb5-hbtn' + (rebalHistory ? ' on' : '') + '" onclick="pfRbHistory()" aria-label="История сделок" title="История сделок — применённые обмены">' + RB5_HIST +
+            (histN ? '<i class="rb5-hbadge">' + (histN > 99 ? '99+' : histN) + '</i>' : '') + '</button>';
+        var fxBtn = '<button class="rb5-hbtn' + (rebalFormulas ? ' on' : '') + '" onclick="pfRbFormulas()" aria-label="Методика расчёта" title="Методика расчёта — все формулы">' + INFO_SVG + '</button>';
         return '<div class="rb5-head">' +
             '<div class="rb5-head-t">' +
                 '<span class="rb5-eyebrow">Ребалансировка</span>' +
                 '<span class="rb5-title">' + esc(p.name) + '</span>' +
                 '<span class="rb5-sub">' + c.count + ' ' + plural(c.count, 'актив', 'актива', 'активов') + ' · ' + fmtRub(c.value) + '</span>' +
             '</div>' +
-            '<div class="rb5-head-r">' + bondCtl + feeCtl + fxBtn +
+            '<div class="rb5-head-r">' + statW + pill + histBtn + fxBtn +
                 '<button class="rb5-x" onclick="pfCloseOverlay()" aria-label="Закрыть">' + XMARK_SVG + '</button>' +
             '</div>' +
+        '</div>';
+    }
+    // Попап «параметры»: сегменты НДФЛ (только при облигациях — на акции он тут не влияет)
+    // и комиссии + поле «своя» для нестандартного тарифа брокера (в процентах за сделку).
+    function rb5ParamsPop(hasB) {
+        if (!rebalParams) return '';
+        var taxes = [[0, '0%'], [0.13, '13%'], [0.15, '15%']];
+        var preset = false; REBAL_FEES.forEach(function (o) { if (o[0] === rebalFee) preset = true; });
+        var taxSec = !hasB ? '' : '<div class="rb5-pop-sec"><span class="rb5-pop-l">НДФЛ</span>' +
+            '<div class="rb5-seg">' + taxes.map(function (o) {
+                return '<button class="rb5-seg-b' + (rebalTax === o[0] ? ' on' : '') + '" onclick="pfSetRebalTax(' + o[0] + ')">' + o[1] + '</button>';
+            }).join('') + '</div>' +
+            '<span class="rb5-pop-hint">учитывается в прибыли облигаций к погашению</span></div>';
+        var feeSec = '<div class="rb5-pop-sec"><span class="rb5-pop-l">Комиссия брокера</span>' +
+            '<div class="rb5-pop-feerow"><div class="rb5-seg">' + REBAL_FEES.map(function (o) {
+                return '<button class="rb5-seg-b' + (preset && rebalFee === o[0] ? ' on' : '') + '" onclick="pfSetRebalFee(' + o[0] + ')">' + o[1] + '</button>';
+            }).join('') + '</div>' +
+            '<label class="rb5-pop-own' + (preset ? '' : ' on') + '" onclick="event.stopPropagation()">' +
+                '<input type="number" min="0" max="5" step="0.01" placeholder="своя" value="' + (preset ? '' : +(rebalFee * 100).toFixed(3)) + '" ' +
+                    'onchange="pfSetRebalFeeCustom(this.value)"><span>%</span>' +
+            '</label></div>' +
+            '<span class="rb5-pop-hint">берётся дважды — при продаже и при покупке</span></div>';
+        return '<div class="rb5-pop">' + taxSec + feeSec + '</div>';
+    }
+    // Портфель только из акций: вместо «машины денег» в шапке — средний потенциал
+    // (взвешен по стоимости позиций; бумаги без потенциала не участвуют)
+    function stockPulseHtml(ss) {
+        var wsum = 0, w = 0;
+        (ss || []).forEach(function (x) {
+            var pot = holdPotential(x.h);
+            if (pot == null || !(x.c.value > 0)) return;
+            wsum += pot * x.c.value; w += x.c.value;
+        });
+        if (!(w > 0)) return '';
+        var avg = wsum / w;
+        return '<div class="rb5-machine rb5-machine--head" title="Средний потенциал акций портфеля, взвешенный по стоимости позиций">' +
+            '<div class="rb5-mch-info"><span class="rb5-label">Потенциал портфеля</span>' +
+                '<div class="rb5-mch-val"><b class="' + (avg >= 0 ? 'pos' : 'neg') + '">' + fmtPct(avg) + '</b><span>средний</span></div></div>' +
         '</div>';
     }
     // Панель «методика расчёта» (иконка ⓘ в шапке): все формулы, по которым карточка
@@ -2756,9 +2882,17 @@
         var segs = [['day', 'день'], ['week', 'неделя'], ['month', 'месяц']];
         var tip = t.pending ? 'Уточняем купоны на Мосбирже…'
             : t.units + ' ' + plural(t.units, 'облигация', 'облигации', 'облигаций') + ' · купоны + номинал + НКД − затраты';
-        return '<div class="rb5-machine rb5-machine--head" title="' + attr(tip) + '">' +
+        // после применённого обмена: дельта-чип + стойкая цветная подсветка виджета —
+        // рост прибыли виден сразу и не гаснет при перерисовках (живёт до закрытия карточки)
+        var flash = '', flashCls = '';
+        if (rebalFlash && isFinite(rebalFlash.delta) && Math.abs(rebalFlash.delta) > 1e-9 && !t.pending) {
+            flash = '<span class="rb5-mch-delta ' + (rebalFlash.delta > 0 ? 'pos' : 'neg') + '" title="Изменение после применённого обмена">' +
+                (rebalFlash.delta > 0 ? '+' : '−') + f2(Math.abs(rebalFlash.delta) * perMul()) + '</span>';
+            flashCls = rebalFlash.delta > 0 ? ' up' : ' down';
+        }
+        return '<div class="rb5-machine rb5-machine--head' + flashCls + '" title="' + attr(tip) + '">' +
             '<div class="rb5-mch-info"><span class="rb5-label">Прибыль по облигациям</span>' +
-                '<div class="rb5-mch-val"><b>' + (t.pending ? '…' : f2(t.total * perMul())) + '</b><span>₽ ' + perLbl() + '</span></div></div>' +
+                '<div class="rb5-mch-val"><b>' + (t.pending ? '…' : f2(t.total * perMul())) + '</b><span>₽ ' + perLbl() + '</span>' + flash + '</div></div>' +
             '<div class="rb5-seg">' + segs.map(function (s) {
                 return '<button class="rb5-seg-b' + (rebalPeriod === s[0] ? ' on' : '') + '" onclick="pfSetRebalPeriod(\'' + s[0] + '\')">' + s[1] + '</button>';
             }).join('') + '</div>' +
@@ -2770,8 +2904,10 @@
     function rb5InfoBtn(key, on) {
         return '<button type="button" class="rb5-info' + (on ? ' on' : '') + '" onclick="pfRbInfo(\'' + attr(key) + '\',event)" aria-label="Детали бумаги" title="Детали">' + INFO_SVG + '</button>';
     }
-    function rb5DetRow(l, v) { return v ? '<div class="rb5-det-r"><span>' + l + '</span><b>' + v + '</b></div>' : ''; }
-    function rb5Det(rows) { return '<div class="rb5-det">' + rows + '</div>'; }
+    // детали — сетка мини-чипов «подпись/значение»; анимация раскрытия только у панели,
+    // открытой последним кликом (rebalInfoAnim), иначе она переигрывалась бы на каждый repaint
+    function rb5DetRow(l, v) { return v ? '<div class="rb5-det-i"><span>' + l + '</span><b>' + v + '</b></div>' : ''; }
+    function rb5Det(key, rows) { return '<div class="rb5-det' + (rebalInfoAnim === key ? ' anim' : '') + '"><div class="rb5-det-grid">' + rows + '</div></div>'; }
     function couponStr(d) {
         if (!d || !(+d.couponValue > 0)) return 'уточняем…';
         return fmtPrice(+d.couponValue) + (+d.freq > 0 ? ' · ' + (+d.freq) + ' ' + plural(+d.freq, 'раз', 'раза', 'раз') + ' в год' : '');
@@ -2785,7 +2921,7 @@
         var det = '';
         if (on) {
             var a = aggHolding(x.h), d = bondDetail(x.h.ticker), nkdNow = curNkdOf(x.h.ticker);
-            det = rb5Det(
+            det = rb5Det(key,
                 rb5DetRow('ISIN', esc(x.h.ticker)) +
                 rb5DetRow('Погашение', e ? ruDate2(e.matDate) + ' · через ' + e.days + ' дн' : 'уточняем…') +
                 rb5DetRow('Купон', couponStr(d)) +
@@ -2807,7 +2943,7 @@
         var det = '';
         if (on) {
             var d = bondDetail(cd.t);
-            det = rb5Det(
+            det = rb5Det(key,
                 rb5DetRow('ISIN', esc(cd.t)) +
                 rb5DetRow('Погашение', (cd.matDate && cd.matDate !== '—') ? ruDate2(cd.matDate) + (cd.econ ? ' · через ' + cd.econ.days + ' дн' : '') : 'уточняем…') +
                 rb5DetRow('Купон', couponStr(d)) +
@@ -2835,7 +2971,7 @@
             '<div class="rb5-deal-side"><i>Продать</i><b>' + esc(sellX.h.name || sellX.h.ticker) + '</b>' +
                 rb5QtyCtl('bond', d.qty, d.maxQty) +
                 '<small>≈ ' + fmtRub(d.proceeds) + ' с НКД' + (rebalFee > 0 ? ' · после комиссии' : '') + '</small></div>' +
-            RB5_ARR +
+            '<span class="rb5-deal-arr">' + RB5_ARR + '</span>' +
             '<div class="rb5-deal-side"><i>Купить</i><b>' + esc(cand.n) + '</b>' +
                 '<div class="rb5-deal-n">' + d.buyQty + ' шт</div>' +
                 '<small>' + (d.rest > 0.005 ? 'останется ' + fmtPrice(d.rest) : '&nbsp;') + '</small></div>' +
@@ -2856,7 +2992,12 @@
         } else {
             rows += '<div class="rb5-vrow"><span class="rb5-vico">' + COIN_SVG + '</span><span class="rb5-vlabel">Прибыль ' + perLbl() + '</span><b>уточняем купоны…</b></div>';
         }
-        return '<div class="rb5-deal">' + flow + note + '<div class="rb5-vbox">' + rows + '</div>' + verdict + '</div>';
+        // применить обмен в портфель одним кликом (есть что покупать → кнопка активна)
+        var apply = d.buyQty > 0
+            ? '<button class="rb5-apply" onclick="pfRbApplyBond()" title="Сделка сразу запишется в портфель и в историю">' + CHECK_SVG +
+                '<span>Применить обмен</span><i>−' + d.qty + ' → +' + d.buyQty + ' шт</i></button>'
+            : '';
+        return '<div class="rb5-deal">' + flow + note + '<div class="rb5-vbox">' + rows + '</div>' + verdict + apply + '</div>';
     }
     function rb5BondCol(bs, c) {
         var head = rb5ColHead('bond', 'Облигации', bs.length, c.bondVal);
@@ -2881,7 +3022,7 @@
         return '<div class="rb5-col">' + head +
             '<div class="rb5-duo">' +
                 '<div class="rb5-list"><div class="rb5-list-h"><b>Продать</b><i>мои · годовых</i></div><div class="rb5-list-scroll">' + mine.map(bondRowHtml).join('') + '</div></div>' +
-                '<div class="rb5-duo-arr">' + RB5_ARR + '</div>' +
+                '<div class="rb5-duo-arr">' + RB5_SWAP + '</div>' +
                 '<div class="rb5-list rb5-list--buy"><div class="rb5-list-h"><b>Купить</b><i>таблица ОФЗ</i></div><div class="rb5-list-scroll">' + candRows + '</div></div>' +
             '</div>' +
             bondDealHtml(mine, cands) +
@@ -2895,7 +3036,7 @@
         var key = 'ss:' + x.h.id, on = !!rebalInfo[key];
         var det = '';
         if (on) {
-            det = rb5Det(
+            det = rb5Det(key,
                 rb5DetRow('Компания', esc(x.h.name || x.h.ticker)) +
                 rb5DetRow('Эшелон', ech ? ROMAN[ech - 1] : '—') +
                 rb5DetRow('Цена сейчас', x.c.cur > 0 ? fmtPrice(x.c.cur) : '—') +
@@ -2918,7 +3059,7 @@
         var key = 'sb:' + cn.ticker, on = !!rebalInfo[key];
         var det = '';
         if (on) {
-            det = rb5Det(
+            det = rb5Det(key,
                 rb5DetRow('Компания', esc(cn.name)) +
                 (cn.sector ? rb5DetRow('Сектор', esc(cn.sector)) : '') +
                 rb5DetRow('Эшелон', ROMAN[cn.ech - 1]) +
@@ -2947,7 +3088,7 @@
             '<div class="rb5-deal-side"><i>Продать</i><b>' + esc(sellX.h.ticker) + '</b>' +
                 rb5QtyCtl('stock', d.qty, d.maxQty) +
                 '<small>≈ ' + fmtRub(d.proceeds) + (rebalFee > 0 ? ' · после комиссии' : '') + '</small></div>' +
-            RB5_ARR +
+            '<span class="rb5-deal-arr">' + RB5_ARR + '</span>' +
             '<div class="rb5-deal-side"><i>Купить</i><b>' + esc(cand.ticker) + '</b>' +
                 '<div class="rb5-deal-n">' + (d.buyQty > 0 ? d.buyQty + ' шт' : 'на ' + fmtRub(d.proceeds)) + '</div>' +
                 '<small>' + (d.priceN > 0 ? 'по ' + fmtPrice(d.priceN) : '&nbsp;') + '</small></div>' +
@@ -2959,7 +3100,11 @@
             : (d.potDelta > 0
                 ? '<div class="rb5-verdict ok">' + CHECK_SVG + '<span>Потенциал растёт — обмен имеет смысл</span></div>'
                 : '<div class="rb5-verdict bad">' + XMARK_SVG + '<span>Потенциал не растёт — такой обмен смысла не имеет</span></div>');
-        return '<div class="rb5-deal">' + flow + '<div class="rb5-vbox">' + rows + '</div>' + verdict + '</div>';
+        var apply = d.buyQty > 0
+            ? '<button class="rb5-apply" onclick="pfRbApplyStock()" title="Сделка сразу запишется в портфель и в историю">' + CHECK_SVG +
+                '<span>Применить обмен</span><i>−' + d.qty + ' ' + esc(sellX.h.ticker) + ' → +' + d.buyQty + ' ' + esc(cand.ticker) + '</i></button>'
+            : '';
+        return '<div class="rb5-deal">' + flow + '<div class="rb5-vbox">' + rows + '</div>' + verdict + apply + '</div>';
     }
     function rb5StockCol(ss, c) {
         var head = rb5ColHead('stock', 'Акции', ss.length, c.stockVal);
@@ -2980,11 +3125,40 @@
         return '<div class="rb5-col">' + head +
             '<div class="rb5-duo">' +
                 '<div class="rb5-list"><div class="rb5-list-h"><b>Продать</b><i>мои · динамика</i></div><div class="rb5-list-scroll">' + mine.map(stockRowHtml).join('') + '</div></div>' +
-                '<div class="rb5-duo-arr">' + RB5_ARR + '</div>' +
+                '<div class="rb5-duo-arr">' + RB5_SWAP + '</div>' +
                 '<div class="rb5-list rb5-list--buy"><div class="rb5-list-h"><b>Купить</b><i>потенциальные' + (ech ? ' · эшелон ' + ROMAN[ech - 1] : '') + '</i></div><div class="rb5-list-scroll">' + candRows + '</div></div>' +
             '</div>' +
             stockDealHtml(mine, cands) +
         '</div>';
+    }
+    // ---- панель «история сделок» (кнопка-часы в шапке) ----
+    // Применённые обмены хранятся в p.trades (уходят в localStorage вместе с портфелем):
+    // каждый расчёт можно отследить и проверить постфактум; запись можно удалить крестиком.
+    function rb5HistoryHtml(p) {
+        if (!rebalHistory) return '';
+        var ts = p.trades || [];
+        var rows = ts.length ? ts.map(function (t) {
+            var w = new Date(t.ts || 0);
+            var when = pad2(w.getDate()) + '.' + pad2(w.getMonth() + 1) + '.' + w.getFullYear() + ' · ' + pad2(w.getHours()) + ':' + pad2(w.getMinutes());
+            var eff = '';
+            if (t.kind === 'bond' && t.dayBefore != null && t.dayAfter != null)
+                eff = rb5Delta(t.dayAfter - t.dayBefore, ' ₽/день', f2);
+            else if (t.kind === 'stock' && t.potFrom != null && t.potTo != null)
+                eff = rb5Delta(t.potTo - t.potFrom, ' п.п.', function (v) { return v.toFixed(1).replace('.', ','); });
+            return '<div class="rb5-hist-r">' +
+                '<span class="rb5-cdot ' + (t.kind === 'bond' ? 'bond' : 'stock') + '"></span>' +
+                '<div class="rb5-hist-main">' +
+                    '<b>−' + t.sellQty + ' ' + esc(t.sellName) + '<span class="rb5-hist-arr">→</span>+' + t.buyQty + ' ' + esc(t.buyName) + '</b>' +
+                    '<span>' + when + ' · продажа ≈ ' + fmtRub(t.proceeds) +
+                        (t.rest > 0.005 ? ' · остаток ' + fmtPrice(t.rest) : '') +
+                        (t.fee > 0 ? ' · комиссия ' + feeLbl(t.fee) : '') + '</span>' +
+                '</div>' +
+                (eff ? '<span class="rb5-hist-eff">' + eff + '</span>' : '') +
+                '<button class="rb5-hist-x" onclick="pfRbDelTrade(\'' + p.id + '\',\'' + t.id + '\')" aria-label="Удалить запись" title="Удалить запись">' + XMARK_SVG + '</button>' +
+            '</div>';
+        }).join('') : '<div class="rb5-hist-empty">Пока пусто — применённые обмены будут записываться сюда, чтобы каждый шаг можно было отследить и проверить.</div>';
+        return '<div class="rb5-hist"><div class="rb5-hist-h"><b>История сделок</b>' +
+            (ts.length ? '<span class="rb5-ccount">' + ts.length + '</span>' : '') + '</div>' + rows + '</div>';
     }
     // animate=true — только первое открытие (см. pfExpand); ре-рендеры без анимации,
     // иначе пересоздание карточки на каждый клик заставляет её мигать целиком
@@ -3000,8 +3174,8 @@
         var cols = (!hasB && !hasS) ? rb5BondCol(bs, c) + rb5StockCol(ss, c)
             : (hasB ? rb5BondCol(bs, c) : '') + (hasS ? rb5StockCol(ss, c) : '');
         return '<div class="pfo-card rb5-card' + (one ? ' rb5-card--one' : '') + (animate ? ' pfo-anim-in' : '') + '">' +
-            rb5Head(p, c, hasB ? bondsTotal(bs) : null) +
-            '<div class="rb5-body">' + rb5FormulasHtml() +
+            rb5Head(p, c, hasB ? bondsTotal(bs) : null, ss) +
+            '<div class="rb5-body">' + rb5HistoryHtml(p) + rb5FormulasHtml() +
             '<div class="rb5-cols' + (one ? ' rb5-cols--one' : '') + '">' + cols + '</div></div>' +
         '</div>';
     }
@@ -3009,7 +3183,15 @@
     // ---------- события ----------
     window.pfSetRebalTax = function (rate) { rebalTax = rate; saveRebalParams(); rebalRepaint(); };
     window.pfSetRebalFee = function (rate) { rebalFee = rate; saveRebalParams(); rebalRepaint(); };
+    // своя комиссия из попапа параметров: вводится в процентах (0,08 → 0.0008)
+    window.pfSetRebalFeeCustom = function (v) {
+        var n = toNum(v);
+        if (!isFinite(n) || n < 0) { rebalRepaint(); return; }
+        rebalFee = clamp(n, 0, 5) / 100; saveRebalParams(); rebalRepaint();
+    };
     window.pfRbFormulas = function () { rebalFormulas = !rebalFormulas; rebalRepaint(); };
+    window.pfRbParams = function () { rebalParams = !rebalParams; rebalRepaint(); };
+    window.pfRbHistory = function () { rebalHistory = !rebalHistory; rebalRepaint(); };
     window.pfSetRebalPeriod = function (per) { if (PERIODS[per]) rebalPeriod = per; saveRebalParams(); rebalRepaint(); };
     // выбор бумаги: клик по своей (side='sell') / рыночной (side='buy'); повторный клик —
     // снять выбор; количество к продаже сбрасывается на предложенное
@@ -3020,11 +3202,114 @@
     // иконка ⓘ в строке: раскрыть/свернуть детали бумаги (не выбирая её — клик не всплывает)
     window.pfRbInfo = function (key, ev) {
         if (ev) { ev.stopPropagation(); ev.preventDefault(); }
-        rebalInfo[key] = !rebalInfo[key]; rebalRepaint();
+        rebalInfo[key] = !rebalInfo[key];
+        rebalInfoAnim = rebalInfo[key] ? key : null;   // анимация раскрытия — только этой панели
+        rebalRepaint();
+        rebalInfoAnim = null;
     };
     window.pfRbQty = function (kind, val, max) {
         var n = Math.round(toNum(val)); if (!isFinite(n)) n = 1;
         rebalPick[kind].qty = clamp(n, 1, max || 1); rebalRepaint();
+    };
+
+    // ---------- применение обмена в портфель ----------
+    // Списание qty у актива: FIFO по дате покупки (старые лоты первыми); лоты, ушедшие
+    // в ноль, удаляются; продано всё — удаляется и сам актив.
+    function pfReduceHolding(p, h, qty) {
+        var ordered = ensureLots(h).slice().sort(function (a, b) { return String(a.buyDate || '').localeCompare(String(b.buyDate || '')); });
+        var left = qty;
+        ordered.forEach(function (l) {
+            if (left <= 0) return;
+            var q = +l.qty || 0, take = Math.min(q, left);
+            l.qty = q - take; left -= take;
+        });
+        h.lots = ensureLots(h).filter(function (l) { return (+l.qty || 0) > 0; });
+        if (!h.lots.length) p.holdings = (p.holdings || []).filter(function (x) { return x.id !== h.id; });
+    }
+    // Покупка: такой тикер уже есть (облигации сверяем по короткому ISIN) → докупка лотом,
+    // иначе новый актив. Цена/НКД — текущие рыночные: ровно те, по которым считался обмен.
+    function pfAddBought(p, o) {
+        var lot = { id: genId('l'), buyDate: todayStr(), buyPrice: Math.round((o.price || 0) * 100) / 100, qty: o.qty,
+            nkd: Math.round((o.nkd || 0) * 100) / 100, priceFromApi: true, nkdFromApi: o.type === 'bond' };
+        var exist = null;
+        (p.holdings || []).forEach(function (h) {
+            if (exist || h.type !== o.type) return;
+            if (o.type === 'bond' ? isinKey(h.ticker) === isinKey(o.ticker) : h.ticker === o.ticker) exist = h;
+        });
+        if (exist) { ensureLots(exist).push(lot); return; }
+        p.holdings.push({ id: genId('h'), ticker: o.ticker, name: o.name || o.ticker, type: o.type, lots: [lot],
+            potAtBuy: o.type === 'stock' ? (o.pot != null ? o.pot : potentialOf(o.ticker)) : null });
+    }
+    function pfLogTrade(p, t) {
+        t.id = genId('t'); t.ts = Date.now(); t.fee = rebalFee || 0;
+        p.trades = p.trades || [];
+        p.trades.unshift(t);
+        if (p.trades.length > 120) p.trades.length = 120;   // страховка от разбухания localStorage
+    }
+    // состав изменился → серии графиков доходности пересобрать заново
+    function pfInvalidateCharts(pid) { delete chartRaw[pid]; delete chartCache[pid]; }
+    // Кнопка «Применить обмен» (облигации): списывает проданные, добавляет купленные,
+    // пишет запись в историю и подсвечивает сдвиг «машины денег» в шапке.
+    window.pfRbApplyBond = function () {
+        var ov = dq('pfOverlay'); if (!ov) return;
+        var p = findPf(ov.dataset.pid); if (!p) return;
+        var bs = calcPf(p).hs.filter(function (x) { return x.h.type === 'bond'; });
+        var sellX = null; bs.forEach(function (x) { if (x.h.id === rebalPick.bond.sell) sellX = x; });
+        var cand = null; ofzMarket().map(ofzCand).forEach(function (cd) { if (cd.t === rebalPick.bond.buy) cand = cd; });
+        if (!sellX || !cand) return;
+        var d = bondDeal(bondHeld(sellX.h), cand, bs);
+        if (!d) { toast('Недостаточно данных для обмена', true); return; }
+        if (!(d.buyQty > 0)) { toast('Выручки не хватает даже на одну новую бумагу', true); return; }
+        var before = bondsTotal(bs);
+        var sellName = sellX.h.name || sellX.h.ticker;
+        pfReduceHolding(p, sellX.h, d.qty);
+        pfAddBought(p, { type: 'bond', ticker: cand.t, name: cand.n, price: cand.price, nkd: cand.nkd, qty: d.buyQty });
+        pfLogTrade(p, { kind: 'bond', sellTicker: sellX.h.ticker, sellName: sellName, sellQty: d.qty,
+            buyTicker: cand.t, buyName: cand.n, buyQty: d.buyQty, proceeds: d.proceeds, rest: d.rest,
+            dayBefore: d.dayBefore, dayAfter: d.dayAfter });
+        // дельта «машины денег»: пересчёт по фактически обновлённому портфелю; если купоны
+        // ещё грузятся — берём расчётную дельту из самой сделки
+        var after = bondsTotal(calcPf(p).hs.filter(function (x) { return x.h.type === 'bond'; }));
+        rebalFlash = (!before.pending && !after.pending) ? { delta: after.total - before.total }
+            : (d.dayBefore != null && d.dayAfter != null ? { delta: d.dayAfter - d.dayBefore } : null);
+        rebalPick.bond = { sell: null, buy: null, qty: null };
+        saveStore(); pfInvalidateCharts(p.id); ensureQuotes(true);
+        ensureBondDetails(p, function () { rebalRepaint(); });
+        rebalRepaint();
+        if (currentTab === 'portfolios' && dq('pfWrap')) renderPortfolios();
+        toast('Обмен применён: −' + d.qty + ' ' + sellName + ' → +' + d.buyQty + ' ' + cand.n);
+    };
+    // Кнопка «Применить обмен» (акции): та же механика, эффект — смена потенциала.
+    window.pfRbApplyStock = function () {
+        var ov = dq('pfOverlay'); if (!ov) return;
+        var p = findPf(ov.dataset.pid); if (!p) return;
+        var ss = calcPf(p).hs.filter(function (x) { return x.h.type !== 'bond'; });
+        var sellX = null; ss.forEach(function (x) { if (x.h.id === rebalPick.stock.sell) sellX = x; });
+        if (!sellX) return;
+        var ech = echelonOf(sellX.h.ticker);
+        var cands = stockCands(ech >= 1 ? ech : 0);
+        if (ech >= 1 && !cands.length) cands = stockCands(0);
+        var cand = null; cands.forEach(function (cn) { if (cn.ticker === rebalPick.stock.buy) cand = cn; });
+        if (!cand) return;
+        var d = stockDeal({ qty: sellX.c.qty, nowPrice: sellX.c.cur || 0, pot: holdPotential(sellX.h) }, cand);
+        if (!d) { toast('Недостаточно данных для обмена', true); return; }
+        if (!(d.buyQty > 0)) { toast('Выручки не хватает даже на одну акцию ' + cand.ticker, true); return; }
+        var sellName = sellX.h.ticker;
+        pfReduceHolding(p, sellX.h, d.qty);
+        pfAddBought(p, { type: 'stock', ticker: cand.ticker, name: cand.name, price: d.priceN, qty: d.buyQty, pot: cand.pot });
+        pfLogTrade(p, { kind: 'stock', sellTicker: sellName, sellName: sellName, sellQty: d.qty,
+            buyTicker: cand.ticker, buyName: cand.ticker, buyQty: d.buyQty, proceeds: d.proceeds,
+            rest: d.priceN > 0 ? d.proceeds - d.buyQty * d.priceN * (1 + (rebalFee || 0)) : 0,
+            potFrom: d.potFrom, potTo: d.potTo });
+        rebalPick.stock = { sell: null, buy: null, qty: null };
+        saveStore(); pfInvalidateCharts(p.id); ensureQuotes(true); rebalRepaint();
+        if (currentTab === 'portfolios' && dq('pfWrap')) renderPortfolios();
+        toast('Обмен применён: −' + d.qty + ' ' + sellName + ' → +' + d.buyQty + ' ' + cand.ticker);
+    };
+    window.pfRbDelTrade = function (pid, tid) {
+        var p = findPf(pid); if (!p) return;
+        p.trades = (p.trades || []).filter(function (t) { return t.id !== tid; });
+        saveStore(); rebalRepaint();
     };
 
     // ====================================================================
