@@ -1253,3 +1253,27 @@ body.dark-mode .pfo-table .pos { color: #34d399; } body.dark-mode .pfo-table .ne
 .pf-toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(14px); z-index: 5000; background: #0f172a; color: #fff; font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 13px; padding: 12px 20px; border-radius: 12px; box-shadow: 0 18px 40px -14px rgba(0,0,0,0.5); opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; }
 .pf-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .pf-toast.err { background: #b91c1c; }
+
+/* ============================================================
+   КАЛЕНДАРЬ ДАТ ПОРТФЕЛЯ: поле «вставить дату» над сеткой
+   (скопированную дату можно вставить/ввести, не ища в календаре)
+   ============================================================ */
+.btcal-paste { display: flex; gap: 6px; margin-bottom: 10px; }
+.btcal-paste input {
+    flex: 1 1 auto; min-width: 0; padding: 7px 10px; outline: none;
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: #2C364C;
+    background: rgba(44, 54, 76, 0.05); border: 1.5px solid rgba(44, 54, 76, 0.10); border-radius: 10px;
+    font-variant-numeric: tabular-nums; transition: border-color 0.15s ease, background 0.15s ease;
+}
+.btcal-paste input::placeholder { color: #9aa6b8; font-weight: 500; }
+.btcal-paste input:focus { background: #fff; border-color: #2C364C; }
+.btcal-paste input.err { border-color: #d23b4e; background: rgba(210, 59, 78, 0.07); }
+.btcal-paste-ok {
+    flex-shrink: 0; padding: 0 12px; border: none; border-radius: 10px; cursor: pointer;
+    font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 800; color: #fff; background: #161B27;
+    transition: opacity 0.15s ease;
+}
+.btcal-paste-ok:hover { opacity: 0.85; }
+body.dark-mode .btcal-paste input { color: #e2e8f0; background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.12); }
+body.dark-mode .btcal-paste input:focus { background: rgba(15, 23, 42, 0.8); border-color: #5a7cff; }
+body.dark-mode .btcal-paste-ok { background: #5a7cff; }

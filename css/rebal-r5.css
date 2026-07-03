@@ -275,6 +275,42 @@ body.dark-mode .rb5-dchip.neg { color: #f87171; }
 body.dark-mode .rb5-verdict.ok { color: #34d399; background: rgba(52, 211, 153, 0.12); }
 body.dark-mode .rb5-verdict.bad { color: #f87171; background: rgba(248, 113, 113, 0.12); }
 
+/* ---- кнопка ⓘ «методика расчёта» в шапке ---- */
+.rb5-fml-btn {
+    width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: grid; place-items: center;
+    background: rgba(255, 255, 255, 0.55); border: 1px solid rgba(44, 54, 76, 0.12); color: #2C364C;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.rb5-fml-btn svg { width: 17px; height: 17px; }
+.rb5-fml-btn:hover { border-color: #2C364C; background: #fff; }
+.rb5-fml-btn.on { background: #161B27; color: #fff; border-color: #161B27; }
+body.dark-mode .rb5-fml-btn { background: rgba(15, 23, 42, 0.6); border-color: rgba(255, 255, 255, 0.12); color: #cbd5e1; }
+body.dark-mode .rb5-fml-btn.on { background: #5a7cff; border-color: #5a7cff; color: #fff; }
+
+/* ---- панель «методика расчёта» ---- */
+.rb5-fml {
+    background: rgba(255, 255, 255, 0.72); border: 1.5px solid rgba(44, 54, 76, 0.10);
+    border-radius: 18px; padding: 14px 18px 16px; margin-bottom: 20px;
+    display: flex; flex-direction: column; gap: 12px;
+}
+body.dark-mode .rb5-fml { background: rgba(15, 23, 42, 0.55); border-color: rgba(255, 255, 255, 0.10); }
+.rb5-fml-note { font-size: 11.5px; line-height: 1.5; color: #7d8aa0; }
+.rb5-fml-note b { color: #2C364C; }
+body.dark-mode .rb5-fml-note { color: #94a3b8; }
+body.dark-mode .rb5-fml-note b { color: #F1F5F9; }
+.rb5-fml-sect { display: flex; flex-direction: column; gap: 5px; }
+.rb5-fml-sect > b { font-size: 12.5px; font-weight: 800; color: #2C364C; }
+body.dark-mode .rb5-fml-sect > b { color: #F1F5F9; }
+.rb5-fml-r { display: grid; grid-template-columns: 170px 1fr; gap: 10px; align-items: baseline; font-size: 11px; }
+.rb5-fml-r span { color: #7d8aa0; }
+.rb5-fml-r code {
+    font-family: 'Inter', sans-serif; font-size: 11px; line-height: 1.45; color: #2C364C;
+    background: rgba(44, 54, 76, 0.05); border: 1px solid rgba(44, 54, 76, 0.08);
+    border-radius: 8px; padding: 3px 8px;
+}
+body.dark-mode .rb5-fml-r code { color: #e2e8f0; background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.08); }
+@media (max-width: 720px) { .rb5-fml-r { grid-template-columns: 1fr; gap: 2px; } }
+
 /* ---- пустая колонка ---- */
 .rb5-empty { display: flex; flex-direction: column; gap: 5px; padding: 26px 20px; text-align: center; }
 .rb5-empty b { font-size: 13.5px; font-weight: 800; color: #2C364C; }
