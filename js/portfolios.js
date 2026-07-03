@@ -2304,6 +2304,7 @@
     window.pfExpand = function (pid) {
         var p = findPf(pid); if (!p) return;
         rebalPick = { bond: { sell: null, buy: null, qty: null }, stock: { sell: null, buy: null, qty: null } };
+        rebalInfo = {};
         ensureQuotes(true);
         if (typeof window.stkEnsureLoaded === 'function') { try { window.stkEnsureLoaded(); } catch (e) {} }   // эшелоны/потенциал акций
         var ov = dq('pfOverlay');
@@ -2355,6 +2356,7 @@
     // выбранный обмен: sell — id актива портфеля, buy — тикер/ISIN с рынка, qty — сколько
     // продать (null → подставится предложение «продать столько, чтобы штук стало больше»)
     var rebalPick = { bond: { sell: null, buy: null, qty: null }, stock: { sell: null, buy: null, qty: null } };
+    var rebalInfo = {};          // ключ строки → раскрыты ли детали бумаги (иконка ⓘ в строке)
     try {
         var _rp = JSON.parse(localStorage.getItem('pf_rebal_params') || '{}');
         if (_rp.tax != null) rebalTax = +_rp.tax;
@@ -2454,13 +2456,12 @@
 
     // ---------- акции ----------
     var ROMAN = ['I', 'II', 'III', 'IV'];
-    // Эшелон тикера: колонка «ЭШЕЛОН» таблицы акций (вкладка «Акции») → колонка таблицы
-    // эшелонов раздела «Ребаланс»; 0 — не определён
+    // Эшелон тикера: колонка таблицы эшелонов раздела «Ребаланс» → колонка «ЭШЕЛОН» таблицы
+    // акций (вкладка «Акции»); 0 — не определён. Таблица эшелонов — ПЕРВИЧНА: кандидаты на
+    // покупку берутся именно из неё, поэтому фильтр «тот же эшелон» должен считать эшелон
+    // продаваемой бумаги по тому же источнику (иначе несовпадение колонок двух гугл-таблиц
+    // давало пустой список кандидатов).
     function echelonOf(ticker) {
-        if (typeof window.stkFindCompany === 'function') {
-            try { var co = window.stkFindCompany(ticker);
-                if (co && co.main) { var e = parseInt(co.main['ЭШЕЛОН'], 10); if (e >= 1 && e <= 4) return e; } } catch (e1) {}
-        }
         try {
             if (typeof echelonTableData !== 'undefined' && echelonTableData) {
                 for (var ci = 0; ci < echelonTableData.length; ci++) {
@@ -2469,6 +2470,10 @@
                 }
             }
         } catch (e2) {}
+        if (typeof window.stkFindCompany === 'function') {
+            try { var co = window.stkFindCompany(ticker);
+                if (co && co.main) { var e = parseInt(co.main['ЭШЕЛОН'], 10); if (e >= 1 && e <= 4) return e; } } catch (e1) {}
+        }
         return 0;
     }
     // Потенциал акции: зафиксированный на дату покупки (h.potAtBuy) → текущий ОДХС → target эшелона
@@ -2494,23 +2499,29 @@
         }
         return 0;
     }
-    // Кандидаты на покупку: потенциальные акции из гугл-таблицы (4 колонки-эшелона раздела
-    // «Ребаланс»), без уже купленных; ech ≥ 1 — только тот же эшелон, что у продаваемой
-    function stockCands(heldSet, ech) {
+    // Кандидаты на покупку: ВСЕ потенциальные акции из гугл-таблицы (4 колонки-эшелона
+    // раздела «Ребаланс»), включая уже купленные (докупить — легитимный обмен; свои
+    // помечаются бейджем «в портфеле», как в списке ОФЗ). Потенциал — из таблицы эшелонов
+    // (target, тот же источник, что показывает раздел «Ребаланс»), при пустом target —
+    // живой ОДХС из таблицы акций; бумаги без потенциала не выкидываем, а сортируем в конец.
+    // ech ≥ 1 — только тот же эшелон, что у продаваемой.
+    function stockCands(ech) {
         var arr = [];
         try {
             if (typeof echelonTableData !== 'undefined' && echelonTableData) {
                 for (var ci = 0; ci < echelonTableData.length; ci++) {
                     (echelonTableData[ci] || []).forEach(function (a) {
-                        if (!a || !a.t || (heldSet && heldSet[a.t])) return;
-                        var pot = toNum(a.target); if (!isFinite(pot)) return;
-                        arr.push({ ticker: a.t, name: a.n || a.t, ech: ci + 1, pot: pot });
+                        if (!a || !a.t) return;
+                        var pot = toNum(a.target);
+                        if (!isFinite(pot)) pot = potentialOf(a.t);
+                        arr.push({ ticker: a.t, name: a.n || a.t, sector: a.sector || '', ech: ci + 1,
+                            pot: (pot != null && isFinite(pot)) ? pot : null });
                     });
                 }
             }
         } catch (e) {}
         if (ech >= 1) arr = arr.filter(function (a) { return a.ech === ech; });
-        arr.sort(function (a, b) { return b.pot - a.pot; });
+        arr.sort(function (a, b) { return (b.pot == null ? -1e9 : b.pot) - (a.pot == null ? -1e9 : a.pot); });
         return arr;
     }
     // Обмен акций: продаём qty по текущей цене → покупаем кандидата; выгода — рост потенциала
@@ -2530,18 +2541,25 @@
     var UNITS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>';
     var COIN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v10M9.5 9.3c0-1.3 1.1-2.1 2.5-2.1s2.5.8 2.5 1.9c0 2.6-5 1.4-5 4 0 1.1 1.1 1.9 2.5 1.9s2.5-.8 2.5-2.1"/></svg>';
     var RB5_CHECK = '<span class="rb5-chip">' + CHECK_SVG + '</span>';
-    function rb5Head(p, c) {
+    // Шапка карточки. bt — bondsTotal() портфеля или null, если облигаций нет: «машина денег»
+    // и НДФЛ (он влияет только на экономику облигаций) живут в шапке и показываются лишь
+    // при наличии облигаций — так колонки внизу начинаются на одном уровне.
+    function rb5Head(p, c, bt) {
         var taxes = [[0, '0%'], [0.13, '13%'], [0.15, '15%']];
+        var bondCtl = '';
+        if (bt) {
+            bondCtl = machineHtml(bt) +
+                '<div class="rb5-seg rb5-seg--tax"><span class="rb5-seg-l">НДФЛ</span>' + taxes.map(function (o) {
+                    return '<button class="rb5-seg-b' + (rebalTax === o[0] ? ' on' : '') + '" onclick="pfSetRebalTax(' + o[0] + ')">' + o[1] + '</button>';
+                }).join('') + '</div>';
+        }
         return '<div class="rb5-head">' +
             '<div class="rb5-head-t">' +
                 '<span class="rb5-eyebrow">Ребалансировка</span>' +
                 '<span class="rb5-title">' + esc(p.name) + '</span>' +
                 '<span class="rb5-sub">' + c.count + ' ' + plural(c.count, 'актив', 'актива', 'активов') + ' · ' + fmtRub(c.value) + '</span>' +
             '</div>' +
-            '<div class="rb5-head-r">' +
-                '<div class="rb5-seg rb5-seg--tax"><span class="rb5-seg-l">НДФЛ</span>' + taxes.map(function (o) {
-                    return '<button class="rb5-seg-b' + (rebalTax === o[0] ? ' on' : '') + '" onclick="pfSetRebalTax(' + o[0] + ')">' + o[1] + '</button>';
-                }).join('') + '</div>' +
+            '<div class="rb5-head-r">' + bondCtl +
                 '<button class="rb5-x" onclick="pfCloseOverlay()" aria-label="Закрыть">' + XMARK_SVG + '</button>' +
             '</div>' +
         '</div>';
@@ -2565,43 +2583,75 @@
             '<span>из ' + max + ' шт</span></div>';
     }
     // «Машина денег»: суммарная прибыль по облигациям за выбранный период + переключатель.
-    // Компактный виджет-строка (не полноразмерная карточка) — чтобы не спорить за внимание
-    // с таблицей обмена ниже: значение слева, период и пояснение справа.
+    // Живёт в ШАПКЕ карточки (компактный виджет), пояснение формулы — в title.
     function machineHtml(t) {
         var segs = [['day', 'день'], ['week', 'неделя'], ['month', 'месяц']];
-        return '<div class="rb5-machine">' +
+        var tip = t.pending ? 'Уточняем купоны на Мосбирже…'
+            : t.units + ' ' + plural(t.units, 'облигация', 'облигации', 'облигаций') + ' · купоны + номинал + НКД − затраты';
+        return '<div class="rb5-machine rb5-machine--head" title="' + attr(tip) + '">' +
             '<div class="rb5-mch-info"><span class="rb5-label">Прибыль по облигациям</span>' +
                 '<div class="rb5-mch-val"><b>' + (t.pending ? '…' : f2(t.total * perMul())) + '</b><span>₽ ' + perLbl() + '</span></div></div>' +
-            '<div class="rb5-mch-side">' +
-                '<div class="rb5-seg">' + segs.map(function (s) {
-                    return '<button class="rb5-seg-b' + (rebalPeriod === s[0] ? ' on' : '') + '" onclick="pfSetRebalPeriod(\'' + s[0] + '\')">' + s[1] + '</button>';
-                }).join('') + '</div>' +
-                '<div class="rb5-mch-sub">' + (t.pending ? 'уточняем купоны на Мосбирже…'
-                    : t.units + ' ' + plural(t.units, 'облигация', 'облигации', 'облигаций') + ' · купоны + номинал + НКД − затраты') + '</div>' +
-            '</div>' +
+            '<div class="rb5-seg">' + segs.map(function (s) {
+                return '<button class="rb5-seg-b' + (rebalPeriod === s[0] ? ' on' : '') + '" onclick="pfSetRebalPeriod(\'' + s[0] + '\')">' + s[1] + '</button>';
+            }).join('') + '</div>' +
         '</div>';
     }
-    // строка моей облигации: имя + кол-во/погашение | доходность годовых из портфеля
+    // ---- иконка ⓘ в строке + раскрывающиеся детали бумаги ----
+    // Иконка появляется при наведении на строку; клик раскрывает панель деталей под строкой
+    // (метаданные из строк убраны — дата погашения и прочее живут теперь только здесь).
+    function rb5InfoBtn(key, on) {
+        return '<button type="button" class="rb5-info' + (on ? ' on' : '') + '" onclick="pfRbInfo(\'' + attr(key) + '\',event)" aria-label="Детали бумаги" title="Детали">' + INFO_SVG + '</button>';
+    }
+    function rb5DetRow(l, v) { return v ? '<div class="rb5-det-r"><span>' + l + '</span><b>' + v + '</b></div>' : ''; }
+    function rb5Det(rows) { return '<div class="rb5-det">' + rows + '</div>'; }
+    function couponStr(d) {
+        if (!d || !(+d.couponValue > 0)) return 'уточняем…';
+        return fmtPrice(+d.couponValue) + (+d.freq > 0 ? ' · ' + (+d.freq) + ' ' + plural(+d.freq, 'раз', 'раза', 'раз') + ' в год' : '');
+    }
+    // строка моей облигации: имя + кол-во | доходность годовых из портфеля
     function bondRowHtml(x) {
         var r = bondHeld(x.h), e = r.econ, sel = rebalPick.bond.sell === x.h.id;
+        var key = 'bs:' + x.h.id, on = !!rebalInfo[key];
         var val = e ? '<b class="' + (e.annual >= 0 ? 'pos' : 'neg') + '">' + fmtPct(e.annual) + '</b><span>годовых</span>'
                     : '<b class="mut">…</b><span>считаем</span>';
+        var det = '';
+        if (on) {
+            var a = aggHolding(x.h), d = bondDetail(x.h.ticker), nkdNow = curNkdOf(x.h.ticker);
+            det = rb5Det(
+                rb5DetRow('ISIN', esc(x.h.ticker)) +
+                rb5DetRow('Погашение', e ? ruDate2(e.matDate) + ' · через ' + e.days + ' дн' : 'уточняем…') +
+                rb5DetRow('Купон', couponStr(d)) +
+                rb5DetRow('Цена сейчас', (bondQuotes[x.h.ticker] > 0 ? fmtPrice(bondQuotes[x.h.ticker]) : '—') + (nkdNow != null ? ' + НКД ' + fmtPrice(nkdNow) : '')) +
+                rb5DetRow('Куплено', r.qty + ' шт · ' + fmtPrice(a.avgPrice) + ' · ' + ruDate(a.avgDate)) +
+                rb5DetRow('Прибыль в день', e ? f2(e.perDay * r.qty) + ' ₽ · ' + f2(e.perDay) + ' ₽/шт' : '—')
+            );
+        }
         return '<div class="rb5-row' + (sel ? ' sel' : '') + '" onclick="pfPickBond(\'sell\',\'' + x.h.id + '\')">' +
             '<div class="rb5-rid"><b>' + esc(x.h.name || x.h.ticker) + (sel ? RB5_CHECK : '') + '</b>' +
-                '<span>' + r.qty + ' шт' + (e ? ' · до ' + ruDate2(e.matDate) : '') + '</span></div>' +
-            '<div class="rb5-rval">' + val + '</div>' +
-        '</div>';
+                '<span>' + r.qty + ' шт</span></div>' +
+            '<div class="rb5-rval">' + val + '</div>' + rb5InfoBtn(key, on) +
+        '</div>' + det;
     }
-    // строка ОФЗ из таблицы: имя + цена с НКД/погашение | доходность из таблицы
+    // строка ОФЗ из таблицы: имя + цена с НКД | доходность из таблицы
     function ofzRowHtml(cd, heldSet) {
         var sel = rebalPick.bond.buy === cd.t;
-        var meta = (cd.unit > 0 ? fmtPrice(cd.unit) + ' с НКД' : '') +
-            (cd.matDate && cd.matDate !== '—' ? (cd.unit > 0 ? ' · ' : '') + 'до ' + ruDate2(cd.matDate) : '');
+        var key = 'bb:' + cd.t, on = !!rebalInfo[key];
+        var det = '';
+        if (on) {
+            var d = bondDetail(cd.t);
+            det = rb5Det(
+                rb5DetRow('ISIN', esc(cd.t)) +
+                rb5DetRow('Погашение', (cd.matDate && cd.matDate !== '—') ? ruDate2(cd.matDate) + (cd.econ ? ' · через ' + cd.econ.days + ' дн' : '') : 'уточняем…') +
+                rb5DetRow('Купон', couponStr(d)) +
+                rb5DetRow('Цена с НКД', cd.unit > 0 ? fmtPrice(cd.unit) : '—') +
+                rb5DetRow('Прибыль в день', cd.econ ? f2(cd.econ.perDay) + ' ₽/шт · ' + fmtPct(cd.econ.annual) + ' годовых' : '—')
+            );
+        }
         return '<div class="rb5-row' + (sel ? ' sel' : '') + '" onclick="pfPickBond(\'buy\',\'' + esc(cd.t) + '\')">' +
             '<div class="rb5-rid"><b>' + esc(cd.n) + (heldSet[isinKey(cd.t)] ? '<i class="rb5-own">в портфеле</i>' : '') + (sel ? RB5_CHECK : '') + '</b>' +
-                '<span>' + (meta || esc(cd.t)) + '</span></div>' +
-            '<div class="rb5-rval"><b class="pos">' + (isFinite(cd.sheetYield) ? cd.sheetYield.toFixed(1).replace('.', ',') + '%' : '—') + '</b><span>доходность</span></div>' +
-        '</div>';
+                '<span>' + (cd.unit > 0 ? fmtPrice(cd.unit) + ' с НКД' : esc(cd.t)) + '</span></div>' +
+            '<div class="rb5-rval"><b class="pos">' + (isFinite(cd.sheetYield) ? cd.sheetYield.toFixed(1).replace('.', ',') + '%' : '—') + '</b><span>доходность</span></div>' + rb5InfoBtn(key, on) +
+        '</div>' + det;
     }
     // расчёт обмена облигаций: продать N шт → купить M шт + прибыль/штук ДО → ПОСЛЕ + вердикт
     function bondDealHtml(mine, cands) {
@@ -2660,7 +2710,7 @@
         if (rebalPick.bond.buy && sellSel && isinKey(rebalPick.bond.buy) === sellSel) rebalPick.bond.buy = null;
         var candRows = cands.length ? cands.map(function (cd) { return ofzRowHtml(cd, heldSet); }).join('')
             : '<div class="rb5-list-empty">Список ОФЗ появится из гугл-таблицы (раздел «Ребаланс»)</div>';
-        return '<div class="rb5-col">' + head + machineHtml(bondsTotal(bs)) +
+        return '<div class="rb5-col">' + head +
             '<div class="rb5-duo">' +
                 '<div class="rb5-list"><div class="rb5-list-h"><b>Продать</b><i>мои · годовых</i></div><div class="rb5-list-scroll">' + mine.map(bondRowHtml).join('') + '</div></div>' +
                 '<div class="rb5-duo-arr">' + RB5_ARR + '</div>' +
@@ -2674,21 +2724,45 @@
         var sel = rebalPick.stock.sell === x.h.id;
         var izm = x.c.pnlPct || 0, ech = echelonOf(x.h.ticker), pot = holdPotential(x.h);
         var tier = ech ? '<span class="rb5-tier t' + ech + '">' + ROMAN[ech - 1] + '</span>' : '';
+        var key = 'ss:' + x.h.id, on = !!rebalInfo[key];
+        var det = '';
+        if (on) {
+            det = rb5Det(
+                rb5DetRow('Компания', esc(x.h.name || x.h.ticker)) +
+                rb5DetRow('Эшелон', ech ? ROMAN[ech - 1] : '—') +
+                rb5DetRow('Цена сейчас', x.c.cur > 0 ? fmtPrice(x.c.cur) : '—') +
+                rb5DetRow('Куплено', x.c.qty + ' шт · ' + fmtPrice(x.c.buy) + ' · ' + ruDate(x.c.firstDate)) +
+                rb5DetRow('Доход', fmtRub(x.c.pnl) + ' · ' + fmtPct(izm)) +
+                rb5DetRow('Потенциал', pot == null ? '—' : fmtPct(pot))
+            );
+        }
         return '<div class="rb5-row' + (sel ? ' sel' : '') + '" onclick="pfPickStock(\'sell\',\'' + x.h.id + '\')">' +
             '<div class="rb5-rid"><b>' + esc(x.h.ticker) + tier + (sel ? RB5_CHECK : '') + '</b>' +
                 '<span>' + x.c.qty + ' шт · потенциал ' + (pot == null ? '—' : fmtPct(pot)) + '</span></div>' +
-            '<div class="rb5-rval"><b class="' + (izm >= 0 ? 'pos' : 'neg') + '">' + fmtPct(izm) + '</b><span>динамика</span></div>' +
-        '</div>';
+            '<div class="rb5-rval"><b class="' + (izm >= 0 ? 'pos' : 'neg') + '">' + fmtPct(izm) + '</b><span>динамика</span></div>' + rb5InfoBtn(key, on) +
+        '</div>' + det;
     }
-    function stockCandRowHtml(cn) {
+    function stockCandRowHtml(cn, heldSet) {
         var sel = rebalPick.stock.buy === cn.ticker;
         var price = stkPriceOf(cn.ticker);
         var tier = '<span class="rb5-tier t' + cn.ech + '">' + ROMAN[cn.ech - 1] + '</span>';
+        var potCls = cn.pot == null ? 'mut' : (cn.pot >= 0 ? 'pos' : 'neg');
+        var key = 'sb:' + cn.ticker, on = !!rebalInfo[key];
+        var det = '';
+        if (on) {
+            det = rb5Det(
+                rb5DetRow('Компания', esc(cn.name)) +
+                (cn.sector ? rb5DetRow('Сектор', esc(cn.sector)) : '') +
+                rb5DetRow('Эшелон', ROMAN[cn.ech - 1]) +
+                rb5DetRow('Цена сейчас', price > 0 ? fmtPrice(price) : '—') +
+                rb5DetRow('Потенциал', cn.pot == null ? '—' : fmtPct(cn.pot))
+            );
+        }
         return '<div class="rb5-row' + (sel ? ' sel' : '') + '" onclick="pfPickStock(\'buy\',\'' + esc(cn.ticker) + '\')">' +
-            '<div class="rb5-rid"><b>' + esc(cn.ticker) + tier + (sel ? RB5_CHECK : '') + '</b>' +
+            '<div class="rb5-rid"><b>' + esc(cn.ticker) + tier + (heldSet && heldSet[cn.ticker] ? '<i class="rb5-own">в портфеле</i>' : '') + (sel ? RB5_CHECK : '') + '</b>' +
                 '<span>' + esc(cn.name) + (price > 0 ? ' · ' + fmtPrice(price) : '') + '</span></div>' +
-            '<div class="rb5-rval"><b class="' + (cn.pot >= 0 ? 'pos' : 'neg') + '">' + fmtPct(cn.pot) + '</b><span>потенциал</span></div>' +
-        '</div>';
+            '<div class="rb5-rval"><b class="' + potCls + '">' + (cn.pot == null ? '—' : fmtPct(cn.pot)) + '</b><span>потенциал</span></div>' + rb5InfoBtn(key, on) +
+        '</div>' + det;
     }
     // расчёт обмена акций: продать N шт → купить M шт + потенциал ДО → ПОСЛЕ + вердикт
     function stockDealHtml(mine, cands) {
@@ -2697,7 +2771,7 @@
         cands.forEach(function (cn) { if (cn.ticker === pick.buy) cand = cn; });
         if (pick.buy && !cand) pick.buy = null;   // выбранный кандидат выпал из эшелона — сброс
         if (!sellX && !cand) return dealHint('Выберите акцию слева (что продать) и справа (что купить) — здесь появится расчёт обмена.');
-        if (sellX && !cand) return dealHint('Теперь выберите справа акцию на замену — показан тот же эшелон, что у продаваемой.');
+        if (sellX && !cand) return dealHint('Теперь выберите справа акцию на замену.');
         if (!sellX) return dealHint('Выберите слева, какую свою акцию продать.');
         var d = stockDeal({ qty: sellX.c.qty, nowPrice: sellX.c.cur || 0, pot: holdPotential(sellX.h) }, cand);
         if (!d) return dealHint('Недостаточно данных для расчёта — попробуйте другую пару.');
@@ -2726,9 +2800,15 @@
         var heldSet = {}; ss.forEach(function (x) { heldSet[x.h.ticker] = 1; });
         var sellX = null; mine.forEach(function (x) { if (x.h.id === rebalPick.stock.sell) sellX = x; });
         var ech = sellX ? echelonOf(sellX.h.ticker) : 0;
-        var cands = stockCands(heldSet, ech);
-        var candRows = cands.length ? cands.map(stockCandRowHtml).join('')
-            : '<div class="rb5-list-empty">' + (ech ? 'Нет потенциальных акций в эшелоне ' + ROMAN[ech - 1] : 'Список появится из гугл-таблицы (раздел «Ребаланс»)') + '</div>';
+        var cands = stockCands(ech);
+        // в эшелоне продаваемой бумаги кандидатов нет (или эшелон не определён) —
+        // не оставляем пустоту, показываем полный список по потенциалу
+        if (ech >= 1 && !cands.length) { cands = stockCands(0); ech = 0; }
+        // саму продаваемую бумагу на замену не предлагаем
+        if (sellX) cands = cands.filter(function (cn) { return cn.ticker !== sellX.h.ticker; });
+        if (rebalPick.stock.buy && sellX && rebalPick.stock.buy === sellX.h.ticker) rebalPick.stock.buy = null;
+        var candRows = cands.length ? cands.map(function (cn) { return stockCandRowHtml(cn, heldSet); }).join('')
+            : '<div class="rb5-list-empty">Список появится из гугл-таблицы (раздел «Ребаланс»)</div>';
         return '<div class="rb5-col">' + head +
             '<div class="rb5-duo">' +
                 '<div class="rb5-list"><div class="rb5-list-h"><b>Продать</b><i>мои · динамика</i></div><div class="rb5-list-scroll">' + mine.map(stockRowHtml).join('') + '</div></div>' +
@@ -2744,9 +2824,16 @@
         var c = calcPf(p);
         var bs = c.hs.filter(function (x) { return x.h.type === 'bond'; });
         var ss = c.hs.filter(function (x) { return x.h.type !== 'bond'; });
-        return '<div class="pfo-card rb5-card' + (animate ? ' pfo-anim-in' : '') + '">' +
-            rb5Head(p, c) +
-            '<div class="rb5-body"><div class="rb5-cols">' + rb5BondCol(bs, c) + rb5StockCol(ss, c) + '</div></div>' +
+        // портфель только из акций → колонку облигаций (и «машину денег» с НДФЛ в шапке)
+        // не показываем вовсе; только из облигаций → прячем колонку акций. Пустой портфель —
+        // обе заглушки, как раньше.
+        var hasB = bs.length > 0, hasS = ss.length > 0;
+        var one = (hasB && !hasS) || (hasS && !hasB);
+        var cols = (!hasB && !hasS) ? rb5BondCol(bs, c) + rb5StockCol(ss, c)
+            : (hasB ? rb5BondCol(bs, c) : '') + (hasS ? rb5StockCol(ss, c) : '');
+        return '<div class="pfo-card rb5-card' + (one ? ' rb5-card--one' : '') + (animate ? ' pfo-anim-in' : '') + '">' +
+            rb5Head(p, c, hasB ? bondsTotal(bs) : null) +
+            '<div class="rb5-body"><div class="rb5-cols' + (one ? ' rb5-cols--one' : '') + '">' + cols + '</div></div>' +
         '</div>';
     }
 
@@ -2759,6 +2846,11 @@
         pk[side] = (pk[side] === id) ? null : id; pk.qty = null; rebalRepaint(); };
     window.pfPickStock = function (side, id) { var pk = rebalPick.stock;
         pk[side] = (pk[side] === id) ? null : id; pk.qty = null; rebalRepaint(); };
+    // иконка ⓘ в строке: раскрыть/свернуть детали бумаги (не выбирая её — клик не всплывает)
+    window.pfRbInfo = function (key, ev) {
+        if (ev) { ev.stopPropagation(); ev.preventDefault(); }
+        rebalInfo[key] = !rebalInfo[key]; rebalRepaint();
+    };
     window.pfRbQty = function (kind, val, max) {
         var n = Math.round(toNum(val)); if (!isFinite(n)) n = 1;
         rebalPick[kind].qty = clamp(n, 1, max || 1); rebalRepaint();

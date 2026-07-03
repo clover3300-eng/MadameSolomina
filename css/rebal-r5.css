@@ -34,7 +34,7 @@ body.dark-mode .rb5-head { border-bottom-color: rgba(255, 255, 255, 0.08); }
 body.dark-mode .rb5-title { color: #F1F5F9; }
 .rb5-sub { font-size: 12px; color: #7d8aa0; }
 body.dark-mode .rb5-sub { color: #94a3b8; }
-.rb5-head-r { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.rb5-head-r { margin-left: auto; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
 .rb5-x {
     width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: grid; place-items: center;
     background: rgba(255, 255, 255, 0.55); border: 1px solid rgba(44, 54, 76, 0.12); color: #2C364C;
@@ -67,6 +67,9 @@ body.dark-mode .rb5-seg-b.on { background: #5a7cff; box-shadow: 0 6px 16px rgba(
 .rb5-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; padding: 20px 28px 26px; }
 .rb5-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
 @media (max-width: 1100px) { .rb5-cols { grid-template-columns: 1fr; } }
+/* портфель только из акций/только из облигаций: одна колонка, карточка уже */
+.rb5-cols--one { grid-template-columns: 1fr; }
+.pfo-card.rb5-card--one { width: min(880px, 94vw); }
 .rb5-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 
 .rb5-colhead { display: flex; align-items: center; gap: 8px; padding: 2px 2px 0; }
@@ -93,18 +96,19 @@ body.dark-mode .rb5-deal, body.dark-mode .rb5-empty {
     border-color: rgba(255, 255, 255, 0.10);
 }
 
-/* ---- «машина денег»: компактный виджет-строка (значение слева, период+пояснение справа) ---- */
+/* ---- «машина денег»: компактный виджет в ШАПКЕ карточки (значение + период) ---- */
 .rb5-machine { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 16px; flex-wrap: wrap; }
+.rb5-machine--head { padding: 6px 8px 6px 14px; gap: 12px; border-radius: 999px; flex-wrap: nowrap; }
 .rb5-mch-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .rb5-label { font-size: 9.5px; font-weight: 700; color: #6b7890; text-transform: uppercase; letter-spacing: 0.14em; }
 body.dark-mode .rb5-label { color: #94a3b8; }
+.rb5-machine--head .rb5-label { font-size: 8.5px; letter-spacing: 0.1em; white-space: nowrap; }
 .rb5-mch-val { display: flex; align-items: baseline; gap: 6px; }
 .rb5-mch-val b { font-size: 21px; font-weight: 800; color: #2C364C; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1.1; }
 body.dark-mode .rb5-mch-val b { color: #F1F5F9; }
 .rb5-mch-val span { font-size: 11.5px; font-weight: 700; color: #7d8aa0; }
-.rb5-mch-side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; min-width: 0; }
-.rb5-mch-sub { font-size: 9.5px; line-height: 1.35; color: #9aa6b8; text-align: right; }
-body.dark-mode .rb5-mch-sub { color: #7c8aa3; }
+.rb5-machine--head .rb5-mch-val b { font-size: 17px; }
+.rb5-machine--head .rb5-mch-val span { font-size: 10px; white-space: nowrap; }
 
 /* ---- пара списков «продать | купить» ---- */
 /* стрелка между колонками делает механику обмена «А → Б» читаемой с первого взгляда */
@@ -139,7 +143,7 @@ body.dark-mode .rb5-list-h b { color: #F1F5F9; }
 body.dark-mode .rb5-row { border-top-color: rgba(255, 255, 255, 0.06); }
 body.dark-mode .rb5-row:hover { background: rgba(255, 255, 255, 0.05); }
 body.dark-mode .rb5-row.sel { background: rgba(90, 124, 255, 0.12); box-shadow: inset 3px 0 0 #5a7cff; }
-.rb5-rid { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.rb5-rid { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1 1 auto; }
 .rb5-rid b { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 800; color: #2C364C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 body.dark-mode .rb5-rid b { color: #F1F5F9; }
 .rb5-rid span { font-size: 10px; color: #94A3B8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
@@ -152,10 +156,41 @@ body.dark-mode .rb5-rid b { color: #F1F5F9; }
 body.dark-mode .rb5-rval b.pos { color: #34d399; }
 body.dark-mode .rb5-rval b.neg { color: #f87171; }
 
-/* чип «выбрано» + бейджи в строке */
-.rb5-chip { display: inline-grid; place-items: center; width: 15px; height: 15px; border-radius: 50%; background: #161B27; color: #fff; flex-shrink: 0; }
-.rb5-chip svg { width: 9px; height: 9px; }
-body.dark-mode .rb5-chip { background: #5a7cff; }
+/* чип «выбрано» + бейджи в строке: заметный — крупнее, жирная галка, светлое кольцо вокруг */
+.rb5-chip {
+    display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%;
+    background: #161B27; color: #fff; flex-shrink: 0;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.95), 0 2px 6px rgba(22, 27, 39, 0.35);
+}
+.rb5-chip svg { width: 11px; height: 11px; stroke-width: 3.4; }
+body.dark-mode .rb5-chip { background: #5a7cff; box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.9), 0 2px 6px rgba(0, 0, 0, 0.5); }
+
+/* иконка ⓘ «детали бумаги»: появляется при наведении на строку */
+.rb5-info {
+    display: grid; place-items: center; flex-shrink: 0; width: 22px; height: 22px;
+    border: none; border-radius: 50%; cursor: pointer; padding: 0;
+    background: transparent; color: #94A3B8; opacity: 0;
+    transition: opacity 0.13s ease, background 0.13s ease, color 0.13s ease;
+}
+.rb5-info svg { width: 14px; height: 14px; }
+.rb5-row:hover .rb5-info, .rb5-info:focus-visible, .rb5-info.on { opacity: 1; }
+.rb5-info:hover { background: rgba(44, 54, 76, 0.10); color: #2C364C; }
+.rb5-info.on { background: #161B27; color: #fff; }
+body.dark-mode .rb5-info:hover { background: rgba(255, 255, 255, 0.10); color: #e2e8f0; }
+body.dark-mode .rb5-info.on { background: #5a7cff; color: #fff; }
+@media (hover: none) { .rb5-info { opacity: 0.55; } }
+
+/* панель деталей под строкой */
+.rb5-det {
+    padding: 8px 14px 10px; border-top: 1px dashed rgba(44, 54, 76, 0.12);
+    background: rgba(44, 54, 76, 0.035);
+    display: flex; flex-direction: column; gap: 4px;
+}
+body.dark-mode .rb5-det { border-top-color: rgba(255, 255, 255, 0.10); background: rgba(255, 255, 255, 0.04); }
+.rb5-det-r { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 10.5px; }
+.rb5-det-r span { color: #94A3B8; flex-shrink: 0; }
+.rb5-det-r b { font-weight: 700; color: #2C364C; font-variant-numeric: tabular-nums; text-align: right; }
+body.dark-mode .rb5-det-r b { color: #e2e8f0; }
 .rb5-own { font-style: normal; font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7890; background: rgba(44, 54, 76, 0.08); padding: 1px 6px; border-radius: 999px; flex-shrink: 0; }
 body.dark-mode .rb5-own { color: #94a3b8; background: rgba(255, 255, 255, 0.08); }
 .rb5-tier { font-size: 8.5px; font-weight: 800; padding: 1px 6px; border-radius: 6px; flex-shrink: 0; letter-spacing: 0.04em; }
