@@ -930,23 +930,48 @@ body.dark-mode .pfm-act.danger { color: #f87171; border-color: rgba(248,113,113,
    ============================================================ */
 .pf-impwrap { position: relative; display: inline-flex; }
 .pf-impbtn .pf-chev { width: 14px; height: 14px; margin-left: -2px; }
-.pf-impmenu { position: absolute; top: calc(100% + 8px); right: 0; z-index: 200; min-width: 232px;
-    background: #fff; border: 1px solid rgba(24,38,60,0.1); border-radius: 14px; padding: 7px;
+.pf-impmenu { position: absolute; top: calc(100% + 8px); right: 0; z-index: 200; min-width: 288px;
+    background: #fff; border: 1px solid rgba(24,38,60,0.1); border-radius: 16px; padding: 8px;
     box-shadow: 0 24px 50px -18px rgba(24,38,60,0.4);
     opacity: 0; visibility: hidden; transform: translateY(-6px); transition: opacity 0.15s, transform 0.15s, visibility 0.15s; }
 .pf-impmenu.up { top: auto; bottom: calc(100% + 8px); transform: translateY(6px); }
 .pf-impmenu.open { opacity: 1; visibility: visible; transform: translateY(0); }
 body.dark-mode .pf-impmenu { background: #18222e; border-color: rgba(255,255,255,0.1); box-shadow: 0 24px 50px -18px rgba(0,0,0,0.6); }
-.pf-impgrp { font-size: 9.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8; padding: 8px 10px 4px; }
-.pf-impitem { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; border: none; background: none; border-radius: 9px; padding: 9px 10px; font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 12.5px; color: #1b2433; cursor: pointer; transition: background 0.12s; }
+.pf-impgrp { font-size: 9.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8; padding: 8px 10px 6px; }
+/* карточка источника: иконка слева, название + подпись (кол-во позиций / причина недоступности) справа */
+.pf-impitem { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; border: none; background: none;
+    border-radius: 11px; padding: 9px 10px; font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 12.5px; color: #1b2433; cursor: pointer; transition: background 0.12s; }
+.pf-impitem + .pf-impitem { margin-top: 2px; }
 .pf-impitem:hover { background: rgba(24,38,60,0.06); }
-.pf-impitem.sub { padding-left: 22px; font-size: 12px; font-weight: 600; color: #46566e; }
-.pf-impitem.sub::before { content: '·'; margin-right: 3px; color: #94a3b8; }
-.pf-impitem.off { opacity: 0.4; cursor: not-allowed; }
-.pf-impitem.off:hover { background: none; }
+/* элементы без .pf-impico (напр. меню «Бэкап» — иконка+текст без карточной обёртки) — фиксируем размер svg, иначе она растягивается до intrinsic 300×150 */
+.pf-impitem > svg { flex-shrink: 0; width: 16px; height: 16px; }
 body.dark-mode .pf-impitem { color: #e7eef6; }
+.pf-impico { flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px;
+    border-radius: 10px; background: rgba(24,38,60,0.05); color: #46566e; }
+.pf-impico svg { width: 17px; height: 17px; }
+.pf-impbody { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+.pf-impbody b { font-weight: 700; font-size: 13px; color: #1b2433; }
+.pf-impbody i { font-style: normal; font-weight: 600; font-size: 11px; color: #8a97a8; }
+.pf-impgo { flex-shrink: 0; display: flex; color: #c3ccd8; }
+.pf-impgo svg { width: 13px; height: 13px; transform: rotate(-90deg); }
+.pf-impitem.off { cursor: not-allowed; }
+.pf-impitem.off:hover { background: none; }
+.pf-impitem.off .pf-impico { opacity: 0.45; }
+.pf-impitem.off .pf-impbody b { color: #8a97a8; }
+.pf-impitem.off .pf-impbody i { color: #b3bcc8; }
 body.dark-mode .pf-impitem:hover { background: rgba(255,255,255,0.07); }
-body.dark-mode .pf-impitem.sub { color: #aab8c8; }
+body.dark-mode .pf-impico { background: rgba(255,255,255,0.07); color: #cdd8e6; }
+body.dark-mode .pf-impbody b { color: #e7eef6; }
+body.dark-mode .pf-impbody i { color: #7c8aa0; }
+body.dark-mode .pf-impitem.off .pf-impbody b { color: #7c8aa0; }
+body.dark-mode .pf-impitem.off .pf-impbody i { color: #5a6577; }
+/* «Только акции/облигации» — подпункты расчёта в виде чипов под основной карточкой, не отдельными строками */
+.pf-impsubs { display: flex; gap: 6px; padding: 2px 10px 6px 53px; flex-wrap: wrap; }
+.pf-impchip { border: 1px solid rgba(24,38,60,0.12); background: rgba(24,38,60,0.03); border-radius: 8px;
+    padding: 4px 9px; font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 10.5px; color: #46566e; cursor: pointer; transition: background 0.12s, color 0.12s; }
+.pf-impchip:hover { background: rgba(24,38,60,0.08); color: #1b2433; }
+body.dark-mode .pf-impchip { border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #aab8c8; }
+body.dark-mode .pf-impchip:hover { background: rgba(255,255,255,0.09); color: #f4f8fd; }
 
 /* ============================================================
    ИЗБРАННОЕ — плитки (тикер · потенциал · кликабельная новость-ссылка)

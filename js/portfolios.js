@@ -838,11 +838,15 @@
     }
     window.renderPortfolios = renderPortfolios;
 
-    // Котировки (акции пачкой, облигации по одной) приходят асинхронно и каждый
-    // ответ зовёт softRerender — без дебаунса это десятки полных ре-рендеров подряд,
-    // от которых вкладка «тормозит». Коалесцируем в один кадр.
+    // Котировки (акции пачкой, облигации по одной) приходят асинхронно, и каждая
+    // приходит В РАЗНОЕ время (несколько облигаций = несколько отдельных fetch).
+    // Раньше первый ответ планировал ре-рендер через 120мс и на этом дебаунс
+    // «сгорал» — следующий ответ (даже через 150мс) снова полностью пересобирал
+    // host.innerHTML → серия быстрых полных ре-рендеров подряд визуально мигает.
+    // Теперь это trailing-дебаунс: каждый новый ответ ПЕРЕНОСИТ таймер вперёд, и
+    // рендер срабатывает один раз — после того как все ответы за пачку утихли.
     function softRerender() {
-        if (softTimer) return;
+        if (softTimer) clearTimeout(softTimer);
         softTimer = setTimeout(function () {
             softTimer = null;
             rebalRepaint();   // открытая карточка ребалансировки: живые цены/НКД пришли — обновить
@@ -851,7 +855,7 @@
             for (var ck in chartOpen) { if (chartOpen[ck]) return; }   // не перерисовываем раскрытый график (сбилась бы анимация)
             if (document.querySelector('.pf-impmenu.open')) return;   // не сбиваем открытое меню «Импорт»
             renderPortfolios();
-        }, 120);
+        }, 150);
     }
 
     // ---- LIVE-полоска (стиль дашборда, свои id, чтобы не дублировать) ----
@@ -893,25 +897,40 @@
     // бэкап: «щит» (кнопка), «выгрузить в файл» (стрелка вниз в лоток), «загрузить из файла» (стрелка вверх)
     var SHIELD_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
     var UPLOAD_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
+    // иконки источников в меню «Импорт» — калькулятор / звезда (избранное) / кошелёк (доход)
+    var IMPCALC_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2.5" width="16" height="19" rx="2.5"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="12" x2="8" y2="12.01"/><line x1="12" y1="12" x2="12" y2="12.01"/><line x1="16" y1="12" x2="16" y2="12.01"/><line x1="8" y1="16" x2="8" y2="16.01"/><line x1="12" y1="16" x2="12" y2="16.01"/><line x1="16" y1="16" x2="16" y2="16.01"/></svg>';
+    var IMPFAV_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2.8 14.9 9 21.7 9.9 16.8 14.5 18 21.2 12 18 6 21.2 7.2 14.5 2.3 9.9 9.1 9"/></svg>';
+    var IMPMON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/><circle cx="16.5" cy="15" r="1.4" fill="currentColor" stroke="none"/></svg>';
 
     // ---- меню «Импорт» (расчёт / избранное / ежемесячный доход) ----
+    // Каждый источник — карточка с иконкой, названием и подписью: если данные есть — сколько
+    // позиций перенесётся, если нет — почему пункт недоступен (понятнее, чем просто «серая кнопка»)
     function impMenuHtml(key, pid) {
         var up = key !== 'head';                                   // в шапке — вниз, иначе — вверх (не обрезается)
-        var calc = !!getCalcComposition('all'), calcS = !!getCalcComposition('stock'),
-            calcB = !!getCalcComposition('bond'), fav = !!getFavComposition(), mon = !!getMonthlyComposition();
+        var calcAll = getCalcComposition('all'), calcS = getCalcComposition('stock'), calcB = getCalcComposition('bond'),
+            fav = getFavComposition(), mon = getMonthlyComposition();
         function oc(src, sub) { return "pfImport('" + src + "'," + (sub ? "'" + sub + "'" : 'null') + ',' + (pid ? "'" + pid + "'" : 'null') + ')'; }
-        function item(src, sub, label, avail, cls) {
-            return '<button class="pf-impitem' + (cls ? ' ' + cls : '') + (avail ? '' : ' off') + '"' +
-                (avail ? '' : ' disabled') + ' onclick="' + oc(src, sub) + '">' + label + '</button>';
+        function posWord(n) { return n + ' ' + plural(n, 'позиция', 'позиции', 'позиций'); }
+        function card(src, sub, ico, title, emptyMsg, list) {
+            var n = list ? list.length : 0, avail = n > 0;
+            return '<button class="pf-impitem' + (avail ? '' : ' off') + '"' + (avail ? '' : ' disabled') +
+                ' onclick="' + oc(src, sub) + '">' +
+                '<span class="pf-impico">' + ico + '</span>' +
+                '<span class="pf-impbody"><b>' + title + '</b><i>' + (avail ? posWord(n) : emptyMsg) + '</i></span>' +
+                (avail ? '<span class="pf-impgo">' + CHEV_SVG + '</span>' : '') +
+            '</button>';
         }
+        var subRow = (calcS && calcS.length) || (calcB && calcB.length)
+            ? '<div class="pf-impsubs">' +
+                ((calcS && calcS.length) ? '<button class="pf-impchip" onclick="' + oc('calc', 'stock') + '">Только акции · ' + calcS.length + '</button>' : '') +
+                ((calcB && calcB.length) ? '<button class="pf-impchip" onclick="' + oc('calc', 'bond') + '">Только облигации · ' + calcB.length + '</button>' : '') +
+            '</div>' : '';
         return '<div class="pf-impmenu' + (up ? ' up' : '') + '" id="pfImp-' + key + '">' +
-            '<div class="pf-impgrp">Из расчёта</div>' +
-            item('calc', 'all', 'Весь расчёт', calc) +
-            item('calc', 'stock', 'Только акции', calcS, 'sub') +
-            item('calc', 'bond', 'Только облигации', calcB, 'sub') +
-            '<div class="pf-impgrp">Другое</div>' +
-            item('fav', null, 'Из избранного', fav) +
-            item('monthly', null, 'Из ежемесячного дохода', mon) +
+            '<div class="pf-impgrp">Откуда перенести бумаги</div>' +
+            card('calc', 'all', IMPCALC_SVG, 'Из расчёта', 'нет сохранённого расчёта', calcAll) +
+            subRow +
+            card('fav', null, IMPFAV_SVG, 'Из избранного', 'нет отмеченных звёздочкой бумаг', fav) +
+            card('monthly', null, IMPMON_SVG, 'Из ежемесячного дохода', 'нет облигаций в калькуляторе дохода', mon) +
             '</div>';
     }
     function impWrapHtml(key, pid) {
@@ -1847,6 +1866,7 @@
         });
     }
     var payCalFull = false;
+    function sameCalDay(a, b) { return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); }
     var CAL_ICO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2.5"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
     function payCalStateHtml(kind) {
         if (kind === 'loading') return '<div class="pfpc-state"><span class="pfcv-spin"></span><span>Уточняем даты выплат на Мосбирже…</span></div>';
@@ -1880,11 +1900,21 @@
         if (!evs.length) return '<div class="' + cls + '">' + head + payCalStateHtml(missing ? 'loading' : 'nodata') + '</div>';
         // в режиме ячейки список скроллится внутри — лимит не нужен, показываем всё сразу
         var LIMIT = 6, multiPf = store.items.length > 1;
-        var shown = (payCalFull || asCell) ? evs : evs.slice(0, LIMIT);
+        // при 2 или 4 портфелях сразу видно много карточек — календарь сворачиваем до
+        // ближайшей даты выплаты (если на неё приходится сразу несколько купонов —
+        // показываем их все); полный список — по клику на «Показать все»
+        var collapseNext = (store.items.length === 2 || store.items.length === 4) && !asCell;
+        var shown;
+        if (collapseNext && !payCalFull) {
+            var d0 = evs[0].date;
+            shown = evs.filter(function (e) { return sameCalDay(e.date, d0); });
+        } else {
+            shown = (payCalFull || asCell) ? evs : evs.slice(0, LIMIT);
+        }
         var soonSum = evs.filter(function (e) { return (e.date.getTime() - Date.now()) <= 30 * 86400000; })
             .reduce(function (s, e) { return s + e.amount; }, 0);
         var soon = '<div class="pfpc-soon"><span class="pfpc-soon-l">за 30 дней</span><span class="pfpc-soon-v">+' + fmtRub(soonSum) + '</span></div>';
-        var more = (!asCell && evs.length > LIMIT) ? '<button class="pfpc-more' + (payCalFull ? ' on' : '') + '" onclick="pfTogglePayCal()">' +
+        var more = (!asCell && evs.length > shown.length) ? '<button class="pfpc-more' + (payCalFull ? ' on' : '') + '" onclick="pfTogglePayCal()">' +
             '<span>' + (payCalFull ? 'Свернуть' : 'Показать все · ' + evs.length) + '</span>' +
             '<svg class="pfpc-more-ch' + (payCalFull ? ' up' : '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>' : '';
         return '<div class="' + cls + '">' + pfCardHead('', 'Календарь выплат', 'ближайшие купоны по облигациям всех портфелей', soon) +
@@ -2611,7 +2641,10 @@
             return (eb ? eb.annual : -1e9) - (ea ? ea.annual : -1e9);
         });
         var heldSet = {}; bs.forEach(function (x) { heldSet[isinKey(x.h.ticker)] = 1; });
-        var cands = ofzMarket().map(ofzCand).sort(function (a, b) {
+        // бумаги, уже лежащие в портфеле (в т.ч. выбранная слева на продажу), не должны
+        // попадать в список «Купить» справа — иначе можно «обменять» бумагу саму на себя
+        // (тот же баг был исправлен для акций через stockCands/heldSet выше)
+        var cands = ofzMarket().map(ofzCand).filter(function (cd) { return !heldSet[isinKey(cd.t)]; }).sort(function (a, b) {
             return (isFinite(b.sheetYield) ? b.sheetYield : -1e9) - (isFinite(a.sheetYield) ? a.sheetYield : -1e9);
         });
         var candRows = cands.length ? cands.map(function (cd) { return ofzRowHtml(cd, heldSet); }).join('')
