@@ -1079,10 +1079,35 @@ body.dark-mode .pff-info { border-color: rgba(255,255,255,0.1); background: rgba
 body.dark-mode .pff-tipbox { background: #0d141d; }
 body.dark-mode .pff-tipbox::before { background: #0d141d; }
 
+/* сегментированный фильтр сортировки избранного (по потенциалу / по свежести новостей) */
+.pff-sort { display: inline-flex; align-items: center; gap: 2px; padding: 3px; border-radius: 11px;
+    background: rgba(24,38,60,0.05); border: 1px solid rgba(24,38,60,0.08); }
+.pff-sort-b { border: none; background: transparent; cursor: pointer; border-radius: 8px; padding: 6px 11px;
+    font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 700; color: #6b7a90; white-space: nowrap;
+    transition: background 0.15s, color 0.15s, box-shadow 0.15s; }
+.pff-sort-b:hover { color: #2b3648; }
+.pff-sort-b.on { background: #fff; color: var(--pf-accent); box-shadow: 0 1px 3px rgba(24,38,60,0.12); }
+body.dark-mode .pff-sort { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
+body.dark-mode .pff-sort-b { color: #93a1b5; }
+body.dark-mode .pff-sort-b:hover { color: #e2e9f2; }
+body.dark-mode .pff-sort-b.on { background: rgba(255,255,255,0.14); color: #fff; box-shadow: none; }
+.pf-topgrid-fav .pff-sort-b { padding: 6px 9px; }
+@media (max-width: 620px) { .pff-sort-b { padding: 6px 9px; } }
+
 /* ============================================================
    КАЛЕНДАРЬ ВЫПЛАТ — ближайшие купоны по облигациям ВСЕХ портфелей сразу
    ============================================================ */
 .pf-paycal { --pf-accent: #3b82f6; }
+/* правая группа шапки календаря: фильтр «Портфели» + сводка «за 30 дней» */
+.pfpc-head-r { display: flex; align-items: center; gap: 12px; margin-left: auto; align-self: center; }
+.pfpc-head-r .pfpc-soon { margin-left: 0; }
+.pfpc-filter .pf-impmenu { min-width: 248px; }
+/* точка-«радуга» у строки «Показать все» в фильтре портфелей */
+.pfpc-alldot { background: conic-gradient(#3b82f6, #16a34a, #f59e0b, #ef4444, #8b5cf6, #3b82f6); }
+/* кликабельная плитка IMOEX в LIVE-полоске портфелей → открывает вкладку «Рынок» */
+.dlv-item.dlv-go { cursor: pointer; border-radius: 8px; margin: -3px -6px; padding: 3px 6px; transition: background 0.15s; }
+.dlv-item.dlv-go:hover { background: rgba(24,38,60,0.05); }
+body.dark-mode .dlv-item.dlv-go:hover { background: rgba(255,255,255,0.07); }
 .pfpc-soon { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; margin-left: auto; align-self: center; }
 /* бейдж «N выплат» — виден в свёрнутом календаре (2/4 портфеля), чтобы не терять контекст */
 .pfpc-cnt { font-size: 10px; font-weight: 800; color: #46566e; background: rgba(24,38,60,0.06);

@@ -273,12 +273,25 @@
     function calcHold(h) {
         var a = aggHolding(h);
         var ci = curPriceInfo(h);
+        var isBond = h.type === 'bond';
         var qty = a.qty, buy = a.avgPrice, cur = ci.p || buy;
-        var invested = a.invested, value = cur * qty, pnl = value - invested;
+        // Облигации: доход/расход считаем по «грязной» цене (чистая цена + НКД). Расход =
+        // цена покупки + НКД на дату покупки, доход = цена сейчас + НКД сейчас (запрос пользователя).
+        // НКД сейчас грузится асинхронно (curNkdOf); пока не пришёл — берём НКД покупки как
+        // приближение (строка пересчитается после ответа MOEX). Для акций НКД = 0.
+        var buyNkd = isBond ? (a.nkd || 0) : 0;
+        var cn = isBond ? curNkdOf(h.ticker) : null;
+        // текущий НКД применяем только когда есть живая ЦЕНА (ci.src !== 'buy'); иначе мы ещё
+        // ждём котировку (в таблице «…») и не смешиваем цену покупки с текущим НКД — иначе
+        // возникает ложное «изменение». Пока цены нет — НКД покупки на обеих сторонах → pnl 0.
+        var curNkd = (isBond && ci.src !== 'buy' && cn != null) ? cn : buyNkd;
+        if (!isBond) curNkd = 0;
+        var invested = a.invested + buyNkd * qty;   // включая НКД на дату покупки
+        var value = (cur + curNkd) * qty, pnl = value - invested;
         return { qty: qty, buy: buy, cur: cur, curSrc: ci.src, invested: invested, value: value, pnl: pnl,
             pnlPct: invested > 0 ? pnl / invested * 100 : 0, days: a.effDays,
             annual: annualize(invested, value, a.effDays), live: isLive(h),
-            lots: a.lots, lotCount: a.count, nkd: a.nkd,
+            lots: a.lots, lotCount: a.count, nkd: a.nkd, curNkd: curNkd,
             firstDate: a.firstDate, avgDate: a.avgDate, anyApi: a.anyApi };
     }
     function calcPf(p) {
@@ -822,6 +835,39 @@
         if (!s || s === '—') return null;
         var d = new Date(s + 'T00:00:00'); return isNaN(d.getTime()) ? null : d;
     }
+    // ---- парсинг произвольной даты, вставленной в поле (Ctrl+V) ----
+    // Нативный <input type="date"> не принимает вставку в формате «12-aug-2025» — обработчик
+    // pfDatePaste перехватывает вставку, распознаёт распространённые форматы и подставляет ISO.
+    var MONTH_MAP = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12,
+        янв: 1, фев: 2, мар: 3, апр: 4, май: 5, мая: 5, июн: 6, июл: 7, авг: 8, сен: 9, окт: 10, ноя: 11, дек: 12 };
+    function monthNum(w) { return MONTH_MAP[String(w || '').slice(0, 3)] || 0; }
+    function fullYear(y) { y = +y; return y < 100 ? 2000 + y : y; }
+    function isoOf(y, mo, d) {
+        if (!(mo >= 1 && mo <= 12) || !(d >= 1 && d <= 31) || !(y >= 1970 && y <= 2100)) return null;
+        return y + '-' + (mo < 10 ? '0' + mo : mo) + '-' + (d < 10 ? '0' + d : d);
+    }
+    function pfParseAnyDate(s) {
+        s = String(s || '').trim().toLowerCase();
+        if (!s) return null;
+        var m = s.match(/^(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})$/);        // 2025-08-12 (ISO)
+        if (m) return isoOf(+m[1], +m[2], +m[3]);
+        m = s.match(/^(\d{1,2})[\s.\-\/]*([a-zа-я]{3,})\.?[\s.\-\/]*(\d{2,4})$/); // 12-aug-2025 / 12 авг 2025
+        if (m) { var mo = monthNum(m[2]); return mo ? isoOf(fullYear(m[3]), mo, +m[1]) : null; }
+        m = s.match(/^(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{2,4})$/);           // 12.08.2025 / 12/08/2025
+        if (m) return isoOf(fullYear(m[3]), +m[2], +m[1]);
+        return null;
+    }
+    // Перехватываем вставку в поле даты: распознали формат → подставляем ISO и шлём change
+    // (чтобы сработал onchange-хендлер сохранения); не распознали — отдаём браузеру как есть.
+    window.pfDatePaste = function (ev, el) {
+        var txt = '';
+        try { txt = (ev.clipboardData || window.clipboardData).getData('text') || ''; } catch (e) { return; }
+        var iso = pfParseAnyDate(txt);
+        if (!iso) return;
+        ev.preventDefault();
+        el.value = iso;
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+    };
 
     // ====================================================================
     //  РЕНДЕР
@@ -936,7 +982,11 @@
             '<div class="dlv-live"><span class="dlv-dot"></span>LIVE</div>' +
             '<div class="dlv-vsep"></div>' +
             '<div class="dlv-items">' + tiles.map(function (t) {
-                return '<div class="dlv-item"><span class="dlv-k">' + t[1] + '</span>' +
+                // клик по IMOEX открывает вкладку «Рынок»
+                var go = t[0] === 'imoex';
+                return '<div class="dlv-item' + (go ? ' dlv-go' : '') + '"' +
+                    (go ? ' role="button" tabindex="0" title="Открыть вкладку «Рынок»" onclick="switchTab(\'market\')"' : '') +
+                    '><span class="dlv-k">' + t[1] + '</span>' +
                     '<span class="dlv-v" id="pflv-v-' + t[0] + '">—</span>' +
                     '<span class="dlv-c" id="pflv-c-' + t[0] + '"></span></div>';
             }).join('<span class="dlv-isep"></span>') + '</div>' +
@@ -1045,7 +1095,14 @@
     // можно было переключить несколько портфелей подряд (см. pfToggleHidden).
     function eyeWrapHtml() {
         var vis = visibleItems().length, total = store.items.length;
-        var rows = store.items.map(function (p) {
+        // строка «Показать все» — видна, когда есть хоть один скрытый портфель
+        var showAll = vis < total
+            ? '<button class="pf-impitem pf-eyeitem pf-eye-all" onclick="pfEyeShowAll(event)">' +
+                '<span class="pf-eyedot pfpc-alldot"></span>' +
+                '<span class="pf-impbody"><b>Показать все</b><i>вернуть скрытые карточки</i></span>' +
+                '<span class="pf-eyestate">' + EYE_SVG + '</span></button>'
+            : '';
+        var rows = showAll + store.items.map(function (p) {
             var c = calcPf(p), off = !!p.hidden;
             return '<button class="pf-impitem pf-eyeitem' + (off ? ' off-eye' : '') + '" onclick="pfToggleHidden(\'' + p.id + '\',event)">' +
                 '<span class="pf-eyedot" style="background:' + colorVal(p.color) + '"></span>' +
@@ -1058,7 +1115,7 @@
                 (vis < total ? '<i class="pf-eyecnt">' + vis + '/' + total + '</i>' : '') + CHEV_SVG + '</button>' +
             '<div class="pf-impmenu" id="pfImp-eye">' +
                 '<div class="pf-impgrp">Какие портфели показывать</div>' + rows +
-                '<div class="pf-eyenote">Скрытые карточки не показываются в сетке, но их капитал по-прежнему учитывается в сводке и календаре выплат.</div>' +
+                '<div class="pf-eyenote">Скрытые карточки не показываются в сетке и в календаре выплат, но их капитал по-прежнему учитывается в общей сводке.</div>' +
             '</div></div>';
     }
 
@@ -1163,14 +1220,11 @@
     // процентов слева + наводимые точки с тултипом (дата + значение) — просто в компактном
     // размере (meньше точек, сжатые отступы через .pfc-mchart-plot в CSS).
     function paintPfChartMini(pid) { drawPfChart(pid, dq('pfmChart-' + pid), null, dq('pfmLeg-' + pid), pid + 'm', 16); }
-    // мини-график в карточке по умолчанию сравнивает с IMOEX (как в референсе); после первого
-    // явного тоггла (кнопка IMOEX) — уважаем выбор пользователя. ВАЖНО: выставляем флаг ДО первого
-    // loadPfChart() любого пейна (см. renderPortfolios) — иначе другой пейн того же портфеля
-    // (раскрытый большой график) может запросить серию РАНЬШЕ repaintMiniCharts() с ещё не
-    // выставленным флагом (wantImoex=false), а пока тот запрос летит, chartBusy блокирует
-    // повторный запрос — кривая IMOEX так и не подгрузится, пока не тронуть тумблер руками.
+    // мини-график в карточке по умолчанию БЕЗ сравнения с индексом (IMOEX/RGBI) — пользователь
+    // включает его сам кнопкой-тумблером. ВАЖНО: выставляем флаг ДО первого loadPfChart() любого
+    // пейна (см. renderPortfolios), чтобы серия сразу запрашивалась в согласованном режиме.
     function ensureDefaultImoexFlags() {
-        visibleItems().slice(0, MAX_CARDS).forEach(function (p) { if (!(p.id in chartImoex)) chartImoex[p.id] = true; });
+        visibleItems().slice(0, MAX_CARDS).forEach(function (p) { if (!(p.id in chartImoex)) chartImoex[p.id] = false; });
     }
     // на каждый видимый портфель — своя загрузка/перерисовка мини-графика (переиспользует loadPfChart)
     function repaintMiniCharts() {
@@ -1220,7 +1274,7 @@
                     '<span class="pfc-hero-inc ' + pnlCls + '">' + (c.pnl >= 0 ? '▲ ' : '▼ ') + fmtRub(Math.abs(c.pnl)) + ' · ' + fmtPct(c.pnlPct) + '</span>' +
                 '</div>' +
                 (function () {
-                    var imOn = !(p.id in chartImoex) || !!chartImoex[p.id];
+                    var imOn = !!chartImoex[p.id];
                     return '<div class="pfc-mini-chart">' +
                         '<div class="pfc-mchart-top">' +
                             '<div class="pfc-mchart-leg" id="pfmLeg-' + p.id + '"></div>' +
@@ -1451,7 +1505,7 @@
     function dateFieldHtml(inputHtml) { return '<span class="pfm-datewrap">' + inputHtml + CAL_SVG + '</span>'; }
     function lotDateInput(pid, h, l) {
         return dateFieldHtml('<input class="pfm-in pfm-in-date" type="date" value="' + attr(l.buyDate) + '" ' +
-            'onchange="pfEditLot(\'' + pid + '\',\'' + h.id + '\',\'' + l.id + '\',\'buyDate\',this.value)">');
+            'onpaste="pfDatePaste(event,this)" onchange="pfEditLot(\'' + pid + '\',\'' + h.id + '\',\'' + l.id + '\',\'buyDate\',this.value)">');
     }
 
     // ===== Красивый календарь для дат в настройках портфеля — тот же виджет (.btcal),
@@ -1824,7 +1878,7 @@
                     'onkeydown="if(event.key===\'Enter\')pfAddHolding(\'' + pid + '\')">' +
                 '<select class="pfm-in pfm-in-type pfaf-type" id="pfNewType-' + pid + '" onchange="pfAddTypeToggle(\'' + pid + '\')">' +
                     '<option value="stock">Акция</option><option value="bond">Облигация</option></select>' +
-                dateFieldHtml('<input class="pfm-in pfm-in-date pfaf-date" id="pfNewDate-' + pid + '" type="date" value="' + todayStr() + '" title="Дата покупки">') +
+                dateFieldHtml('<input class="pfm-in pfm-in-date pfaf-date" id="pfNewDate-' + pid + '" type="date" value="' + todayStr() + '" onpaste="pfDatePaste(event,this)" title="Дата покупки">') +
                 '<span class="pfm-field has-fx pfaf-price">' +
                     '<input class="pfm-in pfm-in-num" id="pfNewPrice-' + pid + '" type="number" step="0.01" min="0" placeholder="цена ₽">' +
                     addFetchBtn(pid, 'price') + '</span>' +
@@ -1860,13 +1914,24 @@
     // renderFavNews — раньше новости грузились для первых 12 тикеров ИЗ ХРАНИЛИЩА (без
     // сортировки), и при >12 избранных часть видимых плиток (например SBER/VTBR) вечно
     // висела в «загрузка новости…», т.к. их просто не было в очереди загрузки.
-    function favShown() {
+    // Пул для загрузки новостей — топ-12 по потенциалу (НЕ грузим новости по всем избранным:
+    // Apps Script медленный, см. очередь newsQueue). Порядок пула стабилен независимо от фильтра.
+    function favPool() {
         return favTickers().slice().sort(function (a, b) {
             var pa = potentialOf(a), pb = potentialOf(b);
             if (pa == null && pb == null) return 0;
             if (pa == null) return 1; if (pb == null) return -1;
             return pb - pa;
         }).slice(0, 12);
+    }
+    var favSort = 'pot';   // 'pot' — по потенциалу (наибольший сверху) | 'news' — по свежести новости
+    function newsDateOf(tk) { var e = newsHtmlCache[tk]; return (e && e.date) ? e.date : 0; }
+    // Отображаемый список = тот же пул, при фильтре «по новизне» переупорядочен по дате новости
+    // (свежие сверху; у кого новость ещё не загружена — в конце, сохраняя порядок по потенциалу).
+    function favShown() {
+        var pool = favPool();
+        if (favSort === 'news') pool = pool.slice().sort(function (a, b) { return newsDateOf(b) - newsDateOf(a); });
+        return pool;
     }
     function favHtml() {
         if (typeof window.stkEnsureLoaded === 'function') { try { window.stkEnsureLoaded(); } catch (e) {} }
@@ -1900,8 +1965,11 @@
                     // задержкой и в системном стиле — свой показывается мгновенно и в тоне приложения
                     '<span class="pff-info-wrap"><button class="pff-info" type="button" aria-label="Что такое потенциал">' + INFO_SVG + '<span>Что такое потенциал?</span></button>' +
                     '<span class="pff-tipbox" role="tooltip">' + esc(POT_TIP) + '</span></span>' +
-                    '<button class="pf-ch-go" onclick="switchTab(\'market-stocks\')">Все акции ' +
-                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></button>' +
+                    // фильтр сортировки избранного (вместо кнопки «Все акции»): по потенциалу / по свежести новостей
+                    '<div class="pff-sort" role="tablist">' +
+                        '<button class="pff-sort-b' + (favSort === 'pot' ? ' on' : '') + '" onclick="pfSetFavSort(\'pot\')" title="Сначала с наибольшим потенциалом">Потенциал</button>' +
+                        '<button class="pff-sort-b' + (favSort === 'news' ? ' on' : '') + '" onclick="pfSetFavSort(\'news\')" title="Сначала со свежими новостями">Новизна</button>' +
+                    '</div>' +
                 '</div>') +
             '<div class="pff-body">' + inner + '</div></div>';
     }
@@ -1916,7 +1984,8 @@
         var link = item.link || '';
         var go = link ? '<svg class="pff-news-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg>' : '';
         return { html: '<span class="pff-news-t">' + esc(title) + (full.length > 300 ? '…' : '') + '</span>' +
-            '<span class="pff-news-m"><i>Smart-Lab</i>' + (rel ? ' · ' + esc(rel) : '') + go + '</span>', link: link };
+            '<span class="pff-news-m"><i>Smart-Lab</i>' + (rel ? ' · ' + esc(rel) : '') + go + '</span>', link: link,
+            date: isNaN(d.getTime()) ? 0 : d.getTime() };   // для сортировки избранного «по свежести»
     }
     function fillNewsSlot(tk) {
         var slot = dq('pf-news-' + tk), e = newsHtmlCache[tk]; if (!slot || !e) return;
@@ -1934,13 +2003,18 @@
                 Promise.resolve(loadNewsForTicker(tk))
                     .then(function (news) { newsHtmlCache[tk] = buildNewsEntry(news); })
                     .catch(function () { newsHtmlCache[tk] = { html: '<span class="pff-news-none">нет свежих новостей</span>', link: '', none: true }; })
-                    .then(function () { newsActive--; fillNewsSlot(tk); pumpNewsQueue(); });
+                    .then(function () { newsActive--; fillNewsSlot(tk);
+                        // при сортировке «по свежести» порядок плиток зависит от дат новостей —
+                        // как только приходит новая, переупорядочиваем (softRerender дебаунсится)
+                        if (favSort === 'news') softRerender();
+                        pumpNewsQueue(); });
             })(tk);
         }
     }
     function renderFavNews() {
-        // тот же топ-12 по потенциалу, что и в favHtml — грузим новости ровно для видимых плиток
-        var favs = favShown(); if (!favs.length || typeof loadNewsForTicker !== 'function') return;
+        // грузим новости для стабильного пула (топ-12 по потенциалу) — он же набор видимых плиток
+        // при любом фильтре; сортировка «по свежести» лишь переупорядочивает уже эти тикеры
+        var favs = favPool(); if (!favs.length || typeof loadNewsForTicker !== 'function') return;
         favs.forEach(function (tk) {
             if (newsHtmlCache[tk]) { fillNewsSlot(tk); return; }   // уже загружено → без сети
             if (!newsStarted[tk]) { newsStarted[tk] = true; newsQueue.push(tk); }
@@ -1995,11 +2069,25 @@
     }
     // все держащиеся сейчас облигации (qty>0) по всем портфелям — общий список для календаря
     // и для догрузки недостающих деталей купонов разом (а не по одной при открытии каждого портфеля)
+    // Фильтр календаря выплат: payCalSel === null → показываем все (не скрытые) портфели;
+    // иначе объект { pid:true } — какие портфели включены пользователем.
+    var payCalSel = null;
+    function calPfSelected(p) { return !payCalSel || !!payCalSel[p.id]; }
+    // портфели-кандидаты для фильтра: не скрытые и содержащие облигации
+    function calPfCandidates() {
+        return store.items.filter(function (p) {
+            return !p.hidden && (p.holdings || []).some(function (h) { return h.type === 'bond' && h.ticker && aggHolding(h).qty > 0; });
+        });
+    }
     function allHeldBonds() {
         var list = [];
-        store.items.forEach(function (p) { (p.holdings || []).forEach(function (h) {
-            if (h.type === 'bond' && h.ticker && aggHolding(h).qty > 0) list.push({ p: p, h: h });
-        }); });
+        store.items.forEach(function (p) {
+            if (p.hidden) return;              // скрытый портфель — купоны в календаре не показываем
+            if (!calPfSelected(p)) return;     // снят в фильтре «Какие портфели показывать»
+            (p.holdings || []).forEach(function (h) {
+                if (h.type === 'bond' && h.ticker && aggHolding(h).qty > 0) list.push({ p: p, h: h });
+            });
+        });
         return list;
     }
     function collectUpcomingCoupons() {
@@ -2049,6 +2137,32 @@
             '<div class="pfpc-amt">+' + fmtRub(ev.amount) + '</div>' +
         '</div>';
     }
+    var FILTER_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>';
+    // Попап «Какие портфели показывать» в шапке календаря: строка «Показать все» + по строке
+    // на каждый портфель (переиспользует инфраструктуру попапов «Импорт», key='paycal').
+    function calFilterHtml() {
+        var cands = calPfCandidates();
+        if (cands.length < 2) return '';   // фильтровать нечего (0–1 портфель с облигациями)
+        var allOn = !payCalSel;
+        var selN = cands.filter(calPfSelected).length;
+        var rows = '<button class="pf-impitem pf-eyeitem' + (allOn ? '' : ' off-eye') + '" onclick="pfCalShowAll(event)">' +
+                '<span class="pf-eyedot pfpc-alldot"></span>' +
+                '<span class="pf-impbody"><b>Показать все</b><i>купоны по всем портфелям</i></span>' +
+                '<span class="pf-eyestate">' + (allOn ? CHECK_SVG : '') + '</span></button>' +
+            cands.map(function (p) {
+                var on = calPfSelected(p);
+                return '<button class="pf-impitem pf-eyeitem' + (on ? '' : ' off-eye') + '" onclick="pfToggleCalPf(\'' + p.id + '\',event)">' +
+                    '<span class="pf-eyedot" style="background:' + colorVal(p.color) + '"></span>' +
+                    '<span class="pf-impbody"><b>' + esc(p.name) + '</b></span>' +
+                    '<span class="pf-eyestate">' + (on ? EYE_SVG : EYEOFF_SVG) + '</span></button>';
+            }).join('');
+        var badge = !allOn ? '<i class="pf-eyecnt">' + selN + '/' + cands.length + '</i>' : '';
+        return '<div class="pf-impwrap pfpc-filter">' +
+            '<button class="d3-quick ghost pf-impbtn" onclick="pfToggleImp(event,\'paycal\')">' + FILTER_SVG + 'Портфели' + badge + CHEV_SVG + '</button>' +
+            '<div class="pf-impmenu" id="pfImp-paycal">' +
+                '<div class="pf-impgrp">Какие портфели показывать</div>' + rows +
+            '</div></div>';
+    }
     // Единый календарь: ближайшие купоны по облигациям ВСЕХ портфелей сразу (не по одному —
     // раньше доход по купонам был виден только внутри карточки ребалансировки ОДНОГО портфеля).
     // asCell=true → карточка встаёт ЯЧЕЙКОЙ в сетку портфелей (нечётное их число): высота
@@ -2057,7 +2171,7 @@
         if (!store.items.length) return '';
         var cls = 'dash2-card pf-card2 pf-paycal' + (asCell ? ' pf-paycal--cell' : '');
         var held = allHeldBonds();
-        var head = pfCardHead('', 'Календарь выплат', 'ближайшие купоны по облигациям всех портфелей');
+        var head = pfCardHead('', 'Календарь выплат', 'ближайшие купоны по облигациям всех портфелей', '<div class="pfpc-head-r">' + calFilterHtml() + '</div>');
         if (!held.length) return '<div class="' + cls + '">' + head + payCalStateHtml('nobonds') + '</div>';
         var missing = held.some(function (x) { return !bondDetail(x.h.ticker); });
         if (missing) ensureAllBondDetails(function () { softRerender(); });
@@ -2083,14 +2197,35 @@
         var cntBadge = (collapseNext && !payCalFull && soonEvs.length > shown.length)
             ? '<span class="pfpc-cnt">' + soonEvs.length + ' ' + plural(soonEvs.length, 'выплата', 'выплаты', 'выплат') + '</span>' : '';
         var soon = '<div class="pfpc-soon">' + cntBadge + '<span class="pfpc-soon-l">за 30 дней</span><span class="pfpc-soon-v">+' + fmtRub(soonSum) + '</span></div>';
-        var more = (!asCell && evs.length > shown.length) ? '<button class="pfpc-more' + (payCalFull ? ' on' : '') + '" onclick="pfTogglePayCal()">' +
+        // при раскрытии shown === evs, поэтому evs.length > shown.length перестаёт быть true —
+        // в развёрнутом виде кнопку показываем принудительно (иначе нельзя свернуть обратно)
+        var more = (!asCell && (payCalFull || evs.length > shown.length)) ? '<button class="pfpc-more' + (payCalFull ? ' on' : '') + '" onclick="pfTogglePayCal()">' +
             '<span>' + (payCalFull ? 'Свернуть' : 'Показать все · ' + evs.length) + '</span>' +
             '<svg class="pfpc-more-ch' + (payCalFull ? ' up' : '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>' : '';
-        return '<div class="' + cls + '">' + pfCardHead('', 'Календарь выплат', 'ближайшие купоны по облигациям всех портфелей', soon) +
+        var right = '<div class="pfpc-head-r">' + calFilterHtml() + soon + '</div>';
+        return '<div class="' + cls + '">' + pfCardHead('', 'Календарь выплат', 'ближайшие купоны по облигациям всех портфелей', right) +
             '<div class="pfpc-body" onscroll="pfPayCalScroll(this)"><div class="pfpc-list">' + shown.map(function (e) { return payCalRowHtml(e, multiPf); }).join('') + '</div>' + more + '</div>' +
         '</div>';
     }
     window.pfTogglePayCal = function () { payCalFull = !payCalFull; renderPortfolios(); };
+    // ре-рендер, сохраняя открытым попап фильтра календаря (как в pfToggleHidden с меню «Видимость»)
+    function reRenderKeepCalMenu() {
+        var open = !!(dq('pfImp-paycal') && dq('pfImp-paycal').classList.contains('open'));
+        renderPortfolios();
+        if (open) { var m = dq('pfImp-paycal'); if (m) { m.classList.add('open'); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); } }
+    }
+    window.pfSetFavSort = function (mode) { if (mode !== 'pot' && mode !== 'news') return; if (favSort === mode) return; favSort = mode; renderPortfolios(); };
+    window.pfCalShowAll = function (ev) { if (ev) ev.stopPropagation(); payCalSel = null; reRenderKeepCalMenu(); };
+    window.pfToggleCalPf = function (pid, ev) {
+        if (ev) ev.stopPropagation();
+        var cands = calPfCandidates();
+        if (!payCalSel) { payCalSel = {}; cands.forEach(function (p) { payCalSel[p.id] = true; }); }
+        payCalSel[pid] = !payCalSel[pid];
+        // все выбраны → вернуть в состояние «все» (null); все сняты → тоже сбрасываем в «все»
+        // (пустой календарь без причины бессмыслен)
+        if (cands.every(function (p) { return payCalSel[p.id]; }) || cands.every(function (p) { return !payCalSel[p.id]; })) payCalSel = null;
+        reRenderKeepCalMenu();
+    };
     // В режиме ячейки список выплат скроллится внутри карточки — пока ниже есть ещё строки,
     // низ списка плавно затухает (класс has-more + mask в CSS) вместо жёсткого среза
     // последней видимой строки; доскроллили до конца — затухание снимается.
@@ -2129,6 +2264,14 @@
     window.pfShowAllHidden = function () {
         store.items.forEach(function (p) { p.hidden = false; });
         saveStore(); renderPortfolios();
+    };
+    // «Показать все» внутри попапа «Видимость» — снимает скрытие со всех, попап оставляем открытым
+    window.pfEyeShowAll = function (ev) {
+        if (ev) ev.stopPropagation();
+        store.items.forEach(function (p) { p.hidden = false; });
+        saveStore(); renderPortfolios();
+        var m = dq('pfImp-eye');
+        if (m) { m.classList.add('open'); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); }
     };
     // НКД при импорте из расчёта/ежемесячного дохода: дата покупки = сегодня, поэтому
     // подтягиваем ТЕКУЩИЙ НКД (ACCRUEDINT) из живых данных MOEX и помечаем как «с API»
