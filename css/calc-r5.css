@@ -63,11 +63,19 @@
 .cx-rows.r5 .pk-card .ct { position: relative; flex: 1; display: flex; flex-direction: column; min-height: 0; }
 
 /* ════════ КАРТОЧКА 01 · КАПИТАЛ ════════ */
+/* Композиция зеркалит карточку 02: сумма центрируется в свободной зоне,
+   параметры (комиссия + MOEX) прижаты к низу — как r-cta теста справа. */
 .cx-rows.r5 .cx-cap-center { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 26px; }
 .cx-rows.r5 .cx-cap-params { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 360px; }
+@media (min-width: 1024px) {
+  .cx-rows.r5 .cx-cap-params { margin-top: auto; max-width: none; }
+}
 
 /* Сумма (#ndInputHero перекрашен) */
 .cx-rows.r5 .nd-input-hero.cx-amount-host { padding: 6px 0 0 !important; gap: 0; }
+@media (min-width: 1024px) {
+  .cx-rows.r5 .nd-input-hero.cx-amount-host { flex: 1; justify-content: center; }
+}
 .cx-rows.r5 .nd-input-hero .nd-input-row { justify-content: center; position: relative; }
 .cx-rows.r5 .nd-sum-field { font-weight: 600; color: var(--r5-text); }
 .cx-rows.r5 .nd-ruble { color: var(--r5-orange) !important; }
@@ -377,8 +385,13 @@ body.dark-mode .cx-rows.r5 .qr-strat { background: rgba(255,255,255,.03); }
 
 /* ── CTA «Рассчитать портфель» (.nd-btn-cta-g → .cx-calc) ── */
 #calcCtaBar { max-width: 1180px; margin-left: auto; margin-right: auto; }
+/* на десктопе кнопка — «третий блок» той же сетки: отступ равен gap между
+   карточками (22px), радиус совпадает с --r5-radius карточек */
+@media (min-width: 1024px) {
+  #calcCtaBar { margin-top: 0; padding: 22px 0 0; }
+}
 #calcCtaBar .nd-btn-cta-g {
-  gap: 12px; padding: 20px; border-radius: 18px;
+  gap: 12px; padding: 21px; border-radius: 22px;
   background: linear-gradient(180deg, #1d2734, #141b26);
   font-size: 13px; letter-spacing: .14em; box-shadow: 0 18px 40px rgba(16,24,38,.30);
 }
