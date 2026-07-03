@@ -117,6 +117,11 @@ body.dark-mode .pf-sumcard {
    портфеля, шапка фиксирована, список выплат скроллится внутри */
 .pf-paycal--cell { height: 674px; display: flex; flex-direction: column; min-width: 0; }
 @media (max-width: 1040px) { .pf-paycal--cell { height: auto; max-height: 654px; } }
+/* узкий вид (3 в ряд): календарь-ячейка растягивается на 2 колонки (до «Избранного»),
+   когда портфель всего 1 — на схлопнутой сетке (см. .pf-grid--narrow media) сбрасываем,
+   чтобы span не создавал лишнюю неявную колонку */
+.pf-paycal--span2 { grid-column: span 2; }
+@media (max-width: 1040px) { .pf-paycal--span2 { grid-column: span 1; } }
 .pf-paycal--cell .pf-ch { flex-shrink: 0; }
 .pf-paycal--cell .pfpc-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
 /* пока ниже есть ещё выплаты (класс has-more ставит pfPayCalScroll) — низ списка плавно
@@ -419,6 +424,22 @@ body.dark-mode .pfc-mdate { color: #5c6a7a; }
 body.dark-mode .pfc-chartwrap { background: #141c27; box-shadow: 0 0 0 1.5px var(--pf-accent), 0 34px 80px -26px rgba(0,0,0,0.62); }
 .pf-card.col-right .pfc-chartwrap { left: auto; right: 0; }
 @media (max-width: 1040px) { .pfc-chartwrap { width: 100%; left: 0; right: auto; } }
+/* «узкий» вид (3 карточки в ряд) — сама карточка уже, но раскрытие («Полный состав»
+   вверху карточки) должно выглядеть так же просторно, как в обычном виде: растягиваем
+   оверлей на весь ряд из 3 узких колонок (было 2 колонки = целый ряд обычного вида).
+   Средняя карточка (.col-mid) сдвигает левый край назад, чтобы оверлей стартовал
+   с начала ряда, а не с середины. */
+.pf-card--narrow .pfc-chartwrap { width: calc(300% + 32px); }
+.pf-card--narrow.col-mid .pfc-chartwrap { left: calc(-100% - 16px); }
+/* сетка узкого вида сама схлопывается до 2/1 колонок на меньших экранах (см. .pf-grid--narrow
+   media выше) — тройная раскладка (300%/col-mid) там уже не соответствует реальным
+   колонкам, откатываем к обычной паре-колонке формуле */
+@media (max-width: 1520px) {
+    .pf-card--narrow .pfc-chartwrap { width: calc(200% + 16px); left: 0; right: auto; }
+    .pf-card--narrow.col-right .pfc-chartwrap { left: auto; right: 0; }
+    .pf-card--narrow.col-mid .pfc-chartwrap { left: 0; right: auto; }
+}
+@media (max-width: 1040px) { .pf-card--narrow .pfc-chartwrap, .pf-card--narrow.col-mid .pfc-chartwrap { width: 100%; left: 0; right: auto; } }
 /* кнопка «свернуть график» в шапке графика */
 .pfcv-close { display: inline-grid; place-items: center; width: 32px; height: 32px; flex-shrink: 0; border-radius: 9px; border: 1px solid rgba(24,38,60,0.1); background: #fff; color: #64748b; cursor: pointer; transition: background 0.14s, color 0.14s, border-color 0.14s; }
 .pfcv-close svg { width: 16px; height: 16px; }
@@ -659,6 +680,12 @@ body.dark-mode .pf-empty-t { color: #f4f8fd; }
     to   { opacity: 1; transform: scale(1); }
 }
 @media (prefers-reduced-motion: reduce) { .pfc-menu { animation-duration: 0.01ms; } }
+/* «узкий» вид (3 карточки в ряд): настройки (⚙) должны открываться такой же ширины,
+   как в обычном виде (иначе редактировать состав неудобно) — расширяем оверлей
+   примерно до ширины обычной (не узкой) карточки, поверх соседней узкой карточки. */
+.pf-card--narrow.menu-open .pfc-menu { width: calc(150% + 8px); }
+.pf-card--narrow.col-right.menu-open .pfc-menu { left: auto; right: 0; }
+@media (max-width: 1520px) { .pf-card--narrow.menu-open .pfc-menu { width: 100%; left: 0; right: auto; } }
 /* повторные ре-рендеры уже открытой панели (добавление/удаление лота, сворачивание
    журнала докупок) пересоздают весь .pfc-menu — без этого анимация входа проигрывалась
    бы заново на каждое действие, и панель заметно «мигала» */

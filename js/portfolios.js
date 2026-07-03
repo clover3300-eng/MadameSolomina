@@ -919,14 +919,21 @@
             var n = visibleItems().length;   // раскладка считает только ВИДИМЫЕ карточки
             var favStr = favHtml();
             var rates = ratesHtml();
-            var oddCal = n % 2 === 1;
-            var payCal = paymentCalendarHtml(oddCal);
+            // В узком виде (3 карточки в ряд) остаток от деления на 3 определяет, сколько
+            // ячеек ряда календарь должен занять: 1 портфель → 2 ячейки (растягивается до
+            // «Избранного»), 2 портфеля → 1 ячейка (третий блок в ряду). В обычном виде
+            // (2 в ряд) логика та же на остатке от 2 — как было раньше.
+            var cols = cardViewMode === 'narrow' ? 3 : 2;
+            var rem = n % cols;
+            var needCell = n > 0 && rem !== 0;
+            var calSpan = needCell ? cols - rem : 1;
+            var payCal = paymentCalendarHtml(needCell, calSpan);
             var body;
-            var gridPart = gridHtml(oddCal ? payCal : '');
+            var gridPart = gridHtml(needCell ? payCal : '');
             // Календарь и ставки — ВНУТРИ левой колонки (не отдельным блоком во всю ширину
             // страницы), чтобы их ширина совпадала с шириной карточек портфеля и они не
             // «наезжали» визуально на колонку «Избранное» сбоку.
-            var left = gridPart + (oddCal ? '' : payCal) + rates;
+            var left = gridPart + (needCell ? '' : payCal) + rates;
             // Сводка по всем портфелям (2+) — компактной карточкой ПОД «Избранным» в правой
             // колонке (раньше — полноширинной sticky-полосой над сеткой, она мешала).
             body = '<div class="pf-topgrid">' +
@@ -1221,7 +1228,7 @@
         // Раскрытый график выезжает ОВЕРЛЕЕМ в сторону поверх контента (position:absolute) —
         // сетка НЕ перестраивается, карточка не смещается, соседи не «прыгают». Направление
         // выезда зависит от колонки: последняя в ряду тянет влево (.col-right).
-        var cards = items.map(function (p, i) { return cardHtml(p, i, i % cols === cols - 1, narrow); }).join('');
+        var cards = items.map(function (p, i) { return cardHtml(p, i, i % cols === cols - 1, narrow, narrow && i % cols === 1); }).join('');
         return '<div class="pf-grid' + (narrow ? ' pf-grid--narrow' : '') + '">' + cards + (calCell || '') + '</div>';
     }
     // все портфели скрыты — осознанное пустое состояние с кнопкой «показать все»
@@ -1269,7 +1276,7 @@
         });
     }
 
-    function cardHtml(p, idx, colRight, narrow) {
+    function cardHtml(p, idx, colRight, narrow, colMid) {
         var c = calcPf(p), ac = colorVal(p.color);
         var pnlCls = c.pnl >= 0 ? 'pos' : 'neg';
         var bench = pfBench(p);
@@ -1286,7 +1293,7 @@
         // но сразу с открытыми активами — отдельный оверлей «весь состав» больше не дублируется тут
         var assetsChartOn = chartOn && !!chartAssets[p.id];
 
-        return '<div class="dash2-card pf-card' + (openMenu === p.id ? ' menu-open' : '') + tall + (chartOn ? ' chart-open' : '') + (chartOn && chartAssets[p.id] ? ' assets-open' : '') + (holdsOn ? ' holds-open' : '') + (colRight ? ' col-right' : '') + (narrow ? ' pf-card--narrow' : '') + '" style="--pf-accent:' + ac + '">' +
+        return '<div class="dash2-card pf-card' + (openMenu === p.id ? ' menu-open' : '') + tall + (chartOn ? ' chart-open' : '') + (chartOn && chartAssets[p.id] ? ' assets-open' : '') + (holdsOn ? ' holds-open' : '') + (colRight ? ' col-right' : '') + (narrow ? ' pf-card--narrow' : '') + (colMid ? ' col-mid' : '') + '" style="--pf-accent:' + ac + '">' +
             '<div class="pfc-top">' +
                 '<div class="pfc-titles">' +
                     '<span class="pfc-name" onclick="pfNameEdit(\'' + p.id + '\',event)" title="Нажмите, чтобы переименовать"><span class="pfc-name-ink">' + esc(p.name) + '</span></span>' +
@@ -2204,9 +2211,9 @@
     // раньше доход по купонам был виден только внутри карточки ребалансировки ОДНОГО портфеля).
     // asCell=true → карточка встаёт ЯЧЕЙКОЙ в сетку портфелей (нечётное их число): высота
     // равна карточке портфеля, список скроллится внутри (см. .pf-paycal--cell в CSS).
-    function paymentCalendarHtml(asCell) {
+    function paymentCalendarHtml(asCell, span) {
         if (!store.items.length) return '';
-        var cls = 'dash2-card pf-card2 pf-paycal' + (asCell ? ' pf-paycal--cell' : '');
+        var cls = 'dash2-card pf-card2 pf-paycal' + (asCell ? ' pf-paycal--cell' : '') + (asCell && span === 2 ? ' pf-paycal--span2' : '');
         var held = allHeldBonds();
         var head = pfCardHead('', 'Календарь выплат', 'ближайшие купоны по облигациям всех портфелей', '<div class="pfpc-head-r">' + calFilterHtml() + '</div>');
         if (!held.length) return '<div class="' + cls + '">' + head + payCalStateHtml('nobonds') + '</div>';
