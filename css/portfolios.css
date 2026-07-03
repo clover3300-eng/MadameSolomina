@@ -148,8 +148,17 @@ body.dark-mode .pf-sumcard {
 .pf-topgrid-fav .pff-head-r { margin-left: 0; width: 100%; justify-content: space-between; }
 .pf-topgrid-fav .pff-info span { display: none; }
 .pf-topgrid-fav .pff-info { padding: 8px 10px; }
-/* блок короче: список плиток скроллится ВНУТРИ карточки, а не тянет её на всю страницу */
-.pf-topgrid-fav .pff-body { padding: 4px 14px 16px; max-height: 486px; overflow-y: auto; scrollbar-width: thin; }
+/* «Избранное» — та же фиксированная высота, что у карточки портфеля (.pf-card 674px), чтобы
+   верхний ряд слева и колонка справа визуально совпадали; список плиток скроллится ВНУТРИ,
+   не растягивая карточку (тот же приём, что у .pf-paycal--cell). */
+.pf-fav { display: flex; flex-direction: column; height: 674px; }
+.pf-fav .pf-ch { flex-shrink: 0; }
+/* пустое состояние («Нет избранных акций») центрируем по высоте карточки, а не прижимаем
+   к верху — иначе в высокой карточке под ним останется пустая полоса */
+.pf-fav .pff-body:has(.pff-empty) { display: flex; }
+.pf-fav .pff-empty { flex: 1; justify-content: center; }
+@media (max-width: 1040px) { .pf-fav { height: auto; max-height: 654px; } }
+.pf-topgrid-fav .pff-body { padding: 4px 14px 16px; flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
 .pf-topgrid-fav .pff-grid { grid-template-columns: 1fr; }
 
 /* выровнять заголовок «Портфели» по вертикали (подзаголовок убран) */
