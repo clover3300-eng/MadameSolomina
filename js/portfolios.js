@@ -69,7 +69,7 @@
     var store = loadStore();
     // вид карточки портфеля: 'normal' (вложено · доход · доходность, 2 в ряд) |
     // 'narrow' (доход · доходность, без «Вложено» — уже, 3 в ряд)
-    function loadCardView() { try { return localStorage.getItem(CARDVIEW_KEY) === 'narrow' ? 'narrow' : 'normal'; } catch (e) { return 'normal'; } }
+    function loadCardView() { try { return localStorage.getItem(CARDVIEW_KEY) === 'normal' ? 'normal' : 'narrow'; } catch (e) { return 'narrow'; } }
     var cardViewMode = loadCardView();
 
     function findPf(id) { for (var i = 0; i < store.items.length; i++) if (store.items[i].id === id) return store.items[i]; return null; }
@@ -2508,10 +2508,14 @@
         if (t) { var c = calcPf(findPf(pid) || { holdings: [] }); t.textContent = on ? 'Свернуть таблицу' : 'Показать все активы · ' + c.hs.length; }
         var ch = btn.querySelector('.pfcv-assets-more-ch'); if (ch) ch.classList.toggle('up', on);
     };
-    // наложить/убрать кривую индекса IMOEX за тот же период
+    // наложить/убрать кривую индекса IMOEX за тот же период — так же, как pfToggleMiniImoex
+    // ниже: точечно обновляем кнопку и график, БЕЗ renderPortfolios (иначе вся раскрытая
+    // карточка перерисовывается заново и заметно мигает).
     window.pfToggleChartImoex = function (pid) {
         chartImoex[pid] = !chartImoex[pid];
-        renderPortfolios();
+        var on = !!chartImoex[pid];
+        var btn = document.querySelector('.pfcv-imbtn[onclick*="\'' + pid + '\'"]');
+        if (btn) { btn.classList.toggle('on', on); var p = findPf(pid); if (p) btn.title = 'Наложить кривую — ' + pfBench(p).full; }
         loadPfChart(pid);
     };
     // тумблер IMOEX прямо на мини-графике карточки: обновляем ТОЛЬКО эту карточку (класс кнопки
