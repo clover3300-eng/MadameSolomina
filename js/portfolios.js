@@ -569,16 +569,20 @@
             return '<span class="pfcv-ytick' + (v === 0 ? ' zero' : '') + '" style="top:' + yAt(v).toFixed(2) + '%">' + lbl + '%</span>';
         }).join('');
         wrap.innerHTML = '<div class="pfcv-yaxis">' + yaxis + '</div><div class="pfcv-plot">' + svg + overlay + '</div>';
-        // анимация прорисовки линии (и индекса) — линия «рисуется» слева направо
-        var path = wrap.querySelector('.pfcv-line');
-        if (path) { try { var len = path.getTotalLength(); path.style.strokeDasharray = len; path.style.strokeDashoffset = len; path.getBoundingClientRect(); path.style.transition = 'stroke-dashoffset 1s cubic-bezier(.4,0,.2,1)'; path.style.strokeDashoffset = '0'; } catch (e) {} }
-        var ar = wrap.querySelector('.pfcv-area');
-        if (ar) { ar.style.opacity = '0'; ar.getBoundingClientRect(); ar.style.transition = 'opacity .9s ease .2s'; ar.style.opacity = '1'; }
-        // IMOEX — просто проявляется (без «рисования» слева направо, как у портфеля): её
-        // dash-паттерн задан в CSS (см. .pfcv-imline) и не должен перебиваться инлайновым
-        // strokeDasharray анимации — иначе пунктир на миг схлопывается в сплошную линию.
-        var imp = wrap.querySelector('.pfcv-imline');
-        if (imp) { imp.style.opacity = '0'; imp.getBoundingClientRect(); imp.style.transition = 'opacity .9s ease .3s'; imp.style.opacity = ''; }
+        // анимация прорисовки линии (и индекса) — линия «рисуется» слева направо.
+        // При ре-рендере из переключателей видимости/вида (noChartAnim, см. renderNoAnim)
+        // пропускаем: график сразу в конечном состоянии, вкладка не мерцает.
+        if (!noChartAnim) {
+            var path = wrap.querySelector('.pfcv-line');
+            if (path) { try { var len = path.getTotalLength(); path.style.strokeDasharray = len; path.style.strokeDashoffset = len; path.getBoundingClientRect(); path.style.transition = 'stroke-dashoffset 1s cubic-bezier(.4,0,.2,1)'; path.style.strokeDashoffset = '0'; } catch (e) {} }
+            var ar = wrap.querySelector('.pfcv-area');
+            if (ar) { ar.style.opacity = '0'; ar.getBoundingClientRect(); ar.style.transition = 'opacity .9s ease .2s'; ar.style.opacity = '1'; }
+            // IMOEX — просто проявляется (без «рисования» слева направо, как у портфеля): её
+            // dash-паттерн задан в CSS (см. .pfcv-imline) и не должен перебиваться инлайновым
+            // strokeDasharray анимации — иначе пунктир на миг схлопывается в сплошную линию.
+            var imp = wrap.querySelector('.pfcv-imline');
+            if (imp) { imp.style.opacity = '0'; imp.getBoundingClientRect(); imp.style.transition = 'opacity .9s ease .3s'; imp.style.opacity = ''; }
+        }
         // подпись «Портфель X%» = то же значение, которым теперь заканчивается кривая (см. выше:
         // либо data.pfFinal, либо подменённый на живой pnlPct последний пункт) — расходиться им
         // неоткуда.
@@ -892,6 +896,16 @@
     var newsStarted = {};    // tk -> true (запрос уже поставлен в очередь)
     var newsQueue = [], newsActive = 0;
     var softTimer = null;    // дебаунс мягкого ре-рендера (котировки приходят пачкой)
+    // Полный ре-рендер заново «рисует» все мини-графики с 1-секундной анимацией линии —
+    // при переключении видимости/вида это выглядит как мерцание всей вкладки. Флаг
+    // noChartAnim на время такого ре-рендера рисует графики сразу в конечном состоянии.
+    var noChartAnim = false;
+    function renderNoAnim() {
+        noChartAnim = true;
+        renderPortfolios();
+        // кешированные графики перерисовываются синхронно; запас — на microtask-хвосты
+        setTimeout(function () { noChartAnim = false; }, 250);
+    }
 
     function renderPortfolios() {
         var host = dq('pfWrap'); if (!host) return;
@@ -918,7 +932,12 @@
             //    чётное — отдельной полноширинной карточкой под сеткой.
             var n = visibleItems().length;   // раскладка считает только ВИДИМЫЕ карточки
             var favStr = favHtml();
-            var rates = ratesHtml();
+            // Единственный портфель, состоящий только из акций → «Календарь выплат» показывать
+            // не о чем (купонов нет и не будет): его не рендерим вовсе, а в свободную ячейку
+            // сетки на его место встаёт карточка «Ставки рынка» (вместо нижней полосы ставок).
+            var soloStocks = store.items.length === 1 &&
+                (store.items[0].holdings || []).length > 0 &&
+                !(store.items[0].holdings || []).some(function (h) { return h.type === 'bond' && aggHolding(h).qty > 0; });
             // В узком виде (3 карточки в ряд) остаток от деления на 3 определяет, сколько
             // ячеек ряда календарь должен занять: 1 портфель → 2 ячейки (растягивается до
             // «Избранного»), 2 портфеля → 1 ячейка (третий блок в ряду). В обычном виде
@@ -927,21 +946,24 @@
             var rem = n % cols;
             var needCell = n > 0 && rem !== 0;
             var calSpan = needCell ? cols - rem : 1;
-            var payCal = paymentCalendarHtml(needCell, calSpan);
+            var payCal = soloStocks ? '' : paymentCalendarHtml(needCell, calSpan);
+            // портфель из одних акций: в свободную ячейку встаёт карточка ставок,
+            // в остальных случаях — календарь выплат (как раньше)
+            var cellCard = soloStocks ? ratesHtml(true, calSpan) : payCal;
             var body;
-            var gridPart = gridHtml(needCell ? payCal : '');
+            var gridPart = gridHtml(needCell ? cellCard : '');
             // Календарь и ставки — ВНУТРИ левой колонки (не отдельным блоком во всю ширину
             // страницы), чтобы их ширина совпадала с шириной карточек портфеля и они не
-            // «наезжали» визуально на колонку «Избранное» сбоку.
-            var left = gridPart + (needCell ? '' : payCal) + rates;
+            // «наезжали» визуально на колонку «Избранное» сбоку. Если ставки уже встали
+            // ячейкой сетки — нижнюю полосу ставок не дублируем.
+            var left = gridPart + (needCell ? '' : payCal) + (soloStocks && needCell ? '' : ratesHtml());
             // Сводка по всем портфелям (2+) — компактной карточкой ПОД «Избранным» в правой
-            // колонке (раньше — полноширинной sticky-полосой над сеткой, она мешала).
+            // колонке; LIVE-виджет (бывшая верхняя тёмная полоса) — под сводкой.
             body = '<div class="pf-topgrid">' +
                     '<div class="pf-topgrid-left">' + left + '</div>' +
-                    '<div class="pf-topgrid-fav">' + favStr + (store.items.length >= 2 ? summaryCardHtml() : '') + '</div>' +
+                    '<div class="pf-topgrid-fav">' + favStr + (store.items.length >= 2 ? summaryCardHtml() : '') + liveBarHtml() + '</div>' +
                 '</div>';
             host.innerHTML =
-                liveBarHtml() +
                 headHtml() +
                 body;
             tickLive();
@@ -987,22 +1009,25 @@
         }, 150);
     }
 
-    // ---- LIVE-полоска (стиль дашборда, свои id, чтобы не дублировать) ----
+    // ---- LIVE-виджет (бывшая тёмная полоса сверху): компактная тёмная карточка в правой
+    // колонке под сводкой «Суммарный капитал». Ids и классы значений (pflv-*/dlv-*)
+    // сохранены — их наполняет tickLive() из данных дашборда.
     function liveBarHtml() {
         var tiles = [['imoex', 'IMOEX'], ['usd', 'USD/RUB'], ['btc', 'BTC']];
-        return '<div class="dash2-livebar" id="pfLiveBar">' +
-            '<div class="dlv-live"><span class="dlv-dot"></span>LIVE</div>' +
-            '<div class="dlv-vsep"></div>' +
-            '<div class="dlv-items">' + tiles.map(function (t) {
+        return '<div class="pf-livecard" id="pfLiveBar">' +
+            '<div class="pflc-head">' +
+                '<div class="dlv-live"><span class="dlv-dot"></span>LIVE</div>' +
+                '<div class="dlv-time"><span class="dlv-time-k">MSK</span><span class="dlv-time-v" id="pfClock">--:--:--</span></div>' +
+            '</div>' +
+            '<div class="pflc-rows">' + tiles.map(function (t) {
                 // клик по IMOEX открывает вкладку «Рынок»
                 var go = t[0] === 'imoex';
-                return '<div class="dlv-item' + (go ? ' dlv-go' : '') + '"' +
+                return '<div class="pflc-row' + (go ? ' pflc-go' : '') + '"' +
                     (go ? ' role="button" tabindex="0" title="Открыть вкладку «Рынок»" onclick="switchTab(\'market\')"' : '') +
                     '><span class="dlv-k">' + t[1] + '</span>' +
                     '<span class="dlv-v" id="pflv-v-' + t[0] + '">—</span>' +
                     '<span class="dlv-c" id="pflv-c-' + t[0] + '"></span></div>';
-            }).join('<span class="dlv-isep"></span>') + '</div>' +
-            '<div class="dlv-time"><span class="dlv-time-k">MSK</span><span class="dlv-time-v" id="pfClock">--:--:--</span></div>' +
+            }).join('') + '</div>' +
             '</div>';
     }
     function tickLive() {
@@ -1042,7 +1067,9 @@
     // Каждый источник — карточка с иконкой, названием и подписью: если данные есть — сколько
     // позиций перенесётся, если нет — почему пункт недоступен (понятнее, чем просто «серая кнопка»)
     function impMenuHtml(key, pid) {
-        var up = key !== 'head';                                   // в шапке — вниз, иначе — вверх (не обрезается)
+        // в шапке и в приглашении пустого портфеля меню раскрывается вниз (места достаточно),
+        // в остальных местах (низ карточки настроек) — вверх, чтобы не обрезалось
+        var up = key !== 'head' && key.indexOf('none-') !== 0;
         var calcAll = getCalcComposition('all'), calcS = getCalcComposition('stock'), calcB = getCalcComposition('bond'),
             fav = getFavComposition(), mon = getMonthlyComposition();
         function oc(src, sub) { return "pfImport('" + src + "'," + (sub ? "'" + sub + "'" : 'null') + ',' + (pid ? "'" + pid + "'" : 'null') + ')'; }
@@ -1115,20 +1142,18 @@
         if (cardViewMode === mode) { closeImpMenus(); return; }
         cardViewMode = mode;
         try { localStorage.setItem(CARDVIEW_KEY, mode); } catch (e) {}
-        closeImpMenus(); renderPortfolios();
+        closeImpMenus(); renderNoAnim();
     };
 
-    // ---- заголовок ----
+    // ---- шапка страницы: без заголовка, только панель действий справа.
+    // «Импорт» из шапки убран — импортировать состав можно из настроек портфеля (⚙).
     function headHtml() {
-        var title = store.items.length === 1 ? 'Портфель' : 'Портфели';
-        return '<div class="d3-head pf-head">' +
-            '<div class="d3-head-l"><h1 class="d3-title">' + title + '</h1></div>' +
+        return '<div class="d3-head pf-head pf-head--bare">' +
             '<div class="d3-head-actions">' +
                 '<button class="d3-quick" onclick="pfAddPortfolio()">' + PLUS_SVG + 'Добавить портфель</button>' +
                 (store.items.length > 1 ? eyeWrapHtml() : '') +
                 viewWrapHtml() +
                 backupWrapHtml() +
-                impWrapHtml('head', null) +
             '</div></div>';
     }
 
@@ -1482,7 +1507,8 @@
             '<span class="pfm-none-arrow up">' + UP_SVG + '</span>' +
             '<span class="pfm-none-art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="13" rx="2.5"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M12 11v5"/><path d="M9.5 13.5h5"/></svg></span>' +
             '<span class="pfm-none-t">Портфель ждёт первые активы</span>' +
-            '<span class="pfm-none-s">Впишите тикер в форму «Добавить актив» сверху — цену и НКД можно подтянуть с MOEX иконкой-календарём. Или подтяните готовый состав кнопкой «Импорт» внизу.</span>' +
+            '<span class="pfm-none-s">Добавьте актив вручную в форме выше — или перенесите готовый состав импортом.</span>' +
+            '<div class="pfm-none-imp">' + impWrapHtml('none-' + p.id, p.id) + '</div>' +
         '</div>';
         // Оверлей на всю карточку: шапка · ВЫДЕЛЕННАЯ форма добавления (сверху) ·
         // полный список состава (без скролла, карточка растёт вниз) · действия (импорт/удалить)
@@ -1510,7 +1536,7 @@
             '</div>' +
             '<div class="pfm-bottom">' +
                 '<div class="pfm-foot">' +
-                    impWrapHtml('imp-' + p.id, p.id) +
+                    (empty ? '' : impWrapHtml('imp-' + p.id, p.id)) +   // у пустого портфеля «Импорт» уже внутри приглашения
                     '<button class="pfm-act" onclick="pfToggleHidden(\'' + p.id + '\')" title="Спрятать карточку из сетки — вернуть можно через «Видимость» в шапке">' +
                         EYEOFF_SVG + 'Скрыть</button>' +
                     '<button class="pfm-act danger" onclick="pfDelete(\'' + p.id + '\')">' +
@@ -2068,7 +2094,9 @@
     }
 
     // ---- ставки рынка (как на дашборде) ----
-    function ratesHtml() {
+    // asCell=true → карточка ВМЕСТО «Календаря выплат» в свободной ячейке сетки (единственный
+    // портфель из одних акций): та же высота, что у карточки портфеля, плитки — колонкой.
+    function ratesHtml(asCell, span) {
         var rd = window.ratesData || (typeof ratesData !== 'undefined' ? ratesData : {});
         function rv(id, fb) { var e = dq(id); var t = e ? (e.textContent || '').trim() : '';
             if (t && /\d/.test(t) && t.indexOf('---') < 0) return t; if (fb != null && /\d/.test(String(fb))) return fb; return t || '—'; }
@@ -2078,11 +2106,16 @@
             { l: 'Инфляция, год', v: rv('val-inflation', rd.inflation), ac: '#D97757', ic: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>' },
             { l: 'Доходность ОФЗ 10 лет', v: rv('val-ofz10', rd.ofz10), ac: '#3d6fd1', ic: '<path d="M3 3v18h18"/><polyline points="7 14 11 10 14 13 20 7"/>' }
         ];
-        return '<div class="d3-ratesband pf-ratesband">' +
-            '<div class="drt-grid">' + tiles.map(function (t) {
+        var grid = '<div class="drt-grid">' + tiles.map(function (t) {
                 return '<div class="drt-tile" style="--ac:' + t.ac + '"><div class="drt-ic"><svg viewBox="0 0 24 24">' + t.ic + '</svg></div>' +
                     '<div class="drt-body"><div class="drt-l">' + esc(t.l) + '</div><div class="drt-v">' + esc(t.v) + '</div></div></div>';
-            }).join('') + '</div></div>';
+            }).join('') + '</div>';
+        if (asCell) {
+            return '<div class="dash2-card pf-card2 pf-ratescard' + (span === 2 ? ' pf-ratescard--span2' : '') + '">' +
+                pfCardHead('', 'Ставки рынка', 'ключевые индикаторы — купонных выплат по портфелю из акций нет') +
+                '<div class="pf-ratescard-body">' + grid + '</div></div>';
+        }
+        return '<div class="d3-ratesband pf-ratesband">' + grid + '</div>';
     }
 
     // ============================================================
@@ -2329,7 +2362,7 @@
         }
         var eyeMenu = dq('pfImp-eye');
         var keepOpen = !!(eyeMenu && eyeMenu.classList.contains('open'));
-        saveStore(); renderPortfolios();
+        saveStore(); renderNoAnim();
         if (keepOpen) {
             var m = dq('pfImp-eye');
             if (m) { m.classList.add('open'); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); }
@@ -2338,13 +2371,13 @@
     };
     window.pfShowAllHidden = function () {
         store.items.forEach(function (p) { p.hidden = false; });
-        saveStore(); renderPortfolios();
+        saveStore(); renderNoAnim();
     };
     // «Показать все» внутри попапа «Видимость» — снимает скрытие со всех, попап оставляем открытым
     window.pfEyeShowAll = function (ev) {
         if (ev) ev.stopPropagation();
         store.items.forEach(function (p) { p.hidden = false; });
-        saveStore(); renderPortfolios();
+        saveStore(); renderNoAnim();
         var m = dq('pfImp-eye');
         if (m) { m.classList.add('open'); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); }
     };
@@ -2412,20 +2445,24 @@
         var f = input && input.files && input.files[0]; if (!f) return;
         var reader = new FileReader();
         reader.onload = function () {
-            var ok = false;
+            var obj;
             try {
-                var obj = JSON.parse(reader.result);
+                obj = JSON.parse(reader.result);
                 if (!obj || !Array.isArray(obj.items)) throw new Error('format');
                 // лёгкая валидация структуры
                 obj.items.forEach(function (p) { if (!p || typeof p !== 'object' || !('holdings' in p) && !p.id) throw new Error('format'); });
-                if (!confirm('Заменить текущие портфели (' + store.items.length + ') данными из файла (' + obj.items.length + ')? Действие перезапишет локальные данные.')) { input.value = ''; return; }
+            } catch (e) { toast('Не удалось прочитать файл бэкапа (неверный формат)', true); input.value = ''; return; }
+            input.value = '';
+            pfConfirm({
+                danger: true, ok: 'Заменить', icon: SHIELD_SVG,
+                title: 'Загрузить бэкап?',
+                text: 'Текущие портфели (' + store.items.length + ') будут заменены данными из файла (' + obj.items.length + '). Локальные данные перезапишутся.'
+            }, function () {
                 store = obj; if (!store.v) store.v = 1;
                 (store.items || []).forEach(function (p) { (p.holdings || []).forEach(ensureLots); });   // миграция лотов
                 saveStore(); openMenu = null; ensureQuotes(true); renderPortfolios();
-                ok = true;
                 toast('Загружено портфелей: ' + store.items.length);
-            } catch (e) { if (!ok) toast('Не удалось прочитать файл бэкапа (неверный формат)', true); }
-            input.value = '';
+            });
         };
         reader.onerror = function () { toast('Ошибка чтения файла', true); input.value = ''; };
         reader.readAsText(f);
@@ -2532,11 +2569,52 @@
     window.pfCloseMenu = function () { openMenu = null; menuTall = false; renderPortfolios(); };
     window.pfRename = function (pid, val) { var p = findPf(pid); if (!p) return; p.name = (val || '').trim() || p.name; saveStore(); renderPortfolios(); };
     window.pfSetColor = function (pid, col) { var p = findPf(pid); if (!p) return; p.color = col; saveStore(); renderPortfolios(); };
+    // ---- стилизованное окно подтверждения (вместо системного confirm) ----
+    // Живёт в <body> (см. правило про fixed-оверлеи: transform на предках вкладок ломает
+    // position:fixed). onOk вызывается только по кнопке подтверждения; Escape/фон/«Отмена»
+    // просто закрывают окно.
+    function pfConfirm(opts, onOk) {
+        var old = dq('pfConfirmOv'); if (old) old.remove();
+        var TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+        var ov = document.createElement('div');
+        ov.id = 'pfConfirmOv';
+        ov.innerHTML = '<div class="pfcf-card" role="alertdialog" aria-modal="true">' +
+            '<div class="pfcf-ico' + (opts.danger ? ' danger' : '') + '">' + (opts.icon || TRASH) + '</div>' +
+            '<div class="pfcf-t">' + opts.title + '</div>' +
+            '<div class="pfcf-s">' + opts.text + '</div>' +
+            '<div class="pfcf-btns">' +
+                '<button class="pfcf-btn" type="button" data-act="no">Отмена</button>' +
+                '<button class="pfcf-btn pfcf-ok' + (opts.danger ? ' danger' : '') + '" type="button" data-act="yes">' + (opts.ok || 'Подтвердить') + '</button>' +
+            '</div></div>';
+        document.body.appendChild(ov);
+        function close() {
+            document.removeEventListener('keydown', onKey);
+            ov.classList.remove('show');
+            setTimeout(function () { ov.remove(); }, 180);
+        }
+        function onKey(e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } }
+        ov.addEventListener('click', function (e) {
+            if (e.target === ov) { close(); return; }
+            var b = e.target.closest('.pfcf-btn'); if (!b) return;
+            close();
+            if (b.getAttribute('data-act') === 'yes') onOk();
+        });
+        document.addEventListener('keydown', onKey);
+        requestAnimationFrame(function () {
+            ov.classList.add('show');
+            var okBtn = ov.querySelector('.pfcf-ok'); if (okBtn) try { okBtn.focus(); } catch (e) {}
+        });
+    }
     window.pfDelete = function (pid) {
         var p = findPf(pid); if (!p) return;
-        if (!confirm('Удалить портфель «' + p.name + '»? Действие необратимо.')) return;
-        store.items = store.items.filter(function (x) { return x.id !== pid; }); saveStore();
-        if (openMenu === pid) openMenu = null; renderPortfolios(); toast('Портфель удалён');
+        pfConfirm({
+            danger: true, ok: 'Удалить',
+            title: 'Удалить портфель?',
+            text: '«' + esc(p.name) + '» будет удалён вместе со всем составом. Действие необратимо.'
+        }, function () {
+            store.items = store.items.filter(function (x) { return x.id !== pid; }); saveStore();
+            if (openMenu === pid) openMenu = null; renderPortfolios(); toast('Портфель удалён');
+        });
     };
     window.pfAddHolding = function (pid) {
         var p = findPf(pid); if (!p) return;

@@ -1145,10 +1145,6 @@ body.dark-mode .pff-sort-b.on { background: rgba(255,255,255,0.14); color: #fff;
 .pfpc-filter .pf-impmenu { min-width: 248px; }
 /* точка-«радуга» у строки «Показать все» в фильтре портфелей */
 .pfpc-alldot { background: conic-gradient(#3b82f6, #16a34a, #f59e0b, #ef4444, #8b5cf6, #3b82f6); }
-/* кликабельная плитка IMOEX в LIVE-полоске портфелей → открывает вкладку «Рынок» */
-.dlv-item.dlv-go { cursor: pointer; border-radius: 8px; margin: -3px -6px; padding: 3px 6px; transition: background 0.15s; }
-.dlv-item.dlv-go:hover { background: rgba(24,38,60,0.05); }
-body.dark-mode .dlv-item.dlv-go:hover { background: rgba(255,255,255,0.07); }
 /* сводка «за 30 дней» — горизонтальная плашка (не стопка мелкого текста в углу) */
 .pfpc-soon { display: flex; align-items: center; gap: 7px; margin-left: auto; align-self: center;
     background: rgba(24,38,60,0.05); border-radius: 999px; padding: 6px 12px 6px 14px; white-space: nowrap; }
@@ -1371,3 +1367,96 @@ body.dark-mode .pfo-table .pos { color: #34d399; } body.dark-mode .pfo-table .ne
 body.dark-mode .btcal-paste input { color: #e2e8f0; background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.12); }
 body.dark-mode .btcal-paste input:focus { background: rgba(15, 23, 42, 0.8); border-color: #5a7cff; }
 body.dark-mode .btcal-paste-ok { background: #5a7cff; }
+
+/* ============================================================
+   ШАПКА БЕЗ ЗАГОЛОВКА: только панель действий (Добавить/Видимость/Вид/Бэкап)
+   справа — заголовок «Портфели» и верхняя LIVE-полоса убраны
+   ============================================================ */
+.pf-head--bare { justify-content: flex-end; }
+
+/* ============================================================
+   LIVE-ВИДЖЕТ (бывшая тёмная полоса сверху): компактная тёмная карточка
+   в правой колонке под сводкой «Суммарный капитал»
+   ============================================================ */
+.pf-livecard {
+    display: flex; flex-direction: column; gap: 4px;
+    padding: 16px 18px 12px; border: 2px solid #131a2b; border-radius: 28px;
+    background: linear-gradient(120deg, #0e1621 0%, #131f2c 100%);
+    box-shadow: 0 16px 36px rgba(24,38,60,0.14);
+}
+body.dark-mode .pf-livecard {
+    border-color: rgba(255,255,255,0.40);
+    box-shadow: 0 16px 36px rgba(0,0,0,0.32);
+}
+.pflc-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 9px;
+    border-bottom: 1px solid rgba(255,255,255,0.08); }
+.pf-livecard .dlv-time { padding-left: 0; margin-left: 0; border-left: none; }
+.pf-livecard .dlv-time-v { font-size: 13px; }
+.pflc-rows { display: flex; flex-direction: column; }
+.pflc-row { display: flex; align-items: baseline; gap: 9px; padding: 9px 2px; }
+.pflc-row + .pflc-row { border-top: 1px solid rgba(255,255,255,0.06); }
+.pflc-row .dlv-v { margin-left: auto; }
+.pflc-row.pflc-go { cursor: pointer; border-radius: 10px; margin: 0 -8px; padding: 9px 10px; transition: background 0.15s; }
+.pflc-row.pflc-go:hover { background: rgba(255,255,255,0.07); }
+
+/* ============================================================
+   «СТАВКИ РЫНКА» ЯЧЕЙКОЙ СЕТКИ — вместо «Календаря выплат», когда единственный
+   портфель состоит только из акций (купонных выплат показывать не о чем)
+   ============================================================ */
+.pf-ratescard { height: 674px; display: flex; flex-direction: column; min-width: 0; }
+@media (max-width: 1040px) { .pf-ratescard { height: auto; } }
+.pf-ratescard--span2 { grid-column: span 2; }
+@media (max-width: 1040px) { .pf-ratescard--span2 { grid-column: span 1; } }
+.pf-ratescard .pf-ch { flex-shrink: 0; }
+.pf-ratescard-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; justify-content: center; padding: 4px 20px 20px; }
+.pf-ratescard-body .drt-grid { grid-template-columns: 1fr; gap: 13px; }
+.pf-ratescard--span2 .pf-ratescard-body .drt-grid { grid-template-columns: 1fr 1fr; }
+@media (max-width: 1040px) { .pf-ratescard--span2 .pf-ratescard-body .drt-grid { grid-template-columns: 1fr; } }
+
+/* ============================================================
+   «Импорт» внутри приглашения пустого портфеля (настройки ⚙):
+   кнопка по центру плашки, меню раскрывается вниз и центрируется
+   ============================================================ */
+.pfm-none-imp { margin-top: 7px; }
+.pfm-none-imp .pf-impmenu { left: 50%; right: auto; margin-left: -144px; }
+
+/* ============================================================
+   СТИЛИЗОВАННОЕ ОКНО ПОДТВЕРЖДЕНИЯ (вместо системного confirm):
+   удаление портфеля, замена данных из бэкапа
+   ============================================================ */
+#pfConfirmOv {
+    position: fixed; inset: 0; z-index: 5000;
+    display: flex; align-items: center; justify-content: center; padding: 24px;
+    background: rgba(8,13,20,0.6); backdrop-filter: blur(4px);
+    opacity: 0; transition: opacity 0.16s ease;
+}
+#pfConfirmOv.show { opacity: 1; }
+.pfcf-card {
+    width: min(400px, 92vw); display: flex; flex-direction: column; align-items: center; gap: 8px;
+    background: #fff; border-radius: 20px; padding: 26px 24px 22px; text-align: center;
+    box-shadow: 0 40px 90px -30px rgba(0,0,0,0.6);
+    transform: translateY(12px) scale(0.98); transition: transform 0.18s ease;
+}
+#pfConfirmOv.show .pfcf-card { transform: none; }
+body.dark-mode .pfcf-card { background: #141c27; }
+.pfcf-ico { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center;
+    background: rgba(59,130,246,0.12); color: #3b82f6; margin-bottom: 3px; }
+.pfcf-ico svg { width: 24px; height: 24px; }
+.pfcf-ico.danger { background: rgba(220,38,38,0.1); color: #dc2626; }
+body.dark-mode .pfcf-ico.danger { background: rgba(248,113,113,0.13); color: #f87171; }
+.pfcf-t { font-family: 'Inter', sans-serif; font-size: 17px; font-weight: 800; color: #0f172a; letter-spacing: -0.01em; }
+body.dark-mode .pfcf-t { color: #f4f8fd; }
+.pfcf-s { font-size: 12.5px; font-weight: 600; color: #94a3b8; line-height: 1.55; max-width: 320px; }
+.pfcf-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; width: 100%; margin-top: 12px; }
+.pfcf-btn { padding: 11px 14px; border-radius: 12px; border: 1px solid rgba(24,38,60,0.12); background: #fff;
+    font-family: 'Manrope', sans-serif; font-size: 12.5px; font-weight: 800; color: #5f6b7d; cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s; }
+.pfcf-btn:hover { background: rgba(24,38,60,0.05); }
+body.dark-mode .pfcf-btn { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); color: #c2cdda; }
+body.dark-mode .pfcf-btn:hover { background: rgba(255,255,255,0.09); }
+.pfcf-btn.pfcf-ok { background: #111927; border-color: #111927; color: #fff; }
+.pfcf-btn.pfcf-ok:hover { background: #1e2a3a; }
+.pfcf-btn.pfcf-ok.danger { background: #dc2626; border-color: #dc2626; }
+.pfcf-btn.pfcf-ok.danger:hover { background: #b91c1c; }
+body.dark-mode .pfcf-btn.pfcf-ok { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+body.dark-mode .pfcf-btn.pfcf-ok.danger { background: #dc2626; border-color: #dc2626; }
