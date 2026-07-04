@@ -25,8 +25,8 @@
     <link rel="stylesheet" href="css/strategies.css">
     <link rel="stylesheet" href="css/rebalance.css">
     <link rel="stylesheet" href="css/rebalance-stocks.css">
-    <link rel="stylesheet" href="css/webapp-layout.css?v=2">
-    <link id="siteLayoutCSS" rel="stylesheet" href="css/site-layout.css?v=16">
+    <link rel="stylesheet" href="css/webapp-layout.css?v=3">
+    <link id="siteLayoutCSS" rel="stylesheet" href="css/site-layout.css?v=17">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/backtest.css?v=3">
     <link rel="stylesheet" href="css/rebalance-r4.css?v=8">
@@ -38,7 +38,7 @@
     <link rel="stylesheet" href="css/stock-terminal.css?v=6">
     <link rel="stylesheet" href="css/bond-terminal.css?v=9">
     <link rel="stylesheet" href="css/table-tooltip.css?v=1">
-    <link rel="stylesheet" href="css/market-heatmap.css?v=22">
+    <link rel="stylesheet" href="css/market-heatmap.css?v=23">
     <link rel="stylesheet" href="css/calc-r5.css?v=10">
     <link rel="stylesheet" href="css/home-register.css?v=5">
     <link rel="stylesheet" href="css/desktop-zoom.css?v=3">
@@ -376,20 +376,9 @@
             <!-- Заголовок, LIVE-полоска и кнопки (Все акции/Облигации) убраны со страницы —
                  «Рынок» уже читается по хлебной крошке в шапке сайта, кнопки и рыночная лента
                  переехали туда же (#topBarMktActions/#topBarMktMarket), см. js/market-livebar.js -->
-            <!-- Индекс МосБиржи — интерактивный график TradingView (рендерится из js/market-chart.js) -->
-            <section class="mk-chart-card" id="mkChartCard" aria-label="График индекса МосБиржи">
-                <div class="mk-chart-head">
-                    <span class="mk-chart-ico" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 7-7"/><path d="M14 8h6v6"/></svg>
-                    </span>
-                    <div class="mk-chart-tt">
-                        <span class="mk-chart-title">Индекс МосБиржи</span>
-                        <span class="mk-chart-sym">IMOEX · RUS:IRUS</span>
-                    </div>
-                </div>
-                <div class="mk-chart-body" id="mkChartBody"></div>
-            </section>
-            <!-- Тепловая карта индекса МосБиржи — ISS API (рендерится из js/market-heatmap.js) -->
+            <!-- Тепловая карта индекса МосБиржи — ISS API (рендерится из js/market-heatmap.js).
+                 График TradingView (месячный ТФ) открывается КНОПКОЙ в статбаре карты и
+                 подменяет собой холст тепловой карты (js/market-chart.js: mkChartMount) -->
             <section class="mh-card" id="mhCard" aria-label="Тепловая карта индекса МосБиржи"></section>
         </div>
 
@@ -2083,8 +2072,8 @@
 <script src="js/stock-terminal.js?v=4" defer></script>
 <script src="js/bond-terminal.js?v=5" defer></script>
 <script src="js/table-tooltip.js?v=1" defer></script>
-<script src="js/market-chart.js?v=4" defer></script>
-<script src="js/market-heatmap.js?v=23" defer></script>
+<script src="js/market-chart.js?v=5" defer></script>
+<script src="js/market-heatmap.js?v=24" defer></script>
 <script src="js/market-livebar.js?v=2" defer></script>
 <script src="js/portfolios.js?v=46" defer></script>
 <script src="js/home-register.js?v=1" defer></script>

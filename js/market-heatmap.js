@@ -63,6 +63,8 @@
     var REFRESH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>';
     var BACK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>';
     var GRID_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/></svg>';
+    // Свечной график — иконка кнопки «График IMOEX» (переключение карта ↔ TradingView)
+    var CANDLE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4v3M8 15v5"/><rect x="6" y="7" width="4" height="8" rx="1"/><path d="M16 3v4M16 14v4"/><rect x="14" y="7" width="4" height="7" rx="1"/></svg>';
     // Звезда «в избранное» и иконка «боковая карточка компании» — те же, что в таблице «Акции»,
     // чтобы поведение строки тикера совпадало между вкладками (заливка звезды — класс .active).
     var STAR_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><polygon points="12 3 14.85 8.78 21.23 9.71 16.61 14.21 17.7 20.56 12 17.56 6.3 20.56 7.39 14.21 2.77 9.71 9.15 8.78 12 3"/></svg>';
@@ -119,6 +121,7 @@
         refCloses: {},       // { week: {TICKER:close}, month: {...} } — закрытие на опорную дату
         refIndex: {},        // { week: closeIMOEX, month: ... }
         zoom: null,          // имя сектора при drill-down или null
+        chartMode: false,    // true → вместо холста карты показан график TradingView
         sortKey: 'weight', sortDir: -1,
         prevPrices: {},      // последняя цена по тикеру (для вспышек)
         tileEls: {}, secEls: {},  // переиспользуемые DOM-узлы (плавные переходы)
@@ -589,7 +592,8 @@
     // ---------- Хлебные крошки (drill-down) ----------
     function renderBread() {
         var b = $('.mh-bread'); if (!b) return;
-        if (!state.zoom) { b.hidden = true; b.innerHTML = ''; return; }
+        // в режиме графика крошки drill-down скрыты вместе с картой
+        if (!state.zoom || state.chartMode) { b.hidden = true; b.innerHTML = ''; return; }
         b.hidden = false;
         b.innerHTML = '<button class="mh-bread-root" type="button" data-act="bread-root">' + BACK_SVG +
             'Индекс МосБиржи</button><span class="mh-bread-sep">▸</span>' +
@@ -769,6 +773,28 @@
     function enterZoom(name) { if (state.zoom === name) return; state.zoom = name; hideTip(); render(); }
     function exitZoom() { if (!state.zoom) return; state.zoom = null; hideTip(); render(); }
 
+    // ---------- Переключение карта ↔ график TradingView ----------
+    // Кнопка в KPI-ячейке индекса: график (месячный ТФ) занимает место холста
+    // карты (тот же бокс), пульс/легенда/таблица остаются на месте.
+    function toggleChart() {
+        state.chartMode = !state.chartMode;
+        var plot = $('.mh-plot'), host = $('.mh-chart-host'), c = card();
+        if (!plot || !host) return;
+        hideTip();
+        plot.style.display = state.chartMode ? 'none' : '';
+        host.hidden = !state.chartMode;
+        renderBread(); // крошки drill-down относятся к карте — прячутся вместе с ней
+        if (state.chartMode && typeof window.mkChartMount === 'function') window.mkChartMount(host);
+        var btn = c && c.querySelector('.mh-chart-btn');
+        if (btn) {
+            btn.classList.toggle('active', state.chartMode);
+            var txt = btn.querySelector('.mh-chart-btn-txt');
+            if (txt) txt.textContent = state.chartMode ? 'Карта' : 'График';
+            btn.title = state.chartMode ? 'Вернуть тепловую карту' : 'Открыть график индекса (месячный таймфрейм)';
+        }
+        if (!state.chartMode) renderPlot(); // вернулись к карте — актуализировать раскладку
+    }
+
     // Обновляет подписи легенды ±cap% под выбранный период
     function updateLegend() {
         var lg = $('.mh-legend'); if (!lg) return;
@@ -821,6 +847,11 @@
             '  <div class="mh-kpi mh-kpi-idx">' +
             '    <div class="mh-idx-top"><span class="mh-idx-tag">IMOEX</span><span class="mh-idx-lbl">Индекс МосБиржи</span></div>' +
             '    <div class="mh-pulse-idx"><span class="mh-idx-val">—</span><span class="mh-idx-chg">—</span></div>' +
+            '    <button class="mh-chart-btn" type="button" data-act="chart-toggle" title="Открыть график индекса (месячный таймфрейм)">' +
+            '      <span class="mh-cb-ico mh-cb-ico-chart" aria-hidden="true">' + CANDLE_SVG + '</span>' +
+            '      <span class="mh-cb-ico mh-cb-ico-map" aria-hidden="true">' + GRID_SVG + '</span>' +
+            '      <span class="mh-chart-btn-txt">График</span>' +
+            '    </button>' +
             '  </div>' +
             '  <div class="mh-kpi mh-kpi-breadth">' +
             '    <div class="mh-brd-top"><span class="mh-kpi-lbl">Ширина рынка</span><span class="mh-brd-ratio"></span></div>' +
@@ -840,6 +871,8 @@
             '<div class="mh-plot">' +
             '  <div class="mh-overlay" hidden></div>' +
             '</div>' +
+            // хост графика TradingView — подменяет холст карты по кнопке «График»
+            '<div class="mh-chart-host" hidden></div>' +
             // тултип ВНЕ .mh-plot (у плота overflow:hidden) — чтобы карточка могла
             // уходить НИЖЕ курсора, не упираясь в нижний край карты и не клипаясь.
             '<div class="mh-tip"></div>' +
@@ -885,6 +918,7 @@
         // Делегированные клики: ретрай, крошки, сектор-зум, плитка, действия/строка таблицы
         c.addEventListener('click', function (e) {
             if (e.target.closest('[data-act="retry"]')) { refresh(); return; }
+            if (e.target.closest('[data-act="chart-toggle"]')) { toggleChart(); return; }
             if (e.target.closest('[data-act="bread-root"]')) { exitZoom(); return; }
             // действия в ячейке тикера — проверяем ДО клика по строке
             var favBtn = e.target.closest('[data-act="fav"]');

@@ -1667,8 +1667,7 @@
         #panel-market.active {
             display: flex; flex-direction: column; gap: 18px;
         }
-        /* Карточки занимают всю ширину контент-области (как блоки дашборда) */
-        #panel-market .mk-chart-card,
+        /* Карточка занимает всю ширину контент-области (как блоки дашборда) */
         #panel-market .mh-card {
             max-width: none !important;
             margin: 0 !important;

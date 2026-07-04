@@ -1938,62 +1938,6 @@
     #panel-market .header,
     #panel-market .header h1 { display: none !important; }
 
-    /* ===== Рынок · карточка графика индекса МосБиржи (TradingView) ===== */
-    .mk-chart-card {
-        max-width: 1180px;
-        margin: 0 auto 18px;
-        background: #ffffff;
-        border: 1px solid rgba(44,54,76,0.06);
-        border-radius: 22px;
-        box-shadow: 0 16px 36px rgba(24,38,60,0.08);
-        overflow: hidden;
-    }
-    body.dark-mode .mk-chart-card {
-        background: #1d2734;
-        border-color: rgba(255,255,255,0.08);
-        box-shadow: 0 16px 36px rgba(0,0,0,0.28);
-    }
-    .mk-chart-head {
-        display: flex; align-items: center; gap: 13px; flex-wrap: wrap;
-        padding: 16px 20px 14px;
-        border-bottom: 1px solid rgba(44,54,76,0.06);
-    }
-    body.dark-mode .mk-chart-head { border-bottom-color: rgba(255,255,255,0.07); }
-    /* Иконка-заглушка раздела (сине-зелёная плашка как в дашборде) */
-    .mk-chart-ico {
-        width: 42px; height: 42px; border-radius: 13px; flex-shrink: 0;
-        display: inline-flex; align-items: center; justify-content: center;
-        background: linear-gradient(135deg, rgba(143,179,160,0.24), rgba(143,179,160,0.08));
-        color: #2f9e63;
-    }
-    body.dark-mode .mk-chart-ico { color: #34c97c; background: linear-gradient(135deg, rgba(143,179,160,0.22), rgba(143,179,160,0.06)); }
-    .mk-chart-ico svg { width: 21px; height: 21px; }
-    .mk-chart-tt { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-    /* Название раздела — крупный заголовок (без пилюли) */
-    .mk-chart-title {
-        font-family: 'Inter', sans-serif; font-weight: 800; font-size: 17px;
-        color: #2C364C; letter-spacing: -0.02em; line-height: 1.05;
-    }
-    body.dark-mode .mk-chart-title { color: #F1F6FB; }
-    .mk-chart-sym {
-        font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 11.5px;
-        color: #8593a6; letter-spacing: 0.02em;
-    }
-    .mk-chart-body { height: 460px; padding: 8px 8px 4px; box-sizing: border-box; }
-    .mk-chart-body .tradingview-widget-container { height: 100%; width: 100%; }
-    .mk-chart-body .tradingview-widget-container__widget { height: calc(100% - 22px); width: 100%; }
-    .mk-chart-body .tradingview-widget-copyright {
-        height: 22px; line-height: 22px; font-size: 10px;
-        font-family: 'Inter', sans-serif; text-align: right; padding-right: 6px;
-        color: #9aa6b6;
-    }
-    .mk-chart-body .tradingview-widget-copyright a,
-    .mk-chart-body .tradingview-widget-copyright .blue-text { color: #9aa6b6 !important; text-decoration: none; }
-    @media (max-width: 720px) {
-        .mk-chart-card { border-radius: 18px; margin-bottom: 14px; }
-        .mk-chart-body { height: 340px; }
-    }
-
     /* Tab panel inner padding adjustments */
     #panel-rebalance .rebalance-tabs-container,
     #panel-market .market-tiles-grid {

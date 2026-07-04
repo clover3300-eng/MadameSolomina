@@ -155,6 +155,35 @@ body.dark-mode .mh-idx-tag { color: #fff; background: rgba(255, 255, 255, 0.10);
 .mh-idx-chg.up { color: var(--mh-up); background: var(--mh-up-bg); }
 .mh-idx-chg.down { color: var(--mh-down); background: var(--mh-down-bg); }
 
+/* --- кнопка «График» — карта ↔ TradingView (месячный ТФ), в пустом углу KPI-ячейки индекса --- */
+.mh-chart-btn {
+    position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
+    display: inline-flex; align-items: center; gap: 8px;
+    appearance: none; border: 0; cursor: pointer;
+    padding: 10px 16px; border-radius: 12px;
+    font: 800 12.5px/1 'Manrope', sans-serif; letter-spacing: .015em;
+    color: #fff; background: linear-gradient(135deg, #202b3c, #10182a);
+    box-shadow: 0 8px 20px -6px rgba(16, 24, 38, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+    transition: transform .16s ease, box-shadow .16s ease, filter .16s ease;
+    white-space: nowrap;
+}
+.mh-chart-btn:hover {
+    transform: translateY(calc(-50% - 1px)); filter: brightness(1.12);
+    box-shadow: 0 12px 26px -8px rgba(16, 24, 38, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.mh-chart-btn:active { transform: translateY(-50%) scale(.96); }
+body.dark-mode .mh-chart-btn {
+    color: #10201a; background: linear-gradient(135deg, #8fecb6, #6fd699);
+    box-shadow: 0 8px 22px -6px rgba(126, 226, 168, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.mh-cb-ico { display: inline-flex; width: 16px; height: 16px; color: var(--mh-accent); flex: 0 0 auto; }
+body.dark-mode .mh-cb-ico { color: #10201a; }
+.mh-cb-ico svg { width: 100%; height: 100%; }
+/* иконка меняется вместе с режимом: свечи → «вернуть карту» (сетка) */
+.mh-chart-btn .mh-cb-ico-map { display: none; }
+.mh-chart-btn.active .mh-cb-ico-chart { display: none; }
+.mh-chart-btn.active .mh-cb-ico-map { display: inline-flex; }
+
 /* --- ширина рынка: плоский сегментный индикатор в стиле остального дашборда --- */
 .mh-brd-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
 .mh-brd-ratio { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: var(--mh-muted2); }
@@ -228,6 +257,20 @@ body.dark-mode .mh-idx-tag { color: #fff; background: rgba(255, 255, 255, 0.10);
 
 .mh-plot { position: relative; width: calc(100% - 44px); height: 560px; box-sizing: border-box;
     margin: 16px 22px 8px; border-radius: 16px; overflow: hidden; background: var(--mh-plot-bg); }
+
+/* хост графика TradingView — тот же бокс, что и холст карты (подмена по кнопке «График») */
+.mh-chart-host { position: relative; width: calc(100% - 44px); height: 560px; box-sizing: border-box;
+    margin: 16px 22px 8px; border-radius: 16px; overflow: hidden; background: var(--mh-bg);
+    border: 1px solid var(--mh-line); }
+.mh-chart-host[hidden] { display: none; }
+.mh-chart-host .tradingview-widget-container { height: 100%; width: 100%; }
+.mh-chart-host .tradingview-widget-container__widget { height: calc(100% - 22px); width: 100%; }
+.mh-chart-host .tradingview-widget-copyright {
+    height: 22px; line-height: 22px; font-size: 10px;
+    font-family: 'Manrope', sans-serif; text-align: right; padding-right: 8px;
+    color: var(--mh-muted2); }
+.mh-chart-host .tradingview-widget-copyright a,
+.mh-chart-host .tradingview-widget-copyright .blue-text { color: var(--mh-muted2) !important; text-decoration: none; }
 
 .mh-tile { position: absolute; overflow: hidden; cursor: pointer; opacity: 1;
     box-sizing: border-box;
@@ -443,7 +486,12 @@ body.dark-mode .mh-retry { color: #10201a; }
     .mh-kpi + .mh-kpi { border-left: 0; border-top: 1px solid var(--mh-line); }
     .mh-kpi-breadth { border-left: 0; }
     .mh-idx-val { font-size: 25px; }
+    /* на узкой KPI-ячейке кнопка «График» встаёт в поток под котировкой */
+    .mh-chart-btn { position: static; transform: none; margin-top: 2px; align-self: flex-start; }
+    .mh-chart-btn:hover { transform: none; }
+    .mh-chart-btn:active { transform: scale(.96); }
     .mh-plot { height: 470px; margin: 12px 14px 6px; width: calc(100% - 28px); }
+    .mh-chart-host { height: 470px; margin: 12px 14px 6px; width: calc(100% - 28px); }
     .mh-meta { padding: 10px 14px 0; }
     /* на узком экране прячем сектор и объём, бар веса — остаётся #, тикер+имя, цена, изм., вес */
     .mh-table th.mh-th-sec, .mh-table td.mh-td-sec-col,

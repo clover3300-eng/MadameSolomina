@@ -1,35 +1,36 @@
 /* ============================================================================
    МОДУЛЬ «ГРАФИК ИНДЕКСА МОСБИРЖИ» — вкладка Рынок
    ----------------------------------------------------------------------------
-   Встраивает интерактивный advanced-chart TradingView (символ RUS:IRUS = IMOEX)
-   в карточку #mkChartBody на вкладке «Рынок». Грузится ПОСЛЕДНИМ (после
-   stock-terminal.js), чтобы его обёртки switchTab/toggleTheme были внешними.
+   Advanced-chart TradingView (символ RUS:IRUS = IMOEX, МЕСЯЧНЫЙ таймфрейм).
+   Отдельной карточки на странице больше нет: график живёт ВНУТРИ карточки
+   тепловой карты (#mhCard) и подменяет её холст по кнопке в статбаре
+   (см. js/market-heatmap.js). Этот модуль только собирает виджет:
 
-   Особенности:
-   - ленивая инициализация: виджет строится только при ПЕРВОМ заходе на вкладку
-     «Рынок» (внешний скрипт TradingView не тянется на старте приложения);
-   - тема (день/ночь) и фон/сетка подбираются под оформление приложения;
-   - при переключении темы виджет пересобирается под новую палитру.
+     window.mkChartMount(host) — построить график в переданном контейнере
+       (ленивая загрузка: внешний скрипт TradingView тянется при первом вызове;
+        повторные вызовы — no-op, пока не сменилась тема).
+
+   При переключении темы (день/ночь) смонтированный виджет пересобирается
+   под новую палитру. Грузится ПЕРЕД market-heatmap.js.
    ========================================================================== */
 (function () {
     'use strict';
 
     var TV_SRC = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
-    var built = false;     // виджет уже построен
+    var hostEl = null;     // контейнер, в котором смонтирован виджет
     var curTheme = null;   // тема, под которую он построен ('light' | 'dark')
 
     function isDark() { return document.body.classList.contains('dark-mode'); }
     function theme() { return isDark() ? 'dark' : 'light'; }
 
-    // Конфиг виджета — повторяет присланный пользователем, с подгонкой под тему
-    // приложения (фон/сетка) и autosize вместо фиксированных width/height.
+    // Конфиг виджета: месячные свечи на всю доступную историю, autosize под хост
     function cfg(t) {
         var dark = (t === 'dark');
         return {
             autosize: true,
             symbol: 'RUS:IRUS',
-            interval: 'D',  // дневной интервал → больше (более тонких) свечей = уменьшенный масштаб
-            range: 'ALL',   // вся доступная история заполняет ширину виджета (без «прижатия» вправо)
+            interval: 'M',  // месячный таймфрейм
+            range: 'ALL',   // вся доступная история заполняет ширину виджета
             timezone: 'Europe/Moscow',
             theme: dark ? 'dark' : 'light',
             style: '1',
@@ -53,14 +54,13 @@
         };
     }
 
-    // Полностью (пере)собирает разметку виджета. Внешний скрипт TradingView
-    // читает свой собственный textContent как конфиг и рисует график в
+    // Полностью (пере)собирает разметку виджета в hostEl. Внешний скрипт
+    // TradingView читает свой textContent как конфиг и рисует график в
     // соседний .tradingview-widget-container__widget.
     function build() {
-        var host = document.getElementById('mkChartBody');
-        if (!host) return;
+        if (!hostEl) return;
         var t = theme();
-        host.innerHTML = '';
+        hostEl.innerHTML = '';
 
         var container = document.createElement('div');
         container.className = 'tradingview-widget-container';
@@ -82,38 +82,27 @@
         container.appendChild(widget);
         container.appendChild(copy);
         container.appendChild(script);
-        host.appendChild(container);
+        hostEl.appendChild(container);
 
         curTheme = t;
-        built = true;
     }
 
-    function ensure() { if (!built) build(); }
-
-    function refreshTheme() {
-        if (!built) return;
-        if (theme() !== curTheme) build(); // пересобрать под новую тему
-    }
-
-    // Лениво строим при первом заходе на «Рынок»
-    var _origSwitch = window.switchTab;
-    window.switchTab = function (tabId) {
-        var r = _origSwitch ? _origSwitch.apply(this, arguments) : undefined;
-        if (tabId === 'market') setTimeout(ensure, 0);
-        return r;
+    // Публичная точка входа: смонтировать график в host (или пересобрать,
+    // если host сменился/тема устарела). Уже актуальный виджет не трогаем.
+    window.mkChartMount = function (host) {
+        if (!host) return;
+        if (hostEl === host && curTheme === theme() && host.firstChild) return;
+        hostEl = host;
+        build();
     };
 
-    // Пересобрать под тему при переключении день/ночь
+    // Пересобрать под тему при переключении день/ночь (если уже смонтирован)
     var _origToggle = window.toggleTheme;
     window.toggleTheme = function () {
         var r = _origToggle ? _origToggle.apply(this, arguments) : undefined;
-        setTimeout(refreshTheme, 0);
+        setTimeout(function () {
+            if (hostEl && curTheme !== theme()) build();
+        }, 0);
         return r;
     };
-
-    // Если приложение стартовало уже на вкладке «Рынок»
-    document.addEventListener('DOMContentLoaded', function () {
-        var p = document.getElementById('panel-market');
-        if (p && p.classList.contains('active')) setTimeout(ensure, 300);
-    });
 })();
