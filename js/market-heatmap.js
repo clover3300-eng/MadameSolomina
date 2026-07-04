@@ -121,7 +121,7 @@
         refCloses: {},       // { week: {TICKER:close}, month: {...} } — закрытие на опорную дату
         refIndex: {},        // { week: closeIMOEX, month: ... }
         zoom: null,          // имя сектора при drill-down или null
-        chartMode: false,    // true → вместо холста карты показан график TradingView
+        chartMode: true,     // true → вместо холста карты показан график TradingView (открыт по умолчанию)
         sortKey: 'weight', sortDir: -1,
         prevPrices: {},      // последняя цена по тикеру (для вспышек)
         tileEls: {}, secEls: {},  // переиспользуемые DOM-узлы (плавные переходы)
@@ -667,7 +667,7 @@
         var c = card(); if (!c) return;
         // LIVE-капсула в шапке: пульс + время последнего апдейта
         var liveEl = c.querySelector('.mh-live'), tEl = c.querySelector('.mh-live-time');
-        if (liveEl) liveEl.className = 'mh-live' + (state.status === 'ready' ? ' live' : state.status === 'error' ? ' stale' : '');
+        if (liveEl) liveEl.className = 'mh-live mh-map-ctrl' + (state.status === 'ready' ? ' live' : state.status === 'error' ? ' stale' : '');
         if (tEl) tEl.textContent = state.updated ? state.updated : '—';
         // тонкая подпись-источник под статбаром
         var meta = c.querySelector('.mh-meta-txt');
@@ -775,17 +775,18 @@
 
     // ---------- Переключение карта ↔ график TradingView ----------
     // Кнопка в KPI-ячейке индекса: график (месячный ТФ) занимает место холста
-    // карты (тот же бокс), пульс/легенда/таблица остаются на месте.
-    function toggleChart() {
-        state.chartMode = !state.chartMode;
+    // карты (тот же бокс), пульс/легенда/таблица остаются на месте. Открыт по
+    // умолчанию (state.chartMode: true) — контролы карты (LIVE, период, размер
+    // плитки, обновить) скрыты в этом режиме через класс mh-view-chart на карточке.
+    function applyChartMode() {
         var plot = $('.mh-plot'), host = $('.mh-chart-host'), c = card();
-        if (!plot || !host) return;
-        hideTip();
+        if (!plot || !host || !c) return;
+        c.classList.toggle('mh-view-chart', state.chartMode);
         plot.style.display = state.chartMode ? 'none' : '';
         host.hidden = !state.chartMode;
         renderBread(); // крошки drill-down относятся к карте — прячутся вместе с ней
         if (state.chartMode && typeof window.mkChartMount === 'function') window.mkChartMount(host);
-        var btn = c && c.querySelector('.mh-chart-btn');
+        var btn = c.querySelector('.mh-chart-btn');
         if (btn) {
             btn.classList.toggle('active', state.chartMode);
             var txt = btn.querySelector('.mh-chart-btn-txt');
@@ -794,6 +795,7 @@
         }
         if (!state.chartMode) renderPlot(); // вернулись к карте — актуализировать раскладку
     }
+    function toggleChart() { state.chartMode = !state.chartMode; hideTip(); applyChartMode(); }
 
     // Обновляет подписи легенды ±cap% под выбранный период
     function updateLegend() {
@@ -821,26 +823,25 @@
             '  <div class="mh-head-title">' +
             '    <span class="mh-head-ico" aria-hidden="true">' + GRID_SVG + '</span>' +
             '    <div class="mh-head-tt">' +
-            '      <span class="mh-title">Тепловая карта</span>' +
-            '      <span class="mh-sym">Индекс МосБиржи · IMOEX</span>' +
+            '      <span class="mh-title">Индекс МосБиржи · IMOEX</span>' +
             '    </div>' +
             '  </div>' +
             '  <div class="mh-head-ctrl">' +
-            '    <span class="mh-live" title="Время последнего обновления данных Мосбиржи (задержка ~15 мин)">' +
+            '    <span class="mh-live mh-map-ctrl" title="Время последнего обновления данных Мосбиржи (задержка ~15 мин)">' +
             '      <i class="mh-live-dot"></i>' +
             '      <span class="mh-live-meta"><span class="mh-live-cap">обновлено</span><span class="mh-live-time">—</span></span>' +
             '    </span>' +
-            '    <span class="mh-seg mh-seg-period" role="tablist" title="Период изменения (цвет карты)">' +
+            '    <span class="mh-seg mh-seg-period mh-map-ctrl" role="tablist" title="Период изменения (цвет карты)">' +
             '      <button class="mh-seg-btn active" type="button" data-period="day">День</button>' +
             '      <button class="mh-seg-btn" type="button" data-period="week">Неделя</button>' +
             '      <button class="mh-seg-btn" type="button" data-period="month">Месяц</button>' +
             '    </span>' +
-            '    <span class="mh-seg mh-seg-size" role="tablist" title="Размер плитки">' +
+            '    <span class="mh-seg mh-seg-size mh-map-ctrl" role="tablist" title="Размер плитки">' +
             '      <button class="mh-seg-btn active" type="button" data-size="weight">Вес</button>' +
             '      <button class="mh-seg-btn" type="button" data-size="value">Объём</button>' +
             '      <button class="mh-seg-btn" type="button" data-size="change">% изм.</button>' +
             '    </span>' +
-            '    <button class="mh-refresh" type="button" title="Обновить" aria-label="Обновить">' + REFRESH_SVG + '</button>' +
+            '    <button class="mh-refresh mh-map-ctrl" type="button" title="Обновить" aria-label="Обновить">' + REFRESH_SVG + '</button>' +
             '  </div>' +
             '</div>' +
             '<div class="mh-pulse">' +
@@ -939,6 +940,7 @@
         plotEl.addEventListener('mouseleave', function () { hideTip(); plotEl.classList.remove('mh-spot'); });
 
         state.built = true;
+        applyChartMode(); // открыт по умолчанию график — сразу монтируем и прячем контролы карты
     }
 
     // ====================================================================

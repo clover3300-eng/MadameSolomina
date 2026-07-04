@@ -86,10 +86,10 @@ body.dark-mode .mh-card {
     font-weight: 800; font-size: 21px; color: var(--mh-text);
     letter-spacing: -0.01em; line-height: 1.1;
 }
-.mh-sym {
-    font-weight: 600; font-size: 13px; color: var(--mh-muted); letter-spacing: 0.01em;
-}
 .mh-head-ctrl { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+/* контролы карты (LIVE-капсула, период, размер плитки, обновить) — видны только
+   когда открыта тепловая карта; в режиме графика (по умолчанию) скрыты */
+.mh-card.mh-view-chart .mh-map-ctrl { display: none; }
 
 /* Капсула актуальности: пульсирующая точка + явная подпись «обновлено HH:MM».
    Раньше тут было «LIVE HH:MM» — время путали с текущим; теперь подпись прямо
@@ -158,10 +158,10 @@ body.dark-mode .mh-idx-tag { color: #fff; background: rgba(255, 255, 255, 0.10);
 /* --- кнопка «График» — карта ↔ TradingView (месячный ТФ), в пустом углу KPI-ячейки индекса --- */
 .mh-chart-btn {
     position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
-    display: inline-flex; align-items: center; gap: 8px;
+    display: inline-flex; align-items: center; gap: 10px;
     appearance: none; border: 0; cursor: pointer;
-    padding: 10px 16px; border-radius: 12px;
-    font: 800 12.5px/1 'Manrope', sans-serif; letter-spacing: .015em;
+    padding: 13px 22px; border-radius: 14px;
+    font: 800 14.5px/1 'Manrope', sans-serif; letter-spacing: .015em;
     color: #fff; background: linear-gradient(135deg, #202b3c, #10182a);
     box-shadow: 0 8px 20px -6px rgba(16, 24, 38, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.09);
     transition: transform .16s ease, box-shadow .16s ease, filter .16s ease;
@@ -176,7 +176,7 @@ body.dark-mode .mh-chart-btn {
     color: #10201a; background: linear-gradient(135deg, #8fecb6, #6fd699);
     box-shadow: 0 8px 22px -6px rgba(126, 226, 168, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
-.mh-cb-ico { display: inline-flex; width: 16px; height: 16px; color: var(--mh-accent); flex: 0 0 auto; }
+.mh-cb-ico { display: inline-flex; width: 18px; height: 18px; color: var(--mh-accent); flex: 0 0 auto; }
 body.dark-mode .mh-cb-ico { color: #10201a; }
 .mh-cb-ico svg { width: 100%; height: 100%; }
 /* иконка меняется вместе с режимом: свечи → «вернуть карту» (сетка) */
