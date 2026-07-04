@@ -84,7 +84,7 @@ body.dark-mode #rebalancePanelContent {
     display: flex;
     align-items: center;
     gap: 14px;
-    margin: 18px 0 0;
+    margin: 26px 0 24px;
 }
 #rebalancePanelContent .sr-cand-num {
     font-family: 'JetBrains Mono', monospace;
