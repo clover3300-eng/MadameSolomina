@@ -774,10 +774,10 @@
     function exitZoom() { if (!state.zoom) return; state.zoom = null; hideTip(); render(); }
 
     // ---------- Переключение карта ↔ график TradingView ----------
-    // Кнопка в KPI-ячейке индекса: график (месячный ТФ) занимает место холста
-    // карты (тот же бокс), пульс/легенда/таблица остаются на месте. Открыт по
-    // умолчанию (state.chartMode: true) — контролы карты (LIVE, период, размер
-    // плитки, обновить) скрыты в этом режиме через класс mh-view-chart на карточке.
+    // Сегмент-переключатель «Карта / График» — в KPI-ячейке индекса, рядом с
+    // котировкой, активная кнопка = текущий режим. График (месячный ТФ) занимает
+    // место холста карты (тот же бокс); контролы карты (LIVE, период, размер
+    // плитки, обновить) скрыты в режиме графика через класс mh-view-chart.
     function applyChartMode() {
         var plot = $('.mh-plot'), host = $('.mh-chart-host'), c = card();
         if (!plot || !host || !c) return;
@@ -786,16 +786,12 @@
         host.hidden = !state.chartMode;
         renderBread(); // крошки drill-down относятся к карте — прячутся вместе с ней
         if (state.chartMode && typeof window.mkChartMount === 'function') window.mkChartMount(host);
-        var btn = c.querySelector('.mh-chart-btn');
-        if (btn) {
-            btn.classList.toggle('active', state.chartMode);
-            var txt = btn.querySelector('.mh-chart-btn-txt');
-            if (txt) txt.textContent = state.chartMode ? 'Карта' : 'График';
-            btn.title = state.chartMode ? 'Вернуть тепловую карту' : 'Открыть график индекса (месячный таймфрейм)';
-        }
+        var mapBtn = c.querySelector('[data-act="view-map"]'), chartBtn = c.querySelector('[data-act="view-chart"]');
+        if (mapBtn) mapBtn.classList.toggle('active', !state.chartMode);
+        if (chartBtn) chartBtn.classList.toggle('active', state.chartMode);
         if (!state.chartMode) renderPlot(); // вернулись к карте — актуализировать раскладку
     }
-    function toggleChart() { state.chartMode = !state.chartMode; hideTip(); applyChartMode(); }
+    function setChartMode(v) { if (state.chartMode === v) return; state.chartMode = v; hideTip(); applyChartMode(); }
 
     // Обновляет подписи легенды ±cap% под выбранный период
     function updateLegend() {
@@ -847,12 +843,15 @@
             '<div class="mh-pulse">' +
             '  <div class="mh-kpi mh-kpi-idx">' +
             '    <div class="mh-idx-top"><span class="mh-idx-tag">IMOEX</span><span class="mh-idx-lbl">Индекс МосБиржи</span></div>' +
-            '    <div class="mh-pulse-idx"><span class="mh-idx-val">—</span><span class="mh-idx-chg">—</span></div>' +
-            '    <button class="mh-chart-btn" type="button" data-act="chart-toggle" title="Открыть график индекса (месячный таймфрейм)">' +
-            '      <span class="mh-cb-ico mh-cb-ico-chart" aria-hidden="true">' + CANDLE_SVG + '</span>' +
-            '      <span class="mh-cb-ico mh-cb-ico-map" aria-hidden="true">' + GRID_SVG + '</span>' +
-            '      <span class="mh-chart-btn-txt">График</span>' +
-            '    </button>' +
+            '    <div class="mh-pulse-idx">' +
+            '      <span class="mh-idx-val">—</span><span class="mh-idx-chg">—</span>' +
+            '      <span class="mh-seg mh-seg-view" role="tablist" title="Тепловая карта / график индекса (месячный таймфрейм)">' +
+            '        <button class="mh-seg-btn" type="button" data-act="view-map">' +
+            '          <span class="mh-cb-ico" aria-hidden="true">' + GRID_SVG + '</span>Карта</button>' +
+            '        <button class="mh-seg-btn active" type="button" data-act="view-chart">' +
+            '          <span class="mh-cb-ico" aria-hidden="true">' + CANDLE_SVG + '</span>График</button>' +
+            '      </span>' +
+            '    </div>' +
             '  </div>' +
             '  <div class="mh-kpi mh-kpi-breadth">' +
             '    <div class="mh-brd-top"><span class="mh-kpi-lbl">Ширина рынка</span><span class="mh-brd-ratio"></span></div>' +
@@ -919,7 +918,8 @@
         // Делегированные клики: ретрай, крошки, сектор-зум, плитка, действия/строка таблицы
         c.addEventListener('click', function (e) {
             if (e.target.closest('[data-act="retry"]')) { refresh(); return; }
-            if (e.target.closest('[data-act="chart-toggle"]')) { toggleChart(); return; }
+            if (e.target.closest('[data-act="view-map"]')) { setChartMode(false); return; }
+            if (e.target.closest('[data-act="view-chart"]')) { setChartMode(true); return; }
             if (e.target.closest('[data-act="bread-root"]')) { exitZoom(); return; }
             // действия в ячейке тикера — проверяем ДО клика по строке
             var favBtn = e.target.closest('[data-act="fav"]');

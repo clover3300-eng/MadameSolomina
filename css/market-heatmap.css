@@ -155,34 +155,15 @@ body.dark-mode .mh-idx-tag { color: #fff; background: rgba(255, 255, 255, 0.10);
 .mh-idx-chg.up { color: var(--mh-up); background: var(--mh-up-bg); }
 .mh-idx-chg.down { color: var(--mh-down); background: var(--mh-down-bg); }
 
-/* --- кнопка «График» — карта ↔ TradingView (месячный ТФ), в пустом углу KPI-ячейки индекса --- */
-.mh-chart-btn {
-    position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
-    display: inline-flex; align-items: center; gap: 10px;
-    appearance: none; border: 0; cursor: pointer;
-    padding: 13px 22px; border-radius: 14px;
-    font: 800 14.5px/1 'Manrope', sans-serif; letter-spacing: .015em;
-    color: #fff; background: linear-gradient(135deg, #202b3c, #10182a);
-    box-shadow: 0 8px 20px -6px rgba(16, 24, 38, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.09);
-    transition: transform .16s ease, box-shadow .16s ease, filter .16s ease;
-    white-space: nowrap;
-}
-.mh-chart-btn:hover {
-    transform: translateY(calc(-50% - 1px)); filter: brightness(1.12);
-    box-shadow: 0 12px 26px -8px rgba(16, 24, 38, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-}
-.mh-chart-btn:active { transform: translateY(-50%) scale(.96); }
-body.dark-mode .mh-chart-btn {
-    color: #10201a; background: linear-gradient(135deg, #8fecb6, #6fd699);
-    box-shadow: 0 8px 22px -6px rgba(126, 226, 168, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.35);
-}
-.mh-cb-ico { display: inline-flex; width: 18px; height: 18px; color: var(--mh-accent); flex: 0 0 auto; }
-body.dark-mode .mh-cb-ico { color: #10201a; }
-.mh-cb-ico svg { width: 100%; height: 100%; }
-/* иконка меняется вместе с режимом: свечи → «вернуть карту» (сетка) */
-.mh-chart-btn .mh-cb-ico-map { display: none; }
-.mh-chart-btn.active .mh-cb-ico-chart { display: none; }
-.mh-chart-btn.active .mh-cb-ico-map { display: inline-flex; }
+/* --- переключатель «Карта / График» — та же пилюля, что у остальных
+   сегмент-контролов карточки (.mh-seg/.mh-seg-btn: светлый «колодец», активный
+   сегмент — тёмный/брендовый), поэтому она не выбивается из общего языка
+   карточки, где бы ни стояла. Стоит справа от котировки, в той же ячейке. */
+.mh-seg-view { margin-left: auto; align-self: center; height: 44px; padding: 5px; position: relative; top: -8px; }
+.mh-seg-view .mh-seg-btn { display: inline-flex; align-items: center; gap: 7px; padding: 0 16px; font-size: 14px; }
+.mh-cb-ico { display: inline-flex; width: 16px; height: 16px; flex: 0 0 auto; color: var(--mh-accent); }
+.mh-seg-view .mh-seg-btn.active .mh-cb-ico { color: #fff; }
+body.dark-mode .mh-seg-view .mh-seg-btn.active .mh-cb-ico { color: #10201a; }
 
 /* --- ширина рынка: плоский сегментный индикатор в стиле остального дашборда --- */
 .mh-brd-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
@@ -486,10 +467,6 @@ body.dark-mode .mh-retry { color: #10201a; }
     .mh-kpi + .mh-kpi { border-left: 0; border-top: 1px solid var(--mh-line); }
     .mh-kpi-breadth { border-left: 0; }
     .mh-idx-val { font-size: 25px; }
-    /* на узкой KPI-ячейке кнопка «График» встаёт в поток под котировкой */
-    .mh-chart-btn { position: static; transform: none; margin-top: 2px; align-self: flex-start; }
-    .mh-chart-btn:hover { transform: none; }
-    .mh-chart-btn:active { transform: scale(.96); }
     .mh-plot { height: 470px; margin: 12px 14px 6px; width: calc(100% - 28px); }
     .mh-chart-host { height: 470px; margin: 12px 14px 6px; width: calc(100% - 28px); }
     .mh-meta { padding: 10px 14px 0; }
