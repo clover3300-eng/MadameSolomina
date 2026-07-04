@@ -1694,8 +1694,8 @@ body.dark-mode .echelon-explain-badge {
 .portfolio-ofz-qty {
     font-family: 'JetBrains Mono', monospace;
     font-size: 12px;
-    font-weight: 600;
-    color: var(--text-slate);
+    font-weight: 700;
+    color: var(--text-deep);
     white-space: nowrap;
     text-align: right;
 }

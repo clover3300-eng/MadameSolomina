@@ -327,8 +327,8 @@ body.dark-mode .portfolio-stock-item:hover {
 .portfolio-stock-qty {
     font-family: 'JetBrains Mono', monospace;
     font-size: 12px;
-    font-weight: 500;
-    color: var(--text-slate);
+    font-weight: 700;
+    color: var(--text-deep);
     text-align: right;
     white-space: nowrap;
 }

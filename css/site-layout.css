@@ -348,7 +348,7 @@
         #rbLeftRail .header { order: -1; }
     }
     /* ===== PORTFOLIO V3 «Зеркало»: новые элементы скрыты на мобиле, обёртки прозрачны ===== */
-    .v3-buylist-btn, .v3-recalc-btn, .pf-table-thead { display: none; }
+    .v3-buylist-btn, .v3-recalc-btn, .v3-createpf-btn, .pf-table-thead { display: none; }
     .v3-table-card { display: contents; }
     /* Ранги (#N) показываем только на десктопной «зеркальной» раскладке;
        на мобиле колонок нет, поэтому ячейка ранга скрыта */
@@ -637,6 +637,21 @@
             background: #141b26; color: #ffffff;
             padding: 3px 10px; border-radius: 999px;
         }
+
+        /* Кнопка «Создать портфель» — переносит рассчитанный состав во вкладку «Портфели» */
+        .v3-createpf-btn {
+            margin-top: 10px;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            background: #D97757; border: none; border-radius: 14px;
+            padding: 15px 18px;
+            font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 14.5px;
+            color: #ffffff; white-space: nowrap; cursor: pointer;
+            width: 100%;
+            box-shadow: 0 14px 30px rgba(217,119,87,0.28);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .v3-createpf-btn:hover { transform: translateY(-1px); box-shadow: 0 18px 36px rgba(217,119,87,0.34); }
+        .v3-createpf-btn .ic { display: inline-flex; color: #ffffff; }
 
         /* Кнопка «Рассчитать заново» под панелью */
         .v3-recalc-btn {
@@ -2018,8 +2033,9 @@
         }
         #pfRightCol .portfolio-ofz-qty {
             font-family: 'JetBrains Mono', monospace;
-            color: #5f6d80; font-size: 15px; font-weight: 400; text-align: right;
+            color: #111927; font-size: 15px; font-weight: 700; text-align: right;
         }
+        body.dark-mode #pfRightCol .portfolio-ofz-qty { color: #f1f6fb; }
         #pfRightCol .portfolio-ofz-sum {
             font-family: 'JetBrains Mono', monospace;
             font-weight: 700; font-size: 15px; color: #111927; text-align: right;
@@ -2314,15 +2330,17 @@
             padding: 12px 26px 11px 26px;
             margin: 0 0 2px;
             font-size: 11px; font-weight: 800;
-            color: #8593a6; letter-spacing: 0.1em;
+            color: #6b7a8f; letter-spacing: 0.1em;
             opacity: 1;
-            background: #f6f9fc;
-            border-bottom: 1px solid #eef2f7;
+            background: #eef2f7;
+            border-top: 1px solid #e3e9f0;
+            border-bottom: 1px solid #e3e9f0;
         }
         body.dark-mode #pfRightCol .portfolio-echelon-columns-header {
-            background: rgba(255,255,255,0.03);
-            border-bottom-color: rgba(255,255,255,0.07);
-            color: #76849a;
+            background: rgba(255,255,255,0.06);
+            border-top-color: rgba(255,255,255,0.09);
+            border-bottom-color: rgba(255,255,255,0.09);
+            color: #9aa7ba;
         }
         #pfRightCol .portfolio-echelon-list { padding: 0 26px 16px 26px; }
         #pfRightCol .portfolio-stock-item {
@@ -2332,8 +2350,9 @@
         }
         #pfRightCol .portfolio-stock-ticker { font-size: 15px; font-weight: 700; }
         #pfRightCol .portfolio-stock-yield,
-        #pfRightCol .portfolio-stock-qty,
         #pfRightCol .portfolio-stock-sum { font-size: 14.5px; }
+        #pfRightCol .portfolio-stock-qty { font-size: 14.5px; font-weight: 700; color: #111927; }
+        body.dark-mode #pfRightCol .portfolio-stock-qty { color: #f1f6fb; }
         #pfRightCol .portfolio-stock-item .ofz-expand-badge { justify-self: end; }
 
         /* Ранг (#N) — как в Ребалансе: моноширинный, приглушённый, по левому краю */
@@ -2365,9 +2384,10 @@
         #pfRightCol .portfolio-important-aurora {
             margin-top: 20px;
             padding: 20px 24px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.06);
+            background: rgba(126,226,168,0.05);
+            border: 1px solid rgba(126,226,168,0.18);
             border-radius: 16px;
+            box-shadow: 0 10px 28px rgba(0,0,0,0.12);
             gap: 16px;
             align-items: flex-start;
         }
@@ -2395,8 +2415,9 @@
         }
         /* Светлая тема */
         body:not(.dark-mode) #pfRightCol .portfolio-important-aurora {
-            background: #f6f9fc;
-            border-color: #e8eef5;
+            background: rgba(17,157,92,0.045);
+            border-color: rgba(17,157,92,0.16);
+            box-shadow: 0 8px 22px rgba(17,157,92,0.06);
         }
         body:not(.dark-mode) #pfRightCol .important-aurora-icon {
             background: rgba(17,157,92,0.08);

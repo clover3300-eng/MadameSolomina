@@ -144,6 +144,17 @@ function populatePanels() {
             };
             fcLight.appendChild(buyBtn);
         }
+        // 2.5) Кнопка «Создать портфель» — переносит рассчитанный состав (ОФЗ + акции)
+        // в новый портфель на вкладке «Портфели» и сразу открывает её
+        const createPfBtn = document.createElement('button');
+        createPfBtn.type = 'button';
+        createPfBtn.className = 'v3-createpf-btn';
+        createPfBtn.innerHTML = '<span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span>Создать портфель';
+        createPfBtn.onclick = function() {
+            if (typeof window.pfImport === 'function') window.pfImport('calc', 'all', null);
+            switchTab('portfolios');
+        };
+        if (fcLight) fcLight.appendChild(createPfBtn);
         // 3) Кнопка «Новый расчёт» — внутри карточки капитала (увеличивает её),
         //    возврат на вкладку Расчёт
         const recalc = document.createElement('button');
