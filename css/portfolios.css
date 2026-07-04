@@ -1417,33 +1417,60 @@ body.dark-mode #topBarPfActions .d3-quick:hover { background: rgba(255,255,255,0
 }
 
 /* ============================================================
-   LIVE-ВИДЖЕТ (бывшая тёмная полоса сверху): та же тёмная карточка, что и
-   «Суммарный капитал» (класс pf-sumcard общий), в правой колонке под ней.
+   РЫНОЧНАЯ ЛЕНТА В ШАПКЕ САЙТА: тонкой строкой ПОД глобальным топ-баром, вшита в фон
+   шапки (без карточки/бокса) — видна только на вкладке «Портфели». Наполняется
+   renderTopBarMarket()/topBarMarketHtml() из js/portfolios.js, значения обновляет
+   tickLive() из тех же скрытых span'ов дашборда, что и раньше.
    ============================================================ */
-.pflc-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 9px;
-    border-bottom: 1px solid rgba(255,255,255,0.08); }
-.pf-livecard .dlv-time { padding-left: 0; margin-left: 0; border-left: none; }
-.pf-livecard .dlv-time-v { font-size: 13px; }
-.pflc-rows { display: flex; flex-direction: column; }
-.pflc-row { display: flex; align-items: baseline; gap: 9px; padding: 9px 2px; }
-.pflc-row + .pflc-row { border-top: 1px solid rgba(255,255,255,0.06); }
-.pflc-row .dlv-v { margin-left: auto; }
-.pflc-row.pflc-go { cursor: pointer; border-radius: 10px; margin: 0 -8px; padding: 9px 10px; transition: background 0.15s; }
-.pflc-row.pflc-go:hover { background: rgba(255,255,255,0.07); }
+#topBarPfMarket {
+    display: none; align-items: center; gap: 9px;
+    padding: 0 16px 9px; overflow-x: auto; scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+#topBarPfMarket::-webkit-scrollbar { display: none; }
+@media (min-width: 1024px) { #topBarPfMarket { padding: 0 32px 10px; } }
+/* на планшете/телефоне и так тесно (кнопки шапки уже сжаты до иконок/скролла) —
+   ленту прячем, чтобы не добавлять вторую тесную строку под уже тесной первой */
+@media (max-width: 1023px) { #topBarPfMarket { display: none !important; } }
+.tbmk-dot {
+    width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+    background: #1a9f6a; box-shadow: 0 0 0 0 rgba(26,159,106,0.5);
+    animation: tbmkPulse 2.2s infinite;
+}
+body.dark-mode .tbmk-dot { background: #34d399; }
+@keyframes tbmkPulse {
+    0%   { box-shadow: 0 0 0 0 rgba(52,211,153,0.45); }
+    70%  { box-shadow: 0 0 0 5px rgba(52,211,153,0); }
+    100% { box-shadow: 0 0 0 0 rgba(52,211,153,0); }
+}
+.tbmk-item { display: flex; align-items: baseline; gap: 5px; white-space: nowrap; flex-shrink: 0; }
+.tbmk-go { cursor: pointer; border-radius: 8px; padding: 3px 5px; margin: -3px -5px; transition: background 0.15s; }
+.tbmk-go:hover { background: rgba(120,140,170,0.14); }
+.tbmk-k { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--text-muted, #94A3B8); opacity: 0.8; }
+.tbmk-v { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; color: var(--text-slate, #64748B); }
+body.dark-mode .tbmk-v { color: #b6c2d1; }
+.tbmk-c { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; }
+.tbmk-c.pos { color: #1a9f6a; }
+.tbmk-c.neg { color: #d1483e; }
+.tbmk-c.flat { color: #94a3b8; }
+body.dark-mode .tbmk-c.pos { color: #34d399; }
+body.dark-mode .tbmk-c.neg { color: #f87171; }
+.tbmk-sep { color: rgba(148,163,184,0.45); font-size: 10px; flex-shrink: 0; }
 
 /* ============================================================
    «СТАВКИ РЫНКА» ВМЕСТО «КАЛЕНДАРЯ ВЫПЛАТ» — когда нигде нет ни одной облигации
    (один портфель из акций, несколько таких портфелей, или все облигации удалили
-   из настроек). БЕЗ большой коробки-обёртки: каждая плитка уже своя мини-карточка
-   (drt-tile), тут только стопка сверху вниз — см. ratesStackHtml.
+   из настроек). БЕЗ большой коробки-обёртки вокруг всего виджета, но заголовок —
+   тот же pfCardHead/.pf-ch, что у остальных карточек (совпадает по шрифту/размеру
+   с «Избранное»), выровнен по верху — плитки не «плавают» по центру ячейки.
    ============================================================ */
-.pf-ratesstack { display: flex; flex-direction: column; gap: 10px; min-width: 0; padding: 6px 2px; }
-.pf-ratesstack-eyebrow { font-family: 'Manrope', sans-serif; font-size: 10.5px; font-weight: 800;
-    letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; padding: 0 2px; }
+.pf-ratesstack { display: flex; flex-direction: column; min-width: 0; }
+.pf-ratesstack-body { padding: 4px 24px 22px; }
 .pf-ratesstack-grid { grid-template-columns: 1fr; gap: 10px; }
 /* свободная ЯЧЕЙКА сетки — растягивается по высоте вместе с соседними карточками
-   (align-items:stretch у .pf-grid), плитки центрируются по этой высоте */
-.pf-ratesstack--cell { justify-content: center; }
+   (align-items:stretch у .pf-grid); контент выравнен по верху, как и у соседей */
+.pf-ratesstack--cell { justify-content: flex-start; }
 .pf-ratesstack--span2 { grid-column: span 2; }
 @media (max-width: 1040px) { .pf-ratesstack--span2 { grid-column: span 1; } }
 /* чётное число портфелей — полоса ставок узкой колонкой под сеткой (не на всю ширину) */

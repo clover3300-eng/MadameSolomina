@@ -886,7 +886,7 @@
     var openRows = {};       // hid -> true: раскрыты ли субданные актива в мини-таблице карточки
     var menuTall = false;    // раскрыта ли карточка настроек «вниз» (показать все тикеры без скролла)
     var menuJustOpened = false;
-    var clockTimer = null;
+    var liveTimer = null;
     var rendering = false;   // защита от повторного входа (см. ниже)
     var loadStatus = {};     // hid -> { state:'loading'|'ok'|'err'|'nodate', date } для кнопки «Загрузить на дату»
     // Новости избранного: кэшируем готовый HTML по тикеру и грузим с ограничением
@@ -961,16 +961,18 @@
             // (уже занявшие место календаря) не нужно.
             var left = gridPart + (needCell ? '' : cellCard) + (noBonds ? '' : ratesHtml());
             // Сводка по всем портфелям (2+) — компактной карточкой ПОД «Избранным» в правой
-            // колонке; LIVE-виджет (бывшая верхняя тёмная полоса) — под сводкой.
+            // колонке. Рыночная лента (бывший LIVE-виджет) больше не карточка тут — она
+            // вшита в фон глобального топ-бара, см. renderTopBarMarket().
             body = '<div class="pf-topgrid">' +
                     '<div class="pf-topgrid-left">' + left + '</div>' +
-                    '<div class="pf-topgrid-fav">' + favStr + (store.items.length >= 2 ? summaryCardHtml() : '') + liveBarHtml() + '</div>' +
+                    '<div class="pf-topgrid-fav">' + favStr + (store.items.length >= 2 ? summaryCardHtml() : '') + '</div>' +
                 '</div>';
             host.innerHTML = body;
             renderTopBarActions();
+            renderTopBarMarket();
             tickLive();
             renderFavNews();
-            ensureClock();
+            ensureLiveTick();
             var payBody = document.querySelector('.pf-paycal--cell .pfpc-body');
             if (payBody) window.pfPayCalScroll(payBody);   // начальное состояние затухания списка выплат
             ensureDefaultImoexFlags(); // флаг IMOEX по умолчанию — ДО первого loadPfChart (см. комментарий выше)
@@ -1011,41 +1013,40 @@
         }, 150);
     }
 
-    // ---- LIVE-виджет (бывшая тёмная полоса сверху): компактная тёмная карточка в правой
-    // колонке под сводкой «Суммарный капитал» — той же тёмной карточкой (класс
-    // pf-sumcard общий с summaryCardHtml, единый стиль). Ids и классы значений
-    // (pflv-*/dlv-*) сохранены — их наполняет tickLive() из данных дашборда.
-    function liveBarHtml() {
+    // ---- РЫНОЧНАЯ ЛЕНТА В ШАПКЕ САЙТА (бывший тёмный LIVE-виджет отдельной карточкой в
+    // правой колонке — не понравился визуально, «не подходил» к странице). Теперь это
+    // тонкая строка, вшитая прямо в фон глобального топ-бара (#topBarPfMarket в
+    // index.html, ПОД #topBar) — без своего бокса, ненавязчиво, но всегда на виду, пока
+    // открыта вкладка «Портфели». Ids те же по смыслу (tbmk-v-*/tbmk-c-*), наполняет их
+    // tickLive() из тех же скрытых span'ов дашборда (val-imoex и т.п.), что и раньше.
+    function topBarMarketHtml() {
         var tiles = [['imoex', 'IMOEX'], ['usd', 'USD/RUB'], ['btc', 'BTC']];
-        return '<div class="pf-sumcard pf-livecard" id="pfLiveBar">' +
-            '<div class="pflc-head">' +
-                '<div class="dlv-live"><span class="dlv-dot"></span>LIVE</div>' +
-                '<div class="dlv-time"><span class="dlv-time-k">MSK</span><span class="dlv-time-v" id="pfClock">--:--:--</span></div>' +
-            '</div>' +
-            '<div class="pflc-rows">' + tiles.map(function (t) {
-                // клик по IMOEX открывает вкладку «Рынок»
-                var go = t[0] === 'imoex';
-                return '<div class="pflc-row' + (go ? ' pflc-go' : '') + '"' +
-                    (go ? ' role="button" tabindex="0" title="Открыть вкладку «Рынок»" onclick="switchTab(\'market\')"' : '') +
-                    '><span class="dlv-k">' + t[1] + '</span>' +
-                    '<span class="dlv-v" id="pflv-v-' + t[0] + '">—</span>' +
-                    '<span class="dlv-c" id="pflv-c-' + t[0] + '"></span></div>';
-            }).join('') + '</div>' +
-            '</div>';
+        return '<span class="tbmk-dot"></span>' + tiles.map(function (t, i) {
+            // клик по IMOEX открывает вкладку «Рынок»
+            var go = t[0] === 'imoex';
+            return (i ? '<span class="tbmk-sep">·</span>' : '') +
+                '<span class="tbmk-item' + (go ? ' tbmk-go' : '') + '"' +
+                (go ? ' role="button" tabindex="0" title="Открыть вкладку «Рынок»" onclick="switchTab(\'market\')"' : '') + '>' +
+                '<span class="tbmk-k">' + t[1] + '</span>' +
+                '<span class="tbmk-v" id="tbmk-v-' + t[0] + '">—</span>' +
+                '<span class="tbmk-c" id="tbmk-c-' + t[0] + '"></span></span>';
+        }).join('');
+    }
+    function renderTopBarMarket() {
+        var host = document.getElementById('topBarPfMarket'); if (!host) return;
+        host.innerHTML = topBarMarketHtml();
+        host.style.display = 'flex';
     }
     function tickLive() {
-        var clock = dq('pfClock');
-        if (clock) { try { clock.textContent = new Date().toLocaleTimeString('ru-RU', { timeZone: 'Europe/Moscow', hour12: false }); }
-            catch (e) { clock.textContent = new Date().toLocaleTimeString('ru-RU', { hour12: false }); } }
         [['imoex', 'val-imoex', 'dyn-imoex'], ['usd', 'val-usdrub', 'dyn-usdrub'], ['btc', 'val-btc', 'dyn-btc']].forEach(function (p) {
-            var v = dq('pflv-v-' + p[0]), c = dq('pflv-c-' + p[0]), sv = dq(p[1]), sd = dq(p[2]);
+            var v = dq('tbmk-v-' + p[0]), c = dq('tbmk-c-' + p[0]), sv = dq(p[1]), sd = dq(p[2]);
             if (v && sv) { var s = (sv.textContent || '').trim(); if (s) v.textContent = s; }
             if (c && sd) { c.textContent = (sd.textContent || '').trim();
-                c.className = 'dlv-c ' + (sd.classList.contains('negative') ? 'neg' : (sd.classList.contains('positive') ? 'pos' : 'flat')); }
+                c.className = 'tbmk-c ' + (sd.classList.contains('negative') ? 'neg' : (sd.classList.contains('positive') ? 'pos' : 'flat')); }
         });
     }
-    function ensureClock() { if (clockTimer) return; clockTimer = setInterval(function () {
-        if (currentTab === 'portfolios' && dq('pfClock')) tickLive(); }, 1000); }
+    function ensureLiveTick() { if (liveTimer) return; liveTimer = setInterval(function () {
+        if (currentTab === 'portfolios' && dq('tbmk-v-imoex')) tickLive(); }, 1000); }
 
     // ---- SVG-иконки ----
     var PLUS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
@@ -2124,15 +2125,20 @@
             rateTiles().map(rateTileHtml).join('') + '</div></div>';
     }
     // Замена «Календаря выплат», когда нигде нет ни одной облигации: те же 4 плитки,
-    // но БЕЗ большого бокса-обёртки (каждая плитка и так своя мини-карточка, drt-tile) —
-    // просто стопкой сверху вниз. asCell=true → занимает свободную ЯЧЕЙКУ сетки (растягивается
-    // на высоту соседних карточек через align-items:stretch, плитки центрируются по высоте);
-    // asCell=false → узкая колонка под сеткой (чётное число портфелей).
+    // без большого бокса-обёртки (каждая плитка и так своя мини-карточка, drt-tile) —
+    // стопкой сверху вниз. Заголовок — тот же pfCardHead, что и у остальных карточек
+    // (тот же шрифт/размер, что «Избранное»), выровнен ПО ВЕРХУ ячейки — раньше вся
+    // колонка центрировалась по высоте свободной ячейки и «плавала» на уровне середины
+    // соседней карточки портфеля; теперь плитки начинаются сразу под заголовком, как у
+    // соседей. asCell=true → занимает свободную ЯЧЕЙКУ сетки (растягивается на высоту
+    // соседних карточек через align-items:stretch); asCell=false → узкая колонка под
+    // сеткой (чётное число портфелей).
     function ratesStackHtml(asCell, span) {
         var grid = '<div class="drt-grid pf-ratesstack-grid">' + rateTiles().map(rateTileHtml).join('') + '</div>';
         var cls = 'pf-ratesstack' + (asCell ? ' pf-ratesstack--cell' : ' pf-ratesstack--flow') +
             (asCell && span === 2 ? ' pf-ratesstack--span2' : '');
-        return '<div class="' + cls + '"><div class="pf-ratesstack-eyebrow">Ставки рынка</div>' + grid + '</div>';
+        return '<div class="' + cls + '">' + pfCardHead('', 'Ставки рынка', '', '') +
+            '<div class="pf-ratesstack-body">' + grid + '</div></div>';
     }
 
     // ============================================================
@@ -3640,10 +3646,13 @@
             if (tabId === 'portfolios') { openMenu = null; renderPortfolios(); }
             else {
                 if (dq('pfOverlay')) window.pfCloseOverlay();
-                // ушли со вкладки — панель действий («Добавить портфель»/«Видимость»/…) в
-                // глобальной шапке сайта больше не относится к текущей странице, прячем её
+                // ушли со вкладки — панель действий («Добавить портфель»/«Видимость»/…) и
+                // рыночная лента в глобальной шапке сайта больше не относятся к текущей
+                // странице, прячем их
                 var tbHost = document.getElementById('topBarPfActions');
                 if (tbHost) { tbHost.style.display = 'none'; tbHost.innerHTML = ''; }
+                var tbMkt = document.getElementById('topBarPfMarket');
+                if (tbMkt) { tbMkt.style.display = 'none'; tbMkt.innerHTML = ''; }
             }
         };
     }
