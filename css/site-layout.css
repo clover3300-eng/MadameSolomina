@@ -423,7 +423,12 @@
         #pfLeftRail .capital-value {
             font-family: 'JetBrains Mono', monospace;
             font-size: 32px; font-weight: 700; letter-spacing: -0.01em;
-            color: #ffffff; white-space: nowrap; display: inline-block; max-width: 100%;
+            white-space: nowrap; display: inline-block; max-width: 100%;
+            /* Фирменный градиент цифры из «Умной замены» (sr-cand-num) */
+            background: linear-gradient(180deg, #ffffff 0%, #7ee2a8 100%);
+            -webkit-background-clip: text; background-clip: text;
+            color: transparent; -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 22px rgba(126, 226, 168, 0.28));
         }
         #pfLeftRail .capital-fee-corner {
             position: relative; cursor: default;
@@ -533,10 +538,12 @@
             box-shadow: none;
         }
 
-        /* Прогноз (светлая часть карточки) — белый «подвал» под тёмным верхом */
+        /* Прогноз — тёмный «подвал», карточка единым градиентом как «Умная замена»;
+           секцию отделяет тонкий разделитель в духе .sr-hr */
         #pfLeftRail .capital-forecast-light {
-            background: #ffffff !important;
+            background: transparent !important;
             box-shadow: none !important;
+            border-top: 1px solid rgba(255,255,255,0.08);
             padding: 20px 22px 20px !important;
             flex: 1;
             display: flex;
@@ -555,7 +562,7 @@
             grid-column: 1; grid-row: 1;
             font-family: 'Manrope', sans-serif;
             font-size: 12.5px; letter-spacing: 0.14em; font-weight: 700;
-            color: #64748b; text-transform: uppercase; white-space: nowrap;
+            color: #76849a; text-transform: uppercase; white-space: nowrap;
             padding: 0;
         }
         #pfLeftRail .forecast-pct-display {
@@ -569,8 +576,8 @@
             padding: 5px 11px;
             transform: none;
             border-radius: 999px;
-            background: #e7f7ee;
-            color: #119d5c;
+            background: rgba(58,208,138,0.16);
+            color: #3ad08a;
             border: none;
             box-shadow: none;
             letter-spacing: 0;
@@ -580,12 +587,11 @@
             grid-column: 1 / -1; grid-row: 2;
             font-family: 'JetBrains Mono', monospace;
             font-size: 27px; font-weight: 600;
-            color: #1e293b;
-            /* сбрасываем градиент-обрезку текста из базовых стилей; мягкий слейт
-               средней насыщенности, не жирный — гармоничнее на белом «подвале» */
+            color: #ffffff;
+            /* сбрасываем градиент-обрезку текста из базовых стилей */
             background: none;
             -webkit-background-clip: border-box; background-clip: border-box;
-            -webkit-text-fill-color: #1e293b;
+            -webkit-text-fill-color: #ffffff;
             margin: 12px 0 16px;
             white-space: nowrap; display: block; max-width: 100%;
         }
@@ -595,39 +601,40 @@
             align-items: stretch !important;
             gap: 0;
             margin-top: 0;
-            border-top: 1px solid rgba(15,23,42,0.08);
+            border-top: 1px solid rgba(255,255,255,0.08);
             padding-top: 14px;
         }
         #pfLeftRail .forecast-breakdown-divider { display: none; }
         #pfLeftRail .forecast-breakdown-item { display: flex; align-items: center; gap: 10px; padding: 4px 0; }
         #pfLeftRail .forecast-breakdown-item .fb-dot { width: 7px; height: 7px; border-radius: 99px; position: static; }
         #pfLeftRail .forecast-breakdown-item .fb-label {
-            font-family: 'Manrope', sans-serif; color: #5f6d80;
+            font-family: 'Manrope', sans-serif; color: #aab6c6;
             font-size: 14.5px !important; padding: 0;
         }
         #pfLeftRail .forecast-breakdown-item .fb-value {
             margin-left: auto; font-family: 'JetBrains Mono', monospace;
-            color: #334155; font-size: 14px !important; text-align: right;
+            color: #c4cedd; font-size: 14px !important; text-align: right;
         }
 
-        /* Кнопка «Список к покупке» — основное действие на белом «подвале» */
+        /* Кнопка «Список к покупке» — белая CTA на тёмной карточке,
+           как «Показать рекомендации» в «Умной замене» */
         .v3-buylist-btn {
             margin-top: 18px;
             display: flex; align-items: center; gap: 12px;
-            background: #141b26; border: none; border-radius: 14px;
+            background: #ffffff; border: none; border-radius: 14px;
             padding: 15px 18px;
             font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 15px;
-            color: #ffffff; white-space: nowrap; cursor: pointer;
+            color: #111927; white-space: nowrap; cursor: pointer;
             width: 100%; text-align: left;
             transition: background 0.15s ease;
         }
-        .v3-buylist-btn:hover { background: #1f2937; }
-        .v3-buylist-btn .ic { display: inline-flex; color: #9aa7bd; }
+        .v3-buylist-btn:hover { background: #eef2f8; }
+        .v3-buylist-btn .ic { display: inline-flex; color: #119d5c; }
         .v3-buylist-btn .count {
             margin-left: auto;
             font-family: 'JetBrains Mono', monospace;
             font-size: 12.5px; font-weight: 700;
-            background: rgba(255,255,255,0.16); color: #ffffff;
+            background: #141b26; color: #ffffff;
             padding: 3px 10px; border-radius: 999px;
         }
 
@@ -651,45 +658,23 @@
             font-size: 14px;
             font-weight: 600;
             background: transparent !important;
-            color: #5f6d80 !important;
+            color: #9aa7ba !important;
             border: none;
             box-shadow: none !important;
         }
         #pfLeftRail .capital-forecast-light .v3-recalc-btn:hover {
-            background: rgba(15,23,42,0.045) !important;
+            background: rgba(255,255,255,0.07) !important;
             transform: none; box-shadow: none !important;
-            color: #111927 !important;
+            color: #ffffff !important;
         }
-        #pfLeftRail .capital-forecast-light .v3-recalc-btn .ic { color: #119d5c; }
+        #pfLeftRail .capital-forecast-light .v3-recalc-btn .ic { color: #7ee2a8; }
 
-        /* Тёмная тема: тёмный верх карточки тот же; «подвал» прогноза в тёмной
-           теме остаётся ТЁМНЫМ (прозрачный — виден градиент), текст/кнопки светлые */
+        /* Тёмная тема: карточка теперь целиком тёмная в обеих темах
+           (как «Умная замена») — отдельных переопределений «подвала» не нужно */
         body.dark-mode #pfLeftRail .portfolio-capital-card { background: linear-gradient(150deg, #10161f 0%, #222e3f 100%) !important; }
         body.dark-mode #pfLeftRail .portfolio-capital-card .portfolio-content-tabs { background: transparent; border-bottom: none; }
         body.dark-mode #pfLeftRail .portfolio-tab-switcher { background: rgba(255,255,255,0.08); }
         body.dark-mode #pfLeftRail .portfolio-tab-btn.active { background: #ffffff; color: #141b26; }
-        body.dark-mode #pfLeftRail .capital-forecast-light { background: transparent !important; }
-        body.dark-mode #pfLeftRail .forecast-label-text { color: #9aa7b8; }
-        body.dark-mode #pfLeftRail .forecast-pct-display::before { background: rgba(58,208,138,0.16); color: #3ad08a; }
-        body.dark-mode #pfLeftRail .forecast-data-total { color: #ffffff; -webkit-text-fill-color: #ffffff; }
-        body.dark-mode #pfLeftRail .forecast-breakdown-row { border-top-color: rgba(255,255,255,0.08); }
-        body.dark-mode #pfLeftRail .forecast-breakdown-item .fb-label { color: #aab6c6; }
-        body.dark-mode #pfLeftRail .forecast-breakdown-item .fb-value { color: #c4cedd; }
-        /* Кнопки на тёмном «подвале»: «Список» снова белый, «Новый расчёт» — призрачный */
-        body.dark-mode .v3-buylist-btn { background: #ffffff; color: #111927; }
-        body.dark-mode .v3-buylist-btn:hover { background: #eef2f8; }
-        body.dark-mode .v3-buylist-btn .ic { color: #5f6d80; }
-        body.dark-mode .v3-buylist-btn .count { background: #141b26; color: #ffffff; }
-        body.dark-mode #pfLeftRail .capital-forecast-light .v3-recalc-btn {
-            background: rgba(255,255,255,0.07) !important;
-            color: #e7edf5 !important;
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14) !important;
-        }
-        body.dark-mode #pfLeftRail .capital-forecast-light .v3-recalc-btn:hover {
-            background: rgba(255,255,255,0.12) !important;
-            color: #ffffff !important;
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2) !important;
-        }
     }
 
     /* ===== V3: встроенная панель «Список к покупке» (вместо таблицы) ===== */
@@ -1936,7 +1921,7 @@
             border: none;
             border-bottom: 1px solid #eef2f7;
             border-radius: 22px 22px 0 0;
-            padding: 14px 26px 13px;
+            padding: 19px 26px 18px;
             margin: 0;
             align-items: center;
         }
@@ -1946,7 +1931,7 @@
         }
         #pfRightCol .portfolio-list-header-text {
             font-family: 'Manrope', sans-serif;
-            font-size: 11px; font-weight: 800;
+            font-size: 12.5px; font-weight: 800;
             color: #8593a6; opacity: 1;
             letter-spacing: 0.1em; text-transform: uppercase;
         }
@@ -2156,7 +2141,7 @@
             border-radius: 22px 22px 0 0;
             margin: 0;
             height: auto;
-            padding: 14px 26px 13px;
+            padding: 19px 26px 18px;
             gap: 12px;
             align-items: center;
         }
@@ -2251,7 +2236,7 @@
         #pfRightCol .portfolio-coupon-card:not(.open) .coupon-preview-strip { padding-right: 56px; }
         #pfRightCol .portfolio-echelons-headers .portfolio-echelon-h-text span {
             font-family: 'Manrope', sans-serif;
-            font-size: 11px; font-weight: 800;
+            font-size: 12.5px; font-weight: 800;
             color: #8593a6; letter-spacing: 0.1em; text-transform: uppercase;
         }
         #pfRightCol #echelonContainerV2 {
