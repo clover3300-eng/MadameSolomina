@@ -975,9 +975,10 @@
     function buildShell() {
         var el = root(); if (!el || built) return;
         el.innerHTML =
+            // заголовок «Терминал · Акции» убран — раздел уже читается по хлебной крошке
+            // в шапке сайта; счётчик компаний остаётся как есть, просто первым в тулбаре
             '<div class="stk-toolbar">'
-            + '  <div class="stk-title-wrap"><h2 class="stk-title">Терминал · Акции</h2>'
-            + '    <span class="stk-count"></span></div>'
+            + '  <span class="stk-count"></span>'
             + '  <div class="stk-tools">'
             + '    <label class="stk-search">'
             + '      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>'

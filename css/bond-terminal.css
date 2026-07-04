@@ -11,7 +11,9 @@
 
 .bnd-root {
     --bnd-radius: 16px;
-    --bnd-head-bg: var(--graphite, #2C364C);
+    /* шапка таблицы — светлая, крупная, в стиле карточек «Портфели»
+       (.pfo-table thead th): жирный uppercase-лейбл вместо тёмной полосы */
+    --bnd-head-bg: #e7ecf3; --bnd-head-bg-hover: #dbe2ec; --bnd-head-tx: #46566e;
     --bnd-card-bg: var(--card, #ffffff);
     --bnd-text: var(--text-deep, #0F172A);
     --bnd-slate: var(--text-slate, #64748B);
@@ -31,15 +33,11 @@
 /* hidden должен прятать даже flex/inline-flex (перебиваем авторский display) */
 .bnd-root [hidden] { display: none !important; }
 
-/* ---------- Тулбар: заголовок + инструменты ---------- */
+/* ---------- Тулбар: счётчик + инструменты (заголовок страницы убран —
+   раздел уже читается по хлебной крошке в шапке сайта) ---------- */
 .bnd-toolbar {
-    display: flex; align-items: flex-end; justify-content: space-between;
+    display: flex; align-items: center; justify-content: space-between;
     flex-wrap: wrap; gap: 14px; margin-bottom: 16px;
-}
-.bnd-title-wrap { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
-.bnd-title {
-    font-family: 'Inter', sans-serif; font-size: 22px; font-weight: 800;
-    color: var(--bnd-text); margin: 0; letter-spacing: -0.01em;
 }
 .bnd-count {
     font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500;
@@ -268,17 +266,20 @@
     font-size: 12.5px;
 }
 
-/* Шапка — тёмная, sticky сверху */
+/* Шапка — светлая, крупная, sticky сверху (в стиле карточек «Портфели»:
+   жирный uppercase-лейбл на приглушённой плашке вместо тёмной полосы) */
 .bnd-table > thead th {
     position: sticky; top: 0; z-index: 3;
-    background: var(--bnd-head-bg); color: #fff;
-    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 12.5px;
+    background: var(--bnd-head-bg); color: var(--bnd-head-tx);
+    font-family: 'Inter', sans-serif; font-weight: 800; font-size: 12.5px;
+    letter-spacing: 0.04em; text-transform: uppercase;
     text-align: center; white-space: nowrap;
-    padding: 15px 11px; cursor: pointer; user-select: none;
-    border-bottom: 1px solid rgba(255,255,255,0.10);
+    padding: 18px 14px; cursor: pointer; user-select: none;
+    border-bottom: 1px solid rgba(24,38,60,0.12);
     transition: background 0.15s ease;
 }
-.bnd-table > thead th:hover { background: #36405a; }
+body.dark-mode .bnd-table > thead th { border-bottom-color: rgba(255,255,255,0.09); }
+.bnd-table > thead th:hover { background: var(--bnd-head-bg-hover); }
 .bnd-table > thead th .bnd-arrow { margin-left: 5px; opacity: 0.95; font-size: 10px; }
 .bnd-sort-prio {
     display: inline-flex; align-items: center; justify-content: center;
@@ -286,7 +287,8 @@
     background: var(--claude-accent, #D97757); color: #fff;
     font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; vertical-align: middle;
 }
-.bnd-table > thead th.bnd-sorted { color: #fff; }
+.bnd-table > thead th.bnd-sorted { color: #1b2433; }
+body.dark-mode .bnd-table > thead th.bnd-sorted { color: #f4f8fd; }
 .bnd-table > thead th.bnd-sorted::after {
     content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
     background: var(--claude-accent, #D97757);
@@ -374,6 +376,7 @@
 
 /* ---------- Тёмная тема ---------- */
 body.dark-mode .bnd-root {
+    --bnd-head-bg: #1f2937; --bnd-head-bg-hover: #263041; --bnd-head-tx: #9fb0c4;
     --bnd-text: var(--text-main, #f1f5f9);
     --bnd-slate: #94a3b8;
     --bnd-muted: #64748b;
@@ -388,7 +391,6 @@ body.dark-mode .bnd-row:hover td.bnd-first { background-color: #233148; }
 
 /* ---------- Мобильная адаптация ---------- */
 @media (max-width: 640px) {
-    .bnd-title { font-size: 19px; }
     .bnd-toolbar { align-items: stretch; }
     .bnd-tools { width: 100%; flex-direction: column; align-items: stretch; }
     .bnd-search { width: 100%; min-width: 0; }

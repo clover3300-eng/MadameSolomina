@@ -584,9 +584,10 @@
     function buildShell() {
         var el = root(); if (!el || built) return;
         el.innerHTML =
+            // заголовок «Терминал · Облигации» убран — раздел уже читается по хлебной
+            // крошке в шапке сайта; счётчик облигаций остаётся, просто первым в тулбаре
             '<div class="bnd-toolbar">'
-            + '  <div class="bnd-title-wrap"><h2 class="bnd-title">Терминал · Облигации</h2>'
-            + '    <span class="bnd-count"></span></div>'
+            + '  <span class="bnd-count"></span>'
             + '  <div class="bnd-tools">'
             + '    <label class="bnd-search">'
             + '      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>'
