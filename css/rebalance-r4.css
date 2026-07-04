@@ -88,14 +88,15 @@ body.dark-mode #rebalancePanelContent {
 }
 #rebalancePanelContent .sr-cand-num {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 52px;
+    font-size: 84px;
     font-weight: 800;
     line-height: 1;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
     background: linear-gradient(180deg, #ffffff 0%, #7ee2a8 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+    filter: drop-shadow(0 0 22px rgba(126, 226, 168, 0.35));
 }
 #rebalancePanelContent .sr-cand-label {
     margin-top: 0;
