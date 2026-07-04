@@ -24,6 +24,12 @@
   --r5-mono: 'JetBrains Mono', monospace;
 }
 
+/* Осушённый источник (#calcSection после переноса узлов в r5Split) должен
+   оставаться скрытым гарантированно — если inline display:none когда-либо
+   собьётся (гонка с другим кодом), между карточками и кнопкой не должна
+   вылезать пустая белая полоса. */
+#calcSection.r5-drained { display: none !important; }
+
 /* ── Раскладка калькуляторной области ─────────────────────── */
 .cx-rows.r5 { display: flex; flex-direction: column; gap: 20px; width: 100%; }
 .cx-rows.r5 .cx-split { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: stretch; }
