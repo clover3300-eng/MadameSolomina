@@ -348,7 +348,7 @@
         #rbLeftRail .header { order: -1; }
     }
     /* ===== PORTFOLIO V3 «Зеркало»: новые элементы скрыты на мобиле, обёртки прозрачны ===== */
-    .v3-buylist-btn, .v3-recalc-btn { display: none; }
+    .v3-buylist-btn, .v3-recalc-btn, .pf-table-thead { display: none; }
     .v3-table-card { display: contents; }
     /* Ранги (#N) показываем только на десктопной «зеркальной» раскладке;
        на мобиле колонок нет, поэтому ячейка ранга скрыта */
@@ -1908,10 +1908,42 @@
             flex-direction: column;
             background: #ffffff;
             border-radius: 22px;
+            overflow: hidden;
             box-shadow: 0 16px 36px rgba(24,38,60,0.08);
             position: relative;
         }
         body.dark-mode #pfRightCol .v3-table-card { background: #1d2734; }
+
+        /* Título карточки — 1в1 rb-thead из «Умной замены» (Ребаланс): название + счётчик + подзаголовок */
+        .pf-table-thead {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            padding: 18px 20px 16px;
+            border-bottom: 1px solid #eef2f7;
+        }
+        body.dark-mode .pf-table-thead { border-bottom-color: rgba(255,255,255,0.07); }
+        .pf-table-thead .ti { flex: 1 1 auto; min-width: 0; }
+        .pf-table-thead .ti .row { display: flex; align-items: center; gap: 10px; }
+        .pf-table-thead .ti b {
+            font-family: 'Manrope', sans-serif;
+            font-size: 17px; font-weight: 800; letter-spacing: -0.01em;
+            color: #111927; white-space: nowrap;
+        }
+        body.dark-mode .pf-table-thead .ti b { color: #f1f6fb; }
+        .pf-table-thead .ti .cnt {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12.5px; font-weight: 700;
+            background: #eef2f8; color: #5f6d80;
+            padding: 3px 10px; border-radius: 999px;
+        }
+        body.dark-mode .pf-table-thead .ti .cnt { background: rgba(255,255,255,0.08); color: #c4cedd; }
+        .pf-table-thead .ti .sub {
+            display: block; margin-top: 5px;
+            font-family: 'Manrope', sans-serif;
+            font-size: 13px; color: #8593a6; font-weight: 600;
+        }
 
         /* Шапка столбцов — как в Ребалансе: серая плашка, ранг, заглавные подписи */
         #pfRightCol .portfolio-list-headers {
@@ -1920,8 +1952,8 @@
             background: #f6f9fc;
             border: none;
             border-bottom: 1px solid #eef2f7;
-            border-radius: 22px 22px 0 0;
-            padding: 19px 26px 18px;
+            border-radius: 0;
+            padding: 13px 26px 12px;
             margin: 0;
             align-items: center;
         }
@@ -1931,7 +1963,7 @@
         }
         #pfRightCol .portfolio-list-header-text {
             font-family: 'Manrope', sans-serif;
-            font-size: 12.5px; font-weight: 800;
+            font-size: 11px; font-weight: 800;
             color: #8593a6; opacity: 1;
             letter-spacing: 0.1em; text-transform: uppercase;
         }
@@ -2095,6 +2127,7 @@
             flex: 1; min-width: 0;
             padding: 0 52px 0 0;
             border: none; background: transparent;
+            cursor: pointer;
         }
         #pfRightCol .portfolio-coupon-card.open .coupon-preview-strip { padding: 0; }
         #pfRightCol .coupon-preview-next {
@@ -2138,10 +2171,10 @@
             background: #f6f9fc;
             border: none;
             border-bottom: 1px solid #eef2f7;
-            border-radius: 22px 22px 0 0;
+            border-radius: 0;
             margin: 0;
             height: auto;
-            padding: 19px 26px 18px;
+            padding: 13px 26px 12px;
             gap: 12px;
             align-items: center;
         }
@@ -2236,7 +2269,7 @@
         #pfRightCol .portfolio-coupon-card:not(.open) .coupon-preview-strip { padding-right: 56px; }
         #pfRightCol .portfolio-echelons-headers .portfolio-echelon-h-text span {
             font-family: 'Manrope', sans-serif;
-            font-size: 12.5px; font-weight: 800;
+            font-size: 11px; font-weight: 800;
             color: #8593a6; letter-spacing: 0.1em; text-transform: uppercase;
         }
         #pfRightCol #echelonContainerV2 {

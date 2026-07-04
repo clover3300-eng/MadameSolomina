@@ -961,6 +961,7 @@ body.dark-mode .portfolio-coupon-card {
     overflow: hidden;
     max-height: 200px;
     opacity: 1;
+    cursor: pointer;
     transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
                 opacity 0.25s ease,
                 padding 0.35s ease;

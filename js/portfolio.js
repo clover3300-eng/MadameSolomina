@@ -521,6 +521,7 @@ if(totalRow) {
                 if (echelonContainerV2) {
                     let echelonsHtmlV2 = '';
                     let grandTotalStocks = 0;
+                    let grandTotalStocksCount = 0;
                     // Новые названия эшелонов
                     const echelonNames = ['НАДЁЖНЫЙ', 'СТАБИЛЬНЫЙ', 'РИСКОВЫЙ', 'ВЕНЧУРНЫЙ'];
                     // Римские цифры
@@ -544,6 +545,7 @@ if(totalRow) {
                         // === ВСТАВИТЬ ЭТОТ БЛОК (Подсчет суммы эшелона) ===
                         const echelonTotalSum = stocksInEchelon.reduce((acc, item) => acc + item.sum, 0);
                         grandTotalStocks += echelonTotalSum;
+                        grandTotalStocksCount += stocksInEchelon.length;
                         // ==================================================
                         
                         echelonsHtmlV2 += `
@@ -624,6 +626,8 @@ if(totalRow) {
                     
                     echelonContainerV2.innerHTML = echelonsHtmlV2;
                     hideSkeletonInstant('skeleton-portfolio-echelons');
+                    const pfStocksCountEl = document.getElementById('pfStocksCount');
+                    if (pfStocksCountEl) pfStocksCountEl.textContent = grandTotalStocksCount;
                     // === ВСТАВЛЯЕМ СЮДА (ШАГ 3) ===
 const totalStocksRow = document.getElementById('echelonsTotalSum');
 const totalStocksPctBadge = document.getElementById('stocksTotalPercent');
@@ -752,6 +756,8 @@ function renderPortfolioBondsV2(opts) {
     if (!list) return;
     const bondCalculations = window._bondCalculationsV2 || [];
     const bondDetailsMap = window._bondDetailsMapV2 || {};
+    const pfBondsCountEl = document.getElementById('pfBondsCount');
+    if (pfBondsCountEl) pfBondsCountEl.textContent = bondCalculations.length;
     if (bondCalculations.length === 0) { list.innerHTML = ''; return; }
 
     // Сортируем по доходности (убывание) — топ показывается первым

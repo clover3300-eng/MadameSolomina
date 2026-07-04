@@ -126,8 +126,8 @@ function populatePanels() {
                 n = next;
             }
         }
-        wrapRange(document.getElementById('portfolio-tab-bonds'), '.portfolio-list-headers', '#bondsTotalRow');
-        wrapRange(document.getElementById('portfolio-tab-stocks'), '.portfolio-echelons-headers', '.portfolio-echelons-total-row');
+        wrapRange(document.getElementById('portfolio-tab-bonds'), '#pfBondsThead', '#bondsTotalRow');
+        wrapRange(document.getElementById('portfolio-tab-stocks'), '#pfStocksThead', '.portfolio-echelons-total-row');
         // 2) Кнопка «Список к покупке» внутри светлой части карточки капитала
         const fcLight = share.querySelector('.capital-forecast-light');
         if (fcLight) {
