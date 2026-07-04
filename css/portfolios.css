@@ -1372,71 +1372,73 @@ body.dark-mode .btcal-paste input:focus { background: rgba(15, 23, 42, 0.8); bor
 body.dark-mode .btcal-paste-ok { background: #5a7cff; }
 
 /* ============================================================
-   ПАНЕЛЬ ДЕЙСТВИЙ СТРАНИЦЫ (Добавить/Видимость/Вид/Бэкап) — живёт не в самой
-   вкладке, а в ГЛОБАЛЬНОЙ шапке сайта (#topBarPfActions), слева от «Поиска».
-   Наполняется js/portfolios.js (renderTopBarActions), видна только на «Портфелях».
+   ПАНЕЛЬ ДЕЙСТВИЙ СТРАНИЦЫ — живёт не в самой вкладке, а в ГЛОБАЛЬНОЙ шапке
+   сайта (.topbar-tab-actions), слева от «Поиска». Общий класс — по одной такой
+   панели на вкладку (#topBarPfActions/#topBarDashActions/#topBarMktActions),
+   видна только своя: «Добавить портфель/Видимость/Вид/Бэкап» (Портфели, из
+   js/portfolios.js), «Новый расчёт/Ребаланс» (Главная, из js/dashboard.js),
+   «Все акции/Облигации» (Рынок, из js/market-livebar.js).
    ============================================================ */
-#topBarPfActions { display: none; align-items: center; gap: 6px; }
+.topbar-tab-actions { display: none; align-items: center; gap: 6px; }
 #topBarPfActions .pf-impwrap { position: relative; }
 /* стеклянные пилюли — в тон «Поиска»/переключателя темы рядом, а не тёмные
    кнопки дашборда (те были уместны в его собственной шапке, тут — чужеродны) */
-#topBarPfActions .d3-quick {
+.topbar-tab-actions .d3-quick {
     padding: 8px 12px; border-radius: 20px; font-size: 12px; gap: 6px; white-space: nowrap;
     background: var(--card-glass-aurora, rgba(255,255,255,0.65));
     border: 1px solid var(--card-border-aurora, rgba(255,255,255,0.4));
     color: var(--text-muted, #64748B); box-shadow: none;
     backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
 }
-#topBarPfActions .d3-quick:hover { background: rgba(255,255,255,0.85); color: var(--text-deep, #0F172A); transform: none; box-shadow: none; }
-body.dark-mode #topBarPfActions .d3-quick { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.14); color: #cdd8e6; }
-body.dark-mode #topBarPfActions .d3-quick:hover { background: rgba(255,255,255,0.16); }
-#topBarPfActions .d3-quick svg { width: 14px; height: 14px; flex-shrink: 0; }
-/* «Добавить портфель» — единственное не-ghost действие, оставляем акцентным (тёмная
-   пилюля), чтобы главное действие читалось на фоне трёх нейтральных попап-кнопок */
-#topBarPfActions .d3-quick:not(.ghost) { background: linear-gradient(135deg, #2C364C, #1b2433); border-color: transparent; color: #fff; }
-#topBarPfActions .d3-quick:not(.ghost):hover { background: linear-gradient(135deg, #39455c, #242e3d); }
+.topbar-tab-actions .d3-quick:hover { background: rgba(255,255,255,0.85); color: var(--text-deep, #0F172A); transform: none; box-shadow: none; }
+body.dark-mode .topbar-tab-actions .d3-quick { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.14); color: #cdd8e6; }
+body.dark-mode .topbar-tab-actions .d3-quick:hover { background: rgba(255,255,255,0.16); }
+.topbar-tab-actions .d3-quick svg { width: 14px; height: 14px; flex-shrink: 0; }
+/* первое (не-ghost) действие в каждой панели остаётся акцентным (тёмная пилюля),
+   чтобы главное действие читалось на фоне нейтральных кнопок рядом */
+.topbar-tab-actions .d3-quick:not(.ghost) { background: linear-gradient(135deg, #2C364C, #1b2433); border-color: transparent; color: #fff; }
+.topbar-tab-actions .d3-quick:not(.ghost):hover { background: linear-gradient(135deg, #39455c, #242e3d); }
 #topBarPfActions .pf-impmenu { right: 0; left: auto; }
 /* мобиль/планшет (<1024px, тот же порог, что у #topSearchBtn рядом) — подписи прячем,
    кнопки становятся компактными иконками, сама панель никогда не исчезает целиком */
 @media (max-width: 1023px) {
-    #topBarPfActions .d3-quick span { display: none; }
-    #topBarPfActions .d3-quick { padding: 9px; border-radius: 50%; gap: 0; }
+    .topbar-tab-actions .d3-quick span { display: none; }
+    .topbar-tab-actions .d3-quick { padding: 9px; border-radius: 50%; gap: 0; }
     #topBarPfActions .pf-eyecnt { margin-left: 3px; }
-    /* подпись прячется (см. выше), а стрелочка-шеврон (индикатор выпадающего меню)
-       была отдельным SVG вне <span> — без подписи рядом с иконкой она смотрелась
-       как лишняя случайная стрелка; прячем и её */
-    #topBarPfActions .d3-quick .pf-chev { display: none; }
+    /* подпись прячется (см. выше), а стрелочка-шеврон (индикатор выпадающего меню
+       у «Портфелей») была отдельным SVG вне <span> — без подписи рядом с иконкой
+       смотрелась как лишняя случайная стрелка; прячем и её */
+    .topbar-tab-actions .d3-quick .pf-chev { display: none; }
 }
-/* узкий телефон — даже 4 иконки-кружка впритык с бургером/бейджем/поиском/темой не
-   влезают в одну строку и раньше уезжали за край экрана (Поиск/тема становились
-   недостижимы). Панель сама не сжимается (flex-shrink:0) и скроллится по горизонтали
-   внутри себя — Поиск и переключатель темы остаются на месте и всегда доступны. */
+/* узкий телефон — даже несколько иконок-кружков впритык с бургером/бейджем/поиском/
+   темой не влезают в одну строку и раньше уезжали за край экрана (Поиск/тема
+   становились недостижимы). Панель сама не сжимается (flex-shrink:0) и скроллится
+   по горизонтали внутри себя — Поиск и переключатель темы остаются на месте. */
 @media (max-width: 600px) {
-    #topBarPfActions {
+    .topbar-tab-actions {
         max-width: 90px; flex-shrink: 0; overflow-x: auto; scrollbar-width: none;
         -webkit-overflow-scrolling: touch;
     }
-    #topBarPfActions::-webkit-scrollbar { display: none; }
-    #topBarPfActions .pf-impwrap, #topBarPfActions > .d3-quick { flex-shrink: 0; }
+    .topbar-tab-actions::-webkit-scrollbar { display: none; }
+    .topbar-tab-actions .pf-impwrap, .topbar-tab-actions > .d3-quick { flex-shrink: 0; }
 }
 
 /* ============================================================
    РЫНОЧНАЯ ЛЕНТА В ШАПКЕ САЙТА: не своей строкой, а прямо В ТОП-БАРЕ — третьим
-   flex-элементом между брендом/брэдкрамбом («Портфели») и панелью действий
-   (первая кнопка — «Добавить портфель»). flex:1 + justify-content:center
-   центрируют ленту РОВНО в свободном пространстве между ними (равноудалена от
-   обоих соседей, а не привязана к какому-то краю) — вшита в фон шапки, без
-   своего бокса. Наполняется renderTopBarMarket()/topBarMarketHtml() из
-   js/portfolios.js, значения обновляет tickLive(), видна только на «Портфелях».
+   flex-элементом между брендом/брэдкрамбом (название раздела) и панелью действий
+   (первая кнопка). flex:1 + justify-content:center центрируют ленту РОВНО в
+   свободном пространстве между ними (равноудалена от обоих соседей, а не
+   привязана к какому-то краю) — вшита в фон шапки, без своего бокса. Общий класс
+   — по одной ленте на вкладку (Портфели/Главная/Рынок), видна только своя.
    ============================================================ */
-#topBarPfMarket {
+.topbar-tab-market {
     display: none; flex: 1 1 auto; align-items: center; justify-content: center;
     gap: 9px; min-width: 0; overflow: hidden; padding: 0 24px;
 }
 /* места для ленты хватает только на просторном экране — с текстовыми подписями
    кнопок (>=1024px) и так тесно, а «воздух» (равные отступы от соседей) должен
    сохраняться, а не превращаться в зажатую полоску впритык */
-@media (max-width: 1300px) { #topBarPfMarket { display: none !important; } }
+@media (max-width: 1300px) { .topbar-tab-market { display: none !important; } }
 .tbmk-dot {
     width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
     background: #1a9f6a; box-shadow: 0 0 0 0 rgba(26,159,106,0.5);

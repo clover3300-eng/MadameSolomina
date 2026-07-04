@@ -31,50 +31,50 @@
     };
 
     // ====================================================================
-    //  LIVE-ПОЛОСКА (рыночные данные + часы МСК)
+    //  РЫНОЧНАЯ ЛЕНТА В ШАПКЕ САЙТА (бывшая тёмная LIVE-полоска #dash2LiveBar на
+    //  странице) — тонкой строкой вшита прямо в топ-бар (#topBarDashMarket, между
+    //  брендом/разделом «Главная» и панелью действий), без своего бокса. Общий
+    //  класс/стили .topbar-tab-market и .tbmk-* — см. css/portfolios.css (там же
+    //  их аналог для вкладки «Портфели», откуда и перекочевал этот паттерн).
     // ====================================================================
-    function renderLiveBar() {
-        var host = dq('dash2LiveBar');
-        if (!host) return;
+    function topBarDashMarketHtml() {
         var tiles = [
-            { k: 'imoex', label: 'IMOEX',   val: 'val-imoex',  dyn: 'dyn-imoex' },
-            { k: 'usd',   label: 'USD/RUB', val: 'val-usdrub', dyn: 'dyn-usdrub' },
-            { k: 'btc',   label: 'BTC',     val: 'val-btc',    dyn: 'dyn-btc' }
+            { k: 'imoex', label: 'IMOEX' },
+            { k: 'usd',   label: 'USD/RUB' },
+            { k: 'btc',   label: 'BTC' }
         ];
-        host.innerHTML =
-            '<div class="dlv-live"><span class="dlv-dot"></span>LIVE</div>' +
-            '<div class="dlv-vsep"></div>' +
-            '<div class="dlv-items">' + tiles.map(function(t) {
-                return '<div class="dlv-item">' +
-                    '<span class="dlv-k">' + esc(t.label) + '</span>' +
-                    '<span class="dlv-v" id="dlv-v-' + t.k + '">—</span>' +
-                    '<span class="dlv-c" id="dlv-c-' + t.k + '"></span>' +
-                '</div>';
-            }).join('<span class="dlv-isep"></span>') + '</div>' +
-            '<div class="dlv-time"><span class="dlv-time-k">MSK</span><span class="dlv-time-v" id="dlvClock">--:--:--</span></div>';
-        tickLiveBar();
+        return '<span class="tbmk-dot"></span>' + tiles.map(function (t, i) {
+            var go = t.k === 'imoex';
+            return (i ? '<span class="tbmk-sep">·</span>' : '') +
+                '<span class="tbmk-item' + (go ? ' tbmk-go' : '') + '"' +
+                (go ? ' role="button" tabindex="0" title="Открыть вкладку «Рынок»" onclick="switchTab(\'market\')"' : '') + '>' +
+                '<span class="tbmk-k">' + esc(t.label) + '</span>' +
+                '<span class="tbmk-v" id="tbmkd-v-' + t.k + '">—</span>' +
+                '<span class="tbmk-c" id="tbmkd-c-' + t.k + '"></span></span>';
+        }).join('');
+    }
+    function renderTopBarDashMarket() {
+        var host = dq('topBarDashMarket'); if (!host) return;
+        host.innerHTML = topBarDashMarketHtml();
+        host.style.display = 'flex';
+    }
+    function hideTopBarDashMarket() {
+        var host = dq('topBarDashMarket'); if (!host) return;
+        host.style.display = 'none'; host.innerHTML = '';
     }
 
-    // Обновление значений полоски без полной перерисовки (раз в секунду)
+    // Обновление значений ленты без полной перерисовки (раз в секунду)
     function tickLiveBar() {
-        var clock = dq('dlvClock');
-        if (clock) {
-            try {
-                clock.textContent = new Date().toLocaleTimeString('ru-RU', { timeZone: 'Europe/Moscow', hour12: false });
-            } catch (e) {
-                clock.textContent = new Date().toLocaleTimeString('ru-RU', { hour12: false });
-            }
-        }
         [['imoex','val-imoex','dyn-imoex'], ['usd','val-usdrub','dyn-usdrub'], ['btc','val-btc','dyn-btc']].forEach(function(p) {
-            var v = dq('dlv-v-' + p[0]);
-            var c = dq('dlv-c-' + p[0]);
+            var v = dq('tbmkd-v-' + p[0]);
+            var c = dq('tbmkd-c-' + p[0]);
             var srcV = dq(p[1]);
             var srcD = dq(p[2]);
             if (v && srcV) { var s = (srcV.textContent || '').trim(); if (s) v.textContent = s; }
             if (c && srcD) {
                 var t = (srcD.textContent || '').trim();
                 c.textContent = t;
-                c.className = 'dlv-c ' + (srcD.classList.contains('negative') ? 'neg' : (srcD.classList.contains('positive') ? 'pos' : 'flat'));
+                c.className = 'tbmk-c ' + (srcD.classList.contains('negative') ? 'neg' : (srcD.classList.contains('positive') ? 'pos' : 'flat'));
             }
         });
     }
@@ -82,8 +82,28 @@
     function ensureClock() {
         if (clockTimer) return;
         clockTimer = setInterval(function() {
-            if (currentTab === 'dashboard' && dq('dlvClock')) tickLiveBar();
+            if (currentTab === 'dashboard' && dq('tbmkd-v-imoex')) tickLiveBar();
         }, 1000);
+    }
+
+    // ====================================================================
+    //  ПАНЕЛЬ ДЕЙСТВИЙ В ШАПКЕ САЙТА (Новый расчёт / Ребаланс) — была
+    //  d3-head-actions прямо на странице, теперь в #topBarDashActions
+    // ====================================================================
+    function renderTopBarDashActions() {
+        var host = dq('topBarDashActions'); if (!host) return;
+        host.innerHTML =
+            '<button class="d3-quick" onclick="switchTab(\'calc\')">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+                '<span>Новый расчёт</span></button>' +
+            '<button class="d3-quick ghost" onclick="switchTab(\'rebalance\')">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>' +
+                '<span>Ребаланс</span></button>';
+        host.style.display = 'flex';
+    }
+    function hideTopBarDashActions() {
+        var host = dq('topBarDashActions'); if (!host) return;
+        host.style.display = 'none'; host.innerHTML = '';
     }
 
     // ====================================================================
@@ -1096,7 +1116,8 @@
     // ====================================================================
     function renderDashboard() {
         rebalRetries = 0;
-        renderLiveBar();
+        renderTopBarDashActions();
+        renderTopBarDashMarket();
         renderPortfolio();
         renderRates();
         renderFavorites();
@@ -1108,6 +1129,16 @@
         requestAnimationFrame(dashSyncTopRowHeights);
     }
     window.renderDashboard = renderDashboard;
+
+    // Ушли со вкладки — панель действий и рыночная лента в шапке сайта больше не
+    // относятся к текущей странице, прячем их (сама рендерится заново при возврате
+    // на «Главную» — см. renderDashboard())
+    var _prevSwitchDash = window.switchTab;
+    window.switchTab = function (tabId) {
+        var r = _prevSwitchDash ? _prevSwitchDash.apply(this, arguments) : undefined;
+        if (tabId !== 'dashboard') { hideTopBarDashActions(); hideTopBarDashMarket(); }
+        return r;
+    };
 
     // Когда таблица акций догрузилась — обновляем избранное (потенциал ОДХС)
     window.onStkCompaniesLoaded = function() {

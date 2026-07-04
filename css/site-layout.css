@@ -1825,10 +1825,8 @@
 
         /* ===== РЕБАЛАНС V3 «Зеркало»: списки слева, умная замена справа ===== */
         #panel-rebalance { max-width: none !important; padding-top: 24px; }
-        /* Рынок-дашборд: верхний отступ под заголовок (как у «Главной») */
+        /* Рынок-дашборд: верхний отступ (заголовок страницы убран — читается по хлебной крошке) */
         #panel-market { padding-top: 20px; padding-bottom: 84px; }
-        /* Заголовок страницы рынка — чуть плотнее к карточкам */
-        #panel-market .mkd-head { margin-bottom: 0; }
         #rebalancePanelContent {
             display: grid;
             grid-template-columns: minmax(0, 1fr) 396px;

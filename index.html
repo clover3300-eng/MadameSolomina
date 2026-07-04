@@ -26,12 +26,12 @@
     <link rel="stylesheet" href="css/rebalance.css">
     <link rel="stylesheet" href="css/rebalance-stocks.css">
     <link rel="stylesheet" href="css/webapp-layout.css?v=2">
-    <link id="siteLayoutCSS" rel="stylesheet" href="css/site-layout.css?v=14">
+    <link id="siteLayoutCSS" rel="stylesheet" href="css/site-layout.css?v=15">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/backtest.css?v=3">
     <link rel="stylesheet" href="css/rebalance-r4.css?v=8">
     <link rel="stylesheet" href="css/dashboard-panel.css?v=4">
-    <link rel="stylesheet" href="css/portfolios.css?v=52">
+    <link rel="stylesheet" href="css/portfolios.css?v=53">
     <link rel="stylesheet" href="css/rebal-r5.css?v=5">
     <link rel="stylesheet" href="css/monthly-panel.css?v=1">
     <link rel="stylesheet" href="css/monthly-r5.css?v=1">
@@ -192,14 +192,18 @@
                 </div>
             </div>
         </div>
-        <!-- Рыночная лента вкладки «Портфели» (IMOEX/USD/BTC), вшита в фон шапки, равноудалена
-             между названием раздела и кнопкой «Добавить портфель» — наполняет js/portfolios.js
-             (topBarMarketHtml), видна только на этой вкладке -->
-        <div id="topBarPfMarket" style="display:none"></div>
+        <!-- Рыночные ленты (IMOEX/USD/BTC), вшиты в фон шапки, равноудалены между названием
+             раздела и первой кнопкой действия — по одной на вкладку (Портфели/Главная/Рынок),
+             видна только своя, наполняются topBarMarketHtml()-аналогами каждого модуля -->
+        <div id="topBarPfMarket" class="topbar-tab-market" style="display:none"></div>
+        <div id="topBarDashMarket" class="topbar-tab-market" style="display:none"></div>
+        <div id="topBarMktMarket" class="topbar-tab-market" style="display:none"></div>
         <div id="topBarActions">
-            <!-- Кнопки вкладки «Портфели» (Добавить/Видимость/Вид/Бэкап) — наполняет
-                 js/portfolios.js (topBarActionsHtml), видны только на этой вкладке -->
-            <div id="topBarPfActions" style="display:none"></div>
+            <!-- Кнопки текущей вкладки (Портфели/Главная/Рынок) — по одной панели на вкладку,
+                 видна только своя, наполняются js/portfolios.js, js/dashboard.js, js/market-livebar.js -->
+            <div id="topBarPfActions" class="topbar-tab-actions" style="display:none"></div>
+            <div id="topBarDashActions" class="topbar-tab-actions" style="display:none"></div>
+            <div id="topBarMktActions" class="topbar-tab-actions" style="display:none"></div>
             <div id="topSearchBtn" onclick="openTopSearch()">
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 Поиск
@@ -296,26 +300,10 @@
         <div id="panel-dashboard" class="tab-panel">
             <div class="dash3">
 
-                <!-- Верхняя LIVE-полоска: рыночные данные + часы МСК -->
-                <div class="dash2-livebar" id="dash2LiveBar"></div>
-
-                <!-- Заголовок страницы -->
-                <div class="d3-head">
-                    <div class="d3-head-l">
-                        <h1 class="d3-title">Главная</h1>
-                        <span class="d3-sub">Обзор портфеля и рынка</span>
-                    </div>
-                    <div class="d3-head-actions">
-                        <button class="d3-quick" onclick="switchTab('calc')">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                            Новый расчёт
-                        </button>
-                        <button class="d3-quick ghost" onclick="switchTab('rebalance')">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-                            Ребаланс
-                        </button>
-                    </div>
-                </div>
+                <!-- Заголовок и LIVE-данные убраны со страницы — «Главная» уже читается по
+                     хлебной крошке в глобальной шапке сайта, кнопки (Новый расчёт/Ребаланс) и
+                     рыночная лента переехали туда же (#topBarDashActions/#topBarDashMarket),
+                     см. renderTopBarDashActions()/renderTopBarDashMarket() в js/dashboard.js -->
 
                 <!-- ВЕРХНИЙ РЯД (высота = блок капитала): капитал · состав · избранное -->
                 <div class="d3-bento">
@@ -385,25 +373,9 @@
 
         <!-- ===== TAB: РЫНОК (дашборд) ===== -->
         <div id="panel-market" class="tab-panel">
-            <!-- Рыночные данные — тёмная LIVE-полоска (рендерится из js/market-livebar.js).
-                 Стоит выше заголовка и переключателей — первой строкой страницы. -->
-            <div class="dash2-livebar" id="mkLiveBar" aria-label="Рыночные данные в реальном времени"></div>
-            <!-- Заголовок страницы — в стиле дашборда («Главная») -->
-            <div class="d3-head mkd-head">
-                <div class="d3-head-l">
-                    <h1 class="d3-title">Индекс Московской Биржи</h1>
-                </div>
-                <div class="d3-head-actions">
-                    <button class="d3-quick" onclick="switchTab('market-stocks')">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                        Все акции
-                    </button>
-                    <button class="d3-quick ghost" onclick="switchTab('market-bonds')">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10"/><path d="M7 13h6"/></svg>
-                        Облигации
-                    </button>
-                </div>
-            </div>
+            <!-- Заголовок, LIVE-полоска и кнопки (Все акции/Облигации) убраны со страницы —
+                 «Рынок» уже читается по хлебной крошке в шапке сайта, кнопки и рыночная лента
+                 переехали туда же (#topBarMktActions/#topBarMktMarket), см. js/market-livebar.js -->
             <!-- Индекс МосБиржи — интерактивный график TradingView (рендерится из js/market-chart.js) -->
             <section class="mk-chart-card" id="mkChartCard" aria-label="График индекса МосБиржи">
                 <div class="mk-chart-head">
@@ -2095,14 +2067,14 @@
 <script src="js/vanguard-test.js" defer></script>
 <script src="js/webapp-tabs.js?v=8" defer></script>
 <script src="js/calc-r5.js?v=6" defer></script>
-<script src="js/dashboard.js?v=4" defer></script>
+<script src="js/dashboard.js?v=5" defer></script>
 <script src="js/sidebar.js" defer></script>
 <script src="js/stock-terminal.js?v=3" defer></script>
 <script src="js/bond-terminal.js?v=4" defer></script>
 <script src="js/table-tooltip.js?v=1" defer></script>
 <script src="js/market-chart.js?v=4" defer></script>
 <script src="js/market-heatmap.js?v=23" defer></script>
-<script src="js/market-livebar.js?v=1" defer></script>
+<script src="js/market-livebar.js?v=2" defer></script>
 <script src="js/portfolios.js?v=46" defer></script>
 <script src="js/home-register.js?v=1" defer></script>
 </body>
