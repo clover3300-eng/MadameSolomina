@@ -52,9 +52,8 @@ function rebalanceShowRecos() {
 
 // Статистика в тёмной рельсе зависит от активной вкладки
 function updateRebalanceStats(mode) {
-    const v1 = document.getElementById('rbStatV1');
-    if (!v1) return;
-    const k1 = document.getElementById('rbStatK1');
+    const candNum = document.getElementById('rbCandNum');
+    const candLabel = document.getElementById('rbCandLabel');
     const k2 = document.getElementById('rbStatK2'), v2 = document.getElementById('rbStatV2');
     const k3 = document.getElementById('rbStatK3'), v3 = document.getElementById('rbStatV3');
     const num = (s) => parseFloat(String(s == null ? '' : s).replace('%', '').replace(',', '.'));
@@ -64,17 +63,19 @@ function updateRebalanceStats(mode) {
         const all = cols.flat();
         const sectors = new Set(all.map(a => (a.sector || '').trim()).filter(Boolean));
         const pots = all.map(a => num(a.target)).filter(n => isFinite(n));
-        if (k1) k1.textContent = 'Кандидатов'; v1.textContent = all.length || '—';
-        if (k2) k2.textContent = 'Макс. потенциал'; v2.textContent = pots.length ? '+' + Math.max(...pots).toFixed(2) + '%' : '—'; v2.className = 'v up';
-        if (k3) k3.textContent = 'Секторов'; v3.textContent = sectors.size || '—'; v3.className = 'v';
+        if (candNum) candNum.textContent = all.length || '—';
+        if (candLabel) candLabel.innerHTML = 'кандидатов на покупку<br>среди акций';
+        if (k2) k2.textContent = 'Макс. потенциал'; if (v2) { v2.textContent = pots.length ? '+' + Math.max(...pots).toFixed(2) + '%' : '—'; v2.className = 'v up'; }
+        if (k3) k3.textContent = 'Секторов'; if (v3) { v3.textContent = sectors.size || '—'; v3.className = 'v'; }
         const sc = document.getElementById('stocksCount'); if (sc) sc.textContent = all.length;
     } else {
         const arr = (typeof bonds !== 'undefined' && bonds) ? bonds : [];
         const ys = arr.map(b => num(b.y)).filter(n => isFinite(n));
         const avg = ys.length ? ys.reduce((s, n) => s + n, 0) / ys.length : 0;
-        if (k1) k1.textContent = 'Кандидатов'; v1.textContent = arr.length || '—';
-        if (k2) k2.textContent = 'Средняя доходность'; v2.textContent = ys.length ? avg.toFixed(2) + '%' : '—'; v2.className = 'v up';
-        if (k3) k3.textContent = 'Лучшая доходность'; v3.textContent = ys.length ? Math.max(...ys).toFixed(2) + '%' : '—'; v3.className = 'v';
+        if (candNum) candNum.textContent = arr.length || '—';
+        if (candLabel) candLabel.innerHTML = 'кандидатов на покупку<br>среди ОФЗ';
+        if (k2) k2.textContent = 'Средняя доходность'; if (v2) { v2.textContent = ys.length ? avg.toFixed(2) + '%' : '—'; v2.className = 'v up'; }
+        if (k3) k3.textContent = 'Лучшая доходность'; if (v3) { v3.textContent = ys.length ? Math.max(...ys).toFixed(2) + '%' : '—'; v3.className = 'v'; }
         const oc = document.getElementById('ofzCount'); if (oc) oc.textContent = arr.length;
     }
 }

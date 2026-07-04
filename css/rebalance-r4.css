@@ -80,13 +80,29 @@ body.dark-mode #rebalancePanelContent {
     color: #fff;
     margin: 0;
 }
-#rebalancePanelContent .smart-replace-desc {
+#rebalancePanelContent .sr-cand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 18px 0 0;
+}
+#rebalancePanelContent .sr-cand-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 52px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    background: linear-gradient(180deg, #ffffff 0%, #7ee2a8 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+#rebalancePanelContent .sr-cand-label {
+    margin-top: 0;
     font-size: 13.5px;
     font-weight: 500;
     color: #aab6c6;
-    line-height: 1.55;
-    margin: 16px 0 0;
-    max-width: none;
+    line-height: 1.45;
 }
 #rebalancePanelContent .sr-points {
     display: flex;

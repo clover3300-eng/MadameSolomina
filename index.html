@@ -29,7 +29,7 @@
     <link id="siteLayoutCSS" rel="stylesheet" href="css/site-layout.css?v=12">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/backtest.css?v=3">
-    <link rel="stylesheet" href="css/rebalance-r4.css?v=4">
+    <link rel="stylesheet" href="css/rebalance-r4.css?v=6">
     <link rel="stylesheet" href="css/dashboard-panel.css?v=4">
     <link rel="stylesheet" href="css/portfolios.css?v=44">
     <link rel="stylesheet" href="css/rebal-r5.css?v=5">
@@ -1370,9 +1370,10 @@
                 <h2 class="smart-replace-title">Умная замена</h2>
             </div>
         </div>
-        <p class="smart-replace-desc">
-            Алгоритм пересматривает портфель и предлагает замены: фиксирует прибыль по выросшим и слабым позициям и докупает недооценённые бумаги с наибольшим потенциалом роста.
-        </p>
+        <div class="sr-cand">
+            <div class="sr-cand-num" id="rbCandNum">—</div>
+            <div class="sr-cand-label" id="rbCandLabel">кандидатов на покупку<br>среди ОФЗ</div>
+        </div>
         <div class="sr-points">
             <div class="sr-point"><span class="sr-dot sell"></span><span><b>Продаём</b> — выросшее и бумаги с низким потенциалом</span></div>
             <div class="sr-point"><span class="sr-dot buy"></span><span><b>Покупаем</b> — недооценённое из списка</span></div>
@@ -1396,7 +1397,6 @@
 
         <!-- Статистика по активной вкладке (обновляется из JS) -->
         <div class="sr-stats" id="rbStats">
-            <div class="sr-stat"><span class="k" id="rbStatK1">Кандидатов</span><span class="v" id="rbStatV1">—</span></div>
             <div class="sr-stat"><span class="k" id="rbStatK2">Средняя доходность</span><span class="v up" id="rbStatV2">—</span></div>
             <div class="sr-stat"><span class="k" id="rbStatK3">Лучшая доходность</span><span class="v" id="rbStatV3">—</span></div>
         </div>
@@ -2066,7 +2066,7 @@
 <script src="js/core.js" defer></script>
 <script src="js/calculator-ui.js?v=3" defer></script>
 <script src="js/data.js?v=4" defer></script>
-<script src="js/rebalance.js?v=4" defer></script>
+<script src="js/rebalance.js?v=5" defer></script>
 <script src="js/company.js?v=2" defer></script>
 <script src="js/portfolio.js?v=4" defer></script>
 <script src="js/init.js?v=4" defer></script>
