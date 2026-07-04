@@ -932,12 +932,15 @@
             //    чётное — отдельной полноширинной карточкой под сеткой.
             var n = visibleItems().length;   // раскладка считает только ВИДИМЫЕ карточки
             var favStr = favHtml();
-            // Единственный портфель, состоящий только из акций → «Календарь выплат» показывать
-            // не о чем (купонов нет и не будет): его не рендерим вовсе, а в свободную ячейку
-            // сетки на его место встаёт карточка «Ставки рынка» (вместо нижней полосы ставок).
-            var soloStocks = store.items.length === 1 &&
-                (store.items[0].holdings || []).length > 0 &&
-                !(store.items[0].holdings || []).some(function (h) { return h.type === 'bond' && aggHolding(h).qty > 0; });
+            // Нигде (ни в одном ВИДИМОМ портфеле) нет ни одной облигации → «Календарь выплат»
+            // показывать не о чем (купонов нет и не будет): не рендерим его вовсе, а на его
+            // место — и в свободной ячейке сетки, и внизу колонки — встают компактные «Ставки
+            // рынка» (см. ratesStackHtml). Условие пересчитывается на КАЖДЫЙ рендер, поэтому
+            // само подхватывает любое изменение состава: добавили/удалили последнюю облигацию
+            // через настройки портфеля, добавили второй портфель и т.п. — не только «один
+            // портфель из акций», а любое число портфелей без единой облигации.
+            var hasVisibleHoldings = store.items.some(function (p) { return !p.hidden && (p.holdings || []).length > 0; });
+            var noBonds = hasVisibleHoldings && !calPfCandidates().length;
             // В узком виде (3 карточки в ряд) остаток от деления на 3 определяет, сколько
             // ячеек ряда календарь должен занять: 1 портфель → 2 ячейки (растягивается до
             // «Избранного»), 2 портфеля → 1 ячейка (третий блок в ряду). В обычном виде
@@ -946,26 +949,25 @@
             var rem = n % cols;
             var needCell = n > 0 && rem !== 0;
             var calSpan = needCell ? cols - rem : 1;
-            var payCal = soloStocks ? '' : paymentCalendarHtml(needCell, calSpan);
-            // портфель из одних акций: в свободную ячейку встаёт карточка ставок,
-            // в остальных случаях — календарь выплат (как раньше)
-            var cellCard = soloStocks ? ratesHtml(true, calSpan) : payCal;
+            // noBonds=true → «Ставки рынка» вместо календаря (и в ячейке, и внизу колонки —
+            // без большого бокса, см. ratesStackHtml); иначе — обычный «Календарь выплат»
+            var cellCard = noBonds ? ratesStackHtml(needCell, calSpan) : paymentCalendarHtml(needCell, calSpan);
             var body;
             var gridPart = gridHtml(needCell ? cellCard : '');
-            // Календарь и ставки — ВНУТРИ левой колонки (не отдельным блоком во всю ширину
+            // Календарь/ставки — ВНУТРИ левой колонки (не отдельным блоком во всю ширину
             // страницы), чтобы их ширина совпадала с шириной карточек портфеля и они не
-            // «наезжали» визуально на колонку «Избранное» сбоку. Если ставки уже встали
-            // ячейкой сетки — нижнюю полосу ставок не дублируем.
-            var left = gridPart + (needCell ? '' : payCal) + (soloStocks && needCell ? '' : ratesHtml());
+            // «наезжали» визуально на колонку «Избранное» сбоку. Нижнюю полосу ставок
+            // показываем только когда есть настоящий календарь — дублировать «Ставки рынка»
+            // (уже занявшие место календаря) не нужно.
+            var left = gridPart + (needCell ? '' : cellCard) + (noBonds ? '' : ratesHtml());
             // Сводка по всем портфелям (2+) — компактной карточкой ПОД «Избранным» в правой
             // колонке; LIVE-виджет (бывшая верхняя тёмная полоса) — под сводкой.
             body = '<div class="pf-topgrid">' +
                     '<div class="pf-topgrid-left">' + left + '</div>' +
                     '<div class="pf-topgrid-fav">' + favStr + (store.items.length >= 2 ? summaryCardHtml() : '') + liveBarHtml() + '</div>' +
                 '</div>';
-            host.innerHTML =
-                headHtml() +
-                body;
+            host.innerHTML = body;
+            renderTopBarActions();
             tickLive();
             renderFavNews();
             ensureClock();
@@ -1010,11 +1012,12 @@
     }
 
     // ---- LIVE-виджет (бывшая тёмная полоса сверху): компактная тёмная карточка в правой
-    // колонке под сводкой «Суммарный капитал». Ids и классы значений (pflv-*/dlv-*)
-    // сохранены — их наполняет tickLive() из данных дашборда.
+    // колонке под сводкой «Суммарный капитал» — той же тёмной карточкой (класс
+    // pf-sumcard общий с summaryCardHtml, единый стиль). Ids и классы значений
+    // (pflv-*/dlv-*) сохранены — их наполняет tickLive() из данных дашборда.
     function liveBarHtml() {
         var tiles = [['imoex', 'IMOEX'], ['usd', 'USD/RUB'], ['btc', 'BTC']];
-        return '<div class="pf-livecard" id="pfLiveBar">' +
+        return '<div class="pf-sumcard pf-livecard" id="pfLiveBar">' +
             '<div class="pflc-head">' +
                 '<div class="dlv-live"><span class="dlv-dot"></span>LIVE</div>' +
                 '<div class="dlv-time"><span class="dlv-time-k">MSK</span><span class="dlv-time-v" id="pfClock">--:--:--</span></div>' +
@@ -1109,7 +1112,7 @@
     // ---- бэкап (выгрузить/загрузить JSON) — переиспользует попап-инфраструктуру «Импорт» ----
     function backupWrapHtml() {
         return '<div class="pf-impwrap">' +
-            '<button class="d3-quick ghost pf-impbtn" onclick="pfToggleImp(event,\'bkp\')">' + SHIELD_SVG + 'Бэкап' + CHEV_SVG + '</button>' +
+            '<button class="d3-quick ghost pf-impbtn" onclick="pfToggleImp(event,\'bkp\')">' + SHIELD_SVG + '<span>Бэкап</span>' + CHEV_SVG + '</button>' +
             '<div class="pf-impmenu" id="pfImp-bkp">' +
                 '<div class="pf-impgrp">Резервная копия</div>' +
                 '<button class="pf-impitem" onclick="pfExportData()">' + DL_SVG + 'Выгрузить в файл (JSON)</button>' +
@@ -1130,7 +1133,7 @@
                 '<span class="pf-eyestate">' + (on ? CHECK_SVG : '') + '</span></button>';
         }
         return '<div class="pf-impwrap">' +
-            '<button class="d3-quick ghost pf-impbtn" onclick="pfToggleImp(event,\'view\')">' + LAYOUT_SVG + 'Вид' + CHEV_SVG + '</button>' +
+            '<button class="d3-quick ghost pf-impbtn" onclick="pfToggleImp(event,\'view\')">' + LAYOUT_SVG + '<span>Вид</span>' + CHEV_SVG + '</button>' +
             '<div class="pf-impmenu" id="pfImp-view">' +
                 '<div class="pf-impgrp">Вид карточки портфеля</div>' +
                 opt('normal', 'Обычный', 'вложено · доход · доходность, 2 в ряд') +
@@ -1145,16 +1148,21 @@
         closeImpMenus(); renderNoAnim();
     };
 
-    // ---- шапка страницы: без заголовка, только панель действий справа.
-    // «Импорт» из шапки убран — импортировать состав можно из настроек портфеля (⚙).
-    function headHtml() {
-        return '<div class="d3-head pf-head pf-head--bare">' +
-            '<div class="d3-head-actions">' +
-                '<button class="d3-quick" onclick="pfAddPortfolio()">' + PLUS_SVG + 'Добавить портфель</button>' +
-                (store.items.length > 1 ? eyeWrapHtml() : '') +
-                viewWrapHtml() +
-                backupWrapHtml() +
-            '</div></div>';
+    // ---- панель действий страницы: живёт не в самой вкладке, а в ГЛОБАЛЬНОЙ шапке
+    // сайта (#topBarPfActions, слева от «Поиска») — см. renderPortfolios/switchTab ниже.
+    // «Импорт» из неё убран — импортировать состав можно из настроек портфеля (⚙).
+    function topBarActionsHtml() {
+        return '<button class="d3-quick" onclick="pfAddPortfolio()">' + PLUS_SVG + '<span>Добавить портфель</span></button>' +
+            (store.items.length > 1 ? eyeWrapHtml() : '') +
+            viewWrapHtml() +
+            backupWrapHtml();
+    }
+    // наполняет/показывает панель действий в глобальной шапке; скрывается при уходе со
+    // вкладки в обёртке switchTab (см. секцию «ИНТЕГРАЦИЯ» внизу файла)
+    function renderTopBarActions() {
+        var host = document.getElementById('topBarPfActions'); if (!host) return;
+        host.innerHTML = topBarActionsHtml();
+        host.style.display = 'flex';
     }
 
     // ---- «Видимость»: попап управления скрытием карточек (инфраструктура «Импорта») ----
@@ -1178,7 +1186,7 @@
             '</button>';
         }).join('');
         return '<div class="pf-impwrap">' +
-            '<button class="d3-quick ghost pf-impbtn" onclick="pfToggleImp(event,\'eye\')">' + EYE_SVG + 'Видимость' +
+            '<button class="d3-quick ghost pf-impbtn" onclick="pfToggleImp(event,\'eye\')">' + EYE_SVG + '<span>Видимость</span>' +
                 (vis < total ? '<i class="pf-eyecnt">' + vis + '/' + total + '</i>' : '') + CHEV_SVG + '</button>' +
             '<div class="pf-impmenu" id="pfImp-eye">' +
                 '<div class="pf-impgrp">Какие портфели показывать</div>' + rows +
@@ -2094,28 +2102,37 @@
     }
 
     // ---- ставки рынка (как на дашборде) ----
-    // asCell=true → карточка ВМЕСТО «Календаря выплат» в свободной ячейке сетки (единственный
-    // портфель из одних акций): та же высота, что у карточки портфеля, плитки — колонкой.
-    function ratesHtml(asCell, span) {
+    function rateTiles() {
         var rd = window.ratesData || (typeof ratesData !== 'undefined' ? ratesData : {});
         function rv(id, fb) { var e = dq(id); var t = e ? (e.textContent || '').trim() : '';
             if (t && /\d/.test(t) && t.indexOf('---') < 0) return t; if (fb != null && /\d/.test(String(fb))) return fb; return t || '—'; }
-        var tiles = [
+        return [
             { l: 'Ключевая ставка', v: rv('val-key-rate', rd.keyRate), ac: '#119d5c', ic: '<line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>' },
             { l: 'Ставка по вкладам', v: rv('val-deposit-rate', rd.depositRate), ac: '#5B7C99', ic: '<polygon points="12 2 21 7 3 7"/><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="12" y1="18" x2="12" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/>' },
             { l: 'Инфляция, год', v: rv('val-inflation', rd.inflation), ac: '#D97757', ic: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>' },
             { l: 'Доходность ОФЗ 10 лет', v: rv('val-ofz10', rd.ofz10), ac: '#3d6fd1', ic: '<path d="M3 3v18h18"/><polyline points="7 14 11 10 14 13 20 7"/>' }
         ];
-        var grid = '<div class="drt-grid">' + tiles.map(function (t) {
-                return '<div class="drt-tile" style="--ac:' + t.ac + '"><div class="drt-ic"><svg viewBox="0 0 24 24">' + t.ic + '</svg></div>' +
-                    '<div class="drt-body"><div class="drt-l">' + esc(t.l) + '</div><div class="drt-v">' + esc(t.v) + '</div></div></div>';
-            }).join('') + '</div>';
-        if (asCell) {
-            return '<div class="dash2-card pf-card2 pf-ratescard' + (span === 2 ? ' pf-ratescard--span2' : '') + '">' +
-                pfCardHead('', 'Ставки рынка', 'ключевые индикаторы — купонных выплат по портфелю из акций нет') +
-                '<div class="pf-ratescard-body">' + grid + '</div></div>';
-        }
-        return '<div class="d3-ratesband pf-ratesband">' + grid + '</div>';
+    }
+    function rateTileHtml(t) {
+        return '<div class="drt-tile" style="--ac:' + t.ac + '"><div class="drt-ic"><svg viewBox="0 0 24 24">' + t.ic + '</svg></div>' +
+            '<div class="drt-body"><div class="drt-l">' + esc(t.l) + '</div><div class="drt-v">' + esc(t.v) + '</div></div></div>';
+    }
+    // полноширинная горизонтальная полоса ставок под сеткой — показывается ВСЕГДА,
+    // когда есть хоть одна облигация хоть в одном портфеле (т.е. «Календарь выплат» тоже виден)
+    function ratesHtml() {
+        return '<div class="d3-ratesband pf-ratesband"><div class="drt-grid">' +
+            rateTiles().map(rateTileHtml).join('') + '</div></div>';
+    }
+    // Замена «Календаря выплат», когда нигде нет ни одной облигации: те же 4 плитки,
+    // но БЕЗ большого бокса-обёртки (каждая плитка и так своя мини-карточка, drt-tile) —
+    // просто стопкой сверху вниз. asCell=true → занимает свободную ЯЧЕЙКУ сетки (растягивается
+    // на высоту соседних карточек через align-items:stretch, плитки центрируются по высоте);
+    // asCell=false → узкая колонка под сеткой (чётное число портфелей).
+    function ratesStackHtml(asCell, span) {
+        var grid = '<div class="drt-grid pf-ratesstack-grid">' + rateTiles().map(rateTileHtml).join('') + '</div>';
+        var cls = 'pf-ratesstack' + (asCell ? ' pf-ratesstack--cell' : ' pf-ratesstack--flow') +
+            (asCell && span === 2 ? ' pf-ratesstack--span2' : '');
+        return '<div class="' + cls + '"><div class="pf-ratesstack-eyebrow">Ставки рынка</div>' + grid + '</div>';
     }
 
     // ============================================================
@@ -3621,7 +3638,13 @@
         window.switchTab = function (tabId) {
             _prevSwitch.apply(this, arguments);
             if (tabId === 'portfolios') { openMenu = null; renderPortfolios(); }
-            else if (dq('pfOverlay')) window.pfCloseOverlay();
+            else {
+                if (dq('pfOverlay')) window.pfCloseOverlay();
+                // ушли со вкладки — панель действий («Добавить портфель»/«Видимость»/…) в
+                // глобальной шапке сайта больше не относится к текущей странице, прячем её
+                var tbHost = document.getElementById('topBarPfActions');
+                if (tbHost) { tbHost.style.display = 'none'; tbHost.innerHTML = ''; }
+            }
         };
     }
     // Когда подгрузилась таблица акций — обновить избранное/потенциал (chain, не ломая дашборд)

@@ -122,7 +122,13 @@ body.dark-mode .pf-sumcard {
    чтобы span не создавал лишнюю неявную колонку */
 .pf-paycal--span2 { grid-column: span 2; }
 @media (max-width: 1040px) { .pf-paycal--span2 { grid-column: span 1; } }
-.pf-paycal--cell .pf-ch { flex-shrink: 0; }
+.pf-paycal--cell .pf-ch { flex-shrink: 0; flex-wrap: wrap; row-gap: 8px; }
+/* в узкой ячейке (3 в ряд) заголовку с подписью и правым блоком (фильтр портфелей +
+   «за 30 дней») тесно бок о бок — подпись прячем (как в узкой колонке «Избранного»),
+   а правый блок роняем на свою строку целиком, иначе он «плавает» центром рядом с
+   заголовком, обёрнутым в 2–3 строки — асимметрично и выглядит криво */
+.pf-paycal--cell .pf-ch-s { display: none; }
+.pf-paycal--cell .pfpc-head-r { flex: 1 1 100%; margin-left: 0; justify-content: flex-start; }
 .pf-paycal--cell .pfpc-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
 /* пока ниже есть ещё выплаты (класс has-more ставит pfPayCalScroll) — низ списка плавно
    затухает вместо жёсткого среза последней видимой строки о край карточки */
@@ -159,9 +165,6 @@ body.dark-mode .pf-sumcard {
 @media (max-width: 1040px) { .pf-fav { height: auto; max-height: 654px; } }
 .pf-topgrid-fav .pff-body { padding: 4px 14px 16px; flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
 .pf-topgrid-fav .pff-grid { grid-template-columns: 1fr; }
-
-/* выровнять заголовок «Портфели» по вертикали (подзаголовок убран) */
-.pf-head { align-items: center; }
 
 /* ---- карточка портфеля (огранка как у карточек калькулятора: 2px рамка, radius 28) ---- */
 .pf-card, .pf-card2 {
@@ -1369,25 +1372,54 @@ body.dark-mode .btcal-paste input:focus { background: rgba(15, 23, 42, 0.8); bor
 body.dark-mode .btcal-paste-ok { background: #5a7cff; }
 
 /* ============================================================
-   ШАПКА БЕЗ ЗАГОЛОВКА: только панель действий (Добавить/Видимость/Вид/Бэкап)
-   справа — заголовок «Портфели» и верхняя LIVE-полоса убраны
+   ПАНЕЛЬ ДЕЙСТВИЙ СТРАНИЦЫ (Добавить/Видимость/Вид/Бэкап) — живёт не в самой
+   вкладке, а в ГЛОБАЛЬНОЙ шапке сайта (#topBarPfActions), слева от «Поиска».
+   Наполняется js/portfolios.js (renderTopBarActions), видна только на «Портфелях».
    ============================================================ */
-.pf-head--bare { justify-content: flex-end; }
+#topBarPfActions { display: none; align-items: center; gap: 6px; }
+#topBarPfActions .pf-impwrap { position: relative; }
+/* стеклянные пилюли — в тон «Поиска»/переключателя темы рядом, а не тёмные
+   кнопки дашборда (те были уместны в его собственной шапке, тут — чужеродны) */
+#topBarPfActions .d3-quick {
+    padding: 8px 12px; border-radius: 20px; font-size: 12px; gap: 6px; white-space: nowrap;
+    background: var(--card-glass-aurora, rgba(255,255,255,0.65));
+    border: 1px solid var(--card-border-aurora, rgba(255,255,255,0.4));
+    color: var(--text-muted, #64748B); box-shadow: none;
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+}
+#topBarPfActions .d3-quick:hover { background: rgba(255,255,255,0.85); color: var(--text-deep, #0F172A); transform: none; box-shadow: none; }
+body.dark-mode #topBarPfActions .d3-quick { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.14); color: #cdd8e6; }
+body.dark-mode #topBarPfActions .d3-quick:hover { background: rgba(255,255,255,0.16); }
+#topBarPfActions .d3-quick svg { width: 14px; height: 14px; flex-shrink: 0; }
+/* «Добавить портфель» — единственное не-ghost действие, оставляем акцентным (тёмная
+   пилюля), чтобы главное действие читалось на фоне трёх нейтральных попап-кнопок */
+#topBarPfActions .d3-quick:not(.ghost) { background: linear-gradient(135deg, #2C364C, #1b2433); border-color: transparent; color: #fff; }
+#topBarPfActions .d3-quick:not(.ghost):hover { background: linear-gradient(135deg, #39455c, #242e3d); }
+#topBarPfActions .pf-impmenu { right: 0; left: auto; }
+/* мобиль/планшет (<1024px, тот же порог, что у #topSearchBtn рядом) — подписи прячем,
+   кнопки становятся компактными иконками, сама панель никогда не исчезает целиком */
+@media (max-width: 1023px) {
+    #topBarPfActions .d3-quick span { display: none; }
+    #topBarPfActions .d3-quick { padding: 9px; border-radius: 50%; gap: 0; }
+    #topBarPfActions .pf-eyecnt { margin-left: 3px; }
+}
+/* узкий телефон — даже 4 иконки-кружка впритык с бургером/бейджем/поиском/темой не
+   влезают в одну строку и раньше уезжали за край экрана (Поиск/тема становились
+   недостижимы). Панель сама не сжимается (flex-shrink:0) и скроллится по горизонтали
+   внутри себя — Поиск и переключатель темы остаются на месте и всегда доступны. */
+@media (max-width: 600px) {
+    #topBarPfActions {
+        max-width: 90px; flex-shrink: 0; overflow-x: auto; scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+    }
+    #topBarPfActions::-webkit-scrollbar { display: none; }
+    #topBarPfActions .pf-impwrap, #topBarPfActions > .d3-quick { flex-shrink: 0; }
+}
 
 /* ============================================================
-   LIVE-ВИДЖЕТ (бывшая тёмная полоса сверху): компактная тёмная карточка
-   в правой колонке под сводкой «Суммарный капитал»
+   LIVE-ВИДЖЕТ (бывшая тёмная полоса сверху): та же тёмная карточка, что и
+   «Суммарный капитал» (класс pf-sumcard общий), в правой колонке под ней.
    ============================================================ */
-.pf-livecard {
-    display: flex; flex-direction: column; gap: 4px;
-    padding: 16px 18px 12px; border: 2px solid #131a2b; border-radius: 28px;
-    background: linear-gradient(120deg, #0e1621 0%, #131f2c 100%);
-    box-shadow: 0 16px 36px rgba(24,38,60,0.14);
-}
-body.dark-mode .pf-livecard {
-    border-color: rgba(255,255,255,0.40);
-    box-shadow: 0 16px 36px rgba(0,0,0,0.32);
-}
 .pflc-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 9px;
     border-bottom: 1px solid rgba(255,255,255,0.08); }
 .pf-livecard .dlv-time { padding-left: 0; margin-left: 0; border-left: none; }
@@ -1400,18 +1432,22 @@ body.dark-mode .pf-livecard {
 .pflc-row.pflc-go:hover { background: rgba(255,255,255,0.07); }
 
 /* ============================================================
-   «СТАВКИ РЫНКА» ЯЧЕЙКОЙ СЕТКИ — вместо «Календаря выплат», когда единственный
-   портфель состоит только из акций (купонных выплат показывать не о чем)
+   «СТАВКИ РЫНКА» ВМЕСТО «КАЛЕНДАРЯ ВЫПЛАТ» — когда нигде нет ни одной облигации
+   (один портфель из акций, несколько таких портфелей, или все облигации удалили
+   из настроек). БЕЗ большой коробки-обёртки: каждая плитка уже своя мини-карточка
+   (drt-tile), тут только стопка сверху вниз — см. ratesStackHtml.
    ============================================================ */
-.pf-ratescard { height: 674px; display: flex; flex-direction: column; min-width: 0; }
-@media (max-width: 1040px) { .pf-ratescard { height: auto; } }
-.pf-ratescard--span2 { grid-column: span 2; }
-@media (max-width: 1040px) { .pf-ratescard--span2 { grid-column: span 1; } }
-.pf-ratescard .pf-ch { flex-shrink: 0; }
-.pf-ratescard-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; justify-content: center; padding: 4px 20px 20px; }
-.pf-ratescard-body .drt-grid { grid-template-columns: 1fr; gap: 13px; }
-.pf-ratescard--span2 .pf-ratescard-body .drt-grid { grid-template-columns: 1fr 1fr; }
-@media (max-width: 1040px) { .pf-ratescard--span2 .pf-ratescard-body .drt-grid { grid-template-columns: 1fr; } }
+.pf-ratesstack { display: flex; flex-direction: column; gap: 10px; min-width: 0; padding: 6px 2px; }
+.pf-ratesstack-eyebrow { font-family: 'Manrope', sans-serif; font-size: 10.5px; font-weight: 800;
+    letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; padding: 0 2px; }
+.pf-ratesstack-grid { grid-template-columns: 1fr; gap: 10px; }
+/* свободная ЯЧЕЙКА сетки — растягивается по высоте вместе с соседними карточками
+   (align-items:stretch у .pf-grid), плитки центрируются по этой высоте */
+.pf-ratesstack--cell { justify-content: center; }
+.pf-ratesstack--span2 { grid-column: span 2; }
+@media (max-width: 1040px) { .pf-ratesstack--span2 { grid-column: span 1; } }
+/* чётное число портфелей — полоса ставок узкой колонкой под сеткой (не на всю ширину) */
+.pf-ratesstack--flow { max-width: 460px; }
 
 /* ============================================================
    «Импорт» внутри приглашения пустого портфеля (настройки ⚙):
