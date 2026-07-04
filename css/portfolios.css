@@ -1402,6 +1402,10 @@ body.dark-mode #topBarPfActions .d3-quick:hover { background: rgba(255,255,255,0
     #topBarPfActions .d3-quick span { display: none; }
     #topBarPfActions .d3-quick { padding: 9px; border-radius: 50%; gap: 0; }
     #topBarPfActions .pf-eyecnt { margin-left: 3px; }
+    /* подпись прячется (см. выше), а стрелочка-шеврон (индикатор выпадающего меню)
+       была отдельным SVG вне <span> — без подписи рядом с иконкой она смотрелась
+       как лишняя случайная стрелка; прячем и её */
+    #topBarPfActions .d3-quick .pf-chev { display: none; }
 }
 /* узкий телефон — даже 4 иконки-кружка впритык с бургером/бейджем/поиском/темой не
    влезают в одну строку и раньше уезжали за край экрана (Поиск/тема становились
@@ -1417,21 +1421,22 @@ body.dark-mode #topBarPfActions .d3-quick:hover { background: rgba(255,255,255,0
 }
 
 /* ============================================================
-   РЫНОЧНАЯ ЛЕНТА В ШАПКЕ САЙТА: тонкой строкой ПОД глобальным топ-баром, вшита в фон
-   шапки (без карточки/бокса) — видна только на вкладке «Портфели». Наполняется
-   renderTopBarMarket()/topBarMarketHtml() из js/portfolios.js, значения обновляет
-   tickLive() из тех же скрытых span'ов дашборда, что и раньше.
+   РЫНОЧНАЯ ЛЕНТА В ШАПКЕ САЙТА: не своей строкой, а прямо В ТОП-БАРЕ — третьим
+   flex-элементом между брендом/брэдкрамбом («Портфели») и панелью действий
+   (первая кнопка — «Добавить портфель»). flex:1 + justify-content:center
+   центрируют ленту РОВНО в свободном пространстве между ними (равноудалена от
+   обоих соседей, а не привязана к какому-то краю) — вшита в фон шапки, без
+   своего бокса. Наполняется renderTopBarMarket()/topBarMarketHtml() из
+   js/portfolios.js, значения обновляет tickLive(), видна только на «Портфелях».
    ============================================================ */
 #topBarPfMarket {
-    display: none; align-items: center; gap: 9px;
-    padding: 0 16px 9px; overflow-x: auto; scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
+    display: none; flex: 1 1 auto; align-items: center; justify-content: center;
+    gap: 9px; min-width: 0; overflow: hidden; padding: 0 24px;
 }
-#topBarPfMarket::-webkit-scrollbar { display: none; }
-@media (min-width: 1024px) { #topBarPfMarket { padding: 0 32px 10px; } }
-/* на планшете/телефоне и так тесно (кнопки шапки уже сжаты до иконок/скролла) —
-   ленту прячем, чтобы не добавлять вторую тесную строку под уже тесной первой */
-@media (max-width: 1023px) { #topBarPfMarket { display: none !important; } }
+/* места для ленты хватает только на просторном экране — с текстовыми подписями
+   кнопок (>=1024px) и так тесно, а «воздух» (равные отступы от соседей) должен
+   сохраняться, а не превращаться в зажатую полоску впритык */
+@media (max-width: 1300px) { #topBarPfMarket { display: none !important; } }
 .tbmk-dot {
     width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
     background: #1a9f6a; box-shadow: 0 0 0 0 rgba(26,159,106,0.5);
