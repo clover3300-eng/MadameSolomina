@@ -372,7 +372,10 @@ body.dark-mode .stk-table > thead th.stk-sorted { color: #f4f8fd; }
    max-width — с запасом под самое длинное ОДНО слово («Привилегированные», 17 букв) —
    иначе break-word переносит не по границе слова, а буквально последнюю букву. */
 .stk-table > thead th.stk-th {
-    white-space: normal; overflow-wrap: break-word; max-width: 168px; line-height: 1.3;
+    /* pre-line — как normal (перенос по словам), но ещё уважает литеральный \n в
+       label (см. OBL_LBL_1/2 в JS): «Обязательства» и «год, %» — гарантированно
+       на разных строках, а не как получится по ширине колонки. */
+    white-space: pre-line; overflow-wrap: break-word; max-width: 168px; line-height: 1.3;
 }
 
 /* Первая колонка (Тикер/Название) — sticky слева, левое выравнивание.
@@ -387,6 +390,12 @@ body.dark-mode .stk-table > thead th.stk-sorted { color: #f4f8fd; }
 .stk-table > thead th.stk-first { z-index: 4; } /* угол шапки выше всех */
 .stk-table > tbody > tr > td.stk-first {
     z-index: 1; background: var(--stk-card-bg);
+    /* «дозакрашиваем» 1px за правым краем цветом самой ячейки — стык со следующей
+       закреплённой ячейкой (Цена) держится не только на точном совпадении границ
+       (там при скролле мог проступать пиксель уезжающего контента), а ещё и
+       перекрыт сверху этой полоской. .stk-edge (см. ниже) перебивает её, когда
+       эта ячейка — фактическая граница закреплённого блока. */
+    box-shadow: 1px 0 0 var(--stk-card-bg);
 }
 /* Закреплённые Цена/ОДХС (см. pin в COLS) — едут вместе с Тикером при горизонтальном
    скролле. left приходит из CSS-переменных (ширина Тикера зависит от данных, в CSS
@@ -405,9 +414,16 @@ body.dark-mode .stk-table > thead th.stk-sorted { color: #f4f8fd; }
 .stk-table > thead th.stk-pin-2 { z-index: 4; }
 .stk-table > tbody > tr > td.stk-pin-1,
 .stk-table > tbody > tr > td.stk-pin-2 { z-index: 1; background: var(--stk-card-bg); }
+/* та же «дозакраска» стыка — только у pin-1 (между Цена и ОДХС); pin-2 всегда
+   последний в закреплённой группе, ему нужна не эта полоска, а stk-edge ниже */
+.stk-table > tbody > tr > td.stk-pin-1 { box-shadow: 1px 0 0 var(--stk-card-bg); }
 /* Граница закреплённого блока — на его фактическом последнем столбце (stk-edge
-   назначается в JS по факту видимости Цена/ОДХС, см. renderHead/renderCompanyRow) */
-.stk-table > tbody > tr > td.stk-edge { box-shadow: 1px 0 0 var(--stk-line); }
+   назначается в JS по факту видимости Цена/ОДХС, см. renderHead/renderCompanyRow).
+   Раньше был var(--stk-line) — он полупрозрачный (задуман как тонкая рамка поверх
+   фона), а тут это ГРАНИЦА sticky-блока: сквозь полупрозрачную линию при скролле
+   было видно уезжающий под неё контент. Здесь — непрозрачный аналог того же тона. */
+.stk-table > tbody > tr > td.stk-edge { box-shadow: 1px 0 0 #f1f1f2; }
+body.dark-mode .stk-table > tbody > tr > td.stk-edge { box-shadow: 1px 0 0 #2e3849; }
 /* .stk-hl (подсветка «хорошего» значения, часто у ОДХС) обычно полупрозрачный фон —
    рассчитан на то, что под ним просвечивает зебра/карточка. У закреплённого столбца
    под ним при скролле оказывается контент ДРУГИХ колонок — полупрозрачность превращалась
