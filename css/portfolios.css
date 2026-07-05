@@ -1142,6 +1142,52 @@ body.dark-mode .pff-sort-b.on { background: color-mix(in srgb, var(--pf-accent) 
 .pf-topgrid-fav .pff-sort-b { padding: 6px 9px; }
 @media (max-width: 620px) { .pff-sort-b { padding: 6px 9px; } }
 
+/* ---- «Избранное» — цветная карточка в тон кнопки «Создать портфель» (#D97757):
+   терракотовая заливка самого блока, белые плитки-«визитки» поверх, полупрозрачно-
+   белые контролы шапки. Вид одинаковый в обеих темах, поэтому тёмная тема здесь
+   пере-переопределяется обратно к «светлым» цветам внутренностей. ---- */
+.pf-card2.pf-fav, body.dark-mode .pf-card2.pf-fav {
+    background: linear-gradient(160deg, #E08663 0%, #D97757 46%, #C9683F 100%);
+    box-shadow: 0 16px 36px rgba(217,119,87,0.30);
+}
+/* заголовок и подзаголовок — белым на цветном фоне */
+.pf-fav .pf-ch-t, body.dark-mode .pf-fav .pf-ch-t { color: #fff; }
+.pf-fav .pf-ch-s, body.dark-mode .pf-fav .pf-ch-s { color: rgba(255,255,255,0.78); }
+/* инфо-кнопка «что такое потенциал» — стеклянная, на ховере белая CTA */
+.pf-fav .pff-info, body.dark-mode .pf-fav .pff-info {
+    border-color: rgba(255,255,255,0.30); background: rgba(255,255,255,0.14); color: #fff; }
+.pf-fav .pff-info svg, body.dark-mode .pf-fav .pff-info svg { color: #fff; }
+.pf-fav .pff-info:hover, body.dark-mode .pf-fav .pff-info:hover { background: #fff; border-color: transparent; color: #C9683F; }
+.pf-fav .pff-info:hover svg, body.dark-mode .pf-fav .pff-info:hover svg { color: #C9683F; }
+/* фильтр Потенциал/Новизна — стеклянный сегмент, активная кнопка белая */
+.pf-fav .pff-sort, body.dark-mode .pf-fav .pff-sort {
+    background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.22); }
+.pf-fav .pff-sort-b, body.dark-mode .pf-fav .pff-sort-b { color: rgba(255,255,255,0.82); }
+.pf-fav .pff-sort-b:hover, body.dark-mode .pf-fav .pff-sort-b:hover { color: #fff; }
+.pf-fav .pff-sort-b.on, body.dark-mode .pf-fav .pff-sort-b.on {
+    background: #fff; color: #C9683F; box-shadow: 0 1px 3px rgba(90,35,15,0.35); }
+/* плитки — белые карточки на терракоте (как белая CTA на тёмной карточке Расчёта);
+   внутренние цвета (тикер, потенциал, новость) возвращаем «светлые» и в тёмной теме */
+.pf-fav .pff-tile, body.dark-mode .pf-fav .pff-tile {
+    border-color: rgba(255,255,255,0.55); background: #fff;
+    box-shadow: 0 8px 20px -12px rgba(122,49,26,0.45); }
+.pf-fav .pff-tile:hover, body.dark-mode .pf-fav .pff-tile:hover {
+    border-color: #fff; background: #fff; box-shadow: 0 14px 26px -14px rgba(90,35,15,0.55); }
+body.dark-mode .pf-fav .pff-tk { color: #0f172a; }
+body.dark-mode .pf-fav .pff-pot.pos { color: #16a34a; }
+body.dark-mode .pf-fav .pff-pot.neg { color: #dc2626; }
+body.dark-mode .pf-fav .pff-news { border-color: rgba(24,38,60,0.06); }
+body.dark-mode .pf-fav .pff-news-t { color: #2b3a4d; }
+.pf-fav .pff-tile:hover .pff-news.link .pff-news-inner,
+body.dark-mode .pf-fav .pff-tile:hover .pff-news.link .pff-news-inner {
+    background: #fff; border-color: color-mix(in srgb, var(--pf-accent) 35%, rgba(24,38,60,0.1));
+    box-shadow: 0 16px 26px -18px rgba(90,35,15,0.6); }
+/* пустое состояние и скроллбар — под цветной фон */
+.pf-fav .pff-empty-art, body.dark-mode .pf-fav .pff-empty-art { background: rgba(255,255,255,0.18); color: #fff; }
+.pf-fav .pff-empty-t, body.dark-mode .pf-fav .pff-empty-t { color: #fff; }
+.pf-fav .pff-empty-s, body.dark-mode .pf-fav .pff-empty-s { color: rgba(255,255,255,0.85); }
+.pf-fav .pff-body { scrollbar-color: rgba(255,255,255,0.55) transparent; }
+
 /* ============================================================
    КАЛЕНДАРЬ ВЫПЛАТ — ближайшие купоны по облигациям ВСЕХ портфелей сразу
    ============================================================ */
