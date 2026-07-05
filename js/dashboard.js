@@ -461,41 +461,6 @@
     }
 
     // ====================================================================
-    //  ВЕРТИКАЛЬ СТАВОК
-    // ====================================================================
-    function renderRates() {
-        var host = dq('dash2Rates');
-        if (!host) return;
-        var rd = window.ratesData || (typeof ratesData !== 'undefined' ? ratesData : {});
-        // Берём свежее значение из «живого» DOM (val-*), иначе из ratesData
-        function rateVal(domId, rdv) {
-            var t = txt(domId, '');
-            if (t && /\d/.test(t) && t.indexOf('---') < 0) return t;
-            if (rdv != null && /\d/.test(String(rdv))) return rdv;
-            return t || '—';
-        }
-        var keyV  = rateVal('val-key-rate', rd.keyRate);
-        var depV  = rateVal('val-deposit-rate', rd.depositRate);
-        var inflV = rateVal('val-inflation', rd.inflation);
-        var ofzV  = rateVal('val-ofz10', rd.ofz10);
-        var tiles = [
-            { l: 'Ключевая ставка',       v: keyV,  ac: '#119d5c', ic: '<line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>' },
-            { l: 'Ставка по вкладам',     v: depV,  ac: '#5B7C99', ic: '<polygon points="12 2 21 7 3 7"/><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="12" y1="18" x2="12" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/>' },
-            { l: 'Инфляция, год',         v: inflV, ac: '#D97757', ic: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>' },
-            { l: 'Доходность ОФЗ 10 лет', v: ofzV,  ac: '#3d6fd1', ic: '<path d="M3 3v18h18"/><polyline points="7 14 11 10 14 13 20 7"/>' }
-        ];
-        host.className = 'd3-ratesband';
-        host.innerHTML =
-            '<div class="drt-head"><div class="drt-title">Ставки рынка</div><span class="drt-tag">Россия · ЦБ РФ</span></div>' +
-            '<div class="drt-grid">' + tiles.map(function(t) {
-                return '<div class="drt-tile" style="--ac:' + t.ac + '">' +
-                    '<div class="drt-ic"><svg viewBox="0 0 24 24">' + t.ic + '</svg></div>' +
-                    '<div class="drt-body"><div class="drt-l">' + esc(t.l) + '</div><div class="drt-v">' + esc(t.v) + '</div></div>' +
-                '</div>';
-            }).join('') + '</div>';
-    }
-
-    // ====================================================================
     //  ИЗБРАННОЕ (звёздочки из раздела «Рынок · Акции»)
     // ====================================================================
     function loadFavsRaw() {
@@ -1119,7 +1084,6 @@
         renderTopBarDashActions();
         renderTopBarDashMarket();
         renderPortfolio();
-        renderRates();
         renderFavorites();
         renderHoldings();
         renderRebal();
@@ -1148,17 +1112,6 @@
     window.onBndBondsLoaded = function() {
         if (currentTab === 'dashboard') { renderFavorites(); dashSyncTopRowHeights(); }
     };
-
-    // Когда подгрузились реальные ставки (Google Sheets) — обновляем полосу ставок,
-    // иначе она остаётся с заглушкой до захода на вкладку «Рынок».
-    if (typeof window.updateRatesDisplay === 'function') {
-        var _origURD = window.updateRatesDisplay;
-        window.updateRatesDisplay = function() {
-            var r = _origURD.apply(this, arguments);
-            if (currentTab === 'dashboard' && dq('dash2Rates')) renderRates();
-            return r;
-        };
-    }
 
     // Пересчёт на других вкладках тоже обновляет сохранённый снапшот
     if (typeof window.calculateAndShowPortfolio === 'function') {
