@@ -1045,16 +1045,20 @@ body.dark-mode .pf-impchip:hover { background: rgba(255,255,255,0.09); color: #f
 /* ============================================================
    ИЗБРАННОЕ — плитки (тикер · потенциал · кликабельная новость-ссылка)
    ============================================================ */
+/* терракотовый акцент всей карточки — тот же #D97757, что у кнопки
+   «Создать портфель» (.v3-createpf-btn в Расчёте); наследуется плитками,
+   инфо-кнопкой, фильтром сортировки и меткой источника новости */
+.pf-card2.pf-fav { --pf-accent: #D97757; }
 .pff-body { padding: 4px 22px 20px; }
 /* плотная авто-сетка: на широких экранах 4–5 плиток в ряд → блок ниже и компактнее */
 .pff-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(248px, 1fr)); gap: 10px; }
 @media (max-width: 560px) { .pff-grid { grid-template-columns: 1fr; } }
-.pff-tile { --pf-accent: #3b82f6; position: relative; display: flex; flex-direction: column; gap: 7px; padding: 11px 13px; border-radius: 13px; border: 1px solid rgba(24,38,60,0.08); background: rgba(24,38,60,0.018); transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s, background 0.15s; }
+.pff-tile { position: relative; display: flex; flex-direction: column; gap: 7px; padding: 11px 13px; border-radius: 13px; border: 1px solid rgba(24,38,60,0.08); background: rgba(24,38,60,0.018); transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s, background 0.15s; }
 .pff-tile:hover { z-index: 30; }
 body.dark-mode .pff-tile { border-color: rgba(255,255,255,0.06); background: rgba(255,255,255,0.025); }
 /* при наведении плитка становится сплошной — header и раскрытая новость = одна поверхность */
-.pff-tile:hover { border-color: color-mix(in srgb, var(--pf-accent) 35%, rgba(24,38,60,0.1)); box-shadow: 0 10px 22px -18px rgba(24,38,60,0.4); transform: translateY(-1px); background: #fff; }
-body.dark-mode .pff-tile:hover { box-shadow: 0 10px 22px -18px rgba(0,0,0,0.5); background: #1c2735; }
+.pff-tile:hover { border-color: color-mix(in srgb, var(--pf-accent) 35%, rgba(24,38,60,0.1)); box-shadow: 0 10px 22px -18px rgba(24,38,60,0.4); transform: translateY(-1px); background: color-mix(in srgb, var(--pf-accent) 3%, #fff); }
+body.dark-mode .pff-tile:hover { box-shadow: 0 10px 22px -18px rgba(0,0,0,0.5); background: color-mix(in srgb, var(--pf-accent) 9%, #1c2735); }
 .pff-thead { display: flex; align-items: flex-start; gap: 10px; }
 .pff-id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; align-items: flex-start; text-align: left; border: none; background: none; padding: 0; cursor: pointer; }
 .pff-tk { max-width: 100%; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 13.5px; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1080,8 +1084,8 @@ body.dark-mode .pff-news { border-color: rgba(255,255,255,0.06); }
 /* разворот полного заголовка на ховере — ТОЛЬКО когда новость загружена (.link):
    для «загрузка новости…» / «нет свежих новостей» раскрывать нечего, а пустой
    развёрнутый бокс давал вторую рамку впритык к границам плитки (задвоение линий) */
-.pff-tile:hover .pff-news.link .pff-news-inner { left: -14px; right: -14px; padding: 2px 13px 12px; background: #fff; border-color: color-mix(in srgb, var(--pf-accent) 35%, rgba(24,38,60,0.1)); box-shadow: 0 16px 26px -18px rgba(24,38,60,0.5); z-index: 30; }
-body.dark-mode .pff-tile:hover .pff-news.link .pff-news-inner { background: #1c2735; border-color: color-mix(in srgb, var(--pf-accent) 35%, rgba(255,255,255,0.12)); box-shadow: 0 16px 26px -18px rgba(0,0,0,0.6); }
+.pff-tile:hover .pff-news.link .pff-news-inner { left: -14px; right: -14px; padding: 2px 13px 12px; background: color-mix(in srgb, var(--pf-accent) 3%, #fff); border-color: color-mix(in srgb, var(--pf-accent) 35%, rgba(24,38,60,0.1)); box-shadow: 0 16px 26px -18px rgba(24,38,60,0.5); z-index: 30; }
+body.dark-mode .pff-tile:hover .pff-news.link .pff-news-inner { background: color-mix(in srgb, var(--pf-accent) 9%, #1c2735); border-color: color-mix(in srgb, var(--pf-accent) 35%, rgba(255,255,255,0.12)); box-shadow: 0 16px 26px -18px rgba(0,0,0,0.6); }
 .pff-tile:hover .pff-news.link .pff-news-t { -webkit-line-clamp: unset; }
 /* и убираем линию-разделитель под шапкой плитки на время разворота — иначе она
    висела бы отдельной чертой над развёрнутым боксом (то самое задвоение) */
@@ -1094,7 +1098,7 @@ body.dark-mode .pff-news-t { color: #d2ddea; }
 .pff-news-go { width: 11px; height: 11px; margin-left: auto; color: var(--pf-accent); opacity: 0.75; flex-shrink: 0; }
 .pff-news-load, .pff-news-none { font-size: 12.5px; color: #b6c0cc; font-style: italic; }
 .pff-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 34px 24px; }
-.pff-empty-art { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; background: linear-gradient(135deg, rgba(245,158,11,0.16), rgba(217,119,87,0.16)); color: #d97706; }
+.pff-empty-art { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; background: linear-gradient(135deg, rgba(217,119,87,0.22), rgba(217,119,87,0.10)); color: #D97757; }
 .pff-empty-art svg { width: 26px; height: 26px; }
 .pff-empty-t { font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 800; color: #0f172a; }
 body.dark-mode .pff-empty-t { color: #f4f8fd; }
@@ -1134,7 +1138,7 @@ body.dark-mode .pff-tipbox::before { background: #0d141d; }
 body.dark-mode .pff-sort { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
 body.dark-mode .pff-sort-b { color: #93a1b5; }
 body.dark-mode .pff-sort-b:hover { color: #e2e9f2; }
-body.dark-mode .pff-sort-b.on { background: rgba(255,255,255,0.14); color: #fff; box-shadow: none; }
+body.dark-mode .pff-sort-b.on { background: color-mix(in srgb, var(--pf-accent) 30%, rgba(255,255,255,0.06)); color: #fff; box-shadow: none; }
 .pf-topgrid-fav .pff-sort-b { padding: 6px 9px; }
 @media (max-width: 620px) { .pff-sort-b { padding: 6px 9px; } }
 
