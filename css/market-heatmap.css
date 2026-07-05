@@ -371,6 +371,10 @@ body.dark-mode .mh-retry { color: #10201a; }
    остаются во всю ширину */
 .mh-table th:first-child, .mh-table td:first-child { padding-left: 22px; }
 .mh-table th:last-child, .mh-table td:last-child { padding-right: 22px; }
+/* «Объём» — последняя колонка, текст без своей рамки/плашки (в отличие от
+   «Лидеров дня»), поэтому 22px общего края читается как «впритык»; добавляем
+   ей больше воздуха сверх базового отступа */
+.mh-table th.mh-th-vol, .mh-table td.mh-td-vol { padding-right: 50px; }
 .mh-table tbody tr:first-child td { border-top: 0; }
 .mh-table td.num { text-align: right; font-family: 'JetBrains Mono', monospace; font-weight: 600; }
 .mh-th-rank { width: 40px; text-align: center !important; cursor: default !important; }
