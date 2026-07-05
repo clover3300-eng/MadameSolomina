@@ -1,14 +1,17 @@
 // =============================================
-// HOME REGISTER — стартовая форма (скролл вниз)
+// HOME AUTH — стартовая сплит-карточка (регистрация/вход)
 // =============================================
 // Лёгкая клиентская форма на приветственной вкладке:
-//   • плавный скролл к форме,
+//   • переключатель «Регистрация / Вход» (одна форма, два режима),
 //   • базовая валидация + сохранение в localStorage (демо),
+//   • показ/скрытие пароля,
 //   • вход через Telegram (использует Telegram WebApp, если есть).
 // Бэкенд-регистрация (брокеры/планы) живёт отдельно в registration.js.
 
 (function () {
     'use strict';
+
+    var authMode = 'register'; // 'register' | 'login'
 
     // Безопасный тост: переиспользуем showDashToast, иначе мягкий фолбэк.
     function toast(msg, isError) {
@@ -28,26 +31,70 @@
         } catch (e) { /* no-op */ }
     }
 
-    // ---- Плавная прокрутка к форме регистрации ----
-    window.scrollToRegister = function () {
-        var target = document.getElementById('homeRegister');
-        if (!target) return;
+    // ---- Переключение «Регистрация / Вход» ----
+    window.homeAuthMode = function (mode) {
+        if (mode !== 'register' && mode !== 'login') return;
+        if (mode === authMode) return;
+        authMode = mode;
         haptic('medium');
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        // Фокус на первое поле после прокрутки (без рывка экрана).
-        setTimeout(function () {
-            var first = target.querySelector('.hr-input');
-            if (first) first.focus({ preventScroll: true });
-        }, 600);
+
+        var isReg = mode === 'register';
+        var el = function (id) { return document.getElementById(id); };
+
+        var tabReg = el('hsTabRegister');
+        var tabLogin = el('hsTabLogin');
+        if (tabReg) tabReg.classList.toggle('active', isReg);
+        if (tabLogin) tabLogin.classList.toggle('active', !isReg);
+
+        var title = el('hsAuthTitle');
+        if (title) title.textContent = isReg ? 'Создайте аккаунт' : 'С возвращением!';
+
+        var nameField = el('hsNameField');
+        if (nameField) nameField.classList.toggle('hidden', !isReg);
+
+        var hint = el('hsPassHint');
+        if (hint) hint.style.display = isReg ? '' : 'none';
+
+        var label = el('hsSubmitLabel');
+        if (label) label.textContent = isReg ? 'Создать аккаунт' : 'Войти';
+
+        var foot = el('hsFoot');
+        if (foot) {
+            foot.innerHTML = isReg
+                ? 'Уже есть аккаунт? <a class="hr-link" onclick="homeAuthMode(\'login\')">Войти</a>'
+                : 'Нет аккаунта? <a class="hr-link" onclick="homeAuthMode(\'register\')">Создать</a>';
+        }
+
+        // Сбрасываем ошибку и «выполненное» состояние кнопки при смене режима.
+        var errBox = el('homeRegError');
+        if (errBox) errBox.classList.remove('show');
+        var btn = el('hsSubmit');
+        if (btn) btn.classList.remove('is-done');
+
+        var form = el('homeRegForm');
+        if (form && form.password) {
+            form.password.setAttribute('autocomplete', isReg ? 'new-password' : 'current-password');
+        }
     };
 
-    // ---- Отправка формы регистрации ----
+    // ---- Показ/скрытие пароля ----
+    window.hsTogglePass = function (btn) {
+        var wrap = btn && btn.closest('.hr-inputwrap');
+        var input = wrap && wrap.querySelector('.hr-input');
+        if (!input) return;
+        var show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        btn.setAttribute('aria-label', show ? 'Скрыть пароль' : 'Показать пароль');
+    };
+
+    // ---- Отправка формы (регистрация или вход) ----
     window.homeRegisterSubmit = function (event) {
         if (event) event.preventDefault();
         var form = document.getElementById('homeRegForm');
         var errBox = document.getElementById('homeRegError');
         if (!form) return false;
 
+        var isReg = authMode === 'register';
         var name = (form.name.value || '').trim();
         var email = (form.email.value || '').trim();
         var pass = form.password.value || '';
@@ -58,22 +105,28 @@
         }
         if (errBox) errBox.classList.remove('show');
 
-        if (name.length < 2) return fail('Введите имя');
+        if (isReg && name.length < 2) return fail('Введите имя');
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail('Введите корректный email');
         if (pass.length < 6) return fail('Пароль — минимум 6 символов');
 
         // Демо-сохранение профиля (без передачи пароля наружу).
         try {
+            var saved = {};
+            if (!isReg) {
+                try { saved = JSON.parse(localStorage.getItem('home_profile_v1')) || {}; } catch (e) { saved = {}; }
+            }
             localStorage.setItem('home_profile_v1', JSON.stringify({
-                name: name, email: email, createdAt: Date.now()
+                name: isReg ? name : (saved.name || null),
+                email: email,
+                createdAt: saved.createdAt || Date.now()
             }));
         } catch (e) { /* приватный режим — не критично */ }
 
         // Успех: визуальный отклик на кнопке, затем переход в терминал.
         var btn = form.querySelector('.hr-submit');
-        if (btn) { btn.classList.add('is-done'); btn.textContent = 'Готово ✓'; }
+        if (btn) { btn.classList.add('is-done'); btn.innerHTML = 'Готово ✓'; }
         haptic('success');
-        toast('Аккаунт создан, ' + name + '!');
+        toast(isReg ? ('Аккаунт создан, ' + name + '!') : 'Вход выполнен');
 
         setTimeout(function () {
             if (typeof window.switchTab === 'function') window.switchTab('calc');
