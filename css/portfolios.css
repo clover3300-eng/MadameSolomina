@@ -1435,10 +1435,10 @@ body.dark-mode .topbar-tab-actions .d3-quick:hover { background: rgba(255,255,25
     display: none; flex: 1 1 auto; align-items: center; justify-content: center;
     gap: 9px; min-width: 0; overflow: hidden; padding: 0 24px;
 }
-/* места для ленты хватает только на просторном экране — с текстовыми подписями
-   кнопок (>=1024px) и так тесно, а «воздух» (равные отступы от соседей) должен
-   сохраняться, а не превращаться в зажатую полоску впритык */
-@media (max-width: 1300px) { .topbar-tab-market { display: none !important; } }
+/* Премиальный стиль: рыночные данные из шапки убраны на ВСЕХ вкладках —
+   лента скрыта целиком (модули по-прежнему рендерят её в скрытый контейнер;
+   вернуть = удалить это правило, стили .tbmk-* ниже сохранены). */
+.topbar-tab-market { display: none !important; }
 .tbmk-dot {
     width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
     background: #1a9f6a; box-shadow: 0 0 0 0 rgba(26,159,106,0.5);

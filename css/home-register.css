@@ -13,13 +13,16 @@
 }
 
 /* ---- Сплит-карточка ---- */
+/* Компактная «премиальная» карточка: не тянется на всю панель, а висит
+   по центру (#panel-home.active — flex-центр) с воздухом вокруг. */
 .hs-card {
     display: grid;
-    grid-template-columns: 1.08fr 1fr;
+    grid-template-columns: 1.05fr 1fr;
     width: 100%;
-    align-self: stretch;          /* #panel-home.active — flex: растягиваемся на высоту */
+    max-width: 920px;
+    align-self: center;
     box-sizing: border-box;
-    border-radius: 32px;
+    border-radius: 30px;
     overflow: hidden;
     background: rgba(255, 255, 255, 0.30);
     border: 1px solid rgba(255, 255, 255, 0.60);
@@ -37,7 +40,7 @@
 .hs-hero {
     display: flex;
     align-items: center;
-    padding: 56px 64px;
+    padding: 44px 46px;
     box-sizing: border-box;
     background: linear-gradient(165deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.10) 100%);
     backdrop-filter: blur(4px) saturate(130%);
@@ -54,9 +57,9 @@
     letter-spacing: 0.42em;
 }
 .hs-title {
-    margin: 22px 0 0;
+    margin: 16px 0 0;
     font-family: 'Inter', sans-serif;
-    font-size: 52px;
+    font-size: 40px;
     line-height: 1.08;
     color: #2C364C;
     letter-spacing: -0.015em;
@@ -65,36 +68,36 @@
 .hs-title-bold  { font-weight: 800; }
 
 .hs-divider {
-    width: 54px;
-    height: 4px;
+    width: 48px;
+    height: 3px;
     border-radius: 2px;
     background: #E8873C;
-    margin: 28px 0;
+    margin: 20px 0;
 }
 .hs-lead {
     margin: 0;
-    max-width: 380px;
+    max-width: 340px;
     font-family: 'Inter', sans-serif;
-    font-size: 15px;
-    line-height: 1.7;
+    font-size: 13.5px;
+    line-height: 1.65;
     color: #5d6b84;
 }
 
 /* ---- Фичи-буллеты ---- */
 .hs-feats {
     list-style: none;
-    margin: 36px 0 0;
+    margin: 26px 0 0;
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
 }
 .hs-feat {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
     font-family: 'Inter', sans-serif;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     color: #2C364C;
 }
@@ -103,16 +106,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 42px;
-    height: 42px;
-    border-radius: 13px;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
     background: rgba(255, 255, 255, 0.85);
     border: 1px solid rgba(255, 255, 255, 0.9);
     box-shadow: 0 8px 20px -8px rgba(44, 54, 76, 0.28);
 }
 .hs-feat-ic svg {
-    width: 20px;
-    height: 20px;
+    width: 17px;
+    height: 17px;
     fill: none;
     stroke: #E8873C;
     stroke-width: 2;
@@ -125,30 +128,30 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 44px 48px;
+    padding: 34px 36px;
     box-sizing: border-box;
     background: #F9F1E5;
 }
 .hs-auth-inner {
     width: 100%;
-    max-width: 372px;
+    max-width: 340px;
 }
 
 /* ---- Переключатель Регистрация / Вход ---- */
 .hs-tabs {
     display: flex;
     gap: 4px;
-    padding: 5px;
-    margin-bottom: 26px;
+    padding: 4px;
+    margin-bottom: 20px;
     background: rgba(44, 54, 76, 0.06);
     border: 1px solid rgba(44, 54, 76, 0.05);
     border-radius: 14px;
 }
 .hs-tab {
     flex: 1;
-    padding: 11px 10px;
+    padding: 9px 10px;
     font-family: 'Inter', sans-serif;
-    font-size: 13px;
+    font-size: 12.5px;
     font-weight: 600;
     color: #6b7890;
     background: none;
@@ -166,21 +169,21 @@
 
 .hr-title {
     font-family: 'Inter', sans-serif;
-    font-size: 25px;
+    font-size: 21px;
     font-weight: 800;
     color: #2C364C;
-    margin: 0 0 6px;
+    margin: 0 0 5px;
 }
 .hr-sub {
     font-family: 'Inter', sans-serif;
-    font-size: 12.5px;
+    font-size: 12px;
     color: #7d8aa0;
-    margin: 0 0 22px;
+    margin: 0 0 18px;
 }
 
 /* ---- Поля формы ---- */
-.hr-form { display: flex; flex-direction: column; gap: 14px; }
-.hr-field { display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.hr-form { display: flex; flex-direction: column; gap: 11px; }
+.hr-field { display: flex; flex-direction: column; gap: 5px; text-align: left; }
 .hr-field.hidden { display: none; }
 .hr-label {
     font-family: 'Inter', sans-serif;
@@ -195,9 +198,9 @@
 .hr-input {
     width: 100%;
     box-sizing: border-box;
-    padding: 14px 44px 14px 16px;
+    padding: 11px 42px 11px 14px;
     font-family: 'Inter', sans-serif;
-    font-size: 14px;
+    font-size: 13.5px;
     color: #2C364C;
     background: #fff;
     border: 1.5px solid rgba(44, 54, 76, 0.10);
@@ -274,15 +277,15 @@
 
 /* ---- Главная кнопка ---- */
 .hr-submit {
-    margin-top: 8px;
+    margin-top: 6px;
     width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    padding: 16px;
+    padding: 13px;
     font-family: 'Inter', sans-serif;
-    font-size: 13px;
+    font-size: 12.5px;
     font-weight: 700;
     color: #fff;
     background: #161B27;
@@ -310,7 +313,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    margin: 18px 0 14px;
+    margin: 14px 0 12px;
     color: #9aa6b8;
     font-family: 'Inter', sans-serif;
     font-size: 10px;
@@ -333,9 +336,9 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
-    padding: 14px;
+    padding: 12px;
     font-family: 'Inter', sans-serif;
-    font-size: 13px;
+    font-size: 12.5px;
     font-weight: 700;
     color: #fff;
     background: linear-gradient(135deg, #2AABEE 0%, #229ED9 100%);
@@ -351,7 +354,7 @@
 
 /* ---- Подвал карточки ---- */
 .hr-foot {
-    margin: 16px 0 0;
+    margin: 13px 0 0;
     text-align: center;
     font-family: 'Inter', sans-serif;
     font-size: 12px;
