@@ -152,7 +152,7 @@ body.dark-mode .pf-sumcard {
 .pf-topgrid-fav .pf-ch { flex-wrap: wrap; padding: 22px 18px 14px; }
 .pf-topgrid-fav .pff-head-r { margin-left: 0; width: 100%; justify-content: space-between; }
 .pf-topgrid-fav .pff-info span { display: none; }
-.pf-topgrid-fav .pff-info { padding: 8px 10px; }
+.pf-topgrid-fav .pff-info { width: 40px; height: 40px; padding: 0; justify-content: center; border-radius: 50%; }
 /* «Избранное» — та же фиксированная высота, что у карточки портфеля (.pf-card 674px), чтобы
    верхний ряд слева и колонка справа визуально совпадали; список плиток скроллится ВНУТРИ,
    не растягивая карточку (тот же приём, что у .pf-paycal--cell). */
@@ -1147,7 +1147,7 @@ body.dark-mode .pff-sort-b.on { background: color-mix(in srgb, var(--pf-accent) 
    белые контролы шапки. Вид одинаковый в обеих темах, поэтому тёмная тема здесь
    пере-переопределяется обратно к «светлым» цветам внутренностей. ---- */
 .pf-card2.pf-fav, body.dark-mode .pf-card2.pf-fav {
-    background: linear-gradient(160deg, #E08663 0%, #D97757 46%, #C9683F 100%);
+    background: linear-gradient(165deg, #EBAD8B 0%, #DE8A63 42%, #C9793F 100%);
     box-shadow: 0 16px 36px rgba(217,119,87,0.30);
 }
 /* заголовок и подзаголовок — тёмным на цветном фоне */
@@ -1160,13 +1160,14 @@ body.dark-mode .pff-sort-b.on { background: color-mix(in srgb, var(--pf-accent) 
 .pf-fav .pff-info svg, body.dark-mode .pf-fav .pff-info svg { color: #1b2433; }
 .pf-fav .pff-info:hover, body.dark-mode .pf-fav .pff-info:hover { background: #fff; border-color: transparent; color: #C9683F; }
 .pf-fav .pff-info:hover svg, body.dark-mode .pf-fav .pff-info:hover svg { color: #C9683F; }
-/* фильтр Потенциал/Новизна — стеклянный сегмент с тёмным текстом, активная кнопка белая */
+/* фильтр Потенциал/Новизна — стеклянный сегмент, неактивная кнопка светлым текстом (видна
+   на терракоте), активная — белая плашка с тёмным текстом */
 .pf-fav .pff-sort, body.dark-mode .pf-fav .pff-sort {
-    background: rgba(255,255,255,0.32); border-color: rgba(27,36,51,0.14); }
-.pf-fav .pff-sort-b, body.dark-mode .pf-fav .pff-sort-b { color: rgba(27,36,51,0.72); }
-.pf-fav .pff-sort-b:hover, body.dark-mode .pf-fav .pff-sort-b:hover { color: #1b2433; }
+    background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.3); }
+.pf-fav .pff-sort-b, body.dark-mode .pf-fav .pff-sort-b { color: rgba(255,255,255,0.88); }
+.pf-fav .pff-sort-b:hover, body.dark-mode .pf-fav .pff-sort-b:hover { color: #fff; }
 .pf-fav .pff-sort-b.on, body.dark-mode .pf-fav .pff-sort-b.on {
-    background: #fff; color: #C9683F; box-shadow: 0 1px 3px rgba(90,35,15,0.35); }
+    background: #fff; color: #1b2433; box-shadow: 0 1px 3px rgba(90,35,15,0.35); }
 /* плитки — белые карточки на терракоте (как белая CTA на тёмной карточке Расчёта);
    внутренние цвета (тикер, потенциал, новость) возвращаем «светлые» и в тёмной теме */
 .pf-fav .pff-tile, body.dark-mode .pf-fav .pff-tile {
