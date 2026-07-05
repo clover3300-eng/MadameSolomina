@@ -1150,20 +1150,21 @@ body.dark-mode .pff-sort-b.on { background: color-mix(in srgb, var(--pf-accent) 
     background: linear-gradient(160deg, #E08663 0%, #D97757 46%, #C9683F 100%);
     box-shadow: 0 16px 36px rgba(217,119,87,0.30);
 }
-/* заголовок и подзаголовок — белым на цветном фоне */
-.pf-fav .pf-ch-t, body.dark-mode .pf-fav .pf-ch-t { color: #fff; }
-.pf-fav .pf-ch-s, body.dark-mode .pf-fav .pf-ch-s { color: rgba(255,255,255,0.78); }
-/* инфо-кнопка «что такое потенциал» — стеклянная, на ховере белая CTA */
+/* заголовок и подзаголовок — тёмным на цветном фоне */
+.pf-fav .pf-ch-t, body.dark-mode .pf-fav .pf-ch-t { color: #1b2433; }
+.pf-fav .pf-ch-s, body.dark-mode .pf-fav .pf-ch-s { color: rgba(27,36,51,0.68); }
+/* инфо-кнопка «что такое потенциал» — стеклянная светлая подложка с тёмным текстом,
+   на ховере белая CTA */
 .pf-fav .pff-info, body.dark-mode .pf-fav .pff-info {
-    border-color: rgba(255,255,255,0.30); background: rgba(255,255,255,0.14); color: #fff; }
-.pf-fav .pff-info svg, body.dark-mode .pf-fav .pff-info svg { color: #fff; }
+    border-color: rgba(27,36,51,0.16); background: rgba(255,255,255,0.55); color: #1b2433; }
+.pf-fav .pff-info svg, body.dark-mode .pf-fav .pff-info svg { color: #1b2433; }
 .pf-fav .pff-info:hover, body.dark-mode .pf-fav .pff-info:hover { background: #fff; border-color: transparent; color: #C9683F; }
 .pf-fav .pff-info:hover svg, body.dark-mode .pf-fav .pff-info:hover svg { color: #C9683F; }
-/* фильтр Потенциал/Новизна — стеклянный сегмент, активная кнопка белая */
+/* фильтр Потенциал/Новизна — стеклянный сегмент с тёмным текстом, активная кнопка белая */
 .pf-fav .pff-sort, body.dark-mode .pf-fav .pff-sort {
-    background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.22); }
-.pf-fav .pff-sort-b, body.dark-mode .pf-fav .pff-sort-b { color: rgba(255,255,255,0.82); }
-.pf-fav .pff-sort-b:hover, body.dark-mode .pf-fav .pff-sort-b:hover { color: #fff; }
+    background: rgba(255,255,255,0.32); border-color: rgba(27,36,51,0.14); }
+.pf-fav .pff-sort-b, body.dark-mode .pf-fav .pff-sort-b { color: rgba(27,36,51,0.72); }
+.pf-fav .pff-sort-b:hover, body.dark-mode .pf-fav .pff-sort-b:hover { color: #1b2433; }
 .pf-fav .pff-sort-b.on, body.dark-mode .pf-fav .pff-sort-b.on {
     background: #fff; color: #C9683F; box-shadow: 0 1px 3px rgba(90,35,15,0.35); }
 /* плитки — белые карточки на терракоте (как белая CTA на тёмной карточке Расчёта);
