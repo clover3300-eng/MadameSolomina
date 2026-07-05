@@ -1142,39 +1142,39 @@ body.dark-mode .pff-sort-b.on { background: color-mix(in srgb, var(--pf-accent) 
 .pf-topgrid-fav .pff-sort-b { padding: 6px 9px; }
 @media (max-width: 620px) { .pff-sort-b { padding: 6px 9px; } }
 
-/* ---- «Избранное» — цветная карточка в тон кнопки «Создать портфель» (#D97757):
-   терракотовая заливка самого блока, белые плитки-«визитки» поверх, полупрозрачно-
-   белые контролы шапки. Вид одинаковый в обеих темах, поэтому тёмная тема здесь
+/* ---- «Избранное» — тёплый «виджет» в тоне страницы: лёгкая кремовая поверхность
+   вместо плотной терракотовой заливки (та смотрелась баннером среди белых карточек),
+   белые плитки-«визитки», а терракота #D97757 — только акцентами (иконки, активный
+   сегмент, метка источника). Вид одинаковый в обеих темах, поэтому тёмная тема здесь
    пере-переопределяется обратно к «светлым» цветам внутренностей. ---- */
 .pf-card2.pf-fav, body.dark-mode .pf-card2.pf-fav {
-    background: linear-gradient(165deg, #EBAD8B 0%, #DE8A63 42%, #C9793F 100%);
-    box-shadow: 0 16px 36px rgba(217,119,87,0.30);
+    background: linear-gradient(172deg, #FFFDFB 0%, #FCF2EB 55%, #F7E7DA 100%);
+    box-shadow: 0 16px 36px rgba(217,119,87,0.16);
 }
 /* заголовок и подзаголовок — тёмным на цветном фоне */
 .pf-fav .pf-ch-t, body.dark-mode .pf-fav .pf-ch-t { color: #1b2433; }
-.pf-fav .pf-ch-s, body.dark-mode .pf-fav .pf-ch-s { color: rgba(27,36,51,0.68); }
+.pf-fav .pf-ch-s, body.dark-mode .pf-fav .pf-ch-s { color: rgba(27,36,51,0.55); }
 /* инфо-кнопка «что такое потенциал» и фильтр Потенциал/Новизна — та же цветовая гамма,
    что у переключателя «Карта/График» в «Рынок» (.mh-seg/.mh-seg-btn): светлый «колодец»
    #f4f7fb, приглушённый серо-синий текст, активный сегмент — тёмная плашка #141b26 */
 .pf-fav .pff-info, body.dark-mode .pf-fav .pff-info {
-    border: none; background: #f4f7fb; color: #7a8698; }
+    border: 1px solid rgba(24,38,60,0.07); background: #fff; color: #7a8698; }
 .pf-fav .pff-info svg, body.dark-mode .pf-fav .pff-info svg { color: #7a8698; }
 .pf-fav .pff-info:hover, body.dark-mode .pf-fav .pff-info:hover { background: #141b26; border-color: transparent; color: #fff; }
 .pf-fav .pff-info:hover svg, body.dark-mode .pf-fav .pff-info:hover svg { color: #fff; }
 .pf-fav .pff-sort, body.dark-mode .pf-fav .pff-sort {
-    background: #f4f7fb; border: none; }
+    background: #fff; border: 1px solid rgba(24,38,60,0.07); }
 .pf-fav .pff-sort-b, body.dark-mode .pf-fav .pff-sort-b { color: #7a8698; }
 .pf-fav .pff-sort-b:hover, body.dark-mode .pf-fav .pff-sort-b:hover { color: #111927; }
 .pf-fav .pff-sort-b.on, body.dark-mode .pf-fav .pff-sort-b.on {
     background: #141b26; color: #fff; box-shadow: 0 5px 14px rgba(16,24,38,0.2); }
-/* плитки — кремовые карточки-«визитки» на терракоте (лёгкий градиент для глубины,
-   как белая CTA на тёмной карточке Расчёта); внутренние цвета (тикер, потенциал,
-   новость) возвращаем «светлые» и в тёмной теме */
+/* плитки — белые «визитки» с тонкой терракотовой рамкой на кремовой поверхности;
+   внутренние цвета (тикер, потенциал, новость) возвращаем «светлые» и в тёмной теме */
 .pf-fav .pff-tile, body.dark-mode .pf-fav .pff-tile {
-    border-color: rgba(255,255,255,0.55); background: linear-gradient(165deg, #fff 0%, #fbf3ee 100%);
-    box-shadow: 0 8px 20px -12px rgba(122,49,26,0.45); }
+    border-color: rgba(217,119,87,0.22); background: #fff;
+    box-shadow: 0 8px 18px -12px rgba(122,49,26,0.16); }
 .pf-fav .pff-tile:hover, body.dark-mode .pf-fav .pff-tile:hover {
-    border-color: #fff; background: #fff; box-shadow: 0 14px 26px -14px rgba(90,35,15,0.55); }
+    border-color: rgba(217,119,87,0.5); background: #fff; box-shadow: 0 14px 26px -14px rgba(122,49,26,0.3); }
 body.dark-mode .pf-fav .pff-tk { color: #0f172a; }
 body.dark-mode .pf-fav .pff-pot.pos { color: #16a34a; }
 body.dark-mode .pf-fav .pff-pot.neg { color: #dc2626; }
@@ -1182,21 +1182,20 @@ body.dark-mode .pf-fav .pff-news { border-color: rgba(24,38,60,0.06); }
 /* заголовок новости — всегда тёмный (не терракотовый), в т.ч. при наведении/разворачивании */
 .pf-fav .pff-news.link:hover .pff-news-t,
 .pf-fav .pff-news-t, body.dark-mode .pf-fav .pff-news-t { color: #2b3a4d; }
-/* граница разворота — тот же белый цвет, что у ховер-рамки плитки (было: терракотовый
-   тон border-color из общего правила — на терракотовой карточке это давало заметный
-   «уступ» между рамкой плитки и рамкой развёрнутого блока новости) */
+/* граница разворота — ТОТ ЖЕ цвет, что у ховер-рамки плитки, иначе на стыке рамки
+   плитки и рамки развёрнутого блока новости виден «уступ» */
 .pf-fav .pff-tile:hover .pff-news.link .pff-news-inner,
 body.dark-mode .pf-fav .pff-tile:hover .pff-news.link .pff-news-inner {
-    background: #fff; border-color: #fff;
-    box-shadow: 0 16px 26px -18px rgba(90,35,15,0.6); }
+    background: #fff; border-color: rgba(217,119,87,0.5);
+    box-shadow: 0 16px 26px -18px rgba(122,49,26,0.4); }
 /* значок-стрелка ссылки — терракотовый и полностью непрозрачный (на белой плитке
    var(--pf-accent) уже даёт нужный цвет, убираем лишь приглушённость 0.75 из общего правила) */
 .pf-fav .pff-news-go { opacity: 1; }
-/* пустое состояние и скроллбар — под цветной фон */
-.pf-fav .pff-empty-art, body.dark-mode .pf-fav .pff-empty-art { background: rgba(255,255,255,0.18); color: #fff; }
-.pf-fav .pff-empty-t, body.dark-mode .pf-fav .pff-empty-t { color: #fff; }
-.pf-fav .pff-empty-s, body.dark-mode .pf-fav .pff-empty-s { color: rgba(255,255,255,0.85); }
-.pf-fav .pff-body { scrollbar-color: rgba(255,255,255,0.55) transparent; }
+/* пустое состояние и скроллбар — тёмный текст на кремовом фоне, терракотовые акценты */
+.pf-fav .pff-empty-art, body.dark-mode .pf-fav .pff-empty-art { background: rgba(217,119,87,0.16); color: #D97757; }
+.pf-fav .pff-empty-t, body.dark-mode .pf-fav .pff-empty-t { color: #1b2433; }
+.pf-fav .pff-empty-s, body.dark-mode .pf-fav .pff-empty-s { color: rgba(27,36,51,0.55); }
+.pf-fav .pff-body { scrollbar-color: rgba(217,119,87,0.45) transparent; }
 
 /* ============================================================
    КАЛЕНДАРЬ ВЫПЛАТ — ближайшие купоны по облигациям ВСЕХ портфелей сразу
