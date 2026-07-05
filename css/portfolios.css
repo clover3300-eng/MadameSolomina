@@ -1091,12 +1091,12 @@ body.dark-mode .pff-tile:hover .pff-news.link .pff-news-inner { background: colo
    висела бы отдельной чертой над развёрнутым боксом (то самое задвоение) */
 .pff-tile:hover .pff-news.link { border-top-color: transparent; }
 .pff-news.link:hover .pff-news-t { color: var(--pf-accent); }
-.pff-news-t { font-size: 12.5px; font-weight: 600; color: #2b3a4d; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; transition: color 0.12s; }
+.pff-news-t { font-size: 13.5px; font-weight: 600; color: #2b3a4d; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; transition: color 0.12s; }
 body.dark-mode .pff-news-t { color: #d2ddea; }
-.pff-news-m { display: flex; align-items: center; gap: 5px; font-size: 10.5px; color: #94a3b8; margin-top: 1px; }
+.pff-news-m { display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: #94a3b8; margin-top: 1px; }
 .pff-news-m i { font-style: normal; color: var(--pf-accent); font-weight: 700; }
-.pff-news-go { width: 11px; height: 11px; margin-left: auto; color: var(--pf-accent); opacity: 0.75; flex-shrink: 0; }
-.pff-news-load, .pff-news-none { font-size: 12.5px; color: #b6c0cc; font-style: italic; }
+.pff-news-go { width: 12px; height: 12px; margin-left: auto; color: var(--pf-accent); opacity: 0.75; flex-shrink: 0; }
+.pff-news-load, .pff-news-none { font-size: 13.5px; color: #b6c0cc; font-style: italic; }
 .pff-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 34px 24px; }
 .pff-empty-art { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; background: linear-gradient(135deg, rgba(217,119,87,0.22), rgba(217,119,87,0.10)); color: #D97757; }
 .pff-empty-art svg { width: 26px; height: 26px; }
@@ -1153,21 +1153,20 @@ body.dark-mode .pff-sort-b.on { background: color-mix(in srgb, var(--pf-accent) 
 /* заголовок и подзаголовок — тёмным на цветном фоне */
 .pf-fav .pf-ch-t, body.dark-mode .pf-fav .pf-ch-t { color: #1b2433; }
 .pf-fav .pf-ch-s, body.dark-mode .pf-fav .pf-ch-s { color: rgba(27,36,51,0.68); }
-/* инфо-кнопка «что такое потенциал» — стеклянная светлая подложка с тёмным текстом,
-   на ховере белая CTA */
+/* инфо-кнопка «что такое потенциал» и фильтр Потенциал/Новизна — та же цветовая гамма,
+   что у переключателя «Карта/График» в «Рынок» (.mh-seg/.mh-seg-btn): светлый «колодец»
+   #f4f7fb, приглушённый серо-синий текст, активный сегмент — тёмная плашка #141b26 */
 .pf-fav .pff-info, body.dark-mode .pf-fav .pff-info {
-    border-color: rgba(27,36,51,0.16); background: rgba(255,255,255,0.55); color: #1b2433; }
-.pf-fav .pff-info svg, body.dark-mode .pf-fav .pff-info svg { color: #1b2433; }
-.pf-fav .pff-info:hover, body.dark-mode .pf-fav .pff-info:hover { background: #fff; border-color: transparent; color: #C9683F; }
-.pf-fav .pff-info:hover svg, body.dark-mode .pf-fav .pff-info:hover svg { color: #C9683F; }
-/* фильтр Потенциал/Новизна — стеклянный сегмент, неактивная кнопка светлым текстом (видна
-   на терракоте), активная — белая плашка с тёмным текстом */
+    border: none; background: #f4f7fb; color: #7a8698; }
+.pf-fav .pff-info svg, body.dark-mode .pf-fav .pff-info svg { color: #7a8698; }
+.pf-fav .pff-info:hover, body.dark-mode .pf-fav .pff-info:hover { background: #141b26; border-color: transparent; color: #fff; }
+.pf-fav .pff-info:hover svg, body.dark-mode .pf-fav .pff-info:hover svg { color: #fff; }
 .pf-fav .pff-sort, body.dark-mode .pf-fav .pff-sort {
-    background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.3); }
-.pf-fav .pff-sort-b, body.dark-mode .pf-fav .pff-sort-b { color: rgba(255,255,255,0.88); }
-.pf-fav .pff-sort-b:hover, body.dark-mode .pf-fav .pff-sort-b:hover { color: #fff; }
+    background: #f4f7fb; border: none; }
+.pf-fav .pff-sort-b, body.dark-mode .pf-fav .pff-sort-b { color: #7a8698; }
+.pf-fav .pff-sort-b:hover, body.dark-mode .pf-fav .pff-sort-b:hover { color: #111927; }
 .pf-fav .pff-sort-b.on, body.dark-mode .pf-fav .pff-sort-b.on {
-    background: #fff; color: #1b2433; box-shadow: 0 1px 3px rgba(90,35,15,0.35); }
+    background: #141b26; color: #fff; box-shadow: 0 5px 14px rgba(16,24,38,0.2); }
 /* плитки — кремовые карточки-«визитки» на терракоте (лёгкий градиент для глубины,
    как белая CTA на тёмной карточке Расчёта); внутренние цвета (тикер, потенциал,
    новость) возвращаем «светлые» и в тёмной теме */
