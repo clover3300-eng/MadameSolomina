@@ -10,6 +10,9 @@
 /* ---- Один экран: панель заполняет контент-область без скролла ---- */
 @media (min-width: 1024px) {
     body.tab-home #panel-home { height: 100%; }
+    /* поднимаем композицию выше визуального центра — padding-bottom сдвигает
+       центрируемый .hs-card вверх внутри #panel-home.active (flex align-items:center) */
+    body.tab-home #panel-home.active { padding-bottom: 64px; box-sizing: border-box; }
 }
 
 /* ---- Сплит-карточка ---- */

@@ -36,11 +36,11 @@
 
 @media (min-width: 1024px) {
   /* верхний отступ от шапки — как на вкладке «Ребаланс» */
-  #calcPane { max-width: 1180px !important; padding: 28px 36px 40px !important; }
+  #calcPane { max-width: 1180px !important; padding: 44px 36px 40px !important; }
   .cx-rows.r5 .cx-split { grid-template-columns: 1fr 1fr; gap: 22px; }
 }
 @media (max-width: 1023px) {
-  #calcPane { padding-top: 18px !important; }
+  #calcPane { padding-top: 32px !important; }
 }
 
 /* ── Карточка pk-card ─────────────────────────────────────── */

@@ -114,14 +114,14 @@
     margin-top: 18px;
     display: flex; align-items: center; justify-content: center; gap: 10px;
     width: 100%;
-    background: linear-gradient(135deg, #3b82f6, #6366f1); border: none; border-radius: 16px;
+    background: linear-gradient(180deg, #1d2734, #141b26); border: none; border-radius: 16px;
     padding: 16px 18px;
     font-family: var(--mi-sans); font-weight: 700; font-size: 15px;
     color: #ffffff; cursor: pointer;
-    box-shadow: 0 14px 30px rgba(59,130,246,0.28);
+    box-shadow: 0 18px 40px rgba(16,24,38,0.30);
     transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
-#panel-monthly .mi5-createpf-btn:hover { transform: translateY(-1px); box-shadow: 0 18px 36px rgba(59,130,246,0.36); }
+#panel-monthly .mi5-createpf-btn:hover { transform: translateY(-1px); box-shadow: 0 22px 48px rgba(16,24,38,0.40); }
 #panel-monthly .mi5-createpf-btn svg { flex-shrink: 0; }
 
 /* Левая карточка (01) — мягкая, почти без рамки */
