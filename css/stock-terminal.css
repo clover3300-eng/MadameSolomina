@@ -368,15 +368,21 @@ body.dark-mode .stk-table > thead th.stk-sorted { color: #f4f8fd; }
     background: var(--claude-accent, #D97757);
 }
 /* Лейблы столбцов — без сокращений (см. COLS), поэтому переносятся в 2 строки вместо
-   растягивания колонки в ширину одной строкой; .stk-first (Тикер/Название) не трогаем. */
+   растягивания колонки в ширину одной строкой; .stk-first (Тикер/Название) не трогаем.
+   max-width — с запасом под самое длинное ОДНО слово («Привилегированные», 17 букв) —
+   иначе break-word переносит не по границе слова, а буквально последнюю букву. */
 .stk-table > thead th.stk-th {
-    white-space: normal; overflow-wrap: break-word; max-width: 118px; line-height: 1.3;
+    white-space: normal; overflow-wrap: break-word; max-width: 168px; line-height: 1.3;
 }
 
-/* Первая колонка (Тикер/Название) — sticky слева, левое выравнивание */
+/* Первая колонка (Тикер/Название) — sticky слева, левое выравнивание.
+   transform/backface-visibility — форсируем отдельный composite-слой: без этого при
+   быстром горизонтальном скролле браузер на миг не успевал перекрасить фон закреплённой
+   ячейки поверх уезжающего контента — грани соседних столбцов «просвечивали» сквозь неё. */
 .stk-table > thead th.stk-first,
 .stk-table > tbody > tr > td.stk-first {
     position: sticky; left: 0; text-align: left;
+    transform: translateZ(0); backface-visibility: hidden;
 }
 .stk-table > thead th.stk-first { z-index: 4; } /* угол шапки выше всех */
 .stk-table > tbody > tr > td.stk-first {
@@ -386,9 +392,15 @@ body.dark-mode .stk-table > thead th.stk-sorted { color: #f4f8fd; }
    скролле. left приходит из CSS-переменных (ширина Тикера зависит от данных, в CSS
    её не зафиксировать) — их считает syncPinOffsets() в JS после каждой отрисовки. */
 .stk-table > thead th.stk-pin-1,
-.stk-table > tbody > tr > td.stk-pin-1 { position: sticky; left: var(--stk-pin1-left, 0px); }
+.stk-table > tbody > tr > td.stk-pin-1 {
+    position: sticky; left: var(--stk-pin1-left, 0px);
+    transform: translateZ(0); backface-visibility: hidden;
+}
 .stk-table > thead th.stk-pin-2,
-.stk-table > tbody > tr > td.stk-pin-2 { position: sticky; left: var(--stk-pin2-left, 0px); }
+.stk-table > tbody > tr > td.stk-pin-2 {
+    position: sticky; left: var(--stk-pin2-left, 0px);
+    transform: translateZ(0); backface-visibility: hidden;
+}
 .stk-table > thead th.stk-pin-1,
 .stk-table > thead th.stk-pin-2 { z-index: 4; }
 .stk-table > tbody > tr > td.stk-pin-1,
