@@ -1183,10 +1183,16 @@ body.dark-mode .pf-fav .pff-news { border-color: rgba(24,38,60,0.06); }
 /* заголовок новости — всегда тёмный (не терракотовый), в т.ч. при наведении/разворачивании */
 .pf-fav .pff-news.link:hover .pff-news-t,
 .pf-fav .pff-news-t, body.dark-mode .pf-fav .pff-news-t { color: #2b3a4d; }
+/* граница разворота — тот же белый цвет, что у ховер-рамки плитки (было: терракотовый
+   тон border-color из общего правила — на терракотовой карточке это давало заметный
+   «уступ» между рамкой плитки и рамкой развёрнутого блока новости) */
 .pf-fav .pff-tile:hover .pff-news.link .pff-news-inner,
 body.dark-mode .pf-fav .pff-tile:hover .pff-news.link .pff-news-inner {
-    background: #fff; border-color: color-mix(in srgb, var(--pf-accent) 35%, rgba(24,38,60,0.1));
+    background: #fff; border-color: #fff;
     box-shadow: 0 16px 26px -18px rgba(90,35,15,0.6); }
+/* значок-стрелка ссылки — терракотовый и полностью непрозрачный (на белой плитке
+   var(--pf-accent) уже даёт нужный цвет, убираем лишь приглушённость 0.75 из общего правила) */
+.pf-fav .pff-news-go { opacity: 1; }
 /* пустое состояние и скроллбар — под цветной фон */
 .pf-fav .pff-empty-art, body.dark-mode .pf-fav .pff-empty-art { background: rgba(255,255,255,0.18); color: #fff; }
 .pf-fav .pff-empty-t, body.dark-mode .pf-fav .pff-empty-t { color: #fff; }
