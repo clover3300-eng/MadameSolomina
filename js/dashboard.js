@@ -5,7 +5,7 @@
 //  • пересчёт прямо здесь — кнопка раскрывает выбор стратегии и комиссии
 //  • вертикальные рекомендации для ребаланса: ОФЗ и акции по эшелонам
 //  • клик по тикеру → выезжающая справа панель о компании / облигации
-//  • вертикаль рыночных ставок
+//  • полоса ставок рынка (ключевая, вклады, инфляция, ОФЗ 10 лет) — как на «Портфелях»
 (function() {
     'use strict';
 
@@ -852,6 +852,30 @@
     };
 
     // ====================================================================
+    //  СТАВКИ РЫНКА — горизонтальная полоса плиток (как на вкладке «Портфели»)
+    // ====================================================================
+    function rateTiles() {
+        var rd = window.ratesData || (typeof ratesData !== 'undefined' ? ratesData : {});
+        function rv(id, fb) { var e = dq(id); var t = e ? (e.textContent || '').trim() : '';
+            if (t && /\d/.test(t) && t.indexOf('---') < 0) return t; if (fb != null && /\d/.test(String(fb))) return fb; return t || '—'; }
+        return [
+            { l: 'Ключевая ставка', v: rv('val-key-rate', rd.keyRate), ac: '#119d5c', ic: '<line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>' },
+            { l: 'Ставка по вкладам', v: rv('val-deposit-rate', rd.depositRate), ac: '#5B7C99', ic: '<polygon points="12 2 21 7 3 7"/><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="12" y1="18" x2="12" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/>' },
+            { l: 'Инфляция, год', v: rv('val-inflation', rd.inflation), ac: '#D97757', ic: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>' },
+            { l: 'Доходность ОФЗ 10 лет', v: rv('val-ofz10', rd.ofz10), ac: '#3d6fd1', ic: '<path d="M3 3v18h18"/><polyline points="7 14 11 10 14 13 20 7"/>' }
+        ];
+    }
+    function rateTileHtml(t) {
+        return '<div class="drt-tile" style="--ac:' + t.ac + '"><div class="drt-ic"><svg viewBox="0 0 24 24">' + t.ic + '</svg></div>' +
+            '<div class="drt-body"><div class="drt-l">' + esc(t.l) + '</div><div class="drt-v">' + esc(t.v) + '</div></div></div>';
+    }
+    function renderRatesBand() {
+        var host = dq('dash2Rates');
+        if (!host) return;
+        host.innerHTML = '<div class="drt-grid">' + rateTiles().map(rateTileHtml).join('') + '</div>';
+    }
+
+    // ====================================================================
     //  РЕКОМЕНДАЦИИ ДЛЯ РЕБАЛАНСА (вертикально: ОФЗ + акции, с сортировкой)
     // ====================================================================
     var rebalSort = { bond: 'yield', stock: 'potential' };
@@ -1086,6 +1110,7 @@
         renderPortfolio();
         renderFavorites();
         renderHoldings();
+        renderRatesBand();
         renderRebal();
         ensureClock();
         if (typeof window.stkEnsureLoaded === 'function') window.stkEnsureLoaded();  // подтянуть таблицу акций (для ОДХС в избранном)
