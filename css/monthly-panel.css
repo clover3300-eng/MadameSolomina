@@ -13,10 +13,10 @@
 #panel-monthly { width: 100%; max-width: none !important; }
 #panel-monthly.active { display: flex; flex-direction: column; gap: 16px; }
 @media (min-width: 1024px) {
-    #panel-monthly { max-width: none !important; padding: 20px 30px 84px !important; margin: 0 !important; }
+    #panel-monthly { max-width: none !important; padding: 28px 30px 84px !important; margin: 0 !important; }
 }
 @media (min-width: 1440px) {
-    #panel-monthly { padding: 24px 40px 84px !important; }
+    #panel-monthly { padding: 32px 40px 84px !important; }
 }
 #panel-monthly .mkd-head { margin-bottom: 0; }
 
