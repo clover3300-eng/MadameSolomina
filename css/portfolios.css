@@ -1257,6 +1257,91 @@ body.dark-mode .pfpc-state-t { color: #f4f8fd; }
 }
 
 /* ============================================================
+   ИСТОРИЯ СДЕЛОК — полноширинный журнал ПОД всей сеткой (всегда снизу).
+   Огранка/шапка — как у «Календаря выплат» (.pf-paycal); строки-«таблица»
+   с выравниванием заголовок↔значение (эталон — таблица ОФЗ). Акцент — сине-
+   стальной #5B7C99, чтобы отличаться от терракоты «Избранного» и синего календаря.
+   ============================================================ */
+.pf-trades { --pf-accent: #5B7C99; margin-top: 16px; }
+/* правая группа шапки: фильтр «Портфели» + «Расход всего» + шеврон «Все сделки» */
+.pft-head-r { display: flex; align-items: center; gap: 12px; margin-left: auto; align-self: center; flex-wrap: wrap; justify-content: flex-end; }
+.pft-sum { display: flex; align-items: center; gap: 7px; background: rgba(24,38,60,0.05); border-radius: 999px; padding: 6px 14px; white-space: nowrap; }
+body.dark-mode .pft-sum { background: rgba(255,255,255,0.06); }
+.pft-sum-l { font-size: 10px; font-weight: 700; letter-spacing: 0.02em; color: #94a3b8; }
+.pft-sum-v { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 800; color: #1b2433; }
+body.dark-mode .pft-sum-v { color: #f4f8fd; }
+/* общий шеврон блока (свернуть/показать все сделки) */
+.pft-toggle { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; border: 1px solid rgba(24,38,60,0.1); background: #fff; border-radius: 10px;
+    padding: 8px 12px; font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 700; color: #46566e; white-space: nowrap; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+.pft-toggle:hover, .pft-toggle.on { background: color-mix(in srgb, var(--pf-accent) 11%, #fff); border-color: color-mix(in srgb, var(--pf-accent) 33%, transparent); color: var(--pf-accent); }
+body.dark-mode .pft-toggle { border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #cdd8e6; }
+body.dark-mode .pft-toggle:hover, body.dark-mode .pft-toggle.on { background: color-mix(in srgb, var(--pf-accent) 24%, rgba(255,255,255,0.05)); color: #fff; }
+.pft-toggle-ch { width: 14px; height: 14px; transition: transform 0.18s; }
+.pft-toggle-ch.up { transform: rotate(180deg); }
+.pft-body { padding: 4px 22px 20px; }
+/* сетка: заголовки колонок и значения делят одну grid-раскладку (col «Портфель» — только .has-pf) */
+.pft-hrow, .pft-row { display: grid; align-items: center; gap: 12px;
+    grid-template-columns: 104px 82px minmax(120px,1.4fr) 92px 84px 62px 104px 96px 108px; }
+.pf-trades.has-pf .pft-hrow, .pf-trades.has-pf .pft-row {
+    grid-template-columns: 104px 82px minmax(120px,1.4fr) minmax(94px,0.9fr) 92px 84px 62px 104px 96px 108px; }
+.pft-hrow { padding: 2px 13px 9px; margin-bottom: 8px; border-bottom: 1px solid rgba(24,38,60,0.08); }
+body.dark-mode .pft-hrow { border-color: rgba(255,255,255,0.08); }
+.pft-h { font-size: 9.5px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pft-h.pft-r { text-align: right; }
+.pft-list { display: flex; flex-direction: column; gap: 7px; }
+.pft-row { padding: 10px 13px; border-radius: 12px; background: rgba(24,38,60,0.022); border: 1px solid rgba(24,38,60,0.05); transition: background 0.15s, border-color 0.15s; }
+.pft-row:hover { background: color-mix(in srgb, var(--pf-accent) 5%, #fff); border-color: color-mix(in srgb, var(--pf-accent) 24%, rgba(24,38,60,0.05)); }
+body.dark-mode .pft-row { background: rgba(255,255,255,0.025); border-color: rgba(255,255,255,0.05); }
+body.dark-mode .pft-row:hover { background: color-mix(in srgb, var(--pf-accent) 13%, #1c2735); border-color: color-mix(in srgb, var(--pf-accent) 30%, rgba(255,255,255,0.06)); }
+.pft-date { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.pft-date b { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 700; color: #1b2433; }
+body.dark-mode .pft-date b { color: #f4f8fd; }
+.pft-date span { font-size: 9.5px; font-weight: 700; color: var(--pf-accent); white-space: nowrap; }
+.pft-side { display: inline-flex; align-items: center; font-size: 10.5px; font-weight: 800; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+.pft-side.buy { color: #16a34a; background: rgba(22,163,74,0.1); }
+.pft-side.sell { color: #dc2626; background: rgba(220,38,38,0.1); }
+body.dark-mode .pft-side.buy { color: #34d399; background: rgba(52,211,153,0.13); }
+body.dark-mode .pft-side.sell { color: #f87171; background: rgba(248,113,113,0.13); }
+.pft-id { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.pft-tk { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.dark-mode .pft-tk { color: #f4f8fd; }
+.pft-nm { font-size: 10.5px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pft-pf { display: inline-flex; align-items: center; gap: 6px; min-width: 0; font-size: 11px; font-weight: 700; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.dark-mode .pft-pf { color: #9fb0c4; }
+.pft-pf i { width: 8px; height: 8px; border-radius: 99px; background: var(--c); flex-shrink: 0; }
+.pft-c { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 700; color: #2b3a4d; text-align: right; white-space: nowrap; }
+body.dark-mode .pft-c { color: #d2ddea; }
+.pft-c.pft-type { text-align: left; }
+.pft-c.pft-pos { color: #46566e; }
+body.dark-mode .pft-c.pft-pos { color: #aeb9c8; }
+.pft-c.pft-total { font-weight: 800; color: #1b2433; }
+body.dark-mode .pft-c.pft-total { color: #fff; }
+.pft-dash { color: #cbd5e1; }
+body.dark-mode .pft-dash { color: #56657a; }
+/* заголовки годов — сворачиваемая полоса перед сделками года */
+.pft-yrgrp + .pft-yrgrp { margin-top: 4px; }
+.pft-yr { display: flex; align-items: center; gap: 9px; width: 100%; text-align: left; cursor: pointer;
+    border: none; background: rgba(24,38,60,0.04); border-radius: 10px; padding: 8px 13px; margin: 6px 0 8px; transition: background 0.15s; }
+.pft-yr:hover { background: rgba(24,38,60,0.07); }
+body.dark-mode .pft-yr { background: rgba(255,255,255,0.05); }
+body.dark-mode .pft-yr:hover { background: rgba(255,255,255,0.09); }
+.pft-yr-ch { width: 14px; height: 14px; color: var(--pf-accent); flex-shrink: 0; transform: rotate(-90deg); transition: transform 0.18s; }
+.pft-yr.open .pft-yr-ch { transform: none; }
+.pft-yr-y { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 800; color: #1b2433; }
+body.dark-mode .pft-yr-y { color: #f4f8fd; }
+.pft-yr-n { font-size: 11px; font-weight: 700; color: #94a3b8; }
+.pft-yr-sum { margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 800; color: #46566e; }
+body.dark-mode .pft-yr-sum { color: #aeb9c8; }
+.pft-morehint { margin-top: 11px; text-align: center; font-size: 11.5px; font-weight: 600; color: #94a3b8; }
+.pft-empty { padding: 26px; text-align: center; font-size: 12.5px; color: #94a3b8; }
+/* узкие экраны: «таблица» шире вьюпорта → горизонтальный скролл внутри блока */
+@media (max-width: 1120px) {
+    .pft-body { overflow-x: auto; scrollbar-width: thin; }
+    .pft-hrow, .pft-row, .pft-yr,
+    .pf-trades.has-pf .pft-hrow, .pf-trades.has-pf .pft-row { min-width: 880px; }
+}
+
+/* ============================================================
    РАЗВОРОТ ПОРТФЕЛЯ — модалка поверх контента (в <body>)
    ============================================================ */
 body.pf-modal-open { overflow: hidden; }

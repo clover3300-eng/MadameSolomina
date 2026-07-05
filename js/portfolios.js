@@ -966,7 +966,10 @@
             body = '<div class="pf-topgrid">' +
                     '<div class="pf-topgrid-left">' + left + '</div>' +
                     '<div class="pf-topgrid-fav">' + favStr + (store.items.length >= 2 ? summaryCardHtml() : '') + '</div>' +
-                '</div>';
+                '</div>' +
+                // «История сделок» — ВСЕГДА самая нижняя секция, полной шириной под всей
+                // сеткой (ниже ставок рынка); скрывается тумблером в меню «Видимость».
+                tradesHtml();
             host.innerHTML = body;
             renderTopBarActions();
             renderTopBarMarket();
@@ -1157,7 +1160,8 @@
     // «Импорт» из неё убран — импортировать состав можно из настроек портфеля (⚙).
     function topBarActionsHtml() {
         return '<button class="d3-quick" onclick="pfAddPortfolio()">' + PLUS_SVG + '<span>Добавить портфель</span></button>' +
-            (store.items.length > 1 ? eyeWrapHtml() : '') +
+            // «Видимость» показываем при 2+ портфелях ИЛИ когда есть сделки (тумблер блока «История сделок»)
+            (store.items.length > 1 || hasAnyTrades() ? eyeWrapHtml() : '') +
             viewWrapHtml() +
             backupWrapHtml();
     }
@@ -1174,28 +1178,36 @@
     // можно было переключить несколько портфелей подряд (см. pfToggleHidden).
     function eyeWrapHtml() {
         var vis = visibleItems().length, total = store.items.length;
-        // строка «Показать все» — видна, когда есть хоть один скрытый портфель
-        var showAll = vis < total
+        var multi = total > 1;
+        // ---- группа «Портфели» (только при 2+ портфелях) ----
+        var showAll = (multi && vis < total)
             ? '<button class="pf-impitem pf-eyeitem pf-eye-all" onclick="pfEyeShowAll(event)">' +
                 '<span class="pf-eyedot pfpc-alldot"></span>' +
                 '<span class="pf-impbody"><b>Показать все</b><i>вернуть скрытые карточки</i></span>' +
                 '<span class="pf-eyestate">' + EYE_SVG + '</span></button>'
             : '';
-        var rows = showAll + store.items.map(function (p) {
+        var pfRows = multi ? (showAll + store.items.map(function (p) {
             var c = calcPf(p), off = !!p.hidden;
             return '<button class="pf-impitem pf-eyeitem' + (off ? ' off-eye' : '') + '" onclick="pfToggleHidden(\'' + p.id + '\',event)">' +
                 '<span class="pf-eyedot" style="background:' + colorVal(p.color) + '"></span>' +
                 '<span class="pf-impbody"><b>' + esc(p.name) + '</b><i>' + fmtRub(c.value) + (off ? ' · скрыт' : '') + '</i></span>' +
                 '<span class="pf-eyestate">' + (off ? EYEOFF_SVG : EYE_SVG) + '</span>' +
             '</button>';
-        }).join('');
+        }).join('')) : '';
+        var pfGroup = multi ? '<div class="pf-impgrp">Какие портфели показывать</div>' + pfRows +
+            '<div class="pf-eyenote">Скрытые карточки не показываются в сетке и в календаре выплат, но их капитал по-прежнему учитывается в общей сводке.</div>' : '';
+        // ---- группа «Секции» — тумблер видимости блока «История сделок» ----
+        var secGroup = hasAnyTrades()
+            ? '<div class="pf-impgrp">Секции страницы</div>' +
+                '<button class="pf-impitem pf-eyeitem' + (tradesHidden ? ' off-eye' : '') + '" onclick="pfToggleTradesHidden(event)">' +
+                    '<span class="pf-eyedot" style="background:#5B7C99"></span>' +
+                    '<span class="pf-impbody"><b>История сделок</b><i>' + (tradesHidden ? 'скрыта' : 'журнал покупок и продаж') + '</i></span>' +
+                    '<span class="pf-eyestate">' + (tradesHidden ? EYEOFF_SVG : EYE_SVG) + '</span></button>'
+            : '';
         return '<div class="pf-impwrap">' +
             '<button class="d3-quick ghost pf-impbtn" onclick="pfToggleImp(event,\'eye\')">' + EYE_SVG + '<span>Видимость</span>' +
-                (vis < total ? '<i class="pf-eyecnt">' + vis + '/' + total + '</i>' : '') + CHEV_SVG + '</button>' +
-            '<div class="pf-impmenu" id="pfImp-eye">' +
-                '<div class="pf-impgrp">Какие портфели показывать</div>' + rows +
-                '<div class="pf-eyenote">Скрытые карточки не показываются в сетке и в календаре выплат, но их капитал по-прежнему учитывается в общей сводке.</div>' +
-            '</div></div>';
+                (multi && vis < total ? '<i class="pf-eyecnt">' + vis + '/' + total + '</i>' : '') + CHEV_SVG + '</button>' +
+            '<div class="pf-impmenu" id="pfImp-eye">' + pfGroup + secGroup + '</div></div>';
     }
 
     // ---- сводка по всем портфелям (только при 2+ портфелях) — компактная карточка ПОД
@@ -2336,6 +2348,197 @@
         if (!el) return;
         var more = el.scrollHeight - el.clientHeight - el.scrollTop > 4;
         el.classList.toggle('has-more', more);
+    };
+
+    // ====================================================================
+    //  ИСТОРИЯ СДЕЛОК — полноширинный журнал ПОД всей сеткой (всегда самая
+    //  нижняя секция). Каждая сделка = один лот покупки (модель хранит только
+    //  покупки; поля l.side/l.fee зарезервированы под будущий ввод продаж и
+    //  комиссии — сейчас side='buy', fee=0). Стиль повторяет «Календарь выплат».
+    // ====================================================================
+    var TRADES_HIDDEN_KEY = 'pf_trades_hidden_v1';
+    var tradesHidden = false;
+    try { tradesHidden = localStorage.getItem(TRADES_HIDDEN_KEY) === '1'; } catch (e) {}
+    var tradesFull = false;     // общий шеврон блока: свёрнуто → 2 последние сделки
+    var tradeYearOpen = {};     // year → true/false, переопределяет дефолт (последний год открыт)
+    var tradeSel = null;        // фильтр портфелей: null = все, иначе { pid:true }
+    var TR_CHEV = '<svg class="__CH__" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+
+    function tradePfSelected(p) { return !tradeSel || !!tradeSel[p.id]; }
+    // портфели-кандидаты для фильтра: не скрытые и содержащие хоть один лот с кол-вом > 0
+    function tradePfCandidates() {
+        return store.items.filter(function (p) {
+            return !p.hidden && (p.holdings || []).some(function (h) {
+                return h.ticker && ensureLots(h).some(function (l) { return (+l.qty || 0) > 0; });
+            });
+        });
+    }
+    // all=true → без фильтра портфелей (для проверки «есть ли вообще сделки»)
+    function collectTrades(all) {
+        var list = [];
+        store.items.forEach(function (p) {
+            if (p.hidden) return;
+            if (!all && !tradePfSelected(p)) return;
+            (p.holdings || []).forEach(function (h) {
+                if (!h.ticker) return;
+                var isBond = h.type === 'bond';
+                ensureLots(h).forEach(function (l) {
+                    var qty = +l.qty || 0; if (!(qty > 0)) return;
+                    var price = +l.buyPrice || 0;
+                    var nkd = isBond ? (+l.nkd || 0) : 0;
+                    var position = (price + nkd) * qty;   // стоимость бумаг (для облигаций — с НКД)
+                    var fee = +l.fee || 0;
+                    list.push({ date: l.buyDate || '', ticker: h.ticker, name: h.name || h.ticker,
+                        type: h.type, side: l.side === 'sell' ? 'sell' : 'buy',
+                        price: price, nkd: nkd, hasNkd: isBond, qty: qty,
+                        position: position, fee: fee, total: position + fee,
+                        pfName: p.name, pfColor: colorVal(p.color) });
+                });
+            });
+        });
+        // новее — выше (даты ISO YYYY-MM-DD сравниваются лексикографически)
+        list.sort(function (a, b) { return (b.date || '').localeCompare(a.date || ''); });
+        return list;
+    }
+    function hasAnyTrades() { return collectTrades(true).length > 0; }
+    function groupTradesByYear(trades) {
+        var groups = [], idx = {};
+        trades.forEach(function (t) {
+            var y = (t.date || '').slice(0, 4) || '—';
+            if (!(y in idx)) { idx[y] = groups.length; groups.push({ year: y, items: [], sum: 0 }); }
+            var g = groups[idx[y]]; g.items.push(t); g.sum += t.total;
+        });
+        return groups;   // порядок годов — по убыванию (trades уже отсортированы)
+    }
+    function tradeYearIsOpen(year, latest) { return (year in tradeYearOpen) ? tradeYearOpen[year] : (year === latest); }
+
+    function tradeHeadRowHtml(multiPf) {
+        return '<div class="pft-hrow">' +
+            '<div class="pft-h">Дата</div>' +
+            '<div class="pft-h">Тип</div>' +
+            '<div class="pft-h">Тикер · название</div>' +
+            (multiPf ? '<div class="pft-h">Портфель</div>' : '') +
+            '<div class="pft-h pft-r">Цена</div>' +
+            '<div class="pft-h pft-r">НКД</div>' +
+            '<div class="pft-h pft-r">Кол-во</div>' +
+            '<div class="pft-h pft-r">Позиция</div>' +
+            '<div class="pft-h pft-r">Комиссия</div>' +
+            '<div class="pft-h pft-r">Расход</div>' +
+        '</div>';
+    }
+    function tradeRowHtml(t, multiPf) {
+        var side = t.side === 'sell'
+            ? '<span class="pft-side sell">Продажа</span>'
+            : '<span class="pft-side buy">Покупка</span>';
+        var rel = '';
+        if (t.date && typeof getRelativeDateText === 'function') {
+            var d = new Date(t.date); if (!isNaN(d.getTime())) rel = getRelativeDateText(d);
+        }
+        return '<div class="pft-row">' +
+            '<div class="pft-date"><b>' + ruDate(t.date) + '</b>' + (rel ? '<span>' + esc(rel) + '</span>' : '') + '</div>' +
+            '<div class="pft-c pft-type">' + side + '</div>' +
+            '<div class="pft-id"><span class="pft-tk">' + esc(t.ticker) + '</span><span class="pft-nm">' + esc(t.name) + '</span></div>' +
+            (multiPf ? '<span class="pft-pf" style="--c:' + t.pfColor + '"><i></i>' + esc(t.pfName) + '</span>' : '') +
+            '<div class="pft-c pft-price">' + fmtPrice(t.price) + '</div>' +
+            '<div class="pft-c pft-nkd">' + (t.hasNkd ? fmtPrice(t.nkd) : '<span class="pft-dash">—</span>') + '</div>' +
+            '<div class="pft-c pft-qty">' + t.qty + '</div>' +
+            '<div class="pft-c pft-pos">' + fmtRub(t.position) + '</div>' +
+            '<div class="pft-c pft-fee">' + (t.fee > 0 ? fmtRub(t.fee) : '<span class="pft-dash">—</span>') + '</div>' +
+            '<div class="pft-c pft-total">' + fmtRub(t.total) + '</div>' +
+        '</div>';
+    }
+    // Попап-фильтр «Какие портфели показывать» (переиспользует инфраструктуру «Импорт», key='trades')
+    function tradeFilterHtml() {
+        var cands = tradePfCandidates();
+        if (cands.length < 2) return '';   // фильтровать нечего (0–1 портфель со сделками)
+        var allOn = !tradeSel, selN = cands.filter(tradePfSelected).length;
+        var rows = '<button class="pf-impitem pf-eyeitem' + (allOn ? '' : ' off-eye') + '" onclick="pfTradeShowAll(event)">' +
+                '<span class="pf-eyedot pfpc-alldot"></span>' +
+                '<span class="pf-impbody"><b>Показать все</b><i>сделки по всем портфелям</i></span>' +
+                '<span class="pf-eyestate">' + (allOn ? CHECK_SVG : '') + '</span></button>' +
+            cands.map(function (p) {
+                var on = tradePfSelected(p);
+                return '<button class="pf-impitem pf-eyeitem' + (on ? '' : ' off-eye') + '" onclick="pfToggleTradePf(\'' + p.id + '\',event)">' +
+                    '<span class="pf-eyedot" style="background:' + colorVal(p.color) + '"></span>' +
+                    '<span class="pf-impbody"><b>' + esc(p.name) + '</b></span>' +
+                    '<span class="pf-eyestate">' + (on ? EYE_SVG : EYEOFF_SVG) + '</span></button>';
+            }).join('');
+        var badge = !allOn ? '<i class="pf-eyecnt">' + selN + '/' + cands.length + '</i>' : '';
+        return '<div class="pf-impwrap pft-filter">' +
+            '<button class="d3-quick ghost pf-impbtn" onclick="pfToggleImp(event,\'trades\')">' + FILTER_SVG + 'Портфели' + badge + CHEV_SVG + '</button>' +
+            '<div class="pf-impmenu" id="pfImp-trades">' +
+                '<div class="pf-impgrp">Какие портфели показывать</div>' + rows +
+            '</div></div>';
+    }
+    function tradesHtml() {
+        if (tradesHidden || !store.items.length || !hasAnyTrades()) return '';
+        var trades = collectTrades(false);
+        var multiPf = tradePfCandidates().length > 1;   // колонка «Портфель» — только при 2+
+        var cls = 'dash2-card pf-card2 pf-trades' + (multiPf ? ' has-pf' : '');
+        var totalSum = trades.reduce(function (s, t) { return s + t.total; }, 0);
+        var toggle = '<button class="pft-toggle' + (tradesFull ? ' on' : '') + '" onclick="pfToggleTrades()" title="' + (tradesFull ? 'Свернуть' : 'Показать все сделки') + '">' +
+            '<span>' + (tradesFull ? 'Свернуть' : 'Все сделки · ' + trades.length) + '</span>' +
+            TR_CHEV.replace('__CH__', 'pft-toggle-ch' + (tradesFull ? ' up' : '')) + '</button>';
+        var right = '<div class="pft-head-r">' + tradeFilterHtml() +
+            '<div class="pft-sum"><span class="pft-sum-l">Расход всего</span><span class="pft-sum-v">' + fmtRub(totalSum) + '</span></div>' +
+            toggle + '</div>';
+        var head = pfCardHead('', 'История сделок', 'покупки и продажи по всем портфелям', right);
+        var inner;
+        if (!trades.length) {
+            inner = '<div class="pft-empty">Ни один портфель не выбран в фильтре</div>';
+        } else if (!tradesFull) {
+            // свёрнуто — 2 последние сделки плоским списком (без разбивки по годам)
+            inner = tradeHeadRowHtml(multiPf) +
+                '<div class="pft-list">' + trades.slice(0, 2).map(function (t) { return tradeRowHtml(t, multiPf); }).join('') + '</div>' +
+                (trades.length > 2 ? '<div class="pft-morehint">и ещё ' + (trades.length - 2) + ' ' + plural(trades.length - 2, 'сделка', 'сделки', 'сделок') + ' — разверните «Все сделки»</div>' : '');
+        } else {
+            // развёрнуто — с разбивкой по годам; прошлые годы сворачиваются по клику
+            var groups = groupTradesByYear(trades);
+            var latest = groups.length ? groups[0].year : '';
+            inner = tradeHeadRowHtml(multiPf) + groups.map(function (g) {
+                var open = tradeYearIsOpen(g.year, latest);
+                var yhead = '<button class="pft-yr' + (open ? ' open' : '') + '" onclick="pfToggleTradeYear(\'' + g.year + '\')">' +
+                    TR_CHEV.replace('__CH__', 'pft-yr-ch') +
+                    '<span class="pft-yr-y">' + esc(g.year) + '</span>' +
+                    '<span class="pft-yr-n">' + g.items.length + ' ' + plural(g.items.length, 'сделка', 'сделки', 'сделок') + '</span>' +
+                    '<span class="pft-yr-sum">' + fmtRub(g.sum) + '</span></button>';
+                var rows = open ? '<div class="pft-list">' + g.items.map(function (t) { return tradeRowHtml(t, multiPf); }).join('') + '</div>' : '';
+                return '<div class="pft-yrgrp">' + yhead + rows + '</div>';
+            }).join('');
+        }
+        return '<div class="' + cls + '">' + head + '<div class="pft-body">' + inner + '</div></div>';
+    }
+    window.pfToggleTrades = function () { tradesFull = !tradesFull; renderPortfolios(); };
+    window.pfToggleTradeYear = function (year) {
+        var groups = groupTradesByYear(collectTrades(false));
+        var latest = groups.length ? groups[0].year : '';
+        tradeYearOpen[year] = !tradeYearIsOpen(year, latest);
+        renderPortfolios();
+    };
+    // ре-рендер с сохранением открытого попапа-фильтра сделок (как reRenderKeepCalMenu)
+    function reRenderKeepTradeMenu() {
+        var open = !!(dq('pfImp-trades') && dq('pfImp-trades').classList.contains('open'));
+        renderPortfolios();
+        if (open) { var m = dq('pfImp-trades'); if (m) { m.classList.add('open'); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); } }
+    }
+    window.pfTradeShowAll = function (ev) { if (ev) ev.stopPropagation(); tradeSel = null; reRenderKeepTradeMenu(); };
+    window.pfToggleTradePf = function (pid, ev) {
+        if (ev) ev.stopPropagation();
+        var cands = tradePfCandidates();
+        if (!tradeSel) { tradeSel = {}; cands.forEach(function (p) { tradeSel[p.id] = true; }); }
+        tradeSel[pid] = !tradeSel[pid];
+        if (cands.every(function (p) { return tradeSel[p.id]; }) || cands.every(function (p) { return !tradeSel[p.id]; })) tradeSel = null;
+        reRenderKeepTradeMenu();
+    };
+    // тумблер видимости блока «История сделок» из меню «Видимость» (попап оставляем открытым)
+    window.pfToggleTradesHidden = function (ev) {
+        if (ev) ev.stopPropagation();
+        tradesHidden = !tradesHidden;
+        try { localStorage.setItem(TRADES_HIDDEN_KEY, tradesHidden ? '1' : '0'); } catch (e) {}
+        var keepOpen = !!(dq('pfImp-eye') && dq('pfImp-eye').classList.contains('open'));
+        renderNoAnim();
+        if (keepOpen) { var m = dq('pfImp-eye'); if (m) { m.classList.add('open'); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); } }
+        toast(tradesHidden ? 'История сделок скрыта' : 'История сделок показана');
     };
 
     // ====================================================================
