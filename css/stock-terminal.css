@@ -367,6 +367,11 @@ body.dark-mode .stk-table > thead th.stk-sorted { color: #f4f8fd; }
     content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
     background: var(--claude-accent, #D97757);
 }
+/* Лейблы столбцов — без сокращений (см. COLS), поэтому переносятся в 2 строки вместо
+   растягивания колонки в ширину одной строкой; .stk-first (Тикер/Название) не трогаем. */
+.stk-table > thead th.stk-th {
+    white-space: normal; overflow-wrap: break-word; max-width: 118px; line-height: 1.3;
+}
 
 /* Первая колонка (Тикер/Название) — sticky слева, левое выравнивание */
 .stk-table > thead th.stk-first,
@@ -376,8 +381,21 @@ body.dark-mode .stk-table > thead th.stk-sorted { color: #f4f8fd; }
 .stk-table > thead th.stk-first { z-index: 4; } /* угол шапки выше всех */
 .stk-table > tbody > tr > td.stk-first {
     z-index: 1; background: var(--stk-card-bg);
-    box-shadow: 1px 0 0 var(--stk-line);
 }
+/* Закреплённые Цена/ОДХС (см. pin в COLS) — едут вместе с Тикером при горизонтальном
+   скролле. left приходит из CSS-переменных (ширина Тикера зависит от данных, в CSS
+   её не зафиксировать) — их считает syncPinOffsets() в JS после каждой отрисовки. */
+.stk-table > thead th.stk-pin-1,
+.stk-table > tbody > tr > td.stk-pin-1 { position: sticky; left: var(--stk-pin1-left, 0px); }
+.stk-table > thead th.stk-pin-2,
+.stk-table > tbody > tr > td.stk-pin-2 { position: sticky; left: var(--stk-pin2-left, 0px); }
+.stk-table > thead th.stk-pin-1,
+.stk-table > thead th.stk-pin-2 { z-index: 4; }
+.stk-table > tbody > tr > td.stk-pin-1,
+.stk-table > tbody > tr > td.stk-pin-2 { z-index: 1; background: var(--stk-card-bg); }
+/* Граница закреплённого блока — на его фактическом последнем столбце (stk-edge
+   назначается в JS по факту видимости Цена/ОДХС, см. renderHead/renderCompanyRow) */
+.stk-table > tbody > tr > td.stk-edge { box-shadow: 1px 0 0 var(--stk-line); }
 
 /* Тело таблицы */
 .stk-table > tbody > tr > td {
@@ -406,9 +424,13 @@ body.dark-mode .stk-table > thead th.stk-sorted { color: #f4f8fd; }
 /* Строка компании */
 .stk-row { transition: background 0.13s ease; }
 .stk-row:nth-child(odd of .stk-row) td { background-color: var(--stk-zebra); }
-.stk-row:nth-child(odd of .stk-row) td.stk-first { background-color: #fbfbfc; }
+.stk-row:nth-child(odd of .stk-row) td.stk-first,
+.stk-row:nth-child(odd of .stk-row) td.stk-pin-1,
+.stk-row:nth-child(odd of .stk-row) td.stk-pin-2 { background-color: #fbfbfc; }
 .stk-row:hover td { background-color: var(--stk-hover); }
-.stk-row:hover td.stk-first { background-color: #eef5fb; }
+.stk-row:hover td.stk-first,
+.stk-row:hover td.stk-pin-1,
+.stk-row:hover td.stk-pin-2 { background-color: #eef5fb; }
 
 /* Первая ячейка: иконка-вызов карточки + идентификатор (слева) и звезда (справа) */
 .stk-first-cell { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -617,8 +639,12 @@ body.dark-mode .stk-root {
     --stk-mini-head-bg: #2a3850;
     --stk-neg-soft: #d99a94;
 }
-body.dark-mode .stk-row:nth-child(odd of .stk-row) td.stk-first { background-color: #1b2536; }
-body.dark-mode .stk-row:hover td.stk-first { background-color: #233148; }
+body.dark-mode .stk-row:nth-child(odd of .stk-row) td.stk-first,
+body.dark-mode .stk-row:nth-child(odd of .stk-row) td.stk-pin-1,
+body.dark-mode .stk-row:nth-child(odd of .stk-row) td.stk-pin-2 { background-color: #1b2536; }
+body.dark-mode .stk-row:hover td.stk-first,
+body.dark-mode .stk-row:hover td.stk-pin-1,
+body.dark-mode .stk-row:hover td.stk-pin-2 { background-color: #233148; }
 /* Бейдж количества компаний — светлый нейтральный фон и в тёмной теме */
 body.dark-mode .stk-sector-count {
     color: var(--stk-text); background: rgba(255,255,255,0.06);

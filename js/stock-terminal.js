@@ -31,38 +31,42 @@
     var OBL = obligationYears();
     var OBL_KEY_1 = 'Процент Обязательств ' + OBL.primary + 'г';
     var OBL_KEY_2 = 'Процент Обязательств ' + OBL.secondary + 'г';
-    var OBL_LBL_1 = '% Обяз. ' + OBL.primary;
-    var OBL_LBL_2 = '% Обяз. ' + OBL.secondary;
+    var OBL_LBL_1 = 'Обязательства ' + OBL.primary + ', %';
+    var OBL_LBL_2 = 'Обязательства ' + OBL.secondary + ', %';
 
     // Столбцы основной таблицы (key — точное имя заголовка из CSV).
     // type: 'num' — сортировка по распарсенному числу; 'text' — по строке (ru).
-    // align: 'center' — у всех столбцов после закреплённого: центрируем И заголовок,
-    // И данные (по просьбе — единое выравнивание начиная со столбца «Учёт»).
+    // align: 'right' у числовых столбцов (моноширинные цифры выравниваются по разряду,
+    // так легче сравнивать величины сверху вниз), 'center' — у текстовых.
+    // pin: true — столбец «едет» вместе с закреплённым Тикером при горизонтальном
+    // скролле (см. stk-pin-N в renderHead/renderCompanyRow и syncPinOffsets); поэтому
+    // Цена и ОДХС стоят первыми в массиве — закреплённая группа должна быть смежной
+    // с Тикером, без обычных столбцов между ними.
     // tip — краткое пояснение столбца (показывается тултипом при наведении на заголовок)
     var COLS = [
+        { key: 'Текущая Цена',                   label: 'Цена',           type: 'num',  align: 'right',  pin: true, tip: 'Текущая рыночная цена одной акции' },
+        { key: 'ОДХС',                           label: 'ОДХС',           type: 'num',  align: 'right',  pin: true, tip: 'Доходность для инвестирования в акции, %' },
         { key: 'РСБУ/МСФО',                      label: 'Учёт',           type: 'text', align: 'center', tip: 'Стандарт отчётности компании: РСБУ или МСФО' },
-        { key: 'Текущая Цена',                   label: 'Цена',           type: 'num',  align: 'center', tip: 'Текущая рыночная цена одной акции' },
-        { key: 'EPS',                            label: 'EPS',            type: 'num',  align: 'center', tip: 'Прибыль на акцию (Earnings Per Share)' },
-        { key: 'ОДХС',                           label: 'ОДХС',           type: 'num',  align: 'center', tip: 'Доходность для инвестирования в акции, %' },
-        { key: 'Изменение СК',                   label: 'Изм. СК',        type: 'num',  align: 'center', tip: 'Изменение собственного капитала за период, %' },
-        { key: 'ROE',                            label: 'ROE',            type: 'num',  align: 'center', tip: 'Рентабельность собственного капитала (ROE), %' },
-        { key: 'Изменение Выручки',              label: 'Изм. Выручки',   type: 'num',  align: 'center', tip: 'Изменение выручки за период, %' },
-        { key: 'Изменение Валовой прибыли',      label: 'Изм. Вал.приб.', type: 'num',  align: 'center', tip: 'Изменение валовой прибыли за период, %' },
-        { key: 'Изменение Операционной прибыли', label: 'Изм. Опер.приб.',type: 'num',  align: 'center', tip: 'Изменение операционной прибыли за период, %' },
-        { key: 'Изменение Чистой прибыли',       label: 'Изм. Чист.приб.',type: 'num',  align: 'center', tip: 'Изменение чистой прибыли за период, %' },
-        { key: 'Денежный Поток от ОД',           label: 'ДП от ОД',       type: 'num',  align: 'center', tip: 'Денежный поток от операционной деятельности (1 — положительный)' },
-        { key: OBL_KEY_1,                        label: OBL_LBL_1,        type: 'num',  align: 'center', tip: 'Доля обязательств в активах за ' + OBL.primary + ' год, %' },
-        { key: OBL_KEY_2,                        label: OBL_LBL_2,        type: 'num',  align: 'center', tip: 'Доля обязательств в активах за ' + OBL.secondary + ' год, %' },
+        { key: 'EPS',                            label: 'EPS',            type: 'num',  align: 'right',  tip: 'Прибыль на акцию (Earnings Per Share)' },
+        { key: 'Изменение СК',                   label: 'Изменение капитала', type: 'num', align: 'right', tip: 'Изменение собственного капитала за период, %' },
+        { key: 'ROE',                            label: 'ROE',            type: 'num',  align: 'right',  tip: 'Рентабельность собственного капитала (ROE), %' },
+        { key: 'Изменение Выручки',              label: 'Изменение выручки', type: 'num', align: 'right', tip: 'Изменение выручки за период, %' },
+        { key: 'Изменение Валовой прибыли',      label: 'Изменение валовой прибыли', type: 'num', align: 'right', tip: 'Изменение валовой прибыли за период, %' },
+        { key: 'Изменение Операционной прибыли', label: 'Изменение операционной прибыли', type: 'num', align: 'right', tip: 'Изменение операционной прибыли за период, %' },
+        { key: 'Изменение Чистой прибыли',       label: 'Изменение чистой прибыли', type: 'num', align: 'right', tip: 'Изменение чистой прибыли за период, %' },
+        { key: 'Денежный Поток от ОД',           label: 'Денежный поток',  type: 'num',  align: 'right',  tip: 'Денежный поток от операционной деятельности (1 — положительный)' },
+        { key: OBL_KEY_1,                        label: OBL_LBL_1,        type: 'num',  align: 'right',  tip: 'Доля обязательств в активах за ' + OBL.primary + ' год, %' },
+        { key: OBL_KEY_2,                        label: OBL_LBL_2,        type: 'num',  align: 'right',  tip: 'Доля обязательств в активах за ' + OBL.secondary + ' год, %' },
         { key: 'Сектор',                         label: 'Сектор',         type: 'text', align: 'center', tip: 'Отрасль / сектор экономики компании' },
-        { key: 'P/BV',                           label: 'P/BV',           type: 'num',  align: 'center', tip: 'Цена к балансовой стоимости (Price / Book Value)' },
-        { key: 'BV/кол-во акций',                label: 'BV/акц.',        type: 'num',  align: 'center', tip: 'Балансовая стоимость на одну акцию' },
-        { key: 'P/E',                            label: 'P/E',            type: 'num',  align: 'center', tip: 'Цена к прибыли (Price / Earnings)' },
-        { key: 'Маржа Валовой прибыли',          label: 'Маржа Вал.',     type: 'num',  align: 'center', tip: 'Маржа валовой прибыли, %' },
-        { key: 'Маржа Операционной прибыли',     label: 'Маржа Опер.',    type: 'num',  align: 'center', tip: 'Маржа операционной прибыли, %' },
-        { key: 'Маржа Чистой прибыли',           label: 'Маржа Чист.',    type: 'num',  align: 'center', tip: 'Маржа чистой прибыли, %' },
-        { key: 'Объем выпуска, шт.',             label: 'Объём выпуска',  type: 'num',  align: 'center', tip: 'Общее количество выпущенных акций, шт.' },
+        { key: 'P/BV',                           label: 'P/BV',           type: 'num',  align: 'right',  tip: 'Цена к балансовой стоимости (Price / Book Value)' },
+        { key: 'BV/кол-во акций',                label: 'BV на акцию',    type: 'num',  align: 'right',  tip: 'Балансовая стоимость на одну акцию' },
+        { key: 'P/E',                            label: 'P/E',            type: 'num',  align: 'right',  tip: 'Цена к прибыли (Price / Earnings)' },
+        { key: 'Маржа Валовой прибыли',          label: 'Валовая маржа',  type: 'num',  align: 'right',  tip: 'Маржа валовой прибыли, %' },
+        { key: 'Маржа Операционной прибыли',     label: 'Операционная маржа', type: 'num', align: 'right', tip: 'Маржа операционной прибыли, %' },
+        { key: 'Маржа Чистой прибыли',           label: 'Чистая маржа',   type: 'num',  align: 'right',  tip: 'Маржа чистой прибыли, %' },
+        { key: 'Объем выпуска, шт.',             label: 'Объём выпуска',  type: 'num',  align: 'right',  tip: 'Общее количество выпущенных акций, шт.' },
         { key: 'Платят дивиденды',               label: 'Дивиденды',      type: 'text', align: 'center', tip: 'Платит ли компания дивиденды' },
-        { key: 'Количество в год',               label: 'Выплат/год',     type: 'num',  align: 'center', tip: 'Количество дивидендных выплат в год' },
+        { key: 'Количество в год',               label: 'Выплат в год',   type: 'num',  align: 'right',  tip: 'Количество дивидендных выплат в год' },
         { key: 'ЭШЕЛОН',                         label: 'Эшелон',         type: 'text', align: 'center', tip: 'Эшелон ликвидности акции (1 — голубые фишки)' },
         { key: 'ПРИВИЛЕГИРОВАННЫЕ АКЦИИ',        label: 'Привилегированные акции', type: 'text', align: 'center', tip: 'Наличие привилегированных акций у компании' },
         { key: 'СОСТОЯНИЕ',                      label: 'Состояние',      type: 'text', align: 'center', tip: 'Текущее состояние / статус компании' }
@@ -82,6 +86,14 @@
         return COLS.filter(function (c) { return state.hiddenCols.indexOf(c.key) === -1; });
     }
     function totalCols() { return visibleCols().length + 1; }
+    // Сколько первых видимых столбцов реально закреплены (Цена/ОДХС — см. pin в COLS).
+    // Пользователь может скрыть один из них панелью видимости столбцов — тогда
+    // закреплённая группа короче (или пуста), это должно отражаться и в разметке.
+    function pinnedLead(cols) {
+        var n = 0;
+        while (n < cols.length && cols[n].pin) n++;
+        return n;
+    }
 
     // Правила условной подсветки ячеек (цвет сайдбара #8FB3A0).
     // op: '>','>=','<','==' — числовой порог (val, редактируется);
@@ -506,9 +518,12 @@
         ths += '<th class="stk-first stk-head-center' + (sortInfo('__ticker') ? ' stk-sorted' : '')
              + '" data-sort="__ticker" data-type="text" title="' + esc('Биржевой тикер и название компании') + '\n' + esc(SORT_HINT) + '">Тикер / Название' + arrow('__ticker') + '</th>';
         var cols = visibleCols();
+        var pinN = pinnedLead(cols);
         for (var i = 0; i < cols.length; i++) {
             var col = cols[i];
-            var cls = ['stk-th', 'stk-col-center']; // все столбцы центрируем (заголовок и данные)
+            var cls = ['stk-th'];
+            if (col.align === 'center') cls.push('stk-col-center'); // числа — по правому краю (разряды совпадают), текст — по центру
+            if (i < pinN) cls.push('stk-pin-' + (i + 1));   // едет вместе с Тикером при горизонтальном скролле
             if (sortInfo(col.key)) cls.push('stk-sorted');
             // тултип: пояснение столбца + подсказка про сортировку (на отдельной строке)
             var tip = col.tip ? esc(col.tip) + '\n' + esc(SORT_HINT) : esc(SORT_HINT);
@@ -532,9 +547,12 @@
         var isFav = state.favorites.indexOf(co.ticker) !== -1;
         var ech = parseInt(co.main['ЭШЕЛОН'], 10);
         var tds = '';
+        var cols = visibleCols();
+        var pinN = pinnedLead(cols);
         // закреплённая ячейка Тикер/Название: слева — раскрытие аккордеона показателей,
         // справа — кластер действий: кнопка боковой карточки компании + звезда «в избранное».
-        tds += '<td class="stk-first"><div class="stk-first-cell">'
+        // stk-edge (граница закреплённого блока) — тут, только если Цена/ОДХС оба скрыты.
+        tds += '<td class="stk-first' + (pinN === 0 ? ' stk-edge' : '') + '"><div class="stk-first-cell">'
              + '<span class="stk-ident' + idOpen + '" data-act="toggle" data-ticker="' + esc(co.ticker) + '" title="Развернуть показатели по годам">'
              + '<span class="stk-chev-btn" aria-hidden="true"><svg class="stk-chev-mini" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></span>'
              + '<span class="stk-num-badge">' + esc(rank) + '</span>'
@@ -546,13 +564,13 @@
              + '<button class="stk-fav' + (isFav ? ' active' : '') + '" type="button" data-act="fav" data-ticker="' + esc(co.ticker) + '" title="' + (isFav ? 'Убрать из избранного' : 'В избранное') + '" aria-label="Избранное">' + STAR_SVG + '</button>'
              + '</span>'
              + '</div></td>';
-        // остальные колонки (только видимые) — все центрированы
-        var cols = visibleCols();
+        // остальные колонки (только видимые) — числа по правому краю, текст по центру
         for (var i = 0; i < cols.length; i++) {
             var col = cols[i];
             var raw = co.main[col.key];
             var empty = isEmptyVal(raw);
-            var cls = 'stk-col-center';
+            var cls = col.align === 'center' ? 'stk-col-center' : '';
+            if (i < pinN) cls += (cls ? ' ' : '') + 'stk-pin-' + (i + 1) + (i === pinN - 1 ? ' stk-edge' : '');
             if (col.type === 'num') {
                 cls += ' stk-num';
                 // отрицательные числовые значения — красным шрифтом (только в таблице, не в карточке)
@@ -725,6 +743,7 @@
             if (acc) acc.style.maxHeight = acc.scrollHeight + 'px';
         });
         syncCardWidths();
+        syncPinOffsets();
     }
 
     // Простой escape для значения в CSS-селекторе [data-card="..."]
@@ -740,6 +759,21 @@
             // карточка шириной по контенту, но не шире видимой области (иначе уедет за экран)
             card.style.maxWidth = w + 'px';
         });
+    }
+
+    // Смещение слева для закреплённых Цена/ОДХС (см. pin в COLS). Ширина колонки
+    // Тикер/Название зависит от данных (авто) — фиксировать left в CSS нельзя,
+    // поэтому меряем реальные ширины после каждой отрисовки и кладём в CSS-переменные,
+    // которые читает .stk-pin-1/.stk-pin-2 (left: var(--stk-pin1-left) и т.п.).
+    function syncPinOffsets() {
+        var el = root(); if (!el) return;
+        var table = el.querySelector('.stk-table'); if (!table) return;
+        var firstTh = table.querySelector('thead th.stk-first'); if (!firstTh) return;
+        var left1 = firstTh.offsetWidth;
+        table.style.setProperty('--stk-pin1-left', left1 + 'px');
+        var pin1Th = table.querySelector('thead th.stk-pin-1');
+        var left2 = left1 + (pin1Th ? pin1Th.offsetWidth : 0);
+        table.style.setProperty('--stk-pin2-left', left2 + 'px');
     }
 
     // =========================================================
@@ -1234,15 +1268,16 @@
     window.renderStockTerminal = function () {
         buildShell();
         if (state.status === 'idle') { loadData(); return; }
-        if (state.status === 'ready') { render(); window.setTimeout(syncCardWidths, 60); }
+        if (state.status === 'ready') { render(); window.setTimeout(function () { syncCardWidths(); syncPinOffsets(); }, 60); }
         else renderState();
     };
 
-    // пересчёт ширины sticky-карточек при ресайзе окна
+    // пересчёт ширины sticky-карточек и смещения закреплённых столбцов при ресайзе окна
     window.addEventListener('resize', function () {
         if (state.status === 'ready' && document.getElementById('panel-market-stocks') &&
             document.getElementById('panel-market-stocks').classList.contains('active')) {
             syncCardWidths();
+            syncPinOffsets();
         }
     });
 
