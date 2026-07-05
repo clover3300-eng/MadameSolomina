@@ -396,6 +396,15 @@ body.dark-mode .stk-table > thead th.stk-sorted { color: #f4f8fd; }
 /* Граница закреплённого блока — на его фактическом последнем столбце (stk-edge
    назначается в JS по факту видимости Цена/ОДХС, см. renderHead/renderCompanyRow) */
 .stk-table > tbody > tr > td.stk-edge { box-shadow: 1px 0 0 var(--stk-line); }
+/* .stk-hl (подсветка «хорошего» значения, часто у ОДХС) обычно полупрозрачный фон —
+   рассчитан на то, что под ним просвечивает зебра/карточка. У закреплённого столбца
+   под ним при скролле оказывается контент ДРУГИХ колонок — полупрозрачность превращалась
+   в буквальное просвечивание чужих цифр сквозь sticky-ячейку. Тут — непрозрачный аналог
+   того же оттенка (см. --stk-good-bg выше, посчитано поверх --stk-card-bg/#fff). */
+.stk-table > tbody > tr > td.stk-pin-1.stk-hl,
+.stk-table > tbody > tr > td.stk-pin-2.stk-hl { background-color: #dde8e3 !important; }
+body.dark-mode .stk-table > tbody > tr > td.stk-pin-1.stk-hl,
+body.dark-mode .stk-table > tbody > tr > td.stk-pin-2.stk-hl { background-color: #374751 !important; }
 
 /* Тело таблицы */
 .stk-table > tbody > tr > td {
