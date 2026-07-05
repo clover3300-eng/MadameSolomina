@@ -363,9 +363,9 @@ body.dark-mode .bnd-table > thead th.bnd-sorted { color: #f4f8fd; }
 .bnd-fav.active { color: #efaa10; }
 .bnd-fav.active svg { fill: #efaa10; }
 
-/* ---------- Десктоп: учитываем zoom 0.85 (см. desktop-zoom.css) ---------- */
+/* ---------- Десктоп ---------- */
 @media (min-width: 1024px) {
-    .bnd-scroll { max-height: calc(var(--real-vh, 100vh) / 0.85 - 210px); }
+    .bnd-scroll { max-height: calc(var(--real-vh, 100vh) - 210px); }
     /* Вкладка Облигации — таблица во всю ширину контентной области
        (перебиваем .tab-panel max-width:1240px из css/site-layout.css) */
     #panel-market-bonds.tab-panel {

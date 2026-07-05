@@ -417,7 +417,7 @@ initSwipeBack();
      if (pop && echPopTrigger) positionEchPop(pop, echPopTrigger);
  }
 
- // Позиционируем поповер у триггера. Учитываем body{zoom:0.85} на десктопе:
+ // Позиционируем поповер у триггера. Учитываем возможный body{zoom} на десктопе:
  // fixed-элемент внутри зума масштабируется, поэтому делим координаты на zoom.
  function positionEchPop(pop, triggerEl) {
      const zoom = parseFloat(getComputedStyle(document.body).zoom) || 1;

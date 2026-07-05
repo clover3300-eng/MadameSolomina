@@ -700,7 +700,7 @@
            купить» закреплены, прокручивается только список — итог виден сразу */
         #pfRightCol.v3-buy-open #v3BuyPanel {
             display: flex;
-            max-height: calc(var(--real-vh, 100vh) / 0.85 - 110px);
+            max-height: calc(var(--real-vh, 100vh) - 110px);
         }
         #v3BuyPanel {
             flex-direction: column;

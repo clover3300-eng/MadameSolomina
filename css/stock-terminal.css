@@ -645,11 +645,9 @@ body.dark-mode .stk-table > tbody > tr > td.stk-pin-2.stk-hl { background-color:
     min-width: 0; padding: 0;
 }
 
-/* ---------- Десктоп: учитываем zoom 0.85 (см. desktop-zoom.css) ----------
-   --real-vh задаётся из JS в px; под zoom px сжимаются, поэтому делим
-   обратно на фактор, как и остальные полноэкранные правила проекта. */
+/* ---------- Десктоп ---------- */
 @media (min-width: 1024px) {
-    .stk-scroll { max-height: calc(var(--real-vh, 100vh) / 0.85 - 210px); }
+    .stk-scroll { max-height: calc(var(--real-vh, 100vh) - 210px); }
     /* Вкладка Акции — таблица во всю ширину контентной области.
        Базовое правило .tab-panel ограничивает её 1240px с авто-центрированием
        (css/site-layout.css) — переопределяем по id, чтобы убрать пустые поля. */
