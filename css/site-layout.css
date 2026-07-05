@@ -2430,6 +2430,34 @@
             color: #111927;
         }
 
+        /* «Важно знать» встроен в шапку таблицы — компактная плашка до заголовков столбцов */
+        #pfRightCol .portfolio-important-aurora--inline {
+            margin: 0;
+            padding: 14px 20px;
+            border-left: none;
+            border-right: none;
+            border-top: none;
+            border-bottom: 1px solid rgba(126,226,168,0.18);
+            border-radius: 0;
+            box-shadow: none;
+            gap: 12px;
+        }
+        body:not(.dark-mode) #pfRightCol .portfolio-important-aurora--inline {
+            border-bottom-color: rgba(17,157,92,0.16);
+        }
+        #pfRightCol .portfolio-important-aurora--inline .important-aurora-icon {
+            width: 28px; height: 28px; min-width: 28px;
+        }
+        #pfRightCol .portfolio-important-aurora--inline .important-aurora-icon svg {
+            width: 14px; height: 14px;
+        }
+        #pfRightCol .portfolio-important-aurora--inline .important-aurora-title {
+            font-size: 11px; margin-bottom: 4px;
+        }
+        #pfRightCol .portfolio-important-aurora--inline .important-aurora-text {
+            font-size: 13px !important; line-height: 1.5 !important;
+        }
+
         /* (центрирование списков ребаланса убрано — теперь они в правой колонке) */
 
 
