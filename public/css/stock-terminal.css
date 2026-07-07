@@ -91,23 +91,29 @@
     font-family: 'JetBrains Mono', monospace;
 }
 
-/* Чип сброса сортировки — виден только при активной сортировке */
+/* Чип сброса сортировки — виден только при активной сортировке.
+   Залит акцентным цветом: раньше был полупрозрачным и терялся */
 .stk-sortreset {
     display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 12px;
-    background: rgba(217, 119, 87, 0.08); border: 1px solid rgba(217, 119, 87, 0.35); border-radius: 11px;
-    font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 600; color: var(--claude-accent, #D97757);
-    cursor: pointer; white-space: nowrap; transition: background 0.15s ease;
+    background: var(--claude-accent, #D97757); border: 1px solid var(--claude-accent, #D97757); border-radius: 11px;
+    font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 700; color: #ffffff;
+    cursor: pointer; white-space: nowrap; transition: filter 0.15s ease;
+    box-shadow: 0 6px 14px rgba(217, 119, 87, 0.30);
 }
-.stk-sortreset:hover { background: rgba(217, 119, 87, 0.15); }
+.stk-sortreset:hover { filter: brightness(1.07); }
 .stk-sortreset svg { width: 13px; height: 13px; }
 
-/* Подсказка про многоуровневую сортировку — видна, когда уже есть активная сортировка */
+/* Подсказка про многоуровневую сортировку — заметный чип, а не прозрачный текст */
 .stk-multisort-hint {
-    display: inline-flex; align-items: center; gap: 6px; max-width: 280px;
-    font-family: 'Inter', sans-serif; font-size: 11.5px; line-height: 1.25; color: var(--stk-muted);
+    display: inline-flex; align-items: center; gap: 7px; max-width: 300px;
+    padding: 7px 11px; border-radius: 10px;
+    background: rgba(143, 179, 160, 0.16); border: 1px solid rgba(143, 179, 160, 0.4);
+    font-family: 'Inter', sans-serif; font-size: 11.5px; line-height: 1.25; color: var(--stk-text);
 }
-.stk-multisort-hint svg { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.8; }
-.stk-multisort-hint b { color: var(--stk-text); font-weight: 700; }
+.stk-multisort-hint svg { width: 14px; height: 14px; flex-shrink: 0; color: #2c5e44; }
+.stk-multisort-hint b { color: #2c5e44; font-weight: 800; }
+body.dark-mode .stk-multisort-hint { background: rgba(143, 179, 160, 0.14); color: #dbe4f0; }
+body.dark-mode .stk-multisort-hint svg, body.dark-mode .stk-multisort-hint b { color: #9fd4bb; }
 
 /* Дропдаун «Столбцы» (видимость столбцов) — в стиле фильтра секторов */
 .stk-colsfilter { position: relative; }
@@ -422,8 +428,13 @@ body.dark-mode .stk-table > thead th.stk-sorted { color: #f4f8fd; }
    Раньше был var(--stk-line) — он полупрозрачный (задуман как тонкая рамка поверх
    фона), а тут это ГРАНИЦА sticky-блока: сквозь полупрозрачную линию при скролле
    было видно уезжающий под неё контент. Здесь — непрозрачный аналог того же тона. */
-.stk-table > tbody > tr > td.stk-edge { box-shadow: 1px 0 0 #f1f1f2; }
-body.dark-mode .stk-table > tbody > tr > td.stk-edge { box-shadow: 1px 0 0 #2e3849; }
+.stk-table > tbody > tr > td.stk-edge {
+    /* мягкая «тень отрыва» вместо резкой линии: тонкая грань + растворяющийся градиент */
+    box-shadow: 1px 0 0 #f1f1f2, 12px 0 14px -10px rgba(24, 38, 60, 0.16);
+}
+body.dark-mode .stk-table > tbody > tr > td.stk-edge {
+    box-shadow: 1px 0 0 #2e3849, 12px 0 14px -10px rgba(0, 0, 0, 0.45);
+}
 /* .stk-hl (подсветка «хорошего» значения, часто у ОДХС) обычно полупрозрачный фон —
    рассчитан на то, что под ним просвечивает зебра/карточка. У закреплённого столбца
    под ним при скролле оказывается контент ДРУГИХ колонок — полупрозрачность превращалась
@@ -708,3 +719,66 @@ body.dark-mode .stk-sector-count {
     .stk-tg-btn { flex: 1; text-align: center; }
     .stk-scroll { max-height: calc(var(--real-vh, 100vh) - 230px); border-radius: 14px; }
 }
+
+/* ===== П.5: фильтры по параметрам + закрепляемое выделение строк ===== */
+/* Кнопка «Фильтры» — в стиле остальных кнопок тулбара */
+.stk-fltfilter { position: relative; }
+.stk-flt-btn {
+    display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px;
+    background: var(--card, #fff); border: 1px solid var(--stk-border); border-radius: 11px;
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; color: var(--stk-slate);
+    cursor: pointer; white-space: nowrap;
+    transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+}
+.stk-flt-btn:hover { color: var(--stk-text); }
+.stk-flt-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+.stk-flt-btn.active { color: #2c5e44; border-color: rgba(143,179,160,0.6); background: rgba(143,179,160,0.14); }
+.stk-flt-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 18px; padding: 0 5px; border-radius: 99px;
+    background: #8FB3A0; color: #fff; font-size: 11px; font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+}
+.stk-flt-menu {
+    position: absolute; top: calc(100% + 6px); right: 0; z-index: 60;
+    width: 380px; max-height: 440px; overflow-y: auto;
+    background: var(--card, #fff); border: 1px solid var(--stk-border); border-radius: 14px;
+    box-shadow: 0 16px 40px -12px rgba(15,23,42,0.28); padding: 8px;
+}
+.stk-flt-list { display: flex; flex-direction: column; gap: 2px; }
+.stk-flt-row {
+    display: flex; align-items: center; gap: 9px; padding: 6px 9px; border-radius: 9px;
+    font-family: 'Inter', sans-serif; font-size: 12.5px; color: var(--stk-text);
+    transition: background 0.13s ease;
+}
+.stk-flt-row:hover { background: rgba(143,179,160,0.08); }
+.stk-flt-row.is-on { background: rgba(143,179,160,0.14); }
+.stk-flt-on { width: 15px; height: 15px; accent-color: #8FB3A0; cursor: pointer; flex-shrink: 0; }
+.stk-flt-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stk-flt-op {
+    appearance: none; -webkit-appearance: none;
+    border: 1px solid var(--stk-border); border-radius: 8px; background: var(--card, #fff);
+    font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: var(--stk-text);
+    width: 44px; height: 30px; text-align: center; cursor: pointer; flex-shrink: 0;
+}
+.stk-flt-val {
+    border: 1px solid var(--stk-border); border-radius: 8px; background: var(--card, #fff);
+    font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: var(--stk-text);
+    width: 84px; height: 30px; padding: 0 8px; text-align: right; flex-shrink: 0;
+    outline: none; transition: border-color 0.15s ease;
+}
+.stk-flt-val:focus { border-color: rgba(143,179,160,0.7); }
+
+/* Закреплённое кликом выделение строки (hover уже есть — .stk-row:hover).
+   !important — перебиваем зебру (:nth-child(odd of …) даёт спецификность выше) */
+.stk-row { cursor: pointer; }
+.stk-row.stk-row-pin > td { background-color: rgba(143, 179, 160, 0.16) !important; }
+.stk-row.stk-row-pin > td.stk-first,
+.stk-row.stk-row-pin > td.stk-pin-1,
+.stk-row.stk-row-pin > td.stk-pin-2 { background-color: #dfe9e4 !important; }
+.stk-row.stk-row-pin > td:first-child { box-shadow: inset 3px 0 0 #8FB3A0, 1px 0 0 #dfe9e4; }
+body.dark-mode .stk-row.stk-row-pin > td { background-color: rgba(143, 179, 160, 0.13) !important; }
+body.dark-mode .stk-row.stk-row-pin > td.stk-first,
+body.dark-mode .stk-row.stk-row-pin > td.stk-pin-1,
+body.dark-mode .stk-row.stk-row-pin > td.stk-pin-2 { background-color: #26333f !important; }
+body.dark-mode .stk-row.stk-row-pin > td:first-child { box-shadow: inset 3px 0 0 #8FB3A0, 1px 0 0 #26333f; }

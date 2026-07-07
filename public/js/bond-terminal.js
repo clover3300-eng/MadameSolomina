@@ -78,8 +78,22 @@
         favorites: loadFavs(), // ISIN в избранном (localStorage)
         favOnly: false,    // показывать только избранное
         rules: DEFAULT_RULES.map(function (r) { return Object.assign({}, r); }), // правила окраски (редактируемые)
-        hiddenCols: []     // ключи скрытых столбцов
+        hiddenCols: [],    // ключи скрытых столбцов
+        filters: {},       // key -> { op, val, on } — фильтры по параметрам
+        pinnedRows: {}     // isin -> true (строка выделена кликом)
     };
+
+    // Активные фильтры по параметрам: включён чекбокс и введён порог
+    function activeFilters() {
+        var out = [];
+        Object.keys(state.filters).forEach(function (key) {
+            var f = state.filters[key];
+            if (f && f.on && f.val !== '' && f.val != null && isFinite(f.val)) {
+                out.push({ key: key, op: f.op || '>', val: +f.val });
+            }
+        });
+        return out;
+    }
 
     // =========================================================
     //  ХЕЛПЕРЫ
@@ -245,11 +259,27 @@
     function filterList(list) {
         var q = state.query.trim().toLowerCase();
         var favOnly = state.favOnly;
-        if (!q && !favOnly) return list;
+        var flt = activeFilters();
+        if (!q && !favOnly && !flt.length) return list;
         return list.filter(function (b) {
             if (favOnly && state.favorites.indexOf(b.isin) === -1) return false;
             if (q && b.name.toLowerCase().indexOf(q) === -1 &&
                      (b.isin || '').toLowerCase().indexOf(q) === -1) return false;
+            // фильтры по параметрам: должны выполниться ВСЕ условия
+            for (var i = 0; i < flt.length; i++) {
+                var f = flt[i];
+                var v = parseNum(b.main[f.key]);
+                if (isNaN(v)) return false;
+                var ok;
+                switch (f.op) {
+                    case '>':  ok = v > f.val; break;
+                    case '>=': ok = v >= f.val; break;
+                    case '<':  ok = v < f.val; break;
+                    case '<=': ok = v <= f.val; break;
+                    default:   ok = v === f.val;
+                }
+                if (!ok) return false;
+            }
             return true;
         });
     }
@@ -331,7 +361,7 @@
         var cntEl = el.querySelector('.bnd-count');
         if (cntEl) {
             if (!state.bonds) { cntEl.textContent = ''; }
-            else if (state.query.trim() || state.favOnly) {
+            else if (state.query.trim() || state.favOnly || activeFilters().length) {
                 var f = filterList(state.bonds).length;
                 cntEl.textContent = 'найдено ' + f + ' из ' + state.bonds.length;
             } else {
@@ -399,7 +429,7 @@
             var disp = col.type === 'date' ? displayDate(raw) : displayCell(raw);
             tds += '<td class="' + cls.trim() + '">' + disp + '</td>';
         }
-        return '<tr class="bnd-row" data-isin="' + esc(b.isin) + '">' + tds + '</tr>';
+        return '<tr class="bnd-row' + (state.pinnedRows[b.isin] ? ' bnd-row-pin' : '') + '" data-isin="' + esc(b.isin) + '">' + tds + '</tr>';
     }
 
     function ruleFor(key) {
@@ -432,6 +462,7 @@
         renderState();
         populateRulesPanel();
         populateColsPanel();
+        populateFltPanel();
         updateSortReset();
         updateFavBtn();
 
@@ -516,6 +547,22 @@
             return;
         }
 
+        // меню фильтров по параметрам
+        if (e.target.closest('[data-act="flt-toggle"]')) {
+            var fmenu = el.querySelector('.bnd-flt-menu');
+            if (fmenu) fmenu.hidden = !fmenu.hidden;
+            return;
+        }
+        // сбросить все фильтры по параметрам
+        if (e.target.closest('[data-act="flt-reset"]')) {
+            state.filters = {};
+            el.querySelectorAll('.bnd-flt-row .bnd-flt-on').forEach(function (c) { c.checked = false; });
+            el.querySelectorAll('.bnd-flt-row .bnd-flt-val').forEach(function (i) { i.value = ''; });
+            updateFltBadge();
+            if (state.status === 'ready') render();
+            return;
+        }
+
         // меню видимости столбцов
         if (e.target.closest('[data-act="cols-toggle"]')) {
             var cmenu = el.querySelector('.bnd-cols-menu');
@@ -575,6 +622,15 @@
             render();
             return;
         }
+
+        // клик по «пустому» месту строки — закрепить/снять выделение строки
+        var rowEl = e.target.closest('tr.bnd-row');
+        if (rowEl && !e.target.closest('button') && !e.target.closest('[data-act]')) {
+            var isin = rowEl.getAttribute('data-isin');
+            state.pinnedRows[isin] = !state.pinnedRows[isin];
+            rowEl.classList.toggle('bnd-row-pin', !!state.pinnedRows[isin]);
+            return;
+        }
     }
 
     // =========================================================
@@ -605,6 +661,20 @@
             + '          <button type="button" class="bnd-reset" data-act="rules-reset">По умолчанию</button></span></div>'
             + '        <p class="bnd-rules-hint">Ячейка подсвечивается <b>зелёным</b>, если условие выполнено. Клик по <b>квадратику</b> слева — выключить выделение, значения порогов можно менять.</p>'
             + '        <div class="bnd-rules-list"></div>'
+            + '      </div>'
+            + '    </div>'
+            + '    <div class="bnd-fltfilter">'
+            + '      <button class="bnd-flt-btn" type="button" data-act="flt-toggle" title="Фильтры по параметрам: показать только облигации с нужными значениями">'
+            + '        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16l-6.5 7.6V19l-3-1.6v-4.8z"/></svg>'
+            + '        <span class="bnd-flt-label">Фильтры</span>'
+            + '        <span class="bnd-flt-badge" hidden></span>'
+            + '        <svg class="bnd-cols-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>'
+            + '      </button>'
+            + '      <div class="bnd-flt-menu" hidden>'
+            + '        <div class="bnd-menu-head"><span>Фильтры по параметрам</span>'
+            + '          <button type="button" class="bnd-reset" data-act="flt-reset">Сбросить</button></div>'
+            + '        <p class="bnd-rules-hint">Показывать только облигации, где выполнены <b>все</b> включённые условия. Например: Ср. дох./год &gt; 15.</p>'
+            + '        <div class="bnd-flt-list"></div>'
             + '      </div>'
             + '    </div>'
             + '    <div class="bnd-colsfilter">'
@@ -638,6 +708,11 @@
             + '<div class="bnd-state"></div>'
             + '<div class="bnd-scroll"></div>';
         el.addEventListener('click', onClick);
+        // Shift+клик по заголовку — не даём браузеру начать выделение текста,
+        // иначе жест «добавить столбец в сортировку» выглядит сломанным
+        el.addEventListener('mousedown', function (e) {
+            if (e.shiftKey && e.target.closest('th[data-sort]')) e.preventDefault();
+        });
         // поиск
         var input = el.querySelector('.bnd-search-input');
         var clearBtn = el.querySelector('.bnd-search-clear');
@@ -646,7 +721,7 @@
             clearBtn.hidden = !input.value;
             if (state.status === 'ready') render();
         });
-        // видимость столбцов (чекбоксы)
+        // видимость столбцов (чекбоксы) + фильтры по параметрам
         el.addEventListener('change', function (e) {
             var colcb = e.target.closest('.bnd-col-opt input');
             if (colcb) {
@@ -657,10 +732,26 @@
                 updateColsBadge();
                 updateSortReset();
                 if (state.status === 'ready') render();
+                return;
+            }
+            var fltEl = e.target.closest('.bnd-flt-row');
+            if (fltEl && (e.target.classList.contains('bnd-flt-on') || e.target.classList.contains('bnd-flt-op'))) {
+                syncFltRow(fltEl);
+                return;
             }
         });
-        // изменение порога правила окраски
+        // изменение порога правила окраски / значения фильтра
         el.addEventListener('input', function (e) {
+            var finp = e.target.closest('.bnd-flt-val');
+            if (finp) {
+                var frow = finp.closest('.bnd-flt-row');
+                if (frow) {
+                    var on = frow.querySelector('.bnd-flt-on');
+                    if (on && finp.value !== '' && !on.checked) on.checked = true;
+                    syncFltRow(frow);
+                }
+                return;
+            }
             var inp = e.target.closest('.bnd-rule-val');
             if (!inp) return;
             var rule = ruleFor(inp.getAttribute('data-rule'));
@@ -676,8 +767,58 @@
             if (rm && !rm.hidden && !e.target.closest('.bnd-rulesfilter')) rm.hidden = true;
             var cm = elr.querySelector('.bnd-cols-menu');
             if (cm && !cm.hidden && !e.target.closest('.bnd-colsfilter')) cm.hidden = true;
+            var fm = elr.querySelector('.bnd-flt-menu');
+            if (fm && !fm.hidden && !e.target.closest('.bnd-fltfilter')) fm.hidden = true;
         });
         built = true;
+    }
+
+    // Прочитать строку фильтра из DOM в state.filters и перерисовать таблицу
+    function syncFltRow(rowEl) {
+        var key = rowEl.getAttribute('data-flt');
+        if (!key) return;
+        var on = rowEl.querySelector('.bnd-flt-on');
+        var op = rowEl.querySelector('.bnd-flt-op');
+        var val = rowEl.querySelector('.bnd-flt-val');
+        var n = val && val.value !== '' ? parseFloat(val.value) : NaN;
+        state.filters[key] = {
+            on: !!(on && on.checked),
+            op: op ? op.value : '>',
+            val: isFinite(n) ? n : ''
+        };
+        rowEl.classList.toggle('is-on', !!(on && on.checked) && isFinite(n));
+        updateFltBadge();
+        if (state.status === 'ready') render();
+    }
+
+    // Бейдж с числом активных фильтров + подсветка кнопки «Фильтры»
+    function updateFltBadge() {
+        var el = root(); if (!el) return;
+        var badge = el.querySelector('.bnd-flt-badge');
+        var btn = el.querySelector('.bnd-flt-btn');
+        var n = activeFilters().length;
+        if (badge) { badge.hidden = n === 0; badge.textContent = n; }
+        if (btn) btn.classList.toggle('active', n > 0);
+    }
+
+    // Наполнить меню фильтров строками по числовым столбцам (один раз)
+    function populateFltPanel() {
+        var el = root(); if (!el) return;
+        var listEl = el.querySelector('.bnd-flt-list');
+        if (!listEl || listEl.childElementCount) return;
+        var ops = ['>', '>=', '<', '<=', '=='];
+        var opTx = { '>': '>', '>=': '≥', '<': '<', '<=': '≤', '==': '=' };
+        listEl.innerHTML = COLS.filter(function (c) { return c.type === 'num'; }).map(function (c) {
+            var opts = ops.map(function (o) {
+                return '<option value="' + o + '">' + opTx[o] + '</option>';
+            }).join('');
+            return '<div class="bnd-flt-row" data-flt="' + esc(c.key) + '">'
+                 + '<input type="checkbox" class="bnd-flt-on" title="Включить условие">'
+                 + '<span class="bnd-flt-name">' + esc(c.label) + '</span>'
+                 + '<select class="bnd-flt-op">' + opts + '</select>'
+                 + '<input type="number" class="bnd-flt-val" step="any" placeholder="порог">'
+                 + '</div>';
+        }).join('');
     }
 
     // Наполнить панель правил окраски (один раз)
