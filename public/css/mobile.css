@@ -274,6 +274,31 @@
     .pf-card { height: auto; min-height: 0; }
     .pf-fav, .pf-paycal--cell { max-height: none; }
 
+    /* БАГ переполнения вправо: portfolios.css схлопывает эти сетки в один
+       столбец голым «1fr» — без minmax(0, ...) грид-трек не сжимается
+       ниже min-content своего содержимого (длинный ISIN вида
+       SU26238RMFS4, цены без переноса), и карточка вылезает за экран.
+       Фикс только на мобиле — на 1024-1040px (тоже бьётся под тот же
+       @media в portfolios.css) и десктопе не трогаем. */
+    .pf-grid, .pf-grid--narrow, .pf-topgrid, .pff-grid {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+    /* дочерние блоки карточки тоже должны уметь сжиматься до 0,
+       иначе overflow:hidden-обёртки не спасают от раздутия родителя */
+    .pf-card, .pf-card2 { min-width: 0; }
+    .pfc-mtablewrap { min-width: 0; }
+    .pfc-mtable .pfc-mc-as { overflow: hidden; }
+    .pfc-mtk b, .pfc-mtk { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Шапка карточки портфеля: 4 иконки действий (30px+gap) отъедают
+       у названия слишком много места — обычные имена вроде «Дивидендный»
+       обрезались в ellipsis-бейдже. Чуть компактнее иконки/зазоры —
+       освобождает ~26px под текст названия. */
+    .pfc-top { gap: 8px; }
+    .pfc-acts { gap: 4px; }
+    .pfc-act { width: 26px; height: 26px; border-radius: 8px; }
+    .pfc-act svg { width: 13px; height: 13px; }
+
     /* Экшены шапки Портфелей: все иконки видны целиком (раньше кластер
        обрезался до 90px со скрытым скроллом — кнопки казались отрезанными).
        Кнопка «Вид» (2/3 карточки в ряд) на телефоне бессмысленна — сетка
@@ -282,9 +307,21 @@
     #topBarPfActions .pf-impwrap:has(#pfImp-view) { display: none; }
 
     /* Мини-таблица состава: зазор между колонками цифр, чтобы
-       «Кол-во» не слипалось с «Сейчас» (было «4 4 259,00 ₽») */
-    .pfc-mtable th + th, .pfc-mtable tbody tr.pfc-mtr td + td { padding-left: 12px; }
+       «Кол-во» не слипалось с «Сейчас» (было «4 4 259,00 ₽»). Зазор
+       умеренный (6px, не 12) — иначе сумма трёх зазоров раздувает
+       таблицу шире контейнера, и последняя колонка «Изм.» обрезается
+       overflow:hidden обёртки. Колонка «Актив» — самая широкая и менее
+       критичная (тикер уже виден в раскрытой строке) — ей разрешаем
+       сжаться первой, чтобы точные числа справа не резались. */
+    .pfc-mtable th + th, .pfc-mtable tbody tr.pfc-mtr td + td { padding-left: 4px; }
     .pfc-mtable thead th { white-space: nowrap; }
+    .pfc-mtable .pfc-mc-as { max-width: 132px; }
+    /* ISIN облигации (12 симв.) длиннее тикера акции — своя строка
+       не тянет колонку резиновой, поэтому бейдж «обл» ужимаем сильнее
+       тикера при нехватке места (порядок сжатия: сначала бейдж) */
+    .pfc-mtk { min-width: 0; }
+    .pfc-mtk > i { flex-shrink: 3; overflow: hidden; }
+    .pfc-mtk > b { flex-shrink: 1; }
 
     /* На вкладках с длинным рядом действий (Портфели/Рынок) иконка в
        плашке раздела лишняя — освобождаем место под полное название.
