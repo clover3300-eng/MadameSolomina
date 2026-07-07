@@ -582,7 +582,6 @@ body.dark-mode .rb5-auto:hover { border-color: #5a7cff; background: rgba(90, 124
 /* ---- заголовок собранного расчёта: «3 · Проверьте и примените» ---- */
 .rb5-deal-h { display: flex; align-items: center; gap: 9px; }
 .rb5-deal-h b { font-size: 12.5px; font-weight: 800; color: #2C364C; }
-.rb5-deal-h span { margin-left: auto; font-size: 10px; color: #94A3B8; text-align: right; }
 body.dark-mode .rb5-deal-h b { color: #F1F5F9; }
 
 /* ---- узкие экраны ---- */
@@ -592,5 +591,91 @@ body.dark-mode .rb5-deal-h b { color: #F1F5F9; }
     .rb5-deal--hint { flex-wrap: wrap; }
     .rb5-deal--hint > svg { display: none; }
     .rb5-auto { flex: 1 1 100%; justify-content: center; }
-    .rb5-deal-h span { display: none; }
+}
+
+/* =========================================================
+   ЦВЕТОВОЕ РАЗДЕЛЕНИЕ КОЛОНОК + ВОЗДУХ МЕЖДУ КАРТОЧКАМИ
+   =========================================================
+   Облигации — голубой (#7B9BBF), акции — терракота (#D97757):
+   те же цвета, что у точек в заголовках колонок. Переменные
+   --rbc-* задаются на колонке и наследуются всеми элементами
+   внутри (чипы шагов, выбор, стрелка-обмен, кнопка применения). */
+
+.rb5-col--bond {
+    --rbc: #56789c; --rbc-deep: #3d5c7d;
+    --rbc-soft: rgba(123, 155, 191, 0.10);
+    --rbc-border: rgba(123, 155, 191, 0.30);
+    --rbc-ring: rgba(123, 155, 191, 0.18);
+    --rbc-shadow: rgba(61, 92, 125, 0.45);
+}
+.rb5-col--stock {
+    --rbc: #c2603e; --rbc-deep: #a8492a;
+    --rbc-soft: rgba(217, 119, 87, 0.09);
+    --rbc-border: rgba(217, 119, 87, 0.28);
+    --rbc-ring: rgba(217, 119, 87, 0.16);
+    --rbc-shadow: rgba(168, 73, 42, 0.45);
+}
+body.dark-mode .rb5-col--bond { --rbc: #7da3cc; --rbc-deep: #56789c; --rbc-soft: rgba(123, 155, 191, 0.08); }
+body.dark-mode .rb5-col--stock { --rbc: #e08a64; --rbc-deep: #c2603e; --rbc-soft: rgba(217, 119, 87, 0.07); }
+
+/* тонированная подложка колонки — облигации и акции читаются как разные зоны */
+.rb5-col--bond, .rb5-col--stock {
+    padding: 18px; border-radius: 24px;
+    background: var(--rbc-soft);
+    border: 1.5px solid var(--rbc-border);
+}
+.rb5-col--bond .rb5-colhead b, .rb5-col--stock .rb5-colhead b { color: var(--rbc); }
+body.dark-mode .rb5-col--bond .rb5-colhead b, body.dark-mode .rb5-col--stock .rb5-colhead b { color: var(--rbc); }
+
+/* цвет колонки на управляющих элементах */
+.rb5-step.on { background: var(--rbc, #161B27); box-shadow: 0 4px 10px var(--rbc-ring, rgba(22, 27, 39, 0.25)); }
+body.dark-mode .rb5-step.on { background: var(--rbc, #5a7cff); }
+.rb5-list--now { border-color: var(--rbc, rgba(44, 54, 76, 0.30)); box-shadow: 0 0 0 4px var(--rbc-ring, rgba(44, 54, 76, 0.05)); }
+body.dark-mode .rb5-list--now { border-color: var(--rbc, rgba(90, 124, 255, 0.45)); box-shadow: 0 0 0 4px var(--rbc-ring, rgba(90, 124, 255, 0.08)); }
+.rb5-chip { background: var(--rbc, #161B27); }
+body.dark-mode .rb5-chip { background: var(--rbc, #5a7cff); }
+.rb5-duo-arr {
+    background: linear-gradient(135deg, var(--rbc, #2C364C), var(--rbc-deep, #161B27));
+    box-shadow: 0 10px 22px -8px var(--rbc-shadow, rgba(22, 27, 39, 0.55)), 0 0 0 5px var(--rbc-ring, rgba(44, 54, 76, 0.06));
+}
+body.dark-mode .rb5-duo-arr {
+    background: linear-gradient(135deg, var(--rbc, #5a7cff), var(--rbc-deep, #3d5df0));
+    box-shadow: 0 10px 22px -8px rgba(0, 0, 0, 0.6), 0 0 0 5px var(--rbc-ring, rgba(255, 255, 255, 0.05));
+}
+.rb5-apply {
+    background: linear-gradient(135deg, var(--rbc, #2C364C), var(--rbc-deep, #161B27));
+    box-shadow: 0 14px 30px -12px var(--rbc-shadow, rgba(22, 27, 39, 0.55));
+}
+.rb5-apply:hover { box-shadow: 0 18px 36px -12px var(--rbc-shadow, rgba(22, 27, 39, 0.65)); }
+body.dark-mode .rb5-apply { background: linear-gradient(135deg, var(--rbc, #5a7cff), var(--rbc-deep, #3d5df0)); box-shadow: 0 14px 30px -12px var(--rbc-shadow, rgba(61, 93, 240, 0.55)); }
+
+/* ---- строки бумаг → отдельные карточки с воздухом ---- */
+.rb5-list-scroll { padding: 4px 10px 12px; display: flex; flex-direction: column; gap: 7px; }
+.rb5-row {
+    padding: 11px 14px; border-radius: 13px;
+    border: 1px solid rgba(44, 54, 76, 0.08); border-top: 1px solid rgba(44, 54, 76, 0.08);
+    background: rgba(255, 255, 255, 0.66);
+    box-shadow: 0 1px 3px rgba(44, 54, 76, 0.04);
+}
+.rb5-row:hover { background: #fff; border-color: rgba(44, 54, 76, 0.16); }
+.rb5-row.sel { background: #fff; border-color: var(--rbc, #161B27); box-shadow: 0 0 0 3px var(--rbc-ring, rgba(22, 27, 39, 0.08)); }
+body.dark-mode .rb5-row {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08); border-top-color: rgba(255, 255, 255, 0.08);
+    box-shadow: none;
+}
+body.dark-mode .rb5-row:hover { background: rgba(255, 255, 255, 0.06); }
+body.dark-mode .rb5-row.sel { background: rgba(255, 255, 255, 0.05); border-color: var(--rbc, #5a7cff); box-shadow: 0 0 0 3px var(--rbc-ring, rgba(90, 124, 255, 0.12)); }
+/* панель деталей ⓘ — карточка-ответ с отступом под своей строкой */
+.rb5-det {
+    margin: -3px 6px 2px 16px; border-radius: 12px;
+    border: 1px dashed rgba(44, 54, 76, 0.16); border-top: 1px dashed rgba(44, 54, 76, 0.16);
+    background: rgba(44, 54, 76, 0.04);
+}
+body.dark-mode .rb5-det { border-color: rgba(255, 255, 255, 0.14); background: rgba(255, 255, 255, 0.03); }
+
+/* ---- узкие экраны ---- */
+@media (max-width: 720px) {
+    .rb5-col--bond, .rb5-col--stock { padding: 12px; border-radius: 20px; }
+    .rb5-list-scroll { padding: 2px 7px 9px; gap: 6px; }
 }

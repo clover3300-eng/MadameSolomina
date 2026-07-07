@@ -3413,29 +3413,28 @@
         function gs(n, t, s) { return '<div class="rb5-gstep">' + rb5Step(n, '') + '<div><b>' + t + '</b><span>' + s + '</span></div></div>'; }
         return '<div class="rb5-guide">' +
             '<div class="rb5-guide-head"><b>Как работает ребалансировка</b>' +
-                '<button type="button" class="rb5-guide-ok" onclick="pfRbGuide()">Понятно, скрыть</button></div>' +
-            '<p class="rb5-guide-lead">Смысл простой: вы продаёте бумагу, которая приносит меньше, и на эти же деньги покупаете ту, что приносит больше. Добавлять деньги со стороны не нужно — портфель просто начинает зарабатывать быстрее.</p>' +
+                '<button type="button" class="rb5-guide-ok" onclick="pfRbGuide()">Понятно</button></div>' +
+            '<p class="rb5-guide-lead">Продайте бумагу, которая приносит меньше, — и купите на эти деньги ту, что приносит больше. Портфель станет зарабатывать быстрее.</p>' +
             '<div class="rb5-guide-steps">' +
-                gs(1, 'Выберите, что продать', 'Кликните бумагу в списке «Продать» — это ваши бумаги из портфеля.') +
-                gs(2, 'Выберите, что купить', 'Кликните замену в списке «Купить» — ищите доходность или потенциал выше, чем у продаваемой.') +
-                gs(3, 'Проверьте и примените', 'Под списками появится расчёт. Зелёный вердикт — обмен выгоден: жмите «Применить обмен». Красный — попробуйте другую пару.') +
+                gs(1, 'Что продать', 'Кликните свою бумагу в списке «Продать».') +
+                gs(2, 'Что купить', 'Кликните замену с доходностью или потенциалом выше.') +
+                gs(3, 'Примените', 'Зелёный вердикт — жмите «Применить обмен».') +
             '</div>' +
-            '<div class="rb5-guide-tip">' + RB5_WAND + '<span>Не хочется выбирать вручную? Нажмите <b>«Подобрать за меня»</b> под списками — карточка сама найдёт самый выгодный обмен. Значок ⓘ у любой бумаги покажет её детали.</span></div>' +
+            '<div class="rb5-guide-tip">' + RB5_WAND + '<span>Или нажмите <b>«Подобрать за меня»</b> — карточка сама найдёт выгодный обмен.</span></div>' +
         '</div>';
     }
     // Подсказка-шаг в блоке расчёта, пока пара не собрана: говорит, куда кликнуть дальше,
     // + кнопка «Подобрать за меня» (pfRbAuto) — авто-выбор самой выгодной пары.
     function dealGuideHtml(kind, hasSell, hasBuy) {
-        var noun = kind === 'bond' ? 'облигацию' : 'акцию';
         var t;
-        if (hasSell) t = ['Шаг 2 — выберите, что купить',
-            kind === 'bond' ? 'Кликните облигацию в списке «Купить» — обычно берут с доходностью выше, чем у продаваемой.'
-                            : 'Кликните акцию в списке «Купить» — ищите потенциал выше, чем у продаваемой.'];
-        else if (hasBuy) t = ['Шаг 1 — выберите, что продать',
-            kind === 'bond' ? 'Кликните свою облигацию в списке «Продать» — обычно продают ту, что приносит меньше всех.'
-                            : 'Кликните свою акцию в списке «Продать» — обычно ту, что уже выросла и потенциала почти не осталось.'];
-        else t = ['Шаг 1 — выберите, что продать',
-            'Кликните ' + noun + ' в списке «Продать», затем замену в списке «Купить» — здесь появится расчёт выгоды.'];
+        if (hasSell) t = ['Шаг 2 — что купить',
+            kind === 'bond' ? 'Выберите облигацию с доходностью выше продаваемой.'
+                            : 'Выберите акцию с потенциалом выше продаваемой.'];
+        else if (hasBuy) t = ['Шаг 1 — что продать',
+            kind === 'bond' ? 'Обычно продают облигацию, что приносит меньше всех.'
+                            : 'Обычно продают акцию, что уже выросла.'];
+        else t = ['Шаг 1 — что продать',
+            'Кликните бумагу в списке «Продать», затем замену в «Купить».'];
         return '<div class="rb5-deal rb5-deal--hint">' + REBAL_SVG +
             '<div class="rb5-hint-txt"><b>' + t[0] + '</b><span>' + t[1] + '</span></div>' +
             '<button type="button" class="rb5-auto" onclick="pfRbAuto(\'' + kind + '\')" title="Карточка сама найдёт самую выгодную пару и подставит её в расчёт">' + RB5_WAND + '<span>Подобрать за меня</span></button>' +
@@ -3443,8 +3442,7 @@
     }
     // заголовок собранного расчёта: пара выбрана — остался шаг 3
     function dealHeadHtml() {
-        return '<div class="rb5-deal-h">' + rb5Step(3, 'on') + '<b>Проверьте и примените</b>' +
-            '<span>количество к продаже можно изменить</span></div>';
+        return '<div class="rb5-deal-h">' + rb5Step(3, 'on') + '<b>Проверьте и примените</b></div>';
     }
     // дельта-чип «+2 шт» / «−1,20 ₽»
     function rb5Delta(v, unit, fmt) {
@@ -3583,7 +3581,7 @@
     }
     function rb5BondCol(bs, c) {
         var head = rb5ColHead('bond', 'Облигации', bs.length, c.bondVal);
-        if (!bs.length) return '<div class="rb5-col">' + head + rb5Empty('Нет облигаций', 'Добавьте облигации в портфель — здесь появится их доходность и обмен.') + '</div>';
+        if (!bs.length) return '<div class="rb5-col rb5-col--bond">' + head + rb5Empty('Нет облигаций', 'Добавьте облигации в портфель — здесь появится их доходность и обмен.') + '</div>';
         // мои — по доходности годовых (лучшие сверху), рынок — по доходности из таблицы
         var mine = bs.slice().sort(function (a, b) {
             var ea = bondHeld(a.h).econ, eb = bondHeld(b.h).econ;
@@ -3605,7 +3603,7 @@
         // чипы шагов 1/2 в заголовках списков + подсветка списка текущего шага —
         // новичок видит, куда кликать сейчас (шаг 3 — в блоке расчёта ниже)
         var s1 = !!rebalPick.bond.sell, s2 = !!rebalPick.bond.buy;
-        return '<div class="rb5-col">' + head +
+        return '<div class="rb5-col rb5-col--bond">' + head +
             '<div class="rb5-duo">' +
                 '<div class="rb5-list' + (!s1 ? ' rb5-list--now' : '') + '"><div class="rb5-list-h">' + rb5Step(1, s1 ? 'done' : 'on') + '<b>Продать</b><i>мои · годовых</i></div><div class="rb5-list-scroll">' + mine.map(bondRowHtml).join('') + '</div></div>' +
                 '<div class="rb5-duo-arr">' + RB5_SWAP + '</div>' +
@@ -3694,7 +3692,7 @@
     }
     function rb5StockCol(ss, c) {
         var head = rb5ColHead('stock', 'Акции', ss.length, c.stockVal);
-        if (!ss.length) return '<div class="rb5-col">' + head + rb5Empty('Нет акций', 'Добавьте акции в портфель — здесь появится их динамика, потенциал и обмен.') + '</div>';
+        if (!ss.length) return '<div class="rb5-col rb5-col--stock">' + head + rb5Empty('Нет акций', 'Добавьте акции в портфель — здесь появится их динамика, потенциал и обмен.') + '</div>';
         var mine = ss.slice().sort(function (a, b) { return (b.c.pnlPct || 0) - (a.c.pnlPct || 0); });   // по динамике
         var heldSet = {}; ss.forEach(function (x) { heldSet[x.h.ticker] = 1; });
         var sellX = null; mine.forEach(function (x) { if (x.h.id === rebalPick.stock.sell) sellX = x; });
@@ -3712,7 +3710,7 @@
             : '<div class="rb5-list-empty">Список появится из гугл-таблицы (раздел «Ребаланс»)</div>';
         // чипы шагов 1/2 + подсветка списка текущего шага — как в колонке облигаций
         var s1 = !!rebalPick.stock.sell, s2 = !!rebalPick.stock.buy;
-        return '<div class="rb5-col">' + head +
+        return '<div class="rb5-col rb5-col--stock">' + head +
             '<div class="rb5-duo">' +
                 '<div class="rb5-list' + (!s1 ? ' rb5-list--now' : '') + '"><div class="rb5-list-h">' + rb5Step(1, s1 ? 'done' : 'on') + '<b>Продать</b><i>мои · динамика</i></div><div class="rb5-list-scroll">' + mine.map(stockRowHtml).join('') + '</div></div>' +
                 '<div class="rb5-duo-arr">' + RB5_SWAP + '</div>' +
