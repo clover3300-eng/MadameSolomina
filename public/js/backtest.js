@@ -100,6 +100,20 @@ function btClearTickers() {
     lsScheduleSave();
 }
 
+// Существует ли бумага на MOEX вообще (для честного сообщения об ошибке:
+// «тикер не найден» вместо «нет цены»). При сетевых сбоях отвечаем true —
+// не делаем вывод о несуществовании из недоступности API.
+async function btTickerExists(ticker) {
+    try {
+        var url = MOEX_PROXY + '?path=' + encodeURIComponent(
+            '/iss/securities/' + ticker + '.json?iss.meta=off&iss.only=description');
+        var res = await fetch(url);
+        if (!res.ok) return true;
+        var data = await res.json();
+        return !!(data.description && data.description.data && data.description.data.length);
+    } catch (e) { return true; }
+}
+
 // Загрузка цены бумаги на дату теста (для авто-расчёта количества)
 async function btFetchTickerPrice(item) {
     var dateStr = btCurrentDate();
@@ -111,7 +125,12 @@ async function btFetchTickerPrice(item) {
         : await btGetStockPriceSafe(item.t, dateStr);
     if (btCurrentDate() !== dateStr) return;   // дата сменилась — результат устарел
     if (p > 0) { item.price = p; item.status = 'ok'; }
-    else { item.price = 0; item.status = 'error'; }
+    else {
+        item.price = 0;
+        // различаем «биржа не знает такой бумаги» и «бумага есть, но нет цены на дату»
+        item.status = (await btTickerExists(item.t)) ? 'error' : 'notfound';
+        if (btCurrentDate() !== dateStr) return;
+    }
     btRecomputeManualQty();
     btRenderTickerList();
     btUpdateRunBtn();
@@ -171,6 +190,8 @@ function btRenderTickerList() {
         var calc;
         if (item.status === 'loading') {
             calc = '<span class="bt-tr-muted">загружаем цену…</span>';
+        } else if (item.status === 'notfound') {
+            calc = '<span class="bt-tr-err">тикер не найден на MOEX — проверьте написание</span>';
         } else if (item.status === 'error') {
             calc = '<span class="bt-tr-err">нет цены на эту дату</span>';
         } else if (item.status === 'nodate') {
@@ -658,11 +679,15 @@ async function btBuildPortfolioSeries(results, fromStr, tillStr) {
     results.bonds.forEach(function(b) { assets.push({ t: b.t, qty: b.qty, lots: b.lots, market: 'bonds', mult: 10 }); });
     results.stocks.forEach(function(s) { assets.push({ t: s.t, qty: s.qty, lots: s.lots, market: 'shares', mult: 1 }); });
     var maps = [], hardDates = [], softDates = [];
+    // Историю всех бумаг тянем параллельно — последовательная загрузка на большом
+    // портфеле держала график сравнения десятки секунд
+    var serList = await Promise.all(assets.map(function (a) {
+        var path = '/iss/history/engines/stock/markets/' + a.market + '/securities/' + a.t + '.json';
+        return btFetchHistorySeries(path, fromStr, tillStr).catch(function () { return []; });
+    }));
     for (var i = 0; i < assets.length; i++) {
         var a = assets[i];
-        var path = '/iss/history/engines/stock/markets/' + a.market + '/securities/' + a.t + '.json';
-        var ser;
-        try { ser = await btFetchHistorySeries(path, fromStr, tillStr); } catch(e) { ser = []; }
+        var ser = serList[i];
         if (!ser.length) continue;
         // фильтр аномалий: одиночная «битая» котировка от MOEX ISS (сбойный CLOSE, задвоенный
         // борд и т.п.) иначе через forward-fill портит ВСЮ доходность до конца графика — цена
@@ -784,6 +809,11 @@ function btRenderImoexChart(panel, data, fromStr, tillStr) {
 
     var zeroY = (minV <= 0 && maxV >= 0) ? Y(0) : null;
     var yTicks = [maxV, (maxV + minV) / 2, minV];
+    // Цвет линии портфеля — по знаку итоговой доходности: зелёная линия у портфеля
+    // в минусе сбивала с толку («обгоняем индекс, но теряем деньги»)
+    var pfUp = data.pfFinal >= 0;
+    var pfColor = pfUp ? '#16B56B' : '#e05252';
+    var pfFill = pfUp ? 'rgba(22,181,107,0.10)' : 'rgba(224,82,82,0.10)';
     var svg = '<svg class="bt-imoex-chart" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet">';
     yTicks.forEach(function(v) {
         var y = Y(v);
@@ -791,10 +821,10 @@ function btRenderImoexChart(panel, data, fromStr, tillStr) {
         svg += '<text x="' + (padL - 8) + '" y="' + (y + 3).toFixed(1) + '" text-anchor="end" font-size="10" fill="#94A3B8" font-family="JetBrains Mono, monospace">' + (v >= 0 ? '+' : '') + v.toFixed(0) + '%</text>';
     });
     if (zeroY !== null) svg += '<line x1="' + padL + '" y1="' + zeroY.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + zeroY.toFixed(1) + '" stroke="rgba(133,147,166,0.45)" stroke-width="1" stroke-dasharray="3 3"/>';
-    svg += '<path d="' + area('pf') + '" fill="rgba(22,181,107,0.10)"/>';
+    svg += '<path d="' + area('pf') + '" fill="' + pfFill + '"/>';
     svg += '<path d="' + line('im') + '" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
-    svg += '<path d="' + line('pf') + '" fill="none" stroke="#16B56B" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>';
-    svg += '<circle cx="' + X(n - 1).toFixed(1) + '" cy="' + Y(s[n - 1].pf).toFixed(1) + '" r="3.5" fill="#16B56B"/>';
+    svg += '<path d="' + line('pf') + '" fill="none" stroke="' + pfColor + '" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>';
+    svg += '<circle cx="' + X(n - 1).toFixed(1) + '" cy="' + Y(s[n - 1].pf).toFixed(1) + '" r="3.5" fill="' + pfColor + '"/>';
     svg += '<circle cx="' + X(n - 1).toFixed(1) + '" cy="' + Y(s[n - 1].im).toFixed(1) + '" r="3.5" fill="#94A3B8"/>';
     svg += '<text x="' + padL + '" y="' + (H - 7) + '" font-size="10" fill="#94A3B8" font-family="Inter">' + btFormatDateShort(fromStr) + '</text>';
     svg += '<text x="' + (W - padR) + '" y="' + (H - 7) + '" text-anchor="end" font-size="10" fill="#94A3B8" font-family="Inter">' + btFormatDateShort(tillStr) + '</text>';
@@ -810,7 +840,7 @@ function btRenderImoexChart(panel, data, fromStr, tillStr) {
     html += '<div class="bt-imoex-sub">Рост портфеля и индекса Мосбиржи с даты теста, нормировано к 0%</div>';
     html += svg;
     html += '<div class="bt-imoex-legend">';
-    html += '<span class="bt-imoex-leg"><i style="background:#16B56B"></i>Ваш портфель <b class="v ' + pfCls + '">' + (data.pfFinal >= 0 ? '+' : '') + data.pfFinal.toFixed(1) + '%</b></span>';
+    html += '<span class="bt-imoex-leg"><i style="background:' + pfColor + '"></i>Ваш портфель <b class="v ' + pfCls + '">' + (data.pfFinal >= 0 ? '+' : '') + data.pfFinal.toFixed(1) + '%</b></span>';
     html += '<span class="bt-imoex-leg"><i style="background:#94A3B8"></i>IMOEX <b class="v ' + imCls + '">' + (data.imFinal >= 0 ? '+' : '') + data.imFinal.toFixed(1) + '%</b></span>';
     html += '</div></div>';
     panel.innerHTML = html;
@@ -1054,52 +1084,41 @@ btFetchPrices = async function(dateStr, assets) {
 
     var todayStr = new Date().toISOString().split('T')[0];
 
-    for (var i = 0; i < assets.bonds.length; i++) {
-        var bond = assets.bonds[i];
-        var histPrice = await btGetBondPriceSafe(bond.t, dateStr);
-        done++;
-        if (histPrice === -1) { failed++; histPrice = 0; }
-        // Цена «сейчас» — всегда живое закрытие с MOEX (тот же источник, что и
-        // конец графика сравнения), цена из расчёта (bond.p) только как запасной вариант.
-        var nowPrice = await btGetBondPriceSafe(bond.t, todayStr);
-        if (nowPrice <= 0) nowPrice = bond.p > 0 ? bond.p : 0;
-        var buyTotal = histPrice > 0 ? histPrice * bond.qty : 0;
-        var nowTotal = nowPrice > 0 ? nowPrice * bond.qty : 0;
-        results.bonds.push({
-            t: bond.t, n: bond.n, qty: bond.qty,
-            buyPrice: histPrice, testPrice: nowPrice,
-            buyTotal: buyTotal, testTotal: nowTotal,
-            pnl: buyTotal > 0 && nowTotal > 0 ? nowTotal - buyTotal : null,
-            pnlPct: buyTotal > 0 && nowTotal > 0 ? ((nowTotal - buyTotal) / buyTotal * 100).toFixed(1) : null,
-            error: histPrice === 0
-        });
-        results.totalBuyPrice += buyTotal;
-        results.totalTestPrice += nowTotal;
-        updateProgress();
+    // Все бумаги грузим ПАРАЛЛЕЛЬНО (и обе цены каждой бумаги тоже): раньше
+    // 20 позиций = 40 последовательных запросов и полминуты ожидания, теперь
+    // время = самый медленный одиночный запрос. Порядок сохраняется через map.
+    function loadOne(asset, getPrice) {
+        return Promise.all([getPrice(asset.t, dateStr), getPrice(asset.t, todayStr)])
+            .then(function (pair) {
+                var histPrice = pair[0], nowPrice = pair[1];
+                done++;
+                if (histPrice === -1) { failed++; histPrice = 0; }
+                // Цена «сейчас» — живое закрытие с MOEX (тот же источник, что и конец
+                // графика сравнения), цена из расчёта (asset.p) — запасной вариант.
+                if (nowPrice <= 0) nowPrice = asset.p > 0 ? asset.p : 0;
+                var buyTotal = histPrice > 0 ? histPrice * asset.qty : 0;
+                var nowTotal = nowPrice > 0 ? nowPrice * asset.qty : 0;
+                updateProgress();
+                return {
+                    t: asset.t, n: asset.n, qty: asset.qty,
+                    buyPrice: histPrice, testPrice: nowPrice,
+                    buyTotal: buyTotal, testTotal: nowTotal,
+                    pnl: buyTotal > 0 && nowTotal > 0 ? nowTotal - buyTotal : null,
+                    pnlPct: buyTotal > 0 && nowTotal > 0 ? ((nowTotal - buyTotal) / buyTotal * 100).toFixed(1) : null,
+                    error: histPrice === 0
+                };
+            });
     }
-
-    for (var j = 0; j < assets.stocks.length; j++) {
-        var stock = assets.stocks[j];
-        var sHistPrice = await btGetStockPriceSafe(stock.t, dateStr);
-        done++;
-        if (sHistPrice === -1) { failed++; sHistPrice = 0; }
-        // Цена «сейчас» — живое закрытие с MOEX (как и конец графика сравнения).
-        var sNowPrice = await btGetStockPriceSafe(stock.t, todayStr);
-        if (sNowPrice <= 0) sNowPrice = stock.p > 0 ? stock.p : 0;
-        var sBuyTotal = sHistPrice > 0 ? sHistPrice * stock.qty : 0;
-        var sNowTotal = sNowPrice > 0 ? sNowPrice * stock.qty : 0;
-        results.stocks.push({
-            t: stock.t, n: stock.n, qty: stock.qty,
-            buyPrice: sHistPrice, testPrice: sNowPrice,
-            buyTotal: sBuyTotal, testTotal: sNowTotal,
-            pnl: sBuyTotal > 0 && sNowTotal > 0 ? sNowTotal - sBuyTotal : null,
-            pnlPct: sBuyTotal > 0 && sNowTotal > 0 ? ((sNowTotal - sBuyTotal) / sBuyTotal * 100).toFixed(1) : null,
-            error: sHistPrice === 0
-        });
-        results.totalBuyPrice += sBuyTotal;
-        results.totalTestPrice += sNowTotal;
-        updateProgress();
-    }
+    var loaded = await Promise.all([
+        Promise.all(assets.bonds.map(function (b) { return loadOne(b, btGetBondPriceSafe); })),
+        Promise.all(assets.stocks.map(function (s) { return loadOne(s, btGetStockPriceSafe); }))
+    ]);
+    results.bonds = loaded[0];
+    results.stocks = loaded[1];
+    results.bonds.concat(results.stocks).forEach(function (a) {
+        results.totalBuyPrice += a.buyTotal;
+        results.totalTestPrice += a.testTotal;
+    });
 
     if (failed > 0 && failed === total) {
         throw new Error('MOEX_UNAVAILABLE');
