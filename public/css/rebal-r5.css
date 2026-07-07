@@ -485,3 +485,112 @@ body.dark-mode .rb5-empty b { color: #F1F5F9; }
     .rb5-det-grid { grid-template-columns: 1fr; }
     #pfOverlay .pfo-card.rb5-card { border-radius: 22px; }
 }
+
+/* =========================================================
+   ПОШАГОВЫЙ РЕЖИМ ДЛЯ НОВИЧКОВ: гид «как это работает»,
+   чипы шагов 1-2-3, подсветка списка текущего шага,
+   подсказки в блоке расчёта, кнопка «Подобрать за меня»
+   ========================================================= */
+
+/* ---- чип-шаг: серый — ещё не дошли, тёмный — текущий, зелёная галка — пройден ---- */
+.rb5-step {
+    display: inline-grid; place-items: center; flex-shrink: 0;
+    width: 20px; height: 20px; border-radius: 50%;
+    font-size: 10.5px; font-weight: 800; font-style: normal; line-height: 1;
+    color: #6b7890; background: rgba(44, 54, 76, 0.09);
+}
+.rb5-step.on { color: #fff; background: #161B27; box-shadow: 0 4px 10px rgba(22, 27, 39, 0.25); }
+.rb5-step.done { color: #1f9d63; background: rgba(31, 157, 99, 0.14); }
+.rb5-step svg { width: 11px; height: 11px; stroke-width: 3; }
+body.dark-mode .rb5-step { color: #94a3b8; background: rgba(255, 255, 255, 0.08); }
+body.dark-mode .rb5-step.on { background: #5a7cff; color: #fff; box-shadow: 0 4px 10px rgba(90, 124, 255, 0.3); }
+body.dark-mode .rb5-step.done { color: #34d399; background: rgba(52, 211, 153, 0.15); }
+
+/* чип в заголовке списка: заголовок выравниваем по центру, имя прижато к чипу */
+.rb5-list-h { align-items: center; }
+.rb5-list-h b { margin-right: auto; }
+
+/* список текущего шага — мягкое кольцо-подсветка, ведёт взгляд «куда кликать» */
+.rb5-list--now { border-color: rgba(44, 54, 76, 0.30); box-shadow: 0 0 0 4px rgba(44, 54, 76, 0.05); }
+body.dark-mode .rb5-list--now { border-color: rgba(90, 124, 255, 0.45); box-shadow: 0 0 0 4px rgba(90, 124, 255, 0.08); }
+
+/* ---- гид «как это работает» (первое открытие / кнопка «?» в шапке) ---- */
+.rb5-guide {
+    background: linear-gradient(135deg, rgba(123, 155, 191, 0.12), rgba(255, 255, 255, 0.72) 55%);
+    border: 1.5px solid rgba(44, 54, 76, 0.12);
+    border-radius: 18px; padding: 18px 22px; margin-bottom: 24px;
+    display: flex; flex-direction: column; gap: 13px;
+}
+body.dark-mode .rb5-guide {
+    background: linear-gradient(135deg, rgba(90, 124, 255, 0.10), rgba(15, 23, 42, 0.55) 55%);
+    border-color: rgba(255, 255, 255, 0.10);
+}
+.rb5-guide-head { display: flex; align-items: center; gap: 12px; }
+.rb5-guide-head b { font-size: 14px; font-weight: 800; color: #2C364C; }
+body.dark-mode .rb5-guide-head b { color: #F1F5F9; }
+.rb5-guide-ok {
+    margin-left: auto; flex-shrink: 0; cursor: pointer;
+    padding: 7px 14px; border: none; border-radius: 999px;
+    font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 800; color: #fff;
+    background: #161B27; box-shadow: 0 8px 18px -8px rgba(22, 27, 39, 0.5);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.rb5-guide-ok:hover { transform: translateY(-1px); box-shadow: 0 10px 22px -8px rgba(22, 27, 39, 0.6); }
+body.dark-mode .rb5-guide-ok { background: #5a7cff; box-shadow: 0 8px 18px -8px rgba(90, 124, 255, 0.5); }
+.rb5-guide-lead { margin: -2px 0 0; font-size: 12px; line-height: 1.55; color: #5d6b83; max-width: 900px; }
+body.dark-mode .rb5-guide-lead { color: #a5b4c8; }
+.rb5-guide-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.rb5-gstep {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 14px 13px; border-radius: 14px;
+    background: rgba(255, 255, 255, 0.8); border: 1px solid rgba(44, 54, 76, 0.08);
+    box-shadow: 0 1px 3px rgba(44, 54, 76, 0.04);
+}
+.rb5-gstep .rb5-step { margin-top: 1px; }
+.rb5-gstep > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.rb5-gstep b { font-size: 12px; font-weight: 800; color: #2C364C; }
+.rb5-gstep span { font-size: 10.5px; line-height: 1.5; color: #7d8aa0; }
+body.dark-mode .rb5-gstep { background: rgba(15, 23, 42, 0.55); border-color: rgba(255, 255, 255, 0.08); box-shadow: none; }
+body.dark-mode .rb5-gstep b { color: #F1F5F9; }
+body.dark-mode .rb5-gstep span { color: #94a3b8; }
+.rb5-guide-tip { display: flex; align-items: center; gap: 9px; font-size: 11px; line-height: 1.5; color: #7d8aa0; }
+.rb5-guide-tip > svg { width: 15px; height: 15px; flex-shrink: 0; color: #b07c22; }
+.rb5-guide-tip b { color: #2C364C; font-weight: 800; }
+body.dark-mode .rb5-guide-tip { color: #94a3b8; }
+body.dark-mode .rb5-guide-tip > svg { color: #f0c674; }
+body.dark-mode .rb5-guide-tip b { color: #F1F5F9; }
+
+/* ---- подсказка-шаг в блоке расчёта: заголовок + пояснение + «Подобрать за меня» ---- */
+.rb5-deal--hint { gap: 12px; }
+.rb5-hint-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; }
+.rb5-hint-txt b { font-size: 12px; font-weight: 800; color: #2C364C; }
+.rb5-hint-txt span { font-size: 11px; line-height: 1.5; color: #9aa6b8; }
+body.dark-mode .rb5-hint-txt b { color: #F1F5F9; }
+.rb5-auto {
+    display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0;
+    padding: 9px 14px; border-radius: 999px; cursor: pointer;
+    font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 800; color: #2C364C;
+    background: rgba(255, 255, 255, 0.85); border: 1.5px solid rgba(44, 54, 76, 0.14);
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+.rb5-auto svg { width: 14px; height: 14px; flex-shrink: 0; color: #b07c22; }
+.rb5-auto:hover { border-color: #2C364C; background: #fff; transform: translateY(-1px); }
+body.dark-mode .rb5-auto { background: rgba(15, 23, 42, 0.6); border-color: rgba(255, 255, 255, 0.14); color: #e2e8f0; }
+body.dark-mode .rb5-auto svg { color: #f0c674; }
+body.dark-mode .rb5-auto:hover { border-color: #5a7cff; background: rgba(90, 124, 255, 0.12); }
+
+/* ---- заголовок собранного расчёта: «3 · Проверьте и примените» ---- */
+.rb5-deal-h { display: flex; align-items: center; gap: 9px; }
+.rb5-deal-h b { font-size: 12.5px; font-weight: 800; color: #2C364C; }
+.rb5-deal-h span { margin-left: auto; font-size: 10px; color: #94A3B8; text-align: right; }
+body.dark-mode .rb5-deal-h b { color: #F1F5F9; }
+
+/* ---- узкие экраны ---- */
+@media (max-width: 720px) {
+    .rb5-guide { padding: 16px; }
+    .rb5-guide-steps { grid-template-columns: 1fr; }
+    .rb5-deal--hint { flex-wrap: wrap; }
+    .rb5-deal--hint > svg { display: none; }
+    .rb5-auto { flex: 1 1 100%; justify-content: center; }
+    .rb5-deal-h span { display: none; }
+}

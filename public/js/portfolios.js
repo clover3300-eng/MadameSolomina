@@ -3021,6 +3021,8 @@
         var p = findPf(pid); if (!p) return;
         rebalPick = { bond: { sell: null, buy: null, qty: null }, stock: { sell: null, buy: null, qty: null } };
         rebalInfo = {}; rebalFormulas = false; rebalParams = false; rebalHistory = false; rebalFlash = null;
+        // пошаговый гид открыт, пока пользователь не нажал «Понятно» (флаг в localStorage)
+        try { rebalGuide = !localStorage.getItem('pf_rebal_guide_v1'); } catch (e) { rebalGuide = true; }
         ensureQuotes(true);
         if (typeof window.stkEnsureLoaded === 'function') { try { window.stkEnsureLoaded(); } catch (e) {} }   // эшелоны/потенциал акций
         var ov = dq('pfOverlay');
@@ -3079,6 +3081,7 @@
     var rebalFormulas = false;   // раскрыта ли панель «методика расчёта» (иконка ⓘ в шапке)
     var rebalParams = false;     // раскрыт ли попап «параметры» (НДФЛ/комиссия) в шапке
     var rebalHistory = false;    // раскрыта ли панель «история сделок»
+    var rebalGuide = false;      // раскрыт ли пошаговый гид «как это работает» (первое открытие / кнопка «?»)
     var rebalInfoAnim = null;    // ключ ⓘ-панели, открытой ПОСЛЕДНИМ кликом: анимацию играем только ей,
                                  // иначе каждый repaint переигрывал бы её у всех открытых панелей
     var rebalFlash = null;       // { delta, anim } — сдвиг «машины денег» после применённого обмена облигаций
@@ -3281,6 +3284,10 @@
     var RB5_HIST = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 2.8-6.5"/><path d="M3 4.5V9h4.5"/><polyline points="12 7.5 12 12 15.5 14"/></svg>';
     var UNITS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>';
     var COIN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v10M9.5 9.3c0-1.3 1.1-2.1 2.5-2.1s2.5.8 2.5 1.9c0 2.6-5 1.4-5 4 0 1.1 1.1 1.9 2.5 1.9s2.5-.8 2.5-2.1"/></svg>';
+    // иконка «?» — кнопка пошагового гида «как это работает» в шапке
+    var RB5_HELP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+    // иконка «искры» — кнопка «Подобрать за меня» (авто-выбор самой выгодной пары)
+    var RB5_WAND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6 4.6 1.9-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/><path d="M19 14.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/></svg>';
     var RB5_CHECK = '<span class="rb5-chip">' + CHECK_SVG + '</span>';
     // Шапка карточки. bt — bondsTotal() портфеля или null, если облигаций нет: «машина денег»
     // и НДФЛ (он влияет только на экономику облигаций) живут в шапке и показываются лишь
@@ -3301,13 +3308,14 @@
         var histBtn = '<button class="rb5-hbtn' + (rebalHistory ? ' on' : '') + '" onclick="pfRbHistory()" aria-label="История сделок" title="История сделок — применённые обмены">' + RB5_HIST +
             (histN ? '<i class="rb5-hbadge">' + (histN > 99 ? '99+' : histN) + '</i>' : '') + '</button>';
         var fxBtn = '<button class="rb5-hbtn' + (rebalFormulas ? ' on' : '') + '" onclick="pfRbFormulas()" aria-label="Методика расчёта" title="Методика расчёта — все формулы">' + INFO_SVG + '</button>';
+        var helpBtn = '<button class="rb5-hbtn' + (rebalGuide ? ' on' : '') + '" onclick="pfRbGuide()" aria-label="Как это работает" title="Как это работает — пошаговая инструкция">' + RB5_HELP + '</button>';
         return '<div class="rb5-head">' +
             '<div class="rb5-head-t">' +
                 '<span class="rb5-eyebrow">Ребалансировка</span>' +
                 '<span class="rb5-title">' + esc(p.name) + '</span>' +
                 '<span class="rb5-sub">' + c.count + ' ' + plural(c.count, 'актив', 'актива', 'активов') + ' · ' + fmtRub(c.value) + '</span>' +
             '</div>' +
-            '<div class="rb5-head-r">' + statW + pill + histBtn + fxBtn +
+            '<div class="rb5-head-r">' + statW + pill + helpBtn + histBtn + fxBtn +
                 '<button class="rb5-x" onclick="pfCloseOverlay()" aria-label="Закрыть">' + XMARK_SVG + '</button>' +
             '</div>' +
         '</div>';
@@ -3392,6 +3400,52 @@
     }
     function rb5Empty(t, s) { return '<div class="rb5-empty"><b>' + esc(t) + '</b><span>' + esc(s) + '</span></div>'; }
     function dealHint(msg) { return '<div class="rb5-deal rb5-deal--hint">' + REBAL_SVG + '<span>' + esc(msg) + '</span></div>'; }
+    // чип-шаг «1/2/3»: on — текущий шаг (тёмный), done — пройден (зелёная галка), '' — ещё не дошли
+    function rb5Step(n, state) {
+        return '<span class="rb5-step' + (state === 'done' ? ' done' : (state === 'on' ? ' on' : '')) + '">' +
+            (state === 'done' ? CHECK_SVG : n) + '</span>';
+    }
+    // ---- пошаговый гид «как это работает» (для новичков) ----
+    // Открыт при первом входе в карточку; «Понятно, скрыть» прячет его навсегда
+    // (флаг pf_rebal_guide_v1 в localStorage), вернуть можно кнопкой «?» в шапке.
+    function rb5GuideHtml() {
+        if (!rebalGuide) return '';
+        function gs(n, t, s) { return '<div class="rb5-gstep">' + rb5Step(n, '') + '<div><b>' + t + '</b><span>' + s + '</span></div></div>'; }
+        return '<div class="rb5-guide">' +
+            '<div class="rb5-guide-head"><b>Как работает ребалансировка</b>' +
+                '<button type="button" class="rb5-guide-ok" onclick="pfRbGuide()">Понятно, скрыть</button></div>' +
+            '<p class="rb5-guide-lead">Смысл простой: вы продаёте бумагу, которая приносит меньше, и на эти же деньги покупаете ту, что приносит больше. Добавлять деньги со стороны не нужно — портфель просто начинает зарабатывать быстрее.</p>' +
+            '<div class="rb5-guide-steps">' +
+                gs(1, 'Выберите, что продать', 'Кликните бумагу в списке «Продать» — это ваши бумаги из портфеля.') +
+                gs(2, 'Выберите, что купить', 'Кликните замену в списке «Купить» — ищите доходность или потенциал выше, чем у продаваемой.') +
+                gs(3, 'Проверьте и примените', 'Под списками появится расчёт. Зелёный вердикт — обмен выгоден: жмите «Применить обмен». Красный — попробуйте другую пару.') +
+            '</div>' +
+            '<div class="rb5-guide-tip">' + RB5_WAND + '<span>Не хочется выбирать вручную? Нажмите <b>«Подобрать за меня»</b> под списками — карточка сама найдёт самый выгодный обмен. Значок ⓘ у любой бумаги покажет её детали.</span></div>' +
+        '</div>';
+    }
+    // Подсказка-шаг в блоке расчёта, пока пара не собрана: говорит, куда кликнуть дальше,
+    // + кнопка «Подобрать за меня» (pfRbAuto) — авто-выбор самой выгодной пары.
+    function dealGuideHtml(kind, hasSell, hasBuy) {
+        var noun = kind === 'bond' ? 'облигацию' : 'акцию';
+        var t;
+        if (hasSell) t = ['Шаг 2 — выберите, что купить',
+            kind === 'bond' ? 'Кликните облигацию в списке «Купить» — обычно берут с доходностью выше, чем у продаваемой.'
+                            : 'Кликните акцию в списке «Купить» — ищите потенциал выше, чем у продаваемой.'];
+        else if (hasBuy) t = ['Шаг 1 — выберите, что продать',
+            kind === 'bond' ? 'Кликните свою облигацию в списке «Продать» — обычно продают ту, что приносит меньше всех.'
+                            : 'Кликните свою акцию в списке «Продать» — обычно ту, что уже выросла и потенциала почти не осталось.'];
+        else t = ['Шаг 1 — выберите, что продать',
+            'Кликните ' + noun + ' в списке «Продать», затем замену в списке «Купить» — здесь появится расчёт выгоды.'];
+        return '<div class="rb5-deal rb5-deal--hint">' + REBAL_SVG +
+            '<div class="rb5-hint-txt"><b>' + t[0] + '</b><span>' + t[1] + '</span></div>' +
+            '<button type="button" class="rb5-auto" onclick="pfRbAuto(\'' + kind + '\')" title="Карточка сама найдёт самую выгодную пару и подставит её в расчёт">' + RB5_WAND + '<span>Подобрать за меня</span></button>' +
+        '</div>';
+    }
+    // заголовок собранного расчёта: пара выбрана — остался шаг 3
+    function dealHeadHtml() {
+        return '<div class="rb5-deal-h">' + rb5Step(3, 'on') + '<b>Проверьте и примените</b>' +
+            '<span>количество к продаже можно изменить</span></div>';
+    }
     // дельта-чип «+2 шт» / «−1,20 ₽»
     function rb5Delta(v, unit, fmt) {
         var cls = v > 0 ? 'pos' : (v < 0 ? 'neg' : 'mut');
@@ -3490,9 +3544,9 @@
         var pick = rebalPick.bond, sellX = null, cand = null;
         mine.forEach(function (x) { if (x.h.id === pick.sell) sellX = x; });
         cands.forEach(function (cd) { if (cd.t === pick.buy) cand = cd; });
-        if (!sellX && !cand) return dealHint('Выберите облигацию слева (что продать) и справа (что купить) — здесь появится расчёт обмена.');
-        if (sellX && !cand) return dealHint('Теперь выберите справа, какую ОФЗ купить на замену.');
-        if (!sellX) return dealHint('Выберите слева, какую свою облигацию продать.');
+        if (!sellX && !cand) return dealGuideHtml('bond', false, false);
+        if (sellX && !cand) return dealGuideHtml('bond', true, false);
+        if (!sellX) return dealGuideHtml('bond', false, true);
         var d = bondDeal(bondHeld(sellX.h), cand, mine);
         if (!d) return dealHint('Недостаточно данных для расчёта — попробуйте другую пару.');
         var flow = '<div class="rb5-deal-flow">' +
@@ -3525,7 +3579,7 @@
             ? '<button class="rb5-apply" onclick="pfRbApplyBond()" title="Сделка сразу запишется в портфель и в историю">' + CHECK_SVG +
                 '<span>Применить обмен</span><i>−' + d.qty + ' → +' + d.buyQty + ' шт</i></button>'
             : '';
-        return '<div class="rb5-deal">' + flow + note + '<div class="rb5-vbox">' + rows + '</div>' + verdict + apply + '</div>';
+        return '<div class="rb5-deal">' + dealHeadHtml() + flow + note + '<div class="rb5-vbox">' + rows + '</div>' + verdict + apply + '</div>';
     }
     function rb5BondCol(bs, c) {
         var head = rb5ColHead('bond', 'Облигации', bs.length, c.bondVal);
@@ -3543,15 +3597,19 @@
         var cands = ofzMarket().map(ofzCand).filter(function (cd) { return !sellSel || isinKey(cd.t) !== sellSel; }).sort(function (a, b) {
             return (isFinite(b.sheetYield) ? b.sheetYield : -1e9) - (isFinite(a.sheetYield) ? a.sheetYield : -1e9);
         });
-        // выбранный ранее кандидат пропал из списка (его же выбрали на продажу) — сброс выбора
-        if (rebalPick.bond.buy && sellSel && isinKey(rebalPick.bond.buy) === sellSel) rebalPick.bond.buy = null;
+        // выбранный ранее кандидат пропал из списка (его же выбрали на продажу, список
+        // перезагрузился) — сброс выбора ДО отрисовки, чтобы чипы шагов не врали
+        if (rebalPick.bond.buy && !cands.some(function (cd) { return cd.t === rebalPick.bond.buy; })) rebalPick.bond.buy = null;
         var candRows = cands.length ? cands.map(function (cd) { return ofzRowHtml(cd, heldSet); }).join('')
             : '<div class="rb5-list-empty">Список ОФЗ появится из гугл-таблицы (раздел «Ребаланс»)</div>';
+        // чипы шагов 1/2 в заголовках списков + подсветка списка текущего шага —
+        // новичок видит, куда кликать сейчас (шаг 3 — в блоке расчёта ниже)
+        var s1 = !!rebalPick.bond.sell, s2 = !!rebalPick.bond.buy;
         return '<div class="rb5-col">' + head +
             '<div class="rb5-duo">' +
-                '<div class="rb5-list"><div class="rb5-list-h"><b>Продать</b><i>мои · годовых</i></div><div class="rb5-list-scroll">' + mine.map(bondRowHtml).join('') + '</div></div>' +
+                '<div class="rb5-list' + (!s1 ? ' rb5-list--now' : '') + '"><div class="rb5-list-h">' + rb5Step(1, s1 ? 'done' : 'on') + '<b>Продать</b><i>мои · годовых</i></div><div class="rb5-list-scroll">' + mine.map(bondRowHtml).join('') + '</div></div>' +
                 '<div class="rb5-duo-arr">' + RB5_SWAP + '</div>' +
-                '<div class="rb5-list rb5-list--buy"><div class="rb5-list-h"><b>Купить</b><i>таблица ОФЗ</i></div><div class="rb5-list-scroll">' + candRows + '</div></div>' +
+                '<div class="rb5-list rb5-list--buy' + (s1 && !s2 ? ' rb5-list--now' : '') + '"><div class="rb5-list-h">' + rb5Step(2, s2 ? 'done' : (s1 ? 'on' : '')) + '<b>Купить</b><i>таблица ОФЗ</i></div><div class="rb5-list-scroll">' + candRows + '</div></div>' +
             '</div>' +
             bondDealHtml(mine, cands) +
         '</div>';
@@ -3607,9 +3665,9 @@
         mine.forEach(function (x) { if (x.h.id === pick.sell) sellX = x; });
         cands.forEach(function (cn) { if (cn.ticker === pick.buy) cand = cn; });
         if (pick.buy && !cand) pick.buy = null;   // выбранный кандидат выпал из эшелона — сброс
-        if (!sellX && !cand) return dealHint('Выберите акцию слева (что продать) и справа (что купить) — здесь появится расчёт обмена.');
-        if (sellX && !cand) return dealHint('Теперь выберите справа акцию на замену.');
-        if (!sellX) return dealHint('Выберите слева, какую свою акцию продать.');
+        if (!sellX && !cand) return dealGuideHtml('stock', false, false);
+        if (sellX && !cand) return dealGuideHtml('stock', true, false);
+        if (!sellX) return dealGuideHtml('stock', false, true);
         var d = stockDeal({ qty: sellX.c.qty, nowPrice: sellX.c.cur || 0, pot: holdPotential(sellX.h) }, cand);
         if (!d) return dealHint('Недостаточно данных для расчёта — попробуйте другую пару.');
         var flow = '<div class="rb5-deal-flow">' +
@@ -3632,7 +3690,7 @@
             ? '<button class="rb5-apply" onclick="pfRbApplyStock()" title="Сделка сразу запишется в портфель и в историю">' + CHECK_SVG +
                 '<span>Применить обмен</span><i>−' + d.qty + ' ' + esc(sellX.h.ticker) + ' → +' + d.buyQty + ' ' + esc(cand.ticker) + '</i></button>'
             : '';
-        return '<div class="rb5-deal">' + flow + '<div class="rb5-vbox">' + rows + '</div>' + verdict + apply + '</div>';
+        return '<div class="rb5-deal">' + dealHeadHtml() + flow + '<div class="rb5-vbox">' + rows + '</div>' + verdict + apply + '</div>';
     }
     function rb5StockCol(ss, c) {
         var head = rb5ColHead('stock', 'Акции', ss.length, c.stockVal);
@@ -3647,14 +3705,18 @@
         if (ech >= 1 && !cands.length) { cands = stockCands(0); ech = 0; }
         // саму продаваемую бумагу на замену не предлагаем
         if (sellX) cands = cands.filter(function (cn) { return cn.ticker !== sellX.h.ticker; });
-        if (rebalPick.stock.buy && sellX && rebalPick.stock.buy === sellX.h.ticker) rebalPick.stock.buy = null;
+        // кандидат пропал из списка (сменился эшелон, выбрали его же на продажу) —
+        // сброс ДО отрисовки, чтобы чипы шагов не врали
+        if (rebalPick.stock.buy && !cands.some(function (cn) { return cn.ticker === rebalPick.stock.buy; })) rebalPick.stock.buy = null;
         var candRows = cands.length ? cands.map(function (cn) { return stockCandRowHtml(cn, heldSet); }).join('')
             : '<div class="rb5-list-empty">Список появится из гугл-таблицы (раздел «Ребаланс»)</div>';
+        // чипы шагов 1/2 + подсветка списка текущего шага — как в колонке облигаций
+        var s1 = !!rebalPick.stock.sell, s2 = !!rebalPick.stock.buy;
         return '<div class="rb5-col">' + head +
             '<div class="rb5-duo">' +
-                '<div class="rb5-list"><div class="rb5-list-h"><b>Продать</b><i>мои · динамика</i></div><div class="rb5-list-scroll">' + mine.map(stockRowHtml).join('') + '</div></div>' +
+                '<div class="rb5-list' + (!s1 ? ' rb5-list--now' : '') + '"><div class="rb5-list-h">' + rb5Step(1, s1 ? 'done' : 'on') + '<b>Продать</b><i>мои · динамика</i></div><div class="rb5-list-scroll">' + mine.map(stockRowHtml).join('') + '</div></div>' +
                 '<div class="rb5-duo-arr">' + RB5_SWAP + '</div>' +
-                '<div class="rb5-list rb5-list--buy"><div class="rb5-list-h"><b>Купить</b><i>потенциальные' + (ech ? ' · эшелон ' + ROMAN[ech - 1] : '') + '</i></div><div class="rb5-list-scroll">' + candRows + '</div></div>' +
+                '<div class="rb5-list rb5-list--buy' + (s1 && !s2 ? ' rb5-list--now' : '') + '"><div class="rb5-list-h">' + rb5Step(2, s2 ? 'done' : (s1 ? 'on' : '')) + '<b>Купить</b><i>потенциальные' + (ech ? ' · эшелон ' + ROMAN[ech - 1] : '') + '</i></div><div class="rb5-list-scroll">' + candRows + '</div></div>' +
             '</div>' +
             stockDealHtml(mine, cands) +
         '</div>';
@@ -3703,7 +3765,7 @@
             : (hasB ? rb5BondCol(bs, c) : '') + (hasS ? rb5StockCol(ss, c) : '');
         return '<div class="pfo-card rb5-card' + (one ? ' rb5-card--one' : '') + (animate ? ' pfo-anim-in' : '') + '">' +
             rb5Head(p, c, hasB ? bondsTotal(bs) : null, ss) +
-            '<div class="rb5-body">' + rb5HistoryHtml(p) + rb5FormulasHtml() +
+            '<div class="rb5-body">' + rb5GuideHtml() + rb5HistoryHtml(p) + rb5FormulasHtml() +
             '<div class="rb5-cols' + (one ? ' rb5-cols--one' : '') + '">' + cols + '</div></div>' +
         '</div>';
     }
@@ -3720,6 +3782,67 @@
     window.pfRbFormulas = function () { rebalFormulas = !rebalFormulas; rebalRepaint(); };
     window.pfRbParams = function () { rebalParams = !rebalParams; rebalRepaint(); };
     window.pfRbHistory = function () { rebalHistory = !rebalHistory; rebalRepaint(); };
+    // гид «как это работает»: скрытие запоминается навсегда (больше не выскакивает при
+    // каждом открытии), показать снова можно кнопкой «?» в шапке
+    window.pfRbGuide = function () {
+        rebalGuide = !rebalGuide;
+        if (!rebalGuide) { try { localStorage.setItem('pf_rebal_guide_v1', '1'); } catch (e) {} }
+        rebalRepaint();
+    };
+    // «Подобрать за меня»: перебирает пары «моя бумага → кандидат с рынка» и подставляет
+    // самую выгодную (облигации — максимальный рост прибыли в день, акции — рост потенциала).
+    // Уже выбранная пользователем сторона уважается — подбирается только недостающая половина.
+    window.pfRbAuto = function (kind) {
+        var ov = dq('pfOverlay'); if (!ov) return;
+        var p = findPf(ov.dataset.pid); if (!p) return;
+        var c = calcPf(p), best = null;
+        if (kind === 'bond') {
+            var bs = c.hs.filter(function (x) { return x.h.type === 'bond'; });
+            if (bondsTotal(bs).pending) { toast('Ещё уточняем купоны на Мосбирже — попробуйте через пару секунд'); return; }
+            var fixS = rebalPick.bond.sell, fixB = rebalPick.bond.buy, f = rebalFee || 0;
+            var cands = ofzMarket().map(ofzCand);
+            bs.forEach(function (x) {
+                if (fixS && x.h.id !== fixS) return;
+                var r = bondHeld(x.h);
+                if (!(r.qty > 0) || !r.econ || !(r.unitNow > 0)) return;
+                cands.forEach(function (cd) {
+                    if (fixB && cd.t !== fixB) return;
+                    if (isinKey(cd.t) === isinKey(x.h.ticker)) return;
+                    if (!cd.econ || !(cd.unit > 0)) return;
+                    var qty = bondQtyFor1More(r.unitNow, cd.unit, r.qty) || r.qty;
+                    var buyQty = Math.floor(qty * r.unitNow * (1 - f) / (cd.unit * (1 + f)));
+                    if (!(buyQty > 0)) return;
+                    var delta = buyQty * cd.econ.perDay - qty * r.econ.perDay;   // прибыль/день ПОСЛЕ − ДО
+                    if (delta > 0 && (!best || delta > best.delta)) best = { sell: x.h.id, buy: cd.t, delta: delta };
+                });
+            });
+            if (!best) { toast(fixS || fixB ? 'Для выбранной бумаги выгодной пары сейчас нет — попробуйте другую' : 'Выгодного обмена сейчас не видно — облигации портфеля и так работают хорошо'); return; }
+            rebalPick.bond = { sell: best.sell, buy: best.buy, qty: null };
+        } else {
+            var ss = c.hs.filter(function (x) { return x.h.type !== 'bond'; });
+            var fixS2 = rebalPick.stock.sell, fixB2 = rebalPick.stock.buy;
+            ss.forEach(function (x) {
+                if (fixS2 && x.h.id !== fixS2) return;
+                var pot = holdPotential(x.h);
+                if (pot == null || !(x.c.qty > 0) || !(x.c.cur > 0)) return;
+                var ech = echelonOf(x.h.ticker);
+                var cnds = stockCands(ech >= 1 ? ech : 0);
+                if (ech >= 1 && !cnds.length) cnds = stockCands(0);
+                cnds.forEach(function (cn) {
+                    if (fixB2 && cn.ticker !== fixB2) return;
+                    if (cn.ticker === x.h.ticker || cn.pot == null) return;
+                    var delta = cn.pot - pot;
+                    if (!(delta > 0)) return;
+                    var d = stockDeal({ qty: x.c.qty, nowPrice: x.c.cur, pot: pot }, cn);
+                    if (!d || !(d.buyQty > 0)) return;
+                    if (!best || delta > best.delta) best = { sell: x.h.id, buy: cn.ticker, delta: delta };
+                });
+            });
+            if (!best) { toast(fixS2 || fixB2 ? 'Для выбранной акции выгодной пары сейчас нет — попробуйте другую' : 'Выгодного обмена сейчас не видно — потенциал ваших акций и так на уровне'); return; }
+            rebalPick.stock = { sell: best.sell, buy: best.buy, qty: null };
+        }
+        rebalRepaint();
+    };
     window.pfSetRebalPeriod = function (per) { if (PERIODS[per]) rebalPeriod = per; saveRebalParams(); rebalRepaint(); };
     // выбор бумаги: клик по своей (side='sell') / рыночной (side='buy'); повторный клик —
     // снять выбор; количество к продаже сбрасывается на предложенное
