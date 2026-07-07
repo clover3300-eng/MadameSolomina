@@ -1716,6 +1716,12 @@
     <div class="calc-accordion" id="calcAccordion">
       <div class="mi5">
 
+        <!-- Краткое объяснение раздела -->
+        <div class="mi5-intro">
+          Здесь вы собираете набор ОФЗ так, чтобы купоны приходили <b>каждый месяц — как зарплата</b>.
+          Введите сумму — калькулятор сам распределит её по выпускам с разными датами выплат.
+        </div>
+
         <!-- Две карточки: калькулятор + (баннер дохода ↔ график выплат) -->
         <div class="mi5-cols">
 
@@ -1755,19 +1761,13 @@
             </div>
             <div id="calc-bonds-input-list" class="mi5-bonds"></div>
             <div class="mi5-foot">
-              <div class="mi5-next" id="miSchToggle" role="button" tabindex="0"
-                   onclick="toggleScheduleView(this)"
-                   onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleScheduleView(this);}">
+              <div class="mi5-next" id="miSchToggle">
                 <div class="mi5-next-l">
                   <span class="mi5-next-k">Ближайшая выплата</span>
                   <span class="mi5-next-nm" id="miNextName">—</span>
                 </div>
                 <div class="mi5-next-r">
                   <span class="mi5-next-am" id="miNextAmt">—</span>
-                  <span class="mi5-next-act">
-                    <span class="mi5-next-act-tx">Показать график</span>
-                    <svg class="mi5-next-chev" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
-                  </span>
                 </div>
               </div>
             </div>
@@ -1776,9 +1776,12 @@
           <!-- Правая колонка: баннер дохода ↔ график выплат -->
           <div class="mi5-right">
 
-            <!-- 01 — баннер дохода (вертикальный, по умолчанию) -->
+            <!-- Баннер дохода (вертикальный, по умолчанию) -->
             <div class="mi5-card mi5-banner mi5-banner-v" id="miBannerCard">
-              <span class="mi5-wm">01</span>
+              <button type="button" class="mi5-view-btn" onclick="toggleScheduleView()">
+                Детали
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+              </button>
               <div class="mi5-cb-head">
                 <span class="mi5-ic">₽</span>
                 <div class="mi5-cb-head-txt">
@@ -1808,8 +1811,12 @@
               </div>
             </div>
 
-          <!-- 04 — график выплат (скрыт по умолчанию) -->
+          <!-- График выплат (скрыт по умолчанию) -->
           <div class="mi5-card mi5-sch is-hidden" id="miSchCard">
+            <button type="button" class="mi5-view-btn" onclick="toggleScheduleView()">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+              Сводка
+            </button>
             <span class="mi5-kick">График выплат</span>
             <div class="mi5-ttl">Все купоны за год</div>
             <div id="calc-results-list" class="mi5-sched"></div>
@@ -1832,6 +1839,14 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
           Создать портфель
         </button>
+
+        <!-- Виджет-переход к расчёту полного портфеля -->
+        <div class="ms-nav-widget" onclick="switchTab('calc')">
+          <span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></span>
+          <span class="tx"><b>Расчёт портфеля из акций и облигаций</b>
+          <span>Хотите не только купоны, но и рост? Введите сумму — получите готовый портфель под вашу стратегию.</span></span>
+          <span class="go"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
+        </div>
       </div>
     </div>
 

@@ -884,17 +884,15 @@ function miPreset(btn) {
     }
 }
 
-// Переключение правой колонки: баннер дохода ↔ график выплат
-function toggleScheduleView(btn) {
+// Переключение правой колонки: баннер дохода ↔ график выплат.
+// Вызывается кнопками «Детали»/«Сводка» в правом верхнем углу карточек.
+function toggleScheduleView() {
     var banner = document.getElementById('miBannerCard');
     var sch = document.getElementById('miSchCard');
     if (!banner || !sch) return;
     var show = sch.classList.contains('is-hidden'); // сейчас скрыт → показываем
     sch.classList.toggle('is-hidden', !show);
     banner.classList.toggle('is-hidden', show);
-    btn.classList.toggle('is-open', show);
-    var tx = btn.querySelector('.mi5-next-act-tx');
-    if (tx) tx.textContent = show ? 'Скрыть график' : 'Показать график';
     if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
         window.Telegram.WebApp.HapticFeedback.selectionChanged();
     }
