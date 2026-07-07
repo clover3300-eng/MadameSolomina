@@ -1,32 +1,35 @@
 /* =========================================================
    HOME SPLIT — стартовая страница одним экраном
    =========================================================
-   Сплит-карточка: герой слева (поверх пейзажа #homeBg),
-   регистрация/вход справа. Скролла и второй секции больше нет.
+   Белая сплит-карточка: слева герой «Добро Пожаловать», справа
+   регистрация/вход в виде увеличенного «экрана телефона» —
+   бежевый корпус .hs-phone выступает за карточку сверху и снизу.
+   Внутри телефона тёплая гамма референса: serif-заголовок,
+   моноширинные подписи, белая кнопка Telegram, зелёные акценты.
    Загружается ПОСЛЕ site-layout.css и ПЕРЕД desktop-zoom.css. */
 
 /* ---- Один экран: панель заполняет контент-область без скролла ---- */
 @media (min-width: 1024px) {
     body.tab-home #panel-home { height: 100%; }
-    /* поднимаем композицию выше визуального центра — padding-bottom сдвигает
-       центрируемый .hs-card вверх внутри #panel-home.active (flex align-items:center) */
-    body.tab-home #panel-home.active { padding-bottom: 64px; box-sizing: border-box; }
+    /* лёгкий оптический сдвиг вверх; больше нельзя — «телефон» выступает
+       над карточкой на 30px и упрётся в шапку на низких экранах */
+    body.tab-home #panel-home.active { padding-bottom: 16px; box-sizing: border-box; }
 }
 
 /* ---- Сплит-карточка ---- */
-/* Компактная «премиальная» карточка: не тянется на всю панель, а висит
-   по центру (#panel-home.active — flex-центр) с воздухом вокруг. */
+/* Белая непрозрачная карточка по центру. overflow НЕ hidden —
+   «телефон» справа намеренно выступает за верх и низ карточки. */
 .hs-card {
     display: grid;
-    grid-template-columns: 1.05fr 1fr;
+    grid-template-columns: 1.12fr 1fr;
+    align-items: center;
     width: 100%;
-    max-width: 920px;
+    max-width: 960px;
     align-self: center;
     box-sizing: border-box;
-    border-radius: 30px;
-    overflow: hidden;
-    background: rgba(255, 255, 255, 0.30);
-    border: 1px solid rgba(255, 255, 255, 0.60);
+    border-radius: 32px;
+    background: #FFFFFF;
+    border: 1px solid rgba(44, 54, 76, 0.08);
     box-shadow:
         0 34px 80px -28px rgba(44, 54, 76, 0.35),
         0 2px 10px rgba(44, 54, 76, 0.05);
@@ -41,11 +44,8 @@
 .hs-hero {
     display: flex;
     align-items: center;
-    padding: 44px 46px;
+    padding: 48px 40px 48px 50px;
     box-sizing: border-box;
-    background: linear-gradient(165deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.10) 100%);
-    backdrop-filter: blur(4px) saturate(130%);
-    -webkit-backdrop-filter: blur(4px) saturate(130%);
 }
 .hs-hero-inner { max-width: 440px; }
 
@@ -110,9 +110,9 @@
     width: 36px;
     height: 36px;
     border-radius: 11px;
-    background: rgba(255, 255, 255, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.9);
-    box-shadow: 0 8px 20px -8px rgba(44, 54, 76, 0.28);
+    background: #F8F3EA;
+    border: 1px solid #EDE5D4;
+    box-shadow: 0 6px 16px -8px rgba(44, 54, 76, 0.20);
 }
 .hs-feat-ic svg {
     width: 17px;
@@ -124,95 +124,127 @@
     stroke-linejoin: round;
 }
 
-/* =====================  ПРАВАЯ ПОЛОВИНА: ФОРМА  ===================== */
+/* ============  ПРАВАЯ ПОЛОВИНА: «ТЕЛЕФОН» С ФОРМОЙ  ============ */
 .hs-auth {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 34px 36px;
+    padding: 0 40px;
     box-sizing: border-box;
-    background: #F9F1E5;
+    /* моноширинный стек для подписей/плейсхолдеров (как в референсе) */
+    --hs-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+}
+
+/* Корпус телефона: бежевая рамка, выступает за края карточки */
+.hs-phone {
+    width: 100%;
+    max-width: 356px;
+    margin: -30px 0;
+    padding: 12px;
+    box-sizing: border-box;
+    background: #EDE7DC;
+    border: 1px solid rgba(44, 54, 76, 0.10);
+    border-radius: 46px;
+    box-shadow:
+        0 40px 90px -36px rgba(44, 54, 76, 0.50),
+        0 6px 18px rgba(44, 54, 76, 0.10),
+        inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+/* Экран телефона: тёплый белый, высота стабильна при смене режима */
+.hs-phone-screen {
+    display: flex;
+    box-sizing: border-box;
+    min-height: 620px; /* = высота контента в режиме «Регистрация» — при
+                          переключении на «Вход» телефон не меняет высоту */
+    padding: 26px 24px 20px;
+    background: #FDFBF5;
+    border-radius: 35px;
 }
 .hs-auth-inner {
+    display: flex;
+    flex-direction: column;
     width: 100%;
-    max-width: 340px;
+    min-width: 0;
 }
 
 /* ---- Переключатель Регистрация / Вход ---- */
 .hs-tabs {
     display: flex;
     gap: 4px;
-    padding: 4px;
-    margin-bottom: 20px;
-    background: rgba(44, 54, 76, 0.06);
-    border: 1px solid rgba(44, 54, 76, 0.05);
-    border-radius: 14px;
+    padding: 5px;
+    margin-bottom: 22px;
+    background: #EAE2D3;
+    border: 1px solid rgba(44, 54, 76, 0.04);
+    border-radius: 16px;
 }
 .hs-tab {
     flex: 1;
-    padding: 9px 10px;
+    padding: 10px;
     font-family: 'Inter', sans-serif;
     font-size: 12.5px;
     font-weight: 600;
-    color: #6b7890;
+    color: #8D8672;
     background: none;
     border: none;
-    border-radius: 10px;
+    border-radius: 12px;
     cursor: pointer;
     transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 .hs-tab.active {
     color: #fff;
     font-weight: 700;
-    background: #161B27;
-    box-shadow: 0 10px 24px -8px rgba(22, 27, 39, 0.5);
+    background: #14181F;
+    box-shadow: 0 10px 24px -8px rgba(20, 24, 31, 0.5);
 }
 
+/* ---- Заголовок (serif, как в референсе) ---- */
 .hr-title {
-    font-family: 'Inter', sans-serif;
-    font-size: 21px;
-    font-weight: 800;
-    color: #2C364C;
-    margin: 0 0 5px;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 29px;
+    font-weight: 400;
+    line-height: 1.15;
+    color: #20242E;
+    margin: 0 0 8px;
 }
 .hr-sub {
     font-family: 'Inter', sans-serif;
     font-size: 12px;
+    line-height: 1.5;
     color: #7d8aa0;
-    margin: 0 0 18px;
+    margin: 0 0 20px;
 }
 
 /* ---- Поля формы ---- */
-.hr-form { display: flex; flex-direction: column; gap: 11px; }
-.hr-field { display: flex; flex-direction: column; gap: 5px; text-align: left; }
+.hr-form { display: flex; flex-direction: column; gap: 12px; }
+.hr-field { display: flex; flex-direction: column; gap: 6px; text-align: left; }
 .hr-field.hidden { display: none; }
 .hr-label {
-    font-family: 'Inter', sans-serif;
-    font-size: 10px;
-    font-weight: 600;
-    color: #6b7890;
+    font-family: var(--hs-mono);
+    font-size: 9.5px;
+    font-weight: 500;
+    color: #97907C;
     text-transform: uppercase;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.24em;
     padding-left: 2px;
 }
 .hr-inputwrap { position: relative; display: block; }
 .hr-input {
     width: 100%;
     box-sizing: border-box;
-    padding: 11px 42px 11px 14px;
-    font-family: 'Inter', sans-serif;
-    font-size: 13.5px;
+    padding: 12px 42px 12px 15px;
+    font-family: var(--hs-mono);
+    font-size: 12.5px;
     color: #2C364C;
     background: #fff;
-    border: 1.5px solid rgba(44, 54, 76, 0.10);
+    border: 1.2px solid #E7DFCF;
     border-radius: 14px;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
     outline: none;
 }
-.hr-input::placeholder { color: #aab4c4; }
+.hr-input::placeholder { color: #B9B19E; }
 .hr-input:focus {
-    border-color: #2C364C;
-    box-shadow: 0 0 0 4px rgba(44, 54, 76, 0.10);
+    border-color: #20242E;
+    box-shadow: 0 0 0 4px rgba(32, 36, 46, 0.08);
 }
 /* Иконка в поле (справа) */
 .hr-ficon {
@@ -223,7 +255,7 @@
     width: 18px;
     height: 18px;
     fill: none;
-    stroke: #b8c0cd;
+    stroke: #CDC5B2;
     stroke-width: 1.8;
     stroke-linecap: round;
     stroke-linejoin: round;
@@ -244,10 +276,10 @@
     border: none;
     border-radius: 10px;
     cursor: pointer;
-    color: #b8c0cd;
+    color: #CDC5B2;
     transition: color 0.2s ease;
 }
-.hr-eye:hover { color: #6b7890; }
+.hr-eye:hover { color: #8D8672; }
 .hr-eye svg {
     width: 18px;
     height: 18px;
@@ -256,14 +288,6 @@
     stroke-width: 1.8;
     stroke-linecap: round;
     stroke-linejoin: round;
-}
-
-.hs-hint {
-    margin: -4px 0 0;
-    padding-left: 2px;
-    font-family: 'Inter', sans-serif;
-    font-size: 11px;
-    color: #9aa6b8;
 }
 
 .hr-error {
@@ -278,32 +302,33 @@
 
 /* ---- Главная кнопка ---- */
 .hr-submit {
-    margin-top: 6px;
+    margin-top: 8px;
     width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    padding: 13px;
+    padding: 14px;
     font-family: 'Inter', sans-serif;
-    font-size: 12.5px;
+    font-size: 13px;
     font-weight: 700;
     color: #fff;
-    background: #161B27;
+    background: linear-gradient(180deg, #1C222E 0%, #10151F 100%);
     border: none;
-    border-radius: 15px;
+    border-radius: 17px;
     cursor: pointer;
-    box-shadow: 0 14px 34px rgba(22, 27, 39, 0.30);
+    box-shadow: 0 16px 32px -10px rgba(16, 21, 31, 0.50);
     transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
-.hr-submit:hover { box-shadow: 0 18px 42px rgba(22, 27, 39, 0.36); }
+.hr-submit:hover { box-shadow: 0 20px 40px -10px rgba(16, 21, 31, 0.58); }
 .hr-submit:active { transform: scale(0.98); }
 .hr-submit.is-done { background: #1f9d63; box-shadow: 0 14px 34px rgba(31, 157, 99, 0.32); }
+/* Зелёная стрелка ↗ как в референсе */
 .hr-submit-arrow {
     width: 16px;
     height: 16px;
     fill: none;
-    stroke: #6fdc9c;
+    stroke: #4CAF6E;
     stroke-width: 2.2;
     stroke-linecap: round;
     stroke-linejoin: round;
@@ -314,82 +339,86 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    margin: 14px 0 12px;
-    color: #9aa6b8;
-    font-family: 'Inter', sans-serif;
-    font-size: 10px;
-    font-weight: 600;
+    margin: 16px 0 14px;
+    color: #ABA38C;
+    font-family: var(--hs-mono);
+    font-size: 9px;
+    font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 0.18em;
+    letter-spacing: 0.3em;
 }
 .hr-divider::before,
 .hr-divider::after {
     content: "";
     flex: 1;
     height: 1px;
-    background: rgba(44, 54, 76, 0.14);
+    background: #E7DFCE;
 }
 
-/* ---- Кнопка Telegram ---- */
+/* ---- Кнопка Telegram: белая с синим самолётиком (как в референсе) ---- */
 .hr-tg {
     width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    padding: 12px;
+    padding: 13px;
     font-family: 'Inter', sans-serif;
-    font-size: 12.5px;
+    font-size: 13px;
     font-weight: 700;
-    color: #fff;
-    background: linear-gradient(135deg, #2AABEE 0%, #229ED9 100%);
-    border: none;
-    border-radius: 14px;
+    color: #20242E;
+    background: #fff;
+    border: 1.2px solid #E7DFCF;
+    border-radius: 15px;
     cursor: pointer;
-    box-shadow: 0 14px 34px rgba(34, 158, 217, 0.34);
-    transition: transform 0.15s ease, box-shadow 0.2s ease;
+    box-shadow: 0 10px 24px -12px rgba(44, 54, 76, 0.18);
+    transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
-.hr-tg:hover { box-shadow: 0 18px 42px rgba(34, 158, 217, 0.42); }
+.hr-tg:hover {
+    border-color: #D8CFBA;
+    box-shadow: 0 14px 30px -12px rgba(44, 54, 76, 0.26);
+}
 .hr-tg:active { transform: scale(0.98); }
-.hr-tg-icon { width: 20px; height: 20px; fill: #fff; }
+.hr-tg-icon { width: 20px; height: 20px; fill: #2AABEE; }
 
-/* ---- Подвал карточки ---- */
+/* ---- Подвал экрана ---- */
 .hr-foot {
-    margin: 13px 0 0;
+    margin: 14px 0 0;
     text-align: center;
     font-family: 'Inter', sans-serif;
     font-size: 12px;
     color: #7d8aa0;
 }
-.hr-link { color: #E8873C; font-weight: 700; cursor: pointer; }
+.hr-link { color: #3D9C5A; font-weight: 700; cursor: pointer; }
 .hr-link:hover { text-decoration: underline; }
 
+/* Замочек прижат к низу «экрана», выравнивание влево — как в референсе */
 .hr-policy {
-    margin: 14px 0 0;
+    margin: auto 0 0;
+    padding-top: 16px;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
+    text-align: left;
     gap: 6px;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--hs-mono);
     font-size: 9px;
     font-weight: 500;
-    color: #a0aec0;
+    color: #ABA38C;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.18em;
 }
 .hr-policy svg {
+    flex: 0 0 auto;
     width: 11px; height: 11px;
     stroke: currentColor; fill: none; stroke-width: 2;
 }
 
 /* =====================  ТЁМНАЯ ТЕМА  ===================== */
 .dark-mode .hs-card {
-    background: rgba(20, 28, 44, 0.55);
+    background: #131A29;
     border-color: rgba(255, 255, 255, 0.08);
     box-shadow: 0 34px 80px -28px rgba(0, 0, 0, 0.6);
-}
-.dark-mode .hs-hero {
-    background: linear-gradient(165deg, rgba(30, 41, 64, 0.55) 0%, rgba(15, 23, 42, 0.35) 100%);
 }
 .dark-mode .hs-eyebrow { color: #7c8db0; }
 .dark-mode .hs-title { color: #F1F5F9; }
@@ -400,16 +429,23 @@
     border-color: rgba(255, 255, 255, 0.10);
     box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.5);
 }
-.dark-mode .hs-auth { background: #141c2c; }
-.dark-mode .hs-tabs {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.06);
+.dark-mode .hs-phone {
+    background: #1E2739;
+    border-color: rgba(255, 255, 255, 0.10);
+    box-shadow:
+        0 40px 90px -36px rgba(0, 0, 0, 0.75),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
-.dark-mode .hs-tab { color: #94a3b8; }
+.dark-mode .hs-phone-screen { background: #0F1626; }
+.dark-mode .hs-tabs {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+.dark-mode .hs-tab { color: #8ea0bf; }
 .dark-mode .hs-tab.active { background: #2a3550; color: #fff; }
 .dark-mode .hr-title { color: #F1F5F9; }
 .dark-mode .hr-sub { color: #94a3b8; }
-.dark-mode .hr-label { color: #94a3b8; }
+.dark-mode .hr-label { color: #7f8fae; }
 .dark-mode .hr-input {
     background: rgba(15, 23, 42, 0.6);
     border-color: rgba(255, 255, 255, 0.12);
@@ -424,15 +460,24 @@
 .dark-mode .hr-ficon { stroke: #64748b; }
 .dark-mode .hr-eye { color: #64748b; }
 .dark-mode .hr-eye:hover { color: #94a3b8; }
-.dark-mode .hs-hint { color: #64748b; }
-.dark-mode .hr-submit { background: #2a3550; }
+.dark-mode .hr-submit { background: linear-gradient(180deg, #33405f 0%, #232c44 100%); }
 .dark-mode .hr-divider { color: #64748b; }
 .dark-mode .hr-divider::before,
 .dark-mode .hr-divider::after { background: rgba(255, 255, 255, 0.12); }
+.dark-mode .hr-tg {
+    background: rgba(15, 23, 42, 0.6);
+    border-color: rgba(255, 255, 255, 0.14);
+    color: #e2e8f0;
+    box-shadow: none;
+}
+.dark-mode .hr-tg:hover { border-color: rgba(255, 255, 255, 0.26); }
 .dark-mode .hr-foot { color: #94a3b8; }
+.dark-mode .hr-link { color: #4ade80; }
+.dark-mode .hr-policy { color: #64748b; }
 
 /* =====================  УЗКИЕ ЭКРАНЫ  ===================== */
-/* Колонки складываются: герой сверху, форма снизу; страница скроллится. */
+/* Колонки складываются: герой сверху, телефон снизу (без выступа);
+   страница скроллится. */
 @media (max-width: 1023px) {
     body.tab-home #contentArea {
         overflow-y: auto !important;
@@ -442,7 +487,9 @@
         grid-template-columns: 1fr;
         border-radius: 26px;
     }
-    .hs-hero { padding: 40px 28px 34px; }
+    .hs-hero { padding: 40px 28px 28px; }
     .hs-title { font-size: 38px; }
-    .hs-auth { padding: 32px 24px 28px; }
+    .hs-auth { padding: 0 18px 30px; }
+    .hs-phone { margin: 0 auto; }
+    .hs-phone-screen { min-height: 0; padding: 24px 20px 20px; }
 }

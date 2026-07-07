@@ -40,7 +40,7 @@
     <link rel="stylesheet" href="css/table-tooltip.css?v=1">
     <link rel="stylesheet" href="css/market-heatmap.css?v=33">
     <link rel="stylesheet" href="css/calc-r5.css?v=10">
-    <link rel="stylesheet" href="css/home-register.css?v=7">
+    <link rel="stylesheet" href="css/home-register.css?v=9">
     <link rel="stylesheet" href="css/profile-menu.css?v=1">
     <link rel="stylesheet" href="css/desktop-zoom.css?v=4">
     <!-- Мобильный слой (≤1023px) — всегда ПОСЛЕДНИЙ, перебивает всё -->
@@ -245,7 +245,7 @@
                         <span class="hs-eyebrow">Wealth&nbsp;Management</span>
                         <h1 class="hs-title">
                             <span class="hs-title-light">Добро</span><br>
-                            <span class="hs-title-bold">пожаловать!</span>
+                            <span class="hs-title-bold">Пожаловать!</span>
                         </h1>
                         <div class="hs-divider"></div>
                         <p class="hs-lead">Частный инвестиционный терминал для портфеля из&nbsp;ОФЗ и&nbsp;акций&nbsp;— расчёт, ребаланс и&nbsp;живая карта рынка в&nbsp;одном спокойном интерфейсе.</p>
@@ -266,8 +266,10 @@
                     </div>
                 </div>
 
-                <!-- Правая половина: регистрация / вход -->
+                <!-- Правая половина: регистрация / вход в «телефоне» -->
                 <div class="hs-auth" id="homeRegister" aria-label="Регистрация">
+                    <div class="hs-phone">
+                    <div class="hs-phone-screen">
                     <div class="hs-auth-inner">
                         <div class="hs-tabs" role="tablist">
                             <button class="hs-tab active" id="hsTabRegister" type="button" role="tab" onclick="homeAuthMode('register')">Регистрация</button>
@@ -301,8 +303,6 @@
                                     </button>
                                 </span>
                             </label>
-                            <p class="hs-hint" id="hsPassHint">Пароль защищён и хранится в зашифрованном виде.</p>
-
                             <div class="hr-error" id="homeRegError" role="alert"></div>
 
                             <button class="hr-submit" type="submit" id="hsSubmit">
@@ -325,7 +325,9 @@
                             <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                             Данные защищены · Secure Access
                         </p>
-                    </div>
+                    </div><!-- /hs-auth-inner -->
+                    </div><!-- /hs-phone-screen -->
+                    </div><!-- /hs-phone -->
                 </div>
 
             </div>
