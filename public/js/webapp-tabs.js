@@ -121,6 +121,32 @@ function populatePanels() {
         }
         wrapRange(document.getElementById('portfolio-tab-bonds'), '#pfBondsThead', '#bondsTotalRow');
         wrapRange(document.getElementById('portfolio-tab-stocks'), '#pfStocksThead', '.portfolio-echelons-total-row');
+        // 1.5) Дубль переключателя ОФЗ/Акции прямо в шапке каждой таблицы —
+        // маленький переключатель в карточке капитала легко не заметить
+        ['pfBondsThead', 'pfStocksThead'].forEach(function(id) {
+            const thead = document.getElementById(id);
+            if (!thead || thead.querySelector('.pf-seg')) return;
+            const seg = document.createElement('div');
+            seg.className = 'pf-seg';
+            seg.innerHTML =
+                '<button type="button" class="pf-seg-btn" data-tab="bonds">ОФЗ</button>' +
+                '<button type="button" class="pf-seg-btn" data-tab="stocks">Акции</button>';
+            seg.querySelectorAll('.pf-seg-btn').forEach(function(b) {
+                b.addEventListener('click', function() { window.switchPortfolioContentTab(b.dataset.tab); });
+            });
+            thead.appendChild(seg);
+        });
+        function pfSyncSeg(tab) {
+            document.querySelectorAll('.pf-seg .pf-seg-btn').forEach(function(b) {
+                b.classList.toggle('active', b.dataset.tab === tab);
+            });
+        }
+        const _origSwitchContentTab = window.switchPortfolioContentTab;
+        window.switchPortfolioContentTab = function(tab) {
+            _origSwitchContentTab(tab);
+            pfSyncSeg(tab);
+        };
+        pfSyncSeg('bonds');
         // 2) Кнопка «Список к покупке» внутри светлой части карточки капитала
         const fcLight = share.querySelector('.capital-forecast-light');
         if (fcLight) {
@@ -148,6 +174,13 @@ function populatePanels() {
             switchTab('portfolios');
         };
         if (fcLight) fcLight.appendChild(createPfBtn);
+        // 2.6) Кнопка «Выгрузить в Excel» — CSV по акциям и облигациям для аналитики
+        const exportBtn = document.createElement('button');
+        exportBtn.type = 'button';
+        exportBtn.className = 'v3-export-btn';
+        exportBtn.innerHTML = '<span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M9.5 12.5l5 5M14.5 12.5l-5 5"/></svg></span>Выгрузить в Excel';
+        exportBtn.onclick = function() { if (typeof pfExportExcel === 'function') pfExportExcel(); };
+        if (fcLight) fcLight.appendChild(exportBtn);
         // 3) Кнопка «Новый расчёт» — внутри карточки капитала (увеличивает её),
         //    возврат на вкладку Расчёт
         const recalc = document.createElement('button');
@@ -173,6 +206,12 @@ function populatePanels() {
                     '<button type="button" class="v3bl-iconbtn" onclick="v3CopyBuyList()" title="Скопировать список">' +
                         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2.5"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
                     '</button>' +
+                '</div>' +
+                '<div class="v3bl-sub">' +
+                    '<span class="hint">Готовый чек-лист для покупок у брокера: отмечайте купленное — остаток и прогресс пересчитаются.</span>' +
+                    '<span class="sp"></span>' +
+                    '<button type="button" class="v3bl-bulk-btn" onclick="slSetAll(true)">Выбрать все</button>' +
+                    '<button type="button" class="v3bl-bulk-btn" onclick="slSetAll(false)">Снять все</button>' +
                 '</div>' +
                 '<div class="v3bl-colhead">' +
                     '<span class="ch-asset">Актив</span>' +
@@ -300,6 +339,20 @@ function populatePanels() {
         const lbForHeight = document.getElementById('listBondsV2');
         if (lbForHeight && window.MutationObserver) {
             new MutationObserver(function(){ setTimeout(window.v3SyncCapHeight, 60); }).observe(lbForHeight, { childList: true });
+        }
+
+        // 6) Виджет-переход к «Ежемесячному доходу» под карточкой капитала/прогноза
+        if (!document.getElementById('pfMonthlyWidget')) {
+            const w = document.createElement('div');
+            w.id = 'pfMonthlyWidget';
+            w.className = 'ms-nav-widget green';
+            w.innerHTML =
+                '<span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg></span>' +
+                '<span class="tx"><b>Ежемесячный доход</b>' +
+                '<span>Отдельный расчёт: набор ОФЗ, где купоны приходят каждый месяц — как зарплата.</span></span>' +
+                '<span class="go"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>';
+            w.onclick = function() { switchTab('monthly'); };
+            rail.appendChild(w);
         }
     })();
     // Равные отступы: grid-gap (рельса→контент) = зазор сайдбар→рельса. Для всех страниц с рельсой.

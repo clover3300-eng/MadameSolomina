@@ -1183,6 +1183,76 @@ function toggleShopItem(row) {
     }
 }
 
+// Массовая отметка позиций списка к покупке: «Выбрать все» / «Снять все».
+// Работает и для оверлея (#shoppingListBody), и для встроенной панели (#v3BuyBody).
+function slSetAll(on) {
+    const svgCheck = '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;"><polyline points="20 6 9 17 4 12"/></svg>';
+    const checked = slLoadChecked();
+    document.querySelectorAll('#shoppingListBody .sl-item, #v3BuyBody .sl-item').forEach(row => {
+        const box = row.querySelector('.sl-checkbox');
+        if (!box) return;
+        const sum = parseFloat(row.dataset.sum) || 0;
+        const key = row.dataset.slkey;
+        const isFilled = row.classList.contains('filled');
+        if (on && !isFilled) {
+            row.classList.add('filled');
+            box.innerHTML = svgCheck;
+            _slExecutedSum += sum;
+            if (key) checked.add(key);
+        } else if (!on && isFilled) {
+            row.classList.remove('filled');
+            box.innerHTML = '';
+            _slExecutedSum -= sum;
+            if (key) checked.delete(key);
+        }
+    });
+    _slExecutedSum = Math.max(0, Math.min(_slTotalSum, _slExecutedSum));
+    slSaveChecked(checked);
+    updateSlFooter();
+    if (window.Telegram?.WebApp?.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    }
+}
+
+// Выгрузка состава портфеля (ОФЗ + акции) в CSV для Excel: BOM UTF-8,
+// разделитель «;», десятичная запятая — открывается в русском Excel без настройки.
+function pfExportExcel() {
+    const d = window._shoppingListData;
+    if (!d || (d.bonds.length === 0 && d.stocks.length === 0)) return;
+    const num = v => String(Math.round(v * 100) / 100).replace('.', ',');
+    const esc = v => {
+        const s = String(v == null ? '' : v);
+        return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    };
+    const yields = {};
+    (window._bondCalculationsV2 || []).forEach(b => { yields[b.t] = b.y; });
+    const rows = [['Тип', 'Тикер', 'Название', 'Эшелон', 'Кол-во, шт', 'Цена, ₽', 'Сумма, ₽', 'Доходность']];
+    let bondsTotal = 0, stocksTotal = 0;
+    d.bonds.forEach(b => {
+        bondsTotal += b.sum;
+        rows.push(['ОФЗ', b.ticker, b.name, '', b.qty, num(b.price), num(b.sum), String(yields[b.ticker] || '').replace('.', ',')]);
+    });
+    d.stocks.forEach(s => {
+        stocksTotal += s.sum;
+        rows.push(['Акция', s.ticker, s.name, s.echelon || '', s.qty, num(s.price), num(s.sum), '']);
+    });
+    rows.push([]);
+    rows.push(['Итого ОФЗ', '', '', '', '', '', num(bondsTotal), '']);
+    rows.push(['Итого акции', '', '', '', '', '', num(stocksTotal), '']);
+    rows.push(['Итого портфель', '', '', '', '', '', num(bondsTotal + stocksTotal), '']);
+    const csv = '\uFEFF' + rows.map(r => r.map(esc).join(';')).join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'portfel_' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+    if (window.Telegram?.WebApp?.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+    }
+}
+
 function updateSlFooter() {
     const remaining = _slTotalSum - _slExecutedSum;
     const percent = _slTotalSum > 0 ? Math.round((_slExecutedSum / _slTotalSum) * 100) : 0;

@@ -42,6 +42,7 @@
     <link rel="stylesheet" href="css/calc-r5.css?v=10">
     <link rel="stylesheet" href="css/home-register.css?v=9">
     <link rel="stylesheet" href="css/profile-menu.css?v=1">
+    <link rel="stylesheet" href="css/typography-tokens.css?v=1">
     <link rel="stylesheet" href="css/desktop-zoom.css?v=4">
     <!-- Мобильный слой (≤1023px) — всегда ПОСЛЕДНИЙ, перебивает всё -->
     <link rel="stylesheet" href="css/mobile.css?v=2">
@@ -1200,8 +1201,9 @@
                         </div>
                         
                         <!-- Итого -->
-                        <div class="coupon-total-foot" style="text-align:right; margin-top:12px; font-weight:bold; font-size:13px; padding-top:12px; border-top:1px solid rgba(0,0,0,0.07);">
-                            Итого ближайшие: <span id="couponTotalHeaderV2" style="color: #16b56b;">0 ₽</span>
+                        <div class="coupon-total-foot">
+                            <span class="ctf-label">Итого ближайшие</span>
+                            <span id="couponTotalHeaderV2" style="color: #16b56b;">0 ₽</span>
                         </div>
                     </div>
                 </div>
@@ -2065,6 +2067,12 @@
         <button class="sl-header-btn" onclick="copyShoppingList()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         </button>
+    </div>
+    <!-- Пояснение + массовые отметки -->
+    <div class="sl-bulkbar">
+        <span class="sl-bulk-hint">Отмечайте купленное — остаток пересчитается</span>
+        <button class="sl-bulk-btn" onclick="slSetAll(true)">Выбрать все</button>
+        <button class="sl-bulk-btn" onclick="slSetAll(false)">Снять все</button>
     </div>
     <!-- Scrollable Body -->
     <div id="shoppingListBody" class="sl-body"></div>

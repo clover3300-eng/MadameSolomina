@@ -1238,51 +1238,8 @@ body.dark-mode .portfolio-echelons-total-row {
    ФИНАЛЬНЫЕ СТИЛИ ДЛЯ НИЖНИХ БЛОКОВ (FIX)
    ============================================== */
 
-/* 1. Блок "ВАЖНО" (Зеленый) - Делаем прозрачным */
-.portfolio-important-aurora {
-    /* Оригинальный glassmorphism фон */
-    background: var(--card-glass-aurora) !important;
-    backdrop-filter: blur(16px) !important;
-    -webkit-backdrop-filter: blur(16px) !important;
-    
-    /* Жёлтая рамка вокруг всего блока */
-    border: 1px solid rgba(251, 191, 36, 0.2) !important;
-    border-radius: 16px !important;
-    
-    /* Отступы */
-    padding: 18px !important;
-    margin-top: 24px !important;
-    
-    display: flex !important;
-    gap: 16px !important;
-    align-items: flex-start !important;
-}
-
-/* Элементы внутри блока "Важно" */
-.important-aurora-icon {
-    color: #F59E0B !important;
-    width: 24px; 
-    height: 24px;
-    display: flex; 
-    align-items: center; 
-    justify-content: center;
-    margin-top: 2px;
-}
-.important-aurora-title {
-    color: #F59E0B !important;
-    font-weight: 700; 
-    font-size: 13px; 
-    text-transform: uppercase; 
-    margin-bottom: 4px;
-    font-family: 'Inter', sans-serif !important;
-}
-.important-aurora-text {
-    color: #aaa !important; /* Серый текст */
-    font-size: 13px !important; 
-    line-height: 1.5 !important;
-    font-family: 'Inter', sans-serif !important;
-}
-
+/* Блок «Важно знать» стилизуется в portfolio.css (используется только
+   в портфеле) — старый glassmorphism-override с серым текстом удалён */
 
 /* 2. Блок "РЕБАЛАНСИРОВКА" (Синий) - Возвращаем рамку */
 .info-rebalance-block {

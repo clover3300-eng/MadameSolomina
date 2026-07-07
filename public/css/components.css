@@ -1670,3 +1670,64 @@ body.input-focused .nd-bottom-bar { opacity: 0; pointer-events: none; transition
 @keyframes nd-shake { 0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)} }
 .shake-error { animation: nd-shake .4s ease !important; }
 /* ===== END NEW DESIGN ===== */
+
+/* ===== Виджет-переход между разделами (портфель → ежемесячный доход,
+   ежемесячный доход → расчёт, ребаланс → расчёты). Белая карточка-ссылка. ===== */
+.ms-nav-widget {
+    margin-top: 16px;
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 18px;
+    background: #ffffff;
+    border: 1px solid #e6ecf4;
+    border-radius: 18px;
+    cursor: pointer;
+    box-shadow: 0 10px 26px rgba(24,38,60,0.06);
+    font-family: 'Manrope', sans-serif;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.ms-nav-widget:hover {
+    transform: translateY(-1px);
+    border-color: #c9d6ea;
+    box-shadow: 0 16px 34px rgba(24,38,60,0.10);
+}
+.ms-nav-widget .ic {
+    width: 44px; height: 44px; min-width: 44px;
+    border-radius: 13px;
+    background: #e7f0fd; color: #3b82f6;
+    display: grid; place-items: center;
+}
+.ms-nav-widget.green .ic { background: #e7f7ef; color: #119d5c; }
+.ms-nav-widget .tx { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.ms-nav-widget .tx b { font-size: 14.5px; font-weight: 800; color: #111927; letter-spacing: -0.01em; }
+.ms-nav-widget .tx span { font-size: 12.5px; line-height: 1.45; color: #7a8798; font-weight: 500; }
+.ms-nav-widget .go { margin-left: auto; color: #97a3b4; display: inline-flex; flex: 0 0 auto; }
+body.dark-mode .ms-nav-widget { background: #1d2734; border-color: rgba(255,255,255,0.08); }
+body.dark-mode .ms-nav-widget .tx b { color: #f1f6fb; }
+body.dark-mode .ms-nav-widget:hover { border-color: rgba(255,255,255,0.18); }
+/* На мобильном портфеле — после табов (порядок flex задан в site-layout) */
+@media (max-width: 1023px) {
+    #pfLeftRail .ms-nav-widget { order: 3; }
+}
+
+/* ===== Список к покупке (оверлей): пояснение + массовые отметки ===== */
+.sl-bulkbar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    background: #ffffff;
+}
+body.dark-mode .sl-bulkbar { background: #1d2734; border-bottom-color: rgba(255,255,255,0.07); }
+.sl-bulk-hint {
+    flex: 1;
+    font-family: 'Manrope', sans-serif;
+    font-size: 11.5px; font-weight: 500; line-height: 1.35;
+    color: #7a8798;
+}
+.sl-bulk-btn {
+    border: none; background: #eef2f8; color: #3d4d63;
+    border-radius: 9px; padding: 7px 11px;
+    font-family: 'Manrope', sans-serif; font-size: 11.5px; font-weight: 700;
+    white-space: nowrap; cursor: pointer;
+}
+.sl-bulk-btn:active { background: #e3ebf5; }
+body.dark-mode .sl-bulk-btn { background: rgba(255,255,255,0.08); color: #c4cedd; }

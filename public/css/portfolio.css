@@ -1591,35 +1591,35 @@ body.dark-mode .echelon-explain-badge {
     line-height: 1.4;
 }
 
-/* === Блок Важно - Aurora Design с маркером === */
+/* === Блок Важно — спокойная янтарная заметка с акцентной кромкой === */
 .portfolio-important-aurora {
     display: flex;
+    align-items: flex-start;
     gap: 14px;
     margin: 24px 0;
-    padding: 18px;
-    background: var(--card-glass-aurora);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(251, 191, 36, 0.2);
-    border-radius: 16px;
+    padding: 16px 18px;
+    background: linear-gradient(180deg, rgba(251, 191, 36, 0.10), rgba(251, 191, 36, 0.05));
+    border: 1px solid rgba(251, 191, 36, 0.28);
+    border-left: 4px solid #F59E0B;
+    border-radius: 14px;
 }
 
 .important-aurora-icon {
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(251, 191, 36, 0.15);
-    border: 1px solid rgba(251, 191, 36, 0.25);
-    border-radius: 12px;
+    background: #F59E0B;
+    border-radius: 11px;
+    box-shadow: 0 6px 14px rgba(245, 158, 11, 0.28);
 }
 
 .important-aurora-icon svg {
-    width: 20px;
-    height: 20px;
-    stroke: #F59E0B;
+    width: 19px;
+    height: 19px;
+    stroke: #ffffff;
 }
 
 .important-aurora-content {
@@ -1627,18 +1627,20 @@ body.dark-mode .echelon-explain-badge {
 }
 
 .important-aurora-title {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Manrope', 'Inter', sans-serif;
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 800;
+    letter-spacing: 0.01em;
     color: var(--text-deep);
-    margin-bottom: 6px;
+    margin-bottom: 5px;
 }
 
 .important-aurora-text {
     font-family: 'Inter', sans-serif;
-    font-size: 13px;
-    color: var(--text-slate);
-    line-height: 1.5;
+    font-size: 13.5px;
+    color: var(--text-deep);
+    opacity: 0.82;
+    line-height: 1.55;
 }
 
 .important-aurora-text strong {

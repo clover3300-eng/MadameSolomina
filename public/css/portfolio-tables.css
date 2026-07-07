@@ -219,13 +219,20 @@ body.dark-mode .portfolio-echelon-percent {
     background: rgba(255, 255, 255, 0.1);
 }
 
+/* Стрелка разворота эшелона — в кружке, чтобы читалась как кнопка */
 .portfolio-echelon-arrow {
-    width: 20px;
-    height: 20px;
+    width: 28px;
+    height: 28px;
+    padding: 5px;
+    border-radius: 999px;
+    background: #eef2f8;
     flex-shrink: 0;
-    color: var(--text-slate);
-    transition: transform 0.3s ease;
+    color: #3d4d63;
+    transition: transform 0.3s ease, background 0.18s ease;
+    box-sizing: border-box;
 }
+.portfolio-echelon-card:hover .portfolio-echelon-arrow { background: #e3ebf5; }
+body.dark-mode .portfolio-echelon-arrow { background: rgba(255,255,255,0.09); color: #c4cedd; }
 
 .portfolio-echelon-card.expanded .portfolio-echelon-arrow {
     transform: rotate(180deg);
@@ -239,6 +246,25 @@ body.dark-mode .portfolio-echelon-percent {
 .portfolio-stock-item .ofz-expand-badge {
     flex-shrink: 0;
     justify-self: end;
+}
+
+/* Стрелки строк в портфеле заметнее, чем базовые 16px/opacity .45 из rebalance.css */
+#panel-portfolio .portfolio-stock-item .ofz-expand-badge,
+#panel-portfolio .portfolio-ofz-summary .ofz-expand-badge {
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
+    opacity: 0.9;
+    background: rgba(91, 124, 153, 0.12);
+}
+#panel-portfolio .portfolio-stock-item .ofz-expand-badge svg,
+#panel-portfolio .portfolio-ofz-summary .ofz-expand-badge svg {
+    width: 13px;
+    height: 13px;
+}
+body.dark-mode #panel-portfolio .portfolio-stock-item .ofz-expand-badge,
+body.dark-mode #panel-portfolio .portfolio-ofz-summary .ofz-expand-badge {
+    background: rgba(255, 255, 255, 0.09);
 }
 
 .portfolio-echelon-content {

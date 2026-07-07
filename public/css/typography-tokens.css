@@ -1,0 +1,84 @@
+/* ==========================================================================
+   ДИЗАЙН-КОД ТИПОГРАФИКИ — единые токены для шрифтов и цифр
+   ==========================================================================
+   Правила (см. также память проекта «table-header-data-convention»):
+   · Все ЦИФРЫ (цены, суммы, количества, проценты, даты) — моноширинный
+     var(--font-num), размер var(--fs-num) в строках таблиц.
+   · Заголовки колонок таблиц — var(--font-ui), var(--fs-th), uppercase, 800.
+   · Итоговые суммы таблиц — var(--fs-total), моно, 700.
+   · Названия карточек-таблиц — var(--fs-card-title), Manrope 800.
+   Новый UI обязан использовать эти переменные вместо «сырых» px.
+
+   Файл подключается ПОСЛЕ тематических css, ПЕРЕД desktop-zoom.css —
+   он выравнивает разнобой уже существующих таблиц.
+   ========================================================================== */
+
+:root {
+    /* Семейства */
+    --font-ui:   'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-text: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-num:  'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    /* Размеры */
+    --fs-th:         11px;   /* заголовки колонок таблиц (uppercase) */
+    --fs-num:        15px;   /* числа в строках таблиц */
+    --fs-num-sm:     12px;   /* вторичные числа: ранги #N, бейджи */
+    --fs-total:      16px;   /* итоговые суммы таблиц */
+    --fs-card-title: 17px;   /* заголовок карточки-таблицы */
+    --fs-card-sub:   13px;   /* подзаголовок карточки-таблицы */
+
+    /* Веса для цифр */
+    --fw-num:       600;
+    --fw-num-bold:  700;
+}
+
+/* ── Портфель: выравнивание существующего разнобоя ─────────────────────────
+   Заголовки колонок: ОФЗ / эшелоны акций / ближайшие выплаты — один шрифт */
+#panel-portfolio .portfolio-list-headers .portfolio-list-header-text,
+#panel-portfolio .portfolio-echelon-columns-header span,
+#panel-portfolio .coupon-table-head span {
+    font-family: var(--font-ui);
+    font-size: var(--fs-th);
+    font-weight: 800;
+}
+
+/* Числа в строках: ОФЗ, акции, выплаты — один размер и моно */
+#panel-portfolio .portfolio-ofz-yield,
+#panel-portfolio .portfolio-ofz-qty,
+#panel-portfolio .portfolio-ofz-sum,
+#panel-portfolio .portfolio-stock-ticker,
+#panel-portfolio .portfolio-stock-qty,
+#panel-portfolio .portfolio-stock-sum,
+#panel-portfolio .coupon-c-date b,
+#panel-portfolio .coupon-c-name,
+#panel-portfolio .coupon-c-qty,
+#panel-portfolio .coupon-c-sum {
+    font-family: var(--font-num);
+    font-size: var(--fs-num);
+}
+
+/* Итог «Ближайшие выплаты» — тот же вес, что «Итого ОФЗ» / «Итого акции» */
+#panel-portfolio .coupon-total-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0, 0, 0, 0.07);
+    text-align: left;
+}
+#panel-portfolio .coupon-total-foot .ctf-label {
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-slate, #64748B);
+}
+#panel-portfolio .coupon-total-foot #couponTotalHeaderV2 {
+    font-family: var(--font-num);
+    font-size: var(--fs-total);
+    font-weight: var(--fw-num-bold);
+}
+body.dark-mode #panel-portfolio .coupon-total-foot { border-top-color: rgba(255,255,255,0.09); }
