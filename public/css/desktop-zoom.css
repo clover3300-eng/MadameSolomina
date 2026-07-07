@@ -1,10 +1,104 @@
 /* ============================================================
-   DESKTOP ZOOM — масштаб интерфейса 100% на десктопе (>=1024px)
+   DESKTOP ZOOM — масштаб интерфейса 90% на десктопе (>=1024px)
    ============================================================
-   Масштабирование отключено (zoom:1), поэтому все компенсации,
-   завязанные на фактор 0.85, здесь не нужны — --real-vh уже
-   соответствует реальному viewport без деления. */
+   Вся логика масштабирования живёт ТОЛЬКО в этом файле.
+   Файл подключается ПОСЛЕДНИМ в <head>, чтобы перебивать
+   правила с !important из других файлов.
+
+   История: до 2026-07-05 был фактор 0.85, потом zoom:1 (без
+   масштаба) — но при 100% на ноутбучном экране (~1500px) раскладка
+   Портфелей складывалась раньше времени, помогал только ручной
+   Cmd+«−» в браузере (= 90%). С 2026-07-07 фактор 0.9 — сайт сам
+   даёт тот же эффект.
+
+   ВАЖНО: zoom сжимает px-значения (в т.ч. --real-vh из JS),
+   поэтому всё полноэкранное делим на фактор обратно.
+   Компенсации построены на --real-vh (px), а НЕ на vh-единицах:
+   поведение vh под zoom отличается между версиями браузеров,
+   а px ведут себя одинаково везде.
+   При смене фактора (0.9) менять его во всех правилах ниже
+   И в трёх компенсациях по проекту: css/stock-terminal.css,
+   css/bond-terminal.css (.stk-scroll/.bnd-scroll) и
+   css/site-layout.css (#v3BuyPanel). */
 
 @media (min-width: 1024px) {
-    body { zoom: 1; }
+    body { zoom: 0.9; }
+
+    /* Каркас приложения: --real-vh задаётся из JS (webapp-tabs.js)
+       при загрузке и на каждый resize окна */
+    #appShell {
+        height: calc(var(--real-vh, 100dvh) / 0.9);
+    }
+
+    /* Экраны, растянутые на весь видимый экран */
+    #screen-app,
+    #screen-company,
+    #screen-dashboard,
+    #screen-register,
+    #screen-portfolio,
+    .user-blocked-screen,
+    #rebalancePanelContent {
+        min-height: calc(var(--real-vh, 100vh) / 0.9);
+    }
+
+    .welcome-screen {
+        min-height: calc(var(--real-vh, 100vh) / 0.9 - 32px);
+    }
+    body.home-mode .welcome-screen {
+        min-height: calc(var(--real-vh, 100vh) / 0.9) !important;
+    }
+    /* На десктопе главная вкладка живёт внутри #contentArea (под хедером),
+       а не на весь экран как на мобильном fullscreen-режиме. Полноэкранная
+       min-height выше «раздувала» .welcome-screen за пределы #contentArea
+       и смещала герой-блок вниз. height:100% на #panel-home делает высоту
+       «определённой», чтобы min-height:100% у .welcome-screen считался
+       от реальной высоты #contentArea, а не от auto. */
+    /* Главная — один экран: сплит-карточка (.hs-card, css/home-register.css)
+       растягивается на высоту панели (height:100% задан в home-register.css).
+       Видимая высота #contentArea = экран минус шапка (~55px на десктопе →
+       /0.9 ≈ 62px в CSS-пикселях). */
+    body.tab-home #panel-home {
+        height: calc(var(--real-vh, 100vh) / 0.9 - 62px);
+    }
+
+    /* Тест Vanguard занимает весь экран */
+    #screen-vanguard.active {
+        height: calc(var(--real-vh, 100vh) / 0.9) !important;
+    }
+
+    /* Затемнение-подложка инфо-шторки: вместо 100vw/100vh
+       растягиваем по краям окна (top/left уже 0 в базовом правиле) —
+       для position:fixed это работает одинаково во всех движках */
+    .info-modal-backdrop {
+        width: auto;
+        height: auto;
+        right: 0;
+        bottom: 0;
+    }
+}
+
+/* Портфели: колонка «Избранное» (.pf-topgrid) и «узкая» сетка карточек (.pf-grid--narrow)
+   схлопываются по @media max-width — а он меряет РЕАЛЬНЫЙ viewport, не сжатый zoom:0.9
+   layout. Из-за этого на обычном ноутбучном экране (100% нативного зума браузера)
+   колонки схлопывались раньше, чем реально не хватало места — помогало только вручную
+   зумить страницу браузером (Cmd+-), т.к. это меняет РЕАЛЬНЫЙ viewport в CSS-px.
+   Компенсация: пороги из portfolios.css умножены на 0.9 и восстановлены здесь. */
+@media (min-width: 1024px) and (max-width: 1600px) {
+    .pf-topgrid { grid-template-columns: minmax(0,1fr) minmax(280px,340px) !important; }
+}
+@media (min-width: 1024px) and (max-width: 1440px) {
+    .pf-topgrid { grid-template-columns: 1fr !important; }
+}
+@media (min-width: 1024px) and (max-width: 1520px) {
+    .pf-grid--narrow { grid-template-columns: 1fr 1fr 1fr !important; }
+}
+@media (min-width: 1024px) and (max-width: 1368px) {
+    .pf-grid--narrow { grid-template-columns: 1fr 1fr !important; }
+}
+
+/* PWA standalone на десктопе */
+@media all and (display-mode: standalone) and (min-width: 1024px) {
+    #appShell {
+        min-height: calc(var(--real-vh, 100dvh) / 0.9);
+    }
 }
