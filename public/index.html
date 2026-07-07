@@ -41,6 +41,7 @@
     <link rel="stylesheet" href="css/market-heatmap.css?v=33">
     <link rel="stylesheet" href="css/calc-r5.css?v=10">
     <link rel="stylesheet" href="css/home-register.css?v=7">
+    <link rel="stylesheet" href="css/profile-menu.css?v=1">
     <link rel="stylesheet" href="css/desktop-zoom.css?v=4">
     
     <!-- Telegram WebApp API (fallback — works both in TG and browser) -->
@@ -210,6 +211,11 @@
             </div>
             <div id="topThemeBtn" onclick="toggleTheme()" title="Сменить тему">
                 <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            </div>
+            <!-- Личный кабинет: показывается вместо кнопки темы на всех вкладках, кроме Главной
+                 (видимость — profile-menu.css, панель и наполнение — js/profile-menu.js) -->
+            <div id="topProfileBtn" class="guest" title="Личный кабинет" role="button" aria-haspopup="dialog" aria-expanded="false">
+                <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             </div>
         </div>
     </div>
@@ -2101,6 +2107,7 @@
 <script src="js/market-livebar.js?v=2" defer></script>
 <script src="js/portfolios.js?v=48" defer></script>
 <script src="js/home-register.js?v=2" defer></script>
+<script src="js/profile-menu.js?v=1" defer></script>
 <script src="js/route-hash.js?v=1" defer></script>
 </body>
 </html>
