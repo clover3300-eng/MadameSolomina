@@ -158,8 +158,8 @@
   var OB_T = '<span class="r5-term ob" data-term="ob">Обл.</span>';
   var AC_T = '<span class="r5-term ac" data-term="ac">Акц.</span>';
   var TERMS = {
-    ob: { nm: 'Облигации', tag: 'Обл.', col: 'var(--r5-ofz)',    long: 'Облигации федерального займа — долговые бумаги государства. Дают фиксированный купонный доход и возврат номинала в срок.', meta: ['Низкий риск', 'Купоны', 'ОФЗ'] },
-    ac: { nm: 'Акции',     tag: 'Акц.', col: 'var(--r5-orange)', long: 'Доли компаний с Московской биржи. Доход — от роста цены и дивидендов. Доходнее облигаций, но заметно волатильнее.',   meta: ['Выше риск', 'Дивиденды', 'МосБиржа'] }
+    ob: { nm: 'Облигации', tag: 'Обл.', col: 'var(--r5-ofz)',    long: 'Облигации федерального займа — долговые бумаги государства. Дают фиксированный купонный доход и возврат номинала в срок.', meta: ['Низкий риск', 'Купоны'] },
+    ac: { nm: 'Акции',     tag: 'Акц.', col: 'var(--r5-orange)', long: 'Доли компаний с Московской биржи. Доход — от роста цены и дивидендов. Доходнее облигаций, но заметно волатильнее.',   meta: ['Выше риск', 'Дивиденды'] }
   };
   var _pop = null, _popFor = null;
   function r5ClosePop() { if (_pop && _pop.parentNode) _pop.parentNode.removeChild(_pop); _pop = null; _popFor = null; }
@@ -392,19 +392,26 @@
     var ba = document.getElementById('r5ResApply');
     if (bc) bc.addEventListener('click', function () { closeQuiz(); });
     if (ba) ba.addEventListener('click', function () {
-      applyProfileStrategy(profile);
+      var applied = applyProfileStrategy(profile);
       closeQuiz();
-      flashResult(profile);
+      flashResult(profile, applied);
       haptic('success');
     });
   }
 
-  // Применить стратегию профиля к существующему селектору стратегий
+  // Применить стратегию профиля к существующему селектору стратегий.
+  // Возвращает фактически применённую стратегию {t, bonds} — для индикатора внизу.
   function applyProfileStrategy(profile) {
     var map = (typeof VG_STRAT_MAP !== 'undefined') ? VG_STRAT_MAP : {};
     var s = map[profile.name] || { bonds: 50, t: 'Гармония' };
+    var applied = { t: s.t, bonds: s.bonds };
 
-    if (s.t === 'Индивидуальная') {
+    // Совпадение процентов с готовой стратегией → применяем готовую, а не «Индивидуальную»
+    var preset = (typeof ndFindPreset === 'function') ? ndFindPreset(s.bonds) : null;
+    if (s.t === 'Индивидуальная' && preset) {
+      if (typeof ndApplyStrategy === 'function') ndApplyStrategy(preset.bonds, preset.title, preset.subtitle);
+      applied = { t: preset.title, bonds: preset.bonds };
+    } else if (s.t === 'Индивидуальная') {
       // кастомное соотношение — через тот же путь, что и слайдер «Своя»
       try { savedCustomBonds = s.bonds; savedCustomStocks = 100 - s.bonds; } catch (e) {}
       setVal('ratioSlider', s.bonds);
@@ -416,26 +423,35 @@
       if (typeof draw === 'function') { try { draw(); } catch (e) {} }
     } else if (typeof ND_STRATEGIES !== 'undefined' && typeof ndApplyStrategy === 'function') {
       var nd = ND_STRATEGIES.find(function (x) { return x.title === s.t; });
-      if (nd) ndApplyStrategy(nd.bonds, nd.title, nd.subtitle);
+      if (nd) { ndApplyStrategy(nd.bonds, nd.title, nd.subtitle); applied = { t: nd.title, bonds: nd.bonds }; }
     }
     // держим список открытым после применения
     var wf = document.getElementById('waterfallContainer');
     if (wf) wf.classList.add('show');
+    return applied;
   }
 
-  // Короткое подтверждение результата над списком стратегий
-  function flashResult(profile) {
+  // Заметное подтверждение: какая стратегия применена по итогам теста
+  function flashResult(profile, applied) {
     var host = document.getElementById('r5QuizEntry');
     if (!host) return;
     var map = (typeof VG_STRAT_MAP !== 'undefined') ? VG_STRAT_MAP : {};
-    var s = map[profile.name] || { t: 'Гармония' };
+    var s = applied || map[profile.name] || { t: 'Гармония', bonds: 50 };
+    var bonds = (typeof s.bonds === 'number' && s.bonds >= 0) ? s.bonds : 50;
     host.classList.add('done');
     host.innerHTML =
       '<span class="ic ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M5 12.5l4.2 4.2L19 7"/></svg></span>' +
-      '<span class="tx"><b>Профиль: ' + esc(profile.name) + '</b><span>Подобрана стратегия «' + esc(s.t) + '»</span></span>' +
+      '<span class="tx"><b>Применена стратегия «' + esc(s.t) + '»</b>' +
+      '<span>Облигации ' + bonds + '% · Акции ' + (100 - bonds) + '% — по вашему профилю «' + esc(profile.name) + '»</span></span>' +
       '<span class="btn ghost" id="r5QuizRetake">Заново</span>';
     var again = document.getElementById('r5QuizRetake');
     if (again) again.addEventListener('click', function (e) { e.stopPropagation(); resetEntry(); openQuiz(); });
+    // Подсветить выбранную строку в списке стратегий, чтобы связь была очевидна
+    var sel = document.querySelector('#ndWfInner .nd-wfc-selected');
+    if (sel) {
+      try { sel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) {}
+      sel.classList.remove('r5-applied-pulse'); void sel.offsetWidth; sel.classList.add('r5-applied-pulse');
+    }
   }
 
   function resetEntry() {

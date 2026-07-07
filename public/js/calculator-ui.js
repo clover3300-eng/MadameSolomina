@@ -244,9 +244,22 @@ function ndOpenCustom() {
     if (wf) wf.classList.remove('show');
 }
 
+// Если пользовательские проценты совпали с готовой стратегией — применяем её,
+// а не «Индивидуальную» (одинаковое распределение не должно жить под двумя именами)
+function ndFindPreset(bondPct) {
+    return ND_STRATEGIES.find(s => s.bonds === bondPct) || null;
+}
+
 function ndSaveCustom() {
     const slider = document.getElementById('customRatioSlider');
     const bondPct = slider ? parseInt(slider.value) : 50;
+    const preset = ndFindPreset(bondPct);
+    if (preset) {
+        const custom = document.getElementById('customStrategyExpanded');
+        if (custom) custom.classList.remove('show');
+        ndApplyStrategy(preset.bonds, preset.title, preset.subtitle);
+        return;
+    }
     savedCustomBonds = bondPct;
     savedCustomStocks = 100 - bondPct;
     document.getElementById('ratioSlider').value = bondPct;
