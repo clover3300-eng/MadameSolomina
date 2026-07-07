@@ -4,7 +4,7 @@
    Подключается ПОСЛЕ webapp-layout.css / site-layout.css, чтобы
    перебивать старые .bt-* стили. Функциональные классы и id
    (#btDateInput, #btSourceCalc/Manual, #btRunBtn, #btResults,
-   ручной ввод тикеров) сохранены — логика в js/webapp-tabs.js. */
+   ручной ввод тикеров) сохранены — логика в js/backtest.js. */
 
 /* ---------- Контейнер: одна центрированная колонка ---------- */
 .bt2-wrap {

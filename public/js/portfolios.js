@@ -750,7 +750,7 @@
     }
 
     // ---------- историческая цена на дату (механизм вкладки «Тест») ----------
-    // btGetStockPriceSafe/btGetBondPriceSafe (webapp-tabs.js) тянут цену закрытия MOEX
+    // btGetStockPriceSafe/btGetBondPriceSafe (backtest.js) тянут цену закрытия MOEX
     // на конкретную дату; облигации уже в рублях (×10 от % номинала). Возвращают >0,
     // 0 (нет данных) или -1 (ошибка) — нам годится только >0.
     function histPriceFn(type) {
