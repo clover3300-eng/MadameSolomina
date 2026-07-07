@@ -2699,7 +2699,9 @@
             autofillNkd(holds); toast('Добавлено: ' + holds.length); return;
         }
         if (store.items.length >= MAX_CARDS) { toast('Максимум ' + MAX_CARDS + ' портфеля', true); return; }
-        var np = makePortfolio(importName(source)); np.holdings = holds; store.items.push(np); saveStore();
+        // src запоминаем: портфель из «ежемесячного дохода» ребалансируется с проверкой
+        // сохранности графика ежемесячных выплат (см. pfLostMonths в карточке ребалансировки)
+        var np = makePortfolio(importName(source)); np.holdings = holds; np.src = source; store.items.push(np); saveStore();
         openMenu = null; ensureQuotes(true); renderPortfolios(); autofillNkd(holds); toast('Импортировано: ' + holds.length);
     };
     function closeImpMenus() {
@@ -3243,6 +3245,42 @@
         for (var n = 1; n <= maxQty; n++) if (Math.floor(n * net / gross) >= n + 1) return n;
         return null;
     }
+    // ---------- график ежемесячных выплат (портфели из импорта «Ежемесячный доход») ----------
+    var RB_MON = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
+    // Месяцы (0-11), в которые бумага платит купоны в ближайшие 12 месяцев —
+    // та же периодическая схема от nextCouponDate, что и в календаре выплат
+    function bondPayMonths(tk) {
+        var det = bondDetail(tk); if (!det) return null;   // детали ещё грузятся
+        var nd = nextCouponDate(det); if (!nd) return null;
+        var freq = +det.freq || 0; if (!(freq > 0)) return null;
+        var stepMs = (365 / freq) * 86400000;
+        var out = {}, horizon = Date.now() + 365 * 86400000;
+        for (var t = nd.getTime(); t <= horizon; t += stepMs) out[new Date(t).getMonth()] = 1;
+        return out;
+    }
+    // Месяцы, которые останутся БЕЗ выплат, если продать sellH целиком и купить candT
+    // (candT == null → просто продать). null — детали купонов ещё не загружены.
+    function pfLostMonths(bs, sellH, candT) {
+        var mine = bondPayMonths(sellH.ticker); if (!mine) return null;
+        var cov = {};
+        bs.forEach(function (x) {
+            if (x.h.id === sellH.id) return;
+            if (!(aggHolding(x.h).qty > 0)) return;
+            var m = bondPayMonths(x.h.ticker); if (!m) return;
+            Object.keys(m).forEach(function (k) { cov[k] = 1; });
+        });
+        var candM = candT ? (bondPayMonths(candT) || {}) : {};
+        var lost = [];
+        Object.keys(mine).forEach(function (k) { if (!cov[k] && !candM[k]) lost.push(+k); });
+        lost.sort(function (a, b) { return a - b; });
+        return lost;
+    }
+    function rbIsMonthlyPf() {
+        var ov = dq('pfOverlay'); if (!ov) return false;
+        var p = findPf(ov.dataset.pid);
+        return !!(p && p.src === 'monthly');
+    }
+
     // Полный расчёт обмена облигаций: продаём qty своих (цена+НКД сейчас, минус комиссия) →
     // покупаем новые (цена+НКД сейчас, плюс комиссия); прибыль в день и штук — по всему
     // портфелю ДО и ПОСЛЕ
@@ -3589,7 +3627,8 @@
             );
         }
         return '<div class="rb5-row' + (sel ? ' sel' : '') + '" onclick="pfPickBond(\'buy\',\'' + esc(cd.t) + '\')">' +
-            '<div class="rb5-rid"><b>' + (sel ? RB5_CHECK : '') + '<span class="rb5-nmt">' + esc(cd.n) + '</span>' + (heldSet[isinKey(cd.t)] ? '<i class="rb5-own">в портф.</i>' : '') + '</b>' +
+            '<div class="rb5-rid"><b>' + (sel ? RB5_CHECK : '') + '<span class="rb5-nmt">' + esc(cd.n) + '</span>' + (heldSet[isinKey(cd.t)] ? '<i class="rb5-own">в портф.</i>' : '') +
+                (cd._keeps ? '<i class="rb5-keep" title="Купоны этой бумаги приходятся на месяцы, которые оголит продажа — график ежемесячных выплат сохранится">держит график</i>' : '') + '</b>' +
                 '<span>' + (cd.unit > 0 ? fmtPrice(cd.unit) + ' с НКД' : esc(cd.t)) + '</span></div>' +
             '<div class="rb5-rval"><b class="pos">' + (isFinite(cd.sheetYield) ? cd.sheetYield.toFixed(1).replace('.', ',') + '%' : '—') + '</b><span>доходность</span></div>' + rb5InfoBtn(key, on) +
         '</div>' + det;
@@ -3616,6 +3655,17 @@
         var note = d.suggest == null
             ? '<div class="rb5-note warn">' + CHART_WARN_SVG + '<span>Новая бумага не дешевле вашей — купить больше штук, чем продали, не выйдет.</span></div>'
             : (d.qty === d.suggest ? '<div class="rb5-note">Минимум для «купить больше, чем продал»: ' + d.suggest + ' шт.</div>' : '');
+        // Портфель из «Ежемесячного дохода»: следим, чтобы после обмена каждый месяц
+        // оставался с выплатой (продажа бумаги целиком может «оголить» её месяцы)
+        if (rbIsMonthlyPf() && d.qty >= d.maxQty) {
+            var lost = pfLostMonths(mine, sellX.h, cand.t);
+            if (lost && lost.length) {
+                note += '<div class="rb5-note warn">' + CHART_WARN_SVG + '<span>Портфель собран под выплаты каждый месяц. После этого обмена без купона останутся: <b>' +
+                    lost.map(function (m) { return RB_MON[m]; }).join(', ') + '</b>. Выберите бумагу с выплатами в эти месяцы (метка «держит график») или продайте не всё.</span></div>';
+            } else if (lost) {
+                note += '<div class="rb5-note">График ежемесячных выплат сохраняется — все месяцы остаются с купоном.</div>';
+            }
+        }
         var rows = '<div class="rb5-vrow"><span class="rb5-vico">' + UNITS_SVG + '</span><span class="rb5-vlabel">Облигаций всего</span>' +
             rb5BA(d.unitsBefore, d.unitsAfter + ' шт') +
             rb5Delta(d.unitsAfter - d.unitsBefore, ' шт', function (v) { return String(v); }) + '</div>';
@@ -3657,6 +3707,18 @@
         // выбранный ранее кандидат пропал из списка (его же выбрали на продажу, список
         // перезагрузился) — сброс выбора ДО отрисовки, чтобы чипы шагов не врали
         if (rebalPick.bond.buy && !cands.some(function (cd) { return cd.t === rebalPick.bond.buy; })) rebalPick.bond.buy = null;
+        // Портфель из «Ежемесячного дохода» + выбрана бумага на продажу → помечаем
+        // кандидатов, чьи купоны закрывают «оголяющиеся» месяцы (метка «держит график»)
+        if (rbIsMonthlyPf() && rebalPick.bond.sell) {
+            var sellSelX = null; bs.forEach(function (x) { if (x.h.id === rebalPick.bond.sell) sellSelX = x; });
+            var needLost = sellSelX ? pfLostMonths(bs, sellSelX.h, null) : null;
+            if (needLost && needLost.length) {
+                cands.forEach(function (cd) {
+                    var cm = bondPayMonths(cd.t);
+                    cd._keeps = !!cm && needLost.every(function (m) { return cm[m]; });
+                });
+            }
+        }
         var candRows = cands.length ? cands.map(function (cd) { return ofzRowHtml(cd, heldSet); }).join('')
             : '<div class="rb5-list-empty">Список ОФЗ появится из гугл-таблицы (раздел «Ребаланс»)</div>';
         // чипы шагов 1/2 в заголовках списков — новичок видит, куда кликать сейчас
@@ -3782,7 +3844,7 @@
     function rb5HistoryHtml(p) {
         if (!rebalHistory) return '';
         var ts = p.trades || [];
-        var rows = ts.length ? ts.map(function (t) {
+        var rows = ts.length ? ts.map(function (t, i) {
             var w = new Date(t.ts || 0);
             var when = pad2(w.getDate()) + '.' + pad2(w.getMonth() + 1) + '.' + w.getFullYear() + ' · ' + pad2(w.getHours()) + ':' + pad2(w.getMinutes());
             var eff = '';
@@ -3790,6 +3852,12 @@
                 eff = rb5Delta(t.dayAfter - t.dayBefore, ' ₽/день', f2);
             else if (t.kind === 'stock' && t.potFrom != null && t.potTo != null)
                 eff = rb5Delta(t.potTo - t.potFrom, ' п.п.', function (v) { return v.toFixed(1).replace('.', ','); });
+            // отмена доступна только для ПОСЛЕДНЕЙ сделки с сохранённым состоянием —
+            // так портфель гарантированно возвращается ровно к состоянию до обмена
+            var undoBtn = (i === 0 && t.undo)
+                ? '<button class="rb5-hist-undo" onclick="pfRbUndoTrade(\'' + p.id + '\',\'' + t.id + '\')" title="Отменить сделку — портфель вернётся к состоянию до обмена">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>Отменить</button>'
+                : '';
             return '<div class="rb5-hist-r">' +
                 '<span class="rb5-cdot ' + (t.kind === 'bond' ? 'bond' : 'stock') + '"></span>' +
                 '<div class="rb5-hist-main">' +
@@ -3799,7 +3867,8 @@
                         (t.fee > 0 ? ' · комиссия ' + feeLbl(t.fee) : '') + '</span>' +
                 '</div>' +
                 (eff ? '<span class="rb5-hist-eff">' + eff + '</span>' : '') +
-                '<button class="rb5-hist-x" onclick="pfRbDelTrade(\'' + p.id + '\',\'' + t.id + '\')" aria-label="Удалить запись" title="Удалить запись">' + XMARK_SVG + '</button>' +
+                undoBtn +
+                '<button class="rb5-hist-x" onclick="pfRbDelTrade(\'' + p.id + '\',\'' + t.id + '\')" aria-label="Удалить запись" title="Удалить запись из истории (портфель не меняется)">' + XMARK_SVG + '</button>' +
             '</div>';
         }).join('') : '<div class="rb5-hist-empty">Пока пусто — применённые обмены будут записываться сюда, чтобы каждый шаг можно было отследить и проверить.</div>';
         return '<div class="rb5-hist"><div class="rb5-hist-h"><b>История сделок</b>' +
@@ -3947,6 +4016,7 @@
     }
     // Покупка: такой тикер уже есть (облигации сверяем по короткому ISIN) → докупка лотом,
     // иначе новый актив. Цена/НКД — текущие рыночные: ровно те, по которым считался обмен.
+    // Возвращает { hid, lotId } — по ним отмена сделки убирает именно этот лот.
     function pfAddBought(p, o) {
         var lot = { id: genId('l'), buyDate: todayStr(), buyPrice: Math.round((o.price || 0) * 100) / 100, qty: o.qty,
             nkd: Math.round((o.nkd || 0) * 100) / 100, priceFromApi: true, nkdFromApi: o.type === 'bond' };
@@ -3955,9 +4025,11 @@
             if (exist || h.type !== o.type) return;
             if (o.type === 'bond' ? isinKey(h.ticker) === isinKey(o.ticker) : h.ticker === o.ticker) exist = h;
         });
-        if (exist) { ensureLots(exist).push(lot); return; }
-        p.holdings.push({ id: genId('h'), ticker: o.ticker, name: o.name || o.ticker, type: o.type, lots: [lot],
-            potAtBuy: o.type === 'stock' ? (o.pot != null ? o.pot : potentialOf(o.ticker)) : null });
+        if (exist) { ensureLots(exist).push(lot); return { hid: exist.id, lotId: lot.id }; }
+        var nh = { id: genId('h'), ticker: o.ticker, name: o.name || o.ticker, type: o.type, lots: [lot],
+            potAtBuy: o.type === 'stock' ? (o.pot != null ? o.pot : potentialOf(o.ticker)) : null };
+        p.holdings.push(nh);
+        return { hid: nh.id, lotId: lot.id };
     }
     function pfLogTrade(p, t) {
         t.id = genId('t'); t.ts = Date.now(); t.fee = rebalFee || 0;
@@ -3979,13 +4051,24 @@
         var d = bondDeal(bondHeld(sellX.h), cand, bs);
         if (!d) { toast('Недостаточно данных для обмена', true); return; }
         if (!(d.buyQty > 0)) { toast('Выручки не хватает даже на одну новую бумагу', true); return; }
+        // портфель под ежемесячные выплаты: не даём обмену оставить месяц без купона
+        if (p.src === 'monthly' && d.qty >= d.maxQty) {
+            var lostM = pfLostMonths(bs, sellX.h, cand.t);
+            if (lostM && lostM.length) {
+                toast('Обмен сломает график ежемесячных выплат: без купона — ' + lostM.map(function (m) { return RB_MON[m]; }).join(', '), true);
+                return;
+            }
+        }
         var before = bondsTotal(bs);
         var sellName = sellX.h.name || sellX.h.ticker;
+        var sellSnap = JSON.parse(JSON.stringify(sellX.h));   // для отмены сделки из истории
+        var sellIdx = (p.holdings || []).indexOf(sellX.h);
         pfReduceHolding(p, sellX.h, d.qty);
-        pfAddBought(p, { type: 'bond', ticker: cand.t, name: cand.n, price: cand.price, nkd: cand.nkd, qty: d.buyQty });
+        var bought = pfAddBought(p, { type: 'bond', ticker: cand.t, name: cand.n, price: cand.price, nkd: cand.nkd, qty: d.buyQty });
         pfLogTrade(p, { kind: 'bond', sellTicker: sellX.h.ticker, sellName: sellName, sellQty: d.qty,
             buyTicker: cand.t, buyName: cand.n, buyQty: d.buyQty, proceeds: d.proceeds, rest: d.rest,
-            dayBefore: d.dayBefore, dayAfter: d.dayAfter });
+            dayBefore: d.dayBefore, dayAfter: d.dayAfter,
+            undo: { sold: sellSnap, soldIdx: sellIdx, buyHid: bought.hid, buyLotId: bought.lotId } });
         // дельта «машины денег»: пересчёт по фактически обновлённому портфелю; если купоны
         // ещё грузятся — берём расчётную дельту из самой сделки
         var after = bondsTotal(calcPf(p).hs.filter(function (x) { return x.h.type === 'bond'; }));
@@ -4014,12 +4097,15 @@
         if (!d) { toast('Недостаточно данных для обмена', true); return; }
         if (!(d.buyQty > 0)) { toast('Выручки не хватает даже на одну акцию ' + cand.ticker, true); return; }
         var sellName = sellX.h.ticker;
+        var sellSnap = JSON.parse(JSON.stringify(sellX.h));   // для отмены сделки из истории
+        var sellIdx = (p.holdings || []).indexOf(sellX.h);
         pfReduceHolding(p, sellX.h, d.qty);
-        pfAddBought(p, { type: 'stock', ticker: cand.ticker, name: cand.name, price: d.priceN, qty: d.buyQty, pot: cand.pot });
+        var bought = pfAddBought(p, { type: 'stock', ticker: cand.ticker, name: cand.name, price: d.priceN, qty: d.buyQty, pot: cand.pot });
         pfLogTrade(p, { kind: 'stock', sellTicker: sellName, sellName: sellName, sellQty: d.qty,
             buyTicker: cand.ticker, buyName: cand.ticker, buyQty: d.buyQty, proceeds: d.proceeds,
             rest: d.priceN > 0 ? d.proceeds - d.buyQty * d.priceN * (1 + (rebalFee || 0)) : 0,
-            potFrom: d.potFrom, potTo: d.potTo });
+            potFrom: d.potFrom, potTo: d.potTo,
+            undo: { sold: sellSnap, soldIdx: sellIdx, buyHid: bought.hid, buyLotId: bought.lotId } });
         rebalPick.stock = { sell: null, buy: null, qty: null };
         saveStore(); pfInvalidateCharts(p.id); ensureQuotes(true); rebalRepaint();
         if (currentTab === 'portfolios' && dq('pfWrap')) renderPortfolios();
@@ -4029,6 +4115,39 @@
         var p = findPf(pid); if (!p) return;
         p.trades = (p.trades || []).filter(function (t) { return t.id !== tid; });
         saveStore(); rebalRepaint();
+    };
+    // Отмена последней сделки: убираем купленный лот, возвращаем проданное как было.
+    // Разрешена только для верхней записи истории — отмены идут строго стеком,
+    // иначе более поздние сделки могли уже перераспределить те же бумаги.
+    window.pfRbUndoTrade = function (pid, tid) {
+        var p = findPf(pid); if (!p) return;
+        var ts = p.trades || [];
+        if (!ts.length || ts[0].id !== tid) { toast('Отменять сделки можно только по порядку — начиная с последней', true); return; }
+        var t = ts[0];
+        if (!t.undo || !t.undo.sold) { toast('У этой записи нет сохранённого состояния для отмены', true); return; }
+        // 1) убрать купленный лот (если холдинг опустел — убрать и его)
+        var bh = null;
+        (p.holdings || []).forEach(function (h) { if (h.id === t.undo.buyHid) bh = h; });
+        if (bh) {
+            bh.lots = ensureLots(bh).filter(function (l) { return l.id !== t.undo.buyLotId; });
+            if (!bh.lots.length) p.holdings = p.holdings.filter(function (x) { return x.id !== bh.id; });
+        }
+        // 2) вернуть проданное: актив ещё есть (продали часть) → восстановить его лоты,
+        //    актив был продан целиком → вернуть его в состав на прежнее место
+        var sold = t.undo.sold, sh = null;
+        (p.holdings || []).forEach(function (h) { if (h.id === sold.id) sh = h; });
+        if (sh) sh.lots = sold.lots;
+        else {
+            var at = (t.undo.soldIdx != null) ? Math.min(t.undo.soldIdx, p.holdings.length) : p.holdings.length;
+            p.holdings.splice(at, 0, sold);
+        }
+        ts.shift();
+        rebalPick.bond = { sell: null, buy: null, qty: null };
+        rebalPick.stock = { sell: null, buy: null, qty: null };
+        saveStore(); pfInvalidateCharts(p.id); ensureQuotes(true);
+        rebalRepaint();
+        if (currentTab === 'portfolios' && dq('pfWrap')) renderPortfolios();
+        toast('Сделка отменена — портфель возвращён к состоянию до обмена');
     };
 
     // ====================================================================
