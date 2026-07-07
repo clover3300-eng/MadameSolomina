@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "madamesolomina",
+  "compatibility_date": "2026-07-07",
+  "observability": {
+    "enabled": true
+  },
+  "assets": {
+    "directory": ".",
+    "not_found_handling": "single-page-application",
+    "html_handling": "none"
+  },
+  "compatibility_flags": [
+    "nodejs_compat"
+  ]
+}
