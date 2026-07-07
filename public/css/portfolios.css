@@ -145,7 +145,7 @@ body.dark-mode .pf-sumcard {
 .pf-topgrid { display: grid; grid-template-columns: minmax(0,1fr) minmax(280px,340px); align-items: start; gap: 16px; }
 .pf-topgrid-left { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .pf-topgrid-fav { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
-@media (max-width: 1600px) { .pf-topgrid { grid-template-columns: 1fr; } }
+@media (max-width: 1360px) { .pf-topgrid { grid-template-columns: 1fr; } }
 /* «Избранное» в узкой колонке (~280–340px, ЛЮБАЯ ширина окна) — заголовок/кнопки рассчитаны
    на полноширинную карточку (там же .pff-grid и по @media 620/560px), в колонке им тесно —
    принудительно тот же компактный вид, но не по ширине окна, а потому что колонка узкая. */
