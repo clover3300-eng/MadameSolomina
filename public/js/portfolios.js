@@ -3410,7 +3410,7 @@
     // (флаг pf_rebal_guide_v1 в localStorage), вернуть можно кнопкой «?» в шапке.
     function rb5GuideHtml() {
         if (!rebalGuide) return '';
-        function gs(n, t, s) { return '<div class="rb5-gstep">' + rb5Step(n, '') + '<div><b>' + t + '</b><span>' + s + '</span></div></div>'; }
+        function gs(n, t, s) { return '<div class="rb5-gstep"><span class="rb5-gnum">' + n + '</span><div><b>' + t + '</b><span>' + s + '</span></div></div>'; }
         return '<div class="rb5-guide">' +
             '<div class="rb5-guide-head"><b>Как работает ребалансировка</b>' +
                 '<button type="button" class="rb5-guide-ok" onclick="pfRbGuide()">Понятно</button></div>' +
@@ -3444,6 +3444,8 @@
     function dealHeadHtml() {
         return '<div class="rb5-deal-h">' + rb5Step(3, 'on') + '<b>Проверьте и примените</b></div>';
     }
+    // «до → после»: «было» приглушённо и мельче, «стало» — крупно (акцент на результате)
+    function rb5BA(before, after) { return '<b class="rb5-ba"><span>' + before + '</span><i>→</i>' + after + '</b>'; }
     // дельта-чип «+2 шт» / «−1,20 ₽»
     function rb5Delta(v, unit, fmt) {
         var cls = v > 0 ? 'pos' : (v < 0 ? 'neg' : 'mut');
@@ -3559,12 +3561,14 @@
         var note = d.suggest == null
             ? '<div class="rb5-note warn">' + CHART_WARN_SVG + '<span>Новая бумага не дешевле вашей — купить больше штук, чем продали, не выйдет.</span></div>'
             : (d.qty === d.suggest ? '<div class="rb5-note">Минимум для «купить больше, чем продал»: ' + d.suggest + ' шт.</div>' : '');
-        var rows = '<div class="rb5-vrow"><span class="rb5-vico">' + UNITS_SVG + '</span><span class="rb5-vlabel">Облигаций всего</span><b>' + d.unitsBefore + ' → ' + d.unitsAfter + '</b>' +
+        var rows = '<div class="rb5-vrow"><span class="rb5-vico">' + UNITS_SVG + '</span><span class="rb5-vlabel">Облигаций всего</span>' +
+            rb5BA(d.unitsBefore, d.unitsAfter + ' шт') +
             rb5Delta(d.unitsAfter - d.unitsBefore, ' шт', function (v) { return String(v); }) + '</div>';
         var verdict = '';
         if (d.dayBefore != null && d.dayAfter != null) {
             var per = perMul(), dd = (d.dayAfter - d.dayBefore) * per;
-            rows += '<div class="rb5-vrow"><span class="rb5-vico">' + COIN_SVG + '</span><span class="rb5-vlabel">Прибыль ' + perLbl() + '</span><b>' + f2(d.dayBefore * per) + ' → ' + f2(d.dayAfter * per) + ' ₽</b>' +
+            rows += '<div class="rb5-vrow"><span class="rb5-vico">' + COIN_SVG + '</span><span class="rb5-vlabel">Прибыль ' + perLbl() + '</span>' +
+                rb5BA(f2(d.dayBefore * per), f2(d.dayAfter * per) + ' ₽') +
                 rb5Delta(dd, ' ₽', f2) + '</div>';
             verdict = dd > 0
                 ? '<div class="rb5-verdict ok">' + CHECK_SVG + '<span>Прибыль растёт — обмен имеет смысл, машина денег разгоняется</span></div>'
@@ -3677,8 +3681,8 @@
                 '<div class="rb5-deal-n">' + (d.buyQty > 0 ? d.buyQty + ' шт' : 'на ' + fmtRub(d.proceeds)) + '</div>' +
                 '<small>' + (d.priceN > 0 ? 'по ' + fmtPrice(d.priceN) : '&nbsp;') + '</small></div>' +
         '</div>';
-        var rows = '<div class="rb5-vrow"><span class="rb5-vlabel">Потенциал бумаги</span><b>' +
-            (d.potFrom == null ? '—' : fmtPct(d.potFrom)) + ' → ' + (d.potTo == null ? '—' : fmtPct(d.potTo)) + '</b>' +
+        var rows = '<div class="rb5-vrow"><span class="rb5-vlabel">Потенциал бумаги</span>' +
+            rb5BA(d.potFrom == null ? '—' : fmtPct(d.potFrom), d.potTo == null ? '—' : fmtPct(d.potTo)) +
             (d.potDelta != null ? rb5Delta(d.potDelta, ' п.п.', function (v) { return v.toFixed(1).replace('.', ','); }) : '') + '</div>';
         var verdict = d.potDelta == null ? ''
             : (d.potDelta > 0
@@ -3840,7 +3844,22 @@
             rebalPick.stock = { sell: best.sell, buy: best.buy, qty: null };
         }
         rebalRepaint();
+        rb5ScrollToSel(kind);
     };
+    // После автоподбора докручиваем оба списка колонки к выбранным карточкам — иначе выбор
+    // в глубине длинного списка остаётся за кадром. Вызывать ПОСЛЕ rebalRepaint: он
+    // восстанавливает старые scrollTop списков, и ручной скролл должен лечь поверх.
+    function rb5ScrollToSel(kind) {
+        var ov = dq('pfOverlay'); if (!ov) return;
+        var col = ov.querySelector(kind === 'bond' ? '.rb5-col--bond' : '.rb5-col--stock'); if (!col) return;
+        [].forEach.call(col.querySelectorAll('.rb5-list-scroll'), function (sc) {
+            var row = sc.querySelector('.rb5-row.sel'); if (!row) return;
+            var top = sc.scrollTop + row.getBoundingClientRect().top - sc.getBoundingClientRect().top
+                - (sc.clientHeight - row.offsetHeight) / 2;   // выбранная карточка — по центру видимой части
+            if (sc.scrollTo) sc.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+            else sc.scrollTop = Math.max(0, top);
+        });
+    }
     window.pfSetRebalPeriod = function (per) { if (PERIODS[per]) rebalPeriod = per; saveRebalParams(); rebalRepaint(); };
     // выбор бумаги: клик по своей (side='sell') / рыночной (side='buy'); повторный клик —
     // снять выбор; количество к продаже сбрасывается на предложенное

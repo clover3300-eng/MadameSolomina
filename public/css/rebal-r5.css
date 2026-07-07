@@ -679,3 +679,104 @@ body.dark-mode .rb5-det { border-color: rgba(255, 255, 255, 0.14); background: r
     .rb5-col--bond, .rb5-col--stock { padding: 12px; border-radius: 20px; }
     .rb5-list-scroll { padding: 2px 7px 9px; gap: 6px; }
 }
+
+/* =========================================================
+   АКЦЕНТНЫЕ БЛОКИ: «Прибыль по облигациям» в шапке,
+   крупные номера шагов в гиде, панель «до → после» в расчёте
+   ========================================================= */
+
+/* ---- «Прибыль по облигациям» — тёмный акцентный виджет (главная метрика карточки) ---- */
+.rb5-machine--head {
+    padding: 10px 12px 10px 20px; gap: 18px; border-radius: 22px;
+    background: linear-gradient(135deg, #2C364C, #161B27);
+    border-color: transparent;
+    box-shadow: 0 16px 34px -16px rgba(22, 27, 39, 0.60);
+}
+body.dark-mode .rb5-machine--head {
+    background: linear-gradient(135deg, #263149, #10141f);
+    border-color: rgba(255, 255, 255, 0.10);
+    box-shadow: 0 16px 34px -16px rgba(0, 0, 0, 0.7);
+}
+.rb5-machine--head .rb5-label { color: rgba(255, 255, 255, 0.55); font-size: 9px; }
+.rb5-machine--head .rb5-mch-val b { font-size: 25px; color: #fff; }
+.rb5-machine--head .rb5-mch-val span { font-size: 11px; color: rgba(255, 255, 255, 0.55); }
+.rb5-machine--head .rb5-mch-val b.pos { color: #4ade80; }
+.rb5-machine--head .rb5-mch-val b.neg { color: #fb7185; }
+/* сегменты периода на тёмной подложке */
+.rb5-machine--head .rb5-seg { background: rgba(255, 255, 255, 0.10); }
+.rb5-machine--head .rb5-seg-b { color: rgba(255, 255, 255, 0.60); }
+.rb5-machine--head .rb5-seg-b:hover { color: #fff; }
+.rb5-machine--head .rb5-seg-b.on { background: #fff; color: #161B27; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35); }
+body.dark-mode .rb5-machine--head .rb5-seg { background: rgba(255, 255, 255, 0.08); }
+body.dark-mode .rb5-machine--head .rb5-seg-b.on { background: #5a7cff; color: #fff; }
+/* дельта-чип и стойкая подсветка после обмена — на тёмном фоне ярче */
+.rb5-machine--head .rb5-mch-delta.pos { color: #4ade80; background: rgba(74, 222, 128, 0.16); }
+.rb5-machine--head .rb5-mch-delta.neg { color: #fb7185; background: rgba(251, 113, 133, 0.16); }
+.rb5-machine--head.up { border-color: rgba(74, 222, 128, 0.55); box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.14), 0 16px 34px -16px rgba(22, 27, 39, 0.60); }
+.rb5-machine--head.down { border-color: rgba(251, 113, 133, 0.50); box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.12), 0 16px 34px -16px rgba(22, 27, 39, 0.60); }
+body.dark-mode .rb5-machine--head.up { border-color: rgba(74, 222, 128, 0.55); box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.12), 0 16px 34px -16px rgba(0, 0, 0, 0.7); }
+body.dark-mode .rb5-machine--head.down { border-color: rgba(251, 113, 133, 0.50); box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.10), 0 16px 34px -16px rgba(0, 0, 0, 0.7); }
+
+/* ---- гид «как это работает»: типографика + крупные номера шагов ---- */
+.rb5-guide { gap: 14px; padding: 20px 24px; }
+.rb5-guide-head b { font-size: 16px; letter-spacing: -0.01em; }
+.rb5-guide-lead { font-size: 13px; line-height: 1.6; color: #55627a; }
+body.dark-mode .rb5-guide-lead { color: #aebcd1; }
+.rb5-gstep { align-items: center; gap: 13px; padding: 14px 16px; }
+.rb5-gstep b { font-size: 13px; letter-spacing: -0.01em; }
+.rb5-gstep span { font-size: 11.5px; line-height: 1.55; }
+.rb5-gnum {
+    flex-shrink: 0; display: grid; place-items: center;
+    width: 42px; height: 42px; border-radius: 15px;
+    font-size: 21px; font-weight: 900; line-height: 1; color: #fff;
+    font-variant-numeric: tabular-nums;
+    background: linear-gradient(135deg, #2C364C, #161B27);
+    box-shadow: 0 10px 20px -10px rgba(22, 27, 39, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+body.dark-mode .rb5-gnum {
+    background: linear-gradient(135deg, #5a7cff, #3b5bdb);
+    box-shadow: 0 10px 20px -10px rgba(90, 124, 255, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+.rb5-guide-tip { font-size: 11.5px; }
+.rb5-guide-tip > svg { width: 16px; height: 16px; }
+
+/* ---- «Облигаций всего» и «Прибыль в день» — акцентная панель в цвете колонки ---- */
+.rb5-vbox {
+    gap: 11px; padding: 13px 15px;
+    background: var(--rbc-soft, rgba(44, 54, 76, 0.05));
+    border: 1px solid var(--rbc-border, rgba(44, 54, 76, 0.10));
+    border-radius: 14px;
+}
+body.dark-mode .rb5-vbox { background: var(--rbc-soft, rgba(255, 255, 255, 0.04)); border-color: var(--rbc-border, rgba(255, 255, 255, 0.10)); }
+.rb5-vrow { gap: 10px; font-size: 12.5px; }
+.rb5-vrow > .rb5-vlabel { font-weight: 700; color: #5d6b83; }
+body.dark-mode .rb5-vrow > .rb5-vlabel { color: #a5b4c8; }
+.rb5-vico {
+    width: 26px; height: 26px; color: var(--rbc, #6b7890);
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid var(--rbc-border, rgba(44, 54, 76, 0.10));
+}
+.rb5-vico svg { width: 14px; height: 14px; }
+body.dark-mode .rb5-vico { background: rgba(15, 23, 42, 0.55); color: var(--rbc, #94a3b8); }
+.rb5-vrow > b { font-size: 16px; }
+/* «было» — приглушённо, стрелка — в цвете колонки, «стало» наследует крупный жирный */
+.rb5-ba { display: inline-flex; align-items: baseline; gap: 7px; }
+.rb5-ba span { font-size: 12px; font-weight: 700; color: #8a96aa; }
+.rb5-ba i { font-style: normal; font-size: 12px; font-weight: 800; color: var(--rbc, #8a96aa); }
+body.dark-mode .rb5-ba span { color: #7d8aa0; }
+/* дельта-чип стал пилюлей с подложкой */
+.rb5-dchip { font-size: 11px; padding: 3px 9px; border-radius: 999px; }
+.rb5-dchip.pos { background: rgba(31, 157, 99, 0.12); }
+.rb5-dchip.neg { background: rgba(210, 59, 78, 0.10); }
+.rb5-dchip.mut { background: rgba(44, 54, 76, 0.07); }
+body.dark-mode .rb5-dchip.pos { background: rgba(52, 211, 153, 0.14); }
+body.dark-mode .rb5-dchip.neg { background: rgba(248, 113, 113, 0.14); }
+body.dark-mode .rb5-dchip.mut { background: rgba(255, 255, 255, 0.08); }
+
+/* ---- узкие экраны ---- */
+@media (max-width: 720px) {
+    .rb5-machine--head { padding: 8px 10px 8px 16px; gap: 12px; }
+    .rb5-machine--head .rb5-mch-val b { font-size: 20px; }
+    .rb5-gnum { width: 36px; height: 36px; border-radius: 12px; font-size: 18px; }
+    .rb5-vrow > b { font-size: 14px; }
+}
