@@ -45,6 +45,7 @@
     function fmtPrice(n) { if (n == null || !isFinite(n)) return '—';
         return n.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₽'; }
     function fmtPct(n) { if (n == null || !isFinite(n)) return '—'; return (n >= 0 ? '+' : '') + n.toFixed(1).replace('.', ',') + '%'; }
+    function fmtQty(n) { return (n == null || !isFinite(n)) ? '—' : Math.round(n).toLocaleString('ru-RU'); }
     function pad2(n) { return String(n).padStart(2, '0'); }
     function todayStr() { var d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
     function dateFromDaysAgo(days) { var d = new Date(); d.setDate(d.getDate() - Math.round(days || 0));
@@ -3497,8 +3498,8 @@
             );
         }
         return '<div class="rb5-row' + (sel ? ' sel' : '') + '" onclick="pfPickBond(\'sell\',\'' + x.h.id + '\')">' +
-            '<div class="rb5-rid"><b>' + (sel ? RB5_CHECK : '') + esc(x.h.name || x.h.ticker) + '</b>' +
-                '<span>' + r.qty + ' шт</span></div>' +
+            '<div class="rb5-rid"><b>' + (sel ? RB5_CHECK : '') + '<span class="rb5-nmt">' + esc(x.h.name || x.h.ticker) + '</span></b>' +
+                '<span>' + fmtQty(r.qty) + ' шт</span></div>' +
             '<div class="rb5-rval">' + val + '</div>' + rb5InfoBtn(key, on) +
         '</div>' + det;
     }
@@ -3518,7 +3519,7 @@
             );
         }
         return '<div class="rb5-row' + (sel ? ' sel' : '') + '" onclick="pfPickBond(\'buy\',\'' + esc(cd.t) + '\')">' +
-            '<div class="rb5-rid"><b>' + (sel ? RB5_CHECK : '') + esc(cd.n) + (heldSet[isinKey(cd.t)] ? '<i class="rb5-own">в портф.</i>' : '') + '</b>' +
+            '<div class="rb5-rid"><b>' + (sel ? RB5_CHECK : '') + '<span class="rb5-nmt">' + esc(cd.n) + '</span>' + (heldSet[isinKey(cd.t)] ? '<i class="rb5-own">в портф.</i>' : '') + '</b>' +
                 '<span>' + (cd.unit > 0 ? fmtPrice(cd.unit) + ' с НКД' : esc(cd.t)) + '</span></div>' +
             '<div class="rb5-rval"><b class="pos">' + (isFinite(cd.sheetYield) ? cd.sheetYield.toFixed(1).replace('.', ',') + '%' : '—') + '</b><span>доходность</span></div>' + rb5InfoBtn(key, on) +
         '</div>' + det;
@@ -3617,8 +3618,8 @@
             );
         }
         return '<div class="rb5-row' + (sel ? ' sel' : '') + '" onclick="pfPickStock(\'sell\',\'' + x.h.id + '\')">' +
-            '<div class="rb5-rid"><b>' + (sel ? RB5_CHECK : '') + esc(x.h.ticker) + tier + '</b>' +
-                '<span>' + x.c.qty + ' шт · потенциал ' + (pot == null ? '—' : fmtPct(pot)) + '</span></div>' +
+            '<div class="rb5-rid"><b>' + (sel ? RB5_CHECK : '') + '<span class="rb5-nmt">' + esc(x.h.ticker) + '</span>' + tier + '</b>' +
+                '<span>' + fmtQty(x.c.qty) + ' шт · потенциал ' + (pot == null ? '—' : fmtPct(pot)) + '</span></div>' +
             '<div class="rb5-rval"><b class="' + (izm >= 0 ? 'pos' : 'neg') + '">' + fmtPct(izm) + '</b><span>динамика</span></div>' + rb5InfoBtn(key, on) +
         '</div>' + det;
     }
@@ -3639,7 +3640,7 @@
             );
         }
         return '<div class="rb5-row' + (sel ? ' sel' : '') + '" onclick="pfPickStock(\'buy\',\'' + esc(cn.ticker) + '\')">' +
-            '<div class="rb5-rid"><b>' + (sel ? RB5_CHECK : '') + esc(cn.ticker) + tier + (heldSet && heldSet[cn.ticker] ? '<i class="rb5-own">в портф.</i>' : '') + '</b>' +
+            '<div class="rb5-rid"><b>' + (sel ? RB5_CHECK : '') + '<span class="rb5-nmt">' + esc(cn.ticker) + '</span>' + tier + (heldSet && heldSet[cn.ticker] ? '<i class="rb5-own">в портф.</i>' : '') + '</b>' +
                 '<span>' + esc(cn.name) + (price > 0 ? ' · ' + fmtPrice(price) : '') + '</span></div>' +
             '<div class="rb5-rval"><b class="' + potCls + '">' + (cn.pot == null ? '—' : fmtPct(cn.pot)) + '</b><span>потенциал</span></div>' + rb5InfoBtn(key, on) +
         '</div>' + det;
