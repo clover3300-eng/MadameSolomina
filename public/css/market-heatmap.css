@@ -157,11 +157,11 @@ body.dark-mode .mh-idx-tag { color: #fff; background: rgba(255, 255, 255, 0.10);
 .mh-idx-chg.down { color: var(--mh-down); background: var(--mh-down-bg); }
 
 /* --- переключатель «Карта / График» — та же пилюля, что у остальных
-   сегмент-контролов карточки (.mh-seg/.mh-seg-btn: светлый «колодец», активный
-   сегмент — тёмный/брендовый), поэтому она не выбивается из общего языка
-   карточки, где бы ни стояла. Стоит справа от котировки, в той же ячейке. */
-.mh-seg-view { margin-left: auto; align-self: center; height: 44px; padding: 5px; position: relative; top: -8px; }
-.mh-seg-view .mh-seg-btn { display: inline-flex; align-items: center; gap: 7px; padding: 0 16px; font-size: 14px; }
+   сегмент-контролов карточки (.mh-seg/.mh-seg-btn). Живёт в шапке карточки
+   КРАЙНИМ ПРАВЫМ: заметен сразу и не сдвигается, когда контролы карты
+   (.mh-map-ctrl) скрываются в режиме графика. */
+.mh-seg-view { align-self: center; }
+.mh-seg-view .mh-seg-btn { display: inline-flex; align-items: center; gap: 7px; padding: 0 14px; font-size: 13.5px; }
 .mh-cb-ico { display: inline-flex; width: 16px; height: 16px; flex: 0 0 auto; color: var(--mh-accent); }
 .mh-seg-view .mh-seg-btn.active .mh-cb-ico { color: #fff; }
 body.dark-mode .mh-seg-view .mh-seg-btn.active .mh-cb-ico { color: #10201a; }

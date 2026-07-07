@@ -838,6 +838,14 @@
             '      <button class="mh-seg-btn" type="button" data-size="change">% изм.</button>' +
             '    </span>' +
             '    <button class="mh-refresh mh-map-ctrl" type="button" title="Обновить" aria-label="Обновить">' + REFRESH_SVG + '</button>' +
+            // Переключатель «Карта/График» — ПОСЛЕДНИМ в шапке карточки (крайний правый):
+            // так он заметнее, а при скрытии контролов карты в режиме графика не сдвигается
+            '    <span class="mh-seg mh-seg-view" role="tablist" title="Тепловая карта / график индекса (месячный таймфрейм)">' +
+            '      <button class="mh-seg-btn" type="button" data-act="view-map">' +
+            '        <span class="mh-cb-ico" aria-hidden="true">' + GRID_SVG + '</span>Карта</button>' +
+            '      <button class="mh-seg-btn active" type="button" data-act="view-chart">' +
+            '        <span class="mh-cb-ico" aria-hidden="true">' + CANDLE_SVG + '</span>График</button>' +
+            '    </span>' +
             '  </div>' +
             '</div>' +
             '<div class="mh-pulse">' +
@@ -845,12 +853,6 @@
             '    <div class="mh-idx-top"><span class="mh-idx-tag">IMOEX</span><span class="mh-idx-lbl">Индекс МосБиржи</span></div>' +
             '    <div class="mh-pulse-idx">' +
             '      <span class="mh-idx-val">—</span><span class="mh-idx-chg">—</span>' +
-            '      <span class="mh-seg mh-seg-view" role="tablist" title="Тепловая карта / график индекса (месячный таймфрейм)">' +
-            '        <button class="mh-seg-btn" type="button" data-act="view-map">' +
-            '          <span class="mh-cb-ico" aria-hidden="true">' + GRID_SVG + '</span>Карта</button>' +
-            '        <button class="mh-seg-btn active" type="button" data-act="view-chart">' +
-            '          <span class="mh-cb-ico" aria-hidden="true">' + CANDLE_SVG + '</span>График</button>' +
-            '      </span>' +
             '    </div>' +
             '  </div>' +
             '  <div class="mh-kpi mh-kpi-breadth">' +
