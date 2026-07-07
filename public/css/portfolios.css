@@ -63,7 +63,7 @@ body.dark-mode .pf-sumcard {
     box-shadow: 0 16px 36px rgba(0,0,0,0.32);
 }
 .pfs2-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #8ea0b6; }
-.pfs2-capital { margin-top: 7px; font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 700; letter-spacing: -0.025em; color: #fff; line-height: 1; }
+.pfs2-capital { margin-top: 7px; font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 700; letter-spacing: -0.025em; color: #fff; line-height: 1; white-space: nowrap; overflow: hidden; }
 .pfs2-sub { margin-top: 7px; display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; font-weight: 600; color: #aebbcc; }
 .pfs2-pnl { white-space: nowrap; }
 .pfs2-pnl.pos { color: #34d399; } .pfs2-pnl.neg { color: #f87171; }
@@ -267,8 +267,9 @@ body.dark-mode .pf-ch-go:hover { background: rgba(255,255,255,0.12); color: #fff
 .pfc-hero { display: flex; flex-direction: column; gap: 6px; margin: 12px 24px 0; padding: 12px 12px 0;
     border-radius: 14px; background: linear-gradient(180deg, rgba(24,38,60,0.035), transparent); }
 body.dark-mode .pfc-hero { background: linear-gradient(180deg, rgba(255,255,255,0.035), transparent); }
-.pfc-hero-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.pfc-hero-val { font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 21px; letter-spacing: -0.01em; color: #0f172a; }
+.pfc-hero-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: nowrap; min-width: 0; }
+/* сумма не переносит «₽» на новую строку — при переполнении JS уменьшает кегль (fitBigSums) */
+.pfc-hero-val { font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 21px; letter-spacing: -0.01em; color: #0f172a; white-space: nowrap; }
 body.dark-mode .pfc-hero-val { color: #f4f8fd; }
 .pfc-hero-inc { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12px; white-space: nowrap; padding: 5px 11px; border-radius: 999px; }
 .pfc-hero-inc.pos { color: #16a34a; background: rgba(22,163,74,0.12); } .pfc-hero-inc.neg { color: #dc2626; background: rgba(220,38,38,0.12); }
@@ -1676,3 +1677,27 @@ body.dark-mode .pfcf-btn:hover { background: rgba(255,255,255,0.09); }
 .pfcf-btn.pfcf-ok.danger:hover { background: #b91c1c; }
 body.dark-mode .pfcf-btn.pfcf-ok { background: #3b82f6; border-color: #3b82f6; color: #fff; }
 body.dark-mode .pfcf-btn.pfcf-ok.danger { background: #dc2626; border-color: #dc2626; }
+
+/* ===== П.6: «Показать все / Скрыть все» в попапе «Видимость» — постоянная пара
+   кнопок сверху (строки портфелей не прыгают) ===== */
+.pf-eyeall-row { display: flex; gap: 6px; padding: 4px 6px 8px; }
+.pf-eyeallbtn {
+    flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    border: 1px solid rgba(24,38,60,0.12); border-radius: 10px; background: transparent;
+    padding: 9px 10px; cursor: pointer;
+    font-family: 'Manrope', 'Inter', sans-serif; font-size: 12.5px; font-weight: 700;
+    color: #3d4d63; transition: background 0.14s ease, border-color 0.14s ease;
+}
+.pf-eyeallbtn svg { width: 15px; height: 15px; }
+.pf-eyeallbtn:hover { background: rgba(24,38,60,0.05); }
+.pf-eyeallbtn:disabled { opacity: 0.4; cursor: default; }
+.pf-eyeallbtn:disabled:hover { background: transparent; }
+body.dark-mode .pf-eyeallbtn { border-color: rgba(255,255,255,0.12); color: #c4cedd; }
+body.dark-mode .pf-eyeallbtn:hover { background: rgba(255,255,255,0.07); }
+
+/* Свотч цвета, занятого другим портфелем, — приглушён и перечёркнут */
+.pfm-sw.taken { opacity: 0.32; cursor: not-allowed; position: relative; }
+.pfm-sw.taken::after {
+    content: ''; position: absolute; left: 18%; right: 18%; top: 50%; height: 2px;
+    background: rgba(255,255,255,0.9); border-radius: 2px; transform: rotate(-45deg);
+}

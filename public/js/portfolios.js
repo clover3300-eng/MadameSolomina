@@ -475,7 +475,7 @@
     var CHART_WARN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
     function pfChartMsgHtml(code) {
         var conf = code === 'NO_ASSETS' ? { icon: CHART_EMPTY_SVG, t: 'Пока нечего показывать', s: 'Добавьте позиции с количеством — и здесь появится кривая доходности.' }
-            : code === 'NO_PF' ? { icon: CHART_SPROUT_SVG, t: 'График скоро появится', s: 'С первой покупки прошло мало дней — как накопится больше котировок, здесь построится кривая доходности.' }
+            : code === 'NO_PF' ? { icon: CHART_SPROUT_SVG, t: 'Пока мало данных для графика', s: 'Кривая доходности строится по дневным котировкам — нужно хотя бы несколько торговых дней после покупки.' }
             : code === 'NO_BT' ? { icon: CHART_CLOCK_SVG, t: 'Модуль ещё грузится', s: 'Данные исторических цен подгружаются — откройте график чуть позже.' }
             : { icon: CHART_WARN_SVG, t: 'Не удалось загрузить', s: 'Не получили данные Мосбиржи. Попробуйте обновить позже.', warn: true };
         return '<div class="pfcv-msg' + (conf.warn ? ' warn' : '') + '"><span class="pfcv-msg-art">' + conf.icon + '</span>' +
@@ -991,11 +991,36 @@
                     if (op && !((op.holdings || []).length)) { var inp = dq('pfNewTk-' + openMenu); if (inp) { try { inp.focus(); } catch (e) {} } }
                 }
             }
+            fitBigSums();   // крупные суммы (до 100 млрд ₽) — уменьшаем кегль, а не переносим/распираем
         } finally {
             rendering = false;
         }
     }
     window.renderPortfolios = renderPortfolios;
+
+    // Автоподгонка крупных сумм: «100 000 000 000 ₽» должна влезать в строку карточки
+    // целиком — без переноса «₽» и сдвига сетки. Меряем переполнение строки и плавно
+    // уменьшаем кегль суммы до влезания.
+    function fitBigSums() {
+        document.querySelectorAll('#pfWrap .pfc-hero-top').forEach(function (row) {
+            var val = row.querySelector('.pfc-hero-val'); if (!val) return;
+            val.style.fontSize = '';
+            var size = parseFloat(getComputedStyle(val).fontSize) || 21;
+            var guard = 0;
+            while (row.scrollWidth > row.clientWidth + 1 && size > 12 && guard < 40) {
+                size -= 0.5; val.style.fontSize = size + 'px'; guard++;
+            }
+        });
+        document.querySelectorAll('#pfWrap .pfs2-capital').forEach(function (el) {
+            el.style.fontSize = '';
+            var size = parseFloat(getComputedStyle(el).fontSize) || 26;
+            var guard = 0;
+            while (el.scrollWidth > el.clientWidth + 1 && size > 14 && guard < 40) {
+                size -= 0.5; el.style.fontSize = size + 'px'; guard++;
+            }
+        });
+    }
+    window.addEventListener('resize', function () { if (currentTab === 'portfolios' && dq('pfWrap')) fitBigSums(); });
 
     // Котировки (акции пачкой, облигации по одной) приходят асинхронно, и каждая
     // приходит В РАЗНОЕ время (несколько облигаций = несколько отдельных fetch).
@@ -1181,11 +1206,14 @@
         var vis = visibleItems().length, total = store.items.length;
         var multi = total > 1;
         // ---- группа «Портфели» (только при 2+ портфелях) ----
-        var showAll = (multi && vis < total)
-            ? '<button class="pf-impitem pf-eyeitem pf-eye-all" onclick="pfEyeShowAll(event)">' +
-                '<span class="pf-eyedot pfpc-alldot"></span>' +
-                '<span class="pf-impbody"><b>Показать все</b><i>вернуть скрытые карточки</i></span>' +
-                '<span class="pf-eyestate">' + EYE_SVG + '</span></button>'
+        // «Показать все»/«Скрыть все» — ПОСТОЯННАЯ пара кнопок сверху: строки портфелей
+        // ниже не прыгают при переключении (раньше «Показать все» то появлялась, то
+        // исчезала — список «мигал» и менял места)
+        var showAll = multi
+            ? '<div class="pf-eyeall-row">' +
+                '<button class="pf-eyeallbtn" onclick="pfEyeShowAll(event)"' + (vis === total ? ' disabled' : '') + '>' + EYE_SVG + 'Показать все</button>' +
+                '<button class="pf-eyeallbtn" onclick="pfEyeHideAll(event)"' + (vis === 0 ? ' disabled' : '') + '>' + EYEOFF_SVG + 'Скрыть все</button>' +
+              '</div>'
             : '';
         var pfRows = multi ? (showAll + store.items.map(function (p) {
             var c = calcPf(p), off = !!p.hidden;
@@ -1498,8 +1526,14 @@
 
     // ---- настройки/редактор (дропдаун ⚙) ----
     function menuHtml(p) {
+        // цвета, занятые ДРУГИМИ портфелями, приглушены и недоступны — у каждого
+        // портфеля свой цвет, карточки не путаются
+        var takenColors = {};
+        store.items.forEach(function (o) { if (o.id !== p.id) takenColors[o.color] = o.name; });
         var sw = COLORS.map(function (cc) {
-            return '<button class="pfm-sw' + (p.color === cc.id ? ' on' : '') + '" style="--sw:' + cc.v + ';background:' + cc.v + '" onclick="pfSetColor(\'' + p.id + '\',\'' + cc.id + '\')" aria-label="' + cc.id + '">' +
+            var taken = takenColors[cc.id];
+            return '<button class="pfm-sw' + (p.color === cc.id ? ' on' : '') + (taken ? ' taken' : '') + '" style="--sw:' + cc.v + ';background:' + cc.v + '" onclick="pfSetColor(\'' + p.id + '\',\'' + cc.id + '\')" aria-label="' + cc.id + '"' +
+                (taken ? ' title="Занят: ' + attr(taken) + '"' : '') + '>' +
                 '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>';
         }).join('');
         var holds = p.holdings || [];
@@ -2548,17 +2582,33 @@
         if (store.items.length >= MAX_CARDS) { toast('Максимум ' + MAX_CARDS + ' портфеля на странице', true); return; }
         var p = makePortfolio(); store.items.push(p); saveStore(); openMenu = p.id; renderPortfolios();
     };
-    // Скопировать состав портфеля текстом (тикер · тип · кол-во · цена покупки · дата) — удобно
-    // вставить в заметки/другой сервис. Использует те же агрегированные лоты, что и мини-таблица.
+    // Скопировать состав портфеля таблицей (TSV): заголовки, нумерация, разделение на
+    // облигации/акции, количество и «шт» в РАЗНЫХ столбцах — вставляется в Excel как
+    // готовая таблица. Использует те же агрегированные лоты, что и мини-таблица.
     function copyTextForPortfolio(p) {
         var c = calcPf(p);
         if (!c.hs.length) return '';
-        var lines = c.hs.map(function (x) {
-            var h = x.h, cc = x.c, isB = h.type === 'bond';
-            return h.ticker + '\t' + (isB ? 'облигация' : 'акция') + '\t' + (cc.qty || 0) + ' шт' +
-                '\t' + fmtPrice(cc.buy) + '\t' + ruDate(cc.firstDate);
-        });
-        return p.name + '\n' + lines.join('\n');
+        // числа без «₽» и разрядных пробелов, десятичная запятая — Excel съедает как число
+        function numCell(v) {
+            if (v == null || !isFinite(v)) return '';
+            return String(Math.round(v * 100) / 100).replace('.', ',');
+        }
+        function section(title, list) {
+            if (!list.length) return [];
+            var rows = [title];
+            list.forEach(function (x, i) {
+                rows.push([i + 1, x.h.ticker, x.h.name || '', Math.round(x.c.qty || 0), 'шт',
+                    numCell(x.c.buy), ruDate(x.c.firstDate)].join('\t'));
+            });
+            return rows;
+        }
+        var bonds = c.hs.filter(function (x) { return x.h.type === 'bond'; });
+        var stocks = c.hs.filter(function (x) { return x.h.type !== 'bond'; });
+        var out = ['Портфель «' + p.name + '»',
+            ['№', 'Тикер', 'Название', 'Кол-во', 'Ед.', 'Цена покупки, ₽', 'Дата покупки'].join('\t')]
+            .concat(section('Облигации', bonds))
+            .concat(section('Акции', stocks));
+        return out.join('\n');
     }
     window.pfCopyComposition = function (pid, ev) {
         if (ev) ev.stopPropagation();
@@ -2602,10 +2652,21 @@
         store.items.forEach(function (p) { p.hidden = false; });
         saveStore(); renderNoAnim();
     };
-    // «Показать все» внутри попапа «Видимость» — снимает скрытие со всех, попап оставляем открытым
+    // «Показать все»/«Скрыть все» внутри попапа «Видимость» — попап оставляем открытым
     window.pfEyeShowAll = function (ev) {
         if (ev) ev.stopPropagation();
         store.items.forEach(function (p) { p.hidden = false; });
+        saveStore(); renderNoAnim();
+        var m = dq('pfImp-eye');
+        if (m) { m.classList.add('open'); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); }
+    };
+    window.pfEyeHideAll = function (ev) {
+        if (ev) ev.stopPropagation();
+        store.items.forEach(function (p) {
+            p.hidden = true;
+            if (openMenu === p.id) { openMenu = null; menuTall = false; }
+            delete chartOpen[p.id]; delete chartAssets[p.id]; delete chartAssetsFull[p.id]; delete holdsExpand[p.id];
+        });
         saveStore(); renderNoAnim();
         var m = dq('pfImp-eye');
         if (m) { m.classList.add('open'); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); }
@@ -2797,7 +2858,14 @@
     window.pfToggleMenuTall = function (pid) { if (openMenu === pid) { menuTall = !menuTall; renderPortfolios(); } };
     window.pfCloseMenu = function () { openMenu = null; menuTall = false; renderPortfolios(); };
     window.pfRename = function (pid, val) { var p = findPf(pid); if (!p) return; p.name = (val || '').trim() || p.name; saveStore(); renderPortfolios(); };
-    window.pfSetColor = function (pid, col) { var p = findPf(pid); if (!p) return; p.color = col; saveStore(); renderPortfolios(); };
+    window.pfSetColor = function (pid, col) {
+        var p = findPf(pid); if (!p) return;
+        // цвета не должны совпадать: занятый другим портфелем цвет выбрать нельзя
+        var other = null;
+        store.items.forEach(function (o) { if (o.id !== pid && o.color === col) other = o; });
+        if (other) { toast('Цвет уже занят портфелем «' + other.name + '»', true); return; }
+        p.color = col; saveStore(); renderPortfolios();
+    };
     // ---- стилизованное окно подтверждения (вместо системного confirm) ----
     // Живёт в <body> (см. правило про fixed-оверлеи: transform на предках вкладок ломает
     // position:fixed). onOk вызывается только по кнопке подтверждения; Escape/фон/«Отмена»
@@ -2994,13 +3062,15 @@
         var host = ev && ev.currentTarget; if (!host || host._editing) return;
         host._editing = true;
         var inp = document.createElement('input');
-        inp.className = 'pfc-name-edit'; inp.value = p.name; inp.maxLength = 40;
+        // 24 символа — максимум, при котором название гарантированно влезает в шапку
+        // карточки и сетка не расползается
+        inp.className = 'pfc-name-edit'; inp.value = p.name; inp.maxLength = 24;
         host.innerHTML = ''; host.appendChild(inp);
         try { inp.focus(); inp.select(); } catch (e) {}
         var committed = false;
         function commit(save) {
             if (committed) return; committed = true;
-            if (save) { var v = (inp.value || '').trim(); if (v) { p.name = v; saveStore(); } }
+            if (save) { var v = (inp.value || '').trim().slice(0, 24); if (v) { p.name = v; saveStore(); } }
             renderPortfolios();
         }
         inp.addEventListener('keydown', function (e) {
