@@ -44,9 +44,19 @@ function updateOfzSortUI() {
     });
 }
 
-// Кнопка «Показать рекомендации» (плейсхолдер)
-function rebalanceShowRecos() {
-    if (typeof showToast === 'function') showToast('Рекомендации скоро будут доступны');
+// Кнопка «Создать портфель» — как на странице портфеля после расчёта:
+// переносит рассчитанный состав во вкладку «Портфели». Если расчёта ещё
+// не было — ведём пользователя на «Расчёт».
+function rebalanceCreatePortfolio() {
+    if (typeof isPortfolioCalculated !== 'undefined' && !isPortfolioCalculated) {
+        if (typeof showLuxuryNotification === 'function') {
+            showLuxuryNotification('Сначала рассчитайте портфель', 'Введите сумму на вкладке «Расчёт» и нажмите «Рассчитать портфель»');
+        }
+        switchTab('calc');
+        return;
+    }
+    if (typeof window.pfImport === 'function') window.pfImport('calc', 'all', null);
+    switchTab('portfolios');
     if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
 }
 
@@ -61,12 +71,12 @@ function updateRebalanceStats(mode) {
     if (mode === 'stocks') {
         const cols = (typeof echelonTableData !== 'undefined' && echelonTableData) ? echelonTableData : [[], [], [], []];
         const all = cols.flat();
-        const sectors = new Set(all.map(a => (a.sector || '').trim()).filter(Boolean));
         const pots = all.map(a => num(a.target)).filter(n => isFinite(n));
+        const avgPot = pots.length ? pots.reduce((s, n) => s + n, 0) / pots.length : 0;
         if (candNum) candNum.textContent = all.length || '—';
         if (candLabel) candLabel.innerHTML = 'кандидатов на покупку<br>среди акций';
-        if (k2) k2.textContent = 'Макс. потенциал'; if (v2) { v2.textContent = pots.length ? '+' + Math.max(...pots).toFixed(2) + '%' : '—'; v2.className = 'v up'; }
-        if (k3) k3.textContent = 'Секторов'; if (v3) { v3.textContent = sectors.size || '—'; v3.className = 'v'; }
+        if (k2) k2.textContent = 'Средний потенциал'; if (v2) { v2.textContent = pots.length ? '+' + avgPot.toFixed(2) + '%' : '—'; v2.className = 'v up'; }
+        if (k3) k3.textContent = 'Макс. потенциал'; if (v3) { v3.textContent = pots.length ? '+' + Math.max(...pots).toFixed(2) + '%' : '—'; v3.className = 'v'; }
         const sc = document.getElementById('stocksCount'); if (sc) sc.textContent = all.length;
     } else {
         const arr = (typeof bonds !== 'undefined' && bonds) ? bonds : [];

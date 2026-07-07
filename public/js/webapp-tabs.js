@@ -466,6 +466,24 @@ function populatePanels() {
         });
         if (card) left.appendChild(card);
         if (hdr) left.appendChild(hdr);
+        // Виджеты-переходы под «Умной заменой»: рассчитать портфель / ежемесячные купоны
+        const ARR_SVG = '<span class="go"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>';
+        const wCalc = document.createElement('div');
+        wCalc.className = 'ms-nav-widget';
+        wCalc.innerHTML =
+            '<span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></span>' +
+            '<span class="tx"><b>Рассчитать портфель</b>' +
+            '<span>Введите сумму — получите готовый состав из ОФЗ и акций под вашу стратегию.</span></span>' + ARR_SVG;
+        wCalc.onclick = function() { switchTab('calc'); };
+        left.appendChild(wCalc);
+        const wMonthly = document.createElement('div');
+        wMonthly.className = 'ms-nav-widget green';
+        wMonthly.innerHTML =
+            '<span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg></span>' +
+            '<span class="tx"><b>Ежемесячные купоны</b>' +
+            '<span>Расчёт набора ОФЗ, где выплаты приходят каждый месяц — как зарплата.</span></span>' + ARR_SVG;
+        wMonthly.onclick = function() { switchTab('monthly'); };
+        left.appendChild(wMonthly);
         host.appendChild(left);
         host.appendChild(right);
     })();
