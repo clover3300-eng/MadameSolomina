@@ -44,7 +44,7 @@
         return (neg ? '−' : '') + n.toLocaleString('ru-RU') + ' ₽'; }
     function fmtPrice(n) { if (n == null || !isFinite(n)) return '—';
         return n.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₽'; }
-    function fmtPct(n) { if (n == null || !isFinite(n)) return '—'; return (n >= 0 ? '+' : '') + n.toFixed(1) + '%'; }
+    function fmtPct(n) { if (n == null || !isFinite(n)) return '—'; return (n >= 0 ? '+' : '') + n.toFixed(1).replace('.', ',') + '%'; }
     function pad2(n) { return String(n).padStart(2, '0'); }
     function todayStr() { var d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
     function dateFromDaysAgo(days) { var d = new Date(); d.setDate(d.getDate() - Math.round(days || 0));
@@ -3011,9 +3011,11 @@
 
     // ====================================================================
     //  КАРТОЧКА РЕБАЛАНСИРОВКИ (R5) — модалка поверх контента (в <body>)
-    //  Дизайн «Главной» (стеклянная карточка, Inter, минимум шума).
-    //  Слева облигации, справа акции; в каждой колонке: «продать» (мой
-    //  портфель) | «купить» (рынок из гугл-таблицы) и расчёт обмена.
+    //  Белая карточка с моно-цифрами (как «Главная»): шапка с пилюлями
+    //  «Прибыль …/день» и «НДФЛ», слим-бар шагов 1-2-3, тонированные
+    //  колонки (облигации — голубая, акции — крем), строки — белые
+    //  карточки. В каждой колонке: «продать» (мой портфель) | «купить»
+    //  (рынок из гугл-таблицы), футер с «Подобрать за меня», расчёт обмена.
     //  Суть: обмен облигаций имеет смысл, только если растёт суммарная
     //  прибыль в день (машина денег) — карточка показывает это до/после.
     // ====================================================================
@@ -3021,8 +3023,6 @@
         var p = findPf(pid); if (!p) return;
         rebalPick = { bond: { sell: null, buy: null, qty: null }, stock: { sell: null, buy: null, qty: null } };
         rebalInfo = {}; rebalFormulas = false; rebalParams = false; rebalHistory = false; rebalFlash = null;
-        // пошаговый гид открыт, пока пользователь не нажал «Понятно» (флаг в localStorage)
-        try { rebalGuide = !localStorage.getItem('pf_rebal_guide_v1'); } catch (e) { rebalGuide = true; }
         ensureQuotes(true);
         if (typeof window.stkEnsureLoaded === 'function') { try { window.stkEnsureLoaded(); } catch (e) {} }   // эшелоны/потенциал акций
         var ov = dq('pfOverlay');
@@ -3081,7 +3081,6 @@
     var rebalFormulas = false;   // раскрыта ли панель «методика расчёта» (иконка ⓘ в шапке)
     var rebalParams = false;     // раскрыт ли попап «параметры» (НДФЛ/комиссия) в шапке
     var rebalHistory = false;    // раскрыта ли панель «история сделок»
-    var rebalGuide = false;      // раскрыт ли пошаговый гид «как это работает» (первое открытие / кнопка «?»)
     var rebalInfoAnim = null;    // ключ ⓘ-панели, открытой ПОСЛЕДНИМ кликом: анимацию играем только ей,
                                  // иначе каждый repaint переигрывал бы её у всех открытых панелей
     var rebalFlash = null;       // { delta, anim } — сдвиг «машины денег» после применённого обмена облигаций
@@ -3278,14 +3277,10 @@
 
     // ---------- рендер ----------
     var RB5_ARR = '<svg class="rb5-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>';
-    // иконка «обмен» (две встречные стрелки) — бейдж между списками «продать | купить»
-    var RB5_SWAP = '<svg class="rb5-swap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h14"/><path d="m14.5 3.5 3.5 3.5-3.5 3.5"/><path d="M20 17H6"/><path d="M9.5 13.5 6 17l3.5 3.5"/></svg>';
     // иконка «история» (часы со стрелкой назад) — кнопка истории сделок в шапке
     var RB5_HIST = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 2.8-6.5"/><path d="M3 4.5V9h4.5"/><polyline points="12 7.5 12 12 15.5 14"/></svg>';
     var UNITS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>';
     var COIN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v10M9.5 9.3c0-1.3 1.1-2.1 2.5-2.1s2.5.8 2.5 1.9c0 2.6-5 1.4-5 4 0 1.1 1.1 1.9 2.5 1.9s2.5-.8 2.5-2.1"/></svg>';
-    // иконка «?» — кнопка пошагового гида «как это работает» в шапке
-    var RB5_HELP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
     // иконка «искры» — кнопка «Подобрать за меня» (авто-выбор самой выгодной пары)
     var RB5_WAND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6 4.6 1.9-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/><path d="M19 14.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/></svg>';
     var RB5_CHECK = '<span class="rb5-chip">' + CHECK_SVG + '</span>';
@@ -3300,22 +3295,24 @@
     function rb5Head(p, c, bt, ss) {
         var statW = bt ? machineHtml(bt) : stockPulseHtml(ss);
         var taxTxt = Math.round((rebalTax || 0) * 100) + '%';
+        // пилюля параметров: «НДФЛ 0%» (при облигациях; комиссия дописывается, если задана) /
+        // «Комиссия 0%» (только акции); клик — попап НДФЛ/комиссии
+        var pillVal = bt ? taxTxt + (rebalFee > 0 ? ' · ' + feeLbl(rebalFee) : '') : feeLbl(rebalFee);
         var pill = '<div class="rb5-hwrap">' +
-            '<button class="rb5-pill' + (rebalParams ? ' on' : '') + '" onclick="pfRbParams()" title="Параметры расчёта — НДФЛ и комиссия брокера">' +
-                GEAR_SVG + '<span>' + (bt ? 'НДФЛ ' + taxTxt + ' · ' : 'Комиссия ') + feeLbl(rebalFee) + '</span>' + CHEV_SVG +
+            '<button class="rb5-hpill' + (rebalParams ? ' on' : '') + '" onclick="pfRbParams()" title="Параметры расчёта — НДФЛ и комиссия брокера">' +
+                '<span class="rb5-hpl">' + (bt ? 'НДФЛ' : 'Комиссия') + '</span><b class="rb5-hpv">' + pillVal + '</b>' +
             '</button>' + rb5ParamsPop(!!bt) + '</div>';
         var histN = (p.trades || []).length;
         var histBtn = '<button class="rb5-hbtn' + (rebalHistory ? ' on' : '') + '" onclick="pfRbHistory()" aria-label="История сделок" title="История сделок — применённые обмены">' + RB5_HIST +
             (histN ? '<i class="rb5-hbadge">' + (histN > 99 ? '99+' : histN) + '</i>' : '') + '</button>';
         var fxBtn = '<button class="rb5-hbtn' + (rebalFormulas ? ' on' : '') + '" onclick="pfRbFormulas()" aria-label="Методика расчёта" title="Методика расчёта — все формулы">' + INFO_SVG + '</button>';
-        var helpBtn = '<button class="rb5-hbtn' + (rebalGuide ? ' on' : '') + '" onclick="pfRbGuide()" aria-label="Как это работает" title="Как это работает — пошаговая инструкция">' + RB5_HELP + '</button>';
         return '<div class="rb5-head">' +
             '<div class="rb5-head-t">' +
                 '<span class="rb5-eyebrow">Ребалансировка</span>' +
                 '<span class="rb5-title">' + esc(p.name) + '</span>' +
                 '<span class="rb5-sub">' + c.count + ' ' + plural(c.count, 'актив', 'актива', 'активов') + ' · ' + fmtRub(c.value) + '</span>' +
             '</div>' +
-            '<div class="rb5-head-r">' + statW + pill + helpBtn + histBtn + fxBtn +
+            '<div class="rb5-head-r">' + statW + pill + histBtn + fxBtn +
                 '<button class="rb5-x" onclick="pfCloseOverlay()" aria-label="Закрыть">' + XMARK_SVG + '</button>' +
             '</div>' +
         '</div>';
@@ -3353,9 +3350,10 @@
         });
         if (!(w > 0)) return '';
         var avg = wsum / w;
-        return '<div class="rb5-machine rb5-machine--head" title="Средний потенциал акций портфеля, взвешенный по стоимости позиций">' +
-            '<div class="rb5-mch-info"><span class="rb5-label">Потенциал портфеля</span>' +
-                '<div class="rb5-mch-val"><b class="' + (avg >= 0 ? 'pos' : 'neg') + '">' + fmtPct(avg) + '</b><span>средний</span></div></div>' +
+        return '<div class="rb5-hpill rb5-hpill--stat" title="Средний потенциал акций портфеля, взвешенный по стоимости позиций">' +
+            '<span class="rb5-hpl">Потенциал</span>' +
+            '<b class="rb5-hpv ' + (avg >= 0 ? 'pos' : 'neg') + '">' + fmtPct(avg) + '</b>' +
+            '<span class="rb5-hpt">средний</span>' +
         '</div>';
     }
     // Панель «методика расчёта» (иконка ⓘ в шапке): все формулы, по которым карточка
@@ -3399,44 +3397,32 @@
             '<span class="rb5-ccount">' + n + '</span><span class="rb5-cval">' + fmtRub(val) + '</span></div>';
     }
     function rb5Empty(t, s) { return '<div class="rb5-empty"><b>' + esc(t) + '</b><span>' + esc(s) + '</span></div>'; }
-    function dealHint(msg) { return '<div class="rb5-deal rb5-deal--hint">' + REBAL_SVG + '<span>' + esc(msg) + '</span></div>'; }
+    function dealHint(msg) { return '<div class="rb5-cfoot"><span class="rb5-cfoot-t">' + esc(msg) + '</span></div>'; }
     // чип-шаг «1/2/3»: on — текущий шаг (тёмный), done — пройден (зелёная галка), '' — ещё не дошли
     function rb5Step(n, state) {
         return '<span class="rb5-step' + (state === 'done' ? ' done' : (state === 'on' ? ' on' : '')) + '">' +
             (state === 'done' ? CHECK_SVG : n) + '</span>';
     }
-    // ---- пошаговый гид «как это работает» (для новичков) ----
-    // Открыт при первом входе в карточку; «Понятно, скрыть» прячет его навсегда
-    // (флаг pf_rebal_guide_v1 в localStorage), вернуть можно кнопкой «?» в шапке.
-    function rb5GuideHtml() {
-        if (!rebalGuide) return '';
-        function gs(n, t, s) { return '<div class="rb5-gstep"><span class="rb5-gnum">' + n + '</span><div><b>' + t + '</b><span>' + s + '</span></div></div>'; }
-        return '<div class="rb5-guide">' +
-            '<div class="rb5-guide-head"><b>Как работает ребалансировка</b>' +
-                '<button type="button" class="rb5-guide-ok" onclick="pfRbGuide()">Понятно</button></div>' +
-            '<p class="rb5-guide-lead">Продайте бумагу, которая приносит меньше, — и купите на эти деньги ту, что приносит больше. Портфель станет зарабатывать быстрее.</p>' +
-            '<div class="rb5-guide-steps">' +
-                gs(1, 'Что продать', 'Кликните свою бумагу в списке «Продать».') +
-                gs(2, 'Что купить', 'Кликните замену с доходностью или потенциалом выше.') +
-                gs(3, 'Примените', 'Зелёный вердикт — жмите «Применить обмен».') +
-            '</div>' +
-            '<div class="rb5-guide-tip">' + RB5_WAND + '<span>Или нажмите <b>«Подобрать за меня»</b> — карточка сама найдёт выгодный обмен.</span></div>' +
+    // ---- слим-бар шагов «1 → 2 → 3» под шапкой (постоянная легенда, как в референсе) ----
+    function rb5StepsBar() {
+        function st(n, b, rest) { return '<span class="rb5-st"><i>' + n + '</i><span><b>' + b + '</b> ' + rest + '</span></span>'; }
+        var arr = '<svg class="rb5-steps-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>';
+        return '<div class="rb5-steps">' +
+            st(1, 'Что продать', '— бумага в списке слева') + arr +
+            st(2, 'Что купить', '— замена доходнее') + arr +
+            st(3, 'Примените', 'обмен при зелёном вердикте') +
+            '<span class="rb5-steps-or">' + RB5_WAND + '<span>или «Подобрать за меня»</span></span>' +
         '</div>';
     }
-    // Подсказка-шаг в блоке расчёта, пока пара не собрана: говорит, куда кликнуть дальше,
-    // + кнопка «Подобрать за меня» (pfRbAuto) — авто-выбор самой выгодной пары.
+    // Подсказка-шаг + «Подобрать за меня» — футер колонки, пока пара не собрана
+    // (pfRbAuto — авто-выбор самой выгодной пары).
     function dealGuideHtml(kind, hasSell, hasBuy) {
         var t;
-        if (hasSell) t = ['Шаг 2 — что купить',
-            kind === 'bond' ? 'Выберите облигацию с доходностью выше продаваемой.'
-                            : 'Выберите акцию с потенциалом выше продаваемой.'];
-        else if (hasBuy) t = ['Шаг 1 — что продать',
-            kind === 'bond' ? 'Обычно продают облигацию, что приносит меньше всех.'
-                            : 'Обычно продают акцию, что уже выросла.'];
-        else t = ['Шаг 1 — что продать',
-            'Кликните бумагу в списке «Продать», затем замену в «Купить».'];
-        return '<div class="rb5-deal rb5-deal--hint">' + REBAL_SVG +
-            '<div class="rb5-hint-txt"><b>' + t[0] + '</b><span>' + t[1] + '</span></div>' +
+        if (hasSell) t = kind === 'bond' ? 'Шаг 2 — выберите в «Купить» облигацию доходнее'
+                                         : 'Шаг 2 — выберите в «Купить» акцию с потенциалом выше';
+        else if (hasBuy) t = 'Шаг 1 — выберите бумагу в списке «Продать»';
+        else t = 'Шаг 1 — кликните бумагу в «Продать»';
+        return '<div class="rb5-cfoot"><span class="rb5-cfoot-t">' + t + '</span>' +
             '<button type="button" class="rb5-auto" onclick="pfRbAuto(\'' + kind + '\')" title="Карточка сама найдёт самую выгодную пару и подставит её в расчёт">' + RB5_WAND + '<span>Подобрать за меня</span></button>' +
         '</div>';
     }
@@ -3458,27 +3444,25 @@
             '<button type="button" onclick="pfRbQty(\'' + kind + '\',' + (qty + 1) + ',' + max + ')" aria-label="Больше">+</button>' +
             '<span>из ' + max + ' шт</span></div>';
     }
-    // «Машина денег»: суммарная прибыль по облигациям за выбранный период + переключатель.
-    // Живёт в ШАПКЕ карточки (компактный виджет), пояснение формулы — в title.
+    // «Машина денег» → пилюля «Прибыль +257,37 ₽ в день» в шапке: зелёное моно-значение,
+    // клик листает период день → неделя → месяц. Пояснение формулы — в title.
     function machineHtml(t) {
-        var segs = [['day', 'день'], ['week', 'неделя'], ['month', 'месяц']];
-        var tip = t.pending ? 'Уточняем купоны на Мосбирже…'
-            : t.units + ' ' + plural(t.units, 'облигация', 'облигации', 'облигаций') + ' · купоны + номинал + НКД − затраты';
-        // после применённого обмена: дельта-чип + стойкая цветная подсветка виджета —
+        var tip = (t.pending ? 'Уточняем купоны на Мосбирже…'
+            : t.units + ' ' + plural(t.units, 'облигация', 'облигации', 'облигаций') + ' · купоны + номинал + НКД − затраты') +
+            ' · клик — сменить период (день / неделя / месяц)';
+        // после применённого обмена: дельта-чип + стойкая цветная подсветка пилюли —
         // рост прибыли виден сразу и не гаснет при перерисовках (живёт до закрытия карточки)
         var flash = '', flashCls = '';
         if (rebalFlash && isFinite(rebalFlash.delta) && Math.abs(rebalFlash.delta) > 1e-9 && !t.pending) {
-            flash = '<span class="rb5-mch-delta ' + (rebalFlash.delta > 0 ? 'pos' : 'neg') + '" title="Изменение после применённого обмена">' +
+            flash = '<span class="rb5-hpd ' + (rebalFlash.delta > 0 ? 'pos' : 'neg') + '" title="Изменение после применённого обмена">' +
                 (rebalFlash.delta > 0 ? '+' : '−') + f2(Math.abs(rebalFlash.delta) * perMul()) + '</span>';
             flashCls = rebalFlash.delta > 0 ? ' up' : ' down';
         }
-        return '<div class="rb5-machine rb5-machine--head' + flashCls + '" title="' + attr(tip) + '">' +
-            '<div class="rb5-mch-info"><span class="rb5-label">Прибыль по облигациям</span>' +
-                '<div class="rb5-mch-val"><b>' + (t.pending ? '…' : f2(t.total * perMul())) + '</b><span>₽ ' + perLbl() + '</span>' + flash + '</div></div>' +
-            '<div class="rb5-seg">' + segs.map(function (s) {
-                return '<button class="rb5-seg-b' + (rebalPeriod === s[0] ? ' on' : '') + '" onclick="pfSetRebalPeriod(\'' + s[0] + '\')">' + s[1] + '</button>';
-            }).join('') + '</div>' +
-        '</div>';
+        var val = t.pending ? '<b class="rb5-hpv mut">…</b>'
+            : '<b class="rb5-hpv ' + (t.total >= 0 ? 'pos' : 'neg') + '">' + (t.total >= 0 ? '+' : '−') + f2(Math.abs(t.total) * perMul()) + ' ₽</b>';
+        return '<button class="rb5-hpill rb5-hpill--stat' + flashCls + '" onclick="pfCycleRebalPeriod()" title="' + attr(tip) + '">' +
+            '<span class="rb5-hpl">Прибыль</span>' + val + '<span class="rb5-hpt">' + perLbl() + '</span>' + flash +
+        '</button>';
     }
     // ---- иконка ⓘ в строке + раскрывающиеся детали бумаги ----
     // Иконка появляется при наведении на строку; клик раскрывает панель деталей под строкой
@@ -3534,7 +3518,7 @@
             );
         }
         return '<div class="rb5-row' + (sel ? ' sel' : '') + '" onclick="pfPickBond(\'buy\',\'' + esc(cd.t) + '\')">' +
-            '<div class="rb5-rid"><b>' + (sel ? RB5_CHECK : '') + esc(cd.n) + (heldSet[isinKey(cd.t)] ? '<i class="rb5-own">в портфеле</i>' : '') + '</b>' +
+            '<div class="rb5-rid"><b>' + (sel ? RB5_CHECK : '') + esc(cd.n) + (heldSet[isinKey(cd.t)] ? '<i class="rb5-own">в портф.</i>' : '') + '</b>' +
                 '<span>' + (cd.unit > 0 ? fmtPrice(cd.unit) + ' с НКД' : esc(cd.t)) + '</span></div>' +
             '<div class="rb5-rval"><b class="pos">' + (isFinite(cd.sheetYield) ? cd.sheetYield.toFixed(1).replace('.', ',') + '%' : '—') + '</b><span>доходность</span></div>' + rb5InfoBtn(key, on) +
         '</div>' + det;
@@ -3604,14 +3588,13 @@
         if (rebalPick.bond.buy && !cands.some(function (cd) { return cd.t === rebalPick.bond.buy; })) rebalPick.bond.buy = null;
         var candRows = cands.length ? cands.map(function (cd) { return ofzRowHtml(cd, heldSet); }).join('')
             : '<div class="rb5-list-empty">Список ОФЗ появится из гугл-таблицы (раздел «Ребаланс»)</div>';
-        // чипы шагов 1/2 в заголовках списков + подсветка списка текущего шага —
-        // новичок видит, куда кликать сейчас (шаг 3 — в блоке расчёта ниже)
+        // чипы шагов 1/2 в заголовках списков — новичок видит, куда кликать сейчас
+        // (шаг 3 — в блоке расчёта ниже)
         var s1 = !!rebalPick.bond.sell, s2 = !!rebalPick.bond.buy;
         return '<div class="rb5-col rb5-col--bond">' + head +
             '<div class="rb5-duo">' +
-                '<div class="rb5-list' + (!s1 ? ' rb5-list--now' : '') + '"><div class="rb5-list-h">' + rb5Step(1, s1 ? 'done' : 'on') + '<b>Продать</b><i>мои · годовых</i></div><div class="rb5-list-scroll">' + mine.map(bondRowHtml).join('') + '</div></div>' +
-                '<div class="rb5-duo-arr">' + RB5_SWAP + '</div>' +
-                '<div class="rb5-list rb5-list--buy' + (s1 && !s2 ? ' rb5-list--now' : '') + '"><div class="rb5-list-h">' + rb5Step(2, s2 ? 'done' : (s1 ? 'on' : '')) + '<b>Купить</b><i>таблица ОФЗ</i></div><div class="rb5-list-scroll">' + candRows + '</div></div>' +
+                '<div class="rb5-list"><div class="rb5-list-h">' + rb5Step(1, s1 ? 'done' : 'on') + '<b>Продать</b><i>мои · годовых</i></div><div class="rb5-list-scroll">' + mine.map(bondRowHtml).join('') + '</div></div>' +
+                '<div class="rb5-list rb5-list--buy"><div class="rb5-list-h">' + rb5Step(2, s2 ? 'done' : (s1 ? 'on' : '')) + '<b>Купить</b><i>таблица ОФЗ</i></div><div class="rb5-list-scroll">' + candRows + '</div></div>' +
             '</div>' +
             bondDealHtml(mine, cands) +
         '</div>';
@@ -3656,7 +3639,7 @@
             );
         }
         return '<div class="rb5-row' + (sel ? ' sel' : '') + '" onclick="pfPickStock(\'buy\',\'' + esc(cn.ticker) + '\')">' +
-            '<div class="rb5-rid"><b>' + (sel ? RB5_CHECK : '') + esc(cn.ticker) + tier + (heldSet && heldSet[cn.ticker] ? '<i class="rb5-own">в портфеле</i>' : '') + '</b>' +
+            '<div class="rb5-rid"><b>' + (sel ? RB5_CHECK : '') + esc(cn.ticker) + tier + (heldSet && heldSet[cn.ticker] ? '<i class="rb5-own">в портф.</i>' : '') + '</b>' +
                 '<span>' + esc(cn.name) + (price > 0 ? ' · ' + fmtPrice(price) : '') + '</span></div>' +
             '<div class="rb5-rval"><b class="' + potCls + '">' + (cn.pot == null ? '—' : fmtPct(cn.pot)) + '</b><span>потенциал</span></div>' + rb5InfoBtn(key, on) +
         '</div>' + det;
@@ -3712,13 +3695,12 @@
         if (rebalPick.stock.buy && !cands.some(function (cn) { return cn.ticker === rebalPick.stock.buy; })) rebalPick.stock.buy = null;
         var candRows = cands.length ? cands.map(function (cn) { return stockCandRowHtml(cn, heldSet); }).join('')
             : '<div class="rb5-list-empty">Список появится из гугл-таблицы (раздел «Ребаланс»)</div>';
-        // чипы шагов 1/2 + подсветка списка текущего шага — как в колонке облигаций
+        // чипы шагов 1/2 — как в колонке облигаций
         var s1 = !!rebalPick.stock.sell, s2 = !!rebalPick.stock.buy;
         return '<div class="rb5-col rb5-col--stock">' + head +
             '<div class="rb5-duo">' +
-                '<div class="rb5-list' + (!s1 ? ' rb5-list--now' : '') + '"><div class="rb5-list-h">' + rb5Step(1, s1 ? 'done' : 'on') + '<b>Продать</b><i>мои · динамика</i></div><div class="rb5-list-scroll">' + mine.map(stockRowHtml).join('') + '</div></div>' +
-                '<div class="rb5-duo-arr">' + RB5_SWAP + '</div>' +
-                '<div class="rb5-list rb5-list--buy' + (s1 && !s2 ? ' rb5-list--now' : '') + '"><div class="rb5-list-h">' + rb5Step(2, s2 ? 'done' : (s1 ? 'on' : '')) + '<b>Купить</b><i>потенциальные' + (ech ? ' · эшелон ' + ROMAN[ech - 1] : '') + '</i></div><div class="rb5-list-scroll">' + candRows + '</div></div>' +
+                '<div class="rb5-list"><div class="rb5-list-h">' + rb5Step(1, s1 ? 'done' : 'on') + '<b>Продать</b><i>мои · динамика</i></div><div class="rb5-list-scroll">' + mine.map(stockRowHtml).join('') + '</div></div>' +
+                '<div class="rb5-list rb5-list--buy"><div class="rb5-list-h">' + rb5Step(2, s2 ? 'done' : (s1 ? 'on' : '')) + '<b>Купить</b><i>потенциальные' + (ech ? ' · эшелон ' + ROMAN[ech - 1] : '') + '</i></div><div class="rb5-list-scroll">' + candRows + '</div></div>' +
             '</div>' +
             stockDealHtml(mine, cands) +
         '</div>';
@@ -3767,7 +3749,7 @@
             : (hasB ? rb5BondCol(bs, c) : '') + (hasS ? rb5StockCol(ss, c) : '');
         return '<div class="pfo-card rb5-card' + (one ? ' rb5-card--one' : '') + (animate ? ' pfo-anim-in' : '') + '">' +
             rb5Head(p, c, hasB ? bondsTotal(bs) : null, ss) +
-            '<div class="rb5-body">' + rb5GuideHtml() + rb5HistoryHtml(p) + rb5FormulasHtml() +
+            '<div class="rb5-body">' + rb5StepsBar() + rb5HistoryHtml(p) + rb5FormulasHtml() +
             '<div class="rb5-cols' + (one ? ' rb5-cols--one' : '') + '">' + cols + '</div></div>' +
         '</div>';
     }
@@ -3784,13 +3766,6 @@
     window.pfRbFormulas = function () { rebalFormulas = !rebalFormulas; rebalRepaint(); };
     window.pfRbParams = function () { rebalParams = !rebalParams; rebalRepaint(); };
     window.pfRbHistory = function () { rebalHistory = !rebalHistory; rebalRepaint(); };
-    // гид «как это работает»: скрытие запоминается навсегда (больше не выскакивает при
-    // каждом открытии), показать снова можно кнопкой «?» в шапке
-    window.pfRbGuide = function () {
-        rebalGuide = !rebalGuide;
-        if (!rebalGuide) { try { localStorage.setItem('pf_rebal_guide_v1', '1'); } catch (e) {} }
-        rebalRepaint();
-    };
     // «Подобрать за меня»: перебирает пары «моя бумага → кандидат с рынка» и подставляет
     // самую выгодную (облигации — максимальный рост прибыли в день, акции — рост потенциала).
     // Уже выбранная пользователем сторона уважается — подбирается только недостающая половина.
@@ -3860,7 +3835,12 @@
             else sc.scrollTop = Math.max(0, top);
         });
     }
-    window.pfSetRebalPeriod = function (per) { if (PERIODS[per]) rebalPeriod = per; saveRebalParams(); rebalRepaint(); };
+    // клик по пилюле «Прибыль» в шапке листает период: день → неделя → месяц → день
+    window.pfCycleRebalPeriod = function () {
+        var order = ['day', 'week', 'month'];
+        rebalPeriod = order[(order.indexOf(rebalPeriod) + 1) % order.length];
+        saveRebalParams(); rebalRepaint();
+    };
     // выбор бумаги: клик по своей (side='sell') / рыночной (side='buy'); повторный клик —
     // снять выбор; количество к продаже сбрасывается на предложенное
     window.pfPickBond = function (side, id) { var pk = rebalPick.bond;

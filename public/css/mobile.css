@@ -351,18 +351,12 @@
     /* Разворот портфеля: плотнее поля */
     #pfOverlay { padding: 10px; }
 
-    /* Карточка ребалансировки R5: шапка в столбик, «машина денег»
-       переносит переключатель периода на свою строку, иконки-действия
-       не вылезают за край */
+    /* Карточка ребалансировки R5: шапка в столбик, пилюля «Прибыль»
+       на всю строку, иконки-действия не вылезают за край */
     .pfo-card.rb5-card { width: 100%; border-radius: 22px; }
-    .rb5-head { padding: 18px 16px 14px; gap: 12px; }
-    .rb5-body { padding: 18px 14px 22px; }
-    .rb5-machine--head {
-        flex-wrap: wrap; border-radius: 18px;
-        padding: 10px 12px; width: 100%;
-    }
-    .rb5-machine--head .rb5-seg { flex: 1 1 100%; display: flex; }
-    .rb5-machine--head .rb5-seg-b { flex: 1; padding: 8px 6px; }
+    .rb5-head { padding: 18px 16px 6px; gap: 10px; }
+    .rb5-body { padding: 12px 14px 22px; }
+    .rb5-hpill--stat { flex: 1 1 100%; justify-content: center; }
     .rb5-head-r { margin-left: 0; width: 100%; justify-content: flex-start; gap: 8px; }
 }
 
