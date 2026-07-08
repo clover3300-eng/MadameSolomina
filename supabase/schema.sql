@@ -23,10 +23,13 @@ create table if not exists public.profiles (
     name         text,
     role         text        not null default 'user' check (role in ('user', 'admin')),
     banned       boolean     not null default false,
-    telegram_id  bigint,
     created_at   timestamptz not null default now(),
     last_seen_at timestamptz not null default now()
 );
+
+-- CREATE TABLE IF NOT EXISTS не трогает уже существующую таблицу —
+-- добавляем новые колонки явно, чтобы обновления схемы попадали и на неё.
+alter table public.profiles add column if not exists telegram_id bigint;
 
 create unique index if not exists profiles_telegram_id_uidx
     on public.profiles (telegram_id) where telegram_id is not null;
