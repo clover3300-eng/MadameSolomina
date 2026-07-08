@@ -1,0 +1,44 @@
+/* =========================================================
+   SITE BACKGROUND — статичная мозаика на ОСТАЛЬНЫХ вкладках
+   =========================================================
+   Та же эстетика плиток, что за манифестом на Главной, но БЕЗ
+   тикеров и живых данных: фиксированный набор чисел, squarify
+   один раз при загрузке (js/site-bg.js), без интервалов/фетчей.
+   Заменяет собой фото-пейзаж #homeBg (отключаем ниже — файл и
+   разметка остаются на месте, просто не показываются). Только
+   светлая тема и десктоп, как раньше вело себя фото; тёмная
+   тема и мобайл — прежний ровный фон вкладок. Загружается ПОСЛЕ
+   site-layout.css и ПЕРЕД desktop-zoom.css. */
+
+#homeBg { display: none !important; }
+
+#siteBgTiles {
+    display: none;
+    position: fixed;
+    top: 0; right: 0; bottom: 0; left: 0;
+    z-index: 1;                 /* тот же слой, что был у #homeBg */
+    overflow: hidden;
+    pointer-events: none;
+    background: linear-gradient(180deg, #F1F6FB 0%, #F9FAFC 100%);
+}
+@media (min-width: 1024px) {
+    body:not(.dark-mode):not(.tab-home) #siteBgTiles { display: block; }
+}
+
+.sbg-tile {
+    position: absolute;
+    box-sizing: border-box;
+    border-radius: 7px;
+}
+/* интенсивность --k (0..1) зашита в фиксированном наборе в site-bg.js —
+   тот же тон, что у карты на Главной (мята 158 / клэй 44); вуаль ниже
+   приглушает чуть сильнее её, тут узор — фон за карточками, не акцент */
+.sbg-tile.up   { background: oklch(calc(0.955 - var(--k, 0) * 0.09) calc(0.014 + var(--k, 0) * 0.05) 158); }
+.sbg-tile.dn   { background: oklch(calc(0.955 - var(--k, 0) * 0.09) calc(0.014 + var(--k, 0) * 0.05) 44); }
+.sbg-tile.flat { background: oklch(0.955 0.006 250); }
+
+.sbg-scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.58) 100%);
+}
