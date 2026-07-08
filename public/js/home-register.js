@@ -64,6 +64,11 @@
     // Модалки больше нет: форма всегда на Главной, в стеклянной колонне.
     // Для вошедшего пользователя вместо формы — приветствие (#hgAuthed);
     // режим recovery показывает форму даже при активной сессии.
+    function escHtml(s) {
+        return String(s).replace(/[&<>"]/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+        });
+    }
     function updateAuthView() {
         var form = el('hsAuthInner');
         var done = el('hgAuthed');
@@ -78,7 +83,33 @@
             var box = el('hgAuthedEmail');
             if (box) box.textContent = email ? ('Вы вошли как ' + email) : 'Вы вошли в аккаунт';
         }
+        // Манифест слева тоже живой: гостю — приглашение, вошедшему —
+        // «с возвращением» (по имени из профиля) и зов на ребалансировку.
+        var title = el('hcTitle'), lead = el('hcLead'), cta = el('hcCtaLabel');
+        if (title && lead && cta) {
+            if (showDone) {
+                var name = (window.supa.profile && window.supa.profile.name) || '';
+                title.innerHTML = 'С возвращением' + (name ? ', ' + escHtml(name) : '') +
+                    '!<br>Рынок не стоял на месте';
+                lead.textContent = 'Пока вас не было, котировки успели сдвинуться. ' +
+                    'Загляните в портфель и проведите ребалансировку — несколько минут, ' +
+                    'и доли снова в равновесии.';
+                cta.textContent = 'Сделать ребалансировку';
+            } else {
+                title.innerHTML = 'Добро пожаловать!<br>Спокойный доход<br>с Московской биржи';
+                lead.textContent = 'Рады видеть вас. За этим текстом — живая карта рынка ' +
+                    'прямо сейчас, а внутри — расчёт портфеля из ОФЗ и акций и план ' +
+                    'ребаланса в одном спокойном интерфейсе.';
+                cta.textContent = 'Начать расчёт';
+            }
+        }
     }
+    // Кнопка манифеста: гостя ведёт в калькулятор, вошедшего — в Портфели
+    // (там живёт ребалансировка).
+    window.hcCtaGo = function () {
+        var authed = !!(window.supa && window.supa.isAuthed());
+        if (typeof window.switchTab === 'function') window.switchTab(authed ? 'portfolios' : 'calc');
+    };
     // Совместимость со старым API модалки: «открыть» = переключить режим
     // и подвести взгляд к колонне (recovery-ссылка из письма зовёт именно это).
     window.hsOpenAuth = function (mode) {

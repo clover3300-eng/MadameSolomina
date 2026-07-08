@@ -40,7 +40,7 @@
     <link rel="stylesheet" href="css/table-tooltip.css?v=1">
     <link rel="stylesheet" href="css/market-heatmap.css?v=33">
     <link rel="stylesheet" href="css/calc-r5.css?v=11">
-    <link rel="stylesheet" href="css/home-register.css?v=14">
+    <link rel="stylesheet" href="css/home-register.css?v=15">
     <link rel="stylesheet" href="css/site-bg.css?v=3">
     <link rel="stylesheet" href="css/profile-menu.css?v=4">
     <link rel="stylesheet" href="css/admin.css?v=2">
@@ -283,11 +283,14 @@
                         <span class="hg-brand-name"><span style="font-weight:300;">Madame </span><span style="font-weight:800;">Solomi'na</span></span>
                         <span class="hg-brand-sub">Wealth Management</span>
                     </div>
-                    <h1 class="hc-title">Спокойный доход<br>с&nbsp;Московской биржи</h1>
-                    <p class="hc-lead">За&nbsp;этим текстом&nbsp;— живая карта рынка прямо сейчас. Расчёт портфеля из&nbsp;ОФЗ и&nbsp;акций, план ребаланса&nbsp;— в&nbsp;одном спокойном интерфейсе.</p>
+                    <!-- Текст манифеста живой: для вошедшего пользователя js/home-register.js
+                         (updateAuthView) меняет заголовок/лид на «С возвращением…» и ведёт
+                         кнопку на ребалансировку в Портфелях вместо калькулятора. -->
+                    <h1 class="hc-title" id="hcTitle">Добро пожаловать!<br>Спокойный доход<br>с&nbsp;Московской биржи</h1>
+                    <p class="hc-lead" id="hcLead">Рады видеть вас. За&nbsp;этим текстом&nbsp;— живая карта рынка прямо сейчас, а&nbsp;внутри&nbsp;— расчёт портфеля из&nbsp;ОФЗ и&nbsp;акций и&nbsp;план ребаланса в&nbsp;одном спокойном интерфейсе.</p>
                     <div class="hc-ctas">
-                        <button class="hc-cta hc-cta-dark" type="button" onclick="switchTab('calc')">
-                            Начать расчёт
+                        <button class="hc-cta hc-cta-dark" type="button" id="hcCtaMain" onclick="hcCtaGo()">
+                            <span id="hcCtaLabel">Начать расчёт</span>
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7"></path><path d="M9 7h8v8"></path></svg>
                         </button>
                         <!-- Живой пульс IMOEX (js/home-register.js), клик — вкладка Рынок -->
@@ -361,7 +364,9 @@
                     <!-- Вид колонны для вошедшего пользователя (js/home-register.js) -->
                     <div class="hg-authed" id="hgAuthed" hidden>
                         <span class="hr-label">Личный кабинет</span>
-                        <h2 class="hr-title">С возвращением</h2>
+                        <!-- «С возвращением» переехало в манифест слева (hcTitle),
+                             тут — нейтральный заголовок, чтобы не дублировать -->
+                        <h2 class="hr-title">Рады видеть вас</h2>
                         <p class="hr-sub" id="hgAuthedEmail"></p>
                         <button class="hr-submit" type="button" onclick="switchTab('portfolios')">
                             <span>В кабинет</span>
@@ -2239,7 +2244,7 @@
 <script src="js/supabase-config.js?v=1" defer></script>
 <script src="js/telegram-config.js?v=1" defer></script>
 <script src="js/supabase-client.js?v=3" defer></script>
-<script src="js/home-register.js?v=10" defer></script>
+<script src="js/home-register.js?v=11" defer></script>
 <script src="js/profile-menu.js?v=5" defer></script>
 <script src="js/cloud-sync.js?v=1" defer></script>
 <script src="js/admin.js?v=2" defer></script>
