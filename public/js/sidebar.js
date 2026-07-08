@@ -32,12 +32,19 @@
 
         var sb = document.getElementById('sideBar');
         if (!sb) return;
+        // Раскрытие по наведению — с небольшой задержкой «намерения»: случайный
+        // пролёт курсора через рельсу больше не вспыхивает оверлеем над контентом
+        var peekTimer = null;
         sb.addEventListener('mouseenter', function() {
             if (sbIsDesktop() && document.body.classList.contains('sb-collapsed')) {
-                document.body.classList.add('sb-peek');
+                clearTimeout(peekTimer);
+                peekTimer = setTimeout(function() {
+                    document.body.classList.add('sb-peek');
+                }, 180);
             }
         });
         sb.addEventListener('mouseleave', function() {
+            clearTimeout(peekTimer);
             document.body.classList.remove('sb-peek');
         });
     });
