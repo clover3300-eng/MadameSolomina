@@ -53,6 +53,8 @@
         signUp: signUp,
         signIn: signIn,
         signInWithTelegram: signInWithTelegram,
+        linkTelegram: linkTelegram,
+        unlinkTelegram: unlinkTelegram,
         signOut: signOut,
         resetPassword: resetPassword,
         updatePassword: updatePassword,
@@ -176,17 +178,43 @@
             });
     }
 
-    // payload — { mode:'webapp', initData } либо { mode:'widget', user } из
-    // homeTelegramLogin(). Проверка подписи и заведение/поиск пользователя —
-    // на сервере (worker/index.js), тут только обмен token_hash на сессию.
-    function signInWithTelegram(payload) {
-        if (!enabled) return Promise.resolve({ ok: false, error: 'Облако не подключено' });
+    // Достаём подтверждённую Telegram-личность — попап Telegram.Login.auth
+    // в обычном браузере, initData напрямую, если открыто внутри Telegram
+    // (WebApp). Используется и для входа, и для привязки в личном кабинете.
+    function captureTelegramIdentity() {
+        return new Promise(function (resolve, reject) {
+            var tg = window.Telegram && window.Telegram.WebApp;
+            if (tg && tg.initData) {
+                resolve({ mode: 'webapp', initData: tg.initData });
+                return;
+            }
+            if (window.Telegram && window.Telegram.Login && window.TELEGRAM_BOT_ID) {
+                window.Telegram.Login.auth({ bot_id: window.TELEGRAM_BOT_ID }, function (user) {
+                    if (!user) { reject(new Error('Вход через Telegram отменён')); return; }
+                    resolve({ mode: 'widget', user: user });
+                });
+                return;
+            }
+            reject(new Error('Вход через Telegram пока не настроен'));
+        });
+    }
+
+    function callTelegramAuth(payload) {
         return fetch('/api/telegram-auth', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
-        }).then(function (res) { return res.json(); })
-            .then(function (data) {
+        }).then(function (res) { return res.json(); }, function () {
+            return { ok: false, error: 'Нет связи с сервером' };
+        });
+    }
+
+    // Вход через Telegram: проверка подписи и заведение/поиск пользователя —
+    // на сервере (worker/index.js), тут только обмен token_hash на сессию.
+    function signInWithTelegram() {
+        if (!enabled) return Promise.resolve({ ok: false, error: 'Облако не подключено' });
+        return captureTelegramIdentity().then(function (payload) {
+            return callTelegramAuth(payload).then(function (data) {
                 if (!data || !data.ok) {
                     return { ok: false, error: (data && data.error) || 'Не удалось войти через Telegram' };
                 }
@@ -196,9 +224,38 @@
                         logEvent('login', { via: 'telegram' });
                         return { ok: true };
                     });
-            }, function () {
-                return { ok: false, error: 'Нет связи с сервером' };
             });
+        }, function (err) {
+            return { ok: false, error: err.message };
+        });
+    }
+
+    // Привязка Telegram к уже вошедшему аккаунту (email/пароль) — чтобы
+    // дальше кнопка «Войти через Telegram» заходила именно в него.
+    function linkTelegram() {
+        if (!enabled || !S.session) return Promise.resolve({ ok: false, error: 'Нужно войти в аккаунт' });
+        return captureTelegramIdentity().then(function (payload) {
+            payload.verifyOnly = true;
+            return callTelegramAuth(payload).then(function (data) {
+                if (!data || !data.ok) {
+                    return { ok: false, error: (data && data.error) || 'Не удалось подтвердить Telegram' };
+                }
+                return client.rpc('link_telegram', { p_telegram_id: data.telegram.id }).then(function (res2) {
+                    if (res2.error) return { ok: false, error: errRu(res2.error) };
+                    return loadProfile().then(function () { return { ok: true, telegram: data.telegram }; });
+                });
+            });
+        }, function (err) {
+            return { ok: false, error: err.message };
+        });
+    }
+
+    function unlinkTelegram() {
+        if (!enabled || !S.session) return Promise.resolve({ ok: false, error: 'Нужно войти в аккаунт' });
+        return client.rpc('unlink_telegram').then(function (res) {
+            if (res.error) return { ok: false, error: errRu(res.error) };
+            return loadProfile().then(function () { return { ok: true }; });
+        });
     }
 
     function signOut(opts) {

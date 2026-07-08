@@ -74,16 +74,39 @@ async function verifyWebAppInitData(initData, botToken) {
     return userJson ? JSON.parse(userJson) : null;
 }
 
-async function findOrCreateTelegramUser(env, tgUser) {
-    var email = 'id' + tgUser.id + '@' + TG_EMAIL_DOMAIN;
-    var name = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ').trim()
-        || tgUser.username || ('id' + tgUser.id);
+async function generateMagicLink(env, headers, email) {
+    var linkRes = await fetch(env.SUPABASE_URL + '/auth/v1/admin/generate_link', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ type: 'magiclink', email: email })
+    });
+    if (!linkRes.ok) throw new Error('generate_link_failed: ' + await linkRes.text());
+    var linkData = await linkRes.json();
+    var tokenHash = linkData.hashed_token || (linkData.properties && linkData.properties.hashed_token);
+    if (!tokenHash) throw new Error('no_hashed_token');
+    return { email: email, token_hash: tokenHash };
+}
 
+async function findOrCreateTelegramUser(env, tgUser) {
     var headers = {
         apikey: env.SUPABASE_SERVICE_ROLE_KEY,
         Authorization: 'Bearer ' + env.SUPABASE_SERVICE_ROLE_KEY,
         'Content-Type': 'application/json'
     };
+
+    // Аккаунт уже привязан (через «Привязать Telegram» в личном кабинете,
+    // см. supabase/schema.sql link_telegram()) — входим именно в него,
+    // с его настоящим email, а не заводим отдельный технический аккаунт.
+    var byIdUrl = env.SUPABASE_URL + '/rest/v1/profiles?select=email&telegram_id=eq.' + encodeURIComponent(tgUser.id);
+    var byId = await fetch(byIdUrl, { headers: headers });
+    var byIdRows = byId.ok ? await byId.json() : [];
+    if (byIdRows.length) {
+        return generateMagicLink(env, headers, byIdRows[0].email);
+    }
+
+    var email = 'id' + tgUser.id + '@' + TG_EMAIL_DOMAIN;
+    var name = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ').trim()
+        || tgUser.username || ('id' + tgUser.id);
 
     var lookupUrl = env.SUPABASE_URL + '/rest/v1/profiles?select=id&email=eq.' + encodeURIComponent(email);
     var lookup = await fetch(lookupUrl, { headers: headers });
@@ -116,17 +139,7 @@ async function findOrCreateTelegramUser(env, tgUser) {
         }
     }
 
-    var linkRes = await fetch(env.SUPABASE_URL + '/auth/v1/admin/generate_link', {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify({ type: 'magiclink', email: email })
-    });
-    if (!linkRes.ok) throw new Error('generate_link_failed: ' + await linkRes.text());
-    var linkData = await linkRes.json();
-    var tokenHash = linkData.hashed_token || (linkData.properties && linkData.properties.hashed_token);
-    if (!tokenHash) throw new Error('no_hashed_token');
-
-    return { email: email, token_hash: tokenHash };
+    return generateMagicLink(env, headers, email);
 }
 
 function json(body, status) {
@@ -137,7 +150,7 @@ function json(body, status) {
 }
 
 async function handleTelegramAuth(request, env) {
-    if (!env.TELEGRAM_BOT_TOKEN || !env.SUPABASE_SERVICE_ROLE_KEY || !env.SUPABASE_URL) {
+    if (!env.TELEGRAM_BOT_TOKEN) {
         return json({ ok: false, error: 'Вход через Telegram ещё не настроен на сервере' }, 500);
     }
 
@@ -158,6 +171,26 @@ async function handleTelegramAuth(request, env) {
 
     if (!tgUser || !tgUser.id) {
         return json({ ok: false, error: 'Не удалось подтвердить вход через Telegram' }, 401);
+    }
+
+    // Только проверка подписи — для привязки Telegram к УЖЕ авторизованному
+    // аккаунту (личный кабинет сам делает client.rpc('link_telegram', ...),
+    // сервисный ключ Supabase тут не нужен).
+    if (body.verifyOnly) {
+        return json({
+            ok: true,
+            telegram: {
+                id: tgUser.id,
+                name: [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ').trim()
+                    || tgUser.username || ('id' + tgUser.id),
+                username: tgUser.username || null,
+                photo_url: tgUser.photo_url || null
+            }
+        });
+    }
+
+    if (!env.SUPABASE_SERVICE_ROLE_KEY || !env.SUPABASE_URL) {
+        return json({ ok: false, error: 'Вход через Telegram ещё не настроен на сервере' }, 500);
     }
 
     try {

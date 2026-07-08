@@ -222,16 +222,6 @@
         });
     };
 
-    // Обмен подтверждённых Telegram-данных на настоящую сессию Supabase
-    // (проверка подписи — на сервере, см. worker/index.js).
-    function telegramCloudLogin(payload) {
-        toast('Входим через Telegram…');
-        window.supa.signInWithTelegram(payload).then(function (r) {
-            if (!r.ok) { toast(r.error, true); return; }
-            successAndGo('Вход выполнен через Telegram');
-        });
-    }
-
     // ---- Вход через Telegram ----
     window.homeTelegramLogin = function () {
         haptic('medium');
@@ -239,24 +229,14 @@
         var waUser = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
 
         // ===== Облако подключено — настоящий вход =====
+        // (попап/initData захватывает и проверяет window.supa.signInWithTelegram —
+        // проверка подписи на сервере, см. worker/index.js)
         if (cloudOn()) {
-            if (tg && tg.initData) {
-                // Открыто внутри Telegram (WebApp) — initData уже подписан ботом.
-                telegramCloudLogin({ mode: 'webapp', initData: tg.initData });
-                return;
-            }
-            if (window.Telegram && window.Telegram.Login && window.TELEGRAM_BOT_ID) {
-                // Обычный браузер — попап входа через Telegram Login Widget.
-                window.Telegram.Login.auth(
-                    { bot_id: window.TELEGRAM_BOT_ID },
-                    function (user) {
-                        if (!user) { toast('Вход через Telegram отменён', true); return; }
-                        telegramCloudLogin({ mode: 'widget', user: user });
-                    }
-                );
-                return;
-            }
-            toast('Вход через Telegram пока не настроен', true);
+            toast('Входим через Telegram…');
+            window.supa.signInWithTelegram().then(function (r) {
+                if (!r.ok) { toast(r.error, true); return; }
+                successAndGo('Вход выполнен через Telegram');
+            });
             return;
         }
 

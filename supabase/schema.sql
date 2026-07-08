@@ -23,9 +23,13 @@ create table if not exists public.profiles (
     name         text,
     role         text        not null default 'user' check (role in ('user', 'admin')),
     banned       boolean     not null default false,
+    telegram_id  bigint,
     created_at   timestamptz not null default now(),
     last_seen_at timestamptz not null default now()
 );
+
+create unique index if not exists profiles_telegram_id_uidx
+    on public.profiles (telegram_id) where telegram_id is not null;
 
 comment on table public.profiles is 'Профили пользователей: роль, бан, последняя активность';
 
@@ -97,11 +101,12 @@ language plpgsql security definer
 set search_path = public
 as $$
 begin
-    insert into public.profiles (id, email, name)
+    insert into public.profiles (id, email, name, telegram_id)
     values (
         new.id,
         new.email,
-        coalesce(nullif(trim(new.raw_user_meta_data ->> 'name'), ''), split_part(new.email, '@', 1))
+        coalesce(nullif(trim(new.raw_user_meta_data ->> 'name'), ''), split_part(new.email, '@', 1)),
+        nullif(new.raw_user_meta_data ->> 'telegram_id', '')::bigint
     )
     on conflict (id) do nothing;
 
@@ -139,7 +144,10 @@ create trigger on_auth_user_email_updated
 -- 5.3 Защита профиля:
 --   · роль и бан меняет только админ,
 --   · нельзя снять роль/забанить ПОСЛЕДНЕГО админа (сервис не осиротеет),
---   · created_at неизменяем.
+--   · created_at неизменяем,
+--   · telegram_id меняется ТОЛЬКО через link_telegram()/unlink_telegram()
+--     (иначе любой пользователь мог бы вписать себе чужой telegram_id
+--     и перехватывать чужие входы через Telegram).
 create or replace function public.guard_profile_update()
 returns trigger
 language plpgsql security definer
@@ -157,6 +165,13 @@ begin
        and (new.role is distinct from old.role or new.banned is distinct from old.banned)
        and not public.is_admin() then
         raise exception 'Менять роль и блокировку может только администратор';
+    end if;
+
+    if auth.uid() is not null
+       and new.telegram_id is distinct from old.telegram_id
+       and coalesce(current_setting('app.telegram_link_verified', true), 'false') <> 'true'
+       and not public.is_admin() then
+        raise exception 'Telegram можно привязать только через проверенную привязку в личном кабинете';
     end if;
 
     if old.role = 'admin' and (new.role <> 'admin' or new.banned) then
@@ -253,7 +268,59 @@ create policy app_events_insert on public.app_events
     with check (user_id = auth.uid() and not public.is_banned());
 
 
--- ===== 7. НАЗНАЧЕНИЕ ПЕРВОГО АДМИНИСТРАТОРА ==================
+-- ===== 7. ПРИВЯЗКА TELEGRAM К СУЩЕСТВУЮЩЕМУ АККАУНТУ =========
+-- Используются из личного кабинета сайта (window.supa.linkTelegram/
+-- unlinkTelegram), когда пользователь УЖЕ вошёл под email — привязывают
+-- его подтверждённый Telegram-id к текущему аккаунту, дальше кнопка
+-- «Войти через Telegram» заходит именно в него, а не заводит отдельный.
+-- set_config('app.telegram_link_verified', 'true', true) — «пропуск»
+-- для guard_profile_update() выше, действует только внутри этой функции.
+
+create or replace function public.link_telegram(p_telegram_id bigint)
+returns void
+language plpgsql security definer
+set search_path = public
+as $$
+begin
+    if auth.uid() is null then
+        raise exception 'Нужно быть авторизованным';
+    end if;
+
+    if exists (
+        select 1 from public.profiles
+        where telegram_id = p_telegram_id and id <> auth.uid()
+    ) then
+        raise exception 'Этот Telegram-аккаунт уже привязан к другому пользователю';
+    end if;
+
+    perform set_config('app.telegram_link_verified', 'true', true);
+    update public.profiles set telegram_id = p_telegram_id where id = auth.uid();
+    perform set_config('app.telegram_link_verified', 'false', true);
+end;
+$$;
+
+grant execute on function public.link_telegram(bigint) to authenticated;
+
+create or replace function public.unlink_telegram()
+returns void
+language plpgsql security definer
+set search_path = public
+as $$
+begin
+    if auth.uid() is null then
+        raise exception 'Нужно быть авторизованным';
+    end if;
+
+    perform set_config('app.telegram_link_verified', 'true', true);
+    update public.profiles set telegram_id = null where id = auth.uid();
+    perform set_config('app.telegram_link_verified', 'false', true);
+end;
+$$;
+
+grant execute on function public.unlink_telegram() to authenticated;
+
+
+-- ===== 8. НАЗНАЧЕНИЕ ПЕРВОГО АДМИНИСТРАТОРА ==================
 -- После того как зарегистрируетесь на сайте, выполните здесь же
 -- (подставив свой email):
 --

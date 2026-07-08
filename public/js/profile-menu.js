@@ -52,6 +52,7 @@
             return {
                 name: pr.name || '',
                 email: pr.email || (window.supa.session.user && window.supa.session.user.email) || '',
+                telegramLinked: !!pr.telegram_id,
                 createdAt: pr.created_at ? Date.parse(pr.created_at) : Date.now(),
                 cloud: true
             };
@@ -302,17 +303,28 @@
         var body = hub.querySelector('#phProfBody');
         if (p) {
             var n = nameParts();
+            var tgRow = p.cloud
+                ? (p.telegramLinked
+                    ? '<div class="ph-tg"><span class="ph-tg-ok">' + IC.check + 'Telegram привязан</span>' +
+                      '<button class="ph-adm" type="button" id="phTgUnlink">Отвязать</button></div>'
+                    : '<div class="ph-tg"><button class="ph-adm" type="button" id="phTgLink">' + IC.userPlus + 'Привязать Telegram</button></div>')
+                : '';
             body.innerHTML =
                 '<div class="ph-2col">' +
                     '<div class="ph-field"><label class="ph-lab" for="phFirst">Имя</label><input class="ph-input" id="phFirst" type="text" autocomplete="off"></div>' +
                     '<div class="ph-field"><label class="ph-lab" for="phLast">Фамилия</label><input class="ph-input" id="phLast" type="text" autocomplete="off"></div>' +
                 '</div>' +
                 '<div class="ph-field"><label class="ph-lab" for="phEmail">Email</label><input class="ph-input" id="phEmail" type="email" autocomplete="off"></div>' +
+                tgRow +
                 '<button class="ph-save" type="button" id="phSaveProf">' + IC.check + 'Сохранить</button>';
             body.querySelector('#phFirst').value = n.first;
             body.querySelector('#phLast').value = n.last;
             body.querySelector('#phEmail').value = isTechEmail(p.email) ? '' : (p.email || '');
             body.querySelector('#phSaveProf').addEventListener('click', onSaveProfile);
+            var tgLink = body.querySelector('#phTgLink');
+            if (tgLink) tgLink.addEventListener('click', onLinkTelegram);
+            var tgUnlink = body.querySelector('#phTgUnlink');
+            if (tgUnlink) tgUnlink.addEventListener('click', onUnlinkTelegram);
         } else {
             body.innerHTML =
                 '<div class="ph-hint">' + IC.user + '<span>Профиль появится после регистрации. Создайте аккаунт на Главной — имя и email подставятся сюда автоматически.</span></div>' +
@@ -365,6 +377,25 @@
         saveProfile({ name: (first + ' ' + last).trim(), email: email });
         renderIdentity();
         toast('Профиль сохранён');
+    }
+
+    function onLinkTelegram() {
+        if (!window.supa) return;
+        toast('Открываем Telegram…');
+        window.supa.linkTelegram().then(function (r) {
+            if (!r.ok) { toast(r.error, true); return; }
+            toast('Telegram привязан — теперь вход через него ведёт в этот аккаунт');
+            renderIdentity();
+        });
+    }
+
+    function onUnlinkTelegram() {
+        if (!window.supa) return;
+        window.supa.unlinkTelegram().then(function (r) {
+            if (!r.ok) { toast(r.error, true); return; }
+            toast('Telegram отвязан');
+            renderIdentity();
+        });
     }
 
     function onSaveToken() {

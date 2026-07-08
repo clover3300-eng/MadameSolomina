@@ -179,6 +179,13 @@ body.dark-mode .ph-eye:hover { color: #cbd5e1; background: rgba(255,255,255,0.07
 .ph-hint svg { width: 13px; height: 13px; flex-shrink: 0; margin-top: 1px; stroke: currentColor; fill: none; stroke-width: 2; }
 body.dark-mode .ph-hint { background: rgba(255,255,255,0.05); }
 
+/* строка привязки Telegram — кнопка переиспользует .ph-adm (см. admin.css) */
+.ph-tg { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ph-tg .ph-adm { margin-right: 0; }
+.ph-tg-ok { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #059669; }
+.ph-tg-ok svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.5; }
+body.dark-mode .ph-tg-ok { color: #34d399; }
+
 /* кнопка «Сохранить» (как .pfm-done Портфелей) */
 .ph-save {
     align-self: flex-start; display: inline-flex; align-items: center; gap: 7px;
