@@ -56,18 +56,22 @@ body.tab-home #hgHeatWrap { display: block; }
     font-weight: 500;
     letter-spacing: 0.04em;
     transition: left 0.6s ease, top 0.6s ease, width 0.6s ease, height 0.6s ease, background 0.6s ease;
-    /* интенсивность 0..1 в --k, тон — как у большой карты (мята 158 / клэй 44) */
+    /* интенсивность 0..1 в --k, тон — как у большой карты (мята 158 / клэй 44);
+       --a 0..1 — фактор площади (js): мелкие плитки растворяются в фон */
+    opacity: calc(0.28 + 0.72 * var(--a, 1));
 }
 .hg-tile.up   { background: oklch(calc(0.965 - var(--k, 0) * 0.10) calc(0.012 + var(--k, 0) * 0.055) 158); color: oklch(0.45 0.09 158); }
 .hg-tile.dn   { background: oklch(calc(0.965 - var(--k, 0) * 0.10) calc(0.012 + var(--k, 0) * 0.055) 44);  color: oklch(0.47 0.09 44); }
 .hg-tile.flat { background: oklch(0.958 0.006 250); color: oklch(0.55 0.02 250); }
 
 /* Вуаль: плотнее слева (под манифестом), легче справа у стекла,
-   плюс лёгкое высветление сверху — под прозрачной шапкой */
+   высветление сверху под прозрачной шапкой + пятно в правом нижнем
+   углу — там сбивается кластер мелких плиток, приглушаем */
 .hg-scrim {
     position: absolute;
     inset: 0;
     background:
+        radial-gradient(58% 52% at 100% 100%, rgba(255, 255, 255, 0.68), transparent 72%),
         linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 26%),
         linear-gradient(90deg,
             rgba(255, 255, 255, 0.88) 0%,
@@ -304,7 +308,8 @@ body.tab-home #hgHeatWrap { display: block; }
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
     outline: none;
 }
-.hr-input::placeholder { color: #A9B2C1; }
+/* у моспейса широкий пробел — стягиваем межсловные зазоры подсказки */
+.hr-input::placeholder { color: #A9B2C1; word-spacing: -3px; }
 .hr-input:focus {
     border-color: #161B27;
     box-shadow: 0 0 0 4px rgba(22, 27, 39, 0.08);
@@ -499,6 +504,7 @@ body.tab-home #hgHeatWrap { display: block; }
 .dark-mode .hg-tile.flat { background: oklch(0.27 0.012 250); color: oklch(0.62 0.02 250); }
 .dark-mode .hg-scrim {
     background:
+        radial-gradient(58% 52% at 100% 100%, rgba(15, 23, 42, 0.68), transparent 72%),
         linear-gradient(180deg, rgba(15, 23, 42, 0.55) 0%, rgba(15, 23, 42, 0) 26%),
         linear-gradient(90deg,
             rgba(19, 26, 41, 0.88) 0%,

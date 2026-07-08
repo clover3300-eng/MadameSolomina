@@ -446,15 +446,20 @@
         var W = box.clientWidth, H = box.clientHeight;
         if (W < 2 || H < 2) return;
         var tiles = squarify(weights.slice(0, MAX_TILES), { x: 0, y: 0, w: W, h: H });
+        // Мелкие плитки (хвост индекса, кластер в углу) не должны спорить
+        // с манифестом: до этой площади плитка растворяется в фон (--a)
+        var FULL_AREA = W * H * 0.008;
         var html = '';
         tiles.forEach(function (t) {
             var chg = changes ? changes[t.tk] : null;
             var cls = (chg != null && chg > 0.02) ? 'up' : ((chg != null && chg < -0.02) ? 'dn' : 'flat');
-            var k = Math.min(1, Math.abs(chg || 0) / CAP);
             var x = t.x + 2, y = t.y + 2, w = Math.max(0, t.w - 4), h = Math.max(0, t.h - 4);
+            var a = Math.min(1, (w * h) / FULL_AREA);
+            var k = Math.min(1, Math.abs(chg || 0) / CAP) * (0.35 + 0.65 * a);
             var label = (w > 64 && h > 40) ? t.tk : '';
             html += '<div class="hg-tile ' + cls + '" style="left:' + x.toFixed(1) + 'px;top:' + y.toFixed(1) +
-                'px;width:' + w.toFixed(1) + 'px;height:' + h.toFixed(1) + 'px;--k:' + k.toFixed(2) + '">' + label + '</div>';
+                'px;width:' + w.toFixed(1) + 'px;height:' + h.toFixed(1) + 'px;--k:' + k.toFixed(2) +
+                ';--a:' + a.toFixed(2) + '">' + label + '</div>';
         });
         box.innerHTML = html;
     }
