@@ -54,23 +54,42 @@
     color: var(--stk-muted);
 }
 
+/* Левая группа тулбара: переключатель Акции/Облигации + режим + счётчик.
+   Используется и в терминале облигаций (общий компонент). */
+.stk-lead { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; min-width: 0; }
+
 /* Тумблер «По секторам / Общий список» — в стиле тулбара: бордер-пилюля,
-   активный сегмент графитовый (как тёмная шапка таблицы и сайдбар) */
+   активный сегмент графитовый (как тёмная шапка таблицы и сайдбар).
+   Фолбэки в var() — компонент живёт и внутри .bnd-root, где нет --stk-токенов */
 .stk-toggle {
     display: inline-flex; height: 38px; padding: 3px; box-sizing: border-box;
     border-radius: 11px; background: var(--card, #fff);
-    border: 1px solid var(--stk-border);
+    border: 1px solid var(--stk-border, rgba(0,0,0,0.08));
 }
 .stk-tg-btn {
     appearance: none; border: 0; cursor: pointer; background: transparent;
     font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600;
-    color: var(--stk-slate); padding: 0 15px; border-radius: 8px;
+    color: var(--stk-slate, #64748B); padding: 0 15px; border-radius: 8px;
     transition: background 0.2s ease, color 0.2s ease;
 }
-.stk-tg-btn:hover { color: var(--stk-text); }
+.stk-tg-btn:hover { color: var(--stk-text, #0F172A); }
 .stk-tg-btn.active {
     background: var(--graphite, #2C364C); color: #fff;
 }
+
+/* Кнопка «Excel» в тулбаре терминалов (акции и облигации) — выгрузка CSV */
+.stk-export-btn {
+    display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px;
+    background: var(--card, #fff);
+    border: 1px solid var(--stk-border, rgba(0,0,0,0.08)); border-radius: 11px;
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600;
+    color: var(--stk-slate, #64748B);
+    cursor: pointer; white-space: nowrap;
+    transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+}
+.stk-export-btn:hover { color: var(--stk-text, #0F172A); border-color: #b9c6d8; }
+.stk-export-btn svg { width: 15px; height: 15px; flex-shrink: 0; color: #16b56b; }
+body.dark-mode .stk-export-btn { background: transparent; border-color: rgba(255,255,255,0.14); color: #c4cedd; }
 
 /* Кнопка «Избранное» — фильтр «только избранное» (золотой акцент при активном режиме) */
 .stk-fav-btn {

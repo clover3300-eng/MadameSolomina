@@ -884,8 +884,42 @@ function miPreset(btn) {
     }
 }
 
+// ===== Интро-оверлей раздела (поверх карточки калькулятора) =====
+// Форматирование стартовой суммы + живая синхронизация с #monthlySumInput
+function miStartFmt(inp) {
+    var d = String(inp.value).replace(/\D/g, '').slice(0, 12);
+    inp.value = d ? parseInt(d, 10).toLocaleString('ru-RU') : '';
+    var main = document.getElementById('monthlySumInput');
+    if (main) main.value = parseInt(d || '0', 10);
+    if (typeof distributeMonthlyInvestment === 'function') distributeMonthlyInvestment();
+}
+
+// «Приступить к расчёту»: прячем оверлей, применяем сумму, открываем
+// кнопку «Подробнее» и активируем «Создать портфель»
+function miStartCalc() {
+    var ov = document.getElementById('miStartOverlay');
+    var inp = document.getElementById('miStartInput');
+    var main = document.getElementById('monthlySumInput');
+    var v = inp ? (parseInt(String(inp.value).replace(/\D/g, ''), 10) || 0) : 0;
+    if (main && v > 0 && parseInt(main.value, 10) !== v) {
+        main.value = v;
+        if (typeof distributeMonthlyInvestment === 'function') distributeMonthlyInvestment();
+    }
+    if (ov) {
+        ov.classList.add('is-out');
+        setTimeout(function () { ov.style.display = 'none'; }, 260);
+    }
+    var more = document.getElementById('miMoreBtn');
+    if (more) more.classList.remove('is-hidden');
+    var cr = document.getElementById('miCreatePfBtn');
+    if (cr) { cr.disabled = false; cr.removeAttribute('title'); }
+    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    }
+}
+
 // Переключение правой колонки: баннер дохода ↔ график выплат.
-// Вызывается кнопками «Детали»/«Сводка» в правом верхнем углу карточек.
+// Вызывается кнопками «Подробнее»/«Сводка» на карточках правой колонки.
 function toggleScheduleView() {
     var banner = document.getElementById('miBannerCard');
     var sch = document.getElementById('miSchCard');

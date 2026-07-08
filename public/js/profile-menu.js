@@ -92,7 +92,8 @@
         out: '<svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
         userPlus: '<svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>',
         sun: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>',
-        moon: '<svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'
+        moon: '<svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
+        card: '<svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>'
     };
 
     // ---------- сборка DOM ----------
@@ -145,6 +146,27 @@
                             '</div></div>' +
                         '<div class="ph-hint">' + IC.shield + '<span>Токен хранится только в этом браузере и никуда не отправляется. После подключения аккаунтов он позволит автоматически загружать позиции и сделки от брокера.</span></div>' +
                         '<button class="ph-save" type="button" id="phSaveTok">' + IC.check + 'Сохранить токен</button>' +
+                    '</div></div></div>' +
+                '</div>' +
+
+                // ---- Тарифы ----
+                '<div class="ph-sec ph-sec--plan" id="phSecPlan">' +
+                    '<button class="ph-row" type="button" data-sec="plan" aria-expanded="false">' +
+                        '<span class="ph-row-ic">' + IC.card + '</span>' +
+                        '<span class="ph-row-tt"><span class="ph-row-t">Тарифы</span><span class="ph-row-s">Базовый — активен</span></span>' +
+                        IC.chev +
+                    '</button>' +
+                    '<div class="ph-body"><div class="ph-body-in"><div class="ph-body-pad">' +
+                        '<div class="ph-plan on">' +
+                            '<div class="ph-plan-h"><b>Базовый</b><span class="ph-plan-price free">бесплатно</span></div>' +
+                            '<div class="ph-plan-s">Расчёт портфеля, ежемесячный доход, портфели, ребаланс и терминал — без ограничений.</div>' +
+                            '<span class="ph-plan-badge">' + IC.check + 'Ваш тариф</span>' +
+                        '</div>' +
+                        '<div class="ph-plan">' +
+                            '<div class="ph-plan-h"><b>Про</b><span class="ph-plan-price">скоро</span></div>' +
+                            '<div class="ph-plan-s">Синхронизация с брокером по API, автоматический ребаланс и уведомления о купонных выплатах.</div>' +
+                            '<div class="ph-hint">' + IC.shield + '<span>Тариф появится после подключения аккаунтов — цена и состав уточняются.</span></div>' +
+                        '</div>' +
                     '</div></div></div>' +
                 '</div>' +
 

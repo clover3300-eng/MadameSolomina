@@ -207,6 +207,40 @@ body.dark-mode .ph-sw { background: rgba(255,255,255,0.14); }
 .ph-sw.on { background: #3b82f6; }
 .ph-sw.on::after { left: 17.5px; }
 
+/* ---- тарифы: карточки планов в аккордеоне ---- */
+.ph-plan {
+    position: relative;
+    border: 1px solid rgba(24,38,60,0.10);
+    border-radius: 13px;
+    padding: 12px 13px;
+    margin-bottom: 9px;
+    background: #ffffff;
+}
+body.dark-mode .ph-plan { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.09); }
+.ph-plan.on { border-color: rgba(59,130,246,0.45); background: rgba(59,130,246,0.045); }
+body.dark-mode .ph-plan.on { border-color: rgba(96,165,250,0.4); background: rgba(96,165,250,0.07); }
+.ph-plan-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ph-plan-h b { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 13px; color: #1b2433; }
+body.dark-mode .ph-plan-h b { color: #f4f8fd; }
+.ph-plan-price {
+    font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 700;
+    letter-spacing: 0.05em; text-transform: uppercase;
+    color: #b45309; background: rgba(245,158,11,0.14);
+    padding: 3px 8px; border-radius: 99px; white-space: nowrap;
+}
+.ph-plan-price.free { color: #15803d; background: rgba(22,163,74,0.12); }
+body.dark-mode .ph-plan-price { color: #fbbf24; }
+body.dark-mode .ph-plan-price.free { color: #4ade80; }
+.ph-plan-s { margin-top: 6px; font-size: 11px; line-height: 1.5; font-weight: 600; color: #7a8798; }
+body.dark-mode .ph-plan-s { color: #9fb0c4; }
+.ph-plan-badge {
+    display: inline-flex; align-items: center; gap: 6px; margin-top: 9px;
+    font-size: 10.5px; font-weight: 800; color: #2563eb;
+}
+body.dark-mode .ph-plan-badge { color: #7fb2ff; }
+.ph-plan-badge svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2.4; }
+.ph-plan .ph-hint { margin-top: 9px; margin-bottom: 0; }
+
 /* ---- футер: примечание + выход / вход ---- */
 .ph-foot { flex-shrink: 0; display: flex; align-items: center; gap: 10px; padding: 11px 16px 15px; border-top: 1px solid rgba(24,38,60,0.07); }
 body.dark-mode .ph-foot { border-color: rgba(255,255,255,0.07); }

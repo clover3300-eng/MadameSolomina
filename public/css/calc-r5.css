@@ -191,7 +191,12 @@
 }
 .cx-rows.r5 .r5-term.ob { color: var(--r5-ofz); }
 .cx-rows.r5 .r5-term.ac { color: var(--r5-orange); }
-.cx-rows.r5 .r5-term:hover { filter: brightness(.9); }
+/* Затемнение — только пока поповер закрыт: filter на термине красил бы и сам
+   поповер (белый → серый) и создавал stacking context, из-за которого поповер
+   уходил под соседние строки списка. */
+.cx-rows.r5 .r5-term:hover:not(:has(.r5-pop)) { filter: brightness(.9); }
+/* Пока поповер открыт — термин выше соседних строк, чтобы поповер не обрезался ими */
+.cx-rows.r5 .r5-term:has(.r5-pop) { z-index: 80; }
 .cx-rows.r5 .r5-pop {
   position: absolute; bottom: calc(100% + 11px); left: 50%; transform: translateX(-50%);
   width: 248px; border-radius: 16px;

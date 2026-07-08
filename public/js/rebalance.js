@@ -44,22 +44,6 @@ function updateOfzSortUI() {
     });
 }
 
-// Кнопка «Создать портфель» — как на странице портфеля после расчёта:
-// переносит рассчитанный состав во вкладку «Портфели». Если расчёта ещё
-// не было — ведём пользователя на «Расчёт».
-function rebalanceCreatePortfolio() {
-    if (typeof isPortfolioCalculated !== 'undefined' && !isPortfolioCalculated) {
-        if (typeof showLuxuryNotification === 'function') {
-            showLuxuryNotification('Сначала рассчитайте портфель', 'Введите сумму на вкладке «Расчёт» и нажмите «Рассчитать портфель»');
-        }
-        switchTab('calc');
-        return;
-    }
-    if (typeof window.pfImport === 'function') window.pfImport('calc', 'all', null);
-    switchTab('portfolios');
-    if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-}
-
 // Статистика в тёмной рельсе зависит от активной вкладки
 function updateRebalanceStats(mode) {
     const candNum = document.getElementById('rbCandNum');

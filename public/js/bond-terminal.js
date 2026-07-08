@@ -27,14 +27,14 @@
     // Закреплённая первая колонка — Название + ISIN (см. renderBondRow).
     var COLS = [
         { key: 'кп',                               label: 'КП',          type: 'num',  align: 'center', title: 'Купонный период, дней' },
-        { key: 'Текущая Цена',                     label: 'Цена',        type: 'num',  align: 'center' },
+        { key: 'Текущая Цена',                     label: 'Цена',        type: 'num',  align: 'center', title: 'Текущая рыночная цена облигации' },
         { key: 'Текущая Купонная Доходность',      label: 'Куп. дох.',   type: 'num',  align: 'center', title: 'Текущая купонная доходность' },
         { key: 'Среднегодовая Простая Доходность', label: 'Ср. дох./год',type: 'num',  align: 'center', title: 'Среднегодовая простая доходность' },
         { key: 'НКД',                              label: 'НКД',         type: 'num',  align: 'center', title: 'Накопленный купонный доход' },
-        { key: 'Купон',                            label: 'Купон',       type: 'num',  align: 'center' },
-        { key: 'Дата Купона',                      label: 'Дата купона', type: 'date', align: 'center' },
-        { key: 'Номинал',                          label: 'Номинал',     type: 'num',  align: 'center' },
-        { key: 'Дата погашения',                   label: 'Погашение',   type: 'date', align: 'center' }
+        { key: 'Купон',                            label: 'Купон',       type: 'num',  align: 'center', title: 'Размер купонной выплаты, ₽' },
+        { key: 'Дата Купона',                      label: 'Дата купона', type: 'date', align: 'center', title: 'Дата ближайшей купонной выплаты' },
+        { key: 'Номинал',                          label: 'Номинал',     type: 'num',  align: 'center', title: 'Номинальная стоимость облигации, ₽' },
+        { key: 'Дата погашения',                   label: 'Погашение',   type: 'date', align: 'center', title: 'Дата погашения облигации' }
     ];
 
     // Звезда «в избранное» (заливка управляется классом .active через CSS)
@@ -381,14 +381,16 @@
     var SORT_HINT = 'Клик — сортировка по столбцу · Shift+клик — добавить столбец';
     function renderHead() {
         var ths = '';
+        // Тултипы шапки — как в терминале акций: первая строка — описание столбца,
+        // вторая (\n, приглушённая) — подсказка про сортировку (см. table-tooltip.js)
         ths += '<th class="bnd-first bnd-head-center' + (sortInfo('__name') ? ' bnd-sorted' : '')
-             + '" data-sort="__name" data-type="text" title="' + esc(SORT_HINT) + '">Название / ISIN' + arrow('__name') + '</th>';
+             + '" data-sort="__name" data-type="text" title="' + esc('Название выпуска и ISIN') + '\n' + esc(SORT_HINT) + '">Название / ISIN' + arrow('__name') + '</th>';
         var cols = visibleCols();
         for (var i = 0; i < cols.length; i++) {
             var col = cols[i];
             var cls = ['bnd-th', 'bnd-col-center'];
             if (sortInfo(col.key)) cls.push('bnd-sorted');
-            var tip = col.title ? col.title + ' · ' + SORT_HINT : SORT_HINT;
+            var tip = col.title ? col.title + '\n' + SORT_HINT : SORT_HINT;
             ths += '<th class="' + cls.join(' ') + '" data-sort="' + esc(col.key) + '" data-type="' + col.type + '" title="' + esc(tip) + '">'
                  + esc(col.label) + arrow(col.key) + '</th>';
         }
@@ -456,6 +458,38 @@
     }
 
     // Полный рендер таблицы (тело строится из текущего состояния)
+    // =========================================================
+    //  ВЫГРУЗКА В EXCEL (CSV, ; как разделитель — русская локаль)
+    //  Выгружается текущий срез: фильтры/поиск/сортировка/видимые столбцы.
+    // =========================================================
+    function csvCell(v) {
+        var s = String(v == null ? '' : v).replace(/\n/g, ' ');
+        return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }
+    function exportCsv() {
+        if (state.status !== 'ready' || !state.bonds) return;
+        var cols = visibleCols();
+        var head = ['Название', 'ISIN'].concat(cols.map(function (c) { return c.label; }));
+        var lines = [head.map(csvCell).join(';')];
+        sortList(filterList(state.bonds)).forEach(function (b) {
+            var row = [b.name, b.isin].concat(cols.map(function (c) {
+                var raw = b.main[c.key];
+                if (isEmptyVal(raw)) return '';
+                return c.type === 'date' ? displayDate(raw) : String(raw);
+            }));
+            lines.push(row.map(csvCell).join(';'));
+        });
+        var d = new Date();
+        var stamp = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        var blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'terminal-obligacii-' + stamp + '.csv';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+    }
+
     function render() {
         var el = root(); if (!el) return;
         if (state.status !== 'ready') { renderState(); return; }
@@ -494,6 +528,16 @@
     // =========================================================
     function onClick(e) {
         var el = root(); if (!el) return;
+
+        // переключатель класса активов (объединённая вкладка Акции/Облигации)
+        var assetBtn = e.target.closest('.mt-asset-btn');
+        if (assetBtn) {
+            if (typeof window.mtShowTerminal === 'function') window.mtShowTerminal(assetBtn.getAttribute('data-asset'));
+            return;
+        }
+
+        // выгрузка текущего среза таблицы в CSV для Excel
+        if (e.target.closest('[data-act="export"]')) { exportCsv(); return; }
 
         if (e.target.closest('[data-act="retry"]')) { loadData(); return; }
 
@@ -641,9 +685,16 @@
         var el = root(); if (!el || built) return;
         el.innerHTML =
             // заголовок «Терминал · Облигации» убран — раздел уже читается по хлебной
-            // крошке в шапке сайта; счётчик облигаций остаётся, просто первым в тулбаре
+            // крошке в шапке сайта. Слева — переключатель Акции/Облигации (объединённая
+            // вкладка, тот же компонент, что в терминале акций) и счётчик.
             '<div class="bnd-toolbar">'
-            + '  <span class="bnd-count"></span>'
+            + '  <div class="stk-lead">'
+            + '    <div class="stk-toggle mt-asset" role="tablist" aria-label="Класс активов">'
+            + '      <button class="stk-tg-btn mt-asset-btn" type="button" data-asset="stocks">Акции</button>'
+            + '      <button class="stk-tg-btn mt-asset-btn active" type="button" data-asset="bonds">Облигации</button>'
+            + '    </div>'
+            + '    <span class="bnd-count"></span>'
+            + '  </div>'
             + '  <div class="bnd-tools">'
             + '    <label class="bnd-search">'
             + '      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>'
@@ -702,6 +753,10 @@
             + '      ' + STAR_SVG
             + '      <span class="bnd-fav-label">Избранное</span>'
             + '      <span class="bnd-fav-badge" hidden></span>'
+            + '    </button>'
+            + '    <button class="stk-export-btn" type="button" data-act="export" title="Выгрузить таблицу в Excel (CSV): текущий фильтр и видимые столбцы">'
+            + '      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M9.5 12.5l5 5M14.5 12.5l-5 5"/></svg>'
+            + '      <span>Excel</span>'
             + '    </button>'
             + '  </div>'
             + '</div>'
@@ -942,11 +997,18 @@
 
     // Оборачиваем глобальный switchTab — файл грузится после sidebar.js,
     // поэтому наш wrapper внешний и срабатывает после смены панели.
+    // «market-bonds» — псевдоним объединённой вкладки терминала: открываем
+    // панель market-stocks и показываем в ней облигации (mtShowTerminal).
     if (typeof window.switchTab === 'function') {
         var _bndPrevSwitchTab = window.switchTab;
         window.switchTab = function (tabId) {
+            if (tabId === 'market-bonds') {
+                window._mtMode = 'bonds';
+                _bndPrevSwitchTab.call(this, 'market-stocks');
+                if (typeof window.mtShowTerminal === 'function') window.mtShowTerminal('bonds');
+                return;
+            }
             _bndPrevSwitchTab.apply(this, arguments);
-            if (tabId === 'market-bonds') window.renderBondTerminal();
         };
     }
 })();

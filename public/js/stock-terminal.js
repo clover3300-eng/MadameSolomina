@@ -788,6 +788,50 @@
     // Простой escape для значения в CSS-селекторе [data-card="..."]
     function cssEscape(s) { return String(s).replace(/["\\]/g, '\\$&'); }
 
+    // =========================================================
+    //  ВЫГРУЗКА В EXCEL (CSV, ; как разделитель — русская локаль)
+    //  Выгружается текущий срез: фильтры/поиск/сортировка/видимые столбцы.
+    // =========================================================
+    function csvCell(v) {
+        var s = String(v == null ? '' : v).replace(/\n/g, ' ');
+        return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }
+    function downloadCsv(name, lines) {
+        var blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+    }
+    function exportCsv() {
+        if (state.status !== 'ready' || !state.companies) return;
+        var cols = visibleCols();
+        var head = ['Тикер', 'Название'].concat(cols.map(function (c) { return c.label.replace(/\n/g, ' '); }));
+        var lines = [head.map(csvCell).join(';')];
+        var pushRow = function (co) {
+            var row = [co.ticker, co.name].concat(cols.map(function (c) {
+                var raw = co.main[c.key];
+                return isEmptyVal(raw) ? '' : String(raw);
+            }));
+            lines.push(row.map(csvCell).join(';'));
+        };
+        var visible = filterList(state.companies);
+        if (state.mode === 'sector') {
+            var groups = {};
+            visible.forEach(function (co) { (groups[co.sector] = groups[co.sector] || []).push(co); });
+            Object.keys(groups).sort(function (a, b) { return a.localeCompare(b, 'ru'); }).forEach(function (sec) {
+                sortList(groups[sec]).forEach(pushRow);
+            });
+        } else {
+            sortList(visible).forEach(pushRow);
+        }
+        var d = new Date();
+        var stamp = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        downloadCsv('terminal-akcii-' + stamp + '.csv', lines);
+    }
+
     // Ширина sticky-карточек = видимая ширина контейнера (чтобы карточка
     // не уезжала при горизонтальном скролле)
     function syncCardWidths() {
@@ -820,6 +864,16 @@
     // =========================================================
     function onClick(e) {
         var el = root(); if (!el) return;
+
+        // переключатель класса активов (объединённая вкладка Акции/Облигации)
+        var assetBtn = e.target.closest('.mt-asset-btn');
+        if (assetBtn) {
+            if (typeof window.mtShowTerminal === 'function') window.mtShowTerminal(assetBtn.getAttribute('data-asset'));
+            return;
+        }
+
+        // выгрузка текущего среза таблицы в CSV для Excel
+        if (e.target.closest('[data-act="export"]')) { exportCsv(); return; }
 
         // повтор загрузки
         if (e.target.closest('[data-act="retry"]')) { loadData(); return; }
@@ -1076,9 +1130,20 @@
         var el = root(); if (!el || built) return;
         el.innerHTML =
             // заголовок «Терминал · Акции» убран — раздел уже читается по хлебной крошке
-            // в шапке сайта; счётчик компаний остаётся как есть, просто первым в тулбаре
+            // в шапке сайта. Слева направо: переключатель Акции/Облигации (объединённая
+            // вкладка), режим «По секторам/Общий список» (по просьбе — слева), счётчик.
             '<div class="stk-toolbar">'
-            + '  <span class="stk-count"></span>'
+            + '  <div class="stk-lead">'
+            + '    <div class="stk-toggle mt-asset" role="tablist" aria-label="Класс активов">'
+            + '      <button class="stk-tg-btn mt-asset-btn active" type="button" data-asset="stocks">Акции</button>'
+            + '      <button class="stk-tg-btn mt-asset-btn" type="button" data-asset="bonds">Облигации</button>'
+            + '    </div>'
+            + '    <div class="stk-toggle" role="tablist">'
+            + '      <button class="stk-tg-btn active" type="button" data-mode="sector">По секторам</button>'
+            + '      <button class="stk-tg-btn" type="button" data-mode="flat">Общий список</button>'
+            + '    </div>'
+            + '    <span class="stk-count"></span>'
+            + '  </div>'
             + '  <div class="stk-tools">'
             + '    <label class="stk-search">'
             + '      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>'
@@ -1151,10 +1216,10 @@
             + '      <span class="stk-fav-label">Избранное</span>'
             + '      <span class="stk-fav-badge" hidden></span>'
             + '    </button>'
-            + '    <div class="stk-toggle" role="tablist">'
-            + '      <button class="stk-tg-btn active" type="button" data-mode="sector">По секторам</button>'
-            + '      <button class="stk-tg-btn" type="button" data-mode="flat">Общий список</button>'
-            + '    </div>'
+            + '    <button class="stk-export-btn" type="button" data-act="export" title="Выгрузить таблицу в Excel (CSV): текущий фильтр и видимые столбцы">'
+            + '      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M9.5 12.5l5 5M14.5 12.5l-5 5"/></svg>'
+            + '      <span>Excel</span>'
+            + '    </button>'
             + '  </div>'
             + '</div>'
             + '<div class="stk-state"></div>'
@@ -1424,6 +1489,28 @@
         else renderState();
     };
 
+    // ---- Объединённая вкладка «Терминал»: Акции ↔ Облигации ----
+    // Оба корня (#stkTerminal и #bndTerminal) живут в #panel-market-stocks;
+    // сегмент .mt-asset в тулбарах переключает, какой из них виден.
+    window._mtMode = 'stocks';
+    window.mtShowTerminal = function (mode) {
+        window._mtMode = (mode === 'bonds') ? 'bonds' : 'stocks';
+        var stk = document.getElementById('stkTerminal');
+        var bnd = document.getElementById('bndTerminal');
+        if (!stk || !bnd) return;
+        stk.style.display = (window._mtMode === 'stocks') ? '' : 'none';
+        bnd.style.display = (window._mtMode === 'bonds') ? '' : 'none';
+        if (window._mtMode === 'bonds') {
+            if (typeof window.renderBondTerminal === 'function') window.renderBondTerminal();
+        } else {
+            window.renderStockTerminal();
+        }
+        // подсветить активный сегмент в тулбарах обоих терминалов
+        document.querySelectorAll('.mt-asset .mt-asset-btn, .mt-asset .bnd-tg-btn').forEach(function (b) {
+            b.classList.toggle('active', b.getAttribute('data-asset') === window._mtMode);
+        });
+    };
+
     // пересчёт ширины sticky-карточек и смещения закреплённых столбцов при ресайзе окна
     window.addEventListener('resize', function () {
         if (state.status === 'ready' && document.getElementById('panel-market-stocks') &&
@@ -1435,11 +1522,12 @@
 
     // Оборачиваем глобальный switchTab — этот файл грузится последним,
     // поэтому наш wrapper внешний и срабатывает после смены панели.
+    // Вход на объединённую вкладку показывает последний выбранный класс активов.
     if (typeof window.switchTab === 'function') {
         var _stkPrevSwitchTab = window.switchTab;
         window.switchTab = function (tabId) {
             _stkPrevSwitchTab.apply(this, arguments);
-            if (tabId === 'market-stocks') window.renderStockTerminal();
+            if (tabId === 'market-stocks') window.mtShowTerminal(window._mtMode || 'stocks');
         };
     }
 })();

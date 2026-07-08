@@ -174,13 +174,19 @@ function populatePanels() {
             switchTab('portfolios');
         };
         if (fcLight) fcLight.appendChild(createPfBtn);
-        // 2.6) Кнопка «Выгрузить в Excel» — CSV по акциям и облигациям для аналитики
-        const exportBtn = document.createElement('button');
-        exportBtn.type = 'button';
-        exportBtn.className = 'v3-export-btn';
-        exportBtn.innerHTML = '<span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M9.5 12.5l5 5M14.5 12.5l-5 5"/></svg></span>Выгрузить в Excel';
-        exportBtn.onclick = function() { if (typeof pfExportExcel === 'function') pfExportExcel(); };
-        if (fcLight) fcLight.appendChild(exportBtn);
+        // 2.6) Кнопка «Выгрузить в Excel» — в шапке карточки-таблицы, рядом с
+        // переключателем ОФЗ/Акции (экспорт живёт возле таблиц, которые выгружает)
+        ['pfBondsThead', 'pfStocksThead'].forEach(function(id) {
+            const thead = document.getElementById(id);
+            if (!thead || thead.querySelector('.pf-export-btn')) return;
+            const ex = document.createElement('button');
+            ex.type = 'button';
+            ex.className = 'pf-export-btn';
+            ex.title = 'Выгрузить в Excel: состав портфеля (ОФЗ и акции)';
+            ex.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M9.5 12.5l5 5M14.5 12.5l-5 5"/></svg>Excel';
+            ex.onclick = function() { if (typeof pfExportExcel === 'function') pfExportExcel(); };
+            thead.appendChild(ex);
+        });
         // 3) Кнопка «Новый расчёт» — внутри карточки капитала (увеличивает её),
         //    возврат на вкладку Расчёт
         const recalc = document.createElement('button');
@@ -466,17 +472,13 @@ function populatePanels() {
         });
         if (card) left.appendChild(card);
         if (hdr) left.appendChild(hdr);
-        // Виджеты-переходы под «Умной заменой»: рассчитать портфель / ежемесячные купоны
+        // Единственный виджет-переход — «Ежемесячные купоны», оформлен как
+        // продолжение тёмной карточки «Умная замена» (заезжает под неё, тонкая
+        // обводка — см. #rbMonthlyWidget в site-layout.css). Виджет «Рассчитать
+        // портфель» убран: кнопка в самой карточке теперь ведёт на «Расчёт».
         const ARR_SVG = '<span class="go"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>';
-        const wCalc = document.createElement('div');
-        wCalc.className = 'ms-nav-widget';
-        wCalc.innerHTML =
-            '<span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></span>' +
-            '<span class="tx"><b>Рассчитать портфель</b>' +
-            '<span>Введите сумму — получите готовый состав из ОФЗ и акций под вашу стратегию.</span></span>' + ARR_SVG;
-        wCalc.onclick = function() { switchTab('calc'); };
-        left.appendChild(wCalc);
         const wMonthly = document.createElement('div');
+        wMonthly.id = 'rbMonthlyWidget';
         wMonthly.className = 'ms-nav-widget green';
         wMonthly.innerHTML =
             '<span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg></span>' +
@@ -538,7 +540,7 @@ function switchTab(tabId) {
     });
 
     // Update breadcrumb in top bar
-    var crumbMap = { dashboard: 'Главная', calc: 'Параметры', portfolio: 'Портфель', portfolios: 'Портфели', rebalance: 'Ребаланс', market: 'Рынок', 'market-bonds': 'Облигации', 'market-stocks': 'Акции', monthly: 'Ежемесячный доход', backtest: 'Тест портфеля' };
+    var crumbMap = { dashboard: 'Главная', calc: 'Параметры', portfolio: 'Портфель', portfolios: 'Портфели', rebalance: 'Ребаланс', market: 'Рынок', 'market-bonds': 'Терминал', 'market-stocks': 'Терминал', monthly: 'Ежемесячный доход', backtest: 'Тест портфеля' };
     var crumb = document.getElementById('topBarCrumb');
     var crumbText = document.getElementById('topBarCrumbText');
     if (crumb && crumbText) {

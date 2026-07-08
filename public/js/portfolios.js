@@ -907,6 +907,17 @@
         // кешированные графики перерисовываются синхронно; запас — на microtask-хвосты
         setTimeout(function () { noChartAnim = false; }, 250);
     }
+    // Плавная перерисовка для пользовательских переключений («Видимость», вид карточек):
+    // полный innerHTML-своп читается как мигание всей сетки. View Transitions кросс-фейдит
+    // старое и новое состояние; after — колбэк после обновления DOM (вернуть попап .open).
+    // Для фоновых обновлений котировок НЕ используется — там перерисовка должна быть незаметной.
+    function renderSmooth(after) {
+        var run = function () { renderNoAnim(); if (after) after(); };
+        if (document.startViewTransition) {
+            try { document.startViewTransition(run); return; } catch (e) {}
+        }
+        run();
+    }
 
     function renderPortfolios() {
         var host = dq('pfWrap'); if (!host) return;
@@ -1178,7 +1189,7 @@
         if (cardViewMode === mode) { closeImpMenus(); return; }
         cardViewMode = mode;
         try { localStorage.setItem(CARDVIEW_KEY, mode); } catch (e) {}
-        closeImpMenus(); renderNoAnim();
+        closeImpMenus(); renderSmooth();
     };
 
     // ---- панель действий страницы: живёт не в самой вкладке, а в ГЛОБАЛЬНОЙ шапке
@@ -2413,6 +2424,24 @@
         store.items.forEach(function (p) {
             if (p.hidden) return;
             if (!all && !tradePfSelected(p)) return;
+            // Обмены ребалансировки: продажи в лотах не хранятся (лоты — только покупки),
+            // поэтому строку «Продажа» строим из журнала p.trades. Купленный в обмене лот
+            // помечаем связкой lotId→trade — для бейджа «ребаланс» и синхронной отмены.
+            var rebalByLot = {};
+            var newestUndoable = (p.trades && p.trades.length && p.trades[0].undo) ? p.trades[0].id : null;
+            (p.trades || []).forEach(function (t) {
+                if (t.undo && t.undo.buyLotId) rebalByLot[t.undo.buyLotId] = t;
+                var w = new Date(t.ts || 0);
+                var iso = w.getFullYear() + '-' + pad2(w.getMonth() + 1) + '-' + pad2(w.getDate());
+                var qty = +t.sellQty || 0;
+                var proceeds = +t.proceeds || 0;
+                list.push({ date: iso, ticker: t.sellTicker || '', name: t.sellName || t.sellTicker || '',
+                    type: t.kind === 'bond' ? 'bond' : 'stock', side: 'sell',
+                    price: qty > 0 ? proceeds / qty : 0, nkd: 0, hasNkd: false, qty: qty,
+                    position: proceeds, fee: 0, total: proceeds,
+                    pfName: p.name, pfColor: colorVal(p.color),
+                    rebal: true, pid: p.id, tradeId: t.id, undoable: t.id === newestUndoable });
+            });
             (p.holdings || []).forEach(function (h) {
                 if (!h.ticker) return;
                 var isBond = h.type === 'bond';
@@ -2422,11 +2451,14 @@
                     var nkd = isBond ? (+l.nkd || 0) : 0;
                     var position = (price + nkd) * qty;   // стоимость бумаг (для облигаций — с НКД)
                     var fee = +l.fee || 0;
+                    var rt = rebalByLot[l.id];   // лот куплен в обмене ребалансировки?
                     list.push({ date: l.buyDate || '', ticker: h.ticker, name: h.name || h.ticker,
                         type: h.type, side: l.side === 'sell' ? 'sell' : 'buy',
                         price: price, nkd: nkd, hasNkd: isBond, qty: qty,
                         position: position, fee: fee, total: position + fee,
-                        pfName: p.name, pfColor: colorVal(p.color) });
+                        pfName: p.name, pfColor: colorVal(p.color),
+                        rebal: !!rt, pid: p.id, tradeId: rt ? rt.id : null,
+                        undoable: !!rt && rt.id === newestUndoable });
                 });
             });
         });
@@ -2440,7 +2472,8 @@
         trades.forEach(function (t) {
             var y = (t.date || '').slice(0, 4) || '—';
             if (!(y in idx)) { idx[y] = groups.length; groups.push({ year: y, items: [], sum: 0 }); }
-            var g = groups[idx[y]]; g.items.push(t); g.sum += t.total;
+            var g = groups[idx[y]]; g.items.push(t);
+            if (t.side !== 'sell') g.sum += t.total;   // сумма года — только расходы на покупки
         });
         return groups;   // порядок годов — по убыванию (trades уже отсортированы)
     }
@@ -2464,11 +2497,20 @@
         var side = t.side === 'sell'
             ? '<span class="pft-side sell">Продажа</span>'
             : '<span class="pft-side buy">Покупка</span>';
+        // сделка из ребалансировки: бейдж + (для последней) кнопка синхронной отмены —
+        // отмена убирает И продажу, И покупку (общая механика pfRbUndoTrade)
+        if (t.rebal) side += '<span class="pft-side rebal" title="Сделка из ребалансировки портфеля">ребаланс</span>';
+        var undoBtn = (t.rebal && t.undoable && t.pid && t.tradeId)
+            ? '<button class="pft-undo" onclick="pfRbUndoTrade(\'' + t.pid + '\',\'' + t.tradeId + '\')" title="Отменить ребалансировку — исчезнут и продажа, и покупка">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>Отменить ребалансировку</button>'
+            : '';
         var rel = '';
         if (t.date && typeof getRelativeDateText === 'function') {
             var d = new Date(t.date); if (!isNaN(d.getTime())) rel = getRelativeDateText(d);
         }
-        return '<div class="pft-row">' +
+        // для продажи «Расход» — на самом деле приход: показываем с плюсом и зелёным
+        var totalCell = t.side === 'sell' ? '<span class="pft-in">+' + fmtRub(t.total) + '</span>' : fmtRub(t.total);
+        return '<div class="pft-row' + (t.rebal ? ' pft-row-rebal' : '') + '">' +
             '<div class="pft-date"><b>' + ruDate(t.date) + '</b>' + (rel ? '<span>' + esc(rel) + '</span>' : '') + '</div>' +
             '<div class="pft-c pft-type">' + side + '</div>' +
             '<div class="pft-id"><span class="pft-tk">' + esc(t.ticker) + '</span><span class="pft-nm">' + esc(t.name) + '</span></div>' +
@@ -2478,7 +2520,8 @@
             '<div class="pft-c pft-qty">' + t.qty + '</div>' +
             '<div class="pft-c pft-pos">' + fmtRub(t.position) + '</div>' +
             '<div class="pft-c pft-fee">' + (t.fee > 0 ? fmtRub(t.fee) : '<span class="pft-dash">—</span>') + '</div>' +
-            '<div class="pft-c pft-total">' + fmtRub(t.total) + '</div>' +
+            '<div class="pft-c pft-total">' + totalCell + '</div>' +
+            undoBtn +
         '</div>';
     }
     // Попап-фильтр «Какие портфели показывать» (переиспользует инфраструктуру «Импорт», key='trades')
@@ -2509,7 +2552,8 @@
         var trades = collectTrades(false);
         var multiPf = tradePfCandidates().length > 1;   // колонка «Портфель» — только при 2+
         var cls = 'dash2-card pf-card2 pf-trades' + (multiPf ? ' has-pf' : '');
-        var totalSum = trades.reduce(function (s, t) { return s + t.total; }, 0);
+        // «Расход всего» — только траты на покупки (выручка продаж расходом не является)
+        var totalSum = trades.reduce(function (s, t) { return s + (t.side === 'sell' ? 0 : t.total); }, 0);
         var toggle = '<button class="pft-toggle' + (tradesFull ? ' on' : '') + '" onclick="pfToggleTrades()" title="' + (tradesFull ? 'Свернуть' : 'Показать все сделки') + '">' +
             '<span>' + (tradesFull ? 'Свернуть' : 'Все сделки · ' + trades.length) + '</span>' +
             TR_CHEV.replace('__CH__', 'pft-toggle-ch' + (tradesFull ? ' up' : '')) + '</button>';
@@ -2570,8 +2614,10 @@
         tradesHidden = !tradesHidden;
         try { localStorage.setItem(TRADES_HIDDEN_KEY, tradesHidden ? '1' : '0'); } catch (e) {}
         var keepOpen = !!(dq('pfImp-eye') && dq('pfImp-eye').classList.contains('open'));
-        renderNoAnim();
-        if (keepOpen) { var m = dq('pfImp-eye'); if (m) { m.classList.add('open'); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); } }
+        renderSmooth(keepOpen ? function () {
+            var m = dq('pfImp-eye');
+            if (m) { m.classList.add('open'); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); }
+        } : null);
         toast(tradesHidden ? 'История сделок скрыта' : 'История сделок показана');
     };
 
@@ -2641,24 +2687,26 @@
         }
         var eyeMenu = dq('pfImp-eye');
         var keepOpen = !!(eyeMenu && eyeMenu.classList.contains('open'));
-        saveStore(); renderNoAnim();
-        if (keepOpen) {
+        var reopenEye = function () {
             var m = dq('pfImp-eye');
             if (m) { m.classList.add('open'); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); }
-        }
+        };
+        saveStore(); renderSmooth(keepOpen ? reopenEye : null);
         toast(p.hidden ? 'Портфель «' + p.name + '» скрыт из сетки' : 'Портфель «' + p.name + '» снова показан');
     };
     window.pfShowAllHidden = function () {
         store.items.forEach(function (p) { p.hidden = false; });
-        saveStore(); renderNoAnim();
+        saveStore(); renderSmooth();
     };
     // «Показать все»/«Скрыть все» внутри попапа «Видимость» — попап оставляем открытым
+    function pfEyeReopen() {
+        var m = dq('pfImp-eye');
+        if (m) { m.classList.add('open'); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); }
+    }
     window.pfEyeShowAll = function (ev) {
         if (ev) ev.stopPropagation();
         store.items.forEach(function (p) { p.hidden = false; });
-        saveStore(); renderNoAnim();
-        var m = dq('pfImp-eye');
-        if (m) { m.classList.add('open'); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); }
+        saveStore(); renderSmooth(pfEyeReopen);
     };
     window.pfEyeHideAll = function (ev) {
         if (ev) ev.stopPropagation();
@@ -2667,9 +2715,7 @@
             if (openMenu === p.id) { openMenu = null; menuTall = false; }
             delete chartOpen[p.id]; delete chartAssets[p.id]; delete chartAssetsFull[p.id]; delete holdsExpand[p.id];
         });
-        saveStore(); renderNoAnim();
-        var m = dq('pfImp-eye');
-        if (m) { m.classList.add('open'); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); }
+        saveStore(); renderSmooth(pfEyeReopen);
     };
     // НКД при импорте из расчёта/ежемесячного дохода: дата покупки = сегодня, поэтому
     // подтягиваем ТЕКУЩИЙ НКД (ACCRUEDINT) из живых данных MOEX и помечаем как «с API»

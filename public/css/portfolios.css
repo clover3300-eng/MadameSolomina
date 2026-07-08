@@ -1321,6 +1321,28 @@ body.dark-mode .pft-c.pft-pos { color: #aeb9c8; }
 body.dark-mode .pft-c.pft-total { color: #fff; }
 .pft-dash { color: #cbd5e1; }
 body.dark-mode .pft-dash { color: #56657a; }
+/* Продажа: «Расход» на деле приход — плюс и зелёный */
+.pft-in { color: #16a34a; }
+body.dark-mode .pft-in { color: #34d399; }
+/* Сделки из ребалансировки: бейдж в колонке «Тип» + кнопка синхронной отмены */
+.pft-c.pft-type { display: flex; flex-direction: column; gap: 3px; align-items: flex-start; }
+.pft-side.rebal { color: #6d5bd0; background: rgba(109, 91, 208, 0.10); font-size: 9px; letter-spacing: 0.04em; }
+body.dark-mode .pft-side.rebal { color: #b3a7f5; background: rgba(179, 167, 245, 0.13); }
+.pft-row { position: relative; }
+.pft-undo {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    display: inline-flex; align-items: center; gap: 6px;
+    border: 1px solid rgba(220, 38, 38, 0.35); border-radius: 999px;
+    background: #ffffff; color: #dc2626;
+    padding: 6px 12px;
+    font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 700; white-space: nowrap;
+    cursor: pointer; opacity: 0; pointer-events: none;
+    box-shadow: 0 8px 18px rgba(24, 38, 60, 0.14);
+    transition: opacity 0.15s ease, background 0.15s ease;
+}
+.pft-row:hover .pft-undo { opacity: 1; pointer-events: auto; }
+.pft-undo:hover { background: rgba(220, 38, 38, 0.08); }
+body.dark-mode .pft-undo { background: #1d2734; color: #f87171; border-color: rgba(248, 113, 113, 0.4); }
 /* заголовки годов — сворачиваемая полоса перед сделками года */
 .pft-yrgrp + .pft-yrgrp { margin-top: 4px; }
 .pft-yr { display: flex; align-items: center; gap: 9px; width: 100%; text-align: left; cursor: pointer;

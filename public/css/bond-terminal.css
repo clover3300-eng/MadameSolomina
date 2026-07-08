@@ -371,12 +371,8 @@ body.dark-mode .bnd-table > thead th.bnd-sorted { color: #f4f8fd; }
 /* ---------- Десктоп ---------- */
 @media (min-width: 1024px) {
     .bnd-scroll { max-height: calc(var(--real-vh, 100vh) / 0.9 - 210px); }
-    /* Вкладка Облигации — таблица во всю ширину контентной области
-       (перебиваем .tab-panel max-width:1240px из css/site-layout.css) */
-    #panel-market-bonds.tab-panel {
-        max-width: none; margin: 0; width: 100%;
-        padding: 20px 24px 64px;
-    }
+    /* Полноширинная раскладка вкладки задаётся правилом #panel-market-stocks
+       в stock-terminal.css — облигации живут в той же объединённой панели */
 }
 
 /* ---------- Тёмная тема ---------- */
