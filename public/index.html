@@ -26,16 +26,16 @@
     <link rel="stylesheet" href="css/rebalance.css">
     <link rel="stylesheet" href="css/rebalance-stocks.css">
     <link rel="stylesheet" href="css/webapp-layout.css?v=3">
-    <link id="siteLayoutCSS" rel="stylesheet" href="css/site-layout.css?v=20">
+    <link id="siteLayoutCSS" rel="stylesheet" href="css/site-layout.css?v=21">
     <link rel="stylesheet" href="css/components.css">
-    <link rel="stylesheet" href="css/backtest.css?v=3">
+    <link rel="stylesheet" href="css/backtest.css?v=4">
     <link rel="stylesheet" href="css/rebalance-r4.css?v=8">
     <link rel="stylesheet" href="css/dashboard-panel.css?v=4">
-    <link rel="stylesheet" href="css/portfolios.css?v=57">
+    <link rel="stylesheet" href="css/portfolios.css?v=58">
     <link rel="stylesheet" href="css/rebal-r5.css?v=7">
     <link rel="stylesheet" href="css/monthly-panel.css?v=1">
-    <link rel="stylesheet" href="css/monthly-r5.css?v=3">
-    <link rel="stylesheet" href="css/stock-terminal.css?v=8">
+    <link rel="stylesheet" href="css/monthly-r5.css?v=4">
+    <link rel="stylesheet" href="css/stock-terminal.css?v=9">
     <link rel="stylesheet" href="css/bond-terminal.css?v=11">
     <link rel="stylesheet" href="css/table-tooltip.css?v=1">
     <link rel="stylesheet" href="css/market-heatmap.css?v=33">
@@ -212,6 +212,16 @@
         <div id="topBarActions">
             <!-- Кнопки текущей вкладки (Портфели/Главная/Рынок) — по одной панели на вкладку,
                  видна только своя, наполняются js/portfolios.js, js/dashboard.js, js/market-livebar.js -->
+            <!-- Excel-кнопки страниц «Портфель» и «Терминал» — рядом с «Поиском»;
+                 показ/скрытие управляет switchTab-обёртка в webapp-tabs.js -->
+            <div id="topBarPageActions" class="topbar-tab-actions" style="display:none">
+                <button type="button" id="pfHdrExportBtn" class="d3-quick ghost hdr-excel" style="display:none" onclick="pfExportExcel()" title="Выгрузить в Excel: состав портфеля (ОФЗ и акции)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M9.5 12.5l5 5M14.5 12.5l-5 5"/></svg><span>Excel</span>
+                </button>
+                <button type="button" id="termHdrExportBtn" class="d3-quick ghost hdr-excel" style="display:none" onclick="mtExportCsv()" title="Выгрузить текущую таблицу в Excel">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M9.5 12.5l5 5M14.5 12.5l-5 5"/></svg><span>Excel</span>
+                </button>
+            </div>
             <div id="topBarPfActions" class="topbar-tab-actions" style="display:none"></div>
             <div id="topBarDashActions" class="topbar-tab-actions" style="display:none"></div>
             <div id="topBarMktActions" class="topbar-tab-actions" style="display:none"></div>
@@ -438,18 +448,19 @@
         <div id="panel-backtest" class="tab-panel">
           <div class="bt2-wrap">
 
-            <!-- Header -->
-            <div class="bt2-head">
-                <div class="bt2-eyebrow">Тест портфеля</div>
-                <h1 class="bt2-h1">Проверьте портфель на истории</h1>
-                <p class="bt2-sub">Узнайте, как выбранный состав вёл бы себя в прошлом</p>
-            </div>
-
-            <!-- Stepper card -->
+            <!-- Stepper card (страничного заголовка нет — раздел читается по крошке
+                 в шапке сайта, как на «Ежемесячном доходе»; шапка внутри карточки) -->
             <div id="btConfigCol" class="bt2-card">
 
             <!-- Шапка с финальными данными теста (появляется после запуска) -->
             <div id="btResultSummary" class="bt-res-summary" style="display:none;"></div>
+
+            <span class="bt2-wm">%</span>
+            <div class="bt2-card-head">
+                <span class="bt2-kick">Тест портфеля</span>
+                <div class="bt2-ttl">Проверка на истории</div>
+                <p class="bt2-card-sub">Как выбранный состав вёл бы себя в прошлом — по реальным котировкам Мосбиржи.</p>
+            </div>
 
             <!-- Шаг 1: Дата -->
             <div class="bt2-step">
@@ -1723,25 +1734,35 @@
                  Показывается при открытии страницы поверх карточки калькулятора;
                  сумма синхронизирована с #monthlySumInput (изначально 1 000 000 ₽). -->
             <div class="mi5-start" id="miStartOverlay">
-              <span class="mi5-kick">Ежемесячный доход</span>
-              <div class="mi5-ttl">Купоны каждый месяц — как зарплата</div>
-              <p class="mi5-start-desc">
-                Здесь вы собираете набор ОФЗ так, чтобы купоны приходили <b>каждый месяц</b>.
-                Введите сумму — калькулятор сам распределит её по 6 выпускам с разными датами выплат.
-              </p>
-              <div class="mi5-start-field">
-                <span class="mi5-start-k">Стартовая сумма</span>
-                <div class="mi5-start-box">
-                  <input type="text" id="miStartInput" value="1 000 000" inputmode="numeric" autocomplete="off"
-                         oninput="miStartFmt(this)"
-                         onkeyup="if(event.keyCode===13) miStartCalc()">
-                  <span class="mi5-rub">₽</span>
-                </div>
+              <span class="mi5-wm">₽</span>
+              <div class="mi5-start-top">
+                <span class="mi5-kick">Ежемесячный доход</span>
+                <div class="mi5-ttl">Купоны каждый месяц —<br>как зарплата</div>
+                <p class="mi5-start-desc">
+                  Здесь вы собираете набор ОФЗ так, чтобы купоны приходили <b>каждый месяц</b> —
+                  калькулятор сам распределит сумму по выпускам с разными датами выплат.
+                </p>
               </div>
-              <button type="button" class="mi5-start-btn" id="miStartBtn" onclick="miStartCalc()">
-                Приступить к расчёту
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
-              </button>
+              <div class="mi5-start-steps">
+                <div class="mi5-start-step"><b>01</b><span>Вводите стартовую сумму — изменить её можно в любой момент</span></div>
+                <div class="mi5-start-step"><b>02</b><span>Калькулятор распределяет её по 6 выпускам ОФЗ</span></div>
+                <div class="mi5-start-step"><b>03</b><span>Купоны закрывают все 12 месяцев года — без пропусков</span></div>
+              </div>
+              <div class="mi5-start-cta">
+                <div class="mi5-start-field">
+                  <span class="mi5-start-k">Стартовая сумма</span>
+                  <div class="mi5-start-box">
+                    <input type="text" id="miStartInput" value="1 000 000" inputmode="numeric" autocomplete="off"
+                           oninput="miStartFmt(this)"
+                           onkeyup="if(event.keyCode===13) miStartCalc()">
+                    <span class="mi5-rub">₽</span>
+                  </div>
+                </div>
+                <button type="button" class="mi5-start-btn" id="miStartBtn" onclick="miStartCalc()">
+                  Приступить к расчёту
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+                </button>
+              </div>
             </div>
 
             <span class="mi5-kick">Калькулятор</span>
@@ -1856,16 +1877,15 @@
 
         </div>
 
-        <!-- Активна только после «Приступить к расчёту» (см. miStartCalc в data.js) -->
-        <button type="button" class="mi5-createpf-btn" id="miCreatePfBtn" disabled
-                title="Сначала нажмите «Приступить к расчёту»"
+        <!-- Появляется только после «Приступить к расчёту» (см. miStartCalc в data.js) -->
+        <button type="button" class="mi5-createpf-btn is-hidden" id="miCreatePfBtn"
                 onclick="if (typeof window.pfImport === 'function') window.pfImport('monthly', null, null); switchTab('portfolios');">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
           Создать портфель
         </button>
 
-        <!-- Виджет-переход к расчёту полного портфеля -->
-        <div class="ms-nav-widget" onclick="switchTab('calc')">
+        <!-- Виджет-переход к расчёту полного портфеля (оформление — mi5-акценты страницы) -->
+        <div class="ms-nav-widget mi5-calc-widget" onclick="switchTab('calc')">
           <span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></span>
           <span class="tx"><b>Расчёт портфеля из акций и облигаций</b>
           <span>Хотите не только купоны, но и рост? Введите сумму — получите готовый портфель под вашу стратегию.</span></span>
@@ -2143,7 +2163,7 @@
 
 <script src="js/core.js" defer></script>
 <script src="js/calculator-ui.js?v=3" defer></script>
-<script src="js/data.js?v=6" defer></script>
+<script src="js/data.js?v=7" defer></script>
 <script src="js/rebalance.js?v=6" defer></script>
 <script src="js/company.js?v=2" defer></script>
 <script src="js/portfolio.js?v=5" defer></script>
@@ -2151,21 +2171,21 @@
 <script src="js/registration.js" defer></script>
 <script src="js/menu-controller.js" defer></script>
 <script src="js/vanguard-test.js" defer></script>
-<script src="js/webapp-tabs.js?v=11" defer></script>
+<script src="js/webapp-tabs.js?v=12" defer></script>
 <script src="js/top-search.js?v=1" defer></script>
 <script src="js/income-chart.js?v=1" defer></script>
 <script src="js/backtest.js?v=1" defer></script>
 <script src="js/app-state.js?v=1" defer></script>
 <script src="js/calc-r5.js?v=6" defer></script>
 <script src="js/dashboard.js?v=5" defer></script>
-<script src="js/sidebar.js?v=2" defer></script>
-<script src="js/stock-terminal.js?v=5" defer></script>
-<script src="js/bond-terminal.js?v=6" defer></script>
+<script src="js/sidebar.js?v=3" defer></script>
+<script src="js/stock-terminal.js?v=6" defer></script>
+<script src="js/bond-terminal.js?v=7" defer></script>
 <script src="js/table-tooltip.js?v=1" defer></script>
 <script src="js/market-chart.js?v=5" defer></script>
 <script src="js/market-heatmap.js?v=32" defer></script>
 <script src="js/market-livebar.js?v=2" defer></script>
-<script src="js/portfolios.js?v=51" defer></script>
+<script src="js/portfolios.js?v=52" defer></script>
 <script src="js/home-register.js?v=2" defer></script>
 <script src="js/profile-menu.js?v=2" defer></script>
 <script src="js/route-hash.js?v=1" defer></script>

@@ -43,13 +43,14 @@
     // по разряду, так легче сравнивать величины сверху вниз), 'center' — у текстовых и у
     // отдельных числовых, где сравнение по разряду не важно (напр. «Выплат в год»).
     // pin: true — столбец «едет» вместе с закреплённым Тикером при горизонтальном
-    // скролле (см. stk-pin-N в renderHead/renderCompanyRow и syncPinOffsets); поэтому
-    // Цена и ОДХС стоят первыми в массиве — закреплённая группа должна быть смежной
-    // с Тикером, без обычных столбцов между ними.
+    // скролле (см. stk-pin-N в renderHead/renderCompanyRow и syncPinOffsets).
+    // Сейчас закреплённых столбцов нет (Цена/ОДХС отвязаны по просьбе — при
+    // горизонтальном скролле закреплён только Тикер/Название); механика pin
+    // оставлена на случай возврата.
     // tip — краткое пояснение столбца (показывается тултипом при наведении на заголовок)
     var COLS = [
-        { key: 'Текущая Цена',                   label: 'Цена',           type: 'num',  align: 'right',  pin: true, tip: 'Текущая рыночная цена одной акции' },
-        { key: 'ОДХС',                           label: 'ОДХС',           type: 'num',  align: 'right',  pin: true, tip: 'Доходность для инвестирования в акции, %' },
+        { key: 'Текущая Цена',                   label: 'Цена',           type: 'num',  align: 'right',  tip: 'Текущая рыночная цена одной акции' },
+        { key: 'ОДХС',                           label: 'ОДХС',           type: 'num',  align: 'right',  tip: 'Доходность для инвестирования в акции, %' },
         { key: 'РСБУ/МСФО',                      label: 'Учёт',           type: 'text', align: 'center', tip: 'Стандарт отчётности компании: РСБУ или МСФО' },
         { key: 'EPS',                            label: 'EPS',            type: 'num',  align: 'right',  tip: 'Прибыль на акцию (Earnings Per Share)' },
         { key: 'Изменение СК',                   label: 'Капитал',        type: 'num',  align: 'right',  tip: 'Изменение собственного капитала за период, %' },
@@ -872,9 +873,6 @@
             return;
         }
 
-        // выгрузка текущего среза таблицы в CSV для Excel
-        if (e.target.closest('[data-act="export"]')) { exportCsv(); return; }
-
         // повтор загрузки
         if (e.target.closest('[data-act="retry"]')) { loadData(); return; }
 
@@ -999,13 +997,15 @@
         var favBtn = e.target.closest('[data-act="fav"]');
         if (favBtn) { toggleFav(favBtn.getAttribute('data-ticker')); return; }
 
-        // тумблер режима
+        // тумблер режима «По секторам/Общий список». ВАЖНО: подсветку active меняем
+        // только у кнопок с data-mode — рядом стоит сегмент класса активов из тех же
+        // .stk-tg-btn, и общий селектор снимал active с «Акции/Облигации» (сбрасывал его)
         var tg = e.target.closest('.stk-tg-btn');
         if (tg) {
             var mode = tg.getAttribute('data-mode');
             if (mode && mode !== state.mode) {
                 state.mode = mode;
-                el.querySelectorAll('.stk-tg-btn').forEach(function (b) {
+                el.querySelectorAll('.stk-tg-btn[data-mode]').forEach(function (b) {
                     b.classList.toggle('active', b === tg);
                 });
                 render();
@@ -1134,11 +1134,15 @@
             // вкладка), режим «По секторам/Общий список» (по просьбе — слева), счётчик.
             '<div class="stk-toolbar">'
             + '  <div class="stk-lead">'
+            // сегмент класса активов — ГЛАВНЫЙ переключатель: с иконками и тёмной
+            // активной плашкой (.mt-asset в CSS), чтобы не путался с тумблером режима
             + '    <div class="stk-toggle mt-asset" role="tablist" aria-label="Класс активов">'
-            + '      <button class="stk-tg-btn mt-asset-btn active" type="button" data-asset="stocks">Акции</button>'
-            + '      <button class="stk-tg-btn mt-asset-btn" type="button" data-asset="bonds">Облигации</button>'
+            + '      <button class="stk-tg-btn mt-asset-btn active" type="button" data-asset="stocks">'
+            + '        <span class="mt-asset-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>Акции</button>'
+            + '      <button class="stk-tg-btn mt-asset-btn" type="button" data-asset="bonds">'
+            + '        <span class="mt-asset-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg></span>Облигации</button>'
             + '    </div>'
-            + '    <div class="stk-toggle" role="tablist">'
+            + '    <div class="stk-toggle stk-mode" role="tablist">'
             + '      <button class="stk-tg-btn active" type="button" data-mode="sector">По секторам</button>'
             + '      <button class="stk-tg-btn" type="button" data-mode="flat">Общий список</button>'
             + '    </div>'
@@ -1216,10 +1220,7 @@
             + '      <span class="stk-fav-label">Избранное</span>'
             + '      <span class="stk-fav-badge" hidden></span>'
             + '    </button>'
-            + '    <button class="stk-export-btn" type="button" data-act="export" title="Выгрузить таблицу в Excel (CSV): текущий фильтр и видимые столбцы">'
-            + '      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M9.5 12.5l5 5M14.5 12.5l-5 5"/></svg>'
-            + '      <span>Excel</span>'
-            + '    </button>'
+            // Excel-кнопка переехала в глобальную шапку сайта (#termHdrExportBtn → mtExportCsv)
             + '  </div>'
             + '</div>'
             + '<div class="stk-state"></div>'
@@ -1492,6 +1493,13 @@
     // ---- Объединённая вкладка «Терминал»: Акции ↔ Облигации ----
     // Оба корня (#stkTerminal и #bndTerminal) живут в #panel-market-stocks;
     // сегмент .mt-asset в тулбарах переключает, какой из них виден.
+    // Excel-кнопка в глобальной шапке сайта (#termHdrExportBtn) выгружает
+    // ТЕКУЩУЮ таблицу: mtExportCsv выбирает экспортёр по _mtMode.
+    window.stkExportCsv = exportCsv;
+    window.mtExportCsv = function () {
+        if (window._mtMode === 'bonds' && typeof window.bndExportCsv === 'function') window.bndExportCsv();
+        else window.stkExportCsv();
+    };
     window._mtMode = 'stocks';
     window.mtShowTerminal = function (mode) {
         window._mtMode = (mode === 'bonds') ? 'bonds' : 'stocks';

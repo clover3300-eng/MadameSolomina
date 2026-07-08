@@ -556,9 +556,11 @@ body.dark-mode .pfcv-spin { border-color: rgba(255,255,255,0.12); border-top-col
    тонированном кружке + заголовок + пояснение), а не одинокая серая строка (та выглядела как
    баг). Тон = акцент портфеля для «нормальных» состояний (нет данных/мало истории), .warn —
    для настоящей ошибки загрузки (единственный случай, где это оправданно тревожный цвет). */
-.pfcv-msg-art { width: 40px; height: 40px; border-radius: 12px; margin-bottom: 4px; display: grid; place-items: center;
-    background: color-mix(in srgb, var(--pf-accent) 14%, transparent); color: var(--pf-accent); flex-shrink: 0; }
-.pfcv-msg-art svg { width: 21px; height: 21px; }
+/* иконка — в стиле «пустого избранного» (.pff-empty-art): градиентная плашка тона портфеля */
+.pfcv-msg-art { width: 46px; height: 46px; border-radius: 14px; margin-bottom: 4px; display: grid; place-items: center;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--pf-accent) 24%, transparent), color-mix(in srgb, var(--pf-accent) 10%, transparent));
+    color: var(--pf-accent); flex-shrink: 0; }
+.pfcv-msg-art svg { width: 22px; height: 22px; }
 .pfcv-msg.warn .pfcv-msg-art { background: rgba(217,119,6,0.14); color: #d97706; }
 .pfcv-msg-t { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #1b2433; }
 body.dark-mode .pfcv-msg-t { color: #f4f8fd; }
@@ -975,6 +977,11 @@ body.dark-mode .pfm-act.danger { color: #f87171; border-color: rgba(248,113,113,
    ============================================================ */
 .pf-impwrap { position: relative; display: inline-flex; }
 .pf-impbtn .pf-chev { width: 14px; height: 14px; margin-left: -2px; }
+/* Открытый попап снапшотится ОТДЕЛЬНО от страницы при плавном ре-рендере (renderSmooth
+   с View Transitions): без собственного имени он участвовал в общем кросс-фейде сетки
+   и «мигал» при каждом клике по строкам внутри («Видимость» и т.п.). Открыт всегда
+   максимум один (closeImpMenus), так что имя уникально. */
+.pf-impmenu.open { view-transition-name: pf-imp-menu; }
 .pf-impmenu { position: absolute; top: calc(100% + 8px); right: 0; z-index: 200; min-width: 288px;
     background: #fff; border: 1px solid rgba(24,38,60,0.1); border-radius: 16px; padding: 8px;
     box-shadow: 0 24px 50px -18px rgba(24,38,60,0.4);
@@ -1232,9 +1239,28 @@ body.dark-mode .pfpc-date b { color: #f4f8fd; }
 .pfpc-tk { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #0f172a; }
 body.dark-mode .pfpc-tk { color: #f4f8fd; }
 .pfpc-nm { font-size: 10.5px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pfpc-pf { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #64748b; white-space: nowrap; }
-body.dark-mode .pfpc-pf { color: #9fb0c4; }
-.pfpc-pf i { width: 8px; height: 8px; border-radius: 99px; background: var(--c); flex-shrink: 0; }
+.pfpc-pf { display: inline-flex; align-items: center; white-space: nowrap; cursor: default; }
+/* номер портфеля «закрашен маркером» его цвета — тот же приём, что у названия карточки (.pfc-name-ink) */
+.pfpc-pfnum {
+    display: inline-block; min-width: 14px; text-align: center;
+    font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 800; color: #1b2433; line-height: 1;
+    padding: 3px 8px 4px;
+    background: linear-gradient(101deg,
+        transparent 1%,
+        color-mix(in srgb, var(--c) 34%, transparent) 8%,
+        color-mix(in srgb, var(--c) 40%, transparent) 50%,
+        color-mix(in srgb, var(--c) 28%, transparent) 92%,
+        transparent 99%);
+    border-radius: 6px 11px 7px 10px / 10px 6px 11px 5px;
+    transform: rotate(-2deg);
+}
+body.dark-mode .pfpc-pfnum { color: #f7fbff;
+    background: linear-gradient(101deg,
+        transparent 1%,
+        color-mix(in srgb, var(--c) 46%, transparent) 8%,
+        color-mix(in srgb, var(--c) 54%, transparent) 50%,
+        color-mix(in srgb, var(--c) 40%, transparent) 92%,
+        transparent 99%); }
 .pfpc-amt { font-family: 'JetBrains Mono', monospace; font-size: 13.5px; font-weight: 800; color: #16a34a; white-space: nowrap; }
 body.dark-mode .pfpc-amt { color: #34d399; }
 .pfpc-more { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 10px;
@@ -1284,9 +1310,9 @@ body.dark-mode .pft-toggle:hover, body.dark-mode .pft-toggle.on { background: co
 .pft-body { padding: 4px 22px 20px; }
 /* сетка: заголовки колонок и значения делят одну grid-раскладку (col «Портфель» — только .has-pf) */
 .pft-hrow, .pft-row { display: grid; align-items: center; gap: 12px;
-    grid-template-columns: 104px 82px minmax(120px,1.4fr) 92px 84px 62px 104px 96px 108px; }
+    grid-template-columns: 104px 96px minmax(120px,1.4fr) 92px 84px 62px 104px 96px 108px; }
 .pf-trades.has-pf .pft-hrow, .pf-trades.has-pf .pft-row {
-    grid-template-columns: 104px 82px minmax(120px,1.4fr) minmax(94px,0.9fr) 92px 84px 62px 104px 96px 108px; }
+    grid-template-columns: 104px 96px minmax(120px,1.4fr) minmax(94px,0.9fr) 92px 84px 62px 104px 96px 108px; }
 .pft-hrow { padding: 2px 13px 9px; margin-bottom: 8px; border-bottom: 1px solid rgba(24,38,60,0.08); }
 body.dark-mode .pft-hrow { border-color: rgba(255,255,255,0.08); }
 .pft-h { font-size: 9.5px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1324,10 +1350,14 @@ body.dark-mode .pft-dash { color: #56657a; }
 /* Продажа: «Расход» на деле приход — плюс и зелёный */
 .pft-in { color: #16a34a; }
 body.dark-mode .pft-in { color: #34d399; }
-/* Сделки из ребалансировки: бейдж в колонке «Тип» + кнопка синхронной отмены */
-.pft-c.pft-type { display: flex; flex-direction: column; gap: 3px; align-items: flex-start; }
-.pft-side.rebal { color: #6d5bd0; background: rgba(109, 91, 208, 0.10); font-size: 9px; letter-spacing: 0.04em; }
-body.dark-mode .pft-side.rebal { color: #b3a7f5; background: rgba(179, 167, 245, 0.13); }
+/* Сделки из ребалансировки: круглая иконка-метка В СТРОКУ с пилюлей типа (не вторым
+   рядом — колонка «Тип» остаётся одноэтажной) + кнопка синхронной отмены */
+.pft-c.pft-type { display: flex; flex-direction: row; gap: 5px; align-items: center; }
+.pft-rebal-ic { flex-shrink: 0; width: 19px; height: 19px; border-radius: 999px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #6d5bd0; background: rgba(109, 91, 208, 0.12); cursor: default; }
+.pft-rebal-ic svg { width: 11px; height: 11px; }
+body.dark-mode .pft-rebal-ic { color: #b3a7f5; background: rgba(179, 167, 245, 0.15); }
 .pft-row { position: relative; }
 .pft-undo {
     position: absolute; right: 10px; top: 50%; transform: translateY(-50%);

@@ -25,8 +25,8 @@
     window.addEventListener('load', applySidebarDefault);
 
     // Desktop hover-to-peek: while the cursor is over the collapsed rail the
-    // sidebar expands as a floating overlay (content/header never shift); moving
-    // the cursor away (into the content) collapses it again.
+    // sidebar expands and the content column shifts right (same as pinned);
+    // moving the cursor away (into the content) collapses it again.
     document.addEventListener('DOMContentLoaded', function() {
         applySidebarDefault();
 

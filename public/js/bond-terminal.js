@@ -489,6 +489,9 @@
         a.click();
         setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
     }
+    // Excel-кнопка живёт в глобальной шапке сайта: mtExportCsv (stock-terminal.js)
+    // дёргает этот экспортёр, когда терминал переключён на облигации
+    window.bndExportCsv = exportCsv;
 
     function render() {
         var el = root(); if (!el) return;
@@ -535,9 +538,6 @@
             if (typeof window.mtShowTerminal === 'function') window.mtShowTerminal(assetBtn.getAttribute('data-asset'));
             return;
         }
-
-        // выгрузка текущего среза таблицы в CSV для Excel
-        if (e.target.closest('[data-act="export"]')) { exportCsv(); return; }
 
         if (e.target.closest('[data-act="retry"]')) { loadData(); return; }
 
@@ -689,9 +689,13 @@
             // вкладка, тот же компонент, что в терминале акций) и счётчик.
             '<div class="bnd-toolbar">'
             + '  <div class="stk-lead">'
+            // сегмент класса активов — тот же ГЛАВНЫЙ переключатель с иконками,
+            // что в терминале акций (.mt-asset)
             + '    <div class="stk-toggle mt-asset" role="tablist" aria-label="Класс активов">'
-            + '      <button class="stk-tg-btn mt-asset-btn" type="button" data-asset="stocks">Акции</button>'
-            + '      <button class="stk-tg-btn mt-asset-btn active" type="button" data-asset="bonds">Облигации</button>'
+            + '      <button class="stk-tg-btn mt-asset-btn" type="button" data-asset="stocks">'
+            + '        <span class="mt-asset-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>Акции</button>'
+            + '      <button class="stk-tg-btn mt-asset-btn active" type="button" data-asset="bonds">'
+            + '        <span class="mt-asset-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg></span>Облигации</button>'
             + '    </div>'
             + '    <span class="bnd-count"></span>'
             + '  </div>'
@@ -754,10 +758,7 @@
             + '      <span class="bnd-fav-label">Избранное</span>'
             + '      <span class="bnd-fav-badge" hidden></span>'
             + '    </button>'
-            + '    <button class="stk-export-btn" type="button" data-act="export" title="Выгрузить таблицу в Excel (CSV): текущий фильтр и видимые столбцы">'
-            + '      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M9.5 12.5l5 5M14.5 12.5l-5 5"/></svg>'
-            + '      <span>Excel</span>'
-            + '    </button>'
+            // Excel-кнопка переехала в глобальную шапку сайта (#termHdrExportBtn → mtExportCsv)
             + '  </div>'
             + '</div>'
             + '<div class="bnd-state"></div>'

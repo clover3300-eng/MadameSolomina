@@ -473,8 +473,25 @@
     var CHART_CLOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>';
     var CHART_SPROUT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V12"/><path d="M12 12C12 8.5 9.5 6 6 6c0 3.5 2.5 6 6 6z"/><path d="M12 9c0-2.76 1.79-5 4.5-5C16.5 6.76 14.71 9 12 9z"/><path d="M4 21h16"/></svg>';
     var CHART_WARN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
-    function pfChartMsgHtml(code) {
-        var conf = code === 'NO_ASSETS' ? { icon: CHART_EMPTY_SVG, t: 'Пока нечего показывать', s: 'Добавьте позиции с количеством — и здесь появится кривая доходности.' }
+    // все покупки портфеля датированы сегодняшним днём → истории котировок ещё нет
+    // физически: первая точка кривой появится после ближайшего закрытия торгов
+    function pfAllBoughtToday(pid) {
+        var p = store.items.find(function (x) { return x.id === pid; });
+        if (!p || !(p.holdings || []).length) return false;
+        var today = todayStr(), seen = false;
+        var all = (p.holdings || []).every(function (h) {
+            return ensureLots(h).every(function (l) {
+                if (!(+l.qty > 0)) return true;
+                seen = true;
+                return (l.buyDate || today) >= today;
+            });
+        });
+        return seen && all;
+    }
+    function pfChartMsgHtml(code, pid) {
+        var conf = (code === 'NO_PF' || code === 'NO_ASSETS') && pid && pfAllBoughtToday(pid)
+              ? { icon: CHART_CLOCK_SVG, t: 'График появится завтра', s: 'Покупки датированы сегодняшним днём — кривая строится по ценам закрытия и будет показана на следующий торговый день.' }
+            : code === 'NO_ASSETS' ? { icon: CHART_EMPTY_SVG, t: 'Пока нечего показывать', s: 'Добавьте позиции с количеством — и здесь появится кривая доходности.' }
             : code === 'NO_PF' ? { icon: CHART_SPROUT_SVG, t: 'Пока мало данных для графика', s: 'Кривая доходности строится по дневным котировкам — нужно хотя бы несколько торговых дней после покупки.' }
             : code === 'NO_BT' ? { icon: CHART_CLOCK_SVG, t: 'Модуль ещё грузится', s: 'Данные исторических цен подгружаются — откройте график чуть позже.' }
             : { icon: CHART_WARN_SVG, t: 'Не удалось загрузить', s: 'Не получили данные Мосбиржи. Попробуйте обновить позже.', warn: true };
@@ -491,7 +508,7 @@
             if (dynEl) { dynEl.textContent = '—'; dynEl.className = 'pfcv-stat-v'; }
             if (legEl) legEl.innerHTML = ''; return; }
         if (data.err) {
-            wrap.innerHTML = pfChartMsgHtml(data.err);
+            wrap.innerHTML = pfChartMsgHtml(data.err, pid);
             if (dynEl) { dynEl.textContent = '—'; dynEl.className = 'pfcv-stat-v'; }
             if (legEl) legEl.innerHTML = '';
             return;
@@ -1154,6 +1171,7 @@
     }
 
     // ---- бэкап (выгрузить/загрузить JSON) — переиспользует попап-инфраструктуру «Импорт» ----
+    var XLSTBL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M9 10v10"/><path d="M15 10v10"/></svg>';
     function backupWrapHtml() {
         return '<div class="pf-impwrap">' +
             '<button class="d3-quick ghost pf-impbtn" onclick="pfToggleImp(event,\'bkp\')">' + SHIELD_SVG + '<span>Бэкап</span>' + CHEV_SVG + '</button>' +
@@ -1161,6 +1179,8 @@
                 '<div class="pf-impgrp">Резервная копия</div>' +
                 '<button class="pf-impitem" onclick="pfExportData()">' + DL_SVG + 'Выгрузить в файл (JSON)</button>' +
                 '<button class="pf-impitem" onclick="pfImportClick()">' + UPLOAD_SVG + 'Загрузить из файла</button>' +
+                '<div class="pf-impgrp">Отчёт</div>' +
+                '<button class="pf-impitem" onclick="pfExportExcelAll()">' + XLSTBL_SVG + 'Выгрузить в Excel (все позиции)</button>' +
             '</div>' +
             '<input type="file" id="pfBkpInput" accept="application/json,.json" style="display:none" onchange="pfImportData(this)">' +
         '</div>';
@@ -2252,13 +2272,16 @@
     }
     function collectUpcomingCoupons() {
         var evs = [];
+        // номер портфеля — его позиция среди ВИДИМЫХ карточек (там же нумеруются кольца)
+        var visNum = {};
+        visibleItems().forEach(function (p, i) { visNum[p.id] = i + 1; });
         allHeldBonds().forEach(function (x) {
             var det = bondDetail(x.h.ticker); if (!det) return;
             var nd = nextCouponDate(det); if (!nd) return;
             var qty = aggHolding(x.h).qty, amount = (+det.couponValue || 0) * qty;
             if (!(amount > 0)) return;
             evs.push({ date: nd, ticker: x.h.ticker, name: x.h.name || x.h.ticker, amount: amount,
-                pfName: x.p.name, pfColor: colorVal(x.p.color) });
+                pfName: x.p.name, pfColor: colorVal(x.p.color), pfNum: visNum[x.p.id] || '' });
         });
         evs.sort(function (a, b) { return a.date - b.date; });
         return evs;
@@ -2290,10 +2313,12 @@
             '<div class="pfpc-state-t">' + conf.t + '</div><div class="pfpc-state-s">' + conf.s + '</div></div>';
     }
     function payCalRowHtml(ev, multiPf) {
+        // метка портфеля — его НОМЕР, «закрашенный маркером» цвета портфеля (тот же приём,
+        // что у названия на карточке, .pfc-name-ink); имя портфеля остаётся в title
         return '<div class="pfpc-row">' +
             '<div class="pfpc-date"><b>' + ruDate(dateToIso(ev.date)) + '</b><span>' + daysUntilText(ev.date) + '</span></div>' +
             '<div class="pfpc-id"><span class="pfpc-tk">' + esc(ev.ticker) + '</span><span class="pfpc-nm">' + esc(ev.name) + '</span></div>' +
-            (multiPf ? '<span class="pfpc-pf" style="--c:' + ev.pfColor + '"><i></i>' + esc(ev.pfName) + '</span>' : '<span></span>') +
+            (multiPf ? '<span class="pfpc-pf" style="--c:' + ev.pfColor + '" title="' + esc(ev.pfName) + '"><b class="pfpc-pfnum">' + ev.pfNum + '</b></span>' : '<span></span>') +
             '<div class="pfpc-amt">+' + fmtRub(ev.amount) + '</div>' +
         '</div>';
     }
@@ -2497,9 +2522,11 @@
         var side = t.side === 'sell'
             ? '<span class="pft-side sell">Продажа</span>'
             : '<span class="pft-side buy">Покупка</span>';
-        // сделка из ребалансировки: бейдж + (для последней) кнопка синхронной отмены —
+        // сделка из ребалансировки: компактная круглая иконка-метка В ТОЙ ЖЕ строке, что
+        // и пилюля типа (не вторым рядом) + (для последней) кнопка синхронной отмены —
         // отмена убирает И продажу, И покупку (общая механика pfRbUndoTrade)
-        if (t.rebal) side += '<span class="pft-side rebal" title="Сделка из ребалансировки портфеля">ребаланс</span>';
+        if (t.rebal) side += '<span class="pft-rebal-ic" title="Сделка из ребалансировки портфеля">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 0 1 14.4-6.1L21 8"/><path d="M21 3.5V8.2h-4.7"/><path d="M20.5 12a8.5 8.5 0 0 1-14.4 6.1L3 16"/><path d="M3 20.5V15.8h4.7"/></svg></span>';
         var undoBtn = (t.rebal && t.undoable && t.pid && t.tradeId)
             ? '<button class="pft-undo" onclick="pfRbUndoTrade(\'' + t.pid + '\',\'' + t.tradeId + '\')" title="Отменить ребалансировку — исчезнут и продажа, и покупка">' +
                 '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>Отменить ребалансировку</button>'
@@ -2777,6 +2804,47 @@
             setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
             toast('Бэкап сохранён · портфелей: ' + store.items.length);
         } catch (e) { toast('Не удалось сохранить файл бэкапа', true); }
+    };
+    // ---- отчёт: все позиции всех портфелей одной таблицей в CSV под русский Excel
+    // (разделитель «;», BOM, десятичная запятая — тот же формат, что выгрузки терминала).
+    // Блок на портфель: строки позиций + «Итого»; в конце — общий итог по всем портфелям.
+    window.pfExportExcelAll = function () {
+        closeImpMenus();
+        if (!store.items.length) { toast('Пока нет портфелей для выгрузки', true); return; }
+        function cell(v) {
+            var s = String(v == null ? '' : v).replace(/\n/g, ' ');
+            return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+        }
+        function num(v, d) { return (v == null || isNaN(v)) ? '' : (+v).toFixed(d == null ? 2 : d).replace('.', ','); }
+        function ruIso(iso) { return iso ? String(iso).split('-').reverse().join('.') : ''; }
+        var head = ['Портфель', 'Тип', 'Тикер', 'Название', 'Кол-во', 'Средняя цена, ₽', 'Вложено, ₽', 'Цена сейчас, ₽', 'Стоимость, ₽', 'Доход, ₽', 'Доход, %', 'Первая покупка'];
+        var lines = [head.map(cell).join(';')], total = { inv: 0, val: 0 }, nPos = 0;
+        store.items.forEach(function (p, i) {
+            var c = calcPf(p);
+            if (i > 0) lines.push('');
+            c.hs.forEach(function (x) {
+                if (!x.h.ticker || !(x.c.qty > 0)) return;
+                nPos++;
+                lines.push([p.name, x.h.type === 'bond' ? 'Облигация' : 'Акция', x.h.ticker, x.h.name || x.h.ticker,
+                    x.c.qty, num(x.c.buy), num(x.c.invested), num(x.c.cur), num(x.c.value), num(x.c.pnl), num(x.c.pnlPct), ruIso(x.c.firstDate)
+                ].map(cell).join(';'));
+            });
+            lines.push([p.name, 'Итого', '', '', '', '', num(c.invested), '', num(c.value), num(c.pnl), num(c.invested > 0 ? c.pnl / c.invested * 100 : 0), ''].map(cell).join(';'));
+            total.inv += c.invested; total.val += c.value;
+        });
+        if (store.items.length > 1) {
+            lines.push('');
+            lines.push(['ВСЕ ПОРТФЕЛИ', 'Итого', '', '', '', '', num(total.inv), '', num(total.val), num(total.val - total.inv), num(total.inv > 0 ? (total.val - total.inv) / total.inv * 100 : 0), ''].map(cell).join(';'));
+        }
+        try {
+            var blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'madame-solomina-positions-' + todayStr() + '.csv';
+            document.body.appendChild(a); a.click();
+            setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+            toast('Excel-отчёт сохранён · позиций: ' + nPos);
+        } catch (e) { toast('Не удалось сохранить Excel-файл', true); }
     };
     window.pfImportClick = function () { closeImpMenus(); var i = dq('pfBkpInput'); if (i) i.click(); };
     window.pfImportData = function (input) {
@@ -4171,29 +4239,38 @@
         if (!ts.length || ts[0].id !== tid) { toast('Отменять сделки можно только по порядку — начиная с последней', true); return; }
         var t = ts[0];
         if (!t.undo || !t.undo.sold) { toast('У этой записи нет сохранённого состояния для отмены', true); return; }
-        // 1) убрать купленный лот (если холдинг опустел — убрать и его)
-        var bh = null;
-        (p.holdings || []).forEach(function (h) { if (h.id === t.undo.buyHid) bh = h; });
-        if (bh) {
-            bh.lots = ensureLots(bh).filter(function (l) { return l.id !== t.undo.buyLotId; });
-            if (!bh.lots.length) p.holdings = p.holdings.filter(function (x) { return x.id !== bh.id; });
-        }
-        // 2) вернуть проданное: актив ещё есть (продали часть) → восстановить его лоты,
-        //    актив был продан целиком → вернуть его в состав на прежнее место
-        var sold = t.undo.sold, sh = null;
-        (p.holdings || []).forEach(function (h) { if (h.id === sold.id) sh = h; });
-        if (sh) sh.lots = sold.lots;
-        else {
-            var at = (t.undo.soldIdx != null) ? Math.min(t.undo.soldIdx, p.holdings.length) : p.holdings.length;
-            p.holdings.splice(at, 0, sold);
-        }
-        ts.shift();
-        rebalPick.bond = { sell: null, buy: null, qty: null };
-        rebalPick.stock = { sell: null, buy: null, qty: null };
-        saveStore(); pfInvalidateCharts(p.id); ensureQuotes(true);
-        rebalRepaint();
-        if (currentTab === 'portfolios' && dq('pfWrap')) renderPortfolios();
-        toast('Сделка отменена — портфель возвращён к состоянию до обмена');
+        // окно предупреждения: отмена стирает ОБЕ записи обмена (продажу и покупку) —
+        // без явного подтверждения так легко потерять сделку случайным кликом
+        var UNDO_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>';
+        pfConfirm({
+            danger: true, ok: 'Да, отменить', icon: UNDO_ICO,
+            title: 'Отменить ребалансировку?',
+            text: 'Из истории исчезнут обе записи обмена — продажа ' + esc(t.sellTicker || '') + ' и покупка ' + esc(t.buyTicker || '') + '. Портфель вернётся к состоянию до сделки.'
+        }, function () {
+            // 1) убрать купленный лот (если холдинг опустел — убрать и его)
+            var bh = null;
+            (p.holdings || []).forEach(function (h) { if (h.id === t.undo.buyHid) bh = h; });
+            if (bh) {
+                bh.lots = ensureLots(bh).filter(function (l) { return l.id !== t.undo.buyLotId; });
+                if (!bh.lots.length) p.holdings = p.holdings.filter(function (x) { return x.id !== bh.id; });
+            }
+            // 2) вернуть проданное: актив ещё есть (продали часть) → восстановить его лоты,
+            //    актив был продан целиком → вернуть его в состав на прежнее место
+            var sold = t.undo.sold, sh = null;
+            (p.holdings || []).forEach(function (h) { if (h.id === sold.id) sh = h; });
+            if (sh) sh.lots = sold.lots;
+            else {
+                var at = (t.undo.soldIdx != null) ? Math.min(t.undo.soldIdx, p.holdings.length) : p.holdings.length;
+                p.holdings.splice(at, 0, sold);
+            }
+            ts.shift();
+            rebalPick.bond = { sell: null, buy: null, qty: null };
+            rebalPick.stock = { sell: null, buy: null, qty: null };
+            saveStore(); pfInvalidateCharts(p.id); ensureQuotes(true);
+            rebalRepaint();
+            if (currentTab === 'portfolios' && dq('pfWrap')) renderPortfolios();
+            toast('Сделка отменена — портфель возвращён к состоянию до обмена');
+        });
     };
 
     // ====================================================================

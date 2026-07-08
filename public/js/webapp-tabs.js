@@ -122,15 +122,19 @@ function populatePanels() {
         wrapRange(document.getElementById('portfolio-tab-bonds'), '#pfBondsThead', '#bondsTotalRow');
         wrapRange(document.getElementById('portfolio-tab-stocks'), '#pfStocksThead', '.portfolio-echelons-total-row');
         // 1.5) Дубль переключателя ОФЗ/Акции прямо в шапке каждой таблицы —
-        // маленький переключатель в карточке капитала легко не заметить
+        // маленький переключатель в карточке капитала легко не заметить.
+        // Оформление — как «Карта/График» на «Рынке» (.mh-seg-view): широкие
+        // кнопки с иконками, активная — тёмная плашка (см. .pf-seg в site-layout.css)
+        const SEG_BOND_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>';
+        const SEG_STOCK_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>';
         ['pfBondsThead', 'pfStocksThead'].forEach(function(id) {
             const thead = document.getElementById(id);
             if (!thead || thead.querySelector('.pf-seg')) return;
             const seg = document.createElement('div');
             seg.className = 'pf-seg';
             seg.innerHTML =
-                '<button type="button" class="pf-seg-btn" data-tab="bonds">ОФЗ</button>' +
-                '<button type="button" class="pf-seg-btn" data-tab="stocks">Акции</button>';
+                '<button type="button" class="pf-seg-btn" data-tab="bonds"><span class="pf-seg-ico">' + SEG_BOND_ICO + '</span>ОФЗ</button>' +
+                '<button type="button" class="pf-seg-btn" data-tab="stocks"><span class="pf-seg-ico">' + SEG_STOCK_ICO + '</span>Акции</button>';
             seg.querySelectorAll('.pf-seg-btn').forEach(function(b) {
                 b.addEventListener('click', function() { window.switchPortfolioContentTab(b.dataset.tab); });
             });
@@ -174,19 +178,9 @@ function populatePanels() {
             switchTab('portfolios');
         };
         if (fcLight) fcLight.appendChild(createPfBtn);
-        // 2.6) Кнопка «Выгрузить в Excel» — в шапке карточки-таблицы, рядом с
-        // переключателем ОФЗ/Акции (экспорт живёт возле таблиц, которые выгружает)
-        ['pfBondsThead', 'pfStocksThead'].forEach(function(id) {
-            const thead = document.getElementById(id);
-            if (!thead || thead.querySelector('.pf-export-btn')) return;
-            const ex = document.createElement('button');
-            ex.type = 'button';
-            ex.className = 'pf-export-btn';
-            ex.title = 'Выгрузить в Excel: состав портфеля (ОФЗ и акции)';
-            ex.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M9.5 12.5l5 5M14.5 12.5l-5 5"/></svg>Excel';
-            ex.onclick = function() { if (typeof pfExportExcel === 'function') pfExportExcel(); };
-            thead.appendChild(ex);
-        });
+        // 2.6) Кнопка «Выгрузить в Excel» живёт в ГЛОБАЛЬНОЙ шапке сайта рядом с
+        // «Поиском» (#topBarPageActions в index.html, показ/скрытие — в switchTab-обёртке
+        // ниже); из шапок таблиц кнопка убрана.
         // 3) Кнопка «Новый расчёт» — внутри карточки капитала (увеличивает её),
         //    возврат на вкладку Расчёт
         const recalc = document.createElement('button');
@@ -941,6 +935,18 @@ function checkRebalanceEmptyState() {
 var _origSwitchTab2 = switchTab;
 switchTab = function(tabId) {
     _origSwitchTab2(tabId);
+    // Excel-кнопки страниц в глобальной шапке (#topBarPageActions, рядом с «Поиском»):
+    // «Портфель» выгружает состав расчёта, «Терминал» — текущую таблицу (акции/облигации)
+    var pageHost = document.getElementById('topBarPageActions');
+    if (pageHost) {
+        var onPf = tabId === 'portfolio';
+        var onTerm = tabId === 'market-stocks' || tabId === 'market-bonds';
+        var pfB = document.getElementById('pfHdrExportBtn');
+        var tmB = document.getElementById('termHdrExportBtn');
+        if (pfB) pfB.style.display = onPf ? '' : 'none';
+        if (tmB) tmB.style.display = onTerm ? '' : 'none';
+        pageHost.style.display = (onPf || onTerm) ? 'flex' : 'none';
+    }
     if (tabId === 'rebalance') {
         setTimeout(checkRebalanceEmptyState, 50);
     }

@@ -1,16 +1,38 @@
 /* ============================================================
-   ВКЛАДКА «ТЕСТ ПОРТФЕЛЯ» — редизайн по референсу (степпер)
+   ВКЛАДКА «ТЕСТ ПОРТФЕЛЯ» — редизайн в стиле «Ежемесячного дохода»
+   (компактный R5: mi5-карточки, моно-кикеры, водяной знак, оранжевый
+   акцент, «колодцы» #f4f7fb, тёмные CTA-кнопки).
    ============================================================
    Подключается ПОСЛЕ webapp-layout.css / site-layout.css, чтобы
    перебивать старые .bt-* стили. Функциональные классы и id
    (#btDateInput, #btSourceCalc/Manual, #btRunBtn, #btResults,
    ручной ввод тикеров) сохранены — логика в js/backtest.js. */
 
+#panel-backtest {
+    --bt-card: #ffffff;
+    --bt-line: #e3e9f1;
+    --bt-text: #111927;
+    --bt-muted: #97a3b4;
+    --bt-muted2: #5f6d80;
+    --bt-green: #16b56b;
+    --bt-orange: #f08c3a;
+    --bt-mono: 'JetBrains Mono', monospace;
+    --bt-sans: 'Manrope', sans-serif;
+}
+body.dark-mode #panel-backtest {
+    --bt-card: #1d2734;
+    --bt-line: rgba(255, 255, 255, .08);
+    --bt-text: #eef2f7;
+    --bt-muted: #7c8a9c;
+    --bt-muted2: #aab6c6;
+}
+
 /* ---------- Контейнер: одна центрированная колонка ---------- */
 .bt2-wrap {
     max-width: 660px;
     margin: 0 auto;
     width: 100%;
+    font-family: var(--bt-sans);
 }
 
 /* На десктопе перебиваем старую двухколоночную grid-раскладку */
@@ -30,100 +52,103 @@
     #panel-backtest > .bt2-wrap > #btResults { grid-column: auto; width: auto; }
 }
 
-/* ---------- Шапка ---------- */
-.bt2-head { margin-bottom: 22px; }
-.bt2-eyebrow {
-    font-size: 12.5px;
-    font-weight: 700;
-    letter-spacing: 2.25px;
-    text-transform: uppercase;
-    color: #8593A6;
-}
-.bt2-h1 {
-    margin: 8px 0 6px;
-    font-size: 30px;
-    font-weight: 800;
-    letter-spacing: -0.3px;
-    color: #111927;
-    line-height: 1.1;
-}
-.bt2-sub {
-    margin: 0;
-    font-size: 15.5px;
-    color: #6C7A8D;
-    line-height: 1.4;
-}
-body.dark-mode .bt2-h1 { color: #F1F6FB; }
-body.dark-mode .bt2-sub { color: #9AA8BC; }
-
-/* ---------- Карточка степпера ---------- */
+/* ---------- Карточка степпера — mi5-карточка (как «Ежемесячный доход») ---------- */
 #btConfigCol.bt2-card {
-    background: #ffffff;
-    border: none;
-    border-radius: 20px;
-    box-shadow: 0 16px 36px rgba(24, 38, 60, 0.08);
-    padding: 30px;
+    position: relative;
+    background: var(--bt-card);
+    border: 1.5px solid #edf0f6;
+    border-radius: 26px;
+    box-shadow: 0 14px 34px rgba(28, 42, 66, .05), 0 2px 6px rgba(28, 42, 66, .03);
+    padding: 24px;
     margin: 0;
     counter-reset: none;
+    overflow: hidden;
 }
 body.dark-mode #btConfigCol.bt2-card {
-    background: #1d2734;
-    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+    border-color: rgba(255, 255, 255, .07);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, .22);
+}
+
+/* Водяной знак «%» — как ₽ на карточках дохода */
+.bt2-wm {
+    position: absolute; top: -22px; right: -6px;
+    font-family: var(--bt-mono); font-weight: 800; font-size: 112px;
+    line-height: 1; color: rgba(17, 25, 39, .045);
+    letter-spacing: -.04em; pointer-events: none; user-select: none;
+}
+body.dark-mode .bt2-wm { color: rgba(255, 255, 255, .04); }
+
+/* Шапка карточки: кикер + заголовок + подводка (вместо страничного заголовка) */
+.bt2-card-head { position: relative; margin-bottom: 22px; }
+.bt2-kick {
+    font-family: var(--bt-mono); font-size: 11px;
+    letter-spacing: .14em; text-transform: uppercase; font-weight: 700;
+    color: var(--bt-muted);
+}
+.bt2-ttl {
+    font-size: 22px; font-weight: 800; color: var(--bt-text);
+    letter-spacing: -.01em; margin-top: 4px; line-height: 1.2;
+}
+.bt2-card-sub {
+    margin: 8px 0 0;
+    font-size: 13.5px; line-height: 1.55; font-weight: 600;
+    color: var(--bt-muted2);
+    max-width: 48ch;
 }
 
 /* ---------- Шаг: бейдж + заголовок в строку, контент во всю ширину ---------- */
-.bt2-step:not(.is-last) { padding-bottom: 24px; }
+.bt2-step { position: relative; }
+.bt2-step:not(.is-last) { padding-bottom: 22px; }
 
 /* Строка-заголовок шага: номер + подпись */
 .bt2-shead {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 13px;
+    gap: 11px;
+    margin-bottom: 12px;
 }
 
+/* Номер шага — моно-квадратик (как ранги ОФЗ в калькуляторе дохода),
+   активный — оранжевая плашка */
 .bt2-badge {
-    width: 34px;
-    height: 34px;
+    width: 28px;
+    height: 28px;
     flex-shrink: 0;
     display: grid;
     place-items: center;
-    border-radius: 50%;
-    background: #ffffff;
-    border: 1.5px solid rgba(133, 147, 166, 0.4);
-    color: #8593A6;
-    font-size: 13.5px;
+    border-radius: 9px;
+    background: #eef2f8;
+    border: none;
+    color: var(--bt-muted2);
+    font-family: var(--bt-mono);
+    font-size: 11.5px;
     font-weight: 700;
     box-sizing: border-box;
 }
 .bt2-badge.is-active {
-    color: #16B56B;
-    border-color: rgba(22, 181, 107, 0.55);
-    background: #ffffff;
+    color: var(--bt-orange);
+    background: rgba(240, 140, 58, .13);
 }
 body.dark-mode .bt2-badge {
-    background: #1d2734;
-    border-color: rgba(255, 255, 255, 0.18);
+    background: #141b26;
     color: #9AA8BC;
 }
 body.dark-mode .bt2-badge.is-active {
-    color: #4ADE80;
-    border-color: rgba(74, 222, 128, 0.5);
-    background: rgba(74, 222, 128, 0.1);
+    color: var(--bt-orange);
+    background: rgba(240, 140, 58, .16);
 }
 
 /* ---------- Тело шага (во всю ширину карточки) ---------- */
 .bt2-body { min-width: 0; }
 .bt2-label {
-    font-family: 'Manrope', sans-serif;
-    font-size: 12.5px;
+    font-family: var(--bt-mono);
+    font-size: 11px;
     font-weight: 700;
-    letter-spacing: 1.75px;
+    letter-spacing: .14em;
     text-transform: uppercase;
-    color: #6C7A8D;
+    color: var(--bt-muted);
     margin: 0;
 }
-body.dark-mode .bt2-label { color: #9AA8BC; }
 
 /* ---------- Поле даты ---------- */
 .bt-date-field { position: relative; }
@@ -141,18 +166,19 @@ body.dark-mode .bt-date-icon { color: #6B7890; }
     box-sizing: border-box;
     margin: 0;
     padding: 13px 44px 13px 16px;
-    border: 1px solid rgba(133, 147, 166, 0.28);
-    border-radius: 12px;
-    background: #ffffff;
-    font-family: inherit;
-    font-size: 16px;
-    font-weight: 600;
-    color: #111927;
+    border: 1.5px solid var(--bt-line);
+    border-radius: 15px;
+    background: var(--bt-card);
+    font-family: var(--bt-mono);
+    font-size: 15.5px;
+    font-weight: 700;
+    color: var(--bt-text);
+    transition: border-color .15s ease, box-shadow .15s ease;
 }
 #btConfigCol.bt2-card .bt-date-input:focus {
     outline: none;
-    border-color: rgba(22, 181, 107, 0.55);
-    box-shadow: 0 0 0 3px rgba(22, 181, 107, 0.12);
+    border-color: var(--bt-orange);
+    box-shadow: 0 0 0 4px rgba(240, 140, 58, 0.10);
 }
 body.dark-mode #btConfigCol.bt2-card .bt-date-input {
     background: rgba(15, 23, 42, 0.4);
@@ -162,14 +188,15 @@ body.dark-mode #btConfigCol.bt2-card .bt-date-input {
 /* site-layout ограничивает дату 230px — растягиваем на всю ширину карточки */
 #btConfigCol #btDateInput { max-width: none; text-align: left; }
 
-/* ---------- Сегментный переключатель источника ---------- */
+/* ---------- Сегментный переключатель источника — как налоговый сегмент
+   в калькуляторе дохода (.mi5-tax): «колодец», активная кнопка белая ---------- */
 #btConfigCol.bt2-card .bt-source-switcher {
     display: flex;
-    gap: 0;
-    padding: 5px;
-    background: #EEF2F8;
+    gap: 8px;
+    padding: 6px;
+    background: #eef2f8;
     border: none;
-    border-radius: 12px;
+    border-radius: 14px;
     margin: 0 0 12px;
 }
 body.dark-mode #btConfigCol.bt2-card .bt-source-switcher {
@@ -214,8 +241,8 @@ body.dark-mode #btConfigCol.bt2-card .bt-source-btn.active {
     padding: 0;
 }
 .bt2-empty {
-    background: #F8FAFC;
-    border: 1.5px dashed #CCD8E5;
+    background: #f4f7fb;
+    border: 1.5px dashed #d8dfeb;
     border-radius: 14px;
     padding: 14px 16px;
 }
@@ -286,29 +313,31 @@ body.dark-mode .bt2-empty.is-ready .bt2-ready-note { color: #9AA8BC; }
 .bt2-goto:active { transform: translateY(0); }
 body.dark-mode .bt2-goto { background: #0f172a; }
 
-/* ---------- Кнопка запуска (2 id, чтобы перебить site-layout) ---------- */
+/* ---------- Кнопка запуска — тёмный градиент, как «Создать портфель»
+   на «Ежемесячном доходе» (2 id, чтобы перебить site-layout) ---------- */
 #btConfigCol #btRunBtn {
     width: 100% !important;
     margin: 0 !important;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 9px;
-    padding: 15px;
+    gap: 10px;
+    padding: 16px;
     border: none;
-    border-radius: 14px;
-    background: #141B26;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #1d2734, #141b26);
     color: #ffffff;
-    font-family: inherit;
+    font-family: var(--bt-sans);
     font-size: 15px;
-    font-weight: 800;
+    font-weight: 700;
     cursor: pointer;
+    box-shadow: 0 18px 40px rgba(16, 24, 38, 0.30);
     transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
 }
 #btConfigCol #btRunBtn svg { width: 18px; height: 18px; stroke: currentColor; }
 #btConfigCol #btRunBtn:not(:disabled):hover {
     transform: translateY(-1px);
-    box-shadow: 0 10px 24px rgba(20, 27, 38, 0.25);
+    box-shadow: 0 22px 48px rgba(16, 24, 38, 0.40);
 }
 #btConfigCol #btRunBtn:disabled {
     background: #E4EAF2;
@@ -340,9 +369,12 @@ body.dark-mode #btConfigCol #btRunBtn:disabled {
     padding: 0 4px;
 }
 .bt2-footer-label {
-    font-size: 13.5px;
-    font-weight: 600;
-    color: #8593A6;
+    font-family: var(--bt-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--bt-muted);
     flex-shrink: 0;
     white-space: nowrap;
 }
@@ -351,17 +383,18 @@ body.dark-mode #btConfigCol #btRunBtn:disabled {
     align-items: center;
     gap: 8px;
     padding: 9px 14px;
-    border: 1.5px dashed #CCD8E5;
+    border: 1.5px dashed #d8dfeb;
     border-radius: 999px;
     background: transparent;
-    font-size: 13px;
+    font-family: var(--bt-mono);
+    font-size: 11.5px;
     font-weight: 700;
-    color: #8593A6;
+    color: var(--bt-muted);
     flex-shrink: 0;
     white-space: nowrap;
 }
 body.dark-mode .bt2-feat { border-color: rgba(255, 255, 255, 0.14); }
-.bt2-feat svg { width: 15px; height: 15px; color: #AAB8C9; flex-shrink: 0; }
+.bt2-feat svg { width: 15px; height: 15px; color: var(--bt-orange); flex-shrink: 0; }
 
 /* Узкие экраны: пилюли могут переноситься */
 @media (max-width: 620px) {
@@ -375,12 +408,14 @@ body.dark-mode .bt2-feat { border-color: rgba(255, 255, 255, 0.14); }
    РЕЖИМ РЕЗУЛЬТАТОВ: карточка слева + таблица справа
    ============================================================ */
 
-/* Шапка с финальными данными теста — ТЁМНАЯ карточка вверху левой карточки */
+/* Шапка с финальными данными теста — ТЁМНАЯ карточка вверху левой карточки
+   (отрицательные поля = padding карточки 24px, радиус = радиус карточки 26px) */
 .bt-res-summary {
-    margin: -30px -30px 26px;
+    position: relative; z-index: 1;   /* поверх водяного знака «%» */
+    margin: -24px -24px 24px;
     padding: 22px 24px;
     background: linear-gradient(160deg, #1f2a3b 0%, #131a25 100%);
-    border-radius: 20px 20px 0 0;
+    border-radius: 24px 24px 0 0;
     color: #F1F6FB;
 }
 .bt-res-sum-top {
@@ -493,13 +528,10 @@ body.dark-mode .bt2-feat { border-color: rgba(255, 255, 255, 0.14); }
         width: 100%;
         display: grid;
         grid-template-columns: 380px minmax(0, 1fr);
-        grid-template-areas:
-            "head    head"
-            "config  results";
+        grid-template-areas: "config  results";
         column-gap: 22px;
         align-items: start;
     }
-    .bt2-wrap.bt-results-mode .bt2-head    { grid-area: head; }
     .bt2-wrap.bt-results-mode #btConfigCol {
         grid-area: config;
         position: sticky;
@@ -519,9 +551,9 @@ body.dark-mode .bt2-feat { border-color: rgba(255, 255, 255, 0.14); }
    ============================================================ */
 #btResults .bt-assets-card {
     background: #ffffff;
-    border: none;
+    border: 1.5px solid #d8dfeb;
     border-radius: 22px;
-    box-shadow: 0 16px 36px rgba(24, 38, 60, 0.08);
+    box-shadow: 0 12px 32px rgba(28, 42, 66, .08), 0 2px 8px rgba(28, 42, 66, .04);
     overflow: hidden;
     margin-bottom: 16px;
     padding: 0;
@@ -530,6 +562,7 @@ body.dark-mode .bt2-feat { border-color: rgba(255, 255, 255, 0.14); }
 }
 body.dark-mode #btResults .bt-assets-card {
     background: #1d2734;
+    border-color: rgba(255, 255, 255, .12);
     box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
 }
 
@@ -729,13 +762,14 @@ body.dark-mode #btResults .bt-asset-pnl.neutral { color: #76849a; }
 /* ---------- Сравнение с IMOEX: график доходности ---------- */
 .bt-imoex-card {
     background: #ffffff;
-    border-radius: 18px;
-    box-shadow: 0 12px 30px rgba(24, 38, 60, 0.08);
+    border: 1.5px solid #d8dfeb;
+    border-radius: 22px;
+    box-shadow: 0 12px 32px rgba(28, 42, 66, .08), 0 2px 8px rgba(28, 42, 66, .04);
     padding: 18px 20px;
     margin-bottom: 14px;
     animation: btResIn 0.32s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
-body.dark-mode .bt-imoex-card { background: #1d2734; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28); }
+body.dark-mode .bt-imoex-card { background: #1d2734; border-color: rgba(255, 255, 255, .12); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28); }
 .bt-imoex-head {
     display: flex; align-items: center; justify-content: space-between;
     gap: 12px; margin-bottom: 6px;
@@ -933,4 +967,55 @@ body.dark-mode #btConfigCol .bt-or-divider::after { background: rgba(255,255,255
     font-size: 10px; font-weight: 700;
     letter-spacing: 0.10em; text-transform: uppercase;
     color: var(--text-muted, #94A3B8);
+}
+
+/* ============================================================
+   РУЧНОЙ РЕЖИМ — акценты mi5 («Ежемесячный доход») поверх старых
+   синих стилей webapp-layout.css: оранжевый фокус полей, тёплый
+   жетон ₽, тёмная кнопка добавления. Селекторы с #panel-backtest —
+   этот файл грузится позже и перебивает базовые.
+   ============================================================ */
+#panel-backtest .bt-capital-input {
+    border: 1.5px solid var(--bt-line);
+    border-radius: 15px;
+    font-family: var(--bt-mono);
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+#panel-backtest .bt-capital-input:focus {
+    border-color: var(--bt-orange);
+    box-shadow: 0 0 0 4px rgba(240, 140, 58, 0.10);
+}
+#panel-backtest .bt-capital-sym {
+    background: linear-gradient(150deg, #ffb066, var(--bt-orange));
+    color: #ffffff;
+    box-shadow: 0 4px 10px rgba(240, 140, 58, .28);
+}
+body.dark-mode #panel-backtest .bt-capital-sym {
+    background: linear-gradient(150deg, #ffb066, var(--bt-orange));
+    color: #ffffff;
+}
+#panel-backtest .bt-ticker-input {
+    border: 1.5px solid var(--bt-line);
+    border-radius: 13px;
+    background: var(--bt-card);
+}
+#panel-backtest .bt-ticker-input:focus {
+    border-color: var(--bt-orange);
+    box-shadow: 0 0 0 4px rgba(240, 140, 58, 0.10);
+}
+#panel-backtest .bt-add-btn {
+    background: linear-gradient(180deg, #1d2734, #141b26);
+    border-radius: 13px;
+    box-shadow: 0 8px 18px rgba(16, 24, 38, .25);
+}
+#panel-backtest .bt-add-btn:hover { box-shadow: 0 10px 22px rgba(16, 24, 38, .34); }
+body.dark-mode #panel-backtest .bt-add-btn { background: #eef2f7; }
+body.dark-mode #panel-backtest .bt-add-btn svg { stroke: #141b26; }
+
+/* Подписи-мини в ручном режиме — моно-кикеры страницы */
+#panel-backtest .bt-mini-label {
+    font-family: var(--bt-mono);
+    font-size: 10.5px; font-weight: 700;
+    letter-spacing: .13em; text-transform: uppercase;
+    color: var(--bt-muted);
 }

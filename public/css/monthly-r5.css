@@ -166,29 +166,52 @@ body.dark-mode #panel-monthly .mi5-view-btn { border-color: rgba(255,255,255,.14
 body.dark-mode #panel-monthly .mi5-view-btn:hover { border-color: var(--mi-orange); }
 
 /* ===== Интро-оверлей раздела — поверх карточки калькулятора =====
-   Описание + стартовая сумма (синхронизирована с #monthlySumInput) +
-   кнопка «Приступить к расчёту». Оформление — в стиле самих карточек. */
+   Три яруса, равномерно распределённые по высоте карточки (space-between):
+   заголовок с описанием → шаги 01/02/03 → стартовая сумма с кнопкой.
+   Оформление — в стиле самих карточек (кикер/моно/оранжевый акцент + водяной ₽). */
 #panel-monthly .mi5-start {
     position: absolute; inset: 0; z-index: 6;
     display: flex; flex-direction: column;
-    align-items: flex-start; justify-content: center;
-    gap: 6px;
-    padding: 30px 34px;
+    align-items: flex-start; justify-content: space-between;
+    gap: 22px;
+    padding: 34px 38px 30px;
     background:
         radial-gradient(135% 75% at 100% -8%, rgba(240, 140, 58, .08), transparent 56%),
+        radial-gradient(125% 70% at -12% 112%, rgba(22, 181, 107, .05), transparent 56%),
         var(--mi-card);
     border-radius: inherit;
+    overflow: hidden;
     transition: opacity .24s ease, transform .24s ease;
 }
 #panel-monthly .mi5-start.is-out { opacity: 0; transform: translateY(8px); pointer-events: none; }
-#panel-monthly .mi5-start .mi5-ttl { font-size: 22px; }
+#panel-monthly .mi5-start-top { position: relative; display: flex; flex-direction: column; }
+#panel-monthly .mi5-start .mi5-ttl { font-size: 24px; line-height: 1.22; margin-top: 7px; }
 #panel-monthly .mi5-start-desc {
     font-size: 13.5px; line-height: 1.6; font-weight: 600;
     color: var(--mi-muted2);
-    margin: 6px 0 14px; max-width: 46ch;
+    margin: 10px 0 0; max-width: 46ch;
 }
 #panel-monthly .mi5-start-desc b { font-weight: 800; color: var(--mi-text); }
-#panel-monthly .mi5-start-field { width: 100%; max-width: 330px; }
+/* шаги 01/02/03 — средний ярус, моно-номера в оранжевых плашках */
+#panel-monthly .mi5-start-steps {
+    position: relative; display: flex; flex-direction: column; gap: 13px;
+    width: 100%; max-width: 47ch;
+    padding: 18px 0;
+    border-top: 1px solid var(--mi-line); border-bottom: 1px solid var(--mi-line);
+}
+#panel-monthly .mi5-start-step { display: flex; align-items: flex-start; gap: 12px; }
+#panel-monthly .mi5-start-step b {
+    flex: 0 0 auto;
+    font-family: var(--mi-mono); font-weight: 700; font-size: 11px; line-height: 1;
+    color: var(--mi-orange); background: rgba(240, 140, 58, .12);
+    border-radius: 8px; padding: 5px 7px;
+}
+#panel-monthly .mi5-start-step span {
+    font-size: 13px; font-weight: 600; line-height: 1.5; color: var(--mi-muted2); padding-top: 2px;
+}
+/* нижний ярус: сумма + кнопка одной колонкой */
+#panel-monthly .mi5-start-cta { position: relative; width: 100%; max-width: 340px; }
+#panel-monthly .mi5-start-field { width: 100%; }
 #panel-monthly .mi5-start-k {
     display: block;
     font-family: var(--mi-mono); font-size: 10.5px; letter-spacing: .16em;
@@ -211,10 +234,11 @@ body.dark-mode #panel-monthly .mi5-view-btn:hover { border-color: var(--mi-orang
 #panel-monthly .mi5-start-box .mi5-rub { font-family: var(--mi-mono); font-size: 25px; font-weight: 700; flex: 0 0 auto; }
 #panel-monthly .mi5-start-btn {
     margin-top: 20px;
-    display: inline-flex; align-items: center; gap: 10px;
+    width: 100%;
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
     background: linear-gradient(180deg, #1d2734, #141b26);
     color: #ffffff; border: none; border-radius: 14px;
-    padding: 14px 24px;
+    padding: 15px 24px;
     font-family: var(--mi-sans); font-weight: 700; font-size: 14.5px;
     cursor: pointer;
     box-shadow: 0 14px 30px rgba(16, 24, 38, .25);
@@ -224,12 +248,8 @@ body.dark-mode #panel-monthly .mi5-view-btn:hover { border-color: var(--mi-orang
 #panel-monthly .mi5-start-btn:active { transform: scale(.98); }
 body.dark-mode #panel-monthly .mi5-start-btn { background: #ffffff; color: #141b26; }
 
-/* «Создать портфель» неактивна, пока пользователь не приступил к расчёту */
-#panel-monthly .mi5-createpf-btn:disabled {
-    opacity: .45; cursor: not-allowed;
-    transform: none !important;
-    box-shadow: 0 10px 24px rgba(16, 24, 38, .14);
-}
+/* «Создать портфель» до «Приступить к расчёту» вовсе скрыта (is-hidden,
+   см. miStartCalc в data.js) — появляется вместе с «Подробнее» */
 
 /* Вертикальный баннер дохода (правая колонка) — карточка-дополнение, без доминантного акцента */
 #panel-monthly .mi5-banner-v {
@@ -250,22 +270,25 @@ body.dark-mode #panel-monthly .mi5-start-btn { background: #ffffff; color: #141b
     display: flex; flex-direction: column; align-items: flex-end;
     text-align: right; gap: 8px; margin-left: auto; min-width: 0;
 }
-/* «Подробнее» — тот же вид, что «Сводка» (.mi5-view-btn), но в потоке слева */
+/* «Подробнее» — тёмная пилюля (белая «призрачная» терялась на карточке),
+   сдвинута правее от кромки, к середине свободной зоны перед суммой */
 #panel-monthly .mi5-more-btn {
     display: inline-flex; align-items: center; gap: 7px;
-    border: 1.5px solid #d8dfeb; border-radius: 999px;
-    background: var(--mi-card);
-    padding: 9px 15px;
+    border: none; border-radius: 999px;
+    background: linear-gradient(180deg, #1d2734, #141b26);
+    padding: 10px 16px;
     font-family: var(--mi-mono); font-weight: 700; font-size: 11px;
     letter-spacing: .06em; text-transform: uppercase;
-    color: var(--mi-orange); cursor: pointer;
+    color: #ffffff; cursor: pointer;
     flex: 0 0 auto; align-self: center;
-    transition: background .15s ease, border-color .15s ease, transform .12s ease;
+    margin-left: 30px;
+    box-shadow: 0 10px 22px rgba(16, 24, 38, .22);
+    transition: transform .15s ease, box-shadow .15s ease;
 }
-#panel-monthly .mi5-more-btn:hover { border-color: var(--mi-orange); background: rgba(240, 140, 58, .07); }
+#panel-monthly .mi5-more-btn svg { color: var(--mi-orange); }
+#panel-monthly .mi5-more-btn:hover { transform: translateY(-1px); box-shadow: 0 14px 28px rgba(16, 24, 38, .30); }
 #panel-monthly .mi5-more-btn:active { transform: scale(.97); }
-body.dark-mode #panel-monthly .mi5-more-btn { border-color: rgba(255,255,255,.14); background: transparent; }
-body.dark-mode #panel-monthly .mi5-more-btn:hover { border-color: var(--mi-orange); }
+body.dark-mode #panel-monthly .mi5-more-btn { background: #ffffff; color: #141b26; }
 #panel-monthly .mi5-banner-v .mi5-cb-hk { display: flex; align-items: center; gap: 8px; }
 #panel-monthly .mi5-banner-v .mi5-cb-hk::before {
     content: ''; width: 6px; height: 6px; border-radius: 50%;
@@ -527,6 +550,36 @@ body.dark-mode #panel-monthly .mi5-more-btn:hover { border-color: var(--mi-orang
     font-family: var(--mi-mono); font-size: 12px; color: var(--mi-muted2); font-weight: 600; text-align: right; white-space: nowrap;
 }
 #panel-monthly .mi5-total-sub b { color: var(--mi-green); font-weight: 700; font-size: 14.5px; line-height: 1; }
+
+/* ===== Виджет-переход «Расчёт портфеля из акций и облигаций» =====
+   Акценты страницы поверх базового .ms-nav-widget: оранжевая иконка-плашка
+   (как .mi5-ic у баннера), круглая стрелка-чип, рамка/радиус mi5-карточек */
+#panel-monthly .ms-nav-widget.mi5-calc-widget {
+    border: 1.5px solid #d8dfeb;
+    border-radius: 20px;
+    padding: 17px 20px;
+    background:
+        radial-gradient(120% 220% at 100% 0%, rgba(240, 140, 58, .07), transparent 52%),
+        var(--mi-card);
+    box-shadow: 0 12px 30px rgba(28, 42, 66, .07);
+}
+#panel-monthly .mi5-calc-widget:hover { border-color: rgba(240, 140, 58, .45); }
+#panel-monthly .mi5-calc-widget .ic {
+    background: linear-gradient(150deg, #ffb066, var(--mi-orange));
+    color: #ffffff;
+    box-shadow: 0 7px 18px rgba(240, 140, 58, .30);
+}
+#panel-monthly .mi5-calc-widget .tx b { font-size: 15px; }
+#panel-monthly .mi5-calc-widget .go {
+    width: 34px; height: 34px;
+    border-radius: 999px;
+    background: rgba(240, 140, 58, .12); color: var(--mi-orange);
+    display: grid; place-items: center;
+    transition: background .15s ease, color .15s ease, transform .15s ease;
+}
+#panel-monthly .mi5-calc-widget:hover .go { background: var(--mi-orange); color: #ffffff; transform: translateX(2px); }
+body.dark-mode #panel-monthly .mi5-calc-widget { background: var(--mi-card); }
+body.dark-mode #panel-monthly .mi5-calc-widget .go { background: rgba(240, 140, 58, .16); }
 
 /* ===== Адаптив ===== */
 @media (max-width: 900px) {

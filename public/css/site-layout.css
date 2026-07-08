@@ -404,6 +404,7 @@
             display: flex;
             flex-direction: column;
             font-family: 'Manrope', sans-serif;
+            position: relative; z-index: 1; /* виджет-продолжение заезжает под карточку */
         }
         #pfLeftRail .capital-decoration { display: none; }
         /* Блок капитала — прозрачный, виден общий градиент карточки */
@@ -1535,15 +1536,16 @@
         #sbBurgerBtn, #sbCloseBtn, #sbOverlay { display: none !important; }
         #appShell {
             display: grid !important;
-            /* Свёрнутая рейка — узкая колонка; hover-peek рисуется floating-
-               оверлеем (контент не дёргается от случайного наведения). А вот
-               ЗАКРЕПЛЁННОЕ меню («Закрепить») занимает настоящую колонку —
-               контент и шапка сдвигаются вправо (см. body:not(.sb-collapsed)). */
+            /* Свёрнутая рейка — узкая колонка. И hover-peek, и ЗАКРЕПЛЁННОЕ
+               меню расширяют НАСТОЯЩУЮ колонку — контент и шапка сдвигаются
+               вправо. Случайное наведение отсекает задержка «намерения»
+               в sidebar.js (180мс), а не оверлей. */
             grid-template-columns: calc(78px + 14px) minmax(0, 1fr);
             grid-template-rows: auto minmax(0, 1fr);
             transition: grid-template-columns 0.3s ease;
         }
-        body:not(.sb-collapsed) #appShell {
+        body:not(.sb-collapsed) #appShell,
+        body.sb-collapsed.sb-peek #appShell {
             grid-template-columns: calc(252px + 14px) minmax(0, 1fr);
         }
         #sideBar {
@@ -1626,29 +1628,13 @@
            показываются только когда панель раскрыта (peek или закреплено). */
         body.sb-collapsed:not(.sb-peek) .sb-chev { opacity: 0; pointer-events: none; }
         body.sb-collapsed:not(.sb-peek) .sb-subs { grid-template-rows: 0fr !important; }
-        body.sb-collapsed.sb-peek #sideBar { z-index: 60; }
         body.sb-collapsed.sb-peek #sbPanel,
         body.sb-collapsed.sb-peek #sbFoot { width: 252px; }
-        body.sb-collapsed.sb-peek #sbPanel { box-shadow: 0 22px 50px -8px rgba(22,27,39,0.45); }
-        body.sb-collapsed.sb-peek #sbFoot { box-shadow: 0 18px 40px -10px rgba(22,27,39,0.4); }
         body.sb-collapsed.sb-peek .sb-label,
         body.sb-collapsed.sb-peek .sb-logo-text { opacity: 1; transition-delay: 0.08s; }
         body.sb-collapsed.sb-peek .sb-item.active::before { left: -10px; }
 
-        /* ===== HEADER FOLLOWS THE RAIL (app pages only) =====
-           On hover-peek the panel floats over the content (content stays put),
-           which would otherwise cover the header brand. So the brand slides
-           right by the same amount the rail grows (92px → 236px ⇒ +144px),
-           keeping a constant gap from the rail's right edge — it "moves with"
-           the sidebar. transform = no reflow, so the right-side actions
-           (search / theme) stay exactly where they are. Welcome page is
-           excluded — its brand stays centred over the hero. */
-        /* Сдвиг бренда — только для hover-peek (оверлей поверх контента).
-           В закреплённом состоянии шапка сдвигается сама вместе с колонкой. */
-        body:not(.tab-home) #topBarBrand { transition: transform 0.3s ease; }
-        body:not(.tab-home).sb-collapsed.sb-peek #topBarBrand { transform: translateX(174px); }
-
-        /* ===== ЗАКРЕПЛЕНО («Закрепить») — настоящая колонка 252px =====
+        /* ===== РАСКРЫТО (peek или «Закрепить») — настоящая колонка 252px =====
            Меню раскрывается в ширину, и grid-колонка #appShell расширяется
            вместе с ним (см. выше) — контент и шапка СДВИГАЮТСЯ, а не
            перекрываются. Тяжёлая «парящая» тень не нужна — панель теперь
@@ -1871,9 +1857,12 @@
             box-shadow: 0 16px 36px rgba(24,38,60,0.08);
             position: relative; z-index: 1; /* виджет-продолжение заезжает под карточку */
         }
-        /* Виджет «Ежемесячные купоны» — продолжение тёмной карточки:
-           заезжает под её скруглённый низ, тонкая обводка, скругление снизу */
-        #rbLeftRail #rbMonthlyWidget {
+        /* Виджет «Ежемесячные купоны/доход» — продолжение тёмной карточки сверху:
+           заезжает под её скруглённый низ, тонкая обводка, скругление снизу.
+           Один и тот же вид на «Ребалансе» и «Портфеле» (рельсы различаются только
+           зазором до карточки: у #rbLeftRail flex-gap 16px, у #pfLeftRail — 0). */
+        #rbLeftRail #rbMonthlyWidget,
+        #pfLeftRail #pfMonthlyWidget {
             margin-top: -38px;                    /* −gap рельсы (16) − радиус карточки (22) */
             padding-top: calc(16px + 22px + 2px); /* контент начинается ниже кромки карточки */
             position: relative; z-index: 0;
@@ -1881,8 +1870,11 @@
             border-radius: 0 0 20px 20px;
             box-shadow: 0 16px 30px rgba(24,38,60,0.07);
         }
-        #rbLeftRail #rbMonthlyWidget:hover { transform: none; border-color: #c9d6ea; }
-        body.dark-mode #rbLeftRail #rbMonthlyWidget { border-color: rgba(255,255,255,0.10); }
+        #pfLeftRail #pfMonthlyWidget { margin-top: -22px; } /* без flex-gap: только радиус карточки */
+        #rbLeftRail #rbMonthlyWidget:hover,
+        #pfLeftRail #pfMonthlyWidget:hover { transform: none; border-color: #c9d6ea; }
+        body.dark-mode #rbLeftRail #rbMonthlyWidget,
+        body.dark-mode #pfLeftRail #pfMonthlyWidget { border-color: rgba(255,255,255,0.10); }
         /* Переключатель ОФЗ/Акции — белая V3-карточка, активная тёмная (как в референсе) */
         #rbLeftRail .rebalance-tabs-container { margin: 0 !important; padding: 0 !important; }
         #rbLeftRail .tab-switcher {
@@ -2441,50 +2433,61 @@
            выглядел как часть шапки, а не как отдельная карточка. */
         #pfStocksThead { border-bottom: none !important; }
 
+        /* Оформление — как карточка ребалансировки (rb5): белый фон, тонкая рамка
+           rgba(44,54,76), eyebrow-заголовок, моно-выделение цифр. Иконка — «квадрат
+           с тонкой рамкой» из семейства контролов rb5-hbtn, лампочка тёплого тона. */
         .portfolio-important-aurora--inline {
             display: flex;
             align-items: center;
             margin: 14px 16px 4px !important;
-            padding: 14px 18px !important;
-            border: 1px solid rgba(245,158,11,0.30) !important;
+            padding: 13px 18px !important;
+            border: 1px solid rgba(44,54,76,0.14) !important;
             border-radius: 16px !important;
-            box-shadow: 0 10px 24px rgba(245,158,11,0.08) !important;
-            background: radial-gradient(130% 200% at 0% 0%,
-                rgba(245,158,11,0.16) 0%, rgba(245,158,11,0.06) 48%, rgba(245,158,11,0.03) 100%) !important;
+            box-shadow: 0 2px 10px rgba(44,54,76,0.05) !important;
+            background: #ffffff !important;
             backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
             gap: 14px;
         }
         .portfolio-important-aurora--inline .important-aurora-icon {
-            width: 36px; height: 36px; min-width: 36px;
+            width: 38px; height: 38px; min-width: 38px;
             display: flex; align-items: center; justify-content: center;
-            background: linear-gradient(135deg, #fbbf24, #f59e0b);
-            border: none;
-            border-radius: 11px;
-            box-shadow: 0 5px 12px rgba(245,158,11,0.35);
+            background: #ffffff;
+            border: 1px solid rgba(44,54,76,0.14);
+            border-radius: 13px;
+            box-shadow: none;
         }
         .portfolio-important-aurora--inline .important-aurora-icon svg {
-            width: 17px; height: 17px; stroke: #ffffff;
+            width: 17px; height: 17px; stroke: #d98a06;
         }
         .portfolio-important-aurora--inline .important-aurora-title {
-            font-family: 'Manrope', sans-serif;
-            font-size: 11px; font-weight: 800;
-            letter-spacing: 0.1em; text-transform: uppercase;
-            color: #d98a06; margin-bottom: 4px;
+            font-family: 'Inter', sans-serif;
+            font-size: 9px; font-weight: 700;
+            letter-spacing: 0.22em; text-transform: uppercase;
+            color: #94A3B8; margin-bottom: 4px;
         }
         .portfolio-important-aurora--inline .important-aurora-text {
-            font-family: 'Manrope', sans-serif;
-            font-size: 13.5px !important; line-height: 1.55 !important;
-            font-weight: 600;
-            color: #c4cedd;
+            font-family: 'Inter', sans-serif;
+            font-size: 13px !important; line-height: 1.55 !important;
+            font-weight: 500;
+            color: #3d4d63;
         }
         .portfolio-important-aurora--inline .important-aurora-text .highlight-marker {
-            background: rgba(245,158,11,0.22); color: #f1f6fb; font-weight: 700;
-            border-radius: 5px; padding: 1px 5px;
+            font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums;
+            background: rgba(44,54,76,0.07); color: #161B27; font-weight: 700; font-size: 12px;
+            border-radius: 6px; padding: 1px 6px;
         }
-        /* Светлая тема */
-        body:not(.dark-mode) .portfolio-important-aurora--inline .important-aurora-text { color: #3d4d63; }
-        body:not(.dark-mode) .portfolio-important-aurora--inline .important-aurora-text .highlight-marker {
-            background: rgba(245,158,11,0.25); color: #111927;
+        /* Тёмная тема — в тон rb5-карточки */
+        body.dark-mode .portfolio-important-aurora--inline {
+            background: #141c27 !important;
+            border-color: rgba(255,255,255,0.08) !important;
+            box-shadow: none !important;
+        }
+        body.dark-mode .portfolio-important-aurora--inline .important-aurora-icon {
+            background: rgba(15,23,42,0.6); border-color: rgba(255,255,255,0.12);
+        }
+        body.dark-mode .portfolio-important-aurora--inline .important-aurora-text { color: #cbd5e1; }
+        body.dark-mode .portfolio-important-aurora--inline .important-aurora-text .highlight-marker {
+            background: rgba(255,255,255,0.09); color: #f1f6fb;
         }
 
         /* (центрирование списков ребаланса убрано — теперь они в правой колонке) */
@@ -2574,85 +2577,45 @@
 /* ===== П.2: дубль переключателя ОФЗ/Акции в шапке таблицы, экспорт в Excel,
    пояснение и массовые отметки в списке к покупке ===== */
 @media (min-width: 1024px) {
-    /* Сег-переключатель в правом краю шапки карточки-таблицы */
+    /* Сег-переключатель ОФЗ/Акции в правом краю шапки карточки-таблицы —
+       тот же компонент, что «Карта/График» на «Рынке» (.mh-seg-view): широкий
+       «колодец», кнопки с иконками, активная — тёмная бренд-плашка */
     .pf-seg {
         margin-left: auto;
         display: inline-flex;
-        background: #eef2f8;
+        height: 38px;
+        box-sizing: border-box;
+        background: #f4f7fb;
         border-radius: 12px;
-        padding: 3px;
-        gap: 2px;
+        padding: 4px;
+        gap: 3px;
         flex: 0 0 auto;
     }
     .pf-seg-btn {
+        display: inline-flex; align-items: center; gap: 7px;
         border: none;
         background: transparent;
-        font-family: 'Manrope', sans-serif;
-        font-weight: 700;
-        font-size: 13px;
-        color: #5f6d80;
-        padding: 8px 16px;
+        font: 700 13.5px 'Manrope', sans-serif;
+        color: #7a8698;
+        padding: 0 18px;
         border-radius: 9px;
         cursor: pointer;
         white-space: nowrap;
-        transition: background 0.15s ease, color 0.15s ease;
+        transition: background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
     }
+    .pf-seg-ico { display: inline-flex; width: 16px; height: 16px; flex: 0 0 auto; color: #16b56b; }
+    .pf-seg-ico svg { width: 100%; height: 100%; }
     .pf-seg-btn:hover { color: #111927; }
-    .pf-seg-btn.active { background: #141b26; color: #ffffff; }
-    body.dark-mode .pf-seg { background: rgba(255,255,255,0.07); }
-    body.dark-mode .pf-seg-btn { color: #9aa7ba; }
-    body.dark-mode .pf-seg-btn.active { background: #ffffff; color: #141b26; }
+    .pf-seg-btn.active { background: #141b26; color: #ffffff; box-shadow: 0 5px 14px rgba(16,24,38,0.2); }
+    .pf-seg-btn.active .pf-seg-ico { color: #ffffff; }
+    body.dark-mode .pf-seg { background: rgba(255,255,255,0.045); }
+    body.dark-mode .pf-seg-btn { color: #8d9bb0; }
+    body.dark-mode .pf-seg-btn.active { background: #7ee2a8; color: #10201a; }
+    body.dark-mode .pf-seg-btn.active .pf-seg-ico { color: #10201a; }
 
-    /* Кнопка «Excel» в шапке карточки-таблицы — в паре с .pf-seg (тот же компонент) */
-    .pf-export-btn {
-        display: inline-flex; align-items: center; gap: 7px;
-        flex: 0 0 auto;
-        background: #eef2f8; color: #5f6d80;
-        border: none; border-radius: 12px;
-        padding: 9px 14px;
-        font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 13px;
-        white-space: nowrap; cursor: pointer;
-        transition: background 0.15s ease, color 0.15s ease;
-    }
-    .pf-export-btn:hover { background: #e3ebf5; color: #111927; }
-    .pf-export-btn svg { color: #16b56b; }
-    body.dark-mode .pf-export-btn { background: rgba(255,255,255,0.07); color: #9aa7ba; }
-    body.dark-mode .pf-export-btn:hover { color: #f1f6fb; }
-
-    /* Виджет «Ежемесячный доход» под карточкой капитала — зелёный акцент
-       в тон callout-блокам: градиентная подложка, иконка-плашка, круглая стрелка */
-    #pfLeftRail #pfMonthlyWidget {
-        border: 1px solid rgba(17,157,92,0.28);
-        background: radial-gradient(140% 220% at 0% 0%,
-            rgba(17,157,92,0.13) 0%, rgba(17,157,92,0.05) 48%, #ffffff 100%);
-        box-shadow: 0 12px 28px rgba(17,157,92,0.10);
-    }
-    #pfLeftRail #pfMonthlyWidget:hover {
-        border-color: rgba(17,157,92,0.45);
-        box-shadow: 0 16px 34px rgba(17,157,92,0.16);
-    }
-    #pfLeftRail #pfMonthlyWidget .ic {
-        background: linear-gradient(135deg, #34d399, #119d5c);
-        color: #ffffff;
-        box-shadow: 0 5px 12px rgba(17,157,92,0.30);
-    }
-    #pfLeftRail #pfMonthlyWidget .go {
-        width: 32px; height: 32px;
-        border-radius: 999px;
-        background: #e7f7ef; color: #119d5c;
-        display: grid; place-items: center;
-        transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
-    }
-    #pfLeftRail #pfMonthlyWidget:hover .go {
-        background: #119d5c; color: #ffffff; transform: translateX(2px);
-    }
-    body.dark-mode #pfLeftRail #pfMonthlyWidget {
-        background: radial-gradient(140% 220% at 0% 0%,
-            rgba(52,211,153,0.16) 0%, rgba(52,211,153,0.06) 48%, #1d2734 100%);
-        border-color: rgba(52,211,153,0.30);
-    }
-    body.dark-mode #pfLeftRail #pfMonthlyWidget .go { background: rgba(52,211,153,0.14); color: #7ee2a8; }
-    body.dark-mode #pfLeftRail #pfMonthlyWidget:hover .go { background: #119d5c; color: #ffffff; }
+    /* Excel-кнопки страниц в глобальной шапке (Портфель/Терминал): стеклянная
+       пилюля .d3-quick + фирменная зелёная иконка файла */
+    .hdr-excel svg { color: #16b56b; }
 
     /* Пояснение + «Выбрать все / Снять все» в панели списка к покупке */
     .v3bl-sub {

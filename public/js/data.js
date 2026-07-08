@@ -895,7 +895,7 @@ function miStartFmt(inp) {
 }
 
 // «Приступить к расчёту»: прячем оверлей, применяем сумму, открываем
-// кнопку «Подробнее» и активируем «Создать портфель»
+// кнопку «Подробнее» и ПОКАЗЫВАЕМ «Создать портфель» (до старта её нет вовсе)
 function miStartCalc() {
     var ov = document.getElementById('miStartOverlay');
     var inp = document.getElementById('miStartInput');
@@ -912,7 +912,7 @@ function miStartCalc() {
     var more = document.getElementById('miMoreBtn');
     if (more) more.classList.remove('is-hidden');
     var cr = document.getElementById('miCreatePfBtn');
-    if (cr) { cr.disabled = false; cr.removeAttribute('title'); }
+    if (cr) cr.classList.remove('is-hidden');
     if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
         window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
     }
