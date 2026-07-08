@@ -12,5 +12,5 @@
 // Пока поля пустые, кнопка «Войти через Telegram» просто открывает бота
 // в приложении Telegram (прежнее поведение).
 
-window.TELEGRAM_BOT_USERNAME = '';
-window.TELEGRAM_BOT_ID = '';
+window.TELEGRAM_BOT_USERNAME = 'MadameSolominabot';
+window.TELEGRAM_BOT_ID = '8469424689';
