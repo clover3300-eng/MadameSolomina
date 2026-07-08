@@ -52,6 +52,7 @@
 
         signUp: signUp,
         signIn: signIn,
+        signInWithTelegram: signInWithTelegram,
         signOut: signOut,
         resetPassword: resetPassword,
         updatePassword: updatePassword,
@@ -172,6 +173,31 @@
                 if (res.error) return { ok: false, error: errRu(res.error) };
                 logEvent('login');
                 return { ok: true };
+            });
+    }
+
+    // payload — { mode:'webapp', initData } либо { mode:'widget', user } из
+    // homeTelegramLogin(). Проверка подписи и заведение/поиск пользователя —
+    // на сервере (worker/index.js), тут только обмен token_hash на сессию.
+    function signInWithTelegram(payload) {
+        if (!enabled) return Promise.resolve({ ok: false, error: 'Облако не подключено' });
+        return fetch('/api/telegram-auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        }).then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (!data || !data.ok) {
+                    return { ok: false, error: (data && data.error) || 'Не удалось войти через Telegram' };
+                }
+                return client.auth.verifyOtp({ token_hash: data.token_hash, type: 'email' })
+                    .then(function (res2) {
+                        if (res2.error) return { ok: false, error: errRu(res2.error) };
+                        logEvent('login', { via: 'telegram' });
+                        return { ok: true };
+                    });
+            }, function () {
+                return { ok: false, error: 'Нет связи с сервером' };
             });
     }
 

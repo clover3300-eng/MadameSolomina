@@ -1,16 +1,25 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "madamesolomina",
+  "main": "worker/index.js",
   "compatibility_date": "2026-07-07",
   "observability": {
     "enabled": true
   },
   "assets": {
     "directory": "public",
+    "binding": "ASSETS",
     "not_found_handling": "single-page-application",
     "html_handling": "none"
   },
   "compatibility_flags": [
     "nodejs_compat"
-  ]
+  ],
+  // SUPABASE_URL не секрет (тот же адрес, что в public/js/supabase-config.js) —
+  // можно хранить прямо тут. TELEGRAM_BOT_TOKEN и SUPABASE_SERVICE_ROLE_KEY —
+  // секреты, задаются один раз командой `wrangler secret put <ИМЯ>`,
+  // в этот файл их вписывать НЕЛЬЗЯ (подробности в TELEGRAM_SETUP.md).
+  "vars": {
+    "SUPABASE_URL": "https://vgxtdekeoxlnbihnswct.supabase.co"
+  }
 }

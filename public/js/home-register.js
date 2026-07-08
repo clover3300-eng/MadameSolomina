@@ -7,7 +7,9 @@
 //   · ключей нет — прежнее демо-сохранение в localStorage.
 // Плюс третий вид формы 'recovery': пользователь пришёл по ссылке
 // «сброс пароля» из письма — просим придумать новый пароль.
-// Вход через Telegram — задел (Telegram WebApp), без Supabase.
+// Вход через Telegram: при подключённом Supabase — настоящий (виджет/
+// WebApp initData проверяются на сервере, см. worker/index.js), иначе
+// прежний демо-режим (только localStorage).
 // Бэкенд-регистрация (брокеры/планы) живёт отдельно в registration.js.
 
 (function () {
@@ -220,19 +222,52 @@
         });
     };
 
+    // Обмен подтверждённых Telegram-данных на настоящую сессию Supabase
+    // (проверка подписи — на сервере, см. worker/index.js).
+    function telegramCloudLogin(payload) {
+        toast('Входим через Telegram…');
+        window.supa.signInWithTelegram(payload).then(function (r) {
+            if (!r.ok) { toast(r.error, true); return; }
+            successAndGo('Вход выполнен через Telegram');
+        });
+    }
+
     // ---- Вход через Telegram ----
     window.homeTelegramLogin = function () {
         haptic('medium');
         var tg = window.Telegram && window.Telegram.WebApp;
-        var user = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+        var waUser = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
 
-        if (user) {
+        // ===== Облако подключено — настоящий вход =====
+        if (cloudOn()) {
+            if (tg && tg.initData) {
+                // Открыто внутри Telegram (WebApp) — initData уже подписан ботом.
+                telegramCloudLogin({ mode: 'webapp', initData: tg.initData });
+                return;
+            }
+            if (window.Telegram && window.Telegram.Login && window.TELEGRAM_BOT_ID) {
+                // Обычный браузер — попап входа через Telegram Login Widget.
+                window.Telegram.Login.auth(
+                    { bot_id: window.TELEGRAM_BOT_ID },
+                    function (user) {
+                        if (!user) { toast('Вход через Telegram отменён', true); return; }
+                        telegramCloudLogin({ mode: 'widget', user: user });
+                    }
+                );
+                return;
+            }
+            toast('Вход через Telegram пока не настроен', true);
+            return;
+        }
+
+        // ===== Демо-режим (ключи Supabase не заданы) =====
+        if (waUser) {
             // Приложение открыто внутри Telegram — пользователь уже авторизован.
             try {
                 localStorage.setItem('home_profile_v1', JSON.stringify({
-                    name: [user.first_name, user.last_name].filter(Boolean).join(' '),
-                    telegram_id: user.id,
-                    username: user.username || null,
+                    name: [waUser.first_name, waUser.last_name].filter(Boolean).join(' '),
+                    telegram_id: waUser.id,
+                    username: waUser.username || null,
                     createdAt: Date.now()
                 }));
             } catch (e) { /* no-op */ }
@@ -245,8 +280,7 @@
         }
 
         // Открыто в обычном браузере: ведём в Telegram-бот для авторизации.
-        // BOT_USERNAME можно задать глобально (window.TG_BOT_USERNAME) при деплое.
-        var bot = window.TG_BOT_USERNAME;
+        var bot = window.TELEGRAM_BOT_USERNAME;
         if (bot) {
             var link = 'https://t.me/' + bot;
             if (tg && typeof tg.openTelegramLink === 'function') tg.openTelegramLink(link);
