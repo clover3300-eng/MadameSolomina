@@ -150,7 +150,11 @@ begin
         new.created_at := old.created_at;
     end if;
 
-    if (new.role is distinct from old.role or new.banned is distinct from old.banned)
+    -- auth.uid() пустой у прямых запросов (SQL Editor, service_role) — это доверенный
+    -- доступ в обход сайта, его не ограничиваем (иначе некому назначить первого админа).
+    -- Обычный пользователь через сайт всегда авторизован, для него auth.uid() не пустой.
+    if auth.uid() is not null
+       and (new.role is distinct from old.role or new.banned is distinct from old.banned)
        and not public.is_admin() then
         raise exception 'Менять роль и блокировку может только администратор';
     end if;
