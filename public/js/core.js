@@ -262,6 +262,11 @@ window._selectedPlan = 'trial';
 
 
     function updateRatesDisplay() {
+    // Живые цифры дня на обложке Главной (#panel-home, см. js/home-register.js)
+    var hcKey = document.getElementById('hcStatKey');
+    if (hcKey) hcKey.innerText = ratesData.keyRate;
+    var hcOfz = document.getElementById('hcStatOfz');
+    if (hcOfz) hcOfz.innerText = ratesData.ofz10;
     document.getElementById('val-key-rate').innerText = ratesData.keyRate;
     document.getElementById('val-deposit-rate').innerText = ratesData.depositRate;
     document.getElementById('val-inflation').innerText = ratesData.inflation;

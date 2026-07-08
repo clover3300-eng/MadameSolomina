@@ -60,6 +60,29 @@
         if (label && lbl) lbl.textContent = label;
     }
 
+    // ---- Модалка входа (#hsAuthOverlay в <body>) ----
+    // Форма-«телефон» больше не живёт на Главной: обложка открывает её
+    // кнопкой «Вход», recovery-ссылка из письма — автоматически.
+    window.hsOpenAuth = function (mode) {
+        var ov = el('hsAuthOverlay');
+        if (!ov) return;
+        if (mode) window.homeAuthMode(mode);
+        if (!ov.hidden) return;
+        ov.hidden = false;
+        // класс .open на следующий кадр — иначе transition не сыграет
+        requestAnimationFrame(function () { ov.classList.add('open'); });
+        haptic('medium');
+    };
+    window.hsCloseAuth = function () {
+        var ov = el('hsAuthOverlay');
+        if (!ov || ov.hidden) return;
+        ov.classList.remove('open');
+        setTimeout(function () { ov.hidden = true; }, 280);
+    };
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') window.hsCloseAuth();
+    });
+
     // ---- Переключение «Регистрация / Вход / Новый пароль» ----
     window.homeAuthMode = function (mode) {
         if (mode !== 'register' && mode !== 'login' && mode !== 'recovery') return;
@@ -133,6 +156,7 @@
         haptic('success');
         toast(msg);
         setTimeout(function () {
+            window.hsCloseAuth();
             if (typeof window.switchTab === 'function') window.switchTab('calc');
         }, 900);
     }
@@ -276,13 +300,22 @@
         // Пришли по ссылке «сброс пароля» из письма
         if (kind === 'recovery') {
             if (typeof window.switchTab === 'function') window.switchTab('home');
-            window.homeAuthMode('recovery');
+            window.hsOpenAuth('recovery');
             toast('Придумайте новый пароль');
             return;
         }
+        // Кнопка на обложке: гостю — «Вход», вошедшему — «В кабинет»
+        var coverBtn = el('hcAuthBtn');
+        var authed = !!(window.supa && window.supa.isAuthed());
+        if (coverBtn) {
+            coverBtn.textContent = authed ? 'В кабинет' : 'Вход';
+            coverBtn.onclick = authed
+                ? function () { if (typeof window.switchTab === 'function') window.switchTab('portfolios'); }
+                : function () { window.hsOpenAuth('login'); };
+        }
         // Уже вошли — форма говорит об этом, а не предлагает регистрацию
         var foot = el('hsFoot');
-        if (foot && window.supa && window.supa.isAuthed() && authMode !== 'recovery') {
+        if (foot && authed && authMode !== 'recovery') {
             var email = (window.supa.profile && window.supa.profile.email) ||
                         (window.supa.session.user && window.supa.session.user.email) || '';
             foot.innerHTML = 'Вы вошли как <b>' + String(email).replace(/[<>&]/g, '') + '</b> · ' +
@@ -294,4 +327,38 @@
     }
 
     if (window.supa) window.supa.onChange(renderCloudState);
+})();
+
+// =============================================
+// HOME COVER — живые цифры дня на обложке
+// =============================================
+// Ставка ЦБ и доходность ОФЗ приходят из ratesData: updateRatesDisplay
+// (js/core.js) дублирует значения в #hcStatKey/#hcStatOfz при каждом
+// обновлении. Здесь — только дневное изменение IMOEX из MOEX ISS.
+(function () {
+    'use strict';
+
+    var IMOEX_URL = 'https://iss.moex.com/iss/engines/stock/markets/index/securities.json' +
+        '?iss.meta=off&securities=IMOEX&iss.only=marketdata&marketdata.columns=SECID,LASTCHANGEPRC';
+
+    function loadImoex() {
+        var elV = document.getElementById('hcStatImoex');
+        if (!elV) return;
+        fetch(IMOEX_URL)
+            .then(function (r) { return r.json(); })
+            .then(function (j) {
+                var md = j && j.marketdata;
+                if (!md || !md.data || !md.data.length) return;
+                var v = md.data[0][md.columns.indexOf('LASTCHANGEPRC')];
+                if (v == null || isNaN(v)) return;
+                var sign = v > 0 ? '+' : (v < 0 ? '−' : '');
+                elV.textContent = sign + Math.abs(v).toFixed(2).replace('.', ',') + '%';
+                elV.classList.toggle('pos', v > 0);
+                elV.classList.toggle('neg', v < 0);
+            })
+            .catch(function () { /* биржа недоступна — остаётся «—» */ });
+    }
+
+    loadImoex();
+    setInterval(loadImoex, 60000);
 })();
