@@ -534,7 +534,7 @@ function switchTab(tabId) {
     });
 
     // Update breadcrumb in top bar
-    var crumbMap = { dashboard: 'Главная', calc: 'Параметры', portfolio: 'Портфель', portfolios: 'Портфели', rebalance: 'Ребаланс', market: 'Рынок', 'market-bonds': 'Терминал', 'market-stocks': 'Терминал', monthly: 'Ежемесячный доход', backtest: 'Тест портфеля' };
+    var crumbMap = { dashboard: 'Главная', calc: 'Параметры', portfolio: 'Портфель', portfolios: 'Портфели', rebalance: 'Ребаланс', market: 'Рынок', 'market-bonds': 'Терминал', 'market-stocks': 'Терминал', monthly: 'Ежемесячный доход', backtest: 'Тест портфеля', admin: 'Админка' };
     var crumb = document.getElementById('topBarCrumb');
     var crumbText = document.getElementById('topBarCrumbText');
     if (crumb && crumbText) {

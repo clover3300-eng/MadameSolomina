@@ -92,7 +92,8 @@
         // Объединённая вкладка терминала (Акции ↔ Облигации внутри)
         'market-stocks': { name: 'Терминал', icon: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M9 10v10"/>' },
         monthly:   { name: 'Ежемесячный доход', icon: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 2v4"/><path d="M16 2v4"/>' },
-        backtest:  { name: 'Тест портфеля',  icon: '<path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/>' }
+        backtest:  { name: 'Тест портфеля',  icon: '<path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/>' },
+        admin:     { name: 'Админка',        icon: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>' }
     };
     function updateDockActive(tabId) {
         document.querySelectorAll('#mobileDock [data-tab]').forEach(function(btn) {

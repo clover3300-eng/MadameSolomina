@@ -1,17 +1,19 @@
 // =============================================
 // HOME AUTH — стартовая сплит-карточка (регистрация/вход)
 // =============================================
-// Лёгкая клиентская форма на приветственной вкладке:
-//   • переключатель «Регистрация / Вход» (одна форма, два режима),
-//   • базовая валидация + сохранение в localStorage (демо),
-//   • показ/скрытие пароля,
-//   • вход через Telegram (использует Telegram WebApp, если есть).
+// Форма на приветственной вкладке. Два режима работы:
+//   · Supabase подключён (js/supabase-config.js) — настоящие
+//     регистрация/вход/сброс пароля через window.supa;
+//   · ключей нет — прежнее демо-сохранение в localStorage.
+// Плюс третий вид формы 'recovery': пользователь пришёл по ссылке
+// «сброс пароля» из письма — просим придумать новый пароль.
+// Вход через Telegram — задел (Telegram WebApp), без Supabase.
 // Бэкенд-регистрация (брокеры/планы) живёт отдельно в registration.js.
 
 (function () {
     'use strict';
 
-    var authMode = 'register'; // 'register' | 'login'
+    var authMode = 'register'; // 'register' | 'login' | 'recovery'
 
     // Безопасный тост: переиспользуем showDashToast, иначе мягкий фолбэк.
     function toast(msg, isError) {
@@ -31,49 +33,84 @@
         } catch (e) { /* no-op */ }
     }
 
-    // ---- Переключение «Регистрация / Вход» ----
+    function el(id) { return document.getElementById(id); }
+    function cloudOn() { return !!(window.supa && window.supa.enabled); }
+
+    // Сообщение под формой: err — красное, ok — зелёное (класс в home-register.css)
+    function note(msg, isOk) {
+        var box = el('homeRegError');
+        if (!box) return;
+        box.textContent = msg;
+        box.classList.toggle('ok', !!isOk);
+        box.classList.add('show');
+    }
+    function clearNote() {
+        var box = el('homeRegError');
+        if (box) { box.classList.remove('show'); box.classList.remove('ok'); }
+    }
+
+    function setBusy(busy, label) {
+        var btn = el('hsSubmit');
+        var lbl = el('hsSubmitLabel');
+        if (!btn) return;
+        btn.disabled = !!busy;
+        btn.classList.toggle('is-busy', !!busy);
+        if (label && lbl) lbl.textContent = label;
+    }
+
+    // ---- Переключение «Регистрация / Вход / Новый пароль» ----
     window.homeAuthMode = function (mode) {
-        if (mode !== 'register' && mode !== 'login') return;
+        if (mode !== 'register' && mode !== 'login' && mode !== 'recovery') return;
         if (mode === authMode) return;
         authMode = mode;
         haptic('medium');
 
         var isReg = mode === 'register';
-        var el = function (id) { return document.getElementById(id); };
+        var isRec = mode === 'recovery';
 
         var tabReg = el('hsTabRegister');
         var tabLogin = el('hsTabLogin');
         if (tabReg) tabReg.classList.toggle('active', isReg);
-        if (tabLogin) tabLogin.classList.toggle('active', !isReg);
+        if (tabLogin) tabLogin.classList.toggle('active', mode === 'login');
 
         var title = el('hsAuthTitle');
-        if (title) title.textContent = isReg ? 'Создайте аккаунт' : 'С возвращением!';
+        if (title) title.textContent = isRec ? 'Новый пароль' : (isReg ? 'Создайте аккаунт' : 'С возвращением!');
 
         var nameField = el('hsNameField');
         if (nameField) nameField.classList.toggle('hidden', !isReg);
+        var emailField = el('hsEmailField');
+        if (emailField) emailField.classList.toggle('hidden', isRec);
 
         var hint = el('hsPassHint');
         if (hint) hint.style.display = isReg ? '' : 'none';
 
+        // «Забыли пароль?» — только в режиме входа и только с подключённым облаком
+        var forgot = el('hsForgot');
+        if (forgot) forgot.style.display = (mode === 'login' && cloudOn()) ? '' : 'none';
+
         var label = el('hsSubmitLabel');
-        if (label) label.textContent = isReg ? 'Создать аккаунт' : 'Войти';
+        if (label) label.textContent = isRec ? 'Сохранить пароль' : (isReg ? 'Создать аккаунт' : 'Войти');
 
         var foot = el('hsFoot');
         if (foot) {
-            foot.innerHTML = isReg
-                ? 'Уже есть аккаунт? <a class="hr-link" onclick="homeAuthMode(\'login\')">Войти</a>'
-                : 'Нет аккаунта? <a class="hr-link" onclick="homeAuthMode(\'register\')">Создать</a>';
+            if (isRec) {
+                foot.innerHTML = 'Вспомнили старый? <a class="hr-link" onclick="homeAuthMode(\'login\')">Войти</a>';
+            } else if (isReg) {
+                foot.innerHTML = 'Уже есть аккаунт? <a class="hr-link" onclick="homeAuthMode(\'login\')">Войти</a>';
+            } else {
+                foot.innerHTML = 'Нет аккаунта? <a class="hr-link" onclick="homeAuthMode(\'register\')">Создать</a>';
+            }
         }
 
-        // Сбрасываем ошибку и «выполненное» состояние кнопки при смене режима.
-        var errBox = el('homeRegError');
-        if (errBox) errBox.classList.remove('show');
+        // Сбрасываем сообщение и «выполненное» состояние кнопки при смене режима.
+        clearNote();
         var btn = el('hsSubmit');
-        if (btn) btn.classList.remove('is-done');
+        if (btn) { btn.classList.remove('is-done'); btn.disabled = false; }
 
         var form = el('homeRegForm');
         if (form && form.password) {
-            form.password.setAttribute('autocomplete', isReg ? 'new-password' : 'current-password');
+            form.password.setAttribute('autocomplete', mode === 'login' ? 'current-password' : 'new-password');
+            if (isRec) form.password.value = '';
         }
     };
 
@@ -87,29 +124,69 @@
         btn.setAttribute('aria-label', show ? 'Скрыть пароль' : 'Показать пароль');
     };
 
-    // ---- Отправка формы (регистрация или вход) ----
+    // ---- Успех: галочка на кнопке и переход в приложение ----
+    function successAndGo(msg) {
+        var btn = el('hsSubmit');
+        if (btn) { btn.classList.add('is-done'); btn.disabled = false; el('hsSubmitLabel').textContent = 'Готово ✓'; }
+        haptic('success');
+        toast(msg);
+        setTimeout(function () {
+            if (typeof window.switchTab === 'function') window.switchTab('calc');
+        }, 900);
+    }
+
+    // ---- Отправка формы ----
     window.homeRegisterSubmit = function (event) {
         if (event) event.preventDefault();
-        var form = document.getElementById('homeRegForm');
-        var errBox = document.getElementById('homeRegError');
+        var form = el('homeRegForm');
         if (!form) return false;
 
         var isReg = authMode === 'register';
+        var isRec = authMode === 'recovery';
         var name = (form.name.value || '').trim();
         var email = (form.email.value || '').trim();
         var pass = form.password.value || '';
 
-        function fail(msg) {
-            if (errBox) { errBox.textContent = msg; errBox.classList.add('show'); }
+        clearNote();
+        if (isReg && name.length < 2) { note('Введите имя'); return false; }
+        if (!isRec && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { note('Введите корректный email'); return false; }
+        if (pass.length < 6) { note('Пароль — минимум 6 символов'); return false; }
+
+        // ===== Облако подключено — настоящая авторизация =====
+        if (cloudOn()) {
+            if (isRec) {
+                setBusy(true, 'Сохраняем…');
+                window.supa.updatePassword(pass).then(function (r) {
+                    setBusy(false, 'Сохранить пароль');
+                    if (!r.ok) { note(r.error); return; }
+                    successAndGo('Пароль обновлён — вы вошли в аккаунт');
+                });
+            } else if (isReg) {
+                setBusy(true, 'Создаём аккаунт…');
+                window.supa.signUp(name, email, pass).then(function (r) {
+                    setBusy(false, 'Создать аккаунт');
+                    if (!r.ok) { note(r.error); return; }
+                    if (r.needConfirm) {
+                        haptic('success');
+                        // переключаем на «Вход» (homeAuthMode чистит сообщение — пишем после)
+                        window.homeAuthMode('login');
+                        note('Почти готово! Мы отправили письмо на ' + email + ' — подтвердите почту и войдите.', true);
+                    } else {
+                        successAndGo('Аккаунт создан, ' + name + '!');
+                    }
+                });
+            } else {
+                setBusy(true, 'Входим…');
+                window.supa.signIn(email, pass).then(function (r) {
+                    setBusy(false, 'Войти');
+                    if (!r.ok) { note(r.error); return; }
+                    successAndGo('Вход выполнен');
+                });
+            }
             return false;
         }
-        if (errBox) errBox.classList.remove('show');
 
-        if (isReg && name.length < 2) return fail('Введите имя');
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail('Введите корректный email');
-        if (pass.length < 6) return fail('Пароль — минимум 6 символов');
-
-        // Демо-сохранение профиля (без передачи пароля наружу).
+        // ===== Демо-режим (ключи Supabase не заданы) =====
         try {
             var saved = {};
             if (!isReg) {
@@ -122,16 +199,25 @@
             }));
         } catch (e) { /* приватный режим — не критично */ }
 
-        // Успех: визуальный отклик на кнопке, затем переход в терминал.
-        var btn = form.querySelector('.hr-submit');
-        if (btn) { btn.classList.add('is-done'); btn.innerHTML = 'Готово ✓'; }
-        haptic('success');
-        toast(isReg ? ('Аккаунт создан, ' + name + '!') : 'Вход выполнен');
-
-        setTimeout(function () {
-            if (typeof window.switchTab === 'function') window.switchTab('calc');
-        }, 900);
+        successAndGo(isReg ? ('Аккаунт создан, ' + name + '!') : 'Вход выполнен');
         return false;
+    };
+
+    // ---- «Забыли пароль?» ----
+    window.homeForgotPassword = function () {
+        if (!cloudOn()) return;
+        var form = el('homeRegForm');
+        var email = form ? (form.email.value || '').trim() : '';
+        clearNote();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            note('Введите email в поле выше — и мы пришлём ссылку для сброса');
+            return;
+        }
+        window.supa.resetPassword(email).then(function (r) {
+            if (!r.ok) { note(r.error); return; }
+            haptic('success');
+            note('Ссылка для сброса пароля отправлена на ' + email, true);
+        });
     };
 
     // ---- Вход через Telegram ----
@@ -170,4 +256,28 @@
 
         toast('Откройте приложение через Telegram, чтобы войти', true);
     };
+
+    // ---- Реакция на состояние облака ----
+    function renderCloudState(kind) {
+        // Пришли по ссылке «сброс пароля» из письма
+        if (kind === 'recovery') {
+            if (typeof window.switchTab === 'function') window.switchTab('home');
+            window.homeAuthMode('recovery');
+            toast('Придумайте новый пароль');
+            return;
+        }
+        // Уже вошли — форма говорит об этом, а не предлагает регистрацию
+        var foot = el('hsFoot');
+        if (foot && window.supa && window.supa.isAuthed() && authMode !== 'recovery') {
+            var email = (window.supa.profile && window.supa.profile.email) ||
+                        (window.supa.session.user && window.supa.session.user.email) || '';
+            foot.innerHTML = 'Вы вошли как <b>' + String(email).replace(/[<>&]/g, '') + '</b> · ' +
+                '<a class="hr-link" onclick="switchTab(\'portfolios\')">К портфелям</a>';
+        }
+        // Показ «Забыли пароль?» при уже выбранном режиме входа
+        var forgot = el('hsForgot');
+        if (forgot) forgot.style.display = (authMode === 'login' && cloudOn()) ? '' : 'none';
+    }
+
+    if (window.supa) window.supa.onChange(renderCloudState);
 })();

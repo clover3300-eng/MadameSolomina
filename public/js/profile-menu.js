@@ -35,17 +35,44 @@
     ];
 
     // ---------- хранилище ----------
+    // Точки подмены на Supabase сработали (2026-07): при живой сессии
+    // профиль приходит из window.supa, локальный режим остаётся фолбэком.
     function readJSON(key) {
         try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; }
     }
-    function getProfile() { return readJSON(LS_PROFILE); }               // null = гость
+    function cloudOn() { return !!(window.supa && window.supa.enabled && window.supa.isAuthed()); }
+    function getProfile() {                                              // null = гость
+        if (cloudOn()) {
+            var pr = window.supa.profile || {};
+            return {
+                name: pr.name || '',
+                email: pr.email || (window.supa.session.user && window.supa.session.user.email) || '',
+                createdAt: pr.created_at ? Date.parse(pr.created_at) : Date.now(),
+                cloud: true
+            };
+        }
+        return readJSON(LS_PROFILE);
+    }
     function saveProfile(patch) {
+        if (cloudOn()) {
+            window.supa.updateProfile(patch).then(function (r) {
+                if (!r.ok) { toast(r.error, true); return; }
+                if (r.emailPending) toast('Подтвердите новый email — письмо уже в ящике');
+                renderIdentity();
+            });
+            return;
+        }
         var cur = getProfile() || {};
         var next = Object.assign({}, cur, patch);
         if (!next.createdAt) next.createdAt = Date.now();
         try { localStorage.setItem(LS_PROFILE, JSON.stringify(next)); } catch (e) {}
     }
     function logout() {
+        if (cloudOn()) {
+            // supa.signOut дожимает синхронизацию, чистит устройство и перезагружает
+            window.supa.signOut();
+            return;
+        }
         try { localStorage.removeItem(LS_PROFILE); } catch (e) {}
         saveSettings({ firstName: null, lastName: null });
     }
@@ -243,7 +270,24 @@
         else { ava.classList.add('guest'); ava.innerHTML = IC.user; }
         hub.querySelector('#phName').textContent = p ? (name || 'Инвестор') : 'Гость';
         hub.querySelector('#phMail').textContent = p ? (p.email || (p.username ? '@' + p.username : '')) : 'Аккаунт не создан';
-        hub.dataset.authState = p ? 'local-user' : 'local-guest';
+        var isCloud = !!(p && p.cloud);
+        hub.dataset.authState = isCloud ? 'cloud-user' : (p ? 'local-user' : 'local-guest');
+
+        // Пилюля состояния + подпись в футере: облако ↔ локально
+        var pill = hub.querySelector('#phPill');
+        if (pill) {
+            pill.innerHTML = '<i></i>' + (isCloud ? 'облако' : 'локально');
+            pill.classList.toggle('cloud', isCloud);
+            pill.title = isCloud
+                ? 'Аккаунт подключён: портфели и настройки синхронизируются, вход доступен с любого устройства.'
+                : 'Данные хранятся в этом браузере. Синхронизация и вход с любого устройства появятся после подключения базы данных.';
+        }
+        var phNote = hub.querySelector('#phNote');
+        if (phNote) {
+            phNote.textContent = isCloud
+                ? 'Данные синхронизируются с облаком — можно входить с любого устройства.'
+                : 'Задел под личный кабинет — данные пока хранятся в этом браузере.';
+        }
 
         // сабтайтл «Профиль»
         var subProf = hub.querySelector('#phSubProf');
@@ -274,7 +318,15 @@
         // футер
         var foot = hub.querySelector('#phFootBtn');
         if (p) {
-            foot.innerHTML = '<button class="ph-out" type="button" id="phLogout">' + IC.out + '<span>Выйти</span></button>';
+            var adminBtn = (window.supa && window.supa.isAdmin())
+                ? '<button class="ph-adm" type="button" id="phAdmin" title="Открыть админку">' + IC.shield + '<span>Админка</span></button>'
+                : '';
+            foot.innerHTML = adminBtn + '<button class="ph-out" type="button" id="phLogout">' + IC.out + '<span>Выйти</span></button>';
+            var adm = foot.querySelector('#phAdmin');
+            if (adm) adm.addEventListener('click', function () {
+                closeHub();
+                if (typeof window.switchTab === 'function') window.switchTab('admin');
+            });
             foot.querySelector('#phLogout').addEventListener('click', onLogout);
         } else {
             foot.innerHTML = '<button class="ph-in" type="button" id="phLogin">' + IC.userPlus + '<span>Войти</span></button>';

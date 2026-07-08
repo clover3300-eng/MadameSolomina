@@ -358,6 +358,25 @@
     .rb5-body { padding: 12px 14px 22px; }
     .rb5-hpill--stat { flex: 1 1 100%; justify-content: center; }
     .rb5-head-r { margin-left: 0; width: 100%; justify-content: flex-start; gap: 8px; }
+
+    /* ========================================================
+       9. АДМИНКА (вход — через пункт «Админка» в шторке меню)
+       ======================================================== */
+    .adm-root { padding: 4px 12px 90px; }
+    .adm-top { flex-wrap: wrap; }
+    .adm-kpis { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .adm-cols { grid-template-columns: 1fr; }
+    /* таблицы: горизонтальная прокрутка вместо ужимания колонок */
+    .adm-uhead, .adm-urow { grid-template-columns: minmax(190px, 2fr) 82px 84px 88px 100px 64px 26px; }
+    .adm-card { overflow-x: auto; padding: 14px; }
+    .adm-uhead, .adm-urow, .adm-ehead, .adm-erow { min-width: 640px; }
+    .adm-users-bar { flex-wrap: wrap; }
+    .adm-search { max-width: none; width: 100%; }
+    /* карточка пользователя — почти во весь экран */
+    #admModal { padding: 12px 8px; }
+    .adm-m-card { max-height: 94vh; padding: 18px 16px 16px; border-radius: 22px; }
+    .adm-m-info { grid-template-columns: 1fr 1fr; }
+    .adm-m-danger { flex-direction: column; align-items: flex-start; }
 }
 
 /* ============================================================

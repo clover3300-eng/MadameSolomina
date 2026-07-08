@@ -42,6 +42,7 @@
     <link rel="stylesheet" href="css/calc-r5.css?v=11">
     <link rel="stylesheet" href="css/home-register.css?v=9">
     <link rel="stylesheet" href="css/profile-menu.css?v=2">
+    <link rel="stylesheet" href="css/admin.css?v=1">
     <link rel="stylesheet" href="css/typography-tokens.css?v=1">
     <link rel="stylesheet" href="css/desktop-zoom.css?v=4">
     <!-- Мобильный слой (≤1023px) — всегда ПОСЛЕДНИЙ, перебивает всё -->
@@ -51,6 +52,8 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Supabase (UMD, self-hosted): defer в <head> выполняется ДО defer-скриптов внизу body -->
+    <script src="js/vendor/supabase.js?v=1" defer></script>
     
 
 
@@ -134,6 +137,11 @@
             <button class="sb-item" data-tab="backtest" onclick="switchTab('backtest')" title="Тест портфеля">
                 <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg>
                 <span class="sb-label">Тест</span>
+            </button>
+            <!-- Админка: скрыта до подтверждения роли admin (показ — gateNav в js/admin.js) -->
+            <button class="sb-item" id="sbAdminBtn" data-tab="admin" style="display:none" onclick="switchTab('admin')" title="Админка">
+                <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <span class="sb-label">Админка</span>
             </button>
         </div>
         </div><!-- /sbPanel -->
@@ -296,7 +304,7 @@
                                     <svg class="hr-ficon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                                 </span>
                             </label>
-                            <label class="hr-field">
+                            <label class="hr-field" id="hsEmailField">
                                 <span class="hr-label">Email</span>
                                 <span class="hr-inputwrap">
                                     <input class="hr-input" type="email" name="email" autocomplete="email" placeholder="you@example.com" required>
@@ -312,6 +320,8 @@
                                     </button>
                                 </span>
                             </label>
+                            <!-- «Забыли пароль?» — показывается в режиме входа при подключённом Supabase -->
+                            <div class="hr-forgot" id="hsForgot" style="display:none"><a class="hr-link" onclick="homeForgotPassword()">Забыли пароль?</a></div>
                             <div class="hr-error" id="homeRegError" role="alert"></div>
 
                             <button class="hr-submit" type="submit" id="hsSubmit">
@@ -615,6 +625,13 @@
             <div id="btResults"></div>
 
           </div><!-- /bt2-wrap -->
+        </div>
+
+        <!-- ===== TAB: АДМИНКА (только для profiles.role = 'admin') =====
+             Контент целиком рендерится из js/admin.js; карточка пользователя —
+             модалка #admModal в <body> (паттерн stockDetailCard/pfOverlay) -->
+        <div id="panel-admin" class="tab-panel">
+            <div id="admRoot" class="adm-root"></div>
         </div>
 
     </div><!-- /contentArea -->
@@ -2186,8 +2203,14 @@
 <script src="js/market-heatmap.js?v=32" defer></script>
 <script src="js/market-livebar.js?v=2" defer></script>
 <script src="js/portfolios.js?v=52" defer></script>
-<script src="js/home-register.js?v=2" defer></script>
-<script src="js/profile-menu.js?v=2" defer></script>
+<!-- Облако: конфиг + клиент ДО home-register/profile-menu (они смотрят window.supa),
+     cloud-sync и admin — после; route-hash по-прежнему ПОСЛЕДНИЙ -->
+<script src="js/supabase-config.js?v=1" defer></script>
+<script src="js/supabase-client.js?v=1" defer></script>
+<script src="js/home-register.js?v=3" defer></script>
+<script src="js/profile-menu.js?v=3" defer></script>
+<script src="js/cloud-sync.js?v=1" defer></script>
+<script src="js/admin.js?v=1" defer></script>
 <script src="js/route-hash.js?v=1" defer></script>
 </body>
 </html>

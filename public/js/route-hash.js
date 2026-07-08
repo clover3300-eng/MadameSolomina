@@ -14,7 +14,7 @@
     // 'dashboard' временно исключён — раздел скрыт (см. goHome в webapp-tabs.js)
     var VALID = ['home', 'portfolios', 'calc', 'portfolio',
                  'rebalance', 'market', 'market-stocks', 'market-bonds',
-                 'monthly', 'backtest'];
+                 'monthly', 'backtest', 'admin'];
 
     function tabFromPath() {
         var t = location.pathname.replace(/^\//, '').replace(/\/$/, '');
