@@ -11,5 +11,5 @@
 // данным ограничивает Row Level Security (см. supabase/schema.sql).
 // Секретный service_role ключ сюда вставлять НЕЛЬЗЯ НИКОГДА.
 
-window.SUPABASE_URL = '';
-window.SUPABASE_ANON_KEY = '';
+window.SUPABASE_URL = 'https://vgxtdekeoxlnbihnswct.supabase.co';
+window.SUPABASE_ANON_KEY = 'sb_publishable_mRHGD72sosD_KDyolGt7PA_ASz_0jaX';
