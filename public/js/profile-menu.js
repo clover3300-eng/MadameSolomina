@@ -41,6 +41,11 @@
         try { return JSON.parse(localStorage.getItem(key)) || null; } catch (e) { return null; }
     }
     function cloudOn() { return !!(window.supa && window.supa.enabled && window.supa.isAuthed()); }
+    // Технический email аккаунтов, заведённых через Telegram (id<telegram_id>@...,
+    // см. worker/index.js) — в интерфейсе его не показываем, поле остаётся пустым.
+    function isTechEmail(email) {
+        return typeof email === 'string' && email.toLowerCase().indexOf('@telegram.mstelegram.local') !== -1;
+    }
     function getProfile() {                                              // null = гость
         if (cloudOn()) {
             var pr = window.supa.profile || {};
@@ -269,7 +274,7 @@
         if (p && ini) { ava.classList.remove('guest'); ava.textContent = ini; }
         else { ava.classList.add('guest'); ava.innerHTML = IC.user; }
         hub.querySelector('#phName').textContent = p ? (name || 'Инвестор') : 'Гость';
-        hub.querySelector('#phMail').textContent = p ? (p.email || (p.username ? '@' + p.username : '')) : 'Аккаунт не создан';
+        hub.querySelector('#phMail').textContent = p ? (isTechEmail(p.email) ? '' : (p.email || (p.username ? '@' + p.username : ''))) : 'Аккаунт не создан';
         var isCloud = !!(p && p.cloud);
         hub.dataset.authState = isCloud ? 'cloud-user' : (p ? 'local-user' : 'local-guest');
 
@@ -306,7 +311,7 @@
                 '<button class="ph-save" type="button" id="phSaveProf">' + IC.check + 'Сохранить</button>';
             body.querySelector('#phFirst').value = n.first;
             body.querySelector('#phLast').value = n.last;
-            body.querySelector('#phEmail').value = p.email || '';
+            body.querySelector('#phEmail').value = isTechEmail(p.email) ? '' : (p.email || '');
             body.querySelector('#phSaveProf').addEventListener('click', onSaveProfile);
         } else {
             body.innerHTML =
