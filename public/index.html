@@ -34,12 +34,13 @@
     <link rel="stylesheet" href="css/portfolios.css?v=58">
     <link rel="stylesheet" href="css/rebal-r5.css?v=7">
     <link rel="stylesheet" href="css/monthly-panel.css?v=1">
-    <link rel="stylesheet" href="css/monthly-r5.css?v=4">
+    <link rel="stylesheet" href="css/monthly-r5.css?v=5">
     <link rel="stylesheet" href="css/stock-terminal.css?v=9">
     <link rel="stylesheet" href="css/bond-terminal.css?v=11">
     <link rel="stylesheet" href="css/table-tooltip.css?v=1">
     <link rel="stylesheet" href="css/market-heatmap.css?v=33">
     <link rel="stylesheet" href="css/calc-r5.css?v=11">
+    <link rel="stylesheet" href="css/calc-mode.css?v=1">
     <link rel="stylesheet" href="css/home-register.css?v=15">
     <link rel="stylesheet" href="css/site-bg.css?v=3">
     <link rel="stylesheet" href="css/profile-menu.css?v=4">
@@ -47,7 +48,7 @@
     <link rel="stylesheet" href="css/typography-tokens.css?v=1">
     <link rel="stylesheet" href="css/desktop-zoom.css?v=4">
     <!-- Мобильный слой (≤1023px) — всегда ПОСЛЕДНИЙ, перебивает всё -->
-    <link rel="stylesheet" href="css/mobile.css?v=3">
+    <link rel="stylesheet" href="css/mobile.css?v=4">
     
     <!-- Telegram WebApp API (fallback — works both in TG and browser) -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -121,11 +122,10 @@
                 </button>
                 <div class="sb-subs" id="sbSubs-calc">
                     <div class="sb-subs-wrap">
+                        <!-- «Ежемесячный доход» объединён с расчётом: тип портфеля
+                             выбирается карточками внутри вкладки (js/calc-mode.js) -->
                         <button class="sb-sub" data-sub="calc-portfolio" onclick="sbNavSub('calc-portfolio', event)">
                             <span class="sb-sub-bar"></span><span class="sb-sub-tx">Расчёт портфеля</span>
-                        </button>
-                        <button class="sb-sub" data-sub="monthly" onclick="sbNavSub('monthly', event)">
-                            <span class="sb-sub-bar"></span><span class="sb-sub-tx">Ежемесячный доход</span>
                         </button>
                     </div>
                 </div>
@@ -469,9 +469,13 @@
             <section class="mh-card" id="mhCard" aria-label="Тепловая карта индекса МосБиржи"></section>
         </div>
 
-        <!-- ===== TAB: ЕЖЕМЕСЯЧНЫЙ ДОХОД (баннер дохода + калькулятор) ===== -->
+        <!-- ===== ЕЖЕМЕСЯЧНЫЙ ДОХОД: вкладки больше нет =====
+             Калькулятор купонов (#calcAccordion) переносится в «Расчёт»
+             (js/calc-mode.js), switchTab('monthly') уводит в calc. Панель
+             остаётся в DOM: в скрытом #mkLeftRail живут тайлы котировок и
+             ставки — источники данных для дашборда/лайвбара (по id). -->
         <div id="panel-monthly" class="tab-panel">
-            <!-- MARKET CONTENT — injected from screen-interesting (баннер дохода + калькулятор) -->
+            <!-- MARKET CONTENT — injected from screen-interesting -->
             <div id="marketPanelContent"></div>
         </div>
 
@@ -1932,8 +1936,8 @@
           Создать портфель
         </button>
 
-        <!-- Виджет-переход к расчёту полного портфеля (оформление — mi5-акценты страницы) -->
-        <div class="ms-nav-widget mi5-calc-widget" onclick="switchTab('calc')">
+        <!-- Виджет-переключатель на смешанный режим расчёта (оформление — mi5-акценты) -->
+        <div class="ms-nav-widget mi5-calc-widget" onclick="if(window.cxSetMode)cxSetMode('mix')">
           <span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></span>
           <span class="tx"><b>Расчёт портфеля из акций и облигаций</b>
           <span>Хотите не только купоны, но и рост? Введите сумму — получите готовый портфель под вашу стратегию.</span></span>
@@ -2220,14 +2224,15 @@
 <script src="js/registration.js" defer></script>
 <script src="js/menu-controller.js" defer></script>
 <script src="js/vanguard-test.js" defer></script>
-<script src="js/webapp-tabs.js?v=12" defer></script>
+<script src="js/webapp-tabs.js?v=13" defer></script>
 <script src="js/top-search.js?v=1" defer></script>
 <script src="js/income-chart.js?v=1" defer></script>
 <script src="js/backtest.js?v=1" defer></script>
 <script src="js/app-state.js?v=1" defer></script>
 <script src="js/calc-r5.js?v=6" defer></script>
+<script src="js/calc-mode.js?v=1" defer></script>
 <script src="js/dashboard.js?v=5" defer></script>
-<script src="js/sidebar.js?v=3" defer></script>
+<script src="js/sidebar.js?v=4" defer></script>
 <script src="js/stock-terminal.js?v=6" defer></script>
 <script src="js/bond-terminal.js?v=7" defer></script>
 <script src="js/table-tooltip.js?v=1" defer></script>

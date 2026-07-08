@@ -91,7 +91,6 @@
         market:    { name: 'Рынок',          icon: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>' },
         // Объединённая вкладка терминала (Акции ↔ Облигации внутри)
         'market-stocks': { name: 'Терминал', icon: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M9 10v10"/>' },
-        monthly:   { name: 'Ежемесячный доход', icon: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 2v4"/><path d="M16 2v4"/>' },
         backtest:  { name: 'Тест портфеля',  icon: '<path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/>' },
         admin:     { name: 'Админка',        icon: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>' }
     };
@@ -116,6 +115,8 @@
         }
     }
     function renderHeaderBadge(tabId) {
+        // «Ежемесячный доход» объединён с расчётом — бейдж показываем расчётный
+        if (tabId === 'monthly') tabId = 'calc';
         var crumb = document.getElementById('topBarCrumb');
         if (!crumb) return;
         var s = hdrSections[tabId];
@@ -131,8 +132,9 @@
 
     // ===== Раскрывающиеся подразделы (Расчёт / Рынок) =====
     // Какая группа/подпункт активны для данной вкладки.
+    // 'monthly' объединён с расчётом (js/calc-mode.js) — легаси-вызовы маппятся на подпункт «Расчёт портфеля»
     var SB_GROUP_OF = { calc: 'calc', portfolio: 'calc', monthly: 'calc', market: 'market', 'market-bonds': 'market', 'market-stocks': 'market' };
-    var SB_SUB_OF   = { calc: 'calc-portfolio', portfolio: 'calc-portfolio', monthly: 'monthly', 'market-bonds': 'market-terminal', 'market-stocks': 'market-terminal' };
+    var SB_SUB_OF   = { calc: 'calc-portfolio', portfolio: 'calc-portfolio', monthly: 'calc-portfolio', 'market-bonds': 'market-terminal', 'market-stocks': 'market-terminal' };
 
     function sbGroupEl(group) { return document.querySelector('.sb-group[data-group="' + group + '"]'); }
 
@@ -156,7 +158,6 @@
     window.sbNavSub = function(sub, e) {
         if (e) e.stopPropagation();
         if (sub === 'calc-portfolio') { window.sbOpenGroup('calc'); switchToCalcOrPortfolio(); }
-        else if (sub === 'monthly')   { window.sbOpenGroup('calc'); switchTab('monthly'); }
         else if (sub === 'market-terminal') {
             // объединённый терминал: акции ↔ облигации переключаются внутри вкладки
             window.sbOpenGroup('market'); switchTab('market-stocks');
