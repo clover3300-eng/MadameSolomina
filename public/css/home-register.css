@@ -87,7 +87,7 @@ body.tab-home #hgHeatWrap { display: block; }
     width: 100%;
     box-sizing: border-box;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 380px;
+    grid-template-columns: minmax(0, 1fr) 460px;
     gap: 56px;
     padding: 8px 56px 30px 72px;
     --hs-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
@@ -207,7 +207,7 @@ body.tab-home #hgHeatWrap { display: block; }
     justify-self: end;
     width: 100%;
     max-height: 100%;
-    padding: 28px 26px 22px;
+    padding: 36px 36px 28px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -245,9 +245,9 @@ body.tab-home #hgHeatWrap { display: block; }
 }
 .hs-tab {
     flex: 1;
-    padding: 9px;
+    padding: 11px;
     font-family: 'Inter', sans-serif;
-    font-size: 12.5px;
+    font-size: 13.5px;
     font-weight: 600;
     color: #5a6a86;
     background: none;
@@ -266,28 +266,28 @@ body.tab-home #hgHeatWrap { display: block; }
 /* ---- Заголовок формы ---- */
 .hr-title {
     font-family: Georgia, 'Times New Roman', serif;
-    font-size: 26px;
+    font-size: 30px;
     font-weight: 400;
     line-height: 1.15;
     color: #161B27;
-    margin: 0 0 6px;
+    margin: 0 0 7px;
 }
 .hr-sub {
     font-family: 'Inter', sans-serif;
-    font-size: 11.5px;
+    font-size: 12.5px;
     line-height: 1.5;
     color: #7d8aa0;
-    margin: 0 0 18px;
+    margin: 0 0 22px;
     overflow-wrap: anywhere;
 }
 
 /* ---- Поля формы ---- */
-.hr-form { display: flex; flex-direction: column; gap: 11px; }
-.hr-field { display: flex; flex-direction: column; gap: 5px; text-align: left; }
+.hr-form { display: flex; flex-direction: column; gap: 14px; }
+.hr-field { display: flex; flex-direction: column; gap: 6px; text-align: left; }
 .hr-field.hidden { display: none; }
 .hr-label {
     font-family: var(--hs-mono, 'JetBrains Mono', Menlo, monospace);
-    font-size: 9px;
+    font-size: 9.5px;
     font-weight: 500;
     color: #8A94A6;
     text-transform: uppercase;
@@ -298,13 +298,13 @@ body.tab-home #hgHeatWrap { display: block; }
 .hr-input {
     width: 100%;
     box-sizing: border-box;
-    padding: 11px 40px 11px 14px;
+    padding: 14px 42px 14px 16px;
     font-family: var(--hs-mono, 'JetBrains Mono', Menlo, monospace);
-    font-size: 12.5px;
+    font-size: 13.5px;
     color: #2C364C;
     background: #fff;
     border: 1.2px solid #DFE5EE;
-    border-radius: 13px;
+    border-radius: 14px;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
     outline: none;
 }
@@ -371,15 +371,15 @@ body.tab-home #hgHeatWrap { display: block; }
 
 /* ---- Главная кнопка ---- */
 .hr-submit {
-    margin-top: 7px;
+    margin-top: 8px;
     width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    padding: 13px;
+    padding: 15px;
     font-family: 'Inter', sans-serif;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: #fff;
     background: linear-gradient(180deg, #1C222E 0%, #10151F 100%);
@@ -430,9 +430,9 @@ body.tab-home #hgHeatWrap { display: block; }
     align-items: center;
     justify-content: center;
     gap: 10px;
-    padding: 12px;
+    padding: 14px;
     font-family: 'Inter', sans-serif;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     color: #2C364C;
     background: #fff;
@@ -467,8 +467,8 @@ body.tab-home #hgHeatWrap { display: block; }
     padding-top: 14px;
     display: flex;
     align-items: center;
-    justify-content: flex-start;
-    text-align: left;
+    justify-content: center;
+    text-align: center;
     gap: 6px;
     font-family: var(--hs-mono, 'JetBrains Mono', Menlo, monospace);
     font-size: 9px;
