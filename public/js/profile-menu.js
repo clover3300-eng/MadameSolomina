@@ -53,6 +53,7 @@
                 name: pr.name || '',
                 email: pr.email || (window.supa.session.user && window.supa.session.user.email) || '',
                 telegramLinked: !!pr.telegram_id,
+                photo: pr.tg_photo_url || '',
                 createdAt: pr.created_at ? Date.parse(pr.created_at) : Date.now(),
                 cloud: true
             };
@@ -260,10 +261,17 @@
         var name = fullName();
         var ini = initials();
 
+        // аватар из Telegram: фото поверх инициалов (при ошибке загрузки
+        // картинка убирает себя — остаются инициалы на градиенте)
+        var photoImg = (p && p.photo)
+            ? '<img class="ph-photo" src="' + String(p.photo).replace(/"/g, '&quot;') + '" alt="" onerror="this.remove()">'
+            : '';
+
         // кнопка в шапке
-        if (p && ini) {
+        if (p && (ini || photoImg)) {
             btn.classList.remove('guest');
             btn.textContent = ini;
+            if (photoImg) btn.innerHTML = ini + photoImg;
         } else {
             btn.classList.add('guest');
             btn.innerHTML = IC.user;
@@ -272,8 +280,11 @@
 
         // шапка панели
         var ava = hub.querySelector('#phAva');
-        if (p && ini) { ava.classList.remove('guest'); ava.textContent = ini; }
-        else { ava.classList.add('guest'); ava.innerHTML = IC.user; }
+        if (p && (ini || photoImg)) {
+            ava.classList.remove('guest');
+            ava.textContent = ini;
+            if (photoImg) ava.innerHTML = ini + photoImg;
+        } else { ava.classList.add('guest'); ava.innerHTML = IC.user; }
         hub.querySelector('#phName').textContent = p ? (name || 'Инвестор') : 'Гость';
         hub.querySelector('#phMail').textContent = p ? (isTechEmail(p.email) ? '' : (p.email || (p.username ? '@' + p.username : ''))) : 'Аккаунт не создан';
         var isCloud = !!(p && p.cloud);

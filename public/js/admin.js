@@ -10,8 +10,8 @@
 //   · Пользователи — таблица + карточка: роль, бан, данные, события;
 //   · События     — журнал app_events с фильтрами и подгрузкой.
 // Опасные действия — двухшаговое подтверждение («Точно?»), как у
-// кнопки «Выйти» в кабинете. Полное удаление аккаунта возможно
-// только из Supabase Dashboard (service-ключ в браузер не кладём).
+// кнопки «Выйти» в кабинете. Полное удаление аккаунта — RPC
+// admin_delete_user (security definer, см. supabase/schema.sql).
 // Грузится после cloud-sync.js, до route-hash.js.
 
 (function () {
@@ -78,6 +78,12 @@
         var s = (bits[0] ? bits[0][0] : '') + (bits[1] ? bits[1][0] : '');
         return (s || n[0] || '?').toUpperCase();
     }
+    // фото из Telegram поверх инициалов (при ошибке загрузки удаляет себя)
+    function avaPhoto(p) {
+        return p.tg_photo_url
+            ? '<img class="adm-ava-img" src="' + esc(p.tg_photo_url) + '" alt="" onerror="this.remove()">'
+            : '';
+    }
     function isOnline(p) { return p.last_seen_at && (Date.now() - new Date(p.last_seen_at).getTime()) < 5 * 60 * 1000; }
     function isMe(p) { return supa().session && p.id === supa().session.user.id; }
 
@@ -90,7 +96,8 @@
         admin_role:             { t: 'Смена роли',        c: 'adm' },
         admin_ban:              { t: 'Блокировка',        c: 'ban' },
         admin_unban:            { t: 'Разблокировка',     c: 'adm' },
-        admin_clear_data:       { t: 'Очистка данных',    c: 'ban' }
+        admin_clear_data:       { t: 'Очистка данных',    c: 'ban' },
+        admin_delete_user:      { t: 'Аккаунт удалён',    c: 'ban' }
     };
     function evMeta(ev) { return EVENT_META[ev] || { t: ev, c: 'out' }; }
 
@@ -123,6 +130,7 @@
         copy: '<svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
         trash: '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
         ban: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>',
+        userX: '<svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="18" y1="8" x2="23" y2="13"/><line x1="23" y1="8" x2="18" y2="13"/></svg>',
         check: '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>'
     };
 
@@ -328,7 +336,7 @@
 
         // служебная строка
         h += '<div class="adm-foot-note">Администраторов: ' + admins + ' · Заблокировано: ' + banned +
-             ' · Полное удаление аккаунтов — только из Supabase Dashboard → Authentication.</div>';
+             ' · Удаление аккаунта — в карточке пользователя, раздел «Пользователи».</div>';
         return h;
     }
 
@@ -402,7 +410,7 @@
             var keys = byUser[p.id] || [];
             return '<div class="adm-urow' + (p.banned ? ' banned' : '') + '" data-act="open-user" data-id="' + p.id + '">' +
                 '<span class="adm-u-id">' +
-                    '<span class="adm-ava' + (p.role === 'admin' ? ' adm' : '') + '">' + esc(initialsOf(p)) + (isOnline(p) ? '<i class="adm-dot"></i>' : '') + '</span>' +
+                    '<span class="adm-ava' + (p.role === 'admin' ? ' adm' : '') + '">' + esc(initialsOf(p)) + avaPhoto(p) + (isOnline(p) ? '<i class="adm-dot"></i>' : '') + '</span>' +
                     '<span class="adm-u-nm"><b>' + esc(p.name || 'Без имени') + (isMe(p) ? ' <em>вы</em>' : '') + '</b><small>' + esc(p.email || '—') + '</small></span>' +
                 '</span>' +
                 '<span>' + roleBadge(p) + '</span>' +
@@ -531,7 +539,7 @@
 
         var h = '<button class="adm-m-x" data-act="close-modal" aria-label="Закрыть">' + IC.x + '</button>' +
             '<div class="adm-m-head">' +
-                '<span class="adm-ava big' + (p.role === 'admin' ? ' adm' : '') + '">' + esc(initialsOf(p)) + '</span>' +
+                '<span class="adm-ava big' + (p.role === 'admin' ? ' adm' : '') + '">' + esc(initialsOf(p)) + avaPhoto(p) + '</span>' +
                 '<div class="adm-m-id">' +
                     '<div class="adm-m-name">' + esc(p.name || 'Без имени') + (me ? ' <em>это вы</em>' : '') + '</div>' +
                     '<div class="adm-m-mail">' + esc(p.email || '—') + '</div>' +
@@ -594,10 +602,13 @@
         }
 
         // Опасная зона
+        var delDisabled = me ? 'Себя удалить нельзя'
+            : (p.role === 'admin' ? 'Сначала снимите роль администратора' : '');
         h += '<div class="adm-m-danger">' +
-            armBtn('clear-data', p.id, IC.trash, 'Очистить данные', me ? '' : '') +
-            '<span class="adm-m-danger-s">Сотрёт портфели и настройки пользователя из облака (без удаления аккаунта). ' +
-            'Удалить аккаунт целиком: Supabase Dashboard → Authentication → Users.</span>' +
+            armBtn('clear-data', p.id, IC.trash, 'Очистить данные', '') +
+            armBtn('delete-user', p.id, IC.userX, 'Удалить аккаунт', delDisabled) +
+            '<span class="adm-m-danger-s">«Очистить данные» стирает портфели и настройки из облака, аккаунт остаётся. ' +
+            '«Удалить аккаунт» удаляет пользователя целиком и безвозвратно.</span>' +
         '</div>';
 
         modal.querySelector('.adm-m-card').innerHTML = h;
@@ -611,7 +622,7 @@
         if (disabledReason) {
             return '<button class="adm-btn" disabled title="' + esc(disabledReason) + '">' + ic + label + '</button>';
         }
-        var danger = act === 'ban' || act === 'clear-data' || act === 'role-user';
+        var danger = act === 'ban' || act === 'clear-data' || act === 'role-user' || act === 'delete-user';
         return '<button class="adm-btn arm2' + (danger ? ' danger' : '') + '" data-act="' + act + '" data-id="' + id + '" data-label="' + esc(label) + '">' + ic + '<span>' + label + '</span></button>';
     }
 
@@ -646,6 +657,22 @@
                 if (modalUser && modalUser.id === id) { modalUser = res.data; renderModal(); }
                 supa().logEvent(evName, Object.assign({ target: id, target_email: res.data.email }, evMetaObj || {}));
                 toast(okMsg);
+                renderApp();
+            });
+    }
+
+    // Полное удаление: RPC admin_delete_user удаляет строку auth.users,
+    // каскад стирает профиль и данные; события остаются с user_id = null.
+    function deleteUser(id) {
+        var em = (D.profiles.filter(function (p) { return p.id === id; })[0] || {}).email;
+        client().rpc('admin_delete_user', { p_user_id: id })
+            .then(function (res) {
+                if (res.error) { toast(supa().errRu(res.error), true); return; }
+                D.profiles = D.profiles.filter(function (p) { return p.id !== id; });
+                D.dataMeta = D.dataMeta.filter(function (r) { return r.user_id !== id; });
+                closeModal();
+                supa().logEvent('admin_delete_user', { target: id, target_email: em });
+                toast('Аккаунт удалён');
                 renderApp();
             });
     }
@@ -702,6 +729,7 @@
             case 'ban': updateUserRow(id, { banned: true }, 'admin_ban', null, 'Пользователь заблокирован'); break;
             case 'unban': updateUserRow(id, { banned: false }, 'admin_unban', null, 'Пользователь разблокирован'); break;
             case 'clear-data': clearUserData(id); break;
+            case 'delete-user': deleteUser(id); break;
         }
     }
 

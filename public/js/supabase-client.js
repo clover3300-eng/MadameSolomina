@@ -240,7 +240,10 @@
                 if (!data || !data.ok) {
                     return { ok: false, error: (data && data.error) || 'Не удалось подтвердить Telegram' };
                 }
-                return client.rpc('link_telegram', { p_telegram_id: data.telegram.id }).then(function (res2) {
+                return client.rpc('link_telegram', {
+                    p_telegram_id: data.telegram.id,
+                    p_photo_url: data.telegram.photo_url || null
+                }).then(function (res2) {
                     if (res2.error) return { ok: false, error: errRu(res2.error) };
                     return loadProfile().then(function () { return { ok: true, telegram: data.telegram }; });
                 });

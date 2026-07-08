@@ -30,6 +30,7 @@ create table if not exists public.profiles (
 -- CREATE TABLE IF NOT EXISTS не трогает уже существующую таблицу —
 -- добавляем новые колонки явно, чтобы обновления схемы попадали и на неё.
 alter table public.profiles add column if not exists telegram_id bigint;
+alter table public.profiles add column if not exists tg_photo_url text;
 
 create unique index if not exists profiles_telegram_id_uidx
     on public.profiles (telegram_id) where telegram_id is not null;
@@ -104,12 +105,13 @@ language plpgsql security definer
 set search_path = public
 as $$
 begin
-    insert into public.profiles (id, email, name, telegram_id)
+    insert into public.profiles (id, email, name, telegram_id, tg_photo_url)
     values (
         new.id,
         new.email,
         coalesce(nullif(trim(new.raw_user_meta_data ->> 'name'), ''), split_part(new.email, '@', 1)),
-        nullif(new.raw_user_meta_data ->> 'telegram_id', '')::bigint
+        nullif(new.raw_user_meta_data ->> 'telegram_id', '')::bigint,
+        nullif(new.raw_user_meta_data ->> 'avatar_url', '')
     )
     on conflict (id) do nothing;
 
@@ -279,7 +281,10 @@ create policy app_events_insert on public.app_events
 -- set_config('app.telegram_link_verified', 'true', true) — «пропуск»
 -- для guard_profile_update() выше, действует только внутри этой функции.
 
-create or replace function public.link_telegram(p_telegram_id bigint)
+-- старая однопараметровая версия мешала бы новой (двусмысленность вызова)
+drop function if exists public.link_telegram(bigint);
+
+create or replace function public.link_telegram(p_telegram_id bigint, p_photo_url text default null)
 returns void
 language plpgsql security definer
 set search_path = public
@@ -297,12 +302,15 @@ begin
     end if;
 
     perform set_config('app.telegram_link_verified', 'true', true);
-    update public.profiles set telegram_id = p_telegram_id where id = auth.uid();
+    update public.profiles
+       set telegram_id  = p_telegram_id,
+           tg_photo_url = coalesce(p_photo_url, tg_photo_url)
+     where id = auth.uid();
     perform set_config('app.telegram_link_verified', 'false', true);
 end;
 $$;
 
-grant execute on function public.link_telegram(bigint) to authenticated;
+grant execute on function public.link_telegram(bigint, text) to authenticated;
 
 create or replace function public.unlink_telegram()
 returns void
@@ -315,7 +323,7 @@ begin
     end if;
 
     perform set_config('app.telegram_link_verified', 'true', true);
-    update public.profiles set telegram_id = null where id = auth.uid();
+    update public.profiles set telegram_id = null, tg_photo_url = null where id = auth.uid();
     perform set_config('app.telegram_link_verified', 'false', true);
 end;
 $$;
@@ -323,7 +331,38 @@ $$;
 grant execute on function public.unlink_telegram() to authenticated;
 
 
--- ===== 8. НАЗНАЧЕНИЕ ПЕРВОГО АДМИНИСТРАТОРА ==================
+-- ===== 8. УДАЛЕНИЕ ПОЛЬЗОВАТЕЛЯ АДМИНОМ ======================
+-- Вызывается из админки («Удалить аккаунт» в карточке пользователя).
+-- security definer выполняется от владельца (postgres), поэтому может
+-- удалить строку в auth.users — каскад стирает profiles и user_data,
+-- в app_events user_id становится null («удалённый аккаунт»).
+
+create or replace function public.admin_delete_user(p_user_id uuid)
+returns void
+language plpgsql security definer
+set search_path = public
+as $$
+begin
+    if not public.is_admin() then
+        raise exception 'Удалять пользователей может только администратор';
+    end if;
+
+    if p_user_id = auth.uid() then
+        raise exception 'Нельзя удалить собственный аккаунт';
+    end if;
+
+    if exists (select 1 from public.profiles where id = p_user_id and role = 'admin') then
+        raise exception 'Сначала снимите с пользователя роль администратора';
+    end if;
+
+    delete from auth.users where id = p_user_id;
+end;
+$$;
+
+grant execute on function public.admin_delete_user(uuid) to authenticated;
+
+
+-- ===== 9. НАЗНАЧЕНИЕ ПЕРВОГО АДМИНИСТРАТОРА ==================
 -- После того как зарегистрируетесь на сайте, выполните здесь же
 -- (подставив свой email):
 --

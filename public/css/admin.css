@@ -253,6 +253,8 @@
     box-shadow: 0 5px 12px -5px rgba(59, 130, 246, 0.55);
 }
 .adm-ava.big { width: 52px; height: 52px; font-size: 16px; border-radius: 18px; }
+/* фото из Telegram поверх инициалов (adm-dot идёт в DOM после — остаётся видимым) */
+.adm-ava-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
 .adm-dot {
     position: absolute; right: -1px; bottom: -1px;
     width: 10px; height: 10px; border-radius: 50%;
@@ -402,13 +404,14 @@ body.adm-modal-open { overflow: hidden; }
 .adm-pf-row .adm-mono { color: var(--text-slate, #64748B); }
 
 .adm-m-danger {
-    display: flex; align-items: center; gap: 12px;
+    display: flex; align-items: center; flex-wrap: wrap; gap: 9px 8px;
     margin-top: 18px; padding: 13px 14px;
     background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.18);
     border-radius: 14px;
 }
 .adm-m-danger .adm-btn { flex-shrink: 0; }
-.adm-m-danger-s { font-size: 11.5px; font-weight: 600; line-height: 1.5; color: var(--text-slate, #64748B); }
+/* описание — отдельной строкой под кнопками */
+.adm-m-danger-s { flex: 1 1 100%; font-size: 11.5px; font-weight: 600; line-height: 1.5; color: var(--text-slate, #64748B); }
 
 /* ===== ВХОД В АДМИНКУ ИЗ ЛИЧНОГО КАБИНЕТА ===== */
 .ph-adm {

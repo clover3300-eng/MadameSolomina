@@ -87,6 +87,19 @@ async function generateMagicLink(env, headers, email) {
     return { email: email, token_hash: tokenHash };
 }
 
+// Дозаполняем профиль телеграмными полями при входе: аватар мог смениться,
+// а у старых аккаунтов колонок telegram_id/tg_photo_url ещё не было.
+// Ошибка не должна ломать вход — молча пропускаем.
+async function updateTgPhoto(env, headers, filter, patch) {
+    try {
+        await fetch(env.SUPABASE_URL + '/rest/v1/profiles?' + filter, {
+            method: 'PATCH',
+            headers: headers,
+            body: JSON.stringify(patch)
+        });
+    } catch (e) { /* no-op */ }
+}
+
 async function findOrCreateTelegramUser(env, tgUser) {
     var headers = {
         apikey: env.SUPABASE_SERVICE_ROLE_KEY,
@@ -97,10 +110,14 @@ async function findOrCreateTelegramUser(env, tgUser) {
     // Аккаунт уже привязан (через «Привязать Telegram» в личном кабинете,
     // см. supabase/schema.sql link_telegram()) — входим именно в него,
     // с его настоящим email, а не заводим отдельный технический аккаунт.
-    var byIdUrl = env.SUPABASE_URL + '/rest/v1/profiles?select=email&telegram_id=eq.' + encodeURIComponent(tgUser.id);
+    var byIdUrl = env.SUPABASE_URL + '/rest/v1/profiles?select=id,email&telegram_id=eq.' + encodeURIComponent(tgUser.id);
     var byId = await fetch(byIdUrl, { headers: headers });
     var byIdRows = byId.ok ? await byId.json() : [];
     if (byIdRows.length) {
+        if (tgUser.photo_url) {
+            await updateTgPhoto(env, headers, 'id=eq.' + encodeURIComponent(byIdRows[0].id),
+                { tg_photo_url: tgUser.photo_url });
+        }
         return generateMagicLink(env, headers, byIdRows[0].email);
     }
 
@@ -138,6 +155,10 @@ async function findOrCreateTelegramUser(env, tgUser) {
             }
         }
     }
+
+    var patch = { telegram_id: tgUser.id };
+    if (tgUser.photo_url) patch.tg_photo_url = tgUser.photo_url;
+    await updateTgPhoto(env, headers, 'email=eq.' + encodeURIComponent(email), patch);
 
     return generateMagicLink(env, headers, email);
 }
