@@ -31,14 +31,14 @@
     border-radius: 7px;
 }
 /* интенсивность --k (0..1) зашита в фиксированном наборе в site-bg.js —
-   тот же тон, что у карты на Главной (мята 158 / клэй 44); вуаль ниже
-   приглушает чуть сильнее её, тут узор — фон за карточками, не акцент */
-.sbg-tile.up   { background: oklch(calc(0.955 - var(--k, 0) * 0.09) calc(0.014 + var(--k, 0) * 0.05) 158); }
-.sbg-tile.dn   { background: oklch(calc(0.955 - var(--k, 0) * 0.09) calc(0.014 + var(--k, 0) * 0.05) 44); }
-.sbg-tile.flat { background: oklch(0.955 0.006 250); }
+   тон как у карты на Главной (мята 158 / клэй 44), но приглушённее:
+   тут узор — тихий фон за карточками, а не акцент */
+.sbg-tile.up   { background: oklch(calc(0.975 - var(--k, 0) * 0.045) calc(0.008 + var(--k, 0) * 0.03) 158); }
+.sbg-tile.dn   { background: oklch(calc(0.975 - var(--k, 0) * 0.045) calc(0.008 + var(--k, 0) * 0.03) 44); }
+.sbg-tile.flat { background: oklch(0.968 0.004 250); }
 
 .sbg-scrim {
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.58) 100%);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.62) 0%, rgba(255, 255, 255, 0.8) 100%);
 }
