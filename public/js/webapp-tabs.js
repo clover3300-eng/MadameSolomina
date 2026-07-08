@@ -642,14 +642,11 @@ window.goHomeScreen = function() {
     document.body.classList.add('tab-home');
 };
 
-// Домик в навигации: на десктопе открывает Дашборд, на мобиле — приветствие.
-// Логотип «Madame Solomi'na» в шапке/сайдбаре всегда ведёт на приветствие (switchTab('home')).
+// Домик в навигации ведёт на приветствие. Дашборд временно скрыт полностью
+// (неактуален) — вернуть: switchTab('dashboard') на десктопе + 'dashboard'
+// в VALID у js/route-hash.js.
 window.goHome = function() {
-    if (window.matchMedia && window.matchMedia('(min-width: 1024px)').matches) {
-        switchTab('dashboard');
-    } else {
-        switchTab('home');
-    }
+    switchTab('home');
 };
 
 // Override openTerminal/openTerminalOrRegister

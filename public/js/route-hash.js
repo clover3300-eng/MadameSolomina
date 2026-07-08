@@ -11,7 +11,8 @@
 (function() {
     'use strict';
 
-    var VALID = ['home', 'dashboard', 'portfolios', 'calc', 'portfolio',
+    // 'dashboard' временно исключён — раздел скрыт (см. goHome в webapp-tabs.js)
+    var VALID = ['home', 'portfolios', 'calc', 'portfolio',
                  'rebalance', 'market', 'market-stocks', 'market-bonds',
                  'monthly', 'backtest'];
 
