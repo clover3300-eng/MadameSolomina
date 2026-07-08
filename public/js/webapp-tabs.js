@@ -651,16 +651,10 @@ window.openTerminal = function() { switchTab('calc'); };
 window.openTerminalOrRegister = function() { switchTab('calc'); };
 window.startCalculation = function() { switchTab('calc'); };
 
-// Кнопка Расчёт — если портфель уже рассчитан, открывает портфель
-// Повторное нажатие на Расчёт возвращает в форму ввода
+// Кнопка «Расчёт» всегда открывает форму расчёта: готовый смешанный портфель
+// теперь живёт в подвкладке «Смешанный портфель» сайдбара (calc-mode.js)
 function switchToCalcOrPortfolio() {
-    if (isPortfolioCalculated && currentTab !== 'calc') {
-        // Пришли с другой вкладки — показываем портфель
-        switchTab('portfolio');
-    } else {
-        // Уже на расчёте, или портфель не рассчитан — идём на форму
-        switchTab('calc');
-    }
+    switchTab('calc');
 }
 
 // Override calculateAndShowPortfolio to show right pane
@@ -734,8 +728,9 @@ window.calculateAndShowPortfolio = function() {
         const sumEl = document.getElementById('btCalcSummary');
         if (sumEl) sumEl.textContent = `${assets.bonds.length + assets.stocks.length} позиций: ${assets.bonds.length} ОФЗ, ${assets.stocks.length} акций.`;
 
-        // Переходим на вкладку Портфель
-        switchTab('portfolio');
+        // Переходим на вкладку Портфель (кроме тихого восстановления расчёта
+        // при загрузке страницы — см. mixRestore в calc-mode.js)
+        if (!window._cxSilentCalc) switchTab('portfolio');
         // Контент таблиц только что отрисован — пересчитываем геометрию ещё раз
         setTimeout(function() {
             window.pfSyncLeftEdge && window.pfSyncLeftEdge();
@@ -744,7 +739,7 @@ window.calculateAndShowPortfolio = function() {
             window.pfFitNumbers && window.pfFitNumbers();
         }, 60);
 
-        if (window.Telegram?.WebApp?.HapticFeedback) {
+        if (!window._cxSilentCalc && window.Telegram?.WebApp?.HapticFeedback) {
             window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
         }
     } catch(e) {

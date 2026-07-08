@@ -132,9 +132,13 @@
 
     // ===== Раскрывающиеся подразделы (Расчёт / Рынок) =====
     // Какая группа/подпункт активны для данной вкладки.
-    // 'monthly' объединён с расчётом (js/calc-mode.js) — легаси-вызовы маппятся на подпункт «Расчёт портфеля»
+    // 'monthly' объединён с расчётом (js/calc-mode.js). Подвкладки результатов:
+    // «Смешанный портфель» (calc-mix → вкладка portfolio) и «Ежемесячный доход»
+    // (calc-monthly → купонный режим calc); появляются после первого расчёта.
+    // Подсветку подпункта для вкладки calc уточняет по режиму обёртка
+    // sbSyncActive в calc-mode.js.
     var SB_GROUP_OF = { calc: 'calc', portfolio: 'calc', monthly: 'calc', market: 'market', 'market-bonds': 'market', 'market-stocks': 'market' };
-    var SB_SUB_OF   = { calc: 'calc-portfolio', portfolio: 'calc-portfolio', monthly: 'calc-portfolio', 'market-bonds': 'market-terminal', 'market-stocks': 'market-terminal' };
+    var SB_SUB_OF   = { calc: 'calc-portfolio', portfolio: 'calc-mix', monthly: 'calc-portfolio', 'market-bonds': 'market-terminal', 'market-stocks': 'market-terminal' };
 
     function sbGroupEl(group) { return document.querySelector('.sb-group[data-group="' + group + '"]'); }
 
@@ -157,7 +161,17 @@
     // Клик по подпункту
     window.sbNavSub = function(sub, e) {
         if (e) e.stopPropagation();
-        if (sub === 'calc-portfolio') { window.sbOpenGroup('calc'); switchToCalcOrPortfolio(); }
+        if (sub === 'calc-portfolio') {
+            // «Расчёт портфеля» = начать новый расчёт: карточки выбора типа
+            window.sbOpenGroup('calc');
+            if (window.cxSetMode) window.cxSetMode('choose');
+            switchTab('calc');
+        }
+        else if (sub === 'calc-mix') { window.sbOpenGroup('calc'); switchTab('portfolio'); }
+        else if (sub === 'calc-monthly') {
+            window.sbOpenGroup('calc');
+            if (window.cxGoMonthly) window.cxGoMonthly(); else switchTab('calc');
+        }
         else if (sub === 'market-terminal') {
             // объединённый терминал: акции ↔ облигации переключаются внутри вкладки
             window.sbOpenGroup('market'); switchTab('market-stocks');

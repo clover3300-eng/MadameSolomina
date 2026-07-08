@@ -23,6 +23,9 @@ function lsSave() {
             btTickers: btState ? btState.tickers : [],
             btSource: btState ? btState.source : 'calc',
             btManualCapital: (document.getElementById('btManualCapital') || {}).value || '',
+            // смешанный расчёт произведён — по этому флагу calc-mode.js тихо
+            // пересобирает портфель при загрузке (подвкладка «Смешанный портфель»)
+            calcDone: typeof isPortfolioCalculated !== 'undefined' ? !!isPortfolioCalculated : false,
             lastTab: currentTab || 'home',
             theme: document.body.classList.contains('dark-mode') ? 'dark' : 'light',
             ts: Date.now()
