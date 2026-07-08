@@ -1,23 +1,28 @@
 /* =========================================================
-   HOME COVER — «журнальная обложка» одним экраном
+   HOME COVER — манифест поверх живой карты рынка + «стекло»
    =========================================================
-   Белая карточка по центру пейзажа: манифест-заголовок (serif),
-   живые цифры дня (моно), две пилюли CTA и три шага-карточки
-   с мини-превью разделов. Форма входа/регистрации («телефон»
-   .hs-phone) живёт в модалке #hsAuthOverlay в конце <body> —
-   стили модалки в конце файла, вся тёплая гамма формы прежняя.
+   Одна широкая карточка: фоновый слой .hg-bg (тепловая карта IMOEX,
+   рисует js/home-register.js), белая вуаль .hg-scrim, слева манифест
+   .hg-main (serif + пилюля «Начать расчёт» + живой пульс IMOEX),
+   справа стеклянная колонна входа/регистрации .hg-auth (та же форма
+   hr-*, что жила в модалке, теперь в холодной палитре сайта).
    Загружается ПОСЛЕ site-layout.css и ПЕРЕД desktop-zoom.css. */
 
 /* ---- Один экран: панель заполняет контент-область без скролла ---- */
 @media (min-width: 1024px) {
     body.tab-home #panel-home { height: 100%; }
-    body.tab-home #panel-home.active { padding-bottom: 16px; box-sizing: border-box; }
+    body.tab-home #panel-home.active {
+        display: flex;
+        flex-direction: column;
+        padding-bottom: 16px;
+        box-sizing: border-box;
+    }
 }
 
 /* ---- Карточка-обложка ---- */
 .hs-card {
     width: 100%;
-    max-width: 880px;
+    max-width: 1120px;
     align-self: center;
     box-sizing: border-box;
     border-radius: 32px;
@@ -33,83 +38,103 @@
     to   { opacity: 1; transform: translateY(0); }
 }
 .hs-cover {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    padding: 52px 56px 36px;
-    /* моноширинный стек для цифр/подписей (как в «телефоне») */
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    flex: 1;
+    min-height: 540px;
+    max-height: 780px;
+    /* моноширинный стек для цифр/подписей */
     --hs-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
 }
-.hc-top {
+
+/* ---- Фон: живая тепловая карта IMOEX ---- */
+.hg-bg { position: absolute; inset: 0; }
+.hg-tile {
+    position: absolute;
+    box-sizing: border-box;
+    border-radius: 5px;
+    overflow: hidden;
     display: flex;
-    flex-direction: column;
-    align-items: center;
+    align-items: flex-end;
+    padding: 6px 8px;
+    font-family: var(--hs-mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    transition: left 0.6s ease, top 0.6s ease, width 0.6s ease, height 0.6s ease, background 0.6s ease;
+    /* интенсивность 0..1 в --k, тон — как у большой карты (мята 158 / клэй 44) */
+}
+.hg-tile.up   { background: oklch(calc(0.965 - var(--k, 0) * 0.10) calc(0.012 + var(--k, 0) * 0.055) 158); color: oklch(0.45 0.09 158); }
+.hg-tile.dn   { background: oklch(calc(0.965 - var(--k, 0) * 0.10) calc(0.012 + var(--k, 0) * 0.055) 44);  color: oklch(0.47 0.09 44); }
+.hg-tile.flat { background: oklch(0.958 0.006 250); color: oklch(0.55 0.02 250); }
+
+/* Вуаль: сильнее слева (под текстом), легче справа у стекла */
+.hg-scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg,
+        rgba(255, 255, 255, 0.86) 0%,
+        rgba(255, 255, 255, 0.66) 55%,
+        rgba(255, 255, 255, 0.42) 100%);
 }
 
-.hs-eyebrow {
+/* ---- Левая часть: манифест ---- */
+.hg-main {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 48px 30px 44px 52px;
+    min-width: 0;
+}
+.hg-brand {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.hg-brand-name {
     font-family: 'Inter', sans-serif;
-    font-size: 10px;
+    font-size: 15px;
+    color: #2C364C;
+    letter-spacing: 0.01em;
+}
+.hg-brand-sub {
+    font-family: 'Inter', sans-serif;
+    font-size: 9.5px;
     font-weight: 600;
     color: #5a6a86;
     text-transform: uppercase;
-    letter-spacing: 0.42em;
+    letter-spacing: 0.38em;
 }
 .hc-title {
-    margin: 18px 0 0;
+    margin: 20px 0 0;
     font-family: Georgia, 'Times New Roman', serif;
     font-size: 42px;
     font-weight: 400;
     line-height: 1.14;
-    color: #20242E;
+    color: #161B27;
     letter-spacing: -0.01em;
 }
 .hc-lead {
-    margin: 14px auto 0;
-    max-width: 430px;
+    margin: 16px 0 0;
+    max-width: 420px;
     font-family: 'Inter', sans-serif;
     font-size: 13.5px;
     line-height: 1.65;
-    color: #5d6b84;
+    color: #4E586B;
 }
 
-/* ---- Живые цифры дня ---- */
-.hc-stats {
-    display: flex;
-    justify-content: center;
-    gap: 44px;
-    margin-top: 26px;
-}
-.hc-stat {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-}
-.hc-stat-v {
-    font-family: var(--hs-mono);
-    font-size: 20px;
-    font-weight: 500;
-    color: #2C364C;
-    font-variant-numeric: tabular-nums;
-}
-.hc-stat-v.pos { color: #1f9d63; }
-.hc-stat-v.neg { color: #d23b4e; }
-.hc-stat-l {
-    font-family: var(--hs-mono);
-    font-size: 9.5px;
-    font-weight: 500;
-    color: #97907C;
-    text-transform: uppercase;
-    letter-spacing: 0.22em;
-}
-
-/* ---- Пилюли CTA ---- */
+/* ---- CTA + живой пульс IMOEX ---- */
 .hc-ctas {
     display: flex;
-    justify-content: center;
-    gap: 12px;
-    margin-top: 26px;
+    align-items: center;
+    gap: 14px;
+    margin-top: 28px;
+    flex-wrap: wrap;
 }
 .hc-cta {
     display: inline-flex;
@@ -122,7 +147,7 @@
     font-weight: 700;
     border-radius: 999px;
     cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
 }
 .hc-cta:active { transform: scale(0.97); }
 .hc-cta-dark {
@@ -136,250 +161,116 @@
     width: 15px;
     height: 15px;
     fill: none;
-    stroke: #4CAF6E;
+    stroke: #8FB3A0;
     stroke-width: 2.2;
     stroke-linecap: round;
     stroke-linejoin: round;
 }
-.hc-cta-ghost {
-    color: #20242E;
-    background: #fff;
-    border: 1.2px solid #E7DFCF;
-    box-shadow: 0 10px 24px -12px rgba(44, 54, 76, 0.18);
-}
-.hc-cta-ghost:hover { border-color: #D8CFBA; box-shadow: 0 14px 30px -12px rgba(44, 54, 76, 0.26); }
-
-/* ---- Три шага (концепт «01 → 02 → 03») ---- */
-.hc-steps {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
-    width: 100%;
-    margin-top: 34px;
-}
-.hc-step {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 14px 16px;
-    text-align: left;
-    background: #FDFBF5;
-    border: 1px solid #EDE5D4;
-    border-radius: 16px;
+.hg-live {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 16px;
+    font-family: var(--hs-mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: #4E586B;
+    background: rgba(255, 255, 255, 0.78);
+    border: 1px solid rgba(44, 54, 76, 0.12);
+    border-radius: 999px;
     cursor: pointer;
-    transition: transform 0.18s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    transition: border-color 0.2s ease, background 0.2s ease;
 }
-.hc-step:hover {
-    transform: translateY(-2px);
-    border-color: #D8CFBA;
-    box-shadow: 0 14px 30px -14px rgba(44, 54, 76, 0.30);
-}
-.hc-step-head {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-}
-.hc-step-num {
-    font-family: var(--hs-mono);
-    font-size: 10px;
-    font-weight: 500;
-    color: #B9B19E;
-    letter-spacing: 0.08em;
-}
-.hc-step-t {
-    font-family: 'Inter', sans-serif;
-    font-size: 12.5px;
-    font-weight: 600;
-    color: #2C364C;
-}
-/* Мини-превью раздела внутри шага */
-.hc-step-prev {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 38px;
-    box-sizing: border-box;
-    background: #fff;
-    border: 1px solid #F0EAD9;
-    border-radius: 10px;
-}
-/* 01 — столбики дохода */
-.hc-prev-bars { align-items: flex-end; gap: 3px; padding: 6px 0; }
-.hc-prev-bars i { display: block; width: 9px; border-radius: 2px; }
-.hc-prev-bars i:nth-child(1) { height: 10px; background: #9FE1CB; }
-.hc-prev-bars i:nth-child(2) { height: 15px; background: #5DCAA5; }
-.hc-prev-bars i:nth-child(3) { height: 20px; background: #1D9E75; }
-.hc-prev-bars i:nth-child(4) { height: 24px; background: #0F6E56; }
-/* 02 — кольцо распределения */
-.hc-prev-ring { gap: 8px; }
-.hc-prev-ring i {
-    display: block;
-    width: 20px;
-    height: 20px;
-    box-sizing: border-box;
-    border-radius: 50%;
-    border: 4px solid #1D9E75;
-    border-right-color: #9FE1CB;
-    border-bottom-color: #E7DFCF;
-}
-.hc-prev-ring span,
-.hc-prev-swap {
-    font-family: var(--hs-mono);
-    font-size: 9.5px;
-    font-weight: 500;
-    color: #97907C;
-    letter-spacing: 0.04em;
-}
+.hg-live:hover { border-color: rgba(44, 54, 76, 0.28); background: #fff; }
+.hg-live-pct { font-variant-numeric: tabular-nums; font-weight: 700; }
+.hg-live-pct.pos { color: #1f9d63; }
+.hg-live-pct.neg { color: #d23b4e; }
+.hg-live-upd { color: #9AA3B2; }
+.hg-live-upd:not(:empty)::before { content: "· "; }
 
-/* =========================================================
-   МОДАЛКА ВХОДА: #hsAuthOverlay в <body>
-   ========================================================= */
-.hs-auth-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 3000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.hs-auth-overlay[hidden] { display: none; }
-.hs-auth-backdrop {
-    position: absolute;
-    inset: 0;
-    background: rgba(20, 24, 31, 0.45);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    opacity: 0;
-    transition: opacity 0.25s ease;
-}
-.hs-auth-overlay.open .hs-auth-backdrop { opacity: 1; }
-.hs-auth {
+/* ---- Правая колонна: стекло ---- */
+.hg-auth {
     position: relative;
     z-index: 1;
-    opacity: 0;
-    transform: translateY(22px) scale(0.98);
-    transition: opacity 0.28s ease, transform 0.28s ease;
-    /* моноширинный стек для подписей/плейсхолдеров формы */
-    --hs-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
-}
-.hs-auth-overlay.open .hs-auth { opacity: 1; transform: none; }
-
-/* Корпус телефона: бежевая рамка (как на бывшей Главной) */
-.hs-phone {
-    position: relative;
-    width: min(356px, calc(100vw - 32px));
-    padding: 12px;
-    box-sizing: border-box;
-    background: #EDE7DC;
-    border: 1px solid rgba(44, 54, 76, 0.10);
-    border-radius: 46px;
-    box-shadow:
-        0 40px 90px -36px rgba(44, 54, 76, 0.50),
-        0 6px 18px rgba(44, 54, 76, 0.10),
-        inset 0 1px 0 rgba(255, 255, 255, 0.55);
-}
-/* Крестик закрытия — «кнопка» на корпусе */
-.hs-phone-close {
-    position: absolute;
-    top: -6px;
-    right: -6px;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    background: #14181F;
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 50%;
-    cursor: pointer;
-    box-shadow: 0 10px 24px -8px rgba(20, 24, 31, 0.5);
-    transition: transform 0.15s ease;
-}
-.hs-phone-close:hover { transform: scale(1.08); }
-.hs-phone-close svg {
-    width: 14px;
-    height: 14px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2.2;
-    stroke-linecap: round;
-}
-/* Экран телефона: тёплый белый; на низких окнах скроллится внутри */
-.hs-phone-screen {
-    display: flex;
-    box-sizing: border-box;
-    min-height: min(620px, calc(100vh - 160px));
-    max-height: calc(100vh - 120px);
-    overflow-y: auto;
+    margin: 16px 16px 16px 0;
     padding: 26px 24px 20px;
-    background: #FDFBF5;
-    border-radius: 35px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    scrollbar-width: none;
+    background: rgba(255, 255, 255, 0.74);
+    backdrop-filter: blur(16px) saturate(1.1);
+    -webkit-backdrop-filter: blur(16px) saturate(1.1);
+    border: 1px solid rgba(44, 54, 76, 0.10);
+    border-radius: 24px;
+    box-shadow: 0 24px 60px -30px rgba(44, 54, 76, 0.35);
 }
+.hg-auth::-webkit-scrollbar { display: none; }
 .hs-auth-inner {
     display: flex;
     flex-direction: column;
     width: 100%;
     min-width: 0;
+    flex: 1;
 }
 
 /* ---- Переключатель Регистрация / Вход ---- */
 .hs-tabs {
     display: flex;
     gap: 4px;
-    padding: 5px;
-    margin-bottom: 22px;
-    background: #EAE2D3;
-    border: 1px solid rgba(44, 54, 76, 0.04);
-    border-radius: 16px;
+    padding: 4px;
+    margin-bottom: 20px;
+    background: rgba(44, 54, 76, 0.07);
+    border-radius: 14px;
 }
 .hs-tab {
     flex: 1;
-    padding: 10px;
+    padding: 9px;
     font-family: 'Inter', sans-serif;
     font-size: 12.5px;
     font-weight: 600;
-    color: #8D8672;
+    color: #5a6a86;
     background: none;
     border: none;
-    border-radius: 12px;
+    border-radius: 11px;
     cursor: pointer;
     transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 .hs-tab.active {
     color: #fff;
     font-weight: 700;
-    background: #14181F;
+    background: #161B27;
     box-shadow: 0 10px 24px -8px rgba(20, 24, 31, 0.5);
 }
 
-/* ---- Заголовок (serif, как в референсе) ---- */
+/* ---- Заголовок формы ---- */
 .hr-title {
     font-family: Georgia, 'Times New Roman', serif;
-    font-size: 29px;
+    font-size: 26px;
     font-weight: 400;
     line-height: 1.15;
-    color: #20242E;
-    margin: 0 0 8px;
+    color: #161B27;
+    margin: 0 0 6px;
 }
 .hr-sub {
     font-family: 'Inter', sans-serif;
-    font-size: 12px;
+    font-size: 11.5px;
     line-height: 1.5;
     color: #7d8aa0;
-    margin: 0 0 20px;
+    margin: 0 0 18px;
+    overflow-wrap: anywhere;
 }
 
 /* ---- Поля формы ---- */
-.hr-form { display: flex; flex-direction: column; gap: 12px; }
-.hr-field { display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.hr-form { display: flex; flex-direction: column; gap: 11px; }
+.hr-field { display: flex; flex-direction: column; gap: 5px; text-align: left; }
 .hr-field.hidden { display: none; }
 .hr-label {
     font-family: var(--hs-mono);
-    font-size: 9.5px;
+    font-size: 9px;
     font-weight: 500;
-    color: #97907C;
+    color: #8A94A6;
     text-transform: uppercase;
     letter-spacing: 0.24em;
     padding-left: 2px;
@@ -388,58 +279,56 @@
 .hr-input {
     width: 100%;
     box-sizing: border-box;
-    padding: 12px 42px 12px 15px;
+    padding: 11px 40px 11px 14px;
     font-family: var(--hs-mono);
     font-size: 12.5px;
     color: #2C364C;
     background: #fff;
-    border: 1.2px solid #E7DFCF;
-    border-radius: 14px;
+    border: 1.2px solid #DFE5EE;
+    border-radius: 13px;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
     outline: none;
 }
-.hr-input::placeholder { color: #B9B19E; }
+.hr-input::placeholder { color: #A9B2C1; }
 .hr-input:focus {
-    border-color: #20242E;
-    box-shadow: 0 0 0 4px rgba(32, 36, 46, 0.08);
+    border-color: #161B27;
+    box-shadow: 0 0 0 4px rgba(22, 27, 39, 0.08);
 }
-/* Иконка в поле (справа) */
 .hr-ficon {
     position: absolute;
-    right: 15px;
+    right: 14px;
     top: 50%;
     transform: translateY(-50%);
-    width: 18px;
-    height: 18px;
+    width: 17px;
+    height: 17px;
     fill: none;
-    stroke: #CDC5B2;
+    stroke: #B9C2D0;
     stroke-width: 1.8;
     stroke-linecap: round;
     stroke-linejoin: round;
     pointer-events: none;
 }
-/* Глаз-переключатель видимости пароля */
 .hr-eye {
     position: absolute;
-    right: 6px;
+    right: 5px;
     top: 50%;
     transform: translateY(-50%);
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 34px;
-    height: 34px;
+    width: 32px;
+    height: 32px;
     background: none;
     border: none;
-    border-radius: 10px;
+    border-radius: 9px;
     cursor: pointer;
-    color: #CDC5B2;
+    color: #B9C2D0;
     transition: color 0.2s ease;
 }
-.hr-eye:hover { color: #8D8672; }
+.hr-eye:hover { color: #5a6a86; }
 .hr-eye svg {
-    width: 18px;
-    height: 18px;
+    width: 17px;
+    height: 17px;
     fill: none;
     stroke: currentColor;
     stroke-width: 1.8;
@@ -447,10 +336,12 @@
     stroke-linejoin: round;
 }
 
+.hr-forgot { text-align: right; margin-top: -3px; }
 .hr-error {
     display: none;
     font-family: 'Inter', sans-serif;
-    font-size: 12px;
+    font-size: 11.5px;
+    line-height: 1.45;
     color: #d23b4e;
     text-align: center;
     padding: 2px 0;
@@ -460,20 +351,20 @@
 
 /* ---- Главная кнопка ---- */
 .hr-submit {
-    margin-top: 8px;
+    margin-top: 7px;
     width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    padding: 14px;
+    padding: 13px;
     font-family: 'Inter', sans-serif;
     font-size: 13px;
     font-weight: 700;
     color: #fff;
     background: linear-gradient(180deg, #1C222E 0%, #10151F 100%);
     border: none;
-    border-radius: 17px;
+    border-radius: 15px;
     cursor: pointer;
     box-shadow: 0 16px 32px -10px rgba(16, 21, 31, 0.50);
     transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
@@ -481,12 +372,11 @@
 .hr-submit:hover { box-shadow: 0 20px 40px -10px rgba(16, 21, 31, 0.58); }
 .hr-submit:active { transform: scale(0.98); }
 .hr-submit.is-done { background: #1f9d63; box-shadow: 0 14px 34px rgba(31, 157, 99, 0.32); }
-/* Зелёная стрелка ↗ как в референсе */
 .hr-submit-arrow {
     width: 16px;
     height: 16px;
     fill: none;
-    stroke: #4CAF6E;
+    stroke: #8FB3A0;
     stroke-width: 2.2;
     stroke-linecap: round;
     stroke-linejoin: round;
@@ -497,8 +387,8 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    margin: 16px 0 14px;
-    color: #ABA38C;
+    margin: 14px 0 12px;
+    color: #8A94A6;
     font-family: var(--hs-mono);
     font-size: 9px;
     font-weight: 500;
@@ -510,50 +400,51 @@
     content: "";
     flex: 1;
     height: 1px;
-    background: #E7DFCE;
+    background: #DFE5EE;
 }
 
-/* ---- Кнопка Telegram: белая с синим самолётиком (как в референсе) ---- */
+/* ---- Кнопка Telegram ---- */
 .hr-tg {
     width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    padding: 13px;
+    padding: 12px;
     font-family: 'Inter', sans-serif;
     font-size: 13px;
     font-weight: 700;
-    color: #20242E;
+    color: #2C364C;
     background: #fff;
-    border: 1.2px solid #E7DFCF;
-    border-radius: 15px;
+    border: 1.2px solid #DFE5EE;
+    border-radius: 14px;
     cursor: pointer;
     box-shadow: 0 10px 24px -12px rgba(44, 54, 76, 0.18);
     transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 .hr-tg:hover {
-    border-color: #D8CFBA;
+    border-color: #B9C2D0;
     box-shadow: 0 14px 30px -12px rgba(44, 54, 76, 0.26);
 }
 .hr-tg:active { transform: scale(0.98); }
 .hr-tg-icon { width: 20px; height: 20px; fill: #2AABEE; }
 
-/* ---- Подвал экрана ---- */
+/* ---- Подвал колонны ---- */
 .hr-foot {
-    margin: 14px 0 0;
+    margin: 12px 0 0;
     text-align: center;
     font-family: 'Inter', sans-serif;
-    font-size: 12px;
+    font-size: 11.5px;
+    line-height: 1.5;
     color: #7d8aa0;
+    overflow-wrap: anywhere;
 }
-.hr-link { color: #3D9C5A; font-weight: 700; cursor: pointer; }
+.hr-link { color: #3D8464; font-weight: 700; cursor: pointer; }
 .hr-link:hover { text-decoration: underline; }
 
-/* Замочек прижат к низу «экрана», выравнивание влево — как в референсе */
 .hr-policy {
     margin: auto 0 0;
-    padding-top: 16px;
+    padding-top: 14px;
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -562,7 +453,7 @@
     font-family: var(--hs-mono);
     font-size: 9px;
     font-weight: 500;
-    color: #ABA38C;
+    color: #8A94A6;
     text-transform: uppercase;
     letter-spacing: 0.18em;
 }
@@ -572,56 +463,54 @@
     stroke: currentColor; fill: none; stroke-width: 2;
 }
 
+/* ---- Вид «вы вошли» (вместо формы) ---- */
+.hg-authed {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    justify-content: center;
+    gap: 6px;
+}
+.hg-authed[hidden] { display: none; }
+.hg-authed .hr-submit { margin-top: 14px; }
+.hg-authed-calc { margin-top: 8px; }
+.hg-authed .hr-policy { margin-top: auto; }
+
 /* =====================  ТЁМНАЯ ТЕМА  ===================== */
 .dark-mode .hs-card {
     background: #131A29;
     border-color: rgba(255, 255, 255, 0.08);
     box-shadow: 0 34px 80px -28px rgba(0, 0, 0, 0.6);
 }
-.dark-mode .hs-eyebrow { color: #7c8db0; }
+.dark-mode .hg-tile.up   { background: oklch(calc(0.28 + var(--k, 0) * 0.14) calc(0.02 + var(--k, 0) * 0.07) 158); color: oklch(0.75 0.08 158); }
+.dark-mode .hg-tile.dn   { background: oklch(calc(0.28 + var(--k, 0) * 0.14) calc(0.02 + var(--k, 0) * 0.07) 44);  color: oklch(0.76 0.08 44); }
+.dark-mode .hg-tile.flat { background: oklch(0.27 0.012 250); color: oklch(0.62 0.02 250); }
+.dark-mode .hg-scrim {
+    background: linear-gradient(90deg,
+        rgba(19, 26, 41, 0.88) 0%,
+        rgba(19, 26, 41, 0.68) 55%,
+        rgba(19, 26, 41, 0.46) 100%);
+}
+.dark-mode .hg-brand-name { color: #F1F5F9; }
+.dark-mode .hg-brand-sub { color: #7c8db0; }
 .dark-mode .hc-title { color: #F1F5F9; }
-.dark-mode .hc-lead { color: #94a3b8; }
-.dark-mode .hc-stat-v { color: #F1F5F9; }
-.dark-mode .hc-stat-v.pos { color: #4ade80; }
-.dark-mode .hc-stat-v.neg { color: #f87171; }
-.dark-mode .hc-stat-l { color: #7f8fae; }
+.dark-mode .hc-lead { color: #a9b6cc; }
 .dark-mode .hc-cta-dark { background: linear-gradient(180deg, #33405f 0%, #232c44 100%); }
-.dark-mode .hc-cta-ghost {
-    color: #e2e8f0;
-    background: rgba(15, 23, 42, 0.6);
+.dark-mode .hg-live {
+    color: #cbd5e1;
+    background: rgba(15, 23, 42, 0.66);
     border-color: rgba(255, 255, 255, 0.14);
-    box-shadow: none;
 }
-.dark-mode .hc-cta-ghost:hover { border-color: rgba(255, 255, 255, 0.26); }
-.dark-mode .hc-step {
-    background: rgba(15, 23, 42, 0.6);
+.dark-mode .hg-live:hover { background: rgba(15, 23, 42, 0.9); border-color: rgba(255, 255, 255, 0.26); }
+.dark-mode .hg-live-pct.pos { color: #4ade80; }
+.dark-mode .hg-live-pct.neg { color: #f87171; }
+.dark-mode .hg-live-upd { color: #64748b; }
+.dark-mode .hg-auth {
+    background: rgba(15, 22, 38, 0.72);
     border-color: rgba(255, 255, 255, 0.10);
+    box-shadow: 0 24px 60px -30px rgba(0, 0, 0, 0.7);
 }
-.dark-mode .hc-step:hover { border-color: rgba(255, 255, 255, 0.22); box-shadow: 0 14px 30px -14px rgba(0, 0, 0, 0.6); }
-.dark-mode .hc-step-num { color: #64748b; }
-.dark-mode .hc-step-t { color: #e2e8f0; }
-.dark-mode .hc-step-prev {
-    background: rgba(15, 23, 42, 0.8);
-    border-color: rgba(255, 255, 255, 0.08);
-}
-.dark-mode .hc-prev-ring i { border-bottom-color: rgba(255, 255, 255, 0.16); }
-.dark-mode .hc-prev-ring span,
-.dark-mode .hc-prev-swap { color: #7f8fae; }
-
-.dark-mode .hs-auth-backdrop { background: rgba(2, 6, 16, 0.6); }
-.dark-mode .hs-phone {
-    background: #1E2739;
-    border-color: rgba(255, 255, 255, 0.10);
-    box-shadow:
-        0 40px 90px -36px rgba(0, 0, 0, 0.75),
-        inset 0 1px 0 rgba(255, 255, 255, 0.06);
-}
-.dark-mode .hs-phone-close { background: #2a3550; }
-.dark-mode .hs-phone-screen { background: #0F1626; }
-.dark-mode .hs-tabs {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.05);
-}
+.dark-mode .hs-tabs { background: rgba(255, 255, 255, 0.07); }
 .dark-mode .hs-tab { color: #8ea0bf; }
 .dark-mode .hs-tab.active { background: #2a3550; color: #fff; }
 .dark-mode .hr-title { color: #F1F5F9; }
@@ -662,12 +551,24 @@
         overflow-y: auto !important;
         overflow-x: hidden !important;
     }
-    .hs-cover { padding: 36px 22px 26px; border-radius: 26px; }
+    .hs-cover {
+        grid-template-columns: 1fr;
+        min-height: 0;
+        max-height: none;
+        border-radius: 26px;
+    }
+    /* На телефоне карта-фон слишком пёстрая под текстом — вуаль почти глухая */
+    .hg-scrim {
+        background: linear-gradient(180deg,
+            rgba(255, 255, 255, 0.90) 0%,
+            rgba(255, 255, 255, 0.78) 100%);
+    }
+    .dark-mode .hg-scrim {
+        background: linear-gradient(180deg,
+            rgba(19, 26, 41, 0.92) 0%,
+            rgba(19, 26, 41, 0.82) 100%);
+    }
+    .hg-main { padding: 34px 24px 8px; }
     .hc-title { font-size: 30px; }
-    .hc-stats { gap: 22px; flex-wrap: wrap; }
-    .hc-stat-v { font-size: 17px; }
-    .hc-ctas { flex-wrap: wrap; }
-    .hc-steps { grid-template-columns: 1fr; margin-top: 26px; }
-    .hs-phone-screen { padding: 24px 20px 20px; }
-    .hs-phone-close { top: 2px; right: 2px; }
+    .hg-auth { margin: 18px 16px 16px; overflow-y: visible; }
 }
