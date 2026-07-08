@@ -1,11 +1,12 @@
 /* =========================================================
-   HOME COVER — манифест поверх живой карты рынка + «стекло»
+   HOME — манифест и «стекло» ВО ВЕСЬ ЭКРАН (без карточки)
    =========================================================
-   Одна широкая карточка: фоновый слой .hg-bg (тепловая карта IMOEX,
-   рисует js/home-register.js), белая вуаль .hg-scrim, слева манифест
-   .hg-main (serif + пилюля «Начать расчёт» + живой пульс IMOEX),
-   справа стеклянная колонна входа/регистрации .hg-auth (та же форма
-   hr-*, что жила в модалке, теперь в холодной палитре сайта).
+   Фон — фикс-слой #hgHeatWrap в начале #appShell: живая тепловая
+   карта IMOEX (.hg-bg рисует js/home-register.js) + вуаль .hg-scrim,
+   виден только на Главной (body.tab-home). Контент вкладки — грид
+   .hg-cover: слева манифест .hg-main (serif + «Начать расчёт» +
+   живой пульс IMOEX), справа стеклянная колонна входа/регистрации
+   .hg-auth (форма hr-* из бывшей модалки, логика не менялась).
    Загружается ПОСЛЕ site-layout.css и ПЕРЕД desktop-zoom.css. */
 
 /* ---- Один экран: панель заполняет контент-область без скролла ---- */
@@ -14,53 +15,44 @@
     body.tab-home #panel-home.active {
         display: flex;
         flex-direction: column;
-        padding-bottom: 16px;
         box-sizing: border-box;
     }
+    /* Тёмная тема: рейка сайдбара — static грид-элемент, фикс-карта легла бы
+       поверх неё. Поднимаем как в светлой (см. #homeBg в site-layout.css). */
+    body.dark-mode.tab-home #sideBar { position: relative; z-index: 50; }
 }
+/* Тёмная тема: контент над фикс-картой (z-index:1); в светлой это уже
+   делает правило body:not(.dark-mode) #contentArea в site-layout.css */
+body.dark-mode.tab-home #contentArea { z-index: 2; }
 
-/* ---- Карточка-обложка ---- */
-.hs-card {
-    width: 100%;
-    max-width: 1120px;
-    align-self: center;
-    box-sizing: border-box;
-    border-radius: 32px;
-    background: #FFFFFF;
-    border: 1px solid rgba(44, 54, 76, 0.08);
-    box-shadow:
-        0 34px 80px -28px rgba(44, 54, 76, 0.35),
-        0 2px 10px rgba(44, 54, 76, 0.05);
-    animation: hsCardIn 0.6s ease-out both;
-}
-@keyframes hsCardIn {
-    from { opacity: 0; transform: translateY(18px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-.hs-cover {
-    position: relative;
+/* ---- Фон на всю страницу: живая тепловая карта IMOEX ---- */
+/* fixed через top/right/bottom/left (не 100vw/100vh) — корректно под
+   body{zoom:0.9}. Поверх пейзажа #homeBg (оба z-index:1, этот позже в
+   DOM), под сайдбаром (50), шапкой (100) и контентом. */
+#hgHeatWrap {
+    display: none;
+    position: fixed;
+    top: 0; right: 0; bottom: 0; left: 0;
+    z-index: 1;
+    pointer-events: none;
     overflow: hidden;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 340px;
-    flex: 1;
-    min-height: 540px;
-    max-height: 780px;
-    /* моноширинный стек для цифр/подписей */
+    background: linear-gradient(180deg, #F1F6FB 0%, #F9FAFC 100%);
+    /* моноширинный стек для тикеров на плитках */
     --hs-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
 }
+body.tab-home #hgHeatWrap { display: block; }
 
-/* ---- Фон: живая тепловая карта IMOEX ---- */
 .hg-bg { position: absolute; inset: 0; }
 .hg-tile {
     position: absolute;
     box-sizing: border-box;
-    border-radius: 5px;
+    border-radius: 6px;
     overflow: hidden;
     display: flex;
     align-items: flex-end;
-    padding: 6px 8px;
+    padding: 7px 9px;
     font-family: var(--hs-mono);
-    font-size: 10px;
+    font-size: 10.5px;
     font-weight: 500;
     letter-spacing: 0.04em;
     transition: left 0.6s ease, top 0.6s ease, width 0.6s ease, height 0.6s ease, background 0.6s ease;
@@ -70,25 +62,41 @@
 .hg-tile.dn   { background: oklch(calc(0.965 - var(--k, 0) * 0.10) calc(0.012 + var(--k, 0) * 0.055) 44);  color: oklch(0.47 0.09 44); }
 .hg-tile.flat { background: oklch(0.958 0.006 250); color: oklch(0.55 0.02 250); }
 
-/* Вуаль: сильнее слева (под текстом), легче справа у стекла */
+/* Вуаль: плотнее слева (под манифестом), легче справа у стекла,
+   плюс лёгкое высветление сверху — под прозрачной шапкой */
 .hg-scrim {
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg,
-        rgba(255, 255, 255, 0.86) 0%,
-        rgba(255, 255, 255, 0.66) 55%,
-        rgba(255, 255, 255, 0.42) 100%);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 26%),
+        linear-gradient(90deg,
+            rgba(255, 255, 255, 0.88) 0%,
+            rgba(255, 255, 255, 0.60) 52%,
+            rgba(255, 255, 255, 0.34) 100%);
+}
+
+/* ---- Контент вкладки: грид на весь экран ---- */
+.hg-cover {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 380px;
+    gap: 56px;
+    padding: 8px 56px 30px 72px;
+    --hs-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
 }
 
 /* ---- Левая часть: манифест ---- */
 .hg-main {
     position: relative;
-    z-index: 1;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 48px 30px 44px 52px;
     min-width: 0;
+    padding-bottom: 4vh; /* оптический центр чуть выше геометрического */
 }
 .hg-brand {
     display: flex;
@@ -98,33 +106,33 @@
 }
 .hg-brand-name {
     font-family: 'Inter', sans-serif;
-    font-size: 15px;
+    font-size: 16px;
     color: #2C364C;
     letter-spacing: 0.01em;
 }
 .hg-brand-sub {
     font-family: 'Inter', sans-serif;
-    font-size: 9.5px;
+    font-size: 10px;
     font-weight: 600;
     color: #5a6a86;
     text-transform: uppercase;
     letter-spacing: 0.38em;
 }
 .hc-title {
-    margin: 20px 0 0;
+    margin: 22px 0 0;
     font-family: Georgia, 'Times New Roman', serif;
-    font-size: 42px;
+    font-size: clamp(42px, 4.4vw, 60px);
     font-weight: 400;
-    line-height: 1.14;
+    line-height: 1.12;
     color: #161B27;
     letter-spacing: -0.01em;
 }
 .hc-lead {
-    margin: 16px 0 0;
-    max-width: 420px;
+    margin: 18px 0 0;
+    max-width: 470px;
     font-family: 'Inter', sans-serif;
-    font-size: 13.5px;
-    line-height: 1.65;
+    font-size: 14.5px;
+    line-height: 1.7;
     color: #4E586B;
 }
 
@@ -133,7 +141,7 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    margin-top: 28px;
+    margin-top: 32px;
     flex-wrap: wrap;
 }
 .hc-cta {
@@ -141,9 +149,9 @@
     align-items: center;
     justify-content: center;
     gap: 9px;
-    padding: 13px 26px;
+    padding: 14px 28px;
     font-family: 'Inter', sans-serif;
-    font-size: 13px;
+    font-size: 13.5px;
     font-weight: 700;
     border-radius: 999px;
     cursor: pointer;
@@ -170,7 +178,7 @@
     display: inline-flex;
     align-items: center;
     gap: 7px;
-    padding: 10px 16px;
+    padding: 11px 17px;
     font-family: var(--hs-mono);
     font-size: 11px;
     font-weight: 500;
@@ -191,9 +199,11 @@
 /* ---- Правая колонна: стекло ---- */
 .hg-auth {
     position: relative;
-    z-index: 1;
-    margin: 16px 16px 16px 0;
-    padding: 26px 24px 20px;
+    align-self: center;
+    justify-self: end;
+    width: 100%;
+    max-height: 100%;
+    padding: 28px 26px 22px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -203,8 +213,13 @@
     backdrop-filter: blur(16px) saturate(1.1);
     -webkit-backdrop-filter: blur(16px) saturate(1.1);
     border: 1px solid rgba(44, 54, 76, 0.10);
-    border-radius: 24px;
+    border-radius: 26px;
     box-shadow: 0 24px 60px -30px rgba(44, 54, 76, 0.35);
+    animation: hgAuthIn 0.6s ease-out both;
+}
+@keyframes hgAuthIn {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 .hg-auth::-webkit-scrollbar { display: none; }
 .hs-auth-inner {
@@ -267,7 +282,7 @@
 .hr-field { display: flex; flex-direction: column; gap: 5px; text-align: left; }
 .hr-field.hidden { display: none; }
 .hr-label {
-    font-family: var(--hs-mono);
+    font-family: var(--hs-mono, 'JetBrains Mono', Menlo, monospace);
     font-size: 9px;
     font-weight: 500;
     color: #8A94A6;
@@ -280,7 +295,7 @@
     width: 100%;
     box-sizing: border-box;
     padding: 11px 40px 11px 14px;
-    font-family: var(--hs-mono);
+    font-family: var(--hs-mono, 'JetBrains Mono', Menlo, monospace);
     font-size: 12.5px;
     color: #2C364C;
     background: #fff;
@@ -389,7 +404,7 @@
     gap: 12px;
     margin: 14px 0 12px;
     color: #8A94A6;
-    font-family: var(--hs-mono);
+    font-family: var(--hs-mono, 'JetBrains Mono', Menlo, monospace);
     font-size: 9px;
     font-weight: 500;
     text-transform: uppercase;
@@ -450,7 +465,7 @@
     justify-content: flex-start;
     text-align: left;
     gap: 6px;
-    font-family: var(--hs-mono);
+    font-family: var(--hs-mono, 'JetBrains Mono', Menlo, monospace);
     font-size: 9px;
     font-weight: 500;
     color: #8A94A6;
@@ -470,6 +485,7 @@
     flex: 1;
     justify-content: center;
     gap: 6px;
+    min-height: 300px;
 }
 .hg-authed[hidden] { display: none; }
 .hg-authed .hr-submit { margin-top: 14px; }
@@ -477,19 +493,17 @@
 .hg-authed .hr-policy { margin-top: auto; }
 
 /* =====================  ТЁМНАЯ ТЕМА  ===================== */
-.dark-mode .hs-card {
-    background: #131A29;
-    border-color: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 34px 80px -28px rgba(0, 0, 0, 0.6);
-}
+.dark-mode #hgHeatWrap { background: linear-gradient(180deg, #0f172a 0%, #111a2e 100%); }
 .dark-mode .hg-tile.up   { background: oklch(calc(0.28 + var(--k, 0) * 0.14) calc(0.02 + var(--k, 0) * 0.07) 158); color: oklch(0.75 0.08 158); }
 .dark-mode .hg-tile.dn   { background: oklch(calc(0.28 + var(--k, 0) * 0.14) calc(0.02 + var(--k, 0) * 0.07) 44);  color: oklch(0.76 0.08 44); }
 .dark-mode .hg-tile.flat { background: oklch(0.27 0.012 250); color: oklch(0.62 0.02 250); }
 .dark-mode .hg-scrim {
-    background: linear-gradient(90deg,
-        rgba(19, 26, 41, 0.88) 0%,
-        rgba(19, 26, 41, 0.68) 55%,
-        rgba(19, 26, 41, 0.46) 100%);
+    background:
+        linear-gradient(180deg, rgba(15, 23, 42, 0.55) 0%, rgba(15, 23, 42, 0) 26%),
+        linear-gradient(90deg,
+            rgba(19, 26, 41, 0.88) 0%,
+            rgba(19, 26, 41, 0.64) 52%,
+            rgba(19, 26, 41, 0.40) 100%);
 }
 .dark-mode .hg-brand-name { color: #F1F5F9; }
 .dark-mode .hg-brand-sub { color: #7c8db0; }
@@ -551,11 +565,10 @@
         overflow-y: auto !important;
         overflow-x: hidden !important;
     }
-    .hs-cover {
+    .hg-cover {
         grid-template-columns: 1fr;
-        min-height: 0;
-        max-height: none;
-        border-radius: 26px;
+        gap: 24px;
+        padding: 20px 18px 30px;
     }
     /* На телефоне карта-фон слишком пёстрая под текстом — вуаль почти глухая */
     .hg-scrim {
@@ -568,7 +581,14 @@
             rgba(19, 26, 41, 0.92) 0%,
             rgba(19, 26, 41, 0.82) 100%);
     }
-    .hg-main { padding: 34px 24px 8px; }
-    .hc-title { font-size: 30px; }
-    .hg-auth { margin: 18px 16px 16px; overflow-y: visible; }
+    .hg-main { padding: 14px 6px 0; }
+    .hc-title { font-size: 32px; }
+    .hg-auth {
+        align-self: stretch;
+        justify-self: stretch;
+        max-height: none;
+        overflow-y: visible;
+        background: rgba(255, 255, 255, 0.86);
+    }
+    .dark-mode .hg-auth { background: rgba(15, 22, 38, 0.86); }
 }

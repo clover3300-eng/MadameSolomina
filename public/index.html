@@ -40,7 +40,7 @@
     <link rel="stylesheet" href="css/table-tooltip.css?v=1">
     <link rel="stylesheet" href="css/market-heatmap.css?v=33">
     <link rel="stylesheet" href="css/calc-r5.css?v=11">
-    <link rel="stylesheet" href="css/home-register.css?v=11">
+    <link rel="stylesheet" href="css/home-register.css?v=12">
     <link rel="stylesheet" href="css/profile-menu.css?v=4">
     <link rel="stylesheet" href="css/admin.css?v=2">
     <link rel="stylesheet" href="css/typography-tokens.css?v=1">
@@ -75,6 +75,16 @@
 
     <!-- ===== HOME BACKGROUND IMAGE (только вкладка «Главная») ===== -->
     <div id="homeBg" aria-hidden="true"></div>
+
+    <!-- Живая тепловая карта IMOEX ВО ВСЮ СТРАНИЦУ (видна только на Главной,
+         поверх пейзажа #homeBg). Плитки рисует js/home-register.js из данных
+         MOEX ISS, сверху вуаль .hg-scrim для читаемости текста. Fixed-слой
+         живёт здесь, а не в #panel-home: tabFadeIn-анимация вкладки ловит
+         position:fixed своим transform. -->
+    <div id="hgHeatWrap" aria-hidden="true">
+        <div class="hg-bg" id="hgHeatBg"></div>
+        <div class="hg-scrim"></div>
+    </div>
 
     <!-- ===== LEFT SIDEBAR (desktop) / DRAWER (mobile) ===== -->
     <nav id="sideBar" aria-label="Основная навигация">
@@ -254,16 +264,12 @@
     <!-- ===================== CONTENT AREA ===================== -->
     <div id="contentArea">
 
-        <!-- ===== TAB: ГЛАВНАЯ — манифест поверх живой карты рынка + стеклянная
-             колонна входа/регистрации справа (вместо модалки). Фон #hgHeatBg
-             рисует js/home-register.js из данных MOEX ISS; вся логика формы
-             (Supabase/Telegram/демо) прежняя — id внутри не менялись. ===== -->
+        <!-- ===== TAB: ГЛАВНАЯ — манифест и стеклянная колонна входа/регистрации
+             ВО ВЕСЬ ЭКРАН, без карточки. Фон — фикс-слой #hgHeatWrap в начале
+             #appShell (живая карта IMOEX, рисует js/home-register.js); вся
+             логика формы (Supabase/Telegram/демо) прежняя — id не менялись. ===== -->
         <div id="panel-home" class="tab-panel active">
-            <div class="hs-card hs-cover">
-
-                <!-- Фоновая тепловая карта IMOEX (декоративный слой, живые данные) -->
-                <div class="hg-bg" id="hgHeatBg" aria-hidden="true"></div>
-                <div class="hg-scrim" aria-hidden="true"></div>
+            <div class="hg-cover">
 
                 <div class="hg-main">
                     <div class="hg-brand">
@@ -2222,7 +2228,7 @@
 <script src="js/supabase-config.js?v=1" defer></script>
 <script src="js/telegram-config.js?v=1" defer></script>
 <script src="js/supabase-client.js?v=3" defer></script>
-<script src="js/home-register.js?v=8" defer></script>
+<script src="js/home-register.js?v=9" defer></script>
 <script src="js/profile-menu.js?v=5" defer></script>
 <script src="js/cloud-sync.js?v=1" defer></script>
 <script src="js/admin.js?v=2" defer></script>
