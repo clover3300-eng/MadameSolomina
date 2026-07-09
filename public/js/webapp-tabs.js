@@ -449,42 +449,10 @@ function populatePanels() {
         });
     }
 
-    // === V3: рельсы Ребаланса и Рынка собираем ПОСЛЕ переноса контента ===
-    // === Ребаланс: рельса (умная замена + переключатель) и правая колонка ===
-    (function() {
-        const host = document.getElementById('rebalancePanelContent');
-        if (!host || document.getElementById('rbLeftRail')) return;
-        const left = document.createElement('div'); left.id = 'rbLeftRail';
-        const right = document.createElement('div'); right.id = 'rbRightCol';
-        const hdr = host.querySelector('.header');
-        // Переключатель ОФЗ/Акции теперь живёт внутри .smart-replace-card (R4),
-        // поэтому отдельно его не переносим — он уедет в рельсу вместе с картой.
-        const card = host.querySelector('.smart-replace-card');
-        [...host.children].forEach(function(c) {
-            if (c === hdr || c === card) return;
-            if (c.classList && (c.classList.contains('aurora-container') || c.classList.contains('noise-overlay'))) return;
-            right.appendChild(c);
-        });
-        if (card) left.appendChild(card);
-        if (hdr) left.appendChild(hdr);
-        // Единственный виджет-переход — «Ежемесячные купоны», оформлен как
-        // продолжение тёмной карточки «Умная замена» (заезжает под неё, тонкая
-        // обводка — см. #rbMonthlyWidget в site-layout.css). Виджет «Рассчитать
-        // портфель» убран: кнопка в самой карточке теперь ведёт на «Расчёт».
-        const ARR_SVG = '<span class="go"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>';
-        const wMonthly = document.createElement('div');
-        wMonthly.id = 'rbMonthlyWidget';
-        wMonthly.className = 'ms-nav-widget green';
-        wMonthly.innerHTML =
-            '<span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg></span>' +
-            '<span class="tx"><b>Ежемесячные купоны</b>' +
-            '<span>Расчёт набора ОФЗ, где выплаты приходят каждый месяц — как зарплата.</span></span>' + ARR_SVG;
-        // купонный калькулятор теперь живёт в «Расчёте» (js/calc-mode.js)
-        wMonthly.onclick = function() { window.cxGoMonthly ? window.cxGoMonthly() : switchTab('calc'); };
-        left.appendChild(wMonthly);
-        host.appendChild(left);
-        host.appendChild(right);
-    })();
+    // === Ребаланс R6: рельсы больше не собираем — шапка-герой и единая карта
+    //     (ОФЗ + акции) идут потоком прямо в #rebalancePanelContent.
+    //     Виджет «Ежемесячные купоны» уехал вместе с рельсой: кнопка шапки
+    //     ведёт на «Расчёт», где живёт купонный калькулятор. ===
     // === Рынок: рельса (котировки + ставки) и правая колонка (калькулятор) ===
     (function() {
         const host = document.getElementById('marketPanelContent');
@@ -748,19 +716,9 @@ window.calculateAndShowPortfolio = function() {
 };
 
 
-// Обновляем счётчики позиций в переключателе ОФЗ/Акции
+// Счётчики и KPI Ребаланса R6 считаются из данных в updateRebalanceStats
 function updateRebalanceTabCounts() {
-    var ofzItems = document.querySelectorAll('#ofz-aurora-list .ofz-aurora-item');
-    var ofzCount = ofzItems.length;
-    var stocksRows = document.querySelectorAll('.stocks-table-row');
-    var stocksCount = 0;
-    stocksRows.forEach(function(row) {
-        row.querySelectorAll('.stocks-cell:not(:empty)').forEach(function(){ stocksCount++; });
-    });
-    var ofzEl = document.getElementById('rebCountOfz');
-    var stEl = document.getElementById('rebCountStocks');
-    if (ofzEl) ofzEl.textContent = ofzCount > 0 ? ofzCount : '';
-    if (stEl) stEl.textContent = stocksCount > 0 ? stocksCount : '';
+    if (typeof updateRebalanceStats === 'function') updateRebalanceStats();
 }
 
 

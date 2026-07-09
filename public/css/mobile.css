@@ -387,3 +387,43 @@
     .dock-item { font-size: 9px; }
     #panel-calc .mi5-preset { font-size: 11.5px; padding: 8px 1px; }
 }
+
+/* ============================================================
+   РЕБАЛАНС R6 (≤1023px): герой в столбик, секции одна под другой
+   ============================================================ */
+@media (max-width: 1023px) {
+    #rebalancePanelContent { display: flex; flex-direction: column; gap: 14px; }
+
+    /* герой: идентити → KPI-ряд → кнопка на всю ширину */
+    .rbx-hero { padding: 18px 16px; gap: 14px 18px; border-radius: 20px; }
+    .rbx-hero-title { font-size: 19px; }
+    .rbx-flow { flex-wrap: wrap; white-space: normal; row-gap: 4px; }
+    .rbx-hero-kpis { margin-left: 0; width: 100%; justify-content: space-between; gap: 14px; }
+    .rbx-kpi .num b { font-size: 25px; }
+    .rbx-hero-cta { width: 100%; justify-content: center; }
+
+    /* карта: секции стопкой */
+    .rbx-card { display: flex; flex-direction: column; border-radius: 20px; }
+    .rbx-sec { padding: 16px 14px 18px; }
+    .rbx-sec-stocks { border-left: none; border-top: 1px solid rgba(44, 54, 76, 0.08); }
+    body.dark-mode .rbx-sec-stocks { border-top-color: rgba(255, 255, 255, 0.07); }
+    .rbx-sh { flex-wrap: wrap; row-gap: 8px; }
+
+    /* таблица ОФЗ плотнее */
+    .rbx-colhead, .rbx-row-main { grid-template-columns: 22px minmax(0, 1fr) 78px 84px 14px; gap: 5px; }
+    .rbx-colhead { padding-left: 8px; padding-right: 8px; font-size: 9.5px; letter-spacing: 0.03em; }
+    .rbx-row-main { padding: 12px 8px; }
+    .rbx-row-main .nm { font-size: 13px; }
+    .rbx-row-main .yl, .rbx-row-main .pr { font-size: 13px; }
+    .rbx-dgrid { grid-template-columns: 1fr; }
+
+    /* эшелоны: 2 колонки вместо 4 */
+    .rbx-esh-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+}
+
+/* совсем узко: KPI-подписи в приоритете, эквалайзер прячем */
+@media (max-width: 520px) {
+    .rbx-eq { display: none; }
+    .rbx-kpi { min-width: 0; }
+    .rbx-kpi .sub { font-size: 11px; white-space: normal; line-height: 1.35; }
+}

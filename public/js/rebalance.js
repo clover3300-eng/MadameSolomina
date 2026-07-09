@@ -44,125 +44,73 @@ function updateOfzSortUI() {
     });
 }
 
-// Статистика в тёмной рельсе зависит от активной вкладки
-function updateRebalanceStats(mode) {
-    const candNum = document.getElementById('rbCandNum');
-    const candLabel = document.getElementById('rbCandLabel');
-    const k2 = document.getElementById('rbStatK2'), v2 = document.getElementById('rbStatV2');
-    const k3 = document.getElementById('rbStatK3'), v3 = document.getElementById('rbStatV3');
+// ----- R6: статистика для шапки-героя (ОФЗ и акции считаются одновременно) -----
+
+// Плавный подсчёт числа в элементе: от прошлого значения к целевому
+function rbxAnimateNum(el, target, fmt) {
+    if (!el) return;
+    if (!isFinite(target)) { el.textContent = '\u2014'; return; }
+    const from = parseFloat(el.dataset.cur || '0') || 0;
+    el.dataset.cur = target;
+    if (Math.abs(target - from) < 1e-9) { el.textContent = fmt(target); return; }
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        el.textContent = fmt(target); return;
+    }
+    const t0 = performance.now(), dur = 800;
+    (function tick(now) {
+        const p = Math.min(1, (now - t0) / dur);
+        const e = 1 - Math.pow(1 - p, 3); // easeOutCubic
+        el.textContent = fmt(from + (target - from) * e);
+        if (p < 1) requestAnimationFrame(tick);
+    })(t0);
+}
+
+// Обновляет KPI шапки-героя и счётчики секций. Старый аргумент (mode)
+// игнорируется — с R6 обе выборки видны на одном экране.
+function updateRebalanceStats() {
     const num = (s) => parseFloat(String(s == null ? '' : s).replace('%', '').replace(',', '.'));
 
-    if (mode === 'stocks') {
-        const cols = (typeof echelonTableData !== 'undefined' && echelonTableData) ? echelonTableData : [[], [], [], []];
-        const all = cols.flat();
-        const pots = all.map(a => num(a.target)).filter(n => isFinite(n));
-        const avgPot = pots.length ? pots.reduce((s, n) => s + n, 0) / pots.length : 0;
-        if (candNum) candNum.textContent = all.length || '—';
-        if (candLabel) candLabel.innerHTML = 'кандидатов на покупку<br>среди акций';
-        if (k2) k2.textContent = 'Средний потенциал'; if (v2) { v2.textContent = pots.length ? '+' + avgPot.toFixed(2) + '%' : '—'; v2.className = 'v up'; }
-        if (k3) k3.textContent = 'Макс. потенциал'; if (v3) { v3.textContent = pots.length ? '+' + Math.max(...pots).toFixed(2) + '%' : '—'; v3.className = 'v'; }
-        const sc = document.getElementById('stocksCount'); if (sc) sc.textContent = all.length;
-    } else {
-        const arr = (typeof bonds !== 'undefined' && bonds) ? bonds : [];
-        const ys = arr.map(b => num(b.y)).filter(n => isFinite(n));
-        const avg = ys.length ? ys.reduce((s, n) => s + n, 0) / ys.length : 0;
-        if (candNum) candNum.textContent = arr.length || '—';
-        if (candLabel) candLabel.innerHTML = 'кандидатов на покупку<br>среди ОФЗ';
-        if (k2) k2.textContent = 'Средняя доходность'; if (v2) { v2.textContent = ys.length ? avg.toFixed(2) + '%' : '—'; v2.className = 'v up'; }
-        if (k3) k3.textContent = 'Лучшая доходность'; if (v3) { v3.textContent = ys.length ? Math.max(...ys).toFixed(2) + '%' : '—'; v3.className = 'v'; }
-        const oc = document.getElementById('ofzCount'); if (oc) oc.textContent = arr.length;
-    }
+    const arr = (typeof bonds !== 'undefined' && bonds) ? bonds : [];
+    const ys = arr.map(b => num(b.y)).filter(n => isFinite(n));
+    const avgY = ys.length ? ys.reduce((s, n) => s + n, 0) / ys.length : NaN;
+
+    const cols = (typeof echelonTableData !== 'undefined' && echelonTableData) ? echelonTableData : [[], [], [], []];
+    const all = cols.flat();
+    const pots = all.map(a => num(a.target)).filter(n => isFinite(n));
+    const avgP = pots.length ? pots.reduce((s, n) => s + n, 0) / pots.length : NaN;
+
+    rbxAnimateNum(document.getElementById('rbxOfzNum'), arr.length || NaN, v => String(Math.round(v)));
+    rbxAnimateNum(document.getElementById('rbxOfzAvg'), avgY, v => v.toFixed(2) + '%');
+    rbxAnimateNum(document.getElementById('rbxStNum'), all.length || NaN, v => String(Math.round(v)));
+    rbxAnimateNum(document.getElementById('rbxStAvg'), avgP, v => (v >= 0 ? '+' : '') + v.toFixed(2) + '%');
+
+    const oc = document.getElementById('ofzCount');
+    if (oc) oc.textContent = arr.length || '\u2014';
+    const sc = document.getElementById('stocksCount');
+    if (sc) sc.textContent = all.length || '\u2014';
 }
 
-// Переключение вкладок ОФЗ / АКЦИИ (Liquid Tab Switcher)
-function switchRebalanceTab(tabName) {
-    const tabSwitcher = document.getElementById('tabSwitcher');
-    const tabs = document.querySelectorAll('.tab-btn');
-    
-    // Убираем активный класс со всех кнопок
-    tabs.forEach(tab => tab.classList.remove('active'));
-    
-    // Скрываем весь контент
-    document.querySelectorAll('.rebalance-tab-content').forEach(content => {
-        content.classList.remove('active');
-    });
-    
-    // Управляем глайдером
-    if (tabName === 'stocks') {
-        tabSwitcher.classList.add('show-stocks');
-        tabs[1].classList.add('active');
-    } else {
-        tabSwitcher.classList.remove('show-stocks');
-        tabs[0].classList.add('active');
-    }
-    
-    // Показываем нужный контент
-    document.getElementById(`rebalance-tab-${tabName}`).classList.add('active');
-    
-    // Скролл на верх страницы
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    
-    // Вибрация
-    if (window.Telegram?.WebApp?.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.selectionChanged();
-    }
-    
-    // Если переключились на акции — рендерим таблицу заново
-    if (tabName === 'stocks') {
-        // Закрываем открытую карточку
-        closeStockDetail();
-        // Перерендериваем таблицу
-        renderAuroraStocksTable();
-    }
-    updateInfoBtnState(tabName);
-    updateRebalanceStats(tabName);
-}
+// Совместимость: переключателя ОФЗ/Акции больше нет — обе секции на одном экране
+function switchRebalanceTab() {}
 
-// Инициализация Spotlight эффекта для карточки "Умная замена"
-function initSmartReplaceSpotlight() {
-    const card = document.getElementById('smartReplaceCard');
-    if (!card) return;
-    
-    card.addEventListener('mousemove', (e) => {
-        const rect = card.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const y = ((e.clientY - rect.top) / rect.height) * 100;
-        card.style.setProperty('--mouse-x', x + '%');
-        card.style.setProperty('--mouse-y', y + '%');
-    });
-}
-
-// Вызываем инициализацию при загрузке
-document.addEventListener('DOMContentLoaded', initSmartReplaceSpotlight);
-
-// Рендер списка ОФЗ в Aurora стиле
+// Рендер списка ОФЗ (левая секция карты R6)
 function renderAuroraOfzList() {
     const container = document.getElementById('ofz-aurora-list');
     if (!container || typeof bonds === 'undefined' || bonds.length === 0) return;
-    
-    // Функция форматирования даты в день-месяц-год
+
     function formatDateDMY(dateStr) {
-        if (!dateStr || dateStr === '—') return '—';
+        if (!dateStr || dateStr === '\u2014') return '\u2014';
         try {
             const date = new Date(dateStr);
             if (isNaN(date.getTime())) return dateStr;
-            const day = String(date.getDate()).padStart(2, '0');
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const year = date.getFullYear();
-            return `${day}-${month}-${year}`;
-        } catch (e) {
-            return dateStr;
-        }
+            return String(date.getDate()).padStart(2, '0') + '.' +
+                   String(date.getMonth() + 1).padStart(2, '0') + '.' + date.getFullYear();
+        } catch (e) { return dateStr; }
     }
-    
-    let html = '';
 
-    // Сортировка списка: по доходности (убыв.) или по цене (возр.)
+    // Сортировка списка: по доходности или по цене (см. setOfzSort)
     const parseYield = (b) => parseFloat(String(b.y || '0').replace('%', '').replace(',', '.')) || 0;
-    const parsePriceFull = (b) => {
-        const p = parseFloat(String(b.p).replace(',', '.')) || 0;
-        return p + (parseFloat(b.nkd || 0) || 0);
-    };
+    const parsePriceFull = (b) => (parseFloat(String(b.p).replace(',', '.')) || 0) + (parseFloat(b.nkd || 0) || 0);
     const sortVal = (b) => rebalanceOfzSortKey === 'price' ? parsePriceFull(b) : parseYield(b);
     const dirSign = (rebalanceOfzSortDir === 'asc') ? 1 : -1;
     const sorted = bonds.slice().sort((a, b) => (sortVal(a) - sortVal(b)) * dirSign);
@@ -171,397 +119,125 @@ function renderAuroraOfzList() {
     const ysAll = sorted.map(parseYield);
     const maxY = Math.max(...ysAll), minY = Math.min(...ysAll);
 
+    let html = '';
     sorted.forEach((b, index) => {
-        const rank = index + 1;
-        const details = bondDetailsMap[b.t] || { matDate: '—', couponValue: 0, nextCoupon: '—', freq: 0 };
+        const details = bondDetailsMap[b.t] || { matDate: '\u2014', couponValue: 0, nextCoupon: '\u2014', freq: 0 };
         const priceFinal = parseFloat(String(b.p).replace(',', '.')).toFixed(2);
         const nkd = parseFloat(b.nkd || 0).toFixed(2);
         const priceWithNkd = (parseFloat(priceFinal) + parseFloat(nkd)).toFixed(2);
-        
-        // Доходность из Google Sheets для строки
-        const sheetYield = b.y ? b.y.replace('%', '') : '—';
-        
-        // Рассчитанная текущая купонная доходность для подстроки
-        let curYield = "0.00";
+        const sheetYield = b.y ? b.y.replace('%', '') : '\u2014';
+        let curYield = '0.00';
         if (details.couponValue > 0 && details.freq > 0) {
             curYield = ((details.couponValue * details.freq / parseFloat(priceFinal)) * 100).toFixed(2);
         }
-        
-        const hiddenClass = ''; // Список ОФЗ раскрыт полностью изначально
-        
+
         html += `
-        <div class="ofz-aurora-item ${hiddenClass}" id="aurora-${b.t}" data-index="${index}">
-            <div class="ofz-aurora-summary" onclick="toggleAuroraOfzDetails('${b.t}')">
-                <span class="rb-rank">#${rank}</span>
-                <span class="ofz-aurora-name">${formatNameWithMonoDigits(limitName(b.n))}</span>
-                <span class="ofz-aurora-yield" style="color:${ofzYieldColor(parseFloat(sheetYield), minY, maxY)}">${sheetYield}%</span>
-                <span class="ofz-aurora-price">${priceWithNkd} ₽</span>
-                <span class="ofz-expand-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></span>
+        <div class="rbx-row" id="aurora-${b.t}">
+            <div class="rbx-row-main" onclick="toggleAuroraOfzDetails('${b.t}')">
+                <span class="rk">#${index + 1}</span>
+                <span class="nm">${formatNameWithMonoDigits(limitName(b.n))}</span>
+                <span class="yl" style="color:${ofzYieldColor(parseFloat(sheetYield), minY, maxY)}">${sheetYield}%</span>
+                <span class="pr">${priceWithNkd} \u20bd</span>
+                <span class="ar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></span>
             </div>
-            
-            <div class="ofz-aurora-details" id="aurora-details-${b.t}">
-                <div class="ofz-aurora-details-list">
-                    <div class="ofz-detail-row">
-                        <span class="ofz-detail-label">Код (ISIN)</span>
-                        <div class="ofz-copy-wrapper" onclick="copyTickerNew('${b.t}')">
-                            <span class="ofz-copy-code">${b.t}</span>
-                            <svg class="ofz-copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                            </svg>
+            <div class="rbx-det" id="aurora-details-${b.t}">
+                <div class="rbx-det-in">
+                    <div class="rbx-dgrid">
+                        <div class="rbx-di rbx-di-copy" onclick="copyTickerNew('${b.t}')" title="Скопировать код">
+                            <span>Код (ISIN)</span>
+                            <b>${b.t}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg></b>
                         </div>
+                        <div class="rbx-di"><span>Текущая цена</span><b>${priceFinal} \u20bd</b></div>
+                        <div class="rbx-di"><span>НКД<i class="rbx-q" onclick="toggleOfzHelp('nkdHelp-${b.t}', event)">?</i></span><b>${nkd} \u20bd</b></div>
+                        <div class="rbx-di"><span>Итого (цена + НКД)</span><b>${priceWithNkd} \u20bd</b></div>
+                        <div class="rbx-dhelp" id="nkdHelp-${b.t}"><b>НКД</b> — накопленный купонный доход: часть купона, которую вы платите продавцу за дни с последней выплаты. Следующий купон получите целиком.</div>
+                        <div class="rbx-di"><span>Погашение</span><b>${formatDateDMY(details.matDate)}</b></div>
+                        <div class="rbx-di"><span>Размер купона</span><b>${details.couponValue} \u20bd</b></div>
+                        <div class="rbx-di"><span>Ближайший купон</span><b>${formatDateDMY(details.nextCoupon)}</b></div>
+                        <div class="rbx-di"><span>Куп. доходность<i class="rbx-q" onclick="toggleOfzHelp('yieldHelp-${b.t}', event)">?</i></span><b class="up">${curYield}%</b></div>
+                        <div class="rbx-dhelp" id="yieldHelp-${b.t}"><b>Текущая купонная доходность</b> — процент годовых от купонов к текущей цене облигации, без учёта выплаты номинала при погашении.</div>
+                        <div class="rbx-di"><span>Выплат в год</span><b>${details.freq}</b></div>
                     </div>
-                    <div class="ofz-detail-row">
-                        <span class="ofz-detail-label">Текущая цена</span>
-                        <span class="ofz-detail-value">${priceFinal} ₽</span>
-                    </div>
-                    <div class="ofz-detail-row">
-                        <span class="ofz-detail-label">НКД<span class="ofz-help-icon" onclick="toggleOfzHelp('nkdHelp-${b.t}', event)">?</span></span>
-                        <span class="ofz-detail-value">${nkd} ₽</span>
-                    </div>
-                    <div class="ofz-inline-help" id="nkdHelp-${b.t}">
-                        <b>НКД</b> — накопленный купонный доход. Это часть купона, которую вы платите продавцу облигации за дни с последней выплаты до даты покупки. При получении следующего купона вы получите его целиком.
-                    </div>
-                    <div class="ofz-detail-row">
-                        <span class="ofz-detail-label">Итого (цена + НКД)</span>
-                        <span class="ofz-detail-value" style="font-weight: 700;">${priceWithNkd} ₽</span>
-                    </div>
-                    <div class="ofz-detail-row">
-                        <span class="ofz-detail-label">Погашение</span>
-                        <span class="ofz-detail-value">${formatDateDMY(details.matDate)}</span>
-                    </div>
-                    <div class="ofz-detail-row">
-                        <span class="ofz-detail-label">Размер купона</span>
-                        <span class="ofz-detail-value">${details.couponValue} ₽</span>
-                    </div>
-                    <div class="ofz-detail-row">
-                        <span class="ofz-detail-label">Ближайший купон</span>
-                        <span class="ofz-detail-value">${formatDateDMY(details.nextCoupon)}</span>
-                    </div>
-                    <div class="ofz-detail-row">
-                        <span class="ofz-detail-label">Текущая купонная доходность<span class="ofz-help-icon" onclick="toggleOfzHelp('yieldHelp-${b.t}', event)">?</span></span>
-                        <span class="ofz-detail-value" style="color: #10B981;">${curYield}%</span>
-                    </div>
-                    <div class="ofz-inline-help" id="yieldHelp-${b.t}">
-                        <b>Текущая купонная доходность</b> — показывает, какой процент годовых вы получаете от купонов относительно текущей цены облигации. Не учитывает выплату номинала при погашении.
-                    </div>
-                    <div class="ofz-detail-row">
-                        <span class="ofz-detail-label">Выплат в год</span>
-                        <span class="ofz-detail-value">${details.freq}</span>
-                    </div>
+                    <button class="rbx-chart-btn" onclick="openTradingViewDirect('${b.t}')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                        Открыть график
+                    </button>
                 </div>
-                <button class="ofz-aurora-chart-btn" onclick="openTradingViewDirect('${b.t}')">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                    </svg>
-                    Открыть график
-                </button>
             </div>
         </div>`;
     });
-    
+
     container.innerHTML = html;
     hideSkeleton('skeleton-ofz-list');
-    const _at = document.querySelector('.tab-btn.active')?.dataset.tab || 'ofz';
-    updateRebalanceStats(_at);
+    updateRebalanceStats();
 }
 
-// Раскрытие/скрытие деталей ОФЗ в Aurora стиле с прокруткой
+// Раскрытие деталей выпуска ОФЗ (одна строка открыта за раз)
 function toggleAuroraOfzDetails(ticker) {
     const item = document.getElementById(`aurora-${ticker}`);
     if (!item) return;
-    
-    const isExpanded = item.classList.contains('expanded');
-    
-    // Закрываем все открытые
-    document.querySelectorAll('.ofz-aurora-item.expanded').forEach(el => {
-        el.classList.remove('expanded');
-    });
-    
-    // Если не был открыт — открываем и прокручиваем
-    if (!isExpanded) {
+    const wasExpanded = item.classList.contains('expanded');
+    document.querySelectorAll('.rbx-row.expanded').forEach(el => el.classList.remove('expanded'));
+    if (!wasExpanded) {
         item.classList.add('expanded');
-        // Прокрутка чтобы карточка была видна между кнопкой телеграм (сверху) и навигацией (снизу)
-        setTimeout(() => {
-            const navHeight = 80; // высота навигационного меню + отступ
-            const topOffset = 60; // отступ от верха (кнопка закрыть телеграм)
-            const itemRect = item.getBoundingClientRect();
-            const viewportHeight = window.innerHeight;
-            const bottomOfCard = itemRect.top + item.offsetHeight;
-            const topOfCard = itemRect.top;
-            
-            // Если верх карточки выше зоны видимости — прокручиваем вниз
-            if (topOfCard < topOffset) {
-                const scrollBy = topOfCard - topOffset;
-                window.scrollBy({ top: scrollBy, behavior: 'smooth' });
-            }
-            // Если низ карточки ниже навигации — прокручиваем вверх
-            else if (bottomOfCard > viewportHeight - navHeight) {
-                const scrollBy = bottomOfCard - (viewportHeight - navHeight) + 20;
-                window.scrollBy({ top: scrollBy, behavior: 'smooth' });
-            }
-        }, 150);
+        setTimeout(() => item.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 180);
     }
-    
-    // Вибрация
-    if (window.Telegram?.WebApp?.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.selectionChanged();
-    }
+    if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.selectionChanged();
 }
 
-// Показать/скрыть все ОФЗ в Aurora стиле
-let ofzListExpanded = true;
+// Рендер акций по эшелонам риска: 4 колонки карточек (правая секция карты R6)
+const RBX_TIERS = [
+    { cls: 'e1', roman: 'I' },
+    { cls: 'e2', roman: 'II' },
+    { cls: 'e3', roman: 'III' },
+    { cls: 'e4', roman: 'IV' },
+];
 
-function toggleAuroraOfzList() {
-    const items = document.querySelectorAll('.ofz-aurora-item');
-    const trigger = document.getElementById('ofzGhostTrigger');
-    const text = document.getElementById('ofzGhostText');
-    
-    ofzListExpanded = !ofzListExpanded;
-    
-    if (!ofzListExpanded) {
-        // Сворачиваем — показываем только первые 3
-        items.forEach((item, index) => {
-            if (index > 2) {
-                item.classList.add('aurora-hidden');
-            }
-            // Также закрываем все подстроки
-            item.classList.remove('expanded');
-        });
-        text.innerText = 'ОТКРЫТЬ СПИСОК';
-        trigger.classList.remove('open');
-        
-        // Прокрутка к верху страницы
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-        // Разворачиваем — показываем все с анимацией
-        items.forEach((item, index) => {
-            item.classList.remove('aurora-hidden');
-            // Перезапускаем анимацию stagger
-            item.style.animation = 'none';
-            item.offsetHeight; // Триггер reflow
-            item.style.animation = `staggerIn 0.4s ease forwards`;
-            item.style.animationDelay = `${index * 0.05}s`;
-        });
-        text.innerText = 'СВЕРНУТЬ';
-        trigger.classList.add('open');
-    }
-    
-    // Вибрация
-    if (window.Telegram?.WebApp?.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-    }
-}
-
-// Стрелка у ИНСТРУМЕНТ — одно нажатие открывает, повторное сворачивает
-function toggleOfzListCollapse() {
-    var items = document.querySelectorAll('.ofz-aurora-item');
-    var toggle = document.getElementById('ofzCollapseToggle');
-    var ghostTrigger = document.getElementById('ofzGhostTrigger');
-    var ghostText = document.getElementById('ofzGhostText');
-    var hiddenItems = document.querySelectorAll('.ofz-aurora-item.aurora-hidden');
-    var isExpanded = hiddenItems.length === 0;
-
-    if (!isExpanded) {
-        // Раскрываем всё
-        items.forEach(function(item, index) {
-            item.classList.remove('aurora-hidden');
-            item.style.animation = 'none';
-            item.offsetHeight;
-            item.style.animation = 'staggerIn 0.35s ease forwards';
-            item.style.animationDelay = (index * 0.04) + 's';
-        });
-        // Стрелка поворачивается вверх — "нажми чтобы скрыть"
-        if (toggle) toggle.classList.add('expanded');
-        if (ghostTrigger) { ghostTrigger.style.display = 'flex'; ghostTrigger.classList.add('open'); }
-        if (ghostText) ghostText.innerText = 'СВЕРНУТЬ';
-        ofzListExpanded = true;
-    } else {
-        // Сворачиваем до 3х
-        items.forEach(function(item, index) {
-            if (index >= 3) {
-                item.classList.add('aurora-hidden');
-                item.classList.remove('expanded');
-            }
-        });
-        // Стрелка возвращается вниз
-        if (toggle) toggle.classList.remove('expanded');
-        if (ghostTrigger) { ghostTrigger.style.display = 'flex'; ghostTrigger.classList.remove('open'); }
-        if (ghostText) ghostText.innerText = 'ОТКРЫТЬ СПИСОК';
-        ofzListExpanded = false;
-    }
-
-    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-    }
-}
-
-// Переключение описания эшелонов
-function toggleEchelonsInfo() {
-    const info = document.getElementById('stocksEchelonInfo');
-    const header = document.getElementById('echelonsHeader');
-    
-    if (!info || !header) return;
-    
-    const isOpen = info.classList.contains('open');
-    
-    if (isOpen) {
-        info.classList.remove('open');
-        header.classList.remove('open');
-    } else {
-        info.classList.add('open');
-        header.classList.add('open');
-    }
-    
-    // Вибрация
-    if (window.Telegram?.WebApp?.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.selectionChanged();
-    }
-}
-
-// Подсветка столбца эшелона при клике на кружок
-let activeEchelonColumn = null;
-
-function toggleEchelonColumnHighlight(echelonNum, event) {
-    event.stopPropagation();
-    
-    const rows = document.querySelectorAll('.stocks-table-row');
-    const circle = document.getElementById(`echelonCircle${echelonNum}`);
-    
-    // Снимаем подсветку со всех столбцов
-    for (let i = 1; i <= 4; i++) {
-        const c = document.getElementById(`echelonCircle${i}`);
-        if (c) c.classList.remove('active');
-        
-        rows.forEach(row => {
-            const cells = row.querySelectorAll('.stocks-cell');
-            if (cells[i - 1]) {
-                cells[i - 1].classList.remove(`column-highlight-${i}`);
-            }
-        });
-    }
-    
-    // Если кликнули на тот же столбец — просто выключаем
-    if (activeEchelonColumn === echelonNum) {
-        activeEchelonColumn = null;
-        
-        // Вибрация
-        if (window.Telegram?.WebApp?.HapticFeedback) {
-            window.Telegram.WebApp.HapticFeedback.selectionChanged();
-        }
-        return;
-    }
-    
-    // Включаем подсветку нового столбца
-    activeEchelonColumn = echelonNum;
-    
-    if (circle) circle.classList.add('active');
-    
-    // Подсвечиваем только ячейки с тикерами
-    rows.forEach(row => {
-        const cells = row.querySelectorAll('.stocks-cell');
-        const cell = cells[echelonNum - 1];
-        if (cell) {
-            // Проверяем есть ли тикер в ячейке
-            const ticker = cell.querySelector('.stocks-cell-ticker');
-            if (ticker && ticker.textContent.trim()) {
-                cell.classList.add(`column-highlight-${echelonNum}`);
-            }
-        }
-    });
-    
-    // Вибрация
-    if (window.Telegram?.WebApp?.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-    }
-}
-
-// Рендер таблицы эшелонов акций в Aurora стиле
 function renderAuroraStocksTable() {
     const container = document.getElementById('stocks-aurora-body');
     if (!container) return;
-    
-    // Сбрасываем подсветку столбцов
-    activeEchelonColumn = null;
-    for (let i = 1; i <= 4; i++) {
-        const c = document.getElementById(`echelonCircle${i}`);
-        if (c) c.classList.remove('active');
-    }
-    
-    // Проверяем есть ли данные в echelonTableData
-    if (typeof echelonTableData === 'undefined' || 
-        !echelonTableData || 
+
+    // Данные могли ещё не приехать из Google Sheets — подождём
+    if (typeof echelonTableData === 'undefined' || !echelonTableData ||
         echelonTableData.every(col => col.length === 0)) {
-        // Если данных нет, ждем загрузки
         setTimeout(renderAuroraStocksTable, 500);
         return;
     }
-    
-    let html = '';
-    const maxRows = Math.max(...echelonTableData.map(col => col.length));
-    const maxVisibleRows = 3;
 
-    // Глобальный максимум потенциала — общая шкала для полосок всех эшелонов
+    // Общая шкала потенциала — полоски всех эшелонов сопоставимы между собой
     const toPot = (s) => parseFloat(String(s == null ? '' : s).replace('%', '').replace(',', '.'));
     const allPots = echelonTableData.flat().map(a => toPot(a.target)).filter(n => isFinite(n));
     const maxPot = allPots.length ? Math.max(...allPots) : 0;
 
-    for (let rowIndex = 0; rowIndex < maxRows; rowIndex++) {
-        const hiddenClass = ''; // Список акций раскрыт полностью изначально
+    let html = '';
+    for (let col = 0; col < 4; col++) {
+        const tier = RBX_TIERS[col];
+        // Внутри эшелона — по убыванию потенциала
+        const assets = (echelonTableData[col] || []).slice()
+            .sort((a, b) => (toPot(b.target) || 0) - (toPot(a.target) || 0));
 
-        html += `<div class="stocks-table-row ${hiddenClass}" data-row="${rowIndex}">`;
+        html += `<div class="rbx-ech-col ${tier.cls}">
+            <div class="rbx-ech-head"><span>${tier.roman}</span></div>`;
 
-        for (let colIndex = 0; colIndex < 4; colIndex++) {
-            const asset = echelonTableData[colIndex][rowIndex];
-
-            if (asset && asset.t) {
-                const ticker = asset.t;
-                const rawTarget = asset.target || '';
-                const echelonNum = colIndex + 1;
-                const name = asset.n || ticker;
-
-                // Потенциал в %: приводим к виду «+125.86%», полоска — доля от максимума
-                const potNum = toPot(rawTarget);
-                const potStr = isFinite(potNum) ? ((potNum >= 0 ? '+' : '') + potNum.toFixed(2) + '%') : rawTarget;
-                const changeClass = isFinite(potNum) ? (potNum >= 0 ? 'positive' : 'negative') : 'neutral';
-                const barPct = (isFinite(potNum) && maxPot > 0) ? Math.max(7, Math.min(100, potNum / maxPot * 100)) : 0;
-                const barHtml = barPct > 0 ? `<div class="ec-bar"><i style="width:${barPct.toFixed(1)}%"></i></div>` : '';
-
-                html += `<div class="stocks-cell esh-card" onclick="openStockDetail('${ticker}', ${echelonNum}, this)">
-                    <div class="ec-top"><span class="stocks-cell-ticker">${ticker}</span><span class="stocks-cell-change ${changeClass}">${potStr}</span></div>
-                    <div class="ec-name">${name}</div>
-                    ${barHtml}
-                </div>`;
-            } else {
-                html += `<div class="stocks-cell empty"></div>`;
-            }
-        }
+        assets.forEach(asset => {
+            if (!asset || !asset.t) return;
+            const potNum = toPot(asset.target);
+            const potStr = isFinite(potNum) ? ((potNum >= 0 ? '+' : '') + potNum.toFixed(2) + '%') : (asset.target || '');
+            const chg = isFinite(potNum) ? (potNum >= 0 ? 'pos' : 'neg') : '';
+            const barPct = (isFinite(potNum) && maxPot > 0) ? Math.max(6, Math.min(100, potNum / maxPot * 100)) : 0;
+            html += `<div class="rbx-tile" onclick="openStockDetail('${asset.t}', ${col + 1}, this)">
+                <div class="tt"><b>${asset.t}</b><span class="${chg}">${potStr}</span></div>
+                <div class="nm">${asset.n || asset.t}</div>
+                ${barPct > 0 ? `<div class="bar"><i style="width:${barPct.toFixed(1)}%"></i></div>` : ''}
+            </div>`;
+        });
 
         html += '</div>';
     }
 
     container.innerHTML = html;
     hideSkeleton('skeleton-stocks-table');
-    const _at = document.querySelector('.tab-btn.active')?.dataset.tab || 'ofz';
-    updateRebalanceStats(_at);
-    
-    // Проверяем что карточка деталей существует и в правильном месте
-    let card = document.getElementById('stockDetailCard');
-    if (!card) {
-        // Создаем карточку если её нет
-        card = document.createElement('div');
-        card.className = 'stock-detail-card';
-        card.id = 'stockDetailCard';
-        const ghostTrigger = document.getElementById('stocksGhostTrigger');
-        if (ghostTrigger) {
-            ghostTrigger.before(card);
-        } else {
-            container.after(card);
-        }
-    }
-    
-    // Обновляем кнопку показать/скрыть
-    updateStocksShowMoreButton();
+    updateRebalanceStats();
 }
 
 // Открытие карточки деталей тикера
@@ -570,7 +246,7 @@ function openStockDetail(ticker, echelon, clickedCell = null) {
     if (!card || !ticker) return;
     
     // Снимаем активный класс с предыдущей ячейки
-    document.querySelectorAll('.stocks-cell.active').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.rbx-tile.active, .stocks-cell.active').forEach(c => c.classList.remove('active'));
     
     // Закрываем если уже открыта эта же карточка
     if (card.classList.contains('open') && card.dataset.ticker === ticker) {
@@ -785,7 +461,7 @@ function closeStockDetail() {
     if (backdrop) backdrop.classList.remove('open');
     document.body.classList.remove('sd-drawer-open');
     // Снимаем активный класс со всех ячеек
-    document.querySelectorAll('.stocks-cell.active').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.rbx-tile.active, .stocks-cell.active').forEach(c => c.classList.remove('active'));
 }
 
 // Подложка-затемнение за выезжающей карточкой (создаётся один раз)
@@ -927,200 +603,6 @@ function goToCompanyPageFromTicker(ticker) {
         }
     } else {
         showToast('Информация о компании недоступна');
-    }
-}
-
-// Показать/скрыть все акции
-let stocksExpanded = true;
-
-function toggleStocksTable() {
-    const rows = document.querySelectorAll('.stocks-table-row');
-    const trigger = document.getElementById('stocksGhostTrigger');
-    const text = document.getElementById('stocksGhostText');
-    
-    stocksExpanded = !stocksExpanded;
-    
-    rows.forEach((row, index) => {
-        if (stocksExpanded) {
-            row.classList.remove('stocks-row-hidden');
-            row.style.animation = 'none';
-            row.offsetHeight;
-            row.style.animation = `staggerIn 0.3s ease forwards`;
-            row.style.animationDelay = `${index * 0.05}s`;
-        } else {
-            if (index >= 3) {
-                row.classList.add('stocks-row-hidden');
-            }
-        }
-    });
-    
-    text.innerText = stocksExpanded ? 'СВЕРНУТЬ' : 'ОТКРЫТЬ СПИСОК';
-    trigger.classList.toggle('open', stocksExpanded);
-
-    // === НОВОЕ: ПРОКРУТКА К НАЧАЛУ ПРИ СКРЫТИИ ===
-    if (!stocksExpanded) {
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth' // Плавная прокрутка
-        });
-    }
-    // ===========================================
-    
-    // Вибрация
-    if (window.Telegram?.WebApp?.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-    }
-}
-
-function updateStocksShowMoreButton() {
-    const allRows = document.querySelectorAll('.stocks-table-row');
-    const hiddenRows = document.querySelectorAll('.stocks-table-row.stocks-row-hidden');
-    const trigger = document.getElementById('stocksGhostTrigger');
-    if (!trigger) return;
-    // Показываем trigger только если есть скрытые строки
-    if (hiddenRows.length > 0) {
-        trigger.style.display = 'flex';
-    } else if (allRows.length > 3) {
-        // Все строки показаны — показываем "Свернуть"
-        trigger.style.display = 'flex';
-    } else {
-        trigger.style.display = 'none';
-    }
-}
-
-// CSS для скрытых строк акций
-const stocksHiddenStyle = document.createElement('style');
-stocksHiddenStyle.textContent = `
-    .stocks-row-hidden {
-        display: none !important;
-    }
-`;
-document.head.appendChild(stocksHiddenStyle);
-
-// Функция показа тултипа для цены
-function showPriceTooltip(event) {
-    event.stopPropagation();
-    
-    // Удаляем старые тултипы
-    document.querySelectorAll('.header-tooltip').forEach(t => t.remove());
-    
-    const tooltip = document.createElement('div');
-    tooltip.className = 'header-tooltip';
-    tooltip.innerHTML = 'Цена формируется как:<br><b>Текущая цена + НКД</b>';
-    document.body.appendChild(tooltip);
-    
-    const rect = event.target.getBoundingClientRect();
-    tooltip.style.top = (rect.bottom + 8) + 'px';
-    tooltip.style.right = (window.innerWidth - rect.right) + 'px';
-    
-    // Закрытие по клику в любом месте
-    setTimeout(() => {
-        document.addEventListener('click', function closeTooltip() {
-            tooltip.remove();
-            document.removeEventListener('click', closeTooltip);
-        });
-    }, 100);
-    
-    // Автозакрытие через 3 секунды
-    setTimeout(() => {
-        if (tooltip.parentNode) {
-            tooltip.remove();
-        }
-    }, 3000);
-}
-
-// Функция показа тултипа для доходности
-function showYieldTooltip(event) {
-    event.stopPropagation();
-    
-    // Удаляем старые тултипы
-    document.querySelectorAll('.header-tooltip').forEach(t => t.remove());
-    
-    const tooltip = document.createElement('div');
-    tooltip.className = 'header-tooltip';
-    tooltip.innerHTML = '<b>Простая доходность к погашению</b>';
-    document.body.appendChild(tooltip);
-    
-    const rect = event.target.getBoundingClientRect();
-    tooltip.style.top = (rect.bottom + 8) + 'px';
-    tooltip.style.left = (rect.left) + 'px';
-    
-    // Закрытие по клику в любом месте
-    setTimeout(() => {
-        document.addEventListener('click', function closeTooltip() {
-            tooltip.remove();
-            document.removeEventListener('click', closeTooltip);
-        });
-    }, 100);
-    
-    // Автозакрытие через 3 секунды
-    setTimeout(() => {
-        if (tooltip.parentNode) {
-            tooltip.remove();
-        }
-    }, 3000);
-}
-
-// Новые функции для раскрывающихся пояснений
-function toggleYieldDropdown(event) {
-    event.stopPropagation();
-    const dropdown = document.getElementById('yieldDropdown');
-    const priceDropdown = document.getElementById('priceDropdown');
-    
-    // Закрываем другой dropdown
-    if (priceDropdown) priceDropdown.classList.remove('show');
-    
-    // Переключаем текущий
-    if (dropdown) {
-        dropdown.classList.toggle('show');
-        
-        // Закрытие по клику вне
-        if (dropdown.classList.contains('show')) {
-            setTimeout(() => {
-                document.addEventListener('click', function closeDropdown(e) {
-                    if (!dropdown.contains(e.target)) {
-                        dropdown.classList.remove('show');
-                        document.removeEventListener('click', closeDropdown);
-                    }
-                });
-            }, 100);
-        }
-    }
-    
-    // Вибрация
-    if (window.Telegram?.WebApp?.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.selectionChanged();
-    }
-}
-
-function togglePriceDropdown(event) {
-    event.stopPropagation();
-    const dropdown = document.getElementById('priceDropdown');
-    const yieldDropdown = document.getElementById('yieldDropdown');
-    
-    // Закрываем другой dropdown
-    if (yieldDropdown) yieldDropdown.classList.remove('show');
-    
-    // Переключаем текущий
-    if (dropdown) {
-        dropdown.classList.toggle('show');
-        
-        // Закрытие по клику вне
-        if (dropdown.classList.contains('show')) {
-            setTimeout(() => {
-                document.addEventListener('click', function closeDropdown(e) {
-                    if (!dropdown.contains(e.target)) {
-                        dropdown.classList.remove('show');
-                        document.removeEventListener('click', closeDropdown);
-                    }
-                });
-            }, 100);
-        }
-    }
-    
-    // Вибрация
-    if (window.Telegram?.WebApp?.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.selectionChanged();
     }
 }
 

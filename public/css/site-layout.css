@@ -1857,101 +1857,30 @@
         body.dark-mode #btConfigCol .bt-run-btn { background: #ffffff; color: #141b26; }
         body.dark-mode #btConfigCol .bt-run-btn svg { stroke: #119d5c; }
 
-        /* ===== РЕБАЛАНС V3 «Зеркало»: списки слева, умная замена справа ===== */
+        /* ===== РЕБАЛАНС R6: шапка-герой + единая карта (стили — rebalance-r6.css) ===== */
         #panel-rebalance { max-width: none !important; padding-top: 24px; }
         /* Рынок-дашборд: верхний отступ (заголовок страницы убран — читается по хлебной крошке) */
         #panel-market { padding-top: 20px; padding-bottom: 84px; }
         #rebalancePanelContent {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) 396px;
-            column-gap: 22px;
-            row-gap: 0;
-            align-items: start;
-            align-content: start;
-            justify-content: center;
-            max-width: 1180px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            max-width: 1280px;
             margin: 0 auto;
-        }
-        #rbRightCol { grid-column: 1; grid-row: 1; min-width: 0; max-width: none; width: 100%; }
-        #rbLeftRail {
-            grid-column: 2; grid-row: 1;
-            position: sticky; top: 0;
-            display: flex; flex-direction: column; gap: 16px; min-width: 0;
-        }
-        /* Заголовок «Ребаланс» дублирует крошку в шапке — скрываем, кнопку-инфо оставляем */
-        #rbLeftRail .header { padding: 0 !important; margin: 0 !important; display: flex; justify-content: flex-end; }
-        #rbLeftRail .header h1 { display: none; }
-        /* Умная замена — тёмный градиент V3 */
-        #rbLeftRail .smart-replace-card {
-            margin: 0 !important;
-            background: linear-gradient(135deg, #10161f 0%, #222e3f 100%);
-            border-radius: 22px;
-            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
-            position: relative; z-index: 1; /* виджет-продолжение заезжает под карточку */
         }
         /* Виджет «Ежемесячные купоны/доход» — продолжение тёмной карточки сверху:
            заезжает под её скруглённый низ, тонкая обводка, скругление снизу.
-           Один и тот же вид на «Ребалансе» и «Портфеле» (рельсы различаются только
-           зазором до карточки: у #rbLeftRail flex-gap 16px, у #pfLeftRail — 0). */
-        #rbLeftRail #rbMonthlyWidget,
+           После R6 остался только на «Портфеле» (#pfLeftRail). */
         #pfLeftRail #pfMonthlyWidget {
-            margin-top: -38px;                    /* −gap рельсы (16) − радиус карточки (22) */
+            margin-top: -22px;                    /* радиус карточки: заезд под кромку */
             padding-top: calc(16px + 22px + 2px); /* контент начинается ниже кромки карточки */
             position: relative; z-index: 0;
             border: 1px solid #dfe6ef;
             border-radius: 0 0 20px 20px;
             box-shadow: 0 16px 30px rgba(24,38,60,0.07);
         }
-        #pfLeftRail #pfMonthlyWidget { margin-top: -22px; } /* без flex-gap: только радиус карточки */
-        #rbLeftRail #rbMonthlyWidget:hover,
         #pfLeftRail #pfMonthlyWidget:hover { transform: none; border-color: #c9d6ea; }
-        body.dark-mode #rbLeftRail #rbMonthlyWidget,
         body.dark-mode #pfLeftRail #pfMonthlyWidget { border-color: rgba(255,255,255,0.10); }
-        /* Переключатель ОФЗ/Акции — белая V3-карточка, активная тёмная (как в референсе) */
-        #rbLeftRail .rebalance-tabs-container { margin: 0 !important; padding: 0 !important; }
-        #rbLeftRail .tab-switcher {
-            width: 100%;
-            display: flex;
-            background: #ffffff;
-            border: none;
-            border-radius: 18px;
-            padding: 7px;
-            gap: 10px;
-            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
-            box-sizing: border-box;
-        }
-        body.dark-mode #rbLeftRail .tab-switcher { background: #1d2734; }
-        #rbLeftRail .tab-glider { display: none; }
-        #rbLeftRail .tab-btn {
-            flex: 1; justify-content: center;
-            padding: 13px 18px;
-            border-radius: 13px;
-            border: none; background: transparent;
-            font-family: 'Manrope', sans-serif;
-            font-size: 15px; font-weight: 700;
-            color: #5f6d80;
-            transition: background 0.18s, color 0.18s;
-        }
-        #rbLeftRail .tab-btn svg { width: 17px; height: 17px; }
-        #rbLeftRail .tab-btn.active { background: #141b26; color: #ffffff; box-shadow: none; }
-        body.dark-mode #rbLeftRail .tab-btn { color: #9aa7ba; }
-        body.dark-mode #rbLeftRail .tab-btn.active { background: #ffffff; color: #141b26; }
-        /* Списки ребаланса — белая V3-карточка */
-        #rbRightCol .rebalance-tab-content.active {
-            background: transparent;
-            border-radius: 0;
-            box-shadow: none;
-            padding: 0;
-        }
-        /* Обёртка из оригинальных стилей остаётся — просто без визуала */
-        /* списки в правой колонке — на всю её ширину */
-        #rbRightCol .echelon-wrapper,
-        #rbRightCol .echelon-table-styled,
-        #rbRightCol .stocks-aurora-container {
-            max-width: none;
-            margin-left: 0;
-            margin-right: 0;
-        }
 
         /* ===== V3: таблица ОФЗ — белая карточка с интегрированным тёмным «Итого» ===== */
         #pfRightCol .v3-table-card {

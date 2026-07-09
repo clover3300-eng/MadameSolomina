@@ -1,0 +1,464 @@
+/* ==========================================================================
+   РЕБАЛАНС R6 — «Умная замена» одним экраном
+   ==========================================================================
+   Шапка-герой (тёмная, с живыми свечениями и потоком «продаём → покупаем»)
+   + единая белая карта: слева таблица кандидатов-ОФЗ, справа кандидаты-акции
+   по четырём эшелонам риска. Переключателя ОФЗ/Акции больше нет.
+
+   Разметка: index.html (#screen-assets → переносится в #rebalancePanelContent),
+   рендер списков: js/rebalance.js (rbx-*). Грузится ПОСЛЕ старых rebalance*.css
+   и site-layout.css, ПЕРЕД typography-tokens/desktop-zoom/mobile.
+   Мобильные (≤1023px) правки — в mobile.css.
+   ========================================================================== */
+
+/* ─────────────────────────── ШАПКА-ГЕРОЙ ─────────────────────────── */
+
+.rbx-hero {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 18px 28px;
+    padding: 22px 24px;
+    border-radius: 24px;
+    background: linear-gradient(120deg, #0c1219 0%, #182231 55%, #131e2b 100%);
+    box-shadow: 0 20px 44px rgba(24, 38, 60, 0.16);
+    isolation: isolate;
+}
+
+/* слой декора: два дрейфующих свечения + точечная сетка */
+.rbx-fx { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+.rbx-fx i { position: absolute; display: block; }
+.rbx-fx .g1 {
+    width: 420px; height: 300px; top: -160px; right: 12%;
+    background: radial-gradient(closest-side, rgba(52, 211, 153, 0.28), transparent 70%);
+    filter: blur(6px);
+    animation: rbxDrift1 16s ease-in-out infinite alternate;
+}
+.rbx-fx .g2 {
+    width: 360px; height: 280px; bottom: -180px; left: 26%;
+    background: radial-gradient(closest-side, rgba(90, 124, 255, 0.20), transparent 70%);
+    filter: blur(8px);
+    animation: rbxDrift2 22s ease-in-out infinite alternate;
+}
+.rbx-fx .mesh {
+    inset: 0;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.13) 1px, transparent 1.4px);
+    background-size: 18px 18px;
+    -webkit-mask-image: linear-gradient(100deg, transparent 38%, rgba(0, 0, 0, 0.5) 72%, rgba(0, 0, 0, 0.8));
+    mask-image: linear-gradient(100deg, transparent 38%, rgba(0, 0, 0, 0.5) 72%, rgba(0, 0, 0, 0.8));
+}
+@keyframes rbxDrift1 {
+    from { transform: translate3d(0, 0, 0) scale(1); }
+    to   { transform: translate3d(-70px, 26px, 0) scale(1.15); }
+}
+@keyframes rbxDrift2 {
+    from { transform: translate3d(0, 0, 0) scale(1); }
+    to   { transform: translate3d(60px, -20px, 0) scale(1.1); }
+}
+
+/* идентити: иконка с пульсом + заголовок + поток продаём→покупаем */
+.rbx-hero-id { display: flex; align-items: center; gap: 15px; min-width: 0; }
+.rbx-hero-ico {
+    flex-shrink: 0;
+    display: grid; place-items: center;
+    width: 47px; height: 47px; border-radius: 15px;
+    color: #4be3a0;
+    background: linear-gradient(135deg, rgba(52, 211, 153, 0.20), rgba(52, 211, 153, 0.05));
+    border: 1px solid rgba(52, 211, 153, 0.30);
+    animation: rbxPulse 3.4s ease-out infinite;
+}
+@keyframes rbxPulse {
+    0%   { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.30); }
+    55%  { box-shadow: 0 0 0 11px rgba(52, 211, 153, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+}
+.rbx-hero-t { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.rbx-hero-title {
+    font-family: 'Manrope', sans-serif;
+    font-size: 21px; font-weight: 800; line-height: 1.1;
+    letter-spacing: -0.01em; color: #ffffff; white-space: nowrap;
+}
+
+/* «Продаём выросшее → покупаем недооценённое» с бегущими точками */
+.rbx-flow {
+    display: flex; align-items: center; gap: 9px;
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600;
+    color: rgba(255, 255, 255, 0.62); white-space: nowrap;
+}
+.rbx-flow .side { display: inline-flex; align-items: center; gap: 6px; }
+.rbx-flow .side i {
+    width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+}
+.rbx-flow .sell i { background: #f87171; box-shadow: 0 0 8px rgba(248, 113, 113, 0.55); }
+.rbx-flow .buy i  { background: #34d399; box-shadow: 0 0 8px rgba(52, 211, 153, 0.55); }
+.rbx-flow .track {
+    position: relative; width: 52px; height: 2px; border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14); overflow: visible;
+}
+.rbx-flow .track b {
+    position: absolute; top: 50%; left: 0;
+    width: 5px; height: 5px; margin-top: -2.5px; border-radius: 50%;
+    background: #34d399; opacity: 0;
+    animation: rbxStream 2.4s linear infinite;
+}
+.rbx-flow .track b:nth-child(2) { animation-delay: 0.8s; }
+.rbx-flow .track b:nth-child(3) { animation-delay: 1.6s; }
+@keyframes rbxStream {
+    0%   { transform: translateX(0); opacity: 0; }
+    18%  { opacity: 1; }
+    82%  { opacity: 1; }
+    100% { transform: translateX(48px); opacity: 0; }
+}
+
+/* KPI: числа-счётчики + эквалайзер-разделитель */
+.rbx-hero-kpis { display: flex; align-items: center; gap: 24px; margin-left: auto; }
+.rbx-kpi { display: flex; flex-direction: column; gap: 3px; }
+.rbx-kpi .num { display: flex; align-items: baseline; gap: 8px; }
+.rbx-kpi .num b {
+    font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 29px; font-weight: 700; line-height: 1;
+    color: #ffffff; font-variant-numeric: tabular-nums; letter-spacing: -0.02em;
+}
+.rbx-kpi .num span {
+    font-family: 'Manrope', sans-serif;
+    font-size: 11px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.12em; color: rgba(255, 255, 255, 0.52);
+}
+.rbx-kpi .sub {
+    font-family: 'Inter', sans-serif;
+    font-size: 11.5px; font-weight: 500; color: rgba(255, 255, 255, 0.48);
+    white-space: nowrap;
+}
+.rbx-kpi .sub b {
+    font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 12px; font-weight: 700; color: #4be3a0;
+    font-variant-numeric: tabular-nums;
+}
+.rbx-eq { display: flex; align-items: flex-end; gap: 3px; height: 26px; }
+.rbx-eq i {
+    width: 3px; border-radius: 999px;
+    background: linear-gradient(180deg, #4be3a0, rgba(75, 227, 160, 0.25));
+    animation: rbxEq 1.7s ease-in-out infinite;
+}
+.rbx-eq i:nth-child(1) { height: 34%; animation-delay: 0s;    }
+.rbx-eq i:nth-child(2) { height: 72%; animation-delay: 0.22s; }
+.rbx-eq i:nth-child(3) { height: 100%; animation-delay: 0.44s; }
+.rbx-eq i:nth-child(4) { height: 58%; animation-delay: 0.66s; }
+.rbx-eq i:nth-child(5) { height: 82%; animation-delay: 0.88s; }
+@keyframes rbxEq {
+    0%, 100% { transform: scaleY(0.55); }
+    50%      { transform: scaleY(1); }
+}
+
+/* белая кнопка «Рассчитать портфель» */
+.rbx-hero-cta {
+    display: inline-flex; align-items: center; gap: 9px; flex-shrink: 0;
+    padding: 14px 23px; border: none; border-radius: 999px; cursor: pointer;
+    font-family: 'Manrope', sans-serif; font-size: 14px; font-weight: 800;
+    color: #10161f; background: #ffffff;
+    box-shadow: 0 10px 26px -8px rgba(0, 0, 0, 0.45);
+    transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+.rbx-hero-cta svg { flex-shrink: 0; stroke: #119d5c; }
+.rbx-hero-cta:hover { transform: translateY(-1px); box-shadow: 0 16px 34px -10px rgba(0, 0, 0, 0.55); }
+.rbx-hero-cta:active { transform: translateY(0); box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.45); }
+
+/* ─────────────────────────── ЕДИНАЯ КАРТА ─────────────────────────── */
+
+.rbx-card {
+    display: grid;
+    grid-template-columns: minmax(330px, 2fr) 3fr;
+    align-items: start;
+    background: #ffffff;
+    border-radius: 24px;
+    box-shadow: 0 16px 36px rgba(24, 38, 60, 0.08);
+}
+body.dark-mode .rbx-card {
+    background: #141c27;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+}
+
+.rbx-sec { padding: 22px 24px 26px; min-width: 0; }
+.rbx-sec-stocks { border-left: 1px solid rgba(44, 54, 76, 0.08); }
+body.dark-mode .rbx-sec-stocks { border-left-color: rgba(255, 255, 255, 0.07); }
+
+/* шапка секции: заголовок + счётчик + сортировка/подсказка */
+.rbx-sh { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; min-height: 32px; }
+.rbx-sh-t { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.rbx-sh-t b {
+    font-family: 'Manrope', sans-serif;
+    font-size: var(--fs-card-title, 17px); font-weight: 800;
+    color: #161B27; letter-spacing: -0.01em; white-space: nowrap;
+}
+body.dark-mode .rbx-sh-t b { color: #F1F5F9; }
+.rbx-cnt {
+    font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 11.5px; font-weight: 700; color: #7d8aa0;
+    background: #F3F5F8; padding: 3px 9px; border-radius: 999px;
+    font-variant-numeric: tabular-nums;
+}
+body.dark-mode .rbx-cnt { background: rgba(255, 255, 255, 0.08); color: #94a3b8; }
+
+/* кнопки сортировки (Доходность / Цена) */
+.rbx-sort { margin-left: auto; display: flex; gap: 6px; }
+.rbx-sc {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 11px; border-radius: 10px; cursor: pointer;
+    border: 1px solid rgba(44, 54, 76, 0.14); background: #ffffff;
+    font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700; color: #5d6b83;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.rbx-sc:hover { border-color: #161B27; }
+.rbx-sc.act { background: #161B27; border-color: #161B27; color: #ffffff; }
+.rbx-sc-ico { position: relative; display: inline-grid; place-items: center; width: 13px; height: 13px; }
+.rbx-sc-ico svg { position: absolute; width: 13px; height: 13px; transition: opacity 0.15s ease, transform 0.2s ease; }
+.rbx-sc .ic-dir { opacity: 0; }
+.rbx-sc.act .ic-neutral { opacity: 0; }
+.rbx-sc.act .ic-dir { opacity: 1; }
+.rbx-sc.act.asc .ic-dir { transform: rotate(180deg); }
+body.dark-mode .rbx-sc { background: rgba(15, 23, 42, 0.6); border-color: rgba(255, 255, 255, 0.13); color: #cbd5e1; }
+body.dark-mode .rbx-sc:hover { border-color: rgba(255, 255, 255, 0.4); }
+body.dark-mode .rbx-sc.act { background: #ffffff; border-color: #ffffff; color: #141b26; }
+
+/* «по эшелонам риска» — тихая кнопка-подсказка про эшелоны */
+.rbx-esh-hint {
+    margin-left: auto; display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 10px; border: none; border-radius: 10px; cursor: pointer;
+    background: transparent;
+    font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #8a96aa;
+    transition: color 0.15s ease, background 0.15s ease;
+}
+.rbx-esh-hint svg { flex-shrink: 0; opacity: 0.75; }
+.rbx-esh-hint:hover { color: #161B27; background: rgba(44, 54, 76, 0.06); }
+body.dark-mode .rbx-esh-hint { color: #94a3b8; }
+body.dark-mode .rbx-esh-hint:hover { color: #e2e8f0; background: rgba(255, 255, 255, 0.07); }
+
+/* ─────────────────────── СЕКЦИЯ ОФЗ: ТАБЛИЦА ─────────────────────── */
+
+.rbx-colhead {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) 96px 100px 20px;
+    gap: 8px; align-items: center;
+    padding: 0 12px 9px;
+    border-bottom: 1px solid rgba(44, 54, 76, 0.08);
+    font-family: var(--font-ui, 'Manrope', sans-serif);
+    font-size: var(--fs-th, 11px); font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.06em; color: #94A3B8;
+}
+.rbx-colhead span { text-align: right; }
+.rbx-colhead .l { text-align: left; }
+body.dark-mode .rbx-colhead { color: #7d8aa0; border-bottom-color: rgba(255, 255, 255, 0.08); }
+
+.rbx-ofz-list { display: flex; flex-direction: column; }
+
+.rbx-row { border-bottom: 1px solid rgba(44, 54, 76, 0.05); }
+.rbx-row:last-child { border-bottom: none; }
+body.dark-mode .rbx-row { border-bottom-color: rgba(255, 255, 255, 0.05); }
+
+.rbx-row-main {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) 96px 100px 20px;
+    gap: 8px; align-items: center;
+    padding: 13px 12px; cursor: pointer;
+    border-radius: 12px;
+    transition: background 0.14s ease;
+}
+.rbx-row-main:hover { background: #F6F8FB; }
+body.dark-mode .rbx-row-main:hover { background: rgba(255, 255, 255, 0.045); }
+
+.rbx-row-main .rk {
+    font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: var(--fs-num-sm, 12px); font-weight: 600; color: #aab4c4;
+    font-variant-numeric: tabular-nums;
+}
+.rbx-row-main .nm {
+    font-family: 'Inter', sans-serif; font-size: 14.5px; font-weight: 800; color: #161B27;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+body.dark-mode .rbx-row-main .nm { color: #F1F5F9; }
+.rbx-row-main .yl {
+    font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: var(--fs-num, 15px); font-weight: 700; text-align: right;
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.rbx-row-main .pr {
+    font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: var(--fs-num, 15px); font-weight: 600; color: #161B27; text-align: right;
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+body.dark-mode .rbx-row-main .pr { color: #e2e8f0; }
+.rbx-row-main .ar { display: grid; place-items: center; color: #c3cddb; }
+.rbx-row-main .ar svg { width: 15px; height: 15px; transition: transform 0.2s ease, color 0.15s ease; }
+.rbx-row.expanded .rbx-row-main .ar svg { transform: rotate(90deg); color: #161B27; }
+body.dark-mode .rbx-row.expanded .rbx-row-main .ar svg { color: #e2e8f0; }
+
+/* раскрывающиеся детали выпуска: 0fr → 1fr */
+.rbx-det { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.28s ease; }
+.rbx-row.expanded .rbx-det { grid-template-rows: 1fr; }
+.rbx-det-in { overflow: hidden; min-height: 0; }
+.rbx-det-in > .rbx-dgrid { margin: 2px 4px 0; }
+
+.rbx-dgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.rbx-di {
+    display: flex; flex-direction: column; gap: 2px; min-width: 0;
+    padding: 8px 11px 9px; border-radius: 10px; background: #F5F7FA;
+}
+body.dark-mode .rbx-di { background: rgba(15, 23, 42, 0.6); }
+.rbx-di span {
+    display: inline-flex; align-items: center;
+    font-family: 'Inter', sans-serif; font-size: 8.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.09em; color: #94A3B8;
+    white-space: nowrap; overflow: hidden;
+}
+.rbx-di b {
+    font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 12px; font-weight: 700; color: #2C364C;
+    font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+body.dark-mode .rbx-di b { color: #e2e8f0; }
+.rbx-di b.up { color: #1f9d63; }
+body.dark-mode .rbx-di b.up { color: #34d399; }
+
+.rbx-di-copy { cursor: pointer; transition: background 0.14s ease; }
+.rbx-di-copy:hover { background: #EDF1F6; }
+body.dark-mode .rbx-di-copy:hover { background: rgba(15, 23, 42, 0.85); }
+.rbx-di-copy b { display: inline-flex; align-items: center; gap: 6px; }
+.rbx-di-copy svg { width: 12px; height: 12px; flex-shrink: 0; color: #94A3B8; }
+
+.rbx-q {
+    display: inline-grid; place-items: center; flex-shrink: 0;
+    width: 14px; height: 14px; margin-left: 5px; border-radius: 50%;
+    font-style: normal; font-size: 9px; font-weight: 800; letter-spacing: 0;
+    color: #7d8aa0; background: rgba(44, 54, 76, 0.09); cursor: pointer;
+    transition: background 0.14s ease, color 0.14s ease;
+}
+.rbx-q:hover { background: #161B27; color: #ffffff; }
+body.dark-mode .rbx-q { background: rgba(255, 255, 255, 0.10); color: #94a3b8; }
+body.dark-mode .rbx-q:hover { background: #ffffff; color: #141b26; }
+
+.rbx-dhelp {
+    display: none; grid-column: 1 / -1;
+    padding: 9px 12px; border-radius: 10px;
+    border: 1px dashed rgba(44, 54, 76, 0.18); background: #ffffff;
+    font-family: 'Inter', sans-serif; font-size: 10.5px; line-height: 1.55; color: #7d8aa0;
+}
+.rbx-dhelp.show { display: block; }
+.rbx-dhelp b { color: #2C364C; }
+body.dark-mode .rbx-dhelp { border-color: rgba(255, 255, 255, 0.14); background: rgba(15, 23, 42, 0.4); color: #94a3b8; }
+body.dark-mode .rbx-dhelp b { color: #e2e8f0; }
+
+.rbx-chart-btn {
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    width: calc(100% - 8px); margin: 9px 4px 12px;
+    padding: 10px 14px; border-radius: 11px; cursor: pointer;
+    border: 1px solid rgba(44, 54, 76, 0.13); background: #ffffff;
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700; color: #2C364C;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+.rbx-chart-btn:hover { border-color: #161B27; }
+body.dark-mode .rbx-chart-btn { background: rgba(15, 23, 42, 0.6); border-color: rgba(255, 255, 255, 0.13); color: #cbd5e1; }
+body.dark-mode .rbx-chart-btn:hover { border-color: rgba(255, 255, 255, 0.4); }
+
+.rbx-foot {
+    margin-top: 13px; padding: 0 6px;
+    font-family: 'Inter', sans-serif; font-size: 11px; line-height: 1.5; color: #9aa6b8;
+}
+
+/* ──────────────── СЕКЦИЯ АКЦИИ: 4 КОЛОНКИ ЭШЕЛОНОВ ──────────────── */
+
+.rbx-esh-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px; align-items: start;
+}
+.rbx-esh-grid .skeleton-container { grid-column: 1 / -1; }
+
+.rbx-ech-col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.rbx-ech-col.e1 { --ech: #1d9d6c; }
+.rbx-ech-col.e2 { --ech: #4b7ee0; }
+.rbx-ech-col.e3 { --ech: #d0812a; }
+.rbx-ech-col.e4 { --ech: #d8434f; }
+
+/* тёмная пилюля-заголовок эшелона с цветной римской цифрой */
+.rbx-ech-head {
+    display: grid; place-items: center;
+    height: 38px; border-radius: 12px;
+    background: linear-gradient(135deg, #10161f, #1b2634);
+}
+.rbx-ech-head span {
+    font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 0.4em; text-indent: 0.4em;
+    color: var(--ech, #4be3a0);
+}
+body.dark-mode .rbx-ech-head { background: linear-gradient(135deg, #0b1017, #16202d); border: 1px solid rgba(255, 255, 255, 0.06); }
+
+/* карточка-кандидат */
+.rbx-tile {
+    padding: 12px 13px 12px; border-radius: 14px; cursor: pointer;
+    background: #ffffff; border: 1px solid rgba(44, 54, 76, 0.10);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+.rbx-tile:hover {
+    border-color: rgba(44, 54, 76, 0.22);
+    box-shadow: 0 10px 22px -10px rgba(24, 38, 60, 0.28);
+    transform: translateY(-1px);
+}
+.rbx-tile.active {
+    border-color: var(--ech, #161B27);
+    box-shadow: 0 0 0 1px var(--ech, #161B27), 0 10px 22px -10px rgba(24, 38, 60, 0.28);
+}
+body.dark-mode .rbx-tile { background: rgba(15, 23, 42, 0.55); border-color: rgba(255, 255, 255, 0.09); }
+body.dark-mode .rbx-tile:hover { border-color: rgba(255, 255, 255, 0.22); box-shadow: 0 10px 22px -10px rgba(0, 0, 0, 0.5); }
+
+.rbx-tile .tt { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.rbx-tile .tt b {
+    font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 14px; font-weight: 700; color: #161B27; letter-spacing: -0.01em;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+body.dark-mode .rbx-tile .tt b { color: #F1F5F9; }
+.rbx-tile .tt span {
+    font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 12px; font-weight: 700; white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+.rbx-tile .tt span.pos { color: #1f9d63; }
+.rbx-tile .tt span.neg { color: #d23b4e; }
+body.dark-mode .rbx-tile .tt span.pos { color: #34d399; }
+body.dark-mode .rbx-tile .tt span.neg { color: #f87171; }
+.rbx-tile .nm {
+    margin-top: 3px;
+    font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 500; color: #8a96aa;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.rbx-tile .bar {
+    margin-top: 10px; height: 4px; border-radius: 999px;
+    background: #EEF1F5; overflow: hidden;
+}
+body.dark-mode .rbx-tile .bar { background: rgba(255, 255, 255, 0.09); }
+.rbx-tile .bar i {
+    display: block; height: 100%; border-radius: inherit;
+    background: linear-gradient(90deg, #34d399, #10B981);
+}
+
+/* ────────────────────────── ПРОЧЕЕ ────────────────────────── */
+
+/* планшет/узкий десктоп: секции друг под другом, эшелоны 4-в-ряд остаются */
+@media (max-width: 1180px) and (min-width: 1024px) {
+    .rbx-card { grid-template-columns: 1fr; }
+    .rbx-sec-stocks { border-left: none; border-top: 1px solid rgba(44, 54, 76, 0.08); }
+    body.dark-mode .rbx-sec-stocks { border-top-color: rgba(255, 255, 255, 0.07); }
+}
+
+/* уважение к reduced motion: статичный герой */
+@media (prefers-reduced-motion: reduce) {
+    .rbx-fx .g1, .rbx-fx .g2, .rbx-hero-ico, .rbx-flow .track b, .rbx-eq i { animation: none; }
+    .rbx-flow .track b { opacity: 0.7; }
+    .rbx-flow .track b:nth-child(1) { left: 8px; }
+    .rbx-flow .track b:nth-child(2) { left: 22px; }
+    .rbx-flow .track b:nth-child(3) { left: 36px; }
+}

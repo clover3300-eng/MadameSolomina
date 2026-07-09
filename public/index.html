@@ -26,7 +26,7 @@
     <link rel="stylesheet" href="css/rebalance.css">
     <link rel="stylesheet" href="css/rebalance-stocks.css">
     <link rel="stylesheet" href="css/webapp-layout.css?v=3">
-    <link id="siteLayoutCSS" rel="stylesheet" href="css/site-layout.css?v=24">
+    <link id="siteLayoutCSS" rel="stylesheet" href="css/site-layout.css?v=25">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/backtest.css?v=4">
     <link rel="stylesheet" href="css/rebalance-r4.css?v=8">
@@ -45,10 +45,11 @@
     <link rel="stylesheet" href="css/site-bg.css?v=3">
     <link rel="stylesheet" href="css/profile-menu.css?v=6">
     <link rel="stylesheet" href="css/admin.css?v=2">
+    <link rel="stylesheet" href="css/rebalance-r6.css?v=1">
     <link rel="stylesheet" href="css/typography-tokens.css?v=1">
     <link rel="stylesheet" href="css/desktop-zoom.css?v=4">
     <!-- Мобильный слой (≤1023px) — всегда ПОСЛЕДНИЙ, перебивает всё -->
-    <link rel="stylesheet" href="css/mobile.css?v=6">
+    <link rel="stylesheet" href="css/mobile.css?v=7">
     
     <!-- Telegram WebApp API (fallback — works both in TG and browser) -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -1433,209 +1434,122 @@
     </div>
     <div class="noise-overlay"></div>
     
-    <!-- Заголовок -->
-   <div class="header" style="display: flex; justify-content: space-between; align-items: center;">
-    <h1>Ребаланс</h1>
-    
-    <button id="stocksInfoBtn" class="info-trigger-btn" onclick="this.classList.remove('h-help-animated'); this.dataset.clicked='1'; if(window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('medium'); else if(navigator.vibrate) navigator.vibrate(10); toggleEchelonGuide(true, 'rebalance', this)">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="16" x2="12" y2="12"></line>
-            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-        </svg>
-    </button>
-</div>
-    
-    <!-- Тёмная боковая панель «Умная замена» (стиль R4) -->
-    <div class="smart-replace-card" id="smartReplaceCard">
-        <div class="sr-head">
-            <div class="smart-replace-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <!-- ===== R6: шапка «Умная замена» — тёмный герой на всю ширину ===== -->
+    <div class="rbx-hero" id="rbxHero">
+        <div class="rbx-fx" aria-hidden="true"><i class="g1"></i><i class="g2"></i><i class="mesh"></i></div>
+        <div class="rbx-hero-id">
+            <div class="rbx-hero-ico">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 3l1.7 5.1a3 3 0 0 0 1.9 1.9L20.7 11.7l-5.1 1.7a3 3 0 0 0-1.9 1.9L12 20.4l-1.7-5.1a3 3 0 0 0-1.9-1.9L3.3 11.7l5.1-1.7a3 3 0 0 0 1.9-1.9z"/>
                     <path d="M19 3.5l.6 1.8 1.8.6-1.8.6-.6 1.8-.6-1.8-1.8-.6 1.8-.6z"/>
                 </svg>
             </div>
-            <div class="smart-replace-content">
-                <h2 class="smart-replace-title">Умная замена</h2>
+            <div class="rbx-hero-t">
+                <div class="rbx-hero-title">Умная замена</div>
+                <div class="rbx-flow">
+                    <span class="side sell"><i></i>Продаём выросшее</span>
+                    <span class="track" aria-hidden="true"><b></b><b></b><b></b></span>
+                    <span class="side buy"><i></i>Покупаем недооценённое</span>
+                </div>
             </div>
         </div>
-        <div class="sr-cand">
-            <div class="sr-cand-num" id="rbCandNum">—</div>
-            <div class="sr-cand-label" id="rbCandLabel">кандидатов на покупку<br>среди ОФЗ</div>
-        </div>
-        <div class="sr-points">
-            <div class="sr-point"><span class="sr-dot sell"></span><span><b>Продаём</b> — выросшее и бумаги с низким потенциалом</span></div>
-            <div class="sr-point"><span class="sr-dot buy"></span><span><b>Покупаем</b> — недооценённое из списка</span></div>
-        </div>
-        <div class="sr-hr"></div>
-
-        <!-- Переключатель ОФЗ / Акции -->
-        <div class="rebalance-tabs-container">
-            <div class="tab-switcher" id="tabSwitcher">
-                <div class="tab-glider"></div>
-                <button class="tab-btn active" onclick="switchRebalanceTab('ofz')" data-tab="ofz">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
-                    ОФЗ
-                </button>
-                <button class="tab-btn" onclick="switchRebalanceTab('stocks')" data-tab="stocks">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                    Акции
-                </button>
+        <div class="rbx-hero-kpis">
+            <div class="rbx-kpi">
+                <div class="num"><b id="rbxOfzNum">—</b><span>ОФЗ</span></div>
+                <div class="sub">средняя доходность <b id="rbxOfzAvg">—</b></div>
+            </div>
+            <div class="rbx-eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="rbx-kpi">
+                <div class="num"><b id="rbxStNum">—</b><span>акции</span></div>
+                <div class="sub">средний потенциал <b id="rbxStAvg">—</b></div>
             </div>
         </div>
-
-        <!-- Статистика по активной вкладке (обновляется из JS) -->
-        <div class="sr-stats" id="rbStats">
-            <div class="sr-stat"><span class="k" id="rbStatK2">Средняя доходность</span><span class="v up" id="rbStatV2">—</span></div>
-            <div class="sr-stat"><span class="k" id="rbStatK3">Лучшая доходность</span><span class="v" id="rbStatV3">—</span></div>
-        </div>
-        <div class="sr-foot">
-            <div class="sr-hr"></div>
-            <!-- Ведёт на вкладку «Расчёт» — там собирается новый портфель -->
-            <button type="button" class="sr-recos" onclick="switchTab('calc')">
-                <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></span>
-                Рассчитать портфель
-            </button>
-        </div>
+        <button type="button" class="rbx-hero-cta" onclick="switchTab('calc')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>
+            Рассчитать портфель
+        </button>
     </div>
 
-    <!-- КОНТЕНТ ВКЛАДКИ ОФЗ -->
-    <div id="rebalance-tab-ofz" class="rebalance-tab-content active">
-        <div class="rb-card">
-            <!-- Заголовок карточки: название + счётчик + сортировка -->
-            <div class="rb-thead">
-                <div class="ti">
-                    <div class="row"><b>Кандидаты на покупку</b><span class="cnt" id="ofzCount">8</span></div>
-                    <span class="sub">Недооценённые ОФЗ — нажмите строку для деталей</span>
-                </div>
-                <div class="sortbar" role="group" aria-label="Сортировка списка">
-                    <button type="button" class="rb-sc act desc" id="ofzSortYield" onclick="setOfzSort('yield')" title="Сортировать по доходности">
+    <!-- ===== R6: единая карта — кандидаты ОФЗ слева, акции по эшелонам справа ===== -->
+    <div class="rbx-card">
+        <section class="rbx-sec rbx-sec-ofz">
+            <div class="rbx-sh">
+                <div class="rbx-sh-t"><b>Кандидаты · ОФЗ</b><span class="rbx-cnt" id="ofzCount">—</span></div>
+                <div class="rbx-sort" role="group" aria-label="Сортировка списка">
+                    <button type="button" class="rbx-sc act desc" id="ofzSortYield" onclick="setOfzSort('yield')" title="Сортировать по доходности">
                         Доходность
-                        <i class="rb-sc-ico">
+                        <i class="rbx-sc-ico">
                             <svg class="ic-neutral" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9l4-4 4 4"/><path d="M8 15l4 4 4-4"/></svg>
                             <svg class="ic-dir" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M6 13l6 6 6-6"/></svg>
                         </i>
                     </button>
-                    <button type="button" class="rb-sc" id="ofzSortPrice" onclick="setOfzSort('price')" title="Сортировать по цене">
+                    <button type="button" class="rbx-sc" id="ofzSortPrice" onclick="setOfzSort('price')" title="Сортировать по цене">
                         Цена
-                        <i class="rb-sc-ico">
+                        <i class="rbx-sc-ico">
                             <svg class="ic-neutral" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9l4-4 4 4"/><path d="M8 15l4 4 4-4"/></svg>
                             <svg class="ic-dir" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M6 13l6 6 6-6"/></svg>
                         </i>
                     </button>
                 </div>
             </div>
-            <!-- Шапка столбцов: ранг | инструмент | доходность | цена -->
-            <div class="ofz-aurora-colhead">
+            <div class="rbx-colhead">
                 <span></span>
-                <span class="ch-left">Инструмент</span>
+                <span class="l">Инструмент</span>
                 <span>Доходность</span>
                 <span>Цена</span>
                 <span></span>
             </div>
-
-            <div id="ofz-aurora-list" class="ofz-aurora-list">
-            <!-- Skeleton для ОФЗ -->
-            <div class="skeleton-container" id="skeleton-ofz-list">
-                <div class="skeleton-list-item" style="animation-delay: 0s"><div class="s-left"><div class="skeleton-bone s-title"></div><div class="skeleton-bone s-sub"></div></div><div class="s-right"><div class="skeleton-bone s-price"></div><div class="skeleton-bone s-yield"></div></div></div>
-                <div class="skeleton-list-item" style="animation-delay: 0.05s"><div class="s-left"><div class="skeleton-bone s-title"></div><div class="skeleton-bone s-sub"></div></div><div class="s-right"><div class="skeleton-bone s-price"></div><div class="skeleton-bone s-yield"></div></div></div>
-                <div class="skeleton-list-item" style="animation-delay: 0.1s"><div class="s-left"><div class="skeleton-bone s-title"></div><div class="skeleton-bone s-sub"></div></div><div class="s-right"><div class="skeleton-bone s-price"></div><div class="skeleton-bone s-yield"></div></div></div>
-                <div class="skeleton-list-item" style="animation-delay: 0.15s"><div class="s-left"><div class="skeleton-bone s-title"></div><div class="skeleton-bone s-sub"></div></div><div class="s-right"><div class="skeleton-bone s-price"></div><div class="skeleton-bone s-yield"></div></div></div>
-            </div>
-            <!-- Динамически заполняется через JS -->
-            </div>
-
-            <!-- Легенда таблицы ОФЗ -->
-            <div class="rb-legend">
-                <span class="rb-leg-item"><span class="rb-leg-grad" aria-hidden="true"></span>Цвет доходности — ярче зелёный = выше в выборке</span>
-                <span class="rb-leg-item"><span class="rb-leg-chip">#</span>Ранг по выбранной сортировке</span>
-                <span class="rb-leg-item"><span class="rb-leg-ic">₽</span>Цена указана с учётом НКД</span>
-                <span class="rb-leg-item"><span class="rb-leg-ic rb-leg-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></span>Нажмите строку — детали выпуска</span>
-            </div>
-        </div><!-- /rb-card -->
-
-        <!-- Ghost Trigger для ОФЗ -->
-        <div class="rebalance-ghost-trigger open" id="ofzGhostTrigger" onclick="toggleAuroraOfzList()">
-            <div class="ghost-line"></div>
-            <div class="ghost-text" id="ofzGhostText">СВЕРНУТЬ</div>
-            <div class="ghost-dots">
-                <div class="ghost-dot"></div>
-                <div class="ghost-dot"></div>
-                <div class="ghost-dot"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- КОНТЕНТ ВКЛАДКИ АКЦИИ -->
-    <div id="rebalance-tab-stocks" class="rebalance-tab-content">
-        <div class="rb-card stocks-aurora-container">
-            <div class="rb-thead">
-                <div class="ti">
-                    <div class="row"><b>Кандидаты на покупку</b><span class="cnt" id="stocksCount">24</span></div>
-                    <span class="sub">Недооценённые акции по эшелонам риска — нажмите карточку</span>
+            <div id="ofz-aurora-list" class="rbx-ofz-list">
+                <!-- Skeleton для ОФЗ -->
+                <div class="skeleton-container" id="skeleton-ofz-list">
+                    <div class="skeleton-list-item" style="animation-delay: 0s"><div class="s-left"><div class="skeleton-bone s-title"></div><div class="skeleton-bone s-sub"></div></div><div class="s-right"><div class="skeleton-bone s-price"></div><div class="skeleton-bone s-yield"></div></div></div>
+                    <div class="skeleton-list-item" style="animation-delay: 0.05s"><div class="s-left"><div class="skeleton-bone s-title"></div><div class="skeleton-bone s-sub"></div></div><div class="s-right"><div class="skeleton-bone s-price"></div><div class="skeleton-bone s-yield"></div></div></div>
+                    <div class="skeleton-list-item" style="animation-delay: 0.1s"><div class="s-left"><div class="skeleton-bone s-title"></div><div class="skeleton-bone s-sub"></div></div><div class="s-right"><div class="skeleton-bone s-price"></div><div class="skeleton-bone s-yield"></div></div></div>
+                    <div class="skeleton-list-item" style="animation-delay: 0.15s"><div class="s-left"><div class="skeleton-bone s-title"></div><div class="skeleton-bone s-sub"></div></div><div class="s-right"><div class="skeleton-bone s-price"></div><div class="skeleton-bone s-yield"></div></div></div>
                 </div>
+                <!-- Динамически заполняется через JS -->
             </div>
-            <div class="esh">
+            <div class="rbx-foot">Цена указана с учётом НКД · нажмите строку — детали выпуска</div>
+        </section>
 
-            <!-- Таблица эшелонов: 4 колонки эшелонов -->
-            <div class="stocks-aurora-table">
-                <div class="stocks-table-header">
-                    <div class="esh-colhead e1" onclick="toggleEchelonColumnHighlight(1, event)"><span class="num" id="echelonCircle1">I</span></div>
-                    <div class="esh-colhead e2" onclick="toggleEchelonColumnHighlight(2, event)"><span class="num" id="echelonCircle2">II</span></div>
-                    <div class="esh-colhead e3" onclick="toggleEchelonColumnHighlight(3, event)"><span class="num" id="echelonCircle3">III</span></div>
-                    <div class="esh-colhead e4" onclick="toggleEchelonColumnHighlight(4, event)"><span class="num" id="echelonCircle4">IV</span></div>
-                </div>
-                <div class="stocks-table-body" id="stocks-aurora-body">
-                    <!-- Skeleton для акций -->
-                    <div class="skeleton-container" id="skeleton-stocks-table">
-                        <div class="skeleton-stocks-grid">
-                            <div class="skeleton-stock-cell"><div class="skeleton-bone s-ticker"></div><div class="skeleton-bone s-sector"></div></div>
-                            <div class="skeleton-stock-cell"><div class="skeleton-bone s-ticker"></div><div class="skeleton-bone s-sector"></div></div>
-                            <div class="skeleton-stock-cell"><div class="skeleton-bone s-ticker"></div><div class="skeleton-bone s-sector"></div></div>
-                            <div class="skeleton-stock-cell"><div class="skeleton-bone s-ticker"></div><div class="skeleton-bone s-sector"></div></div>
-                        </div>
-                        <div class="skeleton-stocks-grid" style="margin-top: 2px;">
-                            <div class="skeleton-stock-cell"><div class="skeleton-bone s-ticker"></div><div class="skeleton-bone s-sector"></div></div>
-                            <div class="skeleton-stock-cell"><div class="skeleton-bone s-ticker"></div><div class="skeleton-bone s-sector"></div></div>
-                            <div class="skeleton-stock-cell"><div class="skeleton-bone s-ticker"></div><div class="skeleton-bone s-sector"></div></div>
-                            <div class="skeleton-stock-cell"><div class="skeleton-bone s-ticker"></div><div class="skeleton-bone s-sector"></div></div>
-                        </div>
-                        <div class="skeleton-stocks-grid" style="margin-top: 2px;">
-                            <div class="skeleton-stock-cell"><div class="skeleton-bone s-ticker"></div><div class="skeleton-bone s-sector"></div></div>
-                            <div class="skeleton-stock-cell"><div class="skeleton-bone s-ticker"></div><div class="skeleton-bone s-sector"></div></div>
-                            <div class="skeleton-stock-cell"><div class="skeleton-bone s-ticker"></div><div class="skeleton-bone s-sector"></div></div>
-                            <div class="skeleton-stock-cell"><div class="skeleton-bone s-ticker"></div><div class="skeleton-bone s-sector"></div></div>
-                        </div>
+        <section class="rbx-sec rbx-sec-stocks">
+            <div class="rbx-sh">
+                <div class="rbx-sh-t"><b>Кандидаты · Акции</b><span class="rbx-cnt" id="stocksCount">—</span></div>
+                <button type="button" class="rbx-esh-hint" onclick="toggleEchelonGuide(true,'rebalance',this)">
+                    по эшелонам риска
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle cx="12" cy="8" r="0.5"/></svg>
+                </button>
+            </div>
+            <div id="stocks-aurora-body" class="rbx-esh-grid">
+                <!-- Skeleton для акций -->
+                <div class="skeleton-container" id="skeleton-stocks-table">
+                    <div class="skeleton-stocks-grid">
+                        <div class="skeleton-stock-cell"><div class="skeleton-bone s-ticker"></div><div class="skeleton-bone s-sector"></div></div>
+                        <div class="skeleton-stock-cell"><div class="skeleton-bone s-ticker"></div><div class="skeleton-bone s-sector"></div></div>
+                        <div class="skeleton-stock-cell"><div class="skeleton-bone s-ticker"></div><div class="skeleton-bone s-sector"></div></div>
+                        <div class="skeleton-stock-cell"><div class="skeleton-bone s-ticker"></div><div class="skeleton-bone s-sector"></div></div>
                     </div>
-                    <!-- Динамически заполняется через JS -->
+                    <div class="skeleton-stocks-grid" style="margin-top: 2px;">
+                        <div class="skeleton-stock-cell"><div class="skeleton-bone s-ticker"></div><div class="skeleton-bone s-sector"></div></div>
+                        <div class="skeleton-stock-cell"><div class="skeleton-bone s-ticker"></div><div class="skeleton-bone s-sector"></div></div>
+                        <div class="skeleton-stock-cell"><div class="skeleton-bone s-ticker"></div><div class="skeleton-bone s-sector"></div></div>
+                        <div class="skeleton-stock-cell"><div class="skeleton-bone s-ticker"></div><div class="skeleton-bone s-sector"></div></div>
+                    </div>
+                    <div class="skeleton-stocks-grid" style="margin-top: 2px;">
+                        <div class="skeleton-stock-cell"><div class="skeleton-bone s-ticker"></div><div class="skeleton-bone s-sector"></div></div>
+                        <div class="skeleton-stock-cell"><div class="skeleton-bone s-ticker"></div><div class="skeleton-bone s-sector"></div></div>
+                        <div class="skeleton-stock-cell"><div class="skeleton-bone s-ticker"></div><div class="skeleton-bone s-sector"></div></div>
+                        <div class="skeleton-stock-cell"><div class="skeleton-bone s-ticker"></div><div class="skeleton-bone s-sector"></div></div>
+                    </div>
                 </div>
+                <!-- Динамически заполняется через JS -->
             </div>
-            
-            <!-- Карточка деталей тикера -->
-            <div class="stock-detail-card" id="stockDetailCard">
-                <!-- Динамически заполняется -->
-            </div>
-
-            <!-- Подсказка «Что такое эшелоны?» -->
-            <button type="button" class="esh-hint-btn esh-hint-stocks" onclick="toggleEchelonGuide(true,'rebalance',this)">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle cx="12" cy="8" r="0.5"/></svg>
-                Что такое эшелоны?
-            </button>
-            </div><!-- /esh -->
-        </div><!-- /rb-card -->
-
-        <!-- Ghost Trigger для акций -->
-        <div class="rebalance-ghost-trigger open" id="stocksGhostTrigger" onclick="toggleStocksTable()">
-            <div class="ghost-line"></div>
-            <div class="ghost-text" id="stocksGhostText">СВЕРНУТЬ</div>
-            <div class="ghost-dots">
-                <div class="ghost-dot"></div>
-                <div class="ghost-dot"></div>
-                <div class="ghost-dot"></div>
-            </div>
-        </div>
+        </section>
     </div>
-    
+
+    <!-- Карточка деталей тикера (выезжает справа, при открытии переносится в body) -->
+    <div class="stock-detail-card" id="stockDetailCard"></div>
+
     <!-- Старый код для совместимости (скрыт) -->
     <div id="ofz-list" style="display:none;"></div>
     <div id="echelon-wrapper" class="echelon-wrapper collapsed" style="display:none;">
@@ -2220,14 +2134,14 @@
 <script src="js/core.js?v=7" defer></script>
 <script src="js/calculator-ui.js?v=3" defer></script>
 <script src="js/data.js?v=7" defer></script>
-<script src="js/rebalance.js?v=6" defer></script>
+<script src="js/rebalance.js?v=7" defer></script>
 <script src="js/company.js?v=2" defer></script>
 <script src="js/portfolio.js?v=5" defer></script>
 <script src="js/init.js?v=4" defer></script>
 <script src="js/registration.js" defer></script>
 <script src="js/menu-controller.js" defer></script>
 <script src="js/vanguard-test.js" defer></script>
-<script src="js/webapp-tabs.js?v=16" defer></script>
+<script src="js/webapp-tabs.js?v=17" defer></script>
 <script src="js/top-search.js?v=1" defer></script>
 <script src="js/income-chart.js?v=1" defer></script>
 <script src="js/backtest.js?v=1" defer></script>
