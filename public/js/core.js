@@ -794,24 +794,10 @@ function calculateAndShowPortfolio() {
         // Сбрасываем на страницу "К ПОКУПКЕ"
         switchPortfolioPage('buy');
         
-        // Логика переключателя Денежный поток / Растущая часть
+        // R6: обе секции единой карты видны всегда; при 100%/0% прячем пустую
         const slider = document.getElementById('ratioSlider');
         const currentBondPct = slider ? parseInt(slider.value) : 50;
-        const tabSwitcher = document.getElementById('portfolioTabSwitcher');
-        
-        if (currentBondPct === 0) {
-            // 100% акций — показываем только Растущую часть
-            if (tabSwitcher) tabSwitcher.style.display = 'none';
-            switchPortfolioContentTab('stocks');
-        } else if (currentBondPct === 100) {
-            // 100% облигаций — показываем только Денежный поток
-            if (tabSwitcher) tabSwitcher.style.display = 'none';
-            switchPortfolioContentTab('bonds');
-        } else {
-            // Смешанный — показываем обе вкладки
-            if (tabSwitcher) tabSwitcher.style.display = '';
-            switchPortfolioContentTab('bonds');
-        }
+        if (typeof pfxApplySplit === 'function') pfxApplySplit(currentBondPct);
         
         showScreen('screen-portfolio');
     } catch(e) {

@@ -728,7 +728,8 @@
     /* ===== V3: встроенная панель «Список к покупке» (вместо таблицы) ===== */
     #v3BuyPanel { display: none; }
     @media (min-width: 1024px) {
-        #pfRightCol.v3-buy-open .portfolio-tab-content { display: none !important; }
+        #pfRightCol.v3-buy-open #pfxCard,
+        #pfRightCol.v3-buy-open .portfolio-coupon-card { display: none !important; }
         /* Панель ограничена по высоте: шапка, заголовки столбцов и футер «Осталось
            купить» закреплены, прокручивается только список — итог виден сразу */
         #pfRightCol.v3-buy-open #v3BuyPanel {
@@ -1893,6 +1894,132 @@
             position: relative;
         }
         body.dark-mode #pfRightCol .v3-table-card { background: #1d2734; }
+
+        /* ===== R6: единая карта портфеля — ОФЗ слева, акции по эшелонам справа
+           (тот же приём, что .rbx-card в Ребалансе: одна белая карта, две секции,
+           вертикальный разделитель). Переключателя ОФЗ/Акции больше нет. ===== */
+        #pfRightCol #pfxCard {
+            display: grid;
+            grid-template-columns: minmax(0, 10fr) minmax(0, 11fr);
+            align-items: stretch;
+            flex: 0 0 auto;
+            background: #ffffff;
+            border-radius: 22px;
+            overflow: hidden;
+            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
+        }
+        body.dark-mode #pfRightCol #pfxCard { background: #1d2734; }
+        #pfRightCol #pfxCard > .portfolio-tab-content { display: block; min-width: 0; }
+        #pfRightCol #pfxCard > #portfolio-tab-stocks { border-left: 1px solid rgba(44, 54, 76, 0.08); }
+        body.dark-mode #pfRightCol #pfxCard > #portfolio-tab-stocks { border-left-color: rgba(255,255,255,0.07); }
+        /* чистый сплит 100/0 — одна секция на всю ширину */
+        #pfRightCol #pfxCard.pfx-solo { grid-template-columns: minmax(0, 1fr); }
+        #pfRightCol #pfxCard.pfx-solo > #portfolio-tab-stocks { border-left: none; }
+        /* вложенные обёртки таблиц — плоские: белая карта теперь внешняя */
+        #pfRightCol #pfxCard .v3-table-card {
+            background: transparent;
+            border-radius: 0;
+            box-shadow: none;
+        }
+        body.dark-mode #pfRightCol #pfxCard .v3-table-card { background: transparent; }
+
+        /* Полкарты уже, чем прежняя таблица во всю ширину — ужимаем сетки колонок.
+           Заголовок и значение держат одну грид-колонку (эталон — таблица ОФЗ). */
+        #pfRightCol #pfxCard .portfolio-list-headers,
+        #pfRightCol #pfxCard .portfolio-ofz-summary,
+        #pfRightCol #pfxCard .portfolio-echelon-columns-header,
+        #pfRightCol #pfxCard .portfolio-stock-item {
+            grid-template-columns: 24px minmax(0, 1fr) 88px 52px 108px 18px;
+            gap: 8px;
+        }
+        #pfRightCol #pfxCard .portfolio-list-headers { padding: 12px 20px 11px; }
+        #pfRightCol #pfxCard .portfolio-ofz-summary { padding: 0 20px; min-height: 52px; }
+        #pfRightCol #pfxCard .portfolio-ofz-name { font-size: 15px; gap: 6px; }
+        #pfRightCol #pfxCard .portfolio-ofz-yield,
+        #pfRightCol #pfxCard .portfolio-ofz-qty,
+        #pfRightCol #pfxCard .portfolio-ofz-sum { font-size: 13.5px; }
+        #pfRightCol #pfxCard .portfolio-ofz-details { padding: 0 20px 16px; }
+        #pfRightCol #pfxCard .pf-table-thead { padding: 18px 20px 14px; }
+
+        /* Секция акций: шапка эшелона и таблица тикеров в тех же пропорциях */
+        #pfRightCol #pfxCard .portfolio-echelons-headers {
+            grid-template-columns: minmax(0, 1fr) 118px 48px 20px;
+            gap: 10px;
+            padding: 12px 20px 11px;
+        }
+        #pfRightCol #pfxCard .portfolio-echelon-header { padding: 15px 20px; }
+        #pfRightCol #pfxCard .portfolio-echelon-header-left { gap: 12px; }
+        #pfRightCol #pfxCard .portfolio-echelon-header-right { grid-template-columns: 118px 48px 20px; gap: 10px; }
+        #pfRightCol #pfxCard .portfolio-echelon-number { width: 30px; height: 30px; font-size: 12px; }
+        #pfRightCol #pfxCard .portfolio-echelon-title { font-size: 14px; }
+        #pfRightCol #pfxCard .portfolio-echelon-sum { font-size: 14px; }
+        #pfRightCol #pfxCard .portfolio-echelon-percent { font-size: 11.5px; padding: 4px 9px; }
+        #pfRightCol #pfxCard .portfolio-echelon-columns-header { padding: 12px 20px 11px; }
+        #pfRightCol #pfxCard .portfolio-echelon-list { padding: 0 20px 14px; }
+        #pfRightCol #pfxCard .portfolio-stock-item { padding: 13px 0; }
+        #pfRightCol #pfxCard .portfolio-stock-ticker { font-size: 14px; }
+        #pfRightCol #pfxCard .portfolio-stock-yield,
+        #pfRightCol #pfxCard .portfolio-stock-qty,
+        #pfRightCol #pfxCard .portfolio-stock-sum { font-size: 13.5px; }
+        #pfRightCol #pfxCard .portfolio-echelon-total-line { padding: 13px 20px; }
+
+        /* Итого секции — компактнее в полкарты */
+        #pfRightCol #pfxCard .portfolio-echelons-total-row {
+            margin: 12px 14px 16px;
+            padding: 12px 16px;
+            gap: 12px;
+        }
+        #pfRightCol #pfxCard .portfolio-echelons-total-row .total-label { font-size: 14px; }
+        #pfRightCol #pfxCard .portfolio-echelons-total-row .total-sum { font-size: 15px; }
+        #pfRightCol #pfxCard .portfolio-important-aurora--inline { margin-left: 20px; margin-right: 20px; }
+
+        /* Узкая карта (выдвинут/закреплён сайдбар, небольшой экран): контейнерный
+           запрос по ширине карты — прячем ранг, короткие заголовки (%/ШТ), плотнее сетка */
+        #pfRightCol #pfxCard { container-type: inline-size; }
+        @container (max-width: 940px) {
+            #pfRightCol #pfxCard .portfolio-list-headers,
+            #pfRightCol #pfxCard .portfolio-ofz-summary,
+            #pfRightCol #pfxCard .portfolio-echelon-columns-header,
+            #pfRightCol #pfxCard .portfolio-stock-item {
+                grid-template-columns: minmax(0, 1fr) 54px 44px 94px 14px;
+                gap: 7px;
+            }
+            #pfRightCol #pfxCard .pf-rank,
+            #pfRightCol #pfxCard .pf-rank-head { display: none; }
+            #pfRightCol #pfxCard .ofz-hdr-full,
+            #pfRightCol #pfxCard .qty-hdr-full { display: none; }
+            #pfRightCol #pfxCard .ofz-hdr-short,
+            #pfRightCol #pfxCard .qty-hdr-short { display: inline; }
+            #pfRightCol #pfxCard .pf-table-thead { padding: 16px 16px 12px; }
+            #pfRightCol #pfxCard .portfolio-list-headers { padding: 12px 16px 11px; }
+            #pfRightCol #pfxCard .portfolio-ofz-summary { padding: 0 16px; }
+            #pfRightCol #pfxCard .portfolio-ofz-name { font-size: 14px; }
+            #pfRightCol #pfxCard .portfolio-ofz-yield,
+            #pfRightCol #pfxCard .portfolio-ofz-qty,
+            #pfRightCol #pfxCard .portfolio-ofz-sum { font-size: 12.5px; }
+            #pfRightCol #pfxCard .portfolio-ofz-details { padding: 0 16px 14px; }
+            #pfRightCol #pfxCard .portfolio-echelons-headers {
+                grid-template-columns: minmax(0, 1fr) 100px 40px 18px;
+                gap: 8px;
+                padding: 12px 16px 11px;
+            }
+            #pfRightCol #pfxCard .portfolio-echelon-header { padding: 13px 16px; }
+            #pfRightCol #pfxCard .portfolio-echelon-header-right { grid-template-columns: 100px 40px 18px; gap: 8px; }
+            #pfRightCol #pfxCard .portfolio-echelon-number { width: 28px; height: 28px; font-size: 11.5px; }
+            #pfRightCol #pfxCard .portfolio-echelon-title { font-size: 13.5px; }
+            #pfRightCol #pfxCard .portfolio-echelon-sum { font-size: 13.5px; }
+            #pfRightCol #pfxCard .portfolio-echelon-percent { font-size: 11px; padding: 3px 7px; }
+            #pfRightCol #pfxCard .portfolio-echelon-columns-header { padding: 11px 16px 10px; }
+            #pfRightCol #pfxCard .portfolio-echelon-list { padding: 0 16px 12px; }
+            #pfRightCol #pfxCard .portfolio-stock-ticker { font-size: 13.5px; }
+            #pfRightCol #pfxCard .portfolio-stock-yield,
+            #pfRightCol #pfxCard .portfolio-stock-qty,
+            #pfRightCol #pfxCard .portfolio-stock-sum { font-size: 12.5px; }
+            #pfRightCol #pfxCard .portfolio-important-aurora--inline { margin-left: 16px; margin-right: 16px; }
+            #pfRightCol #pfxCard .portfolio-echelons-total-row { margin: 12px 12px 14px; padding: 11px 14px; gap: 10px; }
+            #pfRightCol #pfxCard .portfolio-echelons-total-row .total-label { font-size: 13px; }
+            #pfRightCol #pfxCard .portfolio-echelons-total-row .total-sum { font-size: 14px; }
+        }
 
         /* Título карточки — 1в1 rb-thead из «Умной замены» (Ребаланс): название + счётчик + подзаголовок */
         .pf-table-thead {

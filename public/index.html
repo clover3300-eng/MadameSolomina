@@ -26,7 +26,7 @@
     <link rel="stylesheet" href="css/rebalance.css">
     <link rel="stylesheet" href="css/rebalance-stocks.css">
     <link rel="stylesheet" href="css/webapp-layout.css?v=3">
-    <link id="siteLayoutCSS" rel="stylesheet" href="css/site-layout.css?v=25">
+    <link id="siteLayoutCSS" rel="stylesheet" href="css/site-layout.css?v=27">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/backtest.css?v=4">
     <link rel="stylesheet" href="css/rebalance-r4.css?v=8">
@@ -1123,21 +1123,7 @@
                 </div>
             </div>
             
-            <!-- ===== ПЕРЕКЛЮЧАТЕЛЬ ДЕНЕЖНЫЙ ПОТОК / РАСТУЩАЯ ЧАСТЬ ===== -->
-            <div class="portfolio-content-tabs">
-                <div class="portfolio-tab-switcher" id="portfolioTabSwitcher">
-                    <div class="portfolio-tab-glider"></div>
-                    <button class="portfolio-tab-btn active" onclick="switchPortfolioContentTab('bonds')" data-tab="bonds">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
-                        ОФЗ
-                    </button>
-                    <button class="portfolio-tab-btn" onclick="switchPortfolioContentTab('stocks')" data-tab="stocks">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                        Акции
-                    </button>
-                </div>
-            </div>
-            
+            <!-- R6: переключателя ОФЗ/Акции больше нет — секции собираются в единую карту #pfxCard (webapp-tabs.js) -->
             <!-- ===== КОНТЕНТ: ДЕНЕЖНЫЙ ПОТОК (ОФЗ) ===== -->
             <div id="portfolio-tab-bonds" class="portfolio-tab-content active">
                 <!-- Título карточки (стиль rb-thead из «Умной замены») -->
@@ -1278,7 +1264,7 @@
             </div>
             
             <!-- ===== КОНТЕНТ: РАСТУЩАЯ ЧАСТЬ (АКЦИИ) ===== -->
-            <div id="portfolio-tab-stocks" class="portfolio-tab-content">
+            <div id="portfolio-tab-stocks" class="portfolio-tab-content active">
                 <!-- Título карточки (стиль rb-thead из «Умной замены») -->
                 <div class="pf-table-thead" id="pfStocksThead">
                     <div class="ti">
@@ -2131,17 +2117,17 @@
 
 
 
-<script src="js/core.js?v=7" defer></script>
+<script src="js/core.js?v=8" defer></script>
 <script src="js/calculator-ui.js?v=3" defer></script>
 <script src="js/data.js?v=7" defer></script>
 <script src="js/rebalance.js?v=8" defer></script>
 <script src="js/company.js?v=2" defer></script>
-<script src="js/portfolio.js?v=5" defer></script>
+<script src="js/portfolio.js?v=6" defer></script>
 <script src="js/init.js?v=4" defer></script>
 <script src="js/registration.js" defer></script>
 <script src="js/menu-controller.js" defer></script>
 <script src="js/vanguard-test.js" defer></script>
-<script src="js/webapp-tabs.js?v=17" defer></script>
+<script src="js/webapp-tabs.js?v=18" defer></script>
 <script src="js/top-search.js?v=1" defer></script>
 <script src="js/income-chart.js?v=1" defer></script>
 <script src="js/backtest.js?v=1" defer></script>

@@ -711,39 +711,25 @@ function switchPortfolioPage(page) {
     }
 }
 
-// Переключение вкладок Денежный поток / Растущая часть
-function switchPortfolioContentTab(tab) {
-    const switcher = document.getElementById('portfolioTabSwitcher');
-    if (!switcher) return;
-    
-    // Обновляем кнопки
-    document.querySelectorAll('#portfolioTabSwitcher .portfolio-tab-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.tab === tab);
-    });
-    
-    // Двигаем глайдер
-    if (tab === 'stocks') {
-        switcher.classList.add('show-stocks');
-    } else {
-        switcher.classList.remove('show-stocks');
-    }
-    
-    // Скрываем/показываем контент
+// R6: переключателя ОФЗ/Акции больше нет — обе секции всегда видны (compat-стаб)
+function switchPortfolioContentTab() {
     document.querySelectorAll('.portfolio-tab-content').forEach(content => {
-        content.classList.remove('active');
+        content.classList.add('active');
     });
-    
-    const targetTab = document.getElementById(`portfolio-tab-${tab}`);
-    if (targetTab) {
-        targetTab.classList.add('active');
-    }
-    
-    // Haptic feedback
-    if (window.Telegram?.WebApp?.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.selectionChanged();
-    }
-    // Ширина блока могла измениться → пересчитываем центрирование таблиц
-    if (window.pfCenterTables) requestAnimationFrame(window.pfCenterTables);
+}
+
+// R6: при чистом сплите (100% ОФЗ или 100% акций) пустая секция единой карты прячется
+function pfxApplySplit(bondPct) {
+    const bonds = document.getElementById('portfolio-tab-bonds');
+    const stocks = document.getElementById('portfolio-tab-stocks');
+    const coupons = document.getElementById('couponBoxV2');
+    const card = document.getElementById('pfxCard');
+    const noBonds = bondPct === 0;
+    const noStocks = bondPct === 100;
+    if (bonds) bonds.style.display = noBonds ? 'none' : '';
+    if (coupons) coupons.style.display = noBonds ? 'none' : '';
+    if (stocks) stocks.style.display = noStocks ? 'none' : '';
+    if (card) card.classList.toggle('pfx-solo', noBonds || noStocks);
 }
 
 // === Список ОФЗ: рендер с возможностью свернуть/развернуть (топ-3 по доходности) ===

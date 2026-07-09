@@ -121,36 +121,23 @@ function populatePanels() {
         }
         wrapRange(document.getElementById('portfolio-tab-bonds'), '#pfBondsThead', '#bondsTotalRow');
         wrapRange(document.getElementById('portfolio-tab-stocks'), '#pfStocksThead', '.portfolio-echelons-total-row');
-        // 1.5) Дубль переключателя ОФЗ/Акции прямо в шапке каждой таблицы —
-        // маленький переключатель в карточке капитала легко не заметить.
-        // Оформление — как «Карта/График» на «Рынке» (.mh-seg-view): широкие
-        // кнопки с иконками, активная — тёмная плашка (см. .pf-seg в site-layout.css)
-        const SEG_BOND_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>';
-        const SEG_STOCK_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>';
-        ['pfBondsThead', 'pfStocksThead'].forEach(function(id) {
-            const thead = document.getElementById(id);
-            if (!thead || thead.querySelector('.pf-seg')) return;
-            const seg = document.createElement('div');
-            seg.className = 'pf-seg';
-            seg.innerHTML =
-                '<button type="button" class="pf-seg-btn" data-tab="bonds"><span class="pf-seg-ico">' + SEG_BOND_ICO + '</span>ОФЗ</button>' +
-                '<button type="button" class="pf-seg-btn" data-tab="stocks"><span class="pf-seg-ico">' + SEG_STOCK_ICO + '</span>Акции</button>';
-            seg.querySelectorAll('.pf-seg-btn').forEach(function(b) {
-                b.addEventListener('click', function() { window.switchPortfolioContentTab(b.dataset.tab); });
-            });
-            thead.appendChild(seg);
-        });
-        function pfSyncSeg(tab) {
-            document.querySelectorAll('.pf-seg .pf-seg-btn').forEach(function(b) {
-                b.classList.toggle('active', b.dataset.tab === tab);
-            });
-        }
-        const _origSwitchContentTab = window.switchPortfolioContentTab;
-        window.switchPortfolioContentTab = function(tab) {
-            _origSwitchContentTab(tab);
-            pfSyncSeg(tab);
-        };
-        pfSyncSeg('bonds');
+        // 1.5) R6: единая карта — секция ОФЗ слева, акции по эшелонам справа
+        // (как .rbx-card в Ребалансе). Переключателя ОФЗ/Акции больше нет,
+        // обе секции всегда активны; купонные выплаты — стрип под картой.
+        (function() {
+            const tbBonds = document.getElementById('portfolio-tab-bonds');
+            const tbStocks = document.getElementById('portfolio-tab-stocks');
+            if (!tbBonds || !tbStocks || document.getElementById('pfxCard')) return;
+            const pfxCard = document.createElement('div');
+            pfxCard.id = 'pfxCard';
+            tbBonds.parentElement.insertBefore(pfxCard, tbBonds);
+            pfxCard.appendChild(tbBonds);
+            pfxCard.appendChild(tbStocks);
+            tbBonds.classList.add('active');
+            tbStocks.classList.add('active');
+            const coup = document.getElementById('couponBoxV2');
+            if (coup) pfxCard.insertAdjacentElement('afterend', coup);
+        })();
         // 2) Кнопка «Список к покупке» внутри светлой части карточки капитала
         const fcLight = share.querySelector('.capital-forecast-light');
         if (fcLight) {
@@ -271,10 +258,6 @@ function populatePanels() {
             const t = document.getElementById('v3BuyToast');
             if (t) { t.classList.add('show'); setTimeout(function() { t.classList.remove('show'); }, 1600); }
         };
-        // Переключение ОФЗ/Акции возвращает таблицу
-        document.querySelectorAll('.portfolio-tab-btn').forEach(function(b) {
-            b.addEventListener('click', function() { window.v3CloseBuyList(); });
-        });
         // 4) Счётчик позиций к покупке (облигации + акции из данных списка)
         window.v3UpdateBuyCount = function() {
             const el = document.getElementById('v3BuyCount');
@@ -298,23 +281,14 @@ function populatePanels() {
             }).observe(lbObserved, { childList: true });
         }
         window.v3UpdateBuyCount();
-        // 5) Десктоп: табы внутрь карточки капитала (между тёмным блоком и прогнозом);
-        //    мобила: возвращаем на место. Плюс короткий заголовок купонного стрипа.
-        const darkTop = share.querySelector('.capital-dark-top');
+        // 5) Десктоп: короткий заголовок купонного стрипа; мобила — исходный.
         const couponTitle = document.querySelector('#couponBoxV2 .portfolio-coupon-title');
         const couponTitleMobile = couponTitle ? couponTitle.textContent : '';
         const mqV3 = window.matchMedia('(min-width: 1024px)');
         function v3Place() {
-            const tabs = document.querySelector('.portfolio-content-tabs');
             if (mqV3.matches) {
-                if (tabs && darkTop && tabs.previousElementSibling !== darkTop) {
-                    darkTop.insertAdjacentElement('afterend', tabs);
-                }
                 if (couponTitle) couponTitle.textContent = 'Ближайшие выплаты';
             } else {
-                if (tabs && tabs.parentElement !== rail) {
-                    share.insertAdjacentElement('afterend', tabs);
-                }
                 if (couponTitle) couponTitle.textContent = couponTitleMobile;
                 if (window.v3CloseBuyList) window.v3CloseBuyList();
             }
@@ -323,9 +297,7 @@ function populatePanels() {
         else if (mqV3.addListener) mqV3.addListener(v3Place);
         v3Place();
 
-        // Карточка капитала зафиксирована по своей естественной высоте (как в
-        // состоянии «Акции») и НЕ растягивается под высоту таблицы при переключении
-        // ОФЗ/Акции — рельса остаётся фиксированной, как в Ребалансе.
+        // Карточка капитала — естественной высоты, не растягивается под таблицу
         window.v3SyncCapHeight = function() {
             const capCard = document.querySelector('#pfLeftRail .portfolio-capital-card');
             if (!capCard) return;
@@ -333,13 +305,6 @@ function populatePanels() {
         };
         requestAnimationFrame(function(){ requestAnimationFrame(window.v3SyncCapHeight); });
         window.addEventListener('resize', function(){ if (window.v3SyncCapHeight) window.v3SyncCapHeight(); });
-        document.querySelectorAll('.portfolio-tab-btn').forEach(function(b){
-            b.addEventListener('click', function(){ setTimeout(window.v3SyncCapHeight, 60); });
-        });
-        const lbForHeight = document.getElementById('listBondsV2');
-        if (lbForHeight && window.MutationObserver) {
-            new MutationObserver(function(){ setTimeout(window.v3SyncCapHeight, 60); }).observe(lbForHeight, { childList: true });
-        }
 
         // 6) Виджет-переход к «Ежемесячному доходу» под карточкой капитала/прогноза
         if (!document.getElementById('pfMonthlyWidget')) {
@@ -675,20 +640,10 @@ window.calculateAndShowPortfolio = function() {
         // Переключаемся на страницу "К покупке"
         if (typeof switchPortfolioPage === 'function') switchPortfolioPage('buy');
 
-        // Управляем переключателем Денежный поток / Растущая часть
+        // R6: при 100%/0% прячем пустую секцию единой карты
         const slider = document.getElementById('ratioSlider');
         const currentBondPct = slider ? parseInt(slider.value) : 50;
-        const tabSwitcher = document.getElementById('portfolioTabSwitcher');
-        if (currentBondPct === 0) {
-            if (tabSwitcher) tabSwitcher.style.display = 'none';
-            if (typeof switchPortfolioContentTab === 'function') switchPortfolioContentTab('stocks');
-        } else if (currentBondPct === 100) {
-            if (tabSwitcher) tabSwitcher.style.display = 'none';
-            if (typeof switchPortfolioContentTab === 'function') switchPortfolioContentTab('bonds');
-        } else {
-            if (tabSwitcher) tabSwitcher.style.display = '';
-            if (typeof switchPortfolioContentTab === 'function') switchPortfolioContentTab('bonds');
-        }
+        if (typeof pfxApplySplit === 'function') pfxApplySplit(currentBondPct);
 
         // Активируем кнопку Тест портфеля и обновляем инфо
         btUpdateRunBtn();
