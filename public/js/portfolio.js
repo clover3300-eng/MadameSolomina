@@ -646,7 +646,7 @@ if(totalRow) {
                                 </div>
                                 <div class="portfolio-echelon-list">
                                     ${stocksInEchelon.map((s, idx) => `
-                                        <div class="portfolio-stock-wrapper" onclick="event.stopPropagation(); this.classList.toggle('expanded')">
+                                        <div class="portfolio-stock-wrapper pfx-stock-click" onclick="event.stopPropagation(); openStockDetail('${s.t}', ${idx + 1}, this)" title="Открыть карточку компании">
                                             <div class="portfolio-stock-item">
                                                 <div class="pf-rank">#${idx + 1}</div>
                                                 <div class="portfolio-stock-ticker">${s.t}</div>
@@ -654,36 +654,6 @@ if(totalRow) {
                                                 <div class="portfolio-stock-qty">${s.qty}</div>
                                                 <div class="portfolio-stock-sum">${Math.round(s.sum).toLocaleString()} ₽</div>
                                                 <span class="ofz-expand-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></span>
-                                            </div>
-                                            <div class="portfolio-stock-details">
-                                                <div class="portfolio-stock-detail-grid">
-                                                    <div class="portfolio-stock-detail-row">
-                                                        <span class="portfolio-stock-detail-label">Компания</span>
-                                                        <span class="portfolio-stock-detail-value">${s.n || s.t}</span>
-                                                    </div>
-                                                    <div class="portfolio-stock-detail-row">
-                                                        <span class="portfolio-stock-detail-label">Текущая цена</span>
-                                                        <span class="portfolio-stock-detail-value">${s.p} ₽</span>
-                                                    </div>
-                                                    <div class="portfolio-stock-detail-row">
-                                                        <span class="portfolio-stock-detail-label">Потенциал</span>
-                                                        <span class="portfolio-stock-detail-value" style="color: #10B981;">${fmtPotential(s.target, s.p)}</span>
-                                                    </div>
-                                                    <div class="portfolio-stock-detail-row">
-                                                        <span class="portfolio-stock-detail-label">Прогноз</span>
-                                                        <span class="portfolio-stock-detail-value" style="font-size:10px; color:var(--text-slate);">до 36 мес.</span>
-                                                    </div>
-                                                </div>
-                                                <div class="portfolio-stock-buttons">
-                                                    <button class="portfolio-stock-btn chart" onclick="event.stopPropagation(); openTradingViewDirect('${s.t}')">
-                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                                                        График
-                                                    </button>
-                                                    <button class="portfolio-stock-btn info" onclick="event.stopPropagation(); openStockDetail('${s.t}', ${idx + 1})">
-                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                                                        О компании
-                                                    </button>
-                                                </div>
                                             </div>
                                         </div>
                                     `).join('')}
@@ -860,7 +830,7 @@ function renderPortfolioBondsV2(opts) {
         const formattedName = b.n.replace(/(\d+)/g, '<span class="ofz-number">$1</span>');
         const isJustRevealed = opts.justExpanded && idx >= PORTFOLIO_BONDS_VISIBLE;
         html += `
-        <div class="portfolio-ofz-item${isJustRevealed ? ' ofz-just-revealed' : ''}" onclick="this.classList.toggle('expanded')">
+        <div class="portfolio-ofz-item${isJustRevealed ? ' ofz-just-revealed' : ''}" onclick="pfxToggleOfz(this)">
             <div class="portfolio-ofz-summary">
                 <div class="pf-rank">#${idx + 1}</div>
                 <div class="portfolio-ofz-name">${formattedName}</div>
@@ -1409,11 +1379,24 @@ function copyShoppingList() {
 function togglePortfolioEchelon(card, event) {
     // Не раскрываем если клик был по stock-wrapper
     if (event.target.closest('.portfolio-stock-wrapper')) return;
-    
-    card.classList.toggle('expanded');
+
+    // Раскрытие оверлеем: одновременно открыт только один эшелон,
+    // чтобы плавающие списки тикеров не накладывались друг на друга.
+    const wasOpen = card.classList.contains('expanded');
+    const cont = card.closest('#echelonContainerV2') || card.parentElement;
+    if (cont) cont.querySelectorAll('.portfolio-echelon-card.expanded').forEach(function(x) { if (x !== card) x.classList.remove('expanded'); });
+    card.classList.toggle('expanded', !wasOpen);
     if (window.Telegram?.WebApp?.HapticFeedback) {
         window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
     }
+}
+
+// Раскрытие подстроки ОФЗ оверлеем: одновременно открыта только одна строка.
+function pfxToggleOfz(item) {
+    const wasOpen = item.classList.contains('expanded');
+    const list = item.closest('.portfolio-ofz-list') || item.parentElement;
+    if (list) list.querySelectorAll('.portfolio-ofz-item.expanded').forEach(function(x) { if (x !== item) x.classList.remove('expanded'); });
+    item.classList.toggle('expanded', !wasOpen);
 }
 
 // Переключение информации об эшелонах

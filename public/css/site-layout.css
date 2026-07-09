@@ -2117,6 +2117,55 @@
         /* Чуть выше строка — от заголовков до первого эшелона и от последнего
            до «Важно знать» получается одинаковый отступ */
         #pfRightCol #pfxCard .portfolio-echelon-header { padding: 22px 20px; }
+
+        /* ===== Раскрытие подстрок ОФЗ/эшелонов ОВЕРЛЕЕМ (не двигая контент вниз) =====
+           Детали ОФЗ и список тикеров эшелона всплывают плавающим поповером поверх
+           строк ниже — соседние секции/строки остаются на месте. Требует снятия
+           overflow:hidden с карты и обёрток, чтобы поповер не обрезался. */
+        #pfRightCol #pfxCard { overflow: visible; }
+        #pfRightCol #pfxCard .v3-table-card { overflow: visible; }
+        #pfRightCol #pfxCard > .portfolio-tab-content { overflow: visible; }
+        /* Снимаем overflow:hidden со строк и списков-контейнеров, иначе поповер
+           обрезается родителем (строка обрезает себя, список — по своей высоте) */
+        #pfRightCol #pfxCard .portfolio-ofz-item,
+        #pfRightCol #pfxCard .portfolio-ofz-list,
+        #pfRightCol #pfxCard #listBondsV2,
+        #pfRightCol #pfxCard .portfolio-echelon-card,
+        #pfRightCol #pfxCard #echelonContainerV2 { overflow: visible; }
+        @keyframes pfxPop { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+
+        #pfRightCol #pfxCard .portfolio-ofz-item { position: relative; }
+        #pfRightCol #pfxCard .portfolio-ofz-item.expanded { z-index: 45; }
+        #pfRightCol #pfxCard .portfolio-ofz-item.expanded .portfolio-ofz-details {
+            display: block; position: absolute; top: calc(100% - 2px); left: 8px; right: 8px; z-index: 46;
+            padding: 12px 16px 14px; overflow: hidden;
+            background: #ffffff; border: 1px solid #e8eef5; border-radius: 14px;
+            box-shadow: 0 22px 50px -16px rgba(24,38,60,0.30);
+            animation: pfxPop 0.18s ease;
+        }
+        body.dark-mode #pfRightCol #pfxCard .portfolio-ofz-item.expanded .portfolio-ofz-details {
+            background: #26313f; border-color: rgba(255,255,255,0.08);
+            box-shadow: 0 22px 50px -16px rgba(0,0,0,0.6);
+        }
+
+        #pfRightCol #pfxCard .portfolio-echelon-card { position: relative; }
+        #pfRightCol #pfxCard .portfolio-echelon-card.expanded { z-index: 45; }
+        #pfRightCol #pfxCard .portfolio-echelon-card.expanded .portfolio-echelon-content {
+            position: absolute; top: calc(100% - 4px); left: 8px; right: 8px; z-index: 46;
+            max-height: none; overflow: hidden;
+            background: #ffffff; border: 1px solid #e8eef5; border-radius: 14px;
+            box-shadow: 0 22px 50px -16px rgba(24,38,60,0.30);
+            animation: pfxPop 0.18s ease;
+        }
+        body.dark-mode #pfRightCol #pfxCard .portfolio-echelon-card.expanded .portfolio-echelon-content {
+            background: #26313f; border-color: rgba(255,255,255,0.08);
+            box-shadow: 0 22px 50px -16px rgba(0,0,0,0.6);
+        }
+
+        /* Клик по строке акции — открывает карточку компании справа (как в Ребалансе) */
+        #pfRightCol #pfxCard .pfx-stock-click { cursor: pointer; border-radius: 10px; transition: background .12s ease; }
+        #pfRightCol #pfxCard .pfx-stock-click:hover { background: rgba(44,54,76,0.05); }
+        body.dark-mode #pfRightCol #pfxCard .pfx-stock-click:hover { background: rgba(255,255,255,0.05); }
         #pfRightCol #pfxCard .portfolio-echelon-header-left { gap: 12px; }
         #pfRightCol #pfxCard .portfolio-echelon-header-right { grid-template-columns: 118px 48px 20px; gap: 10px; }
         #pfRightCol #pfxCard .portfolio-echelon-number { width: 30px; height: 30px; font-size: 12px; }
