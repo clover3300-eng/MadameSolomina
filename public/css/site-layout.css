@@ -661,17 +661,17 @@
 
         /* Кнопка «Список к покупке» — приглушённая на тёмной карте (референс) */
         .v3-buylist-btn {
-            margin-top: 22px;
+            margin-top: 18px;
             display: flex; align-items: center; gap: 11px;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.14); border-radius: 15px;
-            padding: 14px 16px;
+            background: transparent;
+            border: none; border-radius: 12px;
+            padding: 11px 12px;
             font-family: 'Onest','Manrope', sans-serif; font-weight: 600; font-size: 15px;
-            color: #dfe5ea; white-space: nowrap; cursor: pointer;
+            color: #c8d0d8; white-space: nowrap; cursor: pointer;
             width: 100%; box-sizing: border-box; text-align: left;
-            transition: background 0.15s ease;
+            transition: background 0.15s ease, color 0.15s ease;
         }
-        .v3-buylist-btn:hover { background: rgba(255,255,255,0.07); }
+        .v3-buylist-btn:hover { background: rgba(255,255,255,0.06); color: #eef2f6; }
         .v3-buylist-btn .ic { display: inline-flex; color: #a7e8c4; }
         .v3-buylist-btn .count {
             margin-left: auto;
@@ -823,11 +823,12 @@
     .pcap-fee-wrap { margin-top: 28px; position: relative; z-index: 2; }
     .pcap-fee-btn {
         width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 12px;
-        background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 14px; padding: 13px 14px; cursor: pointer;
-        color: #c8d0d8; font-family: 'Onest', sans-serif; font-weight: 500; font-size: 15px;
+        background: transparent; border: none;
+        border-radius: 12px; padding: 10px 12px; cursor: pointer;
+        color: #aab4bf; font-family: 'Onest', sans-serif; font-weight: 500; font-size: 15px;
+        transition: background 0.15s ease, color 0.15s ease;
     }
-    .pcap-fee-btn:hover { background: rgba(255,255,255,0.06); }
+    .pcap-fee-btn:hover { background: rgba(255,255,255,0.05); color: #c8d0d8; }
     .pcap-fee-right {
         margin-left: auto; display: inline-flex; align-items: center; gap: 8px;
         color: #eef2f6; font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 14px;
@@ -2097,7 +2098,7 @@
         #pfRightCol #pfxCard .portfolio-ofz-summary,
         #pfRightCol #pfxCard .portfolio-echelon-columns-header,
         #pfRightCol #pfxCard .portfolio-stock-item {
-            grid-template-columns: 24px minmax(0, 1fr) 88px 52px 108px 18px;
+            grid-template-columns: 24px minmax(0, 1fr) 88px 64px 108px 18px;
             gap: 8px;
         }
         #pfRightCol #pfxCard .portfolio-list-headers { padding: 14px 20px 13px; }
@@ -2181,17 +2182,13 @@
         #pfRightCol #pfxCard .portfolio-echelon-title { font-size: 14px; }
         #pfRightCol #pfxCard .portfolio-echelon-sum { font-size: 14px; }
         /* Бейджик % — пилюля в тон номера эшелона (e1..e4), как «Итого» справа */
+        /* Бейджи процентов эшелонов — нейтральные (без «радуги»): цветом
+           эшелон метит только кружок-цифра, бейдж тихий серый в обеих темах */
         #pfRightCol #pfxCard .portfolio-echelon-percent {
             font-size: 11.5px; padding: 4px 10px; border-radius: 999px; font-weight: 700;
+            background: rgba(44,54,76,0.07); color: #5d6b83;
         }
-        #pfRightCol #pfxCard .portfolio-echelon-percent.e1 { background: rgba(39,174,96,0.12); color: #1f9d63; }
-        #pfRightCol #pfxCard .portfolio-echelon-percent.e2 { background: rgba(41,128,185,0.12); color: #2980b9; }
-        #pfRightCol #pfxCard .portfolio-echelon-percent.e3 { background: rgba(230,168,23,0.16); color: #b8790e; }
-        #pfRightCol #pfxCard .portfolio-echelon-percent.e4 { background: rgba(211,84,0,0.12); color: #c2410c; }
-        body.dark-mode #pfRightCol #pfxCard .portfolio-echelon-percent.e1 { background: rgba(52,211,153,0.16); color: #4ade80; }
-        body.dark-mode #pfRightCol #pfxCard .portfolio-echelon-percent.e2 { background: rgba(96,165,250,0.16); color: #7dabf7; }
-        body.dark-mode #pfRightCol #pfxCard .portfolio-echelon-percent.e3 { background: rgba(250,204,21,0.18); color: #fbd34d; }
-        body.dark-mode #pfRightCol #pfxCard .portfolio-echelon-percent.e4 { background: rgba(251,146,60,0.18); color: #fb9c5a; }
+        body.dark-mode #pfRightCol #pfxCard .portfolio-echelon-percent { background: rgba(255,255,255,0.08); color: #94a3b8; }
         #pfRightCol #pfxCard .portfolio-echelon-columns-header { padding: 12px 20px 11px; }
         #pfRightCol #pfxCard .portfolio-echelon-list { padding: 0 20px 14px; }
         #pfRightCol #pfxCard .portfolio-stock-item { padding: 13px 0; }
@@ -2426,7 +2423,7 @@
             display: flex; align-items: center; gap: 8px;
         }
         body.dark-mode #pfRightCol .portfolio-ofz-name { color: #f1f6fb; }
-        #pfRightCol .portfolio-ofz-name .ofz-number { font-family: 'Manrope', sans-serif; font-weight: 800; }
+        #pfRightCol .portfolio-ofz-name .ofz-number { font-family: var(--font-num, 'JetBrains Mono', monospace); font-weight: 600; font-variant-numeric: tabular-nums; }
         #pfRightCol .ofz-expand-badge {
             color: #b6c1cf; background: transparent; border: none;
             width: 22px; height: 22px; border-radius: 0;
