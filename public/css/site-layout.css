@@ -2072,6 +2072,10 @@
         #pfRightCol #pfxCard > .portfolio-tab-content { display: block; min-width: 0; }
         #pfRightCol #pfxCard > #portfolio-tab-stocks { border-left: 1px solid rgba(44, 54, 76, 0.08); }
         body.dark-mode #pfRightCol #pfxCard > #portfolio-tab-stocks { border-left-color: rgba(255,255,255,0.07); }
+        /* тон-подложка секции ОФЗ (как .rbx-sec-ofz в Ребалансе): блок ОФЗ
+           не «висит» рядом с секцией акций; скругление даёт overflow:hidden карты */
+        #pfRightCol #pfxCard > #portfolio-tab-bonds { background: #F5F8F6; }
+        body.dark-mode #pfRightCol #pfxCard > #portfolio-tab-bonds { background: rgba(52, 211, 153, 0.045); }
         /* чистый сплит 100/0 — одна секция на всю ширину */
         #pfRightCol #pfxCard.pfx-solo { grid-template-columns: minmax(0, 1fr); }
         #pfRightCol #pfxCard.pfx-solo > #portfolio-tab-stocks { border-left: none; }
