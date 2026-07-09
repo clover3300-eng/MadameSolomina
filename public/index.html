@@ -26,7 +26,7 @@
     <link rel="stylesheet" href="css/rebalance.css">
     <link rel="stylesheet" href="css/rebalance-stocks.css">
     <link rel="stylesheet" href="css/webapp-layout.css?v=3">
-    <link id="siteLayoutCSS" rel="stylesheet" href="css/site-layout.css?v=31">
+    <link id="siteLayoutCSS" rel="stylesheet" href="css/site-layout.css?v=32">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/backtest.css?v=4">
     <link rel="stylesheet" href="css/rebalance-r4.css?v=8">
@@ -1287,16 +1287,7 @@
                             <button class="tax-ui-btn" onclick="setTax(0.15, this)">НДФЛ 15%</button>
                         </div>
                         
-                        <!-- Заголовки таблицы -->
-                        <div class="coupon-table-head">
-                            <span class="pf-rank-head"></span>
-                            <span>ДАТА</span>
-                            <span>НАЗВАНИЕ</span>
-                            <span style="text-align:right">КОЛ-ВО</span>
-                            <span style="text-align:right">СУММА</span>
-                        </div>
-                        
-                        <!-- Список выплат -->
+                        <!-- Список выплат (лента платежей) -->
                         <div id="couponListV2">
                             <!-- Skeleton для купонов -->
                             <div class="skeleton-container" id="skeleton-coupons">
@@ -2174,7 +2165,7 @@
 <script src="js/data.js?v=7" defer></script>
 <script src="js/rebalance.js?v=8" defer></script>
 <script src="js/company.js?v=2" defer></script>
-<script src="js/portfolio.js?v=9" defer></script>
+<script src="js/portfolio.js?v=10" defer></script>
 <script src="js/init.js?v=4" defer></script>
 <script src="js/registration.js" defer></script>
 <script src="js/menu-controller.js" defer></script>

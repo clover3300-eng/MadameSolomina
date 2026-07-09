@@ -254,17 +254,21 @@ if(document.getElementById('listBonds')) {
                 if(rainData.length === 0) { 
                     couponHtml = '<div style="text-align:center; padding:15px; color:#aaa; font-size:12px;">Нет ближайших выплат для выбранных активов.</div>';
                 } else { 
+                    const _cpxToday = new Date(); _cpxToday.setHours(0, 0, 0, 0);
                     rainData.forEach((r, i) => {
                         couponTotal += r.amount;
+                        const _d = new Date(r.date);
+                        const _day = _d.getDate();
+                        const _mon = _d.toLocaleDateString('ru-RU', { month: 'short' }).replace('.', '');
+                        const _diff = Math.round((new Date(_d).setHours(0, 0, 0, 0) - _cpxToday.getTime()) / 86400000);
+                        const _rel = _diff <= 0 ? 'сегодня' : (_diff === 1 ? 'завтра' : 'через ' + _diff + ' дн.');
                         couponHtml += `
-                        <div class="coupon-row">
-                            <div class="pf-rank">#${i + 1}</div>
-                            <div class="coupon-c-date"><b>${new Date(r.date).toLocaleDateString('ru-RU')}</b></div>
-                            <div class="coupon-c-name" style="color:#8e8e93">${limitName(r.name)}</div>
-                            <div class="coupon-c-qty" style="text-align:right">${r.qty}</div>
-                            <div class="coupon-c-sum" style="text-align:right"><b>+${Math.round(r.amount).toLocaleString()} ₽</b></div>
+                        <div class="cpx-row">
+                            <div class="cpx-date"><span class="cpx-date-day">${_day}</span><span class="cpx-date-mon">${_mon}</span></div>
+                            <div class="cpx-main"><span class="cpx-name">${limitName(r.name)}</span><span class="cpx-rel">${_rel}</span></div>
+                            <div class="cpx-right"><span class="cpx-qty">${r.qty} шт</span><span class="cpx-sum">+${Math.round(r.amount).toLocaleString()} ₽</span></div>
                         </div>`;
-                    }); 
+                    });
                 }
                 document.getElementById('couponList').innerHTML = couponHtml;
                 document.getElementById('couponTotalHeader').innerText = Math.round(couponTotal).toLocaleString() + ' ₽';

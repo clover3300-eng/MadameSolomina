@@ -2553,53 +2553,54 @@
         /* Купонная таблица: пропорциональные колонки + отступы от краёв карточки,
            чтобы данные не липли к бортам и не «разбегались» по углам */
         #pfRightCol .portfolio-coupon-content { padding: 0 26px 18px; }
-        /* Таблица выплат: ранг (#N) + строки во всю ширину карточки с подсветкой
-           при наведении — как в таблице ОФЗ. Отрицательные margin'ы выводят строку
-           из паддинга контента, внутренний паддинг возвращает выравнивание. */
-        #pfRightCol .coupon-table-head,
-        #pfRightCol .coupon-row {
-            grid-template-columns: 24px 92px 150px 60px 112px;
-            justify-content: space-between;
-            gap: 16px;
-            margin: 0 -26px;
-            padding-left: 26px; padding-right: 26px;
-            align-items: center;
+        /* ===== Лента ближайших выплат (редизайн R6): дата-бейдж + актив + сумма ===== */
+        #pfRightCol #couponListV2 { display: flex; flex-direction: column; gap: 8px; }
+        #pfRightCol .cpx-row {
+            display: grid; grid-template-columns: auto minmax(0,1fr) auto;
+            align-items: center; gap: 14px;
+            padding: 10px 12px; border-radius: 14px;
+            background: #f6f9fc; transition: background .12s ease;
         }
-        #pfRightCol .coupon-table-head {
-            font-size: 11px; letter-spacing: 0.08em; font-weight: 800;
-            color: #8593a6; padding-top: 4px; padding-bottom: 12px;
-            border-bottom: 1px solid #eef2f7;
+        body.dark-mode #pfRightCol .cpx-row { background: rgba(255,255,255,0.03); }
+        #pfRightCol .cpx-row:hover { background: #eef3fa; }
+        body.dark-mode #pfRightCol .cpx-row:hover { background: rgba(255,255,255,0.05); }
+        #pfRightCol .cpx-date {
+            width: 46px; height: 46px; flex: 0 0 auto;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border-radius: 12px; background: #ffffff; border: 1px solid #e7eef6;
         }
-        body.dark-mode #pfRightCol .coupon-table-head { color: #76849a; border-bottom-color: rgba(255,255,255,0.07); }
-        #pfRightCol .coupon-row { font-size: 14px; padding-top: 13px; padding-bottom: 13px; transition: background .12s ease; }
-        #pfRightCol .coupon-row:hover { background: #f8fafc; }
-        body.dark-mode #pfRightCol .coupon-row:hover { background: rgba(255,255,255,0.03); }
-        /* КОЛ-ВО и СУММА по правому краю (после ранга это 4-я и 5-я колонки) */
-        #pfRightCol .coupon-table-head span:nth-child(4),
-        #pfRightCol .coupon-row div:nth-child(4) { text-align: right; }
-        #pfRightCol .coupon-table-head span:nth-child(5),
-        #pfRightCol .coupon-row div:nth-child(5),
-        #pfRightCol .coupon-row b:last-child { text-align: right; }
-        /* Цифры — моноширинные, как в таблице ОФЗ */
-        #pfRightCol .coupon-c-date, #pfRightCol .coupon-c-date b,
-        #pfRightCol .coupon-c-qty,
-        #pfRightCol .coupon-c-sum, #pfRightCol .coupon-c-sum b {
-            font-family: 'JetBrains Mono', monospace;
+        body.dark-mode #pfRightCol .cpx-date { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
+        #pfRightCol .cpx-date-day { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; color: #111927; line-height: 1; }
+        body.dark-mode #pfRightCol .cpx-date-day { color: #f1f6fb; }
+        #pfRightCol .cpx-date-mon { font-family: 'Manrope', sans-serif; font-size: 9.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #16b56b; margin-top: 3px; }
+        #pfRightCol .cpx-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        #pfRightCol .cpx-name {
+            font-family: 'Manrope', sans-serif; font-size: 14px; font-weight: 700; color: #111927;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
-        #pfRightCol .coupon-c-date, #pfRightCol .coupon-c-date b { font-weight: 600; color: #111927; }
-        body.dark-mode #pfRightCol .coupon-c-date,
-        body.dark-mode #pfRightCol .coupon-c-date b { color: #e7edf5; }
-        #pfRightCol .coupon-c-qty { color: #5f6d80; font-weight: 500; }
-        #pfRightCol .coupon-c-name {
-            font-family: 'Manrope', sans-serif; font-size: 14px; font-weight: 600;
-            color: #5f6d80 !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        body.dark-mode #pfRightCol .cpx-name { color: #f1f6fb; }
+        #pfRightCol .cpx-rel { font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 500; color: #8593a6; }
+        #pfRightCol .cpx-right { display: flex; align-items: center; gap: 12px; }
+        #pfRightCol .cpx-qty {
+            font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: #6b7787;
+            background: #eef2f7; padding: 4px 9px; border-radius: 999px; white-space: nowrap;
         }
-        /* Сумма выплаты — зелёная с «+» */
-        #pfRightCol .coupon-c-sum, #pfRightCol .coupon-c-sum b { color: #16b56b; font-weight: 700; }
-        /* Итоговая строка под таблицей выплат */
-        #pfRightCol .coupon-total-foot { color: #6b7787; }
-        #pfRightCol #couponTotalHeaderV2 { font-family: 'JetBrains Mono', monospace; }
-        body.dark-mode #pfRightCol .coupon-total-foot { color: #aab6c6; border-top-color: rgba(255,255,255,0.08) !important; }
+        body.dark-mode #pfRightCol .cpx-qty { background: rgba(255,255,255,0.06); color: #aab6c6; }
+        #pfRightCol .cpx-sum {
+            font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: #16b56b;
+            white-space: nowrap; min-width: 92px; text-align: right;
+        }
+        /* Итог ленты выплат — акцентная зелёная плашка */
+        #pfRightCol .coupon-total-foot {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-top: 14px; padding: 14px 16px;
+            background: rgba(22,181,107,0.07); border: 1px solid rgba(22,181,107,0.16);
+            border-radius: 14px; color: #0f9a58;
+        }
+        body.dark-mode #pfRightCol .coupon-total-foot { background: rgba(22,181,107,0.10); border-color: rgba(22,181,107,0.22); color: #58d29a; }
+        #pfRightCol .ctf-label { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 13.5px; }
+        #pfRightCol #couponTotalHeaderV2 { font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 17px; color: #16b56b !important; }
+        body.dark-mode #pfRightCol #couponTotalHeaderV2 { color: #58d29a !important; }
 
         /* Тумблер налогов — сегмент-контрол под общий стиль (как переключатели в приложении) */
         #pfRightCol .tax-selector-ui {
