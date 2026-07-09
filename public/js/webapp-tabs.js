@@ -181,9 +181,13 @@ function populatePanels() {
         detBtn.setAttribute('aria-label', 'Детали портфеля');
         detBtn.setAttribute('aria-expanded', 'false');
         detBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+        // Точка-маркер «внутри есть содержимое» — гаснет после первого раскрытия
+        try { if (localStorage.getItem('pf_det_seen_v1')) detBtn.classList.add('seen'); } catch (e) {}
         detBtn.onclick = function() {
             const open = share.classList.toggle('pcap-open');
             detBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            detBtn.classList.add('seen');
+            try { localStorage.setItem('pf_det_seen_v1', '1'); } catch (e) {}
         };
         actions.appendChild(detBtn);
 
@@ -230,7 +234,7 @@ function populatePanels() {
                 '</div>';
             share.insertAdjacentElement('afterend', panel);
 
-            const fmtRu = function(n){ return Math.round(n).toLocaleString('ru-RU').replace(/\s/g, '.'); };
+            const fmtRu = function(n){ return Math.round(n).toLocaleString('ru-RU'); };
             const sumEl = document.getElementById('pfrcSum');
             const ratioEl = document.getElementById('pfrcRatio');
             const allocValEl = document.getElementById('pfrcAllocVal');
@@ -273,13 +277,13 @@ function populatePanels() {
             let sumTimer;
             if (sumEl) sumEl.addEventListener('input', function(){
                 const digits = this.value.replace(/\D/g, '');
-                this.value = digits ? Number(digits).toLocaleString('ru-RU').replace(/\s/g, '.') : '';
+                this.value = digits ? Number(digits).toLocaleString('ru-RU') : '';
                 clearTimeout(sumTimer);
                 sumTimer = setTimeout(applySum, 250);
             });
             document.querySelectorAll('#pfrcChips button').forEach(function(b){
                 b.addEventListener('click', function(){
-                    sumEl.value = Number(this.dataset.v).toLocaleString('ru-RU').replace(/\s/g, '.');
+                    sumEl.value = Number(this.dataset.v).toLocaleString('ru-RU');
                     applySum();
                 });
             });
@@ -683,6 +687,11 @@ function switchTab(tabId) {
     }
     if (tabId === 'portfolio' && window.v3SyncCapHeight) {
         setTimeout(window.v3SyncCapHeight, 80);
+    }
+    // Уровень «Итого» ОФЗ/акций: замер высот только на видимой вкладке
+    // (на скрытой offsetHeight=0 и min-height замораживался нулём)
+    if (tabId === 'portfolio' && window.pfxSyncCardHeights) {
+        setTimeout(window.pfxSyncCardHeights, 90);
     }
     if (tabId === 'dashboard' && window.renderDashboard) {
         window.renderDashboard();

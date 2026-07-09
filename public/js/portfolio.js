@@ -448,7 +448,7 @@ if(totalRow) {
                 const usageLabelText = document.getElementById('usageLabelText');
                 if(usageLabelText) usageLabelText.innerText = Math.round(actualSpentTotal).toLocaleString() + ' ₽';
                 
-                document.getElementById('summ-invested').innerText = Math.round(inputSum).toLocaleString('ru-RU').replace(/\s/g, '.') + ' ₽';
+                document.getElementById('summ-invested').innerText = Math.round(inputSum).toLocaleString('ru-RU') + ' ₽';
                 document.getElementById('srl-bond-pct').innerText = bondPct + '%';
                 document.getElementById('srl-stock-pct').innerText = stockPct + '%';
                 document.getElementById('bar-bond-fill').style.width = bondPct + '%';
@@ -457,8 +457,8 @@ if(totalRow) {
                 const feePercent = (brokerFee * 100).toFixed(2);
                 document.getElementById('summ-fee').innerText = feePercent + '%';
                 
-                document.getElementById('summ-bond-income').innerText = '+' + Math.round(totalBondProjectedIncome).toLocaleString('ru-RU').replace(/\s/g, '.') + ' ₽';
-                document.getElementById('summ-stock-growth').innerText = '+' + Math.round(totalStockProjectedGrowth).toLocaleString('ru-RU').replace(/\s/g, '.') + ' ₽';
+                document.getElementById('summ-bond-income').innerText = '+' + Math.round(totalBondProjectedIncome).toLocaleString('ru-RU') + ' ₽';
+                document.getElementById('summ-stock-growth').innerText = '+' + Math.round(totalStockProjectedGrowth).toLocaleString('ru-RU') + ' ₽';
                 
                 const projectedTotal = inputSum + totalBondProjectedIncome + totalStockProjectedGrowth - feeVal;
                 let percentageChange = (inputSum > 0) ? ((projectedTotal - inputSum) / inputSum) * 100 : 0;
@@ -466,7 +466,7 @@ if(totalRow) {
                 const changeColor = percentageChange >= 0 ? '#27ae60' : '#e74c3c';
                 const changeHtml = ` <span style="font-size: 14px; color: ${changeColor}; font-weight: 500;">(${changeSign}${percentageChange.toFixed(1)}%)</span>`;
                 
-                document.getElementById('summ-total-3y').innerHTML = Math.round(projectedTotal).toLocaleString('ru-RU').replace(/\s/g, '.') + ' ₽' + changeHtml;
+                document.getElementById('summ-total-3y').innerHTML = Math.round(projectedTotal).toLocaleString('ru-RU') + ' ₽' + changeHtml;
                 
                 // === ОБНОВЛЕНИЕ НОВОГО ДИЗАЙНА V2 ===
                 // Синхронизируем распределение в новую карточку
@@ -493,7 +493,7 @@ if(totalRow) {
                 const legendBondSum = document.getElementById('legend-bond-sum');
                 const legendStockSum = document.getElementById('legend-stock-sum');
 
-                const fmtRub = (v) => Math.round(v).toLocaleString('ru-RU').replace(/\s/g, '.') + ' ₽';
+                const fmtRub = (v) => Math.round(v).toLocaleString('ru-RU') + ' ₽';
 
                 if (legendBondSum) legendBondSum.textContent = fmtRub(bondBudget);
                 if (legendStockSum) legendStockSum.textContent = fmtRub(stockBudget);
@@ -506,10 +506,10 @@ if(totalRow) {
                     totalPercentV2.setAttribute('data-pct', changeSign + percentageChange.toFixed(1) + '%');
                 }
                 if (bondIncomeMini) {
-                    bondIncomeMini.textContent = '+' + Math.round(totalBondProjectedIncome).toLocaleString('ru-RU').replace(/\s/g, '.') + ' ₽';
+                    bondIncomeMini.textContent = '+' + Math.round(totalBondProjectedIncome).toLocaleString('ru-RU') + ' ₽';
                 }
                 if (stockGrowthMini) {
-                    stockGrowthMini.textContent = '+' + Math.round(totalStockProjectedGrowth).toLocaleString('ru-RU').replace(/\s/g, '.') + ' ₽';
+                    stockGrowthMini.textContent = '+' + Math.round(totalStockProjectedGrowth).toLocaleString('ru-RU') + ' ₽';
                 }
 
                 // === Референс-карточка: крупные суммы в млн, дата, множитель, комиссия, график ===
@@ -822,6 +822,12 @@ function renderPortfolioBondsV2(opts) {
 
     // Сортируем по доходности (убывание) — топ показывается первым
     const sorted = [...bondCalculations].sort((a, b) => parseFloat(b.y) - parseFloat(a.y));
+    // Градация доходности цветом — та же зелёная шкала, что в списке ОФЗ
+    // Ребаланса (ofzYieldColor из rebalance.js, oklch по диапазону min..max)
+    const ysAll = sorted.map(b => parseFloat(b.y)).filter(isFinite);
+    const minYld = Math.min(...ysAll), maxYld = Math.max(...ysAll);
+    const yldColor = (y) => (typeof ofzYieldColor === 'function' && isFinite(y))
+        ? ' style="color:' + ofzYieldColor(y, minYld, maxYld) + '"' : '';
     const total = sorted.length;
     const showAll = true; // Показываем полный список без кнопки
     const toShow = sorted;
@@ -839,7 +845,7 @@ function renderPortfolioBondsV2(opts) {
             <div class="portfolio-ofz-summary">
                 <div class="pf-rank">#${idx + 1}</div>
                 <div class="portfolio-ofz-name">${formattedName}</div>
-                <div class="portfolio-ofz-yield">${b.y}</div>
+                <div class="portfolio-ofz-yield"${yldColor(parseFloat(b.y))}>${b.y}</div>
                 <div class="portfolio-ofz-qty">${qty}</div>
                 <div class="portfolio-ofz-sum">${Math.round(qty * b.fullCostPerUnit).toLocaleString()} ₽</div>
                 <span class="ofz-expand-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></span>

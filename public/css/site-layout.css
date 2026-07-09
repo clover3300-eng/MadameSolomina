@@ -877,6 +877,14 @@
         #pfLeftRail .pcap-actions .v3-buylist-btn .ic svg,
         #pfLeftRail .pcap-actions .v3-details-btn svg { width: 15px; height: 15px; display: block; }
         #pfLeftRail .pcap-actions .v3-details-btn svg { transition: transform 0.25s ease; }
+        /* Точка-маркер: намекает, что в деке есть содержимое; гаснет после
+           первого раскрытия (класс .seen + localStorage pf_det_seen_v1) */
+        #pfLeftRail .pcap-actions .v3-details-btn { position: relative; }
+        #pfLeftRail .pcap-actions .v3-details-btn:not(.seen)::after {
+            content: ''; position: absolute; top: -3px; right: -3px;
+            width: 8px; height: 8px; border-radius: 50%;
+            background: #a7e8c4; box-shadow: 0 0 0 3px rgba(167,232,196,0.22);
+        }
         #pfLeftRail .portfolio-capital-card.pcap-open .v3-details-btn { background: rgba(255,255,255,0.10); color: #ffffff; }
         #pfLeftRail .portfolio-capital-card.pcap-open .v3-details-btn svg { transform: rotate(180deg); }
         #pfLeftRail .pcap-actions .v3-recalc-btn {
@@ -3237,60 +3245,55 @@
            выглядел как часть шапки, а не как отдельная карточка. */
         #pfStocksThead { border-bottom: none !important; }
 
-        /* Мягкий тонированный колл-аут вместо отдельной «карточки в карточке»:
-           без рамки/тени, безрамочная иконка-чип на тёплой подложке, градиентный
-           фон растворяется к краю — читается как встроенная подсказка, а не блок. */
+        /* Спокойная сноска вместо жёлтого колл-аута: волосяная линия сверху,
+           приглушённый текст, единственный акцент — маркер «70% средств».
+           margin-top:auto прижимает сноску (и «Итого» за ней) к низу карточки —
+           уровни «Итого ОФЗ» и «Итого акции» совпадают при любой высоте. */
         .portfolio-important-aurora--inline {
             display: flex;
             align-items: flex-start;
-            margin: 14px 16px 4px !important;
-            padding: 13px 16px !important;
+            margin: auto 20px 6px !important;
+            padding: 13px 0 0 !important;
             border: none !important;
-            border-radius: 14px !important;
+            border-top: 1px solid rgba(148,163,184,0.22) !important;
+            border-radius: 0 !important;
             box-shadow: none !important;
-            background: linear-gradient(135deg, rgba(245,158,11,0.09), rgba(245,158,11,0.02)) !important;
+            background: none !important;
             backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
-            gap: 12px;
+            gap: 9px;
         }
-        .portfolio-important-aurora--inline .important-aurora-icon {
-            width: 30px; height: 30px; min-width: 30px;
+        #pfRightCol .portfolio-important-aurora--inline .important-aurora-icon {
+            width: auto; height: auto; min-width: 0;
             display: flex; align-items: center; justify-content: center;
-            background: rgba(245,158,11,0.14);
-            border: none;
-            border-radius: 9px;
-            box-shadow: none;
+            background: none; border: none; border-radius: 0; box-shadow: none;
             margin-top: 1px;
         }
-        .portfolio-important-aurora--inline .important-aurora-icon svg {
-            width: 15px; height: 15px; stroke: #d98a06;
+        #pfRightCol .portfolio-important-aurora--inline .important-aurora-icon svg {
+            width: 15px; height: 15px; stroke: #94a3b8;
         }
-        .portfolio-important-aurora--inline .important-aurora-title {
-            font-family: 'Manrope', sans-serif;
-            font-size: 9px; font-weight: 800;
-            letter-spacing: 0.18em; text-transform: uppercase;
-            color: #c17d05; margin-bottom: 5px;
+        #pfRightCol .portfolio-important-aurora--inline .important-aurora-title {
+            font-family: 'Onest', 'Manrope', sans-serif;
+            font-size: 10px; font-weight: 700;
+            letter-spacing: 0.09em; text-transform: uppercase;
+            color: #8794a5; margin-bottom: 4px;
         }
-        .portfolio-important-aurora--inline .important-aurora-text {
+        #pfRightCol .portfolio-important-aurora--inline .important-aurora-text {
             font-family: 'Inter', sans-serif;
-            font-size: 12.5px !important; line-height: 1.55 !important;
+            font-size: 12.5px !important; line-height: 1.5 !important;
             font-weight: 500;
             color: #5d6b83;
         }
-        .portfolio-important-aurora--inline .important-aurora-text .highlight-marker {
+        #pfRightCol .portfolio-important-aurora--inline .important-aurora-text .highlight-marker {
             font-family: var(--font-num, 'JetBrains Mono', monospace); font-variant-numeric: tabular-nums;
             background: rgba(245,158,11,0.16); color: #8a5a08; font-weight: 700; font-size: 12px;
             border-radius: 6px; padding: 1px 6px;
         }
-        /* Тёмная тема — тот же принцип, тёплый градиент растворяется в карте */
-        body.dark-mode .portfolio-important-aurora--inline {
-            background: linear-gradient(135deg, rgba(245,158,11,0.10), rgba(245,158,11,0.015)) !important;
-        }
-        body.dark-mode .portfolio-important-aurora--inline .important-aurora-icon {
-            background: rgba(245,158,11,0.14);
-        }
-        body.dark-mode .portfolio-important-aurora--inline .important-aurora-title { color: #e0a530; }
-        body.dark-mode .portfolio-important-aurora--inline .important-aurora-text { color: #94a3b8; }
-        body.dark-mode .portfolio-important-aurora--inline .important-aurora-text .highlight-marker {
+        /* Тёмная тема — та же сноска, чуть глуше */
+        body.dark-mode .portfolio-important-aurora--inline { border-top-color: rgba(148,163,184,0.16) !important; }
+        body.dark-mode #pfRightCol .portfolio-important-aurora--inline .important-aurora-icon svg { stroke: #64748b; }
+        body.dark-mode #pfRightCol .portfolio-important-aurora--inline .important-aurora-title { color: #7c8794; }
+        body.dark-mode #pfRightCol .portfolio-important-aurora--inline .important-aurora-text { color: #94a3b8; }
+        body.dark-mode #pfRightCol .portfolio-important-aurora--inline .important-aurora-text .highlight-marker {
             background: rgba(245,158,11,0.18); color: #f1c98a;
         }
 
