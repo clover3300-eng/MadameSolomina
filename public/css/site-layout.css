@@ -798,24 +798,19 @@
     }
     .pcap-tilde { color: #556069; }
 
-    /* Сплит-бар распределения */
+    /* Сплит-бар распределения — плоский и тонкий, цвета как во вкладке
+       «Портфели» (облигации #7B9BBF, акции #D97757), без градиента/свечения */
     .pcap-splitbar { margin-top: 30px; display: flex; height: 10px; gap: 4px; position: relative; z-index: 2; }
     .pcap-split-bonds, .pcap-split-stocks { min-width: 0; height: 100%; }
-    .pcap-split-bonds {
-        background: linear-gradient(90deg, #6b9dff, #8fb5ff);
-        border-radius: 6px 3px 3px 6px; box-shadow: 0 0 14px rgba(107,157,255,0.35);
-    }
-    .pcap-split-stocks {
-        background: linear-gradient(90deg, #ef8f7f, #e8837a);
-        border-radius: 3px 6px 6px 3px; box-shadow: 0 0 14px rgba(232,131,122,0.32);
-    }
+    .pcap-split-bonds { background: #7B9BBF; border-radius: 6px 3px 3px 6px; }
+    .pcap-split-stocks { background: #D97757; border-radius: 3px 6px 6px 3px; }
 
     /* Легенда распределения */
     .pcap-legend { margin-top: 22px; display: flex; flex-direction: column; gap: 15px; position: relative; z-index: 2; }
     .pcap-legrow { display: grid; grid-template-columns: 16px minmax(0,1fr) auto auto; align-items: center; gap: 10px; }
     .pcap-dot { width: 9px; height: 9px; border-radius: 50%; }
-    .pcap-dot-bonds { background: #6b9dff; box-shadow: 0 0 0 3px rgba(107,157,255,0.14); }
-    .pcap-dot-stocks { background: #e8837a; box-shadow: 0 0 0 3px rgba(232,131,122,0.14); }
+    .pcap-dot-bonds { background: #7B9BBF; box-shadow: 0 0 0 3px rgba(123,155,191,0.14); }
+    .pcap-dot-stocks { background: #D97757; box-shadow: 0 0 0 3px rgba(217,119,87,0.14); }
     .pcap-dot-fee { background: #7d8894; box-shadow: 0 0 0 3px rgba(125,136,148,0.14); }
     .pcap-legname { font-family: 'Onest', sans-serif; font-weight: 500; font-size: 15px; color: #c8d0d8; }
     .pcap-legpct { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 13px; color: #7d8894; justify-self: end; }
