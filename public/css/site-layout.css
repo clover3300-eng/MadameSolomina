@@ -388,10 +388,10 @@
 
     @media (min-width: 1024px) {
         #panel-portfolio { max-width: none !important; }
-        /* Сетка как в Ребалансе: карточка слева (фикс. 320px), таблица справа (1fr) */
+        /* Сетка как в Ребалансе: карточка слева (фикс. 360px под референс), таблица справа (1fr) */
         #portfolio-page-buy.active {
             display: grid !important;
-            grid-template-columns: 320px minmax(0, 1fr);
+            grid-template-columns: 360px minmax(0, 1fr);
             column-gap: 22px;
             row-gap: 0;
             align-items: start;
@@ -760,8 +760,9 @@
         border-top: none !important; padding: 0 !important;
     }
 
-    /* Шапка секции: чип + подпись + правый элемент */
-    .pcap-head { display: flex; align-items: center; gap: 10px; position: relative; z-index: 2; }
+    /* Шапка секции: чип + подпись + правый элемент.
+       Грид auto|1fr|auto — правый элемент (пиллы/дата) всегда прижат вправо и НЕ вылезает за карту. */
+    .pcap-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; position: relative; z-index: 2; }
     .pcap-chip {
         width: 28px; height: 28px; flex: 0 0 auto;
         border-radius: 9px; background: rgba(255,255,255,0.06);
@@ -770,8 +771,9 @@
     }
     .pcap-chip svg { width: 15px; height: 15px; }
     .pcap-eyebrow {
-        font-family: 'Onest', sans-serif; font-weight: 600; font-size: 11px;
-        letter-spacing: 0.16em; color: #7c8794; text-transform: uppercase; white-space: nowrap;
+        min-width: 0;
+        font-family: 'Onest', sans-serif; font-weight: 600; font-size: 11px; line-height: 1.35;
+        letter-spacing: 0.09em; color: #7c8794; text-transform: uppercase;
     }
     .pcap-date {
         margin-left: auto; font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 11px;
@@ -810,7 +812,7 @@
 
     /* Легенда распределения */
     .pcap-legend { margin-top: 22px; display: flex; flex-direction: column; gap: 15px; position: relative; z-index: 2; }
-    .pcap-legrow { display: grid; grid-template-columns: 16px 1fr auto auto; align-items: center; gap: 12px; }
+    .pcap-legrow { display: grid; grid-template-columns: 16px minmax(0,1fr) auto auto; align-items: center; gap: 10px; }
     .pcap-dot { width: 9px; height: 9px; border-radius: 50%; }
     .pcap-dot-bonds { background: #6b9dff; box-shadow: 0 0 0 3px rgba(107,157,255,0.14); }
     .pcap-dot-stocks { background: #e8837a; box-shadow: 0 0 0 3px rgba(232,131,122,0.14); }
@@ -819,7 +821,7 @@
     .pcap-legpct { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 13px; color: #7d8894; justify-self: end; }
     .pcap-legsum {
         font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 15px; color: #eef2f6;
-        min-width: 126px; text-align: right; justify-self: end; white-space: nowrap;
+        text-align: right; justify-self: end; white-space: nowrap;
     }
 
     /* Кнопка «Комиссия» с раскрытием */
@@ -890,9 +892,9 @@
         background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.06);
         border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 13px;
     }
-    .pcap-brk-row { display: grid; grid-template-columns: 16px 1fr auto; align-items: center; gap: 12px; }
-    .pcap-brk-label { font-family: 'Onest', sans-serif; font-weight: 500; font-size: 15px; color: #c8d0d8; }
-    .pcap-brk-value { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 15px; min-width: 140px; text-align: right; white-space: nowrap; }
+    .pcap-brk-row { display: grid; grid-template-columns: 16px minmax(0,1fr) auto; align-items: center; gap: 10px; }
+    .pcap-brk-label { font-family: 'Onest', sans-serif; font-weight: 500; font-size: 15px; color: #c8d0d8; white-space: nowrap; }
+    .pcap-brk-value { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 14.5px; text-align: right; white-space: nowrap; justify-self: end; }
     .pcap-brk-value.pos { color: #a7e8c4; }
     .pcap-brk-value.neg { color: #e0a48f; }
     .pcap-brk-hr { height: 1px; background: rgba(255,255,255,0.06); }
@@ -2099,14 +2101,17 @@
             grid-template-columns: 24px minmax(0, 1fr) 88px 52px 108px 18px;
             gap: 8px;
         }
-        #pfRightCol #pfxCard .portfolio-list-headers { padding: 12px 20px 11px; }
-        #pfRightCol #pfxCard .portfolio-ofz-summary { padding: 0 20px; min-height: 52px; }
+        #pfRightCol #pfxCard .portfolio-list-headers { padding: 14px 20px 13px; }
+        #pfRightCol #pfxCard .portfolio-ofz-summary { padding: 6px 20px; min-height: 62px; }
         #pfRightCol #pfxCard .portfolio-ofz-name { font-size: 15px; gap: 6px; }
         #pfRightCol #pfxCard .portfolio-ofz-yield,
         #pfRightCol #pfxCard .portfolio-ofz-qty,
         #pfRightCol #pfxCard .portfolio-ofz-sum { font-size: 13.5px; }
         #pfRightCol #pfxCard .portfolio-ofz-details { padding: 0 20px 16px; }
-        #pfRightCol #pfxCard .pf-table-thead { padding: 18px 20px 14px; }
+        /* Шапка контента ОФЗ/Акции — выше и «воздушнее», не приплюснутая */
+        #pfRightCol #pfxCard .pf-table-thead { padding: 26px 22px 20px; }
+        #pfRightCol #pfxCard .pf-table-thead .ti b { font-size: 19px; }
+        #pfRightCol #pfxCard .pf-table-thead .ti .sub { margin-top: 7px; font-size: 13.5px; }
 
         /* Секция акций: шапка эшелона и таблица тикеров в тех же пропорциях */
         #pfRightCol #pfxCard .portfolio-echelons-headers {
@@ -2134,32 +2139,37 @@
         #pfRightCol #pfxCard #echelonContainerV2 { overflow: visible; }
         @keyframes pfxPop { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
 
+        /* Раскрытая строка + поповер = ОДИН выделенный блок (продолжение выбранной строки),
+           а не отдельный плавающий тултип: одинаковый фон, поповер во всю ширину строки,
+           без верхней границы, скруглены только нижние углы, мягкая тень только вниз. */
         #pfRightCol #pfxCard .portfolio-ofz-item { position: relative; }
-        #pfRightCol #pfxCard .portfolio-ofz-item.expanded { z-index: 45; }
+        #pfRightCol #pfxCard .portfolio-ofz-item.expanded { z-index: 45; background: #eef4fb; }
+        body.dark-mode #pfRightCol #pfxCard .portfolio-ofz-item.expanded { background: #222c38; }
         #pfRightCol #pfxCard .portfolio-ofz-item.expanded .portfolio-ofz-details {
-            display: block; position: absolute; top: calc(100% - 2px); left: 8px; right: 8px; z-index: 46;
-            padding: 12px 16px 14px; overflow: hidden;
-            background: #ffffff; border: 1px solid #e8eef5; border-radius: 14px;
-            box-shadow: 0 22px 50px -16px rgba(24,38,60,0.30);
+            display: block; position: absolute; top: 100%; left: 0; right: 0; z-index: 46;
+            padding: 4px 26px 16px; overflow: hidden;
+            background: #eef4fb; border: 1px solid #dbe6f3; border-top: none; border-radius: 0 0 16px 16px;
+            box-shadow: 0 20px 32px -20px rgba(24,38,60,0.28);
             animation: pfxPop 0.18s ease;
         }
         body.dark-mode #pfRightCol #pfxCard .portfolio-ofz-item.expanded .portfolio-ofz-details {
-            background: #26313f; border-color: rgba(255,255,255,0.08);
-            box-shadow: 0 22px 50px -16px rgba(0,0,0,0.6);
+            background: #222c38; border-color: rgba(255,255,255,0.07); border-top: none;
+            box-shadow: 0 20px 32px -20px rgba(0,0,0,0.55);
         }
 
         #pfRightCol #pfxCard .portfolio-echelon-card { position: relative; }
-        #pfRightCol #pfxCard .portfolio-echelon-card.expanded { z-index: 45; }
+        #pfRightCol #pfxCard .portfolio-echelon-card.expanded { z-index: 45; background: #eef4fb; }
+        body.dark-mode #pfRightCol #pfxCard .portfolio-echelon-card.expanded { background: #222c38; }
         #pfRightCol #pfxCard .portfolio-echelon-card.expanded .portfolio-echelon-content {
-            position: absolute; top: calc(100% - 4px); left: 8px; right: 8px; z-index: 46;
+            position: absolute; top: 100%; left: 0; right: 0; z-index: 46;
             max-height: none; overflow: hidden;
-            background: #ffffff; border: 1px solid #e8eef5; border-radius: 14px;
-            box-shadow: 0 22px 50px -16px rgba(24,38,60,0.30);
+            background: #eef4fb; border: 1px solid #dbe6f3; border-top: none; border-radius: 0 0 16px 16px;
+            box-shadow: 0 20px 32px -20px rgba(24,38,60,0.28);
             animation: pfxPop 0.18s ease;
         }
         body.dark-mode #pfRightCol #pfxCard .portfolio-echelon-card.expanded .portfolio-echelon-content {
-            background: #26313f; border-color: rgba(255,255,255,0.08);
-            box-shadow: 0 22px 50px -16px rgba(0,0,0,0.6);
+            background: #222c38; border-color: rgba(255,255,255,0.07); border-top: none;
+            box-shadow: 0 20px 32px -20px rgba(0,0,0,0.55);
         }
 
         /* Клик по строке акции — открывает карточку компании справа (как в Ребалансе) */
