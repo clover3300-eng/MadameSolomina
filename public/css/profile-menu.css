@@ -3,7 +3,8 @@
    ============================================================
    • #topProfileBtn — круглая иконка-аватар в правом верхнем углу
      шапки на всех вкладках, КРОМЕ Главной (body.tab-home).
-   • #topThemeBtn (кнопка темы в шапке) остаётся только на Главной;
+   • #topThemeBtn (кнопка темы в шапке) спрятана совсем: на Главной
+     тема принудительно тёмная (enforceHomeDarkTheme в webapp-tabs.js),
      на остальных вкладках тему переключает плавающая #themeFab
      в правом нижнем углу.
    • #profileHub — панель профиля по наведению/клику, живёт прямо
@@ -16,7 +17,8 @@
 
 /* ===== ВИДИМОСТЬ ПО ВКЛАДКАМ ===== */
 body.tab-home #topProfileBtn { display: none; }
-body:not(.tab-home) #topThemeBtn { display: none; }
+/* Главная всегда в тёмной теме — переключатель в шапке не нужен нигде */
+#topThemeBtn { display: none; }
 body.tab-home #themeFab { display: none; }
 /* Полноэкранные легаси-режимы и шторка компании — прячем плавающие элементы */
 body.quiz-mode #topProfileBtn, body.quiz-mode #themeFab, body.quiz-mode #profileHub { display: none; }

@@ -529,6 +529,8 @@
         window.switchTab = function (tabId) {
             _prevSwitchTab(tabId);
             closeHub();
+            // уход с Главной возвращает тему пользователя (enforceHomeDarkTheme)
+            syncFabIcon();
         };
     }
 

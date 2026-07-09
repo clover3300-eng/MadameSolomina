@@ -1,6 +1,9 @@
 /* =========================================================
    HOME — манифест и «стекло» ВО ВЕСЬ ЭКРАН (без карточки)
    =========================================================
+   Главная ВСЕГДА в тёмной теме: enforceHomeDarkTheme (webapp-tabs.js)
+   вешает body.dark-mode на tab-home, так что светлые стили ниже —
+   фактически мёртвые (оставлены на случай отката).
    Фон — фикс-слой #hgHeatWrap в начале #appShell: живая тепловая
    карта IMOEX (.hg-bg рисует js/home-register.js) + вуаль .hg-scrim,
    виден только на Главной (body.tab-home). Контент вкладки — грид
@@ -528,45 +531,49 @@ body.tab-home #hgHeatWrap { display: block; }
 .dark-mode .hg-live-pct.pos { color: #4ade80; }
 .dark-mode .hg-live-pct.neg { color: #f87171; }
 .dark-mode .hg-live-upd { color: #64748b; }
+/* Колонна входа заметно СВЕТЛЕЕ фона-карты (#0f172a): светлый слейт-глас,
+   иначе стекло сливалось с тёмной картой и форму было плохо видно */
 .dark-mode .hg-auth {
-    background: rgba(15, 22, 38, 0.72);
-    border-color: rgba(255, 255, 255, 0.10);
+    background: rgba(56, 71, 105, 0.80);
+    border-color: rgba(255, 255, 255, 0.17);
     box-shadow: 0 24px 60px -30px rgba(0, 0, 0, 0.7);
 }
-.dark-mode .hs-tabs { background: rgba(255, 255, 255, 0.07); }
-.dark-mode .hs-tab { color: #8ea0bf; }
-.dark-mode .hs-tab.active { background: #2a3550; color: #fff; }
-.dark-mode .hr-title { color: #F1F5F9; }
-.dark-mode .hr-sub { color: #94a3b8; }
-.dark-mode .hr-label { color: #7f8fae; }
+.dark-mode .hs-tabs { background: rgba(15, 23, 42, 0.35); }
+.dark-mode .hs-tab { color: #b9c6dd; }
+.dark-mode .hs-tab.active { background: #141c30; color: #fff; }
+.dark-mode .hr-title { color: #F8FAFD; }
+.dark-mode .hr-sub { color: #b3c0d6; }
+.dark-mode .hr-label { color: #a3b2cd; }
 .dark-mode .hr-input {
-    background: rgba(15, 23, 42, 0.6);
-    border-color: rgba(255, 255, 255, 0.12);
-    color: #e2e8f0;
+    background: rgba(15, 23, 42, 0.55);
+    border-color: rgba(255, 255, 255, 0.18);
+    color: #eef2f8;
 }
-.dark-mode .hr-input::placeholder { color: #64748b; }
+.dark-mode .hr-input::placeholder { color: #8493ad; }
 .dark-mode .hr-input:focus {
-    background: rgba(15, 23, 42, 0.9);
-    border-color: #5a7cff;
-    box-shadow: 0 0 0 4px rgba(90, 124, 255, 0.18);
+    background: rgba(15, 23, 42, 0.8);
+    border-color: #7c9cff;
+    box-shadow: 0 0 0 4px rgba(124, 156, 255, 0.22);
 }
-.dark-mode .hr-ficon { stroke: #64748b; }
-.dark-mode .hr-eye { color: #64748b; }
-.dark-mode .hr-eye:hover { color: #94a3b8; }
-.dark-mode .hr-submit { background: linear-gradient(180deg, #33405f 0%, #232c44 100%); }
-.dark-mode .hr-divider { color: #64748b; }
+.dark-mode .hr-ficon { stroke: #8ea0bf; }
+.dark-mode .hr-eye { color: #8ea0bf; }
+.dark-mode .hr-eye:hover { color: #cbd5e1; }
+.dark-mode .hr-submit { background: linear-gradient(180deg, #1d2740 0%, #131b2e 100%); }
+.dark-mode .hr-error { color: #ff8b98; }
+.dark-mode .hr-error.ok { color: #4ade80; }
+.dark-mode .hr-divider { color: #93a3bd; }
 .dark-mode .hr-divider::before,
-.dark-mode .hr-divider::after { background: rgba(255, 255, 255, 0.12); }
+.dark-mode .hr-divider::after { background: rgba(255, 255, 255, 0.20); }
 .dark-mode .hr-tg {
-    background: rgba(15, 23, 42, 0.6);
-    border-color: rgba(255, 255, 255, 0.14);
-    color: #e2e8f0;
+    background: rgba(15, 23, 42, 0.45);
+    border-color: rgba(255, 255, 255, 0.22);
+    color: #eef2f8;
     box-shadow: none;
 }
-.dark-mode .hr-tg:hover { border-color: rgba(255, 255, 255, 0.26); }
-.dark-mode .hr-foot { color: #94a3b8; }
+.dark-mode .hr-tg:hover { border-color: rgba(255, 255, 255, 0.36); }
+.dark-mode .hr-foot { color: #b3c0d6; }
 .dark-mode .hr-link { color: #4ade80; }
-.dark-mode .hr-policy { color: #64748b; }
+.dark-mode .hr-policy { color: #93a3bd; }
 
 /* =====================  УЗКИЕ ЭКРАНЫ  ===================== */
 @media (max-width: 1023px) {
@@ -599,5 +606,5 @@ body.tab-home #hgHeatWrap { display: block; }
         overflow-y: visible;
         background: rgba(255, 255, 255, 0.86);
     }
-    .dark-mode .hg-auth { background: rgba(15, 22, 38, 0.86); }
+    .dark-mode .hg-auth { background: rgba(56, 71, 105, 0.92); }
 }

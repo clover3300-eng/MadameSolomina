@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initTheme();
     // Set initial home state — class must be present from the very first paint
     document.body.classList.add('tab-home');
+    enforceHomeDarkTheme(true);
     // Populate content panels from legacy screens
     populatePanels();
     // Первичное выравнивание левого края портфеля под логотип
@@ -558,6 +559,8 @@ function switchTab(tabId) {
     document.body.classList.toggle('tab-calc', tabId === 'calc');
     // Прозрачный таббар на главной
     document.body.classList.toggle('tab-home', tabId === 'home');
+    // Главная всегда в тёмной теме; на остальных вкладках — выбор пользователя
+    enforceHomeDarkTheme(tabId === 'home');
     
     // Update panels
     document.querySelectorAll('.tab-panel, #panel-calc').forEach(panel => {
@@ -807,6 +810,23 @@ window.checkFirstVisit = function() {
 
 // Placeholder for missing functions
 window.openTerminalOrRegister = function() { switchTab('calc'); };
+
+// Главная всегда показывается в тёмной теме (манифест поверх живой карты).
+// user_theme в localStorage не трогаем — это выбор пользователя для остальных
+// вкладок, его возвращаем при уходе с Главной. Переключатели темы на Главной
+// спрятаны (profile-menu.css / mobile.css), а toggleTheme там — no-op (core.js).
+function enforceHomeDarkTheme(isHome) {
+    const body = document.body;
+    if (isHome) {
+        body.classList.add('dark-mode');
+        body.classList.remove('light-mode');
+    } else {
+        const saved = localStorage.getItem('user_theme');
+        body.classList.toggle('dark-mode', saved === 'dark');
+        body.classList.toggle('light-mode', saved !== 'dark');
+    }
+    syncThemeBtn();
+}
 
 // Handle theme button in top bar sync
 function syncThemeBtn() {

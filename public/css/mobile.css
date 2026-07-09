@@ -129,6 +129,8 @@
     /* !important — перебивает инлайновый display:none (скрытие для десктопа) */
     #sbMobileExtras { display: flex !important; flex-direction: column; gap: 2px; }
     #sbMobileExtras .sb-item { color: rgba(241,246,251,0.55); font-size: 13px; }
+    /* Главная всегда в тёмной теме (enforceHomeDarkTheme) — тумблер прячем */
+    body.tab-home #sbThemeBtn { display: none !important; }
     /* Пилюля-переключатель темы справа в строке */
     .sb-switch {
         margin-left: auto; flex-shrink: 0;
