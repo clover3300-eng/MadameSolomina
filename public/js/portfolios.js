@@ -2762,7 +2762,7 @@
     }
     // Импорт: pid задан → добавить в портфель; pid null → новый портфель.
     // source: 'calc' (sub: all/stock/bond) | 'fav' | 'monthly'
-    window.pfImport = function (source, sub, pid) {
+    window.pfImport = function (source, sub, pid, name) {
         closeImpMenus();
         var holds = compositionFrom(source, sub);
         if (!holds || !holds.length) { toast('Нет данных для импорта — выполните расчёт / добавьте избранное', true); return; }
@@ -2774,7 +2774,7 @@
         if (store.items.length >= MAX_CARDS) { toast('Максимум ' + MAX_CARDS + ' портфеля', true); return; }
         // src запоминаем: портфель из «ежемесячного дохода» ребалансируется с проверкой
         // сохранности графика ежемесячных выплат (см. pfLostMonths в карточке ребалансировки)
-        var np = makePortfolio(importName(source)); np.holdings = holds; np.src = source; store.items.push(np); saveStore();
+        var np = makePortfolio((name && name.trim()) || importName(source)); np.holdings = holds; np.src = source; store.items.push(np); saveStore();
         openMenu = null; ensureQuotes(true); renderPortfolios(); autofillNkd(holds); toast('Импортировано: ' + holds.length);
     };
     function closeImpMenus() {

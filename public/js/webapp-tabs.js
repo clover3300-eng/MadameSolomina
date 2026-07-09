@@ -344,10 +344,13 @@ function populatePanels() {
                     '</div>' +
                     '<div class="v3bl-track"><div class="v3bl-bar" id="v3SlBar"></div></div>' +
                     '<div class="v3bl-pct" id="v3SlPct">0%</div>' +
-                    '<button type="button" class="v3bl-createpf" onclick="v3BlCreatePortfolio()">' +
-                        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>' +
-                        'Создать портфель' +
-                    '</button>' +
+                    '<div class="v3bl-create">' +
+                        '<input type="text" id="v3PfName" class="v3bl-name" placeholder="Название портфеля" maxlength="40" autocomplete="off" oninput="v3BlNameInput()">' +
+                        '<button type="button" class="v3bl-createpf" id="v3CreateBtn" disabled onclick="v3BlCreatePortfolio()">' +
+                            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>' +
+                            'Создать' +
+                        '</button>' +
+                    '</div>' +
                 '</div>';
             pfRight.insertBefore(buyPanel, pfRight.firstChild);
         }
@@ -382,14 +385,26 @@ function populatePanels() {
             if (typeof window.v3UpdateBuyCount === 'function') window.v3UpdateBuyCount();
             if (pfRight) pfRight.classList.add('v3-buy-open');
             v3MirrorSlFooter();
+            // футер прогресса не должен уходить за нижний край: докручиваем к началу
+            // (герой + панель считаются от верха макета) — max-height задан в CSS
+            window.scrollTo({ top: 0 });
         };
         window.v3CloseBuyList = function() {
             if (pfRight) pfRight.classList.remove('v3-buy-open');
         };
-        // «Создать портфель» из виджета прогресса покупки: переносит рассчитанный
-        // состав (ОФЗ + акции) в новый портфель на вкладке «Портфели» и открывает её
+        // Поле имени активирует кнопку «Создать»: пока пусто — кнопка заблокирована
+        window.v3BlNameInput = function() {
+            var inp = document.getElementById('v3PfName');
+            var btn = document.getElementById('v3CreateBtn');
+            if (inp && btn) btn.disabled = !inp.value.trim();
+        };
+        // «Создать» из виджета прогресса покупки: переносит рассчитанный состав
+        // (ОФЗ + акции) в новый портфель на вкладке «Портфели» под введённым именем
         window.v3BlCreatePortfolio = function() {
-            if (typeof window.pfImport === 'function') window.pfImport('calc', 'all', null);
+            var inp = document.getElementById('v3PfName');
+            var name = inp ? inp.value.trim() : '';
+            if (!name) { if (inp) inp.focus(); return; }
+            if (typeof window.pfImport === 'function') window.pfImport('calc', 'all', null, name);
             switchTab('portfolios');
         };
         window.v3CopyBuyList = function() {

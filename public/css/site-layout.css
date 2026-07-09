@@ -447,8 +447,8 @@
             width: auto !important; height: auto !important;
             border-radius: 30px; pointer-events: none; overflow: hidden;
             background:
-                radial-gradient(460px 320px at 90% -10%, rgba(52,211,153,0.32), transparent 72%),
-                radial-gradient(400px 300px at 12% 115%, rgba(90,124,255,0.26), transparent 72%),
+                radial-gradient(460px 320px at 24% -12%, rgba(52,211,153,0.32), transparent 72%),
+                radial-gradient(400px 300px at 8% 118%, rgba(90,124,255,0.26), transparent 72%),
                 radial-gradient(120% 70% at 50% -12%, rgba(255,255,255,0.08), transparent 60%);
             box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
         }
@@ -1200,7 +1200,10 @@
            купить» закреплены, прокручивается только список — итог виден сразу */
         #pfRightCol.v3-buy-open #v3BuyPanel {
             display: flex;
-            max-height: calc(var(--real-vh, 100vh) / 0.9 - 110px);
+            /* панель не должна уходить за нижний край экрана — иначе парящий футер
+               прогресса оказывается ниже сгиба. 320px ≈ высота героя над панелью +
+               воздух снизу (в CSS-px с учётом zoom:0.9), масштабируется от --real-vh */
+            max-height: calc(var(--real-vh, 100vh) / 0.9 - 320px);
         }
         #v3BuyPanel {
             flex-direction: column;
@@ -1349,18 +1352,40 @@
         .v3bl-track { flex: 1 1 auto; height: 7px; border-radius: 99px; background: rgba(255,255,255,0.1); overflow: hidden; }
         .v3bl-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #2bb87a, #3ad08a); border-radius: 99px; transition: width 0.3s ease; }
         .v3bl-pct { flex: 0 0 auto; min-width: 36px; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: #3ad08a; text-align: right; }
-        /* «Создать портфель» — своя строка (оранжевый акцент) под прогрессом покупки */
-        .v3bl-createpf {
-            flex: 1 1 100%; display: inline-flex; align-items: center; justify-content: center; gap: 9px;
-            margin-top: 2px; cursor: pointer;
-            background: linear-gradient(180deg, #ef8f7f 0%, #e5766a 100%);
-            border: none; border-radius: 14px; padding: 13px 18px;
-            font-family: 'Onest', sans-serif; font-weight: 700; font-size: 14.5px; color: #ffffff;
-            box-shadow: 0 14px 28px -14px rgba(229,118,106,0.8);
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        /* Создание портфеля — единая пилюля: поле имени слева + компактная кнопка
+           «Создать» справа (кнопка — часть той же пилюли). Пока имя пустое — кнопка
+           заблокирована. */
+        .v3bl-create {
+            flex: 1 1 100%; margin-top: 2px;
+            display: flex; align-items: center; gap: 6px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.11);
+            border-radius: 14px; padding: 5px 5px 5px 6px;
         }
-        .v3bl-createpf svg { width: 17px; height: 17px; }
-        .v3bl-createpf:hover { transform: translateY(-1px); box-shadow: 0 18px 32px -14px rgba(229,118,106,0.9); }
+        .v3bl-create:focus-within { border-color: rgba(229,118,106,0.55); }
+        .v3bl-name {
+            flex: 1 1 auto; min-width: 0;
+            background: transparent; border: none; outline: none;
+            font-family: 'Onest', sans-serif; font-weight: 600; font-size: 14px; color: #ffffff;
+            padding: 8px 10px;
+        }
+        .v3bl-name::placeholder { color: #76849a; }
+        .v3bl-createpf {
+            flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px;
+            cursor: pointer;
+            background: linear-gradient(180deg, #ef8f7f 0%, #e5766a 100%);
+            border: none; border-radius: 11px; padding: 9px 16px;
+            font-family: 'Onest', sans-serif; font-weight: 700; font-size: 13.5px; color: #ffffff;
+            box-shadow: 0 10px 22px -12px rgba(229,118,106,0.85);
+            transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease;
+        }
+        .v3bl-createpf svg { width: 16px; height: 16px; }
+        .v3bl-createpf:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 14px 26px -12px rgba(229,118,106,0.95); }
+        .v3bl-createpf:disabled {
+            cursor: not-allowed;
+            background: rgba(255,255,255,0.09); color: #76849a;
+            box-shadow: none;
+        }
     }
 
     /* ===== CUSTOM DATEPICKER (backtest, desktop) ===== */
@@ -2364,7 +2389,8 @@
            вертикальный разделитель). Переключателя ОФЗ/Акции больше нет. ===== */
         #pfRightCol #pfxCard {
             display: grid;
-            grid-template-columns: minmax(0, 10fr) minmax(0, 11fr);
+            /* пропорции колонок как на Ребалансе (.rbx-card): ОФЗ уже, акции шире */
+            grid-template-columns: minmax(330px, 2fr) minmax(0, 3fr);
             align-items: stretch;
             flex: 0 0 auto;
             background: #ffffff;
