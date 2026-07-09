@@ -1915,13 +1915,22 @@
         /* чистый сплит 100/0 — одна секция на всю ширину */
         #pfRightCol #pfxCard.pfx-solo { grid-template-columns: minmax(0, 1fr); }
         #pfRightCol #pfxCard.pfx-solo > #portfolio-tab-stocks { border-left: none; }
-        /* вложенные обёртки таблиц — плоские: белая карта теперь внешняя */
+        /* вложенные обёртки таблиц — плоские: белая карта теперь внешняя.
+           flex-колонка на всю высоту стретченной half-карты — «Итого ОФЗ»
+           и «Итого акции» прижаты книзу (margin-top:auto ниже), поэтому
+           изначально оказываются на одном уровне независимо от длины списков. */
         #pfRightCol #pfxCard .v3-table-card {
             background: transparent;
             border-radius: 0;
             box-shadow: none;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
         }
         body.dark-mode #pfRightCol #pfxCard .v3-table-card { background: transparent; }
+        #pfRightCol #pfxCard #bondsTotalRow,
+        #pfRightCol #pfxCard #footer-important-v2 { margin-top: auto !important; }
 
         /* Полкарты уже, чем прежняя таблица во всю ширину — ужимаем сетки колонок.
            Заголовок и значение держат одну грид-колонку (эталон — таблица ОФЗ). */
@@ -1973,6 +1982,55 @@
         #pfRightCol #pfxCard .portfolio-echelons-total-row .total-sum { font-size: 15px; }
         #pfRightCol #pfxCard .portfolio-important-aurora--inline { margin-left: 20px; margin-right: 20px; }
 
+        /* «ЭШЕЛОН» — сдвигаем над названием уровня (кружок-номер + gap), а не над самим кружком */
+        #pfRightCol #pfxCard .portfolio-echelons-headers .portfolio-echelon-h-text:nth-child(1) { padding-left: 42px; }
+
+        /* Шевроны раскрытия (ОФЗ и эшелоны/тикеры акций) — без квадрата/кружка, одинаковые */
+        #pfRightCol #pfxCard .ofz-expand-badge,
+        #pfRightCol #pfxCard .portfolio-echelon-arrow {
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            border-radius: 0;
+            width: 18px; height: 18px; padding: 0;
+            color: #b6c1cf;
+        }
+        body.dark-mode #pfRightCol #pfxCard .ofz-expand-badge,
+        body.dark-mode #pfRightCol #pfxCard .portfolio-echelon-arrow { color: #5c6b82; }
+        #pfRightCol #pfxCard .ofz-expand-badge svg { width: 15px; height: 15px; stroke: currentColor; }
+        #pfRightCol #pfxCard .portfolio-echelon-card:hover .portfolio-echelon-arrow { background: transparent; }
+
+        /* Подстроки ОФЗ — как в Ребалансе: подпись слева / значение справа, пунктир между строк, без плашки-фона */
+        #pfRightCol #pfxCard .portfolio-ofz-details-grid {
+            background: transparent;
+            border-radius: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        body.dark-mode #pfRightCol #pfxCard .portfolio-ofz-details-grid { background: transparent; }
+        #pfRightCol #pfxCard .portfolio-ofz-detail-row {
+            padding: 11px 0;
+            border-bottom: 1px dashed rgba(44, 54, 76, 0.14);
+        }
+        body.dark-mode #pfRightCol #pfxCard .portfolio-ofz-detail-row { border-bottom-color: rgba(255,255,255,0.1); }
+        #pfRightCol #pfxCard .portfolio-ofz-detail-row:last-child { border-bottom: none; }
+        #pfRightCol #pfxCard .portfolio-ofz-detail-label {
+            font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #8a96aa;
+        }
+        #pfRightCol #pfxCard .portfolio-ofz-detail-value {
+            font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: #2C364C;
+        }
+        body.dark-mode #pfRightCol #pfxCard .portfolio-ofz-detail-value { color: #e2e8f0; }
+        #pfRightCol #pfxCard .ofz-copy-wrapper {
+            background: transparent; padding: 8px 6px; margin: -8px -6px; border-radius: 9px; transition: background 0.14s ease;
+        }
+        #pfRightCol #pfxCard .ofz-copy-wrapper:hover { background: #F5F7FA; }
+        body.dark-mode #pfRightCol #pfxCard .ofz-copy-wrapper:hover { background: rgba(255,255,255,0.05); }
+        #pfRightCol #pfxCard .ofz-copy-code { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: #2C364C; }
+        body.dark-mode #pfRightCol #pfxCard .ofz-copy-code { color: #e2e8f0; }
+        #pfRightCol #pfxCard .ofz-copy-icon { width: 12px; height: 12px; stroke: #94A3B8; opacity: 1; }
+        #pfRightCol #pfxCard .ofz-aurora-chart-btn svg { stroke: #4be3a0; }
+
         /* Узкая карта (выдвинут/закреплён сайдбар, небольшой экран): контейнерный
            запрос по ширине карты — прячем ранг, короткие заголовки (%/ШТ), плотнее сетка */
         #pfRightCol #pfxCard { container-type: inline-size; }
@@ -2007,6 +2065,7 @@
             #pfRightCol #pfxCard .portfolio-echelon-header-right { grid-template-columns: 100px 40px 18px; gap: 8px; }
             #pfRightCol #pfxCard .portfolio-echelon-number { width: 28px; height: 28px; font-size: 11.5px; }
             #pfRightCol #pfxCard .portfolio-echelon-title { font-size: 13.5px; }
+            #pfRightCol #pfxCard .portfolio-echelons-headers .portfolio-echelon-h-text:nth-child(1) { padding-left: 40px; }
             #pfRightCol #pfxCard .portfolio-echelon-sum { font-size: 13.5px; }
             #pfRightCol #pfxCard .portfolio-echelon-percent { font-size: 11px; padding: 3px 7px; }
             #pfRightCol #pfxCard .portfolio-echelon-columns-header { padding: 11px 16px 10px; }
@@ -2303,7 +2362,7 @@
            из паддинга контента, внутренний паддинг возвращает выравнивание. */
         #pfRightCol .coupon-table-head,
         #pfRightCol .coupon-row {
-            grid-template-columns: 26px 110px 168px minmax(0,1fr) 150px;
+            grid-template-columns: 24px 92px minmax(0,1fr) 60px 112px;
             gap: 12px;
             margin: 0 -26px;
             padding-left: 26px; padding-right: 26px;
@@ -2348,7 +2407,7 @@
         /* Тумблер налогов — сегмент-контрол под общий стиль (как переключатели в приложении) */
         #pfRightCol .tax-selector-ui {
             display: flex; gap: 4px;
-            margin: 16px 0 6px !important;
+            margin: 16px 0 20px !important;
             padding: 4px !important;
             background: #eef2f7 !important;
             border-radius: 12px !important;
