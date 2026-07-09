@@ -1064,7 +1064,7 @@
     .pcap-eyebrow {
         min-width: 0;
         font-family: 'Onest', sans-serif; font-weight: 600; font-size: 11px; line-height: 1.35;
-        letter-spacing: 0.09em; color: #7c8794; text-transform: uppercase;
+        letter-spacing: 0.09em; color: rgba(255,255,255,0.92); text-transform: uppercase;
     }
     .pcap-date {
         margin-left: auto; display: inline-flex; align-items: center; gap: 6px;
@@ -1329,47 +1329,69 @@
         }
         body.dark-mode #v3BuyBody .sl-group-total-value { color: #f1f6fb; }
 
-        /* Футер прогресса «Осталось купить» — компактный итог в стиле «Итого ОФЗ»:
-           метрики сверху, прогресс-бар и % — одной строкой снизу */
+        /* Футер прогресса «Осталось купить» — R6-стиль (как .rbx-tile в Ребалансе):
+           светлая карта с тонкой рамкой, моно-цифры, тонкий градиентный бар вместо
+           тёмного плашечного бокса */
         .v3bl-foot {
             margin: 12px 16px 16px;
-            background: #141b26; border-radius: 18px; color: #ffffff;
+            background: #ffffff;
+            border: 1px solid rgba(44,54,76,0.10);
+            border-radius: 18px;
             padding: 16px 18px 15px;
             display: flex; flex-wrap: wrap; align-items: center;
-            column-gap: 14px; row-gap: 13px;
+            column-gap: 14px; row-gap: 12px;
             flex-shrink: 0;
+            box-shadow: 0 10px 22px -14px rgba(24,38,60,0.18);
         }
-        body.dark-mode .v3bl-foot { background: #0d131c; }
+        body.dark-mode .v3bl-foot { background: rgba(15,23,42,0.55); border-color: rgba(255,255,255,0.09); box-shadow: none; }
         .v3bl-foot-row { flex: 1 1 100%; display: flex; align-items: flex-end; gap: 14px; }
         .v3bl-foot .lb {
             font-family: 'Manrope', sans-serif;
             font-size: 10.5px; letter-spacing: 0.12em; font-weight: 700;
-            color: #76849a; text-transform: uppercase; margin-bottom: 6px;
+            color: #94a3b8; text-transform: uppercase; margin-bottom: 6px;
         }
-        .v3bl-foot .vl { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 18px; white-space: nowrap; line-height: 1; }
+        .v3bl-foot .vl {
+            font-family: var(--font-num, 'JetBrains Mono', monospace);
+            font-weight: 700; font-size: 18px; white-space: nowrap; line-height: 1;
+            color: #161B27;
+        }
+        body.dark-mode .v3bl-foot .vl { color: #f1f6fb; }
         .v3bl-foot .plan { margin-left: auto; text-align: right; }
-        .v3bl-foot .plan .vl { color: #8a97ad; font-size: 13px; font-weight: 600; }
-        .v3bl-track { flex: 1 1 auto; height: 7px; border-radius: 99px; background: rgba(255,255,255,0.1); overflow: hidden; }
-        .v3bl-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #2bb87a, #3ad08a); border-radius: 99px; transition: width 0.3s ease; }
-        .v3bl-pct { flex: 0 0 auto; min-width: 36px; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: #3ad08a; text-align: right; }
-        /* Создание портфеля — единая пилюля: поле имени слева + компактная кнопка
-           «Создать» справа (кнопка — часть той же пилюли). Пока имя пустое — кнопка
-           заблокирована. */
+        .v3bl-foot .plan .vl { color: #8a96aa; font-size: 13px; font-weight: 600; }
+        .v3bl-progress { flex: 1 1 100%; display: flex; align-items: center; gap: 10px; }
+        .v3bl-track { flex: 1 1 auto; height: 4px; border-radius: 999px; background: #EEF1F5; overflow: hidden; }
+        body.dark-mode .v3bl-track { background: rgba(255,255,255,0.09); }
+        .v3bl-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #34d399, #10B981); border-radius: inherit; transition: width 0.3s ease; }
+        .v3bl-pct { flex: 0 0 auto; min-width: 34px; font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12.5px; font-weight: 700; color: #1f9d63; text-align: right; }
+        body.dark-mode .v3bl-pct { color: #34d399; }
+        /* Создание портфеля — единая пилюля: поле имени слева + кнопка «Создать
+           портфель» справа. Кнопка всегда активна (оранжевая); без имени клик
+           подсвечивает пилюлю красным и трясёт её вместо блокировки. */
         .v3bl-create {
             flex: 1 1 100%; margin-top: 2px;
             display: flex; align-items: center; gap: 6px;
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.11);
+            background: #F6F8FB;
+            border: 1px solid rgba(44,54,76,0.10);
             border-radius: 14px; padding: 5px 5px 5px 6px;
+            transition: border-color 0.15s ease;
         }
+        body.dark-mode .v3bl-create { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.09); }
         .v3bl-create:focus-within { border-color: rgba(229,118,106,0.55); }
+        @keyframes v3blShake {
+            10%, 90% { transform: translateX(-1px); }
+            20%, 80% { transform: translateX(2px); }
+            30%, 50%, 70% { transform: translateX(-4px); }
+            40%, 60% { transform: translateX(4px); }
+        }
+        .v3bl-create.v3bl-create-err { border-color: rgba(214,68,68,0.6); animation: v3blShake 0.4s ease; }
         .v3bl-name {
             flex: 1 1 auto; min-width: 0;
             background: transparent; border: none; outline: none;
-            font-family: 'Onest', sans-serif; font-weight: 600; font-size: 14px; color: #ffffff;
+            font-family: 'Onest', sans-serif; font-weight: 600; font-size: 14px; color: #161B27;
             padding: 8px 10px;
         }
-        .v3bl-name::placeholder { color: #76849a; }
+        body.dark-mode .v3bl-name { color: #f1f6fb; }
+        .v3bl-name::placeholder { color: #94a3b8; }
         .v3bl-createpf {
             flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px;
             cursor: pointer;
@@ -1377,15 +1399,10 @@
             border: none; border-radius: 11px; padding: 9px 16px;
             font-family: 'Onest', sans-serif; font-weight: 700; font-size: 13.5px; color: #ffffff;
             box-shadow: 0 10px 22px -12px rgba(229,118,106,0.85);
-            transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
         .v3bl-createpf svg { width: 16px; height: 16px; }
-        .v3bl-createpf:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 14px 26px -12px rgba(229,118,106,0.95); }
-        .v3bl-createpf:disabled {
-            cursor: not-allowed;
-            background: rgba(255,255,255,0.09); color: #76849a;
-            box-shadow: none;
-        }
+        .v3bl-createpf:hover { transform: translateY(-1px); box-shadow: 0 14px 26px -12px rgba(229,118,106,0.95); }
     }
 
     /* ===== CUSTOM DATEPICKER (backtest, desktop) ===== */
@@ -2475,34 +2492,40 @@
 
         /* Раскрытая строка + поповер = ОДИН выделенный блок (продолжение выбранной строки),
            а не отдельный плавающий тултип: одинаковый фон, поповер во всю ширину строки,
-           без верхней границы, скруглены только нижние углы, мягкая тень только вниз. */
+           без верхней границы, скруглены только нижние углы, мягкая тень только вниз.
+           Цвет — В ТОН СЕКЦИИ (не отдельный акцентный оттенок): ОФЗ раскрывается в цвете
+           своей зелёной подложки, акции — в белом (цвет карты), чтобы поповер читался
+           как продолжение секции, а не инородная всплывашка. */
         #pfRightCol #pfxCard .portfolio-ofz-item { position: relative; }
-        #pfRightCol #pfxCard .portfolio-ofz-item.expanded { z-index: 45; background: #eef4fb; }
-        body.dark-mode #pfRightCol #pfxCard .portfolio-ofz-item.expanded { background: #222c38; }
+        #pfRightCol #pfxCard .portfolio-ofz-item.expanded { z-index: 45; background: #F5F8F6; }
+        /* solid-блендинг rgba(52,211,153,0.045) поверх фона карты (#1d2734) —
+           попап должен быть НЕПРОЗРАЧНЫМ (иначе строки списка под ним просвечивают),
+           а секционная rgba-подложка сама по себе полупрозрачна и для этого не годится */
+        body.dark-mode #pfRightCol #pfxCard .portfolio-ofz-item.expanded { background: #1e2f39; }
         #pfRightCol #pfxCard .portfolio-ofz-item.expanded .portfolio-ofz-details {
             display: block; position: absolute; top: 100%; left: 0; right: 0; z-index: 46;
             padding: 4px 26px 16px; overflow: hidden;
-            background: #eef4fb; border: 1px solid #dbe6f3; border-top: none; border-radius: 0 0 16px 16px;
+            background: #F5F8F6; border: 1px solid rgba(44,54,76,0.10); border-top: none; border-radius: 0 0 16px 16px;
             box-shadow: 0 20px 32px -20px rgba(24,38,60,0.28);
             animation: pfxPop 0.18s ease;
         }
         body.dark-mode #pfRightCol #pfxCard .portfolio-ofz-item.expanded .portfolio-ofz-details {
-            background: #222c38; border-color: rgba(255,255,255,0.07); border-top: none;
+            background: #1e2f39; border-color: rgba(255,255,255,0.07); border-top: none;
             box-shadow: 0 20px 32px -20px rgba(0,0,0,0.55);
         }
 
         #pfRightCol #pfxCard .portfolio-echelon-card { position: relative; }
-        #pfRightCol #pfxCard .portfolio-echelon-card.expanded { z-index: 45; background: #eef4fb; }
-        body.dark-mode #pfRightCol #pfxCard .portfolio-echelon-card.expanded { background: #222c38; }
+        #pfRightCol #pfxCard .portfolio-echelon-card.expanded { z-index: 45; background: #ffffff; }
+        body.dark-mode #pfRightCol #pfxCard .portfolio-echelon-card.expanded { background: #1d2734; }
         #pfRightCol #pfxCard .portfolio-echelon-card.expanded .portfolio-echelon-content {
             position: absolute; top: 100%; left: 0; right: 0; z-index: 46;
             max-height: none; overflow: hidden;
-            background: #eef4fb; border: 1px solid #dbe6f3; border-top: none; border-radius: 0 0 16px 16px;
+            background: #ffffff; border: 1px solid rgba(44,54,76,0.10); border-top: none; border-radius: 0 0 16px 16px;
             box-shadow: 0 20px 32px -20px rgba(24,38,60,0.28);
             animation: pfxPop 0.18s ease;
         }
         body.dark-mode #pfRightCol #pfxCard .portfolio-echelon-card.expanded .portfolio-echelon-content {
-            background: #222c38; border-color: rgba(255,255,255,0.07); border-top: none;
+            background: #1d2734; border-color: rgba(255,255,255,0.07); border-top: none;
             box-shadow: 0 20px 32px -20px rgba(0,0,0,0.55);
         }
 
@@ -3167,61 +3190,61 @@
            выглядел как часть шапки, а не как отдельная карточка. */
         #pfStocksThead { border-bottom: none !important; }
 
-        /* Оформление — как карточка ребалансировки (rb5): белый фон, тонкая рамка
-           rgba(44,54,76), eyebrow-заголовок, моно-выделение цифр. Иконка — «квадрат
-           с тонкой рамкой» из семейства контролов rb5-hbtn, лампочка тёплого тона. */
+        /* Мягкий тонированный колл-аут вместо отдельной «карточки в карточке»:
+           без рамки/тени, безрамочная иконка-чип на тёплой подложке, градиентный
+           фон растворяется к краю — читается как встроенная подсказка, а не блок. */
         .portfolio-important-aurora--inline {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             margin: 14px 16px 4px !important;
-            padding: 13px 18px !important;
-            border: 1px solid rgba(44,54,76,0.14) !important;
-            border-radius: 16px !important;
-            box-shadow: 0 2px 10px rgba(44,54,76,0.05) !important;
-            background: #ffffff !important;
+            padding: 13px 16px !important;
+            border: none !important;
+            border-radius: 14px !important;
+            box-shadow: none !important;
+            background: linear-gradient(135deg, rgba(245,158,11,0.09), rgba(245,158,11,0.02)) !important;
             backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
-            gap: 14px;
+            gap: 12px;
         }
         .portfolio-important-aurora--inline .important-aurora-icon {
-            width: 38px; height: 38px; min-width: 38px;
+            width: 30px; height: 30px; min-width: 30px;
             display: flex; align-items: center; justify-content: center;
-            background: #ffffff;
-            border: 1px solid rgba(44,54,76,0.14);
-            border-radius: 13px;
+            background: rgba(245,158,11,0.14);
+            border: none;
+            border-radius: 9px;
             box-shadow: none;
+            margin-top: 1px;
         }
         .portfolio-important-aurora--inline .important-aurora-icon svg {
-            width: 17px; height: 17px; stroke: #d98a06;
+            width: 15px; height: 15px; stroke: #d98a06;
         }
         .portfolio-important-aurora--inline .important-aurora-title {
-            font-family: 'Inter', sans-serif;
-            font-size: 9px; font-weight: 700;
-            letter-spacing: 0.22em; text-transform: uppercase;
-            color: #94A3B8; margin-bottom: 4px;
+            font-family: 'Manrope', sans-serif;
+            font-size: 9px; font-weight: 800;
+            letter-spacing: 0.18em; text-transform: uppercase;
+            color: #c17d05; margin-bottom: 5px;
         }
         .portfolio-important-aurora--inline .important-aurora-text {
             font-family: 'Inter', sans-serif;
-            font-size: 13px !important; line-height: 1.55 !important;
+            font-size: 12.5px !important; line-height: 1.55 !important;
             font-weight: 500;
-            color: #3d4d63;
+            color: #5d6b83;
         }
         .portfolio-important-aurora--inline .important-aurora-text .highlight-marker {
-            font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums;
-            background: rgba(44,54,76,0.07); color: #161B27; font-weight: 700; font-size: 12px;
+            font-family: var(--font-num, 'JetBrains Mono', monospace); font-variant-numeric: tabular-nums;
+            background: rgba(245,158,11,0.16); color: #8a5a08; font-weight: 700; font-size: 12px;
             border-radius: 6px; padding: 1px 6px;
         }
-        /* Тёмная тема — в тон rb5-карточки */
+        /* Тёмная тема — тот же принцип, тёплый градиент растворяется в карте */
         body.dark-mode .portfolio-important-aurora--inline {
-            background: #141c27 !important;
-            border-color: rgba(255,255,255,0.08) !important;
-            box-shadow: none !important;
+            background: linear-gradient(135deg, rgba(245,158,11,0.10), rgba(245,158,11,0.015)) !important;
         }
         body.dark-mode .portfolio-important-aurora--inline .important-aurora-icon {
-            background: rgba(15,23,42,0.6); border-color: rgba(255,255,255,0.12);
+            background: rgba(245,158,11,0.14);
         }
-        body.dark-mode .portfolio-important-aurora--inline .important-aurora-text { color: #cbd5e1; }
+        body.dark-mode .portfolio-important-aurora--inline .important-aurora-title { color: #e0a530; }
+        body.dark-mode .portfolio-important-aurora--inline .important-aurora-text { color: #94a3b8; }
         body.dark-mode .portfolio-important-aurora--inline .important-aurora-text .highlight-marker {
-            background: rgba(255,255,255,0.09); color: #f1f6fb;
+            background: rgba(245,158,11,0.18); color: #f1c98a;
         }
 
         /* (центрирование списков ребаланса убрано — теперь они в правой колонке) */

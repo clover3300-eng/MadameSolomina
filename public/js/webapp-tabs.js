@@ -342,13 +342,15 @@ function populatePanels() {
                         '<div><div class="lb">Осталось купить</div><div class="vl" id="v3SlRemaining">0 ₽</div></div>' +
                         '<div class="plan"><div class="lb">План</div><div class="vl" id="v3SlPlan">0 ₽</div></div>' +
                     '</div>' +
-                    '<div class="v3bl-track"><div class="v3bl-bar" id="v3SlBar"></div></div>' +
-                    '<div class="v3bl-pct" id="v3SlPct">0%</div>' +
+                    '<div class="v3bl-progress">' +
+                        '<div class="v3bl-track"><div class="v3bl-bar" id="v3SlBar"></div></div>' +
+                        '<span class="v3bl-pct" id="v3SlPct">0%</span>' +
+                    '</div>' +
                     '<div class="v3bl-create">' +
-                        '<input type="text" id="v3PfName" class="v3bl-name" placeholder="Название портфеля" maxlength="40" autocomplete="off" oninput="v3BlNameInput()">' +
-                        '<button type="button" class="v3bl-createpf" id="v3CreateBtn" disabled onclick="v3BlCreatePortfolio()">' +
+                        '<input type="text" id="v3PfName" class="v3bl-name" placeholder="Придумайте название для нового портфеля" maxlength="40" autocomplete="off" oninput="v3BlNameInput()">' +
+                        '<button type="button" class="v3bl-createpf" id="v3CreateBtn" onclick="v3BlCreatePortfolio()">' +
                             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>' +
-                            'Создать' +
+                            'Создать портфель' +
                         '</button>' +
                     '</div>' +
                 '</div>';
@@ -392,18 +394,35 @@ function populatePanels() {
         window.v3CloseBuyList = function() {
             if (pfRight) pfRight.classList.remove('v3-buy-open');
         };
-        // Поле имени активирует кнопку «Создать»: пока пусто — кнопка заблокирована
+        // Поле имени: как только пользователь начал печатать — снимаем подсветку ошибки
         window.v3BlNameInput = function() {
-            var inp = document.getElementById('v3PfName');
-            var btn = document.getElementById('v3CreateBtn');
-            if (inp && btn) btn.disabled = !inp.value.trim();
+            var wrap = document.querySelector('.v3bl-create');
+            if (wrap) wrap.classList.remove('v3bl-create-err');
         };
-        // «Создать» из виджета прогресса покупки: переносит рассчитанный состав
-        // (ОФЗ + акции) в новый портфель на вкладке «Портфели» под введённым именем
+        // Компактный тост (переиспользует .pf-toast из css/portfolios.css — тот же
+        // визуал, что у уведомлений вкладки «Портфели»; toast() там приватная функция
+        // модуля, наружу не экспортирована, поэтому здесь свой минимальный вызов).
+        function v3blWarnToast(msg) {
+            var t = document.getElementById('pfToast');
+            if (!t) { t = document.createElement('div'); t.id = 'pfToast'; t.className = 'pf-toast'; document.body.appendChild(t); }
+            t.textContent = msg; t.classList.add('err');
+            t.classList.add('show'); clearTimeout(t._tm);
+            t._tm = setTimeout(function() { t.classList.remove('show'); }, 2200);
+        }
+        // «Создать портфель» из виджета прогресса покупки: переносит рассчитанный
+        // состав (ОФЗ + акции) в новый портфель на вкладке «Портфели» под введённым
+        // именем. Кнопка всегда активна — без имени просто предупреждаем и не уводим
+        // со страницы (потерять отмеченный прогресс покупки было бы обидно).
         window.v3BlCreatePortfolio = function() {
             var inp = document.getElementById('v3PfName');
             var name = inp ? inp.value.trim() : '';
-            if (!name) { if (inp) inp.focus(); return; }
+            if (!name) {
+                var wrap = document.querySelector('.v3bl-create');
+                if (wrap) { wrap.classList.remove('v3bl-create-err'); void wrap.offsetWidth; wrap.classList.add('v3bl-create-err'); }
+                if (inp) inp.focus();
+                v3blWarnToast('Придумайте название для портфеля');
+                return;
+            }
             if (typeof window.pfImport === 'function') window.pfImport('calc', 'all', null, name);
             switchTab('portfolios');
         };
