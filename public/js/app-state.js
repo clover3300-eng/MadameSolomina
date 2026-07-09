@@ -27,9 +27,7 @@ function lsSave() {
             // пересобирает портфель при загрузке (подвкладка «Смешанный портфель»)
             calcDone: typeof isPortfolioCalculated !== 'undefined' ? !!isPortfolioCalculated : false,
             lastTab: currentTab || 'home',
-            // именно user_theme, не класс на body: на Главной тема принудительно
-            // тёмная (enforceHomeDarkTheme) и класс не отражает выбор пользователя
-            theme: localStorage.getItem('user_theme') === 'dark' ? 'dark' : 'light',
+            theme: document.body.classList.contains('dark-mode') ? 'dark' : 'light',
             ts: Date.now()
         };
         localStorage.setItem(LS_KEY, JSON.stringify(state));

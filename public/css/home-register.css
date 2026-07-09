@@ -206,29 +206,30 @@ body.tab-home #hgHeatWrap { display: block; }
 .hg-live-upd { color: #9AA3B2; }
 .hg-live-upd:not(:empty)::before { content: "· "; }
 
-/* ---- Правая колонна: стекло ---- */
+/* ---- Правая колонна: сплошная белая карточка ---- */
+/* Не «парящее стекло», а плотная карточка того же языка, что плитки карты
+   на фоне: непрозрачный белый фон, тонкая рамка, малый радиус, лёгкая тень —
+   карточка «лежит» на поверхности, а не висит над ней (по фидбеку). */
 .hg-auth {
     position: relative;
     align-self: center;
     justify-self: end;
     width: 100%;
     max-height: 100%;
-    padding: 40px 40px 30px;
+    padding: 38px 38px 28px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
     scrollbar-width: none;
-    background: rgba(255, 255, 255, 0.74);
-    backdrop-filter: blur(16px) saturate(1.1);
-    -webkit-backdrop-filter: blur(16px) saturate(1.1);
-    border: 1px solid rgba(44, 54, 76, 0.10);
-    border-radius: 26px;
-    box-shadow: 0 24px 60px -30px rgba(44, 54, 76, 0.35);
-    animation: hgAuthIn 0.6s ease-out both;
+    background: #ffffff;
+    border: 1px solid rgba(20, 27, 45, 0.09);
+    border-radius: 14px;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 10px 26px -20px rgba(16, 24, 40, 0.22);
+    animation: hgAuthIn 0.45s ease-out both;
 }
 @keyframes hgAuthIn {
-    from { opacity: 0; transform: translateY(14px); }
+    from { opacity: 0; transform: translateY(8px); }
     to   { opacity: 1; transform: translateY(0); }
 }
 .hg-auth::-webkit-scrollbar { display: none; }
@@ -530,10 +531,48 @@ body.tab-home #hgHeatWrap { display: block; }
 .dark-mode .hg-live-pct.pos { color: #4ade80; }
 .dark-mode .hg-live-pct.neg { color: #f87171; }
 .dark-mode .hg-live-upd { color: #64748b; }
-/* Форма входа и кнопка «Начать расчёт» НЕ перекрашиваются в тёмной теме —
-   по фидбеку два тёмных варианта подряд не понравились («стремно»), поэтому
-   тут просто переиспользуются цвета светлой темы (белое стекло .hg-auth,
-   чёрная .hc-cta-dark) как есть: белая карточка-остров на тёмной карте. */
+/* Тёмная тема (по кнопке в шапке): форма — та же плотная карточка, но
+   в тон тёмных плиток карты (#141d31), не стекло. Тексты/поля подсветлены. */
+.dark-mode .hg-auth {
+    background: #141d31;
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 30px -20px rgba(0, 0, 0, 0.7);
+}
+.dark-mode .hs-tabs { background: rgba(255, 255, 255, 0.06); }
+.dark-mode .hs-tab { color: #8ea0bf; }
+.dark-mode .hs-tab.active { background: #0e1424; color: #fff; }
+.dark-mode .hr-title { color: #F1F5F9; }
+.dark-mode .hr-sub { color: #94a3b8; }
+.dark-mode .hr-label { color: #7f8fae; }
+.dark-mode .hr-input {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #e2e8f0;
+}
+.dark-mode .hr-input::placeholder { color: #64748b; }
+.dark-mode .hr-input:focus {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: #5a7cff;
+    box-shadow: 0 0 0 4px rgba(90, 124, 255, 0.18);
+}
+.dark-mode .hr-ficon { stroke: #64748b; }
+.dark-mode .hr-eye { color: #64748b; }
+.dark-mode .hr-eye:hover { color: #94a3b8; }
+.dark-mode .hr-error { color: #f87171; }
+.dark-mode .hr-error.ok { color: #4ade80; }
+.dark-mode .hr-divider { color: #64748b; }
+.dark-mode .hr-divider::before,
+.dark-mode .hr-divider::after { background: rgba(255, 255, 255, 0.12); }
+.dark-mode .hr-tg {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.14);
+    color: #e2e8f0;
+    box-shadow: none;
+}
+.dark-mode .hr-tg:hover { border-color: rgba(255, 255, 255, 0.26); }
+.dark-mode .hr-foot { color: #94a3b8; }
+.dark-mode .hr-link { color: #4ade80; }
+.dark-mode .hr-policy { color: #64748b; }
 
 /* =====================  УЗКИЕ ЭКРАНЫ  ===================== */
 @media (max-width: 1023px) {
@@ -564,6 +603,7 @@ body.tab-home #hgHeatWrap { display: block; }
         justify-self: stretch;
         max-height: none;
         overflow-y: visible;
-        background: rgba(255, 255, 255, 0.86);
+        background: #ffffff;
     }
+    .dark-mode .hg-auth { background: #141d31; }
 }
