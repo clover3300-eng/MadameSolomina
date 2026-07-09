@@ -143,36 +143,29 @@ function populatePanels() {
         const fcLight = share.querySelector('.capital-forecast-light');
         let actions = share.querySelector('.pcap-actions');
         if (!actions) { actions = document.createElement('div'); actions.className = 'pcap-actions'; share.appendChild(actions); }
-        if (actions) {
-            const buyBtn = document.createElement('button');
-            buyBtn.type = 'button';
-            buyBtn.className = 'v3-buylist-btn';
-            buyBtn.innerHTML = '<span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="16" rx="2.5"/><path d="M9 5V4a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 4v1"/><path d="M8.5 11l1.6 1.6L13.5 9"/><path d="M8.5 16.5h5"/></svg></span>Список к покупке<span class="count" id="v3BuyCount">0</span>';
-            // Повторное нажатие сворачивает встроенную панель (десктоп)
-            buyBtn.onclick = function() {
-                var pfR = document.getElementById('pfRightCol');
-                if (pfR && pfR.classList.contains('v3-buy-open')) { if (typeof window.v3CloseBuyList === 'function') window.v3CloseBuyList(); return; }
-                if (typeof window.v3OpenBuyList === 'function') window.v3OpenBuyList();
-                else if (typeof openShoppingList === 'function') openShoppingList();
-            };
-            actions.appendChild(buyBtn);
-        }
-        // 2.5) Кнопка «Создать портфель» — переносит рассчитанный состав (ОФЗ + акции)
-        // в новый портфель на вкладке «Портфели» и сразу открывает её
-        const createPfBtn = document.createElement('button');
-        createPfBtn.type = 'button';
-        createPfBtn.className = 'v3-createpf-btn';
-        createPfBtn.innerHTML = '<span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span>Создать портфель';
-        createPfBtn.onclick = function() {
-            if (typeof window.pfImport === 'function') window.pfImport('calc', 'all', null);
-            switchTab('portfolios');
+        // 2.1) ГЛАВНАЯ (оранжевая) — «Перейти к покупке»: раскрывает встроенный
+        // чек-лист покупок. Счётчика нет. «Создать портфель» переехала в виджет
+        // прогресса внутри этого чек-листа (см. .v3bl-foot ниже).
+        const buyBtn = document.createElement('button');
+        buyBtn.type = 'button';
+        buyBtn.className = 'v3-createpf-btn';
+        buyBtn.innerHTML = '<span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M2 3h2.2l2 12.5a1.5 1.5 0 0 0 1.5 1.3h9.1a1.5 1.5 0 0 0 1.5-1.2L21 7H5.2"/></svg></span>Перейти к покупке';
+        buyBtn.onclick = function() {
+            var pfR = document.getElementById('pfRightCol');
+            if (pfR && pfR.classList.contains('v3-buy-open')) { if (typeof window.v3CloseBuyList === 'function') window.v3CloseBuyList(); return; }
+            if (typeof window.v3OpenBuyList === 'function') window.v3OpenBuyList();
+            else if (typeof openShoppingList === 'function') openShoppingList();
         };
-        actions.appendChild(createPfBtn);
-        // 2.6) Кнопка «Выгрузить в Excel» живёт в ГЛОБАЛЬНОЙ шапке сайта рядом с
-        // «Поиском» (#topBarPageActions в index.html, показ/скрытие — в switchTab-обёртке
-        // ниже); из шапок таблиц кнопка убрана.
-        // 3) Кнопка «Новый расчёт» — внутри карточки капитала (увеличивает её),
-        //    возврат на вкладку Расчёт
+        actions.appendChild(buyBtn);
+        // 2.2) ВТОРАЯ (призрачная) — «Выгрузить в Excel»: раньше жила в глобальной
+        // шапке страницы; перенесена сюда (в шапке для «Портфеля» скрыта).
+        const excelBtn = document.createElement('button');
+        excelBtn.type = 'button';
+        excelBtn.className = 'v3-buylist-btn';
+        excelBtn.innerHTML = '<span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M9.5 12.5l5 5M14.5 12.5l-5 5"/></svg></span>Выгрузить в Excel';
+        excelBtn.onclick = function() { if (typeof pfExportExcel === 'function') pfExportExcel(); };
+        actions.appendChild(excelBtn);
+        // 3) Кнопка «Новый расчёт» — раскрывает компактную панель настроек
         const recalc = document.createElement('button');
         recalc.type = 'button';
         recalc.className = 'v3-recalc-btn';
@@ -190,6 +183,7 @@ function populatePanels() {
             panel.id = 'pfRecalcPanel';
             panel.innerHTML =
                 '<div class="pfrc-inner">' +
+                    '<div class="pfrc-head"><span class="pfrc-ttl">Пересчёт портфеля</span></div>' +
                     '<div class="pfrc-field pfrc-sum">' +
                         '<div class="pfrc-label">Сумма вложений</div>' +
                         '<div class="pfrc-suminput"><input id="pfrcSum" inputmode="numeric" autocomplete="off"><span class="pfrc-cur">₽</span></div>' +
@@ -211,7 +205,13 @@ function populatePanels() {
                             feeRates.map(function(f){ return '<button type="button" data-f="' + f + '">' + f + '%</button>'; }).join('') +
                         '</div>' +
                     '</div>' +
-                    '<button type="button" class="pfrc-done" id="pfrcDone">Готово</button>' +
+                    '<div class="pfrc-foot">' +
+                        '<button type="button" class="pfrc-gotocalc" id="pfrcGoCalc">' +
+                            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>' +
+                            'На страницу расчёта' +
+                        '</button>' +
+                        '<button type="button" class="pfrc-done" id="pfrcDone">Готово</button>' +
+                    '</div>' +
                 '</div>';
             share.insertAdjacentElement('afterend', panel);
 
@@ -297,11 +297,15 @@ function populatePanels() {
                 recalc.classList.toggle('is-open', open);
                 if (open) { pfrcSync(); if (sumEl) setTimeout(function(){ sumEl.focus(); sumEl.select(); }, 60); }
             };
-            const doneBtn = document.getElementById('pfrcDone');
-            if (doneBtn) doneBtn.addEventListener('click', function(){
+            function pfrcClose() {
                 leftRail.classList.remove('pf-recalc-open');
                 recalc.classList.remove('is-open');
-            });
+            }
+            const doneBtn = document.getElementById('pfrcDone');
+            if (doneBtn) doneBtn.addEventListener('click', pfrcClose);
+            // «На страницу расчёта» — уводит на исходную вкладку «Расчёт»
+            const goCalcBtn = document.getElementById('pfrcGoCalc');
+            if (goCalcBtn) goCalcBtn.addEventListener('click', function(){ pfrcClose(); switchTab('calc'); });
         })();
         // 3.5) Встроенная панель «Список к покупке» — открывается вместо таблицы
         const pfRight = document.getElementById('pfRightCol');
@@ -340,6 +344,10 @@ function populatePanels() {
                     '</div>' +
                     '<div class="v3bl-track"><div class="v3bl-bar" id="v3SlBar"></div></div>' +
                     '<div class="v3bl-pct" id="v3SlPct">0%</div>' +
+                    '<button type="button" class="v3bl-createpf" onclick="v3BlCreatePortfolio()">' +
+                        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>' +
+                        'Создать портфель' +
+                    '</button>' +
                 '</div>';
             pfRight.insertBefore(buyPanel, pfRight.firstChild);
         }
@@ -371,23 +379,28 @@ function populatePanels() {
             const srcBody = document.getElementById('shoppingListBody');
             const host = document.getElementById('v3BuyBody');
             if (srcBody && host) { host.innerHTML = srcBody.innerHTML; srcBody.innerHTML = ''; }
-            const c1 = document.getElementById('v3BuyCount');
-            const c2 = document.getElementById('v3BuyCount2');
-            if (c1 && c2) c2.textContent = c1.textContent;
+            if (typeof window.v3UpdateBuyCount === 'function') window.v3UpdateBuyCount();
             if (pfRight) pfRight.classList.add('v3-buy-open');
             v3MirrorSlFooter();
         };
         window.v3CloseBuyList = function() {
             if (pfRight) pfRight.classList.remove('v3-buy-open');
         };
+        // «Создать портфель» из виджета прогресса покупки: переносит рассчитанный
+        // состав (ОФЗ + акции) в новый портфель на вкладке «Портфели» и открывает её
+        window.v3BlCreatePortfolio = function() {
+            if (typeof window.pfImport === 'function') window.pfImport('calc', 'all', null);
+            switchTab('portfolios');
+        };
         window.v3CopyBuyList = function() {
             if (typeof copyShoppingList === 'function') copyShoppingList();
             const t = document.getElementById('v3BuyToast');
             if (t) { t.classList.add('show'); setTimeout(function() { t.classList.remove('show'); }, 1600); }
         };
-        // 4) Счётчик позиций к покупке (облигации + акции из данных списка)
+        // 4) Счётчик позиций к покупке (облигации + акции) — теперь только в шапке
+        // встроенного чек-листа (#v3BuyCount2); кнопка «Перейти к покупке» без счётчика
         window.v3UpdateBuyCount = function() {
-            const el = document.getElementById('v3BuyCount');
+            const el = document.getElementById('v3BuyCount2');
             if (!el) return;
             let n = 0;
             const d = window._shoppingListData;
@@ -397,7 +410,6 @@ function populatePanels() {
                 if (lb) n = lb.querySelectorAll('.portfolio-ofz-item').length;
             }
             el.textContent = n;
-            el.style.display = n ? '' : 'none';
         };
         const lbObserved = document.getElementById('listBondsV2');
         if (lbObserved && window.MutationObserver) {
@@ -960,13 +972,14 @@ switchTab = function(tabId) {
     // «Портфель» выгружает состав расчёта, «Терминал» — текущую таблицу (акции/облигации)
     var pageHost = document.getElementById('topBarPageActions');
     if (pageHost) {
-        var onPf = tabId === 'portfolio';
+        // «Портфель»: Excel-кнопка переехала в карточку капитала → в шапке скрыта.
+        // «Терминал» по-прежнему выгружает текущую таблицу из глобальной шапки.
         var onTerm = tabId === 'market-stocks' || tabId === 'market-bonds';
         var pfB = document.getElementById('pfHdrExportBtn');
         var tmB = document.getElementById('termHdrExportBtn');
-        if (pfB) pfB.style.display = onPf ? '' : 'none';
+        if (pfB) pfB.style.display = 'none';
         if (tmB) tmB.style.display = onTerm ? '' : 'none';
-        pageHost.style.display = (onPf || onTerm) ? 'flex' : 'none';
+        pageHost.style.display = onTerm ? 'flex' : 'none';
     }
     if (tabId === 'rebalance') {
         setTimeout(checkRebalanceEmptyState, 50);
