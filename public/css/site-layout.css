@@ -768,8 +768,8 @@
             grid-template-areas:
                 "ring caphead bpills forehead act"
                 "ring capsum  bline  foresum  act"
-                "legend legend legend brk  brk"
-                "fee    fee    fee    disc disc";
+                "legend legend legend brk brk"
+                "fee    fee    fee    brk brk";
             align-items: center;
             column-gap: 20px; row-gap: 0;
             padding: 16px 22px !important;
@@ -904,23 +904,22 @@
         /* (7) ДЕКА ДЕТАЛЕЙ: легенда+комиссия слева, разбивка+дисклеймер справа.
            В закрытом состоянии строки 0fr: контент обрезан и прозрачен. */
         #pfLeftRail .pcap-legend, #pfLeftRail .pcap-fee-wrap,
-        #pfLeftRail .pcap-breakdown, #pfLeftRail .pcap-disclaimer {
+        #pfLeftRail .pcap-breakdown {
             box-sizing: border-box; min-height: 0; overflow: hidden; margin: 0;
+            align-self: start;
             position: relative; z-index: 2;
             max-height: 0; opacity: 0; visibility: hidden;
             transition: max-height 0.3s ease, opacity 0.18s ease, visibility 0.18s ease;
         }
         #pfLeftRail .portfolio-capital-card.pcap-open .pcap-legend,
         #pfLeftRail .portfolio-capital-card.pcap-open .pcap-fee-wrap,
-        #pfLeftRail .portfolio-capital-card.pcap-open .pcap-breakdown,
-        #pfLeftRail .portfolio-capital-card.pcap-open .pcap-disclaimer {
+        #pfLeftRail .portfolio-capital-card.pcap-open .pcap-breakdown {
             max-height: 240px; opacity: 1; visibility: visible;
             transition: max-height 0.3s ease, opacity 0.25s ease 0.1s, visibility 0.25s ease 0.1s;
         }
         #pfLeftRail .pcap-legend    { grid-area: legend; }
         #pfLeftRail .pcap-fee-wrap  { grid-area: fee; }
         #pfLeftRail .pcap-breakdown { grid-area: brk; }
-        #pfLeftRail .pcap-disclaimer { grid-area: disc; }
 
         /* Заголовки колонок деки — с общей волосяной линией сверху */
         #pfLeftRail .pcap-legend::before, #pfLeftRail .pcap-breakdown::before {
@@ -960,13 +959,8 @@
         #pfLeftRail .pcap-brk-label { font-size: 13px; }
         #pfLeftRail .pcap-brk-value { font-size: 12.5px; justify-self: end; }
 
-        /* Дисклеймер — возвращён в деку (в строке-герое был скрыт) */
-        #pfLeftRail .pcap-disclaimer {
-            display: flex; align-items: flex-start; gap: 8px;
-            padding: 6px 0 2px; font-size: 11.5px; line-height: 1.45; color: rgba(255,255,255,0.42);
-            background: none; border: none;
-        }
-        #pfLeftRail .pcap-disclaimer svg { width: 14px; height: 14px; flex: none; margin-top: 1px; }
+        /* Дисклеймер на десктопе убран совсем (на мобиле остаётся под графиком) */
+        #pfLeftRail .pcap-disclaimer { display: none !important; }
 
 
         /* ---- Панель пересчёта: компактный попап-продолжение кнопки «Новый расчёт»
