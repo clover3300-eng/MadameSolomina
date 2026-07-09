@@ -541,6 +541,9 @@
         var prev = window.switchTab;
         if (typeof prev !== 'function') { setTimeout(hook, 300); return; }
         window.switchTab = function (tab) {
+            // Авто-тема по вкладке (Главная тёмная, остальные светлые), пока нет
+            // явного выбора — ДО отрисовки, чтобы вкладка появлялась уже в своей теме.
+            if (typeof window.applyAutoThemeForTab === 'function') window.applyAutoThemeForTab(tab);
             var r = prev.apply(this, arguments);
             if (tab === 'home') setTimeout(draw, 80);
             return r;

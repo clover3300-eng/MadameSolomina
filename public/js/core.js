@@ -1094,14 +1094,34 @@ function toggleInterestingMore() {
             // Стартовая вкладка по пути: корень «/» (или /home) — это Главная.
             var _lt = location.pathname.replace(/^\//, '').replace(/\/$/, '');
             var landingHome = (_lt === '' || _lt === 'home');
-            // Главная ЗАДУМАНА тёмной: при заходе на неё дефолт всегда тёмный,
-            // даже если глобально выбрана светлая (переключатель на Главной при
-            // этом продолжает работать — enforce только при загрузке).
-            // На остальных вкладках уважаем явный выбор пользователя (user_theme).
-            // Нет выбора вообще — тоже тёмная (тёмный — общий дефолт продукта).
-            if (savedTheme === 'light' && !landingHome) { document.body.classList.add('light-mode'); btn.innerHTML = moonIcon; }
-            else { document.body.classList.add('dark-mode'); btn.innerHTML = sunIcon; }
+            // Дефолт БЕЗ явного выбора: Главная — тёмная, остальные вкладки —
+            // светлые (авто по вкладке, дальше переключается в applyAutoThemeForTab).
+            // Явный выбор пользователя (нажатие переключателя, user_theme) держится
+            // ВЕЗДЕ и важнее авто-схемы.
+            var dark;
+            if (savedTheme === 'light') dark = false;
+            else if (savedTheme === 'dark') dark = true;
+            else dark = landingHome;
+            if (dark) { document.body.classList.add('dark-mode'); btn.innerHTML = sunIcon; }
+            else { document.body.classList.add('light-mode'); btn.innerHTML = moonIcon; }
         }
+
+        // Авто-тема по вкладке, пока пользователь НЕ сделал явный выбор темы:
+        // Главная — тёмная, все остальные вкладки — светлые. Как только выбор
+        // сделан (user_theme), он держится везде и авто-схема отключается.
+        // Переиспользуем полностью обёрнутый toggleTheme (он синхронит верхнюю
+        // кнопку, плавающий фаб и легаси-значок), а записанный им user_theme
+        // тут же убираем — чтобы сохранить состояние «явного выбора нет».
+        window.applyAutoThemeForTab = function (tabId) {
+            if (localStorage.getItem('user_theme')) return;   // явный выбор важнее
+            var wantDark = (tabId === 'home' || tabId == null);
+            var isDark = document.body.classList.contains('dark-mode');
+            if (isDark === wantDark) return;
+            if (typeof window.toggleTheme === 'function') {
+                window.toggleTheme();
+                localStorage.removeItem('user_theme');
+            }
+        };
 
         function saveSettings() {
     // Автосохранение отключено

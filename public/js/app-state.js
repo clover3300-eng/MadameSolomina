@@ -94,10 +94,10 @@ function lsRestore() {
         if (btCapEl) btCapEl.value = state.btManualCapital;
     }
 
-    // Тема
-    if (state.theme === 'dark' && !document.body.classList.contains('dark-mode')) {
-        if (typeof toggleTheme === 'function') toggleTheme();
-    }
+    // Тема больше НЕ восстанавливается отсюда: ей управляет авто-схема по вкладке
+    // (Главная тёмная, остальные светлые) + явный выбор user_theme (core.js
+    // initTheme/applyAutoThemeForTab). Форс theme==='dark' ломал бы «светлые
+    // остальные» на не-Главных вкладках.
 
     btUpdateRunBtn();
 }
