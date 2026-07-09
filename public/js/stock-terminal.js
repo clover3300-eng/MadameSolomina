@@ -609,9 +609,14 @@
             if (i < pinN) cls += (cls ? ' ' : '') + 'stk-pin-' + (i + 1) + (i === pinN - 1 ? ' stk-edge' : '');
             if (col.type === 'num') {
                 cls += ' stk-num';
-                // отрицательные числовые значения — красным шрифтом (только в таблице, не в карточке)
+                // проценты красим по знаку: плюс — зелёным, минус — красным;
+                // обычные (непроцентные) числа — красным только при отрицательном значении
                 var nv = parseNum(raw);
-                if (!isNaN(nv) && nv < 0) cls += ' stk-neg-val';
+                var isPct = String(raw).indexOf('%') !== -1;
+                if (!isNaN(nv)) {
+                    if (nv < 0) cls += ' stk-neg-val';
+                    else if (isPct && nv > 0) cls += ' stk-pos-val';
+                }
             }
             if (empty) cls += ' stk-empty-cell';
             // условная подсветка ячейки (цвет сайдбара) по правилам isHighlightCell

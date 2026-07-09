@@ -12,8 +12,9 @@
 .bnd-root {
     --bnd-radius: 16px;
     /* шапка таблицы — светлая, крупная, в стиле карточек «Портфели»
-       (.pfo-table thead th): жирный uppercase-лейбл вместо тёмной полосы */
-    --bnd-head-bg: #e7ecf3; --bnd-head-bg-hover: #dbe2ec; --bnd-head-tx: #46566e;
+       (.pfo-table thead th): жирный uppercase-лейбл вместо тёмной полосы.
+       Тон насыщеннее прежнего блёклого — глубокий сине-сланцевый (в тон акций). */
+    --bnd-head-bg: #d5deee; --bnd-head-bg-hover: #c8d4e8; --bnd-head-tx: #384a67;
     --bnd-card-bg: var(--card, #ffffff);
     --bnd-text: var(--text-deep, #0F172A);
     --bnd-slate: var(--text-slate, #64748B);
@@ -22,8 +23,10 @@
     --bnd-line: rgba(15, 23, 42, 0.06);
     --bnd-zebra: rgba(15, 23, 42, 0.022);
     --bnd-hover: rgba(52, 152, 219, 0.06);
-    /* подсветка «хороших» ячеек — цвет сайдбара (#8FB3A0) */
-    --bnd-good-bg: rgba(143, 179, 160, 0.30);  --bnd-good-tx: #2c5e44;
+    /* подсветка «хороших» ячеек — цвет сайдбара (#8FB3A0), заливка мягкая (не кричит) */
+    --bnd-good-bg: rgba(143, 179, 160, 0.16);  --bnd-good-tx: #367353;
+    /* акценты знака для процентов-доходностей */
+    --bnd-pos: #2c7a4d;  --bnd-neg-soft: #c07b74;
 
     font-family: 'Inter', sans-serif;
     color: var(--bnd-text);
@@ -316,12 +319,15 @@ body.dark-mode .bnd-table > thead th.bnd-sorted { color: #f4f8fd; }
 
 /* Тело таблицы */
 .bnd-table > tbody > tr > td {
-    padding: 8px 11px; text-align: center; white-space: nowrap;
+    padding: 13px 11px; text-align: center; white-space: nowrap;
     border-bottom: 1px solid var(--bnd-line); color: var(--bnd-text);
 }
 .bnd-num { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-variant-numeric: tabular-nums; }
 .bnd-date { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--bnd-slate); }
 .bnd-empty-cell { color: var(--bnd-muted); }
+/* проценты-доходности красим по знаку (после .bnd-hl — знак важнее заливки) */
+.bnd-table > tbody > tr > td.bnd-pos-val { color: var(--bnd-pos); }
+.bnd-table > tbody > tr > td.bnd-neg-val { color: var(--bnd-neg-soft); }
 /* Условная подсветка ячеек (цвет сайдбара #8FB3A0) — сильнее зебры/ховера */
 .bnd-table > tbody > tr > td.bnd-hl {
     background-color: var(--bnd-good-bg) !important; color: var(--bnd-good-tx); font-weight: 600;
@@ -331,8 +337,7 @@ body.dark-mode .bnd-table > thead th.bnd-sorted { color: #f4f8fd; }
 
 /* Строка облигации */
 .bnd-row { transition: background 0.13s ease; }
-.bnd-row:nth-child(odd of .bnd-row) td { background-color: var(--bnd-zebra); }
-.bnd-row:nth-child(odd of .bnd-row) td.bnd-first { background-color: #fbfbfc; }
+/* зебра убрана — строки на едином фоне карточки, читаются по крупному межстрочью */
 .bnd-row:hover td { background-color: var(--bnd-hover); }
 .bnd-row:hover td.bnd-first { background-color: #eef5fb; }
 
@@ -385,9 +390,9 @@ body.dark-mode .bnd-root {
     --bnd-zebra: rgba(255,255,255,0.02);
     --bnd-hover: rgba(56,189,248,0.08);
     --bnd-card-bg: var(--card-bg, #1e293b);
-    --bnd-good-bg: rgba(143,179,160,0.22); --bnd-good-tx: #A7C7B5;
+    --bnd-good-bg: rgba(143,179,160,0.13); --bnd-good-tx: #A7C7B5;
+    --bnd-pos: #4ade80; --bnd-neg-soft: #d99a94;
 }
-body.dark-mode .bnd-row:nth-child(odd of .bnd-row) td.bnd-first { background-color: #1b2536; }
 body.dark-mode .bnd-row:hover td.bnd-first { background-color: #233148; }
 
 /* ---------- Мобильная адаптация ---------- */

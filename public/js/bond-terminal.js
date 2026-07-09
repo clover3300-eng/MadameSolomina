@@ -424,7 +424,16 @@
             var raw = b.main[col.key];
             var empty = isEmptyVal(raw);
             var cls = 'bnd-col-center';
-            if (col.type === 'num') cls += ' bnd-num';
+            if (col.type === 'num') {
+                cls += ' bnd-num';
+                // проценты (доходности) красим по знаку: плюс — зелёным, минус — красным
+                var nv = parseNum(raw);
+                var isPct = String(raw).indexOf('%') !== -1;
+                if (!isNaN(nv)) {
+                    if (nv < 0) cls += ' bnd-neg-val';
+                    else if (isPct && nv > 0) cls += ' bnd-pos-val';
+                }
+            }
             if (col.type === 'date') cls += ' bnd-date';
             if (empty) cls += ' bnd-empty-cell';
             else if (isHighlightCell(col.key, b)) cls += ' bnd-hl';
