@@ -521,8 +521,6 @@ body.tab-home #hgHeatWrap { display: block; }
 .dark-mode .hg-brand-sub { color: #7c8db0; }
 .dark-mode .hc-title { color: #F1F5F9; }
 .dark-mode .hc-lead { color: #a9b6cc; }
-.dark-mode .hc-cta-dark { background: linear-gradient(180deg, #3f6154 0%, #24382f 100%); }
-.dark-mode .hc-cta-dark:hover { box-shadow: 0 20px 40px -10px rgba(63, 97, 84, 0.5); }
 .dark-mode .hg-live {
     color: #cbd5e1;
     background: rgba(15, 23, 42, 0.66);
@@ -532,50 +530,10 @@ body.tab-home #hgHeatWrap { display: block; }
 .dark-mode .hg-live-pct.pos { color: #4ade80; }
 .dark-mode .hg-live-pct.neg { color: #f87171; }
 .dark-mode .hg-live-upd { color: #64748b; }
-/* Колонна входа заметно СВЕТЛЕЕ фона-карты (#0f172a): шалфейный глас
-   в тон бренд-акцента (стрелка CTA/позитивные плитки, #8FB3A0),
-   иначе стекло сливалось с тёмной картой и форму было плохо видно */
-.dark-mode .hg-auth {
-    background: rgba(53, 74, 64, 0.82);
-    border-color: rgba(143, 179, 160, 0.24);
-    box-shadow: 0 24px 60px -30px rgba(0, 0, 0, 0.7);
-}
-.dark-mode .hs-tabs { background: rgba(15, 23, 42, 0.35); }
-.dark-mode .hs-tab { color: #b9c6dd; }
-.dark-mode .hs-tab.active { background: #141c30; color: #fff; }
-.dark-mode .hr-title { color: #F8FAFD; }
-.dark-mode .hr-sub { color: #b3c0d6; }
-.dark-mode .hr-label { color: #a3b2cd; }
-.dark-mode .hr-input {
-    background: rgba(15, 23, 42, 0.55);
-    border-color: rgba(255, 255, 255, 0.18);
-    color: #eef2f8;
-}
-.dark-mode .hr-input::placeholder { color: #8493ad; }
-.dark-mode .hr-input:focus {
-    background: rgba(15, 23, 42, 0.8);
-    border-color: #7c9cff;
-    box-shadow: 0 0 0 4px rgba(124, 156, 255, 0.22);
-}
-.dark-mode .hr-ficon { stroke: #8ea0bf; }
-.dark-mode .hr-eye { color: #8ea0bf; }
-.dark-mode .hr-eye:hover { color: #cbd5e1; }
-.dark-mode .hr-submit { background: linear-gradient(180deg, #1d2740 0%, #131b2e 100%); }
-.dark-mode .hr-error { color: #ff8b98; }
-.dark-mode .hr-error.ok { color: #4ade80; }
-.dark-mode .hr-divider { color: #93a3bd; }
-.dark-mode .hr-divider::before,
-.dark-mode .hr-divider::after { background: rgba(255, 255, 255, 0.20); }
-.dark-mode .hr-tg {
-    background: rgba(15, 23, 42, 0.45);
-    border-color: rgba(255, 255, 255, 0.22);
-    color: #eef2f8;
-    box-shadow: none;
-}
-.dark-mode .hr-tg:hover { border-color: rgba(255, 255, 255, 0.36); }
-.dark-mode .hr-foot { color: #b3c0d6; }
-.dark-mode .hr-link { color: #4ade80; }
-.dark-mode .hr-policy { color: #93a3bd; }
+/* Форма входа и кнопка «Начать расчёт» НЕ перекрашиваются в тёмной теме —
+   по фидбеку два тёмных варианта подряд не понравились («стремно»), поэтому
+   тут просто переиспользуются цвета светлой темы (белое стекло .hg-auth,
+   чёрная .hc-cta-dark) как есть: белая карточка-остров на тёмной карте. */
 
 /* =====================  УЗКИЕ ЭКРАНЫ  ===================== */
 @media (max-width: 1023px) {
@@ -608,5 +566,4 @@ body.tab-home #hgHeatWrap { display: block; }
         overflow-y: visible;
         background: rgba(255, 255, 255, 0.86);
     }
-    .dark-mode .hg-auth { background: rgba(53, 74, 64, 0.92); }
 }
