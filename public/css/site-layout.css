@@ -427,24 +427,35 @@
 
         /* ===== Правая панель: тёмная карточка в стиле «Умная замена» ===== */
         #pfLeftRail .portfolio-capital-card {
-            background: linear-gradient(150deg, #10161f 0%, #222e3f 100%) !important;
-            border: none !important;
-            border-radius: 22px !important;
-            box-shadow: 0 16px 36px rgba(24,38,60,0.08) !important;
+            background: linear-gradient(180deg, #1a2531 0%, #10171f 46%, #0c1219 100%) !important;
+            border: 1px solid rgba(255,255,255,0.06) !important;
+            border-radius: 30px !important;
+            box-shadow: 0 40px 80px -34px rgba(6,12,18,0.85), 0 2px 8px rgba(6,12,18,0.4) !important;
             overflow: hidden;
             margin-bottom: 0 !important;
+            padding: 30px 28px 24px;
             display: flex;
             flex-direction: column;
-            font-family: 'Manrope', sans-serif;
+            font-family: 'Onest', 'Manrope', sans-serif;
             position: relative; z-index: 1; /* виджет-продолжение заезжает под карточку */
         }
-        #pfLeftRail .capital-decoration { display: none; }
-        /* Блок капитала — прозрачный, виден общий градиент карточки */
+        /* Верхний блик-оверлей на всю карту (референс) */
+        #pfLeftRail .capital-decoration {
+            display: block;
+            position: absolute; inset: 0;
+            top: auto; right: auto; width: auto; height: auto; filter: none;
+            border-radius: 30px; pointer-events: none;
+            background: radial-gradient(120% 60% at 50% -10%, rgba(255,255,255,0.09), transparent 60%);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+        /* Блок капитала — прозрачный, без собственного паддинга (паддинг на карте) */
         #pfLeftRail .capital-dark-top {
             background: transparent !important;
-            border-radius: 22px 22px 0 0;
-            padding: 24px 22px 24px !important;
+            border-radius: 0;
+            padding: 0 !important;
+            position: static;
         }
+        #pfLeftRail .capital-dark-top::after { display: none; }
         #pfLeftRail .capital-hero { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 0; }
         #pfLeftRail .capital-hero-left { flex: 1; min-width: 0; }
         #pfLeftRail .capital-label-text {
@@ -576,9 +587,8 @@
         #pfLeftRail .capital-forecast-light {
             background: transparent !important;
             box-shadow: none !important;
-            border-top: 1px solid rgba(255,255,255,0.08);
-            padding: 20px 22px 20px !important;
-            flex: 1;
+            border-top: none;
+            padding: 0 !important;
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
@@ -649,81 +659,243 @@
             color: #c4cedd; font-size: 14px !important; text-align: right;
         }
 
-        /* Кнопка «Список к покупке» — белая CTA на тёмной карточке,
-           как «Показать рекомендации» в «Умной замене» */
+        /* Кнопка «Список к покупке» — приглушённая на тёмной карте (референс) */
         .v3-buylist-btn {
-            margin-top: 18px;
-            display: flex; align-items: center; gap: 12px;
-            background: #ffffff; border: none; border-radius: 14px;
-            padding: 15px 18px;
-            font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 15px;
-            color: #111927; white-space: nowrap; cursor: pointer;
-            width: 100%; text-align: left;
+            margin-top: 22px;
+            display: flex; align-items: center; gap: 11px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.14); border-radius: 15px;
+            padding: 14px 16px;
+            font-family: 'Onest','Manrope', sans-serif; font-weight: 600; font-size: 15px;
+            color: #dfe5ea; white-space: nowrap; cursor: pointer;
+            width: 100%; box-sizing: border-box; text-align: left;
             transition: background 0.15s ease;
         }
-        .v3-buylist-btn:hover { background: #eef2f8; }
-        .v3-buylist-btn .ic { display: inline-flex; color: #119d5c; }
+        .v3-buylist-btn:hover { background: rgba(255,255,255,0.07); }
+        .v3-buylist-btn .ic { display: inline-flex; color: #a7e8c4; }
         .v3-buylist-btn .count {
             margin-left: auto;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 12.5px; font-weight: 700;
-            background: #141b26; color: #ffffff;
-            padding: 3px 10px; border-radius: 999px;
+            font-size: 12px; font-weight: 700;
+            background: rgba(255,255,255,0.1); color: #eef2f6;
+            padding: 4px 11px; border-radius: 999px;
         }
 
-        /* Кнопка «Создать портфель» — переносит рассчитанный состав во вкладку «Портфели» */
+        /* Кнопка «Создать портфель» — акцентный градиент (референс) */
         .v3-createpf-btn {
-            margin-top: 10px;
+            margin-top: 12px;
             display: flex; align-items: center; justify-content: center; gap: 10px;
-            background: #D97757; border: none; border-radius: 14px;
-            padding: 15px 18px;
-            font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 14.5px;
+            background: linear-gradient(180deg, #ef8f7f 0%, #e5766a 100%);
+            border: none; border-radius: 15px;
+            padding: 16px 18px;
+            font-family: 'Onest','Manrope', sans-serif; font-weight: 700; font-size: 15.5px;
             color: #ffffff; white-space: nowrap; cursor: pointer;
-            width: 100%;
-            box-shadow: 0 14px 30px rgba(217,119,87,0.28);
+            width: 100%; box-sizing: border-box;
+            box-shadow: 0 16px 30px -14px rgba(229,118,106,0.8);
             transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
-        .v3-createpf-btn:hover { transform: translateY(-1px); box-shadow: 0 18px 36px rgba(217,119,87,0.34); }
+        .v3-createpf-btn:hover { transform: translateY(-1px); box-shadow: 0 20px 34px -14px rgba(229,118,106,0.9); }
         .v3-createpf-btn .ic { display: inline-flex; color: #ffffff; }
 
-        /* Кнопка «Рассчитать заново» под панелью */
+        /* «Новый расчёт» — лёгкая текстовая мятная кнопка (референс) */
         .v3-recalc-btn {
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-            background: #141b26; color: #ffffff;
-            border: none; border-radius: 14px; padding: 15px 18px;
-            font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 14.5px;
-            box-shadow: 0 16px 36px rgba(24,38,60,0.08);
-            white-space: nowrap; cursor: pointer; width: 100%;
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            background: none; color: #a7e8c4;
+            border: none; padding: 6px 18px;
+            font-family: 'Onest','Manrope', sans-serif; font-weight: 600; font-size: 13px;
+            box-shadow: none;
+            white-space: nowrap; cursor: pointer; width: 100%; box-sizing: border-box;
+            transition: color 0.15s ease;
         }
-        .v3-recalc-btn:hover { transform: translateY(-1px); box-shadow: 0 20px 42px rgba(24,38,60,0.14); }
-        .v3-recalc-btn .ic { display: inline-flex; color: #7ee2a8; }
-        /* «Новый расчёт» под белым «Список к покупке» — лёгкая текстовая кнопка
-           без заливки и рамки, чтобы низ карточки не выглядел тяжёлым */
+        .v3-recalc-btn:hover { transform: none; box-shadow: none; color: #c5f0d8; }
+        .v3-recalc-btn .ic { display: inline-flex; color: #a7e8c4; }
         #pfLeftRail .capital-forecast-light .v3-recalc-btn {
-            margin-top: 6px;
-            padding: 11px 18px;
-            font-size: 14px;
+            margin-top: 14px;
+            padding: 6px 18px;
+            font-size: 13px;
             font-weight: 600;
             background: transparent !important;
-            color: #9aa7ba !important;
+            color: #a7e8c4 !important;
             border: none;
             box-shadow: none !important;
         }
         #pfLeftRail .capital-forecast-light .v3-recalc-btn:hover {
-            background: rgba(255,255,255,0.07) !important;
+            background: transparent !important;
             transform: none; box-shadow: none !important;
-            color: #ffffff !important;
+            color: #c5f0d8 !important;
         }
-        #pfLeftRail .capital-forecast-light .v3-recalc-btn .ic { color: #7ee2a8; }
+        #pfLeftRail .capital-forecast-light .v3-recalc-btn .ic { color: #a7e8c4; }
 
         /* Тёмная тема: карточка теперь целиком тёмная в обеих темах
            (как «Умная замена») — отдельных переопределений «подвала» не нужно */
-        body.dark-mode #pfLeftRail .portfolio-capital-card { background: linear-gradient(150deg, #10161f 0%, #222e3f 100%) !important; }
-        body.dark-mode #pfLeftRail .portfolio-capital-card .portfolio-content-tabs { background: transparent; border-bottom: none; }
-        body.dark-mode #pfLeftRail .portfolio-tab-switcher { background: rgba(255,255,255,0.08); }
-        body.dark-mode #pfLeftRail .portfolio-tab-btn.active { background: #ffffff; color: #141b26; }
+        body.dark-mode #pfLeftRail .portfolio-capital-card { background: linear-gradient(180deg, #1a2531 0%, #10171f 46%, #0c1219 100%) !important; }
     }
+
+    /* =====================================================================
+       PCAP: карточка «Текущий капитал + Прогноз» 1в1 по референсу.
+       База (десктоп-рельса и мобила) — карта всегда тёмная в обеих темах.
+       ===================================================================== */
+    .portfolio-capital-card {
+        font-family: 'Onest', 'Manrope', sans-serif;
+        background: linear-gradient(180deg, #1a2531 0%, #10171f 46%, #0c1219 100%);
+        color: #ffffff;
+        border-radius: 26px;
+        padding: 26px 22px 22px;
+        border: 1px solid rgba(255,255,255,0.06);
+    }
+    .portfolio-capital-card .capital-decoration {
+        position: absolute; inset: 0;
+        top: auto; right: auto; width: auto; height: auto; filter: none;
+        border-radius: inherit; pointer-events: none;
+        background: radial-gradient(120% 60% at 50% -10%, rgba(255,255,255,0.09), transparent 60%);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    .portfolio-capital-card .capital-dark-top {
+        background: transparent !important;
+        padding: 0; position: static; color: #ffffff;
+    }
+    .portfolio-capital-card .capital-dark-top::after { display: none; }
+    .portfolio-capital-card .capital-forecast-light {
+        background: transparent !important; box-shadow: none !important;
+        border-top: none !important; padding: 0 !important;
+    }
+
+    /* Шапка секции: чип + подпись + правый элемент */
+    .pcap-head { display: flex; align-items: center; gap: 10px; position: relative; z-index: 2; }
+    .pcap-chip {
+        width: 28px; height: 28px; flex: 0 0 auto;
+        border-radius: 9px; background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.08);
+        display: flex; align-items: center; justify-content: center; color: #8fa0af;
+    }
+    .pcap-chip svg { width: 15px; height: 15px; }
+    .pcap-eyebrow {
+        font-family: 'Onest', sans-serif; font-weight: 600; font-size: 11px;
+        letter-spacing: 0.16em; color: #7c8794; text-transform: uppercase; white-space: nowrap;
+    }
+    .pcap-date {
+        margin-left: auto; font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 11px;
+        color: #f4f7fa; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+        padding: 5px 9px; border-radius: 20px; white-space: nowrap;
+    }
+
+    /* Крупная сумма в млн + подстрока */
+    .pcap-big { margin-top: 16px; display: flex; align-items: baseline; gap: 8px; position: relative; z-index: 2; }
+    .pcap-big-num {
+        font-family: 'Onest', sans-serif; font-weight: 700; font-size: 46px; line-height: 0.95;
+        letter-spacing: -0.02em; font-variant-numeric: tabular-nums;
+    }
+    .pcap-big-unit { font-family: 'Onest', sans-serif; font-weight: 600; font-size: 23px; }
+    .pcap-big-cap .pcap-big-num { color: #a7e8c4; }
+    .pcap-big-cap .pcap-big-unit { color: #6fa98c; }
+    .pcap-big-fore .pcap-big-num { color: #f4f7fa; }
+    .pcap-big-fore .pcap-big-unit { color: #8a95a1; }
+    .pcap-sub {
+        margin-top: 8px; font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 13px;
+        color: #66707a; letter-spacing: 0.02em; position: relative; z-index: 2;
+    }
+    .pcap-tilde { color: #556069; }
+
+    /* Сплит-бар распределения */
+    .pcap-splitbar { margin-top: 30px; display: flex; height: 10px; gap: 4px; position: relative; z-index: 2; }
+    .pcap-split-bonds, .pcap-split-stocks { min-width: 0; height: 100%; }
+    .pcap-split-bonds {
+        background: linear-gradient(90deg, #6b9dff, #8fb5ff);
+        border-radius: 6px 3px 3px 6px; box-shadow: 0 0 14px rgba(107,157,255,0.35);
+    }
+    .pcap-split-stocks {
+        background: linear-gradient(90deg, #ef8f7f, #e8837a);
+        border-radius: 3px 6px 6px 3px; box-shadow: 0 0 14px rgba(232,131,122,0.32);
+    }
+
+    /* Легенда распределения */
+    .pcap-legend { margin-top: 22px; display: flex; flex-direction: column; gap: 15px; position: relative; z-index: 2; }
+    .pcap-legrow { display: grid; grid-template-columns: 16px 1fr auto auto; align-items: center; gap: 12px; }
+    .pcap-dot { width: 9px; height: 9px; border-radius: 50%; }
+    .pcap-dot-bonds { background: #6b9dff; box-shadow: 0 0 0 3px rgba(107,157,255,0.14); }
+    .pcap-dot-stocks { background: #e8837a; box-shadow: 0 0 0 3px rgba(232,131,122,0.14); }
+    .pcap-dot-fee { background: #7d8894; box-shadow: 0 0 0 3px rgba(125,136,148,0.14); }
+    .pcap-legname { font-family: 'Onest', sans-serif; font-weight: 500; font-size: 15px; color: #c8d0d8; }
+    .pcap-legpct { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 13px; color: #7d8894; justify-self: end; }
+    .pcap-legsum {
+        font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 15px; color: #eef2f6;
+        min-width: 126px; text-align: right; justify-self: end; white-space: nowrap;
+    }
+
+    /* Кнопка «Комиссия» с раскрытием */
+    .pcap-fee-wrap { margin-top: 28px; position: relative; z-index: 2; }
+    .pcap-fee-btn {
+        width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 12px;
+        background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 14px; padding: 13px 14px; cursor: pointer;
+        color: #c8d0d8; font-family: 'Onest', sans-serif; font-weight: 500; font-size: 15px;
+    }
+    .pcap-fee-btn:hover { background: rgba(255,255,255,0.06); }
+    .pcap-fee-right {
+        margin-left: auto; display: inline-flex; align-items: center; gap: 8px;
+        color: #eef2f6; font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 14px;
+    }
+    .pcap-fee-chev { width: 14px; height: 14px; stroke: #8a95a1; transition: transform 0.22s ease; }
+    .pcap-fee-wrap.open .pcap-fee-chev { transform: rotate(180deg); }
+    .pcap-fee-panel {
+        max-height: 0; opacity: 0; overflow: hidden;
+        margin-top: 0; padding: 0 14px;
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0);
+        border-radius: 12px;
+        transition: max-height 0.25s ease, opacity 0.2s ease, margin-top 0.25s ease, padding 0.25s ease, border-color 0.25s ease;
+    }
+    .pcap-fee-wrap.open .pcap-fee-panel {
+        max-height: 120px; opacity: 1; margin-top: 10px; padding: 12px 14px;
+        border-color: rgba(255,255,255,0.06);
+    }
+    .pcap-fee-note { font-family: 'Onest', sans-serif; font-weight: 400; font-size: 12px; line-height: 1.4; color: #8a95a1; }
+    .pcap-fee-rub { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 13px; color: #eef2f6; white-space: nowrap; }
+
+    /* Разделитель между секциями */
+    .pcap-divider {
+        height: 1px; margin: 18px 0; position: relative; z-index: 2;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.14), transparent);
+    }
+
+    /* Пиллы прогноза */
+    .pcap-fore-pills { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .pcap-mult-pill {
+        font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 11px; color: #8b95a1;
+        background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.07);
+        padding: 4px 8px; border-radius: 20px; white-space: nowrap;
+    }
+    .pcap-grow-pill {
+        display: inline-flex; align-items: center; gap: 4px;
+        background: rgba(167,232,196,0.13); color: #a7e8c4;
+        font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 11px;
+        padding: 5px 9px; border-radius: 20px; white-space: nowrap;
+    }
+    .pcap-grow-pill.neg { background: rgba(232,131,122,0.14); color: #e8a49a; }
+
+    /* Мини-график */
+    .pcap-chart { margin-top: 18px; position: relative; z-index: 2; }
+    .pcap-chart svg { width: 100%; height: auto; display: block; }
+    .pcap-chart-x { display: flex; justify-content: space-between; margin-top: 4px; }
+    .pcap-chart-x span { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 10px; color: #5c6670; }
+
+    /* Дисклеймер */
+    .pcap-disclaimer { margin-top: 14px; display: flex; align-items: flex-start; gap: 8px; position: relative; z-index: 2; }
+    .pcap-disclaimer svg { width: 13px; height: 13px; stroke: #5c6670; flex: 0 0 auto; margin-top: 1px; }
+    .pcap-disclaimer span { font-family: 'Onest', sans-serif; font-weight: 400; font-size: 11px; line-height: 1.5; color: #5c6670; }
+
+    /* Детализация прогноза */
+    .pcap-breakdown {
+        margin-top: 18px; position: relative; z-index: 2;
+        background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 13px;
+    }
+    .pcap-brk-row { display: grid; grid-template-columns: 16px 1fr auto; align-items: center; gap: 12px; }
+    .pcap-brk-label { font-family: 'Onest', sans-serif; font-weight: 500; font-size: 15px; color: #c8d0d8; }
+    .pcap-brk-value { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 15px; min-width: 140px; text-align: right; white-space: nowrap; }
+    .pcap-brk-value.pos { color: #a7e8c4; }
+    .pcap-brk-value.neg { color: #e0a48f; }
+    .pcap-brk-hr { height: 1px; background: rgba(255,255,255,0.06); }
 
     /* ===== V3: встроенная панель «Список к покупке» (вместо таблицы) ===== */
     #v3BuyPanel { display: none; }

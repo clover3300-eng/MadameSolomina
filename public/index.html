@@ -11,7 +11,7 @@
      
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Manrope:wght@500;600;700;800&family=Onest:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/fonts.css">
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/registration.css">
@@ -26,7 +26,7 @@
     <link rel="stylesheet" href="css/rebalance.css">
     <link rel="stylesheet" href="css/rebalance-stocks.css">
     <link rel="stylesheet" href="css/webapp-layout.css?v=3">
-    <link id="siteLayoutCSS" rel="stylesheet" href="css/site-layout.css?v=30">
+    <link id="siteLayoutCSS" rel="stylesheet" href="css/site-layout.css?v=31">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/backtest.css?v=4">
     <link rel="stylesheet" href="css/rebalance-r4.css?v=8">
@@ -1058,60 +1058,112 @@
                 <div class="capital-dark-top">
                     <div class="capital-decoration"></div>
 
-                    <div class="capital-hero">
-                        <div class="capital-hero-left">
-                            <div class="capital-label-text">Текущий капитал</div>
-                            <div class="capital-value" id="summ-invested">0 ₽</div>
+                    <!-- Шапка секции: чип-иконка + подпись + пилл-дата -->
+                    <div class="pcap-head">
+                        <span class="pcap-chip">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
+                                <path d="M21 12h-6a2 2 0 0 0 0 4h6v-4z"/>
+                            </svg>
+                        </span>
+                        <span class="pcap-eyebrow">Текущий капитал</span>
+                        <span class="pcap-date" id="capDate">—</span>
+                    </div>
+
+                    <!-- Крупная сумма в млн + подстрока полным числом -->
+                    <div class="pcap-big pcap-big-cap" id="capInvestedBig"><span class="pcap-big-num">0</span> <span class="pcap-big-unit">₽</span></div>
+                    <div class="pcap-sub" id="summ-invested">0 ₽</div>
+
+                    <!-- Сплит-бар распределения -->
+                    <div class="pcap-splitbar">
+                        <div class="pcap-split-bonds" id="bar-bond-fill-v2" style="width: 50%;"></div>
+                        <div class="pcap-split-stocks" id="bar-stock-fill-v2" style="width: 50%;"></div>
+                    </div>
+
+                    <!-- Легенда распределения -->
+                    <div class="pcap-legend">
+                        <div class="pcap-legrow">
+                            <span class="pcap-dot pcap-dot-bonds"></span>
+                            <span class="pcap-legname">ОФЗ</span>
+                            <span class="pcap-legpct" id="srl-bond-pct-v2">50%</span>
+                            <span class="pcap-legsum" id="legend-bond-sum">0 ₽</span>
                         </div>
-                        <div class="capital-fee-corner">
-                            <span id="summ-fee">0.00%</span>
+                        <div class="pcap-legrow">
+                            <span class="pcap-dot pcap-dot-stocks"></span>
+                            <span class="pcap-legname">Акции</span>
+                            <span class="pcap-legpct" id="srl-stock-pct-v2">50%</span>
+                            <span class="pcap-legsum" id="legend-stock-sum">0 ₽</span>
                         </div>
                     </div>
 
-                    <div class="capital-thin-bar">
-                        <div class="capital-thin-bar-bonds" id="bar-bond-fill-v2" style="width: 50%;"></div>
-                        <div class="capital-thin-bar-stocks" id="bar-stock-fill-v2" style="width: 50%;"></div>
-                    </div>
-
-                    <div class="capital-legend">
-                        <div class="capital-legend-item">
-                            <span class="legend-dot bonds"></span>
-                            <span class="legend-name">ОФЗ</span>
-                            <span class="legend-pct" id="srl-bond-pct-v2">50%</span>
-                            <span class="legend-sep">·</span>
-                            <span class="legend-sum" id="legend-bond-sum">0 ₽</span>
-                        </div>
-                        <div class="capital-legend-item">
-                            <span class="legend-dot stocks"></span>
-                            <span class="legend-name">Акции</span>
-                            <span class="legend-pct" id="srl-stock-pct-v2">50%</span>
-                            <span class="legend-sep">·</span>
-                            <span class="legend-sum" id="legend-stock-sum">0 ₽</span>
+                    <!-- Кнопка «Комиссия» с раскрытием -->
+                    <div class="pcap-fee-wrap">
+                        <button type="button" class="pcap-fee-btn" onclick="toggleCapFee(this)">
+                            <span class="pcap-dot pcap-dot-fee"></span>
+                            <span class="pcap-fee-label">Комиссия</span>
+                            <span class="pcap-fee-right">
+                                <span id="summ-fee">0.00%</span>
+                                <svg class="pcap-fee-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                            </span>
+                        </button>
+                        <div class="pcap-fee-panel" id="capFeePanel">
+                            <span class="pcap-fee-note">Комиссия брокера за сделки при формировании портфеля</span>
+                            <b id="summ-fee-rub" class="pcap-fee-rub">0 ₽</b>
                         </div>
                     </div>
                 </div>
 
-                <!-- Светлая нижняя часть: прогноз -->
+                <!-- Разделитель между секциями -->
+                <div class="pcap-divider"></div>
+
+                <!-- Нижняя часть: прогноз -->
                 <div class="capital-forecast-light">
-                    <div class="forecast-main-row">
-                        <div class="forecast-data-line">
-                            <div class="forecast-label-text">Прогноз через 3 года</div>
-                            <span class="forecast-data-total"><span id="summ-total-value-v2">~0 ₽</span></span>
-                        </div>
-                        <div class="forecast-pct-display" id="summ-total-percent-v2" data-pct="+0%"></div>
+                    <!-- Шапка прогноза: чип + подпись + пиллы ×N и +N% -->
+                    <div class="pcap-head">
+                        <span class="pcap-chip">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 17l6-6 4 4 8-8"/>
+                                <path d="M17 7h4v4"/>
+                            </svg>
+                        </span>
+                        <span class="pcap-eyebrow">Прогноз через 3 года</span>
+                        <span class="pcap-fore-pills">
+                            <span class="pcap-mult-pill" id="summ-mult">×0</span>
+                            <span class="pcap-grow-pill" id="summ-total-percent-v2" data-pct="+0%">+0%</span>
+                        </span>
                     </div>
 
-                    <div class="forecast-breakdown-row">
-                        <div class="forecast-breakdown-item">
-                            <span class="fb-dot bonds"></span>
-                            <span class="fb-label">Купоны</span>
-                            <span class="fb-value" id="summ-bond-income-mini">+0 ₽</span>
+                    <!-- Крупный прогноз в млн + подстрока полным числом -->
+                    <div class="pcap-big pcap-big-fore" id="capForecastBig"><span class="pcap-big-num">0</span> <span class="pcap-big-unit">₽</span></div>
+                    <div class="pcap-sub"><span class="pcap-tilde">~</span> <span id="summ-total-value-v2">0 ₽</span></div>
+
+                    <!-- Мини-график роста капитала -->
+                    <div class="pcap-chart" id="capChart"></div>
+
+                    <!-- Дисклеймер -->
+                    <div class="pcap-disclaimer">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.5h.01"/></svg>
+                        <span>Прогноз приблизительный: рассчитан по средней доходности и не гарантирует будущий результат.</span>
+                    </div>
+
+                    <!-- Детализация прогноза -->
+                    <div class="pcap-breakdown">
+                        <div class="pcap-brk-row">
+                            <span class="pcap-dot pcap-dot-bonds"></span>
+                            <span class="pcap-brk-label">Купоны</span>
+                            <span class="pcap-brk-value pos" id="summ-bond-income-mini">+0 ₽</span>
                         </div>
-                        <div class="forecast-breakdown-divider"></div>
-                        <div class="forecast-breakdown-item">
-                            <span class="fb-dot stocks"></span>
-                            <span class="fb-label">Рост</span>
-                            <span class="fb-value" id="summ-stock-growth-mini">+0 ₽</span>
+                        <div class="pcap-brk-hr"></div>
+                        <div class="pcap-brk-row">
+                            <span class="pcap-dot pcap-dot-stocks"></span>
+                            <span class="pcap-brk-label">Рост</span>
+                            <span class="pcap-brk-value pos" id="summ-stock-growth-mini">+0 ₽</span>
+                        </div>
+                        <div class="pcap-brk-hr"></div>
+                        <div class="pcap-brk-row">
+                            <span class="pcap-dot pcap-dot-fee"></span>
+                            <span class="pcap-brk-label">Комиссия</span>
+                            <span class="pcap-brk-value neg" id="summ-fee-mini">−0 ₽</span>
                         </div>
                     </div>
                 </div>
@@ -2122,7 +2174,7 @@
 <script src="js/data.js?v=7" defer></script>
 <script src="js/rebalance.js?v=8" defer></script>
 <script src="js/company.js?v=2" defer></script>
-<script src="js/portfolio.js?v=8" defer></script>
+<script src="js/portfolio.js?v=9" defer></script>
 <script src="js/init.js?v=4" defer></script>
 <script src="js/registration.js" defer></script>
 <script src="js/menu-controller.js" defer></script>

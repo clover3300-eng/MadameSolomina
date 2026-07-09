@@ -490,7 +490,8 @@ if(totalRow) {
                 if (legendStockSum) legendStockSum.textContent = fmtRub(stockBudget);
 
                 if (totalValueV2) {
-                    totalValueV2.textContent = '~' + fmtRub(projectedTotal);
+                    // «~» вынесен в отдельный span в разметке (референс)
+                    totalValueV2.textContent = fmtRub(projectedTotal);
                 }
                 if (totalPercentV2) {
                     totalPercentV2.setAttribute('data-pct', changeSign + percentageChange.toFixed(1) + '%');
@@ -501,7 +502,74 @@ if(totalRow) {
                 if (stockGrowthMini) {
                     stockGrowthMini.textContent = '+' + Math.round(totalStockProjectedGrowth).toLocaleString('ru-RU').replace(/\s/g, '.') + ' ₽';
                 }
-                
+
+                // === Референс-карточка: крупные суммы в млн, дата, множитель, комиссия, график ===
+                const fmtBigUnit = (v) => {
+                    const a = Math.abs(v);
+                    if (a >= 1e6) return { num: (v / 1e6).toLocaleString('ru-RU', { maximumFractionDigits: 1 }), unit: 'млн ₽' };
+                    if (a >= 1e3) return { num: (v / 1e3).toLocaleString('ru-RU', { maximumFractionDigits: 0 }), unit: 'тыс ₽' };
+                    return { num: Math.round(v).toLocaleString('ru-RU'), unit: '₽' };
+                };
+                const setBigNum = (id, v) => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    const o = fmtBigUnit(v);
+                    el.innerHTML = '<span class="pcap-big-num">' + o.num + '</span> <span class="pcap-big-unit">' + o.unit + '</span>';
+                };
+                setBigNum('capInvestedBig', inputSum);
+                setBigNum('capForecastBig', projectedTotal);
+
+                const capDateEl = document.getElementById('capDate');
+                if (capDateEl) {
+                    const d = new Date();
+                    capDateEl.textContent = String(d.getDate()).padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + d.getFullYear();
+                }
+
+                const multEl = document.getElementById('summ-mult');
+                if (multEl) multEl.textContent = '×' + (inputSum > 0 ? (projectedTotal / inputSum).toFixed(2) : '0');
+
+                const growPill = document.getElementById('summ-total-percent-v2');
+                if (growPill) {
+                    growPill.textContent = changeSign + percentageChange.toFixed(1) + '%';
+                    growPill.classList.toggle('neg', percentageChange < 0);
+                }
+
+                const feeRubEl = document.getElementById('summ-fee-rub');
+                if (feeRubEl) feeRubEl.textContent = fmtRub(feeVal);
+                const feeMiniEl = document.getElementById('summ-fee-mini');
+                if (feeMiniEl) feeMiniEl.textContent = '−' + fmtRub(feeVal);
+
+                // Мини-график: геометрическая интерполяция капитала за 3 года
+                (function () {
+                    const host = document.getElementById('capChart');
+                    if (!host) return;
+                    const start = inputSum, end = projectedTotal, yrs = 3, pts = [];
+                    for (let i = 0; i <= yrs; i++) {
+                        pts.push(start > 0 ? start * Math.pow(end / start, i / yrs) : start + (end - start) * (i / yrs));
+                    }
+                    const W = 360, top = 6, bot = 54, padL = 4, padR = 4;
+                    const min = Math.min.apply(null, pts), max = Math.max.apply(null, pts);
+                    const xs = pts.map((_, i) => padL + (W - padL - padR) * (i / yrs));
+                    const ys = pts.map(v => max > min ? bot - (v - min) / (max - min) * (bot - top) : bot);
+                    let line = '';
+                    xs.forEach((x, i) => { line += (i ? ' L' : 'M') + x.toFixed(1) + ',' + ys[i].toFixed(1); });
+                    const area = line + ' L' + xs[xs.length - 1].toFixed(1) + ',60 L' + xs[0].toFixed(1) + ',60 Z';
+                    let dots = '';
+                    xs.forEach((x, i) => { dots += '<circle cx="' + x.toFixed(1) + '" cy="' + ys[i].toFixed(1) + '" r="2.6" fill="#0f151b" stroke="#a7e8c4" stroke-width="2"/>'; });
+                    const labels = ['сейчас', '+1', '+2', '3 года'];
+                    host.innerHTML =
+                        '<svg viewBox="0 0 360 60">' +
+                            '<defs><linearGradient id="pcapFill" x1="0" y1="0" x2="0" y2="1">' +
+                                '<stop offset="0" stop-color="#a7e8c4" stop-opacity=".28"/>' +
+                                '<stop offset="1" stop-color="#a7e8c4" stop-opacity="0"/>' +
+                            '</linearGradient></defs>' +
+                            '<path d="' + area + '" fill="url(#pcapFill)"/>' +
+                            '<path d="' + line + '" fill="none" stroke="#a7e8c4" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>' +
+                            dots +
+                        '</svg>' +
+                        '<div class="pcap-chart-x">' + labels.map(l => '<span>' + l + '</span>').join('') + '</div>';
+                })();
+
                 // Рендерим список облигаций в новый контейнер V2 (с возможностью свернуть/развернуть)
                 window._bondCalculationsV2 = bondCalculations;
                 window._bondDetailsMapV2 = bondDetailsMap;
@@ -677,6 +745,12 @@ if(totalStocksRow) {
                 });
             });
         } // Закрытие функции draw
+
+// Раскрытие блока «Комиссия» в карточке капитала (референс)
+function toggleCapFee(btn) {
+    const wrap = btn && btn.closest ? btn.closest('.pcap-fee-wrap') : null;
+    if (wrap) wrap.classList.toggle('open');
+}
 
 /* =================================================================
    PORTFOLIO V2 - ФУНКЦИИ ПЕРЕКЛЮЧЕНИЯ
