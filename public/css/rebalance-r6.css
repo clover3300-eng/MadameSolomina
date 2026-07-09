@@ -170,7 +170,7 @@
 .rbx-card {
     display: grid;
     grid-template-columns: minmax(330px, 2fr) 3fr;
-    align-items: start;
+    align-items: stretch;
     background: #ffffff;
     border-radius: 24px;
     box-shadow: 0 16px 36px rgba(24, 38, 60, 0.08);
@@ -184,6 +184,16 @@ body.dark-mode .rbx-card {
 .rbx-sec { padding: 22px 24px 26px; min-width: 0; }
 .rbx-sec-stocks { border-left: 1px solid rgba(44, 54, 76, 0.08); }
 body.dark-mode .rbx-sec-stocks { border-left-color: rgba(255, 255, 255, 0.07); }
+
+/* тон-подложка секции ОФЗ: своя зона, чтобы блок не «висел» рядом с
+   тёмными пилюлями эшелонов; левые углы повторяют скругление карты */
+.rbx-sec-ofz {
+    display: flex;
+    flex-direction: column;
+    background: #F5F8F6;
+    border-radius: 24px 0 0 24px;
+}
+body.dark-mode .rbx-sec-ofz { background: rgba(52, 211, 153, 0.045); }
 
 /* шапка секции: заголовок + счётчик + сортировка/подсказка */
 .rbx-sh { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; min-height: 32px; }
@@ -373,9 +383,49 @@ body.dark-mode .rbx-shelp b { color: #e2e8f0; }
 body.dark-mode .rbx-chart-btn { background: linear-gradient(135deg, #232f40, #10161f); box-shadow: 0 10px 22px -12px rgba(0, 0, 0, 0.6); }
 
 .rbx-foot {
-    margin-top: 13px; padding: 0 6px;
+    margin-top: 0; padding: 14px 6px 0;
     font-family: 'Inter', sans-serif; font-size: 11px; line-height: 1.5; color: #9aa6b8;
 }
+
+/* «Зачем ребалансировать» — обучающий блок, заполняет низ секции ОФЗ,
+   чтобы под коротким списком не оставалось пустого фона; авто-поля сверху
+   и снизу центрируют его по вертикали в свободном пространстве секции */
+.rbx-why {
+    margin: auto 4px;
+}
+/* стек ≤1180px: секция по высоте контента — фиксированный воздух вместо авто */
+@media (max-width: 1180px) {
+    .rbx-why { margin: 20px 4px 16px; }
+}
+.rbx-why-h { display: flex; align-items: center; gap: 9px; margin-bottom: 10px; }
+.rbx-why-ic {
+    flex-shrink: 0; display: grid; place-items: center;
+    width: 24px; height: 24px; border-radius: 8px;
+    color: #1d9d6c; background: rgba(29, 157, 108, 0.12);
+}
+.rbx-why-ic svg { width: 14px; height: 14px; }
+.rbx-why-h b {
+    font-family: 'Manrope', sans-serif;
+    font-size: 13.5px; font-weight: 800; color: #161B27; letter-spacing: -0.01em;
+}
+.rbx-why-lead {
+    margin: 0 0 13px;
+    font-family: 'Inter', sans-serif; font-size: 12px; line-height: 1.55; color: #5d6b83;
+}
+.rbx-why-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.rbx-why-list li { display: flex; gap: 9px; align-items: flex-start; }
+.rbx-why-list li i { flex-shrink: 0; margin-top: 1px; color: #1d9d6c; line-height: 0; }
+.rbx-why-list li i svg { width: 15px; height: 15px; }
+.rbx-why-list span {
+    font-family: 'Inter', sans-serif; font-size: 11.5px; line-height: 1.5; color: #5d6b83;
+}
+.rbx-why-list b { color: #2C364C; font-weight: 700; }
+body.dark-mode .rbx-why-ic { color: #34d399; background: rgba(52, 211, 153, 0.14); }
+body.dark-mode .rbx-why-h b { color: #F1F5F9; }
+body.dark-mode .rbx-why-lead,
+body.dark-mode .rbx-why-list span { color: #94a3b8; }
+body.dark-mode .rbx-why-list b { color: #e2e8f0; }
+body.dark-mode .rbx-why-list li i { color: #34d399; }
 
 /* ──────────────── СЕКЦИЯ АКЦИИ: 4 КОЛОНКИ ЭШЕЛОНОВ ──────────────── */
 
@@ -460,6 +510,7 @@ body.dark-mode .rbx-tile .bar { background: rgba(255, 255, 255, 0.09); }
 /* планшет/узкий десктоп: секции друг под другом, эшелоны 4-в-ряд остаются */
 @media (max-width: 1180px) and (min-width: 1024px) {
     .rbx-card { grid-template-columns: 1fr; }
+    .rbx-sec-ofz { border-radius: 24px 24px 0 0; }
     .rbx-sec-stocks { border-left: none; border-top: 1px solid rgba(44, 54, 76, 0.08); }
     body.dark-mode .rbx-sec-stocks { border-top-color: rgba(255, 255, 255, 0.07); }
 }
