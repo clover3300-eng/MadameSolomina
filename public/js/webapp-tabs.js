@@ -138,9 +138,12 @@ function populatePanels() {
             const coup = document.getElementById('couponBoxV2');
             if (coup) pfxCard.insertAdjacentElement('afterend', coup);
         })();
-        // 2) Кнопка «Список к покупке» внутри светлой части карточки капитала
+        // 2) Кнопки действий — в отдельную зону .pcap-actions (3-я колонка
+        // горизонтального героя капитала). Раньше жили в .capital-forecast-light.
         const fcLight = share.querySelector('.capital-forecast-light');
-        if (fcLight) {
+        let actions = share.querySelector('.pcap-actions');
+        if (!actions) { actions = document.createElement('div'); actions.className = 'pcap-actions'; share.appendChild(actions); }
+        if (actions) {
             const buyBtn = document.createElement('button');
             buyBtn.type = 'button';
             buyBtn.className = 'v3-buylist-btn';
@@ -152,7 +155,7 @@ function populatePanels() {
                 if (typeof window.v3OpenBuyList === 'function') window.v3OpenBuyList();
                 else if (typeof openShoppingList === 'function') openShoppingList();
             };
-            fcLight.appendChild(buyBtn);
+            actions.appendChild(buyBtn);
         }
         // 2.5) Кнопка «Создать портфель» — переносит рассчитанный состав (ОФЗ + акции)
         // в новый портфель на вкладке «Портфели» и сразу открывает её
@@ -164,7 +167,7 @@ function populatePanels() {
             if (typeof window.pfImport === 'function') window.pfImport('calc', 'all', null);
             switchTab('portfolios');
         };
-        if (fcLight) fcLight.appendChild(createPfBtn);
+        actions.appendChild(createPfBtn);
         // 2.6) Кнопка «Выгрузить в Excel» живёт в ГЛОБАЛЬНОЙ шапке сайта рядом с
         // «Поиском» (#topBarPageActions в index.html, показ/скрытие — в switchTab-обёртке
         // ниже); из шапок таблиц кнопка убрана.
@@ -175,7 +178,7 @@ function populatePanels() {
         recalc.className = 'v3-recalc-btn';
         recalc.innerHTML = '<span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 0 1 14.4-6.1L21 8"/><path d="M21 3.5V8.2h-4.7"/><path d="M20.5 12a8.5 8.5 0 0 1-14.4 6.1L3 16"/><path d="M3 20.5V15.8h4.7"/></svg></span>Новый расчёт';
         recalc.onclick = function() { switchTab('calc'); };
-        if (fcLight) fcLight.appendChild(recalc); else rail.appendChild(recalc);
+        actions.appendChild(recalc);
         // 3.5) Встроенная панель «Список к покупке» — открывается вместо таблицы
         const pfRight = document.getElementById('pfRightCol');
         if (pfRight) {

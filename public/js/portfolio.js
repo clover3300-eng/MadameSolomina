@@ -474,6 +474,11 @@ if(totalRow) {
                 const barBondV2 = document.getElementById('bar-bond-fill-v2');
                 if (barStockV2) barStockV2.style.width = stockPct + '%';
                 if (barBondV2) barBondV2.style.width = bondPct + '%';
+                // Кольцо распределения (слим-герой) — доля ОФЗ в conic-gradient
+                if (barBondV2 && barBondV2.parentElement) barBondV2.parentElement.style.setProperty('--bond', bondPct);
+                // Подпись долей в центре кольца (CSS content: attr(data-split))
+                const darkTop = barBondV2 ? barBondV2.closest('.capital-dark-top') : null;
+                if (darkTop) darkTop.setAttribute('data-split', bondPct + '/' + stockPct);
                 
                 const stockPctV2 = document.getElementById('srl-stock-pct-v2');
                 const bondPctV2 = document.getElementById('srl-bond-pct-v2');
