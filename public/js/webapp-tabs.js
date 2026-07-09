@@ -177,8 +177,132 @@ function populatePanels() {
         recalc.type = 'button';
         recalc.className = 'v3-recalc-btn';
         recalc.innerHTML = '<span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 0 1 14.4-6.1L21 8"/><path d="M21 3.5V8.2h-4.7"/><path d="M20.5 12a8.5 8.5 0 0 1-14.4 6.1L3 16"/><path d="M3 20.5V15.8h4.7"/></svg></span>Новый расчёт';
-        recalc.onclick = function() { switchTab('calc'); };
         actions.appendChild(recalc);
+
+        // 3.4) Встроенная панель пересчёта — «как продолжение карточки»:
+        //      меняем сумму/распределение/комиссию и пересчитываем прямо здесь,
+        //      не уходя на вкладку «Расчёт». Живой пересчёт через draw().
+        (function buildRecalcPanel() {
+            const leftRail = document.getElementById('pfLeftRail');
+            if (!leftRail || document.getElementById('pfRecalcPanel')) return;
+            const feeRates = [0.01, 0.03, 0.05, 0.1, 0.3, 0.5]; // %, как на «Расчёте»
+            const panel = document.createElement('div');
+            panel.id = 'pfRecalcPanel';
+            panel.innerHTML =
+                '<div class="pfrc-inner">' +
+                    '<div class="pfrc-field pfrc-sum">' +
+                        '<div class="pfrc-label">Сумма вложений</div>' +
+                        '<div class="pfrc-suminput"><input id="pfrcSum" inputmode="numeric" autocomplete="off"><span class="pfrc-cur">₽</span></div>' +
+                        '<div class="pfrc-chips" id="pfrcChips">' +
+                            '<button type="button" data-v="1000000">1 млн</button>' +
+                            '<button type="button" data-v="3000000">3 млн</button>' +
+                            '<button type="button" data-v="5000000">5 млн</button>' +
+                            '<button type="button" data-v="10000000">10 млн</button>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="pfrc-field pfrc-alloc">' +
+                        '<div class="pfrc-label">Распределение <b id="pfrcAllocVal">50 / 50</b></div>' +
+                        '<input type="range" id="pfrcRatio" min="0" max="100" step="5" value="50">' +
+                        '<div class="pfrc-ends"><span><i class="pfrc-d-b"></i>ОФЗ</span><span>Акции<i class="pfrc-d-s"></i></span></div>' +
+                    '</div>' +
+                    '<div class="pfrc-field pfrc-fee">' +
+                        '<div class="pfrc-label">Комиссия брокера</div>' +
+                        '<div class="pfrc-fees" id="pfrcFees">' +
+                            feeRates.map(function(f){ return '<button type="button" data-f="' + f + '">' + f + '%</button>'; }).join('') +
+                        '</div>' +
+                    '</div>' +
+                    '<button type="button" class="pfrc-done" id="pfrcDone">Готово</button>' +
+                '</div>';
+            share.insertAdjacentElement('afterend', panel);
+
+            const fmtRu = function(n){ return Math.round(n).toLocaleString('ru-RU').replace(/\s/g, '.'); };
+            const sumEl = document.getElementById('pfrcSum');
+            const ratioEl = document.getElementById('pfrcRatio');
+            const allocValEl = document.getElementById('pfrcAllocVal');
+
+            // Живой пересчёт: draw() перестраивает и герой, и таблицы; затем персист
+            function pfrcApply() {
+                if (typeof draw === 'function') draw();
+                try { if (typeof savePortfolio === 'function') savePortfolio(); } catch (e) {}
+                try {
+                    const rs = document.getElementById('ratioSlider');
+                    const bp = rs ? parseInt(rs.value) : 50;
+                    if (typeof pfxApplySplit === 'function') pfxApplySplit(bp);
+                } catch (e) {}
+                setTimeout(function(){ window.pfFitNumbers && window.pfFitNumbers(); window.pfCenterTables && window.pfCenterTables(); }, 30);
+            }
+
+            // Синхронизация полей панели с текущим состоянием расчёта
+            function pfrcSync() {
+                const cur = (typeof getSumInputValue === 'function') ? getSumInputValue() : 0;
+                if (sumEl) sumEl.value = cur ? fmtRu(cur) : '';
+                const rs = document.getElementById('ratioSlider');
+                const bp = rs ? parseInt(rs.value) : 50;
+                if (ratioEl) { ratioEl.value = bp; ratioEl.style.setProperty('--fill', bp + '%'); }
+                if (allocValEl) allocValEl.textContent = bp + ' / ' + (100 - bp);
+                document.querySelectorAll('#pfrcChips button').forEach(function(b){ b.classList.toggle('active', parseInt(b.dataset.v) === cur); });
+                let bfPct = null;
+                try { if (typeof brokerFee !== 'undefined') bfPct = Math.round(brokerFee * 10000) / 100; } catch (e) {}
+                document.querySelectorAll('#pfrcFees button').forEach(function(b){ b.classList.toggle('active', parseFloat(b.dataset.f) === bfPct); });
+            }
+
+            function applySum() {
+                const digits = (sumEl.value || '').replace(/\D/g, '');
+                const n = parseInt(digits) || 0;
+                const si = document.getElementById('sumInput');
+                if (si) si.value = n ? fmtRu(n) : '';
+                if (n >= 100000) pfrcApply();
+                document.querySelectorAll('#pfrcChips button').forEach(function(b){ b.classList.toggle('active', parseInt(b.dataset.v) === n); });
+            }
+
+            let sumTimer;
+            if (sumEl) sumEl.addEventListener('input', function(){
+                const digits = this.value.replace(/\D/g, '');
+                this.value = digits ? Number(digits).toLocaleString('ru-RU').replace(/\s/g, '.') : '';
+                clearTimeout(sumTimer);
+                sumTimer = setTimeout(applySum, 250);
+            });
+            document.querySelectorAll('#pfrcChips button').forEach(function(b){
+                b.addEventListener('click', function(){
+                    sumEl.value = Number(this.dataset.v).toLocaleString('ru-RU').replace(/\s/g, '.');
+                    applySum();
+                });
+            });
+            if (ratioEl) {
+                ratioEl.addEventListener('input', function(){
+                    const bp = parseInt(this.value);
+                    if (allocValEl) allocValEl.textContent = bp + ' / ' + (100 - bp);
+                    this.style.setProperty('--fill', bp + '%');
+                    const rs = document.getElementById('ratioSlider');
+                    if (rs) rs.value = bp;
+                    pfrcApply();
+                });
+            }
+            document.querySelectorAll('#pfrcFees button').forEach(function(b){
+                b.addEventListener('click', function(){
+                    const f = parseFloat(this.dataset.f) / 100;
+                    try { brokerFee = f; } catch (e) { window.brokerFee = f; }
+                    try { isFeeSelected = true; } catch (e) { window.isFeeSelected = true; }
+                    document.querySelectorAll('#pfrcFees button').forEach(function(x){ x.classList.remove('active'); });
+                    this.classList.add('active');
+                    pfrcApply();
+                });
+            });
+
+            // Кнопка «Новый расчёт»: на десктопе раскрывает встроенную панель,
+            // на мобиле (панели нет) — уводит на вкладку «Расчёт»
+            recalc.onclick = function() {
+                if (!window.matchMedia('(min-width: 1024px)').matches) { switchTab('calc'); return; }
+                const open = leftRail.classList.toggle('pf-recalc-open');
+                recalc.classList.toggle('is-open', open);
+                if (open) { pfrcSync(); if (sumEl) setTimeout(function(){ sumEl.focus(); sumEl.select(); }, 60); }
+            };
+            const doneBtn = document.getElementById('pfrcDone');
+            if (doneBtn) doneBtn.addEventListener('click', function(){
+                leftRail.classList.remove('pf-recalc-open');
+                recalc.classList.remove('is-open');
+            });
+        })();
         // 3.5) Встроенная панель «Список к покупке» — открывается вместо таблицы
         const pfRight = document.getElementById('pfRightCol');
         if (pfRight) {
