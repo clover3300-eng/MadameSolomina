@@ -1869,20 +1869,6 @@
             max-width: 1280px;
             margin: 0 auto;
         }
-        /* Виджет «Ежемесячные купоны/доход» — продолжение тёмной карточки сверху:
-           заезжает под её скруглённый низ, тонкая обводка, скругление снизу.
-           После R6 остался только на «Портфеле» (#pfLeftRail). */
-        #pfLeftRail #pfMonthlyWidget {
-            margin-top: -22px;                    /* радиус карточки: заезд под кромку */
-            padding-top: calc(16px + 22px + 2px); /* контент начинается ниже кромки карточки */
-            position: relative; z-index: 0;
-            border: 1px solid #dfe6ef;
-            border-radius: 0 0 20px 20px;
-            box-shadow: 0 16px 30px rgba(24,38,60,0.07);
-        }
-        #pfLeftRail #pfMonthlyWidget:hover { transform: none; border-color: #c9d6ea; }
-        body.dark-mode #pfLeftRail #pfMonthlyWidget { border-color: rgba(255,255,255,0.10); }
-
         /* ===== V3: таблица ОФЗ — белая карточка с интегрированным тёмным «Итого» ===== */
         #pfRightCol .v3-table-card {
             display: flex;
@@ -1916,14 +1902,14 @@
         #pfRightCol #pfxCard.pfx-solo { grid-template-columns: minmax(0, 1fr); }
         #pfRightCol #pfxCard.pfx-solo > #portfolio-tab-stocks { border-left: none; }
         /* вложенные обёртки таблиц — плоские: белая карта теперь внешняя.
-           flex-колонка на всю высоту стретченной half-карты — «Итого ОФЗ»
-           и «Итого акции» прижаты книзу (margin-top:auto ниже), поэтому
-           изначально оказываются на одном уровне независимо от длины списков. */
+           flex-колонка с высотой, замороженной JS (pfxSyncCardHeights) — «Итого
+           ОФЗ» и «Итого акции» прижаты книзу (margin-top:auto ниже) и изначально
+           на одном уровне, но раскрытие строки в одной секции НЕ тянет высоту
+           другой (в отличие от live height:100%/stretch). */
         #pfRightCol #pfxCard .v3-table-card {
             background: transparent;
             border-radius: 0;
             box-shadow: none;
-            height: 100%;
             display: flex;
             flex-direction: column;
             min-height: 0;
@@ -1956,13 +1942,26 @@
             gap: 10px;
             padding: 12px 20px 11px;
         }
-        #pfRightCol #pfxCard .portfolio-echelon-header { padding: 15px 20px; }
+        /* Чуть выше строка — от заголовков до первого эшелона и от последнего
+           до «Важно знать» получается одинаковый отступ */
+        #pfRightCol #pfxCard .portfolio-echelon-header { padding: 22px 20px; }
         #pfRightCol #pfxCard .portfolio-echelon-header-left { gap: 12px; }
         #pfRightCol #pfxCard .portfolio-echelon-header-right { grid-template-columns: 118px 48px 20px; gap: 10px; }
         #pfRightCol #pfxCard .portfolio-echelon-number { width: 30px; height: 30px; font-size: 12px; }
         #pfRightCol #pfxCard .portfolio-echelon-title { font-size: 14px; }
         #pfRightCol #pfxCard .portfolio-echelon-sum { font-size: 14px; }
-        #pfRightCol #pfxCard .portfolio-echelon-percent { font-size: 11.5px; padding: 4px 9px; }
+        /* Бейджик % — пилюля в тон номера эшелона (e1..e4), как «Итого» справа */
+        #pfRightCol #pfxCard .portfolio-echelon-percent {
+            font-size: 11.5px; padding: 4px 10px; border-radius: 999px; font-weight: 700;
+        }
+        #pfRightCol #pfxCard .portfolio-echelon-percent.e1 { background: rgba(39,174,96,0.12); color: #1f9d63; }
+        #pfRightCol #pfxCard .portfolio-echelon-percent.e2 { background: rgba(41,128,185,0.12); color: #2980b9; }
+        #pfRightCol #pfxCard .portfolio-echelon-percent.e3 { background: rgba(230,168,23,0.16); color: #b8790e; }
+        #pfRightCol #pfxCard .portfolio-echelon-percent.e4 { background: rgba(211,84,0,0.12); color: #c2410c; }
+        body.dark-mode #pfRightCol #pfxCard .portfolio-echelon-percent.e1 { background: rgba(52,211,153,0.16); color: #4ade80; }
+        body.dark-mode #pfRightCol #pfxCard .portfolio-echelon-percent.e2 { background: rgba(96,165,250,0.16); color: #7dabf7; }
+        body.dark-mode #pfRightCol #pfxCard .portfolio-echelon-percent.e3 { background: rgba(250,204,21,0.18); color: #fbd34d; }
+        body.dark-mode #pfRightCol #pfxCard .portfolio-echelon-percent.e4 { background: rgba(251,146,60,0.18); color: #fb9c5a; }
         #pfRightCol #pfxCard .portfolio-echelon-columns-header { padding: 12px 20px 11px; }
         #pfRightCol #pfxCard .portfolio-echelon-list { padding: 0 20px 14px; }
         #pfRightCol #pfxCard .portfolio-stock-item { padding: 13px 0; }
@@ -2031,6 +2030,31 @@
         #pfRightCol #pfxCard .ofz-copy-icon { width: 12px; height: 12px; stroke: #94A3B8; opacity: 1; }
         #pfRightCol #pfxCard .ofz-aurora-chart-btn svg { stroke: #4be3a0; }
 
+        /* Подстроки акций — тот же приём, что у ОФЗ (см. выше) и Ребаланса: без плашки-фона */
+        #pfRightCol #pfxCard .portfolio-stock-detail-grid {
+            background: transparent;
+            border-radius: 0;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px;
+        }
+        body.dark-mode #pfRightCol #pfxCard .portfolio-stock-detail-grid { background: transparent; }
+        #pfRightCol #pfxCard .portfolio-stock-detail-row {
+            padding: 11px 0;
+            border-bottom: 1px dashed rgba(44, 54, 76, 0.14);
+        }
+        body.dark-mode #pfRightCol #pfxCard .portfolio-stock-detail-row { border-bottom-color: rgba(255,255,255,0.1); }
+        #pfRightCol #pfxCard .portfolio-stock-detail-row:last-child { border-bottom: none; }
+        #pfRightCol #pfxCard .portfolio-stock-detail-label {
+            font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #8a96aa;
+        }
+        #pfRightCol #pfxCard .portfolio-stock-detail-value {
+            font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: #2C364C;
+        }
+        body.dark-mode #pfRightCol #pfxCard .portfolio-stock-detail-value { color: #e2e8f0; }
+        /* «График» — та же тёмная кнопка с мятной иконкой, что у ОФЗ/Ребаланса */
+        #pfRightCol #pfxCard .portfolio-stock-btn.chart svg { stroke: #4be3a0; }
+
         /* Узкая карта (выдвинут/закреплён сайдбар, небольшой экран): контейнерный
            запрос по ширине карты — прячем ранг, короткие заголовки (%/ШТ), плотнее сетка */
         #pfRightCol #pfxCard { container-type: inline-size; }
@@ -2061,7 +2085,7 @@
                 gap: 8px;
                 padding: 12px 16px 11px;
             }
-            #pfRightCol #pfxCard .portfolio-echelon-header { padding: 13px 16px; }
+            #pfRightCol #pfxCard .portfolio-echelon-header { padding: 20px 16px; }
             #pfRightCol #pfxCard .portfolio-echelon-header-right { grid-template-columns: 100px 40px 18px; gap: 8px; }
             #pfRightCol #pfxCard .portfolio-echelon-number { width: 28px; height: 28px; font-size: 11.5px; }
             #pfRightCol #pfxCard .portfolio-echelon-title { font-size: 13.5px; }
@@ -2362,8 +2386,9 @@
            из паддинга контента, внутренний паддинг возвращает выравнивание. */
         #pfRightCol .coupon-table-head,
         #pfRightCol .coupon-row {
-            grid-template-columns: 24px 92px minmax(0,1fr) 60px 112px;
-            gap: 12px;
+            grid-template-columns: 24px 92px 150px 60px 112px;
+            justify-content: space-between;
+            gap: 16px;
             margin: 0 -26px;
             padding-left: 26px; padding-right: 26px;
             align-items: center;

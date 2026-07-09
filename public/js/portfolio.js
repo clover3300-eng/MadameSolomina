@@ -557,7 +557,7 @@ if(totalRow) {
                                 </div>
                                 <div class="portfolio-echelon-header-right">
                                     <span class="portfolio-echelon-sum">${Math.round(echelonBudget).toLocaleString()} ₽</span>
-                                    <span class="portfolio-echelon-percent">${percent}%</span>
+                                    <span class="portfolio-echelon-percent ${echelonClasses[idx]}">${percent}%</span>
                                     <svg class="portfolio-echelon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <polyline points="6 9 12 15 18 9"/>
                                     </svg>
@@ -567,7 +567,7 @@ if(totalRow) {
                                 <div class="portfolio-echelon-columns-header">
                                     <span class="pf-rank-head"></span>
                                     <span>ТИКЕР</span>
-                                    <span>ДОХОДНОСТЬ</span>
+                                    <span><span class="ofz-hdr-full">ДОХОДНОСТЬ</span><span class="ofz-hdr-short">%</span></span>
                                     <span><span class="qty-hdr-full">КОЛ-ВО</span><span class="qty-hdr-short">ШТ</span></span>
                                     <span>РАСХОДЫ</span>
                                     <span></span>
@@ -730,6 +730,27 @@ function pfxApplySplit(bondPct) {
     if (coupons) coupons.style.display = noBonds ? 'none' : '';
     if (stocks) stocks.style.display = noStocks ? 'none' : '';
     if (card) card.classList.toggle('pfx-solo', noBonds || noStocks);
+    requestAnimationFrame(function() { requestAnimationFrame(function() { if (window.pfxSyncCardHeights) window.pfxSyncCardHeights(); }); });
+}
+
+// Высота половин карты синхронизируется ОДИН РАЗ (после расчёта/ресайза), а не
+// живьём через CSS stretch — иначе раскрытие строки в ОФЗ тянуло бы за собой
+// содержимое акций (и наоборот). min-height замораживает общий уровень «Итого»,
+// но раскрытая секция свободно растёт сама по себе, не двигая соседнюю.
+window.pfxSyncCardHeights = function() {
+    const bondsCard = document.querySelector('#portfolio-tab-bonds .v3-table-card');
+    const stocksCard = document.querySelector('#portfolio-tab-stocks .v3-table-card');
+    if (!bondsCard || !stocksCard) return;
+    bondsCard.style.minHeight = '';
+    stocksCard.style.minHeight = '';
+    if (window.innerWidth < 1024) return;
+    const h = Math.max(bondsCard.offsetHeight, stocksCard.offsetHeight);
+    bondsCard.style.minHeight = h + 'px';
+    stocksCard.style.minHeight = h + 'px';
+};
+if (!window._pfxHeightResizeBound) {
+    window._pfxHeightResizeBound = true;
+    window.addEventListener('resize', function() { if (window.pfxSyncCardHeights) window.pfxSyncCardHeights(); });
 }
 
 // === Список ОФЗ: рендер с возможностью свернуть/развернуть (топ-3 по доходности) ===

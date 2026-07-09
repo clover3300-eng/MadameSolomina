@@ -305,21 +305,6 @@ function populatePanels() {
         };
         requestAnimationFrame(function(){ requestAnimationFrame(window.v3SyncCapHeight); });
         window.addEventListener('resize', function(){ if (window.v3SyncCapHeight) window.v3SyncCapHeight(); });
-
-        // 6) Виджет-переход к «Ежемесячному доходу» под карточкой капитала/прогноза
-        if (!document.getElementById('pfMonthlyWidget')) {
-            const w = document.createElement('div');
-            w.id = 'pfMonthlyWidget';
-            w.className = 'ms-nav-widget green';
-            w.innerHTML =
-                '<span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg></span>' +
-                '<span class="tx"><b>Ежемесячный доход</b>' +
-                '<span>Отдельный расчёт: набор ОФЗ, где купоны приходят каждый месяц — как зарплата.</span></span>' +
-                '<span class="go"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>';
-            // купонный калькулятор теперь живёт в «Расчёте» (js/calc-mode.js)
-            w.onclick = function() { window.cxGoMonthly ? window.cxGoMonthly() : switchTab('calc'); };
-            rail.appendChild(w);
-        }
     })();
     // Равные отступы: grid-gap (рельса→контент) = зазор сайдбар→рельса. Для всех страниц с рельсой.
     window.pfSyncLeftWidth = function() {
