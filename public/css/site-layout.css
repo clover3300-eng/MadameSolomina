@@ -109,6 +109,38 @@
     .sb-sub.active { color: #A7C7B5; font-weight: 600; }
     .sb-sub.active .sb-sub-bar { background: #8FB3A0; }
 
+    /* ---------- Тёмная тема: СВЕТЛЫЙ сайдбар (по фидбеку) ----------
+       Рейка по умолчанию тёмная (#161B27) в обеих темах; в тёмной теме
+       делаем её светлой — контраст со тёмным контентом. Только десктоп,
+       мобильную шторку (fixed) не трогаем. На десктопе видимая рейка — это
+       карточки #sbPanel и #sbFoot (у самого #sideBar фон прозрачный), их и
+       перекрашиваем. Тексты/бордеры → тёмные-на-светлом, зелёный акцент
+       активного пункта затемнён для читаемости на светлом. */
+    @media (min-width: 1024px) {
+        body.dark-mode #sideBar { background: transparent; }
+        body.dark-mode #sbPanel { background: #EEF2F8; box-shadow: 0 10px 30px rgba(20,27,45,0.12); }
+        body.dark-mode #sbFoot { background: #EEF2F8; box-shadow: 0 8px 22px rgba(20,27,45,0.10); }
+        body.dark-mode #sbHead { border-bottom-color: rgba(20,27,45,0.08); }
+        body.dark-mode .sb-logo-mark { background: linear-gradient(180deg, #1C222E 0%, #10151F 100%); color: #F1F6FB; }
+        body.dark-mode .sb-logo-name { color: #1F2637; }
+        body.dark-mode .sb-logo-sub { color: rgba(31,38,55,0.45); }
+        body.dark-mode .sb-item { color: rgba(31,38,55,0.62); }
+        body.dark-mode .sb-item:hover { background: rgba(20,27,45,0.05); color: #1F2637; }
+        body.dark-mode .sb-item.active { background: rgba(143,179,160,0.20); color: #2f6b4f; }
+        body.dark-mode #sbFoot { border-top-color: rgba(20,27,45,0.08); }
+        body.dark-mode #sbFoot .sb-item { color: rgba(31,38,55,0.5); }
+        body.dark-mode #sbFoot .sb-item:hover { color: #1F2637; background: rgba(20,27,45,0.05); }
+        body.dark-mode .sb-chev { color: rgba(31,38,55,0.4); }
+        body.dark-mode .sb-chev:hover { color: #1F2637; background: rgba(20,27,45,0.07); }
+        body.dark-mode .sb-group.open > .sb-parent .sb-chev { color: rgba(31,38,55,0.7); }
+        body.dark-mode .sb-sub { color: rgba(31,38,55,0.5); }
+        body.dark-mode .sb-sub-bar { background: rgba(20,27,45,0.12); }
+        body.dark-mode .sb-sub:hover { color: #1F2637; }
+        body.dark-mode .sb-sub:hover .sb-sub-bar { background: rgba(20,27,45,0.28); }
+        body.dark-mode .sb-sub.active { color: #2f6b4f; }
+        body.dark-mode .sb-sub.active .sb-sub-bar { background: #8FB3A0; }
+    }
+
     /* ---------- Burger & close buttons ---------- */
     #sbBurgerBtn {
         display: flex; align-items: center; justify-content: center;

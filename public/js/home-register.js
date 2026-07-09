@@ -371,13 +371,21 @@
 (function () {
     'use strict';
 
-    var IMOEX_URL = 'https://iss.moex.com/iss/engines/stock/markets/index/securities.json' +
+    // Тот же путь ISS, что и на «Рынке». URL строим через общий прокси
+    // (window.moexUrl из core.js) — как остальные вкладки; прямой iss.moex.com
+    // оставлен фолбэком, если core.js почему-то не отдал moexUrl.
+    var IMOEX_PATH = '/iss/engines/stock/markets/index/securities.json' +
         '?iss.meta=off&securities=IMOEX&iss.only=marketdata&marketdata.columns=SECID,LASTCHANGEPRC,UPDATETIME';
+    function imoexUrl() {
+        return (typeof window.moexUrl === 'function')
+            ? window.moexUrl(IMOEX_PATH)
+            : 'https://iss.moex.com' + IMOEX_PATH;
+    }
 
     function loadImoex() {
         var elV = document.getElementById('hcStatImoex');
         if (!elV) return;
-        fetch(IMOEX_URL)
+        fetch(imoexUrl())
             .then(function (r) { return r.json(); })
             .then(function (j) {
                 var md = j && j.marketdata;

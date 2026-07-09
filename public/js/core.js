@@ -1,6 +1,10 @@
     // ========== MOEX PROXY ==========
     var MOEX_PROXY = 'https://functions.yandexcloud.net/d4ejkbncfpob68e9letn';
     const moexUrl = (path) => MOEX_PROXY + '?path=' + encodeURIComponent(path);
+    // Отдаём наружу — пульс IMOEX на Главной (home-register.js) ходит через
+    // тот же прокси, что и «Рынок», иначе прямой iss.moex.com у части
+    // пользователей режется (CORS/сеть) и данные не грузятся.
+    window.moexUrl = moexUrl;
 
     // ========== SKELETON LOADER SYSTEM ==========
     function hideSkeleton(id) {
@@ -1087,8 +1091,12 @@ function toggleInterestingMore() {
             const btn = document.getElementById('themeBtn');
             const sunIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
             const moonIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
-            if (savedTheme === 'dark') { document.body.classList.add('dark-mode'); btn.innerHTML = sunIcon; }
-            else { document.body.classList.add('light-mode'); btn.innerHTML = moonIcon; }
+            // По умолчанию (нет сохранённого выбора) — ТЁМНАЯ тема: Главная
+            // задумана тёмной, пользователь при желании переключает на светлую
+            // (выбор пишется в user_theme и остаётся). Светлая — только если
+            // явно выбрана.
+            if (savedTheme === 'light') { document.body.classList.add('light-mode'); btn.innerHTML = moonIcon; }
+            else { document.body.classList.add('dark-mode'); btn.innerHTML = sunIcon; }
         }
 
         function saveSettings() {
