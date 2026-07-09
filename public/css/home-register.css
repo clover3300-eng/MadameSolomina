@@ -521,7 +521,8 @@ body.tab-home #hgHeatWrap { display: block; }
 .dark-mode .hg-brand-sub { color: #7c8db0; }
 .dark-mode .hc-title { color: #F1F5F9; }
 .dark-mode .hc-lead { color: #a9b6cc; }
-.dark-mode .hc-cta-dark { background: linear-gradient(180deg, #33405f 0%, #232c44 100%); }
+.dark-mode .hc-cta-dark { background: linear-gradient(180deg, #3f6154 0%, #24382f 100%); }
+.dark-mode .hc-cta-dark:hover { box-shadow: 0 20px 40px -10px rgba(63, 97, 84, 0.5); }
 .dark-mode .hg-live {
     color: #cbd5e1;
     background: rgba(15, 23, 42, 0.66);
@@ -531,11 +532,12 @@ body.tab-home #hgHeatWrap { display: block; }
 .dark-mode .hg-live-pct.pos { color: #4ade80; }
 .dark-mode .hg-live-pct.neg { color: #f87171; }
 .dark-mode .hg-live-upd { color: #64748b; }
-/* Колонна входа заметно СВЕТЛЕЕ фона-карты (#0f172a): светлый слейт-глас,
+/* Колонна входа заметно СВЕТЛЕЕ фона-карты (#0f172a): шалфейный глас
+   в тон бренд-акцента (стрелка CTA/позитивные плитки, #8FB3A0),
    иначе стекло сливалось с тёмной картой и форму было плохо видно */
 .dark-mode .hg-auth {
-    background: rgba(56, 71, 105, 0.80);
-    border-color: rgba(255, 255, 255, 0.17);
+    background: rgba(53, 74, 64, 0.82);
+    border-color: rgba(143, 179, 160, 0.24);
     box-shadow: 0 24px 60px -30px rgba(0, 0, 0, 0.7);
 }
 .dark-mode .hs-tabs { background: rgba(15, 23, 42, 0.35); }
@@ -606,5 +608,5 @@ body.tab-home #hgHeatWrap { display: block; }
         overflow-y: visible;
         background: rgba(255, 255, 255, 0.86);
     }
-    .dark-mode .hg-auth { background: rgba(56, 71, 105, 0.92); }
+    .dark-mode .hg-auth { background: rgba(53, 74, 64, 0.92); }
 }
