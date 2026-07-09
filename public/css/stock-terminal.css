@@ -54,6 +54,8 @@
     font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500;
     color: var(--stk-muted);
 }
+/* число выделяем крупнее и контрастнее, слово (компаний) остаётся приглушённым */
+.stk-count-n { color: var(--stk-text); font-weight: 700; font-size: 15px; }
 
 /* Левая группа тулбара: переключатель Акции/Облигации + режим + счётчик.
    Используется и в терминале облигаций (общий компонент). */
@@ -75,7 +77,8 @@
 }
 .stk-tg-btn:hover { color: var(--stk-text, #0F172A); }
 .stk-tg-btn.active {
-    background: var(--graphite, #2C364C); color: #fff;
+    /* активный сегмент — как «Карта/График» на Рынке (--mh-brand #141b26) */
+    background: #141b26; color: #fff;
 }
 
 /* Сегмент класса активов (Акции/Облигации) — ГЛАВНЫЙ переключатель вкладки:
@@ -90,7 +93,7 @@
     display: inline-flex; align-items: center; gap: 7px;
     font-weight: 700; font-size: 13.5px; padding: 0 16px;
 }
-.mt-asset .stk-tg-btn.active { background: var(--graphite, #141b26); box-shadow: 0 5px 14px rgba(16, 24, 38, 0.2); }
+.mt-asset .stk-tg-btn.active { background: #141b26; box-shadow: 0 5px 14px rgba(16, 24, 38, 0.2); }
 .mt-asset-ico { display: inline-flex; width: 16px; height: 16px; flex: 0 0 auto; color: #16b56b; }
 .mt-asset-ico svg { width: 100%; height: 100%; }
 .mt-asset .stk-tg-btn.active .mt-asset-ico { color: #fff; }
@@ -628,31 +631,41 @@ body.dark-mode .stk-table > tbody > tr > td.stk-pin-2.stk-hl { background-color:
 .stk-mini th {
     position: sticky; top: 0; z-index: 2; background: var(--stk-mini-head-bg, #eceff4);
     font-family: 'Inter', sans-serif; font-weight: 700; font-size: 11px; color: var(--stk-slate);
-    text-align: center; padding: 10px 16px; white-space: nowrap;
+    text-align: center; padding: 13px 22px; white-space: nowrap;
     text-transform: uppercase; letter-spacing: 0.03em;
     font-variant-numeric: tabular-nums;
     border-bottom: 1px solid var(--stk-line);
+    /* вертикальная сетка столбцов */
+    border-right: 1px solid var(--stk-line);
 }
+.stk-mini th:last-child { border-right: none; }
 /* Первая колонка карточки — фиксированная и не широкая (общая ширина для всех 3 типов ячеек) */
 .stk-mini th.stk-m-th-first,
 .stk-mini td.stk-m-label,
-.stk-mini td.stk-m-clabel { width: 200px; min-width: 200px; max-width: 200px; }
+.stk-mini td.stk-m-clabel { width: 224px; min-width: 224px; max-width: 224px; }
 .stk-mini th.stk-m-th-first {
     text-align: left; left: 0; z-index: 3; font-size: 10.5px; letter-spacing: 0.04em;
 }
 
-/* Зебра по БЛОКАМ (показатель + его «↳ изм.» делят один фон) — глазу легче «вести» строку */
-.stk-mini tr.stk-mg-a > td { background: var(--stk-grp-a, #ffffff); }
-.stk-mini tr.stk-mg-b > td { background: var(--stk-grp-b, #f4f6f9); }
+/* зебра убрана — единый фон карточки; глаз ведёт вертикальная сетка столбцов */
+.stk-mini tr.stk-mg-a > td,
+.stk-mini tr.stk-mg-b > td { background: var(--stk-card-bg, #ffffff); }
 
-.stk-mini td { text-align: right; white-space: nowrap; border-bottom: none; }
+.stk-mini td {
+    text-align: right; white-space: nowrap; border-bottom: none;
+    /* вертикальная сетка столбцов */
+    border-right: 1px solid var(--stk-line);
+}
+.stk-mini td:last-child { border-right: none; }
+/* у закреплённых слева ячеек-подписей разделитель уже даёт box-shadow — не дублируем */
+.stk-mini td.stk-m-label, .stk-mini td.stk-m-clabel { border-right: none; }
 /* нижняя граница только в КОНЦЕ блока (после изм. или у показателя без изм.) */
 .stk-mini tr.stk-m-chg > td,
 .stk-mini tr.stk-m-solo > td { border-bottom: 1px solid var(--stk-line); }
 
 /* строка показателя */
-.stk-mini tr.stk-m-row > td { padding: 10px 16px 5px; }
-.stk-mini tr.stk-m-solo > td { padding-bottom: 10px; }
+.stk-mini tr.stk-m-row > td { padding: 15px 22px 7px; }
+.stk-mini tr.stk-m-solo > td { padding-bottom: 15px; }
 .stk-mini td.stk-m-label {
     text-align: left; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 12.5px; color: var(--stk-text);
     white-space: normal; line-height: 1.25;
@@ -660,12 +673,12 @@ body.dark-mode .stk-table > tbody > tr > td.stk-pin-2.stk-hl { background-color:
 }
 /* Ячейки значений/изменений по годам: единая мин. ширина столбца, выравнивание
    по правому краю — даже если в году стоит прочерк, он встаёт ровно под свой год */
-.stk-mini td.stk-m-val, .stk-mini td.stk-chg { min-width: 84px; }
+.stk-mini td.stk-m-val, .stk-mini td.stk-chg { min-width: 104px; }
 .stk-m-val { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 12px; color: var(--stk-text); font-variant-numeric: tabular-nums; text-align: right; }
 .stk-m-dash { color: var(--stk-muted); }
 
 /* строка изменений «↳ изм.» — прижата к показателю, без верхней линии */
-.stk-mini tr.stk-m-chg > td { padding: 0 16px 9px; }
+.stk-mini tr.stk-m-chg > td { padding: 0 22px 13px; }
 .stk-m-clabel {
     text-align: right !important; font-family: 'Inter', sans-serif; font-style: italic;
     font-size: 10.5px; color: var(--stk-muted) !important;

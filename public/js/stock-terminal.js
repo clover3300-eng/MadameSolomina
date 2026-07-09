@@ -529,12 +529,13 @@
         // счётчик компаний в тулбаре (при поиске — «найдено N»)
         var cntEl = el.querySelector('.stk-count');
         if (cntEl) {
-            if (!state.companies) { cntEl.textContent = ''; }
+            if (!state.companies) { cntEl.innerHTML = ''; }
             else if (state.query.trim() || state.sectors.length || state.favOnly || activeFilters().length) {
                 var f = filterList(state.companies).length;
-                cntEl.textContent = 'найдено ' + f + ' из ' + state.companies.length;
+                cntEl.innerHTML = 'найдено <b class="stk-count-n">' + f + '</b> из <b class="stk-count-n">' + state.companies.length + '</b>';
             } else {
-                cntEl.textContent = state.companies.length + ' ' + plural(state.companies.length, 'компания', 'компании', 'компаний');
+                var nc = state.companies.length;
+                cntEl.innerHTML = '<b class="stk-count-n">' + nc + '</b> ' + plural(nc, 'компания', 'компании', 'компаний');
             }
         }
     }

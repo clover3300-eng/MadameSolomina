@@ -46,6 +46,8 @@
     font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500;
     color: var(--bnd-muted);
 }
+/* число выделяем крупнее и контрастнее, слово (облигаций) остаётся приглушённым */
+.bnd-count-n { color: var(--bnd-text); font-weight: 700; font-size: 15px; }
 .bnd-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
 /* Поле поиска по названию/ISIN */
@@ -310,11 +312,19 @@ body.dark-mode .bnd-table > thead th.bnd-sorted { color: #f4f8fd; }
 .bnd-table > tbody > tr > td.bnd-first {
     position: sticky; left: 0; text-align: left;
     width: 1%; white-space: nowrap;
+    /* отдельный composite-слой — как у акций: без него при быстром горизонтальном
+       скролле грани соседних столбцов «просвечивали» сквозь закреплённую ячейку */
+    transform: translateZ(0); backface-visibility: hidden;
 }
+/* шапка первой колонки — по центру ячейки (данные под ней остаются слева) */
 .bnd-table > thead th.bnd-first { z-index: 4; text-align: center; }
 .bnd-table > tbody > tr > td.bnd-first {
     z-index: 1; background: var(--bnd-card-bg);
-    box-shadow: 1px 0 0 var(--bnd-line);
+    /* мягкая «тень отрыва» закреплённого столбца — как у акций (.stk-edge) */
+    box-shadow: 1px 0 0 #f1f1f2, 12px 0 14px -10px rgba(24, 38, 60, 0.16);
+}
+body.dark-mode .bnd-table > tbody > tr > td.bnd-first {
+    box-shadow: 1px 0 0 #2e3849, 12px 0 14px -10px rgba(0, 0, 0, 0.45);
 }
 
 /* Тело таблицы */
@@ -349,8 +359,8 @@ body.dark-mode .bnd-table > thead th.bnd-sorted { color: #f4f8fd; }
 /* Звезда сразу после текста (а не у дальнего края колонки) — компактнее */
 .bnd-first-cell { justify-content: flex-start; }
 .bnd-first-actions { margin-left: 10px; }
-/* min-width даёт названию/ISIN комфортный простор (колонка чуть шире, не впритык) */
-.bnd-id-text { display: flex; flex-direction: column; gap: 3px; line-height: 1.25; text-align: left; min-width: 124px; }
+/* min-width как у акций (.stk-ident) — колонка «Название» одного размера в обеих таблицах */
+.bnd-id-text { display: flex; flex-direction: column; gap: 3px; line-height: 1.25; text-align: left; min-width: 148px; }
 .bnd-tkr {
     font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px; color: var(--bnd-text);
 }

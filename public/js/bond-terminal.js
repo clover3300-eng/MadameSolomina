@@ -360,12 +360,13 @@
         scEl.style.display = showState ? 'none' : '';
         var cntEl = el.querySelector('.bnd-count');
         if (cntEl) {
-            if (!state.bonds) { cntEl.textContent = ''; }
+            if (!state.bonds) { cntEl.innerHTML = ''; }
             else if (state.query.trim() || state.favOnly || activeFilters().length) {
                 var f = filterList(state.bonds).length;
-                cntEl.textContent = 'найдено ' + f + ' из ' + state.bonds.length;
+                cntEl.innerHTML = 'найдено <b class="bnd-count-n">' + f + '</b> из <b class="bnd-count-n">' + state.bonds.length + '</b>';
             } else {
-                cntEl.textContent = state.bonds.length + ' ' + plural(state.bonds.length, 'облигация', 'облигации', 'облигаций');
+                var nb = state.bonds.length;
+                cntEl.innerHTML = '<b class="bnd-count-n">' + nb + '</b> ' + plural(nb, 'облигация', 'облигации', 'облигаций');
             }
         }
     }
