@@ -142,21 +142,21 @@ function renderAuroraOfzList() {
             </div>
             <div class="rbx-det" id="aurora-details-${b.t}">
                 <div class="rbx-det-in">
-                    <div class="rbx-dgrid">
-                        <div class="rbx-di rbx-di-copy" onclick="copyTickerNew('${b.t}')" title="Скопировать код">
+                    <div class="rbx-spec">
+                        <div class="rbx-srow rbx-srow-copy" onclick="copyTickerNew('${b.t}')" title="Скопировать код">
                             <span>Код (ISIN)</span>
                             <b>${b.t}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg></b>
                         </div>
-                        <div class="rbx-di"><span>Текущая цена</span><b>${priceFinal} \u20bd</b></div>
-                        <div class="rbx-di"><span>НКД<i class="rbx-q" onclick="toggleOfzHelp('nkdHelp-${b.t}', event)">?</i></span><b>${nkd} \u20bd</b></div>
-                        <div class="rbx-di"><span>Итого (цена + НКД)</span><b>${priceWithNkd} \u20bd</b></div>
-                        <div class="rbx-dhelp" id="nkdHelp-${b.t}"><b>НКД</b> — накопленный купонный доход: часть купона, которую вы платите продавцу за дни с последней выплаты. Следующий купон получите целиком.</div>
-                        <div class="rbx-di"><span>Погашение</span><b>${formatDateDMY(details.matDate)}</b></div>
-                        <div class="rbx-di"><span>Размер купона</span><b>${details.couponValue} \u20bd</b></div>
-                        <div class="rbx-di"><span>Ближайший купон</span><b>${formatDateDMY(details.nextCoupon)}</b></div>
-                        <div class="rbx-di"><span>Куп. доходность<i class="rbx-q" onclick="toggleOfzHelp('yieldHelp-${b.t}', event)">?</i></span><b class="up">${curYield}%</b></div>
-                        <div class="rbx-dhelp" id="yieldHelp-${b.t}"><b>Текущая купонная доходность</b> — процент годовых от купонов к текущей цене облигации, без учёта выплаты номинала при погашении.</div>
-                        <div class="rbx-di"><span>Выплат в год</span><b>${details.freq}</b></div>
+                        <div class="rbx-srow"><span>Текущая цена</span><b>${priceFinal} \u20bd</b></div>
+                        <div class="rbx-srow"><span>НКД<i class="rbx-q" onclick="toggleOfzHelp('nkdHelp-${b.t}', event)">?</i></span><b>${nkd} \u20bd</b></div>
+                        <div class="rbx-shelp" id="nkdHelp-${b.t}"><b>НКД</b> — накопленный купонный доход: часть купона, которую вы платите продавцу за дни с последней выплаты. Следующий купон получите целиком.</div>
+                        <div class="rbx-srow"><span>Итого (цена + НКД)</span><b class="tot">${priceWithNkd} \u20bd</b></div>
+                        <div class="rbx-srow"><span>Погашение</span><b>${formatDateDMY(details.matDate)}</b></div>
+                        <div class="rbx-srow"><span>Размер купона</span><b>${details.couponValue} \u20bd</b></div>
+                        <div class="rbx-srow"><span>Ближайший купон</span><b>${formatDateDMY(details.nextCoupon)}</b></div>
+                        <div class="rbx-srow"><span>Куп. доходность<i class="rbx-q" onclick="toggleOfzHelp('yieldHelp-${b.t}', event)">?</i></span><b class="up">${curYield}%</b></div>
+                        <div class="rbx-shelp" id="yieldHelp-${b.t}"><b>Текущая купонная доходность</b> — процент годовых от купонов к текущей цене облигации, без учёта выплаты номинала при погашении.</div>
+                        <div class="rbx-srow"><span>Выплат в год</span><b>${details.freq}</b></div>
                     </div>
                     <button class="rbx-chart-btn" onclick="openTradingViewDirect('${b.t}')">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>

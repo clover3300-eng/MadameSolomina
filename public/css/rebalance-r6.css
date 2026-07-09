@@ -299,34 +299,41 @@ body.dark-mode .rbx-row.expanded .rbx-row-main .ar svg { color: #e2e8f0; }
 .rbx-det { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.28s ease; }
 .rbx-row.expanded .rbx-det { grid-template-rows: 1fr; }
 .rbx-det-in { overflow: hidden; min-height: 0; }
-.rbx-det-in > .rbx-dgrid { margin: 2px 4px 0; }
+.rbx-det-in > .rbx-spec { margin: 2px 4px 0; }
 
-.rbx-dgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
-.rbx-di {
-    display: flex; flex-direction: column; gap: 2px; min-width: 0;
-    padding: 8px 11px 9px; border-radius: 10px; background: #F5F7FA;
+/* список деталей: подпись слева / значение справа, строка под строкой —
+   обе колонки идут по всей длине списка, а не разрозненными плитками */
+.rbx-spec { display: flex; flex-direction: column; }
+.rbx-srow {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 14px;
+    padding: 9px 6px; min-width: 0;
+    border-bottom: 1px dashed rgba(44, 54, 76, 0.10);
 }
-body.dark-mode .rbx-di { background: rgba(15, 23, 42, 0.6); }
-.rbx-di span {
-    display: inline-flex; align-items: center;
-    font-family: 'Inter', sans-serif; font-size: 8.5px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.09em; color: #94A3B8;
-    white-space: nowrap; overflow: hidden;
+.rbx-spec > .rbx-srow:last-child { border-bottom: none; }
+body.dark-mode .rbx-srow { border-bottom-color: rgba(255, 255, 255, 0.09); }
+
+.rbx-srow span {
+    display: inline-flex; align-items: center; flex-shrink: 0;
+    font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600;
+    color: #8a96aa; white-space: nowrap;
 }
-.rbx-di b {
+.rbx-srow b {
     font-family: var(--font-num, 'JetBrains Mono', monospace);
-    font-size: 12px; font-weight: 700; color: #2C364C;
-    font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    font-size: 13px; font-weight: 700; color: #2C364C; text-align: right;
+    font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
 }
-body.dark-mode .rbx-di b { color: #e2e8f0; }
-.rbx-di b.up { color: #1f9d63; }
-body.dark-mode .rbx-di b.up { color: #34d399; }
+body.dark-mode .rbx-srow span { color: #94a3b8; }
+body.dark-mode .rbx-srow b { color: #e2e8f0; }
+.rbx-srow b.up { color: #1f9d63; }
+body.dark-mode .rbx-srow b.up { color: #34d399; }
+.rbx-srow b.tot { font-size: 14px; font-weight: 800; color: #161B27; }
+body.dark-mode .rbx-srow b.tot { color: #F1F5F9; }
 
-.rbx-di-copy { cursor: pointer; transition: background 0.14s ease; }
-.rbx-di-copy:hover { background: #EDF1F6; }
-body.dark-mode .rbx-di-copy:hover { background: rgba(15, 23, 42, 0.85); }
-.rbx-di-copy b { display: inline-flex; align-items: center; gap: 6px; }
-.rbx-di-copy svg { width: 12px; height: 12px; flex-shrink: 0; color: #94A3B8; }
+.rbx-srow-copy { cursor: pointer; border-radius: 9px; margin: 0 -6px; padding: 9px 6px; transition: background 0.14s ease; }
+.rbx-srow-copy:hover { background: #F5F7FA; }
+body.dark-mode .rbx-srow-copy:hover { background: rgba(255, 255, 255, 0.05); }
+.rbx-srow-copy b { display: inline-flex; align-items: center; gap: 6px; }
+.rbx-srow-copy svg { width: 12px; height: 12px; flex-shrink: 0; color: #94A3B8; }
 
 .rbx-q {
     display: inline-grid; place-items: center; flex-shrink: 0;
@@ -339,28 +346,31 @@ body.dark-mode .rbx-di-copy:hover { background: rgba(15, 23, 42, 0.85); }
 body.dark-mode .rbx-q { background: rgba(255, 255, 255, 0.10); color: #94a3b8; }
 body.dark-mode .rbx-q:hover { background: #ffffff; color: #141b26; }
 
-.rbx-dhelp {
-    display: none; grid-column: 1 / -1;
-    padding: 9px 12px; border-radius: 10px;
-    border: 1px dashed rgba(44, 54, 76, 0.18); background: #ffffff;
+.rbx-shelp {
+    display: none;
+    margin: 2px 0 8px; padding: 9px 12px; border-radius: 10px;
+    border: 1px dashed rgba(44, 54, 76, 0.18); background: #F5F7FA;
     font-family: 'Inter', sans-serif; font-size: 10.5px; line-height: 1.55; color: #7d8aa0;
 }
-.rbx-dhelp.show { display: block; }
-.rbx-dhelp b { color: #2C364C; }
-body.dark-mode .rbx-dhelp { border-color: rgba(255, 255, 255, 0.14); background: rgba(15, 23, 42, 0.4); color: #94a3b8; }
-body.dark-mode .rbx-dhelp b { color: #e2e8f0; }
+.rbx-shelp.show { display: block; }
+.rbx-shelp b { color: #2C364C; }
+body.dark-mode .rbx-shelp { border-color: rgba(255, 255, 255, 0.14); background: rgba(15, 23, 42, 0.4); color: #94a3b8; }
+body.dark-mode .rbx-shelp b { color: #e2e8f0; }
 
+/* тёмная кнопка — тот же акцент, что у пилюль эшелонов и шапки-героя */
 .rbx-chart-btn {
     display: flex; align-items: center; justify-content: center; gap: 7px;
-    width: calc(100% - 8px); margin: 9px 4px 12px;
-    padding: 10px 14px; border-radius: 11px; cursor: pointer;
-    border: 1px solid rgba(44, 54, 76, 0.13); background: #ffffff;
-    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700; color: #2C364C;
-    transition: border-color 0.15s ease, background 0.15s ease;
+    width: calc(100% - 8px); margin: 11px 4px 12px;
+    padding: 11px 14px; border: none; border-radius: 12px; cursor: pointer;
+    background: linear-gradient(135deg, #1b2634, #0c1219);
+    font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 700; color: #ffffff;
+    box-shadow: 0 10px 22px -12px rgba(12, 18, 25, 0.55);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
-.rbx-chart-btn:hover { border-color: #161B27; }
-body.dark-mode .rbx-chart-btn { background: rgba(15, 23, 42, 0.6); border-color: rgba(255, 255, 255, 0.13); color: #cbd5e1; }
-body.dark-mode .rbx-chart-btn:hover { border-color: rgba(255, 255, 255, 0.4); }
+.rbx-chart-btn svg { stroke: #4be3a0; }
+.rbx-chart-btn:hover { transform: translateY(-1px); box-shadow: 0 14px 28px -12px rgba(12, 18, 25, 0.65); }
+.rbx-chart-btn:active { transform: translateY(0); }
+body.dark-mode .rbx-chart-btn { background: linear-gradient(135deg, #232f40, #10161f); box-shadow: 0 10px 22px -12px rgba(0, 0, 0, 0.6); }
 
 .rbx-foot {
     margin-top: 13px; padding: 0 6px;
