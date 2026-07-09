@@ -900,7 +900,10 @@
     //  РЕНДЕР
     // ====================================================================
     var openMenu = null;     // id портфеля с раскрытыми настройками
-    var openLots = {};       // hid -> true: раскрыт ли журнал лотов актива в редакторе
+    var editHold = {};       // hid -> true: строка состава раскрыта в редактор (правка по клику)
+    var addOpen = false;     // раскрыта ли форма «Добавить актив» в открытых настройках
+    var colorsOpen = false;  // раскрыта ли палитра цвета в шапке настроек
+    var delArm = false;      // раскрыта ли данжер-зона «Удалить портфель» в футере настроек
     var openRows = {};       // hid -> true: раскрыты ли субданные актива в мини-таблице карточки
     var menuTall = false;    // раскрыта ли карточка настроек «вниз» (показать все тикеры без скролла)
     var menuJustOpened = false;
@@ -1555,7 +1558,12 @@
         return '<tr class="pfc-mdet" data-hid="' + h.id + '"><td colspan="4"><div class="pfc-mdet-in">' + det + '</div></td></tr>';
     }
 
-    // ---- настройки/редактор (дропдаун ⚙) ----
+    // ---- настройки/редактор (дропдаун ⚙): «спокойный список» ----
+    // Состав по умолчанию — ЧИТАЕМЫЙ список (текст, не поля): тикер · шт · средняя цена
+    // покупки · дата. Клик по строке раскрывает редактор ТОЛЬКО этого актива (viewRowHtml/
+    // holdEditorHtml). Форма добавления свёрнута в одну кнопку-строку (у пустого портфеля
+    // раскрыта сразу), цвет — точка в шапке с палитрой-поповером, «Удалить портфель» —
+    // тихая ссылка в футере, раскрывающая данжер-зону с подтверждением НА МЕСТЕ (без модалки).
     function menuHtml(p) {
         // цвета, занятые ДРУГИМИ портфелями, приглушены и недоступны — у каждого
         // портфеля свой цвет, карточки не путаются
@@ -1570,25 +1578,16 @@
         var holds = p.holdings || [];
         var stocks = holds.filter(function (h) { return h.type !== 'bond'; });
         var bonds = holds.filter(function (h) { return h.type === 'bond'; });
-        // состав сгруппирован: отдельно «Акции», отдельно «Облигации» — с заголовком группы
-        // и строкой подписей колонок (тикер · дата · цена · [НКД] · кол-во), чтобы поля были
-        // понятны без фокуса. Сетка подписей совпадает с .pfm-row-main--stock/--bond.
-        function colsHead(kind) {
-            return kind === 'bond'
-                ? '<div class="pfm-cols pfm-cols--bond"><span>Тикер</span><span>Дата</span><span>Цена ₽</span><span>НКД ₽</span><span>Кол-во</span><span></span></div>'
-                : '<div class="pfm-cols pfm-cols--stock"><span>Тикер</span><span>Дата</span><span>Цена ₽</span><span>Кол-во</span><span></span></div>';
-        }
         function grp(label, kind, list) {
             if (!list.length) return '';
             return '<div class="pfm-grp"><span class="pfm-grp-l pfm-grp-l--' + kind + '">' + label + '</span>' +
                 '<span class="pfm-grp-n">' + list.length + '</span><i class="pfm-grp-rule"></i></div>' +
-                colsHead(kind) +
-                list.map(function (h, i) { return editRowHtml(p.id, h, i + 1); }).join('');
+                list.map(function (h) { return viewRowHtml(p.id, h); }).join('');
         }
         var rows = grp('Акции', 'stock', stocks) + grp('Облигации', 'bond', bonds);
         var n = holds.length;
         var empty = !n;
-        // стрелка указывает ВВЕРХ на форму добавления (она теперь над списком)
+        // стрелка указывает ВВЕРХ на форму добавления (она над списком)
         var UP_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="6 11 12 5 18 11"/></svg>';
         // пустое состояние — «портфель с плюсом» в тонированной плашке (а не безликий
         // квадрат), заголовок-приглашение и понятные шаги: форма сверху или импорт снизу
@@ -1599,38 +1598,73 @@
             '<span class="pfm-none-s">Добавьте актив вручную в форме выше — или перенесите готовый состав импортом.</span>' +
             '<div class="pfm-none-imp">' + impWrapHtml('none-' + p.id, p.id) + '</div>' +
         '</div>';
-        // Оверлей на всю карточку: шапка · ВЫДЕЛЕННАЯ форма добавления (сверху) ·
-        // полный список состава (без скролла, карточка растёт вниз) · действия (импорт/удалить)
-        // menuJustOpened=true только на ПЕРВЫЙ рендер после открытия (⚙) — на всех
-        // последующих ре-рендерах (добавление/удаление лота, сворачивание журнала и т.п.
-        // тоже дёргают renderPortfolios и пересоздают весь .pfc-menu целиком) анимация
-        // pfMenuIn ПОВТОРНО не проигрывается, иначе вся панель настроек каждый раз мигает.
-        return '<div class="pfc-menu' + (menuJustOpened ? '' : ' no-anim') + '" id="pfMenu-' + p.id + '">' +
-            '<div class="pfm-top">' +
+        // шапка: точка-цвет (клик → палитра) + «тихое» имя (рамка на ховер/фокус) + «Готово»
+        var top = '<div class="pfm-top">' +
+            '<span class="pfm-colorwrap">' +
+                '<button class="pfm-dot" style="--sw:' + colorVal(p.color) + '" onclick="pfColorsToggle()" aria-label="Цвет портфеля" title="Цвет портфеля"></button>' +
+                (colorsOpen ? '<span class="pfm-colorpop">' + sw + '</span>' : '') +
+            '</span>' +
+            '<span class="pfm-namewrap">' +
                 '<input class="pfm-name" value="' + attr(p.name) + '" onchange="pfRename(\'' + p.id + '\',this.value)" placeholder="Название портфеля">' +
-                '<div class="pfm-colors">' + sw + '</div>' +
-                '<button class="pfm-done" onclick="pfCloseMenu()">' + CHECK_SVG + 'Готово</button>' +
+                PENCIL_SVG +
+            '</span>' +
+            '<button class="pfm-done" onclick="pfCloseMenu()">' + CHECK_SVG + 'Готово</button>' +
+        '</div>';
+        // добавление: свёрнуто в пунктирную кнопку-строку; раскрытая панель — та же форма
+        // «за один подход» (addFormHtml), шапка панели сворачивает её обратно
+        var addBlock = '<div class="pfm-addwrap' + (addOpen ? ' on' : '') + (empty ? ' is-empty' : '') + '">' +
+            (addOpen
+                ? '<button class="pfm-addghost on" onclick="pfAddToggle(\'' + p.id + '\')" title="Свернуть форму добавления">' +
+                    '<span class="pfm-addhead-ic">' + PLUS_SVG + '</span><span class="pfm-addghost-t">Добавить актив</span>' +
+                    '<svg class="pfm-addghost-ch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></button>' +
+                  addFormHtml(p.id, empty)
+                : '<button class="pfm-addghost" onclick="pfAddToggle(\'' + p.id + '\')">' + PLUS_SVG + '<span>Добавить актив</span></button>') +
+        '</div>';
+        // одна строка подписей колонок на весь список (сетка = .pfm-vrow); НКД у облигаций —
+        // подстрокой в ячейке цены, поэтому отдельная колонка ему не нужна
+        var vhead = n ? '<div class="pfm-vhead"><span>Тикер</span><span>Шт</span><span>Цена покупки</span><span>Дата</span></div>' : '';
+        // футер: рутинные действия — тихим текстом слева; «Удалить портфель» — тихой красной
+        // ссылкой справа, раскрывающей данжер-зону (само удаление — только внутри зоны)
+        var foot = '<div class="pfm-bottom">' +
+            '<div class="pfm-foot">' +
+                (empty ? '' : impWrapHtml('imp-' + p.id, p.id)) +   // у пустого портфеля «Импорт» уже внутри приглашения
+                '<button class="pfm-quiet" onclick="pfToggleHidden(\'' + p.id + '\')" title="Спрятать карточку из сетки — вернуть можно через «Видимость» в шапке">' +
+                    EYEOFF_SVG + 'Скрыть</button>' +
+                '<i class="pfm-foot-sp"></i>' +
+                '<button class="pfm-del-link' + (delArm ? ' on' : '') + '" onclick="pfDelArm(' + (delArm ? 'false' : 'true') + ')">Удалить портфель</button>' +
             '</div>' +
-            '<div class="pfm-addpanel' + (empty ? ' is-empty' : '') + '">' +
-                '<div class="pfm-addhead"><span class="pfm-addhead-ic">' + PLUS_SVG + '</span>' +
-                    '<span class="pfm-addhead-t">Добавить актив</span>' +
-                    '<span class="pfm-addhead-s">все данные за один подход</span>' +
-                    '<span class="pfm-hint" title="В полях «цена» и «НКД» иконка-календарь подтягивает значение закрытия с MOEX на выбранную дату. После загрузки иконка гаснет; сотрите значение — и она снова загорится для повторного запроса.">' + INFO_SVG + '</span></div>' +
-                addFormHtml(p.id, empty) +
-            '</div>' +
+            (delArm ? dangerHtml(p) : '') +
+        '</div>';
+        // Оверлей на всю карточку: шапка · добавление · список состава · футер.
+        // menuJustOpened=true только на ПЕРВЫЙ рендер после открытия (⚙) — на всех
+        // последующих ре-рендерах (правка лота, раскрытие строки и т.п. тоже дёргают
+        // renderPortfolios и пересоздают весь .pfc-menu целиком) анимация pfMenuIn
+        // ПОВТОРНО не проигрывается, иначе вся панель настроек каждый раз мигает.
+        return '<div class="pfc-menu' + (menuJustOpened ? '' : ' no-anim') + '" id="pfMenu-' + p.id + '">' +
+            top + addBlock +
             '<div class="pfm-mid' + (empty ? ' pfm-mid--empty' : '') + '">' +
                 '<div class="pfm-sec"><span>Состав · ' + n + ' ' + plural(n, 'актив', 'актива', 'активов') + '</span>' +
                     '<i class="pfm-sec-rule"></i></div>' +
+                vhead +
                 '<div class="pfm-rows">' + (rows || noneBox) + '</div>' +
             '</div>' +
-            '<div class="pfm-bottom">' +
-                '<div class="pfm-foot">' +
-                    (empty ? '' : impWrapHtml('imp-' + p.id, p.id)) +   // у пустого портфеля «Импорт» уже внутри приглашения
-                    '<button class="pfm-act" onclick="pfToggleHidden(\'' + p.id + '\')" title="Спрятать карточку из сетки — вернуть можно через «Видимость» в шапке">' +
-                        EYEOFF_SVG + 'Скрыть</button>' +
-                    '<button class="pfm-act danger" onclick="pfDelete(\'' + p.id + '\')">' +
-                        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Удалить</button>' +
-                '</div>' +
+            foot +
+        '</div>';
+    }
+    // Данжер-зона удаления портфеля: последствия с числами + подтверждение на месте
+    function dangerHtml(p) {
+        var n = (p.holdings || []).length, t = (p.trades || []).length;
+        var bits = [];
+        if (n) bits.push(n + ' ' + plural(n, 'актив', 'актива', 'активов') + ' со всеми лотами');
+        if (t) bits.push('история сделок');
+        var s = bits.length ? 'Будут стёрты: ' + bits.join(' и ') + '. Действие необратимо.'
+            : 'Портфель пуст — будет удалена только карточка.';
+        return '<div class="pfm-danger">' +
+            '<div class="pfm-danger-t">Удалить «' + esc(p.name) + '»?</div>' +
+            '<div class="pfm-danger-s">' + s + '</div>' +
+            '<div class="pfm-danger-btns">' +
+                '<button class="pfm-danger-no" onclick="pfDelArm(false)">Отмена</button>' +
+                '<button class="pfm-danger-yes" onclick="pfDeleteYes(\'' + p.id + '\')">Да, удалить</button>' +
             '</div>' +
         '</div>';
     }
@@ -1969,56 +2003,58 @@
             'onchange="pfEditLot(\'' + pid + '\',\'' + h.id + '\',\'' + l.id + '\',\'qty\',this.value)">';
     }
     var XMARK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-    // Строка состава = актив с ЖУРНАЛОМ ЛОТОВ. Главная строка правит ПЕРВЫЙ лот (+ тикер +
-    // «удалить актив»); тулбар показывает среднюю/кол-во по лотам + «Докупка» + тоггл; доп.
-    // лоты (со 2-го) раскрываются под строкой.
-    function editRowHtml(pid, h, rank) {
-        var isBond = h.type === 'bond';
-        var tag = isBond ? 'обл' : 'акц';
-        var lots = ensureLots(h), l0 = lots[0], agg = aggHolding(h);
-        var multi = lots.length > 1, expanded = !!openLots[h.id];
-        // действия актива в одну строку: «Докупка» (иконка+тултип) + «Удалить» (мягко-красная)
-        var acts = '<div class="pfm-acts">' +
-            '<button class="pfm-mini pfm-dup" type="button" onclick="pfAddLot(\'' + pid + '\',\'' + h.id + '\')" aria-label="Докупка" title="Докупка — ещё одна покупка этого актива (усреднение цены)">' + PLUS_SVG + '</button>' +
-            '<button class="pfm-del" type="button" onclick="pfRemoveHolding(\'' + pid + '\',\'' + h.id + '\')" aria-label="Удалить актив" title="Удалить актив">' + XMARK_SVG + '</button>' +
+    var PENCIL_SVG = '<svg class="pfm-name-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
+    // Строка состава в режиме ПРОСМОТРА (текст, не поля): тикер+тег · шт · средняя цена
+    // покупки (у облигаций подстрока НКД) · дата. Клик раскрывает редактор именно этого
+    // актива под строкой; у актива с несколькими лотами в строке чип «×N».
+    function viewRowHtml(pid, h) {
+        var isB = h.type === 'bond', agg = aggHolding(h), open = !!editHold[h.id];
+        var multi = agg.count > 1;
+        var lotChip = multi ? '<i class="pfm-vlotn">×' + agg.count + '</i>' : '';
+        var nkd = isB && agg.nkd > 0 ? '<i class="pfm-vnkd">НКД ' + fmtPrice(agg.nkd) + '</i>' : '';
+        var priceTip = multi ? ' title="Средняя цена покупки по ' + agg.count + ' лотам"' : '';
+        var dateVal = multi ? ruDate(agg.avgDate) : ruDate(agg.firstDate);
+        var dateTip = multi ? ' title="Средняя (взвешенная) дата покупки"' : '';
+        return '<div class="pfm-vwrap">' +
+            '<div class="pfm-vrow' + (open ? ' open' : '') + '" onclick="pfMenuRowToggle(\'' + pid + '\',\'' + h.id + '\')" title="' + (open ? 'Свернуть' : 'Изменить — даты, цены, количество') + '">' +
+                '<span class="pfm-vtk"><svg class="pfm-vch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>' +
+                    '<b>' + esc(h.ticker) + '</b><span class="pfm-tag ' + h.type + '">' + (isB ? 'обл' : 'акц') + '</span>' + lotChip + '</span>' +
+                '<span class="pfm-vnum">' + fmtQty(agg.qty) + '</span>' +
+                '<span class="pfm-vnum"' + priceTip + '>' + fmtPrice(agg.avgPrice) + nkd + '</span>' +
+                '<span class="pfm-vdate"' + dateTip + '>' + dateVal + '</span>' +
+            '</div>' +
+            (open ? holdEditorHtml(pid, h) : '') +
         '</div>';
-        var main = '<div class="pfm-row-main ' + (isBond ? 'pfm-row-main--bond' : 'pfm-row-main--stock') + '">' +
-            '<span class="pfm-tk-cell">' +
-                (rank ? '<span class="pfm-rank">' + rank + '</span>' : '') +
-                '<span class="pfm-tag ' + h.type + '">' + tag + '</span>' +
-                '<input class="pfm-in pfm-in-tk" value="' + attr(h.ticker) + '" onchange="pfEdit(\'' + pid + '\',\'' + h.id + '\',\'ticker\',this.value)" placeholder="Тикер"></span>' +
-            lotDateInput(pid, h, l0) +
-            lotPriceCell(pid, h, l0) +
-            (isBond ? lotNkdCell(pid, h, l0) : '') +
-            lotQtyInput(pid, h, l0) +
-            acts +
+    }
+    // Редактор актива (раскрыт кликом по строке): тикер + ВСЕ лоты разом (дата · цена ·
+    // [НКД] · кол-во — те же поля с подтяжкой MOEX) + «Докупка» + «удалить актив».
+    // Редактор — СОСЕД строки (не вложен в неё), поэтому клики по полям не сворачивают её.
+    function holdEditorHtml(pid, h) {
+        var isB = h.type === 'bond';
+        var lots = ensureLots(h), multi = lots.length > 1;
+        var cols = '<div class="pfm-ed-cols' + (isB ? ' bond' : '') + '"><span></span><span>Дата</span><span>Цена ₽</span>' +
+            (isB ? '<span>НКД ₽</span>' : '') + '<span>Кол-во</span><span></span></div>';
+        var lotRows = lots.map(function (l, i) {
+            return '<div class="pfm-ed-lot' + (isB ? ' bond' : '') + '">' +
+                '<span class="pfm-lotlbl">' + (i + 1) + '</span>' +
+                lotDateInput(pid, h, l) +
+                lotPriceCell(pid, h, l) +
+                (isB ? lotNkdCell(pid, h, l) : '') +
+                lotQtyInput(pid, h, l) +
+                (multi ? '<button class="pfm-del" type="button" onclick="pfRemoveLot(\'' + pid + '\',\'' + h.id + '\',\'' + l.id + '\')" aria-label="Удалить лот" title="Удалить лот">' + XMARK_SVG + '</button>' : '<span></span>') +
+            '</div>';
+        }).join('');
+        return '<div class="pfm-ed">' +
+            '<div class="pfm-ed-top"><span class="pfm-ed-l">Тикер</span>' +
+                '<input class="pfm-in pfm-in-tk pfm-ed-tk" value="' + attr(h.ticker) + '" onchange="pfEdit(\'' + pid + '\',\'' + h.id + '\',\'ticker\',this.value)" placeholder="Тикер">' +
+                '<span class="pfm-hint" title="Иконка-календарь в полях «цена» и «НКД» подтягивает значение закрытия MOEX на дату лота. После загрузки иконка гаснет; сотрите значение — и она снова загорится.">' + INFO_SVG + '</span></div>' +
+            cols + lotRows +
+            '<div class="pfm-ed-foot">' +
+                '<button class="pfm-lotadd" type="button" onclick="pfAddLot(\'' + pid + '\',\'' + h.id + '\')" title="Докупка — ещё одна покупка этого актива (усреднение цены)">' + PLUS_SVG + 'Докупка</button>' +
+                '<i class="pfm-foot-sp"></i>' +
+                '<button class="pfm-ed-del" type="button" onclick="pfRemoveHolding(\'' + pid + '\',\'' + h.id + '\')">удалить актив</button>' +
+            '</div>' +
         '</div>';
-        // доп. лоты раскрываются ПОД первым лотом; тулбар (сводка + «Свернуть») — НИЖЕ всех лотов
-        var extra = '';
-        if (multi && expanded) {
-            extra = '<div class="pfm-lotlist">' + lots.slice(1).map(function (l, i) {
-                return '<div class="pfm-lotrow ' + (isBond ? 'pfm-lotrow--bond' : 'pfm-lotrow--stock') + '">' +
-                    '<span class="pfm-lotlbl">#' + (i + 2) + '</span>' +
-                    lotDateInput(pid, h, l) +
-                    lotPriceCell(pid, h, l) +
-                    (isBond ? lotNkdCell(pid, h, l) : '') +
-                    lotQtyInput(pid, h, l) +
-                    '<button class="pfm-del" type="button" onclick="pfRemoveLot(\'' + pid + '\',\'' + h.id + '\',\'' + l.id + '\')" aria-label="Удалить лот" title="Удалить лот">' + XMARK_SVG + '</button>' +
-                '</div>';
-            }).join('') + '</div>';
-        }
-        // тулбар лотов — только для активов с несколькими покупками (сводка + сворачивание),
-        // ниже последнего лота. Докупка — отдельной иконкой в строке актива (выше).
-        var bar = '';
-        if (multi) {
-            var toggle = '<button class="pfm-lottgl' + (expanded ? ' on' : '') + '" onclick="pfToggleLots(\'' + pid + '\',\'' + h.id + '\')">' +
-                (expanded ? 'Свернуть' : 'Показать лоты') +
-                '<svg class="pfm-lottgl-i' + (expanded ? ' up' : '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>';
-            var sumTxt = '<span class="pfm-lotsum"><b>' + lots.length + ' ' + plural(lots.length, 'лот', 'лота', 'лотов') + '</b>' +
-                (agg.qty > 0 ? ' · ср. ' + ruDate(agg.avgDate) + ' · ' + fmtPrice(agg.avgPrice) + ' · ' + agg.qty + ' шт' : '') + '</span>';
-            bar = '<div class="pfm-lotbar">' + sumTxt + '<i class="pfm-lotbar-sp"></i>' + toggle + '</div>';
-        }
-        return '<div class="pfm-row pfm-hold' + (multi ? ' has-lots' : '') + '">' + main + extra + bar + '</div>';
     }
 
     // Форма добавления актива «за один подход»: тикер · тип · дата · цена (+иконка) ·
@@ -2653,7 +2689,12 @@
     // ====================================================================
     window.pfAddPortfolio = function () {
         if (store.items.length >= MAX_CARDS) { toast('Максимум ' + MAX_CARDS + ' портфеля на странице', true); return; }
-        var p = makePortfolio(); store.items.push(p); saveStore(); openMenu = p.id; renderPortfolios();
+        var p = makePortfolio(); store.items.push(p); saveStore();
+        // настройки нового портфеля открываются сразу — с тем же чистым состоянием, что и
+        // через ⚙ (pfToggleMenu): форма добавления раскрыта (портфель пуст), остальное закрыто
+        openMenu = p.id; menuJustOpened = true;
+        editHold = {}; colorsOpen = false; delArm = false; addOpen = true;
+        renderPortfolios();
     };
     // Скопировать состав портфеля таблицей (TSV): заголовки, нумерация, разделение на
     // облигации/акции, количество и «шт» в РАЗНЫХ столбцах — вставляется в Excel как
@@ -2875,7 +2916,13 @@
     };
     window.pfToggleMenu = function (pid) {
         if (openMenu === pid) { openMenu = null; menuTall = false; }
-        else { openMenu = pid; menuTall = false; menuJustOpened = true; chartOpen = {}; chartAssets = {}; chartAssetsFull = {}; holdsExpand = {}; }
+        else {
+            openMenu = pid; menuTall = false; menuJustOpened = true; chartOpen = {}; chartAssets = {}; chartAssetsFull = {}; holdsExpand = {};
+            // свежеоткрытые настройки — с чистым состоянием: строки свёрнуты, палитра и
+            // данжер-зона закрыты; форма добавления раскрыта сразу только у пустого портфеля
+            editHold = {}; colorsOpen = false; delArm = false;
+            var p = findPf(pid); addOpen = !(p && (p.holdings || []).length);
+        }
         renderPortfolios();
     };
     // клик по строке актива в мини-таблице → раскрыть/свернуть субданные (дата/цена/НКД).
@@ -2972,7 +3019,7 @@
         loadPfChart(pid);
     };
     window.pfToggleMenuTall = function (pid) { if (openMenu === pid) { menuTall = !menuTall; renderPortfolios(); } };
-    window.pfCloseMenu = function () { openMenu = null; menuTall = false; renderPortfolios(); };
+    window.pfCloseMenu = function () { openMenu = null; menuTall = false; editHold = {}; addOpen = false; colorsOpen = false; delArm = false; renderPortfolios(); };
     window.pfRename = function (pid, val) { var p = findPf(pid); if (!p) return; p.name = (val || '').trim() || p.name; saveStore(); renderPortfolios(); };
     window.pfSetColor = function (pid, col) {
         var p = findPf(pid); if (!p) return;
@@ -2980,7 +3027,7 @@
         var other = null;
         store.items.forEach(function (o) { if (o.id !== pid && o.color === col) other = o; });
         if (other) { toast('Цвет уже занят портфелем «' + other.name + '»', true); return; }
-        p.color = col; saveStore(); renderPortfolios();
+        p.color = col; colorsOpen = false; saveStore(); renderPortfolios();
     };
     // ---- стилизованное окно подтверждения (вместо системного confirm) ----
     // Живёт в <body> (см. правило про fixed-оверлеи: transform на предках вкладок ломает
@@ -3018,16 +3065,15 @@
             var okBtn = ov.querySelector('.pfcf-ok'); if (okBtn) try { okBtn.focus(); } catch (e) {}
         });
     }
-    window.pfDelete = function (pid) {
+    // Удаление портфеля: ссылка в футере настроек раскрывает данжер-зону (pfDelArm),
+    // само удаление — только второй кнопкой «Да, удалить» внутри зоны. Модалки pfConfirm
+    // здесь больше нет — подтверждение с последствиями происходит на месте.
+    window.pfDelArm = function (on) { delArm = !!on; renderPortfolios(); };
+    window.pfDeleteYes = function (pid) {
         var p = findPf(pid); if (!p) return;
-        pfConfirm({
-            danger: true, ok: 'Удалить',
-            title: 'Удалить портфель?',
-            text: '«' + esc(p.name) + '» будет удалён вместе со всем составом. Действие необратимо.'
-        }, function () {
-            store.items = store.items.filter(function (x) { return x.id !== pid; }); saveStore();
-            if (openMenu === pid) openMenu = null; renderPortfolios(); toast('Портфель удалён');
-        });
+        store.items = store.items.filter(function (x) { return x.id !== pid; }); saveStore();
+        if (openMenu === pid) { openMenu = null; menuTall = false; }
+        delArm = false; renderPortfolios(); toast('Портфель удалён');
     };
     window.pfAddHolding = function (pid) {
         var p = findPf(pid); if (!p) return;
@@ -3044,7 +3090,7 @@
         p.holdings = p.holdings || [];
         // тот же тикер уже в портфеле (того же типа) → ДОКУПКА: добавляем лот к активу
         var exist = p.holdings.filter(function (x) { return x.ticker === tk && x.type === type; })[0];
-        if (exist) { ensureLots(exist).push(lot); openLots[exist.id] = true; toast(tk + ': докуплено · +лот'); }
+        if (exist) { ensureLots(exist).push(lot); editHold[exist.id] = true; toast(tk + ': докуплено · +лот'); }
         else {
             // потенциал акции фиксируем на дату покупки (текущий ОДХС) — для карточки ребалансировки
             var pot = type === 'stock' ? potentialOf(tk) : null;
@@ -3089,7 +3135,8 @@
     };
     window.pfRemoveHolding = function (pid, hid) {
         var p = findPf(pid); if (!p) return;
-        p.holdings = (p.holdings || []).filter(function (h) { return h.id !== hid; }); saveStore(); renderPortfolios();
+        p.holdings = (p.holdings || []).filter(function (h) { return h.id !== hid; });
+        delete editHold[hid]; saveStore(); renderPortfolios();
     };
     window.pfEdit = function (pid, hid, field, val) {
         var p = findPf(pid); if (!p) return; var h = findHold(p, hid); if (!h) return;
@@ -3115,7 +3162,7 @@
     window.pfAddLot = function (pid, hid) {
         var p = findPf(pid); if (!p) return; var h = findHold(p, hid); if (!h) return;
         ensureLots(h).push({ id: genId('l'), buyDate: todayStr(), buyPrice: 0, qty: 0, nkd: 0, priceFromApi: false, nkdFromApi: false });
-        openLots[hid] = true; saveStore(); renderPortfolios();
+        editHold[hid] = true; saveStore(); renderPortfolios();
     };
     window.pfRemoveLot = function (pid, hid, lotId) {
         var p = findPf(pid); if (!p) return; var h = findHold(p, hid); if (!h) return;
@@ -3124,7 +3171,23 @@
         h.lots = ls.filter(function (l) { return l.id !== lotId; });
         saveStore(); ensureQuotes(); renderPortfolios();
     };
-    window.pfToggleLots = function (pid, hid) { openLots[hid] = !openLots[hid]; renderPortfolios(); };
+    // клик по строке состава в настройках → раскрыть/свернуть редактор этого актива
+    window.pfMenuRowToggle = function (pid, hid) {
+        if (editHold[hid]) delete editHold[hid]; else editHold[hid] = true;
+        renderPortfolios();
+    };
+    // свернуть/раскрыть форму «Добавить актив» (при раскрытии — фокус на поле тикера)
+    window.pfAddToggle = function (pid) {
+        addOpen = !addOpen; renderPortfolios();
+        if (addOpen) { var el = dq('pfNewTk-' + pid); if (el) try { el.focus(); } catch (e) {} }
+    };
+    // палитра цвета в шапке настроек (точка-кнопка); закрывается кликом мимо — см. ниже
+    window.pfColorsToggle = function () { colorsOpen = !colorsOpen; renderPortfolios(); };
+    document.addEventListener('click', function (e) {
+        if (!colorsOpen) return;
+        if (e.target && e.target.closest && e.target.closest('.pfm-colorwrap')) return;
+        colorsOpen = false; renderPortfolios();
+    });
     // Подтянуть цену/НКД закрытия на дату КОНКРЕТНОГО лота
     window.pfFetchLotField = function (pid, hid, lotId, field) {
         var p = findPf(pid); if (!p) return; var h = findHold(p, hid);

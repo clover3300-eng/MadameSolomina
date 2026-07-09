@@ -323,6 +323,18 @@
     .pfc-mtk > i { flex-shrink: 3; overflow: hidden; }
     .pfc-mtk > b { flex-shrink: 1; }
 
+    /* Настройки ⚙ («спокойный список»): на телефоне колонка «Дата»
+       скрыта (дата видна в раскрытом редакторе строки) — иначе тикер
+       и цена режутся в ellipsis на карточке ~340px. Планшету (601+)
+       места хватает, там сетка десктопная. */
+    @media (max-width: 600px) {
+        .pfm-vhead, .pfm-vrow { grid-template-columns: minmax(0, 1.4fr) 0.5fr 1fr; }
+        .pfm-vhead span:nth-child(4), .pfm-vrow .pfm-vdate { display: none; }
+        /* редактору строки — чуть больше места под дату лота */
+        .pfm-ed-cols, .pfm-ed-lot { grid-template-columns: 14px 1.3fr 0.95fr 0.6fr 22px; }
+        .pfm-ed-cols.bond, .pfm-ed-lot.bond { grid-template-columns: 14px 1.2fr 0.85fr 0.85fr 0.5fr 22px; }
+    }
+
     /* На вкладках с длинным рядом действий (Портфели/Рынок) иконка в
        плашке раздела лишняя — освобождаем место под полное название.
        Классов body.tab-* для этих вкладок нет (только home/calc),

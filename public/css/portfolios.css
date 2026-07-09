@@ -676,7 +676,7 @@ body.dark-mode .pf-add-t { color: #f4f8fd; }
 body.dark-mode .pf-empty-t { color: #f4f8fd; }
 .pf-empty-s { font-size: 13.5px; color: #94a3b8; max-width: 440px; line-height: 1.5; }
 .pf-empty-cta { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; justify-content: center; }
-.pf-empty-cta .d3-quick:disabled, .pfm-act:disabled, .d3-quick:disabled { opacity: 0.45; cursor: not-allowed; }
+.pf-empty-cta .d3-quick:disabled, .d3-quick:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* ============================================================
    ДРОПДАУН НАСТРОЕК / РЕДАКТОР СОСТАВА (⚙)
@@ -706,19 +706,38 @@ body.dark-mode .pf-empty-t { color: #f4f8fd; }
 .pfc-menu.no-anim { animation: none; }
 body.dark-mode .pfc-menu { background: #18222e; box-shadow: 0 0 0 1.5px var(--pf-accent), 0 24px 54px -20px rgba(0,0,0,0.55); }
 
-/* шапка: название слева + цвет напротив + «Готово» */
-.pfm-top { flex-shrink: 0; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    padding: 15px 16px; border-bottom: 1px solid rgba(24,38,60,0.07);
+/* шапка: точка-цвет (палитра-поповер по клику) + «тихое» имя + «Готово» */
+.pfm-top { flex-shrink: 0; display: flex; align-items: center; gap: 10px;
+    padding: 13px 16px; border-bottom: 1px solid rgba(24,38,60,0.07);
     background: radial-gradient(120% 200% at 0% 0%, color-mix(in srgb, var(--pf-accent) 12%, transparent), transparent 60%); }
 body.dark-mode .pfm-top { border-color: rgba(255,255,255,0.07);
     background: radial-gradient(120% 200% at 0% 0%, color-mix(in srgb, var(--pf-accent) 22%, transparent), transparent 60%); }
-.pfm-name { flex: 1 1 150px; min-width: 130px; box-sizing: border-box; border: 1px solid rgba(24,38,60,0.12); border-radius: 11px;
-    padding: 10px 13px; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 15px; color: #0f172a; background: #fff;
-    transition: border-color 0.15s, box-shadow 0.15s; }
-body.dark-mode .pfm-name { background: #111925; border-color: rgba(255,255,255,0.1); color: #f4f8fd; }
-.pfm-name:focus { outline: none; border-color: var(--pf-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pf-accent) 16%, transparent); }
+/* точка текущего цвета — клик раскрывает палитру */
+.pfm-colorwrap { position: relative; flex-shrink: 0; display: inline-flex; }
+.pfm-dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #fff; background: var(--sw); cursor: pointer;
+    padding: 0; box-shadow: 0 0 0 1.5px rgba(24,38,60,0.14); transition: transform 0.12s, box-shadow 0.15s; }
+.pfm-dot:hover { transform: scale(1.12); box-shadow: 0 0 0 2px color-mix(in srgb, var(--sw) 55%, transparent); }
+body.dark-mode .pfm-dot { border-color: #18222e; box-shadow: 0 0 0 1.5px rgba(255,255,255,0.16); }
+.pfm-colorpop { position: absolute; top: calc(100% + 9px); left: -8px; z-index: 220; display: flex; gap: 6px;
+    padding: 9px 10px; background: #fff; border: 1px solid rgba(24,38,60,0.1); border-radius: 13px;
+    box-shadow: 0 18px 40px -16px rgba(24,38,60,0.38); }
+body.dark-mode .pfm-colorpop { background: #18222e; border-color: rgba(255,255,255,0.1); box-shadow: 0 18px 40px -16px rgba(0,0,0,0.6); }
+/* «тихое» имя: выглядит текстом, рамка приходит на ховер/фокус; карандаш — подсказка, что кликабельно */
+.pfm-namewrap { position: relative; flex: 1 1 120px; min-width: 100px; display: block; }
+.pfm-name { width: 100%; box-sizing: border-box; border: 1px solid transparent; border-radius: 10px;
+    padding: 8px 30px 8px 10px; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 15px; color: #0f172a;
+    background: transparent; transition: border-color 0.15s, background 0.15s, box-shadow 0.15s; }
+.pfm-namewrap:hover .pfm-name { border-color: rgba(24,38,60,0.12); background: #fff; }
+.pfm-name:focus { outline: none; border-color: var(--pf-accent); background: #fff;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--pf-accent) 16%, transparent); }
+body.dark-mode .pfm-name { color: #f4f8fd; }
+body.dark-mode .pfm-namewrap:hover .pfm-name { background: #111925; border-color: rgba(255,255,255,0.1); }
+body.dark-mode .pfm-name:focus { background: #111925; border-color: var(--pf-accent); }
+.pfm-name-ic { position: absolute; top: 50%; right: 9px; transform: translateY(-50%); width: 13px; height: 13px;
+    color: #aab4c2; pointer-events: none; opacity: 0.8; transition: opacity 0.15s; }
+.pfm-namewrap:focus-within .pfm-name-ic { opacity: 0; }
+body.dark-mode .pfm-name-ic { color: #69757f; }
 
-.pfm-colors { display: flex; gap: 6px; flex-wrap: wrap; flex-shrink: 0; }
 .pfm-sw { width: 24px; height: 24px; border-radius: 8px; border: 2px solid #fff; cursor: pointer; display: grid; place-items: center; color: #fff;
     box-shadow: 0 0 0 1px rgba(24,38,60,0.12); transition: transform 0.12s, box-shadow 0.15s; }
 body.dark-mode .pfm-sw { border-color: #18222e; box-shadow: 0 0 0 1px rgba(255,255,255,0.14); }
@@ -769,44 +788,70 @@ body.dark-mode .pfm-none-t { color: #f4f8fd; }
 @keyframes pfBounceUp { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 @media (prefers-reduced-motion: reduce) { .pfm-none-arrow { animation: none; } }
 
-/* строка состава — поля; цена/НКД подтягиваются на дату иконкой внутри поля */
-.pfm-row { display: flex; flex-direction: column; gap: 0; padding: 5px 8px; border-radius: 10px; background: rgba(24,38,60,0.025); border: 1px solid transparent; transition: background 0.15s, border-color 0.15s; }
-.pfm-row:hover { background: rgba(24,38,60,0.045); }
-.pfm-row:focus-within { background: #fff; border-color: color-mix(in srgb, var(--pf-accent) 40%, transparent); box-shadow: 0 4px 14px -8px rgba(24,38,60,0.4); }
-body.dark-mode .pfm-row { background: rgba(255,255,255,0.03); }
-body.dark-mode .pfm-row:hover { background: rgba(255,255,255,0.06); }
-body.dark-mode .pfm-row:focus-within { background: #111925; }
-/* поле даты уменьшено, чтобы в строку влезли цена + НКД (для облигаций) */
-.pfm-row-main { display: grid; gap: 5px; align-items: center; }
-.pfm-row-main--stock { grid-template-columns: 1.5fr 1.05fr 1fr 0.7fr 48px; }
-.pfm-row-main--bond  { grid-template-columns: 1.35fr 0.9fr 0.95fr 0.95fr 0.58fr 48px; }
+/* ---- состав: строки-ПРОСМОТР (текст, не поля) + редактор по клику ---- */
+/* подписи колонок — одна строка на весь список, сетка совпадает с .pfm-vrow */
+.pfm-vhead, .pfm-vrow { display: grid; grid-template-columns: minmax(0, 1.5fr) 0.5fr 1.05fr 0.85fr; gap: 8px; align-items: center; }
+.pfm-vhead { padding: 0 11px 5px; flex-shrink: 0; }
+.pfm-vhead span { font-size: 8.5px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;
+    color: #aab4c2; white-space: nowrap; overflow: hidden; text-align: right; }
+.pfm-vhead span:first-child { text-align: left; }
+body.dark-mode .pfm-vhead span { color: #69757f; }
+.pfm-vwrap { display: flex; flex-direction: column; }
+.pfm-vrow { padding: 8px 11px; border-radius: 11px; border: 1px solid transparent; background: rgba(24,38,60,0.025);
+    cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+.pfm-vrow:hover { background: rgba(24,38,60,0.05); }
+body.dark-mode .pfm-vrow { background: rgba(255,255,255,0.03); }
+body.dark-mode .pfm-vrow:hover { background: rgba(255,255,255,0.06); }
+/* раскрытая строка «сливается» с редактором под ней в один блок */
+.pfm-vrow.open { background: color-mix(in srgb, var(--pf-accent) 7%, transparent);
+    border-color: color-mix(in srgb, var(--pf-accent) 30%, transparent); border-bottom-color: transparent;
+    border-radius: 11px 11px 0 0; }
+body.dark-mode .pfm-vrow.open { background: color-mix(in srgb, var(--pf-accent) 14%, transparent); }
+.pfm-vtk { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.pfm-vtk b { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 12.5px; color: #0f172a;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+body.dark-mode .pfm-vtk b { color: #f4f8fd; }
+.pfm-vch { flex-shrink: 0; width: 13px; height: 13px; color: #b6c0cd; transition: transform 0.18s, color 0.15s; }
+.pfm-vrow:hover .pfm-vch { color: var(--pf-accent); }
+.pfm-vrow.open .pfm-vch { transform: rotate(90deg); color: var(--pf-accent); }
+body.dark-mode .pfm-vch { color: #5d6a7c; }
+.pfm-vlotn { flex-shrink: 0; font-family: 'JetBrains Mono', monospace; font-style: normal; font-size: 9.5px; font-weight: 700;
+    color: var(--pf-accent); background: color-mix(in srgb, var(--pf-accent) 12%, transparent); padding: 1px 5px; border-radius: 6px; }
+.pfm-vnum { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 700; color: #1b2433;
+    text-align: right; white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+body.dark-mode .pfm-vnum { color: #e7eef6; }
+.pfm-vnkd { display: block; font-style: normal; font-size: 9px; font-weight: 700; color: #94a3b8; margin-top: 1px; }
+.pfm-vdate { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 600; color: #5f6b7d;
+    text-align: right; white-space: nowrap; }
+body.dark-mode .pfm-vdate { color: #9fb0c2; }
 
-/* ---- журнал лотов (докупки): тулбар + раскрывающийся список доп. лотов ---- */
-.pfm-hold.has-lots { border-color: color-mix(in srgb, var(--pf-accent) 28%, transparent); }
-.pfm-lotbar { display: flex; align-items: center; gap: 8px; padding: 0 2px; margin-top: 7px; }
-.pfm-lotbar-sp { flex: 1 1 auto; }
-/* у актива с одной покупкой панель «Докупка» скрыта, пока строку не навели/не редактируют —
-   список активов остаётся чистым; у активов с лотами (.has-lots) панель всегда видна. */
-.pfm-hold:not(.has-lots) .pfm-lotbar { margin-top: 0; max-height: 0; opacity: 0; overflow: hidden; pointer-events: none; transition: max-height 0.2s ease, opacity 0.14s, margin-top 0.2s ease; }
-.pfm-hold:not(.has-lots):hover .pfm-lotbar,
-.pfm-hold:not(.has-lots):focus-within .pfm-lotbar { margin-top: 7px; max-height: 34px; opacity: 1; pointer-events: auto; }
-@media (prefers-reduced-motion: reduce) { .pfm-hold:not(.has-lots) .pfm-lotbar { transition: none; } }
-.pfm-lotsum { font-family: 'Manrope', sans-serif; font-size: 10.5px; font-weight: 600; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.pfm-lotsum b { font-family: 'Inter', sans-serif; font-weight: 800; color: #5f6b7d; }
-body.dark-mode .pfm-lotsum b { color: #c2cdda; }
-.pfm-lottgl { display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0; border: 1px solid rgba(24,38,60,0.12); background: #fff; border-radius: 8px; padding: 4px 9px; font-family: 'Manrope', sans-serif; font-size: 10px; font-weight: 800; letter-spacing: 0.02em; color: var(--pf-accent); cursor: pointer; transition: background 0.15s; }
-.pfm-lottgl:hover { background: color-mix(in srgb, var(--pf-accent) 10%, transparent); }
-.pfm-lottgl-i { width: 12px; height: 12px; transition: transform 0.2s; }
-.pfm-lottgl-i.up { transform: rotate(180deg); }
-body.dark-mode .pfm-lottgl { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+/* ---- редактор актива: продолжает раскрытую строку вниз (тикер + все лоты + действия) ---- */
+.pfm-ed { border: 1px solid color-mix(in srgb, var(--pf-accent) 30%, transparent); border-top: none;
+    border-radius: 0 0 11px 11px; background: color-mix(in srgb, var(--pf-accent) 3%, rgba(24,38,60,0.015));
+    padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 6px; }
+body.dark-mode .pfm-ed { background: color-mix(in srgb, var(--pf-accent) 7%, rgba(255,255,255,0.02)); }
+.pfm-ed-top { display: flex; align-items: center; gap: 8px; padding-bottom: 2px; }
+.pfm-ed-l { font-size: 8.5px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: #aab4c2; }
+body.dark-mode .pfm-ed-l { color: #69757f; }
+.pfm-ed-tk { max-width: 170px; }
+.pfm-ed-top .pfm-hint { margin-left: auto; }
+.pfm-ed-cols, .pfm-ed-lot { display: grid; grid-template-columns: 16px 1.15fr 1fr 0.65fr 24px; gap: 6px; align-items: center; }
+.pfm-ed-cols.bond, .pfm-ed-lot.bond { grid-template-columns: 16px 1.15fr 0.9fr 0.9fr 0.55fr 24px; }
+.pfm-ed-cols span { font-size: 8.5px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;
+    color: #aab4c2; white-space: nowrap; overflow: hidden; padding-left: 8px; }
+body.dark-mode .pfm-ed-cols span { color: #69757f; }
+.pfm-ed-lot .pfm-del { justify-self: end; }
+.pfm-ed-foot { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+.pfm-ed-del { border: none; background: none; padding: 5px 8px; border-radius: 8px; cursor: pointer;
+    font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 11px; color: #d8726c;
+    transition: background 0.15s, color 0.15s; }
+.pfm-ed-del:hover { background: rgba(220,38,38,0.08); color: #dc2626; }
+body.dark-mode .pfm-ed-del { color: #f08e88; }
+body.dark-mode .pfm-ed-del:hover { background: rgba(248,113,113,0.14); color: #fca5a5; }
+/* «Докупка» в футере редактора — пунктирная мини-кнопка (переиспользуется стиль .pfm-lotadd) */
 .pfm-lotadd { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; border: 1px dashed color-mix(in srgb, var(--pf-accent) 42%, rgba(24,38,60,0.18)); background: transparent; border-radius: 8px; padding: 4px 9px 4px 7px; font-family: 'Manrope', sans-serif; font-size: 10px; font-weight: 800; letter-spacing: 0.02em; color: var(--pf-accent); cursor: pointer; transition: background 0.15s, border-color 0.15s; }
 .pfm-lotadd svg { width: 12px; height: 12px; }
 .pfm-lotadd:hover { background: color-mix(in srgb, var(--pf-accent) 9%, transparent); border-style: solid; }
-.pfm-lotlist { display: flex; flex-direction: column; gap: 6px; padding: 8px 0 1px; margin-top: 1px; border-top: 1px dashed rgba(24,38,60,0.1); }
-body.dark-mode .pfm-lotlist { border-color: rgba(255,255,255,0.1); }
-.pfm-lotrow { display: grid; gap: 5px; align-items: center; }
-.pfm-lotrow--stock { grid-template-columns: 1.5fr 1.05fr 1fr 0.7fr 48px; }
-.pfm-lotrow--bond  { grid-template-columns: 1.35fr 0.9fr 0.95fr 0.95fr 0.58fr 48px; }
 .pfm-lotlbl { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; color: #94a3b8; text-align: center; }
 
 /* обёртка поля с иконкой «подтянуть на дату» */
@@ -833,11 +878,6 @@ body.dark-mode .pfm-fx.done { color: #6b7787; }
 .pfm-hint svg { width: 14px; height: 14px; }
 .pfm-hint:hover { color: var(--pf-accent); }
 
-.pfm-tk-cell { display: flex; align-items: center; gap: 5px; min-width: 0; }
-/* номер актива #N в строке состава (как в карточке/таблице) */
-.pfm-rank { flex-shrink: 0; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 800; color: #aab4c2; letter-spacing: -0.02em; }
-.pfm-rank::before { content: '#'; opacity: 0.55; }
-body.dark-mode .pfm-rank { color: #69757f; }
 .pfm-tag { flex-shrink: 0; font-size: 8.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.02em; padding: 3px 5px; border-radius: 6px; line-height: 1; }
 .pfm-tag.stock { color: #b45309; background: rgba(245,158,11,0.16); }
 .pfm-tag.bond { color: #2563eb; background: rgba(59,130,246,0.16); }
@@ -856,7 +896,7 @@ body.dark-mode .pfaf-type.pfm-in-type { background: color-mix(in srgb, var(--pf-
 .pfaf-type.pfm-in-type:focus { box-shadow: 0 0 0 3px color-mix(in srgb, var(--pf-accent) 22%, transparent); }
 /* компактные поля даты/чисел, чтобы дата + цена + НКД помещались в одну строку */
 .pfm-in-date { font-size: 10.5px; padding-left: 6px; padding-right: 2px; }
-.pfm-row-main .pfm-in-num { font-size: 11px; padding-left: 7px; }
+.pfm-ed-lot .pfm-in-num { font-size: 11px; padding-left: 7px; }
 /* поле даты «как во вкладке Тест»: иконка-календарь справа + нативный date-input под ней.
    Штатный индикатор браузера скрыт (растянут прозрачно на всю ячейку → клик по всему полю
    открывает системный календарь), а видимая иконка одинакова во всём приложении. */
@@ -871,13 +911,6 @@ body.dark-mode .pfm-date-ic { color: #6b7890; }
 .pfm-datewrap .pfm-in-date::-webkit-inner-spin-button,
 .pfm-datewrap .pfm-in-date::-webkit-clear-button { display: none; -webkit-appearance: none; }
 .pfm-addgrid .pfm-datewrap .pfm-in-date { padding-right: 26px; }
-/* действия актива (Докупка-иконка + Удалить) — в одну строку с активом */
-.pfm-acts { display: flex; align-items: center; justify-content: flex-end; gap: 3px; }
-.pfm-mini { width: 22px; height: 22px; border-radius: 7px; border: none; cursor: pointer; display: grid; place-items: center; transition: background 0.14s, color 0.14s, transform 0.1s; }
-.pfm-mini svg { width: 12px; height: 12px; }
-.pfm-mini:active { transform: scale(0.9); }
-.pfm-dup { color: var(--pf-accent); background: color-mix(in srgb, var(--pf-accent) 11%, transparent); }
-.pfm-dup:hover { background: color-mix(in srgb, var(--pf-accent) 20%, transparent); }
 /* крестик удаления — мягко-красный, чтобы сразу читался как «удалить» */
 .pfm-del { width: 22px; height: 22px; border-radius: 7px; border: none; background: rgba(220,38,38,0.07); color: #e2756f; cursor: pointer; display: grid; place-items: center; transition: background 0.15s, color 0.15s, transform 0.1s; }
 .pfm-del svg { width: 12px; height: 12px; }
@@ -885,7 +918,6 @@ body.dark-mode .pfm-date-ic { color: #6b7890; }
 .pfm-del:hover { background: rgba(220,38,38,0.16); color: #dc2626; }
 body.dark-mode .pfm-del { background: rgba(248,113,113,0.12); color: #f08e88; }
 body.dark-mode .pfm-del:hover { background: rgba(248,113,113,0.22); color: #fca5a5; }
-.pfm-lotrow .pfm-del { justify-self: end; }
 
 /* низ: действия (импорт / удалить) — форма добавления вынесена в отдельную панель сверху.
    margin-top:auto прижимает блок к НИЗУ карточки и в режиме pf-card--tall (там .pfm-mid
@@ -893,30 +925,38 @@ body.dark-mode .pfm-del:hover { background: rgba(248,113,113,0.22); color: #fca5
 .pfm-bottom { flex-shrink: 0; margin-top: auto; display: flex; flex-direction: column; gap: 9px; padding: 12px 15px 14px; border-top: 1px solid rgba(24,38,60,0.06); }
 body.dark-mode .pfm-bottom { border-color: rgba(255,255,255,0.06); }
 
-/* ВЫДЕЛЕННАЯ панель добавления актива — над списком состава, своя акцентная рамка/фон/заголовок */
-/* нейтральная чистая заливка в покое; акцент проступает только при фокусе (заполняешь форму)
-   или в пустом портфеле (приглашение) — без мутного цветного фона и тяжёлого цветного свечения */
-.pfm-addpanel { flex-shrink: 0; margin: 12px 15px 8px; padding: 12px 13px 13px; border-radius: 15px;
-    border: 1px solid rgba(24,38,60,0.09);
-    background: rgba(24,38,60,0.022);
-    box-shadow: 0 6px 16px -16px rgba(24,38,60,0.4);
-    transition: border-color 0.18s, box-shadow 0.18s, background 0.18s; }
-body.dark-mode .pfm-addpanel { background: rgba(255,255,255,0.022); border-color: rgba(255,255,255,0.07); box-shadow: none; }
-.pfm-addpanel:focus-within { border-color: color-mix(in srgb, var(--pf-accent) 34%, rgba(24,38,60,0.1));
+/* «Добавить актив»: свёрнуто — одна пунктирная кнопка-строка; раскрыто — панель с той же
+   формой «за один подход» (шапка панели тем же кликом сворачивает её обратно) */
+.pfm-addwrap { flex-shrink: 0; margin: 12px 15px 0; border-radius: 15px;
+    transition: background 0.18s, border-color 0.18s, box-shadow 0.18s; }
+.pfm-addghost { width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 7px;
+    border: 1.5px dashed color-mix(in srgb, var(--pf-accent) 34%, rgba(24,38,60,0.14));
+    background: color-mix(in srgb, var(--pf-accent) 3%, transparent); color: var(--pf-accent);
+    border-radius: 13px; padding: 10px; cursor: pointer;
+    font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 12.5px; transition: background 0.15s, border-color 0.15s; }
+.pfm-addghost > svg { width: 15px; height: 15px; }
+.pfm-addghost:hover { background: color-mix(in srgb, var(--pf-accent) 9%, transparent); border-style: solid; }
+.pfm-addwrap.on { border: 1px solid rgba(24,38,60,0.09); background: rgba(24,38,60,0.022); padding: 5px 13px 13px;
+    box-shadow: 0 6px 16px -16px rgba(24,38,60,0.4); }
+body.dark-mode .pfm-addwrap.on { background: rgba(255,255,255,0.022); border-color: rgba(255,255,255,0.07); box-shadow: none; }
+.pfm-addwrap.on:focus-within { border-color: color-mix(in srgb, var(--pf-accent) 34%, rgba(24,38,60,0.1));
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--pf-accent) 7%, transparent); }
-.pfm-addpanel.is-empty { border-style: dashed; border-width: 1.5px;
+/* пустой портфель: раскрытая панель — приглашение с акцентным пунктиром (как раньше) */
+.pfm-addwrap.on.is-empty { border-style: dashed; border-width: 1.5px;
     border-color: color-mix(in srgb, var(--pf-accent) 30%, rgba(24,38,60,0.12));
     background: color-mix(in srgb, var(--pf-accent) 3%, rgba(24,38,60,0.012)); }
-body.dark-mode .pfm-addpanel.is-empty { border-color: color-mix(in srgb, var(--pf-accent) 34%, rgba(255,255,255,0.08));
+body.dark-mode .pfm-addwrap.on.is-empty { border-color: color-mix(in srgb, var(--pf-accent) 34%, rgba(255,255,255,0.08));
     background: color-mix(in srgb, var(--pf-accent) 8%, rgba(255,255,255,0.022)); }
-.pfm-addhead { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+/* раскрытая шапка панели: слева иконка-чип + заголовок, справа шеврон «свернуть» */
+.pfm-addghost.on { border: none; background: none; justify-content: flex-start; padding: 8px 2px; color: #1b2433; }
+.pfm-addghost.on:hover { background: none; }
+body.dark-mode .pfm-addghost.on { color: #f4f8fd; }
+.pfm-addghost-t { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; letter-spacing: -0.01em; }
+.pfm-addghost-ch { width: 14px; height: 14px; margin-left: auto; color: #97a3b4; transition: color 0.15s; }
+.pfm-addghost.on:hover .pfm-addghost-ch { color: var(--pf-accent); }
 .pfm-addhead-ic { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 7px; flex-shrink: 0;
     color: #fff; background: var(--pf-accent); box-shadow: 0 6px 14px -7px color-mix(in srgb, var(--pf-accent) 90%, transparent); }
 .pfm-addhead-ic svg { width: 14px; height: 14px; }
-.pfm-addhead-t { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #1b2433; letter-spacing: -0.01em; }
-body.dark-mode .pfm-addhead-t { color: #f4f8fd; }
-.pfm-addhead-s { font-size: 10.5px; font-weight: 600; color: #94a3b8; }
-.pfm-addhead .pfm-hint { margin-left: auto; }
 /* форма добавления «за один подход»: тикер·тип / дата·цена·(нкд)·кол-во / Добавить.
    Поле НКД появляется только для облигаций (data-type на форме). */
 .pfm-addform { border-radius: 12px; transition: box-shadow 0.18s; }
@@ -946,13 +986,6 @@ body.dark-mode .pfm-grp-l--stock { color: #fbbf24; } body.dark-mode .pfm-grp-l--
 body.dark-mode .pfm-grp-n { background: rgba(255,255,255,0.07); }
 .pfm-grp-rule { flex: 1; height: 1px; background: linear-gradient(90deg, rgba(24,38,60,0.1), transparent); }
 body.dark-mode .pfm-grp-rule { background: linear-gradient(90deg, rgba(255,255,255,0.12), transparent); }
-/* строка подписей колонок над активами группы (сетка = .pfm-row-main) */
-.pfm-cols { display: grid; gap: 6px; align-items: center; padding: 1px 11px 3px; }
-.pfm-cols span { font-size: 8.5px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: #aab4c2; white-space: nowrap; overflow: hidden; text-align: center; }
-.pfm-cols span:first-child { text-align: left; }
-body.dark-mode .pfm-cols span { color: #69757f; }
-.pfm-cols--stock { grid-template-columns: 1.5fr 1.05fr 1fr 0.7fr 52px; }
-.pfm-cols--bond  { grid-template-columns: 1.35fr 0.9fr 0.95fr 0.95fr 0.58fr 52px; }
 /* кнопка «Добавить» — нейтральная (не в цвет карточки), но с акцентной +-иконкой = понятно, что добавление */
 .pfm-addbtn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex-shrink: 0; border: 1px solid rgba(24,38,60,0.14); background: rgba(24,38,60,0.04); color: #46566e; border-radius: 10px; padding: 0 15px; min-height: 36px; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 12.5px; cursor: pointer; white-space: nowrap; transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.12s; }
 .pfm-addbtn svg { width: 15px; height: 15px; color: var(--pf-accent); }
@@ -960,17 +993,46 @@ body.dark-mode .pfm-cols span { color: #69757f; }
 .pfm-addbtn:active { transform: scale(0.97); }
 body.dark-mode .pfm-addbtn { border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); color: #cdd8e6; }
 body.dark-mode .pfm-addbtn:hover { color: #f4f8fd; }
-.pfm-foot { display: flex; gap: 8px; flex-wrap: wrap; }
-.pfm-foot .pf-impwrap { flex: 1; min-width: 130px; }
-.pfm-foot .pf-impbtn { width: 100%; justify-content: center; }
-.pfm-act { flex: 1; min-width: 110px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid rgba(24,38,60,0.12); background: rgba(24,38,60,0.03); border-radius: 11px; padding: 10px; font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 12.5px; color: #46566e; cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s; }
-.pfm-act svg { width: 15px; height: 15px; }
-.pfm-act:hover { background: rgba(24,38,60,0.07); color: #1b2433; }
-.pfm-act.danger { color: #dc2626; border-color: rgba(220,38,38,0.22); background: rgba(220,38,38,0.05); }
-.pfm-act.danger:hover { background: rgba(220,38,38,0.12); color: #dc2626; }
-body.dark-mode .pfm-act { border-color: rgba(255,255,255,0.09); background: rgba(255,255,255,0.04); color: #cdd8e6; }
-body.dark-mode .pfm-act:hover { background: rgba(255,255,255,0.08); color: #f4f8fd; }
-body.dark-mode .pfm-act.danger { color: #f87171; border-color: rgba(248,113,113,0.25); background: rgba(248,113,113,0.08); }
+/* футер: рутинные действия — тихим текстом слева, «Удалить портфель» — тихой красной ссылкой справа */
+.pfm-foot { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; }
+.pfm-foot-sp { flex: 1 1 auto; }
+.pfm-foot .pf-impwrap { flex: none; }
+.pfm-foot .d3-quick.pf-impbtn { width: auto; border: none; background: none; box-shadow: none;
+    padding: 7px 9px; border-radius: 9px; font-size: 12px; color: #7a8698; }
+.pfm-foot .d3-quick.pf-impbtn:hover { background: rgba(24,38,60,0.06); color: #1b2433; }
+body.dark-mode .pfm-foot .d3-quick.pf-impbtn { color: #93a3b5; }
+body.dark-mode .pfm-foot .d3-quick.pf-impbtn:hover { background: rgba(255,255,255,0.07); color: #f4f8fd; }
+.pfm-quiet { display: inline-flex; align-items: center; gap: 6px; border: none; background: none; cursor: pointer;
+    padding: 7px 9px; border-radius: 9px; font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 12px; color: #7a8698;
+    transition: background 0.15s, color 0.15s; }
+.pfm-quiet svg { width: 14px; height: 14px; }
+.pfm-quiet:hover { background: rgba(24,38,60,0.06); color: #1b2433; }
+body.dark-mode .pfm-quiet { color: #93a3b5; }
+body.dark-mode .pfm-quiet:hover { background: rgba(255,255,255,0.07); color: #f4f8fd; }
+.pfm-del-link { border: none; background: none; cursor: pointer; padding: 7px 9px; border-radius: 9px;
+    font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 12px; color: #d8726c;
+    margin-left: auto;   /* при переносе футера на вторую строку ссылка остаётся справа */
+    transition: background 0.15s, color 0.15s; }
+.pfm-del-link:hover, .pfm-del-link.on { background: rgba(220,38,38,0.07); color: #dc2626; }
+body.dark-mode .pfm-del-link { color: #f08e88; }
+body.dark-mode .pfm-del-link:hover, body.dark-mode .pfm-del-link.on { background: rgba(248,113,113,0.12); color: #fca5a5; }
+
+/* данжер-зона удаления: последствия с числами + подтверждение на месте (вместо модалки) */
+.pfm-danger { border: 1px solid rgba(220,38,38,0.22); background: rgba(220,38,38,0.045); border-radius: 13px; padding: 11px 13px; }
+.pfm-danger-t { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #b91c1c; }
+.pfm-danger-s { font-size: 11.5px; font-weight: 600; color: #c46a63; line-height: 1.45; margin: 3px 0 10px; }
+.pfm-danger-btns { display: flex; gap: 8px; justify-content: flex-end; }
+.pfm-danger-no { border: 1px solid rgba(24,38,60,0.14); background: #fff; color: #46566e; border-radius: 9px;
+    padding: 7px 13px; font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 12px; cursor: pointer; transition: background 0.15s; }
+.pfm-danger-no:hover { background: rgba(24,38,60,0.05); }
+.pfm-danger-yes { border: none; background: #dc2626; color: #fff; border-radius: 9px; padding: 7px 13px;
+    font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 12px; cursor: pointer; transition: filter 0.15s, transform 0.12s; }
+.pfm-danger-yes:hover { filter: brightness(1.08); }
+.pfm-danger-yes:active { transform: scale(0.97); }
+body.dark-mode .pfm-danger { border-color: rgba(248,113,113,0.3); background: rgba(248,113,113,0.09); }
+body.dark-mode .pfm-danger-t { color: #fca5a5; }
+body.dark-mode .pfm-danger-s { color: #d99a94; }
+body.dark-mode .pfm-danger-no { background: #111925; border-color: rgba(255,255,255,0.12); color: #cdd8e6; }
 
 /* ============================================================
    МЕНЮ «ИМПОРТ» (расчёт / избранное / ежемесячный доход)
