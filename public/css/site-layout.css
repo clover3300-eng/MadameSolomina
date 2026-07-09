@@ -118,8 +118,8 @@
        активного пункта затемнён для читаемости на светлом. */
     @media (min-width: 1024px) {
         body.dark-mode #sideBar { background: transparent; }
-        body.dark-mode #sbPanel { background: #EEF2F8; box-shadow: 0 10px 30px rgba(20,27,45,0.12); }
-        body.dark-mode #sbFoot { background: #EEF2F8; box-shadow: 0 8px 22px rgba(20,27,45,0.10); }
+        body.dark-mode #sbPanel { background: #ffffff; box-shadow: 0 10px 30px rgba(20,27,45,0.12); }
+        body.dark-mode #sbFoot { background: #ffffff; box-shadow: 0 8px 22px rgba(20,27,45,0.10); }
         body.dark-mode #sbHead { border-bottom-color: rgba(20,27,45,0.08); }
         body.dark-mode .sb-logo-mark { background: linear-gradient(180deg, #1C222E 0%, #10151F 100%); color: #F1F6FB; }
         body.dark-mode .sb-logo-name { color: #1F2637; }
