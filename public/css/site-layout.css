@@ -446,10 +446,12 @@
             position: absolute; inset: 0 !important; filter: none;
             width: auto !important; height: auto !important;
             border-radius: 30px; pointer-events: none; overflow: hidden;
+            /* Герой стал ниже (84px) — пятна ярче и ближе к центру, иначе тонкая
+               полоса читается «чёрным кирпичом» */
             background:
-                radial-gradient(460px 320px at 24% -12%, rgba(52,211,153,0.32), transparent 72%),
-                radial-gradient(400px 300px at 8% 118%, rgba(90,124,255,0.26), transparent 72%),
-                radial-gradient(120% 70% at 50% -12%, rgba(255,255,255,0.08), transparent 60%);
+                radial-gradient(440px 260px at 22% -24%, rgba(52,211,153,0.40), transparent 72%),
+                radial-gradient(380px 240px at 6% 130%, rgba(90,124,255,0.32), transparent 72%),
+                radial-gradient(120% 90% at 50% -12%, rgba(255,255,255,0.10), transparent 60%);
             box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
         }
         /* точечная сетка-меш поверх свечений, с диагональным затуханием */
@@ -743,9 +745,13 @@
         body.dark-mode #pfLeftRail .portfolio-capital-card { background: linear-gradient(120deg, #0c1219 0%, #182231 55%, #131e2b 100%) !important; }
 
         /* ============================================================
-           ГЕРОЙ КАПИТАЛА: горизонтальный баннер сверху (как .rbx-hero),
-           таблицы — во всю ширину под ним. Три зоны:
-           капитал | прогноз | действия. График/дисклеймер скрыты. */
+           ГЕРОЙ КАПИТАЛА «МОСТ» (R7): одна строка высотой как .rbx-hero.
+           Кольцо | капитал → мост (пилюли ×N и +N%, линия-стрелка,
+           «за 3 года») → прогноз | действия в ряд. Легенда, комиссия,
+           разбивка и дисклеймер — в раскрывной деке (строки 3-4 сетки):
+           карточка растёт вниз по .pcap-open (grid-rows 0fr→1fr).
+           Зоны dark-top/forecast-light распущены display:contents —
+           их дети раскладываются одной сеткой карты. */
         #portfolio-page-buy.active {
             grid-template-columns: minmax(0, 1fr);
             row-gap: 16px;
@@ -755,166 +761,213 @@
         #pfLeftRail .portfolio-content-tabs { display: none; }
 
         #pfLeftRail .portfolio-capital-card {
-            flex-direction: row !important;
-            align-items: stretch;
-            gap: 0;
-            padding: 22px 28px !important;
-            border-radius: 26px !important;
+            position: relative; overflow: hidden;
+            display: grid !important;
+            grid-template-columns: auto auto minmax(48px, 1fr) auto auto;
+            grid-template-rows: auto auto auto auto;
+            grid-template-areas:
+                "ring caphead bpills forehead act"
+                "ring capsum  bline  foresum  act"
+                "legend legend legend brk  brk"
+                "fee    fee    fee    disc disc";
+            align-items: center;
+            column-gap: 20px; row-gap: 0;
+            padding: 16px 22px !important;
+            border-radius: 24px !important;
         }
-        #pfLeftRail .capital-decoration { border-radius: 26px; }
+        #pfLeftRail .capital-decoration { border-radius: 24px; }
 
-        /* Зона 1 — капитал + распределение */
-        #pfLeftRail .capital-dark-top {
-            flex: 1 1 0; min-width: 0;
-            display: flex; flex-direction: column; justify-content: center;
-            padding-right: 30px;
-        }
-        /* Разделитель-элемент между секциями больше не нужен — граница на зонах */
-        #pfLeftRail .pcap-divider { display: none; }
+        /* Зоны-обёртки распущены: их дети — элементы общей сетки карты */
+        #pfLeftRail .capital-dark-top,
+        #pfLeftRail .capital-forecast-light,
+        #pfLeftRail .capital-forecast-light > .pcap-head { display: contents; }
+        #pfLeftRail .pcap-divider { display: block; }
 
-        /* Зона 2 — прогноз */
-        #pfLeftRail .capital-forecast-light {
-            flex: 1 1 0; min-width: 0;
-            display: flex; flex-direction: column; justify-content: center;
-            padding: 0 30px;
-            border-left: 1px solid rgba(255,255,255,0.09);
-        }
-        #pfLeftRail .pcap-chart,
-        #pfLeftRail .pcap-disclaimer { display: none !important; }
-
-        /* Зона 3 — действия */
-        #pfLeftRail .pcap-actions {
-            flex: 0 0 216px; min-width: 0;
-            display: flex; flex-direction: column; justify-content: center; gap: 10px;
-            padding-left: 26px;
-            border-left: 1px solid rgba(255,255,255,0.09);
-        }
-        #pfLeftRail .pcap-actions .v3-createpf-btn { order: -1; margin-top: 0; }
-        #pfLeftRail .pcap-actions .v3-buylist-btn { margin-top: 0; }
-        #pfLeftRail .pcap-actions .v3-recalc-btn {
-            margin-top: 0; width: 100%; box-sizing: border-box;
-            display: flex; align-items: center; gap: 9px; justify-content: flex-start;
-            padding: 9px 12px; border-radius: 11px; cursor: pointer;
-            background: transparent !important; border: none; box-shadow: none !important;
-            font-family: 'Onest','Manrope', sans-serif; font-weight: 600; font-size: 13.5px;
-            color: #8a95a1 !important; transition: background 0.15s ease, color 0.15s ease;
-        }
-        #pfLeftRail .pcap-actions .v3-recalc-btn:hover { background: rgba(255,255,255,0.05) !important; color: #c8d0d8 !important; transform: none; }
-        #pfLeftRail .pcap-actions .v3-recalc-btn .ic { color: #8a95a1; display: inline-flex; }
-
-        /* ---- Слим-герой v2 ---- */
-        /* (1) Полные суммы вместо «млн»: прячем сокращённый блок, подстрока
-           (полное число) становится главной; прогноз — того же размера */
+        /* Скрытое в строке-герое: график и крупные блоки-«млн» */
         #pfLeftRail .pcap-big { display: none; }
-        #pfLeftRail .pcap-sub {
-            margin: 0; font-family: 'JetBrains Mono', monospace; font-weight: 700;
-            font-size: 26px; line-height: 1; letter-spacing: -0.01em;
-        }
-        #pfLeftRail .capital-dark-top .pcap-sub { color: #a7e8c4; }
-        #pfLeftRail .capital-forecast-light .pcap-sub { color: #f4f7fa; }
-        #pfLeftRail .pcap-tilde { opacity: 0.55; }
-        /* Одинаковая высота шапок обеих зон — большие суммы на одной линии
-           (чип прогноза ужат, иначе он тянул свою шапку выше соседней) */
-        #pfLeftRail .portfolio-capital-card .pcap-head { height: 27px; }
-        #pfLeftRail .portfolio-capital-card .pcap-chip { width: 24px; height: 24px; border-radius: 8px; }
-        #pfLeftRail .portfolio-capital-card .pcap-chip svg { width: 13px; height: 13px; }
+        #pfLeftRail .pcap-chart { display: none !important; }
 
-        /* Зона 1 — кольцо-якорь слева на всю высоту, справа три строки:
-           шапка / сумма / легенда в одну строку, ниже призрачная комиссия */
-        #pfLeftRail .capital-dark-top {
-            display: grid;
-            grid-template-columns: auto minmax(0, 1fr);
-            grid-template-areas: "ring head" "ring sum" "ring legend" "ring fee";
-            align-content: center; align-items: center;
-            row-gap: 7px; column-gap: 22px;
-        }
-        #pfLeftRail .capital-dark-top .pcap-head     { grid-area: head; }
-        #pfLeftRail .capital-dark-top .pcap-chip     { display: none; } /* иконку зоны заменяет кольцо */
-        #pfLeftRail .capital-dark-top .pcap-sub      { grid-area: sum; }
-        #pfLeftRail .capital-dark-top .pcap-splitbar { grid-area: ring; }
-        #pfLeftRail .capital-dark-top .pcap-legend   { grid-area: legend; align-self: end; margin: 0; }
-        #pfLeftRail .capital-dark-top .pcap-fee-wrap { grid-area: fee; align-self: start; margin: 0; }
-
-        /* (1) Кольцо распределения — ТОНКИЙ якорь слева, доли в центре */
-        #pfLeftRail .capital-dark-top .pcap-splitbar {
-            width: 84px; height: 84px; margin: 0; gap: 0;
-            align-self: center; justify-self: start; border-radius: 50%; display: block;
+        /* (1) Кольцо распределения — компактный якорь слева на обе строки */
+        #pfLeftRail .pcap-splitbar {
+            grid-area: ring; align-self: center; justify-self: start;
+            width: 46px; height: 46px; margin: 0; gap: 0; display: block;
+            border-radius: 50%; position: relative; z-index: 2;
             background: conic-gradient(#7B9BBF calc(var(--bond, 50) * 1%), #D97757 0);
-            -webkit-mask: radial-gradient(farthest-side, transparent 73%, #000 74%);
-                    mask: radial-gradient(farthest-side, transparent 73%, #000 74%);
+            -webkit-mask: radial-gradient(farthest-side, transparent 66%, #000 67%);
+                    mask: radial-gradient(farthest-side, transparent 66%, #000 67%);
         }
-        #pfLeftRail .capital-dark-top .pcap-splitbar > * { display: none; }
-        #pfLeftRail .capital-dark-top::after {
-            content: attr(data-split);
-            display: block; grid-area: ring; place-self: center;
-            position: relative; z-index: 2; background: none;
-            top: auto; left: auto; right: auto; height: auto; width: auto;
-            font-family: 'JetBrains Mono', monospace; font-weight: 600;
-            font-size: 11px; letter-spacing: 0.02em; color: #8b95a1;
+        #pfLeftRail .pcap-splitbar > * { display: none; }
+
+        /* (2) Шапка капитала: «ТЕКУЩИЙ КАПИТАЛ · дата» одной строкой */
+        #pfLeftRail .capital-dark-top > .pcap-head {
+            grid-area: caphead; align-self: end; height: auto;
+            display: flex; align-items: baseline; gap: 8px; z-index: 2;
+        }
+        #pfLeftRail .portfolio-capital-card .pcap-chip { display: none; }
+        #pfLeftRail .pcap-date {
+            margin: 0; padding: 0; background: none; border: none;
+            font-size: 11px; color: #7c8794; gap: 0;
+        }
+        #pfLeftRail .pcap-date::before { content: '·'; margin-right: 7px; color: rgba(255,255,255,0.30); }
+        #pfLeftRail .pcap-date-lbl { display: none; }
+
+        /* (3) Числа: капитал мятный, прогноз белый — на одной линии */
+        #pfLeftRail .pcap-sub {
+            margin: 5px 0 0; font-family: 'JetBrains Mono', monospace; font-weight: 700;
+            font-size: 24px; line-height: 1; letter-spacing: -0.01em;
+            position: relative; z-index: 2; align-self: start;
+        }
+        #pfLeftRail .capital-dark-top > .pcap-sub { grid-area: capsum; color: #a7e8c4; }
+        #pfLeftRail .capital-forecast-light > .pcap-sub { grid-area: foresum; color: #f4f7fa; }
+        #pfLeftRail .pcap-tilde { color: #f4f7fa; opacity: 1; }
+
+        /* (4) Мост: пилюли над линией-стрелкой, подпись «за 3 года» под ней */
+        #pfLeftRail .pcap-fore-pills {
+            grid-area: bpills; justify-self: center; align-self: end;
+            display: inline-flex; gap: 7px; margin: 0 10px; z-index: 2;
+        }
+        #pfLeftRail .pcap-divider {
+            grid-area: bline; align-self: start; justify-self: stretch;
+            position: relative; height: 1.5px; margin: 10px 12px 0;
+            background: rgba(255,255,255,0.20); z-index: 2;
+        }
+        #pfLeftRail .pcap-divider::before {
+            content: ''; position: absolute; right: -1px; top: -2.5px;
+            width: 6px; height: 6px; border-radius: 0;
+            border-top: 1.5px solid rgba(255,255,255,0.45);
+            border-right: 1.5px solid rgba(255,255,255,0.45);
+            transform: rotate(45deg);
+        }
+        #pfLeftRail .pcap-divider::after {
+            content: 'за 3 года'; position: absolute; top: 7px; left: 50%; transform: translateX(-50%);
+            font-family: 'Onest', sans-serif; font-weight: 600; font-size: 10px;
+            letter-spacing: 0.07em; text-transform: uppercase;
+            color: rgba(255,255,255,0.38); white-space: nowrap;
         }
 
-        /* (5) Легенда капитала — вертикальный список, имена и суммы выровнены;
-           цвет точек связывает источники: ОФЗ→Купоны (синий), Акции→Рост (оранж) */
-        #pfLeftRail .capital-dark-top .pcap-legend { flex-direction: column; gap: 5px; align-self: center; }
-        #pfLeftRail .capital-dark-top .pcap-legrow {
-            display: grid; grid-template-columns: 13px minmax(0,1fr) auto auto; align-items: center; gap: 0 12px;
+        /* (5) Шапка прогноза: «ПРОГНОЗ» (хвост «· 3 года» скрыт — он на мосту) */
+        #pfLeftRail .capital-forecast-light .pcap-eyebrow {
+            grid-area: forehead; align-self: end; z-index: 2; min-width: 0;
         }
-        #pfLeftRail .capital-dark-top .pcap-dot { width: 8px; height: 8px; }
-        #pfLeftRail .capital-dark-top .pcap-legname { font-size: 13px; }
-        #pfLeftRail .capital-dark-top .pcap-legpct { justify-self: end; font-size: 11px; }
-        #pfLeftRail .capital-dark-top .pcap-legsum { justify-self: end; font-size: 13px; }
+        #pfLeftRail .pcap-eb-3y { display: none; }
 
-        /* (5) Комиссия капитала — та же сетка, ставка под колонкой сумм (призрачная) */
-        #pfLeftRail .capital-dark-top .pcap-fee-wrap { position: relative; z-index: 2; align-self: center; }
-        #pfLeftRail .capital-dark-top .pcap-fee-btn {
+        /* (6) Действия — ряд справа: детали | Excel | пересчёт | CTA */
+        #pfLeftRail .pcap-actions {
+            grid-area: act; display: flex; flex-direction: row; align-items: center;
+            gap: 8px; padding: 0; margin-left: 6px; border: none !important; z-index: 3;
+        }
+        #pfLeftRail .pcap-actions .v3-details-btn { order: 1; }
+        #pfLeftRail .pcap-actions .v3-buylist-btn { order: 2; }
+        #pfLeftRail .pcap-actions .v3-recalc-btn  { order: 3; }
+        #pfLeftRail .pcap-actions .v3-createpf-btn { order: 4; }
+        #pfLeftRail .pcap-actions .v3-details-btn,
+        #pfLeftRail .pcap-actions .v3-buylist-btn {
+            flex: none; width: 32px; height: 32px; margin: 0; padding: 0;
+            display: inline-flex; align-items: center; justify-content: center;
+            background: transparent; border: 1px solid rgba(255,255,255,0.16);
+            border-radius: 10px; color: #c8d0d8; cursor: pointer; box-shadow: none;
+            font-size: 0; line-height: 0;
+            transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+        }
+        #pfLeftRail .pcap-actions .v3-details-btn:hover,
+        #pfLeftRail .pcap-actions .v3-buylist-btn:hover {
+            background: rgba(255,255,255,0.07); color: #ffffff; transform: none;
+        }
+        #pfLeftRail .pcap-actions .v3-buylist-btn .tx { display: none; }
+        #pfLeftRail .pcap-actions .v3-buylist-btn .ic svg,
+        #pfLeftRail .pcap-actions .v3-details-btn svg { width: 15px; height: 15px; display: block; }
+        #pfLeftRail .pcap-actions .v3-details-btn svg { transition: transform 0.25s ease; }
+        #pfLeftRail .portfolio-capital-card.pcap-open .v3-details-btn { background: rgba(255,255,255,0.10); color: #ffffff; }
+        #pfLeftRail .portfolio-capital-card.pcap-open .v3-details-btn svg { transform: rotate(180deg); }
+        #pfLeftRail .pcap-actions .v3-recalc-btn {
+            flex: none; width: auto; margin: 0; box-sizing: border-box;
+            display: inline-flex; align-items: center; gap: 7px; justify-content: center;
+            padding: 7px 12px; border-radius: 10px; cursor: pointer;
+            background: transparent !important; border: 1px solid rgba(255,255,255,0.16); box-shadow: none !important;
+            font-family: 'Onest','Manrope', sans-serif; font-weight: 600; font-size: 12.5px;
+            color: #aeb8c2 !important; white-space: nowrap;
+            transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+        }
+        #pfLeftRail .pcap-actions .v3-recalc-btn:hover { background: rgba(255,255,255,0.06) !important; color: #e8edf2 !important; transform: none; }
+        #pfLeftRail .pcap-actions .v3-recalc-btn .ic { color: inherit; display: inline-flex; }
+        #pfLeftRail .pcap-actions .v3-recalc-btn .ic svg { width: 14px; height: 14px; }
+        /* Активная кнопка «Новый расчёт» (панель раскрыта) */
+        #pfLeftRail .pcap-actions .v3-recalc-btn.is-open {
+            background: rgba(167,232,196,0.14) !important; border-color: rgba(167,232,196,0.45);
+            color: #a7e8c4 !important;
+        }
+        #pfLeftRail .pcap-actions .v3-recalc-btn.is-open .ic { color: #a7e8c4; }
+        #pfLeftRail .pcap-actions .v3-createpf-btn {
+            flex: none; width: auto; margin: 0; padding: 9px 16px; border-radius: 12px; font-size: 13.5px; white-space: nowrap;
+        }
+
+        /* (7) ДЕКА ДЕТАЛЕЙ: легенда+комиссия слева, разбивка+дисклеймер справа.
+           В закрытом состоянии строки 0fr: контент обрезан и прозрачен. */
+        #pfLeftRail .pcap-legend, #pfLeftRail .pcap-fee-wrap,
+        #pfLeftRail .pcap-breakdown, #pfLeftRail .pcap-disclaimer {
+            box-sizing: border-box; min-height: 0; overflow: hidden; margin: 0;
+            position: relative; z-index: 2;
+            max-height: 0; opacity: 0; visibility: hidden;
+            transition: max-height 0.3s ease, opacity 0.18s ease, visibility 0.18s ease;
+        }
+        #pfLeftRail .portfolio-capital-card.pcap-open .pcap-legend,
+        #pfLeftRail .portfolio-capital-card.pcap-open .pcap-fee-wrap,
+        #pfLeftRail .portfolio-capital-card.pcap-open .pcap-breakdown,
+        #pfLeftRail .portfolio-capital-card.pcap-open .pcap-disclaimer {
+            max-height: 240px; opacity: 1; visibility: visible;
+            transition: max-height 0.3s ease, opacity 0.25s ease 0.1s, visibility 0.25s ease 0.1s;
+        }
+        #pfLeftRail .pcap-legend    { grid-area: legend; }
+        #pfLeftRail .pcap-fee-wrap  { grid-area: fee; }
+        #pfLeftRail .pcap-breakdown { grid-area: brk; }
+        #pfLeftRail .pcap-disclaimer { grid-area: disc; }
+
+        /* Заголовки колонок деки — с общей волосяной линией сверху */
+        #pfLeftRail .pcap-legend::before, #pfLeftRail .pcap-breakdown::before {
+            display: block; margin: 14px 0 9px; padding-top: 12px;
+            border-top: 1px solid rgba(255,255,255,0.09);
+            font-family: 'Onest', sans-serif; font-weight: 600; font-size: 10px;
+            letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.42);
+        }
+        #pfLeftRail .pcap-legend::before { content: 'Распределение'; }
+        #pfLeftRail .pcap-breakdown::before { content: 'Из чего сложится прогноз'; }
+
+        /* Легенда: полные суммы, имена и суммы выровнены как в эталоне таблиц */
+        #pfLeftRail .pcap-legend { display: flex; flex-direction: column; gap: 6px; }
+        #pfLeftRail .pcap-legrow { display: grid; grid-template-columns: 13px minmax(0,1fr) auto auto; align-items: center; gap: 0 12px; }
+        #pfLeftRail .pcap-dot { width: 8px; height: 8px; }
+        #pfLeftRail .pcap-legname { font-size: 13px; }
+        #pfLeftRail .pcap-legpct { justify-self: end; font-size: 11px; }
+        #pfLeftRail .pcap-legsum { justify-self: end; font-size: 13px; }
+
+        /* Комиссия — призрачная строка под легендой */
+        #pfLeftRail .pcap-fee-wrap { padding: 4px 0 2px; }
+        #pfLeftRail .pcap-fee-btn {
             display: grid; grid-template-columns: 13px minmax(0,1fr) auto; align-items: center; gap: 0 12px;
             width: 100%; padding: 0; border-radius: 6px; font-size: 12.5px; text-align: left;
         }
-        #pfLeftRail .capital-dark-top .pcap-fee-label { justify-self: start; }
-        #pfLeftRail .capital-dark-top .pcap-fee-btn:hover { background: none; }
-        #pfLeftRail .capital-dark-top .pcap-fee-right { margin-left: 0; justify-self: end; font-size: 12px; }
-        #pfLeftRail .capital-dark-top .pcap-fee-chev { width: 12px; height: 12px; }
+        #pfLeftRail .pcap-fee-label { justify-self: start; }
+        #pfLeftRail .pcap-fee-btn:hover { background: none; }
+        #pfLeftRail .pcap-fee-right { margin-left: 0; justify-self: end; font-size: 12px; }
+        #pfLeftRail .pcap-fee-chev { width: 12px; height: 12px; }
 
-        /* (2) Зона прогноза — ВЫДЕЛЕННЫЙ мягко-зелёный блок (акцент результата);
-           (3) без иконки-чипа; (4) знак ≈ белый; детализация — вертикальный
-           список параллельно легенде капитала (Купоны↔ОФЗ, Рост↔Акции) */
-        #pfLeftRail .capital-forecast-light {
-            display: grid; grid-template-columns: minmax(0, 1fr);
-            grid-template-rows: repeat(3, auto);
-            align-content: center; row-gap: 7px;
-            background: linear-gradient(158deg, rgba(167,232,196,0.14), rgba(167,232,196,0.035)) !important;
-            border: 1px solid rgba(167,232,196,0.28) !important;
-            border-radius: 18px;
-            padding: 11px 18px !important;
-            margin: 0 16px !important;
-        }
-        #pfLeftRail .capital-forecast-light .pcap-chip { display: none; }        /* (3) */
-        #pfLeftRail .capital-forecast-light .pcap-tilde { color: #f4f7fa; opacity: 1; } /* (4) */
-        #pfLeftRail .capital-forecast-light .pcap-breakdown {
-            margin: 0; padding: 0; background: none; border: none; border-radius: 0;
-            display: flex; flex-direction: column; gap: 4px;
-        }
-        #pfLeftRail .capital-forecast-light .pcap-brk-hr { display: none; }
-        #pfLeftRail .capital-forecast-light .pcap-brk-row {
-            display: grid; grid-template-columns: 13px minmax(0,1fr) auto; align-items: center; column-gap: 12px;
-        }
-        #pfLeftRail .capital-forecast-light .pcap-brk-row .pcap-dot { width: 8px; height: 8px; }
-        #pfLeftRail .capital-forecast-light .pcap-brk-label { font-size: 13px; }
-        #pfLeftRail .capital-forecast-light .pcap-brk-value { font-size: 12.5px; justify-self: end; }
+        /* Разбивка прогноза: вертикальный список параллельно легенде
+           (цвет точек связывает источники: ОФЗ→Купоны, Акции→Рост) */
+        #pfLeftRail .pcap-breakdown { display: flex; flex-direction: column; gap: 6px; padding: 0; background: none; border: none; border-radius: 0; }
+        #pfLeftRail .pcap-brk-hr { display: none; }
+        #pfLeftRail .pcap-brk-row { display: grid; grid-template-columns: 13px minmax(0,1fr) auto; align-items: center; column-gap: 12px; }
+        #pfLeftRail .pcap-brk-row .pcap-dot { width: 8px; height: 8px; }
+        #pfLeftRail .pcap-brk-label { font-size: 13px; }
+        #pfLeftRail .pcap-brk-value { font-size: 12.5px; justify-self: end; }
 
-        /* Зона действий — без левой границы (разделяет воздух, а не линия) */
-        #pfLeftRail .pcap-actions { border-left: none !important; padding-left: 14px; }
+        /* Дисклеймер — возвращён в деку (в строке-герое был скрыт) */
+        #pfLeftRail .pcap-disclaimer {
+            display: flex; align-items: flex-start; gap: 8px;
+            padding: 6px 0 2px; font-size: 11.5px; line-height: 1.45; color: rgba(255,255,255,0.42);
+            background: none; border: none;
+        }
+        #pfLeftRail .pcap-disclaimer svg { width: 14px; height: 14px; flex: none; margin-top: 1px; }
 
-        /* Кнопки действий — слимнее, карточка ниже */
-        #pfLeftRail .portfolio-capital-card { padding: 14px 28px !important; }
-        #pfLeftRail .pcap-actions { gap: 7px; }
-        #pfLeftRail .pcap-actions .v3-createpf-btn { padding: 10px 16px; border-radius: 13px; font-size: 14.5px; }
-        #pfLeftRail .pcap-actions .v3-buylist-btn { padding: 6px 12px; font-size: 14px; }
-        #pfLeftRail .pcap-actions .v3-buylist-btn .count { padding: 2px 9px; font-size: 11px; }
-        #pfLeftRail .pcap-actions .v3-recalc-btn { padding: 5px 12px; font-size: 13px; }
-        /* Активная кнопка «Новый расчёт» (панель раскрыта) */
-        #pfLeftRail .pcap-actions .v3-recalc-btn.is-open { background: rgba(167,232,196,0.14) !important; color: #a7e8c4 !important; }
-        #pfLeftRail .pcap-actions .v3-recalc-btn.is-open .ic { color: #a7e8c4; }
 
         /* ---- Панель пересчёта: компактный попап-продолжение кнопки «Новый расчёт»
                (прикреплён к правой колонке действий, разворачивается вниз) ---- */

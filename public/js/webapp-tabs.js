@@ -162,7 +162,8 @@ function populatePanels() {
         const excelBtn = document.createElement('button');
         excelBtn.type = 'button';
         excelBtn.className = 'v3-buylist-btn';
-        excelBtn.innerHTML = '<span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M9.5 12.5l5 5M14.5 12.5l-5 5"/></svg></span>Выгрузить в Excel';
+        excelBtn.innerHTML = '<span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M9.5 12.5l5 5M14.5 12.5l-5 5"/></svg></span><span class="tx">Выгрузить в Excel</span>';
+        excelBtn.title = 'Выгрузить в Excel';
         excelBtn.onclick = function() { if (typeof pfExportExcel === 'function') pfExportExcel(); };
         actions.appendChild(excelBtn);
         // 3) Кнопка «Новый расчёт» — раскрывает компактную панель настроек
@@ -171,6 +172,20 @@ function populatePanels() {
         recalc.className = 'v3-recalc-btn';
         recalc.innerHTML = '<span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 0 1 14.4-6.1L21 8"/><path d="M21 3.5V8.2h-4.7"/><path d="M20.5 12a8.5 8.5 0 0 1-14.4 6.1L3 16"/><path d="M3 20.5V15.8h4.7"/></svg></span>Новый расчёт';
         actions.appendChild(recalc);
+        // 3.1) Кнопка «Детали» — раскрывает деку героя (легенда/комиссия/разбивка):
+        //      карточка растёт вниз через .pcap-open (grid-rows 0fr→1fr)
+        const detBtn = document.createElement('button');
+        detBtn.type = 'button';
+        detBtn.className = 'v3-details-btn';
+        detBtn.title = 'Детали портфеля';
+        detBtn.setAttribute('aria-label', 'Детали портфеля');
+        detBtn.setAttribute('aria-expanded', 'false');
+        detBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+        detBtn.onclick = function() {
+            const open = share.classList.toggle('pcap-open');
+            detBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        };
+        actions.appendChild(detBtn);
 
         // 3.4) Встроенная панель пересчёта — «как продолжение карточки»:
         //      меняем сумму/распределение/комиссию и пересчитываем прямо здесь,

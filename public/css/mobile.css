@@ -438,3 +438,9 @@
     .rbx-kpi { min-width: 0; }
     .rbx-kpi .sub { font-size: 11px; white-space: normal; line-height: 1.35; }
 }
+
+/* Портфель: кнопка «Детали» героя — только десктоп (на мобиле карточка
+   капитала и так показывает легенду/разбивку целиком) */
+@media (max-width: 1023px) {
+    .v3-details-btn { display: none !important; }
+}
