@@ -1287,7 +1287,10 @@ function pfExportExcel() {
     if (!d || (d.bonds.length === 0 && d.stocks.length === 0)) return;
     const num = v => String(Math.round(v * 100) / 100).replace('.', ',');
     const esc = v => {
-        const s = String(v == null ? '' : v);
+        let s = String(v == null ? '' : v);
+        // Excel исполняет ячейки, начинающиеся с = + @ (формульная инъекция) —
+        // гасим апострофом; отрицательные числа («-12,3») не трогаем
+        if (/^[=+@\t\r]/.test(s) || (s[0] === '-' && !/^-[\d\s.,]+%?$/.test(s))) s = "'" + s;
         return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
     };
     const yields = {};

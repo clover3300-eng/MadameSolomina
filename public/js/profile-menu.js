@@ -19,6 +19,7 @@
 
     var LS_PROFILE = 'home_profile_v1';
     var LS_SETTINGS = 'profile_settings_v1';
+    var LS_TOKEN = 'broker_token_local_v1';   // локальный, НЕ синхронизируется
 
     var BROKERS = [
         { id: 'tinkoff', name: 'Т-Инвестиции' },
@@ -86,7 +87,30 @@
     function getSettings() { return readJSON(LS_SETTINGS) || {}; }
     function saveSettings(patch) {
         var next = Object.assign({}, getSettings(), patch);
+        // null = «удалить поле»: не таскаем пустые ключи в JSON и в облако
+        Object.keys(next).forEach(function (k) { if (next[k] == null) delete next[k]; });
         try { localStorage.setItem(LS_SETTINGS, JSON.stringify(next)); } catch (e) {}
+    }
+
+    // API-токен брокера — боевой ключ к счёту. Хранится ТОЛЬКО на этом
+    // устройстве (LS_TOKEN нет в cloud-sync.WATCH), в profile_settings_v1
+    // и в облако не попадает — иначе его видел бы админ в user_data.
+    function getBrokerToken() {
+        try { return localStorage.getItem(LS_TOKEN) || ''; } catch (e) { return ''; }
+    }
+    function setBrokerToken(token) {
+        try {
+            if (token) localStorage.setItem(LS_TOKEN, token);
+            else localStorage.removeItem(LS_TOKEN);
+        } catch (e) {}
+    }
+    // Раньше токен жил в profile_settings_v1 и синхронизировался — переносим
+    // в локальный ключ и вычищаем из настроек (следующий push обновит облако).
+    function migrateBrokerToken() {
+        var s = getSettings();
+        if (s.brokerToken === undefined) return;
+        if (s.brokerToken && !getBrokerToken()) setBrokerToken(String(s.brokerToken));
+        saveSettings({ brokerToken: null });
     }
 
     // Имя/фамилия: приоритет — profile_settings, иначе режем name из home_profile_v1
@@ -233,7 +257,8 @@
         document.body.appendChild(hub);
 
         var tok = hub.querySelector('#phToken');
-        if (tok && s.brokerToken) tok.value = s.brokerToken;
+        var savedTok = getBrokerToken();
+        if (tok && savedTok) tok.value = savedTok;
     }
 
     function buildFab() {
@@ -367,7 +392,7 @@
     function renderApiSub() {
         var s = getSettings();
         var sub = hub.querySelector('#phSubApi');
-        if (s.brokerToken) {
+        if (getBrokerToken()) {
             var b = BROKERS.filter(function (x) { return x.id === s.brokerId; })[0];
             sub.textContent = (b ? b.name : 'Брокер') + ' · токен сохранён';
             sub.classList.add('ok');
@@ -412,7 +437,8 @@
     function onSaveToken() {
         var brokerId = hub.querySelector('#phBroker').value;
         var token = (hub.querySelector('#phToken').value || '').trim();
-        saveSettings({ brokerId: brokerId, brokerToken: token || null });
+        saveSettings({ brokerId: brokerId });
+        setBrokerToken(token);
         renderApiSub();
         toast(token ? 'Токен сохранён в этом браузере' : 'Токен удалён');
     }
@@ -564,6 +590,7 @@
     function init() {
         btn = document.getElementById('topProfileBtn');
         if (!btn) return;
+        migrateBrokerToken();
         buildHub();
         buildFab();
         renderIdentity();

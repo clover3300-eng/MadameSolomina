@@ -15,9 +15,13 @@
 
     function dq(id) { return document.getElementById(id); }
     function txt(id, fb) { var e = dq(id); return e ? (e.textContent || '').trim() : (fb == null ? '—' : fb); }
-    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function(c) {
-        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     }); }
+    // Для данных внутри JS-строки inline-обработчика (onclick="fn('X')"):
+    // браузер декодирует &#39; обратно в кавычку ДО исполнения JS, поэтому
+    // одного esc() мало — сначала экранируем для JS (\\ и \'), затем esc().
+    function jsArg(s) { return esc(String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'")); }
     function toNum(s) { return parseFloat(String(s == null ? '' : s).replace('%', '').replace(/\s/g, '').replace(',', '.')); }
 
     var ICONS = {
@@ -267,7 +271,7 @@
             var custom = s.bonds === -1;
             var sel = custom ? (recalc.strat === 'Своя') : (recalc.strat === s.title);
             var sub = custom ? 'вручную' : (s.bonds + '/' + s.stocks);
-            return '<button class="dp-chip' + (sel ? ' sel' : '') + '" onclick="dashPickStrategy(' + s.bonds + ',\'' + esc(s.title) + '\')">' +
+            return '<button class="dp-chip' + (sel ? ' sel' : '') + '" onclick="dashPickStrategy(' + s.bonds + ',\'' + jsArg(s.title) + '\')">' +
                 '<span class="dp-chip-t">' + esc(s.title) + '</span><span class="dp-chip-s">' + esc(sub) + '</span></button>';
         }).join('');
 
@@ -532,11 +536,11 @@
         var metric = meta.metric
             ? '<span class="dfv-metric ' + (meta.neg ? 'neg' : '') + '">' + esc(meta.metric) + '</span>'
             : '<span class="dfv-metric muted">—</span>';
-        return '<div class="dfv-item" onclick="dashOpenFav(\'' + esc(tk) + '\',' + (meta.echelon || 1) + ')">' +
+        return '<div class="dfv-item" onclick="dashOpenFav(\'' + jsArg(tk) + '\',' + (meta.echelon || 1) + ')">' +
             '<span class="dfv-info"><span class="dfv-tk">' + esc(tk) + '</span>' +
                 '<span class="dfv-name">' + esc(meta.name) + '</span></span>' +
             metric +
-            '<button class="dfv-x" title="Убрать из избранного" onclick="event.stopPropagation();dashUnfav(\'' + esc(tk) + '\')">' +
+            '<button class="dfv-x" title="Убрать из избранного" onclick="event.stopPropagation();dashUnfav(\'' + jsArg(tk) + '\')">' +
                 '<svg viewBox="0 0 24 24">' + ICO_CLOSE + '</svg></button>' +
         '</div>';
     }
@@ -563,11 +567,11 @@
         var metric = yld
             ? '<span class="dfv-metric">' + esc(yld) + '</span>'
             : '<span class="dfv-metric muted">—</span>';
-        return '<div class="dfv-item" onclick="dashOpenFavBond(\'' + esc(isin) + '\')">' +
+        return '<div class="dfv-item" onclick="dashOpenFavBond(\'' + jsArg(isin) + '\')">' +
             '<span class="dfv-info"><span class="dfv-tk">' + esc(nm) + '</span>' +
                 '<span class="dfv-name">' + esc(isin) + '</span></span>' +
             metric +
-            '<button class="dfv-x" title="Убрать из избранного" onclick="event.stopPropagation();dashUnfavBond(\'' + esc(isin) + '\')">' +
+            '<button class="dfv-x" title="Убрать из избранного" onclick="event.stopPropagation();dashUnfavBond(\'' + jsArg(isin) + '\')">' +
                 '<svg viewBox="0 0 24 24">' + ICO_CLOSE + '</svg></button>' +
         '</div>';
     }
@@ -699,7 +703,7 @@
         var total = price + nkd;
         var cur = (d.couponValue > 0 && d.freq > 0 && price > 0) ? ((d.couponValue * d.freq / price * 100).toFixed(2) + '%') : '—';
         var rows = [
-            ['Код (ISIN)', '<span class="drb-od-code" onclick="event.stopPropagation();copyTickerNew(\'' + esc(t) + '\')">' + esc(t) + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span>'],
+            ['Код (ISIN)', '<span class="drb-od-code" onclick="event.stopPropagation();copyTickerNew(\'' + jsArg(t) + '\')">' + esc(t) + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span>'],
             ['Текущая цена', price ? price.toFixed(2) + ' ₽' : '—'],
             ['НКД', nkd.toFixed(2) + ' ₽'],
             ['Итого (цена + НКД)', '<b>' + total.toFixed(2) + ' ₽</b>'],
@@ -711,7 +715,7 @@
         ];
         var dr = rows.map(function(r) { return '<div class="drb-od-row"><span class="drb-od-l">' + r[0] + '</span><span class="drb-od-v">' + r[1] + '</span></div>'; }).join('');
         return '<div class="drb-od-list">' + dr + '</div>' +
-            '<button class="drb-od-chart" onclick="event.stopPropagation();openTradingViewDirect(\'' + esc(t) + '\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Открыть график</button>';
+            '<button class="drb-od-chart" onclick="event.stopPropagation();openTradingViewDirect(\'' + jsArg(t) + '\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Открыть график</button>';
     }
 
     // Одна строка состава: облигация раскрывается inline, акция открывает карточку
@@ -720,7 +724,7 @@
         var w = Math.max(2, Math.round((it.sum || 0) / grand * 100));
         var sub = '<span class="d3h-r-sub"><span class="d3h-r-w">' + w + '%</span>' + (it.qty ? '<span>·</span><span>' + it.qty + ' шт</span>' : '');
         if (kind === 'bond') {
-            return '<button class="d3h-row d3h-row-bond" style="--ac:' + ac + ';--w:' + w + '%" onclick="dashOpenBondCard(\'' + esc(it.ticker) + '\')">' +
+            return '<button class="d3h-row d3h-row-bond" style="--ac:' + ac + ';--w:' + w + '%" onclick="dashOpenBondCard(\'' + jsArg(it.ticker) + '\')">' +
                 '<span class="d3h-r-main"><span class="d3h-r-tk">' + esc(it.ticker) + '</span><span class="d3h-r-name">' + esc(it.name || it.ticker) + '</span></span>' +
                 '<span class="d3h-r-side"><span class="d3h-r-sum">' + fmtSum(it.sum) + '</span>' + sub + '</span></span>' +
                 '<svg class="d3h-go" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>' +
@@ -729,7 +733,7 @@
         var meta = resolveTickerMeta(it.ticker);
         var tier = it.echelon ? '<span class="drb-tier tier-' + it.echelon + '">' + ((TIERS[it.echelon - 1] || TIERS[0]).roman) + '</span>' : '';
         var pot = meta.metric ? '<span class="d3h-r-pot ' + (meta.neg ? 'neg' : '') + '">' + esc(meta.metric) + '</span>' : '';
-        return '<button class="d3h-row" style="--ac:' + ac + ';--w:' + w + '%" onclick="dashOpenTicker(\'' + esc(it.ticker) + '\',' + (it.echelon || 1) + ')">' +
+        return '<button class="d3h-row" style="--ac:' + ac + ';--w:' + w + '%" onclick="dashOpenTicker(\'' + jsArg(it.ticker) + '\',' + (it.echelon || 1) + ')">' +
             '<span class="d3h-r-main"><span class="d3h-r-tk">' + esc(it.ticker) + tier + '</span><span class="d3h-r-name">' + esc(it.name || it.ticker) + '</span></span>' +
             '<span class="d3h-r-side"><span class="d3h-r-sum">' + fmtSum(it.sum) + '</span>' + sub + pot + '</span></span>' +
             '<svg class="d3h-go" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>' +
@@ -929,7 +933,7 @@
         var cur = isFinite(it.cur) ? it.cur.toFixed(2) + '%' : '—';
         var t = it.ticker;
         var rows = [
-            ['Код (ISIN)', '<span class="drb-od-code" onclick="event.stopPropagation();copyTickerNew(\'' + esc(t) + '\')">' + esc(t) + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span>'],
+            ['Код (ISIN)', '<span class="drb-od-code" onclick="event.stopPropagation();copyTickerNew(\'' + jsArg(t) + '\')">' + esc(t) + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span>'],
             ['Текущая цена', it.price.toFixed(2) + ' ₽'],
             ['НКД', it.nkd.toFixed(2) + ' ₽'],
             ['Итого (цена + НКД)', '<b>' + it.total.toFixed(2) + ' ₽</b>'],
@@ -943,14 +947,14 @@
             return '<div class="drb-od-row"><span class="drb-od-l">' + r[0] + '</span><span class="drb-od-v">' + r[1] + '</span></div>';
         }).join('');
         return '<div class="drb-ofz" id="dofz-' + esc(t) + '">' +
-            '<button class="drb-item drb-ofz-sum" onclick="dashToggleOfz(\'' + esc(t) + '\')">' +
+            '<button class="drb-item drb-ofz-sum" onclick="dashToggleOfz(\'' + jsArg(t) + '\')">' +
                 '<span class="drb-rank">' + (i + 1) + '</span>' +
                 '<span class="drb-info"><span class="drb-ticker">' + esc(it.name) + '</span><span class="drb-tsub">' + it.total.toFixed(2) + ' ₽</span></span>' +
                 '<span class="drb-metric">' + esc(metric) + '</span>' +
                 '<svg class="drb-go drb-ofz-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>' +
             '</button>' +
             '<div class="drb-ofz-det"><div class="drb-od-list">' + detailRows + '</div>' +
-                '<button class="drb-od-chart" onclick="event.stopPropagation();openTradingViewDirect(\'' + esc(t) + '\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Открыть график</button>' +
+                '<button class="drb-od-chart" onclick="event.stopPropagation();openTradingViewDirect(\'' + jsArg(t) + '\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Открыть график</button>' +
             '</div>' +
         '</div>';
     }
@@ -977,7 +981,7 @@
         }).join('') : '<div class="drb-empty">нет данных</div>';
 
         var stockRows = stocks.length ? stocks.map(function(it, i) {
-            return '<button class="drb-item" onclick="dashOpenTicker(\'' + esc(it.ticker) + '\',' + it.echelon + ')">' +
+            return '<button class="drb-item" onclick="dashOpenTicker(\'' + jsArg(it.ticker) + '\',' + it.echelon + ')">' +
                 '<span class="drb-rank">' + (i + 1) + '</span>' +
                 '<span class="drb-info"><span class="drb-ticker">' + esc(it.ticker) +
                     '<span class="drb-tier tier-' + it.echelon + '">' + (TIERS[it.echelon - 1] || TIERS[0]).roman + '</span></span>' +

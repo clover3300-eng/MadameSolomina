@@ -9,7 +9,12 @@
 // см. TELEGRAM_SETUP.md).
 
 const TG_EMAIL_DOMAIN = 'telegram.mstelegram.local';
-const MAX_AUTH_AGE_SEC = 86400; // сутки
+// Окно годности подписи: чем короче, тем меньше времени у перехваченного
+// payload на повторный вход (replay). Виджет отдаёт свежий auth_date на
+// каждый клик — хватает 15 минут; initData WebApp создаётся при открытии
+// мини-аппа и живёт всю сессию — даём час.
+const MAX_WIDGET_AGE_SEC = 900;
+const MAX_WEBAPP_AGE_SEC = 3600;
 
 const enc = new TextEncoder();
 
@@ -17,6 +22,15 @@ function bufToHex(bytes) {
     return Array.prototype.map.call(bytes, function (b) {
         return b.toString(16).padStart(2, '0');
     }).join('');
+}
+
+// Сравнение за постоянное время — обычный !== отвечает быстрее на раннем
+// расхождении и потенциально утекает информацию о верном префиксе HMAC.
+function safeEqual(a, b) {
+    if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false;
+    var diff = 0;
+    for (var i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    return diff === 0;
 }
 
 async function sha256(bytes) {
@@ -43,10 +57,10 @@ async function verifyWidgetAuth(user, botToken) {
 
     var secretKey = await sha256(enc.encode(botToken));
     var computed = bufToHex(await hmacSha256(secretKey, enc.encode(checkString)));
-    if (computed !== hash) return false;
+    if (!safeEqual(computed, String(hash))) return false;
 
     var authDate = Number(user.auth_date) || 0;
-    if (Date.now() / 1000 - authDate > MAX_AUTH_AGE_SEC) return false;
+    if (Date.now() / 1000 - authDate > MAX_WIDGET_AGE_SEC) return false;
     return true;
 }
 
@@ -65,10 +79,10 @@ async function verifyWebAppInitData(initData, botToken) {
 
     var secretKey = await hmacSha256(enc.encode('WebAppData'), enc.encode(botToken));
     var computed = bufToHex(await hmacSha256(secretKey, enc.encode(checkString)));
-    if (computed !== hash) return null;
+    if (!safeEqual(computed, String(hash))) return null;
 
     var authDate = Number(params.get('auth_date')) || 0;
-    if (Date.now() / 1000 - authDate > MAX_AUTH_AGE_SEC) return null;
+    if (Date.now() / 1000 - authDate > MAX_WEBAPP_AGE_SEC) return null;
 
     var userJson = params.get('user');
     return userJson ? JSON.parse(userJson) : null;
@@ -223,12 +237,27 @@ async function handleTelegramAuth(request, env) {
     }
 }
 
+// Базовые защитные заголовки для всей статики.
+// frame-ancestors разрешает web.telegram.org: веб-версия Telegram открывает
+// мини-аппы в iframe (мобильный/десктопный клиенты — нативный webview, им
+// заголовок не мешает). Остальным сайтам встраивать нас нельзя (кликджекинг).
+var SECURITY_HEADERS = {
+    'Content-Security-Policy': "frame-ancestors 'self' https://web.telegram.org; object-src 'none'; base-uri 'self'",
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'strict-origin-when-cross-origin'
+};
+
 export default {
     async fetch(request, env) {
         var url = new URL(request.url);
         if (url.pathname === '/api/telegram-auth' && request.method === 'POST') {
             return handleTelegramAuth(request, env);
         }
-        return env.ASSETS.fetch(request);
+        var res = await env.ASSETS.fetch(request);
+        res = new Response(res.body, res);
+        Object.keys(SECURITY_HEADERS).forEach(function (k) {
+            res.headers.set(k, SECURITY_HEADERS[k]);
+        });
+        return res;
     }
 };

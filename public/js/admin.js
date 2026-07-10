@@ -39,8 +39,8 @@
     function client() { return window.supa.client; }
     function dq(id) { return document.getElementById(id); }
     function esc(s) {
-        return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
-            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
         });
     }
     function toast(msg, isErr) {
@@ -571,7 +571,12 @@
             h += '<div class="adm-empty">Пользователь ещё ничего не сохранил.</div>';
         } else {
             h += '<div class="adm-m-data">' + modalData.map(function (r, i) {
-                var str = r.value == null ? 'null' : JSON.stringify(r.value, null, 2);
+                var val = r.value;
+                // токен брокера из старых записей — секрет, не показываем даже админу
+                if (r.key === 'profile_settings_v1' && val && typeof val === 'object' && val.brokerToken) {
+                    val = Object.assign({}, val, { brokerToken: '•••скрыто•••' });
+                }
+                var str = val == null ? 'null' : JSON.stringify(val, null, 2);
                 var size = fmtSize(str.length);
                 var extra = '';
                 if (r.key === 'portfolios_v1') extra = pfSummary(r.value);

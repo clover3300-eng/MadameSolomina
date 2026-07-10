@@ -142,7 +142,14 @@ function formatNewsDate(dateString) {
 // !!! ВАЖНО: Замените эту ссылку на URL вашего НОВОГО Apps Script для управления пользователями !!!
 // Это НЕ тот же URL что LOGGING_URL — нужно создать ОТДЕЛЬНЫЙ скрипт из файла UserManagement_GoogleAppsScript.js
 // и развернуть его как веб-приложение (Развернуть → Новое развертывание → Веб-приложение)
-const USERS_API_URL = "https://script.google.com/macros/s/AKfycbwjEFXyzldB0vZBMXknvTRXjgVjxbWC16PMR-_7u3Ax59Beld4OWj7VUiYoMiqV6wJCDQ/exec";
+// ОТКЛЮЧЕНО (аудит безопасности 2026-07-10): старая регистрация через
+// Google Apps Script доверяла НЕПОДПИСАННОМУ initDataUnsafe.user.id —
+// telegram_id подделывается, и любой мог войти в чужой легаси-аккаунт.
+// Настоящий вход теперь через Supabase (supabase-client.js) с проверкой
+// подписи Telegram на сервере (worker/index.js). Пустая строка переводит
+// checkFirstVisit на локальную ветку — ту же, что у всех браузерных
+// пользователей. Старый URL при нужде — в истории git.
+const USERS_API_URL = "";
 
 // Проверяем настроен ли API
 function isApiConfigured() {

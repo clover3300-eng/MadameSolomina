@@ -24,7 +24,10 @@
 
     function bar() { return document.getElementById('topBarMktMarket'); }
     function actionsHost() { return document.getElementById('topBarMktActions'); }
-    function esc(s) { return String(s == null ? '' : s); }
+    // настоящий экранировщик: раньше был String(s) как есть — сейчас сюда идут
+    // только константы, но no-op esc() — мина при будущих правках
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
     function isActive() { var p = document.getElementById('panel-market'); return !!(p && p.classList.contains('active')); }
 
     function render() {

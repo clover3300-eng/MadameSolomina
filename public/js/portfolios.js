@@ -34,9 +34,15 @@
 
     // ---------- helpers ----------
     function dq(id) { return document.getElementById(id); }
-    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
-        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-    function attr(s) { return esc(s).replace(/'/g, '&#39;'); }
+    // ' тоже экранируем: строки часто попадают в onclick="fn('…')", где
+    // одинарная кавычка вырывалась бы из JS-литерала (XSS)
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    function attr(s) { return esc(s); }
+    // Для данных внутри JS-строки inline-обработчика (onclick="fn('X')"):
+    // браузер декодирует &#39; обратно в кавычку ДО исполнения JS, поэтому
+    // одного esc() мало — сначала экранируем для JS (\\ и \'), затем esc().
+    function jsArg(s) { return esc(String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'")); }
     function toNum(s) { return parseFloat(String(s == null ? '' : s).replace('%', '').replace(/\s/g, '').replace(',', '.')); }
     function genId(p) { return (p || 'id') + '_' + Math.random().toString(36).slice(2, 9); }
     function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
@@ -2145,7 +2151,7 @@
                     : '<span class="pff-pot ' + (pot >= 0 ? 'pos' : 'neg') + '">' + fmtPct(pot) + '</span>';
                 return '<div class="pff-tile">' +
                     '<div class="pff-thead">' +
-                        '<button class="pff-id" onclick="pfOpenTicker(\'' + esc(tk) + '\')" title="Открыть карточку компании">' +
+                        '<button class="pff-id" onclick="pfOpenTicker(\'' + jsArg(tk) + '\')" title="Открыть карточку компании">' +
                             '<span class="pff-tk">' + esc(tk) + '</span><span class="pff-nm">' + esc(name) + '</span></button>' +
                         '<div class="pff-pot-wrap"><span class="pff-pot-l">потенциал</span>' + potHtml + '</div>' +
                     '</div>' +
@@ -2854,6 +2860,9 @@
         if (!store.items.length) { toast('Пока нет портфелей для выгрузки', true); return; }
         function cell(v) {
             var s = String(v == null ? '' : v).replace(/\n/g, ' ');
+            // Excel исполняет ячейки, начинающиеся с = + @ (формульная инъекция) —
+            // гасим апострофом; отрицательные числа («-12,3») не трогаем
+            if (/^[=+@\t\r]/.test(s) || (s[0] === '-' && !/^-[\d\s.,]+%?$/.test(s))) s = "'" + s;
             return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
         }
         function num(v, d) { return (v == null || isNaN(v)) ? '' : (+v).toFixed(d == null ? 2 : d).replace('.', ','); }
@@ -3754,7 +3763,7 @@
     // Иконка появляется при наведении на строку; клик раскрывает панель деталей под строкой
     // (метаданные из строк убраны — дата погашения и прочее живут теперь только здесь).
     function rb5InfoBtn(key, on) {
-        return '<button type="button" class="rb5-info' + (on ? ' on' : '') + '" onclick="pfRbInfo(\'' + attr(key) + '\',event)" aria-label="Детали бумаги" title="Детали">' + INFO_SVG + '</button>';
+        return '<button type="button" class="rb5-info' + (on ? ' on' : '') + '" onclick="pfRbInfo(\'' + jsArg(key) + '\',event)" aria-label="Детали бумаги" title="Детали">' + INFO_SVG + '</button>';
     }
     // детали — сетка мини-чипов «подпись/значение»; анимация раскрытия только у панели,
     // открытой последним кликом (rebalInfoAnim), иначе она переигрывалась бы на каждый repaint
@@ -3803,7 +3812,7 @@
                 rb5DetRow('Прибыль в день', cd.econ ? f2(cd.econ.perDay) + ' ₽/шт · ' + fmtPct(cd.econ.annual) + ' годовых' : '—')
             );
         }
-        return '<div class="rb5-row' + (sel ? ' sel' : '') + '" onclick="pfPickBond(\'buy\',\'' + esc(cd.t) + '\')">' +
+        return '<div class="rb5-row' + (sel ? ' sel' : '') + '" onclick="pfPickBond(\'buy\',\'' + jsArg(cd.t) + '\')">' +
             '<div class="rb5-rid"><b>' + (sel ? RB5_CHECK : '') + '<span class="rb5-nmt">' + esc(cd.n) + '</span>' + (heldSet[isinKey(cd.t)] ? '<i class="rb5-own">в портф.</i>' : '') +
                 (cd._keeps ? '<i class="rb5-keep" title="Купоны этой бумаги приходятся на месяцы, которые оголит продажа — график ежемесячных выплат сохранится">держит график</i>' : '') + '</b>' +
                 '<span>' + (cd.unit > 0 ? fmtPrice(cd.unit) + ' с НКД' : esc(cd.t)) + '</span></div>' +
@@ -3948,7 +3957,7 @@
                 rb5DetRow('Потенциал', cn.pot == null ? '—' : fmtPct(cn.pot))
             );
         }
-        return '<div class="rb5-row' + (sel ? ' sel' : '') + '" onclick="pfPickStock(\'buy\',\'' + esc(cn.ticker) + '\')">' +
+        return '<div class="rb5-row' + (sel ? ' sel' : '') + '" onclick="pfPickStock(\'buy\',\'' + jsArg(cn.ticker) + '\')">' +
             '<div class="rb5-rid"><b>' + (sel ? RB5_CHECK : '') + '<span class="rb5-nmt">' + esc(cn.ticker) + '</span>' + tier + (heldSet && heldSet[cn.ticker] ? '<i class="rb5-own">в портф.</i>' : '') + '</b>' +
                 '<span>' + esc(cn.name) + (price > 0 ? ' · ' + fmtPrice(price) : '') + '</span></div>' +
             '<div class="rb5-rval"><b class="' + potCls + '">' + (cn.pot == null ? '—' : fmtPct(cn.pot)) + '</b><span>потенциал</span></div>' + rb5InfoBtn(key, on) +

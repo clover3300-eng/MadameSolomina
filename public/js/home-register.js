@@ -65,8 +65,8 @@
     // Для вошедшего пользователя вместо формы — приветствие (#hgAuthed);
     // режим recovery показывает форму даже при активной сессии.
     function escHtml(s) {
-        return String(s).replace(/[&<>"]/g, function (c) {
-            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+        return String(s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
         });
     }
     function updateAuthView() {

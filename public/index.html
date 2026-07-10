@@ -55,8 +55,10 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <!-- Telegram Login Widget API (Telegram.Login.auth — попап входа в браузере) -->
     <script src="https://telegram.org/js/telegram-widget.js?22" defer></script>
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- PDF-экспорт: html2canvas 1.4.1 и jsPDF 2.5.1 вендорены локально —
+         не зависим от чужих CDN и не пускаем их код на страницу с сессией -->
+    <script src="js/vendor/html2canvas.min.js?v=1"></script>
+    <script src="js/vendor/jspdf.umd.min.js?v=1"></script>
     <!-- Supabase (UMD, self-hosted): defer в <head> выполняется ДО defer-скриптов внизу body -->
     <script src="js/vendor/supabase.js?v=1" defer></script>
     
@@ -2183,12 +2185,12 @@
 
 
 
-<script src="js/core.js?v=8" defer></script>
+<script src="js/core.js?v=9" defer></script>
 <script src="js/calculator-ui.js?v=3" defer></script>
 <script src="js/data.js?v=7" defer></script>
 <script src="js/rebalance.js?v=8" defer></script>
 <script src="js/company.js?v=2" defer></script>
-<script src="js/portfolio.js?v=16" defer></script>
+<script src="js/portfolio.js?v=17" defer></script>
 <script src="js/init.js?v=4" defer></script>
 <script src="js/registration.js" defer></script>
 <script src="js/menu-controller.js" defer></script>
@@ -2198,17 +2200,17 @@
 <script src="js/income-chart.js?v=1" defer></script>
 <script src="js/backtest.js?v=1" defer></script>
 <script src="js/app-state.js?v=5" defer></script>
-<script src="js/calc-r5.js?v=6" defer></script>
+<script src="js/calc-r5.js?v=7" defer></script>
 <script src="js/calc-mode.js?v=3" defer></script>
-<script src="js/dashboard.js?v=5" defer></script>
+<script src="js/dashboard.js?v=6" defer></script>
 <script src="js/sidebar.js?v=5" defer></script>
-<script src="js/stock-terminal.js?v=6" defer></script>
-<script src="js/bond-terminal.js?v=7" defer></script>
+<script src="js/stock-terminal.js?v=7" defer></script>
+<script src="js/bond-terminal.js?v=8" defer></script>
 <script src="js/table-tooltip.js?v=1" defer></script>
 <script src="js/market-chart.js?v=5" defer></script>
-<script src="js/market-heatmap.js?v=32" defer></script>
-<script src="js/market-livebar.js?v=2" defer></script>
-<script src="js/portfolios.js?v=53" defer></script>
+<script src="js/market-heatmap.js?v=33" defer></script>
+<script src="js/market-livebar.js?v=3" defer></script>
+<script src="js/portfolios.js?v=54" defer></script>
 <!-- Статичный фон-мозаика остальных вкладок: не смотрит на window.supa,
      порядок относительно облака не важен -->
 <script src="js/site-bg.js?v=1" defer></script>
@@ -2218,10 +2220,10 @@
 <script src="js/supabase-config.js?v=1" defer></script>
 <script src="js/telegram-config.js?v=1" defer></script>
 <script src="js/supabase-client.js?v=3" defer></script>
-<script src="js/home-register.js?v=14" defer></script>
-<script src="js/profile-menu.js?v=7" defer></script>
-<script src="js/cloud-sync.js?v=1" defer></script>
-<script src="js/admin.js?v=2" defer></script>
+<script src="js/home-register.js?v=15" defer></script>
+<script src="js/profile-menu.js?v=8" defer></script>
+<script src="js/cloud-sync.js?v=2" defer></script>
+<script src="js/admin.js?v=3" defer></script>
 <script src="js/route-hash.js?v=1" defer></script>
 </body>
 </html>

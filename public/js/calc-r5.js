@@ -467,7 +467,7 @@
 
   // ── helpers ───────────────────────────────────────────────────────────────
   function setVal(id, v) { var n = document.getElementById(id); if (n) n.value = v; }
-  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]; }); }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); }
   function haptic(kind) {
     try {
       var h = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback;

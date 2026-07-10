@@ -77,6 +77,39 @@
         return JSON.stringify(value);
     }
 
+    // ---------- защита секретов ----------
+    // API-токен брокера исторически лежал внутри profile_settings_v1 и уезжал
+    // в облако, где виден админам через user_data. Теперь он живёт только в
+    // локальном ключе broker_token_local_v1 (его нет в WATCH). Здесь заслон:
+    // наружу токен не отправляем, а из старых облачных строк вычищаем.
+    var SETTINGS_KEY = 'profile_settings_v1';
+    var LOCAL_TOKEN_KEY = 'broker_token_local_v1';
+
+    function stripSecretsForPush(key, value) {
+        if (key === SETTINGS_KEY && value && typeof value === 'object' && value.brokerToken !== undefined) {
+            value = Object.assign({}, value);
+            delete value.brokerToken;
+        }
+        return value;
+    }
+
+    // Принятую из облака строку настроек чистим от токена: сам токен спасаем
+    // в локальный ключ (если там пусто) и ставим настройки в очередь на
+    // перезаливку — облачная строка перезапишется уже без секрета.
+    function stripSecretsForPull(key, str) {
+        if (key !== SETTINGS_KEY || str == null) return str;
+        try {
+            var obj = JSON.parse(str);
+            if (!obj || typeof obj !== 'object' || obj.brokerToken === undefined) return str;
+            if (obj.brokerToken && !localStorage.getItem(LOCAL_TOKEN_KEY)) {
+                rawSet.call(localStorage, LOCAL_TOKEN_KEY, String(obj.brokerToken));
+            }
+            delete obj.brokerToken;
+            pending[key] = true;
+            return JSON.stringify(obj);
+        } catch (e) { return str; }
+    }
+
     // ---------- патч Storage ----------
     var rawSet = Storage.prototype.setItem;
     var rawRemove = Storage.prototype.removeItem;
@@ -106,7 +139,7 @@
         var rows = keys.map(function (k) {
             var str = null;
             try { str = localStorage.getItem(k); } catch (e) {}
-            return { user_id: uid(), key: k, value: str == null ? null : toJsonb(str) };
+            return { user_id: uid(), key: k, value: str == null ? null : stripSecretsForPush(k, toJsonb(str)) };
         });
 
         pushBusy = S().client.from('user_data')
@@ -166,6 +199,7 @@
                         var fresher = !m.keys[k] || row.updated_at > m.keys[k];
                         if (fresher) {
                             var incoming = row.value == null ? null : fromJsonb(row.value);
+                            incoming = stripSecretsForPull(k, incoming);
                             if (incoming !== localStr) {
                                 applying = true;
                                 try {

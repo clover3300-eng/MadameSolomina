@@ -257,7 +257,7 @@
     function esc(s) {
         return String(s == null ? '' : s)
             .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
     // Целое число в столбце A → это строка компании
@@ -801,6 +801,9 @@
     // =========================================================
     function csvCell(v) {
         var s = String(v == null ? '' : v).replace(/\n/g, ' ');
+        // Excel исполняет ячейки, начинающиеся с = + @ (формульная инъекция) —
+        // гасим апострофом; отрицательные числа («-12,3») не трогаем
+        if (/^[=+@\t\r]/.test(s) || (s[0] === '-' && !/^-[\d\s.,]+%?$/.test(s))) s = "'" + s;
         return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
     }
     function downloadCsv(name, lines) {

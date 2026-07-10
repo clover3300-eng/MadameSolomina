@@ -133,8 +133,8 @@
     function card() { return document.getElementById('mhCard'); }
     function $(sel) { var c = card(); return c ? c.querySelector(sel) : null; }
     function clamp(min, v, max) { return v < min ? min : (v > max ? max : v); }
-    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
-        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
     function fmtPct(p) { if (p == null || isNaN(p)) return '—'; return (p >= 0 ? '+' : '') + p.toFixed(2) + '%'; }
     function fmtPrice(v) {
