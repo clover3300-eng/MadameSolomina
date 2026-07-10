@@ -2601,8 +2601,11 @@
             background: rgba(44,54,76,0.07); color: #5d6b83;
         }
         body.dark-mode #pfRightCol #pfxCard .portfolio-echelon-percent { background: rgba(255,255,255,0.08); color: #94a3b8; }
-        #pfRightCol #pfxCard .portfolio-echelon-columns-header { padding: 12px 20px 11px; }
-        #pfRightCol #pfxCard .portfolio-echelon-list { padding: 0 20px 14px; }
+        /* Левый паддинг 28px (не 20px) — «ТИКЕР» встаёт строго под «ЭШЕЛОН»
+           шапки эшелонов сверху (там текст сдвинут на 42px от иконки-кружка);
+           .portfolio-echelon-list той же величиной держит строки под «ТИКЕР» */
+        #pfRightCol #pfxCard .portfolio-echelon-columns-header { padding: 12px 28px 11px; }
+        #pfRightCol #pfxCard .portfolio-echelon-list { padding: 0 28px 14px; }
         #pfRightCol #pfxCard .portfolio-stock-item { padding: 13px 0; }
         #pfRightCol #pfxCard .portfolio-stock-ticker { font-size: 14px; }
         #pfRightCol #pfxCard .portfolio-stock-yield,
@@ -2731,8 +2734,10 @@
             #pfRightCol #pfxCard .portfolio-echelons-headers .portfolio-echelon-h-text:nth-child(1) { padding-left: 40px; }
             #pfRightCol #pfxCard .portfolio-echelon-sum { font-size: 13.5px; }
             #pfRightCol #pfxCard .portfolio-echelon-percent { font-size: 11px; padding: 3px 7px; }
-            #pfRightCol #pfxCard .portfolio-echelon-columns-header { padding: 11px 16px 10px; }
-            #pfRightCol #pfxCard .portfolio-echelon-list { padding: 0 16px 12px; }
+            /* «ТИКЕР» под «ЭШЕЛОН» (padding-left:40px на строке выше) — тот же
+               приём, что и в широком режиме, свой сдвиг под узкие отступы */
+            #pfRightCol #pfxCard .portfolio-echelon-columns-header { padding: 11px 16px 10px 43px; }
+            #pfRightCol #pfxCard .portfolio-echelon-list { padding: 0 16px 12px 43px; }
             #pfRightCol #pfxCard .portfolio-stock-ticker { font-size: 13.5px; }
             #pfRightCol #pfxCard .portfolio-stock-yield,
             #pfRightCol #pfxCard .portfolio-stock-qty,
@@ -2774,11 +2779,12 @@
             font-size: 13px; color: #8593a6; font-weight: 600;
         }
 
-        /* Шапка столбцов — как в Ребалансе: серая плашка, ранг, заглавные подписи */
+        /* Шапка столбцов — как в Ребалансе: БЕЗ заливки, только волосяная
+           линия снизу отделяет от строк, ранг, заглавные подписи */
         #pfRightCol .portfolio-list-headers {
             grid-template-columns: 26px minmax(0,1fr) 120px 96px 150px 24px;
             gap: 10px;
-            background: #f6f9fc;
+            background: transparent;
             border: none;
             border-bottom: 1px solid #eef2f7;
             border-radius: 0;
@@ -2787,7 +2793,7 @@
             align-items: center;
         }
         body.dark-mode #pfRightCol .portfolio-list-headers {
-            background: rgba(255,255,255,0.03);
+            background: transparent;
             border-bottom-color: rgba(255,255,255,0.07);
         }
         #pfRightCol .portfolio-list-header-text {
@@ -3002,7 +3008,7 @@
         #pfRightCol .portfolio-echelons-headers {
             display: grid;
             grid-template-columns: minmax(0,1fr) 150px 56px 22px;
-            background: #f6f9fc;
+            background: transparent;
             border: none;
             border-bottom: 1px solid #eef2f7;
             border-radius: 0;
@@ -3017,7 +3023,7 @@
         #pfRightCol .portfolio-echelons-headers .portfolio-echelon-h-text:nth-child(2),
         #pfRightCol .portfolio-echelons-headers .portfolio-echelon-h-text:nth-child(3) { justify-content: flex-end; }
         body.dark-mode #pfRightCol .portfolio-echelons-headers {
-            background: rgba(255,255,255,0.03);
+            background: transparent;
             border-bottom-color: rgba(255,255,255,0.07);
         }
         /* Купонная таблица: пропорциональные колонки + отступы от краёв карточки,
@@ -3157,17 +3163,16 @@
             padding: 12px 26px 11px 26px;
             margin: 0 0 2px;
             font-size: 11px; font-weight: 800;
-            color: #6b7a8f; letter-spacing: 0.1em;
+            color: var(--c-th, #6b7a8f); letter-spacing: 0.06em;
             opacity: 1;
-            background: #eef2f7;
-            border-top: 1px solid #e3e9f0;
+            background: transparent;
+            border-top: none;
             border-bottom: 1px solid #e3e9f0;
         }
         body.dark-mode #pfRightCol .portfolio-echelon-columns-header {
-            background: rgba(255,255,255,0.06);
-            border-top-color: rgba(255,255,255,0.09);
+            background: transparent;
             border-bottom-color: rgba(255,255,255,0.09);
-            color: #9aa7ba;
+            color: var(--c-th, #9aa7ba);
         }
         #pfRightCol .portfolio-echelon-list { padding: 0 26px 16px 26px; }
         #pfRightCol .portfolio-stock-item {
