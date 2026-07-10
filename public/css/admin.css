@@ -170,6 +170,9 @@
     flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     font-size: 13px; font-weight: 700; color: var(--text-deep, #1b2433);
 }
+/* имя в ленте Обзора ведёт в карточку пользователя */
+.adm-feed-who[data-act] { cursor: pointer; }
+.adm-feed-who[data-act]:hover { color: #2563eb; }
 .adm-feed-time { font-family: var(--font-num); font-size: var(--fs-num-sm); font-weight: 600; color: var(--text-slate, #64748B); white-space: nowrap; }
 
 /* бейджи событий */

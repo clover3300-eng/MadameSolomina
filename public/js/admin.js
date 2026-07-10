@@ -446,9 +446,11 @@
             feed = '<div class="adm-feed">' + D.events.slice(0, 9).map(function (e) {
                 var m = evMeta(e.event);
                 var who = e.profiles ? (e.profiles.name || e.profiles.email || '—') : 'удалённый аккаунт';
+                // имя ведёт в карточку, если пользователь ещё существует
+                var link = e.user_id && e.profiles;
                 return '<div class="adm-feed-row">' +
                     '<span class="adm-ev ' + m.c + '">' + esc(m.t) + '</span>' +
-                    '<span class="adm-feed-who">' + esc(who) + '</span>' +
+                    '<span class="adm-feed-who' + (link ? '" data-act="open-user" data-id="' + e.user_id : '') + '">' + esc(who) + '</span>' +
                     '<span class="adm-feed-time">' + fmtAgo(e.created_at) + '</span>' +
                 '</div>';
             }).join('') + '</div>';
