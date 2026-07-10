@@ -191,13 +191,41 @@
     };
 
     // ---- Успех: галочка на кнопке и переход в приложение ----
+    // «Раздел при запуске» из настроек кабинета (profile_settings_v1). Уважаем выбор
+    // пользователя; если не задан или «Главная» — падаем на прежний дефолт «Расчёт».
+    function landingTab() {
+        var startTab = '';
+        try {
+            var s = JSON.parse(localStorage.getItem('profile_settings_v1') || '{}');
+            if (s && typeof s.startTab === 'string') startTab = s.startTab;
+        } catch (e) {}
+        return (startTab && startTab !== 'home') ? startTab : 'calc';
+    }
+
     function successAndGo(msg) {
         var btn = el('hsSubmit');
         if (btn) { btn.classList.add('is-done'); btn.disabled = false; el('hsSubmitLabel').textContent = 'Готово ✓'; }
         haptic('success');
         toast(msg);
+        var dest = landingTab();
+
+        // При облачном входе cloud-sync сам делает один мягкий reload, подтянув данные.
+        // Ставим целевой путь заранее — после reload route-hash откроет сразу нужную вкладку,
+        // без промежуточной анимированной смены (именно она + reload давали резкое мигание).
+        if (cloudOn()) {
+            try { history.replaceState({ tab: dest }, '', dest === 'home' ? '/' : '/' + dest); } catch (e) {}
+            // Фолбэк, если reload не случился (данные не изменились / сдержан 30-сек. гард).
+            setTimeout(function () {
+                if (typeof window.switchTab === 'function' &&
+                    typeof currentTab !== 'undefined' && currentTab !== dest) {
+                    window.switchTab(dest);
+                }
+            }, 1600);
+            return;
+        }
+
         setTimeout(function () {
-            if (typeof window.switchTab === 'function') window.switchTab('calc');
+            if (typeof window.switchTab === 'function') window.switchTab(dest);
         }, 900);
     }
 
@@ -318,7 +346,8 @@
             haptic('success');
             toast('Вход выполнен через Telegram');
             if (typeof window.switchTab === 'function') {
-                setTimeout(function () { window.switchTab('calc'); }, 600);
+                var demoDest = landingTab();
+                setTimeout(function () { window.switchTab(demoDest); }, 600);
             }
             return;
         }
