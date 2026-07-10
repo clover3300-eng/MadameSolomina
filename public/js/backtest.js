@@ -155,9 +155,16 @@ async function btFetchTickerPrice(item) {
     if (p > 0) { item.price = p; item.status = 'ok'; }
     else {
         item.price = 0;
-        // различаем «биржа не знает такой бумаги» и «бумага есть, но нет цены на дату»
-        item.status = (await btTickerExists(item.t)) ? 'error' : 'notfound';
-        if (btCurrentDate() !== dateStr) return;
+        if (window._btFxBonds && window._btFxBonds[item.t]) {
+            // валютная/замещающая облигация: цена есть, но номинал в USD/CNY —
+            // без курса на дату рублёвая оценка невозможна (задел, см. btGetBondPrice)
+            item.status = 'fx';
+            item.fxUnit = window._btFxBonds[item.t];
+        } else {
+            // различаем «биржа не знает такой бумаги» и «бумага есть, но нет цены на дату»
+            item.status = (await btTickerExists(item.t)) ? 'error' : 'notfound';
+            if (btCurrentDate() !== dateStr) return;
+        }
     }
     btRecomputeManualQty();
     btRenderTickerList();
@@ -226,8 +233,10 @@ function btRenderTickerList() {
             calc = '<span class="bt-tr-muted">укажите дату оценки</span>';
         } else if (!hasCap) {
             calc = '<span class="bt-tr-muted">' + btPriceStr(item.price) + ' за шт. · укажите капитал</span>';
+        } else if (item.status === 'fx') {
+            calc = '<span class="bt-tr-muted">валютная облигация (номинал в ' + (item.fxUnit || 'валюте') + ') — поддержка в планах</span>';
         } else if (item.qty > 0) {
-            calc = '<b class="bt-tr-qty">' + item.qty + ' шт.</b>'
+            calc = '<b class="bt-tr-qty">' + btQtyStr(item.qty) + ' шт.</b>'
                  + '<span class="bt-tr-sep">×</span>' + btPriceStr(item.price)
                  + '<span class="bt-tr-sep">≈</span><span class="bt-tr-sub">' + btFmtRub(item.qty * item.price) + '</span>';
         } else {
@@ -487,6 +496,16 @@ async function btGetBondPrice(ticker, dateStr) {
     // Нет колонки/значения — классические 1000 ₽ (все ОФЗ-ПД), т.е. прежний ×10.
     var fvIdx = cols.indexOf('FACEVALUE');
     var fv = (fvIdx >= 0 && row[fvIdx] > 0) ? row[fvIdx] : 1000;
+    // Задел под валютные/замещающие облигации: у них номинал в USD/CNY/EUR
+    // (колонка FACEUNIT), рублёвая стоимость = % × номинал × курс на дату.
+    // Курсов у нас пока нет — честно не считаем (иначе ГазКЗ-34Д оценилась бы
+    // в ~80 раз дешевле), тикер помечаем: UI объяснит причину человеку.
+    var fuIdx = cols.indexOf('FACEUNIT');
+    var fu = fuIdx >= 0 ? row[fuIdx] : null;
+    if (fu && fu !== 'SUR' && fu !== 'RUB') {
+        (window._btFxBonds = window._btFxBonds || {})[ticker] = fu;
+        return 0;
+    }
     return price > 0 ? price * (fv / 100) : 0;
 }
 
@@ -702,10 +721,15 @@ function btQtyAtDate(a, d) {
     return q;
 }
 
-// Человекочитаемое количество: целые — как есть, дробные (обратный сплит) — до 2 знаков
+// Человекочитаемое количество: тонкие НЕРАЗРЫВНЫЕ пробелы тысяч («26 373 626»,
+// точки-разделители заняты рублями), дробное (обратный сплит) — до 2 знаков
 function btQtyStr(q) {
-    if (q === Math.round(q)) return String(q);
-    return String(parseFloat(q.toFixed(2)));
+    var r = Math.round(q * 100) / 100;
+    var i = Math.floor(r);
+    var s = i.toLocaleString('ru-RU').replace(/\s/g, ' ');
+    var frac = Math.round((r - i) * 100);
+    if (frac > 0) s += ',' + String(frac).padStart(2, '0').replace(/0$/, '');
+    return s;
 }
 
 // --- Бенчмарки сравнения ---
@@ -821,13 +845,15 @@ function btRenderHero(results, dateStr) {
     h += '<div class="btx-t"><div class="btx-title">Результат теста</div>';
     h += '<div class="btx-sub">' + btFormatDate(dateStr) + ' → сегодня · ' + btPluralPapers(positions) + '</div></div>';
     h += '</div>';
+    // Порядок — логика денег: старт → бумаги сейчас → выплаты → итоговый P&L →
+    // доходность (бывшая пилюля из P&L — отдельным блоком) → риск (просадка)
     h += '<div class="btx-kpis">';
     h += kpi('Стартовая сумма', results.totalBuyPrice > 0 ? btFmtRub(results.totalBuyPrice) : '—');
     h += kpi('Бумаги сейчас', results.totalTestPrice > 0 ? btFmtRub(results.totalTestPrice) : '—');
-    h += kpi('P&L', hasPnl ? (totalPnl >= 0 ? '+' : '') + btFmtRub(totalPnl) : '—', cls,
-        pct !== null ? '<i class="btx-pct ' + cls + '">' + (pct >= 0 ? '+' : '') + pct + '%</i>' : '');
     h += kpi('Купоны и дивиденды', payStr, (!results._payUnknown && results.totalPayouts > 0) ? 'pos' : '');
-    h += '<div class="btx-kpi"><span>Макс. просадка</span><b id="btDDVal">' + (dd != null ? dd.toFixed(1) + '%' : '—') + '</b></div>';
+    h += kpi('P&L', hasPnl ? (totalPnl >= 0 ? '+' : '') + btFmtRub(totalPnl) : '—', cls);
+    h += kpi('Доходность', pct !== null ? (pct >= 0 ? '+' : '') + pct + '%' : '—', cls);
+    h += '<div class="btx-kpi" title="Максимальное падение стоимости бумаг от локального пика до дна внутри периода (по дневным ценам, без выплат). На графике шкала другая — доходность от даты старта, поэтому числа не обязаны совпадать."><span>Макс. просадка</span><b id="btDDVal">' + (dd != null ? dd.toFixed(1) + '%' : '—') + '</b></div>';
     h += '</div>';
     h += '<div class="btx-mode">';
     h += '<div class="bt-res-mode">';
@@ -932,6 +958,14 @@ async function btLoadChart() {
             data.pfFinal = cardPct;
             data.delta = data.pfFinal - data.imFinal;
         }
+        // Третья линия «Депозит» — накопленная RUSFAR; не пилюля, а фон-ориентир.
+        // Ключ с подчёркиванием, чтобы не пересекаться с пилюлями BT_BENCH.
+        // При сбое загрузки график живёт без неё.
+        if (!_btIdxCache.map._RUSFAR) {
+            _btIdxCache.map._RUSFAR = await btFetchHistorySeries('/iss/history/engines/stock/markets/index/securities/RUSFAR.json', dateStr, todayStr);
+            if (seq !== _btChartSeq) return;
+        }
+        btAttachDeposit(data, _btIdxCache.map._RUSFAR);
         if (seq !== _btChartSeq) return;
         btRenderIdxChart(panel, data, dateStr, todayStr, bench);
     } catch(e) {
@@ -1117,6 +1151,27 @@ function btAlignReturns(pfSeries, imoexSeries) {
     return { points: points, pfFinal: last.pf, imFinal: last.im, delta: last.pf - last.im };
 }
 
+// «Депозит»: капитализация дневной ставки RUSFAR (обеспеченный денежный рынок
+// Мосбиржи, ходит вплотную к ключевой) по календарным дням — честный ориентир
+// «а лучше ли вклада?». rates: [{d, c: ставка % годовых}] с индексного эндпоинта.
+// Пишет p.dep (накопленный % с базовой даты) в каждую точку графика.
+function btAttachDeposit(data, rates) {
+    if (!data || !rates || rates.length < 2) return;
+    var pts = data.points, ri = 0, rate = null, factor = 1, prevD = null;
+    for (var i = 0; i < pts.length; i++) {
+        var d = pts[i].d;
+        while (ri < rates.length && rates[ri].d <= d) { rate = rates[ri].c; ri++; }
+        if (prevD !== null && rate !== null) {
+            var days = Math.round((new Date(d) - new Date(prevD)) / 86400000);
+            if (days > 0) factor *= Math.pow(1 + rate / 100, days / 365);
+        }
+        pts[i].dep = (factor - 1) * 100;
+        prevD = d;
+    }
+    data.hasDep = true;
+    data.depFinal = pts[pts.length - 1].dep;
+}
+
 // SVG-график доходности портфеля против выбранного индекса
 function btRenderIdxChart(panel, data, fromStr, tillStr, bench) {
     var pts = data.points;
@@ -1131,8 +1186,10 @@ function btRenderIdxChart(panel, data, fromStr, tillStr, bench) {
     cw = Math.max(280, cw - 4);
     var W = cw, H = Math.round(Math.min(260, Math.max(195, cw * 0.25)));
     var padL = 48, padR = 16, padT = 16, padB = 26;
+    var hasDep = !!data.hasDep && typeof s[0].dep === 'number';
+    var depColor = '#E3A008';
     var allV = [];
-    s.forEach(function(p) { allV.push(p.pf, p.im); });
+    s.forEach(function(p) { allV.push(p.pf, p.im); if (hasDep) allV.push(p.dep); });
     var minV = Math.min.apply(null, allV), maxV = Math.max.apply(null, allV);
     if (minV === maxV) { minV -= 1; maxV += 1; }
     var rng = maxV - minV; minV -= rng * 0.08; maxV += rng * 0.08;
@@ -1157,6 +1214,8 @@ function btRenderIdxChart(panel, data, fromStr, tillStr, bench) {
     });
     if (zeroY !== null) svg += '<line x1="' + padL + '" y1="' + zeroY.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + zeroY.toFixed(1) + '" stroke="rgba(133,147,166,0.45)" stroke-width="1" stroke-dasharray="3 3"/>';
     svg += '<path d="' + area('pf') + '" fill="' + pfFill + '"/>';
+    // Пунктир депозита — под основными линиями, чтобы не спорил с ними
+    if (hasDep) svg += '<path d="' + line('dep') + '" fill="none" stroke="' + depColor + '" stroke-width="1.8" stroke-dasharray="5 4" stroke-linejoin="round" stroke-linecap="round"/>';
     svg += '<path d="' + line('im') + '" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
     svg += '<path d="' + line('pf') + '" fill="none" stroke="' + pfColor + '" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>';
     svg += '<circle cx="' + X(n - 1).toFixed(1) + '" cy="' + Y(s[n - 1].pf).toFixed(1) + '" r="3.5" fill="' + pfColor + '"/>';
@@ -1196,8 +1255,57 @@ function btRenderIdxChart(panel, data, fromStr, tillStr, bench) {
     html += '<div class="bt-imoex-legend">';
     html += '<span class="bt-imoex-leg"><i style="background:' + pfColor + '"></i>Ваш портфель <b class="v ' + pfCls + '">' + (data.pfFinal >= 0 ? '+' : '') + data.pfFinal.toFixed(1) + '%</b></span>';
     html += '<span class="bt-imoex-leg"><i style="background:#94A3B8"></i>' + bench + ' <b class="v ' + imCls + '">' + (data.imFinal >= 0 ? '+' : '') + data.imFinal.toFixed(1) + '%</b></span>';
+    if (hasDep) html += '<span class="bt-imoex-leg" title="Ставка обеспеченного денежного рынка Мосбиржи (RUSFAR) с ежедневной капитализацией — ориентир доходности вклада"><i class="dash" style="background:' + depColor + '"></i>Депозит (RUSFAR) <b class="v">+' + data.depFinal.toFixed(1) + '%</b></span>';
     html += '</div></div>';
     panel.innerHTML = html;
+
+    // ── Ховер-тултип: вертикальная направляющая + значения линий на дату ──
+    var svgEl = panel.querySelector('svg.bt-imoex-chart');
+    var cardEl = panel.querySelector('.bt-imoex-card');
+    if (svgEl && cardEl) {
+        var tip = document.createElement('div');
+        tip.className = 'bt-ch-tip';
+        cardEl.appendChild(tip);
+        var guide = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        guide.setAttribute('stroke', 'rgba(100,116,139,0.55)');
+        guide.setAttribute('stroke-width', '1');
+        guide.setAttribute('stroke-dasharray', '2 3');
+        guide.setAttribute('y1', padT);
+        guide.setAttribute('y2', H - padB);
+        guide.style.display = 'none';
+        svgEl.appendChild(guide);
+        var tipRow = function(color, label, v) {
+            return '<span class="r"><i style="background:' + color + '"></i>' + label
+                + '<b>' + (v >= 0 ? '+' : '') + v.toFixed(1) + '%</b></span>';
+        };
+        svgEl.addEventListener('pointermove', function(ev) {
+            var rect = svgEl.getBoundingClientRect();
+            if (!rect.width) return;
+            var vx = (ev.clientX - rect.left) / rect.width * W;
+            var i = Math.round((vx - padL) / (W - padL - padR) * (n - 1));
+            if (i < 0) i = 0;
+            if (i > n - 1) i = n - 1;
+            var p = s[i];
+            var gx = X(i).toFixed(1);
+            guide.setAttribute('x1', gx);
+            guide.setAttribute('x2', gx);
+            guide.style.display = '';
+            tip.innerHTML = '<b class="d">' + btFormatDateDots(p.d) + '</b>'
+                + tipRow(pfColor, 'Портфель', p.pf)
+                + tipRow('#94A3B8', bench, p.im)
+                + (hasDep ? tipRow(depColor, 'Депозит', p.dep) : '');
+            var px = svgEl.offsetLeft + X(i) / W * rect.width;
+            tip.style.left = px + 'px';
+            tip.style.top = (svgEl.offsetTop + 10) + 'px';
+            tip.style.transform = px > svgEl.offsetLeft + rect.width * 0.62
+                ? 'translateX(calc(-100% - 12px))' : 'translateX(12px)';
+            tip.style.display = 'block';
+        });
+        svgEl.addEventListener('pointerleave', function() {
+            tip.style.display = 'none';
+            guide.style.display = 'none';
+        });
+    }
 }
 
 function btFormatDateShort(dateStr) {
@@ -1330,6 +1438,9 @@ function renderBtResults(results, dateStr) {
     html += tabBtn('overview', 'Обзор');
     html += tabBtn('assets', 'Бумаги', results.bonds.length + results.stocks.length);
     if (payCount > 0) html += tabBtn('pays', 'Выплаты', payCount);
+    // Выгрузка всего результата (сводка + бумаги + выплаты) — по паттерну терминала
+    html += '<button type="button" class="btr-export" onclick="btExportCsv()" title="Скачать результаты теста в Excel (CSV)">'
+        + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Excel</button>';
     html += '</div>';
     html += '<div class="btr-sub" id="btSubOverview"><div id="btImoexPanel"></div></div>';
     html += '<div class="btr-sub" id="btSubAssets"><div id="btAssetTables"></div></div>';
@@ -1418,23 +1529,28 @@ function btRenderAssetTables(results, dateStr) {
                 ? (b.testPrice < 100 ? b.testPrice.toFixed(2) + ' ₽' : btFmtRub(b.testPrice))
                 : '—';
             var pnlStr = (b.error || pnlVal == null) ? '—' : rowSign + btFmtRub(pnlVal);
-            // Не было цены на дату теста → бумага исключена из расчёта, говорим явно
-            var ntBadge = b.error
-                ? '<i class="bt-nt-badge" title="Нет цены на дату теста — бумага не участвует в расчёте">не торговалась</i>'
-                : '';
+            // Не было цены на дату теста → бумага исключена из расчёта, говорим явно;
+            // отдельный случай — валютная облигация (номинал в USD/CNY, курса нет)
+            var ntBadge = '';
+            if (b.error) {
+                var fxu = window._btFxBonds && window._btFxBonds[b.t];
+                ntBadge = fxu
+                    ? '<i class="bt-nt-badge" title="Валютная облигация: номинал в ' + fxu + ', для рублёвой оценки нужен курс на дату — поддержка появится позже. Бумага не участвует в расчёте">валютная</i>'
+                    : '<i class="bt-nt-badge" title="Нет цены на дату теста — бумага не участвует в расчёте">не торговалась</i>';
+            }
             // Облигация погашена внутри окна: номинал вернулся деньгами и уже в P&L
             if (b.redeemed) {
                 ntBadge += '<i class="bt-nt-badge" title="Облигация погашена за период теста: номинал возвращён деньгами и учтён в P&L вместе с купонами">погашена</i>';
             }
             // Сплит за период: «покупка» — в старых акциях, «сейчас» — в новых,
             // количество показываем как «купили → стало»
-            var qtyStr = b.qty + ' шт.';
+            var qtyStr = btQtyStr(b.qty) + ' шт.';
             if (b.splits) {
                 var sp0 = b.splits[0];
                 ntBadge += '<i class="bt-split-badge" title="' + b.splits.map(function(s) {
                     return 'Сплит ' + btFormatDateDots(s.d) + ': ' + s.before + ' → ' + s.after;
                 }).join('; ') + '. Количество и цена «сейчас» — в новых акциях.">сплит ' + sp0.before + ':' + sp0.after + '</i>';
-                qtyStr = b.qty + ' → ' + btQtyStr(b.qty * b.splitK) + ' шт.';
+                qtyStr = btQtyStr(b.qty) + ' → ' + btQtyStr(b.qty * b.splitK) + ' шт.';
             }
             t += '<div class="bt-asset-row">';
             t += '<span class="bt-asset-rank">#' + (k + 1) + '</span>';
@@ -1505,7 +1621,9 @@ function btRenderPayTables(results, dateStr) {
             var perUnitStr = a.splits
                 ? '<span title="Был сплит: выплаты на акцию до и после — в разном масштабе, сумма на 1 шт. не определена">—</span>'
                 : btPriceStr(a.payments.reduce(function(s, p) { return s + p.v; }, 0));
-            var qtyStr = a.splits ? (a.qty + ' → ' + btQtyStr(a.qty * a.splitK) + ' шт.') : (a.qty + ' шт.');
+            var qtyStr = a.splits
+                ? (btQtyStr(a.qty) + ' → ' + btQtyStr(a.qty * a.splitK) + ' шт.')
+                : (btQtyStr(a.qty) + ' шт.');
             // Свёрнутая строка бумаги
             t += '<div class="bt-asset-row bt-pay-group' + (open ? ' open' : '') + '" id="btPayR_' + key + '" onclick="btTogglePayGroup(\'' + key + '\')" role="button" aria-expanded="' + open + '">';
             t += '<span class="bt-asset-rank"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>';
@@ -1554,6 +1672,76 @@ function btRenderPayTables(results, dateStr) {
         html = '<div class="bt-pay-empty">За период теста купонов и дивидендов не было — или их историю не удалось загрузить.</div>';
     }
     container.innerHTML = html;
+}
+
+// ── Экспорт результатов теста в Excel ──
+// CSV с ; и запятой-десятичной (русская локаль Excel), BOM для кириллицы,
+// анти-формульный гард — те же конвенции, что у экспорта терминала.
+function btCsvCell(v) {
+    var s = String(v == null ? '' : v).replace(/\n/g, ' ');
+    // Excel исполняет ячейки, начинающиеся с = + @ (формульная инъекция) —
+    // гасим апострофом; отрицательные числа («-12,3») не трогаем
+    if (/^[=+@\t\r]/.test(s) || (s[0] === '-' && !/^-[\d\s.,]+%?$/.test(s))) s = "'" + s;
+    return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function btCsvNum(v, dec) {
+    if (v == null || isNaN(v)) return '';
+    return (+v).toFixed(dec == null ? 2 : dec).replace('.', ',');
+}
+function btExportCsv() {
+    var r = window._btLastResults, dateStr = window._btLastDate;
+    if (!r || !dateStr) return;
+    var lines = [];
+    function push(row) { lines.push(row.map(btCsvCell).join(';')); }
+    // Сводка
+    push(['Тест портфеля', 'с ' + btFormatDateDots(dateStr) + ' по ' + btFormatDateDots(btLocalISO(new Date()))]);
+    push(['Стартовая сумма, ₽', btCsvNum(r.totalBuyPrice)]);
+    push(['Бумаги сейчас (включая возврат номинала), ₽', btCsvNum(r.totalTestPrice)]);
+    push(['Купоны и дивиденды, ₽', r._payUnknown ? 'н/д' : btCsvNum(r.totalPayouts)]);
+    push(['P&L только цены, ₽', btCsvNum(r.totalPnl)]);
+    push(['Доходность только цены, %', r.totalPnlPct == null ? '' : String(r.totalPnlPct).replace('.', ',')]);
+    push(['P&L с выплатами, ₽', btCsvNum(r.totalPnlFull)]);
+    push(['Доходность с выплатами, %', r.totalPnlPctFull == null ? '' : String(r.totalPnlPctFull).replace('.', ',')]);
+    if (r._maxDD != null) push(['Макс. просадка, %', btCsvNum(r._maxDD, 1)]);
+    // Бумаги
+    lines.push('');
+    push(['Тип', 'Тикер', 'Название', 'Куплено, шт.', 'Сейчас, шт.', 'Цена покупки, ₽', 'Цена сейчас, ₽',
+          'Вложено, ₽', 'Бумаги сейчас, ₽', 'Возврат номинала, ₽', 'Купоны/дивиденды, ₽',
+          'P&L цены, ₽', 'P&L с выплатами, ₽', 'Пометки']);
+    function assetRow(a, type) {
+        var notes = [];
+        if (a.error) notes.push(window._btFxBonds && window._btFxBonds[a.t] ? 'валютная (не в расчёте)' : 'не торговалась');
+        if (a.redeemed) notes.push('погашена');
+        if (a.splits) notes.push('сплит ' + a.splits.map(function(s) { return s.before + ':' + s.after; }).join(', '));
+        var k = a.splitK || 1;
+        push([type, a.t, a.n || a.t, btCsvNum(a.qty, 0), btCsvNum(a.qty * k, k < 1 ? 2 : 0),
+              btCsvNum(a.buyPrice), btCsvNum(a.testPrice), btCsvNum(a.buyTotal), btCsvNum(a.testTotal),
+              btCsvNum(a.amortTotal || 0), btCsvNum(a.payTotal || 0), btCsvNum(a.pnl), btCsvNum(a.pnlFull),
+              notes.join('; ')]);
+    }
+    r.bonds.forEach(function(a) { assetRow(a, 'Облигация'); });
+    r.stocks.forEach(function(a) { assetRow(a, 'Акция'); });
+    // Хронология выплат
+    var pays = [];
+    r.bonds.forEach(function(a) { (a.payments || []).forEach(function(p) { pays.push({ a: a, p: p, kind: 'Купон' }); }); });
+    r.stocks.forEach(function(a) { (a.payments || []).forEach(function(p) { pays.push({ a: a, p: p, kind: 'Дивиденд' }); }); });
+    if (pays.length) {
+        pays.sort(function(x, y) { return x.p.d < y.p.d ? -1 : x.p.d > y.p.d ? 1 : 0; });
+        lines.push('');
+        push(['Выплата', 'Тикер', 'Название', 'Дата', 'На 1 шт., ₽', 'Кол-во на дату, шт.', 'Сумма, ₽']);
+        pays.forEach(function(row) {
+            var q = btQtyAtDate(row.a, row.p.d);
+            push([row.kind, row.a.t, row.a.n || row.a.t, btFormatDateDots(row.p.d),
+                  btCsvNum(row.p.v), btCsvNum(q, q === Math.round(q) ? 0 : 2), btCsvNum(row.p.v * q)]);
+        });
+    }
+    var blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'test-portfelya-' + dateStr + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function() { URL.revokeObjectURL(a.href); a.remove(); }, 0);
 }
 
 // Пометка «параметры изменились» над результатами прошлого запуска —

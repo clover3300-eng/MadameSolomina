@@ -463,7 +463,8 @@ body.dark-mode .bt2-feat { border-color: rgba(255, 255, 255, 0.14); }
     font-size: 12px; font-weight: 600;
     color: rgba(255, 255, 255, 0.58); white-space: nowrap;
 }
-.btx-kpis { display: flex; align-items: flex-start; gap: 26px; margin-left: auto; }
+/* 6 KPI: на узком десктопе ужимаем зазор, а не ломаем строку */
+.btx-kpis { display: flex; align-items: flex-start; gap: clamp(13px, 1.7vw, 26px); margin-left: auto; }
 .btx-kpi { min-width: 0; }
 .btx-kpi span {
     display: block; margin-bottom: 6px;
@@ -553,6 +554,22 @@ body.dark-mode .btr-tab.active { background: rgba(255, 255, 255, 0.12); color: #
 }
 .btr-tab.active .cnt { background: rgba(255, 255, 255, 0.16); color: #dfe7f1; }
 body.dark-mode .btr-tab .cnt { background: rgba(255, 255, 255, 0.08); color: #c4cedd; }
+/* Кнопка выгрузки в Excel — компактная, в хвосте панели подвкладок */
+.btr-export {
+    flex: 0 0 auto;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 14px;
+    border: none; border-radius: 10px;
+    background: transparent;
+    font-family: 'Manrope', sans-serif;
+    font-size: 12px; font-weight: 800;
+    color: #6c7a8d;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+.btr-export:hover { background: #eef2f8; color: #111927; }
+body.dark-mode .btr-export { color: #9aa8bc; }
+body.dark-mode .btr-export:hover { background: rgba(255, 255, 255, 0.08); color: #f1f6fb; }
 .btr-sub { display: none; }
 .btr-sub.active { display: block; animation: btResIn 0.28s cubic-bezier(0.22, 0.61, 0.36, 1); }
 
@@ -1007,6 +1024,7 @@ body.dark-mode .bt-stale-note b { color: #f0b357; }
 
 /* ---------- Сравнение с IMOEX: график доходности ---------- */
 .bt-imoex-card {
+    position: relative;   /* якорь для ховер-тултипа графика */
     background: #ffffff;
     border: 1.5px solid #d8dfeb;
     border-radius: 22px;
@@ -1015,6 +1033,39 @@ body.dark-mode .bt-stale-note b { color: #f0b357; }
     margin-bottom: 14px;
     animation: btResIn 0.32s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
+/* Ховер-тултип графика: дата + значения линий в ближайшей точке */
+.bt-ch-tip {
+    display: none;
+    position: absolute;
+    z-index: 5;
+    pointer-events: none;
+    min-width: 132px;
+    padding: 8px 11px;
+    background: #ffffff;
+    border: 1.5px solid #d8dfeb;
+    border-radius: 12px;
+    box-shadow: 0 10px 26px rgba(28, 42, 66, 0.14);
+}
+.bt-ch-tip .d {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px; font-weight: 700;
+    color: #6c7a8d;
+    margin-bottom: 5px;
+}
+.bt-ch-tip .r {
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px; font-weight: 600;
+    color: #46566b;
+    line-height: 1.65;
+    white-space: nowrap;
+}
+.bt-ch-tip .r i { width: 10px; height: 3px; border-radius: 2px; flex: 0 0 auto; }
+.bt-ch-tip .r b { font-family: 'JetBrains Mono', monospace; font-weight: 700; margin-left: auto; padding-left: 10px; color: #111927; }
+body.dark-mode .bt-ch-tip { background: #1d2734; border-color: rgba(255, 255, 255, 0.14); box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4); }
+body.dark-mode .bt-ch-tip .r { color: #c4cedd; }
+body.dark-mode .bt-ch-tip .r b { color: #f1f6fb; }
 body.dark-mode .bt-imoex-card { background: #1d2734; border-color: rgba(255, 255, 255, .12); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28); }
 .bt-imoex-head {
     display: flex; align-items: center; justify-content: space-between;
