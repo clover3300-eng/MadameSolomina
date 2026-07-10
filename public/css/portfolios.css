@@ -1280,7 +1280,8 @@ body.dark-mode .pf-fav .pff-tile:hover .pff-news.link .pff-news-inner {
 .pfpc-alldot { background: conic-gradient(#3b82f6, #16a34a, #f59e0b, #ef4444, #8b5cf6, #3b82f6); }
 /* сводка «за 30 дней» — горизонтальная плашка (не стопка мелкого текста в углу) */
 .pfpc-soon { display: flex; align-items: center; gap: 7px; margin-left: auto; align-self: center;
-    background: rgba(24,38,60,0.05); border-radius: 999px; padding: 6px 12px 6px 14px; white-space: nowrap; }
+    background: rgba(24,38,60,0.05); border-radius: 999px; padding: 6px 12px 6px 14px; white-space: nowrap;
+    transition: padding 0.2s ease; }
 body.dark-mode .pfpc-soon { background: rgba(255,255,255,0.06); }
 /* бейдж «N выплат» — виден в свёрнутом календаре (2/4 портфеля), чтобы не терять контекст */
 .pfpc-cnt { font-size: 10px; font-weight: 800; color: #46566e; background: rgba(24,38,60,0.08);
@@ -1289,12 +1290,17 @@ body.dark-mode .pfpc-cnt { color: #cdd8e6; background: rgba(255,255,255,0.1); }
 .pfpc-soon-l { font-size: 10px; font-weight: 700; letter-spacing: 0.02em; color: #94a3b8; }
 /* грандтотал шапки — тот же размер, что суммы строк ниже (pfpc-amt): итог не должен
    читаться мельче отдельной выплаты, из которых он и складывается */
-.pfpc-soon-v { font-family: 'JetBrains Mono', monospace; font-size: var(--fs-total, 16px); font-weight: 800; color: #16a34a; }
+.pfpc-soon-v { font-family: 'JetBrains Mono', monospace; font-size: var(--fs-total, 16px); font-weight: 800; color: #16a34a; transition: font-size 0.2s ease; }
 body.dark-mode .pfpc-soon-v { color: #34d399; }
-.pfpc-body { padding: 4px 22px 20px; }
+/* padding здесь и у .pfpc-row/.pfpc-pfnum/.pfpc-amt/.pfpc-soon-v ниже — со своим transition:
+   карточка сама себе container (см. @container ниже), и когда её ширина пересекает 400px
+   ПОСРЕДИ плавного разъезда сайдбара (#appShell, 0.3s), эти свойства без перехода
+   переключались бы мгновенным скачком прямо на глазах — обрывая плавную анимацию сайдбара */
+.pfpc-body { padding: 4px 22px 20px; transition: padding 0.2s ease; }
 .pfpc-list { display: flex; flex-direction: column; gap: 7px; }
 .pfpc-row { display: grid; grid-template-columns: 78px minmax(0,1fr) auto; align-items: center; gap: 12px;
-    padding: 10px 13px; border-radius: 12px; background: rgba(24,38,60,0.022); border: 1px solid rgba(24,38,60,0.05); }
+    padding: 10px 13px; border-radius: 12px; background: rgba(24,38,60,0.022); border: 1px solid rgba(24,38,60,0.05);
+    transition: grid-template-columns 0.2s ease, gap 0.2s ease, padding 0.2s ease; }
 /* мульти-портфель: номер-маркер — левой «рельсой» фиксированной ширины, номера всех строк
    на одной вертикали независимо от ширины суммы справа (раньше маркер стоял auto-колонкой
    перед суммой и «плавал» по горизонтали вслед за её длиной) */
@@ -1319,6 +1325,7 @@ body.dark-mode .pfpc-tk { color: #f4f8fd; }
     display: inline-block; min-width: 16px; text-align: center;
     font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 800; color: #1b2433; line-height: 1;
     padding: 6px 10px 7px;
+    transition: min-width 0.2s ease, padding 0.2s ease, font-size 0.2s ease;
     background: linear-gradient(101deg,
         transparent 1%,
         color-mix(in srgb, var(--c) 34%, transparent) 8%,
@@ -1337,7 +1344,7 @@ body.dark-mode .pfpc-pfnum { color: #f7fbff;
         transparent 99%); }
 /* сумма — главное число строки календаря («сколько и когда придёт»); размер — тот же
    токен --fs-total, что у итоговых сумм таблиц (typography-tokens.css), а не свой px */
-.pfpc-amt { font-family: 'JetBrains Mono', monospace; font-size: var(--fs-total, 16px); font-weight: 800; color: #16a34a; white-space: nowrap; text-align: right; }
+.pfpc-amt { font-family: 'JetBrains Mono', monospace; font-size: var(--fs-total, 16px); font-weight: 800; color: #16a34a; white-space: nowrap; text-align: right; transition: font-size 0.2s ease; }
 body.dark-mode .pfpc-amt { color: #34d399; }
 .pfpc-more { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 10px;
     padding: 9px; border-radius: 11px; border: 1px dashed rgba(24,38,60,0.16); background: none; color: #64748b;
