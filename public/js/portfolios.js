@@ -2395,11 +2395,15 @@
     }
     function payCalRowHtml(ev, multiPf) {
         // метка портфеля — его НОМЕР, «закрашенный маркером» цвета портфеля (тот же приём,
-        // что у названия на карточке, .pfc-name-ink); имя портфеля остаётся в title
-        return '<div class="pfpc-row">' +
+        // что у названия на карточке, .pfc-name-ink); имя портфеля остаётся в title.
+        // Номер — ПЕРВОЙ колонкой фиксированной ширины (левая «рельса», как кольца-номера
+        // на карточках и строки сводки): между тикером и суммой он стоял вплотную к
+        // auto-колонке суммы и «плавал» по горизонтали вслед за её шириной — номера
+        // соседних строк не выравнивались. Один портфель → колонка не рендерится вовсе.
+        return '<div class="pfpc-row' + (multiPf ? ' pfpc-row--pf' : '') + '">' +
+            (multiPf ? '<span class="pfpc-pf" style="--c:' + ev.pfColor + '" title="' + esc(ev.pfName) + '"><b class="pfpc-pfnum">' + ev.pfNum + '</b></span>' : '') +
             '<div class="pfpc-date"><b>' + ruDate(dateToIso(ev.date)) + '</b><span>' + daysUntilText(ev.date) + '</span></div>' +
             '<div class="pfpc-id"><span class="pfpc-tk">' + esc(ev.ticker) + '</span><span class="pfpc-nm">' + esc(ev.name) + '</span></div>' +
-            (multiPf ? '<span class="pfpc-pf" style="--c:' + ev.pfColor + '" title="' + esc(ev.pfName) + '"><b class="pfpc-pfnum">' + ev.pfNum + '</b></span>' : '<span></span>') +
             '<div class="pfpc-amt">+' + fmtRub(ev.amount) + '</div>' +
         '</div>';
     }

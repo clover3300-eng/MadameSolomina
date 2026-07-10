@@ -128,7 +128,8 @@ body.dark-mode .pf-sumcard {
    а правый блок роняем на свою строку целиком, иначе он «плавает» центром рядом с
    заголовком, обёрнутым в 2–3 строки — асимметрично и выглядит криво */
 .pf-paycal--cell .pf-ch-s { display: none; }
-.pf-paycal--cell .pfpc-head-r { flex: 1 1 100%; margin-left: 0; justify-content: flex-start; }
+/* фильтр + «за 30 дней» в узкой ячейке переносятся, а не выпирают за край карточки */
+.pf-paycal--cell .pfpc-head-r { flex: 1 1 100%; margin-left: 0; justify-content: flex-start; flex-wrap: wrap; row-gap: 8px; min-width: 0; }
 .pf-paycal--cell .pfpc-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
 /* пока ниже есть ещё выплаты (класс has-more ставит pfPayCalScroll) — низ списка плавно
    затухает вместо жёсткого среза последней видимой строки о край карточки */
@@ -1290,18 +1291,25 @@ body.dark-mode .pfpc-cnt { color: #cdd8e6; background: rgba(255,255,255,0.1); }
 body.dark-mode .pfpc-soon-v { color: #34d399; }
 .pfpc-body { padding: 4px 22px 20px; }
 .pfpc-list { display: flex; flex-direction: column; gap: 7px; }
-.pfpc-row { display: grid; grid-template-columns: 78px 1fr auto auto; align-items: center; gap: 12px;
+.pfpc-row { display: grid; grid-template-columns: 78px minmax(0,1fr) auto; align-items: center; gap: 12px;
     padding: 10px 13px; border-radius: 12px; background: rgba(24,38,60,0.022); border: 1px solid rgba(24,38,60,0.05); }
+/* мульти-портфель: номер-маркер — левой «рельсой» фиксированной ширины, номера всех строк
+   на одной вертикали независимо от ширины суммы справа (раньше маркер стоял auto-колонкой
+   перед суммой и «плавал» по горизонтали вслед за её длиной) */
+.pfpc-row--pf { grid-template-columns: 30px 78px minmax(0,1fr) auto; }
 body.dark-mode .pfpc-row { background: rgba(255,255,255,0.025); border-color: rgba(255,255,255,0.05); }
 .pfpc-date { display: flex; flex-direction: column; gap: 1px; }
 .pfpc-date b { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 700; color: #1b2433; }
 body.dark-mode .pfpc-date b { color: #f4f8fd; }
 .pfpc-date span { font-size: 9.5px; font-weight: 700; color: var(--pf-accent); }
 .pfpc-id { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.pfpc-tk { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #0f172a; }
+/* тикер обрезается многоточием, как имя под ним: без этого неразрывное «SU26233RMFS5»
+   в узкой ячейке (сдвиг сайдбаром) вылезало из своей колонки под маркер и сумму */
+.pfpc-tk { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #0f172a;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 body.dark-mode .pfpc-tk { color: #f4f8fd; }
 .pfpc-nm { font-size: 10.5px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pfpc-pf { display: inline-flex; align-items: center; white-space: nowrap; cursor: default; }
+.pfpc-pf { display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; cursor: default; }
 /* номер портфеля «закрашен маркером» его цвета — тот же приём, что у названия карточки (.pfc-name-ink) */
 .pfpc-pfnum {
     display: inline-block; min-width: 14px; text-align: center;
@@ -1323,7 +1331,7 @@ body.dark-mode .pfpc-pfnum { color: #f7fbff;
         color-mix(in srgb, var(--c) 54%, transparent) 50%,
         color-mix(in srgb, var(--c) 40%, transparent) 92%,
         transparent 99%); }
-.pfpc-amt { font-family: 'JetBrains Mono', monospace; font-size: 13.5px; font-weight: 800; color: #16a34a; white-space: nowrap; }
+.pfpc-amt { font-family: 'JetBrains Mono', monospace; font-size: 13.5px; font-weight: 800; color: #16a34a; white-space: nowrap; text-align: right; }
 body.dark-mode .pfpc-amt { color: #34d399; }
 .pfpc-more { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 10px;
     padding: 9px; border-radius: 11px; border: 1px dashed rgba(24,38,60,0.16); background: none; color: #64748b;
@@ -1340,8 +1348,22 @@ body.dark-mode .pfpc-more:hover { background: rgba(255,255,255,0.05); color: #f4
 .pfpc-state-t { font-family: 'Inter', sans-serif; font-size: 14.5px; font-weight: 800; color: #0f172a; }
 body.dark-mode .pfpc-state-t { color: #f4f8fd; }
 .pfpc-state-s { font-size: 12px; color: #94a3b8; max-width: 380px; line-height: 1.5; }
+/* Карточка календаря — контейнер: уплотняемся от СВОЕЙ ширины, а не от вьюпорта.
+   Узкой ячейку делает что угодно — 2 портфеля в узком «Виде» (3 в ряд), закреплённый
+   сайдбар, hover-peek — media-запросы по вьюпорту этого не видят. */
+.pf-paycal { container-type: inline-size; }
+@container (max-width: 400px) {
+    .pfpc-body { padding: 4px 14px 16px; }
+    /* колонку даты не сужаем: «через 10 недель» под ней перенесётся на 2 строки */
+    .pfpc-row { gap: 8px; padding: 9px 11px; }
+    .pfpc-row--pf { grid-template-columns: 24px 78px minmax(0,1fr) auto; }
+    .pfpc-amt { font-size: 12px; }
+    .pfpc-pfnum { min-width: 12px; padding: 3px 6px 4px; font-size: 11.5px; }
+    .pfpc-soon { padding: 5px 10px 5px 12px; }
+    .pfpc-soon-v { font-size: 13px; }
+}
 @media (max-width: 560px) {
-    .pfpc-row { grid-template-columns: 58px 1fr auto; gap: 8px; padding: 9px 11px; }
+    .pfpc-row, .pfpc-row--pf { grid-template-columns: 58px minmax(0,1fr) auto; gap: 8px; padding: 9px 11px; }
     .pfpc-pf { display: none; }
 }
 
