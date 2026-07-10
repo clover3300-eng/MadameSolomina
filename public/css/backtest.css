@@ -463,17 +463,25 @@ body.dark-mode .bt2-feat { border-color: rgba(255, 255, 255, 0.14); }
     font-size: 12px; font-weight: 600;
     color: rgba(255, 255, 255, 0.58); white-space: nowrap;
 }
-/* 6 KPI: на узком десктопе ужимаем зазор, а не ломаем строку */
-.btx-kpis { display: flex; align-items: flex-start; gap: clamp(13px, 1.7vw, 26px); margin-left: auto; }
+/* KPI сгруппированы в 3 смысловых блока с тонкими разделителями (Деньги | Итог |
+   Риск) — иначе шесть чисел в ряд сливались в кашу */
+.btx-kpis { display: flex; align-items: stretch; flex-wrap: wrap; gap: 14px 0; margin-left: auto; }
+.btx-grp { display: flex; align-items: flex-start; gap: clamp(13px, 1.6vw, 26px); padding: 0 clamp(16px, 1.7vw, 26px); }
+.btx-grp:first-child { padding-left: 0; }
+.btx-grp:last-child { padding-right: 0; }
+.btx-sep { flex: 0 0 auto; width: 1px; align-self: stretch; min-height: 40px; background: rgba(255, 255, 255, 0.13); }
 .btx-kpi { min-width: 0; }
 .btx-kpi span {
-    display: block; margin-bottom: 6px;
+    display: flex; align-items: center; margin-bottom: 7px;
+    height: 12px; line-height: 1;   /* фикс. высота: иконка «?» не удлиняет подпись, значения выравниваются */
     font-family: 'Manrope', sans-serif;
     font-size: 10px; font-weight: 800;
     letter-spacing: 0.1em; text-transform: uppercase;
     color: rgba(255, 255, 255, 0.5);
     white-space: nowrap;
 }
+/* иконка-подсказка внутри подписи KPI — фикс. размер, не влияет на высоту строки */
+.btx-kpi span .btx-help { width: 12px; height: 12px; margin-left: 4px; flex: 0 0 auto; }
 .btx-kpi b {
     display: inline-flex; align-items: center; gap: 7px;
     font-family: var(--font-num, 'JetBrains Mono', monospace);
@@ -483,6 +491,7 @@ body.dark-mode .bt2-feat { border-color: rgba(255, 255, 255, 0.14); }
 }
 .btx-kpi b.pos { color: #34d399; }
 .btx-kpi b.neg { color: #f87171; }
+.btx-kpi b.dd  { color: #f6c177; }   /* просадка — тёплый «янтарь риска», не тревожный красный */
 .btx-pct {
     font-style: normal;
     font-size: 11px; font-weight: 800;
@@ -653,11 +662,18 @@ body.dark-mode .btb-pill.active { background: rgba(255, 255, 255, 0.14); color: 
 /* Мобила: герой обычным блоком над карточкой настроек */
 @media (max-width: 1023px) {
     .btx-hero { margin-bottom: 14px; padding: 18px; gap: 14px; }
+    /* На мобиле смысловые группы стакаются, разделители — горизонтальные линии */
     .btx-kpis {
         margin-left: 0; width: 100%;
-        display: grid; grid-template-columns: 1fr 1fr;
-        gap: 14px 12px;
+        display: flex; flex-direction: column; align-items: stretch; gap: 0;
     }
+    .btx-grp {
+        display: grid; grid-template-columns: 1fr 1fr;
+        gap: 14px 12px; padding: 13px 0;
+    }
+    .btx-grp:first-child { padding-top: 0; }
+    .btx-grp:last-child { padding-bottom: 0; }
+    .btx-sep { width: auto; height: 1px; min-height: 0; align-self: auto; }
     .btx-kpi b { font-size: 16px; }
     .btx-mode { width: 100%; min-width: 0; }
     .btr-tab { font-size: 12px; padding: 8px 6px; gap: 5px; }

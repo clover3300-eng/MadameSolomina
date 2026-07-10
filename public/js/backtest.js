@@ -941,9 +941,12 @@ function btRenderHero(results, dateStr) {
         : (results.totalPayouts > 0 ? '+' + btFmtRub(results.totalPayouts) : '0 ₽');
     var dd = results._maxDD;
 
-    function kpi(label, val, valCls, extra) {
-        return '<div class="btx-kpi"><span>' + label + '</span><b class="' + (valCls || '') + '">' + val + (extra || '') + '</b></div>';
+    // help — необязательная иконка-подсказка в подпись; label в одну строку
+    function kpi(label, val, valCls, help) {
+        return '<div class="btx-kpi"><span>' + label + (help || '') + '</span><b class="' + (valCls || '') + '">' + val + '</b></div>';
     }
+
+    var ddTip = 'Самое глубокое падение стоимости бумаг от локального пика до дна внутри периода — «сколько вы могли потерять в худший момент, если бы продали на самом дне». Считается по дневным ценам, без учёта выплат. На графике сравнения шкала другая (доходность от даты старта), поэтому это число обычно «страшнее» самой нижней точки графика — и это нормально.';
 
     var h = '';
     h += '<div class="btx-fx"><i class="g1"></i><b class="mesh"></b></div>';
@@ -952,17 +955,25 @@ function btRenderHero(results, dateStr) {
     h += '<div class="btx-t"><div class="btx-title">Результат теста</div>';
     h += '<div class="btx-sub">' + btFormatDate(dateStr) + ' → сегодня · ' + btPluralPapers(positions) + '</div></div>';
     h += '</div>';
-    // Порядок — логика денег: старт → бумаги сейчас → выплаты → итоговый P&L →
-    // доходность (бывшая пилюля из P&L — отдельным блоком) → риск (просадка)
+    // KPI сгруппированы в три смысловых блока (с тонкими разделителями), чтобы
+    // не сливались в кашу: «Деньги» (вложено → стало → выплаты) | «Итог»
+    // (P&L → доходность) | «Риск» (просадка).
     h += '<div class="btx-kpis">';
+    h += '<div class="btx-grp">';
     h += kpi('Стартовая сумма', results.totalBuyPrice > 0 ? btFmtRub(results.totalBuyPrice) : '—');
     h += kpi('Бумаги сейчас', results.totalTestPrice > 0 ? btFmtRub(results.totalTestPrice) : '—');
     h += kpi('Купоны и дивиденды', payStr, (!results._payUnknown && results.totalPayouts > 0) ? 'pos' : '');
+    h += '</div>';
+    h += '<span class="btx-sep"></span>';
+    h += '<div class="btx-grp">';
     h += kpi('P&L', hasPnl ? (totalPnl >= 0 ? '+' : '') + btFmtRub(totalPnl) : '—', cls);
     h += kpi('Доходность', pct !== null ? (pct >= 0 ? '+' : '') + pct + '%' : '—', cls);
-    // Просадка — с видимой иконкой-подсказкой (native title мало кто замечает)
-    var ddTip = 'Самое глубокое падение стоимости бумаг от локального пика до дна внутри периода — «сколько вы могли потерять в худший момент, если бы продали на самом дне». Считается по дневным ценам, без учёта выплат. На графике сравнения шкала другая (доходность от даты старта), поэтому это число обычно «страшнее» самой нижней точки графика — и это нормально.';
-    h += '<div class="btx-kpi"><span>Макс. просадка' + btHelpIcon(ddTip) + '</span><b id="btDDVal">' + (dd != null ? dd.toFixed(1) + '%' : '—') + '</b></div>';
+    h += '</div>';
+    h += '<span class="btx-sep"></span>';
+    h += '<div class="btx-grp">';
+    // id="btDDVal" нужен: btLoadChart дописывает просадку асинхронно после расчёта серии
+    h += '<div class="btx-kpi"><span>Макс. просадка' + btHelpIcon(ddTip) + '</span><b id="btDDVal" class="dd">' + (dd != null ? dd.toFixed(1) + '%' : '—') + '</b></div>';
+    h += '</div>';
     h += '</div>';
     h += '<div class="btx-mode">';
     h += '<div class="bt-res-mode">';
