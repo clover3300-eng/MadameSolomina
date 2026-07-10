@@ -461,10 +461,38 @@ body.dark-mode .bt2-feat { border-color: rgba(255, 255, 255, 0.14); }
 .bt-res-pct-badge svg { width: 13px; height: 13px; }
 .bt-res-pct-badge.pos { color: #34D399; background: rgba(52, 211, 153, 0.15); }
 .bt-res-pct-badge.neg { color: #F87171; background: rgba(248, 113, 113, 0.15); }
+/* Переключатель «С выплатами / Только цены» — сегмент в тёмной карточке,
+   зеркалит .bt-source-switcher (активная белая пилюля на тёмном фоне) */
+.bt-res-mode {
+    display: flex; gap: 4px;
+    margin-top: 16px;
+    padding: 3px;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 11px;
+}
+.bt-res-mode-btn {
+    flex: 1;
+    padding: 7px 10px;
+    border: none; border-radius: 8px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.55);
+    font-family: inherit; font-size: 12px; font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+.bt-res-mode-btn:hover { color: rgba(255, 255, 255, 0.85); }
+.bt-res-mode-btn.active { background: #ffffff; color: #10151d; }
+.bt-res-mode-note {
+    margin-top: 9px;
+    font-size: 11px; line-height: 1.45;
+    color: rgba(255, 255, 255, 0.42);
+}
+
 .bt-res-sum-stats {
     display: grid; grid-template-columns: 1fr 1fr;
     gap: 10px;
-    margin-top: 20px;
+    margin-top: 16px;
 }
 /* Стартовая сумма / P&L — аккуратные карточки-плашки */
 .bt-res-stat {
@@ -539,8 +567,11 @@ body.dark-mode .bt2-feat { border-color: rgba(255, 255, 255, 0.14); }
         align-self: start;
     }
     .bt2-wrap.bt-results-mode #btResults   { grid-area: results; margin-top: 0 !important; }
-    .bt2-wrap.bt-results-mode .bt2-footer  { display: none; }
 }
+
+/* Подвал-обещания «После запуска…» прячем в режиме результатов НА ЛЮБОЙ ширине
+   (раньше правило жило только в десктопном @media и на мобиле подвал оставался) */
+.bt2-wrap.bt-results-mode .bt2-footer { display: none; }
 
 /* ============================================================
    ТАБЛИЦЫ РЕЗУЛЬТАТОВ (Облигации / Акции) — лекало вкладки
@@ -758,6 +789,71 @@ body.dark-mode #btResults .bt-asset-pnl.neutral { color: #76849a; }
     #btResults .bt-asset-pnl { font-size: 13.5px; }
     #btResults .bt-col-head { font-size: 10px; letter-spacing: 0.04em; }
 }
+
+/* ── Таблицы выплат (купоны/дивиденды): то же лекало + итоговая строка ── */
+#btResults .bt-pay-totalrow,
+#btResults .bt-pay-totalrow:hover { background: #f6f9fc; }
+body.dark-mode #btResults .bt-pay-totalrow,
+body.dark-mode #btResults .bt-pay-totalrow:hover { background: rgba(255, 255, 255, 0.04); }
+#btResults .bt-pay-totalrow .bt-asset-name {
+    font-size: 12px; font-weight: 800;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: #6c7a8d;
+}
+body.dark-mode #btResults .bt-pay-totalrow .bt-asset-name { color: #9aa8bc; }
+/* Сноска «по X выплаты не загрузились» внизу карточки */
+#btResults .bt-pay-miss {
+    padding: 10px 24px 14px;
+    font-size: 11.5px; line-height: 1.5;
+    color: #b45309;
+    border-top: 1px solid #eef2f7;
+}
+body.dark-mode #btResults .bt-pay-miss { color: #d9a94e; border-top-color: rgba(255, 255, 255, 0.07); }
+
+/* Мобайл: в таблицах выплат дата важнее всего — возвращаем все 5 колонок
+   (общее правило выше прячет 3-ю колонку у таблиц бумаг) */
+@media (max-width: 1023px) {
+    #btResults .bt-pay-card .bt-asset-buy-price { display: block; font-size: 10.5px; }
+    #btResults .bt-pay-card .bt-asset-head .bt-col-head:nth-child(3) { display: block; }
+    #btResults .bt-pay-card .bt-asset-row,
+    #btResults .bt-pay-card .bt-asset-head {
+        grid-template-columns: minmax(0, 1fr) 66px 54px 76px;
+        gap: 5px;
+    }
+    /* ранг на мобиле не влезает («#28») и не несёт смысла — скрываем */
+    #btResults .bt-pay-card .bt-asset-rank,
+    #btResults .bt-pay-card .bt-asset-head .bt-col-head:first-child { display: none; }
+    /* шапка карточки: пилюля «с даты» под заголовок, а не поверх него */
+    #btResults .bt-pay-card .bt-assets-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    /* заголовки колонок теснее, иначе «ДАТА КУПОНА» наезжает на соседа */
+    #btResults .bt-pay-card .bt-col-head { font-size: 9px; letter-spacing: 0.02em; }
+    #btResults .bt-pay-card .bt-asset-name { font-size: 13px; }
+    #btResults .bt-pay-card .bt-asset-ticker { font-size: 10.5px; }
+    #btResults .bt-pay-card .bt-asset-price { font-size: 11px; }
+    #btResults .bt-pay-card .bt-asset-pnl { font-size: 11.5px; }
+    #btResults .bt-pay-card .bt-pay-miss { padding: 10px 16px 14px; }
+}
+
+/* ── Плашка «параметры изменились» над устаревшими результатами ── */
+.bt-stale-note {
+    display: flex; align-items: flex-start; gap: 10px;
+    background: rgba(245, 158, 11, 0.10);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    border-radius: 14px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    font-size: 12.5px; line-height: 1.5;
+    color: var(--text-slate, #64748B);
+    animation: btResIn 0.3s ease;
+}
+.bt-stale-note svg { flex-shrink: 0; margin-top: 1px; }
+.bt-stale-note b { color: #B45309; }
+body.dark-mode .bt-stale-note { color: #c9b48d; }
+body.dark-mode .bt-stale-note b { color: #f0b357; }
 
 /* ---------- Сравнение с IMOEX: график доходности ---------- */
 .bt-imoex-card {

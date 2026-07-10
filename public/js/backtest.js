@@ -12,6 +12,7 @@ const btState = {
     source: 'calc',
     tickers: [],
     bulkOpen: false,
+    payoutMode: 'full',   // 'full' — P&L с купонами/дивидендами, 'price' — только цены
 };
 
 // --- UI helpers ---
@@ -23,6 +24,7 @@ function btSetSource(src) {
     document.getElementById('btSourceCalcInfo').style.display = src === 'calc' ? 'block' : 'none';
     document.getElementById('btSourceManualBlock').style.display = src === 'manual' ? 'block' : 'none';
     btUpdateRunBtn();
+    btMarkResultsStale();
 }
 
 function btToggleBulk() {
@@ -38,9 +40,21 @@ function btCurrentDate() {
     return el && el.value ? el.value : '';
 }
 
+// Локальная дата → YYYY-MM-DD (toISOString отдаёт UTC и до 03:00 МСК сдвигает день назад)
+function btLocalISO(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+// Тикер из пользовательского ввода: только A-Z / 0-9 / дефис (формат secid MOEX).
+// Всё остальное режем — тикер попадает в innerHTML и onclick, произвольные
+// символы там — вектор self-XSS (см. конвенцию jsArg в остальных модулях).
+function btCleanTicker(raw) {
+    return (raw || '').toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 20);
+}
+
 function btAddTicker() {
     var tickerEl = document.getElementById('btTickerInput');
-    var ticker = (tickerEl.value || '').trim().toUpperCase().replace(/\s+/g, '');
+    var ticker = btCleanTicker(tickerEl.value);
     if (!ticker) { tickerEl.focus(); return; }
     if (!btState.tickers.find(function(t) { return t.t === ticker; })) {
         var type = ticker.startsWith('SU') ? 'bond' : 'stock';
@@ -53,6 +67,7 @@ function btAddTicker() {
     btRecomputeManualQty();
     btRenderTickerList();
     btUpdateRunBtn();
+    btMarkResultsStale();
     lsScheduleSave();
 }
 
@@ -61,9 +76,8 @@ function btApplyBulk() {
     var lines = (ta.value || '').trim().split('\n');
     var added = [];
     lines.forEach(function(line) {
-        var ticker = line.trim().split(/\s+/)[0];
+        var ticker = btCleanTicker(line.trim().split(/\s+/)[0]);
         if (!ticker) return;
-        ticker = ticker.toUpperCase();
         if (btState.tickers.find(function(t) { return t.t === ticker; })) return;
         var type = ticker.startsWith('SU') ? 'bond' : 'stock';
         var item = { t: ticker, type: type, price: 0, qty: 0, status: 'loading' };
@@ -75,6 +89,7 @@ function btApplyBulk() {
     btRecomputeManualQty();
     btRenderTickerList();
     btUpdateRunBtn();
+    if (added.length > 0) btMarkResultsStale();
     added.forEach(function(item) { btFetchTickerPrice(item); });
     if (added.length > 0 && window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
         window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
@@ -87,6 +102,7 @@ function btRemoveTicker(ticker) {
     btRecomputeManualQty();
     btRenderTickerList();
     btUpdateRunBtn();
+    btMarkResultsStale();
     lsScheduleSave();
 }
 
@@ -97,6 +113,7 @@ function btClearTickers() {
     btRecomputeManualQty();
     btRenderTickerList();
     btUpdateRunBtn();
+    btMarkResultsStale();
     lsScheduleSave();
 }
 
@@ -263,6 +280,7 @@ function onBtDateChange() {
         btState.tickers.forEach(function(t) { btFetchTickerPrice(t); });
     }
     btUpdateRunBtn();
+    btMarkResultsStale();
 }
 
 // --- Collect assets from calculated portfolio ---
@@ -485,6 +503,73 @@ async function btGetStockPrice(ticker, dateStr) {
     return closeIdx >= 0 ? (row[closeIdx] || 0) : 0;
 }
 
+// --- Выплаты за период: дивиденды (акции) и купоны (облигации) ---
+
+// История дивидендов бумаги: дата отсечки + выплата на одну акцию
+async function btFetchDividends(ticker) {
+    var url = MOEX_PROXY + '?path=' + encodeURIComponent(
+        '/iss/securities/' + ticker + '/dividends.json?iss.meta=off');
+    var res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var data = await res.json();
+    var blk = data.dividends;
+    if (!blk || !blk.data) return [];
+    var cols = blk.columns;
+    var dIdx = cols.indexOf('registryclosedate'), vIdx = cols.indexOf('value');
+    var out = [];
+    blk.data.forEach(function(r) {
+        var d = r[dIdx], v = r[vIdx];
+        if (d && v > 0) out.push({ d: d, v: +v });
+    });
+    return out;
+}
+
+// Купонное расписание облигации (bondization MOEX ISS, постранично):
+// дата купона + выплата в рублях на одну бумагу. Будущие купоны без
+// определённой ставки приходят с value=null — отфильтруются по v > 0.
+async function btFetchCoupons(ticker) {
+    var out = [], start = 0;
+    for (var page = 0; page < 12; page++) {
+        var url = MOEX_PROXY + '?path=' + encodeURIComponent(
+            '/iss/statistics/engines/stock/markets/bonds/bondization/' + ticker +
+            '.json?iss.meta=off&iss.only=coupons&limit=100&start=' + start);
+        var res = await fetch(url);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        var data = await res.json();
+        var blk = data.coupons;
+        if (!blk || !blk.data || !blk.data.length) break;
+        var cols = blk.columns;
+        var dIdx = cols.indexOf('coupondate');
+        var vrIdx = cols.indexOf('value_rub'), vIdx = cols.indexOf('value');
+        blk.data.forEach(function(r) {
+            var d = r[dIdx];
+            var v = (vrIdx >= 0 && r[vrIdx] != null) ? +r[vrIdx] : (vIdx >= 0 && r[vIdx] != null ? +r[vIdx] : 0);
+            if (d && v > 0) out.push({ d: d, v: v });
+        });
+        if (blk.data.length < 100) break;
+        start += blk.data.length;
+    }
+    return out;
+}
+
+// Выплаты внутри окна теста: строго ПОСЛЕ даты покупки (отсечка/купон в день
+// покупки достаются прежнему владельцу) и по сегодня включительно
+function btFilterPayments(list, fromStr, tillStr) {
+    return list.filter(function(p) { return p.d > fromStr && p.d <= tillStr; })
+        .sort(function(a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; });
+}
+
+// null = не удалось загрузить (неизвестно), [] = выплат за период не было
+async function btFetchPaymentsSafe(ticker, isBond, fromStr, tillStr) {
+    try {
+        var list = isBond ? await btFetchCoupons(ticker) : await btFetchDividends(ticker);
+        return btFilterPayments(list, fromStr, tillStr);
+    } catch(e) {
+        console.warn('[BT] Payments fetch failed for ' + ticker + ':', e.message);
+        return null;
+    }
+}
+
 // --- UI: loading / error / results ---
 
 function showBtLoading(dateStr) {
@@ -521,44 +606,73 @@ function btFmtRub(v) {
     return Math.round(v).toLocaleString('ru-RU').replace(/\s/g, '.') + ' ₽';
 }
 
-// Левая карточка-«шапка» с финальными данными теста
+// Левая карточка-«шапка» с финальными данными теста.
+// P&L и процент зависят от режима btState.payoutMode:
+// 'full' — с купонами/дивидендами за период, 'price' — только изменение цен.
 function btRenderSummary(results, dateStr) {
     var el = document.getElementById('btResultSummary');
     if (!el) return;
     window._btLastResults = results;
     window._btLastDate = dateStr;
-    var totalPnl = results.totalPnl;
-    var pct = results.totalPnlPct !== null ? parseFloat(results.totalPnlPct) : null;
-    var hasPnl = totalPnl !== null;
+    var full = btState.payoutMode !== 'price';
+    var totalPnl = full ? results.totalPnlFull : results.totalPnl;
+    var pctRaw = full ? results.totalPnlPctFull : results.totalPnlPct;
+    var pct = (pctRaw !== null && pctRaw !== undefined) ? parseFloat(pctRaw) : null;
+    var hasPnl = totalPnl !== null && totalPnl !== undefined;
     var cls = hasPnl ? (totalPnl >= 0 ? 'pos' : 'neg') : '';
     var pnlSign = hasPnl && totalPnl >= 0 ? '+' : '';
     var pctSign = pct !== null && pct >= 0 ? '+' : '';
     var arrow = hasPnl ? (totalPnl >= 0
         ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>'
         : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>') : '';
-    var positions = results.bonds.length + results.stocks.length;
 
     var h = '';
     h += '<div class="bt-res-sum-top">';
     h += '<span class="bt-res-sum-eyebrow">Результат теста</span>';
     h += '<span class="bt-res-date-pill"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' + btFormatDate(dateStr) + '</span>';
     h += '</div>';
-    h += '<div class="bt-res-sum-label">Стоимость портфеля сейчас</div>';
+    h += '<div class="bt-res-sum-label">Стоимость бумаг сейчас</div>';
     h += '<div class="bt-res-sum-valrow">';
     h += '<div class="bt-res-sum-value">' + (results.totalTestPrice > 0 ? btFmtRub(results.totalTestPrice) : '—') + '</div>';
     if (pct !== null) {
         h += '<span class="bt-res-pct-badge ' + cls + '">' + arrow + pctSign + pct + '%</span>';
     }
     h += '</div>';
+    // Два вида расчёта: с выплатами / только цены
+    h += '<div class="bt-res-mode">';
+    h += '<button type="button" class="bt-res-mode-btn' + (full ? ' active' : '') + '" onclick="btSetPayoutMode(\'full\')">С выплатами</button>';
+    h += '<button type="button" class="bt-res-mode-btn' + (!full ? ' active' : '') + '" onclick="btSetPayoutMode(\'price\')">Только цены</button>';
+    h += '</div>';
+    h += '<div class="bt-res-mode-note">' + (full
+        ? 'P&L учитывает купоны и дивиденды, выплаченные за период теста'
+        : 'P&L только по изменению цен — купоны и дивиденды не учитываются') + '</div>';
+    var payStr = results._payUnknown ? '—'
+        : (results.totalPayouts > 0 ? '+' + btFmtRub(results.totalPayouts) : '0 ₽');
+    var dd = results._maxDD;
     h += '<div class="bt-res-sum-stats">';
     h += '<div class="bt-res-stat"><span>Стартовая сумма</span><b>' + (results.totalBuyPrice > 0 ? btFmtRub(results.totalBuyPrice) : '—') + '</b></div>';
     h += '<div class="bt-res-stat"><span>P&L</span><b class="' + cls + '">' + (hasPnl ? pnlSign + btFmtRub(totalPnl) : '—') + '</b></div>';
+    h += '<div class="bt-res-stat"><span>Купоны и дивиденды</span><b class="' + (!results._payUnknown && results.totalPayouts > 0 ? 'pos' : '') + '">' + payStr + '</b></div>';
+    h += '<div class="bt-res-stat"><span>Макс. просадка</span><b id="btDDVal">' + (dd != null ? dd.toFixed(1) + '%' : '—') + '</b></div>';
     h += '</div>';
-    h += '<button type="button" class="bt-imoex-btn" id="btImoexBtn" onclick="btCompareImoex()">'
+    h += '<button type="button" class="bt-imoex-btn' + (_btImoexOpen ? ' is-open' : '') + '" id="btImoexBtn" onclick="btCompareImoex()">'
         + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>'
         + 'Сравнить с IMOEX</button>';
     el.innerHTML = h;
     el.style.display = 'block';
+}
+
+// Переключение «С выплатами / Только цены» — пересобирает шапку и таблицы
+// из уже загруженных данных, график сравнения не трогает (он всегда по ценам)
+function btSetPayoutMode(mode) {
+    if (btState.payoutMode === mode) return;
+    btState.payoutMode = mode;
+    var r = window._btLastResults;
+    if (r) {
+        btRenderSummary(r, window._btLastDate);
+        btRenderAssetTables(r, window._btLastDate);
+    }
+    if (typeof lsScheduleSave === 'function') lsScheduleSave();
 }
 
 // Переключение раскладки в режим результатов (карточка слева + таблица справа)
@@ -615,10 +729,17 @@ async function btLoadImoexCompare(panel) {
         return;
     }
     try {
-        var todayStr = new Date().toISOString().split('T')[0];
+        var todayStr = btLocalISO(new Date());
+        // Портфельную серию строим ПЕРВОЙ: из неё же считается макс. просадка
+        // для карточки-итога — она должна появиться, даже если индекс не загрузится
+        var pf = await btBuildPortfolioSeries(results, dateStr, todayStr);
+        if (pf.length > 1) {
+            results._maxDD = btMaxDrawdown(pf);
+            var ddEl = document.getElementById('btDDVal');
+            if (ddEl) ddEl.textContent = results._maxDD.toFixed(1) + '%';
+        }
         var imoexRaw = await btFetchHistorySeries('/iss/history/engines/stock/markets/index/securities/IMOEX.json', dateStr, todayStr);
         if (!imoexRaw.length) throw new Error('NO_IMOEX');
-        var pf = await btBuildPortfolioSeries(results, dateStr, todayStr);
         // Линия портфеля — настоящий ряд MOEX, нормированный к 0% на дату теста.
         var data = btAlignReturns(pf, imoexRaw);
         if (!data || data.points.length < 2) throw new Error('NO_ALIGN');
@@ -746,6 +867,20 @@ async function btBuildPortfolioSeries(results, fromStr, tillStr) {
     return series;
 }
 
+// Максимальная просадка серии стоимости, % (от пика до дна, значение ≤ 0)
+function btMaxDrawdown(series) {
+    var peak = 0, dd = 0;
+    for (var i = 0; i < series.length; i++) {
+        var c = series[i].c;
+        if (c > peak) peak = c;
+        else if (peak > 0) {
+            var d = (c / peak - 1) * 100;
+            if (d < dd) dd = d;
+        }
+    }
+    return dd;
+}
+
 // Выравнивание двух серий к общему старту → доходность в %. Портфель: (стоимость − вложено
 // на эту дату) / вложено на эту дату (q.inv — себестоимость накопленных на эту дату лотов,
 // см. выше) — та же формула, что и в calcHold/calcPf, просто на каждый день. Простое
@@ -837,7 +972,7 @@ function btRenderImoexChart(panel, data, fromStr, tillStr) {
     var html = '<div class="bt-imoex-card">';
     html += '<div class="bt-imoex-head"><div class="bt-imoex-title">Доходность vs рынок (IMOEX)</div>';
     html += '<span class="bt-imoex-delta ' + deltaCls + '">' + (beat ? 'обгоняем рынок ' : 'отстаём ') + deltaTxt + '</span></div>';
-    html += '<div class="bt-imoex-sub">Рост портфеля и индекса Мосбиржи с даты теста, нормировано к 0%</div>';
+    html += '<div class="bt-imoex-sub">Рост портфеля и индекса Мосбиржи с даты теста, нормировано к 0% · только цены, без купонов и дивидендов</div>';
     html += svg;
     html += '<div class="bt-imoex-legend">';
     html += '<span class="bt-imoex-leg"><i style="background:' + pfColor + '"></i>Ваш портфель <b class="v ' + pfCls + '">' + (data.pfFinal >= 0 ? '+' : '') + data.pfFinal.toFixed(1) + '%</b></span>';
@@ -875,7 +1010,37 @@ function btFormatCapital(el) {
     btRecomputeManualQty();
     btRenderTickerList();
     btUpdateRunBtn();
+    btMarkResultsStale();
     if (typeof lsScheduleSave === 'function') lsScheduleSave();
+}
+
+// Итоги по строкам: ценовые суммы, выплаты (купоны/дивиденды) и оба варианта
+// P&L — «только цены» и «с выплатами». Выплата на строку = (на 1 шт.) × qty,
+// пересчитывается именно здесь: btRebuyAtBudget меняет qty уже после загрузки.
+function btComputeTotals(results) {
+    var tb = 0, tt = 0, pay = 0, anyKnown = false;
+    results.bonds.concat(results.stocks).forEach(function(a) {
+        if (a.payments) anyKnown = true;
+        a.payTotal = (a.payments || []).reduce(function(s, p) { return s + p.v; }, 0) * a.qty;
+        pay += a.payTotal;
+        tb += a.buyTotal;
+        tt += a.testTotal;
+        var ok = a.buyTotal > 0 && a.testTotal > 0;
+        a.pnl = ok ? a.testTotal - a.buyTotal : null;
+        a.pnlPct = ok ? ((a.testTotal - a.buyTotal) / a.buyTotal * 100).toFixed(1) : null;
+        a.pnlFull = ok ? a.testTotal + a.payTotal - a.buyTotal : null;
+        a.pnlPctFull = ok ? ((a.testTotal + a.payTotal - a.buyTotal) / a.buyTotal * 100).toFixed(1) : null;
+    });
+    results.totalBuyPrice = tb;
+    results.totalTestPrice = tt;
+    results.totalPayouts = pay;
+    // выплаты «неизвестны» (не грузились ни для одной бумаги) ≠ «их не было»
+    results._payUnknown = !anyKnown && (results.bonds.length + results.stocks.length) > 0;
+    var both = tb > 0 && tt > 0;
+    results.totalPnl = both ? tt - tb : null;
+    results.totalPnlPct = both ? ((tt - tb) / tb * 100).toFixed(1) : null;
+    results.totalPnlFull = both ? tt + pay - tb : null;
+    results.totalPnlPctFull = both ? ((tt + pay - tb) / tb * 100).toFixed(1) : null;
 }
 
 // «Покупка на стартовую сумму»: вместо переоценки текущих количеств по ценам
@@ -887,27 +1052,15 @@ function btRebuyAtBudget(results, budget) {
     var vNow = 0;
     all.forEach(function(a) { if (a.testPrice > 0) vNow += a.testPrice * a.qty; });
     if (vNow <= 0) return;
-    function rebuild(arr) {
-        arr.forEach(function(a) {
-            var w = (a.testPrice > 0 ? a.testPrice * a.qty : 0) / vNow;   // текущий вес
-            var alloc = budget * w;
-            var q = a.buyPrice > 0 ? Math.floor(alloc / a.buyPrice) : 0;
-            a.qty = q;
-            a.buyTotal = a.buyPrice > 0 ? a.buyPrice * q : 0;
-            a.testTotal = a.testPrice > 0 ? a.testPrice * q : 0;
-            a.pnl = (a.buyTotal > 0 && a.testTotal > 0) ? a.testTotal - a.buyTotal : null;
-            a.pnlPct = (a.buyTotal > 0 && a.testTotal > 0) ? ((a.testTotal - a.buyTotal) / a.buyTotal * 100).toFixed(1) : null;
-        });
-    }
-    rebuild(results.bonds);
-    rebuild(results.stocks);
-    var tb = 0, tt = 0;
-    results.bonds.concat(results.stocks).forEach(function(a) { tb += a.buyTotal; tt += a.testTotal; });
-    results.totalBuyPrice = tb;
-    results.totalTestPrice = tt;
-    var both = tb > 0 && tt > 0;
-    results.totalPnl = both ? tt - tb : null;
-    results.totalPnlPct = both ? ((tt - tb) / tb * 100).toFixed(1) : null;
+    all.forEach(function(a) {
+        var w = (a.testPrice > 0 ? a.testPrice * a.qty : 0) / vNow;   // текущий вес
+        var alloc = budget * w;
+        var q = a.buyPrice > 0 ? Math.floor(alloc / a.buyPrice) : 0;
+        a.qty = q;
+        a.buyTotal = a.buyPrice > 0 ? a.buyPrice * q : 0;
+        a.testTotal = a.testPrice > 0 ? a.testPrice * q : 0;
+    });
+    btComputeTotals(results);
 }
 
 function renderBtResults(results, dateStr) {
@@ -917,6 +1070,27 @@ function renderBtResults(results, dateStr) {
     _btImoexOpen = false;   // новый прогон — закрываем прошлый график
     // Финальные данные — в левую карточку-шапку
     btRenderSummary(results, dateStr);
+    // Таблицы живут в своём контейнере: переключатель режима пересобирает
+    // только его, не задевая график IMOEX (тот вставляется перед ним)
+    container.innerHTML = '<div id="btAssetTables"></div>';
+    btRenderAssetTables(results, dateStr);
+    btEnterResultsMode();
+    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+    }
+}
+
+// Дата 'YYYY-MM-DD' → 'DD.MM.YYYY' для колонок таблиц выплат
+function btFormatDateDots(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || '');
+    return m ? m[3] + '.' + m[2] + '.' + m[1] : (iso || '');
+}
+
+// Таблицы результатов: бумаги (ОФЗ/акции) + выплаты (купоны/дивиденды)
+function btRenderAssetTables(results, dateStr) {
+    var container = document.getElementById('btAssetTables');
+    if (!container) return;
+    var full = btState.payoutMode !== 'price';
     var html = '';
 
     // Asset tables helper — лекало таблицы ОФЗ из вкладки «Ребаланс»
@@ -939,18 +1113,20 @@ function renderBtResults(results, dateStr) {
         t += '<div class="bt-col-head right">Сейчас</div>';
         t += '<div class="bt-col-head right">P&L</div>';
         t += '</div>';
-        // Строки данных
+        // Строки данных: P&L — по режиму (с выплатами / только цены)
         for (var k = 0; k < items.length; k++) {
             var b = items[k];
-            var rowPnlClass = b.pnl !== null ? (b.pnl > 0 ? 'pos' : b.pnl < 0 ? 'neg' : 'neutral') : 'neutral';
-            var rowSign = b.pnl !== null && b.pnl >= 0 ? '+' : '';
+            var pnlVal = full ? b.pnlFull : b.pnl;
+            if (pnlVal === undefined) pnlVal = b.pnl;
+            var rowPnlClass = pnlVal != null ? (pnlVal > 0 ? 'pos' : pnlVal < 0 ? 'neg' : 'neutral') : 'neutral';
+            var rowSign = pnlVal != null && pnlVal >= 0 ? '+' : '';
             var buyStr = b.buyPrice > 0
                 ? (b.buyPrice < 100 ? b.buyPrice.toFixed(2) + ' ₽' : btFmtRub(b.buyPrice))
                 : '—';
             var priceStr = b.testPrice > 0
                 ? (b.testPrice < 100 ? b.testPrice.toFixed(2) + ' ₽' : btFmtRub(b.testPrice))
                 : '—';
-            var pnlStr = (b.error || b.pnl === null) ? '—' : rowSign + btFmtRub(b.pnl);
+            var pnlStr = (b.error || pnlVal == null) ? '—' : rowSign + btFmtRub(pnlVal);
             t += '<div class="bt-asset-row">';
             t += '<span class="bt-asset-rank">#' + (k + 1) + '</span>';
             t += '<div class="bt-asset-nameblock"><div class="bt-asset-name">' + (b.n || b.t) + '</div>';
@@ -964,8 +1140,68 @@ function renderBtResults(results, dateStr) {
         return t;
     }
 
+    // Таблица выплат: по строке на каждую выплату, хронологически.
+    // Колонки того же лекала: ранг | бумага | дата | на 1 шт. | сумма.
+    function renderPayTable(items, title, subtitle, dateColName, unitColName) {
+        var rows = [];
+        items.forEach(function(a) {
+            (a.payments || []).forEach(function(p) {
+                if (a.qty > 0) rows.push({ n: a.n || a.t, t: a.t, qty: a.qty, d: p.d, v: p.v, total: p.v * a.qty });
+            });
+        });
+        if (!rows.length) return '';
+        rows.sort(function(x, y) { return x.d < y.d ? -1 : x.d > y.d ? 1 : 0; });
+        var sum = rows.reduce(function(s, r) { return s + r.total; }, 0);
+        var missed = items.filter(function(a) { return a.payments === null; }).map(function(a) { return a.t; });
+        var t = '<div class="bt-assets-card bt-pay-card">';
+        t += '<div class="bt-assets-header">';
+        t += '<div class="bt-assets-ti"><div class="bt-assets-titlerow">';
+        t += '<b class="bt-assets-title">' + title + '</b>';
+        t += '<span class="bt-assets-cnt">' + rows.length + '</span></div>';
+        t += '<span class="bt-assets-sub">' + subtitle + '</span></div>';
+        t += '<div class="bt-assets-date-pill">с ' + btFormatDate(dateStr) + '</div>';
+        t += '</div>';
+        t += '<div class="bt-asset-row bt-asset-head">';
+        t += '<span class="bt-col-head"></span>';
+        t += '<div class="bt-col-head">Бумага</div>';
+        t += '<div class="bt-col-head right">' + dateColName + '</div>';
+        t += '<div class="bt-col-head right">' + unitColName + '</div>';
+        t += '<div class="bt-col-head right">Сумма</div>';
+        t += '</div>';
+        for (var k = 0; k < rows.length; k++) {
+            var r = rows[k];
+            t += '<div class="bt-asset-row">';
+            t += '<span class="bt-asset-rank">#' + (k + 1) + '</span>';
+            t += '<div class="bt-asset-nameblock"><div class="bt-asset-name">' + r.n + '</div>';
+            // количество — вперёд: на узком экране подстрока обрезается справа,
+            // а «сколько штук» в таблице выплат важнее полного тикера
+            t += '<div class="bt-asset-ticker">' + r.qty + ' шт. · ' + r.t + '</div></div>';
+            t += '<div class="bt-asset-buy-price">' + btFormatDateDots(r.d) + '</div>';
+            t += '<div class="bt-asset-price">' + btPriceStr(r.v) + '</div>';
+            t += '<div class="bt-asset-pnl pos">+' + btFmtRub(r.total) + '</div>';
+            t += '</div>';
+        }
+        // Итоговая строка
+        t += '<div class="bt-asset-row bt-pay-totalrow">';
+        t += '<span class="bt-asset-rank"></span>';
+        t += '<div class="bt-asset-nameblock"><div class="bt-asset-name">Итого за период</div></div>';
+        t += '<div class="bt-asset-buy-price"></div>';
+        t += '<div class="bt-asset-price"></div>';
+        t += '<div class="bt-asset-pnl pos">+' + btFmtRub(sum) + '</div>';
+        t += '</div>';
+        if (missed.length) {
+            t += '<div class="bt-pay-miss">По ' + missed.join(', ') + ' историю выплат загрузить не удалось — суммы могут быть неполными.</div>';
+        }
+        t += '</div>';
+        return t;
+    }
+
     html += renderTable(results.bonds, 'Облигации (ОФЗ)', 'Цена входа на дату теста и текущая стоимость');
+    html += renderPayTable(results.bonds, 'Купоны по облигациям',
+        'Когда и сколько заплатила каждая бумага за период теста', 'Дата купона', 'На 1 обл.');
     html += renderTable(results.stocks, 'Акции', 'Цена входа на дату теста и текущая стоимость');
+    html += renderPayTable(results.stocks, 'Дивиденды по акциям',
+        'Когда и сколько заплатила каждая компания за период теста', 'Отсечка', 'На 1 акцию');
 
     if (!results.bonds.length && !results.stocks.length) {
         html += '<div class="bt-error-card">'
@@ -987,56 +1223,30 @@ function renderBtResults(results, dateStr) {
     }
 
     container.innerHTML = html;
-    btEnterResultsMode();
-    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
-    }
+}
+
+// Пометка «параметры изменились» над результатами прошлого запуска —
+// чтобы устаревшие таблицы нельзя было принять за пересчитанные
+function btMarkResultsStale() {
+    if (!window._btLastResults) return;
+    var wrap = document.querySelector('#panel-backtest .bt2-wrap');
+    if (!wrap || !wrap.classList.contains('bt-results-mode')) return;
+    if (document.getElementById('btStaleNote')) return;
+    var res = document.getElementById('btResults');
+    if (!res) return;
+    var div = document.createElement('div');
+    div.id = 'btStaleNote';
+    div.className = 'bt-stale-note';
+    div.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+        + '<div><b>Параметры изменились.</b> Ниже — результат прошлого запуска, нажмите «Запустить тест» ещё раз.</div>';
+    res.insertBefore(div, res.firstChild);
 }
 
 
-
-// ===== IMPROVEMENT 2: LOAD LAST PORTFOLIO IN BACKTEST =====
-
-function btLoadLastPortfolio() {
-    var state = lsLoad();
-    if (!state || !state.sum || parseFloat(state.sum.replace(/\s/g, '')) < 100000) {
-        showLuxuryNotification('Нет сохранённого портфеля', 'Сначала рассчитайте портфель во вкладке «Расчёт»');
-        return;
-    }
-
-    // Восстанавливаем параметры и пересчитываем
-    if (state.sum) {
-        var sumEl = document.getElementById('sumInput');
-        if (sumEl) { sumEl.value = state.sum; if (typeof ndFormatInput === 'function') ndFormatInput(sumEl); }
-    }
-    if (state.bondPct) {
-        var slider = document.getElementById('ratioSlider');
-        if (slider) { slider.value = state.bondPct; if (typeof updateSlider === 'function') updateSlider(slider); }
-    }
-    if (state.isFeeSelected && state.brokerFee && typeof ndSelectFee === 'function') {
-        var feeText = (state.brokerFee * 100).toFixed(2).replace(/\.?0+$/, '') + '%';
-        ndSelectFee(state.brokerFee, feeText, null);
-    }
-
-    // Пересчитываем
-    if (typeof draw === 'function') {
-        try {
-            draw();
-            savePortfolio && savePortfolio();
-            isPortfolioCalculated = true;
-            var assets = btCollectFromPortfolio();
-            var sumEl2 = document.getElementById('btCalcSummary');
-            if (sumEl2) sumEl2.textContent = assets.bonds.length + assets.stocks.length + ' позиций: ' + assets.bonds.length + ' ОФЗ, ' + assets.stocks.length + ' акций.';
-            btUpdateRunBtn();
-            var saveTime = state.ts ? new Date(state.ts).toLocaleString('ru-RU', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
-            showLuxuryNotification('Портфель восстановлен', saveTime ? 'Сохранён ' + saveTime : '');
-        } catch(e) {
-            showLuxuryNotification('Ошибка', 'Не удалось восстановить портфель');
-        }
-    }
-}
 
 // ===== IMPROVEMENT 3: MOEX API GRACEFUL FALLBACK =====
+// («IMPROVEMENT 2» — btLoadLastPortfolio — удалён 2026-07-10: кнопки в UI не было,
+// восстановление расчёта давно живёт в calc-mode.js через флаг calcDone)
 
 async function btGetBondPriceSafe(ticker, dateStr) {
     try {
@@ -1082,15 +1292,18 @@ btFetchPrices = async function(dateStr, assets) {
 
     var results = { date: dateStr, bonds: [], stocks: [], totalBuyPrice: 0, totalTestPrice: 0 };
 
-    var todayStr = new Date().toISOString().split('T')[0];
+    var todayStr = btLocalISO(new Date());
 
-    // Все бумаги грузим ПАРАЛЛЕЛЬНО (и обе цены каждой бумаги тоже): раньше
-    // 20 позиций = 40 последовательных запросов и полминуты ожидания, теперь
-    // время = самый медленный одиночный запрос. Порядок сохраняется через map.
-    function loadOne(asset, getPrice) {
-        return Promise.all([getPrice(asset.t, dateStr), getPrice(asset.t, todayStr)])
-            .then(function (pair) {
-                var histPrice = pair[0], nowPrice = pair[1];
+    // Все бумаги грузим ПАРАЛЛЕЛЬНО (обе цены + выплаты каждой бумаги тоже):
+    // раньше 20 позиций = 40 последовательных запросов и полминуты ожидания,
+    // теперь время = самый медленный одиночный запрос. Порядок сохраняется через map.
+    function loadOne(asset, getPrice, isBond) {
+        return Promise.all([
+            getPrice(asset.t, dateStr),
+            getPrice(asset.t, todayStr),
+            btFetchPaymentsSafe(asset.t, isBond, dateStr, todayStr)
+        ]).then(function (trio) {
+                var histPrice = trio[0], nowPrice = trio[1];
                 done++;
                 if (histPrice === -1) { failed++; histPrice = 0; }
                 // Цена «сейчас» — живое закрытие с MOEX (тот же источник, что и конец
@@ -1103,31 +1316,24 @@ btFetchPrices = async function(dateStr, assets) {
                     t: asset.t, n: asset.n, qty: asset.qty,
                     buyPrice: histPrice, testPrice: nowPrice,
                     buyTotal: buyTotal, testTotal: nowTotal,
-                    pnl: buyTotal > 0 && nowTotal > 0 ? nowTotal - buyTotal : null,
-                    pnlPct: buyTotal > 0 && nowTotal > 0 ? ((nowTotal - buyTotal) / buyTotal * 100).toFixed(1) : null,
+                    payments: trio[2],   // [{d,v на 1 шт.}] за период, null = не загрузились
                     error: histPrice === 0
                 };
             });
     }
     var loaded = await Promise.all([
-        Promise.all(assets.bonds.map(function (b) { return loadOne(b, btGetBondPriceSafe); })),
-        Promise.all(assets.stocks.map(function (s) { return loadOne(s, btGetStockPriceSafe); }))
+        Promise.all(assets.bonds.map(function (b) { return loadOne(b, btGetBondPriceSafe, true); })),
+        Promise.all(assets.stocks.map(function (s) { return loadOne(s, btGetStockPriceSafe, false); }))
     ]);
     results.bonds = loaded[0];
     results.stocks = loaded[1];
-    results.bonds.concat(results.stocks).forEach(function (a) {
-        results.totalBuyPrice += a.buyTotal;
-        results.totalTestPrice += a.testTotal;
-    });
 
     if (failed > 0 && failed === total) {
         throw new Error('MOEX_UNAVAILABLE');
     }
 
-    var hasBuy = results.totalBuyPrice > 0;
-    var hasTest = results.totalTestPrice > 0;
-    results.totalPnl = hasBuy && hasTest ? results.totalTestPrice - results.totalBuyPrice : null;
-    results.totalPnlPct = hasBuy && hasTest ? ((results.totalTestPrice - results.totalBuyPrice) / results.totalBuyPrice * 100).toFixed(1) : null;
+    // Итоги (цены + выплаты, оба варианта P&L) — единым помощником
+    btComputeTotals(results);
     results.failedCount = failed;
     return results;
 };
@@ -1192,8 +1398,8 @@ runBacktest = async function() {
     } catch(e) {
         if (e.message === 'MOEX_UNAVAILABLE') {
             showBtError(
-                'MOEX API недоступен',
-                'Не удалось получить ни одной цены с биржи. Проверьте подключение к интернету или попробуйте позже. Исторические данные доступны через Yandex Cloud прокси.'
+                'Биржа не отвечает',
+                'Не удалось получить ни одной цены с Мосбиржи. Проверьте подключение к интернету и попробуйте ещё раз через пару минут.'
             );
         } else {
             showBtError('Ошибка загрузки', 'Не удалось получить данные с MOEX для даты ' + btFormatDate(testDate) + '.');
@@ -1209,9 +1415,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (dateEl) {
         const maxDate = new Date();
         maxDate.setDate(maxDate.getDate() - 1);
-        dateEl.max = maxDate.toISOString().split('T')[0];
+        dateEl.max = btLocalISO(maxDate);
         dateEl.min = '2010-01-01';
-        dateEl.value = d.toISOString().split('T')[0];
+        dateEl.value = btLocalISO(d);
     }
     btRenderTickerList();
     btUpdateRunBtn();

@@ -22,6 +22,7 @@ function lsSave() {
             btDate: btDate ? btDate.value : '',
             btTickers: btState ? btState.tickers : [],
             btSource: btState ? btState.source : 'calc',
+            btPayoutMode: btState ? btState.payoutMode : 'full',
             btManualCapital: (document.getElementById('btManualCapital') || {}).value || '',
             // смешанный расчёт произведён — по этому флагу calc-mode.js тихо
             // пересобирает портфель при загрузке (подвкладка «Смешанный портфель»)
@@ -87,6 +88,12 @@ function lsRestore() {
 
     if (state.btSource && btState) {
         btSetSource(state.btSource);
+    }
+
+    // Режим P&L теста («с выплатами / только цены») — просто флаг, без перерисовки:
+    // результатов после перезагрузки ещё нет
+    if ((state.btPayoutMode === 'full' || state.btPayoutMode === 'price') && btState) {
+        btState.payoutMode = state.btPayoutMode;
     }
 
     if (state.btManualCapital) {
