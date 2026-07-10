@@ -2599,10 +2599,10 @@
 
     function tradeHeadRowHtml(multiPf) {
         return '<div class="pft-hrow">' +
+            (multiPf ? '<div class="pft-h"></div>' : '') +   // рельса номера-маркера — без заголовка
             '<div class="pft-h">Дата</div>' +
             '<div class="pft-h">Тип</div>' +
             '<div class="pft-h">Тикер · название</div>' +
-            (multiPf ? '<div class="pft-h">Портфель</div>' : '') +
             '<div class="pft-h pft-r">Цена</div>' +
             '<div class="pft-h pft-r">НКД</div>' +
             '<div class="pft-h pft-r">Кол-во</div>' +
@@ -2631,10 +2631,12 @@
         // для продажи «Расход» — на самом деле приход: показываем с плюсом и зелёным
         var totalCell = t.side === 'sell' ? '<span class="pft-in">+' + fmtRub(t.total) + '</span>' : fmtRub(t.total);
         return '<div class="pft-row' + (t.rebal ? ' pft-row-rebal' : '') + '">' +
+            // метка портфеля — номер-маркер ПЕРВОЙ колонкой (левая рельса, как в календаре
+            // выплат): без имени и без заголовка, имя портфеля — в подсказке при наведении
+            (multiPf ? '<span class="pft-pf" style="--c:' + t.pfColor + '" title="' + esc(t.pfName) + '"><b class="pft-pfnum">' + (t.pfNum || '') + '</b></span>' : '') +
             '<div class="pft-date"><b>' + ruDate(t.date) + '</b>' + (rel ? '<span>' + esc(rel) + '</span>' : '') + '</div>' +
             '<div class="pft-c pft-type">' + side + '</div>' +
             '<div class="pft-id"><span class="pft-tk">' + esc(t.ticker) + '</span><span class="pft-nm">' + esc(t.name) + '</span></div>' +
-            (multiPf ? '<span class="pft-pf" style="--c:' + t.pfColor + '" title="' + esc(t.pfName) + '"><b class="pft-pfnum">' + (t.pfNum || '') + '</b><span class="pft-pfname">' + esc(t.pfName) + '</span></span>' : '') +
             '<div class="pft-c pft-price">' + fmtPrice(t.price) + '</div>' +
             '<div class="pft-c pft-nkd">' + (t.hasNkd ? fmtPrice(t.nkd) : '<span class="pft-dash">—</span>') + '</div>' +
             '<div class="pft-c pft-qty">' + t.qty + '</div>' +
@@ -2768,7 +2770,7 @@
             if (v == null || !isFinite(v)) return '';
             return String(Math.round(v * 100) / 100).replace('.', ',');
         }
-        var COLS = ['№', 'Тикер', 'Название', 'Кол-во', 'Ед.', 'Цена покупки, ₽', 'Дата покупки'];
+        var COLS = ['№', 'Тикер', 'Название', 'Кол-во', 'Ед.', 'Цена, ₽', 'Дата покупки'];
         var ALIGN = ['right', 'left', 'left', 'right', 'left', 'right', 'left'];
         function rowCells(x, i) {
             return [i + 1, x.h.ticker, x.h.name || '', Math.round(x.c.qty || 0), 'шт',
@@ -2777,14 +2779,30 @@
         var bonds = c.hs.filter(function (x) { return x.h.type === 'bond'; });
         var stocks = c.hs.filter(function (x) { return x.h.type !== 'bond'; });
 
-        // ---- текстовый вариант (TSV) ----
+        // ---- текстовый вариант: столбцы выровнены ПРОБЕЛАМИ (читается ровной таблицей в любом
+        // моноширинном поле; Excel/Word/Google-таблицы берут rich-html ниже, поэтому табы не
+        // нужны). Ширины столбцов общие для обоих блоков — облигации и акции выровнены между собой. ----
+        var allRows = bonds.map(function (x, i) { return rowCells(x, i); })
+            .concat(stocks.map(function (x, i) { return rowCells(x, i); }));
+        var widths = COLS.map(function (h, ci) {
+            var w = h.length;
+            allRows.forEach(function (r) { w = Math.max(w, String(r[ci]).length); });
+            return w;
+        });
+        function padCell(v, ci) {
+            v = String(v);
+            var gap = widths[ci] - v.length; if (gap < 0) gap = 0;
+            var sp = new Array(gap + 1).join(' ');
+            return ALIGN[ci] === 'right' ? sp + v : v + sp;
+        }
+        function fmtRow(cells) { return cells.map(padCell).join('  ').replace(/\s+$/, ''); }
         var lines = ['Портфель «' + p.name + '»'];
         function txtSection(title, list) {
             if (!list.length) return;
             lines.push('');                                 // пустая строка между блоками
             lines.push(title);                              // название раздела
-            lines.push(COLS.join('\t'));                    // заголовки этого раздела
-            list.forEach(function (x, i) { lines.push(rowCells(x, i).join('\t')); });
+            lines.push(fmtRow(COLS));                       // заголовки этого раздела
+            list.forEach(function (x, i) { lines.push(fmtRow(rowCells(x, i))); });
         }
         txtSection('Облигации', bonds);
         txtSection('Акции', stocks);

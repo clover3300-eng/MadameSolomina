@@ -79,7 +79,8 @@ body.dark-mode #themeFab:hover { background: rgba(30,41,59,0.95); color: rgba(25
    Видна лишь когда есть куда возвращаться (класс .on ставит profile-menu.js). */
 #navBackFab {
     position: fixed; right: 74px; bottom: 20px; z-index: 879;
-    width: 42px; height: 42px; border-radius: 50%;
+    /* вытянута влево пилюлей — площадь нажатия больше, чем у круглой кнопки темы */
+    width: 68px; height: 42px; border-radius: 999px;
     display: none; align-items: center; justify-content: center; cursor: pointer;
     background: transparent;
     border: 1px solid var(--card-border-aurora, rgba(24,38,60,0.12));
