@@ -2200,6 +2200,12 @@
         }
         return '<div class="dash2-card pf-card2 pf-fav">' +
             pfCardHead('', 'Избранное', 'потенциал и свежая новость по тикеру',
+                // «+» → терминал стоит НАПРОТИВ заголовка: вынесен ИЗ .pff-head-r (тот в узкой
+                // колонке переносится на 2-ю строку под заголовок), margin-left:auto уводит его
+                // вправо на строку заголовка. Внутри head-r он ломал space-between фильтра.
+                '<button class="pff-add" type="button" onclick="pfGoTerminal(event)" aria-label="Открыть терминал" title="Открыть терминал — все акции и облигации в таблице">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>' +
+                '</button>' +
                 '<div class="pff-head-r">' +
                     // кастомный поповер вместо нативного title: тот всплывает с секундной
                     // задержкой и в системном стиле — свой показывается мгновенно и в тоне приложения
@@ -2210,10 +2216,6 @@
                         '<button class="pff-sort-b' + (favSort === 'pot' ? ' on' : '') + '" onclick="pfSetFavSort(\'pot\')" title="Сначала с наибольшим потенциалом">Потенциал</button>' +
                         '<button class="pff-sort-b' + (favSort === 'news' ? ' on' : '') + '" onclick="pfSetFavSort(\'news\')" title="Сначала со свежими новостями">Новизна</button>' +
                     '</div>' +
-                    // минималистичный «+» в правом углу — переход в терминал (все бумаги в таблице)
-                    '<button class="pff-add" type="button" onclick="pfGoTerminal(event)" aria-label="Открыть терминал" title="Открыть терминал — все акции и облигации в таблице">' +
-                        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>' +
-                    '</button>' +
                 '</div>') +
             '<div class="pff-body">' + inner + '</div></div>';
     }

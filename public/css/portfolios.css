@@ -1215,7 +1215,7 @@ body.dark-mode .pff-sort-b.on { background: color-mix(in srgb, var(--pf-accent) 
 /* «+» в правом углу шапки избранного → терминал. БЕЗ кружка/плашки — голый значок «плюс»
    напротив заголовка: приглушён, чтобы не отвлекать; на ховере темнеет и чуть растёт. */
 .pff-add {
-    flex-shrink: 0; padding: 4px; margin-left: 2px;
+    flex-shrink: 0; padding: 4px; margin-left: auto;   /* уводит «+» вправо на строку заголовка */
     display: inline-flex; align-items: center; justify-content: center;
     border: none; background: none; cursor: pointer;
     color: #9aa6b4; transition: color 0.15s, transform 0.15s;
