@@ -30,16 +30,28 @@
     /* Веса для цифр */
     --fw-num:       600;
     --fw-num-bold:  700;
+
+    /* Цвет заголовков колонок — эталон .rbx-colhead (Ребаланс) */
+    --c-th: #94A3B8;
 }
+body.dark-mode { --c-th: #7d8aa0; }
 
 /* ── Портфель: выравнивание существующего разнобоя ─────────────────────────
-   Заголовки колонок: ОФЗ / эшелоны акций / ближайшие выплаты — один шрифт */
+   Заголовки колонок: ОФЗ / шапка эшелонов / раскрытый эшелон / ближайшие
+   выплаты — один шрифт, вес, разрядка и цвет (эталон — .rbx-colhead
+   Ребаланса). Специфичность (1 ID + 2 класса) и место в каскоде (файл
+   подключён последним из тематических) перебивают старые hex-цвета
+   в portfolio.css/site-layout.css/portfolio-tables.css — они не удалены,
+   просто больше не выигрывают. */
 #panel-portfolio .portfolio-list-headers .portfolio-list-header-text,
+#panel-portfolio .portfolio-echelons-headers .portfolio-echelon-h-text,
 #panel-portfolio .portfolio-echelon-columns-header span,
 #panel-portfolio .coupon-table-head span {
     font-family: var(--font-ui);
     font-size: var(--fs-th);
     font-weight: 800;
+    letter-spacing: 0.06em;
+    color: var(--c-th);
 }
 
 /* Числа в строках: ОФЗ, акции, выплаты — один размер и моно */

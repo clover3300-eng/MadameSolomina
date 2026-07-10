@@ -2793,10 +2793,13 @@
         #pfRightCol .portfolio-list-header-text {
             font-family: 'Manrope', sans-serif;
             font-size: 11px; font-weight: 800;
-            color: #8593a6; opacity: 1;
+            color: var(--c-th, #8593a6); opacity: 1;
             letter-spacing: 0.1em; text-transform: uppercase;
         }
-        body.dark-mode #pfRightCol .portfolio-list-header-text { color: #76849a; }
+        /* Тёмная тема — тот же токен (typography-tokens.css переопределяет
+           --c-th на body.dark-mode); больше нет отдельного hex здесь, иначе
+           эта (1,2,1)-специфичная дарк-версия обгоняет унификацию цвета. */
+        body.dark-mode #pfRightCol .portfolio-list-header-text { color: var(--c-th, #76849a); }
         #pfRightCol .portfolio-list-header-text.center { justify-content: center !important; text-align: center; }
         #pfRightCol .portfolio-list-header-text.right { text-align: right; }
 
@@ -3100,10 +3103,15 @@
         #pfRightCol .portfolio-coupon-card:not(.open) .coupon-preview-info { flex: 0 1 auto; margin-left: auto; }
         #pfRightCol .portfolio-coupon-card:not(.open) .coupon-preview-right { margin-left: 14px; }
         #pfRightCol .portfolio-coupon-card:not(.open) .coupon-preview-strip { padding-right: 56px; }
+        /* Текст обёрнут в span (рядом — иконка-«?» у ЭШЕЛОН/%), поэтому
+           красит именно span, не .portfolio-echelon-h-text — эта (1,2,1)-
+           специфичность выше правила в typography-tokens.css, единый
+           токен --c-th подключён здесь напрямую (не было дарк-варианта
+           вовсе — в тёмной теме цвет раньше не менялся). */
         #pfRightCol .portfolio-echelons-headers .portfolio-echelon-h-text span {
             font-family: 'Manrope', sans-serif;
             font-size: 11px; font-weight: 800;
-            color: #8593a6; letter-spacing: 0.1em; text-transform: uppercase;
+            color: var(--c-th, #8593a6); letter-spacing: 0.06em; text-transform: uppercase;
         }
         #pfRightCol #echelonContainerV2 {
             background: transparent;
