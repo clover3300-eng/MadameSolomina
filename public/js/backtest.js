@@ -1853,36 +1853,49 @@ function btRenderAllocation(results) {
     var total = b.val + s.val;
     if (total <= 0) { panel.innerHTML = ''; return; }
     var bp = b.val / total * 100, sp = s.val / total * 100;
-    var bondCol = '#2E90FA', stockCol = '#16B56B';
+    // Цвета в тон странице: акции — зелёный линии портфеля с графика (#16B56B),
+    // облигации — акцентный синий проекта (--accent-blue #3498db).
+    var bondCol = '#3498db', stockCol = '#16B56B';
     var tip = 'Доли по текущей рыночной стоимости: цена бумаги сейчас × количество (плюс номинал уже погашенных облигаций). Проценты — от суммарной стоимости бумаг «сейчас», выплаты сюда не входят.';
 
-    var bar = '<div class="bt-alloc-bar">';
-    if (b.val > 0) bar += '<span style="width:' + bp.toFixed(2) + '%;background:' + bondCol + '"></span>';
-    if (s.val > 0) bar += '<span style="width:' + sp.toFixed(2) + '%;background:' + stockCol + '"></span>';
-    bar += '</div>';
+    // ── Компактное кольцо (донат) вместо широкой полосы ──
+    var R = 34, C = 2 * Math.PI * R, GAP = 5;   // GAP — воздух между дугами
+    function arc(col, part, offPart) {
+        if (part <= 0) return '';
+        var len = Math.max(0, part / 100 * C - GAP);
+        return '<circle cx="46" cy="46" r="' + R + '" fill="none" stroke="' + col + '"'
+            + ' stroke-width="11" stroke-linecap="round"'
+            + ' stroke-dasharray="' + len.toFixed(2) + ' ' + (C - len).toFixed(2) + '"'
+            + ' stroke-dashoffset="' + (-(offPart / 100 * C)).toFixed(2) + '"/>';
+    }
+    var ring = '<div class="bt-alloc-ringwrap">'
+        + '<svg class="bt-alloc-ring" width="92" height="92" viewBox="0 0 92 92">'
+        + '<g transform="rotate(-90 46 46)">'
+        + '<circle cx="46" cy="46" r="' + R + '" fill="none" class="bt-alloc-track" stroke-width="11"/>'
+        + arc(stockCol, sp, 0)
+        + arc(bondCol, bp, sp)
+        + '</g></svg>'
+        + '<div class="bt-alloc-ring-c"><b>' + btFmtRub(total) + '</b><span>всего</span></div>'
+        + '</div>';
 
-    function row(name, col, part, cnt, val) {
+    function leg(name, col, part, val) {
         if (val <= 0) return '';
-        return '<div class="bt-alloc-row">'
+        return '<div class="bt-alloc-lrow">'
             + '<i style="background:' + col + '"></i>'
-            + '<span class="bt-alloc-meta"><span class="nm">' + name + '</span>'
-            + '<span class="ct">' + btPluralPapers(cnt) + '</span></span>'
-            + '<span class="bt-alloc-fig"><b class="pct">' + part.toFixed(1) + '%</b>'
-            + '<span class="amt">' + btFmtRub(val) + '</span></span>'
+            + '<div class="bt-alloc-lmeta"><span class="nm">' + name + '</span>'
+            + '<span class="amt">' + btFmtRub(val) + '</span></div>'
+            + '<b class="pct">' + part.toFixed(1) + '%</b>'
             + '</div>';
     }
 
     var html = '<div class="bt-alloc-card">';
-    html += '<div class="bt-alloc-head">';
-    html += '<div class="bt-alloc-htext"><div class="bt-alloc-title">Распределение сейчас' + btHelpIcon(tip) + '</div>';
-    html += '<div class="bt-alloc-sub">Доли по текущей рыночной стоимости бумаг</div></div>';
-    html += '<div class="bt-alloc-total"><span class="lbl">Всего</span><b>' + btFmtRub(total) + '</b></div>';
+    html += '<div class="bt-alloc-title">Распределение' + btHelpIcon(tip) + '</div>';
+    html += '<div class="bt-alloc-body">' + ring
+        + '<div class="bt-alloc-legend">'
+        + leg('Акции', stockCol, sp, s.val)
+        + leg('Облигации', bondCol, bp, b.val)
+        + '</div></div>';
     html += '</div>';
-    html += bar;
-    html += '<div class="bt-alloc-rows">';
-    html += row('Облигации', bondCol, bp, b.n, b.val);
-    html += row('Акции', stockCol, sp, s.n, s.val);
-    html += '</div></div>';
     panel.innerHTML = html;
 }
 

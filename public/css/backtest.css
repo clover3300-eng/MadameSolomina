@@ -1173,60 +1173,56 @@ body.dark-mode .bt-imoex-leg .v.neg { color: #F87171; }
 .bt-dep-toggle.off .dash { opacity: 0.7; }
 
 /* ---------- Виджет «Распределение сейчас» (акции / облигации) ---------- */
+/* Компактный виджет-донат: небольшая карточка, НЕ на всю ширину */
 .bt-alloc-card {
+    max-width: 400px;
     background: #ffffff;
     border: 1.5px solid #d8dfeb;
-    border-radius: 22px;
-    box-shadow: 0 12px 32px rgba(28, 42, 66, .08), 0 2px 8px rgba(28, 42, 66, .04);
-    padding: 18px 20px;
+    border-radius: 20px;
+    box-shadow: 0 10px 26px rgba(28, 42, 66, .07), 0 2px 8px rgba(28, 42, 66, .04);
+    padding: 16px 18px;
     margin-bottom: 14px;
     animation: btResIn 0.32s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
-body.dark-mode .bt-alloc-card { background: #1d2734; border-color: rgba(255, 255, 255, .12); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28); }
-.bt-alloc-head {
-    display: flex; align-items: flex-start; justify-content: space-between;
-    gap: 12px; margin-bottom: 14px;
-}
-.bt-alloc-title { display: inline-flex; align-items: center; font-size: 14px; font-weight: 800; color: #111927; }
+body.dark-mode .bt-alloc-card { background: #1d2734; border-color: rgba(255, 255, 255, .12); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28); }
+.bt-alloc-title { display: inline-flex; align-items: center; font-size: 13.5px; font-weight: 800; color: #111927; margin-bottom: 12px; }
 body.dark-mode .bt-alloc-title { color: #F1F6FB; }
-/* подзаголовок — тот же приём, что у карточки графика (.bt-imoex-sub) */
-.bt-alloc-sub { font-size: 12px; color: #8593A6; margin-top: 3px; }
-.bt-alloc-total { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex: 0 0 auto; }
-.bt-alloc-total .lbl {
-    font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 700;
-    letter-spacing: 0.1em; text-transform: uppercase; color: #8593A6;
+.bt-alloc-body { display: flex; align-items: center; gap: 18px; }
+
+/* Кольцо */
+.bt-alloc-ringwrap { position: relative; flex: 0 0 auto; width: 92px; height: 92px; }
+.bt-alloc-ring circle { transition: stroke-dasharray 0.5s cubic-bezier(0.22, 0.61, 0.36, 1); }
+.bt-alloc-track { stroke: #eef2f8; }
+body.dark-mode .bt-alloc-track { stroke: rgba(255, 255, 255, 0.07); }
+.bt-alloc-ring-c {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; pointer-events: none;
 }
-.bt-alloc-total b {
-    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 15px; color: #111927;
+.bt-alloc-ring-c b {
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px;
+    letter-spacing: -0.02em; color: #111927;
 }
-body.dark-mode .bt-alloc-total b { color: #F1F6FB; }
-body.dark-mode .bt-alloc-total .lbl { color: #9AA8BC; }
-.bt-alloc-bar {
-    display: flex; gap: 3px;
-    height: 16px; border-radius: 8px; overflow: hidden;
-    background: #eef2f8;
-    margin-bottom: 4px;
+body.dark-mode .bt-alloc-ring-c b { color: #F1F6FB; }
+.bt-alloc-ring-c span {
+    font-family: 'Inter', sans-serif; font-size: 8.5px; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase; color: #8593A6; margin-top: 2px;
 }
-body.dark-mode .bt-alloc-bar { background: rgba(255, 255, 255, 0.06); }
-.bt-alloc-bar span { display: block; height: 100%; min-width: 4px; border-radius: 5px; transition: width 0.4s cubic-bezier(0.22, 0.61, 0.36, 1); }
-.bt-alloc-rows { display: flex; flex-direction: column; }
-.bt-alloc-row {
-    display: flex; align-items: center; gap: 12px;
-    padding: 11px 0;
+
+/* Легенда */
+.bt-alloc-legend { flex: 1 1 auto; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.bt-alloc-lrow {
+    display: grid; grid-template-columns: 10px 1fr auto;
+    align-items: center; gap: 9px;
     font-family: 'Inter', sans-serif;
 }
-/* тонкий разделитель между строками — «связывает» список в единое целое */
-.bt-alloc-row + .bt-alloc-row { border-top: 1px solid #eef2f8; }
-body.dark-mode .bt-alloc-row + .bt-alloc-row { border-top-color: rgba(255, 255, 255, 0.07); }
-.bt-alloc-row i { width: 12px; height: 12px; border-radius: 4px; flex: 0 0 auto; }
-.bt-alloc-meta { flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.bt-alloc-row .nm { font-size: 13.5px; font-weight: 700; color: #2a3646; white-space: nowrap; }
-body.dark-mode .bt-alloc-row .nm { color: #e6ecf5; }
-.bt-alloc-row .ct { font-size: 11.5px; font-weight: 600; color: #8593A6; white-space: nowrap; }
-.bt-alloc-fig { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex: 0 0 auto; }
-.bt-alloc-row .pct { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 800; color: #111927; line-height: 1.15; }
-body.dark-mode .bt-alloc-row .pct { color: #F1F6FB; }
-.bt-alloc-row .amt { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: #8593A6; }
+.bt-alloc-lrow i { width: 10px; height: 10px; border-radius: 3px; }
+.bt-alloc-lmeta { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.bt-alloc-lrow .nm { font-size: 13px; font-weight: 700; color: #2a3646; white-space: nowrap; }
+body.dark-mode .bt-alloc-lrow .nm { color: #e6ecf5; }
+.bt-alloc-lrow .amt { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 600; color: #8593A6; white-space: nowrap; }
+.bt-alloc-lrow .pct { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 800; color: #111927; }
+body.dark-mode .bt-alloc-lrow .pct { color: #F1F6FB; }
 
 /* ---------- Ручной режим: «Подставить из расчёта» ---------- */
 .bt-fromcalc {
