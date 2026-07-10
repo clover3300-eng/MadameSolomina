@@ -466,7 +466,7 @@ body.dark-mode .bt2-feat { border-color: rgba(255, 255, 255, 0.14); }
 /* KPI сгруппированы в 3 смысловых блока с тонкими разделителями (Деньги | Итог |
    Риск) — иначе шесть чисел в ряд сливались в кашу */
 .btx-kpis { display: flex; align-items: stretch; flex-wrap: wrap; gap: 14px 0; margin-left: auto; }
-.btx-grp { display: flex; align-items: flex-start; gap: clamp(13px, 1.6vw, 26px); padding: 0 clamp(16px, 1.7vw, 26px); }
+.btx-grp { display: flex; align-items: flex-start; gap: clamp(20px, 2.4vw, 38px); padding: 0 clamp(16px, 1.7vw, 26px); }
 .btx-grp:first-child { padding-left: 0; }
 .btx-grp:last-child { padding-right: 0; }
 .btx-sep { flex: 0 0 auto; width: 1px; align-self: stretch; min-height: 40px; background: rgba(255, 255, 255, 0.13); }

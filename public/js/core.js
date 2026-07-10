@@ -126,6 +126,31 @@ function formatNewsDate(dateString) {
            inflation: '9.1%',
            ofz10: '---'
         };
+        // Кэш ставок рынка в localStorage: живые цифры (CSV Apps Script) иногда не
+        // подгружаются (медленный/недоступный источник) и плитки «Ставки рынка» на
+        // «Портфелях»/дашборде схлопываются в «—». Держим последние удачные значения
+        // до 6 часов, чтобы при следующей загрузке показать их сразу, а не прочерк.
+        var RATES_CACHE_KEY = 'rates_cache_v1', RATES_CACHE_TTL = 6 * 3600 * 1000;
+        function persistRatesCache() {
+            try {
+                var out = {};
+                ['keyRate', 'depositRate', 'inflation', 'ofz10'].forEach(function (k) {
+                    var v = ratesData[k];
+                    if (v && /\d/.test(String(v)) && String(v).indexOf('---') < 0) out[k] = v;
+                });
+                if (Object.keys(out).length) localStorage.setItem(RATES_CACHE_KEY, JSON.stringify({ ts: Date.now(), v: out }));
+            } catch (e) {}
+        }
+        (function restoreRatesCache() {
+            try {
+                var raw = localStorage.getItem(RATES_CACHE_KEY); if (!raw) return;
+                var c = JSON.parse(raw);
+                if (!c || !c.v || (Date.now() - (c.ts || 0)) > RATES_CACHE_TTL) return;
+                ['keyRate', 'depositRate', 'inflation', 'ofz10'].forEach(function (k) {
+                    if (c.v[k]) ratesData[k] = c.v[k];
+                });
+            } catch (e) {}
+        })();
     
 
                 var echelons = [
@@ -286,6 +311,7 @@ window._selectedPlan = 'trial';
     const ratesList = document.getElementById('ratesRowList');
     if (ratesList) ratesList.style.display = '';
     hideSkeleton('skeleton-rates');
+    persistRatesCache();   // запоминаем последние удачные значения на 6 часов
 }
 
         async function updateMarketData() {

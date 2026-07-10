@@ -2713,7 +2713,8 @@
         }
         return '<div class="' + cls + '">' + head + '<div class="pft-body">' + inner + '</div></div>';
     }
-    window.pfToggleTrades = function () { tradesFull = !tradesFull; renderPortfolios(); };
+    // renderNoAnim — раскрытие «Истории сделок» иначе перерисовывает мини-графики карточек с анимацией (мигание)
+    window.pfToggleTrades = function () { tradesFull = !tradesFull; renderNoAnim(); };
     window.pfToggleTradeYear = function (year) {
         var groups = groupTradesByYear(collectTrades(false));
         var latest = groups.length ? groups[0].year : '';
@@ -3052,7 +3053,10 @@
             // данжер-зона и форма добавления актива закрыты
             editHold = {}; colorsOpen = false; delArm = false; addOpen = false;
         }
-        renderPortfolios();
+        // renderNoAnim (не renderPortfolios): раскрытие настроек трогает только ОДНУ карточку,
+        // а полный ре-рендер заново «рисует» мини-графики ВСЕХ карточек с 1-сек анимацией линии —
+        // на глаз это читалось как мигание графиков. noChartAnim рисует их сразу в конечном виде.
+        renderNoAnim();
     };
     // клик по строке актива в мини-таблице → раскрыть/свернуть субданные (дата/цена/НКД).
     // Правим DOM ТОЧЕЧНО (без renderPortfolios): полный ре-рендер заново «рисует» все мини-
@@ -3098,7 +3102,8 @@
     window.pfToggleHolds = function (pid) {
         if (holdsExpand[pid]) { delete holdsExpand[pid]; }
         else { holdsExpand = {}; holdsExpand[pid] = true; openMenu = null; menuTall = false; chartOpen = {}; chartAssets = {}; chartAssetsFull = {}; }
-        renderPortfolios();
+        // renderNoAnim — иначе при раскрытии «всего состава» мигают мини-графики всех карточек
+        renderNoAnim();
     };
     // «Показать активы»: раскрыть/свернуть таблицу состава под графиком.
     // Тоггл через классы (без полного ре-рендера) — чтобы не сбивать анимацию графика.

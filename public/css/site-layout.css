@@ -2468,9 +2468,14 @@
             background: #ffffff;
             border-radius: 22px;
             overflow: hidden;
+            /* тень падает только вниз (0 16px …), а над картой — в отличие от Ребаланса,
+               где сверху её «накрывает» тёмный герой — ничего нет, и верхняя грань
+               таблиц сливалась со светлым фоном-мозаикой. Тонкий контур задаёт ЧЁТКУЮ
+               верхнюю грань по всему периметру. */
+            border: 1px solid rgba(24,38,60,0.10);
             box-shadow: 0 16px 36px rgba(24,38,60,0.08);
         }
-        body.dark-mode #pfRightCol #pfxCard { background: #1d2734; }
+        body.dark-mode #pfRightCol #pfxCard { background: #1d2734; border-color: rgba(255,255,255,0.07); }
         #pfRightCol #pfxCard > .portfolio-tab-content { display: block; min-width: 0; }
         #pfRightCol #pfxCard > #portfolio-tab-stocks { border-left: 1px solid rgba(44, 54, 76, 0.08); }
         body.dark-mode #pfRightCol #pfxCard > #portfolio-tab-stocks { border-left-color: rgba(255,255,255,0.07); }

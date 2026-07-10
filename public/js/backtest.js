@@ -1875,7 +1875,6 @@ function btRenderAllocation(results) {
         + arc(stockCol, sp, 0)
         + arc(bondCol, bp, sp)
         + '</g></svg>'
-        + '<div class="bt-alloc-ring-c"><b>' + btFmtRub(total) + '</b><span>всего</span></div>'
         + '</div>';
 
     function leg(name, col, part, val) {

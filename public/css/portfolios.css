@@ -168,7 +168,10 @@ body.dark-mode .pf-sumcard {
 .pf-fav .pff-body:has(.pff-empty) { display: flex; }
 .pf-fav .pff-empty { flex: 1; justify-content: center; }
 @media (max-width: 1040px) { .pf-fav { height: auto; max-height: 654px; } }
-.pf-topgrid-fav .pff-body { padding: 4px 14px 16px; flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+.pf-topgrid-fav .pff-body { padding: 4px 14px 16px; flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin;
+    /* карточка .pf-fav скруглена на 28px, а скролл-тело — прямоугольник: без этого
+       белая плитка новости в самом низу выглядывает за скруглённый угол блока */
+    border-radius: 0 0 26px 26px; }
 .pf-topgrid-fav .pff-grid { grid-template-columns: 1fr; }
 
 /* ---- карточка портфеля (огранка как у карточек калькулятора: 2px рамка, radius 28) ---- */
