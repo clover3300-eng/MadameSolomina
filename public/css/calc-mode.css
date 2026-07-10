@@ -17,7 +17,7 @@
 
 /* ── Переключение состояний ───────────────────────────────── */
 #cxChooser { display: none !important; }
-body.cxm-choose #cxChooser { display: grid !important; }
+body.cxm-choose #cxChooser { display: flex !important; }
 body.cxm-choose #r5Split,
 body.cxm-monthly #r5Split { display: none !important; }
 body.cxm-choose #calcCtaBar,
@@ -31,23 +31,22 @@ body.cxm-monthly #panel-calc #calcAccordion {
   border-radius: 0; padding: 0; margin: 0; overflow: visible;
 }
 
-/* Виджет «Купоны каждый месяц» под кнопкой расчёта — только в mix-режиме */
-#cxMonthlyWidget { display: none !important; }
-body.tab-calc.cxm-mix #cxMonthlyWidget { display: flex !important; }
+/* Кнопка «Назад к выбору» видна только в рабочих режимах, не на экране выбора */
+#cxBack { display: none; }
+body.cxm-mix #cxBack,
+body.cxm-monthly #cxBack { display: inline-flex; }
 
 /* Появление карточек при смене режима (display:none→видим перезапускает
    анимацию; keyframes r5-up объявлены в calc-r5.css) */
-body.cxm-choose #cxChooser .pk-card,
+body.cxm-choose #cxChooser,
 body.cxm-monthly #panel-calc .mi5-cols > *,
 body.cxm-mix #r5Split .pk-card { animation: r5-up .3s cubic-bezier(.2,.7,.3,1) both; }
-body.cxm-choose #cxChooser .pk-card:nth-child(2),
 body.cxm-monthly #panel-calc .mi5-right { animation-delay: .06s; }
 
 /* ── Единая высота карточек (эталон — пара «Капитал/Распределение») ── */
 @media (min-width: 1024px) {
-  #cxChooser .pk-card {
-    height: var(--cx-card-h, auto);
-    min-height: 460px;
+  #cxChooser {
+    min-height: var(--cx-card-h, 460px);
     box-sizing: border-box;
   }
   body.cxm-monthly #panel-calc .mi5-cols > .mi5-calc,
@@ -61,79 +60,95 @@ body.cxm-monthly #panel-calc .mi5-right { animation-delay: .06s; }
   #panel-calc .mi5-sched { min-height: 0; overflow-y: auto; }
 }
 
-/* ══ Карточка выбора 01 — композиция «Капитала» ══ */
-/* герой по центру свободной зоны, параметры прижаты к низу */
-#cxChooser .ct { min-height: 0; }
-.cx-rows.r5 .cxm-hero {
-  flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; text-align: center;
-  padding: 6px 0 0;
+/* ══ Единая карточка выбора (мокап A+B №1) ══ */
+/* Белая pk-card: шапка с вопросом + две витрины типов + подсказка снизу. */
+#cxChooser {
+  position: relative; flex-direction: column;
+  background: var(--r5-card); border-radius: var(--r5-radius);
+  box-shadow: var(--r5-shadow); padding: 30px;
+}
+
+/* Шапка: вопрос на белой поверхности карточки, по центру */
+.cx-rows.r5 .cxm-head { text-align: center; margin-bottom: 24px; }
+.cx-rows.r5 .cxm-k {
+  font-size: 11.5px; letter-spacing: .16em; text-transform: uppercase;
+  font-weight: 700; color: var(--r5-muted);
 }
 .cx-rows.r5 .cxm-q {
-  font-size: 34px; font-weight: 800; letter-spacing: -0.02em;
-  line-height: 1.18; color: var(--r5-text);
+  font-size: 26px; font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.15; color: var(--r5-text); margin-top: 8px;
 }
-/* линия-андерлайн как .nd-input-line у суммы */
-.cx-rows.r5 .cxm-line {
-  width: 64px; height: 2px; border-radius: 2px;
-  background: var(--r5-blue); opacity: .5; margin-top: 18px;
-}
-/* моно-подсказка как .nd-input-hint */
-.cx-rows.r5 .cxm-hint {
-  font-family: var(--r5-mono); font-size: 11px; letter-spacing: .26em;
-  text-transform: uppercase; color: var(--r5-muted); margin-top: 14px;
-}
-/* нижние параметры — как .cx-cap-params (комиссия + MOEX-полоска) */
-.cx-rows.r5 .cxm-params {
-  display: flex; flex-direction: column; gap: 12px; width: 100%; margin-top: auto;
-}
-/* строка в стиле .nd-fee-trigger */
-.cx-rows.r5 .cxm-fee {
-  display: flex; align-items: center; gap: 12px; padding: 15px 18px;
-  border-radius: 14px; background: #fff; border: 1px solid var(--r5-line);
-  font-size: 15px; font-weight: 600; color: var(--r5-text);
-}
-.cx-rows.r5 .cxm-fee-ic { display: inline-flex; color: var(--r5-muted); }
-.cx-rows.r5 .cxm-fee-pill {
-  margin-left: auto; background: #eef2f8; color: var(--r5-text);
-  padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 700;
-}
-/* полоска в стиле .nd-moex-strip */
-.cx-rows.r5 .cxm-strip {
-  display: flex; align-items: center; justify-content: center; gap: 9px;
-  padding: 2px 0 0;
-  font-family: var(--r5-mono); font-size: 11px; letter-spacing: .2em;
-  text-transform: uppercase; color: var(--r5-muted2);
-}
-.cx-rows.r5 .cxm-dot {
-  width: 6px; height: 6px; border-radius: 99px; flex: 0 0 auto;
-  background: var(--r5-green); box-shadow: 0 0 6px var(--r5-green);
+.cx-rows.r5 .cxm-qline {
+  width: 48px; height: 2px; border-radius: 2px;
+  background: var(--r5-blue); opacity: .45; margin: 14px auto 0;
 }
 
-/* ══ Карточка выбора 02 — композиция «Распределения» ══ */
-/* строки-варианты переиспользуют .nd-wfc (стили списка стратегий),
-   здесь только укрупнение под 2 строки вместо 6 */
-.cx-rows.r5 .cxm-list {
-  flex: 1; min-height: 0; display: flex; flex-direction: column;
-  justify-content: center; gap: 4px;
-}
-.cx-rows.r5 .cxm-row { padding: 26px 18px; }
-.cx-rows.r5 .cxm-row .nd-wfl { gap: 16px; }
-.cx-rows.r5 .cxm-row .nd-wfn { font-size: 19px; font-weight: 800; }
-.cx-rows.r5 .cxm-row .nd-wfs { font-size: 13.5px; margin-top: 3px; }
-.cx-rows.r5 .cxm-row .nd-wfb, .cx-rows.r5 .cxm-row .nd-wfst { font-size: 12.5px; }
-/* моно-мета справа: у купонной строки — оранжевый акцент */
-.cx-rows.r5 .cxm-row .nd-wfb { color: var(--r5-ofz); }
-.cx-rows.r5 .cxm-row .nd-wfst { color: var(--r5-orange); }
-.cx-rows.r5 .cxm-row-mon .nd-wfb { color: var(--r5-orange); }
-.cx-rows.r5 .cxm-row-mon .nd-wfst { color: var(--r5-muted2); }
-.cx-rows.r5 .cxm-row-mon:hover { background: #fff9f4 !important; }
-/* подводка-CTA внизу — тот же .r-cta, что у теста в «Распределении» */
-.cx-rows.r5 .cxm-cta { margin-top: 0; }
+/* Две витрины типов */
+.cx-rows.r5 .cxm-types { display: grid; grid-template-columns: 1fr; gap: 14px; flex: 1; }
+@media (min-width: 1024px) { .cx-rows.r5 .cxm-types { grid-template-columns: 1fr 1fr; } }
 
-body.dark-mode .cx-rows.r5 .cxm-fee { background: rgba(255,255,255,.03); }
-body.dark-mode .cx-rows.r5 .cxm-fee-pill { background: rgba(255,255,255,.08); }
-body.dark-mode .cx-rows.r5 .cxm-row-mon:hover { background: rgba(240,140,58,.10) !important; }
+.cx-rows.r5 .cxm-type {
+  position: relative; overflow: hidden;
+  border: 1px solid var(--r5-line); border-radius: 16px; padding: 22px;
+  display: flex; flex-direction: column; cursor: pointer;
+  transition: border-color .15s, box-shadow .15s, transform .15s;
+}
+.cx-rows.r5 .cxm-type:hover { border-color: #cdd8e6; box-shadow: 0 12px 26px rgba(24,38,60,.08); transform: translateY(-1px); }
+/* «Рекомендованная» витрина — тёмная обводка через inset-тень (без сдвига размеров) */
+.cx-rows.r5 .cxm-type.on { border-color: transparent; box-shadow: inset 0 0 0 1.5px var(--r5-dark); }
+.cx-rows.r5 .cxm-type.on:hover { box-shadow: inset 0 0 0 1.5px var(--r5-dark), 0 12px 26px rgba(24,38,60,.10); }
+.cx-rows.r5 .cxm-type > :not(.wm) { position: relative; }
+/* водяной номер витрины (клипуется overflow:hidden карточки) */
+.cx-rows.r5 .cxm-type .wm {
+  position: absolute; top: -14px; right: -2px; font-family: var(--r5-mono);
+  font-weight: 800; font-size: 74px; line-height: 1; letter-spacing: -.04em;
+  pointer-events: none; color: rgba(17,25,39,.05);
+}
+.cx-rows.r5 .cxm-type[data-mode="mix"] .wm { color: rgba(74,141,240,.08); }
+.cx-rows.r5 .cxm-type[data-mode="monthly"] .wm { color: rgba(240,140,58,.10); }
+
+.cx-rows.r5 .cxm-tk { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; font-weight: 700; }
+.cx-rows.r5 .cxm-tk.blue { color: var(--r5-blue); }
+.cx-rows.r5 .cxm-tk.orange { color: var(--r5-orange); }
+.cx-rows.r5 .cxm-tn { font-size: 19px; font-weight: 800; letter-spacing: -.01em; color: var(--r5-text); margin-top: 6px; }
+.cx-rows.r5 .cxm-ts { font-size: 12.5px; color: var(--r5-muted2); margin-top: 4px; line-height: 1.4; }
+
+.cx-rows.r5 .cxm-facts { display: flex; flex-direction: column; gap: 10px; margin: 16px 0 18px; }
+.cx-rows.r5 .cxm-fact { display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--r5-muted2); }
+.cx-rows.r5 .cxm-fic { flex: 0 0 auto; color: var(--r5-muted); }
+
+/* Кнопка-действие витрины (клик всплывает на всю витрину) */
+.cx-rows.r5 .cxm-tbtn {
+  margin-top: auto; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border-radius: 12px; padding: 12px; font-size: 13.5px; font-weight: 700; cursor: pointer;
+  transition: box-shadow .15s, background .15s;
+}
+.cx-rows.r5 .cxm-tbtn.dark { background: var(--r5-dark); color: #fff; box-shadow: 0 10px 22px rgba(16,24,38,.22); }
+.cx-rows.r5 .cxm-type:hover .cxm-tbtn.dark { box-shadow: 0 14px 28px rgba(16,24,38,.30); }
+.cx-rows.r5 .cxm-tbtn.ghost { background: #fff; color: var(--r5-text); box-shadow: inset 0 0 0 1.5px #d7dfeb; }
+.cx-rows.r5 .cxm-type:hover .cxm-tbtn.ghost { box-shadow: inset 0 0 0 1.5px #c2cede; }
+
+/* Подсказка снизу — тот же .r-cta, что у теста в «Распределении» */
+.cx-rows.r5 .cxm-cta { margin-top: 16px; }
+
+/* Кнопка «Назад к выбору типа» — над рабочими карточками */
+.cx-rows.r5 .cxm-back {
+  align-self: flex-start; align-items: center; gap: 8px;
+  border: 1px solid var(--r5-line); background: var(--r5-card); cursor: pointer;
+  font-family: inherit; font-size: 13px; font-weight: 700; color: var(--r5-muted2);
+  padding: 9px 14px; border-radius: 12px; margin-bottom: 2px;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.cx-rows.r5 .cxm-back:hover { color: var(--r5-text); border-color: #cdd8e6; }
+
+/* ── Тёмная тема ── */
+body.dark-mode .cx-rows.r5 .cxm-type { border-color: rgba(255,255,255,.09); }
+body.dark-mode .cx-rows.r5 .cxm-type .wm { color: rgba(255,255,255,.05); }
+body.dark-mode .cx-rows.r5 .cxm-type.on { box-shadow: inset 0 0 0 1.5px rgba(126,226,168,.55); }
+body.dark-mode .cx-rows.r5 .cxm-type.on:hover { box-shadow: inset 0 0 0 1.5px rgba(126,226,168,.55), 0 12px 26px rgba(0,0,0,.30); }
+body.dark-mode .cx-rows.r5 .cxm-tbtn.dark { background: #0f1620; }
+body.dark-mode .cx-rows.r5 .cxm-tbtn.ghost { background: rgba(255,255,255,.03); box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.14); }
+body.dark-mode .cx-rows.r5 .cxm-back { background: rgba(255,255,255,.03); }
 
 /* ── mi5-карточки в «Расчёте»: геометрия как у pk-card ────── */
 /* Ширину держит #calcPane (1180/паддинги) — внутренний max-width не нужен */
@@ -204,8 +219,8 @@ body.dark-mode #panel-calc .mi5-right > .mi5-card {
 @media (max-width: 1023px) {
   #panel-calc .mi5-card { padding: 22px 20px; }
   #panel-calc .mi5-start { padding: 22px 20px; }
-  .cx-rows.r5 .cxm-q { font-size: 27px; }
-  .cx-rows.r5 .cxm-hero { padding: 26px 0; }
-  .cx-rows.r5 .cxm-row { padding: 20px 14px; }
-  .cx-rows.r5 .cxm-list { gap: 2px; padding: 8px 0; }
+  #cxChooser { padding: 22px 20px; }
+  .cx-rows.r5 .cxm-head { margin-bottom: 18px; }
+  .cx-rows.r5 .cxm-q { font-size: 23px; }
+  .cx-rows.r5 .cxm-type { padding: 20px; }
 }

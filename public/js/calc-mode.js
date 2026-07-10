@@ -46,11 +46,15 @@
     return true;
   }
 
-  // ── Карточки выбора (стили = «Капитал» + «Распределение») ────────────────
-  var MON_IC = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>';
-  var GO_IC  = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>';
-  var SWAP_IC = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3L4 7l4 4"/><path d="M4 7h16"/><path d="M16 21l4-4-4-4"/><path d="M20 17H4"/></svg>';
+  // ── Экран выбора типа портфеля (единая карточка, мокап A+B №1) ───────────
+  var GO_IC   = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>';
+  var BACK_IC = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/></svg>';
   var SPARK_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M12 3l1.9 5.2L19 10l-5.1 1.8L12 17l-1.9-5.2L5 10l5.1-1.8z"/></svg>';
+  // иконки фактов витрин
+  var PIE_IC    = '<svg class="cxm-fic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 9 9h-9z"/><path d="M12 3v9"/></svg>';
+  var TREND_IC  = '<svg class="cxm-fic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M16 7h5v5"/></svg>';
+  var CAL_IC    = '<svg class="cxm-fic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+  var SHIELD_IC = '<svg class="cxm-fic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>';
 
   function buildChooser() {
     if (document.getElementById('cxChooser')) return true;
@@ -58,65 +62,55 @@
     if (!rows) return false;
 
     var ch = document.createElement('div');
-    ch.className = 'cx-split';
+    ch.className = 'cxm-card';
     ch.id = 'cxChooser';
     ch.innerHTML =
-      // 01 — вопрос-«герой» (композиция карточки «Капитал»)
-      '<div class="pk-card">' +
-        '<div class="wm-clip"><span class="wm">01</span></div>' +
-        '<span class="k">Начало</span>' +
-        '<span class="t">Новый расчёт</span>' +
-        '<div class="ct">' +
-          '<div class="cxm-hero">' +
-            '<div class="cxm-q">Какой портфель<br>вам ближе?</div>' +
-            '<div class="cxm-line"></div>' +
-            '<div class="cxm-hint">Выберите тип в карточке 02</div>' +
+      // Шапка: вопрос на белой поверхности карточки (не в хроме)
+      '<div class="cxm-head">' +
+        '<span class="cxm-k">Новый расчёт</span>' +
+        '<div class="cxm-q">Какой портфель вам ближе?</div>' +
+        '<div class="cxm-qline"></div>' +
+      '</div>' +
+      // Две витрины типов
+      '<div class="cxm-types">' +
+        // 01 — Смешанный (рекомендованный)
+        '<div class="cxm-type on" data-mode="mix">' +
+          '<span class="wm">01</span>' +
+          '<span class="cxm-tk blue">Вариант роста</span>' +
+          '<span class="cxm-tn">Смешанный</span>' +
+          '<span class="cxm-ts">Акции и облигации вместе — портфель работает на рост капитала.</span>' +
+          '<div class="cxm-facts">' +
+            '<span class="cxm-fact">' + PIE_IC + 'Облигации и акции по стратегии</span>' +
+            '<span class="cxm-fact">' + TREND_IC + 'Цель — рост, горизонт от 3 лет</span>' +
           '</div>' +
-          '<div class="cxm-params">' +
-            '<div class="cxm-fee">' +
-              '<span class="cxm-fee-ic">' + SWAP_IC + '</span>' +
-              '<span class="cxm-fee-lbl">Тип расчёта</span>' +
-              '<span class="cxm-fee-pill">2 варианта</span>' +
-            '</div>' +
-            '<div class="cxm-strip"><span class="cxm-dot"></span><span>Выбор можно изменить в любой момент</span></div>' +
+          '<span class="cxm-tbtn dark">Выбрать смешанный ' + GO_IC + '</span>' +
+        '</div>' +
+        // 02 — Купонный
+        '<div class="cxm-type" data-mode="monthly">' +
+          '<span class="wm">02</span>' +
+          '<span class="cxm-tk orange">Вариант дохода</span>' +
+          '<span class="cxm-tn">Купонный</span>' +
+          '<span class="cxm-ts">Только надёжные ОФЗ — купоны приходят на счёт каждый месяц.</span>' +
+          '<div class="cxm-facts">' +
+            '<span class="cxm-fact">' + CAL_IC + '12 выплат в год, 6 выпусков</span>' +
+            '<span class="cxm-fact">' + SHIELD_IC + 'Минимальный риск</span>' +
           '</div>' +
+          '<span class="cxm-tbtn ghost">Выбрать купонный ' + GO_IC + '</span>' +
         '</div>' +
       '</div>' +
-      // 02 — варианты списком (композиция карточки «Распределение»)
-      '<div class="pk-card act">' +
-        '<div class="wm-clip"><span class="wm">02</span></div>' +
-        '<span class="k">Выбор</span>' +
-        '<span class="t">Тип портфеля</span>' +
-        '<div class="ct">' +
-          '<div class="cxm-list">' +
-            '<div class="nd-wfc cxm-row" data-mode="mix">' +
-              '<div class="nd-wfl">' +
-                '<div class="nd-wfbar" style="background:linear-gradient(180deg,#4a8df0,#94A8B8)"></div>' +
-                '<div><div class="nd-wfn">Смешанный</div><div class="nd-wfs">Акции + облигации — рост капитала</div></div>' +
-              '</div>' +
-              '<div class="nd-wfr"><div class="nd-wfp"><span class="nd-wfb">Акции + ОФЗ</span><span class="nd-wfst">по стратегии</span></div></div>' +
-            '</div>' +
-            '<div class="nd-wfc cxm-row cxm-row-mon" data-mode="monthly">' +
-              '<div class="nd-wfl">' +
-                '<div class="nd-wfbar" style="background:linear-gradient(180deg,#ffb066,#f08c3a)"></div>' +
-                '<div><div class="nd-wfn">Купонный</div><div class="nd-wfs">Только ОФЗ — купоны каждый месяц</div></div>' +
-              '</div>' +
-              '<div class="nd-wfr"><div class="nd-wfp"><span class="nd-wfb">6 выпусков</span><span class="nd-wfst">каждый месяц</span></div></div>' +
-            '</div>' +
-          '</div>' +
-          '<div class="r-cta cxm-cta">' +
-            '<span class="ic">' + SPARK_IC + '</span>' +
-            '<span class="tx"><b>Не знаете, что выбрать?</b><span>Начните со смешанного — внутри есть тест на риск-профиль</span></span>' +
-            '<span class="btn">Смешанный ' + GO_IC + '</span>' +
-          '</div>' +
-        '</div>' +
+      // Подсказка для неопределившихся
+      '<div class="r-cta cxm-cta">' +
+        '<span class="ic">' + SPARK_IC + '</span>' +
+        '<span class="tx"><b>Не знаете, что выбрать?</b><span>Начните со смешанного — внутри есть тест на определение риск-профиля</span></span>' +
+        '<span class="btn">Смешанный ' + GO_IC + '</span>' +
       '</div>';
 
     rows.insertBefore(ch, rows.firstChild);
 
-    ch.querySelectorAll('.cxm-row').forEach(function (row) {
-      row.addEventListener('click', function () {
-        setMode(row.getAttribute('data-mode'));
+    // Витрина целиком кликабельна (кнопка внутри — визуальная, клик всплывает)
+    ch.querySelectorAll('.cxm-type').forEach(function (t) {
+      t.addEventListener('click', function () {
+        setMode(t.getAttribute('data-mode'));
         haptic('light');
       });
     });
@@ -125,21 +119,20 @@
     return true;
   }
 
-  // ── Виджет-переход mix → monthly (под кнопкой «Рассчитать портфель») ────
-  function buildMixWidget() {
-    if (document.getElementById('cxMonthlyWidget')) return;
-    var bar = document.getElementById('calcCtaBar');
-    if (!bar || !bar.parentNode) return;
-    var w = document.createElement('div');
-    w.id = 'cxMonthlyWidget';
-    w.className = 'ms-nav-widget green';
-    w.innerHTML =
-      '<span class="ic">' + MON_IC + '</span>' +
-      '<span class="tx"><b>Купоны каждый месяц</b>' +
-      '<span>Портфель только из ОФЗ — выплаты приходят ежемесячно, как зарплата.</span></span>' +
-      '<span class="go">' + GO_IC + '</span>';
-    w.onclick = function () { setMode('monthly'); };
-    bar.parentNode.insertBefore(w, bar.nextSibling);
+  // ── Кнопка «Назад к выбору типа» (видна только в режимах mix/monthly) ────
+  // Один элемент в самом верху колонки .cx-rows.r5: [back][chooser][r5Split].
+  // Видимость переключает CSS по классу режима на <body>.
+  function buildBackBtn() {
+    if (document.getElementById('cxBack')) return;
+    var rows = rowsHost();
+    if (!rows) return;
+    var b = document.createElement('button');
+    b.id = 'cxBack';
+    b.type = 'button';
+    b.className = 'cxm-back';
+    b.innerHTML = BACK_IC + '<span>Выбор типа портфеля</span>';
+    b.addEventListener('click', function () { setMode('choose'); haptic('light'); });
+    rows.insertBefore(b, rows.firstChild);
   }
 
   // ── Эталонная высота карточек (пара «Капитал/Распределение») ─────────────
@@ -370,7 +363,7 @@
       if (++tries < 40) setTimeout(init, 60);
       return;
     }
-    buildMixWidget();
+    buildBackBtn();
     installWraps();
     ready = true;
     setMode(pending || 'choose');
