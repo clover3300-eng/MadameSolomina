@@ -34,13 +34,13 @@
     <link rel="stylesheet" href="css/portfolios.css?v=66">
     <link rel="stylesheet" href="css/rebal-r5.css?v=9">
     <link rel="stylesheet" href="css/monthly-panel.css?v=1">
-    <link rel="stylesheet" href="css/monthly-r5.css?v=9">
+    <link rel="stylesheet" href="css/monthly-r5.css?v=13">
     <link rel="stylesheet" href="css/stock-terminal.css?v=9">
     <link rel="stylesheet" href="css/bond-terminal.css?v=11">
     <link rel="stylesheet" href="css/table-tooltip.css?v=1">
     <link rel="stylesheet" href="css/market-heatmap.css?v=33">
     <link rel="stylesheet" href="css/calc-r5.css?v=11">
-    <link rel="stylesheet" href="css/calc-mode.css?v=5">
+    <link rel="stylesheet" href="css/calc-mode.css?v=11">
     <link rel="stylesheet" href="css/home-register.css?v=21">
     <link rel="stylesheet" href="css/site-bg.css?v=3">
     <link rel="stylesheet" href="css/profile-menu.css?v=8">
@@ -1771,25 +1771,27 @@
                   калькулятор сам распределит сумму по выпускам с разными датами выплат.
                 </p>
               </div>
-              <div class="mi5-start-steps">
-                <div class="mi5-start-step"><b>01</b><span>Вводите стартовую сумму — изменить её можно в любой момент</span></div>
-                <div class="mi5-start-step"><b>02</b><span>Калькулятор распределяет её по 6 выпускам ОФЗ</span></div>
-                <div class="mi5-start-step"><b>03</b><span>Купоны закрывают все 12 месяцев года — без пропусков</span></div>
-              </div>
-              <div class="mi5-start-cta">
-                <div class="mi5-start-field">
-                  <span class="mi5-start-k">Стартовая сумма</span>
-                  <div class="mi5-start-box">
-                    <input type="text" id="miStartInput" value="1 000 000" inputmode="numeric" autocomplete="off"
-                           oninput="miStartFmt(this)"
-                           onkeyup="if(event.keyCode===13) miStartCalc()">
-                    <span class="mi5-rub">₽</span>
-                  </div>
+              <div class="mi5-start-body">
+                <div class="mi5-start-steps">
+                  <div class="mi5-start-step"><b>01</b><span>Вводите стартовую сумму — изменить её можно в любой момент</span></div>
+                  <div class="mi5-start-step"><b>02</b><span>Калькулятор распределяет её по 6 выпускам ОФЗ</span></div>
+                  <div class="mi5-start-step"><b>03</b><span>Купоны закрывают все 12 месяцев года — без пропусков</span></div>
                 </div>
-                <button type="button" class="mi5-start-btn" id="miStartBtn" onclick="miStartCalc()">
-                  Приступить к расчёту
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
-                </button>
+                <div class="mi5-start-cta">
+                  <div class="mi5-start-field">
+                    <span class="mi5-start-k">Стартовая сумма</span>
+                    <div class="mi5-start-box">
+                      <input type="text" id="miStartInput" value="1 000 000" inputmode="numeric" autocomplete="off"
+                             oninput="miStartFmt(this)"
+                             onkeyup="if(event.keyCode===13) miStartCalc()">
+                      <span class="mi5-rub">₽</span>
+                    </div>
+                  </div>
+                  <button type="button" class="mi5-start-btn" id="miStartBtn" onclick="miStartCalc()">
+                    Приступить к расчёту
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -2201,7 +2203,7 @@
 <script src="js/backtest.js?v=1" defer></script>
 <script src="js/app-state.js?v=5" defer></script>
 <script src="js/calc-r5.js?v=7" defer></script>
-<script src="js/calc-mode.js?v=6" defer></script>
+<script src="js/calc-mode.js?v=7" defer></script>
 <script src="js/dashboard.js?v=6" defer></script>
 <script src="js/sidebar.js?v=5" defer></script>
 <script src="js/stock-terminal.js?v=7" defer></script>

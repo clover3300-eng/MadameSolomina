@@ -86,7 +86,7 @@
           '<span class="cxm-tbtn dark">Выбрать рост ' + GO_IC + '</span>' +
         '</div>' +
         // 02 — Купонный
-        '<div class="cxm-type" data-mode="monthly">' +
+        '<div class="cxm-type on" data-mode="monthly">' +
           '<span class="wm">02</span>' +
           '<span class="cxm-tk orange">Хочу доход</span>' +
           '<span class="cxm-tn">Получать деньги каждый месяц</span>' +

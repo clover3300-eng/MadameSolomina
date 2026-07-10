@@ -46,7 +46,14 @@ body.cxm-monthly #panel-calc .mi5-right { animation-delay: .06s; }
 /* ── Единая высота карточек (эталон — пара «Капитал/Распределение») ── */
 @media (min-width: 1024px) {
   #cxChooser {
-    min-height: var(--cx-card-h, 460px);
+    /* Экран выбора стоит на вкладке в одиночку — даём ему заметно больше
+       воздуха, чем эталонной паре «Капитал/Распределение»: и само поле выше,
+       и внутренние отступы крупнее. */
+    min-height: calc(var(--cx-card-h, 460px) + 60px);
+    /* Поле выбора у́же основной колонки и отцентровано — обе витрины сужаются
+       пропорционально, композиция собраннее. */
+    max-width: 940px;
+    margin-inline: auto;
     box-sizing: border-box;
   }
   body.cxm-monthly #panel-calc .mi5-cols > .mi5-calc,
@@ -65,17 +72,17 @@ body.cxm-monthly #panel-calc .mi5-right { animation-delay: .06s; }
 #cxChooser {
   position: relative; flex-direction: column;
   background: var(--r5-card); border-radius: var(--r5-radius);
-  box-shadow: var(--r5-shadow); padding: 30px;
+  box-shadow: var(--r5-shadow); padding: 38px;
 }
 
 /* Шапка: вопрос на белой поверхности карточки, по центру */
-.cx-rows.r5 .cxm-head { text-align: center; margin-bottom: 24px; }
+.cx-rows.r5 .cxm-head { text-align: center; margin-bottom: 28px; }
 .cx-rows.r5 .cxm-k {
   font-size: 11.5px; letter-spacing: .16em; text-transform: uppercase;
   font-weight: 700; color: var(--r5-muted);
 }
 .cx-rows.r5 .cxm-q {
-  font-size: 26px; font-weight: 800; letter-spacing: -0.02em;
+  font-size: 28px; font-weight: 800; letter-spacing: -0.02em;
   line-height: 1.15; color: var(--r5-text); margin-top: 8px;
 }
 .cx-rows.r5 .cxm-qline {
@@ -89,7 +96,7 @@ body.cxm-monthly #panel-calc .mi5-right { animation-delay: .06s; }
 
 .cx-rows.r5 .cxm-type {
   position: relative; overflow: hidden;
-  border: 1px solid var(--r5-line); border-radius: 16px; padding: 22px;
+  border: 1px solid var(--r5-line); border-radius: 16px; padding: 28px;
   display: flex; flex-direction: column; cursor: pointer;
   transition: border-color .15s, box-shadow .15s, transform .15s;
 }
@@ -107,20 +114,20 @@ body.cxm-monthly #panel-calc .mi5-right { animation-delay: .06s; }
 .cx-rows.r5 .cxm-type[data-mode="mix"] .wm { color: rgba(74,141,240,.08); }
 .cx-rows.r5 .cxm-type[data-mode="monthly"] .wm { color: rgba(240,140,58,.10); }
 
-.cx-rows.r5 .cxm-tk { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; font-weight: 700; }
+.cx-rows.r5 .cxm-tk { font-size: 11.5px; letter-spacing: .16em; text-transform: uppercase; font-weight: 700; }
 .cx-rows.r5 .cxm-tk.blue { color: var(--r5-blue); }
 .cx-rows.r5 .cxm-tk.orange { color: var(--r5-orange); }
-.cx-rows.r5 .cxm-tn { font-size: 19px; font-weight: 800; letter-spacing: -.01em; color: var(--r5-text); margin-top: 6px; }
-.cx-rows.r5 .cxm-ts { font-size: 12.5px; color: var(--r5-muted2); margin-top: 4px; line-height: 1.4; }
+.cx-rows.r5 .cxm-tn { font-size: 21px; font-weight: 800; letter-spacing: -.015em; line-height: 1.2; color: var(--r5-text); margin-top: 8px; }
+.cx-rows.r5 .cxm-ts { font-size: 13.5px; color: var(--r5-muted2); margin-top: 8px; line-height: 1.5; }
 
-.cx-rows.r5 .cxm-facts { display: flex; flex-direction: column; gap: 10px; margin: 16px 0 18px; }
-.cx-rows.r5 .cxm-fact { display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--r5-muted2); }
+.cx-rows.r5 .cxm-facts { display: flex; flex-direction: column; gap: 12px; margin: 20px 0 20px; }
+.cx-rows.r5 .cxm-fact { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--r5-muted2); }
 .cx-rows.r5 .cxm-fic { flex: 0 0 auto; color: var(--r5-muted); }
 
 /* Кнопка-действие витрины (клик всплывает на всю витрину) */
 .cx-rows.r5 .cxm-tbtn {
   margin-top: auto; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  border-radius: 12px; padding: 12px; font-size: 13.5px; font-weight: 700; cursor: pointer;
+  border-radius: 12px; padding: 15px; font-size: 14.5px; font-weight: 700; cursor: pointer;
   transition: box-shadow .15s, background .15s;
 }
 .cx-rows.r5 .cxm-tbtn.dark { background: var(--r5-dark); color: #fff; box-shadow: 0 10px 22px rgba(16,24,38,.22); }
@@ -201,8 +208,11 @@ body.dark-mode .cx-rows.r5 .cxm-back { background: rgba(255,255,255,.03); }
   #panel-calc .mi5-pay-info .mi5-pay-bn { font-size: 13.5px; }
   #panel-calc .mi5-pay-info .mi5-pay-q { margin-top: 0; }
   #panel-calc .mi5-pay-amt .bar { margin-top: 4px; }
-  /* интро-оверлей в компактной карточке */
-  #panel-calc .mi5-start { padding: 26px 30px 24px; gap: 14px; }
+  /* интро-оверлей в компактной карточке: заголовок держится у верхнего края
+     (см. monthly-r5.css — .mi5-start-top не резиновый), а пара «шаги +
+     стартовая сумма» центрируется в остатке высоты — модест-зазор здесь
+     только между заголовком и этой парой, не между всеми ярусами */
+  #panel-calc .mi5-start { padding: 26px 30px 24px; gap: 22px; }
   #panel-calc .mi5-start .mi5-ttl { font-size: 22px; }
   #panel-calc .mi5-start-steps { padding: 12px 0; gap: 10px; }
   #panel-calc .mi5-start-btn { margin-top: 14px; padding: 13px 22px; }
@@ -217,7 +227,18 @@ body.dark-mode #panel-calc .mi5-right > .mi5-card {
 /* ── Мобайл ───────────────────────────────────────────────── */
 @media (max-width: 1023px) {
   #panel-calc .mi5-card { padding: 22px 20px; }
-  #panel-calc .mi5-start { padding: 22px 20px; }
+  /* На мобильном высота карточки — не эталон (нет --cx-card-h), а случайная
+     высота СКРЫТОГО за оверлеем калькулятора (поле суммы + пресеты + налоги +
+     список облигаций в один столбец — прилично выше интро-текста). Центровка
+     из monthly-r5.css при такой высоте даёт пустоту и сверху, и снизу —
+     возвращаем контент к верхнему краю, как в обычной карточке. */
+  #panel-calc .mi5-start { padding: 22px 20px; justify-content: flex-start; gap: 22px; }
+  /* Пока интро не закрыто, карточка не должна тянуться на высоту СКРЫТОГО
+     калькулятора под оверлеем (поле+пресеты+налоги+список ОФЗ в один
+     столбец на мобильном — заметно выше интро-текста) — иначе после
+     интро-текста остаётся пустой хвост карточки. Ограничение снимается
+     само, когда JS добавляет .is-out после «Приступить к расчёту». */
+  #panel-calc .mi5-calc:has(> .mi5-start:not(.is-out)) { max-height: 610px; overflow: hidden; }
   #cxChooser { padding: 22px 20px; }
   .cx-rows.r5 .cxm-head { margin-bottom: 18px; }
   .cx-rows.r5 .cxm-q { font-size: 23px; }
