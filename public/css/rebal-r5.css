@@ -170,15 +170,35 @@ body.dark-mode .rb5-col--stock { --rbc: #e08a64; --rbc-deep: #c2603e; }
 body.dark-mode .rb5-col--bond { background: rgba(123, 155, 191, 0.10); }
 body.dark-mode .rb5-col--stock { background: rgba(217, 119, 87, 0.09); }
 
-.rb5-colhead { display: flex; align-items: center; gap: 9px; padding: 0 4px; }
+/* ---- шапка колонки: стат-хедер (иконка-бейдж + крупный заголовок + стоимость) ---- */
+.rb5-colhead {
+    display: flex; align-items: center; gap: 13px;
+    padding: 2px 4px 15px; margin-bottom: 3px;
+    border-bottom: 1px solid rgba(44, 54, 76, 0.08);
+}
+body.dark-mode .rb5-colhead { border-bottom-color: rgba(255, 255, 255, 0.09); }
+/* иконка-бейдж в тон колонки (--rbc), с тонкой внутренней обводкой */
+.rb5-chead-ic {
+    display: grid; place-items: center; flex-shrink: 0;
+    width: 42px; height: 42px; border-radius: 13px;
+    background: var(--rbc-soft, rgba(44, 54, 76, 0.06)); color: var(--rbc, #6b7890);
+    box-shadow: inset 0 0 0 1px var(--rbc-border, rgba(44, 54, 76, 0.10));
+}
+.rb5-chead-ic svg { width: 21px; height: 21px; }
+.rb5-chead-t { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.rb5-chead-t b { font-size: 20px; font-weight: 800; color: #161B27; letter-spacing: -0.02em; line-height: 1.15; }
+body.dark-mode .rb5-chead-t b { color: #F1F5F9; }
+.rb5-chead-t span { font-size: 11.5px; font-weight: 600; color: #9aa6b8; font-variant-numeric: tabular-nums; }
+.rb5-chead-v { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 1px; text-align: right; flex-shrink: 0; }
+.rb5-chead-v i { font-style: normal; font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #9aa6b8; }
+.rb5-chead-v b { font-family: var(--rb5-mono); font-size: 17px; font-weight: 700; color: #161B27; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+body.dark-mode .rb5-chead-v b { color: #e2e8f0; }
+
+/* цветная точка + счётчик — используются в панели «История сделок» */
 .rb5-cdot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .rb5-cdot.bond { background: #7B9BBF; }
 .rb5-cdot.stock { background: #D97757; }
-.rb5-colhead b { font-size: 16px; font-weight: 800; color: #161B27; letter-spacing: -0.01em; }
-body.dark-mode .rb5-colhead b { color: #F1F5F9; }
 .rb5-ccount { font-size: 11.5px; font-weight: 700; color: #9aa6b8; }
-.rb5-cval { margin-left: auto; font-family: var(--rb5-mono); font-size: 13.5px; font-weight: 700; color: #161B27; font-variant-numeric: tabular-nums; }
-body.dark-mode .rb5-cval { color: #e2e8f0; }
 
 /* ---- пара списков «продать | купить» (без контейнеров — белые карточки на тонировке) ---- */
 .rb5-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }

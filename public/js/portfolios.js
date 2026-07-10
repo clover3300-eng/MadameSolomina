@@ -3672,6 +3672,9 @@
     // иконка «искры» — кнопка «Подобрать за меня» (авто-выбор самой выгодной пары)
     var RB5_WAND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6 4.6 1.9-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/><path d="M19 14.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/></svg>';
     var RB5_CHECK = '<span class="rb5-chip">' + CHECK_SVG + '</span>';
+    // иконки-бейджи шапок колонок: облигации — портик-«банк» (ОФЗ/госбумаги), акции — столбики рынка
+    var RB5_IC_BOND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 9.3 12 4l8.8 5.3"/><line x1="4" y1="20.4" x2="20" y2="20.4"/><line x1="6.4" y1="10" x2="6.4" y2="20.4"/><line x1="10.1" y1="10" x2="10.1" y2="20.4"/><line x1="13.9" y1="10" x2="13.9" y2="20.4"/><line x1="17.6" y1="10" x2="17.6" y2="20.4"/></svg>';
+    var RB5_IC_STOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><line x1="3.5" y1="20.5" x2="20.5" y2="20.5"/><line x1="7" y1="20" x2="7" y2="13.5"/><line x1="12" y1="20" x2="12" y2="7.5"/><line x1="17" y1="20" x2="17" y2="11"/></svg>';
     // Шапка карточки. bt — bondsTotal() портфеля или null, если облигаций нет: «машина денег»
     // и НДФЛ (он влияет только на экономику облигаций) живут в шапке и показываются лишь
     // при наличии облигаций — так колонки внизу начинаются на одном уровне.
@@ -3782,8 +3785,12 @@
         '</div>';
     }
     function rb5ColHead(kind, name, n, val) {
-        return '<div class="rb5-colhead"><span class="rb5-cdot ' + kind + '"></span><b>' + name + '</b>' +
-            '<span class="rb5-ccount">' + n + '</span><span class="rb5-cval">' + fmtRub(val) + '</span></div>';
+        var ic = kind === 'bond' ? RB5_IC_BOND : RB5_IC_STOCK;
+        return '<div class="rb5-colhead">' +
+            '<span class="rb5-chead-ic ' + kind + '">' + ic + '</span>' +
+            '<div class="rb5-chead-t"><b>' + name + '</b><span>' + n + ' ' + plural(n, 'бумага', 'бумаги', 'бумаг') + '</span></div>' +
+            '<div class="rb5-chead-v"><i>Стоимость</i><b>' + fmtRub(val) + '</b></div>' +
+        '</div>';
     }
     function rb5Empty(t, s) { return '<div class="rb5-empty"><b>' + esc(t) + '</b><span>' + esc(s) + '</span></div>'; }
     function dealHint(msg) { return '<div class="rb5-cfoot"><span class="rb5-cfoot-t">' + esc(msg) + '</span></div>'; }
