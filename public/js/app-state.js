@@ -23,6 +23,7 @@ function lsSave() {
             btTickers: btState ? btState.tickers : [],
             btSource: btState ? btState.source : 'calc',
             btPayoutMode: btState ? btState.payoutMode : 'full',
+            btShowDeposit: btState ? btState.showDeposit : true,
             btManualCapital: (document.getElementById('btManualCapital') || {}).value || '',
             // смешанный расчёт произведён — по этому флагу calc-mode.js тихо
             // пересобирает портфель при загрузке (подвкладка «Смешанный портфель»)
@@ -96,6 +97,11 @@ function lsRestore() {
     // результатов после перезагрузки ещё нет
     if ((state.btPayoutMode === 'full' || state.btPayoutMode === 'price') && btState) {
         btState.payoutMode = state.btPayoutMode;
+    }
+
+    // Показывать ли линию «Депозит» на графике сравнения (по умолчанию да)
+    if (typeof state.btShowDeposit === 'boolean' && btState) {
+        btState.showDeposit = state.btShowDeposit;
     }
 
     if (state.btManualCapital) {

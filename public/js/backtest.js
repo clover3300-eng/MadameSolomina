@@ -15,6 +15,7 @@ const btState = {
     payoutMode: 'full',    // 'full' — P&L с купонами/дивидендами, 'price' — только цены
     benchOverride: null,   // индекс, выбранный вручную пилюлей (сбрасывается новым прогоном)
     resultsTab: 'overview',// активная подвкладка результатов: overview | assets | pays
+    showDeposit: true,     // показывать линию «Депозит (RUSFAR)» на графике сравнения
 };
 
 // --- UI helpers ---
@@ -25,8 +26,51 @@ function btSetSource(src) {
     document.getElementById('btSourceManual').classList.toggle('active', src === 'manual');
     document.getElementById('btSourceCalcInfo').style.display = src === 'calc' ? 'block' : 'none';
     document.getElementById('btSourceManualBlock').style.display = src === 'manual' ? 'block' : 'none';
+    btSyncFromCalcBtn();
     btUpdateRunBtn();
     btMarkResultsStale();
+}
+
+// Кнопка «Подставить из расчёта» в ручном режиме видна только когда портфель
+// действительно рассчитан (иначе подставлять нечего)
+function btSyncFromCalcBtn() {
+    var btn = document.getElementById('btManualFromCalc');
+    if (!btn) return;
+    var show = btState.source === 'manual' && typeof isPortfolioCalculated !== 'undefined' && isPortfolioCalculated;
+    btn.style.display = show ? 'flex' : 'none';
+}
+
+// Подставить состав из расчёта в ручной список: тикеры ОФЗ и акций из
+// рассчитанного портфеля добавляются к уже набранным (без дублей), капитал —
+// из расчёта, если поле ещё пустое. Дальше пользователь правит список руками.
+function btAddFromCalc() {
+    if (typeof isPortfolioCalculated === 'undefined' || !isPortfolioCalculated) return;
+    var a = btCollectFromPortfolio();
+    var items = a.bonds.map(function(b) { return { t: b.t, type: 'bond' }; })
+        .concat(a.stocks.map(function(s) { return { t: s.t, type: 'stock' }; }));
+    // Капитал из расчёта — только если пользователь ещё не ввёл свой
+    if (btGetManualCapital() <= 0) {
+        var cap = btGetCapital();
+        var capEl = document.getElementById('btManualCapital');
+        if (cap > 0 && capEl) capEl.value = String(cap).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    }
+    var added = [];
+    items.forEach(function(it) {
+        var ticker = btCleanTicker(it.t);
+        if (!ticker || btState.tickers.find(function(t) { return t.t === ticker; })) return;
+        var item = { t: ticker, type: it.type || btDetectType(ticker), price: 0, qty: 0, status: 'loading' };
+        btState.tickers.push(item);
+        added.push(item);
+    });
+    btRecomputeManualQty();
+    btRenderTickerList();
+    btUpdateRunBtn();
+    if (added.length) btMarkResultsStale();
+    added.forEach(function(item) { btFetchTickerPrice(item); });
+    if (added.length && window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+    }
+    lsScheduleSave();
 }
 
 function btToggleBulk() {
@@ -268,6 +312,7 @@ function btUpdateRunBtn() {
     var note = document.getElementById('btRunNote');
     if (note) note.classList.toggle('is-hidden', !btn.disabled);
     btSyncCalcInfo();
+    btSyncFromCalcBtn();
 }
 
 // Баннер «Из расчёта»: когда портфель уже рассчитан, переключаем его в
@@ -815,6 +860,68 @@ function btFmtRub(v) {
     return Math.round(v).toLocaleString('ru-RU').replace(/\s/g, '.') + ' ₽';
 }
 
+// Экранирование текста для вставки в innerHTML (подсказки — свои строки, но
+// пусть будет честно на случай будущих правок)
+function btEsc(s) {
+    return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+// Видимая иконка-подсказка «?». Текст пояснения — в data-tip; всплывающий
+// пузырёк рисуется в <body> (btShowHelpTip), поэтому не обрезается overflow:hidden
+// у героя и не зависит от стек-контекста карточки.
+function btHelpIcon(text) {
+    return '<span class="btx-help" data-tip="' + btEsc(text) + '" tabindex="0" role="button" aria-label="Пояснение">'
+        + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+        + '</span>';
+}
+
+// Единый всплывающий пузырёк подсказки на весь модуль (в <body>, fixed):
+// показывается при наведении/фокусе на любую .btx-help, сам клампится в экран.
+var _btHelpTipEl = null;
+function btShowHelpTip(icon) {
+    var text = icon.getAttribute('data-tip');
+    if (!text) return;
+    if (!_btHelpTipEl) {
+        _btHelpTipEl = document.createElement('div');
+        _btHelpTipEl.className = 'bt-help-tip';
+        document.body.appendChild(_btHelpTipEl);
+    }
+    var tip = _btHelpTipEl;
+    tip.textContent = text;   // textContent — без разбора HTML, перевод строк через CSS pre-line
+    tip.style.maxWidth = Math.min(300, window.innerWidth - 24) + 'px';
+    tip.style.display = 'block';
+    tip.style.visibility = 'hidden';
+    var r = icon.getBoundingClientRect();
+    var tr = tip.getBoundingClientRect();
+    var left = r.left + r.width / 2 - tr.width / 2;
+    left = Math.max(12, Math.min(left, window.innerWidth - tr.width - 12));
+    var top = r.bottom + 8;
+    if (top + tr.height > window.innerHeight - 8 && r.top - 8 - tr.height > 8) top = r.top - 8 - tr.height;
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+    tip.style.visibility = 'visible';
+}
+function btHideHelpTip() { if (_btHelpTipEl) _btHelpTipEl.style.display = 'none'; }
+document.addEventListener('mouseover', function(e) {
+    var ic = e.target.closest && e.target.closest('.btx-help');
+    if (ic) btShowHelpTip(ic);
+});
+document.addEventListener('mouseout', function(e) {
+    var ic = e.target.closest && e.target.closest('.btx-help');
+    if (ic && !(e.relatedTarget && ic.contains(e.relatedTarget))) btHideHelpTip();
+});
+document.addEventListener('focusin', function(e) {
+    var ic = e.target.closest && e.target.closest('.btx-help');
+    if (ic) btShowHelpTip(ic);
+});
+document.addEventListener('focusout', function(e) {
+    var ic = e.target.closest && e.target.closest('.btx-help');
+    if (ic) btHideHelpTip();
+});
+window.addEventListener('scroll', btHideHelpTip, true);
+
 // Полноширинный тёмный герой результатов (rbx-стиль, как «Ребаланс»/«Админка»):
 // идентити слева, KPI-числа справа, переключатель режима P&L в хвосте.
 // P&L и процент зависят от btState.payoutMode: 'full' — с выплатами, 'price' — цены.
@@ -853,7 +960,9 @@ function btRenderHero(results, dateStr) {
     h += kpi('Купоны и дивиденды', payStr, (!results._payUnknown && results.totalPayouts > 0) ? 'pos' : '');
     h += kpi('P&L', hasPnl ? (totalPnl >= 0 ? '+' : '') + btFmtRub(totalPnl) : '—', cls);
     h += kpi('Доходность', pct !== null ? (pct >= 0 ? '+' : '') + pct + '%' : '—', cls);
-    h += '<div class="btx-kpi" title="Максимальное падение стоимости бумаг от локального пика до дна внутри периода (по дневным ценам, без выплат). На графике шкала другая — доходность от даты старта, поэтому числа не обязаны совпадать."><span>Макс. просадка</span><b id="btDDVal">' + (dd != null ? dd.toFixed(1) + '%' : '—') + '</b></div>';
+    // Просадка — с видимой иконкой-подсказкой (native title мало кто замечает)
+    var ddTip = 'Самое глубокое падение стоимости бумаг от локального пика до дна внутри периода — «сколько вы могли потерять в худший момент, если бы продали на самом дне». Считается по дневным ценам, без учёта выплат. На графике сравнения шкала другая (доходность от даты старта), поэтому это число обычно «страшнее» самой нижней точки графика — и это нормально.';
+    h += '<div class="btx-kpi"><span>Макс. просадка' + btHelpIcon(ddTip) + '</span><b id="btDDVal">' + (dd != null ? dd.toFixed(1) + '%' : '—') + '</b></div>';
     h += '</div>';
     h += '<div class="btx-mode">';
     h += '<div class="bt-res-mode">';
@@ -902,6 +1011,17 @@ function btExitResultsMode() {
 // ============================================================
 var _btChartSeq = 0;                       // защита от гонки при кликах по пилюлям
 var _btIdxCache = { key: '', map: {} };    // серии индексов текущего прогона
+
+// Переключатель линии «Депозит» в легенде: перерисовываем график из кэша
+// (серии уже посчитаны — ни сети, ни спиннера), состояние персистим
+function btToggleDeposit() {
+    btState.showDeposit = !btState.showDeposit;
+    var c = window._btLastChart;
+    var panel = document.getElementById('btImoexPanel');
+    if (c && panel) btRenderIdxChart(panel, c.data, c.dateStr, c.todayStr, c.bench);
+    else btLoadChart();
+    if (typeof lsScheduleSave === 'function') lsScheduleSave();
+}
 
 // Пилюля индекса: ручной выбор действует до следующего прогона
 function btPickBenchmark(secid) {
@@ -967,6 +1087,8 @@ async function btLoadChart() {
         }
         btAttachDeposit(data, _btIdxCache.map._RUSFAR);
         if (seq !== _btChartSeq) return;
+        // кэш входов графика: переключатель депозита перерисовывает без спиннера/сети
+        window._btLastChart = { data: data, dateStr: dateStr, todayStr: todayStr, bench: bench };
         btRenderIdxChart(panel, data, dateStr, todayStr, bench);
     } catch(e) {
         console.warn('[BT] index compare failed:', e && e.message);
@@ -1186,7 +1308,9 @@ function btRenderIdxChart(panel, data, fromStr, tillStr, bench) {
     cw = Math.max(280, cw - 4);
     var W = cw, H = Math.round(Math.min(260, Math.max(195, cw * 0.25)));
     var padL = 48, padR = 16, padT = 16, padB = 26;
-    var hasDep = !!data.hasDep && typeof s[0].dep === 'number';
+    // депозит есть в данных, но пользователь может скрыть его переключателем в легенде
+    var depAvailable = !!data.hasDep && typeof s[0].dep === 'number';
+    var hasDep = depAvailable && btState.showDeposit;
     var depColor = '#E3A008';
     var allV = [];
     s.forEach(function(p) { allV.push(p.pf, p.im); if (hasDep) allV.push(p.dep); });
@@ -1255,7 +1379,21 @@ function btRenderIdxChart(panel, data, fromStr, tillStr, bench) {
     html += '<div class="bt-imoex-legend">';
     html += '<span class="bt-imoex-leg"><i style="background:' + pfColor + '"></i>Ваш портфель <b class="v ' + pfCls + '">' + (data.pfFinal >= 0 ? '+' : '') + data.pfFinal.toFixed(1) + '%</b></span>';
     html += '<span class="bt-imoex-leg"><i style="background:#94A3B8"></i>' + bench + ' <b class="v ' + imCls + '">' + (data.imFinal >= 0 ? '+' : '') + data.imFinal.toFixed(1) + '%</b></span>';
-    if (hasDep) html += '<span class="bt-imoex-leg" title="Ставка обеспеченного денежного рынка Мосбиржи (RUSFAR) с ежедневной капитализацией — ориентир доходности вклада"><i class="dash" style="background:' + depColor + '"></i>Депозит (RUSFAR) <b class="v">+' + data.depFinal.toFixed(1) + '%</b></span>';
+    // «Депозит» — не пилюля-бенчмарк, а фон-ориентир: клик по легенде включает/
+    // выключает линию, «?» рядом объясняет, что это и зачем сравнивать
+    if (depAvailable) {
+        var depTip = 'Депозит (RUSFAR) — сколько принесла бы та же сумма, если бы вы её просто положили на вклад под рыночную ставку, а не покупали бумаги.\n'
+            + 'RUSFAR — ставка, по которой банки одалживают друг другу деньги под залог; она держится вплотную к ключевой ставке ЦБ и близка к процентам по вкладам. Линия капитализируется каждый день.\n'
+            + 'Зачем сравнивать: если ваш портфель идёт ниже этой линии, значит риск не окупился — деньги на вкладе принесли бы больше, причём без просадок.\n'
+            + 'Пример: 1 000 000 ₽ за год. Портфель дал +8%, а депозит +18% — вклад оказался и выгоднее, и спокойнее.';
+        html += '<span class="bt-imoex-leg-dep">';
+        html += '<button type="button" class="bt-imoex-leg bt-dep-toggle' + (hasDep ? '' : ' off') + '" onclick="btToggleDeposit()" title="Показать или скрыть линию депозита на графике">'
+            + '<i class="dash" style="background:' + (hasDep ? depColor : '#9aa8bc') + '"></i>Депозит (RUSFAR) '
+            + (hasDep ? '<b class="v">+' + data.depFinal.toFixed(1) + '%</b>' : '<b class="v muted">скрыт</b>')
+            + '</button>';
+        html += btHelpIcon(depTip);
+        html += '</span>';
+    }
     html += '</div></div>';
     panel.innerHTML = html;
 
@@ -1294,11 +1432,16 @@ function btRenderIdxChart(panel, data, fromStr, tillStr, bench) {
                 + tipRow(pfColor, 'Портфель', p.pf)
                 + tipRow('#94A3B8', bench, p.im)
                 + (hasDep ? tipRow(depColor, 'Депозит', p.dep) : '');
-            var px = svgEl.offsetLeft + X(i) / W * rect.width;
-            tip.style.left = px + 'px';
-            tip.style.top = (svgEl.offsetTop + 10) + 'px';
-            tip.style.transform = px > svgEl.offsetLeft + rect.width * 0.62
-                ? 'translateX(calc(-100% - 12px))' : 'translateX(12px)';
+            // Тултип прилегает к курсору (следует и по X, и по Y), а вертикальная
+            // направляющая при этом «примагничена» к ближайшей точке данных
+            var cardRect = cardEl.getBoundingClientRect();
+            var curX = ev.clientX - cardRect.left;
+            var curY = ev.clientY - cardRect.top;
+            var flip = curX > cardRect.width * 0.6;
+            tip.style.left = curX + 'px';
+            tip.style.top = curY + 'px';
+            tip.style.transform = flip ? 'translate(-100%, -50%)' : 'translate(0, -50%)';
+            tip.style.marginLeft = flip ? '-16px' : '16px';
             tip.style.display = 'block';
         });
         svgEl.addEventListener('pointerleave', function() {
@@ -1438,17 +1581,22 @@ function renderBtResults(results, dateStr) {
     html += tabBtn('overview', 'Обзор');
     html += tabBtn('assets', 'Бумаги', results.bonds.length + results.stocks.length);
     if (payCount > 0) html += tabBtn('pays', 'Выплаты', payCount);
-    // Выгрузка всего результата (сводка + бумаги + выплаты) — по паттерну терминала
+    // Выгрузка всего результата (сводка + бумаги + выплаты) — по паттерну терминала.
+    // Отделяем тонким разделителем, чтобы кнопка читалась как самостоятельное
+    // действие, а не «потерявшаяся» вкладка.
+    html += '<span class="btr-sep" aria-hidden="true"></span>';
     html += '<button type="button" class="btr-export" onclick="btExportCsv()" title="Скачать результаты теста в Excel (CSV)">'
-        + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Excel</button>';
+        + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
+        + '<span class="btr-export-tx">Excel</span></button>';
     html += '</div>';
-    html += '<div class="btr-sub" id="btSubOverview"><div id="btImoexPanel"></div></div>';
+    html += '<div class="btr-sub" id="btSubOverview"><div id="btImoexPanel"></div><div id="btAllocPanel"></div></div>';
     html += '<div class="btr-sub" id="btSubAssets"><div id="btAssetTables"></div></div>';
     html += '<div class="btr-sub" id="btSubPays"><div id="btPayTables"></div></div>';
     container.innerHTML = html;
 
     btRenderAssetTables(results, dateStr);
     btRenderPayTables(results, dateStr);
+    btRenderAllocation(results);   // виджет «Распределение сейчас» под графиком
     btApplyResultsTab();
     btEnterResultsMode();
     btLoadChart();   // график в «Обзоре» — сразу, без отдельной кнопки
@@ -1672,6 +1820,56 @@ function btRenderPayTables(results, dateStr) {
         html = '<div class="bt-pay-empty">За период теста купонов и дивидендов не было — или их историю не удалось загрузить.</div>';
     }
     container.innerHTML = html;
+}
+
+// ── Виджет «Распределение сейчас»: доли облигаций и акций ──
+// Считаем по ТЕКУЩЕЙ рыночной стоимости (цена сейчас × кол-во + возвращённый
+// номинал), не зависит от режима P&L. Наглядно показывает, чего в портфеле
+// больше и как это соотносится с классами активов.
+function btRenderAllocation(results) {
+    var panel = document.getElementById('btAllocPanel');
+    if (!panel) return;
+    function agg(list) {
+        var val = 0, n = 0;
+        list.forEach(function(a) {
+            if (!(a.qty > 0)) return;
+            var v = (a.testTotal || 0) + (a.amortTotal || 0);
+            if (v > 0) { val += v; n++; }
+        });
+        return { val: val, n: n };
+    }
+    var b = agg(results.bonds), s = agg(results.stocks);
+    var total = b.val + s.val;
+    if (total <= 0) { panel.innerHTML = ''; return; }
+    var bp = b.val / total * 100, sp = s.val / total * 100;
+    var bondCol = '#2E90FA', stockCol = '#16B56B';
+    var tip = 'Доли по текущей рыночной стоимости: цена бумаги сейчас × количество (плюс номинал уже погашенных облигаций). Проценты — от суммарной стоимости бумаг «сейчас», выплаты сюда не входят.';
+
+    var bar = '<div class="bt-alloc-bar">';
+    if (b.val > 0) bar += '<span style="width:' + bp.toFixed(2) + '%;background:' + bondCol + '"></span>';
+    if (s.val > 0) bar += '<span style="width:' + sp.toFixed(2) + '%;background:' + stockCol + '"></span>';
+    bar += '</div>';
+
+    function row(name, col, part, cnt, val) {
+        if (val <= 0) return '';
+        return '<div class="bt-alloc-row">'
+            + '<i style="background:' + col + '"></i>'
+            + '<span class="bt-alloc-meta"><span class="nm">' + name + '</span>'
+            + '<span class="ct">' + btPluralPapers(cnt) + '</span></span>'
+            + '<b class="pct">' + part.toFixed(1) + '%</b>'
+            + '<span class="amt">' + btFmtRub(val) + '</span>'
+            + '</div>';
+    }
+
+    var html = '<div class="bt-alloc-card">';
+    html += '<div class="bt-alloc-head"><div class="bt-alloc-title">Распределение сейчас' + btHelpIcon(tip) + '</div>';
+    html += '<div class="bt-alloc-total">' + btFmtRub(total) + '</div></div>';
+    html += bar;
+    html += '<div class="bt-alloc-rows">';
+    html += row('Облигации', bondCol, bp, b.n, b.val);
+    html += row('Акции', stockCol, sp, s.n, s.val);
+    html += '</div></div>';
+    panel.innerHTML = html;
 }
 
 // ── Экспорт результатов теста в Excel ──

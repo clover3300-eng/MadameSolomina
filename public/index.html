@@ -28,7 +28,7 @@
     <link rel="stylesheet" href="css/webapp-layout.css?v=3">
     <link id="siteLayoutCSS" rel="stylesheet" href="css/site-layout.css?v=46">
     <link rel="stylesheet" href="css/components.css">
-    <link rel="stylesheet" href="css/backtest.css?v=8">
+    <link rel="stylesheet" href="css/backtest.css?v=10">
     <link rel="stylesheet" href="css/rebalance-r4.css?v=8">
     <link rel="stylesheet" href="css/dashboard-panel.css?v=4">
     <link rel="stylesheet" href="css/portfolios.css?v=66">
@@ -629,6 +629,18 @@
                             Применить список
                         </button>
                     </div>
+
+                    <!-- Подставить состав из расчёта (виден только когда портфель рассчитан) -->
+                    <button type="button" id="btManualFromCalc" class="bt-fromcalc" style="display:none;" onclick="btAddFromCalc()">
+                        <span class="bt-fromcalc-ico">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+                        </span>
+                        <span class="bt-fromcalc-tx">
+                            <span class="bt-fromcalc-title">Подставить бумаги из расчёта</span>
+                            <span class="bt-fromcalc-sub">Возьмём состав и капитал из вкладки «Расчёт» — дальше правьте вручную</span>
+                        </span>
+                        <svg class="bt-fromcalc-arr" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </button>
                   </div>
 
                   <!-- ── Состав портфеля (появляется после добавления бумаг) ── -->
@@ -2207,8 +2219,8 @@
 <script src="js/webapp-tabs.js?v=29" defer></script>
 <script src="js/top-search.js?v=1" defer></script>
 <script src="js/income-chart.js?v=1" defer></script>
-<script src="js/backtest.js?v=5" defer></script>
-<script src="js/app-state.js?v=7" defer></script>
+<script src="js/backtest.js?v=7" defer></script>
+<script src="js/app-state.js?v=8" defer></script>
 <script src="js/calc-r5.js?v=7" defer></script>
 <script src="js/calc-mode.js?v=7" defer></script>
 <script src="js/dashboard.js?v=6" defer></script>

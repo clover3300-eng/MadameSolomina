@@ -554,22 +554,33 @@ body.dark-mode .btr-tab.active { background: rgba(255, 255, 255, 0.12); color: #
 }
 .btr-tab.active .cnt { background: rgba(255, 255, 255, 0.16); color: #dfe7f1; }
 body.dark-mode .btr-tab .cnt { background: rgba(255, 255, 255, 0.08); color: #c4cedd; }
-/* Кнопка выгрузки в Excel — компактная, в хвосте панели подвкладок */
+/* Тонкий разделитель между вкладками и кнопкой выгрузки — чтобы Excel читался
+   как самостоятельное действие, а не «потерявшаяся» вкладка */
+.btr-sep {
+    flex: 0 0 auto;
+    align-self: stretch;
+    width: 1.5px; margin: 4px 4px;
+    background: #e3e9f2; border-radius: 1px;
+}
+body.dark-mode .btr-sep { background: rgba(255, 255, 255, 0.12); }
+/* Кнопка выгрузки в Excel — намеренная второстепенная кнопка с контуром */
 .btr-export {
     flex: 0 0 auto;
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 9px 14px;
-    border: none; border-radius: 10px;
-    background: transparent;
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 13px;
+    border: 1.5px solid #d8dfeb; border-radius: 10px;
+    background: #f7f9fc;
     font-family: 'Manrope', sans-serif;
     font-size: 12px; font-weight: 800;
-    color: #6c7a8d;
+    color: #4a5a6e;
     cursor: pointer;
-    transition: background 0.15s, color 0.15s;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
-.btr-export:hover { background: #eef2f8; color: #111927; }
-body.dark-mode .btr-export { color: #9aa8bc; }
-body.dark-mode .btr-export:hover { background: rgba(255, 255, 255, 0.08); color: #f1f6fb; }
+.btr-export svg { color: #1D8A4E; }
+.btr-export:hover { background: #eaf6ef; border-color: #b7e0c7; color: #14663a; }
+body.dark-mode .btr-export { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.14); color: #c4cedd; }
+body.dark-mode .btr-export svg { color: #34D399; }
+body.dark-mode .btr-export:hover { background: rgba(52, 211, 153, 0.12); border-color: rgba(52, 211, 153, 0.35); color: #eafff4; }
 .btr-sub { display: none; }
 .btr-sub.active { display: block; animation: btResIn 0.28s cubic-bezier(0.22, 0.61, 0.36, 1); }
 
@@ -1105,6 +1116,119 @@ body.dark-mode .bt-imoex-leg .v.neg { color: #F87171; }
     font-size: 13px; color: #8593A6;
 }
 .bt-imoex-state .bt-spinner { width: 30px; height: 30px; }
+
+/* ---------- Иконка-подсказка «?» + всплывающий пузырёк ---------- */
+.btx-help {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 14px; height: 14px; margin-left: 5px;
+    vertical-align: middle;
+    color: inherit; opacity: 0.55;
+    cursor: help; border-radius: 50%;
+    transition: opacity 0.15s;
+}
+.btx-help:hover, .btx-help:focus-visible { opacity: 1; outline: none; }
+.btx-help svg { width: 100%; height: 100%; }
+/* На тёмном герое иконка чуть ярче */
+.btx-kpi .btx-help { color: rgba(255, 255, 255, 0.75); }
+/* Пузырёк живёт в <body>, position:fixed — не обрезается overflow:hidden героя */
+.bt-help-tip {
+    display: none; position: fixed; z-index: 4000;
+    max-width: 300px; padding: 11px 13px;
+    background: #111927; color: #eef2f8;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 12px;
+    box-shadow: 0 14px 38px rgba(10, 16, 26, 0.4);
+    font-family: 'Inter', sans-serif;
+    font-size: 12px; font-weight: 500; line-height: 1.5;
+    white-space: pre-line;
+    pointer-events: none;
+}
+
+/* ---------- Легенда графика: переключатель «Депозит» ---------- */
+.bt-imoex-leg-dep { display: inline-flex; align-items: center; gap: 4px; }
+.bt-dep-toggle {
+    border: none; background: transparent; cursor: pointer;
+    padding: 2px 4px; margin: -2px 0; border-radius: 7px;
+    transition: background 0.15s, opacity 0.15s;
+}
+.bt-dep-toggle:hover { background: rgba(133, 147, 166, 0.12); }
+.bt-dep-toggle .v.muted { color: #9AA8BC; font-weight: 700; }
+.bt-dep-toggle.off { opacity: 0.6; }
+.bt-dep-toggle.off .dash { opacity: 0.7; }
+
+/* ---------- Виджет «Распределение сейчас» (акции / облигации) ---------- */
+.bt-alloc-card {
+    background: #ffffff;
+    border: 1.5px solid #d8dfeb;
+    border-radius: 22px;
+    box-shadow: 0 12px 32px rgba(28, 42, 66, .08), 0 2px 8px rgba(28, 42, 66, .04);
+    padding: 18px 20px;
+    margin-bottom: 14px;
+    animation: btResIn 0.32s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+body.dark-mode .bt-alloc-card { background: #1d2734; border-color: rgba(255, 255, 255, .12); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28); }
+.bt-alloc-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-bottom: 13px;
+}
+.bt-alloc-title { display: inline-flex; align-items: center; font-size: 14px; font-weight: 800; color: #111927; }
+body.dark-mode .bt-alloc-title { color: #F1F6FB; }
+.bt-alloc-total {
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px;
+    color: #46566b;
+}
+body.dark-mode .bt-alloc-total { color: #c4cedd; }
+.bt-alloc-bar {
+    display: flex; gap: 3px;
+    height: 14px; border-radius: 7px; overflow: hidden;
+    background: #eef2f8;
+    margin-bottom: 14px;
+}
+body.dark-mode .bt-alloc-bar { background: rgba(255, 255, 255, 0.06); }
+.bt-alloc-bar span { display: block; height: 100%; min-width: 4px; border-radius: 4px; transition: width 0.4s cubic-bezier(0.22, 0.61, 0.36, 1); }
+.bt-alloc-rows { display: flex; flex-direction: column; gap: 10px; }
+.bt-alloc-row {
+    display: grid;
+    grid-template-columns: 12px minmax(0, 1fr) auto auto;
+    align-items: baseline; column-gap: 12px;
+    font-family: 'Inter', sans-serif;
+}
+.bt-alloc-row i { width: 11px; height: 11px; border-radius: 3px; align-self: center; }
+.bt-alloc-meta { display: inline-flex; align-items: baseline; gap: 8px; min-width: 0; }
+.bt-alloc-row .nm { font-size: 13px; font-weight: 700; color: #2a3646; white-space: nowrap; }
+body.dark-mode .bt-alloc-row .nm { color: #e6ecf5; }
+.bt-alloc-row .ct { font-size: 12px; font-weight: 600; color: #8593A6; white-space: nowrap; }
+.bt-alloc-row .pct { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: #111927; justify-self: end; }
+body.dark-mode .bt-alloc-row .pct { color: #F1F6FB; }
+.bt-alloc-row .amt { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: #6c7a8d; justify-self: end; min-width: 92px; text-align: right; }
+@media (max-width: 520px) {
+    .bt-alloc-row { grid-template-columns: 12px minmax(0, 1fr) auto; }
+    .bt-alloc-row .amt { grid-column: 2 / 4; justify-self: end; }
+}
+
+/* ---------- Ручной режим: «Подставить из расчёта» ---------- */
+.bt-fromcalc {
+    display: flex; align-items: center; gap: 11px; width: 100%;
+    margin-top: 10px; padding: 12px 14px;
+    border: 1.5px dashed #b9d8f7; border-radius: 14px;
+    background: #f2f8ff;
+    cursor: pointer; text-align: left;
+    transition: background 0.15s, border-color 0.15s;
+}
+.bt-fromcalc:hover { background: #e8f3ff; border-color: #8ec2f2; }
+body.dark-mode .bt-fromcalc { background: rgba(46, 144, 250, 0.08); border-color: rgba(46, 144, 250, 0.35); }
+body.dark-mode .bt-fromcalc:hover { background: rgba(46, 144, 250, 0.14); }
+.bt-fromcalc-ico {
+    flex: 0 0 auto; display: grid; place-items: center;
+    width: 34px; height: 34px; border-radius: 10px;
+    color: #2E7CF6; background: rgba(46, 144, 250, 0.12);
+}
+.bt-fromcalc-tx { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.bt-fromcalc-title { font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 800; color: #16324f; }
+body.dark-mode .bt-fromcalc-title { color: #dfeeff; }
+.bt-fromcalc-sub { font-size: 11.5px; font-weight: 500; color: #5f7a95; line-height: 1.35; }
+body.dark-mode .bt-fromcalc-sub { color: #9db8d4; }
+.bt-fromcalc-arr { flex: 0 0 auto; color: #2E7CF6; }
 
 /* ============================================================
    РУЧНОЙ РЕЖИМ ТЕСТА — структура + авто-расчёт количества
