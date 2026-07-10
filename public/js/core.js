@@ -1065,56 +1065,150 @@ function toggleInterestingMore() {
             }
         }
         
+        // ================= ТЕМА =================
+        // Две независимые настройки темы:
+        //   theme_home — тема Главной (дефолт — ТЁМНАЯ, всегда открывается тёмной)
+        //   user_theme — тема остальных вкладок «проекта» (дефолт — СВЕТЛАЯ)
+        // На Главной переключатель темы спрашивает охват (весь проект / только
+        // Главная) через попап-выбор; на остальных вкладках меняет сразу тему
+        // проекта, без вопроса. См. requestThemeToggle / _openThemeScopePopup.
+        const _THEME_SUN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+        const _THEME_MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+
+        // Активная вкладка — Главная? (до инициализации currentTab берём из пути)
+        function _themeIsHomeTab() {
+            if (typeof currentTab !== 'undefined' && currentTab != null) return currentTab === 'home';
+            var _lt = location.pathname.replace(/^\//, '').replace(/\/$/, '').replace(/index\.html?$/i, '');
+            return _lt === '' || _lt === 'home';
+        }
+
+        // Какая тема положена вкладке: Главная — theme_home (дефолт тёмная),
+        // остальные — user_theme (дефолт светлая).
+        function _themeWantDark(tabId) {
+            var home = (tabId === 'home' || tabId == null);
+            if (home) { var th = localStorage.getItem('theme_home'); return th ? th === 'dark' : true; }
+            var ut = localStorage.getItem('user_theme'); return ut ? ut === 'dark' : false;
+        }
+
+        // Чистая визуальная смена темы, БЕЗ записи в хранилище. Обёртки в
+        // webapp-tabs / profile-menu / market-chart досинхронивают свои значки
+        // и график поверх этой функции.
         function toggleTheme() {
             const body = document.body;
             const btn = document.getElementById('themeBtn');
-            const sunIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
-            const moonIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
             if (body.classList.contains('dark-mode')) {
                 body.classList.remove('dark-mode'); body.classList.add('light-mode');
-                btn.innerHTML = moonIcon; localStorage.setItem('user_theme', 'light');
+                if (btn) btn.innerHTML = _THEME_MOON;
             } else {
-                body.classList.remove('light-mode');
-                body.classList.add('dark-mode'); btn.innerHTML = sunIcon; localStorage.setItem('user_theme', 'dark');
+                body.classList.remove('light-mode'); body.classList.add('dark-mode');
+                if (btn) btn.innerHTML = _THEME_SUN;
             }
         }
+
+        // Запомнить выбранную тему в нужный ключ.
+        //   scope==='home'    — только Главная (theme_home)
+        //   scope==='all'     — весь проект (theme_home + user_theme)
+        //   иначе (project)   — остальные вкладки (user_theme)
+        function _themePersist(dark, scope) {
+            var val = dark ? 'dark' : 'light';
+            if (scope === 'home') localStorage.setItem('theme_home', val);
+            else if (scope === 'all') { localStorage.setItem('theme_home', val); localStorage.setItem('user_theme', val); }
+            else localStorage.setItem('user_theme', val);
+        }
+
+        // Пользовательский вход в переключение темы (кнопки шапки/фаб/шторка).
+        // На Главной — попап выбора охвата; на остальных вкладках меняем сразу.
+        window.requestThemeToggle = function () {
+            if (_themeIsHomeTab()) { _openThemeScopePopup(); return; }
+            var wantDark = !document.body.classList.contains('dark-mode');
+            if (typeof window.toggleTheme === 'function') window.toggleTheme();
+            _themePersist(wantDark, 'project');
+        };
 
         function initTheme() {
-            const savedTheme = localStorage.getItem('user_theme');
-            const btn = document.getElementById('themeBtn');
-            const sunIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
-            const moonIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
-            // Стартовая вкладка по пути: корень «/» (или /home) — это Главная.
-            var _lt = location.pathname.replace(/^\//, '').replace(/\/$/, '');
+            // Стартовая вкладка — по пути (прямые ссылки /market и т.п.), а не по
+            // ещё дефолтному currentTab='home', иначе на не-Главной мигнёт тёмная.
+            var _lt = location.pathname.replace(/^\//, '').replace(/\/$/, '').replace(/index\.html?$/i, '');
             var landingHome = (_lt === '' || _lt === 'home');
-            // Дефолт БЕЗ явного выбора: Главная — тёмная, остальные вкладки —
-            // светлые (авто по вкладке, дальше переключается в applyAutoThemeForTab).
-            // Явный выбор пользователя (нажатие переключателя, user_theme) держится
-            // ВЕЗДЕ и важнее авто-схемы.
-            var dark;
-            if (savedTheme === 'light') dark = false;
-            else if (savedTheme === 'dark') dark = true;
-            else dark = landingHome;
-            if (dark) { document.body.classList.add('dark-mode'); btn.innerHTML = sunIcon; }
-            else { document.body.classList.add('light-mode'); btn.innerHTML = moonIcon; }
+            var wantDark = _themeWantDark(landingHome ? 'home' : 'other');
+            const btn = document.getElementById('themeBtn');
+            if (wantDark) { document.body.classList.add('dark-mode'); if (btn) btn.innerHTML = _THEME_SUN; }
+            else { document.body.classList.add('light-mode'); if (btn) btn.innerHTML = _THEME_MOON; }
         }
 
-        // Авто-тема по вкладке, пока пользователь НЕ сделал явный выбор темы:
-        // Главная — тёмная, все остальные вкладки — светлые. Как только выбор
-        // сделан (user_theme), он держится везде и авто-схема отключается.
-        // Переиспользуем полностью обёрнутый toggleTheme (он синхронит верхнюю
-        // кнопку, плавающий фаб и легаси-значок), а записанный им user_theme
-        // тут же убираем — чтобы сохранить состояние «явного выбора нет».
+        // Применить тему, положенную вкладке, при её открытии. Вызывается из
+        // обёртки switchTab (home-register.js). Переиспользует обёрнутый
+        // toggleTheme — он синхронит все значки темы и график.
         window.applyAutoThemeForTab = function (tabId) {
-            if (localStorage.getItem('user_theme')) return;   // явный выбор важнее
-            var wantDark = (tabId === 'home' || tabId == null);
-            var isDark = document.body.classList.contains('dark-mode');
-            if (isDark === wantDark) return;
-            if (typeof window.toggleTheme === 'function') {
-                window.toggleTheme();
-                localStorage.removeItem('user_theme');
-            }
+            var wantDark = _themeWantDark(tabId);
+            if (document.body.classList.contains('dark-mode') === wantDark) return;
+            if (typeof window.toggleTheme === 'function') window.toggleTheme();
         };
+
+        // Попап выбора охвата смены темы — только на Главной. Стиль внедряем
+        // лениво один раз. Карточка белая (читается над затемнением в любой теме).
+        function _themeScopeInjectCss() {
+            if (document.getElementById('themeScopeCss')) return;
+            var st = document.createElement('style');
+            st.id = 'themeScopeCss';
+            st.textContent =
+                '#themeScopeOv{position:fixed;inset:0;z-index:4000;display:flex;align-items:center;justify-content:center;padding:20px;' +
+                'background:rgba(10,16,28,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);opacity:0;transition:opacity .18s ease;}' +
+                '#themeScopeOv.show{opacity:1;}' +
+                '#themeScopeOv .tsc-card{width:min(360px,92vw);background:#fff;border:2px solid #131a2b;border-radius:24px;padding:26px 24px 22px;text-align:center;' +
+                'box-shadow:0 30px 80px -20px rgba(10,16,28,.5);transform:translateY(10px) scale(.98);transition:transform .2s cubic-bezier(.2,.8,.2,1);}' +
+                '#themeScopeOv.show .tsc-card{transform:none;}' +
+                '#themeScopeOv .tsc-ico{width:48px;height:48px;margin:0 auto 14px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:#f1f4f9;color:#1b2433;}' +
+                '#themeScopeOv .tsc-ico svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;}' +
+                '#themeScopeOv .tsc-t{font-family:\'Inter\',sans-serif;font-weight:800;font-size:18px;color:#131a2b;margin-bottom:6px;letter-spacing:-.01em;}' +
+                '#themeScopeOv .tsc-s{font-family:\'Manrope\',sans-serif;font-size:13.5px;line-height:1.5;color:#64748b;margin-bottom:20px;}' +
+                '#themeScopeOv .tsc-btns{display:flex;flex-direction:column;gap:10px;}' +
+                '#themeScopeOv .tsc-btn{width:100%;padding:13px 16px;border-radius:14px;cursor:pointer;font-family:\'Inter\',sans-serif;font-weight:700;font-size:14px;' +
+                'border:1.5px solid #e2e8f0;background:#fff;color:#1b2433;transition:background .15s,border-color .15s,transform .1s;}' +
+                '#themeScopeOv .tsc-btn:hover{background:#f7f9fc;border-color:#cbd5e1;}' +
+                '#themeScopeOv .tsc-btn:active{transform:scale(.98);}' +
+                '#themeScopeOv .tsc-btn.tsc-primary{background:linear-gradient(135deg,#3b82f6,#6366f1);border-color:transparent;color:#fff;box-shadow:0 10px 22px -10px rgba(59,130,246,.7);}' +
+                '#themeScopeOv .tsc-btn.tsc-primary:hover{filter:brightness(1.05);}';
+            document.head.appendChild(st);
+        }
+
+        function _openThemeScopePopup() {
+            _themeScopeInjectCss();
+            var existing = document.getElementById('themeScopeOv');
+            if (existing) existing.remove();
+            var isDark = document.body.classList.contains('dark-mode');
+            var targetLabel = isDark ? 'светлую' : 'тёмную';   // куда переключаемся
+            var ov = document.createElement('div');
+            ov.id = 'themeScopeOv';
+            ov.innerHTML =
+                '<div class="tsc-card" role="dialog" aria-modal="true" aria-label="Область смены темы">' +
+                    '<div class="tsc-ico">' + (isDark ? _THEME_SUN : _THEME_MOON) + '</div>' +
+                    '<div class="tsc-t">Сменить на ' + targetLabel + ' тему</div>' +
+                    '<div class="tsc-s">Применить ко всему проекту или только к Главной? Выбор запомнится.</div>' +
+                    '<div class="tsc-btns">' +
+                        '<button class="tsc-btn tsc-primary" type="button" data-scope="all">Во всём проекте</button>' +
+                        '<button class="tsc-btn" type="button" data-scope="home">Только на Главной</button>' +
+                    '</div>' +
+                '</div>';
+            document.body.appendChild(ov);
+            function close() {
+                document.removeEventListener('keydown', onKey);
+                ov.classList.remove('show');
+                setTimeout(function () { ov.remove(); }, 180);
+            }
+            function onKey(e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } }
+            ov.addEventListener('click', function (e) {
+                if (e.target === ov) { close(); return; }
+                var b = e.target.closest('.tsc-btn'); if (!b) return;
+                var scope = b.getAttribute('data-scope');
+                close();
+                var wantDark = !document.body.classList.contains('dark-mode');
+                if (typeof window.toggleTheme === 'function') window.toggleTheme();
+                _themePersist(wantDark, scope);   // 'all' | 'home'
+            });
+            document.addEventListener('keydown', onKey);
+            requestAnimationFrame(function () { ov.classList.add('show'); });
+        }
 
         function saveSettings() {
     // Автосохранение отключено

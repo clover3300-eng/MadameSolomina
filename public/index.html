@@ -182,7 +182,7 @@
             </button>
             <!-- Мобильные пункты шторки (десктоп не видит: mobile.css показывает ≤1023px) -->
             <div id="sbMobileExtras" style="display:none;">
-                <button class="sb-item" id="sbThemeBtn" onclick="toggleTheme()" title="Сменить тему">
+                <button class="sb-item" id="sbThemeBtn" onclick="requestThemeToggle()" title="Сменить тему">
                     <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
                     <span class="sb-label">Тёмная тема</span>
                     <span class="sb-switch" aria-hidden="true"><i></i></span>
@@ -267,7 +267,7 @@
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 Поиск
             </div>
-            <div id="topThemeBtn" onclick="toggleTheme()" title="Сменить тему">
+            <div id="topThemeBtn" onclick="requestThemeToggle()" title="Сменить тему">
                 <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
             </div>
             <!-- Личный кабинет: показывается вместо кнопки темы на всех вкладках, кроме Главной
@@ -2030,7 +2030,7 @@
 
         <div class="nav-search-btn" id="nav-search" onclick="expandSearch()">
             <svg viewBox="0 0 24 24" style="width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <button class="theme-toggle-mini" onclick="event.stopPropagation(); toggleTheme()" id="themeBtn">
+            <button class="theme-toggle-mini" onclick="event.stopPropagation(); requestThemeToggle()" id="themeBtn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
             </button>
         </div>
@@ -2185,7 +2185,7 @@
 
 
 
-<script src="js/core.js?v=9" defer></script>
+<script src="js/core.js?v=10" defer></script>
 <script src="js/calculator-ui.js?v=3" defer></script>
 <script src="js/data.js?v=8" defer></script>
 <script src="js/rebalance.js?v=8" defer></script>
@@ -2221,7 +2221,7 @@
 <script src="js/telegram-config.js?v=1" defer></script>
 <script src="js/supabase-client.js?v=3" defer></script>
 <script src="js/home-register.js?v=15" defer></script>
-<script src="js/profile-menu.js?v=9" defer></script>
+<script src="js/profile-menu.js?v=10" defer></script>
 <script src="js/cloud-sync.js?v=2" defer></script>
 <script src="js/admin.js?v=3" defer></script>
 <script src="js/route-hash.js?v=1" defer></script>

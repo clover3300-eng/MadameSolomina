@@ -273,7 +273,9 @@
         fab.setAttribute('aria-label', 'Сменить тему');
         document.body.appendChild(fab);
         fab.addEventListener('click', function () {
-            if (typeof window.toggleTheme === 'function') window.toggleTheme();
+            // Фаб живёт только вне Главной — переключаем тему проекта без вопроса.
+            if (typeof window.requestThemeToggle === 'function') window.requestThemeToggle();
+            else if (typeof window.toggleTheme === 'function') window.toggleTheme();
         });
         syncFabIcon();
 
