@@ -376,12 +376,19 @@
        ======================================================== */
     .adm-root { padding: 4px 12px 90px; }
     .adm-top { flex-wrap: wrap; }
-    .adm-kpis { grid-template-columns: 1fr 1fr; gap: 10px; }
-    .adm-cols { grid-template-columns: 1fr; }
+    /* герой: KPI второй строкой на всю ширину, кнопка+время — третьей */
+    .adm-hero { padding: 16px; gap: 14px 18px; }
+    .adm-hero-kpis { margin-left: 0; width: 100%; justify-content: space-between; gap: 12px; }
+    .adm-hkpi .num b { font-size: 23px; }
+    .adm-hero-side { width: 100%; flex-direction: row; align-items: center; justify-content: space-between; }
+    /* обзор: график и лента друг под другом */
+    .adm-ov { grid-template-columns: 1fr; }
+    .adm-ov-feed { border-left: none; border-top: 1px solid rgba(19, 26, 43, 0.08); }
     /* таблицы: горизонтальная прокрутка вместо ужимания колонок */
     .adm-uhead, .adm-urow { grid-template-columns: minmax(190px, 2fr) 82px 84px 88px 100px 64px 26px; }
     .adm-card { overflow-x: auto; padding: 14px; }
-    .adm-uhead, .adm-urow, .adm-ehead, .adm-erow { min-width: 640px; }
+    .adm-ov { padding: 0; }
+    .adm-uhead, .adm-urow, .adm-ehead, .adm-erow, .adm-erow-w { min-width: 640px; }
     .adm-users-bar { flex-wrap: wrap; }
     .adm-search { max-width: none; width: 100%; }
     /* карточка пользователя — почти во весь экран */

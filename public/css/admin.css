@@ -1,7 +1,9 @@
 /* ============================================================
    АДМИНКА (#panel-admin) — стили .adm-*
    ============================================================
-   Дизайн-код проекта: белые карточки с мягкой рамкой, заголовки
+   Дизайн-код проекта: тёмная шапка-герой (спокойная версия
+   rbx-hero из «Ребаланса»: та же подложка и раскладка, но без
+   анимаций), ниже — белые карточки с мягкой рамкой, заголовки
    Manrope 800, все цифры/даты — var(--font-num), размеры из
    typography-tokens.css. Тёмная тема — через body.dark-mode.
    Модалка пользователя #admModal живёт в <body> (fixed нельзя
@@ -17,7 +19,79 @@
     font-family: var(--font-ui, 'Manrope', sans-serif);
 }
 
-/* ===== ВЕРХНЯЯ ПОЛОСА: разделы + обновление ===== */
+/* ===== ШАПКА-ГЕРОЙ ===== */
+/* подложка и пропорции — как у .rbx-hero, декор статичный (сетка + свечение) */
+.adm-hero {
+    position: relative; overflow: hidden; isolation: isolate;
+    display: flex; align-items: center; flex-wrap: wrap;
+    gap: 16px 26px; padding: 20px 24px; margin: 6px 0 16px;
+    border-radius: 24px;
+    background: linear-gradient(120deg, #0c1219 0%, #182231 55%, #131e2b 100%);
+    box-shadow: 0 20px 44px rgba(24, 38, 60, 0.16);
+}
+.adm-hero-fx { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+.adm-hero-fx i { position: absolute; display: block; }
+.adm-hero-fx .glow {
+    width: 420px; height: 300px; top: -170px; right: 10%;
+    background: radial-gradient(closest-side, rgba(59, 130, 246, 0.28), transparent 70%);
+    filter: blur(6px);
+}
+.adm-hero-fx .mesh {
+    inset: 0;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.13) 1px, transparent 1.4px);
+    background-size: 18px 18px;
+    -webkit-mask-image: linear-gradient(100deg, transparent 38%, rgba(0, 0, 0, 0.5) 72%, rgba(0, 0, 0, 0.8));
+    mask-image: linear-gradient(100deg, transparent 38%, rgba(0, 0, 0, 0.5) 72%, rgba(0, 0, 0, 0.8));
+}
+.adm-hero-id { display: flex; align-items: center; gap: 15px; min-width: 0; }
+.adm-hero-ico {
+    flex-shrink: 0; display: grid; place-items: center;
+    width: 47px; height: 47px; border-radius: 15px;
+    color: #7db4ff;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.22), rgba(59, 130, 246, 0.05));
+    border: 1px solid rgba(59, 130, 246, 0.35);
+}
+.adm-hero-ico svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.adm-hero-title {
+    font-family: var(--font-ui, 'Manrope', sans-serif);
+    font-size: 21px; font-weight: 800; line-height: 1.1;
+    letter-spacing: -0.01em; color: #fff; white-space: nowrap;
+}
+.adm-hero-sub { margin-top: 5px; font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, 0.55); white-space: nowrap; }
+.adm-hero-kpis { display: flex; align-items: center; gap: 22px; margin-left: auto; }
+.adm-hkpi { display: flex; flex-direction: column; gap: 3px; }
+.adm-hkpi .num { display: flex; align-items: baseline; gap: 8px; }
+.adm-hkpi .num b {
+    font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 27px; font-weight: 700; line-height: 1;
+    color: #fff; font-variant-numeric: tabular-nums; letter-spacing: -0.02em;
+}
+.adm-hkpi .num span {
+    font-size: 11px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.12em; color: rgba(255, 255, 255, 0.52); white-space: nowrap;
+}
+.adm-hkpi .sub { font-size: 11.5px; font-weight: 500; color: rgba(255, 255, 255, 0.48); white-space: nowrap; }
+.adm-hkpi .sub b {
+    font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 12px; font-weight: 700; color: #7db4ff;
+    font-variant-numeric: tabular-nums;
+}
+.adm-hero-div { width: 1px; height: 30px; background: rgba(255, 255, 255, 0.12); }
+.adm-hero-side { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.adm-hero-refresh {
+    display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0;
+    padding: 12px 21px; border: none; border-radius: 999px; cursor: pointer;
+    font-family: var(--font-ui, 'Manrope', sans-serif); font-size: 13.5px; font-weight: 800;
+    color: #10161f; background: #fff;
+    box-shadow: 0 10px 26px -8px rgba(0, 0, 0, 0.45);
+    transition: transform 0.16s ease, box-shadow 0.16s ease, opacity 0.16s;
+}
+.adm-hero-refresh svg { width: 15px; height: 15px; fill: none; stroke: #2563eb; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.adm-hero-refresh:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 16px 34px -10px rgba(0, 0, 0, 0.55); }
+.adm-hero-refresh:disabled { opacity: 0.6; cursor: default; }
+.adm-hero-upd { font-size: 10.5px; font-weight: 600; color: rgba(255, 255, 255, 0.45); white-space: nowrap; }
+
+/* ===== ВЕРХНЯЯ ПОЛОСА: разделы ===== */
 .adm-top {
     display: flex; align-items: center; justify-content: space-between;
     gap: 12px; margin: 6px 0 16px;
@@ -44,19 +118,6 @@
     font-family: var(--font-num); font-size: var(--fs-num-sm); font-weight: var(--fw-num);
     color: var(--text-slate, #64748B); margin-left: 2px;
 }
-.adm-top-right { display: flex; align-items: center; gap: 10px; }
-.adm-upd { font-size: 12px; font-weight: 600; color: var(--text-slate, #64748B); }
-.adm-refresh {
-    width: 34px; height: 34px; border-radius: 10px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    background: #fff; border: 1px solid rgba(19, 26, 43, 0.1);
-    color: var(--text-slate, #64748B);
-    transition: color 0.15s, transform 0.15s, box-shadow 0.15s;
-}
-.adm-refresh:hover { color: #3b82f6; transform: translateY(-1px); box-shadow: 0 6px 14px -8px rgba(24,38,60,0.3); }
-.adm-refresh:disabled { opacity: 0.45; cursor: default; transform: none; }
-.adm-refresh svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-
 /* ===== КАРТОЧКИ ===== */
 .adm-card {
     background: #fff;
@@ -70,40 +131,26 @@
     font-size: var(--fs-card-title); font-weight: 800; letter-spacing: -0.01em;
     color: var(--text-deep, #1b2433); margin-bottom: 12px;
 }
-.adm-cols {
-    display: grid; grid-template-columns: 1.45fr 1fr; gap: 14px;
-    align-items: start;
+/* ===== ОБЗОР: единая карта «график | лента» ===== */
+/* внутренний разделитель между секциями — как у секций .rbx-card */
+.adm-ov { display: grid; grid-template-columns: 1.45fr 1fr; padding: 0; overflow: hidden; align-items: stretch; }
+.adm-ov-sec { padding: 18px 20px; min-width: 0; }
+.adm-ov-feed { border-left: 1px solid rgba(19, 26, 43, 0.08); }
+.adm-ov-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px 12px; flex-wrap: wrap; margin-bottom: 12px;
 }
+.adm-ov-head .adm-card-t { margin-bottom: 0; }
+.adm-ov-ctl { display: flex; align-items: center; gap: 6px; }
+.adm-ov-ctl .sep { width: 1px; height: 18px; background: rgba(19, 26, 43, 0.1); margin: 0 3px; }
+
 .adm-foot-note {
     margin-top: 14px; font-size: 12px; font-weight: 600;
     color: var(--text-slate, #64748B); opacity: 0.85;
 }
+.adm-foot-note b { color: var(--text-deep, #1b2433); }
 
-/* ===== KPI ===== */
-.adm-kpis {
-    display: grid; grid-template-columns: repeat(4, 1fr);
-    gap: 14px; margin-bottom: 14px;
-}
-.adm-kpi {
-    background: #fff; border: 1.5px solid rgba(19, 26, 43, 0.09);
-    border-radius: 20px; padding: 16px 18px; position: relative;
-    box-shadow: 0 14px 34px -24px rgba(24, 38, 60, 0.25);
-}
-.adm-kpi-ic {
-    position: absolute; top: 14px; right: 14px;
-    width: 34px; height: 34px; border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    background: rgba(59, 130, 246, 0.1); color: #3b82f6;
-}
-.adm-kpi-ic svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.adm-kpi-num {
-    font-family: var(--font-num); font-size: 27px; font-weight: var(--fw-num-bold);
-    color: var(--text-deep, #1b2433); line-height: 1.15;
-}
-.adm-kpi-lab { font-size: 13px; font-weight: 700; color: var(--text-deep, #1b2433); margin-top: 2px; }
-.adm-kpi-sub { font-size: 11.5px; font-weight: 600; color: var(--text-slate, #64748B); margin-top: 3px; }
-
-/* ===== ГРАФИК РЕГИСТРАЦИЙ ===== */
+/* ===== ГРАФИК РЕГИСТРАЦИЙ/ВХОДОВ ===== */
 .adm-chart { width: 100%; height: 170px; display: block; }
 .adm-bar { fill: #3b82f6; opacity: 0.85; }
 .adm-bar:hover { opacity: 1; }
@@ -188,11 +235,14 @@
 #panel-admin { --adm-ucols: minmax(220px, 2.2fr) 0.85fr 0.9fr 1fr 1.05fr 0.75fr 34px; }
 
 .adm-users-bar {
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 12px; margin-bottom: 12px;
+    display: flex; align-items: center;
+    gap: 10px 12px; flex-wrap: wrap; margin-bottom: 12px;
 }
+.adm-users-bar .adm-users-n { margin-left: auto; }
+.adm-uflt { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.adm-btn.sm { padding: 7px 12px; font-size: 12px; border-radius: 10px; }
 .adm-search {
-    flex: 1; max-width: 340px; display: flex; align-items: center; gap: 8px;
+    flex: 1; min-width: 190px; max-width: 250px; display: flex; align-items: center; gap: 8px;
     background: rgba(19, 26, 43, 0.045); border: 1px solid rgba(19, 26, 43, 0.08);
     border-radius: 12px; padding: 8px 12px; color: var(--text-slate, #64748B);
 }
@@ -216,6 +266,21 @@
     font-size: var(--fs-th); font-weight: 800; letter-spacing: 0.05em;
     text-transform: uppercase; color: var(--text-slate, #64748B);
 }
+/* сортируемые заголовки: стрелка появляется у активной колонки */
+.adm-th-sort {
+    display: inline-flex; align-items: center; gap: 4px;
+    cursor: pointer; user-select: none;
+    transition: color 0.13s;
+}
+.adm-th-sort:hover { color: var(--text-deep, #1b2433); }
+.adm-th-sort svg {
+    width: 11px; height: 11px; flex-shrink: 0;
+    fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round;
+    opacity: 0; transition: opacity 0.13s, transform 0.16s;
+}
+.adm-th-sort.act { color: var(--text-deep, #1b2433); }
+.adm-th-sort.act svg { opacity: 1; }
+.adm-th-sort.act.asc svg { transform: rotate(180deg); }
 .adm-urow {
     padding: 10px; border-radius: 14px; cursor: pointer;
     border-bottom: 1px solid rgba(19, 26, 43, 0.05);
@@ -276,9 +341,10 @@
 .adm-badge.st-ban { background: rgba(239, 68, 68, 0.12); color: #dc2626; }
 
 /* ===== СОБЫТИЯ: журнал ===== */
-#panel-admin { --adm-ecols: 130px minmax(160px, 1.2fr) 150px 1.6fr; }
+#panel-admin { --adm-ecols: 130px minmax(160px, 1.2fr) 150px 1.6fr 20px; }
 .adm-ev-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
 .adm-ev-bar .adm-users-n { margin-left: auto; }
+.adm-ev-bar .adm-btn.sm { margin-left: 4px; }
 .adm-pill {
     border: 1px solid rgba(19, 26, 43, 0.1); border-radius: 999px;
     background: transparent; cursor: pointer; padding: 6px 13px;
@@ -298,8 +364,19 @@
     font-size: var(--fs-th); font-weight: 800; letter-spacing: 0.05em;
     text-transform: uppercase; color: var(--text-slate, #64748B);
 }
-.adm-erow { padding: 9px 10px; border-bottom: 1px solid rgba(19, 26, 43, 0.05); }
-.adm-erow:last-child { border-bottom: 0; }
+.adm-erow { padding: 9px 10px; }
+.adm-erow-w { border-bottom: 1px solid rgba(19, 26, 43, 0.05); }
+.adm-erow-w:last-child { border-bottom: 0; }
+/* строка с деталями раскрывается по клику (0fr → 1fr, как .rbx-det) */
+.adm-erow.has-meta { cursor: pointer; border-radius: 10px; transition: background 0.13s; }
+.adm-erow.has-meta:hover { background: rgba(59, 130, 246, 0.05); }
+.adm-e-chev { display: flex; justify-content: center; color: var(--text-slate, #b6c1d1); }
+.adm-e-chev svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; transition: transform 0.18s; }
+.adm-erow-w.exp .adm-e-chev svg { transform: rotate(90deg); }
+.adm-erow-det { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.25s ease; }
+.adm-erow-w.exp .adm-erow-det { grid-template-rows: 1fr; }
+.adm-erow-det-in { overflow: hidden; min-height: 0; }
+.adm-erow-det .adm-json { margin: 2px 10px 12px; max-height: 200px; }
 .adm-e-who {
     font-size: 13px; font-weight: 700; color: var(--text-deep, #1b2433);
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -440,19 +517,23 @@ body.dark-mode .adm-seg-btn { color: #9fb1c6; }
 body.dark-mode .adm-seg-btn:hover { color: #f4f8fd; }
 body.dark-mode .adm-seg-btn.active { background: #223042; color: #f4f8fd; box-shadow: none; }
 body.dark-mode .adm-seg-n { color: #9fb1c6; }
-body.dark-mode .adm-refresh { background: #18222e; border-color: rgba(255, 255, 255, 0.1); color: #9fb1c6; }
-body.dark-mode .adm-card, body.dark-mode .adm-kpi, body.dark-mode .adm-gate {
+body.dark-mode .adm-hero { border: 1px solid rgba(255, 255, 255, 0.07); box-shadow: none; }
+body.dark-mode .adm-card, body.dark-mode .adm-gate {
     background: #18222e; border-color: rgba(255, 255, 255, 0.09); box-shadow: none;
 }
-body.dark-mode .adm-card-t, body.dark-mode .adm-kpi-num, body.dark-mode .adm-kpi-lab,
+body.dark-mode .adm-ov-feed { border-color: rgba(255, 255, 255, 0.08); }
+body.dark-mode .adm-ov-ctl .sep { background: rgba(255, 255, 255, 0.12); }
+body.dark-mode .adm-card-t,
 body.dark-mode .adm-gate-t, body.dark-mode .adm-u-nm b, body.dark-mode .adm-mono,
 body.dark-mode .adm-feed-who, body.dark-mode .adm-e-who, body.dark-mode .adm-m-name,
-body.dark-mode .adm-m-key-t, body.dark-mode .adm-pf-row b, body.dark-mode .adm-users-n b { color: #f4f8fd; }
+body.dark-mode .adm-m-key-t, body.dark-mode .adm-pf-row b, body.dark-mode .adm-users-n b,
+body.dark-mode .adm-foot-note b, body.dark-mode .adm-th-sort:hover, body.dark-mode .adm-th-sort.act { color: #f4f8fd; }
 body.dark-mode .adm-gate-s b { color: #dbe7f5; }
 body.dark-mode .adm-bar-v { fill: #f4f8fd; }
 body.dark-mode .adm-bar.zero { fill: rgba(255, 255, 255, 0.1); }
 body.dark-mode .adm-uhead, body.dark-mode .adm-ehead { border-color: rgba(255, 255, 255, 0.09); }
-body.dark-mode .adm-urow, body.dark-mode .adm-erow, body.dark-mode .adm-feed-row { border-color: rgba(255, 255, 255, 0.06); }
+body.dark-mode .adm-urow, body.dark-mode .adm-erow-w, body.dark-mode .adm-feed-row { border-color: rgba(255, 255, 255, 0.06); }
+body.dark-mode .adm-erow.has-meta:hover { background: rgba(96, 165, 250, 0.07); }
 body.dark-mode .adm-urow:hover { background: rgba(96, 165, 250, 0.09); }
 body.dark-mode .adm-search { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.09); }
 body.dark-mode .adm-search input { color: #f4f8fd; }
@@ -469,5 +550,5 @@ body.dark-mode .adm-m-cell { background: rgba(255, 255, 255, 0.045); border-colo
 body.dark-mode .adm-m-sec-t { border-color: rgba(255, 255, 255, 0.08); }
 body.dark-mode .adm-m-key { background: rgba(255, 255, 255, 0.03); border-color: rgba(255, 255, 255, 0.08); }
 body.dark-mode .adm-m-danger { background: rgba(239, 68, 68, 0.09); border-color: rgba(239, 68, 68, 0.3); }
-body.dark-mode .adm-kpi-sub, body.dark-mode .adm-upd, body.dark-mode .adm-empty,
+body.dark-mode .adm-empty,
 body.dark-mode .adm-gate-s, body.dark-mode .adm-foot-note { color: #9fb1c6; }

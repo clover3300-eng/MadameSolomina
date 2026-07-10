@@ -5,13 +5,19 @@
 // сайдбаре скрыт для остальных; прямой заход /admin упирается в
 // заглушку «нет доступа»). Работает целиком на anon-ключе: доступ
 // к чужим строкам открывают RLS-политики public.is_admin().
-// Разделы:
-//   · Обзор       — KPI, график регистраций за 14 дней, лента событий;
-//   · Пользователи — таблица + карточка: роль, бан, данные, события;
-//   · События     — журнал app_events с фильтрами и подгрузкой.
-// Опасные действия — двухшаговое подтверждение («Точно?»), как у
-// кнопки «Выйти» в кабинете. Полное удаление аккаунта — RPC
-// admin_delete_user (security definer, см. supabase/schema.sql).
+// Разделы (под тёмной шапкой-героем с живыми KPI — спокойный вариант
+// rbx-hero из «Ребаланса», без тяжёлых анимаций):
+//   · Обзор       — график регистраций/входов (14/30 дней) и лента событий
+//                   одной картой с внутренним разделителем;
+//   · Пользователи — фильтры-пилюли, сортировка по колонкам, поиск (и по id),
+//                   Excel-выгрузка; карточка: роль, бан, сброс пароля, данные;
+//   · События     — журнал app_events: фильтры, раскрытие meta по клику,
+//                   Excel-выгрузка, подгрузка страницами.
+// Пока вкладка открыта — тихий поллинг раз в 60 с (пропускается, когда
+// открыта карточка или печатают в поиске). Опасные действия — двухшаговое
+// подтверждение («Точно?»), как у кнопки «Выйти» в кабинете. Полное
+// удаление аккаунта — RPC admin_delete_user (security definer,
+// см. supabase/schema.sql).
 // Грузится после cloud-sync.js, до route-hash.js.
 
 (function () {
@@ -21,7 +27,12 @@
     var section = 'overview';         // overview | users | events
     var searchQ = '';
     var eventFilter = 'all';
+    var userFilter = 'all';           // all | online | pf | admins | banned
+    var userSort = { col: 'created', dir: -1 };   // created | seen | data | name
+    var chartKind = 'reg';            // график Обзора: reg | login
+    var chartDays = 14;               // 14 | 30
     var EVENTS_PAGE = 300;
+    var POLL_MS = 60000;              // тихое автообновление, пока вкладка открыта
 
     var D = {
         profiles: [],                 // public.profiles (новые сверху)
@@ -29,6 +40,10 @@
         events: [],                   // app_events + вложенный профиль
         eventsTotal: 0,
         eventsHasMore: false,
+        events24: 0,                  // точный count за сутки (страница событий может не покрыть их все)
+        logins: null,                 // created_at входов за 30 дней — для графика, грузится лениво
+        loginsLoading: false,
+        profilesCapped: false,        // упёрлись в limit(1000) профилей
         loadedAt: 0,
         loading: false,
         error: null
@@ -131,22 +146,29 @@
         trash: '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
         ban: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>',
         userX: '<svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="18" y1="8" x2="23" y2="13"/><line x1="23" y1="8" x2="18" y2="13"/></svg>',
-        check: '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>'
+        check: '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>',
+        dl: '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+        key: '<svg viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>',
+        sdir: '<svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M6 13l6 6 6-6"/></svg>'
     };
 
     // ---------- загрузка данных ----------
-    function refresh() {
+    // silent=true — тихое обновление поллингом: без «загружаем…» на старте
+    function refresh(silent) {
         if (D.loading) return;
         D.loading = true;
         D.error = null;
-        renderApp();
+        if (!silent) renderApp();
 
+        var since24 = new Date(Date.now() - 86400000).toISOString();
         Promise.all([
             client().from('profiles').select('*').order('created_at', { ascending: false }).limit(1000),
             client().from('user_data').select('user_id,key,updated_at').limit(20000),
             client().from('app_events').select('*, profiles(name,email)')
                 .order('created_at', { ascending: false }).limit(EVENTS_PAGE),
-            client().from('app_events').select('*', { count: 'exact', head: true })
+            client().from('app_events').select('*', { count: 'exact', head: true }),
+            // событий за сутки может быть больше первой страницы — считаем на сервере
+            client().from('app_events').select('*', { count: 'exact', head: true }).gte('created_at', since24)
         ]).then(function (res) {
             D.loading = false;
             var bad = res.filter(function (r) { return r.error; })[0];
@@ -160,13 +182,36 @@
             D.events = res[2].data || [];
             D.eventsTotal = res[3].count || 0;
             D.eventsHasMore = D.events.length < D.eventsTotal;
+            D.events24 = res[4].count || 0;
+            D.profilesCapped = D.profiles.length >= 1000;
+            D.logins = null;               // входы для графика пересоберём при необходимости
             D.loadedAt = Date.now();
             renderApp();
+            if (section === 'overview' && chartKind === 'login') loadLogins();
         }, function (e) {
             D.loading = false;
             D.error = String(e && e.message || e);
             renderApp();
         });
+    }
+
+    // входы за 30 дней (только даты) — источник графика «Входы»
+    function loadLogins() {
+        if (D.loginsLoading) return;
+        D.loginsLoading = true;
+        var since = new Date(Date.now() - 30 * 86400000);
+        since.setHours(0, 0, 0, 0);
+        client().from('app_events').select('created_at').eq('event', 'login')
+            .gte('created_at', since.toISOString()).limit(10000)
+            .then(function (res) {
+                D.loginsLoading = false;
+                D.logins = res.error ? [] : (res.data || []).map(function (r) { return r.created_at; });
+                if (section === 'overview') renderApp();
+            }, function () {
+                D.loginsLoading = false;
+                D.logins = [];
+                if (section === 'overview') renderApp();
+            });
     }
 
     function loadMoreEvents() {
@@ -189,6 +234,63 @@
             (m[r.user_id] = m[r.user_id] || []).push(r);
         });
         return m;
+    }
+
+    // ---------- Excel-выгрузка ----------
+    // CSV по паттерну терминала: BOM для Excel, разделитель «;»,
+    // анти-формульный гард (=+@ в начале ячейки гасим апострофом)
+    function csvCell(v) {
+        var s = String(v == null ? '' : v).replace(/\n/g, ' ');
+        if (/^[=+@\t\r]/.test(s) || (s[0] === '-' && !/^-[\d\s.,]+%?$/.test(s))) s = "'" + s;
+        return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }
+    function downloadCsv(name, lines) {
+        var blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+    }
+    function stamp() {
+        var d = new Date();
+        return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+    }
+    // выгружается текущий срез: фильтры, поиск и сортировка как на экране
+    function exportUsers() {
+        var byUser = dataByUser();
+        var lines = [['Имя', 'Email', 'Роль', 'Статус', 'Регистрация', 'Активность', 'Ключей данных', 'ID']
+            .map(csvCell).join(';')];
+        filteredUsers().forEach(function (p) {
+            lines.push([
+                p.name || '', p.email || '',
+                p.role === 'admin' ? 'админ' : 'юзер',
+                p.banned ? 'бан' : (isOnline(p) ? 'онлайн' : 'активен'),
+                fmtDT(p.created_at),
+                p.last_seen_at ? fmtDT(p.last_seen_at) : '—',
+                (byUser[p.id] || []).length,
+                p.id
+            ].map(csvCell).join(';'));
+        });
+        downloadCsv('admin-polzovateli-' + stamp() + '.csv', lines);
+        toast('Список пользователей выгружен');
+    }
+    function exportEvents() {
+        var lines = [['Время', 'Пользователь', 'Email', 'Событие', 'Детали']
+            .map(csvCell).join(';')];
+        filteredEvents().forEach(function (e) {
+            var pr = e.profiles || {};
+            lines.push([
+                fmtDT(e.created_at),
+                pr.name || (e.profiles ? '' : 'удалённый аккаунт'),
+                pr.email || '',
+                evMeta(e.event).t,
+                e.meta && Object.keys(e.meta).length ? JSON.stringify(e.meta) : ''
+            ].map(csvCell).join(';'));
+        });
+        downloadCsv('admin-sobytiya-' + stamp() + '.csv', lines);
+        toast('Журнал событий выгружен');
     }
 
     // ---------- каркас и заглушки ----------
@@ -241,20 +343,12 @@
     function renderApp() {
         if (!ensureRoot()) return;
 
-        var upd = D.loadedAt
-            ? 'обновлено ' + pad2(new Date(D.loadedAt).getHours()) + ':' + pad2(new Date(D.loadedAt).getMinutes())
-            : '';
-
-        var h =
+        var h = renderHero() +
             '<div class="adm-top">' +
                 '<div class="adm-seg" role="tablist">' +
                     segBtn('overview', 'Обзор') +
                     segBtn('users', 'Пользователи', D.profiles.length) +
                     segBtn('events', 'События', D.eventsTotal) +
-                '</div>' +
-                '<div class="adm-top-right">' +
-                    (D.loading ? '<span class="adm-upd">загружаем…</span>' : '<span class="adm-upd">' + upd + '</span>') +
-                    '<button class="adm-refresh" data-act="refresh" title="Обновить данные"' + (D.loading ? ' disabled' : '') + '>' + IC.refresh + '</button>' +
                 '</div>' +
             '</div>';
 
@@ -290,39 +384,66 @@
             label + (n != null ? ' <span class="adm-seg-n">' + n + '</span>' : '') + '</button>';
     }
 
+    // ---------- ШАПКА-ГЕРОЙ ----------
+    // спокойная версия rbx-hero: та же тёмная подложка и раскладка
+    // «идентити | KPI | кнопка», но без анимаций — только статичная сетка
+    function renderHero() {
+        var now = Date.now(), day = 86400000;
+        var loaded = !!D.loadedAt;
+        var online = 0, new7 = 0, act24 = 0;
+        if (loaded) {
+            online = D.profiles.filter(isOnline).length;
+            new7 = D.profiles.filter(function (p) { return now - new Date(p.created_at).getTime() < 7 * day; }).length;
+            act24 = D.profiles.filter(function (p) { return p.last_seen_at && now - new Date(p.last_seen_at).getTime() < day; }).length;
+        }
+        var upd = D.loading ? 'загружаем…'
+            : (loaded ? 'обновлено ' + pad2(new Date(D.loadedAt).getHours()) + ':' + pad2(new Date(D.loadedAt).getMinutes()) : '');
+
+        return '<div class="adm-hero">' +
+            '<div class="adm-hero-fx" aria-hidden="true"><i class="glow"></i><i class="mesh"></i></div>' +
+            '<div class="adm-hero-id">' +
+                '<div class="adm-hero-ico">' + IC.shield + '</div>' +
+                '<div class="adm-hero-t">' +
+                    '<div class="adm-hero-title">Админка</div>' +
+                    '<div class="adm-hero-sub">Пользователи, данные и события сервиса</div>' +
+                '</div>' +
+            '</div>' +
+            '<div class="adm-hero-kpis">' +
+                heroKpi(loaded ? D.profiles.length : '—', 'человек', loaded ? 'за 7 дней <b>+' + new7 + '</b>' : '&nbsp;') +
+                '<i class="adm-hero-div"></i>' +
+                heroKpi(loaded ? online : '—', 'онлайн', loaded ? 'за 24 ч <b>' + act24 + '</b>' : '&nbsp;') +
+                '<i class="adm-hero-div"></i>' +
+                heroKpi(loaded ? D.events24 : '—', 'событий · 24 ч', loaded ? 'всего <b>' + D.eventsTotal + '</b>' : '&nbsp;') +
+            '</div>' +
+            '<div class="adm-hero-side">' +
+                '<button class="adm-hero-refresh" data-act="refresh" title="Обновить данные"' + (D.loading ? ' disabled' : '') + '>' + IC.refresh + 'Обновить</button>' +
+                '<span class="adm-hero-upd">' + upd + '</span>' +
+            '</div>' +
+        '</div>';
+    }
+    function heroKpi(num, label, sub) {
+        return '<div class="adm-hkpi">' +
+            '<div class="num"><b>' + num + '</b><span>' + label + '</span></div>' +
+            '<div class="sub">' + sub + '</div>' +
+        '</div>';
+    }
+
     // ---------- ОБЗОР ----------
+    // одна карта с внутренним разделителем (как секции rbx-card):
+    // слева график с переключателями, справа лента событий
     function renderOverview() {
-        var now = Date.now();
-        var day = 86400000;
-        var new7 = D.profiles.filter(function (p) { return now - new Date(p.created_at).getTime() < 7 * day; }).length;
-        var act24 = D.profiles.filter(function (p) { return p.last_seen_at && now - new Date(p.last_seen_at).getTime() < day; }).length;
-        var act7 = D.profiles.filter(function (p) { return p.last_seen_at && now - new Date(p.last_seen_at).getTime() < 7 * day; }).length;
         var byUser = dataByUser();
         var withPf = Object.keys(byUser).filter(function (uid) {
             return byUser[uid].some(function (r) { return r.key === 'portfolios_v1'; });
         }).length;
-        var ev24 = D.events.filter(function (e) { return now - new Date(e.created_at).getTime() < day; }).length;
         var banned = D.profiles.filter(function (p) { return p.banned; }).length;
         var admins = D.profiles.filter(function (p) { return p.role === 'admin'; }).length;
 
-        var h = '<div class="adm-kpis">' +
-            kpi(IC.users, D.profiles.length, 'Пользователей', '+' + new7 + ' за 7 дней') +
-            kpi(IC.pulse, act24, 'Активны за 24 ч', act7 + ' за неделю') +
-            kpi(IC.box, withPf, 'С портфелями', D.dataMeta.length + ' ключей данных') +
-            kpi(IC.zap, ev24, 'Событий за 24 ч', D.eventsTotal + ' всего') +
-        '</div>';
-
-        h += '<div class="adm-cols">';
-
-        // график регистраций 14 дней
-        h += '<div class="adm-card"><div class="adm-card-t">Регистрации · 14 дней</div>' + regChart() + '</div>';
-
-        // последние события
-        h += '<div class="adm-card"><div class="adm-card-t">Последние события</div>';
+        var feed;
         if (!D.events.length) {
-            h += '<div class="adm-empty">Событий пока нет — они появятся после первых регистраций и входов.</div>';
+            feed = '<div class="adm-empty">Событий пока нет — они появятся после первых регистраций и входов.</div>';
         } else {
-            h += '<div class="adm-feed">' + D.events.slice(0, 9).map(function (e) {
+            feed = '<div class="adm-feed">' + D.events.slice(0, 9).map(function (e) {
                 var m = evMeta(e.event);
                 var who = e.profiles ? (e.profiles.name || e.profiles.email || '—') : 'удалённый аккаунт';
                 return '<div class="adm-feed-row">' +
@@ -332,36 +453,65 @@
                 '</div>';
             }).join('') + '</div>';
         }
-        h += '</div></div>';
+
+        var h = '<div class="adm-card adm-ov">' +
+            '<section class="adm-ov-sec">' +
+                '<div class="adm-ov-head">' +
+                    '<div class="adm-card-t">' + (chartKind === 'reg' ? 'Регистрации' : 'Входы') + ' · ' + chartDays + ' дней</div>' +
+                    '<div class="adm-ov-ctl">' +
+                        ctlPill('chart-kind', 'reg', 'Регистрации', chartKind === 'reg') +
+                        ctlPill('chart-kind', 'login', 'Входы', chartKind === 'login') +
+                        '<i class="sep"></i>' +
+                        ctlPill('chart-days', '14', '14', chartDays === 14) +
+                        ctlPill('chart-days', '30', '30', chartDays === 30) +
+                    '</div>' +
+                '</div>' + chartSvg() +
+            '</section>' +
+            '<section class="adm-ov-sec adm-ov-feed">' +
+                '<div class="adm-card-t">Последние события</div>' + feed +
+            '</section>' +
+        '</div>';
 
         // служебная строка
         h += '<div class="adm-foot-note">Администраторов: ' + admins + ' · Заблокировано: ' + banned +
+             ' · С портфелями: ' + withPf + ' · Ключей данных: ' + D.dataMeta.length +
+             (D.profilesCapped ? ' · <b>показаны первые 1000 профилей</b>' : '') +
              ' · Удаление аккаунта — в карточке пользователя, раздел «Пользователи».</div>';
         return h;
     }
 
-    function kpi(ic, num, label, sub) {
-        return '<div class="adm-kpi"><div class="adm-kpi-ic">' + ic + '</div>' +
-            '<div class="adm-kpi-num">' + num + '</div>' +
-            '<div class="adm-kpi-lab">' + label + '</div>' +
-            '<div class="adm-kpi-sub">' + sub + '</div></div>';
+    function ctlPill(act, f, label, active) {
+        return '<button class="adm-pill' + (active ? ' active' : '') + '" data-act="' + act + '" data-f="' + f + '">' + label + '</button>';
     }
 
-    function regChart() {
+    // столбики по дням: регистрации из profiles, входы из ленивого D.logins
+    function chartSvg() {
+        if (chartKind === 'login' && D.logins === null) {
+            return '<div class="adm-empty">Загружаем входы…</div>';
+        }
         var days = [];
         var now = new Date(); now.setHours(0, 0, 0, 0);
-        for (var i = 13; i >= 0; i--) {
+        for (var i = chartDays - 1; i >= 0; i--) {
             var d = new Date(now.getTime() - i * 86400000);
             days.push({ t: d.getTime(), n: 0, lab: pad2(d.getDate()) });
         }
-        D.profiles.forEach(function (p) {
-            var t = new Date(p.created_at); t.setHours(0, 0, 0, 0);
-            for (var j = 0; j < days.length; j++) if (days[j].t === t.getTime()) { days[j].n++; break; }
+        var src = chartKind === 'reg'
+            ? D.profiles.map(function (p) { return p.created_at; })
+            : D.logins;
+        src.forEach(function (isoStr) {
+            var t = new Date(isoStr); t.setHours(0, 0, 0, 0);
+            var idx = Math.round((t.getTime() - days[0].t) / 86400000);
+            if (idx >= 0 && idx < days.length) days[idx].n++;
         });
         var max = Math.max.apply(null, days.map(function (d) { return d.n; }));
-        if (!max) return '<div class="adm-empty">За последние две недели регистраций не было.</div>';
+        if (!max) {
+            return '<div class="adm-empty">' +
+                (chartKind === 'reg' ? 'За эти дни регистраций не было.' : 'За эти дни входов не было.') + '</div>';
+        }
 
         var W = 560, H = 150, pad = 4, bw = (W - pad * 2) / days.length;
+        var labEvery = days.length > 16 ? 3 : 1;   // 30 дней — подписи через две
+        var showV = days.length <= 16;             // цифры над столбиками только на 14 днях
         var bars = days.map(function (d, i) {
             var bh = d.n ? Math.max(6, (d.n / max) * (H - 44)) : 3;
             var x = pad + i * bw + bw * 0.18;
@@ -369,31 +519,87 @@
             return '<g><title>' + fmtDate(new Date(d.t).toISOString()) + ': ' + d.n + '</title>' +
                 '<rect class="adm-bar' + (d.n ? '' : ' zero') + '" x="' + x.toFixed(1) + '" y="' + y.toFixed(1) +
                 '" width="' + (bw * 0.64).toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="4"/>' +
-                (d.n ? '<text class="adm-bar-v" x="' + (x + bw * 0.32).toFixed(1) + '" y="' + (y - 6).toFixed(1) + '" text-anchor="middle">' + d.n + '</text>' : '') +
-                '<text class="adm-bar-l" x="' + (x + bw * 0.32).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="middle">' + d.lab + '</text></g>';
+                (showV && d.n ? '<text class="adm-bar-v" x="' + (x + bw * 0.32).toFixed(1) + '" y="' + (y - 6).toFixed(1) + '" text-anchor="middle">' + d.n + '</text>' : '') +
+                (i % labEvery === 0 ? '<text class="adm-bar-l" x="' + (x + bw * 0.32).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="middle">' + d.lab + '</text>' : '') +
+            '</g>';
         }).join('');
         return '<svg class="adm-chart" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' + bars + '</svg>';
     }
 
     // ---------- ПОЛЬЗОВАТЕЛИ ----------
+    var U_FILTERS = [
+        { id: 'all', t: 'Все' },
+        { id: 'online', t: 'Онлайн' },
+        { id: 'pf', t: 'С портфелями' },
+        { id: 'admins', t: 'Админы' },
+        { id: 'banned', t: 'Бан' }
+    ];
+
     function filteredUsers() {
-        if (!searchQ.trim()) return D.profiles;
-        var q = searchQ.trim().toLowerCase();
-        return D.profiles.filter(function (p) {
-            return String(p.name || '').toLowerCase().indexOf(q) !== -1 ||
-                   String(p.email || '').toLowerCase().indexOf(q) !== -1;
+        var list = D.profiles;
+        if (userFilter !== 'all') {
+            var byUser = userFilter === 'pf' ? dataByUser() : null;
+            list = list.filter(function (p) {
+                if (userFilter === 'online') return isOnline(p);
+                if (userFilter === 'admins') return p.role === 'admin';
+                if (userFilter === 'banned') return p.banned;
+                return (byUser[p.id] || []).some(function (r) { return r.key === 'portfolios_v1'; });
+            });
+        }
+        if (searchQ.trim()) {
+            var q = searchQ.trim().toLowerCase();
+            list = list.filter(function (p) {
+                return String(p.name || '').toLowerCase().indexOf(q) !== -1 ||
+                       String(p.email || '').toLowerCase().indexOf(q) !== -1 ||
+                       String(p.id || '').toLowerCase().indexOf(q) !== -1;
+            });
+        }
+        return sortUsers(list);
+    }
+
+    function sortUsers(list) {
+        var col = userSort.col, dir = userSort.dir;
+        var counts = null;
+        if (col === 'data') {
+            counts = {};
+            D.dataMeta.forEach(function (r) { counts[r.user_id] = (counts[r.user_id] || 0) + 1; });
+        }
+        function key(p) {
+            if (col === 'name') return String(p.name || p.email || '').toLowerCase();
+            if (col === 'seen') return p.last_seen_at ? new Date(p.last_seen_at).getTime() : -Infinity;
+            if (col === 'data') return counts[p.id] || 0;
+            return new Date(p.created_at).getTime();
+        }
+        return list.slice().sort(function (a, b) {
+            var ka = key(a), kb = key(b);
+            if (col === 'name') return ka.localeCompare(kb, 'ru') * dir;
+            return (ka - kb) * dir;
         });
+    }
+
+    function thSort(col, label) {
+        var a = userSort.col === col;
+        return '<span><span class="adm-th-sort' + (a ? ' act' + (userSort.dir > 0 ? ' asc' : '') : '') +
+            '" data-act="sort-users" data-col="' + col + '" title="Сортировать">' + label + IC.sdir + '</span></span>';
     }
 
     function renderUsers() {
         var h = '<div class="adm-card">' +
             '<div class="adm-users-bar">' +
-                '<div class="adm-search">' + IC.search + '<input id="admSearch" type="text" placeholder="Имя или email…" autocomplete="off" spellcheck="false"></div>' +
+                '<div class="adm-search">' + IC.search + '<input id="admSearch" type="text" placeholder="Имя, email или id…" autocomplete="off" spellcheck="false"></div>' +
+                '<div class="adm-uflt">' + U_FILTERS.map(function (f) {
+                    return ctlPill('u-filter', f.id, f.t, userFilter === f.id);
+                }).join('') + '</div>' +
                 '<span class="adm-users-n">Найдено: <b id="admUsersCount">' + filteredUsers().length + '</b></span>' +
+                '<button class="adm-btn sm" data-act="export-users" title="Выгрузить текущий список (CSV для Excel)">' + IC.dl + 'Excel</button>' +
             '</div>' +
             '<div class="adm-uhead">' +
-                '<span>Пользователь</span><span>Роль</span><span>Статус</span>' +
-                '<span>Регистрация</span><span>Активность</span><span>Данные</span><span></span>' +
+                thSort('name', 'Пользователь') +
+                '<span>Роль</span><span>Статус</span>' +
+                thSort('created', 'Регистрация') +
+                thSort('seen', 'Активность') +
+                thSort('data', 'Данные') +
+                '<span></span>' +
             '</div>' +
             '<div class="adm-ubody" id="admUsersBody">' + usersRows() + '</div>' +
         '</div>';
@@ -403,7 +609,8 @@
     function usersRows() {
         var list = filteredUsers();
         if (!list.length) {
-            return '<div class="adm-empty">' + (searchQ ? 'Никого не нашли по запросу «' + esc(searchQ) + '».' : 'Пока нет ни одного пользователя.') + '</div>';
+            return '<div class="adm-empty">' + (searchQ ? 'Никого не нашли по запросу «' + esc(searchQ) + '».'
+                : (userFilter !== 'all' ? 'Под этот фильтр никто не попадает.' : 'Пока нет ни одного пользователя.')) + '</div>';
         }
         var byUser = dataByUser();
         return list.map(function (p) {
@@ -440,37 +647,51 @@
         { id: 'auth', t: 'Входы/выходы', match: ['login', 'logout'] },
         { id: 'reg', t: 'Регистрации', match: ['register'] },
         { id: 'pass', t: 'Пароль', match: ['password_reset_request', 'password_reset_done'] },
-        { id: 'admin', t: 'Действия админа', match: ['admin_role', 'admin_ban', 'admin_unban', 'admin_clear_data'] }
+        { id: 'admin', t: 'Действия админа', match: ['admin_role', 'admin_ban', 'admin_unban', 'admin_clear_data', 'admin_delete_user'] }
     ];
 
-    function renderEvents() {
+    function filteredEvents() {
         var flt = EV_FILTERS.filter(function (f) { return f.id === eventFilter; })[0] || EV_FILTERS[0];
-        var list = flt.match
+        return flt.match
             ? D.events.filter(function (e) { return flt.match.indexOf(e.event) !== -1; })
             : D.events;
+    }
+
+    function renderEvents() {
+        var list = filteredEvents();
 
         var h = '<div class="adm-card">' +
             '<div class="adm-ev-bar">' +
                 EV_FILTERS.map(function (f) {
-                    return '<button class="adm-pill' + (eventFilter === f.id ? ' active' : '') + '" data-act="ev-filter" data-f="' + f.id + '">' + f.t + '</button>';
+                    return ctlPill('ev-filter', f.id, f.t, eventFilter === f.id);
                 }).join('') +
                 '<span class="adm-users-n">Показано: <b>' + list.length + '</b> из ' + D.eventsTotal + '</span>' +
+                '<button class="adm-btn sm" data-act="export-events" title="Выгрузить текущий срез журнала (CSV для Excel)">' + IC.dl + 'Excel</button>' +
             '</div>';
 
         if (!list.length) {
             h += '<div class="adm-empty">Под этот фильтр событий пока нет.</div>';
         } else {
-            h += '<div class="adm-ehead"><span>Время</span><span>Пользователь</span><span>Событие</span><span>Детали</span></div>' +
+            h += '<div class="adm-ehead"><span>Время</span><span>Пользователь</span><span>Событие</span><span>Детали</span><span></span></div>' +
                 '<div class="adm-ebody">' + list.map(function (e) {
                     var m = evMeta(e.event);
                     var who = e.profiles ? (e.profiles.name || e.profiles.email || '—') : 'удалённый аккаунт';
-                    var meta = e.meta && Object.keys(e.meta).length ? JSON.stringify(e.meta) : '';
+                    var hasMeta = !!(e.meta && Object.keys(e.meta).length);
+                    var meta = hasMeta ? JSON.stringify(e.meta) : '';
                     if (meta.length > 80) meta = meta.slice(0, 77) + '…';
-                    return '<div class="adm-erow">' +
-                        '<span class="adm-mono">' + fmtDT(e.created_at) + '</span>' +
-                        '<span class="adm-e-who' + (e.user_id ? '" data-act="open-user" data-id="' + e.user_id : '') + '">' + esc(who) + '</span>' +
-                        '<span><span class="adm-ev ' + m.c + '">' + esc(m.t) + '</span></span>' +
-                        '<span class="adm-e-meta">' + esc(meta) + '</span>' +
+                    // строка с meta раскрывается по клику: полный JSON под строкой
+                    return '<div class="adm-erow-w">' +
+                        '<div class="adm-erow' + (hasMeta ? ' has-meta" data-act="ev-toggle"' : '"') + '>' +
+                            '<span class="adm-mono">' + fmtDT(e.created_at) + '</span>' +
+                            '<span class="adm-e-who' + (e.user_id ? '" data-act="open-user" data-id="' + e.user_id : '') + '">' + esc(who) + '</span>' +
+                            '<span><span class="adm-ev ' + m.c + '">' + esc(m.t) + '</span></span>' +
+                            '<span class="adm-e-meta">' + esc(meta) + '</span>' +
+                            '<span class="adm-e-chev">' + (hasMeta ? IC.chev : '') + '</span>' +
+                        '</div>' +
+                        (hasMeta
+                            ? '<div class="adm-erow-det"><div class="adm-erow-det-in"><pre class="adm-json">' +
+                              esc(JSON.stringify(e.meta, null, 2)) + '</pre></div></div>'
+                            : '') +
                     '</div>';
                 }).join('') + '</div>';
             if (D.eventsHasMore) {
@@ -561,6 +782,7 @@
                 (p.banned
                     ? armBtn('unban', p.id, IC.check, 'Разблокировать', '')
                     : armBtn('ban', p.id, IC.ban, 'Заблокировать', me ? 'Себя заблокировать нельзя' : '')) +
+                armBtn('reset-pass', p.id, IC.key, 'Сброс пароля', p.email ? '' : 'У пользователя нет email') +
             '</div>';
 
         // Данные
@@ -682,6 +904,19 @@
             });
     }
 
+    // письмо для смены пароля — обычный recovery-поток Supabase (хватает
+    // anon-ключа), редирект на Главную, где вход ловит kind='recovery'
+    function sendReset(id) {
+        var p = D.profiles.filter(function (x) { return x.id === id; })[0];
+        if (!p || !p.email) return;
+        client().auth.resetPasswordForEmail(p.email, { redirectTo: location.origin + '/' })
+            .then(function (res) {
+                if (res.error) { toast(supa().errRu(res.error), true); return; }
+                supa().logEvent('password_reset_request', { target: id, target_email: p.email, by: 'admin' });
+                toast('Письмо для сброса пароля отправлено');
+            });
+    }
+
     function clearUserData(id) {
         client().from('user_data').delete().eq('user_id', id)
             .then(function (res) {
@@ -721,6 +956,26 @@
             case 'go-home': if (window.switchTab) window.switchTab('home'); break;
             case 'ev-filter': eventFilter = btn.getAttribute('data-f'); renderApp(); break;
             case 'ev-more': loadMoreEvents(); break;
+            case 'ev-toggle':
+                var w = btn.closest('.adm-erow-w');
+                if (w) w.classList.toggle('exp');
+                break;
+            case 'u-filter': userFilter = btn.getAttribute('data-f'); renderApp(); break;
+            case 'sort-users':
+                var col = btn.getAttribute('data-col');
+                if (userSort.col === col) userSort.dir = -userSort.dir;
+                else userSort = { col: col, dir: col === 'name' ? 1 : -1 };
+                renderApp();
+                break;
+            case 'chart-kind':
+                chartKind = btn.getAttribute('data-f');
+                if (chartKind === 'login' && D.logins === null) loadLogins();
+                renderApp();
+                break;
+            case 'chart-days': chartDays = +btn.getAttribute('data-f'); renderApp(); break;
+            case 'export-users': exportUsers(); break;
+            case 'export-events': exportEvents(); break;
+            case 'reset-pass': sendReset(id); break;
             case 'open-user': e.stopPropagation(); openUser(id); break;
             case 'close-modal': closeModal(); break;
             case 'copy-id':
@@ -738,6 +993,25 @@
         }
     }
 
+    // ---------- тихий поллинг ----------
+    // раз в POLL_MS перезагружаем данные, пока вкладка открыта; пропускаем,
+    // когда вкладка браузера в фоне, открыта карточка или печатают в поиске
+    var pollTimer = null;
+    function startPoll() {
+        stopPoll();
+        pollTimer = setInterval(function () {
+            if (document.hidden || D.loading) return;
+            if (!supa() || !supa().isAdmin()) return;
+            if (modal && modal.classList.contains('open')) return;
+            var ae = document.activeElement;
+            if (ae && ae.tagName === 'INPUT' && root && root.contains(ae)) return;
+            refresh(true);
+        }, POLL_MS);
+    }
+    function stopPoll() {
+        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    }
+
     // ---------- интеграция с приложением ----------
     function gateNav() {
         var b = dq('sbAdminBtn');
@@ -746,9 +1020,9 @@
 
     function onEnterTab() {
         renderGate();
-        if (supa() && supa().isAdmin() && !D.loading &&
-            (!D.loadedAt || Date.now() - D.loadedAt > 60000)) {
-            refresh();
+        if (supa() && supa().isAdmin()) {
+            if (!D.loading && (!D.loadedAt || Date.now() - D.loadedAt > 60000)) refresh();
+            startPoll();
         }
     }
 
@@ -764,7 +1038,7 @@
         window.switchTab = function (tabId) {
             _prevSwitchTab(tabId);
             if (tabId === 'admin') onEnterTab();
-            else closeModal();
+            else { stopPoll(); closeModal(); }
         };
     }
 
