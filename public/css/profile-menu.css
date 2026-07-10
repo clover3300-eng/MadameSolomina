@@ -311,3 +311,55 @@ body.dark-mode .ph-out.arm { background: #dc2626; border-color: #dc2626; color: 
 .ph-in { border: none; background: linear-gradient(135deg, #3b82f6, #6366f1); color: #fff; box-shadow: 0 8px 18px -9px rgba(59,130,246,0.9); }
 .ph-in:hover { filter: brightness(1.06); }
 .ph-out svg, .ph-in svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+/* ===== СКРЫТИЕ СУММ (тумблер «Скрывать суммы») =====
+   js/sums-privacy.js вешает .sum-mask на листья-ценники (число + ₽) и класс
+   sums-hidden на body. Размытие — БЕЗ transition на filter: свежие суммы
+   после перерисовки не должны «проявляться» анимацией (это была бы утечка).
+   Наведение временно раскрывает конкретное значение для владельца. */
+body.sums-hidden .sum-mask {
+    filter: blur(7px);              /* без transition — иначе живой апдейт цены «проявит» сумму */
+    cursor: default; user-select: none;
+    border-radius: 5px;
+}
+body.sums-hidden .sum-mask:hover { filter: none; user-select: auto; }
+@media (hover: none) {
+    /* на тач-устройствах наведения нет — тап по значению раскрывает его */
+    body.sums-hidden .sum-mask:active { filter: none; }
+}
+
+/* ===== СЕКЦИИ «БЕЗОПАСНОСТЬ» И «ДАННЫЕ» ===== */
+/* «Безопасность» — только для облачного аккаунта (есть что менять/отзывать) */
+#profileHub:not([data-auth-state="cloud-user"]) #phSecSec { display: none; }
+.ph-sec--sec .ph-row-ic { background: rgba(16,185,129,0.10); color: #059669; }
+body.dark-mode .ph-sec--sec .ph-row-ic { color: #34d399; }
+.ph-sec--data .ph-row-ic { background: rgba(100,116,139,0.10); color: #64748b; }
+body.dark-mode .ph-sec--data .ph-row-ic { color: #9fb1c6; }
+
+/* широкие кнопки-ряды внутри секций (переиспользуют .ph-adm из admin.css) */
+.ph-body-pad .ph-adm { margin-right: 0; }
+.ph-adm--wide { width: 100%; justify-content: center; padding: 10px 12px; }
+
+/* «Очистить устройство» — приглушённо-янтарная: полудеструктивная, но не красная */
+#phClearDev { border-color: rgba(180,83,9,0.26); background: rgba(245,158,11,0.08); color: #b45309; }
+#phClearDev:hover { background: rgba(245,158,11,0.16); }
+#phClearDev.arm { background: #b45309; border-color: #b45309; color: #fff; }
+body.dark-mode #phClearDev { color: #fbbf24; border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.1); }
+
+/* опасная зона: удаление аккаунта */
+.ph-danger { margin-top: 2px; border: 1px solid rgba(220,38,38,0.22); border-radius: 12px; padding: 11px 12px; background: rgba(220,38,38,0.04); }
+body.dark-mode .ph-danger { border-color: rgba(248,113,113,0.28); background: rgba(248,113,113,0.06); }
+.ph-danger-h { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase; color: #dc2626; }
+body.dark-mode .ph-danger-h { color: #f87171; }
+.ph-danger-s { margin: 5px 0 10px; font-size: 11px; line-height: 1.45; font-weight: 600; color: #94a3b8; }
+.ph-del {
+    width: 100%; justify-content: center; display: inline-flex; align-items: center; gap: 7px;
+    border: 1px solid rgba(220,38,38,0.3); border-radius: 11px; background: rgba(220,38,38,0.08); color: #dc2626;
+    cursor: pointer; padding: 10px 12px; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 12.5px;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.ph-del:hover { background: rgba(220,38,38,0.14); }
+.ph-del.arm { background: #dc2626; border-color: #dc2626; color: #fff; }
+.ph-del svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+body.dark-mode .ph-del { color: #f87171; border-color: rgba(248,113,113,0.32); background: rgba(248,113,113,0.09); }
+body.dark-mode .ph-del.arm { background: #dc2626; border-color: #dc2626; color: #fff; }

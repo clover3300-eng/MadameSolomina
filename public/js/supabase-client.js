@@ -59,6 +59,8 @@
         resetPassword: resetPassword,
         updatePassword: updatePassword,
         updateProfile: updateProfile,
+        signOutOthers: signOutOthers,
+        deleteAccount: deleteAccount,
         logEvent: logEvent,
         errRu: errRu
     };
@@ -319,6 +321,34 @@
             if (bad) return { ok: false, error: errRu(bad.error) };
             return loadProfile().then(function () {
                 return { ok: true, emailPending: !!emailChanged };
+            });
+        });
+    }
+
+    // Выход на всех ДРУГИХ устройствах (scope:'others') — текущая сессия
+    // сохраняется, отзываются только чужие. Для «забыл выйти на чужом ПК».
+    function signOutOthers() {
+        if (!enabled || !S.session) return Promise.resolve({ ok: false, error: 'Нет сессии' });
+        return client.auth.signOut({ scope: 'others' }).then(function (res) {
+            if (res.error) return { ok: false, error: errRu(res.error) };
+            logEvent('signout_others');
+            return { ok: true };
+        });
+    }
+
+    // Самоудаление аккаунта — RPC delete_own_account (security definer,
+    // см. supabase/schema.sql) стирает строку auth.users, каскад уносит
+    // профиль и user_data. Затем локально выходим (сессия уже мертва).
+    function deleteAccount() {
+        if (!enabled || !S.session) return Promise.resolve({ ok: false, error: 'Нет сессии' });
+        return client.rpc('delete_own_account').then(function (res) {
+            if (res.error) return { ok: false, error: errRu(res.error) };
+            return client.auth.signOut().then(function () {
+                S.session = null; S.profile = null; mirrorProfile();
+                return { ok: true };
+            }, function () {
+                S.session = null; S.profile = null; mirrorProfile();
+                return { ok: true };
             });
         });
     }

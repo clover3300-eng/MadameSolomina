@@ -1,18 +1,23 @@
 // =============================================
-// ЛИЧНЫЙ КАБИНЕТ — задел (база данных не подключена)
+// ЛИЧНЫЙ КАБИНЕТ
 // =============================================
 // Круглая кнопка-аватар (#topProfileBtn, шапка, все вкладки кроме
-// Главной) раскрывает по наведению/клику панель #profileHub:
-//   • Профиль — имя/фамилия/email (локальный аккаунт home_profile_v1),
+// Главной) раскрывает по наведению/клику/Enter панель #profileHub:
+//   • Профиль — имя/фамилия/email (+ привязка Telegram у облачных),
 //   • API брокера — токен для будущей автозагрузки портфеля,
-//   • Настройки — стартовый раздел, приватность (задел),
+//   • Тарифы — маркетинговый задел,
+//   • Настройки — стартовый раздел, «Скрывать суммы» (см. js/sums-privacy.js),
+//   • Безопасность — смена пароля и выход на всех устройствах,
+//     ТОЛЬКО для облачного аккаунта (CSS-гейт по data-auth-state),
+//   • Данные — экспорт JSON, очистка устройства, удаление аккаунта
+//     (cloud → RPC delete_own_account, local → wipe),
 //   • Выйти / Создать аккаунт.
 // Кнопка темы на этих вкладках уезжает в правый нижний угол (#themeFab).
 //
 // Хранилище: home_profile_v1 (создаёт форма на Главной) +
-// profile_settings_v1 (этот модуль). Точки подмены на Supabase:
-// getProfile()/saveProfile()/logout() — весь остальной код ходит
-// только через них.
+// profile_settings_v1 (этот модуль). При живой сессии Supabase профиль
+// и операции идут через window.supa; локальный режим — фолбэк. Точки
+// подмены: getProfile()/saveProfile()/logout() — весь код ходит через них.
 
 (function () {
     'use strict';
@@ -30,9 +35,11 @@
     ];
     var START_TABS = [
         { id: 'home',       name: 'Главная' },
+        { id: 'calc',       name: 'Расчёт' },
         { id: 'portfolios', name: 'Портфели' },
+        { id: 'rebalance',  name: 'Ребаланс' },
         { id: 'market',     name: 'Рынок' },
-        { id: 'calc',       name: 'Расчёт' }
+        { id: 'backtest',   name: 'Тест портфеля' }
     ];
 
     // ---------- хранилище ----------
@@ -152,7 +159,12 @@
         sun: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>',
         moon: '<svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
         card: '<svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>',
-        back: '<svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>'
+        back: '<svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>',
+        lock: '<svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+        monitor: '<svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
+        download: '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+        db: '<svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>',
+        trash: '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>'
     };
 
     // ---------- сборка DOM ----------
@@ -243,12 +255,48 @@
                         '<div class="ph-field"><label class="ph-lab" for="phStartTab">Раздел при запуске</label>' +
                             '<select class="ph-select" id="phStartTab">' + buildOptions(START_TABS, s.startTab || 'home') + '</select></div>' +
                         '<div class="ph-set">' +
-                            '<span class="ph-set-tt"><span class="ph-set-t">Скрывать суммы <span class="ph-soon">скоро</span></span><span class="ph-set-s">Прятать капитал от посторонних глаз</span></span>' +
-                            '<button class="ph-sw' + (s.hideSums ? ' on' : '') + '" type="button" id="phSwHide" role="switch" aria-label="Скрывать суммы"></button>' +
+                            '<span class="ph-set-tt"><span class="ph-set-t">Скрывать суммы</span><span class="ph-set-s">Размывать рубли от посторонних глаз — наведите, чтобы взглянуть</span></span>' +
+                            '<button class="ph-sw' + (s.hideSums ? ' on' : '') + '" type="button" id="phSwHide" role="switch" aria-checked="' + (s.hideSums ? 'true' : 'false') + '" aria-label="Скрывать суммы"></button>' +
                         '</div>' +
                         '<div class="ph-set">' +
                             '<span class="ph-set-tt"><span class="ph-set-t">Синхронизация с брокером <span class="ph-soon">скоро</span></span><span class="ph-set-s">Автозагрузка портфеля по токену</span></span>' +
                             '<button class="ph-sw' + (s.brokerSync ? ' on' : '') + '" type="button" id="phSwSync" role="switch" aria-label="Синхронизация с брокером"></button>' +
+                        '</div>' +
+                    '</div></div></div>' +
+                '</div>' +
+
+                // ---- Безопасность (только для облачного аккаунта) ----
+                '<div class="ph-sec ph-sec--sec" id="phSecSec">' +
+                    '<button class="ph-row" type="button" data-sec="sec" aria-expanded="false">' +
+                        '<span class="ph-row-ic">' + IC.lock + '</span>' +
+                        '<span class="ph-row-tt"><span class="ph-row-t">Безопасность</span><span class="ph-row-s">Пароль, устройства</span></span>' +
+                        IC.chev +
+                    '</button>' +
+                    '<div class="ph-body"><div class="ph-body-in"><div class="ph-body-pad">' +
+                        '<div class="ph-field"><label class="ph-lab" for="phPass1">Новый пароль</label>' +
+                            '<input class="ph-input" id="phPass1" type="password" placeholder="минимум 6 символов" autocomplete="new-password" spellcheck="false"></div>' +
+                        '<div class="ph-field"><label class="ph-lab" for="phPass2">Повторите пароль</label>' +
+                            '<input class="ph-input" id="phPass2" type="password" placeholder="ещё раз" autocomplete="new-password" spellcheck="false"></div>' +
+                        '<button class="ph-save" type="button" id="phSavePass">' + IC.check + 'Обновить пароль</button>' +
+                        '<div class="ph-hint">' + IC.monitor + '<span>Выход на всех устройствах завершит сессии везде, кроме этого браузера, — на случай, если вы забыли выйти на чужом компьютере.</span></div>' +
+                        '<button class="ph-adm ph-adm--wide" type="button" id="phSignoutAll">' + IC.monitor + '<span>Выйти на всех устройствах</span></button>' +
+                    '</div></div></div>' +
+                '</div>' +
+
+                // ---- Данные ----
+                '<div class="ph-sec ph-sec--data" id="phSecData">' +
+                    '<button class="ph-row" type="button" data-sec="data" aria-expanded="false">' +
+                        '<span class="ph-row-ic">' + IC.db + '</span>' +
+                        '<span class="ph-row-tt"><span class="ph-row-t">Данные</span><span class="ph-row-s">Экспорт, очистка, удаление</span></span>' +
+                        IC.chev +
+                    '</button>' +
+                    '<div class="ph-body"><div class="ph-body-in"><div class="ph-body-pad">' +
+                        '<button class="ph-adm ph-adm--wide" type="button" id="phExport">' + IC.download + '<span>Скачать мои данные (JSON)</span></button>' +
+                        '<button class="ph-adm ph-adm--wide" type="button" id="phClearDev">' + IC.trash + '<span>Очистить данные на этом устройстве</span></button>' +
+                        '<div class="ph-danger">' +
+                            '<div class="ph-danger-h">Опасная зона</div>' +
+                            '<div class="ph-danger-s" id="phDangerNote">Удаление сотрёт аккаунт и все данные без возможности восстановления.</div>' +
+                            '<button class="ph-del" type="button" id="phDeleteAcc">' + IC.trash + '<span>Удалить аккаунт</span></button>' +
                         '</div>' +
                     '</div></div></div>' +
                 '</div>' +
@@ -364,6 +412,14 @@
         hub.querySelector('#phMail').textContent = p ? (isTechEmail(p.email) ? '' : (p.email || (p.username ? '@' + p.username : ''))) : 'Аккаунт не создан';
         var isCloud = !!(p && p.cloud);
         hub.dataset.authState = isCloud ? 'cloud-user' : (p ? 'local-user' : 'local-guest');
+
+        // «Данные»: текст опасной зоны и её видимость (гостю удалять нечего)
+        var dn = hub.querySelector('#phDangerNote');
+        if (dn) dn.textContent = isCloud
+            ? 'Удаление сотрёт аккаунт в облаке и все данные без возможности восстановления.'
+            : 'Удаление сотрёт локальный профиль и все данные в этом браузере.';
+        var dz = hub.querySelector('.ph-danger');
+        if (dz) dz.style.display = p ? '' : 'none';
 
         // Пилюля состояния + подпись в футере: облако ↔ локально
         var pill = hub.querySelector('#phPill');
@@ -518,6 +574,109 @@
         if (typeof window.homeAuthMode === 'function') window.homeAuthMode('register');
     }
 
+    // ---------- безопасность (только облако) ----------
+    function onSavePassword() {
+        if (!window.supa) return;
+        var p1 = hub.querySelector('#phPass1').value || '';
+        var p2 = hub.querySelector('#phPass2').value || '';
+        if (p1.length < 6) { toast('Пароль — минимум 6 символов', true); return; }
+        if (p1 !== p2) { toast('Пароли не совпадают', true); return; }
+        toast('Обновляем пароль…');
+        window.supa.updatePassword(p1).then(function (r) {
+            if (!r.ok) { toast(r.error, true); return; }
+            hub.querySelector('#phPass1').value = '';
+            hub.querySelector('#phPass2').value = '';
+            toast('Пароль обновлён');
+        });
+    }
+    function onSignoutAll(e) {
+        if (!armToggle(e.currentTarget, 'Выйти везде?')) return;
+        if (!window.supa) return;
+        toast('Завершаем сессии на других устройствах…');
+        window.supa.signOutOthers().then(function (r) {
+            toast(r.ok ? 'Сессии на других устройствах завершены' : r.error, !r.ok);
+        });
+    }
+
+    // ---------- данные ----------
+    // Все пользовательские ключи приложения: берём список синхронизации
+    // из cloud-sync (единый источник правды), плюс локальные вне WATCH.
+    function appDataKeys() {
+        var base = (window.supaSync && window.supaSync.WATCH) ? window.supaSync.WATCH.slice() : [
+            'portfolios_v1', 'profile_settings_v1', 'stk_fav_v1', 'bnd_fav_v1',
+            'dash_portfolio_v1', 'pf_cardview_v1', 'pf_trades_hidden_v1', 'pf_rebal_params',
+            'sl_checked_v1', 'invest_settings', 'portfolio_snapshot', 'msolominа_state'
+        ];
+        return base;
+    }
+    function wipeLocalData() {
+        var keys = appDataKeys().concat([
+            'home_profile_v1', LS_TOKEN, 'supa_sync_meta_v1', 'supa_seen_ping_v1'
+        ]);
+        keys.forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
+    }
+    function onExportData() {
+        try {
+            // токен брокера НЕ выгружаем — это боевой ключ к счёту, не место ему в файле
+            var keys = appDataKeys().concat(['home_profile_v1']);
+            var dump = { app: "Madame Solomi'na", exportedAt: new Date().toISOString(), data: {} };
+            keys.forEach(function (k) {
+                var v = localStorage.getItem(k);
+                if (v == null) return;
+                try { dump.data[k] = JSON.parse(v); } catch (e) { dump.data[k] = v; }
+            });
+            var blob = new Blob([JSON.stringify(dump, null, 2)], { type: 'application/json' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'madame-solomina-data-' + new Date().toISOString().slice(0, 10) + '.json';
+            document.body.appendChild(a); a.click();
+            setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+            toast('Данные сохранены в файл');
+        } catch (e) { toast('Не удалось сохранить файл', true); }
+    }
+    function onClearDevice(e) {
+        if (!armToggle(e.currentTarget, 'Точно очистить?')) return;
+        wipeLocalData();
+        toast('Данные на устройстве очищены');
+        setTimeout(function () { location.reload(); }, 450);
+    }
+    function onDeleteAccount(e) {
+        if (!armToggle(e.currentTarget, 'Точно удалить аккаунт?')) return;
+        var p = getProfile();
+        if (p && p.cloud && window.supa) {
+            toast('Удаляем аккаунт…');
+            window.supa.deleteAccount().then(function (r) {
+                if (!r.ok) { toast(r.error, true); return; }
+                wipeLocalData();
+                toast('Аккаунт удалён');
+                setTimeout(function () { location.href = '/'; }, 600);
+            });
+        } else {
+            // локальный профиль — стираем всё и уходим в гости
+            wipeLocalData();
+            renderIdentity();
+            closeHub();
+            if (typeof window.switchTab === 'function') window.switchTab('home');
+            toast('Профиль и данные удалены');
+        }
+    }
+
+    // arm-подтверждение для одиночной кнопки: первый клик «взводит» (меняет
+    // подпись), второй в течение 2.8с — выполняет. Возвращает true, когда пора.
+    function armToggle(btn, confirmText) {
+        if (btn.classList.contains('arm')) { clearTimeout(btn._armT); return true; }
+        btn.classList.add('arm');
+        var sp = btn.querySelector('span');
+        btn._label = sp ? sp.textContent : btn.textContent;
+        if (sp) sp.textContent = confirmText; else btn.textContent = confirmText;
+        btn._armT = setTimeout(function () {
+            btn.classList.remove('arm');
+            var s2 = btn.querySelector('span');
+            if (s2) s2.textContent = btn._label; else btn.textContent = btn._label;
+        }, 2800);
+        return false;
+    }
+
     // ---------- открытие/закрытие ----------
     var openT = null, closeT = null;
 
@@ -552,6 +711,20 @@
         btn.addEventListener('click', function () {
             clearTimeout(openT); clearTimeout(closeT);
             if (hub.classList.contains('open')) closeHub(); else openHub();
+        });
+        // клавиатура: кнопка-аватар — это div role="button", сам по себе Enter/Space
+        // его не активируют. Открываем/закрываем панель и уводим фокус внутрь.
+        btn.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+                e.preventDefault();
+                clearTimeout(openT); clearTimeout(closeT);
+                if (hub.classList.contains('open')) { closeHub(); }
+                else {
+                    openHub();
+                    var first = hub.querySelector('.ph-row');
+                    if (first) first.focus();
+                }
+            }
         });
         document.addEventListener('pointerdown', function (e) {
             if (!hub.classList.contains('open')) return;
@@ -590,12 +763,23 @@
         });
         hub.querySelector('#phSwHide').addEventListener('click', function () {
             this.classList.toggle('on');
-            saveSettings({ hideSums: this.classList.contains('on') });
+            var hidden = this.classList.contains('on');
+            this.setAttribute('aria-checked', hidden ? 'true' : 'false');
+            saveSettings({ hideSums: hidden });
+            if (window.sumsPrivacy) window.sumsPrivacy.set(hidden);
+            toast(hidden ? 'Суммы скрыты — наведите на значение, чтобы взглянуть' : 'Суммы показаны');
         });
         hub.querySelector('#phSwSync').addEventListener('click', function () {
             this.classList.toggle('on');
             saveSettings({ brokerSync: this.classList.contains('on') });
         });
+
+        // безопасность + данные
+        hub.querySelector('#phSavePass').addEventListener('click', onSavePassword);
+        hub.querySelector('#phSignoutAll').addEventListener('click', onSignoutAll);
+        hub.querySelector('#phExport').addEventListener('click', onExportData);
+        hub.querySelector('#phClearDev').addEventListener('click', onClearDevice);
+        hub.querySelector('#phDeleteAcc').addEventListener('click', onDeleteAccount);
     }
 
     // ---------- интеграция с остальным приложением ----------

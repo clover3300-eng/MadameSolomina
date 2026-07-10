@@ -362,6 +362,29 @@ $$;
 grant execute on function public.admin_delete_user(uuid) to authenticated;
 
 
+-- ===== 8b. САМОУДАЛЕНИЕ АККАУНТА ==============================
+-- Вызывается из личного кабинета («Удалить аккаунт» в разделе «Данные»).
+-- Пользователь удаляет ТОЛЬКО себя (auth.uid()); каскад стирает его
+-- profiles и user_data. Существующим установкам нужно выполнить этот
+-- блок один раз (миграция), чтобы кнопка заработала.
+
+create or replace function public.delete_own_account()
+returns void
+language plpgsql security definer
+set search_path = public
+as $$
+begin
+    if auth.uid() is null then
+        raise exception 'Нужно войти в аккаунт';
+    end if;
+
+    delete from auth.users where id = auth.uid();
+end;
+$$;
+
+grant execute on function public.delete_own_account() to authenticated;
+
+
 -- ===== 9. НАЗНАЧЕНИЕ ПЕРВОГО АДМИНИСТРАТОРА ==================
 -- После того как зарегистрируетесь на сайте, выполните здесь же
 -- (подставив свой email):
