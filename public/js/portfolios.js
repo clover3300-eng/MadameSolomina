@@ -2490,7 +2490,10 @@
         renderPortfolios();
         if (open) { var m = dq('pfImp-paycal'); if (m) { m.classList.add('open'); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); } }
     }
-    window.pfSetFavSort = function (mode) { if (mode !== 'pot' && mode !== 'news') return; if (favSort === mode) return; favSort = mode; renderPortfolios(); };
+    // renderNoAnim (не renderPortfolios): переключатель сортировки избранного трогает только
+    // порядок плиток, но полный ре-рендер заново «рисует» мини-графики карточек портфелей с
+    // 1-сек. анимацией линии — на глаз это мерцание. Флаг noChartAnim рисует графики сразу.
+    window.pfSetFavSort = function (mode) { if (mode !== 'pot' && mode !== 'news') return; if (favSort === mode) return; favSort = mode; renderNoAnim(); };
     window.pfCalShowAll = function (ev) { if (ev) ev.stopPropagation(); payCalSel = null; reRenderKeepCalMenu(); };
     window.pfToggleCalPf = function (pid, ev) {
         if (ev) ev.stopPropagation();
