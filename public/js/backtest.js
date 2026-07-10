@@ -1867,14 +1867,17 @@ function btRenderAllocation(results) {
             + '<i style="background:' + col + '"></i>'
             + '<span class="bt-alloc-meta"><span class="nm">' + name + '</span>'
             + '<span class="ct">' + btPluralPapers(cnt) + '</span></span>'
-            + '<b class="pct">' + part.toFixed(1) + '%</b>'
-            + '<span class="amt">' + btFmtRub(val) + '</span>'
+            + '<span class="bt-alloc-fig"><b class="pct">' + part.toFixed(1) + '%</b>'
+            + '<span class="amt">' + btFmtRub(val) + '</span></span>'
             + '</div>';
     }
 
     var html = '<div class="bt-alloc-card">';
-    html += '<div class="bt-alloc-head"><div class="bt-alloc-title">Распределение сейчас' + btHelpIcon(tip) + '</div>';
-    html += '<div class="bt-alloc-total">' + btFmtRub(total) + '</div></div>';
+    html += '<div class="bt-alloc-head">';
+    html += '<div class="bt-alloc-htext"><div class="bt-alloc-title">Распределение сейчас' + btHelpIcon(tip) + '</div>';
+    html += '<div class="bt-alloc-sub">Доли по текущей рыночной стоимости бумаг</div></div>';
+    html += '<div class="bt-alloc-total"><span class="lbl">Всего</span><b>' + btFmtRub(total) + '</b></div>';
+    html += '</div>';
     html += bar;
     html += '<div class="bt-alloc-rows">';
     html += row('Облигации', bondCol, bp, b.n, b.val);

@@ -1184,43 +1184,49 @@ body.dark-mode .bt-imoex-leg .v.neg { color: #F87171; }
 }
 body.dark-mode .bt-alloc-card { background: #1d2734; border-color: rgba(255, 255, 255, .12); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28); }
 .bt-alloc-head {
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 12px; margin-bottom: 13px;
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 12px; margin-bottom: 14px;
 }
 .bt-alloc-title { display: inline-flex; align-items: center; font-size: 14px; font-weight: 800; color: #111927; }
 body.dark-mode .bt-alloc-title { color: #F1F6FB; }
-.bt-alloc-total {
-    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px;
-    color: #46566b;
+/* подзаголовок — тот же приём, что у карточки графика (.bt-imoex-sub) */
+.bt-alloc-sub { font-size: 12px; color: #8593A6; margin-top: 3px; }
+.bt-alloc-total { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex: 0 0 auto; }
+.bt-alloc-total .lbl {
+    font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase; color: #8593A6;
 }
-body.dark-mode .bt-alloc-total { color: #c4cedd; }
+.bt-alloc-total b {
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 15px; color: #111927;
+}
+body.dark-mode .bt-alloc-total b { color: #F1F6FB; }
+body.dark-mode .bt-alloc-total .lbl { color: #9AA8BC; }
 .bt-alloc-bar {
     display: flex; gap: 3px;
-    height: 14px; border-radius: 7px; overflow: hidden;
+    height: 16px; border-radius: 8px; overflow: hidden;
     background: #eef2f8;
-    margin-bottom: 14px;
+    margin-bottom: 4px;
 }
 body.dark-mode .bt-alloc-bar { background: rgba(255, 255, 255, 0.06); }
-.bt-alloc-bar span { display: block; height: 100%; min-width: 4px; border-radius: 4px; transition: width 0.4s cubic-bezier(0.22, 0.61, 0.36, 1); }
-.bt-alloc-rows { display: flex; flex-direction: column; gap: 10px; }
+.bt-alloc-bar span { display: block; height: 100%; min-width: 4px; border-radius: 5px; transition: width 0.4s cubic-bezier(0.22, 0.61, 0.36, 1); }
+.bt-alloc-rows { display: flex; flex-direction: column; }
 .bt-alloc-row {
-    display: grid;
-    grid-template-columns: 12px minmax(0, 1fr) auto auto;
-    align-items: baseline; column-gap: 12px;
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 0;
     font-family: 'Inter', sans-serif;
 }
-.bt-alloc-row i { width: 11px; height: 11px; border-radius: 3px; align-self: center; }
-.bt-alloc-meta { display: inline-flex; align-items: baseline; gap: 8px; min-width: 0; }
-.bt-alloc-row .nm { font-size: 13px; font-weight: 700; color: #2a3646; white-space: nowrap; }
+/* тонкий разделитель между строками — «связывает» список в единое целое */
+.bt-alloc-row + .bt-alloc-row { border-top: 1px solid #eef2f8; }
+body.dark-mode .bt-alloc-row + .bt-alloc-row { border-top-color: rgba(255, 255, 255, 0.07); }
+.bt-alloc-row i { width: 12px; height: 12px; border-radius: 4px; flex: 0 0 auto; }
+.bt-alloc-meta { flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.bt-alloc-row .nm { font-size: 13.5px; font-weight: 700; color: #2a3646; white-space: nowrap; }
 body.dark-mode .bt-alloc-row .nm { color: #e6ecf5; }
-.bt-alloc-row .ct { font-size: 12px; font-weight: 600; color: #8593A6; white-space: nowrap; }
-.bt-alloc-row .pct { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: #111927; justify-self: end; }
+.bt-alloc-row .ct { font-size: 11.5px; font-weight: 600; color: #8593A6; white-space: nowrap; }
+.bt-alloc-fig { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex: 0 0 auto; }
+.bt-alloc-row .pct { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 800; color: #111927; line-height: 1.15; }
 body.dark-mode .bt-alloc-row .pct { color: #F1F6FB; }
-.bt-alloc-row .amt { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: #6c7a8d; justify-self: end; min-width: 92px; text-align: right; }
-@media (max-width: 520px) {
-    .bt-alloc-row { grid-template-columns: 12px minmax(0, 1fr) auto; }
-    .bt-alloc-row .amt { grid-column: 2 / 4; justify-self: end; }
-}
+.bt-alloc-row .amt { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: #8593A6; }
 
 /* ---------- Ручной режим: «Подставить из расчёта» ---------- */
 .bt-fromcalc {
