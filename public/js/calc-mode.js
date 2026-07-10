@@ -68,7 +68,7 @@
       // Шапка: вопрос на белой поверхности карточки (не в хроме)
       '<div class="cxm-head">' +
         '<span class="cxm-k">Новый расчёт</span>' +
-        '<div class="cxm-q">Какой портфель вам ближе?</div>' +
+        '<div class="cxm-q">Что для вас важнее сейчас?</div>' +
         '<div class="cxm-qline"></div>' +
       '</div>' +
       // Две витрины типов
@@ -76,9 +76,9 @@
         // 01 — Смешанный (рекомендованный)
         '<div class="cxm-type on" data-mode="mix">' +
           '<span class="wm">01</span>' +
-          '<span class="cxm-tk blue">Вариант роста</span>' +
-          '<span class="cxm-tn">Смешанный</span>' +
-          '<span class="cxm-ts">Акции и облигации вместе — портфель работает на рост капитала.</span>' +
+          '<span class="cxm-tk blue">Хочу рост</span>' +
+          '<span class="cxm-tn">Нарастить капитал за годы</span>' +
+          '<span class="cxm-ts">Не трогаю деньги сейчас — хочу, чтобы через несколько лет их стало заметно больше.</span>' +
           '<div class="cxm-facts">' +
             '<span class="cxm-fact">' + PIE_IC + 'Облигации и акции по стратегии</span>' +
             '<span class="cxm-fact">' + TREND_IC + 'Цель — рост, горизонт от 3 лет</span>' +
@@ -88,9 +88,9 @@
         // 02 — Купонный
         '<div class="cxm-type" data-mode="monthly">' +
           '<span class="wm">02</span>' +
-          '<span class="cxm-tk orange">Вариант дохода</span>' +
-          '<span class="cxm-tn">Купонный</span>' +
-          '<span class="cxm-ts">Только надёжные ОФЗ — купоны приходят на счёт каждый месяц.</span>' +
+          '<span class="cxm-tk orange">Хочу доход</span>' +
+          '<span class="cxm-tn">Получать деньги каждый месяц</span>' +
+          '<span class="cxm-ts">Пусть капитал приносит выплаты на счёт — как зарплата от вложений.</span>' +
           '<div class="cxm-facts">' +
             '<span class="cxm-fact">' + CAL_IC + '12 выплат в год, 6 выпусков</span>' +
             '<span class="cxm-fact">' + SHIELD_IC + 'Минимальный риск</span>' +
