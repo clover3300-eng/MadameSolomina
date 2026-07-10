@@ -2210,6 +2210,10 @@
                         '<button class="pff-sort-b' + (favSort === 'pot' ? ' on' : '') + '" onclick="pfSetFavSort(\'pot\')" title="Сначала с наибольшим потенциалом">Потенциал</button>' +
                         '<button class="pff-sort-b' + (favSort === 'news' ? ' on' : '') + '" onclick="pfSetFavSort(\'news\')" title="Сначала со свежими новостями">Новизна</button>' +
                     '</div>' +
+                    // минималистичный «+» в правом углу — переход в терминал (все бумаги в таблице)
+                    '<button class="pff-add" type="button" onclick="pfGoTerminal(event)" aria-label="Открыть терминал" title="Открыть терминал — все акции и облигации в таблице">' +
+                        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>' +
+                    '</button>' +
                 '</div>') +
             '<div class="pff-body">' + inner + '</div></div>';
     }
@@ -2531,6 +2535,10 @@
     // all=true → без фильтра портфелей (для проверки «есть ли вообще сделки»)
     function collectTrades(all) {
         var list = [];
+        // номер портфеля-метки — тот же, что у колец на карточках и в календаре выплат
+        // (позиция среди ВИДИМЫХ портфелей), чтобы номера совпадали по всей вкладке
+        var visNum = {};
+        visibleItems().forEach(function (p, i) { visNum[p.id] = i + 1; });
         store.items.forEach(function (p) {
             if (p.hidden) return;
             if (!all && !tradePfSelected(p)) return;
@@ -2549,7 +2557,7 @@
                     type: t.kind === 'bond' ? 'bond' : 'stock', side: 'sell',
                     price: qty > 0 ? proceeds / qty : 0, nkd: 0, hasNkd: false, qty: qty,
                     position: proceeds, fee: 0, total: proceeds,
-                    pfName: p.name, pfColor: colorVal(p.color),
+                    pfName: p.name, pfColor: colorVal(p.color), pfNum: visNum[p.id] || '',
                     rebal: true, pid: p.id, tradeId: t.id, undoable: t.id === newestUndoable });
             });
             (p.holdings || []).forEach(function (h) {
@@ -2566,7 +2574,7 @@
                         type: h.type, side: l.side === 'sell' ? 'sell' : 'buy',
                         price: price, nkd: nkd, hasNkd: isBond, qty: qty,
                         position: position, fee: fee, total: position + fee,
-                        pfName: p.name, pfColor: colorVal(p.color),
+                        pfName: p.name, pfColor: colorVal(p.color), pfNum: visNum[p.id] || '',
                         rebal: !!rt, pid: p.id, tradeId: rt ? rt.id : null,
                         undoable: !!rt && rt.id === newestUndoable });
                 });
@@ -2626,7 +2634,7 @@
             '<div class="pft-date"><b>' + ruDate(t.date) + '</b>' + (rel ? '<span>' + esc(rel) + '</span>' : '') + '</div>' +
             '<div class="pft-c pft-type">' + side + '</div>' +
             '<div class="pft-id"><span class="pft-tk">' + esc(t.ticker) + '</span><span class="pft-nm">' + esc(t.name) + '</span></div>' +
-            (multiPf ? '<span class="pft-pf" style="--c:' + t.pfColor + '"><i></i>' + esc(t.pfName) + '</span>' : '') +
+            (multiPf ? '<span class="pft-pf" style="--c:' + t.pfColor + '" title="' + esc(t.pfName) + '"><b class="pft-pfnum">' + (t.pfNum || '') + '</b><span class="pft-pfname">' + esc(t.pfName) + '</span></span>' : '') +
             '<div class="pft-c pft-price">' + fmtPrice(t.price) + '</div>' +
             '<div class="pft-c pft-nkd">' + (t.hasNkd ? fmtPrice(t.nkd) : '<span class="pft-dash">—</span>') + '</div>' +
             '<div class="pft-c pft-qty">' + t.qty + '</div>' +
@@ -2745,51 +2753,98 @@
         editHold = {}; colorsOpen = false; delArm = false; addOpen = true;
         renderPortfolios();
     };
-    // Скопировать состав портфеля таблицей (TSV): заголовки, нумерация, разделение на
-    // облигации/акции, количество и «шт» в РАЗНЫХ столбцах — вставляется в Excel как
-    // готовая таблица. Использует те же агрегированные лоты, что и мини-таблица.
+    // Скопировать состав портфеля таблицей: облигации и акции — ОТДЕЛЬНЫМИ блоками, у
+    // каждого своё жирное название раздела и своя строка заголовков (№ / Тикер / … ), между
+    // блоками — пустая строка. Возвращает { text, html }:
+    //  · text — TSV-фолбэк (пустая строка-разделитель, заголовки под названием раздела),
+    //    в Excel столбцы выравниваются по табам;
+    //  · html — таблица для Excel/Word/Google-таблиц: названия разделов и заголовки жирные,
+    //    каждое значение в своей ячейке — выравнивание по заголовкам «из коробки».
     function copyTextForPortfolio(p) {
         var c = calcPf(p);
-        if (!c.hs.length) return '';
+        if (!c.hs.length) return null;
         // числа без «₽» и разрядных пробелов, десятичная запятая — Excel съедает как число
         function numCell(v) {
             if (v == null || !isFinite(v)) return '';
             return String(Math.round(v * 100) / 100).replace('.', ',');
         }
-        function section(title, list) {
-            if (!list.length) return [];
-            var rows = [title];
-            list.forEach(function (x, i) {
-                rows.push([i + 1, x.h.ticker, x.h.name || '', Math.round(x.c.qty || 0), 'шт',
-                    numCell(x.c.buy), ruDate(x.c.firstDate)].join('\t'));
-            });
-            return rows;
+        var COLS = ['№', 'Тикер', 'Название', 'Кол-во', 'Ед.', 'Цена покупки, ₽', 'Дата покупки'];
+        var ALIGN = ['right', 'left', 'left', 'right', 'left', 'right', 'left'];
+        function rowCells(x, i) {
+            return [i + 1, x.h.ticker, x.h.name || '', Math.round(x.c.qty || 0), 'шт',
+                numCell(x.c.buy), ruDate(x.c.firstDate)];
         }
         var bonds = c.hs.filter(function (x) { return x.h.type === 'bond'; });
         var stocks = c.hs.filter(function (x) { return x.h.type !== 'bond'; });
-        var out = ['Портфель «' + p.name + '»',
-            ['№', 'Тикер', 'Название', 'Кол-во', 'Ед.', 'Цена покупки, ₽', 'Дата покупки'].join('\t')]
-            .concat(section('Облигации', bonds))
-            .concat(section('Акции', stocks));
-        return out.join('\n');
+
+        // ---- текстовый вариант (TSV) ----
+        var lines = ['Портфель «' + p.name + '»'];
+        function txtSection(title, list) {
+            if (!list.length) return;
+            lines.push('');                                 // пустая строка между блоками
+            lines.push(title);                              // название раздела
+            lines.push(COLS.join('\t'));                    // заголовки этого раздела
+            list.forEach(function (x, i) { lines.push(rowCells(x, i).join('\t')); });
+        }
+        txtSection('Облигации', bonds);
+        txtSection('Акции', stocks);
+        var text = lines.join('\n');
+
+        // ---- HTML-вариант (жирные разделы/заголовки, выравнивание по столбцам) ----
+        var rows = ['<tr><td colspan="' + COLS.length + '" style="font-weight:800;font-size:14px;padding-bottom:4px;">' + esc('Портфель «' + p.name + '»') + '</td></tr>'];
+        function htmlSection(title, list) {
+            if (!list.length) return;
+            rows.push('<tr><td colspan="' + COLS.length + '" style="height:10px;"></td></tr>');   // пустая строка-разделитель
+            rows.push('<tr><td colspan="' + COLS.length + '" style="font-weight:800;">' + esc(title) + '</td></tr>');
+            rows.push('<tr>' + COLS.map(function (h, i) {
+                return '<td align="' + ALIGN[i] + '" style="font-weight:700;border-bottom:1px solid #d0d7e2;">' + esc(h) + '</td>';
+            }).join('') + '</tr>');
+            list.forEach(function (x, i) {
+                rows.push('<tr>' + rowCells(x, i).map(function (v, ci) {
+                    return '<td align="' + ALIGN[ci] + '">' + esc(String(v)) + '</td>';
+                }).join('') + '</tr>');
+            });
+        }
+        htmlSection('Облигации', bonds);
+        htmlSection('Акции', stocks);
+        var html = '<table style="border-collapse:collapse;font-family:Inter,Arial,sans-serif;font-size:13px;">' + rows.join('') + '</table>';
+
+        return { text: text, html: html };
     }
+    // «+» в шапке «Избранного» → терминал: та же связка, что у сайдбар-подпункта «Терминал»
+    // (раскрыть группу «Рынок» + показать таблицу акций в #panel-market-stocks)
+    window.pfGoTerminal = function (ev) {
+        if (ev) ev.stopPropagation();
+        if (typeof window.sbOpenGroup === 'function') window.sbOpenGroup('market');
+        if (typeof window.switchTab === 'function') window.switchTab('market-stocks');
+    };
     window.pfCopyComposition = function (pid, ev) {
         if (ev) ev.stopPropagation();
         var p = findPf(pid); if (!p) return;
-        var text = copyTextForPortfolio(p);
-        if (!text) { toast('Состав портфеля пуст', true); return; }
+        var payload = copyTextForPortfolio(p);
+        if (!payload || !payload.text) { toast('Состав портфеля пуст', true); return; }
         function ok() { toast('Состав «' + p.name + '» скопирован'); }
         function fallback() {
             try {
                 var ta = document.createElement('textarea');
-                ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                ta.value = payload.text; ta.style.position = 'fixed'; ta.style.opacity = '0';
                 document.body.appendChild(ta); ta.focus(); ta.select();
                 document.execCommand('copy'); document.body.removeChild(ta); ok();
             } catch (e) { toast('Не удалось скопировать', true); }
         }
-        try {
-            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(ok, fallback);
+        function plainWrite() {
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(payload.text).then(ok, fallback);
             else fallback();
+        }
+        try {
+            // rich-copy: и жирные разделы (text/html для Excel/Word), и TSV-фолбэк (text/plain)
+            if (navigator.clipboard && navigator.clipboard.write && typeof ClipboardItem === 'function' && payload.html) {
+                var item = new ClipboardItem({
+                    'text/html': new Blob([payload.html], { type: 'text/html' }),
+                    'text/plain': new Blob([payload.text], { type: 'text/plain' })
+                });
+                navigator.clipboard.write([item]).then(ok, plainWrite);
+            } else plainWrite();
         } catch (e) { fallback(); }
     };
     // Скрыть/показать карточку. Попап «Видимость» пересоздаётся рендером — если он был

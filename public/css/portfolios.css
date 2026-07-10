@@ -1212,6 +1212,22 @@ body.dark-mode .pff-sort-b:hover { color: #e2e9f2; }
 body.dark-mode .pff-sort-b.on { background: color-mix(in srgb, var(--pf-accent) 30%, rgba(255,255,255,0.06)); color: #fff; box-shadow: none; }
 .pf-topgrid-fav .pff-sort-b { padding: 6px 9px; }
 @media (max-width: 620px) { .pff-sort-b { padding: 6px 9px; } }
+/* «+» в правом углу шапки избранного → терминал. Минималистичная, в тон инфо-кнопке и
+   фильтру (.pff-info/.pff-sort): белый «колодец», приглушённый значок, ховер — тёмная
+   плашка #141b26. Не притягивает внимание, но кликабельна. */
+.pff-add {
+    flex-shrink: 0; width: 34px; height: 34px; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid rgba(24,38,60,0.07); background: #fff; border-radius: 10px;
+    color: #7a8698; cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.15s;
+}
+.pff-add svg { width: 16px; height: 16px; }
+.pff-add:hover { background: #141b26; border-color: transparent; color: #fff; transform: translateY(-1px); }
+.pff-add:active { transform: scale(0.94); }
+body.dark-mode .pff-add { border-color: rgba(24,38,60,0.07); background: #fff; color: #7a8698; }
+body.dark-mode .pff-add:hover { background: #141b26; color: #fff; }
+.pf-topgrid-fav .pff-add { width: 40px; height: 40px; border-radius: 50%; }
 
 /* ---- «Избранное» — тёплый «виджет» в тоне страницы: лёгкая кремовая поверхность
    вместо плотной терракотовой заливки (та смотрелась баннером среди белых карточек),
@@ -1432,9 +1448,31 @@ body.dark-mode .pft-side.sell { color: #f87171; background: rgba(248,113,113,0.1
 .pft-tk { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 body.dark-mode .pft-tk { color: #f4f8fd; }
 .pft-nm { font-size: 10.5px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pft-pf { display: inline-flex; align-items: center; gap: 6px; min-width: 0; font-size: 11px; font-weight: 700; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pft-pf { display: inline-flex; align-items: center; gap: 7px; min-width: 0; font-size: 11px; font-weight: 700; color: #64748b; white-space: nowrap; cursor: default; }
 body.dark-mode .pft-pf { color: #9fb0c4; }
-.pft-pf i { width: 8px; height: 8px; border-radius: 99px; background: var(--c); flex-shrink: 0; }
+/* номер портфеля «закрашен маркером» его цвета — тот же приём и пропорции, что у меток
+   в календаре выплат (.pfpc-pfnum) и названия карточки (.pfc-name-ink); имя рядом обрезается */
+.pft-pfnum {
+    flex-shrink: 0; display: inline-block; min-width: 13px; text-align: center;
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 800; color: #1b2433; line-height: 1;
+    padding: 3px 7px 4px;
+    background: linear-gradient(101deg,
+        transparent 1%,
+        color-mix(in srgb, var(--c) 34%, transparent) 8%,
+        color-mix(in srgb, var(--c) 40%, transparent) 50%,
+        color-mix(in srgb, var(--c) 28%, transparent) 92%,
+        transparent 99%);
+    border-radius: 7px 12px 8px 11px / 11px 7px 12px 6px;
+    transform: rotate(-2deg);
+}
+body.dark-mode .pft-pfnum { color: #f7fbff;
+    background: linear-gradient(101deg,
+        transparent 1%,
+        color-mix(in srgb, var(--c) 46%, transparent) 8%,
+        color-mix(in srgb, var(--c) 54%, transparent) 50%,
+        color-mix(in srgb, var(--c) 40%, transparent) 92%,
+        transparent 99%); }
+.pft-pfname { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pft-c { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 700; color: #2b3a4d; text-align: right; white-space: nowrap; }
 body.dark-mode .pft-c { color: #d2ddea; }
 .pft-c.pft-type { text-align: left; }

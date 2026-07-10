@@ -151,11 +151,15 @@
         userPlus: '<svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>',
         sun: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>',
         moon: '<svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
-        card: '<svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>'
+        card: '<svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>',
+        back: '<svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>'
     };
 
     // ---------- сборка DOM ----------
-    var hub = null, fab = null, btn = null;
+    var hub = null, fab = null, btn = null, backFab = null;
+    // история разделов для тихой кнопки «назад» (рядом с темой): стек предыдущих вкладок,
+    // navBack — флаг, что переключение вызвано самой кнопкой (тогда в стек не пишем)
+    var navHist = [], navBack = false;
 
     function buildOptions(list, selected) {
         return list.map(function (o) {
@@ -272,11 +276,55 @@
             if (typeof window.toggleTheme === 'function') window.toggleTheme();
         });
         syncFabIcon();
+
+        // Тихая кнопка «назад» слева от темы: возвращает на раздел, с которого пришли.
+        // Видна только когда есть куда возвращаться, приглушена, чтобы не отвлекать.
+        backFab = document.createElement('div');
+        backFab.id = 'navBackFab';
+        backFab.setAttribute('role', 'button');
+        backFab.setAttribute('aria-label', 'Назад — к предыдущему разделу');
+        backFab.title = 'Назад';
+        backFab.innerHTML = IC.back;
+        document.body.appendChild(backFab);
+        backFab.addEventListener('click', navGoBack);
+        installNavTracking();
+        syncBackFab();
     }
 
     function syncFabIcon() {
         if (!fab) return;
         fab.innerHTML = document.body.classList.contains('dark-mode') ? IC.sun : IC.moon;
+    }
+
+    // ---------- «назад» к предыдущему разделу ----------
+    // Оборачиваем switchTab (route-hash.js уже обернул его до нас — мы становимся самым
+    // внешним слоем и видим ВСЕ переключения). Пишем в стек прежнюю вкладку currentTab.
+    function installNavTracking() {
+        if (typeof window.switchTab !== 'function' || window.__pmNavTracked) return;
+        window.__pmNavTracked = true;
+        var _prev = window.switchTab;
+        window.switchTab = function (tabId) {
+            var from = (typeof currentTab !== 'undefined') ? currentTab : null;
+            var r = _prev.apply(this, arguments);
+            var to = (typeof currentTab !== 'undefined') ? currentTab : tabId;
+            if (!navBack && from && to && from !== to) {
+                navHist.push(from);
+                if (navHist.length > 40) navHist.shift();
+            }
+            syncBackFab();
+            return r;
+        };
+    }
+    function navGoBack() {
+        if (!navHist.length) return;
+        var dest = navHist.pop();
+        navBack = true;                       // это переключение в стек не пишем
+        try { if (typeof window.switchTab === 'function') window.switchTab(dest); }
+        finally { navBack = false; }
+        syncBackFab();
+    }
+    function syncBackFab() {
+        if (backFab) backFab.classList.toggle('on', navHist.length > 0);
     }
 
     // ---------- рендер динамики (шапка панели, сабтайтлы, футер, аватар в шапке сайта) ----------
