@@ -133,11 +133,18 @@
         });
     }
 
+    // таблица ОФЗ (bonds[]) загружена — можно резолвить короткий ISIN портфеля в полный SECID
+    function bondsReady() { try { return typeof bonds !== 'undefined' && bonds && bonds.length > 0; } catch (e) { return false; } }
     function fetchBondQuote(isin) {
         if (!isin || bondQuotes[isin] != null || bondPending[isin]) return;
         if (typeof fetchBondData !== 'function') { bondQuotes[isin] = 0; return; }
+        // Портфель хранит короткий ISIN («SU26230»), а MOEX/fetchBondData отвечает только на
+        // ПОЛНЫЙ SECID («SU26230RMFS1») — резолвим через таблицу ОФЗ. Пока bonds[] не загружена,
+        // короткий тикер не резолвится: НЕ кэшируем 0 (иначе цена «замёрзнет» на весь сеанс), ждём.
+        var full = fullBondId(isin);
+        if (full === isin && !/RMFS/.test(isin) && !bondsReady()) return;
         bondPending[isin] = true;
-        Promise.resolve(fetchBondData(isin))
+        Promise.resolve(fetchBondData(full))
             .then(function (r) { bondQuotes[isin] = (r && r.price > 0) ? r.price : 0; })
             .catch(function () { bondQuotes[isin] = 0; })
             .then(function () { bondPending[isin] = false; softRerender(); });
@@ -149,10 +156,12 @@
         return fetchRetry(BONDS_URL, { cache: 'no-store' }, 2, 500).then(function (r) { return r.json(); }).then(function (j) {
             var md = j.marketdata, found = {}; if (!md || !md.data) return found;
             var c = md.columns, si = c.indexOf('SECID'), li = c.indexOf('LAST');
-            var want = {}; isins.forEach(function (x) { want[x] = 1; });
+            // MOEX отдаёт цену под ПОЛНЫМ SECID; портфель просит короткий ISIN — сопоставляем по
+            // полному (fullBondId), а результат кладём под исходным ключом, который читает карточка.
+            var want = {}; isins.forEach(function (x) { want[fullBondId(x)] = x; });
             md.data.forEach(function (row) {
-                var t = row[si], last = row[li];
-                if (t && want[t] && found[t] == null && last != null && last !== '' && +last > 0) found[t] = +last * 10;
+                var t = row[si], last = row[li], key = want[t];
+                if (key && found[key] == null && last != null && last !== '' && +last > 0) found[key] = +last * 10;
             });
             return found;
         });
@@ -177,21 +186,49 @@
     // Текущий НКД (ACCRUEDINT) облигаций — для колонки «НКД сейчас» в таблице состава.
     // Цена идёт батчем отдельно (без НКД), поэтому НКД тянем через fetchBondData
     // (она же кеширует в глобальный bondDataCache). Результат — в bondNkdNow.
+    // «хорошая» запись bondDataCache: под коротким ISIN портфеля кэш часто пустой (0/«—» —
+    // осадок от неудачного запроса до резолва), реальные данные лежат под полным SECID.
+    function bondCacheEntry(isin) {
+        try {
+            if (typeof bondDataCache === 'undefined' || !bondDataCache) return null;
+            var full = fullBondId(isin);
+            if (bondDataCache[full] && bondDataCache[full].price > 0) return bondDataCache[full];
+            if (bondDataCache[isin] && bondDataCache[isin].matDate && bondDataCache[isin].matDate !== '—') return bondDataCache[isin];
+            return bondDataCache[full] || bondDataCache[isin] || null;
+        } catch (e) { return null; }
+    }
     function ensureBondNkd(isins) {
         if (typeof fetchBondData !== 'function') return;
         isins.forEach(function (x) {
             if (!x || bondNkdNow[x] != null || bondNkdPending[x]) return;
-            try { if (typeof bondDataCache !== 'undefined' && bondDataCache[x] && bondDataCache[x].nkd != null) { bondNkdNow[x] = +bondDataCache[x].nkd || 0; return; } } catch (e) {}
+            var ce = bondCacheEntry(x);
+            if (ce && ce.nkd != null && ce.matDate && ce.matDate !== '—') { bondNkdNow[x] = +ce.nkd || 0; return; }
+            var full = fullBondId(x);
+            if (full === x && !/RMFS/.test(x) && !bondsReady()) return;   // ждём таблицу ОФЗ для резолва
             bondNkdPending[x] = true;
-            Promise.resolve(fetchBondData(x))
+            Promise.resolve(fetchBondData(full))
                 .then(function (r) { bondNkdNow[x] = (r && r.nkd != null && r.nkd >= 0) ? +r.nkd : 0; })
                 .catch(function () { bondNkdNow[x] = 0; })
                 .then(function () { bondNkdPending[x] = false; softRerender(); });
         });
     }
+    // Живые цена/НКД облигации по короткому ISIN портфеля (₽). Приоритет — наш прямой запрос
+    // (bondQuotes/bondNkdNow), фолбэк — кэш деталей ОФЗ под полным SECID. live=true, если цена настоящая.
+    function liveBond(isin) {
+        var price = bondQuotes[isin] > 0 ? bondQuotes[isin] : 0;
+        var nkd = bondNkdNow[isin] != null ? bondNkdNow[isin] : null;
+        if (price > 0 && nkd != null) return { price: price, nkd: nkd, live: true };
+        var ce = bondCacheEntry(isin);
+        if (ce) {
+            if (!(price > 0) && ce.price > 0) price = ce.price;
+            if (nkd == null && ce.nkd != null) nkd = +ce.nkd;
+        }
+        return { price: price, nkd: nkd, live: price > 0 };
+    }
     function curNkdOf(isin) {
         if (bondNkdNow[isin] != null) return bondNkdNow[isin];
-        try { if (typeof bondDataCache !== 'undefined' && bondDataCache[isin] && bondDataCache[isin].nkd != null) return +bondDataCache[isin].nkd; } catch (e) {}
+        var ce = bondCacheEntry(isin);
+        if (ce && ce.nkd != null) return +ce.nkd;
         return null;
     }
 
@@ -216,7 +253,9 @@
     // 'table' (таблица акций) / 'buy' (котировки ещё нет — подставлена средняя цена
     // ПОКУПКИ; в колонках «Сейчас» её показывать нельзя, только «…»).
     function curPriceInfo(h) {
-        if (h.type === 'bond') { if (bondQuotes[h.ticker] > 0) return { p: bondQuotes[h.ticker], src: 'live' }; }
+        // облигации: короткий ISIN портфеля резолвим в полный SECID (liveBond) — иначе живая
+        // цена лежала под полным ключом, а колонка «Сейчас» вечно показывала «…»
+        if (h.type === 'bond') { var lb = liveBond(h.ticker); if (lb.price > 0) return { p: lb.price, src: 'live' }; }
         else {
             if (quotes[h.ticker]) return { p: quotes[h.ticker].price, src: 'live' };
             if (typeof window.stkFindCompany === 'function') {
@@ -227,7 +266,7 @@
         return { p: aggHolding(h).avgPrice || 0, src: 'buy' };   // фолбэк — средняя цена покупки по лотам
     }
     function curPriceOf(h) { return curPriceInfo(h).p; }
-    function isLive(h) { return h.type === 'bond' ? (bondQuotes[h.ticker] > 0) : !!quotes[h.ticker]; }
+    function isLive(h) { return h.type === 'bond' ? (liveBond(h.ticker).price > 0) : !!quotes[h.ticker]; }
 
     // Разовый запрос цены для кнопки «по API»
     function lookupPrice(ticker, type, cb) {
@@ -3282,11 +3321,29 @@
         var p = findPf(pid); if (!p) return;
         rebalPick = { bond: { sell: null, buy: null, qty: null }, stock: { sell: null, buy: null, qty: null } };
         rebalInfo = {}; rebalFormulas = false; rebalParams = false; rebalHistory = false; rebalFlash = null;
+        // Цена/НКД облигаций «сейчас» — основа решения об обмене: сбрасываем живой кэш held-бумаг
+        // при каждом открытии, чтобы карточка тянула свежую котировку MOEX (у акций свой TTL 60с).
+        (p.holdings || []).forEach(function (h) {
+            if (h.type === 'bond' && h.ticker) { delete bondQuotes[h.ticker]; delete bondNkdNow[h.ticker]; }
+        });
         ensureQuotes(true);
         if (typeof window.stkEnsureLoaded === 'function') { try { window.stkEnsureLoaded(); } catch (e) {} }   // эшелоны/потенциал акций
         var ov = dq('pfOverlay');
-        if (!ov) { ov = document.createElement('div'); ov.id = 'pfOverlay'; document.body.appendChild(ov);
-            ov.addEventListener('click', function (e) { if (e.target === ov) window.pfCloseOverlay(); }); }
+        if (!ov) {
+            ov = document.createElement('div'); ov.id = 'pfOverlay'; document.body.appendChild(ov);
+            ov.addEventListener('click', function (e) {
+                if (e.target === ov) { window.pfCloseOverlay(); return; }
+                // клик мимо открытого попапа параметров — закрыть его (пилюля-кнопка переключает сама)
+                if (rebalParams && !e.target.closest('.rb5-hwrap')) { rebalParams = false; rebalRepaint(); }
+            });
+            // выбор бумаги с клавиатуры: строки-«кнопки» — div с role=button, Enter/Space их «кликают»
+            ov.addEventListener('keydown', function (e) {
+                if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+                if (e.target.closest('button, input, a, select, textarea')) return;   // на своих контролах — их логика
+                var row = e.target.closest('.rb5-row'); if (!row) return;
+                e.preventDefault(); row.click();
+            });
+        }
         ov.dataset.pid = pid;
         ov.innerHTML = overlayHtml(p, true);
         // догружаем купоны/погашения (мои облигации + список ОФЗ из таблицы) → перерисовать
@@ -3317,14 +3374,24 @@
         if (!need.length || typeof fetchBondData !== 'function') { cb(); return; }
         var left = need.length;
         need.forEach(function (tk) {
-            Promise.resolve(fetchBondData(tk)).catch(function () {}).then(function () { if (--left <= 0) cb(); });
+            // короткий ISIN портфеля → полный SECID, иначе fetchBondData не находит купоны/погашение
+            Promise.resolve(fetchBondData(fullBondId(tk))).catch(function () {}).then(function () { if (--left <= 0) cb(); });
         });
     }
     window.pfCloseOverlay = function () {
         var ov = dq('pfOverlay'); if (ov) ov.classList.remove('show');
         document.body.classList.remove('pf-modal-open'); document.removeEventListener('keydown', pfEscClose);
     };
-    function pfEscClose(e) { if (e.key === 'Escape') window.pfCloseOverlay(); }
+    function pfEscClose(e) {
+        if (e.key !== 'Escape') return;
+        // открыт диалог подтверждения (отмена сделки) — Esc гасит ЕГО (свой обработчик), не карточку
+        if (dq('pfConfirmOv')) return;
+        // сначала сворачиваем раскрытый попап/панель, и только следующим Esc — саму карточку
+        if (rebalParams || rebalFormulas || rebalHistory) {
+            rebalParams = false; rebalFormulas = false; rebalHistory = false; rebalRepaint(); return;
+        }
+        window.pfCloseOverlay();
+    }
 
     // ---------- параметры ----------
     var rebalTax = 0;            // ставка НДФЛ в расчётах (0 / 0.13 / 0.15)
@@ -3381,10 +3448,12 @@
     // цена/НКД с MOEX (unitNow — выручка за 1 шт при продаже прямо сейчас)
     function bondHeld(h) {
         var a = aggHolding(h);
-        var nkdNow = curNkdOf(h.ticker); if (nkdNow == null) nkdNow = a.nkd || 0;
-        var price = bondQuotes[h.ticker] > 0 ? bondQuotes[h.ticker] : (a.avgPrice || 0);
+        var lb = liveBond(h.ticker);
+        var nkdNow = lb.nkd != null ? lb.nkd : (a.nkd || 0);
+        var price = lb.price > 0 ? lb.price : (a.avgPrice || 0);
         var econ = bondEconAt(bondDetail(h.ticker), (a.avgPrice || 0) + (a.nkd || 0), nkdNow);
-        return { h: h, qty: a.qty || 0, avgDate: a.avgDate, unitNow: price + nkdNow, econ: econ };
+        return { h: h, qty: a.qty || 0, avgDate: a.avgDate, unitNow: price + nkdNow,
+            priceNow: price, nkdNow: nkdNow, live: lb.live, econ: econ };
     }
     // Список ОФЗ из гугл-таблицы — ТОТ ЖЕ источник, что вкладка «ОФЗ» раздела «Ребаланс»
     // (data.js: bonds[]): t=ISIN, n=имя, p/y — цена и доходность из таблицы; цена уточняется
@@ -3393,11 +3462,18 @@
         try {
             if (typeof bonds !== 'undefined' && bonds && bonds.length) {
                 return bonds.map(function (b) {
-                    var live = null;
-                    try { if (typeof bondDataCache !== 'undefined' && bondDataCache[b.t] && bondDataCache[b.t].price > 0) live = +bondDataCache[b.t].price; } catch (e) {}
+                    // цена И НКД — живые из кэша MOEX (ключ таблицы = полный SECID), таблица ОФЗ —
+                    // фолбэк; НКД капает каждый день, со статичным табличным расход занижался
+                    var live = null, liveNkd = null;
+                    try {
+                        if (typeof bondDataCache !== 'undefined' && bondDataCache[b.t] && bondDataCache[b.t].price > 0) {
+                            live = +bondDataCache[b.t].price;
+                            if (bondDataCache[b.t].nkd != null) liveNkd = +bondDataCache[b.t].nkd;
+                        }
+                    } catch (e) {}
                     return { t: b.t, n: b.n || b.t,
                         price: live || parseFloat(String(b.p).replace(',', '.')) || 0,
-                        nkd: parseFloat(b.nkd || 0) || 0,
+                        nkd: liveNkd != null ? liveNkd : (parseFloat(b.nkd || 0) || 0),
                         sheetYield: toNum(b.y), matDate: b.matDate };
                 });
             }
@@ -3522,6 +3598,22 @@
         } catch (e) {}
         return null;
     }
+    // Потенциал для СРАВНЕНИЯ в обмене — тем же способом, что у кандидатов (target таблицы
+    // эшелонов → живой ОДХС): сравниваем «текущий против текущего». holdPotential у моей бумаги
+    // мог быть заморожен на дату покупки (это её тезис, показываем в ⓘ), но для решения
+    // «менять ли сейчас» замороженное число завышало бы мою бумагу против живого кандидата.
+    function livePotential(h) {
+        try {
+            if (typeof echelonTableData !== 'undefined' && echelonTableData) {
+                for (var ci = 0; ci < echelonTableData.length; ci++) {
+                    var col = echelonTableData[ci] || [];
+                    for (var i = 0; i < col.length; i++) if (col[i] && col[i].t === h.ticker) { var t = toNum(col[i].target); if (isFinite(t)) return t; }
+                }
+            }
+        } catch (e) {}
+        var p = potentialOf(h.ticker); if (p != null && isFinite(p)) return p;
+        return holdPotential(h);
+    }
     // цена акции для расчётов: живой MOEX → таблица акций
     function stkPriceOf(tk) {
         if (quotes[tk] && quotes[tk].price > 0) return quotes[tk].price;
@@ -3564,8 +3656,9 @@
         var qty = rebalPick.stock.qty != null ? clamp(Math.round(rebalPick.stock.qty), 1, r.qty) : Math.max(1, Math.round(r.qty / 2));
         var priceN = stkPriceOf(cand.ticker);
         var proceeds = qty * r.nowPrice * (1 - f);
-        return { qty: qty, maxQty: r.qty, proceeds: proceeds, priceN: priceN,
-            buyQty: priceN > 0 ? Math.floor(proceeds / (priceN * (1 + f))) : 0,
+        var buyQty = priceN > 0 ? Math.floor(proceeds / (priceN * (1 + f))) : 0;
+        return { qty: qty, maxQty: r.qty, proceeds: proceeds, priceN: priceN, buyQty: buyQty,
+            rest: priceN > 0 ? proceeds - buyQty * priceN * (1 + f) : 0,
             potFrom: r.pot, potTo: cand.pot,
             potDelta: (r.pot != null && cand.pot != null) ? cand.pot - r.pot : null };
     }
@@ -3639,7 +3732,7 @@
     function stockPulseHtml(ss) {
         var wsum = 0, w = 0;
         (ss || []).forEach(function (x) {
-            var pot = holdPotential(x.h);
+            var pot = livePotential(x.h);
             if (pot == null || !(x.c.value > 0)) return;
             wsum += pot * x.c.value; w += x.c.value;
         });
@@ -3680,9 +3773,10 @@
             ]) +
             sect('Акции', [
                 ['Динамика', '(цена сейчас − средняя цена покупки) ÷ средняя цена покупки × 100'],
-                ['Потенциал', 'колонка target таблицы эшелонов («Ребаланс»); мои: зафиксирован на дату покупки → живой ОДХС'],
+                ['Потенциал', 'target таблицы эшелонов («Ребаланс») → живой ОДХС; в обмене сравниваем текущий против текущего (потенциал «при покупке» — в деталях бумаги)'],
                 ['Выручка от продажи', 'кол-во × цена сейчас × (1 − комиссия)'],
                 ['Куплено новых', '⌊выручка ÷ (цена новой × (1 + комиссия))⌋'],
+                ['Налог', 'НДФЛ с прибыли акций в расчёте обмена не учитывается — прикиньте его отдельно перед продажей прибыльной бумаги'],
                 ['Вердикт', 'обмен имеет смысл, если потенциал новой выше потенциала продаваемой']
             ]) +
         '</div>';
@@ -3781,17 +3875,17 @@
                     : '<b class="mut">…</b><span>считаем</span>';
         var det = '';
         if (on) {
-            var a = aggHolding(x.h), d = bondDetail(x.h.ticker), nkdNow = curNkdOf(x.h.ticker);
+            var a = aggHolding(x.h), d = bondDetail(x.h.ticker);
             det = rb5Det(key,
                 rb5DetRow('ISIN', esc(x.h.ticker)) +
                 rb5DetRow('Погашение', e ? ruDate2(e.matDate) + ' · через ' + e.days + ' дн' : 'уточняем…') +
                 rb5DetRow('Купон', couponStr(d)) +
-                rb5DetRow('Цена сейчас', (bondQuotes[x.h.ticker] > 0 ? fmtPrice(bondQuotes[x.h.ticker]) : '—') + (nkdNow != null ? ' + НКД ' + fmtPrice(nkdNow) : '')) +
+                rb5DetRow('Цена сейчас', (r.priceNow > 0 ? fmtPrice(r.priceNow) : '—') + (r.nkdNow != null ? ' + НКД ' + fmtPrice(r.nkdNow) : '')) +
                 rb5DetRow('Куплено', r.qty + ' шт · ' + fmtPrice(a.avgPrice) + ' · ' + ruDate(a.avgDate)) +
                 rb5DetRow('Прибыль в день', e ? f2(e.perDay * r.qty) + ' ₽ · ' + f2(e.perDay) + ' ₽/шт' : '—')
             );
         }
-        return '<div class="rb5-row' + (sel ? ' sel' : '') + '" onclick="pfPickBond(\'sell\',\'' + x.h.id + '\')">' +
+        return '<div class="rb5-row' + (sel ? ' sel' : '') + '" tabindex="0" role="button" aria-pressed="' + (sel ? 'true' : 'false') + '" onclick="pfPickBond(\'sell\',\'' + x.h.id + '\')">' +
             '<div class="rb5-rid"><b>' + (sel ? RB5_CHECK : '') + '<span class="rb5-nmt">' + esc(x.h.name || x.h.ticker) + '</span></b>' +
                 '<span>' + fmtQty(r.qty) + ' шт</span></div>' +
             '<div class="rb5-rval">' + val + '</div>' + rb5InfoBtn(key, on) +
@@ -3812,7 +3906,7 @@
                 rb5DetRow('Прибыль в день', cd.econ ? f2(cd.econ.perDay) + ' ₽/шт · ' + fmtPct(cd.econ.annual) + ' годовых' : '—')
             );
         }
-        return '<div class="rb5-row' + (sel ? ' sel' : '') + '" onclick="pfPickBond(\'buy\',\'' + jsArg(cd.t) + '\')">' +
+        return '<div class="rb5-row' + (sel ? ' sel' : '') + '" tabindex="0" role="button" aria-pressed="' + (sel ? 'true' : 'false') + '" onclick="pfPickBond(\'buy\',\'' + jsArg(cd.t) + '\')">' +
             '<div class="rb5-rid"><b>' + (sel ? RB5_CHECK : '') + '<span class="rb5-nmt">' + esc(cd.n) + '</span>' + (heldSet[isinKey(cd.t)] ? '<i class="rb5-own">в портф.</i>' : '') +
                 (cd._keeps ? '<i class="rb5-keep" title="Купоны этой бумаги приходятся на месяцы, которые оголит продажа — график ежемесячных выплат сохранится">держит график</i>' : '') + '</b>' +
                 '<span>' + (cd.unit > 0 ? fmtPrice(cd.unit) + ' с НКД' : esc(cd.t)) + '</span></div>' +
@@ -3827,8 +3921,14 @@
         if (!sellX && !cand) return dealGuideHtml('bond', false, false);
         if (sellX && !cand) return dealGuideHtml('bond', true, false);
         if (!sellX) return dealGuideHtml('bond', false, true);
-        var d = bondDeal(bondHeld(sellX.h), cand, mine);
+        var sh = bondHeld(sellX.h);
+        var d = bondDeal(sh, cand, mine);
         if (!d) return dealHint('Недостаточно данных для расчёта — попробуйте другую пару.');
+        // прибыль в день ДО/ПОСЛЕ считаем ПЕРВЫМ — от вердикта зависит тон заметок ниже
+        var per = perMul();
+        var haveDay = d.dayBefore != null && d.dayAfter != null;
+        var dd = haveDay ? (d.dayAfter - d.dayBefore) * per : null;
+        var profitUp = dd != null && dd > 0;
         var flow = '<div class="rb5-deal-flow">' +
             '<div class="rb5-deal-side"><i>Продать</i><b>' + esc(sellX.h.name || sellX.h.ticker) + '</b>' +
                 rb5QtyCtl('bond', d.qty, d.maxQty) +
@@ -3838,9 +3938,18 @@
                 '<div class="rb5-deal-n">' + d.buyQty + ' шт</div>' +
                 '<small>' + (d.rest > 0.005 ? 'останется ' + fmtPrice(d.rest) : '&nbsp;') + '</small></div>' +
         '</div>';
-        var note = d.suggest == null
-            ? '<div class="rb5-note warn">' + CHART_WARN_SVG + '<span>Новая бумага не дешевле вашей — купить больше штук, чем продали, не выйдет.</span></div>'
-            : (d.qty === d.suggest ? '<div class="rb5-note">Минимум для «купить больше, чем продал»: ' + d.suggest + ' шт.</div>' : '');
+        // котировка «сейчас» не пришла с Мосбиржи → выручка посчитана по цене покупки: честно предупреждаем
+        var note = '';
+        if (!sh.live) note += '<div class="rb5-note info">' + INFO_SVG + '<span>Котировка «сейчас» ещё не пришла с Мосбиржи — выручка от продажи посчитана по вашей цене покупки. Обновите карточку через пару секунд.</span></div>';
+        // штук станет меньше (новая дороже за штуку): тревожный тон — ТОЛЬКО когда прибыль НЕ растёт;
+        // иначе это осознанный размен «меньше штук, зато каждая доходнее» — машина денег всё равно быстрее
+        if (d.suggest == null) {
+            note += profitUp
+                ? '<div class="rb5-note">Штук станет меньше — новая бумага дороже за штуку, зато каждая доходнее. Прибыль в день всё равно растёт.</div>'
+                : '<div class="rb5-note warn">' + CHART_WARN_SVG + '<span>Новая бумага дороже вашей: штук станет меньше' + (haveDay ? ', и прибыль в день не растёт' : '') + ' — обмен спорный.</span></div>';
+        } else if (d.qty === d.suggest) {
+            note += '<div class="rb5-note">Минимум для «купить больше, чем продал»: ' + d.suggest + ' шт.</div>';
+        }
         // Портфель из «Ежемесячного дохода»: следим, чтобы после обмена каждый месяц
         // оставался с выплатой (продажа бумаги целиком может «оголить» её месяцы)
         if (rbIsMonthlyPf() && d.qty >= d.maxQty) {
@@ -3856,12 +3965,11 @@
             rb5BA(d.unitsBefore, d.unitsAfter + ' шт') +
             rb5Delta(d.unitsAfter - d.unitsBefore, ' шт', function (v) { return String(v); }) + '</div>';
         var verdict = '';
-        if (d.dayBefore != null && d.dayAfter != null) {
-            var per = perMul(), dd = (d.dayAfter - d.dayBefore) * per;
+        if (haveDay) {
             rows += '<div class="rb5-vrow"><span class="rb5-vico">' + COIN_SVG + '</span><span class="rb5-vlabel">Прибыль ' + perLbl() + '</span>' +
                 rb5BA(f2(d.dayBefore * per), f2(d.dayAfter * per) + ' ₽') +
                 rb5Delta(dd, ' ₽', f2) + '</div>';
-            verdict = dd > 0
+            verdict = profitUp
                 ? '<div class="rb5-verdict ok">' + CHECK_SVG + '<span>Прибыль растёт — обмен имеет смысл, машина денег разгоняется</span></div>'
                 : '<div class="rb5-verdict bad">' + XMARK_SVG + '<span>Прибыль ' + perLbl() + ' снизится — такой обмен смысла не имеет</span></div>';
         } else {
@@ -3921,21 +4029,25 @@
     // строка моей акции: тикер + эшелон + кол-во/потенциал | динамика с покупки
     function stockRowHtml(x) {
         var sel = rebalPick.stock.sell === x.h.id;
-        var izm = x.c.pnlPct || 0, ech = echelonOf(x.h.ticker), pot = holdPotential(x.h);
+        var izm = x.c.pnlPct || 0, ech = echelonOf(x.h.ticker), pot = livePotential(x.h);
         var tier = ech ? '<span class="rb5-tier t' + ech + '">' + ROMAN[ech - 1] + '</span>' : '';
         var key = 'ss:' + x.h.id, on = !!rebalInfo[key];
         var det = '';
         if (on) {
+            // потенциал «при покупке» показываем отдельной строкой, только если он реально
+            // заморожен и отличается от текущего — иначе лишний шум
+            var atBuy = (x.h.potAtBuy != null && isFinite(+x.h.potAtBuy)) ? +x.h.potAtBuy : null;
             det = rb5Det(key,
                 rb5DetRow('Компания', esc(x.h.name || x.h.ticker)) +
                 rb5DetRow('Эшелон', ech ? ROMAN[ech - 1] : '—') +
                 rb5DetRow('Цена сейчас', x.c.cur > 0 ? fmtPrice(x.c.cur) : '—') +
                 rb5DetRow('Куплено', x.c.qty + ' шт · ' + fmtPrice(x.c.buy) + ' · ' + ruDate(x.c.firstDate)) +
                 rb5DetRow('Доход', fmtRub(x.c.pnl) + ' · ' + fmtPct(izm)) +
-                rb5DetRow('Потенциал', pot == null ? '—' : fmtPct(pot))
+                rb5DetRow('Потенциал сейчас', pot == null ? '—' : fmtPct(pot)) +
+                (atBuy != null && (pot == null || Math.abs(atBuy - pot) > 0.05) ? rb5DetRow('При покупке', fmtPct(atBuy)) : '')
             );
         }
-        return '<div class="rb5-row' + (sel ? ' sel' : '') + '" onclick="pfPickStock(\'sell\',\'' + x.h.id + '\')">' +
+        return '<div class="rb5-row' + (sel ? ' sel' : '') + '" tabindex="0" role="button" aria-pressed="' + (sel ? 'true' : 'false') + '" onclick="pfPickStock(\'sell\',\'' + x.h.id + '\')">' +
             '<div class="rb5-rid"><b>' + (sel ? RB5_CHECK : '') + '<span class="rb5-nmt">' + esc(x.h.ticker) + '</span>' + tier + '</b>' +
                 '<span>' + fmtQty(x.c.qty) + ' шт · потенциал ' + (pot == null ? '—' : fmtPct(pot)) + '</span></div>' +
             '<div class="rb5-rval"><b class="' + (izm >= 0 ? 'pos' : 'neg') + '">' + fmtPct(izm) + '</b><span>динамика</span></div>' + rb5InfoBtn(key, on) +
@@ -3957,7 +4069,7 @@
                 rb5DetRow('Потенциал', cn.pot == null ? '—' : fmtPct(cn.pot))
             );
         }
-        return '<div class="rb5-row' + (sel ? ' sel' : '') + '" onclick="pfPickStock(\'buy\',\'' + jsArg(cn.ticker) + '\')">' +
+        return '<div class="rb5-row' + (sel ? ' sel' : '') + '" tabindex="0" role="button" aria-pressed="' + (sel ? 'true' : 'false') + '" onclick="pfPickStock(\'buy\',\'' + jsArg(cn.ticker) + '\')">' +
             '<div class="rb5-rid"><b>' + (sel ? RB5_CHECK : '') + '<span class="rb5-nmt">' + esc(cn.ticker) + '</span>' + tier + (heldSet && heldSet[cn.ticker] ? '<i class="rb5-own">в портф.</i>' : '') + '</b>' +
                 '<span>' + esc(cn.name) + (price > 0 ? ' · ' + fmtPrice(price) : '') + '</span></div>' +
             '<div class="rb5-rval"><b class="' + potCls + '">' + (cn.pot == null ? '—' : fmtPct(cn.pot)) + '</b><span>потенциал</span></div>' + rb5InfoBtn(key, on) +
@@ -3972,7 +4084,7 @@
         if (!sellX && !cand) return dealGuideHtml('stock', false, false);
         if (sellX && !cand) return dealGuideHtml('stock', true, false);
         if (!sellX) return dealGuideHtml('stock', false, true);
-        var d = stockDeal({ qty: sellX.c.qty, nowPrice: sellX.c.cur || 0, pot: holdPotential(sellX.h) }, cand);
+        var d = stockDeal({ qty: sellX.c.qty, nowPrice: sellX.c.cur || 0, pot: livePotential(sellX.h) }, cand);
         if (!d) return dealHint('Недостаточно данных для расчёта — попробуйте другую пару.');
         var flow = '<div class="rb5-deal-flow">' +
             '<div class="rb5-deal-side"><i>Продать</i><b>' + esc(sellX.h.ticker) + '</b>' +
@@ -3981,9 +4093,13 @@
             '<span class="rb5-deal-arr">' + RB5_ARR + '</span>' +
             '<div class="rb5-deal-side"><i>Купить</i><b>' + esc(cand.ticker) + '</b>' +
                 '<div class="rb5-deal-n">' + (d.buyQty > 0 ? d.buyQty + ' шт' : 'на ' + fmtRub(d.proceeds)) + '</div>' +
-                '<small>' + (d.priceN > 0 ? 'по ' + fmtPrice(d.priceN) : '&nbsp;') + '</small></div>' +
+                '<small>' + (d.priceN > 0 ? 'по ' + fmtPrice(d.priceN) + (d.buyQty > 0 && d.rest > 0.005 ? ' · останется ' + fmtPrice(d.rest) : '') : '&nbsp;') + '</small></div>' +
         '</div>';
-        var rows = '<div class="rb5-vrow"><span class="rb5-vlabel">Потенциал бумаги</span>' +
+        // выручки не хватает даже на одну акцию кандидата — объясняем, а не прячем кнопку молча
+        var note = (d.buyQty <= 0 && d.priceN > 0)
+            ? '<div class="rb5-note warn">' + CHART_WARN_SVG + '<span>Выручки (' + fmtRub(d.proceeds) + ') не хватает даже на одну акцию ' + esc(cand.ticker) + ' по ' + fmtPrice(d.priceN) + '. Продайте больше или выберите бумагу дешевле.</span></div>'
+            : '';
+        var rows = '<div class="rb5-vrow"><span class="rb5-vlabel">Потенциал сейчас</span>' +
             rb5BA(d.potFrom == null ? '—' : fmtPct(d.potFrom), d.potTo == null ? '—' : fmtPct(d.potTo)) +
             (d.potDelta != null ? rb5Delta(d.potDelta, ' п.п.', function (v) { return v.toFixed(1).replace('.', ','); }) : '') + '</div>';
         var verdict = d.potDelta == null ? ''
@@ -3994,7 +4110,7 @@
             ? '<button class="rb5-apply" onclick="pfRbApplyStock()" title="Сделка сразу запишется в портфель и в историю">' + CHECK_SVG +
                 '<span>Применить обмен</span><i>−' + d.qty + ' ' + esc(sellX.h.ticker) + ' → +' + d.buyQty + ' ' + esc(cand.ticker) + '</i></button>'
             : '';
-        return '<div class="rb5-deal">' + dealHeadHtml() + flow + '<div class="rb5-vbox">' + rows + '</div>' + verdict + apply + '</div>';
+        return '<div class="rb5-deal">' + dealHeadHtml() + flow + note + '<div class="rb5-vbox">' + rows + '</div>' + verdict + apply + '</div>';
     }
     function rb5StockCol(ss, c) {
         var head = rb5ColHead('stock', 'Акции', ss.length, c.stockVal);
@@ -4112,9 +4228,17 @@
                     if (fixB && cd.t !== fixB) return;
                     if (isinKey(cd.t) === isinKey(x.h.ticker)) return;
                     if (!cd.econ || !(cd.unit > 0)) return;
-                    var qty = bondQtyFor1More(r.unitNow, cd.unit, r.qty) || r.qty;
+                    var partial = bondQtyFor1More(r.unitNow, cd.unit, r.qty);
+                    var qty = partial || r.qty;
                     var buyQty = Math.floor(qty * r.unitNow * (1 - f) / (cd.unit * (1 + f)));
                     if (!(buyQty > 0)) return;
+                    // портфель под ежемесячные выплаты: пару, применимую лишь продажей ЦЕЛИКОМ
+                    // (нет частичного варианта) и оголяющую месяц, apply всё равно отклонит —
+                    // не подсовываем такой «тупик» автоподбором
+                    if (p.src === 'monthly' && !partial) {
+                        var lost = pfLostMonths(bs, x.h, cd.t);
+                        if (lost && lost.length) return;
+                    }
                     var delta = buyQty * cd.econ.perDay - qty * r.econ.perDay;   // прибыль/день ПОСЛЕ − ДО
                     if (delta > 0 && (!best || delta > best.delta)) best = { sell: x.h.id, buy: cd.t, delta: delta };
                 });
@@ -4126,7 +4250,7 @@
             var fixS2 = rebalPick.stock.sell, fixB2 = rebalPick.stock.buy;
             ss.forEach(function (x) {
                 if (fixS2 && x.h.id !== fixS2) return;
-                var pot = holdPotential(x.h);
+                var pot = livePotential(x.h);
                 if (pot == null || !(x.c.qty > 0) || !(x.c.cur > 0)) return;
                 var ech = echelonOf(x.h.ticker);
                 var cnds = stockCands(ech >= 1 ? ech : 0);
@@ -4279,7 +4403,7 @@
         if (ech >= 1 && !cands.length) cands = stockCands(0);
         var cand = null; cands.forEach(function (cn) { if (cn.ticker === rebalPick.stock.buy) cand = cn; });
         if (!cand) return;
-        var d = stockDeal({ qty: sellX.c.qty, nowPrice: sellX.c.cur || 0, pot: holdPotential(sellX.h) }, cand);
+        var d = stockDeal({ qty: sellX.c.qty, nowPrice: sellX.c.cur || 0, pot: livePotential(sellX.h) }, cand);
         if (!d) { toast('Недостаточно данных для обмена', true); return; }
         if (!(d.buyQty > 0)) { toast('Выручки не хватает даже на одну акцию ' + cand.ticker, true); return; }
         var sellName = sellX.h.ticker;
@@ -4317,7 +4441,7 @@
         pfConfirm({
             danger: true, ok: 'Да, отменить', icon: UNDO_ICO,
             title: 'Отменить ребалансировку?',
-            text: 'Из истории исчезнут обе записи обмена — продажа ' + esc(t.sellTicker || '') + ' и покупка ' + esc(t.buyTicker || '') + '. Портфель вернётся к состоянию до сделки.'
+            text: 'Из истории исчезнут обе записи обмена — продажа ' + esc(t.sellName || t.sellTicker || '') + ' и покупка ' + esc(t.buyName || t.buyTicker || '') + '. Портфель вернётся к состоянию до сделки.'
         }, function () {
             // 1) убрать купленный лот (если холдинг опустел — убрать и его)
             var bh = null;
