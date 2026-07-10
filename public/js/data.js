@@ -674,10 +674,9 @@ function recalcCustomCoupons() {
 
     const MON = ['ЯНВ','ФЕВ','МАР','АПР','МАЙ','ИЮН','ИЮЛ','АВГ','СЕН','ОКТ','НОЯ','ДЕК'];
     let totalAmount = 0;
-    let maxNet = 0;
     let nextIdx = -1;
 
-    // Первый проход — считаем суммы и максимум (для ширины полос)
+    // Первый проход — считаем суммы
     const rows = allScheduledPayments.map(function(payment, idx) {
         let qty = bondQtyMap[payment.paymentTicker];
         if (!qty) {
@@ -687,7 +686,6 @@ function recalcCustomCoupons() {
         qty = qty || 0;
         const net = (payment.staticCouponVal * qty) * (1 - customTax);
         totalAmount += net;
-        if (net > maxNet) maxNet = net;
         if (qty > 0 && nextIdx === -1) nextIdx = idx;
 
         // Формат даты: DD.MM.YYYY (реальные данные) либо MM.YY (демо)
@@ -712,14 +710,13 @@ function recalcCustomCoupons() {
     // Второй проход — рисуем таймлайн выплат
     let html = '';
     rows.forEach(function(r, idx) {
-        const w = maxNet > 0 ? Math.round(r.net / maxNet * 100) : 0;
         const sumStr = r.qty > 0 ? ('+' + Math.round(r.net).toLocaleString('ru-RU') + ' ₽') : '—';
         html += '<div class="mi5-pay' + (idx === nextIdx ? ' is-next' : '') + '">'
             + '<div class="mi5-pay-rail"><span class="dot"></span></div>'
             + '<div class="mi5-pay-main">'
             + '<div class="mi5-pay-date"><b>' + (r.day || r.mo) + '</b><span>' + (r.day ? r.mo : '') + '</span></div>'
             + '<div class="mi5-pay-info"><div class="mi5-pay-bn">' + r.name + '</div><div class="mi5-pay-q">' + r.qty + ' шт</div></div>'
-            + '<div class="mi5-pay-amt' + (r.qty > 0 ? '' : ' is-zero') + '"><span class="am">' + sumStr + '</span><span class="bar"><i style="width:' + w + '%"></i></span></div>'
+            + '<div class="mi5-pay-amt' + (r.qty > 0 ? '' : ' is-zero') + '"><span class="am">' + sumStr + '</span></div>'
             + '</div></div>';
     });
     resultList.innerHTML = html;

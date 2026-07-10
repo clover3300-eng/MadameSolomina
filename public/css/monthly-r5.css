@@ -499,7 +499,7 @@ body.dark-mode #panel-calc .mi5-more-btn { background: #ffffff; color: #141b26; 
 }
 #panel-calc .mi5-pay {
     position: relative; display: grid; grid-template-columns: 24px 1fr; gap: 13px;
-    padding: 6px 12px 6px 0; border-radius: 13px;
+    padding: 10px 12px 10px 0; border-radius: 13px;
 }
 #panel-calc .mi5-pay.is-next { background: linear-gradient(90deg, rgba(22, 181, 107, .07), rgba(22, 181, 107, 0) 78%); }
 #panel-calc .mi5-pay-rail { position: relative; display: flex; justify-content: center; }
@@ -524,9 +524,6 @@ body.dark-mode #panel-calc .mi5-more-btn { background: #ffffff; color: #141b26; 
 #panel-calc .mi5-pay-amt .am { font-family: var(--mi-mono); font-weight: 700; font-size: 15px; color: var(--mi-muted2); white-space: nowrap; }
 #panel-calc .mi5-pay-amt.is-zero .am { color: var(--mi-muted); }
 #panel-calc .mi5-pay.is-next .mi5-pay-amt .am { color: var(--mi-green); }
-#panel-calc .mi5-pay-amt .bar { display: block; height: 3px; border-radius: 99px; background: #eef2f7; margin-top: 7px; overflow: hidden; }
-#panel-calc .mi5-pay-amt .bar i { display: block; height: 100%; border-radius: 99px; background: rgba(22, 181, 107, .32); }
-#panel-calc .mi5-pay.is-next .mi5-pay-amt .bar i { background: rgba(22, 181, 107, .6); }
 
 #panel-calc .mi5-total {
     display: flex; align-items: flex-end; justify-content: space-between;
@@ -588,4 +585,3 @@ body.dark-mode #panel-calc .mi5-next,
 body.dark-mode #panel-calc .mi5-total { background: #141b26; }
 body.dark-mode #panel-calc .mi5-pay-rail::before { background: rgba(255, 255, 255, .10); }
 body.dark-mode #panel-calc .mi5-pay-rail .dot { background: #1d2734; border-color: #3a475a; }
-body.dark-mode #panel-calc .mi5-pay-amt .bar { background: rgba(255, 255, 255, .08); }
