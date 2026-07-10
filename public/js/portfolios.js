@@ -2966,10 +2966,9 @@
         if (openMenu === pid) { openMenu = null; menuTall = false; }
         else {
             openMenu = pid; menuTall = false; menuJustOpened = true; chartOpen = {}; chartAssets = {}; chartAssetsFull = {}; holdsExpand = {};
-            // свежеоткрытые настройки — с чистым состоянием: строки свёрнуты, палитра и
-            // данжер-зона закрыты; форма добавления раскрыта сразу только у пустого портфеля
-            editHold = {}; colorsOpen = false; delArm = false;
-            var p = findPf(pid); addOpen = !(p && (p.holdings || []).length);
+            // свежеоткрытые настройки — с чистым состоянием: строки свёрнуты, палитра,
+            // данжер-зона и форма добавления актива закрыты
+            editHold = {}; colorsOpen = false; delArm = false; addOpen = false;
         }
         renderPortfolios();
     };
