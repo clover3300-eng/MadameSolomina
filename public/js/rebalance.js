@@ -363,7 +363,7 @@ function openStockDetail(ticker, echelon, clickedCell = null) {
             </div>
             ${sectorHtml}
             <div class="sd-hr"></div>
-            <div class="sd-pot">
+            <div class="sd-pot${isFinite(potNum) && potNum < 0 ? ' sd-pot--neg' : ''}">
                 <div>
                     <div class="sd-pot-label">Потенциал</div>
                     <div class="sd-pot-val">${potDisplay}</div>

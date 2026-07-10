@@ -83,6 +83,64 @@
         pinnedRows: {}     // isin -> true (строка выделена кликом)
     };
 
+    // ---------- Настройки (localStorage) ----------
+    // Переживают перезагрузку: сортировка, скрытые столбцы, «только избранное»,
+    // фильтры по параметрам и пороги правил окраски. Ключи-столбцы валидируем против COLS.
+    var PREFS_KEY = 'bnd_prefs_v1';
+    function colExists(k) { for (var i = 0; i < COLS.length; i++) if (COLS[i].key === k) return true; return false; }
+    function loadPrefs() {
+        try {
+            var p = JSON.parse(localStorage.getItem(PREFS_KEY));
+            if (!p || typeof p !== 'object') return;
+            if (typeof p.favOnly === 'boolean') state.favOnly = p.favOnly;
+            if (Array.isArray(p.hiddenCols)) state.hiddenCols = p.hiddenCols.filter(colExists);
+            if (Array.isArray(p.sort)) state.sort = p.sort.filter(function (s) {
+                return s && (s.key === '__name' || colExists(s.key)) && (s.dir === 1 || s.dir === -1);
+            }).map(function (s) { return { key: s.key, type: s.type || 'text', dir: s.dir }; });
+            if (p.filters && typeof p.filters === 'object') {
+                Object.keys(p.filters).forEach(function (k) {
+                    if (!colExists(k)) return;
+                    var f = p.filters[k]; if (!f) return;
+                    var v = (f.val === '' || f.val == null || !isFinite(f.val)) ? '' : +f.val;
+                    state.filters[k] = { on: !!f.on, op: f.op || '>', val: v };
+                });
+            }
+            if (Array.isArray(p.rules)) p.rules.forEach(function (sr) {
+                if (!sr || !sr.key) return;
+                var r = ruleFor(sr.key); if (!r) return;
+                if (typeof sr.off === 'boolean') r.off = sr.off;
+                if (typeof sr.val === 'number' && isFinite(sr.val)) r.val = sr.val;
+            });
+        } catch (e) {}
+    }
+    function savePrefs() {
+        try {
+            localStorage.setItem(PREFS_KEY, JSON.stringify({
+                favOnly: state.favOnly, hiddenCols: state.hiddenCols, sort: state.sort,
+                filters: state.filters,
+                rules: state.rules.map(function (r) { return { key: r.key, off: !!r.off, val: r.val }; })
+            }));
+        } catch (e) {}
+    }
+    // Один раз после наполнения панелей — привести поля меню фильтров к state
+    function syncRestoredControls() {
+        var el = root(); if (!el || state._ctrlsSynced) return;
+        if (!el.querySelector('.bnd-flt-row')) return;
+        updateColsBadge();
+        Object.keys(state.filters).forEach(function (key) {
+            var f = state.filters[key]; if (!f) return;
+            var row = el.querySelector('.bnd-flt-row[data-flt="' + cssEscape(key) + '"]'); if (!row) return;
+            var on = row.querySelector('.bnd-flt-on'), op = row.querySelector('.bnd-flt-op'), val = row.querySelector('.bnd-flt-val');
+            if (on) on.checked = !!f.on;
+            if (op && f.op) op.value = f.op;
+            if (val) val.value = (f.val === '' || f.val == null) ? '' : f.val;
+            row.classList.toggle('is-on', !!f.on && f.val !== '' && f.val != null && isFinite(f.val));
+        });
+        updateFltBadge();
+        state._ctrlsSynced = true;
+    }
+    loadPrefs(); // восстановить сохранённый вид ДО первого render
+
     // Активные фильтры по параметрам: включён чекбокс и введён порог
     function activeFilters() {
         var out = [];
@@ -219,6 +277,12 @@
             if (!isIntStr(a) || !name) continue;
             var main = {};
             for (var c = 0; c < headers.length; c++) main[headers[c]] = (row[c] || '').trim();
+            // Пропускаем «мёртвые» строки без котировки: цена пустая или ноль. Такую
+            // облигацию невозможно оценить (доходность/НКД тоже пустые), а в таблице
+            // строка «0 / — / 0.00%» выглядит как ошибка данных. Реальные ОФЗ всегда
+            // торгуются ~50–110% номинала, так что price ≤ 0 — гарантированно нет данных.
+            var priceRaw = main['Текущая Цена'];
+            if (isEmptyVal(priceRaw) || !(parseNum(priceRaw) > 0)) continue;
             bonds.push({
                 num: parseInt(a, 10),
                 name: name,
@@ -441,7 +505,7 @@
             var disp = col.type === 'date' ? displayDate(raw) : displayCell(raw);
             tds += '<td class="' + cls.trim() + '">' + disp + '</td>';
         }
-        return '<tr class="bnd-row' + (state.pinnedRows[b.isin] ? ' bnd-row-pin' : '') + '" data-isin="' + esc(b.isin) + '">' + tds + '</tr>';
+        return '<tr class="bnd-row' + (state.pinnedRows[b.isin] ? ' bnd-row-pin' : '') + '" data-isin="' + esc(b.isin) + '" title="Клик по строке — закрепить подсветку для сравнения">' + tds + '</tr>';
     }
 
     function ruleFor(key) {
@@ -509,10 +573,12 @@
     function render() {
         var el = root(); if (!el) return;
         if (state.status !== 'ready') { renderState(); return; }
+        savePrefs();
         renderState();
         populateRulesPanel();
         populateColsPanel();
         populateFltPanel();
+        syncRestoredControls();
         updateSortReset();
         updateFavBtn();
 

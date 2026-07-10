@@ -91,6 +91,9 @@ body.dark-mode .mh-card {
 /* контролы карты (LIVE-капсула, период, размер плитки, обновить) — видны только
    когда открыта тепловая карта; в режиме графика (по умолчанию) скрыты */
 .mh-card.mh-view-chart .mh-map-ctrl { display: none; }
+/* мета-строка (легенда −cap%/+cap% + подпись «размер плитки — …, цвет — …») описывает
+   ТОЛЬКО карту — в режиме графика она не имеет смысла, скрываем вместе с картой */
+.mh-card.mh-view-chart .mh-meta { display: none; }
 
 /* Капсула актуальности: пульсирующая точка + явная подпись «обновлено HH:MM».
    Раньше тут было «LIVE HH:MM» — время путали с текущим; теперь подпись прямо
@@ -466,7 +469,17 @@ body.dark-mode .mh-retry { color: #10201a; }
 @media (max-width: 720px) {
     .mh-card { border-radius: 18px; margin-bottom: 14px; }
     .mh-head { padding: 16px 14px 12px; gap: 12px; }
-    .mh-head-ctrl { width: 100%; justify-content: space-between; }
+    /* контролы карты — не тремя ярусами на всю ширину, а ОДНИМ горизонтально
+       скроллируемым рядом (как панель действий в шапке): главный тумблер
+       «Карта/График» через order:-1 всегда первым и на виду, период/размер/обновить
+       листаются вбок. В режиме графика .mh-map-ctrl скрыты — остаётся только тумблер. */
+    .mh-head-ctrl {
+        width: 100%; flex-wrap: nowrap; justify-content: flex-start; gap: 8px;
+        overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    }
+    .mh-head-ctrl::-webkit-scrollbar { display: none; }
+    .mh-head-ctrl > * { flex-shrink: 0; }
+    .mh-head-ctrl .mh-seg-view { order: -1; }
     .mh-pulse { grid-template-columns: 1fr; margin: 0 14px; }
     .mh-kpi { padding: 13px 16px; }
     .mh-kpi + .mh-kpi { border-left: 0; border-top: 1px solid var(--mh-line); }

@@ -150,6 +150,81 @@
         pinnedRows: {}     // ticker -> true (строка выделена кликом)
     };
 
+    // ---------- Настройки (localStorage) ----------
+    // Переживают перезагрузку: режим группировки, сортировка, скрытые столбцы,
+    // «только избранное», выбранные секторы, фильтры по параметрам и пороги правил
+    // окраски. Ключи-столбцы валидируем против COLS (заголовки «% Обязательств»
+    // зависят от года — устаревший ключ иначе отфильтровал бы всё в пустоту).
+    var PREFS_KEY = 'stk_prefs_v1';
+    function colExists(k) { for (var i = 0; i < COLS.length; i++) if (COLS[i].key === k) return true; return false; }
+    function loadPrefs() {
+        try {
+            var p = JSON.parse(localStorage.getItem(PREFS_KEY));
+            if (!p || typeof p !== 'object') return;
+            if (p.mode === 'sector' || p.mode === 'flat') state.mode = p.mode;
+            if (typeof p.favOnly === 'boolean') state.favOnly = p.favOnly;
+            if (Array.isArray(p.sectors)) state.sectors = p.sectors.filter(function (s) { return typeof s === 'string'; });
+            if (Array.isArray(p.hiddenCols)) state.hiddenCols = p.hiddenCols.filter(colExists);
+            if (Array.isArray(p.sort)) state.sort = p.sort.filter(function (s) {
+                return s && (s.key === '__ticker' || colExists(s.key)) && (s.dir === 1 || s.dir === -1);
+            }).map(function (s) { return { key: s.key, type: s.type || 'text', dir: s.dir }; });
+            if (p.filters && typeof p.filters === 'object') {
+                Object.keys(p.filters).forEach(function (k) {
+                    if (!colExists(k)) return;
+                    var f = p.filters[k]; if (!f) return;
+                    var v = (f.val === '' || f.val == null || !isFinite(f.val)) ? '' : +f.val;
+                    state.filters[k] = { on: !!f.on, op: f.op || '>', val: v };
+                });
+            }
+            if (Array.isArray(p.rules)) p.rules.forEach(function (sr) {
+                if (!sr || !sr.key) return;
+                var r = ruleFor(sr.key); if (!r) return;   // слитие поверх дефолтов: схема правил = DEFAULT_RULES
+                if (typeof sr.off === 'boolean') r.off = sr.off;
+                if (typeof sr.val === 'number' && isFinite(sr.val)) r.val = sr.val;
+            });
+        } catch (e) {}
+    }
+    function savePrefs() {
+        try {
+            localStorage.setItem(PREFS_KEY, JSON.stringify({
+                mode: state.mode, favOnly: state.favOnly, sectors: state.sectors,
+                hiddenCols: state.hiddenCols, sort: state.sort, filters: state.filters,
+                rules: state.rules.map(function (r) { return { key: r.key, off: !!r.off, val: r.val }; })
+            }));
+        } catch (e) {}
+    }
+
+    // Один раз после постройки панелей — привести чекбоксы/поля меню (секторы,
+    // фильтры) в соответствие с восстановленным state; правила/столбцы синхронизирует
+    // сам populate*. Также «чистим» несуществующие секторы (иначе пустая таблица).
+    function syncRestoredControls() {
+        var el = root(); if (!el || state._ctrlsSynced) return;
+        if (!el.querySelector('.stk-flt-row')) return; // панели ещё не наполнены — позже
+        // тумблер «По секторам / Общий список»: active-класс в разметке захардкожен на
+        // «сектор», приводим к восстановленному state.mode (таблица уже сгруппирована верно)
+        el.querySelectorAll('.stk-tg-btn[data-mode]').forEach(function (b) {
+            b.classList.toggle('active', b.getAttribute('data-mode') === state.mode);
+        });
+        var valid = {};
+        el.querySelectorAll('.stk-sec-opt input').forEach(function (c) { valid[c.value] = 1; });
+        if (state.sectors.length) state.sectors = state.sectors.filter(function (s) { return valid[s]; });
+        el.querySelectorAll('.stk-sec-opt input').forEach(function (c) { c.checked = state.sectors.indexOf(c.value) !== -1; });
+        updateSecBadge();
+        updateColsBadge();
+        Object.keys(state.filters).forEach(function (key) {
+            var f = state.filters[key]; if (!f) return;
+            var row = el.querySelector('.stk-flt-row[data-flt="' + cssEscape(key) + '"]'); if (!row) return;
+            var on = row.querySelector('.stk-flt-on'), op = row.querySelector('.stk-flt-op'), val = row.querySelector('.stk-flt-val');
+            if (on) on.checked = !!f.on;
+            if (op && f.op) op.value = f.op;
+            if (val) val.value = (f.val === '' || f.val == null) ? '' : f.val;
+            row.classList.toggle('is-on', !!f.on && f.val !== '' && f.val != null && isFinite(f.val));
+        });
+        updateFltBadge();
+        state._ctrlsSynced = true;
+    }
+    loadPrefs(); // восстановить сохранённый вид ДО первого render/автозагрузки
+
     // Активные фильтры по параметрам: включён чекбокс и введён порог
     function activeFilters() {
         var out = [];
@@ -624,7 +699,10 @@
             else if (isHighlightCell(col.key, co)) cls += ' stk-hl';
             tds += '<td class="' + cls.trim() + '">' + displayCell(col.key, raw) + '</td>';
         }
-        var rowHtml = '<tr class="stk-row' + (state.pinnedRows[co.ticker] ? ' stk-row-pin' : '') + '" data-ticker="' + esc(co.ticker) + '">' + tds + '</tr>';
+        // title на строке = подсказка про жест закрепления (кастомный тултип таблицы
+        // покажет её ровно над ячейками-данными, где этот клик и срабатывает — у имени
+        // и кнопок действий свои title, они перекрывают этот при наведении на них)
+        var rowHtml = '<tr class="stk-row' + (state.pinnedRows[co.ticker] ? ' stk-row-pin' : '') + '" data-ticker="' + esc(co.ticker) + '" title="Клик по строке — закрепить подсветку для сравнения">' + tds + '</tr>';
         // аккордеон-строка (рендерим содержимое только если раскрыта — иначе лёгкая заглушка)
         var open = !!state.expanded[co.ticker];
         var accInner = open ? renderCardInner(co) : '';
@@ -729,11 +807,13 @@
     function render() {
         var el = root(); if (!el) return;
         if (state.status !== 'ready') { renderState(); return; }
+        savePrefs();          // сохранить текущий вид (после любой правки состояния)
         renderState(); // обновит счётчик и спрячет состояние
         populateSectorMenu(); // наполнить меню секторов (один раз)
         populateRulesPanel(); // наполнить панель правил окраски (один раз)
         populateColsPanel();  // наполнить меню видимости столбцов (один раз)
         populateFltPanel();   // наполнить меню фильтров по параметрам (один раз)
+        syncRestoredControls(); // один раз: привести чекбоксы меню к восстановленному state
         updateSortReset();    // показать/скрыть кнопку сброса сортировки
         updateFavBtn();       // состояние кнопки «Избранное»
 

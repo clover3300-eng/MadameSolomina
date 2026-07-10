@@ -22,8 +22,10 @@
     // число (возможно со знаком и разделителями/пробелами) вплотную к ₽
     var MONEY = /[\d][\d\s.,  ]*\s*₽/;
     // области, которые не маскируем: шапка с рыночными лентами, сам кабинет,
-    // редактируемые поля (там пользователь вводит свои же суммы).
-    var SKIP_SEL = '#headerWrapper, #profileHub, #topSearchModal, input, textarea, select, [contenteditable="true"]';
+    // редактируемые поля (там пользователь вводит свои же суммы), а также вкладка
+    // «Рынок» (тепловая карта + терминалы Акции/Облигации) — там ПУБЛИЧНЫЕ котировки
+    // Мосбиржи, а не капитал пользователя: размывать их бессмысленно, только ломает чтение.
+    var SKIP_SEL = '#headerWrapper, #profileHub, #topSearchModal, #panel-market, #panel-market-stocks, input, textarea, select, [contenteditable="true"]';
 
     var on = false;
     var observer = null;

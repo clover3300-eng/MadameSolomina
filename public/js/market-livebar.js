@@ -1,53 +1,23 @@
 /* ============================================================================
-   МОДУЛЬ «ШАПКА ВКЛАДКИ РЫНОК» (рыночная лента + кнопки в глобальной шапке сайта)
+   МОДУЛЬ «КНОПКИ ВКЛАДКИ РЫНОК» (переходы к терминалам в глобальной шапке сайта)
    ----------------------------------------------------------------------------
-   Раньше здесь была тёмная LIVE-полоска (.dash2-livebar/.dlv-*) прямо на странице
-   и заголовок с 2 кнопками (d3-head/d3-head-actions) — оба убраны со страницы
-   («Рынок» и так читается по хлебной крошке): лента тонкой строкой вшита в фон
-   топ-бара (#topBarMktMarket, между брендом и панелью действий, общий класс
-   .topbar-tab-market — см. css/portfolios.css), кнопки «Все акции»/«Облигации» —
-   в #topBarMktActions (.topbar-tab-actions). Значения ленты берёт из тех же
-   «источников» (#val-imoex, #dyn-imoex …), что и остальные вкладки — отдельный
-   фетч не нужен, данные обновляет core.js. Тикает раз в секунду, пока активна
-   вкладка «Рынок». Грузится ПОСЛЕДНИМ, чтобы обёртка switchTab была внешней.
+   Раньше здесь была и тёмная LIVE-полоска, и рыночная лента, вшитая в фон топ-бара
+   (#topBarMktMarket). По «премиальному» решению лента убрана с ВСЕХ вкладок
+   (css/portfolios.css: .topbar-tab-market { display:none !important }), поэтому её
+   рендер и ежесекундный тик здесь тоже удалены — они обновляли навсегда скрытый
+   контейнер вхолостую. Осталось только то, что видно: кнопки-ссылки «Все акции» и
+   «Облигации» в #topBarMktActions (.topbar-tab-actions), которые ведут в терминалы.
+
+   Грузится ПОСЛЕДНИМ, чтобы обёртка switchTab была внешней. Если понадобится
+   вернуть ленту — история в git; стили .tbmk-* в portfolios.css сохранены.
    ========================================================================== */
 (function () {
     'use strict';
 
-    var TILES = [
-        { k: 'imoex', label: 'IMOEX',   v: 'val-imoex',  d: 'dyn-imoex' },
-        { k: 'usd',   label: 'USD/RUB', v: 'val-usdrub', d: 'dyn-usdrub' },
-        { k: 'btc',   label: 'BTC',     v: 'val-btc',    d: 'dyn-btc' }
-    ];
-
-    var built = false, timer = null;
-
-    function bar() { return document.getElementById('topBarMktMarket'); }
     function actionsHost() { return document.getElementById('topBarMktActions'); }
-    // настоящий экранировщик: раньше был String(s) как есть — сейчас сюда идут
-    // только константы, но no-op esc() — мина при будущих правках
-    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
     function isActive() { var p = document.getElementById('panel-market'); return !!(p && p.classList.contains('active')); }
 
-    function render() {
-        var host = bar(); if (!host) return;
-        // клик по IMOEX здесь не нужен (сами уже на «Рынке», не на «Портфели»/«Главной»)
-        host.innerHTML = '<span class="tbmk-dot"></span>' + TILES.map(function (t, i) {
-            return (i ? '<span class="tbmk-sep">·</span>' : '') +
-                '<span class="tbmk-item">' +
-                '<span class="tbmk-k">' + esc(t.label) + '</span>' +
-                '<span class="tbmk-v" id="tbmkm-v-' + t.k + '">—</span>' +
-                '<span class="tbmk-c" id="tbmkm-c-' + t.k + '"></span></span>';
-        }).join('');
-        host.style.display = 'flex';
-        built = true;
-        tick();
-    }
-
     function hide() {
-        var host = bar(); if (host) { host.style.display = 'none'; host.innerHTML = ''; }
-        built = false;
         var a = actionsHost(); if (a) { a.style.display = 'none'; a.innerHTML = ''; }
     }
 
@@ -66,43 +36,16 @@
         host.style.display = 'flex';
     }
 
-    // Обновление значений без полной перерисовки (раз в секунду)
-    function tick() {
-        var host = bar(); if (!host) return;
-        TILES.forEach(function (t) {
-            var v = document.getElementById('tbmkm-v-' + t.k);
-            var c = document.getElementById('tbmkm-c-' + t.k);
-            var srcV = document.getElementById(t.v);
-            var srcD = document.getElementById(t.d);
-            if (v && srcV) { var s = (srcV.textContent || '').trim(); if (s && s !== '---') v.textContent = s; }
-            if (c && srcD) {
-                var tx = (srcD.textContent || '').trim();
-                c.textContent = tx;
-                c.className = 'tbmk-c ' + (srcD.classList.contains('negative') ? 'neg' : (srcD.classList.contains('positive') ? 'pos' : 'flat'));
-            }
-        });
-    }
-
-    function start() {
-        if (!built) render();
-        if (!timer) timer = setInterval(function () { if (!document.hidden && isActive()) tick(); }, 1000);
-    }
-
-    // Лениво строим/обновляем при заходе на «Рынок», прячем при уходе
+    // Показываем кнопки при заходе на «Рынок», прячем при уходе
     var _origSwitch = window.switchTab;
     window.switchTab = function (tabId) {
         var r = _origSwitch ? _origSwitch.apply(this, arguments) : undefined;
-        if (tabId === 'market') { render(); start(); renderActions(); }
-        else { hide(); }
+        if (tabId === 'market') renderActions();
+        else hide();
         return r;
     };
 
-    document.addEventListener('visibilitychange', function () {
-        if (!document.hidden && isActive()) tick();
-    });
-
     document.addEventListener('DOMContentLoaded', function () {
-        if (isActive()) { render(); start(); renderActions(); }
-        else { start(); } // запускаем таймер заранее — он сам проверяет активность вкладки
+        if (isActive()) renderActions();
     });
 })();

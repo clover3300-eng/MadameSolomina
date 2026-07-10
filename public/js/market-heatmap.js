@@ -121,13 +121,41 @@
         refCloses: {},       // { week: {TICKER:close}, month: {...} } — закрытие на опорную дату
         refIndex: {},        // { week: closeIMOEX, month: ... }
         zoom: null,          // имя сектора при drill-down или null
-        chartMode: true,     // true → вместо холста карты показан график TradingView (открыт по умолчанию)
+        // true → вместо холста карты показан график TradingView. Дефолт — КАРТА
+        // (false): это уникальная фишка вкладки, график есть в любом терминале.
+        // Последний выбор пользователя восстанавливается из mh_prefs_v1 (loadPrefs).
+        chartMode: false,
         sortKey: 'weight', sortDir: -1,
         prevPrices: {},      // последняя цена по тикеру (для вспышек)
         tileEls: {}, secEls: {},  // переиспользуемые DOM-узлы (плавные переходы)
         status: 'idle', updated: null, timer: null, loading: false
     };
     var plotEl = null;
+
+    // ---------- Настройки вида (localStorage) ----------
+    // Запоминаем выбор пользователя между сессиями: карта/график, период,
+    // размер плитки, сортировку таблицы. Данные (rows) НЕ кэшируем — только вид.
+    var PREFS_KEY = 'mh_prefs_v1';
+    function loadPrefs() {
+        try {
+            var p = JSON.parse(localStorage.getItem(PREFS_KEY));
+            if (!p || typeof p !== 'object') return;
+            if (typeof p.chartMode === 'boolean') state.chartMode = p.chartMode;
+            if (p.period === 'day' || p.period === 'week' || p.period === 'month') state.period = p.period;
+            if (p.sizeMode === 'weight' || p.sizeMode === 'value' || p.sizeMode === 'change') state.sizeMode = p.sizeMode;
+            if (p.sortKey && COLS.some(function (c) { return c.key === p.sortKey; })) state.sortKey = p.sortKey;
+            if (p.sortDir === 1 || p.sortDir === -1) state.sortDir = p.sortDir;
+        } catch (e) {}
+    }
+    function savePrefs() {
+        try {
+            localStorage.setItem(PREFS_KEY, JSON.stringify({
+                chartMode: state.chartMode, period: state.period, sizeMode: state.sizeMode,
+                sortKey: state.sortKey, sortDir: state.sortDir
+            }));
+        } catch (e) {}
+    }
+    loadPrefs();
 
     // ---------- Утилиты ----------
     function card() { return document.getElementById('mhCard'); }
@@ -705,6 +733,14 @@
                 applyPeriod();   // переложить дневное изм. на выбранный период (если не «день»)
                 state.status = 'ready'; hideOverlay();
                 render();
+                // восстановленный из настроек период «неделя/месяц» требует опорных
+                // закрытий; applyPeriod выше показал дневные изм. как фолбэк — дотягиваем
+                // историю и перекрашиваем (один раз: дальше refCloses в кэше сессии)
+                if (state.period !== 'day' && !state.refCloses[state.period]) {
+                    fetchRefCloses(state.period)
+                        .then(function () { applyPeriod(); render(); })
+                        .catch(function (e) { if (window.console) console.warn('[market-heatmap] период', e); });
+                }
             }).catch(function (e) {
                 state.status = 'error'; if (!state.rows) showError(); setMeta();
                 if (window.console) console.warn('[market-heatmap]', e);
@@ -791,7 +827,7 @@
         if (chartBtn) chartBtn.classList.toggle('active', state.chartMode);
         if (!state.chartMode) renderPlot(); // вернулись к карте — актуализировать раскладку
     }
-    function setChartMode(v) { if (state.chartMode === v) return; state.chartMode = v; hideTip(); applyChartMode(); }
+    function setChartMode(v) { if (state.chartMode === v) return; state.chartMode = v; hideTip(); applyChartMode(); savePrefs(); }
 
     // Обновляет подписи легенды ±cap% под выбранный период
     function updateLegend() {
@@ -802,7 +838,7 @@
     }
     // Смена периода: при «неделя/месяц» лениво подтягивает опорные закрытия (кэш на сессию)
     function selectPeriod(p) {
-        state.period = p; updateLegend();
+        state.period = p; updateLegend(); savePrefs();
         if (p === 'day' || state.refCloses[p]) { applyPeriod(); render(); return; }
         spin(true);
         fetchRefCloses(p).catch(function (e) { if (window.console) console.warn('[market-heatmap] period', e); })
@@ -827,23 +863,26 @@
             '      <i class="mh-live-dot"></i>' +
             '      <span class="mh-live-meta"><span class="mh-live-cap">обновлено</span><span class="mh-live-time">—</span></span>' +
             '    </span>' +
+            // active-классы сегментов берём из state (восстановленного из mh_prefs_v1),
+            // а не хардкодим «День»/«Вес»/«График» — иначе подсветка врёт после перезагрузки
             '    <span class="mh-seg mh-seg-period mh-map-ctrl" role="tablist" title="Период изменения (цвет карты)">' +
-            '      <button class="mh-seg-btn active" type="button" data-period="day">День</button>' +
-            '      <button class="mh-seg-btn" type="button" data-period="week">Неделя</button>' +
-            '      <button class="mh-seg-btn" type="button" data-period="month">Месяц</button>' +
+            '      <button class="mh-seg-btn' + (state.period === 'day' ? ' active' : '') + '" type="button" data-period="day">День</button>' +
+            '      <button class="mh-seg-btn' + (state.period === 'week' ? ' active' : '') + '" type="button" data-period="week">Неделя</button>' +
+            '      <button class="mh-seg-btn' + (state.period === 'month' ? ' active' : '') + '" type="button" data-period="month">Месяц</button>' +
             '    </span>' +
             '    <span class="mh-seg mh-seg-size mh-map-ctrl" role="tablist" title="Размер плитки">' +
-            '      <button class="mh-seg-btn active" type="button" data-size="weight">Вес</button>' +
-            '      <button class="mh-seg-btn" type="button" data-size="value">Объём</button>' +
-            '      <button class="mh-seg-btn" type="button" data-size="change">% изм.</button>' +
+            '      <button class="mh-seg-btn' + (state.sizeMode === 'weight' ? ' active' : '') + '" type="button" data-size="weight">Вес</button>' +
+            '      <button class="mh-seg-btn' + (state.sizeMode === 'value' ? ' active' : '') + '" type="button" data-size="value">Объём</button>' +
+            '      <button class="mh-seg-btn' + (state.sizeMode === 'change' ? ' active' : '') + '" type="button" data-size="change">% изм.</button>' +
             '    </span>' +
             '    <button class="mh-refresh mh-map-ctrl" type="button" title="Обновить" aria-label="Обновить">' + REFRESH_SVG + '</button>' +
             // Переключатель «Карта/График» — ПОСЛЕДНИМ в шапке карточки (крайний правый):
-            // так он заметнее, а при скрытии контролов карты в режиме графика не сдвигается
+            // так он заметнее, а при скрытии контролов карты в режиме графика не сдвигается.
+            // active-класс проставит applyChartMode() в конце build() по state.chartMode.
             '    <span class="mh-seg mh-seg-view" role="tablist" title="Тепловая карта / график индекса (месячный таймфрейм)">' +
             '      <button class="mh-seg-btn" type="button" data-act="view-map">' +
             '        <span class="mh-cb-ico" aria-hidden="true">' + GRID_SVG + '</span>Карта</button>' +
-            '      <button class="mh-seg-btn active" type="button" data-act="view-chart">' +
+            '      <button class="mh-seg-btn" type="button" data-act="view-chart">' +
             '        <span class="mh-cb-ico" aria-hidden="true">' + CANDLE_SVG + '</span>График</button>' +
             '    </span>' +
             '  </div>' +
@@ -894,6 +933,7 @@
                 if (b.classList.contains('active')) return;
                 c.querySelectorAll('.mh-seg-size .mh-seg-btn').forEach(function (x) { x.classList.remove('active'); });
                 b.classList.add('active'); state.sizeMode = b.getAttribute('data-size');
+                savePrefs();
                 render();
             });
         });
@@ -913,6 +953,7 @@
                 var k = th.getAttribute('data-sort'), col = COLS.filter(function (x) { return x.key === k; })[0];
                 if (state.sortKey === k) state.sortDir *= -1;
                 else { state.sortKey = k; state.sortDir = col && col.num ? -1 : 1; }
+                savePrefs();
                 renderTable();
             });
         });
@@ -941,8 +982,9 @@
         plotEl.addEventListener('mousemove', moveTip);
         plotEl.addEventListener('mouseleave', function () { hideTip(); plotEl.classList.remove('mh-spot'); });
 
+        updateLegend(); // подписи легенды ±cap% под восстановленный период
         state.built = true;
-        applyChartMode(); // открыт по умолчанию график — сразу монтируем и прячем контролы карты
+        applyChartMode(); // синхронизировать вид (карта/график) и подсветку тумблера по state.chartMode
     }
 
     // ====================================================================

@@ -982,6 +982,13 @@ body.dark-mode #stockDetailCard .sd-pot { background: rgba(22, 181, 107, 0.1); }
     white-space: nowrap;
 }
 #stockDetailCard .sd-pot-horizon .ic { display: inline-flex; }
+/* Отрицательный потенциал — не зелёным (это ввод в заблуждение), а красным на
+   нейтрально-красной подложке: минус читается как минус в обеих темах. */
+#stockDetailCard .sd-pot--neg { background: linear-gradient(135deg, #fdeeee 0%, #fef2f2 100%); }
+body.dark-mode #stockDetailCard .sd-pot--neg { background: rgba(216, 67, 79, 0.12); }
+#stockDetailCard .sd-pot--neg .sd-pot-label { color: #b5636a; }
+#stockDetailCard .sd-pot--neg .sd-pot-val { color: #d8434f; }
+#stockDetailCard .sd-pot--neg .sd-pot-horizon { color: #a9757a; }
 /* Оговорка о характере потенциала (под блоком потенциала) */
 #stockDetailCard .sd-pot-note {
     display: flex;
