@@ -34,13 +34,13 @@
     <link rel="stylesheet" href="css/portfolios.css?v=58">
     <link rel="stylesheet" href="css/rebal-r5.css?v=9">
     <link rel="stylesheet" href="css/monthly-panel.css?v=1">
-    <link rel="stylesheet" href="css/monthly-r5.css?v=6">
+    <link rel="stylesheet" href="css/monthly-r5.css?v=8">
     <link rel="stylesheet" href="css/stock-terminal.css?v=9">
     <link rel="stylesheet" href="css/bond-terminal.css?v=11">
     <link rel="stylesheet" href="css/table-tooltip.css?v=1">
     <link rel="stylesheet" href="css/market-heatmap.css?v=33">
     <link rel="stylesheet" href="css/calc-r5.css?v=11">
-    <link rel="stylesheet" href="css/calc-mode.css?v=3">
+    <link rel="stylesheet" href="css/calc-mode.css?v=4">
     <link rel="stylesheet" href="css/home-register.css?v=21">
     <link rel="stylesheet" href="css/site-bg.css?v=3">
     <link rel="stylesheet" href="css/profile-menu.css?v=6">
@@ -1818,7 +1818,6 @@
               <button class="tax-segment active" id="tax-custom-13" data-tax="0.13" onclick="setCustomTax(0.13, this)">НДФЛ 13%</button>
               <button class="tax-segment" id="tax-custom-15" data-tax="0.15" onclick="setCustomTax(0.15, this)">НДФЛ 15%</button>
             </div>
-            <div class="mi5-bondsub"><span class="l">Облигации</span><span class="r">6 выпусков · купоны ежемесячно</span></div>
             <div class="mi5-col-head">
               <span class="rk"></span>
               <span class="nm">Облигация</span>
@@ -1852,19 +1851,20 @@
                 </div>
               </div>
               <div class="mi5-cb-lead">
-                <!-- «Подробнее» (график выплат) — слева, напротив суммы среднего дохода;
-                     появляется только после «Приступить к расчёту» -->
-                <button type="button" class="mi5-more-btn is-hidden" id="miMoreBtn" onclick="toggleScheduleView()">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 9 5 12 1.8-5.2L21 14Z"/><path d="M7.2 2.2 8 5.1"/><path d="M5.1 8 2.2 7.2"/><path d="M14 4.1 12 6"/><path d="m6 12-1.9 2"/></svg>
-                  Подробнее
-                </button>
                 <div class="mi5-cb-lead-r">
                   <div class="mi5-cb-hk">Средний доход в месяц</div>
                   <div class="mi5-cb-amt"><span id="ndIbMonthly">~573</span><span class="mi5-rub">₽</span></div>
                 </div>
               </div>
               <div class="mi5-cb-mini">
-                <div class="mi5-cb-mk">По месяцам</div>
+                <div class="mi5-cb-mini-head">
+                  <div class="mi5-cb-mk">По месяцам</div>
+                  <!-- «Подробнее» (график выплат) — появляется только после «Приступить к расчёту» -->
+                  <button type="button" class="mi5-more-btn is-hidden" id="miMoreBtn" onclick="toggleScheduleView()">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 9 5 12 1.8-5.2L21 14Z"/><path d="M7.2 2.2 8 5.1"/><path d="M5.1 8 2.2 7.2"/><path d="M14 4.1 12 6"/><path d="m6 12-1.9 2"/></svg>
+                    Подробнее
+                  </button>
+                </div>
                 <div class="mi5-cb-chart" id="miMonthlyChart"></div>
               </div>
               <div class="mi5-foot">
@@ -2201,7 +2201,7 @@
 <script src="js/backtest.js?v=1" defer></script>
 <script src="js/app-state.js?v=5" defer></script>
 <script src="js/calc-r5.js?v=7" defer></script>
-<script src="js/calc-mode.js?v=5" defer></script>
+<script src="js/calc-mode.js?v=6" defer></script>
 <script src="js/dashboard.js?v=6" defer></script>
 <script src="js/sidebar.js?v=5" defer></script>
 <script src="js/stock-terminal.js?v=7" defer></script>

@@ -263,28 +263,30 @@ body.dark-mode #panel-calc .mi5-start-btn { background: #ffffff; color: #141b26;
 }
 #panel-calc .mi5-cb-head { display: flex; align-items: center; gap: 14px; flex: 0 0 auto; }
 #panel-calc .mi5-cb-head-txt { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-/* Строка «Подробнее» ←→ «Средний доход в месяц» */
+/* Строка «Средний доход в месяц» */
 #panel-calc .mi5-cb-lead {
     flex: 0 0 auto; display: flex; flex-direction: row; align-items: center;
-    justify-content: space-between; gap: 14px; margin-top: 18px;
+    justify-content: flex-end; gap: 14px; margin-top: 18px;
 }
 #panel-calc .mi5-cb-lead-r {
     display: flex; flex-direction: column; align-items: flex-end;
     text-align: right; gap: 8px; margin-left: auto; min-width: 0;
 }
-/* «Подробнее» — тёмная пилюля (белая «призрачная» терялась на карточке),
-   сдвинута правее от кромки, к середине свободной зоны перед суммой */
+/* «По месяцам» ←→ «Подробнее» — шапка мини-графика */
+#panel-calc .mi5-cb-mini-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+/* «Подробнее» — тёмная пилюля рядом с подписью графика */
 #panel-calc .mi5-more-btn {
-    display: inline-flex; align-items: center; gap: 7px;
+    display: inline-flex; align-items: center; gap: 6px;
     border: none; border-radius: 999px;
     background: linear-gradient(180deg, #1d2734, #141b26);
-    padding: 10px 16px;
-    font-family: var(--mi-mono); font-weight: 700; font-size: 11px;
+    padding: 7px 13px;
+    font-family: var(--mi-mono); font-weight: 700; font-size: 10.5px;
     letter-spacing: .06em; text-transform: uppercase;
     color: #ffffff; cursor: pointer;
-    flex: 0 0 auto; align-self: center;
-    margin-left: 30px;
-    box-shadow: 0 10px 22px rgba(16, 24, 38, .22);
+    flex: 0 0 auto;
+    box-shadow: 0 8px 18px rgba(16, 24, 38, .22);
     transition: transform .15s ease, box-shadow .15s ease;
 }
 #panel-calc .mi5-more-btn svg { color: var(--mi-orange); }
@@ -427,22 +429,12 @@ body.dark-mode #panel-calc .mi5-more-btn { background: #ffffff; color: #141b26; 
     background: #fff; color: var(--mi-text); box-shadow: 0 2px 8px rgba(20, 30, 48, .10);
 }
 
-#panel-calc .mi5-bondsub {
-    display: flex; align-items: baseline; justify-content: space-between;
-    margin-top: 22px; padding-bottom: 11px; border-bottom: 1px solid #eef2f7;
-}
-#panel-calc .mi5-bondsub .l {
-    font-family: var(--mi-mono); font-size: 11px; letter-spacing: .13em;
-    text-transform: uppercase; font-weight: 700; color: var(--mi-muted);
-}
-#panel-calc .mi5-bondsub .r { font-family: var(--mi-mono); font-size: 12px; color: var(--mi-muted2); font-weight: 600; }
-
 /* Заголовки колонок над списком — та же логика «подпись прямо над данными»,
    что и в таблице ОФЗ на вкладке «Портфель»: ширины колонок 1-в-1 как у .mi5-bond,
    чтобы «Доходность»/«Кол-во» стояли строго над своими значениями. */
 #panel-calc .mi5-col-head {
     display: grid; grid-template-columns: 28px minmax(0,1fr) 64px 140px;
-    gap: 13px; padding: 0 0 8px; margin-top: 10px;
+    gap: 13px; padding: 0 0 8px; margin-top: 26px;
     font-family: var(--mi-sans); font-size: 10px; font-weight: 800;
     letter-spacing: .07em; text-transform: uppercase; color: var(--mi-muted2);
 }
@@ -452,7 +444,7 @@ body.dark-mode #panel-calc .mi5-more-btn { background: #ffffff; color: #141b26; 
 #panel-calc .mi5-bonds { display: grid; grid-template-columns: 1fr; }
 #panel-calc .mi5-bond {
     display: grid; grid-template-columns: 28px minmax(0,1fr) 64px 140px;
-    align-items: center; gap: 13px; padding: 9px 0; border-bottom: 1px solid #eef2f7;
+    align-items: center; gap: 13px; padding: 14px 0; border-bottom: 1px solid #eef2f7;
 }
 #panel-calc .mi5-bond:last-child { border-bottom: none; }
 #panel-calc .mi5-bond-rk {
@@ -588,7 +580,6 @@ body.dark-mode #panel-calc .mi5-banner-v {
 body.dark-mode #panel-calc .mi5-preset.act { background: #eef2f7; border-color: #eef2f7; color: #141b26; }
 body.dark-mode #panel-calc .mi5-tax { background: #141b26; }
 body.dark-mode #panel-calc .mi5-tax .tax-segment.active { background: #2a3547; color: #fff; box-shadow: none; }
-body.dark-mode #panel-calc .mi5-bondsub,
 body.dark-mode #panel-calc .mi5-bond { border-color: rgba(255, 255, 255, .06); }
 body.dark-mode #panel-calc .mi5-bond-rk { background: #141b26; }
 body.dark-mode #panel-calc .mi5-step { background: #141b26; }

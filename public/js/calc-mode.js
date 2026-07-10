@@ -83,7 +83,7 @@
             '<span class="cxm-fact">' + PIE_IC + 'Облигации и акции по стратегии</span>' +
             '<span class="cxm-fact">' + TREND_IC + 'Цель — рост, горизонт от 3 лет</span>' +
           '</div>' +
-          '<span class="cxm-tbtn dark">Выбрать смешанный ' + GO_IC + '</span>' +
+          '<span class="cxm-tbtn dark">Выбрать рост ' + GO_IC + '</span>' +
         '</div>' +
         // 02 — Купонный
         '<div class="cxm-type" data-mode="monthly">' +
@@ -95,7 +95,7 @@
             '<span class="cxm-fact">' + CAL_IC + '12 выплат в год, 6 выпусков</span>' +
             '<span class="cxm-fact">' + SHIELD_IC + 'Минимальный риск</span>' +
           '</div>' +
-          '<span class="cxm-tbtn ghost">Выбрать купонный ' + GO_IC + '</span>' +
+          '<span class="cxm-tbtn ghost">Выбрать доход ' + GO_IC + '</span>' +
         '</div>' +
       '</div>' +
       // Подсказка для неопределившихся

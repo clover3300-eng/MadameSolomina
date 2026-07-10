@@ -185,9 +185,8 @@ body.dark-mode .cx-rows.r5 .cxm-back { background: rgba(255,255,255,.03); }
   #panel-calc .mi5-preset { padding: 7px 4px; }
   #panel-calc .mi5-tax { margin-top: 10px; padding: 5px; }
   #panel-calc .mi5-tax .tax-segment { padding: 7px; }
-  #panel-calc .mi5-bondsub { margin-top: 10px; padding-bottom: 7px; }
-  #panel-calc .mi5-col-head { margin-top: 6px; padding-bottom: 5px; }
-  #panel-calc .mi5-bond { padding: 4px 0; }
+  #panel-calc .mi5-col-head { margin-top: 18px; padding-bottom: 5px; }
+  #panel-calc .mi5-bond { padding: 8px 0; }
   #panel-calc .mi5-foot { padding-top: 10px; }
   #panel-calc .mi5-next { min-height: 64px; padding: 10px 16px; }
   #panel-calc .mi5-cb-stats { min-height: 64px; }
