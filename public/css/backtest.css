@@ -408,64 +408,96 @@ body.dark-mode .bt2-feat { border-color: rgba(255, 255, 255, 0.14); }
    РЕЖИМ РЕЗУЛЬТАТОВ: карточка слева + таблица справа
    ============================================================ */
 
-/* Шапка с финальными данными теста — ТЁМНАЯ карточка вверху левой карточки
-   (отрицательные поля = padding карточки 24px, радиус = радиус карточки 26px) */
-.bt-res-summary {
-    position: relative; z-index: 1;   /* поверх водяного знака «%» */
-    margin: -24px -24px 24px;
-    padding: 22px 24px;
-    background: linear-gradient(160deg, #1f2a3b 0%, #131a25 100%);
-    border-radius: 24px 24px 0 0;
-    color: #F1F6FB;
-}
-.bt-res-sum-top {
-    display: flex;
+/* ── ГЕРОЙ РЕЗУЛЬТАТОВ (btx-*) — спокойный rbx-стиль, как «Ребаланс»/«Админка»:
+   тёмный градиент, пульс-иконка, KPI-числа, режим P&L в хвосте ── */
+.btx-hero {
+    position: relative;
+    overflow: hidden;
     align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 16px 28px;
+    padding: 20px 24px;
+    border-radius: 24px;
+    background: linear-gradient(120deg, #0c1219 0%, #182231 55%, #131e2b 100%);
+    box-shadow: 0 20px 44px rgba(24, 38, 60, 0.16);
+    isolation: isolate;
+    color: #f1f6fb;
 }
-.bt-res-sum-eyebrow {
-    font-size: 11.5px; font-weight: 700;
-    letter-spacing: 1.5px; text-transform: uppercase;
+.btx-hero .btx-fx { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+.btx-fx i {
+    position: absolute; display: block;
+    width: 420px; height: 300px; top: -170px; right: 10%;
+    background: radial-gradient(closest-side, rgba(75, 227, 160, 0.20), transparent 70%);
+    filter: blur(6px);
+}
+.btx-fx b {
+    position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1.4px);
+    background-size: 18px 18px;
+    -webkit-mask-image: linear-gradient(100deg, transparent 40%, rgba(0, 0, 0, 0.5) 75%, rgba(0, 0, 0, 0.8));
+    mask-image: linear-gradient(100deg, transparent 40%, rgba(0, 0, 0, 0.5) 75%, rgba(0, 0, 0, 0.8));
+}
+.btx-id { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.btx-ico {
+    flex-shrink: 0;
+    display: grid; place-items: center;
+    width: 45px; height: 45px; border-radius: 14px;
+    color: #4be3a0;
+    background: linear-gradient(135deg, rgba(52, 211, 153, 0.20), rgba(52, 211, 153, 0.05));
+    border: 1px solid rgba(52, 211, 153, 0.30);
+    animation: btxPulse 3.4s ease-out infinite;
+}
+@keyframes btxPulse {
+    0%   { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.30); }
+    55%  { box-shadow: 0 0 0 10px rgba(52, 211, 153, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+}
+.btx-t { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.btx-title {
+    font-family: 'Manrope', sans-serif;
+    font-size: 19px; font-weight: 800; line-height: 1.1;
+    letter-spacing: -0.01em; color: #ffffff; white-space: nowrap;
+}
+.btx-sub {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px; font-weight: 600;
+    color: rgba(255, 255, 255, 0.58); white-space: nowrap;
+}
+.btx-kpis { display: flex; align-items: flex-start; gap: 26px; margin-left: auto; }
+.btx-kpi { min-width: 0; }
+.btx-kpi span {
+    display: block; margin-bottom: 6px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 10px; font-weight: 800;
+    letter-spacing: 0.1em; text-transform: uppercase;
     color: rgba(255, 255, 255, 0.5);
-}
-.bt-res-date-pill {
-    display: inline-flex; align-items: center; gap: 5px;
-    font-size: 11.5px; font-weight: 700;
-    color: #CDD9E8;
-    background: rgba(255, 255, 255, 0.09);
-    padding: 4px 9px; border-radius: 999px;
     white-space: nowrap;
 }
-.bt-res-date-pill svg { width: 12px; height: 12px; flex-shrink: 0; }
-.bt-res-sum-label { font-size: 12.5px; color: rgba(255, 255, 255, 0.55); margin-bottom: 12px; }
-.bt-res-sum-valrow {
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 12px;
+.btx-kpi b {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 18px; font-weight: 700; line-height: 1;
+    color: #ffffff; font-variant-numeric: tabular-nums;
+    white-space: nowrap;
 }
-.bt-res-sum-value {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 27px; font-weight: 800;
-    letter-spacing: -0.5px; line-height: 1.1;
-    color: #ffffff;
+.btx-kpi b.pos { color: #34d399; }
+.btx-kpi b.neg { color: #f87171; }
+.btx-pct {
+    font-style: normal;
+    font-size: 11px; font-weight: 800;
+    padding: 3px 8px; border-radius: 999px;
 }
-/* Бейдж процента изменения — справа от суммы */
-.bt-res-pct-badge {
-    flex-shrink: 0;
-    display: inline-flex; align-items: center; gap: 2px;
-    padding: 5px 11px; border-radius: 999px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px; font-weight: 800;
+.btx-pct.pos { color: #34d399; background: rgba(52, 211, 153, 0.14); }
+.btx-pct.neg { color: #f87171; background: rgba(248, 113, 113, 0.14); }
+.btx-mode { display: flex; flex-direction: column; gap: 6px; min-width: 208px; }
+.btx-mode-note {
+    font-size: 10.5px; font-weight: 600; text-align: center;
+    color: rgba(255, 255, 255, 0.45);
 }
-.bt-res-pct-badge svg { width: 13px; height: 13px; }
-.bt-res-pct-badge.pos { color: #34D399; background: rgba(52, 211, 153, 0.15); }
-.bt-res-pct-badge.neg { color: #F87171; background: rgba(248, 113, 113, 0.15); }
-/* Переключатель «С выплатами / Только цены» — сегмент в тёмной карточке,
-   зеркалит .bt-source-switcher (активная белая пилюля на тёмном фоне) */
+/* Переключатель «С выплатами / Только цены» — сегмент на тёмном фоне,
+   зеркалит .bt-source-switcher (активная белая пилюля) */
 .bt-res-mode {
     display: flex; gap: 4px;
-    margin-top: 16px;
     padding: 3px;
     background: rgba(255, 255, 255, 0.07);
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -479,61 +511,79 @@ body.dark-mode .bt2-feat { border-color: rgba(255, 255, 255, 0.14); }
     color: rgba(255, 255, 255, 0.55);
     font-family: inherit; font-size: 12px; font-weight: 700;
     cursor: pointer;
+    white-space: nowrap;
     transition: background 0.15s, color 0.15s;
 }
 .bt-res-mode-btn:hover { color: rgba(255, 255, 255, 0.85); }
 .bt-res-mode-btn.active { background: #ffffff; color: #10151d; }
-.bt-res-mode-note {
-    margin-top: 9px;
-    font-size: 11px; line-height: 1.45;
-    color: rgba(255, 255, 255, 0.42);
-}
 
-.bt-res-sum-stats {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-top: 16px;
+/* ── Подвкладки результатов [Обзор | Бумаги | Выплаты] ── */
+.btr-tabs {
+    display: flex; gap: 4px;
+    padding: 4px;
+    background: #ffffff;
+    border: 1.5px solid #d8dfeb;
+    border-radius: 14px;
+    box-shadow: 0 8px 22px rgba(28, 42, 66, 0.06);
+    margin-bottom: 14px;
 }
-/* Стартовая сумма / P&L — аккуратные карточки-плашки */
-.bt-res-stat {
-    display: flex; flex-direction: column; gap: 6px;
-    min-width: 0;
-    padding: 11px 13px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 13px;
-}
-.bt-res-stat span {
-    font-size: 10px; font-weight: 700;
-    letter-spacing: 0.07em; text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.45);
-}
-.bt-res-stat b {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 14.5px; font-weight: 800;
-    color: #EAF1F8;
-    line-height: 1.05;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.bt-res-stat b.pos { color: #34D399; }
-.bt-res-stat b.neg { color: #F87171; }
-
-/* Кнопка «Сравнить с IMOEX» */
-.bt-imoex-btn {
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-    width: 100%; margin-top: 18px;
-    padding: 11px 14px;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 11px;
-    background: rgba(255, 255, 255, 0.06);
-    color: #EAF1F8;
-    font-family: inherit; font-size: 13px; font-weight: 700;
+body.dark-mode .btr-tabs { background: #1d2734; border-color: rgba(255, 255, 255, 0.12); }
+.btr-tab {
+    flex: 1;
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 9px 12px;
+    border: none; border-radius: 10px;
+    background: transparent;
+    font-family: 'Manrope', sans-serif;
+    font-size: 13px; font-weight: 800;
+    color: #6c7a8d;
     cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
+    transition: background 0.15s, color 0.15s;
 }
-.bt-imoex-btn:hover { background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.28); }
-.bt-imoex-btn svg { width: 15px; height: 15px; }
-.bt-imoex-btn.is-open { background: rgba(126, 226, 168, 0.16); border-color: rgba(126, 226, 168, 0.42); color: #9EE6BD; }
+.btr-tab:hover { color: #111927; }
+.btr-tab.active { background: #111927; color: #ffffff; }
+body.dark-mode .btr-tab { color: #9aa8bc; }
+body.dark-mode .btr-tab:hover { color: #f1f6fb; }
+body.dark-mode .btr-tab.active { background: rgba(255, 255, 255, 0.12); color: #ffffff; }
+.btr-tab .cnt {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 700;
+    padding: 1px 7px; border-radius: 999px;
+    background: #eef2f8; color: #6c7a8d;
+}
+.btr-tab.active .cnt { background: rgba(255, 255, 255, 0.16); color: #dfe7f1; }
+body.dark-mode .btr-tab .cnt { background: rgba(255, 255, 255, 0.08); color: #c4cedd; }
+.btr-sub { display: none; }
+.btr-sub.active { display: block; animation: btResIn 0.28s cubic-bezier(0.22, 0.61, 0.36, 1); }
+
+/* ── Пилюли выбора индекса в карточке графика ── */
+.btb-pills {
+    display: flex; gap: 4px; flex-shrink: 0;
+    padding: 3px;
+    background: #f2f5fa;
+    border-radius: 10px;
+}
+body.dark-mode .btb-pills { background: rgba(255, 255, 255, 0.06); }
+.btb-pill {
+    border: none; border-radius: 7px;
+    padding: 5px 10px;
+    background: transparent;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 700;
+    color: #6c7a8d;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+.btb-pill:hover { color: #111927; }
+.btb-pill.active { background: #111927; color: #ffffff; }
+body.dark-mode .btb-pill { color: #9aa8bc; }
+body.dark-mode .btb-pill:hover { color: #f1f6fb; }
+body.dark-mode .btb-pill.active { background: rgba(255, 255, 255, 0.14); color: #ffffff; }
+.bt-imoex-subrow {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-bottom: 14px;
+}
+.bt-imoex-subrow .bt-imoex-sub { margin-bottom: 0; }
 
 /* Раскрытие таблицы результатов */
 .bt2-wrap.bt-results-mode #btResults {
@@ -544,7 +594,7 @@ body.dark-mode .bt2-feat { border-color: rgba(255, 255, 255, 0.14); }
     to   { opacity: 1; transform: none; }
 }
 
-/* Десктоп: две колонки — настройки+шапка слева, таблицы справа.
+/* Десктоп: герой на всю ширину сверху, под ним настройки слева и результаты справа.
    После расчёта раскрываемся на ВСЮ ширину панели (как «Ребаланс»):
    снимаем кап 1200px и центрирование, добавляем боковые поля. */
 @media (min-width: 1024px) {
@@ -556,10 +606,14 @@ body.dark-mode .bt2-feat { border-color: rgba(255, 255, 255, 0.14); }
         width: 100%;
         display: grid;
         grid-template-columns: 380px minmax(0, 1fr);
-        grid-template-areas: "config  results";
+        grid-template-areas:
+            "hero    hero"
+            "config  results";
         column-gap: 22px;
+        row-gap: 18px;
         align-items: start;
     }
+    .bt2-wrap.bt-results-mode #btHero { grid-area: hero; }
     .bt2-wrap.bt-results-mode #btConfigCol {
         grid-area: config;
         position: sticky;
@@ -567,6 +621,20 @@ body.dark-mode .bt2-feat { border-color: rgba(255, 255, 255, 0.14); }
         align-self: start;
     }
     .bt2-wrap.bt-results-mode #btResults   { grid-area: results; margin-top: 0 !important; }
+}
+/* Мобила: герой обычным блоком над карточкой настроек */
+@media (max-width: 1023px) {
+    .btx-hero { margin-bottom: 14px; padding: 18px; gap: 14px; }
+    .btx-kpis {
+        margin-left: 0; width: 100%;
+        display: grid; grid-template-columns: 1fr 1fr;
+        gap: 14px 12px;
+    }
+    .btx-kpi b { font-size: 16px; }
+    .btx-mode { width: 100%; min-width: 0; }
+    .btr-tab { font-size: 12px; padding: 8px 6px; gap: 5px; }
+    .bt-imoex-subrow { flex-wrap: wrap; }
+    .bt-imoex-head { flex-wrap: wrap; }
 }
 
 /* Подвал-обещания «После запуска…» прячем в режиме результатов НА ЛЮБОЙ ширине
@@ -790,7 +858,40 @@ body.dark-mode #btResults .bt-asset-pnl.neutral { color: #76849a; }
     #btResults .bt-col-head { font-size: 10px; letter-spacing: 0.04em; }
 }
 
-/* ── Таблицы выплат (купоны/дивиденды): то же лекало + итоговая строка ── */
+/* ── Таблицы выплат (купоны/дивиденды): аккордеон по бумаге ── */
+/* Свёрнутая строка бумаги: кликабельна, шеврон в ранг-колонке */
+#btResults .bt-pay-group { cursor: pointer; user-select: none; }
+#btResults .bt-pay-group .bt-asset-rank {
+    color: #8593a6;
+    display: flex; align-items: center;
+}
+#btResults .bt-pay-group .bt-asset-rank svg { transition: transform 0.18s ease; }
+#btResults .bt-pay-group.open .bt-asset-rank svg { transform: rotate(90deg); }
+#btResults .bt-pay-group.open { background: #f7fafd; }
+body.dark-mode #btResults .bt-pay-group.open { background: rgba(255, 255, 255, 0.03); }
+/* Раскрытые строки-выплаты: тише фон, меньше высота, дата в колонке даты */
+#btResults .bt-pay-sub {
+    height: 42px;
+    background: #fafcfe;
+}
+#btResults .bt-pay-sub:hover { background: #fafcfe; }
+body.dark-mode #btResults .bt-pay-sub,
+body.dark-mode #btResults .bt-pay-sub:hover { background: rgba(255, 255, 255, 0.02); }
+#btResults .bt-pay-sub .bt-asset-buy-price { color: #8593a6; }
+#btResults .bt-pay-sub .bt-asset-price { font-weight: 600; color: #5f6d80; }
+body.dark-mode #btResults .bt-pay-sub .bt-asset-price { color: #9aa8bc; }
+#btResults .bt-pay-sub .bt-asset-pnl { font-size: 13px; }
+/* Пустое состояние подвкладки «Выплаты» */
+#btResults .bt-pay-empty {
+    background: #ffffff;
+    border: 1.5px dashed #d8dfeb;
+    border-radius: 22px;
+    padding: 34px 20px;
+    text-align: center;
+    font-size: 13px; color: #8593a6;
+}
+body.dark-mode #btResults .bt-pay-empty { background: #1d2734; border-color: rgba(255, 255, 255, 0.14); color: #9aa8bc; }
+
 #btResults .bt-pay-totalrow,
 #btResults .bt-pay-totalrow:hover { background: #f6f9fc; }
 body.dark-mode #btResults .bt-pay-totalrow,
@@ -815,14 +916,12 @@ body.dark-mode #btResults .bt-pay-miss { color: #d9a94e; border-top-color: rgba(
 @media (max-width: 1023px) {
     #btResults .bt-pay-card .bt-asset-buy-price { display: block; font-size: 10.5px; }
     #btResults .bt-pay-card .bt-asset-head .bt-col-head:nth-child(3) { display: block; }
+    /* первая колонка узкая — в ней живёт шеврон аккордеона */
     #btResults .bt-pay-card .bt-asset-row,
     #btResults .bt-pay-card .bt-asset-head {
-        grid-template-columns: minmax(0, 1fr) 66px 54px 76px;
+        grid-template-columns: 16px minmax(0, 1fr) 64px 52px 74px;
         gap: 5px;
     }
-    /* ранг на мобиле не влезает («#28») и не несёт смысла — скрываем */
-    #btResults .bt-pay-card .bt-asset-rank,
-    #btResults .bt-pay-card .bt-asset-head .bt-col-head:first-child { display: none; }
     /* шапка карточки: пилюля «с даты» под заголовок, а не поверх него */
     #btResults .bt-pay-card .bt-assets-header {
         flex-direction: column;
@@ -837,6 +936,41 @@ body.dark-mode #btResults .bt-pay-miss { color: #d9a94e; border-top-color: rgba(
     #btResults .bt-pay-card .bt-asset-pnl { font-size: 11.5px; }
     #btResults .bt-pay-card .bt-pay-miss { padding: 10px 16px 14px; }
 }
+
+/* ── Бейдж «не торговалась» у бумаг без цены на дату теста ── */
+#btResults .bt-nt-badge {
+    display: inline-block;
+    margin-left: 7px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-family: 'Inter', sans-serif;
+    font-size: 10px; font-weight: 700; font-style: normal;
+    background: rgba(245, 158, 11, 0.12);
+    color: #b45309;
+    vertical-align: 2px;
+    white-space: nowrap;
+}
+body.dark-mode #btResults .bt-nt-badge { background: rgba(245, 158, 11, 0.16); color: #f0b357; }
+
+/* ── Чипы быстрых периодов под полем даты ── */
+.bt-date-presets { display: flex; gap: 6px; margin-top: 9px; }
+.bt-preset {
+    flex: 1;
+    padding: 7px 4px;
+    border: 1px solid rgba(44, 54, 76, 0.16);
+    border-radius: 9px;
+    background: transparent;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px; font-weight: 700;
+    color: #5f6d80;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.bt-preset:hover { border-color: #9aa8bc; color: #111927; }
+.bt-preset.active { background: #111927; border-color: #111927; color: #ffffff; }
+body.dark-mode .bt-preset { border-color: rgba(255, 255, 255, 0.16); color: #9aa8bc; }
+body.dark-mode .bt-preset:hover { border-color: rgba(255, 255, 255, 0.34); color: #f1f6fb; }
+body.dark-mode .bt-preset.active { background: rgba(255, 255, 255, 0.14); border-color: transparent; color: #ffffff; }
 
 /* ── Плашка «параметры изменились» над устаревшими результатами ── */
 .bt-stale-note {

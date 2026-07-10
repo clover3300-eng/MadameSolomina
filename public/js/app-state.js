@@ -75,12 +75,14 @@ function lsRestore() {
     if (state.btDate) {
         var btDateEl = document.getElementById('btDateInput');
         if (btDateEl) btDateEl.value = state.btDate;
+        if (typeof btSyncPresetChips === 'function') btSyncPresetChips();
     }
 
     // Тикеры бэктеста — нормализуем и подгружаем цены на дату теста заново
+    // (тип определяет btDetectType: SU/RU000 → облигация, задел под корпоративные)
     if (state.btTickers && state.btTickers.length > 0 && btState) {
         btState.tickers = state.btTickers.map(function(t) {
-            return { t: t.t, type: t.type || (String(t.t).startsWith('SU') ? 'bond' : 'stock'), price: 0, qty: 0, status: 'loading' };
+            return { t: t.t, type: t.type || btDetectType(t.t), price: 0, qty: 0, status: 'loading' };
         });
         btRenderTickerList();
         btState.tickers.forEach(function(t) { btFetchTickerPrice(t); });

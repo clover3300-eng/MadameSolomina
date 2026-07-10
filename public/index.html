@@ -28,7 +28,7 @@
     <link rel="stylesheet" href="css/webapp-layout.css?v=3">
     <link id="siteLayoutCSS" rel="stylesheet" href="css/site-layout.css?v=46">
     <link rel="stylesheet" href="css/components.css">
-    <link rel="stylesheet" href="css/backtest.css?v=5">
+    <link rel="stylesheet" href="css/backtest.css?v=6">
     <link rel="stylesheet" href="css/rebalance-r4.css?v=8">
     <link rel="stylesheet" href="css/dashboard-panel.css?v=4">
     <link rel="stylesheet" href="css/portfolios.css?v=66">
@@ -504,12 +504,13 @@
         <div id="panel-backtest" class="tab-panel">
           <div class="bt2-wrap">
 
+            <!-- Герой результатов (rbx-стиль, на всю ширину; появляется после запуска,
+                 рендерится из js/backtest.js → btRenderHero) -->
+            <div id="btHero" class="btx-hero" style="display:none;"></div>
+
             <!-- Stepper card (страничного заголовка нет — раздел читается по крошке
                  в шапке сайта, как на «Ежемесячном доходе»; шапка внутри карточки) -->
             <div id="btConfigCol" class="bt2-card">
-
-            <!-- Шапка с финальными данными теста (появляется после запуска) -->
-            <div id="btResultSummary" class="bt-res-summary" style="display:none;"></div>
 
             <span class="bt2-wm">%</span>
             <div class="bt2-card-head">
@@ -528,6 +529,12 @@
                     <div class="bt-date-field">
                         <input type="date" id="btDateInput" class="bt-date-input" onchange="onBtDateChange()">
                         <svg class="bt-date-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    </div>
+                    <!-- Быстрые периоды: N лет назад от сегодня -->
+                    <div class="bt-date-presets">
+                        <button type="button" class="bt-preset" data-years="1" onclick="btSetPreset(1)">1 год</button>
+                        <button type="button" class="bt-preset" data-years="3" onclick="btSetPreset(3)">3 года</button>
+                        <button type="button" class="bt-preset" data-years="5" onclick="btSetPreset(5)">5 лет</button>
                     </div>
                 </div>
             </div>
@@ -2200,8 +2207,8 @@
 <script src="js/webapp-tabs.js?v=29" defer></script>
 <script src="js/top-search.js?v=1" defer></script>
 <script src="js/income-chart.js?v=1" defer></script>
-<script src="js/backtest.js?v=2" defer></script>
-<script src="js/app-state.js?v=6" defer></script>
+<script src="js/backtest.js?v=3" defer></script>
+<script src="js/app-state.js?v=7" defer></script>
 <script src="js/calc-r5.js?v=7" defer></script>
 <script src="js/calc-mode.js?v=7" defer></script>
 <script src="js/dashboard.js?v=6" defer></script>
