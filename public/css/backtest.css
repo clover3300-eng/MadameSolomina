@@ -952,6 +952,22 @@ body.dark-mode #btResults .bt-pay-miss { color: #d9a94e; border-top-color: rgba(
 }
 body.dark-mode #btResults .bt-nt-badge { background: rgba(245, 158, 11, 0.16); color: #f0b357; }
 
+/* ── Бейдж «сплит 1:100» у акций со сплитом внутри окна теста ── */
+#btResults .bt-split-badge {
+    display: inline-block;
+    margin-left: 7px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-family: 'Inter', sans-serif;
+    font-size: 10px; font-weight: 700; font-style: normal;
+    background: rgba(59, 130, 246, 0.10);
+    color: #1d4ed8;
+    vertical-align: 2px;
+    white-space: nowrap;
+    cursor: help;
+}
+body.dark-mode #btResults .bt-split-badge { background: rgba(96, 165, 250, 0.16); color: #7fb3f7; }
+
 /* ── Чипы быстрых периодов под полем даты ── */
 .bt-date-presets { display: flex; gap: 6px; margin-top: 9px; }
 .bt-preset {

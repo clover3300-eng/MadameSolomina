@@ -468,7 +468,7 @@ async function btFetchPrices(dateStr, assets) {
 async function btGetBondPrice(ticker, dateStr) {
     var fromDate = new Date(dateStr);
     fromDate.setDate(fromDate.getDate() - 7);
-    var from = fromDate.toISOString().split('T')[0];
+    var from = btLocalISO(fromDate);
 
     var url = MOEX_PROXY + '?path=' + encodeURIComponent(
         '/iss/history/engines/stock/markets/bonds/securities/' + ticker +
@@ -495,7 +495,7 @@ async function btGetBondPrice(ticker, dateStr) {
 async function btGetBondNkd(ticker, dateStr) {
     var fromDate = new Date(dateStr);
     fromDate.setDate(fromDate.getDate() - 7);
-    var from = fromDate.toISOString().split('T')[0];
+    var from = btLocalISO(fromDate);
 
     var url = MOEX_PROXY + '?path=' + encodeURIComponent(
         '/iss/history/engines/stock/markets/bonds/securities/' + ticker +
@@ -524,7 +524,7 @@ async function btGetBondNkdSafe(ticker, dateStr) {
 async function btGetStockPrice(ticker, dateStr) {
     var fromDate = new Date(dateStr);
     fromDate.setDate(fromDate.getDate() - 7);
-    var from = fromDate.toISOString().split('T')[0];
+    var from = btLocalISO(fromDate);
 
     var url = MOEX_PROXY + '?path=' + encodeURIComponent(
         '/iss/history/engines/stock/markets/shares/securities/' + ticker +
@@ -553,9 +553,14 @@ async function btFetchDividends(ticker) {
     if (!blk || !blk.data) return [];
     var cols = blk.columns;
     var dIdx = cols.indexOf('registryclosedate'), vIdx = cols.indexOf('value');
+    var cIdx = cols.indexOf('currencyid');
     var out = [];
     blk.data.forEach(function(r) {
         var d = r[dIdx], v = r[vIdx];
+        // валютные дивиденды (исторические USD-выплаты Polymetal, QIWI и т.п.)
+        // не суммируем как рубли — курса на дату у нас нет
+        var cur = cIdx >= 0 ? r[cIdx] : null;
+        if (cur && cur !== 'RUB' && cur !== 'SUR') return;
         if (d && v > 0) out.push({ d: d, v: +v });
     });
     return out;
@@ -589,6 +594,45 @@ async function btFetchCoupons(ticker) {
     return out;
 }
 
+// Амортизации облигации (тот же bondization): возврат номинала — частями
+// (ОФЗ-АД, корпоративные) или целиком при погашении (data_source='maturity').
+// Это возврат ТЕЛА, а не купон: идёт в стоимость/P&L, а не в «Выплаты».
+async function btFetchAmortizations(ticker) {
+    var out = [], start = 0;
+    for (var page = 0; page < 12; page++) {
+        var url = MOEX_PROXY + '?path=' + encodeURIComponent(
+            '/iss/statistics/engines/stock/markets/bonds/bondization/' + ticker +
+            '.json?iss.meta=off&iss.only=amortizations&limit=100&start=' + start);
+        var res = await fetch(url);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        var data = await res.json();
+        var blk = data.amortizations;
+        if (!blk || !blk.data || !blk.data.length) break;
+        var cols = blk.columns;
+        var dIdx = cols.indexOf('amortdate');
+        var vrIdx = cols.indexOf('value_rub'), vIdx = cols.indexOf('value');
+        var sIdx = cols.indexOf('data_source');
+        blk.data.forEach(function(r) {
+            var d = r[dIdx];
+            var v = (vrIdx >= 0 && r[vrIdx] != null) ? +r[vrIdx] : (vIdx >= 0 && r[vIdx] != null ? +r[vIdx] : 0);
+            if (d && v > 0) out.push({ d: d, v: v, fin: sIdx >= 0 && r[sIdx] === 'maturity' });
+        });
+        if (blk.data.length < 100) break;
+        start += blk.data.length;
+    }
+    return out;
+}
+
+// null = не удалось загрузить, [] = амортизаций за период не было
+async function btFetchAmortsSafe(ticker, fromStr, tillStr) {
+    try {
+        return btFilterPayments(await btFetchAmortizations(ticker), fromStr, tillStr);
+    } catch(e) {
+        console.warn('[BT] Amortizations fetch failed for ' + ticker + ':', e.message);
+        return null;
+    }
+}
+
 // Выплаты внутри окна теста: строго ПОСЛЕ даты покупки (отсечка/купон в день
 // покупки достаются прежнему владельцу) и по сегодня включительно
 function btFilterPayments(list, fromStr, tillStr) {
@@ -605,6 +649,63 @@ async function btFetchPaymentsSafe(ticker, isBond, fromStr, tillStr) {
         console.warn('[BT] Payments fetch failed for ' + ticker + ':', e.message);
         return null;
     }
+}
+
+// --- Сплиты акций ---
+// Сплит внутри окна теста ломает «лобовое» сравнение цен: Транснефть 1→100
+// (фев 2024) без поправки даёт −99%, обратный сплит ВТБ 5000→1 (июл 2024) —
+// +400 000%. Справочник сплитов MOEX ISS отдаёт ВСЕ сплиты одним запросом:
+// tradedate, secid, before, after (before старых акций → after новых).
+
+// Кэш-промис на страницу: параллельные loadOne делят один запрос
+var _btSplitsPromise = null;
+function btFetchAllSplits() {
+    if (!_btSplitsPromise) {
+        _btSplitsPromise = (async function() {
+            var url = MOEX_PROXY + '?path=' + encodeURIComponent(
+                '/iss/statistics/engines/stock/splits.json?iss.meta=off');
+            var res = await fetch(url);
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            var data = await res.json();
+            var blk = data.splits;
+            if (!blk || !blk.data) return [];
+            var cols = blk.columns;
+            var dIdx = cols.indexOf('tradedate'), tIdx = cols.indexOf('secid');
+            var bIdx = cols.indexOf('before'), aIdx = cols.indexOf('after');
+            return blk.data.map(function(r) {
+                return { d: r[dIdx], t: r[tIdx], before: +r[bIdx], after: +r[aIdx] };
+            }).filter(function(s) { return s.d && s.t && s.before > 0 && s.after > 0; });
+        })().catch(function(e) {
+            console.warn('[BT] Splits fetch failed:', e && e.message);
+            _btSplitsPromise = null;   // не кэшируем ошибку — следующий прогон попробует снова
+            return null;               // null = неизвестно (без поправки, как раньше)
+        });
+    }
+    return _btSplitsPromise;
+}
+
+// Сплиты бумаги строго ПОСЛЕ даты покупки (цена на дату покупки уже в «своих»
+// единицах) и по сегодня. f = after/before: множитель количества.
+function btSplitsFor(all, ticker, fromStr, tillStr) {
+    if (!all) return [];
+    return all.filter(function(s) { return s.t === ticker && s.d > fromStr && s.d <= tillStr; })
+        .map(function(s) { return { d: s.d, before: s.before, after: s.after, f: s.after / s.before }; })
+        .sort(function(a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; });
+}
+
+// Количество бумаг на дату d: стартовое qty × произведение прошедших к d сплитов.
+// Выплата «на 1 шт.» объявляется в акциях СВОЕГО времени — умножать надо именно
+// на количество в тот день (PLZL: 1301.75 ₽ до сплита 1:10, 73 ₽ после).
+function btQtyAtDate(a, d) {
+    var q = a.qty;
+    if (a.splits) a.splits.forEach(function(s) { if (s.d <= d) q *= s.f; });
+    return q;
+}
+
+// Человекочитаемое количество: целые — как есть, дробные (обратный сплит) — до 2 знаков
+function btQtyStr(q) {
+    if (q === Math.round(q)) return String(q);
+    return String(parseFloat(q.toFixed(2)));
 }
 
 // --- Бенчмарки сравнения ---
@@ -641,7 +742,7 @@ function btApplyPayoutsToSeries(series, results) {
     var events = [];
     results.bonds.concat(results.stocks).forEach(function(a) {
         if (!a.payments || !(a.qty > 0)) return;
-        a.payments.forEach(function(p) { events.push({ d: p.d, amt: p.v * a.qty }); });
+        a.payments.forEach(function(p) { events.push({ d: p.d, amt: p.v * btQtyAtDate(a, p.d) }); });
     });
     if (!events.length) return series;
     events.sort(function(x, y) { return x.d < y.d ? -1 : x.d > y.d ? 1 : 0; });
@@ -882,8 +983,10 @@ async function btBuildPortfolioSeries(results, fromStr, tillStr) {
     // базовую дату ВСЕГО графика (baseDate = максимум из стартов «жёстких» активов).
     // mult=10 — задел: для корп. облигаций с номиналом ≠1000 линию графика при их
     // появлении надо будет строить от FACEVALUE (см. btGetBondPrice).
-    results.bonds.forEach(function(b) { if (b.qty > 0 || (b.lots && b.lots.length)) assets.push({ t: b.t, qty: b.qty, lots: b.lots, market: 'bonds', mult: 10 }); });
-    results.stocks.forEach(function(s) { if (s.qty > 0 || (s.lots && s.lots.length)) assets.push({ t: s.t, qty: s.qty, lots: s.lots, market: 'shares', mult: 1 }); });
+    // splits/splitK приходят из строк результатов «Теста»; вызовы из portfolios.js
+    // их не передают — там поведение прежнее (поправка = 1).
+    results.bonds.forEach(function(b) { if (b.qty > 0 || (b.lots && b.lots.length)) assets.push({ t: b.t, qty: b.qty, lots: b.lots, market: 'bonds', mult: 10, splits: b.splits, splitK: b.splitK }); });
+    results.stocks.forEach(function(s) { if (s.qty > 0 || (s.lots && s.lots.length)) assets.push({ t: s.t, qty: s.qty, lots: s.lots, market: 'shares', mult: 1, splits: s.splits, splitK: s.splitK }); });
     var maps = [], hardDates = [], softDates = [];
     // Историю всех бумаг тянем параллельно — последовательная загрузка на большом
     // портфеле держала график сравнения десятки секунд
@@ -895,6 +998,17 @@ async function btBuildPortfolioSeries(results, fromStr, tillStr) {
         var a = assets[i];
         var ser = serList[i];
         if (!ser.length) continue;
+        // Приведение цен к сегодняшним акциям: цену дня d делим на произведение
+        // сплит-множителей БУДУЩИХ относительно d сплитов. Серия становится
+        // непрерывной (без этого 100×-обвал в день сплита застревал в фильтре
+        // аномалий ниже и цена «замерзала» досплитовой до конца графика).
+        var spl = (a.splits && a.splits.length) ? a.splits : null;
+        var unitAdj = function(d) {
+            if (!spl) return 1;
+            var m = 1;
+            for (var si = 0; si < spl.length; si++) if (spl[si].d > d) m *= spl[si].f;
+            return m;
+        };
         // фильтр аномалий: одиночная «битая» котировка от MOEX ISS (сбойный CLOSE, задвоенный
         // борд и т.п.) иначе через forward-fill портит ВСЮ доходность до конца графика — цена
         // навсегда «залипает» на неверном уровне. Облигации внутридневно почти не двигаются
@@ -903,7 +1017,7 @@ async function btBuildPortfolioSeries(results, fromStr, tillStr) {
         var map = {}, dates = [], prevGood = null;
         var lo = a.market === 'bonds' ? 0.5 : 0.1, hi = a.market === 'bonds' ? 2 : 10;
         ser.forEach(function(p) {
-            var c = p.c * a.mult;
+            var c = p.c * a.mult / unitAdj(p.d);
             if (prevGood != null && prevGood > 0) {
                 var ratio = c / prevGood;
                 if (ratio < lo || ratio > hi) return;
@@ -912,7 +1026,8 @@ async function btBuildPortfolioSeries(results, fromStr, tillStr) {
         });
         dates.sort();
         var lots = (a.lots && a.lots.length) ? a.lots.slice().sort(function (x, y) { return x.buyDate < y.buyDate ? -1 : x.buyDate > y.buyDate ? 1 : 0; }) : null;
-        maps.push({ dates: dates, map: map, qty: a.qty, lots: lots });
+        // qty — в сегодняшних акциях (цены выше уже приведены к ним же)
+        maps.push({ dates: dates, map: map, qty: a.qty * (a.splitK || 1), lots: lots });
         if (lots) softDates.push(dates[0]); else hardDates.push(dates[0]);
     }
     if (!maps.length) return [];
@@ -1125,15 +1240,20 @@ function btComputeTotals(results) {
     var tb = 0, tt = 0, pay = 0, anyKnown = false;
     results.bonds.concat(results.stocks).forEach(function(a) {
         if (a.payments) anyKnown = true;
-        a.payTotal = (a.payments || []).reduce(function(s, p) { return s + p.v; }, 0) * a.qty;
+        // выплата «на 1 шт.» × количество НА ДАТУ выплаты (см. btQtyAtDate: сплиты)
+        a.payTotal = (a.payments || []).reduce(function(s, p) { return s + p.v * btQtyAtDate(a, p.d); }, 0);
+        // возврат номинала (амортизации/погашение) — это тело, а не купон:
+        // прибавляем к стоимости «сейчас» в ОБОИХ режимах P&L
+        a.amortTotal = (a.amorts || []).reduce(function(s, p) { return s + p.v * btQtyAtDate(a, p.d); }, 0);
+        var effNow = a.testTotal + a.amortTotal;
         pay += a.payTotal;
         tb += a.buyTotal;
-        tt += a.testTotal;
-        var ok = a.buyTotal > 0 && a.testTotal > 0;
-        a.pnl = ok ? a.testTotal - a.buyTotal : null;
-        a.pnlPct = ok ? ((a.testTotal - a.buyTotal) / a.buyTotal * 100).toFixed(1) : null;
-        a.pnlFull = ok ? a.testTotal + a.payTotal - a.buyTotal : null;
-        a.pnlPctFull = ok ? ((a.testTotal + a.payTotal - a.buyTotal) / a.buyTotal * 100).toFixed(1) : null;
+        tt += effNow;
+        var ok = a.buyTotal > 0 && effNow > 0;
+        a.pnl = ok ? effNow - a.buyTotal : null;
+        a.pnlPct = ok ? ((effNow - a.buyTotal) / a.buyTotal * 100).toFixed(1) : null;
+        a.pnlFull = ok ? effNow + a.payTotal - a.buyTotal : null;
+        a.pnlPctFull = ok ? ((effNow + a.payTotal - a.buyTotal) / a.buyTotal * 100).toFixed(1) : null;
     });
     results.totalBuyPrice = tb;
     results.totalTestPrice = tt;
@@ -1154,15 +1274,17 @@ function btRebuyAtBudget(results, budget) {
     if (!budget || budget <= 0) return;
     var all = results.bonds.concat(results.stocks);
     var vNow = 0;
-    all.forEach(function(a) { if (a.testPrice > 0) vNow += a.testPrice * a.qty; });
+    // testPrice — в сегодняшних акциях, qty — в купленных на дату теста: сплит-коэффициент
+    all.forEach(function(a) { if (a.testPrice > 0) vNow += a.testPrice * a.qty * (a.splitK || 1); });
     if (vNow <= 0) return;
     all.forEach(function(a) {
-        var w = (a.testPrice > 0 ? a.testPrice * a.qty : 0) / vNow;   // текущий вес
+        var k = a.splitK || 1;
+        var w = (a.testPrice > 0 ? a.testPrice * a.qty * k : 0) / vNow;   // текущий вес
         var alloc = budget * w;
         var q = a.buyPrice > 0 ? Math.floor(alloc / a.buyPrice) : 0;
         a.qty = q;
         a.buyTotal = a.buyPrice > 0 ? a.buyPrice * q : 0;
-        a.testTotal = a.testPrice > 0 ? a.testPrice * q : 0;
+        a.testTotal = a.testPrice > 0 ? a.testPrice * q * k : 0;
     });
     btComputeTotals(results);
 }
@@ -1300,11 +1422,25 @@ function btRenderAssetTables(results, dateStr) {
             var ntBadge = b.error
                 ? '<i class="bt-nt-badge" title="Нет цены на дату теста — бумага не участвует в расчёте">не торговалась</i>'
                 : '';
+            // Облигация погашена внутри окна: номинал вернулся деньгами и уже в P&L
+            if (b.redeemed) {
+                ntBadge += '<i class="bt-nt-badge" title="Облигация погашена за период теста: номинал возвращён деньгами и учтён в P&L вместе с купонами">погашена</i>';
+            }
+            // Сплит за период: «покупка» — в старых акциях, «сейчас» — в новых,
+            // количество показываем как «купили → стало»
+            var qtyStr = b.qty + ' шт.';
+            if (b.splits) {
+                var sp0 = b.splits[0];
+                ntBadge += '<i class="bt-split-badge" title="' + b.splits.map(function(s) {
+                    return 'Сплит ' + btFormatDateDots(s.d) + ': ' + s.before + ' → ' + s.after;
+                }).join('; ') + '. Количество и цена «сейчас» — в новых акциях.">сплит ' + sp0.before + ':' + sp0.after + '</i>';
+                qtyStr = b.qty + ' → ' + btQtyStr(b.qty * b.splitK) + ' шт.';
+            }
             t += '<div class="bt-asset-row">';
             t += '<span class="bt-asset-rank">#' + (k + 1) + '</span>';
             t += '<div class="bt-asset-nameblock"><div class="bt-asset-name">' + (b.n || b.t) + ntBadge + '</div>';
             // в ручном режиме имя = тикер — не дублируем его в подстроке
-            t += '<div class="bt-asset-ticker">' + ((b.n && b.n !== b.t) ? b.t + ' · ' : '') + b.qty + ' шт.</div></div>';
+            t += '<div class="bt-asset-ticker">' + ((b.n && b.n !== b.t) ? b.t + ' · ' : '') + qtyStr + '</div></div>';
             t += '<div class="bt-asset-buy-price">' + buyStr + '</div>';
             t += '<div class="bt-asset-price">' + priceStr + '</div>';
             t += '<div class="bt-asset-pnl ' + rowPnlClass + '">' + pnlStr + '</div>';
@@ -1364,19 +1500,24 @@ function btRenderPayTables(results, dateStr) {
         groups.forEach(function(a) {
             var key = kind + '_' + a.t;
             var open = !!_btPayOpen[key];
-            var perUnit = a.payments.reduce(function(s, p) { return s + p.v; }, 0);
+            // «на 1 шт. за период»: при сплите выплаты объявлены на акции РАЗНОГО
+            // масштаба — складывать их бессмысленно, показываем прочерк с пояснением
+            var perUnitStr = a.splits
+                ? '<span title="Был сплит: выплаты на акцию до и после — в разном масштабе, сумма на 1 шт. не определена">—</span>'
+                : btPriceStr(a.payments.reduce(function(s, p) { return s + p.v; }, 0));
+            var qtyStr = a.splits ? (a.qty + ' → ' + btQtyStr(a.qty * a.splitK) + ' шт.') : (a.qty + ' шт.');
             // Свёрнутая строка бумаги
             t += '<div class="bt-asset-row bt-pay-group' + (open ? ' open' : '') + '" id="btPayR_' + key + '" onclick="btTogglePayGroup(\'' + key + '\')" role="button" aria-expanded="' + open + '">';
             t += '<span class="bt-asset-rank"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>';
             t += '<div class="bt-asset-nameblock"><div class="bt-asset-name">' + (a.n || a.t) + '</div>';
             // количество — вперёд (на узком экране подстрока режется справа);
             // в ручном режиме имя = тикер, второй раз его не пишем
-            t += '<div class="bt-asset-ticker">' + a.qty + ' шт.' + ((a.n && a.n !== a.t) ? ' · ' + a.t : '') + '</div></div>';
+            t += '<div class="bt-asset-ticker">' + qtyStr + ((a.n && a.n !== a.t) ? ' · ' + a.t : '') + '</div></div>';
             t += '<div class="bt-asset-buy-price">' + a.payments.length + ' выпл.</div>';
-            t += '<div class="bt-asset-price">' + btPriceStr(perUnit) + '</div>';
+            t += '<div class="bt-asset-price">' + perUnitStr + '</div>';
             t += '<div class="bt-asset-pnl pos">+' + btFmtRub(a.payTotal || 0) + '</div>';
             t += '</div>';
-            // Раскрытая хронология
+            // Раскрытая хронология: сумма = выплата × количество НА ДАТУ выплаты
             t += '<div class="bt-pay-body" id="btPayG_' + key + '" style="display:' + (open ? 'block' : 'none') + ';">';
             a.payments.forEach(function(p) {
                 t += '<div class="bt-asset-row bt-pay-sub">';
@@ -1384,7 +1525,7 @@ function btRenderPayTables(results, dateStr) {
                 t += '<div class="bt-asset-nameblock"></div>';
                 t += '<div class="bt-asset-buy-price">' + btFormatDateDots(p.d) + '</div>';
                 t += '<div class="bt-asset-price">' + btPriceStr(p.v) + '</div>';
-                t += '<div class="bt-asset-pnl pos">+' + btFmtRub(p.v * a.qty) + '</div>';
+                t += '<div class="bt-asset-pnl pos">+' + btFmtRub(p.v * btQtyAtDate(a, p.d)) + '</div>';
                 t += '</div>';
             });
             t += '</div>';
@@ -1491,22 +1632,40 @@ btFetchPrices = async function(dateStr, assets) {
         return Promise.all([
             getPrice(asset.t, dateStr),
             getPrice(asset.t, todayStr),
-            btFetchPaymentsSafe(asset.t, isBond, dateStr, todayStr)
+            btFetchPaymentsSafe(asset.t, isBond, dateStr, todayStr),
+            btFetchAllSplits(),
+            isBond ? btFetchAmortsSafe(asset.t, dateStr, todayStr) : Promise.resolve([])
         ]).then(function (trio) {
                 var histPrice = trio[0], nowPrice = trio[1];
                 done++;
                 if (histPrice === -1) { failed++; histPrice = 0; }
                 // Цена «сейчас» — живое закрытие с MOEX (тот же источник, что и конец
                 // графика сравнения), цена из расчёта (asset.p) — запасной вариант.
+                var rawNow = nowPrice;
                 if (nowPrice <= 0) nowPrice = asset.p > 0 ? asset.p : 0;
+                // Сплиты в окне теста: цена покупки — в старых акциях, цена «сейчас» —
+                // в новых. Текущее количество = qty × splitK (qty остаётся стартовым).
+                // Крайний случай: тест в день сплита при приостановленных торгах
+                // (последняя цена — досплитовая) не ловим — сравниваем с датой теста.
+                var spl = btSplitsFor(trio[3], asset.t, dateStr, todayStr);
+                var splitK = spl.reduce(function(m, s) { return m * s.f; }, 1);
+                // Погашение внутри окна: бумаги больше нет (цены «сейчас» нет), но
+                // номинал вернулся ДЕНЬГАМИ — учтётся через amorts в btComputeTotals.
+                // Без этого погашенная облигация выглядела как убыток в −100% цены.
+                var amorts = trio[4];
+                var redeemed = isBond && histPrice > 0 && rawNow <= 0
+                    && !!(amorts && amorts.some(function(p) { return p.fin; }));
                 var buyTotal = histPrice > 0 ? histPrice * asset.qty : 0;
-                var nowTotal = nowPrice > 0 ? nowPrice * asset.qty : 0;
+                var nowTotal = nowPrice > 0 ? nowPrice * asset.qty * splitK : 0;
                 updateProgress();
                 return {
                     t: asset.t, n: asset.n, qty: asset.qty,
                     buyPrice: histPrice, testPrice: nowPrice,
                     buyTotal: buyTotal, testTotal: nowTotal,
+                    splits: spl.length ? spl : null, splitK: splitK,
                     payments: trio[2],   // [{d,v на 1 шт.}] за период, null = не загрузились
+                    amorts: amorts,      // возвраты номинала за период (fin = погашение)
+                    redeemed: redeemed,
                     error: histPrice === 0
                 };
             });
