@@ -1566,6 +1566,8 @@
         }
         return null;
     };
+    // весь список компаний таблицы (тикер+имя) — для автокомплита тикеров в «Портфелях»
+    window.stkAllCompanies = function () { return state.companies || []; };
     window.stkToggleFav = function (ticker) {
         toggleFav(ticker);
         return state.favorites.indexOf(ticker) !== -1;

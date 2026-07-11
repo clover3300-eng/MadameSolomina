@@ -14,13 +14,20 @@
 
     var STORE_KEY = 'portfolios_v1';
     var CARDVIEW_KEY = 'pf_cardview_v1';
-    var MAX_CARDS = 4;
+    var SNAP_KEY = 'pf_snapshots_v1';   // дневные снимки стоимости портфелей (локальный кэш, в облако не зеркалится)
+    var MAX_CARDS = 8;   // лимит СОЗДАНИЯ (по числу цветов палитры); сетка рендерит все видимые
     var ISS = 'https://iss.moex.com/iss/';
-    var SHARES_URL = ISS + 'engines/stock/markets/shares/boards/TQBR/securities.json' +
-        '?iss.meta=off&iss.only=marketdata&marketdata.columns=SECID,LAST,LASTTOPREVPRICE';
-    // батч-котировки облигаций: один запрос по всему рынку bonds (LAST в % номинала → ×10 = ₽)
+    // котировки акций: ВСЕ доски рынка shares одним запросом (не только TQBR — иначе
+    // фонды/ETF с TQTF и бумаги с TQTD никогда не получали живой цены); лучшая строка
+    // на тикер выбирается по приоритету досок в fetchStockQuotes.
+    var SHARES_URL = ISS + 'engines/stock/markets/shares/securities.json' +
+        '?iss.meta=off&iss.only=marketdata&marketdata.columns=SECID,BOARDID,LAST,LASTTOPREVPRICE';
+    var STK_BOARDS = { TQBR: 3, TQTF: 2, TQTD: 1 };   // приоритет досок (прочие = 0)
+    // батч-котировки облигаций: один запрос по всему рынку bonds. LAST приходит в % от
+    // номинала — рубли = % × FACEVALUE/100, номиналы забираем из блока securities тем же
+    // запросом (у ОФЗ 1000 ₽, у корпоративных бывает другой).
     var BONDS_URL = ISS + 'engines/stock/markets/bonds/securities.json' +
-        '?iss.meta=off&iss.only=marketdata&marketdata.columns=SECID,LAST';
+        '?iss.meta=off&iss.only=marketdata,securities&marketdata.columns=SECID,LAST&securities.columns=SECID,FACEVALUE';
     var QUOTE_TTL = 60000;   // 60с — кэш котировок акций
     // тултип для цен облигаций: котировки MOEX — «чистые» (без НКД), НКД учитываем отдельной колонкой
     var BOND_PRICE_TIP = 'Чистая цена облигации — без НКД (НКД в отдельной колонке)';
@@ -79,6 +86,49 @@
     function loadCardView() { try { return localStorage.getItem(CARDVIEW_KEY) === 'normal' ? 'normal' : 'narrow'; } catch (e) { return 'narrow'; } }
     var cardViewMode = loadCardView();
 
+    // ---------- дневные снимки стоимости (pid -> { 'ГГГГ-ММ-ДД': ₽ }) ----------
+    // Пишутся при живых котировках (не чаще раза в 5 минут), хранят до 400 дней.
+    // Питают чип «▲ X ₽ сегодня» в шапке карточки: изменение к последнему снимку
+    // прошлых дней. Локальный кэш устройства — в облако не зеркалится.
+    var snaps = (function () { try { var o = JSON.parse(localStorage.getItem(SNAP_KEY)); if (o && typeof o === 'object') return o; } catch (e) {} return {}; })();
+    var snapSavedAt = 0;
+    function recordSnapshots() {
+        if (!quotesTs) return;   // без живых цен снимок был бы ценами покупки
+        if (Date.now() - snapSavedAt < 5 * 60000) return;
+        snapSavedAt = Date.now();
+        var today = todayStr(), changed = false;
+        store.items.forEach(function (p) {
+            var v = calcPf(p).value;
+            if (!(v > 0)) return;
+            var m = snaps[p.id] || (snaps[p.id] = {});
+            if (m[today] != null && Math.abs(m[today] - v) < 0.5) return;
+            m[today] = Math.round(v); changed = true;
+            var ks = Object.keys(m).sort();
+            while (ks.length > 400) { delete m[ks.shift()]; }
+        });
+        Object.keys(snaps).forEach(function (pid) { if (!findPf(pid)) { delete snaps[pid]; changed = true; } });
+        if (changed) try { localStorage.setItem(SNAP_KEY, JSON.stringify(snaps)); } catch (e) {}
+    }
+    // Изменение стоимости за сегодня: текущая стоимость − последний снимок прошлых дней
+    function dayDelta(p, curValue) {
+        var m = snaps[p.id]; if (!m) return null;
+        var today = todayStr(), best = null;
+        for (var d in m) if (d < today && (best == null || d > best)) best = d;
+        if (best == null || !(curValue > 0)) return null;
+        return curValue - m[best];
+    }
+    // Самое сильное дневное движение среди акций портфеля (LASTTOPREVPRICE из котировок)
+    function topMover(p) {
+        var best = null;
+        (p.holdings || []).forEach(function (h) {
+            if (h.type === 'bond' || !h.ticker) return;
+            var q = quotes[h.ticker]; if (!q || q.chgPct == null) return;
+            if (!(aggHolding(h).qty > 0)) return;
+            if (!best || Math.abs(q.chgPct) > Math.abs(best.chg)) best = { t: h.ticker, chg: q.chgPct };
+        });
+        return best;
+    }
+
     function findPf(id) { for (var i = 0; i < store.items.length; i++) if (store.items[i].id === id) return store.items[i]; return null; }
     // скрытые портфели (p.hidden) не показываются в сетке карточек, но продолжают
     // учитываться в суммарном капитале, сводке и календаре выплат — деньги не исчезают
@@ -90,7 +140,7 @@
         var used = {}; store.items.forEach(function (p) { used[p.color] = 1; });
         var col = COLORS[store.items.length % COLORS.length].id;
         for (var i = 0; i < COLORS.length; i++) if (!used[COLORS[i].id]) { col = COLORS[i].id; break; }
-        return { id: genId('pf'), name: name || ('Портфель ' + (store.items.length + 1)), color: col, createdAt: Date.now(), holdings: [] };
+        return { id: genId('pf'), name: name || ('Портфель ' + (store.items.length + 1)), color: col, createdAt: Date.now(), holdings: [], cash: 0 };
     }
 
     // ---------- котировки ----------
@@ -100,6 +150,16 @@
     var bondPending = {};
     var bondNkdNow = {};     // isin -> текущий НКД ₽ (ACCRUEDINT), null/undefined = ещё не загружен
     var bondNkdPending = {};
+    var bondFaceMap = {};    // SECID/ISIN -> номинал ₽ (FACEVALUE из батча/истории MOEX)
+    // Номинал облигации ₽: карта батча → кэш деталей (fetchBondData кладёт face) → 1000 (ОФЗ)
+    function bondFace(isin) {
+        if (bondFaceMap[isin] > 0) return bondFaceMap[isin];
+        var full = fullBondId(isin);
+        if (bondFaceMap[full] > 0) return bondFaceMap[full];
+        var ce = bondCacheEntry(isin);
+        if (ce && ce.face > 0) return ce.face;
+        return 1000;
+    }
 
     function collectTickers() {
         var s = {}, b = {};
@@ -124,10 +184,17 @@
     function fetchStockQuotes() {
         return fetchRetry(SHARES_URL, { cache: 'no-store' }, 3, 500).then(function (r) { return r.json(); }).then(function (j) {
             var md = j.marketdata; if (!md || !md.data) return;
-            var c = md.columns, si = c.indexOf('SECID'), li = c.indexOf('LAST'), pi = c.indexOf('LASTTOPREVPRICE');
+            var c = md.columns, si = c.indexOf('SECID'), li = c.indexOf('LAST'),
+                bi = c.indexOf('BOARDID'), pi = c.indexOf('LASTTOPREVPRICE');
+            // одна бумага приходит строками нескольких досок — держим лучшую по приоритету
+            var best = {};   // ticker -> приоритет доски принятой котировки
             md.data.forEach(function (row) {
                 var t = row[si], last = row[li];
-                if (t && last != null && last !== '') quotes[t] = { price: +last, chgPct: (pi >= 0 && row[pi] != null ? +row[pi] : null) };
+                if (!t || last == null || last === '') return;
+                var prio = STK_BOARDS[row[bi]] || 0;
+                if (best[t] != null && prio <= best[t]) return;
+                best[t] = prio;
+                quotes[t] = { price: +last, chgPct: (pi >= 0 && row[pi] != null ? +row[pi] : null) };
             });
             quotesTs = Date.now();
         });
@@ -155,13 +222,24 @@
     function fetchBondQuotesBatch(isins) {
         return fetchRetry(BONDS_URL, { cache: 'no-store' }, 2, 500).then(function (r) { return r.json(); }).then(function (j) {
             var md = j.marketdata, found = {}; if (!md || !md.data) return found;
+            // номиналы из блока securities — кладём в bondFaceMap (нужны и здесь для
+            // пересчёта % → ₽, и экономике bondEconAt для суммы погашения)
+            var sec = j.securities;
+            if (sec && sec.data) {
+                var sc = sec.columns, ssi = sc.indexOf('SECID'), sfi = sc.indexOf('FACEVALUE');
+                if (ssi >= 0 && sfi >= 0) sec.data.forEach(function (row) {
+                    var t = row[ssi], f = +row[sfi];
+                    if (t && f > 0) bondFaceMap[t] = f;
+                });
+            }
             var c = md.columns, si = c.indexOf('SECID'), li = c.indexOf('LAST');
             // MOEX отдаёт цену под ПОЛНЫМ SECID; портфель просит короткий ISIN — сопоставляем по
             // полному (fullBondId), а результат кладём под исходным ключом, который читает карточка.
             var want = {}; isins.forEach(function (x) { want[fullBondId(x)] = x; });
             md.data.forEach(function (row) {
                 var t = row[si], last = row[li], key = want[t];
-                if (key && found[key] == null && last != null && last !== '' && +last > 0) found[key] = +last * 10;
+                if (key && found[key] == null && last != null && last !== '' && +last > 0)
+                    found[key] = +last * (bondFaceMap[t] > 0 ? bondFaceMap[t] : 1000) / 100;
             });
             return found;
         });
@@ -267,6 +345,24 @@
     }
     function curPriceOf(h) { return curPriceInfo(h).p; }
     function isLive(h) { return h.type === 'bond' ? (liveBond(h.ticker).price > 0) : !!quotes[h.ticker]; }
+    // Котировки уже загружены, а этой бумаги в них нет → тикер, скорее всего, неверный
+    // (или бумага не торгуется). Раньше строка вечно висела в «…» с подсказкой «ждём MOEX» —
+    // не отличить опечатку от медленной сети. true = «не ждите, котировки не будет».
+    function quoteMissing(h) {
+        if (h.type === 'bond') return bondQuotes[h.ticker] === 0;   // 0 = запросили и не нашли
+        if (!quotesTs || quotesLoading || quotes[h.ticker]) return false;
+        if (typeof window.stkFindCompany === 'function') {
+            var co = window.stkFindCompany(h.ticker);
+            if (co && co.main && toNum(co.main['Текущая Цена']) > 0) return false;   // есть цена из таблицы
+        }
+        return true;
+    }
+    // Ячейка «Сейчас», когда живой цены нет: либо ещё грузится («…»), либо тикер не найден («—»)
+    function noQuoteCell(h) {
+        return quoteMissing(h)
+            ? { txt: '—', tip: 'Котировка не найдена на MOEX — проверьте тикер' }
+            : { txt: '…', tip: 'Ждём котировку MOEX…' };
+    }
 
     // Разовый запрос цены для кнопки «по API»
     function lookupPrice(ticker, type, cb) {
@@ -688,6 +784,11 @@
                 '<div class="pfcv-stats">' +
                     pfcvStat('Вложено', fmtRub(c.invested), '') +
                     pfcvStat('Доход', fmtRub(c.pnl), pnlCls) +
+                    (function () {   // полученные купоны/дивиденды — в «Доход» и кривую не входят
+                        var po = pfPayouts(p);
+                        return (po.any && (po.pending || po.sum > 0.005))
+                            ? pfcvStat('Выплаты получено', po.pending ? '…' : '+' + fmtRub(po.sum), po.pending ? '' : 'pos') : '';
+                    })() +
                     '<div class="pfcv-stat pfcv-stat--dyn"><span class="pfcv-stat-l">Динамика за период</span><span class="pfcv-stat-v" id="pfcvDyn-' + pid + '">—</span></div>' +
                 '</div>' +
                 '<button class="pfcv-assetbtn' + (asOn ? ' on' : '') + '" data-pid="' + pid + '" onclick="pfToggleChartAssets(\'' + pid + '\')" title="Показать состав портфеля">' +
@@ -730,6 +831,8 @@
             var nkdNow = isB ? curNkdOf(h.ticker) : null;   // текущий НКД (ACCRUEDINT)
             // «Изменение» = доход в % (cc.pnlPct) вместо годовых; для позиций без вложений (кол-во 0) — прочерк
             var hasInv = cc.invested > 0;
+            // нет живой цены: «…» пока грузится, «—» если тикер не нашёлся в котировках
+            var noQ = cc.curSrc === 'buy' ? noQuoteCell(h) : null;
             return '<tr>' +
                 '<td class="pfo-c-rk">#' + (i + 1) + '</td>' +
                 '<td class="pfo-tk pfo-c-as"><span class="pfo-tkline"><b>' + esc(h.ticker) + '</b></span><span class="pfo-nm">' + esc(h.name || '') + '</span></td>' +
@@ -739,11 +842,11 @@
                 '<td class="pfo-nkdcol' + (isB ? '' : ' muted') + '"' + (isB ? ' title="НКД на дату покупки (взвеш. по лотам)"' : '') + '>' + (isB ? fmtPrice(cc.nkd || 0) : '—') + '</td>' +
                 '<td>' + (cc.qty || 0) + '</td>' +
                 '<td>' + fmtRub(cc.invested) + '</td>' +
-                '<td class="' + (cc.live ? 'pfo-live' : '') + '"' + (cc.curSrc === 'buy' ? ' title="Ждём котировку MOEX…"' : ptip) + '>' + (cc.curSrc === 'buy' ? '…' : fmtPrice(cc.cur)) + '</td>' +
+                '<td class="' + (cc.live ? 'pfo-live' : '') + '"' + (noQ ? ' title="' + attr(noQ.tip) + '"' : ptip) + '>' + (noQ ? noQ.txt : fmtPrice(cc.cur)) + '</td>' +
                 '<td class="pfo-nkdcol' + (isB ? '' : ' muted') + '"' + (isB ? ' title="Текущий накопленный купонный доход — НКД сейчас (MOEX)"' : '') + '>' + (isB ? (nkdNow != null ? fmtPrice(nkdNow) : '—') : '—') + '</td>' +
                 '<td>' + fmtRub(cc.value) + '</td>' +
                 '<td class="' + (cc.pnl >= 0 ? 'pos' : 'neg') + '">' + fmtRub(cc.pnl) + '</td>' +
-                '<td class="' + (!hasInv ? '' : (cc.pnlPct >= 0 ? 'pos' : 'neg')) + '">' + (!hasInv ? '—' : fmtPct(cc.pnlPct)) + '</td>' +
+                '<td class="' + (!hasInv || noQ ? '' : (cc.pnlPct >= 0 ? 'pos' : 'neg')) + '">' + (!hasInv || noQ ? '—' : fmtPct(cc.pnlPct)) + '</td>' +
             '</tr>';
         }).join('');
     }
@@ -849,25 +952,28 @@
         fetchRetry(url, { cache: 'no-store' }, 2, 500).then(function (r) { return r.json(); }).then(function (j) {
             var h = j.history, best = null;
             if (h && h.data && h.data.length) {
-                var c = h.columns, bi = c.indexOf('BOARDID'), di = c.indexOf('TRADEDATE'), cl = c.indexOf('CLOSE'), ai = c.indexOf('ACCINT');
+                var c = h.columns, bi = c.indexOf('BOARDID'), di = c.indexOf('TRADEDATE'), cl = c.indexOf('CLOSE'),
+                    ai = c.indexOf('ACCINT'), fi = c.indexOf('FACEVALUE');
                 h.data.forEach(function (row) {
                     var close = cl >= 0 ? row[cl] : null;
                     if (close == null || !(+close > 0)) return;
                     var cand = { board: row[bi], date: row[di], close: +close,
-                        accint: (ai >= 0 && row[ai] != null && isFinite(row[ai])) ? +row[ai] : null };
+                        accint: (ai >= 0 && row[ai] != null && isFinite(row[ai])) ? +row[ai] : null,
+                        face: (fi >= 0 && +row[fi] > 0) ? +row[fi] : null };
                     if (!best) { best = cand; return; }
                     var bMain = !!MAIN[best.board], cMain = !!MAIN[cand.board];
                     if (cMain !== bMain) { if (cMain) best = cand; return; }
                     if (cand.date > best.date) best = cand;
                 });
             }
+            if (best && best.face > 0) bondFaceMap[secid] = best.face;   // попутно запоминаем номинал
             histCache[key] = best; cb(best);
         }).catch(function () { cb(null); });
     }
     function lookupHistPrice(ticker, type, dateStr, cb) {
         fetchHistRow(type, ticker, dateStr, function (row) {
-            // облигации: CLOSE в % номинала → ×10 = ₽ (номинал 1000)
-            if (row) { cb(type === 'bond' ? row.close * 10 : row.close); return; }
+            // облигации: CLOSE в % номинала → ₽ через FACEVALUE (у ОФЗ 1000 ₽, прежний ×10)
+            if (row) { cb(type === 'bond' ? row.close * ((row.face > 0 ? row.face : bondFace(ticker)) / 100) : row.close); return; }
             var fn = histPriceFn(type);   // фолбэк — механизм Тест-вкладки, затем живая котировка
             if (fn) {
                 Promise.resolve(fn(ticker, dateStr)).then(function (p) { p > 0 ? cb(p) : lookupPrice(ticker, type, cb); })
@@ -907,6 +1013,99 @@
         if (!s || s === '—') return null;
         var d = new Date(s + 'T00:00:00'); return isNaN(d.getTime()) ? null : d;
     }
+
+    // ============================================================
+    //  ВЫПЛАТЫ — настоящие расписания MOEX: купоны (bondization) и
+    //  дивиденды (dividends), через готовые загрузчики вкладки «Тест»
+    //  (btFetchCoupons/btFetchDividends). Питают строку «Выплаты» в
+    //  карточке (полученное с даты покупки) и «Календарь выплат»
+    //  (будущие события на год вперёд, точными датами).
+    // ============================================================
+    var coupSched = {};      // полный SECID -> [{d,v}] | null (загрузили: пусто/ошибка → фолбэк)
+    var coupPending = {};
+    var divSched = {};       // тикер -> [{d,v}] | null
+    var divPending = {};
+    var schedQueue = [], schedActive = 0;   // общая очередь, максимум 2 параллельных запроса
+    function pumpSchedQueue() {
+        while (schedActive < 2 && schedQueue.length) {
+            var job = schedQueue.shift(); schedActive++;
+            (function (job) {
+                var fnName = job.kind === 'bond' ? 'btFetchCoupons' : 'btFetchDividends';
+                var run = (typeof window[fnName] === 'function')
+                    ? Promise.resolve().then(function () { return window[fnName](job.key); })
+                    : Promise.reject(new Error('NO_FN'));
+                run.then(function (list) { (job.kind === 'bond' ? coupSched : divSched)[job.key] = (list && list.length) ? list : null; })
+                   .catch(function () { (job.kind === 'bond' ? coupSched : divSched)[job.key] = null; })
+                   .then(function () {
+                        schedActive--; delete (job.kind === 'bond' ? coupPending : divPending)[job.key];
+                        softRerender(); pumpSchedQueue();
+                   });
+            })(job);
+        }
+    }
+    function ensureSchedule(kind, key) {
+        var cache = kind === 'bond' ? coupSched : divSched, pend = kind === 'bond' ? coupPending : divPending;
+        if (!key || (key in cache) || pend[key]) return;
+        pend[key] = true; schedQueue.push({ kind: kind, key: key });
+        pumpSchedQueue();
+    }
+    // Количество бумаг актива, купленное К дате (строго до неё: купон в день покупки
+    // достаётся продавцу — покупатель компенсирует его через НКД). Лоты — журнал
+    // покупок; проданное в ребалансе уже вычтено из лотов задним числом, поэтому
+    // выплаты по проданным ранее бумагам этим приближением не учитываются.
+    function qtyAtDate(h, iso) {
+        var q = 0;
+        ensureLots(h).forEach(function (l) { if ((+l.qty > 0) && l.buyDate && l.buyDate < iso) q += +l.qty; });
+        return q;
+    }
+    // Полученные выплаты по активу за время владения, ₽. null = расписание ещё грузится.
+    // Облигации — купоны по расписанию MOEX (фолбэк — периодическая схема от погашения),
+    // дивиденды считаем по дате отсечки (фактическая выплата приходит на пару недель позже).
+    function holdPayouts(h) {
+        if (!h.ticker) return 0;
+        var today = todayStr();
+        if (h.type === 'bond') {
+            var full = fullBondId(h.ticker);
+            // короткий ISIN ещё не резолвится (таблица ОФЗ не загружена) — подождём
+            if (full === h.ticker && !/RMFS/.test(h.ticker) && !bondsReady()) return null;
+            if (!(full in coupSched)) { ensureSchedule('bond', full); return null; }
+            var sched = coupSched[full];
+            if (sched) {
+                var sum = 0;
+                sched.forEach(function (cp) { if (cp.d <= today) sum += cp.v * qtyAtDate(h, cp.d); });
+                return sum;
+            }
+            // расписание недоступно → приближение: шаг «выплат в год» от даты погашения назад
+            var det = bondDetail(h.ticker);
+            if (!det || !(+det.couponValue > 0) || !(+det.freq > 0)) return 0;
+            var mat = parseBondDate(det.matDate); if (!mat) return 0;
+            var stepMs = (365 / det.freq) * 86400000, t = mat.getTime(), sum2 = 0;
+            while (t > Date.now()) t -= stepMs;
+            for (var guard = 0; guard < 400 && t > 0; guard++, t -= stepMs) {
+                var q = qtyAtDate(h, dateToIso(new Date(t)));
+                if (!(q > 0)) break;   // ушли раньше первой покупки
+                sum2 += (+det.couponValue) * q;
+            }
+            return sum2;
+        }
+        if (!(h.ticker in divSched)) { ensureSchedule('div', h.ticker); return null; }
+        var ds = divSched[h.ticker]; if (!ds) return 0;
+        var sum3 = 0;
+        ds.forEach(function (dv) { if (dv.d <= today) sum3 += dv.v * qtyAtDate(h, dv.d); });
+        return sum3;
+    }
+    // Сумма полученных выплат по портфелю; pending — хоть одно расписание ещё грузится
+    function pfPayouts(p) {
+        var sum = 0, pending = false, any = false;
+        (p.holdings || []).forEach(function (h) {
+            if (!h.ticker || !(aggHolding(h).qty > 0)) return;
+            any = true;
+            var v = holdPayouts(h);
+            if (v == null) pending = true; else sum += v;
+        });
+        return { sum: sum, pending: pending, any: any };
+    }
+
     // ---- парсинг произвольной даты, вставленной в поле (Ctrl+V) ----
     // Нативный <input type="date"> не принимает вставку в формате «12-aug-2025» — обработчик
     // pfDatePaste перехватывает вставку, распознаёт распространённые форматы и подставляет ISO.
@@ -950,7 +1149,6 @@
     var colorsOpen = false;  // раскрыта ли палитра цвета в шапке настроек
     var delArm = false;      // раскрыта ли данжер-зона «Удалить портфель» в футере настроек
     var openRows = {};       // hid -> true: раскрыты ли субданные актива в мини-таблице карточки
-    var menuTall = false;    // раскрыта ли карточка настроек «вниз» (показать все тикеры без скролла)
     var menuJustOpened = false;
     var liveTimer = null;
     var rendering = false;   // защита от повторного входа (см. ниже)
@@ -1009,13 +1207,11 @@
             //    чётное — отдельной полноширинной карточкой под сеткой.
             var n = visibleItems().length;   // раскладка считает только ВИДИМЫЕ карточки
             var favStr = favHtml();
-            // Нигде (ни в одном ВИДИМОМ портфеле) нет ни одной облигации → «Календарь выплат»
-            // показывать не о чем (купонов нет и не будет): не рендерим его вовсе, а на его
-            // место — и в свободной ячейке сетки, и внизу колонки — встают компактные «Ставки
-            // рынка» (см. ratesStackHtml). Условие пересчитывается на КАЖДЫЙ рендер, поэтому
-            // само подхватывает любое изменение состава: добавили/удалили последнюю облигацию
-            // через настройки портфеля, добавили второй портфель и т.п. — не только «один
-            // портфель из акций», а любое число портфелей без единой облигации.
+            // Календарь выплат показывать не о чем (нет ни облигаций, ни акций с известными
+            // будущими дивидендами) → не рендерим его вовсе, а на его место — и в свободной
+            // ячейке сетки, и внизу колонки — встают компактные «Ставки рынка» (см.
+            // ratesStackHtml). Условие пересчитывается на КАЖДЫЙ рендер, поэтому само
+            // подхватывает любое изменение состава и приход расписаний дивидендов.
             var hasVisibleHoldings = store.items.some(function (p) { return !p.hidden && (p.holdings || []).length > 0; });
             var noBonds = hasVisibleHoldings && !calPfCandidates().length;
             // В узком виде (3 карточки в ряд) остаток от деления на 3 определяет, сколько
@@ -1047,7 +1243,18 @@
                     '<div class="pf-topgrid-left">' + left + '</div>' +
                     '<div class="pf-topgrid-fav">' + favStr + (store.items.length >= 2 ? summaryCardHtml() : '') + '</div>' +
                 '</div>';
+            // Позиции скролла внутренних списков (мини-таблица состава, календарь, избранное,
+            // настройки): innerHTML-своп сбрасывал их в ноль на каждом фоновом обновлении
+            // котировок — запоминаем по data-skey и возвращаем после пересборки.
+            var keepScroll = {};
+            Array.prototype.forEach.call(host.querySelectorAll('[data-skey]'), function (el) {
+                if (el.scrollTop) keepScroll[el.getAttribute('data-skey')] = el.scrollTop;
+            });
             host.innerHTML = body;
+            Array.prototype.forEach.call(host.querySelectorAll('[data-skey]'), function (el) {
+                var k = el.getAttribute('data-skey');
+                if (keepScroll[k]) el.scrollTop = keepScroll[k];
+            });
             renderTopBarActions();
             renderTopBarMarket();
             tickLive();
@@ -1068,6 +1275,7 @@
                 }
             }
             fitBigSums();   // крупные суммы (до 100 млрд ₽) — уменьшаем кегль, а не переносим/распираем
+            recordSnapshots();   // дневной снимок стоимости — для чипа «сегодня ±X ₽»
         } finally {
             rendering = false;
         }
@@ -1171,6 +1379,8 @@
     var IMPCALC_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2.5" width="16" height="19" rx="2.5"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="12" x2="8" y2="12.01"/><line x1="12" y1="12" x2="12" y2="12.01"/><line x1="16" y1="12" x2="16" y2="12.01"/><line x1="8" y1="16" x2="8" y2="16.01"/><line x1="12" y1="16" x2="12" y2="16.01"/><line x1="16" y1="16" x2="16" y2="16.01"/></svg>';
     var IMPFAV_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2.8 14.9 9 21.7 9.9 16.8 14.5 18 21.2 12 18 6 21.2 7.2 14.5 2.3 9.9 9.1 9"/></svg>';
     var IMPMON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/><circle cx="16.5" cy="15" r="1.4" fill="currentColor" stroke="none"/></svg>';
+    // «Из CSV-файла» — лист со строками (брокерский отчёт)
+    var IMPCSV_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2.5H6.5a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V8z"/><polyline points="14 2.5 14 8 19.5 8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="16" y2="16"/></svg>';
     // глаз / перечёркнутый глаз — управление видимостью карточек портфелей
     var EYE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
     var EYEOFF_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.4 10.4 0 0 1 12 19c-6.5 0-10-7-10-7a19.3 19.3 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.9 9.9 0 0 1 12 4c6.5 0 10 7 10 7a19.4 19.4 0 0 1-3.23 4.35"/><path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"/><line x1="2" y1="2" x2="22" y2="22"/></svg>';
@@ -1196,19 +1406,26 @@
             '</button>';
         }
         // явно показываем, что в расчёте учтены ТОЛЬКО акции и облигации (не весь состав калькулятора)
-        var calcBreakdown = (calcS && calcS.length) || (calcB && calcB.length)
-            ? ' · ' + (calcS ? calcS.length : 0) + ' акций, ' + (calcB ? calcB.length : 0) + ' облигаций' : '';
-        var subRow = (calcS && calcS.length) || (calcB && calcB.length)
+        var nS = calcS ? calcS.length : 0, nB = calcB ? calcB.length : 0;
+        var calcBreakdown = (nS || nB)
+            ? ' · ' + nS + ' ' + plural(nS, 'акция', 'акции', 'акций') + ', ' + nB + ' ' + plural(nB, 'облигация', 'облигации', 'облигаций') : '';
+        var subRow = (nS || nB)
             ? '<div class="pf-impsubs">' +
-                ((calcS && calcS.length) ? '<button class="pf-impchip" onclick="' + oc('calc', 'stock') + '">Только акции · ' + calcS.length + '</button>' : '') +
-                ((calcB && calcB.length) ? '<button class="pf-impchip" onclick="' + oc('calc', 'bond') + '">Только облигации · ' + calcB.length + '</button>' : '') +
+                (nS ? '<button class="pf-impchip" onclick="' + oc('calc', 'stock') + '">Только акции · ' + nS + '</button>' : '') +
+                (nB ? '<button class="pf-impchip" onclick="' + oc('calc', 'bond') + '">Только облигации · ' + nB + '</button>' : '') +
             '</div>' : '';
+        // импорт из CSV-файла (брокерский отчёт): всегда доступен, pid прокидывается в клик
+        var csvItem = '<button class="pf-impitem" onclick="pfCsvClick(' + (pid ? "'" + pid + "'" : 'null') + ')">' +
+            '<span class="pf-impico">' + IMPCSV_SVG + '</span>' +
+            '<span class="pf-impbody"><b>Из CSV-файла</b><i>отчёт брокера: тикер · дата · цена · кол-во · [НКД]</i></span>' +
+            '<span class="pf-impgo">' + CHEV_SVG + '</span></button>';
         return '<div class="pf-impmenu' + (up ? ' up' : '') + '" id="pfImp-' + key + '">' +
             '<div class="pf-impgrp">Откуда перенести бумаги</div>' +
             card('calc', 'all', IMPCALC_SVG, 'Из расчёта', 'нет сохранённого расчёта', calcAll, calcBreakdown) +
             subRow +
             card('fav', null, IMPFAV_SVG, 'Из избранного', 'нет отмеченных звёздочкой бумаг', fav) +
             card('monthly', null, IMPMON_SVG, 'Из ежемесячного дохода', 'нет облигаций в калькуляторе дохода', mon) +
+            csvItem +
             '</div>';
     }
     function impWrapHtml(key, pid) {
@@ -1229,6 +1446,7 @@
                 '<button class="pf-impitem" onclick="pfImportClick()">' + UPLOAD_SVG + 'Загрузить из файла</button>' +
                 '<div class="pf-impgrp">Отчёт</div>' +
                 '<button class="pf-impitem" onclick="pfExportExcelAll()">' + XLSTBL_SVG + 'Выгрузить в Excel (все позиции)</button>' +
+                '<button class="pf-impitem" onclick="pfExportTradesExcel()">' + XLSTBL_SVG + 'Выгрузить сделки (Excel)</button>' +
             '</div>' +
             '<input type="file" id="pfBkpInput" accept="application/json,.json" style="display:none" onchange="pfImportData(this)">' +
         '</div>';
@@ -1322,14 +1540,25 @@
     // «Избранным» в правой колонке: капитал + вложено/доход + распределение + мини-лидерборд
     // портфелей + кнопки быстрого перехода к таблицам «Рынок · Акции» и «Рынок · Облигации».
     function summaryCardHtml() {
-        var inv = 0, val = 0, bondVal = 0;
+        var inv = 0, val = 0, bondVal = 0, cashTotal = 0, paySum = 0, payPending = false;
         var rows = [];
         store.items.forEach(function (p) {
             var c = calcPf(p); inv += c.invested; val += c.value; bondVal += c.bondVal;
+            cashTotal += (+p.cash || 0);
+            var po = pfPayouts(p);
+            if (po.pending) payPending = true; else paySum += po.sum;
             rows.push({ name: p.name, color: p.color, pct: c.pnlPct, value: c.value, has: c.invested > 0, hid: !!p.hidden });
         });
         var pnl = val - inv, pnlPct = inv > 0 ? pnl / inv * 100 : 0;
         var bondPct = val > 0 ? bondVal / val * 100 : 0, stockPct = 100 - bondPct;
+        // кэш и полученные выплаты — отдельной строкой (в капитал бумаг и «Доход» не входят)
+        var extras = '';
+        if (cashTotal > 0 || paySum > 0.005 || payPending) {
+            extras = '<div class="pfs2-extras">' +
+                (cashTotal > 0 ? '<span title="Свободные деньги всех портфелей — не вложены в бумаги">Кэш <b>' + fmtRub(cashTotal) + '</b></span>' : '') +
+                ((paySum > 0.005 || payPending) ? '<span title="Полученные купоны и дивиденды за время владения — по расписаниям MOEX">Выплаты получено <b class="pos">' + (payPending ? '…' : '+' + fmtRub(paySum)) + '</b></span>' : '') +
+            '</div>';
+        }
 
         var ranked = rows.slice().sort(function (a, b) {
             if (a.has !== b.has) return a.has ? -1 : 1; return b.pct - a.pct; });
@@ -1349,6 +1578,7 @@
             '<div class="pfs2-eyebrow">Суммарный капитал · ' + store.items.length + ' ' + plural(store.items.length, 'портфель', 'портфеля', 'портфелей') + '</div>' +
             '<div class="pfs2-capital">' + fmtRub(val) + '</div>' +
             '<div class="pfs2-sub">Вложено ' + fmtRub(inv) + '<span class="pfs2-pnl ' + (pnl >= 0 ? 'pos' : 'neg') + '">' + (pnl >= 0 ? '▲ ' : '▼ ') + fmtRub(Math.abs(pnl)) + ' · ' + fmtPct(pnlPct) + '</span></div>' +
+            extras +
             '<div class="pfs2-alloc">' +
                 '<div class="pfs2-alloc-bar"><span class="pfs2-alloc-stock" style="width:' + stockPct.toFixed(1) + '%"></span><span class="pfs2-alloc-bond" style="width:' + bondPct.toFixed(1) + '%"></span></div>' +
                 '<div class="pfs2-alloc-leg"><span><i class="stock"></i>Акции ' + (100 - Math.round(bondPct)) + '%</span><span><i class="bond"></i>Облигации ' + Math.round(bondPct) + '%</span></div>' +
@@ -1380,7 +1610,9 @@
         if (!store.items.length) return emptyHtml();
         var vis = visibleItems();
         if (!vis.length) return allHiddenHtml();
-        var items = vis.slice(0, MAX_CARDS);
+        // рендерим ВСЕ видимые портфели (MAX_CARDS ограничивает только создание новых):
+        // раньше slice(0,4) молча прятал карточки 5+ после импорта бэкапа
+        var items = vis;
         var narrow = cardViewMode === 'narrow', cols = narrow ? 3 : 2;
         // Раскрытый график выезжает ОВЕРЛЕЕМ в сторону поверх контента (position:absolute) —
         // сетка НЕ перестраивается, карточка не смещается, соседи не «прыгают». Направление
@@ -1424,11 +1656,11 @@
     // включает его сам кнопкой-тумблером. ВАЖНО: выставляем флаг ДО первого loadPfChart() любого
     // пейна (см. renderPortfolios), чтобы серия сразу запрашивалась в согласованном режиме.
     function ensureDefaultImoexFlags() {
-        visibleItems().slice(0, MAX_CARDS).forEach(function (p) { if (!(p.id in chartImoex)) chartImoex[p.id] = false; });
+        visibleItems().forEach(function (p) { if (!(p.id in chartImoex)) chartImoex[p.id] = false; });
     }
     // на каждый видимый портфель — своя загрузка/перерисовка мини-графика (переиспользует loadPfChart)
     function repaintMiniCharts() {
-        visibleItems().slice(0, MAX_CARDS).forEach(function (p) {
+        visibleItems().forEach(function (p) {
             if (dq('pfmChart-' + p.id)) loadPfChart(p.id);
         });
     }
@@ -1450,10 +1682,23 @@
         // но сразу с открытыми активами — отдельный оверлей «весь состав» больше не дублируется тут
         var assetsChartOn = chartOn && !!chartAssets[p.id];
 
+        // чип «за сегодня»: изменение стоимости к последнему дневному снимку; в подсказке —
+        // самое сильное дневное движение среди акций. Если снимка ещё нет (первый день),
+        // но какая-то акция прыгнула на ≥4% — показываем её вместо суммы.
+        var dd = dayDelta(p, c.value), mv = topMover(p);
+        var dayChip = '';
+        if (dd != null && Math.abs(dd) >= 1) {
+            var mvTxt = (mv && Math.abs(mv.chg) >= 3) ? ' Сильнее всех: ' + mv.t + ' ' + fmtPct(mv.chg) + ' за день.' : '';
+            dayChip = '<span class="pfc-day ' + (dd >= 0 ? 'pos' : 'neg') + '" title="' + attr('Изменение стоимости портфеля за сегодня — к последнему дневному снимку.' + mvTxt) + '">' +
+                (dd >= 0 ? '▲' : '▼') + ' ' + fmtRub(Math.abs(dd)) + ' сегодня</span>';
+        } else if (mv && Math.abs(mv.chg) >= 4) {
+            dayChip = '<span class="pfc-day ' + (mv.chg >= 0 ? 'pos' : 'neg') + '" title="Самое сильное движение дня среди акций портфеля">' + esc(mv.t) + ' ' + fmtPct(mv.chg) + ' за день</span>';
+        }
         return '<div class="dash2-card pf-card' + (openMenu === p.id ? ' menu-open' : '') + tall + (chartOn ? ' chart-open' : '') + (chartOn && chartAssets[p.id] ? ' assets-open' : '') + (holdsOn ? ' holds-open' : '') + (colRight ? ' col-right' : '') + (narrow ? ' pf-card--narrow' : '') + (colMid ? ' col-mid' : '') + '" style="--pf-accent:' + ac + '">' +
             '<div class="pfc-top">' +
                 '<div class="pfc-titles">' +
                     '<span class="pfc-name" onclick="pfNameEdit(\'' + p.id + '\',event)" title="Нажмите, чтобы переименовать"><span class="pfc-name-ink">' + esc(p.name) + '</span></span>' +
+                    dayChip +
                 '</div>' +
                 '<div class="pfc-ctrls">' +
                     '<div class="pfc-acts">' +
@@ -1485,14 +1730,25 @@
                     '</div>';
                 })() +
             '</div>' +
-            cardRingHtml(c, idx) +
-            '<div class="pfc-stats2">' +
-                (narrow ? '' : '<div class="pfc-stat2"><span class="pfc-stat2-l">Вложено</span><span class="pfc-stat2-v">' + fmtRub(c.invested) + '</span></div>') +
-                '<div class="pfc-stat2 pfc-stat2--inc"><span class="pfc-stat2-l">Доход</span><span class="pfc-stat2-v ' + pnlCls + '">' + fmtRub(c.pnl) + '</span></div>' +
-                '<div class="pfc-stat2 pfc-stat2--yield is-' + (c.annual >= 0 ? 'gn' : 'rd') + '" title="Доходность в пересчёте на год (может отличаться от «Дохода» и графика — те показывают фактическое изменение за весь срок, а не годовые)"><span class="pfc-stat2-l">Доходность</span><span class="pfc-stat2-v ' + (c.annual >= 0 ? 'pos' : 'neg') + '">' + fmtPct(c.annual) + '</span></div>' +
-            '</div>' +
+            cardRingHtml(c, idx, p) +
+            (function () {
+                // «Выплаты» — полученные купоны/дивиденды за время владения (в «Доход» не входят);
+                // «Кэш» — свободные деньги (правится в ⚙, пополняется остатком ребалансировок).
+                // Оба блока опциональны — сетка статов резиновая (flex), влезает любое число.
+                var po = pfPayouts(p);
+                var payStat = (po.any && (po.pending || po.sum > 0.005))
+                    ? '<div class="pfc-stat2 pfc-stat2--pay" title="Полученные купоны и дивиденды за время владения — по расписаниям MOEX (дивиденды — по дате отсечки). В «Доход» не входят"><span class="pfc-stat2-l">Выплаты</span><span class="pfc-stat2-v ' + (po.pending ? '' : 'pos') + '">' + (po.pending ? '…' : '+' + fmtRub(po.sum)) + '</span></div>' : '';
+                var cashStat = (p.cash > 0)
+                    ? '<div class="pfc-stat2" title="Свободные деньги портфеля — не вложены в бумаги; правятся в настройках ⚙"><span class="pfc-stat2-l">Кэш</span><span class="pfc-stat2-v">' + fmtRub(p.cash) + '</span></div>' : '';
+                return '<div class="pfc-stats2">' +
+                    (narrow ? '' : '<div class="pfc-stat2"><span class="pfc-stat2-l">Вложено</span><span class="pfc-stat2-v">' + fmtRub(c.invested) + '</span></div>') +
+                    '<div class="pfc-stat2 pfc-stat2--inc"><span class="pfc-stat2-l">Доход</span><span class="pfc-stat2-v ' + pnlCls + '">' + fmtRub(c.pnl) + '</span></div>' +
+                    payStat + cashStat +
+                    '<div class="pfc-stat2 pfc-stat2--yield is-' + (c.annual >= 0 ? 'gn' : 'rd') + '" title="Доходность в пересчёте на год (может отличаться от «Дохода» и графика — те показывают фактическое изменение за весь срок, а не годовые)"><span class="pfc-stat2-l">Доходность</span><span class="pfc-stat2-v ' + (c.annual >= 0 ? 'pos' : 'neg') + '">' + fmtPct(c.annual) + '</span></div>' +
+                '</div>';
+            })() +
             '<div class="pfc-sep"></div>' +
-            '<div class="pfc-massets">' + assetsBody + '</div>' +
+            '<div class="pfc-massets" data-skey="ma-' + p.id + '">' + assetsBody + '</div>' +
             '<div class="pfc-foot">' +
                 '<button class="pfc-rebal" onclick="pfExpand(\'' + p.id + '\')">' + REBAL_SVG + 'Ребалансировать</button>' +
                 (c.hs.length > MANY ? '<button class="pfc-more' + (holdsOn ? ' on' : '') + '" onclick="pfToggleHolds(\'' + p.id + '\')" aria-label="' + (holdsOn ? 'Свернуть состав' : 'Показать весь состав') + '" title="' + (holdsOn ? 'Свернуть' : 'Показать всё · ' + c.hs.length) + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>' : '') +
@@ -1514,20 +1770,39 @@
                 '<button class="pfc-holdsover-x" onclick="pfToggleHolds(\'' + p.id + '\')" aria-label="Свернуть" title="Свернуть">' +
                     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
             '</div>' +
-            '<div class="pfc-holdsover-list">' + body + '</div>' +
+            '<div class="pfc-holdsover-list" data-skey="ho-' + p.id + '">' + body + '</div>' +
         '</div>';
     }
 
-    // Кольцо распределения карточки: маленький donut + номер портфеля в центре + полоса-легенда
-    function cardRingHtml(c, idx) {
+    // Кольцо распределения карточки: маленький donut + номер портфеля в центре + полоса-легенда.
+    // Если в ⚙ задана целевая доля облигаций (p.targetBond) — на полосе метка цели, под
+    // легендой строка отклонения с подсказкой «докупите … на ~X ₽» (возврат к цели докупкой
+    // недостающего класса, без продаж).
+    function cardRingHtml(c, idx, p) {
         var bondP = Math.round(clamp(c.bondPct, 0, 100)), stockP = 100 - bondP;
         var num = '<span class="pfc-ringnum">' + (((idx || 0) + 1)) + '</span>';
+        var tgt = (p && p.targetBond != null && isFinite(+p.targetBond)) ? clamp(Math.round(+p.targetBond), 0, 100) : null;
+        var marker = '', hint = '';
+        if (tgt != null && c.value > 0) {
+            // полоса: слева акции (stockP%), справа облигации — граница цели на 100−tgt% слева
+            marker = '<i class="pfc-dist-tgt" style="left:' + (100 - tgt) + '%" title="Цель: облигации ' + tgt + '%"></i>';
+            var dev = c.bondPct - tgt;
+            if (Math.abs(dev) < 3) {
+                hint = '<div class="pfc-tgt-hint ok">' + CHECK_SVG + 'В балансе с целью ' + tgt + '% облигаций</div>';
+            } else {
+                var buyTxt = '';
+                if (dev > 0 && tgt > 0) { var needS = c.bondVal * 100 / tgt - c.value; if (needS > 1) buyTxt = ' — докупить акций на ~' + fmtRub(needS); }
+                else if (dev < 0 && tgt < 100) { var needB = c.stockVal * 100 / (100 - tgt) - c.value; if (needB > 1) buyTxt = ' — докупить облигаций на ~' + fmtRub(needB); }
+                hint = '<div class="pfc-tgt-hint off" title="Отклонение от целевой структуры (цель — ' + tgt + '% облигаций). Сумма — сколько докупить недостающего класса, чтобы вернуться к цели без продаж">' +
+                    'Облигаций на ' + Math.abs(dev).toFixed(0) + ' п.п. ' + (dev > 0 ? 'больше' : 'меньше') + ' цели' + buyTxt + '</div>';
+            }
+        }
         return '<div class="pfc-alloc">' +
             donutHtml(c.bondPct, 40, num) +
             '<div class="pfc-dist">' +
-                '<div class="pfc-dist-bar"><div style="width:' + stockP + '%;background:#D97757"></div><div style="width:' + bondP + '%;background:#7B9BBF"></div></div>' +
+                '<div class="pfc-dist-barwrap"><div class="pfc-dist-bar"><div style="width:' + stockP + '%;background:#D97757"></div><div style="width:' + bondP + '%;background:#7B9BBF"></div></div>' + marker + '</div>' +
                 '<div class="pfc-dist-lbl"><span><i style="background:#D97757"></i>Акции ' + stockP + '%</span><span><i style="background:#7B9BBF"></i>Облигации ' + bondP + '%</span></div>' +
-            '</div></div>';
+            '</div></div>' + hint;
     }
 
     // мини-таблица состава: НАСТОЯЩАЯ <table> (как pfo-table в ребалансе), а не css-grid из
@@ -1562,13 +1837,21 @@
         var multi = c.lotCount > 1, open = !!openRows[h.id];
         var lotChip = multi ? ' <i class="pfc-lotn">×' + c.lotCount + '</i>' : '';
         var ptip = isB ? ' title="' + attr(BOND_PRICE_TIP) + '"' : '';
+        // котировки ещё нет (curSrc='buy' — фолбэк на цену покупки): «…» пока грузится,
+        // «—» если котировки загружены и бумаги в них нет (опечатка в тикере); цену покупки
+        // под видом текущей не показываем, «Изм.» без котировки — прочерк, а не «+0,0%»
+        var noQ = c.curSrc === 'buy' ? noQuoteCell(h) : null;
+        // дневной маркер: акция сдвинулась за день на ≥3% — стрелка с величиной в подсказке
+        var dayMark = '';
+        if (!isB && quotes[h.ticker] && quotes[h.ticker].chgPct != null && Math.abs(quotes[h.ticker].chgPct) >= 3) {
+            var ch = quotes[h.ticker].chgPct;
+            dayMark = ' <i class="pfc-rowday ' + (ch >= 0 ? 'up' : 'dn') + '" title="За сегодня: ' + fmtPct(ch) + '">' + (ch >= 0 ? '▲' : '▼') + '</i>';
+        }
         var row = '<tr class="pfc-mtr' + (open ? ' open' : '') + '" data-hid="' + h.id + '" onclick="pfToggleAssetRow(\'' + pid + '\',\'' + h.id + '\')">' +
                 '<td class="pfc-mc-as"><span class="pfc-mtk"><svg class="pfc-mch' + (open ? ' up' : '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg><b>' + esc(h.ticker) + '</b><i class="' + (isB ? 'bond' : 'stock') + '">' + (isB ? 'обл' : 'акц') + '</i>' + lotChip + '</span></td>' +
                 '<td class="pfc-mqty">' + (c.qty || 0) + '</td>' +
-                // котировки ещё нет (curSrc='buy' — фолбэк на цену покупки): показываем «…»,
-                // а не цену покупки под видом текущей; после загрузки MOEX ячейка обновится
-                '<td class="pfc-mnow' + (c.live ? ' live' : '') + '"' + (c.curSrc === 'buy' ? ' title="Ждём котировку MOEX…"' : ptip) + '>' + (c.curSrc === 'buy' ? '…' : fmtPrice(c.cur)) + '</td>' +
-                '<td class="pfc-mchg ' + (c.invested > 0 ? (c.pnlPct >= 0 ? 'pos' : 'neg') : '') + '">' + (c.invested > 0 ? fmtPct(c.pnlPct) : '—') + '</td>' +
+                '<td class="pfc-mnow' + (c.live ? ' live' : '') + '"' + (noQ ? ' title="' + attr(noQ.tip) + '"' : ptip) + '>' + (noQ ? noQ.txt : fmtPrice(c.cur) + dayMark) + '</td>' +
+                '<td class="pfc-mchg ' + (!noQ && c.invested > 0 ? (c.pnlPct >= 0 ? 'pos' : 'neg') : '') + '">' + (!noQ && c.invested > 0 ? fmtPct(c.pnlPct) : '—') + '</td>' +
             '</tr>';
         return open ? row + pfMiniDetailRowHtml(h, c) : row;
     }
@@ -1650,10 +1933,19 @@
                 (colorsOpen ? '<span class="pfm-colorpop">' + sw + '</span>' : '') +
             '</span>' +
             '<span class="pfm-namewrap">' +
-                '<input class="pfm-name" value="' + attr(p.name) + '" onchange="pfRename(\'' + p.id + '\',this.value)" placeholder="Название портфеля">' +
+                // 24 символа — тот же максимум, что у инлайн-правки имени на карточке
+                '<input class="pfm-name" maxlength="24" value="' + attr(p.name) + '" onchange="pfRename(\'' + p.id + '\',this.value)" placeholder="Название портфеля">' +
                 PENCIL_SVG +
             '</span>' +
             '<button class="pfm-done" onclick="pfCloseMenu()">' + CHECK_SVG + 'Готово</button>' +
+        '</div>';
+        // деньги и цель: свободный кэш портфеля (пополняется остатком ребалансировок) и
+        // целевая доля облигаций (маркер на полосе распределения + подсказка «докупите…»)
+        var extras = '<div class="pfm-extras">' +
+            '<label class="pfm-extra" title="Свободные деньги портфеля — не вложены в бумаги; сюда автоматически падает остаток от обменов ребалансировки">' +
+                '<span>Свободные деньги</span><span class="pfm-extra-f"><input class="pfm-in pfm-in-num" type="number" min="0" step="0.01" value="' + (p.cash > 0 ? p.cash : '') + '" placeholder="0" onchange="pfSetCash(\'' + p.id + '\',this.value)"><i>₽</i></span></label>' +
+            '<label class="pfm-extra" title="Целевая структура: сколько процентов портфеля должно быть в облигациях. На карточке появится метка цели и подсказка, чего докупить. Пусто — выключено">' +
+                '<span>Цель · облигации</span><span class="pfm-extra-f"><input class="pfm-in pfm-in-num" type="number" min="0" max="100" step="1" value="' + (p.targetBond != null ? p.targetBond : '') + '" placeholder="выкл" onchange="pfSetTarget(\'' + p.id + '\',this.value)"><i>%</i></span></label>' +
         '</div>';
         // добавление: свёрнуто в пунктирную кнопку-строку; раскрытая панель — та же форма
         // «за один подход» (addFormHtml), шапка панели сворачивает её обратно
@@ -1686,12 +1978,12 @@
         // renderPortfolios и пересоздают весь .pfc-menu целиком) анимация pfMenuIn
         // ПОВТОРНО не проигрывается, иначе вся панель настроек каждый раз мигает.
         return '<div class="pfc-menu' + (menuJustOpened ? '' : ' no-anim') + '" id="pfMenu-' + p.id + '">' +
-            top + addBlock +
+            top + addBlock + extras +
             '<div class="pfm-mid' + (empty ? ' pfm-mid--empty' : '') + '">' +
                 '<div class="pfm-sec"><span>Состав · ' + n + ' ' + plural(n, 'актив', 'актива', 'активов') + '</span>' +
                     '<i class="pfm-sec-rule"></i></div>' +
                 vhead +
-                '<div class="pfm-rows">' + (rows || noneBox) + '</div>' +
+                '<div class="pfm-rows" data-skey="menu-' + p.id + '">' + (rows || noneBox) + '</div>' +
             '</div>' +
             foot +
         '</div>';
@@ -1713,19 +2005,8 @@
             '</div>' +
         '</div>';
     }
-    // Иконка «подтянуть на дату» внутри поля: горит (lit) пока не подтянуто с API,
-    // затухает (done) после загрузки — с тултипом «… на дату ДД.ММ.ГГГГ», крутится при загрузке.
-    function fieldFx(pid, hid, field, fromApi, dateStr, loading) {
-        var what = field === 'nkd' ? 'НКД' : 'цену';
-        var title = loading ? 'Загрузка…'
-            : (fromApi ? (field === 'nkd' ? 'НКД' : 'Цена') + ' закрытия на ' + ruDate(dateStr) + ' · нажмите, чтобы обновить'
-                       : 'Подтянуть ' + what + ' закрытия MOEX на дату покупки');
-        var cls = 'pfm-fx ' + (loading ? 'loading' : (fromApi ? 'done' : 'lit'));
-        var inner = loading ? '<span class="pfm-fx-sp"></span>' : FETCH_SVG;
-        return '<button class="' + cls + '" type="button" tabindex="-1" title="' + attr(title) + '" ' +
-            'onclick="pfFetchField(\'' + pid + '\',\'' + hid + '\',\'' + field + '\')">' + inner + '</button>';
-    }
-    // Иконка «подтянуть на дату» для КОНКРЕТНОГО ЛОТА (журнал докупок)
+    // Иконка «подтянуть на дату» для КОНКРЕТНОГО ЛОТА (журнал докупок): горит (lit) пока
+    // не подтянуто с API, затухает (done) после загрузки, крутится при загрузке.
     function fieldFxLot(pid, hid, lotId, field, fromApi, dateStr, loading) {
         var what = field === 'nkd' ? 'НКД' : 'цену';
         var title = loading ? 'Загрузка…'
@@ -2111,11 +2392,29 @@
             (field === 'nkd' ? 'НКД' : 'цену') + ' закрытия MOEX на выбранную дату" ' +
             'onclick="pfAddFetch(\'' + pid + '\',\'' + field + '\',event)">' + FETCH_SVG + '</button>';
     }
+    // Подсказки тикеров для формы добавления: ОФЗ из таблицы + компании из таблицы акций.
+    // Кэшируем собранный список, пересобираем при изменении числа компаний.
+    var tkListCache = { n: -1, html: '' };
+    function tickerListHtml(pid) {
+        var cos = (typeof window.stkAllCompanies === 'function') ? window.stkAllCompanies() : [];
+        var bn = 0; try { if (typeof bonds !== 'undefined' && bonds) bn = bonds.length; } catch (e) {}
+        if (tkListCache.n !== cos.length + bn) {
+            var opts = [];
+            try { if (typeof bonds !== 'undefined' && bonds) bonds.forEach(function (b) {
+                if (b.t) opts.push('<option value="' + attr(b.t) + '">' + esc(b.n || '') + '</option>'); }); } catch (e) {}
+            cos.forEach(function (co) {
+                if (co && co.ticker) opts.push('<option value="' + attr(co.ticker) + '">' + esc(co.name || '') + '</option>');
+            });
+            tkListCache = { n: cos.length + bn, html: opts.join('') };
+        }
+        return '<datalist id="pfTkList-' + pid + '">' + tkListCache.html + '</datalist>';
+    }
     function addFormHtml(pid, empty) {
         return '<div class="pfm-addform" id="pfAddForm-' + pid + '" data-type="stock">' +
+            tickerListHtml(pid) +
             '<div class="pfm-addgrid">' +
-                '<input class="pfm-in pfm-in-tk pfaf-tk" id="pfNewTk-' + pid + '" placeholder="Тикер / ISIN" maxlength="14" ' +
-                    'onkeydown="if(event.key===\'Enter\')pfAddHolding(\'' + pid + '\')">' +
+                '<input class="pfm-in pfm-in-tk pfaf-tk" id="pfNewTk-' + pid + '" placeholder="Тикер / ISIN" maxlength="14" list="pfTkList-' + pid + '" ' +
+                    'oninput="pfNewTkAuto(\'' + pid + '\')" onkeydown="if(event.key===\'Enter\')pfAddHolding(\'' + pid + '\')">' +
                 '<select class="pfm-in pfm-in-type pfaf-type" id="pfNewType-' + pid + '" onchange="pfAddTypeToggle(\'' + pid + '\')">' +
                     '<option value="stock">Акция</option><option value="bond">Облигация</option></select>' +
                 dateFieldHtml('<input class="pfm-in pfm-in-date pfaf-date" id="pfNewDate-' + pid + '" type="date" value="' + todayStr() + '" onpaste="pfDatePaste(event,this)" title="Дата покупки">') +
@@ -2217,7 +2516,7 @@
                         '<button class="pff-sort-b' + (favSort === 'news' ? ' on' : '') + '" onclick="pfSetFavSort(\'news\')" title="Сначала со свежими новостями">Новизна</button>' +
                     '</div>' +
                 '</div>') +
-            '<div class="pff-body">' + inner + '</div></div>';
+            '<div class="pff-body" data-skey="fav">' + inner + '</div></div>';
     }
     // Готовый HTML новости + ссылку складываем в кэш (новость = клик по ссылке, не карточка)
     function buildNewsEntry(news) {
@@ -2272,8 +2571,11 @@
     // ---- ставки рынка (как на дашборде) ----
     function rateTiles() {
         var rd = window.ratesData || (typeof ratesData !== 'undefined' ? ratesData : {});
+        // мусор из гугл-таблицы («#VALUE!», «#DIV/0!», «---») в плитку не пропускаем:
+        // значение годится, только если в нём есть цифра и нет маркеров ошибки; иначе «—»
+        function rvOk(s) { s = String(s == null ? '' : s); return /\d/.test(s) && s.indexOf('---') < 0 && s.indexOf('#') < 0; }
         function rv(id, fb) { var e = dq(id); var t = e ? (e.textContent || '').trim() : '';
-            if (t && /\d/.test(t) && t.indexOf('---') < 0) return t; if (fb != null && /\d/.test(String(fb))) return fb; return t || '—'; }
+            if (t && rvOk(t)) return t; if (fb != null && rvOk(fb)) return fb; return '—'; }
         return [
             { l: 'Ключевая ставка', v: rv('val-key-rate', rd.keyRate), ac: '#119d5c', ic: '<line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>' },
             { l: 'Ставка по вкладам', v: rv('val-deposit-rate', rd.depositRate), ac: '#5B7C99', ic: '<polygon points="12 2 21 7 3 7"/><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="12" y1="18" x2="12" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/>' },
@@ -2331,8 +2633,9 @@
         if (days <= 0) return 'сегодня';
         if (days === 1) return 'завтра';
         if (days < 14) return 'через ' + days + ' ' + plural(days, 'день', 'дня', 'дней');
-        var w = Math.round(days / 7);
-        return 'через ' + w + ' ' + plural(w, 'неделю', 'недели', 'недель');
+        if (days < 60) { var w = Math.round(days / 7); return 'через ' + w + ' ' + plural(w, 'неделю', 'недели', 'недель'); }
+        var mo = Math.round(days / 30);   // дальше двух месяцев недели уже не читаются
+        return 'через ' + mo + ' ' + plural(mo, 'месяц', 'месяца', 'месяцев');
     }
     // все держащиеся сейчас облигации (qty>0) по всем портфелям — общий список для календаря
     // и для догрузки недостающих деталей купонов разом (а не по одной при открытии каждого портфеля)
@@ -2340,35 +2643,87 @@
     // иначе объект { pid:true } — какие портфели включены пользователем.
     var payCalSel = null;
     function calPfSelected(p) { return !payCalSel || !!payCalSel[p.id]; }
-    // портфели-кандидаты для фильтра: не скрытые и содержащие облигации
-    function calPfCandidates() {
-        return store.items.filter(function (p) {
-            return !p.hidden && (p.holdings || []).some(function (h) { return h.type === 'bond' && h.ticker && aggHolding(h).qty > 0; });
+    // у портфеля есть акции с ОБЪЯВЛЕННЫМИ будущими дивидендами (по загруженным расписаниям)
+    function pfHasUpcomingDivs(p) {
+        var today = todayStr();
+        return (p.holdings || []).some(function (h) {
+            if (h.type === 'bond' || !h.ticker || !(aggHolding(h).qty > 0)) return false;
+            var ds = divSched[h.ticker];
+            return !!(ds && ds.some(function (dv) { return dv.d > today; }));
         });
     }
-    function allHeldBonds() {
+    // портфели-кандидаты для фильтра: не скрытые, с облигациями ИЛИ с будущими дивидендами
+    function calPfCandidates() {
+        return store.items.filter(function (p) {
+            if (p.hidden) return false;
+            var hasBond = (p.holdings || []).some(function (h) { return h.type === 'bond' && h.ticker && aggHolding(h).qty > 0; });
+            return hasBond || pfHasUpcomingDivs(p);
+        });
+    }
+    function allHeldOf(type) {
         var list = [];
         store.items.forEach(function (p) {
-            if (p.hidden) return;              // скрытый портфель — купоны в календаре не показываем
+            if (p.hidden) return;              // скрытый портфель — выплаты в календаре не показываем
             if (!calPfSelected(p)) return;     // снят в фильтре «Какие портфели показывать»
             (p.holdings || []).forEach(function (h) {
-                if (h.type === 'bond' && h.ticker && aggHolding(h).qty > 0) list.push({ p: p, h: h });
+                var isB = h.type === 'bond';
+                if ((type === 'bond' ? isB : !isB) && h.ticker && aggHolding(h).qty > 0) list.push({ p: p, h: h });
             });
         });
         return list;
     }
-    function collectUpcomingCoupons() {
-        var evs = [];
+    function allHeldBonds() { return allHeldOf('bond'); }
+    function allHeldStocks() { return allHeldOf('stock'); }
+    // Будущие выплаты на год вперёд: купоны по НАСТОЯЩЕМУ расписанию MOEX (bondization;
+    // фолбэк — прежняя периодическая схема, пока расписание грузится/недоступно),
+    // погашения (номинал × кол-во в дату matDate) и объявленные дивиденды (по дате отсечки).
+    function collectUpcomingPayouts() {
+        var evs = [], now = Date.now(), horizon = now + 365 * 86400000, today = todayStr();
         // номер портфеля — его позиция среди ВИДИМЫХ карточек (там же нумеруются кольца)
         var visNum = {};
         visibleItems().forEach(function (p, i) { visNum[p.id] = i + 1; });
+        function ev(date, kind, amount, x) {
+            return { date: date, kind: kind, amount: amount, ticker: x.h.ticker, name: x.h.name || x.h.ticker,
+                pfName: x.p.name, pfColor: colorVal(x.p.color), pfNum: visNum[x.p.id] || '' };
+        }
         allHeldBonds().forEach(function (x) {
-            var det = bondDetail(x.h.ticker); if (!det) return;
-            var nd = nextCouponDate(det); if (!nd) return;
-            var qty = aggHolding(x.h).qty, amount = (+det.couponValue || 0) * qty;
-            if (!(amount > 0)) return;
-            evs.push({ date: nd, ticker: x.h.ticker, name: x.h.name || x.h.ticker, amount: amount,
-                pfName: x.p.name, pfColor: colorVal(x.p.color), pfNum: visNum[x.p.id] || '' });
+            var qty = aggHolding(x.h).qty;
+            var det = bondDetail(x.h.ticker);
+            var full = fullBondId(x.h.ticker);
+            var sched = (full in coupSched) ? coupSched[full] : (ensureSchedule('bond', full), undefined);
+            var pushed = false;
+            if (sched) {
+                sched.forEach(function (cp) {
+                    if (cp.d <= today) return;
+                    var t = Date.parse(cp.d); if (!isFinite(t) || t > horizon) return;
+                    evs.push(ev(new Date(t), 'coupon', cp.v * qty, x)); pushed = true;
+                });
+            }
+            if (!pushed && det && (+det.couponValue > 0)) {   // фолбэк: периодическая схема
+                var nd = nextCouponDate(det);
+                if (nd && +det.freq > 0) {
+                    var stepMs = (365 / det.freq) * 86400000;
+                    var matT = (parseBondDate(det.matDate) || { getTime: function () { return horizon; } }).getTime();
+                    for (var t2 = nd.getTime(); t2 <= horizon && t2 <= matT; t2 += stepMs)
+                        evs.push(ev(new Date(t2), 'coupon', det.couponValue * qty, x));
+                }
+            }
+            // погашение: тело облигации возвращается в дату matDate
+            if (det) {
+                var mat = parseBondDate(det.matDate);
+                if (mat && mat.getTime() > now && mat.getTime() <= horizon)
+                    evs.push(ev(mat, 'redeem', bondFace(x.h.ticker) * qty, x));
+            }
+        });
+        allHeldStocks().forEach(function (x) {
+            var ds = (x.h.ticker in divSched) ? divSched[x.h.ticker] : (ensureSchedule('div', x.h.ticker), undefined);
+            if (!ds) return;
+            var qty = aggHolding(x.h).qty;
+            ds.forEach(function (dv) {
+                if (dv.d <= today) return;
+                var t = Date.parse(dv.d); if (!isFinite(t) || t > horizon) return;
+                evs.push(ev(new Date(t), 'div', dv.v * qty, x));
+            });
         });
         evs.sort(function (a, b) { return a.date - b.date; });
         return evs;
@@ -2394,8 +2749,8 @@
     function payCalStateHtml(kind) {
         if (kind === 'loading') return '<div class="pfpc-state"><span class="pfcv-spin"></span><span>Уточняем даты выплат на Мосбирже…</span></div>';
         var conf = kind === 'nodata'
-            ? { t: 'Пока не считается', s: 'Не нашли даты погашения по вашим облигациям — попробуйте обновить страницу чуть позже.' }
-            : { t: 'Пока нечего показывать', s: 'Добавьте облигации в любой портфель — здесь появится график ближайших купонных выплат.' };
+            ? { t: 'Пока не считается', s: 'Не нашли расписание выплат по вашим бумагам — попробуйте обновить страницу чуть позже.' }
+            : { t: 'Пока нечего показывать', s: 'Добавьте облигации или дивидендные акции в любой портфель — здесь появится график ближайших выплат.' };
         return '<div class="pfpc-state"><div class="pfpc-state-art">' + CAL_ICO_SVG + '</div>' +
             '<div class="pfpc-state-t">' + conf.t + '</div><div class="pfpc-state-s">' + conf.s + '</div></div>';
     }
@@ -2406,13 +2761,19 @@
         // на карточках и строки сводки): между тикером и суммой он стоял вплотную к
         // auto-колонке суммы и «плавал» по горизонтали вслед за её шириной — номера
         // соседних строк не выравнивались. Один портфель → колонка не рендерится вовсе.
+        // Тип выплаты: купон — по умолчанию (без бейджа), дивиденды и погашение — с бейджем.
+        var kind = ev.kind === 'div' ? '<i class="pfpc-kind kind-div" title="Объявленные дивиденды — по дате закрытия реестра (деньги приходят на пару недель позже)">дивиденды</i>'
+            : ev.kind === 'redeem' ? '<i class="pfpc-kind kind-red" title="Погашение — возврат номинала облигации">погашение</i>' : '';
         return '<div class="pfpc-row' + (multiPf ? ' pfpc-row--pf' : '') + '">' +
             (multiPf ? '<span class="pfpc-pf" style="--c:' + ev.pfColor + '" title="' + esc(ev.pfName) + '"><b class="pfpc-pfnum">' + ev.pfNum + '</b></span>' : '') +
             '<div class="pfpc-date"><b>' + ruDate(dateToIso(ev.date)) + '</b><span>' + daysUntilText(ev.date) + '</span></div>' +
-            '<div class="pfpc-id"><span class="pfpc-tk">' + esc(ev.ticker) + '</span><span class="pfpc-nm">' + esc(ev.name) + '</span></div>' +
+            '<div class="pfpc-id"><span class="pfpc-tk">' + esc(ev.ticker) + kind + '</span><span class="pfpc-nm">' + esc(ev.name) + '</span></div>' +
             '<div class="pfpc-amt">+' + fmtRub(ev.amount) + '</div>' +
         '</div>';
     }
+    // подпись месяца для разделителей списка выплат («Сентябрь 2026 · +12 400 ₽»)
+    var PAY_MON = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+    function payMonKey(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1); }
     var FILTER_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>';
     // Попап «Какие портфели показывать» в шапке календаря: строка «Показать все» + по строке
     // на каждый портфель (переиспользует инфраструктуру попапов «Импорт», key='paycal').
@@ -2439,20 +2800,24 @@
                 '<div class="pf-impgrp">Какие портфели показывать</div>' + rows +
             '</div></div>';
     }
-    // Единый календарь: ближайшие купоны по облигациям ВСЕХ портфелей сразу (не по одному —
-    // раньше доход по купонам был виден только внутри карточки ребалансировки ОДНОГО портфеля).
-    // asCell=true → карточка встаёт ЯЧЕЙКОЙ в сетку портфелей (нечётное их число): высота
-    // равна карточке портфеля, список скроллится внутри (см. .pf-paycal--cell в CSS).
+    // Единый календарь: выплаты по ВСЕМ портфелям сразу на год вперёд — купоны (настоящее
+    // расписание MOEX), погашения и объявленные дивиденды. asCell=true → карточка встаёт
+    // ЯЧЕЙКОЙ в сетку портфелей (нечётное их число): высота равна карточке портфеля,
+    // список скроллится внутри (см. .pf-paycal--cell в CSS).
     function paymentCalendarHtml(asCell, span) {
         if (!store.items.length) return '';
+        var SUB = 'купоны, дивиденды и погашения на год вперёд';
         var cls = 'dash2-card pf-card2 pf-paycal' + (asCell ? ' pf-paycal--cell' : '') + (asCell && span === 2 ? ' pf-paycal--span2' : '');
-        var held = allHeldBonds();
-        var head = pfCardHead('', 'Календарь выплат', 'ближайшие купоны по облигациям всех портфелей', '<div class="pfpc-head-r">' + calFilterHtml() + '</div>');
-        if (!held.length) return '<div class="' + cls + '">' + head + payCalStateHtml('nobonds') + '</div>';
+        var held = allHeldBonds(), heldS = allHeldStocks();
+        var head = pfCardHead('', 'Календарь выплат', SUB, '<div class="pfpc-head-r">' + calFilterHtml() + '</div>');
+        if (!held.length && !heldS.length) return '<div class="' + cls + '">' + head + payCalStateHtml('nobonds') + '</div>';
         var missing = held.some(function (x) { return !bondDetail(x.h.ticker); });
         if (missing) ensureAllBondDetails(function () { softRerender(); });
-        var evs = collectUpcomingCoupons();
-        if (!evs.length) return '<div class="' + cls + '">' + head + payCalStateHtml(missing ? 'loading' : 'nodata') + '</div>';
+        // расписания (купоны облигаций / дивиденды акций) ещё в очереди загрузки?
+        var schedPending = held.some(function (x) { return !(fullBondId(x.h.ticker) in coupSched); }) ||
+            heldS.some(function (x) { return !(x.h.ticker in divSched); });
+        var evs = collectUpcomingPayouts();
+        if (!evs.length) return '<div class="' + cls + '">' + head + payCalStateHtml((missing || schedPending) ? 'loading' : 'nodata') + '</div>';
         // в режиме ячейки список скроллится внутри — лимит не нужен, показываем всё сразу
         var LIMIT = 6, multiPf = store.items.length > 1;
         // при 2 или 4 портфелях сразу видно много карточек — календарь сворачиваем до
@@ -2479,8 +2844,24 @@
             '<span>' + (payCalFull ? 'Свернуть' : 'Показать все · ' + evs.length) + '</span>' +
             '<svg class="pfpc-more-ch' + (payCalFull ? ' up' : '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>' : '';
         var right = '<div class="pfpc-head-r">' + calFilterHtml() + soon + '</div>';
-        return '<div class="' + cls + '">' + pfCardHead('', 'Календарь выплат', 'ближайшие купоны по облигациям всех портфелей', right) +
-            '<div class="pfpc-body" onscroll="pfPayCalScroll(this)"><div class="pfpc-list">' + shown.map(function (e) { return payCalRowHtml(e, multiPf); }).join('') + '</div>' + more + '</div>' +
+        // в развёрнутых видах (ячейка/«показать все») список разбиваем разделителями по
+        // месяцам с суммой месяца; короткий свёрнутый список оставляем плоским
+        var withMonths = (payCalFull || asCell) && shown.length > 3;
+        var monSum = {};
+        if (withMonths) evs.forEach(function (e) { var k = payMonKey(e.date); monSum[k] = (monSum[k] || 0) + e.amount; });
+        var rowsHtml = '', prevMon = null;
+        shown.forEach(function (e) {
+            if (withMonths) {
+                var k = payMonKey(e.date);
+                if (k !== prevMon) {
+                    prevMon = k;
+                    rowsHtml += '<div class="pfpc-mon"><b>' + PAY_MON[e.date.getMonth()] + ' ' + e.date.getFullYear() + '</b><span>+' + fmtRub(monSum[k]) + '</span></div>';
+                }
+            }
+            rowsHtml += payCalRowHtml(e, multiPf);
+        });
+        return '<div class="' + cls + '">' + pfCardHead('', 'Календарь выплат', SUB, right) +
+            '<div class="pfpc-body" data-skey="paycal" onscroll="pfPayCalScroll(this)"><div class="pfpc-list">' + rowsHtml + '</div>' + more + '</div>' +
         '</div>';
     }
     window.pfTogglePayCal = function () { payCalFull = !payCalFull; renderPortfolios(); };
@@ -2753,7 +3134,7 @@
     //  ДЕЙСТВИЯ (inline onclick)
     // ====================================================================
     window.pfAddPortfolio = function () {
-        if (store.items.length >= MAX_CARDS) { toast('Максимум ' + MAX_CARDS + ' портфеля на странице', true); return; }
+        if (store.items.length >= MAX_CARDS) { toast('Максимум ' + MAX_CARDS + ' ' + plural(MAX_CARDS, 'портфель', 'портфеля', 'портфелей') + ' на странице', true); return; }
         var p = makePortfolio(); store.items.push(p); saveStore();
         // настройки нового портфеля открываются сразу — с тем же чистым состоянием, что и
         // через ⚙ (pfToggleMenu): форма добавления раскрыта (портфель пуст), остальное закрыто
@@ -2878,7 +3259,7 @@
         var p = findPf(pid); if (!p) return;
         p.hidden = !p.hidden;
         if (p.hidden) {   // прибираем состояния скрытой карточки
-            if (openMenu === pid) { openMenu = null; menuTall = false; }
+            if (openMenu === pid) { openMenu = null; }
             delete chartOpen[pid]; delete chartAssets[pid]; delete chartAssetsFull[pid]; delete holdsExpand[pid];
         }
         var eyeMenu = dq('pfImp-eye');
@@ -2908,7 +3289,7 @@
         if (ev) ev.stopPropagation();
         store.items.forEach(function (p) {
             p.hidden = true;
-            if (openMenu === p.id) { openMenu = null; menuTall = false; }
+            if (openMenu === p.id) { openMenu = null; }
             delete chartOpen[p.id]; delete chartAssets[p.id]; delete chartAssetsFull[p.id]; delete holdsExpand[p.id];
         });
         saveStore(); renderSmooth(pfEyeReopen);
@@ -2937,10 +3318,12 @@
         if (!holds || !holds.length) { toast('Нет данных для импорта — выполните расчёт / добавьте избранное', true); return; }
         if (pid) {
             var p = findPf(pid); if (!p) return;
-            p.holdings = (p.holdings || []).concat(holds); saveStore(); ensureQuotes(true); renderPortfolios();
+            p.holdings = (p.holdings || []).concat(holds); saveStore();
+            pfInvalidateCharts(pid);   // состав изменился → серия графика доходности устарела
+            ensureQuotes(true); renderPortfolios();
             autofillNkd(holds); toast('Добавлено: ' + holds.length); return;
         }
-        if (store.items.length >= MAX_CARDS) { toast('Максимум ' + MAX_CARDS + ' портфеля', true); return; }
+        if (store.items.length >= MAX_CARDS) { toast('Максимум ' + MAX_CARDS + ' ' + plural(MAX_CARDS, 'портфель', 'портфеля', 'портфелей'), true); return; }
         // src запоминаем: портфель из «ежемесячного дохода» ребалансируется с проверкой
         // сохранности графика ежемесячных выплат (см. pfLostMonths в карточке ребалансировки)
         var np = makePortfolio((name && name.trim()) || importName(source)); np.holdings = holds; np.src = source; store.items.push(np); saveStore();
@@ -2974,23 +3357,31 @@
             toast('Бэкап сохранён · портфелей: ' + store.items.length);
         } catch (e) { toast('Не удалось сохранить файл бэкапа', true); }
     };
-    // ---- отчёт: все позиции всех портфелей одной таблицей в CSV под русский Excel
-    // (разделитель «;», BOM, десятичная запятая — тот же формат, что выгрузки терминала).
+    // ---- общие CSV-хелперы выгрузок (под русский Excel: «;», BOM, десятичная запятая) ----
+    function csvCell(v) {
+        var s = String(v == null ? '' : v).replace(/\n/g, ' ');
+        // Excel исполняет ячейки, начинающиеся с = + @ (формульная инъекция) —
+        // гасим апострофом; отрицательные числа («-12,3») не трогаем
+        if (/^[=+@\t\r]/.test(s) || (s[0] === '-' && !/^-[\d\s.,]+%?$/.test(s))) s = "'" + s;
+        return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }
+    function csvNum(v, d) { return (v == null || isNaN(v)) ? '' : (+v).toFixed(d == null ? 2 : d).replace('.', ','); }
+    function csvRuDate(iso) { return iso ? String(iso).split('-').reverse().join('.') : ''; }
+    function csvDownload(lines, fname) {
+        var blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = fname;
+        document.body.appendChild(a); a.click();
+        setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+    }
+    // ---- отчёт: все позиции всех портфелей одной таблицей в CSV под русский Excel.
     // Блок на портфель: строки позиций + «Итого»; в конце — общий итог по всем портфелям.
     window.pfExportExcelAll = function () {
         closeImpMenus();
         if (!store.items.length) { toast('Пока нет портфелей для выгрузки', true); return; }
-        function cell(v) {
-            var s = String(v == null ? '' : v).replace(/\n/g, ' ');
-            // Excel исполняет ячейки, начинающиеся с = + @ (формульная инъекция) —
-            // гасим апострофом; отрицательные числа («-12,3») не трогаем
-            if (/^[=+@\t\r]/.test(s) || (s[0] === '-' && !/^-[\d\s.,]+%?$/.test(s))) s = "'" + s;
-            return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-        }
-        function num(v, d) { return (v == null || isNaN(v)) ? '' : (+v).toFixed(d == null ? 2 : d).replace('.', ','); }
-        function ruIso(iso) { return iso ? String(iso).split('-').reverse().join('.') : ''; }
         var head = ['Портфель', 'Тип', 'Тикер', 'Название', 'Кол-во', 'Средняя цена, ₽', 'Вложено, ₽', 'Цена сейчас, ₽', 'Стоимость, ₽', 'Доход, ₽', 'Доход, %', 'Первая покупка'];
-        var lines = [head.map(cell).join(';')], total = { inv: 0, val: 0 }, nPos = 0;
+        var lines = [head.map(csvCell).join(';')], total = { inv: 0, val: 0 }, nPos = 0;
         store.items.forEach(function (p, i) {
             var c = calcPf(p);
             if (i > 0) lines.push('');
@@ -2998,27 +3389,98 @@
                 if (!x.h.ticker || !(x.c.qty > 0)) return;
                 nPos++;
                 lines.push([p.name, x.h.type === 'bond' ? 'Облигация' : 'Акция', x.h.ticker, x.h.name || x.h.ticker,
-                    x.c.qty, num(x.c.buy), num(x.c.invested), num(x.c.cur), num(x.c.value), num(x.c.pnl), num(x.c.pnlPct), ruIso(x.c.firstDate)
-                ].map(cell).join(';'));
+                    x.c.qty, csvNum(x.c.buy), csvNum(x.c.invested), csvNum(x.c.cur), csvNum(x.c.value), csvNum(x.c.pnl), csvNum(x.c.pnlPct), csvRuDate(x.c.firstDate)
+                ].map(csvCell).join(';'));
             });
-            lines.push([p.name, 'Итого', '', '', '', '', num(c.invested), '', num(c.value), num(c.pnl), num(c.invested > 0 ? c.pnl / c.invested * 100 : 0), ''].map(cell).join(';'));
+            lines.push([p.name, 'Итого', '', '', '', '', csvNum(c.invested), '', csvNum(c.value), csvNum(c.pnl), csvNum(c.invested > 0 ? c.pnl / c.invested * 100 : 0), ''].map(csvCell).join(';'));
             total.inv += c.invested; total.val += c.value;
         });
         if (store.items.length > 1) {
             lines.push('');
-            lines.push(['ВСЕ ПОРТФЕЛИ', 'Итого', '', '', '', '', num(total.inv), '', num(total.val), num(total.val - total.inv), num(total.inv > 0 ? (total.val - total.inv) / total.inv * 100 : 0), ''].map(cell).join(';'));
+            lines.push(['ВСЕ ПОРТФЕЛИ', 'Итого', '', '', '', '', csvNum(total.inv), '', csvNum(total.val), csvNum(total.val - total.inv), csvNum(total.inv > 0 ? (total.val - total.inv) / total.inv * 100 : 0), ''].map(csvCell).join(';'));
         }
         try {
-            var blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
-            var a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'madame-solomina-positions-' + todayStr() + '.csv';
-            document.body.appendChild(a); a.click();
-            setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+            csvDownload(lines, 'madame-solomina-positions-' + todayStr() + '.csv');
             toast('Excel-отчёт сохранён · позиций: ' + nPos);
         } catch (e) { toast('Не удалось сохранить Excel-файл', true); }
     };
+    // ---- отчёт: все сделки (покупки из лотов + продажи из журналов ребалансировок)
+    // по ВСЕМ портфелям, включая скрытые — это выгрузка данных, а не вид страницы.
+    window.pfExportTradesExcel = function () {
+        closeImpMenus();
+        var rows = [];
+        store.items.forEach(function (p) {
+            (p.trades || []).forEach(function (t) {   // продажи обменов ребалансировки
+                var w = new Date(t.ts || 0);
+                var iso = w.getFullYear() + '-' + pad2(w.getMonth() + 1) + '-' + pad2(w.getDate());
+                var q = +t.sellQty || 0, proceeds = +t.proceeds || 0;
+                rows.push({ pf: p.name, date: iso, side: 'Продажа', type: t.kind === 'bond' ? 'Облигация' : 'Акция',
+                    tk: t.sellTicker || '', nm: t.sellName || t.sellTicker || '', price: q > 0 ? proceeds / q : null,
+                    nkd: null, qty: q, sum: proceeds, feePct: (+t.fee || 0) * 100 });
+            });
+            (p.holdings || []).forEach(function (h) {
+                if (!h.ticker) return;
+                var isB = h.type === 'bond';
+                ensureLots(h).forEach(function (l) {
+                    var q = +l.qty || 0; if (!(q > 0)) return;
+                    var nkd = isB ? (+l.nkd || 0) : null;
+                    rows.push({ pf: p.name, date: l.buyDate || '', side: 'Покупка', type: isB ? 'Облигация' : 'Акция',
+                        tk: h.ticker, nm: h.name || h.ticker, price: +l.buyPrice || 0, nkd: nkd, qty: q,
+                        sum: ((+l.buyPrice || 0) + (nkd || 0)) * q, feePct: 0 });
+                });
+            });
+        });
+        if (!rows.length) { toast('Пока нет сделок для выгрузки', true); return; }
+        rows.sort(function (a, b) { return (b.date || '').localeCompare(a.date || ''); });
+        var head = ['Портфель', 'Дата', 'Сторона', 'Тип', 'Тикер', 'Название', 'Цена, ₽', 'НКД, ₽', 'Кол-во', 'Сумма, ₽', 'Комиссия, %'];
+        var lines = [head.map(csvCell).join(';')];
+        rows.forEach(function (r) {
+            lines.push([r.pf, csvRuDate(r.date), r.side, r.type, r.tk, r.nm, csvNum(r.price),
+                r.nkd != null ? csvNum(r.nkd) : '', r.qty, csvNum(r.sum), r.feePct > 0 ? csvNum(r.feePct, 3) : ''
+            ].map(csvCell).join(';'));
+        });
+        try {
+            csvDownload(lines, 'madame-solomina-trades-' + todayStr() + '.csv');
+            toast('Сделки сохранены · строк: ' + rows.length);
+        } catch (e) { toast('Не удалось сохранить Excel-файл', true); }
+    };
     window.pfImportClick = function () { closeImpMenus(); var i = dq('pfBkpInput'); if (i) i.click(); };
+    // Санация бэкапа перед заменой store: битый файл не должен ронять вкладку, а строки
+    // из файла попадают в onclick-атрибуты — id вне безопасного алфавита перегенерируем
+    // (см. security-конвенции). Кривые holdings/lots приводим к рабочей форме, а не падаем.
+    function pfIdOk(s) { return typeof s === 'string' && /^[\w-]{1,64}$/.test(s); }
+    function sanitizeStore(obj) {
+        var truncated = false;
+        var items = obj.items.filter(function (p) { return p && typeof p === 'object'; });
+        if (items.length > MAX_CARDS) { items = items.slice(0, MAX_CARDS); truncated = true; }
+        items.forEach(function (p) {
+            var idFixed = !pfIdOk(p.id);
+            if (idFixed) p.id = genId('pf');
+            p.name = String(p.name || 'Портфель').slice(0, 24);
+            p.color = pfIdOk(p.color) ? p.color : COLORS[0].id;
+            p.cash = (+p.cash > 0) ? Math.round(+p.cash * 100) / 100 : 0;
+            p.targetBond = (p.targetBond != null && isFinite(+p.targetBond)) ? clamp(Math.round(+p.targetBond), 0, 100) : null;
+            if (!Array.isArray(p.holdings)) p.holdings = [];
+            p.holdings = p.holdings.filter(function (h) { return h && typeof h === 'object' && h.ticker; });
+            var holdIdFixed = false;
+            p.holdings.forEach(function (h) {
+                if (!pfIdOk(h.id)) { h.id = genId('h'); holdIdFixed = true; }
+                h.ticker = String(h.ticker).toUpperCase().replace(/[^\w.@-]/g, '').slice(0, 20);
+                h.name = String(h.name || h.ticker).slice(0, 80);
+                h.type = h.type === 'bond' ? 'bond' : 'stock';
+                if (h.lots != null && !Array.isArray(h.lots)) delete h.lots;   // ensureLots мигрирует из одиночных полей
+                if (Array.isArray(h.lots)) {
+                    h.lots = h.lots.filter(function (l) { return l && typeof l === 'object'; });
+                    h.lots.forEach(function (l) { if (!pfIdOk(l.id)) { l.id = genId('l'); holdIdFixed = true; } });
+                }
+                ensureLots(h);
+            });
+            if (!Array.isArray(p.trades)) delete p.trades;
+            // сменились id активов/лотов → сохранённые undo-ссылки сделок больше не сходятся
+            else if (holdIdFixed || idFixed) p.trades.forEach(function (t) { if (t && t.undo) delete t.undo; });
+        });
+        return { items: items, truncated: truncated };
+    }
     window.pfImportData = function (input) {
         var f = input && input.files && input.files[0]; if (!f) return;
         var reader = new FileReader();
@@ -3027,28 +3489,148 @@
             try {
                 obj = JSON.parse(reader.result);
                 if (!obj || !Array.isArray(obj.items)) throw new Error('format');
-                // лёгкая валидация структуры
-                obj.items.forEach(function (p) { if (!p || typeof p !== 'object' || !('holdings' in p) && !p.id) throw new Error('format'); });
             } catch (e) { toast('Не удалось прочитать файл бэкапа (неверный формат)', true); input.value = ''; return; }
             input.value = '';
+            var extra = obj.items.length > MAX_CARDS ? ' Файл содержит ' + obj.items.length + ' — будут загружены первые ' + MAX_CARDS + '.' : '';
             pfConfirm({
                 danger: true, ok: 'Заменить', icon: SHIELD_SVG,
                 title: 'Загрузить бэкап?',
-                text: 'Текущие портфели (' + store.items.length + ') будут заменены данными из файла (' + obj.items.length + '). Локальные данные перезапишутся.'
+                text: 'Текущие портфели (' + store.items.length + ') будут заменены данными из файла (' + Math.min(obj.items.length, MAX_CARDS) + '). Локальные данные перезапишутся.' + extra
             }, function () {
-                store = obj; if (!store.v) store.v = 1;
-                (store.items || []).forEach(function (p) { (p.holdings || []).forEach(ensureLots); });   // миграция лотов
+                var clean = sanitizeStore(obj);
+                store = { v: obj.v || 1, items: clean.items };
+                chartRaw = {}; chartCache = {};   // серии графиков от старых портфелей больше не валидны
                 saveStore(); openMenu = null; ensureQuotes(true); renderPortfolios();
-                toast('Загружено портфелей: ' + store.items.length);
+                toast('Загружено портфелей: ' + store.items.length + (clean.truncated ? ' (лишние за лимитом отброшены)' : ''));
             });
         };
         reader.onerror = function () { toast('Ошибка чтения файла', true); input.value = ''; };
         reader.readAsText(f);
     };
+    // ---- импорт сделок из CSV-файла (универсальный формат брокерских отчётов) ----
+    // Понимает разделители ; , и таб; шапку ищет по знакомым названиям колонок
+    // (тикер/дата/цена/кол-во/НКД/тип), без шапки ждёт порядок: тикер;дата;цена;кол-во;[НКД].
+    // Тип бумаги берётся из колонки или угадывается (SU…/RU… и таблица ОФЗ → облигация).
+    var csvImportPid = null;
+    function guessType(tk) {
+        if (/^SU\d{5}/.test(tk) || /^RU\d{3}/.test(tk) || /^XS\d/.test(tk)) return 'bond';
+        try { if (typeof bonds !== 'undefined' && bonds) for (var i = 0; i < bonds.length; i++) {
+            var t = bonds[i] && bonds[i].t;
+            if (t && (t.indexOf(tk) === 0 || tk.indexOf(t) === 0)) return 'bond';
+        } } catch (e) {}
+        return 'stock';
+    }
+    // полное имя бумаги по тикеру: таблица ОФЗ / таблица акций (для новых активов)
+    function lookupName(tk, type) {
+        if (type === 'bond') {
+            try { if (typeof bonds !== 'undefined' && bonds) for (var i = 0; i < bonds.length; i++) {
+                var t = bonds[i] && bonds[i].t;
+                if (t && (t.indexOf(tk) === 0 || tk.indexOf(t) === 0)) return bonds[i].n || tk;
+            } } catch (e) {}
+            return tk;
+        }
+        if (typeof window.stkFindCompany === 'function') {
+            var co = window.stkFindCompany(tk);
+            if (co && co.name) return co.name;
+        }
+        return tk;
+    }
+    function parseTradesCsv(text) {
+        var lines = String(text || '').replace(/\r/g, '').split('\n')
+            .map(function (s) { return s.trim(); }).filter(Boolean);
+        if (!lines.length) return { rows: [], skipped: 0 };
+        // разделитель — какой чаще встречается в первой строке
+        var sep = ';', bestN = -1;
+        [';', '\t', ','].forEach(function (s) {
+            var n = lines[0].split(s).length - 1;
+            if (n > bestN) { bestN = n; sep = s; }
+        });
+        function cells(s) { return s.split(sep).map(function (c) { return c.replace(/^"+|"+$/g, '').trim(); }); }
+        var head = cells(lines[0]).map(function (c) { return c.toLowerCase(); });
+        function findCol(names) {
+            for (var i = 0; i < head.length; i++)
+                for (var j = 0; j < names.length; j++) if (head[i].indexOf(names[j]) >= 0) return i;
+            return -1;
+        }
+        var ci = { tk: findCol(['тикер', 'ticker', 'isin', 'secid', 'код', 'инструмент']),
+            date: findCol(['дата', 'date']), price: findCol(['цена', 'price']),
+            qty: findCol(['кол-во', 'количество', 'кол', 'qty', 'quantity', 'шт']),
+            nkd: findCol(['нкд', 'aci', 'купонн']), type: findCol(['тип', 'type']) };
+        var hasHead = ci.tk >= 0 && ci.qty >= 0;
+        if (!hasHead) ci = { tk: 0, date: 1, price: 2, qty: 3, nkd: 4, type: -1 };
+        var rows = [], skipped = 0;
+        for (var i = hasHead ? 1 : 0; i < lines.length; i++) {
+            var cs = cells(lines[i]);
+            var tk = String(cs[ci.tk] || '').toUpperCase().replace(/\s/g, '');
+            var qty = Math.round(toNum(cs[ci.qty]));
+            if (!tk || !/^[\w.@-]{2,20}$/.test(tk) || !(qty > 0)) { skipped++; continue; }
+            var price = ci.price >= 0 ? toNum(cs[ci.price]) : NaN;
+            var dateIso = ci.date >= 0 ? pfParseAnyDate(cs[ci.date]) : null;
+            var tRaw = ci.type >= 0 ? String(cs[ci.type] || '').toLowerCase() : '';
+            var type = tRaw.indexOf('обл') >= 0 || tRaw.indexOf('bond') >= 0 ? 'bond'
+                : (tRaw.indexOf('акц') >= 0 || tRaw.indexOf('stock') >= 0 || tRaw.indexOf('share') >= 0 ? 'stock' : guessType(tk));
+            var nkd = (type === 'bond' && ci.nkd >= 0 && toNum(cs[ci.nkd]) > 0) ? Math.round(toNum(cs[ci.nkd]) * 100) / 100 : 0;
+            rows.push({ ticker: tk, type: type, buyDate: dateIso || todayStr(),
+                buyPrice: (isFinite(price) && price > 0) ? Math.round(price * 100) / 100 : 0, qty: qty, nkd: nkd });
+        }
+        return { rows: rows, skipped: skipped };
+    }
+    // каждая строка CSV = отдельная покупка (лот); одинаковые тикеры сливаются в один актив
+    function mergeRowsIntoPf(p, rows) {
+        var tickers = {};
+        rows.forEach(function (r) {
+            var lot = { id: genId('l'), buyDate: r.buyDate, buyPrice: r.buyPrice, qty: r.qty, nkd: r.nkd, priceFromApi: false, nkdFromApi: false };
+            var exist = (p.holdings || []).filter(function (h) { return h.ticker === r.ticker && h.type === r.type; })[0];
+            if (exist) ensureLots(exist).push(lot);
+            else {
+                p.holdings = p.holdings || [];
+                p.holdings.push({ id: genId('h'), ticker: r.ticker, name: lookupName(r.ticker, r.type), type: r.type, lots: [lot],
+                    potAtBuy: r.type === 'stock' ? potentialOf(r.ticker) : null });
+            }
+            tickers[r.ticker] = 1;
+        });
+        return Object.keys(tickers).length;
+    }
+    window.pfCsvClick = function (pid) {
+        closeImpMenus(); csvImportPid = pid || null;
+        var inp = dq('pfCsvInput');
+        if (!inp) {
+            inp = document.createElement('input');
+            inp.type = 'file'; inp.id = 'pfCsvInput';
+            inp.accept = '.csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain';
+            inp.style.display = 'none';
+            document.body.appendChild(inp);
+            inp.addEventListener('change', function () { pfCsvImport(this); });
+        }
+        inp.value = ''; inp.click();
+    };
+    function pfCsvImport(input) {
+        var f = input && input.files && input.files[0]; if (!f) return;
+        var reader = new FileReader();
+        reader.onload = function () {
+            input.value = '';
+            var parsed = parseTradesCsv(reader.result);
+            if (!parsed.rows.length) {
+                toast('В файле не нашлось сделок. Нужны колонки: тикер · дата · цена · кол-во' + (parsed.skipped ? ' (строк пропущено: ' + parsed.skipped + ')' : ''), true);
+                return;
+            }
+            var p = csvImportPid ? findPf(csvImportPid) : null;
+            if (!p) {
+                if (store.items.length >= MAX_CARDS) { toast('Максимум ' + MAX_CARDS + ' ' + plural(MAX_CARDS, 'портфель', 'портфеля', 'портфелей'), true); return; }
+                p = makePortfolio('Импорт CSV'); store.items.push(p);
+            }
+            var nTick = mergeRowsIntoPf(p, parsed.rows);
+            saveStore(); pfInvalidateCharts(p.id); ensureQuotes(true); renderPortfolios();
+            toast('Импортировано ' + parsed.rows.length + ' ' + plural(parsed.rows.length, 'сделка', 'сделки', 'сделок') + ' · ' +
+                nTick + ' ' + plural(nTick, 'бумага', 'бумаги', 'бумаг') + (parsed.skipped ? ' · пропущено строк: ' + parsed.skipped : ''));
+        };
+        reader.onerror = function () { toast('Ошибка чтения файла', true); input.value = ''; };
+        reader.readAsText(f);
+    }
     window.pfToggleMenu = function (pid) {
-        if (openMenu === pid) { openMenu = null; menuTall = false; }
+        if (openMenu === pid) { openMenu = null; }
         else {
-            openMenu = pid; menuTall = false; menuJustOpened = true; chartOpen = {}; chartAssets = {}; chartAssetsFull = {}; holdsExpand = {};
+            openMenu = pid; menuJustOpened = true; chartOpen = {}; chartAssets = {}; chartAssetsFull = {}; holdsExpand = {};
             // свежеоткрытые настройки — с чистым состоянием: строки свёрнуты, палитра,
             // данжер-зона и форма добавления актива закрыты
             editHold = {}; colorsOpen = false; delArm = false; addOpen = false;
@@ -3087,21 +3669,21 @@
     // график доходности: раскрыть/свернуть. Открыт может быть только один (и не вместе с ⚙).
     window.pfToggleChart = function (pid) {
         if (chartOpen[pid]) { delete chartOpen[pid]; delete chartAssets[pid]; delete chartAssetsFull[pid]; }
-        else { chartOpen = {}; chartAssets = {}; chartAssetsFull = {}; holdsExpand = {}; chartOpen[pid] = true; openMenu = null; menuTall = false; }
+        else { chartOpen = {}; chartAssets = {}; chartAssetsFull = {}; holdsExpand = {}; chartOpen[pid] = true; openMenu = null; }
         renderPortfolios();
         if (chartOpen[pid]) loadPfChart(pid);
     };
     // «раскрытие» вверху карточки: та же панель графика, но сразу с открытыми активами
     window.pfOpenChartAssets = function (pid) {
         if (chartOpen[pid] && chartAssets[pid]) { delete chartOpen[pid]; delete chartAssets[pid]; delete chartAssetsFull[pid]; }
-        else { chartOpen = {}; chartAssets = {}; chartAssetsFull = {}; holdsExpand = {}; chartOpen[pid] = true; chartAssets[pid] = true; openMenu = null; menuTall = false; }
+        else { chartOpen = {}; chartAssets = {}; chartAssetsFull = {}; holdsExpand = {}; chartOpen[pid] = true; chartAssets[pid] = true; openMenu = null; }
         renderPortfolios();
         if (chartOpen[pid]) loadPfChart(pid);
     };
     // «весь состав»: раскрыть/свернуть оверлей со полной таблицей состава (вниз поверх контента)
     window.pfToggleHolds = function (pid) {
         if (holdsExpand[pid]) { delete holdsExpand[pid]; }
-        else { holdsExpand = {}; holdsExpand[pid] = true; openMenu = null; menuTall = false; chartOpen = {}; chartAssets = {}; chartAssetsFull = {}; }
+        else { holdsExpand = {}; holdsExpand[pid] = true; openMenu = null; chartOpen = {}; chartAssets = {}; chartAssetsFull = {}; }
         // renderNoAnim — иначе при раскрытии «всего состава» мигают мини-графики всех карточек
         renderNoAnim();
     };
@@ -3152,9 +3734,10 @@
         if (btn) { btn.classList.toggle('on', on); btn.title = on ? 'Скрыть индекс Мосбиржи' : 'Сравнить с индексом Мосбиржи'; }
         loadPfChart(pid);
     };
-    window.pfToggleMenuTall = function (pid) { if (openMenu === pid) { menuTall = !menuTall; renderPortfolios(); } };
-    window.pfCloseMenu = function () { openMenu = null; menuTall = false; editHold = {}; addOpen = false; colorsOpen = false; delArm = false; renderPortfolios(); };
-    window.pfRename = function (pid, val) { var p = findPf(pid); if (!p) return; p.name = (val || '').trim() || p.name; saveStore(); renderPortfolios(); };
+    window.pfCloseMenu = function () { openMenu = null; editHold = {}; addOpen = false; colorsOpen = false; delArm = false; renderPortfolios(); };
+    window.pfRename = function (pid, val) { var p = findPf(pid); if (!p) return;
+        p.name = ((val || '').trim() || p.name).slice(0, 24);   // тот же лимит, что у инлайн-правки
+        saveStore(); renderPortfolios(); };
     window.pfSetColor = function (pid, col) {
         var p = findPf(pid); if (!p) return;
         // цвета не должны совпадать: занятый другим портфелем цвет выбрать нельзя
@@ -3206,7 +3789,7 @@
     window.pfDeleteYes = function (pid) {
         var p = findPf(pid); if (!p) return;
         store.items = store.items.filter(function (x) { return x.id !== pid; }); saveStore();
-        if (openMenu === pid) { openMenu = null; menuTall = false; }
+        if (openMenu === pid) { openMenu = null; }
         delArm = false; renderPortfolios(); toast('Портфель удалён');
     };
     window.pfAddHolding = function (pid) {
@@ -3228,11 +3811,44 @@
         else {
             // потенциал акции фиксируем на дату покупки (текущий ОДХС) — для карточки ребалансировки
             var pot = type === 'stock' ? potentialOf(tk) : null;
-            p.holdings.push({ id: genId('h'), ticker: tk, name: tk, type: type, lots: [lot], potAtBuy: pot });
+            // полное имя — сразу из таблиц (ОФЗ/акции), а не копия тикера
+            p.holdings.push({ id: genId('h'), ticker: tk, name: lookupName(tk, type), type: type, lots: [lot], potAtBuy: pot });
         }
-        saveStore(); ensureQuotes(true); renderPortfolios();
+        saveStore(); pfInvalidateCharts(pid); ensureQuotes(true); renderPortfolios();
         // фокус обратно на поле тикера для быстрого ввода следующего актива
         var ni = dq('pfNewTk-' + pid); if (ni) try { ni.focus(); } catch (e) {}
+    };
+    // Автоопределение типа по вводимому тикеру: SU…/RU…/XS… или совпадение с таблицей
+    // ОФЗ → «Облигация», тикер из таблицы акций → «Акция». Селект переключается сам
+    // (вместе с полем НКД через pfAddTypeToggle) — руками менять тип почти не приходится.
+    window.pfNewTkAuto = function (pid) {
+        var tkEl = dq('pfNewTk-' + pid), tyEl = dq('pfNewType-' + pid);
+        if (!tkEl || !tyEl) return;
+        var tk = (tkEl.value || '').trim().toUpperCase();
+        if (tk.length < 3) return;
+        var t = null;
+        if (/^SU\d{2}/.test(tk) || /^RU\d{3}/.test(tk) || /^XS\d/.test(tk)) t = 'bond';
+        else if (typeof window.stkFindCompany === 'function' && window.stkFindCompany(tk)) t = 'stock';
+        else {
+            try { if (typeof bonds !== 'undefined' && bonds) for (var i = 0; i < bonds.length; i++)
+                if (bonds[i].t && bonds[i].t.indexOf(tk) === 0) { t = 'bond'; break; } } catch (e) {}
+        }
+        if (t && tyEl.value !== t) { tyEl.value = t; window.pfAddTypeToggle(pid); }
+    };
+    // свободные деньги портфеля (кэш): правится в ⚙, пополняется остатком ребалансировок
+    window.pfSetCash = function (pid, val) {
+        var p = findPf(pid); if (!p) return;
+        var n = toNum(val);
+        p.cash = (isFinite(n) && n > 0) ? Math.round(n * 100) / 100 : 0;
+        saveStore(); renderPortfolios();
+    };
+    // целевая доля облигаций, %: пусто/не число → выключено (null)
+    window.pfSetTarget = function (pid, val) {
+        var p = findPf(pid); if (!p) return;
+        var s = String(val == null ? '' : val).trim();
+        var n = toNum(s);
+        p.targetBond = (s !== '' && isFinite(n)) ? clamp(Math.round(n), 0, 100) : null;
+        saveStore(); renderPortfolios();
     };
     // Тип в форме добавления: показываем поле НКД только для облигаций (без ре-рендера —
     // чтобы не потерять уже введённые значения).
@@ -3270,17 +3886,17 @@
     window.pfRemoveHolding = function (pid, hid) {
         var p = findPf(pid); if (!p) return;
         p.holdings = (p.holdings || []).filter(function (h) { return h.id !== hid; });
-        delete editHold[hid]; saveStore(); renderPortfolios();
+        delete editHold[hid]; saveStore(); pfInvalidateCharts(pid); renderPortfolios();
     };
     window.pfEdit = function (pid, hid, field, val) {
         var p = findPf(pid); if (!p) return; var h = findHold(p, hid); if (!h) return;
         if (field === 'ticker') {
-            h.ticker = (val || '').trim().toUpperCase(); h.name = h.ticker;
+            h.ticker = (val || '').trim().toUpperCase(); h.name = lookupName(h.ticker, h.type);
             // сменился тикер → старые цены/НКД лотов не на этот тикер: гасим флаги «с API»
             ensureLots(h).forEach(function (l) { l.priceFromApi = false; l.nkdFromApi = false;
                 delete loadStatus[l.id + ':price']; delete loadStatus[l.id + ':nkd']; });
         }
-        saveStore(); ensureQuotes(); renderPortfolios();
+        saveStore(); pfInvalidateCharts(pid); ensureQuotes(); renderPortfolios();
     };
     // ---- журнал лотов: правка/добавление/удаление отдельных покупок ----
     function findLot(h, lotId) { var ls = ensureLots(h); for (var i = 0; i < ls.length; i++) if (ls[i].id === lotId) return ls[i]; return null; }
@@ -3291,19 +3907,19 @@
         else if (field === 'buyPrice') { l.buyPrice = Math.max(0, toNum(val) || 0); l.priceFromApi = false; delete loadStatus[lotId + ':price']; }
         else if (field === 'nkd') { l.nkd = Math.max(0, toNum(val) || 0); l.nkdFromApi = false; delete loadStatus[lotId + ':nkd']; }
         else if (field === 'qty') { l.qty = Math.max(0, Math.round(toNum(val) || 0)); }
-        saveStore(); ensureQuotes(); renderPortfolios();
+        saveStore(); pfInvalidateCharts(pid); ensureQuotes(); renderPortfolios();
     };
     window.pfAddLot = function (pid, hid) {
         var p = findPf(pid); if (!p) return; var h = findHold(p, hid); if (!h) return;
         ensureLots(h).push({ id: genId('l'), buyDate: todayStr(), buyPrice: 0, qty: 0, nkd: 0, priceFromApi: false, nkdFromApi: false });
-        editHold[hid] = true; saveStore(); renderPortfolios();
+        editHold[hid] = true; saveStore(); pfInvalidateCharts(pid); renderPortfolios();
     };
     window.pfRemoveLot = function (pid, hid, lotId) {
         var p = findPf(pid); if (!p) return; var h = findHold(p, hid); if (!h) return;
         var ls = ensureLots(h);
         if (ls.length <= 1) return;   // последний лот не удаляем — есть «Удалить актив»
         h.lots = ls.filter(function (l) { return l.id !== lotId; });
-        saveStore(); ensureQuotes(); renderPortfolios();
+        saveStore(); pfInvalidateCharts(pid); ensureQuotes(); renderPortfolios();
     };
     // клик по строке состава в настройках → раскрыть/свернуть редактор этого актива
     window.pfMenuRowToggle = function (pid, hid) {
@@ -3337,35 +3953,12 @@
             if (v != null && v >= 0) {
                 if (field === 'nkd') { cl.nkd = Math.round(v * 100) / 100; cl.nkdFromApi = true; }
                 else { cl.buyPrice = Math.round(v * 100) / 100; cl.priceFromApi = true; }
-                saveStore(); renderPortfolios();
+                saveStore(); pfInvalidateCharts(pid); renderPortfolios();
                 toast(h.ticker + ': ' + (field === 'nkd' ? 'НКД ' : '') + fmtPrice(v) + ' на ' + ruDate(cl.buyDate));
             } else { renderPortfolios(); toast('Нет ' + (field === 'nkd' ? 'НКД' : 'цены') + ' ' + h.ticker + ' на ' + ruDate(l.buyDate), true); }
         };
         if (field === 'nkd') lookupHistNkd(h.ticker, l.buyDate, done);
         else lookupHistPrice(h.ticker, h.type, l.buyDate, function (price) { done(price && price > 0 ? price : null); });
-    };
-    // Подтянуть цену (акция/облигация — чистая цена закрытия) или НКД (облигация) на дату покупки.
-    window.pfFetchField = function (pid, hid, field) {
-        var p = findPf(pid); if (!p) return; var h = findHold(p, hid);
-        if (!h || !h.ticker) { toast('Сначала укажите тикер', true); return; }
-        if (!h.buyDate) { toast('Укажите дату покупки', true); return; }
-        if (field === 'nkd' && h.type !== 'bond') return;
-        loadStatus[hid + ':' + field] = 'loading'; renderPortfolios();
-        var done = function (v) {
-            var cur = findHold(findPf(pid) || {}, hid); if (!cur) return;
-            delete loadStatus[hid + ':' + field];
-            if (v != null && v >= 0) {
-                if (field === 'nkd') { cur.nkd = Math.round(v * 100) / 100; cur.nkdFromApi = true; }
-                else { cur.buyPrice = Math.round(v * 100) / 100; cur.priceFromApi = true; }
-                saveStore(); renderPortfolios();
-                toast(cur.ticker + ': ' + (field === 'nkd' ? 'НКД ' : '') + fmtPrice(v) + ' на ' + ruDate(cur.buyDate));
-            } else {
-                renderPortfolios();
-                toast('Нет ' + (field === 'nkd' ? 'НКД' : 'цены') + ' ' + cur.ticker + ' на ' + ruDate(cur.buyDate), true);
-            }
-        };
-        if (field === 'nkd') lookupHistNkd(h.ticker, h.buyDate, done);
-        else lookupHistPrice(h.ticker, h.type, h.buyDate, function (price) { done(price && price > 0 ? price : null); });
     };
     window.pfOpenTicker = function (tk) { if (typeof window.openStockDetail === 'function') { try { window.openStockDetail(tk, 1); } catch (e) {} } };
     // Инлайн-правка имени портфеля: клик по названию → поле ввода на месте (Enter/blur — сохранить, Esc — отмена)
@@ -3514,17 +4107,19 @@
 
     // ---------- экономика облигаций («машина денег») ----------
     // Прибыль облигации при удержании до погашения:
-    //   доход   = оставшиеся купоны (купон × выплат/год × дней ÷ 365) + номинал 1000 ₽ + НКД сейчас
+    //   доход   = оставшиеся купоны (купон × выплат/год × дней ÷ 365) + номинал + НКД сейчас
     //   затраты = (цена + НКД) × (1 + комиссия брокера) — для моих средние по покупкам, для рыночных текущие
     //   НДФЛ    = (доход − затраты) × ставка, если разница положительна
     //   прибыль/день = (доход − затраты − НДФЛ) ÷ дней до погашения;  годовых = ×365 ÷ (затраты + НДФЛ)
+    // Номинал — настоящий FACEVALUE бумаги (у ОФЗ 1000 ₽, у корпоративных бывает другой).
     // (погашение по номиналу — не сделка, комиссия при нём не берётся)
-    function bondEconAt(det, costUnit, nkdNow) {
+    function bondEconAt(det, costUnit, nkdNow, face) {
         if (!det || !(costUnit > 0)) return null;
         var mat = parseBondDate(det.matDate); if (!mat) return null;
         var days = (mat.getTime() - Date.now()) / 86400000; if (!(days > 0)) return null;
+        var nominal = (det.face > 0) ? +det.face : (face > 0 ? face : 1000);
         var cost = costUnit * (1 + (rebalFee || 0));
-        var income = (+det.couponValue || 0) * (+det.freq || 0) * days / 365 + 1000 + (nkdNow || 0);
+        var income = (+det.couponValue || 0) * (+det.freq || 0) * days / 365 + nominal + (nkdNow || 0);
         var tax = Math.max(0, income - cost) * (rebalTax || 0);
         var profit = income - cost - tax;
         return { perDay: profit / days, annual: profit / days * 365 / (cost + tax) * 100,
@@ -3537,7 +4132,7 @@
         var lb = liveBond(h.ticker);
         var nkdNow = lb.nkd != null ? lb.nkd : (a.nkd || 0);
         var price = lb.price > 0 ? lb.price : (a.avgPrice || 0);
-        var econ = bondEconAt(bondDetail(h.ticker), (a.avgPrice || 0) + (a.nkd || 0), nkdNow);
+        var econ = bondEconAt(bondDetail(h.ticker), (a.avgPrice || 0) + (a.nkd || 0), nkdNow, bondFace(h.ticker));
         return { h: h, qty: a.qty || 0, avgDate: a.avgDate, unitNow: price + nkdNow,
             priceNow: price, nkdNow: nkdNow, live: lb.live, econ: econ };
     }
@@ -3569,7 +4164,7 @@
     // Кандидат на покупку: цена+НКД сейчас = расход, дальше та же экономика, что у моих
     function ofzCand(b) {
         var unit = b.price + b.nkd;
-        var econ = bondEconAt(bondDetail(b.t), unit, b.nkd);
+        var econ = bondEconAt(bondDetail(b.t), unit, b.nkd, bondFace(b.t));
         return { t: b.t, n: b.n, unit: unit, price: b.price, nkd: b.nkd, sheetYield: b.sheetYield,
             matDate: (econ && econ.matDate) || b.matDate, econ: econ };
     }
@@ -3845,9 +4440,9 @@
             }).join('') + '</div>';
         }
         return '<div class="rb5-fml">' +
-            '<div class="rb5-fml-note">Текущие параметры: комиссия брокера <b>' + fee + '</b> (берётся при продаже и при покупке), НДФЛ <b>' + tax + '</b>. Номинал ОФЗ — 1000 ₽.</div>' +
+            '<div class="rb5-fml-note">Текущие параметры: комиссия брокера <b>' + fee + '</b> (берётся при продаже и при покупке), НДФЛ <b>' + tax + '</b>. Номинал — настоящий FACEVALUE бумаги с MOEX (у ОФЗ 1000 ₽).</div>' +
             sect('Облигация — прибыль к погашению', [
-                ['Доход', 'купон × выплат в год × (дней до погашения ÷ 365) + номинал 1000 ₽ + НКД сейчас'],
+                ['Доход', 'купон × выплат в год × (дней до погашения ÷ 365) + номинал + НКД сейчас'],
                 ['Затраты', '(цена + НКД) × (1 + комиссия) — для моих: средние цена/НКД покупки по лотам; для рыночных: текущие'],
                 ['НДФЛ', 'макс(0, доход − затраты) × ' + tax],
                 ['Прибыль в день', '(доход − затраты − НДФЛ) ÷ дней до погашения'],
@@ -4467,11 +5062,15 @@
         var sellSnap = JSON.parse(JSON.stringify(sellX.h));   // для отмены сделки из истории
         var sellIdx = (p.holdings || []).indexOf(sellX.h);
         pfReduceHolding(p, sellX.h, d.qty);
-        var bought = pfAddBought(p, { type: 'bond', ticker: cand.t, name: cand.n, price: cand.price, nkd: cand.nkd, qty: d.buyQty });
+        // тикер купленной — КОРОТКИЙ ISIN (как у добавленных вручную): полный SECID из
+        // таблицы ОФЗ давал в составе «SU26233RMFS5» рядом с «SU26230» — разнобой
+        var bought = pfAddBought(p, { type: 'bond', ticker: isinKey(cand.t), name: cand.n, price: cand.price, nkd: cand.nkd, qty: d.buyQty });
         pfLogTrade(p, { kind: 'bond', sellTicker: sellX.h.ticker, sellName: sellName, sellQty: d.qty,
-            buyTicker: cand.t, buyName: cand.n, buyQty: d.buyQty, proceeds: d.proceeds, rest: d.rest,
+            buyTicker: isinKey(cand.t), buyName: cand.n, buyQty: d.buyQty, proceeds: d.proceeds, rest: d.rest,
             dayBefore: d.dayBefore, dayAfter: d.dayAfter,
             undo: { sold: sellSnap, soldIdx: sellIdx, buyHid: bought.hid, buyLotId: bought.lotId } });
+        // не потраченный при покупке остаток выручки — в свободные деньги портфеля
+        if (d.rest > 0.005) p.cash = Math.round(((+p.cash || 0) + d.rest) * 100) / 100;
         // дельта «машины денег»: пересчёт по фактически обновлённому портфелю; если купоны
         // ещё грузятся — берём расчётную дельту из самой сделки
         var after = bondsTotal(calcPf(p).hs.filter(function (x) { return x.h.type === 'bond'; }));
@@ -4504,11 +5103,14 @@
         var sellIdx = (p.holdings || []).indexOf(sellX.h);
         pfReduceHolding(p, sellX.h, d.qty);
         var bought = pfAddBought(p, { type: 'stock', ticker: cand.ticker, name: cand.name, price: d.priceN, qty: d.buyQty, pot: cand.pot });
+        var stRest = d.priceN > 0 ? d.proceeds - d.buyQty * d.priceN * (1 + (rebalFee || 0)) : 0;
         pfLogTrade(p, { kind: 'stock', sellTicker: sellName, sellName: sellName, sellQty: d.qty,
             buyTicker: cand.ticker, buyName: cand.ticker, buyQty: d.buyQty, proceeds: d.proceeds,
-            rest: d.priceN > 0 ? d.proceeds - d.buyQty * d.priceN * (1 + (rebalFee || 0)) : 0,
+            rest: stRest,
             potFrom: d.potFrom, potTo: d.potTo,
             undo: { sold: sellSnap, soldIdx: sellIdx, buyHid: bought.hid, buyLotId: bought.lotId } });
+        // не потраченный при покупке остаток выручки — в свободные деньги портфеля
+        if (stRest > 0.005) p.cash = Math.round(((+p.cash || 0) + stRest) * 100) / 100;
         rebalPick.stock = { sell: null, buy: null, qty: null };
         saveStore(); pfInvalidateCharts(p.id); ensureQuotes(true); rebalRepaint();
         if (currentTab === 'portfolios' && dq('pfWrap')) renderPortfolios();
@@ -4552,6 +5154,8 @@
                 var at = (t.undo.soldIdx != null) ? Math.min(t.undo.soldIdx, p.holdings.length) : p.holdings.length;
                 p.holdings.splice(at, 0, sold);
             }
+            // 3) забрать обратно остаток выручки, упавший в кэш при применении обмена
+            if (t.rest > 0.005) p.cash = Math.max(0, Math.round(((+p.cash || 0) - t.rest) * 100) / 100);
             ts.shift();
             rebalPick.bond = { sell: null, buy: null, qty: null };
             rebalPick.stock = { sell: null, buy: null, qty: null };

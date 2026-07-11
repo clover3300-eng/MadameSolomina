@@ -335,10 +335,11 @@ body.dark-mode .pfc-dist-bar { background: rgba(255,255,255,0.1); }
 body.dark-mode .pfc-dist-lbl { color: #aab8c8; }
 .pfc-dist-lbl i { display: inline-block; width: 6px; height: 6px; border-radius: 99px; margin-right: 4px; vertical-align: middle; }
 
-/* ---- три карточки-стата: вложено / доход / доходность — одинаковые по ширине и шрифтам ---- */
-.pfc-stats2 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 12px 24px 0; }
-/* «узкий» вид карточки — без «Вложено», только доход/доходность */
-.pf-card--narrow .pfc-stats2 { grid-template-columns: 1fr 1fr; }
+/* ---- карточки-статы: вложено / доход / [выплаты] / [кэш] / доходность.
+   Раньше жёсткая сетка 3 колонок — теперь flex с равными ячейками: статов может
+   быть 2–5 («Выплаты» и «Кэш» появляются по данным), ряд делится поровну всегда */
+.pfc-stats2 { display: flex; gap: 8px; margin: 12px 24px 0; }
+.pfc-stats2 .pfc-stat2 { flex: 1 1 0; }
 .pfc-stat2 { min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: 8px 12px; background: rgba(24,38,60,0.035); border-radius: 11px; border: 1px solid rgba(24,38,60,0.06); }
 body.dark-mode .pfc-stat2 { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.06); }
 .pfc-stat2--yield.is-gn { background: color-mix(in srgb, var(--pf-gn) 8%, rgba(24,38,60,0.035)); border-color: color-mix(in srgb, var(--pf-gn) 18%, rgba(24,38,60,0.08)); }
@@ -1911,3 +1912,75 @@ body.dark-mode .pf-eyeallbtn:hover { background: rgba(255,255,255,0.07); }
 .tbmk-go:hover .tbmk-go-arr { transform: translateX(2px); color: #3d4d63; }
 body.dark-mode .tbmk-go { border-color: rgba(255,255,255,0.14); color: #c4cedd; }
 body.dark-mode .tbmk-go:hover { border-color: rgba(255,255,255,0.28); color: #f1f6fb; background: rgba(255,255,255,0.06); }
+
+/* ============================================================
+   РАУНД «АУДИТ»: выплаты · кэш · цель · дневные маркеры · CSV
+   ============================================================ */
+
+/* --- чип «▲ 1 234 ₽ сегодня» в шапке карточки (снимки стоимости по дням) --- */
+.pfc-titles { flex-direction: row; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pfc-day { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 99px; cursor: default; }
+.pfc-day.pos { color: #15803d; background: rgba(22,163,74,0.09); }
+.pfc-day.neg { color: #b91c1c; background: rgba(220,38,38,0.08); }
+body.dark-mode .pfc-day.pos { color: #34d399; background: rgba(52,211,153,0.12); }
+body.dark-mode .pfc-day.neg { color: #f87171; background: rgba(248,113,113,0.12); }
+
+/* --- дневной маркер ▲/▼ (≥3% за день) возле цены в мини-таблице --- */
+.pfc-rowday { font-style: normal; font-size: 9px; margin-left: 3px; vertical-align: 1px; }
+.pfc-rowday.up { color: #16a34a; }
+.pfc-rowday.dn { color: #dc2626; }
+body.dark-mode .pfc-rowday.up { color: #34d399; }
+body.dark-mode .pfc-rowday.dn { color: #f87171; }
+
+/* --- целевая структура: метка цели на полосе распределения + строка отклонения --- */
+.pfc-dist-barwrap { position: relative; }
+.pfc-dist-tgt { position: absolute; top: -3px; bottom: -3px; width: 2px; border-radius: 2px;
+    background: #1b2433; opacity: 0.55; transform: translateX(-1px); pointer-events: auto; }
+body.dark-mode .pfc-dist-tgt { background: #eef3f9; opacity: 0.6; }
+.pfc-tgt-hint { margin: 8px 24px 0; font-size: 11.5px; font-weight: 650; line-height: 1.35;
+    display: flex; align-items: center; gap: 6px; }
+.pfc-tgt-hint svg { width: 12px; height: 12px; flex: 0 0 auto; }
+.pfc-tgt-hint.ok { color: #6b7c92; }
+.pfc-tgt-hint.ok svg { color: #16a34a; }
+.pfc-tgt-hint.off { color: #9a6a1f; }
+body.dark-mode .pfc-tgt-hint.ok { color: #93a3b8; }
+body.dark-mode .pfc-tgt-hint.off { color: #e0b465; }
+
+/* --- «Свободные деньги» и «Цель · облигации» в настройках ⚙ --- */
+.pfm-extras { display: flex; gap: 10px; margin: 10px 0 2px; }
+.pfm-extra { flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 7px 10px 7px 12px; border-radius: 11px; background: rgba(24,38,60,0.03); border: 1px solid rgba(24,38,60,0.07); }
+body.dark-mode .pfm-extra { background: rgba(255,255,255,0.035); border-color: rgba(255,255,255,0.08); }
+.pfm-extra > span:first-child { font-size: 11px; font-weight: 700; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.dark-mode .pfm-extra > span:first-child { color: #aab8c8; }
+.pfm-extra-f { display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto; }
+.pfm-extra-f .pfm-in { width: 86px; text-align: right; }
+.pfm-extra-f i { font-style: normal; font-size: 11px; font-weight: 700; color: #94a3b8; }
+
+/* --- календарь: разделители месяцев и бейджи типа выплаты --- */
+.pfpc-mon { display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+    margin: 10px 2px 2px; padding: 0 11px; }
+.pfpc-list > .pfpc-mon:first-child { margin-top: 0; }
+.pfpc-mon b { font-size: 11px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: #8a97a8; }
+.pfpc-mon span { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #4b9d6e; white-space: nowrap; }
+body.dark-mode .pfpc-mon b { color: #93a3b8; }
+body.dark-mode .pfpc-mon span { color: #34d399; }
+.pfpc-kind { font-style: normal; font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 800;
+    letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 6px; border-radius: 99px;
+    margin-left: 6px; vertical-align: 1px; white-space: nowrap; }
+.pfpc-kind.kind-div { color: #7c5eb8; background: rgba(139,92,246,0.12); }
+.pfpc-kind.kind-red { color: #1f6feb; background: rgba(61,111,209,0.11); }
+body.dark-mode .pfpc-kind.kind-div { color: #c4b5fd; background: rgba(139,92,246,0.2); }
+body.dark-mode .pfpc-kind.kind-red { color: #93c5fd; background: rgba(61,111,209,0.22); }
+
+/* --- строка «Кэш · Выплаты получено» в сводке «Суммарный капитал» (тёмная карточка) --- */
+.pfs2-extras { margin-top: 7px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; font-weight: 600; color: #aebbcc; }
+.pfs2-extras b { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #eef3f9; }
+.pfs2-extras b.pos { color: #34d399; }
+
+/* узкий экран: 4–5 статов в один ряд не влезают — переносим по 2 в ряд */
+@media (max-width: 600px) {
+    .pfc-stats2 { flex-wrap: wrap; }
+    .pfc-stats2 .pfc-stat2 { flex: 1 1 40%; }
+}

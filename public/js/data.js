@@ -72,18 +72,24 @@
                 couponValue: parseFloat(sec_row[sec_cols.indexOf('COUPONVALUE')]) || 0,
                 nextCoupon: sec_row[sec_cols.indexOf('NEXTCOUPON')] || '—',
                 couponYield: sec_row[sec_cols.indexOf('COUPONPERCENT')] || '—',
-                freq: freq
+                freq: freq,
+                face: (parseFloat(sec_row[sec_cols.indexOf('FACEVALUE')]) > 0) ? parseFloat(sec_row[sec_cols.indexOf('FACEVALUE')]) : 1000
             };
         }
 
-        // === ВАЖНО: Умножаем на 10 (проценты -> рубли) ===
-        // Если цены нет, ставим 0 (заглушки убрали, как вы просили)
-        const finalPrice = lastPrice > 0 ? (lastPrice * 10) : 0; 
-        
-        const result = { 
-            nkd: sec_row ? (parseFloat(sec_row[sec_cols.indexOf('ACCRUEDINT')]) || 0) : 0, 
-            matDate: (sec_row && sec_row[sec_cols.indexOf('MATDATE')]) || '—', 
-            price: finalPrice
+        // Котировка MOEX — в % от номинала: рубли = % × FACEVALUE / 100. У ОФЗ номинал
+        // 1000 ₽ (то же ×10, что и раньше), но у корпоративных/амортизированных бумаг
+        // номинал другой — берём настоящий из securities. Валютные бонды (FACEUNIT ≠ RUB)
+        // этим не решаются: их цена получится в валюте номинала.
+        const faceIdx = sec_cols ? sec_cols.indexOf('FACEVALUE') : -1;
+        const faceVal = (sec_row && faceIdx >= 0 && parseFloat(sec_row[faceIdx]) > 0) ? parseFloat(sec_row[faceIdx]) : 1000;
+        const finalPrice = lastPrice > 0 ? (lastPrice * faceVal / 100) : 0;
+
+        const result = {
+            nkd: sec_row ? (parseFloat(sec_row[sec_cols.indexOf('ACCRUEDINT')]) || 0) : 0,
+            matDate: (sec_row && sec_row[sec_cols.indexOf('MATDATE')]) || '—',
+            price: finalPrice,
+            face: faceVal
         };
         
         // Сохраняем в кэш
