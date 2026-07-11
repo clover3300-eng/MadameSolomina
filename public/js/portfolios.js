@@ -1682,17 +1682,15 @@
         // но сразу с открытыми активами — отдельный оверлей «весь состав» больше не дублируется тут
         var assetsChartOn = chartOn && !!chartAssets[p.id];
 
-        // чип «за сегодня»: изменение стоимости к последнему дневному снимку; в подсказке —
-        // самое сильное дневное движение среди акций. Если снимка ещё нет (первый день),
-        // но какая-то акция прыгнула на ≥4% — показываем её вместо суммы.
+        // чип «за сегодня»: изменение стоимости портфеля к последнему дневному снимку;
+        // в подсказке — самое сильное дневное движение среди акций. Показывается только
+        // когда снимок прошлого дня уже есть (со второго дня наблюдения).
         var dd = dayDelta(p, c.value), mv = topMover(p);
         var dayChip = '';
         if (dd != null && Math.abs(dd) >= 1) {
             var mvTxt = (mv && Math.abs(mv.chg) >= 3) ? ' Сильнее всех: ' + mv.t + ' ' + fmtPct(mv.chg) + ' за день.' : '';
             dayChip = '<span class="pfc-day ' + (dd >= 0 ? 'pos' : 'neg') + '" title="' + attr('Изменение стоимости портфеля за сегодня — к последнему дневному снимку.' + mvTxt) + '">' +
                 (dd >= 0 ? '▲' : '▼') + ' ' + fmtRub(Math.abs(dd)) + ' сегодня</span>';
-        } else if (mv && Math.abs(mv.chg) >= 4) {
-            dayChip = '<span class="pfc-day ' + (mv.chg >= 0 ? 'pos' : 'neg') + '" title="Самое сильное движение дня среди акций портфеля">' + esc(mv.t) + ' ' + fmtPct(mv.chg) + ' за день</span>';
         }
         return '<div class="dash2-card pf-card' + (openMenu === p.id ? ' menu-open' : '') + tall + (chartOn ? ' chart-open' : '') + (chartOn && chartAssets[p.id] ? ' assets-open' : '') + (holdsOn ? ' holds-open' : '') + (colRight ? ' col-right' : '') + (narrow ? ' pf-card--narrow' : '') + (colMid ? ' col-mid' : '') + '" style="--pf-accent:' + ac + '">' +
             '<div class="pfc-top">' +

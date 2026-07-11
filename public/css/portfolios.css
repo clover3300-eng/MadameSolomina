@@ -359,13 +359,22 @@ body.dark-mode .pfc-sep { background: rgba(255,255,255,0.06); }
 /* ---- превью состава: усечённая мини-таблица (4 строки) + «Показать всё» ----
    Настоящая <table> (как pfo-table в ребалансе), а не css-grid с фикс px-колонками —
    шапка и строки гарантированно совпадают по ширине, числа не «наезжают» друг на друга. */
-.pfc-massets { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; display: flex; flex-direction: column; padding: 4px 24px 0; }
-/* flex-shrink:0 обязателен — иначе flex-контейнер сжимает эту обёртку (overflow:hidden даёт
-   automatic minimum size = 0) и обрезает список активов ВМЕСТО скролла в .pfc-massets */
-.pfc-mtablewrap { overflow: hidden; flex-shrink: 0; }
+/* padding-top:0 — чтобы липкая шапка садилась ровно на край обрезки скролла (иначе
+   строка «выглядывала» бы над шапкой в зазоре верхнего паддинга); отступ над шапкой
+   даёт её собственный padding-top */
+.pfc-massets { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; display: flex; flex-direction: column; padding: 0 24px 0; }
+/* flex-shrink:0 обязателен — иначе flex-контейнер сжимает обёртку и обрезает список
+   активов ВМЕСТО скролла в .pfc-massets. overflow:visible (не hidden!) — чтобы sticky-шапка
+   таблицы липла к скроллеру .pfc-massets, а не запиралась внутри самой обёртки */
+.pfc-mtablewrap { overflow: visible; flex-shrink: 0; }
 .pfc-mtable { width: 100%; border-collapse: collapse; }
-.pfc-mtable thead th { text-align: right; padding: 0 0 6px; font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; letter-spacing: 0.08em; color: #94a3b8; text-transform: uppercase; border-bottom: 1px solid rgba(24,38,60,0.06); }
-body.dark-mode .pfc-mtable thead th { border-color: rgba(255,255,255,0.06); }
+/* шапка колонок ПРИЛИПАЕТ к верху при скролле состава — непрозрачный фон под цвет
+   карточки перекрывает уезжающие под неё строки */
+.pfc-mtable thead th { position: sticky; top: 0; z-index: 3; background: #fff;
+    text-align: right; padding: 6px 0; font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; letter-spacing: 0.08em; color: #94a3b8; text-transform: uppercase; border-bottom: 1px solid rgba(24,38,60,0.06); }
+body.dark-mode .pfc-mtable thead th { background: #1a232f; border-color: rgba(255,255,255,0.06); }
+/* оверлей «весь состав» — свой фон карточки (темнее card), чтобы липкая шапка совпадала */
+body.dark-mode .pfc-holdsover-list .pfc-mtable thead th { background: #18222e; }
 .pfc-mtable thead th.pfc-mc-as, .pfc-mtable td.pfc-mc-as { text-align: left; }
 .pfc-mtable thead th:last-child { padding-right: 2px; }
 .pfc-mtable tbody tr.pfc-mtr td { padding: 8px 0; font-size: 11.5px; border-bottom: 1px solid rgba(24,38,60,0.045); }
@@ -429,7 +438,7 @@ body.dark-mode .pfc-mdate { color: #5c6a7a; }
 .pfc-empty { padding: 22px 0; text-align: center; font-size: 12.5px; color: #94a3b8; }
 
 /* ---- оверлей «весь состав»: та же мини-таблица, без ограничения в 4 строки ---- */
-.pfc-holdsover-list { overflow-y: auto; padding: 6px 18px 16px; }
+.pfc-holdsover-list { overflow-y: auto; padding: 0 18px 16px; }
 .pfc-holdsover-list .pfc-mtablewrap { padding-left: 2px; padding-right: 2px; }
 
 /* режим графика — карточка НЕ перестраивает сетку: график выезжает оверлеем в сторону */
