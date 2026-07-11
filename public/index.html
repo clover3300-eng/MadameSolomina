@@ -26,12 +26,12 @@
     <link rel="stylesheet" href="css/rebalance.css">
     <link rel="stylesheet" href="css/rebalance-stocks.css">
     <link rel="stylesheet" href="css/webapp-layout.css?v=3">
-    <link id="siteLayoutCSS" rel="stylesheet" href="css/site-layout.css?v=47">
+    <link id="siteLayoutCSS" rel="stylesheet" href="css/site-layout.css?v=48">
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/backtest.css?v=15">
     <link rel="stylesheet" href="css/rebalance-r4.css?v=9">
     <link rel="stylesheet" href="css/dashboard-panel.css?v=4">
-    <link rel="stylesheet" href="css/portfolios.css?v=70">
+    <link rel="stylesheet" href="css/portfolios.css?v=71">
     <link rel="stylesheet" href="css/rebal-r5.css?v=9">
     <link rel="stylesheet" href="css/monthly-panel.css?v=1">
     <link rel="stylesheet" href="css/monthly-r5.css?v=13">
@@ -45,12 +45,13 @@
     <link rel="stylesheet" href="css/site-bg.css?v=3">
     <link rel="stylesheet" href="css/profile-menu.css?v=11">
     <link rel="stylesheet" href="css/notifications.css?v=1">
-    <link rel="stylesheet" href="css/admin.css?v=7">
+    <link rel="stylesheet" href="css/tab-gates.css?v=1">
+    <link rel="stylesheet" href="css/admin.css?v=8">
     <link rel="stylesheet" href="css/rebalance-r6.css?v=2">
     <link rel="stylesheet" href="css/typography-tokens.css?v=2">
     <link rel="stylesheet" href="css/desktop-zoom.css?v=4">
     <!-- Мобильный слой (≤1023px) — всегда ПОСЛЕДНИЙ, перебивает всё -->
-    <link rel="stylesheet" href="css/mobile.css?v=11">
+    <link rel="stylesheet" href="css/mobile.css?v=12">
     
     <!-- Telegram WebApp API (fallback — works both in TG and browser) -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -114,66 +115,69 @@
             </button>
         </div>
         <div id="sbNav">
-            <button class="sb-item" data-tab="home" onclick="goHome()" title="Главная">
+            <!-- Пункты — настоящие ссылки: Cmd/Ctrl/средний клик открывает раздел в новой
+                 вкладке браузера (SPA-фолбэк вернёт index.html, route-hash восстановит),
+                 обычный клик перехватывают sbGo/sbGoParent/sbGoSub (sidebar.js) -->
+            <a class="sb-item" data-tab="home" href="/" onclick="return sbGo(event, 'home')" title="Главная">
                 <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                 <span class="sb-label">Главная</span>
-            </button>
+            </a>
             <div class="sb-group" data-group="calc">
-                <button class="sb-item sb-parent" data-tab="calc" onclick="sbNavParent('calc', event)" title="Расчёт">
+                <a class="sb-item sb-parent" data-tab="calc" href="/calc" onclick="return sbGoParent(event, 'calc')" title="Расчёт">
                     <svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
                     <span class="sb-label">Расчёт</span>
                     <span class="sb-chev" onclick="sbToggleGroup('calc', event)" aria-label="Развернуть"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span>
-                </button>
+                </a>
                 <div class="sb-subs" id="sbSubs-calc">
                     <div class="sb-subs-wrap">
                         <!-- «Ежемесячный доход» объединён с расчётом: тип портфеля
                              выбирается карточками внутри вкладки (js/calc-mode.js).
                              Подвкладки результатов скрыты до первого расчёта —
                              их показывает calc-mode.js (showSub) -->
-                        <button class="sb-sub" data-sub="calc-portfolio" onclick="sbNavSub('calc-portfolio', event)">
+                        <a class="sb-sub" data-sub="calc-portfolio" href="/calc" onclick="return sbGoSub(event, 'calc-portfolio')">
                             <span class="sb-sub-bar"></span><span class="sb-sub-tx">Расчёт портфеля</span>
-                        </button>
-                        <button class="sb-sub" id="sbSubMix" data-sub="calc-mix" style="display:none" onclick="sbNavSub('calc-mix', event)">
+                        </a>
+                        <a class="sb-sub" id="sbSubMix" data-sub="calc-mix" href="/portfolio" style="display:none" onclick="return sbGoSub(event, 'calc-mix')">
                             <span class="sb-sub-bar"></span><span class="sb-sub-tx">Смешанный портфель</span>
-                        </button>
-                        <button class="sb-sub" id="sbSubMonthly" data-sub="calc-monthly" style="display:none" onclick="sbNavSub('calc-monthly', event)">
+                        </a>
+                        <a class="sb-sub" id="sbSubMonthly" data-sub="calc-monthly" href="/calc" style="display:none" onclick="return sbGoSub(event, 'calc-monthly')">
                             <span class="sb-sub-bar"></span><span class="sb-sub-tx">Ежемесячный доход</span>
-                        </button>
+                        </a>
                     </div>
                 </div>
             </div>
-            <button class="sb-item" data-tab="portfolios" onclick="switchTab('portfolios')" title="Портфели">
+            <a class="sb-item" data-tab="portfolios" href="/portfolios" onclick="return sbGo(event, 'portfolios')" title="Портфели">
                 <svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg>
                 <span class="sb-label">Портфели</span>
-            </button>
-            <button class="sb-item" data-tab="rebalance" onclick="switchTab('rebalance')" title="Ребаланс">
+            </a>
+            <a class="sb-item" data-tab="rebalance" href="/rebalance" onclick="return sbGo(event, 'rebalance')" title="Ребаланс">
                 <svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg>
                 <span class="sb-label">Ребаланс</span>
-            </button>
+            </a>
             <div class="sb-group" data-group="market">
-                <button class="sb-item sb-parent" data-tab="market" onclick="sbNavParent('market', event)" title="Рынок">
+                <a class="sb-item sb-parent" data-tab="market" href="/market" onclick="return sbGoParent(event, 'market')" title="Рынок">
                     <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                     <span class="sb-label">Рынок</span>
                     <span class="sb-chev" onclick="sbToggleGroup('market', event)" aria-label="Развернуть"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span>
-                </button>
+                </a>
                 <div class="sb-subs" id="sbSubs-market">
                     <div class="sb-subs-wrap">
                         <!-- Объединённая вкладка: внутри переключатель Акции ↔ Облигации -->
-                        <button class="sb-sub" data-sub="market-terminal" onclick="sbNavSub('market-terminal', event)">
+                        <a class="sb-sub" data-sub="market-terminal" href="/market-stocks" onclick="return sbGoSub(event, 'market-terminal')">
                             <span class="sb-sub-bar"></span><span class="sb-sub-tx">Терминал</span>
-                        </button>
+                        </a>
                     </div>
                 </div>
             </div>
-            <button class="sb-item" data-tab="backtest" onclick="switchTab('backtest')" title="Тест портфеля">
+            <a class="sb-item" data-tab="backtest" href="/backtest" onclick="return sbGo(event, 'backtest')" title="Тест портфеля">
                 <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg>
                 <span class="sb-label">Тест</span>
-            </button>
+            </a>
             <!-- Админка: скрыта до подтверждения роли admin (показ — gateNav в js/admin.js) -->
-            <button class="sb-item" id="sbAdminBtn" data-tab="admin" style="display:none" onclick="switchTab('admin')" title="Админка">
+            <a class="sb-item" id="sbAdminBtn" data-tab="admin" href="/admin" style="display:none" onclick="return sbGo(event, 'admin')" title="Админка">
                 <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 <span class="sb-label">Админка</span>
-            </button>
+            </a>
         </div>
         </div><!-- /sbPanel -->
         <div id="sbFoot">
@@ -2225,7 +2229,7 @@
 <script src="js/calc-r5.js?v=7" defer></script>
 <script src="js/calc-mode.js?v=8" defer></script>
 <script src="js/dashboard.js?v=6" defer></script>
-<script src="js/sidebar.js?v=5" defer></script>
+<script src="js/sidebar.js?v=6" defer></script>
 <script src="js/stock-terminal.js?v=11" defer></script>
 <script src="js/bond-terminal.js?v=10" defer></script>
 <script src="js/table-tooltip.js?v=1" defer></script>
@@ -2242,13 +2246,14 @@
      cloud-sync и admin — после; route-hash по-прежнему ПОСЛЕДНИЙ -->
 <script src="js/supabase-config.js?v=1" defer></script>
 <script src="js/telegram-config.js?v=1" defer></script>
-<script src="js/supabase-client.js?v=4" defer></script>
-<script src="js/home-register.js?v=16" defer></script>
-<script src="js/profile-menu.js?v=13" defer></script>
+<script src="js/supabase-client.js?v=5" defer></script>
+<script src="js/home-register.js?v=17" defer></script>
+<script src="js/profile-menu.js?v=14" defer></script>
 <script src="js/notifications.js?v=2" defer></script>
+<script src="js/tab-gates.js?v=1" defer></script>
 <script src="js/sums-privacy.js?v=2" defer></script>
 <script src="js/cloud-sync.js?v=2" defer></script>
-<script src="js/admin.js?v=9" defer></script>
-<script src="js/route-hash.js?v=1" defer></script>
+<script src="js/admin.js?v=10" defer></script>
+<script src="js/route-hash.js?v=2" defer></script>
 </body>
 </html>

@@ -180,6 +180,34 @@
             window.sbOpenGroup('market'); switchTab(sub);
         }
     };
+    // ---- Пункты-ссылки: обычный клик — SPA-переход, модифицированный — браузеру ----
+    // Пункты сайдбара — настоящие <a href>: Cmd/Ctrl/Shift/средний клик открывает
+    // раздел в новой вкладке браузера (прямая загрузка пути восстанавливается
+    // route-hash.js). Обычный левый клик перехватываем и переключаем без перезагрузки.
+    function sbModClick(e) {
+        return !!(e && (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey ||
+            (typeof e.button === 'number' && e.button !== 0)));
+    }
+    window.sbGo = function(e, tab) {
+        if (sbModClick(e)) return true;
+        if (e) e.preventDefault();
+        if (tab === 'home' && typeof window.goHome === 'function') window.goHome();
+        else switchTab(tab);
+        return false;
+    };
+    window.sbGoParent = function(e, group) {
+        if (sbModClick(e)) return true;
+        if (e) e.preventDefault();
+        window.sbNavParent(group, e);
+        return false;
+    };
+    window.sbGoSub = function(e, sub) {
+        if (sbModClick(e)) return true;
+        if (e) e.preventDefault();
+        window.sbNavSub(sub, e);
+        return false;
+    };
+
     // Синхронизирует активную группу/подпункт и подсветку родителя с текущей вкладкой
     function sbSyncActive(tabId) {
         var activeGroup = SB_GROUP_OF[tabId] || null;

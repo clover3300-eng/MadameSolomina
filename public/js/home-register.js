@@ -191,42 +191,52 @@
     };
 
     // ---- Успех: галочка на кнопке и переход в приложение ----
-    // «Раздел при запуске» из настроек кабинета (profile_settings_v1). Уважаем выбор
-    // пользователя; если не задан или «Главная» — падаем на прежний дефолт «Расчёт».
-    function landingTab() {
+    // Куда вести после успеха. «Раздел при запуске» из настроек кабинета
+    // (profile_settings_v1) уважается всегда. Если он не задан:
+    //   · вход (email/Telegram/новый пароль) — ОСТАЁМСЯ на Главной: манифест
+    //     уже перерисован в «С возвращением, Имя» (updateAuthView), прыжок
+    //     на «Расчёт» и мерцания были главным раздражителем;
+    //   · регистрация нового аккаунта — прежний дефолт «Расчёт» (онбординг).
+    function landingTab(isNewUser) {
         var startTab = '';
         try {
             var s = JSON.parse(localStorage.getItem('profile_settings_v1') || '{}');
             if (s && typeof s.startTab === 'string') startTab = s.startTab;
         } catch (e) {}
-        return (startTab && startTab !== 'home') ? startTab : 'calc';
+        if (startTab && startTab !== 'home') return startTab;
+        return isNewUser ? 'calc' : 'home';
     }
 
-    function successAndGo(msg) {
+    function successAndGo(msg, isNewUser) {
         var btn = el('hsSubmit');
         if (btn) { btn.classList.add('is-done'); btn.disabled = false; el('hsSubmitLabel').textContent = 'Готово ✓'; }
         haptic('success');
         toast(msg);
-        var dest = landingTab();
+        var dest = landingTab(isNewUser);
 
         // При облачном входе cloud-sync сам делает один мягкий reload, подтянув данные.
-        // Ставим целевой путь заранее — после reload route-hash откроет сразу нужную вкладку,
-        // без промежуточной анимированной смены (именно она + reload давали резкое мигание).
+        // Ставим целевой путь заранее — после reload route-hash откроет нужную вкладку
+        // синхронно, до первого пейнта (бесшовно, без промежуточной Главной).
         if (cloudOn()) {
-            try { history.replaceState({ tab: dest }, '', dest === 'home' ? '/' : '/' + dest); } catch (e) {}
-            // Фолбэк, если reload не случился (данные не изменились / сдержан 30-сек. гард).
-            setTimeout(function () {
-                if (typeof window.switchTab === 'function' &&
-                    typeof currentTab !== 'undefined' && currentTab !== dest) {
-                    window.switchTab(dest);
-                }
-            }, 1600);
+            if (dest !== 'home') {
+                try { history.replaceState({ tab: dest }, '', '/' + dest); } catch (e) {}
+                // Фолбэк, если reload не случился (данные не изменились / 30-сек. гард).
+                setTimeout(function () {
+                    if (typeof window.switchTab === 'function' &&
+                        typeof currentTab !== 'undefined' && currentTab !== dest) {
+                        window.switchTab(dest);
+                    }
+                }, 1600);
+            }
+            // dest === 'home': никуда не уходим — пользователь уже видит приветствие
             return;
         }
 
-        setTimeout(function () {
-            if (typeof window.switchTab === 'function') window.switchTab(dest);
-        }, 900);
+        if (dest !== 'home') {
+            setTimeout(function () {
+                if (typeof window.switchTab === 'function') window.switchTab(dest);
+            }, 900);
+        }
     }
 
     // ---- Отправка формы ----
@@ -266,7 +276,7 @@
                         window.homeAuthMode('login');
                         note('Почти готово! Мы отправили письмо на ' + email + ' — подтвердите почту и войдите.', true);
                     } else {
-                        successAndGo('Аккаунт создан, ' + name + '!');
+                        successAndGo('Аккаунт создан, ' + name + '!', true);
                     }
                 });
             } else {
@@ -293,7 +303,7 @@
             }));
         } catch (e) { /* приватный режим — не критично */ }
 
-        successAndGo(isReg ? ('Аккаунт создан, ' + name + '!') : 'Вход выполнен');
+        successAndGo(isReg ? ('Аккаунт создан, ' + name + '!') : 'Вход выполнен', isReg);
         return false;
     };
 
@@ -345,8 +355,8 @@
             } catch (e) { /* no-op */ }
             haptic('success');
             toast('Вход выполнен через Telegram');
-            if (typeof window.switchTab === 'function') {
-                var demoDest = landingTab();
+            var demoDest = landingTab();
+            if (demoDest !== 'home' && typeof window.switchTab === 'function') {
                 setTimeout(function () { window.switchTab(demoDest); }, 600);
             }
             return;

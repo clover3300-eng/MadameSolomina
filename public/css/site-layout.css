@@ -39,6 +39,8 @@
     .sb-logo-name { color: #F1F6FB; font-size: 13.5px; white-space: nowrap; }
     .sb-logo-sub { color: rgba(241,246,251,0.38); font-size: 9.5px; letter-spacing: 0.16em; text-transform: uppercase; margin-top: 2px; }
     #sbNav { display: flex; flex-direction: column; gap: 3px; padding: 4px 10px; flex: 1; }
+    /* пункты теперь <a href> (открытие в новой вкладке браузера) — гасим дефолты ссылок */
+    a.sb-item, a.sb-sub { text-decoration: none; box-sizing: border-box; }
     .sb-item {
         display: flex; align-items: center; gap: 12px;
         width: 100%; border: none; background: transparent;

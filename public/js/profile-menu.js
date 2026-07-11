@@ -888,18 +888,23 @@
         wire();
         // событие аудита могло прийти до нас — подхватываем текущее состояние
         if (window.echelonAudit) setAuditBadge(window.echelonAudit.mismatch());
-
-        // «Раздел при запуске»: применяем только на «чистом» заходе (путь /),
-        // прямые ссылки вида /market восстанавливает route-hash.js.
-        var startTab = getSettings().startTab;
-        if (startTab && startTab !== 'home' && location.pathname.replace(/\/$/, '') === '') {
-            setTimeout(function () {
-                if (typeof window.switchTab === 'function' && typeof currentTab !== 'undefined' && currentTab === 'home') {
-                    window.switchTab(startTab);
-                }
-            }, 40);
-        }
     }
+
+    // «Раздел при запуске»: применяем только на «чистом» заходе (путь /),
+    // прямые ссылки вида /market восстанавливает route-hash.js. Переключаем
+    // СИНХРОННО на DOMContentLoaded — до первого пейнта, чтобы Главная не
+    // мелькала перед стартовой вкладкой (бесшовный заход). Хендлер навешан
+    // на верхнем уровне: defer-скрипт выполняется до DOMContentLoaded, а
+    // восстановитель route-hash (скрипт позже нас) увидит уже переключённую
+    // вкладку и не дёрнет её повторно.
+    document.addEventListener('DOMContentLoaded', function () {
+        var startTab = getSettings().startTab;
+        if (!startTab || startTab === 'home') return;
+        if (location.pathname.replace(/\/$/, '') !== '') return;
+        if (typeof window.switchTab === 'function' && typeof currentTab !== 'undefined' && currentTab === 'home') {
+            window.switchTab(startTab);
+        }
+    }, { once: true });
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();

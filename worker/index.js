@@ -288,7 +288,7 @@ async function handleNotify(request, env) {
     var pRes = await fetch(env.SUPABASE_URL + '/rest/v1/profiles?id=eq.' +
         encodeURIComponent(caller.id) + '&select=role,banned', { headers: svc });
     var pRows = pRes.ok ? await pRes.json() : [];
-    if (!pRows.length || pRows[0].role !== 'admin' || pRows[0].banned) {
+    if (!pRows.length || ['admin', 'owner'].indexOf(pRows[0].role) === -1 || pRows[0].banned) {
         return json({ ok: false, error: 'Рассылать может только администратор' }, 403);
     }
 

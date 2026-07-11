@@ -1437,14 +1437,17 @@ body.dark-mode .pft-toggle { border-color: rgba(255,255,255,0.1); background: rg
 body.dark-mode .pft-toggle:hover, body.dark-mode .pft-toggle.on { background: color-mix(in srgb, var(--pf-accent) 24%, rgba(255,255,255,0.05)); color: #fff; }
 .pft-toggle-ch { width: 14px; height: 14px; transition: transform 0.18s; }
 .pft-toggle-ch.up { transform: rotate(180deg); }
-.pft-body { padding: 4px 22px 20px; }
-/* сетка: заголовки колонок и значения делят одну grid-раскладку (col «Портфель» — только .has-pf) */
+/* overflow-x: clip — страховка: при дробном браузерном зуме ширина карточки
+   гуляет на пиксели, и жёсткий грид вылезал бы за её границы (столбец «Расход») */
+.pft-body { padding: 4px 22px 20px; overflow-x: clip; }
+/* сетка: заголовки колонок и значения делят одну grid-раскладку (col «Портфель» — только .has-pf);
+   колонки со свободой сжатия (minmax) — при нехватке ширины на зуме ужимаются, а не переполняют карточку */
 .pft-hrow, .pft-row { display: grid; align-items: center; gap: 12px;
-    grid-template-columns: 104px 96px minmax(120px,1.4fr) 92px 84px 62px 104px 96px 108px; }
+    grid-template-columns: minmax(86px,104px) minmax(80px,96px) minmax(110px,1.4fr) minmax(76px,92px) minmax(66px,84px) minmax(50px,62px) minmax(86px,104px) minmax(78px,96px) minmax(90px,108px); }
 /* мульти-портфель: номер-маркер — узкой ПЕРВОЙ «рельсой» (как левая рельса в календаре
    выплат), отдельной колонки «Портфель» с именем больше нет */
 .pf-trades.has-pf .pft-hrow, .pf-trades.has-pf .pft-row {
-    grid-template-columns: 34px 104px 96px minmax(120px,1.4fr) 92px 84px 62px 104px 96px 108px; }
+    grid-template-columns: 34px minmax(86px,104px) minmax(80px,96px) minmax(110px,1.4fr) minmax(76px,92px) minmax(66px,84px) minmax(50px,62px) minmax(86px,104px) minmax(78px,96px) minmax(90px,108px); }
 .pft-hrow { padding: 2px 13px 9px; margin-bottom: 8px; border-bottom: 1px solid rgba(24,38,60,0.08); }
 body.dark-mode .pft-hrow { border-color: rgba(255,255,255,0.08); }
 .pft-h { font-size: 9.5px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

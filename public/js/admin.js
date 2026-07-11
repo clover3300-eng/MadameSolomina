@@ -118,7 +118,9 @@
         admin_clear_data:       { t: 'Очистка данных',    c: 'ban' },
         admin_delete_user:      { t: 'Аккаунт удалён',    c: 'ban' },
         admin_notify:           { t: 'Оповещение',        c: 'adm' },
-        admin_notify_del:       { t: 'Оповещение отозвано', c: 'ban' }
+        admin_notify_del:       { t: 'Оповещение отозвано', c: 'ban' },
+        admin_gate:             { t: 'Вкладки: заглушки', c: 'adm' },
+        admin_gate_notify:      { t: 'Рассылка о готовности', c: 'adm' }
     };
     function evMeta(ev) { return EVENT_META[ev] || { t: ev, c: 'out' }; }
 
@@ -159,6 +161,7 @@
         key: '<svg viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>',
         sdir: '<svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M6 13l6 6 6-6"/></svg>',
         bell: '<svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
+        crown: '<svg viewBox="0 0 24 24"><path d="M2 8l4.5 4L12 4l5.5 8L22 8v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/></svg>',
         info: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
         send: '<svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>'
     };
@@ -361,6 +364,7 @@
                     segBtn('users', 'Пользователи', D.profiles.length) +
                     segBtn('events', 'События', D.eventsTotal) +
                     segBtn('notify', 'Оповещения', NT.list ? NT.list.length : null) +
+                    segBtn('tabs', 'Вкладки', GC.cfg ? (gatesOffCount() || null) : null) +
                     segBtn('sheet', 'Гугл таблица', EA.results.length ? (EA.mismatch || null) : null) +
                 '</div>' +
             '</div>';
@@ -375,6 +379,8 @@
             h += renderUsers();
         } else if (section === 'notify') {
             h += renderNotify();
+        } else if (section === 'tabs') {
+            h += renderTabsAdmin();
         } else if (section === 'sheet') {
             h += renderSheet();
         } else {
@@ -409,6 +415,19 @@
         }
         var nfTo = dq('admNfTo');
         if (nfTo) nfTo.addEventListener('change', function () { NC.to = this.value; });
+
+        // раздел «Вкладки»: тексты баннеров живут в GC.cfg и возвращаются
+        // в поля после каждой перерисовки (тот же паттерн, что у черновика NC)
+        root.querySelectorAll('input[data-gt-msg]').forEach(function (inp) {
+            var gtTab = inp.getAttribute('data-gt-msg');
+            inp.value = (GC.cfg && GC.cfg[gtTab] && GC.cfg[gtTab].msg) || '';
+            inp.addEventListener('input', function () {
+                if (!GC.cfg || !GC.cfg[gtTab]) return;
+                GC.cfg[gtTab].msg = this.value;
+                var sv = dq('admGtSave');
+                if (sv) sv.disabled = !(gatesDirty() && !GC.saving);
+            });
+        });
     }
 
     function segBtn(id, label, n) {
@@ -469,7 +488,7 @@
             return byUser[uid].some(function (r) { return r.key === 'portfolios_v1'; });
         }).length;
         var banned = D.profiles.filter(function (p) { return p.banned; }).length;
-        var admins = D.profiles.filter(function (p) { return p.role === 'admin'; }).length;
+        var admins = D.profiles.filter(isMod).length;
 
         var feed;
         if (!D.events.length) {
@@ -575,7 +594,7 @@
             var byUser = userFilter === 'pf' ? dataByUser() : null;
             list = list.filter(function (p) {
                 if (userFilter === 'online') return isOnline(p);
-                if (userFilter === 'admins') return p.role === 'admin';
+                if (userFilter === 'admins') return isMod(p);
                 if (userFilter === 'banned') return p.banned;
                 return (byUser[p.id] || []).some(function (r) { return r.key === 'portfolios_v1'; });
             });
@@ -651,7 +670,7 @@
             var keys = byUser[p.id] || [];
             return '<div class="adm-urow' + (p.banned ? ' banned' : '') + '" data-act="open-user" data-id="' + p.id + '">' +
                 '<span class="adm-u-id">' +
-                    '<span class="adm-ava' + (p.role === 'admin' ? ' adm' : '') + '">' + esc(initialsOf(p)) + avaPhoto(p) + (isOnline(p) ? '<i class="adm-dot"></i>' : '') + '</span>' +
+                    '<span class="adm-ava' + (isMod(p) ? ' adm' : '') + '">' + esc(initialsOf(p)) + avaPhoto(p) + (isOnline(p) ? '<i class="adm-dot"></i>' : '') + '</span>' +
                     '<span class="adm-u-nm"><b>' + esc(p.name || 'Без имени') + (isMe(p) ? ' <em>вы</em>' : '') + '</b><small>' + esc(p.email || '—') + '</small></span>' +
                 '</span>' +
                 '<span>' + roleBadge(p) + '</span>' +
@@ -665,10 +684,13 @@
     }
 
     function roleBadge(p) {
+        if (p.role === 'owner') return '<span class="adm-badge role-owner">' + IC.crown + 'владелец</span>';
         return p.role === 'admin'
             ? '<span class="adm-badge role-admin">' + IC.shield + 'админ</span>'
             : '<span class="adm-badge role-user">юзер</span>';
     }
+    function isMod(p) { return p.role === 'admin' || p.role === 'owner'; }
+    function iAmOwner() { return !!(supa().isOwner && supa().isOwner()); }
     function statusBadge(p) {
         if (p.banned) return '<span class="adm-badge st-ban">бан</span>';
         if (isOnline(p)) return '<span class="adm-badge st-on">онлайн</span>';
@@ -681,7 +703,7 @@
         { id: 'auth', t: 'Входы/выходы', match: ['login', 'logout'] },
         { id: 'reg', t: 'Регистрации', match: ['register'] },
         { id: 'pass', t: 'Пароль', match: ['password_reset_request', 'password_reset_done'] },
-        { id: 'admin', t: 'Действия админа', match: ['admin_role', 'admin_ban', 'admin_unban', 'admin_clear_data', 'admin_delete_user', 'admin_notify', 'admin_notify_del'] }
+        { id: 'admin', t: 'Действия админа', match: ['admin_role', 'admin_ban', 'admin_unban', 'admin_clear_data', 'admin_delete_user', 'admin_notify', 'admin_notify_del', 'admin_gate', 'admin_gate_notify'] }
     ];
 
     function filteredEvents() {
@@ -794,7 +816,7 @@
 
         var h = '<button class="adm-m-x" data-act="close-modal" aria-label="Закрыть">' + IC.x + '</button>' +
             '<div class="adm-m-head">' +
-                '<span class="adm-ava big' + (p.role === 'admin' ? ' adm' : '') + '">' + esc(initialsOf(p)) + avaPhoto(p) + '</span>' +
+                '<span class="adm-ava big' + (isMod(p) ? ' adm' : '') + '">' + esc(initialsOf(p)) + avaPhoto(p) + '</span>' +
                 '<div class="adm-m-id">' +
                     '<div class="adm-m-name">' + esc(p.name || 'Без имени') + (me ? ' <em>это вы</em>' : '') + '</div>' +
                     '<div class="adm-m-mail">' + esc(p.email || '—') + '</div>' +
@@ -810,13 +832,11 @@
             '</div>' +
 
             '<div class="adm-m-actions">' +
-                (p.role === 'admin'
-                    ? armBtn('role-user', p.id, IC.shield, 'Снять админа', me ? 'С себя роль снять нельзя — попросите другого админа' : '')
-                    : armBtn('role-admin', p.id, IC.shield, 'Сделать админом', '')) +
+                roleActionBtn(p, me) +
                 (p.banned
-                    ? armBtn('unban', p.id, IC.check, 'Разблокировать', '')
-                    : armBtn('ban', p.id, IC.ban, 'Заблокировать', me ? 'Себя заблокировать нельзя' : '')) +
-                armBtn('reset-pass', p.id, IC.key, 'Сброс пароля', p.email ? '' : 'У пользователя нет email') +
+                    ? armBtn('unban', p.id, IC.check, 'Разблокировать', banDisabledReason(p, me))
+                    : armBtn('ban', p.id, IC.ban, 'Заблокировать', banDisabledReason(p, me))) +
+                armBtn('reset-pass', p.id, IC.key, 'Сброс пароля', resetDisabledReason(p, me)) +
             '</div>';
 
         // Данные
@@ -862,11 +882,17 @@
             }).join('') + '</div>';
         }
 
-        // Опасная зона
+        // Опасная зона (правила ролей зеркалят серверные гарды из schema.sql —
+        // сервер всё равно не пропустит, тут только честные подсказки)
         var delDisabled = me ? 'Себя удалить нельзя'
-            : (p.role === 'admin' ? 'Сначала снимите роль администратора' : '');
+            : (p.role === 'owner' ? 'Владельца сервиса удалить нельзя'
+            : (p.role === 'admin'
+                ? (iAmOwner() ? 'Сначала снимите роль администратора' : 'Администратора удаляет только владелец')
+                : ''));
+        var clearDisabled = (!me && p.role === 'owner') ? 'Данные владельца — только сам владелец'
+            : ((!me && p.role === 'admin' && !iAmOwner()) ? 'Данные администратора чистит владелец' : '');
         h += '<div class="adm-m-danger">' +
-            armBtn('clear-data', p.id, IC.trash, 'Очистить данные', '') +
+            armBtn('clear-data', p.id, IC.trash, 'Очистить данные', clearDisabled) +
             armBtn('delete-user', p.id, IC.userX, 'Удалить аккаунт', delDisabled) +
             '<span class="adm-m-danger-s">«Очистить данные» стирает портфели и настройки из облака, аккаунт остаётся. ' +
             '«Удалить аккаунт» удаляет пользователя целиком и безвозвратно.</span>' +
@@ -877,6 +903,36 @@
 
     function mInfo(label, val) {
         return '<div class="adm-m-cell"><small>' + label + '</small><b class="adm-mono">' + val + '</b></div>';
+    }
+
+    // Кнопки карточки с учётом иерархии ролей (user < admin < owner):
+    // роли раздаёт только владелец, владелец неприкосновенен, админ не
+    // трогает других админов. Сервер (schema.sql 5.3) дублирует все запреты.
+    function roleActionBtn(p, me) {
+        if (p.role === 'owner') {
+            return armBtn('role-user', p.id, IC.crown, 'Владелец',
+                'Владелец сервиса — роль передаётся только напрямую в базе данных');
+        }
+        if (p.role === 'admin') {
+            return armBtn('role-user', p.id, IC.shield, 'Снять админа',
+                !iAmOwner() ? 'Назначает и снимает администраторов только владелец'
+                    : (me ? 'С себя роль снять нельзя' : ''));
+        }
+        return armBtn('role-admin', p.id, IC.shield, 'Сделать админом',
+            !iAmOwner() ? 'Назначает и снимает администраторов только владелец' : '');
+    }
+    function banDisabledReason(p, me) {
+        if (me) return 'Себя заблокировать нельзя';
+        if (p.role === 'owner') return 'Владельца заблокировать нельзя';
+        if (p.role === 'admin' && !iAmOwner()) return 'Администратора блокирует только владелец';
+        return '';
+    }
+    function resetDisabledReason(p, me) {
+        if (!p.email) return 'У пользователя нет email';
+        if (me) return '';
+        if (p.role === 'owner') return 'Сброс пароля владельцу — только он сам';
+        if (p.role === 'admin' && !iAmOwner()) return 'Сброс пароля администратору — только владелец';
+        return '';
     }
 
     function armBtn(act, id, ic, label, disabledReason) {
@@ -1158,6 +1214,215 @@
                     '<button class="adm-btn sm" data-act="nf-refresh" title="Обновить список и счётчики прочтений"' + (NT.loading ? ' disabled' : '') + '>' + IC.refresh + '</button>' +
                 '</div>' + hist +
             '</section>' +
+        '</div>';
+    }
+
+    // ---------- ВКЛАДКИ: заглушки и системные сообщения ----------
+    // Конфиг — app_config['tab_gates'] (см. supabase/schema.sql, раздел 10),
+    // применяет у пользователей js/tab-gates.js: off = тёмная заглушка
+    // «раздел в разработке» с подпиской на готовность (feature_waitlist),
+    // msg = баннер поверх вкладки. «Уведомить» шлёт подписчикам адресные
+    // оповещения (+ Telegram выбравшим его) и чистит список ожидания.
+    var GATE_TABS = [
+        { id: 'calc',          t: 'Расчёт' },
+        { id: 'portfolio',     t: 'Портфель' },
+        { id: 'portfolios',    t: 'Портфели' },
+        { id: 'rebalance',     t: 'Ребаланс' },
+        { id: 'market',        t: 'Рынок' },
+        { id: 'market-stocks', t: 'Терминал' },
+        { id: 'backtest',      t: 'Тест портфеля' }
+    ];
+    var GC = { cfg: null, saved: '', wl: null, loading: false, saving: false, notifying: false, error: null };
+
+    function gatesOffCount() {
+        if (!GC.cfg) return 0;
+        return GATE_TABS.filter(function (t) { return GC.cfg[t.id] && GC.cfg[t.id].off; }).length;
+    }
+    function gatesClean() {
+        var tabs = {};
+        GATE_TABS.forEach(function (t) {
+            var g = GC.cfg && GC.cfg[t.id];
+            if (!g) return;
+            var e = {};
+            if (g.off) e.off = true;
+            var m = String(g.msg || '').trim().slice(0, 300);
+            if (m) {
+                e.msg = m;
+                if (g.msgKind === 'warn') e.msgKind = 'warn';
+            }
+            if (Object.keys(e).length) tabs[t.id] = e;
+        });
+        return tabs;
+    }
+    function gatesDirty() { return JSON.stringify(gatesClean()) !== GC.saved; }
+    function wlByTab(tab) {
+        return (GC.wl || []).filter(function (r) { return r.tab === tab; });
+    }
+
+    function loadGates(force) {
+        if (GC.loading) return;
+        if (!force && GC.cfg) return;
+        GC.loading = true;
+        GC.error = null;
+        Promise.all([
+            client().from('app_config').select('value').eq('key', 'tab_gates').limit(1),
+            client().from('feature_waitlist').select('user_id,tab,channel').limit(5000)
+        ]).then(function (res) {
+            GC.loading = false;
+            var bad = res.filter(function (r) { return r.error; })[0];
+            if (bad) {
+                GC.error = bad.error.message;
+            } else {
+                var v = (res[0].data && res[0].data[0] && res[0].data[0].value) || {};
+                var tabs = v.tabs || {};
+                GC.cfg = {};
+                GATE_TABS.forEach(function (t) {
+                    var g = tabs[t.id] || {};
+                    GC.cfg[t.id] = { off: !!g.off, msg: g.msg || '', msgKind: g.msgKind === 'warn' ? 'warn' : 'info' };
+                });
+                GC.saved = JSON.stringify(gatesClean());
+                GC.wl = res[1].data || [];
+            }
+            if (section === 'tabs') renderApp();
+        }, function (e) {
+            GC.loading = false;
+            GC.error = String(e && e.message || e);
+            if (section === 'tabs') renderApp();
+        });
+    }
+
+    function saveGates() {
+        if (GC.saving || !GC.cfg) return;
+        GC.saving = true;
+        renderApp();
+        var tabs = gatesClean();
+        client().from('app_config').upsert({
+            key: 'tab_gates',
+            value: { tabs: tabs },
+            updated_by: supa().session.user.id
+        }, { onConflict: 'key' }).then(function (res) {
+            GC.saving = false;
+            if (res.error) { toast(supa().errRu(res.error), true); renderApp(); return; }
+            GC.saved = JSON.stringify(tabs);
+            supa().logEvent('admin_gate', { off: Object.keys(tabs).filter(function (k) { return tabs[k].off; }) });
+            // применяем на своей странице сразу — увидеть заглушку можно тут же
+            if (window.tabGates) window.tabGates.refresh();
+            toast('Настройки вкладок сохранены и уже действуют');
+            renderApp();
+        });
+    }
+
+    // Рассылка «раздел готов»: адресное оповещение каждому подписчику
+    // (+ дубль в Telegram выбравшим этот канал), затем список очищается.
+    // Подписчиков перечитываем с сервера ПРЯМО перед отправкой — снапшот в
+    // GC.wl мог устареть, а delete по вкладке снёс бы новых без оповещения.
+    function notifyGateReady(tab) {
+        if (GC.notifying) return;
+        GC.notifying = true;
+        renderApp();
+        client().from('feature_waitlist').select('user_id,channel').eq('tab', tab)
+            .then(function (res) {
+                var subs = res.error ? [] : (res.data || []);
+                if (!subs.length) {
+                    GC.notifying = false;
+                    toast('Подписчиков уже нет — список пуст');
+                    loadGates(true);
+                    return;
+                }
+                notifyGateSend(tab, subs);
+            }, function () {
+                GC.notifying = false;
+                toast('Не удалось получить список подписчиков', true);
+                renderApp();
+            });
+    }
+    function notifyGateSend(tab, subs) {
+        var tabName = (GATE_TABS.filter(function (t) { return t.id === tab; })[0] || {}).t || tab;
+        var title = 'Раздел «' + tabName + '» открыт';
+        var body = 'Мы дописали раздел, на который вы подписывались, — заходите, он уже ждёт вас в меню.';
+        client().from('notifications').insert(subs.map(function (s) {
+            return { user_id: s.user_id, title: title, body: body, kind: 'success', created_by: supa().session.user.id };
+        })).then(function (res) {
+            if (res.error) {
+                GC.notifying = false;
+                toast(supa().errRu(res.error), true);
+                renderApp();
+                return;
+            }
+            NT.list = null;   // история оповещений устарела — перечитается при заходе
+            var tg = subs.filter(function (s) { return s.channel === 'telegram'; });
+            var tgSent = 0;
+            function tgNext(i) {
+                if (i >= tg.length) return Promise.resolve();
+                return fetch('/api/notify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + supa().session.access_token },
+                    body: JSON.stringify({ user_id: tg[i].user_id, title: title, body: body })
+                }).then(function (r) { return r.json(); }).then(function (d) {
+                    if (d && d.ok && d.sent) tgSent++;
+                }, function () {}).then(function () { return tgNext(i + 1); });
+            }
+            tgNext(0).then(function () {
+                return client().from('feature_waitlist').delete().eq('tab', tab);
+            }).then(function () {
+                GC.notifying = false;
+                GC.wl = (GC.wl || []).filter(function (r) { return r.tab !== tab; });
+                supa().logEvent('admin_gate_notify', { tab: tab, subscribers: subs.length, telegram: tgSent });
+                toast('Оповестили ' + subs.length + ' подписч.' + (tg.length ? ' · Telegram: ' + tgSent + ' из ' + tg.length : ''));
+                renderApp();
+            });
+        });
+    }
+
+    function renderTabsAdmin() {
+        if (GC.cfg === null && !GC.loading && !GC.error) loadGates();
+
+        if (GC.error) {
+            return '<div class="adm-card"><div class="adm-error">Не удалось загрузить настройки вкладок: ' + esc(GC.error) +
+                '<br>Если таблиц ещё нет — выполните <b>supabase/schema.sql</b> (раздел 10, «Заглушки вкладок»).</div></div>';
+        }
+        if (GC.cfg === null) {
+            return '<div class="adm-card"><div class="adm-empty">Загружаем настройки вкладок…</div></div>';
+        }
+
+        var rows = GATE_TABS.map(function (t) {
+            var g = GC.cfg[t.id];
+            var subs = wlByTab(t.id);
+            var tgN = subs.filter(function (s) { return s.channel === 'telegram'; }).length;
+            var wlTxt = subs.length
+                ? subs.length + ' в списке ожидания' + (tgN ? ' · TG: ' + tgN : '')
+                : 'подписчиков нет';
+            return '<div class="adm-gt-row' + (g.off ? ' off' : '') + '">' +
+                '<div class="adm-gt-name"><b>' + esc(t.t) + '</b><small>' + wlTxt + '</small></div>' +
+                '<div class="adm-gt-gate">' +
+                    '<button class="ph-sw' + (g.off ? ' on' : '') + '" type="button" data-act="gt-off" data-tab="' + t.id + '" role="switch" aria-checked="' + (g.off ? 'true' : 'false') + '" aria-label="Заглушка: ' + esc(t.t) + '"></button>' +
+                    '<span class="adm-gt-gate-l">' + (g.off ? 'Заглушка' : 'Открыта') + '</span>' +
+                '</div>' +
+                '<input class="adm-nf-input adm-gt-msg" type="text" maxlength="300" placeholder="Системное сообщение на вкладке (пусто — нет)" data-gt-msg="' + t.id + '" autocomplete="off" spellcheck="false">' +
+                '<div class="adm-gt-kind">' +
+                    ctlPill('gt-kind:' + t.id, 'info', 'Инфо', g.msgKind !== 'warn') +
+                    ctlPill('gt-kind:' + t.id, 'warn', 'Важно', g.msgKind === 'warn') +
+                '</div>' +
+                '<button class="adm-btn sm arm2 adm-gt-notify" data-act="gt-notify" data-id="' + t.id + '" data-label="Уведомить"' +
+                    (subs.length && !GC.notifying ? '' : ' disabled') +
+                    ' title="Разослать подписчикам оповещение «раздел открыт» (+ Telegram выбравшим его) и очистить список">' +
+                    IC.bell + '<span>' + (GC.notifying ? 'Шлём…' : 'Уведомить') + '</span></button>' +
+            '</div>';
+        }).join('');
+
+        return '<div class="adm-card adm-gt">' +
+            '<div class="adm-gt-head">' +
+                '<div>' +
+                    '<div class="adm-card-t">Заглушки и сообщения вкладок</div>' +
+                    '<div class="adm-gt-s">Заглушка закрывает раздел тёмной сценой «в разработке» — авторизованные могут подписаться на новость о готовности. Сообщение — баннер поверх работающей вкладки. Главную и Админку закрыть нельзя.</div>' +
+                '</div>' +
+                '<button class="adm-btn sm" data-act="gt-refresh" title="Перечитать настройки и подписчиков"' + (GC.loading ? ' disabled' : '') + '>' + IC.refresh + '</button>' +
+            '</div>' +
+            '<div class="adm-gt-list">' + rows + '</div>' +
+            '<div class="adm-gt-foot">' +
+                '<button class="adm-btn primary" id="admGtSave" data-act="gt-save"' + ((gatesDirty() && !GC.saving) ? '' : ' disabled') + '>' + IC.check + (GC.saving ? 'Сохраняем…' : 'Сохранить изменения') + '</button>' +
+                '<span class="adm-nf-hint">Изменения вступают в силу у пользователей в течение пары минут (кэш конфига) или при следующем заходе.</span>' +
+            '</div>' +
         '</div>';
     }
 
@@ -1485,7 +1750,12 @@
         }
 
         switch (act) {
-            case 'sec': section = btn.getAttribute('data-sec'); renderApp(); break;
+            case 'sec':
+                section = btn.getAttribute('data-sec');
+                // «Вкладки»: подписчики и конфиг меняются извне — освежаем на входе
+                if (section === 'tabs' && GC.cfg && !GC.saving && !gatesDirty()) loadGates(true);
+                renderApp();
+                break;
             case 'refresh': refresh(); break;
             case 'go-home': if (window.switchTab) window.switchTab('home'); break;
             case 'ev-filter': eventFilter = btn.getAttribute('data-f'); renderApp(); break;
@@ -1547,6 +1817,19 @@
             case 'nf-send': sendNotify(); break;
             case 'nf-refresh': loadNotify(true); break;
             case 'nf-del': deleteNotify(id); break;
+            case 'gt-off':
+                var gtTab = btn.getAttribute('data-tab');
+                if (GC.cfg && GC.cfg[gtTab]) { GC.cfg[gtTab].off = !GC.cfg[gtTab].off; renderApp(); }
+                break;
+            case 'gt-save': saveGates(); break;
+            case 'gt-refresh': loadGates(true); break;
+            case 'gt-notify': notifyGateReady(id); break;
+            default:
+                // пилюли типа баннера: data-act="gt-kind:<tab>"
+                if (act && act.indexOf('gt-kind:') === 0 && GC.cfg) {
+                    var kt = act.slice(8);
+                    if (GC.cfg[kt]) { GC.cfg[kt].msgKind = btn.getAttribute('data-f'); renderApp(); }
+                }
         }
     }
 

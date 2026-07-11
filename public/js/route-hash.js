@@ -44,14 +44,17 @@
         try { window.switchTab(t); } finally { applyingPath = false; }
     });
 
-    // Восстановление вкладки при загрузке/обновлении страницы
+    // Восстановление вкладки при загрузке/обновлении страницы.
+    // СИНХРОННО, без setTimeout: скрипт последний, все модули уже отработали
+    // свои DOMContentLoaded-хендлеры, а переключение до первого пейнта убирает
+    // мигание Главной перед целевой вкладкой (бесшовный заход по прямой ссылке
+    // и после reload при входе). Если вкладку уже переключил кто-то раньше
+    // (стартовый раздел из настроек кабинета) — не дёргаем повторно.
     document.addEventListener('DOMContentLoaded', function() {
         var t = tabFromPath();
         if (!t || t === 'home') return;
-        // Даём отработать DOMContentLoaded-инициализации остальных модулей
-        setTimeout(function() {
-            applyingPath = true;
-            try { window.switchTab(t); } finally { applyingPath = false; }
-        }, 0);
+        if (typeof currentTab !== 'undefined' && t === currentTab) return;
+        applyingPath = true;
+        try { window.switchTab(t); } finally { applyingPath = false; }
     });
 })();

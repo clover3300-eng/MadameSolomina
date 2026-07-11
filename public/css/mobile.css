@@ -360,6 +360,13 @@
     /* Панель уведомлений (звоночек) — так же во всю ширину */
     #nfPanel { top: 58px; right: 8px; left: 8px; width: auto; max-width: none; }
 
+    /* Заглушка вкладки: компактнее поля, плитки крупнее не нужны */
+    .gx-in { padding: 40px 16px; }
+    .gx-title { font-size: 24px; }
+    /* Админка → «Вкладки»: строка настроек складывается в столбик */
+    .adm-gt-row { grid-template-columns: 1fr 1fr; }
+    .adm-gt-row .adm-gt-msg { grid-column: 1 / -1; }
+
     /* Палитра поиска: выше на экране — под ней клавиатура */
     #searchOverlay { padding-top: 10vh; }
 

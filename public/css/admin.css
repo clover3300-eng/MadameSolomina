@@ -337,6 +337,8 @@
 }
 .adm-badge svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2.4; }
 .adm-badge.role-admin { background: linear-gradient(135deg, #3b82f6, #6366f1); color: #fff; }
+/* владелец — тёплое золото, сразу отличим от синих админов */
+.adm-badge.role-owner { background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; }
 .adm-badge.role-user { background: rgba(100, 116, 139, 0.1); color: #64748b; }
 .adm-badge.st-ok { background: rgba(16, 185, 129, 0.1); color: #059669; }
 .adm-badge.st-on { background: rgba(16, 185, 129, 0.16); color: #047857; }
@@ -749,3 +751,31 @@ body.dark-mode .adm-nfh-m > b { color: #f4f8fd; }
 body.dark-mode .adm-nfk.info    { color: #93c5fd; background: rgba(59, 130, 246, 0.16); }
 body.dark-mode .adm-nfk.success { color: #6ee7b7; background: rgba(16, 185, 129, 0.16); }
 body.dark-mode .adm-nfk.warn    { color: #fcd34d; background: rgba(245, 158, 11, 0.16); }
+
+/* ===== ВКЛАДКИ: заглушки и системные сообщения ===== */
+.adm-gt-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.adm-gt-head .adm-card-t { margin-bottom: 4px; }
+.adm-gt-s { font-size: 12px; font-weight: 600; line-height: 1.5; color: var(--text-slate, #64748B); max-width: 720px; }
+.adm-gt-list { margin-top: 14px; display: flex; flex-direction: column; }
+.adm-gt-row {
+    display: grid; align-items: center; gap: 12px;
+    grid-template-columns: minmax(150px, 190px) 128px 1fr 118px auto;
+    padding: 10px 2px; border-bottom: 1px solid rgba(19, 26, 43, 0.06);
+}
+.adm-gt-row:last-child { border-bottom: 0; }
+.adm-gt-row.off { background: rgba(245, 158, 11, 0.045); border-radius: 12px; padding-left: 10px; padding-right: 10px; }
+.adm-gt-name { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.adm-gt-name b { font-size: 13px; font-weight: 800; color: var(--text-deep, #1b2433); }
+.adm-gt-name small { font-size: 10.5px; font-weight: 600; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.adm-gt-gate { display: flex; align-items: center; gap: 8px; }
+.adm-gt-gate-l { font-size: 11px; font-weight: 800; color: #94a3b8; letter-spacing: 0.02em; }
+.adm-gt-row.off .adm-gt-gate-l { color: #b45309; }
+.adm-gt-kind { display: flex; align-items: center; gap: 5px; }
+.adm-gt-notify { white-space: nowrap; }
+.adm-gt-foot { margin-top: 14px; display: flex; align-items: center; gap: 12px; }
+
+body.dark-mode .adm-gt-row { border-color: rgba(255, 255, 255, 0.06); }
+body.dark-mode .adm-gt-row.off { background: rgba(245, 158, 11, 0.08); }
+body.dark-mode .adm-gt-name b { color: #f4f8fd; }
+body.dark-mode .adm-gt-gate-l { color: #9fb1c6; }
+body.dark-mode .adm-gt-row.off .adm-gt-gate-l { color: #fcd34d; }

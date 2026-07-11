@@ -11,6 +11,8 @@
 --   app_events         — журнал событий (регистрации, входы, действия админа)
 --   notifications      — оповещения от админа (всем или адресно)
 --   notification_reads — отметки «прочитано» по пользователям
+--   app_config         — глобальные настройки (заглушки вкладок, баннеры)
+--   feature_waitlist   — подписки «сообщить, когда раздел готов»
 --
 -- Доступ построен на RLS: пользователь видит только своё,
 -- администратор (profiles.role = 'admin') — всё.
@@ -28,6 +30,16 @@ create table if not exists public.profiles (
     created_at   timestamptz not null default now(),
     last_seen_at timestamptz not null default now()
 );
+
+-- Роли (2026-07-11): user < admin < owner.
+--   owner («владелец») — неприкосновенен: его нельзя разжаловать, забанить
+--     или удалить через сайт; только он раздаёт и снимает роль админа;
+--   admin — модерация обычных пользователей (бан, очистка, сброс пароля,
+--     оповещения), но не трогает других админов и владельца.
+-- Расширяем check-ограничение старых установок (имя создано автоматически).
+alter table public.profiles drop constraint if exists profiles_role_check;
+alter table public.profiles add constraint profiles_role_check
+    check (role in ('user', 'admin', 'owner'));
 
 -- CREATE TABLE IF NOT EXISTS не трогает уже существующую таблицу —
 -- добавляем новые колонки явно, чтобы обновления схемы попадали и на неё.
@@ -75,6 +87,8 @@ comment on table public.app_events is 'Журнал: register / login / logout /
 -- security definer обходит RLS самих profiles — иначе политика
 -- «admin видит всё» зациклилась бы на чтении своей же таблицы.
 
+-- is_admin() = «есть права модерации»: и админ, и владелец. Все политики
+-- RLS ходят через неё, поэтому владельцу доступно всё админское.
 create or replace function public.is_admin()
 returns boolean
 language sql stable security definer
@@ -82,7 +96,18 @@ set search_path = public
 as $$
     select exists (
         select 1 from public.profiles
-        where id = auth.uid() and role = 'admin' and not banned
+        where id = auth.uid() and role in ('admin', 'owner') and not banned
+    );
+$$;
+
+create or replace function public.is_owner()
+returns boolean
+language sql stable security definer
+set search_path = public
+as $$
+    select exists (
+        select 1 from public.profiles
+        where id = auth.uid() and role = 'owner' and not banned
     );
 $$;
 
@@ -148,10 +173,14 @@ create trigger on_auth_user_email_updated
     when (old.email is distinct from new.email)
     execute function public.handle_user_email_updated();
 
--- 5.3 Защита профиля:
---   · роль и бан меняет только админ,
---   · нельзя снять роль/забанить ПОСЛЕДНЕГО админа (сервис не осиротеет),
---   · created_at неизменяем,
+-- 5.3 Защита профиля (иерархия ролей user < admin < owner):
+--   · created_at неизменяем;
+--   · владелец через сайт неприкосновенен: его роль и бан не меняет никто
+--     (в т.ч. другой владелец) — только доверенный доступ (SQL Editor);
+--   · назначает и снимает АДМИНОВ только владелец;
+--   · банить/разбанивать админ может только обычных пользователей,
+--     владелец — пользователей и админов;
+--   · нельзя снять роль ПОСЛЕДНЕГО владельца/админа (сервис не осиротеет);
 --   · telegram_id меняется ТОЛЬКО через link_telegram()/unlink_telegram()
 --     (иначе любой пользователь мог бы вписать себе чужой telegram_id
 --     и перехватывать чужие входы через Telegram).
@@ -166,12 +195,36 @@ begin
     end if;
 
     -- auth.uid() пустой у прямых запросов (SQL Editor, service_role) — это доверенный
-    -- доступ в обход сайта, его не ограничиваем (иначе некому назначить первого админа).
+    -- доступ в обход сайта, его не ограничиваем (иначе некому назначить владельца).
     -- Обычный пользователь через сайт всегда авторизован, для него auth.uid() не пустой.
     if auth.uid() is not null
-       and (new.role is distinct from old.role or new.banned is distinct from old.banned)
-       and not public.is_admin() then
-        raise exception 'Менять роль и блокировку может только администратор';
+       and (new.role is distinct from old.role or new.banned is distinct from old.banned) then
+
+        if not public.is_admin() then
+            raise exception 'Менять роль и блокировку может только администратор';
+        end if;
+
+        -- владелец неприкосновенен (и сам себя через сайт не разжалует —
+        -- передача владения только через SQL Editor, осознанно)
+        if old.role = 'owner' then
+            raise exception 'Владельца сервиса нельзя разжаловать или заблокировать';
+        end if;
+
+        -- назначение владельцем через сайт запрещено (только SQL Editor)
+        if new.role = 'owner' then
+            raise exception 'Назначить владельца можно только напрямую в базе данных';
+        end if;
+
+        -- роли admin ↔ user раздаёт только владелец
+        if new.role is distinct from old.role and not public.is_owner() then
+            raise exception 'Назначать и снимать администраторов может только владелец';
+        end if;
+
+        -- бан/разбан админа — только владельцу
+        if old.role = 'admin' and new.banned is distinct from old.banned
+           and not public.is_owner() then
+            raise exception 'Блокировать администратора может только владелец';
+        end if;
     end if;
 
     if auth.uid() is not null
@@ -181,10 +234,12 @@ begin
         raise exception 'Telegram можно привязать только через проверенную привязку в личном кабинете';
     end if;
 
-    if old.role = 'admin' and (new.role <> 'admin' or new.banned) then
+    -- сервис не должен осиротеть: последний владелец (или последний
+    -- модератор вообще) не снимается и не блокируется даже из SQL Editor
+    if old.role in ('admin', 'owner') and (new.role not in ('admin', 'owner') or new.banned) then
         if not exists (
             select 1 from public.profiles
-            where role = 'admin' and not banned and id <> old.id
+            where role in ('admin', 'owner') and not banned and id <> old.id
         ) then
             raise exception 'Нельзя снять или заблокировать последнего администратора';
         end if;
@@ -353,6 +408,12 @@ begin
         raise exception 'Нельзя удалить собственный аккаунт';
     end if;
 
+    -- владельца не удаляет никто; админа — только владелец, предварительно
+    -- сняв роль (двухшаговость — защита от сноса модерации одним кликом)
+    if exists (select 1 from public.profiles where id = p_user_id and role = 'owner') then
+        raise exception 'Владельца сервиса удалить нельзя';
+    end if;
+
     if exists (select 1 from public.profiles where id = p_user_id and role = 'admin') then
         raise exception 'Сначала снимите с пользователя роль администратора';
     end if;
@@ -378,6 +439,12 @@ as $$
 begin
     if auth.uid() is null then
         raise exception 'Нужно войти в аккаунт';
+    end if;
+
+    -- владелец не удаляет себя из кабинета: сервис не должен остаться без
+    -- хозяина случайным кликом. Передача владения — SQL Editor, осознанно.
+    if exists (select 1 from public.profiles where id = auth.uid() and role = 'owner') then
+        raise exception 'Владелец не может удалить свой аккаунт — сначала передайте владение (SQL Editor)';
     end if;
 
     delete from auth.users where id = auth.uid();
@@ -457,10 +524,105 @@ create policy notification_reads_insert on public.notification_reads
     with check (user_id = auth.uid() and not public.is_banned());
 
 
--- ===== 10. НАЗНАЧЕНИЕ ПЕРВОГО АДМИНИСТРАТОРА =================
+-- ===== 10. ЗАГЛУШКИ ВКЛАДОК И СИСТЕМНЫЕ СООБЩЕНИЯ ============
+-- app_config — глобальные настройки сайта (строка на ключ, value = jsonb).
+-- Ключ 'tab_gates': { tabs: { calc: { off: true },
+--                             market: { msg: 'текст', msgKind: 'warn' } } }
+--   off  — вкладка закрыта заглушкой «раздел в разработке»;
+--   msg  — системное сообщение-баннер поверх вкладки (не блокирует).
+-- Читают ВСЕ, включая гостей (заглушку видит и неавторизованный),
+-- пишет только админ.
+
+create table if not exists public.app_config (
+    key        text primary key,
+    value      jsonb not null default '{}'::jsonb,
+    updated_at timestamptz not null default now(),
+    updated_by uuid references public.profiles(id) on delete set null
+);
+
+comment on table public.app_config is 'Глобальные настройки сайта: заглушки вкладок, системные сообщения…';
+
+create or replace function public.touch_app_config()
+returns trigger
+language plpgsql
+as $$
+begin
+    new.updated_at := now();
+    return new;
+end;
+$$;
+
+drop trigger if exists touch_app_config on public.app_config;
+create trigger touch_app_config
+    before insert or update on public.app_config
+    for each row execute function public.touch_app_config();
+
+alter table public.app_config enable row level security;
+
+drop policy if exists app_config_select on public.app_config;
+create policy app_config_select on public.app_config
+    for select to anon, authenticated
+    using (true);
+
+drop policy if exists app_config_insert on public.app_config;
+create policy app_config_insert on public.app_config
+    for insert to authenticated
+    with check (public.is_admin());
+
+drop policy if exists app_config_update on public.app_config;
+create policy app_config_update on public.app_config
+    for update to authenticated
+    using (public.is_admin())
+    with check (public.is_admin());
+
+-- feature_waitlist — «сообщите, когда раздел будет готов»: подписки
+-- пользователей под заглушкой (канал — что человек выбрал для доставки).
+create table if not exists public.feature_waitlist (
+    user_id    uuid not null references public.profiles(id) on delete cascade,
+    tab        text not null,
+    channel    text not null default 'site' check (channel in ('site', 'browser', 'telegram')),
+    created_at timestamptz not null default now(),
+    primary key (user_id, tab)
+);
+
+comment on table public.feature_waitlist is 'Подписки «сообщить о готовности раздела» из-под заглушки';
+
+alter table public.feature_waitlist enable row level security;
+
+drop policy if exists feature_waitlist_select on public.feature_waitlist;
+create policy feature_waitlist_select on public.feature_waitlist
+    for select to authenticated
+    using (user_id = auth.uid() or public.is_admin());
+
+drop policy if exists feature_waitlist_insert on public.feature_waitlist;
+create policy feature_waitlist_insert on public.feature_waitlist
+    for insert to authenticated
+    with check (user_id = auth.uid() and not public.is_banned());
+
+drop policy if exists feature_waitlist_update on public.feature_waitlist;
+create policy feature_waitlist_update on public.feature_waitlist
+    for update to authenticated
+    using (user_id = auth.uid())
+    with check (user_id = auth.uid() and not public.is_banned());
+
+-- свою подписку снимает пользователь; админ чистит список после рассылки
+drop policy if exists feature_waitlist_delete on public.feature_waitlist;
+create policy feature_waitlist_delete on public.feature_waitlist
+    for delete to authenticated
+    using (user_id = auth.uid() or public.is_admin());
+
+
+-- ===== 11. НАЗНАЧЕНИЕ ВЛАДЕЛЬЦА ==============================
 -- После того как зарегистрируетесь на сайте, выполните здесь же
 -- (подставив свой email):
 --
---   update public.profiles set role = 'admin' where email = 'you@example.com';
+--   update public.profiles set role = 'owner' where email = 'you@example.com';
 --
--- Дальше роли раздаются прямо из админки сайта.
+-- Владелец один; дальше роли админов раздаются из админки сайта
+-- (только владельцем). Существующим установкам с role = 'admin'
+-- нужно один раз поднять свой аккаунт до владельца этой же командой —
+-- иначе кнопки ролей в админке останутся недоступными.
+-- Передача владения (осознанно, только здесь):
+--
+--   update public.profiles set role = 'owner' where email = 'new@example.com';
+--   update public.profiles set role = 'admin' where email = 'old@example.com';

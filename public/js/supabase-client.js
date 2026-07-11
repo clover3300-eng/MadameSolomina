@@ -45,8 +45,13 @@
         ready: false,    // первичная загрузка сессии завершена
 
         isAuthed: function () { return !!S.session; },
+        // права модерации: и админ, и владелец (роли user < admin < owner)
         isAdmin: function () {
-            return !!(S.profile && S.profile.role === 'admin' && !S.profile.banned);
+            return !!(S.profile && (S.profile.role === 'admin' || S.profile.role === 'owner') && !S.profile.banned);
+        },
+        // владелец: раздаёт роли, неприкосновенен (см. supabase/schema.sql 5.3)
+        isOwner: function () {
+            return !!(S.profile && S.profile.role === 'owner' && !S.profile.banned);
         },
         onChange: function (cb) { if (typeof cb === 'function') listeners.push(cb); },
 
