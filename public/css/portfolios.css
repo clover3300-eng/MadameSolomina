@@ -1838,6 +1838,25 @@ body.dark-mode .tbmk-c.neg { color: #f87171; }
 /* чётное число портфелей — полоса ставок узкой колонкой под сеткой (не на всю ширину) */
 .pf-ratesstack--flow { max-width: 460px; }
 
+/* ---- полоса «Ставки рынка» (.pf-ratesband) — общие правки ----
+   min-width:0: .drt-grid — флекс-элемент .d3-ratesband, без этого min-width:auto не
+   даёт сетке ужаться до ширины блока и колонки переполняют/обрезают значения.
+   Значение масштабируется по ширине САМОЙ плитки (cqw контейнера .drt-tile), а не окна. */
+.pf-ratesband .drt-grid { min-width: 0; gap: 12px; align-content: start; }
+.pf-ratesband .drt-tile { align-items: center; container-type: inline-size; }
+.pf-ratesband .drt-v { font-size: clamp(17px, 15cqw, 25px); }
+
+/* ---- КОНСТРУКТОР: полоса адаптируется к ширине БЛОКА, а не окна ----
+   Базовая .drt-grid — repeat(4,1fr) с переносами по ШИРИНЕ ОКНА; в конструкторе блок
+   бывает узким при широком окне, и 4 плитки сжимались/обрезались. Здесь .pf-ratesband —
+   контейнер, и колонки считаются по его ширине: 4 в ряд по умолчанию, ≤560px блока —
+   ровно 2×2, ≤300px — в столбик (без «сироты» 3+1). Классическую полноширинную полосу
+   не трогаем — там остаются родные оконные брейкпоинты. */
+.pfd-item .pf-ratesband { container-type: inline-size; container-name: rband; }
+.pfd-item .pf-ratesband .drt-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@container rband (max-width: 560px) { .pfd-item .pf-ratesband .drt-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@container rband (max-width: 300px) { .pfd-item .pf-ratesband .drt-grid { grid-template-columns: minmax(0, 1fr); } }
+
 /* ============================================================
    «Импорт» внутри приглашения пустого портфеля (настройки ⚙):
    кнопка по центру плашки, меню раскрывается вниз и центрируется
@@ -2022,6 +2041,11 @@ body.dark-mode .pfpc-kind.kind-red { color: #93c5fd; background: rgba(61,111,209
    а не вылезает за границы */
 .pfd-item.pfd-hset .pfd-body { overflow-y: auto; overflow-x: hidden; border-radius: 20px; }
 .pfd-item.pfd-hset .pfd-body > * { height: 100%; flex: 1; box-sizing: border-box; }
+/* «Ставки» с ручной высотой: полоса-флекс тянет сетку плиток на всю высоту блока,
+   ряды растягиваются равномерно — потянув блок выше, пользователь ЗАПОЛНЯЕТ пустоту
+   плитками, а не оставляет мёртвое поле снизу (жалоба «пространство не заполнить») */
+.pfd-item.pfd-hset .pf-ratesband { height: 100%; }
+.pfd-item.pfd-hset .pf-ratesband .drt-grid { flex: 1; align-content: stretch; grid-auto-rows: minmax(64px, 1fr); }
 /* «Избранное»/«Сводка» в свободной сетке: обёртка правой колонки без её ширины */
 .pfd-item .pf-topgrid-fav.pfd-favwrap { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 
