@@ -2033,6 +2033,12 @@ body.dark-mode .pfpc-kind.kind-red { color: #93c5fd; background: rgba(61,111,209
     gap: 16px;
     align-items: start;   /* блоки держат свою природную высоту, ряд не растягивает соседей */
 }
+/* masonry-режим: короткие блоки подтягиваются вверх в чужой зазор. CSS-masonry
+   (grid-template-rows:masonry) в Chrome ещё нет — раскладку считает JS (pfdPack):
+   ставит каждому блоку явные grid-column-start и grid-row в ПИКСЕЛЯХ. Поэтому
+   grid-auto-rows:1px и row-gap:0 (вертикальный зазор вшит в grid-row-span), а
+   column-gap остаётся 16px из gap выше. */
+.pfd-grid.pfd-masonry { grid-auto-rows: 1px; row-gap: 0; }
 .pfd-item { position: relative; min-width: 0; display: flex; flex-direction: column; }
 .pfd-body { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
 .pfd-body > * { min-width: 0; }
@@ -2048,6 +2054,11 @@ body.dark-mode .pfpc-kind.kind-red { color: #93c5fd; background: rgba(61,111,209
 .pfd-item.pfd-hset .pf-ratesband .drt-grid { flex: 1; align-content: stretch; grid-auto-rows: minmax(64px, 1fr); }
 /* «Избранное»/«Сводка» в свободной сетке: обёртка правой колонки без её ширины */
 .pfd-item .pf-topgrid-fav.pfd-favwrap { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+/* ...а при РУЧНОЙ высоте карточка внутри обёртки тоже заполняет блок. Без этого
+   .pf-fav с фикс-674px (portfolios.css) переполняет обёртку и её НИЖНЯЯ ГРАНЬ
+   (скруглённый низ карточки) уезжает под обрез/скролл — «пропадает нижняя грань».
+   height:100% перебивает 674px, min-height:0 отдаёт скролл внутреннему .pff-body */
+.pfd-item.pfd-hset .pfd-favwrap > * { height: 100%; min-height: 0; flex: 1; }
 
 /* ---- режим правки ---- */
 /* спокойная серая рамка вместо синего пунктира: границы блоков видны,

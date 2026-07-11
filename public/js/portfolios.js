@@ -1287,6 +1287,7 @@
             }
             fitBigSums();   // крупные суммы (до 100 млрд ₽) — уменьшаем кегль, а не переносим/распираем
             recordSnapshots();   // дневной снимок стоимости — для чипа «сегодня ±X ₽»
+            pfdSchedulePack();   // masonry: подтянуть короткие блоки вверх в зазоры (no-op вне конструктора)
         } finally {
             rendering = false;
         }
@@ -1671,6 +1672,68 @@
     // перерисовки (котировки) глушатся — innerHTML-своп убил бы перетаскивание.
     function pfdRerender() { pfdWantRender = true; renderSmooth(); }
 
+    // ---- masonry-упаковка: короткие блоки подтягиваются вверх в чужой зазор ----
+    // CSS-grid делает ряд по высоте самого высокого блока — под коротким соседом
+    // зияет дыра. CSS-masonry в Chrome ещё нет, поэтому раскладываем сами: каждому
+    // блоку ставим ЯВНЫЕ grid-column-start и grid-row (в px, при grid-auto-rows:1px),
+    // жадно кладя его в колонку(и) с наименьшим текущим «дном». Блоки остаются
+    // grid-элементами — drag/resize/FLIP работают как прежде, меняется только место.
+    // align-items:start уже держит природную высоту, offsetHeight даёт её независимо
+    // от текущего grid-row, поэтому мерить можно без сброса. Вся геометрия в CSS-px
+    // (offset*/clientWidth + grid-auto-rows:1px) — один координатный простор, zoom
+    // делить не нужно (в отличие от призрака драга, что уходит в визуальные px).
+    var pfdPackRaf = 0;
+    var pfdRO = null;
+    function pfdSpanOf(item, colW, gap) {
+        var s = /span\s+(\d+)/.exec(item.style.gridColumn || '');
+        if (s) return clamp(+s[1], 1, 12);
+        return clamp(Math.round((item.offsetWidth + gap) / (colW + gap)), 1, 12);
+    }
+    function pfdPack() {
+        pfdPackRaf = 0;
+        var grid = document.getElementById('pfdGrid');
+        if (!grid || !grid.classList.contains('pfd-masonry')) return;
+        var items = Array.prototype.filter.call(grid.children, function (el) {
+            return el.classList && el.classList.contains('pfd-item');
+        });
+        if (!items.length) return;
+        var gap = parseFloat(getComputedStyle(grid).columnGap) || 16;
+        var colW = (grid.clientWidth - gap * 11) / 12;
+        var bottom = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        items.forEach(function (item) {
+            var span = pfdSpanOf(item, colW, gap);
+            var h = Math.max(1, Math.ceil(item.offsetHeight));
+            var bestC = 0, bestTop = Infinity;
+            for (var c = 0; c + span <= 12; c++) {
+                var top = 0;
+                for (var k = c; k < c + span; k++) if (bottom[k] > top) top = bottom[k];
+                if (top < bestTop - 0.5) { bestTop = top; bestC = c; }
+            }
+            item.style.gridColumn = (bestC + 1) + ' / span ' + span;
+            item.style.gridRow = (Math.round(bestTop) + 1) + ' / span ' + h;
+            var nb = bestTop + h + gap;
+            for (var k2 = bestC; k2 < bestC + span; k2++) bottom[k2] = nb;
+        });
+    }
+    function pfdRepackSoon() { if (!pfdPackRaf) pfdPackRaf = requestAnimationFrame(pfdPack); }
+    // (пере)подписываем ResizeObserver на актуальные блоки: их высота меняется от
+    // шрифтов/состава/ресайза/ширины окна — тогда пере-упаковываем. Смена grid-row
+    // не трогает border-box блока (align-items:start), а смена start-колонки — его
+    // ширину, поэтому петли нет: упаковка идемпотентна и сходится за пару проходов.
+    function pfdSchedulePack() {
+        var grid = document.getElementById('pfdGrid');
+        if (!grid || !grid.classList.contains('pfd-masonry')) { if (pfdRO) pfdRO.disconnect(); return; }
+        if (window.ResizeObserver) {
+            if (!pfdRO) pfdRO = new ResizeObserver(pfdRepackSoon);
+            pfdRO.disconnect();
+            pfdRO.observe(grid);
+            Array.prototype.forEach.call(grid.children, function (el) {
+                if (el.classList && el.classList.contains('pfd-item')) pfdRO.observe(el);
+            });
+        }
+        pfdPack();   // синхронно — первый пейнт уже с masonry-раскладкой, без мигания
+    }
+
     // ---- блоки страницы (порядок по умолчанию = естественный порядок вёрстки) ----
     function pfdBlocks(favStr, noBonds) {
         var blocks = [];
@@ -1730,7 +1793,7 @@
                 '</div>' +
               '</div>'
             : '';
-        return bar + '<div class="pfd-grid' + (dashEdit ? ' editing' : '') + '" id="pfdGrid">' + items + '</div>';
+        return bar + '<div class="pfd-grid pfd-masonry' + (dashEdit ? ' editing' : '') + '" id="pfdGrid">' + items + '</div>';
     }
 
     // ---- вход/выход из режима правки, сброс ----
@@ -1838,6 +1901,7 @@
         pfdFlip(grid, function () {
             if (before) grid.insertBefore(pfdDragEl, over);
             else grid.insertBefore(pfdDragEl, over.nextSibling);
+            pfdPack();   // masonry: сразу пере-упаковываем — FLIP снимет новые места
         });
         pfdLastReorder = Date.now();
     }
@@ -1953,6 +2017,7 @@
                 item.classList.add('pfd-hset');
             }
             if (badge) badge.textContent = newSpan + ' / 12' + (hMode ? ' · ' + newH + ' px' : ' · высота авто');
+            pfdRepackSoon();   // masonry: соседи переезжают под новый размер вживую
         }
         function onUp() {
             document.removeEventListener('pointermove', onMove);
