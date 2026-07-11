@@ -135,6 +135,24 @@ body.cxm-monthly #panel-calc .mi5-right { animation-delay: .06s; }
 .cx-rows.r5 .cxm-tbtn.ghost { background: #fff; color: var(--r5-text); box-shadow: inset 0 0 0 1.5px #d7dfeb; }
 .cx-rows.r5 .cxm-type:hover .cxm-tbtn.ghost { box-shadow: inset 0 0 0 1.5px #c2cede; }
 
+/* Бейдж «есть сохранённый расчёт» на витрине выбора — появляется, когда
+   соответствующий режим уже посчитан (mix: calcDone / monthly: started).
+   Клик по витрине продолжает работу (расчёт восстановлен ещё при загрузке). */
+.cx-rows.r5 .cxm-type .cxm-resume {
+  align-self: flex-start; display: inline-flex; align-items: center; gap: 7px;
+  margin-bottom: 12px; padding: 5px 12px 5px 10px; border-radius: 999px;
+  font-size: 11.5px; font-weight: 700; letter-spacing: .01em;
+  background: rgba(74,141,240,.10); color: var(--r5-blue);
+}
+.cx-rows.r5 .cxm-type[data-mode="monthly"] .cxm-resume {
+  background: rgba(240,140,58,.12); color: var(--r5-orange);
+}
+.cx-rows.r5 .cxm-type .cxm-resume .dot {
+  width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+}
+body.dark-mode .cx-rows.r5 .cxm-type .cxm-resume { background: rgba(74,141,240,.16); }
+body.dark-mode .cx-rows.r5 .cxm-type[data-mode="monthly"] .cxm-resume { background: rgba(240,140,58,.18); }
+
 /* Подсказка снизу — тот же .r-cta, что у теста в «Распределении» */
 .cx-rows.r5 .cxm-cta { margin-top: 16px; }
 

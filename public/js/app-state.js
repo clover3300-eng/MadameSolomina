@@ -57,12 +57,28 @@ function lsRestore() {
         }
     }
 
-    // Слайдер
+    // Слайдер + синхронизация карточки стратегии и подсветки в списке.
+    // Раньше восстанавливался только slider.value — заголовок «Стратегия» и
+    // галочка в списке оставались на дефолтной «Гармонии», расходясь с реально
+    // выбранным соотношением (напр. slider=60, а в списке отмечена 50/50).
+    // Прогоняем bondPct через тот же путь, что и обычный выбор стратегии.
     if (state.bondPct) {
+        var bp = parseInt(state.bondPct, 10);
         var slider = document.getElementById('ratioSlider');
-        if (slider) {
-            slider.value = state.bondPct;
-            if (typeof updateSlider === 'function') updateSlider(slider);
+        if (slider) slider.value = state.bondPct;
+        var preset = (typeof ndFindPreset === 'function') ? ndFindPreset(bp) : null;
+        if (preset && typeof ndApplyStrategy === 'function') {
+            ndApplyStrategy(preset.bonds, preset.title, preset.subtitle);
+        } else if (!isNaN(bp) && bp >= 0 && bp <= 100) {
+            // некруглое соотношение — «Индивидуальная», как после ручной настройки
+            try { savedCustomBonds = bp; savedCustomStocks = 100 - bp; } catch (e) {}
+            var custSlider = document.getElementById('customRatioSlider');
+            if (custSlider) custSlider.value = bp;
+            if (typeof updateCustomSliderDisplay === 'function') { try { updateCustomSliderDisplay(bp); } catch (e) {} }
+            if (typeof updateMainCardUI === 'function') { try { updateMainCardUI(bp, 'Индивидуальная', 'Ваша настройка'); } catch (e) {} }
+            var cv = document.getElementById('ndStratCardVal'); if (cv) cv.textContent = 'Индивидуальная';
+            if (typeof ndBuildWF === 'function') { try { ndBuildWF(); } catch (e) {} }
+            if (typeof draw === 'function') { try { draw(); } catch (e) {} }
         }
     }
 
@@ -115,6 +131,7 @@ function lsRestore() {
     // остальные» на не-Главных вкладках.
 
     btUpdateRunBtn();
+    if (typeof ndSyncCtaState === 'function') ndSyncCtaState();
 }
 
 // Автосохранение каждые 2 сек после изменений

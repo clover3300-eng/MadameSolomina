@@ -126,14 +126,18 @@
 }
 .cx-rows.r5 #feeSelectedText.nd-fee-pill.placeholder { color: var(--r5-muted); }
 .cx-rows.r5 .nd-broker-chev { stroke: var(--r5-muted); }
-/* Выпадашка комиссии — открывается ПОВЕРХ контента (не растягивает карточку вниз) */
+/* Выпадашка комиссии — открывается ПОВЕРХ контента ВВЕРХ (триггер стоит у нижней
+   кромки карточки «Капитал»; вниз список накрывала бы кнопка «Рассчитать портфель»
+   и перехватывала клики по нижним тарифам). z-index держим выше кнопки. */
 .cx-rows.r5 .fee-selector-unified { position: relative; }
 .cx-rows.r5 .nd-fee-dd {
-  position: absolute; left: 0; right: 0; top: calc(100% + 8px); z-index: 9;
+  position: absolute; left: 0; right: 0; bottom: calc(100% + 8px); z-index: 40;
   margin: 0 !important; background: var(--r5-card); border-radius: 14px;
-  box-shadow: 0 18px 40px rgba(20,30,48,.20); overflow-y: auto;
+  box-shadow: 0 -14px 40px rgba(20,30,48,.20); overflow-y: auto;
 }
-.cx-rows.r5 .nd-fee-dd.show { margin: 0 !important; border: 1px solid var(--r5-line); max-height: 280px; }
+/* вверх помещаются все 7 тарифов без внутреннего скролла (места над триггером
+   с запасом — выше карточки крупная сумма) */
+.cx-rows.r5 .nd-fee-dd.show { margin: 0 !important; border: 1px solid var(--r5-line); max-height: 344px; }
 
 /* Плашка MOEX (.nd-moex-strip → .cx-moex) */
 .cx-rows.r5 .nd-moex-strip { justify-content: center; gap: 9px; padding: 2px 0 0; }
@@ -428,6 +432,19 @@ body.dark-mode .cx-rows.r5 .qr-strat { background: rgba(255,255,255,.03); }
 }
 #calcCtaBar .nd-btn-cta-g:hover { box-shadow: 0 22px 48px rgba(16,24,38,.40); }
 #calcCtaBar .nd-btn-cta-g .cta-ic { color: #7ee2a8; display: inline-flex; align-items: center; }
+/* Пока не введена сумма (≥100 000 ₽) или не выбрана комиссия — кнопка приглушена,
+   подпись подсказывает недостающий шаг (клик всё равно покажет плашку-гид).
+   #calcCtaBar лежит ВНЕ .cx-rows.r5, поэтому --r5-* здесь не в области видимости —
+   приглушённые тона задаём явными значениями. */
+#calcCtaBar .nd-btn-cta-g.is-locked {
+  background: #eef2f8; color: #8895a8; box-shadow: none;
+}
+#calcCtaBar .nd-btn-cta-g.is-locked:hover { box-shadow: none; }
+#calcCtaBar .nd-btn-cta-g.is-locked .cta-ic { color: #97a3b4; opacity: .8; }
+body.dark-mode #calcCtaBar .nd-btn-cta-g.is-locked {
+  background: rgba(255,255,255,.06); color: #8b98ac;
+}
+body.dark-mode #calcCtaBar .nd-btn-cta-g.is-locked .cta-ic { color: #8b98ac; }
 
 /* ── Тёмная тема ──────────────────────────────────────────── */
 body.dark-mode .cx-rows.r5 {

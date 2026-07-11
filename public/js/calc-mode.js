@@ -116,8 +116,52 @@
     });
     var cta = ch.querySelector('.cxm-cta');
     if (cta) cta.addEventListener('click', function () { setMode('mix'); haptic('light'); });
+    refreshResumeBadges();
     return true;
   }
+
+  // ── Бейджи «продолжить сохранённый расчёт» на витринах выбора (фишка 4) ──
+  // Если режим уже посчитан (mix: calcDone/isPortfolioCalculated, monthly:
+  // started/miStarted), на витрине появляется пилюля «Сохранённый расчёт», а
+  // кнопка меняет надпись на «Продолжить». Сам расчёт восстановлен ещё при
+  // загрузке (moRestore/mixRestore), поэтому клик просто открывает готовое.
+  function savedFor(m) {
+    try {
+      if (m === 'mix') {
+        if (typeof isPortfolioCalculated !== 'undefined' && isPortfolioCalculated) return true;
+        var s = JSON.parse(localStorage.getItem('msolominа_state'));
+        return !!(s && s.calcDone);
+      }
+      if (miStarted) return true;
+      var mo = JSON.parse(localStorage.getItem(MO_KEY));
+      return !!(mo && mo.started);
+    } catch (e) { return false; }
+  }
+  function refreshResumeBadges() {
+    var ch = document.getElementById('cxChooser');
+    if (!ch) return;
+    ['mix', 'monthly'].forEach(function (m) {
+      var card = ch.querySelector('.cxm-type[data-mode="' + m + '"]');
+      if (!card) return;
+      var saved = savedFor(m);
+      card.classList.toggle('has-saved', saved);
+      var btn = card.querySelector('.cxm-tbtn');
+      if (btn) {
+        if (!btn._baseHTML) btn._baseHTML = btn.innerHTML;
+        btn.innerHTML = saved ? ('Продолжить ' + GO_IC) : btn._baseHTML;
+      }
+      var badge = card.querySelector('.cxm-resume');
+      if (saved && !badge) {
+        badge = document.createElement('span');
+        badge.className = 'cxm-resume';
+        badge.innerHTML = '<span class="dot"></span>Сохранённый расчёт';
+        card.insertBefore(badge, card.querySelector('.cxm-tk'));
+      } else if (!saved && badge) {
+        badge.parentNode.removeChild(badge);
+      }
+    });
+  }
+  window.cxRefreshResume = refreshResumeBadges;
 
   // ── Кнопка «Назад к выбору типа» (видна только в режимах mix/monthly) ────
   // Один элемент в самом верху колонки .cx-rows.r5: [back][chooser][r5Split].
@@ -202,6 +246,8 @@
         }, 60);
       }
     }
+    if (m === 'choose') refreshResumeBadges();               // актуализируем бейджи «Продолжить»
+    if (m === 'mix' && typeof ndSyncCtaState === 'function') ndSyncCtaState();  // состояние кнопки «Рассчитать»
     requestAnimationFrame(syncCardHeight);
     syncCalcSubActive();
     var ca = document.getElementById('contentArea');

@@ -295,6 +295,7 @@ function ndSelectFee(value, rateText, el) {
     document.querySelectorAll('.fee-dropdown-item').forEach(i => i.classList.remove('selected'));
     if (el) el.classList.add('selected');
     toggleFeeDropdown();
+    ndSyncCtaState();
     draw();
 }
 
@@ -334,6 +335,7 @@ function applyCustomFee() {
         document.querySelectorAll('.fee-dropdown-item').forEach(i => i.classList.remove('selected'));
         const row = document.getElementById('feeCustomRow');
         if (row) row.classList.add('selected');
+        ndSyncCtaState();
         draw();
     }
     closeCustomFeeInput();
@@ -443,8 +445,40 @@ function ndFormatInput(input) {
     const zeroPh = document.getElementById('ndZeroPlaceholder');
     if (hero) hero.classList.toggle('has-value', num > 0);
     if (zeroPh) zeroPh.style.display = 'none';
+    ndSyncCtaState();
     draw();
 }
+
+// Состояние кнопки «Рассчитать портфель»: пока сумма < 100 000 ₽ или не выбрана
+// комиссия — кнопка приглушена, а подпись подсказывает недостающий шаг. Клик по
+// приглушённой кнопке всё равно работает (calculateAndShowPortfolio покажет
+// плашку-гид), просто теперь заранее видно, чего не хватает.
+function ndSyncCtaState() {
+    var bar = document.getElementById('calcCtaBar');
+    if (!bar) return;
+    var btn = bar.querySelector('.nd-btn-cta-g');
+    if (!btn) return;
+    var raw = (document.getElementById('sumInput') || {}).value || '';
+    var sum = parseInt(raw.replace(/\D/g, ''), 10) || 0;
+    var feeOk = (typeof isFeeSelected !== 'undefined') && isFeeSelected;
+    var msg, locked = true;
+    if (sum < 100000) msg = 'Введите сумму';
+    else if (!feeOk)  msg = 'Выберите комиссию';
+    else { msg = 'Рассчитать портфель'; locked = false; }
+    btn.classList.toggle('is-locked', locked);
+    var label = btn.querySelector('.cta-label');
+    if (label) label.textContent = msg;
+}
+window.ndSyncCtaState = ndSyncCtaState;
+
+// Enter в поле суммы = «готово»: сразу запускаем расчёт (проверки суммы и
+// комиссии — внутри calculateAndShowPortfolio). Только в смешанном режиме; в
+// купонном своё поле (monthlySumInput), туда Enter отсюда не попадёт.
+function ndSumEnter() {
+    if (document.body.classList.contains('cxm-monthly')) return;
+    if (typeof calculateAndShowPortfolio === 'function') calculateAndShowPortfolio();
+}
+window.ndSumEnter = ndSumEnter;
 
 function ndOnFocus() {
     const hero = document.getElementById('ndInputHero');
