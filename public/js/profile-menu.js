@@ -820,6 +820,38 @@
 
     window.profileMenuRefresh = renderIdentity;
 
+    // ---------- сигнал аудита эшелонов (только у админа) ----------
+    // Админский модуль (admin.js) в фоне сверяет эшелоны с дивидендами и шлёт
+    // событие 'echelon-audit'. При расхождениях зажигаем красный «!» на аватаре —
+    // подсказку зайти в Админку → «Гугл таблица» и перепроверить.
+    function setAuditBadge(n) {
+        if (!btn) return;
+        var el = btn.querySelector('#phAlert');
+        if (n && n > 0) {
+            if (!el) {
+                el = document.createElement('span');
+                el.id = 'phAlert';
+                el.className = 'ph-alert';
+                el.setAttribute('aria-hidden', 'true');
+                el.textContent = '!';
+                btn.appendChild(el);
+            }
+            el.title = 'Эшелоны: ' + n + ' ' + plural(n, 'расхождение', 'расхождения', 'расхождений') + ' с дивидендами — проверьте в Админке';
+        } else if (el) {
+            el.remove();
+        }
+    }
+    function plural(n, one, few, many) {
+        var m = Math.abs(n) % 100, n1 = m % 10;
+        if (m > 10 && m < 20) return many;
+        if (n1 > 1 && n1 < 5) return few;
+        if (n1 === 1) return one;
+        return many;
+    }
+    window.addEventListener('echelon-audit', function (e) {
+        setAuditBadge(e.detail && e.detail.mismatch);
+    });
+
     // ---------- init ----------
     function init() {
         btn = document.getElementById('topProfileBtn');
@@ -829,6 +861,8 @@
         buildFab();
         renderIdentity();
         wire();
+        // событие аудита могло прийти до нас — подхватываем текущее состояние
+        if (window.echelonAudit) setAuditBadge(window.echelonAudit.mismatch());
 
         // «Раздел при запуске»: применяем только на «чистом» заходе (путь /),
         // прямые ссылки вида /market восстанавливает route-hash.js.

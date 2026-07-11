@@ -699,10 +699,7 @@
             else if (isHighlightCell(col.key, co)) cls += ' stk-hl';
             tds += '<td class="' + cls.trim() + '">' + displayCell(col.key, raw) + '</td>';
         }
-        // title на строке = подсказка про жест закрепления (кастомный тултип таблицы
-        // покажет её ровно над ячейками-данными, где этот клик и срабатывает — у имени
-        // и кнопок действий свои title, они перекрывают этот при наведении на них)
-        var rowHtml = '<tr class="stk-row' + (state.pinnedRows[co.ticker] ? ' stk-row-pin' : '') + '" data-ticker="' + esc(co.ticker) + '" title="Клик по строке — закрепить подсветку для сравнения">' + tds + '</tr>';
+        var rowHtml = '<tr class="stk-row' + (state.pinnedRows[co.ticker] ? ' stk-row-pin' : '') + '" data-ticker="' + esc(co.ticker) + '">' + tds + '</tr>';
         // аккордеон-строка (рендерим содержимое только если раскрыта — иначе лёгкая заглушка)
         var open = !!state.expanded[co.ticker];
         var accInner = open ? renderCardInner(co) : '';

@@ -505,7 +505,7 @@
             var disp = col.type === 'date' ? displayDate(raw) : displayCell(raw);
             tds += '<td class="' + cls.trim() + '">' + disp + '</td>';
         }
-        return '<tr class="bnd-row' + (state.pinnedRows[b.isin] ? ' bnd-row-pin' : '') + '" data-isin="' + esc(b.isin) + '" title="Клик по строке — закрепить подсветку для сравнения">' + tds + '</tr>';
+        return '<tr class="bnd-row' + (state.pinnedRows[b.isin] ? ' bnd-row-pin' : '') + '" data-isin="' + esc(b.isin) + '">' + tds + '</tr>';
     }
 
     function ruleFor(key) {

@@ -147,6 +147,8 @@
         ban: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>',
         userX: '<svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="18" y1="8" x2="23" y2="13"/><line x1="23" y1="8" x2="18" y2="13"/></svg>',
         check: '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>',
+        alert: '<svg viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+        grid: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>',
         dl: '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
         key: '<svg viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>',
         sdir: '<svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M6 13l6 6 6-6"/></svg>'
@@ -349,6 +351,7 @@
                     segBtn('overview', 'Обзор') +
                     segBtn('users', 'Пользователи', D.profiles.length) +
                     segBtn('events', 'События', D.eventsTotal) +
+                    segBtn('sheet', 'Гугл таблица', EA.results.length ? (EA.mismatch || null) : null) +
                 '</div>' +
             '</div>';
 
@@ -360,6 +363,8 @@
             h += renderOverview();
         } else if (section === 'users') {
             h += renderUsers();
+        } else if (section === 'sheet') {
+            h += renderSheet();
         } else {
             h += renderEvents();
         }
@@ -933,6 +938,204 @@
     }
 
     // ---------- клики (делегирование) ----------
+    // ---------- АУДИТ ЭШЕЛОНОВ («Гугл таблица») ----------
+    // Тикеры и их «проставленный» эшелон берём из echelonTableData (данные
+    // Google-таблицы «Акции», 4 колонки = 4 эшелона). Для каждого тикера
+    // тянем историю дивидендов с MOEX (fetchDividendRows из company.js, с
+    // общим кэшем divHistoryCache) и вычисляем «дивидендный» эшелон:
+    //   1 — платят каждый год И повышают;
+    //   2 — платят каждый год, но суммы разнятся;
+    //   3 — платят через раз (есть пропуски);
+    //   4 — не платят вовсе.
+    // Расхождение проставленного и вычисленного = сигнал проверить вручную.
+    var ECH_ROMAN = ['I', 'II', 'III', 'IV'];
+    var ECH_DESC = {
+        1: 'платят каждый год и повышают',
+        2: 'платят каждый год, суммы разнятся',
+        3: 'платят через раз (есть пропуски)',
+        4: 'дивиденды не платят'
+    };
+    var EA = { results: [], mismatch: 0, running: false, ranAt: 0, bgStarted: false, _promise: null };
+
+    // Классификация эшелона по истории выплат. Возвращает 1..4 либо 0 —
+    // «недостаточно данных» (короткая история, судить рано, в расхождения не идёт).
+    function echelonFromDivs(rows) {
+        var Y = new Date().getFullYear();
+        if (!rows || !rows.length) return 4;
+        var map = {}, minY = Infinity;
+        rows.forEach(function (r) {
+            var y = +r.year;
+            if (r.sum > 0) { map[y] = r.sum; if (y < minY) minY = y; }
+        });
+        if (minY === Infinity) return 4;         // записи есть, но все нулевые
+        var end = Y - 1;                          // текущий год ещё не закрыт
+        var start = Math.max(Y - 5, minY);        // окно ≤5 последних лет, но не раньше первой выплаты
+        if (start > end) start = end;
+        var years = [], paid = 0;
+        for (var y = start; y <= end; y++) { years.push(y); if (map[y] != null) paid++; }
+        if (paid === 0) return 4;                 // платили когда-то, но в окне — нет
+        if (years.length < 3) return 0;           // мало истории — 1/2/3 не различить
+        if (paid < years.length) return 3;        // с пропусками
+        for (var i = 1; i < years.length; i++) {
+            if (map[years[i]] < map[years[i - 1]] * 0.999) return 2;   // где-то снизили → «разнятся»
+        }
+        return 1;                                 // каждый год и не ниже предыдущего
+    }
+
+    // Источник: тикер + проставленный эшелон из таблицы «Акции».
+    function eaSource() {
+        var out = [], seen = {};
+        if (typeof echelonTableData === 'undefined' || !echelonTableData) return out;
+        for (var c = 0; c < echelonTableData.length; c++) {
+            (echelonTableData[c] || []).forEach(function (a) {
+                if (!a || !a.t) return;
+                var t = String(a.t).trim().toUpperCase();
+                if (!t || seen[t]) return;
+                seen[t] = true;
+                out.push({ t: t, n: a.n || a.t, assigned: c + 1 });
+            });
+        }
+        return out;
+    }
+
+    function divFn() {
+        return (typeof fetchDividendRows === 'function') ? fetchDividendRows
+            : (typeof window.fetchDividendRows === 'function' ? window.fetchDividendRows : null);
+    }
+
+    // Прогон аудита с ограниченной параллельностью, чтобы не завалить прокси MOEX.
+    function runAudit(force) {
+        if (EA.running) return EA._promise;
+        var src = eaSource();
+        if (!src.length) return Promise.resolve([]);
+        if (!force && EA.ranAt && EA.results.length && Date.now() - EA.ranAt < 30 * 60000) {
+            return Promise.resolve(EA.results);
+        }
+        var fn = divFn();
+        if (!fn) return Promise.resolve([]);
+        EA.running = true;
+        var i = 0, CONC = 4, results = [];
+        function worker() {
+            if (i >= src.length) return Promise.resolve();
+            var item = src[i++];
+            return fn(item.t).then(function (rows) {
+                var expected = echelonFromDivs(rows);
+                var last = rows && rows[0] ? rows[0] : null;
+                results.push({
+                    t: item.t, n: item.n, assigned: item.assigned, expected: expected,
+                    match: expected === 0 ? null : (expected === item.assigned),
+                    lastYear: last ? last.year : '', lastSum: last ? last.sum : null,
+                    years: rows ? rows.length : 0
+                });
+            }, function () {
+                results.push({ t: item.t, n: item.n, assigned: item.assigned, expected: 0, match: null, error: true });
+            }).then(worker);
+        }
+        var pool = [];
+        for (var k = 0; k < CONC; k++) pool.push(worker());
+        EA._promise = Promise.all(pool).then(function () {
+            results.sort(function (a, b) { return a.assigned - b.assigned || a.t.localeCompare(b.t); });
+            EA.results = results;
+            EA.ranAt = Date.now();
+            EA.running = false;
+            EA.mismatch = results.filter(function (r) { return r.match === false; }).length;
+            try { window.dispatchEvent(new CustomEvent('echelon-audit', { detail: { mismatch: EA.mismatch, total: results.length } })); } catch (e) {}
+            if (root && !document.hidden && typeof currentTab !== 'undefined' && currentTab === 'admin' && section === 'sheet') renderApp();
+            return results;
+        });
+        return EA._promise;
+    }
+
+    // Фоновый аудит для админа: ждём, пока Google-таблица подгрузит echelonTableData.
+    function bgAudit() {
+        if (EA.bgStarted) { runAudit(); return; }
+        if (!(supa() && supa().isAdmin())) return;
+        EA.bgStarted = true;
+        var tries = 0;
+        (function attempt() {
+            if (eaSource().length && divFn()) { runAudit(); return; }
+            if (tries++ < 25) setTimeout(attempt, 3000);
+        })();
+    }
+
+    window.echelonAudit = {
+        run: runAudit,
+        results: function () { return EA.results; },
+        mismatch: function () { return EA.mismatch; },
+        running: function () { return EA.running; },
+        ranAt: function () { return EA.ranAt; }
+    };
+
+    function echBadge(n, kind) {
+        // kind: 'ok' | 'bad' | 'na'
+        return '<span class="adm-echb ' + kind + '">' + (n ? ECH_ROMAN[n - 1] : '—') + '</span>';
+    }
+
+    function renderSheet() {
+        var src = eaSource();
+        if (!src.length) {
+            return '<div class="adm-sheet">' +
+                '<div class="adm-gate"><div class="adm-gate-s">Таблица «Акции» ещё не подтянулась из Google-таблицы. ' +
+                'Откройте вкладку «Рынок» или обновите страницу — тикеры и эшелоны появятся здесь.</div></div></div>';
+        }
+        var res = EA.results;
+        var legend = ECH_ROMAN.map(function (r, k) {
+            return '<span class="adm-lg"><i class="adm-echb ok">' + r + '</i>' + ECH_DESC[k + 1] + '</span>';
+        }).join('');
+        var head = '<div class="adm-sheet-head">' +
+            '<div class="adm-sheet-tt">' +
+                '<div class="adm-sheet-t">' + IC.grid + 'Эшелоны по дивидендам</div>' +
+                '<div class="adm-sheet-s">Сверяем эшелон из Google-таблицы «Акции» с историей выплат MOEX. Клик по тикеру — карточка компании с дивидендами.</div>' +
+            '</div>' +
+            '<button class="adm-btn sm" data-act="sheet-refresh"' + (EA.running ? ' disabled' : '') + '>' + IC.refresh + (EA.running ? 'Считаем…' : 'Пересчитать') + '</button>' +
+        '</div>';
+
+        if (!res.length) {
+            runAudit();
+            return '<div class="adm-sheet">' + head +
+                '<div class="adm-gate"><div class="adm-gate-s">Считаем эшелоны по истории дивидендов ' + src.length + ' тикеров…</div></div></div>';
+        }
+
+        var bad = res.filter(function (r) { return r.match === false; }).length;
+        var na = res.filter(function (r) { return r.match === null; }).length;
+        var ok = res.length - bad - na;
+        var summary = '<div class="adm-sheet-sum">' +
+            '<span class="adm-chip ok">' + IC.check + ok + ' совпадает</span>' +
+            '<span class="adm-chip ' + (bad ? 'bad' : 'mut') + '">' + IC.alert + bad + ' расхождений</span>' +
+            '<span class="adm-chip mut">' + na + ' без оценки</span>' +
+            '<span class="adm-sheet-legend">' + legend + '</span>' +
+        '</div>';
+
+        // Группируем по проставленному эшелону — «все тикеры распределены по эшелонам».
+        var cols = '';
+        for (var e = 1; e <= 4; e++) {
+            var rows = res.filter(function (r) { return r.assigned === e; });
+            var rowsHtml = rows.length ? rows.map(function (r) {
+                var kind = r.match === false ? 'bad' : (r.match === null ? 'na' : 'ok');
+                var expBadge = r.expected ? echBadge(r.expected, kind) : '<span class="adm-echb na">—</span>';
+                var note = r.error ? 'нет данных MOEX'
+                    : (r.expected === 0 ? 'мало истории'
+                    : (r.match === false ? 'дивиденды → ' + ECH_ROMAN[r.expected - 1] + ' эшелон' : ECH_DESC[r.expected]));
+                var last = (r.lastSum != null && r.lastYear)
+                    ? ' · ' + r.lastYear + ': ' + r.lastSum.toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' ₽' : '';
+                return '<div class="adm-srow ' + kind + '" data-act="sheet-open" data-ticker="' + esc(r.t) + '" data-ech="' + r.assigned + '" title="Открыть карточку компании ' + esc(r.t) + '">' +
+                    '<span class="adm-sr-sig">' + (r.match === false ? IC.alert : (r.match === null ? IC.grid : IC.check)) + '</span>' +
+                    '<span class="adm-sr-t">' + esc(r.t) + '</span>' +
+                    expBadge +
+                    '<span class="adm-sr-meta"><span class="adm-sr-n">' + esc(r.n) + '</span>' +
+                        '<span class="adm-sr-note">' + note + last + '</span></span>' +
+                '</div>';
+            }).join('') : '<div class="adm-sempty">нет тикеров</div>';
+            cols += '<div class="adm-scol">' +
+                '<div class="adm-scol-h"><span class="adm-echb ok">' + ECH_ROMAN[e - 1] + '</span>' + ECH_ROMAN[e - 1] + ' эшелон' +
+                    '<span class="adm-scol-n">' + rows.length + '</span></div>' +
+                '<div class="adm-scol-b">' + rowsHtml + '</div>' +
+            '</div>';
+        }
+
+        return '<div class="adm-sheet">' + head + summary + '<div class="adm-scols">' + cols + '</div></div>';
+    }
+
     function onAction(e) {
         var btn = e.target.closest ? e.target.closest('[data-act]') : null;
         if (!btn) return;
@@ -992,6 +1195,12 @@
             case 'unban': updateUserRow(id, { banned: false }, 'admin_unban', null, 'Пользователь разблокирован'); break;
             case 'clear-data': clearUserData(id); break;
             case 'delete-user': deleteUser(id); break;
+            case 'sheet-refresh': EA.results = []; renderApp(); runAudit(true); break;
+            case 'sheet-open':
+                var tk = btn.getAttribute('data-ticker');
+                var ech = +btn.getAttribute('data-ech') || 1;
+                if (typeof window.openStockDetail === 'function') window.openStockDetail(tk, ech);
+                break;
         }
     }
 
@@ -1025,6 +1234,7 @@
         if (supa() && supa().isAdmin()) {
             if (!D.loading && (!D.loadedAt || Date.now() - D.loadedAt > 60000)) refresh();
             startPoll();
+            bgAudit();
         }
     }
 
@@ -1047,6 +1257,9 @@
     if (window.supa) {
         window.supa.onChange(function (kind) {
             gateNav();
+            // Фоновый аудит эшелонов запускаем для админа сразу, как узнали роль —
+            // чтобы красный сигнал на аватаре зажёгся, даже если в Админку не заходили.
+            if ((kind === 'init' || kind === 'signin' || kind === 'profile') && supa() && supa().isAdmin()) bgAudit();
             if (typeof currentTab !== 'undefined' && currentTab === 'admin' &&
                 (kind === 'init' || kind === 'signin' || kind === 'signout' || kind === 'profile')) {
                 onEnterTab();
