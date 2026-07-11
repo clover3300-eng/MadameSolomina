@@ -650,3 +650,102 @@ body.dark-mode .adm-srow:hover { background: rgba(96, 165, 250, 0.1); }
 body.dark-mode .adm-sr-t { color: #f4f8fd; }
 body.dark-mode .adm-sr-n { color: #9fb1c6; }
 body.dark-mode .adm-seg-btn[data-sec="sheet"] .adm-seg-n { color: #f87171; }
+
+/* ===== ОПОВЕЩЕНИЯ: форма | история одной картой ===== */
+/* та же схема, что «Обзор»: grid c внутренним разделителем */
+.adm-nf { display: grid; grid-template-columns: 0.95fr 1.25fr; padding: 0; overflow: hidden; align-items: stretch; }
+.adm-nf-sec { padding: 18px 20px; min-width: 0; display: flex; flex-direction: column; }
+.adm-nf-histsec { border-left: 1px solid rgba(19, 26, 43, 0.08); }
+@media (max-width: 1279px) {
+    .adm-nf { grid-template-columns: 1fr; }
+    .adm-nf-histsec { border-left: 0; border-top: 1px solid rgba(19, 26, 43, 0.08); }
+}
+
+.adm-nf-lab {
+    margin: 10px 0 5px; font-size: 10.5px; font-weight: 800;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--text-slate, #64748B);
+}
+.adm-nf-select, .adm-nf-input, .adm-nf-text {
+    width: 100%; box-sizing: border-box;
+    border: 1px solid rgba(19, 26, 43, 0.14); border-radius: 12px;
+    background: #fbfcfe; padding: 9px 12px;
+    font-family: var(--font-ui); font-size: 13px; font-weight: 600;
+    color: var(--text-deep, #1b2433);
+    transition: border-color 0.15s, background 0.15s;
+}
+.adm-nf-select:focus, .adm-nf-input:focus, .adm-nf-text:focus {
+    outline: none; border-color: rgba(59, 130, 246, 0.55); background: #fff;
+}
+.adm-nf-text { resize: vertical; min-height: 96px; line-height: 1.5; }
+.adm-nf-kinds { display: flex; align-items: center; gap: 6px; }
+
+/* чекбокс-пилюля «Продублировать в Telegram» */
+.adm-nf-tg {
+    margin-top: 14px; align-self: flex-start;
+    display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid rgba(19, 26, 43, 0.12); border-radius: 12px;
+    background: #fff; cursor: pointer; padding: 8px 12px;
+    font-family: var(--font-ui); font-size: 12.5px; font-weight: 700;
+    color: var(--text-slate, #64748B);
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.adm-nf-tg i {
+    width: 16px; height: 16px; border-radius: 6px; box-sizing: border-box;
+    border: 1.5px solid rgba(19, 26, 43, 0.25); background: #fff;
+    display: grid; place-items: center; transition: background 0.15s, border-color 0.15s;
+}
+.adm-nf-tg i svg { width: 10px; height: 10px; stroke: #fff; stroke-width: 3; fill: none; opacity: 0; }
+.adm-nf-tg > svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none; }
+.adm-nf-tg:hover { border-color: rgba(59, 130, 246, 0.5); color: var(--text-deep, #1b2433); }
+.adm-nf-tg.on { border-color: rgba(59, 130, 246, 0.5); color: #2563eb; background: rgba(59, 130, 246, 0.06); }
+.adm-nf-tg.on i { background: #3b82f6; border-color: #3b82f6; }
+.adm-nf-tg.on i svg { opacity: 1; }
+
+.adm-nf-foot { margin-top: 14px; display: flex; align-items: center; gap: 12px; }
+.adm-nf-hint { font-size: 11px; font-weight: 600; line-height: 1.45; color: #94a3b8; }
+
+/* история рассылок */
+.adm-nfh-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.adm-nfh-head .adm-card-t { margin-bottom: 0; }
+.adm-nfh-head + .adm-empty, .adm-nfh-head + .adm-error { margin-top: 12px; }
+.adm-nfh {
+    margin-top: 10px; min-height: 0; max-height: 520px;
+    overflow-y: auto; scrollbar-width: thin;
+    display: flex; flex-direction: column;
+}
+.adm-nfh-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 11px 2px; border-bottom: 1px solid rgba(19, 26, 43, 0.06);
+}
+.adm-nfh-row:last-child { border-bottom: 0; }
+.adm-nfk {
+    flex-shrink: 0; width: 28px; height: 28px; border-radius: 10px;
+    display: grid; place-items: center; margin-top: 1px;
+}
+.adm-nfk svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.adm-nfk.info    { color: #2563eb; background: rgba(59, 130, 246, 0.12); }
+.adm-nfk.success { color: #059669; background: rgba(16, 185, 129, 0.12); }
+.adm-nfk.warn    { color: #d97706; background: rgba(245, 158, 11, 0.14); }
+.adm-nfh-m { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.adm-nfh-m > b { font-size: 13px; font-weight: 800; color: var(--text-deep, #1b2433); overflow-wrap: anywhere; }
+.adm-nfh-b {
+    font-size: 12px; font-weight: 600; line-height: 1.45; color: var(--text-slate, #64748B);
+    white-space: pre-line; overflow-wrap: anywhere;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.adm-nfh-meta { font-family: var(--font-num); font-size: var(--fs-num-sm); font-weight: 600; color: #94a3b8; }
+.adm-nfh-del { flex-shrink: 0; align-self: center; }
+
+body.dark-mode .adm-nf-histsec { border-color: rgba(255, 255, 255, 0.08); }
+body.dark-mode .adm-nf-select, body.dark-mode .adm-nf-input, body.dark-mode .adm-nf-text { background: #111925; border-color: rgba(255, 255, 255, 0.1); color: #f4f8fd; }
+body.dark-mode .adm-nf-select:focus, body.dark-mode .adm-nf-input:focus, body.dark-mode .adm-nf-text:focus { background: #0f1722; }
+body.dark-mode .adm-nf-tg { background: transparent; border-color: rgba(255, 255, 255, 0.12); color: #9fb1c6; }
+body.dark-mode .adm-nf-tg.on { background: rgba(59, 130, 246, 0.12); color: #93c5fd; }
+body.dark-mode .adm-nf-tg i { background: transparent; border-color: rgba(255, 255, 255, 0.25); }
+body.dark-mode .adm-nf-tg.on i { background: #3b82f6; border-color: #3b82f6; }
+body.dark-mode .adm-nfh-row { border-color: rgba(255, 255, 255, 0.06); }
+body.dark-mode .adm-nfh-m > b { color: #f4f8fd; }
+body.dark-mode .adm-nfk.info    { color: #93c5fd; background: rgba(59, 130, 246, 0.16); }
+body.dark-mode .adm-nfk.success { color: #6ee7b7; background: rgba(16, 185, 129, 0.16); }
+body.dark-mode .adm-nfk.warn    { color: #fcd34d; background: rgba(245, 158, 11, 0.16); }

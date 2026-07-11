@@ -12,7 +12,11 @@
 //   · Пользователи — фильтры-пилюли, сортировка по колонкам, поиск (и по id),
 //                   Excel-выгрузка; карточка: роль, бан, сброс пароля, данные;
 //   · События     — журнал app_events: фильтры, раскрытие meta по клику,
-//                   Excel-выгрузка, подгрузка страницами.
+//                   Excel-выгрузка, подгрузка страницами;
+//   · Оповещения  — рассылка в public.notifications (всем или адресно),
+//                   дубль в Telegram через worker /api/notify, история
+//                   с числом прочитавших и отзывом. У пользователей —
+//                   звоночек в шапке (js/notifications.js).
 // Пока вкладка открыта — тихий поллинг раз в 60 с (пропускается, когда
 // открыта карточка или печатают в поиске). Опасные действия — двухшаговое
 // подтверждение («Точно?»), как у кнопки «Выйти» в кабинете. Полное
@@ -24,7 +28,7 @@
     'use strict';
 
     var root = null;                  // #admRoot
-    var section = 'overview';         // overview | users | events
+    var section = 'overview';         // overview | users | events | notify | sheet
     var searchQ = '';
     var eventFilter = 'all';
     var userFilter = 'all';           // all | online | pf | admins | banned
@@ -112,7 +116,9 @@
         admin_ban:              { t: 'Блокировка',        c: 'ban' },
         admin_unban:            { t: 'Разблокировка',     c: 'adm' },
         admin_clear_data:       { t: 'Очистка данных',    c: 'ban' },
-        admin_delete_user:      { t: 'Аккаунт удалён',    c: 'ban' }
+        admin_delete_user:      { t: 'Аккаунт удалён',    c: 'ban' },
+        admin_notify:           { t: 'Оповещение',        c: 'adm' },
+        admin_notify_del:       { t: 'Оповещение отозвано', c: 'ban' }
     };
     function evMeta(ev) { return EVENT_META[ev] || { t: ev, c: 'out' }; }
 
@@ -151,7 +157,10 @@
         grid: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>',
         dl: '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
         key: '<svg viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>',
-        sdir: '<svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M6 13l6 6 6-6"/></svg>'
+        sdir: '<svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M6 13l6 6 6-6"/></svg>',
+        bell: '<svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
+        info: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+        send: '<svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>'
     };
 
     // ---------- загрузка данных ----------
@@ -351,6 +360,7 @@
                     segBtn('overview', 'Обзор') +
                     segBtn('users', 'Пользователи', D.profiles.length) +
                     segBtn('events', 'События', D.eventsTotal) +
+                    segBtn('notify', 'Оповещения', NT.list ? NT.list.length : null) +
                     segBtn('sheet', 'Гугл таблица', EA.results.length ? (EA.mismatch || null) : null) +
                 '</div>' +
             '</div>';
@@ -363,6 +373,8 @@
             h += renderOverview();
         } else if (section === 'users') {
             h += renderUsers();
+        } else if (section === 'notify') {
+            h += renderNotify();
         } else if (section === 'sheet') {
             h += renderSheet();
         } else {
@@ -382,6 +394,21 @@
                 if (cnt) cnt.textContent = filteredUsers().length;
             });
         }
+
+        // черновик оповещения переживает перерисовки (поллинг, смена типа):
+        // значения держим в NC и возвращаем в поля после каждого рендера
+        var nfT = dq('admNfTitle');
+        if (nfT) {
+            nfT.value = NC.title;
+            nfT.addEventListener('input', function () { NC.title = this.value; });
+        }
+        var nfB = dq('admNfBody');
+        if (nfB) {
+            nfB.value = NC.body;
+            nfB.addEventListener('input', function () { NC.body = this.value; });
+        }
+        var nfTo = dq('admNfTo');
+        if (nfTo) nfTo.addEventListener('change', function () { NC.to = this.value; });
     }
 
     function segBtn(id, label, n) {
@@ -654,7 +681,7 @@
         { id: 'auth', t: 'Входы/выходы', match: ['login', 'logout'] },
         { id: 'reg', t: 'Регистрации', match: ['register'] },
         { id: 'pass', t: 'Пароль', match: ['password_reset_request', 'password_reset_done'] },
-        { id: 'admin', t: 'Действия админа', match: ['admin_role', 'admin_ban', 'admin_unban', 'admin_clear_data', 'admin_delete_user'] }
+        { id: 'admin', t: 'Действия админа', match: ['admin_role', 'admin_ban', 'admin_unban', 'admin_clear_data', 'admin_delete_user', 'admin_notify', 'admin_notify_del'] }
     ];
 
     function filteredEvents() {
@@ -935,6 +962,203 @@
                 toast('Данные пользователя очищены');
                 renderApp();
             });
+    }
+
+    // ---------- ОПОВЕЩЕНИЯ ----------
+    // Запись в public.notifications (user_id null = всем) — у пользователей
+    // она всплывает под звоночком в шапке (js/notifications.js). Дубль в
+    // Telegram — POST /api/notify (worker проверяет, что зовёт админ, и шлёт
+    // ботом тем, кто привязал Telegram и включил notify_telegram). История —
+    // с числом прочитавших (notification_reads) и отзывом (delete каскадом
+    // уносит и отметки).
+    var NT = { list: null, reads: {}, loading: false, error: null, sending: false };
+    // черновик живёт вне DOM: поллинг перерисовывает раздел, поля восстанавливаются
+    var NC = { to: 'all', kind: 'info', title: '', body: '', tg: false };
+
+    var NF_KINDS = [
+        { id: 'info',    t: 'Инфо' },
+        { id: 'success', t: 'Успех' },
+        { id: 'warn',    t: 'Важно' }
+    ];
+    function nfKindIc(kind) {
+        return kind === 'success' ? IC.check : (kind === 'warn' ? IC.alert : IC.info);
+    }
+
+    function loadNotify(force) {
+        if (NT.loading) return;
+        if (!force && NT.list) return;
+        NT.loading = true;
+        NT.error = null;
+        Promise.all([
+            client().from('notifications').select('*')
+                .order('created_at', { ascending: false }).limit(200),
+            client().from('notification_reads').select('notification_id').limit(20000)
+        ]).then(function (res) {
+            NT.loading = false;
+            var bad = res.filter(function (r) { return r.error; })[0];
+            if (bad) {
+                NT.error = bad.error.message;
+            } else {
+                NT.list = res[0].data || [];
+                NT.reads = {};
+                (res[1].data || []).forEach(function (r) {
+                    NT.reads[r.notification_id] = (NT.reads[r.notification_id] || 0) + 1;
+                });
+            }
+            if (section === 'notify') renderApp();
+        }, function (e) {
+            NT.loading = false;
+            NT.error = String(e && e.message || e);
+            if (section === 'notify') renderApp();
+        });
+    }
+
+    function sendNotify() {
+        if (NT.sending) return;
+        var title = NC.title.trim();
+        var body = NC.body.trim();
+        if (!title) { toast('Введите заголовок оповещения', true); return; }
+        NT.sending = true;
+        renderApp();
+        var target = NC.to === 'all' ? null : NC.to;
+        client().from('notifications').insert({
+            user_id: target,
+            title: title,
+            body: body,
+            kind: NC.kind,
+            created_by: supa().session.user.id
+        }).select().single().then(function (res) {
+            if (res.error) {
+                NT.sending = false;
+                toast(supa().errRu(res.error), true);
+                renderApp();
+                return;
+            }
+            var em = target ? ((D.profiles.filter(function (p) { return p.id === target; })[0] || {}).email) : null;
+            supa().logEvent('admin_notify', {
+                target: target || 'all',
+                target_email: em || undefined,
+                title: title.slice(0, 80),
+                telegram: NC.tg
+            });
+            if (NT.list) { NT.list.unshift(res.data); }
+            var wantTg = NC.tg;
+            NC.title = '';
+            NC.body = '';
+            if (!wantTg) {
+                NT.sending = false;
+                toast(target ? 'Оповещение отправлено пользователю' : 'Оповещение отправлено всем');
+                renderApp();
+                return;
+            }
+            fetch('/api/notify', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: 'Bearer ' + supa().session.access_token
+                },
+                body: JSON.stringify({ user_id: target, title: title, body: body })
+            }).then(function (r) { return r.json(); }).then(function (d) {
+                NT.sending = false;
+                if (d && d.ok) {
+                    toast(d.total
+                        ? 'Оповещение отправлено. Telegram: ушло ' + d.sent + ' из ' + d.total + (d.failed ? ', ошибок ' + d.failed : '')
+                        : 'Оповещение отправлено. В Telegram некому: никто не включил уведомления');
+                } else {
+                    toast('На сайте отправлено, но Telegram не сработал: ' + ((d && d.error) || 'ошибка сервера'), true);
+                }
+                renderApp();
+            }, function () {
+                NT.sending = false;
+                toast('На сайте отправлено, но сервер Telegram-рассылки недоступен', true);
+                renderApp();
+            });
+        });
+    }
+
+    function deleteNotify(id) {
+        client().from('notifications').delete().eq('id', id).then(function (res) {
+            if (res.error) { toast(supa().errRu(res.error), true); return; }
+            var gone = (NT.list || []).filter(function (n) { return String(n.id) === String(id); })[0];
+            NT.list = (NT.list || []).filter(function (n) { return String(n.id) !== String(id); });
+            supa().logEvent('admin_notify_del', { notification: id, title: gone ? gone.title.slice(0, 80) : undefined });
+            toast('Оповещение отозвано у всех получателей');
+            renderApp();
+        });
+    }
+
+    function renderNotify() {
+        if (NT.list === null && !NT.loading && !NT.error) loadNotify();
+
+        // получатели: все или конкретный (список берём из уже загруженных профилей)
+        var users = D.profiles.slice().sort(function (a, b) {
+            return String(a.name || a.email || '').localeCompare(String(b.name || b.email || ''), 'ru');
+        });
+        var opts = '<option value="all"' + (NC.to === 'all' ? ' selected' : '') + '>Всем пользователям (' + D.profiles.length + ')</option>' +
+            users.map(function (p) {
+                var label = (p.name || 'Без имени') + (p.email ? ' — ' + p.email : '');
+                return '<option value="' + p.id + '"' + (NC.to === p.id ? ' selected' : '') + '>' + esc(label) + '</option>';
+            }).join('');
+
+        var form = '<section class="adm-nf-sec">' +
+            '<div class="adm-card-t">Новое оповещение</div>' +
+            '<label class="adm-nf-lab" for="admNfTo">Кому</label>' +
+            '<select class="adm-nf-select" id="admNfTo">' + opts + '</select>' +
+            '<label class="adm-nf-lab">Тип</label>' +
+            '<div class="adm-nf-kinds">' + NF_KINDS.map(function (k) {
+                return ctlPill('nf-kind', k.id, k.t, NC.kind === k.id);
+            }).join('') + '</div>' +
+            '<label class="adm-nf-lab" for="admNfTitle">Заголовок</label>' +
+            '<input class="adm-nf-input" id="admNfTitle" type="text" maxlength="120" placeholder="Например: обновление сервиса" autocomplete="off" spellcheck="false">' +
+            '<label class="adm-nf-lab" for="admNfBody">Текст</label>' +
+            '<textarea class="adm-nf-text" id="admNfBody" maxlength="2000" rows="5" placeholder="Что произошло и что сделать пользователю…"></textarea>' +
+            '<button class="adm-nf-tg' + (NC.tg ? ' on' : '') + '" type="button" data-act="nf-tg" title="Отправить это же сообщение ботом в Telegram — тем, кто привязал его и включил уведомления">' +
+                '<i>' + IC.check + '</i>' + IC.send + 'Продублировать в Telegram' +
+            '</button>' +
+            '<div class="adm-nf-foot">' +
+                '<button class="adm-btn primary" data-act="nf-send"' + (NT.sending ? ' disabled' : '') + '>' + IC.bell + (NT.sending ? 'Отправляем…' : 'Отправить') + '</button>' +
+                '<span class="adm-nf-hint">Получатели увидят его под звоночком в шапке — рядом с аватаром.</span>' +
+            '</div>' +
+        '</section>';
+
+        var hist;
+        if (NT.error) {
+            hist = '<div class="adm-error">Не удалось загрузить оповещения: ' + esc(NT.error) +
+                '<br>Если таблиц ещё нет — выполните <b>supabase/schema.sql</b> (раздел 9, «Оповещения») в SQL Editor.</div>';
+        } else if (NT.list === null) {
+            hist = '<div class="adm-empty">Загружаем…</div>';
+        } else if (!NT.list.length) {
+            hist = '<div class="adm-empty">Ещё ничего не отправляли — первое оповещение появится здесь.</div>';
+        } else {
+            hist = '<div class="adm-nfh">' + NT.list.map(function (n) {
+                var kind = (n.kind === 'success' || n.kind === 'warn') ? n.kind : 'info';
+                var t = n.user_id ? (D.profiles.filter(function (p) { return p.id === n.user_id; })[0]) : null;
+                var who = n.user_id
+                    ? 'Лично: ' + esc(t ? (t.name || t.email || 'пользователь') : 'удалённый аккаунт')
+                    : 'Всем';
+                var readN = NT.reads[n.id] || 0;
+                var readTxt = n.user_id ? (readN ? 'прочитано' : 'не прочитано') : 'прочитали: ' + readN;
+                return '<div class="adm-nfh-row">' +
+                    '<span class="adm-nfk ' + kind + '">' + nfKindIc(kind) + '</span>' +
+                    '<span class="adm-nfh-m">' +
+                        '<b>' + esc(n.title) + '</b>' +
+                        (n.body ? '<span class="adm-nfh-b">' + esc(n.body) + '</span>' : '') +
+                        '<span class="adm-nfh-meta">' + who + ' · ' + fmtDT(n.created_at) + ' · ' + readTxt + '</span>' +
+                    '</span>' +
+                    '<button class="adm-btn sm arm2 danger adm-nfh-del" data-act="nf-del" data-id="' + n.id + '" data-label="Отозвать" title="Убрать оповещение у всех получателей">' + IC.trash + '<span>Отозвать</span></button>' +
+                '</div>';
+            }).join('') + '</div>';
+        }
+
+        return '<div class="adm-card adm-nf">' +
+            form +
+            '<section class="adm-nf-sec adm-nf-histsec">' +
+                '<div class="adm-nfh-head">' +
+                    '<div class="adm-card-t">Отправленные</div>' +
+                    '<button class="adm-btn sm" data-act="nf-refresh" title="Обновить список и счётчики прочтений"' + (NT.loading ? ' disabled' : '') + '>' + IC.refresh + '</button>' +
+                '</div>' + hist +
+            '</section>' +
+        '</div>';
     }
 
     // ---------- клики (делегирование) ----------
@@ -1318,6 +1542,11 @@
                 var ech = +btn.getAttribute('data-ech') || 1;
                 if (typeof window.openStockDetail === 'function') window.openStockDetail(tk, ech);
                 break;
+            case 'nf-kind': NC.kind = btn.getAttribute('data-f'); renderApp(); break;
+            case 'nf-tg': NC.tg = !NC.tg; renderApp(); break;
+            case 'nf-send': sendNotify(); break;
+            case 'nf-refresh': loadNotify(true); break;
+            case 'nf-del': deleteNotify(id); break;
         }
     }
 
@@ -1332,7 +1561,8 @@
             if (!supa() || !supa().isAdmin()) return;
             if (modal && modal.classList.contains('open')) return;
             var ae = document.activeElement;
-            if (ae && ae.tagName === 'INPUT' && root && root.contains(ae)) return;
+            // печатают в поиске или в форме оповещения — не перерисовываем из-под рук
+            if (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && root && root.contains(ae)) return;
             refresh(true);
         }, POLL_MS);
     }

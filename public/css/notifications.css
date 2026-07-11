@@ -1,0 +1,148 @@
+/* ============================================================
+   УВЕДОМЛЕНИЯ — звоночек в шапке + панель
+   ============================================================
+   • #nfBell — круглая кнопка слева от аватара (#topProfileBtn),
+     то же «стекло», что у гостевого аватара; видна только при
+     живой сессии Supabase (.on ставит js/notifications.js)
+     и по тем же правилам вкладок, что аватар (не на Главной).
+   • .nf-badge — синий счётчик непрочитанных (в тон бренда;
+     красный «!» на аватаре — другой сигнал, аудит эшелонов).
+   • #nfPanel — панель в <body> (паттерн #profileHub: fixed нельзя
+     класть в анимируемые вкладки), та же «огранка»: 2px #131a2b,
+     радиус 24, Inter 800 в заголовках.
+   • Настройки доставки внутри панели реюзают .ph-set/.ph-sw
+     из profile-menu.css — свои только иконки и мелочи.
+   Мобильные правки (#nfPanel на всю ширину) — в css/mobile.css.
+   ============================================================ */
+
+/* ===== КНОПКА-ЗВОНОЧЕК ===== */
+#nfBell {
+    width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+    display: none; align-items: center; justify-content: center;
+    position: relative; cursor: pointer; user-select: none;
+    background: var(--card-glass-aurora, rgba(255,255,255,0.65));
+    border: 1px solid var(--card-border-aurora, rgba(255,255,255,0.4));
+    color: var(--text-slate, #64748B);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    transition: transform 0.15s, background 0.2s, color 0.2s;
+}
+#nfBell.on { display: flex; }
+/* прячем там же, где и аватар: Главная и легаси-квиз */
+body.tab-home #nfBell, body.quiz-mode #nfBell { display: none !important; }
+#nfBell:hover { transform: translateY(-1px); background: rgba(255,255,255,0.85); color: var(--text-deep, #1b2433); }
+#nfBell:active { transform: scale(0.95); }
+#nfBell svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+body.dark-mode #nfBell { background: rgba(30,41,59,0.75); border-color: rgba(255,255,255,0.1); color: rgba(255,255,255,0.5); }
+body.dark-mode #nfBell:hover { background: rgba(30,41,59,0.95); color: rgba(255,255,255,0.8); }
+
+/* счётчик непрочитанных — синий, чтобы не путаться с красным «!» админа */
+.nf-badge {
+    position: absolute; top: -4px; right: -4px; z-index: 2;
+    min-width: 16px; height: 16px; padding: 0 4px; box-sizing: border-box;
+    border-radius: 999px; pointer-events: none;
+    background: linear-gradient(135deg, #3b82f6, #6366f1); color: #fff;
+    font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 800;
+    line-height: 16px; text-align: center; letter-spacing: 0.01em;
+    box-shadow: 0 0 0 2px var(--bg-page, #fff), 0 3px 8px -2px rgba(59,130,246,0.7);
+}
+body.dark-mode .nf-badge { box-shadow: 0 0 0 2px #0f1722, 0 3px 8px -2px rgba(59,130,246,0.7); }
+
+/* ===== ПАНЕЛЬ ===== */
+#nfPanel {
+    position: fixed; top: 66px; right: 26px; z-index: 1250;
+    width: 344px; max-width: calc(100vw - 20px);
+    max-height: min(560px, calc(var(--real-vh, 100vh) - 110px));
+    display: flex; flex-direction: column;
+    background: #fff; border: 2px solid #131a2b; border-radius: 24px;
+    box-shadow: 0 24px 54px -20px rgba(24,38,60,0.34);
+    font-family: 'Manrope', 'Inter', sans-serif;
+    opacity: 0; transform: translateY(-6px) scale(0.985); transform-origin: top right;
+    pointer-events: none; visibility: hidden;
+    transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0.18s;
+}
+#nfPanel.open {
+    opacity: 1; transform: none; pointer-events: auto; visibility: visible;
+    transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s;
+}
+body.dark-mode #nfPanel { background: #18222e; border-color: rgba(255,255,255,0.40); box-shadow: 0 24px 54px -20px rgba(0,0,0,0.55); }
+@media (prefers-reduced-motion: reduce) { #nfPanel { transition-duration: 0.01ms; } }
+
+/* ---- шапка панели ---- */
+.nf-head {
+    flex-shrink: 0; display: flex; align-items: center; gap: 8px;
+    padding: 14px 16px 12px; border-bottom: 1px solid rgba(24,38,60,0.07);
+    border-radius: 22px 22px 0 0;
+    background: radial-gradient(120% 200% at 0% 0%, rgba(59,130,246,0.10), transparent 60%);
+}
+body.dark-mode .nf-head { border-color: rgba(255,255,255,0.07); background: radial-gradient(120% 200% at 0% 0%, rgba(59,130,246,0.18), transparent 60%); }
+.nf-head-t { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 14.5px; color: #1b2433; letter-spacing: -0.01em; }
+body.dark-mode .nf-head-t { color: #f4f8fd; }
+.nf-head-n {
+    padding: 3px 8px; border-radius: 99px;
+    font-size: 10px; font-weight: 800; letter-spacing: 0.03em;
+    color: #2563eb; background: rgba(59,130,246,0.12);
+}
+body.dark-mode .nf-head-n { color: #93c5fd; background: rgba(59,130,246,0.2); }
+.nf-hbtn {
+    margin-left: auto; flex-shrink: 0;
+    width: 28px; height: 28px; border-radius: 9px; border: none; cursor: pointer;
+    display: grid; place-items: center;
+    background: transparent; color: #94a3b8;
+    transition: background 0.15s, color 0.15s;
+}
+/* кнопка «назад» в настройках стоит первой — стрелка слева, заголовок за ней */
+.nf-head .nf-hbtn:first-child { margin-left: -6px; margin-right: -2px; }
+.nf-hbtn:hover { background: rgba(24,38,60,0.06); color: #1b2433; }
+.nf-hbtn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+body.dark-mode .nf-hbtn { color: #9fb1c6; }
+body.dark-mode .nf-hbtn:hover { background: rgba(255,255,255,0.07); color: #f4f8fd; }
+
+/* ---- список ---- */
+.nf-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; padding: 8px 8px 10px; display: flex; flex-direction: column; gap: 4px; }
+.nf-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 10px; border-radius: 14px;
+}
+.nf-item.new { background: rgba(59,130,246,0.06); }
+body.dark-mode .nf-item.new { background: rgba(59,130,246,0.12); }
+.nf-ic {
+    flex-shrink: 0; width: 28px; height: 28px; border-radius: 10px;
+    display: grid; place-items: center; margin-top: 1px;
+}
+.nf-ic svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.nf-ic.info    { color: #2563eb; background: rgba(59,130,246,0.12); }
+.nf-ic.success { color: #059669; background: rgba(16,185,129,0.12); }
+.nf-ic.warn    { color: #d97706; background: rgba(245,158,11,0.14); }
+body.dark-mode .nf-ic.info    { color: #93c5fd; background: rgba(59,130,246,0.16); }
+body.dark-mode .nf-ic.success { color: #6ee7b7; background: rgba(16,185,129,0.16); }
+body.dark-mode .nf-ic.warn    { color: #fcd34d; background: rgba(245,158,11,0.16); }
+.nf-item-m { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.nf-item-t { display: flex; align-items: center; gap: 6px; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 12.5px; color: #1b2433; overflow-wrap: anywhere; }
+body.dark-mode .nf-item-t { color: #f4f8fd; }
+.nf-dot { flex-shrink: 0; width: 6px; height: 6px; border-radius: 99px; background: #3b82f6; box-shadow: 0 0 0 2.5px rgba(59,130,246,0.18); }
+.nf-item-b { font-size: 11.5px; font-weight: 600; line-height: 1.45; color: #64748b; white-space: pre-line; overflow-wrap: anywhere; }
+body.dark-mode .nf-item-b { color: #9fb1c6; }
+.nf-item-d { margin-top: 1px; font-size: 10px; font-weight: 700; color: #a5b1c2; }
+body.dark-mode .nf-item-d { color: #718196; }
+
+/* ---- пустое состояние ---- */
+.nf-empty { padding: 34px 26px 38px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+.nf-empty-ic { width: 44px; height: 44px; border-radius: 15px; display: grid; place-items: center; color: #a5b1c2; background: rgba(148,163,184,0.12); margin-bottom: 4px; }
+.nf-empty-ic svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.nf-empty-t { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 13.5px; color: #1b2433; }
+body.dark-mode .nf-empty-t { color: #f4f8fd; }
+.nf-empty-s { font-size: 11.5px; font-weight: 600; line-height: 1.5; color: #94a3b8; max-width: 240px; }
+
+/* ---- настройки доставки (реюз .ph-set/.ph-sw из profile-menu.css) ---- */
+.nf-prefs { padding: 12px 12px 14px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; scrollbar-width: thin; }
+.nf-set-ic {
+    flex-shrink: 0; width: 28px; height: 28px; border-radius: 10px;
+    display: grid; place-items: center;
+    color: #2563eb; background: rgba(59,130,246,0.1);
+}
+.nf-set-ic svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+body.dark-mode .nf-set-ic { color: #93c5fd; background: rgba(59,130,246,0.16); }
+.nf-set-off .nf-set-ic { color: #a5b1c2; background: rgba(148,163,184,0.12); }
+.nf-set-off .ph-sw { opacity: 0.45; cursor: not-allowed; }
+.nf-prefs-hint { padding: 2px 4px 0; font-size: 10.5px; font-weight: 600; line-height: 1.5; color: #a5b1c2; }
+body.dark-mode .nf-prefs-hint { color: #718196; }

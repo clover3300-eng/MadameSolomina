@@ -237,6 +237,100 @@ async function handleTelegramAuth(request, env) {
     }
 }
 
+// =============================================
+// POST /api/notify — дубль оповещения в Telegram
+// =============================================
+// Зовёт админка после записи оповещения в public.notifications:
+// проверяем JWT Supabase вызывающего, что он незабаненный админ,
+// и шлём сообщение ботом всем получателям, кто привязал Telegram
+// И включил «Уведомления в Telegram» (profiles.notify_telegram).
+// body: { title, body, user_id? } — user_id сужает до одного адресата.
+
+// Лимит субзапросов CF Worker — 50 на вызов; 3 уходят на проверки,
+// остальное — с запасом на рассылку. Хвост больших списков вернётся
+// в skipped (задел под батчи, когда пользователей станет больше).
+const MAX_TG_SENDS = 40;
+
+function tgEscape(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+async function handleNotify(request, env) {
+    if (!env.TELEGRAM_BOT_TOKEN || !env.SUPABASE_SERVICE_ROLE_KEY || !env.SUPABASE_URL) {
+        return json({ ok: false, error: 'Рассылка в Telegram ещё не настроена на сервере' }, 500);
+    }
+
+    var auth = request.headers.get('Authorization') || '';
+    var jwt = auth.indexOf('Bearer ') === 0 ? auth.slice(7) : '';
+    if (!jwt) return json({ ok: false, error: 'Нужна авторизация' }, 401);
+
+    var body;
+    try { body = await request.json(); } catch (e) { return json({ ok: false, error: 'Bad request' }, 400); }
+    var title = String(body.title || '').trim().slice(0, 200);
+    var text = String(body.body || '').trim().slice(0, 2000);
+    if (!title && !text) return json({ ok: false, error: 'Пустое оповещение' }, 400);
+
+    var svc = {
+        apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: 'Bearer ' + env.SUPABASE_SERVICE_ROLE_KEY,
+        'Content-Type': 'application/json'
+    };
+
+    // 1) чей JWT — валидирует сам Supabase (подпись, срок)
+    var uRes = await fetch(env.SUPABASE_URL + '/auth/v1/user', {
+        headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: 'Bearer ' + jwt }
+    });
+    if (!uRes.ok) return json({ ok: false, error: 'Сессия не подтверждена' }, 401);
+    var caller = await uRes.json();
+    if (!caller || !caller.id) return json({ ok: false, error: 'Сессия не подтверждена' }, 401);
+
+    // 2) роль: рассылает только незабаненный админ
+    var pRes = await fetch(env.SUPABASE_URL + '/rest/v1/profiles?id=eq.' +
+        encodeURIComponent(caller.id) + '&select=role,banned', { headers: svc });
+    var pRows = pRes.ok ? await pRes.json() : [];
+    if (!pRows.length || pRows[0].role !== 'admin' || pRows[0].banned) {
+        return json({ ok: false, error: 'Рассылать может только администратор' }, 403);
+    }
+
+    // 3) получатели: Telegram привязан + уведомления включены + не в бане
+    var filter = 'telegram_id=not.is.null&notify_telegram=is.true&banned=is.false&select=telegram_id&limit=1000';
+    if (body.user_id) filter = 'id=eq.' + encodeURIComponent(body.user_id) + '&' + filter;
+    var rRes = await fetch(env.SUPABASE_URL + '/rest/v1/profiles?' + filter, { headers: svc });
+    var recipients = rRes.ok ? await rRes.json() : [];
+    if (!recipients.length) return json({ ok: true, sent: 0, failed: 0, skipped: 0, total: 0 });
+
+    var msg = (title ? '<b>' + tgEscape(title) + '</b>' : '') +
+        (title && text ? '\n\n' : '') + tgEscape(text) +
+        '\n\n<i>Madame Solomi\'na</i>';
+
+    var slice = recipients.slice(0, MAX_TG_SENDS);
+    var sent = 0, failed = 0;
+    for (var i = 0; i < slice.length; i++) {
+        try {
+            var tgRes = await fetch('https://api.telegram.org/bot' + env.TELEGRAM_BOT_TOKEN + '/sendMessage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: slice[i].telegram_id,
+                    text: msg,
+                    parse_mode: 'HTML',
+                    disable_web_page_preview: true
+                })
+            });
+            // 403 — пользователь не нажимал Start у бота или заблокировал его
+            if (tgRes.ok) sent++; else failed++;
+        } catch (e) { failed++; }
+    }
+
+    return json({
+        ok: true,
+        sent: sent,
+        failed: failed,
+        skipped: recipients.length - slice.length,
+        total: recipients.length
+    });
+}
+
 // Базовые защитные заголовки для всей статики.
 // frame-ancestors разрешает web.telegram.org: веб-версия Telegram открывает
 // мини-аппы в iframe (мобильный/десктопный клиенты — нативный webview, им
@@ -252,6 +346,9 @@ export default {
         var url = new URL(request.url);
         if (url.pathname === '/api/telegram-auth' && request.method === 'POST') {
             return handleTelegramAuth(request, env);
+        }
+        if (url.pathname === '/api/notify' && request.method === 'POST') {
+            return handleNotify(request, env);
         }
         var res = await env.ASSETS.fetch(request);
         res = new Response(res.body, res);

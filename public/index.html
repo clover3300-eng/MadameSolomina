@@ -44,12 +44,13 @@
     <link rel="stylesheet" href="css/home-register.css?v=21">
     <link rel="stylesheet" href="css/site-bg.css?v=3">
     <link rel="stylesheet" href="css/profile-menu.css?v=11">
-    <link rel="stylesheet" href="css/admin.css?v=6">
+    <link rel="stylesheet" href="css/notifications.css?v=1">
+    <link rel="stylesheet" href="css/admin.css?v=7">
     <link rel="stylesheet" href="css/rebalance-r6.css?v=2">
     <link rel="stylesheet" href="css/typography-tokens.css?v=2">
     <link rel="stylesheet" href="css/desktop-zoom.css?v=4">
     <!-- Мобильный слой (≤1023px) — всегда ПОСЛЕДНИЙ, перебивает всё -->
-    <link rel="stylesheet" href="css/mobile.css?v=10">
+    <link rel="stylesheet" href="css/mobile.css?v=11">
     
     <!-- Telegram WebApp API (fallback — works both in TG and browser) -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -2237,15 +2238,17 @@
 <script src="js/site-bg.js?v=1" defer></script>
 
 <!-- Облако: конфиг + клиент ДО home-register/profile-menu (они смотрят window.supa),
+     notifications (звоночек) — после profile-menu (встаёт рядом с аватаром),
      cloud-sync и admin — после; route-hash по-прежнему ПОСЛЕДНИЙ -->
 <script src="js/supabase-config.js?v=1" defer></script>
 <script src="js/telegram-config.js?v=1" defer></script>
 <script src="js/supabase-client.js?v=4" defer></script>
 <script src="js/home-register.js?v=16" defer></script>
 <script src="js/profile-menu.js?v=13" defer></script>
+<script src="js/notifications.js?v=2" defer></script>
 <script src="js/sums-privacy.js?v=2" defer></script>
 <script src="js/cloud-sync.js?v=2" defer></script>
-<script src="js/admin.js?v=8" defer></script>
+<script src="js/admin.js?v=9" defer></script>
 <script src="js/route-hash.js?v=1" defer></script>
 </body>
 </html>

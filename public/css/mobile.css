@@ -357,6 +357,9 @@
     /* Панель профиля: почти во всю ширину, ниже шапки */
     #profileHub { right: 8px; left: 8px; width: auto; max-width: none; }
 
+    /* Панель уведомлений (звоночек) — так же во всю ширину */
+    #nfPanel { top: 58px; right: 8px; left: 8px; width: auto; max-width: none; }
+
     /* Палитра поиска: выше на экране — под ней клавиатура */
     #searchOverlay { padding-top: 10vh; }
 

@@ -5,10 +5,12 @@
 -- ВЕСЬ файл целиком → Run. Скрипт идемпотентен — повторный запуск
 -- ничего не ломает (drop/create политик и триггеров).
 --
--- Три таблицы:
---   profiles   — профиль пользователя (роль, бан, активность)
---   user_data  — синхронизация данных приложения (портфели, настройки…)
---   app_events — журнал событий (регистрации, входы, действия админа)
+-- Таблицы:
+--   profiles           — профиль пользователя (роль, бан, активность)
+--   user_data          — синхронизация данных приложения (портфели, настройки…)
+--   app_events         — журнал событий (регистрации, входы, действия админа)
+--   notifications      — оповещения от админа (всем или адресно)
+--   notification_reads — отметки «прочитано» по пользователям
 --
 -- Доступ построен на RLS: пользователь видит только своё,
 -- администратор (profiles.role = 'admin') — всё.
@@ -385,7 +387,77 @@ $$;
 grant execute on function public.delete_own_account() to authenticated;
 
 
--- ===== 9. НАЗНАЧЕНИЕ ПЕРВОГО АДМИНИСТРАТОРА ==================
+-- ===== 9. ОПОВЕЩЕНИЯ =========================================
+-- Админ рассылает оповещения из админки: всем (user_id = null)
+-- или конкретному пользователю. Пользователь видит их под
+-- звоночком в шапке; отметки «прочитано» — в notification_reads
+-- (строка на пару «пользователь × оповещение»), непрочитанные
+-- считаются как разница. Существующим установкам достаточно
+-- выполнить этот блок один раз (весь файл тоже безопасен).
+
+create table if not exists public.notifications (
+    id         bigint generated always as identity primary key,
+    user_id    uuid references public.profiles(id) on delete cascade,   -- null = всем
+    title      text not null,
+    body       text not null default '',
+    kind       text not null default 'info' check (kind in ('info', 'success', 'warn')),
+    created_by uuid references public.profiles(id) on delete set null,
+    created_at timestamptz not null default now()
+);
+
+create index if not exists notifications_user_idx    on public.notifications (user_id, created_at desc);
+create index if not exists notifications_created_idx on public.notifications (created_at desc);
+
+comment on table public.notifications is 'Оповещения от администратора: user_id null — всем, иначе адресное';
+
+create table if not exists public.notification_reads (
+    user_id         uuid   not null references public.profiles(id) on delete cascade,
+    notification_id bigint not null references public.notifications(id) on delete cascade,
+    read_at         timestamptz not null default now(),
+    primary key (user_id, notification_id)
+);
+
+comment on table public.notification_reads is 'Отметки «прочитано»: по строке на пользователя и оповещение';
+
+-- Доставка в Telegram (worker /api/notify): пользователь включает сам
+-- в настройках звоночка. Выключено по умолчанию — рассылка только по
+-- явному согласию. Задел под push на телефон — там же, на клиенте.
+alter table public.profiles add column if not exists notify_telegram boolean not null default false;
+
+alter table public.notifications      enable row level security;
+alter table public.notification_reads enable row level security;
+
+-- Пользователь видит общие и свои адресные оповещения; админ — все.
+drop policy if exists notifications_select on public.notifications;
+create policy notifications_select on public.notifications
+    for select to authenticated
+    using (user_id is null or user_id = auth.uid() or public.is_admin());
+
+-- Создаёт и отзывает оповещения только администратор.
+drop policy if exists notifications_insert on public.notifications;
+create policy notifications_insert on public.notifications
+    for insert to authenticated
+    with check (public.is_admin() and created_by = auth.uid());
+
+drop policy if exists notifications_delete on public.notifications;
+create policy notifications_delete on public.notifications
+    for delete to authenticated
+    using (public.is_admin());
+
+-- Отметки: свои пишет и видит пользователь, админ видит все
+-- (счётчик «прочитали N» в истории рассылок).
+drop policy if exists notification_reads_select on public.notification_reads;
+create policy notification_reads_select on public.notification_reads
+    for select to authenticated
+    using (user_id = auth.uid() or public.is_admin());
+
+drop policy if exists notification_reads_insert on public.notification_reads;
+create policy notification_reads_insert on public.notification_reads
+    for insert to authenticated
+    with check (user_id = auth.uid() and not public.is_banned());
+
+
+-- ===== 10. НАЗНАЧЕНИЕ ПЕРВОГО АДМИНИСТРАТОРА =================
 -- После того как зарегистрируетесь на сайте, выполните здесь же
 -- (подставив свой email):
 --
