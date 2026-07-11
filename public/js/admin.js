@@ -962,29 +962,50 @@
     var sheetFilter = 'all';          // all | ok | bad | na — фильтр-чипы раздела
     var EA = { results: [], mismatch: 0, running: false, ranAt: 0, bgStarted: false, _promise: null, _sig: '' };
 
-    // Классификация эшелона по истории выплат. Возвращает 1..4 либо 0 —
-    // «недостаточно данных» (короткая история, судить рано, в расхождения не идёт).
-    function echelonFromDivs(rows) {
+    // Классификация эшелона по истории выплат. Возвращает { ech: 0..4, why }.
+    // Решают ПОСЛЕДНИЕ 3 ЗАКРЫТЫХ ГОДА: разовый пропуск старше трёх лет
+    // (например, санкционный 2022 у Сбера) не выбрасывает стабильного
+    // плательщика из I эшелона — по свежим годам он платит и повышает.
+    // 0 — «без оценки» (короткая история, судить рано, в расхождения не идёт).
+    function ruYears(n) {
+        var m = n % 100, d = n % 10;
+        return n + ' ' + (m > 10 && m < 20 ? 'лет' : d === 1 ? 'год' : d > 1 && d < 5 ? 'года' : 'лет');
+    }
+    function classifyDivs(rows) {
         var Y = new Date().getFullYear();
-        if (!rows || !rows.length) return 4;
-        var map = {}, minY = Infinity;
-        rows.forEach(function (r) {
-            var y = +r.year;
-            if (r.sum > 0) { map[y] = r.sum; if (y < minY) minY = y; }
-        });
-        if (minY === Infinity) return 4;         // записи есть, но все нулевые
         var end = Y - 1;                          // текущий год ещё не закрыт
-        var start = Math.max(Y - 5, minY);        // окно ≤5 последних лет, но не раньше первой выплаты
-        if (start > end) start = end;
-        var years = [], paid = 0;
-        for (var y = start; y <= end; y++) { years.push(y); if (map[y] != null) paid++; }
-        if (paid === 0) return 4;                 // платили когда-то, но в окне — нет
-        if (years.length < 3) return 0;           // мало истории — 1/2/3 не различить
-        if (paid < years.length) return 3;        // с пропусками
-        for (var i = 1; i < years.length; i++) {
-            if (map[years[i]] < map[years[i - 1]] * 0.999) return 2;   // где-то снизили → «разнятся»
+        var map = {}, minY = Infinity, maxY = -Infinity;
+        (rows || []).forEach(function (r) {
+            var y = +r.year;
+            if (r.sum > 0) {
+                map[y] = (map[y] || 0) + r.sum;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+            }
+        });
+        if (minY === Infinity) return { ech: 4, why: 'выплат не найдено' };
+        if (maxY < end - 1) return { ech: 4, why: 'последняя выплата — ' + maxY };   // молчат ≥2 закрытых лет
+        if (minY > end - 2) return { ech: 0, why: 'мало истории (платят с ' + minY + ')' };
+        var r3 = [end - 2, end - 1, end];
+        if (r3.some(function (y) { return map[y] == null; })) {
+            // пропуск в свежей тройке лет — «когда платят, когда нет»
+            var start = Math.max(Y - 5, minY), missed = [];
+            for (var y = start; y <= end; y++) if (map[y] == null) missed.push(y);
+            return { ech: 3, why: 'пропуск' + (missed.length > 1 ? 'и' : '') + ': ' + missed.join(', ') };
         }
-        return 1;                                 // каждый год и не ниже предыдущего
+        // последние 3 года платили: повышают или разнятся?
+        var dropY = 0;
+        for (var i = 1; i < r3.length; i++) {
+            if (map[r3[i]] < map[r3[i - 1]] * 0.999) dropY = r3[i];
+        }
+        if (dropY) return { ech: 2, why: 'в ' + dropY + ' выплата снизилась' };
+        // серия лет без снижения — вглубь, пока года идут подряд
+        var streak = 1;
+        for (var y2 = end; y2 > minY; y2--) {
+            if (map[y2] != null && map[y2 - 1] != null && map[y2] >= map[y2 - 1] * 0.999) streak++;
+            else break;
+        }
+        return { ech: 1, why: 'платят и повышают ' + ruYears(streak) + ' подряд' };
     }
 
     // Источник: тикер + проставленный эшелон из таблицы «Акции».
@@ -1019,12 +1040,12 @@
     }
 
     function saveAuditCache() {
-        try { localStorage.setItem(AUDIT_LS, JSON.stringify({ v: 1, ranAt: EA.ranAt, sig: EA._sig, results: EA.results })); } catch (e) {}
+        try { localStorage.setItem(AUDIT_LS, JSON.stringify({ v: 2, ranAt: EA.ranAt, sig: EA._sig, results: EA.results })); } catch (e) {}
     }
     function loadAuditCache() {
         try {
             var c = JSON.parse(localStorage.getItem(AUDIT_LS) || 'null');
-            if (!c || c.v !== 1 || !c.results || !c.results.length) return null;
+            if (!c || c.v !== 2 || !c.results || !c.results.length) return null;
             if (Date.now() - c.ranAt > AUDIT_TTL) return null;
             return c;
         } catch (e) { return null; }
@@ -1046,16 +1067,16 @@
             if (i >= src.length) return Promise.resolve();
             var item = src[i++];
             return fn(item.t).then(function (rows) {
-                var expected = echelonFromDivs(rows);
+                var c = classifyDivs(rows);
                 var last = rows && rows[0] ? rows[0] : null;
                 results.push({
-                    t: item.t, n: item.n, assigned: item.assigned, expected: expected,
-                    match: expected === 0 ? null : (expected === item.assigned),
+                    t: item.t, n: item.n, assigned: item.assigned, expected: c.ech, why: c.why,
+                    match: c.ech === 0 ? null : (c.ech === item.assigned),
                     lastYear: last ? last.year : '', lastSum: last ? last.sum : null,
                     years: rows ? rows.length : 0
                 });
             }, function () {
-                results.push({ t: item.t, n: item.n, assigned: item.assigned, expected: 0, match: null, error: true });
+                results.push({ t: item.t, n: item.n, assigned: item.assigned, expected: 0, why: '', match: null, error: true });
             }).then(worker);
         }
         var pool = [];
@@ -1137,7 +1158,7 @@
         var head = '<div class="adm-sheet-head">' +
             '<div class="adm-sheet-tt">' +
                 '<div class="adm-sheet-t">' + IC.grid + 'Эшелоны по дивидендам</div>' +
-                '<div class="adm-sheet-s">Сверяем эшелон из Google-таблицы «Акции» с историей выплат MOEX. Клик по тикеру — карточка компании с дивидендами.</div>' +
+                '<div class="adm-sheet-s">Сверяем эшелон из Google-таблицы «Акции» с историей выплат MOEX: решают последние 3 закрытых года, разовый пропуск старше (например, 2022) эшелон не понижает. Клик по тикеру — карточка компании с дивидендами.</div>' +
             '</div>' +
             '<div class="adm-sheet-act">' +
                 '<a class="adm-btn sm" href="' + SHEET_LINK + '" target="_blank" rel="noopener" title="Открыть лист «Акции» в Google Sheets">' + IC.grid + 'Таблица</a>' +
@@ -1181,8 +1202,8 @@
                 var kind = r.match === false ? 'bad' : (r.match === null ? 'na' : 'ok');
                 var expBadge = r.expected ? echBadge(r.expected, kind) : '<span class="adm-echb na">—</span>';
                 var note = r.error ? 'нет данных MOEX'
-                    : (r.expected === 0 ? 'мало истории'
-                    : (r.match === false ? 'дивиденды → ' + ECH_ROMAN[r.expected - 1] + ' эшелон' : ECH_DESC[r.expected]));
+                    : (r.why || (r.expected === 0 ? 'мало истории'
+                    : (r.match === false ? 'дивиденды → ' + ECH_ROMAN[r.expected - 1] + ' эшелон' : ECH_DESC[r.expected])));
                 var last = (r.lastSum != null && r.lastYear)
                     ? ' · ' + r.lastYear + ': ' + r.lastSum.toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' ₽' : '';
                 return '<div class="adm-srow ' + kind + '" data-act="sheet-open" data-ticker="' + esc(r.t) + '" data-ech="' + r.assigned + '" title="Открыть карточку компании ' + esc(r.t) + '">' +
@@ -1206,13 +1227,13 @@
     // Excel-выгрузка сверки: как у пользователей/событий — BOM, «;», анти-формульный гард
     function exportSheet() {
         if (!EA.results.length) return;
-        var lines = ['Тикер;Название;Эшелон (таблица);Эшелон (дивиденды);Статус;Последний год выплаты;Сумма за год, ₽;Лет с выплатами'];
+        var lines = ['Тикер;Название;Эшелон (таблица);Эшелон (дивиденды);Статус;Причина;Последний год выплаты;Сумма за год, ₽;Лет с выплатами'];
         EA.results.forEach(function (r) {
             var status = r.error ? 'нет данных MOEX'
                 : (r.match === false ? 'расхождение' : (r.match === null ? 'без оценки' : 'совпадает'));
             lines.push([
                 r.t, r.n, ECH_ROMAN[r.assigned - 1],
-                r.expected ? ECH_ROMAN[r.expected - 1] : '—', status,
+                r.expected ? ECH_ROMAN[r.expected - 1] : '—', status, r.why || '',
                 r.lastYear || '', r.lastSum != null ? String(r.lastSum).replace('.', ',') : '', r.years || 0
             ].map(csvCell).join(';'));
         });
