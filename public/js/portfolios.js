@@ -1494,6 +1494,8 @@
     // «Импорт» из неё убран — импортировать состав можно из настроек портфеля (⚙).
     // иконка конструктора: сетка 2×2 (LAYOUT_SVG занят пунктом «Вид»)
     var PFDGRID_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.6"/></svg>';
+    // шесть точек-«грип» в ярлыке блока конструктора
+    var PFD_GRIP_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.7"/><circle cx="15" cy="6" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="9" cy="18" r="1.7"/><circle cx="15" cy="18" r="1.7"/></svg>';
     function topBarActionsHtml() {
         return '<button class="d3-quick" onclick="pfAddPortfolio()">' + PLUS_SVG + '<span>Добавить портфель</span></button>' +
             // «Видимость» показываем при 2+ портфелях ИЛИ когда есть сделки (тумблер блока «История сделок»)
@@ -1677,17 +1679,17 @@
         visibleItems().forEach(function (p, i) {
             // col-right/col-mid не передаём: в свободной сетке колонка блока заранее
             // неизвестна, график всегда выезжает вправо от карточки
-            blocks.push({ id: 'pf:' + p.id, html: cardHtml(p, i, false, narrow, false), span: defSpan });
+            blocks.push({ id: 'pf:' + p.id, name: p.name, html: cardHtml(p, i, false, narrow, false), span: defSpan });
         });
-        blocks.push({ id: 'cal', html: noBonds ? ratesStackHtml(true, 1) : paymentCalendarHtml(true, 1), span: defSpan });
-        if (!noBonds) blocks.push({ id: 'rates', html: ratesHtml(), span: 12 });
+        blocks.push({ id: 'cal', name: noBonds ? 'Ставки' : 'Календарь выплат', html: noBonds ? ratesStackHtml(true, 1) : paymentCalendarHtml(true, 1), span: defSpan });
+        if (!noBonds) blocks.push({ id: 'rates', name: 'Ставки', html: ratesHtml(), span: 12 });
         var tr = tradesHtml();
-        if (tr) blocks.push({ id: 'trades', html: tr, span: 12 });
+        if (tr) blocks.push({ id: 'trades', name: 'История сделок', html: tr, span: 12 });
         // обёртка .pf-topgrid-fav сохраняет прицельные стили правой колонки
         // (одноколоночный .pff-grid и т.п.) и в свободной сетке
-        blocks.push({ id: 'fav', html: '<div class="pf-topgrid-fav pfd-favwrap">' + favStr + '</div>', span: defSpan });
+        blocks.push({ id: 'fav', name: 'Избранное', html: '<div class="pf-topgrid-fav pfd-favwrap">' + favStr + '</div>', span: defSpan });
         if (store.items.length >= 2) {
-            blocks.push({ id: 'sum', html: '<div class="pf-topgrid-fav pfd-favwrap">' + summaryCardHtml() + '</div>', span: defSpan });
+            blocks.push({ id: 'sum', name: 'Сводка', html: '<div class="pf-topgrid-fav pfd-favwrap">' + summaryCardHtml() + '</div>', span: defSpan });
         }
         return blocks.filter(function (b) { return b.html; });
     }
@@ -1705,11 +1707,11 @@
         var items = ordered.map(function (b) {
             var span = clamp(+(dashCfg.span[b.id]) || b.span, 3, 12);
             var h = +(dashCfg.h[b.id]) || 0;
-            var style = 'grid-column: span ' + span + ';' + (h ? 'height:' + clamp(h, 240, 1200) + 'px;' : '');
-            return '<div class="pfd-item' + (h ? ' pfd-hset' : '') + '" data-pfd="' + esc(b.id) + '"' +
-                (dashEdit ? ' draggable="true"' : '') + ' style="' + style + '">' +
+            var style = 'grid-column: span ' + span + ';' + (h ? 'height:' + clamp(h, 240, 1400) + 'px;' : '');
+            return '<div class="pfd-item' + (h ? ' pfd-hset' : '') + '" data-pfd="' + esc(b.id) + '" style="' + style + '">' +
                 (dashEdit
                     ? '<div class="pfd-chrome">' +
+                        '<span class="pfd-name">' + PFD_GRIP_SVG + '<span>' + esc(b.name || '') + '</span></span>' +
                         '<span class="pfd-size"></span>' +
                         '<span class="pfd-rs" title="Потяните: ширина — колонками, высота — свободно. Двойной клик — размер по умолчанию"></span>' +
                       '</div>'
@@ -1721,7 +1723,7 @@
         var bar = dashEdit
             ? '<div class="pfd-bar">' +
                 '<div class="pfd-bar-t"><b>Конструктор дашборда</b>' +
-                    '<span>Перетаскивайте блоки на новые места, размер меняйте за правый нижний угол (сетка — 12 колонок). Всё сохраняется само.</span></div>' +
+                    '<span>Тяните блок за любое место, размер — за уголок (12 колонок, высота — свободно). Двойной клик по уголку — размер по умолчанию, Esc — готово.</span></div>' +
                 '<div class="pfd-bar-r">' +
                     '<button class="d3-quick ghost" onclick="pfDashReset()">Вернуть стандартную</button>' +
                     '<button class="d3-quick" onclick="pfDashToggleEdit()">' + CHECK_SVG + '<span>Готово</span></button>' +
@@ -1748,35 +1750,163 @@
         toast('Стандартная раскладка возвращена');
     };
 
-    // ---- перетаскивание: живая перестановка блоков в сетке ----
-    var pfdDragEl = null;
-    document.addEventListener('dragstart', function (e) {
-        var it = e.target.closest ? e.target.closest('.pfd-item') : null;
-        if (!it || !dashEdit) return;
-        pfdDragEl = it;
-        it.classList.add('pfd-dragging');
-        try {
-            e.dataTransfer.setData('text/plain', it.getAttribute('data-pfd'));
-            e.dataTransfer.effectAllowed = 'move';
-        } catch (err) {}
-    });
-    document.addEventListener('dragover', function (e) {
-        if (!pfdDragEl) return;
+    // ---- перетаскивание: pointer-события вместо HTML5 DnD ----
+    // Своё перетаскивание даёт: призрак-клон точно под курсором (вместо
+    // системного полупрозрачного снимка), FLIP-анимацию перестановки соседей
+    // (сетка не «прыгает»), автопрокрутку у краёв экрана и работу на тач-пене.
+    // Оригинальный блок остаётся в потоке как пунктирный слот (.pfd-slot) —
+    // предпросмотр нового места всегда живой.
+    var pfdDragEl = null;       // блок-слот в сетке
+    var pfdGhost = null;        // fixed-клон у курсора
+    var pfdGz = 1;              // zoom-фактор контекста призрака (body zoom 0.9)
+    var pfdGrabX = 0, pfdGrabY = 0;
+    var pfdArm = null;          // { item, x, y } — ждём порог 5px до старта
+    var pfdLastPt = null;
+    var pfdLastReorder = 0;
+    var pfdTick = null;
+    var pfdScrollEl = null;     // скролл-контейнер страницы (null = window)
+
+    function pfdScrollParentOf(el) {
+        for (var p = el.parentElement; p; p = p.parentElement) {
+            var s = getComputedStyle(p);
+            if (/(auto|scroll)/.test(s.overflowY) && p.scrollHeight > p.clientHeight + 2) return p;
+        }
+        return null;
+    }
+    // FLIP: замер до/после перестановки + обратный transform с переходом —
+    // соседи плавно съезжаются на новые места вместо мгновенного скачка
+    function pfdFlip(grid, mutate) {
+        var kids = Array.prototype.slice.call(grid.children);
+        var first = kids.map(function (el) { return el.getBoundingClientRect(); });
+        mutate();
+        kids.forEach(function (el, i) {
+            var last = el.getBoundingClientRect();
+            var dx = first[i].left - last.left, dy = first[i].top - last.top;
+            if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+            el.style.transition = 'none';
+            el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+            requestAnimationFrame(function () {
+                el.style.transition = 'transform 200ms cubic-bezier(.2, .7, .3, 1)';
+                el.style.transform = '';
+            });
+            clearTimeout(el._pfdFlipT);
+            el._pfdFlipT = setTimeout(function () { el.style.transition = ''; }, 240);
+        });
+    }
+    function pfdStartDrag(item, x, y) {
+        var r = item.getBoundingClientRect();
+        pfdDragEl = item;
+        pfdScrollEl = pfdScrollParentOf(item);
+        pfdGrabX = x - r.left; pfdGrabY = y - r.top;
+        var g = item.cloneNode(true);
+        g.classList.add('pfd-ghost');
+        g.classList.remove('pfd-slot');
+        g.style.gridColumn = '';
+        g.style.width = r.width + 'px';
+        g.style.height = r.height + 'px';
+        g.style.left = '-9999px'; g.style.top = '0px';
+        g.style.transform = 'none';   // на время калибровки: scale исказил бы замер
+        document.body.appendChild(g);
+        // самокалибровка под zoom: fixed-координаты и размеры клона живут в
+        // масштабе body (zoom 0.9), а clientX/rect — в визуальных px
+        pfdGz = g.getBoundingClientRect().width / r.width || 1;
+        if (Math.abs(pfdGz - 1) > 0.001) {
+            g.style.width = (r.width / pfdGz) + 'px';
+            g.style.height = (r.height / pfdGz) + 'px';
+        }
+        g.style.transform = '';       // возвращаем scale(1.02) из класса
+        pfdGhost = g;
+        pfdMoveGhost(x, y);
+        item.classList.add('pfd-slot');
+        document.body.classList.add('pfd-dragging-now');
+        pfdTick = requestAnimationFrame(pfdAutoScroll);
+    }
+    function pfdMoveGhost(x, y) {
+        if (!pfdGhost) return;
+        pfdGhost.style.left = ((x - pfdGrabX) / pfdGz) + 'px';
+        pfdGhost.style.top = ((y - pfdGrabY) / pfdGz) + 'px';
+    }
+    function pfdReorderAt(x, y) {
+        if (!pfdDragEl || Date.now() - pfdLastReorder < 130) return;
         var grid = document.getElementById('pfdGrid');
         if (!grid) return;
-        e.preventDefault();     // разрешаем drop
-        var over = e.target.closest ? e.target.closest('.pfd-item') : null;
+        var el = document.elementFromPoint(x, y);
+        var over = el && el.closest ? el.closest('.pfd-item') : null;
         if (!over || over === pfdDragEl || over.parentNode !== grid) return;
-        // живой предпросмотр: тянем вперёд — встаём перед целью, назад — после
         var kids = Array.prototype.slice.call(grid.children);
-        if (kids.indexOf(over) < kids.indexOf(pfdDragEl)) grid.insertBefore(pfdDragEl, over);
-        else grid.insertBefore(pfdDragEl, over.nextSibling);
+        var before = kids.indexOf(over) < kids.indexOf(pfdDragEl);
+        pfdFlip(grid, function () {
+            if (before) grid.insertBefore(pfdDragEl, over);
+            else grid.insertBefore(pfdDragEl, over.nextSibling);
+        });
+        pfdLastReorder = Date.now();
+    }
+    // у верхней/нижней кромки экрана страница едет сама — длинный дашборд
+    // можно пересобрать одним перетаскиванием
+    function pfdAutoScroll() {
+        if (!pfdDragEl) { pfdTick = null; return; }
+        if (pfdLastPt) {
+            var m = 90, vh = window.innerHeight, dy = 0;
+            if (pfdLastPt.y < m) dy = -Math.ceil((m - pfdLastPt.y) / 5);
+            else if (pfdLastPt.y > vh - m) dy = Math.ceil((pfdLastPt.y - (vh - m)) / 5);
+            if (dy) {
+                if (pfdScrollEl) pfdScrollEl.scrollTop += dy;
+                else window.scrollBy(0, dy);
+                pfdReorderAt(pfdLastPt.x, pfdLastPt.y);
+            }
+        }
+        pfdTick = requestAnimationFrame(pfdAutoScroll);
+    }
+    function pfdEndDrag(cancelled) {
+        if (pfdTick) { cancelAnimationFrame(pfdTick); pfdTick = null; }
+        document.body.classList.remove('pfd-dragging-now');
+        var item = pfdDragEl, g = pfdGhost;
+        pfdDragEl = null; pfdGhost = null; pfdLastPt = null;
+        if (!item) return;
+        if (!cancelled) pfdSaveOrder();
+        if (g) {
+            // призрак мягко «прилетает» в слот и растворяется
+            var sr = item.getBoundingClientRect();
+            g.style.transition = 'left 170ms cubic-bezier(.2, .7, .3, 1), top 170ms cubic-bezier(.2, .7, .3, 1), transform 170ms, opacity 170ms';
+            g.style.left = (sr.left / pfdGz) + 'px';
+            g.style.top = (sr.top / pfdGz) + 'px';
+            g.style.transform = 'none';
+            g.style.opacity = '0.6';
+            setTimeout(function () {
+                if (g.parentNode) g.parentNode.removeChild(g);
+                item.classList.remove('pfd-slot');
+            }, 180);
+        } else {
+            item.classList.remove('pfd-slot');
+        }
+    }
+    document.addEventListener('pointerdown', function (e) {
+        if (!dashEdit || e.button !== 0) return;
+        if (e.target.closest && e.target.closest('.pfd-rs')) return;   // уголок — ресайз
+        var it = e.target.closest ? e.target.closest('.pfd-grid.editing .pfd-item') : null;
+        if (!it) return;
+        e.preventDefault();
+        pfdArm = { item: it, x: e.clientX, y: e.clientY };
     });
-    document.addEventListener('dragend', function () {
+    document.addEventListener('pointermove', function (e) {
+        if (pfdArm && !pfdDragEl) {
+            // порог 5px: случайный клик не превращается в перетаскивание
+            if (Math.abs(e.clientX - pfdArm.x) + Math.abs(e.clientY - pfdArm.y) > 5) {
+                pfdStartDrag(pfdArm.item, pfdArm.x, pfdArm.y);
+            }
+        }
         if (!pfdDragEl) return;
-        pfdDragEl.classList.remove('pfd-dragging');
-        pfdDragEl = null;
-        pfdSaveOrder();
+        pfdLastPt = { x: e.clientX, y: e.clientY };
+        pfdMoveGhost(e.clientX, e.clientY);
+        pfdReorderAt(e.clientX, e.clientY);
+    });
+    document.addEventListener('pointerup', function () {
+        pfdArm = null;
+        if (pfdDragEl) pfdEndDrag(false);
+    });
+    document.addEventListener('pointercancel', function () {
+        pfdArm = null;
+        if (pfdDragEl) pfdEndDrag(true);
     });
     function pfdSaveOrder() {
         var grid = document.getElementById('pfdGrid');
@@ -1788,39 +1918,57 @@
     }
 
     // ---- изменение размера за уголок ----
+    // Дельтовый ресайз: считаем от стартовой ширины/высоты блока, а не от его
+    // rect на каждом шаге — блок может переехать на другой ряд, расчёт не
+    // разваливается. Вся геометрия в layout-px (offsetWidth), курсорные дельты
+    // делим на zoom-фактор — при body{zoom:0.9} колонки совпадают с сеткой.
+    // Высота фиксируется ТОЛЬКО при заметном вертикальном движении: ширину
+    // можно менять, не замораживая природную высоту блока.
     document.addEventListener('pointerdown', function (e) {
         var rs = e.target.closest ? e.target.closest('.pfd-rs') : null;
-        if (!rs || !dashEdit) return;
+        if (!rs || !dashEdit || e.button !== 0) return;
         e.preventDefault();
+        e.stopPropagation();
         var item = rs.closest('.pfd-item');
         var grid = document.getElementById('pfdGrid');
         if (!item || !grid) return;
-        var gap = 16;
-        var colW = (grid.getBoundingClientRect().width - gap * 11) / 12;
-        var ir = item.getBoundingClientRect();
+        var gap = parseFloat(getComputedStyle(grid).columnGap) || 16;
+        var z = grid.getBoundingClientRect().width / grid.offsetWidth || 1;
+        var colW = (grid.offsetWidth - gap * 11) / 12;
+        var startX = e.clientX, startY = e.clientY;
+        var startW = item.offsetWidth, startH = item.offsetHeight;
+        var hadH = item.classList.contains('pfd-hset');
         var id = item.getAttribute('data-pfd');
         var badge = item.querySelector('.pfd-size');
-        var newSpan = 0, newH = 0;
+        var newSpan = 0, newH = 0, hMode = hadH;
+        item.classList.add('pfd-resizing');
         function onMove(ev) {
-            newSpan = clamp(Math.round((ev.clientX - ir.left + gap / 2) / (colW + gap)), 3, 12);
-            newH = clamp(Math.round(ev.clientY - ir.top), 240, 1200);
+            var dx = (ev.clientX - startX) / z, dy = (ev.clientY - startY) / z;
+            newSpan = clamp(Math.round((startW + dx + gap) / (colW + gap)), 3, 12);
+            if (!hMode && Math.abs(dy) > 8) hMode = true;
             item.style.gridColumn = 'span ' + newSpan;
-            item.style.height = newH + 'px';
-            item.classList.add('pfd-hset');
-            if (badge) badge.textContent = newSpan + ' кол · ' + newH + ' px';
+            if (hMode) {
+                newH = clamp(Math.round(startH + dy), 240, 1400);
+                item.style.height = newH + 'px';
+                item.classList.add('pfd-hset');
+            }
+            if (badge) badge.textContent = newSpan + ' / 12' + (hMode ? ' · ' + newH + ' px' : ' · высота авто');
         }
         function onUp() {
             document.removeEventListener('pointermove', onMove);
             document.removeEventListener('pointerup', onUp);
+            document.removeEventListener('pointercancel', onUp);
+            item.classList.remove('pfd-resizing');
             if (badge) badge.textContent = '';
             if (newSpan) {
                 dashCfg.span[id] = newSpan;
-                dashCfg.h[id] = newH;
+                if (hMode && newH) dashCfg.h[id] = newH;
                 saveDashCfg();
             }
         }
         document.addEventListener('pointermove', onMove);
         document.addEventListener('pointerup', onUp);
+        document.addEventListener('pointercancel', onUp);
     });
     // двойной клик по уголку — вернуть блоку размер по умолчанию
     document.addEventListener('dblclick', function (e) {
@@ -1833,6 +1981,14 @@
         delete dashCfg.h[id];
         saveDashCfg();
         pfdRerender();
+    });
+    // Esc = «Готово»: быстрый выход из режима правки
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape' || !dashEdit) return;
+        var panel = document.getElementById('panel-portfolios');
+        if (!panel || !panel.classList.contains('active')) return;
+        if (pfdDragEl) { pfdEndDrag(true); return; }   // сначала отменяем перетаскивание
+        window.pfDashToggleEdit();
     });
 
     // все портфели скрыты — осознанное пустое состояние с кнопкой «показать все»

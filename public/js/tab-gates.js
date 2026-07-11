@@ -13,14 +13,23 @@
 //
 // Заглушка — ГЛАВНАЯ ОДИН В ОДИН: та же сетка .hg-cover (манифест слева,
 // плотная белая колонна справа), те же классы hc-*/hr-*/hg-* из
-// home-register.css, фон — ЖИВАЯ тепловая карта IMOEX (рисует общий рендер
-// window.hgHeatRepaint из home-register.js в .gx-heat). Отличия только в
-// тексте и механике формы: вместо входа — подписка «сообщим о готовности».
-// Рендерится ВНУТРИ панели вкладки (.gx-cover, прямые дети панели прячутся
-// классом .tab-gated — никаких fixed, см. паттерн «fixed ловится transform»).
+// home-register.css. На десктопе, пока открыта закрытая вкладка, body.gx-on
+// включает ОБЩИЙ фикс-слой Главной #hgHeatWrap (живая карта + вуаль на весь
+// экран, ПОД шапкой и сайдбаром) и форсит тёмную тему — сцена один в один,
+// включая фон под рейкой (syncFull). Отличия только в тексте и механике
+// формы: вместо входа — подписка «сообщим о готовности».
+// Контент рендерится ВНУТРИ панели вкладки (.gx-cover, прямые дети панели
+// прячутся классом .tab-gated — никаких fixed, см. паттерн «fixed ловится
+// transform»); свой фон .gx-heat в .gx-cover остаётся только для узких
+// экранов (десктоп прячет его CSS-ом — фон рисует #hgHeatWrap).
 // Исключение — заглушка мобильной версии: она одна на ВСЁ приложение и
 // живёт fixed-оверлеем #gxMobileCover прямо в <body> (там transform не
 // ловит, см. паттерн stockDetailCard).
+//
+// Свои вкладки админа появляются у всех СРАЗУ: syncPanels создаёт пустую
+// панель #panel-<key> (её тут же закрывает заглушка), syncSidebar — настоящий
+// пункт сайдбара перед «Админкой»; роутинг /<key> понимает route-hash.js
+// (isValid спрашивает tabGates.getCustom).
 //
 //   · авторизованный видит обращение по имени и колонну «сообщим, когда
 //     будет готово» с выбором канала (сайт / браузер / Telegram — подписка
@@ -139,9 +148,112 @@
     function panelOf(tab) { return document.getElementById('panel-' + tab); }
 
     function applyAll() {
+        syncPanels();
+        syncSidebar();
         var all = tabsAll();
         Object.keys(all).forEach(function (tab) { applyTab(tab); });
         applyMobile();
+        syncFull();
+    }
+
+    // ---------- свои вкладки: панель + пункт сайдбара ----------
+    // Добавленная админом вкладка появляется у ВСЕХ сразу: создаём пустую
+    // панель #panel-<key> (её тут же закрывает заглушка) и настоящий пункт
+    // сайдбара перед «Админкой». Если разработчики позже выложат настоящую
+    // панель с таким id — syncPanels её не тронет.
+    var KEY_RE = /^[a-z][a-z0-9-]{1,23}$/;
+    var GX_TAB_ICON = '<svg viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg>';
+
+    function customKeys() {
+        return Object.keys(customTabs).filter(function (k) {
+            return KEY_RE.test(k) && !BASE_TABS[k] && k !== MOBILE_KEY && k !== 'home' && k !== 'admin';
+        });
+    }
+
+    function syncPanels() {
+        var home = document.getElementById('panel-home');
+        var host = home && home.parentNode;
+        if (!host) return;
+        customKeys().forEach(function (key) {
+            if (!document.getElementById('panel-' + key)) {
+                var p = document.createElement('div');
+                p.id = 'panel-' + key;
+                p.className = 'tab-panel gx-custom-panel';
+                host.appendChild(p);
+            }
+        });
+        // вкладку убрали из конфига — уносим пользователя и панель
+        var live = document.querySelectorAll('.tab-panel.gx-custom-panel');
+        for (var i = 0; i < live.length; i++) {
+            var key = live[i].id.replace(/^panel-/, '');
+            if (customTabs[key]) continue;
+            if (live[i].classList.contains('active') && typeof window.switchTab === 'function') {
+                window.switchTab('home');
+            }
+            live[i].remove();
+        }
+    }
+
+    function syncSidebar() {
+        var nav = document.getElementById('sbNav');
+        if (!nav) return;
+        var anchor = document.getElementById('sbAdminBtn');
+        var stale = nav.querySelectorAll('.sb-item.gx-custom');
+        for (var i = 0; i < stale.length; i++) {
+            if (!customTabs[stale[i].getAttribute('data-tab')]) stale[i].remove();
+        }
+        customKeys().forEach(function (key) {
+            var label = (customTabs[key] && customTabs[key].label) || key;
+            var el = nav.querySelector('.sb-item.gx-custom[data-tab="' + key + '"]');
+            if (!el) {
+                el = document.createElement('a');
+                el.className = 'sb-item gx-custom';
+                el.setAttribute('data-tab', key);
+                el.href = '/' + key;
+                el.innerHTML = GX_TAB_ICON + '<span class="sb-label"></span>';
+                el.addEventListener('click', function (e) {
+                    // модифицированный клик — браузеру (новая вкладка), обычный — SPA
+                    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                    e.preventDefault();
+                    if (typeof window.switchTab === 'function') window.switchTab(key);
+                });
+                nav.insertBefore(el, anchor || null);
+            }
+            el.title = label;
+            el.querySelector('.sb-label').textContent = label;
+        });
+    }
+
+    // ---------- полноэкранная сцена: фон как на Главной ----------
+    // Пока открыта закрытая вкладка (десктоп), body.gx-on включает общий
+    // фикс-слой Главной #hgHeatWrap (css/tab-gates.css) — карта уходит под
+    // шапку и сайдбар. Тему форсим в тёмную (у Главной то же делает авто-тема);
+    // при уходе возвращаем тему вкладки через applyAutoThemeForTab.
+    var forcedDark = false;
+    function curTab() {
+        // currentTab объявлена `let` в webapp-tabs.js — она в скрипт-скоупе, а
+        // не на window; барворд виден всем классическим скриптам, грузящимся позже
+        try { return (typeof currentTab !== 'undefined') ? currentTab : null; } catch (e) { return null; }
+    }
+    function syncFull() {
+        var t = curTab();
+        var g = t ? gates[t] : null;
+        var on = !!(g && g.off && tabsAll()[t] && !isNarrow());
+        var was = document.body.classList.contains('gx-on');
+        document.body.classList.toggle('gx-on', on);
+        if (on && !document.body.classList.contains('dark-mode')) {
+            forcedDark = true;
+            if (typeof window.toggleTheme === 'function') window.toggleTheme();
+        } else if (!on && was && forcedDark) {
+            forcedDark = false;
+            if (typeof window.applyAutoThemeForTab === 'function') window.applyAutoThemeForTab(t || 'home');
+        }
+        if (on && !was) {
+            // слой был display:none (нулевой размер) — перерисовать карту
+            window.requestAnimationFrame(function () {
+                if (typeof window.hgHeatRepaint === 'function') window.hgHeatRepaint();
+            });
+        }
     }
 
     function applyTab(tab) {
@@ -416,17 +528,19 @@
         }
     }
 
-    // Поворот/ресайз: мобильная заглушка следует за шириной экрана
+    // Поворот/ресайз: мобильная заглушка следует за шириной экрана,
+    // а полноэкранная сцена — за пересечением десктопного порога
     (function () {
         try {
             var mq = window.matchMedia('(max-width: 1023px)');
-            var onMq = function () { applyMobile(); };
+            var onMq = function () { applyMobile(); syncFull(); };
             if (mq.addEventListener) mq.addEventListener('change', onMq);
             else if (mq.addListener) mq.addListener(onMq);
         } catch (e) {}
     })();
 
-    // Переключение вкладки: перепроверяем конфиг (мягко, с троттлингом)
+    // Переключение вкладки: перепроверяем конфиг (мягко, с троттлингом).
+    // syncFull зовём ВСЕГДА — уходя с закрытой вкладки надо снять gx-on/тему.
     var _prevSwitchTab = window.switchTab;
     if (typeof _prevSwitchTab === 'function') {
         window.switchTab = function (tabId) {
@@ -435,6 +549,7 @@
                 applyTab(tabId);
                 fetchConfig(false);
             }
+            syncFull();
         };
     }
 

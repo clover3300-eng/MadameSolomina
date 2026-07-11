@@ -2017,53 +2017,102 @@ body.dark-mode .pfpc-kind.kind-red { color: #93c5fd; background: rgba(61,111,209
 .pfd-item { position: relative; min-width: 0; display: flex; flex-direction: column; }
 .pfd-body { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
 .pfd-body > * { min-width: 0; }
-/* ручная высота: внутренняя карточка заполняет обёртку (перебивает фикс-674px) */
+/* ручная высота: внутренняя карточка заполняет обёртку (перебивает фикс-674px);
+   если контент отказывается ужиматься (min-height внутри) — блок скроллится,
+   а не вылезает за границы */
+.pfd-item.pfd-hset .pfd-body { overflow-y: auto; overflow-x: hidden; border-radius: 20px; }
 .pfd-item.pfd-hset .pfd-body > * { height: 100%; flex: 1; box-sizing: border-box; }
 /* «Избранное»/«Сводка» в свободной сетке: обёртка правой колонки без её ширины */
 .pfd-item .pf-topgrid-fav.pfd-favwrap { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 
 /* ---- режим правки ---- */
+/* спокойная серая рамка вместо синего пунктира: границы блоков видны,
+   но не кричат; синий остаётся только у активных состояний (слот, ховер ручки) */
+.pfd-grid.editing { user-select: none; }
 .pfd-grid.editing .pfd-item {
-    outline: 2px dashed rgba(59, 130, 246, 0.5);
-    outline-offset: 4px;
+    outline: 1.5px dashed rgba(148, 163, 184, 0.55);
+    outline-offset: 3px;
     border-radius: 20px;
     cursor: grab;
+    touch-action: none;
+}
+.pfd-grid.editing .pfd-item:hover {
+    outline-color: rgba(100, 116, 139, 0.8);
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.10);
 }
 .pfd-grid.editing .pfd-item:active { cursor: grabbing; }
-.pfd-grid.editing .pfd-item.pfd-dragging { opacity: 0.5; }
+.pfd-grid.editing .pfd-item.pfd-resizing { outline-color: rgba(59, 130, 246, 0.7); }
 /* содержимое блока в режиме правки не перехватывает мышь — тянется весь блок */
 .pfd-grid.editing .pfd-body { pointer-events: none; user-select: none; }
+body.pfd-dragging-now { cursor: grabbing; }
+body.pfd-dragging-now * { cursor: grabbing !important; }
+
+/* слот на месте тянутого блока: контент растворяется, остаётся посадочная зона */
+.pfd-item.pfd-slot { outline: 2px dashed rgba(59, 130, 246, 0.55) !important; background: rgba(59, 130, 246, 0.05); box-shadow: none !important; }
+.pfd-item.pfd-slot > * { opacity: 0; }
+
+/* призрак-клон у курсора (живёт в body, поверх всего) */
+.pfd-ghost {
+    position: fixed; z-index: 6000; pointer-events: none;
+    margin: 0; opacity: 0.98;
+    border-radius: 20px;
+    transform: scale(1.02);
+    box-shadow: 0 22px 55px rgba(15, 23, 42, 0.30), 0 4px 14px rgba(15, 23, 42, 0.16);
+}
+.pfd-ghost .pfd-rs, .pfd-ghost .pfd-size { display: none; }
 
 .pfd-chrome { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
+/* ярлык блока — имя + грип-точки, «биркой» на верхней кромке */
+.pfd-name {
+    position: absolute; top: -11px; left: 14px;
+    display: inline-flex; align-items: center; gap: 5px;
+    max-width: 70%; padding: 3px 10px 3px 7px; border-radius: 999px;
+    font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em;
+    color: #475569; background: #fff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+    white-space: nowrap; overflow: hidden;
+}
+.pfd-name svg { width: 11px; height: 11px; flex-shrink: 0; color: #94a3b8; }
+.pfd-name > span { overflow: hidden; text-overflow: ellipsis; }
 /* бейдж текущего размера — появляется только во время ресайза (JS пишет текст) */
 .pfd-size {
-    position: absolute; top: 8px; right: 34px;
+    position: absolute; top: 8px; right: 38px;
     padding: 3px 9px; border-radius: 999px;
     font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 600;
     color: #fff; background: rgba(19, 26, 43, 0.85);
 }
 .pfd-size:empty { display: none; }
-/* уголок-ручка ресайза */
+/* уголок-ручка ресайза: нейтральный, синеет под курсором */
 .pfd-rs {
     position: absolute; right: 2px; bottom: 2px;
-    width: 26px; height: 26px; border-radius: 9px 0 16px 0;
+    width: 30px; height: 30px; border-radius: 9px 0 16px 0;
     cursor: nwse-resize; pointer-events: auto;
     background:
-        linear-gradient(135deg, transparent 46%, rgba(59, 130, 246, 0.9) 47%, rgba(59, 130, 246, 0.9) 55%, transparent 56%,
-            transparent 64%, rgba(59, 130, 246, 0.9) 65%, rgba(59, 130, 246, 0.9) 73%, transparent 74%);
+        linear-gradient(135deg, transparent 46%, rgba(100, 116, 139, 0.75) 47%, rgba(100, 116, 139, 0.75) 55%, transparent 56%,
+            transparent 64%, rgba(100, 116, 139, 0.75) 65%, rgba(100, 116, 139, 0.75) 73%, transparent 74%);
     touch-action: none;
 }
-.pfd-rs:hover { background-color: rgba(59, 130, 246, 0.12); }
+.pfd-rs:hover {
+    background:
+        linear-gradient(135deg, transparent 46%, rgba(59, 130, 246, 0.95) 47%, rgba(59, 130, 246, 0.95) 55%, transparent 56%,
+            transparent 64%, rgba(59, 130, 246, 0.95) 65%, rgba(59, 130, 246, 0.95) 73%, transparent 74%);
+    background-color: rgba(59, 130, 246, 0.10);
+}
 
-/* ---- панель режима правки над сеткой ---- */
+/* ---- панель режима правки: липкая, не уезжает на длинной странице ---- */
 .pfd-bar {
+    position: sticky; top: 10px; z-index: 60;
     display: flex; align-items: center; justify-content: space-between; gap: 14px;
     margin-bottom: 14px; padding: 11px 16px; border-radius: 16px;
-    background: rgba(59, 130, 246, 0.07);
-    border: 1.5px dashed rgba(59, 130, 246, 0.45);
+    background: rgba(255, 255, 255, 0.92);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.10);
 }
 .pfd-bar-t { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-.pfd-bar-t b { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #1d4ed8; }
+.pfd-bar-t b { display: inline-flex; align-items: center; gap: 7px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #0f172a; }
+.pfd-bar-t b::before { content: ''; width: 7px; height: 7px; border-radius: 99px; background: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18); }
 .pfd-bar-t span { font-size: 11.5px; font-weight: 600; color: #64748b; }
 .pfd-bar-r { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
@@ -2075,7 +2124,11 @@ body.dark-mode .pfpc-kind.kind-red { color: #93c5fd; background: rgba(61,111,209
     background: #3b82f6; box-shadow: 0 0 0 2.5px rgba(59, 130, 246, 0.2);
 }
 
-body.dark-mode .pfd-bar { background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.4); }
-body.dark-mode .pfd-bar-t b { color: #93c5fd; }
+body.dark-mode .pfd-grid.editing .pfd-item { outline-color: rgba(148, 163, 184, 0.35); }
+body.dark-mode .pfd-grid.editing .pfd-item:hover { outline-color: rgba(148, 163, 184, 0.6); }
+body.dark-mode .pfd-item.pfd-slot { background: rgba(59, 130, 246, 0.09); }
+body.dark-mode .pfd-name { color: #cbd5e1; background: #0f172a; border-color: #27324a; }
+body.dark-mode .pfd-bar { background: rgba(11, 18, 32, 0.9); border-color: #27324a; }
+body.dark-mode .pfd-bar-t b { color: #e2e8f0; }
 body.dark-mode .pfd-bar-t span { color: #9fb1c6; }
 body.dark-mode .pfd-size { background: rgba(9, 14, 24, 0.9); }

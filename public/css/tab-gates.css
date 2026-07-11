@@ -106,6 +106,39 @@
 .gx-chan.on b { color: #161B27; }
 .gx-chan:disabled { opacity: 0.55; cursor: not-allowed; }
 
+/* ===== ДЕСКТОП: фон во весь экран, как на Главной ===== */
+/* Пока открыта закрытая вкладка, JS вешает body.gx-on и форсит тёмную тему.
+   Тогда поднимается ОБЩИЙ фикс-слой Главной #hgHeatWrap (живая карта + вуаль
+   на весь экран, ПОД прозрачной шапкой и светлой рейкой — ровно как на
+   Главной), а панель-заглушка становится прозрачной: своя .gx-heat/.gx-scrim
+   и карточная рамка гасятся, сцена тянется от края до края. */
+@media (min-width: 1024px) {
+    body.gx-on #hgHeatWrap { display: block; }
+    /* контент и рейка — над фикс-картой (копия поведения тёмной Главной) */
+    body.gx-on #contentArea { z-index: 2; }
+    body.gx-on #sideBar { position: relative; z-index: 50; }
+
+    /* панель-заглушка во весь экран, без max-width и карточных отступов */
+    body.gx-on .tab-panel.tab-gated {
+        max-width: none; margin: 0; padding: 0;
+        height: 100%;
+        display: flex; flex-direction: column;
+    }
+    body.gx-on .tab-gated .gx-cover {
+        flex: 1; min-height: 0;
+        border-radius: 0; border: none; box-shadow: none;
+        background: transparent;   /* карту рисует #hgHeatWrap */
+    }
+    /* свои фон и вуаль в панели не нужны — их даёт полноэкранный слой */
+    body.gx-on .tab-gated .gx-heat,
+    body.gx-on .tab-gated .gx-scrim { display: none; }
+    /* сетку манифеста центрируем во всю высоту, паддинги — как на Главной */
+    body.gx-on .tab-gated .hg-cover {
+        flex: 1;
+        padding: 8px 108px 30px 72px;
+    }
+}
+
 /* ===== ЗАГЛУШКА МОБИЛЬНОЙ ВЕРСИИ: оверлей на всё приложение ===== */
 #gxMobileCover {
     position: fixed; inset: 0; z-index: 4000;

@@ -16,9 +16,22 @@
                  'rebalance', 'market', 'market-stocks', 'market-bonds',
                  'monthly', 'backtest', 'admin'];
 
+    // Кроме встроенных, валидны свои вкладки админа (tab-gates.js): их ключи
+    // приходят из конфига, панель #panel-<key> создаётся динамически. Прямая
+    // загрузка /<key> должна восстанавливать вкладку — сверяемся с tabGates и
+    // с фактически существующей панелью.
+    function isValidTab(t) {
+        if (VALID.indexOf(t) !== -1) return true;
+        try {
+            var custom = window.tabGates && window.tabGates.getCustom && window.tabGates.getCustom();
+            if (custom && custom[t]) return true;
+        } catch (e) {}
+        return !!document.getElementById('panel-' + t);
+    }
+
     function tabFromPath() {
         var t = location.pathname.replace(/^\//, '').replace(/\/$/, '');
-        return VALID.indexOf(t) !== -1 ? t : null;
+        return isValidTab(t) ? t : null;
     }
 
     function pathForTab(tabId) {
@@ -31,7 +44,7 @@
     var _prevSwitchTab = window.switchTab;
     window.switchTab = function(tabId) {
         _prevSwitchTab(tabId);
-        if (!applyingPath && VALID.indexOf(tabId) !== -1 && tabFromPath() !== tabId) {
+        if (!applyingPath && isValidTab(tabId) && tabFromPath() !== tabId) {
             history.pushState({ tab: tabId }, '', pathForTab(tabId));
         }
     };
