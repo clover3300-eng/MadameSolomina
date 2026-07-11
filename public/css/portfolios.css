@@ -369,9 +369,12 @@ body.dark-mode .pfc-sep { background: rgba(255,255,255,0.06); }
 .pfc-mtablewrap { overflow: visible; flex-shrink: 0; }
 .pfc-mtable { width: 100%; border-collapse: collapse; }
 /* шапка колонок ПРИЛИПАЕТ к верху при скролле состава — непрозрачный фон под цвет
-   карточки перекрывает уезжающие под неё строки */
-.pfc-mtable thead th { position: sticky; top: 0; z-index: 3; background: #fff;
-    text-align: right; padding: 6px 0; font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; letter-spacing: 0.08em; color: #94a3b8; text-transform: uppercase; border-bottom: 1px solid rgba(24,38,60,0.06); }
+   карточки перекрывает уезжающие под неё строки. top:-1px (не 0!) — уводит верхнюю
+   кромку шапки ЗА край обрезки скроллера: при дробном скролле (scrollTop 37.78 и т.п.)
+   её антиалиасинг иначе оставлял бы 1px-шов, сквозь который просвечивала строка;
+   +1px верхнего паддинга компенсирует сдвиг, текст остаётся на месте */
+.pfc-mtable thead th { position: sticky; top: -1px; z-index: 3; background: #fff;
+    text-align: right; padding: 7px 0 6px; font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; letter-spacing: 0.08em; color: #94a3b8; text-transform: uppercase; border-bottom: 1px solid rgba(24,38,60,0.06); }
 body.dark-mode .pfc-mtable thead th { background: #1a232f; border-color: rgba(255,255,255,0.06); }
 /* оверлей «весь состав» — свой фон карточки (темнее card), чтобы липкая шапка совпадала */
 body.dark-mode .pfc-holdsover-list .pfc-mtable thead th { background: #18222e; }
