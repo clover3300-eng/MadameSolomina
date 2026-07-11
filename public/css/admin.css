@@ -565,6 +565,11 @@ body.dark-mode .adm-gate-s, body.dark-mode .adm-foot-note { color: #9fb1c6; }
     box-shadow: 0 14px 34px -24px rgba(24, 38, 60, 0.25);
 }
 .adm-sheet-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.adm-sheet-act { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.adm-sheet-act a.adm-btn { text-decoration: none; }
+.adm-sheet-upd { font-family: var(--font-num); font-size: 10.5px; font-weight: 600; color: #94a3b8; white-space: nowrap; }
+/* счётчик расхождений на сегменте «Гугл таблица» — красный, это сигнал */
+.adm-seg-btn[data-sec="sheet"] .adm-seg-n { color: #dc2626; font-weight: 800; }
 .adm-sheet-t {
     display: flex; align-items: center; gap: 8px;
     font-size: var(--fs-card-title); font-weight: 800; letter-spacing: -0.01em;
@@ -574,12 +579,16 @@ body.dark-mode .adm-gate-s, body.dark-mode .adm-foot-note { color: #9fb1c6; }
 .adm-sheet-s { margin-top: 5px; font-size: 12.5px; font-weight: 600; line-height: 1.5; color: var(--text-slate, #64748B); max-width: 640px; }
 
 .adm-sheet-sum { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin: 16px 0 6px; }
+/* чипы-счётчики = фильтры: клик оставляет свой срез, повторный — все */
 .adm-chip {
     display: inline-flex; align-items: center; gap: 5px;
-    padding: 5px 11px; border-radius: 999px;
+    padding: 5px 11px; border: 0; border-radius: 999px; cursor: pointer;
     font-family: var(--font-num); font-size: 12px; font-weight: 800;
     background: rgba(19, 26, 43, 0.05); color: var(--text-slate, #64748B);
+    transition: box-shadow 0.14s, transform 0.14s;
 }
+.adm-chip:hover { transform: translateY(-1px); }
+.adm-chip.on { box-shadow: 0 0 0 2px currentColor inset; }
 .adm-chip svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 .adm-chip.ok { background: rgba(22, 163, 74, 0.12); color: #16a34a; }
 .adm-chip.bad { background: rgba(239, 68, 68, 0.13); color: #dc2626; }
@@ -640,3 +649,4 @@ body.dark-mode .adm-scol-h { background: rgba(255, 255, 255, 0.03); border-color
 body.dark-mode .adm-srow:hover { background: rgba(96, 165, 250, 0.1); }
 body.dark-mode .adm-sr-t { color: #f4f8fd; }
 body.dark-mode .adm-sr-n { color: #9fb1c6; }
+body.dark-mode .adm-seg-btn[data-sec="sheet"] .adm-seg-n { color: #f87171; }

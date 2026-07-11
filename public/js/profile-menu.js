@@ -493,6 +493,7 @@
         }
 
         renderApiSub();
+        applyAuditBadge();   // innerHTML выше стирает «!» на аватаре — возвращаем
     }
 
     function renderApiSub() {
@@ -823,22 +824,46 @@
     // ---------- сигнал аудита эшелонов (только у админа) ----------
     // Админский модуль (admin.js) в фоне сверяет эшелоны с дивидендами и шлёт
     // событие 'echelon-audit'. При расхождениях зажигаем красный «!» на аватаре —
-    // подсказку зайти в Админку → «Гугл таблица» и перепроверить.
+    // подсказку зайти в Админку → «Гугл таблица» и перепроверить. Клик по «!»
+    // ведёт прямо в раздел. renderIdentity перерисовывает кнопку через innerHTML,
+    // поэтому число держим в auditN и накатываем бейдж заново после каждого рендера.
+    var auditN = 0;
     function setAuditBadge(n) {
+        auditN = (n && n > 0) ? n : 0;
+        applyAuditBadge();
+    }
+    function applyAuditBadge() {
         if (!btn) return;
+        var hint = 'Эшелоны: ' + auditN + ' ' + plural(auditN, 'расхождение', 'расхождения', 'расхождений') + ' с дивидендами — проверьте в Админке';
         var el = btn.querySelector('#phAlert');
-        if (n && n > 0) {
+        if (auditN > 0) {
             if (!el) {
                 el = document.createElement('span');
                 el.id = 'phAlert';
                 el.className = 'ph-alert';
                 el.setAttribute('aria-hidden', 'true');
                 el.textContent = '!';
+                el.addEventListener('click', function (ev) {
+                    ev.stopPropagation();
+                    try { closeHub(); } catch (e) {}
+                    if (window.echelonAudit && typeof window.echelonAudit.open === 'function') window.echelonAudit.open();
+                });
                 btn.appendChild(el);
             }
-            el.title = 'Эшелоны: ' + n + ' ' + plural(n, 'расхождение', 'расхождения', 'расхождений') + ' с дивидендами — проверьте в Админке';
+            el.title = hint;
         } else if (el) {
             el.remove();
+        }
+        // красная точка на кнопке «Админка» в панели кабинета
+        var adm = hub && hub.querySelector('#phAdmin');
+        if (adm) {
+            var dot = adm.querySelector('.ph-adm-dot');
+            if (auditN > 0 && !dot) {
+                dot = document.createElement('i');
+                dot.className = 'ph-adm-dot';
+                adm.appendChild(dot);
+            } else if (!auditN && dot) dot.remove();
+            adm.title = auditN > 0 ? hint : 'Открыть админку';
         }
     }
     function plural(n, one, few, many) {

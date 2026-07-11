@@ -955,7 +955,12 @@
         3: 'платят через раз (есть пропуски)',
         4: 'дивиденды не платят'
     };
-    var EA = { results: [], mismatch: 0, running: false, ranAt: 0, bgStarted: false, _promise: null };
+    // Google-таблица «Акции» — источник эшелонов (SHEET_ID/GID из core.js)
+    var SHEET_LINK = 'https://docs.google.com/spreadsheets/d/1SFV5dBIsvfX5HKbXBuXHFVvBfw1p1MPPx2uK209ajLM/edit#gid=1213653337';
+    var AUDIT_LS = 'ech_audit_v1';    // кэш результатов: бейдж на аватаре сразу после загрузки, без 24 запросов к MOEX
+    var AUDIT_TTL = 6 * 3600000;
+    var sheetFilter = 'all';          // all | ok | bad | na — фильтр-чипы раздела
+    var EA = { results: [], mismatch: 0, running: false, ranAt: 0, bgStarted: false, _promise: null, _sig: '' };
 
     // Классификация эшелона по истории выплат. Возвращает 1..4 либо 0 —
     // «недостаточно данных» (короткая история, судить рано, в расхождения не идёт).
@@ -1003,6 +1008,28 @@
             : (typeof window.fetchDividendRows === 'function' ? window.fetchDividendRows : null);
     }
 
+    // Подпись состава таблицы: если тикеры/эшелоны в Google-таблице поменялись,
+    // сохранённый кэш аудита считается устаревшим.
+    function eaSig(src) {
+        return src.map(function (s) { return s.t + ':' + s.assigned; }).join(',');
+    }
+
+    function auditAnnounce() {
+        try { window.dispatchEvent(new CustomEvent('echelon-audit', { detail: { mismatch: EA.mismatch, total: EA.results.length } })); } catch (e) {}
+    }
+
+    function saveAuditCache() {
+        try { localStorage.setItem(AUDIT_LS, JSON.stringify({ v: 1, ranAt: EA.ranAt, sig: EA._sig, results: EA.results })); } catch (e) {}
+    }
+    function loadAuditCache() {
+        try {
+            var c = JSON.parse(localStorage.getItem(AUDIT_LS) || 'null');
+            if (!c || c.v !== 1 || !c.results || !c.results.length) return null;
+            if (Date.now() - c.ranAt > AUDIT_TTL) return null;
+            return c;
+        } catch (e) { return null; }
+    }
+
     // Прогон аудита с ограниченной параллельностью, чтобы не завалить прокси MOEX.
     function runAudit(force) {
         if (EA.running) return EA._promise;
@@ -1039,21 +1066,39 @@
             EA.ranAt = Date.now();
             EA.running = false;
             EA.mismatch = results.filter(function (r) { return r.match === false; }).length;
-            try { window.dispatchEvent(new CustomEvent('echelon-audit', { detail: { mismatch: EA.mismatch, total: results.length } })); } catch (e) {}
+            EA._sig = eaSig(src);
+            saveAuditCache();
+            auditAnnounce();
             if (root && !document.hidden && typeof currentTab !== 'undefined' && currentTab === 'admin' && section === 'sheet') renderApp();
             return results;
         });
         return EA._promise;
     }
 
-    // Фоновый аудит для админа: ждём, пока Google-таблица подгрузит echelonTableData.
+    // Фоновый аудит для админа: сперва поднимаем сохранённый результат (бейдж
+    // загорается мгновенно), затем ждём echelonTableData из Google-таблицы и,
+    // если кэша нет / состав изменился / кэш старше TTL — пересчитываем.
     function bgAudit() {
-        if (EA.bgStarted) { runAudit(); return; }
         if (!(supa() && supa().isAdmin())) return;
+        if (EA.bgStarted) { runAudit(); return; }
         EA.bgStarted = true;
+        var cached = loadAuditCache();
+        if (cached) {
+            EA.results = cached.results;
+            EA.ranAt = cached.ranAt;
+            EA._sig = cached.sig || '';
+            EA.mismatch = cached.results.filter(function (r) { return r.match === false; }).length;
+            auditAnnounce();
+        }
         var tries = 0;
         (function attempt() {
-            if (eaSource().length && divFn()) { runAudit(); return; }
+            var src = eaSource();
+            if (src.length && divFn()) {
+                if (EA.results.length && EA._sig === eaSig(src)) return;   // кэш актуален
+                EA.ranAt = 0;                                               // состав изменился — мимо TTL
+                runAudit();
+                return;
+            }
             if (tries++ < 25) setTimeout(attempt, 3000);
         })();
     }
@@ -1063,7 +1108,13 @@
         results: function () { return EA.results; },
         mismatch: function () { return EA.mismatch; },
         running: function () { return EA.running; },
-        ranAt: function () { return EA.ranAt; }
+        ranAt: function () { return EA.ranAt; },
+        // прыжок из бейджа на аватаре прямо в раздел «Гугл таблица»
+        open: function () {
+            section = 'sheet';
+            if (typeof currentTab !== 'undefined' && currentTab === 'admin') renderApp();
+            else if (typeof window.switchTab === 'function') window.switchTab('admin');
+        }
     };
 
     function echBadge(n, kind) {
@@ -1082,12 +1133,18 @@
         var legend = ECH_ROMAN.map(function (r, k) {
             return '<span class="adm-lg"><i class="adm-echb ok">' + r + '</i>' + ECH_DESC[k + 1] + '</span>';
         }).join('');
+        var checked = EA.ranAt ? 'проверено ' + pad2(new Date(EA.ranAt).getHours()) + ':' + pad2(new Date(EA.ranAt).getMinutes()) : '';
         var head = '<div class="adm-sheet-head">' +
             '<div class="adm-sheet-tt">' +
                 '<div class="adm-sheet-t">' + IC.grid + 'Эшелоны по дивидендам</div>' +
                 '<div class="adm-sheet-s">Сверяем эшелон из Google-таблицы «Акции» с историей выплат MOEX. Клик по тикеру — карточка компании с дивидендами.</div>' +
             '</div>' +
-            '<button class="adm-btn sm" data-act="sheet-refresh"' + (EA.running ? ' disabled' : '') + '>' + IC.refresh + (EA.running ? 'Считаем…' : 'Пересчитать') + '</button>' +
+            '<div class="adm-sheet-act">' +
+                '<a class="adm-btn sm" href="' + SHEET_LINK + '" target="_blank" rel="noopener" title="Открыть лист «Акции» в Google Sheets">' + IC.grid + 'Таблица</a>' +
+                '<button class="adm-btn sm" data-act="sheet-export"' + (res.length ? '' : ' disabled') + ' title="Выгрузить результат сверки (CSV для Excel)">' + IC.dl + 'Excel</button>' +
+                '<button class="adm-btn sm" data-act="sheet-refresh"' + (EA.running ? ' disabled' : '') + ' title="Забрать свежие дивиденды с MOEX и пересчитать">' + IC.refresh + (EA.running ? 'Считаем…' : 'Пересчитать') + '</button>' +
+                (checked ? '<span class="adm-sheet-upd">' + checked + '</span>' : '') +
+            '</div>' +
         '</div>';
 
         if (!res.length) {
@@ -1099,17 +1156,27 @@
         var bad = res.filter(function (r) { return r.match === false; }).length;
         var na = res.filter(function (r) { return r.match === null; }).length;
         var ok = res.length - bad - na;
+        // чипы-счётчики работают фильтрами: клик оставляет только свой срез, повторный — все
+        function chip(f, cls, icon, label) {
+            return '<button type="button" class="adm-chip ' + cls + (sheetFilter === f ? ' on' : '') + '" data-act="sheet-filter" data-f="' + f + '" title="Показать только этот срез (повторный клик — все)">' + icon + label + '</button>';
+        }
         var summary = '<div class="adm-sheet-sum">' +
-            '<span class="adm-chip ok">' + IC.check + ok + ' совпадает</span>' +
-            '<span class="adm-chip ' + (bad ? 'bad' : 'mut') + '">' + IC.alert + bad + ' расхождений</span>' +
-            '<span class="adm-chip mut">' + na + ' без оценки</span>' +
+            chip('ok', 'ok', IC.check, ok + ' совпадает') +
+            chip('bad', bad ? 'bad' : 'mut', IC.alert, bad + ' расхождений') +
+            chip('na', 'mut', '', na + ' без оценки') +
             '<span class="adm-sheet-legend">' + legend + '</span>' +
         '</div>';
+
+        var kindOf = function (r) { return r.match === false ? 'bad' : (r.match === null ? 'na' : 'ok'); };
+        var RANK = { bad: 0, na: 1, ok: 2 };   // проблемы — наверх колонки
 
         // Группируем по проставленному эшелону — «все тикеры распределены по эшелонам».
         var cols = '';
         for (var e = 1; e <= 4; e++) {
-            var rows = res.filter(function (r) { return r.assigned === e; });
+            var rows = res.filter(function (r) {
+                return r.assigned === e && (sheetFilter === 'all' || kindOf(r) === sheetFilter);
+            });
+            rows.sort(function (a, b) { return RANK[kindOf(a)] - RANK[kindOf(b)] || a.t.localeCompare(b.t); });
             var rowsHtml = rows.length ? rows.map(function (r) {
                 var kind = r.match === false ? 'bad' : (r.match === null ? 'na' : 'ok');
                 var expBadge = r.expected ? echBadge(r.expected, kind) : '<span class="adm-echb na">—</span>';
@@ -1125,7 +1192,7 @@
                     '<span class="adm-sr-meta"><span class="adm-sr-n">' + esc(r.n) + '</span>' +
                         '<span class="adm-sr-note">' + note + last + '</span></span>' +
                 '</div>';
-            }).join('') : '<div class="adm-sempty">нет тикеров</div>';
+            }).join('') : '<div class="adm-sempty">' + (sheetFilter === 'all' ? 'нет тикеров' : 'нет под фильтром') + '</div>';
             cols += '<div class="adm-scol">' +
                 '<div class="adm-scol-h"><span class="adm-echb ok">' + ECH_ROMAN[e - 1] + '</span>' + ECH_ROMAN[e - 1] + ' эшелон' +
                     '<span class="adm-scol-n">' + rows.length + '</span></div>' +
@@ -1134,6 +1201,23 @@
         }
 
         return '<div class="adm-sheet">' + head + summary + '<div class="adm-scols">' + cols + '</div></div>';
+    }
+
+    // Excel-выгрузка сверки: как у пользователей/событий — BOM, «;», анти-формульный гард
+    function exportSheet() {
+        if (!EA.results.length) return;
+        var lines = ['Тикер;Название;Эшелон (таблица);Эшелон (дивиденды);Статус;Последний год выплаты;Сумма за год, ₽;Лет с выплатами'];
+        EA.results.forEach(function (r) {
+            var status = r.error ? 'нет данных MOEX'
+                : (r.match === false ? 'расхождение' : (r.match === null ? 'без оценки' : 'совпадает'));
+            lines.push([
+                r.t, r.n, ECH_ROMAN[r.assigned - 1],
+                r.expected ? ECH_ROMAN[r.expected - 1] : '—', status,
+                r.lastYear || '', r.lastSum != null ? String(r.lastSum).replace('.', ',') : '', r.years || 0
+            ].map(csvCell).join(';'));
+        });
+        downloadCsv('echelon-audit-' + stamp() + '.csv', lines);
+        toast('Выгрузка сформирована');
     }
 
     function onAction(e) {
@@ -1195,7 +1279,19 @@
             case 'unban': updateUserRow(id, { banned: false }, 'admin_unban', null, 'Пользователь разблокирован'); break;
             case 'clear-data': clearUserData(id); break;
             case 'delete-user': deleteUser(id); break;
-            case 'sheet-refresh': EA.results = []; renderApp(); runAudit(true); break;
+            case 'sheet-refresh':
+                // чистим сессионный кэш дивидендов (company.js), иначе «пересчитать»
+                // возьмёт те же старые данные; renderSheet сам запустит runAudit
+                try { window.divHistoryCache = {}; } catch (err) {}
+                EA.results = [];
+                EA.ranAt = 0;
+                renderApp();
+                break;
+            case 'sheet-export': exportSheet(); break;
+            case 'sheet-filter':
+                sheetFilter = sheetFilter === btn.getAttribute('data-f') ? 'all' : btn.getAttribute('data-f');
+                renderApp();
+                break;
             case 'sheet-open':
                 var tk = btn.getAttribute('data-ticker');
                 var ech = +btn.getAttribute('data-ech') || 1;
