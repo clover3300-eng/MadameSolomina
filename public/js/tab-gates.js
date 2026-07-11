@@ -2,20 +2,31 @@
 // ЗАГЛУШКИ ВКЛАДОК И СИСТЕМНЫЕ СООБЩЕНИЯ
 // =============================================
 // Конфиг живёт в Supabase (app_config, ключ 'tab_gates', пишет админ из
-// раздела «Вкладки»), читают все — включая гостей. Форматы:
-//   { tabs: { calc: { off: true }, market: { msg: '…', msgKind: 'warn' } } }
+// раздела «Вкладки»), читают все — включая гостей. Формат:
+//   { tabs:   { calc: { off: true }, market: { msg: '…', msgKind: 'warn' },
+//               mobile: { off: true } },        // 'mobile' — ВСЯ мобильная версия
+//     custom: { newtab: { label: 'Новая вкладка' } } }  // задел на будущие вкладки
 //   off — вкладка закрыта заглушкой «раздел в разработке»;
-//   msg — баннер-сообщение поверх вкладки (не блокирует работу).
+//   msg — баннер-сообщение поверх вкладки (не блокирует работу);
+//   custom — вкладки, добавленные админом заранее: заглушка применится сама,
+//   как только в DOM появится #panel-<key> (пока панели нет — просто ждёт).
 //
-// Заглушка — тёмная сцена В ДУХЕ Главной (градиент + мозаика плиток +
-// крупная типографика), рендерится ВНУТРИ панели вкладки (.gx-cover,
-// прямые дети панели прячутся классом .tab-gated — никаких fixed,
-// см. паттерн «fixed ловится transform» у stockDetailCard):
-//   · авторизованный видит обращение по имени и карточку «сообщим,
-//     когда будет готово» с выбором канала (сайт / браузер / Telegram —
-//     подписка в feature_waitlist; выбор telegram включает
-//     profiles.notify_telegram, browser — разрешение Notification);
-//   · гость видит просто заглушку с кнопкой «На Главную».
+// Заглушка — ГЛАВНАЯ ОДИН В ОДИН: та же сетка .hg-cover (манифест слева,
+// плотная белая колонна справа), те же классы hc-*/hr-*/hg-* из
+// home-register.css, фон — ЖИВАЯ тепловая карта IMOEX (рисует общий рендер
+// window.hgHeatRepaint из home-register.js в .gx-heat). Отличия только в
+// тексте и механике формы: вместо входа — подписка «сообщим о готовности».
+// Рендерится ВНУТРИ панели вкладки (.gx-cover, прямые дети панели прячутся
+// классом .tab-gated — никаких fixed, см. паттерн «fixed ловится transform»).
+// Исключение — заглушка мобильной версии: она одна на ВСЁ приложение и
+// живёт fixed-оверлеем #gxMobileCover прямо в <body> (там transform не
+// ловит, см. паттерн stockDetailCard).
+//
+//   · авторизованный видит обращение по имени и колонну «сообщим, когда
+//     будет готово» с выбором канала (сайт / браузер / Telegram — подписка
+//     в feature_waitlist; выбор telegram включает profiles.notify_telegram,
+//     browser — разрешение Notification);
+//   · гость видит заглушку с кнопкой «Войти на Главной».
 //
 // Кэш конфига — localStorage tab_gates_cache_v1 (ВНЕ cloud-sync.WATCH):
 // заглушка встаёт мгновенно при загрузке, сеть лишь освежает.
@@ -28,9 +39,12 @@
     var LS_CACHE = 'tab_gates_cache_v1';
     var REFRESH_MS = 90000;              // перечитываем конфиг не чаще
     var CFG_KEY = 'tab_gates';
+    var MOBILE_KEY = 'mobile';           // спец-ключ: вся мобильная версия
 
-    // Вкладки, которым доступны заглушка и баннер (Главная и Админка — никогда)
-    var TABS = {
+    // Встроенные вкладки, которым доступны заглушка и баннер
+    // (Главная и Админка — никогда). Список дополняется custom-вкладками
+    // из конфига — их админ добавляет заранее, до появления самой панели.
+    var BASE_TABS = {
         calc:            'Расчёт',
         portfolio:       'Портфель',
         portfolios:      'Портфели',
@@ -41,6 +55,7 @@
     };
 
     var gates = {};          // tab -> { off, msg, msgKind }
+    var customTabs = {};     // key -> { label } (добавленные админом)
     var fetchedAt = 0;
     var fetching = false;
     var myWaitlist = null;   // tab -> channel (подписки текущего пользователя), null = не грузили
@@ -61,16 +76,26 @@
         var n = (pr && pr.name || '').trim();
         return n ? n.split(/\s+/)[0] : '';
     }
+    function tabsAll() {
+        var m = {}, k;
+        for (k in BASE_TABS) m[k] = BASE_TABS[k];
+        for (k in customTabs) {
+            if (m[k] || k === MOBILE_KEY || k === 'home' || k === 'admin') continue;
+            m[k] = (customTabs[k] && customTabs[k].label) || k;
+        }
+        return m;
+    }
+    function isNarrow() {
+        try { return window.matchMedia('(max-width: 1023px)').matches; } catch (e) { return false; }
+    }
 
     // ---------- конфиг ----------
     function readCache() {
-        try {
-            var c = JSON.parse(localStorage.getItem(LS_CACHE) || 'null');
-            return (c && c.tabs) ? c.tabs : {};
-        } catch (e) { return {}; }
+        try { return JSON.parse(localStorage.getItem(LS_CACHE) || 'null') || {}; }
+        catch (e) { return {}; }
     }
-    function writeCache(tabs) {
-        try { localStorage.setItem(LS_CACHE, JSON.stringify({ tabs: tabs, at: Date.now() })); } catch (e) {}
+    function writeCache() {
+        try { localStorage.setItem(LS_CACHE, JSON.stringify({ tabs: gates, custom: customTabs, at: Date.now() })); } catch (e) {}
     }
 
     function fetchConfig(force) {
@@ -84,7 +109,8 @@
                 fetchedAt = Date.now();
                 var v = (res.data && res.data[0] && res.data[0].value) || {};
                 gates = v.tabs || {};
-                writeCache(gates);
+                customTabs = v.custom || {};
+                writeCache();
                 applyAll();
             }, function () { fetching = false; });
     }
@@ -102,19 +128,25 @@
     window.tabGates = {
         refresh: function () { fetchedAt = 0; return fetchConfig(true); },
         get: function () { return gates; },
-        TABS: TABS
+        getCustom: function () { return customTabs; },
+        BASE_TABS: BASE_TABS,
+        MOBILE_KEY: MOBILE_KEY,
+        // совместимость со старым API (admin.js читал TABS)
+        TABS: BASE_TABS
     };
 
     // ---------- применение ----------
     function panelOf(tab) { return document.getElementById('panel-' + tab); }
 
     function applyAll() {
-        Object.keys(TABS).forEach(function (tab) { applyTab(tab); });
+        var all = tabsAll();
+        Object.keys(all).forEach(function (tab) { applyTab(tab); });
+        applyMobile();
     }
 
     function applyTab(tab) {
         var panel = panelOf(tab);
-        if (!panel) return;
+        if (!panel) return;   // custom-вкладка без панели — заглушка ждёт её появления
         var g = gates[tab] || {};
 
         // --- заглушка ---
@@ -152,54 +184,109 @@
         }
     }
 
-    // ---------- сцена-заглушка ----------
-    // Мозаика как на Главной, но статичная: сетка плиток с псевдослучайной
-    // (сеяной — без мигания при перерисовках) интенсивностью.
-    function tilesHtml(tab) {
-        var html = '';
-        var seed = 0;
-        for (var i = 0; i < tab.length; i++) seed = (seed * 31 + tab.charCodeAt(i)) & 0xffff;
-        function rnd() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
-        for (var k = 0; k < 24; k++) {
-            var kind = rnd() < 0.55 ? 'up' : (rnd() < 0.5 ? 'dn' : 'flat');
-            html += '<i class="' + kind + '" style="--k:' + (0.25 + rnd() * 0.75).toFixed(2) + '"></i>';
+    // Заглушка ВСЕЙ мобильной версии: fixed-оверлей в <body> (не в панели —
+    // мобильная заглушка одна на всё приложение). Включается конфигом
+    // tabs.mobile.off и только на узком экране (≤1023px, как css/mobile.css).
+    function applyMobile() {
+        var g = gates[MOBILE_KEY] || {};
+        var on = !!g.off && isNarrow();
+        var cover = document.getElementById('gxMobileCover');
+        if (on) {
+            if (!cover) {
+                cover = document.createElement('div');
+                cover.id = 'gxMobileCover';
+                cover.className = 'gx-cover gx-mobile';
+                document.body.appendChild(cover);
+            }
+            renderCover(cover, MOBILE_KEY);
+            document.body.classList.add('gx-mobile-on');
+        } else if (cover) {
+            cover.remove();
+            document.body.classList.remove('gx-mobile-on');
         }
-        return '<div class="gx-tiles" aria-hidden="true">' + html + '</div>';
     }
+
+    // ---------- сцена-заглушка: Главная один в один ----------
+    // Разметка повторяет .hg-cover из index.html (манифест .hg-main слева,
+    // белая колонна .hg-auth справа) — классы те же, стили приезжают из
+    // home-register.css, tab-gates.css лишь переводит сцену в тёмный вид
+    // Главной. Фон — живые плитки .hg-tile в .gx-heat (hgHeatRepaint).
+    var SVG_ARROW = '<svg class="hr-submit-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7"></path><path d="M9 7h8v8"></path></svg>';
+    var SVG_LOCK = '<svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>';
+    var SVG_BELL = '<svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>';
 
     function renderCover(cover, tab) {
         var isAuthed = authed();
         var name = firstName();
-        var tabName = TABS[tab] || tab;
+        var isMobile = tab === MOBILE_KEY;
+        var tabName = isMobile ? 'Мобильная версия' : (tabsAll()[tab] || tab);
         var sub = myWaitlist && myWaitlist[tab];
 
-        var head =
-            '<div class="gx-brand"><span class="gx-brand-n"><span style="font-weight:300;">Madame </span><span style="font-weight:800;">Solomi\'na</span></span><span class="gx-brand-s">Terminal</span></div>' +
-            '<div class="gx-badge">Раздел в разработке</div>' +
-            '<h2 class="gx-title">' + (isAuthed && name ? esc(name) + ', раздел<br>«' + esc(tabName) + '» в мастерской' : 'Раздел «' + esc(tabName) + '»<br>скоро откроется') + '</h2>' +
-            '<p class="gx-lead">' + (isAuthed
-                ? 'Мы дорабатываем его до привычного уровня. Подпишитесь — и мы сообщим, как только всё будет готово.'
-                : 'Мы дорабатываем его до привычного уровня. Загляните чуть позже — или войдите, чтобы подписаться на новость о запуске.') + '</p>';
+        // --- левый манифест ---
+        var title, lead;
+        if (isMobile) {
+            title = (isAuthed && name)
+                ? esc(name) + ', мобильная версия<br>пока в мастерской'
+                : 'Мобильная версия<br>пока в мастерской';
+            lead = 'Мы аккуратно собираем тот же терминал под экран телефона. ' +
+                'Пока загляните с компьютера — там открыта полная версия.';
+        } else {
+            title = (isAuthed && name)
+                ? esc(name) + ', раздел<br>«' + esc(tabName) + '» в мастерской'
+                : 'Раздел «' + esc(tabName) + '»<br>скоро откроется';
+            lead = isAuthed
+                ? 'Мы дорабатываем его до привычного уровня — спокойно и без спешки. ' +
+                  'Подпишитесь на оповещение, и мы сообщим, как только всё будет готово.'
+                : 'Мы дорабатываем его до привычного уровня. Загляните чуть позже — ' +
+                  'или войдите, чтобы подписаться на новость о запуске.';
+        }
+        var ctas = '<div class="hc-ctas">' +
+            (isMobile ? '' :
+                '<button class="hc-cta hc-cta-dark" type="button" data-gx="go-home">' +
+                    '<span>' + (isAuthed ? 'Вернуться в кабинет' : 'На Главную') + '</span>' +
+                    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7"></path><path d="M9 7h8v8"></path></svg>' +
+                '</button>') +
+            '<span class="hg-live gx-status">Раздел в разработке</span>' +
+        '</div>';
 
-        var card;
+        var main =
+            '<div class="hg-main">' +
+                '<div class="hg-brand">' +
+                    '<span class="hg-brand-name"><span style="font-weight:300;">Madame </span><span style="font-weight:800;">Solomi\'na</span></span>' +
+                    '<span class="hg-brand-sub">Wealth Management</span>' +
+                '</div>' +
+                '<h1 class="hc-title">' + title + '</h1>' +
+                '<p class="hc-lead">' + lead + '</p>' +
+                ctas +
+            '</div>';
+
+        // --- правая колонна: та же белая карточка, но с механикой подписки ---
+        var side;
         if (!isAuthed) {
-            card =
-                '<div class="gx-card">' +
-                    '<div class="gx-card-t">Не пропустить запуск</div>' +
-                    '<div class="gx-card-s">Создайте аккаунт или войдите — под заглушкой появится подписка на оповещение о готовности раздела.</div>' +
-                    '<button class="gx-btn primary" type="button" data-gx="go-home">Войти на Главной</button>' +
-                '</div>';
+            side =
+                '<aside class="hg-auth gx-side">' +
+                    '<span class="hr-label">Оповещение о запуске</span>' +
+                    '<h2 class="hr-title">Не пропустите запуск</h2>' +
+                    '<p class="hr-sub">' + (isMobile
+                        ? 'Откройте сайт с компьютера, войдите в аккаунт — и подпишитесь на новость о запуске мобильной версии.'
+                        : 'Войдите или создайте аккаунт — и здесь появится подписка: пришлём новость, когда раздел откроется.') + '</p>' +
+                    (isMobile ? '' :
+                        '<button class="hr-submit" type="button" data-gx="go-home"><span>Войти на Главной</span>' + SVG_ARROW + '</button>') +
+                    '<p class="hr-policy">' + SVG_LOCK + 'Secure Access</p>' +
+                '</aside>';
         } else if (sub) {
-            card =
-                '<div class="gx-card">' +
-                    '<div class="gx-card-ok"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.27"/></svg></div>' +
-                    '<div class="gx-card-t">Вы в списке</div>' +
-                    '<div class="gx-card-s">Как только раздел откроется, пришлём оповещение' + (sub === 'telegram' ? ' — и продублируем в Telegram' : (sub === 'browser' ? ' — и покажем в браузере' : ' под звоночек в шапке')) + '.</div>' +
-                    '<div class="gx-row">' +
-                        '<button class="gx-btn primary" type="button" data-gx="go-home">Вернуться в кабинет</button>' +
-                        '<button class="gx-btn ghost" type="button" data-gx="unsub" data-tab="' + tab + '">Отписаться</button>' +
-                    '</div>' +
-                '</div>';
+            side =
+                '<aside class="hg-auth gx-side">' +
+                    '<span class="hr-label">Оповещение о запуске</span>' +
+                    '<div class="gx-ok"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.27"/></svg></div>' +
+                    '<h2 class="hr-title">Вы в списке</h2>' +
+                    '<p class="hr-sub">Как только ' + (isMobile ? 'мобильная версия откроется' : 'раздел откроется') + ', пришлём оповещение' +
+                        (sub === 'telegram' ? ' — и продублируем в Telegram' : (sub === 'browser' ? ' — и покажем в браузере' : ' под звоночек в шапке')) + '.</p>' +
+                    (isMobile ? '' :
+                        '<button class="hr-submit" type="button" data-gx="go-home"><span>Вернуться в кабинет</span>' + SVG_ARROW + '</button>') +
+                    '<p class="hr-foot">Передумали? <a class="hr-link" data-gx="unsub" data-tab="' + tab + '">Отписаться</a></p>' +
+                    '<p class="hr-policy">' + SVG_LOCK + 'Secure Access</p>' +
+                '</aside>';
         } else {
             var pr = supa().profile || {};
             var tgOk = !!pr.telegram_id;
@@ -207,20 +294,34 @@
                 chanBtn('site', 'Под звоночком', 'Оповещение на сайте — рядом с аватаром', true, true) +
                 chanBtn('browser', 'В браузере', ('Notification' in window) ? 'Системное уведомление на этом устройстве' : 'Браузер не поддерживает уведомления', ('Notification' in window), false) +
                 chanBtn('telegram', 'В Telegram', tgOk ? 'Сообщение от бота — придёт и на телефон' : 'Сначала привяжите Telegram: аватар → Профиль', tgOk, false);
-            card =
-                '<div class="gx-card">' +
-                    '<div class="gx-card-t">Сообщим о готовности</div>' +
-                    '<div class="gx-card-s">Выберите, как удобнее получить новость о запуске раздела.</div>' +
+            side =
+                '<aside class="hg-auth gx-side">' +
+                    '<span class="hr-label">Оповещение о запуске</span>' +
+                    '<h2 class="hr-title">Сообщим о готовности</h2>' +
+                    '<p class="hr-sub">Выберите удобный канал — оповестим один раз, когда ' + (isMobile ? 'мобильная версия' : 'раздел') + ' откроется.</p>' +
                     '<div class="gx-chans" data-tab="' + tab + '">' + chans + '</div>' +
-                    '<div class="gx-row">' +
-                        '<button class="gx-btn primary" type="button" data-gx="sub" data-tab="' + tab + '">Подписаться</button>' +
-                        '<button class="gx-btn ghost" type="button" data-gx="go-home">Вернуться в кабинет</button>' +
-                    '</div>' +
-                '</div>';
+                    '<button class="hr-submit" type="button" data-gx="sub" data-tab="' + tab + '"><span>Подписаться</span>' + SVG_ARROW + '</button>' +
+                    (isMobile ? '' :
+                        '<button class="hr-tg" type="button" data-gx="go-home">Вернуться в кабинет</button>') +
+                    '<p class="hr-policy">' + SVG_BELL + 'Одно оповещение · без спама</p>' +
+                '</aside>';
         }
 
-        cover.innerHTML = tilesHtml(tab) + '<div class="gx-glow" aria-hidden="true"></div>' +
-            '<div class="gx-in">' + head + card + '</div>';
+        var html =
+            '<div class="gx-heat" aria-hidden="true"></div>' +
+            '<div class="gx-scrim" aria-hidden="true"></div>' +
+            '<div class="hg-cover gx-hg">' + main + side + '</div>';
+
+        // повторный вызов с тем же содержимым не трогает DOM — иначе
+        // на каждом switchTab переигрывалась бы анимация hgAuthIn
+        if (cover._gxHtml !== html) {
+            cover.innerHTML = html;
+            cover._gxHtml = html;
+        }
+        // живые плитки в фон (общий рендер Главной; данные закэшированы)
+        window.requestAnimationFrame(function () {
+            if (typeof window.hgHeatRepaint === 'function') window.hgHeatRepaint();
+        });
     }
 
     function chanBtn(id, t, s, enabled, active) {
@@ -257,7 +358,7 @@
                     });
                 }
                 toast('Подписка оформлена — сообщим, когда раздел откроется');
-                applyTab(tab);
+                if (tab === MOBILE_KEY) applyMobile(); else applyTab(tab);
             });
     }
 
@@ -269,7 +370,7 @@
                 if (res.error) { toast(supa().errRu(res.error), true); return; }
                 if (myWaitlist) delete myWaitlist[tab];
                 toast('Подписка снята');
-                applyTab(tab);
+                if (tab === MOBILE_KEY) applyMobile(); else applyTab(tab);
             });
     }
 
@@ -298,7 +399,9 @@
 
     // ---------- init ----------
     function init() {
-        gates = readCache();       // мгновенно, до сети
+        var c = readCache();       // мгновенно, до сети
+        gates = c.tabs || {};
+        customTabs = c.custom || {};
         applyAll();
         if (!cloudOn()) return;    // демо-режим — заглушек нет
         fetchMyWaitlist().then(function () { applyAll(); });
@@ -313,12 +416,22 @@
         }
     }
 
+    // Поворот/ресайз: мобильная заглушка следует за шириной экрана
+    (function () {
+        try {
+            var mq = window.matchMedia('(max-width: 1023px)');
+            var onMq = function () { applyMobile(); };
+            if (mq.addEventListener) mq.addEventListener('change', onMq);
+            else if (mq.addListener) mq.addListener(onMq);
+        } catch (e) {}
+    })();
+
     // Переключение вкладки: перепроверяем конфиг (мягко, с троттлингом)
     var _prevSwitchTab = window.switchTab;
     if (typeof _prevSwitchTab === 'function') {
         window.switchTab = function (tabId) {
             _prevSwitchTab(tabId);
-            if (TABS[tabId]) {
+            if (tabsAll()[tabId]) {
                 applyTab(tabId);
                 fetchConfig(false);
             }

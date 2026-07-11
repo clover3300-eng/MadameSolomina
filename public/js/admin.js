@@ -163,7 +163,8 @@
         bell: '<svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
         crown: '<svg viewBox="0 0 24 24"><path d="M2 8l4.5 4L12 4l5.5 8L22 8v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/></svg>',
         info: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
-        send: '<svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>'
+        send: '<svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
+        plus: '<svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
     };
 
     // ---------- загрузка данных ----------
@@ -428,6 +429,17 @@
                 if (sv) sv.disabled = !(gatesDirty() && !GC.saving);
             });
         });
+        // черновик формы «добавить вкладку» — тоже переживает перерисовки
+        var gtK = dq('admGtKey');
+        if (gtK) {
+            gtK.value = GC.addKey;
+            gtK.addEventListener('input', function () { GC.addKey = this.value; });
+        }
+        var gtL = dq('admGtLabel');
+        if (gtL) {
+            gtL.value = GC.addLabel;
+            gtL.addEventListener('input', function () { GC.addLabel = this.value; });
+        }
     }
 
     function segBtn(id, label, n) {
@@ -1232,20 +1244,38 @@
         { id: 'market-stocks', t: 'Терминал' },
         { id: 'backtest',      t: 'Тест портфеля' }
     ];
-    var GC = { cfg: null, saved: '', wl: null, loading: false, saving: false, notifying: false, error: null };
+    // Спец-строка: заглушка ВСЕЙ мобильной версии (ключ 'mobile' в конфиге,
+    // fixed-оверлей на экранах ≤1023px рисует tab-gates.js). Баннер к ней
+    // не применим — баннеры живут внутри конкретных панелей.
+    var GATE_MOBILE = { id: 'mobile', t: 'Мобильная версия', mobile: true };
+    // addKey/addLabel — черновик формы «добавить вкладку» (переживает
+    // перерисовки, тот же паттерн, что NC у оповещений)
+    var GC = { cfg: null, custom: {}, saved: '', wl: null, loading: false, saving: false, notifying: false, error: null, addKey: '', addLabel: '' };
+
+    // Полный список строк раздела: мобильная версия + встроенные вкладки +
+    // добавленные админом (custom — задел под будущие вкладки: заглушка
+    // применится сама, как только на сайте появится #panel-<ключ>).
+    function gateList() {
+        var l = [GATE_MOBILE].concat(GATE_TABS);
+        Object.keys(GC.custom || {}).forEach(function (k) {
+            l.push({ id: k, t: (GC.custom[k] && GC.custom[k].label) || k, custom: true });
+        });
+        return l;
+    }
 
     function gatesOffCount() {
         if (!GC.cfg) return 0;
-        return GATE_TABS.filter(function (t) { return GC.cfg[t.id] && GC.cfg[t.id].off; }).length;
+        return gateList().filter(function (t) { return GC.cfg[t.id] && GC.cfg[t.id].off; }).length;
     }
     function gatesClean() {
         var tabs = {};
-        GATE_TABS.forEach(function (t) {
+        gateList().forEach(function (t) {
             var g = GC.cfg && GC.cfg[t.id];
             if (!g) return;
             var e = {};
             if (g.off) e.off = true;
-            var m = String(g.msg || '').trim().slice(0, 300);
+            // у мобильной строки баннера нет — только заглушка
+            var m = t.mobile ? '' : String(g.msg || '').trim().slice(0, 300);
             if (m) {
                 e.msg = m;
                 if (g.msgKind === 'warn') e.msgKind = 'warn';
@@ -1254,7 +1284,9 @@
         });
         return tabs;
     }
-    function gatesDirty() { return JSON.stringify(gatesClean()) !== GC.saved; }
+    // Снапшот для «есть несохранённые правки»: настройки вкладок + список custom
+    function gatesSnap() { return JSON.stringify({ t: gatesClean(), c: GC.custom }); }
+    function gatesDirty() { return gatesSnap() !== GC.saved; }
     function wlByTab(tab) {
         return (GC.wl || []).filter(function (r) { return r.tab === tab; });
     }
@@ -1275,12 +1307,13 @@
             } else {
                 var v = (res[0].data && res[0].data[0] && res[0].data[0].value) || {};
                 var tabs = v.tabs || {};
+                GC.custom = v.custom || {};   // до gateList(): custom-строки читаются из конфига
                 GC.cfg = {};
-                GATE_TABS.forEach(function (t) {
+                gateList().forEach(function (t) {
                     var g = tabs[t.id] || {};
                     GC.cfg[t.id] = { off: !!g.off, msg: g.msg || '', msgKind: g.msgKind === 'warn' ? 'warn' : 'info' };
                 });
-                GC.saved = JSON.stringify(gatesClean());
+                GC.saved = gatesSnap();
                 GC.wl = res[1].data || [];
             }
             if (section === 'tabs') renderApp();
@@ -1298,12 +1331,12 @@
         var tabs = gatesClean();
         client().from('app_config').upsert({
             key: 'tab_gates',
-            value: { tabs: tabs },
+            value: { tabs: tabs, custom: GC.custom },
             updated_by: supa().session.user.id
         }, { onConflict: 'key' }).then(function (res) {
             GC.saving = false;
             if (res.error) { toast(supa().errRu(res.error), true); renderApp(); return; }
-            GC.saved = JSON.stringify(tabs);
+            GC.saved = JSON.stringify({ t: tabs, c: GC.custom });
             supa().logEvent('admin_gate', { off: Object.keys(tabs).filter(function (k) { return tabs[k].off; }) });
             // применяем на своей странице сразу — увидеть заглушку можно тут же
             if (window.tabGates) window.tabGates.refresh();
@@ -1337,9 +1370,12 @@
             });
     }
     function notifyGateSend(tab, subs) {
-        var tabName = (GATE_TABS.filter(function (t) { return t.id === tab; })[0] || {}).t || tab;
-        var title = 'Раздел «' + tabName + '» открыт';
-        var body = 'Мы дописали раздел, на который вы подписывались, — заходите, он уже ждёт вас в меню.';
+        var tabName = (gateList().filter(function (t) { return t.id === tab; })[0] || {}).t || tab;
+        var isMob = tab === GATE_MOBILE.id;
+        var title = isMob ? 'Мобильная версия открыта' : 'Раздел «' + tabName + '» открыт';
+        var body = isMob
+            ? 'Мобильная версия готова — теперь сайт удобно открывать прямо с телефона.'
+            : 'Мы дописали раздел, на который вы подписывались, — заходите, он уже ждёт вас в меню.';
         client().from('notifications').insert(subs.map(function (s) {
             return { user_id: s.user_id, title: title, body: body, kind: 'success', created_by: supa().session.user.id };
         })).then(function (res) {
@@ -1385,28 +1421,45 @@
             return '<div class="adm-card"><div class="adm-empty">Загружаем настройки вкладок…</div></div>';
         }
 
-        var rows = GATE_TABS.map(function (t) {
+        var rows = gateList().map(function (t) {
             var g = GC.cfg[t.id];
+            if (!g) { g = GC.cfg[t.id] = { off: false, msg: '', msgKind: 'info' }; }
             var subs = wlByTab(t.id);
             var tgN = subs.filter(function (s) { return s.channel === 'telegram'; }).length;
             var wlTxt = subs.length
                 ? subs.length + ' в списке ожидания' + (tgN ? ' · TG: ' + tgN : '')
                 : 'подписчиков нет';
-            return '<div class="adm-gt-row' + (g.off ? ' off' : '') + '">' +
-                '<div class="adm-gt-name"><b>' + esc(t.t) + '</b><small>' + wlTxt + '</small></div>' +
+            // custom-вкладка, панели которой на сайте ещё нет — честная подсказка
+            if (t.custom && !document.getElementById('panel-' + t.id)) {
+                wlTxt += ' · вкладки ещё нет — заглушка ждёт её появления';
+            }
+            var chip = t.mobile ? '<span class="adm-gt-chip">весь сайт ≤1023px</span>'
+                : (t.custom ? '<span class="adm-gt-chip blue">своя</span>' : '');
+            // мобильной строке баннер не положен: вместо поля и пилюль — пояснение
+            var msgCell = t.mobile
+                ? '<div class="adm-gt-note">Заглушка закрывает всю мобильную версию — на компьютере сайт работает как обычно.</div>'
+                : '<input class="adm-nf-input adm-gt-msg" type="text" maxlength="300" placeholder="Системное сообщение на вкладке (пусто — нет)" data-gt-msg="' + t.id + '" autocomplete="off" spellcheck="false">' ;
+            var kindCell = t.mobile ? '' :
+                '<div class="adm-gt-kind">' +
+                    ctlPill('gt-kind:' + t.id, 'info', 'Инфо', g.msgKind !== 'warn') +
+                    ctlPill('gt-kind:' + t.id, 'warn', 'Важно', g.msgKind === 'warn') +
+                '</div>';
+            return '<div class="adm-gt-row' + (g.off ? ' off' : '') + (t.mobile ? ' mob' : '') + '">' +
+                '<div class="adm-gt-name"><b>' + esc(t.t) + chip + '</b><small>' + wlTxt + '</small></div>' +
                 '<div class="adm-gt-gate">' +
                     '<button class="ph-sw' + (g.off ? ' on' : '') + '" type="button" data-act="gt-off" data-tab="' + t.id + '" role="switch" aria-checked="' + (g.off ? 'true' : 'false') + '" aria-label="Заглушка: ' + esc(t.t) + '"></button>' +
                     '<span class="adm-gt-gate-l">' + (g.off ? 'Заглушка' : 'Открыта') + '</span>' +
                 '</div>' +
-                '<input class="adm-nf-input adm-gt-msg" type="text" maxlength="300" placeholder="Системное сообщение на вкладке (пусто — нет)" data-gt-msg="' + t.id + '" autocomplete="off" spellcheck="false">' +
-                '<div class="adm-gt-kind">' +
-                    ctlPill('gt-kind:' + t.id, 'info', 'Инфо', g.msgKind !== 'warn') +
-                    ctlPill('gt-kind:' + t.id, 'warn', 'Важно', g.msgKind === 'warn') +
+                msgCell + kindCell +
+                '<div class="adm-gt-act">' +
+                    '<button class="adm-btn sm arm2 adm-gt-notify" data-act="gt-notify" data-id="' + t.id + '" data-label="Уведомить"' +
+                        (subs.length && !GC.notifying ? '' : ' disabled') +
+                        ' title="Разослать подписчикам оповещение «раздел открыт» (+ Telegram выбравшим его) и очистить список">' +
+                        IC.bell + '<span>' + (GC.notifying ? 'Шлём…' : 'Уведомить') + '</span></button>' +
+                    (t.custom
+                        ? '<button class="adm-btn sm danger arm2 adm-gt-del" data-act="gt-del" data-id="' + t.id + '" data-label="Убрать" title="Убрать вкладку из списка (настройки и подписка по ней пропадут после сохранения)"><span>Убрать</span></button>'
+                        : '') +
                 '</div>' +
-                '<button class="adm-btn sm arm2 adm-gt-notify" data-act="gt-notify" data-id="' + t.id + '" data-label="Уведомить"' +
-                    (subs.length && !GC.notifying ? '' : ' disabled') +
-                    ' title="Разослать подписчикам оповещение «раздел открыт» (+ Telegram выбравшим его) и очистить список">' +
-                    IC.bell + '<span>' + (GC.notifying ? 'Шлём…' : 'Уведомить') + '</span></button>' +
             '</div>';
         }).join('');
 
@@ -1414,16 +1467,49 @@
             '<div class="adm-gt-head">' +
                 '<div>' +
                     '<div class="adm-card-t">Заглушки и сообщения вкладок</div>' +
-                    '<div class="adm-gt-s">Заглушка закрывает раздел тёмной сценой «в разработке» — авторизованные могут подписаться на новость о готовности. Сообщение — баннер поверх работающей вкладки. Главную и Админку закрыть нельзя.</div>' +
+                    '<div class="adm-gt-s">Заглушка закрывает раздел тёмной сценой в стиле Главной — авторизованные могут подписаться на новость о готовности. Сообщение — баннер поверх работающей вкладки. «Мобильная версия» закрывает весь сайт на телефонах. Главную и Админку закрыть нельзя.</div>' +
                 '</div>' +
                 '<button class="adm-btn sm" data-act="gt-refresh" title="Перечитать настройки и подписчиков"' + (GC.loading ? ' disabled' : '') + '>' + IC.refresh + '</button>' +
             '</div>' +
             '<div class="adm-gt-list">' + rows + '</div>' +
+            '<div class="adm-gt-add">' +
+                '<input class="adm-nf-input" id="admGtKey" type="text" maxlength="24" placeholder="ключ латиницей: news" autocomplete="off" spellcheck="false">' +
+                '<input class="adm-nf-input" id="admGtLabel" type="text" maxlength="40" placeholder="Название вкладки (например «Новости»)" autocomplete="off" spellcheck="false">' +
+                '<button class="adm-btn sm" data-act="gt-add">' + IC.plus + '<span>Добавить вкладку</span></button>' +
+            '</div>' +
+            '<span class="adm-nf-hint">Задел на будущее: ключ = id панели новой вкладки (panel-&lt;ключ&gt;). Добавленная вкладка рождается под заглушкой — как только разработчики выложат саму вкладку, заглушка и подписка применятся к ней автоматически.</span>' +
             '<div class="adm-gt-foot">' +
                 '<button class="adm-btn primary" id="admGtSave" data-act="gt-save"' + ((gatesDirty() && !GC.saving) ? '' : ' disabled') + '>' + IC.check + (GC.saving ? 'Сохраняем…' : 'Сохранить изменения') + '</button>' +
                 '<span class="adm-nf-hint">Изменения вступают в силу у пользователей в течение пары минут (кэш конфига) или при следующем заходе.</span>' +
             '</div>' +
         '</div>';
+    }
+
+    // ---------- свои вкладки (задел на будущее) ----------
+    function addGateTab() {
+        if (!GC.cfg) return;
+        var key = (GC.addKey || '').trim().toLowerCase();
+        var label = (GC.addLabel || '').trim();
+        if (!/^[a-z][a-z0-9-]{1,23}$/.test(key)) {
+            toast('Ключ — латиницей: буквы, цифры, дефис; от 2 до 24 символов', true);
+            return;
+        }
+        var taken = key === 'home' || key === 'admin' ||
+            gateList().some(function (t) { return t.id === key; });
+        if (taken) { toast('Такой ключ уже занят', true); return; }
+        GC.custom[key] = { label: label || key };
+        // новая вкладка рождается закрытой — это её смысл до релиза
+        GC.cfg[key] = { off: true, msg: '', msgKind: 'info' };
+        GC.addKey = '';
+        GC.addLabel = '';
+        renderApp();
+        toast('Вкладка добавлена — не забудьте «Сохранить изменения»');
+    }
+    function removeGateTab(key) {
+        if (!GC.custom[key]) return;
+        delete GC.custom[key];
+        delete GC.cfg[key];
+        renderApp();
     }
 
     // ---------- клики (делегирование) ----------
@@ -1824,6 +1910,8 @@
             case 'gt-save': saveGates(); break;
             case 'gt-refresh': loadGates(true); break;
             case 'gt-notify': notifyGateReady(id); break;
+            case 'gt-add': addGateTab(); break;
+            case 'gt-del': removeGateTab(id); break;
             default:
                 // пилюли типа баннера: data-act="gt-kind:<tab>"
                 if (act && act.indexOf('gt-kind:') === 0 && GC.cfg) {

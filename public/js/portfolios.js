@@ -1184,6 +1184,11 @@
 
     function renderPortfolios() {
         var host = dq('pfWrap'); if (!host) return;
+        // Режим конструктора: фоновые перерисовки (котировки приходят пачками)
+        // глушим — innerHTML-своп сбросил бы перетаскивание/ресайз на полпути.
+        // Собственные перерисовки конструктора идут через pfdRerender().
+        if (dashEdit && !pfdWantRender) return;
+        pfdWantRender = false;
         // favHtml() синхронно дёргает stkEnsureLoaded(): если таблица акций уже
         // загружена, та сразу вызывает onStkCompaniesLoaded()→renderPortfolios(),
         // т.е. рендер вызывает сам себя. Без этого guard'а получается бесконечная
@@ -1226,6 +1231,11 @@
             // без большого бокса, см. ratesStackHtml); иначе — обычный «Календарь выплат»
             var cellCard = noBonds ? ratesStackHtml(needCell, calSpan) : paymentCalendarHtml(needCell, calSpan);
             var body;
+            if (pfdActive()) {
+                // Конструктор: пользовательская раскладка — единая 12-колоночная
+                // сетка, порядок и размеры блоков из pf_dash_v1 (см. секцию выше)
+                body = pfdBodyHtml(favStr, noBonds);
+            } else {
             var gridPart = gridHtml(needCell ? cellCard : '');
             // Календарь/ставки — ВНУТРИ левой колонки (не отдельным блоком во всю ширину
             // страницы), чтобы их ширина совпадала с шириной карточек портфеля и они не
@@ -1243,6 +1253,7 @@
                     '<div class="pf-topgrid-left">' + left + '</div>' +
                     '<div class="pf-topgrid-fav">' + favStr + (store.items.length >= 2 ? summaryCardHtml() : '') + '</div>' +
                 '</div>';
+            }
             // Позиции скролла внутренних списков (мини-таблица состава, календарь, избранное,
             // настройки): innerHTML-своп сбрасывал их в ноль на каждом фоновом обновлении
             // котировок — запоминаем по data-skey и возвращаем после пересборки.
@@ -1481,11 +1492,17 @@
     // ---- панель действий страницы: живёт не в самой вкладке, а в ГЛОБАЛЬНОЙ шапке
     // сайта (#topBarPfActions, слева от «Поиска») — см. renderPortfolios/switchTab ниже.
     // «Импорт» из неё убран — импортировать состав можно из настроек портфеля (⚙).
+    // иконка конструктора: сетка 2×2 (LAYOUT_SVG занят пунктом «Вид»)
+    var PFDGRID_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.6"/></svg>';
     function topBarActionsHtml() {
         return '<button class="d3-quick" onclick="pfAddPortfolio()">' + PLUS_SVG + '<span>Добавить портфель</span></button>' +
             // «Видимость» показываем при 2+ портфелях ИЛИ когда есть сделки (тумблер блока «История сделок»)
             (store.items.length > 1 || hasAnyTrades() ? eyeWrapHtml() : '') +
             viewWrapHtml() +
+            // конструктор раскладки: только десктоп (скрыт в mobile.css), подсветка — раскладка своя
+            (store.items.length
+                ? '<button class="d3-quick ghost pfd-ctl' + (dashCfg.on ? ' on' : '') + '" onclick="pfDashToggleEdit()" title="Настроить раскладку страницы: перетаскивание и размеры блоков">' + PFDGRID_SVG + '<span>Конструктор</span></button>'
+                : '') +
             backupWrapHtml();
     }
     // наполняет/показывает панель действий в глобальной шапке; скрывается при уходе со
@@ -1620,6 +1637,204 @@
         var cards = items.map(function (p, i) { return cardHtml(p, i, i % cols === cols - 1, narrow, narrow && i % cols === 1); }).join('');
         return '<div class="pf-grid' + (narrow ? ' pf-grid--narrow' : '') + '">' + cards + (calCell || '') + '</div>';
     }
+    // ============================================================
+    //  ДАШБОРД-КОНСТРУКТОР — пользовательская раскладка страницы
+    // ============================================================
+    // Полный конструктор: каждый блок страницы (карточки портфелей, календарь,
+    // ставки, история сделок, избранное, сводка) — ячейка единой 12-колоночной
+    // сетки .pfd-grid. В режиме правки (кнопка «Конструктор» в шапке) блоки
+    // перетаскиваются местами (HTML5 DnD, живой предпросмотр перестановки) и
+    // тянутся за правый нижний угол (ширина квантуется в колонки, высота — px).
+    // Раскладка живёт в pf_dash_v1 (+ cloud-sync.WATCH — едет за пользователем):
+    //   { on, order: ['pf:<id>','cal','fav',…], span: {id: 3..12}, h: {id: px} }
+    // Пока on=false — страница рендерится классической двухколоночной вёрсткой.
+    // Только десктоп: на ≤1023px всегда обычная колонка (pfdActive()).
+    var DASH_KEY = 'pf_dash_v1';
+    var dashCfg = loadDashCfg();
+    var dashEdit = false;        // режим правки (не персистится)
+    var pfdWantRender = false;   // наш собственный ре-рендер в режиме правки
+    function loadDashCfg() {
+        try {
+            var c = JSON.parse(localStorage.getItem(DASH_KEY) || 'null') || {};
+            return { on: !!c.on, order: Array.isArray(c.order) ? c.order : [], span: c.span || {}, h: c.h || {} };
+        } catch (e) { return { on: false, order: [], span: {}, h: {} }; }
+    }
+    function saveDashCfg() { try { localStorage.setItem(DASH_KEY, JSON.stringify(dashCfg)); } catch (e) {} }
+    function pfdActive() {
+        if (!dashCfg.on && !dashEdit) return false;
+        try { if (window.matchMedia('(max-width: 1023px)').matches) return false; } catch (e) {}
+        return visibleItems().length > 0;
+    }
+    // Ре-рендер, инициированный самим конструктором: в режиме правки фоновые
+    // перерисовки (котировки) глушатся — innerHTML-своп убил бы перетаскивание.
+    function pfdRerender() { pfdWantRender = true; renderSmooth(); }
+
+    // ---- блоки страницы (порядок по умолчанию = естественный порядок вёрстки) ----
+    function pfdBlocks(favStr, noBonds) {
+        var blocks = [];
+        var narrow = cardViewMode === 'narrow';
+        var defSpan = narrow ? 4 : 6;
+        visibleItems().forEach(function (p, i) {
+            // col-right/col-mid не передаём: в свободной сетке колонка блока заранее
+            // неизвестна, график всегда выезжает вправо от карточки
+            blocks.push({ id: 'pf:' + p.id, html: cardHtml(p, i, false, narrow, false), span: defSpan });
+        });
+        blocks.push({ id: 'cal', html: noBonds ? ratesStackHtml(true, 1) : paymentCalendarHtml(true, 1), span: defSpan });
+        if (!noBonds) blocks.push({ id: 'rates', html: ratesHtml(), span: 12 });
+        var tr = tradesHtml();
+        if (tr) blocks.push({ id: 'trades', html: tr, span: 12 });
+        // обёртка .pf-topgrid-fav сохраняет прицельные стили правой колонки
+        // (одноколоночный .pff-grid и т.п.) и в свободной сетке
+        blocks.push({ id: 'fav', html: '<div class="pf-topgrid-fav pfd-favwrap">' + favStr + '</div>', span: defSpan });
+        if (store.items.length >= 2) {
+            blocks.push({ id: 'sum', html: '<div class="pf-topgrid-fav pfd-favwrap">' + summaryCardHtml() + '</div>', span: defSpan });
+        }
+        return blocks.filter(function (b) { return b.html; });
+    }
+
+    function pfdBodyHtml(favStr, noBonds) {
+        var blocks = pfdBlocks(favStr, noBonds);
+        var byId = {};
+        blocks.forEach(function (b) { byId[b.id] = b; });
+        var ordered = [];
+        (dashCfg.order || []).forEach(function (id) {
+            if (byId[id]) { ordered.push(byId[id]); delete byId[id]; }
+        });
+        blocks.forEach(function (b) { if (byId[b.id]) ordered.push(b); });   // новые блоки — в конец
+
+        var items = ordered.map(function (b) {
+            var span = clamp(+(dashCfg.span[b.id]) || b.span, 3, 12);
+            var h = +(dashCfg.h[b.id]) || 0;
+            var style = 'grid-column: span ' + span + ';' + (h ? 'height:' + clamp(h, 240, 1200) + 'px;' : '');
+            return '<div class="pfd-item' + (h ? ' pfd-hset' : '') + '" data-pfd="' + esc(b.id) + '"' +
+                (dashEdit ? ' draggable="true"' : '') + ' style="' + style + '">' +
+                (dashEdit
+                    ? '<div class="pfd-chrome">' +
+                        '<span class="pfd-size"></span>' +
+                        '<span class="pfd-rs" title="Потяните: ширина — колонками, высота — свободно. Двойной клик — размер по умолчанию"></span>' +
+                      '</div>'
+                    : '') +
+                '<div class="pfd-body">' + b.html + '</div>' +
+            '</div>';
+        }).join('');
+
+        var bar = dashEdit
+            ? '<div class="pfd-bar">' +
+                '<div class="pfd-bar-t"><b>Конструктор дашборда</b>' +
+                    '<span>Перетаскивайте блоки на новые места, размер меняйте за правый нижний угол (сетка — 12 колонок). Всё сохраняется само.</span></div>' +
+                '<div class="pfd-bar-r">' +
+                    '<button class="d3-quick ghost" onclick="pfDashReset()">Вернуть стандартную</button>' +
+                    '<button class="d3-quick" onclick="pfDashToggleEdit()">' + CHECK_SVG + '<span>Готово</span></button>' +
+                '</div>' +
+              '</div>'
+            : '';
+        return bar + '<div class="pfd-grid' + (dashEdit ? ' editing' : '') + '" id="pfdGrid">' + items + '</div>';
+    }
+
+    // ---- вход/выход из режима правки, сброс ----
+    window.pfDashToggleEdit = function () {
+        try { if (window.matchMedia('(max-width: 1023px)').matches) { toast('Конструктор доступен на широком экране', true); return; } } catch (e) {}
+        if (!visibleItems().length) { toast('Сначала добавьте портфель — пока нечего расставлять', true); return; }
+        if (!dashEdit && !dashCfg.on) { dashCfg.on = true; saveDashCfg(); }
+        dashEdit = !dashEdit;
+        closeImpMenus();
+        pfdRerender();
+    };
+    window.pfDashReset = function () {
+        dashCfg = { on: false, order: [], span: {}, h: {} };
+        dashEdit = false;
+        saveDashCfg();
+        pfdRerender();
+        toast('Стандартная раскладка возвращена');
+    };
+
+    // ---- перетаскивание: живая перестановка блоков в сетке ----
+    var pfdDragEl = null;
+    document.addEventListener('dragstart', function (e) {
+        var it = e.target.closest ? e.target.closest('.pfd-item') : null;
+        if (!it || !dashEdit) return;
+        pfdDragEl = it;
+        it.classList.add('pfd-dragging');
+        try {
+            e.dataTransfer.setData('text/plain', it.getAttribute('data-pfd'));
+            e.dataTransfer.effectAllowed = 'move';
+        } catch (err) {}
+    });
+    document.addEventListener('dragover', function (e) {
+        if (!pfdDragEl) return;
+        var grid = document.getElementById('pfdGrid');
+        if (!grid) return;
+        e.preventDefault();     // разрешаем drop
+        var over = e.target.closest ? e.target.closest('.pfd-item') : null;
+        if (!over || over === pfdDragEl || over.parentNode !== grid) return;
+        // живой предпросмотр: тянем вперёд — встаём перед целью, назад — после
+        var kids = Array.prototype.slice.call(grid.children);
+        if (kids.indexOf(over) < kids.indexOf(pfdDragEl)) grid.insertBefore(pfdDragEl, over);
+        else grid.insertBefore(pfdDragEl, over.nextSibling);
+    });
+    document.addEventListener('dragend', function () {
+        if (!pfdDragEl) return;
+        pfdDragEl.classList.remove('pfd-dragging');
+        pfdDragEl = null;
+        pfdSaveOrder();
+    });
+    function pfdSaveOrder() {
+        var grid = document.getElementById('pfdGrid');
+        if (!grid) return;
+        dashCfg.order = Array.prototype.map.call(grid.children, function (el) {
+            return el.getAttribute('data-pfd');
+        }).filter(Boolean);
+        saveDashCfg();
+    }
+
+    // ---- изменение размера за уголок ----
+    document.addEventListener('pointerdown', function (e) {
+        var rs = e.target.closest ? e.target.closest('.pfd-rs') : null;
+        if (!rs || !dashEdit) return;
+        e.preventDefault();
+        var item = rs.closest('.pfd-item');
+        var grid = document.getElementById('pfdGrid');
+        if (!item || !grid) return;
+        var gap = 16;
+        var colW = (grid.getBoundingClientRect().width - gap * 11) / 12;
+        var ir = item.getBoundingClientRect();
+        var id = item.getAttribute('data-pfd');
+        var badge = item.querySelector('.pfd-size');
+        var newSpan = 0, newH = 0;
+        function onMove(ev) {
+            newSpan = clamp(Math.round((ev.clientX - ir.left + gap / 2) / (colW + gap)), 3, 12);
+            newH = clamp(Math.round(ev.clientY - ir.top), 240, 1200);
+            item.style.gridColumn = 'span ' + newSpan;
+            item.style.height = newH + 'px';
+            item.classList.add('pfd-hset');
+            if (badge) badge.textContent = newSpan + ' кол · ' + newH + ' px';
+        }
+        function onUp() {
+            document.removeEventListener('pointermove', onMove);
+            document.removeEventListener('pointerup', onUp);
+            if (badge) badge.textContent = '';
+            if (newSpan) {
+                dashCfg.span[id] = newSpan;
+                dashCfg.h[id] = newH;
+                saveDashCfg();
+            }
+        }
+        document.addEventListener('pointermove', onMove);
+        document.addEventListener('pointerup', onUp);
+    });
+    // двойной клик по уголку — вернуть блоку размер по умолчанию
+    document.addEventListener('dblclick', function (e) {
+        var rs = e.target.closest ? e.target.closest('.pfd-rs') : null;
+        if (!rs || !dashEdit) return;
+        var item = rs.closest('.pfd-item');
+        var id = item && item.getAttribute('data-pfd');
+        if (!id) return;
+        delete dashCfg.span[id];
+        delete dashCfg.h[id];
+        saveDashCfg();
+        pfdRerender();
+    });
+
     // все портфели скрыты — осознанное пустое состояние с кнопкой «показать все»
     function allHiddenHtml() {
         var n = store.items.length;

@@ -518,8 +518,10 @@
         return out;
     }
 
-    function draw() {
-        var box = document.getElementById('hgHeatBg');
+    // Рисует карту в произвольный контейнер. Помимо родного #hgHeatBg этим же
+    // рендером пользуются заглушки вкладок (js/tab-gates.js): их сцена — «Главная
+    // один в один», фон .gx-heat заполняется теми же живыми плитками .hg-tile.
+    function drawInto(box) {
         if (!box || !weights) return;
         var W = box.clientWidth, H = box.clientHeight;
         if (W < 2 || H < 2) return;
@@ -541,6 +543,18 @@
         });
         box.innerHTML = html;
     }
+
+    // Все живые карты на странице: фон Главной + фоны заглушек (.gx-heat)
+    function draw() {
+        drawInto(document.getElementById('hgHeatBg'));
+        var extra = document.querySelectorAll('.gx-heat');
+        for (var i = 0; i < extra.length; i++) drawInto(extra[i]);
+    }
+    // Публичный репейнт для tab-gates.js: данные уже есть — рисуем сразу,
+    // нет — грузим (draw() случится по приходу данных).
+    window.hgHeatRepaint = function () {
+        if (weights && changes) draw(); else load();
+    };
 
     function load() {
         if (!document.getElementById('hgHeatBg')) return;
@@ -564,7 +578,11 @@
     setInterval(function () {
         if (document.hidden) return;
         var p = document.getElementById('panel-home');
-        if (!p || !p.classList.contains('active')) return;
+        var homeActive = !!(p && p.classList.contains('active'));
+        // живая карта видна и на заглушках: активная закрытая вкладка
+        // или полноэкранная заглушка мобильной версии
+        var gateVisible = !!document.querySelector('.tab-panel.active .gx-heat, #gxMobileCover .gx-heat');
+        if (!homeActive && !gateVisible) return;
         load();
     }, 60000);
 

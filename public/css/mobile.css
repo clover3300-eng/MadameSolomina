@@ -360,12 +360,29 @@
     /* Панель уведомлений (звоночек) — так же во всю ширину */
     #nfPanel { top: 58px; right: 8px; left: 8px; width: auto; max-width: none; }
 
-    /* Заглушка вкладки: компактнее поля, плитки крупнее не нужны */
-    .gx-in { padding: 40px 16px; }
-    .gx-title { font-size: 24px; }
+    /* Заглушка вкладки — «Главная один в один»: сетка .hg-cover внутри
+       уже складывается в столбик правилами home-register.css; здесь только
+       поля сцены и оверлей мобильной заглушки (учёт дока-навигации) */
+    .gx-cover { border-radius: 18px; }
+    .gx-cover .hg-cover { padding: 26px 18px 34px; }
+    .gx-cover .hc-title { font-size: 30px; }
+    #gxMobileCover { border-radius: 0; padding-bottom: 0; }
+    #gxMobileCover .hg-cover { padding-bottom: 40px; }
+    /* на телефоне карта-фон слишком пёстрая под текстом — вуаль почти глухая
+       (тёмный аналог мобильного .hg-scrim Главной) */
+    .gx-scrim {
+        background: linear-gradient(180deg,
+            rgba(19, 26, 41, 0.92) 0%,
+            rgba(19, 26, 41, 0.84) 100%);
+    }
     /* Админка → «Вкладки»: строка настроек складывается в столбик */
     .adm-gt-row { grid-template-columns: 1fr 1fr; }
     .adm-gt-row .adm-gt-msg { grid-column: 1 / -1; }
+    .adm-gt-row.mob .adm-gt-note { grid-column: 1 / -1; }
+    .adm-gt-add { grid-template-columns: 1fr; }
+
+    /* Портфели: конструктор раскладки — только десктоп */
+    .pfd-ctl { display: none !important; }
 
     /* Палитра поиска: выше на экране — под ней клавиатура */
     #searchOverlay { padding-top: 10vh; }
