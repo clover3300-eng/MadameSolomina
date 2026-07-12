@@ -1512,9 +1512,10 @@
             // своя раскладка (тогда в меню — тумблеры скрытых изначальных секций)
             (store.items.length > 1 || hasAnyTrades() || dashCfg.on ? eyeWrapHtml() : '') +
             viewWrapHtml() +
-            // конструктор раскладки: только десктоп (скрыт в mobile.css), подсветка — раскладка своя
+            // «＋ Блок»: один клик — сразу выпадающий список «Добавить блок» слева (без промежуточного
+            // шага). Только десктоп (скрыт в mobile.css), точка-индикатор .on = раскладка своя.
             (store.items.length
-                ? '<button class="d3-quick ghost pfd-ctl' + (dashCfg.on ? ' on' : '') + '" onclick="pfDashToggleEdit()" title="Настроить раскладку страницы: перетаскивание и размеры блоков">' + PFDGRID_SVG + '<span>Конструктор</span></button>'
+                ? '<button class="d3-quick ghost pfd-ctl' + (dashCfg.on ? ' on' : '') + '" onclick="pfdOpenAdd(event)" title="Добавить блок на дашборд">' + PFD_PLUS_SVG + '<span>Блок</span></button>'
                 : '') +
             backupWrapHtml();
     }
@@ -2129,11 +2130,9 @@
         var bar = dashEdit
             ? '<div class="pfd-bar">' +
                 '<div class="pfd-bar-m">' + add +
-                    '<div class="pfd-bar-t"><b>Конструктор дашборда</b>' +
-                        '<span>Блоки двигаются и меняются прямо на странице: тяните за руку в правом-верхнем углу, размер — за правую/нижнюю кромку или уголок. Здесь — добавить виджет, отменить и вернуть стандартную раскладку.</span></div>' +
                     '<div class="pfd-bar-r">' +
                         '<button class="d3-quick ghost" onclick="pfdUndo()" title="Отменить последнее изменение раскладки (Cmd/Ctrl+Z)">' + PFD_UNDO_SVG + '<span>Отменить</span></button>' +
-                        '<button class="d3-quick ghost" onclick="pfDashReset()">Вернуть стандартную</button>' +
+                        '<button class="d3-quick ghost" onclick="pfDashReset()" title="Вернуть стандартную раскладку страницы">' + PFDGRID_SVG + '<span>Вернуть стандартную</span></button>' +
                         '<button class="d3-quick" onclick="pfDashToggleEdit()">' + CHECK_SVG + '<span>Готово</span></button>' +
                     '</div>' +
                 '</div>' +
@@ -2167,6 +2166,23 @@
         closeImpMenus();
         pfdRerender();
     };
+    // «＋ Блок» (шапка) — короткий путь: открыть тулбокс И СРАЗУ раскрыть список слева.
+    // Если тулбокс уже открыт — просто переключаем список (не закрываем весь конструктор).
+    window.pfdOpenAdd = function (ev) {
+        if (ev) ev.stopPropagation();
+        if (dashEdit) { pfdPickerToggle(); return; }
+        window.pfDashToggleEdit();          // с гардами/тостами: включит раскладку + тулбокс
+        if (dashEdit) pfdOpenPickerSoon();  // открылся (гарды прошли) → раскрыть список, как только он в DOM
+    };
+    // тулбокс рендерится через renderSmooth (View Transitions — асинхронно): ждём появления
+    // #pfdPicker в DOM и раскрываем список
+    function pfdOpenPickerSoon() {
+        var tries = 0;
+        (function poll() {
+            if (document.getElementById('pfdPicker')) { pfdPickerShow(); return; }
+            if (tries++ < 40) requestAnimationFrame(poll);
+        })();
+    }
     // окно сузилось до мобильной ширины во время правки → автоматически «Готово»:
     // на ≤1023 конструктор неактивен (pfdActive), режим правки не должен висеть
     // заглушкой фоновых рендеров с некликабельным контентом
