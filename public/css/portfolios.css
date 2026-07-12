@@ -2191,27 +2191,61 @@ body.pfd-dragging-now * { cursor: grabbing !important; }
     box-shadow: 0 10px 30px rgba(15, 23, 42, 0.10);
 }
 .pfd-bar-m { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
-/* полка «Добавить блок»: мини-превью скрытых/опт-ин блоков (KPI, график, карта, новости, заметка) */
-.pfd-shelf { display: flex; flex-direction: column; gap: 8px; padding-top: 10px; border-top: 1px dashed #e2e8f0; }
-.pfd-shelf-l { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700; color: #64748b; }
-.pfd-shelf-row { display: flex; flex-wrap: wrap; gap: 9px; }
-.pfd-pv {
-    position: relative; display: flex; flex-direction: column; gap: 6px; width: 116px; padding: 8px 8px 9px; cursor: pointer;
-    border-radius: 13px; border: 1px solid #e6ebf2; background: #fbfcfe;
-    transition: border-color 0.13s, background 0.13s, transform 0.1s, box-shadow 0.13s;
+/* выпадающий список «Добавить блок» СЛЕВА: кнопка-триггер + увеличенные ЖИВЫЕ превью */
+.pfd-addwrap { position: relative; flex-shrink: 0; }
+.pfd-addbtn {
+    display: inline-flex; align-items: center; gap: 7px; padding: 8px 12px; cursor: pointer;
+    border-radius: 11px; border: 1px solid #cfe0ff; background: linear-gradient(#fff, #f4f8ff); color: #1d4ed8;
+    font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 800; letter-spacing: -0.01em;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05); transition: border-color 0.13s, background 0.13s, box-shadow 0.13s;
 }
-.pfd-pv:hover { border-color: #bfdbfe; background: #fff; transform: translateY(-2px); box-shadow: 0 10px 22px -12px rgba(59, 130, 246, 0.5); }
-.pfd-pv-thumb { position: relative; display: block; border-radius: 9px; overflow: hidden; line-height: 0; background: #eef3f8; }
+.pfd-addbtn > svg:first-child { width: 15px; height: 15px; }
+.pfd-addchev { width: 14px; height: 14px; opacity: 0.75; transition: transform 0.18s; }
+.pfd-addbtn:hover { border-color: #93c5fd; box-shadow: 0 6px 16px -8px rgba(59, 130, 246, 0.5); }
+.pfd-addbtn.open { background: #eaf1ff; border-color: #93c5fd; }
+.pfd-addbtn.open .pfd-addchev { transform: rotate(180deg); }
+.pfd-picker {
+    position: absolute; left: 0; top: calc(100% + 9px); z-index: 80; width: 430px; max-width: 82vw;
+    display: none; flex-direction: column; max-height: min(74vh, 760px);
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 18px; overflow: hidden;
+    box-shadow: 0 26px 60px -20px rgba(15, 23, 42, 0.34); animation: pfdPickIn 0.16s ease;
+}
+.pfd-picker.open { display: flex; }
+@keyframes pfdPickIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.pfd-picker-h { padding: 13px 16px 11px; border-bottom: 1px solid #eef2f7; display: flex; flex-direction: column; gap: 2px; }
+.pfd-picker-h b { font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 800; color: #0f172a; }
+.pfd-picker-h span { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #64748b; }
+.pfd-picker-list { display: flex; flex-direction: column; gap: 12px; padding: 14px; overflow-y: auto; }
+/* карточка-превью: живой блок сверху (не кликается), футер с названием и «Добавить» */
+.pfd-pick {
+    position: relative; display: flex; flex-direction: column; cursor: pointer;
+    border-radius: 14px; border: 1px solid #e6ebf2; background: #f8fafc; overflow: hidden;
+    transition: border-color 0.14s, box-shadow 0.14s, transform 0.1s;
+}
+.pfd-pick:hover { border-color: #bfdbfe; box-shadow: 0 12px 26px -14px rgba(59, 130, 246, 0.55); transform: translateY(-2px); }
+.pfd-pick-stage { position: relative; padding: 12px 12px 6px; pointer-events: none; max-height: 320px; overflow: hidden; }
+.pfd-pick-stage > * { margin: 0 !important; }
+.pfd-pick-stage .pfhm-box { height: 150px; }        /* карта в превью — компактнее */
+.pfd-pick-sketch { display: block; padding: 0; background: #eef3f8; }
+.pfd-pick-sketch .pfd-pv-svg { width: 100%; height: auto; display: block; }
+.pfd-pick-tag {
+    position: absolute; top: 10px; right: 10px; z-index: 3; padding: 2px 8px; border-radius: 999px;
+    font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
+    color: #64748b; background: rgba(255, 255, 255, 0.9); border: 1px solid #e2e8f0; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+}
+.pfd-pick-foot { display: flex; align-items: center; gap: 10px; padding: 10px 13px; border-top: 1px solid #eef2f7; background: #fff; }
+.pfd-pick-txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+.pfd-pick-txt b { font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 800; color: #0f172a; }
+.pfd-pick-txt span { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: #64748b; line-height: 1.3; }
+.pfd-pick-add {
+    flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 9px;
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 800; color: #fff; background: #3b82f6;
+    transition: filter 0.12s; white-space: nowrap;
+}
+.pfd-pick-add svg { width: 13px; height: 13px; }
+.pfd-pick:hover .pfd-pick-add { filter: brightness(1.07); }
+/* палитра эскизов превью (примеры без портфелей) */
 .pfd-pv-svg { display: block; width: 100%; height: auto; }
-.pfd-pv-add {
-    position: absolute; top: 5px; right: 5px; width: 18px; height: 18px; border-radius: 50%;
-    display: inline-flex; align-items: center; justify-content: center; color: #fff; background: #3b82f6;
-    opacity: 0; transform: scale(0.7); transition: opacity 0.13s, transform 0.13s; box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4);
-}
-.pfd-pv-add svg { width: 11px; height: 11px; }
-.pfd-pv:hover .pfd-pv-add { opacity: 1; transform: scale(1); }
-.pfd-pv-name { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700; color: #334155; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* палитра эскизов превью */
 .pfd-pv-svg .pv-card { fill: #fff; stroke: #e6ebf2; stroke-width: 1; }
 .pfd-pv-svg .pv-accent { fill: #3b82f6; }
 .pfd-pv-svg .pv-strong { fill: #cbd5e1; }
@@ -2587,12 +2621,20 @@ body.dark-mode .pfd-bar-t span { color: #9fb1c6; }
 body.dark-mode .pfd-size { background: rgba(9, 14, 24, 0.9); }
 body.dark-mode .pfd-hide { color: #9fb1c6; background: #0f172a; border-color: #27324a; }
 body.dark-mode .pfd-hide:hover { color: #f87171; border-color: #7f1d1d; background: #1c1017; }
-body.dark-mode .pfd-shelf { border-top-color: #27324a; }
-body.dark-mode .pfd-shelf-l { color: #9fb1c6; }
-body.dark-mode .pfd-pv { background: #16213a; border-color: #27324a; }
-body.dark-mode .pfd-pv:hover { background: #1a2740; border-color: #2f4a8a; box-shadow: 0 10px 22px -12px rgba(59, 130, 246, 0.55); }
-body.dark-mode .pfd-pv-name { color: #cbd5e1; }
-body.dark-mode .pfd-pv-thumb { background: #0f1a2e; }
+body.dark-mode .pfd-addbtn { background: #16233f; border-color: #2f4a8a; color: #93c5fd; box-shadow: none; }
+body.dark-mode .pfd-addbtn:hover { border-color: #3b62b8; }
+body.dark-mode .pfd-addbtn.open { background: #1c2b52; border-color: #3b62b8; }
+body.dark-mode .pfd-picker { background: #101a2c; border-color: #27324a; box-shadow: 0 26px 60px -20px rgba(0, 0, 0, 0.66); }
+body.dark-mode .pfd-picker-h { border-bottom-color: #22304a; }
+body.dark-mode .pfd-picker-h b { color: #e8f0fb; }
+body.dark-mode .pfd-picker-h span { color: #9fb1c6; }
+body.dark-mode .pfd-pick { background: #16213a; border-color: #27324a; }
+body.dark-mode .pfd-pick:hover { border-color: #2f4a8a; box-shadow: 0 12px 26px -14px rgba(59, 130, 246, 0.5); }
+body.dark-mode .pfd-pick-foot { background: #131d31; border-top-color: #22304a; }
+body.dark-mode .pfd-pick-txt b { color: #e8f0fb; }
+body.dark-mode .pfd-pick-txt span { color: #9fb1c6; }
+body.dark-mode .pfd-pick-tag { background: rgba(16, 26, 44, 0.85); border-color: #2a3856; color: #9fb1c6; }
+body.dark-mode .pfd-pick-sketch { background: #0f1a2e; }
 body.dark-mode .pfd-pv-svg .pv-card { fill: #1c2942; stroke: #2a3856; }
 body.dark-mode .pfd-pv-svg .pv-strong { fill: #46587a; }
 body.dark-mode .pfd-pv-svg .pv-soft { fill: #3a4a68; }

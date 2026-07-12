@@ -1865,6 +1865,91 @@
         if (id === 'news') return PFD_PV.news;
         return PFD_PV.gen;
     }
+    var PFD_CHEVDOWN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" class="pfd-addchev"><polyline points="6 9 12 15 18 9"/></svg>';
+    var PFD_PICK_DESC = {
+        'kpi:cap': 'Суммарный капитал и прибыль по всем портфелям',
+        'kpi:day': 'Изменение стоимости за сегодня',
+        'kpi:next': 'Ближайшая купонная или дивидендная выплата',
+        'cap': 'Линия стоимости всех портфелей по дням',
+        'heat': 'Тепловая карта индекса Мосбиржи — размер по весу, цвет за день',
+        'news': 'Свежие новости по бумагам ваших портфелей',
+        '__note': 'Заметки, списки задач и сроки прямо на дашборде'
+    };
+    // ---- выпадающий список «Добавить блок» слева: увеличенные ЖИВЫЕ превью ----
+    // Скрытые блоки в дашборде отсутствуют → живая копия в выпадашке — единственная в
+    // #pfWrap, её и наполняют штатные pfdHeatRepaintSoon/renderPosNews (карта/новости).
+    // Заметку показываем ПРИМЕРОМ (это пользовательский контент, «скрытой» заметки нет).
+    var pfdShelfBlocks = [];    // стэш скрытых блоков {id,name,htmlFn} из pfdBodyHtml
+    var pfdPickerOpen = false;
+    function pfdNoteExampleHtml() {
+        return '<div class="dash2-card pf-card2 pf-noteblk pfnt-c-amber pfnt-fill-edge">' +
+            '<div class="pf-ch pfnt-head"><div class="pf-ch-l">' +
+                '<span class="pfnt-colorwrap"><span class="pfnt-badge">' + NOTE_ICON_SVG + '</span></span>' +
+                '<span class="pfnt-title">Заметка</span></div></div>' +
+            '<div class="pfnt-list">' +
+                '<div class="pfnt-row pfnt-row--text"><div class="pfnt-tx">Идеи и план по портфелю</div></div>' +
+                '<div class="pfnt-row pfnt-row--bullet"><span class="pfnt-dash"></span><div class="pfnt-tx">Докупить ОФЗ на просадке</div></div>' +
+                '<div class="pfnt-row pfnt-row--check done"><span class="pfnt-check on">' + NOTE_CHECK_SVG + '</span><div class="pfnt-tx">Ребаланс раз в квартал</div></div>' +
+            '</div>' +
+            '<div class="pfnt-duewrap"><div class="pfnt-due set soon"><span class="pfnt-due-ic">' + NOTE_CLOCK_SVG + '</span>' +
+                '<span class="pfnt-due-main"><span class="pfnt-due-date">через 3 дня</span><span class="pfnt-cd-static">осталось 3 дн</span></span></div></div>' +
+        '</div>';
+    }
+    function pfdPickCard(id, name, block, noPf) {
+        var desc = PFD_PICK_DESC[id] || '';
+        var stage;
+        if (id === '__note') {
+            stage = '<div class="pfd-pick-stage">' + pfdNoteExampleHtml() + '</div><span class="pfd-pick-tag">пример</span>';
+        } else if (noPf) {
+            // портфели не собраны → крупный эскиз-пример вместо пустого живого блока
+            stage = '<div class="pfd-pick-stage pfd-pick-sketch">' + pfdBlockPreviewSvg(id) + '</div><span class="pfd-pick-tag">пример</span>';
+        } else {
+            stage = '<div class="pfd-pick-stage">' + (block ? block.htmlFn() : '') + '</div>';
+        }
+        var onclick = id === '__note' ? 'pfdAddNote()' : ('pfdShowBlock(\'' + jsArg(id) + '\')');
+        return '<div class="pfd-pick" onclick="' + onclick + '" role="button" tabindex="0" title="Добавить на дашборд">' +
+            stage +
+            '<div class="pfd-pick-foot">' +
+                '<div class="pfd-pick-txt"><b>' + esc(name) + '</b>' + (desc ? '<span>' + esc(desc) + '</span>' : '') + '</div>' +
+                '<span class="pfd-pick-add">' + PFD_PLUS_SVG + 'Добавить</span>' +
+            '</div>' +
+        '</div>';
+    }
+    function pfdPickerInner() {
+        // «портфели не собраны» = нет вложений/стоимости ни в одном (пустые портфели):
+        // живые блоки были бы пустыми → показываем примеры. invested берётся из лотов,
+        // не зависит от живых котировок, поэтому проверка надёжна и без сети.
+        var noPf = !visibleItems().some(function (p) { var c = calcPf(p); return c && (c.invested > 0 || c.value > 0); });
+        var cards = pfdShelfBlocks.map(function (b) { return pfdPickCard(b.id, b.name || b.id, b, noPf); });
+        cards.push(pfdPickCard('__note', 'Заметка', null, noPf));
+        var hint = noPf
+            ? 'Соберите портфель — и здесь появятся ваши живые данные. Пока показаны примеры.'
+            : 'Живой предпросмотр с вашими данными. Нажмите карточку, чтобы добавить.';
+        return '<div class="pfd-picker-h"><b>Что добавить</b><span>' + hint + '</span></div>' +
+            '<div class="pfd-picker-list">' + cards.join('') + '</div>';
+    }
+    window.pfdPickerToggle = function (ev) {
+        if (ev) ev.stopPropagation();
+        if (pfdPickerOpen) pfdPickerClose(); else pfdPickerShow();
+    };
+    function pfdPickerShow() {
+        var host = document.getElementById('pfdPicker'); if (!host) return;
+        host.innerHTML = pfdPickerInner();
+        host.classList.add('open');
+        var btn = document.querySelector('#pfWrap .pfd-addbtn'); if (btn) btn.classList.add('open');
+        pfdPickerOpen = true;
+        // оживить карту/новости в превью (реальные блоки скрыты → селекторы бьют сюда)
+        requestAnimationFrame(function () {
+            try { if (document.querySelector('#pfdPicker .pfhm-box')) pfdHeatRepaintSoon(); } catch (e) {}
+            try { if (document.querySelector('#pfdPicker .pf-newsblk')) renderPosNews(); } catch (e) {}
+        });
+    }
+    function pfdPickerClose() {
+        var host = document.getElementById('pfdPicker'); if (host) { host.classList.remove('open'); host.innerHTML = ''; }
+        var btn = document.querySelector('#pfWrap .pfd-addbtn'); if (btn) btn.classList.remove('open');
+        pfdPickerOpen = false;
+    }
+    window.pfdPickerCloseIfOpen = function () { if (pfdPickerOpen) pfdPickerClose(); };
 
     function pfdBodyHtml(favStr, noBonds) {
         var blocks = pfdBlocks(favStr, noBonds);
@@ -1900,22 +1985,22 @@
             '</div>';
         }).join('');
 
-        // полка «Добавить блок»: мини-превью скрытых опт-ин блоков + всегда «Заметка»
-        var shelf = '';
-        if (dashEdit) {
-            function pvTile(id, name, onclick) {
-                return '<button class="pfd-pv" onclick="' + onclick + '" title="Добавить: ' + attr(name) + '">' +
-                    '<span class="pfd-pv-thumb">' + pfdBlockPreviewSvg(id) + '<span class="pfd-pv-add">' + PFD_PLUS_SVG + '</span></span>' +
-                    '<span class="pfd-pv-name">' + esc(name) + '</span>' +
-                '</button>';
-            }
-            var tiles = hiddenB.map(function (b) { return pvTile(b.id, b.name || b.id, 'pfdShowBlock(\'' + jsArg(b.id) + '\')'); });
-            tiles.push(pvTile('__note', 'Заметка', 'pfdAddNote()'));
-            shelf = '<div class="pfd-shelf"><span class="pfd-shelf-l">Добавить блок</span><div class="pfd-shelf-row">' + tiles.join('') + '</div></div>';
-        }
+        // выпадающий список «Добавить блок» СЛЕВА: живые превью скрытых опт-ин блоков
+        // (или примеры, если портфели не собраны) + всегда «Заметка». Содержимое
+        // выпадашки собирается ЛЕНИВО при открытии (pfdPickerShow) — блоки тяжёлые.
+        pfdShelfBlocks = hiddenB.slice();
+        pfdPickerOpen = false;   // при каждом ре-рендере бара выпадашка закрыта
+        var add = dashEdit
+            ? '<div class="pfd-addwrap">' +
+                '<button class="pfd-addbtn" onclick="pfdPickerToggle(event)" aria-label="Добавить блок">' +
+                    PFD_PLUS_SVG + '<span>Добавить блок</span>' + PFD_CHEVDOWN_SVG +
+                '</button>' +
+                '<div class="pfd-picker" id="pfdPicker"></div>' +
+              '</div>'
+            : '';
         var bar = dashEdit
             ? '<div class="pfd-bar">' +
-                '<div class="pfd-bar-m">' +
+                '<div class="pfd-bar-m">' + add +
                     '<div class="pfd-bar-t"><b>Конструктор дашборда</b>' +
                         '<span>Тяните блок за любое место, размер — за уголок (12 колонок, высота — свободно). Крестик прячет блок, Esc — готово.</span></div>' +
                     '<div class="pfd-bar-r">' +
@@ -1923,7 +2008,7 @@
                         '<button class="d3-quick ghost" onclick="pfDashReset()">Вернуть стандартную</button>' +
                         '<button class="d3-quick" onclick="pfDashToggleEdit()">' + CHECK_SVG + '<span>Готово</span></button>' +
                     '</div>' +
-                '</div>' + shelf +
+                '</div>' +
               '</div>'
             : '';
         return bar + '<div class="pfd-grid pfd-masonry' + (dashEdit ? ' editing' : '') + '" id="pfdGrid">' + items + '</div>';
@@ -1977,6 +2062,7 @@
         pfdRerender();
     };
     window.pfdShowBlock = function (id) {
+        pfdPickerClose();   // снять живые превью до ре-рендера (иначе филлеры бьют в них)
         pfdPushUndo();
         dashCfg.hidden[id] = 0;
         saveDashCfg();
@@ -2028,6 +2114,7 @@
         });
     }
     window.pfdAddNote = function () {
+        pfdPickerClose();   // снять живой пример-заметку из выпадашки до ре-рендера
         pfdFlushNotes();
         pfdPushUndo();
         var id = genId('n');
@@ -2364,10 +2451,16 @@
             pfdNoteClrOpen = null;
         }
         if (pfdCal && !(t && t.closest && t.closest('.pfnt-duewrap'))) pfdCalClose();
+        // выпадашка «Добавить блок»: клик вне неё и не по кнопке — закрыть
+        if (pfdPickerOpen && !(t && t.closest && t.closest('.pfd-addwrap'))) pfdPickerClose();
     });
-    // Esc закрывает открытый календарь срока
+    // Esc закрывает открытый календарь срока / выпадашку добавления блока
     document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && pfdCal) { e.stopPropagation(); pfdCalClose(); }
+        if (e.key !== 'Escape') return;
+        // stopImmediatePropagation — иначе тот же Esc долетит до хендлера выхода из
+        // режима правки (ниже) и закроет ВЕСЬ конструктор, а не только поповер
+        if (pfdCal) { e.stopImmediatePropagation(); pfdCalClose(); }
+        else if (pfdPickerOpen) { e.stopImmediatePropagation(); pfdPickerClose(); }
     });
     document.addEventListener('keydown', function (e) {
         if (!dashEdit || (!e.metaKey && !e.ctrlKey) || e.shiftKey || String(e.key).toLowerCase() !== 'z') return;
