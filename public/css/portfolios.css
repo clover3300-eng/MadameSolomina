@@ -1551,6 +1551,12 @@ body.dark-mode .pft-yr-sum { color: #aeb9c8; }
     .pft-hrow, .pft-row, .pft-yr,
     .pf-trades.has-pf .pft-hrow, .pf-trades.has-pf .pft-row { min-width: 880px; }
 }
+/* «История сделок» в КОНСТРУКТОРЕ: блок бывает узким при широком окне (оконный
+   брейкпоинт выше не срабатывает) → колонки резались. Таблица широкая (~880px) —
+   в узком блоке не режем колонки, а даём горизонтальный скролл, как на узком экране. */
+.pfd-item .pft-body { overflow-x: auto; scrollbar-width: thin; }
+.pfd-item .pft-hrow, .pfd-item .pft-row, .pfd-item .pft-yr,
+.pfd-item .pf-trades.has-pf .pft-hrow, .pfd-item .pf-trades.has-pf .pft-row { min-width: 880px; }
 
 /* ============================================================
    РАЗВОРОТ ПОРТФЕЛЯ — модалка поверх контента (в <body>)
@@ -2042,11 +2048,29 @@ body.dark-mode .pfpc-kind.kind-red { color: #93c5fd; background: rgba(61,111,209
 .pfd-item { position: relative; min-width: 0; display: flex; flex-direction: column; }
 .pfd-body { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
 .pfd-body > * { min-width: 0; }
-/* ручная высота: внутренняя карточка заполняет обёртку (перебивает фикс-674px);
-   если контент отказывается ужиматься (min-height внутри) — блок скроллится,
-   а не вылезает за границы */
-.pfd-item.pfd-hset .pfd-body { overflow-y: auto; overflow-x: hidden; border-radius: 20px; }
-.pfd-item.pfd-hset .pfd-body > * { height: 100%; flex: 1; box-sizing: border-box; }
+/* ручная высота: карточка заполняет блок и СКРОЛЛИТСЯ ВНУТРИ своей области-списка
+   (шапка и рамка карточки закреплены). Раньше прокручивался сам .pfd-body — он уносил
+   карту ЦЕЛИКОМ, и при прокрутке верхняя граница/шапка уезжали под обрез («пропадает
+   верхняя граница»). Теперь .pfd-body только КЛИПует по границе блока (рамка карточки на
+   месте), а перелив берут на себя внутренние скролл-области карточек
+   (.pfc-massets/.pff-body/.pfpc-body/.pft-body). radius = скругление карточек (28px). */
+.pfd-item.pfd-hset .pfd-body { overflow: hidden; border-radius: 28px; }
+.pfd-item.pfd-hset .pfd-body > * { height: 100%; min-height: 0; flex: 1; box-sizing: border-box; }
+/* «История сделок» — блочная карта (.pf-card2, не флекс): делаем флекс-колонкой, чтобы
+   список сделок скроллился ВНУТРИ .pft-body, а шапка с рамкой оставались закреплены */
+.pfd-item.pfd-hset .pf-trades { display: flex; flex-direction: column; }
+.pfd-item.pfd-hset .pf-trades .pft-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+/* Портфель: у карточки закреплена шапка (.pfc-top), а ВСЁ ниже (герой + мини-график +
+   список состава) скроллится единым блоком .pfc-normal. Иначе высокий герой не
+   помещался в короткий блок и переливался за нижнюю грань. Внутренний скролл списка
+   (.pfc-massets) отключаем — чтобы не было ДВОЙНОГО скролла внутри .pfc-normal. */
+.pfd-item.pfd-hset .pfc-top { flex-shrink: 0; }
+.pfd-item.pfd-hset .pfc-normal { overflow-y: auto; scrollbar-width: thin; }
+.pfd-item.pfd-hset .pfc-massets { overflow: visible; flex: 0 0 auto; }
+/* когда в карточке открыт флайаут (настройки/график/меню выходят ЗА блок) — снимаем
+   клип, иначе в блоке с ручной высотой они бы обрезались; флайаут overlay-ем ложится
+   поверх соседей, как и в обычной сетке */
+.pfd-item.pfd-hset:has(.menu-open, .chart-open, .pf-card--tall) .pfd-body { overflow: visible; }
 /* «Ставки» с ручной высотой: полоса-флекс тянет сетку плиток на всю высоту блока,
    ряды растягиваются равномерно — потянув блок выше, пользователь ЗАПОЛНЯЕТ пустоту
    плитками, а не оставляет мёртвое поле снизу (жалоба «пространство не заполнить») */
