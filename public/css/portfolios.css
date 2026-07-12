@@ -2205,10 +2205,10 @@ body.pfd-dragging-now * { cursor: grabbing !important; }
 .pfd-addbtn.open { background: #eaf1ff; border-color: #93c5fd; }
 .pfd-addbtn.open .pfd-addchev { transform: rotate(180deg); }
 .pfd-picker {
-    position: absolute; left: 0; top: calc(100% + 9px); z-index: 80; width: 300px; max-width: 82vw;
+    position: absolute; left: 0; top: calc(100% + 5px); z-index: 80; width: 300px; max-width: 82vw;
     display: none; flex-direction: column; max-height: min(74vh, 620px);
-    background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden;
-    box-shadow: 0 26px 60px -20px rgba(15, 23, 42, 0.34); animation: pfdPickIn 0.16s ease;
+    background: #fff; border: 1px solid #dbe4f0; border-radius: 14px; overflow: hidden;
+    box-shadow: 0 18px 40px -18px rgba(15, 23, 42, 0.3); animation: pfdPickIn 0.14s ease; transform-origin: top left;
 }
 .pfd-picker.open { display: flex; }
 @keyframes pfdPickIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
@@ -2232,14 +2232,21 @@ body.pfd-dragging-now * { cursor: grabbing !important; }
 }
 .pfd-pick-add svg { width: 14px; height: 14px; }
 .pfd-pick:hover .pfd-pick-add, .pfd-pick.active .pfd-pick-add { background: #2563eb; color: #fff; }
-/* поповер-превью СПРАВА от списка — появляется при наведении на строку */
+/* поповер-превью СПРАВА от списка — появляется на уровне наведённой строки (top из JS) */
 .pfd-pickpv {
-    position: absolute; left: 312px; top: calc(100% + 9px); z-index: 81; width: 372px; max-width: 46vw;
-    display: none; background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden;
-    box-shadow: 0 26px 60px -20px rgba(15, 23, 42, 0.34); animation: pfdPickIn 0.16s ease;
+    position: absolute; left: 310px; top: calc(100% + 5px); z-index: 81; width: 372px; max-width: 46vw;
+    display: none; max-height: min(80vh, 640px); overflow: hidden;
+    background: #fff; border: 1px solid #dbe4f0; border-radius: 14px;
+    box-shadow: 0 22px 48px -20px rgba(15, 23, 42, 0.32); animation: pfdPickIn 0.14s ease;
 }
-.pfd-pickpv.show { display: block; }
-.pfd-pick-stage { position: relative; padding: 14px; pointer-events: none; max-height: 440px; overflow: hidden; }
+.pfd-pickpv.show { display: flex; flex-direction: column; }
+.pfd-pickpv-h { display: flex; align-items: center; gap: 8px; padding: 10px 13px; border-bottom: 1px solid #eef2f7; flex-shrink: 0; }
+.pfd-pickpv-h b { font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 800; color: #0f172a; }
+.pfd-pickpv-badge {
+    padding: 2px 8px; border-radius: 999px; font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.05em; color: #b4780c; background: #fdf3da; border: 1px solid #f2ddac;
+}
+.pfd-pick-stage { position: relative; padding: 13px; pointer-events: none; overflow: hidden; }
 .pfd-pick-stage > * { margin: 0 !important; }
 .pfd-pick-stage .pfhm-box { height: 168px; }        /* карта в превью — компактнее */
 .pfd-pick-sketch { display: block; padding: 0; background: #eef3f8; }
@@ -2379,11 +2386,12 @@ body.dark-mode .pfhm-tile:hover { box-shadow: inset 0 0 0 2px rgba(255, 255, 255
 .pfnw-item:hover .pfnw-item-go { color: var(--pf-accent); transform: translate(1px, -1px); }
 .pfnw-empty { padding: 22px 6px; font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 600; color: #8494a7; line-height: 1.5; }
 /* превью новости — оверлей поверх контента карточки */
-.pfnw-preview { position: absolute; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; padding: 16px;
-    background: rgba(248, 250, 253, 0.72); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); border-radius: 28px; animation: pfnwPvIn 0.16s ease; }
-@keyframes pfnwPvIn { from { opacity: 0; } to { opacity: 1; } }
-.pfnw-pv-card { width: 100%; max-width: 340px; max-height: 100%; overflow-y: auto; display: flex; flex-direction: column; gap: 9px;
-    padding: 16px 17px 17px; border-radius: 16px; background: #fff; border: 1px solid #e6ecf4; box-shadow: 0 24px 50px -20px rgba(24, 38, 60, 0.4); }
+/* превью новости: РАСКРЫВАЕТСЯ СВЕРХУ ВНИЗ поверх контента карточки (не модалка-по-центру) */
+.pfnw-preview { position: absolute; inset: 0; z-index: 30; overflow-y: auto;
+    background: #fff; border-radius: inherit; animation: pfnwPvDown 0.2s ease; }
+@keyframes pfnwPvDown { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
+.pfnw-pv-card { width: 100%; display: flex; flex-direction: column; gap: 9px;
+    padding: 15px 16px 16px; background: transparent; border: 0; border-radius: 0; box-shadow: none; }
 .pfnw-pv-head { display: flex; align-items: center; gap: 9px; }
 .pfnw-pv-tk { padding: 3px 10px; border-radius: 8px; border: 0; cursor: pointer; font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12px; font-weight: 800; color: #1d4ed8; background: #e8f0ff; transition: background 0.12s; }
 .pfnw-pv-tk:hover { background: #d7e6ff; }
@@ -2430,28 +2438,36 @@ body.dark-mode .pfhm-tile:hover { box-shadow: inset 0 0 0 2px rgba(255, 255, 255
 .pfnt-badge svg { width: 17px; height: 17px; }
 .pfnt-badge:hover { transform: translateY(-1px); background: color-mix(in srgb, var(--nt) 22%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--nt) 32%, transparent), 0 3px 10px -4px color-mix(in srgb, var(--nt) 60%, transparent); }
 .pfnt-colorpop {
-    position: absolute; top: calc(100% + 9px); left: -6px; z-index: 240; display: none; flex-direction: column; gap: 8px;
-    padding: 10px; background: #fff; border: 1px solid rgba(24, 38, 60, 0.1); border-radius: 13px;
+    position: absolute; top: calc(100% + 9px); left: -6px; z-index: 240; display: none; flex-direction: column; gap: 5px;
+    width: 224px; padding: 11px 12px 12px; background: #fff; border: 1px solid rgba(24, 38, 60, 0.1); border-radius: 14px;
     box-shadow: 0 18px 40px -16px rgba(24, 38, 60, 0.38);
 }
 .pfnt-colorpop.open { display: flex; }
-.pfnt-pop-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.pfnt-pop-sec { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #9aa6b6; }
+.pfnt-pop-sec:not(:first-child) { margin-top: 5px; }
+.pfnt-pop-row { display: flex; gap: 6px; }
 /* свотчи-прямоугольники со скруглением — уменьшенное эхо полей формы регистрации */
 .pfnt-sw {
-    width: 36px; height: 22px; border-radius: 8px; padding: 0; cursor: pointer;
+    position: relative; flex: 1; height: 24px; border-radius: 7px; padding: 0; cursor: pointer;
     background: var(--sw); border: 1.5px solid #fff; box-shadow: 0 0 0 1px rgba(24, 38, 60, 0.12);
     transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 .pfnt-sw:hover { transform: translateY(-1px); }
 .pfnt-sw.on { box-shadow: 0 0 0 2px var(--sw); }
-/* переключатель заливки: кант слева | вся карточка — иконками */
-.pfnt-pop-fills { display: flex; gap: 6px; padding-top: 8px; border-top: 1px solid #eef1f6; }
+.pfnt-sw.on::after {
+    content: ''; position: absolute; inset: 0; margin: auto; width: 6px; height: 10px; box-sizing: border-box;
+    border: solid #fff; border-width: 0 2.2px 2.2px 0; transform: translateY(-1px) rotate(45deg);
+    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.35));
+}
+/* переключатель заливки: кант слева | вся карточка — иконка + подпись */
+.pfnt-pop-fills { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .pfnt-fillb {
-    flex: 1; height: 26px; border-radius: 8px; padding: 0; cursor: pointer;
-    display: inline-flex; align-items: center; justify-content: center; color: #94a3b8;
+    display: flex; align-items: center; justify-content: center; gap: 6px; height: 34px; border-radius: 9px; padding: 0 6px; cursor: pointer;
+    font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 700; color: #7a8798;
     background: #f5f7fb; border: 1px solid #e6ebf2; transition: color 0.12s, background 0.12s, border-color 0.12s;
 }
-.pfnt-fillb svg { width: 20px; height: 16px; }
+.pfnt-fillb svg { width: 17px; height: 14px; flex-shrink: 0; }
+.pfnt-fillb span { white-space: nowrap; }
 .pfnt-fillb:hover { color: var(--nt); border-color: color-mix(in srgb, var(--nt) 40%, #e6ebf2); }
 .pfnt-fillb.on { color: var(--nt); border-color: var(--nt); background: color-mix(in srgb, var(--nt) 12%, #fff); }
 .pfnt-title {
@@ -2552,6 +2568,14 @@ body.dark-mode .pfhm-tile:hover { box-shadow: inset 0 0 0 2px rgba(255, 255, 255
 }
 .pfnt-cal.open { display: flex; }
 .pfnt-cal.down { top: calc(100% + 8px); bottom: auto; }
+/* сегмент «День | Период» */
+.pfnt-cal-modes { display: flex; gap: 3px; padding: 3px; border-radius: 10px; background: #eef1f6; }
+.pfnt-cal-mode {
+    flex: 1; padding: 6px 0; border: 0; border-radius: 8px; cursor: pointer; background: none;
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700; color: #64748b; transition: background 0.13s, color 0.13s, box-shadow 0.13s;
+}
+.pfnt-cal-mode:hover { color: var(--nt); }
+.pfnt-cal-mode.on { background: #fff; color: var(--nt); box-shadow: 0 1px 3px rgba(24, 38, 60, 0.12); }
 .pfnt-cal-presets { display: flex; flex-wrap: wrap; gap: 5px; }
 .pfnt-cal-preset {
     padding: 4px 9px; border-radius: 999px; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 700;
@@ -2579,6 +2603,15 @@ body.dark-mode .pfhm-tile:hover { box-shadow: inset 0 0 0 2px rgba(255, 255, 255
 .pfnt-cal-d.past { color: #c0cad6; }
 .pfnt-cal-d.today { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--nt) 45%, #cbd5e1); }
 .pfnt-cal-d.sel { background: var(--nt); color: #fff; font-weight: 700; box-shadow: none; }
+/* диапазон-период: концы — заливкой (со скруглением наружу), середина — светлым тоном */
+.pfnt-cal-d.inrange { background: color-mix(in srgb, var(--nt) 15%, #f1f5f9); color: color-mix(in srgb, var(--nt) 70%, #334155); border-radius: 0; }
+.pfnt-cal-d.rstart, .pfnt-cal-d.rend { background: var(--nt); color: #fff; font-weight: 700; box-shadow: none; }
+.pfnt-cal-d.rstart { border-radius: 8px 0 0 8px; }
+.pfnt-cal-d.rend { border-radius: 0 8px 8px 0; }
+.pfnt-cal-hint {
+    font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: color-mix(in srgb, var(--nt) 55%, #64748b);
+    text-align: center; padding: 1px 0 2px;
+}
 .pfnt-cal-time { display: flex; align-items: center; gap: 7px; padding-top: 9px; border-top: 1px solid #eef1f6; color: #94a3b8; }
 .pfnt-cal-time svg { width: 15px; height: 15px; flex-shrink: 0; }
 .pfnt-cal-time > span { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: #64748b; }
@@ -2639,6 +2672,9 @@ body.dark-mode .pfd-pick:hover, body.dark-mode .pfd-pick.active { background: #1
 body.dark-mode .pfd-pick-add { background: #1c2b52; color: #93c5fd; }
 body.dark-mode .pfd-pick:hover .pfd-pick-add, body.dark-mode .pfd-pick.active .pfd-pick-add { background: #2563eb; color: #fff; }
 body.dark-mode .pfd-pickpv { background: #101a2c; border-color: #27324a; box-shadow: 0 26px 60px -20px rgba(0, 0, 0, 0.66); }
+body.dark-mode .pfd-pickpv-h { border-bottom-color: #22304a; }
+body.dark-mode .pfd-pickpv-h b { color: #e8f0fb; }
+body.dark-mode .pfd-pickpv-badge { color: #f0c66a; background: #2a230f; border-color: #4a3c17; }
 body.dark-mode .pfd-pick-txt b { color: #e8f0fb; }
 body.dark-mode .pfd-pick-txt span { color: #9fb1c6; }
 body.dark-mode .pfd-pick-tag { background: rgba(16, 26, 44, 0.85); border-color: #2a3856; color: #9fb1c6; }
@@ -2657,6 +2693,7 @@ body.dark-mode .pfcap-empty-t { color: #cbd5e1; }
 body.dark-mode .pfcap-empty-s { color: #8fa2b8; }
 body.dark-mode .pfnt-badge { background: color-mix(in srgb, var(--nt) 24%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--nt) 34%, transparent); }
 body.dark-mode .pfnt-colorpop { background: #18222e; border-color: rgba(255, 255, 255, 0.1); box-shadow: 0 18px 40px -16px rgba(0, 0, 0, 0.6); }
+body.dark-mode .pfnt-pop-sec { color: #7f8da0; }
 body.dark-mode .pfnt-sw { border-color: #18222e; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14); }
 body.dark-mode .pfnt-sw.on { box-shadow: 0 0 0 2px var(--sw); }
 body.dark-mode .pfnt-title { color: color-mix(in srgb, var(--nt) 55%, #cbd5e1); }
@@ -2691,7 +2728,11 @@ body.dark-mode .pfnt-cal-nav { background: #101826; border-color: #27324a; color
 body.dark-mode .pfnt-cal-wd { color: #64748b; }
 body.dark-mode .pfnt-cal-d { color: #cbd6e4; }
 body.dark-mode .pfnt-cal-d.past { color: #4a5670; }
-body.dark-mode .pfnt-cal-d.sel { color: #fff; }
+body.dark-mode .pfnt-cal-d.sel, body.dark-mode .pfnt-cal-d.rstart, body.dark-mode .pfnt-cal-d.rend { color: #fff; }
+body.dark-mode .pfnt-cal-d.inrange { background: color-mix(in srgb, var(--nt) 26%, #16202e); color: #dbe6f4; }
+body.dark-mode .pfnt-cal-modes { background: #0f1826; }
+body.dark-mode .pfnt-cal-mode { color: #9fb1c6; }
+body.dark-mode .pfnt-cal-mode.on { background: #1b2740; box-shadow: none; }
 body.dark-mode .pfnt-cal-time, body.dark-mode .pfnt-cal-foot { border-top-color: rgba(255, 255, 255, 0.08); }
 body.dark-mode .pfnt-cal-time > span { color: #9fb1c6; }
 body.dark-mode .pfnt-cal-time-in { background: #101826; border-color: #27324a; color: #e8f0fb; }
@@ -2763,8 +2804,8 @@ body.dark-mode .pfnw-empty { color: #8fa2b8; }
 body.dark-mode .pfnw-pk { border-color: #27324a; background: #131c2b; color: #b9c6d6; }
 body.dark-mode .pfnw-pk:hover { border-color: #34425c; color: #f4f8fd; }
 body.dark-mode .pfnw-addinput { background: #0f1826; color: #e7eef7; }
-body.dark-mode .pfnw-preview { background: rgba(11, 18, 32, 0.72); }
-body.dark-mode .pfnw-pv-card { background: #141d2e; border-color: #27324a; box-shadow: 0 24px 50px -20px rgba(0, 0, 0, 0.7); }
+body.dark-mode .pfnw-preview { background: #141d2e; }
+body.dark-mode .pfnw-pv-card { background: transparent; border: 0; box-shadow: none; }
 body.dark-mode .pfnw-pv-title { color: #eaf0f8; }
 body.dark-mode .pfnw-pv-tk { color: #93c5fd; background: #16233f; }
 body.dark-mode .pfnw-pv-x { background: #1c2740; color: #9fb1c6; }
