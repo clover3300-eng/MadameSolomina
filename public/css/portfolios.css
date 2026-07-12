@@ -62,7 +62,13 @@ body.dark-mode .pf-sumcard {
         linear-gradient(150deg, #0a0f16 0%, #16202c 100%);
     box-shadow: 0 16px 36px rgba(0,0,0,0.32);
 }
-.pfs2-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #8ea0b6; }
+/* «заголовок» суммарного капитала — размером как в «Избранном» (.pf-ch-t 21px/800),
+   под ним мелкой строкой — счётчик портфелей */
+.pfs2-eyebrow { display: flex; flex-direction: column; gap: 3px; }
+.pfs2-eyebrow-t { font-family: 'Inter', sans-serif; font-size: 21px; font-weight: 800; letter-spacing: -0.015em; color: #fff; line-height: 1.1; }
+.pfs2-eyebrow-c { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #8ea0b6; }
+/* в сетке над заголовком висит глаз-скрытие (.pfd-eye) — освобождаем справа место, чтобы не наезжал */
+.pfd-item[data-pfd="sum"] .pfs2-eyebrow { padding-right: 36px; }
 .pfs2-capital { margin-top: 7px; font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 700; letter-spacing: -0.025em; color: #fff; line-height: 1; white-space: nowrap; overflow: hidden; }
 .pfs2-sub { margin-top: 7px; display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; font-weight: 600; color: #aebbcc; }
 .pfs2-pnl { white-space: nowrap; }
@@ -2177,22 +2183,20 @@ body.pfd-dragging-now .pfd-move { cursor: grabbing; }
 .pfd-item[data-pfd="sum"] .pfd-eye .pfc-act:hover {
     border-color: rgba(255, 255, 255, 0.22); background: rgba(255, 255, 255, 0.12); color: #fff;
 }
-/* Корзина удаления ВИДЖЕТА — тихая биркой над правым-верхним углом, проявляется по hover. */
-.pfd-del {
-    position: absolute; top: -11px; right: 14px; z-index: 8;
-    width: 26px; height: 26px; border-radius: 999px;
-    display: inline-flex; align-items: center; justify-content: center;
-    color: #64748b; background: #fff; border: 1px solid #e2e8f0;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.10);
-    cursor: pointer; padding: 0;
-    opacity: 0; pointer-events: none;
-    transition: opacity 0.14s ease, color 0.12s, border-color 0.12s, background 0.12s;
+/* Корзина удаления ВИДЖЕТА — ВНУТРИ карточки, тихая иконка в правом-верхнем углу шапки
+   (точная калька .pfnt-trash заметки): без фона/рамки, проявляется по hover, hover — красная. */
+.pfd-cardrm {
+    position: absolute; top: 15px; right: 15px; z-index: 14;
+    width: 26px; height: 26px; border: 0; background: none; padding: 0; cursor: pointer; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center; color: #c3cdd9;
+    opacity: 0; pointer-events: none; transition: opacity 0.14s, color 0.12s, background 0.12s;
 }
-.pfd-del svg { width: 13px; height: 13px; }
-.pfd-item:hover .pfd-del, .pfd-del:focus-visible, .pfd-grid.editing .pfd-del {
-    opacity: 1; pointer-events: auto;
-}
-.pfd-del:hover { color: #dc2626; border-color: #fecaca; background: #fef2f2; }  /* красный — «удалить виджет» */
+.pfd-item:hover .pfd-cardrm, .pfd-cardrm:focus-visible, .pfd-grid.editing .pfd-cardrm { opacity: 1; pointer-events: auto; }
+.pfd-cardrm svg { width: 15px; height: 15px; }
+.pfd-cardrm:hover { color: #e0592b; background: rgba(224, 89, 43, 0.1); }
+/* блоки с контролами в шапке (график/карта/новости) — освобождаем справа место под корзину,
+   чтобы значок не наезжал на их кнопки; у KPI шапки нет — там угол и так свободен */
+.pfd-rmable > .pfd-body > .dash2-card > .pf-ch { padding-right: 46px; }
 /* бейдж текущего размера — появляется только во время ресайза (JS пишет текст) */
 .pfd-size {
     position: absolute; top: 8px; right: 38px;
@@ -2408,6 +2412,9 @@ body.dark-mode .pfhm-tile:hover { box-shadow: inset 0 0 0 2px rgba(255, 255, 255
 .pf-newsblk { position: relative; }
 .pfnw-body { flex: 1; min-height: 0; margin-top: 6px; }
 .pfd-item.pfd-hset .pf-newsblk .pfnw-body { overflow-y: auto; scrollbar-width: thin; }
+/* заметка при РУЧНОЙ высоте: список строк заполняет середину карточки, панель «Текст/Пункт/
+   Задача» и срок прижаты книзу (иначе тянешь блок выше — данные не адаптируются, снизу пустота) */
+.pfd-item.pfd-hset .pf-noteblk .pfnt-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
 .pfnw-list { display: flex; flex-direction: column; gap: 5px; }
 .pfnw-item {
     position: relative; box-sizing: border-box; display: flex; align-items: flex-start; gap: 11px; width: 100%; text-align: left;
@@ -2680,8 +2687,8 @@ body.dark-mode .pfd-bar { background: rgba(11, 18, 32, 0.9); border-color: #2732
 body.dark-mode .pfd-bar-t b { color: #e2e8f0; }
 body.dark-mode .pfd-bar-t span { color: #9fb1c6; }
 body.dark-mode .pfd-size { background: rgba(9, 14, 24, 0.9); }
-body.dark-mode .pfd-del { color: #9fb1c6; background: #0f172a; border-color: #27324a; }
-body.dark-mode .pfd-del:hover { color: #f87171; border-color: #7f1d1d; background: #1c1017; }  /* красный — «удалить» */
+body.dark-mode .pfd-cardrm { color: #5c6c82; }
+body.dark-mode .pfd-cardrm:hover { color: #f87171; background: rgba(248, 113, 113, 0.12); }  /* красный — «удалить» */
 body.dark-mode .pfd-addbtn { background: #16233f; border-color: #2f4a8a; color: #93c5fd; box-shadow: none; }
 body.dark-mode .pfd-addbtn:hover { border-color: #3b62b8; }
 body.dark-mode .pfd-addbtn.open { background: #1c2b52; border-color: #3b62b8; }

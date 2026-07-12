@@ -1626,7 +1626,7 @@
 
         var GO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>';
         return '<div class="dash2-card pf-sumcard">' +
-            '<div class="pfs2-eyebrow">Суммарный капитал · ' + store.items.length + ' ' + plural(store.items.length, 'портфель', 'портфеля', 'портфелей') + '</div>' +
+            '<div class="pfs2-eyebrow"><span class="pfs2-eyebrow-t">Суммарный капитал</span><span class="pfs2-eyebrow-c">' + store.items.length + ' ' + plural(store.items.length, 'портфель', 'портфеля', 'портфелей') + '</span></div>' +
             '<div class="pfs2-capital">' + fmtRub(val) + '</div>' +
             '<div class="pfs2-sub">Вложено ' + fmtRub(inv) + '<span class="pfs2-pnl ' + (pnl >= 0 ? 'pos' : 'neg') + '">' + (pnl >= 0 ? '▲ ' : '▼ ') + fmtRub(Math.abs(pnl)) + ' · ' + fmtPct(pnlPct) + '</span></div>' +
             extras +
@@ -1955,19 +1955,33 @@
     }
     // превью справа: БЕЗ белой шапки — сразу готовый блок, а в углу плашка-статус
     // («Демо» — данных нет/недостаточно, показан пример; «Live» — реальные данные рынка/портфеля).
+    // достаточно ли РЕАЛЬНЫХ данных у блока для «живого» превью (иначе рисуем демо, даже когда
+    // портфель уже собран): график — ≥2 точек; «за сегодня» — есть дневной снимок; «ближайшая
+    // выплата» — есть событие; новости — есть загруженная новость по позиции; капитал/карта — всегда.
+    function pfdWidgetHasRealData(id) {
+        if (id === 'heat' || id === 'kpi:cap') return true;
+        if (id === 'kpi:day') return store.items.some(function (p) { return dayDelta(p, calcPf(p).value) != null; });
+        if (id === 'kpi:next') return collectUpcomingPayouts().length > 0;
+        if (id === 'cap') return pfdCapSeries().length >= 2;
+        if (id === 'news') return pfdNewsList().some(function (x) { var e = newsHtmlCache[x.tk]; return e && e.html; });
+        return true;
+    }
     function pfdPickPvHtml(id, name, noPf) {
         // «Live» — данные реальные; «Демо» — данных нет/недостаточно, показываем пример.
         var stage = '', live = false;
         if (id === '__note') { stage = pfdNoteExampleHtml(); live = false; }               // заметка — всегда образец
         else if (id === 'heat') { stage = pfdHeatHtml(); live = true; }                    // карта рынка живая всегда (не зависит от портфеля)
-        else if (noPf) {                                                                    // портфель не собран → мало данных, рисуем демо
+        else if (!noPf && pfdWidgetHasRealData(id)) {
+            var b = pfdShelfBlockById(id); stage = b ? b.htmlFn() : '';
+            live = true;                                                                    // собран портфель И данных достаточно
+        } else {
+            // портфель не собран ИЛИ у блока ещё нет данных (график не сформирован, за сегодня нет
+            // результата, нет ближайших выплат/новостей) → показываем ДЕМО вместо пустого live
             if (id.indexOf('kpi:') === 0) stage = pfdKpiHtml(id.slice(4), PFD_DEMO_KPI);
             else if (id === 'cap') stage = pfdCapChartHtml(pfdDemoCapSeries());
             else if (id === 'news') stage = pfdNewsDemoHtml();
+            else { var b2 = pfdShelfBlockById(id); stage = b2 ? b2.htmlFn() : ''; }
             live = false;
-        } else {
-            var b = pfdShelfBlockById(id); stage = b ? b.htmlFn() : '';
-            live = true;                                                                    // собран портфель → реальные данные
         }
         return '<div class="pfd-pick-stage">' +
             '<span class="pfd-pick-tag ' + (live ? 'live' : 'demo') + '">' + (live ? 'Live' : 'Демо') + '</span>' + stage +
@@ -2013,7 +2027,9 @@
         // карта живая ВСЕГДА (реальный рынок); новости — только в живом режиме (в демо строки статичные)
         requestAnimationFrame(function () {
             try { if (document.querySelector('#pfdPickPv .pfhm-box')) pfdHeatRepaintSoon(); } catch (e) {}
-            try { if (!noPf && document.querySelector('#pfdPickPv .pf-newsblk')) renderPosNews(); } catch (e) {}
+            // новости наполняем ТОЛЬКО в живом превью — у демо строки статичные (без data-tk),
+            // и демонстрируется .pfd-pick-tag.live именно у живого блока
+            try { if (document.querySelector('#pfdPickPv .pf-newsblk') && document.querySelector('#pfdPickPv .pfd-pick-tag.live')) renderPosNews(); } catch (e) {}
         });
     };
     window.pfdPickerToggle = function (ev) {
@@ -2058,8 +2074,8 @@
             // Кнопка «скрыть/удалить» блока:
             //  • заметка / портфель — СВОЯ кнопка уже есть в шапке карточки (pfnt-trash / глаз .pfc-act),
             //    в chrome не дублируем;
-            //  • ВИДЖЕТ (defHidden: KPI/график/карта/новости) — УДАЛИТЬ (корзина .pfd-del биркой над
-            //    углом, по hover), вернётся из «Конструктор → Добавить блок»;
+            //  • ВИДЖЕТ (defHidden: KPI/график/карта/новости) — УДАЛИТЬ (корзина .pfd-cardrm ВНУТРИ
+            //    карточки, как у заметки, по hover), вернётся из «Конструктор → Добавить блок»;
             //  • «Календарь выплат»/«Сводка» — СКРЫТЬ глазом .pfc-act В ШАПКЕ карточки (.pfd-eye,
             //    правый-верхний угол напротив заголовка, ТОЧНО как у портфеля, виден всегда), вернуть
             //    — через меню «Видимость» в шапке;
@@ -2070,7 +2086,10 @@
             if (b.isNote || b.id.indexOf('pf:') === 0) {
                 hideBtn = '';
             } else if (b.defHidden) {
-                hideBtn = '<button class="pfd-del" title="Удалить виджет (вернуть — «Добавить блок» в Конструкторе)" aria-label="Удалить виджет" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + NOTE_TRASH_SVG + '</button>';
+                // корзина ВНУТРИ карточки (как у заметки .pfnt-trash): тихая иконка в правом-верхнем
+                // углу шапки, проявляется по hover; у виджетов с контролами в шапке место освобождает
+                // .pfd-rmable (padding-right), у KPI шапки нет — угол и так свободен
+                hideBtn = '<button class="pfd-cardrm" title="Удалить виджет (вернуть — «Добавить блок» в Конструкторе)" aria-label="Удалить виджет" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + NOTE_TRASH_SVG + '</button>';
             } else if (b.id === 'cal' || b.id === 'sum') {
                 // глаз-скрытие — ТОЧНО как в карточке портфеля (.pfc-act), в правом-верхнем углу
                 // напротив заголовка, видимый постоянно (не в зазоре-бирке)
@@ -2087,7 +2106,7 @@
                 '<span class="pfd-rs-b" title="Потяните — высота свободно"></span>' +
                 '<span class="pfd-rs" title="Потяните — ширина и высота. Двойной клик — сброс высоты, ещё раз — ширины"></span>' +
             '</div>';
-            return '<div class="pfd-item' + (h ? ' pfd-hset' : '') + '" data-pfd="' + esc(b.id) + '" style="' + style + '">' +
+            return '<div class="pfd-item' + (h ? ' pfd-hset' : '') + (b.defHidden ? ' pfd-rmable' : '') + '" data-pfd="' + esc(b.id) + '" style="' + style + '">' +
                 chrome +
                 '<div class="pfd-body">' + html + '</div>' +
             '</div>';
