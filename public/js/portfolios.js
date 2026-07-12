@@ -1188,6 +1188,12 @@
         // глушим — innerHTML-своп сбросил бы перетаскивание/ресайз на полпути.
         // Собственные перерисовки конструктора идут через pfdRerender().
         if (dashEdit && !pfdWantRender) return;
+        // курсор в «Заметках» — innerHTML-своп унёс бы фокус и несохранённый хвост
+        // текста; котировки подождут до blur (автосейв заметки идёт с дебаунсом).
+        // Проверяем activeElement, а НЕ :focus — псевдокласс не матчится, когда окно
+        // потеряло фокус ОС, а курсор в поле остаётся (иначе фон срывал бы ввод).
+        var ae = document.activeElement;
+        if (ae && ae.classList && ae.classList.contains('pfnt-area') && host.contains(ae)) return;
         pfdWantRender = false;
         // favHtml() синхронно дёргает stkEnsureLoaded(): если таблица акций уже
         // загружена, та сразу вызывает onStkCompaniesLoaded()→renderPortfolios(),
@@ -1270,6 +1276,8 @@
             renderTopBarMarket();
             tickLive();
             renderFavNews();
+            renderPosNews();        // блок «Новости по позициям» (no-op, если не включён)
+            pfdHeatRepaintSoon();   // блок «Карта рынка»: дорисовать живые плитки
             ensureLiveTick();
             var payBody = document.querySelector('.pf-paycal--cell .pfpc-body');
             if (payBody) window.pfPayCalScroll(payBody);   // начальное состояние затухания списка выплат
@@ -1659,18 +1667,20 @@
     function loadDashCfg() {
         try {
             var c = JSON.parse(localStorage.getItem(DASH_KEY) || 'null') || {};
-            return { on: !!c.on, order: Array.isArray(c.order) ? c.order : [], span: c.span || {}, h: c.h || {} };
-        } catch (e) { return { on: false, order: [], span: {}, h: {} }; }
+            return { on: !!c.on, order: Array.isArray(c.order) ? c.order : [], span: c.span || {}, h: c.h || {},
+                hidden: c.hidden || {}, note: typeof c.note === 'string' ? c.note : '' };
+        } catch (e) { return { on: false, order: [], span: {}, h: {}, hidden: {}, note: '' }; }
     }
     function saveDashCfg() {
         try {
             // чистим ключи удалённых портфелей — конфиг не копит мусор (и не тащит
             // его в облако через cloud-sync). Скрытые портфели остаются в store.items,
             // их раскладка переживает «скрыть/показать».
-            var known = { cal: 1, rates: 1, trades: 1, fav: 1, sum: 1 };
+            var known = { cal: 1, rates: 1, trades: 1, fav: 1, sum: 1,
+                'kpi:cap': 1, 'kpi:day': 1, 'kpi:next': 1, cap: 1, heat: 1, news: 1, note: 1 };
             store.items.forEach(function (p) { known['pf:' + p.id] = 1; });
             dashCfg.order = (dashCfg.order || []).filter(function (id) { return known[id]; });
-            [dashCfg.span, dashCfg.h].forEach(function (m) {
+            [dashCfg.span, dashCfg.h, dashCfg.hidden].forEach(function (m) {
                 Object.keys(m || {}).forEach(function (id) { if (!known[id]) delete m[id]; });
             });
             localStorage.setItem(DASH_KEY, JSON.stringify(dashCfg));
@@ -1727,6 +1737,18 @@
             var nb = bestTop + h + gap;
             for (var k2 = bestC; k2 < bestC + span; k2++) bottom[k2] = nb;
         });
+        pfdPlaceGuide();        // направляющую ресайза кладём по фактической геометрии блока
+        pfdHeatRepaintSoon();   // ширина окна/блока изменилась → плитки карты заново
+    }
+    // направляющая ресайза: пунктир на ПРАВОЙ грани блока (offsetLeft+offsetWidth уже в
+    // grid-relative layout-px, как и absolute-guide) — считаем ПОСЛЕ упаковки, иначе при
+    // смене колонки блока offsetLeft ссылается на старое место и линия улетает за сетку
+    var pfdGuideEl = null, pfdGuideItem = null;
+    function pfdPlaceGuide() {
+        if (!pfdGuideEl || !pfdGuideItem) return;
+        pfdGuideEl.style.left = (pfdGuideItem.offsetLeft + pfdGuideItem.offsetWidth) + 'px';
+        pfdGuideEl.style.top = (pfdGuideItem.offsetTop - 8) + 'px';
+        pfdGuideEl.style.height = (pfdGuideItem.offsetHeight + 16) + 'px';
     }
     function pfdRepackSoon() { if (!pfdPackRaf) pfdPackRaf = requestAnimationFrame(pfdPack); }
     // (пере)подписываем ResizeObserver на актуальные блоки: их высота меняется от
@@ -1753,6 +1775,9 @@
     // потом полноширинные «Ставки» и «История сделок». Иначе полноширинный блок
     // сразу после календаря «запечатывал» бы ряд, оставляя справа дыру в 8 колонок
     // (жадный masonry не поднимает более поздние блоки выше уже уложенных).
+    // html — ЛЕНИВЫЙ (htmlFn): для скрытых блоков разметка не собирается вовсе.
+    // defHidden: true — опт-ин блоки (KPI, график капитала, карта, новости, заметки):
+    // появляются только с полки «Добавить блок», существующие раскладки не трогают.
     function pfdBlocks(favStr, noBonds) {
         var blocks = [];
         var narrow = cardViewMode === 'narrow';
@@ -1760,20 +1785,35 @@
         visibleItems().forEach(function (p, i) {
             // col-right/col-mid не передаём: в свободной сетке колонка блока заранее
             // неизвестна, график всегда выезжает вправо от карточки
-            blocks.push({ id: 'pf:' + p.id, name: p.name, html: cardHtml(p, i, false, narrow, false), span: defSpan });
+            blocks.push({ id: 'pf:' + p.id, name: p.name, htmlFn: function () { return cardHtml(p, i, false, narrow, false); }, span: defSpan });
         });
-        blocks.push({ id: 'cal', name: noBonds ? 'Ставки' : 'Календарь выплат', html: noBonds ? ratesStackHtml(true, 1) : paymentCalendarHtml(true, 1), span: defSpan });
+        blocks.push({ id: 'cal', name: noBonds ? 'Ставки' : 'Календарь выплат', htmlFn: function () { return noBonds ? ratesStackHtml(true, 1) : paymentCalendarHtml(true, 1); }, span: defSpan });
         // обёртка .pf-topgrid-fav сохраняет прицельные стили правой колонки
         // (одноколоночный .pff-grid и т.п.) и в свободной сетке
-        blocks.push({ id: 'fav', name: 'Избранное', html: '<div class="pf-topgrid-fav pfd-favwrap">' + favStr + '</div>', span: defSpan });
+        blocks.push({ id: 'fav', name: 'Избранное', htmlFn: function () { return '<div class="pf-topgrid-fav pfd-favwrap">' + favStr + '</div>'; }, span: defSpan });
         if (store.items.length >= 2) {
-            blocks.push({ id: 'sum', name: 'Сводка', html: '<div class="pf-topgrid-fav pfd-favwrap">' + summaryCardHtml() + '</div>', span: defSpan });
+            blocks.push({ id: 'sum', name: 'Сводка', htmlFn: function () { return '<div class="pf-topgrid-fav pfd-favwrap">' + summaryCardHtml() + '</div>'; }, span: defSpan });
         }
-        if (!noBonds) blocks.push({ id: 'rates', name: 'Ставки', html: ratesHtml(), span: 12 });
+        blocks.push({ id: 'kpi:cap', name: 'KPI · Капитал', htmlFn: function () { return pfdKpiHtml('cap'); }, span: 4, defHidden: true });
+        blocks.push({ id: 'kpi:day', name: 'KPI · За сегодня', htmlFn: function () { return pfdKpiHtml('day'); }, span: 4, defHidden: true });
+        blocks.push({ id: 'kpi:next', name: 'KPI · Ближайшая выплата', htmlFn: function () { return pfdKpiHtml('next'); }, span: 4, defHidden: true });
+        blocks.push({ id: 'cap', name: 'График капитала', htmlFn: pfdCapChartHtml, span: defSpan, defHidden: true });
+        blocks.push({ id: 'heat', name: 'Карта рынка', htmlFn: pfdHeatHtml, span: defSpan, defHidden: true });
+        blocks.push({ id: 'news', name: 'Новости по позициям', htmlFn: pfdNewsHtml, span: defSpan, defHidden: true });
+        blocks.push({ id: 'note', name: 'Заметки', htmlFn: pfdNoteHtml, span: 4, defHidden: true });
+        if (!noBonds) blocks.push({ id: 'rates', name: 'Ставки', htmlFn: ratesHtml, span: 12 });
         var tr = tradesHtml();
-        if (tr) blocks.push({ id: 'trades', name: 'История сделок', html: tr, span: 12 });
-        return blocks.filter(function (b) { return b.html; });
+        if (tr) blocks.push({ id: 'trades', name: 'История сделок', htmlFn: function () { return tr; }, span: 12 });
+        return blocks;
     }
+    // скрыт ли блок: явный выбор пользователя (cfg.hidden) главнее дефолта блока
+    function pfdIsHidden(b) {
+        var m = dashCfg.hidden || {};
+        return Object.prototype.hasOwnProperty.call(m, b.id) ? !!m[b.id] : !!b.defHidden;
+    }
+    var PFD_X_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+    var PFD_PLUS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+    var PFD_UNDO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>';
 
     function pfdBodyHtml(favStr, noBonds) {
         var blocks = pfdBlocks(favStr, noBonds);
@@ -1784,8 +1824,12 @@
             if (byId[id]) { ordered.push(byId[id]); delete byId[id]; }
         });
         blocks.forEach(function (b) { if (byId[b.id]) ordered.push(b); });   // новые блоки — в конец
+        var shown = [], hiddenB = [];
+        ordered.forEach(function (b) { (pfdIsHidden(b) ? hiddenB : shown).push(b); });
 
-        var items = ordered.map(function (b) {
+        var items = shown.map(function (b) {
+            var html = b.htmlFn();
+            if (!html) return '';
             var span = clamp(+(dashCfg.span[b.id]) || b.span, 3, 12);
             var h = +(dashCfg.h[b.id]) || 0;
             var style = 'grid-column: span ' + span + ';' + (h ? 'height:' + clamp(h, 240, 1400) + 'px;' : '');
@@ -1793,22 +1837,34 @@
                 (dashEdit
                     ? '<div class="pfd-chrome">' +
                         '<span class="pfd-name">' + PFD_GRIP_SVG + '<span>' + esc(b.name || '') + '</span></span>' +
+                        '<button class="pfd-hide" title="Убрать блок с дашборда (вернуть — с полки «Добавить блок»)" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + PFD_X_SVG + '</button>' +
                         '<span class="pfd-size"></span>' +
-                        '<span class="pfd-rs" title="Потяните: ширина — колонками, высота — свободно. Двойной клик — размер по умолчанию"></span>' +
+                        '<span class="pfd-rs" title="Потяните: ширина — колонками, высота — свободно. Двойной клик — высота в авто, ещё раз — ширина по умолчанию"></span>' +
                       '</div>'
                     : '') +
-                '<div class="pfd-body">' + b.html + '</div>' +
+                '<div class="pfd-body">' + html + '</div>' +
             '</div>';
         }).join('');
 
+        // полка «Добавить блок»: всё скрытое (и опт-ин блоки, и убранные крестиком)
+        var shelf = '';
+        if (dashEdit && hiddenB.length) {
+            shelf = '<div class="pfd-shelf"><span class="pfd-shelf-l">Добавить блок:</span>' +
+                hiddenB.map(function (b) {
+                    return '<button class="pfd-shelf-chip" onclick="pfdShowBlock(\'' + jsArg(b.id) + '\')">' + PFD_PLUS_SVG + esc(b.name || b.id) + '</button>';
+                }).join('') + '</div>';
+        }
         var bar = dashEdit
             ? '<div class="pfd-bar">' +
-                '<div class="pfd-bar-t"><b>Конструктор дашборда</b>' +
-                    '<span>Тяните блок за любое место, размер — за уголок (12 колонок, высота — свободно). Двойной клик по уголку — размер по умолчанию, Esc — готово.</span></div>' +
-                '<div class="pfd-bar-r">' +
-                    '<button class="d3-quick ghost" onclick="pfDashReset()">Вернуть стандартную</button>' +
-                    '<button class="d3-quick" onclick="pfDashToggleEdit()">' + CHECK_SVG + '<span>Готово</span></button>' +
-                '</div>' +
+                '<div class="pfd-bar-m">' +
+                    '<div class="pfd-bar-t"><b>Конструктор дашборда</b>' +
+                        '<span>Тяните блок за любое место, размер — за уголок (12 колонок, высота — свободно). Крестик прячет блок, Esc — готово.</span></div>' +
+                    '<div class="pfd-bar-r">' +
+                        '<button class="d3-quick ghost" onclick="pfdUndo()" title="Отменить последнее изменение раскладки (Cmd/Ctrl+Z)">' + PFD_UNDO_SVG + '<span>Отменить</span></button>' +
+                        '<button class="d3-quick ghost" onclick="pfDashReset()">Вернуть стандартную</button>' +
+                        '<button class="d3-quick" onclick="pfDashToggleEdit()">' + CHECK_SVG + '<span>Готово</span></button>' +
+                    '</div>' +
+                '</div>' + shelf +
               '</div>'
             : '';
         return bar + '<div class="pfd-grid pfd-masonry' + (dashEdit ? ' editing' : '') + '" id="pfdGrid">' + items + '</div>';
@@ -1831,6 +1887,7 @@
         if (!visibleItems().length) { toast('Сначала добавьте портфель — пока нечего расставлять', true); return; }
         if (!dashCfg.on) { dashCfg.on = true; saveDashCfg(); }
         dashEdit = true;
+        pfdUndoStack.length = 0;   // новая сессия правки — свой стек отмен
         closeImpMenus();
         pfdRerender();
     };
@@ -1844,11 +1901,259 @@
         else if (pfdNarrowMq.addListener) pfdNarrowMq.addListener(pfdNarrowH);
     } catch (e) {}
     window.pfDashReset = function () {
-        dashCfg = { on: false, order: [], span: {}, h: {} };
+        // заметки — пользовательский ТЕКСТ, не раскладка: сброс их не стирает
+        dashCfg = { on: false, order: [], span: {}, h: {}, hidden: {}, note: dashCfg.note || '' };
         dashEdit = false;
+        pfdUndoStack.length = 0;
         saveDashCfg();
         pfdRerender();
         toast('Стандартная раскладка возвращена');
+    };
+
+    // ---- скрытие/возврат блоков (крестик на бирке + полка «Добавить блок») ----
+    window.pfdHideBlock = function (id) {
+        pfdPushUndo();
+        dashCfg.hidden[id] = 1;
+        saveDashCfg();
+        pfdRerender();
+    };
+    window.pfdShowBlock = function (id) {
+        pfdPushUndo();
+        dashCfg.hidden[id] = 0;
+        saveDashCfg();
+        pfdRerender();
+    };
+
+    // ---- undo: каждый шаг правки кладёт снимок раскладки, Cmd/Ctrl+Z возвращает ----
+    // Стек живёт в памяти на сессию правки (вход в режим начинает новую).
+    var pfdUndoStack = [];
+    function pfdCfgSnap() { return JSON.stringify({ order: dashCfg.order, span: dashCfg.span, h: dashCfg.h, hidden: dashCfg.hidden }); }
+    function pfdPushUndo() {
+        pfdUndoStack.push(pfdCfgSnap());
+        if (pfdUndoStack.length > 40) pfdUndoStack.shift();
+    }
+    window.pfdUndo = function () {
+        // пропускаем снимки, не отличающиеся от текущего (драг, вернувшийся на место)
+        var cur = pfdCfgSnap(), snap = null;
+        while (pfdUndoStack.length) { var s = pfdUndoStack.pop(); if (s !== cur) { snap = s; break; } }
+        if (!snap) { toast('Отменять нечего', true); return; }
+        try {
+            var o = JSON.parse(snap);
+            dashCfg.order = o.order || []; dashCfg.span = o.span || {};
+            dashCfg.h = o.h || {}; dashCfg.hidden = o.hidden || {};
+        } catch (e) { return; }
+        saveDashCfg();
+        pfdRerender();
+    };
+    document.addEventListener('keydown', function (e) {
+        if (!dashEdit || (!e.metaKey && !e.ctrlKey) || e.shiftKey || String(e.key).toLowerCase() !== 'z') return;
+        var panel = document.getElementById('panel-portfolios');
+        if (!panel || !panel.classList.contains('active')) return;
+        e.preventDefault();
+        window.pfdUndo();
+    });
+
+    // ---- KPI-плитки: капитал · за сегодня · ближайшая выплата ----
+    // Компактные «кирпичики» дашборда (span 4): включаются с полки «Добавить блок».
+    function pfdKpiHtml(kind) {
+        var inv = 0, val = 0, dd = 0, hasDd = false, mv = null;
+        store.items.forEach(function (p) {
+            var c = calcPf(p); inv += c.invested; val += c.value;
+            var d = dayDelta(p, c.value); if (d != null) { dd += d; hasDd = true; }
+            var m = topMover(p); if (m && (!mv || Math.abs(m.chg) > Math.abs(mv.chg))) mv = m;
+        });
+        var ic, label, vHtml, vCls = '', sub, ac;
+        if (kind === 'cap') {
+            var pnl = val - inv, pct = inv > 0 ? pnl / inv * 100 : 0;
+            ic = '<rect x="2" y="7" width="20" height="13" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/>';
+            label = 'Суммарный капитал'; ac = '#3d6fd1';
+            vHtml = fmtRub(val);
+            sub = 'Вложено ' + fmtRub(inv) + ' · <b class="' + (pnl >= 0 ? 'pos' : 'neg') + '">' + (pnl >= 0 ? '▲ ' : '▼ ') + fmtRub(Math.abs(pnl)) + ' · ' + fmtPct(pct) + '</b>';
+        } else if (kind === 'day') {
+            ic = '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>';
+            label = 'За сегодня'; ac = hasDd ? (dd >= 0 ? '#119d5c' : '#c2410c') : '#64748b';
+            vHtml = hasDd ? (dd >= 0 ? '+' : '−') + fmtRub(Math.abs(dd)) : '—';
+            vCls = hasDd ? (dd >= 0 ? ' pos' : ' neg') : '';
+            sub = hasDd
+                ? ((mv && Math.abs(mv.chg) >= 1) ? 'Сильнее всех: ' + esc(mv.t) + ' <b class="' + (mv.chg >= 0 ? 'pos' : 'neg') + '">' + fmtPct(mv.chg) + '</b> за день' : 'к последнему дневному снимку')
+                : 'появится со второго дня наблюдения';
+        } else {
+            var ev = collectUpcomingPayouts()[0];
+            ic = '<rect x="3" y="4" width="18" height="18" rx="2.5"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/>';
+            label = 'Ближайшая выплата'; ac = '#119d5c';
+            vHtml = ev ? '+' + fmtRub(ev.amount) : '—';
+            vCls = ev ? ' pos' : '';
+            sub = ev ? esc(ev.ticker) + ' · ' + ruDate(dateToIso(ev.date)) + ' · ' + esc(daysUntilText(ev.date))
+                : 'нет запланированных выплат на год вперёд';
+        }
+        return '<div class="dash2-card pf-kpi" style="--ac:' + ac + '">' +
+            '<div class="pf-kpi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + ic + '</svg></div>' +
+            '<div class="pf-kpi-body">' +
+                '<div class="pf-kpi-l">' + label + '</div>' +
+                '<div class="pf-kpi-v' + vCls + '">' + vHtml + '</div>' +
+                '<div class="pf-kpi-s">' + sub + '</div>' +
+            '</div></div>';
+    }
+
+    // ---- «График капитала»: линия суммарной стоимости по дневным снимкам ----
+    // Данные уже копятся в pf_snapshots_v1 (recordSnapshots, до 400 дней) — блок
+    // просто их показывает. Снимки локальные (в облако не зеркалятся) — при смене
+    // устройства история начнётся заново.
+    function pfdCapSeries() {
+        var dates = {};
+        Object.keys(snaps).forEach(function (pid) {
+            if (!findPf(pid)) return;
+            Object.keys(snaps[pid]).forEach(function (d) { dates[d] = 1; });
+        });
+        var ds = Object.keys(dates).sort();
+        var totals = ds.map(function () { return 0; });
+        // forward-fill: в день без снимка портфель идёт по последнему известному значению
+        store.items.forEach(function (p) {
+            var m = snaps[p.id]; if (!m) return;
+            var ks = Object.keys(m).sort(), j = 0, cur = null;
+            for (var i = 0; i < ds.length; i++) {
+                while (j < ks.length && ks[j] <= ds[i]) { cur = m[ks[j]]; j++; }
+                if (cur != null) totals[i] += cur;
+            }
+        });
+        var out = ds.map(function (d, i) { return { d: d, v: totals[i] }; });
+        if (quotesTs) {   // сегодняшняя точка — живая, не ждёт снимка
+            var live = 0, any = false;
+            store.items.forEach(function (p) { var v = calcPf(p).value; if (v > 0) { live += v; any = true; } });
+            if (any) {
+                var t = todayStr();
+                if (out.length && out[out.length - 1].d === t) out[out.length - 1].v = live;
+                else out.push({ d: t, v: live });
+            }
+        }
+        return out;
+    }
+    function pfdCapChartHtml() {
+        var s = pfdCapSeries();
+        var last = s.length ? s[s.length - 1] : null;
+        var right = '';
+        var body;
+        if (s.length < 2) {
+            body = '<div class="pfcap-empty"><div class="pfcap-empty-t">' + (s.length ? 'Первая точка уже есть' : 'Снимков пока нет') + '</div>' +
+                '<div class="pfcap-empty-s">Стоимость портфелей записывается раз в день при живых котировках — линия появится со второго дня.</div></div>';
+        } else {
+            var min = Infinity, max = -Infinity;
+            s.forEach(function (pt) { if (pt.v < min) min = pt.v; if (pt.v > max) max = pt.v; });
+            var span = Math.max(1, max - min);
+            var W = 100, H = 42, PAD = 4;
+            var pts = s.map(function (pt, i) {
+                var x = s.length > 1 ? i / (s.length - 1) * W : 0;
+                var y = H - PAD - (pt.v - min) / span * (H - PAD * 2);
+                return x.toFixed(2) + ',' + y.toFixed(2);
+            });
+            var line = 'M' + pts.join(' L');
+            var area = line + ' L' + W + ',' + H + ' L0,' + H + ' Z';
+            var delta = last.v - s[0].v, dPct = s[0].v > 0 ? delta / s[0].v * 100 : 0;
+            right = '<div class="pfcap-hr"><b>' + fmtRub(last.v) + '</b>' +
+                '<span class="' + (delta >= 0 ? 'pos' : 'neg') + '">' + (delta >= 0 ? '▲ ' : '▼ ') + fmtRub(Math.abs(delta)) + ' · ' + fmtPct(dPct) + '</span></div>';
+            body = '<div class="pfcap-plot">' +
+                '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" aria-hidden="true">' +
+                    '<defs><linearGradient id="pfcapGrad" x1="0" y1="0" x2="0" y2="1">' +
+                        '<stop offset="0" stop-color="rgba(59,130,246,0.22)"/><stop offset="1" stop-color="rgba(59,130,246,0)"/>' +
+                    '</linearGradient></defs>' +
+                    '<path d="' + area + '" fill="url(#pfcapGrad)"/>' +
+                    '<path d="' + line + '" fill="none" stroke="#3b82f6" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>' +
+                '</svg>' +
+                '<span class="pfcap-y pfcap-y--max">' + fmtRub(max) + '</span>' +
+                '<span class="pfcap-y pfcap-y--min">' + fmtRub(min) + '</span>' +
+            '</div>' +
+            '<div class="pfcap-x"><span>' + ruDate(s[0].d) + '</span><span>' + ruDate(last.d) + '</span></div>';
+        }
+        return '<div class="dash2-card pf-card2 pf-capblk" title="Дневные снимки хранятся на этом устройстве (до 400 дней)">' +
+            pfCardHead('', 'График капитала', 'стоимость всех портфелей по дням', right) +
+            '<div class="pfcap-body">' + body + '</div></div>';
+    }
+
+    // ---- «Карта рынка»: живой мини-treemap IMOEX ----
+    // Рисует home-register.js (window.hgHeatRepaint): контейнеру достаточно класса
+    // .gx-heat — тот же приём, что у заглушек вкладок (tab-gates). Обновляется тем же
+    // 60-секундным циклом Главной (он ищет .gx-heat на активной вкладке).
+    function pfdHeatHtml() {
+        return '<div class="dash2-card pf-card2 pf-heatblk">' +
+            pfCardHead('', 'Карта рынка', 'индекс Мосбиржи · изменение за день',
+                '<button class="d3-quick ghost pfhm-go" onclick="switchTab(\'market\')">Открыть рынок</button>') +
+            '<div class="pfhm-box gx-heat"></div></div>';
+    }
+    var pfdHeatT = null;
+    function pfdHeatRepaintSoon() {
+        var box = document.querySelector('#pfWrap .pfhm-box');
+        if (!box || typeof window.hgHeatRepaint !== 'function') return;
+        var sz = box.clientWidth + 'x' + box.clientHeight;
+        if (box._pfhmSz === sz) return;   // размер не менялся — не дёргаем перерисовку
+        box._pfhmSz = sz;
+        clearTimeout(pfdHeatT);
+        pfdHeatT = setTimeout(function () { try { window.hgHeatRepaint(); } catch (e) {} }, 120);
+    }
+
+    // ---- «Новости по позициям»: свежая новость по каждой акции портфелей ----
+    // Переиспользует пайплайн новостей «Избранного» (loadNewsForTicker + newsHtmlCache +
+    // очередь newsQueue): та же лента Smart-Lab, тот же кэш — общие тикеры не грузятся дважды.
+    function pfdNewsTickers() {
+        var seen = {}, list = [];
+        visibleItems().forEach(function (p) {
+            (p.holdings || []).forEach(function (h) {
+                if (h.type === 'bond' || !h.ticker || seen[h.ticker]) return;
+                var a = aggHolding(h); if (!(a.qty > 0)) return;
+                var q = quotes[h.ticker];
+                seen[h.ticker] = 1;
+                list.push({ tk: h.ticker, val: ((q && q.price) || a.avgPrice || 0) * a.qty });
+            });
+        });
+        list.sort(function (a, b) { return b.val - a.val; });   // крупные позиции — первыми
+        return list.slice(0, 10).map(function (x) { return x.tk; });
+    }
+    function pfdNewsHtml() {
+        var tks = pfdNewsTickers();
+        var body = !tks.length
+            ? '<div class="pfnw-empty">Добавьте акции в любой портфель — здесь появится свежая новость по каждой позиции.</div>'
+            : '<div class="pfnw-list">' + tks.map(function (tk) {
+                return '<div class="pfnw-row" id="pfnw-' + esc(tk) + '">' +
+                    '<button class="pfnw-tk" onclick="event.stopPropagation();pfOpenTicker(\'' + jsArg(tk) + '\')" title="Открыть карточку компании">' + esc(tk) + '</button>' +
+                    '<div class="pfnw-news"><span class="pff-news-load">загрузка новости…</span></div>' +
+                '</div>';
+            }).join('') + '</div>';
+        return '<div class="dash2-card pf-card2 pf-newsblk">' +
+            pfCardHead('', 'Новости по позициям', 'свежая новость по каждой акции портфелей') +
+            '<div class="pfnw-body" data-skey="posnews">' + body + '</div></div>';
+    }
+    function fillPosNewsSlot(tk) {
+        var row = dq('pfnw-' + tk), e = newsHtmlCache[tk]; if (!row || !e) return;
+        var slot = row.querySelector('.pfnw-news'); if (!slot) return;
+        slot.innerHTML = e.html;
+        row.classList.toggle('is-none', !!e.none);
+        if (e.link) {
+            row.classList.add('link'); row.setAttribute('role', 'link');
+            row.onclick = function (ev) { ev.stopPropagation(); if (typeof openExternalLink === 'function') openExternalLink(e.link); else window.open(e.link, '_blank'); };
+        } else { row.classList.remove('link'); row.onclick = null; }
+    }
+    function renderPosNews() {
+        if (!document.querySelector('#pfWrap .pfnw-list') || typeof loadNewsForTicker !== 'function') return;
+        pfdNewsTickers().forEach(function (tk) {
+            if (newsHtmlCache[tk]) { fillPosNewsSlot(tk); return; }
+            if (!newsStarted[tk]) { newsStarted[tk] = true; newsQueue.push(tk); }
+        });
+        setTimeout(pumpNewsQueue, newsActive ? 0 : 400);
+    }
+
+    // ---- «Заметки»: текст пользователя, живёт в pf_dash_v1 (едет в облако) ----
+    function pfdNoteHtml() {
+        return '<div class="dash2-card pf-card2 pf-noteblk">' +
+            pfCardHead('', 'Заметки', 'цели, план ребаланса — сохраняются сами') +
+            '<textarea class="pfnt-area" placeholder="Цели, план ребаланса, идеи…" oninput="pfdNoteInput(this)">' + esc(dashCfg.note || '') + '</textarea>' +
+        '</div>';
+    }
+    var pfdNoteT = null;
+    window.pfdNoteInput = function (el) {
+        clearTimeout(pfdNoteT);
+        pfdNoteT = setTimeout(function () {
+            dashCfg.note = String(el.value || '').slice(0, 20000);
+            saveDashCfg();
+        }, 400);
     };
 
     // ---- перетаскивание: pointer-события вместо HTML5 DnD ----
@@ -1898,6 +2203,7 @@
     }
     function pfdStartDrag(item, x, y) {
         var r = item.getBoundingClientRect();
+        pfdPushUndo();   // снимок ДО перестановки — Cmd+Z вернёт как было
         pfdDragEl = item;
         pfdHomeNext = item.nextElementSibling;   // исходное место — для отмены
         pfdScrollEl = pfdScrollParentOf(item);
@@ -2006,7 +2312,8 @@
     }
     document.addEventListener('pointerdown', function (e) {
         if (!dashEdit || e.button !== 0) return;
-        if (e.target.closest && e.target.closest('.pfd-rs')) return;   // уголок — ресайз
+        // уголок — ресайз, крестик — скрытие блока: их клики не взводят драг
+        if (e.target.closest && e.target.closest('.pfd-rs, .pfd-hide')) return;
         var it = e.target.closest ? e.target.closest('.pfd-grid.editing .pfd-item') : null;
         if (!it) return;
         e.preventDefault();
@@ -2067,12 +2374,21 @@
         var badge = item.querySelector('.pfd-size');
         var newSpan = 0, newH = 0, hMode = hadH;
         pfdArm = null;   // гасим возможный «взвод» драга — ресайз и драг не смешиваются
+        pfdPushUndo();
         item.classList.add('pfd-resizing');
+        // направляющая: пунктир на правой грани блока — видно новую ширину даже до
+        // того, как соседи доехали. Позицию считает pfdPlaceGuide() в конце упаковки.
+        var guide = document.createElement('div');
+        guide.className = 'pfd-guide';
+        grid.appendChild(guide);
+        pfdGuideEl = guide; pfdGuideItem = item;
         function cleanup() {
             document.removeEventListener('pointermove', onMove);
             document.removeEventListener('pointerup', onUp);
             document.removeEventListener('pointercancel', onUp);
             item.classList.remove('pfd-resizing');
+            if (guide.parentNode) guide.parentNode.removeChild(guide);
+            pfdGuideEl = null; pfdGuideItem = null;
             if (badge) badge.textContent = '';
             pfdRsCancel = null;
         }
@@ -2087,7 +2403,7 @@
                 item.classList.add('pfd-hset');
             }
             if (badge) badge.textContent = newSpan + ' / 12' + (hMode ? ' · ' + newH + ' px' : ' · высота авто');
-            pfdRepackSoon();   // masonry: соседи переезжают под новый размер вживую
+            pfdRepackSoon();   // masonry: соседи переезжают под новый размер + кладём направляющую
         }
         function onUp() {
             cleanup();
@@ -2096,6 +2412,7 @@
                 if (hMode && newH) dashCfg.h[id] = newH;
                 saveDashCfg();
             }
+            pfdHeatRepaintSoon();   // карта рынка перерисовывается под новый размер блока
         }
         // Esc/выход из режима во время ресайза: возвращаем стартовые размеры,
         // ничего не сохраняем — вместо прежнего выхода из конструктора «на полпути»
@@ -2110,15 +2427,22 @@
         document.addEventListener('pointerup', onUp);
         document.addEventListener('pointercancel', onUp);
     });
-    // двойной клик по уголку — вернуть блоку размер по умолчанию
+    // двойной клик по уголку — ступенчатый сброс: сперва высота в авто (чаще всего
+    // хочется именно её), следующий дабл-клик возвращает ширину по умолчанию
     document.addEventListener('dblclick', function (e) {
         var rs = e.target.closest ? e.target.closest('.pfd-rs') : null;
         if (!rs || !dashEdit) return;
         var item = rs.closest('.pfd-item');
         var id = item && item.getAttribute('data-pfd');
         if (!id) return;
-        delete dashCfg.span[id];
-        delete dashCfg.h[id];
+        pfdPushUndo();
+        if (dashCfg.h[id] != null) {
+            delete dashCfg.h[id];
+            toast('Высота — авто');
+        } else {
+            delete dashCfg.span[id];
+            toast('Ширина — по умолчанию');
+        }
         saveDashCfg();
         pfdRerender();
     });
@@ -3047,6 +3371,8 @@
             date: isNaN(d.getTime()) ? 0 : d.getTime() };   // для сортировки избранного «по свежести»
     }
     function fillNewsSlot(tk) {
+        // новость по тикеру может ждать и блок «Новости по позициям» (конструктор)
+        if (typeof fillPosNewsSlot === 'function') fillPosNewsSlot(tk);
         var slot = dq('pf-news-' + tk), e = newsHtmlCache[tk]; if (!slot || !e) return;
         slot.innerHTML = '<div class="pff-news-inner">' + e.html + '</div>';
         slot.classList.toggle('is-none', !!e.none);   // маркер «новости нет» (разворот на ховере идёт только у .link)
