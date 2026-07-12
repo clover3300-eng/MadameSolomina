@@ -382,7 +382,7 @@
     .adm-gt-add { grid-template-columns: 1fr; }
 
     /* Портфели: настройка раскладки (кнопка «Раскладка» + карточка) — только десктоп */
-    .pfl-open-btn, .pfl-panel { display: none !important; }
+    .pfl-open-btn, .pfl-panel, .pfl-bar { display: none !important; }
 
     /* Палитра поиска: выше на экране — под ней клавиатура */
     #searchOverlay { padding-top: 10vh; }

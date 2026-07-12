@@ -33,18 +33,25 @@
         var sb = document.getElementById('sideBar');
         if (!sb) return;
         // Раскрытие по наведению — с небольшой задержкой «намерения»: случайный
-        // пролёт курсора через рельсу больше не вспыхивает оверлеем над контентом
-        var peekTimer = null;
-        sb.addEventListener('mouseenter', function() {
-            if (sbIsDesktop() && document.body.classList.contains('sb-collapsed')) {
-                clearTimeout(peekTimer);
-                peekTimer = setTimeout(function() {
-                    document.body.classList.add('sb-peek');
-                }, 180);
+        // пролёт курсора через рельсу больше не вспыхивает оверлеем над контентом.
+        // У САМОЙ левой грани окна (мёртвая зона EDGE_DEAD px) не раскрываемся —
+        // там ОС/браузер выкидывает свою боковую панель, и два сайдбара разом
+        // выглядят странно. Открыть можно, отведя курсор чуть правее по рельсе.
+        var peekTimer = null, peekArmed = false;
+        var EDGE_DEAD = 4;
+        function onRailMove(e) {
+            if (!sbIsDesktop() || !document.body.classList.contains('sb-collapsed')) return;
+            if (e.clientX <= EDGE_DEAD) {           // у самого края — гасим намерение
+                clearTimeout(peekTimer); peekArmed = false; return;
             }
-        });
+            if (peekArmed || document.body.classList.contains('sb-peek')) return;
+            peekArmed = true;
+            peekTimer = setTimeout(function() { document.body.classList.add('sb-peek'); }, 180);
+        }
+        sb.addEventListener('mouseenter', onRailMove);
+        sb.addEventListener('mousemove', onRailMove);
         sb.addEventListener('mouseleave', function() {
-            clearTimeout(peekTimer);
+            clearTimeout(peekTimer); peekArmed = false;
             document.body.classList.remove('sb-peek');
         });
     });

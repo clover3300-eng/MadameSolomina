@@ -2131,6 +2131,12 @@ body.dark-mode .pfpc-kind.kind-red { color: #93c5fd; background: rgba(61,111,209
    (скруглённый низ карточки) уезжает под обрез/скролл — «пропадает нижняя грань».
    height:100% перебивает 674px, min-height:0 отдаёт скролл внутреннему .pff-body */
 .pfd-item.pfd-hset .pfd-favwrap > * { height: 100%; min-height: 0; flex: 1; }
+/* «Суммарный капитал» при ручной высоте: карточка — флекс-колонка, а список портфелей
+   (.pfs2-board) забирает лишнюю высоту и скроллится, кнопки-навигация прижаты к низу.
+   Иначе контент оставался наверху, а под ним зияла пустота во всю растянутую высоту. */
+.pfd-item[data-pfd="sum"].pfd-hset .pf-sumcard { display: flex; flex-direction: column; }
+.pfd-item[data-pfd="sum"].pfd-hset .pf-sumcard > .pfs2-board { flex: 1 1 auto; min-height: 40px; overflow-y: auto; scrollbar-width: thin; }
+.pfd-item[data-pfd="sum"].pfd-hset .pf-sumcard > .pfs2-nav { flex-shrink: 0; }
 
 /* ---- живая правка блоков (всегда при показанной сетке .pfd-live) ---- */
 /* Блоки читаются как «плитки»: при наведении проявляются грип-ручка (перенос),
@@ -2209,6 +2215,13 @@ body.pfd-dragging-now .pfd-grid.editing .pfd-item { cursor: grabbing; }
 /* блоки с контролами в шапке (график/карта/новости) — освобождаем справа место под корзину,
    чтобы значок не наезжал на их кнопки; у KPI шапки нет — там угол и так свободен */
 .pfd-rmable > .pfd-body > .dash2-card > .pf-ch { padding-right: 46px; }
+/* виджеты с полноценной шапкой (заголовок начинается на 22px от верха карточки) —
+   опускаем корзину на УРОВЕНЬ ЗАГОЛОВКА, а не под самый верх блока */
+.pfd-item[data-pfd="cap"] .pfd-cardrm,
+.pfd-item[data-pfd="cap2"] .pfd-cardrm,
+.pfd-item[data-pfd="heat"] .pfd-cardrm,
+.pfd-item[data-pfd="news"] .pfd-cardrm,
+.pfd-item[data-pfd="alloc"] .pfd-cardrm { top: 24px; right: 20px; }
 /* бейдж текущего размера — появляется только во время ресайза (JS пишет текст) */
 .pfd-size {
     position: absolute; top: 8px; right: 38px;
@@ -2222,8 +2235,9 @@ body.pfd-dragging-now .pfd-grid.editing .pfd-item { cursor: grabbing; }
 /* Живут в ЗАЗОРЕ между блоками (отрицательные offset) — не перекрывают контент и
    скроллбары карточек. Подсказка — ТОЛЬКО курсор (никаких линий/пунктиров): у любой
    грани он меняется на ↔/↕, у уголка — ⤡. Уголок показывает лёгкий серый грип по hover. */
-.pfd-rs-r, .pfd-rs-b { position: absolute; z-index: 6; pointer-events: auto; touch-action: none; }
+.pfd-rs-r, .pfd-rs-b, .pfd-rs-l { position: absolute; z-index: 6; pointer-events: auto; touch-action: none; }
 .pfd-rs-r { top: 18px; bottom: 20px; right: -9px; width: 13px; cursor: ew-resize; }
+.pfd-rs-l { top: 18px; bottom: 20px; left: -9px; width: 13px; cursor: ew-resize; }
 .pfd-rs-b { left: 18px; right: 20px; bottom: -9px; height: 13px; cursor: ns-resize; }
 /* уголок-ручка (обе оси) — в наружном углу блока, проявляется при наведении */
 .pfd-rs {
@@ -2243,20 +2257,33 @@ body.pfd-dragging-now .pfd-grid.editing .pfd-item { cursor: grabbing; }
 }
 
 /* ============ карточка «Настройка раскладки» (бывший бар-конструктор + пикер) ============ */
-/* разделитель между названием раздела и кнопкой настройки вида — отделяет кнопку от
-   крошки «Портфели», чтобы она не читалась как продолжение названия */
-.pfl-open-sep { display: none; width: 1px; height: 20px; margin: 0 4px 0 12px; border-radius: 1px; background: #d7dee8; vertical-align: middle; }
-body.dark-mode .pfl-open-sep { background: rgba(255, 255, 255, 0.16); }
-/* кнопка «Настроить вид» в шапке страницы (рядом с названием раздела): явно нажимаемая —
-   мягкий цвет + шеврон (открывает панель), но не кричит. Тёмная — «Добавить на дашборд». */
+/* слим-панель входа НАД сеткой (переехала из шапки): ярлык «Раскладка» + кнопка «Настроить вид» */
+.pfl-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    margin: 0 0 14px; padding: 9px 12px 9px 14px; border-radius: 14px;
+    background: linear-gradient(#f7f9fe, #eef2fb); border: 1px solid #e4e9f4;
+}
+.pfl-bar-l { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.pfl-bar-ic { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 9px; background: #ecebff; color: #4f46e5; flex-shrink: 0; box-shadow: inset 0 0 0 1px #dcd9ff; }
+.pfl-bar-ic svg { width: 17px; height: 17px; }
+.pfl-bar-tx { display: flex; flex-direction: column; gap: 0; min-width: 0; }
+.pfl-bar-tx b { font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 800; color: #1e293b; letter-spacing: -0.01em; }
+.pfl-bar-tx span { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700; color: #7c8aa0; }
+body.dark-mode .pfl-bar { background: linear-gradient(#111b2e, #0e1626); border-color: #22304a; }
+body.dark-mode .pfl-bar-ic { background: #1c2445; color: #b7bdff; box-shadow: inset 0 0 0 1px #2f376a; }
+body.dark-mode .pfl-bar-tx b { color: #eaf1fb; }
+body.dark-mode .pfl-bar-tx span { color: #93a4bd; }
+/* кнопка «Настроить вид»: явно нажимаемая — мягкий индиго + шеврон, но не кричит */
 .pfl-open-btn {
-    display: none; align-items: center; gap: 7px; padding: 7px 10px 7px 12px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 7px; padding: 7px 10px 7px 12px; cursor: pointer;
     border-radius: 10px; border: 1px solid #c1cbf7; background: linear-gradient(#eef1ff, #dee3fe); color: #4338ca;
     font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 800; letter-spacing: -0.01em; white-space: nowrap;
     box-shadow: 0 2px 7px -3px rgba(79, 70, 229, 0.4); transition: background 0.14s, border-color 0.14s, box-shadow 0.14s, transform 0.1s;
 }
-.pfl-open-ic { width: 15px; height: 15px; }
-.pfl-open-chev { width: 13px; height: 13px; opacity: 0.7; transition: transform 0.2s; }
+.pfl-open-ic { display: inline-flex; align-items: center; }
+.pfl-open-ic svg { width: 15px; height: 15px; }
+.pfl-open-chev { display: inline-flex; align-items: center; opacity: 0.7; transition: transform 0.2s; }
+.pfl-open-chev svg { width: 13px; height: 13px; }
 .pfl-open-btn:hover { background: linear-gradient(#e6eaff, #cbd3fd); border-color: #9aa7f5; box-shadow: 0 5px 14px -4px rgba(79, 70, 229, 0.5); transform: translateY(-1px); }
 .pfl-open-btn:active { transform: translateY(0); }
 .pfl-open-btn.active { background: linear-gradient(#4f46e5, #4035c4); border-color: transparent; color: #fff; box-shadow: 0 5px 16px -4px rgba(79, 70, 229, 0.65); }
@@ -2301,6 +2328,10 @@ body.dark-mode .pfl-open-sep { background: rgba(255, 255, 255, 0.16); }
 .pfl-btn.ghost:hover { background: #f4f7fb; border-color: #c3d0e0; color: #1e293b; }
 .pfl-btn.primary { background: linear-gradient(#4f46e5, #4338ca); color: #fff; box-shadow: 0 6px 16px -6px rgba(79, 70, 229, 0.6); }
 .pfl-btn.primary:hover { background: linear-gradient(#5b52ea, #4b40d6); }
+/* «Сохранено» — успокоенное зелёное состояние (текущий вид == сохранённому) */
+.pfl-btn.primary.done { background: #eaf7ef; color: #12a35c; border: 1px solid #b7ebc9; box-shadow: none; }
+.pfl-btn.primary.done:hover { background: #e2f4e9; }
+body.dark-mode .pfl-btn.primary.done { background: rgba(18, 163, 92, 0.14); color: #6ee7a8; border-color: rgba(52, 211, 153, 0.35); }
 .pfl-x {
     flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; cursor: pointer;
     border-radius: 10px; border: 1px solid #e5eaf1; background: #fff; color: #64748b; transition: background 0.12s, color 0.12s, border-color 0.12s;
@@ -2336,8 +2367,10 @@ body.dark-mode .pfl-open-sep { background: rgba(255, 255, 255, 0.16); }
 /* правая колонка: превью-сцена + подвал (имя + тёмная кнопка «Добавить на дашборд») */
 .pfd-pickpv { flex: 1; min-width: 0; display: none; flex-direction: column; min-height: 0; background: #f6f8fb; }
 .pfd-pickpv.show { display: flex; }
-.pfd-pick-stage { position: relative; flex: 1; min-height: 0; padding: 18px; pointer-events: none; overflow: auto; }
-.pfd-pick-stage > * { margin: 0 !important; }
+.pfd-pick-stage { position: relative; flex: 1; min-height: 0; padding: 16px; pointer-events: none; overflow: auto; }
+/* сам блок в превью показываем УМЕНЬШЕННЫМ (zoom) — иначе виджет занимает всю сцену
+   «гигантом»; zoom (а не transform) честно ужимает и раскладку, и SVG-графику */
+.pfd-pick-stage > * { margin: 0 !important; zoom: 0.72; }
 .pfd-pick-stage .pfhm-box { height: 190px; }        /* карта в превью — компактнее */
 .pfd-pick-tag {
     position: absolute; top: 14px; right: 14px; z-index: 3; padding: 2px 8px; border-radius: 999px;
@@ -2407,16 +2440,17 @@ body.dark-mode .pfl-open-sep { background: rgba(255, 255, 255, 0.16); }
    от неопределённой высоты родителя — иначе фикс-высотный ребёнок (карта 260px)
    вываливался за схлопнутую карточку, offsetHeight занижался и masonry клал
    следующий блок ВНАХЛЁСТ. height:100% нужен только в hset (ручная высота). */
-.pf-capblk, .pf-heatblk, .pf-newsblk, .pf-noteblk { display: flex; flex-direction: column; box-sizing: border-box; }
+.pf-capblk, .pf-heatblk, .pf-newsblk, .pf-noteblk, .pf-allocblk { display: flex; flex-direction: column; box-sizing: border-box; }
 /* Отступ снизу и по бокам держит КАРТОЧКА (было padding только у шапки .pf-ch →
    контент упирался в нижнюю/боковую грань). Шапке гасим горизонтальный паддинг,
    чтобы заголовок и тело выровнялись по одной вертикали. */
-.pf-capblk, .pf-heatblk, .pf-newsblk, .pf-noteblk { padding: 0 22px 20px; }
-.pf-capblk > .pf-ch, .pf-heatblk > .pf-ch, .pf-newsblk > .pf-ch, .pf-noteblk > .pf-ch { padding-left: 0; padding-right: 0; }
+.pf-capblk, .pf-heatblk, .pf-newsblk, .pf-noteblk, .pf-allocblk { padding: 0 22px 20px; }
+.pf-capblk > .pf-ch, .pf-heatblk > .pf-ch, .pf-newsblk > .pf-ch, .pf-noteblk > .pf-ch, .pf-allocblk > .pf-ch { padding-left: 0; padding-right: 0; }
 .pfd-item.pfd-hset .pf-capblk,
 .pfd-item.pfd-hset .pf-heatblk,
 .pfd-item.pfd-hset .pf-newsblk,
-.pfd-item.pfd-hset .pf-noteblk { height: 100%; }
+.pfd-item.pfd-hset .pf-noteblk,
+.pfd-item.pfd-hset .pf-allocblk { height: 100%; }
 
 /* --- «График капитала»: чипы окна в шапке, крупный герой-значение, график --- */
 .pfcap-seg { flex-shrink: 0; }
@@ -2439,6 +2473,60 @@ body.dark-mode .pfl-open-sep { background: rgba(255, 255, 255, 0.16); }
 .pfcap-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; text-align: center; padding: 26px 18px; }
 .pfcap-empty-t { font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 800; color: #334155; }
 .pfcap-empty-s { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: #8494a7; max-width: 340px; line-height: 1.45; }
+
+/* --- «График капитала» дизайн B: столбцы --- */
+.pfcapb-wrap { position: relative; flex: 1; min-height: 158px; display: flex; }
+.pfcapb-plot { flex: 1; min-height: 0; display: flex; align-items: flex-end; gap: 2px; padding-left: 2px; }
+.pfcapb-bar { flex: 1 1 0; min-width: 2px; border-radius: 3px 3px 0 0; background: linear-gradient(#12a35c, #8fd6b3); opacity: 0.92; transition: opacity 0.12s, filter 0.12s; }
+.pfcapb-bar.neg { background: linear-gradient(#e0592b, #f3b79e); }
+.pfcapb-bar:hover { opacity: 1; filter: brightness(1.06); }
+body.dark-mode .pfcapb-bar { background: linear-gradient(#2fd08a, #1c5e42); }
+body.dark-mode .pfcapb-bar.neg { background: linear-gradient(#f4794f, #6e2c17); }
+
+/* --- «Распределение активов»: кольцо + легенда + выбор портфеля --- */
+.pf-allocblk .pfal-seg { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+.pfal-chip {
+    display: inline-flex; align-items: center; gap: 6px; max-width: 148px;
+    padding: 5px 10px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff;
+    font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700; color: #64748b;
+    cursor: pointer; white-space: nowrap; overflow: hidden; transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.pfal-chip span { overflow: hidden; text-overflow: ellipsis; }
+.pfal-chip i { width: 8px; height: 8px; border-radius: 99px; flex-shrink: 0; }
+.pfal-chip:hover { border-color: #cbd5e1; color: #334155; }
+.pfal-chip.on { background: #0f172a; border-color: #0f172a; color: #fff; }
+.pfal-body { display: flex; align-items: center; gap: 18px; margin-top: 14px; flex: 1; min-height: 0; }
+.pfal-donut { position: relative; flex-shrink: 0; width: 132px; height: 132px; }
+.pfal-donut svg { width: 100%; height: 100%; display: block; }
+.pfal-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; }
+.pfal-center b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 24px; font-weight: 800; letter-spacing: -0.02em; color: #0f172a; line-height: 1; }
+.pfal-center span { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; }
+.pfal-legend { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 9px; }
+.pfal-lrow { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto auto; align-items: center; gap: 9px; }
+.pfal-dot { width: 10px; height: 10px; border-radius: 3px; }
+.pfal-dot.stk { background: #D97757; } .pfal-dot.bnd { background: #7B9BBF; } .pfal-dot.csh { background: #94a3b8; }
+.pfal-lname { font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 700; color: #475569; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pfal-lval { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12.5px; font-weight: 700; color: #1e293b; }
+.pfal-lpct { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12.5px; font-weight: 800; color: #0f172a; min-width: 34px; text-align: right; }
+.pfal-empty { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; padding: 22px 16px; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: #8494a7; line-height: 1.45; }
+body.dark-mode .pfal-chip { background: #16213a; border-color: #2b3a55; color: #b6c4d8; }
+body.dark-mode .pfal-chip:hover { border-color: #3a4c6d; color: #eaf1fb; }
+body.dark-mode .pfal-chip.on { background: #eaf1fb; border-color: #eaf1fb; color: #0f172a; }
+body.dark-mode .pfal-center b { color: #eaf0f8; }
+body.dark-mode .pfal-lname { color: #b6c4d8; }
+body.dark-mode .pfal-lval { color: #dce6f2; }
+body.dark-mode .pfal-lpct { color: #eaf0f8; }
+body.dark-mode .pfal-empty { color: #8fa2b8; }
+
+/* --- переключатель дизайна графика в превью пикера (Линия / Столбцы) --- */
+.pfl-pv-variant { display: inline-flex; gap: 3px; padding: 3px; border-radius: 9px; background: #eef2f8; margin-right: 4px; flex-shrink: 0; }
+.pfl-vbtn { border: 0; background: none; padding: 5px 11px; border-radius: 7px; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700; color: #64748b; transition: background 0.12s, color 0.12s; }
+.pfl-vbtn.on { background: #fff; color: #0f172a; box-shadow: 0 2px 6px -3px rgba(15, 23, 42, 0.3); }
+.pfl-vbtn:hover:not(.on) { color: #334155; }
+body.dark-mode .pfl-pv-variant { background: #16213a; }
+body.dark-mode .pfl-vbtn { color: #9fb1c6; }
+body.dark-mode .pfl-vbtn.on { background: #26344f; color: #eaf1fb; box-shadow: none; }
+body.dark-mode .pfl-vbtn:hover:not(.on) { color: #dce6f2; }
 
 /* --- «Карта рынка»: свой treemap (живые плитки, не декоративный фон Главной) --- */
 .pfhm-box {
