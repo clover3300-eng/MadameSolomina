@@ -1668,7 +1668,7 @@
     // \n в строки-абзацы, чтобы ничьи записи не потерялись.
     function pfdNormNote(n) {
         n = n || {};
-        var color = PFD_NOTE_COLORS.indexOf(n.color) >= 0 ? n.color : 'slate';
+        var color = PFD_NOTE_COLORS.indexOf(n.color) >= 0 ? n.color : 'amber';   // новая заметка — жёлтая
         var items = [];
         if (Array.isArray(n.items)) {
             n.items.forEach(function (it) {
@@ -1895,39 +1895,54 @@
                 '<span class="pfnt-due-main"><span class="pfnt-due-date">через 3 дня</span><span class="pfnt-cd-static">осталось 3 дн</span></span></div></div>' +
         '</div>';
     }
-    function pfdPickCard(id, name, block, noPf) {
+    function pfdShelfBlockById(id) { return pfdShelfBlocks.filter(function (b) { return b.id === id; })[0] || null; }
+    // «портфели не собраны» = нет вложений/стоимости ни в одном (пустые портфели): живые
+    // блоки были бы пустыми → показываем примеры. invested берётся из лотов, не зависит от
+    // живых котировок, поэтому проверка надёжна и без сети.
+    function pfdPickNoPf() { return !visibleItems().some(function (p) { var c = calcPf(p); return c && (c.invested > 0 || c.value > 0); }); }
+    // содержимое поповера-превью справа: живой блок (или крупный эскиз-пример, если
+    // портфели не собраны; заметка — всегда пример, «скрытой» заметки нет)
+    function pfdPickPvHtml(id, noPf) {
+        if (id === '__note') return '<div class="pfd-pick-stage">' + pfdNoteExampleHtml() + '</div><span class="pfd-pick-tag">пример</span>';
+        if (noPf) return '<div class="pfd-pick-stage pfd-pick-sketch">' + pfdBlockPreviewSvg(id) + '</div><span class="pfd-pick-tag">пример</span>';
+        var b = pfdShelfBlockById(id);
+        return '<div class="pfd-pick-stage">' + (b ? b.htmlFn() : '') + '</div>';
+    }
+    // компактная строка списка: имя + описание + «＋»; наведение показывает превью справа
+    function pfdPickRow(id, name) {
         var desc = PFD_PICK_DESC[id] || '';
-        var stage;
-        if (id === '__note') {
-            stage = '<div class="pfd-pick-stage">' + pfdNoteExampleHtml() + '</div><span class="pfd-pick-tag">пример</span>';
-        } else if (noPf) {
-            // портфели не собраны → крупный эскиз-пример вместо пустого живого блока
-            stage = '<div class="pfd-pick-stage pfd-pick-sketch">' + pfdBlockPreviewSvg(id) + '</div><span class="pfd-pick-tag">пример</span>';
-        } else {
-            stage = '<div class="pfd-pick-stage">' + (block ? block.htmlFn() : '') + '</div>';
-        }
         var onclick = id === '__note' ? 'pfdAddNote()' : ('pfdShowBlock(\'' + jsArg(id) + '\')');
-        return '<div class="pfd-pick" onclick="' + onclick + '" role="button" tabindex="0" title="Добавить на дашборд">' +
-            stage +
-            '<div class="pfd-pick-foot">' +
-                '<div class="pfd-pick-txt"><b>' + esc(name) + '</b>' + (desc ? '<span>' + esc(desc) + '</span>' : '') + '</div>' +
-                '<span class="pfd-pick-add">' + PFD_PLUS_SVG + 'Добавить</span>' +
-            '</div>' +
+        var arg = jsArg(id);
+        return '<div class="pfd-pick" data-pick="' + esc(id) + '" role="button" tabindex="0" ' +
+            'title="Навести — показать превью справа; нажать — добавить на дашборд" ' +
+            'onmouseenter="pfdPickPreview(\'' + arg + '\')" onfocus="pfdPickPreview(\'' + arg + '\')" onclick="' + onclick + '">' +
+            '<div class="pfd-pick-txt"><b>' + esc(name) + '</b>' + (desc ? '<span>' + esc(desc) + '</span>' : '') + '</div>' +
+            '<span class="pfd-pick-add">' + PFD_PLUS_SVG + '</span>' +
         '</div>';
     }
     function pfdPickerInner() {
-        // «портфели не собраны» = нет вложений/стоимости ни в одном (пустые портфели):
-        // живые блоки были бы пустыми → показываем примеры. invested берётся из лотов,
-        // не зависит от живых котировок, поэтому проверка надёжна и без сети.
-        var noPf = !visibleItems().some(function (p) { var c = calcPf(p); return c && (c.invested > 0 || c.value > 0); });
-        var cards = pfdShelfBlocks.map(function (b) { return pfdPickCard(b.id, b.name || b.id, b, noPf); });
-        cards.push(pfdPickCard('__note', 'Заметка', null, noPf));
+        var noPf = pfdPickNoPf();
+        var rows = pfdShelfBlocks.map(function (b) { return pfdPickRow(b.id, b.name || b.id); });
+        rows.push(pfdPickRow('__note', 'Заметка'));
         var hint = noPf
-            ? 'Соберите портфель — и здесь появятся ваши живые данные. Пока показаны примеры.'
-            : 'Живой предпросмотр с вашими данными. Нажмите карточку, чтобы добавить.';
+            ? 'Наведите на блок — справа появится пример. Нажмите, чтобы добавить.'
+            : 'Наведите на блок — справа появится живое превью. Нажмите, чтобы добавить.';
         return '<div class="pfd-picker-h"><b>Что добавить</b><span>' + hint + '</span></div>' +
-            '<div class="pfd-picker-list">' + cards.join('') + '</div>';
+            '<div class="pfd-picker-list">' + rows.join('') + '</div>';
     }
+    // наведение на строку → наполнить поповер-превью справа (живой блок или пример)
+    window.pfdPickPreview = function (id) {
+        var pv = document.getElementById('pfdPickPv'); if (!pv) return;
+        pv.innerHTML = pfdPickPvHtml(id, pfdPickNoPf());
+        pv.classList.add('show');
+        var host = document.getElementById('pfdPicker');
+        if (host) host.querySelectorAll('.pfd-pick').forEach(function (r) { r.classList.toggle('active', r.getAttribute('data-pick') === id); });
+        // карта/новости живые: реальные блоки скрыты → единственная копия в #pfWrap — здесь
+        requestAnimationFrame(function () {
+            try { if (document.querySelector('#pfdPickPv .pfhm-box')) pfdHeatRepaintSoon(); } catch (e) {}
+            try { if (document.querySelector('#pfdPickPv .pf-newsblk')) renderPosNews(); } catch (e) {}
+        });
+    };
     window.pfdPickerToggle = function (ev) {
         if (ev) ev.stopPropagation();
         if (pfdPickerOpen) pfdPickerClose(); else pfdPickerShow();
@@ -1937,15 +1952,11 @@
         host.innerHTML = pfdPickerInner();
         host.classList.add('open');
         var btn = document.querySelector('#pfWrap .pfd-addbtn'); if (btn) btn.classList.add('open');
-        pfdPickerOpen = true;
-        // оживить карту/новости в превью (реальные блоки скрыты → селекторы бьют сюда)
-        requestAnimationFrame(function () {
-            try { if (document.querySelector('#pfdPicker .pfhm-box')) pfdHeatRepaintSoon(); } catch (e) {}
-            try { if (document.querySelector('#pfdPicker .pf-newsblk')) renderPosNews(); } catch (e) {}
-        });
+        pfdPickerOpen = true;   // превью справа появляется при наведении (pfdPickPreview)
     }
     function pfdPickerClose() {
         var host = document.getElementById('pfdPicker'); if (host) { host.classList.remove('open'); host.innerHTML = ''; }
+        var pv = document.getElementById('pfdPickPv'); if (pv) { pv.classList.remove('show'); pv.innerHTML = ''; }
         var btn = document.querySelector('#pfWrap .pfd-addbtn'); if (btn) btn.classList.remove('open');
         pfdPickerOpen = false;
     }
@@ -1985,9 +1996,9 @@
             '</div>';
         }).join('');
 
-        // выпадающий список «Добавить блок» СЛЕВА: живые превью скрытых опт-ин блоков
-        // (или примеры, если портфели не собраны) + всегда «Заметка». Содержимое
-        // выпадашки собирается ЛЕНИВО при открытии (pfdPickerShow) — блоки тяжёлые.
+        // выпадающий список «Добавить блок» СЛЕВА: компактные строки; при наведении на
+        // строку — ЖИВОЕ превью (или пример) в поповере #pfdPickPv СПРАВА от списка.
+        // Содержимое собирается ЛЕНИВО при открытии/наведении — блоки тяжёлые.
         pfdShelfBlocks = hiddenB.slice();
         pfdPickerOpen = false;   // при каждом ре-рендере бара выпадашка закрыта
         var add = dashEdit
@@ -1996,6 +2007,7 @@
                     PFD_PLUS_SVG + '<span>Добавить блок</span>' + PFD_CHEVDOWN_SVG +
                 '</button>' +
                 '<div class="pfd-picker" id="pfdPicker"></div>' +
+                '<div class="pfd-pickpv" id="pfdPickPv"></div>' +
               '</div>'
             : '';
         var bar = dashEdit
@@ -2314,9 +2326,8 @@
     var pfdCal = null;   // { nid, vy, vm, d:Date } — просматриваемый месяц + выбранный момент
     var PFDCAL_WD = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
     var PFDCAL_MON = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-    var PFDCAL_PRESETS = [   // «выбор периода»: быстрые сроки от текущего момента
-        { l: 'Сегодня', d: 0, mo: 0 }, { l: 'Завтра', d: 1, mo: 0 }, { l: '+3 дня', d: 3, mo: 0 },
-        { l: 'Неделя', d: 7, mo: 0 }, { l: 'Месяц', d: 0, mo: 1 }
+    var PFDCAL_PRESETS = [   // быстрый выбор срока от текущего момента — три периода
+        { l: 'Сегодня', d: 0, mo: 0 }, { l: 'Завтра', d: 1, mo: 0 }, { l: 'Неделя', d: 7, mo: 0 }
     ];
     function pfd2(n) { return String(n).padStart(2, '0'); }
     function pfdCalInner() {
@@ -2917,11 +2928,15 @@
                 '<button type="button" class="pfnt-due-clr" onclick="pfdNoteClearDue(\'' + jsArg(nt.id) + '\',event)" aria-label="Убрать срок" title="Убрать срок">' + NOTE_X_SVG + '</button>' +
             '</div>';
         }
-        // .pfnt-cal — контейнер СВОЕГО календаря-поповера (наполняется при открытии, поверх контента)
-        return '<div class="pfnt-duewrap">' + chip + '<div class="pfnt-cal" data-nid="' + esc(nt.id) + '"></div></div>';
+        // .pfnt-cal — контейнер СВОЕГО календаря-поповера (наполняется при открытии, поверх контента).
+        // onclick=stopPropagation на КОНТЕЙНЕРЕ (он переживает ре-рендер innerHTML при выборе дня/
+        // пресета, в отличие от самой кнопки) — иначе всплывший клик долетал до общего обработчика
+        // document, а detached-кнопка теряла closest('.pfnt-duewrap') и календарь тут же закрывался.
+        return '<div class="pfnt-duewrap">' + chip +
+            '<div class="pfnt-cal" data-nid="' + esc(nt.id) + '" onclick="event.stopPropagation()"></div></div>';
     }
     function pfdNoteHtml(nt) {
-        var color = PFD_NOTE_COLORS.indexOf(nt.color) >= 0 ? nt.color : 'slate';
+        var color = PFD_NOTE_COLORS.indexOf(nt.color) >= 0 ? nt.color : 'amber';
         var fill = nt.fill === 'full' ? 'full' : 'edge';
         var sw = PFD_NOTE_COLORS.map(function (c) {
             return '<button type="button" class="pfnt-sw' + (c === color ? ' on' : '') + '" data-c="' + c + '" style="--sw:var(--nt-' + c + ')" title="Цвет" onclick="pfdSetNoteColor(\'' + jsArg(nt.id) + '\',\'' + c + '\',event)"></button>';

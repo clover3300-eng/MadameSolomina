@@ -2205,45 +2205,50 @@ body.pfd-dragging-now * { cursor: grabbing !important; }
 .pfd-addbtn.open { background: #eaf1ff; border-color: #93c5fd; }
 .pfd-addbtn.open .pfd-addchev { transform: rotate(180deg); }
 .pfd-picker {
-    position: absolute; left: 0; top: calc(100% + 9px); z-index: 80; width: 430px; max-width: 82vw;
-    display: none; flex-direction: column; max-height: min(74vh, 760px);
-    background: #fff; border: 1px solid #e2e8f0; border-radius: 18px; overflow: hidden;
+    position: absolute; left: 0; top: calc(100% + 9px); z-index: 80; width: 300px; max-width: 82vw;
+    display: none; flex-direction: column; max-height: min(74vh, 620px);
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden;
     box-shadow: 0 26px 60px -20px rgba(15, 23, 42, 0.34); animation: pfdPickIn 0.16s ease;
 }
 .pfd-picker.open { display: flex; }
 @keyframes pfdPickIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
-.pfd-picker-h { padding: 13px 16px 11px; border-bottom: 1px solid #eef2f7; display: flex; flex-direction: column; gap: 2px; }
+.pfd-picker-h { padding: 13px 15px 11px; border-bottom: 1px solid #eef2f7; display: flex; flex-direction: column; gap: 2px; }
 .pfd-picker-h b { font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 800; color: #0f172a; }
-.pfd-picker-h span { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #64748b; }
-.pfd-picker-list { display: flex; flex-direction: column; gap: 12px; padding: 14px; overflow-y: auto; }
-/* карточка-превью: живой блок сверху (не кликается), футер с названием и «Добавить» */
+.pfd-picker-h span { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #64748b; line-height: 1.35; }
+.pfd-picker-list { display: flex; flex-direction: column; gap: 4px; padding: 8px; overflow-y: auto; }
+/* компактная строка: имя + описание + «＋»; наведение раскрывает превью справа */
 .pfd-pick {
-    position: relative; display: flex; flex-direction: column; cursor: pointer;
-    border-radius: 14px; border: 1px solid #e6ebf2; background: #f8fafc; overflow: hidden;
-    transition: border-color 0.14s, box-shadow 0.14s, transform 0.1s;
+    display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 9px 10px;
+    border-radius: 11px; border: 1px solid transparent; background: #f8fafc;
+    transition: border-color 0.13s, background 0.13s;
 }
-.pfd-pick:hover { border-color: #bfdbfe; box-shadow: 0 12px 26px -14px rgba(59, 130, 246, 0.55); transform: translateY(-2px); }
-.pfd-pick-stage { position: relative; padding: 12px 12px 6px; pointer-events: none; max-height: 320px; overflow: hidden; }
-.pfd-pick-stage > * { margin: 0 !important; }
-.pfd-pick-stage .pfhm-box { height: 150px; }        /* карта в превью — компактнее */
-.pfd-pick-sketch { display: block; padding: 0; background: #eef3f8; }
-.pfd-pick-sketch .pfd-pv-svg { width: 100%; height: auto; display: block; }
-.pfd-pick-tag {
-    position: absolute; top: 10px; right: 10px; z-index: 3; padding: 2px 8px; border-radius: 999px;
-    font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
-    color: #64748b; background: rgba(255, 255, 255, 0.9); border: 1px solid #e2e8f0; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
-}
-.pfd-pick-foot { display: flex; align-items: center; gap: 10px; padding: 10px 13px; border-top: 1px solid #eef2f7; background: #fff; }
+.pfd-pick:hover, .pfd-pick.active { border-color: #bfdbfe; background: #eff5ff; }
 .pfd-pick-txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
 .pfd-pick-txt b { font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 800; color: #0f172a; }
 .pfd-pick-txt span { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: #64748b; line-height: 1.3; }
 .pfd-pick-add {
-    flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 9px;
-    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 800; color: #fff; background: #3b82f6;
-    transition: filter 0.12s; white-space: nowrap;
+    flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px;
+    border-radius: 8px; color: #2563eb; background: #e6efff; transition: background 0.12s, color 0.12s;
 }
-.pfd-pick-add svg { width: 13px; height: 13px; }
-.pfd-pick:hover .pfd-pick-add { filter: brightness(1.07); }
+.pfd-pick-add svg { width: 14px; height: 14px; }
+.pfd-pick:hover .pfd-pick-add, .pfd-pick.active .pfd-pick-add { background: #2563eb; color: #fff; }
+/* поповер-превью СПРАВА от списка — появляется при наведении на строку */
+.pfd-pickpv {
+    position: absolute; left: 312px; top: calc(100% + 9px); z-index: 81; width: 372px; max-width: 46vw;
+    display: none; background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden;
+    box-shadow: 0 26px 60px -20px rgba(15, 23, 42, 0.34); animation: pfdPickIn 0.16s ease;
+}
+.pfd-pickpv.show { display: block; }
+.pfd-pick-stage { position: relative; padding: 14px; pointer-events: none; max-height: 440px; overflow: hidden; }
+.pfd-pick-stage > * { margin: 0 !important; }
+.pfd-pick-stage .pfhm-box { height: 168px; }        /* карта в превью — компактнее */
+.pfd-pick-sketch { display: block; padding: 0; background: #eef3f8; }
+.pfd-pick-sketch .pfd-pv-svg { width: 100%; height: auto; display: block; }
+.pfd-pick-tag {
+    position: absolute; top: 12px; right: 12px; z-index: 3; padding: 2px 8px; border-radius: 999px;
+    font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
+    color: #64748b; background: rgba(255, 255, 255, 0.9); border: 1px solid #e2e8f0; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+}
 /* палитра эскизов превью (примеры без портфелей) */
 .pfd-pv-svg { display: block; width: 100%; height: auto; }
 .pfd-pv-svg .pv-card { fill: #fff; stroke: #e6ebf2; stroke-width: 1; }
@@ -2430,13 +2435,14 @@ body.dark-mode .pfhm-tile:hover { box-shadow: inset 0 0 0 2px rgba(255, 255, 255
     box-shadow: 0 18px 40px -16px rgba(24, 38, 60, 0.38);
 }
 .pfnt-colorpop.open { display: flex; }
-.pfnt-pop-row { display: flex; gap: 6px; }
+.pfnt-pop-row { display: flex; gap: 6px; flex-wrap: wrap; }
+/* свотчи-прямоугольники со скруглением — уменьшенное эхо полей формы регистрации */
 .pfnt-sw {
-    width: 22px; height: 22px; border-radius: 7px; padding: 0; cursor: pointer;
-    background: var(--sw); border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(24, 38, 60, 0.12);
+    width: 36px; height: 22px; border-radius: 8px; padding: 0; cursor: pointer;
+    background: var(--sw); border: 1.5px solid #fff; box-shadow: 0 0 0 1px rgba(24, 38, 60, 0.12);
     transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
-.pfnt-sw:hover { transform: translateY(-2px); }
+.pfnt-sw:hover { transform: translateY(-1px); }
 .pfnt-sw.on { box-shadow: 0 0 0 2px var(--sw); }
 /* переключатель заливки: кант слева | вся карточка — иконками */
 .pfnt-pop-fills { display: flex; gap: 6px; padding-top: 8px; border-top: 1px solid #eef1f6; }
@@ -2628,9 +2634,11 @@ body.dark-mode .pfd-picker { background: #101a2c; border-color: #27324a; box-sha
 body.dark-mode .pfd-picker-h { border-bottom-color: #22304a; }
 body.dark-mode .pfd-picker-h b { color: #e8f0fb; }
 body.dark-mode .pfd-picker-h span { color: #9fb1c6; }
-body.dark-mode .pfd-pick { background: #16213a; border-color: #27324a; }
-body.dark-mode .pfd-pick:hover { border-color: #2f4a8a; box-shadow: 0 12px 26px -14px rgba(59, 130, 246, 0.5); }
-body.dark-mode .pfd-pick-foot { background: #131d31; border-top-color: #22304a; }
+body.dark-mode .pfd-pick { background: #16213a; border-color: transparent; }
+body.dark-mode .pfd-pick:hover, body.dark-mode .pfd-pick.active { background: #1b2a49; border-color: #2f4a8a; }
+body.dark-mode .pfd-pick-add { background: #1c2b52; color: #93c5fd; }
+body.dark-mode .pfd-pick:hover .pfd-pick-add, body.dark-mode .pfd-pick.active .pfd-pick-add { background: #2563eb; color: #fff; }
+body.dark-mode .pfd-pickpv { background: #101a2c; border-color: #27324a; box-shadow: 0 26px 60px -20px rgba(0, 0, 0, 0.66); }
 body.dark-mode .pfd-pick-txt b { color: #e8f0fb; }
 body.dark-mode .pfd-pick-txt span { color: #9fb1c6; }
 body.dark-mode .pfd-pick-tag { background: rgba(16, 26, 44, 0.85); border-color: #2a3856; color: #9fb1c6; }
