@@ -1194,7 +1194,7 @@
         // добавление/удаление заметки) пропускаем: они сами флашат текст. Проверяем
         // activeElement, а НЕ :focus — псевдокласс не матчится без фокуса окна ОС.
         var ae = document.activeElement;
-        if (!pfdWantRender && ae && ae.classList && ae.classList.contains('pfnt-area') && host.contains(ae)) return;
+        if (!pfdWantRender && ae && ae.classList && ae.classList.contains('pfnt-tx') && host.contains(ae)) return;
         pfdWantRender = false;
         // favHtml() синхронно дёргает stkEnsureLoaded(): если таблица акций уже
         // загружена, та сразу вызывает onStkCompaniesLoaded()→renderPortfolios(),
@@ -1662,22 +1662,41 @@
     // Пока on=false — страница рендерится классической двухколоночной вёрсткой.
     // Только десктоп: на ≤1023px всегда обычная колонка (pfdActive()).
     var DASH_KEY = 'pf_dash_v1';
+    var PFD_NOTE_COLORS = ['slate', 'blue', 'green', 'amber', 'violet', 'rose'];
+    // Заметка нового формата: цвет + список строк (тип text | bullet | check) + необяз.
+    // срок (due, timestamp). Нормализуем при загрузке; старую одну строку text режем по
+    // \n в строки-абзацы, чтобы ничьи записи не потерялись.
+    function pfdNormNote(n) {
+        n = n || {};
+        var color = PFD_NOTE_COLORS.indexOf(n.color) >= 0 ? n.color : 'slate';
+        var items = [];
+        if (Array.isArray(n.items)) {
+            n.items.forEach(function (it) {
+                if (!it || typeof it !== 'object') return;
+                var type = (it.type === 'bullet' || it.type === 'check') ? it.type : 'text';
+                items.push({ id: String(it.id || genId('i')), type: type,
+                    text: typeof it.text === 'string' ? it.text : '', done: !!it.done });
+            });
+        } else if (typeof n.text === 'string' && n.text) {
+            n.text.split('\n').forEach(function (ln) { items.push({ id: genId('i'), type: 'text', text: ln, done: false }); });
+        }
+        if (!items.length) items = [{ id: genId('i'), type: 'text', text: '', done: false }];
+        var due = (typeof n.due === 'number' && isFinite(n.due)) ? n.due : null;
+        return { id: String(n.id || genId('n')), color: color, items: items, due: due };
+    }
     var dashCfg = loadDashCfg();
     var dashEdit = false;        // режим правки (не персистится)
     var pfdWantRender = false;   // наш собственный ре-рендер в режиме правки
     function loadDashCfg() {
         try {
             var c = JSON.parse(localStorage.getItem(DASH_KEY) || 'null') || {};
-            var notes = Array.isArray(c.notes) ? c.notes.filter(function (n) { return n && n.id; }).map(function (n) {
-                return { id: String(n.id), text: typeof n.text === 'string' ? n.text : '', color: n.color || 'slate' };
-            }) : [];
+            var notes = Array.isArray(c.notes) ? c.notes.filter(function (n) { return n && n.id; }).map(pfdNormNote) : [];
             // миграция старого одиночного cfg.note (строка) → первая заметка нового формата
-            if (!notes.length && typeof c.note === 'string' && c.note.trim()) notes = [{ id: 'nmig', text: c.note, color: 'slate' }];
+            if (!notes.length && typeof c.note === 'string' && c.note.trim()) notes = [pfdNormNote({ id: 'nmig', text: c.note })];
             return { on: !!c.on, order: Array.isArray(c.order) ? c.order : [], span: c.span || {}, h: c.h || {},
                 hidden: c.hidden || {}, notes: notes };
         } catch (e) { return { on: false, order: [], span: {}, h: {}, hidden: {}, notes: [] }; }
     }
-    var PFD_NOTE_COLORS = ['slate', 'blue', 'green', 'amber', 'violet', 'rose'];
     function saveDashCfg() {
         try {
             // чистим ключи удалённых портфелей — конфиг не копит мусор (и не тащит
@@ -1960,23 +1979,34 @@
         saveDashCfg();
         pfdRerender();
     };
-    // ---- мультизаметки: добавить / удалить / перекрасить ----
-    // Перед любым ре-рендером сбрасываем несохранённый (в пределах дебаунса) текст
-    // всех заметок из DOM в модель — иначе пересборка затёрла бы последние символы.
+    // ---- мультизаметки: добавить / удалить / перекрасить + строки/срок ----
+    function pfdFindNote(id) { return (dashCfg.notes || []).filter(function (n) { return n.id === id; })[0]; }
+    function pfdFindItem(nid, iid) { var n = pfdFindNote(nid); return n ? (n.items || []).filter(function (x) { return x.id === iid; })[0] : null; }
+    function pfdNoteCard(id) { return document.querySelector('#pfWrap .pf-noteblk[data-nid="' + id + '"]'); }
+    function pfdFocusEnd(el) {
+        if (!el) return; el.focus();
+        try { var r = document.createRange(); r.selectNodeContents(el); r.collapse(false);
+            var s = window.getSelection(); s.removeAllRanges(); s.addRange(r); } catch (e) {}
+    }
+    // Перед любым ре-рендером сбрасываем несохранённый (в пределах дебаунса) текст всех
+    // строк заметок из DOM в модель — структурные правки (добавить/убрать строку, срок,
+    // цвет) пишутся в модель сразу, дебаунсится только набор текста.
     function pfdFlushNotes() {
         clearTimeout(pfdNoteT);
         document.querySelectorAll('#pfWrap .pf-noteblk').forEach(function (card) {
-            var id = card.getAttribute('data-nid'), area = card.querySelector('.pfnt-area');
-            if (!id || !area) return;
-            var nt = (dashCfg.notes || []).filter(function (n) { return n.id === id; })[0];
-            if (nt) nt.text = String(area.value || '').slice(0, 20000);
+            var nt = pfdFindNote(card.getAttribute('data-nid')); if (!nt) return;
+            card.querySelectorAll('.pfnt-row').forEach(function (row) {
+                var it = (nt.items || []).filter(function (x) { return x.id === row.getAttribute('data-iid'); })[0];
+                var tx = row.querySelector('.pfnt-tx');
+                if (it && tx) it.text = String(tx.textContent || '').slice(0, 4000);
+            });
         });
     }
     window.pfdAddNote = function () {
         pfdFlushNotes();
         pfdPushUndo();
         var id = genId('n');
-        dashCfg.notes = (dashCfg.notes || []).concat([{ id: id, text: '', color: 'slate' }]);
+        dashCfg.notes = (dashCfg.notes || []).concat([pfdNormNote({ id: id })]);
         dashCfg.hidden['note:' + id] = 0;
         // новую заметку — сразу после последней имеющейся заметки в порядке (или в конец)
         var ord = (dashCfg.order || []).slice();
@@ -1995,21 +2025,151 @@
         saveDashCfg();
         pfdRerender();
     };
+    var pfdNoteClrOpen = null;   // id заметки с раскрытой палитрой (одна за раз)
+    window.pfdNoteClrToggle = function (id, ev) {
+        if (ev) ev.stopPropagation();
+        var card = pfdNoteCard(id), pop = card && card.querySelector('.pfnt-colorpop'); if (!pop) return;
+        var willOpen = !pop.classList.contains('open');
+        document.querySelectorAll('#pfWrap .pfnt-colorpop.open').forEach(function (p) { p.classList.remove('open'); });
+        pop.classList.toggle('open', willOpen);
+        pfdNoteClrOpen = willOpen ? id : null;
+    };
     window.pfdSetNoteColor = function (id, color, ev) {
         if (ev) ev.stopPropagation();
-        var nt = (dashCfg.notes || []).filter(function (n) { return n.id === id; })[0];
-        if (!nt || nt.color === color) return;
+        var nt = pfdFindNote(id); if (!nt) return;
+        var card = pfdNoteCard(id);
+        if (nt.color !== color) {
+            pfdPushUndo();
+            nt.color = color;
+            saveDashCfg();
+            // перекраска без ре-рендера — не теряем фокус/каретку в строке
+            if (card) {
+                PFD_NOTE_COLORS.forEach(function (c) { card.classList.remove('pfnt-c-' + c); });
+                card.classList.add('pfnt-c-' + color);
+                card.querySelectorAll('.pfnt-sw').forEach(function (s) { s.classList.toggle('on', s.getAttribute('data-c') === color); });
+                var dot = card.querySelector('.pfnt-dot'); if (dot) dot.setAttribute('style', '--sw:var(--nt-' + color + ')');
+            }
+        }
+        var pop = card && card.querySelector('.pfnt-colorpop'); if (pop) pop.classList.remove('open');
+        pfdNoteClrOpen = null;
+    };
+    // строки заметки: текст/пункт/задача — добавление, удаление, отметка, ввод, клавиши
+    function pfdNoteInsertItem(nid, afterIid, type, focus) {
+        var nt = pfdFindNote(nid); if (!nt) return;
         pfdPushUndo();
-        nt.color = color;
+        var it = { id: genId('i'), type: type || 'text', text: '', done: false };
+        var arr = nt.items || (nt.items = []);
+        var idx = afterIid ? arr.map(function (x) { return x.id; }).indexOf(afterIid) : -1;
+        if (idx >= 0) arr.splice(idx + 1, 0, it); else arr.push(it);
         saveDashCfg();
-        // перекраска без ре-рендера — не теряем фокус/каретку в textarea
-        var card = document.querySelector('.pf-noteblk[data-nid="' + id + '"]');
-        if (card) {
-            PFD_NOTE_COLORS.forEach(function (c) { card.classList.remove('pfnt-c-' + c); });
-            card.classList.add('pfnt-c-' + color);
-            card.querySelectorAll('.pfnt-sw').forEach(function (s) { s.classList.toggle('on', s.getAttribute('data-c') === color); });
+        var card = pfdNoteCard(nid), list = card && card.querySelector('.pfnt-list');
+        if (list) {
+            var tmp = document.createElement('div'); tmp.innerHTML = pfdNoteRowHtml(nid, it);
+            var node = tmp.firstChild;
+            var afterEl = afterIid ? list.querySelector('.pfnt-row[data-iid="' + afterIid + '"]') : null;
+            if (afterEl) list.insertBefore(node, afterEl.nextSibling); else list.appendChild(node);
+            if (focus) pfdFocusEnd(node.querySelector('.pfnt-tx'));
+        }
+        pfdRepackSoon();
+    }
+    window.pfdNoteAddItem = function (nid, type) {
+        var nt = pfdFindNote(nid); var arr = nt && nt.items || [];
+        pfdNoteInsertItem(nid, arr.length ? arr[arr.length - 1].id : null, type, true);
+    };
+    window.pfdNoteDelItem = function (nid, iid, ev, focusPrev) {
+        if (ev) ev.stopPropagation();
+        var nt = pfdFindNote(nid); if (!nt) return;
+        var arr = nt.items || [], card = pfdNoteCard(nid);
+        if (arr.length <= 1) {   // последнюю строку не удаляем — просто очищаем
+            if (arr[0]) { arr[0].text = ''; arr[0].done = false; }
+            saveDashCfg();
+            var tx0 = card && card.querySelector('.pfnt-tx'); if (tx0) { tx0.textContent = ''; pfdFocusEnd(tx0); }
+            pfdRepackSoon(); return;
+        }
+        var idx = arr.map(function (x) { return x.id; }).indexOf(iid); if (idx < 0) return;
+        pfdPushUndo();
+        arr.splice(idx, 1); saveDashCfg();
+        var row = card && card.querySelector('.pfnt-row[data-iid="' + iid + '"]');
+        var prev = row && row.previousElementSibling;
+        if (row) row.parentNode.removeChild(row);
+        if (focusPrev && prev) pfdFocusEnd(prev.querySelector('.pfnt-tx'));
+        pfdRepackSoon();
+    };
+    window.pfdNoteToggle = function (nid, iid, ev) {
+        if (ev) ev.stopPropagation();
+        var it = pfdFindItem(nid, iid); if (!it) return;
+        it.done = !it.done; saveDashCfg();
+        var card = pfdNoteCard(nid), row = card && card.querySelector('.pfnt-row[data-iid="' + iid + '"]');
+        if (row) { row.classList.toggle('done', it.done); var b = row.querySelector('.pfnt-check'); if (b) b.classList.toggle('on', it.done); }
+    };
+    window.pfdNoteRowInput = function (nid, iid, el) {
+        pfdRepackSoon();   // текст мог перенестись на новую строку — блок подрос
+        clearTimeout(pfdNoteT);
+        var val = String(el.textContent || '').slice(0, 4000);
+        pfdNoteT = setTimeout(function () { var it = pfdFindItem(nid, iid); if (it) { it.text = val; saveDashCfg(); } }, 350);
+    };
+    window.pfdNoteRowKey = function (ev, nid, iid) {
+        if (ev.key === 'Enter' && !ev.shiftKey) {
+            ev.preventDefault();
+            var it = pfdFindItem(nid, iid); if (it) it.text = String(ev.target.textContent || '').slice(0, 4000);
+            pfdNoteInsertItem(nid, iid, it ? it.type : 'text', true);
+        } else if (ev.key === 'Backspace' && String(ev.target.textContent || '') === '') {
+            ev.preventDefault();
+            window.pfdNoteDelItem(nid, iid, null, true);
         }
     };
+    // срок выполнения: due (timestamp) + живой отсчёт; чип пересобираем на месте
+    function pfdToLocalInput(ts) {
+        var d = new Date(ts); function p(n) { return String(n).padStart(2, '0'); }
+        return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes());
+    }
+    function pfdDueDateText(ts) {
+        var d = new Date(ts);
+        return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) + ', ' + d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    }
+    function pfdDueCountdown(ts) {
+        var diff = ts - Date.now(), over = diff < 0, a = Math.abs(diff);
+        var d = Math.floor(a / 86400000), h = Math.floor(a % 86400000 / 3600000), m = Math.floor(a % 3600000 / 60000), s = Math.floor(a % 60000 / 1000);
+        var body = d > 0 ? (d + ' дн ' + h + ' ч') : (h > 0 ? (h + ' ч ' + m + ' мин') : (m + ' мин ' + s + ' с'));
+        return { txt: (over ? 'просрочено · ' + body : 'осталось ' + body), cls: over ? 'over' : (diff < 86400000 ? 'soon' : 'ok') };
+    }
+    function pfdReplaceDue(nt) {
+        var card = pfdNoteCard(nt.id), due = card && card.querySelector('.pfnt-due');
+        if (!due) return;
+        var tmp = document.createElement('div'); tmp.innerHTML = pfdNoteDueHtml(nt);
+        due.parentNode.replaceChild(tmp.firstChild, due);
+    }
+    window.pfdNoteSetDue = function (id, val) {
+        var nt = pfdFindNote(id); if (!nt) return;
+        var ts = val ? new Date(val).getTime() : null;
+        var next = (ts && isFinite(ts)) ? ts : null;
+        if (next === nt.due) return;
+        pfdPushUndo(); nt.due = next; saveDashCfg(); pfdReplaceDue(nt); pfdRepackSoon();
+    };
+    window.pfdNoteClearDue = function (id, ev) {
+        if (ev) { ev.stopPropagation(); ev.preventDefault(); }
+        var nt = pfdFindNote(id); if (!nt || nt.due == null) return;
+        pfdPushUndo(); nt.due = null; saveDashCfg(); pfdReplaceDue(nt); pfdRepackSoon();
+    };
+    // живой отсчёт сроков: тикаем раз в секунду, только на активной вкладке с заметками
+    setInterval(function () {
+        if (document.hidden) return;
+        var panel = document.getElementById('panel-portfolios');
+        if (!panel || !panel.classList.contains('active')) return;
+        var cds = document.querySelectorAll('#pfWrap .pfnt-cd'); if (!cds.length) return;
+        cds.forEach(function (el) {
+            var ts = +el.getAttribute('data-due'); if (!isFinite(ts)) return;
+            var r = pfdDueCountdown(ts); el.textContent = r.txt;
+            var wrap = el.closest('.pfnt-due'); if (wrap) { wrap.classList.remove('ok', 'soon', 'over'); wrap.classList.add(r.cls); }
+        });
+    }, 1000);
+    // клик вне палитры цвета — закрыть раскрытый поповер
+    document.addEventListener('click', function (e) {
+        if (!pfdNoteClrOpen) return;
+        if (e.target && e.target.closest && e.target.closest('.pfnt-colorwrap')) return;
+        document.querySelectorAll('#pfWrap .pfnt-colorpop.open').forEach(function (p) { p.classList.remove('open'); });
+        pfdNoteClrOpen = null;
+    });
     document.addEventListener('keydown', function (e) {
         if (!dashEdit || (!e.metaKey && !e.ctrlKey) || e.shiftKey || String(e.key).toLowerCase() !== 'z') return;
         var panel = document.getElementById('panel-portfolios');
@@ -2093,46 +2253,91 @@
         }
         return out;
     }
+    var pfdCapRange = 'all';   // 'all' | '90' | '30' — окно графика (сессия, не персистится)
+    var pfdCapState = null;    // геометрия текущего графика для ховера-перекрестия
+    function pfdCapRangeFilter(s) {
+        if (pfdCapRange === 'all' || s.length < 2) return s;
+        var cutoff = Date.now() - (pfdCapRange === '30' ? 30 : 90) * 86400000;
+        var f = s.filter(function (pt) { return new Date(pt.d).getTime() >= cutoff; });
+        return f.length >= 2 ? f : s.slice(-2);
+    }
+    function pfdCapChip(r, lbl) { return '<button class="pff-sort-b' + (pfdCapRange === r ? ' on' : '') + '" onclick="pfdCapSetRange(\'' + r + '\')">' + lbl + '</button>'; }
     function pfdCapChartHtml() {
-        var s = pfdCapSeries();
+        var full = pfdCapSeries();
+        var s = pfdCapRangeFilter(full);
         var last = s.length ? s[s.length - 1] : null;
-        var right = '';
-        var body;
+        var right = '', body, chips = '';
         if (s.length < 2) {
-            body = '<div class="pfcap-empty"><div class="pfcap-empty-t">' + (s.length ? 'Первая точка уже есть' : 'Снимков пока нет') + '</div>' +
+            pfdCapState = null;
+            body = '<div class="pfcap-empty"><div class="pfcap-empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 3-4 3 3 4-6"/></svg></div>' +
+                '<div class="pfcap-empty-t">' + (full.length ? 'Первая точка уже есть' : 'Снимков пока нет') + '</div>' +
                 '<div class="pfcap-empty-s">Стоимость портфелей записывается раз в день при живых котировках — линия появится со второго дня.</div></div>';
         } else {
+            // адаптивные чипы окна: показываем, только если данных ощутимо больше месяца
+            var spanDays = (new Date(full[full.length - 1].d).getTime() - new Date(full[0].d).getTime()) / 86400000;
+            if (spanDays > 33) chips = '<div class="pfcap-seg pff-sort">' + pfdCapChip('30', '30д') + (spanDays > 93 ? pfdCapChip('90', '90д') : '') + pfdCapChip('all', 'Всё') + '</div>';
             var min = Infinity, max = -Infinity;
             s.forEach(function (pt) { if (pt.v < min) min = pt.v; if (pt.v > max) max = pt.v; });
             var span = Math.max(1, max - min);
-            var W = 100, H = 42, PAD = 4;
-            var pts = s.map(function (pt, i) {
-                var x = s.length > 1 ? i / (s.length - 1) * W : 0;
-                var y = H - PAD - (pt.v - min) / span * (H - PAD * 2);
-                return x.toFixed(2) + ',' + y.toFixed(2);
-            });
+            var n = s.length, INX = 1.6, PT = 12, PB = 16;
+            function xP(i) { return INX + (n > 1 ? i / (n - 1) : 0) * (100 - 2 * INX); }
+            function yP(v) { return PT + (1 - (v - min) / span) * (100 - PT - PB); }
+            var pts = s.map(function (pt, i) { return xP(i).toFixed(2) + ',' + yP(pt.v).toFixed(2); });
             var line = 'M' + pts.join(' L');
-            var area = line + ' L' + W + ',' + H + ' L0,' + H + ' Z';
+            var area = line + ' L' + xP(n - 1).toFixed(2) + ',100 L' + xP(0).toFixed(2) + ',100 Z';
             var delta = last.v - s[0].v, dPct = s[0].v > 0 ? delta / s[0].v * 100 : 0;
+            var up = delta >= 0, col = up ? '#12a35c' : '#e0592b';
+            pfdCapState = { s: s, min: min, span: span, n: n, inx: INX, pt: PT, pb: PB };
+            var plotBot = 100 - PB, grid = '';
+            [0.25, 0.5, 0.75].forEach(function (f) { var gy = (PT + (plotBot - PT) * f).toFixed(1); grid += '<line x1="0" y1="' + gy + '" x2="100" y2="' + gy + '" class="pfcap-grid"/>'; });
+            var lx = xP(n - 1).toFixed(2), ly = yP(last.v).toFixed(2);
             right = '<div class="pfcap-hr"><b>' + fmtRub(last.v) + '</b>' +
-                '<span class="' + (delta >= 0 ? 'pos' : 'neg') + '">' + (delta >= 0 ? '▲ ' : '▼ ') + fmtRub(Math.abs(delta)) + ' · ' + fmtPct(dPct) + '</span></div>';
+                '<span class="pfcap-delta ' + (up ? 'pos' : 'neg') + '">' + (up ? '▲' : '▼') + ' ' + fmtRub(Math.abs(delta)) + ' · ' + fmtPct(dPct) + '</span></div>';
             body = '<div class="pfcap-plot">' +
-                '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" aria-hidden="true">' +
+                '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
                     '<defs><linearGradient id="pfcapGrad" x1="0" y1="0" x2="0" y2="1">' +
-                        '<stop offset="0" stop-color="rgba(59,130,246,0.22)"/><stop offset="1" stop-color="rgba(59,130,246,0)"/>' +
+                        '<stop offset="0" stop-color="' + col + '" stop-opacity="0.24"/><stop offset="1" stop-color="' + col + '" stop-opacity="0"/>' +
                     '</linearGradient></defs>' +
+                    grid +
                     '<path d="' + area + '" fill="url(#pfcapGrad)"/>' +
-                    '<path d="' + line + '" fill="none" stroke="#3b82f6" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>' +
+                    '<path d="' + line + '" fill="none" stroke="' + col + '" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>' +
                 '</svg>' +
+                '<span class="pfcap-end" style="left:' + lx + '%;top:' + ly + '%;--cc:' + col + '"></span>' +
                 '<span class="pfcap-y pfcap-y--max">' + fmtRub(max) + '</span>' +
                 '<span class="pfcap-y pfcap-y--min">' + fmtRub(min) + '</span>' +
+                '<div class="pfcap-cursor"></div><span class="pfcap-cdot"></span><div class="pfcap-tip"></div>' +
+                '<div class="pfcap-hit" onmousemove="pfdCapHover(event)" onmouseleave="pfdCapHoverEnd(event)"></div>' +
             '</div>' +
             '<div class="pfcap-x"><span>' + ruDate(s[0].d) + '</span><span>' + ruDate(last.d) + '</span></div>';
         }
         return '<div class="dash2-card pf-card2 pf-capblk" title="Дневные снимки хранятся на этом устройстве (до 400 дней)">' +
             pfCardHead('', 'График капитала', 'стоимость всех портфелей по дням', right) +
+            (chips ? '<div class="pfcap-ctl">' + chips + '</div>' : '') +
             '<div class="pfcap-body">' + body + '</div></div>';
     }
+    window.pfdCapSetRange = function (r) { if (pfdCapRange === r) return; pfdCapRange = r; pfdCapRepaint(); };
+    function pfdCapRepaint() {
+        var card = document.querySelector('#pfWrap .pf-capblk'); if (!card) return;
+        var tmp = document.createElement('div'); tmp.innerHTML = pfdCapChartHtml();
+        card.parentNode.replaceChild(tmp.firstChild, card);
+        pfdRepackSoon();
+    }
+    window.pfdCapHover = function (ev) {
+        var st = pfdCapState, hit = ev.currentTarget, plot = hit && hit.parentNode; if (!st || !plot) return;
+        var rect = hit.getBoundingClientRect(); if (!rect.width) return;
+        var frac = clamp((ev.clientX - rect.left) / rect.width, 0, 1);
+        var i = clamp(Math.round(frac * (st.n - 1)), 0, st.n - 1), pt = st.s[i];
+        var lx = st.inx + (st.n > 1 ? i / (st.n - 1) : 0) * (100 - 2 * st.inx);
+        var ly = st.pt + (1 - (pt.v - st.min) / st.span) * (100 - st.pt - st.pb);
+        var cur = plot.querySelector('.pfcap-cursor'), cdot = plot.querySelector('.pfcap-cdot'), tip = plot.querySelector('.pfcap-tip');
+        if (cur) { cur.style.left = lx + '%'; cur.classList.add('on'); }
+        if (cdot) { cdot.style.left = lx + '%'; cdot.style.top = ly + '%'; cdot.classList.add('on'); }
+        if (tip) { tip.innerHTML = '<b>' + fmtRub(pt.v) + '</b><i>' + ruDate(pt.d) + '</i>'; tip.style.left = clamp(lx, 13, 87) + '%'; tip.classList.add('on'); }
+    };
+    window.pfdCapHoverEnd = function (ev) {
+        var plot = ev.currentTarget && ev.currentTarget.parentNode; if (!plot) return;
+        ['.pfcap-cursor', '.pfcap-cdot', '.pfcap-tip'].forEach(function (sel) { var el = plot.querySelector(sel); if (el) el.classList.remove('on'); });
+    };
 
     // ---- «Карта рынка»: живой мини-treemap IMOEX ----
     // Рисует home-register.js (window.hgHeatRepaint): контейнеру достаточно класса
@@ -2235,33 +2440,72 @@
     // ---- «Новости по позициям»: свежая новость по каждой акции портфелей ----
     // Переиспользует пайплайн новостей «Избранного» (loadNewsForTicker + newsHtmlCache +
     // очередь newsQueue): та же лента Smart-Lab, тот же кэш — общие тикеры не грузятся дважды.
-    function pfdNewsTickers() {
+    function pfdNewsList() {
         var seen = {}, list = [];
         visibleItems().forEach(function (p) {
             (p.holdings || []).forEach(function (h) {
                 if (h.type === 'bond' || !h.ticker || seen[h.ticker]) return;
                 var a = aggHolding(h); if (!(a.qty > 0)) return;
-                var q = quotes[h.ticker];
-                seen[h.ticker] = 1;
-                list.push({ tk: h.ticker, val: ((q && q.price) || a.avgPrice || 0) * a.qty });
+                var q = quotes[h.ticker]; seen[h.ticker] = 1;
+                list.push({ tk: h.ticker, qty: a.qty, val: ((q && q.price) || a.avgPrice || 0) * a.qty,
+                    chg: q && q.chgPct != null ? q.chgPct : null });
             });
         });
         list.sort(function (a, b) { return b.val - a.val; });   // крупные позиции — первыми
-        return list.slice(0, 10).map(function (x) { return x.tk; });
+        return list.slice(0, 12);
     }
+    function pfdNewsTickers() { return pfdNewsList().map(function (x) { return x.tk; }); }
+    var pfdNewsPick = null;   // выбранный тикер (null = «Все позиции»)
     function pfdNewsHtml() {
-        var tks = pfdNewsTickers();
-        var body = !tks.length
-            ? '<div class="pfnw-empty">Добавьте акции в любой портфель — здесь появится свежая новость по каждой позиции.</div>'
-            : '<div class="pfnw-list">' + tks.map(function (tk) {
-                return '<div class="pfnw-row" id="pfnw-' + esc(tk) + '">' +
-                    '<button class="pfnw-tk" onclick="event.stopPropagation();pfOpenTicker(\'' + jsArg(tk) + '\')" title="Открыть карточку компании">' + esc(tk) + '</button>' +
+        var list = pfdNewsList();
+        if (!list.length) {
+            return '<div class="dash2-card pf-card2 pf-newsblk">' +
+                pfCardHead('', 'Новости по позициям', 'свежая новость по акциям портфелей') +
+                '<div class="pfnw-body" data-skey="posnews"><div class="pfnw-empty">Добавьте акции в любой портфель — здесь появится свежая новость по каждой позиции.</div></div></div>';
+        }
+        // выбранного тикера уже нет в позициях → назад к «Все»
+        if (pfdNewsPick && !list.some(function (x) { return x.tk === pfdNewsPick; })) pfdNewsPick = null;
+        // селектор тикеров (свиток чипов): «Все» + позиции по убыванию стоимости
+        var picks = '<div class="pfnw-picks">' +
+            '<button class="pfnw-pk' + (pfdNewsPick === null ? ' on' : '') + '" onclick="pfdNewsSetPick(\'\')">Все</button>' +
+            list.map(function (x) {
+                return '<button class="pfnw-pk' + (pfdNewsPick === x.tk ? ' on' : '') + '" onclick="pfdNewsSetPick(\'' + jsArg(x.tk) + '\')">' + esc(x.tk) + '</button>';
+            }).join('') + '</div>';
+        var body;
+        if (pfdNewsPick) {
+            var it = list.filter(function (x) { return x.tk === pfdNewsPick; })[0];
+            var chg = it.chg == null ? '' : '<span class="pfnw-fchg ' + (it.chg >= 0 ? 'pos' : 'neg') + '">' + (it.chg >= 0 ? '+' : '−') + Math.abs(it.chg).toFixed(1).replace('.', ',') + '%</span>';
+            body = '<div class="pfnw-featured" id="pfnw-' + esc(it.tk) + '">' +
+                '<div class="pfnw-fhead">' +
+                    '<button class="pfnw-tk pfnw-ftk" onclick="event.stopPropagation();pfOpenTicker(\'' + jsArg(it.tk) + '\')" title="Открыть карточку компании">' + esc(it.tk) + '</button>' +
+                    '<span class="pfnw-fpos"><b>' + fmtRub(it.val) + '</b> · ' + fmtQty(it.qty) + ' шт' + (chg ? ' · ' + chg : '') + '</span>' +
+                '</div>' +
+                '<div class="pfnw-news pfnw-fnews"><span class="pff-news-load">загрузка новости…</span></div>' +
+            '</div>';
+        } else {
+            body = '<div class="pfnw-list">' + list.map(function (x) {
+                return '<div class="pfnw-row" id="pfnw-' + esc(x.tk) + '">' +
+                    '<button class="pfnw-tk" onclick="event.stopPropagation();pfOpenTicker(\'' + jsArg(x.tk) + '\')" title="Открыть карточку компании">' + esc(x.tk) + '</button>' +
                     '<div class="pfnw-news"><span class="pff-news-load">загрузка новости…</span></div>' +
                 '</div>';
             }).join('') + '</div>';
+        }
         return '<div class="dash2-card pf-card2 pf-newsblk">' +
-            pfCardHead('', 'Новости по позициям', 'свежая новость по каждой акции портфелей') +
+            pfCardHead('', 'Новости по позициям', 'выберите бумагу или смотрите все сразу') +
+            picks +
             '<div class="pfnw-body" data-skey="posnews">' + body + '</div></div>';
+    }
+    window.pfdNewsSetPick = function (tk) {
+        var next = tk || null;
+        if (pfdNewsPick === next) next = null;   // повторный клик по активному чипу — назад к «Все»
+        pfdNewsPick = next;
+        pfdNewsRepaint();
+    };
+    function pfdNewsRepaint() {
+        var card = document.querySelector('#pfWrap .pf-newsblk'); if (!card) return;
+        var tmp = document.createElement('div'); tmp.innerHTML = pfdNewsHtml();
+        card.parentNode.replaceChild(tmp.firstChild, card);
+        renderPosNews(); pfdRepackSoon();
     }
     function fillPosNewsSlot(tk) {
         var row = dq('pfnw-' + tk), e = newsHtmlCache[tk]; if (!row || !e) return;
@@ -2274,38 +2518,85 @@
         } else { row.classList.remove('link'); row.onclick = null; }
     }
     function renderPosNews() {
-        if (!document.querySelector('#pfWrap .pfnw-list') || typeof loadNewsForTicker !== 'function') return;
-        pfdNewsTickers().forEach(function (tk) {
+        if (!document.querySelector('#pfWrap .pf-newsblk') || typeof loadNewsForTicker !== 'function') return;
+        var want = pfdNewsPick ? [pfdNewsPick] : pfdNewsTickers();
+        want.forEach(function (tk) {
             if (newsHtmlCache[tk]) { fillPosNewsSlot(tk); return; }
             if (!newsStarted[tk]) { newsStarted[tk] = true; newsQueue.push(tk); }
         });
         setTimeout(pumpNewsQueue, newsActive ? 0 : 400);
     }
 
-    // ---- «Заметки»: мультиблок, каждая заметка со своим цветом; текст в pf_dash_v1 ----
-    function pfdNoteHtml(nt) {
-        var color = PFD_NOTE_COLORS.indexOf(nt.color) >= 0 ? nt.color : 'slate';
-        var swatches = PFD_NOTE_COLORS.map(function (c) {
-            return '<button type="button" class="pfnt-sw' + (c === color ? ' on' : '') + '" data-c="' + c + '" style="--sw:var(--nt-' + c + ')" title="Цвет заметки" onclick="pfdSetNoteColor(\'' + jsArg(nt.id) + '\',\'' + c + '\',event)"></button>';
-        }).join('');
-        var tools = '<div class="pfnt-tools">' +
-                '<div class="pfnt-swatches">' + swatches + '</div>' +
-                '<button type="button" class="pfnt-add" title="Добавить ещё одну заметку" onclick="pfdAddNote()">' + PFD_PLUS_SVG + '</button>' +
-            '</div>';
-        return '<div class="dash2-card pf-card2 pf-noteblk pfnt-c-' + color + '" data-nid="' + esc(nt.id) + '">' +
-            pfCardHead('', 'Заметка', '', tools) +
-            '<textarea class="pfnt-area" maxlength="20000" placeholder="Цели, план ребаланса, идеи…" oninput="pfdNoteInput(\'' + jsArg(nt.id) + '\',this)">' + esc(nt.text || '') + '</textarea>' +
+    // ---- «Заметки»: мультиблок; у каждой цвет-точка, строки (текст/пункт/задача) и срок ----
+    var pfdNoteT = null;
+    var NOTE_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8.5z"/><path d="M15 3v5a1 1 0 0 0 1 1h5"/><path d="M8.5 13.5h7"/><path d="M8.5 17h5"/></svg>';
+    var NOTE_CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    var NOTE_X_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+    var NOTE_CLOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+    var NOTE_TB_TEXT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>';
+    var NOTE_TB_BULLET = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h3M4 12h3M4 17h3M10 7h10M10 12h10M10 17h10"/></svg>';
+    var NOTE_TB_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="7" r="2.4"/><path d="M11 7h9"/><circle cx="6" cy="17" r="2.4"/><path d="M11 17h9"/></svg>';
+    function pfdNoteRowHtml(nid, it) {
+        var type = (it.type === 'bullet' || it.type === 'check') ? it.type : 'text';
+        var mark = type === 'check'
+            ? '<button type="button" class="pfnt-check' + (it.done ? ' on' : '') + '" tabindex="-1" onclick="pfdNoteToggle(\'' + jsArg(nid) + '\',\'' + jsArg(it.id) + '\',event)" aria-label="Отметить выполненной">' + NOTE_CHECK_SVG + '</button>'
+            : (type === 'bullet' ? '<span class="pfnt-dash" aria-hidden="true"></span>' : '');
+        var ph = type === 'check' ? 'Задача…' : (type === 'bullet' ? 'Пункт…' : 'Текст заметки…');
+        return '<div class="pfnt-row pfnt-row--' + type + (it.done ? ' done' : '') + '" data-iid="' + esc(it.id) + '" data-type="' + type + '">' +
+            mark +
+            '<div class="pfnt-tx" contenteditable="true" role="textbox" data-ph="' + attr(ph) + '" ' +
+                'oninput="pfdNoteRowInput(\'' + jsArg(nid) + '\',\'' + jsArg(it.id) + '\',this)" ' +
+                'onkeydown="pfdNoteRowKey(event,\'' + jsArg(nid) + '\',\'' + jsArg(it.id) + '\')">' + esc(it.text || '') + '</div>' +
+            '<button type="button" class="pfnt-del" tabindex="-1" onclick="pfdNoteDelItem(\'' + jsArg(nid) + '\',\'' + jsArg(it.id) + '\',event)" aria-label="Удалить строку" title="Удалить строку">' + NOTE_X_SVG + '</button>' +
         '</div>';
     }
-    var pfdNoteT = null;
-    window.pfdNoteInput = function (id, el) {
-        clearTimeout(pfdNoteT);
-        var val = String(el.value || '').slice(0, 20000);
-        pfdNoteT = setTimeout(function () {
-            var nt = (dashCfg.notes || []).filter(function (n) { return n.id === id; })[0];
-            if (nt) { nt.text = val; saveDashCfg(); }
-        }, 400);
-    };
+    function pfdNoteDueHtml(nt) {
+        if (nt.due == null) {
+            return '<div class="pfnt-due">' +
+                '<span class="pfnt-due-ic">' + NOTE_CLOCK_SVG + '</span>' +
+                '<span class="pfnt-due-add">Срок выполнения</span>' +
+                '<input type="datetime-local" class="pfnt-due-input" onclick="try{this.showPicker&&this.showPicker()}catch(e){}"onchange="pfdNoteSetDue(\'' + jsArg(nt.id) + '\',this.value)" aria-label="Срок выполнения">' +
+            '</div>';
+        }
+        var cd = pfdDueCountdown(nt.due);
+        return '<div class="pfnt-due set ' + cd.cls + '">' +
+            '<span class="pfnt-due-ic">' + NOTE_CLOCK_SVG + '</span>' +
+            '<span class="pfnt-due-main"><span class="pfnt-due-date">' + esc(pfdDueDateText(nt.due)) + '</span>' +
+                '<span class="pfnt-cd" data-due="' + nt.due + '">' + esc(cd.txt) + '</span></span>' +
+            '<input type="datetime-local" class="pfnt-due-input" onclick="try{this.showPicker&&this.showPicker()}catch(e){}"value="' + attr(pfdToLocalInput(nt.due)) + '" onchange="pfdNoteSetDue(\'' + jsArg(nt.id) + '\',this.value)" aria-label="Срок выполнения">' +
+            '<button type="button" class="pfnt-due-clr" onclick="pfdNoteClearDue(\'' + jsArg(nt.id) + '\',event)" aria-label="Убрать срок" title="Убрать срок">' + NOTE_X_SVG + '</button>' +
+        '</div>';
+    }
+    function pfdNoteHtml(nt) {
+        var color = PFD_NOTE_COLORS.indexOf(nt.color) >= 0 ? nt.color : 'slate';
+        var sw = PFD_NOTE_COLORS.map(function (c) {
+            return '<button type="button" class="pfnt-sw' + (c === color ? ' on' : '') + '" data-c="' + c + '" style="--sw:var(--nt-' + c + ')" title="Цвет" onclick="pfdSetNoteColor(\'' + jsArg(nt.id) + '\',\'' + c + '\',event)"></button>';
+        }).join('');
+        // шапка: цвет-точка с палитрой-поповером (как в настройках портфеля) + иконка заметки;
+        // «+» — без контейнера в правом верхнем углу, как в «Избранном» (класс .pff-add)
+        var head = '<div class="pf-ch pfnt-head">' +
+            '<div class="pf-ch-l">' +
+                '<span class="pfnt-colorwrap">' +
+                    '<button type="button" class="pfnt-dot" style="--sw:var(--nt-' + color + ')" onclick="pfdNoteClrToggle(\'' + jsArg(nt.id) + '\',event)" aria-label="Цвет заметки" title="Цвет заметки"></button>' +
+                    '<span class="pfnt-colorpop' + (pfdNoteClrOpen === nt.id ? ' open' : '') + '">' + sw + '</span>' +
+                '</span>' +
+                '<span class="pfnt-title" title="Заметка" aria-label="Заметка">' + NOTE_ICON_SVG + '</span>' +
+            '</div>' +
+            '<button type="button" class="pff-add pfnt-plus" onclick="pfdAddNote()" aria-label="Новая заметка" title="Добавить ещё одну заметку">' + PFD_PLUS_SVG + '</button>' +
+        '</div>';
+        var rows = (nt.items || []).map(function (it) { return pfdNoteRowHtml(nt.id, it); }).join('');
+        var toolbar = '<div class="pfnt-toolbar">' +
+            '<button type="button" class="pfnt-tb" onclick="pfdNoteAddItem(\'' + jsArg(nt.id) + '\',\'text\')" title="Абзац текста">' + NOTE_TB_TEXT + '<span>Текст</span></button>' +
+            '<button type="button" class="pfnt-tb" onclick="pfdNoteAddItem(\'' + jsArg(nt.id) + '\',\'bullet\')" title="Пункт списка (—)">' + NOTE_TB_BULLET + '<span>Пункт</span></button>' +
+            '<button type="button" class="pfnt-tb" onclick="pfdNoteAddItem(\'' + jsArg(nt.id) + '\',\'check\')" title="Задача с чекбоксом">' + NOTE_TB_CHECK + '<span>Задача</span></button>' +
+        '</div>';
+        return '<div class="dash2-card pf-card2 pf-noteblk pfnt-c-' + color + '" data-nid="' + esc(nt.id) + '">' +
+            head +
+            '<div class="pfnt-list">' + rows + '</div>' +
+            toolbar +
+            pfdNoteDueHtml(nt) +
+        '</div>';
+    }
 
     // ---- перетаскивание: pointer-события вместо HTML5 DnD ----
     // Своё перетаскивание даёт: призрак-клон точно под курсором (вместо
