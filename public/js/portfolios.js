@@ -1934,21 +1934,23 @@
             '<div class="pfnw-body"><div class="pfnw-list">' + rows + '</div></div></div>';
     }
     // превью справа: БЕЗ белой шапки — сразу готовый блок, а в углу плашка-статус
-    // («пример» для демо/заметки, «вживую» для реальных данных рынка/портфеля).
+    // («Демо» — данных нет/недостаточно, показан пример; «Live» — реальные данные рынка/портфеля).
     function pfdPickPvHtml(id, name, noPf) {
-        var stage = '', badge = 'пример';
-        if (id === '__note') { stage = pfdNoteExampleHtml(); badge = 'пример'; }
-        else if (noPf) {
-            if (id === 'heat') { stage = pfdHeatHtml(); badge = 'вживую'; }                // рынок живой и без портфеля
-            else if (id.indexOf('kpi:') === 0) stage = pfdKpiHtml(id.slice(4), PFD_DEMO_KPI);
+        // «Live» — данные реальные; «Демо» — данных нет/недостаточно, показываем пример.
+        var stage = '', live = false;
+        if (id === '__note') { stage = pfdNoteExampleHtml(); live = false; }               // заметка — всегда образец
+        else if (id === 'heat') { stage = pfdHeatHtml(); live = true; }                    // карта рынка живая всегда (не зависит от портфеля)
+        else if (noPf) {                                                                    // портфель не собран → мало данных, рисуем демо
+            if (id.indexOf('kpi:') === 0) stage = pfdKpiHtml(id.slice(4), PFD_DEMO_KPI);
             else if (id === 'cap') stage = pfdCapChartHtml(pfdDemoCapSeries());
             else if (id === 'news') stage = pfdNewsDemoHtml();
+            live = false;
         } else {
             var b = pfdShelfBlockById(id); stage = b ? b.htmlFn() : '';
-            badge = 'вживую';                                                             // собран портфель → реальные данные
+            live = true;                                                                    // собран портфель → реальные данные
         }
         return '<div class="pfd-pick-stage">' +
-            (badge ? '<span class="pfd-pick-tag">' + esc(badge) + '</span>' : '') + stage +
+            '<span class="pfd-pick-tag ' + (live ? 'live' : 'demo') + '">' + (live ? 'Live' : 'Демо') + '</span>' + stage +
         '</div>';
     }
     // компактная строка списка: имя + описание + «＋»; наведение показывает превью справа
@@ -2037,9 +2039,10 @@
             var xCall = b.isNote ? 'pfdRemoveNote(\'' + jsArg(b.id) + '\')' : 'pfdHideBlock(\'' + jsArg(b.id) + '\')';
             var xTitle = b.isNote ? 'Удалить заметку (Cmd/Ctrl+Z вернёт)' : 'Убрать блок с дашборда (вернуть — с полки «Добавить блок»)';
             // блоки с полки «Что добавить» (KPI/график/карта/новости) можно убрать и БЕЗ режима
-            // конструктора — плавающий крестик в углу карточки, как «удалить» у заметки
+            // конструктора — тихая иконка-корзина в углу шапки, проявляется при наведении (как «удалить» у заметки)
             var removable = !b.isNote && !!b.defHidden;
-            return '<div class="pfd-item' + (h ? ' pfd-hset' : '') + '" data-pfd="' + esc(b.id) + '" style="' + style + '">' +
+            var rmChrome = !dashEdit && removable;
+            return '<div class="pfd-item' + (h ? ' pfd-hset' : '') + (rmChrome ? ' pfd-rmable' : '') + '" data-pfd="' + esc(b.id) + '" style="' + style + '">' +
                 (dashEdit
                     ? '<div class="pfd-chrome">' +
                         '<span class="pfd-name">' + PFD_GRIP_SVG + '<span>' + esc(b.name || '') + '</span></span>' +
@@ -2047,8 +2050,8 @@
                         '<span class="pfd-size"></span>' +
                         '<span class="pfd-rs" title="Потяните: ширина — колонками, высота — свободно. Двойной клик — высота в авто, ещё раз — ширина по умолчанию"></span>' +
                       '</div>'
-                    : (removable
-                        ? '<button class="pfd-cardx" title="Убрать карточку (вернуть — «Добавить блок»)" aria-label="Убрать карточку" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + PFD_X_SVG + '</button>'
+                    : (rmChrome
+                        ? '<button class="pfd-cardrm" title="Убрать карточку (вернуть — «Добавить блок»)" aria-label="Убрать карточку" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + NOTE_TRASH_SVG + '</button>'
                         : '')) +
                 '<div class="pfd-body">' + html + '</div>' +
             '</div>';
@@ -2433,8 +2436,7 @@
             cells += '<button type="button" class="' + cls + '" data-ts="' + ts + '" ' +
                 'onmousedown="pfdCalDown(' + ts + ',event)" onmouseenter="pfdCalOver(' + ts + ')">' + day + '</button>';
         }
-        var hint = isPer ? 'Период выбран — задайте время конца и «Готово»'
-            : 'Нажмите день срока или зажмите и протяните, чтобы выбрать период';
+        var hint = isPer ? 'Период выбран' : 'Выберите день или период';
         var timeVal = pfd2(d.getHours()) + ':' + pfd2(d.getMinutes());
         return '<div class="pfnt-cal-presets">' + presets + '</div>' +
             '<div class="pfnt-cal-head">' +
@@ -2541,8 +2543,7 @@
         if (!pop) return;
         var isPer = pfdCal.start != null;
         var hint = pop.querySelector('.pfnt-cal-hint');
-        if (hint) hint.textContent = isPer ? 'Период выбран — задайте время конца и «Готово»'
-            : 'Нажмите день срока или зажмите и протяните, чтобы выбрать период';
+        if (hint) hint.textContent = isPer ? 'Период выбран' : 'Выберите день или период';
         var tl = pop.querySelector('.pfnt-cal-time > span');
         if (tl) tl.textContent = isPer ? 'Время конца' : 'Время';
     }

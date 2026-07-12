@@ -1301,6 +1301,46 @@ body.dark-mode .pf-fav .pff-tile:hover .pff-news.link .pff-news-inner {
 .pf-fav .pff-empty-s, body.dark-mode .pf-fav .pff-empty-s { color: rgba(27,36,51,0.55); }
 .pf-fav .pff-body { scrollbar-color: rgba(217,119,87,0.45) transparent; }
 
+/* ---- «Избранное» в ТЁМНОЙ теме: тёплый тёмный виджет вместо кремового (иначе среди
+   тёмных карточек он белым баннером). Идёт ПОСЛЕ форс-светлого блока выше — та же
+   специфичность, побеждает как более позднее правило. Терракота #D97757 — по-прежнему
+   акцент, но поверхность/плитки/текст переворачиваются в тёмные. ---- */
+body.dark-mode .pf-card2.pf-fav {
+    background: linear-gradient(172deg, #1e2430 0%, #221c20 62%, #271a1a 100%);
+    box-shadow: 0 16px 36px rgba(0,0,0,0.42); border-color: rgba(217,119,87,0.30);
+}
+body.dark-mode .pf-fav .pf-ch-t { color: #f4f8fd; }
+body.dark-mode .pf-fav .pf-ch-s { color: rgba(226,232,240,0.58); }
+/* инфо-кнопка и фильтр Потенциал/Новизна — тёмный «колодец», активный сегмент — терракота */
+body.dark-mode .pf-fav .pff-info { background: rgba(255,255,255,0.045); border-color: rgba(255,255,255,0.09); color: #a9b6c6; }
+body.dark-mode .pf-fav .pff-info svg { color: #D97757; }
+body.dark-mode .pf-fav .pff-info:hover { background: #D97757; border-color: transparent; color: #fff; }
+body.dark-mode .pf-fav .pff-info:hover svg { color: #fff; }
+body.dark-mode .pf-fav .pff-sort { background: rgba(255,255,255,0.045); border-color: rgba(255,255,255,0.09); }
+body.dark-mode .pf-fav .pff-sort-b { color: #9fb1c6; }
+body.dark-mode .pf-fav .pff-sort-b:hover { color: #eef3f9; }
+body.dark-mode .pf-fav .pff-sort-b.on { background: #D97757; color: #fff; box-shadow: 0 5px 14px rgba(217,119,87,0.32); }
+/* плитки-«визитки» — полупрозрачные тёмные с тёплой рамкой */
+body.dark-mode .pf-fav .pff-tile {
+    border-color: rgba(217,119,87,0.24); background: rgba(255,255,255,0.028);
+    box-shadow: 0 8px 18px -14px rgba(0,0,0,0.5); }
+body.dark-mode .pf-fav .pff-tile:hover {
+    border-color: rgba(217,119,87,0.55); background: rgba(217,119,87,0.09); box-shadow: 0 14px 26px -14px rgba(0,0,0,0.6); }
+body.dark-mode .pf-fav .pff-tk { color: #f4f8fd; }
+body.dark-mode .pf-fav .pff-nm { color: #8f9db0; }
+body.dark-mode .pf-fav .pff-pot.pos { color: #34d399; }
+body.dark-mode .pf-fav .pff-pot.neg { color: #f87171; }
+body.dark-mode .pf-fav .pff-news { border-top-color: rgba(255,255,255,0.08); }
+body.dark-mode .pf-fav .pff-news-t,
+body.dark-mode .pf-fav .pff-news.link:hover .pff-news-t { color: #d2ddea; }
+body.dark-mode .pf-fav .pff-news-m { color: #8f9db0; }
+/* развёрнутая новость — непрозрачная тёплая тёмная плашка, рамка в тон ховеру плитки */
+body.dark-mode .pf-fav .pff-tile:hover .pff-news.link .pff-news-inner {
+    background: #241b1c; border-color: rgba(217,119,87,0.55);
+    box-shadow: 0 16px 26px -18px rgba(0,0,0,0.7); }
+body.dark-mode .pf-fav .pff-empty-t { color: #f1f5f9; }
+body.dark-mode .pf-fav .pff-empty-s { color: rgba(226,232,240,0.55); }
+
 /* ============================================================
    КАЛЕНДАРЬ ВЫПЛАТ — ближайшие купоны по облигациям ВСЕХ портфелей сразу
    ============================================================ */
@@ -2155,22 +2195,23 @@ body.pfd-dragging-now * { cursor: grabbing !important; }
 }
 .pfd-hide svg { width: 10px; height: 10px; }
 .pfd-hide:hover { color: #dc2626; border-color: #fecaca; background: #fef2f2; }
-/* «убрать карточку» БЕЗ режима конструктора: плавающий крестик над углом,
-   как «удалить» у заметки — проявляется при наведении на карточку */
-.pfd-cardx {
-    position: absolute; top: -11px; right: 14px; z-index: 14;
-    width: 22px; height: 22px; border-radius: 999px; padding: 0;
-    display: inline-flex; align-items: center; justify-content: center;
-    color: #64748b; background: #fff; border: 1px solid #e2e8f0;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.10); cursor: pointer;
-    opacity: 0; transform: scale(0.82); pointer-events: none;
-    transition: opacity 0.14s, transform 0.14s, color 0.14s, border-color 0.14s, background 0.14s;
+/* «убрать карточку» БЕЗ режима конструктора — как «удалить» у заметки (.pfnt-trash):
+   тихая иконка-корзина в правом верхнем углу шапки, проявляется при наведении на карточку.
+   Не «плавающий» чип над бортом, а бесшумный значок внутри карточки. */
+.pfd-cardrm {
+    position: absolute; top: 15px; right: 15px; z-index: 14;
+    width: 26px; height: 26px; border: 0; background: none; padding: 0; cursor: pointer; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center; color: #c3cdd9;
+    opacity: 0; pointer-events: none; transition: opacity 0.14s, color 0.12s, background 0.12s;
 }
-.pfd-item:hover .pfd-cardx, .pfd-cardx:focus-visible { opacity: 1; transform: none; pointer-events: auto; }
-.pfd-cardx svg { width: 11px; height: 11px; }
-.pfd-cardx:hover { color: #dc2626; border-color: #fecaca; background: #fef2f2; }
-body.dark-mode .pfd-cardx { color: #9fb1c6; background: #0f172a; border-color: #27324a; }
-body.dark-mode .pfd-cardx:hover { color: #f87171; border-color: #7f1d1d; background: #1c1017; }
+.pfd-item:hover .pfd-cardrm, .pfd-cardrm:focus-visible { opacity: 1; pointer-events: auto; }
+.pfd-cardrm svg { width: 15px; height: 15px; }
+.pfd-cardrm:hover { color: #e0592b; background: rgba(224, 89, 43, 0.1); }
+body.dark-mode .pfd-cardrm { color: #5c6c82; }
+body.dark-mode .pfd-cardrm:hover { color: #f87171; background: rgba(248, 113, 113, 0.12); }
+/* блоки с контролами в шапке (график/карта/новости) — освобождаем справа место под корзину,
+   чтобы значок не наезжал на их кнопки; у KPI шапки нет — там угол и так свободен */
+.pfd-rmable > .pfd-body > .dash2-card > .pf-ch { padding-right: 46px; }
 /* бейдж текущего размера — появляется только во время ресайза (JS пишет текст) */
 .pfd-size {
     position: absolute; top: 8px; right: 38px;
@@ -2267,6 +2308,9 @@ body.dark-mode .pfd-cardx:hover { color: #f87171; border-color: #7f1d1d; backgro
     font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
     color: #64748b; background: rgba(255, 255, 255, 0.9); border: 1px solid #e2e8f0; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
 }
+.pfd-pick-tag.live { color: #15803d; background: rgba(240, 253, 244, 0.92); border-color: #bbf7d0; }
+.pfd-pick-tag.live::before { content: ''; display: inline-block; width: 5px; height: 5px; margin: 0 4px 1px 0; border-radius: 50%; background: #22c55e; vertical-align: middle; }
+.pfd-pick-tag.demo { color: #b45309; background: rgba(255, 251, 235, 0.92); border-color: #fde68a; }
 /* палитра эскизов превью (примеры без портфелей) */
 .pfd-pv-svg { display: block; width: 100%; height: auto; }
 .pfd-pv-svg .pv-card { fill: #fff; stroke: #e6ebf2; stroke-width: 1; }
@@ -2377,7 +2421,7 @@ body.dark-mode .pfhm-tile:hover { box-shadow: inset 0 0 0 2px rgba(255, 255, 255
 .pfd-item.pfd-hset .pf-newsblk .pfnw-body { overflow-y: auto; scrollbar-width: thin; }
 .pfnw-list { display: flex; flex-direction: column; gap: 5px; }
 .pfnw-item {
-    position: relative; display: flex; align-items: flex-start; gap: 11px; width: 100%; text-align: left;
+    position: relative; box-sizing: border-box; display: flex; align-items: flex-start; gap: 11px; width: 100%; text-align: left;
     padding: 9px 11px; border-radius: 12px; border: 1px solid #eef2f7; background: #fbfcfe;
     transition: border-color 0.13s, background 0.13s;
 }
@@ -2599,8 +2643,8 @@ body.dark-mode .pfhm-tile:hover { box-shadow: inset 0 0 0 2px rgba(255, 255, 255
 .pfnt-cal-d.rstart { border-radius: 8px 0 0 8px; }
 .pfnt-cal-d.rend { border-radius: 0 8px 8px 0; }
 .pfnt-cal-hint {
-    font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: color-mix(in srgb, var(--nt) 55%, #64748b);
-    text-align: center; padding: 1px 0 2px;
+    font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 500; color: #9aa7b8;
+    text-align: center; padding: 1px 0 2px; letter-spacing: 0.01em;
 }
 .pfnt-cal-time { display: flex; align-items: center; gap: 7px; padding-top: 9px; border-top: 1px solid #eef1f6; color: #94a3b8; }
 .pfnt-cal-time svg { width: 15px; height: 15px; flex-shrink: 0; }
@@ -2666,6 +2710,8 @@ body.dark-mode .pfd-pickpv { background: #0f1a2e; }
 body.dark-mode .pfd-pick-txt b { color: #e8f0fb; }
 body.dark-mode .pfd-pick-txt span { color: #9fb1c6; }
 body.dark-mode .pfd-pick-tag { background: rgba(16, 26, 44, 0.85); border-color: #2a3856; color: #9fb1c6; }
+body.dark-mode .pfd-pick-tag.live { color: #4ade80; background: rgba(16, 26, 44, 0.85); border-color: #14532d; }
+body.dark-mode .pfd-pick-tag.demo { color: #fbbf24; background: rgba(16, 26, 44, 0.85); border-color: #78350f; }
 body.dark-mode .pfd-pick-sketch { background: #0f1a2e; }
 body.dark-mode .pfd-pv-svg .pv-card { fill: #1c2942; stroke: #2a3856; }
 body.dark-mode .pfd-pv-svg .pv-strong { fill: #46587a; }
@@ -2718,6 +2764,7 @@ body.dark-mode .pfnt-cal-d { color: #cbd6e4; }
 body.dark-mode .pfnt-cal-d.past { color: #4a5670; }
 body.dark-mode .pfnt-cal-d.sel, body.dark-mode .pfnt-cal-d.rstart, body.dark-mode .pfnt-cal-d.rend { color: #fff; }
 body.dark-mode .pfnt-cal-d.inrange { background: color-mix(in srgb, var(--nt) 26%, #16202e); color: #dbe6f4; }
+body.dark-mode .pfnt-cal-hint { color: #74839a; }
 body.dark-mode .pfnt-cal-time, body.dark-mode .pfnt-cal-foot { border-top-color: rgba(255, 255, 255, 0.08); }
 body.dark-mode .pfnt-cal-time > span { color: #9fb1c6; }
 body.dark-mode .pfnt-cal-time-in { background: #101826; border-color: #27324a; color: #e8f0fb; }
