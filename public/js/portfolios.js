@@ -1496,6 +1496,8 @@
     // иконка конструктора: сетка 2×2 (LAYOUT_SVG занят пунктом «Вид»)
     var PFDGRID_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.6"/></svg>';
     function topBarActionsHtml() {
+        // «Панель управления» на дашборде собирает ВСЕ контролы страницы — шапку оставляем пустой
+        if (pfdPanelActive()) return '';
         return '<button class="d3-quick" onclick="pfAddPortfolio()">' + PLUS_SVG + '<span>Добавить портфель</span></button>' +
             // «Видимость» показываем при 2+ портфелях, при наличии сделок ИЛИ когда включена
             // своя раскладка (тогда в меню — тумблеры скрытых изначальных секций)
@@ -1725,7 +1727,7 @@
             // чистим ключи удалённых портфелей — конфиг не копит мусор (и не тащит
             // его в облако через cloud-sync). Скрытые портфели остаются в store.items,
             // их раскладка переживает «скрыть/показать».
-            var known = { cal: 1, rates: 1, trades: 1, fav: 1, sum: 1,
+            var known = { cal: 1, rates: 1, trades: 1, fav: 1, sum: 1, panel: 1,
                 'kpi:cap': 1, 'kpi:day': 1, 'kpi:next': 1, cap: 1, cap2: 1, heat: 1, news: 1, alloc: 1 };
             store.items.forEach(function (p) { known['pf:' + p.id] = 1; });
             (dashCfg.notes || []).forEach(function (n) { known['note:' + n.id] = 1; });
@@ -1854,13 +1856,14 @@
             // неизвестна, график всегда выезжает вправо от карточки
             blocks.push({ id: 'pf:' + p.id, name: p.name, htmlFn: function () { return cardHtml(p, i, false, narrow, false); }, span: defSpan });
         });
-        blocks.push({ id: 'cal', name: noBonds ? 'Ставки' : 'Календарь выплат', htmlFn: function () { return noBonds ? ratesStackHtml(true, 1, true) : paymentCalendarHtml(true, 1); }, span: defSpan });
+        blocks.push({ id: 'cal', name: noBonds ? 'Ставки' : 'Календарь выплат', htmlFn: function () { return noBonds ? ratesStackHtml(true, 1, true, 'cal') : paymentCalendarHtml(true, 1); }, span: defSpan });
         // обёртка .pf-topgrid-fav сохраняет прицельные стили правой колонки
         // (одноколоночный .pff-grid и т.п.) и в свободной сетке
         blocks.push({ id: 'fav', name: 'Избранное', htmlFn: function () { return '<div class="pf-topgrid-fav pfd-favwrap">' + favStr + '</div>'; }, span: defSpan });
         if (store.items.length >= 2) {
             blocks.push({ id: 'sum', name: 'Сводка', htmlFn: function () { return '<div class="pf-topgrid-fav pfd-favwrap">' + summaryCardHtml() + '</div>'; }, span: defSpan });
         }
+        blocks.push({ id: 'panel', name: 'Панель управления', htmlFn: pfdPanelHtml, span: 12, defHidden: true });
         blocks.push({ id: 'kpi:cap', name: 'KPI · Капитал', htmlFn: function () { return pfdKpiHtml('cap'); }, span: 4, defHidden: true });
         blocks.push({ id: 'kpi:day', name: 'KPI · За сегодня', htmlFn: function () { return pfdKpiHtml('day'); }, span: 4, defHidden: true });
         blocks.push({ id: 'kpi:next', name: 'KPI · Ближайшая выплата', htmlFn: function () { return pfdKpiHtml('next'); }, span: 4, defHidden: true });
@@ -1904,6 +1907,7 @@
         return PFD_PV.gen;
     }
     var PFD_PICK_DESC = {
+        'panel': 'Полоса управления: KPI и все кнопки страницы одним блоком',
         'kpi:cap': 'Суммарный капитал и прибыль по всем портфелям',
         'kpi:day': 'Изменение стоимости за сегодня',
         'kpi:next': 'Ближайшая купонная или дивидендная выплата',
@@ -1930,6 +1934,7 @@
         if (id === 'alloc') return { ic: PFD_ICO_ALLOC, t: 'violet' };
         if (id === 'heat') return { ic: PFD_ICO_HEAT, t: 'green' };
         if (id === 'news') return { ic: PFD_ICO_NEWS, t: 'amber' };
+        if (id === 'panel') return { ic: PFDGRID_SVG, t: 'indigo' };
         return { ic: PFDGRID_SVG, t: 'blue' };
     }
     // ---- список «Блоки для дашборда»: строка = иконка + название + описание, превью справа ----
@@ -2097,41 +2102,80 @@
                 '<button type="button" class="pfl-pv-add" onclick="pfdAddSelected()">' + PFD_PLUS_SVG + '<span>Добавить на дашборд</span></button>' +
             '</div>';
     }
-    // семейство: дизайны СТОПКОЙ — у каждого мини-превью, название и своя кнопка «Добавить»
-    // (или «Добавлено», если дизайн уже на дашборде). Спокойный вертикальный выбор.
+    // семейство: дизайны СТОПКОЙ — каждый показан ЦЕЛИКОМ (крупное превью), карточка
+    // ВЫБИРАЕТСЯ кликом (рамка), внизу ОДНА общая кнопка «Добавить виджет» добавляет
+    // выбранный дизайн. Так видно оба варианта полностью, а не по обрезку с кнопкой у каждого.
+    var pflFamPick = null;   // id выбранного дизайна семейства (для общей кнопки)
     function pfdRenderFamilyPreview(pv, key) {
         var fam = pfdFamilyByKey(key); if (!fam) { pv.innerHTML = ''; return; }
         var noPf = pfdPickNoPf();
+        // выбор по умолчанию — ПЕРВЫЙ ещё не добавленный дизайн (если прежний сбит/добавлен)
+        var avail = fam.variants.filter(function (v) { return dashCfg.hidden[v.id] !== 0; });
+        var famHas = fam.variants.some(function (v) { return v.id === pflFamPick; });
+        if (!famHas || dashCfg.hidden[pflFamPick] === 0) pflFamPick = (avail[0] || fam.variants[0]).id;
         var cards = fam.variants.map(function (v) {
             var added = dashCfg.hidden[v.id] === 0;
-            return '<div class="pfl-choice' + (added ? ' added' : '') + '">' +
+            var sel = !added && v.id === pflFamPick;
+            return '<div class="pfl-choice' + (added ? ' added' : '') + (sel ? ' selected' : '') + '" ' +
+                (added ? '' : 'role="button" tabindex="0" aria-pressed="' + (sel ? 'true' : 'false') + '" onclick="pfdFamPick(\'' + jsArg(v.id) + '\')" ') + '>' +
                 '<div class="pfl-choice-pv">' + pfdPickPvHtml(v.id, v.label, noPf) + '</div>' +
                 '<div class="pfl-choice-side">' +
                     '<div class="pfl-choice-meta"><b>' + esc(v.label) + '</b><span>' + esc(v.desc) + '</span></div>' +
                     (added
-                        ? '<span class="pfl-choice-add is-added">' + CHECK_SVG + '<span>Добавлено</span></span>'
-                        : '<button type="button" class="pfl-choice-add" onclick="pfdAddWidget(\'' + jsArg(v.id) + '\')">' + PFD_PLUS_SVG + '<span>Добавить</span></button>') +
+                        ? '<span class="pfl-choice-badge is-added">' + CHECK_SVG + '<span>Добавлено</span></span>'
+                        : '<span class="pfl-choice-badge">' + (sel ? CHECK_SVG + '<span>Выбрано</span>' : '<span>Выбрать</span>') + '</span>') +
                 '</div>' +
             '</div>';
         }).join('');
+        var allAdded = avail.length === 0;
         pv.innerHTML = '<div class="pfl-fam">' +
-            '<div class="pfl-fam-h"><b>' + esc(fam.name) + '</b><span>Выберите дизайн — можно добавить оба</span></div>' +
+            '<div class="pfl-fam-h"><b>' + esc(fam.name) + '</b><span>Оба дизайна показаны целиком — выберите нужный</span></div>' +
             '<div class="pfl-fam-list">' + cards + '</div>' +
+            '<div class="pfl-pv-foot">' +
+                '<div class="pfl-pv-meta"><b>' + esc(fam.name) + '</b><span>' + (allAdded ? 'Оба дизайна уже на дашборде' : 'Выделите дизайн рамкой и добавьте') + '</span></div>' +
+                (allAdded
+                    ? '<span class="pfl-pv-add is-added">' + CHECK_SVG + '<span>Добавлено</span></span>'
+                    : '<button type="button" class="pfl-pv-add" onclick="pfdAddSelected()">' + PFD_PLUS_SVG + '<span>Добавить виджет</span></button>') +
+            '</div>' +
         '</div>';
     }
+    // выбор дизайна семейства (рамка): перерисовываем ТОЛЬКО превью (без ре-рендера панели —
+    // фокус/список целы), затем перекрашиваем карту, если она в выбранной карточке
+    window.pfdFamPick = function (id) {
+        if (dashCfg.hidden[id] === 0) return;   // добавленный дизайн не выбираем
+        pflFamPick = id;
+        var pv = document.getElementById('pfdPickPv'), fam = pfdFamilyOfId(id);
+        if (pv && fam) {
+            pfdRenderFamilyPreview(pv, fam.key);
+            requestAnimationFrame(function () { try { if (document.querySelector('#pfdPickPv .pfhm-box')) pfdHeatRepaintSoon(); } catch (e) {} });
+        }
+    };
     // добавить конкретный виджет (в т.ч. отдельный дизайн семейства); выбор в списке сохраняем,
     // чтобы после ре-рендера остаться на том же блоке/семействе (кнопка станет «Добавлено»)
     window.pfdAddWidget = function (id) {
         if (dashCfg.hidden[id] === 0) return;   // уже на дашборде
         pfdPushUndo();
         dashCfg.hidden[id] = 0;
+        // «Панель управления» — всегда верхней полосой во всю ширину: в НАЧАЛО порядка, span 12
+        if (id === 'panel') {
+            dashCfg.order = (dashCfg.order || []).filter(function (x) { return x !== 'panel'; });
+            dashCfg.order.unshift('panel');
+            dashCfg.span = dashCfg.span || {}; dashCfg.span.panel = 12;
+            dashCfg.col = dashCfg.col || {}; dashCfg.col.panel = 1;
+        }
         saveDashCfg();
         pfdRerender();
-        toast('Блок добавлен на дашборд');
+        toast(id === 'panel' ? 'Панель управления добавлена' : 'Блок добавлен на дашборд');
     };
-    // тёмная кнопка «Добавить на дашборд» (одиночный блок): добавляет и выбирает следующий
+    // тёмная кнопка «Добавить виджет»: для семейства — добавляет ВЫБРАННЫЙ дизайн (pflFamPick),
+    // для одиночного блока — сам блок; затем ре-рендер и выбор следующего
     window.pfdAddSelected = function () {
-        var id = pflSelectedId; if (!id || id.indexOf('fam:') === 0) return;
+        var id = pflSelectedId;
+        if (id && id.indexOf('fam:') === 0) {          // семейство — добавляем выбранный дизайн
+            if (pflFamPick && dashCfg.hidden[pflFamPick] !== 0) pfdAddWidget(pflFamPick);
+            return;
+        }
+        if (!id) return;
         if (id === '__note') { pfdAddNote(); return; }
         pfdAddWidget(id);
         pflSelectedId = null;   // блок ушёл со списка → pflInitPreview выберет следующий
@@ -2185,8 +2229,12 @@
                 hideBtn = '<button class="pfd-cardrm" title="Удалить виджет (вернуть — «Добавить блок» в Конструкторе)" aria-label="Удалить виджет" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + NOTE_TRASH_SVG + '</button>';
             } else if (b.id === 'cal' || b.id === 'sum') {
                 // глаз-скрытие — ТОЧНО как в карточке портфеля (.pfc-act), в правом-верхнем углу
-                // напротив заголовка, видимый постоянно (не в зазоре-бирке)
-                hideBtn = '<span class="pfd-eye"><button class="pfc-act" title="Скрыть блок (вернуть — «Видимость» в шапке)" aria-label="Скрыть блок" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + EYEOFF_SVG + '</button></span>';
+                // напротив заголовка, видимый постоянно (не в зазоре-бирке). Исключение: когда
+                // блок cal показывает «Ставки рынка» (noBonds) — заголовка нет, а глаз сидит в
+                // последней плитке (см. ratesStackHtml), угловой оверлей не нужен.
+                if (!(b.id === 'cal' && noBonds)) {
+                    hideBtn = '<span class="pfd-eye"><button class="pfc-act" title="Скрыть блок (вернуть — «Видимость» в шапке)" aria-label="Скрыть блок" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + EYEOFF_SVG + '</button></span>';
+                }
             }
             // «живой» chrome у КАЖДОГО блока сетки: НЕВИДИМАЯ полоса-хват по ВЕРХНЕЙ ГРАНИ
             // (.pfd-move — курсор сам «ладошка», за неё блок тянется, никакой бирки), кнопка
@@ -2256,16 +2304,31 @@
         return '<div class="pfl-panel" id="pflPanel">' +
             '<div class="pfl-head">' +
                 '<div class="pfl-head-t">' +
-                    '<span class="pfl-head-ic">' + PFDGRID_SVG + '</span>' +
-                    '<div class="pfl-head-tx"><b>Настройка раскладки</b>' +
-                        '<span>Добавьте блоки, расставьте их перетаскиванием и сохраните свой вид</span></div>' +
+                    '<span class="pfl-head-ic">' + PFD_PLUS_SVG + '</span>' +
+                    '<div class="pfl-head-tx"><b>Добавить виджет</b>' +
+                        '<span>Выберите блок слева — справа появится превью; настройки раскладки — в иконке рядом с кнопкой</span></div>' +
                 '</div>' +
-                '<button type="button" class="pfl-x" onclick="pfLayoutClose()" aria-label="Закрыть настройку раскладки">' + XMARK_SVG + '</button>' +
+                '<button type="button" class="pfl-x" onclick="pfLayoutClose()" aria-label="Закрыть">' + XMARK_SVG + '</button>' +
             '</div>' +
             '<div class="pfl-body">' + pfdPickerInner() + '</div>' +
-            pflFootHtml() +
         '</div>';
     }
+    // ---- поповер раскладки (иконка рядом с «Добавить виджет»): базовая/индивидуальная/сохранить.
+    // Наполняется из updateLayoutBtn при каждом ре-рендере — состояние всегда актуально.
+    function pfLayoutCfgPopHtml() {
+        var saved = pfdLayoutSaved();
+        return '<div class="pfl-cfg-h">Раскладка</div>' +
+            '<button type="button" class="pfl-cfg-item" onclick="pfLayoutReset()">' + PFDGRID_SVG +
+                '<span><b>Базовая</b><i>стандартная расстановка блоков</i></span></button>' +
+            (dashCfg.saved
+                ? '<button type="button" class="pfl-cfg-item" onclick="pfLayoutRestoreSaved()">' + UNDO_SVG +
+                    '<span><b>Индивидуальная</b><i>ваша сохранённая раскладка</i></span></button>'
+                : '') +
+            '<div class="pfl-cfg-sep"></div>' +
+            '<button type="button" class="pfl-cfg-item primary' + (saved ? ' done' : '') + '" onclick="pfLayoutSave()">' + CHECK_SVG +
+                '<span><b>' + (saved ? 'Сохранено' : 'Сохранить текущую раскладку') + '</b></span></button>';
+    }
+    window.pfLayoutCfgPopHtml = pfLayoutCfgPopHtml;
     // подвал карточки настройки — блок управления раскладкой
     function pflFootHtml() {
         var done = pfdLayoutSaved();
@@ -2287,13 +2350,25 @@
     // точка «своя раскладка» + нажатое состояние. Только десктоп, только на вкладке «Портфели».
     function updateLayoutBtn() {
         var b = document.getElementById('pfLayoutBtn'); if (!b) return;
+        // при активной «Панели управления» ВСЕ контролы страницы живут в ней — шапку прячем
+        var show = (currentTab === 'portfolios' && store.items.length && !pfdPanelActive());
         // базовый стиль кнопки — display:none, поэтому показываем ЯВНЫМ inline-flex
-        var show = (currentTab === 'portfolios' && store.items.length);
         b.style.display = show ? 'inline-flex' : 'none';
         var sep = document.getElementById('pfLayoutSep');
         if (sep) sep.style.display = show ? 'inline-block' : 'none';
         b.classList.toggle('on', !!dashCfg.on);
         b.classList.toggle('active', !!dashEdit);
+        // иконка раскладки рядом: показ синхронно с кнопкой, поповер наполняем актуальным состоянием
+        var cfg = document.getElementById('pfLayoutCfgWrap');
+        if (cfg) {
+            cfg.style.display = show ? 'inline-flex' : 'none';
+            var pop = document.getElementById('pfLayoutCfgPop');
+            if (pop && show) pop.innerHTML = pfLayoutCfgPopHtml();
+        }
+        // поповер раскладки внутри «Панели управления» — держим в актуальном состоянии тоже
+        Array.prototype.forEach.call(document.querySelectorAll('#pfWrap .pfp-cfg .pfl-cfg-pop'), function (p) {
+            p.innerHTML = pfLayoutCfgPopHtml();
+        });
     }
     window.updateLayoutBtn = updateLayoutBtn;
     // клик по кнопке «Раскладка»: открыть карточку (или закрыть, если уже открыта)
@@ -2327,6 +2402,7 @@
         dashCfg.saved = pfdSavedSnap();
         saveDashCfg();
         pfdUpdateSaveBtn();
+        updateLayoutBtn();   // освежить поповер раскладки в шапке (кнопка → «Сохранено»)
         toast('Раскладка сохранена — закреплена за вами');
     };
     // «Вернуть сохранённую» — откатить рабочий вид к последней контрольной точке
@@ -2938,6 +3014,62 @@
                 '<div class="pf-kpi-v' + vCls + '">' + vHtml + '</div>' +
                 '<div class="pf-kpi-s">' + sub + '</div>' +
             '</div></div>';
+    }
+
+    // ---- «Панель управления» (виджет-герой): полноширинная тёмная полоса в стиле верхнего
+    // блока «Ребаланса». Слева — идентити + KPI (капитал · за сегодня), справа — ВСЕ контролы
+    // страницы (добавить виджет/портфель, Excel, видимость, бэкап, раскладка). Пока панель на
+    // дашборде — те же кнопки в шапке страницы скрыты (topBarActionsHtml/updateLayoutBtn через
+    // pfdPanelActive). Удаляется штатной корзиной .pfd-cardrm (defHidden) → кнопки возвращаются.
+    function pfdPanelActive() {
+        if (!dashCfg.on) return false;                                   // панель живёт только в живой сетке
+        try { if (window.matchMedia('(max-width: 1023px)').matches) return false; } catch (e) {}
+        return (dashCfg.hidden || {}).panel === 0;                       // defHidden:true → активна лишь явным показом
+    }
+    var PFP_EXCEL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M9.5 12.5l5 5M14.5 12.5l-5 5"/></svg>';
+    var PFP_SLIDERS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="8" x2="14" y2="8"/><line x1="18" y1="8" x2="20" y2="8"/><circle cx="16" cy="8" r="2"/><line x1="4" y1="16" x2="6" y2="16"/><line x1="10" y1="16" x2="20" y2="16"/><circle cx="8" cy="16" r="2"/></svg>';
+    function pfdPanelHtml() {
+        // KPI считаем как в pfdKpiHtml — по ВСЕМ портфелям (скрытые тоже: деньги не исчезают)
+        var inv = 0, val = 0, dd = 0, hasDd = false;
+        store.items.forEach(function (p) {
+            var c = calcPf(p); inv += c.invested; val += c.value;
+            var d = dayDelta(p, c.value); if (d != null) { dd += d; hasDd = true; }
+        });
+        var pnl = val - inv, pct = inv > 0 ? pnl / inv * 100 : 0;
+        var n = visibleItems().length;
+        var ddCls = hasDd ? (dd >= 0 ? 'pos' : 'neg') : '';
+        var ddVal = hasDd ? (dd >= 0 ? '+' : '−') + fmtRub(Math.abs(dd)) : '—';
+
+        var idBlock = '<div class="pfp-id">' +
+            '<div class="pfp-ico">' + PFDGRID_SVG + '</div>' +
+            '<div class="pfp-id-t"><div class="pfp-title">Панель управления</div>' +
+                '<div class="pfp-sub">' + n + ' ' + plural(n, 'портфель', 'портфеля', 'портфелей') + ' · дашборд под рукой</div></div>' +
+        '</div>';
+
+        var kpis = '<div class="pfp-kpis">' +
+            '<div class="pfp-kpi"><div class="num"><b>' + fmtRub(val) + '</b><span>капитал</span></div>' +
+                '<div class="sub">вложено ' + fmtRub(inv) + ' · <b class="' + (pnl >= 0 ? 'pos' : 'neg') + '">' + (pnl >= 0 ? '▲ ' : '▼ ') + fmtPct(pct) + '</b></div></div>' +
+            '<i class="pfp-div"></i>' +
+            '<div class="pfp-kpi"><div class="num"><b class="' + ddCls + '">' + ddVal + '</b><span>за сегодня</span></div>' +
+                '<div class="sub">' + (hasDd ? 'к последнему дневному снимку' : 'появится со второго дня') + '</div></div>' +
+        '</div>';
+
+        var actions = '<div class="pfp-actions">' +
+            '<button type="button" class="pfp-btn primary" onclick="pfLayoutToggle(event)" title="Добавить виджет на дашборд">' + PFD_PLUS_SVG + '<span>Виджет</span></button>' +
+            '<button type="button" class="pfp-btn" onclick="pfAddPortfolio()" title="Создать новый портфель">' + PLUS_SVG + '<span>Портфель</span></button>' +
+            '<button type="button" class="pfp-btn icon" onclick="pfExportExcelAll()" title="Выгрузить все позиции в Excel">' + PFP_EXCEL_SVG + '</button>' +
+            eyeWrapHtml() +
+            backupWrapHtml() +
+            '<span class="pfl-cfg-wrap pfp-cfg" style="display:inline-flex">' +
+                '<button type="button" class="pfl-cfg-btn" title="Раскладка: базовая, индивидуальная, сохранить" aria-label="Настройки раскладки">' + PFP_SLIDERS_SVG + '</button>' +
+                '<div class="pfl-cfg-pop">' + pfLayoutCfgPopHtml() + '</div>' +
+            '</span>' +
+        '</div>';
+
+        return '<div class="pfp-panel">' +
+            '<div class="pfp-fx" aria-hidden="true"><i class="g1"></i><i class="g2"></i><i class="mesh"></i></div>' +
+            idBlock + kpis + actions +
+        '</div>';
     }
 
     // ---- «График капитала»: линия суммарной стоимости по дневным снимкам ----
@@ -4953,9 +5085,9 @@
             { l: 'Доходность ОФЗ 10 лет', v: rv('val-ofz10', rd.ofz10), ac: '#3d6fd1', ic: '<path d="M3 3v18h18"/><polyline points="7 14 11 10 14 13 20 7"/>' }
         ];
     }
-    function rateTileHtml(t) {
-        return '<div class="drt-tile" style="--ac:' + t.ac + '"><div class="drt-ic"><svg viewBox="0 0 24 24">' + t.ic + '</svg></div>' +
-            '<div class="drt-body"><div class="drt-l">' + esc(t.l) + '</div><div class="drt-v">' + esc(t.v) + '</div></div></div>';
+    function rateTileHtml(t, extra) {
+        return '<div class="drt-tile' + (extra ? ' drt-tile--eye' : '') + '" style="--ac:' + t.ac + '"><div class="drt-ic"><svg viewBox="0 0 24 24">' + t.ic + '</svg></div>' +
+            '<div class="drt-body"><div class="drt-l">' + esc(t.l) + '</div><div class="drt-v">' + esc(t.v) + '</div></div>' + (extra || '') + '</div>';
     }
     // полноширинная горизонтальная полоса ставок под сеткой — показывается ВСЕГДА,
     // когда есть хоть одна облигация хоть в одном портфеле (т.е. «Календарь выплат» тоже виден)
@@ -4972,15 +5104,20 @@
     // соседей. asCell=true → занимает свободную ЯЧЕЙКУ сетки (растягивается на высоту
     // соседних карточек через align-items:stretch); asCell=false → узкая колонка под
     // сеткой (чётное число портфелей).
-    function ratesStackHtml(asCell, span, withHead) {
-        var grid = '<div class="drt-grid pf-ratesstack-grid">' + rateTiles().map(rateTileHtml).join('') + '</div>';
+    // hideId (напр. 'cal') — на дашборде даёт глаз-скрытие блока прямо в ПОСЛЕДНЕЙ плитке
+    // (заголовок «Ставки рынка» убран по просьбе — плитки самоописательны, а отдельная шапка
+    // ради глаза была лишней). Классический путь вызывается без hideId — плитки без глаза.
+    function ratesStackHtml(asCell, span, withHead, hideId) {
+        var tiles = rateTiles();
+        var eye = hideId
+            ? '<button class="pfc-act pf-ratestile-eye" title="Скрыть блок (вернуть — «Видимость» в шапке)" aria-label="Скрыть блок ставок" onclick="pfdHideBlock(\'' + jsArg(hideId) + '\')">' + EYEOFF_SVG + '</button>'
+            : '';
+        var grid = '<div class="drt-grid pf-ratesstack-grid">' + tiles.map(function (t, i) {
+            return rateTileHtml(t, i === tiles.length - 1 ? eye : '');
+        }).join('') + '</div>';
         var cls = 'pf-ratesstack' + (asCell ? ' pf-ratesstack--cell' : ' pf-ratesstack--flow') +
-            (asCell && span === 2 ? ' pf-ratesstack--span2' : '') + (withHead ? ' pf-ratesstack--head' : '');
-        // На дашборде (withHead) даём заголовок «Ставки рынка» — тогда глаз-скрытие (.pfd-eye)
-        // садится В ШАПКУ блока (как у карточки портфеля), а не на голую грань плиток. В классике
-        // заголовок не нужен (плитки самоописательны) — вызывается без withHead.
+            (asCell && span === 2 ? ' pf-ratesstack--span2' : '');
         return '<div class="' + cls + '">' +
-            (withHead ? pfCardHead('', 'Ставки рынка', 'ключевые ставки и инфляция', null) : '') +
             '<div class="pf-ratesstack-body">' + grid + '</div></div>';
     }
 

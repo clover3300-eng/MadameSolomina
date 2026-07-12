@@ -1893,6 +1893,18 @@ body.dark-mode .tbmk-c.neg { color: #f87171; }
 @media (max-width: 1040px) { .pf-ratesstack--span2 { grid-column: span 1; } }
 /* чётное число портфелей — полоса ставок узкой колонкой под сеткой (не на всю ширину) */
 .pf-ratesstack--flow { max-width: 460px; }
+/* Заголовка «Ставки рынка» больше нет — глаз-скрытие всего блока сидит в ПОСЛЕДНЕЙ плитке
+   (правый-верхний угол), тихо: без фона/рамки, приглушённый, ярче по hover блока/кнопки. */
+.pf-ratesstack-grid .drt-tile--eye { position: relative; }
+.pf-ratestile-eye.pfc-act {
+    position: absolute; top: 7px; right: 7px; width: 24px; height: 24px; border-radius: 7px;
+    border-color: transparent; background: transparent; color: #94a3b8; opacity: 0.7; z-index: 2;
+}
+.pf-ratesstack:hover .pf-ratestile-eye.pfc-act { opacity: 1; }
+.pf-ratestile-eye.pfc-act:hover { background: rgba(24,38,60,0.06); color: #1b2433; }
+.pf-ratestile-eye.pfc-act svg { width: 13px; height: 13px; }
+body.dark-mode .pf-ratestile-eye.pfc-act { color: #8595ab; background: transparent; }
+body.dark-mode .pf-ratestile-eye.pfc-act:hover { background: rgba(255,255,255,0.08); color: #f4f8fd; }
 
 /* ---- полоса «Ставки рынка» (.pf-ratesband) — общие правки ----
    min-width:0: .drt-grid — флекс-элемент .d3-ratesband, без этого min-width:auto не
@@ -2283,6 +2295,111 @@ body.dark-mode .pfl-open-sep { background: rgba(255, 255, 255, 0.16); }
 .pfl-open-btn.on::after { content: ''; position: absolute; top: 3px; right: 4px; width: 6px; height: 6px; border-radius: 99px; background: #22c55e; box-shadow: 0 0 0 2px #eef1ff; }
 .pfl-open-btn.active.on::after { box-shadow: 0 0 0 2px #4035c4; }
 
+/* ---- иконка «Раскладка» рядом с «Добавить виджет» + hover-поповер ----
+   Базовая/Индивидуальная/Сохранить вынесены из карточки в поповер по наведению. */
+.pfl-cfg-wrap { display: none; align-items: center; position: relative; margin-left: 6px; vertical-align: middle; }
+.pfl-cfg-btn {
+    display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px;
+    border-radius: 10px; border: 1px solid #d7deea; background: linear-gradient(#fbfcff, #eef1f8);
+    color: #4b5566; cursor: pointer; transition: background 0.14s, border-color 0.14s, color 0.14s;
+}
+.pfl-cfg-btn svg { width: 17px; height: 17px; }
+.pfl-cfg-btn:hover, .pfl-cfg-wrap:hover .pfl-cfg-btn { background: linear-gradient(#eef1ff, #dfe4fb); border-color: #b9c2ef; color: #3730a3; }
+/* поповер: раскрывается по hover обёртки; невидимый мостик сверху не даёт схлопнуться в зазоре */
+.pfl-cfg-pop {
+    position: absolute; top: calc(100% + 8px); right: 0; z-index: 1200; width: 264px;
+    background: #fff; border: 1px solid #e6ebf3; border-radius: 14px; padding: 8px;
+    box-shadow: 0 20px 44px -18px rgba(15, 23, 42, 0.5), 0 4px 14px -8px rgba(15, 23, 42, 0.28);
+    opacity: 0; visibility: hidden; transform: translateY(-4px) scale(0.98); transform-origin: top right;
+    transition: opacity 0.14s, transform 0.14s, visibility 0.14s;
+}
+.pfl-cfg-pop::before { content: ''; position: absolute; top: -10px; left: 0; right: 0; height: 10px; }
+.pfl-cfg-wrap:hover .pfl-cfg-pop, .pfl-cfg-pop:hover { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
+.pfl-cfg-h { font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8; padding: 6px 10px 7px; }
+.pfl-cfg-item { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; padding: 9px 10px; border: 0; border-radius: 10px; background: transparent; cursor: pointer; color: #1b2433; transition: background 0.12s; }
+.pfl-cfg-item:hover { background: #f1f4f9; }
+.pfl-cfg-item svg { width: 17px; height: 17px; flex-shrink: 0; color: #64748b; }
+.pfl-cfg-item > span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.pfl-cfg-item b { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; }
+.pfl-cfg-item i { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; font-style: normal; color: #7c8798; }
+.pfl-cfg-sep { height: 1px; margin: 6px 8px; background: #eef1f6; }
+.pfl-cfg-item.primary b { color: #4338ca; }
+.pfl-cfg-item.primary svg { color: #4f46e5; }
+.pfl-cfg-item.primary.done b, .pfl-cfg-item.primary.done svg { color: #12a35c; }
+body.dark-mode .pfl-cfg-btn { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.12); color: #b7c2d3; }
+body.dark-mode .pfl-cfg-btn:hover, body.dark-mode .pfl-cfg-wrap:hover .pfl-cfg-btn { background: rgba(99, 102, 241, 0.2); border-color: rgba(129, 140, 248, 0.5); color: #c7d2fe; }
+body.dark-mode .pfl-cfg-pop { background: #131c2e; border-color: #26324c; box-shadow: 0 20px 44px -18px rgba(0, 0, 0, 0.6); }
+body.dark-mode .pfl-cfg-item { color: #e8eef7; }
+body.dark-mode .pfl-cfg-item:hover { background: rgba(255, 255, 255, 0.06); }
+body.dark-mode .pfl-cfg-item svg { color: #93a2b8; }
+body.dark-mode .pfl-cfg-item i { color: #8fa0b6; }
+body.dark-mode .pfl-cfg-sep { background: #24304a; }
+body.dark-mode .pfl-cfg-item.primary b, body.dark-mode .pfl-cfg-item.primary svg { color: #a5b4fc; }
+body.dark-mode .pfl-cfg-item.primary.done b, body.dark-mode .pfl-cfg-item.primary.done svg { color: #6ee7a8; }
+
+/* ============================================================
+   «ПАНЕЛЬ УПРАВЛЕНИЯ» (виджет .pfp-panel) — полноширинный тёмный герой в стиле
+   верхнего блока «Ребаланса»: идентити + KPI слева, все контролы страницы справа.
+   overflow у самой панели — visible (иначе поповер раскладки/меню обрежутся);
+   декоративный glow клипуется своим слоем .pfp-fx.
+   ============================================================ */
+.pfp-panel {
+    position: relative; width: 100%;
+    display: flex; align-items: center; flex-wrap: wrap; gap: 14px 26px;
+    padding: 18px 22px; border-radius: 22px;
+    background: linear-gradient(120deg, #0c1219 0%, #182231 55%, #131e2b 100%);
+    box-shadow: 0 20px 44px rgba(24, 38, 60, 0.16); border: 1px solid rgba(255, 255, 255, 0.05);
+}
+/* «Панель управления» — корзина удаления в правом-верхнем углу; освобождаем ей место */
+.pfd-item[data-pfd="panel"] .pfp-panel { padding-right: 46px; }
+.pfp-fx { position: absolute; inset: 0; z-index: 0; overflow: hidden; border-radius: inherit; pointer-events: none; }
+.pfp-fx i { position: absolute; display: block; }
+.pfp-fx .g1 { width: 380px; height: 260px; top: -150px; right: 14%; background: radial-gradient(closest-side, rgba(52, 211, 153, 0.22), transparent 70%); filter: blur(6px); }
+.pfp-fx .g2 { width: 320px; height: 240px; bottom: -160px; left: 22%; background: radial-gradient(closest-side, rgba(90, 124, 255, 0.16), transparent 70%); filter: blur(8px); }
+.pfp-fx .mesh { inset: 0; background-image: radial-gradient(rgba(255, 255, 255, 0.10) 1px, transparent 1.4px); background-size: 18px 18px; -webkit-mask-image: linear-gradient(100deg, transparent 40%, rgba(0, 0, 0, 0.5) 74%, rgba(0, 0, 0, 0.8)); mask-image: linear-gradient(100deg, transparent 40%, rgba(0, 0, 0, 0.5) 74%, rgba(0, 0, 0, 0.8)); }
+.pfp-panel > .pfp-id, .pfp-panel > .pfp-kpis, .pfp-panel > .pfp-actions { position: relative; z-index: 1; }
+/* идентити */
+.pfp-id { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.pfp-ico { flex-shrink: 0; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 13px; color: #8ab4ff; background: linear-gradient(135deg, rgba(90, 124, 255, 0.22), rgba(90, 124, 255, 0.05)); border: 1px solid rgba(90, 124, 255, 0.30); }
+.pfp-ico svg { width: 21px; height: 21px; }
+.pfp-id-t { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.pfp-title { font-family: 'Manrope', sans-serif; font-size: 19px; font-weight: 800; letter-spacing: -0.01em; color: #fff; white-space: nowrap; }
+.pfp-sub { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, 0.55); white-space: nowrap; }
+/* KPI */
+.pfp-kpis { display: flex; align-items: center; gap: 22px; margin-left: auto; }
+.pfp-kpi { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.pfp-kpi .num { display: flex; align-items: baseline; gap: 7px; }
+.pfp-kpi .num b { font-family: 'Manrope', sans-serif; font-size: 20px; font-weight: 800; letter-spacing: -0.01em; color: #fff; }
+.pfp-kpi .num b.pos { color: #4be3a0; }
+.pfp-kpi .num b.neg { color: #ff9d7a; }
+.pfp-kpi .num span { font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: rgba(255, 255, 255, 0.5); }
+.pfp-kpi .sub { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: rgba(255, 255, 255, 0.55); white-space: nowrap; }
+.pfp-kpi .sub b { font-weight: 800; }
+.pfp-kpi .sub b.pos { color: #4be3a0; }
+.pfp-kpi .sub b.neg { color: #ff9d7a; }
+.pfp-div { width: 1px; height: 34px; background: rgba(255, 255, 255, 0.12); flex-shrink: 0; }
+/* действия: свои кнопки + переиспользованные .pf-impwrap (видимость/бэкап) на тёмном фоне */
+.pfp-actions { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.pfp-btn, .pfp-actions .d3-quick.pf-impbtn {
+    display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 14px;
+    border-radius: 11px; border: 1px solid rgba(255, 255, 255, 0.14); background: rgba(255, 255, 255, 0.07);
+    color: #e8eef7; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; white-space: nowrap;
+    transition: background 0.14s, border-color 0.14s, transform 0.1s; box-shadow: none;
+}
+.pfp-btn svg, .pfp-actions .d3-quick.pf-impbtn svg { width: 16px; height: 16px; }
+.pfp-btn:hover, .pfp-actions .d3-quick.pf-impbtn:hover { background: rgba(255, 255, 255, 0.13); border-color: rgba(255, 255, 255, 0.24); }
+.pfp-btn:active { transform: translateY(1px); }
+.pfp-btn.icon { padding: 0; width: 38px; justify-content: center; }
+.pfp-btn.primary { background: #fff; color: #14261a; border-color: transparent; box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.5); }
+.pfp-btn.primary svg { color: #119d5c; }
+.pfp-btn.primary:hover { background: #f1fbf5; }
+.pfp-actions .pf-impwrap { position: relative; }
+.pfp-actions .pf-eyecnt { background: rgba(255, 255, 255, 0.16); color: #eaf1fb; }
+/* иконка раскладки внутри панели — тоже translucent-light на тёмном */
+.pfp-cfg .pfl-cfg-btn { width: 38px; height: 38px; background: rgba(255, 255, 255, 0.07); border-color: rgba(255, 255, 255, 0.14); color: #cdd7e6; }
+.pfp-cfg:hover .pfl-cfg-btn, .pfp-cfg .pfl-cfg-btn:hover { background: rgba(255, 255, 255, 0.13); border-color: rgba(255, 255, 255, 0.24); color: #fff; }
+@media (max-width: 1180px) { .pfp-kpis { margin-left: 0; } }
+
 /* сама карточка: докнутый сверху диалог с внутренним скроллом (шапка всегда видна).
    Высоту держим умеренной (не во весь экран), чтобы под карточкой была видна сетка —
    её блоки можно перетаскивать/менять, не закрывая карточку. */
@@ -2522,12 +2639,21 @@ body.dark-mode .pfal-empty { color: #8fa2b8; }
 .pfl-fam-h b { display: block; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #0f172a; }
 .pfl-fam-h span { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #64748b; }
 .pfl-fam-list { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: thin; display: flex; flex-direction: column; gap: 12px; padding: 0 14px 16px; }
-.pfl-choice { display: flex; gap: 14px; align-items: stretch; border: 1px solid #e5eaf2; border-radius: 14px; background: #fff; padding: 12px; transition: border-color 0.12s, box-shadow 0.12s; }
-.pfl-choice:hover { border-color: #d3ddec; box-shadow: 0 6px 18px -10px rgba(15, 23, 42, 0.35); }
-.pfl-choice.added { background: #f7fbf8; border-color: #cdead8; }
-.pfl-choice-pv { flex: 1 1 0; min-width: 0; height: 128px; border-radius: 10px; overflow: hidden; background: #f6f8fb; position: relative; }
-.pfl-choice-pv .pfd-pick-stage { padding: 10px; }
+.pfl-choice { display: flex; gap: 14px; align-items: stretch; border: 1px solid #e5eaf2; border-radius: 14px; background: #fff; padding: 12px; cursor: pointer; transition: border-color 0.12s, box-shadow 0.12s, background 0.12s; }
+.pfl-choice:hover { border-color: #cdd8e8; box-shadow: 0 6px 18px -10px rgba(15, 23, 42, 0.35); }
+.pfl-choice.selected { border-color: #4f46e5; box-shadow: 0 0 0 1px #4f46e5, 0 12px 28px -16px rgba(79, 70, 229, 0.55); }
+.pfl-choice.added { background: #f7fbf8; border-color: #cdead8; cursor: default; }
+/* превью показываем ЦЕЛИКОМ — крупный бокс, виджет вписан по высоте (zoom), без обрезки */
+.pfl-choice-pv { flex: 1 1 0; min-width: 0; height: 196px; border-radius: 10px; overflow: hidden; background: #f6f8fb; position: relative; }
+.pfl-choice-pv .pfd-pick-stage { padding: 10px; overflow: hidden; }
+.pfl-choice-pv .pfd-pick-stage > * { zoom: 0.6; }
 .pfl-choice-side { flex: 0 0 150px; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+/* значок состояния карточки (Выбрать / Выбрано / Добавлено) вместо кнопки у каждого дизайна */
+.pfl-choice-badge { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700; color: #64748b; padding: 6px 12px; border-radius: 99px; border: 1px solid #e2e8f0; background: #f8fafc; }
+.pfl-choice-badge svg { width: 14px; height: 14px; }
+.pfl-choice.selected .pfl-choice-badge { color: #4f46e5; border-color: #c7d2fe; background: #eef2ff; }
+.pfl-choice-badge.is-added { color: #12a35c; border-color: #bbecd0; background: #eaf7ef; }
+.pfl-pv-add.is-added { background: #eaf7ef; color: #12a35c; box-shadow: none; cursor: default; }
 .pfl-choice-meta b { display: block; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 800; color: #0f172a; }
 .pfl-choice-meta span { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #64748b; line-height: 1.35; }
 .pfl-choice-add {
@@ -2551,6 +2677,11 @@ body.dark-mode .pfl-choice-meta b { color: #eaf1fb; }
 body.dark-mode .pfl-choice-meta span { color: #9fb1c6; }
 body.dark-mode .pfl-choice-add { background: linear-gradient(135deg, #3a4664, #232d40); }
 body.dark-mode .pfl-choice-add.is-added { background: rgba(18, 163, 92, 0.16); color: #6ee7a8; }
+body.dark-mode .pfl-choice.selected { border-color: #6366f1; box-shadow: 0 0 0 1px #6366f1, 0 12px 28px -16px rgba(99, 102, 241, 0.6); }
+body.dark-mode .pfl-choice-badge { color: #9fb1c6; border-color: #2c3a56; background: rgba(255, 255, 255, 0.03); }
+body.dark-mode .pfl-choice.selected .pfl-choice-badge { color: #c7d2fe; border-color: #4451a0; background: rgba(99, 102, 241, 0.16); }
+body.dark-mode .pfl-choice-badge.is-added { color: #6ee7a8; border-color: rgba(52, 211, 153, 0.3); background: rgba(18, 163, 92, 0.16); }
+body.dark-mode .pfl-pv-add.is-added { background: rgba(18, 163, 92, 0.16); color: #6ee7a8; }
 
 /* --- «Карта рынка»: свой treemap (живые плитки, не декоративный фон Главной) --- */
 .pfhm-box {
