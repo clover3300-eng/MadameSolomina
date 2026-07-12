@@ -2215,14 +2215,44 @@
     // а глаз-скрытие у «Сводки»/«Календаря» на месте (в классике on:false их бы не было, и
     // дашборд «замирал» до первого добавления виджета). Карточку закрываем, чтобы виден был
     // результат; заметки (текст) храним. Обратимо: снимок кладём ПЕРЕД сбросом (Cmd/Ctrl+Z).
+    // Явная «классическая» раскладка в живой сетке: карточки портфелей в верхнем ряду,
+    // «Избранное» — крайним справа, «Сводка» под ним, календарь широкой полосой слева
+    // под карточками, «Ставки»/«История сделок» — во всю ширину внизу. Считаем ЯВНЫЕ
+    // col/span (а не жадную упаковку) — тогда вид предсказуем и совпадает с классикой
+    // «4 карточки в ряд, избранное справа», а не со случайной масонри-стопкой.
+    function pfdStandardCfg() {
+        var order = [], col = {}, span = {};
+        var pfIds = visibleItems().map(function (p) { return 'pf:' + p.id; });
+        var n = pfIds.length;
+        var cardSpan, favSpan, favCol;
+        if (n >= 1 && n <= 3) {
+            // карточки + «Избранное» делят 12 колонок поровну: 1→6|6, 2→4·4|4, 3→3·3·3|3
+            var slots = n + 1;
+            cardSpan = Math.floor(12 / slots);
+            favSpan = 12 - cardSpan * n;               // остаток отдаём «Избранному» (ровно 12)
+            pfIds.forEach(function (id, i) { order.push(id); span[id] = cardSpan; col[id] = 1 + i * cardSpan; });
+            favCol = 1 + n * cardSpan;
+        } else {
+            // 0 или 4+ карточек: «Избранное» правой колонкой (9–12), карточки по 2 в ряд слева
+            cardSpan = 4; favSpan = 4; favCol = 9;
+            pfIds.forEach(function (id, i) { order.push(id); span[id] = cardSpan; col[id] = 1 + (i % 2) * 4; });
+        }
+        order.push('fav'); span.fav = favSpan; col.fav = favCol;
+        if (store.items.length >= 2) { order.push('sum'); span.sum = favSpan; col.sum = favCol; }
+        order.push('cal'); span.cal = Math.max(favCol - 1, 3); col.cal = 1;   // широкая полоса слева
+        order.push('rates'); span.rates = 12; col.rates = 1;
+        order.push('trades'); span.trades = 12; col.trades = 1;
+        return { order: order, col: col, span: span };
+    }
     window.pfLayoutReset = function () {
         pfdPushUndo();
-        dashCfg = { on: true, order: [], span: {}, h: {}, hidden: {}, col: {}, notes: dashCfg.notes || [] };
+        var std = pfdStandardCfg();
+        dashCfg = { on: true, order: std.order, span: std.span, h: {}, hidden: {}, col: std.col, notes: dashCfg.notes || [] };
         dashEdit = false;
         saveDashCfg();
         pfdRerender();
         updateLayoutBtn();
-        toast('Стандартная раскладка возвращена — блоки остаются подвижными');
+        toast('Стандартная раскладка возвращена');
     };
     // совместимость со старыми вызовами (Esc-хендлер и т.п.)
     window.pfDashToggleEdit = function () { if (dashEdit) window.pfLayoutClose(); else window.pfLayoutToggle(); };
@@ -3373,7 +3403,7 @@
         pfdGhost.style.top = ((y - pfdGrabY) / pfdGz) + 'px';
     }
     function pfdReorderAt(x, y) {
-        if (!pfdDragEl || Date.now() - pfdLastReorder < 90) return;
+        if (!pfdDragEl || Date.now() - pfdLastReorder < 55) return;
         var grid = document.getElementById('pfdGrid');
         if (!grid) return;
         var id = pfdDragEl.getAttribute('data-pfd');
@@ -3386,7 +3416,12 @@
         var gap = parseFloat(getComputedStyle(grid).columnGap) || 16;
         var colW = (grid.clientWidth - gap * 11) / 12;
         var span = pfdSpanOf(pfdDragEl, colW, gap);
-        var targetCol = clamp(Math.round(((x - gr.left) / z) / (colW + gap)), 0, 12 - span) + 1;  // 1-based
+        // Целимся ПО ЛЕВОМУ КРАЮ перетаскиваемой карточки, а не по курсору: вычитаем захват
+        // (pfdGrabX — где пользователь взял блок). Иначе цель смещена на «полкарточки», и чтобы
+        // сдвинуть синий слот на колонку, приходится вести курсор заметно дальше. Теперь слот
+        // идёт за краем карточки 1:1 — сразу отзывчиво.
+        var leftEdge = x - pfdGrabX;
+        var targetCol = clamp(Math.round(((leftEdge - gr.left) / z) / (colW + gap)), 0, 12 - span) + 1;  // 1-based
         if (!dashCfg.col) dashCfg.col = {};
         var colChanged = dashCfg.col[id] !== targetCol;
         // ---- ПОРЯДОК В СТОПКЕ: блок под курсором, иначе ближайший по расстоянию ----

@@ -69,7 +69,7 @@ body.dark-mode .pf-sumcard {
 .pfs2-eyebrow-c { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #8ea0b6; }
 /* в сетке над заголовком висит глаз-скрытие (.pfd-eye) — освобождаем справа место, чтобы не наезжал */
 .pfd-item[data-pfd="sum"] .pfs2-eyebrow { padding-right: 36px; }
-.pfs2-capital { margin-top: 7px; font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 700; letter-spacing: -0.025em; color: #fff; line-height: 1; white-space: nowrap; overflow: hidden; }
+.pfs2-capital { margin-top: 14px; font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 700; letter-spacing: -0.025em; color: #fff; line-height: 1; white-space: nowrap; overflow: hidden; }
 .pfs2-sub { margin-top: 7px; display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; font-weight: 600; color: #aebbcc; }
 .pfs2-pnl { white-space: nowrap; }
 .pfs2-pnl.pos { color: #34d399; } .pfs2-pnl.neg { color: #f87171; }
