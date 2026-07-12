@@ -2399,8 +2399,8 @@
     var pfdCal = null;
     var PFDCAL_WD = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
     var PFDCAL_MON = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-    var PFDCAL_PRESETS = [   // быстрый срок от сегодня: конец = сегодня+смещение
-        { l: 'Сегодня', d: 0 }, { l: 'Завтра', d: 1 }, { l: 'Неделя', d: 7 }
+    var PFDCAL_PRESETS = [   // быстрый срок от сегодня: конец = сегодня+смещение; period → диапазон
+        { l: 'Сегодня', d: 0 }, { l: 'Завтра', d: 1 }, { l: 'Неделя', d: 7, period: true }
     ];
     function pfd2(n) { return String(n).padStart(2, '0'); }
     function pfdMid(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); }   // полночь дня Date
@@ -2550,11 +2550,15 @@
     window.pfdCalPreset = function (i) {
         if (!pfdCal) return;
         var p = PFDCAL_PRESETS[i]; if (!p) return;
+        var now = new Date();
         var d = new Date();
         if (p.d) d.setDate(d.getDate() + p.d);
         d.setHours(pfdCal.d.getHours(), pfdCal.d.getMinutes(), 0, 0);       // время-суток сохраняем
-        pfdCal.d = d; pfdCal.vy = d.getFullYear(); pfdCal.vm = d.getMonth();
-        pfdCal.start = null;                       // пресеты — одиночный день-срок
+        pfdCal.d = d;
+        // «Неделя» — ДИАПАЗОН с текущей даты по +7 дней; прочие пресеты — одиночный срок.
+        // Вид календаря держим на месяце начала периода (виден день-старт), иначе — на дне.
+        if (p.period) { pfdCal.start = pfdMid(now); pfdCal.vy = now.getFullYear(); pfdCal.vm = now.getMonth(); }
+        else { pfdCal.start = null; pfdCal.vy = d.getFullYear(); pfdCal.vm = d.getMonth(); }
         pfdCalRender();
     };
     window.pfdCalTime = function (val) {
@@ -2795,7 +2799,7 @@
     function pfdHeatHtml() {
         return '<div class="dash2-card pf-card2 pf-heatblk">' +
             pfCardHead('', 'Карта рынка', 'индекс Мосбиржи · размер — вес, цвет — за день',
-                '<button class="d3-quick ghost pfhm-go" onclick="switchTab(\'market\')">Открыть рынок' + GO_ARROW_SVG + '</button>') +
+                '<button class="d3-quick ghost pfhm-go" onclick="switchTab(\'market\')">Открыть' + GO_ARROW_SVG + '</button>') +
             '<div class="pfhm-box"><div class="pfhm-state">Загружаем карту рынка…</div></div>' +
         '</div>';
     }
