@@ -2191,21 +2191,37 @@ body.pfd-dragging-now * { cursor: grabbing !important; }
     box-shadow: 0 10px 30px rgba(15, 23, 42, 0.10);
 }
 .pfd-bar-m { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
-/* полка «Добавить блок»: скрытые крестиком + опт-ин блоки (KPI, график, карта…) */
-.pfd-shelf {
-    display: flex; align-items: center; flex-wrap: wrap; gap: 7px;
-    padding-top: 9px; border-top: 1px dashed #e2e8f0;
+/* полка «Добавить блок»: мини-превью скрытых/опт-ин блоков (KPI, график, карта, новости, заметка) */
+.pfd-shelf { display: flex; flex-direction: column; gap: 8px; padding-top: 10px; border-top: 1px dashed #e2e8f0; }
+.pfd-shelf-l { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700; color: #64748b; }
+.pfd-shelf-row { display: flex; flex-wrap: wrap; gap: 9px; }
+.pfd-pv {
+    position: relative; display: flex; flex-direction: column; gap: 6px; width: 116px; padding: 8px 8px 9px; cursor: pointer;
+    border-radius: 13px; border: 1px solid #e6ebf2; background: #fbfcfe;
+    transition: border-color 0.13s, background 0.13s, transform 0.1s, box-shadow 0.13s;
 }
-.pfd-shelf-l { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700; color: #64748b; margin-right: 2px; }
-.pfd-shelf-chip {
-    display: inline-flex; align-items: center; gap: 5px;
-    padding: 4px 11px 4px 8px; border-radius: 999px;
-    font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700; color: #334155;
-    background: #f1f5f9; border: 1px solid #e2e8f0; cursor: pointer;
-    transition: background 0.12s, border-color 0.12s, color 0.12s;
+.pfd-pv:hover { border-color: #bfdbfe; background: #fff; transform: translateY(-2px); box-shadow: 0 10px 22px -12px rgba(59, 130, 246, 0.5); }
+.pfd-pv-thumb { position: relative; display: block; border-radius: 9px; overflow: hidden; line-height: 0; background: #eef3f8; }
+.pfd-pv-svg { display: block; width: 100%; height: auto; }
+.pfd-pv-add {
+    position: absolute; top: 5px; right: 5px; width: 18px; height: 18px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center; color: #fff; background: #3b82f6;
+    opacity: 0; transform: scale(0.7); transition: opacity 0.13s, transform 0.13s; box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4);
 }
-.pfd-shelf-chip svg { width: 11px; height: 11px; color: #3b82f6; }
-.pfd-shelf-chip:hover { background: #e0edff; border-color: #bfdbfe; color: #1d4ed8; }
+.pfd-pv-add svg { width: 11px; height: 11px; }
+.pfd-pv:hover .pfd-pv-add { opacity: 1; transform: scale(1); }
+.pfd-pv-name { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700; color: #334155; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* палитра эскизов превью */
+.pfd-pv-svg .pv-card { fill: #fff; stroke: #e6ebf2; stroke-width: 1; }
+.pfd-pv-svg .pv-accent { fill: #3b82f6; }
+.pfd-pv-svg .pv-strong { fill: #cbd5e1; }
+.pfd-pv-svg .pv-soft { fill: #d7dfe9; }
+.pfd-pv-svg .pv-line2 { fill: #e5ebf3; }
+.pfd-pv-svg .pv-ring { fill: none; stroke: #3b82f6; stroke-width: 2; }
+.pfd-pv-svg .pv-stroke { fill: none; stroke: #3b82f6; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.pfd-pv-svg .pv-area { fill: rgba(59, 130, 246, 0.14); }
+.pfd-pv-svg .pv-pos { fill: #34d399; } .pfd-pv-svg .pv-pos2 { fill: #6ee7b7; }
+.pfd-pv-svg .pv-neg { fill: #f87171; } .pfd-pv-svg .pv-neg2 { fill: #fca5a5; }
 .pfd-bar-t { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .pfd-bar-t b { display: inline-flex; align-items: center; gap: 7px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #0f172a; }
 .pfd-bar-t b::before { content: ''; width: 7px; height: 7px; border-radius: 99px; background: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18); }
@@ -2357,6 +2373,10 @@ body.dark-mode .pfhm-tile:hover { box-shadow: inset 0 0 0 2px rgba(255, 255, 255
 .pfnt-c-slate { --nt: var(--nt-slate); } .pfnt-c-blue { --nt: var(--nt-blue); }
 .pfnt-c-green { --nt: var(--nt-green); } .pfnt-c-amber { --nt: var(--nt-amber); }
 .pfnt-c-violet { --nt: var(--nt-violet); } .pfnt-c-rose { --nt: var(--nt-rose); }
+/* заливка «вся карточка»: тонируем фон и рамку в тон, боковой кант убираем */
+.pf-noteblk.pfnt-fill-full { background: color-mix(in srgb, var(--nt) 9%, #fff); border-color: color-mix(in srgb, var(--nt) 26%, #e6ebf2); }
+.pf-noteblk.pfnt-fill-full::before { opacity: 0; }
+.pf-noteblk.pfnt-fill-full .pfnt-due { background: color-mix(in srgb, var(--nt) 6%, #fff); }
 /* шапка: единый цветной значок-иконка (он же выбор цвета) + подпись + «+» справа */
 .pfnt-head { align-items: center; }
 .pfnt-head .pf-ch-l { display: flex; flex-direction: row; align-items: center; gap: 10px; }
@@ -2371,11 +2391,12 @@ body.dark-mode .pfhm-tile:hover { box-shadow: inset 0 0 0 2px rgba(255, 255, 255
 .pfnt-badge svg { width: 17px; height: 17px; }
 .pfnt-badge:hover { transform: translateY(-1px); background: color-mix(in srgb, var(--nt) 22%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--nt) 32%, transparent), 0 3px 10px -4px color-mix(in srgb, var(--nt) 60%, transparent); }
 .pfnt-colorpop {
-    position: absolute; top: calc(100% + 9px); left: -6px; z-index: 240; display: none; gap: 6px;
-    padding: 9px 10px; background: #fff; border: 1px solid rgba(24, 38, 60, 0.1); border-radius: 13px;
+    position: absolute; top: calc(100% + 9px); left: -6px; z-index: 240; display: none; flex-direction: column; gap: 8px;
+    padding: 10px; background: #fff; border: 1px solid rgba(24, 38, 60, 0.1); border-radius: 13px;
     box-shadow: 0 18px 40px -16px rgba(24, 38, 60, 0.38);
 }
 .pfnt-colorpop.open { display: flex; }
+.pfnt-pop-row { display: flex; gap: 6px; }
 .pfnt-sw {
     width: 22px; height: 22px; border-radius: 7px; padding: 0; cursor: pointer;
     background: var(--sw); border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(24, 38, 60, 0.12);
@@ -2383,8 +2404,37 @@ body.dark-mode .pfhm-tile:hover { box-shadow: inset 0 0 0 2px rgba(255, 255, 255
 }
 .pfnt-sw:hover { transform: translateY(-2px); }
 .pfnt-sw.on { box-shadow: 0 0 0 2px var(--sw); }
-.pfnt-title { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: -0.01em; color: color-mix(in srgb, var(--nt) 42%, #334155); }
-.pfnt-plus.pff-add { margin-left: auto; color: #9aa6b4; }
+/* переключатель заливки: кант слева | вся карточка — иконками */
+.pfnt-pop-fills { display: flex; gap: 6px; padding-top: 8px; border-top: 1px solid #eef1f6; }
+.pfnt-fillb {
+    flex: 1; height: 26px; border-radius: 8px; padding: 0; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; color: #94a3b8;
+    background: #f5f7fb; border: 1px solid #e6ebf2; transition: color 0.12s, background 0.12s, border-color 0.12s;
+}
+.pfnt-fillb svg { width: 20px; height: 16px; }
+.pfnt-fillb:hover { color: var(--nt); border-color: color-mix(in srgb, var(--nt) 40%, #e6ebf2); }
+.pfnt-fillb.on { color: var(--nt); border-color: var(--nt); background: color-mix(in srgb, var(--nt) 12%, #fff); }
+.pfnt-title {
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: -0.01em; cursor: text;
+    color: color-mix(in srgb, var(--nt) 42%, #334155); border-radius: 6px; padding: 2px 5px; margin: -2px -5px;
+    transition: background 0.12s, box-shadow 0.12s; max-width: 168px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pfnt-title:hover { background: color-mix(in srgb, var(--nt) 8%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--nt) 20%, transparent); }
+.pfnt-name-edit {
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: -0.01em; color: #1e293b;
+    width: 150px; max-width: 150px; padding: 2px 6px; border-radius: 7px; outline: none;
+    border: 1px solid var(--nt); background: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, var(--nt) 16%, transparent);
+}
+.pfnt-head-r { display: flex; align-items: center; gap: 2px; margin-left: auto; }
+.pfnt-trash {
+    width: 26px; height: 26px; border: 0; background: none; padding: 0; cursor: pointer; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center; color: #c3cdd9;
+    opacity: 0; transition: opacity 0.14s, color 0.12s, background 0.12s;
+}
+.pfnt-trash svg { width: 15px; height: 15px; }
+.pf-noteblk:hover .pfnt-trash { opacity: 1; }
+.pfnt-trash:hover { color: #e0592b; background: rgba(224, 89, 43, 0.1); }
+.pfnt-plus.pff-add { color: #9aa6b4; }
 .pfnt-plus.pff-add:hover { color: var(--nt); }
 /* строки заметки */
 .pfnt-list { display: flex; flex-direction: column; gap: 1px; margin-top: 12px; }
@@ -2424,22 +2474,25 @@ body.dark-mode .pfhm-tile:hover { box-shadow: inset 0 0 0 2px rgba(255, 255, 255
 }
 .pfnt-tb svg { width: 14px; height: 14px; }
 .pfnt-tb:hover { border-style: solid; border-color: var(--nt); color: var(--nt); background: color-mix(in srgb, var(--nt) 7%, transparent); }
-/* срок выполнения с живым отсчётом */
+/* срок выполнения: чип с живым отсчётом + СВОЙ календарь-поповер */
+.pfnt-duewrap { position: relative; margin-top: 11px; }
 .pfnt-due {
-    position: relative; display: flex; align-items: center; gap: 8px; margin-top: 11px; padding: 8px 11px;
-    border-radius: 11px; border: 1px solid #e6ebf2; background: #f8fafc; transition: border-color 0.14s, background 0.14s;
+    position: relative; display: flex; align-items: center; gap: 8px; width: 100%; box-sizing: border-box; padding: 8px 11px;
+    border-radius: 11px; border: 1px solid #e6ebf2; background: #f8fafc; font: inherit; text-align: left; color: inherit;
+    transition: border-color 0.14s, background 0.14s;
 }
+.pfnt-due-empty { cursor: pointer; }
 .pfnt-due:hover { border-color: #c7d2e0; background: #f1f5fb; }
 .pfnt-due-ic { display: inline-flex; flex-shrink: 0; color: #94a3b8; }
 .pfnt-due-ic svg { width: 15px; height: 15px; }
 .pfnt-due-add { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: #8494a7; }
-.pfnt-due-main { display: flex; flex-direction: column; gap: 1px; line-height: 1.2; min-width: 0; }
+.pfnt-due-chev { margin-left: auto; display: inline-flex; color: #b7c2d0; }
+.pfnt-due-chev svg { width: 14px; height: 14px; }
+.pfnt-due-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; line-height: 1.2; text-align: left; border: 0; background: none; padding: 0; cursor: pointer; font: inherit; }
 .pfnt-due-date { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700; color: #334155; }
 .pfnt-cd { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11px; font-weight: 600; color: #64748b; }
-.pfnt-due-input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; }
-.pfnt-due.set .pfnt-due-input { right: 30px; }
 .pfnt-due-clr {
-    position: relative; z-index: 2; margin-left: auto; flex-shrink: 0; width: 20px; height: 20px; border: 0; background: none;
+    position: relative; z-index: 2; flex-shrink: 0; width: 20px; height: 20px; border: 0; background: none;
     cursor: pointer; padding: 0; display: inline-flex; align-items: center; justify-content: center; color: #a9b4c2; border-radius: 6px;
     transition: color 0.12s, background 0.12s;
 }
@@ -2450,6 +2503,61 @@ body.dark-mode .pfhm-tile:hover { box-shadow: inset 0 0 0 2px rgba(255, 255, 255
 .pfnt-due.set.over { border-color: color-mix(in srgb, #ef4444 50%, #e6ebf2); background: #fef2f2; }
 .pfnt-due.set.over .pfnt-due-ic, .pfnt-due.set.over .pfnt-cd { color: #dc2626; }
 .pfnt-due.set.ok .pfnt-due-ic { color: color-mix(in srgb, var(--nt) 68%, #94a3b8); }
+/* календарь-поповер: раскрывается ВВЕРХ поверх контента заметки */
+.pfnt-cal {
+    position: absolute; left: 0; bottom: calc(100% + 8px); z-index: 260; width: 258px; max-width: 100%;
+    display: none; flex-direction: column; gap: 9px; padding: 12px; box-sizing: border-box;
+    background: #fff; border: 1px solid rgba(24, 38, 60, 0.12); border-radius: 15px;
+    box-shadow: 0 22px 50px -18px rgba(24, 38, 60, 0.42);
+}
+.pfnt-cal.open { display: flex; }
+.pfnt-cal.down { top: calc(100% + 8px); bottom: auto; }
+.pfnt-cal-presets { display: flex; flex-wrap: wrap; gap: 5px; }
+.pfnt-cal-preset {
+    padding: 4px 9px; border-radius: 999px; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 700;
+    color: color-mix(in srgb, var(--nt) 62%, #475569); background: color-mix(in srgb, var(--nt) 10%, #f5f7fb); border: 1px solid color-mix(in srgb, var(--nt) 18%, #e6ebf2);
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.pfnt-cal-preset:hover { background: color-mix(in srgb, var(--nt) 22%, #fff); color: var(--nt); border-color: color-mix(in srgb, var(--nt) 40%, #e6ebf2); }
+.pfnt-cal-head { display: flex; align-items: center; justify-content: space-between; }
+.pfnt-cal-mon { font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 800; color: #1e293b; }
+.pfnt-cal-nav {
+    width: 26px; height: 26px; border-radius: 8px; border: 1px solid #e6ebf2; background: #f8fafc; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; color: #64748b; transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.pfnt-cal-nav svg { width: 14px; height: 14px; }
+.pfnt-cal-nav:not(.next) svg { transform: rotate(180deg); }
+.pfnt-cal-nav:hover { background: color-mix(in srgb, var(--nt) 12%, #fff); color: var(--nt); border-color: color-mix(in srgb, var(--nt) 35%, #e6ebf2); }
+.pfnt-cal-wds, .pfnt-cal-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.pfnt-cal-wd { text-align: center; font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700; color: #a5b0be; padding-bottom: 2px; }
+.pfnt-cal-e { height: 30px; }
+.pfnt-cal-d {
+    height: 30px; border: 0; background: none; border-radius: 8px; cursor: pointer;
+    font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12px; font-weight: 600; color: #334155; transition: background 0.1s, color 0.1s;
+}
+.pfnt-cal-d:hover { background: color-mix(in srgb, var(--nt) 14%, #f1f5f9); }
+.pfnt-cal-d.past { color: #c0cad6; }
+.pfnt-cal-d.today { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--nt) 45%, #cbd5e1); }
+.pfnt-cal-d.sel { background: var(--nt); color: #fff; font-weight: 700; box-shadow: none; }
+.pfnt-cal-time { display: flex; align-items: center; gap: 7px; padding-top: 9px; border-top: 1px solid #eef1f6; color: #94a3b8; }
+.pfnt-cal-time svg { width: 15px; height: 15px; flex-shrink: 0; }
+.pfnt-cal-time > span { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: #64748b; }
+.pfnt-cal-time-in {
+    margin-left: auto; font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 13px; font-weight: 600; color: #1e293b;
+    padding: 4px 8px; border-radius: 8px; border: 1px solid #e6ebf2; background: #f8fafc; cursor: pointer;
+}
+.pfnt-cal-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pfnt-cal-clear {
+    padding: 7px 10px; border-radius: 9px; border: 0; background: none; cursor: pointer;
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: #94a3b8; transition: color 0.12s, background 0.12s;
+}
+.pfnt-cal-clear:hover { color: #e0592b; background: rgba(224, 89, 43, 0.08); }
+.pfnt-cal-ok {
+    padding: 7px 16px; border-radius: 9px; border: 0; cursor: pointer; color: #fff; background: var(--nt);
+    font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 700; transition: filter 0.12s, transform 0.1s;
+}
+.pfnt-cal-ok:hover { filter: brightness(1.06); }
+.pfnt-cal-ok:active { transform: scale(0.97); }
 
 /* кнопка «Конструктор» в шапке: точка-индикатор, когда раскладка своя */
 .pfd-ctl.on { position: relative; }
@@ -2481,8 +2589,14 @@ body.dark-mode .pfd-hide { color: #9fb1c6; background: #0f172a; border-color: #2
 body.dark-mode .pfd-hide:hover { color: #f87171; border-color: #7f1d1d; background: #1c1017; }
 body.dark-mode .pfd-shelf { border-top-color: #27324a; }
 body.dark-mode .pfd-shelf-l { color: #9fb1c6; }
-body.dark-mode .pfd-shelf-chip { color: #cbd5e1; background: #16213a; border-color: #27324a; }
-body.dark-mode .pfd-shelf-chip:hover { background: #1c2b52; border-color: #2f4a8a; color: #93c5fd; }
+body.dark-mode .pfd-pv { background: #16213a; border-color: #27324a; }
+body.dark-mode .pfd-pv:hover { background: #1a2740; border-color: #2f4a8a; box-shadow: 0 10px 22px -12px rgba(59, 130, 246, 0.55); }
+body.dark-mode .pfd-pv-name { color: #cbd5e1; }
+body.dark-mode .pfd-pv-thumb { background: #0f1a2e; }
+body.dark-mode .pfd-pv-svg .pv-card { fill: #1c2942; stroke: #2a3856; }
+body.dark-mode .pfd-pv-svg .pv-strong { fill: #46587a; }
+body.dark-mode .pfd-pv-svg .pv-soft { fill: #3a4a68; }
+body.dark-mode .pfd-pv-svg .pv-line2 { fill: #2c3a56; }
 body.dark-mode .pf-kpi-v { color: #e7eef7; }
 body.dark-mode .pf-kpi-l { color: #8fa2b8; }
 body.dark-mode .pf-kpi-s { color: #9fb1c6; }
@@ -2512,6 +2626,25 @@ body.dark-mode .pfnt-due.set.soon { border-color: #6b4a12; background: #241a09; 
 body.dark-mode .pfnt-due.set.soon .pfnt-due-ic, body.dark-mode .pfnt-due.set.soon .pfnt-cd { color: #fbbf24; }
 body.dark-mode .pfnt-due.set.over { border-color: #7f1d1d; background: #2a1113; }
 body.dark-mode .pfnt-due.set.over .pfnt-due-ic, body.dark-mode .pfnt-due.set.over .pfnt-cd { color: #f87171; }
+/* тёмная тема — новые элементы заметок (заголовок, заливка, трэш, календарь) */
+body.dark-mode .pfnt-name-edit { color: #e8f0fb; background: #0f1826; }
+body.dark-mode .pfnt-pop-fills { border-top-color: rgba(255, 255, 255, 0.08); }
+body.dark-mode .pfnt-fillb { background: #16202e; border-color: #27324a; color: #8496ad; }
+body.dark-mode .pfnt-fillb.on { background: color-mix(in srgb, var(--nt) 26%, #16202e); }
+body.dark-mode .pf-noteblk.pfnt-fill-full { background: color-mix(in srgb, var(--nt) 16%, #101826); border-color: color-mix(in srgb, var(--nt) 34%, #27324a); }
+body.dark-mode .pf-noteblk.pfnt-fill-full .pfnt-due { background: color-mix(in srgb, var(--nt) 12%, #101826); }
+body.dark-mode .pfnt-trash { color: #5c6c82; }
+body.dark-mode .pfnt-due-chev { color: #5c6c82; }
+body.dark-mode .pfnt-cal { background: #16202e; border-color: rgba(255, 255, 255, 0.1); box-shadow: 0 22px 50px -18px rgba(0, 0, 0, 0.6); }
+body.dark-mode .pfnt-cal-mon { color: #e8f0fb; }
+body.dark-mode .pfnt-cal-nav { background: #101826; border-color: #27324a; color: #9fb1c6; }
+body.dark-mode .pfnt-cal-wd { color: #64748b; }
+body.dark-mode .pfnt-cal-d { color: #cbd6e4; }
+body.dark-mode .pfnt-cal-d.past { color: #4a5670; }
+body.dark-mode .pfnt-cal-d.sel { color: #fff; }
+body.dark-mode .pfnt-cal-time, body.dark-mode .pfnt-cal-foot { border-top-color: rgba(255, 255, 255, 0.08); }
+body.dark-mode .pfnt-cal-time > span { color: #9fb1c6; }
+body.dark-mode .pfnt-cal-time-in { background: #101826; border-color: #27324a; color: #e8f0fb; }
 body.dark-mode .pfhm-state { color: #64748b; }
 
 /* --- «График капитала»: сетка, маркер конца, перекрестие-ховер, окно-чипы --- */

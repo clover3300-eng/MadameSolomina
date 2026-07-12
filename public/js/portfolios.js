@@ -1682,7 +1682,9 @@
         }
         if (!items.length) items = [{ id: genId('i'), type: 'text', text: '', done: false }];
         var due = (typeof n.due === 'number' && isFinite(n.due)) ? n.due : null;
-        return { id: String(n.id || genId('n')), color: color, items: items, due: due };
+        var name = (typeof n.name === 'string') ? n.name.slice(0, 40) : '';   // редактируемый заголовок ('' → «Заметка»)
+        var fill = (n.fill === 'full') ? 'full' : 'edge';                     // заливка: кант слева | вся карточка
+        return { id: String(n.id || genId('n')), color: color, items: items, due: due, name: name, fill: fill };
     }
     var dashCfg = loadDashCfg();
     var dashEdit = false;        // режим правки (не персистится)
@@ -1844,6 +1846,25 @@
     var PFD_X_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
     var PFD_PLUS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
     var PFD_UNDO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>';
+    // мини-эскизы блоков для полки «Добавить блок» — не рендерим тяжёлый настоящий блок,
+    // а показываем узнаваемый набросок (карточка + характерная графика)
+    var PV_CARD = '<rect x="6" y="7" width="108" height="46" rx="9" class="pv-card"/>';
+    var PFD_PV = {
+        kpi: '<svg viewBox="0 0 120 60" class="pfd-pv-svg">' + PV_CARD + '<circle cx="96" cy="22" r="8" class="pv-accent"/><rect x="18" y="16" width="40" height="13" rx="3.5" class="pv-strong"/><rect x="18" y="35" width="56" height="6" rx="3" class="pv-soft"/></svg>',
+        cap: '<svg viewBox="0 0 120 60" class="pfd-pv-svg">' + PV_CARD + '<path d="M16 43 L34 35 L52 39 L70 25 L88 29 L104 17 L104 47 L16 47 Z" class="pv-area"/><path d="M16 43 L34 35 L52 39 L70 25 L88 29 L104 17" class="pv-stroke"/></svg>',
+        heat: '<svg viewBox="0 0 120 60" class="pfd-pv-svg">' + PV_CARD + '<rect x="14" y="15" width="30" height="30" rx="3" class="pv-pos"/><rect x="48" y="15" width="24" height="17" rx="3" class="pv-neg"/><rect x="48" y="34" width="24" height="11" rx="3" class="pv-pos2"/><rect x="76" y="15" width="30" height="13" rx="3" class="pv-neg2"/><rect x="76" y="30" width="30" height="15" rx="3" class="pv-pos"/></svg>',
+        news: '<svg viewBox="0 0 120 60" class="pfd-pv-svg">' + PV_CARD + '<circle cx="18" cy="21" r="4" class="pv-accent"/><rect x="28" y="17" width="58" height="5" rx="2.5" class="pv-soft"/><rect x="28" y="25" width="34" height="4" rx="2" class="pv-line2"/><circle cx="18" cy="39" r="4" class="pv-accent"/><rect x="28" y="35" width="58" height="5" rx="2.5" class="pv-soft"/><rect x="28" y="43" width="42" height="4" rx="2" class="pv-line2"/></svg>',
+        note: '<svg viewBox="0 0 120 60" class="pfd-pv-svg">' + PV_CARD + '<rect x="6" y="14" width="4" height="32" rx="2" class="pv-accent"/><rect x="22" y="15" width="38" height="6" rx="3" class="pv-soft"/><circle cx="24" cy="32" r="4" class="pv-ring"/><rect x="34" y="29" width="48" height="5" rx="2.5" class="pv-line2"/><rect x="22" y="41" width="60" height="5" rx="2.5" class="pv-line2"/></svg>',
+        gen: '<svg viewBox="0 0 120 60" class="pfd-pv-svg">' + PV_CARD + '<rect x="18" y="16" width="50" height="7" rx="3" class="pv-soft"/><rect x="18" y="30" width="84" height="5" rx="2.5" class="pv-line2"/><rect x="18" y="40" width="70" height="5" rx="2.5" class="pv-line2"/></svg>'
+    };
+    function pfdBlockPreviewSvg(id) {
+        if (id === '__note' || id.indexOf('note') === 0) return PFD_PV.note;
+        if (id.indexOf('kpi:') === 0) return PFD_PV.kpi;
+        if (id === 'cap') return PFD_PV.cap;
+        if (id === 'heat') return PFD_PV.heat;
+        if (id === 'news') return PFD_PV.news;
+        return PFD_PV.gen;
+    }
 
     function pfdBodyHtml(favStr, noBonds) {
         var blocks = pfdBlocks(favStr, noBonds);
@@ -1879,14 +1900,18 @@
             '</div>';
         }).join('');
 
-        // полка «Добавить блок»: скрытые опт-ин блоки + всегда «Заметка» (плодит новые)
+        // полка «Добавить блок»: мини-превью скрытых опт-ин блоков + всегда «Заметка»
         var shelf = '';
         if (dashEdit) {
-            var chips = hiddenB.map(function (b) {
-                return '<button class="pfd-shelf-chip" onclick="pfdShowBlock(\'' + jsArg(b.id) + '\')">' + PFD_PLUS_SVG + esc(b.name || b.id) + '</button>';
-            });
-            chips.push('<button class="pfd-shelf-chip" onclick="pfdAddNote()">' + PFD_PLUS_SVG + 'Заметка</button>');
-            shelf = '<div class="pfd-shelf"><span class="pfd-shelf-l">Добавить блок:</span>' + chips.join('') + '</div>';
+            function pvTile(id, name, onclick) {
+                return '<button class="pfd-pv" onclick="' + onclick + '" title="Добавить: ' + attr(name) + '">' +
+                    '<span class="pfd-pv-thumb">' + pfdBlockPreviewSvg(id) + '<span class="pfd-pv-add">' + PFD_PLUS_SVG + '</span></span>' +
+                    '<span class="pfd-pv-name">' + esc(name) + '</span>' +
+                '</button>';
+            }
+            var tiles = hiddenB.map(function (b) { return pvTile(b.id, b.name || b.id, 'pfdShowBlock(\'' + jsArg(b.id) + '\')'); });
+            tiles.push(pvTile('__note', 'Заметка', 'pfdAddNote()'));
+            shelf = '<div class="pfd-shelf"><span class="pfd-shelf-l">Добавить блок</span><div class="pfd-shelf-row">' + tiles.join('') + '</div></div>';
         }
         var bar = dashEdit
             ? '<div class="pfd-bar">' +
@@ -2049,8 +2074,56 @@
                 card.querySelectorAll('.pfnt-sw').forEach(function (s) { s.classList.toggle('on', s.getAttribute('data-c') === color); });
             }
         }
-        var pop = card && card.querySelector('.pfnt-colorpop'); if (pop) pop.classList.remove('open');
-        pfdNoteClrOpen = null;
+        // палитра НЕ закрывается — рядом выбор заливки; закроет клик вне (см. обработчик ниже)
+    };
+    // заливка заметки: кант слева (edge) | вся карточка (full) — перекраска классом, без ре-рендера
+    window.pfdSetNoteFill = function (id, fill, ev) {
+        if (ev) ev.stopPropagation();
+        fill = fill === 'full' ? 'full' : 'edge';
+        var nt = pfdFindNote(id); if (!nt || nt.fill === fill) return;
+        var card = pfdNoteCard(id);
+        pfdPushUndo(); nt.fill = fill; saveDashCfg();
+        if (card) {
+            card.classList.toggle('pfnt-fill-full', fill === 'full');
+            card.classList.toggle('pfnt-fill-edge', fill === 'edge');
+            card.querySelectorAll('.pfnt-fillb').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-f') === fill); });
+        }
+    };
+    // редактируемый заголовок заметки (клик по подписи → инпут, как у названия портфеля)
+    window.pfdNoteNameEdit = function (id, ev) {
+        if (ev) ev.stopPropagation();
+        var nt = pfdFindNote(id); if (!nt) return;
+        var host = ev && ev.currentTarget; if (!host || host._editing) return;
+        host._editing = true;
+        var inp = document.createElement('input');
+        inp.className = 'pfnt-name-edit'; inp.value = nt.name || ''; inp.maxLength = 40;
+        inp.placeholder = 'Заметка';
+        host.innerHTML = ''; host.appendChild(inp);
+        try { inp.focus(); inp.select(); } catch (e) {}
+        var done = false;
+        function commit(save) {
+            if (done) return; done = true;
+            if (save) { var v = (inp.value || '').trim().slice(0, 40); if (v !== (nt.name || '')) { pfdPushUndo(); nt.name = v; saveDashCfg(); } }
+            host._editing = false;
+            host.innerHTML = esc((nt.name && nt.name.trim()) ? nt.name : 'Заметка');
+            pfdRepackSoon();
+        }
+        inp.addEventListener('keydown', function (e) {
+            e.stopPropagation();
+            if (e.key === 'Enter') { e.preventDefault(); commit(true); }
+            else if (e.key === 'Escape') { e.preventDefault(); commit(false); }
+        });
+        inp.addEventListener('blur', function () { commit(true); });
+        inp.addEventListener('click', function (e) { e.stopPropagation(); });
+    };
+    // удаление заметки БЕЗ режима конструктора — с подтверждением (Cmd/Ctrl+Z вернёт)
+    window.pfdNoteDelete = function (id, ev) {
+        if (ev) ev.stopPropagation();
+        var nt = pfdFindNote(id); if (!nt) return;
+        var ttl = (nt.name && nt.name.trim()) ? nt.name : 'заметку';
+        pfConfirm({ danger: true, title: 'Удалить ' + esc(ttl) + '?', text: 'Заметка со всеми пунктами будет удалена. Отменить можно сочетанием Cmd/Ctrl+Z в конструкторе.', ok: 'Удалить' }, function () {
+            pfdRemoveNote('note:' + id);
+        });
     };
     // строки заметки: текст/пункт/задача — добавление, удаление, отметка, ввод, клавиши
     function pfdNoteInsertItem(nid, afterIid, type, focus) {
@@ -2133,10 +2206,10 @@
         return { txt: (over ? 'просрочено · ' + body : 'осталось ' + body), cls: over ? 'over' : (diff < 86400000 ? 'soon' : 'ok') };
     }
     function pfdReplaceDue(nt) {
-        var card = pfdNoteCard(nt.id), due = card && card.querySelector('.pfnt-due');
-        if (!due) return;
+        var card = pfdNoteCard(nt.id), wrap = card && card.querySelector('.pfnt-duewrap');
+        if (!wrap) return;
         var tmp = document.createElement('div'); tmp.innerHTML = pfdNoteDueHtml(nt);
-        due.parentNode.replaceChild(tmp.firstChild, due);
+        wrap.parentNode.replaceChild(tmp.firstChild, wrap);
     }
     window.pfdNoteSetDue = function (id, val) {
         var nt = pfdFindNote(id); if (!nt) return;
@@ -2150,6 +2223,127 @@
         var nt = pfdFindNote(id); if (!nt || nt.due == null) return;
         pfdPushUndo(); nt.due = null; saveDashCfg(); pfdReplaceDue(nt); pfdRepackSoon();
     };
+    // ---- СВОЙ календарь-поповер срока: день + время + быстрый период (поверх контента) ----
+    var pfdCal = null;   // { nid, vy, vm, d:Date } — просматриваемый месяц + выбранный момент
+    var PFDCAL_WD = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+    var PFDCAL_MON = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+    var PFDCAL_PRESETS = [   // «выбор периода»: быстрые сроки от текущего момента
+        { l: 'Сегодня', d: 0, mo: 0 }, { l: 'Завтра', d: 1, mo: 0 }, { l: '+3 дня', d: 3, mo: 0 },
+        { l: 'Неделя', d: 7, mo: 0 }, { l: 'Месяц', d: 0, mo: 1 }
+    ];
+    function pfd2(n) { return String(n).padStart(2, '0'); }
+    function pfdCalInner() {
+        var c = pfdCal, d = c.d, vy = c.vy, vm = c.vm;
+        var presets = PFDCAL_PRESETS.map(function (p, i) {
+            return '<button type="button" class="pfnt-cal-preset" onclick="pfdCalPreset(' + i + ')">' + p.l + '</button>';
+        }).join('');
+        var wd = PFDCAL_WD.map(function (w) { return '<span class="pfnt-cal-wd">' + w + '</span>'; }).join('');
+        var first = new Date(vy, vm, 1);
+        var lead = (first.getDay() + 6) % 7;                 // Пн — первый столбец
+        var daysIn = new Date(vy, vm + 1, 0).getDate();
+        var today = new Date(); today.setHours(0, 0, 0, 0);
+        var cells = '';
+        for (var i = 0; i < lead; i++) cells += '<span class="pfnt-cal-e"></span>';
+        for (var day = 1; day <= daysIn; day++) {
+            var dt = new Date(vy, vm, day), ts = dt.getTime();
+            var isSel = d && d.getFullYear() === vy && d.getMonth() === vm && d.getDate() === day;
+            var isToday = ts === today.getTime();
+            var isPast = dt < today;
+            cells += '<button type="button" class="pfnt-cal-d' + (isSel ? ' sel' : '') + (isToday ? ' today' : '') + (isPast ? ' past' : '') + '" onclick="pfdCalPickDay(' + ts + ')">' + day + '</button>';
+        }
+        var timeVal = pfd2(d.getHours()) + ':' + pfd2(d.getMinutes());
+        return '<div class="pfnt-cal-presets">' + presets + '</div>' +
+            '<div class="pfnt-cal-head">' +
+                '<button type="button" class="pfnt-cal-nav" onclick="pfdCalNav(-1)" aria-label="Прошлый месяц">' + NOTE_CHEV_SVG + '</button>' +
+                '<span class="pfnt-cal-mon">' + PFDCAL_MON[vm] + ' ' + vy + '</span>' +
+                '<button type="button" class="pfnt-cal-nav next" onclick="pfdCalNav(1)" aria-label="Следующий месяц">' + NOTE_CHEV_SVG + '</button>' +
+            '</div>' +
+            '<div class="pfnt-cal-wds">' + wd + '</div>' +
+            '<div class="pfnt-cal-days">' + cells + '</div>' +
+            '<div class="pfnt-cal-time">' + NOTE_CLOCK_SVG + '<span>Время</span>' +
+                '<input type="time" class="pfnt-cal-time-in" value="' + timeVal + '" onchange="pfdCalTime(this.value)"></div>' +
+            '<div class="pfnt-cal-foot">' +
+                '<button type="button" class="pfnt-cal-clear" onclick="pfdCalClear()">Убрать срок</button>' +
+                '<button type="button" class="pfnt-cal-ok" onclick="pfdCalApply()">Готово</button>' +
+            '</div>';
+    }
+    function pfdCalRender() {
+        if (!pfdCal) return;
+        var card = pfdNoteCard(pfdCal.nid), pop = card && card.querySelector('.pfnt-cal');
+        if (pop) pop.innerHTML = pfdCalInner();
+    }
+    window.pfdCalOpen = function (nid, ev) {
+        if (ev) { ev.stopPropagation(); ev.preventDefault(); }
+        // закрыть любые другие поповеры (палитра, чужой календарь)
+        document.querySelectorAll('#pfWrap .pfnt-cal.open').forEach(function (p) { p.classList.remove('open'); });
+        document.querySelectorAll('#pfWrap .pfnt-colorpop.open').forEach(function (p) { p.classList.remove('open'); });
+        pfdNoteClrOpen = null;
+        var nt = pfdFindNote(nid); if (!nt) return;
+        var d = nt.due != null ? new Date(nt.due) : new Date();
+        if (nt.due == null) d.setHours(18, 0, 0, 0);   // разумный дефолт срока — сегодня 18:00
+        pfdCal = { nid: nid, vy: d.getFullYear(), vm: d.getMonth(), d: d };
+        var card = pfdNoteCard(nid), pop = card && card.querySelector('.pfnt-cal');
+        if (!pop) { pfdCal = null; return; }
+        pop.innerHTML = pfdCalInner();
+        pop.classList.remove('down');
+        pop.classList.add('open');
+        // по умолчанию раскрывается ВВЕРХ; выбираем сторону с бОльшим запасом, если
+        // сверху не помещается (заметка у верха/низа страницы) — переворачиваем вниз
+        var chip = pop.parentNode.querySelector('.pfnt-due');
+        if (chip) {
+            var cr = chip.getBoundingClientRect(), ph = pop.getBoundingClientRect().height;
+            var roomUp = cr.top - 8, roomDown = window.innerHeight - cr.bottom - 8;
+            if (roomUp < ph && roomDown > roomUp) pop.classList.add('down');
+        }
+        try { pop.scrollIntoView({ block: 'nearest' }); } catch (e) {}
+        pfdRepackSoon();
+    };
+    function pfdCalClose() {
+        if (!pfdCal) return;
+        var card = pfdNoteCard(pfdCal.nid), pop = card && card.querySelector('.pfnt-cal');
+        if (pop) { pop.classList.remove('open'); pop.innerHTML = ''; }
+        pfdCal = null; pfdRepackSoon();
+    }
+    window.pfdCalNav = function (delta) {
+        if (!pfdCal) return;
+        var m = pfdCal.vm + delta;
+        pfdCal.vy += Math.floor(m / 12); pfdCal.vm = ((m % 12) + 12) % 12;
+        pfdCalRender();
+    };
+    window.pfdCalPickDay = function (ts) {
+        if (!pfdCal) return;
+        var day = new Date(ts), d = pfdCal.d;
+        d.setFullYear(day.getFullYear(), day.getMonth(), day.getDate());   // день меняем, время сохраняем
+        pfdCal.vy = d.getFullYear(); pfdCal.vm = d.getMonth();
+        pfdCalRender();
+    };
+    window.pfdCalPreset = function (i) {
+        if (!pfdCal) return;
+        var p = PFDCAL_PRESETS[i]; if (!p) return;
+        var d = new Date();
+        if (p.mo) d.setMonth(d.getMonth() + p.mo);
+        if (p.d) d.setDate(d.getDate() + p.d);
+        d.setHours(pfdCal.d.getHours(), pfdCal.d.getMinutes(), 0, 0);       // время-суток сохраняем
+        pfdCal.d = d; pfdCal.vy = d.getFullYear(); pfdCal.vm = d.getMonth();
+        pfdCalRender();
+    };
+    window.pfdCalTime = function (val) {
+        if (!pfdCal || !val) return;
+        var m = /^(\d{1,2}):(\d{2})$/.exec(val); if (!m) return;
+        pfdCal.d.setHours(+m[1], +m[2], 0, 0);
+    };
+    window.pfdCalApply = function () {
+        if (!pfdCal) return;
+        var nt = pfdFindNote(pfdCal.nid), ts = pfdCal.d.getTime();
+        pfdCalClose();
+        if (nt && ts !== nt.due) { pfdPushUndo(); nt.due = ts; saveDashCfg(); pfdReplaceDue(nt); pfdRepackSoon(); }
+    };
+    window.pfdCalClear = function () {
+        if (!pfdCal) return;
+        var nt = pfdFindNote(pfdCal.nid);
+        pfdCalClose();
+        if (nt && nt.due != null) { pfdPushUndo(); nt.due = null; saveDashCfg(); pfdReplaceDue(nt); pfdRepackSoon(); }
+    };
     // живой отсчёт сроков: тикаем раз в секунду, только на активной вкладке с заметками
     setInterval(function () {
         if (document.hidden) return;
@@ -2162,12 +2356,18 @@
             var wrap = el.closest('.pfnt-due'); if (wrap) { wrap.classList.remove('ok', 'soon', 'over'); wrap.classList.add(r.cls); }
         });
     }, 1000);
-    // клик вне палитры цвета — закрыть раскрытый поповер
+    // клик вне палитры/календаря — закрыть раскрытый поповер
     document.addEventListener('click', function (e) {
-        if (!pfdNoteClrOpen) return;
-        if (e.target && e.target.closest && e.target.closest('.pfnt-colorwrap')) return;
-        document.querySelectorAll('#pfWrap .pfnt-colorpop.open').forEach(function (p) { p.classList.remove('open'); });
-        pfdNoteClrOpen = null;
+        var t = e.target;
+        if (pfdNoteClrOpen && !(t && t.closest && t.closest('.pfnt-colorwrap'))) {
+            document.querySelectorAll('#pfWrap .pfnt-colorpop.open').forEach(function (p) { p.classList.remove('open'); });
+            pfdNoteClrOpen = null;
+        }
+        if (pfdCal && !(t && t.closest && t.closest('.pfnt-duewrap'))) pfdCalClose();
+    });
+    // Esc закрывает открытый календарь срока
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && pfdCal) { e.stopPropagation(); pfdCalClose(); }
     });
     document.addEventListener('keydown', function (e) {
         if (!dashEdit || (!e.metaKey && !e.ctrlKey) || e.shiftKey || String(e.key).toLowerCase() !== 'z') return;
@@ -2587,6 +2787,11 @@
     var NOTE_TB_TEXT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>';
     var NOTE_TB_BULLET = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h3M4 12h3M4 17h3M10 7h10M10 12h10M10 17h10"/></svg>';
     var NOTE_TB_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="7" r="2.4"/><path d="M11 7h9"/><circle cx="6" cy="17" r="2.4"/><path d="M11 17h9"/></svg>';
+    var NOTE_TRASH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+    // иконки заливки: кант слева (рамка + жирная левая грань) | залить всю карточку (заполненный прямоугольник)
+    var NOTE_FILL_EDGE_SVG = '<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8"/><rect x="4" y="5" width="4.5" height="14" rx="1.6" fill="currentColor"/></svg>';
+    var NOTE_FILL_FULL_SVG = '<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="14" rx="2.5" fill="currentColor"/></svg>';
+    var NOTE_CHEV_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
     function pfdNoteRowHtml(nid, it) {
         var type = (it.type === 'bullet' || it.type === 'check') ? it.type : 'text';
         var mark = type === 'check'
@@ -2602,38 +2807,52 @@
         '</div>';
     }
     function pfdNoteDueHtml(nt) {
+        var chip;
         if (nt.due == null) {
-            return '<div class="pfnt-due">' +
+            chip = '<button type="button" class="pfnt-due pfnt-due-empty" onclick="pfdCalOpen(\'' + jsArg(nt.id) + '\',event)" aria-label="Задать срок выполнения">' +
                 '<span class="pfnt-due-ic">' + NOTE_CLOCK_SVG + '</span>' +
                 '<span class="pfnt-due-add">Срок выполнения</span>' +
-                '<input type="datetime-local" class="pfnt-due-input" onclick="try{this.showPicker&&this.showPicker()}catch(e){}"onchange="pfdNoteSetDue(\'' + jsArg(nt.id) + '\',this.value)" aria-label="Срок выполнения">' +
+                '<span class="pfnt-due-chev">' + NOTE_CHEV_SVG + '</span>' +
+            '</button>';
+        } else {
+            var cd = pfdDueCountdown(nt.due);
+            chip = '<div class="pfnt-due set ' + cd.cls + '">' +
+                '<span class="pfnt-due-ic">' + NOTE_CLOCK_SVG + '</span>' +
+                '<button type="button" class="pfnt-due-main" onclick="pfdCalOpen(\'' + jsArg(nt.id) + '\',event)" title="Изменить срок">' +
+                    '<span class="pfnt-due-date">' + esc(pfdDueDateText(nt.due)) + '</span>' +
+                    '<span class="pfnt-cd" data-due="' + nt.due + '">' + esc(cd.txt) + '</span></button>' +
+                '<button type="button" class="pfnt-due-clr" onclick="pfdNoteClearDue(\'' + jsArg(nt.id) + '\',event)" aria-label="Убрать срок" title="Убрать срок">' + NOTE_X_SVG + '</button>' +
             '</div>';
         }
-        var cd = pfdDueCountdown(nt.due);
-        return '<div class="pfnt-due set ' + cd.cls + '">' +
-            '<span class="pfnt-due-ic">' + NOTE_CLOCK_SVG + '</span>' +
-            '<span class="pfnt-due-main"><span class="pfnt-due-date">' + esc(pfdDueDateText(nt.due)) + '</span>' +
-                '<span class="pfnt-cd" data-due="' + nt.due + '">' + esc(cd.txt) + '</span></span>' +
-            '<input type="datetime-local" class="pfnt-due-input" onclick="try{this.showPicker&&this.showPicker()}catch(e){}"value="' + attr(pfdToLocalInput(nt.due)) + '" onchange="pfdNoteSetDue(\'' + jsArg(nt.id) + '\',this.value)" aria-label="Срок выполнения">' +
-            '<button type="button" class="pfnt-due-clr" onclick="pfdNoteClearDue(\'' + jsArg(nt.id) + '\',event)" aria-label="Убрать срок" title="Убрать срок">' + NOTE_X_SVG + '</button>' +
-        '</div>';
+        // .pfnt-cal — контейнер СВОЕГО календаря-поповера (наполняется при открытии, поверх контента)
+        return '<div class="pfnt-duewrap">' + chip + '<div class="pfnt-cal" data-nid="' + esc(nt.id) + '"></div></div>';
     }
     function pfdNoteHtml(nt) {
         var color = PFD_NOTE_COLORS.indexOf(nt.color) >= 0 ? nt.color : 'slate';
+        var fill = nt.fill === 'full' ? 'full' : 'edge';
         var sw = PFD_NOTE_COLORS.map(function (c) {
             return '<button type="button" class="pfnt-sw' + (c === color ? ' on' : '') + '" data-c="' + c + '" style="--sw:var(--nt-' + c + ')" title="Цвет" onclick="pfdSetNoteColor(\'' + jsArg(nt.id) + '\',\'' + c + '\',event)"></button>';
         }).join('');
+        // палитра-поповер: ряд цветов + переключатель заливки (кант сбоку | вся карточка) иконками
+        var fills = '<span class="pfnt-pop-fills">' +
+            '<button type="button" class="pfnt-fillb' + (fill === 'edge' ? ' on' : '') + '" data-f="edge" title="Цветной кант слева" onclick="pfdSetNoteFill(\'' + jsArg(nt.id) + '\',\'edge\',event)">' + NOTE_FILL_EDGE_SVG + '</button>' +
+            '<button type="button" class="pfnt-fillb' + (fill === 'full' ? ' on' : '') + '" data-f="full" title="Залить всю карточку" onclick="pfdSetNoteFill(\'' + jsArg(nt.id) + '\',\'full\',event)">' + NOTE_FILL_FULL_SVG + '</button>' +
+        '</span>';
         // шапка: единый цветной значок-иконка (он же выбор цвета — палитра-поповер),
-        // подпись «Заметка», «+» без контейнера в правом верхнем углу (как в «Избранном»)
+        // РЕДАКТИРУЕМЫЙ заголовок (клик → инпут, как у портфеля), справа — удалить + «+»
+        var titleTxt = (nt.name && nt.name.trim()) ? nt.name : 'Заметка';
         var head = '<div class="pf-ch pfnt-head">' +
             '<div class="pf-ch-l">' +
                 '<span class="pfnt-colorwrap">' +
-                    '<button type="button" class="pfnt-badge" onclick="pfdNoteClrToggle(\'' + jsArg(nt.id) + '\',event)" aria-label="Цвет заметки" title="Цвет заметки">' + NOTE_ICON_SVG + '</button>' +
-                    '<span class="pfnt-colorpop' + (pfdNoteClrOpen === nt.id ? ' open' : '') + '">' + sw + '</span>' +
+                    '<button type="button" class="pfnt-badge" onclick="pfdNoteClrToggle(\'' + jsArg(nt.id) + '\',event)" aria-label="Цвет заметки" title="Цвет и заливка">' + NOTE_ICON_SVG + '</button>' +
+                    '<span class="pfnt-colorpop' + (pfdNoteClrOpen === nt.id ? ' open' : '') + '"><span class="pfnt-pop-row">' + sw + '</span>' + fills + '</span>' +
                 '</span>' +
-                '<span class="pfnt-title">Заметка</span>' +
+                '<span class="pfnt-title" title="Нажмите, чтобы переименовать" onclick="pfdNoteNameEdit(\'' + jsArg(nt.id) + '\',event)">' + esc(titleTxt) + '</span>' +
             '</div>' +
-            '<button type="button" class="pff-add pfnt-plus" onclick="pfdAddNote()" aria-label="Новая заметка" title="Добавить ещё одну заметку">' + PFD_PLUS_SVG + '</button>' +
+            '<span class="pfnt-head-r">' +
+                '<button type="button" class="pfnt-trash" onclick="pfdNoteDelete(\'' + jsArg(nt.id) + '\',event)" aria-label="Удалить заметку" title="Удалить заметку">' + NOTE_TRASH_SVG + '</button>' +
+                '<button type="button" class="pff-add pfnt-plus" onclick="pfdAddNote()" aria-label="Новая заметка" title="Добавить ещё одну заметку">' + PFD_PLUS_SVG + '</button>' +
+            '</span>' +
         '</div>';
         var rows = (nt.items || []).map(function (it) { return pfdNoteRowHtml(nt.id, it); }).join('');
         var toolbar = '<div class="pfnt-toolbar">' +
@@ -2641,7 +2860,7 @@
             '<button type="button" class="pfnt-tb" onclick="pfdNoteAddItem(\'' + jsArg(nt.id) + '\',\'bullet\')" title="Пункт списка (—)">' + NOTE_TB_BULLET + '<span>Пункт</span></button>' +
             '<button type="button" class="pfnt-tb" onclick="pfdNoteAddItem(\'' + jsArg(nt.id) + '\',\'check\')" title="Задача с чекбоксом">' + NOTE_TB_CHECK + '<span>Задача</span></button>' +
         '</div>';
-        return '<div class="dash2-card pf-card2 pf-noteblk pfnt-c-' + color + '" data-nid="' + esc(nt.id) + '">' +
+        return '<div class="dash2-card pf-card2 pf-noteblk pfnt-c-' + color + ' pfnt-fill-' + fill + '" data-nid="' + esc(nt.id) + '">' +
             head +
             '<div class="pfnt-list">' + rows + '</div>' +
             toolbar +
@@ -3941,7 +4160,8 @@
         var grid = '<div class="drt-grid pf-ratesstack-grid">' + rateTiles().map(rateTileHtml).join('') + '</div>';
         var cls = 'pf-ratesstack' + (asCell ? ' pf-ratesstack--cell' : ' pf-ratesstack--flow') +
             (asCell && span === 2 ? ' pf-ratesstack--span2' : '');
-        return '<div class="' + cls + '">' + pfCardHead('', 'Ставки рынка', '', '') +
+        // без заголовка «Ставки рынка» — плитки сами по себе достаточно самоописательны
+        return '<div class="' + cls + '">' +
             '<div class="pf-ratesstack-body">' + grid + '</div></div>';
     }
 
