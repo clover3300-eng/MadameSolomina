@@ -1707,8 +1707,8 @@
             // миграция старого одиночного cfg.note (строка) → первая заметка нового формата
             if (!notes.length && typeof c.note === 'string' && c.note.trim()) notes = [pfdNormNote({ id: 'nmig', text: c.note })];
             return { on: !!c.on, order: Array.isArray(c.order) ? c.order : [], span: c.span || {}, h: c.h || {},
-                hidden: c.hidden || {}, notes: notes };
-        } catch (e) { return { on: false, order: [], span: {}, h: {}, hidden: {}, notes: [] }; }
+                hidden: c.hidden || {}, col: c.col || {}, notes: notes };
+        } catch (e) { return { on: false, order: [], span: {}, h: {}, hidden: {}, col: {}, notes: [] }; }
     }
     function saveDashCfg() {
         try {
@@ -1720,7 +1720,7 @@
             store.items.forEach(function (p) { known['pf:' + p.id] = 1; });
             (dashCfg.notes || []).forEach(function (n) { known['note:' + n.id] = 1; });
             dashCfg.order = (dashCfg.order || []).filter(function (id) { return known[id]; });
-            [dashCfg.span, dashCfg.h, dashCfg.hidden].forEach(function (m) {
+            [dashCfg.span, dashCfg.h, dashCfg.hidden, dashCfg.col].forEach(function (m) {
                 Object.keys(m || {}).forEach(function (id) { if (!known[id]) delete m[id]; });
             });
             localStorage.setItem(DASH_KEY, JSON.stringify(dashCfg));
@@ -1773,18 +1773,33 @@
         var gap = parseFloat(getComputedStyle(grid).columnGap) || 16;
         var colW = (grid.clientWidth - gap * 11) / 12;
         var bottom = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        var colPref = dashCfg.col || {};
         items.forEach(function (item) {
             var span = pfdSpanOf(item, colW, gap);
             var h = Math.max(1, Math.ceil(item.offsetHeight));
-            var bestC = 0, bestTop = Infinity;
-            for (var c = 0; c + span <= 12; c++) {
-                var top = 0;
-                for (var k = c; k < c + span; k++) if (bottom[k] > top) top = bottom[k];
-                if (top < bestTop - 0.5) { bestTop = top; bestC = c; }
+            var id = item.getAttribute('data-pfd');
+            var bestC;
+            // Блок, который пользователь перетащил в конкретную колонку (colPref) — СТАВИМ
+            // ИМЕННО ТУДА (стопкой под тем, что уже в этих колонках), даже если рядом есть
+            // более короткая колонка. Так «Суммарный капитал» можно положить под «Второй»
+            // справа, оставив слева зазор. Не тронутые блоки — жадно в кратчайшую колонку.
+            var pref = colPref[id];
+            if (pref) {
+                bestC = clamp(pref - 1, 0, 12 - span);
+            } else {
+                bestC = 0;
+                var bestTop = Infinity;
+                for (var c = 0; c + span <= 12; c++) {
+                    var t = 0;
+                    for (var k = c; k < c + span; k++) if (bottom[k] > t) t = bottom[k];
+                    if (t < bestTop - 0.5) { bestTop = t; bestC = c; }
+                }
             }
+            var topY = 0;
+            for (var kk = bestC; kk < bestC + span; kk++) if (bottom[kk] > topY) topY = bottom[kk];
             item.style.gridColumn = (bestC + 1) + ' / span ' + span;
-            item.style.gridRow = (Math.round(bestTop) + 1) + ' / span ' + h;
-            var nb = bestTop + h + gap;
+            item.style.gridRow = (Math.round(topY) + 1) + ' / span ' + h;
+            var nb = topY + h + gap;
             for (var k2 = bestC; k2 < bestC + span; k2++) bottom[k2] = nb;
         });
         pfdHeatRepaintSoon();   // ширина окна/блока изменилась → плитки карты заново
@@ -2202,7 +2217,7 @@
     // результат; заметки (текст) храним. Обратимо: снимок кладём ПЕРЕД сбросом (Cmd/Ctrl+Z).
     window.pfLayoutReset = function () {
         pfdPushUndo();
-        dashCfg = { on: true, order: [], span: {}, h: {}, hidden: {}, notes: dashCfg.notes || [] };
+        dashCfg = { on: true, order: [], span: {}, h: {}, hidden: {}, col: {}, notes: dashCfg.notes || [] };
         dashEdit = false;
         saveDashCfg();
         pfdRerender();
@@ -2238,7 +2253,7 @@
     // ---- undo: каждый шаг правки кладёт снимок раскладки, Cmd/Ctrl+Z возвращает ----
     // Стек живёт в памяти на сессию правки (вход в режим начинает новую).
     var pfdUndoStack = [];
-    function pfdCfgSnap() { return JSON.stringify({ order: dashCfg.order, span: dashCfg.span, h: dashCfg.h, hidden: dashCfg.hidden, notes: dashCfg.notes }); }
+    function pfdCfgSnap() { return JSON.stringify({ order: dashCfg.order, span: dashCfg.span, h: dashCfg.h, hidden: dashCfg.hidden, col: dashCfg.col, notes: dashCfg.notes }); }
     function pfdPushUndo() {
         pfdUndoStack.push(pfdCfgSnap());
         if (pfdUndoStack.length > 40) pfdUndoStack.shift();
@@ -2251,7 +2266,7 @@
         try {
             var o = JSON.parse(snap);
             dashCfg.order = o.order || []; dashCfg.span = o.span || {};
-            dashCfg.h = o.h || {}; dashCfg.hidden = o.hidden || {}; dashCfg.notes = o.notes || [];
+            dashCfg.h = o.h || {}; dashCfg.hidden = o.hidden || {}; dashCfg.col = o.col || {}; dashCfg.notes = o.notes || [];
         } catch (e) { return; }
         saveDashCfg();
         pfdRerender();
@@ -3278,6 +3293,7 @@
     var pfdTick = null;
     var pfdScrollEl = null;     // скролл-контейнер страницы (null = window)
     var pfdHomeNext = null;     // сосед справа на старте драга — для отмены (Esc)
+    var pfdDragColKey = null, pfdDragColHome;   // прежняя колонка блока — для отмены
     var pfdRsCancel = null;     // отмена активного ресайза (функция) — Esc/выход из режима
 
     function pfdScrollParentOf(el) {
@@ -3312,6 +3328,20 @@
         pfdPushUndo();   // снимок ДО перестановки — Cmd+Z вернёт как было
         pfdDragEl = item;
         pfdHomeNext = item.nextElementSibling;   // исходное место — для отмены
+        // прежняя колонка блока — вернём её при отмене жеста (Esc/pointercancel)
+        pfdDragColKey = item.getAttribute('data-pfd');
+        if (!dashCfg.col) dashCfg.col = {};
+        pfdDragColHome = dashCfg.col[pfdDragColKey];
+        // фиксируем текущие колонки ВСЕХ блоков — чтобы при перетаскивании одного остальные
+        // не «перепрыгивали» жадной упаковкой (предсказуемость: двигается только твой блок)
+        Array.prototype.forEach.call(item.parentNode.children, function (c) {
+            if (!c.classList || !c.classList.contains('pfd-item')) return;
+            var cid = c.getAttribute('data-pfd');
+            if (dashCfg.col[cid] == null) {
+                var m = /^\s*(\d+)/.exec(c.style.gridColumn || '');
+                if (m) dashCfg.col[cid] = +m[1];
+            }
+        });
         pfdScrollEl = pfdScrollParentOf(item);
         pfdGrabX = x - r.left; pfdGrabY = y - r.top;
         var g = item.cloneNode(true);
@@ -3346,12 +3376,23 @@
         if (!pfdDragEl || Date.now() - pfdLastReorder < 90) return;
         var grid = document.getElementById('pfdGrid');
         if (!grid) return;
+        var id = pfdDragEl.getAttribute('data-pfd');
+        // ---- ЦЕЛЕВАЯ КОЛОНКА из позиции курсора (в layout-px, с поправкой на zoom) ----
+        // Перетащенный блок ЗАКРЕПЛЯЕТСЯ за колонку под курсором (dashCfg.col) — pfdPack
+        // ставит его именно туда стопкой, оставляя зазор в других колонках. Так «Сводку»
+        // можно положить под «Второй» справа, а не в кратчайшую (левую) колонку.
+        var gr = grid.getBoundingClientRect();
+        var z = gr.width / grid.clientWidth || 1;
+        var gap = parseFloat(getComputedStyle(grid).columnGap) || 16;
+        var colW = (grid.clientWidth - gap * 11) / 12;
+        var span = pfdSpanOf(pfdDragEl, colW, gap);
+        var targetCol = clamp(Math.round(((x - gr.left) / z) / (colW + gap)), 0, 12 - span) + 1;  // 1-based
+        if (!dashCfg.col) dashCfg.col = {};
+        var colChanged = dashCfg.col[id] !== targetCol;
+        // ---- ПОРЯДОК В СТОПКЕ: блок под курсором, иначе ближайший по расстоянию ----
         var el = document.elementFromPoint(x, y);
         var over = el && el.closest ? el.closest('.pfd-item') : null;
         if (over && (over === pfdDragEl || over.parentNode !== grid)) over = null;
-        // Курсор в зазоре / пустом месте сетки (например, справа в конце ряда, где ещё
-        // ЕСТЬ место) — elementFromPoint не попадает в блок. Берём ближайший по расстоянию
-        // до центра блок, чтобы перетаскивание «в пустоту» тоже переставляло.
         if (!over) {
             var bestD = Infinity;
             Array.prototype.forEach.call(grid.children, function (c) {
@@ -3362,20 +3403,24 @@
                 if (d < bestD) { bestD = d; over = c; }
             });
         }
-        if (!over || over === pfdDragEl) return;
-        // Куда вставлять — ПРОСТРАНСТВЕННО от курсора к целевому блоку (не по DOM-индексу):
-        // выше блока или в его левой половине → до; ниже или в правой половине → после.
-        var r = over.getBoundingClientRect();
-        var before;
-        if (y < r.top) before = true;
-        else if (y > r.bottom) before = false;
-        else before = x < (r.left + r.width / 2);
-        // уже на нужном месте — не дёргаем сетку зря
-        if (before && over.previousElementSibling === pfdDragEl) return;
-        if (!before && over.nextElementSibling === pfdDragEl) return;
+        var before = false, orderChanged = false;
+        if (over && over !== pfdDragEl) {
+            // Куда вставлять — ПРОСТРАНСТВЕННО: выше блока или в его левой половине → до;
+            // ниже или в правой половине → после.
+            var r = over.getBoundingClientRect();
+            if (y < r.top) before = true;
+            else if (y > r.bottom) before = false;
+            else before = x < (r.left + r.width / 2);
+            if (before && over.previousElementSibling !== pfdDragEl) orderChanged = true;
+            else if (!before && over.nextElementSibling !== pfdDragEl) orderChanged = true;
+        }
+        if (!colChanged && !orderChanged) return;   // ни колонка, ни порядок не поменялись
+        dashCfg.col[id] = targetCol;
         pfdFlip(grid, function () {
-            if (before) grid.insertBefore(pfdDragEl, over);
-            else grid.insertBefore(pfdDragEl, over.nextSibling);
+            if (orderChanged && over) {
+                if (before) grid.insertBefore(pfdDragEl, over);
+                else grid.insertBefore(pfdDragEl, over.nextSibling);
+            }
             pfdPack();   // masonry: сразу пере-упаковываем — FLIP снимет новые места
         });
         pfdLastReorder = Date.now();
@@ -3405,8 +3450,12 @@
         if (!cancelled) pfdSaveOrder();
         else {
             // отмена (Esc/pointercancel): живая перестановка уже переставила блок в
-            // DOM — возвращаем его на исходное место, иначе на экране один порядок,
-            // а сохранён другой (после «Готово» блок «прыгнул» бы обратно)
+            // DOM и закрепила колонку — возвращаем и порядок, и прежнюю колонку, иначе
+            // на экране один вид, а сохранён другой (после «Готово» блок «прыгнул» бы)
+            if (pfdDragColKey) {
+                if (pfdDragColHome == null) { if (dashCfg.col) delete dashCfg.col[pfdDragColKey]; }
+                else { if (!dashCfg.col) dashCfg.col = {}; dashCfg.col[pfdDragColKey] = pfdDragColHome; }
+            }
             var grid = item.parentNode;
             if (grid && grid.id === 'pfdGrid') {
                 pfdFlip(grid, function () {
