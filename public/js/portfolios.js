@@ -2084,14 +2084,15 @@
             }
             // «живой» chrome у КАЖДОГО блока сетки: НЕВИДИМАЯ полоса-хват по ВЕРХНЕЙ ГРАНИ
             // (.pfd-move — курсор сам «ладошка», за неё блок тянется, никакой бирки), кнопка
-            // скрыть/удалить и три зоны ресайза (правая кромка/нижняя/уголок).
+            // скрыть/удалить и три зоны ресайза (правая кромка/нижняя/уголок). Без текстового
+            // бейджа размера и без native-подсказок (title) на кромках — подсказка ресайза
+            // ТОЛЬКО курсором (↔/↕/⤡), никаких «туттипов» при перетаскивании грани.
             var chrome = '<div class="pfd-chrome">' +
                 '<span class="pfd-move" aria-hidden="true"></span>' +
                 hideBtn +
-                '<span class="pfd-size"></span>' +
-                '<span class="pfd-rs-r" title="Потяните — ширина по колонкам"></span>' +
-                '<span class="pfd-rs-b" title="Потяните — высота свободно"></span>' +
-                '<span class="pfd-rs" title="Потяните — ширина и высота. Двойной клик — сброс высоты, ещё раз — ширины"></span>' +
+                '<span class="pfd-rs-r"></span>' +
+                '<span class="pfd-rs-b"></span>' +
+                '<span class="pfd-rs"></span>' +
             '</div>';
             return '<div class="pfd-item' + (h ? ' pfd-hset' : '') + (b.defHidden ? ' pfd-rmable' : '') + '" data-pfd="' + esc(b.id) + '" style="' + style + '">' +
                 chrome +
@@ -2179,14 +2180,14 @@
         else if (pfdNarrowMq.addListener) pfdNarrowMq.addListener(pfdNarrowH);
     } catch (e) {}
     window.pfDashReset = function () {
-        // «Вернуть стандартную» = вернуться к КЛАССИЧЕСКОЙ раскладке страницы (on:false):
-        // «Избранное» в правой колонке, карточки слева — тот самый стандартный вид. Дашборд-
-        // сетка (on:true) выкидывала «Избранное» из правой колонки в общий поток — не то.
-        // Заметки — пользовательский ТЕКСТ, не раскладка: сброс их не стирает. Чтобы снова
-        // настраивать сетку — кнопка «＋ Блок» в шапке (один клик снова открывает конструктор).
-        dashCfg = { on: false, order: [], span: {}, h: {}, hidden: {}, notes: dashCfg.notes || [] };
-        dashEdit = false;
-        pfdUndoStack.length = 0;
+        // «Вернуть стандартную» = сбросить ВСЕ перетаскивания/ресайзы/скрытия к дефолтной
+        // расстановке блоков, ОСТАВАЯСЬ в дашборд-сетке (on:true): «Избранное» и прочее
+        // остаются подвижными блоками, сетка НЕ исчезает в классику. Заметки — пользовательский
+        // ТЕКСТ, не раскладка: сброс их не стирает. Обратимо — снимок кладём ПЕРЕД сбросом,
+        // «Отменить» в тулбоксе вернёт прежнюю расстановку.
+        pfdPushUndo();
+        dashCfg = { on: true, order: [], span: {}, h: {}, hidden: {}, notes: dashCfg.notes || [] };
+        dashEdit = true;
         saveDashCfg();
         pfdRerender();
         toast('Стандартная раскладка возвращена');
@@ -3460,19 +3461,17 @@
         var hadH = item.classList.contains('pfd-hset');
         var startColStyle = item.style.gridColumn, startHStyle = item.style.height;
         var id = item.getAttribute('data-pfd');
-        var badge = item.querySelector('.pfd-size');
         var newSpan = 0, newH = 0, hMode = hadH || axis === 'y';
         pfdArm = null;   // гасим возможный «взвод» драга — ресайз и драг не смешиваются
         pfdPushUndo();
         item.classList.add('pfd-resizing');
-        // без направляющей-пунктира и прочих линий: соседи сами переезжают под новый
-        // размер (masonry), новую ширину/высоту показывает только текстовый бейдж
+        // без направляющей-пунктира, текстового бейджа и прочих подсказок: соседи сами
+        // переезжают под новый размер (masonry), размер виден по самому блоку
         function cleanup() {
             document.removeEventListener('pointermove', onMove);
             document.removeEventListener('pointerup', onUp);
             document.removeEventListener('pointercancel', onUp);
             item.classList.remove('pfd-resizing');
-            if (badge) badge.textContent = '';
             pfdRsCancel = null;
         }
         function onMove(ev) {
@@ -3487,8 +3486,7 @@
                 item.style.height = newH + 'px';
                 item.classList.add('pfd-hset');
             }
-            if (badge) badge.textContent = newSpan + ' / 12' + (hMode ? ' · ' + newH + ' px' : ' · высота авто');
-            pfdRepackSoon();   // masonry: соседи переезжают под новый размер + кладём направляющую
+            pfdRepackSoon();   // masonry: соседи переезжают под новый размер
         }
         function onUp() {
             cleanup();
