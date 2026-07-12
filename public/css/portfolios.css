@@ -2244,19 +2244,25 @@ body.pfd-dragging-now * { cursor: grabbing !important; }
    вываливался за схлопнутую карточку, offsetHeight занижался и masonry клал
    следующий блок ВНАХЛЁСТ. height:100% нужен только в hset (ручная высота). */
 .pf-capblk, .pf-heatblk, .pf-newsblk, .pf-noteblk { display: flex; flex-direction: column; box-sizing: border-box; }
+/* Отступ снизу и по бокам держит КАРТОЧКА (было padding только у шапки .pf-ch →
+   контент упирался в нижнюю/боковую грань). Шапке гасим горизонтальный паддинг,
+   чтобы заголовок и тело выровнялись по одной вертикали. */
+.pf-capblk, .pf-heatblk, .pf-newsblk, .pf-noteblk { padding: 0 22px 20px; }
+.pf-capblk > .pf-ch, .pf-heatblk > .pf-ch, .pf-newsblk > .pf-ch, .pf-noteblk > .pf-ch { padding-left: 0; padding-right: 0; }
 .pfd-item.pfd-hset .pf-capblk,
 .pfd-item.pfd-hset .pf-heatblk,
 .pfd-item.pfd-hset .pf-newsblk,
 .pfd-item.pfd-hset .pf-noteblk { height: 100%; }
 
-/* --- «График капитала» --- */
-.pfcap-hr { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0; }
-.pfcap-hr b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: var(--fs-total, 16px); font-weight: 700; color: #0f172a; }
-.pfcap-hr span { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11.5px; font-weight: 600; }
-.pfcap-hr .pos { color: #119d5c; }
-.pfcap-hr .neg { color: #c2410c; }
-.pfcap-body { display: flex; flex-direction: column; flex: 1; min-height: 0; margin-top: 10px; }
-.pfcap-plot { position: relative; flex: 1; min-height: 150px; }
+/* --- «График капитала»: чипы окна в шапке, крупный герой-значение, график --- */
+.pfcap-seg { flex-shrink: 0; }
+.pf-capblk > .pf-ch { align-items: center; }
+/* герой: текущая стоимость + пилюля-дельта + подпись периода в одну строку */
+.pfcap-hero { display: flex; align-items: baseline; flex-wrap: wrap; gap: 9px; margin-top: 4px; }
+.pfcap-val { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 25px; font-weight: 800; letter-spacing: -0.02em; color: #0f172a; line-height: 1.05; }
+.pfcap-per { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: #9aa7b8; }
+.pfcap-body { display: flex; flex-direction: column; flex: 1; min-height: 0; margin-top: 14px; }
+.pfcap-plot { position: relative; flex: 1; min-height: 158px; }
 .pfcap-plot svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .pfcap-y {
     position: absolute; left: 0; font-family: var(--font-num, 'JetBrains Mono', monospace);
@@ -2292,21 +2298,52 @@ body.dark-mode .pfhm-box { background: #0b1220; }
 body.dark-mode .pfhm-tile { color: #e7eef7; }
 body.dark-mode .pfhm-tile:hover { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.28); }
 
-/* --- «Новости по позициям» --- */
-.pfnw-body { flex: 1; min-height: 0; margin-top: 4px; }
+/* --- «Новости по позициям»: компактные строки, превью — оверлеем --- */
+.pf-newsblk { position: relative; }
+.pfnw-body { flex: 1; min-height: 0; margin-top: 6px; }
 .pfd-item.pfd-hset .pf-newsblk .pfnw-body { overflow-y: auto; scrollbar-width: thin; }
-.pfnw-row { display: flex; align-items: flex-start; gap: 10px; padding: 9px 2px; border-top: 1px solid #f1f5f9; }
-.pfnw-row:first-child { border-top: 0; }
-.pfnw-row.link { cursor: pointer; }
-.pfnw-row.link:hover .pff-news-t { color: #1d4ed8; -webkit-line-clamp: unset; }
-.pfnw-tk {
-    flex-shrink: 0; padding: 3px 9px; border-radius: 8px; border: 0; cursor: pointer;
-    font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11.5px; font-weight: 700;
-    color: #334155; background: #f1f5f9; transition: background 0.12s, color 0.12s;
+.pfnw-list { display: flex; flex-direction: column; gap: 5px; }
+.pfnw-item {
+    display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; cursor: pointer;
+    padding: 9px 11px; border-radius: 12px; border: 1px solid #eef2f7; background: #fbfcfe;
+    transition: border-color 0.13s, background 0.13s, transform 0.1s;
 }
-.pfnw-tk:hover { background: #e0edff; color: #1d4ed8; }
-.pfnw-news { min-width: 0; flex: 1; }
+.pfnw-item:hover { border-color: #d3e0f2; background: #f4f8ff; }
+.pfnw-item:active { transform: scale(0.995); }
+.pfnw-item-l { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; width: 62px; }
+.pfnw-item-tk { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12px; font-weight: 800; color: #1e293b; letter-spacing: 0.01em; }
+.pfnw-pfdots { display: inline-flex; gap: 3px; }
+.pfnw-pfdot { width: 7px; height: 7px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9); }
+.pfnw-item-nopf { font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #b0bccb; }
+.pfnw-item-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.pfnw-item-title { font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 600; color: #273244; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pfnw-item.is-none .pfnw-item-title { color: #a5b1c0; font-weight: 500; font-style: italic; }
+.pfnw-item-meta { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 600; color: #9aa7b8; }
+.pfnw-item-go { flex-shrink: 0; display: inline-flex; color: #c3cedb; transition: color 0.13s, transform 0.13s; }
+.pfnw-item-go svg { width: 13px; height: 13px; }
+.pfnw-item:hover .pfnw-item-go { color: var(--pf-accent); transform: translate(1px, -1px); }
 .pfnw-empty { padding: 22px 6px; font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 600; color: #8494a7; line-height: 1.5; }
+/* превью новости — оверлей поверх контента карточки */
+.pfnw-preview { position: absolute; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; padding: 16px;
+    background: rgba(248, 250, 253, 0.72); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); border-radius: 28px; animation: pfnwPvIn 0.16s ease; }
+@keyframes pfnwPvIn { from { opacity: 0; } to { opacity: 1; } }
+.pfnw-pv-card { width: 100%; max-width: 340px; max-height: 100%; overflow-y: auto; display: flex; flex-direction: column; gap: 9px;
+    padding: 16px 17px 17px; border-radius: 16px; background: #fff; border: 1px solid #e6ecf4; box-shadow: 0 24px 50px -20px rgba(24, 38, 60, 0.4); }
+.pfnw-pv-head { display: flex; align-items: center; gap: 9px; }
+.pfnw-pv-tk { padding: 3px 10px; border-radius: 8px; border: 0; cursor: pointer; font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12px; font-weight: 800; color: #1d4ed8; background: #e8f0ff; transition: background 0.12s; }
+.pfnw-pv-tk:hover { background: #d7e6ff; }
+.pfnw-pv-pf { flex: 1; min-width: 0; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: #8494a7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pfnw-pv-x { margin-left: auto; flex-shrink: 0; width: 24px; height: 24px; border: 0; background: #f1f5f9; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; color: #64748b; transition: background 0.12s, color 0.12s; }
+.pfnw-pv-x:hover { background: #e2e8f0; color: #0f172a; }
+.pfnw-pv-x svg { width: 13px; height: 13px; }
+.pfnw-pv-title { font-family: 'Inter', sans-serif; font-size: 14.5px; font-weight: 700; line-height: 1.4; color: #16203a; }
+.pfnw-pv-meta { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #94a3b8; }
+.pfnw-pv-state { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; color: #8494a7; padding: 6px 0; }
+.pfnw-pv-open { margin-top: 3px; align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 10px; border: 0; cursor: pointer;
+    font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 700; color: #fff; background: var(--pf-accent); transition: filter 0.13s, transform 0.1s; }
+.pfnw-pv-open:hover { filter: brightness(1.06); }
+.pfnw-pv-open:active { transform: scale(0.97); }
+.pfnw-pv-open svg { width: 14px; height: 14px; }
 
 /* --- «Заметки»: мультиблок; цвет-точка, строки (текст/пункт/задача), срок --- */
 .pf-noteblk {
@@ -2320,18 +2357,21 @@ body.dark-mode .pfhm-tile:hover { box-shadow: inset 0 0 0 2px rgba(255, 255, 255
 .pfnt-c-slate { --nt: var(--nt-slate); } .pfnt-c-blue { --nt: var(--nt-blue); }
 .pfnt-c-green { --nt: var(--nt-green); } .pfnt-c-amber { --nt: var(--nt-amber); }
 .pfnt-c-violet { --nt: var(--nt-violet); } .pfnt-c-rose { --nt: var(--nt-rose); }
-/* шапка: цвет-точка (палитра-поповер) + иконка заметки + «+» без контейнера справа */
+/* шапка: единый цветной значок-иконка (он же выбор цвета) + подпись + «+» справа */
 .pfnt-head { align-items: center; }
-.pfnt-head .pf-ch-l { display: flex; flex-direction: row; align-items: center; gap: 9px; }
+.pfnt-head .pf-ch-l { display: flex; flex-direction: row; align-items: center; gap: 10px; }
 .pfnt-colorwrap { position: relative; display: inline-flex; flex-shrink: 0; }
-.pfnt-dot {
-    width: 18px; height: 18px; border-radius: 50%; border: 2px solid #fff; background: var(--sw, var(--nt));
-    cursor: pointer; padding: 0; box-shadow: 0 0 0 1.5px rgba(24, 38, 60, 0.14);
-    transition: transform 0.12s, box-shadow 0.15s;
+.pfnt-badge {
+    width: 30px; height: 30px; flex-shrink: 0; border-radius: 9px; border: 0; padding: 0; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; color: var(--nt);
+    background: color-mix(in srgb, var(--nt) 15%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--nt) 22%, transparent);
+    transition: transform 0.13s, box-shadow 0.15s, background 0.15s;
 }
-.pfnt-dot:hover { transform: scale(1.12); box-shadow: 0 0 0 2px color-mix(in srgb, var(--nt) 55%, transparent); }
+.pfnt-badge svg { width: 17px; height: 17px; }
+.pfnt-badge:hover { transform: translateY(-1px); background: color-mix(in srgb, var(--nt) 22%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--nt) 32%, transparent), 0 3px 10px -4px color-mix(in srgb, var(--nt) 60%, transparent); }
 .pfnt-colorpop {
-    position: absolute; top: calc(100% + 9px); left: -8px; z-index: 240; display: none; gap: 6px;
+    position: absolute; top: calc(100% + 9px); left: -6px; z-index: 240; display: none; gap: 6px;
     padding: 9px 10px; background: #fff; border: 1px solid rgba(24, 38, 60, 0.1); border-radius: 13px;
     box-shadow: 0 18px 40px -16px rgba(24, 38, 60, 0.38);
 }
@@ -2343,8 +2383,7 @@ body.dark-mode .pfhm-tile:hover { box-shadow: inset 0 0 0 2px rgba(255, 255, 255
 }
 .pfnt-sw:hover { transform: translateY(-2px); }
 .pfnt-sw.on { box-shadow: 0 0 0 2px var(--sw); }
-.pfnt-title { display: inline-flex; color: color-mix(in srgb, var(--nt) 78%, #4a5568); }
-.pfnt-title svg { width: 19px; height: 19px; }
+.pfnt-title { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: -0.01em; color: color-mix(in srgb, var(--nt) 42%, #334155); }
 .pfnt-plus.pff-add { margin-left: auto; color: #9aa6b4; }
 .pfnt-plus.pff-add:hover { color: var(--nt); }
 /* строки заметки */
@@ -2447,21 +2486,16 @@ body.dark-mode .pfd-shelf-chip:hover { background: #1c2b52; border-color: #2f4a8
 body.dark-mode .pf-kpi-v { color: #e7eef7; }
 body.dark-mode .pf-kpi-l { color: #8fa2b8; }
 body.dark-mode .pf-kpi-s { color: #9fb1c6; }
-body.dark-mode .pfcap-hr b { color: #e7eef7; }
+body.dark-mode .pfcap-val { color: #eaf0f8; }
 body.dark-mode .pfcap-y { background: rgba(11, 18, 32, 0.75); color: #8fa2b8; }
 body.dark-mode .pfcap-x { color: #8fa2b8; }
 body.dark-mode .pfcap-empty-t { color: #cbd5e1; }
 body.dark-mode .pfcap-empty-s { color: #8fa2b8; }
-body.dark-mode .pfnw-row { border-top-color: #1e293b; }
-body.dark-mode .pfnw-row.link:hover .pff-news-t { color: #93c5fd; }
-body.dark-mode .pfnw-tk { color: #cbd5e1; background: #16213a; }
-body.dark-mode .pfnw-tk:hover { background: #1c2b52; color: #93c5fd; }
-body.dark-mode .pfnw-empty { color: #8fa2b8; }
-body.dark-mode .pfnt-dot { border-color: #18222e; box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.16); }
+body.dark-mode .pfnt-badge { background: color-mix(in srgb, var(--nt) 24%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--nt) 34%, transparent); }
 body.dark-mode .pfnt-colorpop { background: #18222e; border-color: rgba(255, 255, 255, 0.1); box-shadow: 0 18px 40px -16px rgba(0, 0, 0, 0.6); }
 body.dark-mode .pfnt-sw { border-color: #18222e; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14); }
 body.dark-mode .pfnt-sw.on { box-shadow: 0 0 0 2px var(--sw); }
-body.dark-mode .pfnt-title { color: color-mix(in srgb, var(--nt) 68%, #cbd5e1); }
+body.dark-mode .pfnt-title { color: color-mix(in srgb, var(--nt) 55%, #cbd5e1); }
 body.dark-mode .pfnt-row:hover { background: color-mix(in srgb, var(--nt) 14%, transparent); }
 body.dark-mode .pfnt-tx { color: #dbe6f2; }
 body.dark-mode .pfnt-tx:empty::before { color: #5c6c82; }
@@ -2481,10 +2515,9 @@ body.dark-mode .pfnt-due.set.over .pfnt-due-ic, body.dark-mode .pfnt-due.set.ove
 body.dark-mode .pfhm-state { color: #64748b; }
 
 /* --- «График капитала»: сетка, маркер конца, перекрестие-ховер, окно-чипы --- */
-.pfcap-ctl { display: flex; justify-content: flex-end; margin-top: 8px; }
 .pfcap-delta {
-    display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 999px;
-    font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11px; font-weight: 700;
+    display: inline-flex; align-items: center; gap: 3px; padding: 3px 9px; border-radius: 999px;
+    font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12px; font-weight: 700; white-space: nowrap;
 }
 .pfcap-delta.pos { color: #0f7a48; background: rgba(18, 163, 92, 0.12); }
 .pfcap-delta.neg { color: #c2410c; background: rgba(224, 89, 43, 0.12); }
@@ -2518,25 +2551,38 @@ body.dark-mode .pfcap-grid { stroke: rgba(148, 163, 184, 0.12); }
 body.dark-mode .pfcap-cdot { background: #0b1220; }
 
 /* --- «Новости по позициям»: селектор тикеров + карточка выбранной бумаги --- */
-.pfnw-picks { display: flex; gap: 6px; margin-top: 10px; margin-bottom: 2px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.pfnw-picks { display: flex; align-items: center; gap: 6px; margin-top: 10px; margin-bottom: 4px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
 .pfnw-picks::-webkit-scrollbar { display: none; }
 .pfnw-pk {
-    flex-shrink: 0; padding: 5px 11px; border-radius: 999px; cursor: pointer; border: 1px solid #e6ebf2; background: #f8fafc;
+    flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 999px; cursor: pointer; border: 1px solid #e6ebf2; background: #f8fafc;
     font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11.5px; font-weight: 700; color: #475569; transition: border-color 0.13s, color 0.13s, background 0.13s;
 }
 .pfnw-pk:hover { border-color: #c7d2e0; color: #1e293b; }
 .pfnw-pk.on { background: var(--pf-accent); border-color: var(--pf-accent); color: #fff; }
-.pfnw-featured { display: flex; flex-direction: column; gap: 10px; padding-top: 8px; }
-.pfnw-fhead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.pfnw-ftk { font-size: 13px; padding: 4px 11px; }
-.pfnw-fpos { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: #64748b; }
-.pfnw-fpos b { font-family: var(--font-num, 'JetBrains Mono', monospace); color: #0f172a; }
-.pfnw-fchg.pos { color: #12a35c; font-weight: 700; }
-.pfnw-fchg.neg { color: #e0592b; font-weight: 700; }
-.pfnw-featured .pfnw-fnews { border-top: 1px solid #f1f5f9; padding-top: 11px; }
-.pfnw-featured .pff-news-t { -webkit-line-clamp: unset; font-size: 14px; line-height: 1.42; }
+.pfnw-pk.on .pfnw-pfdot { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.55); }
+.pfnw-pkdots { display: inline-flex; gap: 3px; }
+.pfnw-pkx { font-style: normal; font-size: 13px; line-height: 1; opacity: 0.6; padding: 0 1px; }
+.pfnw-pkx:hover { opacity: 1; }
+.pfnw-pkadd { padding: 5px 8px; color: #64748b; }
+.pfnw-pkadd svg { width: 13px; height: 13px; }
+.pfnw-addwrap { flex-shrink: 0; display: inline-flex; }
+.pfnw-addinput { width: 92px; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--pf-accent); outline: none;
+    font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11.5px; font-weight: 700; color: #1e293b; text-transform: uppercase;
+    background: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, var(--pf-accent) 15%, transparent); }
+body.dark-mode .pfnw-item { border-color: #212c40; background: #121a29; }
+body.dark-mode .pfnw-item:hover { border-color: #33507e; background: #16233b; }
+body.dark-mode .pfnw-item-tk { color: #e7eef7; }
+body.dark-mode .pfnw-item-title { color: #c7d2e0; }
+body.dark-mode .pfnw-item.is-none .pfnw-item-title { color: #64748b; }
+body.dark-mode .pfnw-item-meta { color: #74839a; }
+body.dark-mode .pfnw-pfdot { box-shadow: 0 0 0 1px rgba(11, 18, 32, 0.9); }
+body.dark-mode .pfnw-empty { color: #8fa2b8; }
 body.dark-mode .pfnw-pk { border-color: #27324a; background: #131c2b; color: #b9c6d6; }
 body.dark-mode .pfnw-pk:hover { border-color: #34425c; color: #f4f8fd; }
-body.dark-mode .pfnw-fpos { color: #93a1b5; }
-body.dark-mode .pfnw-fpos b { color: #e7eef7; }
-body.dark-mode .pfnw-featured .pfnw-fnews { border-top-color: #1e293b; }
+body.dark-mode .pfnw-addinput { background: #0f1826; color: #e7eef7; }
+body.dark-mode .pfnw-preview { background: rgba(11, 18, 32, 0.72); }
+body.dark-mode .pfnw-pv-card { background: #141d2e; border-color: #27324a; box-shadow: 0 24px 50px -20px rgba(0, 0, 0, 0.7); }
+body.dark-mode .pfnw-pv-title { color: #eaf0f8; }
+body.dark-mode .pfnw-pv-tk { color: #93c5fd; background: #16233f; }
+body.dark-mode .pfnw-pv-x { background: #1c2740; color: #9fb1c6; }
+body.dark-mode .pfnw-pv-x:hover { background: #24314f; color: #f4f8fd; }

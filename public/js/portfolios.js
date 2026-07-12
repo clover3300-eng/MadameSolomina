@@ -2045,9 +2045,8 @@
             // перекраска без ре-рендера — не теряем фокус/каретку в строке
             if (card) {
                 PFD_NOTE_COLORS.forEach(function (c) { card.classList.remove('pfnt-c-' + c); });
-                card.classList.add('pfnt-c-' + color);
+                card.classList.add('pfnt-c-' + color);   // --nt меняется классом → цветной значок перекрашивается сам
                 card.querySelectorAll('.pfnt-sw').forEach(function (s) { s.classList.toggle('on', s.getAttribute('data-c') === color); });
-                var dot = card.querySelector('.pfnt-dot'); if (dot) dot.setAttribute('style', '--sw:var(--nt-' + color + ')');
             }
         }
         var pop = card && card.querySelector('.pfnt-colorpop'); if (pop) pop.classList.remove('open');
@@ -2266,16 +2265,16 @@
         var full = pfdCapSeries();
         var s = pfdCapRangeFilter(full);
         var last = s.length ? s[s.length - 1] : null;
-        var right = '', body, chips = '';
+        var right = '', hero = '', body;
         if (s.length < 2) {
             pfdCapState = null;
             body = '<div class="pfcap-empty"><div class="pfcap-empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 3-4 3 3 4-6"/></svg></div>' +
                 '<div class="pfcap-empty-t">' + (full.length ? 'Первая точка уже есть' : 'Снимков пока нет') + '</div>' +
                 '<div class="pfcap-empty-s">Стоимость портфелей записывается раз в день при живых котировках — линия появится со второго дня.</div></div>';
         } else {
-            // адаптивные чипы окна: показываем, только если данных ощутимо больше месяца
+            // адаптивные чипы окна В ШАПКЕ (не отдельной строкой): только если данных больше месяца
             var spanDays = (new Date(full[full.length - 1].d).getTime() - new Date(full[0].d).getTime()) / 86400000;
-            if (spanDays > 33) chips = '<div class="pfcap-seg pff-sort">' + pfdCapChip('30', '30д') + (spanDays > 93 ? pfdCapChip('90', '90д') : '') + pfdCapChip('all', 'Всё') + '</div>';
+            if (spanDays > 33) right = '<div class="pfcap-seg pff-sort">' + pfdCapChip('30', '30д') + (spanDays > 93 ? pfdCapChip('90', '90д') : '') + pfdCapChip('all', 'Всё') + '</div>';
             var min = Infinity, max = -Infinity;
             s.forEach(function (pt) { if (pt.v < min) min = pt.v; if (pt.v > max) max = pt.v; });
             var span = Math.max(1, max - min);
@@ -2287,12 +2286,15 @@
             var area = line + ' L' + xP(n - 1).toFixed(2) + ',100 L' + xP(0).toFixed(2) + ',100 Z';
             var delta = last.v - s[0].v, dPct = s[0].v > 0 ? delta / s[0].v * 100 : 0;
             var up = delta >= 0, col = up ? '#12a35c' : '#e0592b';
+            var daysShown = Math.max(1, Math.round((new Date(last.d).getTime() - new Date(s[0].d).getTime()) / 86400000));
             pfdCapState = { s: s, min: min, span: span, n: n, inx: INX, pt: PT, pb: PB };
             var plotBot = 100 - PB, grid = '';
             [0.25, 0.5, 0.75].forEach(function (f) { var gy = (PT + (plotBot - PT) * f).toFixed(1); grid += '<line x1="0" y1="' + gy + '" x2="100" y2="' + gy + '" class="pfcap-grid"/>'; });
             var lx = xP(n - 1).toFixed(2), ly = yP(last.v).toFixed(2);
-            right = '<div class="pfcap-hr"><b>' + fmtRub(last.v) + '</b>' +
-                '<span class="pfcap-delta ' + (up ? 'pos' : 'neg') + '">' + (up ? '▲' : '▼') + ' ' + fmtRub(Math.abs(delta)) + ' · ' + fmtPct(dPct) + '</span></div>';
+            // герой: крупная текущая стоимость + пилюля дельты + за сколько дней
+            hero = '<div class="pfcap-hero"><span class="pfcap-val">' + fmtRub(last.v) + '</span>' +
+                '<span class="pfcap-delta ' + (up ? 'pos' : 'neg') + '">' + (up ? '▲' : '▼') + ' ' + fmtRub(Math.abs(delta)) + ' · ' + fmtPct(dPct) + '</span>' +
+                '<span class="pfcap-per">за ' + daysShown + ' дн</span></div>';
             body = '<div class="pfcap-plot">' +
                 '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
                     '<defs><linearGradient id="pfcapGrad" x1="0" y1="0" x2="0" y2="1">' +
@@ -2311,8 +2313,8 @@
             '<div class="pfcap-x"><span>' + ruDate(s[0].d) + '</span><span>' + ruDate(last.d) + '</span></div>';
         }
         return '<div class="dash2-card pf-card2 pf-capblk" title="Дневные снимки хранятся на этом устройстве (до 400 дней)">' +
-            pfCardHead('', 'График капитала', 'стоимость всех портфелей по дням', right) +
-            (chips ? '<div class="pfcap-ctl">' + chips + '</div>' : '') +
+            pfCardHead('', 'График капитала', 'стоимость всех портфелей', right) +
+            hero +
             '<div class="pfcap-body">' + body + '</div></div>';
     }
     window.pfdCapSetRange = function (r) { if (pfdCapRange === r) return; pfdCapRange = r; pfdCapRepaint(); };
@@ -2440,65 +2442,87 @@
     // ---- «Новости по позициям»: свежая новость по каждой акции портфелей ----
     // Переиспользует пайплайн новостей «Избранного» (loadNewsForTicker + newsHtmlCache +
     // очередь newsQueue): та же лента Smart-Lab, тот же кэш — общие тикеры не грузятся дважды.
+    var pfdNewsCustom = [];    // тикеры не из портфеля, добавленные вручную (сессия)
+    var pfdNewsAdding = false;  // раскрыт ли инпут добавления тикера
     function pfdNewsList() {
-        var seen = {}, list = [];
+        var map = {}, order = [];
         visibleItems().forEach(function (p) {
             (p.holdings || []).forEach(function (h) {
-                if (h.type === 'bond' || !h.ticker || seen[h.ticker]) return;
+                if (h.type === 'bond' || !h.ticker) return;
                 var a = aggHolding(h); if (!(a.qty > 0)) return;
-                var q = quotes[h.ticker]; seen[h.ticker] = 1;
-                list.push({ tk: h.ticker, qty: a.qty, val: ((q && q.price) || a.avgPrice || 0) * a.qty,
-                    chg: q && q.chgPct != null ? q.chgPct : null });
+                var tk = h.ticker, q = quotes[tk];
+                if (!map[tk]) { map[tk] = { tk: tk, qty: 0, val: 0, chg: q && q.chgPct != null ? q.chgPct : null, pfs: [] }; order.push(tk); }
+                map[tk].qty += a.qty;
+                map[tk].val += ((q && q.price) || a.avgPrice || 0) * a.qty;
+                if (!map[tk].pfs.some(function (x) { return x.id === p.id; })) map[tk].pfs.push({ id: p.id, name: p.name, color: colorVal(p.color) });
             });
         });
+        var list = order.map(function (tk) { return map[tk]; });
         list.sort(function (a, b) { return b.val - a.val; });   // крупные позиции — первыми
-        return list.slice(0, 12);
+        pfdNewsCustom.forEach(function (tk) {
+            if (map[tk]) return;   // уже есть в портфеле — не дублируем
+            var q = quotes[tk];
+            list.push({ tk: tk, qty: 0, val: 0, chg: q && q.chgPct != null ? q.chgPct : null, pfs: [], custom: true });
+        });
+        return list.slice(0, 16);
     }
     function pfdNewsTickers() { return pfdNewsList().map(function (x) { return x.tk; }); }
-    var pfdNewsPick = null;   // выбранный тикер (null = «Все позиции»)
+    var pfdNewsPick = null;   // выбранный тикер-фильтр (null = все)
+    function pfdNewsDots(x) { return x.pfs.slice(0, 3).map(function (p) { return '<i class="pfnw-pfdot" style="background:' + p.color + '" title="' + attr(p.name) + '"></i>'; }).join(''); }
+    function pfdNewsChips(list) {
+        var chips = '<button class="pfnw-pk' + (pfdNewsPick === null ? ' on' : '') + '" onclick="pfdNewsSetPick(\'\')">Все</button>';
+        chips += list.map(function (x) {
+            return '<button class="pfnw-pk' + (pfdNewsPick === x.tk ? ' on' : '') + '" onclick="pfdNewsSetPick(\'' + jsArg(x.tk) + '\')">' + esc(x.tk) +
+                (x.custom ? '<i class="pfnw-pkx" onclick="event.stopPropagation();pfdNewsDelCustom(\'' + jsArg(x.tk) + '\')" title="Убрать тикер">×</i>' : '<span class="pfnw-pkdots">' + pfdNewsDots(x) + '</span>') + '</button>';
+        }).join('');
+        chips += pfdNewsAdding
+            ? '<span class="pfnw-addwrap"><input class="pfnw-addinput" placeholder="ТИКЕР" maxlength="12" onkeydown="pfdNewsAddKey(event)" onblur="pfdNewsAddBlur(this)"></span>'
+            : '<button class="pfnw-pk pfnw-pkadd" onclick="pfdNewsAddToggle()" title="Добавить тикер не из портфеля" aria-label="Добавить тикер">' + PFD_PLUS_SVG + '</button>';
+        return '<div class="pfnw-picks">' + chips + '</div>';
+    }
     function pfdNewsHtml() {
         var list = pfdNewsList();
-        if (!list.length) {
+        if (!list.length && !pfdNewsAdding) {
             return '<div class="dash2-card pf-card2 pf-newsblk">' +
-                pfCardHead('', 'Новости по позициям', 'свежая новость по акциям портфелей') +
-                '<div class="pfnw-body" data-skey="posnews"><div class="pfnw-empty">Добавьте акции в любой портфель — здесь появится свежая новость по каждой позиции.</div></div></div>';
+                pfCardHead('', 'Новости по позициям', 'свежая новость по бумагам портфелей', '<button class="pff-add" onclick="pfdNewsAddToggle()" title="Добавить тикер не из портфеля" aria-label="Добавить тикер">' + PFD_PLUS_SVG + '</button>') +
+                '<div class="pfnw-body" data-skey="posnews"><div class="pfnw-empty">Добавьте акции в портфель — или введите любой тикер по кнопке «+» справа.</div></div></div>';
         }
-        // выбранного тикера уже нет в позициях → назад к «Все»
         if (pfdNewsPick && !list.some(function (x) { return x.tk === pfdNewsPick; })) pfdNewsPick = null;
-        // селектор тикеров (свиток чипов): «Все» + позиции по убыванию стоимости
-        var picks = '<div class="pfnw-picks">' +
-            '<button class="pfnw-pk' + (pfdNewsPick === null ? ' on' : '') + '" onclick="pfdNewsSetPick(\'\')">Все</button>' +
-            list.map(function (x) {
-                return '<button class="pfnw-pk' + (pfdNewsPick === x.tk ? ' on' : '') + '" onclick="pfdNewsSetPick(\'' + jsArg(x.tk) + '\')">' + esc(x.tk) + '</button>';
-            }).join('') + '</div>';
-        var body;
-        if (pfdNewsPick) {
-            var it = list.filter(function (x) { return x.tk === pfdNewsPick; })[0];
-            var chg = it.chg == null ? '' : '<span class="pfnw-fchg ' + (it.chg >= 0 ? 'pos' : 'neg') + '">' + (it.chg >= 0 ? '+' : '−') + Math.abs(it.chg).toFixed(1).replace('.', ',') + '%</span>';
-            body = '<div class="pfnw-featured" id="pfnw-' + esc(it.tk) + '">' +
-                '<div class="pfnw-fhead">' +
-                    '<button class="pfnw-tk pfnw-ftk" onclick="event.stopPropagation();pfOpenTicker(\'' + jsArg(it.tk) + '\')" title="Открыть карточку компании">' + esc(it.tk) + '</button>' +
-                    '<span class="pfnw-fpos"><b>' + fmtRub(it.val) + '</b> · ' + fmtQty(it.qty) + ' шт' + (chg ? ' · ' + chg : '') + '</span>' +
-                '</div>' +
-                '<div class="pfnw-news pfnw-fnews"><span class="pff-news-load">загрузка новости…</span></div>' +
-            '</div>';
-        } else {
-            body = '<div class="pfnw-list">' + list.map(function (x) {
-                return '<div class="pfnw-row" id="pfnw-' + esc(x.tk) + '">' +
-                    '<button class="pfnw-tk" onclick="event.stopPropagation();pfOpenTicker(\'' + jsArg(x.tk) + '\')" title="Открыть карточку компании">' + esc(x.tk) + '</button>' +
-                    '<div class="pfnw-news"><span class="pff-news-load">загрузка новости…</span></div>' +
-                '</div>';
-            }).join('') + '</div>';
-        }
+        var shown = pfdNewsPick ? list.filter(function (x) { return x.tk === pfdNewsPick; }) : list;
+        var rows = shown.map(function (x) {
+            var mark = x.custom ? '<span class="pfnw-item-nopf" title="Не в портфеле">внеш.</span>' : '<span class="pfnw-pfdots">' + pfdNewsDots(x) + '</span>';
+            return '<button type="button" class="pfnw-item" data-tk="' + esc(x.tk) + '" id="pfnw-' + esc(x.tk) + '" onclick="pfdNewsOpenPreview(\'' + jsArg(x.tk) + '\')">' +
+                '<span class="pfnw-item-l"><span class="pfnw-item-tk">' + esc(x.tk) + '</span>' + mark + '</span>' +
+                '<span class="pfnw-item-body"><span class="pfnw-item-title">загрузка новости…</span><span class="pfnw-item-meta"></span></span>' +
+                '<span class="pfnw-item-go">' + GO_ARROW_SVG + '</span>' +
+            '</button>';
+        }).join('');
         return '<div class="dash2-card pf-card2 pf-newsblk">' +
-            pfCardHead('', 'Новости по позициям', 'выберите бумагу или смотрите все сразу') +
-            picks +
-            '<div class="pfnw-body" data-skey="posnews">' + body + '</div></div>';
+            pfCardHead('', 'Новости по позициям', 'нажмите бумагу — новость раскроется поверх') +
+            pfdNewsChips(list) +
+            '<div class="pfnw-body" data-skey="posnews"><div class="pfnw-list">' + rows + '</div></div></div>';
     }
     window.pfdNewsSetPick = function (tk) {
         var next = tk || null;
         if (pfdNewsPick === next) next = null;   // повторный клик по активному чипу — назад к «Все»
         pfdNewsPick = next;
+        pfdNewsRepaint();
+    };
+    window.pfdNewsAddToggle = function () { pfdNewsAdding = !pfdNewsAdding; pfdNewsRepaint(); if (pfdNewsAdding) setTimeout(function () { var i = document.querySelector('#pfWrap .pfnw-addinput'); if (i) i.focus(); }, 30); };
+    function pfdNewsCommitAdd(val) {
+        var tk = String(val || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+        pfdNewsAdding = false;
+        if (tk.length >= 2 && pfdNewsCustom.indexOf(tk) < 0) { pfdNewsCustom.push(tk); pfdNewsPick = tk; }
+        pfdNewsRepaint();
+    }
+    window.pfdNewsAddKey = function (ev) {
+        if (ev.key === 'Enter') { ev.preventDefault(); pfdNewsCommitAdd(ev.target.value); }
+        else if (ev.key === 'Escape') { ev.preventDefault(); pfdNewsAdding = false; pfdNewsRepaint(); }
+    };
+    window.pfdNewsAddBlur = function (el) { if (!pfdNewsAdding) return; if (String(el.value || '').trim()) pfdNewsCommitAdd(el.value); else { pfdNewsAdding = false; pfdNewsRepaint(); } };
+    window.pfdNewsDelCustom = function (tk) {
+        pfdNewsCustom = pfdNewsCustom.filter(function (t) { return t !== tk; });
+        if (pfdNewsPick === tk) pfdNewsPick = null;
         pfdNewsRepaint();
     };
     function pfdNewsRepaint() {
@@ -2507,20 +2531,47 @@
         card.parentNode.replaceChild(tmp.firstChild, card);
         renderPosNews(); pfdRepackSoon();
     }
+    // предпросмотр новости — оверлей ПОВЕРХ контента карточки (не растягивает строку)
+    window.pfdNewsOpenPreview = function (tk) {
+        var card = document.querySelector('#pfWrap .pf-newsblk'); if (!card) return;
+        if (!newsHtmlCache[tk] && typeof loadNewsForTicker === 'function' && !newsStarted[tk]) { newsStarted[tk] = true; newsQueue.push(tk); setTimeout(pumpNewsQueue, 0); }
+        var e = newsHtmlCache[tk];
+        var it = pfdNewsList().filter(function (x) { return x.tk === tk; })[0];
+        var pfLabel = it && it.pfs.length ? it.pfs.map(function (p) { return p.name; }).join(' · ') : (it && it.custom ? 'не в портфеле' : '');
+        var inner;
+        if (!e) inner = '<div class="pfnw-pv-state">Загружаем новость…</div>';
+        else if (e.none) inner = '<div class="pfnw-pv-state">Свежих новостей по ' + esc(tk) + ' нет.</div>';
+        else inner = '<div class="pfnw-pv-title">' + esc(e.title || '') + '</div>' +
+            '<div class="pfnw-pv-meta">' + esc(e.src || 'Smart-Lab') + (e.rel ? ' · ' + esc(e.rel) : '') + '</div>' +
+            (e.link ? '<button class="pfnw-pv-open" onclick="pfdNewsOpenLink(\'' + jsArg(e.link) + '\')">Открыть новость' + GO_ARROW_SVG + '</button>' : '');
+        var pv = '<div class="pfnw-preview" data-tk="' + esc(tk) + '" onclick="if(event.target===this)pfdNewsClosePreview()">' +
+            '<div class="pfnw-pv-card">' +
+                '<div class="pfnw-pv-head">' +
+                    '<button class="pfnw-pv-tk" onclick="pfOpenTicker(\'' + jsArg(tk) + '\')" title="Открыть карточку компании">' + esc(tk) + '</button>' +
+                    (pfLabel ? '<span class="pfnw-pv-pf">' + esc(pfLabel) + '</span>' : '') +
+                    '<button class="pfnw-pv-x" onclick="pfdNewsClosePreview()" aria-label="Закрыть">' + NOTE_X_SVG + '</button>' +
+                '</div>' + inner +
+            '</div></div>';
+        var old = card.querySelector('.pfnw-preview'); if (old) old.parentNode.removeChild(old);
+        card.insertAdjacentHTML('beforeend', pv);
+    };
+    window.pfdNewsClosePreview = function () { var pv = document.querySelector('#pfWrap .pf-newsblk .pfnw-preview'); if (pv) pv.parentNode.removeChild(pv); };
+    window.pfdNewsOpenLink = function (link) { if (typeof openExternalLink === 'function') openExternalLink(link); else window.open(link, '_blank'); };
     function fillPosNewsSlot(tk) {
-        var row = dq('pfnw-' + tk), e = newsHtmlCache[tk]; if (!row || !e) return;
-        var slot = row.querySelector('.pfnw-news'); if (!slot) return;
-        slot.innerHTML = e.html;
-        row.classList.toggle('is-none', !!e.none);
-        if (e.link) {
-            row.classList.add('link'); row.setAttribute('role', 'link');
-            row.onclick = function (ev) { ev.stopPropagation(); if (typeof openExternalLink === 'function') openExternalLink(e.link); else window.open(e.link, '_blank'); };
-        } else { row.classList.remove('link'); row.onclick = null; }
+        var row = document.querySelector('#pfWrap .pfnw-item[data-tk="' + tk + '"]'), e = newsHtmlCache[tk]; if (!e) { }
+        if (row && e) {
+            var titleEl = row.querySelector('.pfnw-item-title'), metaEl = row.querySelector('.pfnw-item-meta');
+            row.classList.toggle('is-none', !!e.none);
+            if (titleEl) titleEl.textContent = e.none ? 'нет свежих новостей' : (e.title || '');
+            if (metaEl) metaEl.textContent = e.none ? '' : (e.src || 'Smart-Lab') + (e.rel ? ' · ' + e.rel : '');
+        }
+        // если по этому тикеру открыт предпросмотр в состоянии загрузки — обновим
+        var pv = document.querySelector('#pfWrap .pf-newsblk .pfnw-preview[data-tk="' + tk + '"]');
+        if (pv && e && pv.querySelector('.pfnw-pv-state')) window.pfdNewsOpenPreview(tk);
     }
     function renderPosNews() {
         if (!document.querySelector('#pfWrap .pf-newsblk') || typeof loadNewsForTicker !== 'function') return;
-        var want = pfdNewsPick ? [pfdNewsPick] : pfdNewsTickers();
-        want.forEach(function (tk) {
+        pfdNewsTickers().forEach(function (tk) {
             if (newsHtmlCache[tk]) { fillPosNewsSlot(tk); return; }
             if (!newsStarted[tk]) { newsStarted[tk] = true; newsQueue.push(tk); }
         });
@@ -2572,15 +2623,15 @@
         var sw = PFD_NOTE_COLORS.map(function (c) {
             return '<button type="button" class="pfnt-sw' + (c === color ? ' on' : '') + '" data-c="' + c + '" style="--sw:var(--nt-' + c + ')" title="Цвет" onclick="pfdSetNoteColor(\'' + jsArg(nt.id) + '\',\'' + c + '\',event)"></button>';
         }).join('');
-        // шапка: цвет-точка с палитрой-поповером (как в настройках портфеля) + иконка заметки;
-        // «+» — без контейнера в правом верхнем углу, как в «Избранном» (класс .pff-add)
+        // шапка: единый цветной значок-иконка (он же выбор цвета — палитра-поповер),
+        // подпись «Заметка», «+» без контейнера в правом верхнем углу (как в «Избранном»)
         var head = '<div class="pf-ch pfnt-head">' +
             '<div class="pf-ch-l">' +
                 '<span class="pfnt-colorwrap">' +
-                    '<button type="button" class="pfnt-dot" style="--sw:var(--nt-' + color + ')" onclick="pfdNoteClrToggle(\'' + jsArg(nt.id) + '\',event)" aria-label="Цвет заметки" title="Цвет заметки"></button>' +
+                    '<button type="button" class="pfnt-badge" onclick="pfdNoteClrToggle(\'' + jsArg(nt.id) + '\',event)" aria-label="Цвет заметки" title="Цвет заметки">' + NOTE_ICON_SVG + '</button>' +
                     '<span class="pfnt-colorpop' + (pfdNoteClrOpen === nt.id ? ' open' : '') + '">' + sw + '</span>' +
                 '</span>' +
-                '<span class="pfnt-title" title="Заметка" aria-label="Заметка">' + NOTE_ICON_SVG + '</span>' +
+                '<span class="pfnt-title">Заметка</span>' +
             '</div>' +
             '<button type="button" class="pff-add pfnt-plus" onclick="pfdAddNote()" aria-label="Новая заметка" title="Добавить ещё одну заметку">' + PFD_PLUS_SVG + '</button>' +
         '</div>';
@@ -3808,8 +3859,10 @@
         var full = String(item.title || ''), title = full.slice(0, 300);
         var link = item.link || '';
         var go = link ? '<svg class="pff-news-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg>' : '';
+        // title/rel/src — для предпросмотра «Новостей по позициям» (оверлей), html — для «Избранного»
         return { html: '<span class="pff-news-t">' + esc(title) + (full.length > 300 ? '…' : '') + '</span>' +
             '<span class="pff-news-m"><i>Smart-Lab</i>' + (rel ? ' · ' + esc(rel) : '') + go + '</span>', link: link,
+            title: title + (full.length > 300 ? '…' : ''), rel: rel, src: 'Smart-Lab',
             date: isNaN(d.getTime()) ? 0 : d.getTime() };   // для сортировки избранного «по свежести»
     }
     function fillNewsSlot(tk) {
