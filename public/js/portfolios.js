@@ -1293,7 +1293,9 @@
                 if (menuJustOpened) {
                     menuJustOpened = false;
                     var op = findPf(openMenu);
-                    if (op && !((op.holdings || []).length)) { var inp = dq('pfNewTk-' + openMenu); if (inp) { try { inp.focus(); } catch (e) {} } }
+                    // preventScroll: фокус НЕ должен тащить страницу (иначе добавление/открытие
+                    // нового портфеля внизу «прыгало» в начало — приходилось прокручивать обратно)
+                    if (op && !((op.holdings || []).length)) { var inp = dq('pfNewTk-' + openMenu); if (inp) { try { inp.focus({ preventScroll: true }); } catch (e) { try { inp.focus(); } catch (e2) {} } } }
                 }
             }
             fitBigSums();   // крупные суммы (до 100 млрд ₽) — уменьшаем кегль, а не переносим/распираем
@@ -2116,15 +2118,14 @@
         var cards = fam.variants.map(function (v) {
             var added = dashCfg.hidden[v.id] === 0;
             var sel = !added && v.id === pflFamPick;
+            // без большой рамки/бейджа «Выбрано» (их было слишком много): одно превью-окно,
+            // выбор — тонкое кольцо + маленькая галочка в углу, подпись обычным текстом
             return '<div class="pfl-choice' + (added ? ' added' : '') + (sel ? ' selected' : '') + '" ' +
                 (added ? '' : 'role="button" tabindex="0" aria-pressed="' + (sel ? 'true' : 'false') + '" onclick="pfdFamPick(\'' + jsArg(v.id) + '\')" ') + '>' +
-                '<div class="pfl-choice-pv">' + pfdPickPvHtml(v.id, v.label, noPf) + '</div>' +
-                '<div class="pfl-choice-side">' +
-                    '<div class="pfl-choice-meta"><b>' + esc(v.label) + '</b><span>' + esc(v.desc) + '</span></div>' +
-                    (added
-                        ? '<span class="pfl-choice-badge is-added">' + CHECK_SVG + '<span>Добавлено</span></span>'
-                        : '<span class="pfl-choice-badge">' + (sel ? CHECK_SVG + '<span>Выбрано</span>' : '<span>Выбрать</span>') + '</span>') +
+                '<div class="pfl-choice-pv">' + pfdPickPvHtml(v.id, v.label, noPf) +
+                    (sel || added ? '<span class="pfl-choice-tick' + (added ? ' is-added' : '') + '">' + CHECK_SVG + '</span>' : '') +
                 '</div>' +
+                '<div class="pfl-choice-cap"><b>' + esc(v.label) + '</b><span>' + esc(v.desc) + (added ? ' · на дашборде' : '') + '</span></div>' +
             '</div>';
         }).join('');
         var allAdded = avail.length === 0;
@@ -2207,7 +2208,13 @@
             if (!html) return '';
             var span = clamp(+(dashCfg.span[b.id]) || b.span, 3, 12);
             var h = +(dashCfg.h[b.id]) || 0;
-            var style = 'grid-column: span ' + span + ';' + (h ? 'height:' + clamp(h, 240, 1400) + 'px;' : '');
+            var isPanel = b.id === 'panel';
+            var minH = isPanel ? 72 : 240;   // «Панель управления» — низкая полоса, свой минимум
+            // Панель — контент-бар: заданная высота работает как МИНИМУМ (растёт под контент при
+            // узкой ширине — кнопки не режутся), БЕЗ hset-клипа (меню/поповеры не обрезаются).
+            var style = 'grid-column: span ' + span + ';' +
+                (h ? ((isPanel ? 'min-height:' : 'height:') + clamp(h, minH, 1400) + 'px;') : '');
+            var hsetClass = (h && !isPanel) ? ' pfd-hset' : '';
             // Кнопка «скрыть/удалить» блока:
             //  • заметка / портфель — СВОЯ кнопка уже есть в шапке карточки (pfnt-trash / глаз .pfc-act),
             //    в chrome не дублируем;
@@ -2249,7 +2256,7 @@
                 '<span class="pfd-rs-b"></span>' +
                 '<span class="pfd-rs"></span>' +
             '</div>';
-            return '<div class="pfd-item' + (h ? ' pfd-hset' : '') + (b.defHidden ? ' pfd-rmable' : '') + '" data-pfd="' + esc(b.id) + '" style="' + style + '">' +
+            return '<div class="pfd-item' + hsetClass + (b.defHidden ? ' pfd-rmable' : '') + '" data-pfd="' + esc(b.id) + '" style="' + style + '">' +
                 chrome +
                 '<div class="pfd-body">' + html + '</div>' +
             '</div>';
@@ -3847,8 +3854,14 @@
             // Куда вставлять — ПРОСТРАНСТВЕННО: выше блока или в его левой половине → до;
             // ниже или в правой половине → после.
             var r = over.getBoundingClientRect();
+            // Полноширинные блоки (span 12: «Панель управления», «История сделок», «Ставки») —
+            // решаем ТОЛЬКО по вертикали (выше середины → перед ним). Для них левая/правая
+            // половина бессмысленна, и раньше такой блок было не поднять наверх мимо колоночных
+            // карточек (курсор попадал в «правую половину» → всегда «после»).
+            var fullW = pfdSpanOf(pfdDragEl, colW, gap) >= 12 || pfdSpanOf(over, colW, gap) >= 12;
             if (y < r.top) before = true;
             else if (y > r.bottom) before = false;
+            else if (fullW) before = y < (r.top + r.height / 2);
             else before = x < (r.left + r.width / 2);
             if (before && over.previousElementSibling !== pfdDragEl) orderChanged = true;
             else if (!before && over.nextElementSibling !== pfdDragEl) orderChanged = true;
@@ -4003,6 +4016,7 @@
         var hadH = item.classList.contains('pfd-hset');
         var startColStyle = item.style.gridColumn, startHStyle = item.style.height;
         var id = item.getAttribute('data-pfd');
+        var minH = id === 'panel' ? 72 : 240;   // «Панель управления» — низкая полоса: даём вернуть малую высоту
         var newSpan = 0, newH = 0, hMode = hadH || axis === 'y';
         // ---- левая кромка: правый край блока закреплён, левый едет → span и стартовая
         // колонка меняются вместе. Считаем текущую стартовую колонку и «колонку за правым
@@ -4053,7 +4067,7 @@
             if (!hMode && Math.abs(dy) > 8) hMode = true;
             item.style.gridColumn = 'span ' + newSpan;
             if (hMode) {
-                newH = clamp(Math.round(startH + dy), 240, 1400);
+                newH = clamp(Math.round(startH + dy), minH, 1400);
                 item.style.height = newH + 'px';
                 item.classList.add('pfd-hset');
             }
@@ -4066,7 +4080,13 @@
             // иначе «пиннили» бы текущий span поверх дефолта
             if (newSpan && axis !== 'y') { dashCfg.span[id] = newSpan; changed = true; }
             if (axis === 'xl' && newColStart) { dashCfg.col[id] = newColStart; changed = true; }
-            if (hMode && newH) { dashCfg.h[id] = newH; changed = true; }
+            if (hMode && newH) {
+                // «Панель управления»: стянутая почти к минимуму высота = вернуть АВТО (натуральную),
+                // иначе она застревала на 240px (общий минимум карточек) и не возвращалась к исходной
+                if (id === 'panel' && newH <= 96) { delete dashCfg.h[id]; }
+                else { dashCfg.h[id] = newH; }
+                changed = true;
+            }
             if (changed) saveDashCfg();
             pfdHeatRepaintSoon();   // карта рынка перерисовывается под новый размер блока
         }
@@ -5667,7 +5687,11 @@
         // через ⚙ (pfToggleMenu): форма добавления раскрыта (портфель пуст), остальное закрыто
         openMenu = p.id; menuJustOpened = true;
         editHold = {}; colorsOpen = false; delArm = false; addOpen = true;
+        // новый портфель добавляется ВНИЗ; не прыгаем в начало страницы (своп innerHTML терял
+        // scroll-anchor) — держим позицию главного скролла, чтобы к новому портфелю не бежать заново
+        var sc = document.getElementById('contentArea'), scTop = sc ? sc.scrollTop : 0;
         renderPortfolios();
+        if (sc && sc.scrollTop !== scTop) sc.scrollTop = scTop;
     };
     // Скопировать состав портфеля таблицей: облигации и акции — ОТДЕЛЬНЫМИ блоками, у
     // каждого своё жирное название раздела и своя строка заголовков (№ / Тикер / … ), между

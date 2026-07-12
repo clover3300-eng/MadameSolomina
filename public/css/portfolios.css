@@ -14,7 +14,7 @@
 @media (min-width: 1800px) { #panel-portfolios { padding: 26px 56px 84px !important; } }
 
 .pf-wrap {
-    width: 100%; box-sizing: border-box;
+    width: 100%; box-sizing: border-box; position: relative;   /* контекст для оверлея пикера .pfl-panel */
     display: flex; flex-direction: column; gap: 16px;
     font-family: 'Manrope', 'Inter', sans-serif;
 }
@@ -2344,14 +2344,18 @@ body.dark-mode .pfl-cfg-item.primary.done b, body.dark-mode .pfl-cfg-item.primar
    декоративный glow клипуется своим слоем .pfp-fx.
    ============================================================ */
 .pfp-panel {
-    position: relative; width: 100%;
-    display: flex; align-items: center; flex-wrap: wrap; gap: 14px 26px;
+    position: relative; width: 100%; box-sizing: border-box;      /* иначе width:100%+padding шире ячейки → правый край за краем */
+    container-type: inline-size; container-name: pfpanel;          /* адаптив по ширине САМОГО блока (квадрат/прямоугольник) */
+    display: flex; align-items: center; align-content: center; flex-wrap: wrap; gap: 14px 26px;
     padding: 18px 22px; border-radius: 22px;
     background: linear-gradient(120deg, #0c1219 0%, #182231 55%, #131e2b 100%);
     box-shadow: 0 20px 44px rgba(24, 38, 60, 0.16); border: 1px solid rgba(255, 255, 255, 0.05);
 }
 /* «Панель управления» — корзина удаления в правом-верхнем углу; освобождаем ей место */
 .pfd-item[data-pfd="panel"] .pfp-panel { padding-right: 46px; }
+/* панель заполняет min-height блока (контент центрируется); при узкой ширине контент
+   переносится и блок РАСТЁТ под него — masonry меряет реальную высоту, наезда нет */
+.pfd-item[data-pfd="panel"] .pfd-body > .pfp-panel { flex: 1 1 auto; }
 .pfp-fx { position: absolute; inset: 0; z-index: 0; overflow: hidden; border-radius: inherit; pointer-events: none; }
 .pfp-fx i { position: absolute; display: block; }
 .pfp-fx .g1 { width: 380px; height: 260px; top: -150px; right: 14%; background: radial-gradient(closest-side, rgba(52, 211, 153, 0.22), transparent 70%); filter: blur(6px); }
@@ -2398,18 +2402,36 @@ body.dark-mode .pfl-cfg-item.primary.done b, body.dark-mode .pfl-cfg-item.primar
 /* иконка раскладки внутри панели — тоже translucent-light на тёмном */
 .pfp-cfg .pfl-cfg-btn { width: 38px; height: 38px; background: rgba(255, 255, 255, 0.07); border-color: rgba(255, 255, 255, 0.14); color: #cdd7e6; }
 .pfp-cfg:hover .pfl-cfg-btn, .pfp-cfg .pfl-cfg-btn:hover { background: rgba(255, 255, 255, 0.13); border-color: rgba(255, 255, 255, 0.24); color: #fff; }
-@media (max-width: 1180px) { .pfp-kpis { margin-left: 0; } }
+/* Адаптив по ширине БЛОКА: сузили панель / сделали квадратом → контент перестраивается,
+   ничего не вылезает за край (container queries, не оконные media). */
+@container pfpanel (max-width: 760px) {
+    .pfp-kpis { margin-left: 0; }
+    .pfp-id, .pfp-kpis, .pfp-actions { flex: 1 1 auto; }
+}
+@container pfpanel (max-width: 500px) {
+    .pfp-id, .pfp-kpis, .pfp-actions { flex-basis: 100%; }
+    .pfp-kpis { flex-wrap: wrap; gap: 10px 18px; }
+    .pfp-div { display: none; }
+    .pfp-actions { gap: 7px; }
+    .pfp-btn span, .pfp-actions .d3-quick.pf-impbtn span { display: none; }   /* очень узко → только иконки */
+    .pfp-btn { padding: 0 11px; }
+    .pfp-actions .d3-quick.pf-impbtn { padding: 0 10px; }
+}
 
 /* сама карточка: докнутый сверху диалог с внутренним скроллом (шапка всегда видна).
    Высоту держим умеренной (не во весь экран), чтобы под карточкой была видна сетка —
    её блоки можно перетаскивать/менять, не закрывая карточку. */
+/* Карточка-пикер раскрывается ОВЕРЛЕЕМ поверх контента (не сдвигает сетку вниз):
+   абсолютно у верхней грани #pfWrap, съезжает вниз. .pf-wrap — контекст позиционирования. */
 .pfl-panel {
-    position: sticky; top: 10px; z-index: 60;
-    display: flex; flex-direction: column; max-height: 64vh;
-    margin-bottom: 16px; border-radius: 18px; overflow: hidden;
+    position: absolute; top: 0; left: 0; right: 0; z-index: 60;
+    display: flex; flex-direction: column; max-height: min(72vh, 720px);
+    border-radius: 18px; overflow: hidden;
     background: #fff; border: 1px solid #e2e8f0;
-    box-shadow: 0 24px 60px -22px rgba(15, 23, 42, 0.4), 0 3px 10px rgba(15, 23, 42, 0.06);
+    box-shadow: 0 30px 70px -20px rgba(15, 23, 42, 0.5), 0 6px 18px rgba(15, 23, 42, 0.1);
+    animation: pflDrop 0.18s ease-out;
 }
+@keyframes pflDrop { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 .pfl-head {
     flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px;
     padding: 15px 18px; border-bottom: 1px solid #eef2f7; background: #fbfcfe;
@@ -2639,20 +2661,24 @@ body.dark-mode .pfal-empty { color: #8fa2b8; }
 .pfl-fam-h b { display: block; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #0f172a; }
 .pfl-fam-h span { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #64748b; }
 .pfl-fam-list { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: thin; display: flex; flex-direction: column; gap: 12px; padding: 0 14px 16px; }
-.pfl-choice { display: flex; gap: 14px; align-items: stretch; border: 1px solid #e5eaf2; border-radius: 14px; background: #fff; padding: 12px; cursor: pointer; transition: border-color 0.12s, box-shadow 0.12s, background 0.12s; }
-.pfl-choice:hover { border-color: #cdd8e8; box-shadow: 0 6px 18px -10px rgba(15, 23, 42, 0.35); }
-.pfl-choice.selected { border-color: #4f46e5; box-shadow: 0 0 0 1px #4f46e5, 0 12px 28px -16px rgba(79, 70, 229, 0.55); }
-.pfl-choice.added { background: #f7fbf8; border-color: #cdead8; cursor: default; }
-/* превью показываем ЦЕЛИКОМ — крупный бокс, виджет вписан по высоте (zoom), без обрезки */
-.pfl-choice-pv { flex: 1 1 0; min-width: 0; height: 196px; border-radius: 10px; overflow: hidden; background: #f6f8fb; position: relative; }
+/* превью ЦЕЛИКОМ, БЕЗ большой рамки/бейджа — единственная рамка = само окно превью;
+   выбор = тонкое кольцо + галочка в углу, подпись обычным текстом (меньше визуального шума) */
+.pfl-choice { display: flex; flex-direction: column; gap: 8px; cursor: pointer; }
+.pfl-choice.added { cursor: default; }
+.pfl-choice-pv { position: relative; width: 100%; height: 200px; border-radius: 12px; overflow: hidden; background: #f6f8fb; border: 1px solid #e7ecf3; transition: border-color 0.12s, box-shadow 0.12s; }
+.pfl-choice:hover .pfl-choice-pv { border-color: #cdd8e8; }
+.pfl-choice.selected .pfl-choice-pv { border-color: #4f46e5; box-shadow: 0 0 0 1px #4f46e5; }
+.pfl-choice.added .pfl-choice-pv { opacity: 0.55; }
 .pfl-choice-pv .pfd-pick-stage { padding: 10px; overflow: hidden; }
 .pfl-choice-pv .pfd-pick-stage > * { zoom: 0.6; }
-.pfl-choice-side { flex: 0 0 150px; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
-/* значок состояния карточки (Выбрать / Выбрано / Добавлено) вместо кнопки у каждого дизайна */
-.pfl-choice-badge { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700; color: #64748b; padding: 6px 12px; border-radius: 99px; border: 1px solid #e2e8f0; background: #f8fafc; }
-.pfl-choice-badge svg { width: 14px; height: 14px; }
-.pfl-choice.selected .pfl-choice-badge { color: #4f46e5; border-color: #c7d2fe; background: #eef2ff; }
-.pfl-choice-badge.is-added { color: #12a35c; border-color: #bbecd0; background: #eaf7ef; }
+.pfl-choice-pv .pfd-pick-tag { display: none; }   /* в стопке дизайнов метка Live/Демо избыточна — убираем шум */
+.pfl-choice-tick { position: absolute; top: 8px; left: 8px; z-index: 3; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #4f46e5; color: #fff; box-shadow: 0 2px 6px rgba(79, 70, 229, 0.45); }
+.pfl-choice-tick.is-added { background: #12a35c; box-shadow: 0 2px 6px rgba(18, 163, 92, 0.4); }
+.pfl-choice-tick svg { width: 13px; height: 13px; }
+.pfl-choice-cap { display: flex; flex-direction: column; gap: 1px; padding: 0 2px; }
+.pfl-choice-cap b { font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 800; color: #0f172a; }
+.pfl-choice.selected .pfl-choice-cap b { color: #4338ca; }
+.pfl-choice-cap span { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #64748b; }
 .pfl-pv-add.is-added { background: #eaf7ef; color: #12a35c; box-shadow: none; cursor: default; }
 .pfl-choice-meta b { display: block; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 800; color: #0f172a; }
 .pfl-choice-meta span { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #64748b; line-height: 1.35; }
@@ -2669,18 +2695,12 @@ body.dark-mode .pfal-empty { color: #8fa2b8; }
 .pfl-choice-add.is-added { background: #eaf7ef; color: #12a35c; box-shadow: none; cursor: default; }
 body.dark-mode .pfl-fam-h b { color: #eaf1fb; }
 body.dark-mode .pfl-fam-h span { color: #9fb1c6; }
-body.dark-mode .pfl-choice { background: #131f36; border-color: #26324c; }
-body.dark-mode .pfl-choice:hover { border-color: #3a4c6d; }
-body.dark-mode .pfl-choice.added { background: rgba(18, 163, 92, 0.08); border-color: rgba(52, 211, 153, 0.3); }
-body.dark-mode .pfl-choice-pv { background: #0f1a2e; }
-body.dark-mode .pfl-choice-meta b { color: #eaf1fb; }
-body.dark-mode .pfl-choice-meta span { color: #9fb1c6; }
-body.dark-mode .pfl-choice-add { background: linear-gradient(135deg, #3a4664, #232d40); }
-body.dark-mode .pfl-choice-add.is-added { background: rgba(18, 163, 92, 0.16); color: #6ee7a8; }
-body.dark-mode .pfl-choice.selected { border-color: #6366f1; box-shadow: 0 0 0 1px #6366f1, 0 12px 28px -16px rgba(99, 102, 241, 0.6); }
-body.dark-mode .pfl-choice-badge { color: #9fb1c6; border-color: #2c3a56; background: rgba(255, 255, 255, 0.03); }
-body.dark-mode .pfl-choice.selected .pfl-choice-badge { color: #c7d2fe; border-color: #4451a0; background: rgba(99, 102, 241, 0.16); }
-body.dark-mode .pfl-choice-badge.is-added { color: #6ee7a8; border-color: rgba(52, 211, 153, 0.3); background: rgba(18, 163, 92, 0.16); }
+body.dark-mode .pfl-choice-pv { background: #0f1a2e; border-color: #26324c; }
+body.dark-mode .pfl-choice:hover .pfl-choice-pv { border-color: #3a4c6d; }
+body.dark-mode .pfl-choice.selected .pfl-choice-pv { border-color: #6366f1; box-shadow: 0 0 0 1px #6366f1; }
+body.dark-mode .pfl-choice-cap b { color: #eaf1fb; }
+body.dark-mode .pfl-choice.selected .pfl-choice-cap b { color: #c7d2fe; }
+body.dark-mode .pfl-choice-cap span { color: #9fb1c6; }
 body.dark-mode .pfl-pv-add.is-added { background: rgba(18, 163, 92, 0.16); color: #6ee7a8; }
 
 /* --- «Карта рынка»: свой treemap (живые плитки, не декоративный фон Главной) --- */
