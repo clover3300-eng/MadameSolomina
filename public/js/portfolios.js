@@ -1188,12 +1188,13 @@
         // глушим — innerHTML-своп сбросил бы перетаскивание/ресайз на полпути.
         // Собственные перерисовки конструктора идут через pfdRerender().
         if (dashEdit && !pfdWantRender) return;
-        // курсор в «Заметках» — innerHTML-своп унёс бы фокус и несохранённый хвост
-        // текста; котировки подождут до blur (автосейв заметки идёт с дебаунсом).
-        // Проверяем activeElement, а НЕ :focus — псевдокласс не матчится, когда окно
-        // потеряло фокус ОС, а курсор в поле остаётся (иначе фон срывал бы ввод).
+        // курсор в «Заметках» — ФОНОВЫЙ innerHTML-своп (котировки) унёс бы фокус и
+        // несохранённый хвост текста; такие рендеры откладываем до blur (автосейв
+        // заметки идёт с дебаунсом). Явные рендеры конструктора (pfdWantRender —
+        // добавление/удаление заметки) пропускаем: они сами флашат текст. Проверяем
+        // activeElement, а НЕ :focus — псевдокласс не матчится без фокуса окна ОС.
         var ae = document.activeElement;
-        if (ae && ae.classList && ae.classList.contains('pfnt-area') && host.contains(ae)) return;
+        if (!pfdWantRender && ae && ae.classList && ae.classList.contains('pfnt-area') && host.contains(ae)) return;
         pfdWantRender = false;
         // favHtml() синхронно дёргает stkEnsureLoaded(): если таблица акций уже
         // загружена, та сразу вызывает onStkCompaniesLoaded()→renderPortfolios(),
@@ -1667,18 +1668,25 @@
     function loadDashCfg() {
         try {
             var c = JSON.parse(localStorage.getItem(DASH_KEY) || 'null') || {};
+            var notes = Array.isArray(c.notes) ? c.notes.filter(function (n) { return n && n.id; }).map(function (n) {
+                return { id: String(n.id), text: typeof n.text === 'string' ? n.text : '', color: n.color || 'slate' };
+            }) : [];
+            // миграция старого одиночного cfg.note (строка) → первая заметка нового формата
+            if (!notes.length && typeof c.note === 'string' && c.note.trim()) notes = [{ id: 'nmig', text: c.note, color: 'slate' }];
             return { on: !!c.on, order: Array.isArray(c.order) ? c.order : [], span: c.span || {}, h: c.h || {},
-                hidden: c.hidden || {}, note: typeof c.note === 'string' ? c.note : '' };
-        } catch (e) { return { on: false, order: [], span: {}, h: {}, hidden: {}, note: '' }; }
+                hidden: c.hidden || {}, notes: notes };
+        } catch (e) { return { on: false, order: [], span: {}, h: {}, hidden: {}, notes: [] }; }
     }
+    var PFD_NOTE_COLORS = ['slate', 'blue', 'green', 'amber', 'violet', 'rose'];
     function saveDashCfg() {
         try {
             // чистим ключи удалённых портфелей — конфиг не копит мусор (и не тащит
             // его в облако через cloud-sync). Скрытые портфели остаются в store.items,
             // их раскладка переживает «скрыть/показать».
             var known = { cal: 1, rates: 1, trades: 1, fav: 1, sum: 1,
-                'kpi:cap': 1, 'kpi:day': 1, 'kpi:next': 1, cap: 1, heat: 1, news: 1, note: 1 };
+                'kpi:cap': 1, 'kpi:day': 1, 'kpi:next': 1, cap: 1, heat: 1, news: 1 };
             store.items.forEach(function (p) { known['pf:' + p.id] = 1; });
+            (dashCfg.notes || []).forEach(function (n) { known['note:' + n.id] = 1; });
             dashCfg.order = (dashCfg.order || []).filter(function (id) { return known[id]; });
             [dashCfg.span, dashCfg.h, dashCfg.hidden].forEach(function (m) {
                 Object.keys(m || {}).forEach(function (id) { if (!known[id]) delete m[id]; });
@@ -1800,7 +1808,10 @@
         blocks.push({ id: 'cap', name: 'График капитала', htmlFn: pfdCapChartHtml, span: defSpan, defHidden: true });
         blocks.push({ id: 'heat', name: 'Карта рынка', htmlFn: pfdHeatHtml, span: defSpan, defHidden: true });
         blocks.push({ id: 'news', name: 'Новости по позициям', htmlFn: pfdNewsHtml, span: defSpan, defHidden: true });
-        blocks.push({ id: 'note', name: 'Заметки', htmlFn: pfdNoteHtml, span: 4, defHidden: true });
+        // каждая заметка — свой блок note:<id> (мультизаметки, «+» плодит новые)
+        (dashCfg.notes || []).forEach(function (nt) {
+            blocks.push({ id: 'note:' + nt.id, name: 'Заметка', htmlFn: function () { return pfdNoteHtml(nt); }, span: 4, isNote: true });
+        });
         if (!noBonds) blocks.push({ id: 'rates', name: 'Ставки', htmlFn: ratesHtml, span: 12 });
         var tr = tradesHtml();
         if (tr) blocks.push({ id: 'trades', name: 'История сделок', htmlFn: function () { return tr; }, span: 12 });
@@ -1833,11 +1844,14 @@
             var span = clamp(+(dashCfg.span[b.id]) || b.span, 3, 12);
             var h = +(dashCfg.h[b.id]) || 0;
             var style = 'grid-column: span ' + span + ';' + (h ? 'height:' + clamp(h, 240, 1400) + 'px;' : '');
+            // заметку крестик УДАЛЯЕТ (это контент, не блок-полка); Cmd+Z вернёт
+            var xCall = b.isNote ? 'pfdRemoveNote(\'' + jsArg(b.id) + '\')' : 'pfdHideBlock(\'' + jsArg(b.id) + '\')';
+            var xTitle = b.isNote ? 'Удалить заметку (Cmd/Ctrl+Z вернёт)' : 'Убрать блок с дашборда (вернуть — с полки «Добавить блок»)';
             return '<div class="pfd-item' + (h ? ' pfd-hset' : '') + '" data-pfd="' + esc(b.id) + '" style="' + style + '">' +
                 (dashEdit
                     ? '<div class="pfd-chrome">' +
                         '<span class="pfd-name">' + PFD_GRIP_SVG + '<span>' + esc(b.name || '') + '</span></span>' +
-                        '<button class="pfd-hide" title="Убрать блок с дашборда (вернуть — с полки «Добавить блок»)" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + PFD_X_SVG + '</button>' +
+                        '<button class="pfd-hide" title="' + xTitle + '" onclick="' + xCall + '">' + PFD_X_SVG + '</button>' +
                         '<span class="pfd-size"></span>' +
                         '<span class="pfd-rs" title="Потяните: ширина — колонками, высота — свободно. Двойной клик — высота в авто, ещё раз — ширина по умолчанию"></span>' +
                       '</div>'
@@ -1846,13 +1860,14 @@
             '</div>';
         }).join('');
 
-        // полка «Добавить блок»: всё скрытое (и опт-ин блоки, и убранные крестиком)
+        // полка «Добавить блок»: скрытые опт-ин блоки + всегда «Заметка» (плодит новые)
         var shelf = '';
-        if (dashEdit && hiddenB.length) {
-            shelf = '<div class="pfd-shelf"><span class="pfd-shelf-l">Добавить блок:</span>' +
-                hiddenB.map(function (b) {
-                    return '<button class="pfd-shelf-chip" onclick="pfdShowBlock(\'' + jsArg(b.id) + '\')">' + PFD_PLUS_SVG + esc(b.name || b.id) + '</button>';
-                }).join('') + '</div>';
+        if (dashEdit) {
+            var chips = hiddenB.map(function (b) {
+                return '<button class="pfd-shelf-chip" onclick="pfdShowBlock(\'' + jsArg(b.id) + '\')">' + PFD_PLUS_SVG + esc(b.name || b.id) + '</button>';
+            });
+            chips.push('<button class="pfd-shelf-chip" onclick="pfdAddNote()">' + PFD_PLUS_SVG + 'Заметка</button>');
+            shelf = '<div class="pfd-shelf"><span class="pfd-shelf-l">Добавить блок:</span>' + chips.join('') + '</div>';
         }
         var bar = dashEdit
             ? '<div class="pfd-bar">' +
@@ -1902,7 +1917,7 @@
     } catch (e) {}
     window.pfDashReset = function () {
         // заметки — пользовательский ТЕКСТ, не раскладка: сброс их не стирает
-        dashCfg = { on: false, order: [], span: {}, h: {}, hidden: {}, note: dashCfg.note || '' };
+        dashCfg = { on: false, order: [], span: {}, h: {}, hidden: {}, notes: dashCfg.notes || [] };
         dashEdit = false;
         pfdUndoStack.length = 0;
         saveDashCfg();
@@ -1927,7 +1942,7 @@
     // ---- undo: каждый шаг правки кладёт снимок раскладки, Cmd/Ctrl+Z возвращает ----
     // Стек живёт в памяти на сессию правки (вход в режим начинает новую).
     var pfdUndoStack = [];
-    function pfdCfgSnap() { return JSON.stringify({ order: dashCfg.order, span: dashCfg.span, h: dashCfg.h, hidden: dashCfg.hidden }); }
+    function pfdCfgSnap() { return JSON.stringify({ order: dashCfg.order, span: dashCfg.span, h: dashCfg.h, hidden: dashCfg.hidden, notes: dashCfg.notes }); }
     function pfdPushUndo() {
         pfdUndoStack.push(pfdCfgSnap());
         if (pfdUndoStack.length > 40) pfdUndoStack.shift();
@@ -1940,10 +1955,60 @@
         try {
             var o = JSON.parse(snap);
             dashCfg.order = o.order || []; dashCfg.span = o.span || {};
-            dashCfg.h = o.h || {}; dashCfg.hidden = o.hidden || {};
+            dashCfg.h = o.h || {}; dashCfg.hidden = o.hidden || {}; dashCfg.notes = o.notes || [];
         } catch (e) { return; }
         saveDashCfg();
         pfdRerender();
+    };
+    // ---- мультизаметки: добавить / удалить / перекрасить ----
+    // Перед любым ре-рендером сбрасываем несохранённый (в пределах дебаунса) текст
+    // всех заметок из DOM в модель — иначе пересборка затёрла бы последние символы.
+    function pfdFlushNotes() {
+        clearTimeout(pfdNoteT);
+        document.querySelectorAll('#pfWrap .pf-noteblk').forEach(function (card) {
+            var id = card.getAttribute('data-nid'), area = card.querySelector('.pfnt-area');
+            if (!id || !area) return;
+            var nt = (dashCfg.notes || []).filter(function (n) { return n.id === id; })[0];
+            if (nt) nt.text = String(area.value || '').slice(0, 20000);
+        });
+    }
+    window.pfdAddNote = function () {
+        pfdFlushNotes();
+        pfdPushUndo();
+        var id = genId('n');
+        dashCfg.notes = (dashCfg.notes || []).concat([{ id: id, text: '', color: 'slate' }]);
+        dashCfg.hidden['note:' + id] = 0;
+        // новую заметку — сразу после последней имеющейся заметки в порядке (или в конец)
+        var ord = (dashCfg.order || []).slice();
+        var lastNoteIdx = -1;
+        for (var i = 0; i < ord.length; i++) if (ord[i].indexOf('note:') === 0) lastNoteIdx = i;
+        if (lastNoteIdx >= 0) ord.splice(lastNoteIdx + 1, 0, 'note:' + id); else ord.push('note:' + id);
+        dashCfg.order = ord;
+        saveDashCfg();
+        pfdRerender();
+    };
+    window.pfdRemoveNote = function (blockId) {
+        var id = String(blockId).replace(/^note:/, '');
+        pfdFlushNotes();
+        pfdPushUndo();
+        dashCfg.notes = (dashCfg.notes || []).filter(function (n) { return n.id !== id; });
+        saveDashCfg();
+        pfdRerender();
+    };
+    window.pfdSetNoteColor = function (id, color, ev) {
+        if (ev) ev.stopPropagation();
+        var nt = (dashCfg.notes || []).filter(function (n) { return n.id === id; })[0];
+        if (!nt || nt.color === color) return;
+        pfdPushUndo();
+        nt.color = color;
+        saveDashCfg();
+        // перекраска без ре-рендера — не теряем фокус/каретку в textarea
+        var card = document.querySelector('.pf-noteblk[data-nid="' + id + '"]');
+        if (card) {
+            PFD_NOTE_COLORS.forEach(function (c) { card.classList.remove('pfnt-c-' + c); });
+            card.classList.add('pfnt-c-' + color);
+            card.querySelectorAll('.pfnt-sw').forEach(function (s) { s.classList.toggle('on', s.getAttribute('data-c') === color); });
+        }
     };
     document.addEventListener('keydown', function (e) {
         if (!dashEdit || (!e.metaKey && !e.ctrlKey) || e.shiftKey || String(e.key).toLowerCase() !== 'z') return;
@@ -2075,20 +2140,97 @@
     // 60-секундным циклом Главной (он ищет .gx-heat на активной вкладке).
     function pfdHeatHtml() {
         return '<div class="dash2-card pf-card2 pf-heatblk">' +
-            pfCardHead('', 'Карта рынка', 'индекс Мосбиржи · изменение за день',
-                '<button class="d3-quick ghost pfhm-go" onclick="switchTab(\'market\')">Открыть рынок</button>') +
-            '<div class="pfhm-box gx-heat"></div></div>';
+            pfCardHead('', 'Карта рынка', 'индекс Мосбиржи · размер — вес, цвет — за день',
+                '<button class="d3-quick ghost pfhm-go" onclick="switchTab(\'market\')">Открыть рынок' + GO_ARROW_SVG + '</button>') +
+            '<div class="pfhm-box"><div class="pfhm-state">Загружаем карту рынка…</div></div>' +
+        '</div>';
+    }
+    // ---- собственный squarified-treemap (свои плитки, а не декоративный фон Главной):
+    // живые цвета по дневному %, тикер+% на плитке, hover-подсветка. Данные — те же
+    // два эндпоинта MOEX ISS (веса индекса + дневное изменение), кэш на 60с.
+    var PFHM_ISS = 'https://iss.moex.com/iss/';
+    var pfdHeatW = null;    // [{tk, value}] веса по убыванию
+    var pfdHeatC = null;    // {TICKER: изм.% за день}
+    var pfdHeatTs = 0, pfdHeatLoading = false;
+    function pfhmJget(u) { return fetch(u, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw 0; return r.json(); }); }
+    function pfdHeatLoad(cb) {
+        if (pfdHeatLoading) return;
+        if (pfdHeatW && pfdHeatC && Date.now() - pfdHeatTs < 60000) { cb && cb(); return; }
+        pfdHeatLoading = true;
+        var aU = PFHM_ISS + 'statistics/engines/stock/markets/index/analytics/IMOEX.json?iss.meta=off&iss.only=analytics&analytics.columns=ticker,weight&limit=100';
+        var mU = PFHM_ISS + 'engines/stock/markets/shares/boards/TQBR/securities.json?iss.meta=off&iss.only=marketdata&marketdata.columns=SECID,LASTTOPREVPRICE';
+        Promise.all([pfdHeatW ? Promise.resolve(null) : pfhmJget(aU), pfhmJget(mU)])
+            .then(function (res) {
+                if (res[0]) { var a = res[0].analytics, ti = a.columns.indexOf('ticker'), wi = a.columns.indexOf('weight');
+                    pfdHeatW = a.data.map(function (r) { return { tk: r[ti], value: +r[wi] || 0 }; }).filter(function (x) { return x.value > 0; }).sort(function (x, y) { return y.value - x.value; }); }
+                var md = res[1].marketdata, si = md.columns.indexOf('SECID'), ci = md.columns.indexOf('LASTTOPREVPRICE');
+                var m = {}; md.data.forEach(function (r) { m[r[si]] = r[ci]; }); pfdHeatC = m;
+                pfdHeatTs = Date.now(); pfdHeatLoading = false; cb && cb();
+            })
+            .catch(function () { pfdHeatLoading = false; cb && cb(true); });
+    }
+    // диверг-палитра OKLCH как у большой карты: рост — мята 158, падение — клэй 44
+    function pfdTileColor(p) {
+        if (p == null || isNaN(p)) p = 0;
+        var dark = document.body.classList.contains('dark-mode'), cap = 3;
+        var a = clamp(p, -cap, cap) / cap, m = Math.abs(a), hue = a >= 0 ? 158 : 44;
+        var nL = dark ? 0.30 : 0.955, sL = dark ? 0.56 : 0.72, nC = dark ? 0.016 : 0.012, sC = dark ? 0.135 : 0.115;
+        var t = Math.pow(m < 0.04 ? 0 : (m - 0.04) / 0.96, 0.8);
+        return 'oklch(' + (nL + (sL - nL) * t).toFixed(3) + ' ' + (nC + (sC - nC) * t).toFixed(3) + ' ' + hue + ')';
+    }
+    function pfhmWorst(row, side) { var mx = -Infinity, mn = Infinity, s = 0, i; for (i = 0; i < row.length; i++) { var ar = row[i].area; s += ar; if (ar > mx) mx = ar; if (ar < mn) mn = ar; } if (s === 0) return Infinity; var s2 = s * s, d2 = side * side; return Math.max(d2 * mx / s2, s2 / (d2 * mn)); }
+    function pfhmRow(row, free, out) { var ra = 0, i, seg; for (i = 0; i < row.length; i++) ra += row[i].area; if (free.w <= free.h) { var rh = ra / free.w, x = free.x; for (i = 0; i < row.length; i++) { seg = row[i].area / rh; out.push({ tk: row[i].tk, x: x, y: free.y, w: seg, h: rh }); x += seg; } return { x: free.x, y: free.y + rh, w: free.w, h: free.h - rh }; } var rw = ra / free.h, y = free.y; for (i = 0; i < row.length; i++) { seg = row[i].area / rw; out.push({ tk: row[i].tk, x: free.x, y: y, w: rw, h: seg }); y += seg; } return { x: free.x + rw, y: free.y, w: free.w - rw, h: free.h }; }
+    function pfhmSquarify(items, W, H) {
+        var out = [], total = 0, i; for (i = 0; i < items.length; i++) total += items[i].value; if (total <= 0 || W <= 0 || H <= 0) return out;
+        var scale = W * H / total, scaled = items.map(function (n) { return { tk: n.tk, area: n.value * scale }; });
+        var free = { x: 0, y: 0, w: W, h: H }, row = [], idx = 0;
+        while (idx < scaled.length) { var side = Math.min(free.w, free.h), it = scaled[idx]; if (row.length === 0 || pfhmWorst(row.concat(it), side) <= pfhmWorst(row, side)) { row.push(it); idx++; } else { free = pfhmRow(row, free, out); row = []; } }
+        if (row.length) pfhmRow(row, free, out);
+        return out;
+    }
+    function pfdHeatRender() {
+        var box = document.querySelector('#pfWrap .pfhm-box'); if (!box) return;
+        if (!pfdHeatW || !pfdHeatC) {
+            pfdHeatLoad(function (err) { if (err) { var b = document.querySelector('#pfWrap .pfhm-box'); if (b) b.innerHTML = '<div class="pfhm-state">Биржа недоступна — попробуйте позже</div>'; } else pfdHeatRender(); });
+            return;
+        }
+        var W = box.clientWidth, H = box.clientHeight; if (W < 4 || H < 4) return;
+        var MAX = W * H > 180000 ? 40 : 26;
+        var tiles = pfhmSquarify(pfdHeatW.slice(0, MAX), W, H);
+        var html = '';
+        tiles.forEach(function (t) {
+            var chg = pfdHeatC[t.tk]; if (chg != null && isNaN(+chg)) chg = null; else if (chg != null) chg = +chg;
+            var x = t.x + 1.5, y = t.y + 1.5, w = Math.max(0, t.w - 3), h = Math.max(0, t.h - 3);
+            var big = w > 52 && h > 34, mid = w > 34 && h > 22;
+            var pctTxt = chg == null ? '' : (chg >= 0 ? '+' : '−') + Math.abs(chg).toFixed(1) + '%';
+            var label = big ? '<b>' + esc(t.tk) + '</b><i>' + pctTxt + '</i>' : (mid ? '<b>' + esc(t.tk) + '</b>' : '');
+            var tip = esc(t.tk) + (chg == null ? '' : ' · ' + pctTxt + ' за день');
+            html += '<button type="button" class="pfhm-tile" style="left:' + x.toFixed(1) + 'px;top:' + y.toFixed(1) + 'px;width:' + w.toFixed(1) + 'px;height:' + h.toFixed(1) + 'px;--tc:' + pfdTileColor(chg) + '" title="' + tip + '" onclick="pfOpenTicker(\'' + jsArg(t.tk) + '\')">' + label + '</button>';
+        });
+        box.innerHTML = html;
     }
     var pfdHeatT = null;
     function pfdHeatRepaintSoon() {
-        var box = document.querySelector('#pfWrap .pfhm-box');
-        if (!box || typeof window.hgHeatRepaint !== 'function') return;
-        var sz = box.clientWidth + 'x' + box.clientHeight;
-        if (box._pfhmSz === sz) return;   // размер не менялся — не дёргаем перерисовку
-        box._pfhmSz = sz;
+        var box = document.querySelector('#pfWrap .pfhm-box'); if (!box) return;
         clearTimeout(pfdHeatT);
-        pfdHeatT = setTimeout(function () { try { window.hgHeatRepaint(); } catch (e) {} }, 120);
+        pfdHeatT = setTimeout(pfdHeatRender, 90);
     }
+    // живое обновление карты: раз в 60с, только когда блок на экране и вкладка видна
+    setInterval(function () {
+        if (document.hidden) return;
+        var panel = document.getElementById('panel-portfolios');
+        if (!panel || !panel.classList.contains('active')) return;
+        if (!document.querySelector('#pfWrap .pfhm-box')) return;
+        pfdHeatTs = 0;   // форсируем перезагрузку данных
+        pfdHeatLoad(function (err) { if (!err) pfdHeatRender(); });
+    }, 60000);
+    var GO_ARROW_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg>';
+    // смена темы (класс dark-mode на body) → перекрасить плитки карты под новую палитру
+    try {
+        new MutationObserver(function () {
+            if (document.querySelector('#pfWrap .pfhm-box')) pfdHeatRepaintSoon();
+        }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    } catch (e) {}
 
     // ---- «Новости по позициям»: свежая новость по каждой акции портфелей ----
     // Переиспользует пайплайн новостей «Избранного» (loadNewsForTicker + newsHtmlCache +
@@ -2140,19 +2282,28 @@
         setTimeout(pumpNewsQueue, newsActive ? 0 : 400);
     }
 
-    // ---- «Заметки»: текст пользователя, живёт в pf_dash_v1 (едет в облако) ----
-    function pfdNoteHtml() {
-        return '<div class="dash2-card pf-card2 pf-noteblk">' +
-            pfCardHead('', 'Заметки', 'цели, план ребаланса — сохраняются сами') +
-            '<textarea class="pfnt-area" placeholder="Цели, план ребаланса, идеи…" oninput="pfdNoteInput(this)">' + esc(dashCfg.note || '') + '</textarea>' +
+    // ---- «Заметки»: мультиблок, каждая заметка со своим цветом; текст в pf_dash_v1 ----
+    function pfdNoteHtml(nt) {
+        var color = PFD_NOTE_COLORS.indexOf(nt.color) >= 0 ? nt.color : 'slate';
+        var swatches = PFD_NOTE_COLORS.map(function (c) {
+            return '<button type="button" class="pfnt-sw' + (c === color ? ' on' : '') + '" data-c="' + c + '" style="--sw:var(--nt-' + c + ')" title="Цвет заметки" onclick="pfdSetNoteColor(\'' + jsArg(nt.id) + '\',\'' + c + '\',event)"></button>';
+        }).join('');
+        var tools = '<div class="pfnt-tools">' +
+                '<div class="pfnt-swatches">' + swatches + '</div>' +
+                '<button type="button" class="pfnt-add" title="Добавить ещё одну заметку" onclick="pfdAddNote()">' + PFD_PLUS_SVG + '</button>' +
+            '</div>';
+        return '<div class="dash2-card pf-card2 pf-noteblk pfnt-c-' + color + '" data-nid="' + esc(nt.id) + '">' +
+            pfCardHead('', 'Заметка', '', tools) +
+            '<textarea class="pfnt-area" maxlength="20000" placeholder="Цели, план ребаланса, идеи…" oninput="pfdNoteInput(\'' + jsArg(nt.id) + '\',this)">' + esc(nt.text || '') + '</textarea>' +
         '</div>';
     }
     var pfdNoteT = null;
-    window.pfdNoteInput = function (el) {
+    window.pfdNoteInput = function (id, el) {
         clearTimeout(pfdNoteT);
+        var val = String(el.value || '').slice(0, 20000);
         pfdNoteT = setTimeout(function () {
-            dashCfg.note = String(el.value || '').slice(0, 20000);
-            saveDashCfg();
+            var nt = (dashCfg.notes || []).filter(function (n) { return n.id === id; })[0];
+            if (nt) { nt.text = val; saveDashCfg(); }
         }, 400);
     };
 

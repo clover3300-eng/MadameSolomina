@@ -2087,22 +2087,23 @@ body.dark-mode .pfpc-kind.kind-red { color: #93c5fd; background: rgba(61,111,209
 .pfd-item.pfd-hset .pfd-favwrap > * { height: 100%; min-height: 0; flex: 1; }
 
 /* ---- режим правки ---- */
-/* спокойная серая рамка вместо синего пунктира: границы блоков видны,
-   но не кричат; синий остаётся только у активных состояний (слот, ховер ручки) */
+/* без пунктирной рамки: блоки читаются как «плитки» через мягкий подъём и
+   тень при наведении. Синий — только у активных состояний (слот, ресайз) */
 .pfd-grid.editing { user-select: none; }
 .pfd-grid.editing .pfd-item {
-    outline: 1.5px dashed rgba(148, 163, 184, 0.55);
-    outline-offset: 3px;
-    border-radius: 20px;
+    border-radius: 24px;
     cursor: grab;
     touch-action: none;
+    transition: box-shadow 0.16s ease, transform 0.16s ease;
 }
 .pfd-grid.editing .pfd-item:hover {
-    outline-color: rgba(100, 116, 139, 0.8);
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.10);
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.13);
+    transform: translateY(-2px);
 }
 .pfd-grid.editing .pfd-item:active { cursor: grabbing; }
-.pfd-grid.editing .pfd-item.pfd-resizing { outline-color: rgba(59, 130, 246, 0.7); }
+.pfd-grid.editing .pfd-item.pfd-resizing {
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.55), 0 16px 40px rgba(15, 23, 42, 0.14);
+}
 /* содержимое блока в режиме правки не перехватывает мышь — тянется весь блок */
 .pfd-grid.editing .pfd-body { pointer-events: none; user-select: none; }
 body.pfd-dragging-now { cursor: grabbing; }
@@ -2238,8 +2239,17 @@ body.pfd-dragging-now * { cursor: grabbing !important; }
 .pf-kpi-s .pos { color: #119d5c; }
 .pf-kpi-s .neg { color: #c2410c; }
 
+/* Высоту блока держат ВНУТРЕННИЕ min-height (плот/список/поле), а не height:100%
+   от неопределённой высоты родителя — иначе фикс-высотный ребёнок (карта 260px)
+   вываливался за схлопнутую карточку, offsetHeight занижался и masonry клал
+   следующий блок ВНАХЛЁСТ. height:100% нужен только в hset (ручная высота). */
+.pf-capblk, .pf-heatblk, .pf-newsblk, .pf-noteblk { display: flex; flex-direction: column; box-sizing: border-box; }
+.pfd-item.pfd-hset .pf-capblk,
+.pfd-item.pfd-hset .pf-heatblk,
+.pfd-item.pfd-hset .pf-newsblk,
+.pfd-item.pfd-hset .pf-noteblk { height: 100%; }
+
 /* --- «График капитала» --- */
-.pf-capblk { display: flex; flex-direction: column; height: 100%; box-sizing: border-box; }
 .pfcap-hr { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0; }
 .pfcap-hr b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: var(--fs-total, 16px); font-weight: 700; color: #0f172a; }
 .pfcap-hr span { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11.5px; font-weight: 600; }
@@ -2260,16 +2270,29 @@ body.pfd-dragging-now * { cursor: grabbing !important; }
 .pfcap-empty-t { font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 800; color: #334155; }
 .pfcap-empty-s { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: #8494a7; max-width: 340px; line-height: 1.45; }
 
-/* --- «Карта рынка»: контейнер тёмный, как фон Главной — плитки .hg-tile родные --- */
-.pf-heatblk { display: flex; flex-direction: column; height: 100%; box-sizing: border-box; }
+/* --- «Карта рынка»: свой treemap (живые плитки, не декоративный фон Главной) --- */
 .pfhm-box {
     position: relative; overflow: hidden; margin-top: 10px;
-    height: 250px; border-radius: 16px; background: #0b1220;
+    height: 260px; border-radius: 16px; background: #eef2f7;
 }
-.pfd-item.pfd-hset .pf-heatblk .pfhm-box { flex: 1; height: auto; min-height: 120px; }
+.pfd-item.pfd-hset .pf-heatblk .pfhm-box { flex: 1; height: auto; min-height: 130px; }
+.pfhm-state { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: #94a3b8; }
+.pfhm-tile {
+    position: absolute; border: 0; margin: 0; padding: 5px 7px; border-radius: 5px;
+    background: var(--tc, #e2e8f0); cursor: pointer; overflow: hidden;
+    display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end;
+    color: #0f172a; text-align: left;
+    transition: filter 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease;
+}
+.pfhm-tile b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11px; font-weight: 700; letter-spacing: 0.02em; line-height: 1.1; }
+.pfhm-tile i { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 9.5px; font-weight: 600; font-style: normal; opacity: 0.82; line-height: 1.2; }
+.pfhm-tile:hover { filter: brightness(1.04) saturate(1.1); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.65); transform: scale(1.02); z-index: 2; }
+.pfhm-go svg { width: 12px; height: 12px; margin-left: 4px; }
+body.dark-mode .pfhm-box { background: #0b1220; }
+body.dark-mode .pfhm-tile { color: #e7eef7; }
+body.dark-mode .pfhm-tile:hover { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.28); }
 
 /* --- «Новости по позициям» --- */
-.pf-newsblk { display: flex; flex-direction: column; height: 100%; box-sizing: border-box; }
 .pfnw-body { flex: 1; min-height: 0; margin-top: 4px; }
 .pfd-item.pfd-hset .pf-newsblk .pfnw-body { overflow-y: auto; scrollbar-width: thin; }
 .pfnw-row { display: flex; align-items: flex-start; gap: 10px; padding: 9px 2px; border-top: 1px solid #f1f5f9; }
@@ -2285,16 +2308,52 @@ body.pfd-dragging-now * { cursor: grabbing !important; }
 .pfnw-news { min-width: 0; flex: 1; }
 .pfnw-empty { padding: 22px 6px; font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 600; color: #8494a7; line-height: 1.5; }
 
-/* --- «Заметки» --- */
-.pf-noteblk { display: flex; flex-direction: column; height: 100%; box-sizing: border-box; }
-.pfnt-area {
-    flex: 1; min-height: 150px; margin-top: 10px; padding: 12px 14px;
-    border: 1px solid #e2e8f0; border-radius: 14px; resize: none;
-    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500; line-height: 1.55; color: #1e293b;
-    background: #f8fafc; outline: none; box-sizing: border-box;
-    transition: border-color 0.12s, background 0.12s;
+/* --- «Заметки»: мультиблок, у каждой свой цвет (--nt), «+» плодит новые --- */
+.pf-noteblk {
+    --nt-slate: #64748b; --nt-blue: #3b82f6; --nt-green: #10b981;
+    --nt-amber: #f59e0b; --nt-violet: #8b5cf6; --nt-rose: #f43f5e;
+    --nt: var(--nt-slate);
+    position: relative; overflow: hidden;
 }
-.pfnt-area:focus { border-color: #93c5fd; background: #fff; }
+/* тонкий цветной кант слева — «стикер» в тон выбранного цвета */
+.pf-noteblk::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--nt); opacity: 0.9; }
+.pfnt-c-slate { --nt: var(--nt-slate); } .pfnt-c-blue { --nt: var(--nt-blue); }
+.pfnt-c-green { --nt: var(--nt-green); } .pfnt-c-amber { --nt: var(--nt-amber); }
+.pfnt-c-violet { --nt: var(--nt-violet); } .pfnt-c-rose { --nt: var(--nt-rose); }
+/* заголовок-точка карточки в цвет заметки */
+.pf-noteblk .pf-ch-t::before {
+    content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 99px;
+    background: var(--nt); margin-right: 7px; vertical-align: middle;
+}
+.pfnt-tools { display: flex; align-items: center; gap: 10px; }
+.pfnt-swatches { display: inline-flex; gap: 5px; }
+.pfnt-sw {
+    width: 15px; height: 15px; border-radius: 99px; padding: 0; cursor: pointer;
+    background: var(--sw); border: 2px solid transparent; box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.08);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.pfnt-sw:hover { transform: scale(1.18); }
+.pfnt-sw.on { border-color: #fff; box-shadow: 0 0 0 2px var(--sw); }
+.pfnt-add {
+    width: 26px; height: 26px; flex-shrink: 0; border-radius: 9px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--nt); background: color-mix(in srgb, var(--nt) 12%, transparent); border: 0;
+    transition: background 0.12s ease, transform 0.12s ease;
+}
+.pfnt-add:hover { background: color-mix(in srgb, var(--nt) 22%, transparent); transform: rotate(90deg); }
+.pfnt-add svg { width: 14px; height: 14px; }
+.pfnt-area {
+    flex: 1; min-height: 148px; margin-top: 12px; padding: 13px 15px;
+    border: 1px solid #e6ebf2; border-left: 2px solid color-mix(in srgb, var(--nt) 45%, #e6ebf2);
+    border-radius: 12px; resize: none;
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500; line-height: 1.6; color: #1e293b;
+    background:
+        linear-gradient(color-mix(in srgb, var(--nt) 4%, #fff), color-mix(in srgb, var(--nt) 4%, #fff)),
+        repeating-linear-gradient(transparent, transparent 24px, rgba(148, 163, 184, 0.14) 24px, rgba(148, 163, 184, 0.14) 25px);
+    outline: none; box-sizing: border-box;
+    transition: border-color 0.14s ease, box-shadow 0.14s ease;
+}
+.pfnt-area:focus { border-color: var(--nt); box-shadow: 0 0 0 3px color-mix(in srgb, var(--nt) 16%, transparent); }
 .pfnt-area::placeholder { color: #a5b3c4; }
 
 /* кнопка «Конструктор» в шапке: точка-индикатор, когда раскладка своя */
@@ -2305,8 +2364,6 @@ body.pfd-dragging-now * { cursor: grabbing !important; }
     background: #3b82f6; box-shadow: 0 0 0 2.5px rgba(59, 130, 246, 0.2);
 }
 
-body.dark-mode .pfd-grid.editing .pfd-item { outline-color: rgba(148, 163, 184, 0.35); }
-body.dark-mode .pfd-grid.editing .pfd-item:hover { outline-color: rgba(148, 163, 184, 0.6); }
 /* уголок-ручка на тёмных карточках: серые штрихи светлой темы почти неразличимы */
 body.dark-mode .pfd-rs {
     background:
@@ -2344,6 +2401,15 @@ body.dark-mode .pfnw-row.link:hover .pff-news-t { color: #93c5fd; }
 body.dark-mode .pfnw-tk { color: #cbd5e1; background: #16213a; }
 body.dark-mode .pfnw-tk:hover { background: #1c2b52; color: #93c5fd; }
 body.dark-mode .pfnw-empty { color: #8fa2b8; }
-body.dark-mode .pfnt-area { color: #dbe6f2; background: #0d1526; border-color: #27324a; }
-body.dark-mode .pfnt-area:focus { border-color: #2f4a8a; background: #0f172a; }
+body.dark-mode .pfnt-area {
+    color: #dbe6f2; border-color: #27324a; border-left-color: color-mix(in srgb, var(--nt) 55%, #27324a);
+    background:
+        linear-gradient(color-mix(in srgb, var(--nt) 10%, #0d1526), color-mix(in srgb, var(--nt) 10%, #0d1526)),
+        repeating-linear-gradient(transparent, transparent 24px, rgba(148, 163, 184, 0.10) 24px, rgba(148, 163, 184, 0.10) 25px);
+}
+body.dark-mode .pfnt-area:focus { border-color: var(--nt); box-shadow: 0 0 0 3px color-mix(in srgb, var(--nt) 22%, transparent); }
 body.dark-mode .pfnt-area::placeholder { color: #5c6c82; }
+body.dark-mode .pfnt-sw { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3); }
+body.dark-mode .pfnt-sw.on { border-color: #0f172a; }
+body.dark-mode .pfnt-add { background: color-mix(in srgb, var(--nt) 22%, transparent); }
+body.dark-mode .pfhm-state { color: #64748b; }
