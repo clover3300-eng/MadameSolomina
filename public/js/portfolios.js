@@ -1506,9 +1506,6 @@
     // «Импорт» из неё убран — импортировать состав можно из настроек портфеля (⚙).
     // иконка конструктора: сетка 2×2 (LAYOUT_SVG занят пунктом «Вид»)
     var PFDGRID_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.6"/></svg>';
-    // рука-«грип» в верхнем-правом углу блока: за неё блок перетаскивается (при нажатии —
-    // анимация «зацепления», см. css .pfd-move)
-    var PFD_HAND_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L9 13"/></svg>';
     function topBarActionsHtml() {
         return '<button class="d3-quick" onclick="pfAddPortfolio()">' + PLUS_SVG + '<span>Добавить портфель</span></button>' +
             // «Видимость» показываем при 2+ портфелях, при наличии сделок ИЛИ когда включена
@@ -2058,30 +2055,33 @@
             var span = clamp(+(dashCfg.span[b.id]) || b.span, 3, 12);
             var h = +(dashCfg.h[b.id]) || 0;
             var style = 'grid-column: span ' + span + ';' + (h ? 'height:' + clamp(h, 240, 1400) + 'px;' : '');
-            // Кнопка «скрыть/удалить» (левее руки в правом-верхнем кластере, проявляется по hover):
+            // Кнопка «скрыть/удалить» блока:
             //  • заметка / портфель — СВОЯ кнопка уже есть в шапке карточки (pfnt-trash / глаз .pfc-act),
             //    в chrome не дублируем;
-            //  • ВИДЖЕТ (defHidden: KPI/график/карта/новости) — УДАЛИТЬ (корзина, как в заметках),
-            //    вернётся из «Конструктор → Добавить блок»;
-            //  • «Календарь выплат»/«Сводка»/«История сделок» — СКРЫТЬ (глаз-off, как в карточках
-            //    портфеля), вернуть — через меню «Видимость» в шапке;
+            //  • ВИДЖЕТ (defHidden: KPI/график/карта/новости) — УДАЛИТЬ (корзина .pfd-del биркой над
+            //    углом, по hover), вернётся из «Конструктор → Добавить блок»;
+            //  • «Календарь выплат»/«Сводка» — СКРЫТЬ глазом .pfc-act В ШАПКЕ карточки (.pfd-eye,
+            //    правый-верхний угол напротив заголовка, ТОЧНО как у портфеля, виден всегда), вернуть
+            //    — через меню «Видимость» в шапке;
+            //  • «История сделок» — своего on-card глаза НЕТ (правый угол шапки занят .pft-toggle);
+            //    скрыть/показать — из меню «Видимость»;
             //  • «Избранное»/«Ставки рынка» — без кнопки (их не скрываем).
             var hideBtn = '';
             if (b.isNote || b.id.indexOf('pf:') === 0) {
                 hideBtn = '';
             } else if (b.defHidden) {
-                hideBtn = '<button class="pfd-tool pfd-del" title="Удалить виджет (вернуть — «Добавить блок» в Конструкторе)" aria-label="Удалить виджет" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + NOTE_TRASH_SVG + '</button>';
-            } else if (b.id === 'cal' || b.id === 'sum' || b.id === 'trades') {
-                var hCall = b.id === 'trades' ? 'pfToggleTradesHidden(event)' : ('pfdHideBlock(\'' + jsArg(b.id) + '\')');
-                hideBtn = '<button class="pfd-tool pfd-hide" title="Скрыть блок (вернуть — «Видимость» в шапке)" aria-label="Скрыть блок" onclick="' + hCall + '">' + EYEOFF_SVG + '</button>';
+                hideBtn = '<button class="pfd-del" title="Удалить виджет (вернуть — «Добавить блок» в Конструкторе)" aria-label="Удалить виджет" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + NOTE_TRASH_SVG + '</button>';
+            } else if (b.id === 'cal' || b.id === 'sum') {
+                // глаз-скрытие — ТОЧНО как в карточке портфеля (.pfc-act), в правом-верхнем углу
+                // напротив заголовка, видимый постоянно (не в зазоре-бирке)
+                hideBtn = '<span class="pfd-eye"><button class="pfc-act" title="Скрыть блок (вернуть — «Видимость» в шапке)" aria-label="Скрыть блок" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + EYEOFF_SVG + '</button></span>';
             }
-            // «живой» chrome есть у КАЖДОГО блока сетки (не только в тулбоксе): рука-ручка в
-            // правом-верхнем углу для переноса (+ кнопка скрыть/удалить слева от неё) и три зоны
-            // ресайза — правая кромка (ширина), нижняя (высота), уголок (обе). Всё по hover (см. CSS).
+            // «живой» chrome у КАЖДОГО блока сетки: НЕВИДИМАЯ полоса-хват по ВЕРХНЕЙ ГРАНИ
+            // (.pfd-move — курсор сам «ладошка», за неё блок тянется, никакой бирки), кнопка
+            // скрыть/удалить и три зоны ресайза (правая кромка/нижняя/уголок).
             var chrome = '<div class="pfd-chrome">' +
-                '<div class="pfd-tools">' + hideBtn +
-                    '<span class="pfd-move" role="button" tabindex="0" aria-label="Переместить блок" title="Потяните, чтобы переместить блок">' + PFD_HAND_SVG + '</span>' +
-                '</div>' +
+                '<span class="pfd-move" aria-hidden="true"></span>' +
+                hideBtn +
                 '<span class="pfd-size"></span>' +
                 '<span class="pfd-rs-r" title="Потяните — ширина по колонкам"></span>' +
                 '<span class="pfd-rs-b" title="Потяните — высота свободно"></span>' +
