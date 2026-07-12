@@ -1881,6 +1881,10 @@ body.dark-mode .tbmk-c.neg { color: #f87171; }
    ============================================================ */
 .pf-ratesstack { display: flex; flex-direction: column; min-width: 0; }
 .pf-ratesstack-body { padding: 4px 24px 22px; }
+/* на дашборде — с заголовком: резервируем справа место под глаз-скрытие (.pfd-eye),
+   тело плиток начинается сразу под шапкой */
+.pf-ratesstack--head > .pf-ch { padding-right: 46px; }
+.pf-ratesstack--head > .pf-ratesstack-body { padding-top: 2px; }
 .pf-ratesstack-grid { grid-template-columns: 1fr; gap: 10px; }
 /* свободная ЯЧЕЙКА сетки — растягивается по высоте вместе с соседними карточками
    (align-items:stretch у .pf-grid); контент выравнен по верху, как и у соседей */
@@ -2257,33 +2261,19 @@ body.pfd-dragging-now .pfd-grid.editing .pfd-item { cursor: grabbing; }
 }
 
 /* ============ карточка «Настройка раскладки» (бывший бар-конструктор + пикер) ============ */
-/* слим-панель входа НАД сеткой (переехала из шапки): ярлык «Раскладка» + кнопка «Настроить вид» */
-.pfl-bar {
-    display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    margin: 0 0 14px; padding: 9px 12px 9px 14px; border-radius: 14px;
-    background: linear-gradient(#f7f9fe, #eef2fb); border: 1px solid #e4e9f4;
-}
-.pfl-bar-l { display: flex; align-items: center; gap: 11px; min-width: 0; }
-.pfl-bar-ic { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 9px; background: #ecebff; color: #4f46e5; flex-shrink: 0; box-shadow: inset 0 0 0 1px #dcd9ff; }
-.pfl-bar-ic svg { width: 17px; height: 17px; }
-.pfl-bar-tx { display: flex; flex-direction: column; gap: 0; min-width: 0; }
-.pfl-bar-tx b { font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 800; color: #1e293b; letter-spacing: -0.01em; }
-.pfl-bar-tx span { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700; color: #7c8aa0; }
-body.dark-mode .pfl-bar { background: linear-gradient(#111b2e, #0e1626); border-color: #22304a; }
-body.dark-mode .pfl-bar-ic { background: #1c2445; color: #b7bdff; box-shadow: inset 0 0 0 1px #2f376a; }
-body.dark-mode .pfl-bar-tx b { color: #eaf1fb; }
-body.dark-mode .pfl-bar-tx span { color: #93a4bd; }
-/* кнопка «Настроить вид»: явно нажимаемая — мягкий индиго + шеврон, но не кричит */
+/* разделитель между названием раздела и кнопкой настройки вида — отделяет кнопку от
+   крошки «Портфели», чтобы она не читалась как продолжение названия */
+.pfl-open-sep { display: none; width: 1px; height: 20px; margin: 0 4px 0 12px; border-radius: 1px; background: #d7dee8; vertical-align: middle; }
+body.dark-mode .pfl-open-sep { background: rgba(255, 255, 255, 0.16); }
+/* кнопка «Настроить вид» в шапке страницы: явно нажимаемая — мягкий индиго + шеврон, но не кричит */
 .pfl-open-btn {
-    display: inline-flex; align-items: center; gap: 7px; padding: 7px 10px 7px 12px; cursor: pointer;
+    display: none; align-items: center; gap: 7px; padding: 7px 10px 7px 12px; cursor: pointer;
     border-radius: 10px; border: 1px solid #c1cbf7; background: linear-gradient(#eef1ff, #dee3fe); color: #4338ca;
     font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 800; letter-spacing: -0.01em; white-space: nowrap;
     box-shadow: 0 2px 7px -3px rgba(79, 70, 229, 0.4); transition: background 0.14s, border-color 0.14s, box-shadow 0.14s, transform 0.1s;
 }
-.pfl-open-ic { display: inline-flex; align-items: center; }
-.pfl-open-ic svg { width: 15px; height: 15px; }
-.pfl-open-chev { display: inline-flex; align-items: center; opacity: 0.7; transition: transform 0.2s; }
-.pfl-open-chev svg { width: 13px; height: 13px; }
+.pfl-open-ic { width: 15px; height: 15px; }
+.pfl-open-chev { width: 13px; height: 13px; opacity: 0.7; transition: transform 0.2s; }
 .pfl-open-btn:hover { background: linear-gradient(#e6eaff, #cbd3fd); border-color: #9aa7f5; box-shadow: 0 5px 14px -4px rgba(79, 70, 229, 0.5); transform: translateY(-1px); }
 .pfl-open-btn:active { transform: translateY(0); }
 .pfl-open-btn.active { background: linear-gradient(#4f46e5, #4035c4); border-color: transparent; color: #fff; box-shadow: 0 5px 16px -4px rgba(79, 70, 229, 0.65); }
@@ -2317,6 +2307,13 @@ body.dark-mode .pfl-bar-tx span { color: #93a4bd; }
 .pfl-head-tx b { font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 800; color: #0f172a; letter-spacing: -0.01em; }
 .pfl-head-tx span { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: #64748b; }
 .pfl-head-r { display: flex; align-items: center; gap: 9px; flex-shrink: 0; }
+/* подвал карточки — блок управления раскладкой (вынесен из шапки) */
+.pfl-foot {
+    flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 12px 16px; border-top: 1px solid #eef2f7; background: #fbfcfe;
+}
+.pfl-foot-l { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; min-width: 0; }
+body.dark-mode .pfl-foot { border-top-color: #22304a; background: #0d1626; }
 .pfl-btn {
     display: inline-flex; align-items: center; gap: 7px; padding: 9px 14px; cursor: pointer; white-space: nowrap;
     border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 800; letter-spacing: -0.01em;
@@ -2412,21 +2409,21 @@ body.dark-mode .pfl-btn.primary.done { background: rgba(18, 163, 92, 0.14); colo
 /* ============ новые блоки конструктора (опт-ин с полки «Добавить блок») ============ */
 /* --- KPI-плитка: иконка + подпись + крупное моно-значение --- */
 .pf-kpi {
-    display: flex; align-items: center; gap: 14px;
-    padding: 18px 20px; container-type: inline-size;
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 16px; container-type: inline-size;
     height: 100%; box-sizing: border-box;
 }
 .pf-kpi-ic {
-    flex-shrink: 0; width: 44px; height: 44px; border-radius: 13px;
+    flex-shrink: 0; width: 38px; height: 38px; border-radius: 11px;
     display: flex; align-items: center; justify-content: center;
     color: var(--ac, #3d6fd1); background: color-mix(in srgb, var(--ac, #3d6fd1) 10%, transparent);
 }
-.pf-kpi-ic svg { width: 22px; height: 22px; }
+.pf-kpi-ic svg { width: 19px; height: 19px; }
 .pf-kpi-body { min-width: 0; }
 .pf-kpi-l { font-family: 'Inter', sans-serif; font-size: var(--fs-th, 11px); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #8494a7; }
 .pf-kpi-v {
     font-family: var(--font-num, 'JetBrains Mono', monospace); font-weight: 700;
-    font-size: clamp(17px, 7.5cqw, 25px); line-height: 1.25; color: #0f172a;
+    font-size: clamp(16px, 6.4cqw, 21px); line-height: 1.15; color: #0f172a;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .pf-kpi-v.pos { color: #119d5c; }
@@ -2519,14 +2516,41 @@ body.dark-mode .pfal-lpct { color: #eaf0f8; }
 body.dark-mode .pfal-empty { color: #8fa2b8; }
 
 /* --- переключатель дизайна графика в превью пикера (Линия / Столбцы) --- */
-.pfl-pv-variant { display: inline-flex; gap: 3px; padding: 3px; border-radius: 9px; background: #eef2f8; margin-right: 4px; flex-shrink: 0; }
-.pfl-vbtn { border: 0; background: none; padding: 5px 11px; border-radius: 7px; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700; color: #64748b; transition: background 0.12s, color 0.12s; }
-.pfl-vbtn.on { background: #fff; color: #0f172a; box-shadow: 0 2px 6px -3px rgba(15, 23, 42, 0.3); }
-.pfl-vbtn:hover:not(.on) { color: #334155; }
-body.dark-mode .pfl-pv-variant { background: #16213a; }
-body.dark-mode .pfl-vbtn { color: #9fb1c6; }
-body.dark-mode .pfl-vbtn.on { background: #26344f; color: #eaf1fb; box-shadow: none; }
-body.dark-mode .pfl-vbtn:hover:not(.on) { color: #dce6f2; }
+/* --- превью СЕМЕЙСТВА виджетов: дизайны стопкой, у каждого своя кнопка «Добавить» --- */
+.pfl-fam { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.pfl-fam-h { flex-shrink: 0; padding: 14px 16px 10px; }
+.pfl-fam-h b { display: block; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #0f172a; }
+.pfl-fam-h span { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #64748b; }
+.pfl-fam-list { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: thin; display: flex; flex-direction: column; gap: 12px; padding: 0 14px 16px; }
+.pfl-choice { display: flex; gap: 14px; align-items: stretch; border: 1px solid #e5eaf2; border-radius: 14px; background: #fff; padding: 12px; transition: border-color 0.12s, box-shadow 0.12s; }
+.pfl-choice:hover { border-color: #d3ddec; box-shadow: 0 6px 18px -10px rgba(15, 23, 42, 0.35); }
+.pfl-choice.added { background: #f7fbf8; border-color: #cdead8; }
+.pfl-choice-pv { flex: 1 1 0; min-width: 0; height: 128px; border-radius: 10px; overflow: hidden; background: #f6f8fb; position: relative; }
+.pfl-choice-pv .pfd-pick-stage { padding: 10px; }
+.pfl-choice-side { flex: 0 0 150px; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+.pfl-choice-meta b { display: block; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 800; color: #0f172a; }
+.pfl-choice-meta span { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #64748b; line-height: 1.35; }
+.pfl-choice-add {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;
+    border: 0; border-radius: 9px; padding: 9px 12px; white-space: nowrap;
+    font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 800; letter-spacing: -0.01em;
+    background: linear-gradient(135deg, #1f2937, #0f172a); color: #fff; box-shadow: 0 8px 18px -10px rgba(15, 23, 42, 0.7);
+    transition: filter 0.12s, transform 0.1s;
+}
+.pfl-choice-add svg { width: 15px; height: 15px; }
+.pfl-choice-add:hover { filter: brightness(1.14); }
+.pfl-choice-add:active { transform: translateY(1px); }
+.pfl-choice-add.is-added { background: #eaf7ef; color: #12a35c; box-shadow: none; cursor: default; }
+body.dark-mode .pfl-fam-h b { color: #eaf1fb; }
+body.dark-mode .pfl-fam-h span { color: #9fb1c6; }
+body.dark-mode .pfl-choice { background: #131f36; border-color: #26324c; }
+body.dark-mode .pfl-choice:hover { border-color: #3a4c6d; }
+body.dark-mode .pfl-choice.added { background: rgba(18, 163, 92, 0.08); border-color: rgba(52, 211, 153, 0.3); }
+body.dark-mode .pfl-choice-pv { background: #0f1a2e; }
+body.dark-mode .pfl-choice-meta b { color: #eaf1fb; }
+body.dark-mode .pfl-choice-meta span { color: #9fb1c6; }
+body.dark-mode .pfl-choice-add { background: linear-gradient(135deg, #3a4664, #232d40); }
+body.dark-mode .pfl-choice-add.is-added { background: rgba(18, 163, 92, 0.16); color: #6ee7a8; }
 
 /* --- «Карта рынка»: свой treemap (живые плитки, не декоративный фон Главной) --- */
 .pfhm-box {

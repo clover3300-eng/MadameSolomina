@@ -31,7 +31,7 @@
     <link rel="stylesheet" href="css/backtest.css?v=15">
     <link rel="stylesheet" href="css/rebalance-r4.css?v=9">
     <link rel="stylesheet" href="css/dashboard-panel.css?v=4">
-    <link rel="stylesheet" href="css/portfolios.css?v=111">
+    <link rel="stylesheet" href="css/portfolios.css?v=112">
     <link rel="stylesheet" href="css/rebal-r5.css?v=9">
     <link rel="stylesheet" href="css/monthly-panel.css?v=1">
     <link rel="stylesheet" href="css/monthly-r5.css?v=13">
@@ -51,7 +51,7 @@
     <link rel="stylesheet" href="css/typography-tokens.css?v=2">
     <link rel="stylesheet" href="css/desktop-zoom.css?v=4">
     <!-- Мобильный слой (≤1023px) — всегда ПОСЛЕДНИЙ, перебивает всё -->
-    <link rel="stylesheet" href="css/mobile.css?v=14">
+    <link rel="stylesheet" href="css/mobile.css?v=15">
     
     <!-- Telegram WebApp API (fallback — works both in TG and browser) -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -244,9 +244,16 @@
                 <div id="topBarCrumb" style="display:none;align-items:center;">
                     <span id="topBarCrumbText" class="hdr-sec"></span>
                 </div>
-                <!-- Вход в настройку раскладки «Портфелей» переехал из шапки в саму страницу
-                     (панель .pfl-bar над сеткой, рендерит js/portfolios.js) — в шапке он читался
-                     непонятно. -->
+                <!-- «Настроить вид» — вход в настройку дашборда «Портфелей»: показ/скрытие и
+                     состояние ведёт js/portfolios.js (updateLayoutBtn), только десктоп.
+                     Разделитель слева + шеврон справа делают её явно нажимаемой (не частью
+                     названия раздела) -->
+                <span id="pfLayoutSep" class="pfl-open-sep" style="display:none" aria-hidden="true"></span>
+                <button type="button" id="pfLayoutBtn" class="pfl-open-btn" style="display:none" onclick="pfLayoutToggle(event)" title="Настроить вид дашборда: добавить блоки, расставить их и сохранить свою раскладку">
+                    <svg class="pfl-open-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="8" x2="14" y2="8"/><line x1="18" y1="8" x2="20" y2="8"/><circle cx="16" cy="8" r="2"/><line x1="4" y1="16" x2="6" y2="16"/><line x1="10" y1="16" x2="20" y2="16"/><circle cx="8" cy="16" r="2"/></svg>
+                    <span>Настроить вид</span>
+                    <svg class="pfl-open-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
             </div>
         </div>
         <!-- Рыночные ленты (IMOEX/USD/BTC), вшиты в фон шапки, равноудалены между названием
@@ -2239,7 +2246,7 @@
 <script src="js/market-chart.js?v=5" defer></script>
 <script src="js/market-heatmap.js?v=34" defer></script>
 <script src="js/market-livebar.js?v=4" defer></script>
-<script src="js/portfolios.js?v=106" defer></script>
+<script src="js/portfolios.js?v=107" defer></script>
 <!-- Статичный фон-мозаика остальных вкладок: не смотрит на window.supa,
      порядок относительно облака не важен -->
 <script src="js/site-bg.js?v=1" defer></script>
