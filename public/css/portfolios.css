@@ -2069,8 +2069,9 @@ body.dark-mode .pfpc-kind.kind-red { color: #93c5fd; background: rgba(61,111,209
 .pfd-item.pfd-hset .pfc-massets { overflow: visible; flex: 0 0 auto; }
 /* когда в карточке открыт флайаут (настройки/график/меню выходят ЗА блок) — снимаем
    клип, иначе в блоке с ручной высотой они бы обрезались; флайаут overlay-ем ложится
-   поверх соседей, как и в обычной сетке */
-.pfd-item.pfd-hset:has(.menu-open, .chart-open, .pf-card--tall) .pfd-body { overflow: visible; }
+   поверх соседей, как и в обычной сетке. .pf-impmenu.open — дропдауны-фильтры
+   («Портфели» в календаре и истории сделок): в коротком блоке выпадали бы за обрез */
+.pfd-item.pfd-hset:has(.menu-open, .chart-open, .pf-card--tall, .pf-impmenu.open) .pfd-body { overflow: visible; }
 /* «Ставки» с ручной высотой: полоса-флекс тянет сетку плиток на всю высоту блока,
    ряды растягиваются равномерно — потянув блок выше, пользователь ЗАПОЛНЯЕТ пустоту
    плитками, а не оставляет мёртвое поле снизу (жалоба «пространство не заполнить») */
@@ -2185,6 +2186,18 @@ body.pfd-dragging-now * { cursor: grabbing !important; }
 
 body.dark-mode .pfd-grid.editing .pfd-item { outline-color: rgba(148, 163, 184, 0.35); }
 body.dark-mode .pfd-grid.editing .pfd-item:hover { outline-color: rgba(148, 163, 184, 0.6); }
+/* уголок-ручка на тёмных карточках: серые штрихи светлой темы почти неразличимы */
+body.dark-mode .pfd-rs {
+    background:
+        linear-gradient(135deg, transparent 46%, rgba(148, 163, 184, 0.85) 47%, rgba(148, 163, 184, 0.85) 55%, transparent 56%,
+            transparent 64%, rgba(148, 163, 184, 0.85) 65%, rgba(148, 163, 184, 0.85) 73%, transparent 74%);
+}
+body.dark-mode .pfd-rs:hover {
+    background:
+        linear-gradient(135deg, transparent 46%, rgba(96, 165, 250, 0.95) 47%, rgba(96, 165, 250, 0.95) 55%, transparent 56%,
+            transparent 64%, rgba(96, 165, 250, 0.95) 65%, rgba(96, 165, 250, 0.95) 73%, transparent 74%);
+    background-color: rgba(59, 130, 246, 0.14);
+}
 body.dark-mode .pfd-item.pfd-slot { background: rgba(59, 130, 246, 0.09); }
 body.dark-mode .pfd-name { color: #cbd5e1; background: #0f172a; border-color: #27324a; }
 body.dark-mode .pfd-bar { background: rgba(11, 18, 32, 0.9); border-color: #27324a; }

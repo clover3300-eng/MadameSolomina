@@ -1662,7 +1662,20 @@
             return { on: !!c.on, order: Array.isArray(c.order) ? c.order : [], span: c.span || {}, h: c.h || {} };
         } catch (e) { return { on: false, order: [], span: {}, h: {} }; }
     }
-    function saveDashCfg() { try { localStorage.setItem(DASH_KEY, JSON.stringify(dashCfg)); } catch (e) {} }
+    function saveDashCfg() {
+        try {
+            // чистим ключи удалённых портфелей — конфиг не копит мусор (и не тащит
+            // его в облако через cloud-sync). Скрытые портфели остаются в store.items,
+            // их раскладка переживает «скрыть/показать».
+            var known = { cal: 1, rates: 1, trades: 1, fav: 1, sum: 1 };
+            store.items.forEach(function (p) { known['pf:' + p.id] = 1; });
+            dashCfg.order = (dashCfg.order || []).filter(function (id) { return known[id]; });
+            [dashCfg.span, dashCfg.h].forEach(function (m) {
+                Object.keys(m || {}).forEach(function (id) { if (!known[id]) delete m[id]; });
+            });
+            localStorage.setItem(DASH_KEY, JSON.stringify(dashCfg));
+        } catch (e) {}
+    }
     function pfdActive() {
         if (!dashCfg.on && !dashEdit) return false;
         try { if (window.matchMedia('(max-width: 1023px)').matches) return false; } catch (e) {}
@@ -1734,7 +1747,12 @@
         pfdPack();   // синхронно — первый пейнт уже с masonry-раскладкой, без мигания
     }
 
-    // ---- блоки страницы (порядок по умолчанию = естественный порядок вёрстки) ----
+    // ---- блоки страницы ----
+    // Порядок по умолчанию заполняет ряды: сначала карточки, затем короткие блоки
+    // одной ширины (календарь + избранное + сводка) — они встают в один ряд, и лишь
+    // потом полноширинные «Ставки» и «История сделок». Иначе полноширинный блок
+    // сразу после календаря «запечатывал» бы ряд, оставляя справа дыру в 8 колонок
+    // (жадный masonry не поднимает более поздние блоки выше уже уложенных).
     function pfdBlocks(favStr, noBonds) {
         var blocks = [];
         var narrow = cardViewMode === 'narrow';
@@ -1745,15 +1763,15 @@
             blocks.push({ id: 'pf:' + p.id, name: p.name, html: cardHtml(p, i, false, narrow, false), span: defSpan });
         });
         blocks.push({ id: 'cal', name: noBonds ? 'Ставки' : 'Календарь выплат', html: noBonds ? ratesStackHtml(true, 1) : paymentCalendarHtml(true, 1), span: defSpan });
-        if (!noBonds) blocks.push({ id: 'rates', name: 'Ставки', html: ratesHtml(), span: 12 });
-        var tr = tradesHtml();
-        if (tr) blocks.push({ id: 'trades', name: 'История сделок', html: tr, span: 12 });
         // обёртка .pf-topgrid-fav сохраняет прицельные стили правой колонки
         // (одноколоночный .pff-grid и т.п.) и в свободной сетке
         blocks.push({ id: 'fav', name: 'Избранное', html: '<div class="pf-topgrid-fav pfd-favwrap">' + favStr + '</div>', span: defSpan });
         if (store.items.length >= 2) {
             blocks.push({ id: 'sum', name: 'Сводка', html: '<div class="pf-topgrid-fav pfd-favwrap">' + summaryCardHtml() + '</div>', span: defSpan });
         }
+        if (!noBonds) blocks.push({ id: 'rates', name: 'Ставки', html: ratesHtml(), span: 12 });
+        var tr = tradesHtml();
+        if (tr) blocks.push({ id: 'trades', name: 'История сделок', html: tr, span: 12 });
         return blocks.filter(function (b) { return b.html; });
     }
 
@@ -1798,13 +1816,33 @@
 
     // ---- вход/выход из режима правки, сброс ----
     window.pfDashToggleEdit = function () {
+        if (dashEdit) {
+            // выключение («Готово») работает при ЛЮБОЙ ширине окна: гард ширины
+            // ниже относится только к включению — иначе, сузив окно в режиме
+            // правки, из него было бы не выйти (кнопки скрыты, рендеры заглушены)
+            if (pfdDragEl) pfdEndDrag(true);
+            if (pfdRsCancel) pfdRsCancel();
+            dashEdit = false;
+            closeImpMenus();
+            pfdRerender();
+            return;
+        }
         try { if (window.matchMedia('(max-width: 1023px)').matches) { toast('Конструктор доступен на широком экране', true); return; } } catch (e) {}
         if (!visibleItems().length) { toast('Сначала добавьте портфель — пока нечего расставлять', true); return; }
-        if (!dashEdit && !dashCfg.on) { dashCfg.on = true; saveDashCfg(); }
-        dashEdit = !dashEdit;
+        if (!dashCfg.on) { dashCfg.on = true; saveDashCfg(); }
+        dashEdit = true;
         closeImpMenus();
         pfdRerender();
     };
+    // окно сузилось до мобильной ширины во время правки → автоматически «Готово»:
+    // на ≤1023 конструктор неактивен (pfdActive), режим правки не должен висеть
+    // заглушкой фоновых рендеров с некликабельным контентом
+    try {
+        var pfdNarrowMq = window.matchMedia('(max-width: 1023px)');
+        var pfdNarrowH = function (ev) { if (ev.matches && dashEdit) window.pfDashToggleEdit(); };
+        if (pfdNarrowMq.addEventListener) pfdNarrowMq.addEventListener('change', pfdNarrowH);
+        else if (pfdNarrowMq.addListener) pfdNarrowMq.addListener(pfdNarrowH);
+    } catch (e) {}
     window.pfDashReset = function () {
         dashCfg = { on: false, order: [], span: {}, h: {} };
         dashEdit = false;
@@ -1828,6 +1866,8 @@
     var pfdLastReorder = 0;
     var pfdTick = null;
     var pfdScrollEl = null;     // скролл-контейнер страницы (null = window)
+    var pfdHomeNext = null;     // сосед справа на старте драга — для отмены (Esc)
+    var pfdRsCancel = null;     // отмена активного ресайза (функция) — Esc/выход из режима
 
     function pfdScrollParentOf(el) {
         for (var p = el.parentElement; p; p = p.parentElement) {
@@ -1859,6 +1899,7 @@
     function pfdStartDrag(item, x, y) {
         var r = item.getBoundingClientRect();
         pfdDragEl = item;
+        pfdHomeNext = item.nextElementSibling;   // исходное место — для отмены
         pfdScrollEl = pfdScrollParentOf(item);
         pfdGrabX = x - r.left; pfdGrabY = y - r.top;
         var g = item.cloneNode(true);
@@ -1924,11 +1965,23 @@
     function pfdEndDrag(cancelled) {
         if (pfdTick) { cancelAnimationFrame(pfdTick); pfdTick = null; }
         document.body.classList.remove('pfd-dragging-now');
-        var item = pfdDragEl, g = pfdGhost;
-        pfdDragEl = null; pfdGhost = null; pfdLastPt = null;
+        var item = pfdDragEl, g = pfdGhost, home = pfdHomeNext;
+        pfdDragEl = null; pfdGhost = null; pfdLastPt = null; pfdHomeNext = null;
         if (!item) return;
         if (!cancelled) pfdSaveOrder();
-        if (g) {
+        else {
+            // отмена (Esc/pointercancel): живая перестановка уже переставила блок в
+            // DOM — возвращаем его на исходное место, иначе на экране один порядок,
+            // а сохранён другой (после «Готово» блок «прыгнул» бы обратно)
+            var grid = item.parentNode;
+            if (grid && grid.id === 'pfdGrid') {
+                pfdFlip(grid, function () {
+                    grid.insertBefore(item, home && home.parentNode === grid ? home : null);
+                    pfdPack();
+                });
+            }
+        }
+        if (g && !cancelled) {
             // призрак мягко «прилетает» в слот и растворяется
             var sr = item.getBoundingClientRect();
             g.style.transition = 'left 170ms cubic-bezier(.2, .7, .3, 1), top 170ms cubic-bezier(.2, .7, .3, 1), transform 170ms, opacity 170ms';
@@ -1941,7 +1994,14 @@
                 item.classList.remove('pfd-slot');
             }, 180);
         } else {
+            // отмена: блок сам плавно едет на исходное место (FLIP выше), призрак
+            // просто растворяется у курсора — лететь ему больше некуда
             item.classList.remove('pfd-slot');
+            if (g) {
+                g.style.transition = 'opacity 150ms, transform 150ms';
+                g.style.opacity = '0';
+                setTimeout(function () { if (g.parentNode) g.parentNode.removeChild(g); }, 160);
+            }
         }
     }
     document.addEventListener('pointerdown', function (e) {
@@ -1953,7 +2013,7 @@
         pfdArm = { item: it, x: e.clientX, y: e.clientY };
     });
     document.addEventListener('pointermove', function (e) {
-        if (pfdArm && !pfdDragEl) {
+        if (pfdArm && !pfdDragEl && !pfdRsCancel) {   // во время ресайза драг не стартует
             // порог 5px: случайный клик не превращается в перетаскивание
             if (Math.abs(e.clientX - pfdArm.x) + Math.abs(e.clientY - pfdArm.y) > 5) {
                 pfdStartDrag(pfdArm.item, pfdArm.x, pfdArm.y);
@@ -2002,10 +2062,20 @@
         var startX = e.clientX, startY = e.clientY;
         var startW = item.offsetWidth, startH = item.offsetHeight;
         var hadH = item.classList.contains('pfd-hset');
+        var startColStyle = item.style.gridColumn, startHStyle = item.style.height;
         var id = item.getAttribute('data-pfd');
         var badge = item.querySelector('.pfd-size');
         var newSpan = 0, newH = 0, hMode = hadH;
+        pfdArm = null;   // гасим возможный «взвод» драга — ресайз и драг не смешиваются
         item.classList.add('pfd-resizing');
+        function cleanup() {
+            document.removeEventListener('pointermove', onMove);
+            document.removeEventListener('pointerup', onUp);
+            document.removeEventListener('pointercancel', onUp);
+            item.classList.remove('pfd-resizing');
+            if (badge) badge.textContent = '';
+            pfdRsCancel = null;
+        }
         function onMove(ev) {
             var dx = (ev.clientX - startX) / z, dy = (ev.clientY - startY) / z;
             newSpan = clamp(Math.round((startW + dx + gap) / (colW + gap)), 3, 12);
@@ -2020,17 +2090,22 @@
             pfdRepackSoon();   // masonry: соседи переезжают под новый размер вживую
         }
         function onUp() {
-            document.removeEventListener('pointermove', onMove);
-            document.removeEventListener('pointerup', onUp);
-            document.removeEventListener('pointercancel', onUp);
-            item.classList.remove('pfd-resizing');
-            if (badge) badge.textContent = '';
+            cleanup();
             if (newSpan) {
                 dashCfg.span[id] = newSpan;
                 if (hMode && newH) dashCfg.h[id] = newH;
                 saveDashCfg();
             }
         }
+        // Esc/выход из режима во время ресайза: возвращаем стартовые размеры,
+        // ничего не сохраняем — вместо прежнего выхода из конструктора «на полпути»
+        pfdRsCancel = function () {
+            cleanup();
+            item.style.gridColumn = startColStyle;
+            item.style.height = startHStyle;
+            if (!hadH) item.classList.remove('pfd-hset');
+            pfdRepackSoon();
+        };
         document.addEventListener('pointermove', onMove);
         document.addEventListener('pointerup', onUp);
         document.addEventListener('pointercancel', onUp);
@@ -2052,7 +2127,12 @@
         if (e.key !== 'Escape' || !dashEdit) return;
         var panel = document.getElementById('panel-portfolios');
         if (!panel || !panel.classList.contains('active')) return;
-        if (pfdDragEl) { pfdEndDrag(true); return; }   // сначала отменяем перетаскивание
+        // сначала отменяются активные операции: перетаскивание, затем ресайз —
+        // и только «чистый» Esc закрывает режим правки. pfdArm сбрасываем всегда:
+        // иначе зажатая кнопка мыши после отмены тут же перезапускала бы драг
+        pfdArm = null;
+        if (pfdDragEl) { pfdEndDrag(true); return; }
+        if (pfdRsCancel) { pfdRsCancel(); return; }
         window.pfDashToggleEdit();
     });
 
