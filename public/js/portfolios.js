@@ -2156,7 +2156,10 @@
         var b = document.getElementById('pfLayoutBtn'); if (!b) return;
         // базовый стиль кнопки — display:none (скрыта по умолчанию), поэтому показываем
         // ЯВНЫМ inline-flex, а не пустой строкой (иначе откат к скрывающему CSS-правилу)
-        b.style.display = (currentTab === 'portfolios' && store.items.length) ? 'inline-flex' : 'none';
+        var show = (currentTab === 'portfolios' && store.items.length);
+        b.style.display = show ? 'inline-flex' : 'none';
+        var sep = document.getElementById('pfLayoutSep');
+        if (sep) sep.style.display = show ? 'inline-block' : 'none';
         b.classList.toggle('on', !!dashCfg.on);       // точка-индикатор: раскладка своя
         b.classList.toggle('active', !!dashEdit);     // нажатое состояние: карточка открыта
     }
@@ -2192,17 +2195,19 @@
         updateLayoutBtn();
         toast('Раскладка сохранена — закреплена за вами');
     };
-    // «Вернуть стандартную» = классический вид: карточки в ряд, «Избранное» справа, БЕЗ
-    // виджетов (dashCfg.on:false). Сбрасываем всю расстановку/скрытия; заметки (текст) храним.
-    // Обратимо: снимок кладём ПЕРЕД сбросом (Cmd/Ctrl+Z вернёт).
+    // «Вернуть стандартную» = сбросить всю расстановку/размеры/скрытия/добавленные виджеты
+    // к стандартному виду, НО ОСТАТЬСЯ в живой сетке (on:true) — блоки по-прежнему подвижны,
+    // а глаз-скрытие у «Сводки»/«Календаря» на месте (в классике on:false их бы не было, и
+    // дашборд «замирал» до первого добавления виджета). Карточку закрываем, чтобы виден был
+    // результат; заметки (текст) храним. Обратимо: снимок кладём ПЕРЕД сбросом (Cmd/Ctrl+Z).
     window.pfLayoutReset = function () {
         pfdPushUndo();
-        dashCfg = { on: false, order: [], span: {}, h: {}, hidden: {}, notes: dashCfg.notes || [] };
+        dashCfg = { on: true, order: [], span: {}, h: {}, hidden: {}, notes: dashCfg.notes || [] };
         dashEdit = false;
         saveDashCfg();
         pfdRerender();
         updateLayoutBtn();
-        toast('Стандартная раскладка возвращена');
+        toast('Стандартная раскладка возвращена — блоки остаются подвижными');
     };
     // совместимость со старыми вызовами (Esc-хендлер и т.п.)
     window.pfDashToggleEdit = function () { if (dashEdit) window.pfLayoutClose(); else window.pfLayoutToggle(); };
@@ -3338,14 +3343,36 @@
         pfdGhost.style.top = ((y - pfdGrabY) / pfdGz) + 'px';
     }
     function pfdReorderAt(x, y) {
-        if (!pfdDragEl || Date.now() - pfdLastReorder < 130) return;
+        if (!pfdDragEl || Date.now() - pfdLastReorder < 90) return;
         var grid = document.getElementById('pfdGrid');
         if (!grid) return;
         var el = document.elementFromPoint(x, y);
         var over = el && el.closest ? el.closest('.pfd-item') : null;
-        if (!over || over === pfdDragEl || over.parentNode !== grid) return;
-        var kids = Array.prototype.slice.call(grid.children);
-        var before = kids.indexOf(over) < kids.indexOf(pfdDragEl);
+        if (over && (over === pfdDragEl || over.parentNode !== grid)) over = null;
+        // Курсор в зазоре / пустом месте сетки (например, справа в конце ряда, где ещё
+        // ЕСТЬ место) — elementFromPoint не попадает в блок. Берём ближайший по расстоянию
+        // до центра блок, чтобы перетаскивание «в пустоту» тоже переставляло.
+        if (!over) {
+            var bestD = Infinity;
+            Array.prototype.forEach.call(grid.children, function (c) {
+                if (c === pfdDragEl || !c.classList || !c.classList.contains('pfd-item')) return;
+                var cr = c.getBoundingClientRect();
+                var cx = cr.left + cr.width / 2, cy = cr.top + cr.height / 2;
+                var d = (x - cx) * (x - cx) + (y - cy) * (y - cy);
+                if (d < bestD) { bestD = d; over = c; }
+            });
+        }
+        if (!over || over === pfdDragEl) return;
+        // Куда вставлять — ПРОСТРАНСТВЕННО от курсора к целевому блоку (не по DOM-индексу):
+        // выше блока или в его левой половине → до; ниже или в правой половине → после.
+        var r = over.getBoundingClientRect();
+        var before;
+        if (y < r.top) before = true;
+        else if (y > r.bottom) before = false;
+        else before = x < (r.left + r.width / 2);
+        // уже на нужном месте — не дёргаем сетку зря
+        if (before && over.previousElementSibling === pfdDragEl) return;
+        if (!before && over.nextElementSibling === pfdDragEl) return;
         pfdFlip(grid, function () {
             if (before) grid.insertBefore(pfdDragEl, over);
             else grid.insertBefore(pfdDragEl, over.nextSibling);
@@ -3413,12 +3440,19 @@
     }
     document.addEventListener('pointerdown', function (e) {
         if (!pfdLive() || e.button !== 0) return;
-        // перетаскивание стартует ТОЛЬКО с грип-ручки (.pfd-move) сверху блока —
-        // так содержимое карточки (тикеры, меню, скролл) остаётся кликабельным, а
-        // кромки/уголок ресайза и кнопка скрыть не взводят драг
+        var it = null;
         var grip = e.target.closest ? e.target.closest('.pfd-move') : null;
-        if (!grip) return;
-        var it = grip.closest('.pfd-grid.pfd-live .pfd-item');
+        if (grip) {
+            // грип-ручка по верхней грани — работает ВСЕГДА (в т.ч. при закрытой карточке,
+            // чтобы содержимое блока — тикеры/меню/скролл — оставалось кликабельным)
+            it = grip.closest('.pfd-grid.pfd-live .pfd-item');
+        } else if (dashEdit && e.target.closest) {
+            // в режиме настройки (карточка «Раскладка» открыта) блок тащится за ЛЮБОЕ
+            // место — левый край, тело, шапку — кроме интерактивных элементов (кнопки,
+            // ссылки, поля, редактируемый текст заметок, ручки ресайза, глаз/корзина)
+            if (e.target.closest('button, a, input, textarea, select, [contenteditable="true"], .pfnt-tx, .pfd-rs, .pfd-rs-r, .pfd-rs-b, .pfd-eye, .pfd-cardrm')) return;
+            it = e.target.closest('#pfdGrid.pfd-live .pfd-item');
+        }
         if (!it) return;
         e.preventDefault();
         pfdArm = { item: it, x: e.clientX, y: e.clientY };
@@ -7144,6 +7178,8 @@
                 if (tbMkt) { tbMkt.style.display = 'none'; tbMkt.innerHTML = ''; }
                 var tbLay = document.getElementById('pfLayoutBtn');
                 if (tbLay) tbLay.style.display = 'none';
+                var tbLaySep = document.getElementById('pfLayoutSep');
+                if (tbLaySep) tbLaySep.style.display = 'none';
             }
         };
     }

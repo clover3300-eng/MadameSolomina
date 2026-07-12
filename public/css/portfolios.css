@@ -75,7 +75,7 @@ body.dark-mode .pf-sumcard {
 .pfs2-pnl.pos { color: #34d399; } .pfs2-pnl.neg { color: #f87171; }
 
 /* тонкая полоса распределения акции/облигации */
-.pfs2-alloc { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.pfs2-alloc { margin-top: 17px; display: flex; flex-direction: column; gap: 6px; }
 .pfs2-alloc-bar { display: flex; height: 6px; border-radius: 99px; overflow: hidden; background: rgba(255,255,255,0.08); }
 .pfs2-alloc-stock { background: #D97757; } .pfs2-alloc-bond { background: #7B9BBF; }
 .pfs2-alloc-leg { display: flex; gap: 14px; font-size: 11px; font-weight: 700; color: #aebbcc; }
@@ -2172,6 +2172,18 @@ body.pfd-dragging-now * { cursor: grabbing !important; }
     z-index: 5; pointer-events: auto; touch-action: none; cursor: grab;
 }
 body.pfd-dragging-now .pfd-move { cursor: grabbing; }
+/* Режим настройки (карточка «Раскладка» открыта): блок тащится за ЛЮБОЕ место (логика в
+   pointerdown-хендлере) — показываем это курсором «ладошка» на всей карточке, а на
+   интерактивных элементах внутри возвращаем обычный указатель. */
+.pfd-grid.editing .pfd-item { cursor: grab; }
+.pfd-grid.editing .pfd-item button,
+.pfd-grid.editing .pfd-item a,
+.pfd-grid.editing .pfd-item input,
+.pfd-grid.editing .pfd-item textarea,
+.pfd-grid.editing .pfd-item select,
+.pfd-grid.editing .pfd-item [contenteditable="true"],
+.pfd-grid.editing .pfd-item .pfnt-tx { cursor: auto; }
+body.pfd-dragging-now .pfd-grid.editing .pfd-item { cursor: grabbing; }
 /* Глаз «Скрыть» у Календаря/Сводки/Истории — КАК В КАРТОЧКЕ ПОРТФЕЛЯ (кнопка .pfc-act),
    в правом-верхнем углу напротив заголовка, виден ПОСТОЯННО (не по hover). */
 .pfd-eye { position: absolute; top: 17px; right: 18px; z-index: 7; pointer-events: auto; }
@@ -2231,27 +2243,35 @@ body.pfd-dragging-now .pfd-move { cursor: grabbing; }
 }
 
 /* ============ карточка «Настройка раскладки» (бывший бар-конструктор + пикер) ============ */
-/* кнопка «Раскладка» в шапке страницы (рядом с названием раздела): выделяется мягким
-   цветом, но не кричит. Тёмная — это кнопка «Добавить на дашборд» ВНУТРИ карточки. */
+/* разделитель между названием раздела и кнопкой настройки вида — отделяет кнопку от
+   крошки «Портфели», чтобы она не читалась как продолжение названия */
+.pfl-open-sep { display: none; width: 1px; height: 20px; margin: 0 4px 0 12px; border-radius: 1px; background: #d7dee8; vertical-align: middle; }
+body.dark-mode .pfl-open-sep { background: rgba(255, 255, 255, 0.16); }
+/* кнопка «Настроить вид» в шапке страницы (рядом с названием раздела): явно нажимаемая —
+   мягкий цвет + шеврон (открывает панель), но не кричит. Тёмная — «Добавить на дашборд». */
 .pfl-open-btn {
-    display: none; align-items: center; gap: 7px; margin-left: 14px; padding: 7px 13px; cursor: pointer;
-    border-radius: 10px; border: 1px solid #c7d2fe; background: linear-gradient(#eef2ff, #e0e7ff); color: #4f46e5;
-    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; letter-spacing: -0.01em; white-space: nowrap;
-    box-shadow: 0 2px 8px -3px rgba(79, 70, 229, 0.35); transition: background 0.14s, border-color 0.14s, box-shadow 0.14s, transform 0.1s;
+    display: none; align-items: center; gap: 7px; padding: 7px 10px 7px 12px; cursor: pointer;
+    border-radius: 10px; border: 1px solid #c1cbf7; background: linear-gradient(#eef1ff, #dee3fe); color: #4338ca;
+    font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 800; letter-spacing: -0.01em; white-space: nowrap;
+    box-shadow: 0 2px 7px -3px rgba(79, 70, 229, 0.4); transition: background 0.14s, border-color 0.14s, box-shadow 0.14s, transform 0.1s;
 }
-.pfl-open-btn svg { width: 15px; height: 15px; }
-.pfl-open-btn:hover { background: linear-gradient(#e4e9ff, #cdd7fe); border-color: #a5b4fc; box-shadow: 0 4px 12px -3px rgba(79, 70, 229, 0.45); }
-.pfl-open-btn:active { transform: translateY(1px); }
-.pfl-open-btn.active { background: linear-gradient(#4f46e5, #4338ca); border-color: transparent; color: #fff; box-shadow: 0 4px 14px -4px rgba(79, 70, 229, 0.6); }
+.pfl-open-ic { width: 15px; height: 15px; }
+.pfl-open-chev { width: 13px; height: 13px; opacity: 0.7; transition: transform 0.2s; }
+.pfl-open-btn:hover { background: linear-gradient(#e6eaff, #cbd3fd); border-color: #9aa7f5; box-shadow: 0 5px 14px -4px rgba(79, 70, 229, 0.5); transform: translateY(-1px); }
+.pfl-open-btn:active { transform: translateY(0); }
+.pfl-open-btn.active { background: linear-gradient(#4f46e5, #4035c4); border-color: transparent; color: #fff; box-shadow: 0 5px 16px -4px rgba(79, 70, 229, 0.65); }
+.pfl-open-btn.active .pfl-open-chev { transform: rotate(180deg); opacity: 0.95; }
 /* точка «раскладка своя» */
 .pfl-open-btn.on { position: relative; }
-.pfl-open-btn.on::after { content: ''; position: absolute; top: 4px; right: 5px; width: 6px; height: 6px; border-radius: 99px; background: #22c55e; box-shadow: 0 0 0 2px #eef2ff; }
-.pfl-open-btn.active.on::after { box-shadow: 0 0 0 2px #4338ca; }
+.pfl-open-btn.on::after { content: ''; position: absolute; top: 3px; right: 4px; width: 6px; height: 6px; border-radius: 99px; background: #22c55e; box-shadow: 0 0 0 2px #eef1ff; }
+.pfl-open-btn.active.on::after { box-shadow: 0 0 0 2px #4035c4; }
 
-/* сама карточка: докнутый сверху диалог с внутренним скроллом (шапка всегда видна) */
+/* сама карточка: докнутый сверху диалог с внутренним скроллом (шапка всегда видна).
+   Высоту держим умеренной (не во весь экран), чтобы под карточкой была видна сетка —
+   её блоки можно перетаскивать/менять, не закрывая карточку. */
 .pfl-panel {
     position: sticky; top: 10px; z-index: 60;
-    display: flex; flex-direction: column; max-height: 82vh;
+    display: flex; flex-direction: column; max-height: 64vh;
     margin-bottom: 16px; border-radius: 18px; overflow: hidden;
     background: #fff; border: 1px solid #e2e8f0;
     box-shadow: 0 24px 60px -22px rgba(15, 23, 42, 0.4), 0 3px 10px rgba(15, 23, 42, 0.06);
