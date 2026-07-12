@@ -1921,32 +1921,35 @@
             { tk: 'GAZP', title: 'Газпром нарастил экспорт по итогам месяца', meta: 'Smart-Lab · вчера' }
         ];
         var rows = demo.map(function (x) {
-            return '<div class="pfnw-item">' +
-                '<span class="pfnw-item-l"><span class="pfnw-item-tk">' + x.tk + '</span></span>' +
-                '<span class="pfnw-item-body"><span class="pfnw-item-title">' + esc(x.title) + '</span><span class="pfnw-item-meta">' + esc(x.meta) + '</span></span>' +
-                '<span class="pfnw-item-go">' + GO_ARROW_SVG + '</span>' +
+            return '<div class="pfnw-item link">' +
+                '<span class="pfnw-item-tkbtn"><span class="pfnw-item-tk">' + x.tk + '</span></span>' +
+                '<div class="pfnw-item-news"><div class="pfnw-item-news-inner">' +
+                    '<span class="pfnw-item-title">' + esc(x.title) + '</span>' +
+                    '<span class="pfnw-item-meta"><i>' + esc(x.meta) + '</i></span>' +
+                '</div></div>' +
             '</div>';
         }).join('');
         return '<div class="dash2-card pf-card2 pf-newsblk">' +
-            pfCardHead('', 'Новости по позициям', 'нажмите бумагу — новость раскроется поверх') +
+            pfCardHead('', 'Новости по позициям', 'наведите бумагу — новость раскроется, нажмите — откроется') +
             '<div class="pfnw-body"><div class="pfnw-list">' + rows + '</div></div></div>';
     }
-    // содержимое поповера-превью справа: шапка (название + бейдж) + сцена.
-    // Портфель собран → живой блок; ПУСТОЙ → настоящий блок с ДЕМО-данными (карта живая
-    // всегда — это реальный рынок); заметка — всегда пример.
+    // превью справа: БЕЗ белой шапки — сразу готовый блок, а в углу плашка-статус
+    // («пример» для демо/заметки, «вживую» для реальных данных рынка/портфеля).
     function pfdPickPvHtml(id, name, noPf) {
-        var stage = '', badge = '';
+        var stage = '', badge = 'пример';
         if (id === '__note') { stage = pfdNoteExampleHtml(); badge = 'пример'; }
         else if (noPf) {
-            if (id === 'heat') stage = pfdHeatHtml();                                    // рынок живой и без портфеля
-            else if (id.indexOf('kpi:') === 0) { stage = pfdKpiHtml(id.slice(4), PFD_DEMO_KPI); badge = 'демо'; }
-            else if (id === 'cap') { stage = pfdCapChartHtml(pfdDemoCapSeries()); badge = 'демо'; }
-            else if (id === 'news') { stage = pfdNewsDemoHtml(); badge = 'демо'; }
+            if (id === 'heat') { stage = pfdHeatHtml(); badge = 'вживую'; }                // рынок живой и без портфеля
+            else if (id.indexOf('kpi:') === 0) stage = pfdKpiHtml(id.slice(4), PFD_DEMO_KPI);
+            else if (id === 'cap') stage = pfdCapChartHtml(pfdDemoCapSeries());
+            else if (id === 'news') stage = pfdNewsDemoHtml();
         } else {
             var b = pfdShelfBlockById(id); stage = b ? b.htmlFn() : '';
+            badge = 'вживую';                                                             // собран портфель → реальные данные
         }
-        return '<div class="pfd-pickpv-h"><b>' + esc(name) + '</b>' + (badge ? '<span class="pfd-pickpv-badge">' + esc(badge) + '</span>' : '') + '</div>' +
-            '<div class="pfd-pick-stage">' + stage + '</div>';
+        return '<div class="pfd-pick-stage">' +
+            (badge ? '<span class="pfd-pick-tag">' + esc(badge) + '</span>' : '') + stage +
+        '</div>';
     }
     // компактная строка списка: имя + описание + «＋»; наведение показывает превью справа
     function pfdPickRow(id, name) {
@@ -1965,36 +1968,26 @@
         var rows = pfdShelfBlocks.map(function (b) { return pfdPickRow(b.id, b.name || b.id); });
         rows.push(pfdPickRow('__note', 'Заметка'));
         var hint = noPf
-            ? 'Наведите на блок — справа появится превью с демо-данными. Нажмите, чтобы добавить.'
-            : 'Наведите на блок — справа появится живое превью. Нажмите, чтобы добавить.';
-        return '<div class="pfd-picker-h"><b>Что добавить</b><span>' + hint + '</span></div>' +
-            '<div class="pfd-picker-list">' + rows.join('') + '</div>';
+            ? 'Наведите блок — справа появится превью с примерными данными. Нажмите, чтобы добавить.'
+            : 'Наведите блок — справа появится его превью. Нажмите, чтобы добавить.';
+        return '<div class="pfd-picker-col">' +
+                '<div class="pfd-picker-h"><b>Что добавить</b><span>' + hint + '</span></div>' +
+                '<div class="pfd-picker-list">' + rows.join('') + '</div>' +
+            '</div>' +
+            '<div class="pfd-pickpv" id="pfdPickPv"></div>';
     }
-    // поповер выравниваем по вертикали со СТРОКОЙ, на которую навели (не по верху списка).
-    // Считаем в layout-px через offsetTop — иначе body{zoom:0.9} десктопа рассинхронит
-    // визуальные getBoundingClientRect и CSS-top, и поповер уезжает выше строки.
-    function pfdAlignPickPv(pv, row) {
-        var picker = document.getElementById('pfdPicker');
-        if (!picker || !row) return;
-        var top = row.offsetTop + picker.offsetTop;        // строка → относительно .pfd-addwrap
-        pv.style.top = top + 'px';
-        // не свешиваться за низ экрана (переполнение меряем визуально, правку делим на zoom)
-        var zoom = parseFloat(getComputedStyle(document.body).zoom) || 1;
-        var over = pv.getBoundingClientRect().bottom - (window.innerHeight - 8);
-        if (over > 0) pv.style.top = Math.max(0, top - over / zoom) + 'px';
-    }
-    // наведение на строку → наполнить поповер-превью справа (живой блок / демо / пример)
+    // наведение на строку → наполнить превью-сцену справа (живой блок / демо / пример).
+    // Сцена — фиксированная правая колонка панели, вертикальное выравнивание не нужно.
     window.pfdPickPreview = function (id) {
         var pv = document.getElementById('pfdPickPv'); if (!pv) return;
         var noPf = pfdPickNoPf();
         var name = id === '__note' ? 'Заметка' : ((pfdShelfBlockById(id) || {}).name || id);
         pv.innerHTML = pfdPickPvHtml(id, name, noPf);
         pv.classList.add('show');
-        var host = document.getElementById('pfdPicker'), activeRow = null;
+        var host = document.getElementById('pfdPicker');
         if (host) host.querySelectorAll('.pfd-pick').forEach(function (r) {
-            var on = r.getAttribute('data-pick') === id; r.classList.toggle('active', on); if (on) activeRow = r;
+            r.classList.toggle('active', r.getAttribute('data-pick') === id);
         });
-        pfdAlignPickPv(pv, activeRow);
         // карта живая ВСЕГДА (реальный рынок); новости — только в живом режиме (в демо строки статичные)
         requestAnimationFrame(function () {
             try { if (document.querySelector('#pfdPickPv .pfhm-box')) pfdHeatRepaintSoon(); } catch (e) {}
@@ -2010,11 +2003,13 @@
         host.innerHTML = pfdPickerInner();
         host.classList.add('open');
         var btn = document.querySelector('#pfWrap .pfd-addbtn'); if (btn) btn.classList.add('open');
-        pfdPickerOpen = true;   // превью справа появляется при наведении (pfdPickPreview)
+        pfdPickerOpen = true;
+        // сразу показать превью первого блока — правая колонка не должна пустовать до наведения
+        var first = host.querySelector('.pfd-pick');
+        if (first) pfdPickPreview(first.getAttribute('data-pick'));
     }
     function pfdPickerClose() {
         var host = document.getElementById('pfdPicker'); if (host) { host.classList.remove('open'); host.innerHTML = ''; }
-        var pv = document.getElementById('pfdPickPv'); if (pv) { pv.classList.remove('show'); pv.innerHTML = ''; }
         var btn = document.querySelector('#pfWrap .pfd-addbtn'); if (btn) btn.classList.remove('open');
         pfdPickerOpen = false;
     }
@@ -2041,6 +2036,9 @@
             // заметку крестик УДАЛЯЕТ (это контент, не блок-полка); Cmd+Z вернёт
             var xCall = b.isNote ? 'pfdRemoveNote(\'' + jsArg(b.id) + '\')' : 'pfdHideBlock(\'' + jsArg(b.id) + '\')';
             var xTitle = b.isNote ? 'Удалить заметку (Cmd/Ctrl+Z вернёт)' : 'Убрать блок с дашборда (вернуть — с полки «Добавить блок»)';
+            // блоки с полки «Что добавить» (KPI/график/карта/новости) можно убрать и БЕЗ режима
+            // конструктора — плавающий крестик в углу карточки, как «удалить» у заметки
+            var removable = !b.isNote && !!b.defHidden;
             return '<div class="pfd-item' + (h ? ' pfd-hset' : '') + '" data-pfd="' + esc(b.id) + '" style="' + style + '">' +
                 (dashEdit
                     ? '<div class="pfd-chrome">' +
@@ -2049,7 +2047,9 @@
                         '<span class="pfd-size"></span>' +
                         '<span class="pfd-rs" title="Потяните: ширина — колонками, высота — свободно. Двойной клик — высота в авто, ещё раз — ширина по умолчанию"></span>' +
                       '</div>'
-                    : '') +
+                    : (removable
+                        ? '<button class="pfd-cardx" title="Убрать карточку (вернуть — «Добавить блок»)" aria-label="Убрать карточку" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + PFD_X_SVG + '</button>'
+                        : '')) +
                 '<div class="pfd-body">' + html + '</div>' +
             '</div>';
         }).join('');
@@ -2059,13 +2059,13 @@
         // Содержимое собирается ЛЕНИВО при открытии/наведении — блоки тяжёлые.
         pfdShelfBlocks = hiddenB.slice();
         pfdPickerOpen = false;   // при каждом ре-рендере бара выпадашка закрыта
+        // кнопка-триггер слева; сама панель пикера — прямой ребёнок .pfd-bar (ниже),
+        // чтобы раскрываться на всю ширину бара и левым краем совпадать с «Конструктором»
         var add = dashEdit
             ? '<div class="pfd-addwrap">' +
                 '<button class="pfd-addbtn" onclick="pfdPickerToggle(event)" aria-label="Добавить блок">' +
                     PFD_PLUS_SVG + '<span>Добавить блок</span>' + PFD_CHEVDOWN_SVG +
                 '</button>' +
-                '<div class="pfd-picker" id="pfdPicker"></div>' +
-                '<div class="pfd-pickpv" id="pfdPickPv"></div>' +
               '</div>'
             : '';
         var bar = dashEdit
@@ -2079,6 +2079,7 @@
                         '<button class="d3-quick" onclick="pfDashToggleEdit()">' + CHECK_SVG + '<span>Готово</span></button>' +
                     '</div>' +
                 '</div>' +
+                '<div class="pfd-picker" id="pfdPicker"></div>' +
               '</div>'
             : '';
         return bar + '<div class="pfd-grid pfd-masonry' + (dashEdit ? ' editing' : '') + '" id="pfdGrid">' + items + '</div>';
@@ -2388,9 +2389,10 @@
         var nt = pfdFindNote(id); if (!nt || nt.due == null) return;
         pfdPushUndo(); nt.due = null; nt.dueStart = null; saveDashCfg(); pfdReplaceDue(nt); pfdRepackSoon();
     };
-    // ---- СВОЙ календарь-поповер срока: ДЕНЬ или ПЕРИОД + время (поверх контента) ----
-    // pfdCal.mode='day'|'period'; d = конец/дедлайн (Date, с временем); start = начало
-    // периода (ms, локальная полночь) в режиме «Период»; picking = ждём второй клик (конец).
+    // ---- СВОЙ календарь-поповер срока: день или период ПРОТЯГИВАНИЕМ + время ----
+    // Одиночный клик по дню = срок-день; зажать день и протянуть до другого = период.
+    // d = конец/дедлайн (Date, с временем); start = начало периода (ms, локальная полночь)
+    // или null для одиночного дня; dragging/dragAnchor — состояние протягивания мышью.
     var pfdCal = null;
     var PFDCAL_WD = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
     var PFDCAL_MON = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
@@ -2400,11 +2402,8 @@
     function pfd2(n) { return String(n).padStart(2, '0'); }
     function pfdMid(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); }   // полночь дня Date
     function pfdCalInner() {
-        var c = pfdCal, d = c.d, vy = c.vy, vm = c.vm, isPer = c.mode === 'period';
-        var modes = '<div class="pfnt-cal-modes">' +
-            '<button type="button" class="pfnt-cal-mode' + (isPer ? '' : ' on') + '" onclick="pfdCalSetMode(\'day\')">День</button>' +
-            '<button type="button" class="pfnt-cal-mode' + (isPer ? ' on' : '') + '" onclick="pfdCalSetMode(\'period\')">Период</button>' +
-        '</div>';
+        var c = pfdCal, d = c.d, vy = c.vy, vm = c.vm;
+        var isPer = c.start != null;                         // период задан, если есть день начала
         var presets = PFDCAL_PRESETS.map(function (p, i) {
             return '<button type="button" class="pfnt-cal-preset" onclick="pfdCalPreset(' + i + ')">' + p.l + '</button>';
         }).join('');
@@ -2414,7 +2413,7 @@
         var daysIn = new Date(vy, vm + 1, 0).getDate();
         var today = new Date(); today.setHours(0, 0, 0, 0);
         var endMid = pfdMid(d);
-        var startMid = (isPer && c.start != null) ? c.start : null;
+        var startMid = isPer ? c.start : null;
         var lo = startMid != null ? Math.min(startMid, endMid) : endMid;
         var hi = startMid != null ? Math.max(startMid, endMid) : endMid;
         var cells = '';
@@ -2424,20 +2423,20 @@
             var cls = 'pfnt-cal-d';
             if (ts === today.getTime()) cls += ' today';
             if (dt < today) cls += ' past';
-            if (isPer && startMid != null) {
+            if (startMid != null) {
                 if (ts === lo && ts === hi) cls += ' sel';
                 else if (ts === lo) cls += ' rstart';
                 else if (ts === hi) cls += ' rend';
                 else if (ts > lo && ts < hi) cls += ' inrange';
             } else if (ts === endMid) cls += ' sel';
-            cells += '<button type="button" class="' + cls + '" onclick="pfdCalPickDay(' + ts + ')">' + day + '</button>';
+            // mousedown — начало, mouseenter при зажатой кнопке — конец периода (протягивание)
+            cells += '<button type="button" class="' + cls + '" data-ts="' + ts + '" ' +
+                'onmousedown="pfdCalDown(' + ts + ',event)" onmouseenter="pfdCalOver(' + ts + ')">' + day + '</button>';
         }
-        var hint = !isPer ? 'Выберите день срока'
-            : (c.picking ? 'Теперь нажмите день конца периода'
-            : (startMid != null ? 'Период выбран — задайте время и «Готово»' : 'Нажмите день начала периода'));
+        var hint = isPer ? 'Период выбран — задайте время конца и «Готово»'
+            : 'Нажмите день срока или зажмите и протяните, чтобы выбрать период';
         var timeVal = pfd2(d.getHours()) + ':' + pfd2(d.getMinutes());
-        return modes +
-            '<div class="pfnt-cal-presets">' + presets + '</div>' +
+        return '<div class="pfnt-cal-presets">' + presets + '</div>' +
             '<div class="pfnt-cal-head">' +
                 '<button type="button" class="pfnt-cal-nav" onclick="pfdCalNav(-1)" aria-label="Прошлый месяц">' + NOTE_CHEV_SVG + '</button>' +
                 '<span class="pfnt-cal-mon">' + PFDCAL_MON[vm] + ' ' + vy + '</span>' +
@@ -2453,14 +2452,25 @@
                 '<button type="button" class="pfnt-cal-ok" onclick="pfdCalApply()">Готово</button>' +
             '</div>';
     }
-    window.pfdCalSetMode = function (mode) {
+    // перекрасить дни по текущему выбору БЕЗ пересборки innerHTML — плавно во время протягивания
+    function pfdCalPaint() {
         if (!pfdCal) return;
-        mode = mode === 'period' ? 'period' : 'day';
-        if (pfdCal.mode === mode) return;
-        pfdCal.mode = mode;
-        pfdCal.start = null; pfdCal.picking = false;   // сбрасываем набор диапазона при смене режима
-        pfdCalRender();
-    };
+        var card = pfdNoteCard(pfdCal.nid), pop = card && card.querySelector('.pfnt-cal');
+        if (!pop) return;
+        var endMid = pfdMid(pfdCal.d), startMid = pfdCal.start;
+        var lo = startMid != null ? Math.min(startMid, endMid) : endMid;
+        var hi = startMid != null ? Math.max(startMid, endMid) : endMid;
+        pop.querySelectorAll('.pfnt-cal-d').forEach(function (btn) {
+            var ts = +btn.getAttribute('data-ts');
+            btn.classList.remove('sel', 'rstart', 'rend', 'inrange');
+            if (startMid != null) {
+                if (ts === lo && ts === hi) btn.classList.add('sel');
+                else if (ts === lo) btn.classList.add('rstart');
+                else if (ts === hi) btn.classList.add('rend');
+                else if (ts > lo && ts < hi) btn.classList.add('inrange');
+            } else if (ts === endMid) btn.classList.add('sel');
+        });
+    }
     function pfdCalRender() {
         if (!pfdCal) return;
         var card = pfdNoteCard(pfdCal.nid), pop = card && card.querySelector('.pfnt-cal');
@@ -2475,9 +2485,8 @@
         var nt = pfdFindNote(nid); if (!nt) return;
         var d = nt.due != null ? new Date(nt.due) : new Date();
         if (nt.due == null) d.setHours(18, 0, 0, 0);   // разумный дефолт срока — сегодня 18:00
-        // режим восстанавливаем по заметке: есть начало периода → «Период», иначе «День»
-        var mode = nt.dueStart != null ? 'period' : 'day';
-        pfdCal = { nid: nid, vy: d.getFullYear(), vm: d.getMonth(), d: d, mode: mode, start: (nt.dueStart != null ? nt.dueStart : null), picking: false };
+        // выбор восстанавливаем по заметке: есть день начала → период, иначе одиночный срок
+        pfdCal = { nid: nid, vy: d.getFullYear(), vm: d.getMonth(), d: d, start: (nt.dueStart != null ? nt.dueStart : null), dragging: false, dragAnchor: null };
         var card = pfdNoteCard(nid), pop = card && card.querySelector('.pfnt-cal');
         if (!pop) { pfdCal = null; return; }
         pop.innerHTML = pfdCalInner();
@@ -2507,22 +2516,36 @@
         pfdCalRender();
     };
     function pfdCalSetDayOf(d, ts) { var t = new Date(ts); d.setFullYear(t.getFullYear(), t.getMonth(), t.getDate()); }
-    window.pfdCalPickDay = function (ts) {
+    // нажали день: старт как одиночный срок; протягивание (mouseenter) расширит до периода
+    window.pfdCalDown = function (ts, ev) {
+        if (ev) ev.preventDefault();               // без выделения текста при протягивании
         if (!pfdCal) return;
-        var d = pfdCal.d;
-        if (pfdCal.mode === 'period') {
-            if (!pfdCal.picking) {                 // первый клик — начало нового периода
-                pfdCal.start = ts; pfdCalSetDayOf(d, ts); pfdCal.picking = true;
-            } else {                               // второй клик — конец; упорядочим начало/конец
-                var lo = Math.min(pfdCal.start, ts), hi = Math.max(pfdCal.start, ts);
-                pfdCal.start = lo; pfdCalSetDayOf(d, hi); pfdCal.picking = false;
-            }
-        } else {                                   // режим «День» — один срок
-            pfdCalSetDayOf(d, ts); pfdCal.start = null; pfdCal.picking = false;
-        }
-        pfdCal.vy = d.getFullYear(); pfdCal.vm = d.getMonth();
-        pfdCalRender();
+        pfdCal.dragAnchor = ts; pfdCal.dragging = true;
+        pfdCalSetDayOf(pfdCal.d, ts); pfdCal.start = null;
+        pfdCalPaint();
     };
+    // курсор зашёл на день при зажатой кнопке — второй конец периода
+    window.pfdCalOver = function (ts) {
+        if (!pfdCal || !pfdCal.dragging) return;
+        var lo = Math.min(pfdCal.dragAnchor, ts), hi = Math.max(pfdCal.dragAnchor, ts);
+        pfdCalSetDayOf(pfdCal.d, hi); pfdCal.start = lo < hi ? lo : null;   // lo==hi → одиночный день
+        pfdCalPaint();
+    };
+    // отпустили кнопку — зафиксировать выбор. НЕ пересобираем innerHTML: следом за mouseup
+    // браузер шлёт click, и на пересозданном (detached) дне closest('.pfnt-duewrap') вернул бы
+    // null → общий обработчик закрыл бы календарь. Точечно правим только подсказку и подпись времени.
+    function pfdCalDragEnd() {
+        if (!pfdCal || !pfdCal.dragging) return;
+        pfdCal.dragging = false;
+        var card = pfdNoteCard(pfdCal.nid), pop = card && card.querySelector('.pfnt-cal');
+        if (!pop) return;
+        var isPer = pfdCal.start != null;
+        var hint = pop.querySelector('.pfnt-cal-hint');
+        if (hint) hint.textContent = isPer ? 'Период выбран — задайте время конца и «Готово»'
+            : 'Нажмите день срока или зажмите и протяните, чтобы выбрать период';
+        var tl = pop.querySelector('.pfnt-cal-time > span');
+        if (tl) tl.textContent = isPer ? 'Время конца' : 'Время';
+    }
     window.pfdCalPreset = function (i) {
         if (!pfdCal) return;
         var p = PFDCAL_PRESETS[i]; if (!p) return;
@@ -2530,8 +2553,7 @@
         if (p.d) d.setDate(d.getDate() + p.d);
         d.setHours(pfdCal.d.getHours(), pfdCal.d.getMinutes(), 0, 0);       // время-суток сохраняем
         pfdCal.d = d; pfdCal.vy = d.getFullYear(); pfdCal.vm = d.getMonth();
-        if (pfdCal.mode === 'period') { pfdCal.start = pfdMid(new Date()); pfdCal.picking = false; }   // период: сегодня → конец
-        else pfdCal.start = null;
+        pfdCal.start = null;                       // пресеты — одиночный день-срок
         pfdCalRender();
     };
     window.pfdCalTime = function (val) {
@@ -2543,7 +2565,7 @@
         if (!pfdCal) return;
         var nt = pfdFindNote(pfdCal.nid), ts = pfdCal.d.getTime();
         // начало периода валидно, только если оно РАНЬШЕ дня конца (иначе — обычный срок-день)
-        var start = (pfdCal.mode === 'period' && pfdCal.start != null && pfdCal.start < pfdMid(pfdCal.d)) ? pfdCal.start : null;
+        var start = (pfdCal.start != null && pfdCal.start < pfdMid(pfdCal.d)) ? pfdCal.start : null;
         pfdCalClose();
         if (nt && (ts !== nt.due || start !== (nt.dueStart == null ? null : nt.dueStart))) {
             pfdPushUndo(); nt.due = ts; nt.dueStart = start; saveDashCfg(); pfdReplaceDue(nt); pfdRepackSoon();
@@ -2567,6 +2589,8 @@
             var wrap = el.closest('.pfnt-due'); if (wrap) { wrap.classList.remove('ok', 'soon', 'over'); wrap.classList.add(r.cls); }
         });
     }, 1000);
+    // отпускание мыши где угодно завершает протягивание диапазона в календаре срока
+    document.addEventListener('mouseup', function () { if (pfdCal && pfdCal.dragging) pfdCalDragEnd(); });
     // клик вне палитры/календаря — закрыть раскрытый поповер
     document.addEventListener('click', function (e) {
         var t = e.target;
@@ -2575,8 +2599,8 @@
             pfdNoteClrOpen = null;
         }
         if (pfdCal && !(t && t.closest && t.closest('.pfnt-duewrap'))) pfdCalClose();
-        // выпадашка «Добавить блок»: клик вне неё и не по кнопке — закрыть
-        if (pfdPickerOpen && !(t && t.closest && t.closest('.pfd-addwrap'))) pfdPickerClose();
+        // выпадашка «Добавить блок»: клик вне панели и не по кнопке-триггеру — закрыть
+        if (pfdPickerOpen && !(t && t.closest && (t.closest('.pfd-addwrap') || t.closest('.pfd-picker')))) pfdPickerClose();
     });
     // Esc закрывает открытый календарь срока / выпадашку добавления блока
     document.addEventListener('keydown', function (e) {
@@ -2911,19 +2935,27 @@
         }
         if (pfdNewsPick && !list.some(function (x) { return x.tk === pfdNewsPick; })) pfdNewsPick = null;
         var shown = pfdNewsPick ? list.filter(function (x) { return x.tk === pfdNewsPick; }) : list;
-        var rows = shown.map(function (x) {
-            var mark = x.custom ? '<span class="pfnw-item-nopf" title="Не в портфеле">внеш.</span>' : '<span class="pfnw-pfdots">' + pfdNewsDots(x) + '</span>';
-            return '<button type="button" class="pfnw-item" data-tk="' + esc(x.tk) + '" id="pfnw-' + esc(x.tk) + '" onclick="pfdNewsOpenPreview(\'' + jsArg(x.tk) + '\')">' +
-                '<span class="pfnw-item-l"><span class="pfnw-item-tk">' + esc(x.tk) + '</span>' + mark + '</span>' +
-                '<span class="pfnw-item-body"><span class="pfnw-item-title">загрузка новости…</span><span class="pfnw-item-meta"></span></span>' +
-                '<span class="pfnw-item-go">' + GO_ARROW_SVG + '</span>' +
-            '</button>';
-        }).join('');
+        var rows = shown.map(function (x) { return pfdNewsItemHtml(x); }).join('');
         return '<div class="dash2-card pf-card2 pf-newsblk">' +
-            pfCardHead('', 'Новости по позициям', 'нажмите бумагу — новость раскроется поверх') +
+            pfCardHead('', 'Новости по позициям', 'наведите бумагу — новость раскроется, нажмите — откроется') +
             pfdNewsChips(list) +
             '<div class="pfnw-body" data-skey="posnews"><div class="pfnw-list">' + rows + '</div></div></div>';
     }
+    // строка новости в стиле «Избранного»: слева тикер-чип (→ карточка компании), справа
+    // блок новости, который РАСКРЫВАЕТСЯ по наведению (полный заголовок всплывает поверх),
+    // клик по нему открывает саму новость. Наполняется асинхронно в fillPosNewsSlot.
+    function pfdNewsItemHtml(x) {
+        var mark = x.custom ? '<span class="pfnw-item-nopf" title="Не в портфеле">внеш.</span>' : '<span class="pfnw-pfdots">' + pfdNewsDots(x) + '</span>';
+        return '<div class="pfnw-item" data-tk="' + esc(x.tk) + '" id="pfnw-' + esc(x.tk) + '">' +
+            '<button type="button" class="pfnw-item-tkbtn" onclick="pfOpenTicker(\'' + jsArg(x.tk) + '\')" title="Открыть карточку компании">' +
+                '<span class="pfnw-item-tk">' + esc(x.tk) + '</span>' + mark + '</button>' +
+            '<div class="pfnw-item-news"><div class="pfnw-item-news-inner">' +
+                '<span class="pfnw-item-title">загрузка новости…</span>' +
+                '<span class="pfnw-item-meta"></span>' +
+            '</div></div>' +
+        '</div>';
+    }
+    var PFNW_GO_SVG = '<svg class="pfnw-item-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg>';
     window.pfdNewsSetPick = function (tk) {
         var next = tk || null;
         if (pfdNewsPick === next) next = null;   // повторный клик по активному чипу — назад к «Все»
@@ -2953,43 +2985,24 @@
         card.parentNode.replaceChild(tmp.firstChild, card);
         renderPosNews(); pfdRepackSoon();
     }
-    // предпросмотр новости — оверлей ПОВЕРХ контента карточки (не растягивает строку)
-    window.pfdNewsOpenPreview = function (tk) {
-        var card = document.querySelector('#pfWrap .pf-newsblk'); if (!card) return;
-        if (!newsHtmlCache[tk] && typeof loadNewsForTicker === 'function' && !newsStarted[tk]) { newsStarted[tk] = true; newsQueue.push(tk); setTimeout(pumpNewsQueue, 0); }
-        var e = newsHtmlCache[tk];
-        var it = pfdNewsList().filter(function (x) { return x.tk === tk; })[0];
-        var pfLabel = it && it.pfs.length ? it.pfs.map(function (p) { return p.name; }).join(' · ') : (it && it.custom ? 'не в портфеле' : '');
-        var inner;
-        if (!e) inner = '<div class="pfnw-pv-state">Загружаем новость…</div>';
-        else if (e.none) inner = '<div class="pfnw-pv-state">Свежих новостей по ' + esc(tk) + ' нет.</div>';
-        else inner = '<div class="pfnw-pv-title">' + esc(e.title || '') + '</div>' +
-            '<div class="pfnw-pv-meta">' + esc(e.src || 'Smart-Lab') + (e.rel ? ' · ' + esc(e.rel) : '') + '</div>' +
-            (e.link ? '<button class="pfnw-pv-open" onclick="pfdNewsOpenLink(\'' + jsArg(e.link) + '\')">Открыть новость' + GO_ARROW_SVG + '</button>' : '');
-        var pv = '<div class="pfnw-preview" data-tk="' + esc(tk) + '" onclick="if(event.target===this)pfdNewsClosePreview()">' +
-            '<div class="pfnw-pv-card">' +
-                '<div class="pfnw-pv-head">' +
-                    '<button class="pfnw-pv-tk" onclick="pfOpenTicker(\'' + jsArg(tk) + '\')" title="Открыть карточку компании">' + esc(tk) + '</button>' +
-                    (pfLabel ? '<span class="pfnw-pv-pf">' + esc(pfLabel) + '</span>' : '') +
-                    '<button class="pfnw-pv-x" onclick="pfdNewsClosePreview()" aria-label="Закрыть">' + NOTE_X_SVG + '</button>' +
-                '</div>' + inner +
-            '</div></div>';
-        var old = card.querySelector('.pfnw-preview'); if (old) old.parentNode.removeChild(old);
-        card.insertAdjacentHTML('beforeend', pv);
-    };
-    window.pfdNewsClosePreview = function () { var pv = document.querySelector('#pfWrap .pf-newsblk .pfnw-preview'); if (pv) pv.parentNode.removeChild(pv); };
     window.pfdNewsOpenLink = function (link) { if (typeof openExternalLink === 'function') openExternalLink(link); else window.open(link, '_blank'); };
+    // Наполнить строку новости (как fillNewsSlot «Избранного»): заголовок + мета; если есть
+    // ссылка — строка кликабельна (открывает новость), нет — помечаем «нет свежих новостей».
     function fillPosNewsSlot(tk) {
-        var row = document.querySelector('#pfWrap .pfnw-item[data-tk="' + tk + '"]'), e = newsHtmlCache[tk]; if (!e) { }
-        if (row && e) {
-            var titleEl = row.querySelector('.pfnw-item-title'), metaEl = row.querySelector('.pfnw-item-meta');
-            row.classList.toggle('is-none', !!e.none);
-            if (titleEl) titleEl.textContent = e.none ? 'нет свежих новостей' : (e.title || '');
-            if (metaEl) metaEl.textContent = e.none ? '' : (e.src || 'Smart-Lab') + (e.rel ? ' · ' + e.rel : '');
+        var row = document.querySelector('#pfWrap .pfnw-item[data-tk="' + tk + '"]'), e = newsHtmlCache[tk];
+        if (!row || !e) return;
+        var titleEl = row.querySelector('.pfnw-item-title'), metaEl = row.querySelector('.pfnw-item-meta');
+        var news = row.querySelector('.pfnw-item-news');
+        row.classList.toggle('is-none', !!e.none);
+        if (titleEl) titleEl.textContent = e.none ? 'нет свежих новостей' : (e.title || '');
+        if (metaEl) metaEl.innerHTML = e.none ? '' : ('<i>' + esc(e.src || 'Smart-Lab') + '</i>' + (e.rel ? ' · ' + esc(e.rel) : '') + (e.link ? PFNW_GO_SVG : ''));
+        if (e.link) {
+            row.classList.add('link');
+            if (news) { news.setAttribute('role', 'link'); news.onclick = function (ev) { ev.stopPropagation(); window.pfdNewsOpenLink(e.link); }; }
+        } else {
+            row.classList.remove('link');
+            if (news) { news.removeAttribute('role'); news.onclick = null; }
         }
-        // если по этому тикеру открыт предпросмотр в состоянии загрузки — обновим
-        var pv = document.querySelector('#pfWrap .pf-newsblk .pfnw-preview[data-tk="' + tk + '"]');
-        if (pv && e && pv.querySelector('.pfnw-pv-state')) window.pfdNewsOpenPreview(tk);
     }
     function renderPosNews() {
         if (!document.querySelector('#pfWrap .pf-newsblk') || typeof loadNewsForTicker !== 'function') return;
