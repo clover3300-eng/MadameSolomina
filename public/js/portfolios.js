@@ -1506,8 +1506,9 @@
     // «Импорт» из неё убран — импортировать состав можно из настроек портфеля (⚙).
     // иконка конструктора: сетка 2×2 (LAYOUT_SVG занят пунктом «Вид»)
     var PFDGRID_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.6"/></svg>';
-    // шесть точек-«грип» в ярлыке блока конструктора
-    var PFD_GRIP_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.7"/><circle cx="15" cy="6" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="9" cy="18" r="1.7"/><circle cx="15" cy="18" r="1.7"/></svg>';
+    // рука-«грип» в верхнем-правом углу блока: за неё блок перетаскивается (при нажатии —
+    // анимация «зацепления», см. css .pfd-move)
+    var PFD_HAND_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L9 13"/></svg>';
     function topBarActionsHtml() {
         return '<button class="d3-quick" onclick="pfAddPortfolio()">' + PLUS_SVG + '<span>Добавить портфель</span></button>' +
             // «Видимость» показываем при 2+ портфелях, при наличии сделок ИЛИ когда включена
@@ -1556,18 +1557,16 @@
             '<div class="pf-eyenote">Скрытые карточки не показываются в сетке и в календаре выплат, но их капитал по-прежнему учитывается в общей сводке.</div>' : '';
         // ---- группа «Секции страницы» — тумблеры видимости блоков ----
         // При включённой своей раскладке (dashCfg.on) сюда попадают скрытые/показанные
-        // ИЗНАЧАЛЬНЫЕ блоки (календарь/ставки, избранное, сводка) — их возвращают именно
-        // отсюда (виджеты возвращаются из «Конструктор → Добавить блок»). Плюс всегда —
-        // тумблер «История сделок».
+        // ИЗНАЧАЛЬНЫЕ блоки, которые МОЖНО скрыть глазом на самой карточке — «Календарь
+        // выплат» и «Сводка» (у «Избранного»/«Ставок рынка» скрытия нет). Виджеты
+        // возвращаются из «Конструктор → Добавить блок». Плюс всегда — «История сделок».
         var dashSecRows = '';
         if (dashCfg.on) {
             var hasVisHold = store.items.some(function (p) { return !p.hidden && (p.holdings || []).length > 0; });
             var noBondsV = hasVisHold && !calPfCandidates().length;
             var secs = [
                 { id: 'cal', name: noBondsV ? 'Ставки' : 'Календарь выплат', sub: noBondsV ? 'ставки денежного рынка' : 'ближайшие купоны и дивиденды', on: true },
-                { id: 'fav', name: 'Избранное', sub: 'отслеживаемые бумаги', on: true },
-                { id: 'sum', name: 'Сводка', sub: 'суммарный капитал по портфелям', on: store.items.length >= 2 },
-                { id: 'rates', name: 'Ставки рынка', sub: 'ключевая ставка и RUSFAR', on: !noBondsV }
+                { id: 'sum', name: 'Сводка', sub: 'суммарный капитал по портфелям', on: store.items.length >= 2 }
             ];
             dashSecRows = secs.filter(function (s) { return s.on; }).map(function (s) {
                 var hid = !!(dashCfg.hidden || {})[s.id];
@@ -1805,18 +1804,7 @@
             var nb = bestTop + h + gap;
             for (var k2 = bestC; k2 < bestC + span; k2++) bottom[k2] = nb;
         });
-        pfdPlaceGuide();        // направляющую ресайза кладём по фактической геометрии блока
         pfdHeatRepaintSoon();   // ширина окна/блока изменилась → плитки карты заново
-    }
-    // направляющая ресайза: пунктир на ПРАВОЙ грани блока (offsetLeft+offsetWidth уже в
-    // grid-relative layout-px, как и absolute-guide) — считаем ПОСЛЕ упаковки, иначе при
-    // смене колонки блока offsetLeft ссылается на старое место и линия улетает за сетку
-    var pfdGuideEl = null, pfdGuideItem = null;
-    function pfdPlaceGuide() {
-        if (!pfdGuideEl || !pfdGuideItem) return;
-        pfdGuideEl.style.left = (pfdGuideItem.offsetLeft + pfdGuideItem.offsetWidth) + 'px';
-        pfdGuideEl.style.top = (pfdGuideItem.offsetTop - 8) + 'px';
-        pfdGuideEl.style.height = (pfdGuideItem.offsetHeight + 16) + 'px';
     }
     function pfdRepackSoon() { if (!pfdPackRaf) pfdPackRaf = requestAnimationFrame(pfdPack); }
     // (пере)подписываем ResizeObserver на актуальные блоки: их высота меняется от
@@ -2070,28 +2058,30 @@
             var span = clamp(+(dashCfg.span[b.id]) || b.span, 3, 12);
             var h = +(dashCfg.h[b.id]) || 0;
             var style = 'grid-column: span ' + span + ';' + (h ? 'height:' + clamp(h, 240, 1400) + 'px;' : '');
-            // Угловая кнопка блока (проявляется при наведении):
-            //  • заметка — своя корзина уже есть в шапке карточки (pfnt-trash), кнопку не дублируем;
-            //  • ВИДЖЕТ (defHidden: KPI/график/карта/новости) — УДАЛИТЬ (корзина), вернётся из
-            //    «Конструктор → Добавить блок»;
-            //  • ИЗНАЧАЛЬНЫЙ блок — СКРЫТЬ (глаз-off): портфель → pfToggleHidden, «История сделок»
-            //    → pfToggleTradesHidden, остальные (календарь/избранное/сводка/ставки) → pfdHideBlock;
-            //    вернуть — через меню «Видимость» в шапке.
+            // Кнопка «скрыть/удалить» (левее руки в правом-верхнем кластере, проявляется по hover):
+            //  • заметка / портфель — СВОЯ кнопка уже есть в шапке карточки (pfnt-trash / глаз .pfc-act),
+            //    в chrome не дублируем;
+            //  • ВИДЖЕТ (defHidden: KPI/график/карта/новости) — УДАЛИТЬ (корзина, как в заметках),
+            //    вернётся из «Конструктор → Добавить блок»;
+            //  • «Календарь выплат»/«Сводка»/«История сделок» — СКРЫТЬ (глаз-off, как в карточках
+            //    портфеля), вернуть — через меню «Видимость» в шапке;
+            //  • «Избранное»/«Ставки рынка» — без кнопки (их не скрываем).
             var hideBtn = '';
-            if (!b.isNote && b.defHidden) {
-                hideBtn = '<button class="pfd-hide pfd-hide--del" title="Удалить виджет (вернуть — «Добавить блок» в Конструкторе)" aria-label="Удалить виджет" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + NOTE_TRASH_SVG + '</button>';
-            } else if (!b.isNote) {
-                var hCall = b.id.indexOf('pf:') === 0 ? ('pfToggleHidden(\'' + jsArg(b.id.slice(3)) + '\',event)')
-                    : b.id === 'trades' ? 'pfToggleTradesHidden(event)'
-                    : ('pfdHideBlock(\'' + jsArg(b.id) + '\')');
-                hideBtn = '<button class="pfd-hide" title="Скрыть блок (вернуть — «Видимость» в шапке)" aria-label="Скрыть блок" onclick="' + hCall + '">' + EYEOFF_SVG + '</button>';
+            if (b.isNote || b.id.indexOf('pf:') === 0) {
+                hideBtn = '';
+            } else if (b.defHidden) {
+                hideBtn = '<button class="pfd-tool pfd-del" title="Удалить виджет (вернуть — «Добавить блок» в Конструкторе)" aria-label="Удалить виджет" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + NOTE_TRASH_SVG + '</button>';
+            } else if (b.id === 'cal' || b.id === 'sum' || b.id === 'trades') {
+                var hCall = b.id === 'trades' ? 'pfToggleTradesHidden(event)' : ('pfdHideBlock(\'' + jsArg(b.id) + '\')');
+                hideBtn = '<button class="pfd-tool pfd-hide" title="Скрыть блок (вернуть — «Видимость» в шапке)" aria-label="Скрыть блок" onclick="' + hCall + '">' + EYEOFF_SVG + '</button>';
             }
-            // «живой» chrome есть у КАЖДОГО блока сетки (не только в тулбоксе): грип-ручка для
-            // переноса, кнопка скрыть/удалить, бейдж размера и три зоны ресайза — правая кромка
-            // (ширина), нижняя (высота) и уголок (обе). Всё проявляется по hover (см. CSS).
+            // «живой» chrome есть у КАЖДОГО блока сетки (не только в тулбоксе): рука-ручка в
+            // правом-верхнем углу для переноса (+ кнопка скрыть/удалить слева от неё) и три зоны
+            // ресайза — правая кромка (ширина), нижняя (высота), уголок (обе). Всё по hover (см. CSS).
             var chrome = '<div class="pfd-chrome">' +
-                '<span class="pfd-name pfd-move" title="Потяните, чтобы переместить блок">' + PFD_GRIP_SVG + '<span>' + esc(b.name || '') + '</span></span>' +
-                hideBtn +
+                '<div class="pfd-tools">' + hideBtn +
+                    '<span class="pfd-move" role="button" tabindex="0" aria-label="Переместить блок" title="Потяните, чтобы переместить блок">' + PFD_HAND_SVG + '</span>' +
+                '</div>' +
                 '<span class="pfd-size"></span>' +
                 '<span class="pfd-rs-r" title="Потяните — ширина по колонкам"></span>' +
                 '<span class="pfd-rs-b" title="Потяните — высота свободно"></span>' +
@@ -2121,7 +2111,7 @@
             ? '<div class="pfd-bar">' +
                 '<div class="pfd-bar-m">' + add +
                     '<div class="pfd-bar-t"><b>Конструктор дашборда</b>' +
-                        '<span>Блоки двигаются и меняются прямо на странице: тяните за ручку сверху, размер — за правую/нижнюю кромку или уголок. Здесь — добавить виджет, отменить и вернуть стандартную раскладку.</span></div>' +
+                        '<span>Блоки двигаются и меняются прямо на странице: тяните за руку в правом-верхнем углу, размер — за правую/нижнюю кромку или уголок. Здесь — добавить виджет, отменить и вернуть стандартную раскладку.</span></div>' +
                     '<div class="pfd-bar-r">' +
                         '<button class="d3-quick ghost" onclick="pfdUndo()" title="Отменить последнее изменение раскладки (Cmd/Ctrl+Z)">' + PFD_UNDO_SVG + '<span>Отменить</span></button>' +
                         '<button class="d3-quick ghost" onclick="pfDashReset()">Вернуть стандартную</button>' +
@@ -3395,19 +3385,13 @@
         pfdArm = null;   // гасим возможный «взвод» драга — ресайз и драг не смешиваются
         pfdPushUndo();
         item.classList.add('pfd-resizing');
-        // направляющая: пунктир на правой грани блока — видно новую ширину даже до
-        // того, как соседи доехали. Позицию считает pfdPlaceGuide() в конце упаковки.
-        var guide = document.createElement('div');
-        guide.className = 'pfd-guide';
-        grid.appendChild(guide);
-        pfdGuideEl = guide; pfdGuideItem = item;
+        // без направляющей-пунктира и прочих линий: соседи сами переезжают под новый
+        // размер (masonry), новую ширину/высоту показывает только текстовый бейдж
         function cleanup() {
             document.removeEventListener('pointermove', onMove);
             document.removeEventListener('pointerup', onUp);
             document.removeEventListener('pointercancel', onUp);
             item.classList.remove('pfd-resizing');
-            if (guide.parentNode) guide.parentNode.removeChild(guide);
-            pfdGuideEl = null; pfdGuideItem = null;
             if (badge) badge.textContent = '';
             pfdRsCancel = null;
         }

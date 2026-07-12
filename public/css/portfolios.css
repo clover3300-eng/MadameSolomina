@@ -2078,7 +2078,7 @@ body.dark-mode .pfpc-kind.kind-red { color: #93c5fd; background: rgba(61,111,209
     grid-template-columns: repeat(12, minmax(0, 1fr));
     gap: 16px;
     align-items: start;   /* блоки держат свою природную высоту, ряд не растягивает соседей */
-    position: relative;   /* якорь для направляющей ресайза (.pfd-guide) */
+    position: relative;   /* якорь для абсолютных ручек/кластера инструментов блоков */
 }
 /* masonry-режим: короткие блоки подтягиваются вверх в чужой зазор. CSS-masonry
    (grid-template-rows:masonry) в Chrome ещё нет — раскладку считает JS (pfdPack):
@@ -2137,7 +2137,7 @@ body.dark-mode .pfpc-kind.kind-red { color: #93c5fd; background: rgba(61,111,209
 .pfd-grid.editing .pfd-item { transition: box-shadow 0.16s ease; }
 .pfd-grid.editing .pfd-item:hover { box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12); }
 .pfd-grid.pfd-live .pfd-item.pfd-resizing {
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.55), 0 16px 40px rgba(15, 23, 42, 0.14);
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);   /* только мягкая тень — без синих рамок/линий */
 }
 body.pfd-dragging-now { cursor: grabbing; }
 body.pfd-dragging-now * { cursor: grabbing !important; }
@@ -2157,51 +2157,51 @@ body.pfd-dragging-now * { cursor: grabbing !important; }
 }
 .pfd-ghost .pfd-chrome { display: none; }   /* призрак — без грипа/ручек/бейджа */
 
-/* направляющая ресайза: пунктир на границе колонки, куда «прилипнет» правый край */
-.pfd-guide {
-    position: absolute; width: 0; z-index: 5; pointer-events: none;
-    border-left: 2px dashed rgba(59, 130, 246, 0.75);
-}
-
 .pfd-chrome { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
-/* грип-ручка = ярлык блока (имя + точки), «биркой» на верхней кромке. Проявляется при
-   наведении; за неё блок перетаскивается (единственная точка старта драга). */
-.pfd-name {
-    position: absolute; top: -11px; left: 14px;
-    display: inline-flex; align-items: center; gap: 5px;
-    max-width: 70%; padding: 3px 10px 3px 7px; border-radius: 999px;
-    font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em;
-    color: #475569; background: #fff;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
-    white-space: nowrap; overflow: hidden;
+/* правый-верхний кластер инструментов блока: [скрыть/удалить] [рука-перенос].
+   Проявляется при наведении на блок; в углу — рука, за неё блок перетаскивается. */
+.pfd-tools {
+    position: absolute; top: -11px; right: 14px;
+    display: inline-flex; align-items: center; gap: 6px;
     opacity: 0; pointer-events: none; transition: opacity 0.14s ease;
 }
-.pfd-name.pfd-move { cursor: grab; }
-.pfd-name.pfd-move:active { cursor: grabbing; }
-.pfd-name svg { width: 11px; height: 11px; flex-shrink: 0; color: #94a3b8; }
-.pfd-name > span { overflow: hidden; text-overflow: ellipsis; }
-/* кнопка «скрыть/удалить» — биркой на верхней кромке справа (симметрично имени) */
-.pfd-hide {
-    position: absolute; top: -11px; right: 14px;
-    width: 22px; height: 22px; border-radius: 999px;
+/* рука-ручка (единственная точка старта перетаскивания). При нажатии — «зацепление». */
+.pfd-move {
+    width: 26px; height: 26px; border-radius: 999px;
     display: inline-flex; align-items: center; justify-content: center;
-    color: #64748b; background: #fff;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
-    cursor: pointer; padding: 0;
-    opacity: 0; pointer-events: none;
-    transition: opacity 0.14s ease, color 0.12s, border-color 0.12s, background 0.12s;
+    color: #64748b; background: #fff; border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.10);
+    cursor: grab; padding: 0; outline: none;
+    transition: color 0.12s, border-color 0.12s, background 0.12s, transform 0.12s;
 }
-.pfd-hide svg { width: 12px; height: 12px; }
+.pfd-move svg { width: 14px; height: 14px; }
+.pfd-move:hover { color: #334155; border-color: #cbd5e1; background: #f8fafc; }
+.pfd-move:focus-visible { border-color: #94a3b8; box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.3); }
+.pfd-move:active { cursor: grabbing; animation: pfd-grab 0.26s ease; }
+/* «зацепление»: кисть коротко сжимается при нажатии */
+@keyframes pfd-grab {
+    0% { transform: scale(1) rotate(0); }
+    45% { transform: scale(0.8) rotate(-8deg); }
+    100% { transform: scale(0.92) rotate(0); }
+}
+body.pfd-dragging-now .pfd-move { cursor: grabbing; }
+/* кнопка «скрыть/удалить» — слева от руки в кластере */
+.pfd-tool {
+    width: 26px; height: 26px; border-radius: 999px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #64748b; background: #fff; border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.10);
+    cursor: pointer; padding: 0;
+    transition: color 0.12s, border-color 0.12s, background 0.12s;
+}
+.pfd-tool svg { width: 13px; height: 13px; }
 .pfd-hide:hover { color: #475569; border-color: #cbd5e1; background: #f8fafc; }   /* нейтральный — «скрыть блок» */
-.pfd-hide--del:hover { color: #dc2626; border-color: #fecaca; background: #fef2f2; }  /* красный — «удалить виджет» */
-/* проявление грипа и кнопки: при наведении на блок (или клавиатурный фокус), а при
+.pfd-del:hover { color: #dc2626; border-color: #fecaca; background: #fef2f2; }  /* красный — «удалить виджет» */
+/* проявление кластера: при наведении на блок (или фокус на руке/кнопке), а при
    открытом тулбоксе — постоянно */
-.pfd-item:hover .pfd-name,
-.pfd-item:hover .pfd-hide,
-.pfd-name:focus-visible, .pfd-hide:focus-visible,
-.pfd-grid.editing .pfd-name, .pfd-grid.editing .pfd-hide {
+.pfd-item:hover .pfd-tools,
+.pfd-tools:focus-within,
+.pfd-grid.editing .pfd-tools {
     opacity: 1; pointer-events: auto;
 }
 /* бейдж текущего размера — появляется только во время ресайза (JS пишет текст) */
@@ -2215,19 +2215,11 @@ body.pfd-dragging-now * { cursor: grabbing !important; }
 
 /* ---- ручки ресайза: правая кромка (ширина), нижняя (высота), уголок (обе) ---- */
 /* Живут в ЗАЗОРЕ между блоками (отрицательные offset) — не перекрывают контент и
-   скроллбары карточек. Курсор на кромке подсказывает ось; тонкая синяя черта — под
-   курсором. Кромки активны всегда (курсор меняется у любой грани), уголок проявляется
-   при наведении на блок. */
+   скроллбары карточек. Подсказка — ТОЛЬКО курсор (никаких линий/пунктиров): у любой
+   грани он меняется на ↔/↕, у уголка — ⤡. Уголок показывает лёгкий серый грип по hover. */
 .pfd-rs-r, .pfd-rs-b { position: absolute; z-index: 6; pointer-events: auto; touch-action: none; }
 .pfd-rs-r { top: 18px; bottom: 20px; right: -9px; width: 13px; cursor: ew-resize; }
 .pfd-rs-b { left: 18px; right: 20px; bottom: -9px; height: 13px; cursor: ns-resize; }
-.pfd-rs-r::before, .pfd-rs-b::before {
-    content: ''; position: absolute; border-radius: 999px; background: rgba(59, 130, 246, 0.9);
-    opacity: 0; transition: opacity 0.12s;
-}
-.pfd-rs-r::before { top: 6px; bottom: 6px; left: 50%; width: 3px; transform: translateX(-50%); }
-.pfd-rs-b::before { left: 6px; right: 6px; top: 50%; height: 3px; transform: translateY(-50%); }
-.pfd-rs-r:hover::before, .pfd-rs-b:hover::before { opacity: 1; }
 /* уголок-ручка (обе оси) — в наружном углу блока, проявляется при наведении */
 .pfd-rs {
     position: absolute; right: -9px; bottom: -9px;
@@ -2235,14 +2227,14 @@ body.pfd-dragging-now * { cursor: grabbing !important; }
     cursor: nwse-resize; border-radius: 0 0 11px 0;
     opacity: 0; transition: opacity 0.12s;
     background:
-        linear-gradient(135deg, transparent 44%, rgba(100, 116, 139, 0.8) 45%, rgba(100, 116, 139, 0.8) 54%, transparent 55%,
-            transparent 63%, rgba(100, 116, 139, 0.8) 64%, rgba(100, 116, 139, 0.8) 73%, transparent 74%);
+        linear-gradient(135deg, transparent 44%, rgba(100, 116, 139, 0.7) 45%, rgba(100, 116, 139, 0.7) 54%, transparent 55%,
+            transparent 63%, rgba(100, 116, 139, 0.7) 64%, rgba(100, 116, 139, 0.7) 73%, transparent 74%);
 }
 .pfd-item:hover .pfd-rs { opacity: 1; }
 .pfd-rs:hover {
     background:
-        linear-gradient(135deg, transparent 44%, rgba(59, 130, 246, 0.95) 45%, rgba(59, 130, 246, 0.95) 54%, transparent 55%,
-            transparent 63%, rgba(59, 130, 246, 0.95) 64%, rgba(59, 130, 246, 0.95) 73%, transparent 74%);
+        linear-gradient(135deg, transparent 44%, rgba(71, 85, 105, 0.95) 45%, rgba(71, 85, 105, 0.95) 54%, transparent 55%,
+            transparent 63%, rgba(71, 85, 105, 0.95) 64%, rgba(71, 85, 105, 0.95) 73%, transparent 74%);
 }
 
 /* ---- панель режима правки: липкая, не уезжает на длинной странице ---- */
@@ -2690,20 +2682,19 @@ body.dark-mode .pfd-rs {
 }
 body.dark-mode .pfd-rs:hover {
     background:
-        linear-gradient(135deg, transparent 46%, rgba(96, 165, 250, 0.95) 47%, rgba(96, 165, 250, 0.95) 55%, transparent 56%,
-            transparent 64%, rgba(96, 165, 250, 0.95) 65%, rgba(96, 165, 250, 0.95) 73%, transparent 74%);
-    background-color: rgba(59, 130, 246, 0.14);
+        linear-gradient(135deg, transparent 46%, rgba(203, 213, 225, 0.95) 47%, rgba(203, 213, 225, 0.95) 55%, transparent 56%,
+            transparent 64%, rgba(203, 213, 225, 0.95) 65%, rgba(203, 213, 225, 0.95) 73%, transparent 74%);
 }
 body.dark-mode .pfd-item.pfd-slot { background: rgba(59, 130, 246, 0.09); }
-body.dark-mode .pfd-name { color: #cbd5e1; background: #0f172a; border-color: #27324a; }
+body.dark-mode .pfd-move { color: #9fb1c6; background: #0f172a; border-color: #27324a; }
+body.dark-mode .pfd-move:hover { color: #e2e8f0; border-color: #3a475f; background: #172033; }
 body.dark-mode .pfd-bar { background: rgba(11, 18, 32, 0.9); border-color: #27324a; }
 body.dark-mode .pfd-bar-t b { color: #e2e8f0; }
 body.dark-mode .pfd-bar-t span { color: #9fb1c6; }
 body.dark-mode .pfd-size { background: rgba(9, 14, 24, 0.9); }
-body.dark-mode .pfd-hide { color: #9fb1c6; background: #0f172a; border-color: #27324a; }
+body.dark-mode .pfd-tool { color: #9fb1c6; background: #0f172a; border-color: #27324a; }
 body.dark-mode .pfd-hide:hover { color: #cbd5e1; border-color: #3a475f; background: #172033; }   /* нейтральный — «скрыть» */
-body.dark-mode .pfd-hide--del:hover { color: #f87171; border-color: #7f1d1d; background: #1c1017; }  /* красный — «удалить» */
-body.dark-mode .pfd-rs-r::before, body.dark-mode .pfd-rs-b::before { background: rgba(96, 165, 250, 0.95); }
+body.dark-mode .pfd-del:hover { color: #f87171; border-color: #7f1d1d; background: #1c1017; }  /* красный — «удалить» */
 body.dark-mode .pfd-addbtn { background: #16233f; border-color: #2f4a8a; color: #93c5fd; box-shadow: none; }
 body.dark-mode .pfd-addbtn:hover { border-color: #3b62b8; }
 body.dark-mode .pfd-addbtn.open { background: #1c2b52; border-color: #3b62b8; }
