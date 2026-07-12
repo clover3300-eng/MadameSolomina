@@ -381,8 +381,8 @@
     .adm-gt-row.mob .adm-gt-note { grid-column: 1 / -1; }
     .adm-gt-add { grid-template-columns: 1fr; }
 
-    /* Портфели: конструктор раскладки — только десктоп */
-    .pfd-ctl { display: none !important; }
+    /* Портфели: настройка раскладки (кнопка «Раскладка» + карточка) — только десктоп */
+    .pfl-open-btn, .pfl-panel { display: none !important; }
 
     /* Палитра поиска: выше на экране — под ней клавиатура */
     #searchOverlay { padding-top: 10vh; }

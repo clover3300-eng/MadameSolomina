@@ -2230,80 +2230,119 @@ body.pfd-dragging-now .pfd-move { cursor: grabbing; }
             transparent 63%, rgba(71, 85, 105, 0.95) 64%, rgba(71, 85, 105, 0.95) 73%, transparent 74%);
 }
 
-/* ---- панель режима правки: липкая, не уезжает на длинной странице ---- */
-.pfd-bar {
+/* ============ карточка «Настройка раскладки» (бывший бар-конструктор + пикер) ============ */
+/* кнопка «Раскладка» в шапке страницы (рядом с названием раздела): выделяется мягким
+   цветом, но не кричит. Тёмная — это кнопка «Добавить на дашборд» ВНУТРИ карточки. */
+.pfl-open-btn {
+    display: none; align-items: center; gap: 7px; margin-left: 14px; padding: 7px 13px; cursor: pointer;
+    border-radius: 10px; border: 1px solid #c7d2fe; background: linear-gradient(#eef2ff, #e0e7ff); color: #4f46e5;
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; letter-spacing: -0.01em; white-space: nowrap;
+    box-shadow: 0 2px 8px -3px rgba(79, 70, 229, 0.35); transition: background 0.14s, border-color 0.14s, box-shadow 0.14s, transform 0.1s;
+}
+.pfl-open-btn svg { width: 15px; height: 15px; }
+.pfl-open-btn:hover { background: linear-gradient(#e4e9ff, #cdd7fe); border-color: #a5b4fc; box-shadow: 0 4px 12px -3px rgba(79, 70, 229, 0.45); }
+.pfl-open-btn:active { transform: translateY(1px); }
+.pfl-open-btn.active { background: linear-gradient(#4f46e5, #4338ca); border-color: transparent; color: #fff; box-shadow: 0 4px 14px -4px rgba(79, 70, 229, 0.6); }
+/* точка «раскладка своя» */
+.pfl-open-btn.on { position: relative; }
+.pfl-open-btn.on::after { content: ''; position: absolute; top: 4px; right: 5px; width: 6px; height: 6px; border-radius: 99px; background: #22c55e; box-shadow: 0 0 0 2px #eef2ff; }
+.pfl-open-btn.active.on::after { box-shadow: 0 0 0 2px #4338ca; }
+
+/* сама карточка: докнутый сверху диалог с внутренним скроллом (шапка всегда видна) */
+.pfl-panel {
     position: sticky; top: 10px; z-index: 60;
-    display: flex; flex-direction: column; gap: 9px;
-    margin-bottom: 14px; padding: 11px 16px; border-radius: 16px;
-    background: rgba(255, 255, 255, 0.92);
-    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.10);
+    display: flex; flex-direction: column; max-height: 82vh;
+    margin-bottom: 16px; border-radius: 18px; overflow: hidden;
+    background: #fff; border: 1px solid #e2e8f0;
+    box-shadow: 0 24px 60px -22px rgba(15, 23, 42, 0.4), 0 3px 10px rgba(15, 23, 42, 0.06);
 }
-.pfd-bar-m { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
-/* выпадающий список «Добавить блок» СЛЕВА: кнопка-триггер + увеличенные ЖИВЫЕ превью */
-.pfd-addwrap { position: relative; flex-shrink: 0; }
-.pfd-addbtn {
-    display: inline-flex; align-items: center; gap: 7px; padding: 8px 12px; cursor: pointer;
-    border-radius: 11px; border: 1px solid #cfe0ff; background: linear-gradient(#fff, #f4f8ff); color: #1d4ed8;
-    font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 800; letter-spacing: -0.01em;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05); transition: border-color 0.13s, background 0.13s, box-shadow 0.13s;
+.pfl-head {
+    flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 15px 18px; border-bottom: 1px solid #eef2f7; background: #fbfcfe;
 }
-.pfd-addbtn > svg:first-child { width: 15px; height: 15px; }
-.pfd-addchev { width: 14px; height: 14px; opacity: 0.75; transition: transform 0.18s; }
-.pfd-addbtn:hover { border-color: #93c5fd; box-shadow: 0 6px 16px -8px rgba(59, 130, 246, 0.5); }
-.pfd-addbtn.open { background: #eaf1ff; border-color: #93c5fd; }
-.pfd-addbtn.open .pfd-addchev { transform: rotate(180deg); }
-/* панель «Что добавить»: раскрывается вниз из бара-конструктора (как «Пересчитать портфель»
-   в смешанном портфеле — scaleY сверху). left:0 = у внутреннего борта бара (паддинг бара
-   absolute-детей не сдвигает), т.е. ровно под левой границей конструктора и карточек.
-   Внутри две колонки: список слева + превью справа. */
-.pfd-picker {
-    position: absolute; left: 0; top: calc(100% + 6px); z-index: 80; max-width: calc(100vw - 44px);
-    display: flex; background: #fff; border: 1px solid #dbe4f0; border-radius: 16px; overflow: hidden;
-    box-shadow: 0 28px 56px -22px rgba(15, 23, 42, 0.34);
-    opacity: 0; transform: scaleY(0.72); transform-origin: top center;
-    pointer-events: none; visibility: hidden;
-    transition: opacity 0.2s ease, transform 0.26s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.26s;
+.pfl-head-t { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.pfl-head-ic {
+    flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px;
+    border-radius: 11px; color: #4f46e5; background: #eef2ff; box-shadow: inset 0 0 0 1px #e0e7ff;
 }
-.pfd-picker.open { opacity: 1; transform: scaleY(1); pointer-events: auto; visibility: visible; }
-.pfd-picker-col { width: 296px; flex-shrink: 0; display: flex; flex-direction: column; max-height: min(72vh, 560px); border-right: 1px solid #eef2f7; }
-.pfd-picker-h { padding: 13px 15px 11px; border-bottom: 1px solid #eef2f7; display: flex; flex-direction: column; gap: 2px; }
-.pfd-picker-h b { font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 800; color: #0f172a; }
+.pfl-head-ic svg { width: 20px; height: 20px; }
+.pfl-head-tx { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.pfl-head-tx b { font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 800; color: #0f172a; letter-spacing: -0.01em; }
+.pfl-head-tx span { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: #64748b; }
+.pfl-head-r { display: flex; align-items: center; gap: 9px; flex-shrink: 0; }
+.pfl-btn {
+    display: inline-flex; align-items: center; gap: 7px; padding: 9px 14px; cursor: pointer; white-space: nowrap;
+    border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 800; letter-spacing: -0.01em;
+    border: 1px solid transparent; transition: background 0.13s, border-color 0.13s, box-shadow 0.13s, transform 0.1s;
+}
+.pfl-btn svg { width: 15px; height: 15px; }
+.pfl-btn:active { transform: translateY(1px); }
+.pfl-btn.ghost { background: #fff; border-color: #dbe4f0; color: #475569; }
+.pfl-btn.ghost:hover { background: #f4f7fb; border-color: #c3d0e0; color: #1e293b; }
+.pfl-btn.primary { background: linear-gradient(#4f46e5, #4338ca); color: #fff; box-shadow: 0 6px 16px -6px rgba(79, 70, 229, 0.6); }
+.pfl-btn.primary:hover { background: linear-gradient(#5b52ea, #4b40d6); }
+.pfl-x {
+    flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; cursor: pointer;
+    border-radius: 10px; border: 1px solid #e5eaf1; background: #fff; color: #64748b; transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.pfl-x svg { width: 17px; height: 17px; }
+.pfl-x:hover { background: #f1f5f9; color: #0f172a; border-color: #cbd5e1; }
+
+/* тело: список блоков слева + большое превью справа */
+.pfl-body { flex: 1; min-height: 0; display: flex; }
+.pfd-picker-col { flex: 0 0 306px; display: flex; flex-direction: column; min-height: 0; border-right: 1px solid #eef2f7; }
+.pfd-picker-h { padding: 14px 16px 11px; border-bottom: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 2px; }
+.pfd-picker-h b { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #0f172a; }
 .pfd-picker-h span { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #64748b; line-height: 1.35; }
-.pfd-picker-list { flex: 1; display: flex; flex-direction: column; gap: 4px; padding: 8px; overflow-y: auto; scrollbar-width: thin; }
-/* компактная строка: имя + описание + «＋»; наведение раскрывает превью справа */
+.pfd-picker-list { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 5px; padding: 9px; overflow-y: auto; scrollbar-width: thin; }
+/* строка: цветная иконка-плитка + имя + описание; выбор подсвечивает и раскрывает превью справа */
 .pfd-pick {
-    display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 9px 10px;
-    border-radius: 11px; border: 1px solid transparent; background: #f8fafc;
-    transition: border-color 0.13s, background 0.13s;
+    display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 10px 11px;
+    border-radius: 12px; border: 1px solid transparent; background: #f8fafc;
+    transition: border-color 0.13s, background 0.13s, box-shadow 0.13s;
 }
-.pfd-pick:hover, .pfd-pick.active { border-color: #bfdbfe; background: #eff5ff; }
+.pfd-pick:hover { border-color: #dbe4f0; background: #fff; box-shadow: 0 3px 10px -6px rgba(15, 23, 42, 0.25); }
+.pfd-pick.active { border-color: #c7d2fe; background: #f5f7ff; box-shadow: 0 4px 12px -6px rgba(79, 70, 229, 0.35); }
+.pfd-pick-ic { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 11px; }
+.pfd-pick-ic svg { width: 20px; height: 20px; }
+.pfd-pick-ic.tint-blue { color: #2563eb; background: #e8f0ff; }
+.pfd-pick-ic.tint-indigo { color: #4f46e5; background: #ecebff; }
+.pfd-pick-ic.tint-green { color: #16a34a; background: #e6f7ec; }
+.pfd-pick-ic.tint-amber { color: #d97706; background: #fdf1dd; }
+.pfd-pick-ic.tint-violet { color: #7c3aed; background: #f2e9fe; }
 .pfd-pick-txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
-.pfd-pick-txt b { font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 800; color: #0f172a; }
-.pfd-pick-txt span { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: #64748b; line-height: 1.3; }
-.pfd-pick-add {
-    flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px;
-    border-radius: 8px; color: #2563eb; background: #e6efff; transition: background 0.12s, color 0.12s;
-}
-.pfd-pick-add svg { width: 14px; height: 14px; }
-.pfd-pick:hover .pfd-pick-add, .pfd-pick.active .pfd-pick-add { background: #2563eb; color: #fff; }
-/* правая колонка-сцена: сразу готовый блок (без белой шапки), статус-плашка в углу */
-.pfd-pickpv { width: 392px; flex-shrink: 0; display: none; align-self: stretch; background: #f8fafc; overflow: hidden; }
-.pfd-pickpv.show { display: block; }
-.pfd-pick-stage { position: relative; padding: 15px; pointer-events: none; overflow: hidden; max-height: min(72vh, 560px); }
+.pfd-pick-txt b { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #0f172a; }
+.pfd-pick-txt span { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: #64748b; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+/* правая колонка: превью-сцена + подвал (имя + тёмная кнопка «Добавить на дашборд») */
+.pfd-pickpv { flex: 1; min-width: 0; display: none; flex-direction: column; min-height: 0; background: #f6f8fb; }
+.pfd-pickpv.show { display: flex; }
+.pfd-pick-stage { position: relative; flex: 1; min-height: 0; padding: 18px; pointer-events: none; overflow: auto; }
 .pfd-pick-stage > * { margin: 0 !important; }
-.pfd-pick-stage .pfhm-box { height: 168px; }        /* карта в превью — компактнее */
-.pfd-pick-sketch { display: block; padding: 0; background: #eef3f8; }
-.pfd-pick-sketch .pfd-pv-svg { width: 100%; height: auto; display: block; }
+.pfd-pick-stage .pfhm-box { height: 190px; }        /* карта в превью — компактнее */
 .pfd-pick-tag {
-    position: absolute; top: 12px; right: 12px; z-index: 3; padding: 2px 8px; border-radius: 999px;
+    position: absolute; top: 14px; right: 14px; z-index: 3; padding: 2px 8px; border-radius: 999px;
     font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
     color: #64748b; background: rgba(255, 255, 255, 0.9); border: 1px solid #e2e8f0; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
 }
 .pfd-pick-tag.live { color: #15803d; background: rgba(240, 253, 244, 0.92); border-color: #bbf7d0; }
 .pfd-pick-tag.live::before { content: ''; display: inline-block; width: 5px; height: 5px; margin: 0 4px 1px 0; border-radius: 50%; background: #22c55e; vertical-align: middle; }
 .pfd-pick-tag.demo { color: #b45309; background: rgba(255, 251, 235, 0.92); border-color: #fde68a; }
+.pfl-pv-foot {
+    flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    padding: 13px 18px; border-top: 1px solid #eef2f7; background: #fff;
+}
+.pfl-pv-meta { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.pfl-pv-meta b { font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 800; color: #0f172a; }
+.pfl-pv-meta span { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pfl-pv-add {
+    flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; cursor: pointer;
+    border-radius: 11px; border: 0; color: #fff; background: linear-gradient(135deg, #2C364C, #1b2433);
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; letter-spacing: -0.01em; white-space: nowrap;
+    box-shadow: 0 8px 20px -8px rgba(15, 23, 42, 0.55); transition: filter 0.12s, transform 0.1s, box-shadow 0.12s;
+}
+.pfl-pv-add svg { width: 16px; height: 16px; }
+.pfl-pv-add:hover { filter: brightness(1.12); box-shadow: 0 10px 24px -8px rgba(15, 23, 42, 0.6); }
+.pfl-pv-add:active { transform: translateY(1px); }
 /* палитра эскизов превью (примеры без портфелей) */
 .pfd-pv-svg { display: block; width: 100%; height: auto; }
 .pfd-pv-svg .pv-card { fill: #fff; stroke: #e6ebf2; stroke-width: 1; }
@@ -2316,11 +2355,6 @@ body.pfd-dragging-now .pfd-move { cursor: grabbing; }
 .pfd-pv-svg .pv-area { fill: rgba(59, 130, 246, 0.14); }
 .pfd-pv-svg .pv-pos { fill: #34d399; } .pfd-pv-svg .pv-pos2 { fill: #6ee7b7; }
 .pfd-pv-svg .pv-neg { fill: #f87171; } .pfd-pv-svg .pv-neg2 { fill: #fca5a5; }
-.pfd-bar-t { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-.pfd-bar-t b { display: inline-flex; align-items: center; gap: 7px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #0f172a; }
-.pfd-bar-t b::before { content: ''; width: 7px; height: 7px; border-radius: 99px; background: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18); }
-.pfd-bar-t span { font-size: 11.5px; font-weight: 600; color: #64748b; }
-.pfd-bar-r { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
 /* ============ новые блоки конструктора (опт-ин с полки «Добавить блок») ============ */
 /* --- KPI-плитка: иконка + подпись + крупное моно-значение --- */
@@ -2663,14 +2697,6 @@ body.dark-mode .pfhm-tile:hover { box-shadow: inset 0 0 0 2px rgba(255, 255, 255
 .pfnt-cal-ok:hover { filter: brightness(1.06); }
 .pfnt-cal-ok:active { transform: scale(0.97); }
 
-/* кнопка «Конструктор» в шапке: точка-индикатор, когда раскладка своя */
-.pfd-ctl.on { position: relative; }
-.pfd-ctl.on::after {
-    content: ''; position: absolute; top: 7px; right: 7px;
-    width: 6px; height: 6px; border-radius: 99px;
-    background: #3b82f6; box-shadow: 0 0 0 2.5px rgba(59, 130, 246, 0.2);
-}
-
 /* уголок-ручка на тёмных карточках: серые штрихи светлой темы почти неразличимы */
 body.dark-mode .pfd-rs {
     background:
@@ -2683,31 +2709,48 @@ body.dark-mode .pfd-rs:hover {
             transparent 64%, rgba(203, 213, 225, 0.95) 65%, rgba(203, 213, 225, 0.95) 73%, transparent 74%);
 }
 body.dark-mode .pfd-item.pfd-slot { background: rgba(59, 130, 246, 0.09); }
-body.dark-mode .pfd-bar { background: rgba(11, 18, 32, 0.9); border-color: #27324a; }
-body.dark-mode .pfd-bar-t b { color: #e2e8f0; }
-body.dark-mode .pfd-bar-t span { color: #9fb1c6; }
 body.dark-mode .pfd-size { background: rgba(9, 14, 24, 0.9); }
 body.dark-mode .pfd-cardrm { color: #5c6c82; }
 body.dark-mode .pfd-cardrm:hover { color: #f87171; background: rgba(248, 113, 113, 0.12); }  /* красный — «удалить» */
-body.dark-mode .pfd-addbtn { background: #16233f; border-color: #2f4a8a; color: #93c5fd; box-shadow: none; }
-body.dark-mode .pfd-addbtn:hover { border-color: #3b62b8; }
-body.dark-mode .pfd-addbtn.open { background: #1c2b52; border-color: #3b62b8; }
-body.dark-mode .pfd-picker { background: #101a2c; border-color: #27324a; box-shadow: 0 26px 60px -20px rgba(0, 0, 0, 0.66); }
+/* кнопка «Раскладка» в тёмной шапке */
+body.dark-mode .pfl-open-btn { background: #1c2445; border-color: #3a3f7a; color: #b7bdff; box-shadow: none; }
+body.dark-mode .pfl-open-btn:hover { background: #242d55; border-color: #4a51a0; }
+body.dark-mode .pfl-open-btn.active { background: linear-gradient(#4f46e5, #4338ca); border-color: transparent; color: #fff; }
+body.dark-mode .pfl-open-btn.on::after { box-shadow: 0 0 0 2px #1c2445; }
+body.dark-mode .pfl-open-btn.active.on::after { box-shadow: 0 0 0 2px #4338ca; }
+/* карточка настройки раскладки */
+body.dark-mode .pfl-panel { background: #101a2c; border-color: #27324a; box-shadow: 0 26px 60px -20px rgba(0, 0, 0, 0.66); }
+body.dark-mode .pfl-head { background: #0d1626; border-bottom-color: #22304a; }
+body.dark-mode .pfl-head-ic { background: #1c2445; color: #b7bdff; box-shadow: inset 0 0 0 1px #2f376a; }
+body.dark-mode .pfl-head-tx b { color: #e8f0fb; }
+body.dark-mode .pfl-head-tx span { color: #9fb1c6; }
+body.dark-mode .pfl-btn.ghost { background: #16213a; border-color: #2b3a55; color: #b6c4d8; }
+body.dark-mode .pfl-btn.ghost:hover { background: #1b2a49; border-color: #3a4c6d; color: #eaf1fb; }
+body.dark-mode .pfl-x { background: #16213a; border-color: #2b3a55; color: #93a3b8; }
+body.dark-mode .pfl-x:hover { background: #1b2a49; color: #eaf1fb; border-color: #3a4c6d; }
 body.dark-mode .pfd-picker-col { border-right-color: #22304a; }
 body.dark-mode .pfd-picker-h { border-bottom-color: #22304a; }
 body.dark-mode .pfd-picker-h b { color: #e8f0fb; }
 body.dark-mode .pfd-picker-h span { color: #9fb1c6; }
 body.dark-mode .pfd-pick { background: #16213a; border-color: transparent; }
-body.dark-mode .pfd-pick:hover, body.dark-mode .pfd-pick.active { background: #1b2a49; border-color: #2f4a8a; }
-body.dark-mode .pfd-pick-add { background: #1c2b52; color: #93c5fd; }
-body.dark-mode .pfd-pick:hover .pfd-pick-add, body.dark-mode .pfd-pick.active .pfd-pick-add { background: #2563eb; color: #fff; }
+body.dark-mode .pfd-pick:hover { background: #1b2a49; border-color: #2f4a8a; box-shadow: none; }
+body.dark-mode .pfd-pick.active { background: #1e2650; border-color: #4a51a0; box-shadow: none; }
+body.dark-mode .pfd-pick-ic.tint-blue { color: #93c5fd; background: rgba(59, 130, 246, 0.18); }
+body.dark-mode .pfd-pick-ic.tint-indigo { color: #b7bdff; background: rgba(99, 102, 241, 0.2); }
+body.dark-mode .pfd-pick-ic.tint-green { color: #6ee7a8; background: rgba(34, 197, 94, 0.16); }
+body.dark-mode .pfd-pick-ic.tint-amber { color: #fbbf24; background: rgba(217, 119, 6, 0.18); }
+body.dark-mode .pfd-pick-ic.tint-violet { color: #c4a2fb; background: rgba(124, 58, 237, 0.2); }
 body.dark-mode .pfd-pickpv { background: #0f1a2e; }
 body.dark-mode .pfd-pick-txt b { color: #e8f0fb; }
 body.dark-mode .pfd-pick-txt span { color: #9fb1c6; }
 body.dark-mode .pfd-pick-tag { background: rgba(16, 26, 44, 0.85); border-color: #2a3856; color: #9fb1c6; }
 body.dark-mode .pfd-pick-tag.live { color: #4ade80; background: rgba(16, 26, 44, 0.85); border-color: #14532d; }
 body.dark-mode .pfd-pick-tag.demo { color: #fbbf24; background: rgba(16, 26, 44, 0.85); border-color: #78350f; }
-body.dark-mode .pfd-pick-sketch { background: #0f1a2e; }
+body.dark-mode .pfl-pv-foot { background: #0d1626; border-top-color: #22304a; }
+body.dark-mode .pfl-pv-meta b { color: #e8f0fb; }
+body.dark-mode .pfl-pv-meta span { color: #9fb1c6; }
+body.dark-mode .pfl-pv-add { background: linear-gradient(135deg, #3a4664, #232d40); box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.6); }
+body.dark-mode .pfl-pv-add:hover { filter: brightness(1.18); }
 body.dark-mode .pfd-pv-svg .pv-card { fill: #1c2942; stroke: #2a3856; }
 body.dark-mode .pfd-pv-svg .pv-strong { fill: #46587a; }
 body.dark-mode .pfd-pv-svg .pv-soft { fill: #3a4a68; }

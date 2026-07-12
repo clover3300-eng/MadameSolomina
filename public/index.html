@@ -31,7 +31,7 @@
     <link rel="stylesheet" href="css/backtest.css?v=15">
     <link rel="stylesheet" href="css/rebalance-r4.css?v=9">
     <link rel="stylesheet" href="css/dashboard-panel.css?v=4">
-    <link rel="stylesheet" href="css/portfolios.css?v=107">
+    <link rel="stylesheet" href="css/portfolios.css?v=108">
     <link rel="stylesheet" href="css/rebal-r5.css?v=9">
     <link rel="stylesheet" href="css/monthly-panel.css?v=1">
     <link rel="stylesheet" href="css/monthly-r5.css?v=13">
@@ -244,6 +244,12 @@
                 <div id="topBarCrumb" style="display:none;align-items:center;">
                     <span id="topBarCrumbText" class="hdr-sec"></span>
                 </div>
+                <!-- «Раскладка» — вход в настройку дашборда «Портфелей»: показ/скрытие и
+                     состояние ведёт js/portfolios.js (updateLayoutBtn), только десктоп -->
+                <button type="button" id="pfLayoutBtn" class="pfl-open-btn" style="display:none" onclick="pfLayoutToggle(event)" title="Настроить раскладку: добавить блоки и сохранить свой вид дашборда">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.6"/></svg>
+                    <span>Раскладка</span>
+                </button>
             </div>
         </div>
         <!-- Рыночные ленты (IMOEX/USD/BTC), вшиты в фон шапки, равноудалены между названием
@@ -2236,7 +2242,7 @@
 <script src="js/market-chart.js?v=5" defer></script>
 <script src="js/market-heatmap.js?v=34" defer></script>
 <script src="js/market-livebar.js?v=4" defer></script>
-<script src="js/portfolios.js?v=101" defer></script>
+<script src="js/portfolios.js?v=102" defer></script>
 <!-- Статичный фон-мозаика остальных вкладок: не смотрит на window.supa,
      порядок относительно облака не важен -->
 <script src="js/site-bg.js?v=1" defer></script>

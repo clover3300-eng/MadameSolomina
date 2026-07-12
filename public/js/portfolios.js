@@ -1189,7 +1189,7 @@
         // innerHTML-своп оборвал бы жест или затёр живые превью пикера. В покое —
         // даже при живой сетке — обновления котировок идут как обычно. Собственные
         // перерисовки конструктора идут через pfdRerender() (флаг pfdWantRender).
-        if ((pfdBusy() || pfdPickerOpen) && !pfdWantRender) return;
+        if ((pfdBusy() || dashEdit) && !pfdWantRender) return;
         // курсор в «Заметках» — ФОНОВЫЙ innerHTML-своп (котировки) унёс бы фокус и
         // несохранённый хвост текста; такие рендеры откладываем до blur (автосейв
         // заметки идёт с дебаунсом). Явные рендеры конструктора (pfdWantRender —
@@ -1299,6 +1299,7 @@
             fitBigSums();   // крупные суммы (до 100 млрд ₽) — уменьшаем кегль, а не переносим/распираем
             recordSnapshots();   // дневной снимок стоимости — для чипа «сегодня ±X ₽»
             pfdSchedulePack();   // masonry: подтянуть короткие блоки вверх в зазоры (no-op вне конструктора)
+            if (dashEdit) pflInitPreview();   // карточка раскладки открыта — показать превью выбранного блока
         } finally {
             rendering = false;
         }
@@ -1498,11 +1499,8 @@
             // «Видимость» показываем при 2+ портфелях, при наличии сделок ИЛИ когда включена
             // своя раскладка (тогда в меню — тумблеры скрытых изначальных секций)
             (store.items.length > 1 || hasAnyTrades() || dashCfg.on ? eyeWrapHtml() : '') +
-            // «＋ Блок»: один клик — сразу выпадающий список «Добавить блок» слева (без промежуточного
-            // шага). Только десктоп (скрыт в mobile.css), точка-индикатор .on = раскладка своя.
-            (store.items.length
-                ? '<button class="d3-quick ghost pfd-ctl' + (dashCfg.on ? ' on' : '') + '" onclick="pfdOpenAdd(event)" title="Добавить блок на дашборд">' + PFD_PLUS_SVG + '<span>Блок</span></button>'
-                : '') +
+            // Вход в настройку раскладки («Раскладка») переехал в шапку страницы рядом с
+            // названием раздела — кнопка #pfLayoutBtn (index.html + updateLayoutBtn/pfLayoutToggle).
             backupWrapHtml();
     }
     // наполняет/показывает панель действий в глобальной шапке; скрывается при уходе со
@@ -1511,6 +1509,7 @@
         var host = document.getElementById('topBarPfActions'); if (!host) return;
         host.innerHTML = topBarActionsHtml();
         host.style.display = 'flex';
+        updateLayoutBtn();   // кнопка «Раскладка» в шапке страницы (рядом с названием раздела)
     }
 
     // ---- «Видимость»: попап управления скрытием карточек (инфраструктура «Импорта») ----
@@ -1855,7 +1854,6 @@
         return Object.prototype.hasOwnProperty.call(m, b.id) ? !!m[b.id] : !!b.defHidden;
     }
     var PFD_PLUS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
-    var PFD_UNDO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>';
     // мини-эскизы блоков для полки «Добавить блок» — не рендерим тяжёлый настоящий блок,
     // а показываем узнаваемый набросок (карточка + характерная графика)
     var PV_CARD = '<rect x="6" y="7" width="108" height="46" rx="9" class="pv-card"/>';
@@ -1875,7 +1873,6 @@
         if (id === 'news') return PFD_PV.news;
         return PFD_PV.gen;
     }
-    var PFD_CHEVDOWN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" class="pfd-addchev"><polyline points="6 9 12 15 18 9"/></svg>';
     var PFD_PICK_DESC = {
         'kpi:cap': 'Суммарный капитал и прибыль по всем портфелям',
         'kpi:day': 'Изменение стоимости за сегодня',
@@ -1885,7 +1882,22 @@
         'news': 'Свежие новости по бумагам ваших портфелей',
         '__note': 'Заметки, списки задач и сроки прямо на дашборде'
     };
-    // ---- выпадающий список «Добавить блок» слева: увеличенные ЖИВЫЕ превью ----
+    // цветные иконки-плитки строк списка «Блоки для дашборда» (как в макете): узнаваемая
+    // пиктограмма + мягкая тонировка по типу блока
+    var PFD_ICO_KPI = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="6.5" y="12" width="3" height="6" rx="1"/><rect x="11.5" y="8.5" width="3" height="9.5" rx="1"/><rect x="16.5" y="5" width="3" height="13" rx="1"/></svg>';
+    var PFD_ICO_CAP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><polyline points="6 14 10 10 14 12 20 5.5"/></svg>';
+    var PFD_ICO_HEAT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="10" rx="1.7"/><rect x="13" y="3" width="8" height="6" rx="1.7"/><rect x="13" y="11" width="8" height="10" rx="1.7"/><rect x="3" y="15" width="8" height="6" rx="1.7"/></svg>';
+    var PFD_ICO_NEWS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h12.5v13H5.5a1.5 1.5 0 0 1-1.5-1.5z"/><path d="M16.5 8.5H19a1.5 1.5 0 0 1 1.5 1.5v7.5a1.5 1.5 0 0 1-1.5 1.5"/><path d="M7 9h6.5M7 12.5h6.5M7 16h4"/></svg>';
+    // {ic, t} для строки списка: иконка + класс тонировки (tint-*)
+    function pfdPickMeta(id) {
+        if (id === '__note' || id.indexOf('note:') === 0) return { ic: NOTE_ICON_SVG, t: 'violet' };
+        if (id.indexOf('kpi:') === 0) return { ic: PFD_ICO_KPI, t: 'indigo' };
+        if (id === 'cap') return { ic: PFD_ICO_CAP, t: 'blue' };
+        if (id === 'heat') return { ic: PFD_ICO_HEAT, t: 'green' };
+        if (id === 'news') return { ic: PFD_ICO_NEWS, t: 'amber' };
+        return { ic: PFDGRID_SVG, t: 'blue' };
+    }
+    // ---- список «Блоки для дашборда»: строка = иконка + название + описание, превью справа ----
     // Скрытые блоки в дашборде отсутствуют → живая копия в выпадашке — единственная в
     // #pfWrap, её и наполняют штатные pfdHeatRepaintSoon/renderPosNews (карта/новости).
     // Заметку показываем ПРИМЕРОМ (это пользовательский контент, «скрытой» заметки нет).
@@ -1974,40 +1986,45 @@
             '<span class="pfd-pick-tag ' + (live ? 'live' : 'demo') + '">' + (live ? 'Live' : 'Демо') + '</span>' + stage +
         '</div>';
     }
-    // компактная строка списка: имя + описание + «＋»; наведение показывает превью справа
+    // строка списка: цветная иконка-плитка + имя + описание; клик/наведение выбирает блок
+    // и показывает его превью справа (добавление — тёмной кнопкой в превью, а не по строке)
     function pfdPickRow(id, name) {
         var desc = PFD_PICK_DESC[id] || '';
-        var onclick = id === '__note' ? 'pfdAddNote()' : ('pfdShowBlock(\'' + jsArg(id) + '\')');
+        var m = pfdPickMeta(id);
         var arg = jsArg(id);
         return '<div class="pfd-pick" data-pick="' + esc(id) + '" role="button" tabindex="0" ' +
-            'title="Навести — показать превью справа; нажать — добавить на дашборд" ' +
-            'onmouseenter="pfdPickPreview(\'' + arg + '\')" onfocus="pfdPickPreview(\'' + arg + '\')" onclick="' + onclick + '">' +
+            'title="Показать превью — добавить кнопкой справа" ' +
+            'onmouseenter="pfdPickPreview(\'' + arg + '\')" onfocus="pfdPickPreview(\'' + arg + '\')" onclick="pfdPickPreview(\'' + arg + '\')">' +
+            '<span class="pfd-pick-ic tint-' + m.t + '">' + m.ic + '</span>' +
             '<div class="pfd-pick-txt"><b>' + esc(name) + '</b>' + (desc ? '<span>' + esc(desc) + '</span>' : '') + '</div>' +
-            '<span class="pfd-pick-add">' + PFD_PLUS_SVG + '</span>' +
         '</div>';
     }
     function pfdPickerInner() {
-        var noPf = pfdPickNoPf();
         var rows = pfdShelfBlocks.map(function (b) { return pfdPickRow(b.id, b.name || b.id); });
         rows.push(pfdPickRow('__note', 'Заметка'));
-        var hint = noPf
-            ? 'Наведите блок — справа появится превью с примерными данными. Нажмите, чтобы добавить.'
-            : 'Наведите блок — справа появится его превью. Нажмите, чтобы добавить.';
         return '<div class="pfd-picker-col">' +
-                '<div class="pfd-picker-h"><b>Что добавить</b><span>' + hint + '</span></div>' +
+                '<div class="pfd-picker-h"><b>Блоки для дашборда</b><span>Выберите блок — справа появится его превью</span></div>' +
                 '<div class="pfd-picker-list">' + rows.join('') + '</div>' +
             '</div>' +
             '<div class="pfd-pickpv" id="pfdPickPv"></div>';
     }
-    // наведение на строку → наполнить превью-сцену справа (живой блок / демо / пример).
-    // Сцена — фиксированная правая колонка панели, вертикальное выравнивание не нужно.
+    // выбранный в списке блок (для тёмной кнопки «Добавить на дашборд»)
+    var pflSelectedId = null;
+    // клик/наведение на строку → наполнить превью-сцену справа (живой блок / демо / пример)
+    // + подвал с названием и тёмной кнопкой добавления
     window.pfdPickPreview = function (id) {
         var pv = document.getElementById('pfdPickPv'); if (!pv) return;
+        pflSelectedId = id;
         var noPf = pfdPickNoPf();
         var name = id === '__note' ? 'Заметка' : ((pfdShelfBlockById(id) || {}).name || id);
-        pv.innerHTML = pfdPickPvHtml(id, name, noPf);
+        var desc = PFD_PICK_DESC[id] || '';
+        pv.innerHTML = pfdPickPvHtml(id, name, noPf) +
+            '<div class="pfl-pv-foot">' +
+                '<div class="pfl-pv-meta"><b>' + esc(name) + '</b>' + (desc ? '<span>' + esc(desc) + '</span>' : '') + '</div>' +
+                '<button type="button" class="pfl-pv-add" onclick="pfdAddSelected()">' + PFD_PLUS_SVG + '<span>Добавить на дашборд</span></button>' +
+            '</div>';
         pv.classList.add('show');
-        var host = document.getElementById('pfdPicker');
+        var host = document.getElementById('pflPanel');
         if (host) host.querySelectorAll('.pfd-pick').forEach(function (r) {
             r.classList.toggle('active', r.getAttribute('data-pick') === id);
         });
@@ -2019,26 +2036,27 @@
             try { if (document.querySelector('#pfdPickPv .pf-newsblk') && document.querySelector('#pfdPickPv .pfd-pick-tag.live')) renderPosNews(); } catch (e) {}
         });
     };
-    window.pfdPickerToggle = function (ev) {
-        if (ev) ev.stopPropagation();
-        if (pfdPickerOpen) pfdPickerClose(); else pfdPickerShow();
+    // тёмная кнопка «Добавить на дашборд»: добавляет выбранный блок и оставляет карточку
+    // открытой (список сам обновится — добавленный блок уходит с полки)
+    window.pfdAddSelected = function () {
+        var id = pflSelectedId; if (!id) return;
+        if (id === '__note') { pfdAddNote(); return; }
+        pfdPushUndo();
+        dashCfg.hidden[id] = 0;
+        saveDashCfg();
+        pflSelectedId = null;   // блок ушёл со списка → pflInitPreview выберет следующий
+        pfdRerender();
+        toast('Блок добавлен на дашборд');
     };
-    function pfdPickerShow() {
-        var host = document.getElementById('pfdPicker'); if (!host) return;
-        host.innerHTML = pfdPickerInner();
-        host.classList.add('open');
-        var btn = document.querySelector('#pfWrap .pfd-addbtn'); if (btn) btn.classList.add('open');
-        pfdPickerOpen = true;
-        // сразу показать превью первого блока — правая колонка не должна пустовать до наведения
-        var first = host.querySelector('.pfd-pick');
-        if (first) pfdPickPreview(first.getAttribute('data-pick'));
+    // выбрать первую (или ранее выбранную) строку и показать её превью после ре-рендера
+    function pflInitPreview() {
+        var list = document.querySelector('#pflPanel .pfd-picker-list'); if (!list) return;
+        var rows = Array.prototype.slice.call(list.querySelectorAll('.pfd-pick')); if (!rows.length) return;
+        var target = null;
+        if (pflSelectedId) target = rows.filter(function (r) { return r.getAttribute('data-pick') === pflSelectedId; })[0];
+        if (!target) target = rows[0];
+        pfdPickPreview(target.getAttribute('data-pick'));
     }
-    function pfdPickerClose() {
-        var host = document.getElementById('pfdPicker'); if (host) { host.classList.remove('open'); host.innerHTML = ''; }
-        var btn = document.querySelector('#pfWrap .pfd-addbtn'); if (btn) btn.classList.remove('open');
-        pfdPickerOpen = false;
-    }
-    window.pfdPickerCloseIfOpen = function () { if (pfdPickerOpen) pfdPickerClose(); };
 
     function pfdBodyHtml(favStr, noBonds) {
         var blocks = pfdBlocks(favStr, noBonds);
@@ -2100,98 +2118,103 @@
             '</div>';
         }).join('');
 
-        // выпадающий список «Добавить блок» СЛЕВА: компактные строки; при наведении на
-        // строку — ЖИВОЕ превью (или пример) в поповере #pfdPickPv СПРАВА от списка.
-        // Содержимое собирается ЛЕНИВО при открытии/наведении — блоки тяжёлые.
+        // Полка скрытых блоков для карточки «Настройка раскладки» (список + превью).
+        // Содержимое превью собирается ЛЕНИВО при выборе строки — блоки тяжёлые.
         pfdShelfBlocks = hiddenB.slice();
-        pfdPickerOpen = false;   // при каждом ре-рендере бара выпадашка закрыта
-        // кнопка-триггер слева; сама панель пикера — прямой ребёнок .pfd-bar (ниже),
-        // чтобы раскрываться на всю ширину бара и левым краем совпадать с «Конструктором»
-        var add = dashEdit
-            ? '<div class="pfd-addwrap">' +
-                '<button class="pfd-addbtn" onclick="pfdPickerToggle(event)" aria-label="Добавить блок">' +
-                    PFD_PLUS_SVG + '<span>Добавить блок</span>' + PFD_CHEVDOWN_SVG +
-                '</button>' +
-              '</div>'
-            : '';
-        var bar = dashEdit
-            ? '<div class="pfd-bar">' +
-                '<div class="pfd-bar-m">' + add +
-                    '<div class="pfd-bar-r">' +
-                        '<button class="d3-quick ghost" onclick="pfdUndo()" title="Отменить последнее изменение раскладки (Cmd/Ctrl+Z)">' + PFD_UNDO_SVG + '<span>Отменить</span></button>' +
-                        '<button class="d3-quick ghost" onclick="pfDashReset()" title="Вернуть стандартную раскладку страницы">' + PFDGRID_SVG + '<span>Вернуть стандартную</span></button>' +
-                        '<button class="d3-quick" onclick="pfDashToggleEdit()">' + CHECK_SVG + '<span>Готово</span></button>' +
-                    '</div>' +
+        pfdPickerOpen = false;
+        // Карточка настройки раскладки открывается кнопкой «Раскладка» в шапке страницы
+        // (dashEdit) и живёт НАД сеткой; в ней шапка (Вернуть стандартную / Сохранить / ✕)
+        // и список блоков с превью. Сама сетка ниже остаётся живой (drag/resize/скрытие).
+        var panel = dashEdit ? pflPanelHtml() : '';
+        return panel + '<div class="pfd-grid pfd-masonry pfd-live' + (dashEdit ? ' editing' : '') + '" id="pfdGrid">' + items + '</div>';
+    }
+    // карточка «Настройка раскладки» (редизайн бывшего бара-конструктора + пикера)
+    function pflPanelHtml() {
+        return '<div class="pfl-panel" id="pflPanel">' +
+            '<div class="pfl-head">' +
+                '<div class="pfl-head-t">' +
+                    '<span class="pfl-head-ic">' + PFDGRID_SVG + '</span>' +
+                    '<div class="pfl-head-tx"><b>Настройка раскладки</b>' +
+                        '<span>Добавьте блоки, расставьте их перетаскиванием и сохраните свой вид</span></div>' +
                 '</div>' +
-                '<div class="pfd-picker" id="pfdPicker"></div>' +
-              '</div>'
-            : '';
-        return bar + '<div class="pfd-grid pfd-masonry pfd-live' + (dashEdit ? ' editing' : '') + '" id="pfdGrid">' + items + '</div>';
+                '<div class="pfl-head-r">' +
+                    '<button type="button" class="pfl-btn ghost" onclick="pfLayoutReset()" title="Классический вид: карточки в ряд, «Избранное» справа, без виджетов">' + PFDGRID_SVG + '<span>Вернуть стандартную</span></button>' +
+                    '<button type="button" class="pfl-btn primary" onclick="pfLayoutSave()" title="Закрепить текущую раскладку за собой">' + CHECK_SVG + '<span>Сохранить раскладку</span></button>' +
+                    '<button type="button" class="pfl-x" onclick="pfLayoutClose()" aria-label="Закрыть настройку раскладки">' + XMARK_SVG + '</button>' +
+                '</div>' +
+            '</div>' +
+            '<div class="pfl-body">' + pfdPickerInner() + '</div>' +
+        '</div>';
     }
 
-    // ---- открыть/закрыть тулбокс «Конструктор», сброс раскладки ----
-    // Правка блоков (перенос/ресайз/скрытие) живёт ВСЕГДА при живой сетке — этот
-    // тумблер лишь показывает/прячет панель-тулбокс (добавить виджет, отменить,
-    // вернуть стандартную). Первый вызов заодно включает свою раскладку (dashCfg.on).
-    window.pfDashToggleEdit = function () {
-        if (dashEdit) {
-            // закрытие работает при ЛЮБОЙ ширине окна (гард ширины ниже — только на
-            // открытие); активный жест на всякий случай завершаем
-            if (pfdDragEl) pfdEndDrag(true);
-            if (pfdRsCancel) pfdRsCancel();
-            dashEdit = false;
-            closeImpMenus();
-            pfdRerender();
-            return;
-        }
-        try { if (window.matchMedia('(max-width: 1023px)').matches) { toast('Конструктор доступен на широком экране', true); return; } } catch (e) {}
+    // ---- «Раскладка»: открыть/закрыть карточку настройки, сохранить, вернуть стандартную ----
+    // Правка блоков (перенос/ресайз/скрытие) живёт ВСЕГДА при живой сетке (dashCfg.on) — карточка
+    // лишь показывает список блоков для добавления и кнопки сохранения/сброса. dashEdit = карточка
+    // открыта. Кнопка «Раскладка» в шапке страницы — единственная точка входа (#pfLayoutBtn).
+    // подсветка кнопки «Раскладка»: показ/скрытие + точка «своя раскладка» + нажатое состояние
+    function updateLayoutBtn() {
+        var b = document.getElementById('pfLayoutBtn'); if (!b) return;
+        // базовый стиль кнопки — display:none (скрыта по умолчанию), поэтому показываем
+        // ЯВНЫМ inline-flex, а не пустой строкой (иначе откат к скрывающему CSS-правилу)
+        b.style.display = (currentTab === 'portfolios' && store.items.length) ? 'inline-flex' : 'none';
+        b.classList.toggle('on', !!dashCfg.on);       // точка-индикатор: раскладка своя
+        b.classList.toggle('active', !!dashEdit);     // нажатое состояние: карточка открыта
+    }
+    window.updateLayoutBtn = updateLayoutBtn;
+    // клик по кнопке «Раскладка»: открыть карточку (или закрыть, если уже открыта)
+    window.pfLayoutToggle = function (ev) {
+        if (ev) ev.stopPropagation();
+        if (dashEdit) { window.pfLayoutClose(); return; }
+        try { if (window.matchMedia('(max-width: 1023px)').matches) { toast('Настройка раскладки доступна на широком экране', true); return; } } catch (e) {}
         if (!visibleItems().length) { toast('Сначала добавьте портфель — пока нечего расставлять', true); return; }
         if (!dashCfg.on) { dashCfg.on = true; saveDashCfg(); }
         dashEdit = true;
-        // стек отмен НЕ сбрасываем: живые правки (вне тулбокса) тоже кладут снимки,
-        // и «Отменить» в панели должно откатывать в том числе их
+        closeImpMenus();
+        pfdRerender();          // отрисует карточку; pflInitPreview выберет первый блок
+        updateLayoutBtn();
+    };
+    // закрыть карточку (✕): режим своей раскладки НЕ выключаем — сетка остаётся живой,
+    // расстановка уже автосохранена; пользователь может тащить/менять блоки и без карточки
+    window.pfLayoutClose = function () {
+        if (pfdDragEl) pfdEndDrag(true);
+        if (pfdRsCancel) pfdRsCancel();
+        dashEdit = false;
         closeImpMenus();
         pfdRerender();
+        updateLayoutBtn();
     };
-    // «＋ Блок» (шапка) — короткий путь: открыть тулбокс И СРАЗУ раскрыть список слева.
-    // Если тулбокс уже открыт — просто переключаем список (не закрываем весь конструктор).
-    window.pfdOpenAdd = function (ev) {
-        if (ev) ev.stopPropagation();
-        if (dashEdit) { pfdPickerToggle(); return; }
-        window.pfDashToggleEdit();          // с гардами/тостами: включит раскладку + тулбокс
-        if (dashEdit) pfdOpenPickerSoon();  // открылся (гарды прошли) → раскрыть список, как только он в DOM
+    // «Сохранить раскладку»: закрепить текущий вид (уже персистится) + закрыть карточку
+    window.pfLayoutSave = function () {
+        pfdFlushNotes();
+        saveDashCfg();
+        dashEdit = false;
+        pfdRerender();
+        updateLayoutBtn();
+        toast('Раскладка сохранена — закреплена за вами');
     };
-    // тулбокс рендерится через renderSmooth (View Transitions — асинхронно): ждём появления
-    // #pfdPicker в DOM и раскрываем список
-    function pfdOpenPickerSoon() {
-        var tries = 0;
-        (function poll() {
-            if (document.getElementById('pfdPicker')) { pfdPickerShow(); return; }
-            if (tries++ < 40) requestAnimationFrame(poll);
-        })();
-    }
-    // окно сузилось до мобильной ширины во время правки → автоматически «Готово»:
-    // на ≤1023 конструктор неактивен (pfdActive), режим правки не должен висеть
-    // заглушкой фоновых рендеров с некликабельным контентом
+    // «Вернуть стандартную» = классический вид: карточки в ряд, «Избранное» справа, БЕЗ
+    // виджетов (dashCfg.on:false). Сбрасываем всю расстановку/скрытия; заметки (текст) храним.
+    // Обратимо: снимок кладём ПЕРЕД сбросом (Cmd/Ctrl+Z вернёт).
+    window.pfLayoutReset = function () {
+        pfdPushUndo();
+        dashCfg = { on: false, order: [], span: {}, h: {}, hidden: {}, notes: dashCfg.notes || [] };
+        dashEdit = false;
+        saveDashCfg();
+        pfdRerender();
+        updateLayoutBtn();
+        toast('Стандартная раскладка возвращена');
+    };
+    // совместимость со старыми вызовами (Esc-хендлер и т.п.)
+    window.pfDashToggleEdit = function () { if (dashEdit) window.pfLayoutClose(); else window.pfLayoutToggle(); };
+    window.pfDashReset = window.pfLayoutReset;
+    // окно сузилось до мобильной ширины во время правки → автозакрытие карточки:
+    // на ≤1023 конструктор неактивен (pfdActive), карточка не должна висеть заглушкой
     try {
         var pfdNarrowMq = window.matchMedia('(max-width: 1023px)');
-        var pfdNarrowH = function (ev) { if (ev.matches && dashEdit) window.pfDashToggleEdit(); };
+        var pfdNarrowH = function (ev) { if (ev.matches && dashEdit) window.pfLayoutClose(); };
         if (pfdNarrowMq.addEventListener) pfdNarrowMq.addEventListener('change', pfdNarrowH);
         else if (pfdNarrowMq.addListener) pfdNarrowMq.addListener(pfdNarrowH);
     } catch (e) {}
-    window.pfDashReset = function () {
-        // «Вернуть стандартную» = сбросить ВСЕ перетаскивания/ресайзы/скрытия к дефолтной
-        // расстановке блоков, ОСТАВАЯСЬ в дашборд-сетке (on:true): «Избранное» и прочее
-        // остаются подвижными блоками, сетка НЕ исчезает в классику. Заметки — пользовательский
-        // ТЕКСТ, не раскладка: сброс их не стирает. Обратимо — снимок кладём ПЕРЕД сбросом,
-        // «Отменить» в тулбоксе вернёт прежнюю расстановку.
-        pfdPushUndo();
-        dashCfg = { on: true, order: [], span: {}, h: {}, hidden: {}, notes: dashCfg.notes || [] };
-        dashEdit = true;
-        saveDashCfg();
-        pfdRerender();
-        toast('Стандартная раскладка возвращена');
-    };
 
     // ---- скрытие/возврат блоков (крестик на бирке + полка «Добавить блок») ----
     window.pfdHideBlock = function (id) {
@@ -2201,7 +2224,6 @@
         pfdRerender();
     };
     window.pfdShowBlock = function (id) {
-        pfdPickerClose();   // снять живые превью до ре-рендера (иначе филлеры бьют в них)
         pfdPushUndo();
         dashCfg.hidden[id] = 0;
         saveDashCfg();
@@ -2253,7 +2275,6 @@
         });
     }
     window.pfdAddNote = function () {
-        pfdPickerClose();   // снять живой пример-заметку из выпадашки до ре-рендера
         pfdFlushNotes();
         pfdPushUndo();
         var id = genId('n');
@@ -2669,16 +2690,12 @@
             pfdNoteClrOpen = null;
         }
         if (pfdCal && !(t && t.closest && t.closest('.pfnt-duewrap'))) pfdCalClose();
-        // выпадашка «Добавить блок»: клик вне панели и не по кнопке-триггеру — закрыть
-        if (pfdPickerOpen && !(t && t.closest && (t.closest('.pfd-addwrap') || t.closest('.pfd-picker')))) pfdPickerClose();
     });
-    // Esc закрывает открытый календарь срока / выпадашку добавления блока
+    // Esc закрывает открытый календарь срока (не давая ему долететь до хендлера закрытия
+    // карточки раскладки ниже — иначе один Esc закрыл бы и календарь, и всю карточку)
     document.addEventListener('keydown', function (e) {
         if (e.key !== 'Escape') return;
-        // stopImmediatePropagation — иначе тот же Esc долетит до хендлера выхода из
-        // режима правки (ниже) и закроет ВЕСЬ конструктор, а не только поповер
         if (pfdCal) { e.stopImmediatePropagation(); pfdCalClose(); }
-        else if (pfdPickerOpen) { e.stopImmediatePropagation(); pfdPickerClose(); }
     });
     document.addEventListener('keydown', function (e) {
         if (!pfdLive() || (!e.metaKey && !e.ctrlKey) || e.shiftKey || String(e.key).toLowerCase() !== 'z') return;
@@ -3539,7 +3556,7 @@
         pfdArm = null;
         if (pfdDragEl) { pfdEndDrag(true); return; }
         if (pfdRsCancel) { pfdRsCancel(); return; }
-        if (dashEdit) window.pfDashToggleEdit();
+        if (dashEdit) window.pfLayoutClose();
     });
 
     // все портфели скрыты — осознанное пустое состояние с кнопкой «показать все»
@@ -7118,13 +7135,15 @@
             if (tabId === 'portfolios') { openMenu = null; renderPortfolios(); }
             else {
                 if (dq('pfOverlay')) window.pfCloseOverlay();
-                // ушли со вкладки — панель действий («Добавить портфель»/«Видимость»/…) и
-                // рыночная лента в глобальной шапке сайта больше не относятся к текущей
-                // странице, прячем их
+                // ушли со вкладки — карточку раскладки закрываем (иначе гард рендера её бы
+                // держал открытой при возврате), панель действий и рыночную ленту прячем
+                dashEdit = false;
                 var tbHost = document.getElementById('topBarPfActions');
                 if (tbHost) { tbHost.style.display = 'none'; tbHost.innerHTML = ''; }
                 var tbMkt = document.getElementById('topBarPfMarket');
                 if (tbMkt) { tbMkt.style.display = 'none'; tbMkt.innerHTML = ''; }
+                var tbLay = document.getElementById('pfLayoutBtn');
+                if (tbLay) tbLay.style.display = 'none';
             }
         };
     }
