@@ -1184,10 +1184,12 @@
 
     function renderPortfolios() {
         var host = dq('pfWrap'); if (!host) return;
-        // Режим конструктора: фоновые перерисовки (котировки приходят пачками)
-        // глушим — innerHTML-своп сбросил бы перетаскивание/ресайз на полпути.
-        // Собственные перерисовки конструктора идут через pfdRerender().
-        if (dashEdit && !pfdWantRender) return;
+        // Во время активного жеста (перетаскивание/ресайз) или при открытом пикере
+        // «Добавить блок» фоновые перерисовки (котировки приходят пачками) глушим:
+        // innerHTML-своп оборвал бы жест или затёр живые превью пикера. В покое —
+        // даже при живой сетке — обновления котировок идут как обычно. Собственные
+        // перерисовки конструктора идут через pfdRerender() (флаг pfdWantRender).
+        if ((pfdBusy() || pfdPickerOpen) && !pfdWantRender) return;
         // курсор в «Заметках» — ФОНОВЫЙ innerHTML-своп (котировки) унёс бы фокус и
         // несохранённый хвост текста; такие рендеры откладываем до blur (автосейв
         // заметки идёт с дебаунсом). Явные рендеры конструктора (pfdWantRender —
@@ -1508,8 +1510,9 @@
     var PFD_GRIP_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.7"/><circle cx="15" cy="6" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="9" cy="18" r="1.7"/><circle cx="15" cy="18" r="1.7"/></svg>';
     function topBarActionsHtml() {
         return '<button class="d3-quick" onclick="pfAddPortfolio()">' + PLUS_SVG + '<span>Добавить портфель</span></button>' +
-            // «Видимость» показываем при 2+ портфелях ИЛИ когда есть сделки (тумблер блока «История сделок»)
-            (store.items.length > 1 || hasAnyTrades() ? eyeWrapHtml() : '') +
+            // «Видимость» показываем при 2+ портфелях, при наличии сделок ИЛИ когда включена
+            // своя раскладка (тогда в меню — тумблеры скрытых изначальных секций)
+            (store.items.length > 1 || hasAnyTrades() || dashCfg.on ? eyeWrapHtml() : '') +
             viewWrapHtml() +
             // конструктор раскладки: только десктоп (скрыт в mobile.css), подсветка — раскладка своя
             (store.items.length
@@ -1551,14 +1554,37 @@
         }).join('')) : '';
         var pfGroup = multi ? '<div class="pf-impgrp">Какие портфели показывать</div>' + pfRows +
             '<div class="pf-eyenote">Скрытые карточки не показываются в сетке и в календаре выплат, но их капитал по-прежнему учитывается в общей сводке.</div>' : '';
-        // ---- группа «Секции» — тумблер видимости блока «История сделок» ----
-        var secGroup = hasAnyTrades()
-            ? '<div class="pf-impgrp">Секции страницы</div>' +
-                '<button class="pf-impitem pf-eyeitem' + (tradesHidden ? ' off-eye' : '') + '" onclick="pfToggleTradesHidden(event)">' +
+        // ---- группа «Секции страницы» — тумблеры видимости блоков ----
+        // При включённой своей раскладке (dashCfg.on) сюда попадают скрытые/показанные
+        // ИЗНАЧАЛЬНЫЕ блоки (календарь/ставки, избранное, сводка) — их возвращают именно
+        // отсюда (виджеты возвращаются из «Конструктор → Добавить блок»). Плюс всегда —
+        // тумблер «История сделок».
+        var dashSecRows = '';
+        if (dashCfg.on) {
+            var hasVisHold = store.items.some(function (p) { return !p.hidden && (p.holdings || []).length > 0; });
+            var noBondsV = hasVisHold && !calPfCandidates().length;
+            var secs = [
+                { id: 'cal', name: noBondsV ? 'Ставки' : 'Календарь выплат', sub: noBondsV ? 'ставки денежного рынка' : 'ближайшие купоны и дивиденды', on: true },
+                { id: 'fav', name: 'Избранное', sub: 'отслеживаемые бумаги', on: true },
+                { id: 'sum', name: 'Сводка', sub: 'суммарный капитал по портфелям', on: store.items.length >= 2 },
+                { id: 'rates', name: 'Ставки рынка', sub: 'ключевая ставка и RUSFAR', on: !noBondsV }
+            ];
+            dashSecRows = secs.filter(function (s) { return s.on; }).map(function (s) {
+                var hid = !!(dashCfg.hidden || {})[s.id];
+                return '<button class="pf-impitem pf-eyeitem' + (hid ? ' off-eye' : '') + '" onclick="pfdToggleSection(\'' + s.id + '\',event)">' +
                     '<span class="pf-eyedot" style="background:#5B7C99"></span>' +
-                    '<span class="pf-impbody"><b>История сделок</b><i>' + (tradesHidden ? 'скрыта' : 'журнал покупок и продаж') + '</i></span>' +
-                    '<span class="pf-eyestate">' + (tradesHidden ? EYEOFF_SVG : EYE_SVG) + '</span></button>'
+                    '<span class="pf-impbody"><b>' + esc(s.name) + '</b><i>' + esc(hid ? 'скрыт' : s.sub) + '</i></span>' +
+                    '<span class="pf-eyestate">' + (hid ? EYEOFF_SVG : EYE_SVG) + '</span></button>';
+            }).join('');
+        }
+        var tradesRow = hasAnyTrades()
+            ? '<button class="pf-impitem pf-eyeitem' + (tradesHidden ? ' off-eye' : '') + '" onclick="pfToggleTradesHidden(event)">' +
+                '<span class="pf-eyedot" style="background:#5B7C99"></span>' +
+                '<span class="pf-impbody"><b>История сделок</b><i>' + (tradesHidden ? 'скрыта' : 'журнал покупок и продаж') + '</i></span>' +
+                '<span class="pf-eyestate">' + (tradesHidden ? EYEOFF_SVG : EYE_SVG) + '</span></button>'
             : '';
+        var secInner = dashSecRows + tradesRow;
+        var secGroup = secInner ? '<div class="pf-impgrp">Секции страницы</div>' + secInner : '';
         return '<div class="pf-impwrap">' +
             '<button class="d3-quick ghost pf-impbtn" onclick="pfToggleImp(event,\'eye\')">' + EYE_SVG + '<span>Видимость</span>' +
                 (multi && vis < total ? '<i class="pf-eyecnt">' + vis + '/' + total + '</i>' : '') + CHEV_SVG + '</button>' +
@@ -1723,8 +1749,18 @@
         try { if (window.matchMedia('(max-width: 1023px)').matches) return false; } catch (e) {}
         return visibleItems().length > 0;
     }
-    // Ре-рендер, инициированный самим конструктором: в режиме правки фоновые
-    // перерисовки (котировки) глушатся — innerHTML-своп убил бы перетаскивание.
+    // Сетка показана на десктопе → блоки ЖИВЫЕ: перетаскивание (за грип-ручку),
+    // ресайз (за кромки/уголок), скрытие и удаление доступны ВСЕГДА, без входа в
+    // отдельный режим. dashEdit теперь означает лишь «открыт тулбокс Конструктора»
+    // (панель «Добавить виджет / Отменить / Вернуть стандартную»).
+    function pfdLive() { return pfdActive(); }
+    // Идёт жест — активное перетаскивание или ресайз. На это время фоновые
+    // ре-рендеры (котировки приходят пачками) глушим: innerHTML-своп оборвал бы
+    // жест на полпути. pfdDragEl/pfdRsCancel объявлены ниже (var-хойстинг), к
+    // моменту вызова (пользовательское взаимодействие) уже инициализированы.
+    function pfdBusy() { return !!(pfdDragEl || pfdRsCancel); }
+    // Ре-рендер, инициированный самим конструктором: во время жеста/открытого
+    // пикера фоновые перерисовки глушатся — этот флаг их пропускает.
     function pfdRerender() { pfdWantRender = true; renderSmooth(); }
 
     // ---- masonry-упаковка: короткие блоки подтягиваются вверх в чужой зазор ----
@@ -1846,7 +1882,6 @@
         var m = dashCfg.hidden || {};
         return Object.prototype.hasOwnProperty.call(m, b.id) ? !!m[b.id] : !!b.defHidden;
     }
-    var PFD_X_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
     var PFD_PLUS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
     var PFD_UNDO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>';
     // мини-эскизы блоков для полки «Добавить блок» — не рендерим тяжёлый настоящий блок,
@@ -2035,24 +2070,35 @@
             var span = clamp(+(dashCfg.span[b.id]) || b.span, 3, 12);
             var h = +(dashCfg.h[b.id]) || 0;
             var style = 'grid-column: span ' + span + ';' + (h ? 'height:' + clamp(h, 240, 1400) + 'px;' : '');
-            // заметку крестик УДАЛЯЕТ (это контент, не блок-полка); Cmd+Z вернёт
-            var xCall = b.isNote ? 'pfdRemoveNote(\'' + jsArg(b.id) + '\')' : 'pfdHideBlock(\'' + jsArg(b.id) + '\')';
-            var xTitle = b.isNote ? 'Удалить заметку (Cmd/Ctrl+Z вернёт)' : 'Убрать блок с дашборда (вернуть — с полки «Добавить блок»)';
-            // блоки с полки «Что добавить» (KPI/график/карта/новости) можно убрать и БЕЗ режима
-            // конструктора — тихая иконка-корзина в углу шапки, проявляется при наведении (как «удалить» у заметки)
-            var removable = !b.isNote && !!b.defHidden;
-            var rmChrome = !dashEdit && removable;
-            return '<div class="pfd-item' + (h ? ' pfd-hset' : '') + (rmChrome ? ' pfd-rmable' : '') + '" data-pfd="' + esc(b.id) + '" style="' + style + '">' +
-                (dashEdit
-                    ? '<div class="pfd-chrome">' +
-                        '<span class="pfd-name">' + PFD_GRIP_SVG + '<span>' + esc(b.name || '') + '</span></span>' +
-                        '<button class="pfd-hide" title="' + xTitle + '" onclick="' + xCall + '">' + PFD_X_SVG + '</button>' +
-                        '<span class="pfd-size"></span>' +
-                        '<span class="pfd-rs" title="Потяните: ширина — колонками, высота — свободно. Двойной клик — высота в авто, ещё раз — ширина по умолчанию"></span>' +
-                      '</div>'
-                    : (rmChrome
-                        ? '<button class="pfd-cardrm" title="Убрать карточку (вернуть — «Добавить блок»)" aria-label="Убрать карточку" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + NOTE_TRASH_SVG + '</button>'
-                        : '')) +
+            // Угловая кнопка блока (проявляется при наведении):
+            //  • заметка — своя корзина уже есть в шапке карточки (pfnt-trash), кнопку не дублируем;
+            //  • ВИДЖЕТ (defHidden: KPI/график/карта/новости) — УДАЛИТЬ (корзина), вернётся из
+            //    «Конструктор → Добавить блок»;
+            //  • ИЗНАЧАЛЬНЫЙ блок — СКРЫТЬ (глаз-off): портфель → pfToggleHidden, «История сделок»
+            //    → pfToggleTradesHidden, остальные (календарь/избранное/сводка/ставки) → pfdHideBlock;
+            //    вернуть — через меню «Видимость» в шапке.
+            var hideBtn = '';
+            if (!b.isNote && b.defHidden) {
+                hideBtn = '<button class="pfd-hide pfd-hide--del" title="Удалить виджет (вернуть — «Добавить блок» в Конструкторе)" aria-label="Удалить виджет" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + NOTE_TRASH_SVG + '</button>';
+            } else if (!b.isNote) {
+                var hCall = b.id.indexOf('pf:') === 0 ? ('pfToggleHidden(\'' + jsArg(b.id.slice(3)) + '\',event)')
+                    : b.id === 'trades' ? 'pfToggleTradesHidden(event)'
+                    : ('pfdHideBlock(\'' + jsArg(b.id) + '\')');
+                hideBtn = '<button class="pfd-hide" title="Скрыть блок (вернуть — «Видимость» в шапке)" aria-label="Скрыть блок" onclick="' + hCall + '">' + EYEOFF_SVG + '</button>';
+            }
+            // «живой» chrome есть у КАЖДОГО блока сетки (не только в тулбоксе): грип-ручка для
+            // переноса, кнопка скрыть/удалить, бейдж размера и три зоны ресайза — правая кромка
+            // (ширина), нижняя (высота) и уголок (обе). Всё проявляется по hover (см. CSS).
+            var chrome = '<div class="pfd-chrome">' +
+                '<span class="pfd-name pfd-move" title="Потяните, чтобы переместить блок">' + PFD_GRIP_SVG + '<span>' + esc(b.name || '') + '</span></span>' +
+                hideBtn +
+                '<span class="pfd-size"></span>' +
+                '<span class="pfd-rs-r" title="Потяните — ширина по колонкам"></span>' +
+                '<span class="pfd-rs-b" title="Потяните — высота свободно"></span>' +
+                '<span class="pfd-rs" title="Потяните — ширина и высота. Двойной клик — сброс высоты, ещё раз — ширины"></span>' +
+            '</div>';
+            return '<div class="pfd-item' + (h ? ' pfd-hset' : '') + '" data-pfd="' + esc(b.id) + '" style="' + style + '">' +
+                chrome +
                 '<div class="pfd-body">' + html + '</div>' +
             '</div>';
         }).join('');
@@ -2075,7 +2121,7 @@
             ? '<div class="pfd-bar">' +
                 '<div class="pfd-bar-m">' + add +
                     '<div class="pfd-bar-t"><b>Конструктор дашборда</b>' +
-                        '<span>Тяните блок за любое место, размер — за уголок (12 колонок, высота — свободно). Крестик прячет блок, Esc — готово.</span></div>' +
+                        '<span>Блоки двигаются и меняются прямо на странице: тяните за ручку сверху, размер — за правую/нижнюю кромку или уголок. Здесь — добавить виджет, отменить и вернуть стандартную раскладку.</span></div>' +
                     '<div class="pfd-bar-r">' +
                         '<button class="d3-quick ghost" onclick="pfdUndo()" title="Отменить последнее изменение раскладки (Cmd/Ctrl+Z)">' + PFD_UNDO_SVG + '<span>Отменить</span></button>' +
                         '<button class="d3-quick ghost" onclick="pfDashReset()">Вернуть стандартную</button>' +
@@ -2085,15 +2131,17 @@
                 '<div class="pfd-picker" id="pfdPicker"></div>' +
               '</div>'
             : '';
-        return bar + '<div class="pfd-grid pfd-masonry' + (dashEdit ? ' editing' : '') + '" id="pfdGrid">' + items + '</div>';
+        return bar + '<div class="pfd-grid pfd-masonry pfd-live' + (dashEdit ? ' editing' : '') + '" id="pfdGrid">' + items + '</div>';
     }
 
-    // ---- вход/выход из режима правки, сброс ----
+    // ---- открыть/закрыть тулбокс «Конструктор», сброс раскладки ----
+    // Правка блоков (перенос/ресайз/скрытие) живёт ВСЕГДА при живой сетке — этот
+    // тумблер лишь показывает/прячет панель-тулбокс (добавить виджет, отменить,
+    // вернуть стандартную). Первый вызов заодно включает свою раскладку (dashCfg.on).
     window.pfDashToggleEdit = function () {
         if (dashEdit) {
-            // выключение («Готово») работает при ЛЮБОЙ ширине окна: гард ширины
-            // ниже относится только к включению — иначе, сузив окно в режиме
-            // правки, из него было бы не выйти (кнопки скрыты, рендеры заглушены)
+            // закрытие работает при ЛЮБОЙ ширине окна (гард ширины ниже — только на
+            // открытие); активный жест на всякий случай завершаем
             if (pfdDragEl) pfdEndDrag(true);
             if (pfdRsCancel) pfdRsCancel();
             dashEdit = false;
@@ -2105,7 +2153,8 @@
         if (!visibleItems().length) { toast('Сначала добавьте портфель — пока нечего расставлять', true); return; }
         if (!dashCfg.on) { dashCfg.on = true; saveDashCfg(); }
         dashEdit = true;
-        pfdUndoStack.length = 0;   // новая сессия правки — свой стек отмен
+        // стек отмен НЕ сбрасываем: живые правки (вне тулбокса) тоже кладут снимки,
+        // и «Отменить» в панели должно откатывать в том числе их
         closeImpMenus();
         pfdRerender();
     };
@@ -2616,9 +2665,13 @@
         else if (pfdPickerOpen) { e.stopImmediatePropagation(); pfdPickerClose(); }
     });
     document.addEventListener('keydown', function (e) {
-        if (!dashEdit || (!e.metaKey && !e.ctrlKey) || e.shiftKey || String(e.key).toLowerCase() !== 'z') return;
+        if (!pfdLive() || (!e.metaKey && !e.ctrlKey) || e.shiftKey || String(e.key).toLowerCase() !== 'z') return;
         var panel = document.getElementById('panel-portfolios');
         if (!panel || !panel.classList.contains('active')) return;
+        // не перехватываем Cmd/Ctrl+Z, когда правится текст (заметка/поле ввода) —
+        // там это отмена ввода, а не отмена раскладки
+        var ae = document.activeElement;
+        if (ae && (ae.isContentEditable || ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA')) return;
         e.preventDefault();
         window.pfdUndo();
     });
@@ -3271,10 +3324,13 @@
         }
     }
     document.addEventListener('pointerdown', function (e) {
-        if (!dashEdit || e.button !== 0) return;
-        // уголок — ресайз, крестик — скрытие блока: их клики не взводят драг
-        if (e.target.closest && e.target.closest('.pfd-rs, .pfd-hide')) return;
-        var it = e.target.closest ? e.target.closest('.pfd-grid.editing .pfd-item') : null;
+        if (!pfdLive() || e.button !== 0) return;
+        // перетаскивание стартует ТОЛЬКО с грип-ручки (.pfd-move) сверху блока —
+        // так содержимое карточки (тикеры, меню, скролл) остаётся кликабельным, а
+        // кромки/уголок ресайза и кнопка скрыть не взводят драг
+        var grip = e.target.closest ? e.target.closest('.pfd-move') : null;
+        if (!grip) return;
+        var it = grip.closest('.pfd-grid.pfd-live .pfd-item');
         if (!it) return;
         e.preventDefault();
         pfdArm = { item: it, x: e.clientX, y: e.clientY };
@@ -3316,13 +3372,16 @@
     // Высота фиксируется ТОЛЬКО при заметном вертикальном движении: ширину
     // можно менять, не замораживая природную высоту блока.
     document.addEventListener('pointerdown', function (e) {
-        var rs = e.target.closest ? e.target.closest('.pfd-rs') : null;
-        if (!rs || !dashEdit || e.button !== 0) return;
+        var rs = e.target.closest ? e.target.closest('.pfd-rs, .pfd-rs-r, .pfd-rs-b') : null;
+        if (!rs || !pfdLive() || e.button !== 0) return;
         e.preventDefault();
         e.stopPropagation();
         var item = rs.closest('.pfd-item');
         var grid = document.getElementById('pfdGrid');
         if (!item || !grid) return;
+        // ось ресайза по ручке: правая кромка — только ширина, нижняя — только
+        // высота, уголок — обе (как раньше)
+        var axis = rs.classList.contains('pfd-rs-r') ? 'x' : rs.classList.contains('pfd-rs-b') ? 'y' : 'both';
         var gap = parseFloat(getComputedStyle(grid).columnGap) || 16;
         var z = grid.getBoundingClientRect().width / grid.offsetWidth || 1;
         var colW = (grid.offsetWidth - gap * 11) / 12;
@@ -3332,7 +3391,7 @@
         var startColStyle = item.style.gridColumn, startHStyle = item.style.height;
         var id = item.getAttribute('data-pfd');
         var badge = item.querySelector('.pfd-size');
-        var newSpan = 0, newH = 0, hMode = hadH;
+        var newSpan = 0, newH = 0, hMode = hadH || axis === 'y';
         pfdArm = null;   // гасим возможный «взвод» драга — ресайз и драг не смешиваются
         pfdPushUndo();
         item.classList.add('pfd-resizing');
@@ -3354,6 +3413,8 @@
         }
         function onMove(ev) {
             var dx = (ev.clientX - startX) / z, dy = (ev.clientY - startY) / z;
+            if (axis === 'y') dx = 0;      // нижняя кромка — ширину не трогаем
+            if (axis === 'x') dy = 0;      // правая кромка — высоту не трогаем
             newSpan = clamp(Math.round((startW + dx + gap) / (colW + gap)), 3, 12);
             if (!hMode && Math.abs(dy) > 8) hMode = true;
             item.style.gridColumn = 'span ' + newSpan;
@@ -3367,11 +3428,12 @@
         }
         function onUp() {
             cleanup();
-            if (newSpan) {
-                dashCfg.span[id] = newSpan;
-                if (hMode && newH) dashCfg.h[id] = newH;
-                saveDashCfg();
-            }
+            var changed = false;
+            // ширину пишем только когда её реально можно было менять (не чистый ресайз высоты) —
+            // иначе «пиннили» бы текущий span поверх дефолта
+            if (newSpan && axis !== 'y') { dashCfg.span[id] = newSpan; changed = true; }
+            if (hMode && newH) { dashCfg.h[id] = newH; changed = true; }
+            if (changed) saveDashCfg();
             pfdHeatRepaintSoon();   // карта рынка перерисовывается под новый размер блока
         }
         // Esc/выход из режима во время ресайза: возвращаем стартовые размеры,
@@ -3387,37 +3449,35 @@
         document.addEventListener('pointerup', onUp);
         document.addEventListener('pointercancel', onUp);
     });
-    // двойной клик по уголку — ступенчатый сброс: сперва высота в авто (чаще всего
-    // хочется именно её), следующий дабл-клик возвращает ширину по умолчанию
+    // двойной клик по ручке ресайза — сброс: кромка сбрасывает свою ось (ширину/высоту),
+    // уголок — ступенчато (сперва высота в авто, следующий дабл-клик — ширина по умолчанию)
     document.addEventListener('dblclick', function (e) {
-        var rs = e.target.closest ? e.target.closest('.pfd-rs') : null;
-        if (!rs || !dashEdit) return;
+        var rs = e.target.closest ? e.target.closest('.pfd-rs, .pfd-rs-r, .pfd-rs-b') : null;
+        if (!rs || !pfdLive()) return;
         var item = rs.closest('.pfd-item');
         var id = item && item.getAttribute('data-pfd');
         if (!id) return;
         pfdPushUndo();
-        if (dashCfg.h[id] != null) {
-            delete dashCfg.h[id];
-            toast('Высота — авто');
-        } else {
-            delete dashCfg.span[id];
-            toast('Ширина — по умолчанию');
-        }
+        var axis = rs.classList.contains('pfd-rs-r') ? 'x' : rs.classList.contains('pfd-rs-b') ? 'y' : 'both';
+        if (axis === 'x') { delete dashCfg.span[id]; toast('Ширина — по умолчанию'); }
+        else if (axis === 'y') { delete dashCfg.h[id]; toast('Высота — авто'); }
+        else if (dashCfg.h[id] != null) { delete dashCfg.h[id]; toast('Высота — авто'); }
+        else { delete dashCfg.span[id]; toast('Ширина — по умолчанию'); }
         saveDashCfg();
         pfdRerender();
     });
-    // Esc = «Готово»: быстрый выход из режима правки
+    // Esc: сперва отменяет активный жест (перетаскивание, затем ресайз), затем —
+    // если открыт тулбокс — закрывает его
     document.addEventListener('keydown', function (e) {
-        if (e.key !== 'Escape' || !dashEdit) return;
+        if (e.key !== 'Escape' || !pfdLive()) return;
         var panel = document.getElementById('panel-portfolios');
         if (!panel || !panel.classList.contains('active')) return;
-        // сначала отменяются активные операции: перетаскивание, затем ресайз —
-        // и только «чистый» Esc закрывает режим правки. pfdArm сбрасываем всегда:
-        // иначе зажатая кнопка мыши после отмены тут же перезапускала бы драг
+        // pfdArm сбрасываем всегда: иначе зажатая кнопка мыши после отмены тут же
+        // перезапускала бы драг
         pfdArm = null;
         if (pfdDragEl) { pfdEndDrag(true); return; }
         if (pfdRsCancel) { pfdRsCancel(); return; }
-        window.pfDashToggleEdit();
+        if (dashEdit) window.pfDashToggleEdit();
     });
 
     // все портфели скрыты — осознанное пустое состояние с кнопкой «показать все»
@@ -4931,6 +4991,22 @@
             if (m) { m.classList.add('open'); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); }
         } : null);
         toast(tradesHidden ? 'История сделок скрыта' : 'История сделок показана');
+    };
+    // тумблер видимости ИЗНАЧАЛЬНОЙ секции (Календарь/Ставки/Избранное/Сводка) из меню
+    // «Видимость» — попап оставляем открытым, как у «Истории сделок»
+    window.pfdToggleSection = function (id, ev) {
+        if (ev) ev.stopPropagation();
+        var wasHidden = !!(dashCfg.hidden || {})[id];
+        pfdPushUndo();
+        dashCfg.hidden[id] = wasHidden ? 0 : 1;
+        saveDashCfg();
+        var keepOpen = !!(dq('pfImp-eye') && dq('pfImp-eye').classList.contains('open'));
+        pfdWantRender = true;   // явная правка конструктора — не глушим рендер
+        renderSmooth(keepOpen ? function () {
+            var m = dq('pfImp-eye');
+            if (m) { m.classList.add('open'); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); }
+        } : null);
+        toast(wasHidden ? 'Блок показан' : 'Блок скрыт');
     };
 
     // ====================================================================

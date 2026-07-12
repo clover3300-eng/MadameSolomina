@@ -2126,32 +2126,26 @@ body.dark-mode .pfpc-kind.kind-red { color: #93c5fd; background: rgba(61,111,209
    height:100% перебивает 674px, min-height:0 отдаёт скролл внутреннему .pff-body */
 .pfd-item.pfd-hset .pfd-favwrap > * { height: 100%; min-height: 0; flex: 1; }
 
-/* ---- режим правки ---- */
-/* без пунктирной рамки: блоки читаются как «плитки» через мягкий подъём и
-   тень при наведении. Синий — только у активных состояний (слот, ресайз) */
-.pfd-grid.editing { user-select: none; }
-.pfd-grid.editing .pfd-item {
-    border-radius: 24px;
-    cursor: grab;
-    touch-action: none;
-    transition: box-shadow 0.16s ease, transform 0.16s ease;
-}
-.pfd-grid.editing .pfd-item:hover {
-    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.13);
-    transform: translateY(-2px);
-}
-.pfd-grid.editing .pfd-item:active { cursor: grabbing; }
-.pfd-grid.editing .pfd-item.pfd-resizing {
+/* ---- живая правка блоков (всегда при показанной сетке .pfd-live) ---- */
+/* Блоки читаются как «плитки»: при наведении проявляются грип-ручка (перенос),
+   кнопка скрыть/удалить и ручки ресайза по кромкам; курсор на грани сам подсказывает,
+   что её можно потянуть. Содержимое карточек ОСТАЁТСЯ кликабельным — мышь перехватывают
+   только сами ручки (chrome — pointer-events:none, ручки — auto), режим для этого не нужен. */
+.pfd-grid.pfd-live { user-select: none; }
+.pfd-grid.pfd-live .pfd-item { border-radius: 24px; }
+/* тулбокс «Конструктор» открыт — блоки чуть «приподняты» тенью (режим расстановки) */
+.pfd-grid.editing .pfd-item { transition: box-shadow 0.16s ease; }
+.pfd-grid.editing .pfd-item:hover { box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12); }
+.pfd-grid.pfd-live .pfd-item.pfd-resizing {
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.55), 0 16px 40px rgba(15, 23, 42, 0.14);
 }
-/* содержимое блока в режиме правки не перехватывает мышь — тянется весь блок */
-.pfd-grid.editing .pfd-body { pointer-events: none; user-select: none; }
 body.pfd-dragging-now { cursor: grabbing; }
 body.pfd-dragging-now * { cursor: grabbing !important; }
 
 /* слот на месте тянутого блока: контент растворяется, остаётся посадочная зона */
 .pfd-item.pfd-slot { outline: 2px dashed rgba(59, 130, 246, 0.55) !important; background: rgba(59, 130, 246, 0.05); box-shadow: none !important; }
 .pfd-item.pfd-slot > * { opacity: 0; }
+.pfd-item.pfd-slot .pfd-chrome { display: none; }   /* слот не показывает свой chrome */
 
 /* призрак-клон у курсора (живёт в body, поверх всего) */
 .pfd-ghost {
@@ -2161,7 +2155,7 @@ body.pfd-dragging-now * { cursor: grabbing !important; }
     transform: scale(1.02);
     box-shadow: 0 22px 55px rgba(15, 23, 42, 0.30), 0 4px 14px rgba(15, 23, 42, 0.16);
 }
-.pfd-ghost .pfd-rs, .pfd-ghost .pfd-size, .pfd-ghost .pfd-hide { display: none; }
+.pfd-ghost .pfd-chrome { display: none; }   /* призрак — без грипа/ручек/бейджа */
 
 /* направляющая ресайза: пунктир на границе колонки, куда «прилипнет» правый край */
 .pfd-guide {
@@ -2170,7 +2164,8 @@ body.pfd-dragging-now * { cursor: grabbing !important; }
 }
 
 .pfd-chrome { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
-/* ярлык блока — имя + грип-точки, «биркой» на верхней кромке */
+/* грип-ручка = ярлык блока (имя + точки), «биркой» на верхней кромке. Проявляется при
+   наведении; за неё блок перетаскивается (единственная точка старта драга). */
 .pfd-name {
     position: absolute; top: -11px; left: 14px;
     display: inline-flex; align-items: center; gap: 5px;
@@ -2180,10 +2175,13 @@ body.pfd-dragging-now * { cursor: grabbing !important; }
     border: 1px solid #e2e8f0;
     box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
     white-space: nowrap; overflow: hidden;
+    opacity: 0; pointer-events: none; transition: opacity 0.14s ease;
 }
+.pfd-name.pfd-move { cursor: grab; }
+.pfd-name.pfd-move:active { cursor: grabbing; }
 .pfd-name svg { width: 11px; height: 11px; flex-shrink: 0; color: #94a3b8; }
 .pfd-name > span { overflow: hidden; text-overflow: ellipsis; }
-/* крестик «убрать блок» — биркой на верхней кромке справа (симметрично имени) */
+/* кнопка «скрыть/удалить» — биркой на верхней кромке справа (симметрично имени) */
 .pfd-hide {
     position: absolute; top: -11px; right: 14px;
     width: 22px; height: 22px; border-radius: 999px;
@@ -2191,27 +2189,21 @@ body.pfd-dragging-now * { cursor: grabbing !important; }
     color: #64748b; background: #fff;
     border: 1px solid #e2e8f0;
     box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
-    cursor: pointer; pointer-events: auto; padding: 0;
+    cursor: pointer; padding: 0;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.14s ease, color 0.12s, border-color 0.12s, background 0.12s;
 }
-.pfd-hide svg { width: 10px; height: 10px; }
-.pfd-hide:hover { color: #dc2626; border-color: #fecaca; background: #fef2f2; }
-/* «убрать карточку» БЕЗ режима конструктора — как «удалить» у заметки (.pfnt-trash):
-   тихая иконка-корзина в правом верхнем углу шапки, проявляется при наведении на карточку.
-   Не «плавающий» чип над бортом, а бесшумный значок внутри карточки. */
-.pfd-cardrm {
-    position: absolute; top: 15px; right: 15px; z-index: 14;
-    width: 26px; height: 26px; border: 0; background: none; padding: 0; cursor: pointer; border-radius: 8px;
-    display: inline-flex; align-items: center; justify-content: center; color: #c3cdd9;
-    opacity: 0; pointer-events: none; transition: opacity 0.14s, color 0.12s, background 0.12s;
+.pfd-hide svg { width: 12px; height: 12px; }
+.pfd-hide:hover { color: #475569; border-color: #cbd5e1; background: #f8fafc; }   /* нейтральный — «скрыть блок» */
+.pfd-hide--del:hover { color: #dc2626; border-color: #fecaca; background: #fef2f2; }  /* красный — «удалить виджет» */
+/* проявление грипа и кнопки: при наведении на блок (или клавиатурный фокус), а при
+   открытом тулбоксе — постоянно */
+.pfd-item:hover .pfd-name,
+.pfd-item:hover .pfd-hide,
+.pfd-name:focus-visible, .pfd-hide:focus-visible,
+.pfd-grid.editing .pfd-name, .pfd-grid.editing .pfd-hide {
+    opacity: 1; pointer-events: auto;
 }
-.pfd-item:hover .pfd-cardrm, .pfd-cardrm:focus-visible { opacity: 1; pointer-events: auto; }
-.pfd-cardrm svg { width: 15px; height: 15px; }
-.pfd-cardrm:hover { color: #e0592b; background: rgba(224, 89, 43, 0.1); }
-body.dark-mode .pfd-cardrm { color: #5c6c82; }
-body.dark-mode .pfd-cardrm:hover { color: #f87171; background: rgba(248, 113, 113, 0.12); }
-/* блоки с контролами в шапке (график/карта/новости) — освобождаем справа место под корзину,
-   чтобы значок не наезжал на их кнопки; у KPI шапки нет — там угол и так свободен */
-.pfd-rmable > .pfd-body > .dash2-card > .pf-ch { padding-right: 46px; }
 /* бейдж текущего размера — появляется только во время ресайза (JS пишет текст) */
 .pfd-size {
     position: absolute; top: 8px; right: 38px;
@@ -2220,21 +2212,37 @@ body.dark-mode .pfd-cardrm:hover { color: #f87171; background: rgba(248, 113, 11
     color: #fff; background: rgba(19, 26, 43, 0.85);
 }
 .pfd-size:empty { display: none; }
-/* уголок-ручка ресайза: нейтральный, синеет под курсором */
-.pfd-rs {
-    position: absolute; right: 2px; bottom: 2px;
-    width: 30px; height: 30px; border-radius: 9px 0 16px 0;
-    cursor: nwse-resize; pointer-events: auto;
-    background:
-        linear-gradient(135deg, transparent 46%, rgba(100, 116, 139, 0.75) 47%, rgba(100, 116, 139, 0.75) 55%, transparent 56%,
-            transparent 64%, rgba(100, 116, 139, 0.75) 65%, rgba(100, 116, 139, 0.75) 73%, transparent 74%);
-    touch-action: none;
+
+/* ---- ручки ресайза: правая кромка (ширина), нижняя (высота), уголок (обе) ---- */
+/* Живут в ЗАЗОРЕ между блоками (отрицательные offset) — не перекрывают контент и
+   скроллбары карточек. Курсор на кромке подсказывает ось; тонкая синяя черта — под
+   курсором. Кромки активны всегда (курсор меняется у любой грани), уголок проявляется
+   при наведении на блок. */
+.pfd-rs-r, .pfd-rs-b { position: absolute; z-index: 6; pointer-events: auto; touch-action: none; }
+.pfd-rs-r { top: 18px; bottom: 20px; right: -9px; width: 13px; cursor: ew-resize; }
+.pfd-rs-b { left: 18px; right: 20px; bottom: -9px; height: 13px; cursor: ns-resize; }
+.pfd-rs-r::before, .pfd-rs-b::before {
+    content: ''; position: absolute; border-radius: 999px; background: rgba(59, 130, 246, 0.9);
+    opacity: 0; transition: opacity 0.12s;
 }
+.pfd-rs-r::before { top: 6px; bottom: 6px; left: 50%; width: 3px; transform: translateX(-50%); }
+.pfd-rs-b::before { left: 6px; right: 6px; top: 50%; height: 3px; transform: translateY(-50%); }
+.pfd-rs-r:hover::before, .pfd-rs-b:hover::before { opacity: 1; }
+/* уголок-ручка (обе оси) — в наружном углу блока, проявляется при наведении */
+.pfd-rs {
+    position: absolute; right: -9px; bottom: -9px;
+    width: 22px; height: 22px; z-index: 7; pointer-events: auto; touch-action: none;
+    cursor: nwse-resize; border-radius: 0 0 11px 0;
+    opacity: 0; transition: opacity 0.12s;
+    background:
+        linear-gradient(135deg, transparent 44%, rgba(100, 116, 139, 0.8) 45%, rgba(100, 116, 139, 0.8) 54%, transparent 55%,
+            transparent 63%, rgba(100, 116, 139, 0.8) 64%, rgba(100, 116, 139, 0.8) 73%, transparent 74%);
+}
+.pfd-item:hover .pfd-rs { opacity: 1; }
 .pfd-rs:hover {
     background:
-        linear-gradient(135deg, transparent 46%, rgba(59, 130, 246, 0.95) 47%, rgba(59, 130, 246, 0.95) 55%, transparent 56%,
-            transparent 64%, rgba(59, 130, 246, 0.95) 65%, rgba(59, 130, 246, 0.95) 73%, transparent 74%);
-    background-color: rgba(59, 130, 246, 0.10);
+        linear-gradient(135deg, transparent 44%, rgba(59, 130, 246, 0.95) 45%, rgba(59, 130, 246, 0.95) 54%, transparent 55%,
+            transparent 63%, rgba(59, 130, 246, 0.95) 64%, rgba(59, 130, 246, 0.95) 73%, transparent 74%);
 }
 
 /* ---- панель режима правки: липкая, не уезжает на длинной странице ---- */
@@ -2693,7 +2701,9 @@ body.dark-mode .pfd-bar-t b { color: #e2e8f0; }
 body.dark-mode .pfd-bar-t span { color: #9fb1c6; }
 body.dark-mode .pfd-size { background: rgba(9, 14, 24, 0.9); }
 body.dark-mode .pfd-hide { color: #9fb1c6; background: #0f172a; border-color: #27324a; }
-body.dark-mode .pfd-hide:hover { color: #f87171; border-color: #7f1d1d; background: #1c1017; }
+body.dark-mode .pfd-hide:hover { color: #cbd5e1; border-color: #3a475f; background: #172033; }   /* нейтральный — «скрыть» */
+body.dark-mode .pfd-hide--del:hover { color: #f87171; border-color: #7f1d1d; background: #1c1017; }  /* красный — «удалить» */
+body.dark-mode .pfd-rs-r::before, body.dark-mode .pfd-rs-b::before { background: rgba(96, 165, 250, 0.95); }
 body.dark-mode .pfd-addbtn { background: #16233f; border-color: #2f4a8a; color: #93c5fd; box-shadow: none; }
 body.dark-mode .pfd-addbtn:hover { border-color: #3b62b8; }
 body.dark-mode .pfd-addbtn.open { background: #1c2b52; border-color: #3b62b8; }
