@@ -763,7 +763,7 @@
         }
     }
     function paintPfChart(pid) { drawPfChart(pid, dq('pfcvChart-' + pid), dq('pfcvDyn-' + pid), dq('pfcvLeg-' + pid), pid); }
-    function repaintCharts(pid) { paintPfChart(pid); paintPfChartMini(pid); }
+    function repaintCharts(pid) { paintPfChart(pid); paintPfChartMini(pid); pfdCapMaybeRepaint(); }
     function pfcvStat(l, v, cls) { return '<div class="pfcv-stat"><span class="pfcv-stat-l">' + esc(l) + '</span><span class="pfcv-stat-v ' + (cls || '') + '">' + v + '</span></div>'; }
     // пейн графика в карточке: слева — сводка, справа — кривая доходности (выезжает справа)
     function pfChartViewHtml(p, c, idx) {
@@ -1476,23 +1476,10 @@
     }
 
     var LAYOUT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="6" height="16" rx="1.6"/><rect x="9.5" y="4" width="6" height="16" rx="1.6"/><rect x="16.5" y="4" width="5" height="16" rx="1.6"/></svg>';
-    // ---- «Вид»: попап выбора вида карточки портфеля (обычный / узкий, 2 или 3 в ряд) ----
-    function viewWrapHtml() {
-        var narrow = cardViewMode === 'narrow';
-        function opt(mode, title, sub) {
-            var on = (mode === 'narrow') === narrow;
-            return '<button class="pf-impitem pf-eyeitem' + (on ? '' : ' off-eye') + '" onclick="pfSetCardView(\'' + mode + '\')">' +
-                '<span class="pf-impbody"><b>' + title + '</b><i>' + sub + '</i></span>' +
-                '<span class="pf-eyestate">' + (on ? CHECK_SVG : '') + '</span></button>';
-        }
-        return '<div class="pf-impwrap">' +
-            '<button class="d3-quick ghost pf-impbtn" onclick="pfToggleImp(event,\'view\')">' + LAYOUT_SVG + '<span>Вид</span>' + CHEV_SVG + '</button>' +
-            '<div class="pf-impmenu" id="pfImp-view">' +
-                '<div class="pf-impgrp">Вид карточки портфеля</div>' +
-                opt('normal', 'Обычный', 'вложено · доход · доходность, 2 в ряд') +
-                opt('narrow', 'Узкий', 'доход · доходность, 3 в ряд') +
-            '</div></div>';
-    }
+    // Переключатель «Вид» (обычный/узкий) убран из шапки — раскладку теперь задаёт
+    // Конструктор (перетаскивание/ресайз блоков), а вид карточек портфеля стал избыточным.
+    // Режим cardViewMode остаётся (по умолчанию 'narrow') и по-прежнему питает раскладку
+    // сетки/карточек; pfSetCardView сохранён на случай программного вызова.
     window.pfSetCardView = function (mode) {
         if (mode !== 'normal' && mode !== 'narrow') return;
         if (cardViewMode === mode) { closeImpMenus(); return; }
@@ -1511,7 +1498,6 @@
             // «Видимость» показываем при 2+ портфелях, при наличии сделок ИЛИ когда включена
             // своя раскладка (тогда в меню — тумблеры скрытых изначальных секций)
             (store.items.length > 1 || hasAnyTrades() || dashCfg.on ? eyeWrapHtml() : '') +
-            viewWrapHtml() +
             // «＋ Блок»: один клик — сразу выпадающий список «Добавить блок» слева (без промежуточного
             // шага). Только десктоп (скрыт в mobile.css), точка-индикатор .on = раскладка своя.
             (store.items.length
@@ -2193,10 +2179,13 @@
         else if (pfdNarrowMq.addListener) pfdNarrowMq.addListener(pfdNarrowH);
     } catch (e) {}
     window.pfDashReset = function () {
-        // заметки — пользовательский ТЕКСТ, не раскладка: сброс их не стирает
-        dashCfg = { on: false, order: [], span: {}, h: {}, hidden: {}, notes: dashCfg.notes || [] };
-        dashEdit = false;
-        pfdUndoStack.length = 0;
+        // Сброс расстановки к стандартной, НО остаёмся в конструкторе: раскладка включена
+        // (on:true) и тулбокс открыт (dashEdit:true) — сразу можно двигать/добавлять дальше.
+        // Заметки — пользовательский ТЕКСТ, не раскладка: сброс их не стирает. Обратимо через
+        // «Отменить» (кладём снимок текущей раскладки перед сбросом, стек НЕ чистим).
+        pfdPushUndo();
+        dashCfg = { on: true, order: [], span: {}, h: {}, hidden: {}, notes: dashCfg.notes || [] };
+        dashEdit = true;
         saveDashCfg();
         pfdRerender();
         toast('Стандартная раскладка возвращена');
@@ -2781,6 +2770,50 @@
         }
         return out;
     }
+    // Фолбэк, когда дневных снимков ещё мало (<2 точек): портфели свежие или были
+    // пересозданы (история снимков ведётся по id и обнуляется при удалении). Собираем
+    // линию капитала из ТЕХ ЖЕ исторических серий MOEX, что питают мини-графики карточек
+    // (chartRaw[pid].series = [{d, c, inv}], c — рыночная стоимость на дату), суммируя c по
+    // всем портфелям с forward-fill. Серии подтягиваются асинхронно (repaintMiniCharts на
+    // рендере) — как только подъедут, pfdCapMaybeRepaint дорисует линию поверх заглушки.
+    function pfdCapHistSeries() {
+        var per = [];
+        visibleItems().forEach(function (p) {
+            var raw = chartRaw[p.id];
+            if (!raw || !raw.series || !raw.series.length) return;
+            var m = {};
+            raw.series.forEach(function (q) { if (q && q.d != null && q.c != null) m[q.d] = q.c; });
+            var ks = Object.keys(m); if (ks.length) per.push({ ks: ks.sort(), m: m });
+        });
+        if (!per.length) return [];
+        var allD = {}; per.forEach(function (s) { s.ks.forEach(function (d) { allD[d] = 1; }); });
+        var ds = Object.keys(allD).sort();
+        if (ds.length < 2) return [];
+        var out = ds.map(function (d) { return { d: d, v: 0 }; });
+        per.forEach(function (s) {
+            var j = 0, cur = null;
+            for (var i = 0; i < ds.length; i++) {
+                while (j < s.ks.length && s.ks[j] <= ds[i]) { cur = s.m[s.ks[j]]; j++; }
+                if (cur != null) out[i].v += cur;
+            }
+        });
+        // последняя точка — живая суммарная стоимость (как в pfdCapSeries), чтобы конец
+        // линии совпадал со «Суммарным капиталом», а не с ценой последнего закрытия MOEX
+        if (quotesTs) {
+            var live = 0, any = false;
+            visibleItems().forEach(function (p) { var v = calcPf(p).value; if (v > 0) { live += v; any = true; } });
+            if (any) out[out.length - 1].v = live;
+        }
+        return out;
+    }
+    // Итоговая серия графика капитала: приоритет — дневные снимки (истинная стоимость по
+    // дням); если их <2 — исторический фолбэк (сразу и без ожидания снимков, как у карточек).
+    function pfdCapEffectiveSeries() {
+        var s = pfdCapSeries();
+        if (s.length >= 2) return s;
+        var h = pfdCapHistSeries();
+        return h.length >= 2 ? h : s;
+    }
     var pfdCapRange = 'all';   // 'all' | '90' | '30' — окно графика (сессия, не персистится)
     var pfdCapState = null;    // геометрия текущего графика для ховера-перекрестия
     function pfdCapRangeFilter(s) {
@@ -2791,7 +2824,7 @@
     }
     function pfdCapChip(r, lbl) { return '<button class="pff-sort-b' + (pfdCapRange === r ? ' on' : '') + '" onclick="pfdCapSetRange(\'' + r + '\')">' + lbl + '</button>'; }
     function pfdCapChartHtml(demoSeries) {
-        var full = demoSeries || pfdCapSeries();
+        var full = demoSeries || pfdCapEffectiveSeries();
         var s = demoSeries ? demoSeries.slice() : pfdCapRangeFilter(full);
         var last = s.length ? s[s.length - 1] : null;
         var right = '', hero = '', body;
@@ -2852,6 +2885,17 @@
         var tmp = document.createElement('div'); tmp.innerHTML = pfdCapChartHtml();
         card.parentNode.replaceChild(tmp.firstChild, card);
         pfdRepackSoon();
+    }
+    // Дорисовать линию капитала поверх заглушки «мало данных», когда исторические серии
+    // карточек (chartRaw) подъехали асинхронно. Действуем ТОЛЬКО пока показана заглушка —
+    // как только линия нарисована, .pfcap-empty исчезает и повторные вызовы выходят сразу
+    // (без циклов и лишних перерисовок). Вызывается из repaintCharts после каждой загрузки.
+    function pfdCapMaybeRepaint() {
+        var card = document.querySelector('#pfWrap .pf-capblk'); if (!card) return;
+        if (!card.querySelector('.pfcap-empty')) return;   // линия уже есть — не трогаем
+        if (pfdCapSeries().length >= 2) return;            // подъехали настоящие снимки — обычный ре-рендер справится
+        if (pfdCapHistSeries().length < 2) return;         // истории ещё нет — ждём
+        pfdCapRepaint();
     }
     window.pfdCapHover = function (ev) {
         var st = pfdCapState, hit = ev.currentTarget, plot = hit && hit.parentNode; if (!st || !plot) return;
