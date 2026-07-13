@@ -2363,6 +2363,9 @@
             var style = 'grid-column: span ' + span + ';' +
                 (h ? ((isPanel ? 'min-height:' : 'height:') + clamp(h, minH, 1400) + 'px;') : '');
             var hsetClass = (h && !isPanel) ? ' pfd-hset' : '';
+            // Высокая «Панель управления»: контент раскладывается по ВСЕЙ высоте (идентити сверху,
+            // KPI акцентом, кнопки снизу), а не висит компактной группой в центре пустоты.
+            if (isPanel && h >= 168) hsetClass += ' pfd-ptall';
             // Кнопка «скрыть/удалить» блока:
             //  • заметка / портфель — СВОЯ кнопка уже есть в шапке карточки (pfnt-trash / глаз .pfc-act),
             //    в chrome не дублируем;
@@ -5410,8 +5413,12 @@
         ];
     }
     function rateTileHtml(t, extra) {
-        return '<div class="drt-tile' + (extra ? ' drt-tile--eye' : '') + '" style="--ac:' + t.ac + '"><div class="drt-ic"><svg viewBox="0 0 24 24">' + t.ic + '</svg></div>' +
-            '<div class="drt-body"><div class="drt-l">' + esc(t.l) + '</div><div class="drt-v">' + esc(t.v) + '</div></div>' + (extra || '') + '</div>';
+        // extra — только строка-разметка (кнопка-глаз). При вызове через .map(rateTileHtml)
+        // вторым аргументом прилетает ИНДЕКС массива (0,1,2,3) — он не должен попасть в плитку
+        // «сырой» цифрой (был баг «1 2 3» под плитками ставок); принимаем только строку.
+        var ex = (typeof extra === 'string') ? extra : '';
+        return '<div class="drt-tile' + (ex ? ' drt-tile--eye' : '') + '" style="--ac:' + t.ac + '"><div class="drt-ic"><svg viewBox="0 0 24 24">' + t.ic + '</svg></div>' +
+            '<div class="drt-body"><div class="drt-l">' + esc(t.l) + '</div><div class="drt-v">' + esc(t.v) + '</div></div>' + ex + '</div>';
     }
     // полноширинная горизонтальная полоса ставок под сеткой — показывается ВСЕГДА,
     // когда есть хоть одна облигация хоть в одном портфеле (т.е. «Календарь выплат» тоже виден)

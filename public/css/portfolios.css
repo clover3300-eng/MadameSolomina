@@ -2510,6 +2510,20 @@ body.dark-mode .pfcf-input:focus { border-color: #818cf8; box-shadow: 0 0 0 3px 
    поднимаем всю ячейку панели над соседями. */
 .pfd-grid .pfd-item[data-pfd="panel"]:hover,
 .pfd-grid .pfd-item[data-pfd="panel"]:focus-within { z-index: 60; }
+/* Высокую панель (пользователь растянул по высоте) раскладываем колонкой во всю высоту:
+   идентити сверху, KPI акцентом по центру, кнопки снизу — контент ЗАПОЛНЯЕТ карточку, а не
+   висит компактной группой в пустоте. Цифры KPI крупнее — большая карточка тянет акцент. */
+.pfd-item.pfd-ptall .pfp-panel {
+    flex-direction: column; flex-wrap: nowrap; align-items: stretch;
+    justify-content: space-between; gap: 22px; padding: 26px 26px;
+}
+.pfd-item.pfd-ptall[data-pfd="panel"] .pfp-panel { padding-right: 46px; }
+.pfd-item.pfd-ptall .pfp-id, .pfd-item.pfd-ptall .pfp-kpis, .pfd-item.pfd-ptall .pfp-actions { flex: 0 0 auto; }
+.pfd-item.pfd-ptall .pfp-kpis { margin-left: 0; gap: 12px 40px; flex-wrap: wrap; }
+.pfd-item.pfd-ptall .pfp-kpi .num b { font-size: 27px; }
+.pfd-item.pfd-ptall .pfp-kpi .num span { font-size: 11px; }
+.pfd-item.pfd-ptall .pfp-div { height: 44px; }
+.pfd-item.pfd-ptall .pfp-actions { align-content: flex-end; }
 
 /* сама карточка: докнутый сверху диалог с внутренним скроллом (шапка всегда видна).
    Высоту держим умеренной (не во весь экран), чтобы под карточкой была видна сетка —
@@ -2741,12 +2755,14 @@ body.dark-mode .pfcapb-bar.neg { background: linear-gradient(#f4794f, #6e2c17); 
 .pfal-lname { font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 700; color: #475569; white-space: nowrap; }
 .pfal-lval { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12.5px; font-weight: 700; color: #1e293b; justify-self: end; white-space: nowrap; }
 .pfal-lpct { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12.5px; font-weight: 800; color: #0f172a; min-width: 34px; text-align: right; }
-/* Совсем узкий блок (напр. span 3): сумма падает на свою строку под названием —
-   слово и процент остаются на первой, ничего не режется. */
-@container pfalloc (max-width: 320px) {
+/* Узкий блок (типовой span 4 при больших 8-значных суммах): сумма падает на свою строку
+   под названием — слово и процент остаются на первой, сумма НИКОГДА не наезжает на название.
+   Порог с запасом (≤ 470px), т.к. при кольце-донате слева легенде остаётся ~240px, и
+   «Облигации» + 8-значная сумма + процент в одну строку не помещаются. */
+@container pfalloc (max-width: 470px) {
     .pfal-lrow { grid-template-columns: 12px 1fr auto; grid-template-areas: "dot name pct" ". val val"; row-gap: 1px; column-gap: 9px; }
     .pfal-dot { grid-area: dot; } .pfal-lname { grid-area: name; }
-    .pfal-lpct { grid-area: pct; } .pfal-lval { grid-area: val; justify-self: start; font-size: 11.5px; color: #64748b; }
+    .pfal-lpct { grid-area: pct; } .pfal-lval { grid-area: val; justify-self: start; font-size: 12px; color: #64748b; }
     body.dark-mode .pfal-lval { color: #8ea1b8; }
 }
 .pfal-empty { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; padding: 22px 16px; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: #8494a7; line-height: 1.45; }
