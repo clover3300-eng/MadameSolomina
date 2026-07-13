@@ -2337,6 +2337,36 @@ body.dark-mode .pfl-cfg-sep { background: #24304a; }
 body.dark-mode .pfl-cfg-item.primary b, body.dark-mode .pfl-cfg-item.primary svg { color: #a5b4fc; }
 body.dark-mode .pfl-cfg-item.primary.done b, body.dark-mode .pfl-cfg-item.primary.done svg { color: #6ee7a8; }
 
+/* ---- готовые пресеты в поповере раскладки: список + строка + удаление ---- */
+.pfl-cfg-list { display: flex; flex-direction: column; gap: 1px; max-height: 216px; overflow-y: auto; }
+.pfl-cfg-preset { display: flex; align-items: center; }
+.pfl-cfg-preset .pfl-cfg-item { flex: 1 1 auto; min-width: 0; }
+.pfl-cfg-preset .pfl-cfg-item b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pfl-cfg-preset.active .pfl-cfg-item svg { color: #12a35c; }
+.pfl-cfg-preset.active .pfl-cfg-item b { color: #12a35c; }
+.pfl-cfg-preset.active .pfl-cfg-item i { color: #12a35c; }
+.pfl-cfg-del { flex-shrink: 0; width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 9px;
+    background: transparent; color: #aeb8c6; cursor: pointer; transition: background 0.12s, color 0.12s; }
+.pfl-cfg-del svg { width: 14px; height: 14px; }
+.pfl-cfg-del:hover { background: rgba(220, 38, 38, 0.1); color: #dc2626; }
+.pfl-cfg-empty { padding: 3px 11px 8px; font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #94a3b8; line-height: 1.5; }
+.pfl-cfg-item.add b { color: #4338ca; }
+.pfl-cfg-item.add svg { color: #4f46e5; }
+body.dark-mode .pfl-cfg-preset.active .pfl-cfg-item svg,
+body.dark-mode .pfl-cfg-preset.active .pfl-cfg-item b,
+body.dark-mode .pfl-cfg-preset.active .pfl-cfg-item i { color: #6ee7a8; }
+body.dark-mode .pfl-cfg-del { color: #6b7686; }
+body.dark-mode .pfl-cfg-del:hover { background: rgba(248, 113, 113, 0.14); color: #f87171; }
+body.dark-mode .pfl-cfg-empty { color: #8fa0b6; }
+body.dark-mode .pfl-cfg-item.add b, body.dark-mode .pfl-cfg-item.add svg { color: #a5b4fc; }
+
+/* ввод имени пресета в модалке (реюз .pfcf-card) */
+.pfcf-input { width: 100%; margin-top: 4px; padding: 11px 13px; border-radius: 12px; border: 1px solid rgba(24, 38, 60, 0.16);
+    background: #fff; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; color: #0f172a; outline: none; box-sizing: border-box; }
+.pfcf-input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15); }
+body.dark-mode .pfcf-input { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.14); color: #f4f8fd; }
+body.dark-mode .pfcf-input:focus { border-color: #818cf8; box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2); }
+
 /* ============================================================
    «ПАНЕЛЬ УПРАВЛЕНИЯ» (виджет .pfp-panel) — полноширинный тёмный герой в стиле
    верхнего блока «Ребаланса»: идентити + KPI слева, все контролы страницы справа.

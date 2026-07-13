@@ -1515,6 +1515,7 @@
         host.innerHTML = topBarActionsHtml();
         host.style.display = 'flex';
         updateLayoutBtn();   // кнопка «Раскладка» в шапке страницы (рядом с названием раздела)
+        pfPresetsFetch();    // подтягиваем общие пресеты (троттлинг 90с; no-op пока supa не готов)
     }
 
     // ---- «Видимость»: попап управления скрытием карточек (инфраструктура «Импорта») ----
@@ -1743,6 +1744,101 @@
         // состоянии (правка после сохранения снова показывает «Сохранить»)
         try { if (dashEdit) pfdUpdateSaveBtn(); } catch (e) {}
     }
+
+    // ============ ГЛОБАЛЬНЫЕ ПРЕСЕТЫ РАСКЛАДКИ ============================
+    // Пресет — портативный снимок раскладки дашборда (какие блоки показаны, их
+    // размеры и расстановка). Задаёт админ/владелец, ВЫБИРАЮТ все пользователи в
+    // «настройках раскладки». Хранится в Supabase app_config (ключ 'pf_presets',
+    // value = { presets:[{id,name,snap,at,by}] }): читают ВСЕ (RLS select=true),
+    // пишет только is_admin(). Карточки портфелей в снимке шаблонизируются позиционно
+    // (pf:#0, pf:#1…) — у каждого свои id, при применении токены подставляются в его
+    // реальные портфели по порядку. Личные заметки в пресет НЕ попадают. Локальный
+    // кэш — pf_presets_cache_v1 (ВНЕ cloud-sync.WATCH: конфиг общий, не пер-юзерный).
+    var PRESETS_KEY = 'pf_presets';
+    var PRESETS_CACHE = 'pf_presets_cache_v1';
+    var PRESETS_REFRESH_MS = 90000;
+    var pfPresetList = loadPresetCache();      // [{id,name,snap,at,by}]
+    var pfPresetsFetchedAt = 0, pfPresetsFetching = false, pfPresetsSaving = false;
+    function loadPresetCache() {
+        try { var c = JSON.parse(localStorage.getItem(PRESETS_CACHE) || 'null'); return (c && Array.isArray(c.presets)) ? c.presets : []; }
+        catch (e) { return []; }
+    }
+    function savePresetCache() {
+        try { localStorage.setItem(PRESETS_CACHE, JSON.stringify({ presets: pfPresetList, at: Date.now() })); } catch (e) {}
+    }
+    function pfSupa() { return window.supa; }
+    function pfCloudOn() { return !!(pfSupa() && pfSupa().enabled); }
+    function pfIsAdmin() { return !!(pfSupa() && pfSupa().isAdmin && pfSupa().isAdmin()); }
+    // читаем список пресетов из облака (троттлинг); по приходу освежаем кэш и поповер
+    function pfPresetsFetch(force) {
+        if (!pfCloudOn() || pfPresetsFetching) return;
+        if (!force && Date.now() - pfPresetsFetchedAt < PRESETS_REFRESH_MS) return;
+        pfPresetsFetching = true;
+        pfSupa().client.from('app_config').select('value').eq('key', PRESETS_KEY).limit(1)
+            .then(function (res) {
+                pfPresetsFetching = false;
+                if (res.error) return;
+                pfPresetsFetchedAt = Date.now();
+                var v = (res.data && res.data[0] && res.data[0].value) || {};
+                pfPresetList = Array.isArray(v.presets) ? v.presets.filter(function (p) { return p && p.id && p.snap; }) : [];
+                savePresetCache();
+                try { updateLayoutBtn(); } catch (e) {}
+            }, function () { pfPresetsFetching = false; });
+    }
+    // сохранить список в облако (только админ/владелец). Локально применяем сразу.
+    function pfPresetsPersist(okMsg) {
+        if (!pfIsAdmin()) { toast('Пресеты задаёт администратор', true); return; }
+        savePresetCache();
+        try { updateLayoutBtn(); } catch (e) {}
+        if (!pfCloudOn() || pfPresetsSaving) return;
+        pfPresetsSaving = true;
+        var uid = (pfSupa().session && pfSupa().session.user) ? pfSupa().session.user.id : null;
+        pfSupa().client.from('app_config').upsert({ key: PRESETS_KEY, value: { presets: pfPresetList }, updated_by: uid }, { onConflict: 'key' })
+            .then(function (res) {
+                pfPresetsSaving = false;
+                if (res.error) { toast((pfSupa().errRu ? pfSupa().errRu(res.error) : 'Не удалось сохранить пресет'), true); return; }
+                pfPresetsFetchedAt = Date.now();
+                try { pfSupa().logEvent && pfSupa().logEvent('pf_preset_save', { n: pfPresetList.length }); } catch (e) {}
+                if (okMsg) toast(okMsg);
+            }, function () { pfPresetsSaving = false; toast('Не удалось сохранить пресет', true); });
+    }
+    // ---- шаблонизация: снимок раскладки → портативный (карточки портфелей позиционно) ----
+    function pfPresetTemplate(snap) {
+        snap = snap || {};
+        var order = (snap.order || []).slice();
+        var map = {}, i = 0;
+        order.forEach(function (id) { if (id.indexOf('pf:') === 0 && !map[id]) map[id] = 'pf:#' + (i++); });
+        var tok = function (id) { return map[id] || id; };
+        var isNote = function (id) { return id.indexOf('note:') === 0; };
+        function remap(m) { var o = {}; Object.keys(m || {}).forEach(function (k) { if (!isNote(k)) o[tok(k)] = m[k]; }); return o; }
+        return { order: order.filter(function (id) { return !isNote(id); }).map(tok),
+            span: remap(snap.span), h: remap(snap.h), hidden: remap(snap.hidden), col: remap(snap.col), allocPf: 'all' };
+    }
+    // ---- инстанцирование: портативный пресет → раскладка для ЭТОГО пользователя ----
+    function pfPresetInstantiate(snap) {
+        snap = snap || {};
+        var real = visibleItems().map(function (p) { return 'pf:' + p.id; });
+        function sub(id) { var m = /^pf:#(\d+)$/.exec(id); if (!m) return id; var idx = +m[1]; return idx < real.length ? real[idx] : null; }
+        var order = [], seen = {};
+        (snap.order || []).forEach(function (id) { var r = sub(id); if (r && !seen[r]) { order.push(r); seen[r] = 1; } });
+        function remap(m) { var o = {}; Object.keys(m || {}).forEach(function (k) { var r = sub(k); if (r) o[r] = m[k]; }); return o; }
+        var span = remap(snap.span), h = remap(snap.h), hidden = remap(snap.hidden), col = remap(snap.col);
+        // портфелей БОЛЬШЕ, чем в пресете — не теряем: добавляем хвост карточек дефолтным размером
+        real.forEach(function (id) { if (!seen[id]) { order.push(id); if (span[id] == null) span[id] = 4; } });
+        // личные заметки пользователя сохраняем — их блоки дописываем в конец
+        (dashCfg.notes || []).forEach(function (n) { var id = 'note:' + n.id; if (order.indexOf(id) === -1) order.push(id); });
+        return { order: order, span: span, h: h, hidden: hidden, col: col, allocPf: snap.allocPf || 'all' };
+    }
+    // структурная подпись раскладки (без заметок) — для отметки «активен» у пресета
+    function pfStructSig(c) {
+        var keep = function (k) { return k.indexOf('note:') !== 0; };
+        function m(o) { var r = {}; Object.keys(o || {}).filter(keep).sort().forEach(function (k) { r[k] = o[k]; }); return r; }
+        return JSON.stringify([(c.order || []).filter(keep), m(c.span), m(c.h), m(c.hidden), m(c.col), c.allocPf || 'all']);
+    }
+    function pfPresetActive(p) {
+        try { return pfStructSig(pfPresetInstantiate(p.snap)) === pfStructSig(dashCfg); } catch (e) { return false; }
+    }
+
     function pfdActive() {
         if (!dashCfg.on && !dashEdit) return false;
         try { if (window.matchMedia('(max-width: 1023px)').matches) return false; } catch (e) {}
@@ -2324,16 +2420,38 @@
     // Наполняется из updateLayoutBtn при каждом ре-рендере — состояние всегда актуально.
     function pfLayoutCfgPopHtml() {
         var saved = pfdLayoutSaved();
-        return '<div class="pfl-cfg-h">Раскладка</div>' +
+        var admin = pfIsAdmin();
+        var PRESET_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>';
+        var html = '<div class="pfl-cfg-h">Раскладка</div>' +
             '<button type="button" class="pfl-cfg-item" onclick="pfLayoutReset()">' + PFDGRID_SVG +
                 '<span><b>Базовая</b><i>стандартная расстановка блоков</i></span></button>' +
             (dashCfg.saved
                 ? '<button type="button" class="pfl-cfg-item" onclick="pfLayoutRestoreSaved()">' + UNDO_SVG +
                     '<span><b>Индивидуальная</b><i>ваша сохранённая раскладка</i></span></button>'
-                : '') +
-            '<div class="pfl-cfg-sep"></div>' +
+                : '');
+        // ---- готовые пресеты: задаёт админ, выбирают все ----
+        html += '<div class="pfl-cfg-sep"></div><div class="pfl-cfg-h">Готовые пресеты</div>';
+        if (pfPresetList.length) {
+            html += '<div class="pfl-cfg-list">' + pfPresetList.map(function (p) {
+                var act = pfPresetActive(p);
+                return '<div class="pfl-cfg-preset' + (act ? ' active' : '') + '">' +
+                    '<button type="button" class="pfl-cfg-item" onclick="pfApplyPreset(\'' + esc(p.id) + '\')" title="Применить пресет ко всей раскладке">' + PRESET_IC +
+                        '<span><b>' + esc(p.name || 'Пресет') + '</b><i>' + (act ? 'активен' : 'общий пресет') + '</i></span></button>' +
+                    (admin ? '<button type="button" class="pfl-cfg-del" onclick="pfDeletePreset(\'' + esc(p.id) + '\', event)" title="Удалить пресет у всех" aria-label="Удалить">' + XMARK_SVG + '</button>' : '') +
+                '</div>';
+            }).join('') + '</div>';
+        } else {
+            html += '<div class="pfl-cfg-empty">' + (admin ? 'Соберите раскладку и сохраните её как пресет — он появится у всех.' : 'Пресетов пока нет.') + '</div>';
+        }
+        if (admin) {
+            html += '<button type="button" class="pfl-cfg-item add" onclick="pfSaveAsPreset()" title="Сделать текущую раскладку общим пресетом">' + PFD_PLUS_SVG +
+                '<span><b>Сохранить как пресет</b><i>для всех пользователей</i></span></button>';
+        }
+        // ---- личное сохранение ----
+        html += '<div class="pfl-cfg-sep"></div>' +
             '<button type="button" class="pfl-cfg-item primary' + (saved ? ' done' : '') + '" onclick="pfLayoutSave()">' + CHECK_SVG +
                 '<span><b>' + (saved ? 'Сохранено' : 'Сохранить текущую раскладку') + '</b></span></button>';
+        return html;
     }
     window.pfLayoutCfgPopHtml = pfLayoutCfgPopHtml;
     // подвал карточки настройки — блок управления раскладкой
@@ -2474,6 +2592,72 @@
     // совместимость со старыми вызовами (Esc-хендлер и т.п.)
     window.pfDashToggleEdit = function () { if (dashEdit) window.pfLayoutClose(); else window.pfLayoutToggle(); };
     window.pfDashReset = window.pfLayoutReset;
+
+    // ---- глобальные пресеты: применить (все) / сохранить как пресет (админ) / удалить (админ) ----
+    window.pfApplyPreset = function (id) {
+        var p = pfPresetList.filter(function (x) { return x.id === id; })[0];
+        if (!p) { toast('Пресет не найден', true); return; }
+        if (!visibleItems().length) { toast('Сначала добавьте портфель', true); return; }
+        pfdPushUndo();
+        var c = pfPresetInstantiate(p.snap);
+        dashCfg.on = true;
+        dashCfg.order = c.order; dashCfg.span = c.span; dashCfg.h = c.h;
+        dashCfg.hidden = c.hidden; dashCfg.col = c.col; dashCfg.allocPf = c.allocPf;
+        saveDashCfg();
+        dashEdit = false;
+        pfdRerender();
+        updateLayoutBtn();
+        toast('Применён пресет «' + (p.name || 'без имени') + '»');
+    };
+    window.pfSaveAsPreset = function () {
+        if (!pfIsAdmin()) { toast('Пресеты задаёт администратор', true); return; }
+        if (!pfCloudOn() || !(pfSupa().isAuthed && pfSupa().isAuthed())) { toast('Нужен вход в аккаунт', true); return; }
+        pfdFlushNotes();
+        pfPresetNameModal('', function (name) {
+            var snap = pfPresetTemplate(pfdSavedSnap());
+            var by = (pfSupa().session && pfSupa().session.user) ? pfSupa().session.user.id : null;
+            pfPresetList = pfPresetList.concat([{ id: genId('pre'), name: name.slice(0, 40) || 'Пресет', snap: snap, at: Date.now(), by: by }]);
+            pfPresetsPersist('Пресет «' + (name || 'Пресет') + '» доступен всем');
+        });
+    };
+    window.pfDeletePreset = function (id, ev) {
+        if (ev) ev.stopPropagation();
+        if (!pfIsAdmin()) return;
+        var p = pfPresetList.filter(function (x) { return x.id === id; })[0]; if (!p) return;
+        pfConfirm({ danger: true, title: 'Удалить пресет?', text: '«' + esc(p.name || 'Пресет') + '» исчезнет у всех пользователей.', ok: 'Удалить' }, function () {
+            pfPresetList = pfPresetList.filter(function (x) { return x.id !== id; });
+            pfPresetsPersist('Пресет удалён');
+        });
+    };
+    // маленькая модалка ввода имени пресета (реюз оформления pfConfirm)
+    function pfPresetNameModal(initial, onOk) {
+        var old = dq('pfConfirmOv'); if (old) old.remove();
+        var GRID = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>';
+        var ov = document.createElement('div');
+        ov.id = 'pfConfirmOv';
+        ov.innerHTML = '<div class="pfcf-card" role="dialog" aria-modal="true">' +
+            '<div class="pfcf-ico">' + GRID + '</div>' +
+            '<div class="pfcf-t">Новый пресет раскладки</div>' +
+            '<div class="pfcf-s">Он станет доступен всем пользователям в настройках раскладки.</div>' +
+            '<input type="text" class="pfcf-input" id="pfPresetName" maxlength="40" placeholder="Название пресета" value="' + esc(initial || '') + '">' +
+            '<div class="pfcf-btns">' +
+                '<button class="pfcf-btn" type="button" data-act="no">Отмена</button>' +
+                '<button class="pfcf-btn pfcf-ok" type="button" data-act="yes">Сохранить</button>' +
+            '</div></div>';
+        document.body.appendChild(ov);
+        var inp = ov.querySelector('#pfPresetName');
+        function close() { document.removeEventListener('keydown', onKey); ov.classList.remove('show'); setTimeout(function () { ov.remove(); }, 180); }
+        function submit() { var v = (inp.value || '').trim(); if (!v) { try { inp.focus(); } catch (e) {} return; } close(); onOk(v); }
+        function onKey(e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } else if (e.key === 'Enter') { e.preventDefault(); submit(); } }
+        ov.addEventListener('click', function (e) {
+            if (e.target === ov) { close(); return; }
+            var b = e.target.closest('.pfcf-btn'); if (!b) return;
+            if (b.getAttribute('data-act') === 'yes') submit(); else close();
+        });
+        document.addEventListener('keydown', onKey);
+        requestAnimationFrame(function () { ov.classList.add('show'); try { inp.focus(); inp.select(); } catch (e) {} });
+    }
+
     // окно сузилось до мобильной ширины во время правки → автозакрытие карточки:
     // на ≤1023 конструктор неактивен (pfdActive), карточка не должна висеть заглушкой
     try {
