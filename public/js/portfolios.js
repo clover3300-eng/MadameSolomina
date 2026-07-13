@@ -5362,6 +5362,7 @@
                     '<div class="pff-thead">' +
                         '<button class="pff-id" onclick="pfOpenTicker(\'' + jsArg(tk) + '\')" title="Открыть карточку компании">' +
                             '<span class="pff-tk">' + esc(tk) + '</span><span class="pff-nm">' + esc(name) + '</span></button>' +
+                        '<button class="pff-del" onclick="pfRemoveFav(\'' + jsArg(tk) + '\', event)" title="Убрать из избранного" aria-label="Убрать из избранного">' + NOTE_TRASH_SVG + '</button>' +
                         '<div class="pff-pot-wrap"><span class="pff-pot-l">потенциал</span>' + potHtml + '</div>' +
                     '</div>' +
                     '<div class="pff-news" id="pf-news-' + esc(tk) + '"><div class="pff-news-inner"><span class="pff-news-load">загрузка новости…</span></div></div>' +
@@ -5763,6 +5764,32 @@
     // порядок плиток, но полный ре-рендер заново «рисует» мини-графики карточек портфелей с
     // 1-сек. анимацией линии — на глаз это мерцание. Флаг noChartAnim рисует графики сразу.
     window.pfSetFavSort = function (mode) { if (mode !== 'pot' && mode !== 'news') return; if (favSort === mode) return; favSort = mode; renderNoAnim(); };
+    // Убрать тикер из избранного прямо из блока «Избранное» (корзина по hover плитки) —
+    // сразу, без подтверждения. Источник правды — stk_fav_v1 (через stkToggleFav терминала),
+    // перерисовываем ТОЛЬКО карточки «Избранного» в #pfWrap (без ре-рендера всей страницы —
+    // не мигают графики/карта), затем догружаем новости оставшихся тикеров.
+    function pfRepaintFav() {
+        var cards = document.querySelectorAll('#pfWrap .pf-fav');
+        if (!cards.length) return;
+        cards.forEach(function (card) {
+            var tmp = document.createElement('div'); tmp.innerHTML = favHtml();
+            if (tmp.firstChild) card.parentNode.replaceChild(tmp.firstChild, card);
+        });
+        if (typeof renderFavNews === 'function') renderFavNews();
+        pfdRepackSoon();
+    }
+    window.pfRemoveFav = function (tk, ev) {
+        if (ev) { try { ev.stopPropagation(); ev.preventDefault(); } catch (e) {} }
+        if (!tk) return;
+        if (typeof window.stkToggleFav === 'function') {
+            if (favTickers().indexOf(tk) !== -1) window.stkToggleFav(tk);   // toggle снимает звезду
+        } else {
+            try { var f = JSON.parse(localStorage.getItem('stk_fav_v1')) || []; var i = f.indexOf(tk);
+                if (i !== -1) { f.splice(i, 1); localStorage.setItem('stk_fav_v1', JSON.stringify(f)); } } catch (e) {}
+        }
+        pfRepaintFav();
+        toast(tk + ' убран из избранного');
+    };
     window.pfCalShowAll = function (ev) { if (ev) ev.stopPropagation(); payCalSel = null; reRenderKeepCalMenu(); };
     window.pfToggleCalPf = function (pid, ev) {
         if (ev) ev.stopPropagation();

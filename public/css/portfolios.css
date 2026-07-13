@@ -164,6 +164,11 @@ body.dark-mode .pf-sumcard {
    верхний ряд слева и колонка справа визуально совпадали; список плиток скроллится ВНУТРИ,
    не растягивая карточку (тот же приём, что у .pf-paycal--cell). */
 .pf-fav { display: flex; flex-direction: column; height: 674px; }
+/* В КОНСТРУКТОРЕ «Избранное» — свободный виджет: фикс-674px не даёт его ужать (натуральная
+   высота = минимум ресайза). Без hset (не растянут) карточка занимает свой контент, но не
+   выше ~340px — список скроллится внутри. Так блок можно вернуть в компактный вид и растянуть.
+   Классическая правая колонка (.pf-topgrid-fav вне .pfd-item) сохраняет 674px. */
+.pfd-item:not(.pfd-hset) .pf-fav { height: auto; max-height: 340px; }
 .pf-fav .pf-ch { flex-shrink: 0; }
 /* Заголовок-колонка ужимается по flex-basis:0, а не тянется по содержимому: иначе в узкой
    правой колонке длинный подзаголовок занимал всю строку и «+» (margin-left:auto при
@@ -1165,6 +1170,14 @@ body.dark-mode .pff-tile:hover { box-shadow: 0 10px 22px -18px rgba(0,0,0,0.5); 
 body.dark-mode .pff-tk { color: #f4f8fd; }
 .pff-id:hover .pff-tk { color: var(--pf-accent); }
 .pff-nm { max-width: 100%; font-size: 10.5px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Корзина «убрать из избранного» рядом с тикером — проявляется по hover плитки (калька
+   .pfnt-trash заметки), удаляет сразу без предупреждения. Раскрывается по ширине (0→24),
+   поэтому в покое места не занимает, а на hover встаёт между тикером и потенциалом. */
+.pff-del { flex-shrink: 0; width: 0; height: 22px; overflow: hidden; opacity: 0; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 7px; color: #c3cdd9; display: inline-flex; align-items: center; justify-content: center; transition: opacity 0.14s, width 0.14s, color 0.12s, background 0.12s; }
+.pff-del svg { width: 15px; height: 15px; flex-shrink: 0; }
+.pff-tile:hover .pff-del { width: 22px; opacity: 1; }
+.pff-del:hover { color: #e0592b; background: rgba(224, 89, 43, 0.1); }
+body.dark-mode .pff-del { color: #5c6c82; }
 .pff-pot-wrap { text-align: right; flex-shrink: 0; }
 .pff-pot-l { display: block; font-size: 8px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #94a3b8; }
 .pff-pot { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; }
