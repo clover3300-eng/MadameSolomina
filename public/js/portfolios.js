@@ -2036,6 +2036,10 @@
         return Object.prototype.hasOwnProperty.call(m, b.id) ? !!m[b.id] : !!b.defHidden;
     }
     var PFD_PLUS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+    // Порог перехода «Панели управления» полоса → герой-колонка (px). Совпадает с натуральной
+    // высотой колонки (идентити+KPI+кнопки+отступы) — тогда переход бесшовный: ниже порога
+    // min-height ужимает панель плавно до ~84px, выше — колонка заполняет высоту.
+    var PFD_PANEL_TALL = 320;
     // мини-эскизы блоков для полки «Добавить блок» — не рендерим тяжёлый настоящий блок,
     // а показываем узнаваемый набросок (карточка + характерная графика)
     var PV_CARD = '<rect x="6" y="7" width="108" height="46" rx="9" class="pv-card"/>';
@@ -2364,8 +2368,10 @@
                 (h ? ((isPanel ? 'min-height:' : 'height:') + clamp(h, minH, 1400) + 'px;') : '');
             var hsetClass = (h && !isPanel) ? ' pfd-hset' : '';
             // Высокая «Панель управления»: контент раскладывается по ВСЕЙ высоте (идентити сверху,
-            // KPI акцентом, кнопки снизу), а не висит компактной группой в центре пустоты.
-            if (isPanel && h >= 168) hsetClass += ' pfd-ptall';
+            // KPI акцентом, кнопки снизу), а не висит компактной группой в центре пустоты. Порог
+            // PFD_PANEL_TALL ≈ натуральной высоте колонки — ниже него панель = компактная полоса
+            // (сжимается плавно до ~84px), выше = герой-колонка (переход без «залипания»/наезда).
+            if (isPanel && h >= PFD_PANEL_TALL) hsetClass += ' pfd-ptall';
             // Кнопка «скрыть/удалить» блока:
             //  • заметка / портфель — СВОЯ кнопка уже есть в шапке карточки (pfnt-trash / глаз .pfc-act),
             //    в chrome не дублируем;
@@ -4310,7 +4316,7 @@
         var startW = item.offsetWidth, startH = item.offsetHeight;
         var hadH = item.classList.contains('pfd-hset');
         var hadPtall = item.classList.contains('pfd-ptall');
-        var startColStyle = item.style.gridColumn, startHStyle = item.style.height;
+        var startColStyle = item.style.gridColumn, startHStyle = item.style.height, startMinHStyle = item.style.minHeight;
         var id = item.getAttribute('data-pfd');
         var minH = id === 'panel' ? 72 : 240;   // «Панель управления» — низкая полоса: даём вернуть малую высоту
         var newSpan = 0, newH = 0, hMode = hadH || axis === 'y';
@@ -4364,12 +4370,22 @@
             item.style.gridColumn = 'span ' + newSpan;
             if (hMode) {
                 newH = clamp(Math.round(startH + dy), minH, 1400);
-                item.style.height = newH + 'px';
-                // «Панель управления» — не hset-клип (иначе поповеры/меню обрежутся), а
-                // раскладка-колонка pfd-ptall ПРЯМО во время тяги (класс из рендера сам не
-                // приедет — ресайз не перестраивает HTML блока)
-                if (id === 'panel') item.classList.toggle('pfd-ptall', newH >= 168);
-                else item.classList.add('pfd-hset');
+                if (id === 'panel') {
+                    // Панель пишет min-height (как и рендер) — не height: иначе стей­л
+                    // min-height из прошлого рендера конфликтует с новым height и СТОПОРИТ
+                    // сжатие (min-height оказывался полом — панель нельзя было ужать назад).
+                    // min-height растёт под контент (не режет поповеры hset-клипом), сжатие
+                    // идёт до натуральной высоты контента текущего режима (полоса ~84 / колонка).
+                    item.style.minHeight = newH + 'px';
+                    item.style.height = '';
+                    // раскладка-колонка pfd-ptall ПРЯМО во время тяги (класс из рендера сам
+                    // не приедет — ресайз HTML блока не пересобирает); порог = натуральной
+                    // высоте колонки, чтобы сжатие/переход шли без «залипания» и наезда
+                    item.classList.toggle('pfd-ptall', newH >= PFD_PANEL_TALL);
+                } else {
+                    item.style.height = newH + 'px';
+                    item.classList.add('pfd-hset');
+                }
             }
             pfdRepackSoon();   // masonry: соседи переезжают под новый размер
         }
@@ -4384,7 +4400,7 @@
                 // «Панель управления»: стянутая почти к минимуму высота = вернуть АВТО (натуральную),
                 // иначе она застревала на 240px (общий минимум карточек) и не возвращалась к исходной
                 if (id === 'panel' && newH <= 96) {
-                    delete dashCfg.h[id]; item.style.height = ''; item.classList.remove('pfd-ptall');
+                    delete dashCfg.h[id]; item.style.height = ''; item.style.minHeight = ''; item.classList.remove('pfd-ptall');
                 } else { dashCfg.h[id] = newH; }
                 changed = true;
             }
@@ -4397,6 +4413,7 @@
             cleanup();
             item.style.gridColumn = startColStyle;
             item.style.height = startHStyle;
+            item.style.minHeight = startMinHStyle;
             if (axis === 'xl') {   // вернуть прежнюю стартовую колонку (или снять, если её не было)
                 if (leftColStartHome == null) { if (dashCfg.col) delete dashCfg.col[id]; }
                 else dashCfg.col[id] = leftColStartHome;

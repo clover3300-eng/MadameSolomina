@@ -2515,7 +2515,7 @@ body.dark-mode .pfcf-input:focus { border-color: #818cf8; box-shadow: 0 0 0 3px 
    висит компактной группой в пустоте. Цифры KPI крупнее — большая карточка тянет акцент. */
 .pfd-item.pfd-ptall .pfp-panel {
     flex-direction: column; flex-wrap: nowrap; align-items: stretch;
-    justify-content: space-between; gap: clamp(18px, 3cqw, 44px); padding: clamp(22px, 3cqw, 44px);
+    justify-content: space-between; gap: clamp(16px, 2cqw, 34px); padding: clamp(20px, 2cqw, 34px);
 }
 .pfd-item.pfd-ptall[data-pfd="panel"] .pfp-panel { padding-right: clamp(46px, 3cqw, 54px); }
 .pfd-item.pfd-ptall .pfp-id, .pfd-item.pfd-ptall .pfp-kpis, .pfd-item.pfd-ptall .pfp-actions { flex: 0 0 auto; }
