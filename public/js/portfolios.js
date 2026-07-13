@@ -2361,7 +2361,9 @@
             var span = clamp(+(dashCfg.span[b.id]) || b.span, 3, 12);
             var h = +(dashCfg.h[b.id]) || 0;
             var isPanel = b.id === 'panel';
-            var minH = isPanel ? 72 : 240;   // «Панель управления» — низкая полоса, свой минимум
+            // низкий общий пол (72): ресайз сохраняет высоту только выше натуральной, поэтому
+            // клампу нечего «поднимать» — а порог 240 раньше насильно раздувал компактные блоки
+            var minH = 72;
             // Панель — контент-бар: заданная высота работает как МИНИМУМ (растёт под контент при
             // узкой ширине — кнопки не режутся), БЕЗ hset-клипа (меню/поповеры не обрезаются).
             var style = 'grid-column: span ' + span + ';' +
@@ -4318,7 +4320,22 @@
         var hadPtall = item.classList.contains('pfd-ptall');
         var startColStyle = item.style.gridColumn, startHStyle = item.style.height, startMinHStyle = item.style.minHeight;
         var id = item.getAttribute('data-pfd');
-        var minH = id === 'panel' ? 72 : 240;   // «Панель управления» — низкая полоса: даём вернуть малую высоту
+        // ОБЩЕЕ ПРАВИЛО виджетов: минимум по высоте = натуральная высота блока (его контент),
+        // а не фикс-порог 240 — иначе «Ставки» (полоса ~85px) и т.п. нельзя вернуть в линию.
+        // natH меряем один раз на старте: снимаем заданную высоту/hset/ptall, читаем offsetHeight,
+        // возвращаем как было (синхронно, без мигания). Утянул ниже natH → блок сворачивается в АВТО.
+        var natH = (function () {
+            var sh = item.style.height, smh = item.style.minHeight,
+                hh = item.classList.contains('pfd-hset'), pt = item.classList.contains('pfd-ptall');
+            item.style.height = ''; item.style.minHeight = '';
+            item.classList.remove('pfd-hset'); item.classList.remove('pfd-ptall');
+            var n = item.offsetHeight;
+            item.style.height = sh; item.style.minHeight = smh;
+            if (hh) item.classList.add('pfd-hset'); if (pt) item.classList.add('pfd-ptall');
+            return n;
+        })();
+        var collapseTo = natH + 16;   // на/ниже этой высоты — вернуть натуральную (авто)
+        var minH = 56;                // абсолютный пол тяги (свернётся в авто раньше, чем упрётся)
         var newSpan = 0, newH = 0, hMode = hadH || axis === 'y';
         // ---- левая кромка: правый край блока закреплён, левый едет → span и стартовая
         // колонка меняются вместе. Считаем текущую стартовую колонку и «колонку за правым
@@ -4370,21 +4387,24 @@
             item.style.gridColumn = 'span ' + newSpan;
             if (hMode) {
                 newH = clamp(Math.round(startH + dy), minH, 1400);
+                var collapse = newH <= collapseTo;   // утянули к натуральной → показать авто-высоту
                 if (id === 'panel') {
                     // Панель пишет min-height (как и рендер) — не height: иначе стей­л
                     // min-height из прошлого рендера конфликтует с новым height и СТОПОРИТ
-                    // сжатие (min-height оказывался полом — панель нельзя было ужать назад).
-                    // min-height растёт под контент (не режет поповеры hset-клипом), сжатие
-                    // идёт до натуральной высоты контента текущего режима (полоса ~84 / колонка).
-                    item.style.minHeight = newH + 'px';
-                    item.style.height = '';
-                    // раскладка-колонка pfd-ptall ПРЯМО во время тяги (класс из рендера сам
-                    // не приедет — ресайз HTML блока не пересобирает); порог = натуральной
-                    // высоте колонки, чтобы сжатие/переход шли без «залипания» и наезда
-                    item.classList.toggle('pfd-ptall', newH >= PFD_PANEL_TALL);
+                    // сжатие. min-height растёт под контент (не режет поповеры hset-клипом).
+                    if (collapse) { item.style.minHeight = ''; item.style.height = ''; item.classList.remove('pfd-ptall'); }
+                    else {
+                        item.style.minHeight = newH + 'px'; item.style.height = '';
+                        // раскладка-колонка pfd-ptall ПРЯМО во время тяги (порог = натуральной
+                        // высоте колонки, чтобы сжатие/переход шли без «залипания» и наезда)
+                        item.classList.toggle('pfd-ptall', newH >= PFD_PANEL_TALL);
+                    }
+                } else if (collapse) {
+                    // ОБЩЕЕ: любой блок утянутый к натуральной высоте — обратно в авто (без hset-клипа),
+                    // так «Ставки» и др. возвращаются в компактную линию, а не застревают
+                    item.style.height = ''; item.style.minHeight = ''; item.classList.remove('pfd-hset');
                 } else {
-                    item.style.height = newH + 'px';
-                    item.classList.add('pfd-hset');
+                    item.style.height = newH + 'px'; item.classList.add('pfd-hset');
                 }
             }
             pfdRepackSoon();   // masonry: соседи переезжают под новый размер
@@ -4397,10 +4417,12 @@
             if (newSpan && axis !== 'y') { dashCfg.span[id] = newSpan; changed = true; }
             if (axis === 'xl' && newColStart) { dashCfg.col[id] = newColStart; changed = true; }
             if (hMode && newH) {
-                // «Панель управления»: стянутая почти к минимуму высота = вернуть АВТО (натуральную),
-                // иначе она застревала на 240px (общий минимум карточек) и не возвращалась к исходной
-                if (id === 'panel' && newH <= 96) {
-                    delete dashCfg.h[id]; item.style.height = ''; item.style.minHeight = ''; item.classList.remove('pfd-ptall');
+                // ОБЩЕЕ ПРАВИЛО: стянули к натуральной высоте (≤ collapseTo) → сбрасываем в АВТО
+                // (не пишем cfg.h), любой блок возвращается к своей естественной компактной высоте;
+                // выше — сохраняем заданную высоту. Раньше был фикс-порог 240 (полосу не вернуть).
+                if (newH <= collapseTo) {
+                    delete dashCfg.h[id]; item.style.height = ''; item.style.minHeight = '';
+                    item.classList.remove('pfd-ptall'); item.classList.remove('pfd-hset');
                 } else { dashCfg.h[id] = newH; }
                 changed = true;
             }
