@@ -1916,6 +1916,20 @@ body.dark-mode .pf-ratestile-eye.pfc-act:hover { background: rgba(255,255,255,0.
 .pf-ratesband .drt-grid { min-width: 0; gap: 12px; align-content: start; }
 .pf-ratesband .drt-tile { align-items: center; container-type: inline-size; }
 .pf-ratesband .drt-v { font-size: clamp(17px, 15cqw, 25px); }
+/* В конструкторе плитка бывает узкой (4 в ряд при неполной ширине блока) — название
+   ставки не режем в «…», а переносим на 2 строки; так «Доходность ОФЗ 10 лет» и
+   «Ключевая ставка» читаются целиком (в широкой оконной полосе всё равно одна строка). */
+.pfd-item .pf-ratesband .drt-l, .pf-ratesstack .drt-l {
+    white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.2; letter-spacing: 0.03em;
+}
+/* Плитка ставки в конструкторе — на СЕТКУ (auto | 1fr), а не flex: во flex-раскладке
+   тело схлопывалось до самого узкого слова (flex-grow тут игнорировался из-за content-box
+   плитки), и название резалось в «…». Грид-колонка 1fr надёжно отдаёт телу всю ширину
+   справа от иконки, и «Ставка по вкладам» / «Доходность ОФЗ 10 лет» переносятся целиком. */
+.pfd-item .pf-ratesband .drt-tile, .pf-ratesstack .drt-tile {
+    display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center;
+}
+.pfd-item .pf-ratesband .drt-body, .pf-ratesstack .drt-body { min-width: 0; justify-content: center; gap: 4px; }
 
 /* ---- КОНСТРУКТОР: полоса адаптируется к ширине БЛОКА, а не окна ----
    Базовая .drt-grid — repeat(4,1fr) с переносами по ШИРИНЕ ОКНА; в конструкторе блок
@@ -2473,13 +2487,16 @@ body.dark-mode .pfcf-input:focus { border-color: #818cf8; box-shadow: 0 0 0 3px 
 .pfp-cfg .pfl-cfg-btn { width: 38px; height: 38px; background: rgba(255, 255, 255, 0.07); border-color: rgba(255, 255, 255, 0.14); color: #cdd7e6; }
 .pfp-cfg:hover .pfl-cfg-btn, .pfp-cfg .pfl-cfg-btn:hover { background: rgba(255, 255, 255, 0.13); border-color: rgba(255, 255, 255, 0.24); color: #fff; }
 /* Адаптив по ширине БЛОКА: сузили панель / сделали квадратом → контент перестраивается,
-   ничего не вылезает за край (container queries, не оконные media). */
-@container pfpanel (max-width: 760px) {
-    .pfp-kpis { margin-left: 0; }
-    .pfp-id, .pfp-kpis, .pfp-actions { flex: 1 1 auto; }
-}
-@container pfpanel (max-width: 500px) {
+   ничего не вылезает за край (container queries, не оконные media). Как только панель уже
+   не влезает одной строкой (полная ширина span 12 ≈ 1180px, а урезанная — меньше), три
+   секции (идентити · KPI · кнопки) встают ЧИСТЫМИ ярусами по всей ширине — так аккуратнее,
+   чем когда идентити и KPI жмутся в одну строку. */
+@container pfpanel (max-width: 820px) {
     .pfp-id, .pfp-kpis, .pfp-actions { flex-basis: 100%; }
+    .pfp-kpis { margin-left: 0; }
+    .pfp-actions { padding-top: 2px; }
+}
+@container pfpanel (max-width: 440px) {
     .pfp-kpis { flex-wrap: wrap; gap: 10px 18px; }
     .pfp-div { display: none; }
     .pfp-actions { gap: 7px; }
@@ -2487,6 +2504,12 @@ body.dark-mode .pfcf-input:focus { border-color: #818cf8; box-shadow: 0 0 0 3px 
     .pfp-btn { padding: 0 11px; }
     .pfp-actions .d3-quick.pf-impbtn { padding: 0 10px; }
 }
+/* Поповер раскладки в панели (.pfp-actions z-index:1 замыкает стек-контекст, а сама
+   .pfd-item панели — z-index:auto): без подъёма поповер уходит ПОД соседние карточки
+   сетки, что идут ниже по DOM. Пока панель под курсором (= поповер открыт по hover) —
+   поднимаем всю ячейку панели над соседями. */
+.pfd-grid .pfd-item[data-pfd="panel"]:hover,
+.pfd-grid .pfd-item[data-pfd="panel"]:focus-within { z-index: 60; }
 
 /* сама карточка: докнутый сверху диалог с внутренним скроллом (шапка всегда видна).
    Высоту держим умеренной (не во весь экран), чтобы под карточкой была видна сетка —
@@ -2707,13 +2730,25 @@ body.dark-mode .pfcapb-bar.neg { background: linear-gradient(#f4794f, #6e2c17); 
 .pfal-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; }
 .pfal-center b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 24px; font-weight: 800; letter-spacing: -0.02em; color: #0f172a; line-height: 1; }
 .pfal-center span { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; }
+.pf-allocblk { container-type: inline-size; container-name: pfalloc; }
 .pfal-legend { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 9px; }
-.pfal-lrow { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto auto; align-items: center; gap: 9px; }
+/* Слово (Акции/Облигации) — колонка max-content: НИКОГДА не жмётся под длинную
+   сумму (8-значные рубли раньше выдавливали название в «…»). Сумма забирает гибкую
+   середину и прижата вправо; процент — своей колонкой справа. */
+.pfal-lrow { display: grid; grid-template-columns: 12px max-content minmax(0, 1fr) auto; align-items: center; gap: 9px; }
 .pfal-dot { width: 10px; height: 10px; border-radius: 3px; }
 .pfal-dot.stk { background: #D97757; } .pfal-dot.bnd { background: #7B9BBF; } .pfal-dot.csh { background: #94a3b8; }
-.pfal-lname { font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 700; color: #475569; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pfal-lval { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12.5px; font-weight: 700; color: #1e293b; }
+.pfal-lname { font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 700; color: #475569; white-space: nowrap; }
+.pfal-lval { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12.5px; font-weight: 700; color: #1e293b; justify-self: end; white-space: nowrap; }
 .pfal-lpct { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12.5px; font-weight: 800; color: #0f172a; min-width: 34px; text-align: right; }
+/* Совсем узкий блок (напр. span 3): сумма падает на свою строку под названием —
+   слово и процент остаются на первой, ничего не режется. */
+@container pfalloc (max-width: 320px) {
+    .pfal-lrow { grid-template-columns: 12px 1fr auto; grid-template-areas: "dot name pct" ". val val"; row-gap: 1px; column-gap: 9px; }
+    .pfal-dot { grid-area: dot; } .pfal-lname { grid-area: name; }
+    .pfal-lpct { grid-area: pct; } .pfal-lval { grid-area: val; justify-self: start; font-size: 11.5px; color: #64748b; }
+    body.dark-mode .pfal-lval { color: #8ea1b8; }
+}
 .pfal-empty { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; padding: 22px 16px; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: #8494a7; line-height: 1.45; }
 body.dark-mode .pfal-chip { background: #16213a; border-color: #2b3a55; color: #b6c4d8; }
 body.dark-mode .pfal-chip:hover { border-color: #3a4c6d; color: #eaf1fb; }
