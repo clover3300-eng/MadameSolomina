@@ -1838,6 +1838,50 @@
     function pfPresetActive(p) {
         try { return pfStructSig(pfPresetInstantiate(p.snap)) === pfStructSig(dashCfg); } catch (e) { return false; }
     }
+    // мини-эскиз раскладки пресета: 12-колоночная схема блоков (span/col/скрытия как в реальной
+    // упаковке) — чтобы вид был понятен без применения, а не только по названию
+    function pfPresetThumbSvg(snap) {
+        snap = snap || {};
+        var META = {
+            fav: { l: 'Избранное', h: 3 }, cal: { l: 'Календарь', h: 3 }, sum: { l: 'Сводка', h: 2 },
+            panel: { l: 'Панель', h: 1 }, rates: { l: 'Ставки', h: 1 }, trades: { l: 'Сделки', h: 2 },
+            'kpi:cap': { l: 'Капитал', h: 1 }, 'kpi:day': { l: 'За день', h: 1 }, 'kpi:next': { l: 'Выплата', h: 1 },
+            cap: { l: 'График', h: 2 }, cap2: { l: 'График', h: 2 }, heat: { l: 'Карта', h: 2.4 },
+            news: { l: 'Новости', h: 2 }, alloc: { l: 'Активы', h: 2 }
+        };
+        var DEFSPAN = { fav: 4, cal: 8, sum: 4, panel: 12, rates: 12, trades: 12,
+            'kpi:cap': 4, 'kpi:day': 4, 'kpi:next': 4, cap: 6, cap2: 6, heat: 6, news: 6, alloc: 4 };
+        function meta(id) {
+            if (id.indexOf('pf:') === 0) { var m = /pf:#?(\d+)/.exec(id); return { l: 'П' + ((m ? +m[1] : 0) + 1), h: 3, cls: 'pf' }; }
+            if (id.indexOf('note:') === 0) return { l: 'Заметка', h: 1.5, cls: 'note' };
+            var x = META[id]; return { l: x ? x.l : id, h: x ? x.h : 2, cls: 'w' };
+        }
+        function defSpan(id) { if (id.indexOf('pf:') === 0) return 4; if (id.indexOf('note:') === 0) return 4; return DEFSPAN[id] || 6; }
+        var hidden = snap.hidden || {}, spanM = snap.span || {}, colM = snap.col || {};
+        var order = (snap.order || []).filter(function (id) { return !hidden[id]; });
+        if (!order.length) return '';
+        var COLS = 12, bottom = [], i; for (i = 0; i < COLS; i++) bottom[i] = 0;
+        var placed = order.map(function (id) {
+            var mt = meta(id);
+            var span = Math.max(3, Math.min(COLS, spanM[id] || defSpan(id)));
+            var x, c, k, yy;
+            if (colM[id]) { x = Math.max(0, Math.min(COLS - span, colM[id] - 1)); }
+            else { x = 0; var bestY = Infinity; for (c = 0; c <= COLS - span; c++) { yy = 0; for (k = c; k < c + span; k++) yy = Math.max(yy, bottom[k]); if (yy < bestY) { bestY = yy; x = c; } } }
+            var y = 0; for (k = x; k < x + span; k++) y = Math.max(y, bottom[k]);
+            for (k = x; k < x + span; k++) bottom[k] = y + mt.h;
+            return { x: x, y: y, w: span, h: mt.h, l: mt.l, cls: mt.cls };
+        });
+        var totalH = 0; for (i = 0; i < COLS; i++) totalH = Math.max(totalH, bottom[i]); if (!totalH) totalH = 1;
+        var CW = 22, CH = 15, GAP = 3, PAD = 4;
+        var W = COLS * CW + PAD * 2, H = totalH * CH + PAD * 2;
+        var body = placed.map(function (p) {
+            var x = PAD + p.x * CW + GAP / 2, y = PAD + p.y * CH + GAP / 2;
+            var w = p.w * CW - GAP, h = p.h * CH - GAP;
+            var label = (w > 28 && h > 10) ? '<text x="' + (x + w / 2).toFixed(1) + '" y="' + (y + h / 2).toFixed(1) + '" class="pft-tx">' + esc(p.l) + '</text>' : '';
+            return '<g class="pft-b pft-' + p.cls + '"><rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="3"/>' + label + '</g>';
+        }).join('');
+        return '<svg viewBox="0 0 ' + W + ' ' + H.toFixed(1) + '" class="pfl-thumb-svg" preserveAspectRatio="xMidYMid meet">' + body + '</svg>';
+    }
 
     function pfdActive() {
         if (!dashCfg.on && !dashEdit) return false;
@@ -2421,7 +2465,6 @@
     function pfLayoutCfgPopHtml() {
         var saved = pfdLayoutSaved();
         var admin = pfIsAdmin();
-        var PRESET_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>';
         var html = '<div class="pfl-cfg-h">Раскладка</div>' +
             '<button type="button" class="pfl-cfg-item" onclick="pfLayoutReset()">' + PFDGRID_SVG +
                 '<span><b>Базовая</b><i>стандартная расстановка блоков</i></span></button>' +
@@ -2435,8 +2478,11 @@
             html += '<div class="pfl-cfg-list">' + pfPresetList.map(function (p) {
                 var act = pfPresetActive(p);
                 return '<div class="pfl-cfg-preset' + (act ? ' active' : '') + '">' +
-                    '<button type="button" class="pfl-cfg-item" onclick="pfApplyPreset(\'' + esc(p.id) + '\')" title="Применить пресет ко всей раскладке">' + PRESET_IC +
-                        '<span><b>' + esc(p.name || 'Пресет') + '</b><i>' + (act ? 'активен' : 'общий пресет') + '</i></span></button>' +
+                    '<button type="button" class="pfl-cfg-preset-card" onclick="pfApplyPreset(\'' + esc(p.id) + '\')" title="Применить пресет ко всей раскладке">' +
+                        '<span class="pfl-cfg-thumb">' + pfPresetThumbSvg(p.snap) + '</span>' +
+                        '<span class="pfl-cfg-preset-cap"><b>' + esc(p.name || 'Пресет') + '</b>' +
+                            (act ? '<i class="pfl-cfg-badge">активен</i>' : '<i class="pfl-cfg-apply">применить</i>') + '</span>' +
+                    '</button>' +
                     (admin ? '<button type="button" class="pfl-cfg-del" onclick="pfDeletePreset(\'' + esc(p.id) + '\', event)" title="Удалить пресет у всех" aria-label="Удалить">' + XMARK_SVG + '</button>' : '') +
                 '</div>';
             }).join('') + '</div>';

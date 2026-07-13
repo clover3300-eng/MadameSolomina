@@ -2337,26 +2337,50 @@ body.dark-mode .pfl-cfg-sep { background: #24304a; }
 body.dark-mode .pfl-cfg-item.primary b, body.dark-mode .pfl-cfg-item.primary svg { color: #a5b4fc; }
 body.dark-mode .pfl-cfg-item.primary.done b, body.dark-mode .pfl-cfg-item.primary.done svg { color: #6ee7a8; }
 
-/* ---- готовые пресеты в поповере раскладки: список + строка + удаление ---- */
-.pfl-cfg-list { display: flex; flex-direction: column; gap: 1px; max-height: 216px; overflow-y: auto; }
-.pfl-cfg-preset { display: flex; align-items: center; }
-.pfl-cfg-preset .pfl-cfg-item { flex: 1 1 auto; min-width: 0; }
-.pfl-cfg-preset .pfl-cfg-item b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pfl-cfg-preset.active .pfl-cfg-item svg { color: #12a35c; }
-.pfl-cfg-preset.active .pfl-cfg-item b { color: #12a35c; }
-.pfl-cfg-preset.active .pfl-cfg-item i { color: #12a35c; }
-.pfl-cfg-del { flex-shrink: 0; width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 9px;
-    background: transparent; color: #aeb8c6; cursor: pointer; transition: background 0.12s, color 0.12s; }
-.pfl-cfg-del svg { width: 14px; height: 14px; }
-.pfl-cfg-del:hover { background: rgba(220, 38, 38, 0.1); color: #dc2626; }
+/* ---- готовые пресеты: карточки с мини-эскизом раскладки ---- */
+.pfl-cfg-list { display: flex; flex-direction: column; gap: 8px; max-height: 344px; overflow-y: auto; padding: 2px; margin: 0 -2px; }
+.pfl-cfg-preset { position: relative; }
+.pfl-cfg-preset-card { display: block; width: 100%; text-align: left; padding: 0; border: 1px solid #e6ebf3; border-radius: 12px;
+    background: #fff; cursor: pointer; overflow: hidden; transition: border-color 0.12s, box-shadow 0.12s; }
+.pfl-cfg-preset-card:hover { border-color: #c3ccef; box-shadow: 0 6px 16px -8px rgba(15, 23, 42, 0.3); }
+.pfl-cfg-preset.active .pfl-cfg-preset-card { border-color: #12a35c; box-shadow: 0 0 0 1px #12a35c; }
+.pfl-cfg-thumb { display: block; height: 90px; padding: 7px; background: #f5f8fc; border-bottom: 1px solid #eef1f6; }
+.pfl-thumb-svg { width: 100%; height: 100%; display: block; }
+.pft-pf rect { fill: #4f46e5; }
+.pft-w rect { fill: #cdd7e8; }
+.pft-note rect { fill: #f1c877; }
+.pft-tx { font-family: 'Inter', sans-serif; font-size: 8px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+.pft-pf .pft-tx { fill: #fff; }
+.pft-w .pft-tx { fill: #5b6675; }
+.pft-note .pft-tx { fill: #7a5b12; }
+.pfl-cfg-preset-cap { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 11px; }
+.pfl-cfg-preset-cap b { font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 700; color: #1b2433; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pfl-cfg-apply { font-style: normal; font-size: 10.5px; font-weight: 600; color: #94a3b8; flex-shrink: 0; }
+.pfl-cfg-preset-card:hover .pfl-cfg-apply { color: #4f46e5; }
+.pfl-cfg-badge { font-style: normal; font-size: 10px; font-weight: 700; color: #12a35c; background: rgba(18, 163, 92, 0.12);
+    padding: 2px 7px; border-radius: 999px; flex-shrink: 0; }
+.pfl-cfg-del { position: absolute; top: 7px; right: 7px; z-index: 3; width: 24px; height: 24px; display: grid; place-items: center;
+    border: 0; border-radius: 7px; background: rgba(255, 255, 255, 0.92); color: #64748b; cursor: pointer; opacity: 0;
+    box-shadow: 0 2px 6px -2px rgba(15, 23, 42, 0.3); transition: opacity 0.12s, background 0.12s, color 0.12s; }
+.pfl-cfg-del svg { width: 13px; height: 13px; }
+.pfl-cfg-preset:hover .pfl-cfg-del { opacity: 1; }
+.pfl-cfg-del:hover { background: #fff; color: #dc2626; }
 .pfl-cfg-empty { padding: 3px 11px 8px; font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #94a3b8; line-height: 1.5; }
 .pfl-cfg-item.add b { color: #4338ca; }
 .pfl-cfg-item.add svg { color: #4f46e5; }
-body.dark-mode .pfl-cfg-preset.active .pfl-cfg-item svg,
-body.dark-mode .pfl-cfg-preset.active .pfl-cfg-item b,
-body.dark-mode .pfl-cfg-preset.active .pfl-cfg-item i { color: #6ee7a8; }
-body.dark-mode .pfl-cfg-del { color: #6b7686; }
-body.dark-mode .pfl-cfg-del:hover { background: rgba(248, 113, 113, 0.14); color: #f87171; }
+body.dark-mode .pfl-cfg-preset-card { background: #16202f; border-color: #26324c; }
+body.dark-mode .pfl-cfg-preset-card:hover { border-color: #3a4a72; }
+body.dark-mode .pfl-cfg-preset.active .pfl-cfg-preset-card { border-color: #34d399; box-shadow: 0 0 0 1px #34d399; }
+body.dark-mode .pfl-cfg-thumb { background: rgba(255, 255, 255, 0.03); border-bottom-color: #22304a; }
+body.dark-mode .pft-pf rect { fill: #818cf8; }
+body.dark-mode .pft-w rect { fill: #3c4a63; }
+body.dark-mode .pft-w .pft-tx { fill: #aab6c8; }
+body.dark-mode .pft-note rect { fill: #b98a3e; }
+body.dark-mode .pft-note .pft-tx { fill: #2a2010; }
+body.dark-mode .pfl-cfg-preset-cap b { color: #e8eef7; }
+body.dark-mode .pfl-cfg-del { background: rgba(30, 41, 59, 0.9); color: #aab6c8; }
+body.dark-mode .pfl-cfg-del:hover { background: #1e293b; color: #f87171; }
+body.dark-mode .pfl-cfg-badge { color: #6ee7a8; background: rgba(52, 211, 153, 0.14); }
 body.dark-mode .pfl-cfg-empty { color: #8fa0b6; }
 body.dark-mode .pfl-cfg-item.add b, body.dark-mode .pfl-cfg-item.add svg { color: #a5b4fc; }
 
