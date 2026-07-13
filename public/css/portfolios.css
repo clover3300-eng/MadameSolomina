@@ -368,7 +368,11 @@ body.dark-mode .pfc-sep { background: rgba(255,255,255,0.06); }
 /* padding-top:0 — чтобы липкая шапка садилась ровно на край обрезки скролла (иначе
    строка «выглядывала» бы над шапкой в зазоре верхнего паддинга); отступ над шапкой
    даёт её собственный padding-top */
-.pfc-massets { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; display: flex; flex-direction: column; padding: 0 24px 0; }
+/* список активов мини-карточки: не выше 5 тикеров (шапка 23 + 5×30 + пик 6-й ≈ 184px),
+   остальные — прокруткой. Ограничение стабильно при любой высоте карточки (в т.ч. после
+   ресайза): max-height не даёт списку разворачиваться на весь блок. «Весь состав» — по
+   шеврону в подвале (.pfc-holdsover, без ограничения). */
+.pfc-massets { flex: 0 1 auto; min-height: 0; max-height: 184px; overflow-y: auto; scrollbar-width: thin; display: flex; flex-direction: column; padding: 0 24px 0; }
 /* flex-shrink:0 обязателен — иначе flex-контейнер сжимает обёртку и обрезает список
    активов ВМЕСТО скролла в .pfc-massets. overflow:visible (не hidden!) — чтобы sticky-шапка
    таблицы липла к скроллеру .pfc-massets, а не запиралась внутри самой обёртки */
@@ -1013,13 +1017,12 @@ body.dark-mode .pfm-grp-l--stock { color: #fbbf24; } body.dark-mode .pfm-grp-l--
 body.dark-mode .pfm-grp-n { background: rgba(255,255,255,0.07); }
 .pfm-grp-rule { flex: 1; height: 1px; background: linear-gradient(90deg, rgba(24,38,60,0.1), transparent); }
 body.dark-mode .pfm-grp-rule { background: linear-gradient(90deg, rgba(255,255,255,0.12), transparent); }
-/* кнопка «Добавить» — нейтральная (не в цвет карточки), но с акцентной +-иконкой = понятно, что добавление */
-.pfm-addbtn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex-shrink: 0; border: 1px solid rgba(24,38,60,0.14); background: rgba(24,38,60,0.04); color: #46566e; border-radius: 10px; padding: 0 15px; min-height: 36px; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 12.5px; cursor: pointer; white-space: nowrap; transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.12s; }
-.pfm-addbtn svg { width: 15px; height: 15px; color: var(--pf-accent); }
-.pfm-addbtn:hover { background: color-mix(in srgb, var(--pf-accent) 10%, rgba(24,38,60,0.04)); border-color: color-mix(in srgb, var(--pf-accent) 38%, rgba(24,38,60,0.14)); color: #1b2433; }
+/* кнопка «Добавить» — ЗАМЕТНАЯ, в цвет портфеля: это главное действие формы. Раньше была
+   нейтрально-серой и терялась → пользователь по привычке жал «Готово» и не добавлял актив. */
+.pfm-addbtn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex-shrink: 0; border: 1px solid var(--pf-accent); background: var(--pf-accent); color: #fff; border-radius: 10px; padding: 0 17px; min-height: 36px; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 12.5px; cursor: pointer; white-space: nowrap; box-shadow: 0 5px 14px -6px color-mix(in srgb, var(--pf-accent) 65%, transparent); transition: filter 0.15s, box-shadow 0.15s, transform 0.12s; }
+.pfm-addbtn svg { width: 15px; height: 15px; color: #fff; }
+.pfm-addbtn:hover { filter: brightness(1.07); box-shadow: 0 7px 18px -6px color-mix(in srgb, var(--pf-accent) 75%, transparent); }
 .pfm-addbtn:active { transform: scale(0.97); }
-body.dark-mode .pfm-addbtn { border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); color: #cdd8e6; }
-body.dark-mode .pfm-addbtn:hover { color: #f4f8fd; }
 /* футер: рутинные действия — тихим текстом слева, «Удалить портфель» — тихой красной ссылкой справа */
 .pfm-foot { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; }
 .pfm-foot-sp { flex: 1 1 auto; }
@@ -2123,13 +2126,15 @@ body.dark-mode .pfpc-kind.kind-red { color: #93c5fd; background: rgba(61,111,209
    список сделок скроллился ВНУТРИ .pft-body, а шапка с рамкой оставались закреплены */
 .pfd-item.pfd-hset .pf-trades { display: flex; flex-direction: column; }
 .pfd-item.pfd-hset .pf-trades .pft-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
-/* Портфель: у карточки закреплена шапка (.pfc-top), а ВСЁ ниже (герой + мини-график +
-   список состава) скроллится единым блоком .pfc-normal. Иначе высокий герой не
-   помещался в короткий блок и переливался за нижнюю грань. Внутренний скролл списка
-   (.pfc-massets) отключаем — чтобы не было ДВОЙНОГО скролла внутри .pfc-normal. */
+/* Портфель: шапка (.pfc-top) закреплена; если высокий герой не помещается в короткий
+   блок, .pfc-normal скроллится целиком (запас для очень низких блоков). Список активов
+   .pfc-massets ОСТАЁТСЯ ограниченным 5 тикерами со своим скроллом (max-height из базового
+   правила) — раньше в hset его разворачивали на все строки (overflow:visible;flex:0 0 auto),
+   из-за чего после ресайза показывались ВСЕ тикеры; теперь ограничение стабильно. */
 .pfd-item.pfd-hset .pfc-top { flex-shrink: 0; }
 .pfd-item.pfd-hset .pfc-normal { overflow-y: auto; scrollbar-width: thin; }
-.pfd-item.pfd-hset .pfc-massets { overflow: visible; flex: 0 0 auto; }
+/* список активов наследует базовое ограничение (max-height 5 тикеров + свой скролл) —
+   в hset его больше НЕ разворачиваем на все строки */
 /* когда в карточке открыт флайаут (настройки/график/меню выходят ЗА блок) — снимаем
    клип, иначе в блоке с ручной высотой они бы обрезались; флайаут overlay-ем ложится
    поверх соседей, как и в обычной сетке. .pf-impmenu.open — дропдауны-фильтры

@@ -4369,6 +4369,18 @@
         if (pfdRsCancel) { pfdRsCancel(); return; }
         if (dashEdit) window.pfLayoutClose();
     });
+    // клик ВНЕ карточки «Добавить виджет» закрывает её — как ждёшь от оверлея (раньше
+    // закрывали только ✕/Esc, и казалось, что карточка «не закрывается»). Не трогаем клики
+    // внутри карточки, по кнопкам её открытия/раскладки, по модалкам в <body> и во время жеста.
+    document.addEventListener('click', function (e) {
+        if (!dashEdit) return;
+        var t = e.target; if (!t || !t.closest) return;
+        if (t.closest('.pfl-panel')) return;
+        if (t.closest('#pfLayoutBtn') || t.closest('#pfLayoutCfgWrap') || t.closest('.pfp-cfg') || t.closest('.pfp-btn')) return;
+        if (t.closest('#pfConfirmOv')) return;
+        if (pfdBusy()) return;
+        window.pfLayoutClose();
+    });
 
     // все портфели скрыты — осознанное пустое состояние с кнопкой «показать все»
     function allHiddenHtml() {
@@ -6515,7 +6527,15 @@
         if (btn) { btn.classList.toggle('on', on); btn.title = on ? 'Скрыть индекс Мосбиржи' : 'Сравнить с индексом Мосбиржи'; }
         loadPfChart(pid);
     };
-    window.pfCloseMenu = function () { openMenu = null; editHold = {}; addOpen = false; colorsOpen = false; delArm = false; renderPortfolios(); };
+    window.pfCloseMenu = function () {
+        // не терять начатый ввод: если форма добавления заполнена (есть тикер) — добавляем актив
+        // перед закрытием. Частая ошибка: заполнил поля и жмёшь «Готово» вместо «Добавить».
+        var pid = openMenu, added = null;
+        if (pid) { var tk = dq('pfNewTk-' + pid); if (tk && tk.value.trim()) added = pfReadAddForm(pid); }
+        openMenu = null; editHold = {}; addOpen = false; colorsOpen = false; delArm = false;
+        if (added) { toast(added.restocked ? added.ticker + ': докуплено · +лот' : added.ticker + ' добавлен в портфель'); ensureQuotes(true); }
+        renderPortfolios();
+    };
     window.pfRename = function (pid, val) { var p = findPf(pid); if (!p) return;
         p.name = ((val || '').trim() || p.name).slice(0, 24);   // тот же лимит, что у инлайн-правки
         saveStore(); renderPortfolios(); };
@@ -6573,12 +6593,15 @@
         if (openMenu === pid) { openMenu = null; }
         delArm = false; renderPortfolios(); toast('Портфель удалён');
     };
-    window.pfAddHolding = function (pid) {
-        var p = findPf(pid); if (!p) return;
+    // читает форму добавления и записывает актив в модель (БЕЗ ре-рендера/фокуса/тоста).
+    // Возвращает {ticker, restocked} если добавлено, иначе null (нет тикера). Общая логика
+    // для кнопки «Добавить» и для «Готово» (чтобы заполненный, но не добавленный тикер не пропал).
+    function pfReadAddForm(pid) {
+        var p = findPf(pid); if (!p) return null;
         var tkEl = dq('pfNewTk-' + pid), tyEl = dq('pfNewType-' + pid), dEl = dq('pfNewDate-' + pid),
             prEl = dq('pfNewPrice-' + pid), nkEl = dq('pfNewNkd-' + pid), qEl = dq('pfNewQty-' + pid);
         var tk = (tkEl && tkEl.value || '').trim().toUpperCase();
-        if (!tk) { toast('Введите тикер', true); if (tkEl) try { tkEl.focus(); } catch (e) {} return; }
+        if (!tk) return null;
         var type = (tyEl && tyEl.value) === 'bond' ? 'bond' : 'stock';
         var date = (dEl && dEl.value) || todayStr();
         var price = Math.max(0, toNum(prEl && prEl.value) || 0);
@@ -6587,15 +6610,22 @@
         var lot = { id: genId('l'), buyDate: date, buyPrice: price, qty: qty, nkd: nkd, priceFromApi: false, nkdFromApi: false };
         p.holdings = p.holdings || [];
         // тот же тикер уже в портфеле (того же типа) → ДОКУПКА: добавляем лот к активу
-        var exist = p.holdings.filter(function (x) { return x.ticker === tk && x.type === type; })[0];
-        if (exist) { ensureLots(exist).push(lot); editHold[exist.id] = true; toast(tk + ': докуплено · +лот'); }
+        var exist = p.holdings.filter(function (x) { return x.ticker === tk && x.type === type; })[0], restocked = false;
+        if (exist) { ensureLots(exist).push(lot); editHold[exist.id] = true; restocked = true; }
         else {
             // потенциал акции фиксируем на дату покупки (текущий ОДХС) — для карточки ребалансировки
             var pot = type === 'stock' ? potentialOf(tk) : null;
             // полное имя — сразу из таблиц (ОФЗ/акции), а не копия тикера
             p.holdings.push({ id: genId('h'), ticker: tk, name: lookupName(tk, type), type: type, lots: [lot], potAtBuy: pot });
         }
-        saveStore(); pfInvalidateCharts(pid); ensureQuotes(true); renderPortfolios();
+        saveStore(); pfInvalidateCharts(pid);
+        return { ticker: tk, restocked: restocked };
+    }
+    window.pfAddHolding = function (pid) {
+        var r = pfReadAddForm(pid);
+        if (!r) { toast('Введите тикер', true); var t = dq('pfNewTk-' + pid); if (t) try { t.focus(); } catch (e) {} return; }
+        if (r.restocked) toast(r.ticker + ': докуплено · +лот');
+        ensureQuotes(true); renderPortfolios();
         // фокус обратно на поле тикера для быстрого ввода следующего актива
         var ni = dq('pfNewTk-' + pid); if (ni) try { ni.focus(); } catch (e) {}
     };
