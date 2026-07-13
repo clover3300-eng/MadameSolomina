@@ -4309,6 +4309,7 @@
         var startX = e.clientX, startY = e.clientY;
         var startW = item.offsetWidth, startH = item.offsetHeight;
         var hadH = item.classList.contains('pfd-hset');
+        var hadPtall = item.classList.contains('pfd-ptall');
         var startColStyle = item.style.gridColumn, startHStyle = item.style.height;
         var id = item.getAttribute('data-pfd');
         var minH = id === 'panel' ? 72 : 240;   // «Панель управления» — низкая полоса: даём вернуть малую высоту
@@ -4364,7 +4365,11 @@
             if (hMode) {
                 newH = clamp(Math.round(startH + dy), minH, 1400);
                 item.style.height = newH + 'px';
-                item.classList.add('pfd-hset');
+                // «Панель управления» — не hset-клип (иначе поповеры/меню обрежутся), а
+                // раскладка-колонка pfd-ptall ПРЯМО во время тяги (класс из рендера сам не
+                // приедет — ресайз не перестраивает HTML блока)
+                if (id === 'panel') item.classList.toggle('pfd-ptall', newH >= 168);
+                else item.classList.add('pfd-hset');
             }
             pfdRepackSoon();   // masonry: соседи переезжают под новый размер
         }
@@ -4378,8 +4383,9 @@
             if (hMode && newH) {
                 // «Панель управления»: стянутая почти к минимуму высота = вернуть АВТО (натуральную),
                 // иначе она застревала на 240px (общий минимум карточек) и не возвращалась к исходной
-                if (id === 'panel' && newH <= 96) { delete dashCfg.h[id]; }
-                else { dashCfg.h[id] = newH; }
+                if (id === 'panel' && newH <= 96) {
+                    delete dashCfg.h[id]; item.style.height = ''; item.classList.remove('pfd-ptall');
+                } else { dashCfg.h[id] = newH; }
                 changed = true;
             }
             if (changed) saveDashCfg();
@@ -4396,6 +4402,7 @@
                 else dashCfg.col[id] = leftColStartHome;
             }
             if (!hadH) item.classList.remove('pfd-hset');
+            if (id === 'panel') item.classList.toggle('pfd-ptall', hadPtall);
             pfdRepackSoon();
         };
         document.addEventListener('pointermove', onMove);
