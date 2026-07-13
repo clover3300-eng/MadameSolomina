@@ -1757,15 +1757,21 @@
     var PRESETS_KEY = 'pf_presets';
     var PRESETS_CACHE = 'pf_presets_cache_v1';
     var PRESETS_REFRESH_MS = 90000;
-    var pfPresetList = loadPresetCache();      // [{id,name,snap,at,by}]
+    // pfPresetList — общие пресеты [{id,name,snap,at,by}]; pfBaseMap — БАЗОВАЯ раскладка по
+    // числу видимых портфелей { "1": snap, "2": snap… } (снимки шаблонизированы pf:#0…). Оба
+    // в том же app_config-ключе 'pf_presets' (value = { presets, bases }).
+    var pfPresetList = [], pfBaseMap = {};
+    (function () { var c = loadPresetCache(); pfPresetList = c.presets; pfBaseMap = c.bases; })();
     var pfPresetsFetchedAt = 0, pfPresetsFetching = false, pfPresetsSaving = false;
     function loadPresetCache() {
-        try { var c = JSON.parse(localStorage.getItem(PRESETS_CACHE) || 'null'); return (c && Array.isArray(c.presets)) ? c.presets : []; }
-        catch (e) { return []; }
+        try { var c = JSON.parse(localStorage.getItem(PRESETS_CACHE) || 'null') || {};
+            return { presets: Array.isArray(c.presets) ? c.presets : [], bases: (c.bases && typeof c.bases === 'object') ? c.bases : {} };
+        } catch (e) { return { presets: [], bases: {} }; }
     }
     function savePresetCache() {
-        try { localStorage.setItem(PRESETS_CACHE, JSON.stringify({ presets: pfPresetList, at: Date.now() })); } catch (e) {}
+        try { localStorage.setItem(PRESETS_CACHE, JSON.stringify({ presets: pfPresetList, bases: pfBaseMap, at: Date.now() })); } catch (e) {}
     }
+    function pfBaseFor(count) { return (pfBaseMap || {})[String(count)] || null; }
     function pfSupa() { return window.supa; }
     function pfCloudOn() { return !!(pfSupa() && pfSupa().enabled); }
     function pfIsAdmin() { return !!(pfSupa() && pfSupa().isAdmin && pfSupa().isAdmin()); }
@@ -1781,6 +1787,7 @@
                 pfPresetsFetchedAt = Date.now();
                 var v = (res.data && res.data[0] && res.data[0].value) || {};
                 pfPresetList = Array.isArray(v.presets) ? v.presets.filter(function (p) { return p && p.id && p.snap; }) : [];
+                pfBaseMap = (v.bases && typeof v.bases === 'object') ? v.bases : {};
                 savePresetCache();
                 try { updateLayoutBtn(); } catch (e) {}
             }, function () { pfPresetsFetching = false; });
@@ -1793,7 +1800,7 @@
         if (!pfCloudOn() || pfPresetsSaving) return;
         pfPresetsSaving = true;
         var uid = (pfSupa().session && pfSupa().session.user) ? pfSupa().session.user.id : null;
-        pfSupa().client.from('app_config').upsert({ key: PRESETS_KEY, value: { presets: pfPresetList }, updated_by: uid }, { onConflict: 'key' })
+        pfSupa().client.from('app_config').upsert({ key: PRESETS_KEY, value: { presets: pfPresetList, bases: pfBaseMap }, updated_by: uid }, { onConflict: 'key' })
             .then(function (res) {
                 pfPresetsSaving = false;
                 if (res.error) { toast((pfSupa().errRu ? pfSupa().errRu(res.error) : 'Не удалось сохранить пресет'), true); return; }
@@ -2306,6 +2313,7 @@
         }
         saveDashCfg();
         pfdRerender();
+        pfdScrollToBlock(id);
         toast(id === 'panel' ? 'Панель управления добавлена' : 'Блок добавлен на дашборд');
     };
     // тёмная кнопка «Добавить виджет»: для семейства — добавляет ВЫБРАННЫЙ дизайн (pflFamPick),
@@ -2465,9 +2473,17 @@
     function pfLayoutCfgPopHtml() {
         var saved = pfdLayoutSaved();
         var admin = pfIsAdmin();
+        var count = visibleItems().length;
+        var hasBase = !!pfBaseFor(count);
+        var PIN_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="17" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"/></svg>';
+        var pfW = plural(count, 'портфель', 'портфеля', 'портфелей');
         var html = '<div class="pfl-cfg-h">Раскладка</div>' +
-            '<button type="button" class="pfl-cfg-item" onclick="pfLayoutReset()">' + PFDGRID_SVG +
-                '<span><b>Базовая</b><i>стандартная расстановка блоков</i></span></button>' +
+            '<div class="pfl-cfg-baserow">' +
+                '<button type="button" class="pfl-cfg-item" onclick="pfLayoutReset()" title="Вернуть базовую раскладку для ' + count + ' ' + pfW + '">' + PFDGRID_SVG +
+                    '<span><b>Базовая</b><i>' + (hasBase ? 'своя · ' : 'стандартная · ') + count + ' ' + pfW + '</i></span></button>' +
+                (admin ? '<button type="button" class="pfl-cfg-mini" onclick="pfSetBasePreset()" title="Сделать текущую раскладку базовой для ' + count + ' ' + pfW + ' (для всех)" aria-label="Сделать базовой">' + PIN_IC + '</button>' : '') +
+                (admin && hasBase ? '<button type="button" class="pfl-cfg-mini" onclick="pfResetBasePreset()" title="Сбросить базовую для ' + count + ' ' + pfW + ' к системной" aria-label="Сбросить базовую">' + UNDO_SVG + '</button>' : '') +
+            '</div>' +
             (dashCfg.saved
                 ? '<button type="button" class="pfl-cfg-item" onclick="pfLayoutRestoreSaved()">' + UNDO_SVG +
                     '<span><b>Индивидуальная</b><i>ваша сохранённая раскладка</i></span></button>'
@@ -2625,15 +2641,44 @@
         order.push('trades'); span.trades = 12; col.trades = 1;
         return { order: order, col: col, span: span };
     }
+    // «Базовая» = для ТЕКУЩЕГО числа портфелей: если владелец/админ задал свою базовую для
+    // этого числа (pfBaseMap) — берём её (шаблон → реальные портфели), иначе системную pfdStandardCfg.
     window.pfLayoutReset = function () {
         pfdPushUndo();
-        var std = pfdStandardCfg();
-        dashCfg = { on: true, order: std.order, span: std.span, h: {}, hidden: {}, col: std.col, notes: dashCfg.notes || [] };
+        var count = visibleItems().length;
+        var base = pfBaseFor(count);
+        if (base) {
+            var c = pfPresetInstantiate(base);
+            dashCfg = { on: true, order: c.order, span: c.span, h: c.h, hidden: c.hidden, col: c.col,
+                notes: dashCfg.notes || [], allocPf: c.allocPf, saved: dashCfg.saved || null };
+        } else {
+            var std = pfdStandardCfg();
+            dashCfg = { on: true, order: std.order, span: std.span, h: {}, hidden: {}, col: std.col,
+                notes: dashCfg.notes || [], allocPf: dashCfg.allocPf || 'all', saved: dashCfg.saved || null };
+        }
         dashEdit = false;
         saveDashCfg();
         pfdRerender();
         updateLayoutBtn();
-        toast('Стандартная раскладка возвращена');
+        toast(base ? 'Базовая раскладка возвращена' : 'Стандартная раскладка возвращена');
+    };
+    // владелец/админ: закрепить ТЕКУЩИЙ вид как базовый для ТЕКУЩЕГО числа портфелей — у
+    // каждого числа своя базовая (по «Базовой» юзер получит её вместо системной).
+    window.pfSetBasePreset = function () {
+        if (!pfIsAdmin()) { toast('Базовую задаёт администратор', true); return; }
+        if (!pfCloudOn() || !(pfSupa().isAuthed && pfSupa().isAuthed())) { toast('Нужен вход в аккаунт', true); return; }
+        var count = visibleItems().length;
+        if (!count) { toast('Сначала добавьте портфель', true); return; }
+        pfdFlushNotes();
+        pfBaseMap[String(count)] = pfPresetTemplate(pfdSavedSnap());
+        pfPresetsPersist('Базовая для ' + count + ' портф. сохранена — у всех');
+    };
+    window.pfResetBasePreset = function () {
+        if (!pfIsAdmin()) return;
+        var count = visibleItems().length;
+        if (!pfBaseFor(count)) return;
+        delete pfBaseMap[String(count)];
+        pfPresetsPersist('Базовая для ' + count + ' портф. сброшена к системной');
     };
     // совместимость со старыми вызовами (Esc-хендлер и т.п.)
     window.pfDashToggleEdit = function () { if (dashEdit) window.pfLayoutClose(); else window.pfLayoutToggle(); };
@@ -2720,11 +2765,27 @@
         saveDashCfg();
         pfdRerender();
     };
+    // прокрутка к только что добавленному блоку + короткая подсветка — чтобы было видно,
+    // что он появился (ре-рендер асинхронный → опрашиваем DOM несколько кадров).
+    function pfdScrollToBlock(id) {
+        var tries = 0;
+        (function poll() {
+            var el = document.querySelector('#pfWrap .pfd-item[data-pfd="' + id + '"]');
+            if (el) {
+                try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) { try { el.scrollIntoView(); } catch (e2) {} }
+                el.classList.add('pfd-flash');
+                setTimeout(function () { try { el.classList.remove('pfd-flash'); } catch (e) {} }, 1500);
+                return;
+            }
+            if (tries++ < 45) requestAnimationFrame(poll);
+        })();
+    }
     window.pfdShowBlock = function (id) {
         pfdPushUndo();
         dashCfg.hidden[id] = 0;
         saveDashCfg();
         pfdRerender();
+        pfdScrollToBlock(id);
     };
 
     // ---- undo: каждый шаг правки кладёт снимок раскладки, Cmd/Ctrl+Z возвращает ----
@@ -2785,6 +2846,7 @@
         dashCfg.order = ord;
         saveDashCfg();
         pfdRerender();
+        pfdScrollToBlock('note:' + id);
     };
     window.pfdRemoveNote = function (blockId) {
         var id = String(blockId).replace(/^note:/, '');
@@ -5928,7 +5990,9 @@
         // настройки нового портфеля открываются сразу — с тем же чистым состоянием, что и
         // через ⚙ (pfToggleMenu): форма добавления раскрыта (портфель пуст), остальное закрыто
         openMenu = p.id; menuJustOpened = true;
-        editHold = {}; colorsOpen = false; delArm = false; addOpen = true;
+        // форма добавления СВЁРНУТА по умолчанию (раскрывается кнопкой «＋ Добавить актив») —
+        // раньше открывалась сразу, что мешало
+        editHold = {}; colorsOpen = false; delArm = false; addOpen = false;
         // новый портфель добавляется ВНИЗ; не прыгаем в начало страницы (своп innerHTML терял
         // scroll-anchor) — держим позицию главного скролла, чтобы к новому портфелю не бежать заново
         var sc = document.getElementById('contentArea'), scTop = sc ? sc.scrollTop : 0;

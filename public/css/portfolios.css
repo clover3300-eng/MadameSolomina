@@ -2340,6 +2340,17 @@ body.dark-mode .pfl-cfg-item svg { color: #93a2b8; }
 body.dark-mode .pfl-cfg-item i { color: #8fa0b6; }
 body.dark-mode .pfl-cfg-sep { background: #24304a; }
 body.dark-mode .pfl-cfg-item.primary b, body.dark-mode .pfl-cfg-item.primary svg { color: #a5b4fc; }
+/* строка «Базовая» + мини-кнопки админа (закрепить / сбросить базовую для N портфелей) */
+.pfl-cfg-baserow { display: flex; align-items: center; gap: 2px; }
+.pfl-cfg-baserow .pfl-cfg-item { flex: 1 1 auto; min-width: 0; }
+.pfl-cfg-mini { flex-shrink: 0; width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: #94a3b8; cursor: pointer; transition: background 0.12s, color 0.12s; }
+.pfl-cfg-mini svg { width: 15px; height: 15px; }
+.pfl-cfg-mini:hover { background: #eef1ff; color: #4338ca; }
+body.dark-mode .pfl-cfg-mini { color: #8fa0b6; }
+body.dark-mode .pfl-cfg-mini:hover { background: rgba(99, 102, 241, 0.2); color: #c7d2fe; }
+/* короткая подсветка только что добавленного блока — сразу видно, что он появился */
+@keyframes pfdFlash { 0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); } 16% { box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.55); } 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); } }
+.pfd-item.pfd-flash { animation: pfdFlash 1.4s ease-out; border-radius: 28px; }
 body.dark-mode .pfl-cfg-item.primary.done b, body.dark-mode .pfl-cfg-item.primary.done svg { color: #6ee7a8; }
 
 /* ---- готовые пресеты: карточки с мини-эскизом раскладки ---- */
