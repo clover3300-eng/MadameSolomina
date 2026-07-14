@@ -85,6 +85,12 @@
     /* активный сегмент — как «Карта/График» на Рынке (--mh-brand #141b26) */
     background: #141b26; color: #fff;
 }
+/* Тёмная тема: #141b26 — это ПОЧТИ ТОТ ЖЕ тон, что и тёмная страница/колодец под ним
+   (страница #0f172a, колодец rgba(255,255,255,.05) поверх нее) — активный сегмент
+   тонул и было не различить, какой из двух выбран. «Карта/График» на Рынке (--mh-brand)
+   решает это ровно так же: в тёмной теме бренд-плашка не остаётся тёмной, а становится
+   светлой мятной с тёмным текстом — переносим то же решение (тот же цвет #7ee2a8/#10201a). */
+body.dark-mode .stk-tg-btn.active { background: #7ee2a8; color: #10201a; }
 
 /* Сегмент класса активов (Акции/Облигации) — ГЛАВНЫЙ переключатель вкладки:
    визуально отделён от тумблера режима рядом — «колодец» вместо бордер-пилюли,
@@ -103,6 +109,8 @@
 .mt-asset-ico svg { width: 100%; height: 100%; }
 .mt-asset .stk-tg-btn.active .mt-asset-ico { color: #fff; }
 body.dark-mode .stk-toggle.mt-asset { background: rgba(255, 255, 255, 0.05); }
+body.dark-mode .mt-asset .stk-tg-btn.active { background: #7ee2a8; box-shadow: 0 5px 14px rgba(0, 0, 0, 0.3); }
+body.dark-mode .mt-asset .stk-tg-btn.active .mt-asset-ico { color: #10201a; }
 /* разделитель между классом активов и режимом списка */
 .stk-lead .stk-mode { position: relative; margin-left: 14px; }
 .stk-lead .stk-mode::before {

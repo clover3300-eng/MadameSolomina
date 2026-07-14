@@ -94,33 +94,35 @@ body.dark-mode #themeFab:hover { background: rgba(30,41,59,0.95); color: rgba(25
     #themeFab { right: 14px; bottom: calc(max(env(safe-area-inset-bottom, 0px), 12px) + 72px); }
 }
 
-/* ===== ТИХАЯ КНОПКА «НАЗАД» (слева от кнопки темы) =====
-   Возвращает на раздел, с которого пришли. Нарочно приглушена (полупрозрачна, без
-   заливки и тени) — «не притягивает внимание»; проявляется только при наведении.
+/* ===== КНОПКА «НАЗАД» (слева от кнопки темы) =====
+   Возвращает на раздел, с которого пришли. Раньше была полупрозрачной иконкой без
+   подписи (opacity:0.42, без заливки) — «не притягивает внимание» — и терялась рядом
+   с более яркой кнопкой темы; по просьбе сделана заметнее: та же «стеклянная» плашка
+   и тень, что у #themeFab, видна СРАЗУ (не только при наведении), плюс текстовая
+   подпись «Назад» — так понятно её назначение без наведения.
    Видна лишь когда есть куда возвращаться (класс .on ставит profile-menu.js). */
 #navBackFab {
     position: fixed; right: 74px; bottom: 20px; z-index: 879;
-    /* вытянута влево пилюлей — площадь нажатия больше, чем у круглой кнопки темы */
-    width: 68px; height: 42px; border-radius: 999px;
-    display: none; align-items: center; justify-content: center; cursor: pointer;
-    background: transparent;
-    border: 1px solid var(--card-border-aurora, rgba(24,38,60,0.12));
-    color: var(--text-slate, #64748B);
-    opacity: 0.42;
-    transition: opacity 0.2s, transform 0.15s, background 0.2s, color 0.2s, border-color 0.2s;
-}
-#navBackFab.on { display: flex; }
-#navBackFab:hover {
-    opacity: 1; transform: translateY(-2px); color: var(--text-deep, #1b2433);
-    background: var(--card-glass-aurora, rgba(255,255,255,0.9));
-    border-color: var(--card-border-aurora, rgba(255,255,255,0.45));
+    height: 42px; padding: 0 16px 0 13px; border-radius: 999px;
+    display: none; align-items: center; gap: 7px; cursor: pointer;
+    background: var(--card-glass-aurora, rgba(255,255,255,0.72));
+    border: 1px solid var(--card-border-aurora, rgba(255,255,255,0.45));
     backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    color: var(--text-slate, #64748B);
     box-shadow: 0 10px 24px -10px rgba(24,38,60,0.35);
+    font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 700; white-space: nowrap;
+    transition: transform 0.15s, box-shadow 0.2s, background 0.2s, color 0.2s, border-color 0.2s;
 }
-#navBackFab:active { transform: scale(0.95); }
-#navBackFab svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 2; }
-body.dark-mode #navBackFab { border-color: rgba(255,255,255,0.12); color: rgba(255,255,255,0.5); }
-body.dark-mode #navBackFab:hover { background: rgba(30,41,59,0.85); border-color: rgba(255,255,255,0.12); color: rgba(255,255,255,0.85); }
+#navBackFab.on { display: inline-flex; }
+#navBackFab:hover {
+    transform: translateY(-2px); color: var(--text-deep, #1b2433);
+    background: rgba(255,255,255,0.92);
+    box-shadow: 0 14px 28px -10px rgba(24,38,60,0.4);
+}
+#navBackFab:active { transform: scale(0.96); }
+#navBackFab svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2.3; flex-shrink: 0; }
+body.dark-mode #navBackFab { background: rgba(30,41,59,0.82); border-color: rgba(255,255,255,0.12); color: rgba(255,255,255,0.68); }
+body.dark-mode #navBackFab:hover { background: rgba(30,41,59,0.96); border-color: rgba(255,255,255,0.18); color: rgba(255,255,255,0.92); }
 /* прячем там же, где и кнопку темы (Главная / квиз / шторка компании), и на мобильном
    (там своя навигация — док и свайпы) — !important перебивает .on */
 body.tab-home #navBackFab,
@@ -145,8 +147,6 @@ body.sd-drawer-open #navBackFab { display: none !important; }
     opacity: 1; transform: none; pointer-events: auto; visibility: visible;
     transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s;
 }
-/* невидимый мостик до кнопки — чтобы hover не рвался в зазоре */
-#profileHub::before { content: ''; position: absolute; top: -18px; right: 0; width: 150px; height: 18px; }
 body.dark-mode #profileHub { background: #18222e; border-color: rgba(255,255,255,0.40); box-shadow: 0 24px 54px -20px rgba(0,0,0,0.55); }
 @media (max-width: 1023px) { #profileHub { top: 58px; right: 10px; } }
 @media (prefers-reduced-motion: reduce) { #profileHub { transition-duration: 0.01ms; } }

@@ -1061,10 +1061,15 @@ body.dark-mode .dm-news b { color: #e8eef7; }
 .pfcm-wds, .pfcm-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
 .pfcm-wd { text-align: center; font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700; color: #a5b0be; padding-bottom: 4px; }
 .pfcm-e { min-height: 40px; }
+/* Обводка/подложка — на самой ЯЧЕЙКЕ (скруглённый прямоугольник по её границам).
+   justify-content: center — содержимое (число, а под ним точки портфелей) стоит РОВНО
+   в середине ячейки. Было flex-start + несимметричный padding (3px сверху, 2px снизу):
+   число прижималось к верхней грани, и обводка облегала его неравномерно — сверху
+   впритык, снизу с зазором. Центрируем по обеим осям, padding симметричный. */
 .pfcm-d {
-    position: relative; min-height: 40px; box-sizing: border-box; padding: 3px 2px 2px;
+    position: relative; min-height: 40px; box-sizing: border-box; padding: 3px 2px;
     border: 0; border-radius: 9px; background: none; text-align: center;
-    display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 1px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
 }
 .pfcm-n { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11.5px; font-weight: 600; color: #64748b; font-style: normal; line-height: 1.1; }
 /* день без выплат — просто число; кликать не за чем, поэтому это <span>, не кнопка */
@@ -1080,7 +1085,10 @@ body.dark-mode .dm-news b { color: #e8eef7; }
 .pfcm-d.multi .pfcm-n { color: #0f172a; font-weight: 700; }
 .pfcm-d.has.today { box-shadow: inset 0 0 0 1.5px #1b2433; }
 .pfcm-d.sel { box-shadow: inset 0 0 0 2px #1b2433; }
-.pfcm-dots { display: flex; gap: 2px; }
+/* точки портфелей — «висят» под числом, не сдвигая его с центра ячейки: без этого
+   в днях с выплатами число уезжало вверх, а в соседних пустых оставалось по центру,
+   и вся строка сетки читалась как рваная */
+.pfcm-dots { position: absolute; left: 0; right: 0; bottom: 4px; display: flex; gap: 2px; justify-content: center; }
 .pfcm-dots i { width: 4px; height: 4px; border-radius: 50%; }
 
 /* Заданная высота виджета (.pfd-hset): контент ПОДСТРАИВАЕТСЯ под размер — сетка
@@ -1089,7 +1097,6 @@ body.dark-mode .dm-news b { color: #e8eef7; }
 .pfd-item.pfd-hset .pf-calmblk .pfcm-grid { flex: 1 1 auto; min-height: 0; grid-auto-rows: 1fr; }
 .pfd-item.pfd-hset .pf-calmblk .pfcm-d,
 .pfd-item.pfd-hset .pf-calmblk .pfcm-e { min-height: 0; }
-.pfd-item.pfd-hset .pf-calmblk .pfcm-d { justify-content: center; }
 .pfd-item.pfd-hset .pf-calmblk .pfcm-day { flex: 0 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
 
 /* раскрытый день — список бумаг под сеткой */
@@ -1721,10 +1728,27 @@ body.dark-mode .pfl3-abtn:hover { background: rgba(255, 255, 255, 0.08); color: 
 #panel-portfolios .pfm-extra { flex: 1 1 220px; }
 
 /* ============ 17. «Избранное»: глаз-скрытие и поповер «Что такое потенциал» ============ */
-/* Глаз .pfd-eye висит в правом-верхнем углу блока (top:17/right:18), а на строке заголовка
-   «Избранного» там же стоит «+» → терминал (margin-left:auto). Резервируем ему место, как
-   это уже сделано у «Сводки» (.pfs2-eyebrow, portfolios.css). */
-#panel-portfolios .pfd-item[data-pfd="fav"] .pf-fav > .pf-ch { padding-right: 46px; }
+/* Глаз-скрытие «Избранного» (.pff-hide) — РЯДОМ с инфо-иконкой внутри .pff-head-r
+   (см. favHtml/showHide в portfolios.js), а не угловым оверлеем .pfd-eye поверх карточки:
+   тот наезжал на «+» → терминал (margin-left:auto тянет его в тот же угол) и заставлял
+   держать под него специальный padding-right, отчего «+» съезжал левее своего обычного
+   места. Компонент — калька .pfd-cardrm/.pfd-cardcfg: тихая иконка без фона/рамки,
+   проявляется только по hover блока. */
+.pff-hide {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; flex-shrink: 0; padding: 0;
+    border: 0; border-radius: 9px; background: transparent; color: #9aa7b8; cursor: pointer;
+    opacity: 0; transition: opacity 0.12s, background 0.12s, color 0.12s;
+}
+.pff-hide svg { width: 15px; height: 15px; }
+.pfd-item:hover .pff-hide, .pff-hide:focus-visible { opacity: 1; }
+.pff-hide:hover { background: rgba(24, 38, 60, 0.06); color: #1b2433; }
+body.dark-mode .pff-hide { color: #7e8ea3; }
+body.dark-mode .pff-hide:hover { background: rgba(255,255,255,0.08); color: #f4f8fd; }
+/* узкая правая колонка (.pf-topgrid-fav) — компонент .pff-hide здесь не рендерится вовсе
+   (showHide=false в классическом виде), но на всякий случай не даём ему растягивать
+   компактную круглую .pff-info там, где та уже урезана до иконки-без-текста */
+.pf-topgrid-fav .pff-hide { width: 34px; height: 34px; }
 
 /* Поповер-объяснение «потенциала» — АБСОЛЮТНЫЙ (.pff-tipbox) и раскрывается вниз из шапки
    карточки, а тело блока в сетке обрезано (.pfd-item.pfd-hset .pfd-body { overflow:hidden }

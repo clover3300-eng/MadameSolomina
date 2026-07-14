@@ -2,7 +2,7 @@
 // ЛИЧНЫЙ КАБИНЕТ
 // =============================================
 // Круглая кнопка-аватар (#topProfileBtn, шапка, все вкладки кроме
-// Главной) раскрывает по наведению/клику/Enter панель #profileHub:
+// Главной) раскрывает по клику/Enter панель #profileHub:
 //   • Профиль — имя/фамилия/email (+ привязка Telegram у облачных),
 //   • API брокера — токен для будущей автозагрузки портфеля,
 //   • Тарифы — маркетинговый задел,
@@ -340,14 +340,16 @@
         });
         syncFabIcon();
 
-        // Тихая кнопка «назад» слева от темы: возвращает на раздел, с которого пришли.
-        // Видна только когда есть куда возвращаться, приглушена, чтобы не отвлекать.
+        // Кнопка «назад» слева от темы: возвращает на раздел, с которого пришли.
+        // Видна только когда есть куда возвращаться; подпись рядом с иконкой — чтобы
+        // назначение читалось сразу, без наведения (раньше была просто полупрозрачная
+        // стрелка и терялась рядом с яркой кнопкой темы).
         backFab = document.createElement('div');
         backFab.id = 'navBackFab';
         backFab.setAttribute('role', 'button');
         backFab.setAttribute('aria-label', 'Назад — к предыдущему разделу');
         backFab.title = 'Назад';
-        backFab.innerHTML = IC.back;
+        backFab.innerHTML = IC.back + '<span>Назад</span>';
         document.body.appendChild(backFab);
         backFab.addEventListener('click', navGoBack);
         installNavTracking();
@@ -707,38 +709,23 @@
     }
 
     // ---------- открытие/закрытие ----------
-    var openT = null, closeT = null;
-
     function openHub() {
-        clearTimeout(closeT);
         if (!hub || hub.classList.contains('open')) return;
         renderIdentity();
         hub.classList.add('open');
         btn.setAttribute('aria-expanded', 'true');
     }
     function closeHub() {
-        clearTimeout(openT);
         if (!hub || !hub.classList.contains('open')) return;
         hub.classList.remove('open');
         btn.setAttribute('aria-expanded', 'false');
     }
 
     function wire() {
-        var canHover = window.matchMedia && window.matchMedia('(hover: hover)').matches;
-        if (canHover) {
-            btn.addEventListener('mouseenter', function () {
-                clearTimeout(closeT);
-                openT = setTimeout(openHub, 110);
-            });
-            btn.addEventListener('mouseleave', function () {
-                clearTimeout(openT);
-                closeT = setTimeout(closeHub, 280);
-            });
-            hub.addEventListener('mouseenter', function () { clearTimeout(closeT); });
-            hub.addEventListener('mouseleave', function () { closeT = setTimeout(closeHub, 280); });
-        }
+        // Открывается ТОЛЬКО по клику (раньше открывалась ещё и по наведению — мешало,
+        // когда курсор просто проходил над аватаром по пути к чему-то другому). Закрытие —
+        // повторный клик по аватару, клик снаружи (pointerdown ниже) или Escape.
         btn.addEventListener('click', function () {
-            clearTimeout(openT); clearTimeout(closeT);
             if (hub.classList.contains('open')) closeHub(); else openHub();
         });
         // клавиатура: кнопка-аватар — это div role="button", сам по себе Enter/Space
@@ -746,7 +733,6 @@
         btn.addEventListener('keydown', function (e) {
             if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
                 e.preventDefault();
-                clearTimeout(openT); clearTimeout(closeT);
                 if (hub.classList.contains('open')) { closeHub(); }
                 else {
                     openHub();

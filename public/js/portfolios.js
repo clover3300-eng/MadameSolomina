@@ -1249,7 +1249,12 @@
             //  • нечётное число портфелей (1 или 3) → календарь в свободной ячейке сетки,
             //    чётное — отдельной полноширинной карточкой под сеткой.
             var n = visibleItems().length;   // раскладка считает только ВИДИМЫЕ карточки
-            var favStr = favHtml();
+            // showHide = сработает ли ниже КОНСТРУКТОРНАЯ ветка (pfdBodyHtml) — та же
+            // проверка, что решает branch на пару строк ниже (pfdActive()). Считаем её
+            // здесь заранее: favStr — ОДНА строка на оба branch'а (constructor/classic),
+            // и хвост скрытия нужен только там, где карточка обёрнута в .pfd-item с
+            // «Видимостью» в шапке — в классической правой колонке скрывать нечем.
+            var favStr = favHtml(pfdActive());
             // Календарь выплат показывать не о чем (нет ни облигаций, ни акций с известными
             // будущими дивидендами) → не рендерим его вовсе, а на его место — и в свободной
             // ячейке сетки, и внизу колонки — встают компактные «Ставки рынка» (см.
@@ -2300,7 +2305,7 @@
         (dashCfg.notes || []).forEach(function (nt) {
             blocks.push({ id: 'note:' + nt.id, name: 'Заметка', htmlFn: function () { return pfdNoteHtml(nt); }, span: 4, isNote: true });
         });
-        if (!noBonds) blocks.push({ id: 'rates', name: 'Ставки', htmlFn: ratesHtml, span: 12 });
+        if (!noBonds) blocks.push({ id: 'rates', name: 'Ставки', htmlFn: function () { return ratesHtml('rates'); }, span: 12 });
         // «История сделок»: на подвкладке «Операции» — полноэкранный журнал (asPage)
         var tr = tradesHtml(dashTab === 'ops');
         if (tr) blocks.push({ id: 'trades', name: 'История сделок', htmlFn: function () { return tr; }, span: 12 });
@@ -2664,9 +2669,12 @@
             //    в chrome не дублируем;
             //  • ВИДЖЕТ (defHidden: KPI/график/карта/новости) — УДАЛИТЬ (корзина .pfd-cardrm ВНУТРИ
             //    карточки, как у заметки, по hover), вернётся из «Конструктор → Добавить блок»;
-            //  • «Календарь выплат»/«Сводка»/«Избранное»/«Ставки рынка» — СКРЫТЬ глазом .pfc-act
-            //    В ШАПКЕ карточки (.pfd-eye, правый-верхний угол напротив заголовка, ТОЧНО как у
-            //    портфеля, виден всегда), вернуть — через меню «Видимость» в шапке;
+            //  • «Календарь выплат»/«Сводка» — СКРЫТЬ глазом .pfc-act В ШАПКЕ карточки (.pfd-eye,
+            //    правый-верхний угол напротив заголовка, ТОЧНО как у портфеля, виден всегда),
+            //    вернуть — через меню «Видимость» в шапке;
+            //  • «Избранное» — свой глаз ВНУТРИ шапки, рядом с инфо-иконкой, по hover
+            //    (см. favHtml/showHide) — угловой оверлей там наезжал на «+» → терминал;
+            //  • «Ставки рынка» — свой глаз в последней плитке, по hover (см. ratesHtml);
             //  • «История сделок» — своего on-card глаза НЕТ (правый угол шапки занят .pft-toggle);
             //    скрыть/показать — из меню «Видимость».
             var hideBtn = '';
@@ -2680,12 +2688,11 @@
                 // открывает поповер .pfdcfg-pop прямо на блоке (см. pfdCfgOpen ниже)
                 hideBtn = '<button class="pfd-cardcfg" title="Настройки виджета" aria-label="Настройки виджета" onclick="pfdCfgOpen(\'' + jsArg(b.id) + '\', event)">' + PFDCFG_GEAR_SVG + '</button>' +
                     '<button class="pfd-cardrm" title="Удалить виджет (вернуть — «Добавить блок» в Конструкторе)" aria-label="Удалить виджет" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + NOTE_TRASH_SVG + '</button>';
-            } else if (b.id === 'cal' || b.id === 'sum' || b.id === 'fav') {
+            } else if (b.id === 'cal' || b.id === 'sum') {
                 // глаз-скрытие — ТОЧНО как в карточке портфеля (.pfc-act), в правом-верхнем углу
                 // напротив заголовка, видимый постоянно (не в зазоре-бирке). Исключение: когда
                 // блок cal показывает «Ставки рынка» (noBonds) — заголовка нет, а глаз сидит в
-                // последней плитке (см. ratesStackHtml), угловой оверлей не нужен. Полоса
-                // «Ставки рынка» (rates) — там же, в своей последней плитке (см. ratesHtml).
+                // последней плитке (см. ratesStackHtml), угловой оверлей не нужен.
                 if (!(b.id === 'cal' && noBonds)) {
                     hideBtn = '<span class="pfd-eye"><button class="pfc-act" title="Скрыть блок (вернуть — «Видимость» в шапке)" aria-label="Скрыть блок" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + EYEOFF_SVG + '</button></span>';
                 }
@@ -6165,7 +6172,7 @@
         if (favSort === 'news') pool = pool.slice().sort(function (a, b) { return newsDateOf(b) - newsDateOf(a); });
         return pool;
     }
-    function favHtml() {
+    function favHtml(showHide) {
         if (typeof window.stkEnsureLoaded === 'function') { try { window.stkEnsureLoaded(); } catch (e) {} }
         var favs = favShown();
         var inner;
@@ -6206,6 +6213,11 @@
                     // задержкой и в системном стиле — свой показывается мгновенно и в тоне приложения
                     '<span class="pff-info-wrap"><button class="pff-info" type="button" aria-label="Что такое потенциал">' + INFO_SVG + '<span>Что такое потенциал?</span></button>' +
                     '<span class="pff-tipbox" role="tooltip">' + esc(POT_TIP) + '</span></span>' +
+                    // глаз-скрытие — РЯДОМ с инфо-иконкой (не в углу карточки, где раньше
+                    // наезжал на «+»): тихая иконка, проявляется только по hover карточки,
+                    // как и корзина/шестерёнка виджетов (.pfd-cardrm). Только в конструкторе —
+                    // у классической правой колонки нет «Видимости» в шапке, скрывать нечем.
+                    (showHide ? '<button class="pff-hide" type="button" onclick="pfdHideBlock(\'fav\')" title="Скрыть блок (вернуть — «Видимость» в шапке)" aria-label="Скрыть блок">' + EYEOFF_SVG + '</button>' : '') +
                     // фильтр сортировки избранного (вместо кнопки «Все акции»): по потенциалу / по свежести новостей
                     '<div class="pff-sort" role="tablist">' +
                         '<button class="pff-sort-b' + (favSort === 'pot' ? ' on' : '') + '" onclick="pfSetFavSort(\'pot\')" title="Сначала с наибольшим потенциалом">Потенциал</button>' +
@@ -6293,11 +6305,17 @@
     }
     // полноширинная горизонтальная полоса ставок под сеткой — показывается ВСЕГДА,
     // когда есть хоть одна облигация хоть в одном портфеле (т.е. «Календарь выплат» тоже виден)
-    // Глаз-скрытие — в ПОСЛЕДНЕЙ плитке (тот же .pf-ratestile-eye, что у стопки ratesStackHtml):
+    // hideId — как у ratesStackHtml: глаз-скрытие рисуем ТОЛЬКО когда явно передан id
+    // (конструкторная ветка передаёт 'rates', классический вызов — без аргумента). У
+    // классического вида нет «Видимости» в шапке, скрывать там нечем — кнопка не должна
+    // ни рисоваться (мёртвый клик), ни быть кликабельной по неосторожному hover.
+    // Сама кнопка — в ПОСЛЕДНЕЙ плитке (тот же .pf-ratestile-eye, что у ratesStackHtml):
     // у полосы нет шапки, и угловой оверлей .pfd-eye лёг бы поверх значения плитки.
-    function ratesHtml() {
+    function ratesHtml(hideId) {
         var tiles = rateTiles();
-        var eye = '<button class="pfc-act pf-ratestile-eye" title="Скрыть блок (вернуть — «Видимость» в шапке)" aria-label="Скрыть блок ставок" onclick="pfdHideBlock(\'rates\')">' + EYEOFF_SVG + '</button>';
+        var eye = hideId
+            ? '<button class="pfc-act pf-ratestile-eye" title="Скрыть блок (вернуть — «Видимость» в шапке)" aria-label="Скрыть блок ставок" onclick="pfdHideBlock(\'' + jsArg(hideId) + '\')">' + EYEOFF_SVG + '</button>'
+            : '';
         return '<div class="d3-ratesband pf-ratesband"><div class="drt-grid">' +
             tiles.map(function (t, i) {
                 return rateTileHtml(t, i === tiles.length - 1 ? eye : '');
@@ -6603,7 +6621,7 @@
         var cards = document.querySelectorAll('#pfWrap .pf-fav');
         if (!cards.length) return;
         cards.forEach(function (card) {
-            var tmp = document.createElement('div'); tmp.innerHTML = favHtml();
+            var tmp = document.createElement('div'); tmp.innerHTML = favHtml(pfdActive());
             if (tmp.firstChild) card.parentNode.replaceChild(tmp.firstChild, card);
         });
         if (typeof renderFavNews === 'function') renderFavNews();

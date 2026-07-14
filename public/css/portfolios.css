@@ -163,7 +163,12 @@ body.dark-mode .pf-sumcard {
    на полноширинную карточку (там же .pff-grid и по @media 620/560px), в колонке им тесно —
    принудительно тот же компактный вид, но не по ширине окна, а потому что колонка узкая. */
 .pf-topgrid-fav .pf-ch { flex-wrap: wrap; padding: 22px 18px 14px; }
-.pf-topgrid-fav .pff-head-r { margin-left: 0; width: 100%; justify-content: space-between; }
+/* Раскладка ряда: слева группа «инфо + скрыть» (они про одно — служебные иконки шапки и
+   должны читаться как пара), фильтр сортировки — прижат к правому краю.
+   Было space-between: свободное место делилось МЕЖДУ ВСЕМИ тремя, и глаз-скрытие уезжал
+   на ~100px от инфо-иконки, повисая один посреди шапки. */
+.pf-topgrid-fav .pff-head-r { margin-left: 0; width: 100%; justify-content: flex-start; }
+.pf-topgrid-fav .pff-sort { margin-left: auto; }
 .pf-topgrid-fav .pff-info span { display: none; }
 .pf-topgrid-fav .pff-info { width: 40px; height: 40px; padding: 0; justify-content: center; border-radius: 50%; }
 /* «Избранное» — та же фиксированная высота, что у карточки портфеля (.pf-card 674px), чтобы
@@ -1897,13 +1902,17 @@ body.dark-mode .tbmk-c.neg { color: #f87171; }
 /* чётное число портфелей — полоса ставок узкой колонкой под сеткой (не на всю ширину) */
 .pf-ratesstack--flow { max-width: 460px; }
 /* Заголовка «Ставки рынка» больше нет — глаз-скрытие всего блока сидит в ПОСЛЕДНЕЙ плитке
-   (правый-верхний угол), тихо: без фона/рамки, приглушённый, ярче по hover блока/кнопки. */
+   (правый-верхний угол), тихо: без фона/рамки. Рисуется ТОЛЬКО в конструкторе (см. hideId
+   в ratesHtml/ratesStackHtml — классический вызов его не передаёт), поэтому кнопка всегда
+   внутри .pfd-item, и проявляется по hover блока — как .pfd-cardrm/.pff-hide, не отдельным
+   полупрозрачным пятном поверх плитки. */
 .pf-ratesstack-grid .drt-tile--eye { position: relative; }
 .pf-ratestile-eye.pfc-act {
     position: absolute; top: 7px; right: 7px; width: 24px; height: 24px; border-radius: 7px;
-    border-color: transparent; background: transparent; color: #94a3b8; opacity: 0.7; z-index: 2;
+    border-color: transparent; background: transparent; color: #94a3b8; opacity: 0; z-index: 2;
+    transition: opacity 0.12s, background 0.12s, color 0.12s;
 }
-.pf-ratesstack:hover .pf-ratestile-eye.pfc-act { opacity: 1; }
+.pfd-item:hover .pf-ratestile-eye.pfc-act, .pf-ratestile-eye.pfc-act:focus-visible { opacity: 1; }
 .pf-ratestile-eye.pfc-act:hover { background: rgba(24,38,60,0.06); color: #1b2433; }
 .pf-ratestile-eye.pfc-act svg { width: 13px; height: 13px; }
 body.dark-mode .pf-ratestile-eye.pfc-act { color: #8595ab; background: transparent; }
