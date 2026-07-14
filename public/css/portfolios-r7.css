@@ -118,6 +118,16 @@ body.dark-mode #panel-portfolios .pff2-list .pff-tk { color: #f4f8fd; }
     background: none; padding: 0;
 }
 #panel-portfolios .pff2-list .pff-news { background: transparent; border: 0; padding-left: 0; padding-right: 0; }
+/* Поля — как у «Заметки» (.pf-noteblk: карточка 0 22px 20px, шапка без своих боковых полей):
+   заголовок, подзаголовок и строки списка стоят на ОДНОЙ вертикали 22px от края карточки.
+   Раньше шапка отбивалась на 18px, а тело — на 14px, и в колонке рядом с заметкой два
+   заголовка не совпадали. Боковые поля живут на .pf-ch/.pff-body, а не на карточке:
+   .pff-body — скролл-контейнер, его фон обязан доходить до скруглённого края. */
+#panel-portfolios .pf-fav > .pf-ch,
+#panel-portfolios .pf-topgrid-fav .pf-fav > .pf-ch { padding: 22px 22px 14px; }
+#panel-portfolios .pf-fav .pff-body,
+#panel-portfolios .pf-topgrid-fav .pff-body { padding: 4px 22px 20px; }
+#panel-portfolios .pff2-list .pff-tile { padding-left: 0; padding-right: 0; }
 
 /* ============ 7. «График капитала»: пилюли периода нижним рядом ============ */
 .pfcap-ranges {
@@ -596,7 +606,11 @@ body.dark-mode .pfx-corner-pv { background: #16202f; }
     transition: border-color 0.13s, box-shadow 0.13s, transform 0.1s;
 }
 .pfl2-card:hover { border-color: #c9d4e4; box-shadow: 0 8px 22px -12px rgba(15, 23, 42, 0.3); }
+/* .sel — карточка ОТМЕЧЕНА (поедет в дашборд); выбор множественный, отмеченных сразу
+   несколько. .cur — у неё сейчас открыты настройки справа; она одна, и её выделяем
+   только чуть плотнее кольцом, чтобы не спорить с самой отметкой. */
 .pfl2-card.sel { border-color: #4453ef; box-shadow: 0 0 0 1px #4453ef, 0 10px 26px -12px rgba(68, 83, 239, 0.45); background: #fdfdff; }
+.pfl2-card.sel.cur { box-shadow: 0 0 0 3px rgba(68, 83, 239, 0.22), 0 10px 26px -12px rgba(68, 83, 239, 0.45); }
 .pfl2-card-h { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
 .pfl2-card-h b { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; letter-spacing: -0.01em; color: #0f172a; }
 .pfl2-check {
@@ -665,6 +679,11 @@ body.dark-mode .pfl2-gate:hover { background: rgba(255, 255, 255, 0.08); color: 
 .pfl2-foot-r { display: flex; align-items: center; gap: 9px; flex-shrink: 0; }
 .pfl2-addbtn { background: linear-gradient(#5563f6, #4453ef) !important; padding: 11px 18px; }
 .pfl2-addbtn:hover { background: linear-gradient(#6672f8, #4f5ef4) !important; }
+/* ничего не отмечено — кнопке нечего добавлять */
+.pfl2-addbtn[disabled] { opacity: 0.4; cursor: default; box-shadow: none; }
+.pfl2-addbtn[disabled]:hover { background: linear-gradient(#5563f6, #4453ef) !important; }
+/* список отмеченных в подвале может быть длинным — пусть переносится, а не обрезается */
+.pfl2-foot .pfl2-sel span { white-space: normal; overflow: visible; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 /* пикер в тёмной теме */
 body.dark-mode .pfl2-side { border-right-color: #22304a; }
 body.dark-mode .pfl2-search { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.12); }

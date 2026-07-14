@@ -2424,16 +2424,19 @@
         pfdAddWidget(id);
         pflSelectedId = null;   // блок ушёл со списка → pflInitPreview выберет следующий
     };
-    // R7: после ре-рендера пикера убеждаемся, что выбранный виджет есть в текущем списке —
-    // иначе выбираем первый (разметка pfl2 уже собрана в pflPanelHtml с актуальным состоянием)
+    // R7: после ре-рендера пикера чистим выбор от виджетов, которых в каталоге больше нет
+    // (админ спрятал / портфелей стало меньше). Выбор МНОЖЕСТВЕННЫЙ и переживает смену
+    // категории/поиска — набирать пачку можно из разных разделов, поэтому фильтруем по
+    // ПОЛНОМУ каталогу (pfl2Visible), а не по видимому списку (pfl2Filtered).
     function pflInitPreview() {
         if (!dq('pflPanel')) return;
-        var list = pfl2Filtered();
-        if (!list.length) return;
-        if (!list.some(function (w) { return w.id === pfl2Sel; })) {
-            pfl2Sel = list[0].id;
-            pfl2Paint(['main', 'set', 'foot']);
-        }
+        var ok = {};
+        pfl2Visible().forEach(function (w) { ok[w.id] = 1; });
+        var kept = pfl2SelIds.filter(function (id) { return ok[id]; });
+        if (kept.length === pfl2SelIds.length && (!pfl2Sel || ok[pfl2Sel])) return;
+        pfl2SelIds = kept;
+        if (!pfl2Sel || !ok[pfl2Sel]) pfl2Sel = kept.length ? kept[kept.length - 1] : null;
+        pfl2Paint(['main', 'set', 'foot']);
     }
 
     function pfdBodyHtml(favStr, noBonds) {
@@ -2975,9 +2978,11 @@
             });
         });
     }
-    window.pfdAddNote = function () {
+    // batch=true — заметка добавляется в составе пачки из пикера: снимок undo, сохранение,
+    // ре-рендер и подкрутку делает вызывающий один раз на всю пачку (см. pfl2Add)
+    window.pfdAddNote = function (batch) {
         pfdFlushNotes();
-        pfdPushUndo();
+        if (!batch) pfdPushUndo();
         var id = genId('n');
         dashCfg.notes = (dashCfg.notes || []).concat([pfdNormNote({ id: id })]);
         dashCfg.hidden['note:' + id] = 0;
@@ -2987,6 +2992,7 @@
         for (var i = 0; i < ord.length; i++) if (ord[i].indexOf('note:') === 0) lastNoteIdx = i;
         if (lastNoteIdx >= 0) ord.splice(lastNoteIdx + 1, 0, 'note:' + id); else ord.push('note:' + id);
         dashCfg.order = ord;
+        if (batch) return;
         saveDashCfg();
         pfdRerender();
         pfdScrollToBlock('note:' + id);
@@ -7040,7 +7046,20 @@
         return list;
     }
     var pfl2Cat = 'pop', pfl2Q = '', pfl2Sel = 'cap';
-    var pfl2Opts = { size: 'm', theme: 'light', view: 'line', period: '30' };
+    // ВЫБОР — МНОЖЕСТВЕННЫЙ: pfl2SelIds — все отмеченные виджеты в порядке выбора (их и
+    // добавит кнопка), pfl2Sel — тот, чьи настройки показаны справа (последний нажатый).
+    // Клик по карточке переключает её участие в выборе; настройки — СВОИ у каждого
+    // виджета (pfl2OptMap), поэтому в одной пачке можно добавить светлый график и
+    // тёмный список, не перебивая опции друг другу.
+    var pfl2SelIds = ['cap'];
+    var pfl2OptMap = {};
+    function pfl2DefOpts() { return { size: 'm', theme: 'light', view: 'line', period: '30' }; }
+    function pfl2OptsOf(id) {
+        if (!id) return pfl2DefOpts();
+        if (!pfl2OptMap[id]) pfl2OptMap[id] = pfl2DefOpts();
+        return pfl2OptMap[id];
+    }
+    function pfl2IsSel(id) { return pfl2SelIds.indexOf(id) >= 0; }
     // каталог с учётом видимости: скрытые админом виджеты (pfWGates) обычный
     // пользователь не видит вовсе; админ видит все (скрытые — приглушёнными)
     function pfl2Visible() {
@@ -7237,20 +7256,23 @@
         var CHECK = '<span class="pfl2-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>';
         var admin = pfIsAdmin();
         var cards = list.map(function (w) {
-            var sel = pfl2Sel === w.id;
+            var sel = pfl2IsSel(w.id);          // отмечен галочкой — поедет в дашборд
+            var cur = pfl2Sel === w.id;         // его настройки открыты справа
             var added = pfl2IsAdded(w.id);
             var gated = !!pfWGates[w.id];
             // админ/владелец: глаз на карточке скрывает виджет из каталога у ВСЕХ пользователей
             var eye = admin ? '<button type="button" class="pfl2-gate' + (gated ? ' off' : '') + '" title="' +
                 (gated ? 'Скрыт у пользователей — нажмите, чтобы вернуть' : 'Скрыть виджет у всех пользователей') + '"' +
                 ' onclick="pfl2GateToggle(\'' + jsArg(w.id) + '\', event)">' + (gated ? EYEOFF_SVG : EYE_SVG) + '</button>' : '';
-            // выбранная карточка — живое превью: настройки справа (тема/вид/высота/период)
-            // отражаются прямо в демо, видно что добавляешь
-            var demoCls = 'pfl2-demo' + (sel ? ' dm-' + pfl2Opts.size + (pfl2Opts.theme === 'dark' ? ' dm-dark' : '') : '');
-            return '<div class="pfl2-card' + (sel ? ' sel' : '') + (gated ? ' gated' : '') + '" role="button" tabindex="0" onclick="pfl2Pick(\'' + jsArg(w.id) + '\')">' +
+            // отмеченная карточка — живое превью: её СОБСТВЕННЫЕ настройки (тема/вид/высота/
+            // период) отражаются прямо в демо, видно что добавляешь
+            var o = sel ? pfl2OptsOf(w.id) : null;
+            var demoCls = 'pfl2-demo' + (o ? ' dm-' + o.size + (o.theme === 'dark' ? ' dm-dark' : '') : '');
+            return '<div class="pfl2-card' + (sel ? ' sel' : '') + (cur ? ' cur' : '') + (gated ? ' gated' : '') +
+                '" role="button" tabindex="0" aria-pressed="' + (sel ? 'true' : 'false') + '" onclick="pfl2Pick(\'' + jsArg(w.id) + '\')">' +
                 '<div class="pfl2-card-h"><b>' + esc(w.name) + '</b>' + eye + (sel ? CHECK : '') + '</div>' +
                 '<span class="pfl2-card-d">' + esc(w.desc) + '</span>' +
-                '<div class="' + demoCls + '">' + pfl2DemoHtml(w.id, sel ? pfl2Opts : null) + '</div>' +
+                '<div class="' + demoCls + '">' + pfl2DemoHtml(w.id, o) + '</div>' +
                 (gated ? '<span class="pfl2-added pfl2-gatebdg">скрыт у всех</span>' : (added ? '<span class="pfl2-added">на дашборде</span>' : '')) +
             '</div>';
         }).join('');
@@ -7261,7 +7283,7 @@
     function pfl2SetHtml() {
         var w = pfl2ById(pfl2Sel);
         if (!w) return '<div class="pfl2-set-t">Настройки виджета</div><div class="pfl2-none">Выберите виджет слева.</div>';
-        var o = pfl2Opts;
+        var o = pfl2OptsOf(pfl2Sel);
         function seg(key, opts) {
             return '<div class="pfl2-seg">' + opts.map(function (x) {
                 return '<button type="button" class="pfl2-seg-b' + (o[key] === x[0] ? ' on' : '') + '" onclick="pfl2SetOpt(\'' + key + '\',\'' + x[0] + '\')">' + x[1] + '</button>';
@@ -7278,19 +7300,33 @@
         var viewSeg = '<label class="pfl2-lbl">Вид графика</label>' + seg('view', [['line', PFD_ICO_CAP], ['bars', PFD_ICO_KPI]]);
         var themeSeg = '<label class="pfl2-lbl">Тема</label>' + seg('theme', [['light', '☀ Светлая'], ['dark', '☾ Тёмная']]);
         var sizeSeg = '<label class="pfl2-lbl">Высота виджета</label>' + seg('size', [['s', 'S'], ['m', 'M'], ['l', 'L']]);
-        return '<div class="pfl2-set-t">Настройки виджета</div>' +
+        // подпись, что настройки — этого виджета: в пачке выбранных их несколько,
+        // и «Тема/Высота» без имени читались бы как общие для всех
+        return '<div class="pfl2-set-t">Настройки · ' + esc(w.name) + '</div>' +
             (w.chart ? periodSel + curSel + viewSeg : '') +
             themeSeg + sizeSeg +
-            '<div class="pfl2-set-hint">Размеры и место виджета всегда можно поменять позже — просто перетащите его или потяните за кромку.</div>';
+            '<div class="pfl2-set-hint">Настройки — у каждого виджета свои. Размеры и место всегда можно поменять позже — просто перетащите виджет или потяните за кромку.</div>';
     }
-    function pfl2SizeLabel() { return pfl2Opts.size === 's' ? 'Компактный' : pfl2Opts.size === 'l' ? 'Большой' : 'Средний размер'; }
+    function pfl2SizeLabel(id) { var s = pfl2OptsOf(id).size; return s === 's' ? 'Компактный' : s === 'l' ? 'Большой' : 'Средний размер'; }
     function pfl2FootHtml() {
-        var w = pfl2ById(pfl2Sel);
-        return '<div class="pfl2-sel"><b>' + (w ? 'Выбран 1 виджет' : 'Виджет не выбран') + '</b>' +
-            '<span>' + (w ? esc(w.name) + ' · ' + pfl2SizeLabel() : 'кликните карточку в списке') + '</span></div>' +
+        var n = pfl2SelIds.length;
+        // список выбранных именами: видно всю пачку до нажатия «Добавить»
+        var names = pfl2SelIds.map(function (id) {
+            var w = pfl2ById(id);
+            return w ? w.name : id;
+        });
+        var sub = !n ? 'кликните карточки в списке — можно отметить сразу несколько'
+            : n === 1 ? esc(names[0]) + ' · ' + pfl2SizeLabel(pfl2SelIds[0])
+            : esc(names.join(', '));
+        var title = !n ? 'Виджеты не выбраны'
+            : 'Выбрано ' + n + ' ' + plural(n, 'виджет', 'виджета', 'виджетов');
+        var btnLbl = n > 1 ? 'Добавить ' + n + ' ' + plural(n, 'виджет', 'виджета', 'виджетов') : 'Добавить виджет';
+        return '<div class="pfl2-sel"><b>' + title + '</b><span>' + sub + '</span></div>' +
             '<div class="pfl2-foot-r">' +
+                (n ? '<button type="button" class="pfl-btn ghost" onclick="pfl2ClearSel()">Снять выбор</button>' : '') +
                 '<button type="button" class="pfl-btn ghost" onclick="pfLayoutClose()">Отмена</button>' +
-                '<button type="button" class="pfl-btn primary pfl2-addbtn" onclick="pfl2Add()">' + PFD_PLUS_SVG + '<span>Добавить виджет</span></button>' +
+                '<button type="button" class="pfl-btn primary pfl2-addbtn"' + (n ? '' : ' disabled') +
+                    ' onclick="pfl2Add()">' + PFD_PLUS_SVG + '<span>' + btnLbl + '</span></button>' +
             '</div>';
     }
     function pfl2Paint(parts) {
@@ -7302,33 +7338,81 @@
     }
     window.pfl2SetCat = function (k) { pfl2Cat = k; pfl2Q = ''; var i = dq('pfl2Qinp'); if (i) i.value = ''; pfl2Paint(['cats', 'main']); };
     window.pfl2Search = function (v) { pfl2Q = String(v || '').trim().toLowerCase(); pfl2Paint(['cats', 'main']); };
-    window.pfl2Pick = function (id) { pfl2Sel = id; pfl2Paint(['main', 'set', 'foot']); };
+    // клик по карточке ПЕРЕКЛЮЧАЕТ её участие в выборе (можно набрать пачку). Настройки
+    // справа показываем у последнего отмеченного; сняли последний — панель пустеет.
+    window.pfl2Pick = function (id) {
+        var i = pfl2SelIds.indexOf(id);
+        if (i >= 0) {
+            pfl2SelIds.splice(i, 1);
+            if (pfl2Sel === id) pfl2Sel = pfl2SelIds.length ? pfl2SelIds[pfl2SelIds.length - 1] : null;
+        } else {
+            pfl2SelIds.push(id);
+            pfl2Sel = id;
+        }
+        pfl2KeepScroll(function () { pfl2Paint(['main', 'set', 'foot']); });
+    };
+    window.pfl2ClearSel = function () {
+        pfl2SelIds = []; pfl2Sel = null;
+        pfl2KeepScroll(function () { pfl2Paint(['main', 'set', 'foot']); });
+    };
+    // innerHTML-своп списка сбрасывает его прокрутку — вокруг любой перерисовки
+    // центральной колонки позицию запоминаем и возвращаем
+    function pfl2KeepScroll(fn) {
+        var main = dq('pfl2Main'), st = main ? main.scrollTop : 0;
+        fn();
+        main = dq('pfl2Main'); if (main) main.scrollTop = st;
+    }
     window.pfl2SetOpt = function (k, v) {
-        pfl2Opts[k] = v;
+        if (!pfl2Sel) return;
+        pfl2OptsOf(pfl2Sel)[k] = v;
         // настройки видны СРАЗУ: демо выбранной карточки перерисовывается с новыми
         // опциями (тема/высота/вид/период). Скролл списка сохраняем — innerHTML-своп
         // среди прочего сбрасывает позицию.
-        var main = dq('pfl2Main'), st = main ? main.scrollTop : 0;
-        pfl2Paint(['main', 'set', 'foot']);
-        main = dq('pfl2Main'); if (main) main.scrollTop = st;
+        pfl2KeepScroll(function () { pfl2Paint(['main', 'set', 'foot']); });
     };
+    // Добавляем ВСЮ отмеченную пачку за один раз: один снимок для Cmd+Z, одна запись
+    // конфига и один ре-рендер на всех (иначе N виджетов = N перерисовок дашборда и
+    // N всплывашек). Уже показанные виджеты пропускаем и говорим об этом в итоге.
     window.pfl2Add = function () {
-        var id = pfl2Sel;
-        if (!id) { toast('Сначала выберите виджет', true); return; }
-        if (id === '__note') { pfdAddNote(); return; }
-        var real = (id === 'cap' && pfl2Opts.view === 'bars') ? 'cap2' : id;
-        // именно ЭТОТ вариант уже показан → не дублируем, просто подсвечиваем его
-        var m = dashCfg.hidden || {};
+        if (!pfl2SelIds.length) { toast('Сначала выберите виджет', true); return; }
         var defOn = { fav: 1, cal: 1, rates: 1, trades: 1, sum: 1 };
-        var shownAlready = defOn[real] ? !m[real] : m[real] === 0;
-        if (shownAlready) { toast('Виджет уже на дашборде'); pfdScrollToBlock(real); return; }
-        pfdAddWidget(real);
         var hMap = { s: 300, l: 560 };
-        if (pfl2Opts.size !== 'm') dashCfg.h[real] = hMap[pfl2Opts.size]; else delete dashCfg.h[real];
-        if (pfl2Opts.theme === 'dark') dashCfg.thm[real] = 'dark'; else delete dashCfg.thm[real];
-        if (real === 'cap' || real === 'cap2') pfdCapRange = pfl2Opts.period || 'all';
+        var added = [], skipped = 0, notes = 0;
+        pfdPushUndo();
+        pfl2SelIds.forEach(function (id) {
+            if (id === '__note') { pfdAddNote(true); notes++; return; }
+            var o = pfl2OptsOf(id);
+            // «График капитала» — одно имя каталога на два блока-дизайна (линия/столбцы)
+            var real = (id === 'cap' && o.view === 'bars') ? 'cap2' : id;
+            var m = dashCfg.hidden || {};
+            var shownAlready = defOn[real] ? !m[real] : m[real] === 0;
+            if (shownAlready) { skipped++; return; }
+            dashCfg.hidden[real] = 0;
+            // «Панель управления» — всегда верхней полосой во всю ширину
+            if (real === 'panel') {
+                dashCfg.order = (dashCfg.order || []).filter(function (x) { return x !== 'panel'; });
+                dashCfg.order.unshift('panel');
+                dashCfg.span = dashCfg.span || {}; dashCfg.span.panel = 12;
+                dashCfg.col = dashCfg.col || {}; dashCfg.col.panel = 1;
+            }
+            if (o.size !== 'm') dashCfg.h[real] = hMap[o.size]; else delete dashCfg.h[real];
+            if (o.theme === 'dark') dashCfg.thm[real] = 'dark'; else delete dashCfg.thm[real];
+            if (real === 'cap' || real === 'cap2') pfdCapRange = o.period || 'all';
+            added.push(real);
+        });
         saveDashCfg();
+        pfl2SelIds = []; pfl2Sel = null;
         pfdRerender();
+        var n = added.length + notes;
+        if (!n) toast(skipped === 1 ? 'Виджет уже на дашборде' : 'Все выбранные виджеты уже на дашборде');
+        else {
+            // к одиночному добавлению подкручиваем — к пачке нет: она может лечь в разные
+            // концы сетки, и прыжок к «первому попавшемуся» дезориентирует
+            if (n === 1 && added.length) pfdScrollToBlock(added[0]);
+            toast(n === 1 ? 'Блок добавлен на дашборд'
+                : 'Добавлено ' + n + ' ' + plural(n, 'виджет', 'виджета', 'виджетов') +
+                  (skipped ? ' · ' + skipped + ' уже ' + plural(skipped, 'был', 'было', 'было') + ' на дашборде' : ''));
+        }
     };
 
     // ====================================================================
