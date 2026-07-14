@@ -1036,3 +1036,74 @@ body.dark-mode .pfl-opt.active .pfl-opt-card { background: #16203a; }
 body.dark-mode .pfl-opt-cap b { color: #e8eef7; }
 body.dark-mode .pfl-opt-thumb { background: rgba(255,255,255,0.04); }
 body.dark-mode .pfl-opt-go { background: rgba(255,255,255,0.06); color: #8fa0b6; }
+
+/* ============ 18. Тема виджета «Стекло» (.pfd-thm-glass) ============
+   Третий вариант рядом со «Светлой» и «Тёмной». Эффект снят с плиток тепловой карты
+   в «Рынке» (.mh-tile, market-heatmap.css): полупрозрачная светлая поверхность +
+   диагональный блик-«проблеск» по наведению. Разница в том, что плитка карты
+   просвечивает свою заливку, а виджет — ФОН СТРАНИЦЫ, поэтому здесь настоящий
+   backdrop-filter. Работает в паре с тоном фона (#siteBgTiles): по белому пейзажу
+   стекло было бы не видно вовсе. */
+.pfd-item.pfd-thm-glass > .pfd-body > .pf-card2,
+.pfd-item.pfd-thm-glass > .pfd-body > * > .pf-card2,
+.pfd-item.pfd-thm-glass > .pfd-body > .dash2-card {
+    position: relative; overflow: hidden;
+    background: rgba(255, 255, 255, 0.55) !important;
+    border-color: rgba(255, 255, 255, 0.75) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(1.35);
+    backdrop-filter: blur(16px) saturate(1.35);
+    box-shadow: 0 16px 40px -20px rgba(24, 38, 60, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+/* блик — тот же приём и та же геометрия, что у .mh-tile::before */
+.pfd-item.pfd-thm-glass > .pfd-body > .pf-card2::before,
+.pfd-item.pfd-thm-glass > .pfd-body > .dash2-card::before {
+    content: ''; position: absolute; top: 0; left: -65%; width: 55%; height: 100%;
+    z-index: 3; pointer-events: none; transform: skewX(-18deg); opacity: 0;
+    background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+}
+.pfd-item.pfd-thm-glass:hover > .pfd-body > .pf-card2::before,
+.pfd-item.pfd-thm-glass:hover > .pfd-body > .dash2-card::before { animation: pfdSheen 0.72s ease; }
+@keyframes pfdSheen { 0% { left: -65%; opacity: 0; } 28% { opacity: 0.75; } 100% { left: 135%; opacity: 0; } }
+/* содержимое — поверх блика */
+.pfd-item.pfd-thm-glass .pf-ch, .pfd-item.pfd-thm-glass .pfcap-body,
+.pfd-item.pfd-thm-glass .pfcap-ranges { position: relative; z-index: 4; }
+/* на стекле текст держим тёмным (поверхность светлая), но плашки-«колодцы» внутри
+   гасим — иначе они лепят непрозрачные пятна поверх прозрачной карточки */
+.pfd-item.pfd-thm-glass .pfcap-kpi, .pfd-item.pfd-thm-glass .pfx-well {
+    background: rgba(255, 255, 255, 0.4); border-color: rgba(255, 255, 255, 0.6);
+}
+/* тёмная тема сайта: стекло становится дымчатым, а не молочным */
+body.dark-mode .pfd-item.pfd-thm-glass > .pfd-body > .pf-card2,
+body.dark-mode .pfd-item.pfd-thm-glass > .pfd-body > * > .pf-card2,
+body.dark-mode .pfd-item.pfd-thm-glass > .pfd-body > .dash2-card {
+    background: rgba(28, 39, 53, 0.55) !important;
+    border-color: rgba(255, 255, 255, 0.14) !important;
+    box-shadow: 0 16px 40px -20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+body.dark-mode .pfd-item.pfd-thm-glass > .pfd-body > .pf-card2::before,
+body.dark-mode .pfd-item.pfd-thm-glass > .pfd-body > .dash2-card::before {
+    background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+}
+/* Safari/фолбэк: без backdrop-filter прозрачная карточка читалась бы как «дырка» —
+   даём плотную поверхность, блик остаётся */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .pfd-item.pfd-thm-glass > .pfd-body > .pf-card2,
+    .pfd-item.pfd-thm-glass > .pfd-body > * > .pf-card2,
+    .pfd-item.pfd-thm-glass > .pfd-body > .dash2-card { background: rgba(255, 255, 255, 0.92) !important; }
+}
+
+/* демо-превью «стекло» в пикере: фона страницы под ним нет, поэтому имитируем —
+   подкладываем тот же тон, что у фона вкладок, и по нему пускаем стеклянную плашку */
+.pfl2-demo.dm-glass {
+    background: linear-gradient(135deg, #E7EEF7, #EDF1F7); border-radius: 10px; padding: 8px;
+    position: relative; overflow: hidden;
+}
+.pfl2-demo.dm-glass::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.45) 50%, transparent 65%);
+}
+.pfl2-demo.dm-glass > * {
+    background: rgba(255, 255, 255, 0.55); border-radius: 8px; padding: 6px;
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7);
+}

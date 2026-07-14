@@ -2555,7 +2555,10 @@
                 '<span class="pfd-rs-b"></span>' +
                 '<span class="pfd-rs"></span>' +
             '</div>';
-            var thmCls = ((dashCfg.thm || {})[b.id] === 'dark') ? ' pfd-thm-dark' : '';
+            // тема виджета: тёмная плашка или «стекло» (полупрозрачная поверхность с бликом,
+            // как у плиток тепловой карты) — см. .pfd-thm-* в portfolios-r7.css
+            var thmV = (dashCfg.thm || {})[b.id];
+            var thmCls = thmV === 'dark' ? ' pfd-thm-dark' : thmV === 'glass' ? ' pfd-thm-glass' : '';
             return '<div class="pfd-item' + hsetClass + thmCls + (b.defHidden ? ' pfd-rmable' : '') + '" data-pfd="' + esc(b.id) + '" style="' + style + '">' +
                 chrome +
                 '<div class="pfd-body">' + html + '</div>' +
@@ -7515,7 +7518,8 @@
             // отмеченная карточка — живое превью: её СОБСТВЕННЫЕ настройки (тема/вид/высота/
             // период) отражаются прямо в демо, видно что добавляешь
             var o = sel ? pfl2OptsOf(w.id) : null;
-            var demoCls = 'pfl2-demo' + (o ? ' dm-' + o.size + (o.theme === 'dark' ? ' dm-dark' : '') : '');
+            var demoCls = 'pfl2-demo' + (o ? ' dm-' + o.size +
+                (o.theme === 'dark' ? ' dm-dark' : o.theme === 'glass' ? ' dm-glass' : '') : '');
             return '<div class="pfl2-card' + (sel ? ' sel' : '') + (cur ? ' cur' : '') + (gated ? ' gated' : '') +
                 '" role="button" tabindex="0" aria-pressed="' + (sel ? 'true' : 'false') + '" onclick="pfl2Pick(\'' + jsArg(w.id) + '\')">' +
                 '<div class="pfl2-card-h"><b>' + esc(w.name) + '</b>' + eye + (sel ? CHECK : '') + '</div>' +
@@ -7546,7 +7550,9 @@
         var curSel = '<label class="pfl2-lbl">Валюта</label>' +
             '<select class="pfl2-select" disabled title="Пока только рубль"><option>₽ Рубль</option></select>';
         var viewSeg = '<label class="pfl2-lbl">Вид графика</label>' + seg('view', [['line', PFD_ICO_CAP], ['bars', PFD_ICO_KPI]]);
-        var themeSeg = '<label class="pfl2-lbl">Тема</label>' + seg('theme', [['light', '☀ Светлая'], ['dark', '☾ Тёмная']]);
+        // «Стекло» — полупрозрачная поверхность с диагональным бликом, как у плиток тепловой
+        // карты в «Рынке»: сквозь виджет просвечивает фон страницы
+        var themeSeg = '<label class="pfl2-lbl">Тема</label>' + seg('theme', [['light', '☀ Светлая'], ['dark', '☾ Тёмная'], ['glass', '◇ Стекло']]);
         var sizeSeg = '<label class="pfl2-lbl">Высота виджета</label>' + seg('size', [['s', 'S'], ['m', 'M'], ['l', 'L']]);
         // подпись, что настройки — этого виджета: в пачке выбранных их несколько,
         // и «Тема/Высота» без имени читались бы как общие для всех
@@ -7644,7 +7650,7 @@
                 dashCfg.col = dashCfg.col || {}; dashCfg.col.panel = 1;
             }
             if (o.size !== 'm') dashCfg.h[real] = hMap[o.size]; else delete dashCfg.h[real];
-            if (o.theme === 'dark') dashCfg.thm[real] = 'dark'; else delete dashCfg.thm[real];
+            if (o.theme === 'dark' || o.theme === 'glass') dashCfg.thm[real] = o.theme; else delete dashCfg.thm[real];
             if (real === 'cap' || real === 'cap2') pfdCapRange = o.period || 'all';
             added.push(real);
         });
