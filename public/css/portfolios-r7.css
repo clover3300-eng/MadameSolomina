@@ -245,15 +245,23 @@ body.dark-mode .pft-side.pay { color: #34d399; background: rgba(52, 211, 153, 0.
 
 /* ============ 10. Новые виджеты ============ */
 /* карточки-виджеты с шапкой pf-ch и внутренним паддингом как у pf-capblk */
-.pf-divsblk, .pf-assetsblk, .pf-opsblk, .pf-yieldblk, .pf-snapsblk, .pfx-setcard, .pfx-emptycard {
+.pf-divsblk, .pf-assetsblk, .pf-opsblk, .pf-yieldblk, .pf-snapsblk, .pfx-setcard, .pfx-emptycard,
+.pf-moversblk, .pf-idxblk, .pf-passiveblk, .pf-concblk {
     display: flex; flex-direction: column; box-sizing: border-box; padding: 0 22px 20px;
 }
 .pf-divsblk > .pf-ch, .pf-assetsblk > .pf-ch, .pf-opsblk > .pf-ch, .pf-yieldblk > .pf-ch,
-.pf-snapsblk > .pf-ch, .pfx-setcard > .pf-ch { padding-left: 0; padding-right: 0; }
+.pf-snapsblk > .pf-ch, .pfx-setcard > .pf-ch,
+.pf-moversblk > .pf-ch, .pf-idxblk > .pf-ch, .pf-passiveblk > .pf-ch, .pf-concblk > .pf-ch { padding-left: 0; padding-right: 0; }
 .pfd-item.pfd-hset .pf-divsblk, .pfd-item.pfd-hset .pf-assetsblk, .pfd-item.pfd-hset .pf-opsblk,
-.pfd-item.pfd-hset .pf-yieldblk, .pfd-item.pfd-hset .pf-snapsblk { height: 100%; }
+.pfd-item.pfd-hset .pf-yieldblk, .pfd-item.pfd-hset .pf-snapsblk,
+.pfd-item.pfd-hset .pf-moversblk, .pfd-item.pfd-hset .pf-idxblk,
+.pfd-item.pfd-hset .pf-passiveblk, .pfd-item.pfd-hset .pf-concblk { height: 100%; }
 .pfd-item.pfd-hset .pfas-list, .pfd-item.pfd-hset .pfsn-list,
 .pfd-item.pfd-hset .pfop-list, .pfd-item.pfd-hset .pfyl-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+/* виджеты с малым числом строк (Рынок сейчас, Пассивный доход, Дивиденды) при заданной
+   высоте РАСПРЕДЕЛЯЮТ строки по высоте — данные подстраиваются, а не жмутся к шапке */
+.pfd-item.pfd-hset .pfix-rows, .pfd-item.pfd-hset .pfpv-rows,
+.pfd-item.pfd-hset .pfdv-rows { flex: 1 1 auto; min-height: 0; justify-content: space-evenly; }
 
 /* — Дивиденды — */
 .pfdv-rows { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
@@ -605,6 +613,21 @@ body.dark-mode .pfx-corner-pv { background: #16202f; }
     font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
     color: #12a35c; background: #eafaf1; border: 1px solid #b7ebc9; padding: 2px 8px; border-radius: 999px;
 }
+/* админ/владелец: глаз на карточке — скрыть виджет из каталога у всех пользователей */
+.pfl2-card-h b { flex: 1 1 auto; min-width: 0; }
+.pfl2-gate {
+    flex-shrink: 0; display: grid; place-items: center; width: 24px; height: 24px; margin: -3px 0;
+    border: 0; border-radius: 7px; background: transparent; color: #94a3b8; cursor: pointer; padding: 0;
+    opacity: 0; transition: opacity 0.12s, background 0.12s, color 0.12s;
+}
+.pfl2-card:hover .pfl2-gate, .pfl2-gate.off { opacity: 1; }
+.pfl2-gate:hover { background: #eef2f7; color: #475569; }
+.pfl2-gate.off { color: #b45309; }
+.pfl2-gate.off:hover { background: #fef3c7; color: #92610c; }
+.pfl2-gate svg { width: 14px; height: 14px; }
+.pfl2-card.gated .pfl2-card-d, .pfl2-card.gated .pfl2-demo { opacity: 0.45; filter: saturate(0.6); }
+.pfl2-gatebdg { color: #b45309; background: #fef3c7; border-color: #fde68a; }
+body.dark-mode .pfl2-gate:hover { background: rgba(255, 255, 255, 0.08); color: #cbd6e4; }
 /* правая колонка: настройки */
 .pfl2-set { flex: 0 0 236px; min-height: 0; overflow-y: auto; scrollbar-width: thin; padding: 16px; border-left: 1px solid #eef2f7; display: flex; flex-direction: column; gap: 7px; }
 .pfl2-set-t { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #0f172a; margin-bottom: 6px; }
@@ -664,6 +687,34 @@ body.dark-mode .pfl2-sel b { color: #e8eef7; }
 
 /* ============ 13. Демо-превью пикера (только статичные примеры) ============ */
 .pfl2-demo .dm-svg { width: 100%; height: 84px; display: block; }
+/* живое превью ВЫБРАННОЙ карточки: высота S/M/L и тёмная тема видны прямо в демо */
+.pfl2-demo.dm-s { min-height: 58px; max-height: 58px; }
+.pfl2-demo.dm-s .dm-svg { height: 50px; }
+.pfl2-demo.dm-s .dm-kcap-box .dm-svg, .pfl2-demo.dm-s .dm-kcap .dm-svg { height: 24px; }
+.pfl2-demo.dm-l { min-height: 148px; }
+.pfl2-demo.dm-l .dm-svg { height: 128px; }
+.pfl2-demo.dm-l .dm-kcap-box .dm-svg, .pfl2-demo.dm-l .dm-kcap .dm-svg { height: 64px; }
+.pfl2-demo .dm-bar { fill: #12a35c; opacity: 0.85; }
+.dm-cap { position: relative; }
+.dm-cap .dm-per {
+    position: absolute; left: 2px; bottom: 0; font-style: normal;
+    font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 800; letter-spacing: 0.05em;
+    text-transform: uppercase; color: #94a3b8;
+}
+.pfl2-demo.dm-dark { background: #101826; border: 1px solid #22304a; padding: 8px 10px; box-sizing: border-box; }
+.pfl2-demo.dm-dark .dm-grid { stroke: rgba(148, 163, 184, 0.28); }
+.pfl2-demo.dm-dark .dm-dot { stroke: #101826; }
+.pfl2-demo.dm-dark .dm-row { border-bottom-color: rgba(255, 255, 255, 0.08); }
+.pfl2-demo.dm-dark .dm-row em, .pfl2-demo.dm-dark .dm-row b:not(.pos):not(.neg),
+.pfl2-demo.dm-dark .dm-kcap-box > b, .pfl2-demo.dm-dark .dm-chip b,
+.pfl2-demo.dm-dark .dm-note b { color: #e8eef7; }
+.pfl2-demo.dm-dark .dm-kcap-box, .pfl2-demo.dm-dark .dm-chip {
+    background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.1);
+}
+.pfl2-demo.dm-dark .dm-bars i { color: #aab6c8; }
+.pfl2-demo.dm-dark .dm-note i:not(.done) { color: #93a2b8; }
+.pfl2-demo.dm-dark .dm-news span { color: #aab6c8; }
+.pfl2-demo.dm-dark .dm-news b { color: #e8eef7; }
 .pfl2-demo .dm-area { fill: rgba(18, 163, 92, 0.14); }
 .pfl2-demo .dm-line { fill: none; stroke: #12a35c; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
 .pfl2-demo .dm-grid { stroke: rgba(148, 163, 184, 0.22); stroke-width: 1; vector-effect: non-scaling-stroke; stroke-dasharray: 3 4; }

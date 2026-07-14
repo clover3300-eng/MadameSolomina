@@ -1531,6 +1531,7 @@
         host.style.display = 'flex';
         updateLayoutBtn();   // кнопка «Раскладка» в шапке страницы (рядом с названием раздела)
         pfPresetsFetch();    // подтягиваем общие пресеты (троттлинг 90с; no-op пока supa не готов)
+        pfWGatesFetch();     // и видимость виджетов каталога (тот же троттлинг)
     }
 
     // ---- «Видимость»: попап управления скрытием карточек (инфраструктура «Импорта») ----
@@ -1829,6 +1830,55 @@
                 if (okMsg) toast(okMsg);
             }, function () { pfPresetsSaving = false; toast('Не удалось сохранить пресет', true); });
     }
+    // ============ ВИДИМОСТЬ ВИДЖЕТОВ КАТАЛОГА (админ/владелец) ================
+    // Админ может скрыть любой виджет из пикера «Добавить виджет» у ВСЕХ обычных
+    // пользователей: глаз на карточке пикера. Конфиг общий — app_config (ключ
+    // 'widget_gates', value = { hidden: { <id виджета>: 1 } }): читают все (RLS
+    // select=true), пишет только is_admin(). Кэш — widget_gates_cache_v1 (ВНЕ
+    // cloud-sync.WATCH: конфиг общий, не пер-юзерный). Админ видит скрытые
+    // карточки приглушёнными с бейджем «скрыт у всех» — и может вернуть.
+    var WGATES_KEY = 'widget_gates';
+    var WGATES_CACHE = 'widget_gates_cache_v1';
+    var pfWGates = (function () {
+        try { var c = JSON.parse(localStorage.getItem(WGATES_CACHE) || 'null') || {}; return (c.hidden && typeof c.hidden === 'object') ? c.hidden : {}; }
+        catch (e) { return {}; }
+    })();
+    var pfWGatesFetchedAt = 0, pfWGatesFetching = false;
+    function pfWGatesSaveCache() {
+        try { localStorage.setItem(WGATES_CACHE, JSON.stringify({ hidden: pfWGates, at: Date.now() })); } catch (e) {}
+    }
+    function pfWGatesFetch(force) {
+        if (!pfCloudOn() || pfWGatesFetching) return;
+        if (!force && Date.now() - pfWGatesFetchedAt < PRESETS_REFRESH_MS) return;
+        pfWGatesFetching = true;
+        pfSupa().client.from('app_config').select('value').eq('key', WGATES_KEY).limit(1)
+            .then(function (res) {
+                pfWGatesFetching = false;
+                if (res.error) return;
+                pfWGatesFetchedAt = Date.now();
+                var v = (res.data && res.data[0] && res.data[0].value) || {};
+                pfWGates = (v.hidden && typeof v.hidden === 'object') ? v.hidden : {};
+                pfWGatesSaveCache();
+                if (dashEdit) pfl2Paint(['cats', 'main']);   // пикер открыт — освежаем каталог
+            }, function () { pfWGatesFetching = false; });
+    }
+    window.pfl2GateToggle = function (id, ev) {
+        if (ev) ev.stopPropagation();
+        if (!pfIsAdmin()) return;
+        if (pfWGates[id]) delete pfWGates[id]; else pfWGates[id] = 1;
+        var nowHidden = !!pfWGates[id];
+        pfWGatesSaveCache();
+        pfl2Paint(['cats', 'main']);
+        if (!pfCloudOn()) { toast('Без облака скрытие действует только на этом устройстве', true); return; }
+        var uid = (pfSupa().session && pfSupa().session.user) ? pfSupa().session.user.id : null;
+        pfSupa().client.from('app_config').upsert({ key: WGATES_KEY, value: { hidden: pfWGates }, updated_by: uid }, { onConflict: 'key' })
+            .then(function (res) {
+                if (res.error) { toast((pfSupa().errRu ? pfSupa().errRu(res.error) : 'Не удалось сохранить видимость виджета'), true); return; }
+                pfWGatesFetchedAt = Date.now();
+                toast(nowHidden ? 'Виджет скрыт у пользователей' : 'Виджет снова виден всем');
+            }, function () { toast('Не удалось сохранить видимость виджета', true); });
+    };
+
     // ---- шаблонизация: снимок раскладки → портативный (карточки портфелей позиционно) ----
     function pfPresetTemplate(snap) {
         snap = snap || {};
@@ -2642,6 +2692,7 @@
         if (!dashCfg.on) { dashCfg.on = true; saveDashCfg(); }
         dashEdit = true;
         closeImpMenus();
+        pfWGatesFetch();        // свежая видимость виджетов каталога к открытию пикера
         pfdRerender();          // отрисует карточку; pflInitPreview выберет первый блок
         updateLayoutBtn();
     };
@@ -4133,6 +4184,8 @@
     var pfdScrollEl = null;     // скролл-контейнер страницы (null = window)
     var pfdHomeNext = null;     // сосед справа на старте драга — для отмены (Esc)
     var pfdDragColKey = null, pfdDragColHome;   // прежняя колонка блока — для отмены
+    var pfdDragColStart = null;    // фактическая колонка блока на старте драга (освобождаемая на дропе)
+    var pfdDragRects = null;       // снимок мест ВСЕХ блоков на старте драга — для «обмена» на дропе
     var pfdRsCancel = null;     // отмена активного ресайза (функция) — Esc/выход из режима
 
     function pfdScrollParentOf(el) {
@@ -4171,6 +4224,18 @@
         pfdDragColKey = item.getAttribute('data-pfd');
         if (!dashCfg.col) dashCfg.col = {};
         pfdDragColHome = dashCfg.col[pfdDragColKey];
+        // фактическая стартовая колонка блока — освобождаемое место для «обмена» на дропе
+        var srect0 = pfdGridRect(item);
+        pfdDragColStart = srect0 ? srect0.col0 + 1 : null;
+        // снимок мест всех блоков ДО жеста: пока блок тащится, pfdPack перекладывает
+        // соседей (частичное перекрытие временно роняет их вниз), и «кто был в этом
+        // ряду» на дропе надёжно знает только стартовая картинка
+        pfdDragRects = {};
+        Array.prototype.forEach.call(item.parentNode.children, function (c) {
+            if (!c.classList || !c.classList.contains('pfd-item')) return;
+            var rr = pfdGridRect(c);
+            if (rr) pfdDragRects[c.getAttribute('data-pfd')] = rr;
+        });
         // фиксируем текущие колонки ВСЕХ блоков — чтобы при перетаскивании одного остальные
         // не «перепрыгивали» жадной упаковкой (предсказуемость: двигается только твой блок)
         Array.prototype.forEach.call(item.parentNode.children, function (c) {
@@ -4291,13 +4356,56 @@
         }
         pfdTick = requestAnimationFrame(pfdAutoScroll);
     }
+    // ---- «ОБМЕН МЕСТАМИ» НА ДРОПЕ: блок брошен на чужие колонки в ряду → сосед(и),
+    // которых он накрыл, переезжают в колонки, которые блок освободил. Раньше сосед
+    // оставался пришпилен к своей колонке, pfdPack складывал два блока стопкой — и
+    // сосед «падал» вниз, разваливая ряд из трёх. Решаем именно на дропе (не в
+    // процессе): во время жеста слот сам гуляет между рядами, и «тот же ряд»
+    // надёжно определяется только по точке отпускания.
+    function pfdResolveRowSwap(item, lp) {
+        var grid = document.getElementById('pfdGrid');
+        if (!grid || !lp) return;
+        var id = item.getAttribute('data-pfd');
+        var target = dashCfg.col ? dashCfg.col[id] : null;
+        var homeCol = pfdDragColStart;
+        if (target == null || homeCol == null || target === homeCol) return;
+        var gr = grid.getBoundingClientRect();
+        var z = gr.width / grid.clientWidth || 1;
+        var gap = parseFloat(getComputedStyle(grid).columnGap) || 16;
+        var colW = (grid.clientWidth - gap * 11) / 12;
+        var span = pfdSpanOf(item, colW, gap);
+        // частичный сдвиг (меньше своей ширины): освобождаемые колонки пересекаются с
+        // занятыми — соседа переселять некуда, оставляем свободную расстановку как есть
+        if (Math.abs(target - homeCol) < span) return;
+        var rowPx = (lp.y - gr.top) / z;      // строка под курсором (grid-auto-rows: 1px)
+        var t0 = target - 1, t1 = t0 + span, victims = [];
+        // жертвы — по СНИМКУ мест на старте жеста: к моменту дропа pfdPack уже мог
+        // временно уронить накрытого соседа вниз, и его живой rect ряд не выдаёт
+        Object.keys(pfdDragRects || {}).forEach(function (vid) {
+            if (vid === id) return;
+            var rc = pfdDragRects[vid];
+            if (rowPx < rc.row0 - 8 || rowPx > rc.row1 + 8) return;   // не тот ряд
+            var ov = Math.min(rc.right0, t1) - Math.max(rc.col0, t0);
+            if (ov < Math.min(span, rc.span) / 2) return;   // лёгкое касание краем — не обмен
+            victims.push({ id: vid, rc: rc });
+        });
+        if (!victims.length) return;
+        // вытесненные встают в освобождённые колонки слева направо
+        victims.sort(function (a, b) { return a.rc.col0 - b.rc.col0; });
+        var cur = homeCol;
+        victims.forEach(function (v) {
+            dashCfg.col[v.id] = clamp(cur, 1, 12 - v.rc.span + 1);
+            cur += v.rc.span;
+        });
+        pfdFlip(grid, pfdPack);   // соседи плавно съезжаются на новые места
+    }
     function pfdEndDrag(cancelled) {
         if (pfdTick) { cancelAnimationFrame(pfdTick); pfdTick = null; }
         document.body.classList.remove('pfd-dragging-now');
-        var item = pfdDragEl, g = pfdGhost, home = pfdHomeNext;
+        var item = pfdDragEl, g = pfdGhost, home = pfdHomeNext, lp = pfdLastPt;
         pfdDragEl = null; pfdGhost = null; pfdLastPt = null; pfdHomeNext = null;
         if (!item) return;
-        if (!cancelled) pfdSaveOrder();
+        if (!cancelled) { pfdResolveRowSwap(item, lp); pfdSaveOrder(); }
         else {
             // отмена (Esc/pointercancel): живая перестановка уже переставила блок в
             // DOM и закрепила колонку — возвращаем и порядок, и прежнюю колонку, иначе
@@ -4590,6 +4698,10 @@
             }
             if (changed) saveDashCfg();
             pfdHeatRepaintSoon();   // карта рынка перерисовывается под новый размер блока
+            // высота изменилась → перерисовываем содержимое: списки пересчитывают число
+            // строк под новый размер (pfdRowsFor), графики перетягиваются — данные
+            // «подстраиваются», а не клипуются молча
+            if (hMode && newH) pfdRerender();
         }
         // Esc/выход из режима во время ресайза: возвращаем стартовые размеры,
         // ничего не сохраняем — вместо прежнего выхода из конструктора «на полпути»
@@ -6513,9 +6625,10 @@
         return '<div class="dash2-card pf-card2 pf-assetsblk">' +
             pfCardHead('', 'Список активов', 'все бумаги по убыванию стоимости позиции', null) + body + '</div>';
     }
-    // «Последние операции»: 5 свежих сделок компактным списком
+    // «Последние операции»: 5 свежих сделок компактным списком (при заданной высоте
+    // блока строк больше/меньше — под размер, см. pfdRowsFor)
     function pfwOpsHtml() {
-        var list = collectTrades(false).slice(0, 5);
+        var list = collectTrades(false).slice(0, pfdRowsFor('ops', 5, 42, 150));
         var body;
         if (!list.length) {
             body = '<div class="pfal-empty">Операций пока нет — покупки появятся здесь автоматически.</div>';
@@ -6567,7 +6680,7 @@
         if (s.length < 2) {
             body = '<div class="pfal-empty">Снимки записываются раз в день при живых котировках — таблица появится со второго дня.</div>';
         } else {
-            var tail = s.slice(-11);
+            var tail = s.slice(-(pfdRowsFor('snaps', 10, 38, 110) + 1));   // строк по высоте блока
             var rows = '';
             for (var i = tail.length - 1; i >= 1; i--) {
                 var d = tail[i].v - tail[i - 1].v;
@@ -6602,6 +6715,15 @@
             pfCardHead('', 'Отчёты и экспорт', 'выгрузки, бэкап и импорт данных', null) + body + '</div>';
     }
 
+    // сколько строк списка влезает в заданную пользователем высоту блока (cfg.h):
+    // (высота − «хром» карточки: шапка/отступы/подвал) ÷ высота строки. Без заданной
+    // высоты — дефолт def (естественная высота виджета). Так содержимое ПОДСТРАИВАЕТСЯ
+    // под размер: виджет L показывает больше данных, а не пустоту под пятью строками.
+    function pfdRowsFor(id, def, rowH, chrome) {
+        var h = +((dashCfg.h || {})[id]) || 0;
+        if (!h) return def;
+        return clamp(Math.floor((h - (chrome || 96)) / rowH), 2, 40);
+    }
     // короткий формат числа для осей: 1 264 484 → «1,26 млн», 12 400 → «12 тыс»
     function pfxShortNum(v) {
         var a = Math.abs(v);
@@ -6625,7 +6747,7 @@
             });
         });
         rows.sort(function (a, b) { return Math.abs(b.chg) - Math.abs(a.chg); });
-        rows = rows.slice(0, 6);
+        rows = rows.slice(0, pfdRowsFor('movers', 6, 34, 110));   // строк больше при высоком блоке
         var body;
         if (!rows.length) {
             body = '<div class="pfal-empty">Появится с приходом дневных котировок — держите в портфеле хотя бы одну акцию.</div>';
@@ -6700,15 +6822,19 @@
         if (!list.length || !(total > 0)) {
             body = '<div class="pfal-empty">Добавьте бумаги — покажем, насколько портфель диверсифицирован.</div>';
         } else {
-            var top = list.slice(0, 5), topSum = 0;
+            // строк больше при высоком блоке; вердикт всегда по топ-5 (стабильная метрика,
+            // не зависящая от размера виджета)
+            var top = list.slice(0, Math.max(5, pfdRowsFor('conc', 5, 34, 150))), top5Sum = 0;
+            list.slice(0, 5).forEach(function (r) { top5Sum += r.v / total * 100; });
             var rows = top.map(function (r) {
-                var sh = r.v / total * 100; topSum += sh;
+                var sh = r.v / total * 100;
                 return '<div class="pfyl-row">' +
                     '<span class="pfyl-n pfmv-n"><b>' + esc(r.tk) + '</b></span>' +
                     '<span class="pfyl-barwrap"><span class="pfyl-bar ' + (sh > 40 ? 'neg' : 'pos') + '" style="width:' + clamp(sh, 3, 100).toFixed(1) + '%"></span></span>' +
                     '<b>' + sh.toFixed(1).replace('.', ',') + '%</b>' +
                 '</div>';
             }).join('');
+            var topSum = top5Sum;
             var verdict = topSum <= 45 ? ['ok', 'Хорошая диверсификация — топ-5 бумаг занимают ' + Math.round(topSum) + '% портфеля']
                 : topSum <= 70 ? ['mid', 'Умеренная концентрация — топ-5 бумаг занимают ' + Math.round(topSum) + '% портфеля']
                 : ['hot', 'Высокая концентрация — топ-5 бумаг занимают ' + Math.round(topSum) + '% портфеля'];
@@ -6909,8 +7035,15 @@
     }
     var pfl2Cat = 'pop', pfl2Q = '', pfl2Sel = 'cap';
     var pfl2Opts = { size: 'm', theme: 'light', view: 'line', period: '30' };
-    function pfl2Filtered() {
+    // каталог с учётом видимости: скрытые админом виджеты (pfWGates) обычный
+    // пользователь не видит вовсе; админ видит все (скрытые — приглушёнными)
+    function pfl2Visible() {
         var all = pfl2Catalog();
+        if (pfIsAdmin()) return all;
+        return all.filter(function (w) { return !pfWGates[w.id]; });
+    }
+    function pfl2Filtered() {
+        var all = pfl2Visible();
         if (pfl2Q) {
             return all.filter(function (w) {
                 return (w.name + ' ' + w.desc).toLowerCase().indexOf(pfl2Q) >= 0;
@@ -6936,9 +7069,24 @@
         '<path d="' + PFL2_DEMO_PATH + ' L 214 82 L 4 82 Z" class="dm-area"/>' +
         '<path d="' + PFL2_DEMO_PATH + '" class="dm-line"/>' +
         '<circle cx="214" cy="9" r="3.2" class="dm-dot"/></svg>';
-    function pfl2DemoHtml(id) {
+    // тот же график столбцами — для живого превью «Вид графика: столбцы»
+    var PFL2_DEMO_BARS = (function () {
+        var hs = [26, 32, 24, 38, 30, 44, 40, 52, 46, 58, 50, 64, 60, 70, 66, 74], out = '';
+        hs.forEach(function (h, i) {
+            out += '<rect x="' + (6 + i * 13.4) + '" y="' + (80 - h) + '" width="9" height="' + h + '" rx="2.5" class="dm-bar"/>';
+        });
+        return '<svg viewBox="0 0 220 84" class="dm-svg" preserveAspectRatio="none">' +
+            '<line x1="0" y1="22" x2="220" y2="22" class="dm-grid"/><line x1="0" y1="46" x2="220" y2="46" class="dm-grid"/><line x1="0" y1="70" x2="220" y2="70" class="dm-grid"/>' +
+            out + '</svg>';
+    })();
+    var PFL2_PERIOD_LBL = { 7: '7 дней', 30: '30 дней', 90: '3 месяца', 365: 'год', all: 'всё время' };
+    function pfl2DemoHtml(id, o) {
+        // o — опции живого превью (только у ВЫБРАННОЙ карточки): вид графика и период
+        // меняют само демо; тема и высота — классами контейнера (см. pfl2MainHtml)
         if (id === 'cap') {
-            return '<div class="dm-cap">' + PFL2_DEMO_LINE + '</div>';
+            var chart = (o && o.view === 'bars') ? PFL2_DEMO_BARS : PFL2_DEMO_LINE;
+            var per = o ? '<i class="dm-per">' + (PFL2_PERIOD_LBL[o.period] || '30 дней') + '</i>' : '';
+            return '<div class="dm-cap">' + chart + per + '</div>';
         }
         if (id === 'alloc') {
             return '<div class="dm-alloc"><svg viewBox="0 0 84 84" class="dm-donut">' +
@@ -7068,7 +7216,7 @@
     }
     // ---- отрисовка секций пикера ----
     function pfl2CatsHtml() {
-        var all = pfl2Catalog();
+        var all = pfl2Visible();
         return PFL2_CATS.map(function (c) {
             var n = all.filter(function (w) { return w.cats.indexOf(c[0]) >= 0; }).length;
             if (!n) return '';
@@ -7081,14 +7229,23 @@
         var list = pfl2Filtered();
         var title = pfl2Q ? ('Найдено: ' + list.length) : ((PFL2_CATS.filter(function (c) { return c[0] === pfl2Cat; })[0] || ['', 'Виджеты'])[1] + ' виджеты');
         var CHECK = '<span class="pfl2-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>';
+        var admin = pfIsAdmin();
         var cards = list.map(function (w) {
             var sel = pfl2Sel === w.id;
             var added = pfl2IsAdded(w.id);
-            return '<div class="pfl2-card' + (sel ? ' sel' : '') + '" role="button" tabindex="0" onclick="pfl2Pick(\'' + jsArg(w.id) + '\')">' +
-                '<div class="pfl2-card-h"><b>' + esc(w.name) + '</b>' + (sel ? CHECK : '') + '</div>' +
+            var gated = !!pfWGates[w.id];
+            // админ/владелец: глаз на карточке скрывает виджет из каталога у ВСЕХ пользователей
+            var eye = admin ? '<button type="button" class="pfl2-gate' + (gated ? ' off' : '') + '" title="' +
+                (gated ? 'Скрыт у пользователей — нажмите, чтобы вернуть' : 'Скрыть виджет у всех пользователей') + '"' +
+                ' onclick="pfl2GateToggle(\'' + jsArg(w.id) + '\', event)">' + (gated ? EYEOFF_SVG : EYE_SVG) + '</button>' : '';
+            // выбранная карточка — живое превью: настройки справа (тема/вид/высота/период)
+            // отражаются прямо в демо, видно что добавляешь
+            var demoCls = 'pfl2-demo' + (sel ? ' dm-' + pfl2Opts.size + (pfl2Opts.theme === 'dark' ? ' dm-dark' : '') : '');
+            return '<div class="pfl2-card' + (sel ? ' sel' : '') + (gated ? ' gated' : '') + '" role="button" tabindex="0" onclick="pfl2Pick(\'' + jsArg(w.id) + '\')">' +
+                '<div class="pfl2-card-h"><b>' + esc(w.name) + '</b>' + eye + (sel ? CHECK : '') + '</div>' +
                 '<span class="pfl2-card-d">' + esc(w.desc) + '</span>' +
-                '<div class="pfl2-demo">' + pfl2DemoHtml(w.id) + '</div>' +
-                (added ? '<span class="pfl2-added">на дашборде</span>' : '') +
+                '<div class="' + demoCls + '">' + pfl2DemoHtml(w.id, sel ? pfl2Opts : null) + '</div>' +
+                (gated ? '<span class="pfl2-added pfl2-gatebdg">скрыт у всех</span>' : (added ? '<span class="pfl2-added">на дашборде</span>' : '')) +
             '</div>';
         }).join('');
         return '<div class="pfl2-main-t">' + title + '</div>' +
@@ -7140,7 +7297,15 @@
     window.pfl2SetCat = function (k) { pfl2Cat = k; pfl2Q = ''; var i = dq('pfl2Qinp'); if (i) i.value = ''; pfl2Paint(['cats', 'main']); };
     window.pfl2Search = function (v) { pfl2Q = String(v || '').trim().toLowerCase(); pfl2Paint(['cats', 'main']); };
     window.pfl2Pick = function (id) { pfl2Sel = id; pfl2Paint(['main', 'set', 'foot']); };
-    window.pfl2SetOpt = function (k, v) { pfl2Opts[k] = v; pfl2Paint(['set', 'foot']); };
+    window.pfl2SetOpt = function (k, v) {
+        pfl2Opts[k] = v;
+        // настройки видны СРАЗУ: демо выбранной карточки перерисовывается с новыми
+        // опциями (тема/высота/вид/период). Скролл списка сохраняем — innerHTML-своп
+        // среди прочего сбрасывает позицию.
+        var main = dq('pfl2Main'), st = main ? main.scrollTop : 0;
+        pfl2Paint(['main', 'set', 'foot']);
+        main = dq('pfl2Main'); if (main) main.scrollTop = st;
+    };
     window.pfl2Add = function () {
         var id = pfl2Sel;
         if (!id) { toast('Сначала выберите виджет', true); return; }
@@ -7165,18 +7330,28 @@
     // ====================================================================
     window.pfAddPortfolio = function () {
         if (store.items.length >= MAX_CARDS) { toast('Максимум ' + MAX_CARDS + ' ' + plural(MAX_CARDS, 'портфель', 'портфеля', 'портфелей') + ' на странице', true); return; }
-        var p = makePortfolio(); store.items.push(p); saveStore();
+        // новый портфель появляется ВВЕРХУ — и в списке (unshift), и на дашборде
+        // (его блок в начало dashCfg.order; без col-пина masonry кладёт его в
+        // верхний левый угол, приколотые соседи остаются в своих колонках)
+        var p = makePortfolio(); store.items.unshift(p); saveStore();
+        var bid = 'pf:' + p.id;
+        if (Array.isArray(dashCfg.order)) {
+            var ix = dashCfg.order.indexOf(bid);
+            if (ix >= 0) dashCfg.order.splice(ix, 1);
+            dashCfg.order.unshift(bid);
+            saveDashCfg();
+        }
         // настройки нового портфеля открываются сразу — с тем же чистым состоянием, что и
         // через ⚙ (pfToggleMenu): форма добавления раскрыта (портфель пуст), остальное закрыто
         openMenu = p.id; menuJustOpened = true;
         // форма добавления СВЁРНУТА по умолчанию (раскрывается кнопкой «＋ Добавить актив») —
         // раньше открывалась сразу, что мешало
         editHold = {}; colorsOpen = false; delArm = false; addOpen = false;
-        // новый портфель добавляется ВНИЗ; не прыгаем в начало страницы (своп innerHTML терял
-        // scroll-anchor) — держим позицию главного скролла, чтобы к новому портфелю не бежать заново
-        var sc = document.getElementById('contentArea'), scTop = sc ? sc.scrollTop : 0;
         renderPortfolios();
-        if (sc && sc.scrollTop !== scTop) sc.scrollTop = scTop;
+        // и прокручиваем к нему наверх — портфель создаётся с открытыми настройками,
+        // пользователь должен его сразу видеть
+        var sc = document.getElementById('contentArea');
+        if (sc) { try { sc.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { sc.scrollTop = 0; } }
     };
     // Скопировать состав портфеля таблицей: облигации и акции — ОТДЕЛЬНЫМИ блоками, у
     // каждого своё жирное название раздела и своя строка заголовков (№ / Тикер / … ), между
