@@ -1394,3 +1394,245 @@ body.dark-mode .pf-skel, .pfd-item.pfd-thm-dark .pf-skel {
     background-size: 200% 100%;
 }
 @media (prefers-reduced-motion: reduce) { .pf-skel { animation: none; } }
+
+/* ============================================================
+   23. R8 — пер-вкладочные дашборды: виджеты подвкладки «Портфели»
+   (список портфелей / структура / сводные плитки), панель «Раскладки»
+   (pfl3) и пустое состояние подвкладки без виджетов.
+   ============================================================ */
+
+/* — карточки-виджеты с шапкой pf-ch, поля как у остальных (см. §10) — */
+.pf-plistblk, .pf-pstructblk, .pf-psumblk {
+    display: flex; flex-direction: column; box-sizing: border-box; padding: 0 22px 20px;
+}
+.pf-plistblk > .pf-ch, .pf-pstructblk > .pf-ch, .pf-psumblk > .pf-ch { padding-left: 0; padding-right: 0; }
+.pfd-item.pfd-hset .pf-plistblk, .pfd-item.pfd-hset .pf-pstructblk, .pfd-item.pfd-hset .pf-psumblk { height: 100%; }
+.pfd-item.pfd-hset .pfpl-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+/* у этих виджетов свои контролы в шапке — корзине хватает освобождённого угла */
+.pfd-item[data-pfd="plist"] .pfd-cardrm { top: 20px; }
+
+/* — «Мои портфели»: строки-список (референс-скрин) — */
+.pfpl-head-r { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.pfpl-add {
+    display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+    border: 0; border-radius: 11px; padding: 9px 14px;
+    background: linear-gradient(#5563f6, #4453ef); color: #fff;
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700;
+    box-shadow: 0 8px 18px -8px rgba(78, 92, 245, 0.75);
+    transition: background 0.13s, transform 0.1s;
+}
+.pfpl-add:hover { background: linear-gradient(#6672f8, #4f5ef4); }
+.pfpl-add:active { transform: translateY(1px); }
+.pfpl-add svg { width: 13px; height: 13px; }
+.pfpl-list { display: flex; flex-direction: column; margin-top: 4px; }
+.pfpl-row {
+    display: grid;
+    grid-template-columns: auto minmax(150px, 1.3fr) minmax(120px, 1fr) minmax(130px, 1.1fr) minmax(110px, 1fr) 132px auto;
+    gap: 16px; align-items: center; padding: 14px 2px;
+    border-bottom: 1px solid #eef2f7; cursor: pointer;
+    transition: background 0.1s;
+}
+.pfpl-row:hover { background: #f8fafc; }
+.pfpl-row:last-child { border-bottom: 0; }
+body.dark-mode .pfpl-row { border-bottom-color: rgba(255, 255, 255, 0.08); }
+body.dark-mode .pfpl-row:hover { background: rgba(255, 255, 255, 0.04); }
+.pfpl-ic {
+    width: 44px; height: 44px; border-radius: 13px; flex-shrink: 0;
+    display: grid; place-items: center;
+    color: var(--pc, #4453ef);
+    background: color-mix(in srgb, var(--pc, #4453ef) 12%, transparent);
+}
+.pfpl-ic svg { width: 20px; height: 20px; }
+.pfpl-id { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pfpl-id b {
+    font-family: 'Inter', sans-serif; font-size: 14.5px; font-weight: 800; letter-spacing: -0.01em;
+    color: #0f172a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+body.dark-mode .pfpl-id b { color: #f4f8fd; }
+.pfpl-id i { font-family: 'Inter', sans-serif; font-style: normal; font-size: 11px; font-weight: 600; color: #8494a7; }
+.pfpl-kpi { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pfpl-kpi i {
+    font-family: 'Inter', sans-serif; font-style: normal; font-size: 10px; font-weight: 700;
+    letter-spacing: 0.07em; text-transform: uppercase; color: #8494a7;
+}
+.pfpl-kpi b {
+    font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 14.5px; font-weight: 700;
+    color: #0f172a; white-space: nowrap;
+}
+body.dark-mode .pfpl-kpi b { color: #f4f8fd; }
+.pfpl-kpi b.pos { color: #119d5c; }
+.pfpl-kpi b.neg { color: #c2410c; }
+.pfpl-kpi b.muted { color: #94a3b8; }
+.pfpl-kpi em {
+    font-style: normal; font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+.pfpl-kpi em.pos { color: #119d5c; }
+.pfpl-kpi em.neg { color: #c2410c; }
+.pfpl-spark { display: block; min-width: 0; height: 38px; }
+.pfpl-spark-svg { width: 100%; height: 100%; display: block; }
+.pfpl-spark-svg .l { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.pfpl-spark-svg .a { stroke: none; }
+.pfpl-spark-svg.pos .l { stroke: #12a35c; }
+.pfpl-spark-svg.pos .a { fill: rgba(18, 163, 92, 0.12); }
+.pfpl-spark-svg.neg .l { stroke: #e0592b; }
+.pfpl-spark-svg.neg .a { fill: rgba(224, 89, 43, 0.1); }
+.pfpl-spark-svg.flat line { stroke: #cbd5e1; stroke-width: 2; stroke-dasharray: 3 5; stroke-linecap: round; }
+body.dark-mode .pfpl-spark-svg.flat line { stroke: rgba(255, 255, 255, 0.2); }
+.pfpl-gear { width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0; }
+.pfpl-gear svg { width: 16px; height: 16px; }
+/* узкий блок (span<9): прячем «Вложено» и спарклайн, ряды не ломаются.
+   Дети ряда по порядку: 1 иконка · 2 имя · 3 стоимость · 4 доходность ·
+   5 вложено · 6 спарклайн · 7 шестерёнка */
+.pf-plistblk { container-type: inline-size; }
+@container (max-width: 760px) {
+    .pfpl-row { grid-template-columns: auto minmax(130px, 1.3fr) minmax(110px, 1fr) minmax(120px, 1fr) auto; }
+    .pfpl-row > :nth-child(5), .pfpl-row > .pfpl-spark { display: none; }
+}
+@container (max-width: 470px) {
+    .pfpl-row { grid-template-columns: auto minmax(0, 1.3fr) minmax(90px, 1fr) auto; }
+    .pfpl-row > :nth-child(4) { display: none; }
+    .pfpl-head-r .pfpl-sort { display: none; }
+}
+
+/* — «Структура по портфелям»: кольцо + легенда — */
+.pfps-wrap { display: flex; align-items: center; gap: 26px; margin-top: 10px; flex-wrap: wrap; }
+.pfps-ring { position: relative; width: 170px; height: 170px; flex-shrink: 0; }
+.pfps-ring svg { width: 100%; height: 100%; display: block; }
+.pfps-center {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 2px; text-align: center; padding: 0 26px;
+}
+.pfps-center b {
+    font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 15px; font-weight: 800;
+    color: #0f172a; letter-spacing: -0.02em; white-space: nowrap;
+}
+body.dark-mode .pfps-center b { color: #f4f8fd; }
+.pfps-center span { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 600; color: #8494a7; }
+.pfps-legend { flex: 1 1 220px; min-width: 0; display: flex; flex-direction: column; }
+.pfps-lrow {
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto;
+    gap: 10px; align-items: center; padding: 9px 2px; border-bottom: 1px solid #eef2f7;
+}
+.pfps-lrow:last-child { border-bottom: 0; }
+body.dark-mode .pfps-lrow { border-bottom-color: rgba(255, 255, 255, 0.08); }
+.pfps-lrow i { width: 9px; height: 9px; border-radius: 99px; flex-shrink: 0; }
+.pfps-ln {
+    min-width: 0; font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 700; color: #1b2433;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+body.dark-mode .pfps-ln { color: #e8eef7; }
+.pfps-lv { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12.5px; font-weight: 700; color: #334155; white-space: nowrap; }
+body.dark-mode .pfps-lv { color: #cbd6e4; }
+.pfps-lp {
+    font-style: normal; font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 11.5px; font-weight: 700; color: #8494a7; min-width: 44px; text-align: right; white-space: nowrap;
+}
+
+/* — «Сводные показатели»: плитки 2×2 — */
+.pfsm-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 8px; }
+.pfsm-tile {
+    display: flex; flex-direction: column; gap: 5px; min-width: 0;
+    padding: 15px 16px 13px; border: 1px solid #eef2f7; border-radius: 14px; background: #fbfcfe;
+}
+body.dark-mode .pfsm-tile { border-color: rgba(255, 255, 255, 0.08); background: rgba(255, 255, 255, 0.03); }
+.pfsm-tile i {
+    font-family: 'Inter', sans-serif; font-style: normal; font-size: 10.5px; font-weight: 700;
+    letter-spacing: 0.05em; text-transform: uppercase; color: #8494a7;
+}
+.pfsm-tile b {
+    font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 19px; font-weight: 800;
+    color: #0f172a; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+body.dark-mode .pfsm-tile b { color: #f4f8fd; }
+.pfsm-tile b.pos { color: #119d5c; }
+.pfsm-tile b.neg { color: #c2410c; }
+.pfsm-chip {
+    align-self: flex-start; font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 700;
+    color: #64748b; background: rgba(24, 38, 60, 0.05); padding: 3px 9px; border-radius: 999px; white-space: nowrap;
+}
+body.dark-mode .pfsm-chip { background: rgba(255, 255, 255, 0.07); color: #b7c2d3; }
+.pfsm-chip.pos { color: #0f7a44; background: rgba(18, 163, 92, 0.1); }
+.pfsm-chip.neg { color: #b0421c; background: rgba(224, 89, 43, 0.1); }
+.pfd-item.pfd-hset .pf-psumblk .pfsm-grid { flex: 1 1 auto; min-height: 0; align-content: stretch; }
+
+/* — пустая подвкладка: приглашение собрать дашборд — */
+.pfx-emptytab {
+    box-sizing: border-box; padding: 44px 24px;
+    border: 1.5px dashed #d3dce8; border-radius: var(--pfr, 20px); background: rgba(255, 255, 255, 0.6);
+}
+body.dark-mode .pfx-emptytab { border-color: rgba(255, 255, 255, 0.14); background: rgba(255, 255, 255, 0.03); }
+.pfx-emptytab .pfpc-state { max-width: 460px; margin: 0 auto; }
+.pfx-emptytab-btn { margin-top: 16px; }
+
+/* — панель «Раскладки» (pfl3): список с эскизами + крупное превью — */
+.pfl-panel.pfl3 { max-height: min(84vh, 760px); }
+.pfl3-body { flex: 1; min-height: 0; display: flex; }
+.pfl3-list {
+    flex: 0 0 320px; min-height: 0; overflow-y: auto; scrollbar-width: thin;
+    display: flex; flex-direction: column; gap: 6px;
+    padding: 14px 12px; border-right: 1px solid #eef2f7;
+}
+body.dark-mode .pfl3-list { border-right-color: rgba(255, 255, 255, 0.08); }
+.pfl3-row {
+    display: flex; align-items: center; gap: 12px; cursor: pointer;
+    border: 1.5px solid #e7ecf3; border-radius: 13px; background: #fff; padding: 10px 12px;
+    transition: border-color 0.12s, background 0.12s, box-shadow 0.12s;
+}
+.pfl3-row:hover { border-color: #c9d4e4; background: #fbfcfe; }
+.pfl3-row.on { border-color: #4453ef; box-shadow: 0 0 0 1px #4453ef; background: #fdfdff; }
+.pfl3-row.gated { opacity: 0.62; }
+body.dark-mode .pfl3-row { background: #131c2e; border-color: #26324c; }
+body.dark-mode .pfl3-row:hover { border-color: #3a4c6d; }
+body.dark-mode .pfl3-row.on { border-color: #818cf8; box-shadow: 0 0 0 1px #818cf8; }
+.pfl3-thumb {
+    flex-shrink: 0; width: 74px; height: 48px; border-radius: 8px; overflow: hidden;
+    background: #f4f7fb; border: 1px solid #e7ecf3; display: grid; place-items: center;
+}
+.pfl3-thumb .pfl-thumb-svg { width: 100%; height: 100%; }
+body.dark-mode .pfl3-thumb { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); }
+.pfl3-cap { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.pfl3-cap b {
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #0f172a;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+body.dark-mode .pfl3-cap b { color: #f4f8fd; }
+.pfl3-cap i {
+    font-family: 'Inter', sans-serif; font-style: normal; font-size: 11px; font-weight: 600; color: #8494a7;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pfl3-now {
+    flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px;
+    font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 800; color: #0f7a44;
+    background: rgba(18, 163, 92, 0.1); border-radius: 999px; padding: 4px 9px;
+}
+.pfl3-now svg { width: 11px; height: 11px; }
+.pfl3-pv {
+    flex: 1; min-width: 0; min-height: 0; overflow-y: auto; scrollbar-width: thin;
+    padding: 18px 20px; background: #f8fafc; display: flex; flex-direction: column; gap: 14px;
+}
+body.dark-mode .pfl3-pv { background: #0d1626; }
+.pfl3-stage {
+    border: 1px solid #e7ecf3; border-radius: 15px; background: #fff; padding: 16px;
+    display: grid; place-items: center; min-height: 220px;
+}
+.pfl3-stage .pfl-thumb-svg { width: 100%; max-width: 560px; height: auto; max-height: 320px; }
+body.dark-mode .pfl3-stage { background: #131c2e; border-color: #26324c; }
+.pfl3-pvfoot { border-top: 0; padding: 0; background: transparent; }
+.pfl3-adm { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pfl3-abtn {
+    display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+    border: 1px solid #dbe4f0; border-radius: 10px; background: #fff; padding: 8px 12px;
+    font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700; color: #475569;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.pfl3-abtn:hover { background: #f4f7fb; border-color: #c3d0e0; color: #1e293b; }
+.pfl3-abtn svg { width: 13px; height: 13px; }
+.pfl3-abtn.off { color: #b45309; border-color: #f2dcb3; background: #fdf6e7; }
+.pfl3-abtn.danger { color: #b0421c; }
+.pfl3-abtn.danger:hover { background: rgba(224, 89, 43, 0.08); border-color: rgba(224, 89, 43, 0.3); }
+body.dark-mode .pfl3-abtn { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.12); color: #cbd6e4; }
+body.dark-mode .pfl3-abtn:hover { background: rgba(255, 255, 255, 0.08); color: #f4f8fd; }
+.pfl3-foot-hint { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: #8494a7; }
+/* кнопка-слайдеры героя: активное состояние, пока панель открыта */
+.pfx-hero .pfp-cfg.active .pfl-cfg-btn { background: rgba(255, 255, 255, 0.22); color: #fff; }

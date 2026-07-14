@@ -1269,15 +1269,16 @@
             // без большого бокса, см. ratesStackHtml); иначе — обычный «Календарь выплат»
             var cellCard = noBonds ? ratesStackHtml(needCell, calSpan) : paymentCalendarHtml(needCell, calSpan);
             // ---- R7: радиус карточек из настроек + первичная раскладка-референс ----
+            pfxSyncCfg();      // R8: dashCfg = конфиг активной подвкладки
             pfxApplyCorner();
             pfxSeedLayout();
             // Шапка вкладки: тёмный герой «Панель управления» + ряд подвкладок (Обзор |
-            // Портфели | Аналитика | …). На «Обзоре» ниже — прежний дашборд/классика,
-            // на остальных подвкладках — свои готовые раскладки (pfxTabBodyHtml).
+            // Портфели | Аналитика | …). R8: у КАЖДОЙ подвкладки свой дашборд-конструктор
+            // (pfdBodyHtml с её конфигом), «Обзор» дополнительно умеет классический вид.
             var chrome = pfxHeroHtml() + pfxTabsHtml();
             var body;
-            if (pfxTab !== 'overview' && store.items.length && pfxWide()) {
-                body = chrome + pfxTabBodyHtml(favStr, noBonds);
+            if (pfxEffTab() !== 'overview') {
+                body = chrome + pfdBodyHtml(favStr, noBonds);
             } else if (pfdActive()) {
                 // Конструктор: пользовательская раскладка — единая 12-колоночная
                 // сетка, порядок и размеры блоков из pf_dash_v1 (см. секцию выше)
@@ -1345,6 +1346,7 @@
             ensureDefaultImoexFlags(); // флаг IMOEX по умолчанию — ДО первого loadPfChart (см. комментарий выше)
             repaintOpenCharts();   // если какой-то график раскрыт — дорисовываем после ре-рендера
             repaintMiniCharts();   // мини-график «портфель vs IMOEX» в каждой карточке
+            pfPlistSparksSoon();   // спарклайны «Моих портфелей» без снимков — дорисовать из истории
             if (openMenu) {
                 var m = dq('pfMenu-' + openMenu); if (m) m.scrollTop = 0;
                 // пустой портфель → сразу ставим фокус на ввод тикера (интуитивнее)
@@ -1806,27 +1808,101 @@
                 saved: c.saved || null };                       // снимок сохранённой раскладки (для «Вернуть сохранённую»)
         } catch (e) { return { on: true, order: [], span: {}, h: {}, hidden: {}, col: {}, notes: [], allocPf: 'all', thm: {}, corner: 'std', saved: null }; }
     }
+    // ВНИМАНИЕ: список ручной — новый виджет обязан быть и здесь, иначе saveDashCfg
+    // молча вычистит его из hidden/order, и на дашборде он не появится вовсе.
+    function pfdKnownIds() {
+        var known = { cal: 1, calm: 1, rates: 1, trades: 1, fav: 1, sum: 1, panel: 1,
+            'kpi:cap': 1, 'kpi:day': 1, 'kpi:next': 1, cap: 1, cap2: 1, heat: 1, news: 1, alloc: 1,
+            divs: 1, assets: 1, ops: 1, yield: 1, snaps: 1, movers: 1, idx: 1, passive: 1, conc: 1,
+            plist: 1, pstruct: 1, psum: 1, pdetail: 1, reports: 1,
+            'set:corner': 1, 'set:vis': 1, 'set:layout': 1 };
+        store.items.forEach(function (p) { known['pf:' + p.id] = 1; });
+        (dashCfg.notes || []).forEach(function (n) { known['note:' + n.id] = 1; });
+        return known;
+    }
     function saveDashCfg() {
         try {
             // чистим ключи удалённых портфелей — конфиг не копит мусор (и не тащит
             // его в облако через cloud-sync). Скрытые портфели остаются в store.items,
             // их раскладка переживает «скрыть/показать».
-            // ВНИМАНИЕ: список ручной — новый виджет обязан быть и здесь, иначе saveDashCfg
-            // молча вычистит его из hidden/order, и на дашборде он не появится вовсе.
-            var known = { cal: 1, calm: 1, rates: 1, trades: 1, fav: 1, sum: 1, panel: 1,
-                'kpi:cap': 1, 'kpi:day': 1, 'kpi:next': 1, cap: 1, cap2: 1, heat: 1, news: 1, alloc: 1,
-                divs: 1, assets: 1, ops: 1, yield: 1, snaps: 1, movers: 1, idx: 1, passive: 1, conc: 1 };
-            store.items.forEach(function (p) { known['pf:' + p.id] = 1; });
-            (dashCfg.notes || []).forEach(function (n) { known['note:' + n.id] = 1; });
+            var known = pfdKnownIds();
             dashCfg.order = (dashCfg.order || []).filter(function (id) { return known[id]; });
             [dashCfg.span, dashCfg.h, dashCfg.hidden, dashCfg.col, dashCfg.thm].forEach(function (m) {
                 Object.keys(m || {}).forEach(function (id) { if (!known[id]) delete m[id]; });
             });
-            localStorage.setItem(DASH_KEY, JSON.stringify(dashCfg));
+            // R8: активная раскладка пер-вкладочная. «Обзор» живёт в старом ключе pf_dash_v1
+            // (совместимость + cloud-sync), остальные подвкладки — картой pf_dash_tabs_v1.
+            if (dashTab === 'overview') localStorage.setItem(DASH_KEY, JSON.stringify(dashCfg));
+            else {
+                pfTabsStore[dashTab] = dashCfg;
+                localStorage.setItem(DASH_TABS_KEY, JSON.stringify(pfTabsStore));
+            }
         } catch (e) {}
         // если открыта карточка настройки — держим кнопку «Сохранить/Сохранено» в актуальном
         // состоянии (правка после сохранения снова показывает «Сохранить»)
         try { if (dashEdit) pfdUpdateSaveBtn(); } catch (e) {}
+    }
+
+    // ============ R8: ПЕР-ВКЛАДОЧНЫЕ РАСКЛАДКИ ============================
+    // У КАЖДОЙ подвкладки (Обзор | Портфели | Аналитика | …) свой полноценный
+    // дашборд-конструктор: свои order/span/h/hidden/col/thm/notes/saved. Активный
+    // конфиг — всегда переменная dashCfg (весь конструктор работает с ней), а
+    // pfxSyncCfg подменяет её при смене подвкладки. dashTab — вкладка активного
+    // dashCfg. Новая подвкладка в PFX_TABS работает автоматически: без сида она
+    // начинается пустой сеткой с приглашением добавить виджеты.
+    var DASH_TABS_KEY = 'pf_dash_tabs_v1';
+    var dashTab = 'overview';
+    var pfTabCfgs = { overview: dashCfg };
+    var pfTabsStore = (function () {
+        try { var o = JSON.parse(localStorage.getItem(DASH_TABS_KEY) || 'null'); return (o && typeof o === 'object') ? o : {}; }
+        catch (e) { return {}; }
+    })();
+    // конфиг подвкладки: без corner (глобальный, живёт в overview-конфиге) и без on
+    // (подвкладки всегда живут сеткой — «классического» вида у них нет)
+    function normTabCfg(c) {
+        c = c || {};
+        var notes = Array.isArray(c.notes) ? c.notes.filter(function (n) { return n && n.id; }).map(pfdNormNote) : [];
+        return { on: true, order: Array.isArray(c.order) ? c.order : [], span: c.span || {}, h: c.h || {},
+            hidden: c.hidden || {}, col: c.col || {}, thm: (c.thm && typeof c.thm === 'object') ? c.thm : {},
+            notes: notes, allocPf: c.allocPf || 'all', saved: c.saved || null };
+    }
+    // сиды подвкладок: [id, col, span] — повторяют прежние статичные раскладки
+    // pfxTabBodyHtml, только теперь это стартовая точка конструктора, а не бетон
+    var PFX_TAB_SEEDS = {
+        ports: [['plist', 1, 12], ['pstruct', 1, 6], ['psum', 7, 6], ['pdetail', 1, 12]],
+        analytics: [['cap', 1, 8], ['alloc', 9, 4], ['yield', 1, 4], ['movers', 5, 4], ['conc', 9, 4], ['assets', 1, 8], ['idx', 9, 4]],
+        reports: [['reports', 1, 6], ['snaps', 7, 6]],
+        divs: [['divs', 1, 4], ['kpi:next', 5, 4], ['passive', 9, 4], ['cal', 1, 8], ['calm', 9, 4]],
+        ops: [['trades', 1, 12]],
+        settings: [['set:corner', 1, 6], ['set:vis', 7, 6], ['set:layout', 1, 6], ['reports', 7, 6]]
+    };
+    function pfxTabSeed(tab) {
+        var cfg = normTabCfg(null);
+        (PFX_TAB_SEEDS[tab] || []).forEach(function (r) {
+            cfg.order.push(r[0]); cfg.col[r[0]] = r[1]; cfg.span[r[0]] = r[2]; cfg.hidden[r[0]] = 0;
+        });
+        return cfg;
+    }
+    function dashCfgFor(tab) {
+        if (!pfTabCfgs[tab]) pfTabCfgs[tab] = pfTabsStore[tab] ? normTabCfg(pfTabsStore[tab]) : pfxTabSeed(tab);
+        return pfTabCfgs[tab];
+    }
+    // эффективная подвкладка: на мобильном и без портфелей всё живёт «Обзором»
+    function pfxEffTab() {
+        var t = (typeof pfxTab === 'string') ? pfxTab : 'overview';
+        return (t !== 'overview' && store.items.length && pfxWide()) ? t : 'overview';
+    }
+    function pfxSyncCfg() {
+        var t = pfxEffTab();
+        if (t === dashTab) return;
+        dashTab = t;
+        dashCfg = dashCfgFor(t);
+        pfdUndoStack.length = 0;   // undo-стек не должен уносить снимок на чужую вкладку
+        try { window.pfdCfgClose(); } catch (e) {}
+    }
+    function pfxTabLabel(t) {
+        for (var i = 0; i < PFX_TABS.length; i++) if (PFX_TABS[i][0] === t) return PFX_TABS[i][1];
+        return 'Обзор';
     }
 
     // ============ ГЛОБАЛЬНЫЕ ПРЕСЕТЫ РАСКЛАДКИ ============================
@@ -1855,7 +1931,17 @@
     function savePresetCache() {
         try { localStorage.setItem(PRESETS_CACHE, JSON.stringify({ presets: pfPresetList, bases: pfBaseMap, at: Date.now() })); } catch (e) {}
     }
-    function pfBaseFor(count) { return (pfBaseMap || {})[String(count)] || null; }
+    // R8: базовая раскладка пер-вкладочная. Для «Обзора» ключ — ЧИСЛО видимых портфелей
+    // (как исторически, свои базовые на 1/2/3… портфеля), для подвкладок — имя вкладки.
+    function pfBaseKey() { return dashTab === 'overview' ? String(visibleItems().length) : dashTab; }
+    function pfBaseFor() { return (pfBaseMap || {})[pfBaseKey()] || null; }
+    // пресеты ТЕКУЩЕЙ подвкладки (у старых пресетов поля tab нет — они обзорные);
+    // с гейтом: скрытые админом (hid) обычный пользователь не видит, админ видит все
+    function pfPresetsOfTab() { return pfPresetList.filter(function (p) { return (p.tab || 'overview') === dashTab; }); }
+    function pfPresetsVisible() {
+        var admin = pfIsAdmin();
+        return pfPresetsOfTab().filter(function (p) { return admin || !p.hid; });
+    }
     function pfSupa() { return window.supa; }
     function pfCloudOn() { return !!(pfSupa() && pfSupa().enabled); }
     function pfIsAdmin() { return !!(pfSupa() && pfSupa().isAdmin && pfSupa().isAdmin()); }
@@ -1874,6 +1960,7 @@
                 pfBaseMap = (v.bases && typeof v.bases === 'object') ? v.bases : {};
                 savePresetCache();
                 try { updateLayoutBtn(); } catch (e) {}
+                try { pfl3Repaint(); } catch (e) {}
             }, function () { pfPresetsFetching = false; });
     }
     // сохранить список в облако (только админ/владелец). Локально применяем сразу.
@@ -1881,6 +1968,7 @@
         if (!pfIsAdmin()) { toast('Пресеты задаёт администратор', true); return; }
         savePresetCache();
         try { updateLayoutBtn(); } catch (e) {}
+        try { pfl3Repaint(); } catch (e) {}
         if (!pfCloudOn() || pfPresetsSaving) return;
         pfPresetsSaving = true;
         var uid = (pfSupa().session && pfSupa().session.user) ? pfSupa().session.user.id : null;
@@ -1987,10 +2075,19 @@
             panel: { l: 'Панель', h: 1 }, rates: { l: 'Ставки', h: 1 }, trades: { l: 'Сделки', h: 2 },
             'kpi:cap': { l: 'Капитал', h: 1 }, 'kpi:day': { l: 'За день', h: 1 }, 'kpi:next': { l: 'Выплата', h: 1 },
             cap: { l: 'График', h: 2 }, cap2: { l: 'График', h: 2 }, heat: { l: 'Карта', h: 2.4 },
-            news: { l: 'Новости', h: 2 }, alloc: { l: 'Активы', h: 2 }
+            news: { l: 'Новости', h: 2 }, alloc: { l: 'Активы', h: 2 },
+            divs: { l: 'Дивиденды', h: 2 }, calm: { l: 'Месяц', h: 2.4 }, assets: { l: 'Активы', h: 2.4 },
+            ops: { l: 'Операции', h: 2 }, yield: { l: 'Доходность', h: 2 }, snaps: { l: 'Снимки', h: 2.4 },
+            movers: { l: 'Лидеры', h: 2 }, idx: { l: 'Рынок', h: 2 }, passive: { l: 'Доход', h: 2 },
+            conc: { l: 'Диверс.', h: 2 }, plist: { l: 'Портфели', h: 2.6 }, pstruct: { l: 'Структура', h: 2.4 },
+            psum: { l: 'Сводные', h: 2.4 }, pdetail: { l: 'Составы', h: 3 }, reports: { l: 'Отчёты', h: 2.4 },
+            'set:corner': { l: 'Вид', h: 2 }, 'set:vis': { l: 'Видимость', h: 2 }, 'set:layout': { l: 'Раскладки', h: 2 }
         };
         var DEFSPAN = { fav: 4, cal: 8, sum: 4, panel: 12, rates: 12, trades: 12,
-            'kpi:cap': 4, 'kpi:day': 4, 'kpi:next': 4, cap: 6, cap2: 6, heat: 6, news: 6, alloc: 4 };
+            'kpi:cap': 4, 'kpi:day': 4, 'kpi:next': 4, cap: 6, cap2: 6, heat: 6, news: 6, alloc: 4,
+            divs: 4, calm: 4, assets: 4, ops: 4, yield: 4, snaps: 6, movers: 4, idx: 4, passive: 4, conc: 4,
+            plist: 12, pstruct: 6, psum: 6, pdetail: 12, reports: 6,
+            'set:corner': 6, 'set:vis': 6, 'set:layout': 6 };
         function meta(id) {
             if (id.indexOf('pf:') === 0) { var m = /pf:#?(\d+)/.exec(id); return { l: 'П' + ((m ? +m[1] : 0) + 1), h: 3, cls: 'pf' }; }
             if (id.indexOf('note:') === 0) return { l: 'Заметка', h: 1.5, cls: 'note' };
@@ -2156,7 +2253,7 @@
             // неизвестна, график всегда выезжает вправо от карточки
             blocks.push({ id: 'pf:' + p.id, name: p.name, htmlFn: function () { return cardHtml(p, i, false, narrow, false); }, span: defSpan });
         });
-        blocks.push({ id: 'cal', name: noBonds ? 'Ставки' : 'Календарь выплат', htmlFn: function () { return noBonds ? ratesStackHtml(true, 1, true, 'cal') : paymentCalendarHtml(true, 1); }, span: defSpan });
+        blocks.push({ id: 'cal', name: noBonds ? 'Ставки' : 'Календарь выплат', htmlFn: function () { return noBonds ? ratesStackHtml(true, 1, true, 'cal') : paymentCalendarHtml(true, 1, dashTab === 'divs'); }, span: defSpan });
         // обёртка .pf-topgrid-fav сохраняет прицельные стили правой колонки
         // (одноколоночный .pff-grid и т.п.) и в свободной сетке
         blocks.push({ id: 'fav', name: 'Избранное', htmlFn: function () { return '<div class="pf-topgrid-fav pfd-favwrap">' + favStr + '</div>'; }, span: defSpan });
@@ -2185,13 +2282,28 @@
         blocks.push({ id: 'idx', name: 'Рынок сейчас', htmlFn: pfwIdxHtml, span: 4, defHidden: true });
         blocks.push({ id: 'passive', name: 'Пассивный доход', htmlFn: pfwPassiveHtml, span: 4, defHidden: true });
         blocks.push({ id: 'conc', name: 'Диверсификация', htmlFn: pfwConcHtml, span: 4, defHidden: true });
+        // R8: виджеты подвкладок (референс-скрин «Мои портфели» и карточки настроек);
+        // доступны из пикера на ЛЮБОЙ подвкладке, сиды включают их на своих
+        blocks.push({ id: 'plist', name: 'Мои портфели', htmlFn: pfwPlistHtml, span: 12, defHidden: true });
+        blocks.push({ id: 'pstruct', name: 'Структура по портфелям', htmlFn: pfwPstructHtml, span: 6, defHidden: true });
+        blocks.push({ id: 'psum', name: 'Сводные показатели', htmlFn: pfwPsumHtml, span: 6, defHidden: true });
+        blocks.push({ id: 'pdetail', name: 'Составы портфелей', htmlFn: pfxTabPortsHtml, span: 12, defHidden: true });
+        blocks.push({ id: 'reports', name: 'Отчёты и экспорт', htmlFn: pfwReportsHtml, span: 6, defHidden: true });
+        blocks.push({ id: 'set:corner', name: 'Отображение карточек', htmlFn: function () { return pfxSetCardHtml('Отображение карточек', 'скругление углов виджетов и карточек', pfxCornerRowHtml(true)); }, span: 6, defHidden: true });
+        blocks.push({ id: 'set:vis', name: 'Видимость', htmlFn: function () { return pfxSetCardHtml('Видимость', 'какие портфели и секции показывать', pfxVisRowsHtml()); }, span: 6, defHidden: true });
+        blocks.push({ id: 'set:layout', name: 'Раскладки', htmlFn: pfwLayoutCardHtml, span: 6, defHidden: true });
         // каждая заметка — свой блок note:<id> (мультизаметки, «+» плодит новые)
         (dashCfg.notes || []).forEach(function (nt) {
             blocks.push({ id: 'note:' + nt.id, name: 'Заметка', htmlFn: function () { return pfdNoteHtml(nt); }, span: 4, isNote: true });
         });
         if (!noBonds) blocks.push({ id: 'rates', name: 'Ставки', htmlFn: ratesHtml, span: 12 });
-        var tr = tradesHtml();
+        // «История сделок»: на подвкладке «Операции» — полноэкранный журнал (asPage)
+        var tr = tradesHtml(dashTab === 'ops');
         if (tr) blocks.push({ id: 'trades', name: 'История сделок', htmlFn: function () { return tr; }, span: 12 });
+        // R8: на подвкладках ВСЕ блоки опт-ин — что показано, решает сид (hidden[id]=0)
+        // и пользователь через пикер; дефолтно-видимых блоков там нет (включая новые
+        // карточки портфелей pf:*, которые на «Обзоре» видимы по умолчанию)
+        if (dashTab !== 'overview') blocks.forEach(function (b) { if (!b.isNote) b.defHidden = true; });
         return blocks;
     }
     // скрыт ли блок: явный выбор пользователя (cfg.hidden) главнее дефолта блока
@@ -2597,6 +2709,17 @@
             '</div>';
         }).join('');
 
+        // R8: подвкладка без единого видимого блока (всё скрыли / пустой сид будущей
+        // вкладки) — не голая пустота, а приглашение собрать дашборд
+        if (!shown.length || !items) {
+            items = '<div class="pfx-emptytab" style="grid-column: 1 / span 12">' +
+                '<div class="pfpc-state"><div class="pfpc-state-art">' + PFDGRID_SVG + '</div>' +
+                '<div class="pfpc-state-t">Здесь пока пусто</div>' +
+                '<div class="pfpc-state-s">Соберите подвкладку под себя: добавьте виджеты — их можно двигать, растягивать и скрывать.</div>' +
+                '<button type="button" class="pfl-pv-add pfx-emptytab-btn" onclick="pfLayoutToggle(event)">' + PFD_PLUS_SVG + '<span>Добавить виджет</span></button>' +
+            '</div></div>';
+        }
+
         // Полка скрытых блоков для карточки «Настройка раскладки» (список + превью).
         // Содержимое превью собирается ЛЕНИВО при выборе строки — блоки тяжёлые.
         pfdShelfBlocks = hiddenB.slice();
@@ -2604,7 +2727,8 @@
         // Карточка настройки раскладки открывается кнопкой «Раскладка» в шапке страницы
         // (dashEdit) и живёт НАД сеткой; в ней шапка (Вернуть стандартную / Сохранить / ✕)
         // и список блоков с превью. Сама сетка ниже остаётся живой (drag/resize/скрытие).
-        var panel = dashEdit ? pflPanelHtml() : '';
+        // R8: вторым жильцом того же места может быть панель «Раскладки» (pfl3).
+        var panel = dashEdit ? pflPanelHtml() : (pfl3Open ? pfl3PanelHtml() : '');
         return panel + '<div class="pfd-grid pfd-masonry pfd-live' + (dashEdit ? ' editing' : '') + '" id="pfdGrid">' + items + '</div>';
     }
     // ---- сохранённая раскладка: снимок + сравнение (для «Сохранено» и «Вернуть сохранённую») ----
@@ -2655,7 +2779,7 @@
                 '<div class="pfl-head-t">' +
                     '<span class="pfl-head-ic">' + PFL2_STAR + '</span>' +
                     '<div class="pfl-head-tx"><b>Добавить виджет</b>' +
-                        '<span>Выберите блок слева — справа появится превью и настройки</span></div>' +
+                        '<span>Виджеты добавятся на подвкладку «' + esc(pfxTabLabel(dashTab)) + '» — выберите и настройте</span></div>' +
                 '</div>' +
                 '<button type="button" class="pfl-x" onclick="pfLayoutClose()" aria-label="Закрыть">' + XMARK_SVG + '</button>' +
             '</div>' +
@@ -2679,10 +2803,15 @@
     // каждое рисовалось по-своему (кнопка / кнопка / карточки с эскизом), и нигде не было
     // видно, что применено ПРЯМО СЕЙЧАС. Теперь это ОДИН список одинаковых строк
     // (эскиз + имя + пояснение + отметка «сейчас»), а сверху — строка состояния.
-    // Снимок базовой для текущего числа портфелей: своя (задал админ) или системная.
+    // Снимок базовой для текущей подвкладки: своя (задал админ) или системная —
+    // pfdStandardCfg на «Обзоре», сид pfxTabSeed на подвкладках.
     function pfBaseSnapNow() {
-        var base = pfBaseFor(visibleItems().length);
+        var base = pfBaseFor();
         if (base) return pfPresetInstantiate(base);
+        if (dashTab !== 'overview') {
+            var seed = pfxTabSeed(dashTab);
+            return { order: seed.order, span: seed.span, h: {}, hidden: seed.hidden, col: seed.col, allocPf: 'all' };
+        }
         var std = pfdStandardCfg();
         return { order: std.order, span: std.span, h: {}, hidden: Object.assign({}, std.hidden || {}),
             col: std.col, allocPf: 'all' };
@@ -2694,8 +2823,9 @@
         try { cur = pfStructSig(dashCfg); } catch (e) { return { k: 'custom' }; }
         try { if (pfStructSig(pfBaseSnapNow()) === cur) return { k: 'base' }; } catch (e) {}
         if (dashCfg.saved) { try { if (pfStructSig(dashCfg.saved) === cur) return { k: 'saved' }; } catch (e) {} }
-        for (var i = 0; i < pfPresetList.length; i++) {
-            if (pfPresetActive(pfPresetList[i])) return { k: 'preset', id: pfPresetList[i].id, name: pfPresetList[i].name };
+        var tabPresets = pfPresetsOfTab();
+        for (var i = 0; i < tabPresets.length; i++) {
+            if (pfPresetActive(tabPresets[i])) return { k: 'preset', id: tabPresets[i].id, name: tabPresets[i].name };
         }
         return { k: 'custom' };
     }
@@ -2719,9 +2849,12 @@
         var saved = pfdLayoutSaved();
         var admin = pfIsAdmin();
         var count = visibleItems().length;
-        var hasBase = !!pfBaseFor(count);
+        var hasBase = !!pfBaseFor();
         var act = pfLayoutActive();
-        var pfW = plural(count, 'портфель', 'портфеля', 'портфелей');
+        // R8: раскладка пер-вкладочная — подпись базовой зависит от подвкладки
+        var baseScope = dashTab === 'overview'
+            ? count + ' ' + plural(count, 'портфель', 'портфеля', 'портфелей')
+            : 'подвкладка «' + pfxTabLabel(dashTab) + '»';
         var PIN_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="17" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"/></svg>';
 
         // ---- шапка панели: имя + явный ✕ (панель открывается кликом и живёт до закрытия) ----
@@ -2743,12 +2876,12 @@
         html += '<div class="pfl-cfg-h">Выбрать раскладку</div><div class="pfl-cfg-list">';
         html += pfLayoutOptHtml({
             name: hasBase ? 'Базовая' : 'Стандартная',
-            sub: (hasBase ? 'задана администратором' : 'вид по умолчанию') + ' · ' + count + ' ' + pfW,
+            sub: (hasBase ? 'задана администратором' : 'вид по умолчанию') + ' · ' + baseScope,
             snap: pfBaseSnapNow(), active: act.k === 'base', action: 'pfLayoutReset()',
-            title: 'Вернуть базовую раскладку для ' + count + ' ' + pfW,
+            title: 'Вернуть базовую раскладку (' + baseScope + ')',
             extra: admin ? '<div class="pfl-opt-adm">' +
-                '<button type="button" class="pfl-cfg-mini" onclick="pfSetBasePreset()" title="Сделать текущую раскладку базовой для ' + count + ' ' + pfW + ' (для всех)" aria-label="Сделать базовой">' + PIN_IC + '</button>' +
-                (hasBase ? '<button type="button" class="pfl-cfg-mini" onclick="pfResetBasePreset()" title="Сбросить базовую для ' + count + ' ' + pfW + ' к системной" aria-label="Сбросить базовую">' + UNDO_SVG + '</button>' : '') +
+                '<button type="button" class="pfl-cfg-mini" onclick="pfSetBasePreset()" title="Сделать текущую раскладку базовой (' + attr(baseScope) + ', для всех)" aria-label="Сделать базовой">' + PIN_IC + '</button>' +
+                (hasBase ? '<button type="button" class="pfl-cfg-mini" onclick="pfResetBasePreset()" title="Сбросить базовую (' + attr(baseScope) + ') к системной" aria-label="Сбросить базовую">' + UNDO_SVG + '</button>' : '') +
             '</div>' : ''
         });
         if (dashCfg.saved) {
@@ -2758,9 +2891,9 @@
                 title: 'Откатить к вашей сохранённой раскладке'
             });
         }
-        pfPresetList.forEach(function (p) {
+        pfPresetsVisible().forEach(function (p) {
             html += pfLayoutOptHtml({
-                name: p.name || 'Пресет', sub: 'общий пресет', portable: true,
+                name: p.name || 'Пресет', sub: p.hid ? 'пресет · скрыт у пользователей' : 'общий пресет', portable: true,
                 snap: p.snap, active: act.k === 'preset' && act.id === p.id,
                 action: 'pfApplyPreset(\'' + esc(p.id) + '\')', title: 'Применить пресет ко всей раскладке',
                 extra: admin ? '<button type="button" class="pfl-cfg-del" onclick="pfDeletePreset(\'' + esc(p.id) + '\', event)" title="Удалить пресет у всех" aria-label="Удалить">' + XMARK_SVG + '</button>' : ''
@@ -2869,6 +3002,7 @@
         try { if (window.matchMedia('(max-width: 1023px)').matches) { toast('Настройка раскладки доступна на широком экране', true); return; } } catch (e) {}
         if (!visibleItems().length) { toast('Сначала добавьте портфель — пока нечего расставлять', true); return; }
         if (!dashCfg.on) { dashCfg.on = true; saveDashCfg(); }
+        pfl3Open = false;   // пикер и панель раскладок не живут вместе
         dashEdit = true;
         closeImpMenus();
         pfWGatesFetch();        // свежая видимость виджетов каталога к открытию пикера
@@ -2895,6 +3029,7 @@
         saveDashCfg();
         pfdUpdateSaveBtn();
         updateLayoutBtn();   // освежить поповер раскладки в шапке (кнопка → «Сохранено»)
+        try { pfl3Repaint(); } catch (e) {}   // панель раскладок: строка «Ваша сохранённая» и подвал
         toast('Раскладка сохранена — закреплена за вами');
     };
     // «Вернуть сохранённую» — откатить рабочий вид к последней контрольной точке
@@ -2973,19 +3108,23 @@
     // этого числа (pfBaseMap) — берём её (шаблон → реальные портфели), иначе системную pfdStandardCfg.
     window.pfLayoutReset = function () {
         pfdPushUndo();
-        var count = visibleItems().length;
-        var base = pfBaseFor(count);
-        if (base) {
-            var c = pfPresetInstantiate(base);
-            dashCfg = { on: true, order: c.order, span: c.span, h: c.h, hidden: c.hidden, col: c.col,
-                thm: {}, corner: dashCfg.corner || 'std',
-                notes: dashCfg.notes || [], allocPf: c.allocPf, saved: dashCfg.saved || null };
+        var base = pfBaseFor();
+        var c;
+        if (base) c = pfPresetInstantiate(base);
+        else if (dashTab !== 'overview') {
+            // системная база подвкладки — её сид
+            var seed = pfxTabSeed(dashTab);
+            c = { order: seed.order, span: seed.span, h: {}, hidden: seed.hidden, col: seed.col, allocPf: 'all' };
         } else {
             var std = pfdStandardCfg();
-            dashCfg = { on: true, order: std.order, span: std.span, h: {}, hidden: Object.assign({}, std.hidden || {}), col: std.col,
-                thm: {}, corner: dashCfg.corner || 'std',
-                notes: dashCfg.notes || [], allocPf: dashCfg.allocPf || 'all', saved: dashCfg.saved || null };
+            c = { order: std.order, span: std.span, h: {}, hidden: Object.assign({}, std.hidden || {}), col: std.col, allocPf: dashCfg.allocPf || 'all' };
         }
+        // R8: конфиг МУТИРУЕМ (dashCfg — общий объект с pfTabCfgs, пересоздание оторвало
+        // бы его от реестра вкладок); corner/notes/saved остаются как были
+        dashCfg.on = true;
+        dashCfg.order = c.order; dashCfg.span = c.span; dashCfg.h = c.h;
+        dashCfg.hidden = c.hidden; dashCfg.col = c.col; dashCfg.thm = {};
+        dashCfg.allocPf = c.allocPf;
         dashEdit = false;
         saveDashCfg();
         pfdRerender();
@@ -3000,15 +3139,16 @@
         var count = visibleItems().length;
         if (!count) { toast('Сначала добавьте портфель', true); return; }
         pfdFlushNotes();
-        pfBaseMap[String(count)] = pfPresetTemplate(pfdSavedSnap());
-        pfPresetsPersist('Базовая для ' + count + ' портф. сохранена — у всех');
+        pfBaseMap[pfBaseKey()] = pfPresetTemplate(pfdSavedSnap());
+        pfPresetsPersist(dashTab === 'overview'
+            ? 'Базовая для ' + count + ' портф. сохранена — у всех'
+            : 'Базовая «' + pfxTabLabel(dashTab) + '» сохранена — у всех');
     };
     window.pfResetBasePreset = function () {
         if (!pfIsAdmin()) return;
-        var count = visibleItems().length;
-        if (!pfBaseFor(count)) return;
-        delete pfBaseMap[String(count)];
-        pfPresetsPersist('Базовая для ' + count + ' портф. сброшена к системной');
+        if (!pfBaseFor()) return;
+        delete pfBaseMap[pfBaseKey()];
+        pfPresetsPersist('Базовая сброшена к системной');
     };
     // совместимость со старыми вызовами (Esc-хендлер и т.п.)
     window.pfDashToggleEdit = function () { if (dashEdit) window.pfLayoutClose(); else window.pfLayoutToggle(); };
@@ -3037,8 +3177,9 @@
         pfPresetNameModal('', function (name) {
             var snap = pfPresetTemplate(pfdSavedSnap());
             var by = (pfSupa().session && pfSupa().session.user) ? pfSupa().session.user.id : null;
-            pfPresetList = pfPresetList.concat([{ id: genId('pre'), name: name.slice(0, 40) || 'Пресет', snap: snap, at: Date.now(), by: by }]);
-            pfPresetsPersist('Пресет «' + (name || 'Пресет') + '» доступен всем');
+            // R8: пресет привязан к подвкладке (tab) — показывается только на ней
+            pfPresetList = pfPresetList.concat([{ id: genId('pre'), name: name.slice(0, 40) || 'Пресет', snap: snap, at: Date.now(), by: by, tab: dashTab }]);
+            pfPresetsPersist('Пресет «' + (name || 'Пресет') + '» доступен всем на подвкладке «' + pfxTabLabel(dashTab) + '»');
         });
     };
     window.pfDeletePreset = function (id, ev) {
@@ -6819,9 +6960,11 @@
     window.pfxGoTab = function (t) {
         if (!PFX_TABS.some(function (x) { return x[0] === t; }) || pfxTab === t) return;
         if (dashEdit) { dashEdit = false; try { updateLayoutBtn(); } catch (e) {} }   // пикер не тащим на другую подвкладку
+        pfl3Open = false;                       // панель раскладок — тоже пер-вкладочная
         pfxTab = t;
         try { localStorage.setItem(PFX_TAB_KEY, t); } catch (e) {}
         closeImpMenus();
+        pfxSyncCfg();                           // R8: dashCfg вкладки + сброс undo
         renderNoAnim();
     };
     function pfxTabsHtml() {
@@ -6843,13 +6986,9 @@
         renderNoAnim();
         toast(s.hideSums ? 'Суммы скрыты — наведите на сумму, чтобы посмотреть' : 'Суммы снова видны');
     };
-    window.pfxAddWidgetClick = function () {
-        if (pfxTab !== 'overview') {
-            pfxTab = 'overview';
-            try { localStorage.setItem(PFX_TAB_KEY, 'overview'); } catch (e) {}
-        }
-        window.pfLayoutToggle();
-    };
+    // R8: пикер работает на ЛЮБОЙ подвкладке — виджет добавляется на текущую
+    // (раньше кнопка принудительно уводила на «Обзор»)
+    window.pfxAddWidgetClick = function () { window.pfLayoutToggle(); };
     function pfxHeroHtml() {
         if (!store.items.length || !pfxWide()) return '';
         var dd = 0, hasDd = false;
@@ -6880,9 +7019,11 @@
             '<button type="button" class="pfp-btn icon' + (sumsOn ? ' on' : '') + '" onclick="pfxToggleSums()" title="' + (sumsOn ? 'Показать суммы' : 'Скрывать суммы от посторонних глаз') + '">' + (sumsOn ? PFX_LOCK_SVG : PFX_UNLOCK_SVG) + '</button>' +
             eyeWrapHtml() +
             backupWrapHtml() +
-            '<span class="pfl-cfg-wrap pfp-cfg" style="display:inline-flex">' +
-                '<button type="button" class="pfl-cfg-btn" onclick="pfCfgPopToggle(event)" title="Раскладка и отображение карточек" aria-label="Настройки раскладки">' + PFP_SLIDERS_SVG + '</button>' +
-                '<div class="pfl-cfg-pop">' + pfLayoutCfgPopHtml() + '</div>' +
+            // R8: кнопка-слайдеры открывает ПАНЕЛЬ «Раскладки» (pfl3) текущей подвкладки —
+            // пресеты с эскизами, базовая, своя сохранённая; прежний поповер остался
+            // только в шапке страницы (index.html) как быстрый доступ
+            '<span class="pfl-cfg-wrap pfp-cfg' + (pfl3Open ? ' active' : '') + '" style="display:inline-flex">' +
+                '<button type="button" class="pfl-cfg-btn" onclick="pfLayoutsToggle(event)" title="Раскладки подвкладки: пресеты, базовая, сохранённая" aria-label="Панель раскладок">' + PFP_SLIDERS_SVG + '</button>' +
             '</span>' +
         '</div>';
         return '<div class="pfp-panel pfx-hero">' +
@@ -6892,14 +7033,22 @@
     }
 
     // ---- скругление карточек: CSS-переменная --pfr на панели, персист в pf_dash_v1 ----
-    function pfxCornerPx() { return dashCfg.corner === 'main' ? '14px' : dashCfg.corner === 'lg' ? '28px' : '20px'; }
+    // R8: настройка ГЛОБАЛЬНАЯ (одна на все подвкладки) — живёт в конфиге «Обзора»,
+    // какая бы подвкладка ни была активна
+    function pfxCornerPx() {
+        var c = (pfTabCfgs.overview || dashCfg).corner;
+        return c === 'main' ? '14px' : c === 'lg' ? '28px' : '20px';
+    }
     function pfxApplyCorner() {
         var el = document.getElementById('panel-portfolios');
         if (el) el.style.setProperty('--pfr', pfxCornerPx());
     }
     window.pfxSetCorner = function (v) {
-        if (['std', 'main', 'lg'].indexOf(v) < 0 || dashCfg.corner === v) return;
-        dashCfg.corner = v; saveDashCfg();
+        var oc = pfTabCfgs.overview || dashCfg;
+        if (['std', 'main', 'lg'].indexOf(v) < 0 || oc.corner === v) return;
+        oc.corner = v;
+        if (oc === dashCfg) saveDashCfg();
+        else try { localStorage.setItem(DASH_KEY, JSON.stringify(oc)); } catch (e) {}
         pfxApplyCorner();
         renderNoAnim();
         try { updateLayoutBtn(); } catch (e) {}
@@ -6923,6 +7072,7 @@
     // (авто-заметка над «Избранным» из старого референса убрана — в зонной раскладке
     // 2026-07-14 у неё нет своего места, заметки добавляются пикером по желанию)
     function pfxSeedLayout() {
+        if (dashTab !== 'overview') return;   // R8: подвкладки сидируются в pfxTabSeed
         if (!dashCfg.on || (dashCfg.order || []).length || !visibleItems().length) return;
         var std = pfdStandardCfg();
         dashCfg.order = std.order; dashCfg.span = std.span; dashCfg.col = std.col;
@@ -7348,17 +7498,200 @@
     }
 
     // ====================================================================
-    //  R7 — ПОДВКЛАДКИ: готовые раскладки из виджетов
+    //  R8 — ВИДЖЕТЫ ПОДВКЛАДКИ «ПОРТФЕЛИ» (референс-скрин 2026-07-14):
+    //  «Мои портфели» (строки со стоимостью/доходностью/спарклайном),
+    //  «Структура по портфелям» (кольцо), «Сводные показатели» (4 плитки).
     // ====================================================================
-    function pfxCell(span, html, col) {
-        if (!html) return '';
-        return '<div class="pfx-cell" style="grid-column:' + (col ? col + ' / span ' + span : 'span ' + span) + '">' + html + '</div>';
+    var PFPL_CASE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="13" rx="2.5"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2.5 12.5h19"/></svg>';
+    var PFPL_GEAR_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="8" cy="7" r="2.5"/><circle cx="16" cy="17" r="2.5"/></svg>';
+    var pfPlistSort = 'value';   // 'value' | 'yield' | 'name' — сортировка списка (сессия)
+    window.pfPlistSetSort = function (v, ev) {
+        if (ev) ev.stopPropagation();
+        if (pfPlistSort === v) return;
+        pfPlistSort = v;
+        renderNoAnim();
+    };
+    // серия значений для спарклайна: дневные снимки → фолбэк на историю мини-графиков
+    // (chartRaw наполняется асинхронно, см. pfPlistSparksSoon) → живой хвост
+    function pfPlistSeries(p) {
+        var m = snaps[p.id] || {}, ks = Object.keys(m).sort();
+        var out = ks.map(function (k) { return m[k]; });
+        if (out.length < 2) {
+            var raw = chartRaw[p.id];
+            if (raw && raw.series && raw.series.length >= 2) out = raw.series.map(function (q) { return q.c; });
+        }
+        if (quotesTs) { var v = calcPf(p).value; if (v > 0) out = out.concat([v]); }
+        return out;
     }
-    function pfxGridWrap(cells) { return '<div class="pfx-grid">' + cells.join('') + '</div>'; }
-    function pfxEmptyCardHtml(t, s) {
-        return '<div class="dash2-card pf-card2 pfx-emptycard"><div class="pfpc-state"><div class="pfpc-state-art">' + CAL_ICO_SVG + '</div>' +
-            '<div class="pfpc-state-t">' + t + '</div><div class="pfpc-state-s">' + s + '</div></div></div>';
+    function pfPlistSparkSvg(p) {
+        var s = pfPlistSeries(p);
+        if (s.length > 40) {   // прореживание: спарклайну хватает ~40 точек
+            var step = s.length / 40, thin = [];
+            for (var i = 0; i < 40; i++) thin.push(s[Math.floor(i * step)]);
+            thin[39] = s[s.length - 1];
+            s = thin;
+        }
+        if (s.length < 2) {
+            return '<svg class="pfpl-spark-svg flat" viewBox="0 0 120 36" preserveAspectRatio="none"><line x1="4" y1="18" x2="116" y2="18"/></svg>';
+        }
+        var min = Math.min.apply(null, s), max = Math.max.apply(null, s);
+        var span = max - min || 1;
+        var pts = s.map(function (v, i) {
+            var x = 4 + i / (s.length - 1) * 112;
+            var y = 30 - (v - min) / span * 24;
+            return [Math.round(x * 10) / 10, Math.round(y * 10) / 10];
+        });
+        var line = pts.map(function (pt, i) { return (i ? 'L' : 'M') + pt[0] + ' ' + pt[1]; }).join(' ');
+        var area = line + ' L ' + pts[pts.length - 1][0] + ' 34 L ' + pts[0][0] + ' 34 Z';
+        var up = s[s.length - 1] >= s[0];
+        return '<svg class="pfpl-spark-svg ' + (up ? 'pos' : 'neg') + '" viewBox="0 0 120 36" preserveAspectRatio="none">' +
+            '<path class="a" d="' + area + '"/><path class="l" d="' + line + '"/></svg>';
     }
+    // портфели без снимков: дозагружаем историю мини-графиков и дорисовываем спарклайны
+    // на месте (без ре-рендера страницы) — те же данные, что у мини-графика карточки
+    var pfplSparkTimer = null;
+    function pfPlistSparksSoon() {
+        var pend = [];
+        visibleItems().forEach(function (p) {
+            var el = document.querySelector('#pfWrap .pfpl-spark[data-pid="' + p.id + '"]');
+            if (!el) return;
+            if (Object.keys(snaps[p.id] || {}).length >= 2) return;
+            if (chartRaw[p.id] && chartRaw[p.id].series) return;
+            pend.push(p.id);
+            loadPfChart(p.id);
+        });
+        if (!pend.length) return;
+        if (pfplSparkTimer) clearInterval(pfplSparkTimer);
+        var tries = 0;
+        pfplSparkTimer = setInterval(function () {
+            pend = pend.filter(function (pid) {
+                var el = document.querySelector('#pfWrap .pfpl-spark[data-pid="' + pid + '"]');
+                if (!el) return false;
+                if (!(chartRaw[pid] && chartRaw[pid].series)) return !!chartBusy[pid];
+                var p = findPf(pid);
+                if (p) el.innerHTML = pfPlistSparkSvg(p);
+                return false;
+            });
+            if (!pend.length || ++tries > 20) { clearInterval(pfplSparkTimer); pfplSparkTimer = null; }
+        }, 700);
+    }
+    function pfwPlistHtml() {
+        var vis = visibleItems();
+        if (!vis.length) {
+            return '<div class="dash2-card pf-card2 pf-plistblk">' +
+                pfCardHead('', 'Мои портфели', 'список портфелей со сводкой', null) +
+                '<div class="pfal-empty">' + (store.items.length ? 'Все портфели скрыты — верните их в меню «Видимость» в шапке.' : 'Создайте первый портфель кнопкой «Портфель» в шапке.') + '</div></div>';
+        }
+        var rows = vis.map(function (p) { return { p: p, c: calcPf(p) }; });
+        var total = 0; rows.forEach(function (r) { total += r.c.value; });
+        if (pfPlistSort === 'name') rows.sort(function (a, b) { return a.p.name.localeCompare(b.p.name, 'ru'); });
+        else if (pfPlistSort === 'yield') rows.sort(function (a, b) { return (b.c.invested > 0 ? b.c.pnlPct : -1e9) - (a.c.invested > 0 ? a.c.pnlPct : -1e9); });
+        else rows.sort(function (a, b) { return b.c.value - a.c.value; });
+        var seg = '<div class="pft-kinds pfpl-sort">' + [['value', 'Стоимость'], ['yield', 'Доходность'], ['name', 'Имя']].map(function (x) {
+            return '<button type="button" class="pft-kind' + (pfPlistSort === x[0] ? ' on' : '') + '" onclick="pfPlistSetSort(\'' + x[0] + '\', event)">' + x[1] + '</button>';
+        }).join('') + '</div>';
+        var add = '<button type="button" class="pfpl-add" onclick="pfAddPortfolio()" title="Создать новый портфель">' + PFD_PLUS_SVG + '<span>Новый портфель</span></button>';
+        var body = '<div class="pfpl-list">' + rows.map(function (r) {
+            var p = r.p, c = r.c, ac = colorVal(p.color);
+            var n = (p.holdings || []).filter(function (h) { return aggHolding(h).qty > 0; }).length;
+            var has = c.invested > 0;
+            function kpi(l, v, cls, extra) {
+                return '<span class="pfpl-kpi"><i>' + l + '</i><b class="' + (cls || '') + '">' + v + '</b>' + (extra || '') + '</span>';
+            }
+            var yld = has
+                ? kpi('Доходность', (c.pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(c.pnl)), c.pnl >= 0 ? 'pos' : 'neg',
+                    '<em class="' + (c.pnlPct >= 0 ? 'pos' : 'neg') + '">' + fmtPct(c.pnlPct) + '</em>')
+                : kpi('Доходность', '—', 'muted');
+            return '<div class="pfpl-row" role="button" tabindex="0" onclick="pfxPortSettings(\'' + p.id + '\')" title="Открыть настройки портфеля">' +
+                '<span class="pfpl-ic" style="--pc:' + ac + '">' + PFPL_CASE_SVG + '</span>' +
+                '<span class="pfpl-id"><b>' + esc(p.name) + '</b><i>' + n + ' ' + plural(n, 'актив', 'актива', 'активов') + '</i></span>' +
+                kpi('Стоимость', fmtRub(c.value)) +
+                yld +
+                kpi('Вложено', has ? fmtRub(c.invested) : '—', has ? '' : 'muted') +
+                '<span class="pfpl-spark" data-pid="' + p.id + '">' + pfPlistSparkSvg(p) + '</span>' +
+                '<button type="button" class="pfc-act pfpl-gear" onclick="event.stopPropagation(); pfxPortSettings(\'' + p.id + '\')" title="Настройки портфеля" aria-label="Настройки портфеля">' + PFPL_GEAR_SVG + '</button>' +
+            '</div>';
+        }).join('') + '</div>';
+        return '<div class="dash2-card pf-card2 pf-plistblk">' +
+            pfCardHead('', 'Мои портфели', 'всего ' + store.items.length + ' ' + plural(store.items.length, 'портфель', 'портфеля', 'портфелей') + ' · ' + fmtRub(total),
+                '<div class="pfpl-head-r">' + seg + add + '</div>') + body + '</div>';
+    }
+    // «Структура по портфелям»: кольцо распределения стоимости + легенда
+    function pfwPstructHtml() {
+        var vis = visibleItems(), total = 0;
+        var rows = [];
+        vis.forEach(function (p) {
+            var v = calcPf(p).value;
+            if (!(v > 0)) return;
+            total += v;
+            rows.push({ name: p.name, color: colorVal(p.color), v: v });
+        });
+        var body;
+        if (!total) {
+            body = '<div class="pfal-empty">Добавьте бумаги в портфели — распределение стоимости появится автоматически.</div>';
+        } else {
+            rows.sort(function (a, b) { return b.v - a.v; });
+            var R = 54, C = 2 * Math.PI * R, off = 0;
+            var segs = rows.map(function (r) {
+                var len = r.v / total * C;
+                var s = '<circle cx="70" cy="70" r="' + R + '" fill="none" stroke="' + r.color + '" stroke-width="16" stroke-dasharray="' + Math.max(len - 2.5, 0.8).toFixed(1) + ' ' + C.toFixed(1) + '" stroke-dashoffset="' + (-off).toFixed(1) + '" stroke-linecap="round"/>';
+                off += len;
+                return s;
+            }).join('');
+            var legend = rows.map(function (r) {
+                var pct = (r.v / total * 100);
+                return '<div class="pfps-lrow"><i style="background:' + r.color + '"></i>' +
+                    '<span class="pfps-ln">' + esc(r.name) + '</span>' +
+                    '<b class="pfps-lv">' + fmtRub(r.v) + '</b>' +
+                    '<em class="pfps-lp">' + pct.toFixed(1).replace('.', ',') + '%</em></div>';
+            }).join('');
+            body = '<div class="pfps-wrap">' +
+                '<div class="pfps-ring"><svg viewBox="0 0 140 140"><g transform="rotate(-90 70 70)">' + segs + '</g></svg>' +
+                    '<div class="pfps-center"><b>' + fmtRub(total) + '</b><span>общая стоимость</span></div></div>' +
+                '<div class="pfps-legend">' + legend + '</div>' +
+            '</div>';
+        }
+        return '<div class="dash2-card pf-card2 pf-pstructblk">' +
+            pfCardHead('', 'Структура по портфелям', 'распределение стоимости', null) + body + '</div>';
+    }
+    // «Сводные показатели»: 4 плитки — стоимость (+за сегодня), доходность, вложено, активы
+    function pfwPsumHtml() {
+        var value = 0, invested = 0, pnl = 0, dd = 0, hasDd = false, assets = 0, nPf = 0;
+        visibleItems().forEach(function (p) {
+            var c = calcPf(p);
+            value += c.value; invested += c.invested; pnl += c.pnl;
+            var d = dayDelta(p, c.value);
+            if (d != null) { dd += d; hasDd = true; }
+            var k = (p.holdings || []).filter(function (h) { return aggHolding(h).qty > 0; }).length;
+            if (k) { assets += k; nPf++; }
+        });
+        var pct = invested > 0 ? pnl / invested * 100 : null;
+        var base = value - dd;
+        var ddPct = hasDd && base > 0 ? dd / base * 100 : null;
+        function tile(l, v, vCls, chip) {
+            return '<div class="pfsm-tile"><i>' + l + '</i><b class="' + (vCls || '') + '">' + v + '</b>' + (chip || '') + '</div>';
+        }
+        function chip(cls, tx) { return '<span class="pfsm-chip ' + cls + '">' + tx + '</span>'; }
+        // проценты в чипах — БЕЗ знака (направление уже говорит стрелка ▲/▼)
+        function absPct(x) { return Math.abs(x).toFixed(1).replace('.', ',') + '%'; }
+        var ddChip = hasDd
+            ? chip(dd >= 0 ? 'pos' : 'neg', (dd >= 0 ? '▲ ' : '▼ ') + (ddPct != null ? absPct(ddPct) : fmtRub(Math.abs(dd))) + ' за сегодня')
+            : chip('', 'появится со второго дня');
+        var body = '<div class="pfsm-grid">' +
+            tile('Общая стоимость', fmtRub(value), '', ddChip) +
+            tile('Общая доходность', invested > 0 ? (pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(pnl)) : '—', pnl >= 0 ? 'pos' : 'neg',
+                pct != null ? chip(pct >= 0 ? 'pos' : 'neg', (pct >= 0 ? '▲ ' : '▼ ') + absPct(pct)) : '') +
+            tile('Общая вложенная сумма', invested > 0 ? fmtRub(invested) : '—') +
+            tile('Количество активов', String(assets), '', chip('', 'в ' + nPf + ' ' + plural(nPf, 'портфеле', 'портфелях', 'портфелях'))) +
+        '</div>';
+        return '<div class="dash2-card pf-card2 pf-psumblk">' +
+            pfCardHead('', 'Сводные показатели', 'итог по всем видимым портфелям', null) + body + '</div>';
+    }
+
+    // ====================================================================
+    //  R7 — ПОДВКЛАДКИ (R8: статичные сетки pfxCell/pfxGridWrap удалены —
+    //  раскладку каждой подвкладки собирает конструктор pfdBodyHtml)
+    // ====================================================================
     // Подвкладка «Портфели» (R7.2): не карточки-виджеты, а полноширинный обзор КАЖДОГО
     // портфеля — шапка с показателями и распределением + ПОЛНЫЙ состав таблицей с
     // показателями по каждой бумаге (кол-во, средняя, сейчас, стоимость, доля, доход).
@@ -7425,73 +7758,29 @@
             return '<div class="dash2-card pf-card2 pfpt-card" style="--pf-accent:' + ac + '">' + head + table + '</div>';
         }).join('') + '</div>';
     }
+    // R8: только видимость ПОРТФЕЛЕЙ (глобальная). Тумблеры секций отсюда убраны:
+    // видимость блоков теперь пер-вкладочная и управляется корзиной/глазом на самих
+    // виджетах и меню «Видимость» в герое — а этот виджет может жить на любой подвкладке.
     function pfxVisRowsHtml() {
-        var rows = '';
-        if (store.items.length > 1) {
-            rows += '<div class="pf-impgrp">Портфели</div>';
-            store.items.forEach(function (p) {
-                var off = !!p.hidden, c = calcPf(p);
-                rows += '<button class="pf-impitem pf-eyeitem' + (off ? ' off-eye' : '') + '" onclick="pfToggleHidden(\'' + p.id + '\',event)">' +
-                    '<span class="pf-eyedot" style="background:' + colorVal(p.color) + '"></span>' +
-                    '<span class="pf-impbody"><b>' + esc(p.name) + '</b><i>' + fmtRub(c.value) + (off ? ' · скрыт' : '') + '</i></span>' +
-                    '<span class="pf-eyestate">' + (off ? EYEOFF_SVG : EYE_SVG) + '</span></button>';
-            });
-        }
-        rows += '<div class="pf-impgrp">Секции страницы</div>';
-        var hid = !!(dashCfg.hidden || {}).cal;
-        rows += '<button class="pf-impitem pf-eyeitem' + (hid ? ' off-eye' : '') + '" onclick="pfdToggleSection(\'cal\',event)">' +
-            '<span class="pf-eyedot" style="background:#5B7C99"></span>' +
-            '<span class="pf-impbody"><b>Календарь выплат</b><i>' + (hid ? 'скрыт' : 'ближайшие купоны и дивиденды') + '</i></span>' +
-            '<span class="pf-eyestate">' + (hid ? EYEOFF_SVG : EYE_SVG) + '</span></button>';
-        if (hasAnyTrades()) {
-            rows += '<button class="pf-impitem pf-eyeitem' + (tradesHidden ? ' off-eye' : '') + '" onclick="pfToggleTradesHidden(event)">' +
-                '<span class="pf-eyedot" style="background:#5B7C99"></span>' +
-                '<span class="pf-impbody"><b>История операций</b><i>' + (tradesHidden ? 'скрыта' : 'журнал покупок и продаж') + '</i></span>' +
-                '<span class="pf-eyestate">' + (tradesHidden ? EYEOFF_SVG : EYE_SVG) + '</span></button>';
-        }
+        var rows = '<div class="pf-impgrp">Портфели</div>';
+        store.items.forEach(function (p) {
+            var off = !!p.hidden, c = calcPf(p);
+            rows += '<button class="pf-impitem pf-eyeitem' + (off ? ' off-eye' : '') + '" onclick="pfToggleHidden(\'' + p.id + '\',event)">' +
+                '<span class="pf-eyedot" style="background:' + colorVal(p.color) + '"></span>' +
+                '<span class="pf-impbody"><b>' + esc(p.name) + '</b><i>' + fmtRub(c.value) + (off ? ' · скрыт' : '') + '</i></span>' +
+                '<span class="pf-eyestate">' + (off ? EYEOFF_SVG : EYE_SVG) + '</span></button>';
+        });
+        rows += '<div class="pf-eyenote">Скрытые портфели не показываются в списках и календаре, но их капитал учитывается в сводке. Видимость виджетов настраивается на каждой подвкладке: корзина на блоке и меню «Видимость» в шапке.</div>';
         return '<div class="pfx-setlist">' + rows + '</div>';
     }
     function pfxSetCardHtml(title, sub, inner) {
         return '<div class="dash2-card pf-card2 pfx-setcard">' + pfCardHead('', title, sub, null) +
             '<div class="pfx-setbody">' + inner + '</div></div>';
     }
-    function pfxTabSettingsHtml() {
-        var layout = '<div class="pfl-cfg-inline">' + pfLayoutCfgPopHtml() + '</div>';
-        return pfxGridWrap([
-            pfxCell(6, pfxSetCardHtml('Отображение карточек', 'скругление углов виджетов и карточек', pfxCornerRowHtml(true))),
-            pfxCell(6, pfxSetCardHtml('Видимость', 'какие портфели и секции показывать', pfxVisRowsHtml())),
-            pfxCell(6, pfxSetCardHtml('Раскладка дашборда', 'базовая, пресеты и сохранение', layout)),
-            pfxCell(6, pfwReportsHtml())
-        ]);
-    }
-    function pfxTabBodyHtml(favStr, noBonds) {
-        if (pfxTab === 'ports') return pfxTabPortsHtml();
-        if (pfxTab === 'analytics') return pfxGridWrap([
-            pfxCell(8, pfdCapChartHtml()),
-            pfxCell(4, pfdAllocHtml()),
-            pfxCell(4, pfwYieldHtml()),
-            pfxCell(4, pfwMoversHtml()),
-            pfxCell(4, pfwConcHtml()),
-            pfxCell(8, pfwAssetsHtml()),
-            pfxCell(4, pfwIdxHtml())
-        ]);
-        if (pfxTab === 'reports') return pfxGridWrap([
-            pfxCell(6, pfwReportsHtml()),
-            pfxCell(6, pfwSnapsHtml())
-        ]);
-        if (pfxTab === 'divs') return pfxGridWrap([
-            pfxCell(4, pfwDivsHtml()),
-            pfxCell(4, pfdKpiHtml('next')),
-            pfxCell(4, pfwPassiveHtml()),
-            pfxCell(12, noBonds ? pfxEmptyCardHtml('Выплат пока не видно', 'Добавьте облигации или дивидендные акции — календарь соберётся автоматически.') : paymentCalendarHtml(false, 1, true))
-        ]);
-        if (pfxTab === 'ops') {
-            var tr = tradesHtml(true);
-            return pfxGridWrap([pfxCell(12, tr || pfxEmptyCardHtml('Операций пока нет', 'Добавьте бумаги в портфель — покупки появятся в журнале автоматически.'))]);
-        }
-        if (pfxTab === 'settings') return pfxTabSettingsHtml();
-        return '';
-    }
+    // R8: статичных раскладок подвкладок (pfxTabBodyHtml) больше нет — каждая
+    // подвкладка рендерится конструктором pfdBodyHtml со своим конфигом; прежние
+    // наборы виджетов стали СИДАМИ (PFX_TAB_SEEDS), карточки настроек — виджетами
+    // set:* (pfxSetCardHtml/pfxVisRowsHtml используются ими и живут выше).
 
     // ====================================================================
     //  R7 — ПИКЕР «ДОБАВИТЬ ВИДЖЕТ»: категории + карточки с ДЕМО-превью + настройки
@@ -7531,7 +7820,16 @@
             { id: 'movers', name: 'Лидеры дня', desc: 'Сильнейшие дневные движения ваших бумаг', cats: ['charts', 'assets', 'market'] },
             { id: 'idx', name: 'Рынок сейчас', desc: 'IMOEX, доллар и биткойн — живые значения', cats: ['market', 'other'] },
             { id: 'passive', name: 'Пассивный доход', desc: 'Купоны и дивиденды в пересчёте на месяц', cats: ['divs', 'profit'] },
-            { id: 'conc', name: 'Диверсификация', desc: 'Доли крупнейших позиций и вердикт о концентрации', cats: ['charts', 'profit'] }
+            { id: 'conc', name: 'Диверсификация', desc: 'Доли крупнейших позиций и вердикт о концентрации', cats: ['charts', 'profit'] },
+            // R8: виджеты подвкладок — доступны на любой подвкладке
+            { id: 'plist', name: 'Мои портфели', desc: 'Список портфелей: стоимость, доходность и мини-график', cats: ['pop', 'over', 'assets'] },
+            { id: 'pstruct', name: 'Структура по портфелям', desc: 'Кольцо: как капитал распределён между портфелями', cats: ['over', 'charts'] },
+            { id: 'psum', name: 'Сводные показатели', desc: 'Общая стоимость, доходность, вложения и число активов', cats: ['over', 'profit'] },
+            { id: 'pdetail', name: 'Составы портфелей', desc: 'Полные таблицы бумаг каждого портфеля с показателями', cats: ['assets'] },
+            { id: 'reports', name: 'Отчёты и экспорт', desc: 'Excel-выгрузки, бэкап и импорт данных', cats: ['other'] },
+            { id: 'set:corner', name: 'Отображение карточек', desc: 'Настройка скругления углов виджетов', cats: ['other'] },
+            { id: 'set:vis', name: 'Видимость', desc: 'Какие портфели и секции показывать', cats: ['other'] },
+            { id: 'set:layout', name: 'Раскладки', desc: 'Вход в панель раскладок и сохранение вида', cats: ['other'] }
         ];
         if (store.items.length >= 2) list.push({ id: 'sum', name: 'Сводка портфелей', desc: 'Суммарный капитал и лидерборд портфелей', cats: ['over', 'profit'] });
         return list;
@@ -7568,12 +7866,13 @@
         return all.filter(function (w) { return w.cats.indexOf(pfl2Cat) >= 0; });
     }
     function pfl2ById(id) { return pfl2Catalog().filter(function (w) { return w.id === id; })[0] || null; }
-    // виджет уже на дашборде? (деф-видимые блоки — если не скрыты; defHidden — при явном показе)
+    // виджет уже на дашборде? (деф-видимые блоки — если не скрыты; defHidden — при явном
+    // показе). R8: деф-видимые есть только на «Обзоре», на подвкладках всё опт-ин.
     function pfl2IsAdded(id) {
         if (id === '__note') return false;
         var m = dashCfg.hidden || {};
         if (id === 'cap') return m.cap === 0 || m.cap2 === 0;
-        var defOn = { fav: 1, cal: 1, rates: 1, trades: 1, sum: 1 };
+        var defOn = dashTab === 'overview' ? { fav: 1, cal: 1, rates: 1, trades: 1, sum: 1 } : {};
         if (defOn[id]) return !m[id];
         return m[id] === 0;
     }
@@ -7741,6 +8040,61 @@
                 '<span class="dm-row"><i>1</i><em>Основной</em><b>84 300 512 ₽</b></span>' +
                 '<span class="dm-row"><i>2</i><em>Пенсионный</em><b>39 464 090 ₽</b></span></div>';
         }
+        if (id === 'plist') {
+            return '<div class="dm-rows">' +
+                '<span class="dm-row"><i style="color:#4c5ef7">▦</i><em>Основной</em><b>68 910 342 ₽</b><b class="pos">+0,11%</b></span>' +
+                '<span class="dm-row"><i style="color:#7c3aed">▦</i><em>Долгосрочный</em><b>24 160 785 ₽</b><b class="pos">+5,43%</b></span>' +
+                '<span class="dm-row"><i style="color:#d97757">▦</i><em>Спекулятивный</em><b>8 303 090 ₽</b><b class="neg">−1,47%</b></span></div>';
+        }
+        if (id === 'pstruct') {
+            return '<div class="dm-alloc"><svg viewBox="0 0 84 84" class="dm-donut">' +
+                '<circle cx="42" cy="42" r="30" fill="none" stroke="#e8edf4" stroke-width="13"/>' +
+                '<g transform="rotate(-90 42 42)">' +
+                '<circle cx="42" cy="42" r="30" fill="none" stroke="#4c5ef7" stroke-width="13" stroke-dasharray="128 188"/>' +
+                '<circle cx="42" cy="42" r="30" fill="none" stroke="#a78bfa" stroke-width="13" stroke-dasharray="45 188" stroke-dashoffset="-128"/>' +
+                '<circle cx="42" cy="42" r="30" fill="none" stroke="#f4a261" stroke-width="13" stroke-dasharray="15 188" stroke-dashoffset="-173"/>' +
+                '</g></svg>' +
+                '<div class="dm-leg">' +
+                    '<span><i style="background:#4c5ef7"></i>Основной<b>68%</b></span>' +
+                    '<span><i style="background:#a78bfa"></i>Долгосрочный<b>24%</b></span>' +
+                    '<span><i style="background:#f4a261"></i>Спекулятивный<b>8%</b></span>' +
+                '</div></div>';
+        }
+        if (id === 'psum') {
+            return '<div class="dm-chips">' +
+                '<span class="dm-chip"><i>Стоимость</i><b>101 374 217</b></span>' +
+                '<span class="dm-chip"><i>Доходность</i><b class="pos">+1 194 762</b></span>' +
+                '<span class="dm-chip"><i>Вложено</i><b>100 848 682</b></span>' +
+                '<span class="dm-chip"><i>Активов</i><b>35</b></span></div>';
+        }
+        if (id === 'pdetail') {
+            return '<div class="dm-rows">' +
+                '<span class="dm-row"><em>SBER</em><i>100 шт · 12,4%</i><b>31 045 ₽</b></span>' +
+                '<span class="dm-row"><em>LKOH</em><i>12 шт · 8,2%</i><b>84 300 ₽</b></span>' +
+                '<span class="dm-row"><em>ОФЗ 26248</em><i>280 шт · 21,7%</i><b>162 063 ₽</b></span></div>';
+        }
+        if (id === 'reports') {
+            return '<div class="dm-rows">' +
+                '<span class="dm-row"><em>Excel · Все позиции</em><b>→</b></span>' +
+                '<span class="dm-row"><em>Excel · Журнал операций</em><b>→</b></span>' +
+                '<span class="dm-row"><em>Бэкап JSON</em><b>→</b></span></div>';
+        }
+        if (id === 'set:corner') {
+            return '<div class="dm-chips">' +
+                '<span class="dm-chip"><i>Мягкие</i><b>20px</b></span>' +
+                '<span class="dm-chip"><i>Главная</i><b>14px</b></span>' +
+                '<span class="dm-chip"><i>Крупные</i><b>28px</b></span></div>';
+        }
+        if (id === 'set:vis') {
+            return '<div class="dm-rows">' +
+                '<span class="dm-row"><em>Основной</em><b>👁</b></span>' +
+                '<span class="dm-row"><em>Календарь выплат</em><b>👁</b></span></div>';
+        }
+        if (id === 'set:layout') {
+            return '<div class="dm-rows">' +
+                '<span class="dm-row"><em>Панель раскладок</em><b>→</b></span>' +
+                '<span class="dm-row"><em>Сохранить текущий вид</em><b>→</b></span></div>';
+        }
         return '<div class="dm-rows"><span class="dm-row"><em>Виджет</em></span></div>';
     }
     // ---- отрисовка секций пикера ----
@@ -7882,7 +8236,7 @@
     // N всплывашек). Уже показанные виджеты пропускаем и говорим об этом в итоге.
     window.pfl2Add = function () {
         if (!pfl2SelIds.length) { toast('Сначала выберите виджет', true); return; }
-        var defOn = { fav: 1, cal: 1, rates: 1, trades: 1, sum: 1 };
+        var defOn = dashTab === 'overview' ? { fav: 1, cal: 1, rates: 1, trades: 1, sum: 1 } : {};
         var hMap = { s: 300, l: 560 };
         var added = [], skipped = 0, notes = 0;
         pfdPushUndo();
@@ -7923,6 +8277,211 @@
     };
 
     // ====================================================================
+    //  R8 — ПАНЕЛЬ «РАСКЛАДКИ» (pfl3): управление раскладками подвкладки.
+    //  Живёт там же, где пикер виджетов (над сеткой), и в том же стиле:
+    //  слева список вариантов с SVG-эскизами (базовая | своя сохранённая |
+    //  общие пресеты), справа крупное превью выбранного с действиями.
+    //  Пользователь: посмотреть и применить, сохранить свой вид.
+    //  Админ/владелец: обновить пресет из текущей раскладки, переименовать,
+    //  скрыть у пользователей (гейт hid), удалить, назначить базовую.
+    // ====================================================================
+    var pfl3Open = false;
+    var pfl3Sel = 'base';
+    var PFL3_IC = PFP_SLIDERS_SVG;
+    window.pfLayoutsToggle = function (ev) {
+        if (ev) ev.stopPropagation();
+        if (pfl3Open) { window.pfLayoutsClose(); return; }
+        try { if (window.matchMedia('(max-width: 1023px)').matches) { toast('Управление раскладками доступно на широком экране', true); return; } } catch (e) {}
+        if (!store.items.length) { toast('Сначала добавьте портфель — пока нечего расставлять', true); return; }
+        if (dashEdit) dashEdit = false;         // пикер и панель раскладок не живут вместе
+        if (!dashCfg.on) { dashCfg.on = true; saveDashCfg(); }
+        pfl3Open = true;
+        pfl3Sel = 'base';
+        closeImpMenus();
+        pfPresetsFetch(true);   // свежие пресеты и базовые к открытию
+        pfdRerender();
+        updateLayoutBtn();
+    };
+    window.pfLayoutsClose = function () {
+        if (!pfl3Open) return;
+        pfl3Open = false;
+        pfdRerender();
+        updateLayoutBtn();
+    };
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape' || !pfl3Open) return;
+        window.pfLayoutsClose();
+        e.stopImmediatePropagation();
+    });
+    // варианты раскладок текущей подвкладки — единый список для строк и превью
+    function pfl3Options() {
+        var act = pfLayoutActive();
+        var hasBase = !!pfBaseFor();
+        var opts = [{
+            key: 'base', kind: 'base',
+            name: hasBase ? 'Базовая' : 'Стандартная',
+            sub: hasBase ? 'задана администратором' : 'системный вид по умолчанию',
+            snap: pfBaseSnapNow(), portable: false, active: act.k === 'base'
+        }];
+        if (dashCfg.saved) opts.push({
+            key: 'saved', kind: 'saved', name: 'Ваша сохранённая', sub: 'личная контрольная точка',
+            snap: dashCfg.saved, portable: false, active: act.k === 'saved'
+        });
+        pfPresetsVisible().forEach(function (p) {
+            opts.push({
+                key: 'pre:' + p.id, kind: 'preset', preset: p,
+                name: p.name || 'Пресет', sub: p.hid ? 'скрыт у пользователей' : 'общий пресет',
+                snap: p.snap, portable: true, active: act.k === 'preset' && act.id === p.id
+            });
+        });
+        return opts;
+    }
+    function pfl3OptByKey(key) {
+        var opts = pfl3Options();
+        for (var i = 0; i < opts.length; i++) if (opts[i].key === key) return opts[i];
+        return opts[0];
+    }
+    function pfl3ThumbHtml(o) {
+        var svg = '';
+        try { svg = pfPresetThumbSvg(o.portable ? o.snap : pfPresetTemplate(o.snap)); } catch (e) {}
+        return svg || '<span class="pfl-opt-nothumb">' + PFDGRID_SVG + '</span>';
+    }
+    function pfl3ListHtml() {
+        var opts = pfl3Options();
+        if (!opts.some(function (o) { return o.key === pfl3Sel; })) pfl3Sel = 'base';
+        return opts.map(function (o) {
+            return '<div class="pfl3-row' + (pfl3Sel === o.key ? ' on' : '') + (o.preset && o.preset.hid ? ' gated' : '') + '"' +
+                ' role="button" tabindex="0" onclick="pfl3Pick(\'' + jsArg(o.key) + '\')">' +
+                '<span class="pfl3-thumb">' + pfl3ThumbHtml(o) + '</span>' +
+                '<span class="pfl3-cap"><b>' + esc(o.name) + '</b><i>' + esc(o.sub) + '</i></span>' +
+                (o.active ? '<span class="pfl3-now">' + CHECK_SVG + '<span>сейчас</span></span>' : '') +
+            '</div>';
+        }).join('');
+    }
+    function pfl3PvHtml() {
+        var o = pfl3OptByKey(pfl3Sel);
+        if (!o) return '';
+        var admin = pfIsAdmin();
+        var apply = o.kind === 'base' ? 'pfLayoutReset()'
+            : o.kind === 'saved' ? 'pfLayoutRestoreSaved()'
+            : 'pfApplyPreset(\'' + jsArg(o.preset.id) + '\')';
+        var meta = '';
+        if (o.kind === 'preset' && o.preset.at) {
+            try { meta = 'обновлён ' + new Date(o.preset.at).toLocaleDateString('ru-RU'); } catch (e) {}
+        }
+        // админ-действия: у пресета — полный набор, у базовой — назначение/сброс
+        var adm = '';
+        if (admin && o.kind === 'preset') {
+            var pid = jsArg(o.preset.id);
+            adm = '<div class="pfl3-adm">' +
+                '<button type="button" class="pfl3-abtn" onclick="pfPresetUpdate(\'' + pid + '\', event)" title="Заменить содержимое пресета текущей раскладкой подвкладки">' + UNDO_SVG + '<span>Обновить из текущей</span></button>' +
+                '<button type="button" class="pfl3-abtn" onclick="pfPresetRename(\'' + pid + '\', event)" title="Переименовать пресет">' + PENCIL_SVG + '<span>Переименовать</span></button>' +
+                '<button type="button" class="pfl3-abtn' + (o.preset.hid ? ' off' : '') + '" onclick="pfPresetGate(\'' + pid + '\', event)" title="' + (o.preset.hid ? 'Пресет скрыт у пользователей — нажмите, чтобы вернуть' : 'Скрыть пресет у всех пользователей') + '">' + (o.preset.hid ? EYEOFF_SVG : EYE_SVG) + '<span>' + (o.preset.hid ? 'Скрыт у всех' : 'Виден всем') + '</span></button>' +
+                '<button type="button" class="pfl3-abtn danger" onclick="pfDeletePreset(\'' + pid + '\', event)" title="Удалить пресет у всех">' + NOTE_TRASH_SVG + '<span>Удалить</span></button>' +
+            '</div>';
+        } else if (admin && o.kind === 'base') {
+            adm = '<div class="pfl3-adm">' +
+                '<button type="button" class="pfl3-abtn" onclick="pfSetBasePreset()" title="Сделать текущую раскладку базовой для всех пользователей">' + CHECK_SVG + '<span>Назначить текущую базовой</span></button>' +
+                (pfBaseFor() ? '<button type="button" class="pfl3-abtn" onclick="pfResetBasePreset()" title="Сбросить базовую к системной">' + UNDO_SVG + '<span>Сбросить к системной</span></button>' : '') +
+            '</div>';
+        }
+        return '<div class="pfl3-stage">' + pfl3ThumbHtml(o) + '</div>' +
+            '<div class="pfl-pv-foot pfl3-pvfoot">' +
+                '<div class="pfl-pv-meta"><b>' + esc(o.name) + '</b><span>' + esc(o.sub) + (meta ? ' · ' + meta : '') + '</span></div>' +
+                (o.active
+                    ? '<span class="pfl-pv-add is-added">' + CHECK_SVG + '<span>Применена сейчас</span></span>'
+                    : '<button type="button" class="pfl-pv-add" onclick="' + apply + '">' + CHECK_SVG + '<span>Применить</span></button>') +
+            '</div>' + adm;
+    }
+    function pfl3FootHtml() {
+        var saved = pfdLayoutSaved();
+        var admin = pfIsAdmin();
+        return '<div class="pfl-foot pfl3-foot" id="pfl3Foot">' +
+            '<div class="pfl-foot-l">' +
+                '<button type="button" class="pfl-btn primary' + (saved ? ' done' : '') + '" onclick="pfLayoutSave()" title="' + (saved ? 'Текущий вид уже сохранён' : 'Закрепить текущую раскладку за собой') + '">' + CHECK_SVG + '<span>' + (saved ? 'Сохранено' : 'Сохранить текущий вид') + '</span></button>' +
+                (admin ? '<button type="button" class="pfl-btn ghost" onclick="pfSaveAsPreset()" title="Сделать текущую раскладку общим пресетом подвкладки">' + PFD_PLUS_SVG + '<span>Новый пресет из текущего вида</span></button>' : '') +
+            '</div>' +
+            '<span class="pfl3-foot-hint">У каждой подвкладки — своя раскладка' + (admin ? ' · пресеты видят все пользователи' : '') + '</span>' +
+        '</div>';
+    }
+    function pfl3PanelHtml() {
+        return '<div class="pfl-panel pfl3" id="pfl3Panel">' +
+            '<div class="pfl-head">' +
+                '<div class="pfl-head-t">' +
+                    '<span class="pfl-head-ic">' + PFL3_IC + '</span>' +
+                    '<div class="pfl-head-tx"><b>Раскладки · ' + esc(pfxTabLabel(dashTab)) + '</b>' +
+                        '<span>Выберите вариант слева — справа появится схема и действия</span></div>' +
+                '</div>' +
+                '<button type="button" class="pfl-x" onclick="pfLayoutsClose()" aria-label="Закрыть">' + XMARK_SVG + '</button>' +
+            '</div>' +
+            '<div class="pfl3-body">' +
+                '<div class="pfl3-list" id="pfl3List">' + pfl3ListHtml() + '</div>' +
+                '<div class="pfl3-pv" id="pfl3Pv">' + pfl3PvHtml() + '</div>' +
+            '</div>' +
+            pfl3FootHtml() +
+        '</div>';
+    }
+    window.pfl3Pick = function (key) {
+        if (pfl3Sel === key) return;
+        pfl3Sel = key;
+        pfl3Repaint();
+    };
+    // точечная перерисовка панели (без полного ре-рендера страницы) — после выбора
+    // строки, прихода пресетов из облака, переименования/гейта
+    function pfl3Repaint() {
+        if (!pfl3Open) return;
+        var list = dq('pfl3List'), pv = dq('pfl3Pv'), foot = dq('pfl3Foot');
+        if (list) list.innerHTML = pfl3ListHtml();
+        if (pv) pv.innerHTML = pfl3PvHtml();
+        if (foot) foot.outerHTML = pfl3FootHtml();
+    }
+    // ---- админ-действия над пресетами (обновить/переименовать/гейт) ----
+    var PENCIL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/><path d="m15 5 4 4"/></svg>';
+    function pfPresetById(id) { return pfPresetList.filter(function (x) { return x.id === id; })[0] || null; }
+    window.pfPresetUpdate = function (id, ev) {
+        if (ev) ev.stopPropagation();
+        if (!pfIsAdmin()) return;
+        var p = pfPresetById(id); if (!p) return;
+        pfConfirm({ title: 'Обновить пресет?', text: 'Текущая раскладка подвкладки «' + esc(pfxTabLabel(dashTab)) + '» заменит содержимое пресета «' + esc(p.name || 'Пресет') + '» у всех пользователей.', ok: 'Обновить' }, function () {
+            pfdFlushNotes();
+            p.snap = pfPresetTemplate(pfdSavedSnap());
+            p.at = Date.now();
+            pfPresetsPersist('Пресет «' + (p.name || 'Пресет') + '» обновлён из текущей раскладки');
+        });
+    };
+    window.pfPresetRename = function (id, ev) {
+        if (ev) ev.stopPropagation();
+        if (!pfIsAdmin()) return;
+        var p = pfPresetById(id); if (!p) return;
+        pfPresetNameModal(p.name || '', function (name) {
+            p.name = name.slice(0, 40) || 'Пресет';
+            pfPresetsPersist('Пресет переименован');
+        });
+    };
+    window.pfPresetGate = function (id, ev) {
+        if (ev) ev.stopPropagation();
+        if (!pfIsAdmin()) return;
+        var p = pfPresetById(id); if (!p) return;
+        if (p.hid) delete p.hid; else p.hid = 1;
+        pfPresetsPersist(p.hid ? 'Пресет скрыт у пользователей' : 'Пресет снова виден всем');
+    };
+    // карточка-виджет «Раскладки» (подвкладка «Настройки»): вход в панель + быстрый сейв
+    function pfwLayoutCardHtml() {
+        function item(ic, t, sub, oc) {
+            return '<button class="pf-impitem" onclick="' + oc + '">' +
+                '<span class="pf-impico">' + ic + '</span>' +
+                '<span class="pf-impbody"><b>' + t + '</b><i>' + sub + '</i></span>' +
+                '<span class="pf-impgo">' + CHEV_SVG + '</span></button>';
+        }
+        var body = '<div class="pfx-setlist">' +
+            item(PFL3_IC, 'Панель раскладок', 'пресеты, базовая и ваша сохранённая — у каждой подвкладки своя', 'pfLayoutsToggle(event)') +
+            item(CHECK_SVG, 'Сохранить текущий вид', 'закрепить раскладку этой подвкладки за собой', 'pfLayoutSave()') +
+        '</div>';
+        return '<div class="dash2-card pf-card2 pfx-setcard">' +
+            pfCardHead('', 'Раскладки', 'управление видом подвкладок', null) + body + '</div>';
+    }
+
+    // ====================================================================
     //  ДЕЙСТВИЯ (inline onclick)
     // ====================================================================
     window.pfAddPortfolio = function () {
@@ -7931,15 +8490,26 @@
         // (его блок в начало dashCfg.order; без col-пина masonry кладёт его в
         // верхний левый угол, приколотые соседи остаются в своих колонках)
         var p = makePortfolio(); store.items.unshift(p); saveStore();
+        // R8: карточка нового портфеля живёт на «Обзоре» — целим в ЕГО конфиг,
+        // даже если кнопку нажали с другой подвкладки
+        var oc = dashCfgFor('overview');
         var bid = 'pf:' + p.id;
-        if (Array.isArray(dashCfg.order)) {
-            var ix = dashCfg.order.indexOf(bid);
-            if (ix >= 0) dashCfg.order.splice(ix, 1);
-            dashCfg.order.unshift(bid);
-            saveDashCfg();
+        if (Array.isArray(oc.order)) {
+            var ix = oc.order.indexOf(bid);
+            if (ix >= 0) oc.order.splice(ix, 1);
+            oc.order.unshift(bid);
+            if (oc === dashCfg) saveDashCfg();
+            else try { localStorage.setItem(DASH_KEY, JSON.stringify(oc)); } catch (e) {}
         }
         // настройки нового портфеля открываются сразу — с тем же чистым состоянием, что и
-        // через ⚙ (pfToggleMenu): форма добавления раскрыта (портфель пуст), остальное закрыто
+        // через ⚙ (pfToggleMenu): форма добавления раскрыта (портфель пуст), остальное закрыто.
+        // Карточка с настройками живёт на «Обзоре» — переключаемся туда, откуда бы ни нажали.
+        if (pfxTab !== 'overview') {
+            pfxTab = 'overview';
+            try { localStorage.setItem(PFX_TAB_KEY, 'overview'); } catch (e) {}
+            pfl3Open = false;
+            pfxSyncCfg();
+        }
         openMenu = p.id; menuJustOpened = true;
         // форма добавления СВЁРНУТА по умолчанию (раскрывается кнопкой «＋ Добавить актив») —
         // раньше открывалась сразу, что мешало
