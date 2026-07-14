@@ -6976,9 +6976,20 @@
     //  пикер «Добавить виджет» с демо-превью, настройка скруглений карточек.
     // ====================================================================
     // ---- подвкладки (Обзор | Портфели | Аналитика | Отчёты | Дивиденды | Операции | Настройки) ----
+    // [ключ, подпись, иконка]. Иконка — чтобы вкладка узнавалась по силуэту и ряд не
+    // приходилось перечитывать целиком. Третий элемент добавлен, а не подменил второй:
+    // подпись [1] читает ещё и pfxTabLabel — она уходит в текст, не в разметку.
+    var PFXI = function (d) {
+        return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
+    };
     var PFX_TABS = [
-        ['overview', 'Обзор'], ['ports', 'Портфели'], ['analytics', 'Аналитика'],
-        ['reports', 'Отчёты'], ['divs', 'Дивиденды'], ['ops', 'Операции'], ['settings', 'Настройки']
+        ['overview',  'Обзор',      PFXI('<rect x="3" y="3" width="7.5" height="8.5" rx="1.8"/><rect x="13.5" y="3" width="7.5" height="5" rx="1.8"/><rect x="13.5" y="10.5" width="7.5" height="10.5" rx="1.8"/><rect x="3" y="14" width="7.5" height="7" rx="1.8"/>')],
+        ['ports',     'Портфели',   PFXI('<rect x="2.5" y="7" width="19" height="13" rx="2.5"/><path d="M8.5 7V5.5A1.5 1.5 0 0 1 10 4h4a1.5 1.5 0 0 1 1.5 1.5V7"/><path d="M2.5 12.5h19"/>')],
+        ['analytics', 'Аналитика',  PFXI('<path d="M3 3v16.5A1.5 1.5 0 0 0 4.5 21H21"/><path d="M7 15.5l4-4.5 3.5 3L20 7"/>')],
+        ['reports',   'Отчёты',     PFXI('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/>')],
+        ['divs',      'Дивиденды',  PFXI('<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>')],
+        ['ops',       'Операции',   PFXI('<path d="M3 7h13"/><path d="M12.5 3.5 16 7l-3.5 3.5"/><path d="M21 17H8"/><path d="M11.5 13.5 8 17l3.5 3.5"/>')],
+        ['settings',  'Настройки',  PFDCFG_GEAR_SVG]   // та же шестерёнка, что у виджетов
     ];
     var PFX_TAB_KEY = 'pf_subtab_v1';   // локально (в облако не зеркалится — просто позиция UI)
     var pfxTab = (function () {
@@ -7001,7 +7012,8 @@
     function pfxTabsHtml() {
         if (!store.items.length || !pfxWide()) return '';
         return '<div class="pfx-tabs" role="tablist">' + PFX_TABS.map(function (t) {
-            return '<button type="button" role="tab" class="pfx-tab' + (pfxTab === t[0] ? ' on' : '') + '" aria-selected="' + (pfxTab === t[0]) + '" onclick="pfxGoTab(\'' + t[0] + '\')">' + t[1] + '</button>';
+            return '<button type="button" role="tab" class="pfx-tab' + (pfxTab === t[0] ? ' on' : '') + '" aria-selected="' + (pfxTab === t[0]) + '" onclick="pfxGoTab(\'' + t[0] + '\')">' +
+                '<span class="pfx-tab-ic" aria-hidden="true">' + t[2] + '</span>' + t[1] + '</button>';
         }).join('') + '</div>';
     }
 
