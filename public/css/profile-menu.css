@@ -185,6 +185,16 @@ body.dark-mode .ph-pill { color: #9fb1c6; background: rgba(255,255,255,0.07); }
 
 /* ---- список секций-аккордеонов ---- */
 .ph-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; display: flex; flex-direction: column; gap: 8px; padding: 12px 12px 6px; }
+/* Заголовок группы разделов («Аккаунт», «Подписка», …) — тихая надстрочная метка, как
+   .pf-impgrp в меню Портфелей: она делит список, но не спорит со строками-аккордеонами.
+   Первая группа идёт сразу под шапкой — верхний отступ ей не нужен. */
+.ph-grp {
+    flex-shrink: 0; margin: 6px 4px -2px;
+    font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 800;
+    letter-spacing: 0.1em; text-transform: uppercase; color: #a8b3c2;
+}
+.ph-grp:first-child { margin-top: 0; }
+body.dark-mode .ph-grp { color: #7d8da0; }
 .ph-sec { flex-shrink: 0; border: 1px solid rgba(24,38,60,0.08); border-radius: 16px; background: #fbfcfe; transition: border-color 0.15s, background 0.15s; }
 .ph-sec.on { border-color: rgba(59,130,246,0.35); background: #fff; }
 body.dark-mode .ph-sec { border-color: rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); }
@@ -258,6 +268,16 @@ body.dark-mode .ph-tg-ok { color: #34d399; }
 .ph-save:active { transform: scale(0.97); }
 .ph-save svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.5; }
 .ph-sec--api .ph-save { background: #8b5cf6; box-shadow: 0 8px 18px -9px rgba(139,92,246,0.9); }
+/* «Пароль обновлён» — успокоенное зелёное состояние (та же логика, что .pfl-btn.primary.done
+   в Портфелях): кнопка сама отчитывается о результате, тост может уже уйти */
+.ph-save.done, .ph-sec--sec .ph-save.done {
+    background: #eaf7ef; color: #12a35c; box-shadow: none; cursor: default;
+}
+body.dark-mode .ph-save.done, body.dark-mode .ph-sec--sec .ph-save.done {
+    background: rgba(18,163,92,0.16); color: #6ee7a8;
+}
+.ph-save:disabled { opacity: 0.65; cursor: default; }
+.ph-save:disabled:hover { filter: none; }
 
 /* ---- строки настроек с переключателями ---- */
 .ph-set { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border: 1px solid rgba(24,38,60,0.08); border-radius: 12px; background: #fff; }

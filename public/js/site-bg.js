@@ -101,9 +101,48 @@
         draw();
     }
 
+    // ---------------------------------------------------------------
+    //  ВАРИАНТ ФОНА (переключатель в «Портфели · Настройки»)
+    // ---------------------------------------------------------------
+    // Заливки живут в css/site-bg.css (body.sbg-<key> #siteBgTiles). Здесь — только
+    // список, персист и классы на <body>. Мозаика — дефолт: при пустом ключе классы
+    // не ставим вовсе, и всё работает ровно как до появления переключателя.
+    var BG_KEY = 'site_bg_v1';
+    var BG_LIST = [
+        { id: 'mosaic',   name: 'Мозаика',    sub: 'как сейчас' },
+        { id: 'sage',     name: 'Шалфейный',  sub: 'тихий зелёный' },
+        { id: 'gradient', name: 'Градиент',   sub: 'сине-лиловая дымка' },
+        { id: 'calm',     name: 'Спокойный',  sub: 'нейтральная бумага' },
+        { id: 'dune',     name: 'Дюны',       sub: 'тёплый песок' },
+        { id: 'aurora',   name: 'Аврора',     sub: 'холодные всполохи' }
+    ];
+    function bgValid(v) { return BG_LIST.some(function (b) { return b.id === v; }); }
+    function bgGet() {
+        try { var v = localStorage.getItem(BG_KEY); return bgValid(v) ? v : 'mosaic'; }
+        catch (e) { return 'mosaic'; }
+    }
+    function bgApply() {
+        var cur = bgGet(), b = document.body;
+        if (!b) return;
+        BG_LIST.forEach(function (x) { b.classList.remove('sbg-' + x.id); });
+        b.classList.toggle('sbg-plain', cur !== 'mosaic');
+        if (cur !== 'mosaic') b.classList.add('sbg-' + cur);
+        // «Мозаика» вернулась после другого варианта — плитки могли не рисоваться ни разу
+        // (бокс был занят заливкой, размер не менялся, drawIfResized() отсекал по lastW/lastH)
+        if (cur === 'mosaic') { lastW = 0; lastH = 0; drawIfResized(); }
+    }
+    function bgSet(v) {
+        if (!bgValid(v) || v === bgGet()) return;
+        try { localStorage.setItem(BG_KEY, v); } catch (e) {}
+        bgApply();
+    }
+    // API для переключателя (js/portfolios.js — карточка «Фон страницы»)
+    window.siteBg = { list: function () { return BG_LIST.slice(); }, get: bgGet, set: bgSet, apply: bgApply };
+
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', drawIfResized);
+        document.addEventListener('DOMContentLoaded', function () { bgApply(); drawIfResized(); });
     } else {
+        bgApply();
         drawIfResized();
     }
 

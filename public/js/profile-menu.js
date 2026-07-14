@@ -191,7 +191,16 @@
                 '<div class="ph-id"><div class="ph-name" id="phName"></div><div class="ph-mail" id="phMail"></div></div>' +
                 '<div class="ph-pill" id="phPill" title="Данные хранятся в этом браузере. Синхронизация и вход с любого устройства появятся после подключения базы данных."><i></i>локально</div>' +
             '</div>' +
+            // Разделы сгруппированы по смыслу: шесть равнозначных строк подряд не давали
+            // понять, где искать пароль, а где выгрузку данных. Групп ровно три, и в каждой
+            // по два раздела — заголовок над ОДНОЙ строкой ничего не группирует, только
+            // добавляет шума (так было с «Подпиской» и «Подключениями»).
+            //   Аккаунт             — кто я и по какому тарифу
+            //   Приложение          — как оно себя ведёт и что к нему подключено
+            //   Безопасность и данные — пароль, устройства, экспорт, удаление
             '<div class="ph-list">' +
+
+                '<div class="ph-grp">Аккаунт</div>' +
 
                 // ---- Профиль ----
                 '<div class="ph-sec ph-sec--prof" id="phSecProf">' +
@@ -201,6 +210,50 @@
                         IC.chev +
                     '</button>' +
                     '<div class="ph-body"><div class="ph-body-in"><div class="ph-body-pad" id="phProfBody"></div></div></div>' +
+                '</div>' +
+
+                // ---- Тарифы ----
+                '<div class="ph-sec ph-sec--plan" id="phSecPlan">' +
+                    '<button class="ph-row" type="button" data-sec="plan" aria-expanded="false">' +
+                        '<span class="ph-row-ic">' + IC.card + '</span>' +
+                        '<span class="ph-row-tt"><span class="ph-row-t">Тарифы</span><span class="ph-row-s">Базовый — активен</span></span>' +
+                        IC.chev +
+                    '</button>' +
+                    '<div class="ph-body"><div class="ph-body-in"><div class="ph-body-pad">' +
+                        '<div class="ph-plan on">' +
+                            '<div class="ph-plan-h"><b>Базовый</b><span class="ph-plan-price free">бесплатно</span></div>' +
+                            '<div class="ph-plan-s">Расчёт портфеля, ежемесячный доход, портфели, ребаланс и терминал — без ограничений.</div>' +
+                            '<span class="ph-plan-badge">' + IC.check + 'Ваш тариф</span>' +
+                        '</div>' +
+                        '<div class="ph-plan">' +
+                            '<div class="ph-plan-h"><b>Pro</b><span class="ph-plan-price">скоро</span></div>' +
+                            '<div class="ph-plan-s">Синхронизация с брокером по API, автоматический ребаланс и уведомления о купонных выплатах.</div>' +
+                            '<div class="ph-hint">' + IC.shield + '<span>Тариф появится после подключения аккаунтов — цена и состав уточняются.</span></div>' +
+                        '</div>' +
+                    '</div></div></div>' +
+                '</div>' +
+
+                '<div class="ph-grp">Приложение</div>' +
+
+                // ---- Настройки ----
+                '<div class="ph-sec ph-sec--set" id="phSecSet">' +
+                    '<button class="ph-row" type="button" data-sec="set" aria-expanded="false">' +
+                        '<span class="ph-row-ic">' + IC.sliders + '</span>' +
+                        '<span class="ph-row-tt"><span class="ph-row-t">Настройки</span><span class="ph-row-s">Запуск, приватность</span></span>' +
+                        IC.chev +
+                    '</button>' +
+                    '<div class="ph-body"><div class="ph-body-in"><div class="ph-body-pad">' +
+                        '<div class="ph-field"><label class="ph-lab" for="phStartTab">Раздел при запуске</label>' +
+                            '<select class="ph-select" id="phStartTab">' + buildOptions(START_TABS, s.startTab || 'home') + '</select></div>' +
+                        '<div class="ph-set">' +
+                            '<span class="ph-set-tt"><span class="ph-set-t">Скрывать суммы</span><span class="ph-set-s">Размывать рубли от посторонних глаз — наведите, чтобы взглянуть</span></span>' +
+                            '<button class="ph-sw' + (s.hideSums ? ' on' : '') + '" type="button" id="phSwHide" role="switch" aria-checked="' + (s.hideSums ? 'true' : 'false') + '" aria-label="Скрывать суммы"></button>' +
+                        '</div>' +
+                        '<div class="ph-set">' +
+                            '<span class="ph-set-tt"><span class="ph-set-t">Синхронизация с брокером <span class="ph-soon">скоро</span></span><span class="ph-set-s">Автозагрузка портфеля по токену</span></span>' +
+                            '<button class="ph-sw' + (s.brokerSync ? ' on' : '') + '" type="button" id="phSwSync" role="switch" aria-label="Синхронизация с брокером"></button>' +
+                        '</div>' +
+                    '</div></div></div>' +
                 '</div>' +
 
                 // ---- API брокера ----
@@ -223,47 +276,7 @@
                     '</div></div></div>' +
                 '</div>' +
 
-                // ---- Тарифы ----
-                '<div class="ph-sec ph-sec--plan" id="phSecPlan">' +
-                    '<button class="ph-row" type="button" data-sec="plan" aria-expanded="false">' +
-                        '<span class="ph-row-ic">' + IC.card + '</span>' +
-                        '<span class="ph-row-tt"><span class="ph-row-t">Тарифы</span><span class="ph-row-s">Базовый — активен</span></span>' +
-                        IC.chev +
-                    '</button>' +
-                    '<div class="ph-body"><div class="ph-body-in"><div class="ph-body-pad">' +
-                        '<div class="ph-plan on">' +
-                            '<div class="ph-plan-h"><b>Базовый</b><span class="ph-plan-price free">бесплатно</span></div>' +
-                            '<div class="ph-plan-s">Расчёт портфеля, ежемесячный доход, портфели, ребаланс и терминал — без ограничений.</div>' +
-                            '<span class="ph-plan-badge">' + IC.check + 'Ваш тариф</span>' +
-                        '</div>' +
-                        '<div class="ph-plan">' +
-                            '<div class="ph-plan-h"><b>Про</b><span class="ph-plan-price">скоро</span></div>' +
-                            '<div class="ph-plan-s">Синхронизация с брокером по API, автоматический ребаланс и уведомления о купонных выплатах.</div>' +
-                            '<div class="ph-hint">' + IC.shield + '<span>Тариф появится после подключения аккаунтов — цена и состав уточняются.</span></div>' +
-                        '</div>' +
-                    '</div></div></div>' +
-                '</div>' +
-
-                // ---- Настройки ----
-                '<div class="ph-sec ph-sec--set" id="phSecSet">' +
-                    '<button class="ph-row" type="button" data-sec="set" aria-expanded="false">' +
-                        '<span class="ph-row-ic">' + IC.sliders + '</span>' +
-                        '<span class="ph-row-tt"><span class="ph-row-t">Настройки</span><span class="ph-row-s">Запуск, приватность</span></span>' +
-                        IC.chev +
-                    '</button>' +
-                    '<div class="ph-body"><div class="ph-body-in"><div class="ph-body-pad">' +
-                        '<div class="ph-field"><label class="ph-lab" for="phStartTab">Раздел при запуске</label>' +
-                            '<select class="ph-select" id="phStartTab">' + buildOptions(START_TABS, s.startTab || 'home') + '</select></div>' +
-                        '<div class="ph-set">' +
-                            '<span class="ph-set-tt"><span class="ph-set-t">Скрывать суммы</span><span class="ph-set-s">Размывать рубли от посторонних глаз — наведите, чтобы взглянуть</span></span>' +
-                            '<button class="ph-sw' + (s.hideSums ? ' on' : '') + '" type="button" id="phSwHide" role="switch" aria-checked="' + (s.hideSums ? 'true' : 'false') + '" aria-label="Скрывать суммы"></button>' +
-                        '</div>' +
-                        '<div class="ph-set">' +
-                            '<span class="ph-set-tt"><span class="ph-set-t">Синхронизация с брокером <span class="ph-soon">скоро</span></span><span class="ph-set-s">Автозагрузка портфеля по токену</span></span>' +
-                            '<button class="ph-sw' + (s.brokerSync ? ' on' : '') + '" type="button" id="phSwSync" role="switch" aria-label="Синхронизация с брокером"></button>' +
-                        '</div>' +
-                    '</div></div></div>' +
-                '</div>' +
+                '<div class="ph-grp">Безопасность и данные</div>' +
 
                 // ---- Безопасность (только для облачного аккаунта) ----
                 '<div class="ph-sec ph-sec--sec" id="phSecSec">' +
@@ -576,18 +589,33 @@
     }
 
     // ---------- безопасность (только облако) ----------
+    // Кнопка «Обновить пароль» сама отчитывается о результате: поля очищаются, и по ним
+    // уже не видно, прошло ли обновление, — тост к этому моменту мог и уйти. Состояния:
+    // «Обновляем…» (заблокирована) → «Пароль обновлён» с галочкой (.done) → через 2.6с
+    // обратно. Тот же приём отложенного возврата, что у .arm в onLogout.
+    var passTimer = null;
+    function setPassBtn(state) {
+        var b = hub.querySelector('#phSavePass');
+        if (!b) return;
+        b.classList.toggle('done', state === 'done');
+        b.disabled = state === 'busy';
+        b.innerHTML = IC.check + (state === 'busy' ? 'Обновляем…' : state === 'done' ? 'Пароль обновлён' : 'Обновить пароль');
+    }
     function onSavePassword() {
         if (!window.supa) return;
         var p1 = hub.querySelector('#phPass1').value || '';
         var p2 = hub.querySelector('#phPass2').value || '';
         if (p1.length < 6) { toast('Пароль — минимум 6 символов', true); return; }
         if (p1 !== p2) { toast('Пароли не совпадают', true); return; }
-        toast('Обновляем пароль…');
+        clearTimeout(passTimer);
+        setPassBtn('busy');
         window.supa.updatePassword(p1).then(function (r) {
-            if (!r.ok) { toast(r.error, true); return; }
+            if (!r.ok) { setPassBtn('idle'); toast(r.error, true); return; }
             hub.querySelector('#phPass1').value = '';
             hub.querySelector('#phPass2').value = '';
+            setPassBtn('done');
             toast('Пароль обновлён');
+            passTimer = setTimeout(function () { setPassBtn('idle'); }, 2600);
         });
     }
     function onSignoutAll(e) {

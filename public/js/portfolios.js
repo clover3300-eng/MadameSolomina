@@ -1623,15 +1623,17 @@
             '<div class="pf-eyenote">Скрытые карточки не показываются в сетке и в календаре выплат, но их капитал по-прежнему учитывается в общей сводке.</div>' : '';
         // ---- группа «Секции страницы» — тумблеры видимости блоков ----
         // При включённой своей раскладке (dashCfg.on) сюда попадают скрытые/показанные
-        // ИЗНАЧАЛЬНЫЕ блоки, которые МОЖНО скрыть глазом на самой карточке — «Календарь
-        // выплат» и «Сводка» (у «Избранного»/«Ставок рынка» скрытия нет). Виджеты
-        // возвращаются из «Конструктор → Добавить блок». Плюс всегда — «История сделок».
+        // ИЗНАЧАЛЬНЫЕ блоки, которые МОЖНО скрыть глазом на самой карточке: «Календарь
+        // выплат», «Избранное», «Ставки рынка» и «Сводка». Виджеты возвращаются из
+        // «Конструктор → Добавить блок». Плюс всегда — «История сделок».
         var dashSecRows = '';
         if (dashCfg.on) {
             var hasVisHold = store.items.some(function (p) { return !p.hidden && (p.holdings || []).length > 0; });
             var noBondsV = hasVisHold && !calPfCandidates().length;
             var secs = [
                 { id: 'cal', name: noBondsV ? 'Ставки' : 'Календарь выплат', sub: noBondsV ? 'ставки денежного рынка' : 'ближайшие купоны и дивиденды', on: true },
+                { id: 'fav', name: 'Избранное', sub: 'потенциал и новости по тикерам', on: true },
+                { id: 'rates', name: 'Ставки рынка', sub: 'ключевая ставка, вклады, инфляция', on: !noBondsV },
                 { id: 'sum', name: 'Сводка', sub: 'суммарный капитал по портфелям', on: store.items.length >= 2 }
             ];
             dashSecRows = secs.filter(function (s) { return s.on; }).map(function (s) {
@@ -1815,7 +1817,7 @@
             'kpi:cap': 1, 'kpi:day': 1, 'kpi:next': 1, cap: 1, cap2: 1, heat: 1, news: 1, alloc: 1,
             divs: 1, assets: 1, ops: 1, yield: 1, snaps: 1, movers: 1, idx: 1, passive: 1, conc: 1,
             plist: 1, pstruct: 1, psum: 1, pdetail: 1, reports: 1,
-            'set:corner': 1, 'set:vis': 1, 'set:layout': 1 };
+            'set:corner': 1, 'set:vis': 1, 'set:layout': 1, 'set:bg': 1 };
         store.items.forEach(function (p) { known['pf:' + p.id] = 1; });
         (dashCfg.notes || []).forEach(function (n) { known['note:' + n.id] = 1; });
         return known;
@@ -1874,7 +1876,7 @@
         reports: [['reports', 1, 6], ['snaps', 7, 6]],
         divs: [['divs', 1, 4], ['kpi:next', 5, 4], ['passive', 9, 4], ['cal', 1, 8], ['calm', 9, 4]],
         ops: [['trades', 1, 12]],
-        settings: [['set:corner', 1, 6], ['set:vis', 7, 6], ['set:layout', 1, 6], ['reports', 7, 6]]
+        settings: [['set:corner', 1, 6], ['set:bg', 7, 6], ['set:vis', 1, 6], ['set:layout', 7, 6], ['reports', 1, 6]]
     };
     function pfxTabSeed(tab) {
         var cfg = normTabCfg(null);
@@ -2081,13 +2083,14 @@
             movers: { l: 'Лидеры', h: 2 }, idx: { l: 'Рынок', h: 2 }, passive: { l: 'Доход', h: 2 },
             conc: { l: 'Диверс.', h: 2 }, plist: { l: 'Портфели', h: 2.6 }, pstruct: { l: 'Структура', h: 2.4 },
             psum: { l: 'Сводные', h: 2.4 }, pdetail: { l: 'Составы', h: 3 }, reports: { l: 'Отчёты', h: 2.4 },
-            'set:corner': { l: 'Вид', h: 2 }, 'set:vis': { l: 'Видимость', h: 2 }, 'set:layout': { l: 'Раскладки', h: 2 }
+            'set:corner': { l: 'Вид', h: 2 }, 'set:vis': { l: 'Видимость', h: 2 }, 'set:layout': { l: 'Раскладки', h: 2 },
+            'set:bg': { l: 'Фон', h: 2 }
         };
         var DEFSPAN = { fav: 4, cal: 8, sum: 4, panel: 12, rates: 12, trades: 12,
             'kpi:cap': 4, 'kpi:day': 4, 'kpi:next': 4, cap: 6, cap2: 6, heat: 6, news: 6, alloc: 4,
             divs: 4, calm: 4, assets: 4, ops: 4, yield: 4, snaps: 6, movers: 4, idx: 4, passive: 4, conc: 4,
             plist: 12, pstruct: 6, psum: 6, pdetail: 12, reports: 6,
-            'set:corner': 6, 'set:vis': 6, 'set:layout': 6 };
+            'set:corner': 6, 'set:vis': 6, 'set:layout': 6, 'set:bg': 6 };
         function meta(id) {
             if (id.indexOf('pf:') === 0) { var m = /pf:#?(\d+)/.exec(id); return { l: 'П' + ((m ? +m[1] : 0) + 1), h: 3, cls: 'pf' }; }
             if (id.indexOf('note:') === 0) return { l: 'Заметка', h: 1.5, cls: 'note' };
@@ -2290,6 +2293,7 @@
         blocks.push({ id: 'pdetail', name: 'Составы портфелей', htmlFn: pfxTabPortsHtml, span: 12, defHidden: true });
         blocks.push({ id: 'reports', name: 'Отчёты и экспорт', htmlFn: pfwReportsHtml, span: 6, defHidden: true });
         blocks.push({ id: 'set:corner', name: 'Отображение карточек', htmlFn: function () { return pfxSetCardHtml('Отображение карточек', 'скругление углов виджетов и карточек', pfxCornerRowHtml(true)); }, span: 6, defHidden: true });
+        blocks.push({ id: 'set:bg', name: 'Фон страницы', htmlFn: function () { return pfxSetCardHtml('Фон страницы', 'общая подложка сайта под карточками', pfxBgRowHtml(true)); }, span: 6, defHidden: true });
         blocks.push({ id: 'set:vis', name: 'Видимость', htmlFn: function () { return pfxSetCardHtml('Видимость', 'какие портфели и секции показывать', pfxVisRowsHtml()); }, span: 6, defHidden: true });
         blocks.push({ id: 'set:layout', name: 'Раскладки', htmlFn: pfwLayoutCardHtml, span: 6, defHidden: true });
         // каждая заметка — свой блок note:<id> (мультизаметки, «+» плодит новые)
@@ -2660,12 +2664,11 @@
             //    в chrome не дублируем;
             //  • ВИДЖЕТ (defHidden: KPI/график/карта/новости) — УДАЛИТЬ (корзина .pfd-cardrm ВНУТРИ
             //    карточки, как у заметки, по hover), вернётся из «Конструктор → Добавить блок»;
-            //  • «Календарь выплат»/«Сводка» — СКРЫТЬ глазом .pfc-act В ШАПКЕ карточки (.pfd-eye,
-            //    правый-верхний угол напротив заголовка, ТОЧНО как у портфеля, виден всегда), вернуть
-            //    — через меню «Видимость» в шапке;
+            //  • «Календарь выплат»/«Сводка»/«Избранное»/«Ставки рынка» — СКРЫТЬ глазом .pfc-act
+            //    В ШАПКЕ карточки (.pfd-eye, правый-верхний угол напротив заголовка, ТОЧНО как у
+            //    портфеля, виден всегда), вернуть — через меню «Видимость» в шапке;
             //  • «История сделок» — своего on-card глаза НЕТ (правый угол шапки занят .pft-toggle);
-            //    скрыть/показать — из меню «Видимость»;
-            //  • «Избранное»/«Ставки рынка» — без кнопки (их не скрываем).
+            //    скрыть/показать — из меню «Видимость».
             var hideBtn = '';
             if (b.isNote || b.id.indexOf('pf:') === 0) {
                 hideBtn = '';
@@ -2677,11 +2680,12 @@
                 // открывает поповер .pfdcfg-pop прямо на блоке (см. pfdCfgOpen ниже)
                 hideBtn = '<button class="pfd-cardcfg" title="Настройки виджета" aria-label="Настройки виджета" onclick="pfdCfgOpen(\'' + jsArg(b.id) + '\', event)">' + PFDCFG_GEAR_SVG + '</button>' +
                     '<button class="pfd-cardrm" title="Удалить виджет (вернуть — «Добавить блок» в Конструкторе)" aria-label="Удалить виджет" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + NOTE_TRASH_SVG + '</button>';
-            } else if (b.id === 'cal' || b.id === 'sum') {
+            } else if (b.id === 'cal' || b.id === 'sum' || b.id === 'fav') {
                 // глаз-скрытие — ТОЧНО как в карточке портфеля (.pfc-act), в правом-верхнем углу
                 // напротив заголовка, видимый постоянно (не в зазоре-бирке). Исключение: когда
                 // блок cal показывает «Ставки рынка» (noBonds) — заголовка нет, а глаз сидит в
-                // последней плитке (см. ratesStackHtml), угловой оверлей не нужен.
+                // последней плитке (см. ratesStackHtml), угловой оверлей не нужен. Полоса
+                // «Ставки рынка» (rates) — там же, в своей последней плитке (см. ratesHtml).
                 if (!(b.id === 'cal' && noBonds)) {
                     hideBtn = '<span class="pfd-eye"><button class="pfc-act" title="Скрыть блок (вернуть — «Видимость» в шапке)" aria-label="Скрыть блок" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + EYEOFF_SVG + '</button></span>';
                 }
@@ -2913,8 +2917,9 @@
             (admin ? '<button type="button" class="pfl-cfg-item add" onclick="pfSaveAsPreset()" title="Сделать текущую раскладку общим пресетом">' + PFD_PLUS_SVG +
                 '<span><b>Сохранить как пресет</b><i>появится у всех пользователей</i></span></button>' : '');
 
-        // ---- отображение карточек: скругление углов виджетов (R7) ----
-        html += '<div class="pfl-cfg-sep"></div><div class="pfl-cfg-h">Отображение карточек</div>' + pfxCornerRowHtml(false);
+        // ---- отображение карточек: скругление углов виджетов (R7) + фон страницы ----
+        html += '<div class="pfl-cfg-sep"></div><div class="pfl-cfg-h">Отображение карточек</div>' + pfxCornerRowHtml(false) +
+            '<div class="pfl-cfg-h">Фон страницы</div>' + pfxBgRowHtml(false);
         return html;
     }
     window.pfLayoutCfgPopHtml = pfLayoutCfgPopHtml;
@@ -6288,9 +6293,15 @@
     }
     // полноширинная горизонтальная полоса ставок под сеткой — показывается ВСЕГДА,
     // когда есть хоть одна облигация хоть в одном портфеле (т.е. «Календарь выплат» тоже виден)
+    // Глаз-скрытие — в ПОСЛЕДНЕЙ плитке (тот же .pf-ratestile-eye, что у стопки ratesStackHtml):
+    // у полосы нет шапки, и угловой оверлей .pfd-eye лёг бы поверх значения плитки.
     function ratesHtml() {
+        var tiles = rateTiles();
+        var eye = '<button class="pfc-act pf-ratestile-eye" title="Скрыть блок (вернуть — «Видимость» в шапке)" aria-label="Скрыть блок ставок" onclick="pfdHideBlock(\'rates\')">' + EYEOFF_SVG + '</button>';
         return '<div class="d3-ratesband pf-ratesband"><div class="drt-grid">' +
-            rateTiles().map(rateTileHtml).join('') + '</div></div>';
+            tiles.map(function (t, i) {
+                return rateTileHtml(t, i === tiles.length - 1 ? eye : '');
+            }).join('') + '</div></div>';
     }
     // Замена «Календаря выплат», когда нигде нет ни одной облигации: те же 4 плитки,
     // без большого бокса-обёртки (каждая плитка и так своя мини-карточка, drt-tile) —
@@ -7066,6 +7077,29 @@
                 '<span class="pfx-corner-tx"><b>' + o[1] + '</b><i>' + o[2] + (big ? ' · ' + o[3] : '') + '</i></span>' +
             '</button>';
         }).join('') + '</div>';
+    }
+
+    // ---- фон страницы: варианты живут в js/site-bg.js (список + персист + классы на body) ----
+    // Настройка ГЛОБАЛЬНАЯ и общесайтовая — тот же фон на всех вкладках, не только здесь.
+    // Плитка каждого варианта показывает его НАСТОЯЩУЮ заливку (класс .sbgpv-<id>,
+    // css/site-bg.css), поэтому выбирать можно глазами, а не по названию.
+    window.pfxSetBg = function (v) {
+        if (!window.siteBg) return;
+        window.siteBg.set(v);
+        renderNoAnim();
+        var b = (window.siteBg.list().filter(function (x) { return x.id === v; })[0] || {}).name;
+        if (b) toast('Фон: ' + b.toLowerCase());
+    };
+    function pfxBgRowHtml(big) {
+        if (!window.siteBg) return '';
+        var cur = window.siteBg.get();
+        return '<div class="pfx-bg-row' + (big ? ' big' : '') + '">' + window.siteBg.list().map(function (o) {
+            return '<button type="button" class="pfx-bg' + (cur === o.id ? ' on' : '') + '" onclick="pfxSetBg(\'' + jsArg(o.id) + '\')" title="' + esc(o.name) + ' — ' + esc(o.sub) + '">' +
+                '<span class="pfx-bg-pv sbgpv-' + esc(o.id) + '"></span>' +
+                '<span class="pfx-bg-tx"><b>' + esc(o.name) + '</b><i>' + esc(o.sub) + '</i></span>' +
+            '</button>';
+        }).join('') + '</div>' +
+        '<div class="pfx-bg-note">Фон общий для всего сайта. На Главной своя живая карта, а в тёмной теме и на телефоне фон остаётся ровным — там узор только мешал бы.</div>';
     }
 
     // ---- первичная раскладка: у нового пользователя дашборд сразу собран по референсу ----
@@ -7868,7 +7902,8 @@
             { id: 'reports', name: 'Отчёты и экспорт', desc: 'Excel-выгрузки, бэкап и импорт данных', cats: ['other'] },
             { id: 'set:corner', name: 'Отображение карточек', desc: 'Настройка скругления углов виджетов', cats: ['other'] },
             { id: 'set:vis', name: 'Видимость', desc: 'Какие портфели и секции показывать', cats: ['other'] },
-            { id: 'set:layout', name: 'Раскладки', desc: 'Вход в панель раскладок и сохранение вида', cats: ['other'] }
+            { id: 'set:layout', name: 'Раскладки', desc: 'Вход в панель раскладок и сохранение вида', cats: ['other'] },
+            { id: 'set:bg', name: 'Фон страницы', desc: 'Общая подложка сайта: мозаика, шалфейный, градиент и другие', cats: ['other'] }
         ];
         if (store.items.length >= 2) list.push({ id: 'sum', name: 'Сводка портфелей', desc: 'Суммарный капитал и лидерборд портфелей', cats: ['over', 'profit'] });
         return list;
@@ -8134,6 +8169,13 @@
                 '<span class="dm-row"><em>Панель раскладок</em><b>→</b></span>' +
                 '<span class="dm-row"><em>Сохранить текущий вид</em><b>→</b></span></div>';
         }
+        // фон — единственный виджет, чьё демо показывает НАСТОЯЩИЕ заливки (.sbgpv-*),
+        // а не подпись: выбирают его глазами
+        if (id === 'set:bg') {
+            return '<div class="dm-bgs">' + (window.siteBg ? window.siteBg.list() : []).slice(0, 6).map(function (b) {
+                return '<span class="dm-bg sbgpv-' + esc(b.id) + '"></span>';
+            }).join('') + '</div>';
+        }
         return '<div class="dm-rows"><span class="dm-row"><em>Виджет</em></span></div>';
     }
     // ---- отрисовка секций пикера ----
@@ -8397,13 +8439,16 @@
             '</div>';
         }).join('');
     }
+    // действие «применить» выбранного варианта — одно на превью и на подвал
+    function pfl3ApplyCall(o) {
+        return o.kind === 'base' ? 'pfLayoutReset()'
+            : o.kind === 'saved' ? 'pfLayoutRestoreSaved()'
+            : 'pfApplyPreset(\'' + jsArg(o.preset.id) + '\')';
+    }
     function pfl3PvHtml() {
         var o = pfl3OptByKey(pfl3Sel);
         if (!o) return '';
         var admin = pfIsAdmin();
-        var apply = o.kind === 'base' ? 'pfLayoutReset()'
-            : o.kind === 'saved' ? 'pfLayoutRestoreSaved()'
-            : 'pfApplyPreset(\'' + jsArg(o.preset.id) + '\')';
         var meta = '';
         if (o.kind === 'preset' && o.preset.at) {
             try { meta = 'обновлён ' + new Date(o.preset.at).toLocaleDateString('ru-RU'); } catch (e) {}
@@ -8424,23 +8469,34 @@
                 (pfBaseFor() ? '<button type="button" class="pfl3-abtn" onclick="pfResetBasePreset()" title="Сбросить базовую к системной">' + UNDO_SVG + '<span>Сбросить к системной</span></button>' : '') +
             '</div>';
         }
+        // «Применить» и подпись варианта переехали в ПОДВАЛ панели — ровно туда же, где у
+        // пикера «Выбрано …» и «Добавить виджет» (см. pfl3FootHtml). Здесь остаётся схема,
+        // строка «обновлён …» (её в подвале нет) и админ-действия над пресетом.
         return '<div class="pfl3-stage">' + pfl3ThumbHtml(o) + '</div>' +
-            '<div class="pfl-pv-foot pfl3-pvfoot">' +
-                '<div class="pfl-pv-meta"><b>' + esc(o.name) + '</b><span>' + esc(o.sub) + (meta ? ' · ' + meta : '') + '</span></div>' +
-                (o.active
-                    ? '<span class="pfl-pv-add is-added">' + CHECK_SVG + '<span>Применена сейчас</span></span>'
-                    : '<button type="button" class="pfl-pv-add" onclick="' + apply + '">' + CHECK_SVG + '<span>Применить</span></button>') +
-            '</div>' + adm;
+            (meta ? '<div class="pfl3-meta">' + esc(meta) + '</div>' : '') + adm;
     }
+    // Подвал — калька подвала пикера «Добавить виджет» (.pfl2-foot): слева подпись, что
+    // выбрано, справа кнопки, и главная — «Применить» — крайняя справа, тем же primary.
     function pfl3FootHtml() {
+        var o = pfl3OptByKey(pfl3Sel);
         var saved = pfdLayoutSaved();
         var admin = pfIsAdmin();
-        return '<div class="pfl-foot pfl3-foot" id="pfl3Foot">' +
-            '<div class="pfl-foot-l">' +
-                '<button type="button" class="pfl-btn primary' + (saved ? ' done' : '') + '" onclick="pfLayoutSave()" title="' + (saved ? 'Текущий вид уже сохранён' : 'Закрепить текущую раскладку за собой') + '">' + CHECK_SVG + '<span>' + (saved ? 'Сохранено' : 'Сохранить текущий вид') + '</span></button>' +
-                (admin ? '<button type="button" class="pfl-btn ghost" onclick="pfSaveAsPreset()" title="Сделать текущую раскладку общим пресетом подвкладки">' + PFD_PLUS_SVG + '<span>Новый пресет из текущего вида</span></button>' : '') +
+        var title = o ? esc(o.name) : 'Раскладка не выбрана';
+        var sub = o ? esc(o.sub) : 'выберите вариант слева';
+        return '<div class="pfl-foot pfl2-foot pfl3-foot" id="pfl3Foot">' +
+            '<div class="pfl2-sel"><b>' + title + '</b><span>' + sub + '</span></div>' +
+            '<div class="pfl2-foot-r">' +
+                '<button type="button" class="pfl-btn ghost' + (saved ? ' done' : '') + '" onclick="pfLayoutSave()" title="' + (saved ? 'Текущий вид уже сохранён' : 'Закрепить текущую раскладку за собой') + '">' + CHECK_SVG + '<span>' + (saved ? 'Сохранено' : 'Сохранить текущий вид') + '</span></button>' +
+                (admin ? '<button type="button" class="pfl-btn ghost" onclick="pfSaveAsPreset()" title="Сделать текущую раскладку общим пресетом подвкладки">' + PFD_PLUS_SVG + '<span>Новый пресет</span></button>' : '') +
+                '<button type="button" class="pfl-btn ghost" onclick="pfLayoutsClose()">Отмена</button>' +
+                // «Применена» — то же успокоенное зелёное состояние, что «Сохранено»
+                // (.pfl-btn.primary.done); .pfl2-addbtn не вешаем — его градиент !important
+                // перебил бы зелёный фон
+                (o && o.active
+                    ? '<span class="pfl-btn primary done pfl3-applied">' + CHECK_SVG + '<span>Применена</span></span>'
+                    : '<button type="button" class="pfl-btn primary pfl2-addbtn"' + (o ? '' : ' disabled') +
+                        ' onclick="' + (o ? pfl3ApplyCall(o) : '') + '">' + CHECK_SVG + '<span>Применить</span></button>') +
             '</div>' +
-            '<span class="pfl3-foot-hint">У каждой подвкладки — своя раскладка' + (admin ? ' · пресеты видят все пользователи' : '') + '</span>' +
         '</div>';
     }
     function pfl3PanelHtml() {

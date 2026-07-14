@@ -519,9 +519,12 @@ body.dark-mode .pfx-setlist .pf-impitem { border-color: rgba(255, 255, 255, 0.08
 /* инлайн-версия поповера раскладки в карточке настроек */
 .pfl-cfg-inline { display: flex; flex-direction: column; }
 .pfl-cfg-inline .pfl-cfg-h:first-child { display: none; }   /* дубль заголовка карточки */
-/* скругления на странице настроек — своя карточка, дубль внутри раскладки прячем */
+/* скругления и фон на странице настроек — свои карточки, дубли внутри раскладки прячем */
 .pfl-cfg-inline .pfx-corner-row,
-.pfl-cfg-inline .pfl-cfg-h:has(+ .pfx-corner-row) { display: none; }
+.pfl-cfg-inline .pfx-bg-row,
+.pfl-cfg-inline .pfx-bg-note,
+.pfl-cfg-inline .pfl-cfg-h:has(+ .pfx-corner-row),
+.pfl-cfg-inline .pfl-cfg-h:has(+ .pfx-bg-row) { display: none; }
 
 /* — выбор скругления карточек — */
 .pfx-corner-row { display: flex; gap: 8px; padding: 4px 8px 8px; }
@@ -549,6 +552,49 @@ body.dark-mode .pfx-corner { border-color: rgba(255, 255, 255, 0.1); background:
 body.dark-mode .pfx-corner.on { border-color: #818cf8; background: rgba(99, 102, 241, 0.14); box-shadow: 0 0 0 1px #818cf8; }
 body.dark-mode .pfx-corner-tx b { color: #e8eef7; }
 body.dark-mode .pfx-corner-pv { background: #16202f; }
+
+/* — выбор фона страницы (варианты и заливки — css/site-bg.css) —
+   Тот же компонент-плитка, что у скруглений (.pfx-corner): те же рамки, кольцо
+   выбора и подпись — это соседние настройки в одной карточке, и своя стилистика
+   у каждой читалась бы как два разных элемента управления. Отличие одно: плиток
+   шесть, поэтому не flex в ряд, а сетка с переносом. */
+.pfx-bg-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); gap: 8px; padding: 4px 8px 8px; }
+.pfx-bg-row.big { padding: 10px 0 4px; gap: 10px; }
+.pfx-bg {
+    display: flex; flex-direction: column; align-items: center; gap: 7px; min-width: 0;
+    padding: 10px 8px; cursor: pointer;
+    border: 1px solid #e7ecf3; border-radius: 13px; background: #fbfcfe;
+    transition: border-color 0.13s, background 0.13s, box-shadow 0.13s;
+}
+.pfx-bg:hover { background: #f4f7fb; border-color: #d3dce8; }
+.pfx-bg.on { border-color: #4453ef; background: #f5f7ff; box-shadow: 0 0 0 1px #4453ef; }
+.pfx-bg-pv {
+    width: 100%; height: 40px; border-radius: 9px;
+    border: 1px solid rgba(24, 38, 60, 0.12);
+    /* белая «карточка» поверх образца: видно ГЛАВНОЕ — отделяется ли на этом фоне
+       белая карточка (ради этого фон и держат глубже белого, см. site-bg.css) */
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+.pfx-bg.on .pfx-bg-pv { border-color: #4453ef; }
+.pfx-bg-tx { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 0; max-width: 100%; }
+.pfx-bg-tx b { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 800; color: #1b2433; white-space: nowrap; }
+.pfx-bg-tx i {
+    font-family: 'Inter', sans-serif; font-style: normal; font-size: 10px; font-weight: 600; color: #8494a7;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+}
+.pfx-bg.on .pfx-bg-tx b { color: #4338ca; }
+.pfx-bg-note {
+    padding: 2px 8px 8px; font-family: 'Inter', sans-serif; font-size: 10.5px;
+    font-weight: 600; color: #94a3b8; line-height: 1.5;
+}
+.pfx-corner-row.big + .pfx-bg-note, .pfx-bg-row.big + .pfx-bg-note { padding: 8px 0 0; }
+body.dark-mode .pfx-bg { border-color: rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.03); }
+body.dark-mode .pfx-bg.on { border-color: #818cf8; background: rgba(99, 102, 241, 0.14); box-shadow: 0 0 0 1px #818cf8; }
+body.dark-mode .pfx-bg-tx b { color: #e8eef7; }
+body.dark-mode .pfx-bg.on .pfx-bg-tx b { color: #c7d2fe; }
+/* Демо в пикере «Добавить виджет»: шесть настоящих заливок рядком */
+.pfl2-demo .dm-bgs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 10px 12px; }
+.pfl2-demo .dm-bg { height: 26px; border-radius: 7px; border: 1px solid rgba(24, 38, 60, 0.1); }
 
 /* ============ 12. Пикер «Добавить виджет» (pfl2) ============ */
 .pfl-panel.pfl2 { max-height: min(84vh, 860px); }
@@ -1566,27 +1612,32 @@ body.dark-mode .pfx-emptytab { border-color: rgba(255, 255, 255, 0.14); backgrou
 .pfx-emptytab-btn { margin-top: 16px; }
 
 /* — панель «Раскладки» (pfl3): список с эскизами + крупное превью — */
-.pfl-panel.pfl3 { max-height: min(84vh, 760px); }
+/* Ритм — тот же, что у пикера «Добавить виджет» (.pfl2): одинаковая высота панели,
+   те же отступы колонок (список ≈ .pfl2-side, превью ≈ .pfl2-main), тот же подвал.
+   Панели живут в одном месте над сеткой и открываются соседними кнопками — разный
+   «воздух» читался как две разные плоскости. */
+.pfl-panel.pfl3 { max-height: min(84vh, 860px); }
 .pfl3-body { flex: 1; min-height: 0; display: flex; }
 .pfl3-list {
-    flex: 0 0 320px; min-height: 0; overflow-y: auto; scrollbar-width: thin;
-    display: flex; flex-direction: column; gap: 6px;
-    padding: 14px 12px; border-right: 1px solid #eef2f7;
+    flex: 0 0 330px; min-height: 0; overflow-y: auto; scrollbar-width: thin;
+    display: flex; flex-direction: column; gap: 9px;
+    padding: 16px 14px; border-right: 1px solid #eef2f7;
 }
 body.dark-mode .pfl3-list { border-right-color: rgba(255, 255, 255, 0.08); }
 .pfl3-row {
-    display: flex; align-items: center; gap: 12px; cursor: pointer;
-    border: 1.5px solid #e7ecf3; border-radius: 13px; background: #fff; padding: 10px 12px;
+    display: flex; align-items: center; gap: 13px; cursor: pointer;
+    border: 1.5px solid #e7ecf3; border-radius: 15px; background: #fff; padding: 13px 13px;
     transition: border-color 0.12s, background 0.12s, box-shadow 0.12s;
 }
+.pfl3-row:not(.on):hover { box-shadow: 0 8px 22px -12px rgba(15, 23, 42, 0.3); }
 .pfl3-row:hover { border-color: #c9d4e4; background: #fbfcfe; }
-.pfl3-row.on { border-color: #4453ef; box-shadow: 0 0 0 1px #4453ef; background: #fdfdff; }
+.pfl3-row.on { border-color: #4453ef; box-shadow: 0 0 0 1px #4453ef, 0 10px 26px -12px rgba(68, 83, 239, 0.45); background: #fdfdff; }
 .pfl3-row.gated { opacity: 0.62; }
 body.dark-mode .pfl3-row { background: #131c2e; border-color: #26324c; }
 body.dark-mode .pfl3-row:hover { border-color: #3a4c6d; }
 body.dark-mode .pfl3-row.on { border-color: #818cf8; box-shadow: 0 0 0 1px #818cf8; }
 .pfl3-thumb {
-    flex-shrink: 0; width: 74px; height: 48px; border-radius: 8px; overflow: hidden;
+    flex-shrink: 0; width: 84px; height: 55px; border-radius: 10px; overflow: hidden;
     background: #f4f7fb; border: 1px solid #e7ecf3; display: grid; place-items: center;
 }
 .pfl3-thumb .pfl-thumb-svg { width: 100%; height: 100%; }
@@ -1609,16 +1660,18 @@ body.dark-mode .pfl3-cap b { color: #f4f8fd; }
 .pfl3-now svg { width: 11px; height: 11px; }
 .pfl3-pv {
     flex: 1; min-width: 0; min-height: 0; overflow-y: auto; scrollbar-width: thin;
-    padding: 18px 20px; background: #f8fafc; display: flex; flex-direction: column; gap: 14px;
+    padding: 16px 18px; background: #f8fafc; display: flex; flex-direction: column; gap: 16px;
 }
 body.dark-mode .pfl3-pv { background: #0d1626; }
 .pfl3-stage {
-    border: 1px solid #e7ecf3; border-radius: 15px; background: #fff; padding: 16px;
-    display: grid; place-items: center; min-height: 220px;
+    border: 1.5px solid #e7ecf3; border-radius: 15px; background: #fff; padding: 20px;
+    display: grid; place-items: center; min-height: 240px;
 }
 .pfl3-stage .pfl-thumb-svg { width: 100%; max-width: 560px; height: auto; max-height: 320px; }
 body.dark-mode .pfl3-stage { background: #131c2e; border-color: #26324c; }
 .pfl3-pvfoot { border-top: 0; padding: 0; background: transparent; }
+/* «обновлён 14.07.2026» под схемой пресета — единственная подпись, которой нет в подвале */
+.pfl3-meta { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: #8494a7; margin-top: -6px; }
 .pfl3-adm { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .pfl3-abtn {
     display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
@@ -1633,7 +1686,12 @@ body.dark-mode .pfl3-stage { background: #131c2e; border-color: #26324c; }
 .pfl3-abtn.danger:hover { background: rgba(224, 89, 43, 0.08); border-color: rgba(224, 89, 43, 0.3); }
 body.dark-mode .pfl3-abtn { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.12); color: #cbd6e4; }
 body.dark-mode .pfl3-abtn:hover { background: rgba(255, 255, 255, 0.08); color: #f4f8fd; }
-.pfl3-foot-hint { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: #8494a7; }
+/* Подвал панели — та же полоса, что у пикера: слева подпись выбранного, справа кнопки,
+   «Применить» крайняя справа на месте «Добавить виджет». Разметка переиспользует классы
+   пикера (.pfl2-foot/.pfl2-sel/.pfl2-foot-r), поэтому отдельных правил почти не нужно. */
+.pfl3-foot .pfl2-foot-r { flex-wrap: wrap; justify-content: flex-end; }
+/* «Применена» в подвале — некликабельная метка, а не кнопка */
+.pfl3-applied { cursor: default; }
 /* кнопка-слайдеры героя: активное состояние, пока панель открыта */
 .pfx-hero .pfp-cfg.active .pfl-cfg-btn { background: rgba(255, 255, 255, 0.22); color: #fff; }
 
@@ -1661,3 +1719,18 @@ body.dark-mode .pfl3-abtn:hover { background: rgba(255, 255, 255, 0.08); color: 
    только подпись. Теперь при нехватке места плитки переносятся в столбик и подписи целы. */
 #panel-portfolios .pfm-extras { flex-wrap: wrap; }
 #panel-portfolios .pfm-extra { flex: 1 1 220px; }
+
+/* ============ 17. «Избранное»: глаз-скрытие и поповер «Что такое потенциал» ============ */
+/* Глаз .pfd-eye висит в правом-верхнем углу блока (top:17/right:18), а на строке заголовка
+   «Избранного» там же стоит «+» → терминал (margin-left:auto). Резервируем ему место, как
+   это уже сделано у «Сводки» (.pfs2-eyebrow, portfolios.css). */
+#panel-portfolios .pfd-item[data-pfd="fav"] .pf-fav > .pf-ch { padding-right: 46px; }
+
+/* Поповер-объяснение «потенциала» — АБСОЛЮТНЫЙ (.pff-tipbox) и раскрывается вниз из шапки
+   карточки, а тело блока в сетке обрезано (.pfd-item.pfd-hset .pfd-body { overflow:hidden }
+   в portfolios.css) — подсказка уезжала под контент. Тот же приём, что у .pfc-menu/.pf-impmenu
+   в portfolios.css:2156: пока поповер открыт, блоку разрешаем показывать overflow, а сам блок
+   поднимаем над соседями — иначе следующая карточка сетки нарисуется поверх подсказки.
+   :has() держится на hover/focus-within самой обёртки, так что «залипания» слоя нет. */
+#panel-portfolios .pfd-item:has(.pff-info-wrap:hover, .pff-info-wrap:focus-within) .pfd-body { overflow: visible; }
+#panel-portfolios .pfd-item:has(.pff-info-wrap:hover, .pff-info-wrap:focus-within) { z-index: 30; }
