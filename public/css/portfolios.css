@@ -13,10 +13,16 @@
 @media (min-width: 1440px) { #panel-portfolios { padding: 24px 40px 84px !important; } }
 @media (min-width: 1800px) { #panel-portfolios { padding: 26px 56px 84px !important; } }
 
+/* Типографика страницы — ДВА текстовых голоса, как на карточке регистрации
+   Главной (.hr-title + .hr-sub, home-register.css): Georgia serif = заголовки
+   виджетов (.pf-ch-t, см. portfolios-r7.css), Inter = ВЕСЬ остальной текст.
+   Manrope убран (2026-07-14): он и Inter — два похожих гротеска, деливших
+   один и тот же UI-слой без правила «где какой», и рядом с серифом этот
+   разнобой стал заметен. Цифры остаются моно (--font-num). */
 .pf-wrap {
     width: 100%; box-sizing: border-box; position: relative;   /* контекст для оверлея пикера .pfl-panel */
     display: flex; flex-direction: column; gap: 16px;
-    font-family: 'Manrope', 'Inter', sans-serif;
+    font-family: 'Inter', sans-serif;
 }
 .pf-wrap .pos { color: #16a34a; }
 .pf-wrap .neg { color: #dc2626; }
@@ -101,7 +107,7 @@ body.dark-mode .pf-sumcard {
 .pfs2-nav { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .pfs2-go { display: inline-flex; align-items: center; gap: 7px; padding: 10px 12px; cursor: pointer;
     border: 1px solid rgba(255,255,255,0.14); border-radius: 12px; background: rgba(255,255,255,0.06);
-    font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 800; color: #e7eef6;
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 800; color: #e7eef6;
     transition: background 0.15s, border-color 0.15s, color 0.15s; }
 .pfs2-go i { width: 8px; height: 8px; border-radius: 99px; flex-shrink: 0; }
 .pfs2-go i.stock { background: #D97757; } .pfs2-go i.bond { background: #7B9BBF; }
@@ -274,8 +280,8 @@ body.dark-mode .pfc-act.on { background: #0c1118; color: #7ee2a8; }
 .pf-ch-k { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #97a3b4; }
 .pf-ch-t { font-family: 'Inter', sans-serif; font-size: 21px; font-weight: 800; color: #1b2433; letter-spacing: -0.015em; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 body.dark-mode .pf-ch-t { color: #f4f8fd; }
-.pf-ch-s { font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 600; color: #97a3b4; letter-spacing: 0; }
-.pf-ch-go { margin-left: auto; align-self: center; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(24,38,60,0.1); background: #fff; border-radius: 10px; padding: 8px 13px; cursor: pointer; font-family: 'Manrope', sans-serif; font-size: 12.5px; font-weight: 700; color: #46566e; white-space: nowrap; transition: background 0.15s, color 0.15s; }
+.pf-ch-s { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: #97a3b4; letter-spacing: 0; }
+.pf-ch-go { margin-left: auto; align-self: center; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(24,38,60,0.1); background: #fff; border-radius: 10px; padding: 8px 13px; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 700; color: #46566e; white-space: nowrap; transition: background 0.15s, color 0.15s; }
 .pf-ch-go svg { width: 14px; height: 14px; }
 .pf-ch-go:hover { background: #1b2433; color: #fff; border-color: transparent; }
 body.dark-mode .pf-ch-go { border-color: rgba(255,255,255,0.09); background: rgba(255,255,255,0.04); color: #cdd8e6; }
@@ -324,7 +330,7 @@ body.dark-mode .pfc-mchart-leg { color: #93a3b8; }
    пунктирная линия на графике, см. .pfcv-imline) */
 .pfc-imtgl { display: inline-flex; align-items: center; gap: 5px;
     padding: 3px 7px; border-radius: 7px; border: 1px solid rgba(24,38,60,0.1); background: rgba(255,255,255,0.78);
-    font-family: 'Manrope', sans-serif; font-size: 9.5px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+    font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
     color: #a3adbc; cursor: pointer; transition: color .15s, border-color .15s, opacity .15s; flex-shrink: 0; }
 body.dark-mode .pfc-imtgl { background: rgba(17,25,37,0.7); border-color: rgba(255,255,255,0.12); color: #66748a; }
 .pfc-imtgl-dot { width: 12px; height: 0; border-top: 2px dashed #cbd5e1; border-radius: 0; transition: border-color .15s; }
@@ -415,16 +421,16 @@ body.dark-mode .pfc-mdet td { border-bottom-color: rgba(255,255,255,0.045) !impo
 .pfc-mdet-in { display: flex; flex-wrap: wrap; gap: 6px 8px; padding: 4px 2px 2px 16px; }
 .pfc-det-i { display: inline-flex; flex-direction: column; gap: 1px; padding: 4px 9px; border-radius: 8px; background: rgba(24,38,60,0.035); }
 body.dark-mode .pfc-det-i { background: rgba(255,255,255,0.045); }
-.pfc-det-l { font-family: 'Manrope', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: #94a3b8; }
+.pfc-det-l { font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: #94a3b8; }
 .pfc-det-v { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 800; color: #0f172a; }
 body.dark-mode .pfc-det-v { color: #eef3f9; }
 /* название актива в субданных — текст, а не число: обычный шрифт + перенос по словам */
 .pfc-det-i--nm { max-width: 100%; }
-.pfc-det-v--nm { font-family: 'Manrope', sans-serif; font-weight: 700; white-space: normal; overflow-wrap: anywhere; }
+.pfc-det-v--nm { font-family: 'Inter', sans-serif; font-weight: 700; white-space: normal; overflow-wrap: anywhere; }
 /* строка-заголовок группы («Акции» / «Облигации») в мини-таблице оверлея «весь состав» */
 .pfc-mgrp td { padding: 12px 0 5px !important; border-bottom: 1px solid rgba(24,38,60,0.06); }
 body.dark-mode .pfc-mgrp td { border-bottom-color: rgba(255,255,255,0.06); }
-.pfc-mgrp-in { display: inline-flex; align-items: center; gap: 7px; font-family: 'Manrope', sans-serif;
+.pfc-mgrp-in { display: inline-flex; align-items: center; gap: 7px; font-family: 'Inter', sans-serif;
     font-size: 10px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: #7f8ea3; }
 body.dark-mode .pfc-mgrp-in { color: #93a3b8; }
 .pfc-mgrp-in b { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; font-weight: 700; color: #94a3b8;
@@ -513,7 +519,7 @@ body.dark-mode .pfcv-close { border-color: rgba(255,255,255,0.1); background: rg
    слева, доля справа моноширинным жирным — раньше класс не был описан в CSS вовсе и строки
    рендерились неоформленным текстом без цвета/точек/выравнивания */
 .pfc-lg { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 9px;
-    background: rgba(24,38,60,0.035); font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 700; color: #5f6b7d; }
+    background: rgba(24,38,60,0.035); font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700; color: #5f6b7d; }
 body.dark-mode .pfc-lg { background: rgba(255,255,255,0.045); color: #aab8c8; }
 .pfc-lg i { width: 9px; height: 9px; border-radius: 99px; flex-shrink: 0; }
 .pfc-lg i.stock { background: #D97757; } .pfc-lg i.bond { background: #7B9BBF; }
@@ -539,7 +545,7 @@ body.dark-mode .pfcv-stat--dyn { background: color-mix(in srgb, var(--pf-accent)
 .pfcv-rk { font-size: 12px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: #6b7d92; }
 body.dark-mode .pfcv-rk { color: #93a8c2; }
 .pfcv-rsub { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #9aa7b6; }
-.pfcv-imbtn { display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0; cursor: pointer; border: 1px solid rgba(24,38,60,0.12); background: #fff; color: #64748b; border-radius: 999px; padding: 6px 13px; font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 11.5px; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+.pfcv-imbtn { display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0; cursor: pointer; border: 1px solid rgba(24,38,60,0.12); background: #fff; color: #64748b; border-radius: 999px; padding: 6px 13px; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 11.5px; transition: background 0.15s, color 0.15s, border-color 0.15s; }
 .pfcv-imbtn .pfcv-imdot { width: 16px; height: 0; border-top: 2.5px dashed #94a3b8; }
 .pfcv-imbtn:hover { background: rgba(24,38,60,0.05); color: #1b2433; }
 .pfcv-imbtn.on { background: #475569; color: #fff; border-color: transparent; }
@@ -605,7 +611,7 @@ body.dark-mode .pfcv-msg-t { color: #f4f8fd; }
 /* кнопка «Показать активы» — низ левой колонки (прижата к низу через margin-top:auto) */
 .pfcv-assetbtn { margin-top: auto; display: inline-flex; align-items: center; gap: 9px; cursor: pointer;
     border: 1px solid rgba(24,38,60,0.1); background: rgba(24,38,60,0.02); border-radius: 11px; padding: 10px 13px;
-    font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 12.5px; color: #46566e;
+    font-family: 'Inter', sans-serif; font-weight: 700; font-size: 12.5px; color: #46566e;
     transition: background 0.15s, color 0.15s, border-color 0.15s; }
 .pfcv-assetbtn svg { width: 15px; height: 15px; flex-shrink: 0; }
 .pfcv-assetbtn-t { margin-right: auto; }
@@ -640,7 +646,7 @@ body.dark-mode .pfcv-assets .pfo-table thead th { background: color-mix(in srgb,
    тон), а не висит отдельным блоком под ней */
 .pfcv-assets-more { display: flex; align-items: center; justify-content: center; gap: 6px; width: calc(100% - 48px);
     margin: -14px 24px 16px; padding: 9px; border-radius: 0 0 12px 12px; border: 1px solid rgba(24,38,60,0.08); border-top: none;
-    background: rgba(24,38,60,0.03); color: #46566e; font-family: 'Manrope', sans-serif; font-weight: 800;
+    background: rgba(24,38,60,0.03); color: #46566e; font-family: 'Inter', sans-serif; font-weight: 800;
     font-size: 11.5px; cursor: pointer; position: relative; z-index: 1; transition: background 0.15s, color 0.15s, border-color 0.15s; }
 .pfcv-assets-more:hover { background: color-mix(in srgb, var(--pf-accent) 10%, transparent);
     border-color: color-mix(in srgb, var(--pf-accent) 35%, transparent); color: var(--pf-accent); }
@@ -660,7 +666,7 @@ body.dark-mode .pfcv-assets-more:hover { color: #eaf1f8; }
 
 /* ---- футер: «Ребалансировать» — тёмная кнопка на всю ширину (как в референсе) ---- */
 .pfc-foot { padding: 14px 24px 20px; margin-top: auto; display: flex; align-items: stretch; gap: 8px; }
-.pfc-rebal { flex: 1 1 auto; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; border: none; background: #141b26; border-radius: 12px; padding: 11px; font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 12.5px; color: #fff; transition: opacity 0.15s, transform 0.12s; }
+.pfc-rebal { flex: 1 1 auto; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; border: none; background: #141b26; border-radius: 12px; padding: 11px; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 12.5px; color: #fff; transition: opacity 0.15s, transform 0.12s; }
 .pfc-rebal svg { width: 15px; height: 15px; color: #7ee2a8; }
 .pfc-rebal:hover { opacity: 0.88; }
 .pfc-rebal:active { transform: scale(0.985); }
@@ -784,7 +790,7 @@ body.dark-mode .pfm-sw { border-color: #18222e; box-shadow: 0 0 0 1px rgba(255,2
 
 /* «Готово» — аккуратная таблетка в акценте портфеля */
 .pfm-done { flex-shrink: 0; display: inline-flex; align-items: center; gap: 7px; border: none; border-radius: 11px; cursor: pointer;
-    background: var(--pf-accent); color: #fff; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 13px; padding: 10px 16px;
+    background: var(--pf-accent); color: #fff; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 13px; padding: 10px 16px;
     box-shadow: 0 8px 18px -9px color-mix(in srgb, var(--pf-accent) 90%, transparent); transition: filter 0.15s, transform 0.12s; }
 .pfm-done svg { width: 15px; height: 15px; }
 .pfm-done:hover { filter: brightness(1.06); }
@@ -796,7 +802,7 @@ body.dark-mode .pfm-sw { border-color: #18222e; box-shadow: 0 0 0 1px rgba(255,2
 .pfm-sec > span { white-space: nowrap; }
 .pfm-sec-rule { flex: 1; height: 1px; background: linear-gradient(90deg, rgba(24,38,60,0.1), transparent); }
 body.dark-mode .pfm-sec-rule { background: linear-gradient(90deg, rgba(255,255,255,0.12), transparent); }
-.pfm-tall { flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; border: 1px solid rgba(24,38,60,0.12); background: #fff; border-radius: 8px; padding: 4px 9px; font-family: 'Manrope', sans-serif; font-size: 10px; font-weight: 800; letter-spacing: 0.02em; text-transform: none; color: var(--pf-accent); cursor: pointer; transition: background 0.15s; }
+.pfm-tall { flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; border: 1px solid rgba(24,38,60,0.12); background: #fff; border-radius: 8px; padding: 4px 9px; font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 800; letter-spacing: 0.02em; text-transform: none; color: var(--pf-accent); cursor: pointer; transition: background 0.15s; }
 .pfm-tall:hover { background: color-mix(in srgb, var(--pf-accent) 10%, transparent); }
 .pfm-tall-i { width: 13px; height: 13px; transition: transform 0.2s; }
 .pfm-tall-i.up { transform: rotate(180deg); }
@@ -879,13 +885,13 @@ body.dark-mode .pfm-ed-cols span { color: #69757f; }
 .pfm-ed-lot .pfm-del { justify-self: end; }
 .pfm-ed-foot { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
 .pfm-ed-del { border: none; background: none; padding: 5px 8px; border-radius: 8px; cursor: pointer;
-    font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 11px; color: #d8726c;
+    font-family: 'Inter', sans-serif; font-weight: 700; font-size: 11px; color: #d8726c;
     transition: background 0.15s, color 0.15s; }
 .pfm-ed-del:hover { background: rgba(220,38,38,0.08); color: #dc2626; }
 body.dark-mode .pfm-ed-del { color: #f08e88; }
 body.dark-mode .pfm-ed-del:hover { background: rgba(248,113,113,0.14); color: #fca5a5; }
 /* «Докупка» в футере редактора — пунктирная мини-кнопка (переиспользуется стиль .pfm-lotadd) */
-.pfm-lotadd { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; border: 1px dashed color-mix(in srgb, var(--pf-accent) 42%, rgba(24,38,60,0.18)); background: transparent; border-radius: 8px; padding: 4px 9px 4px 7px; font-family: 'Manrope', sans-serif; font-size: 10px; font-weight: 800; letter-spacing: 0.02em; color: var(--pf-accent); cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+.pfm-lotadd { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; border: 1px dashed color-mix(in srgb, var(--pf-accent) 42%, rgba(24,38,60,0.18)); background: transparent; border-radius: 8px; padding: 4px 9px 4px 7px; font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 800; letter-spacing: 0.02em; color: var(--pf-accent); cursor: pointer; transition: background 0.15s, border-color 0.15s; }
 .pfm-lotadd svg { width: 12px; height: 12px; }
 .pfm-lotadd:hover { background: color-mix(in srgb, var(--pf-accent) 9%, transparent); border-style: solid; }
 .pfm-lotlbl { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; color: #94a3b8; text-align: center; }
@@ -969,7 +975,7 @@ body.dark-mode .pfm-bottom { border-color: rgba(255,255,255,0.06); }
     border: 1.5px dashed color-mix(in srgb, var(--pf-accent) 34%, rgba(24,38,60,0.14));
     background: color-mix(in srgb, var(--pf-accent) 3%, transparent); color: var(--pf-accent);
     border-radius: 13px; padding: 10px; cursor: pointer;
-    font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 12.5px; transition: background 0.15s, border-color 0.15s; }
+    font-family: 'Inter', sans-serif; font-weight: 800; font-size: 12.5px; transition: background 0.15s, border-color 0.15s; }
 .pfm-addghost > svg { width: 15px; height: 15px; }
 .pfm-addghost:hover { background: color-mix(in srgb, var(--pf-accent) 9%, transparent); border-style: solid; }
 .pfm-addwrap.on { border: 1px solid rgba(24,38,60,0.09); background: rgba(24,38,60,0.022); padding: 5px 13px 13px;
@@ -1024,7 +1030,7 @@ body.dark-mode .pfm-grp-n { background: rgba(255,255,255,0.07); }
 body.dark-mode .pfm-grp-rule { background: linear-gradient(90deg, rgba(255,255,255,0.12), transparent); }
 /* кнопка «Добавить» — ЗАМЕТНАЯ, в цвет портфеля: это главное действие формы. Раньше была
    нейтрально-серой и терялась → пользователь по привычке жал «Готово» и не добавлял актив. */
-.pfm-addbtn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex-shrink: 0; border: 1px solid var(--pf-accent); background: var(--pf-accent); color: #fff; border-radius: 10px; padding: 0 17px; min-height: 36px; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 12.5px; cursor: pointer; white-space: nowrap; box-shadow: 0 5px 14px -6px color-mix(in srgb, var(--pf-accent) 65%, transparent); transition: filter 0.15s, box-shadow 0.15s, transform 0.12s; }
+.pfm-addbtn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex-shrink: 0; border: 1px solid var(--pf-accent); background: var(--pf-accent); color: #fff; border-radius: 10px; padding: 0 17px; min-height: 36px; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 12.5px; cursor: pointer; white-space: nowrap; box-shadow: 0 5px 14px -6px color-mix(in srgb, var(--pf-accent) 65%, transparent); transition: filter 0.15s, box-shadow 0.15s, transform 0.12s; }
 .pfm-addbtn svg { width: 15px; height: 15px; color: #fff; }
 .pfm-addbtn:hover { filter: brightness(1.07); box-shadow: 0 7px 18px -6px color-mix(in srgb, var(--pf-accent) 75%, transparent); }
 .pfm-addbtn:active { transform: scale(0.97); }
@@ -1038,14 +1044,14 @@ body.dark-mode .pfm-grp-rule { background: linear-gradient(90deg, rgba(255,255,2
 body.dark-mode .pfm-foot .d3-quick.pf-impbtn { color: #93a3b5; }
 body.dark-mode .pfm-foot .d3-quick.pf-impbtn:hover { background: rgba(255,255,255,0.07); color: #f4f8fd; }
 .pfm-quiet { display: inline-flex; align-items: center; gap: 6px; border: none; background: none; cursor: pointer;
-    padding: 7px 9px; border-radius: 9px; font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 12px; color: #7a8698;
+    padding: 7px 9px; border-radius: 9px; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 12px; color: #7a8698;
     transition: background 0.15s, color 0.15s; }
 .pfm-quiet svg { width: 14px; height: 14px; }
 .pfm-quiet:hover { background: rgba(24,38,60,0.06); color: #1b2433; }
 body.dark-mode .pfm-quiet { color: #93a3b5; }
 body.dark-mode .pfm-quiet:hover { background: rgba(255,255,255,0.07); color: #f4f8fd; }
 .pfm-del-link { border: none; background: none; cursor: pointer; padding: 7px 9px; border-radius: 9px;
-    font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 12px; color: #d8726c;
+    font-family: 'Inter', sans-serif; font-weight: 700; font-size: 12px; color: #d8726c;
     margin-left: auto;   /* при переносе футера на вторую строку ссылка остаётся справа */
     transition: background 0.15s, color 0.15s; }
 .pfm-del-link:hover, .pfm-del-link.on { background: rgba(220,38,38,0.07); color: #dc2626; }
@@ -1058,10 +1064,10 @@ body.dark-mode .pfm-del-link:hover, body.dark-mode .pfm-del-link.on { background
 .pfm-danger-s { font-size: 11.5px; font-weight: 600; color: #c46a63; line-height: 1.45; margin: 3px 0 10px; }
 .pfm-danger-btns { display: flex; gap: 8px; justify-content: flex-end; }
 .pfm-danger-no { border: 1px solid rgba(24,38,60,0.14); background: #fff; color: #46566e; border-radius: 9px;
-    padding: 7px 13px; font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 12px; cursor: pointer; transition: background 0.15s; }
+    padding: 7px 13px; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 12px; cursor: pointer; transition: background 0.15s; }
 .pfm-danger-no:hover { background: rgba(24,38,60,0.05); }
 .pfm-danger-yes { border: none; background: #dc2626; color: #fff; border-radius: 9px; padding: 7px 13px;
-    font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 12px; cursor: pointer; transition: filter 0.15s, transform 0.12s; }
+    font-family: 'Inter', sans-serif; font-weight: 800; font-size: 12px; cursor: pointer; transition: filter 0.15s, transform 0.12s; }
 .pfm-danger-yes:hover { filter: brightness(1.08); }
 .pfm-danger-yes:active { transform: scale(0.97); }
 body.dark-mode .pfm-danger { border-color: rgba(248,113,113,0.3); background: rgba(248,113,113,0.09); }
@@ -1089,7 +1095,7 @@ body.dark-mode .pf-impmenu { background: #18222e; border-color: rgba(255,255,255
 .pf-impgrp { font-size: 9.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8; padding: 8px 10px 6px; }
 /* карточка источника: иконка слева, название + подпись (кол-во позиций / причина недоступности) справа */
 .pf-impitem { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; border: none; background: none;
-    border-radius: 11px; padding: 9px 10px; font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 12.5px; color: #1b2433; cursor: pointer; transition: background 0.12s; }
+    border-radius: 11px; padding: 9px 10px; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 12.5px; color: #1b2433; cursor: pointer; transition: background 0.12s; }
 .pf-impitem + .pf-impitem { margin-top: 2px; }
 .pf-impitem:hover { background: rgba(24,38,60,0.06); }
 /* элементы без .pf-impico (напр. меню «Бэкап» — иконка+текст без карточной обёртки) — фиксируем размер svg, иначе она растягивается до intrinsic 300×150 */
@@ -1142,7 +1148,7 @@ body.dark-mode .pf-empty--hidden .pf-empty-art { background: rgba(255,255,255,0.
 /* «Только акции/облигации» — подпункты расчёта в виде чипов под основной карточкой, не отдельными строками */
 .pf-impsubs { display: flex; gap: 6px; padding: 2px 10px 6px 53px; flex-wrap: wrap; }
 .pf-impchip { border: 1px solid rgba(24,38,60,0.12); background: rgba(24,38,60,0.03); border-radius: 8px;
-    padding: 4px 9px; font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 10.5px; color: #46566e; cursor: pointer; transition: background 0.12s, color 0.12s; }
+    padding: 4px 9px; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 10.5px; color: #46566e; cursor: pointer; transition: background 0.12s, color 0.12s; }
 .pf-impchip:hover { background: rgba(24,38,60,0.08); color: #1b2433; }
 body.dark-mode .pf-impchip { border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #aab8c8; }
 body.dark-mode .pf-impchip:hover { background: rgba(255,255,255,0.09); color: #f4f8fd; }
@@ -1219,7 +1225,7 @@ body.dark-mode .pff-empty-t { color: #f4f8fd; }
 /* шапка избранного: инфо «что такое потенциал» + «Все акции» */
 .pff-head-r { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 .pff-head-r .pf-ch-go { margin-left: 0; }
-.pff-info { display: inline-flex; align-items: center; gap: 6px; cursor: help; border: 1px solid rgba(24,38,60,0.1); background: #fff; border-radius: 10px; padding: 8px 12px; font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 700; color: #46566e; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+.pff-info { display: inline-flex; align-items: center; gap: 6px; cursor: help; border: 1px solid rgba(24,38,60,0.1); background: #fff; border-radius: 10px; padding: 8px 12px; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700; color: #46566e; transition: background 0.15s, color 0.15s, border-color 0.15s; }
 .pff-info svg { width: 15px; height: 15px; color: var(--pf-accent); }
 .pff-info:hover { background: color-mix(in srgb, var(--pf-accent) 10%, #fff); border-color: color-mix(in srgb, var(--pf-accent) 32%, transparent); color: var(--pf-accent); }
 body.dark-mode .pff-info { border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #cdd8e6; }
@@ -1229,7 +1235,7 @@ body.dark-mode .pff-info { border-color: rgba(255,255,255,0.1); background: rgba
 .pff-info-wrap { position: relative; display: inline-flex; }
 .pff-tipbox { position: absolute; top: calc(100% + 10px); right: 0; z-index: 90; width: 296px; box-sizing: border-box;
     padding: 12px 14px; border-radius: 12px; background: #161e29; border: 1px solid rgba(255,255,255,0.12);
-    color: #dbe4ef; font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 500; line-height: 1.55; text-align: left;
+    color: #dbe4ef; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500; line-height: 1.55; text-align: left;
     box-shadow: 0 14px 34px rgba(0,0,0,0.38); pointer-events: none;
     opacity: 0; visibility: hidden; transform: translateY(-4px);
     transition: opacity 0.15s, transform 0.15s, visibility 0.15s; }
@@ -1244,7 +1250,7 @@ body.dark-mode .pff-tipbox::before { background: #0d141d; }
 .pff-sort { display: inline-flex; align-items: center; gap: 2px; padding: 3px; border-radius: 11px;
     background: rgba(24,38,60,0.05); border: 1px solid rgba(24,38,60,0.08); }
 .pff-sort-b { border: none; background: transparent; cursor: pointer; border-radius: 8px; padding: 6px 11px;
-    font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 700; color: #6b7a90; white-space: nowrap;
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700; color: #6b7a90; white-space: nowrap;
     transition: background 0.15s, color 0.15s, box-shadow 0.15s; }
 .pff-sort-b:hover { color: #2b3648; }
 .pff-sort-b.on { background: #fff; color: var(--pf-accent); box-shadow: 0 1px 3px rgba(24,38,60,0.12); }
@@ -1424,7 +1430,7 @@ body.dark-mode .pfpc-tk { color: #f4f8fd; }
 body.dark-mode .pfpc-amt { color: #34d399; }
 .pfpc-more { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 10px;
     padding: 9px; border-radius: 11px; border: 1px dashed rgba(24,38,60,0.16); background: none; color: #64748b;
-    font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; }
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; }
 .pfpc-more:hover { background: rgba(24,38,60,0.04); color: #1b2433; }
 body.dark-mode .pfpc-more { border-color: rgba(255,255,255,0.14); color: #9fb0c4; }
 body.dark-mode .pfpc-more:hover { background: rgba(255,255,255,0.05); color: #f4f8fd; }
@@ -1474,7 +1480,7 @@ body.dark-mode .pft-sum { background: rgba(255,255,255,0.06); }
 body.dark-mode .pft-sum-v { color: #f4f8fd; }
 /* общий шеврон блока (свернуть/показать все сделки) */
 .pft-toggle { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; border: 1px solid rgba(24,38,60,0.1); background: #fff; border-radius: 10px;
-    padding: 8px 12px; font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 700; color: #46566e; white-space: nowrap; transition: background 0.15s, color 0.15s, border-color 0.15s; }
+    padding: 8px 12px; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700; color: #46566e; white-space: nowrap; transition: background 0.15s, color 0.15s, border-color 0.15s; }
 .pft-toggle:hover, .pft-toggle.on { background: color-mix(in srgb, var(--pf-accent) 11%, #fff); border-color: color-mix(in srgb, var(--pf-accent) 33%, transparent); color: var(--pf-accent); }
 body.dark-mode .pft-toggle { border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #cdd8e6; }
 body.dark-mode .pft-toggle:hover, body.dark-mode .pft-toggle.on { background: color-mix(in srgb, var(--pf-accent) 24%, rgba(255,255,255,0.05)); color: #fff; }
@@ -1659,7 +1665,7 @@ body.dark-mode .pfo-distrib { background: #1a232f; border-color: rgba(255,255,25
 body.dark-mode .pfo-leg + .pfo-leg { border-color: rgba(255,255,255,0.06); }
 .pfo-leg-dot { grid-row: 1; grid-column: 1; width: 11px; height: 11px; border-radius: 99px; }
 .pfo-leg.stock .pfo-leg-dot { background: #D97757; } .pfo-leg.bond .pfo-leg-dot { background: #7B9BBF; }
-.pfo-leg-nm { grid-row: 1; grid-column: 2; font-family: 'Manrope', sans-serif; font-size: 12.5px; font-weight: 700; color: #475569; }
+.pfo-leg-nm { grid-row: 1; grid-column: 2; font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 700; color: #475569; }
 body.dark-mode .pfo-leg-nm { color: #cdd8e6; }
 .pfo-leg-pct { grid-row: 1; grid-column: 3; font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 800; color: #0f172a; }
 body.dark-mode .pfo-leg-pct { color: #f4f8fd; }
@@ -1700,7 +1706,7 @@ body.dark-mode .pfo-income-l { color: #93a8c2; }
 .pfo-income-v b { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 700; color: #2a3f57; letter-spacing: -0.01em; }
 body.dark-mode .pfo-income-v b { color: #eaf1f8; }
 .pfo-income-unit { font-size: 12px; font-weight: 700; color: #7e93a8; }
-.pfo-income-sub { font-family: 'Manrope', sans-serif; font-size: 11.5px; font-weight: 600; color: #94a3b8; }
+.pfo-income-sub { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #94a3b8; }
 .pfo-income-note { margin-left: auto; max-width: 320px; font-size: 10.5px; line-height: 1.4; color: #9aa7b6; text-align: right; }
 @media (max-width: 720px) { .pfo-income-note { margin-left: 0; text-align: left; max-width: none; } }
 
@@ -1732,8 +1738,8 @@ body.dark-mode .pfo-nkdcol.muted { color: #46525f; }
 .pfo-tkline { display: flex; align-items: center; gap: 7px; }
 .pfo-tk b { font-family: 'Inter', sans-serif; font-weight: 800; color: #0f172a; font-size: 13px; }
 body.dark-mode .pfo-tk b { color: #f4f8fd; }
-.pfo-nm { font-family: 'Manrope', sans-serif; font-size: 10.5px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
-.pfo-tag { font-family: 'Manrope', sans-serif; font-size: 9.5px; font-weight: 800; text-transform: uppercase; padding: 2px 7px; border-radius: 6px; }
+.pfo-nm { font-family: 'Inter', sans-serif; font-size: 10.5px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+.pfo-tag { font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 800; text-transform: uppercase; padding: 2px 7px; border-radius: 6px; }
 .pfo-tag.stock { color: #b45309; background: rgba(217,119,87,0.14); }
 .pfo-tag.bond { color: #3a5d80; background: rgba(123,155,191,0.18); }
 .pfo-lots { font-style: normal; font-size: 9px; font-weight: 800; color: var(--pf-accent); background: color-mix(in srgb, var(--pf-accent) 14%, transparent); padding: 1px 5px; border-radius: 5px; margin-left: 5px; }
@@ -1741,13 +1747,13 @@ body.dark-mode .pfo-tk b { color: #f4f8fd; }
 .pfo-table .pos { color: #16a34a; } .pfo-table .neg { color: #dc2626; }
 body.dark-mode .pfo-table .pos { color: #34d399; } body.dark-mode .pfo-table .neg { color: #f87171; }
 .pfo-table td small { display: block; font-size: 10px; opacity: 0.8; }
-.pfo-empty { text-align: center; color: #94a3b8; padding: 30px; font-family: 'Manrope', sans-serif; }
+.pfo-empty { text-align: center; color: #94a3b8; padding: 30px; font-family: 'Inter', sans-serif; }
 @media (max-width: 720px) { .pfo-top { gap: 16px; } .pfo-stats { grid-template-columns: 1fr 1fr; } #pfOverlay { padding: 12px; } }
 
 /* ============================================================
    TOAST
    ============================================================ */
-.pf-toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(14px); z-index: 5000; background: #0f172a; color: #fff; font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 13px; padding: 12px 20px; border-radius: 12px; box-shadow: 0 18px 40px -14px rgba(0,0,0,0.5); opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; }
+.pf-toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(14px); z-index: 5000; background: #0f172a; color: #fff; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 13px; padding: 12px 20px; border-radius: 12px; box-shadow: 0 18px 40px -14px rgba(0,0,0,0.5); opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; }
 .pf-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .pf-toast.err { background: #b91c1c; }
 
@@ -1972,7 +1978,7 @@ body.dark-mode .pfcf-t { color: #f4f8fd; }
 .pfcf-s { font-size: 12.5px; font-weight: 600; color: #94a3b8; line-height: 1.55; max-width: 320px; }
 .pfcf-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; width: 100%; margin-top: 12px; }
 .pfcf-btn { padding: 11px 14px; border-radius: 12px; border: 1px solid rgba(24,38,60,0.12); background: #fff;
-    font-family: 'Manrope', sans-serif; font-size: 12.5px; font-weight: 800; color: #5f6b7d; cursor: pointer;
+    font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 800; color: #5f6b7d; cursor: pointer;
     transition: background 0.15s, border-color 0.15s, color 0.15s; }
 .pfcf-btn:hover { background: rgba(24,38,60,0.05); }
 body.dark-mode .pfcf-btn { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); color: #c2cdda; }
@@ -1991,7 +1997,7 @@ body.dark-mode .pfcf-btn.pfcf-ok.danger { background: #dc2626; border-color: #dc
     flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
     border: 1px solid rgba(24,38,60,0.12); border-radius: 10px; background: transparent;
     padding: 9px 10px; cursor: pointer;
-    font-family: 'Manrope', 'Inter', sans-serif; font-size: 12.5px; font-weight: 700;
+    font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 700;
     color: #3d4d63; transition: background 0.14s ease, border-color 0.14s ease;
 }
 .pf-eyeallbtn svg { width: 15px; height: 15px; }
@@ -2445,13 +2451,13 @@ body.dark-mode .pfcf-input:focus { border-color: #818cf8; box-shadow: 0 0 0 3px 
 .pfp-ico { flex-shrink: 0; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 13px; color: #8ab4ff; background: linear-gradient(135deg, rgba(90, 124, 255, 0.22), rgba(90, 124, 255, 0.05)); border: 1px solid rgba(90, 124, 255, 0.30); }
 .pfp-ico svg { width: 21px; height: 21px; }
 .pfp-id-t { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.pfp-title { font-family: 'Manrope', sans-serif; font-size: 19px; font-weight: 800; letter-spacing: -0.01em; color: #fff; white-space: nowrap; }
+.pfp-title { font-family: 'Inter', sans-serif; font-size: 19px; font-weight: 800; letter-spacing: -0.01em; color: #fff; white-space: nowrap; }
 .pfp-sub { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, 0.55); white-space: nowrap; }
 /* KPI */
 .pfp-kpis { display: flex; align-items: center; gap: 22px; margin-left: auto; }
 .pfp-kpi { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .pfp-kpi .num { display: flex; align-items: baseline; gap: 7px; }
-.pfp-kpi .num b { font-family: 'Manrope', sans-serif; font-size: 20px; font-weight: 800; letter-spacing: -0.01em; color: #fff; }
+.pfp-kpi .num b { font-family: 'Inter', sans-serif; font-size: 20px; font-weight: 800; letter-spacing: -0.01em; color: #fff; }
 .pfp-kpi .num b.pos { color: #4be3a0; }
 .pfp-kpi .num b.neg { color: #ff9d7a; }
 .pfp-kpi .num span { font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: rgba(255, 255, 255, 0.5); }
