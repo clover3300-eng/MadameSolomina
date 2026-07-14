@@ -88,15 +88,46 @@
         box.innerHTML = html;
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', draw);
-    } else {
+    // Перерисовываем, только когда размер РЕАЛЬНО поменялся: draw() правит innerHTML бокса,
+    // и без этой отсечки наблюдатель мог бы гонять сам себя.
+    var lastW = 0, lastH = 0;
+    function drawIfResized() {
+        var box = document.getElementById('siteBgTiles');
+        if (!box) return;
+        var W = box.clientWidth, H = box.clientHeight;
+        if (W < 2 || H < 2) return;                 // скрыт (не та вкладка/тема) — рисовать нечего
+        if (W === lastW && H === lastH) return;
+        lastW = W; lastH = H;
         draw();
     }
 
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', drawIfResized);
+    } else {
+        drawIfResized();
+    }
+
+    // Мозаика показывается только на НЕ-главной вкладке в светлой теме (см. css/site-bg.css:
+    // display:none по умолчанию, block по body:not(.dark-mode):not(.tab-home)). Загрузка же
+    // идёт НА ГЛАВНОЙ — бокс скрыт, его clientWidth = 0, и разовый draw() на DOMContentLoaded
+    // выходил вхолостую. Перейдя на другую вкладку, пользователь получал пустой бокс: draw()
+    // звал только resize окна, а переключение вкладки — не resize. Итог: плиток не было
+    // никогда, фон вкладок оставался голым градиентом.
+    // ResizeObserver закрывает это, не сообщая site-bg.js про вкладки: у display:none размер
+    // 0×0, при показе он становится W×H — наблюдатель срабатывает и на смену вкладки, и на
+    // смену темы, и на ресайз окна.
+    if (window.ResizeObserver) {
+        var ro = new ResizeObserver(function () { drawIfResized(); });
+        var target = document.getElementById('siteBgTiles');
+        if (target) ro.observe(target);
+        else document.addEventListener('DOMContentLoaded', function () {
+            var t = document.getElementById('siteBgTiles'); if (t) ro.observe(t);
+        });
+    }
+    // фолбэк для браузеров без ResizeObserver
     var rsz = null;
     window.addEventListener('resize', function () {
         clearTimeout(rsz);
-        rsz = setTimeout(draw, 200);
+        rsz = setTimeout(drawIfResized, 200);
     });
 })();
