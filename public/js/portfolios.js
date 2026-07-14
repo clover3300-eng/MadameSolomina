@@ -4369,27 +4369,28 @@
         pfdArm = null;   // гасим возможный «взвод» драга — ресайз и драг не смешиваются
         pfdPushUndo();
         item.classList.add('pfd-resizing');
-        // ОБЩЕЕ ПРАВИЛО: тянем ПРАВУЮ кромку блока вправо → блоки СПРАВА (в тех же рядах)
-        // не уезжают вниз, а СЖИМАЮТСЯ (их левый край едет за правым краем нашего блока,
-        // правый край на месте); тянем влево — они растут обратно. Соседей и их правые края
-        // фиксируем ОДИН раз на старте по текущей раскладке pfdPack. Работает только у правой
-        // кромки (axis 'x') и только если справа есть с кем «поделиться».
+        // ОБЩЕЕ ПРАВИЛО «делитель»: тянем боковую кромку блока НАРУЖУ → соседи с ЭТОЙ стороны
+        // (в тех же рядах) не уезжают вниз, а СЖИМАЮТСЯ (их край у нашего блока едет за нашей
+        // кромкой, дальний край на месте); тянем внутрь — растут обратно. Работает у обеих
+        // боковых кромок (правая axis 'x', левая 'xl'), если с этой стороны есть с кем «поделиться».
         var pushNb = null, pushA = null, pushOrig = null;
-        if (axis === 'x') {
+        if (axis === 'x' || axis === 'xl') {
             var raStart = pfdGridRect(item);
             if (raStart) {
                 var nb = [];
                 Array.prototype.forEach.call(grid.children, function (c) {
                     if (c === item || !c.classList || !c.classList.contains('pfd-item')) return;
                     var rc = pfdGridRect(c); if (!rc) return;
-                    // строго справа от нашего блока и с перекрытием по строкам (тот же «ряд»)
-                    if (rc.col0 >= raStart.right0 - 0.5 && rc.row0 < raStart.row1 - 0.5 && rc.row1 > raStart.row0 + 0.5) {
-                        nb.push({ el: c, id: c.getAttribute('data-pfd'), col0: rc.col0, span: rc.span, right0: rc.right0 });
-                    }
+                    var rowOverlap = rc.row0 < raStart.row1 - 0.5 && rc.row1 > raStart.row0 + 0.5;
+                    if (!rowOverlap) return;
+                    // справа (для правой кромки): левый край соседа = наш правый;
+                    // слева (для левой кромки): правый край соседа = наш левый
+                    var isNb = axis === 'x' ? (rc.col0 >= raStart.right0 - 0.5) : (rc.right0 <= raStart.col0 + 0.5);
+                    if (isNb) nb.push({ el: c, id: c.getAttribute('data-pfd'), col0: rc.col0, span: rc.span, right0: rc.right0 });
                 });
                 if (nb.length) {
                     if (!dashCfg.col) dashCfg.col = {};
-                    pushNb = nb; pushA = { col0: raStart.col0, span: raStart.span };
+                    pushNb = nb; pushA = { col0: raStart.col0, span: raStart.span, right0: raStart.right0 };
                     pushOrig = { cols: {}, spans: {} };
                     pushOrig.cols[id] = dashCfg.col[id]; pushOrig.spans[id] = dashCfg.span[id];
                     nb.forEach(function (n) { pushOrig.cols[n.id] = dashCfg.col[n.id]; pushOrig.spans[n.id] = dashCfg.span[n.id]; });
@@ -4410,9 +4411,25 @@
             var dx = (ev.clientX - startX) / z, dy = (ev.clientY - startY) / z;
             if (axis === 'y') dx = 0;      // нижняя кромка — ширину не трогаем
             if (axis === 'x' || axis === 'xl') dy = 0;   // боковые кромки — высоту не трогаем
-            if (axis === 'xl') {
-                // левая кромка: тянем влево (dx<0) → шире. Правый край закреплён:
-                // новая стартовая колонка = (колонка за правым краем) − новый span.
+            if (axis === 'xl' && pushNb) {
+                // левая кромка + есть соседи слева → «делитель»: наш блок растёт влево, соседи
+                // сжимаются (их ЛЕВЫЕ края на месте, ПРАВЫЕ едут за нашим левым). Правый край
+                // нашего блока закреплён. Самому «тесному» слева соседу оставляем ≥3 колонки.
+                var maxNbCol0 = Math.max.apply(null, pushNb.map(function (n) { return n.col0; }));
+                var maxSpanL = Math.max(3, pushA.right0 - (maxNbCol0 + 3));
+                newSpan = clamp(Math.round((startW - dx + gap) / (colW + gap)), 3, maxSpanL);
+                var aLeft = pushA.right0 - newSpan;     // левый край нашего блока (0-базово)
+                newColStart = aLeft + 1;
+                dashCfg.col[id] = newColStart;          // правый край держится: col = right0 − span
+                pushNb.forEach(function (n) {
+                    var ns = Math.max(3, aLeft - n.col0);
+                    n.el.style.gridColumn = 'span ' + ns;   // pfdSpanOf читает span отсюда
+                    dashCfg.col[n.id] = n.col0 + 1;          // левый край соседа на месте
+                    n._span = ns;
+                });
+            } else if (axis === 'xl') {
+                // левая кромка без соседей слева: тянем влево (dx<0) → шире. Правый край
+                // закреплён: новая стартовая колонка = (колонка за правым краем) − новый span.
                 newSpan = clamp(Math.round((startW - dx + gap) / (colW + gap)), 3, 12);
                 newColStart = clamp(rightEdgeCol - newSpan, 1, 12);
                 newSpan = rightEdgeCol - newColStart;   // держим согласованность после clamp
@@ -4468,9 +4485,9 @@
             // иначе «пиннили» бы текущий span поверх дефолта
             if (newSpan && axis !== 'y') { dashCfg.span[id] = newSpan; changed = true; }
             if (axis === 'xl' && newColStart) { dashCfg.col[id] = newColStart; changed = true; }
-            // «делитель»: сохраняем ужатые/выросшие размеры соседей справа (их col уже в
-            // dashCfg.col из onMove); наш col тоже закреплён (левый край)
-            if (axis === 'x' && pushNb) {
+            // «делитель»: сохраняем ужатые/выросшие размеры соседей (их col уже в dashCfg.col
+            // из onMove); наш col тоже закреплён (левый край у правой кромки / он же у левой)
+            if ((axis === 'x' || axis === 'xl') && pushNb) {
                 pushNb.forEach(function (n) { if (n._span) dashCfg.span[n.id] = n._span; });
                 changed = true;
             }
