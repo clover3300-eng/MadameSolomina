@@ -12,10 +12,13 @@
 .stk-root {
     /* --- локальные токены модуля (на основе токенов проекта) --- */
     --stk-radius: 16px;
-    /* шапка таблицы — светлая, крупная, в стиле карточек «Портфели»
-       (.pfo-table thead th): жирный uppercase-лейбл вместо тёмной полосы.
-       Тон насыщеннее прежнего блёклого — глубокий сине-сланцевый (periwinkle-slate). */
-    --stk-head-bg: #d5deee; --stk-head-bg-hover: #c8d4e8; --stk-head-tx: #384a67;
+    /* Шапка таблицы — почти белая, тихий серый КАПС. Прежняя плашка (#d5deee, текст
+       #384a67/800) была плотнее самих данных и перетягивала внимание на себя: в таблице
+       на 200+ строк смотрят в ЧИСЛА, а шапка нужна только чтобы понять столбец. Держит
+       её теперь не заливка, а линия снизу (--stk-head-line) — этого хватает и при
+       sticky-скролле, потому что под шапкой всегда контрастный край. */
+    --stk-head-bg: #fcfdfe; --stk-head-bg-hover: #f1f5f9; --stk-head-tx: #8a97a8;
+    --stk-head-line: rgba(24, 38, 60, 0.14);
     --stk-card-bg: var(--card, #ffffff);
     --stk-text: var(--text-deep, #0F172A);
     --stk-slate: var(--text-slate, #64748B);
@@ -64,15 +67,17 @@
 /* Тумблер «По секторам / Общий список» — в стиле тулбара: бордер-пилюля,
    активный сегмент графитовый (как тёмная шапка таблицы и сайдбар).
    Фолбэки в var() — компонент живёт и внутри .bnd-root, где нет --stk-токенов */
+/* Высота — 44px (было 38): переключатели вкладки читались мельче соседних кнопок
+   тулбара и терялись, хотя это ГЛАВНЫЙ орган управления страницей. */
 .stk-toggle {
-    display: inline-flex; height: 38px; padding: 3px; box-sizing: border-box;
-    border-radius: 11px; background: var(--card, #fff);
+    display: inline-flex; height: 44px; padding: 4px; box-sizing: border-box;
+    border-radius: 13px; background: var(--card, #fff);
     border: 1px solid var(--stk-border, rgba(0,0,0,0.08));
 }
 .stk-tg-btn {
     appearance: none; border: 0; cursor: pointer; background: transparent;
-    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600;
-    color: var(--stk-slate, #64748B); padding: 0 15px; border-radius: 8px;
+    font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 600;
+    color: var(--stk-slate, #64748B); padding: 0 17px; border-radius: 9px;
     transition: background 0.2s ease, color 0.2s ease;
 }
 .stk-tg-btn:hover { color: var(--stk-text, #0F172A); }
@@ -87,14 +92,14 @@
    После него — тонкий разделитель перед второстепенным тумблером режима. */
 .stk-toggle.mt-asset {
     border: none; background: var(--stk-well, #eef2f7);
-    padding: 4px; border-radius: 12px; gap: 3px;
+    padding: 4px; border-radius: 14px; gap: 3px;
 }
 .mt-asset .stk-tg-btn {
-    display: inline-flex; align-items: center; gap: 7px;
-    font-weight: 700; font-size: 13.5px; padding: 0 16px;
+    display: inline-flex; align-items: center; gap: 8px;
+    font-weight: 700; font-size: 14px; padding: 0 18px;
 }
 .mt-asset .stk-tg-btn.active { background: #141b26; box-shadow: 0 5px 14px rgba(16, 24, 38, 0.2); }
-.mt-asset-ico { display: inline-flex; width: 16px; height: 16px; flex: 0 0 auto; color: #16b56b; }
+.mt-asset-ico { display: inline-flex; width: 17px; height: 17px; flex: 0 0 auto; color: #16b56b; }
 .mt-asset-ico svg { width: 100%; height: 100%; }
 .mt-asset .stk-tg-btn.active .mt-asset-ico { color: #fff; }
 body.dark-mode .stk-toggle.mt-asset { background: rgba(255, 255, 255, 0.05); }
@@ -383,14 +388,18 @@ body.dark-mode .stk-multisort-hint svg, body.dark-mode .stk-multisort-hint b { c
 .stk-table > thead th {
     position: sticky; top: 0; z-index: 3;
     background: var(--stk-head-bg); color: var(--stk-head-tx);
-    font-family: 'Inter', sans-serif; font-weight: 800; font-size: 12.5px;
-    letter-spacing: 0.04em; text-transform: uppercase;
-    text-align: right; white-space: nowrap;
-    padding: 18px 14px; cursor: pointer; user-select: none;
-    border-bottom: 1px solid rgba(24,38,60,0.12);
-    transition: background 0.15s ease;
+    font-family: 'Inter', sans-serif; font-weight: 700; font-size: 11.5px;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    /* Заголовки — ПО ЦЕНТРУ колонки, числа под ними остаются по правому краю.
+       Это осознанное исключение из общего правила проекта «заголовок выровнен как
+       значение под ним» (эталон — таблица ОФЗ): здесь лейблы длинные и переносятся
+       в две строки, и прижатые вправо они собирались в рваную лесенку. */
+    text-align: center; white-space: nowrap;
+    padding: 16px 14px; cursor: pointer; user-select: none;
+    border-bottom: 1.5px solid var(--stk-head-line);
+    transition: background 0.15s ease, color 0.15s ease;
 }
-body.dark-mode .stk-table > thead th { border-bottom-color: rgba(255,255,255,0.09); }
+body.dark-mode .stk-table > thead th { border-bottom-color: rgba(255,255,255,0.14); }
 .stk-table > thead th:hover { background: var(--stk-head-bg-hover); }
 .stk-table > thead th .stk-arrow { margin-left: 5px; opacity: 0.95; font-size: 10px; }
 /* Номер приоритета при многоуровневой сортировке (1, 2, 3 …) */
@@ -711,7 +720,10 @@ body.dark-mode .stk-table > tbody > tr > td.stk-pin-2.stk-hl { background-color:
 
 /* ---------- Тёмная тема ---------- */
 body.dark-mode .stk-root {
-    --stk-head-bg: #1f2937; --stk-head-bg-hover: #263041; --stk-head-tx: #9fb0c4;
+    /* Тёмная тема — та же логика, что в светлой: шапка сливается с полотном
+       таблицы, а не сидит отдельной плашкой; отделяет её линия снизу. */
+    --stk-head-bg: var(--card-bg, #1e293b); --stk-head-bg-hover: rgba(255,255,255,0.05); --stk-head-tx: #7e8ea3;
+    --stk-head-line: rgba(255,255,255,0.14);
     --stk-text: var(--text-main, #f1f5f9);
     --stk-slate: #94a3b8;
     --stk-muted: #64748b;

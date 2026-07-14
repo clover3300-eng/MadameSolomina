@@ -14,7 +14,11 @@
     /* шапка таблицы — светлая, крупная, в стиле карточек «Портфели»
        (.pfo-table thead th): жирный uppercase-лейбл вместо тёмной полосы.
        Тон насыщеннее прежнего блёклого — глубокий сине-сланцевый (в тон акций). */
-    --bnd-head-bg: #d5deee; --bnd-head-bg-hover: #c8d4e8; --bnd-head-tx: #384a67;
+    /* Шапка — почти белая, тихий серый КАПС; держит её линия снизу, а не заливка.
+       Один в один со стоковым терминалом (--stk-head-* в css/stock-terminal.css):
+       это две вкладки одного «Терминала», и шапки обязаны совпадать. */
+    --bnd-head-bg: #fcfdfe; --bnd-head-bg-hover: #f1f5f9; --bnd-head-tx: #8a97a8;
+    --bnd-head-line: rgba(24, 38, 60, 0.14);
     --bnd-card-bg: var(--card, #ffffff);
     --bnd-text: var(--text-deep, #0F172A);
     --bnd-slate: var(--text-slate, #64748B);
@@ -276,19 +280,19 @@ body.dark-mode .bnd-multisort-hint svg, body.dark-mode .bnd-multisort-hint b { c
     font-size: 12.5px;
 }
 
-/* Шапка — светлая, крупная, sticky сверху (в стиле карточек «Портфели»:
-   жирный uppercase-лейбл на приглушённой плашке вместо тёмной полосы) */
+/* Шапка — почти белая, тихий серый КАПС по центру, sticky сверху.
+   Ровно те же значения, что у .stk-table > thead th. */
 .bnd-table > thead th {
     position: sticky; top: 0; z-index: 3;
     background: var(--bnd-head-bg); color: var(--bnd-head-tx);
-    font-family: 'Inter', sans-serif; font-weight: 800; font-size: 12.5px;
-    letter-spacing: 0.04em; text-transform: uppercase;
+    font-family: 'Inter', sans-serif; font-weight: 700; font-size: 11.5px;
+    letter-spacing: 0.06em; text-transform: uppercase;
     text-align: center; white-space: nowrap;
-    padding: 18px 14px; cursor: pointer; user-select: none;
-    border-bottom: 1px solid rgba(24,38,60,0.12);
-    transition: background 0.15s ease;
+    padding: 16px 14px; cursor: pointer; user-select: none;
+    border-bottom: 1.5px solid var(--bnd-head-line);
+    transition: background 0.15s ease, color 0.15s ease;
 }
-body.dark-mode .bnd-table > thead th { border-bottom-color: rgba(255,255,255,0.09); }
+body.dark-mode .bnd-table > thead th { border-bottom-color: rgba(255,255,255,0.14); }
 .bnd-table > thead th:hover { background: var(--bnd-head-bg-hover); }
 .bnd-table > thead th .bnd-arrow { margin-left: 5px; opacity: 0.95; font-size: 10px; }
 .bnd-sort-prio {
@@ -392,7 +396,10 @@ body.dark-mode .bnd-table > tbody > tr > td.bnd-first {
 
 /* ---------- Тёмная тема ---------- */
 body.dark-mode .bnd-root {
-    --bnd-head-bg: #1f2937; --bnd-head-bg-hover: #263041; --bnd-head-tx: #9fb0c4;
+    /* Тёмная тема — та же логика, что в светлой: шапка сливается с полотном
+       таблицы, а не сидит отдельной плашкой; отделяет её линия снизу. */
+    --bnd-head-bg: var(--card-bg, #1e293b); --bnd-head-bg-hover: rgba(255,255,255,0.05); --bnd-head-tx: #7e8ea3;
+    --bnd-head-line: rgba(255,255,255,0.14);
     --bnd-text: var(--text-main, #f1f5f9);
     --bnd-slate: #94a3b8;
     --bnd-muted: #64748b;
