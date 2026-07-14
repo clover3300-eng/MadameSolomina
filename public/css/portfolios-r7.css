@@ -869,3 +869,109 @@ body.dark-mode .dm-news b { color: #e8eef7; }
 @media (max-width: 1023px) {
     .pfx-hero, .pfx-tabs { display: none !important; }
 }
+
+/* ============ 16. Виджет «Календарь выплат · месяц» (.pfcm-) ============
+   Месячная сетка выплат: рядом со списочным «Календарём выплат» (.pfpc-) — тот отвечает
+   на «что и когда», этот на «как выплаты разложены по месяцу». Язык тот же, что у
+   списка: квадратик дня красится ЦВЕТОМ ПОРТФЕЛЯ (--c), день с выплатами из разных
+   портфелей — нейтральный акцент и точки по цветам. */
+.pf-calmblk { display: flex; flex-direction: column; box-sizing: border-box; padding: 0 22px 20px; }
+.pf-calmblk > .pf-ch { padding-left: 0; padding-right: 0; }
+.pfcm-head-r { display: flex; align-items: center; margin-left: auto; }
+.pfcm-tot { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+.pfcm-tot i { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: #9aa7b8; font-style: normal; }
+.pfcm-tot b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 15px; font-weight: 700; color: #12a35c; }
+.pfcm-tot.empty b { color: #9aa7b8; font-size: 12.5px; font-family: 'Inter', sans-serif; }
+
+/* шапка-навигация месяца */
+.pfcm-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 2px 0 10px; }
+.pfcm-mon { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #1e293b; letter-spacing: -0.01em; }
+.pfcm-arw {
+    width: 28px; height: 28px; flex-shrink: 0; border-radius: 9px; border: 1px solid #e6ebf2; background: #f8fafc;
+    cursor: pointer; display: inline-flex; align-items: center; justify-content: center; color: #64748b;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.pfcm-arw svg { width: 14px; height: 14px; }
+.pfcm-arw.prev svg { transform: rotate(180deg); }
+.pfcm-arw:hover:not([disabled]) { background: #eef2f7; color: #1b2433; border-color: #d3dbe6; }
+.pfcm-arw[disabled] { opacity: 0.35; cursor: default; }
+
+/* сетка */
+.pfcm-wds, .pfcm-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.pfcm-wd { text-align: center; font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700; color: #a5b0be; padding-bottom: 4px; }
+.pfcm-e { min-height: 40px; }
+.pfcm-d {
+    position: relative; min-height: 40px; box-sizing: border-box; padding: 3px 2px 2px;
+    border: 0; border-radius: 9px; background: none; text-align: center;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 1px;
+}
+.pfcm-n { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11.5px; font-weight: 600; color: #64748b; font-style: normal; line-height: 1.1; }
+/* день без выплат — просто число; кликать не за чем, поэтому это <span>, не кнопка */
+.pfcm-d:not(.has) { color: #94a3b8; }
+.pfcm-d.today .pfcm-n { color: #1b2433; font-weight: 800; }
+.pfcm-d.today { box-shadow: inset 0 0 0 1.5px #cbd5e1; }
+/* день С ВЫПЛАТАМИ — кликабельный, подложка в цвет портфеля */
+.pfcm-d.has { cursor: pointer; transition: transform 0.1s, box-shadow 0.13s; }
+.pfcm-d.has:hover { transform: translateY(-1px); }
+.pfcm-d.one { background: color-mix(in srgb, var(--c) 14%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 30%, transparent); }
+.pfcm-d.one .pfcm-n { color: color-mix(in srgb, var(--c) 65%, #1b2433); font-weight: 700; }
+.pfcm-d.one .pfcm-s { color: color-mix(in srgb, var(--c) 72%, #1b2433); }
+.pfcm-d.multi { background: rgba(18, 163, 92, 0.09); box-shadow: inset 0 0 0 1px rgba(18, 163, 92, 0.22); }
+.pfcm-d.multi .pfcm-n { color: #0f172a; font-weight: 700; }
+.pfcm-d.has.today { box-shadow: inset 0 0 0 1.5px #1b2433; }
+.pfcm-d.sel { box-shadow: inset 0 0 0 2px #1b2433; }
+.pfcm-s { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 9.5px; font-weight: 700; color: #12a35c; line-height: 1.1; letter-spacing: -0.02em; }
+.pfcm-dots { display: flex; gap: 2px; }
+.pfcm-dots i { width: 4px; height: 4px; border-radius: 50%; }
+
+/* раскрытый день — список бумаг под сеткой */
+.pfcm-day { margin-top: 12px; padding-top: 11px; border-top: 1px solid #eef2f7; }
+.pfcm-day-h { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 6px; }
+.pfcm-day-h b { font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 800; color: #0f172a; }
+.pfcm-day-h span { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 13px; font-weight: 700; color: #12a35c; }
+.pfcm-day-r { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid #f3f6fa; }
+.pfcm-day-r:last-child { border-bottom: 0; }
+.pfcm-day-c { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.pfcm-day-tk { flex: 1; min-width: 0; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700; color: #1b2433; display: flex; align-items: baseline; gap: 6px; }
+.pfcm-day-tk em { font-style: normal; font-size: 10.5px; font-weight: 600; color: #9aa7b8; }
+.pfcm-day-r b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12px; font-weight: 700; color: #12a35c; }
+
+/* тёмная тема */
+body.dark-mode .pfcm-mon { color: #e8eef7; }
+body.dark-mode .pfcm-arw { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.09); color: #a9b6c6; }
+body.dark-mode .pfcm-arw:hover:not([disabled]) { background: rgba(255,255,255,0.1); color: #fff; }
+body.dark-mode .pfcm-n { color: #8fa0b6; }
+body.dark-mode .pfcm-d.today { box-shadow: inset 0 0 0 1.5px rgba(255,255,255,0.2); }
+body.dark-mode .pfcm-d.today .pfcm-n,
+body.dark-mode .pfcm-d.multi .pfcm-n { color: #f4f8fd; }
+body.dark-mode .pfcm-d.one .pfcm-n, body.dark-mode .pfcm-d.one .pfcm-s { color: color-mix(in srgb, var(--c) 55%, #e8eef7); }
+body.dark-mode .pfcm-d.has.today, body.dark-mode .pfcm-d.sel { box-shadow: inset 0 0 0 2px #fff; }
+body.dark-mode .pfcm-day, body.dark-mode .pfcm-day-r { border-color: rgba(255,255,255,0.08); }
+body.dark-mode .pfcm-day-h b, body.dark-mode .pfcm-day-tk { color: #e8eef7; }
+body.dark-mode .pfcm-tot b, body.dark-mode .pfcm-s, body.dark-mode .pfcm-day-h span, body.dark-mode .pfcm-day-r b { color: #34d399; }
+/* тёмный ВИДЖЕТ (настройка «Тема: тёмная» в пикере) — те же правила, но по классу блока */
+.pfd-item.pfd-thm-dark .pfcm-mon, .pfd-item.pfd-thm-dark .pfcm-day-h b, .pfd-item.pfd-thm-dark .pfcm-day-tk { color: #e8eef7; }
+.pfd-item.pfd-thm-dark .pfcm-n { color: #8fa0b6; }
+.pfd-item.pfd-thm-dark .pfcm-arw { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.09); color: #a9b6c6; }
+.pfd-item.pfd-thm-dark .pfcm-day, .pfd-item.pfd-thm-dark .pfcm-day-r { border-color: rgba(255,255,255,0.08); }
+
+/* демо-превью «месяц» в пикере (.dm-cm-) — статичный пример, живых данных нет */
+.dm-cm { display: flex; flex-direction: column; gap: 3px; }
+.dm-cm-h { display: flex; align-items: baseline; justify-content: space-between; }
+.dm-cm-h b { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 800; color: #0f172a; }
+.dm-cm-h i { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 9.5px; font-weight: 700; color: #12a35c; font-style: normal; }
+.dm-cm-wds, .dm-cm-g { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1.5px; }
+.dm-cm-wds span { text-align: center; font-family: 'Inter', sans-serif; font-size: 6px; font-weight: 700; color: #a5b0be; }
+.dm-cm-e { aspect-ratio: 1; }
+.dm-cm-d {
+    aspect-ratio: 1; display: grid; place-items: center; border-radius: 3px;
+    font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 6.5px; font-weight: 600; color: #94a3b8;
+}
+.dm-cm-d.today { box-shadow: inset 0 0 0 1px #cbd5e1; }
+.dm-cm-d.has { font-weight: 800; }
+.dm-cm-d.p-a { background: rgba(76, 94, 247, 0.16); color: #4c5ef7; }
+.dm-cm-d.p-b { background: rgba(49, 196, 141, 0.18); color: #17915f; }
+.dm-cm-d.p-m { background: rgba(18, 163, 92, 0.14); color: #0f172a; }
+.dm-dark .dm-cm-h b { color: #e8eef7; }
+.dm-dark .dm-cm-d { color: #7f8ea3; }
+.dm-dark .dm-cm-d.p-m { color: #e8eef7; }

@@ -1782,7 +1782,9 @@
             // чистим ключи удалённых портфелей — конфиг не копит мусор (и не тащит
             // его в облако через cloud-sync). Скрытые портфели остаются в store.items,
             // их раскладка переживает «скрыть/показать».
-            var known = { cal: 1, rates: 1, trades: 1, fav: 1, sum: 1, panel: 1,
+            // ВНИМАНИЕ: список ручной — новый виджет обязан быть и здесь, иначе saveDashCfg
+            // молча вычистит его из hidden/order, и на дашборде он не появится вовсе.
+            var known = { cal: 1, calm: 1, rates: 1, trades: 1, fav: 1, sum: 1, panel: 1,
                 'kpi:cap': 1, 'kpi:day': 1, 'kpi:next': 1, cap: 1, cap2: 1, heat: 1, news: 1, alloc: 1,
                 divs: 1, assets: 1, ops: 1, yield: 1, snaps: 1, movers: 1, idx: 1, passive: 1, conc: 1 };
             store.items.forEach(function (p) { known['pf:' + p.id] = 1; });
@@ -2144,6 +2146,8 @@
         blocks.push({ id: 'news', name: 'Новости по позициям', htmlFn: pfdNewsHtml, span: defSpan, defHidden: true });
         // R7: новые виджеты (используются и на подвкладках, и добавляются на «Обзор» из пикера)
         blocks.push({ id: 'divs', name: 'Дивиденды и купоны', htmlFn: pfwDivsHtml, span: 4, defHidden: true });
+        // месячная сетка выплат — отдельный виджет рядом со списочным «Календарём выплат» (cal)
+        blocks.push({ id: 'calm', name: 'Календарь · месяц', htmlFn: function () { return pfcmCardHtml(); }, span: 4, defHidden: true });
         blocks.push({ id: 'assets', name: 'Список активов', htmlFn: pfwAssetsHtml, span: 4, defHidden: true });
         blocks.push({ id: 'ops', name: 'Последние операции', htmlFn: pfwOpsHtml, span: 4, defHidden: true });
         blocks.push({ id: 'yield', name: 'Доходность портфелей', htmlFn: pfwYieldHtml, span: 4, defHidden: true });
@@ -6682,6 +6686,133 @@
         return '<div class="dash2-card pf-card2 pf-assetsblk">' +
             pfCardHead('', 'Список активов', 'все бумаги по убыванию стоимости позиции', null) + body + '</div>';
     }
+    // ====================================================================
+    //  ВИДЖЕТ «Календарь выплат · месяц» — настоящая месячная сетка
+    // ====================================================================
+    // В отличие от блока «Календарь выплат» (cal), который показывает выплаты СПИСКОМ,
+    // этот виджет рисует месяц клеточками: видно, как выплаты распределены по дням.
+    // Данные — те же collectUpcomingPayouts() (реальные расписания Мосбиржи, год вперёд),
+    // никакой своей арифметики. Дни с выплатами метим ЦВЕТОМ ПОДЛОЖКИ квадратика — тем же
+    // приёмом, что и список-календарь (цвет портфеля); день с выплатами из разных
+    // портфелей получает нейтральную акцентную подложку и точки по цветам.
+    var PFCM_WD = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+    var PFCM_MON = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+        'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+    var pfcmOffset = 0;    // смещение показанного месяца от текущего (стрелки ‹ ›)
+    var pfcmSelKey = null; // выбранный день (YYYY-M-D) — под сеткой раскрывается его список
+    function pfcmKey(d) { return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate(); }
+    // Месяц, который показываем: текущий + смещение. Через setMonth на 1-м числе —
+    // иначе 31-е «перепрыгивало» бы короткие месяцы.
+    function pfcmShownMonth() {
+        var n = new Date(), d = new Date(n.getFullYear(), n.getMonth(), 1);
+        d.setMonth(d.getMonth() + pfcmOffset);
+        return d;
+    }
+    // выплаты показанного месяца, разложенные по дням: key → { sum, evs, colors }
+    function pfcmByDay(mon) {
+        var map = {}, y = mon.getFullYear(), m = mon.getMonth();
+        collectUpcomingPayouts().forEach(function (e) {
+            if (e.date.getFullYear() !== y || e.date.getMonth() !== m) return;
+            var k = pfcmKey(e.date);
+            if (!map[k]) map[k] = { sum: 0, evs: [], colors: [] };
+            map[k].sum += e.amount;
+            map[k].evs.push(e);
+            if (map[k].colors.indexOf(e.pfColor) < 0) map[k].colors.push(e.pfColor);
+        });
+        return map;
+    }
+    window.pfcmNav = function (delta, ev) {
+        if (ev) ev.stopPropagation();
+        // держимся в пределах горизонта данных: назад — не раньше текущего месяца
+        // (прошлые выплаты живут в «Истории операций»), вперёд — год, как и у collectUpcomingPayouts
+        var next = pfcmOffset + delta;
+        if (next < 0 || next > 12) return;
+        pfcmOffset = next;
+        pfcmSelKey = null;
+        renderNoAnim();
+    };
+    window.pfcmPickDay = function (k, ev) {
+        if (ev) ev.stopPropagation();
+        pfcmSelKey = (pfcmSelKey === k) ? null : k;
+        renderNoAnim();
+    };
+    function pfcmCardHtml(demoMap) {
+        var mon = demoMap ? new Date(new Date().getFullYear(), new Date().getMonth(), 1) : pfcmShownMonth();
+        var byDay = demoMap || pfcmByDay(mon);
+        var y = mon.getFullYear(), m = mon.getMonth();
+        var today = new Date(); var todayKey = pfcmKey(today);
+        // первая клетка — понедельник недели, в которой лежит 1-е число (getDay: Вс=0 → Пн=0)
+        var first = new Date(y, m, 1);
+        var lead = (first.getDay() + 6) % 7;
+        var days = new Date(y, m + 1, 0).getDate();
+        var cells = '';
+        for (var i = 0; i < lead; i++) cells += '<span class="pfcm-e"></span>';
+        var monthSum = 0, monthCnt = 0;
+        for (var d = 1; d <= days; d++) {
+            var k = y + '-' + m + '-' + d;
+            var info = byDay[k];
+            var cls = 'pfcm-d';
+            var style = '', inner = '<i class="pfcm-n">' + d + '</i>';
+            if (k === todayKey) cls += ' today';
+            if (info) {
+                monthSum += info.sum; monthCnt += info.evs.length;
+                cls += ' has';
+                // один портфель — подложка его цветом; несколько — нейтральный акцент и точки
+                if (info.colors.length === 1) { cls += ' one'; style = ' style="--c:' + info.colors[0] + '"'; }
+                else {
+                    cls += ' multi';
+                    inner += '<span class="pfcm-dots">' + info.colors.slice(0, 3).map(function (c) {
+                        return '<i style="background:' + c + '"></i>'; }).join('') + '</span>';
+                }
+                inner += '<b class="pfcm-s">' + fmtRubShort(info.sum) + '</b>';
+                if (pfcmSelKey === k) cls += ' sel';
+            }
+            var tip = info ? (ruDate(dateToIso(new Date(y, m, d))) + ' · ' + info.evs.length + ' ' +
+                plural(info.evs.length, 'выплата', 'выплаты', 'выплат') + ' на ' + fmtRub(info.sum)) : '';
+            cells += info
+                ? '<button type="button" class="' + cls + '"' + style + ' title="' + attr(tip) + '" onclick="pfcmPickDay(\'' + jsArg(k) + '\', event)">' + inner + '</button>'
+                : '<span class="' + cls + '">' + inner + '</span>';
+        }
+        var CH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+        var nav = '<div class="pfcm-nav">' +
+            '<button type="button" class="pfcm-arw prev"' + (pfcmOffset <= 0 && !demoMap ? ' disabled' : '') + ' aria-label="Предыдущий месяц" onclick="pfcmNav(-1, event)">' + CH + '</button>' +
+            '<span class="pfcm-mon">' + PFCM_MON[m] + ' ' + y + '</span>' +
+            '<button type="button" class="pfcm-arw next"' + (pfcmOffset >= 12 && !demoMap ? ' disabled' : '') + ' aria-label="Следующий месяц" onclick="pfcmNav(1, event)">' + CH + '</button>' +
+        '</div>';
+        var totalPill = monthCnt
+            ? '<span class="pfcm-tot"><i>за месяц</i><b>+' + fmtRub(monthSum) + '</b></span>'
+            : '<span class="pfcm-tot empty"><i>за месяц</i><b>выплат нет</b></span>';
+        // список выбранного дня — раскрывается ПОД сеткой, чтобы суммы можно было прочитать
+        // по бумагам, а не только сводной цифрой в клетке
+        var detail = '';
+        if (pfcmSelKey && byDay[pfcmSelKey]) {
+            var info2 = byDay[pfcmSelKey];
+            var parts = pfcmSelKey.split('-');
+            detail = '<div class="pfcm-day"><div class="pfcm-day-h"><b>' + ruDate(dateToIso(new Date(+parts[0], +parts[1], +parts[2]))) + '</b>' +
+                '<span>+' + fmtRub(info2.sum) + '</span></div>' +
+                info2.evs.map(function (e) {
+                    var kind = e.kind === 'div' ? 'дивиденды' : e.kind === 'redeem' ? 'погашение' : 'купон';
+                    return '<div class="pfcm-day-r"><i class="pfcm-day-c" style="background:' + e.pfColor + '"></i>' +
+                        '<span class="pfcm-day-tk">' + esc(e.ticker) + '<em>' + kind + '</em></span>' +
+                        '<b>+' + fmtRub(e.amount) + '</b></div>';
+                }).join('') + '</div>';
+        }
+        return '<div class="dash2-card pf-card2 pf-calmblk">' +
+            pfCardHead('', 'Календарь выплат', 'купоны, дивиденды и погашения по дням', '<div class="pfcm-head-r">' + totalPill + '</div>') +
+            nav +
+            '<div class="pfcm-wds">' + PFCM_WD.map(function (w) { return '<span class="pfcm-wd">' + w + '</span>'; }).join('') + '</div>' +
+            '<div class="pfcm-grid">' + cells + '</div>' +
+            detail +
+        '</div>';
+    }
+    // компактные рубли для клетки: 8 913 → «8,9к», 1 240 000 → «1,2М» (в клетку 40px
+    // полная сумма не влезает, а порядок величины прочитать надо)
+    function fmtRubShort(v) {
+        v = Math.round(+v || 0);
+        if (v >= 1000000) return (Math.round(v / 100000) / 10).toString().replace('.', ',') + 'М';
+        if (v >= 1000) return (Math.round(v / 100) / 10).toString().replace('.', ',') + 'к';
+        return String(v);
+    }
     // «Последние операции»: 5 свежих сделок компактным списком (при заданной высоте
     // блока строк больше/меньше — под размер, см. pfdRowsFor)
     function pfwOpsHtml() {
@@ -7076,7 +7207,8 @@
             { id: 'ops', name: 'Последние операции', desc: 'История последних операций по портфелю', cats: ['assets', 'other'] },
             { id: '__note', name: 'Заметка', desc: 'Быстрая заметка, список задач или идеи', cats: ['notes', 'other'] },
             { id: 'kpi:next', name: 'Ближайшая выплата', desc: 'Ближайший купон или дивиденд — дата и сумма', cats: ['divs', 'cal'] },
-            { id: 'cal', name: 'Календарь выплат', desc: 'Купоны, дивиденды и погашения на год вперёд', cats: ['divs', 'cal'] },
+            { id: 'cal', name: 'Календарь выплат · список', desc: 'Купоны, дивиденды и погашения на год вперёд', cats: ['divs', 'cal'] },
+            { id: 'calm', name: 'Календарь выплат · месяц', desc: 'Месячная сетка: в какие дни придут выплаты и сколько', cats: ['pop', 'divs', 'cal'] },
             { id: 'yield', name: 'Доходность портфелей', desc: 'Сравнение доходности ваших портфелей', cats: ['profit', 'charts'] },
             { id: 'snaps', name: 'Снимки капитала', desc: 'Дневные значения стоимости и их изменение', cats: ['profit', 'other'] },
             { id: 'news', name: 'Новости по позициям', desc: 'Свежие новости по бумагам ваших портфелей', cats: ['market'] },
@@ -7249,6 +7381,19 @@
                 '<span class="dm-row"><i>29.07</i><em>ОФЗ 26233 · купон</em><b class="pos">+8 913 ₽</b></span>' +
                 '<span class="dm-row"><i>02.08</i><em>SBER · дивиденды</em><b class="pos">+23 400 ₽</b></span>' +
                 '<span class="dm-row"><i>15.08</i><em>ОФЗ 26248 · купон</em><b class="pos">+11 260 ₽</b></span></div>';
+        }
+        if (id === 'calm') {
+            // мини-месяц: та же сетка 7×N, что и у виджета, но статичными числами —
+            // сразу видно, чем «месяц» отличается от списочного календаря
+            var mk = '', pay = { 4: 'a', 11: 'b', 12: 'a', 19: 'm', 26: 'a' };
+            for (var i = 0; i < 3; i++) mk += '<span class="dm-cm-e"></span>';
+            for (var d = 1; d <= 30; d++) {
+                var p = pay[d];
+                mk += '<span class="dm-cm-d' + (p ? ' has p-' + p : '') + (d === 12 ? ' today' : '') + '">' + d + '</span>';
+            }
+            return '<div class="dm-cm"><div class="dm-cm-h"><b>Июль 2026</b><i>+44 573 ₽</i></div>' +
+                '<div class="dm-cm-wds">' + PFCM_WD.map(function (w) { return '<span>' + w + '</span>'; }).join('') + '</div>' +
+                '<div class="dm-cm-g">' + mk + '</div></div>';
         }
         if (id === 'yield') {
             return '<div class="dm-bars">' +
