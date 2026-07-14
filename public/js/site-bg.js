@@ -113,10 +113,8 @@
         { id: 'sage',     name: 'Шалфейный',  sub: 'тихий зелёный' },
         { id: 'gradient', name: 'Градиент',   sub: 'сине-лиловая дымка' },
         { id: 'calm',     name: 'Спокойный',  sub: 'нейтральная бумага' },
-        { id: 'dune',     name: 'Дюны',       sub: 'тёплый песок' },
         { id: 'aurora',   name: 'Аврора',     sub: 'холодные всполохи' },
-        { id: 'dawn',     name: 'Рассвет',    sub: 'персик и барвинок' },
-        { id: 'marble',   name: 'Мрамор',     sub: 'камень с прожилками' }
+        { id: 'dawn',     name: 'Рассвет',    sub: 'персик и барвинок' }
     ];
     function bgValid(v) { return BG_LIST.some(function (b) { return b.id === v; }); }
     function bgGet() {

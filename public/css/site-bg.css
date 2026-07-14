@@ -99,14 +99,6 @@ body.sbg-calm #siteBgTiles {
         linear-gradient(180deg, #E8EBF0 0%, #ECEEF2 60%, #E9ECF1 100%);
 }
 
-/* — Дюны (мой вариант): тёплый песок/шампань, «приватный банк» — */
-body.sbg-dune #siteBgTiles {
-    background:
-        radial-gradient(1100px 640px at 14% 2%, rgba(240, 230, 214, 0.9) 0%, rgba(240, 230, 214, 0) 66%),
-        radial-gradient(900px 560px at 90% 22%, rgba(234, 226, 216, 0.8) 0%, rgba(234, 226, 216, 0) 68%),
-        linear-gradient(168deg, #EDE8DF 0%, #EEEAE3 55%, #E9E5DD 100%);
-}
-
 /* — Аврора (мой вариант): глубокая холодная дымка с зелёным и сиреневым всполохом — */
 body.sbg-aurora #siteBgTiles {
     background:
@@ -125,17 +117,6 @@ body.sbg-dawn #siteBgTiles {
         radial-gradient(900px 600px at 92% 10%, rgba(238, 226, 240, 0.8) 0%, rgba(238, 226, 240, 0) 66%),
         radial-gradient(1000px 660px at 58% 100%, rgba(214, 224, 245, 0.75) 0%, rgba(214, 224, 245, 0) 68%),
         linear-gradient(160deg, #EFE7E6 0%, #EBE8F0 50%, #E4E9F4 100%);
-}
-
-/* — Мрамор (мой вариант): холодный камень с редкими светлыми прожилками.
-     Прожилки заданы в px и НЕ повторяют масштаб экрана — это намеренно:
-     камень должен выглядеть одинаково крупным на любом мониторе. — */
-body.sbg-marble #siteBgTiles {
-    background:
-        repeating-linear-gradient(122deg, rgba(255, 255, 255, 0) 0 34px, rgba(255, 255, 255, 0.5) 34px 37px, rgba(255, 255, 255, 0) 37px 96px),
-        repeating-linear-gradient(122deg, rgba(176, 189, 206, 0) 0 88px, rgba(176, 189, 206, 0.3) 88px 90px, rgba(176, 189, 206, 0) 90px 210px),
-        radial-gradient(1200px 700px at 22% 0%, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 62%),
-        linear-gradient(150deg, #E6E9EF 0%, #ECEEF2 46%, #E4E8EE 100%);
 }
 
 /* --- ОБРАЗЦЫ (.sbgpv-<id>) для переключателя и демо в пикере ---
@@ -168,11 +149,6 @@ body.sbg-marble #siteBgTiles {
         radial-gradient(90% 80% at 50% -10%, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0) 62%),
         linear-gradient(180deg, #E8EBF0 0%, #E9ECF1 100%);
 }
-.sbgpv-dune {
-    background:
-        radial-gradient(70% 85% at 14% 2%, rgba(240, 230, 214, 0.95) 0%, rgba(240, 230, 214, 0) 68%),
-        linear-gradient(168deg, #EDE8DF 0%, #E9E5DD 100%);
-}
 .sbgpv-aurora {
     background:
         radial-gradient(60% 75% at 6% 8%, rgba(196, 226, 224, 0.95) 0%, rgba(196, 226, 224, 0) 62%),
@@ -186,13 +162,6 @@ body.sbg-marble #siteBgTiles {
         radial-gradient(60% 75% at 92% 8%, rgba(238, 226, 240, 0.85) 0%, rgba(238, 226, 240, 0) 68%),
         radial-gradient(70% 85% at 58% 100%, rgba(214, 224, 245, 0.8) 0%, rgba(214, 224, 245, 0) 70%),
         linear-gradient(160deg, #EFE7E6 0%, #E4E9F4 100%);
-}
-/* прожилки в образце — в процентах: в плитке 44×32 шаг 34px дал бы одну полосу */
-.sbgpv-marble {
-    background:
-        repeating-linear-gradient(122deg, rgba(255, 255, 255, 0) 0 22%, rgba(255, 255, 255, 0.55) 22% 25%, rgba(255, 255, 255, 0) 25% 60%),
-        repeating-linear-gradient(122deg, rgba(176, 189, 206, 0) 0 52%, rgba(176, 189, 206, 0.35) 52% 54%, rgba(176, 189, 206, 0) 54% 120%),
-        linear-gradient(150deg, #E6E9EF 0%, #E4E8EE 100%);
 }
 
 /* =========================================================

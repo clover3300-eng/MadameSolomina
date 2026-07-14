@@ -1037,10 +1037,18 @@ body.dark-mode .dm-news b { color: #e8eef7; }
    портфелей — нейтральный акцент и точки по цветам. */
 .pf-calmblk { display: flex; flex-direction: column; box-sizing: border-box; padding: 0 22px 20px; }
 .pf-calmblk > .pf-ch { padding-left: 0; padding-right: 0; }
-/* итог месяца — компактная пилюля одной строкой в конце строки навигации:
-   nowrap не даёт «₽» переноситься на новую строку при узком виджете */
+/* Шестерёнка и корзина в шапке «Календаря» — ВИДНЫ ВСЕГДА и стоят на одной линии с
+   пилюлей «за месяц». У остальных виджетов угол пустой, и там тихая манера (opacity 0
+   до наведения) читается как чистота; здесь же в углу уже стоит пилюля, и иконки,
+   выныривая по ховеру на 7px выше неё, ломали ровный ряд у всех на виду.
+   top: 22.5px — не подгонка «на глаз»: иконка 26px, её центр (22.5 + 13) совпадает с
+   центром пилюли (22px паддинга шапки + половина её 23px высоты). */
+.pfd-item[data-pfd="calm"] .pfd-cardcfg,
+.pfd-item[data-pfd="calm"] .pfd-cardrm { opacity: 1; pointer-events: auto; top: 22.5px; }
+/* итог месяца в шапке — компактная пилюля одной строкой: nowrap не даёт «₽»
+   переноситься на новую строку при узком виджете */
+.pfcm-head-r { display: flex; align-items: center; margin-left: auto; flex-shrink: 0; }
 .pfcm-tot {
-    margin-left: auto; flex-shrink: 0;
     display: inline-flex; align-items: baseline; gap: 6px; white-space: nowrap;
     padding: 5px 11px; border-radius: 99px;
     background: rgba(18, 163, 92, 0.08); box-shadow: inset 0 0 0 1px rgba(18, 163, 92, 0.18);
@@ -1052,7 +1060,7 @@ body.dark-mode .dm-news b { color: #e8eef7; }
 .pfcm-tot.empty b { color: #9aa7b8; font-size: 11.5px; font-family: 'Inter', sans-serif; }
 
 /* шапка-навигация месяца */
-.pfcm-nav { display: flex; align-items: center; gap: 8px; margin: 2px 0 10px; }
+.pfcm-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 2px 0 10px; }
 .pfcm-mon { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #1e293b; letter-spacing: -0.01em; }
 .pfcm-arw {
     width: 28px; height: 28px; flex-shrink: 0; border-radius: 9px; border: 1px solid #e6ebf2; background: #f8fafc;

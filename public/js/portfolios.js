@@ -7305,18 +7305,14 @@
                 : '<span class="' + cls + '">' + inner + '</span>';
         }
         var CH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
-        // итог за месяц стоит В СТРОКЕ НАВИГАЦИИ, а не в шапке карточки: рядом с названием
-        // месяца, к которому он и относится (как в демо-превью виджета). В шапке он
-        // отнимал ширину у подзаголовка и висел, не выровненный ни с чем.
-        var totalPill = monthCnt
-            ? '<span class="pfcm-tot"><i>за месяц</i><b>+' + fmtRub(monthSum) + '</b></span>'
-            : '<span class="pfcm-tot empty"><i>за месяц</i><b>выплат нет</b></span>';
         var nav = '<div class="pfcm-nav">' +
             '<button type="button" class="pfcm-arw prev"' + (pfcmOffset <= 0 && !demoMap ? ' disabled' : '') + ' aria-label="Предыдущий месяц" onclick="pfcmNav(-1, event)">' + CH + '</button>' +
             '<span class="pfcm-mon">' + PFCM_MON[m] + ' ' + y + '</span>' +
             '<button type="button" class="pfcm-arw next"' + (pfcmOffset >= 12 && !demoMap ? ' disabled' : '') + ' aria-label="Следующий месяц" onclick="pfcmNav(1, event)">' + CH + '</button>' +
-            totalPill +
         '</div>';
+        var totalPill = monthCnt
+            ? '<span class="pfcm-tot"><i>за месяц</i><b>+' + fmtRub(monthSum) + '</b></span>'
+            : '<span class="pfcm-tot empty"><i>за месяц</i><b>выплат нет</b></span>';
         // список выбранного дня — раскрывается ПОД сеткой, чтобы суммы можно было прочитать
         // по бумагам, а не только сводной цифрой в клетке
         var detail = '';
@@ -7333,7 +7329,7 @@
                 }).join('') + '</div>';
         }
         return '<div class="dash2-card pf-card2 pf-calmblk">' +
-            pfCardHead('', 'Календарь выплат', 'купоны, дивиденды и погашения по дням') +
+            pfCardHead('', 'Календарь выплат', 'купоны, дивиденды и погашения по дням', '<div class="pfcm-head-r">' + totalPill + '</div>') +
             nav +
             '<div class="pfcm-wds">' + PFCM_WD.map(function (w) { return '<span class="pfcm-wd">' + w + '</span>'; }).join('') + '</div>' +
             '<div class="pfcm-grid">' + cells + '</div>' +
