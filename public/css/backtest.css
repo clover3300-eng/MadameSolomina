@@ -17,7 +17,7 @@
     --bt-green: #16b56b;
     --bt-orange: #f08c3a;
     --bt-mono: 'JetBrains Mono', monospace;
-    --bt-sans: 'Manrope', sans-serif;
+    --bt-sans: 'Inter', sans-serif;
 }
 body.dark-mode #panel-backtest {
     --bt-card: #1d2734;
@@ -454,7 +454,7 @@ body.dark-mode .bt2-feat { border-color: rgba(255, 255, 255, 0.14); }
 }
 .btx-t { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .btx-title {
-    font-family: 'Manrope', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 19px; font-weight: 800; line-height: 1.1;
     letter-spacing: -0.01em; color: #ffffff; white-space: nowrap;
 }
@@ -474,7 +474,7 @@ body.dark-mode .bt2-feat { border-color: rgba(255, 255, 255, 0.14); }
 .btx-kpi span {
     display: flex; align-items: center; margin-bottom: 7px;
     height: 12px; line-height: 1;   /* фикс. высота: иконка «?» не удлиняет подпись, значения выравниваются */
-    font-family: 'Manrope', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 10px; font-weight: 800;
     letter-spacing: 0.1em; text-transform: uppercase;
     color: rgba(255, 255, 255, 0.5);
@@ -544,7 +544,7 @@ body.dark-mode .btr-tabs { background: #1d2734; border-color: rgba(255, 255, 255
     padding: 9px 12px;
     border: none; border-radius: 10px;
     background: transparent;
-    font-family: 'Manrope', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 13px; font-weight: 800;
     color: #6c7a8d;
     cursor: pointer;
@@ -579,7 +579,7 @@ body.dark-mode .btr-sep { background: rgba(255, 255, 255, 0.12); }
     padding: 8px 13px;
     border: 1.5px solid #d8dfeb; border-radius: 10px;
     background: #f7f9fc;
-    font-family: 'Manrope', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 12px; font-weight: 800;
     color: #4a5a6e;
     cursor: pointer;
@@ -688,7 +688,7 @@ body.dark-mode .btb-pill.active { background: rgba(255, 255, 255, 0.14); color: 
 /* ============================================================
    ТАБЛИЦЫ РЕЗУЛЬТАТОВ (Облигации / Акции) — лекало вкладки
    «Ребаланс» (список ОФЗ): белая карточка, ранг-колонка, тонкие
-   разделители строк, Manrope-названия + JetBrains-Mono цифры.
+   разделители строк, Inter-названия + JetBrains-Mono цифры.
    Перебивают старые .bt-assets-* из webapp-layout.css / site-layout.css
    (backtest.css грузится позже, селекторы #btResults .bt-* выигрывают).
    ============================================================ */
@@ -721,7 +721,7 @@ body.dark-mode #btResults .bt-assets-header { border-bottom-color: rgba(255, 255
 #btResults .bt-assets-ti { flex: 1 1 auto; min-width: 0; }
 #btResults .bt-assets-titlerow { display: flex; align-items: center; gap: 10px; }
 #btResults .bt-assets-title {
-    font-family: 'Manrope', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 17px;
     font-weight: 800;
     letter-spacing: -0.01em;
@@ -787,7 +787,7 @@ body.dark-mode #btResults .bt-asset-row:hover { background: rgba(255, 255, 255, 
 body.dark-mode #btResults .bt-asset-head { background: rgba(255, 255, 255, 0.03); border-bottom-color: rgba(255, 255, 255, 0.07); }
 body.dark-mode #btResults .bt-asset-head:hover { background: rgba(255, 255, 255, 0.03); }
 #btResults .bt-col-head {
-    font-family: 'Manrope', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 11px;
     font-weight: 800;
     letter-spacing: 0.1em;
@@ -816,7 +816,7 @@ body.dark-mode #btResults .bt-asset-rank { color: #5a6b80; }
 /* Название + тикер */
 #btResults .bt-asset-nameblock { min-width: 0; overflow: hidden; }
 #btResults .bt-asset-name {
-    font-family: 'Manrope', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 15.5px;
     font-weight: 800;
     letter-spacing: -0.01em;
@@ -1242,7 +1242,7 @@ body.dark-mode .bt-fromcalc:hover { background: rgba(46, 144, 250, 0.14); }
     color: #2E7CF6; background: rgba(46, 144, 250, 0.12);
 }
 .bt-fromcalc-tx { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
-.bt-fromcalc-title { font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 800; color: #16324f; }
+.bt-fromcalc-title { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #16324f; }
 body.dark-mode .bt-fromcalc-title { color: #dfeeff; }
 .bt-fromcalc-sub { font-size: 11.5px; font-weight: 500; color: #5f7a95; line-height: 1.35; }
 body.dark-mode .bt-fromcalc-sub { color: #9db8d4; }

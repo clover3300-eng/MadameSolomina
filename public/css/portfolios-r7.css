@@ -833,32 +833,13 @@ body.dark-mode .dm-news b { color: #e8eef7; }
 .pfd-item.pfd-thm-dark .pfdv-t i, .pfd-item.pfd-thm-dark .pfdv-pn { color: #8fa0b6; }
 
 /* ============ 15. Мелочи ============ */
-/* .d3-quick (кнопки-действия, база dashboard-panel.css) — единственный класс ЧУЖОГО
-   файла, который рендерится на «Портфелях» с Manrope. Базу не трогаем (её делит скрытый
-   дашборд), гасим только у себя — на странице остаётся один гротеск, Inter. */
-#panel-portfolios .d3-quick { font-family: 'Inter', sans-serif; }
-/* Формы НЕ наследуют шрифт: UA-стиль ставит кнопкам/полям свой `font: 400 13.33px Arial`,
-   поэтому текст без собственного font-family (подписи в .pfl-cfg-item, .pfx-corner и др.)
-   выпадал из типографики страницы в Arial. Оба `:where()` обнуляют специфичность правила
-   до 0,0,0 — авторский стиль всё равно бьёт UA, но ЛЮБОЕ явное правило (в т.ч. моно у
-   числовых кнопок) продолжает выигрывать у него. */
-:where(#panel-portfolios) :where(button, input, select, textarea) { font-family: inherit; }
-/* Шапка карточек: заголовок — тем же серифом, что «Создайте аккаунт» в карточке
-   регистрации на Главной (.hr-title, home-register.css). Размер меньше — это заголовок
-   виджета, а не страницы; насыщенность 400, как у сериф-оригинала. */
+/* Семейство/вес заголовков задаёт ОБЩИЙ список в typography-tokens.css (сериф 400) —
+   здесь только РАЗМЕРЫ, они у «Портфелей» свои: заголовок панели старше заголовков
+   виджетов под ним, и на гротеске эта иерархия читалась перевёрнутой. */
 #panel-portfolios .pf-ch-t,
 #panel-portfolios .pfnt-title,
-#panel-portfolios .pfnt-name-edit {
-    font-family: Georgia, 'Times New Roman', serif;
-    font-weight: 400; font-size: 22px; letter-spacing: 0;
-}
-/* Заголовок ПАНЕЛИ («Панель управления» в тёмном герое) — тот же сериф: он старше
-   заголовков виджетов под ним, и на гротеске иерархия читалась перевёрнутой.
-   Крупнее их (24px) и с тем же весом 400; .pfp-sub под ним остаётся Inter. */
-#panel-portfolios .pfp-title {
-    font-family: Georgia, 'Times New Roman', serif;
-    font-weight: 400; font-size: 24px; letter-spacing: 0;
-}
+#panel-portfolios .pfnt-name-edit { font-size: 22px; }
+#panel-portfolios .pfp-title { font-size: 24px; }
 /* растянутый герой в конструкторе масштабирует заголовок по ширине блока —
    сериф без веса 800 держим в той же вилке */
 #panel-portfolios .pfd-item.pfd-ptall .pfp-title { font-weight: 400; }

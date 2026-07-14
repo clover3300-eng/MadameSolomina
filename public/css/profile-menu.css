@@ -10,7 +10,7 @@
      в <body> (fixed нельзя класть внутрь анимируемых панелей —
      transform ловит его, см. паттерн stockDetailCard).
    Стиль — «огранка» карточек Портфелей: 2px рамка #131a2b,
-   radius 28, Inter 800 для заголовков, Manrope для текста.
+   radius 28, Inter 800 для заголовков, Inter для текста.
    Данные локальные (localStorage), позже заменятся на Supabase.
    ============================================================ */
 
@@ -136,7 +136,7 @@ body.sd-drawer-open #navBackFab { display: none !important; }
     display: flex; flex-direction: column;
     background: #fff; border: 2px solid #131a2b; border-radius: 28px;
     box-shadow: 0 24px 54px -20px rgba(24,38,60,0.34);
-    font-family: 'Manrope', 'Inter', sans-serif;
+    font-family: 'Inter', sans-serif;
     opacity: 0; transform: translateY(-6px) scale(0.985); transform-origin: top right;
     pointer-events: none; visibility: hidden;
     transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0.18s;
@@ -216,7 +216,7 @@ body.dark-mode .ph-row-s.ok { color: #34d399; }
 .ph-lab { font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #94a3b8; margin-left: 2px; }
 .ph-input, .ph-select {
     width: 100%; box-sizing: border-box; border: 1px solid rgba(24,38,60,0.12); border-radius: 11px;
-    padding: 9px 12px; font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 13px;
+    padding: 9px 12px; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 13px;
     color: #0f172a; background: #fff; transition: border-color 0.15s, box-shadow 0.15s;
 }
 .ph-input:focus, .ph-select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.16); }
@@ -251,7 +251,7 @@ body.dark-mode .ph-tg-ok { color: #34d399; }
 .ph-save {
     align-self: flex-start; display: inline-flex; align-items: center; gap: 7px;
     border: none; border-radius: 11px; cursor: pointer; background: #3b82f6; color: #fff;
-    font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 12.5px; padding: 9px 15px;
+    font-family: 'Inter', sans-serif; font-weight: 800; font-size: 12.5px; padding: 9px 15px;
     box-shadow: 0 8px 18px -9px rgba(59,130,246,0.9); transition: filter 0.15s, transform 0.12s;
 }
 .ph-save:hover { filter: brightness(1.06); }
@@ -321,7 +321,7 @@ body.dark-mode .ph-note { color: #64748b; }
 }
 .ph-out, .ph-in {
     flex-shrink: 0; display: inline-flex; align-items: center; gap: 7px; padding: 9px 14px;
-    border-radius: 11px; cursor: pointer; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 12.5px;
+    border-radius: 11px; cursor: pointer; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 12.5px;
     transition: background 0.15s, border-color 0.15s, color 0.15s, filter 0.15s;
 }
 .ph-out { border: 1px solid rgba(220,38,38,0.25); background: rgba(220,38,38,0.06); color: #dc2626; }
@@ -376,7 +376,7 @@ body.dark-mode .ph-danger-h { color: #f87171; }
 .ph-del {
     width: 100%; justify-content: center; display: inline-flex; align-items: center; gap: 7px;
     border: 1px solid rgba(220,38,38,0.3); border-radius: 11px; background: rgba(220,38,38,0.08); color: #dc2626;
-    cursor: pointer; padding: 10px 12px; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 12.5px;
+    cursor: pointer; padding: 10px 12px; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 12.5px;
     transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 .ph-del:hover { background: rgba(220,38,38,0.14); }

@@ -4,7 +4,7 @@
    Дизайн-код проекта: тёмная шапка-герой (спокойная версия
    rbx-hero из «Ребаланса»: та же подложка и раскладка, но без
    анимаций), ниже — белые карточки с мягкой рамкой, заголовки
-   Manrope 800, все цифры/даты — var(--font-num), размеры из
+   Inter 800, все цифры/даты — var(--font-num), размеры из
    typography-tokens.css. Тёмная тема — через body.dark-mode.
    Модалка пользователя #admModal живёт в <body> (fixed нельзя
    класть внутрь анимируемых панелей — паттерн stockDetailCard).
@@ -16,7 +16,7 @@
     max-width: 1180px;
     margin: 0 auto;
     padding: 4px 18px 40px;
-    font-family: var(--font-ui, 'Manrope', sans-serif);
+    font-family: var(--font-ui, 'Inter', sans-serif);
 }
 
 /* ===== ШАПКА-ГЕРОЙ ===== */
@@ -53,7 +53,7 @@
 }
 .adm-hero-ico svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .adm-hero-title {
-    font-family: var(--font-ui, 'Manrope', sans-serif);
+    font-family: var(--font-ui, 'Inter', sans-serif);
     font-size: 21px; font-weight: 800; line-height: 1.1;
     letter-spacing: -0.01em; color: #fff; white-space: nowrap;
 }
@@ -81,7 +81,7 @@
 .adm-hero-refresh {
     display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0;
     padding: 12px 21px; border: none; border-radius: 999px; cursor: pointer;
-    font-family: var(--font-ui, 'Manrope', sans-serif); font-size: 13.5px; font-weight: 800;
+    font-family: var(--font-ui, 'Inter', sans-serif); font-size: 13.5px; font-weight: 800;
     color: #10161f; background: #fff;
     box-shadow: 0 10px 26px -8px rgba(0, 0, 0, 0.45);
     transition: transform 0.16s ease, box-shadow 0.16s ease, opacity 0.16s;
@@ -501,7 +501,7 @@ body.adm-modal-open { overflow: hidden; }
     border: 1px solid rgba(59, 130, 246, 0.35); border-radius: 11px;
     background: rgba(59, 130, 246, 0.08); cursor: pointer;
     padding: 8px 13px; margin-right: 8px;
-    font-family: var(--font-ui, 'Manrope', sans-serif); font-size: 12.5px; font-weight: 800;
+    font-family: var(--font-ui, 'Inter', sans-serif); font-size: 12.5px; font-weight: 800;
     color: #2563eb; transition: background 0.15s, transform 0.12s;
 }
 .ph-adm:hover { background: rgba(59, 130, 246, 0.14); transform: translateY(-1px); }

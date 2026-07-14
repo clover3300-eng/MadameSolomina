@@ -23,7 +23,7 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
-    font-family: 'Manrope', 'Inter', sans-serif;
+    font-family: 'Inter', sans-serif;
 }
 
 /* ---------- Заголовок страницы ---------- */
@@ -39,7 +39,7 @@ body.dark-mode .d3-title { color: #f4f8fd; }
 .d3-quick {
     display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
     border: none; border-radius: 12px; padding: 10px 16px;
-    font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 13px; color: #fff;
+    font-family: 'Inter', sans-serif; font-weight: 700; font-size: 13px; color: #fff;
     background: linear-gradient(135deg, #2C364C, #1b2433);
     box-shadow: 0 10px 22px -10px rgba(24,38,60,0.6); transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
@@ -212,7 +212,7 @@ body.dark-mode .dash2-portfolio {
 .dp-ring-center {
     position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
 }
-.dp-ring-c-top { font-family: 'Manrope', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #8ea0b6; }
+.dp-ring-c-top { font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #8ea0b6; }
 .dp-ring-c-val { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: #fff; }
 .dp-legend { display: flex; flex-direction: column; gap: 9px; align-items: stretch; min-width: 100%; }
 /* Одна строка на пункт, колонки выровнены: точка · название · % · сумма */
@@ -244,7 +244,7 @@ body.dark-mode .dash2-portfolio {
     width: 100%; margin-top: 22px; position: relative;
     background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1);
     border-radius: 14px; padding: 13px 16px; cursor: pointer;
-    color: #fff; font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 14px;
+    color: #fff; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 14px;
     transition: background 0.18s ease, border-color 0.18s ease;
 }
 .dp-recalc-toggle:hover { background: rgba(255,255,255,0.12); }
@@ -273,7 +273,7 @@ body.dark-mode .dash2-portfolio {
 /* шапка панели пересчёта */
 .dp-rc-head { display: flex; align-items: center; gap: 8px; padding: 16px 0 4px; margin-bottom: 4px; }
 .dp-rc-head svg { width: 15px; height: 15px; fill: none; stroke: #3ad08a; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.dp-rc-head span { font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: #aebbcc; }
+.dp-rc-head span { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: #aebbcc; }
 .dp-field-label {
     font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
     color: #8593a8; margin: 14px 0 8px;
@@ -305,7 +305,7 @@ body.dark-mode .dash2-portfolio {
 }
 .dp-chip:hover { background: rgba(255,255,255,0.1); }
 .dp-chip.sel { background: #fff; border-color: #fff; }
-.dp-chip-t { font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 800; color: #e8eef6; }
+.dp-chip-t { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #e8eef6; }
 .dp-chip-s { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; color: #8593a8; }
 .dp-chip.sel .dp-chip-t { color: #111927; }
 .dp-chip.sel .dp-chip-s { color: #5f6d80; }
@@ -340,7 +340,7 @@ body.dark-mode .dash2-portfolio {
 }
 .dp-fchip:hover { background: rgba(255,255,255,0.1); }
 .dp-fchip.sel { background: #fff; border-color: #fff; color: #111927; }
-.dp-fchip-custom { font-family: 'Manrope', sans-serif; }
+.dp-fchip-custom { font-family: 'Inter', sans-serif; }
 
 .dp-custom-fee { display: none; align-items: center; gap: 8px; margin-top: 8px; }
 .dp-custom-fee.open { display: flex; }
@@ -352,7 +352,7 @@ body.dark-mode .dash2-portfolio {
 .dp-custom-fee span { color: #76849a; font-family: 'JetBrains Mono', monospace; }
 .dp-fee-apply {
     background: rgba(255,255,255,0.14); border: none; color: #fff; border-radius: 11px;
-    padding: 10px 16px; font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 13px; cursor: pointer;
+    padding: 10px 16px; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 13px; cursor: pointer;
 }
 .dp-fee-apply:hover { background: rgba(255,255,255,0.22); }
 
@@ -361,7 +361,7 @@ body.dark-mode .dash2-portfolio {
     display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%;
     margin-top: 16px; background: linear-gradient(135deg, #16b56b, #119d5c);
     border: none; border-radius: 13px; padding: 14px; cursor: pointer;
-    font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 14.5px; color: #fff;
+    font-family: 'Inter', sans-serif; font-weight: 800; font-size: 14.5px; color: #fff;
     box-shadow: 0 10px 24px -8px rgba(17,157,92,0.6); transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 .dp-run-btn:hover { transform: translateY(-1px); box-shadow: 0 14px 28px -8px rgba(17,157,92,0.7); }
@@ -405,7 +405,7 @@ body.dark-mode .drt-tile { background: #1a232f; border-color: rgba(255,255,255,0
 }
 .drt-ic svg { width: 21px; height: 21px; fill: none; stroke: var(--ac, #5B7C99); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .drt-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; position: relative; }
-.drt-l { font-family: 'Manrope', sans-serif; font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #8593a8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.drt-l { font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #8593a8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 body.dark-mode .drt-l { color: #97a7bb; }
 .drt-v { font-family: 'JetBrains Mono', monospace; font-size: 25px; font-weight: 700; letter-spacing: -0.02em; color: #111927; line-height: 1; }
 body.dark-mode .drt-v { color: #f4f8fd; }
@@ -449,7 +449,7 @@ body.dark-mode .dfv-list::-webkit-scrollbar-thumb, body.dark-mode .dfv-ov-list::
     flex-shrink: 0; margin-top: 0; box-sizing: border-box; min-height: 46px; width: 100%;
     display: flex; align-items: center; justify-content: center; gap: 7px;
     border: none; border-top: 1px solid rgba(44,54,76,0.06); background: transparent; cursor: pointer; padding: 0 10px;
-    font-family: 'Manrope', sans-serif; font-size: 12.5px; font-weight: 700; color: #5B7C99;
+    font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 700; color: #5B7C99;
     transition: color 0.15s ease, background 0.15s ease;
 }
 .dfv-foot-link svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.15s ease; }
@@ -481,7 +481,7 @@ body.dark-mode .dfv-overlay { background: #1a232f; border-color: rgba(255,255,25
 body.dark-mode .dfv-item { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.06); }
 body.dark-mode .dfv-item:hover { background: rgba(255,255,255,0.09); }
 .dfv-info { display: flex; flex-direction: column; min-width: 0; flex: 1; gap: 1px; }
-.dfv-tk { display: flex; align-items: center; gap: 6px; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 13.5px; color: #111927; }
+.dfv-tk { display: flex; align-items: center; gap: 6px; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 13.5px; color: #111927; }
 body.dark-mode .dfv-tk { color: #f1f6fb; }
 .dfv-name { font-size: 11px; color: #8593a6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dfv-metric { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: #119d5c; flex-shrink: 0; min-width: 60px; text-align: right; letter-spacing: -0.01em; }
@@ -511,7 +511,7 @@ body.dark-mode .dfv-empty-text { color: #9aa7b8; }
 .dfv-empty-btn {
     margin-top: 8px; display: inline-flex; align-items: center; gap: 8px;
     border: none; cursor: pointer; border-radius: 12px; padding: 11px 18px;
-    font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 12.5px; color: #fff;
+    font-family: 'Inter', sans-serif; font-weight: 700; font-size: 12.5px; color: #fff;
     background: linear-gradient(135deg, #2C364C, #1b2433); box-shadow: 0 10px 22px -10px rgba(24,38,60,0.6);
     transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
@@ -546,7 +546,7 @@ body.dark-mode .d3h-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,2
 /* Подзаголовок группы (ОФЗ / Акции) */
 .d3h-grp {
     display: flex; align-items: center; gap: 7px; padding: 4px 2px 7px;
-    font-family: 'Manrope', sans-serif; font-size: 10.5px; font-weight: 800; letter-spacing: 0.06em;
+    font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 800; letter-spacing: 0.06em;
     text-transform: uppercase; color: #8593a8; position: sticky; top: 0; z-index: 1;
     background: #ffffff;
 }
@@ -572,7 +572,7 @@ body.dark-mode .d3h-grp b { color: #c4cedd; }
 .d3h-row:hover { background: rgba(44,54,76,0.04); transform: translateX(2px); }
 body.dark-mode .d3h-row:hover { background: rgba(255,255,255,0.05); }
 .d3h-r-main { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; position: relative; }
-.d3h-r-tk { display: flex; align-items: center; gap: 6px; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 13px; color: #111927; }
+.d3h-r-tk { display: flex; align-items: center; gap: 6px; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 13px; color: #111927; }
 body.dark-mode .d3h-r-tk { color: #f1f6fb; }
 .d3h-r-name { font-size: 11px; color: #8593a6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .d3h-r-side { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0; position: relative; }
@@ -644,7 +644,7 @@ body.dark-mode .d3h-go { stroke: #4a5666; }
 .dash2-rebal { padding: 18px 20px 18px; }
 .drb-title { font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 800; color: #111927; margin-bottom: 13px; }
 body.dark-mode .drb-title { color: #f1f6fb; }
-.drb-sub { font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 600; color: #9aa7b8; letter-spacing: 0; margin-left: 6px; }
+.drb-sub { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: #9aa7b8; letter-spacing: 0; margin-left: 6px; }
 .drb-loading { color: #9aa7b8; font-size: 13px; padding: 14px 0; display: flex; align-items: center; gap: 10px; }
 .drb-spin { width: 15px; height: 15px; border: 2px solid rgba(91,124,153,0.2); border-top-color: #5B7C99; border-radius: 50%; animation: drbSpin 0.7s linear infinite; }
 @keyframes drbSpin { to { transform: rotate(360deg); } }
@@ -658,7 +658,7 @@ body.dark-mode .drb-title { color: #f1f6fb; }
 }
 body.dark-mode .drb-col-head { border-bottom-color: rgba(255,255,255,0.07); }
 .drb-col-name {
-    font-family: 'Manrope', sans-serif; font-size: 12.5px; font-weight: 800; letter-spacing: 0.03em;
+    font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 800; letter-spacing: 0.03em;
     text-transform: uppercase; color: #5f6d80; white-space: nowrap;
 }
 body.dark-mode .drb-col-name { color: #c4cedd; }
@@ -675,7 +675,7 @@ body.dark-mode .drb-colsub-l, body.dark-mode .drb-colsub-r { color: #76849a; }
 body.dark-mode .drb-sort { background: rgba(255,255,255,0.06); }
 .drb-sort-btn {
     border: none; background: transparent; cursor: pointer;
-    font-family: 'Manrope', sans-serif; font-size: 10.5px; font-weight: 700; letter-spacing: 0;
+    font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 700; letter-spacing: 0;
     color: #8593a8; padding: 4px 10px; border-radius: 7px; white-space: nowrap; transition: all 0.15s ease;
 }
 .drb-sort-btn:hover { color: #5f6d80; }
@@ -696,7 +696,7 @@ body.dark-mode .drb-item:hover { background: rgba(255,255,255,0.09); }
     color: #97a3b4; width: 18px; flex-shrink: 0; text-align: center;
 }
 .drb-info { display: flex; flex-direction: column; min-width: 0; flex: 1; gap: 1px; }
-.drb-ticker { display: flex; align-items: center; gap: 7px; font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 13.5px; color: #111927; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.drb-ticker { display: flex; align-items: center; gap: 7px; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 13.5px; color: #111927; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 body.dark-mode .drb-ticker { color: #f1f6fb; }
 .drb-tier {
     display: inline-grid; place-items: center; min-width: 17px; height: 16px; padding: 0 5px;
@@ -743,7 +743,7 @@ body.dark-mode .drb-od-v { color: #eef2f7; }
 .drb-od-code { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 600; color: #5B7C99; background: rgba(91,124,153,0.1); padding: 4px 9px; border-radius: 8px; transition: background 0.15s ease; }
 .drb-od-code:hover { background: rgba(91,124,153,0.18); }
 .drb-od-code svg { width: 12px; height: 12px; flex-shrink: 0; }
-.drb-od-chart { display: flex; align-items: center; justify-content: center; gap: 8px; width: calc(100% - 12px); margin: 8px 6px 6px; padding: 11px; border: none; border-radius: 12px; background: #141b26; color: #fff; font-family: 'Manrope', sans-serif; font-weight: 700; font-size: 12.5px; cursor: pointer; transition: transform 0.15s ease; }
+.drb-od-chart { display: flex; align-items: center; justify-content: center; gap: 8px; width: calc(100% - 12px); margin: 8px 6px 6px; padding: 11px; border: none; border-radius: 12px; background: #141b26; color: #fff; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 12.5px; cursor: pointer; transition: transform 0.15s ease; }
 .drb-od-chart:hover { transform: translateY(-1px); }
 .drb-od-chart svg { width: 15px; height: 15px; }
 body.dark-mode .drb-od-chart { background: #0e1621; }
@@ -758,7 +758,7 @@ body.dark-mode .drb-od-chart { background: #0e1621; }
 }
 body.dark-mode #stockDetailCard .dbf { background: rgba(255,255,255,0.04); }
 #stockDetailCard .dbf-l {
-    font-family: 'Manrope', sans-serif; font-size: 11px; font-weight: 600;
+    font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600;
     color: var(--r4-muted, #97a3b4); margin-bottom: 4px;
 }
 #stockDetailCard .dbf-v {

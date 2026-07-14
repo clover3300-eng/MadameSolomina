@@ -41,7 +41,7 @@
     border-radius: 28px;
     box-shadow: 0 16px 36px rgba(24,38,60,0.08);
     overflow: hidden;
-    font-family: 'Manrope', 'Inter', sans-serif;
+    font-family: 'Inter', sans-serif;
     color: var(--mh-text);
     -webkit-font-smoothing: antialiased;
 }
@@ -117,7 +117,7 @@ body.dark-mode .mh-card {
 .mh-seg { display: inline-flex; height: 38px; padding: 4px; box-sizing: border-box;
     border-radius: 12px; background: var(--mh-well); gap: 3px; }
 .mh-seg-btn { appearance: none; border: 0; cursor: pointer; background: transparent;
-    font: 700 13px 'Manrope', sans-serif; color: var(--mh-muted); padding: 0 14px;
+    font: 700 13px 'Inter', sans-serif; color: var(--mh-muted); padding: 0 14px;
     border-radius: 9px; transition: background .16s ease, color .16s ease, box-shadow .16s ease; }
 .mh-seg-btn:hover { color: var(--mh-text); }
 .mh-seg-btn.active { background: var(--mh-brand); color: #fff; box-shadow: 0 5px 14px rgba(16, 24, 38, .2); }
@@ -186,7 +186,7 @@ body.dark-mode .mh-seg-view .mh-seg-btn.active .mh-cb-ico { color: #10201a; }
 /* тонкий разделитель между сегментами под цвет фона трека */
 .mh-breadth-bar i + i { box-shadow: inset 1px 0 0 var(--mh-card-soft); }
 .mh-breadth-lbl { display: flex; align-items: center; justify-content: space-between; gap: 8px;
-    font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 600; color: var(--mh-muted2); }
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: var(--mh-muted2); }
 .mh-breadth-lbl span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .mh-breadth-lbl span::before { content: ''; width: 7px; height: 7px; border-radius: 2px; flex: 0 0 auto; }
 .mh-breadth-lbl b { font-family: 'JetBrains Mono', monospace; font-weight: 700; }
@@ -227,7 +227,7 @@ body.dark-mode .mh-seg-view .mh-seg-btn.active .mh-cb-ico { color: #10201a; }
 .mh-bread { display: flex; align-items: center; gap: 8px; padding: 11px 22px 0; font-size: 12.5px; }
 .mh-bread[hidden] { display: none; }
 .mh-bread-root { appearance: none; border: 0; background: var(--mh-well); cursor: pointer;
-    font: 700 12.5px 'Manrope', sans-serif; color: var(--mh-muted); padding: 6px 11px 6px 9px; border-radius: 9px;
+    font: 700 12.5px 'Inter', sans-serif; color: var(--mh-muted); padding: 6px 11px 6px 9px; border-radius: 9px;
     display: inline-flex; align-items: center; gap: 5px; transition: background .15s, color .15s; }
 .mh-bread-root:hover { color: var(--mh-text); }
 .mh-bread-root svg { width: 14px; height: 14px; }
@@ -252,7 +252,7 @@ body.dark-mode .mh-seg-view .mh-seg-btn.active .mh-cb-ico { color: #10201a; }
 .mh-chart-host .tradingview-widget-container__widget { height: calc(100% - 22px); width: 100%; }
 .mh-chart-host .tradingview-widget-copyright {
     height: 22px; line-height: 22px; font-size: 10px;
-    font-family: 'Manrope', sans-serif; text-align: right; padding-right: 8px;
+    font-family: 'Inter', sans-serif; text-align: right; padding-right: 8px;
     color: var(--mh-muted2); }
 .mh-chart-host .tradingview-widget-copyright a,
 .mh-chart-host .tradingview-widget-copyright .blue-text { color: var(--mh-muted2) !important; text-decoration: none; }
@@ -345,13 +345,13 @@ body.dark-mode .mh-plot.mh-spot .mh-tile:not(:hover) { filter: brightness(.7) sa
     background: linear-gradient(100deg, var(--mh-line) 30%, rgba(143,179,160,.18) 50%, var(--mh-line) 70%);
     background-size: 220% 100%; animation: mhShimmer 1.25s linear infinite; }
 @keyframes mhShimmer { to { background-position: -220% 0; } }
-.mh-retry { appearance: none; cursor: pointer; font: 700 13px 'Manrope', sans-serif;
+.mh-retry { appearance: none; cursor: pointer; font: 700 13px 'Inter', sans-serif;
     color: #fff; background: var(--mh-brand); border: 0; border-radius: 10px; padding: 9px 18px; }
 body.dark-mode .mh-retry { color: #10201a; }
 
 /* ---------- Таблица под картой (без внутреннего скролла — растёт по контенту) ---------- */
 .mh-table-wrap { border-top: 1px solid var(--mh-line); margin-top: 8px; }
-.mh-table { width: 100%; border-collapse: collapse; font-family: 'Manrope', sans-serif; }
+.mh-table { width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; }
 .mh-table thead th { background: var(--mh-card-soft);
     font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 700; color: var(--mh-muted2);
     text-transform: uppercase; letter-spacing: .07em; text-align: left; padding: 11px 16px;

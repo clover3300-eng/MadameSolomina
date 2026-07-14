@@ -76,7 +76,7 @@
 }
 .rbx-hero-t { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .rbx-hero-title {
-    font-family: 'Manrope', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 21px; font-weight: 800; line-height: 1.1;
     letter-spacing: -0.01em; color: #ffffff; white-space: nowrap;
 }
@@ -122,7 +122,7 @@
     color: #ffffff; font-variant-numeric: tabular-nums; letter-spacing: -0.02em;
 }
 .rbx-kpi .num span {
-    font-family: 'Manrope', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 11px; font-weight: 800; text-transform: uppercase;
     letter-spacing: 0.12em; color: rgba(255, 255, 255, 0.52);
 }
@@ -156,7 +156,7 @@
 .rbx-hero-cta {
     display: inline-flex; align-items: center; gap: 9px; flex-shrink: 0;
     padding: 14px 23px; border: none; border-radius: 999px; cursor: pointer;
-    font-family: 'Manrope', sans-serif; font-size: 14px; font-weight: 800;
+    font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 800;
     color: #10161f; background: #ffffff;
     box-shadow: 0 10px 26px -8px rgba(0, 0, 0, 0.45);
     transition: transform 0.16s ease, box-shadow 0.16s ease;
@@ -199,7 +199,7 @@ body.dark-mode .rbx-sec-ofz { background: rgba(52, 211, 153, 0.045); }
 .rbx-sh { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; min-height: 32px; }
 .rbx-sh-t { display: flex; align-items: center; gap: 9px; min-width: 0; }
 .rbx-sh-t b {
-    font-family: 'Manrope', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: var(--fs-card-title, 17px); font-weight: 800;
     color: #161B27; letter-spacing: -0.01em; white-space: nowrap;
 }
@@ -254,7 +254,7 @@ body.dark-mode .rbx-esh-hint:hover { color: #e2e8f0; background: rgba(255, 255, 
     gap: 8px; align-items: center;
     padding: 0 12px 9px;
     border-bottom: 1px solid rgba(44, 54, 76, 0.08);
-    font-family: var(--font-ui, 'Manrope', sans-serif);
+    font-family: var(--font-ui, 'Inter', sans-serif);
     font-size: var(--fs-th, 11px); font-weight: 800;
     text-transform: uppercase; letter-spacing: 0.06em; color: #94A3B8;
 }
@@ -405,7 +405,7 @@ body.dark-mode .rbx-chart-btn { background: linear-gradient(135deg, #232f40, #10
 }
 .rbx-why-ic svg { width: 14px; height: 14px; }
 .rbx-why-h b {
-    font-family: 'Manrope', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 13.5px; font-weight: 800; color: #161B27; letter-spacing: -0.01em;
 }
 .rbx-why-lead {

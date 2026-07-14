@@ -438,7 +438,7 @@
             padding: 30px 28px 24px;
             display: flex;
             flex-direction: column;
-            font-family: 'Onest', 'Manrope', sans-serif;
+            font-family: 'Inter', sans-serif;
             position: relative; z-index: 1; /* виджет-продолжение заезжает под карточку */
         }
         /* Оживляем как верхнюю карту Ребаланса: зелёное + синее свечения по углам,
@@ -475,7 +475,7 @@
         #pfLeftRail .capital-hero { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 0; }
         #pfLeftRail .capital-hero-left { flex: 1; min-width: 0; }
         #pfLeftRail .capital-label-text {
-            font-family: 'Manrope', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-size: 12.5px; letter-spacing: 0.14em; font-weight: 700;
             color: #76849a; text-transform: uppercase; white-space: nowrap;
             margin: 0 0 18px;
@@ -507,7 +507,7 @@
             transform: none;
             white-space: nowrap;
             z-index: 6;
-            font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 600;
+            font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600;
             color: #e7edf5; background: #2a3548;
             padding: 6px 12px; border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.25);
@@ -533,7 +533,7 @@
         #pfLeftRail .capital-legend-item .legend-dot { width: 7px; height: 7px; border-radius: 99px; flex: 0 0 auto; position: static; }
         #pfLeftRail .capital-legend-item .legend-name {
             color: #b9c4d4; font-weight: 600; padding: 5px 0; font-size: 14px;
-            font-family: 'Manrope', sans-serif; white-space: nowrap;
+            font-family: 'Inter', sans-serif; white-space: nowrap;
         }
         #pfLeftRail .capital-legend-item .legend-pct {
             font-family: 'JetBrains Mono', monospace;
@@ -577,7 +577,7 @@
             border: none;
             border-radius: 10px;
             background: transparent;
-            font-family: 'Manrope', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-size: 14px;
             font-weight: 700;
             letter-spacing: 0;
@@ -619,7 +619,7 @@
         #pfLeftRail .forecast-data-line { display: contents; }
         #pfLeftRail .forecast-label-text {
             grid-column: 1; grid-row: 1;
-            font-family: 'Manrope', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-size: 12.5px; letter-spacing: 0.14em; font-weight: 700;
             color: #76849a; text-transform: uppercase; white-space: nowrap;
             padding: 0;
@@ -667,7 +667,7 @@
         #pfLeftRail .forecast-breakdown-item { display: flex; align-items: center; gap: 10px; padding: 4px 0; }
         #pfLeftRail .forecast-breakdown-item .fb-dot { width: 7px; height: 7px; border-radius: 99px; position: static; }
         #pfLeftRail .forecast-breakdown-item .fb-label {
-            font-family: 'Manrope', sans-serif; color: #aab6c6;
+            font-family: 'Inter', sans-serif; color: #aab6c6;
             font-size: 14.5px !important; padding: 0;
         }
         #pfLeftRail .forecast-breakdown-item .fb-value {
@@ -682,7 +682,7 @@
             background: transparent;
             border: none; border-radius: 12px;
             padding: 11px 12px;
-            font-family: 'Onest','Manrope', sans-serif; font-weight: 600; font-size: 15px;
+            font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px;
             color: #c8d0d8; white-space: nowrap; cursor: pointer;
             width: 100%; box-sizing: border-box; text-align: left;
             transition: background 0.15s ease, color 0.15s ease;
@@ -704,7 +704,7 @@
             background: linear-gradient(180deg, #ef8f7f 0%, #e5766a 100%);
             border: none; border-radius: 15px;
             padding: 16px 18px;
-            font-family: 'Onest','Manrope', sans-serif; font-weight: 700; font-size: 15.5px;
+            font-family: 'Inter', sans-serif; font-weight: 700; font-size: 15.5px;
             color: #ffffff; white-space: nowrap; cursor: pointer;
             width: 100%; box-sizing: border-box;
             box-shadow: 0 16px 30px -14px rgba(229,118,106,0.8);
@@ -718,7 +718,7 @@
             display: flex; align-items: center; justify-content: center; gap: 8px;
             background: none; color: #a7e8c4;
             border: none; padding: 6px 18px;
-            font-family: 'Onest','Manrope', sans-serif; font-weight: 600; font-size: 13px;
+            font-family: 'Inter', sans-serif; font-weight: 600; font-size: 13px;
             box-shadow: none;
             white-space: nowrap; cursor: pointer; width: 100%; box-sizing: border-box;
             transition: color 0.15s ease;
@@ -842,7 +842,7 @@
         }
         #pfLeftRail .pcap-divider::after {
             content: 'за 3 года'; position: absolute; top: 7px; left: 50%; transform: translateX(-50%);
-            font-family: 'Onest', sans-serif; font-weight: 600; font-size: 10px;
+            font-family: 'Inter', sans-serif; font-weight: 600; font-size: 10px;
             letter-spacing: 0.07em; text-transform: uppercase;
             color: rgba(255,255,255,0.38); white-space: nowrap;
         }
@@ -894,7 +894,7 @@
             display: inline-flex; align-items: center; gap: 7px; justify-content: center;
             padding: 7px 12px; border-radius: 10px; cursor: pointer;
             background: transparent !important; border: 1px solid rgba(255,255,255,0.16); box-shadow: none !important;
-            font-family: 'Onest','Manrope', sans-serif; font-weight: 600; font-size: 12.5px;
+            font-family: 'Inter', sans-serif; font-weight: 600; font-size: 12.5px;
             color: #aeb8c2 !important; white-space: nowrap;
             transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
         }
@@ -935,7 +935,7 @@
         #pfLeftRail .pcap-legend::before, #pfLeftRail .pcap-breakdown::before {
             display: block; margin: 14px 0 9px; padding-top: 12px;
             border-top: 1px solid rgba(255,255,255,0.09);
-            font-family: 'Onest', sans-serif; font-weight: 600; font-size: 10px;
+            font-family: 'Inter', sans-serif; font-weight: 600; font-size: 10px;
             letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.42);
         }
         #pfLeftRail .pcap-legend::before { content: 'Распределение'; }
@@ -996,12 +996,12 @@
         #pfRecalcPanel .pfrc-inner { display: flex; flex-direction: column; gap: 14px; }
         #pfRecalcPanel .pfrc-head { display: flex; align-items: center; }
         #pfRecalcPanel .pfrc-ttl {
-            font: 700 13px 'Onest', sans-serif; color: #eef2f6; letter-spacing: 0.01em;
+            font: 700 13px 'Inter', sans-serif; color: #eef2f6; letter-spacing: 0.01em;
         }
         #pfRecalcPanel .pfrc-field { min-width: 0; }
         #pfRecalcPanel .pfrc-label {
             display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
-            font: 600 10.5px/1.2 'Onest', sans-serif; letter-spacing: 0.08em;
+            font: 600 10.5px/1.2 'Inter', sans-serif; letter-spacing: 0.08em;
             text-transform: uppercase; color: #7c8794;
         }
         #pfRecalcPanel .pfrc-label b {
@@ -1025,7 +1025,7 @@
         #pfRecalcPanel .pfrc-fees button {
             background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
             color: #aab4bf; border-radius: 9px; padding: 6px 11px;
-            font: 600 12px 'Onest', sans-serif; cursor: pointer; transition: all 0.15s ease;
+            font: 600 12px 'Inter', sans-serif; cursor: pointer; transition: all 0.15s ease;
         }
         #pfRecalcPanel .pfrc-chips button:hover,
         #pfRecalcPanel .pfrc-fees button:hover { background: rgba(255,255,255,0.09); color: #eef2f6; }
@@ -1049,7 +1049,7 @@
         }
         #pfRecalcPanel .pfrc-ends {
             display: flex; justify-content: space-between; margin-top: 9px;
-            font: 600 11px 'Onest', sans-serif; color: #8a95a1;
+            font: 600 11px 'Inter', sans-serif; color: #8a95a1;
         }
         #pfRecalcPanel .pfrc-ends i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; vertical-align: middle; }
         #pfRecalcPanel .pfrc-d-b { background: #7B9BBF; margin-right: 6px; }
@@ -1061,7 +1061,7 @@
             white-space: nowrap; cursor: pointer;
             background: rgba(255,255,255,0.05); color: #c8d0d8;
             border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
-            padding: 10px 12px; font: 600 12.5px 'Onest', sans-serif; transition: all 0.15s ease;
+            padding: 10px 12px; font: 600 12.5px 'Inter', sans-serif; transition: all 0.15s ease;
         }
         #pfRecalcPanel .pfrc-gotocalc svg { width: 15px; height: 15px; }
         #pfRecalcPanel .pfrc-gotocalc:hover { background: rgba(255,255,255,0.09); color: #eef2f6; }
@@ -1069,7 +1069,7 @@
             flex: 0 0 auto; white-space: nowrap; cursor: pointer;
             background: rgba(167,232,196,0.14); color: #a7e8c4;
             border: 1px solid rgba(167,232,196,0.3); border-radius: 12px;
-            padding: 10px 18px; font: 700 13px 'Onest', sans-serif; transition: background 0.15s ease;
+            padding: 10px 18px; font: 700 13px 'Inter', sans-serif; transition: background 0.15s ease;
         }
         #pfRecalcPanel .pfrc-done:hover { background: rgba(167,232,196,0.22); }
         @keyframes pfrcIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
@@ -1084,7 +1084,7 @@
        База (десктоп-рельса и мобила) — карта всегда тёмная в обеих темах.
        ===================================================================== */
     .portfolio-capital-card {
-        font-family: 'Onest', 'Manrope', sans-serif;
+        font-family: 'Inter', sans-serif;
         background: linear-gradient(120deg, #0c1219 0%, #182231 55%, #131e2b 100%);
         color: #ffffff;
         border-radius: 26px;
@@ -1120,7 +1120,7 @@
     .pcap-chip svg { width: 15px; height: 15px; }
     .pcap-eyebrow {
         min-width: 0;
-        font-family: 'Onest', sans-serif; font-weight: 600; font-size: 11px; line-height: 1.35;
+        font-family: 'Inter', sans-serif; font-weight: 600; font-size: 11px; line-height: 1.35;
         letter-spacing: 0.09em; color: rgba(255,255,255,0.92); text-transform: uppercase;
     }
     .pcap-date {
@@ -1130,17 +1130,17 @@
         padding: 5px 9px; border-radius: 20px; white-space: nowrap;
     }
     .pcap-date-lbl {
-        font-family: 'Onest', sans-serif; font-weight: 600; font-size: 9.5px;
+        font-family: 'Inter', sans-serif; font-weight: 600; font-size: 9.5px;
         letter-spacing: 0.08em; text-transform: uppercase; color: #7c8794;
     }
 
     /* Крупная сумма в млн + подстрока */
     .pcap-big { margin-top: 16px; display: flex; align-items: baseline; gap: 8px; position: relative; z-index: 2; }
     .pcap-big-num {
-        font-family: 'Onest', sans-serif; font-weight: 700; font-size: 46px; line-height: 0.95;
+        font-family: 'Inter', sans-serif; font-weight: 700; font-size: 46px; line-height: 0.95;
         letter-spacing: -0.02em; font-variant-numeric: tabular-nums;
     }
-    .pcap-big-unit { font-family: 'Onest', sans-serif; font-weight: 600; font-size: 23px; }
+    .pcap-big-unit { font-family: 'Inter', sans-serif; font-weight: 600; font-size: 23px; }
     .pcap-big-cap .pcap-big-num { color: #a7e8c4; }
     .pcap-big-cap .pcap-big-unit { color: #6fa98c; }
     .pcap-big-fore .pcap-big-num { color: #f4f7fa; }
@@ -1165,7 +1165,7 @@
     .pcap-dot-bonds { background: #7B9BBF; box-shadow: 0 0 0 3px rgba(123,155,191,0.14); }
     .pcap-dot-stocks { background: #D97757; box-shadow: 0 0 0 3px rgba(217,119,87,0.14); }
     .pcap-dot-fee { background: #7d8894; box-shadow: 0 0 0 3px rgba(125,136,148,0.14); }
-    .pcap-legname { font-family: 'Onest', sans-serif; font-weight: 500; font-size: 15px; color: #c8d0d8; }
+    .pcap-legname { font-family: 'Inter', sans-serif; font-weight: 500; font-size: 15px; color: #c8d0d8; }
     .pcap-legpct { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 13px; color: #7d8894; justify-self: end; }
     .pcap-legsum {
         font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 15px; color: #eef2f6;
@@ -1178,7 +1178,7 @@
         width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 12px;
         background: transparent; border: none;
         border-radius: 12px; padding: 10px 12px; cursor: pointer;
-        color: #aab4bf; font-family: 'Onest', sans-serif; font-weight: 500; font-size: 15px;
+        color: #aab4bf; font-family: 'Inter', sans-serif; font-weight: 500; font-size: 15px;
         transition: background 0.15s ease, color 0.15s ease;
     }
     .pcap-fee-btn:hover { background: rgba(255,255,255,0.05); color: #c8d0d8; }
@@ -1200,7 +1200,7 @@
         max-height: 120px; opacity: 1; margin-top: 10px; padding: 12px 14px;
         border-color: rgba(255,255,255,0.06);
     }
-    .pcap-fee-note { font-family: 'Onest', sans-serif; font-weight: 400; font-size: 12px; line-height: 1.4; color: #8a95a1; }
+    .pcap-fee-note { font-family: 'Inter', sans-serif; font-weight: 400; font-size: 12px; line-height: 1.4; color: #8a95a1; }
     .pcap-fee-rub { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 13px; color: #eef2f6; white-space: nowrap; }
 
     /* Разделитель между секциями */
@@ -1233,7 +1233,7 @@
     /* Дисклеймер */
     .pcap-disclaimer { margin-top: 14px; display: flex; align-items: flex-start; gap: 8px; position: relative; z-index: 2; }
     .pcap-disclaimer svg { width: 13px; height: 13px; stroke: #5c6670; flex: 0 0 auto; margin-top: 1px; }
-    .pcap-disclaimer span { font-family: 'Onest', sans-serif; font-weight: 400; font-size: 11px; line-height: 1.5; color: #5c6670; }
+    .pcap-disclaimer span { font-family: 'Inter', sans-serif; font-weight: 400; font-size: 11px; line-height: 1.5; color: #5c6670; }
 
     /* Детализация прогноза */
     .pcap-breakdown {
@@ -1242,7 +1242,7 @@
         border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 13px;
     }
     .pcap-brk-row { display: grid; grid-template-columns: 16px minmax(0,1fr) auto; align-items: center; gap: 10px; }
-    .pcap-brk-label { font-family: 'Onest', sans-serif; font-weight: 500; font-size: 15px; color: #c8d0d8; white-space: nowrap; }
+    .pcap-brk-label { font-family: 'Inter', sans-serif; font-weight: 500; font-size: 15px; color: #c8d0d8; white-space: nowrap; }
     .pcap-brk-value { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 14.5px; text-align: right; white-space: nowrap; justify-self: end; }
     .pcap-brk-value.pos { color: #a7e8c4; }
     .pcap-brk-value.neg { color: #e0a48f; }
@@ -1267,7 +1267,7 @@
             background: #ffffff;
             border-radius: 22px;
             box-shadow: 0 16px 36px rgba(24,38,60,0.08);
-            font-family: 'Manrope', sans-serif;
+            font-family: 'Inter', sans-serif;
             overflow: hidden;
         }
         body.dark-mode #v3BuyPanel { background: #1d2734; }
@@ -1306,7 +1306,7 @@
             display: flex; align-items: center; gap: 16px;
             padding: 11px 26px; flex-shrink: 0;
             border-bottom: 1px solid #eef2f7;
-            font-family: 'Manrope', sans-serif; font-size: 11px; font-weight: 800;
+            font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 800;
             letter-spacing: 0.08em; text-transform: uppercase; color: #97a3b4;
         }
         body.dark-mode .v3bl-colhead { border-bottom-color: rgba(255,255,255,0.07); color: #76849a; }
@@ -1317,7 +1317,7 @@
         #v3BuyBody { padding: 2px 0 0; flex: 1 1 auto; overflow-y: auto; min-height: 0; }
         #v3BuyBody .sl-section-label {
             padding: 16px 26px 8px; margin: 0;
-            font-family: 'Manrope', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-size: 12.5px; font-weight: 700; letter-spacing: 0.12em;
             text-transform: uppercase; color: #97a3b4;
         }
@@ -1352,7 +1352,7 @@
         }
         body.dark-mode #v3BuyBody .sl-badge { background: rgba(255,255,255,0.08); color: #c4cedd; }
         #v3BuyBody .sl-ticker {
-            font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 15px; color: #111927;
+            font-family: 'Inter', sans-serif; font-weight: 800; font-size: 15px; color: #111927;
         }
         body.dark-mode #v3BuyBody .sl-ticker { color: #f1f6fb; }
         #v3BuyBody .sl-name {
@@ -1378,7 +1378,7 @@
         }
         body.dark-mode #v3BuyBody .sl-group-total { background: rgba(255,255,255,0.03); border-top-color: rgba(255,255,255,0.07); }
         #v3BuyBody .sl-group-total-label {
-            font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 12.5px;
+            font-family: 'Inter', sans-serif; font-weight: 800; font-size: 12.5px;
             color: #5f6d80; letter-spacing: 0.08em; text-transform: uppercase;
         }
         #v3BuyBody .sl-group-total-value {
@@ -1403,7 +1403,7 @@
         body.dark-mode .v3bl-foot { background: rgba(15,23,42,0.55); border-color: rgba(255,255,255,0.09); box-shadow: none; }
         .v3bl-foot-row { flex: 1 1 100%; display: flex; align-items: flex-end; gap: 14px; }
         .v3bl-foot .lb {
-            font-family: 'Manrope', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-size: 10.5px; letter-spacing: 0.12em; font-weight: 700;
             color: #94a3b8; text-transform: uppercase; margin-bottom: 6px;
         }
@@ -1444,7 +1444,7 @@
         .v3bl-name {
             flex: 1 1 auto; min-width: 0;
             background: transparent; border: none; outline: none;
-            font-family: 'Onest', sans-serif; font-weight: 600; font-size: 14px; color: #161B27;
+            font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px; color: #161B27;
             padding: 8px 10px;
         }
         body.dark-mode .v3bl-name { color: #f1f6fb; }
@@ -1454,7 +1454,7 @@
             cursor: pointer;
             background: linear-gradient(180deg, #ef8f7f 0%, #e5766a 100%);
             border: none; border-radius: 11px; padding: 9px 16px;
-            font-family: 'Onest', sans-serif; font-weight: 700; font-size: 13.5px; color: #ffffff;
+            font-family: 'Inter', sans-serif; font-weight: 700; font-size: 13.5px; color: #ffffff;
             box-shadow: 0 10px 22px -12px rgba(229,118,106,0.85);
             transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
@@ -2067,7 +2067,7 @@
         }
         body.dark-mode #btResults .bt-assets-header { border-bottom-color: rgba(255,255,255,0.07); }
         #btResults .bt-assets-title {
-            font-family: 'Manrope', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-weight: 800; font-size: 15px; color: #111927;
         }
         body.dark-mode #btResults .bt-assets-title { color: #f1f6fb; }
@@ -2075,7 +2075,7 @@
         #btResults .bt-asset-head { background: transparent; padding: 12px 20px 8px; }
         body.dark-mode #btResults .bt-asset-row { border-bottom-color: rgba(255,255,255,0.05); }
         #btResults .bt-asset-name {
-            font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 15px; color: #111927;
+            font-family: 'Inter', sans-serif; font-weight: 800; font-size: 15px; color: #111927;
         }
         body.dark-mode #btResults .bt-asset-name { color: #f1f6fb; }
         #btResults .bt-asset-isin { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #8593a6; }
@@ -2325,11 +2325,11 @@
             padding: 24px 26px !important;
         }
         #mkLeftRail .rates-glass-card .rv-title {
-            font-family: 'Manrope', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-size: 12.5px !important; letter-spacing: 0.14em !important; font-weight: 700 !important;
             color: #76849a !important; text-transform: uppercase;
         }
-        #mkLeftRail .rates-glass-card .rate-row-label { color: #b9c4d4 !important; font-family: 'Manrope', sans-serif; }
+        #mkLeftRail .rates-glass-card .rate-row-label { color: #b9c4d4 !important; font-family: 'Inter', sans-serif; }
         #mkLeftRail .rates-glass-card .rate-row-value { color: #ffffff !important; font-family: 'JetBrains Mono', monospace; }
         #mkLeftRail .rates-glass-card .rate-row-item { border-color: rgba(255,255,255,0.08) !important; }
         /* Калькулятор — белая V3-карточка */
@@ -2389,7 +2389,7 @@
         }
         body.dark-mode #btResults .bt-assets-header { border-bottom-color: rgba(255,255,255,0.07); }
         #btResults .bt-assets-title {
-            font-family: 'Manrope', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-weight: 800; font-size: 15px; color: #111927;
         }
         body.dark-mode #btResults .bt-assets-title { color: #f1f6fb; }
@@ -2397,7 +2397,7 @@
         #btResults .bt-asset-head { background: transparent; padding: 12px 20px 8px; }
         body.dark-mode #btResults .bt-asset-row { border-bottom-color: rgba(255,255,255,0.05); }
         #btResults .bt-asset-name {
-            font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 15px; color: #111927;
+            font-family: 'Inter', sans-serif; font-weight: 800; font-size: 15px; color: #111927;
         }
         body.dark-mode #btResults .bt-asset-name { color: #f1f6fb; }
         #btResults .bt-asset-isin { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #8593a6; }
@@ -2416,7 +2416,7 @@
         }
         body.dark-mode #btConfigCol .bt-config-card { background: #1d2734; }
         #btConfigCol .bt-config-label {
-            font-family: 'Manrope', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-size: 12.5px; letter-spacing: 0.12em; font-weight: 700;
             color: #97a3b4; text-transform: uppercase;
         }
@@ -2425,7 +2425,7 @@
             background: #141b26;
             border-radius: 18px;
             padding: 18px;
-            font-family: 'Manrope', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-size: 15px; font-weight: 700;
             box-shadow: 0 16px 36px rgba(24,38,60,0.08);
             transition: transform 0.15s ease, box-shadow 0.15s ease;
@@ -2768,7 +2768,7 @@
         .pf-table-thead .ti { flex: 1 1 auto; min-width: 0; }
         .pf-table-thead .ti .row { display: flex; align-items: center; gap: 10px; }
         .pf-table-thead .ti b {
-            font-family: 'Manrope', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-size: 17px; font-weight: 800; letter-spacing: -0.01em;
             color: #111927; white-space: nowrap;
         }
@@ -2782,7 +2782,7 @@
         body.dark-mode .pf-table-thead .ti .cnt { background: rgba(255,255,255,0.08); color: #c4cedd; }
         .pf-table-thead .ti .sub {
             display: block; margin-top: 5px;
-            font-family: 'Manrope', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-size: 13px; color: #8593a6; font-weight: 600;
         }
 
@@ -2804,7 +2804,7 @@
             border-bottom-color: rgba(255,255,255,0.07);
         }
         #pfRightCol .portfolio-list-header-text {
-            font-family: 'Manrope', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-size: 11px; font-weight: 800;
             color: var(--c-th, #8593a6); opacity: 1;
             letter-spacing: 0.1em; text-transform: uppercase;
@@ -2845,7 +2845,7 @@
             align-items: center;
         }
         #pfRightCol .portfolio-ofz-name {
-            font-family: 'Manrope', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-weight: 800; font-size: 16px;
             color: #111927;
             display: flex; align-items: center; gap: 8px;
@@ -2914,7 +2914,7 @@
         }
         body.dark-mode #pfRightCol .portfolio-echelons-total-row .total-icon svg { stroke: #e7edf5; }
         #pfRightCol .portfolio-echelons-total-row .total-label {
-            font-family: 'Manrope', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-weight: 800; font-size: 15px; letter-spacing: 0.04em;
             color: #111927; white-space: nowrap; text-transform: none;
         }
@@ -2962,7 +2962,7 @@
         #pfRightCol .portfolio-coupon-icon svg { width: 19px; height: 19px; color: #5f6d80; }
         /* Размер как у заголовка таблицы ОФЗ (.pf-table-thead .row b — 17px/800) */
         #pfRightCol .portfolio-coupon-title {
-            font-family: 'Manrope', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-size: 17px; font-weight: 800; color: #111927; white-space: nowrap;
         }
         body.dark-mode #pfRightCol .portfolio-coupon-title { color: #f1f6fb; }
@@ -3055,14 +3055,14 @@
         body.dark-mode #pfRightCol .cpx-date { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
         #pfRightCol .cpx-date-day { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; color: #111927; line-height: 1; }
         body.dark-mode #pfRightCol .cpx-date-day { color: #f1f6fb; }
-        #pfRightCol .cpx-date-mon { font-family: 'Manrope', sans-serif; font-size: 9.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #16b56b; margin-top: 3px; }
+        #pfRightCol .cpx-date-mon { font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #16b56b; margin-top: 3px; }
         #pfRightCol .cpx-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
         #pfRightCol .cpx-name {
-            font-family: 'Manrope', sans-serif; font-size: 14px; font-weight: 700; color: #111927;
+            font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 700; color: #111927;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
         body.dark-mode #pfRightCol .cpx-name { color: #f1f6fb; }
-        #pfRightCol .cpx-rel { font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 500; color: #8593a6; }
+        #pfRightCol .cpx-rel { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500; color: #8593a6; }
         #pfRightCol .cpx-right { display: flex; align-items: center; gap: 12px; }
         #pfRightCol .cpx-qty {
             font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: #6b7787;
@@ -3081,7 +3081,7 @@
             border-radius: 14px; color: #0f9a58;
         }
         body.dark-mode #pfRightCol .coupon-total-foot { background: rgba(22,181,107,0.10); border-color: rgba(22,181,107,0.22); color: #58d29a; }
-        #pfRightCol .ctf-label { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 13.5px; }
+        #pfRightCol .ctf-label { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 13.5px; }
         #pfRightCol #couponTotalHeaderV2 { font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 17px; color: #16b56b !important; }
         body.dark-mode #pfRightCol #couponTotalHeaderV2 { color: #58d29a !important; }
 
@@ -3098,7 +3098,7 @@
             flex: 1; padding: 9px 0 !important;
             border: none !important; border-radius: 9px !important;
             background: transparent !important; box-shadow: none !important;
-            font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 700;
+            font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700;
             color: #6b7787 !important; cursor: pointer;
             transition: background .18s, color .18s, box-shadow .18s;
         }
@@ -3122,7 +3122,7 @@
            токен --c-th подключён здесь напрямую (не было дарк-варианта
            вовсе — в тёмной теме цвет раньше не менялся). */
         #pfRightCol .portfolio-echelons-headers .portfolio-echelon-h-text span {
-            font-family: 'Manrope', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-size: 11px; font-weight: 800;
             color: var(--c-th, #8593a6); letter-spacing: 0.06em; text-transform: uppercase;
         }
@@ -3239,13 +3239,13 @@
         }
         #pfRightCol .important-aurora-icon svg { stroke: #ffffff; width: 16px; height: 16px; }
         #pfRightCol .important-aurora-title {
-            font-family: 'Manrope', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-size: 12px; font-weight: 800;
             letter-spacing: 0.1em; text-transform: uppercase;
             color: #d98a06; margin-bottom: 7px;
         }
         #pfRightCol .important-aurora-text {
-            font-family: 'Manrope', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-size: 14px !important; line-height: 1.6 !important;
             color: #c4cedd;
         }
@@ -3292,7 +3292,7 @@
             width: 15px; height: 15px; stroke: #94a3b8;
         }
         #pfRightCol .portfolio-important-aurora--inline .important-aurora-title {
-            font-family: 'Onest', 'Manrope', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-size: 10px; font-weight: 700;
             letter-spacing: 0.09em; text-transform: uppercase;
             color: #8794a5; margin-bottom: 4px;
@@ -3422,7 +3422,7 @@
         display: inline-flex; align-items: center; gap: 7px;
         border: none;
         background: transparent;
-        font: 700 13.5px 'Manrope', sans-serif;
+        font: 700 13.5px 'Inter', sans-serif;
         color: #7a8698;
         padding: 0 18px;
         border-radius: 9px;
@@ -3453,7 +3453,7 @@
     }
     body.dark-mode .v3bl-sub { border-bottom-color: rgba(255,255,255,0.07); }
     .v3bl-sub .hint {
-        font-family: 'Manrope', sans-serif;
+        font-family: 'Inter', sans-serif;
         font-size: 12.5px; font-weight: 500; line-height: 1.4;
         color: #7a8798;
     }
@@ -3461,7 +3461,7 @@
     .v3bl-bulk-btn {
         border: none; background: #eef2f8; color: #3d4d63;
         border-radius: 9px; padding: 7px 12px;
-        font-family: 'Manrope', sans-serif; font-size: 12px; font-weight: 700;
+        font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700;
         white-space: nowrap; cursor: pointer;
         transition: background 0.15s ease;
     }
