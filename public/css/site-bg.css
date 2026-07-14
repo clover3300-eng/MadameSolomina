@@ -19,7 +19,11 @@
     z-index: 1;                 /* тот же слой, что был у #homeBg */
     overflow: hidden;
     pointer-events: none;
-    background: linear-gradient(180deg, #F1F6FB 0%, #F9FAFC 100%);
+    /* Тон страницы держим ЗАМЕТНО глубже белого: карточки на вкладках белые (#fff) с очень
+       светлой рамкой, и на прежнем #F1F6FB→#F9FAFC (низ почти белый) они переставали
+       читаться как карточки — контраст с фоном был ~1.04, границу держала одна рамка.
+       Теперь низ градиента не уходит в белизну, и белая карточка отделяется сама. */
+    background: linear-gradient(180deg, #E7EEF7 0%, #EDF1F7 100%);
 }
 @media (min-width: 1024px) {
     body:not(.dark-mode):not(.tab-home) #siteBgTiles { display: block; }
