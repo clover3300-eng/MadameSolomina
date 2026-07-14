@@ -6237,8 +6237,10 @@
         var link = item.link || '';
         var go = link ? '<svg class="pff-news-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg>' : '';
         // title/rel/src — для предпросмотра «Новостей по позициям» (оверлей), html — для «Избранного»
+        // источник — отдельной пилюлей, дата — рядом: раньше оба были простым текстом
+        // через « · », и источник, будучи цветным и жирным, читался как часть заголовка
         return { html: '<span class="pff-news-t">' + esc(title) + (full.length > 300 ? '…' : '') + '</span>' +
-            '<span class="pff-news-m"><i>Smart-Lab</i>' + (rel ? ' · ' + esc(rel) : '') + go + '</span>', link: link,
+            '<span class="pff-news-m"><i>Smart-Lab</i>' + (rel ? '<em>' + esc(rel) + '</em>' : '') + go + '</span>', link: link,
             title: title + (full.length > 300 ? '…' : ''), rel: rel, src: 'Smart-Lab',
             date: isNaN(d.getTime()) ? 0 : d.getTime() };   // для сортировки избранного «по свежести»
     }
@@ -7104,10 +7106,15 @@
     window.pfxSetBg = function (v) {
         if (!window.siteBg) return;
         window.siteBg.set(v);
-        renderNoAnim();
         var b = (window.siteBg.list().filter(function (x) { return x.id === v; })[0] || {}).name;
         if (b) toast('Фон: ' + b.toLowerCase());
     };
+    // Фон меняет не только эта карточка, но и плавающая кнопка #bgFab (js/site-bg.js).
+    // Перерисовку повесили на событие, а не на pfxSetBg: так отметка «выбрано» верна,
+    // кто бы ни переключил, и карточке не нужно знать про существование кнопки.
+    document.addEventListener('site-bg-change', function () {
+        if (document.querySelector('.pfx-bg')) renderNoAnim();
+    });
     function pfxBgRowHtml(big) {
         if (!window.siteBg) return '';
         var cur = window.siteBg.get();
@@ -7298,14 +7305,18 @@
                 : '<span class="' + cls + '">' + inner + '</span>';
         }
         var CH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+        // итог за месяц стоит В СТРОКЕ НАВИГАЦИИ, а не в шапке карточки: рядом с названием
+        // месяца, к которому он и относится (как в демо-превью виджета). В шапке он
+        // отнимал ширину у подзаголовка и висел, не выровненный ни с чем.
+        var totalPill = monthCnt
+            ? '<span class="pfcm-tot"><i>за месяц</i><b>+' + fmtRub(monthSum) + '</b></span>'
+            : '<span class="pfcm-tot empty"><i>за месяц</i><b>выплат нет</b></span>';
         var nav = '<div class="pfcm-nav">' +
             '<button type="button" class="pfcm-arw prev"' + (pfcmOffset <= 0 && !demoMap ? ' disabled' : '') + ' aria-label="Предыдущий месяц" onclick="pfcmNav(-1, event)">' + CH + '</button>' +
             '<span class="pfcm-mon">' + PFCM_MON[m] + ' ' + y + '</span>' +
             '<button type="button" class="pfcm-arw next"' + (pfcmOffset >= 12 && !demoMap ? ' disabled' : '') + ' aria-label="Следующий месяц" onclick="pfcmNav(1, event)">' + CH + '</button>' +
+            totalPill +
         '</div>';
-        var totalPill = monthCnt
-            ? '<span class="pfcm-tot"><i>за месяц</i><b>+' + fmtRub(monthSum) + '</b></span>'
-            : '<span class="pfcm-tot empty"><i>за месяц</i><b>выплат нет</b></span>';
         // список выбранного дня — раскрывается ПОД сеткой, чтобы суммы можно было прочитать
         // по бумагам, а не только сводной цифрой в клетке
         var detail = '';
@@ -7322,7 +7333,7 @@
                 }).join('') + '</div>';
         }
         return '<div class="dash2-card pf-card2 pf-calmblk">' +
-            pfCardHead('', 'Календарь выплат', 'купоны, дивиденды и погашения по дням', '<div class="pfcm-head-r">' + totalPill + '</div>') +
+            pfCardHead('', 'Календарь выплат', 'купоны, дивиденды и погашения по дням') +
             nav +
             '<div class="pfcm-wds">' + PFCM_WD.map(function (w) { return '<span class="pfcm-wd">' + w + '</span>'; }).join('') + '</div>' +
             '<div class="pfcm-grid">' + cells + '</div>' +
@@ -8032,15 +8043,18 @@
                 '<span class="dm-row dm-box"><i>Ожидается</i><b class="pos">+45 200 ₽</b></span></div>';
         }
         if (id === 'heat') {
-            // как в референсе: крупная SBER-плитка слева, GAZP/LKOH правее, мелкие — хвостом
+            // раскладка как в референсе: SBER во всю высоту слева, GAZP и LKOH колонкой
+            // правее, безымянная мелочь — блоком 2×2 в правом нижнем углу
             return '<div class="dm-heat">' +
-                '<span style="grid-area:a;background:#2fbf71"><b>SBER</b><i>+1,6%</i></span>' +
-                '<span style="grid-area:b;background:#8fdfb6"><b>GAZP</b><i>+0,8%</i></span>' +
-                '<span style="grid-area:c;background:#4ecb8d"><b>LKOH</b><i>+2,1%</i></span>' +
-                '<span style="grid-area:d;background:#a9e8c8"></span>' +
-                '<span style="grid-area:e;background:#c9f0dd"></span>' +
-                '<span style="grid-area:f;background:#79d9a9"></span>' +
-                '<span style="grid-area:g;background:#def5e9"></span></div>';
+                '<span class="big" style="grid-area:a;background:#63ad84"><b>SBER</b><i>+1,6%</i></span>' +
+                '<span style="grid-area:b;background:#8cc7a7"><b>GAZP</b><i>+0,8%</i></span>' +
+                '<span style="grid-area:c;background:#6fb490"><b>LKOH</b><i>+2,1%</i></span>' +
+                '<span style="grid-area:d;background:#7cbd99"></span>' +
+                '<span style="grid-area:e;background:#93cdad"></span>' +
+                '<span style="grid-area:f;background:#a3d6bb"></span>' +
+                '<span style="grid-area:g;background:#86c3a2"></span>' +
+                '<span style="grid-area:h;background:#b5dfc9"></span>' +
+                '<span style="grid-area:i;background:#97cfb0"></span></div>';
         }
         if (id === 'movers') {
             return '<div class="dm-bars">' +

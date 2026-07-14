@@ -116,6 +116,28 @@ body.sbg-aurora #siteBgTiles {
         linear-gradient(160deg, #E3ECEF 0%, #E7EAF2 50%, #E4EBEE 100%);
 }
 
+/* — Рассвет: второй градиент, тёплый персик сверху-слева уходит в холодный
+     барвинок снизу-справа. Отличается от «Градиента» направлением тепла —
+     там тёплое пятно внизу справа, здесь тёплый весь верх. — */
+body.sbg-dawn #siteBgTiles {
+    background:
+        radial-gradient(1000px 640px at 10% 0%, rgba(247, 224, 219, 0.9) 0%, rgba(247, 224, 219, 0) 66%),
+        radial-gradient(900px 600px at 92% 10%, rgba(238, 226, 240, 0.8) 0%, rgba(238, 226, 240, 0) 66%),
+        radial-gradient(1000px 660px at 58% 100%, rgba(214, 224, 245, 0.75) 0%, rgba(214, 224, 245, 0) 68%),
+        linear-gradient(160deg, #EFE7E6 0%, #EBE8F0 50%, #E4E9F4 100%);
+}
+
+/* — Мрамор (мой вариант): холодный камень с редкими светлыми прожилками.
+     Прожилки заданы в px и НЕ повторяют масштаб экрана — это намеренно:
+     камень должен выглядеть одинаково крупным на любом мониторе. — */
+body.sbg-marble #siteBgTiles {
+    background:
+        repeating-linear-gradient(122deg, rgba(255, 255, 255, 0) 0 34px, rgba(255, 255, 255, 0.5) 34px 37px, rgba(255, 255, 255, 0) 37px 96px),
+        repeating-linear-gradient(122deg, rgba(176, 189, 206, 0) 0 88px, rgba(176, 189, 206, 0.3) 88px 90px, rgba(176, 189, 206, 0) 90px 210px),
+        radial-gradient(1200px 700px at 22% 0%, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 62%),
+        linear-gradient(150deg, #E6E9EF 0%, #ECEEF2 46%, #E4E8EE 100%);
+}
+
 /* --- ОБРАЗЦЫ (.sbgpv-<id>) для переключателя и демо в пикере ---
    Те же заливки, но в координатах плитки: у #siteBgTiles радиусы заданы в px под
    размер экрана — в образце 44×32px они дали бы одно сплошное пятно. Здесь те же
@@ -158,3 +180,104 @@ body.sbg-aurora #siteBgTiles {
         radial-gradient(65% 80% at 96% 92%, rgba(206, 228, 235, 0.8) 0%, rgba(206, 228, 235, 0) 68%),
         linear-gradient(160deg, #E3ECEF 0%, #E4EBEE 100%);
 }
+.sbgpv-dawn {
+    background:
+        radial-gradient(70% 85% at 10% 0%, rgba(247, 224, 219, 0.95) 0%, rgba(247, 224, 219, 0) 68%),
+        radial-gradient(60% 75% at 92% 8%, rgba(238, 226, 240, 0.85) 0%, rgba(238, 226, 240, 0) 68%),
+        radial-gradient(70% 85% at 58% 100%, rgba(214, 224, 245, 0.8) 0%, rgba(214, 224, 245, 0) 70%),
+        linear-gradient(160deg, #EFE7E6 0%, #E4E9F4 100%);
+}
+/* прожилки в образце — в процентах: в плитке 44×32 шаг 34px дал бы одну полосу */
+.sbgpv-marble {
+    background:
+        repeating-linear-gradient(122deg, rgba(255, 255, 255, 0) 0 22%, rgba(255, 255, 255, 0.55) 22% 25%, rgba(255, 255, 255, 0) 25% 60%),
+        repeating-linear-gradient(122deg, rgba(176, 189, 206, 0) 0 52%, rgba(176, 189, 206, 0.35) 52% 54%, rgba(176, 189, 206, 0) 54% 120%),
+        linear-gradient(150deg, #E6E9EF 0%, #E4E8EE 100%);
+}
+
+/* =========================================================
+   ПЛАВАЮЩИЙ ПЕРЕКЛЮЧАТЕЛЬ ФОНА (#bgFab)
+   =========================================================
+   Стоит НАД кнопкой темы (#themeFab: right 22, bottom 20, 42px), той же
+   «стеклянной» плашкой. Раскрывается ВВЕРХ: контейнер прижат к низу, поэтому
+   рейка, вырастая, толкает границу вверх — без анимации самой позиции.
+
+   Показываем ровно там, где фон вообще виден (см. #siteBgTiles выше): десктоп,
+   светлая тема, не Главная. В тёмной теме и на телефоне кнопка ничего бы не
+   меняла — а кнопка, которая ничего не делает, хуже её отсутствия. */
+#bgFab { display: none; }
+@media (min-width: 1024px) {
+    body:not(.dark-mode):not(.tab-home) #bgFab {
+        display: flex; flex-direction: column; align-items: center; gap: 8px;
+        position: fixed; right: 22px; bottom: 72px; z-index: 880;
+    }
+}
+body.quiz-mode #bgFab, body.sd-drawer-open #bgFab { display: none; }
+
+.bgfab-btn {
+    width: 42px; height: 42px; flex-shrink: 0; border-radius: 50%; padding: 0;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    background: var(--card-glass-aurora, rgba(255, 255, 255, 0.72));
+    border: 1px solid var(--card-border-aurora, rgba(255, 255, 255, 0.45));
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    color: var(--text-slate, #64748B);
+    box-shadow: 0 10px 24px -10px rgba(24, 38, 60, 0.35);
+    transition: transform 0.15s, box-shadow 0.2s, background 0.2s, color 0.2s;
+}
+.bgfab-btn svg { width: 18px; height: 18px; }
+#bgFab:hover .bgfab-btn, #bgFab.open .bgfab-btn { color: var(--text-deep, #1b2433); background: rgba(255, 255, 255, 0.9); }
+.bgfab-btn:active { transform: scale(0.95); }
+
+/* Рейка: ширина = ширине кнопки (42px), поэтому раскрытие читается как «кнопка
+   вытянулась вверх», а не как выехавшее откуда-то меню.
+   max-height анимируем от 0 — высота зависит от числа вариантов, и держать её
+   в CSS числом значило бы править стиль при каждом новом фоне. */
+.bgfab-rail {
+    box-sizing: border-box; width: 42px;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    border-radius: 21px; padding: 0; max-height: 0; overflow: hidden;
+    /* НЕ стекло, в отличие от кнопки: рейка всплывает над чем угодно — над тёмным
+       героем, над белой карточкой, — а образцы фона сами очень светлые. Сквозь
+       полупрозрачную подложку они меняли вид вместе с тем, что под ней, и «Спокойный»
+       над тёмной карточкой выглядел темнее «Мрамора» над белой. Плотный белый фон
+       даёт всем образцам одну и ту же подложку — их можно честно сравнивать. */
+    background: #fff;
+    border: 1px solid transparent;
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    opacity: 0; transform: translateY(6px); pointer-events: none;
+    transition: max-height 0.26s ease, opacity 0.18s ease, transform 0.26s ease, padding 0.26s ease, box-shadow 0.2s;
+}
+/* :has(:focus-visible), а НЕ :focus-within — иначе клик по образцу оставляет на нём
+   фокус, и рейка висит раскрытой после ухода мыши. :focus-visible ставится только
+   при работе с клавиатуры — ровно тот случай, ради которого правило и нужно. */
+#bgFab:hover .bgfab-rail, #bgFab.open .bgfab-rail, #bgFab:has(:focus-visible) .bgfab-rail {
+    max-height: 460px; opacity: 1; transform: none; pointer-events: auto;
+    padding: 6px; border-color: rgba(24, 38, 60, 0.08);
+    box-shadow: 0 14px 30px -12px rgba(24, 38, 60, 0.45);
+}
+/* заливку даёт .sbgpv-<id> — здесь НЕ трогаем background-size/repeat:
+   у «Мозаики» они свои, а .bgfab-sw идёт ниже по файлу и перебил бы их */
+.bgfab-sw {
+    width: 30px; height: 30px; flex-shrink: 0; border-radius: 50%; padding: 0;
+    border: 1px solid rgba(24, 38, 60, 0.16); cursor: pointer;
+    transition: transform 0.14s, box-shadow 0.16s, border-color 0.16s;
+}
+.bgfab-sw:hover { transform: scale(1.1); border-color: rgba(24, 38, 60, 0.32); }
+.bgfab-sw.on { border-color: transparent; box-shadow: 0 0 0 2px #1b2433; }
+
+/* Подпись слева от образца. Нужна не для красоты: заливки различаются оттенком в
+   пределах пары процентов светлоты (см. правило коридора выше), и кружком 30px
+   «Спокойный» от «Мрамора» не отличить. Нативный title всплывает через секунду и в
+   системном стиле — здесь тот же приём, что у .pff-tipbox «Избранного».
+   Живёт РЯДОМ с рейкой, а не внутри: рейка растёт через max-height + overflow:hidden,
+   и подпись внутри неё была бы срезана по ширине кружка. Позицию по вертикали ставит
+   JS по наведённому образцу — CSS этого не умеет, а список вариантов не фиксирован. */
+.bgfab-tip {
+    position: absolute; right: 52px; pointer-events: none; z-index: 1;
+    padding: 5px 9px; border-radius: 8px; white-space: nowrap;
+    font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700; color: #fff;
+    background: rgba(19, 26, 43, 0.92);
+    box-shadow: 0 8px 18px -8px rgba(24, 38, 60, 0.5);
+    opacity: 0; transform: translate(4px, -50%); transition: opacity 0.14s, transform 0.14s;
+}
+.bgfab-tip.on { opacity: 1; transform: translate(0, -50%); }

@@ -1199,27 +1199,36 @@ body.dark-mode .pff-pot.pos { color: #34d399; } body.dark-mode .pff-pot.neg { co
 .pff-news { position: relative; min-width: 0; min-height: 38px; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(24,38,60,0.06); }
 body.dark-mode .pff-news { border-color: rgba(255,255,255,0.06); }
 .pff-news.link { cursor: pointer; }
-/* при наведении новость не «всплывает» отдельным блоком, а РАСТЯГИВАЕТ карточку вниз:
-   слой уезжает к краям плитки (-13px = её паддинг), продолжает её рамку/тень и скругляет
-   только нижние углы — визуально это та же карточка, ставшая выше. */
-.pff-news-inner { position: absolute; left: 0; right: 0; top: 8px; display: flex; flex-direction: column; gap: 2px; border: 1px solid transparent; border-top: none; border-radius: 0 0 13px 13px; transition: background 0.15s, box-shadow 0.15s, padding 0.15s, left 0.15s, right 0.15s, border-color 0.15s; }
-/* слой уезжает РОВНО на внешний край рамки плитки (-14 = -13 паддинг − 1 рамка): его боковые
-   рамки ложатся точно поверх рамки плитки → единый контур без двойной линии и ступенек */
+/* При наведении новость раскрывается ОТДЕЛЬНОЙ карточкой поверх соседей: полный
+   заголовок, своя рамка, скругление и тень. Раньше слой уезжал к самым краям плитки
+   (−14px) и скруглял только низ — получалась не карточка, а «оторванный лист»,
+   вплотную притёртый к краям «Избранного».
+   Ключ к спокойному раскрытию: НА СКОЛЬКО слой уходит за края, РОВНО СТОЛЬКО он
+   добирает padding'ом (10 = 10, top −1 = padding-top 9 + рамка 1 против top 8) —
+   поэтому текст не сдвигается ни на пиксель, растёт только сама карточка. */
+.pff-news-inner { position: absolute; left: 0; right: 0; top: 8px; display: flex; flex-direction: column; gap: 3px; border: 1px solid transparent; border-radius: 14px; transition: background 0.18s ease, box-shadow 0.18s ease, padding 0.18s ease, left 0.18s ease, right 0.18s ease, top 0.18s ease, border-color 0.18s ease; }
 /* разворот полного заголовка на ховере — ТОЛЬКО когда новость загружена (.link):
    для «загрузка новости…» / «нет свежих новостей» раскрывать нечего, а пустой
    развёрнутый бокс давал вторую рамку впритык к границам плитки (задвоение линий) */
-.pff-tile:hover .pff-news.link .pff-news-inner { left: -14px; right: -14px; padding: 2px 13px 12px; background: color-mix(in srgb, var(--pf-accent) 3%, #fff); border-color: color-mix(in srgb, var(--pf-accent) 35%, rgba(24,38,60,0.1)); box-shadow: 0 16px 26px -18px rgba(24,38,60,0.5); z-index: 30; }
-body.dark-mode .pff-tile:hover .pff-news.link .pff-news-inner { background: color-mix(in srgb, var(--pf-accent) 9%, #1c2735); border-color: color-mix(in srgb, var(--pf-accent) 35%, rgba(255,255,255,0.12)); box-shadow: 0 16px 26px -18px rgba(0,0,0,0.6); }
+.pff-tile:hover .pff-news.link .pff-news-inner { left: -10px; right: -10px; top: -1px; padding: 9px 10px 11px; background: color-mix(in srgb, var(--pf-accent) 5%, #fff); border-color: color-mix(in srgb, var(--pf-accent) 30%, rgba(24,38,60,0.12)); box-shadow: 0 18px 34px -16px rgba(24,38,60,0.42); z-index: 30; }
+body.dark-mode .pff-tile:hover .pff-news.link .pff-news-inner { background: color-mix(in srgb, var(--pf-accent) 12%, #1c2735); border-color: color-mix(in srgb, var(--pf-accent) 35%, rgba(255,255,255,0.12)); box-shadow: 0 18px 34px -16px rgba(0,0,0,0.6); }
 .pff-tile:hover .pff-news.link .pff-news-t { -webkit-line-clamp: unset; }
-/* и убираем линию-разделитель под шапкой плитки на время разворота — иначе она
-   висела бы отдельной чертой над развёрнутым боксом (то самое задвоение) */
+/* линию-разделитель под шапкой плитки на время разворота убираем — иначе она
+   висела бы отдельной чертой над развёрнутой карточкой (задвоение линий) */
 .pff-tile:hover .pff-news.link { border-top-color: transparent; }
 .pff-news.link:hover .pff-news-t { color: var(--pf-accent); }
 .pff-news-t { font-size: 13.5px; font-weight: 600; color: #2b3a4d; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; transition: color 0.12s; }
 body.dark-mode .pff-news-t { color: #d2ddea; }
-.pff-news-m { display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: #94a3b8; margin-top: 1px; }
-.pff-news-m i { font-style: normal; color: var(--pf-accent); font-weight: 700; }
-.pff-news-go { width: 12px; height: 12px; margin-left: auto; color: var(--pf-accent); opacity: 0.75; flex-shrink: 0; }
+.pff-news-m { display: flex; align-items: center; gap: 7px; font-size: 11.5px; color: #94a3b8; margin-top: 2px; }
+/* источник — пилюлей: цветным жирным текстом он читался как продолжение заголовка */
+.pff-news-m i {
+    font-style: normal; font-size: 9.5px; font-weight: 800; letter-spacing: 0.04em;
+    padding: 2px 6px; border-radius: 5px; flex-shrink: 0;
+    color: var(--pf-accent); background: color-mix(in srgb, var(--pf-accent) 12%, transparent);
+}
+.pff-news-m em { font-style: normal; }
+.pff-news-go { width: 12px; height: 12px; margin-left: auto; color: var(--pf-accent); opacity: 0.75; flex-shrink: 0; transition: transform 0.16s, opacity 0.16s; }
+.pff-tile:hover .pff-news.link .pff-news-go { opacity: 1; transform: translate(2px, -2px); }
 .pff-news-load, .pff-news-none { font-size: 13.5px; color: #b6c0cc; font-style: italic; }
 .pff-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 34px 24px; }
 .pff-empty-art { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; background: linear-gradient(135deg, rgba(217,119,87,0.22), rgba(217,119,87,0.10)); color: #D97757; }
@@ -1319,12 +1328,15 @@ body.dark-mode .pf-fav .pff-news { border-color: rgba(24,38,60,0.06); }
 /* заголовок новости — всегда тёмный (не терракотовый), в т.ч. при наведении/разворачивании */
 .pf-fav .pff-news.link:hover .pff-news-t,
 .pf-fav .pff-news-t, body.dark-mode .pf-fav .pff-news-t { color: #2b3a4d; }
-/* граница разворота — ТОТ ЖЕ цвет, что у ховер-рамки плитки, иначе на стыке рамки
-   плитки и рамки развёрнутого блока новости виден «уступ» */
+/* Развёрнутая новость — чисто белая карточка в обеих темах: «Избранное» здесь всегда
+   светлое (см. правила выше), а на мозаичном фоне белое читается лучше подкрашенного.
+   Раньше цвет рамки был подобран под ховер-рамку плитки, чтобы на стыке не было
+   «уступа», — в R7 плитка стала плоской строкой без рамки, стыка нет, и рамка теперь
+   просто обводит всплывающую карточку. */
 .pf-fav .pff-tile:hover .pff-news.link .pff-news-inner,
 body.dark-mode .pf-fav .pff-tile:hover .pff-news.link .pff-news-inner {
-    background: #fff; border-color: rgba(217,119,87,0.5);
-    box-shadow: 0 16px 26px -18px rgba(122,49,26,0.4); }
+    background: #fff; border-color: rgba(217,119,87,0.35);
+    box-shadow: 0 18px 34px -16px rgba(122,49,26,0.38); }
 /* значок-стрелка ссылки — терракотовый и полностью непрозрачный (на белой плитке
    var(--pf-accent) уже даёт нужный цвет, убираем лишь приглушённость 0.75 из общего правила) */
 .pf-fav .pff-news-go { opacity: 1; }

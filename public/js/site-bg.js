@@ -114,7 +114,9 @@
         { id: 'gradient', name: 'Градиент',   sub: 'сине-лиловая дымка' },
         { id: 'calm',     name: 'Спокойный',  sub: 'нейтральная бумага' },
         { id: 'dune',     name: 'Дюны',       sub: 'тёплый песок' },
-        { id: 'aurora',   name: 'Аврора',     sub: 'холодные всполохи' }
+        { id: 'aurora',   name: 'Аврора',     sub: 'холодные всполохи' },
+        { id: 'dawn',     name: 'Рассвет',    sub: 'персик и барвинок' },
+        { id: 'marble',   name: 'Мрамор',     sub: 'камень с прожилками' }
     ];
     function bgValid(v) { return BG_LIST.some(function (b) { return b.id === v; }); }
     function bgGet() {
@@ -130,6 +132,10 @@
         // «Мозаика» вернулась после другого варианта — плитки могли не рисоваться ни разу
         // (бокс был занят заливкой, размер не менялся, drawIfResized() отсекал по lastW/lastH)
         if (cur === 'mosaic') { lastW = 0; lastH = 0; drawIfResized(); }
+        // фон меняют ДВА места — плавающий переключатель ниже и карточка в «Настройках».
+        // Событие держит их в согласии: кто бы ни переключил, отметку «выбрано»
+        // перерисуют оба, и им не нужно знать друг о друге.
+        try { document.dispatchEvent(new CustomEvent('site-bg-change', { detail: cur })); } catch (e) {}
     }
     function bgSet(v) {
         if (!bgValid(v) || v === bgGet()) return;
@@ -139,9 +145,76 @@
     // API для переключателя (js/portfolios.js — карточка «Фон страницы»)
     window.siteBg = { list: function () { return BG_LIST.slice(); }, get: bgGet, set: bgSet, apply: bgApply };
 
+    // --- плавающий переключатель фона (#bgFab) ---
+    // Круглая кнопка с волной над кнопкой темы; по наведению вверх раскрывается
+    // рейка образцов шириной в саму кнопку. Живёт здесь, а не в profile-menu.js,
+    // потому что это про фон: список вариантов и bgSet() уже рядом.
+    // Раскрытие — по наведению И по клику: наведение удобно мышью, клик нужен
+    // для клавиатуры и тач-экранов, где hover не наступает вовсе.
+    var fab = null;
+    function fabSync() {
+        if (!fab) return;
+        var cur = bgGet();
+        [].forEach.call(fab.querySelectorAll('.bgfab-sw'), function (el) {
+            var on = el.getAttribute('data-bg') === cur;
+            el.classList.toggle('on', on);
+            el.setAttribute('aria-checked', on ? 'true' : 'false');
+        });
+    }
+    function buildFab() {
+        if (document.getElementById('bgFab')) return;
+        var WAVE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<path d="M2 8c2.5-2.6 5-2.6 7.5 0S15 10.6 17.5 8 22 5.4 22 8"/>' +
+            '<path d="M2 16c2.5-2.6 5-2.6 7.5 0s5 2.6 7.5 0 4.5-2.6 4.5 0"/></svg>';
+        fab = document.createElement('div');
+        fab.id = 'bgFab';
+        fab.innerHTML =
+            '<div class="bgfab-rail" role="radiogroup" aria-label="Фон страницы">' +
+                BG_LIST.map(function (o) {
+                    // data-name → подпись .bgfab-tip слева от образца: варианты фона
+                    // намеренно неяркие, и кружком 30px они друг от друга не отличаются —
+                    // без названия выбирать пришлось бы наугад
+                    return '<button type="button" class="bgfab-sw sbgpv-' + o.id + '" role="radio" data-bg="' + o.id + '"' +
+                        ' data-name="' + o.name + '" aria-label="' + o.name + ' — ' + o.sub + '"></button>';
+                }).join('') +
+            '</div>' +
+            '<span class="bgfab-tip" aria-hidden="true"></span>' +
+            '<button type="button" class="bgfab-btn" aria-label="Фон страницы" title="Фон страницы">' + WAVE + '</button>';
+        document.body.appendChild(fab);
+        var tip = fab.querySelector('.bgfab-tip');
+        fab.addEventListener('click', function (e) {
+            var sw = e.target.closest('.bgfab-sw');
+            if (sw) { bgSet(sw.getAttribute('data-bg')); return; }
+            if (e.target.closest('.bgfab-btn')) fab.classList.toggle('open');
+        });
+        // подпись ведём по наведённому образцу: ставим её ровно напротив кружка.
+        // offsetTop, а НЕ getBoundingClientRect: на десктопе у body zoom 0.9, и rect
+        // отдаёт уже отмасштабированные px, а `top` в CSS — свои, до масштаба;
+        // подпись съезжала бы на те самые 10%. offsetTop живёт в тех же координатах, что CSS.
+        fab.addEventListener('mouseover', function (e) {
+            var sw = e.target.closest('.bgfab-sw'); if (!sw) return;
+            tip.textContent = sw.getAttribute('data-name');
+            tip.style.top = (sw.offsetTop + sw.offsetHeight / 2) + 'px';
+            tip.classList.add('on');
+        });
+        fab.addEventListener('mouseout', function (e) {
+            if (e.target.closest('.bgfab-sw')) tip.classList.remove('on');
+        });
+        fab.addEventListener('mouseleave', function () { tip.classList.remove('on'); });
+        document.addEventListener('pointerdown', function (e) {
+            if (fab.classList.contains('open') && !fab.contains(e.target)) fab.classList.remove('open');
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') fab.classList.remove('open');
+        });
+        fabSync();
+    }
+    document.addEventListener('site-bg-change', fabSync);
+
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function () { bgApply(); drawIfResized(); });
+        document.addEventListener('DOMContentLoaded', function () { buildFab(); bgApply(); drawIfResized(); });
     } else {
+        buildFab();
         bgApply();
         drawIfResized();
     }
