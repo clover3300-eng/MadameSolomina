@@ -2159,10 +2159,6 @@
     // делить не нужно (в отличие от призрака драга, что уходит в визуальные px).
     var pfdPackRaf = 0;
     var pfdRO = null;
-    // Минимальная ширина оверлея настроек портфеля. ДУБЛИРУЕТ нижнюю границу max() из
-    // portfolios-r7.css («ширина по своей карточке») — правите там, поправьте и здесь:
-    // по этому числу pfdPack решает, кому из блоков у правого края оверлей растить влево.
-    var PFD_MENU_MIN_W = 490;
     function pfdSpanOf(item, colW, gap) {
         var s = /span\s+(\d+)/.exec(item.style.gridColumn || '');
         if (s) return clamp(+s[1], 1, 12);
@@ -2215,11 +2211,6 @@
             for (var kk = bestC; kk < bestC + span; kk++) if (bottom[kk] > topY) topY = bottom[kk];
             item.style.gridColumn = (bestC + 1) + ' / span ' + span;
             item.style.gridRow = (Math.round(topY) + 1) + ' / span ' + h;
-            // Блок у ПРАВОГО края сетки И УЖЕ оверлея настроек: оверлею расти влево, иначе
-            // он вылез бы за сетку и потянул горизонтальную прокрутку. Блокам шире оверлея
-            // это не нужно — там оверлей ровно по блоку и никуда не торчит.
-            var wCss = span * colW + (span - 1) * gap;
-            item.classList.toggle('pfd-edge-r', bestC + span >= 12 && wCss < PFD_MENU_MIN_W);
             var nb = topY + h + gap;
             for (var k2 = bestC; k2 < bestC + span; k2++) bottom[k2] = nb;
         });
