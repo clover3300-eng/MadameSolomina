@@ -1334,6 +1334,7 @@
             fitBigSums();   // крупные суммы (до 100 млрд ₽) — уменьшаем кегль, а не переносим/распираем
             recordSnapshots();   // дневной снимок стоимости — для чипа «сегодня ±X ₽»
             pfdSchedulePack();   // masonry: подтянуть короткие блоки вверх в зазоры (no-op вне конструктора)
+            if (pfdCfgFor) pfdCfgRemountSoon(pfdCfgFor);   // открытый поповер настроек виджета переживает ре-рендер
             if (dashEdit) pflInitPreview();   // карточка раскладки открыта — показать превью выбранного блока
         } finally {
             rendering = false;
@@ -2531,8 +2532,11 @@
             } else if (b.defHidden) {
                 // корзина ВНУТРИ карточки (как у заметки .pfnt-trash): тихая иконка в правом-верхнем
                 // углу шапки, проявляется по hover; у виджетов с контролами в шапке место освобождает
-                // .pfd-rmable (padding-right), у KPI шапки нет — угол и так свободен
-                hideBtn = '<button class="pfd-cardrm" title="Удалить виджет (вернуть — «Добавить блок» в Конструкторе)" aria-label="Удалить виджет" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + NOTE_TRASH_SVG + '</button>';
+                // .pfd-rmable (padding-right), у KPI шапки нет — угол и так свободен.
+                // Рядом — шестерёнка настроек виджета (тема/высота, у графика — вид/период):
+                // открывает поповер .pfdcfg-pop прямо на блоке (см. pfdCfgOpen ниже)
+                hideBtn = '<button class="pfd-cardcfg" title="Настройки виджета" aria-label="Настройки виджета" onclick="pfdCfgOpen(\'' + jsArg(b.id) + '\', event)">' + PFDCFG_GEAR_SVG + '</button>' +
+                    '<button class="pfd-cardrm" title="Удалить виджет (вернуть — «Добавить блок» в Конструкторе)" aria-label="Удалить виджет" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + NOTE_TRASH_SVG + '</button>';
             } else if (b.id === 'cal' || b.id === 'sum') {
                 // глаз-скрытие — ТОЧНО как в карточке портфеля (.pfc-act), в правом-верхнем углу
                 // напротив заголовка, видимый постоянно (не в зазоре-бирке). Исключение: когда
@@ -3039,10 +3043,201 @@
         pfdScrollToBlock(id);
     };
 
+    // ====================================================================
+    //  ПОПОВЕР НАСТРОЕК ВИДЖЕТА — шестерёнка .pfd-cardcfg рядом с корзиной.
+    //  Открывает карточку .pfdcfg-pop прямо НА блоке: тема (светлая/тёмная/
+    //  стекло — как в пикере), высота S/M/L, у графика капитала — вид и период.
+    //  Изменения применяются сразу; тема и высота правятся живьём без ре-рендера
+    //  (поповер не мигает), смена вида графика меняет id блока (cap↔cap2) →
+    //  полный ре-рендер и повторный монтаж поповера без анимации входа.
+    // ====================================================================
+    var PFDCFG_GEAR_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
+    var PFDCFG_X_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+    var pfdCfgFor = null;   // id блока с открытым поповером настроек (null — закрыт)
+    // имя виджета для шапки поповера: каталог пикера + блоки вне каталога
+    function pfdCfgName(id) {
+        var w = pfl2ById(id === 'cap2' ? 'cap' : id);
+        if (w) return w.name;
+        return id === 'panel' ? 'Панель управления' : 'Виджет';
+    }
+    // текущий пресет высоты — те же значения, что пишет пикер (s=300 / l=560 / m=авто);
+    // произвольная высота от ручного ресайза не подсвечивает ни одну кнопку
+    function pfdCfgSizeOf(id) {
+        var h = +((dashCfg.h || {})[id]) || 0;
+        if (!h) return 'm';
+        return h === 300 ? 's' : h === 560 ? 'l' : '';
+    }
+    function pfdCfgHtml(id) {
+        var thm = (dashCfg.thm || {})[id];
+        thm = thm === 'dark' ? 'dark' : thm === 'glass' ? 'glass' : 'light';
+        var size = pfdCfgSizeOf(id);
+        var a = jsArg(id);
+        function thmBtn(v, label) {
+            return '<button type="button" class="pfdcfg-thm' + (thm === v ? ' on' : '') + '" onclick="pfdCfgSetThm(\'' + a + '\',\'' + v + '\')">' +
+                '<span class="pfdcfg-sw pfdcfg-sw-' + v + '"><i></i><em></em></span>' +
+                '<span class="pfdcfg-thm-n">' + label + '</span></button>';
+        }
+        function segBtn(fn, v, cur, label, title) {
+            return '<button type="button" class="pfdcfg-seg-b' + (cur === v ? ' on' : '') + '"' + (title ? ' title="' + title + '"' : '') +
+                ' onclick="' + fn + '(\'' + a + '\',\'' + v + '\')">' + label + '</button>';
+        }
+        var capExtra = '';
+        if (id === 'cap' || id === 'cap2') {
+            var view = id === 'cap2' ? 'bars' : 'line';
+            capExtra =
+                '<div class="pfdcfg-lbl">Вид графика</div>' +
+                '<div class="pfdcfg-seg">' +
+                    segBtn('pfdCfgSetView', 'line', view, 'Линия') +
+                    segBtn('pfdCfgSetView', 'bars', view, 'Столбцы') +
+                '</div>' +
+                '<div class="pfdcfg-lbl">Период</div>' +
+                '<div class="pfdcfg-seg">' +
+                    [['7', '7д'], ['30', '30д'], ['90', '3м'], ['365', 'Год'], ['all', 'Всё']].map(function (x) {
+                        return segBtn('pfdCfgSetPeriod', x[0], pfdCapRange, x[1]);
+                    }).join('') +
+                '</div>';
+        }
+        return '<div class="pfdcfg-head">' +
+                '<div class="pfdcfg-head-t"><span class="pfdcfg-k">Настройки виджета</span><b class="pfdcfg-t">' + esc(pfdCfgName(id)) + '</b></div>' +
+                '<button type="button" class="pfdcfg-x" onclick="pfdCfgClose()" aria-label="Закрыть">' + PFDCFG_X_SVG + '</button>' +
+            '</div>' +
+            '<div class="pfdcfg-lbl">Тема</div>' +
+            '<div class="pfdcfg-thms">' + thmBtn('light', 'Светлая') + thmBtn('dark', 'Тёмная') + thmBtn('glass', 'Стекло') + '</div>' +
+            '<div class="pfdcfg-lbl">Высота</div>' +
+            '<div class="pfdcfg-seg">' +
+                segBtn('pfdCfgSetSize', 's', size, 'S', 'Компактный · 300 px') +
+                segBtn('pfdCfgSetSize', 'm', size, 'M', 'Средний · по содержимому') +
+                segBtn('pfdCfgSetSize', 'l', size, 'L', 'Большой · 560 px') +
+            '</div>' +
+            capExtra +
+            '<div class="pfdcfg-hint">Изменения применяются сразу. Ширину и место меняйте перетаскиванием за кромки блока.</div>';
+    }
+    function pfdCfgMount(id, noAnim) {
+        if (document.querySelector('#pfWrap .pfdcfg-pop')) return;   // один поповер на страницу
+        var item = document.querySelector('#pfWrap .pfd-item[data-pfd="' + id + '"]');
+        if (!item) return;
+        var pop = document.createElement('div');
+        pop.className = 'pfdcfg-pop' + (noAnim ? ' no-anim' : '');
+        pop.innerHTML = pfdCfgHtml(id);
+        item.appendChild(pop);
+        item.classList.add('pfd-cfgopen');
+        pfdCfgFor = id;
+    }
+    // перерисовать содержимое открытого поповера на месте (подсветка активных кнопок)
+    function pfdCfgRepaint() {
+        var pop = document.querySelector('#pfWrap .pfdcfg-pop');
+        if (pop && pfdCfgFor) pop.innerHTML = pfdCfgHtml(pfdCfgFor);
+    }
+    // после полного ре-рендера поповер собирается заново на свежем блоке БЕЗ анимации
+    // входа (тот же принцип, что .pfo-anim-in/.no-anim). Рендер под view-transition
+    // асинхронный — опрашиваем DOM по кадрам, как pfdScrollToBlock.
+    function pfdCfgRemountSoon(id) {
+        pfdCfgFor = id;
+        var tries = 0;
+        (function poll() {
+            if (!document.querySelector('#pfWrap .pfdcfg-pop')) {
+                var item = document.querySelector('#pfWrap .pfd-item[data-pfd="' + id + '"]');
+                if (item) { pfdCfgMount(id, true); return; }
+            } else return;   // поповер уже на месте (повторный вызов) — выходим
+            if (tries++ < 60) requestAnimationFrame(poll);
+            else pfdCfgFor = null;   // блок исчез (скрыт/удалён) — считаем поповер закрытым
+        })();
+    }
+    window.pfdCfgOpen = function (id, ev) {
+        if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+        var open = document.querySelector('#pfWrap .pfdcfg-pop');
+        if (open && pfdCfgFor === id) { window.pfdCfgClose(); return; }   // повторный клик = закрыть
+        window.pfdCfgClose();
+        pfdCfgMount(id, false);
+    };
+    window.pfdCfgClose = function () {
+        document.querySelectorAll('#pfWrap .pfdcfg-pop').forEach(function (p) {
+            var it = p.closest('.pfd-item');
+            if (it) it.classList.remove('pfd-cfgopen');
+            p.remove();
+        });
+        pfdCfgFor = null;
+    };
+    // тема — живьём классом на блоке, без ре-рендера (тот же класс ставит pfdBodyHtml)
+    window.pfdCfgSetThm = function (id, v) {
+        pfdPushUndo();
+        if (v === 'dark' || v === 'glass') dashCfg.thm[id] = v; else delete dashCfg.thm[id];
+        saveDashCfg();
+        var item = document.querySelector('#pfWrap .pfd-item[data-pfd="' + id + '"]');
+        if (item) {
+            item.classList.toggle('pfd-thm-dark', v === 'dark');
+            item.classList.toggle('pfd-thm-glass', v === 'glass');
+        }
+        pfdCfgRepaint();
+        pfdUpdateSaveBtn();
+    };
+    // высота — пресеты пикера (s=300 / m=авто / l=560); стиль блока правим живьём и
+    // перепаковываем masonry — ровно как штатный ресайз за кромку
+    window.pfdCfgSetSize = function (id, s) {
+        pfdPushUndo();
+        var hMap = { s: 300, l: 560 };
+        if (s === 'm') delete dashCfg.h[id]; else dashCfg.h[id] = hMap[s];
+        saveDashCfg();
+        var item = document.querySelector('#pfWrap .pfd-item[data-pfd="' + id + '"]');
+        if (item) {
+            var h = +(dashCfg.h[id]) || 0;
+            var isPanel = id === 'panel';
+            item.style.height = (!isPanel && h) ? h + 'px' : '';
+            item.style.minHeight = (isPanel && h) ? h + 'px' : '';
+            item.classList.toggle('pfd-hset', !!h && !isPanel);
+            if (isPanel) item.classList.toggle('pfd-ptall', h >= PFD_PANEL_TALL);
+            pfdRepackSoon();
+        }
+        pfdCfgRepaint();
+        pfdUpdateSaveBtn();
+    };
+    // вид графика капитала: линия и столбцы — два разных блока (cap/cap2); настройки
+    // и место в сетке переезжают на новый id (как pfl2Add с real='cap2')
+    window.pfdCfgSetView = function (id, v) {
+        var to = v === 'bars' ? 'cap2' : 'cap';
+        if (id === to) return;
+        pfdPushUndo();
+        ['span', 'h', 'col', 'thm'].forEach(function (k) {
+            var m = dashCfg[k] = dashCfg[k] || {};
+            if (m[id] != null) m[to] = m[id];
+            delete m[id];
+        });
+        dashCfg.hidden[id] = 1; dashCfg.hidden[to] = 0;
+        var ord = dashCfg.order = (dashCfg.order || []).slice();
+        var jx = ord.indexOf(to);
+        if (jx >= 0) ord.splice(jx, 1);
+        var ix = ord.indexOf(id);
+        if (ix >= 0) ord.splice(ix, 1, to); else ord.push(to);
+        saveDashCfg();
+        pfdRerender();
+        pfdCfgRemountSoon(to);
+    };
+    // период графика — сессионная настройка, общая с пилюлями на самом виджете;
+    // pfdCapRepaint меняет карточку ВНУТРИ .pfd-body, поповер (сосед) не трогается
+    window.pfdCfgSetPeriod = function (id, p) {
+        if (pfdCapRange !== p) { pfdCapRange = p; pfdCapRepaint(); }
+        pfdCfgRepaint();
+    };
+    // клик-вне и Esc закрывают поповер; Esc гасим stopImmediatePropagation-ом, чтобы
+    // тот же Esc не долетал до обработчика выхода из режима правки (оба на document,
+    // этот зарегистрирован раньше по файлу — выполняется первым)
+    document.addEventListener('click', function (e) {
+        if (!pfdCfgFor) return;
+        var t = e.target;
+        if (!t || !t.closest || !t.isConnected) return;
+        if (t.closest('.pfdcfg-pop') || t.closest('.pfd-cardcfg')) return;
+        window.pfdCfgClose();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape' || !pfdCfgFor) return;
+        window.pfdCfgClose();
+        e.stopImmediatePropagation();
+    });
+
     // ---- undo: каждый шаг правки кладёт снимок раскладки, Cmd/Ctrl+Z возвращает ----
     // Стек живёт в памяти на сессию правки (вход в режим начинает новую).
     var pfdUndoStack = [];
-    function pfdCfgSnap() { return JSON.stringify({ order: dashCfg.order, span: dashCfg.span, h: dashCfg.h, hidden: dashCfg.hidden, col: dashCfg.col, notes: dashCfg.notes }); }
+    function pfdCfgSnap() { return JSON.stringify({ order: dashCfg.order, span: dashCfg.span, h: dashCfg.h, hidden: dashCfg.hidden, col: dashCfg.col, thm: dashCfg.thm, notes: dashCfg.notes }); }
     function pfdPushUndo() {
         pfdUndoStack.push(pfdCfgSnap());
         if (pfdUndoStack.length > 40) pfdUndoStack.shift();
@@ -3055,8 +3250,10 @@
         try {
             var o = JSON.parse(snap);
             dashCfg.order = o.order || []; dashCfg.span = o.span || {};
-            dashCfg.h = o.h || {}; dashCfg.hidden = o.hidden || {}; dashCfg.col = o.col || {}; dashCfg.notes = o.notes || [];
+            dashCfg.h = o.h || {}; dashCfg.hidden = o.hidden || {}; dashCfg.col = o.col || {};
+            dashCfg.thm = o.thm || {}; dashCfg.notes = o.notes || [];
         } catch (e) { return; }
+        window.pfdCfgClose();   // откат мог поменять/убрать блок с открытым поповером настроек
         saveDashCfg();
         pfdRerender();
     };
@@ -7552,7 +7749,7 @@
         var viewSeg = '<label class="pfl2-lbl">Вид графика</label>' + seg('view', [['line', PFD_ICO_CAP], ['bars', PFD_ICO_KPI]]);
         // «Стекло» — полупрозрачная поверхность с диагональным бликом, как у плиток тепловой
         // карты в «Рынке»: сквозь виджет просвечивает фон страницы
-        var themeSeg = '<label class="pfl2-lbl">Тема</label>' + seg('theme', [['light', '☀ Светлая'], ['dark', '☾ Тёмная'], ['glass', '◇ Стекло']]);
+        var themeSeg = '<label class="pfl2-lbl">Тема</label>' + seg('theme', [['light', 'Светлая'], ['dark', 'Тёмная'], ['glass', 'Стекло']]);
         var sizeSeg = '<label class="pfl2-lbl">Высота виджета</label>' + seg('size', [['s', 'S'], ['m', 'M'], ['l', 'L']]);
         // подпись, что настройки — этого виджета: в пачке выбранных их несколько,
         // и «Тема/Высота» без имени читались бы как общие для всех

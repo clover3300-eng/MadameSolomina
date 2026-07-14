@@ -830,7 +830,10 @@ body.dark-mode .dm-bars i { color: #aab6c8; }
 body.dark-mode .dm-news span { color: #aab6c8; }
 body.dark-mode .dm-news b { color: #e8eef7; }
 
-/* ============ 14. Пер-виджетная тёмная тема (настройка «Тема» в пикере) ============ */
+/* ============ 14. Пер-виджетная тёмная тема (настройка «Тема» в пикере) ============
+   Класс .pfd-thm-dark на блоке сетки (.pfd-item) зеркалит body.dark-mode-вид КАЖДОГО
+   семейства виджетов каталога — «Тёмная» выглядит одинаково при любой теме сайта.
+   Новые внутренности виджета → новое зеркало сюда. */
 .pfd-item.pfd-thm-dark .dash2-card {
     background: linear-gradient(150deg, #101826, #16202f);
     border-color: rgba(255, 255, 255, 0.09);
@@ -842,14 +845,115 @@ body.dark-mode .dm-news b { color: #e8eef7; }
 .pfd-item.pfd-thm-dark .pfyl-n, .pfd-item.pfd-thm-dark .pfop-sum { color: #f4f8fd; }
 .pfd-item.pfd-thm-dark .pf-ch-s, .pfd-item.pfd-thm-dark .pfcap-per,
 .pfd-item.pfd-thm-dark .pf-kpi-l, .pfd-item.pfd-thm-dark .pf-kpi-s { color: #8fa0b6; }
+.pfd-item.pfd-thm-dark .pf-ch-go { border-color: rgba(255,255,255,0.09); background: rgba(255,255,255,0.04); color: #cdd8e6; }
+.pfd-item.pfd-thm-dark .pf-ch-go:hover { background: rgba(255,255,255,0.12); color: #fff; }
 .pfd-item.pfd-thm-dark .pfcap-y { background: rgba(16, 24, 38, 0.75); color: #8fa0b6; }
+.pfd-item.pfd-thm-dark .pfcap-yt { color: #8fa0b6; }
 .pfd-item.pfd-thm-dark .pfcap-rb { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); color: #93a2b8; }
 .pfd-item.pfd-thm-dark .pfcap-rb.on { background: rgba(99, 102, 241, 0.22); border-color: rgba(129, 140, 248, 0.5); color: #c7d2fe; }
+.pfd-item.pfd-thm-dark .pfcap-empty-t { color: #f4f8fd; }
 .pfd-item.pfd-thm-dark .pfdv-row, .pfd-item.pfd-thm-dark .dm-chip { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.09); }
 .pfd-item.pfd-thm-dark .pfas-row, .pfd-item.pfd-thm-dark .pfop-row,
-.pfd-item.pfd-thm-dark .pfsn-row, .pfd-item.pfd-thm-dark .pfdv-prow { border-bottom-color: rgba(255, 255, 255, 0.08); }
+.pfd-item.pfd-thm-dark .pfsn-row, .pfd-item.pfd-thm-dark .pfdv-prow,
+.pfd-item.pfd-thm-dark .pfix-row, .pfd-item.pfd-thm-dark .pfpv-row { border-bottom-color: rgba(255, 255, 255, 0.08); }
 .pfd-item.pfd-thm-dark .pfas-nm, .pfd-item.pfd-thm-dark .pfop-id i,
-.pfd-item.pfd-thm-dark .pfdv-t i, .pfd-item.pfd-thm-dark .pfdv-pn { color: #8fa0b6; }
+.pfd-item.pfd-thm-dark .pfdv-t i { color: #8fa0b6; }
+.pfd-item.pfd-thm-dark .pfdv-pn { color: #e8eef7; }
+/* Список активов / Операции / Доходность — мелкие плашки и ховеры */
+.pfd-item.pfd-thm-dark .pfas-row:hover { background: rgba(255, 255, 255, 0.04); }
+.pfd-item.pfd-thm-dark .pfas-id i { background: rgba(255, 255, 255, 0.08); }
+.pfd-item.pfd-thm-dark .pfop-all { color: #a5b4fc; }
+.pfd-item.pfd-thm-dark .pfyl-barwrap { background: rgba(255, 255, 255, 0.08); }
+/* Рынок сейчас / Пассивный доход / Лидеры дня (бар-строки реюзают pfyl) */
+.pfd-item.pfd-thm-dark .pfix-t b, .pfd-item.pfd-thm-dark .pfmv-n b { color: #f4f8fd; }
+.pfd-item.pfd-thm-dark .pfix-v, .pfd-item.pfd-thm-dark .pfpv-row b { color: #e8eef7; }
+/* Распределение активов */
+.pfd-item.pfd-thm-dark .pfal-chip { background: #16213a; border-color: #2b3a55; color: #b6c4d8; }
+.pfd-item.pfd-thm-dark .pfal-chip:hover { border-color: #3a4c6d; color: #eaf1fb; }
+.pfd-item.pfd-thm-dark .pfal-chip.on { background: #eaf1fb; border-color: #eaf1fb; color: #0f172a; }
+.pfd-item.pfd-thm-dark .pfal-center b { color: #eaf0f8; }
+.pfd-item.pfd-thm-dark .pfal-lname { color: #b6c4d8; }
+.pfd-item.pfd-thm-dark .pfal-lval { color: #dce6f2; }
+.pfd-item.pfd-thm-dark .pfal-lpct { color: #eaf0f8; }
+.pfd-item.pfd-thm-dark .pfal-empty { color: #8fa2b8; }
+/* Карта рынка: тёмная подложка бокса; цвета плиток считает JS от темы САЙТА — не трогаем */
+.pfd-item.pfd-thm-dark .pfhm-box { background: #0b1220; }
+.pfd-item.pfd-thm-dark .pfhm-state { color: #64748b; }
+/* Новости по позициям */
+.pfd-item.pfd-thm-dark .pfnw-item { border-color: #212c40; background: #121a29; }
+.pfd-item.pfd-thm-dark .pfnw-item:hover { border-color: #33507e; background: #16233b; }
+.pfd-item.pfd-thm-dark .pfnw-item-tk { color: #e7eef7; }
+.pfd-item.pfd-thm-dark .pfnw-item-title { color: #c7d2e0; }
+.pfd-item.pfd-thm-dark .pfnw-item.is-none .pfnw-item-title { color: #64748b; }
+.pfd-item.pfd-thm-dark .pfnw-item-meta { color: #74839a; }
+.pfd-item.pfd-thm-dark .pfnw-item.link:hover .pfnw-item-news-inner { background: #16233b; border-color: #33507e; box-shadow: 0 16px 30px -16px rgba(0, 0, 0, 0.65); }
+.pfd-item.pfd-thm-dark .pfnw-pfdot { box-shadow: 0 0 0 1px rgba(11, 18, 32, 0.9); }
+.pfd-item.pfd-thm-dark .pfnw-empty { color: #8fa2b8; }
+.pfd-item.pfd-thm-dark .pfnw-pk { border-color: #27324a; background: #131c2b; color: #b9c6d6; }
+.pfd-item.pfd-thm-dark .pfnw-pk:hover { border-color: #34425c; color: #f4f8fd; }
+.pfd-item.pfd-thm-dark .pfnw-addinput { background: #0f1826; color: #e7eef7; }
+/* Календарь · месяц — дополнение к зеркалам §16 */
+.pfd-item.pfd-thm-dark .pfcm-tot b, .pfd-item.pfd-thm-dark .pfcm-s,
+.pfd-item.pfd-thm-dark .pfcm-day-h span, .pfd-item.pfd-thm-dark .pfcm-day-r b { color: #34d399; }
+.pfd-item.pfd-thm-dark .pfcm-d.today { box-shadow: inset 0 0 0 1.5px rgba(255,255,255,0.2); }
+.pfd-item.pfd-thm-dark .pfcm-d.today .pfcm-n,
+.pfd-item.pfd-thm-dark .pfcm-d.multi .pfcm-n { color: #f4f8fd; }
+.pfd-item.pfd-thm-dark .pfcm-d.one .pfcm-n,
+.pfd-item.pfd-thm-dark .pfcm-d.one .pfcm-s { color: color-mix(in srgb, var(--c) 55%, #e8eef7); }
+.pfd-item.pfd-thm-dark .pfcm-d.has.today, .pfd-item.pfd-thm-dark .pfcm-d.sel { box-shadow: inset 0 0 0 2px #fff; }
+.pfd-item.pfd-thm-dark .pfcm-arw:hover:not([disabled]) { background: rgba(255,255,255,0.1); color: #fff; }
+/* Календарь выплат · список (pfpc); id-префикс — светлые правила §8 тоже с #panel-portfolios */
+#panel-portfolios .pfd-item.pfd-thm-dark .pfpc-soon { background: rgba(255,255,255,0.06); }
+#panel-portfolios .pfd-item.pfd-thm-dark .pfpc-soon-l { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.12); color: #b7c2d3; }
+#panel-portfolios .pfd-item.pfd-thm-dark .pfpc-soon-v { color: #34d399; background: rgba(52, 211, 153, 0.12); border-color: rgba(52, 211, 153, 0.24); }
+#panel-portfolios .pfd-item.pfd-thm-dark .pfpc-cnt { color: #cdd8e6; background: rgba(255,255,255,0.1); }
+#panel-portfolios .pfd-item.pfd-thm-dark .pfpc-mon span { color: #34d399; }
+#panel-portfolios .pfd-item.pfd-thm-dark .pfpc-row { background: rgba(255,255,255,0.025); border-color: rgba(255,255,255,0.05); }
+#panel-portfolios .pfd-item.pfd-thm-dark .pfpc-day { background: rgba(255,255,255,0.07); color: #f4f8fd; }
+#panel-portfolios .pfd-item.pfd-thm-dark .pfpc-day--pf { background: color-mix(in srgb, var(--c) 26%, transparent);
+    color: color-mix(in srgb, var(--c) 34%, #f4f8fd); }
+#panel-portfolios .pfd-item.pfd-thm-dark .pfpc-tk { color: #f4f8fd; }
+#panel-portfolios .pfd-item.pfd-thm-dark .pfpc-amt { color: #34d399; }
+#panel-portfolios .pfd-item.pfd-thm-dark .pfpc-more { border-color: rgba(255,255,255,0.14); color: #9fb0c4; }
+#panel-portfolios .pfd-item.pfd-thm-dark .pfpc-more:hover { background: rgba(255,255,255,0.05); color: #f4f8fd; }
+#panel-portfolios .pfd-item.pfd-thm-dark .pfpc-state-t { color: #f4f8fd; }
+/* Ставки рынка — плитки drt (светлая база в §7в тоже под #panel-portfolios) */
+#panel-portfolios .pfd-item.pfd-thm-dark .drt-tile { background: #141c27; border-color: rgba(255, 255, 255, 0.1); }
+#panel-portfolios .pfd-item.pfd-thm-dark .drt-v { color: #f4f8fd; }
+/* Избранное — тёплый тёмный вид (зеркало body.dark-mode-блока в portfolios.css;
+   id-префикс перебивает форс-светлые пары .pf-fav той же секции) */
+#panel-portfolios .pfd-item.pfd-thm-dark .pf-card2.pf-fav {
+    background: linear-gradient(172deg, #1e2430 0%, #221c20 62%, #271a1a 100%);
+    box-shadow: 0 16px 36px rgba(0,0,0,0.42); border-color: rgba(217,119,87,0.30);
+}
+#panel-portfolios .pfd-item.pfd-thm-dark .pf-fav .pf-ch-t { color: #f4f8fd; }
+#panel-portfolios .pfd-item.pfd-thm-dark .pf-fav .pf-ch-s { color: rgba(226,232,240,0.58); }
+#panel-portfolios .pfd-item.pfd-thm-dark .pf-fav .pff-info { background: rgba(255,255,255,0.045); border-color: rgba(255,255,255,0.09); color: #a9b6c6; }
+#panel-portfolios .pfd-item.pfd-thm-dark .pf-fav .pff-info svg { color: #D97757; }
+#panel-portfolios .pfd-item.pfd-thm-dark .pf-fav .pff-info:hover { background: #D97757; border-color: transparent; color: #fff; }
+#panel-portfolios .pfd-item.pfd-thm-dark .pf-fav .pff-info:hover svg { color: #fff; }
+#panel-portfolios .pfd-item.pfd-thm-dark .pf-fav .pff-sort { background: rgba(255,255,255,0.045); border-color: rgba(255,255,255,0.09); }
+#panel-portfolios .pfd-item.pfd-thm-dark .pf-fav .pff-sort-b { color: #9fb1c6; }
+#panel-portfolios .pfd-item.pfd-thm-dark .pf-fav .pff-sort-b:hover { color: #eef3f9; }
+#panel-portfolios .pfd-item.pfd-thm-dark .pf-fav .pff-sort-b.on { background: #D97757; color: #fff; box-shadow: 0 5px 14px rgba(217,119,87,0.32); }
+#panel-portfolios .pfd-item.pfd-thm-dark .pf-fav .pff-tile {
+    border-color: rgba(217,119,87,0.24); background: rgba(255,255,255,0.028);
+    box-shadow: 0 8px 18px -14px rgba(0,0,0,0.5); }
+#panel-portfolios .pfd-item.pfd-thm-dark .pf-fav .pff-tile:hover {
+    border-color: rgba(217,119,87,0.55); background: rgba(217,119,87,0.09); box-shadow: 0 14px 26px -14px rgba(0,0,0,0.6); }
+#panel-portfolios .pfd-item.pfd-thm-dark .pf-fav .pff-tk { color: #f4f8fd; }
+#panel-portfolios .pfd-item.pfd-thm-dark .pf-fav .pff-nm { color: #8f9db0; }
+#panel-portfolios .pfd-item.pfd-thm-dark .pf-fav .pff-pot.pos { color: #34d399; }
+#panel-portfolios .pfd-item.pfd-thm-dark .pf-fav .pff-pot.neg { color: #f87171; }
+#panel-portfolios .pfd-item.pfd-thm-dark .pf-fav .pff-news { border-top-color: rgba(255,255,255,0.08); }
+#panel-portfolios .pfd-item.pfd-thm-dark .pf-fav .pff-news-t,
+#panel-portfolios .pfd-item.pfd-thm-dark .pf-fav .pff-news.link:hover .pff-news-t { color: #d2ddea; }
+#panel-portfolios .pfd-item.pfd-thm-dark .pf-fav .pff-news-m { color: #8f9db0; }
+#panel-portfolios .pfd-item.pfd-thm-dark .pf-fav .pff-tile:hover .pff-news.link .pff-news-inner {
+    background: #241b1c; border-color: rgba(217,119,87,0.55);
+    box-shadow: 0 16px 26px -18px rgba(0,0,0,0.7); }
+#panel-portfolios .pfd-item.pfd-thm-dark .pf-fav .pff-empty-t { color: #f1f5f9; }
+#panel-portfolios .pfd-item.pfd-thm-dark .pf-fav .pff-empty-s { color: rgba(226,232,240,0.55); }
 
 /* ============ 15. Мелочи ============ */
 /* Семейство/вес заголовков задаёт ОБЩИЙ список в typography-tokens.css (сериф 400) —
@@ -1056,12 +1160,14 @@ body.dark-mode .pfl-opt-go { background: rgba(255,255,255,0.06); color: #8fa0b6;
 }
 /* блик — тот же приём и та же геометрия, что у .mh-tile::before */
 .pfd-item.pfd-thm-glass > .pfd-body > .pf-card2::before,
+.pfd-item.pfd-thm-glass > .pfd-body > * > .pf-card2::before,
 .pfd-item.pfd-thm-glass > .pfd-body > .dash2-card::before {
     content: ''; position: absolute; top: 0; left: -65%; width: 55%; height: 100%;
     z-index: 3; pointer-events: none; transform: skewX(-18deg); opacity: 0;
     background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.5), transparent);
 }
 .pfd-item.pfd-thm-glass:hover > .pfd-body > .pf-card2::before,
+.pfd-item.pfd-thm-glass:hover > .pfd-body > * > .pf-card2::before,
 .pfd-item.pfd-thm-glass:hover > .pfd-body > .dash2-card::before { animation: pfdSheen 0.72s ease; }
 @keyframes pfdSheen { 0% { left: -65%; opacity: 0; } 28% { opacity: 0.75; } 100% { left: 135%; opacity: 0; } }
 /* содержимое — поверх блика */
@@ -1071,6 +1177,20 @@ body.dark-mode .pfl-opt-go { background: rgba(255,255,255,0.06); color: #8fa0b6;
    гасим — иначе они лепят непрозрачные пятна поверх прозрачной карточки */
 .pfd-item.pfd-thm-glass .pfcap-kpi, .pfd-item.pfd-thm-glass .pfx-well {
     background: rgba(255, 255, 255, 0.4); border-color: rgba(255, 255, 255, 0.6);
+}
+/* …то же для непрозрачных строк-плашек остальных виджетов (дивиденды, новости,
+   календарь-список, плитки ставок и «Избранного») — сквозь них должен сквозить фон */
+.pfd-item.pfd-thm-glass .pfdv-row, .pfd-item.pfd-thm-glass .pfnw-item,
+#panel-portfolios .pfd-item.pfd-thm-glass .pfpc-row,
+#panel-portfolios .pfd-item.pfd-thm-glass .drt-tile,
+#panel-portfolios .pfd-item.pfd-thm-glass .pf-fav .pff-tile {
+    background: rgba(255, 255, 255, 0.42); border-color: rgba(255, 255, 255, 0.65);
+}
+body.dark-mode .pfd-item.pfd-thm-glass .pfdv-row, body.dark-mode .pfd-item.pfd-thm-glass .pfnw-item,
+body.dark-mode #panel-portfolios .pfd-item.pfd-thm-glass .pfpc-row,
+body.dark-mode #panel-portfolios .pfd-item.pfd-thm-glass .drt-tile,
+body.dark-mode #panel-portfolios .pfd-item.pfd-thm-glass .pf-fav .pff-tile {
+    background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.12);
 }
 /* тёмная тема сайта: стекло становится дымчатым, а не молочным */
 body.dark-mode .pfd-item.pfd-thm-glass > .pfd-body > .pf-card2,
@@ -1107,3 +1227,129 @@ body.dark-mode .pfd-item.pfd-thm-glass > .pfd-body > .dash2-card::before {
     -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7);
 }
+
+/* ============ 19. Шестерёнка настроек виджета + поповер (.pfd-cardcfg / .pfdcfg-pop) ============
+   Шестерёнка живёт СЛЕВА от корзины .pfd-cardrm (та же тихая манера: без фона,
+   проявляется по hover блока), открывает карточку настроек прямо на виджете.
+   Тема/высота применяются мгновенно (см. pfdCfg* в portfolios.js). */
+.pfd-cardcfg {
+    position: absolute; top: 15px; right: 45px; z-index: 14;
+    width: 26px; height: 26px; border: 0; background: none; padding: 0; cursor: pointer; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center; color: #c3cdd9;
+    opacity: 0; pointer-events: none; transition: opacity 0.14s, color 0.12s, background 0.12s;
+}
+.pfd-item:hover .pfd-cardcfg, .pfd-cardcfg:focus-visible, .pfd-grid.editing .pfd-cardcfg,
+.pfd-item.pfd-cfgopen .pfd-cardcfg { opacity: 1; pointer-events: auto; }
+.pfd-cardcfg svg { width: 15px; height: 15px; }
+.pfd-cardcfg:hover, .pfd-item.pfd-cfgopen .pfd-cardcfg { color: #4453ef; background: rgba(68, 83, 239, 0.09); }
+/* пока поповер открыт — корзина рядом тоже видима (угол «в фокусе») */
+.pfd-item.pfd-cfgopen .pfd-cardrm { opacity: 1; pointer-events: auto; }
+/* виджеты с полноценной шапкой — на уровень заголовка, слева от их корзины */
+.pfd-item[data-pfd="cap"] .pfd-cardcfg,
+.pfd-item[data-pfd="cap2"] .pfd-cardcfg,
+.pfd-item[data-pfd="news"] .pfd-cardcfg,
+.pfd-item[data-pfd="alloc"] .pfd-cardcfg { top: 24px; right: 50px; }
+#panel-portfolios .pfd-item[data-pfd="heat"] .pfd-cardcfg { top: 21px; right: 174px; }
+/* в углу теперь ДВЕ кнопки — шапке нужно больше места справа (база 46px в portfolios.css) */
+.pfd-rmable > .pfd-body > .dash2-card > .pf-ch { padding-right: 78px; }
+/* тёмная тема сайта и тёмные/стеклянные виджеты: иконка чуть светлее, hover — индиго */
+body.dark-mode .pfd-cardcfg, .pfd-item.pfd-thm-dark .pfd-cardcfg { color: #5c6c82; }
+body.dark-mode .pfd-cardcfg:hover, body.dark-mode .pfd-item.pfd-cfgopen .pfd-cardcfg,
+.pfd-item.pfd-thm-dark .pfd-cardcfg:hover, .pfd-item.pfd-thm-dark.pfd-cfgopen .pfd-cardcfg {
+    color: #a5b4fc; background: rgba(129, 140, 248, 0.14);
+}
+
+/* ---- сам поповер: белая карточка в правом-верхнем углу блока ---- */
+.pfd-item.pfd-cfgopen { z-index: 45; }   /* поповер поверх соседних блоков сетки */
+.pfdcfg-pop {
+    position: absolute; top: 46px; right: 14px; z-index: 60;
+    width: 268px; box-sizing: border-box; padding: 14px 14px 12px;
+    background: #fff; border: 1px solid #e7ecf3; border-radius: 16px;
+    box-shadow: 0 24px 48px -18px rgba(15, 23, 42, 0.35), 0 4px 14px -8px rgba(15, 23, 42, 0.14);
+    transform-origin: top right;
+    animation: pfdcfgIn 0.17s cubic-bezier(0.2, 0.9, 0.3, 1.25);
+}
+/* повторный монтаж после ре-рендера — без анимации входа (как .pfc-menu/.no-anim) */
+.pfdcfg-pop.no-anim { animation: none; }
+@keyframes pfdcfgIn { from { opacity: 0; transform: translateY(-6px) scale(0.96); } to { opacity: 1; transform: none; } }
+/* в режиме правки контент блоков заглушен pointer-events — поповеру клики нужны */
+.pfd-grid.editing .pfdcfg-pop { pointer-events: auto; }
+
+.pfdcfg-head { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 4px; }
+.pfdcfg-head-t { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.pfdcfg-k { font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: #9aa7b8; }
+.pfdcfg-t { font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 800; color: #0f172a; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pfdcfg-x {
+    width: 26px; height: 26px; flex-shrink: 0; border: 0; border-radius: 8px; cursor: pointer;
+    background: #f4f7fb; color: #7c8798; display: grid; place-items: center;
+    transition: background 0.12s, color 0.12s;
+}
+.pfdcfg-x:hover { background: #e9eef5; color: #1b2433; }
+.pfdcfg-x svg { width: 12px; height: 12px; }
+.pfdcfg-lbl { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: #9aa7b8; margin: 11px 0 6px; }
+
+/* тема — три мини-карточки со свотчами-эскизами (светлая / тёмная / стекло) */
+.pfdcfg-thms { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+.pfdcfg-thm {
+    display: flex; flex-direction: column; align-items: stretch; gap: 6px;
+    padding: 5px 5px 6px; border: 1.5px solid #e7ecf3; border-radius: 12px; background: #fff; cursor: pointer;
+    transition: border-color 0.13s, box-shadow 0.13s;
+}
+.pfdcfg-thm:hover { border-color: #c9d4e4; }
+.pfdcfg-thm.on { border-color: #4453ef; box-shadow: 0 0 0 1px #4453ef; }
+.pfdcfg-thm-n { font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 700; color: #64748b; text-align: center; }
+.pfdcfg-thm.on .pfdcfg-thm-n { color: #4453ef; }
+/* свотч — эскиз карточки: строка-заголовок + строка-текст на своей поверхности */
+.pfdcfg-sw { position: relative; height: 36px; border-radius: 8px; overflow: hidden; border: 1px solid rgba(24, 38, 60, 0.08); }
+.pfdcfg-sw i, .pfdcfg-sw em { position: absolute; left: 8px; border-radius: 99px; }
+.pfdcfg-sw i { top: 9px; width: 46%; height: 4px; }
+.pfdcfg-sw em { top: 19px; width: 68%; height: 3px; opacity: 0.55; }
+.pfdcfg-sw-light { background: linear-gradient(160deg, #ffffff, #f2f6fb); }
+.pfdcfg-sw-light i { background: #1b2433; }
+.pfdcfg-sw-light em { background: #94a3b8; }
+.pfdcfg-sw-dark { background: linear-gradient(150deg, #101826, #1c2940); border-color: rgba(16, 24, 38, 0.55); }
+.pfdcfg-sw-dark i { background: #f4f8fd; }
+.pfdcfg-sw-dark em { background: #7d8da6; }
+/* «стекло»: тон фона вкладок + полупрозрачная плашка и диагональный блик, как у .dm-glass */
+.pfdcfg-sw-glass { background: linear-gradient(135deg, #dfe9f5, #c9d8ea); }
+.pfdcfg-sw-glass::before {
+    content: ''; position: absolute; inset: 4px 5px; border-radius: 6px;
+    background: rgba(255, 255, 255, 0.55); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75);
+}
+.pfdcfg-sw-glass::after {
+    content: ''; position: absolute; top: 0; left: 26%; width: 24%; height: 100%;
+    transform: skewX(-18deg);
+    background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+}
+.pfdcfg-sw-glass i { background: #1b2433; left: 11px; top: 10px; width: 40%; z-index: 1; }
+.pfdcfg-sw-glass em { background: #5b6a7e; left: 11px; top: 19px; width: 56%; z-index: 1; }
+
+/* сегменты (высота, вид графика, период) — в манере .pfl2-seg */
+.pfdcfg-seg { display: flex; gap: 6px; }
+.pfdcfg-seg-b {
+    flex: 1 1 0; min-width: 0; padding: 7px 2px; border: 1.5px solid #e7ecf3; border-radius: 10px;
+    background: #fff; cursor: pointer; text-align: center;
+    font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700; color: #64748b;
+    transition: border-color 0.13s, background 0.13s, color 0.13s;
+}
+.pfdcfg-seg-b:hover { border-color: #c9d4e4; color: #1b2433; }
+.pfdcfg-seg-b.on { border-color: #4453ef; background: rgba(68, 83, 239, 0.07); color: #4453ef; }
+.pfdcfg-hint {
+    margin-top: 12px; padding-top: 9px; border-top: 1px dashed #e7ecf3;
+    font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 600; line-height: 1.45; color: #9aa7b8;
+}
+
+/* тёмная тема сайта */
+body.dark-mode .pfdcfg-pop { background: #131c2e; border-color: #26324c; box-shadow: 0 24px 48px -18px rgba(0, 0, 0, 0.65), 0 4px 14px -8px rgba(0, 0, 0, 0.4); }
+body.dark-mode .pfdcfg-t { color: #e8eef7; }
+body.dark-mode .pfdcfg-x { background: rgba(255, 255, 255, 0.06); color: #a9b6c6; }
+body.dark-mode .pfdcfg-x:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+body.dark-mode .pfdcfg-thm { background: #131c2e; border-color: #26324c; }
+body.dark-mode .pfdcfg-thm:hover { border-color: #3a4c6d; }
+body.dark-mode .pfdcfg-thm.on { border-color: #818cf8; box-shadow: 0 0 0 1px #818cf8; }
+body.dark-mode .pfdcfg-thm-n { color: #93a2b8; }
+body.dark-mode .pfdcfg-thm.on .pfdcfg-thm-n { color: #c7d2fe; }
+body.dark-mode .pfdcfg-seg-b { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.12); color: #cbd6e4; }
+body.dark-mode .pfdcfg-seg-b:hover { border-color: rgba(255, 255, 255, 0.24); color: #f4f8fd; }
+body.dark-mode .pfdcfg-seg-b.on { background: rgba(99, 102, 241, 0.2); border-color: rgba(129, 140, 248, 0.5); color: #c7d2fe; }
+body.dark-mode .pfdcfg-hint { border-top-color: rgba(255, 255, 255, 0.1); color: #7f8ea3; }
