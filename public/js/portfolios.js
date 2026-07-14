@@ -2640,51 +2640,109 @@
     }
     // ---- поповер раскладки (иконка рядом с «Добавить виджет»): базовая/индивидуальная/сохранить.
     // Наполняется из updateLayoutBtn при каждом ре-рендере — состояние всегда актуально.
+    // Раскладку можно ВЗЯТЬ из трёх мест — базовая, своя сохранённая, общий пресет. Раньше
+    // каждое рисовалось по-своему (кнопка / кнопка / карточки с эскизом), и нигде не было
+    // видно, что применено ПРЯМО СЕЙЧАС. Теперь это ОДИН список одинаковых строк
+    // (эскиз + имя + пояснение + отметка «сейчас»), а сверху — строка состояния.
+    // Снимок базовой для текущего числа портфелей: своя (задал админ) или системная.
+    function pfBaseSnapNow() {
+        var base = pfBaseFor(visibleItems().length);
+        if (base) return pfPresetInstantiate(base);
+        var std = pfdStandardCfg();
+        return { order: std.order, span: std.span, h: {}, hidden: Object.assign({}, std.hidden || {}),
+            col: std.col, allocPf: 'all' };
+    }
+    // Что применено сейчас: сравниваем СТРУКТУРНУЮ подпись (без заметок — они личные и
+    // в пресет не входят). Ничего не совпало → пользователь сам подвинул блоки.
+    function pfLayoutActive() {
+        var cur;
+        try { cur = pfStructSig(dashCfg); } catch (e) { return { k: 'custom' }; }
+        try { if (pfStructSig(pfBaseSnapNow()) === cur) return { k: 'base' }; } catch (e) {}
+        if (dashCfg.saved) { try { if (pfStructSig(dashCfg.saved) === cur) return { k: 'saved' }; } catch (e) {} }
+        for (var i = 0; i < pfPresetList.length; i++) {
+            if (pfPresetActive(pfPresetList[i])) return { k: 'preset', id: pfPresetList[i].id, name: pfPresetList[i].name };
+        }
+        return { k: 'custom' };
+    }
+    // строка-вариант: эскиз + имя + пояснение + отметка. Одинаковая для базовой,
+    // сохранённой и пресетов — выбор читается как выбор, а не как три разные кнопки.
+    function pfLayoutOptHtml(o) {
+        // эскиз строим по ПОРТАТИВНОМУ снимку: pfPresetThumbSvg подписывает карточки
+        // портфелей позиционно (П1, П2…) и реальные id ему не по зубам
+        var thumb = '';
+        try { thumb = pfPresetThumbSvg(o.portable ? o.snap : pfPresetTemplate(o.snap)); } catch (e) {}
+        return '<div class="pfl-opt' + (o.active ? ' active' : '') + '">' +
+            '<button type="button" class="pfl-opt-card" onclick="' + o.action + '" title="' + attr(o.title || '') + '">' +
+                '<span class="pfl-opt-thumb">' + (thumb || '<span class="pfl-opt-nothumb">' + PFDGRID_SVG + '</span>') + '</span>' +
+                '<span class="pfl-opt-cap"><b>' + esc(o.name) + '</b><i>' + esc(o.sub) + '</i></span>' +
+                (o.active ? '<span class="pfl-opt-now">' + CHECK_SVG + 'сейчас</span>'
+                          : '<span class="pfl-opt-go">применить</span>') +
+            '</button>' + (o.extra || '') +
+        '</div>';
+    }
     function pfLayoutCfgPopHtml() {
         var saved = pfdLayoutSaved();
         var admin = pfIsAdmin();
         var count = visibleItems().length;
         var hasBase = !!pfBaseFor(count);
-        var PIN_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="17" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"/></svg>';
+        var act = pfLayoutActive();
         var pfW = plural(count, 'портфель', 'портфеля', 'портфелей');
-        var html = '<div class="pfl-cfg-h">Раскладка</div>' +
-            '<div class="pfl-cfg-baserow">' +
-                '<button type="button" class="pfl-cfg-item" onclick="pfLayoutReset()" title="Вернуть базовую раскладку для ' + count + ' ' + pfW + '">' + PFDGRID_SVG +
-                    '<span><b>Базовая</b><i>' + (hasBase ? 'своя · ' : 'стандартная · ') + count + ' ' + pfW + '</i></span></button>' +
-                (admin ? '<button type="button" class="pfl-cfg-mini" onclick="pfSetBasePreset()" title="Сделать текущую раскладку базовой для ' + count + ' ' + pfW + ' (для всех)" aria-label="Сделать базовой">' + PIN_IC + '</button>' : '') +
-                (admin && hasBase ? '<button type="button" class="pfl-cfg-mini" onclick="pfResetBasePreset()" title="Сбросить базовую для ' + count + ' ' + pfW + ' к системной" aria-label="Сбросить базовую">' + UNDO_SVG + '</button>' : '') +
-            '</div>' +
-            (dashCfg.saved
-                ? '<button type="button" class="pfl-cfg-item" onclick="pfLayoutRestoreSaved()">' + UNDO_SVG +
-                    '<span><b>Индивидуальная</b><i>ваша сохранённая раскладка</i></span></button>'
-                : '');
-        // ---- готовые пресеты: задаёт админ, выбирают все ----
-        html += '<div class="pfl-cfg-sep"></div><div class="pfl-cfg-h">Готовые пресеты</div>';
-        if (pfPresetList.length) {
-            html += '<div class="pfl-cfg-list">' + pfPresetList.map(function (p) {
-                var act = pfPresetActive(p);
-                return '<div class="pfl-cfg-preset' + (act ? ' active' : '') + '">' +
-                    '<button type="button" class="pfl-cfg-preset-card" onclick="pfApplyPreset(\'' + esc(p.id) + '\')" title="Применить пресет ко всей раскладке">' +
-                        '<span class="pfl-cfg-thumb">' + pfPresetThumbSvg(p.snap) + '</span>' +
-                        '<span class="pfl-cfg-preset-cap"><b>' + esc(p.name || 'Пресет') + '</b>' +
-                            (act ? '<i class="pfl-cfg-badge">активен</i>' : '<i class="pfl-cfg-apply">применить</i>') + '</span>' +
-                    '</button>' +
-                    (admin ? '<button type="button" class="pfl-cfg-del" onclick="pfDeletePreset(\'' + esc(p.id) + '\', event)" title="Удалить пресет у всех" aria-label="Удалить">' + XMARK_SVG + '</button>' : '') +
-                '</div>';
-            }).join('') + '</div>';
-        } else {
-            html += '<div class="pfl-cfg-empty">' + (admin ? 'Соберите раскладку и сохраните её как пресет — он появится у всех.' : 'Пресетов пока нет.') + '</div>';
+        var PIN_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="17" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"/></svg>';
+
+        // ---- строка состояния: что применено и сохранено ли ----
+        var actName = act.k === 'base' ? (hasBase ? 'Базовая' : 'Стандартная')
+            : act.k === 'saved' ? 'Ваша сохранённая'
+            : act.k === 'preset' ? ('Пресет «' + (act.name || 'без имени') + '»')
+            : 'Изменённая вручную';
+        var actSub = act.k === 'custom'
+            ? (saved ? 'совпадает с сохранённой' : 'не сохранена — кнопка внизу')
+            : (saved ? 'сохранена' : 'не сохранена');
+        var html = '<div class="pfl-cfg-now' + (act.k === 'custom' && !saved ? ' warn' : '') + '">' +
+            '<i>Сейчас применено</i><b>' + esc(actName) + '</b><span>' + esc(actSub) + '</span></div>';
+
+        // ---- ЕДИНЫЙ список вариантов ----
+        html += '<div class="pfl-cfg-h">Выбрать раскладку</div><div class="pfl-cfg-list">';
+        html += pfLayoutOptHtml({
+            name: hasBase ? 'Базовая' : 'Стандартная',
+            sub: (hasBase ? 'задана администратором' : 'вид по умолчанию') + ' · ' + count + ' ' + pfW,
+            snap: pfBaseSnapNow(), active: act.k === 'base', action: 'pfLayoutReset()',
+            title: 'Вернуть базовую раскладку для ' + count + ' ' + pfW,
+            extra: admin ? '<div class="pfl-opt-adm">' +
+                '<button type="button" class="pfl-cfg-mini" onclick="pfSetBasePreset()" title="Сделать текущую раскладку базовой для ' + count + ' ' + pfW + ' (для всех)" aria-label="Сделать базовой">' + PIN_IC + '</button>' +
+                (hasBase ? '<button type="button" class="pfl-cfg-mini" onclick="pfResetBasePreset()" title="Сбросить базовую для ' + count + ' ' + pfW + ' к системной" aria-label="Сбросить базовую">' + UNDO_SVG + '</button>' : '') +
+            '</div>' : ''
+        });
+        if (dashCfg.saved) {
+            html += pfLayoutOptHtml({
+                name: 'Ваша сохранённая', sub: 'та, что вы закрепили за собой',
+                snap: dashCfg.saved, active: act.k === 'saved', action: 'pfLayoutRestoreSaved()',
+                title: 'Откатить к вашей сохранённой раскладке'
+            });
         }
-        if (admin) {
-            html += '<button type="button" class="pfl-cfg-item add" onclick="pfSaveAsPreset()" title="Сделать текущую раскладку общим пресетом">' + PFD_PLUS_SVG +
-                '<span><b>Сохранить как пресет</b><i>для всех пользователей</i></span></button>';
+        pfPresetList.forEach(function (p) {
+            html += pfLayoutOptHtml({
+                name: p.name || 'Пресет', sub: 'общий пресет', portable: true,
+                snap: p.snap, active: act.k === 'preset' && act.id === p.id,
+                action: 'pfApplyPreset(\'' + esc(p.id) + '\')', title: 'Применить пресет ко всей раскладке',
+                extra: admin ? '<button type="button" class="pfl-cfg-del" onclick="pfDeletePreset(\'' + esc(p.id) + '\', event)" title="Удалить пресет у всех" aria-label="Удалить">' + XMARK_SVG + '</button>' : ''
+            });
+        });
+        html += '</div>';
+        if (!dashCfg.saved && !pfPresetList.length) {
+            html += '<div class="pfl-cfg-empty">Других вариантов пока нет: подвиньте блоки и сохраните вид — он появится здесь.</div>';
         }
+
+        // ---- личное сохранение: главное действие, отдельной секцией ----
+        html += '<div class="pfl-cfg-sep"></div><div class="pfl-cfg-h">Ваша раскладка</div>' +
+            '<button type="button" class="pfl-cfg-item primary' + (saved ? ' done' : '') + '" onclick="pfLayoutSave()" title="' +
+                (saved ? 'Текущий вид уже сохранён' : 'Закрепить текущую раскладку за собой') + '">' + CHECK_SVG +
+                '<span><b>' + (saved ? 'Сохранено' : 'Сохранить текущий вид') + '</b>' +
+                '<i>' + (saved ? 'к нему можно вернуться в любой момент' : 'закрепить за собой — переживёт перезагрузку') + '</i></span></button>' +
+            (admin ? '<button type="button" class="pfl-cfg-item add" onclick="pfSaveAsPreset()" title="Сделать текущую раскладку общим пресетом">' + PFD_PLUS_SVG +
+                '<span><b>Сохранить как пресет</b><i>появится у всех пользователей</i></span></button>' : '');
+
         // ---- отображение карточек: скругление углов виджетов (R7) ----
         html += '<div class="pfl-cfg-sep"></div><div class="pfl-cfg-h">Отображение карточек</div>' + pfxCornerRowHtml(false);
-        // ---- личное сохранение ----
-        html += '<div class="pfl-cfg-sep"></div>' +
-            '<button type="button" class="pfl-cfg-item primary' + (saved ? ' done' : '') + '" onclick="pfLayoutSave()">' + CHECK_SVG +
-                '<span><b>' + (saved ? 'Сохранено' : 'Сохранить текущую раскладку') + '</b></span></button>';
         return html;
     }
     window.pfLayoutCfgPopHtml = pfLayoutCfgPopHtml;

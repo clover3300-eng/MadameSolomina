@@ -975,3 +975,64 @@ body.dark-mode .pfcm-tot b, body.dark-mode .pfcm-s, body.dark-mode .pfcm-day-h s
 .dm-dark .dm-cm-h b { color: #e8eef7; }
 .dm-dark .dm-cm-d { color: #7f8ea3; }
 .dm-dark .dm-cm-d.p-m { color: #e8eef7; }
+
+/* ============ 17. Поповер раскладки: единый список вариантов (.pfl-opt) ============
+   Базовая / своя сохранённая / общие пресеты — ОДИН вид строки: эскиз + имя +
+   пояснение + отметка «сейчас». Раньше это были три разных контрола, и что
+   применено прямо сейчас — не читалось вовсе. */
+.pfl-cfg-now {
+    display: flex; flex-direction: column; gap: 1px;
+    margin: 2px 2px 8px; padding: 9px 11px 10px; border-radius: 11px;
+    background: #f4f7fb; border: 1px solid #e7ecf3;
+}
+.pfl-cfg-now i { font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: #9aa7b8; font-style: normal; }
+.pfl-cfg-now b { font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 800; color: #0f172a; letter-spacing: -0.01em; }
+.pfl-cfg-now span { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: #7c8798; }
+/* вид изменён и НЕ сохранён — единственное место, где стоит подсветить */
+.pfl-cfg-now.warn { background: #fff8ed; border-color: #f6e0bd; }
+.pfl-cfg-now.warn span { color: #b47512; }
+
+.pfl-opt { position: relative; }
+.pfl-opt-card {
+    display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; cursor: pointer;
+    padding: 8px; border: 1.5px solid #e7ecf3; border-radius: 12px; background: #fff;
+    transition: border-color 0.13s, background 0.13s, box-shadow 0.13s;
+}
+.pfl-opt-card:hover { border-color: #c9d4e4; box-shadow: 0 8px 20px -14px rgba(15, 23, 42, 0.4); }
+.pfl-opt.active .pfl-opt-card { border-color: #4453ef; background: #fdfdff; box-shadow: 0 0 0 1px #4453ef; }
+.pfl-opt-thumb {
+    flex-shrink: 0; width: 74px; height: 52px; border-radius: 7px; overflow: hidden;
+    background: #f4f7fb; display: grid; place-items: center; padding: 3px; box-sizing: border-box;
+}
+.pfl-opt-thumb .pfl-thumb-svg { width: 100%; height: 100%; }
+.pfl-opt-nothumb svg { width: 18px; height: 18px; color: #a5b0be; }
+.pfl-opt-cap { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pfl-opt-cap b { font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 800; color: #0f172a; letter-spacing: -0.01em;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pfl-opt-cap i { font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 600; font-style: normal; color: #8b97a8; line-height: 1.3; }
+/* отметка «сейчас» / приглашение «применить» — на одном месте, чтобы строки читались столбцом */
+.pfl-opt-now, .pfl-opt-go {
+    flex-shrink: 0; align-self: center; font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 800;
+    letter-spacing: 0.04em; text-transform: uppercase; padding: 4px 8px; border-radius: 999px;
+}
+.pfl-opt-now { display: inline-flex; align-items: center; gap: 4px; background: #4453ef; color: #fff; }
+.pfl-opt-now svg { width: 10px; height: 10px; }
+.pfl-opt-go { color: #9aa7b8; background: #f4f7fb; opacity: 0; transition: opacity 0.13s; }
+.pfl-opt-card:hover .pfl-opt-go { opacity: 1; }
+/* мини-кнопки админа и удаление пресета — поверх строки, проявляются по наведению */
+.pfl-opt-adm { position: absolute; right: 6px; bottom: 6px; display: flex; gap: 2px; opacity: 0; transition: opacity 0.13s; }
+.pfl-opt:hover .pfl-opt-adm { opacity: 1; }
+.pfl-opt > .pfl-cfg-del { position: absolute; right: 6px; top: 6px; opacity: 0; transition: opacity 0.13s; }
+.pfl-opt:hover > .pfl-cfg-del { opacity: 1; }
+/* пояснение к «Сохранить» — вторая строка внутри пункта */
+.pfl-cfg-item.primary i { color: #8b97a8; }
+
+body.dark-mode .pfl-cfg-now { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.09); }
+body.dark-mode .pfl-cfg-now b { color: #e8eef7; }
+body.dark-mode .pfl-cfg-now.warn { background: rgba(180, 117, 18, 0.14); border-color: rgba(246, 224, 189, 0.24); }
+body.dark-mode .pfl-cfg-now.warn span { color: #e8b765; }
+body.dark-mode .pfl-opt-card { background: #131c2e; border-color: #26324c; }
+body.dark-mode .pfl-opt.active .pfl-opt-card { background: #16203a; }
+body.dark-mode .pfl-opt-cap b { color: #e8eef7; }
+body.dark-mode .pfl-opt-thumb { background: rgba(255,255,255,0.04); }
+body.dark-mode .pfl-opt-go { background: rgba(255,255,255,0.06); color: #8fa0b6; }
