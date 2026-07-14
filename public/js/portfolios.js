@@ -1391,9 +1391,15 @@
     function tickLive() {
         [['imoex', 'val-imoex', 'dyn-imoex'], ['usd', 'val-usdrub', 'dyn-usdrub'], ['btc', 'val-btc', 'dyn-btc']].forEach(function (p) {
             var v = dq('tbmk-v-' + p[0]), c = dq('tbmk-c-' + p[0]), sv = dq(p[1]), sd = dq(p[2]);
-            if (v && sv) { var s = (sv.textContent || '').trim(); if (s) v.textContent = s; }
-            if (c && sd) { c.textContent = (sd.textContent || '').trim();
-                c.className = 'tbmk-c ' + (sd.classList.contains('negative') ? 'neg' : (sd.classList.contains('positive') ? 'pos' : 'flat')); }
+            var s = sv ? (sv.textContent || '').trim() : '';
+            var d = sd ? (sd.textContent || '').trim() : '';
+            var cls = sd ? (sd.classList.contains('negative') ? 'neg' : (sd.classList.contains('positive') ? 'pos' : 'flat')) : 'flat';
+            if (v && s) v.textContent = s;
+            if (c && sd) { c.textContent = d; c.className = 'tbmk-c ' + cls; }
+            // виджет «Рынок сейчас» (pfwIdxHtml) — те же значения в его строки
+            var wv = dq('pfxidx-v-' + p[0]), wc = dq('pfxidx-c-' + p[0]);
+            if (wv && s) wv.textContent = s;
+            if (wc && sd) { wc.textContent = d; wc.className = 'pfix-c ' + cls; }
         });
     }
     function ensureLiveTick() { if (liveTimer) return; liveTimer = setInterval(function () {
@@ -1709,7 +1715,7 @@
         // только когда он валиден и раньше конца, иначе это обычный однодневный срок.
         var dueStart = (typeof n.dueStart === 'number' && isFinite(n.dueStart) && due != null && n.dueStart < due) ? n.dueStart : null;
         var name = (typeof n.name === 'string') ? n.name.slice(0, 40) : '';   // редактируемый заголовок ('' → «Заметка»)
-        var fill = (n.fill === 'full') ? 'full' : 'edge';                     // заливка: кант слева | вся карточка
+        var fill = (n.fill === 'full' || n.fill === 'none') ? n.fill : 'edge';   // заливка: кант | вся карточка | без линии
         return { id: String(n.id || genId('n')), color: color, items: items, due: due, dueStart: dueStart, name: name, fill: fill };
     }
     var dashCfg = loadDashCfg();
@@ -1745,7 +1751,7 @@
             // их раскладка переживает «скрыть/показать».
             var known = { cal: 1, rates: 1, trades: 1, fav: 1, sum: 1, panel: 1,
                 'kpi:cap': 1, 'kpi:day': 1, 'kpi:next': 1, cap: 1, cap2: 1, heat: 1, news: 1, alloc: 1,
-                divs: 1, assets: 1, ops: 1, yield: 1, snaps: 1 };
+                divs: 1, assets: 1, ops: 1, yield: 1, snaps: 1, movers: 1, idx: 1, passive: 1, conc: 1 };
             store.items.forEach(function (p) { known['pf:' + p.id] = 1; });
             (dashCfg.notes || []).forEach(function (n) { known['note:' + n.id] = 1; });
             dashCfg.order = (dashCfg.order || []).filter(function (id) { return known[id]; });
@@ -2052,6 +2058,10 @@
         blocks.push({ id: 'ops', name: 'Последние операции', htmlFn: pfwOpsHtml, span: 4, defHidden: true });
         blocks.push({ id: 'yield', name: 'Доходность портфелей', htmlFn: pfwYieldHtml, span: 4, defHidden: true });
         blocks.push({ id: 'snaps', name: 'Снимки капитала', htmlFn: pfwSnapsHtml, span: 4, defHidden: true });
+        blocks.push({ id: 'movers', name: 'Лидеры дня', htmlFn: pfwMoversHtml, span: 4, defHidden: true });
+        blocks.push({ id: 'idx', name: 'Рынок сейчас', htmlFn: pfwIdxHtml, span: 4, defHidden: true });
+        blocks.push({ id: 'passive', name: 'Пассивный доход', htmlFn: pfwPassiveHtml, span: 4, defHidden: true });
+        blocks.push({ id: 'conc', name: 'Диверсификация', htmlFn: pfwConcHtml, span: 4, defHidden: true });
         // каждая заметка — свой блок note:<id> (мультизаметки, «+» плодит новые)
         (dashCfg.notes || []).forEach(function (nt) {
             blocks.push({ id: 'note:' + nt.id, name: 'Заметка', htmlFn: function () { return pfdNoteHtml(nt); }, span: 4, isNote: true });
@@ -2736,6 +2746,7 @@
             dashCfg = { on: true, order: std.order, span: std.span, h: {}, hidden: Object.assign({}, std.hidden || {}), col: std.col,
                 thm: {}, corner: dashCfg.corner || 'std',
                 notes: dashCfg.notes || [], allocPf: dashCfg.allocPf || 'all', saved: dashCfg.saved || null };
+            pfxStdNotePlace();   // заметка над «Избранным» — как в референсе (1 портфель)
         }
         dashEdit = false;
         saveDashCfg();
@@ -2963,16 +2974,18 @@
         }
         // палитра НЕ закрывается — рядом выбор заливки; закроет клик вне (см. обработчик ниже)
     };
-    // заливка заметки: кант слева (edge) | вся карточка (full) — перекраска классом, без ре-рендера
+    // заливка заметки: кант слева (edge) | вся карточка (full) | без линии (none, R7) —
+    // перекраска классом, без ре-рендера
     window.pfdSetNoteFill = function (id, fill, ev) {
         if (ev) ev.stopPropagation();
-        fill = fill === 'full' ? 'full' : 'edge';
+        fill = (fill === 'full' || fill === 'none') ? fill : 'edge';
         var nt = pfdFindNote(id); if (!nt || nt.fill === fill) return;
         var card = pfdNoteCard(id);
         pfdPushUndo(); nt.fill = fill; saveDashCfg();
         if (card) {
             card.classList.toggle('pfnt-fill-full', fill === 'full');
             card.classList.toggle('pfnt-fill-edge', fill === 'edge');
+            card.classList.toggle('pfnt-fill-none', fill === 'none');
             card.querySelectorAll('.pfnt-fillb').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-f') === fill); });
         }
     };
@@ -3570,14 +3583,21 @@
             var up = delta >= 0, col = up ? '#12a35c' : '#e0592b';
             var daysShown = Math.max(1, Math.round((new Date(last.d).getTime() - new Date(s[0].d).getTime()) / 86400000));
             pfdCapState = { s: s, min: min, span: span, n: n, inx: INX, pt: PT, pb: PB };
-            var plotBot = 100 - PB, grid = '';
-            [0.25, 0.5, 0.75].forEach(function (f) { var gy = (PT + (plotBot - PT) * f).toFixed(1); grid += '<line x1="0" y1="' + gy + '" x2="100" y2="' + gy + '" class="pfcap-grid"/>'; });
+            // R7: боковая шкала слева (как в референсе) — «красивые» деления niceTicks,
+            // линии сетки в SVG на тех же уровнях, подписи коротким форматом (млн/тыс)
+            var grid = '', yTicks = '';
+            niceTicks(min, max, 4).forEach(function (tv) {
+                var gy = yP(tv);
+                if (gy < 2 || gy > 98) return;
+                grid += '<line x1="0" y1="' + gy.toFixed(1) + '" x2="100" y2="' + gy.toFixed(1) + '" class="pfcap-grid"/>';
+                yTicks += '<span class="pfcap-yt" style="top:' + gy.toFixed(1) + '%">' + pfxShortNum(tv) + '</span>';
+            });
             var lx = xP(n - 1).toFixed(2), ly = yP(last.v).toFixed(2);
             // герой: крупная текущая стоимость + пилюля дельты + за сколько дней
             hero = '<div class="pfcap-hero"><span class="pfcap-val">' + fmtRub(last.v) + '</span>' +
                 '<span class="pfcap-delta ' + (up ? 'pos' : 'neg') + '">' + (up ? '▲' : '▼') + ' ' + fmtRub(Math.abs(delta)) + ' · ' + fmtPct(dPct) + '</span>' +
                 '<span class="pfcap-per">за ' + daysShown + ' дн</span></div>';
-            body = '<div class="pfcap-plot">' +
+            body = '<div class="pfcap-plot pfcap-plot--axis">' +
                 '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
                     '<defs><linearGradient id="pfcapGrad" x1="0" y1="0" x2="0" y2="1">' +
                         '<stop offset="0" stop-color="' + col + '" stop-opacity="0.24"/><stop offset="1" stop-color="' + col + '" stop-opacity="0"/>' +
@@ -3587,8 +3607,7 @@
                     '<path d="' + line + '" fill="none" stroke="' + col + '" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>' +
                 '</svg>' +
                 '<span class="pfcap-end" style="left:' + lx + '%;top:' + ly + '%;--cc:' + col + '"></span>' +
-                '<span class="pfcap-y pfcap-y--max">' + fmtRub(max) + '</span>' +
-                '<span class="pfcap-y pfcap-y--min">' + fmtRub(min) + '</span>' +
+                yTicks +
                 '<div class="pfcap-cursor"></div><span class="pfcap-cdot"></span><div class="pfcap-tip"></div>' +
                 '<div class="pfcap-hit" onmousemove="pfdCapHover(event)" onmouseleave="pfdCapHoverEnd(event)"></div>' +
             '</div>' +
@@ -3715,13 +3734,12 @@
             return '<circle cx="50" cy="50" r="38" fill="none" stroke="' + s.c + '" stroke-width="15" ' +
                 'stroke-dasharray="' + dash + ' ' + (C - f * C).toFixed(2) + '" stroke-dashoffset="' + off + '"/>';
         }).join('');
-        var big = d.total > 0 ? Math.round(d.stock / d.total * 100) : 0;
+        // R7: центр кольца ПУСТОЙ (проценты читаются в легенде рядом — референс)
         return '<div class="pfal-donut">' +
             '<svg viewBox="0 0 100 100" aria-hidden="true">' +
                 '<circle cx="50" cy="50" r="38" fill="none" stroke="rgba(148,163,184,0.16)" stroke-width="15"/>' +
                 '<g transform="rotate(-90 50 50)">' + arcs + '</g>' +
             '</svg>' +
-            '<div class="pfal-center"><b>' + big + '%</b><span>акции</span></div>' +
         '</div>';
     }
     function pfdAllocLegRow(label, val, total, cls) {
@@ -4011,6 +4029,7 @@
     // иконки заливки: кант слева (рамка + жирная левая грань) | залить всю карточку (заполненный прямоугольник)
     var NOTE_FILL_EDGE_SVG = '<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8"/><rect x="4" y="5" width="4.5" height="14" rx="1.6" fill="currentColor"/></svg>';
     var NOTE_FILL_FULL_SVG = '<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="14" rx="2.5" fill="currentColor"/></svg>';
+    var NOTE_FILL_NONE_SVG = '<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8"/></svg>';
     var NOTE_CHEV_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
     function pfdNoteRowHtml(nid, it) {
         var type = (it.type === 'bullet' || it.type === 'check') ? it.type : 'text';
@@ -4062,6 +4081,7 @@
         var fills = '<span class="pfnt-pop-fills">' +
             '<button type="button" class="pfnt-fillb' + (fill === 'edge' ? ' on' : '') + '" data-f="edge" title="Цветной кант слева" onclick="pfdSetNoteFill(\'' + jsArg(nt.id) + '\',\'edge\',event)">' + NOTE_FILL_EDGE_SVG + '<span>Кант</span></button>' +
             '<button type="button" class="pfnt-fillb' + (fill === 'full' ? ' on' : '') + '" data-f="full" title="Залить всю карточку" onclick="pfdSetNoteFill(\'' + jsArg(nt.id) + '\',\'full\',event)">' + NOTE_FILL_FULL_SVG + '<span>Вся карточка</span></button>' +
+            '<button type="button" class="pfnt-fillb' + (fill === 'none' ? ' on' : '') + '" data-f="none" title="Чистая карточка без цветной линии" onclick="pfdSetNoteFill(\'' + jsArg(nt.id) + '\',\'none\',event)">' + NOTE_FILL_NONE_SVG + '<span>Без линии</span></button>' +
         '</span>';
         // шапка: единый цветной значок-иконка (он же выбор цвета — палитра-поповер),
         // РЕДАКТИРУЕМЫЙ заголовок (клик → инпут, как у портфеля), справа — удалить + «+»
@@ -4409,8 +4429,10 @@
             if (hh) item.classList.add('pfd-hset'); if (pt) item.classList.add('pfd-ptall');
             return n;
         })();
-        var collapseTo = natH + 16;   // на/ниже этой высоты — вернуть натуральную (авто)
-        var minH = 56;                // абсолютный пол тяги (свернётся в авто раньше, чем упрётся)
+        // R7: блок можно УЖИМАТЬ НИЖЕ натуральной высоты (контент клипуется hset и скроллится
+        // внутри) — «снап» в авто-высоту только в узком окне ±16px вокруг натуральной.
+        var snapLo = natH - 16, snapHi = natH + 16;
+        var minH = 88;                // абсолютный пол тяги (совсем в нитку не ужать)
         var newSpan = 0, newH = 0, hMode = hadH || axis === 'y';
         // ---- левая кромка: правый край блока закреплён, левый едет → span и стартовая
         // колонка меняются вместе. Считаем текущую стартовую колонку и «колонку за правым
@@ -4521,7 +4543,7 @@
             item.style.gridColumn = 'span ' + newSpan;
             if (hMode) {
                 newH = clamp(Math.round(startH + dy), minH, 1400);
-                var collapse = newH <= collapseTo;   // утянули к натуральной → показать авто-высоту
+                var collapse = newH >= snapLo && newH <= snapHi;   // около натуральной → снап в авто
                 if (id === 'panel') {
                     // Панель пишет min-height (как и рендер) — не height: иначе стей­л
                     // min-height из прошлого рендера конфликтует с новым height и СТОПОРИТ
@@ -4557,10 +4579,10 @@
                 changed = true;
             }
             if (hMode && newH) {
-                // ОБЩЕЕ ПРАВИЛО: стянули к натуральной высоте (≤ collapseTo) → сбрасываем в АВТО
-                // (не пишем cfg.h), любой блок возвращается к своей естественной компактной высоте;
-                // выше — сохраняем заданную высоту. Раньше был фикс-порог 240 (полосу не вернуть).
-                if (newH <= collapseTo) {
+                // ОБЩЕЕ ПРАВИЛО: около натуральной высоты (±16px) → сбрасываем в АВТО (не пишем
+                // cfg.h); заметно выше ИЛИ НИЖЕ натуральной — сохраняем заданную высоту (ужатый
+                // блок клипуется hset, списки скроллятся внутри).
+                if (newH >= snapLo && newH <= snapHi) {
                     delete dashCfg.h[id]; item.style.height = ''; item.style.minHeight = '';
                     item.classList.remove('pfd-ptall'); item.classList.remove('pfd-hset');
                 } else { dashCfg.h[id] = newH; }
@@ -4634,6 +4656,10 @@
     document.addEventListener('click', function (e) {
         if (!dashEdit) return;
         var t = e.target; if (!t || !t.closest) return;
+        // клик по элементу, который обработчик уже УСПЕЛ перерисовать (innerHTML-своп в
+        // pfl2Paint и т.п.): узел оторван от DOM, closest('.pfl-panel') даёт null и карточка
+        // закрывалась ЛЮБЫМ кликом внутри пикера. Оторванные узлы игнорируем.
+        if (!t.isConnected) return;
         if (t.closest('.pfl-panel')) return;
         if (t.closest('#pfLayoutBtn') || t.closest('#pfLayoutCfgWrap') || t.closest('.pfp-cfg') || t.closest('.pfp-btn')) return;
         if (t.closest('#pfConfirmOv')) return;
@@ -4754,15 +4780,11 @@
                 // «Выплаты» — полученные купоны/дивиденды за время владения (в «Доход» не входят);
                 // «Кэш» — свободные деньги (правится в ⚙, пополняется остатком ребалансировок).
                 // Оба блока опциональны — сетка статов резиновая (flex), влезает любое число.
-                var po = pfPayouts(p);
-                var payStat = (po.any && (po.pending || po.sum > 0.005))
-                    ? '<div class="pfc-stat2 pfc-stat2--pay" title="Полученные купоны и дивиденды за время владения — по расписаниям MOEX (дивиденды — по дате отсечки). В «Доход» не входят"><span class="pfc-stat2-l">Выплаты</span><span class="pfc-stat2-v ' + (po.pending ? '' : 'pos') + '">' + (po.pending ? '…' : '+' + fmtRub(po.sum)) + '</span></div>' : '';
-                var cashStat = (p.cash > 0)
-                    ? '<div class="pfc-stat2" title="Свободные деньги портфеля — не вложены в бумаги; правятся в настройках ⚙"><span class="pfc-stat2-l">Кэш</span><span class="pfc-stat2-v">' + fmtRub(p.cash) + '</span></div>' : '';
+                // R7: в карточке ТОЛЬКО «Доход» и «Доходность» (референс) — кэш и выплаты
+                // не показываем (они остаются в развороте/настройках и общей сводке)
                 return '<div class="pfc-stats2">' +
                     (narrow ? '' : '<div class="pfc-stat2"><span class="pfc-stat2-l">Вложено</span><span class="pfc-stat2-v">' + fmtRub(c.invested) + '</span></div>') +
                     '<div class="pfc-stat2 pfc-stat2--inc"><span class="pfc-stat2-l">Доход</span><span class="pfc-stat2-v ' + pnlCls + '">' + fmtRub(c.pnl) + '</span></div>' +
-                    payStat + cashStat +
                     '<div class="pfc-stat2 pfc-stat2--yield is-' + (c.annual >= 0 ? 'gn' : 'rd') + '" title="Доходность в пересчёте на год (может отличаться от «Дохода» и графика — те показывают фактическое изменение за весь срок, а не годовые)"><span class="pfc-stat2-l">Доходность</span><span class="pfc-stat2-v ' + (c.annual >= 0 ? 'pos' : 'neg') + '">' + fmtPct(c.annual) + '</span></div>' +
                 '</div>';
             })() +
@@ -6396,7 +6418,22 @@
         var std = pfdStandardCfg();
         dashCfg.order = std.order; dashCfg.span = std.span; dashCfg.col = std.col;
         dashCfg.hidden = Object.assign({}, std.hidden || {});
+        pfxStdNotePlace();
         saveDashCfg();
+    }
+    // как в референсе: заметка в правой колонке НАД «Избранным» (только раскладка на
+    // 1 портфель). Нет своих заметок — создаём пустую; есть — первую ставим на место.
+    function pfxStdNotePlace() {
+        if (visibleItems().length !== 1) return;
+        if (!(dashCfg.notes || []).length) {
+            dashCfg.notes = [pfdNormNote({ id: genId('n'), items: [{ id: genId('i'), type: 'text', text: '' }] })];
+        }
+        var nid = 'note:' + dashCfg.notes[0].id;
+        var i = dashCfg.order.indexOf(nid);
+        if (i >= 0) dashCfg.order.splice(i, 1);
+        var fi = dashCfg.order.indexOf('fav');
+        dashCfg.order.splice(fi >= 0 ? fi : dashCfg.order.length, 0, nid);
+        dashCfg.span[nid] = 4; dashCfg.col[nid] = 9;
     }
 
     // ====================================================================
@@ -6565,6 +6602,123 @@
             pfCardHead('', 'Отчёты и экспорт', 'выгрузки, бэкап и импорт данных', null) + body + '</div>';
     }
 
+    // короткий формат числа для осей: 1 264 484 → «1,26 млн», 12 400 → «12 тыс»
+    function pfxShortNum(v) {
+        var a = Math.abs(v);
+        function trim(x, d) { return x.toFixed(d).replace(/\.?0+$/, '').replace('.', ','); }
+        if (a >= 1e9) return trim(v / 1e9, 2) + ' млрд';
+        if (a >= 1e6) return trim(v / 1e6, 2) + ' млн';
+        if (a >= 1e3) return trim(v / 1e3, 0) + ' тыс';
+        return String(Math.round(v));
+    }
+    // ---- R7.2: виджеты «как в больших терминалах» ----
+    // «Лидеры дня»: сильнейшие дневные движения среди акций портфелей (quotes.chgPct)
+    function pfwMoversHtml() {
+        var seen = {}, rows = [];
+        visibleItems().forEach(function (p) {
+            (p.holdings || []).forEach(function (h) {
+                if (!h.ticker || h.type === 'bond' || seen[h.ticker] || !(aggHolding(h).qty > 0)) return;
+                seen[h.ticker] = 1;
+                var q = quotes[h.ticker];
+                if (!q || q.chgPct == null) return;
+                rows.push({ tk: h.ticker, name: assetDisplayName(h), chg: +q.chgPct });
+            });
+        });
+        rows.sort(function (a, b) { return Math.abs(b.chg) - Math.abs(a.chg); });
+        rows = rows.slice(0, 6);
+        var body;
+        if (!rows.length) {
+            body = '<div class="pfal-empty">Появится с приходом дневных котировок — держите в портфеле хотя бы одну акцию.</div>';
+        } else {
+            var maxAbs = rows.reduce(function (m, r) { return Math.max(m, Math.abs(r.chg)); }, 0.1);
+            body = '<div class="pfyl-list pfmv-list">' + rows.map(function (r) {
+                var w = clamp(Math.abs(r.chg) / maxAbs * 100, 4, 100);
+                return '<div class="pfyl-row">' +
+                    '<span class="pfyl-n pfmv-n" role="button" onclick="pfOpenTicker(\'' + jsArg(r.tk) + '\')"><b>' + esc(r.tk) + '</b><em>' + esc(r.name) + '</em></span>' +
+                    '<span class="pfyl-barwrap"><span class="pfyl-bar ' + (r.chg >= 0 ? 'pos' : 'neg') + '" style="width:' + w.toFixed(1) + '%"></span></span>' +
+                    '<b class="' + (r.chg >= 0 ? 'pos' : 'neg') + '">' + fmtPct(r.chg) + '</b>' +
+                '</div>';
+            }).join('') + '</div>';
+        }
+        return '<div class="dash2-card pf-card2 pf-moversblk">' +
+            pfCardHead('', 'Лидеры дня', 'сильнейшие движения ваших бумаг за день', null) + body + '</div>';
+    }
+    // «Рынок сейчас»: IMOEX / USD / BTC — живые значения из скрытых спанов дашборда
+    // (те же источники, что рыночная лента в шапке; тикает tickLive раз в секунду)
+    function pfwIdxHtml() {
+        var items = [
+            ['imoex', 'IMOEX', 'Индекс Мосбиржи'],
+            ['usd', 'USD/RUB', 'Доллар США'],
+            ['btc', 'BTC', 'Биткойн']
+        ];
+        var rows = items.map(function (t) {
+            return '<div class="pfix-row">' +
+                '<span class="pfix-t"><b>' + t[1] + '</b><i>' + t[2] + '</i></span>' +
+                '<span class="pfix-v" id="pfxidx-v-' + t[0] + '">—</span>' +
+                '<span class="pfix-c" id="pfxidx-c-' + t[0] + '"></span>' +
+            '</div>';
+        }).join('');
+        return '<div class="dash2-card pf-card2 pf-idxblk">' +
+            pfCardHead('', 'Рынок сейчас', 'индекс, валюта и криптовалюта — живые значения',
+                '<button class="d3-quick ghost pfhm-go" onclick="switchTab(\'market\')">Рынок' + GO_ARROW_SVG + '</button>') +
+            '<div class="pfix-rows">' + rows + '</div></div>';
+    }
+    // «Пассивный доход»: средний месяц из выплат на год вперёд + доходность выплатами
+    function pfwPassiveHtml() {
+        var evs = collectUpcomingPayouts();
+        var year = 0, soon = 0;
+        evs.forEach(function (e) { if (e.date.getTime() - Date.now() <= 30 * 86400000) soon += e.amount; year += e.amount; });
+        var val = 0;
+        store.items.forEach(function (p) { if (!p.hidden) val += calcPf(p).value; });
+        var monthly = year / 12, yPct = val > 0 ? year / val * 100 : 0;
+        var body;
+        if (!(year > 0)) {
+            body = '<div class="pfal-empty">Добавьте облигации или дивидендные акции — посчитаем ваш пассивный доход.</div>';
+        } else {
+            body = '<div class="pfpv-hero"><b>+' + fmtRub(monthly) + '</b><span>в среднем в месяц · по выплатам на год вперёд</span></div>' +
+                '<div class="pfpv-rows">' +
+                    '<div class="pfpv-row"><span>Ближайшие 30 дней</span><b class="pos">' + (soon > 0 ? '+' + fmtRub(soon) : '—') + '</b></div>' +
+                    '<div class="pfpv-row"><span>За год вперёд</span><b class="pos">+' + fmtRub(year) + '</b></div>' +
+                    '<div class="pfpv-row"><span>Доходность выплатами</span><b>' + fmtPct(yPct).replace('+', '') + ' годовых</b></div>' +
+                '</div>';
+        }
+        return '<div class="dash2-card pf-card2 pf-passiveblk">' +
+            pfCardHead('', 'Пассивный доход', 'купоны и дивиденды в пересчёте на месяц', null) + body + '</div>';
+    }
+    // «Диверсификация»: доли топ-5 позиций и вердикт о концентрации
+    function pfwConcHtml() {
+        var m = {}, total = 0;
+        visibleItems().forEach(function (p) {
+            calcPf(p).hs.forEach(function (x) {
+                if (!(x.c.qty > 0) || !(x.c.value > 0)) return;
+                m[x.h.ticker] = (m[x.h.ticker] || 0) + x.c.value; total += x.c.value;
+            });
+        });
+        var list = Object.keys(m).map(function (tk) { return { tk: tk, v: m[tk] }; })
+            .sort(function (a, b) { return b.v - a.v; });
+        var body;
+        if (!list.length || !(total > 0)) {
+            body = '<div class="pfal-empty">Добавьте бумаги — покажем, насколько портфель диверсифицирован.</div>';
+        } else {
+            var top = list.slice(0, 5), topSum = 0;
+            var rows = top.map(function (r) {
+                var sh = r.v / total * 100; topSum += sh;
+                return '<div class="pfyl-row">' +
+                    '<span class="pfyl-n pfmv-n"><b>' + esc(r.tk) + '</b></span>' +
+                    '<span class="pfyl-barwrap"><span class="pfyl-bar ' + (sh > 40 ? 'neg' : 'pos') + '" style="width:' + clamp(sh, 3, 100).toFixed(1) + '%"></span></span>' +
+                    '<b>' + sh.toFixed(1).replace('.', ',') + '%</b>' +
+                '</div>';
+            }).join('');
+            var verdict = topSum <= 45 ? ['ok', 'Хорошая диверсификация — топ-5 бумаг занимают ' + Math.round(topSum) + '% портфеля']
+                : topSum <= 70 ? ['mid', 'Умеренная концентрация — топ-5 бумаг занимают ' + Math.round(topSum) + '% портфеля']
+                : ['hot', 'Высокая концентрация — топ-5 бумаг занимают ' + Math.round(topSum) + '% портфеля'];
+            body = '<div class="pfyl-list pfcc-list">' + rows + '</div>' +
+                '<div class="pfcc-verdict ' + verdict[0] + '">' + verdict[1] + '</div>';
+        }
+        return '<div class="dash2-card pf-card2 pf-concblk">' +
+            pfCardHead('', 'Диверсификация', 'доли крупнейших позиций по всем портфелям', null) + body + '</div>';
+    }
+
     // ====================================================================
     //  R7 — ПОДВКЛАДКИ: готовые раскладки из виджетов
     // ====================================================================
@@ -6577,12 +6731,71 @@
         return '<div class="dash2-card pf-card2 pfx-emptycard"><div class="pfpc-state"><div class="pfpc-state-art">' + CAL_ICO_SVG + '</div>' +
             '<div class="pfpc-state-t">' + t + '</div><div class="pfpc-state-s">' + s + '</div></div></div>';
     }
-    function pfxTabPortsHtml(favStr) {
-        var right = favStr + (store.items.length >= 2 ? summaryCardHtml() : '');
-        return '<div class="pf-topgrid">' +
-            '<div class="pf-topgrid-left">' + gridHtml('') + '</div>' +
-            '<div class="pf-topgrid-fav">' + right + '</div>' +
-        '</div>';
+    // Подвкладка «Портфели» (R7.2): не карточки-виджеты, а полноширинный обзор КАЖДОГО
+    // портфеля — шапка с показателями и распределением + ПОЛНЫЙ состав таблицей с
+    // показателями по каждой бумаге (кол-во, средняя, сейчас, стоимость, доля, доход).
+    function pfxPortHoldRowHtml(x, c) {
+        var h = x.h, hc = x.c, isB = h.type === 'bond';
+        var share = (c.value > 0 && hc.value > 0) ? hc.value / c.value * 100 : 0;
+        var noQ = hc.curSrc === 'buy';
+        var has = hc.invested > 0 && !noQ;
+        return '<tr class="pfpt-tr"' + (isB ? '' : ' role="button" onclick="pfOpenTicker(\'' + jsArg(h.ticker) + '\')"') + '>' +
+            '<td class="pfpt-as"><b>' + esc(h.ticker) + '</b><i class="' + (isB ? 'bond' : 'stock') + '">' + (isB ? 'обл' : 'акц') + '</i><span>' + esc(assetDisplayName(h)) + '</span></td>' +
+            '<td class="pfpt-num">' + fmtQty(hc.qty) + '</td>' +
+            '<td class="pfpt-num">' + fmtPrice(hc.buy) + '</td>' +
+            '<td class="pfpt-num' + (hc.live ? ' pfpt-live' : '') + '">' + (noQ ? '…' : fmtPrice(hc.cur)) + '</td>' +
+            '<td class="pfpt-num pfpt-val">' + fmtRub(hc.value) + '</td>' +
+            '<td class="pfpt-share"><span class="pfpt-sharebar"><i style="width:' + clamp(share, 2, 100).toFixed(1) + '%"></i></span><b>' + share.toFixed(1).replace('.', ',') + '%</b></td>' +
+            '<td class="pfpt-num ' + (has ? (hc.pnl >= 0 ? 'pos' : 'neg') : '') + '">' + (has ? (hc.pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(hc.pnl)) : '—') + '</td>' +
+            '<td class="pfpt-num ' + (has ? (hc.pnlPct >= 0 ? 'pos' : 'neg') : '') + '">' + (has ? fmtPct(hc.pnlPct) : '—') + '</td>' +
+        '</tr>';
+    }
+    window.pfxPortSettings = function (pid) {
+        pfxTab = 'overview';
+        try { localStorage.setItem(PFX_TAB_KEY, 'overview'); } catch (e) {}
+        window.pfToggleMenu(pid);   // откроет карточку с настройками на «Обзоре»
+    };
+    function pfxTabPortsHtml() {
+        var vis = visibleItems();
+        if (!vis.length) return store.items.length ? allHiddenHtml() : emptyHtml();
+        var GEAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="8" cy="7" r="2.5"/><circle cx="16" cy="17" r="2.5"/></svg>';
+        return '<div class="pfx-ports">' + vis.map(function (p) {
+            var c = calcPf(p), ac = colorVal(p.color);
+            var dd = dayDelta(p, c.value);
+            var bondP = Math.round(clamp(c.bondPct, 0, 100)), stockP = 100 - bondP;
+            var ddChip = (dd != null && Math.abs(dd) >= 1)
+                ? '<span class="pfc-day ' + (dd >= 0 ? 'pos' : 'neg') + '">' + (dd >= 0 ? '▲' : '▼') + ' ' + fmtRub(Math.abs(dd)) + ' сегодня</span>' : '';
+            function kpi(l, v, cls) {
+                return '<div class="pfpt-kpi"><span>' + l + '</span><b class="' + (cls || '') + '">' + v + '</b></div>';
+            }
+            var head = '<div class="pfpt-head">' +
+                '<div class="pfpt-id">' +
+                    '<span class="pfc-name" onclick="pfNameEdit(\'' + p.id + '\',event)" title="Нажмите, чтобы переименовать"><span class="pfc-name-ink">' + esc(p.name) + '</span></span>' +
+                    ddChip +
+                '</div>' +
+                '<div class="pfpt-kpis">' +
+                    kpi('Капитал', fmtRub(c.value)) +
+                    kpi('Вложено', fmtRub(c.invested)) +
+                    kpi('Доход', (c.invested > 0 ? (c.pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(c.pnl)) : '—'), c.pnl >= 0 ? 'pos' : 'neg') +
+                    kpi('Доходность', c.invested > 0 ? fmtPct(c.annual) : '—', c.annual >= 0 ? 'pos' : 'neg') +
+                '</div>' +
+                '<div class="pfpt-alloc">' +
+                    '<div class="pfc-dist-bar"><div style="width:' + stockP + '%;background:#D97757"></div><div style="width:' + bondP + '%;background:#7B9BBF"></div></div>' +
+                    '<div class="pfc-dist-lbl"><span><i style="background:#D97757"></i>Акции ' + stockP + '%</span><span><i style="background:#7B9BBF"></i>Облигации ' + bondP + '%</span></div>' +
+                '</div>' +
+                '<div class="pfpt-acts">' +
+                    '<button class="pfc-rebal pfpt-rebal" onclick="pfExpand(\'' + p.id + '\')">' + REBAL_SVG + 'Ребалансировать</button>' +
+                    '<button class="pfc-act" onclick="pfxPortSettings(\'' + p.id + '\')" title="Настройки портфеля" aria-label="Настройки портфеля">' + GEAR + '</button>' +
+                '</div>' +
+            '</div>';
+            var table = c.hs.length
+                ? '<div class="pfpt-tablewrap"><table class="pfpt-table"><thead><tr>' +
+                    '<th>Бумага</th><th class="pfpt-num">Кол-во</th><th class="pfpt-num">Средняя</th><th class="pfpt-num">Сейчас</th>' +
+                    '<th class="pfpt-num">Стоимость</th><th>Доля</th><th class="pfpt-num">Доход</th><th class="pfpt-num">Доходность</th>' +
+                  '</tr></thead><tbody>' + c.hs.map(function (x) { return pfxPortHoldRowHtml(x, c); }).join('') + '</tbody></table></div>'
+                : '<div class="pfal-empty">Состав пуст — добавьте активы в настройках портфеля ⚙.</div>';
+            return '<div class="dash2-card pf-card2 pfpt-card" style="--pf-accent:' + ac + '">' + head + table + '</div>';
+        }).join('') + '</div>';
     }
     function pfxVisRowsHtml() {
         var rows = '';
@@ -6624,12 +6837,15 @@
         ]);
     }
     function pfxTabBodyHtml(favStr, noBonds) {
-        if (pfxTab === 'ports') return pfxTabPortsHtml(favStr);
+        if (pfxTab === 'ports') return pfxTabPortsHtml();
         if (pfxTab === 'analytics') return pfxGridWrap([
             pfxCell(8, pfdCapChartHtml()),
             pfxCell(4, pfdAllocHtml()),
-            pfxCell(6, pfwYieldHtml()),
-            pfxCell(6, pfwAssetsHtml())
+            pfxCell(4, pfwYieldHtml()),
+            pfxCell(4, pfwMoversHtml()),
+            pfxCell(4, pfwConcHtml()),
+            pfxCell(8, pfwAssetsHtml()),
+            pfxCell(4, pfwIdxHtml())
         ]);
         if (pfxTab === 'reports') return pfxGridWrap([
             pfxCell(6, pfwReportsHtml()),
@@ -6638,7 +6854,7 @@
         if (pfxTab === 'divs') return pfxGridWrap([
             pfxCell(4, pfwDivsHtml()),
             pfxCell(4, pfdKpiHtml('next')),
-            pfxCell(4, pfwDivsByPfHtml()),
+            pfxCell(4, pfwPassiveHtml()),
             pfxCell(12, noBonds ? pfxEmptyCardHtml('Выплат пока не видно', 'Добавьте облигации или дивидендные акции — календарь соберётся автоматически.') : paymentCalendarHtml(false, 1, true))
         ]);
         if (pfxTab === 'ops') {
@@ -6652,10 +6868,18 @@
     // ====================================================================
     //  R7 — ПИКЕР «ДОБАВИТЬ ВИДЖЕТ»: категории + карточки с ДЕМО-превью + настройки
     // ====================================================================
+    // категории пикера: [key, name, svg-иконка] — иконка у КАЖДОЙ (как в референсе)
     var PFL2_CATS = [
-        ['pop', 'Популярные'], ['over', 'Обзор портфеля'], ['charts', 'Графики и аналитика'],
-        ['assets', 'Активы и позиции'], ['profit', 'Доходность и прибыль'], ['divs', 'Дивиденды и выплаты'],
-        ['market', 'Рынок и индексы'], ['notes', 'Заметки и задачи'], ['cal', 'Календарь и события'], ['other', 'Прочее']
+        ['pop', 'Популярные', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2.8 14.9 9 21.7 9.9 16.8 14.5 18 21.2 12 18 6 21.2 7.2 14.5 2.3 9.9 9.1 9"/></svg>'],
+        ['over', 'Обзор портфеля', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="13" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg>'],
+        ['charts', 'Графики и аналитика', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><polyline points="6 14 10 10 14 12 20 5.5"/></svg>'],
+        ['assets', 'Активы и позиции', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>'],
+        ['profit', 'Доходность и прибыль', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>'],
+        ['divs', 'Дивиденды и выплаты', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/><circle cx="16.5" cy="15" r="1.4" fill="currentColor" stroke="none"/></svg>'],
+        ['market', 'Рынок и индексы', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="10" rx="1.7"/><rect x="13" y="3" width="8" height="6" rx="1.7"/><rect x="13" y="11" width="8" height="10" rx="1.7"/><rect x="3" y="15" width="8" height="6" rx="1.7"/></svg>'],
+        ['notes', 'Заметки и задачи', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8.5z"/><path d="M15 3v5a1 1 0 0 0 1 1h5"/><path d="M8.5 13.5h7"/><path d="M8.5 17h5"/></svg>'],
+        ['cal', 'Календарь и события', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2.5"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2.5" x2="8" y2="6"/><line x1="16" y1="2.5" x2="16" y2="6"/></svg>'],
+        ['other', 'Прочее', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>']
     ];
     function pfl2Catalog() {
         var list = [
@@ -6674,7 +6898,11 @@
             { id: 'snaps', name: 'Снимки капитала', desc: 'Дневные значения стоимости и их изменение', cats: ['profit', 'other'] },
             { id: 'news', name: 'Новости по позициям', desc: 'Свежие новости по бумагам ваших портфелей', cats: ['market'] },
             { id: 'fav', name: 'Избранное', desc: 'Потенциал и свежая новость по любимым тикерам', cats: ['market', 'assets'] },
-            { id: 'rates', name: 'Ставки рынка', desc: 'Ключевая ставка, вклады, инфляция и ОФЗ 10 лет', cats: ['market', 'other'] }
+            { id: 'rates', name: 'Ставки рынка', desc: 'Ключевая ставка, вклады, инфляция и ОФЗ 10 лет', cats: ['market', 'other'] },
+            { id: 'movers', name: 'Лидеры дня', desc: 'Сильнейшие дневные движения ваших бумаг', cats: ['charts', 'assets', 'market'] },
+            { id: 'idx', name: 'Рынок сейчас', desc: 'IMOEX, доллар и биткойн — живые значения', cats: ['market', 'other'] },
+            { id: 'passive', name: 'Пассивный доход', desc: 'Купоны и дивиденды в пересчёте на месяц', cats: ['divs', 'profit'] },
+            { id: 'conc', name: 'Диверсификация', desc: 'Доли крупнейших позиций и вердикт о концентрации', cats: ['charts', 'profit'] }
         ];
         if (store.items.length >= 2) list.push({ id: 'sum', name: 'Сводка портфелей', desc: 'Суммарный капитал и лидерборд портфелей', cats: ['over', 'profit'] });
         return list;
@@ -6701,9 +6929,13 @@
         return m[id] === 0;
     }
     // ---- ДЕМО-превью (всегда статичные примеры, никаких живых данных) ----
+    // плавная растущая кривая с заливкой и точкой на конце — как график в референсе
+    var PFL2_DEMO_PATH = 'M4 70 C 26 64, 40 68, 58 60 C 78 51, 88 58, 106 46 C 126 33, 138 41, 156 28 C 174 16, 190 22, 206 12 L 214 9';
     var PFL2_DEMO_LINE = '<svg viewBox="0 0 220 84" class="dm-svg" preserveAspectRatio="none">' +
-        '<path d="M4 66 L34 58 L62 62 L92 44 L122 50 L152 30 L182 36 L216 14 L216 82 L4 82 Z" class="dm-area"/>' +
-        '<path d="M4 66 L34 58 L62 62 L92 44 L122 50 L152 30 L182 36 L216 14" class="dm-line"/></svg>';
+        '<line x1="0" y1="22" x2="220" y2="22" class="dm-grid"/><line x1="0" y1="46" x2="220" y2="46" class="dm-grid"/><line x1="0" y1="70" x2="220" y2="70" class="dm-grid"/>' +
+        '<path d="' + PFL2_DEMO_PATH + ' L 214 82 L 4 82 Z" class="dm-area"/>' +
+        '<path d="' + PFL2_DEMO_PATH + '" class="dm-line"/>' +
+        '<circle cx="214" cy="9" r="3.2" class="dm-dot"/></svg>';
     function pfl2DemoHtml(id) {
         if (id === 'cap') {
             return '<div class="dm-cap">' + PFL2_DEMO_LINE + '</div>';
@@ -6724,7 +6956,10 @@
                 '</div></div>';
         }
         if (id === 'kpi:cap') {
-            return '<div class="dm-kcap"><b>123 764 602 ₽</b><span class="pos">+50 330 434 ₽ · +68,5%</span>' + PFL2_DEMO_LINE + '</div>';
+            // как в референсе: значение + дельта + зелёная кривая в светлом боксе
+            return '<div class="dm-kcap"><div class="dm-kcap-box"><b>123 764 602 ₽</b>' +
+                '<span class="pos">+50 330 434 ₽ <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg> +68,5%</span>' +
+                PFL2_DEMO_LINE + '</div></div>';
         }
         if (id === 'kpi:day') {
             return '<div class="dm-chips">' +
@@ -6742,13 +6977,39 @@
                 '<span class="dm-row dm-box"><i>Ожидается</i><b class="pos">+45 200 ₽</b></span></div>';
         }
         if (id === 'heat') {
+            // как в референсе: крупная SBER-плитка слева, GAZP/LKOH правее, мелкие — хвостом
             return '<div class="dm-heat">' +
                 '<span style="grid-area:a;background:#2fbf71"><b>SBER</b><i>+1,6%</i></span>' +
-                '<span style="grid-area:b;background:#79d9a9"><b>GAZP</b><i>+0,8%</i></span>' +
+                '<span style="grid-area:b;background:#8fdfb6"><b>GAZP</b><i>+0,8%</i></span>' +
                 '<span style="grid-area:c;background:#4ecb8d"><b>LKOH</b><i>+2,1%</i></span>' +
                 '<span style="grid-area:d;background:#a9e8c8"></span>' +
-                '<span style="grid-area:e;background:#8fdfb6"></span>' +
-                '<span style="grid-area:f;background:#c9f0dd"></span></div>';
+                '<span style="grid-area:e;background:#c9f0dd"></span>' +
+                '<span style="grid-area:f;background:#79d9a9"></span>' +
+                '<span style="grid-area:g;background:#def5e9"></span></div>';
+        }
+        if (id === 'movers') {
+            return '<div class="dm-bars">' +
+                '<span><i>YDEX</i><em style="width:88%"></em><b class="pos">+3,5%</b></span>' +
+                '<span><i>SBER</i><em style="width:46%"></em><b class="pos">+1,6%</b></span>' +
+                '<span><i>MTSS</i><em style="width:30%;background:#f0876a"></em><b class="neg">−1,2%</b></span></div>';
+        }
+        if (id === 'idx') {
+            return '<div class="dm-rows">' +
+                '<span class="dm-row"><em>IMOEX</em><b>2 874,4</b><b class="pos">+0,8%</b></span>' +
+                '<span class="dm-row"><em>USD/RUB</em><b>81,24</b><b class="neg">−0,3%</b></span>' +
+                '<span class="dm-row"><em>BTC</em><b>118 402 $</b><b class="pos">+2,1%</b></span></div>';
+        }
+        if (id === 'passive') {
+            return '<div class="dm-kcap"><b>+41 830 ₽</b><span>в среднем в месяц</span>' +
+                '<div class="dm-rows" style="margin-top:6px">' +
+                '<span class="dm-row"><em>Ближайшие 30 дней</em><b class="pos">+24 336 ₽</b></span>' +
+                '<span class="dm-row"><em>За год</em><b class="pos">+501 968 ₽</b></span></div></div>';
+        }
+        if (id === 'conc') {
+            return '<div class="dm-bars">' +
+                '<span><i>SBER</i><em style="width:70%"></em><b>28,4%</b></span>' +
+                '<span><i>LKOH</i><em style="width:44%"></em><b>17,9%</b></span>' +
+                '<span><i>ОФЗ 26248</i><em style="width:34%"></em><b>13,8%</b></span></div>';
         }
         if (id === 'assets') {
             return '<div class="dm-rows">' +
@@ -6808,12 +7069,11 @@
     // ---- отрисовка секций пикера ----
     function pfl2CatsHtml() {
         var all = pfl2Catalog();
-        var STAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2.8 14.9 9 21.7 9.9 16.8 14.5 18 21.2 12 18 6 21.2 7.2 14.5 2.3 9.9 9.1 9"/></svg>';
         return PFL2_CATS.map(function (c) {
             var n = all.filter(function (w) { return w.cats.indexOf(c[0]) >= 0; }).length;
             if (!n) return '';
             return '<button type="button" class="pfl2-cat' + (!pfl2Q && pfl2Cat === c[0] ? ' on' : '') + '" onclick="pfl2SetCat(\'' + c[0] + '\')">' +
-                (c[0] === 'pop' ? '<span class="pfl2-cat-ic">' + STAR + '</span>' : '') +
+                '<span class="pfl2-cat-ic">' + c[2] + '</span>' +
                 '<span class="pfl2-cat-n">' + c[1] + '</span><i class="pfl2-cat-c">' + n + '</i></button>';
         }).join('');
     }
