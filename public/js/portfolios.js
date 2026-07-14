@@ -7711,10 +7711,49 @@
             '<td class="pfpt-num ' + (has ? (hc.pnlPct >= 0 ? 'pos' : 'neg') : '') + '">' + (has ? fmtPct(hc.pnlPct) : '—') + '</td>' +
         '</tr>';
     }
+    // ---- переход на «Обзор» ради настроек портфеля (R8) ----
+    // Карточка портфеля с её настройками живёт ТОЛЬКО на «Обзоре», поэтому «+ Портфель»,
+    // шестерёнка в «Моих портфелях» и клик по строке списка уводят туда с любой подвкладки.
+    // Чтобы это не читалось как сбой («нажал — куда-то унесло»), переход ОЗВУЧИВАЕМ тостом
+    // и подсвечиваем карточку, к которой унесло.
+    function pfxGoOverviewFor(pid) {
+        var jumped = pfxEffTab() !== 'overview';
+        if (jumped) {
+            pfxTab = 'overview';
+            try { localStorage.setItem(PFX_TAB_KEY, 'overview'); } catch (e) {}
+            pfl3Open = false;
+            pfxSyncCfg();
+        }
+        // карточку могли удалить с «Обзора» (hidden=1) — тогда уводить было бы некуда:
+        // возвращаем её, раз пользователь сам просит настройки этого портфеля
+        var oc = dashCfgFor('overview');
+        if (oc.hidden && oc.hidden['pf:' + pid]) {
+            oc.hidden['pf:' + pid] = 0;
+            if (oc === dashCfg) saveDashCfg();
+            else try { localStorage.setItem(DASH_KEY, JSON.stringify(oc)); } catch (e) {}
+        }
+        return jumped;
+    }
+    // подсветка карточки после перехода (без прокрутки — её ведут вызывающие)
+    function pfxFlashBlock(id) {
+        var tries = 0;
+        (function poll() {
+            var el = document.querySelector('#pfWrap .pfd-item[data-pfd="' + id + '"]');
+            if (el) {
+                el.classList.add('pfd-flash');
+                setTimeout(function () { try { el.classList.remove('pfd-flash'); } catch (e) {} }, 1500);
+                return;
+            }
+            if (tries++ < 45) requestAnimationFrame(poll);
+        })();
+    }
     window.pfxPortSettings = function (pid) {
-        pfxTab = 'overview';
-        try { localStorage.setItem(PFX_TAB_KEY, 'overview'); } catch (e) {}
+        var jumped = pfxGoOverviewFor(pid);
         window.pfToggleMenu(pid);   // откроет карточку с настройками на «Обзоре»
+        if (jumped) {
+            toast('Настройки портфеля открыты на «Обзоре»');
+            pfxFlashBlock('pf:' + pid);
+        }
     };
     function pfxTabPortsHtml() {
         var vis = visibleItems();
@@ -8375,7 +8414,7 @@
             var pid = jsArg(o.preset.id);
             adm = '<div class="pfl3-adm">' +
                 '<button type="button" class="pfl3-abtn" onclick="pfPresetUpdate(\'' + pid + '\', event)" title="Заменить содержимое пресета текущей раскладкой подвкладки">' + UNDO_SVG + '<span>Обновить из текущей</span></button>' +
-                '<button type="button" class="pfl3-abtn" onclick="pfPresetRename(\'' + pid + '\', event)" title="Переименовать пресет">' + PENCIL_SVG + '<span>Переименовать</span></button>' +
+                '<button type="button" class="pfl3-abtn" onclick="pfPresetRename(\'' + pid + '\', event)" title="Переименовать пресет">' + PFL3_PENCIL_SVG + '<span>Переименовать</span></button>' +
                 '<button type="button" class="pfl3-abtn' + (o.preset.hid ? ' off' : '') + '" onclick="pfPresetGate(\'' + pid + '\', event)" title="' + (o.preset.hid ? 'Пресет скрыт у пользователей — нажмите, чтобы вернуть' : 'Скрыть пресет у всех пользователей') + '">' + (o.preset.hid ? EYEOFF_SVG : EYE_SVG) + '<span>' + (o.preset.hid ? 'Скрыт у всех' : 'Виден всем') + '</span></button>' +
                 '<button type="button" class="pfl3-abtn danger" onclick="pfDeletePreset(\'' + pid + '\', event)" title="Удалить пресет у всех">' + NOTE_TRASH_SVG + '<span>Удалить</span></button>' +
             '</div>';
@@ -8436,7 +8475,10 @@
         if (foot) foot.outerHTML = pfl3FootHtml();
     }
     // ---- админ-действия над пресетами (обновить/переименовать/гейт) ----
-    var PENCIL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/><path d="m15 5 4 4"/></svg>';
+    // ВНИМАНИЕ: имя своё (не PENCIL_SVG) — та переменная уже занята карандашом-подсказкой
+    // у имени портфеля (.pfm-name-ic, размер задаёт КЛАСС). Одноимённый var в этом же
+    // скоупе перетирал её, и карандаш в настройках раздувался во всю карточку.
+    var PFL3_PENCIL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/><path d="m15 5 4 4"/></svg>';
     function pfPresetById(id) { return pfPresetList.filter(function (x) { return x.id === id; })[0] || null; }
     window.pfPresetUpdate = function (id, ev) {
         if (ev) ev.stopPropagation();
@@ -8503,13 +8545,9 @@
         }
         // настройки нового портфеля открываются сразу — с тем же чистым состоянием, что и
         // через ⚙ (pfToggleMenu): форма добавления раскрыта (портфель пуст), остальное закрыто.
-        // Карточка с настройками живёт на «Обзоре» — переключаемся туда, откуда бы ни нажали.
-        if (pfxTab !== 'overview') {
-            pfxTab = 'overview';
-            try { localStorage.setItem(PFX_TAB_KEY, 'overview'); } catch (e) {}
-            pfl3Open = false;
-            pfxSyncCfg();
-        }
+        // Карточка с настройками живёт на «Обзоре» — переключаемся туда, откуда бы ни нажали
+        // (переход озвучиваем тостом ниже, см. pfxGoOverviewFor).
+        var jumped = pfxGoOverviewFor(p.id);
         openMenu = p.id; menuJustOpened = true;
         // форма добавления СВЁРНУТА по умолчанию (раскрывается кнопкой «＋ Добавить актив») —
         // раньше открывалась сразу, что мешало
@@ -8520,6 +8558,11 @@
         // пользователь должен его сразу видеть
         var sc = document.getElementById('contentArea');
         if (sc) { try { sc.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { sc.scrollTop = 0; } }
+        // нажали с другой подвкладки — объясняем, куда унесло, и подсвечиваем карточку
+        if (jumped) {
+            toast('Портфель создан — настройки открыты на «Обзоре»');
+            pfxFlashBlock('pf:' + p.id);
+        }
     };
     // Скопировать состав портфеля таблицей: облигации и акции — ОТДЕЛЬНЫМИ блоками, у
     // каждого своё жирное название раздела и своя строка заголовков (№ / Тикер / … ), между
