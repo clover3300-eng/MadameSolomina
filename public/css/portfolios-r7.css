@@ -169,6 +169,10 @@ body.dark-mode #panel-portfolios .pfc-rebal svg { color: #b7c2d3; }
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03), 0 10px 24px -18px rgba(24, 38, 60, 0.16);
     padding: 15px 16px; gap: 13px; align-items: center;
 }
+/* базовая .drt-tile (dashboard-panel.css) подмешивает в угол цветное пятно-градиент —
+   в референсе плитка чистая, цвет живёт только в значке слева */
+#panel-portfolios .drt-tile::before { display: none; }
+#panel-portfolios .drt-tile:hover { transform: none; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03), 0 10px 24px -18px rgba(24, 38, 60, 0.16); }
 #panel-portfolios .drt-ic {
     width: 42px; height: 42px; border-radius: 13px; flex-shrink: 0;
     background: color-mix(in srgb, var(--ac, #3d6fd1) 10%, transparent);
@@ -829,8 +833,15 @@ body.dark-mode .dm-news b { color: #e8eef7; }
 .pfd-item.pfd-thm-dark .pfdv-t i, .pfd-item.pfd-thm-dark .pfdv-pn { color: #8fa0b6; }
 
 /* ============ 15. Мелочи ============ */
-/* шапка карточек: заголовок + сабтайтл читаются легче на светлом */
-#panel-portfolios .pf-ch-t { letter-spacing: -0.01em; }
+/* Шапка карточек: заголовок — тем же серифом, что «Создайте аккаунт» в карточке
+   регистрации на Главной (.hr-title, home-register.css). Размер меньше — это заголовок
+   виджета, а не страницы; насыщенность 400, как у сериф-оригинала. */
+#panel-portfolios .pf-ch-t,
+#panel-portfolios .pfnt-title,
+#panel-portfolios .pfnt-name-edit {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-weight: 400; font-size: 22px; letter-spacing: 0;
+}
 /* пилюля дневного изменения на карточке портфеля — мягче */
 #panel-portfolios .pfc-day { border-radius: 999px; }
 /* узкий экран: герой и подвкладки не рендерятся (см. pfxWide) — правил не нужно,

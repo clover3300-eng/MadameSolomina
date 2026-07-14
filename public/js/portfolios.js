@@ -4123,7 +4123,10 @@
     }
     function pfdNoteHtml(nt) {
         var color = PFD_NOTE_COLORS.indexOf(nt.color) >= 0 ? nt.color : 'amber';
-        var fill = nt.fill === 'full' ? 'full' : 'edge';
+        // 'none' — полноправное значение (см. pfdNormNote): без него сохранённая заливка
+        // «Без линии» на каждом ре-рендере откатывалась в 'edge' (кант возвращался сам), а
+        // pfdSetNoteFill(id,'none') молча выходил по nt.fill === fill — «с первого раза не ставится»
+        var fill = (nt.fill === 'full' || nt.fill === 'none') ? nt.fill : 'edge';
         var PFD_COLOR_NAMES = { slate: 'Серый', blue: 'Синий', green: 'Зелёный', amber: 'Жёлтый', violet: 'Фиолетовый', rose: 'Розовый' };
         var sw = PFD_NOTE_COLORS.map(function (c) {
             return '<button type="button" class="pfnt-sw' + (c === color ? ' on' : '') + '" data-c="' + c + '" style="--sw:var(--nt-' + c + ')" title="' + attr(PFD_COLOR_NAMES[c] || c) + '" aria-label="' + attr(PFD_COLOR_NAMES[c] || c) + '" onclick="pfdSetNoteColor(\'' + jsArg(nt.id) + '\',\'' + c + '\',event)"></button>';
@@ -5928,24 +5931,25 @@
             '<div class="pfpc-state-t">' + conf.t + '</div><div class="pfpc-state-s">' + conf.s + '</div></div>';
     }
     function payCalRowHtml(ev, multiPf) {
-        // метка портфеля — его НОМЕР, «закрашенный маркером» цвета портфеля (тот же приём,
-        // что у названия на карточке, .pfc-name-ink); имя портфеля остаётся в title.
-        // Номер — ПЕРВОЙ колонкой фиксированной ширины (левая «рельса», как кольца-номера
-        // на карточках и строки сводки): между тикером и суммой он стоял вплотную к
-        // auto-колонке суммы и «плавал» по горизонтали вслед за её шириной — номера
-        // соседних строк не выравнивались. Один портфель → колонка не рендерится вовсе.
+        // Дата — квадратиком-«отрывным календарём» (число сверху, месяц под ним), как в
+        // референсе. Он же метка портфеля: подложка квадратика красится в цвет портфеля
+        // (раньше рядом стояла отдельная рельса с НОМЕРОМ портфеля — две сущности про одно
+        // и то же). Полная дата, «через сколько» и имя портфеля — в подсказке.
         // Тип выплаты: купон — по умолчанию (без бейджа), дивиденды и погашение — с бейджем.
         var kind = ev.kind === 'div' ? '<i class="pfpc-kind kind-div" title="Объявленные дивиденды — по дате закрытия реестра (деньги приходят на пару недель позже)">дивиденды</i>'
             : ev.kind === 'redeem' ? '<i class="pfpc-kind kind-red" title="Погашение — возврат номинала облигации">погашение</i>' : '';
-        return '<div class="pfpc-row' + (multiPf ? ' pfpc-row--pf' : '') + '">' +
-            (multiPf ? '<span class="pfpc-pf" style="--c:' + ev.pfColor + '" title="' + esc(ev.pfName) + '"><b class="pfpc-pfnum">' + ev.pfNum + '</b></span>' : '') +
-            '<div class="pfpc-date"><b>' + ruDate(dateToIso(ev.date)) + '</b><span>' + daysUntilText(ev.date) + '</span></div>' +
+        var tip = ruDate(dateToIso(ev.date)) + ' · ' + daysUntilText(ev.date) + (multiPf && ev.pfName ? ' · ' + ev.pfName : '');
+        return '<div class="pfpc-row">' +
+            '<div class="pfpc-day' + (multiPf ? ' pfpc-day--pf' : '') + '"' + (multiPf ? ' style="--c:' + ev.pfColor + '"' : '') + ' title="' + attr(tip) + '">' +
+                '<b>' + ev.date.getDate() + '</b><span>' + PAY_MON_SHORT[ev.date.getMonth()] + '</span></div>' +
             '<div class="pfpc-id"><span class="pfpc-tk">' + esc(ev.ticker) + kind + '</span><span class="pfpc-nm">' + esc(ev.name) + '</span></div>' +
             '<div class="pfpc-amt">+' + fmtRub(ev.amount) + '</div>' +
         '</div>';
     }
     // подпись месяца для разделителей списка выплат («Сентябрь 2026 · +12 400 ₽»)
     var PAY_MON = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+    // короткая подпись месяца — внутри квадратика даты («29 / июл»)
+    var PAY_MON_SHORT = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
     function payMonKey(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1); }
     var FILTER_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>';
     // Попап «Какие портфели показывать» в шапке календаря: строка «Показать все» + по строке
@@ -6535,11 +6539,13 @@
     }
     // как в референсе: заметка в правой колонке НАД «Избранным» (только раскладка на
     // 1 портфель). Нет своих заметок — создаём пустую; есть — первую ставим на место.
+    // Заливка — 'none': в стандартном виде заметка чистая, без цветного канта.
     function pfxStdNotePlace() {
         if (visibleItems().length !== 1) return;
         if (!(dashCfg.notes || []).length) {
-            dashCfg.notes = [pfdNormNote({ id: genId('n'), items: [{ id: genId('i'), type: 'text', text: '' }] })];
+            dashCfg.notes = [pfdNormNote({ id: genId('n'), fill: 'none', items: [{ id: genId('i'), type: 'text', text: '' }] })];
         }
+        dashCfg.notes[0].fill = 'none';
         var nid = 'note:' + dashCfg.notes[0].id;
         var i = dashCfg.order.indexOf(nid);
         if (i >= 0) dashCfg.order.splice(i, 1);

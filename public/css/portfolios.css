@@ -1393,18 +1393,24 @@ body.dark-mode .pfpc-soon-v { color: #34d399; }
    переключались бы мгновенным скачком прямо на глазах — обрывая плавную анимацию сайдбара */
 .pfpc-body { padding: 4px 22px 20px; transition: padding 0.2s ease; }
 .pfpc-list { display: flex; flex-direction: column; gap: 7px; }
-.pfpc-row { display: grid; grid-template-columns: 78px minmax(0,1fr) auto; align-items: center; gap: 12px;
+.pfpc-row { display: grid; grid-template-columns: 46px minmax(0,1fr) auto; align-items: center; gap: 12px;
     padding: 10px 13px; border-radius: 12px; background: rgba(24,38,60,0.022); border: 1px solid rgba(24,38,60,0.05);
     transition: grid-template-columns 0.2s ease, gap 0.2s ease, padding 0.2s ease; }
-/* мульти-портфель: номер-маркер — левой «рельсой» фиксированной ширины, номера всех строк
-   на одной вертикали независимо от ширины суммы справа (раньше маркер стоял auto-колонкой
-   перед суммой и «плавал» по горизонтали вслед за её длиной) */
-.pfpc-row--pf { grid-template-columns: 40px 78px minmax(0,1fr) auto; }
 body.dark-mode .pfpc-row { background: rgba(255,255,255,0.025); border-color: rgba(255,255,255,0.05); }
-.pfpc-date { display: flex; flex-direction: column; gap: 1px; }
-.pfpc-date b { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 700; color: #1b2433; }
-body.dark-mode .pfpc-date b { color: #f4f8fd; }
-.pfpc-date span { font-size: 9.5px; font-weight: 700; color: var(--pf-accent); }
+/* дата — квадратик-«отрывной календарь» левой рельсой строки (число + месяц). Подложка
+   нейтральная; когда портфелей несколько (.pfpc-day--pf), она красится в цвет портфеля —
+   это и есть метка «чья выплата» вместо отдельного номера-бейджа. */
+.pfpc-day { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+    width: 46px; height: 46px; border-radius: 12px; cursor: default;
+    background: rgba(24,38,60,0.05); color: #1b2433;
+    transition: width 0.2s ease, height 0.2s ease; }
+.pfpc-day b { font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
+.pfpc-day span { font-size: 9px; font-weight: 700; letter-spacing: 0.04em; text-transform: lowercase; opacity: 0.72; }
+body.dark-mode .pfpc-day { background: rgba(255,255,255,0.07); color: #f4f8fd; }
+.pfpc-day--pf { background: color-mix(in srgb, var(--c) 15%, transparent);
+    color: color-mix(in srgb, var(--c) 72%, #101722); }
+body.dark-mode .pfpc-day--pf { background: color-mix(in srgb, var(--c) 26%, transparent);
+    color: color-mix(in srgb, var(--c) 34%, #f4f8fd); }
 .pfpc-id { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 /* тикер обрезается многоточием, как имя под ним: без этого неразрывное «SU26233RMFS5»
    в узкой ячейке (сдвиг сайдбаром) вылезало из своей колонки под маркер и сумму */
@@ -1412,31 +1418,6 @@ body.dark-mode .pfpc-date b { color: #f4f8fd; }
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 body.dark-mode .pfpc-tk { color: #f4f8fd; }
 .pfpc-nm { font-size: 10.5px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pfpc-pf { display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; cursor: default; }
-/* номер портфеля «закрашен маркером» его цвета — тот же приём и те же пропорции радиуса,
-   что у названия карточки (.pfc-name-ink): в тесной 30px-рельсе бейдж выглядел мельче
-   колец-номеров на карточках портфелей рядом — увеличен, рельса расширена под него */
-.pfpc-pfnum {
-    display: inline-block; min-width: 16px; text-align: center;
-    font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 800; color: #1b2433; line-height: 1;
-    padding: 6px 10px 7px;
-    transition: min-width 0.2s ease, padding 0.2s ease, font-size 0.2s ease;
-    background: linear-gradient(101deg,
-        transparent 1%,
-        color-mix(in srgb, var(--c) 34%, transparent) 8%,
-        color-mix(in srgb, var(--c) 40%, transparent) 50%,
-        color-mix(in srgb, var(--c) 28%, transparent) 92%,
-        transparent 99%);
-    border-radius: 8px 14px 9px 13px / 13px 8px 14px 7px;
-    transform: rotate(-2deg);
-}
-body.dark-mode .pfpc-pfnum { color: #f7fbff;
-    background: linear-gradient(101deg,
-        transparent 1%,
-        color-mix(in srgb, var(--c) 46%, transparent) 8%,
-        color-mix(in srgb, var(--c) 54%, transparent) 50%,
-        color-mix(in srgb, var(--c) 40%, transparent) 92%,
-        transparent 99%); }
 /* сумма — главное число строки календаря («сколько и когда придёт»); размер — тот же
    токен --fs-total, что у итоговых сумм таблиц (typography-tokens.css), а не свой px */
 .pfpc-amt { font-family: 'JetBrains Mono', monospace; font-size: var(--fs-total, 16px); font-weight: 800; color: #16a34a; white-space: nowrap; text-align: right; transition: font-size 0.2s ease; }
@@ -1462,17 +1443,17 @@ body.dark-mode .pfpc-state-t { color: #f4f8fd; }
 .pf-paycal { container-type: inline-size; }
 @container (max-width: 400px) {
     .pfpc-body { padding: 4px 14px 16px; }
-    /* колонку даты не сужаем: «через 10 недель» под ней перенесётся на 2 строки */
-    .pfpc-row { gap: 8px; padding: 9px 11px; }
-    .pfpc-row--pf { grid-template-columns: 32px 78px minmax(0,1fr) auto; }
+    .pfpc-row { grid-template-columns: 40px minmax(0,1fr) auto; gap: 8px; padding: 9px 11px; }
+    .pfpc-day { width: 40px; height: 40px; border-radius: 11px; }
+    .pfpc-day b { font-size: 14px; }
     .pfpc-amt { font-size: 14px; }
-    .pfpc-pfnum { min-width: 14px; padding: 5px 8px 6px; font-size: 13px; }
     .pfpc-soon { padding: 5px 10px 5px 12px; }
     .pfpc-soon-v { font-size: 15px; }
 }
 @media (max-width: 560px) {
-    .pfpc-row, .pfpc-row--pf { grid-template-columns: 58px minmax(0,1fr) auto; gap: 8px; padding: 9px 11px; }
-    .pfpc-pf { display: none; }
+    .pfpc-row { grid-template-columns: 40px minmax(0,1fr) auto; gap: 8px; padding: 9px 11px; }
+    .pfpc-day { width: 40px; height: 40px; border-radius: 11px; }
+    .pfpc-day b { font-size: 14px; }
 }
 
 /* ============================================================
