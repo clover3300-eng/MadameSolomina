@@ -1378,6 +1378,14 @@
             softTimer = null;
             rebalRepaint();   // открытая карточка ребалансировки: живые цены/НКД пришли — обновить
             if (currentTab !== 'portfolios' || !dq('pfWrap')) return;
+            // Идёт жест (драг/ресайз), открыт пикер или ещё доигрывают анимации только что
+            // отпущенной карточки — полный своп сейчас недопустим: он оборвёт жест/анимацию.
+            // Раньше renderPortfolios просто отбрасывал такой рендер (ранний return), и на
+            // авторизованном аккаунте — где есть живые котировки, а значит пачки ответов
+            // каждые несколько секунд — своп регулярно попадал в «хвост» дропа: карточка
+            // моргала и прыгала на месте. Теперь ПЕРЕЗАВОДИМ таймер: обновление не теряется,
+            // а дожидается покоя.
+            if (pfdQuiet()) { softRerender(); return; }
             if (openMenu) return;   // не сбиваем открытый редактор
             for (var ck in chartOpen) { if (chartOpen[ck]) return; }   // не перерисовываем раскрытый график (сбилась бы анимация)
             if (document.querySelector('.pf-impmenu.open')) return;   // не сбиваем открытое меню «Импорт»
@@ -1999,6 +2007,14 @@
     // жест на полпути. pfdDragEl/pfdRsCancel объявлены ниже (var-хойстинг), к
     // моменту вызова (пользовательское взаимодействие) уже инициализированы.
     function pfdBusy() { return !!(pfdDragEl || pfdRsCancel); }
+    // «Тихое окно» после жеста: pfdEndDrag сбрасывает pfdDragEl сразу, но карточка ещё
+    // доигрывает — призрак летит в слот (~180мс), соседи съезжаются FLIP-ом (~240мс).
+    // Полный своп в этот момент обрывает анимацию на полукадре: визуально карточка
+    // моргает и «прыгает». Держим фоновые перерисовки до конца анимаций.
+    var pfdCalmUntil = 0;
+    function pfdCalm(ms) { pfdCalmUntil = Date.now() + (ms || 320); }
+    // Можно ли сейчас делать ФОНОВЫЙ полный своп (жест / открытый пикер / хвост анимации).
+    function pfdQuiet() { return pfdBusy() || dashEdit || Date.now() < pfdCalmUntil; }
     // Ре-рендер, инициированный самим конструктором: во время жеста/открытого
     // пикера фоновые перерисовки глушатся — этот флаг их пропускает.
     function pfdRerender() { pfdWantRender = true; renderSmooth(); }
@@ -4434,6 +4450,8 @@
     }
     function pfdEndDrag(cancelled) {
         if (pfdTick) { cancelAnimationFrame(pfdTick); pfdTick = null; }
+        // жест кончился, но призрак/FLIP ещё летят — фоновым свопам сюда нельзя
+        pfdCalm(360);
         document.body.classList.remove('pfd-dragging-now');
         var item = pfdDragEl, g = pfdGhost, home = pfdHomeNext, lp = pfdLastPt;
         pfdDragEl = null; pfdGhost = null; pfdLastPt = null; pfdHomeNext = null;
@@ -4633,6 +4651,9 @@
             document.removeEventListener('pointercancel', onUp);
             item.classList.remove('pfd-resizing');
             pfdRsCancel = null;
+            // единственный выход из ресайза (и обычный, и по Esc): соседи ещё съезжаются
+            // FLIP-ом под новый размер — фоновым свопам сюда нельзя
+            pfdCalm(360);
         }
         var newColStart = 0;
         function onMove(ev) {
