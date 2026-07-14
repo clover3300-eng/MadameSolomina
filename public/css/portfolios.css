@@ -2314,8 +2314,11 @@ body.dark-mode .pfl-open-sep { background: rgba(255, 255, 255, 0.16); }
 .pfl-open-btn.on::after { content: ''; position: absolute; top: 3px; right: 4px; width: 6px; height: 6px; border-radius: 99px; background: #22c55e; box-shadow: 0 0 0 2px #eef1ff; }
 .pfl-open-btn.active.on::after { box-shadow: 0 0 0 2px #4035c4; }
 
-/* ---- иконка «Раскладка» рядом с «Добавить виджет» + hover-поповер ----
-   Базовая/Индивидуальная/Сохранить вынесены из карточки в поповер по наведению. */
+/* ---- иконка «Раскладка» рядом с «Добавить виджет» + поповер ПО КЛИКУ ----
+   Раньше поповер раскрывался по hover и пропадал при любом ре-рендере/уходе мыши —
+   «Сохранить текущий вид» было не нажать. Теперь клик по шестерёнке вешает .open
+   (pfCfgPopToggle в portfolios.js), панель живёт до клика-вне/Esc/✕ и переживает
+   перерисовки (open восстанавливает renderPortfolios). */
 .pfl-cfg-wrap { display: none; align-items: center; position: relative; margin-left: 6px; vertical-align: middle; }
 .pfl-cfg-btn {
     display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px;
@@ -2323,8 +2326,7 @@ body.dark-mode .pfl-open-sep { background: rgba(255, 255, 255, 0.16); }
     color: #4b5566; cursor: pointer; transition: background 0.14s, border-color 0.14s, color 0.14s;
 }
 .pfl-cfg-btn svg { width: 17px; height: 17px; }
-.pfl-cfg-btn:hover, .pfl-cfg-wrap:hover .pfl-cfg-btn { background: linear-gradient(#eef1ff, #dfe4fb); border-color: #b9c2ef; color: #3730a3; }
-/* поповер: раскрывается по hover обёртки; невидимый мостик сверху не даёт схлопнуться в зазоре */
+.pfl-cfg-btn:hover, .pfl-cfg-wrap.open .pfl-cfg-btn { background: linear-gradient(#eef1ff, #dfe4fb); border-color: #b9c2ef; color: #3730a3; }
 .pfl-cfg-pop {
     position: absolute; top: calc(100% + 8px); right: 0; z-index: 1200; width: 264px;
     background: #fff; border: 1px solid #e6ebf3; border-radius: 14px; padding: 8px;
@@ -2332,8 +2334,16 @@ body.dark-mode .pfl-open-sep { background: rgba(255, 255, 255, 0.16); }
     opacity: 0; visibility: hidden; transform: translateY(-4px) scale(0.98); transform-origin: top right;
     transition: opacity 0.14s, transform 0.14s, visibility 0.14s;
 }
-.pfl-cfg-pop::before { content: ''; position: absolute; top: -10px; left: 0; right: 0; height: 10px; }
-.pfl-cfg-wrap:hover .pfl-cfg-pop, .pfl-cfg-pop:hover { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
+.pfl-cfg-wrap.open .pfl-cfg-pop { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
+/* шапка поповера: имя панели + явный ✕ (панель теперь «прилипшая», нужен выход) */
+.pfl-cfg-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 4px 4px 10px; }
+.pfl-cfg-head b { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #1b2433; }
+.pfl-cfg-x {
+    width: 26px; height: 26px; flex-shrink: 0; display: grid; place-items: center; border: 0;
+    border-radius: 8px; background: #f1f4f9; color: #64748b; cursor: pointer; transition: background 0.12s, color 0.12s;
+}
+.pfl-cfg-x svg { width: 13px; height: 13px; }
+.pfl-cfg-x:hover { background: #e5eaf2; color: #1b2433; }
 .pfl-cfg-h { font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8; padding: 6px 10px 7px; }
 .pfl-cfg-item { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; padding: 9px 10px; border: 0; border-radius: 10px; background: transparent; cursor: pointer; color: #1b2433; transition: background 0.12s; }
 .pfl-cfg-item:hover { background: #f1f4f9; }
@@ -2346,8 +2356,11 @@ body.dark-mode .pfl-open-sep { background: rgba(255, 255, 255, 0.16); }
 .pfl-cfg-item.primary svg { color: #4f46e5; }
 .pfl-cfg-item.primary.done b, .pfl-cfg-item.primary.done svg { color: #12a35c; }
 body.dark-mode .pfl-cfg-btn { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.12); color: #b7c2d3; }
-body.dark-mode .pfl-cfg-btn:hover, body.dark-mode .pfl-cfg-wrap:hover .pfl-cfg-btn { background: rgba(99, 102, 241, 0.2); border-color: rgba(129, 140, 248, 0.5); color: #c7d2fe; }
+body.dark-mode .pfl-cfg-btn:hover, body.dark-mode .pfl-cfg-wrap.open .pfl-cfg-btn { background: rgba(99, 102, 241, 0.2); border-color: rgba(129, 140, 248, 0.5); color: #c7d2fe; }
 body.dark-mode .pfl-cfg-pop { background: #131c2e; border-color: #26324c; box-shadow: 0 20px 44px -18px rgba(0, 0, 0, 0.6); }
+body.dark-mode .pfl-cfg-head b { color: #e8eef7; }
+body.dark-mode .pfl-cfg-x { background: rgba(255, 255, 255, 0.06); color: #a9b6c6; }
+body.dark-mode .pfl-cfg-x:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
 body.dark-mode .pfl-cfg-item { color: #e8eef7; }
 body.dark-mode .pfl-cfg-item:hover { background: rgba(255, 255, 255, 0.06); }
 body.dark-mode .pfl-cfg-item svg { color: #93a2b8; }
@@ -2485,7 +2498,10 @@ body.dark-mode .pfcf-input:focus { border-color: #818cf8; box-shadow: 0 0 0 3px 
 .pfp-actions .pf-eyecnt { background: rgba(255, 255, 255, 0.16); color: #eaf1fb; }
 /* иконка раскладки внутри панели — тоже translucent-light на тёмном */
 .pfp-cfg .pfl-cfg-btn { width: 38px; height: 38px; background: rgba(255, 255, 255, 0.07); border-color: rgba(255, 255, 255, 0.14); color: #cdd7e6; }
-.pfp-cfg:hover .pfl-cfg-btn, .pfp-cfg .pfl-cfg-btn:hover { background: rgba(255, 255, 255, 0.13); border-color: rgba(255, 255, 255, 0.24); color: #fff; }
+.pfp-cfg.open .pfl-cfg-btn, .pfp-cfg .pfl-cfg-btn:hover { background: rgba(255, 255, 255, 0.13); border-color: rgba(255, 255, 255, 0.24); color: #fff; }
+/* «воздух» KPI «за сегодня»: единственный показатель героя дышит свободнее */
+.pfp-kpis--solo { padding: 0 30px 0 26px; gap: 0; }
+.pfp-kpis--solo .pfp-kpi { gap: 5px; }
 /* Адаптив по ширине БЛОКА: сузили панель / сделали квадратом → контент перестраивается,
    ничего не вылезает за край (container queries, не оконные media). Как только панель уже
    не влезает одной строкой (полная ширина span 12 ≈ 1180px, а урезанная — меньше), три

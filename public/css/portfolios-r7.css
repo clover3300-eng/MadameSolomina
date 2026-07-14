@@ -893,13 +893,16 @@ body.dark-mode .dm-news b { color: #e8eef7; }
 .pfd-item.pfd-thm-dark .pfnw-pk:hover { border-color: #34425c; color: #f4f8fd; }
 .pfd-item.pfd-thm-dark .pfnw-addinput { background: #0f1826; color: #e7eef7; }
 /* Календарь · месяц — дополнение к зеркалам §16 */
-.pfd-item.pfd-thm-dark .pfcm-tot b, .pfd-item.pfd-thm-dark .pfcm-s,
+.pfd-item.pfd-thm-dark .pfcm-tot b,
 .pfd-item.pfd-thm-dark .pfcm-day-h span, .pfd-item.pfd-thm-dark .pfcm-day-r b { color: #34d399; }
+.pfd-item.pfd-thm-dark .pfcm-tot { background: rgba(52, 211, 153, 0.1); box-shadow: inset 0 0 0 1px rgba(52, 211, 153, 0.22); }
+.pfd-item.pfd-thm-dark .pfcm-tot i { color: #7fc4a4; }
+.pfd-item.pfd-thm-dark .pfcm-tot.empty { background: rgba(255,255,255,0.05); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1); }
+.pfd-item.pfd-thm-dark .pfcm-tot.empty i, .pfd-item.pfd-thm-dark .pfcm-tot.empty b { color: #8fa2b8; }
 .pfd-item.pfd-thm-dark .pfcm-d.today { box-shadow: inset 0 0 0 1.5px rgba(255,255,255,0.2); }
 .pfd-item.pfd-thm-dark .pfcm-d.today .pfcm-n,
 .pfd-item.pfd-thm-dark .pfcm-d.multi .pfcm-n { color: #f4f8fd; }
-.pfd-item.pfd-thm-dark .pfcm-d.one .pfcm-n,
-.pfd-item.pfd-thm-dark .pfcm-d.one .pfcm-s { color: color-mix(in srgb, var(--c) 55%, #e8eef7); }
+.pfd-item.pfd-thm-dark .pfcm-d.one .pfcm-n { color: color-mix(in srgb, var(--c) 55%, #e8eef7); }
 .pfd-item.pfd-thm-dark .pfcm-d.has.today, .pfd-item.pfd-thm-dark .pfcm-d.sel { box-shadow: inset 0 0 0 2px #fff; }
 .pfd-item.pfd-thm-dark .pfcm-arw:hover:not([disabled]) { background: rgba(255,255,255,0.1); color: #fff; }
 /* Календарь выплат · список (pfpc); id-префикс — светлые правила §8 тоже с #panel-portfolios */
@@ -981,11 +984,19 @@ body.dark-mode .dm-news b { color: #e8eef7; }
    портфелей — нейтральный акцент и точки по цветам. */
 .pf-calmblk { display: flex; flex-direction: column; box-sizing: border-box; padding: 0 22px 20px; }
 .pf-calmblk > .pf-ch { padding-left: 0; padding-right: 0; }
-.pfcm-head-r { display: flex; align-items: center; margin-left: auto; }
-.pfcm-tot { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
-.pfcm-tot i { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: #9aa7b8; font-style: normal; }
-.pfcm-tot b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 15px; font-weight: 700; color: #12a35c; }
-.pfcm-tot.empty b { color: #9aa7b8; font-size: 12.5px; font-family: 'Inter', sans-serif; }
+/* итог месяца в шапке — компактная пилюля одной строкой: nowrap не даёт «₽»
+   переноситься на новую строку при узком виджете */
+.pfcm-head-r { display: flex; align-items: center; margin-left: auto; flex-shrink: 0; }
+.pfcm-tot {
+    display: inline-flex; align-items: baseline; gap: 6px; white-space: nowrap;
+    padding: 5px 11px; border-radius: 99px;
+    background: rgba(18, 163, 92, 0.08); box-shadow: inset 0 0 0 1px rgba(18, 163, 92, 0.18);
+}
+.pfcm-tot i { font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #56906f; font-style: normal; }
+.pfcm-tot b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 13px; font-weight: 700; color: #12a35c; white-space: nowrap; }
+.pfcm-tot.empty { background: #f2f5f9; box-shadow: inset 0 0 0 1px #e6ebf2; }
+.pfcm-tot.empty i { color: #9aa7b8; }
+.pfcm-tot.empty b { color: #9aa7b8; font-size: 11.5px; font-family: 'Inter', sans-serif; }
 
 /* шапка-навигация месяца */
 .pfcm-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 2px 0 10px; }
@@ -1019,14 +1030,21 @@ body.dark-mode .dm-news b { color: #e8eef7; }
 .pfcm-d.has:hover { transform: translateY(-1px); }
 .pfcm-d.one { background: color-mix(in srgb, var(--c) 14%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 30%, transparent); }
 .pfcm-d.one .pfcm-n { color: color-mix(in srgb, var(--c) 65%, #1b2433); font-weight: 700; }
-.pfcm-d.one .pfcm-s { color: color-mix(in srgb, var(--c) 72%, #1b2433); }
 .pfcm-d.multi { background: rgba(18, 163, 92, 0.09); box-shadow: inset 0 0 0 1px rgba(18, 163, 92, 0.22); }
 .pfcm-d.multi .pfcm-n { color: #0f172a; font-weight: 700; }
 .pfcm-d.has.today { box-shadow: inset 0 0 0 1.5px #1b2433; }
 .pfcm-d.sel { box-shadow: inset 0 0 0 2px #1b2433; }
-.pfcm-s { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 9.5px; font-weight: 700; color: #12a35c; line-height: 1.1; letter-spacing: -0.02em; }
 .pfcm-dots { display: flex; gap: 2px; }
 .pfcm-dots i { width: 4px; height: 4px; border-radius: 50%; }
+
+/* Заданная высота виджета (.pfd-hset): контент ПОДСТРАИВАЕТСЯ под размер — сетка
+   месяца тянется на свободную высоту (ряды 1fr), клетки могут и сжиматься
+   (min-height снимается), раскрытый список дня скроллится, а не распирает блок. */
+.pfd-item.pfd-hset .pf-calmblk .pfcm-grid { flex: 1 1 auto; min-height: 0; grid-auto-rows: 1fr; }
+.pfd-item.pfd-hset .pf-calmblk .pfcm-d,
+.pfd-item.pfd-hset .pf-calmblk .pfcm-e { min-height: 0; }
+.pfd-item.pfd-hset .pf-calmblk .pfcm-d { justify-content: center; }
+.pfd-item.pfd-hset .pf-calmblk .pfcm-day { flex: 0 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
 
 /* раскрытый день — список бумаг под сеткой */
 .pfcm-day { margin-top: 12px; padding-top: 11px; border-top: 1px solid #eef2f7; }
@@ -1048,11 +1066,15 @@ body.dark-mode .pfcm-n { color: #8fa0b6; }
 body.dark-mode .pfcm-d.today { box-shadow: inset 0 0 0 1.5px rgba(255,255,255,0.2); }
 body.dark-mode .pfcm-d.today .pfcm-n,
 body.dark-mode .pfcm-d.multi .pfcm-n { color: #f4f8fd; }
-body.dark-mode .pfcm-d.one .pfcm-n, body.dark-mode .pfcm-d.one .pfcm-s { color: color-mix(in srgb, var(--c) 55%, #e8eef7); }
+body.dark-mode .pfcm-d.one .pfcm-n { color: color-mix(in srgb, var(--c) 55%, #e8eef7); }
 body.dark-mode .pfcm-d.has.today, body.dark-mode .pfcm-d.sel { box-shadow: inset 0 0 0 2px #fff; }
 body.dark-mode .pfcm-day, body.dark-mode .pfcm-day-r { border-color: rgba(255,255,255,0.08); }
 body.dark-mode .pfcm-day-h b, body.dark-mode .pfcm-day-tk { color: #e8eef7; }
-body.dark-mode .pfcm-tot b, body.dark-mode .pfcm-s, body.dark-mode .pfcm-day-h span, body.dark-mode .pfcm-day-r b { color: #34d399; }
+body.dark-mode .pfcm-tot b, body.dark-mode .pfcm-day-h span, body.dark-mode .pfcm-day-r b { color: #34d399; }
+body.dark-mode .pfcm-tot { background: rgba(52, 211, 153, 0.1); box-shadow: inset 0 0 0 1px rgba(52, 211, 153, 0.22); }
+body.dark-mode .pfcm-tot i { color: #7fc4a4; }
+body.dark-mode .pfcm-tot.empty { background: rgba(255,255,255,0.05); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1); }
+body.dark-mode .pfcm-tot.empty i, body.dark-mode .pfcm-tot.empty b { color: #8fa2b8; }
 /* тёмный ВИДЖЕТ (настройка «Тема: тёмная» в пикере) — те же правила, но по классу блока */
 .pfd-item.pfd-thm-dark .pfcm-mon, .pfd-item.pfd-thm-dark .pfcm-day-h b, .pfd-item.pfd-thm-dark .pfcm-day-tk { color: #e8eef7; }
 .pfd-item.pfd-thm-dark .pfcm-n { color: #8fa0b6; }
@@ -1353,3 +1375,22 @@ body.dark-mode .pfdcfg-seg-b { background: rgba(255, 255, 255, 0.04); border-col
 body.dark-mode .pfdcfg-seg-b:hover { border-color: rgba(255, 255, 255, 0.24); color: #f4f8fd; }
 body.dark-mode .pfdcfg-seg-b.on { background: rgba(99, 102, 241, 0.2); border-color: rgba(129, 140, 248, 0.5); color: #c7d2fe; }
 body.dark-mode .pfdcfg-hint { border-top-color: rgba(255, 255, 255, 0.1); color: #7f8ea3; }
+
+/* ============ 22. Скелетоны загрузки (.pf-skel) ============
+   Пока живые котировки первой загрузки в полёте, суммы (герой карточки, «Доход»,
+   сводка, KPI, «за сегодня» в панели управления) показываются мерцающими
+   плашками вместо «прыгающих» чисел по цене покупки. Рендерит skelHtml(w,h). */
+.pf-skel {
+    display: inline-block; vertical-align: middle; border-radius: 6px;
+    background: linear-gradient(100deg, #e8edf4 40%, #f5f8fc 50%, #e8edf4 60%);
+    background-size: 200% 100%;
+    animation: pfSkelWave 1.3s ease-in-out infinite;
+}
+@keyframes pfSkelWave { from { background-position: 130% 0; } to { background-position: -70% 0; } }
+/* тёмные поверхности: герой «Панели управления», тёмная тема сайта, тёмные виджеты */
+.pfx-hero .pf-skel, .pfp-panel .pf-skel,
+body.dark-mode .pf-skel, .pfd-item.pfd-thm-dark .pf-skel {
+    background: linear-gradient(100deg, rgba(255, 255, 255, 0.1) 40%, rgba(255, 255, 255, 0.22) 50%, rgba(255, 255, 255, 0.1) 60%);
+    background-size: 200% 100%;
+}
+@media (prefers-reduced-motion: reduce) { .pf-skel { animation: none; } }
