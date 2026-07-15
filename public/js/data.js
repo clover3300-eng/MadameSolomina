@@ -290,13 +290,9 @@ function showDemoBanner() {
 
 async function loadData() {
             initTheme();
-            checkFirstVisit();
             updateMarketData();
             loadCompanyDescriptions();
-            // Init bento ring
-            setTimeout(() => { syncBentoRing(); syncBentoMarketData(); }, 1500);
-            //updateMarketStatus(); // Временно отключаем, т.к. элемент не существует
-            
+
             try {
     console.log('Fetching data from:', CSV_URL);
     const response = await fetch(CSV_URL, {
@@ -555,9 +551,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Очищаем от пробелов и превращаем в число
     const totalInvestment = parseFloat(input.value.replace(/\s/g, ''));
-    
-    console.log(`[CALC] === НАЧАЛО РАСЧЕТА ===`); // ЛОГ
-    console.log(`[CALC] Введенная сумма: ${totalInvestment}`); // ЛОГ
 
     if (!totalInvestment || totalInvestment <= 0) {
         renderMonthlyIncomeCards();
@@ -567,7 +560,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 6 бумаг в стратегии
     const perBondBudget = totalInvestment / 6;
-    console.log(`[CALC] Бюджет на одну бумагу: ${perBondBudget.toFixed(2)}`); // ЛОГ
 
     const priced = monthlyIncomeBonds.map(bond => ({ bond, fullPrice: bond.p + bond.nkd }));
 
@@ -580,14 +572,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Сохраняем кол-во в карту
         bondQtyMap[bond.t] = count;
-
-        // === ВАЖНЫЙ ЛОГ ПО КАЖДОЙ БУМАГЕ ===
-        console.log(`[CALC] Бумага: ${bond.n}`);
-        console.log(`       Цена (тело): ${bond.p}`);
-        console.log(`       НКД: ${bond.nkd}`);
-        console.log(`       Полная цена: ${fullPrice.toFixed(2)}`);
-        console.log(`       Расчет: ${perBondBudget.toFixed(2)} / ${fullPrice.toFixed(2)} = ${count} шт.`);
-        console.log('---');
     });
 
     // Остаток от деления "на 6 равных частей" добираем самыми дешёвыми бумагами,
@@ -605,11 +589,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
-    console.log(`[CALC] Остаток после добора: ${leftover.toFixed(2)}`);
-
     renderMonthlyIncomeCards();
     recalcCustomCoupons();
-    console.log(`[CALC] === КОНЕЦ РАСЧЕТА ===`);
 }
         // ===== ФУНКЦИЯ 1: Отрисовка карточек =====
 function renderMonthlyIncomeCards() {

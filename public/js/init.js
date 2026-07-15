@@ -1,18 +1,7 @@
-        if ('serviceWorker' in navigator && location.protocol === 'https:') {
-    navigator.serviceWorker.register('./service-worker.js')
-        .then(function(registration) {
-            console.log('Service Worker зарегистрирован:', registration);
-        })
-        .catch(function(error) {
-            console.log('Ошибка регистрации Service Worker:', error);
-        });
-} else {
-    console.log('Service Worker not registered: not HTTPS or not supported');
-}
-
-             // Показываем навигацию принудительно для отладки
-             document.getElementById('navWrapper').style.display = 'flex';
-        loadData(); 
+        // Регистрация service-worker удалена (аудит 2026-07-15): файла
+        // service-worker.js в public/ нет, на проде запрос отдавал 404.
+        // loadData() отсюда тоже убран — данные грузит единственный вызов
+        // в DOMContentLoaded-инициализаторе webapp-tabs.js (раньше грузились дважды).
         if(window.Telegram && window.Telegram.WebApp) {
             const tg = window.Telegram.WebApp;
             
@@ -25,13 +14,13 @@
             // Отключаем свайп вниз для закрытия приложения
             tg.disableVerticalSwipes();
             
-            // Запрашиваем полноэкранный режим (Telegram Bot API 7.7+)
-            if (tg.requestFullscreen) {
+            // Полноэкранный режим и блокировка ориентации появились в Bot API 8.0:
+            // на старых клиентах сам метод существует, но внутри логирует
+            // «not supported» в консоль — поэтому сверяем версию, а не наличие
+            if (tg.requestFullscreen && tg.isVersionAtLeast && tg.isVersionAtLeast('8.0')) {
                 tg.requestFullscreen();
             }
-            
-            // Блокируем сворачивание приложения (Telegram Bot API 7.7+)
-            if (tg.lockOrientation) {
+            if (tg.lockOrientation && tg.isVersionAtLeast && tg.isVersionAtLeast('8.0')) {
                 tg.lockOrientation();
             }
             
@@ -53,7 +42,7 @@
             // Повторный вызов expand через небольшую задержку (на случай если первый не сработал)
             setTimeout(() => {
                 tg.expand();
-                if (tg.requestFullscreen) {
+                if (tg.requestFullscreen && tg.isVersionAtLeast && tg.isVersionAtLeast('8.0')) {
                     tg.requestFullscreen();
                 }
             }, 100);
@@ -537,33 +526,8 @@ function updateInfoBtnState(tabName) {
 }
 
     
-document.addEventListener("DOMContentLoaded", function() {
-    const tg = window.Telegram.WebApp;
-    tg.expand();
-
-    // 1. ПРОВЕРКА: Если данных нет, покажем ошибку
-    if (!tg.initDataUnsafe || !tg.initDataUnsafe.user) {
-        // alert("Нет данных пользователя (вы не в Телеграм?)"); 
-        return;
-    }
-
-    const user = tg.initDataUnsafe.user;
-
-    // 4. ОТПРАВКА ЛОГА через единый API
-    const logParams = new URLSearchParams();
-    logParams.append("action", "webapp_log");
-    logParams.append("id", user.id);
-    logParams.append("username", user.username ? "@" + user.username : "No Username");
-    logParams.append("first_name", user.first_name);
-
-    fetch(`${USERS_API_URL}?${logParams.toString()}`, { redirect: 'follow', mode: 'cors' })
-    .then(r => r.json())
-    .then(data => {
-        console.log("Лог записан:", data);
-    })
-    .catch(err => {
-        console.error("Ошибка лога:", err);
-    });
-});
+// Легаси-лог посещений в Google Apps Script удалён (аудит 2026-07-15):
+// USERS_API_URL пуст с аудита безопасности 2026-07-10, и в Telegram-контексте
+// fetch уходил в саму страницу и падал с «Ошибка лога» в консоли.
 
 

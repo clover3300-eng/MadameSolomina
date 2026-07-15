@@ -1731,3 +1731,16 @@ body.dark-mode .sl-bulkbar { background: #1d2734; border-bottom-color: rgba(255,
 }
 .sl-bulk-btn:active { background: #e3ebf5; }
 body.dark-mode .sl-bulk-btn { background: rgba(255,255,255,0.08); color: #c4cedd; }
+
+/* ===== Оверлей квиза Vanguard (перенесено из удалённого registration.css,
+   аудит 2026-07-15; сам файл целиком обслуживал вычищенную легаси-регистрацию) ===== */
+body.quiz-mode #screen-vanguard {
+    position: fixed !important;
+    top: 0; left: 0; right: 0; bottom: 0;
+    overflow: hidden !important;
+    z-index: 200;
+    margin: 0 !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+}

@@ -43,12 +43,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (ruble) ruble.style.fontSize = '64px';
         }, 50);
     }
-    // Start data loading
+    // Start data loading — единственный вызов на старте (аудит 2026-07-15:
+    // раньше loadData дублировался из init.js, а updateMarketData и
+    // loadCompanyDescriptions вызывались трижды — loadData делает оба сам;
+    // 30-секундный интервал updateMarketData уже ставит core.js)
     loadData();
-    // Init market data auto-refresh
-    updateMarketData();
-    setInterval(updateMarketData, 30000);
-    loadCompanyDescriptions();
 });
 
 function populatePanels() {
@@ -890,18 +889,9 @@ window.goBackFromCompany = function() {
     if (co) { co.classList.remove('active'); co.style.display = ''; }
 };
 
-// Sync bento ring / market data to topbar
-window.syncBentoMarketData = function() {
-    // Update quick stats if wanted in future
-};
-
-// checkFirstVisit override — skip welcome screen
-window.checkFirstVisit = function() {
-    // No-op: we always start at the app
-};
-
-// Placeholder for missing functions
-window.openTerminalOrRegister = function() { switchTab('calc'); };
+// Шимы syncBentoMarketData/checkFirstVisit и дубль openTerminalOrRegister
+// удалены (аудит 2026-07-15): их легаси-источники вычищены из
+// registration.js/core.js/data.js, вызовов больше нет.
 
 // Handle theme button in top bar sync
 function syncThemeBtn() {

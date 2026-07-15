@@ -115,7 +115,6 @@ function formatNewsDate(dateString) {
         let currentScreen = 'screen-home';
         let lastNavScreen = 'screen-home';
         var isPortfolioCalculated = false;
-        let isFirstVisit = true;
         let isUpdatingProgrammatically = false;
         let savedCustomBonds = null;
         let savedCustomStocks = null;
@@ -164,77 +163,17 @@ function formatNewsDate(dateString) {
         
         // Swipe navigation removed
 
-// !!! ВАЖНО: Замените эту ссылку на URL вашего НОВОГО Apps Script для управления пользователями !!!
-// Это НЕ тот же URL что LOGGING_URL — нужно создать ОТДЕЛЬНЫЙ скрипт из файла UserManagement_GoogleAppsScript.js
-// и развернуть его как веб-приложение (Развернуть → Новое развертывание → Веб-приложение)
-// ОТКЛЮЧЕНО (аудит безопасности 2026-07-10): старая регистрация через
-// Google Apps Script доверяла НЕПОДПИСАННОМУ initDataUnsafe.user.id —
-// telegram_id подделывается, и любой мог войти в чужой легаси-аккаунт.
-// Настоящий вход теперь через Supabase (supabase-client.js) с проверкой
-// подписи Telegram на сервере (worker/index.js). Пустая строка переводит
-// checkFirstVisit на локальную ветку — ту же, что у всех браузерных
-// пользователей. Старый URL при нужде — в истории git.
-const USERS_API_URL = "";
-
-// Проверяем настроен ли API
-function isApiConfigured() {
-    return USERS_API_URL && !USERS_API_URL.includes('ВСТАВЬТЕ_СЮДА');
-}
-
-// Глобальное состояние пользователя
+// Старая регистрация через Google Apps Script удалена целиком (аудит 2026-07-15;
+// отключена была ещё аудитом безопасности 2026-07-10 — доверяла неподписанному
+// initDataUnsafe). Настоящий вход — Supabase (supabase-client.js + home-register.js).
+// Глобальное состояние пользователя оставлено: его читают init.js (свайп-назад)
+// и легаси-ветки showScreen.
 window._currentUser = null;
 window._isRegistered = false;
-window._selectedBroker = '';
-window._selectedPlan = 'trial';
-
-                function checkFirstVisit() {
-    // Сначала проверяем localStorage — быстрый кэш
-    const cached = localStorage.getItem('user_registered');
-    
-    const tg = window.Telegram?.WebApp;
-    const telegramId = tg?.initDataUnsafe?.user?.id;
-    
-    if (telegramId && isApiConfigured()) {
-        // В Telegram и API настроен — проверяем в Google Sheets
-        // Но сначала показываем кэш мгновенно если есть
-        if (cached) {
-            try {
-                const cachedUser = JSON.parse(cached);
-                window._currentUser = cachedUser;
-                window._isRegistered = true;
-                isFirstVisit = false;
-                document.getElementById('navWrapper').style.display = 'flex';
-                populateDashboard(cachedUser);
-                showScreen('screen-dashboard');
-            } catch(e) {
-                showScreen('screen-home');
-            }
-        }
-        // Затем проверяем актуальные данные с сервера (async)
-        checkUserRegistration(telegramId);
-    } else {
-        // Не в Telegram или API не настроен — работаем через localStorage
-        if (cached) {
-            try {
-                const cachedUser = JSON.parse(cached);
-                window._currentUser = cachedUser;
-                window._isRegistered = true;
-                isFirstVisit = false;
-                document.getElementById('navWrapper').style.display = 'flex';
-                populateDashboard(cachedUser);
-                showScreen('screen-dashboard');
-                return;
-            } catch(e) { /* corrupted cache */ }
-        }
-        isFirstVisit = true;
-        showScreen('screen-home');
-    }
-}
 
 
         function startCalculation() {
     localStorage.setItem('user_visited', 'true');
-    isFirstVisit = false;
     showScreen('screen-app');
     
     // Haptic feedback при открытии
@@ -243,10 +182,8 @@ window._selectedPlan = 'trial';
     }
 }
     function openTerminal() {
-    console.log('openTerminal called'); // для отладки
     localStorage.setItem('user_visited', 'true');
-    isFirstVisit = false;
-    
+
     // Скрываем навигацию (экран расчёта без nav)
     const navWrapper = document.getElementById('navWrapper');
     if (navWrapper) navWrapper.style.removeProperty('display');
@@ -571,8 +508,6 @@ setTimeout(() => {
                 document.body.classList.remove('app-mode');
                 document.getElementById('navWrapper').style.display = 'flex';
                 document.getElementById('stickyPanel').style.display = 'none';
-                // Обновляем данные дашборда
-                if (window._currentUser) populateDashboard(window._currentUser);
             } else if (screenId === 'screen-register') {
                 // Регистрация — без навигации
                 document.body.classList.remove('home-mode');
