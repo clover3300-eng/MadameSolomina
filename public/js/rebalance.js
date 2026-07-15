@@ -136,6 +136,7 @@ function renderAuroraOfzList() {
             <div class="rbx-row-main" onclick="toggleAuroraOfzDetails('${b.t}')">
                 <span class="rk">#${index + 1}</span>
                 <span class="nm">${formatNameWithMonoDigits(limitName(b.n))}</span>
+                <span class="mt">${formatDateDMY(details.matDate)}</span>
                 <span class="yl" style="color:${ofzYieldColor(parseFloat(sheetYield), minY, maxY)}">${sheetYield}%</span>
                 <span class="pr">${priceWithNkd} \u20bd</span>
                 <span class="ar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></span>
@@ -630,6 +631,33 @@ function openTradingViewDirect(ticker) {
 // КОНЕЦ AURORA REBALANCE ФУНКЦИЙ
 
 // ========================================================================
+// БЛОК КАНДИДАТОВ — переключатель ОФЗ/Акции (лекало подвкладок «Теста»).
+// Списки рендерятся в свои контейнеры как раньше; переключатель только
+// показывает нужную подвкладку и её инструменты (сортировка / эшелоны).
+// ========================================================================
+function rbxCandTab(tab) {
+    document.querySelectorAll('#rbxCandTabs .rbr-tab').forEach(btn => {
+        btn.classList.toggle('act', btn.dataset.ctab === tab);
+    });
+    const subOfz = document.getElementById('rbxSubOfz');
+    const subStocks = document.getElementById('rbxSubStocks');
+    if (subOfz) subOfz.classList.toggle('act', tab === 'ofz');
+    if (subStocks) subStocks.classList.toggle('act', tab === 'stocks');
+    const toolsOfz = document.getElementById('rbxToolsOfz');
+    const toolsStocks = document.getElementById('rbxToolsStocks');
+    if (toolsOfz) toolsOfz.hidden = tab !== 'ofz';
+    if (toolsStocks) toolsStocks.hidden = tab !== 'stocks';
+    // раскрытая строка ОФЗ и попап деталей не должны «висеть» на скрытой вкладке
+    if (tab !== 'ofz') {
+        document.querySelectorAll('.rbx-row.expanded').forEach(el => el.classList.remove('expanded'));
+    }
+    if (window.Telegram?.WebApp?.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.selectionChanged();
+    }
+}
+window.rbxCandTab = rbxCandTab;
+
+// ========================================================================
 // АКАДЕМИЯ РЕБАЛАНСИРОВКИ — выезжающая справа шторка (#rbxAcademy)
 // Открывается кнопкой «Подробнее» блока «Зачем нужно ребалансировать».
 // Паттерн тот же, что у карточки тикера: панель переносится в <body>,
@@ -658,6 +686,10 @@ function rbxAcademyOpen() {
     panel.classList.add('open');
     const body = panel.querySelector('.rbxa-body');
     if (body) body.scrollTop = 0;
+    // тренажёры — в исходное состояние при каждом открытии
+    rbxLevelReset();
+    rbxInsidePick(rbxiState.mode);
+    rbxAcademyStep(1, true);
     if (window.Telegram?.WebApp?.HapticFeedback) {
         window.Telegram.WebApp.HapticFeedback.selectionChanged();
     }
@@ -669,6 +701,7 @@ function rbxAcademyClose() {
     const backdrop = document.getElementById('rbxAcademyBackdrop');
     if (backdrop) backdrop.classList.remove('open');
     document.body.classList.remove('rbxa-open');
+    rbxAcademyStopPlay();
 }
 
 // Переключение разделов академии (Два уровня / Внутри классов / Раз в год)
@@ -681,6 +714,260 @@ function rbxAcademyTab(name) {
     });
     const body = document.querySelector('#rbxAcademy .rbxa-body');
     if (body) body.scrollTop = 0;
+    if (name !== 'annual') rbxAcademyStopPlay();   // ушли со вкладки — автопрогон не крутим вслепую
+}
+
+// ── Раздел 1: тренажёр «Два уровня» ──────────────────────────────────────
+// Сцена: полоса долей акции/ОФЗ + полки с бумагами. Уровень 1 меняет бумаги
+// внутри полки (доли неподвижны), уровень 2 двигает сами доли.
+const RBXL_CHIPS = {
+    st: [{ t: 'SBER', v: '+75%' }, { t: 'GAZP', v: 'потенциал исчерпан', hot: true }, { t: 'LKOH', v: '+42%' }],
+    of: [{ t: 'ОФЗ 26238', v: '19.3%' }, { t: 'ОФЗ 26233', v: '15.2% — подорожала', hot: true }, { t: 'ОФЗ 26230', v: '18.6%' }]
+};
+// Что происходит по нажатию на уровне 1: шаг за шагом меняем «перегретую»
+// бумагу на недооценённую — сначала в акциях, потом в облигациях.
+const RBXL_SWAPS = [
+    {
+        shelf: 'st', idx: 1, to: { t: 'MRKC', v: '+153%' },
+        say: '<b>Акции:</b> GAZP дошёл до справедливой цены — потенциал исчерпан. Продали и купили MRKC с апсайдом +153% из того же эшелона. Доли остались 50/50 — риск не изменился.'
+    },
+    {
+        shelf: 'of', idx: 1, to: { t: 'ОФЗ 26225', v: '18.3%' },
+        say: '<b>Облигации:</b> ОФЗ 26233 подорожала, её доходность упала до 15.2%. Переложились в 26225 под 18.3% — на те же деньги больше бумаг. Доли снова не тронуты.'
+    }
+];
+
+const rbxlState = { level: 1, swap: 0, stage: 0, chips: null };
+
+function rbxLevelReset() {
+    rbxlState.level = 1;
+    rbxlState.swap = 0;
+    rbxlState.stage = 0;
+    rbxlState.chips = { st: RBXL_CHIPS.st.map(c => ({ ...c })), of: RBXL_CHIPS.of.map(c => ({ ...c })) };
+    document.querySelectorAll('#rbxAcademy .rbxl-sw').forEach(b => b.classList.toggle('act', b.dataset.lvl === '1'));
+    rbxLevelSplit(50);
+    rbxLevelChips();
+    rbxLevelSay('Портфель собран по плану 50/50. Нажмите кнопку ниже.');
+    rbxLevelBtn('Сделать замену');
+}
+window.rbxLevelReset = rbxLevelReset;
+
+function rbxLevelPick(lvl) {
+    rbxlState.level = lvl;
+    rbxlState.swap = 0;
+    rbxlState.stage = 0;
+    rbxlState.chips = { st: RBXL_CHIPS.st.map(c => ({ ...c })), of: RBXL_CHIPS.of.map(c => ({ ...c })) };
+    document.querySelectorAll('#rbxAcademy .rbxl-sw').forEach(b => b.classList.toggle('act', b.dataset.lvl === String(lvl)));
+    rbxLevelSplit(50);
+    rbxLevelChips();
+    if (lvl === 1) {
+        rbxLevelSay('<b>Уровень 1 · постоянно.</b> Меняем бумаги внутри классов: продаём то, что выросло, покупаем недооценённое. Доли акций и ОФЗ при этом не двигаются.');
+        rbxLevelBtn('Сделать замену');
+    } else {
+        rbxLevelSay('<b>Уровень 2 · раз в год.</b> Сверяем фактические доли с планом. Посмотрим, что делает с портфелем год роста.');
+        rbxLevelBtn('Прошёл год');
+    }
+    if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.selectionChanged();
+}
+window.rbxLevelPick = rbxLevelPick;
+
+// Одно нажатие главной кнопки — один шаг сценария выбранного уровня
+function rbxLevelAct() {
+    if (rbxlState.level === 1) {
+        const swap = RBXL_SWAPS[rbxlState.swap];
+        if (!swap) {   // оба обмена показаны — подводим итог
+            rbxLevelSay('Так и работает первый уровень: капитал постоянно перетекает в самые недооценённые бумаги, а доли классов стоят на месте. Сбросьте, чтобы повторить.');
+            rbxLevelBtn('Сделать замену', true);
+            return;
+        }
+        rbxlState.chips[swap.shelf][swap.idx] = { ...swap.to, fresh: true };
+        rbxlState.swap++;
+        rbxLevelChips();
+        rbxLevelSay(swap.say);
+        rbxLevelFlashBar();
+        rbxLevelBtn(rbxlState.swap < RBXL_SWAPS.length ? 'Следующая замена' : 'Готово');
+    } else {
+        if (rbxlState.stage === 0) {          // год роста → перекос долей
+            rbxlState.stage = 1;
+            rbxLevelSplit(58);
+            rbxLevelSay('За год акции выросли сильнее облигаций — их доля раздулась до <b>58%</b>. Портфель стал рискованнее, чем мы планировали.');
+            rbxLevelBtn('Выровнять доли');
+        } else if (rbxlState.stage === 1) {   // годовая сверка → возврат к плану
+            rbxlState.stage = 2;
+            rbxLevelSplit(50);
+            rbxLevelSay('Продали часть выросших акций и докупили ОФЗ — доли снова <b>50/50</b>. Прибыль зафиксирована, риск вернулся к плану.');
+            rbxLevelBtn('Ещё раз', true);
+        }
+    }
+    if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.selectionChanged();
+}
+window.rbxLevelAct = rbxLevelAct;
+
+// Полоса долей: ширина сегментов + подписи процентов
+function rbxLevelSplit(pctSt) {
+    const segSt = document.getElementById('rbxlSegSt');
+    const segOf = document.getElementById('rbxlSegOf');
+    const txSt = document.getElementById('rbxlPctSt');
+    const txOf = document.getElementById('rbxlPctOf');
+    if (segSt) segSt.style.width = pctSt + '%';
+    if (segOf) segOf.style.width = (100 - pctSt) + '%';
+    if (txSt) txSt.textContent = pctSt + '%';
+    if (txOf) txOf.textContent = (100 - pctSt) + '%';
+    const bar = document.getElementById('rbxlBar');
+    if (bar) bar.classList.toggle('skew', pctSt !== 50);
+}
+
+// Полки с бумагами; hot — «перегретая» бумага, fresh — только что купленная
+function rbxLevelChips() {
+    ['st', 'of'].forEach(shelf => {
+        const host = document.getElementById(shelf === 'st' ? 'rbxlChipsSt' : 'rbxlChipsOf');
+        if (!host) return;
+        host.innerHTML = rbxlState.chips[shelf].map(c =>
+            '<span class="rbxl-chip' + (c.hot ? ' hot' : '') + (c.fresh ? ' fresh' : '') + '">'
+            + '<b>' + c.t + '</b><i>' + c.v + '</i></span>'
+        ).join('');
+    });
+}
+
+function rbxLevelSay(html) {
+    const el = document.getElementById('rbxlSay');
+    if (el) el.innerHTML = html;
+}
+
+function rbxLevelBtn(label, done) {
+    const btn = document.getElementById('rbxlDo');
+    if (!btn) return;
+    btn.textContent = label;
+    btn.classList.toggle('done', !!done);
+}
+
+// Подсветка полосы долей на уровне 1 — «смотрите, доли не сдвинулись»
+function rbxLevelFlashBar() {
+    const bar = document.getElementById('rbxlBar');
+    if (!bar) return;
+    bar.classList.remove('steady');
+    void bar.offsetWidth;   // рестарт анимации
+    bar.classList.add('steady');
+}
+
+// ── Раздел 2: тренажёр «Умная замена» ────────────────────────────────────
+// Один и тот же компонент для ОФЗ и акций: карточка «продаём» → карточка
+// «покупаем» и строка эффекта. Числа иллюстративные, позиция 100 000 ₽.
+const RBXI_DEMO = {
+    ofz: {
+        out: { tag: 'Продаём', t: 'ОФЗ 26233', sub: 'подорожала до 720 ₽', k: 'Доходность', v: '15.2%', tone: 'warn' },
+        in:  { tag: 'Покупаем', t: 'ОФЗ 26225', sub: 'торгуется по 584 ₽', k: 'Доходность', v: '18.9%', tone: 'good' },
+        stats: [
+            { l: 'Бумаг в позиции', a: '138 шт', b: '171 шт', d: '+33 шт' },
+            { l: 'Купоны в год', a: '15 200 ₽', b: '18 900 ₽', d: '+3 700 ₽' },
+            { l: 'Тело к погашению', a: '138 000 ₽', b: '171 000 ₽', d: '+33 000 ₽' }
+        ],
+        rules: [
+            'Цена ОФЗ выросла — её доходность к цене упала ниже соседних выпусков.',
+            'Меняем на выпуск дешевле: на ту же сумму получаем больше бумаг, купонов и тела к погашению.',
+            'Купоны не копим на счёте, а реинвестируем в самый недооценённый выпуск.'
+        ]
+    },
+    st: {
+        out: { tag: 'Продаём', t: 'GAZP', sub: 'дошла до справедливой цены', k: 'Потенциал', v: '+8%', tone: 'warn' },
+        in:  { tag: 'Покупаем', t: 'MRKC', sub: 'тот же эшелон риска', k: 'Потенциал', v: '+153%', tone: 'good' },
+        stats: [
+            { l: 'Потенциал позиции', a: '+8%', b: '+153%', d: '×19' },
+            { l: 'Оценка при росте', a: '108 000 ₽', b: '253 000 ₽', d: '+145 000 ₽' },
+            { l: 'Эшелон риска', a: 'II', b: 'II', d: 'не меняем' }
+        ],
+        rules: [
+            'У каждой бумаги есть потенциал роста до справедливой цены — он виден в таблице кандидатов.',
+            'Потенциал реализован — фиксируем прибыль и берём бумагу с наибольшим апсайдом внутри того же эшелона.',
+            'Эшелон сохраняем: риск остаётся распределён по плану.'
+        ]
+    }
+};
+
+const rbxiState = { mode: 'ofz', done: false };
+
+function rbxInsidePick(mode) {
+    rbxiState.mode = mode;
+    rbxiState.done = false;
+    document.querySelectorAll('#rbxAcademy .rbxi-sg').forEach(b => b.classList.toggle('act', b.dataset.imode === mode));
+    rbxInsideRender();
+    if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.selectionChanged();
+}
+window.rbxInsidePick = rbxInsidePick;
+
+function rbxInsideAct() {
+    rbxiState.done = !rbxiState.done;
+    rbxInsideRender();
+    if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.selectionChanged();
+}
+window.rbxInsideAct = rbxInsideAct;
+
+function rbxInsideRender() {
+    const d = RBXI_DEMO[rbxiState.mode];
+    if (!d) return;
+    const done = rbxiState.done;
+
+    const card = (c, dim) => '<div class="rbxi-tag">' + c.tag + '</div>'
+        + '<div class="rbxi-t">' + c.t + '</div>'
+        + '<div class="rbxi-sub">' + c.sub + '</div>'
+        + '<div class="rbxi-kv ' + c.tone + '"><span>' + c.k + '</span><b>' + c.v + '</b></div>';
+
+    const out = document.getElementById('rbxiOut');
+    const inn = document.getElementById('rbxiIn');
+    if (out) { out.innerHTML = card(d.out); out.classList.toggle('dim', done); }
+    if (inn) { inn.innerHTML = card(d.in); inn.classList.toggle('hi', done); }
+
+    const arrow = document.getElementById('rbxiArrow');
+    if (arrow) arrow.classList.toggle('go', done);
+
+    const stats = document.getElementById('rbxiStats');
+    if (stats) {
+        // строку, где значение не меняется (эшелон), не зачёркиваем — менять там нечего
+        stats.innerHTML = d.stats.map(s =>
+            '<div class="rbxi-stat' + (done ? ' done' : '') + (s.a === s.b ? ' same' : '') + '">'
+            + '<span class="l">' + s.l + '</span>'
+            + '<span class="v"><em>' + s.a + '</em>'
+            + (done ? '<i class="ar">→</i><b>' + s.b + '</b><u>' + s.d + '</u>' : '') + '</span>'
+            + '</div>'
+        ).join('');
+    }
+
+    const btn = document.getElementById('rbxiDo');
+    if (btn) {
+        btn.textContent = done ? 'Показать как было' : 'Обменять';
+        btn.classList.toggle('done', done);
+    }
+
+    const rules = document.getElementById('rbxiRules');
+    if (rules) rules.innerHTML = d.rules.map(r => '<li>' + r + '</li>').join('');
+}
+
+// ── Раздел 3: автопрогон примера по шагам ────────────────────────────────
+let rbxaPlayTimer = null;
+
+function rbxAcademyPlay() {
+    if (rbxaPlayTimer) { rbxAcademyStopPlay(); return; }
+    let n = 1;
+    rbxAcademyStep(1, true);
+    rbxAcademyPlayBtn(true);
+    rbxaPlayTimer = setInterval(() => {
+        n++;
+        if (n > 4) { rbxAcademyStopPlay(); return; }
+        rbxAcademyStep(n, true);
+    }, 2200);
+}
+window.rbxAcademyPlay = rbxAcademyPlay;
+
+function rbxAcademyStopPlay() {
+    if (rbxaPlayTimer) { clearInterval(rbxaPlayTimer); rbxaPlayTimer = null; }
+    rbxAcademyPlayBtn(false);
+}
+
+function rbxAcademyPlayBtn(playing) {
+    const btn = document.getElementById('rbxaPlay');
+    const tx = document.getElementById('rbxaPlayTx');
+    if (btn) btn.classList.toggle('playing', playing);
+    if (tx) tx.textContent = playing ? 'Стоп' : 'Проиграть';
 }
 
 // Пример годовой ребалансировки по шагам (раздел «Раз в год»).
@@ -709,9 +996,11 @@ const RBXA_STEPS = {
     }
 };
 
-function rbxAcademyStep(n) {
+// fromPlay ставит автопрогон; ручной клик по шагу его останавливает
+function rbxAcademyStep(n, fromPlay) {
     const step = RBXA_STEPS[n];
     if (!step) return;
+    if (!fromPlay) rbxAcademyStopPlay();
     document.querySelectorAll('#rbxAcademy .rbxa-step').forEach(btn => {
         btn.classList.toggle('act', btn.dataset.astep === String(n));
     });

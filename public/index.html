@@ -50,12 +50,12 @@
     <link rel="stylesheet" href="css/notifications.css?v=2">
     <link rel="stylesheet" href="css/tab-gates.css?v=4">
     <link rel="stylesheet" href="css/admin.css?v=11">
-    <link rel="stylesheet" href="css/rebalance-r6.css?v=4">
+    <link rel="stylesheet" href="css/rebalance-r6.css?v=5">
     <link rel="stylesheet" href="css/typography-tokens.css?v=7">
     <link rel="stylesheet" href="css/portfolios-r7.css?v=27">
     <link rel="stylesheet" href="css/desktop-zoom.css?v=4">
     <!-- Мобильный слой (≤1023px) — всегда ПОСЛЕДНИЙ, перебивает всё -->
-    <link rel="stylesheet" href="css/mobile.css?v=16">
+    <link rel="stylesheet" href="css/mobile.css?v=17">
     
     <!-- Telegram WebApp API (fallback — works both in TG and browser) -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -1547,7 +1547,8 @@
         </button>
     </div>
 
-    <!-- ===== R7: три отдельных блока — «Зачем ребалансировать», кандидаты ОФЗ, акции.
+    <!-- ===== R7: два блока — «Зачем ребалансировать» и кандидаты (ОФЗ/Акции
+         подвкладками по лекалу «Теста»: .rbr-tabs + .rbr-sub).
          Карточки в языке карточки регистрации Главной (.hg-auth): белые, радиус 14px,
          тонкая рамка. Кнопка «Подробнее» открывает Академию ребалансировки (#rbxAcademy). ===== -->
     <div class="rbx-grid">
@@ -1575,10 +1576,20 @@
             </button>
         </section>
 
-        <section class="rbx-block rbx-sec rbx-sec-ofz">
-            <div class="rbx-sh">
-                <div class="rbx-sh-t"><b>Кандидаты · ОФЗ</b><span class="rbx-cnt" id="ofzCount">—</span></div>
-                <div class="rbx-sort" role="group" aria-label="Сортировка списка">
+        <section class="rbx-block rbx-block-cands">
+            <!-- Переключатель ОФЗ/Акции — лекало подвкладок «Теста» (.btr-tabs):
+                 сами вкладки слева, инструменты активного списка — справа за разделителем -->
+            <div class="rbr-tabs" id="rbxCandTabs">
+                <button type="button" class="rbr-tab act" data-ctab="ofz" onclick="rbxCandTab('ofz')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M7 8V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/><path d="M12 12v4"/><path d="M10 14h4"/></svg>
+                    Кандидаты · ОФЗ<span class="cnt" id="ofzCount">—</span>
+                </button>
+                <button type="button" class="rbr-tab" data-ctab="stocks" onclick="rbxCandTab('stocks')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>
+                    Кандидаты · Акции<span class="cnt" id="stocksCount">—</span>
+                </button>
+                <span class="rbr-sep" aria-hidden="true"></span>
+                <div class="rbx-sort" id="rbxToolsOfz" role="group" aria-label="Сортировка списка">
                     <button type="button" class="rbx-sc act desc" id="ofzSortYield" onclick="setOfzSort('yield')" title="Сортировать по доходности">
                         Доходность
                         <i class="rbx-sc-ico">
@@ -1594,10 +1605,17 @@
                         </i>
                     </button>
                 </div>
+                <button type="button" class="rbx-esh-hint" id="rbxToolsStocks" hidden onclick="toggleEchelonGuide(true,'rebalance',this)">
+                    по эшелонам риска
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle cx="12" cy="8" r="0.5"/></svg>
+                </button>
             </div>
+
+            <div class="rbr-sub act" id="rbxSubOfz">
             <div class="rbx-colhead">
                 <span></span>
                 <span class="l">Инструмент</span>
+                <span class="mt-h">Погашение</span>
                 <span>Доходность</span>
                 <span>Цена</span>
                 <span></span>
@@ -1613,16 +1631,9 @@
                 <!-- Динамически заполняется через JS -->
             </div>
             <div class="rbx-foot">Цена указана с учётом НКД · нажмите строку — детали выпуска</div>
-        </section>
-
-        <section class="rbx-block rbx-sec rbx-sec-stocks">
-            <div class="rbx-sh">
-                <div class="rbx-sh-t"><b>Кандидаты · Акции</b><span class="rbx-cnt" id="stocksCount">—</span></div>
-                <button type="button" class="rbx-esh-hint" onclick="toggleEchelonGuide(true,'rebalance',this)">
-                    по эшелонам риска
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle cx="12" cy="8" r="0.5"/></svg>
-                </button>
             </div>
+
+            <div class="rbr-sub" id="rbxSubStocks">
             <div id="stocks-aurora-body" class="rbx-esh-grid">
                 <!-- Skeleton для акций -->
                 <div class="skeleton-container" id="skeleton-stocks-table">
@@ -1646,6 +1657,7 @@
                     </div>
                 </div>
                 <!-- Динамически заполняется через JS -->
+            </div>
             </div>
         </section>
     </div>
@@ -1686,57 +1698,80 @@
         </div>
 
         <div class="rbxa-body">
-            <!-- Раздел 1: наша ребалансировка — два уровня -->
+            <!-- Раздел 1: наша ребалансировка — два уровня (интерактивный тренажёр) -->
             <div class="rbxa-pane act" id="rbxaPane-levels">
                 <h4 class="rbxa-h">Ребалансировка на двух уровнях</h4>
-                <p class="rbxa-lead">Классический подход — раз в год выравнивать доли акций и облигаций. Мы идём дальше: портфель обслуживается постоянно, но по строгим правилам — на двух уровнях.</p>
+                <p class="rbxa-lead">Классический подход — раз в год выравнивать доли акций и облигаций. Мы идём дальше: портфель обслуживается постоянно, но по строгим правилам. Выберите уровень и нажимайте кнопку — покажем, что происходит с портфелем.</p>
 
-                <div class="rbxa-lvl lv1">
-                    <div class="rbxa-lvl-badge">Уровень 1 · постоянно</div>
-                    <div class="rbxa-lvl-t">Внутри классов активов</div>
-                    <p>Меняем бумаги внутри портфеля ОФЗ и внутри портфеля акций: продаём то, что выросло, и перекладываем в недооценённое. Доли акций и облигаций при этом не меняются — риск-профиль остаётся прежним.</p>
-                </div>
-                <div class="rbxa-lvl lv2">
-                    <div class="rbxa-lvl-badge">Уровень 2 · раз в год</div>
-                    <div class="rbxa-lvl-t">Между классами активов</div>
-                    <p>Раз в год сверяем фактическое соотношение акций и облигаций с целевым и возвращаем его к плану: продаём часть выросшего класса, докупаем отставший.</p>
+                <div class="rbxl">
+                    <div class="rbxl-switch" role="group" aria-label="Уровень ребалансировки">
+                        <button type="button" class="rbxl-sw act" data-lvl="1" onclick="rbxLevelPick(1)">
+                            <b>Уровень 1</b><span>внутри классов · постоянно</span>
+                        </button>
+                        <button type="button" class="rbxl-sw" data-lvl="2" onclick="rbxLevelPick(2)">
+                            <b>Уровень 2</b><span>между классами · раз в год</span>
+                        </button>
+                    </div>
+
+                    <div class="rbxl-scene">
+                        <div class="rbxl-bar" id="rbxlBar">
+                            <div class="seg st" id="rbxlSegSt"><span>Акции</span><b id="rbxlPctSt">50%</b></div>
+                            <div class="seg of" id="rbxlSegOf"><span>ОФЗ</span><b id="rbxlPctOf">50%</b></div>
+                        </div>
+                        <div class="rbxl-shelves">
+                            <div class="rbxl-shelf st"><em>Акции</em><div class="chips" id="rbxlChipsSt"></div></div>
+                            <div class="rbxl-shelf of"><em>ОФЗ</em><div class="chips" id="rbxlChipsOf"></div></div>
+                        </div>
+                    </div>
+
+                    <div class="rbxl-say" id="rbxlSay">Портфель собран по плану 50/50. Нажмите кнопку ниже.</div>
+
+                    <div class="rbxl-actions">
+                        <button type="button" class="rbxl-do" id="rbxlDo" onclick="rbxLevelAct()">Сделать замену</button>
+                        <button type="button" class="rbxl-reset" onclick="rbxLevelReset()" title="Начать сначала" aria-label="Начать сначала">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="rbxa-note">
-                    <b>Почему это работает.</b> Оба уровня заставляют делать одно и то же: продавать дорого и покупать дёшево — механически, без прогнозов и эмоций. Первый уровень повышает отдачу капитала между сверками, второй держит риск портфеля под контролем.
+                    <b>Почему это работает.</b> Оба уровня заставляют делать одно и то же — продавать дорого и покупать дёшево, механически, без прогнозов и эмоций. Первый уровень повышает отдачу капитала между сверками, второй держит риск портфеля под контролем.
                 </div>
             </div>
 
-            <!-- Раздел 2: умная замена внутри ОФЗ и акций -->
+            <!-- Раздел 2: умная замена внутри ОФЗ и акций (интерактивный обмен) -->
             <div class="rbxa-pane" id="rbxaPane-inside">
                 <h4 class="rbxa-h">Умная замена внутри портфеля</h4>
-                <p class="rbxa-lead">Продолжение ребалансировки: между годовыми сверками мы не сидим сложа руки, а перекладываем капитал внутри каждого класса — из «дорогих» бумаг в недооценённые.</p>
+                <p class="rbxa-lead">Продолжение ребалансировки: между годовыми сверками мы не сидим сложа руки, а перекладываем капитал внутри каждого класса — из «дорогих» бумаг в недооценённые. Нажмите «Обменять» и посмотрите, что даёт замена.</p>
 
-                <div class="rbxa-cls ofz">
-                    <div class="rbxa-cls-h">
-                        <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M7 8V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/><path d="M12 12v4"/><path d="M10 14h4"/></svg></i>
-                        <b>Облигации · ОФЗ</b>
-                    </div>
-                    <ul>
-                        <li>Выпуск вырос в цене — его доходность стала ниже, чем у соседних выпусков.</li>
-                        <li>Продаём его и покупаем более дешёвый выпуск: на ту же сумму — больше бумаг и выше доходность. Это наш «обмен +1 шт».</li>
-                        <li>Купоны не копим на счёте, а реинвестируем в самый недооценённый выпуск.</li>
-                    </ul>
+                <div class="rbxi-seg" role="group" aria-label="Класс активов">
+                    <button type="button" class="rbxi-sg act" data-imode="ofz" onclick="rbxInsidePick('ofz')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M7 8V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/><path d="M12 12v4"/><path d="M10 14h4"/></svg>
+                        Облигации · ОФЗ
+                    </button>
+                    <button type="button" class="rbxi-sg" data-imode="st" onclick="rbxInsidePick('st')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>
+                        Акции · эшелоны
+                    </button>
                 </div>
-                <div class="rbxa-cls st">
-                    <div class="rbxa-cls-h">
-                        <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></i>
-                        <b>Акции · эшелоны I–III</b>
+
+                <div class="rbxi-demo">
+                    <div class="rbxi-cap">На позицию <b>100 000 ₽</b> · пример</div>
+                    <div class="rbxi-pair">
+                        <div class="rbxi-card out" id="rbxiOut"></div>
+                        <div class="rbxi-arrow" id="rbxiArrow">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+                        </div>
+                        <div class="rbxi-card in" id="rbxiIn"></div>
                     </div>
-                    <ul>
-                        <li>У каждой бумаги есть потенциал роста до справедливой цены — он виден в таблице кандидатов.</li>
-                        <li>Бумага реализовала потенциал — фиксируем прибыль и перекладываемся в бумагу с наибольшим потенциалом внутри того же эшелона.</li>
-                        <li>Доли эшелонов сохраняем: риск остаётся распределён по плану.</li>
-                    </ul>
+                    <div class="rbxi-stats" id="rbxiStats"></div>
+                    <button type="button" class="rbxi-do" id="rbxiDo" onclick="rbxInsideAct()">Обменять</button>
                 </div>
+
+                <ul class="rbxi-rules" id="rbxiRules"></ul>
 
                 <div class="rbxa-note">
-                    <b>Важно.</b> Такие замены не двигают общие доли: акции остаются акциями, облигации — облигациями. Общий баланс классов выравниваем отдельно — раз в год.
+                    <b>Важно.</b> Такие замены не двигают общие доли: акции остаются акциями, облигации — облигациями. Риск-профиль портфеля не меняется. Общий баланс классов выравниваем отдельно — раз в год.
                 </div>
             </div>
 
@@ -1745,11 +1780,17 @@
                 <h4 class="rbxa-h">Общая ребалансировка — раз в год</h4>
                 <p class="rbxa-lead">Раз в год сверяем фактические доли акций и облигаций с целевыми и возвращаем портфель к плану. Пройдите пример по шагам.</p>
 
-                <div class="rbxa-steps" role="group" aria-label="Шаги примера">
-                    <button type="button" class="rbxa-step act" data-astep="1" onclick="rbxAcademyStep(1)">1. Старт</button>
-                    <button type="button" class="rbxa-step" data-astep="2" onclick="rbxAcademyStep(2)">2. Год спустя</button>
-                    <button type="button" class="rbxa-step" data-astep="3" onclick="rbxAcademyStep(3)">3. Ребаланс</button>
-                    <button type="button" class="rbxa-step" data-astep="4" onclick="rbxAcademyStep(4)">4. Итог</button>
+                <div class="rbxa-steps-row">
+                    <div class="rbxa-steps" role="group" aria-label="Шаги примера">
+                        <button type="button" class="rbxa-step act" data-astep="1" onclick="rbxAcademyStep(1)">1. Старт</button>
+                        <button type="button" class="rbxa-step" data-astep="2" onclick="rbxAcademyStep(2)">2. Год спустя</button>
+                        <button type="button" class="rbxa-step" data-astep="3" onclick="rbxAcademyStep(3)">3. Ребаланс</button>
+                        <button type="button" class="rbxa-step" data-astep="4" onclick="rbxAcademyStep(4)">4. Итог</button>
+                    </div>
+                    <button type="button" class="rbxa-play" id="rbxaPlay" onclick="rbxAcademyPlay()" title="Проиграть все шаги">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 4 20 12 6 20 6 4" fill="currentColor" stroke="none"/></svg>
+                        <span id="rbxaPlayTx">Проиграть</span>
+                    </button>
                 </div>
 
                 <div class="rbxa-sim">
@@ -2377,7 +2418,7 @@
 <script src="js/core.js?v=11" defer></script>
 <script src="js/calculator-ui.js?v=4" defer></script>
 <script src="js/data.js?v=9" defer></script>
-<script src="js/rebalance.js?v=10" defer></script>
+<script src="js/rebalance.js?v=11" defer></script>
 <script src="js/company.js?v=2" defer></script>
 <script src="js/portfolio.js?v=17" defer></script>
 <script src="js/init.js?v=4" defer></script>

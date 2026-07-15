@@ -357,6 +357,14 @@
     /* Академия ребалансировки — так же во всю ширину, вкладки-переключатели ужимаем */
     #rbxAcademy { width: 100vw; max-width: 100vw; border-left: none; }
     .rbxa-tab { font-size: 11px; padding: 9px 6px; gap: 5px; }
+    /* тренажёры академии: полки и пара «продаём→покупаем» — в столбик */
+    .rbxl-switch, .rbxl-shelves, .rbxi-seg { grid-template-columns: 1fr; }
+    .rbxi-pair { grid-template-columns: 1fr; }
+    .rbxi-arrow { justify-self: center; transform: rotate(90deg); }
+    .rbxi-arrow.go { transform: rotate(90deg) scale(1.15); }
+    .rbxi-stat { flex-direction: column; align-items: flex-start; gap: 4px; }
+    .rbxa-steps-row { flex-direction: column; }
+    .rbxa-play { padding: 9px 14px; justify-content: center; }
 
     /* Панель профиля: почти во всю ширину, ниже шапки */
     #profileHub { right: 8px; left: 8px; width: auto; max-width: none; }
@@ -452,14 +460,20 @@
     .rbx-kpi .num b { font-size: 25px; }
     .rbx-hero-cta { width: 100%; justify-content: center; }
 
-    /* блоки стопкой (R7: три отдельные карточки) */
+    /* блоки стопкой (R7: карточка «Зачем» + карточка кандидатов с подвкладками) */
     .rbx-grid { display: flex; flex-direction: column; gap: 12px; margin-top: 0; }
-    .rbx-sec { padding: 16px 14px 18px; }
+    .rbx-block-cands { padding: 10px 12px 14px; }
     .rbx-block-why { padding: 20px 16px 16px; }
     .rbx-wc-title { font-size: 23px; }
-    .rbx-sh { flex-wrap: wrap; row-gap: 8px; }
+    /* переключатель: вкладки в ряд, инструменты — строкой ниже */
+    .rbr-tabs { flex-wrap: wrap; row-gap: 4px; }
+    .rbr-tab { flex: 1; font-size: 12px; padding: 9px 8px; gap: 6px; }
+    .rbr-sep { display: none; }
+    #rbxToolsOfz, #rbxToolsStocks { margin-left: 0; width: 100%; justify-content: flex-end; }
 
-    /* таблица ОФЗ плотнее */
+    /* таблица ОФЗ плотнее; «Погашение» на телефоне не помещается — прячем
+       (дата осталась в раскрытых деталях выпуска) */
+    .rbx-colhead .mt-h, .rbx-row-main .mt { display: none; }
     .rbx-colhead, .rbx-row-main { grid-template-columns: 22px minmax(0, 1fr) 78px 84px 14px; gap: 5px; }
     .rbx-colhead { padding-left: 8px; padding-right: 8px; font-size: 9.5px; letter-spacing: 0.03em; }
     .rbx-row-main { padding: 12px 8px; }

@@ -165,13 +165,14 @@
 .rbx-hero-cta:hover { transform: translateY(-1px); box-shadow: 0 16px 34px -10px rgba(0, 0, 0, 0.55); }
 .rbx-hero-cta:active { transform: translateY(0); box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.45); }
 
-/* ─────────────── ТРИ ОТДЕЛЬНЫХ БЛОКА (R7) ───────────────
-   Вместо единой карты с разделителем — три самостоятельные карточки в языке
+/* ─────────────── ДВА БЛОКА (R7) ───────────────
+   Вместо единой карты с разделителем — самостоятельные карточки в языке
    карточки регистрации Главной (.hg-auth в home-register.css): белый фон,
-   тонкая рамка, радиус 14px, лёгкая тень. */
+   тонкая рамка, радиус 14px, лёгкая тень. Слева «Зачем ребалансировать»,
+   справа кандидаты: ОФЗ и акции больше не соседи, а подвкладки (.rbr-*). */
 .rbx-grid {
     display: grid;
-    grid-template-columns: minmax(230px, 0.9fr) minmax(430px, 1.8fr) minmax(0, 2.3fr);
+    grid-template-columns: minmax(280px, 1fr) minmax(0, 2.55fr);
     /* каждый блок — своей высоты: карточки самостоятельные, без общего низа */
     align-items: start;
     gap: 16px;
@@ -190,8 +191,65 @@ body.dark-mode .rbx-block {
     box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
 }
 
-.rbx-sec { padding: 22px 24px 26px; min-width: 0; }
-.rbx-sec-ofz { display: flex; flex-direction: column; }
+/* ── Блок кандидатов: переключатель + подвкладки ──
+   Лекало — подвкладки результатов «Теста» (.btr-tabs/.btr-sub в backtest.css):
+   ряд-пилюля сверху, инструменты активного списка справа за разделителем. */
+.rbx-block-cands { padding: 14px 16px 18px; min-width: 0; }
+.rbr-tabs {
+    display: flex; align-items: center; gap: 4px;
+    padding: 4px;
+    background: #ffffff;
+    border: 1.5px solid #d8dfeb;
+    border-radius: 14px;
+    box-shadow: 0 8px 22px rgba(28, 42, 66, 0.06);
+    margin-bottom: 14px;
+}
+body.dark-mode .rbr-tabs { background: #1d2734; border-color: rgba(255, 255, 255, 0.12); }
+.rbr-tab {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 9px 14px;
+    border: none; border-radius: 10px;
+    background: transparent; cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px; font-weight: 800; color: #6c7a8d;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+}
+.rbr-tab svg { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.75; }
+.rbr-tab:hover { color: #111927; }
+.rbr-tab.act { background: #111927; color: #ffffff; }
+.rbr-tab.act svg { opacity: 1; }
+body.dark-mode .rbr-tab { color: #9aa8bc; }
+body.dark-mode .rbr-tab:hover { color: #f1f6fb; }
+body.dark-mode .rbr-tab.act { background: rgba(255, 255, 255, 0.12); color: #ffffff; }
+.rbr-tab .cnt {
+    font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 11px; font-weight: 700;
+    padding: 1px 7px; border-radius: 999px;
+    background: #eef2f8; color: #6c7a8d;
+    font-variant-numeric: tabular-nums;
+}
+.rbr-tab.act .cnt { background: rgba(255, 255, 255, 0.16); color: #dfe7f1; }
+body.dark-mode .rbr-tab .cnt { background: rgba(255, 255, 255, 0.08); color: #c4cedd; }
+/* разделитель перед инструментами активного списка */
+.rbr-sep {
+    flex: 0 0 auto; align-self: stretch;
+    width: 1.5px; margin: 4px; border-radius: 1px;
+    background: #e3e9f2;
+}
+body.dark-mode .rbr-sep { background: rgba(255, 255, 255, 0.12); }
+/* инструменты (сортировка ОФЗ / подсказка эшелонов) прижаты вправо.
+   [hidden] нужен явным правилом: у самих инструментов display:flex/inline-flex,
+   он перебивает дефолтный display:none атрибута */
+#rbxToolsOfz, #rbxToolsStocks { margin-left: auto; }
+#rbxToolsOfz[hidden], #rbxToolsStocks[hidden] { display: none; }
+
+.rbr-sub { display: none; }
+.rbr-sub.act { display: block; animation: rbrSubIn 0.28s cubic-bezier(0.22, 0.61, 0.36, 1); }
+@keyframes rbrSubIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
 
 /* ── Узкий блок «Зачем нужно ребалансировать» ── */
 .rbx-block-why {
@@ -228,25 +286,8 @@ body.dark-mode .rbx-wc-title { color: #F1F5F9; }
 body.dark-mode .rbx-wc-btn { background: #223045; }
 body.dark-mode .rbx-wc-btn:hover { background: #2a3a53; }
 
-/* шапка секции: заголовок + счётчик + сортировка/подсказка */
-.rbx-sh { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; min-height: 32px; }
-.rbx-sh-t { display: flex; align-items: center; gap: 9px; min-width: 0; }
-.rbx-sh-t b {
-    font-family: 'Inter', sans-serif;
-    font-size: var(--fs-card-title, 17px); font-weight: 800;
-    color: #161B27; letter-spacing: -0.01em; white-space: nowrap;
-}
-body.dark-mode .rbx-sh-t b { color: #F1F5F9; }
-.rbx-cnt {
-    font-family: var(--font-num, 'JetBrains Mono', monospace);
-    font-size: 11.5px; font-weight: 700; color: #7d8aa0;
-    background: #F3F5F8; padding: 3px 9px; border-radius: 999px;
-    font-variant-numeric: tabular-nums;
-}
-body.dark-mode .rbx-cnt { background: rgba(255, 255, 255, 0.08); color: #94a3b8; }
-
-/* кнопки сортировки (Доходность / Цена) */
-.rbx-sort { margin-left: auto; display: flex; gap: 6px; }
+/* кнопки сортировки (Доходность / Цена) — живут в ряду переключателя */
+.rbx-sort { display: flex; gap: 6px; }
 .rbx-sc {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 7px 11px; border-radius: 10px; cursor: pointer;
@@ -283,7 +324,7 @@ body.dark-mode .rbx-esh-hint:hover { color: #e2e8f0; background: rgba(255, 255, 
 
 .rbx-colhead {
     display: grid;
-    grid-template-columns: 34px minmax(0, 1fr) 96px 100px 20px;
+    grid-template-columns: 34px minmax(0, 1fr) 118px 96px 108px 20px;
     gap: 8px; align-items: center;
     padding: 0 12px 9px;
     border-bottom: 1px solid rgba(44, 54, 76, 0.08);
@@ -303,7 +344,7 @@ body.dark-mode .rbx-row { border-bottom-color: rgba(255, 255, 255, 0.05); }
 
 .rbx-row-main {
     display: grid;
-    grid-template-columns: 34px minmax(0, 1fr) 96px 100px 20px;
+    grid-template-columns: 34px minmax(0, 1fr) 118px 96px 108px 20px;
     gap: 8px; align-items: center;
     padding: 13px 12px; cursor: pointer;
     border-radius: 12px;
@@ -322,6 +363,13 @@ body.dark-mode .rbx-row-main:hover { background: rgba(255, 255, 255, 0.045); }
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
 }
 body.dark-mode .rbx-row-main .nm { color: #F1F5F9; }
+/* Погашение: колонка второго плана — тем же моно, но тише цифр доходности/цены */
+.rbx-row-main .mt {
+    font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: var(--fs-num-sm, 12.5px); font-weight: 500; color: #8a96aa; text-align: right;
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+body.dark-mode .rbx-row-main .mt { color: #76849a; }
 .rbx-row-main .yl {
     font-family: var(--font-num, 'JetBrains Mono', monospace);
     font-size: var(--fs-num, 15px); font-weight: 700; text-align: right;
@@ -523,6 +571,7 @@ body.dark-mode .rbx-tile .bar { background: rgba(255, 255, 255, 0.09); }
     .rbx-grid { grid-template-columns: 1fr; }
     .rbx-wc-btn { width: auto; align-self: flex-start; padding: 13px 26px; }
     .rbx-block-why .rbx-why-list { margin-bottom: 18px; }
+    .rbr-tab { flex: 1; }
 }
 
 /* уважение к reduced motion: статичный герой */
@@ -543,7 +592,7 @@ body.dark-mode .rbx-tile .bar { background: rgba(255, 255, 255, 0.09); }
     flex-direction: column;
     position: fixed;
     top: 0; right: 0; bottom: 0; left: auto;
-    width: min(600px, 94vw);
+    width: min(640px, 94vw);
     background: #ffffff;
     border-left: 1px solid #e3e9f1;
     box-shadow: -24px 0 60px rgba(20, 30, 50, 0.20);
@@ -657,9 +706,9 @@ body.dark-mode .rbxa-tab.act { background: #2a3a53; color: #ffffff; }
     to   { opacity: 1; transform: translateY(0); }
 }
 
-.rbxa-h { margin: 0 0 7px; font-size: 20px; line-height: 1.2; color: #161B27; }
+.rbxa-h { margin: 0 0 8px; font-size: 21px; line-height: 1.25; color: #161B27; }
 body.dark-mode .rbxa-h { color: #F1F5F9; }
-.rbxa-lead { margin: 0 0 16px; font-size: 12.5px; line-height: 1.6; color: #5f6d80; }
+.rbxa-lead { margin: 0 0 18px; font-size: 13.5px; line-height: 1.65; color: #55637a; }
 body.dark-mode .rbxa-lead { color: #9aa7ba; }
 
 /* карточки уровней (раздел «Два уровня») */
@@ -684,7 +733,7 @@ body.dark-mode .rbxa-lvl.lv2 { border-left-color: #6b96e8; }
 .rbxa-lvl.lv2 .rbxa-lvl-badge { color: #3D6FD1; }
 .rbxa-lvl-t { font-size: 14px; font-weight: 700; color: #161B27; margin-bottom: 6px; }
 body.dark-mode .rbxa-lvl-t { color: #e2e8f0; }
-.rbxa-lvl p { margin: 0; font-size: 12px; line-height: 1.55; color: #5d6b83; }
+.rbxa-lvl p { margin: 0; font-size: 13px; line-height: 1.65; color: #55637a; }
 body.dark-mode .rbxa-lvl p { color: #94a3b8; }
 
 /* примечание-вывод */
@@ -694,7 +743,7 @@ body.dark-mode .rbxa-lvl p { color: #94a3b8; }
     border-radius: 12px;
     background: #F5F8F6;
     border: 1px solid rgba(29, 157, 108, 0.14);
-    font-size: 12px; line-height: 1.55; color: #4a5872;
+    font-size: 13px; line-height: 1.65; color: #48566d;
 }
 .rbxa-note b { color: #161B27; font-weight: 700; }
 body.dark-mode .rbxa-note { background: rgba(52, 211, 153, 0.06); border-color: rgba(52, 211, 153, 0.16); color: #94a3b8; }
@@ -723,7 +772,7 @@ body.dark-mode .rbxa-cls-h b { color: #e2e8f0; }
 .rbxa-cls li {
     position: relative;
     padding-left: 16px;
-    font-size: 12px; line-height: 1.55; color: #5d6b83;
+    font-size: 13px; line-height: 1.6; color: #55637a;
 }
 .rbxa-cls li::before {
     content: '';
@@ -822,7 +871,7 @@ body.dark-mode .rbxa-sim-box .bar { background: rgba(255, 255, 255, 0.1); }
     text-transform: uppercase; letter-spacing: 0.1em; color: #9aa5b5;
 }
 .rbxa-sim-note.act em { color: #159d68; }
-.rbxa-sim-note span { font-size: 12px; line-height: 1.5; color: #4a5872; }
+.rbxa-sim-note span { font-size: 13px; line-height: 1.6; color: #48566d; }
 body.dark-mode .rbxa-sim-note { background: rgba(255, 255, 255, 0.03); border-color: rgba(255, 255, 255, 0.07); }
 body.dark-mode .rbxa-sim-note.act { background: rgba(52, 211, 153, 0.07); border-color: rgba(52, 211, 153, 0.16); }
 body.dark-mode .rbxa-sim-note span { color: #94a3b8; }
@@ -862,4 +911,329 @@ body.dark-mode .rbxa-foot { background: rgba(255, 255, 255, 0.03); border-top-co
 
 @media (prefers-reduced-motion: reduce) {
     #rbxAcademy, #rbxAcademyBackdrop, .rbxa-pane.act { transition: none; animation: none; }
+}
+
+/* ─────────── АКАДЕМИЯ · тренажёр «Два уровня» (.rbxl-*) ───────────
+   Сцена: полоса долей акции/ОФЗ + две полки с бумагами. Уровень 1 меняет
+   бумаги на полках, доли стоят; уровень 2 двигает саму полосу. */
+.rbxl {
+    border: 1px solid #eef2f7;
+    border-radius: 12px;
+    padding: 14px;
+    background: #ffffff;
+}
+body.dark-mode .rbxl { background: rgba(255, 255, 255, 0.03); border-color: rgba(255, 255, 255, 0.08); }
+
+/* выбор уровня — две крупные кнопки-карточки */
+.rbxl-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 14px; }
+.rbxl-sw {
+    display: flex; flex-direction: column; gap: 2px;
+    padding: 10px 12px;
+    border: 1.5px solid #e3e9f2; border-radius: 11px;
+    background: #f8fafc; cursor: pointer; text-align: left;
+    transition: border-color 0.16s ease, background 0.16s ease;
+}
+.rbxl-sw b { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #55637a; }
+.rbxl-sw span { font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 600; color: #9aa5b5; }
+.rbxl-sw:hover { border-color: #cfd8e6; }
+.rbxl-sw.act { background: #ffffff; border-color: #10B981; }
+.rbxl-sw.act b { color: #161B27; }
+.rbxl-sw.act span { color: #159d68; }
+body.dark-mode .rbxl-sw { background: rgba(255, 255, 255, 0.03); border-color: rgba(255, 255, 255, 0.09); }
+body.dark-mode .rbxl-sw.act { background: rgba(52, 211, 153, 0.08); border-color: #34d399; }
+body.dark-mode .rbxl-sw.act b { color: #f1f5f9; }
+body.dark-mode .rbxl-sw.act span { color: #34d399; }
+
+/* полоса долей */
+.rbxl-bar {
+    display: flex; gap: 3px;
+    height: 44px; margin-bottom: 10px;
+    border-radius: 10px; overflow: hidden;
+}
+.rbxl-bar .seg {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+    min-width: 0;
+    transition: width 0.6s cubic-bezier(.22, 1, .36, 1);
+}
+.rbxl-bar .seg span {
+    font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.75;
+    white-space: nowrap; overflow: hidden;
+}
+.rbxl-bar .seg b {
+    font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.rbxl-bar .seg.st { width: 50%; background: rgba(16, 185, 129, 0.16); color: #10714f; }
+.rbxl-bar .seg.of { width: 50%; background: rgba(61, 111, 209, 0.14); color: #2b4f96; }
+body.dark-mode .rbxl-bar .seg.st { background: rgba(52, 211, 153, 0.18); color: #6ee7b7; }
+body.dark-mode .rbxl-bar .seg.of { background: rgba(107, 150, 232, 0.18); color: #a5c2f5; }
+/* перекос долей — полоса просит внимания */
+.rbxl-bar.skew { box-shadow: inset 0 0 0 1.5px rgba(245, 158, 11, 0.5); }
+/* уровень 1 — доказательство, что доли не сдвинулись */
+.rbxl-bar.steady { animation: rbxlSteady 1.1s ease-out; }
+@keyframes rbxlSteady {
+    0%, 100% { box-shadow: inset 0 0 0 0 rgba(16, 185, 129, 0); }
+    35%      { box-shadow: inset 0 0 0 2px rgba(16, 185, 129, 0.55); }
+}
+
+/* полки с бумагами */
+.rbxl-shelves { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.rbxl-shelf {
+    padding: 9px 10px 10px;
+    border-radius: 10px;
+    background: #f8fafc; border: 1px solid #eef2f7;
+}
+body.dark-mode .rbxl-shelf { background: rgba(255, 255, 255, 0.03); border-color: rgba(255, 255, 255, 0.07); }
+.rbxl-shelf em {
+    display: block; margin-bottom: 7px;
+    font-style: normal; font-family: 'Inter', sans-serif;
+    font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em;
+}
+.rbxl-shelf.st em { color: #159d68; }
+.rbxl-shelf.of em { color: #3D6FD1; }
+.rbxl-shelf .chips { display: flex; flex-direction: column; gap: 5px; }
+.rbxl-chip {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+    padding: 7px 9px;
+    border-radius: 8px;
+    background: #ffffff; border: 1px solid #eef2f7;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+.rbxl-chip b {
+    font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 12px; font-weight: 700; color: #161B27; white-space: nowrap;
+}
+.rbxl-chip i {
+    font-style: normal; font-family: 'Inter', sans-serif;
+    font-size: 10px; font-weight: 600; color: #9aa5b5;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+body.dark-mode .rbxl-chip { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.07); }
+body.dark-mode .rbxl-chip b { color: #e2e8f0; }
+/* «перегретая» бумага — кандидат на замену */
+.rbxl-chip.hot { background: rgba(245, 158, 11, 0.09); border-color: rgba(245, 158, 11, 0.32); }
+.rbxl-chip.hot i { color: #b4761a; }
+body.dark-mode .rbxl-chip.hot { background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.3); }
+body.dark-mode .rbxl-chip.hot i { color: #fbbf24; }
+/* только что купленная */
+.rbxl-chip.fresh {
+    background: rgba(16, 185, 129, 0.09); border-color: rgba(16, 185, 129, 0.34);
+    animation: rbxlFresh 0.5s ease-out;
+}
+.rbxl-chip.fresh i { color: #159d68; }
+body.dark-mode .rbxl-chip.fresh { background: rgba(52, 211, 153, 0.12); border-color: rgba(52, 211, 153, 0.32); }
+body.dark-mode .rbxl-chip.fresh i { color: #34d399; }
+@keyframes rbxlFresh {
+    from { opacity: 0; transform: translateX(10px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+/* реплика-объяснение */
+.rbxl-say {
+    margin-top: 12px; padding: 11px 13px;
+    border-radius: 10px;
+    background: #f8fafc; border: 1px solid #eef2f7;
+    font-family: 'Inter', sans-serif; font-size: 12.5px; line-height: 1.6; color: #48566d;
+    min-height: 62px;
+}
+.rbxl-say b { color: #161B27; font-weight: 700; }
+body.dark-mode .rbxl-say { background: rgba(255, 255, 255, 0.03); border-color: rgba(255, 255, 255, 0.07); color: #94a3b8; }
+body.dark-mode .rbxl-say b { color: #e2e8f0; }
+
+/* кнопка шага + сброс */
+.rbxl-actions { display: flex; gap: 8px; margin-top: 10px; }
+.rbxl-do {
+    flex: 1;
+    padding: 11px 16px;
+    border: none; border-radius: 10px; cursor: pointer;
+    background: #141b26; color: #ffffff;
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700;
+    transition: background 0.16s ease, transform 0.12s ease;
+}
+.rbxl-do:hover { background: #1e2938; }
+.rbxl-do:active { transform: scale(0.99); }
+.rbxl-do.done { background: #10B981; }
+.rbxl-do.done:hover { background: #0ea371; }
+body.dark-mode .rbxl-do { background: #223045; }
+body.dark-mode .rbxl-do:hover { background: #2a3a53; }
+.rbxl-reset {
+    flex: 0 0 auto; display: grid; place-items: center;
+    width: 40px;
+    border: 1px solid #e3e9f2; border-radius: 10px; cursor: pointer;
+    background: #ffffff; color: #6c7a8d;
+    transition: background 0.16s ease, color 0.16s ease;
+}
+.rbxl-reset svg { width: 15px; height: 15px; }
+.rbxl-reset:hover { background: #f1f5f9; color: #161B27; }
+body.dark-mode .rbxl-reset { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); color: #9aa7ba; }
+
+/* ─────────── АКАДЕМИЯ · тренажёр «Умная замена» (.rbxi-*) ─────────── */
+.rbxi-seg {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 5px;
+    padding: 4px; margin-bottom: 12px;
+    border-radius: 12px; background: #f1f5f9;
+}
+body.dark-mode .rbxi-seg { background: rgba(255, 255, 255, 0.05); }
+.rbxi-sg {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 9px 10px;
+    border: none; border-radius: 9px; cursor: pointer;
+    background: transparent;
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700; color: #5f6d80;
+    transition: background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+}
+.rbxi-sg svg { width: 13px; height: 13px; flex-shrink: 0; opacity: 0.7; }
+.rbxi-sg:hover { color: #161B27; }
+.rbxi-sg.act { background: #ffffff; color: #161B27; box-shadow: 0 1px 3px rgba(16, 24, 40, 0.12); }
+.rbxi-sg.act svg { opacity: 1; }
+body.dark-mode .rbxi-sg { color: #9aa7ba; }
+body.dark-mode .rbxi-sg.act { background: #2a3a53; color: #ffffff; }
+
+.rbxi-demo {
+    border: 1px solid #eef2f7; border-radius: 12px;
+    padding: 14px; background: #ffffff;
+}
+body.dark-mode .rbxi-demo { background: rgba(255, 255, 255, 0.03); border-color: rgba(255, 255, 255, 0.08); }
+.rbxi-cap {
+    margin-bottom: 11px;
+    font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.1em; color: #9aa5b5;
+}
+.rbxi-cap b { font-family: var(--font-num, 'JetBrains Mono', monospace); color: #55637a; }
+body.dark-mode .rbxi-cap b { color: #c4cedd; }
+
+/* пара карточек «продаём → покупаем» */
+.rbxi-pair { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 9px; }
+.rbxi-card {
+    padding: 11px 12px 12px;
+    border: 1px solid #eef2f7; border-radius: 11px;
+    background: #f8fafc;
+    transition: opacity 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+}
+body.dark-mode .rbxi-card { background: rgba(255, 255, 255, 0.03); border-color: rgba(255, 255, 255, 0.07); }
+.rbxi-card.dim { opacity: 0.45; }
+.rbxi-card.hi { background: rgba(16, 185, 129, 0.07); border-color: rgba(16, 185, 129, 0.34); }
+body.dark-mode .rbxi-card.hi { background: rgba(52, 211, 153, 0.1); border-color: rgba(52, 211, 153, 0.32); }
+.rbxi-tag {
+    font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 5px;
+}
+.rbxi-card.out .rbxi-tag { color: #d0803a; }
+.rbxi-card.in .rbxi-tag { color: #159d68; }
+.rbxi-t {
+    font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 14.5px; font-weight: 700; color: #161B27;
+}
+body.dark-mode .rbxi-t { color: #f1f5f9; }
+.rbxi-sub {
+    margin-top: 2px;
+    font-family: 'Inter', sans-serif; font-size: 11px; line-height: 1.4; color: #8a96aa;
+}
+.rbxi-kv {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+    margin-top: 9px; padding-top: 8px;
+    border-top: 1px solid rgba(44, 54, 76, 0.08);
+}
+body.dark-mode .rbxi-kv { border-top-color: rgba(255, 255, 255, 0.07); }
+.rbxi-kv span {
+    font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em; color: #9aa5b5;
+}
+.rbxi-kv b {
+    font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.rbxi-kv.warn b { color: #d0803a; }
+.rbxi-kv.good b { color: #159d68; }
+body.dark-mode .rbxi-kv.warn b { color: #fbbf24; }
+body.dark-mode .rbxi-kv.good b { color: #34d399; }
+.rbxi-arrow { color: #cbd5e1; line-height: 0; transition: color 0.3s ease, transform 0.3s ease; }
+.rbxi-arrow svg { width: 20px; height: 20px; }
+.rbxi-arrow.go { color: #10B981; transform: scale(1.15); }
+
+/* строки эффекта замены */
+.rbxi-stats { display: flex; flex-direction: column; gap: 5px; margin-top: 12px; }
+.rbxi-stat {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+    padding: 9px 11px;
+    border-radius: 9px;
+    background: #f8fafc; border: 1px solid #eef2f7;
+    transition: background 0.3s ease, border-color 0.3s ease;
+}
+.rbxi-stat.done { background: rgba(16, 185, 129, 0.06); border-color: rgba(16, 185, 129, 0.18); }
+body.dark-mode .rbxi-stat { background: rgba(255, 255, 255, 0.03); border-color: rgba(255, 255, 255, 0.07); }
+body.dark-mode .rbxi-stat.done { background: rgba(52, 211, 153, 0.08); border-color: rgba(52, 211, 153, 0.2); }
+.rbxi-stat .l {
+    font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #6c7a8d;
+}
+body.dark-mode .rbxi-stat .l { color: #9aa7ba; }
+.rbxi-stat .v { display: inline-flex; align-items: baseline; gap: 7px; white-space: nowrap; }
+.rbxi-stat .v em, .rbxi-stat .v b, .rbxi-stat .v u {
+    font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-variant-numeric: tabular-nums; font-style: normal; text-decoration: none;
+}
+.rbxi-stat .v em { font-size: 12.5px; font-weight: 600; color: #8a96aa; }
+.rbxi-stat.done .v em { text-decoration: line-through; opacity: 0.6; }
+/* значение не изменилось (эшелон риска) — не зачёркиваем и не красим в «прибыль» */
+.rbxi-stat.same.done { background: #f8fafc; border-color: #eef2f7; }
+.rbxi-stat.same.done .v em { text-decoration: none; opacity: 1; }
+.rbxi-stat.same .v u { color: #6c7a8d; background: rgba(44, 54, 76, 0.08); }
+body.dark-mode .rbxi-stat.same.done { background: rgba(255, 255, 255, 0.03); border-color: rgba(255, 255, 255, 0.07); }
+body.dark-mode .rbxi-stat.same .v u { color: #9aa7ba; background: rgba(255, 255, 255, 0.08); }
+.rbxi-stat .v .ar { font-style: normal; color: #cbd5e1; font-size: 12px; }
+.rbxi-stat .v b { font-size: 13.5px; font-weight: 700; color: #161B27; }
+body.dark-mode .rbxi-stat .v b { color: #f1f5f9; }
+.rbxi-stat .v u {
+    font-size: 11px; font-weight: 700; color: #159d68;
+    background: rgba(16, 185, 129, 0.12); padding: 1px 6px; border-radius: 999px;
+}
+body.dark-mode .rbxi-stat .v u { color: #34d399; background: rgba(52, 211, 153, 0.14); }
+
+.rbxi-do {
+    width: 100%; margin-top: 12px; padding: 11px 16px;
+    border: none; border-radius: 10px; cursor: pointer;
+    background: #141b26; color: #ffffff;
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700;
+    transition: background 0.16s ease, transform 0.12s ease;
+}
+.rbxi-do:hover { background: #1e2938; }
+.rbxi-do:active { transform: scale(0.99); }
+.rbxi-do.done { background: #ffffff; color: #55637a; border: 1px solid #e3e9f2; }
+.rbxi-do.done:hover { background: #f1f5f9; }
+body.dark-mode .rbxi-do { background: #223045; }
+body.dark-mode .rbxi-do.done { background: rgba(255, 255, 255, 0.05); color: #9aa7ba; border-color: rgba(255, 255, 255, 0.1); }
+
+/* правила класса под тренажёром */
+.rbxi-rules { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.rbxi-rules li {
+    position: relative; padding-left: 16px;
+    font-family: 'Inter', sans-serif; font-size: 13px; line-height: 1.6; color: #55637a;
+}
+.rbxi-rules li::before {
+    content: ''; position: absolute; left: 2px; top: 8px;
+    width: 5px; height: 5px; border-radius: 50%; background: #10B981;
+}
+body.dark-mode .rbxi-rules li { color: #94a3b8; }
+
+/* ─────────── АКАДЕМИЯ · автопрогон примера ─────────── */
+.rbxa-steps-row { display: flex; align-items: stretch; gap: 8px; margin-bottom: 12px; }
+.rbxa-steps-row .rbxa-steps { flex: 1; margin-bottom: 0; }
+.rbxa-play {
+    flex: 0 0 auto;
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 0 14px;
+    border: 1px solid #e3e9f2; border-radius: 12px; cursor: pointer;
+    background: #ffffff;
+    font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700; color: #55637a;
+    transition: background 0.16s ease, color 0.16s ease;
+}
+.rbxa-play svg { width: 11px; height: 11px; flex-shrink: 0; }
+.rbxa-play:hover { background: #f1f5f9; color: #161B27; }
+.rbxa-play.playing { background: #141b26; color: #ffffff; border-color: #141b26; }
+body.dark-mode .rbxa-play { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); color: #9aa7ba; }
+body.dark-mode .rbxa-play.playing { background: #2a3a53; color: #ffffff; border-color: #2a3a53; }
+
+@media (prefers-reduced-motion: reduce) {
+    .rbxl-bar .seg, .rbxl-chip.fresh, .rbxl-bar.steady, .rbxi-card, .rbxi-arrow { transition: none; animation: none; }
 }
