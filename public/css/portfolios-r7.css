@@ -476,21 +476,27 @@ body.dark-mode .pfmv-n b { color: #f4f8fd; }
 /* ============ 11а. Подвкладка «Портфели» — обзор портфеля + полный состав ============ */
 .pfx-ports { display: flex; flex-direction: column; gap: 16px; }
 .pfpt-card { padding: 20px 22px; }
+/* R9.1: шапка карточки состава — СЕТКА вместо flex-каши (просьба 2026-07-16
+   «добавить воздуха и равномерно распределить»): ряд 1 — имя и действия по краям,
+   ряд 2 — четыре KPI РАВНЫМИ колонками, ряд 3 — полоса распределения во всю ширину */
 .pfpt-head {
-    display: flex; align-items: center; flex-wrap: wrap; gap: 14px 26px;
-    padding-bottom: 16px; border-bottom: 1px solid #eef2f7; margin-bottom: 4px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: 'id acts' 'kpis kpis' 'alloc alloc';
+    align-items: center; row-gap: 18px; column-gap: 26px;
+    padding-bottom: 20px; border-bottom: 1px solid #eef2f7; margin-bottom: 4px;
 }
 body.dark-mode .pfpt-head { border-bottom-color: rgba(255, 255, 255, 0.08); }
-.pfpt-id { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.pfpt-kpis { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
-.pfpt-kpi { display: flex; flex-direction: column; gap: 2px; }
+.pfpt-id { grid-area: id; display: flex; align-items: center; gap: 12px; min-width: 0; }
+.pfpt-kpis { grid-area: kpis; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px 28px; align-items: start; }
+.pfpt-kpi { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .pfpt-kpi span { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: #8494a7; }
-.pfpt-kpi b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 16px; font-weight: 700; color: #0f172a; white-space: nowrap; }
+.pfpt-kpi b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 17px; font-weight: 700; color: #0f172a; white-space: nowrap; }
 .pfpt-kpi b.pos { color: #119d5c; }
 .pfpt-kpi b.neg { color: #c2410c; }
 body.dark-mode .pfpt-kpi b { color: #f4f8fd; }
-.pfpt-alloc { display: flex; flex-direction: column; gap: 6px; min-width: 170px; max-width: 240px; flex: 1 1 170px; }
-.pfpt-acts { display: flex; align-items: center; gap: 9px; margin-left: auto; }
+.pfpt-alloc { grid-area: alloc; display: flex; flex-direction: column; gap: 7px; min-width: 0; max-width: none; }
+.pfpt-acts { grid-area: acts; display: flex; align-items: center; gap: 9px; justify-self: end; }
 .pfpt-rebal { flex: 0 0 auto !important; padding: 10px 16px !important; }
 .pfpt-acts .pfc-act { width: 38px; height: 38px; border-radius: 11px; }
 .pfpt-acts .pfc-act svg { width: 16px; height: 16px; }
@@ -1818,3 +1824,95 @@ body.dark-mode .pff-hide:hover { background: rgba(255,255,255,0.08); color: #f4f
    :has() держится на hover/focus-within самой обёртки, так что «залипания» слоя нет. */
 #panel-portfolios .pfd-item:has(.pff-info-wrap:hover, .pff-info-wrap:focus-within) .pfd-body { overflow: visible; }
 #panel-portfolios .pfd-item:has(.pff-info-wrap:hover, .pff-info-wrap:focus-within) { z-index: 30; }
+
+/* ============ R9.1. Шторка настроек портфеля (pfxPortSettings) ============ */
+/* Настройки из «Моих портфелей»/«Составов» открываются НА МЕСТЕ — оверлеем-шторкой
+   справа (как drawer тикера), без прыжка на другую подвкладку. Внутри — тот же
+   .pfc-menu, что в карточке, поэтому ниже только «переселение» его из карточного
+   оверлея в статичную колонку панели. Живёт в <body> (fixed в панелях ловится
+   transform-ами предков — см. память fixed-overlays-need-body). */
+#pfSetDrawer { position: fixed; inset: 0; z-index: 960; display: none; }
+body:has(#panel-portfolios.active) #pfSetDrawer.open { display: block; }
+.pfsd-scrim { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.34); backdrop-filter: blur(2px); animation: pfsdFade 0.22s ease both; }
+@keyframes pfsdFade { from { opacity: 0; } to { opacity: 1; } }
+.pfsd-panel {
+    position: absolute; top: 12px; right: 12px; bottom: 12px;
+    width: min(478px, calc(100vw - 48px));
+    display: flex; flex-direction: column;
+    background: #fff; border-radius: 24px; overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(24, 38, 60, 0.07), -30px 0 90px -34px rgba(15, 23, 42, 0.5);
+    animation: pfsdIn 0.28s cubic-bezier(0.22, 0.9, 0.3, 1) both;
+}
+@keyframes pfsdIn { from { transform: translateX(42px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .pfsd-panel, .pfsd-scrim { animation-duration: 0.01ms; } }
+.pfsd-head { display: flex; align-items: center; gap: 12px; padding: 18px 20px 14px; border-bottom: 1px solid rgba(24, 38, 60, 0.07); }
+.pfsd-head-t { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.pfsd-head-t b { font-family: Georgia, 'Times New Roman', serif; font-weight: 400; font-size: 20px; letter-spacing: 0.01em; color: #16233b; }
+.pfsd-head-t span { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #8494a7; }
+.pfsd-x { margin-left: auto; flex-shrink: 0; width: 34px; height: 34px; border-radius: 10px; border: 0; background: rgba(24, 38, 60, 0.05); color: #64748b; display: grid; place-items: center; cursor: pointer; transition: background 0.15s, color 0.15s; }
+.pfsd-x:hover { background: rgba(24, 38, 60, 0.1); color: #0f172a; }
+.pfsd-x svg { width: 14px; height: 14px; }
+.pfsd-body { flex: 1; min-height: 0; display: flex; }
+/* .pfc-menu в шторке: статичная колонка на всю панель — без карточного absolute,
+   рамки-акцента и входной анимации (входит сама шторка) */
+.pfsd-body .pfc-menu { position: static; inset: auto; flex: 1; min-width: 0; box-shadow: none; border-radius: 0; animation: none; background: transparent; }
+body.dark-mode .pfsd-panel { background: #18222e; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), -30px 0 90px -30px rgba(0, 0, 0, 0.65); }
+body.dark-mode .pfsd-head { border-bottom-color: rgba(255, 255, 255, 0.08); }
+body.dark-mode .pfsd-head-t b { color: #f4f8fd; }
+body.dark-mode .pfsd-x { background: rgba(255, 255, 255, 0.07); color: #93a2b8; }
+body.dark-mode .pfsd-x:hover { background: rgba(255, 255, 255, 0.13); color: #e8eef7; }
+/* пока шторка открыта — угловые кнопки не спорят с ней */
+body.pfsd-open #bgFab, body.pfsd-open #themeFab, body.pfsd-open #pfWidgetFab { display: none !important; }
+
+/* ============ R9.1. Теневой виджет «Добавить виджет» + FAB ============ */
+/* Обучающая ячейка на вкладке-портфеле: пунктирный «призрак» рядом с карточкой.
+   Первый клик улетает кометой в правый нижний угол и остаётся там круглой кнопкой
+   #pfWidgetFab (над кнопкой смены фона) — пользователь видит переезд своими глазами. */
+.pfxg-item { min-height: 300px; }
+.pfxg-ghost {
+    width: 100%; height: 100%; min-height: 300px; box-sizing: border-box; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+    padding: 26px; text-align: center;
+    background: rgba(255, 255, 255, 0.42);
+    border: 2px dashed rgba(76, 94, 247, 0.38); border-radius: var(--pfr, 20px);
+    transition: background 0.16s, border-color 0.16s, transform 0.16s, box-shadow 0.2s;
+}
+.pfxg-ghost:hover { background: rgba(255, 255, 255, 0.72); border-color: rgba(76, 94, 247, 0.62); transform: translateY(-2px); box-shadow: 0 18px 40px -22px rgba(68, 83, 239, 0.35); }
+.pfxg-plus { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(#5b67f2, #4453ef); color: #fff; box-shadow: 0 12px 26px -12px rgba(68, 83, 239, 0.6); }
+.pfxg-plus svg { width: 20px; height: 20px; }
+.pfxg-ghost b { font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 800; color: #1e293b; }
+.pfxg-ghost i { font-style: normal; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; line-height: 1.55; color: #8494a7; max-width: 250px; }
+body.dark-mode .pfxg-ghost { background: rgba(255, 255, 255, 0.04); border-color: rgba(129, 140, 248, 0.4); }
+body.dark-mode .pfxg-ghost:hover { background: rgba(255, 255, 255, 0.07); }
+body.dark-mode .pfxg-ghost b { color: #e8eef7; }
+/* комета: клон призрака сжимается в круг по пути к месту будущего FAB */
+.pfxg-fly {
+    position: fixed; z-index: 970; display: grid; place-items: center; pointer-events: none;
+    background: linear-gradient(#5b67f2, #4453ef); color: #fff;
+    border-radius: var(--pfr, 20px); box-shadow: 0 18px 44px -16px rgba(68, 83, 239, 0.55);
+    transition: left 0.68s cubic-bezier(0.45, 0.05, 0.2, 1), top 0.68s cubic-bezier(0.45, 0.05, 0.2, 1),
+        width 0.68s cubic-bezier(0.45, 0.05, 0.2, 1), height 0.68s cubic-bezier(0.45, 0.05, 0.2, 1),
+        border-radius 0.68s ease;
+}
+.pfxg-fly.go { border-radius: 50%; }
+.pfxg-fly svg { width: 20px; height: 20px; }
+/* постоянная кнопка: над #bgFab (bottom 72 + 42 кнопка + 10 зазор = 124) */
+#pfWidgetFab { display: none; }
+body:has(#panel-portfolios.active) #pfWidgetFab.on {
+    position: fixed; right: 22px; bottom: 124px; z-index: 879;
+    width: 46px; height: 46px; border-radius: 50%; border: 0; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(#5b67f2, #4453ef); color: #fff;
+    box-shadow: 0 14px 30px -12px rgba(68, 83, 239, 0.65);
+    animation: pfxFabPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    transition: transform 0.15s, box-shadow 0.2s;
+}
+@keyframes pfxFabPop { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+body:has(#panel-portfolios.active) #pfWidgetFab.on:hover { transform: translateY(-2px); box-shadow: 0 18px 36px -12px rgba(68, 83, 239, 0.75); }
+#pfWidgetFab svg { width: 18px; height: 18px; }
+body.quiz-mode #pfWidgetFab, body.sd-drawer-open #pfWidgetFab { display: none !important; }
+
+/* ============ R9.1. Шапка «Моих портфелей»: инструменты справа ============ */
+.pf-plistblk > .pf-ch > .pf-ch-l { flex: 1 1 auto; }
+.pfpl-sort-cap { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: #8494a7; }
+body.dark-mode .pfpl-sort-cap { color: #93a2b8; }

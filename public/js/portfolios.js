@@ -1169,6 +1169,9 @@
     //  РЕНДЕР
     // ====================================================================
     var openMenu = null;     // id портфеля с раскрытыми настройками
+    // R9.1: openMenu показан ШТОРКОЙ поверх страницы (pfxPortSettings), а не меню
+    // в карточке; пока true — карточное меню не рендерится (см. menuOn в cardHtml)
+    var pfSetDrawerOn = false;
     var editHold = {};       // hid -> true: строка состава раскрыта в редактор (правка по клику)
     var addOpen = false;     // раскрыта ли форма «Добавить актив» в открытых настройках
     var colorsOpen = false;  // раскрыта ли палитра цвета в шапке настроек
@@ -1352,6 +1355,8 @@
             repaintOpenCharts();   // если какой-то график раскрыт — дорисовываем после ре-рендера
             repaintMiniCharts();   // мини-график «портфель vs IMOEX» в каждой карточке
             pfPlistSparksSoon();   // спарклайны «Моих портфелей» без снимков — дорисовать из истории
+            pfxDrawerSync();       // R9.1: шторка настроек портфеля обновляется вместе со страницей
+            pfxFabSync();          // R9.1: круглая кнопка «+ виджет» справа внизу (после обучения)
             if (openMenu) {
                 var m = dq('pfMenu-' + openMenu); if (m) m.scrollTop = 0;
                 // пустой портфель → сразу ставим фокус на ввод тикера (интуитивнее)
@@ -1888,11 +1893,13 @@
     };
     function pfxTabSeed(tab) {
         var cfg = normTabCfg(null);
-        // вкладка-портфель (R9): стартует с его полной карточки во всю ширину; id виджета
-        // карточки совпадает с именем вкладки ('pf:<id>'). «Распределение активов», если
-        // его добавят из пикера, сразу смотрит на этот портфель (allocPf).
+        // вкладка-портфель (R9): стартует с его карточки «чуть шире узкой» (span 5 —
+        // просьба 2026-07-16, было 12); id виджета карточки совпадает с именем вкладки
+        // ('pf:<id>'). «Распределение активов», если его добавят из пикера, сразу
+        // смотрит на этот портфель (allocPf). Рядом рендерится обучающий «теневой
+        // виджет» добавления (см. pfdBodyHtml → pfxGhostClick).
         if (pfxIsPfTab(tab)) {
-            cfg.order.push(tab); cfg.col[tab] = 1; cfg.span[tab] = 12; cfg.hidden[tab] = 0;
+            cfg.order.push(tab); cfg.col[tab] = 1; cfg.span[tab] = 5; cfg.hidden[tab] = 0;
             cfg.allocPf = tab.slice(3);
             return cfg;
         }
@@ -1902,7 +1909,15 @@
         return cfg;
     }
     function dashCfgFor(tab) {
-        if (!pfTabCfgs[tab]) pfTabCfgs[tab] = pfTabsStore[tab] ? normTabCfg(pfTabsStore[tab]) : pfxTabSeed(tab);
+        if (!pfTabCfgs[tab]) {
+            var c = pfTabsStore[tab] ? normTabCfg(pfTabsStore[tab]) : pfxTabSeed(tab);
+            // мягкая миграция R9.1: НЕТРОНУТЫЙ старый сид вкладки-портфеля (одна карточка
+            // во всю ширину, больше ничего) сужается до нового сида span 5; любая правка
+            // пользователя (виджеты, заметки, другой span) конфиг от миграции уводит
+            if (pfxIsPfTab(tab) && pfTabsStore[tab] && c.order.length === 1 && c.order[0] === tab &&
+                +c.span[tab] === 12 && !c.notes.length) c.span[tab] = 5;
+            pfTabCfgs[tab] = c;
+        }
         return pfTabCfgs[tab];
     }
     // вкладка-портфель (R9): динамическая подвкладка 'pf:<id>' с дашбордом одного
@@ -2752,6 +2767,23 @@
                 '<div class="pfd-body">' + html + '</div>' +
             '</div>';
         }).join('');
+
+        // R9.1: обучающий «теневой виджет» на вкладке-портфеле — подсказывает про
+        // пикер, пока пользователь ни разу его отсюда не открыл. Первый клик улетает
+        // FAB-ом в правый нижний угол (pfxGhostClick) и больше призрак не показывается.
+        // Обычный .pfd-item для masonry-пакера, но БЕЗ chrome (не тянется/не режется)
+        // и вне dashCfg.order (saveDashCfg его не знает и не сохранит).
+        if (pfxIsPfTab(dashTab) && shown.length && !pfxFabSeen() && !dashEdit) {
+            items += '<div class="pfd-item pfxg-item" data-pfd="__ghost" style="grid-column: span 4;">' +
+                '<div class="pfd-body">' +
+                    '<button type="button" class="pfxg-ghost" onclick="pfxGhostClick(event)" title="Открыть пикер виджетов">' +
+                        '<span class="pfxg-plus">' + PFD_PLUS_SVG + '</span>' +
+                        '<b>Добавить виджет</b>' +
+                        '<i>график капитала, календарь выплат, новости — соберите вкладку под себя</i>' +
+                    '</button>' +
+                '</div>' +
+            '</div>';
+        }
 
         // R8: подвкладка без единого видимого блока (всё скрыли / пустой сид будущей
         // вкладки) — не голая пустота, а приглашение собрать дашборд
@@ -5415,9 +5447,12 @@
         var pnlCls = c.pnl >= 0 ? 'pos' : 'neg';
         var bench = pfBench(p);
         var chartOn = !!chartOpen[p.id], holdsOn = !!holdsExpand[p.id];
-        var menu = (openMenu === p.id) ? menuHtml(p) : '';
+        // R9.1: когда настройки открыты ШТОРКОЙ (pfSetDrawerOn), карточное меню не
+        // рендерим — иначе на странице два .pfc-menu с ОДИНАКОВЫМИ id полей формы
+        var menuOn = openMenu === p.id && !pfSetDrawerOn;
+        var menu = menuOn ? menuHtml(p) : '';
         // настройки всегда раскрыты «во всю высоту» — полный список без внутреннего скролла
-        var tall = (openMenu === p.id) ? ' pf-card--tall' : '';
+        var tall = menuOn ? ' pf-card--tall' : '';
         var MANY = 4;
         // мини-версия показывает ВЕСЬ состав по порядку (от лучших к худшим — c.hs уже
         // отсортирован); список не режется — карточка скроллится внутри (.pfc-massets).
@@ -5429,7 +5464,7 @@
 
         // чип «за сегодня» под названием убран (просьба 2026-07-14): дневное изменение
         // живёт в герое «Панель управления» и KPI-виджете, в карточке он дублировался
-        return '<div class="dash2-card pf-card' + (openMenu === p.id ? ' menu-open' : '') + tall + (chartOn ? ' chart-open' : '') + (chartOn && chartAssets[p.id] ? ' assets-open' : '') + (holdsOn ? ' holds-open' : '') + (colRight ? ' col-right' : '') + (narrow ? ' pf-card--narrow' : '') + (colMid ? ' col-mid' : '') + '" style="--pf-accent:' + ac + '">' +
+        return '<div class="dash2-card pf-card' + (menuOn ? ' menu-open' : '') + tall + (chartOn ? ' chart-open' : '') + (chartOn && chartAssets[p.id] ? ' assets-open' : '') + (holdsOn ? ' holds-open' : '') + (colRight ? ' col-right' : '') + (narrow ? ' pf-card--narrow' : '') + (colMid ? ' col-mid' : '') + '" style="--pf-accent:' + ac + '">' +
             '<div class="pfc-top">' +
                 '<div class="pfc-titles">' +
                     '<span class="pfc-name" onclick="pfNameEdit(\'' + p.id + '\',event)" title="Нажмите, чтобы переименовать"><span class="pfc-name-ink">' + esc(p.name) + '</span></span>' +
@@ -5439,7 +5474,7 @@
                         '<button class="pfc-act" onclick="pfCopyComposition(\'' + p.id + '\',event)" aria-label="Скопировать состав" title="Скопировать состав портфеля">' + COPY_SVG + '</button>' +
                         '<button class="pfc-act' + (assetsChartOn ? ' on' : '') + '" onclick="pfOpenChartAssets(\'' + p.id + '\')" aria-label="Полный состав" title="' + (assetsChartOn ? 'Свернуть' : 'Полный состав') + '">' + HOLDS_SVG + '</button>' +
                         '<button class="pfc-act" onclick="pfToggleHidden(\'' + p.id + '\',event)" aria-label="Скрыть портфель" title="Скрыть карточку из сетки">' + EYEOFF_SVG + '</button>' +
-                        '<button class="pfc-act' + (openMenu === p.id ? ' on' : '') + '" onclick="pfToggleMenu(\'' + p.id + '\')" aria-label="Настройки" title="Настройки">' + GEAR_SVG + '</button>' +
+                        '<button class="pfc-act' + (menuOn ? ' on' : '') + '" onclick="pfToggleMenu(\'' + p.id + '\')" aria-label="Настройки" title="Настройки">' + GEAR_SVG + '</button>' +
                     '</div>' +
                 '</div>' +
             '</div>' +
@@ -7810,7 +7845,9 @@
         }).join('') + '</div>';
         return '<div class="dash2-card pf-card2 pf-plistblk">' +
             pfCardHead('', 'Мои портфели', 'всего ' + store.items.length + ' ' + plural(store.items.length, 'портфель', 'портфеля', 'портфелей') + ' · ' + fmtRub(total),
-                '<div class="pfpl-head-r">' + seg + add + '</div>') + body + '</div>';
+                // подпись у сегмента — иначе «Стоимость|Доходность|Имя» читается как
+                // фильтр или вкладки, а не сортировка (просьба 2026-07-16)
+                '<div class="pfpl-head-r"><span class="pfpl-sort-cap">Сортировка</span>' + seg + add + '</div>') + body + '</div>';
     }
     // «Структура по портфелям»: кольцо распределения стоимости + легенда
     function pfwPstructHtml() {
@@ -7944,27 +7981,139 @@
             if (tries++ < 45) requestAnimationFrame(poll);
         })();
     }
-    window.pfxPortSettings = function (pid) {
-        var p = findPf(pid);
-        // R9: 2+ видимых портфелей → настройки на СОБСТВЕННОЙ вкладке портфеля
-        if (p && !p.hidden && visibleItems().length >= 2 && pfxWide()) {
-            var t = 'pf:' + pid;
-            var far = pfxEffTab() !== t;
-            if (pfxOpenPfTabs.indexOf(pid) < 0) { pfxOpenPfTabs.push(pid); pfxSaveOpenTabs(); }
-            pfxActivateTab(t);
-            // карточку могли убрать с вкладки корзиной — настройкам она нужна, возвращаем
-            // (тот же приём, что у pfxGoOverviewFor); dashCfg после активации = конфиг вкладки
-            if (dashCfg.hidden && dashCfg.hidden[t]) { dashCfg.hidden[t] = 0; saveDashCfg(); }
-            window.pfToggleMenu(pid);   // сам ре-рендерит
-            if (far) { toast('Настройки открыты на вкладке портфеля'); pfxFlashBlock(t); }
+    // ---- R9.1: настройки портфеля — ШТОРКОЙ справа, БЕЗ смены подвкладки ----
+    // Шестерёнка в «Моих портфелях»/«Составах» больше никуда не уводит (просьба
+    // 2026-07-16): настройки открываются оверлеем поверх текущей страницы.
+    // Содержимое — тот же menuHtml, что в карточке (одна логика состава/цвета/
+    // импорта/удаления), поэтому и источник состояния общий: openMenu + флаг
+    // pfSetDrawerOn. Пока шторка открыта, карточное меню НЕ рендерится (см.
+    // menuOn в cardHtml) — иначе на странице два набора одинаковых id полей.
+    function pfxDrawerEl() {
+        var host = document.getElementById('pfSetDrawer');
+        if (host) return host;
+        host = document.createElement('div');
+        host.id = 'pfSetDrawer';
+        host.innerHTML = '<div class="pfsd-scrim" onclick="pfCloseMenu()"></div>' +
+            '<aside class="pfsd-panel" role="dialog" aria-label="Настройки портфеля">' +
+                '<div class="pfsd-head">' +
+                    '<div class="pfsd-head-t"><b>Настройки портфеля</b><span>состав, имя и цвет, деньги, цель и удаление</span></div>' +
+                    '<button type="button" class="pfsd-x" onclick="pfCloseMenu()" aria-label="Закрыть">' + XMARK_SVG + '</button>' +
+                '</div>' +
+                '<div class="pfsd-body"></div>' +
+            '</aside>';
+        document.body.appendChild(host);
+        return host;
+    }
+    // синк шторки — в конце renderPortfolios: все хендлеры настроек (лоты, цвет,
+    // импорт, данжер-зона) зовут общий рендер, шторка обновляется вместе со страницей
+    function pfxDrawerSync() {
+        var host = document.getElementById('pfSetDrawer');
+        var p = pfSetDrawerOn && openMenu ? findPf(openMenu) : null;
+        if (!p) {
+            pfSetDrawerOn = false;
+            if (host && host.classList.contains('open')) {
+                host.classList.remove('open');
+                document.body.classList.remove('pfsd-open');
+            }
             return;
         }
-        var jumped = pfxGoOverviewFor(pid);
-        window.pfToggleMenu(pid);   // откроет карточку с настройками на «Обзоре»
-        if (jumped) {
-            toast('Настройки портфеля открыты на «Обзоре»');
-            pfxFlashBlock('pf:' + pid);
+        host = pfxDrawerEl();
+        var body = host.querySelector('.pfsd-body');
+        // курсор в текстовом поле шторки (имя/деньги/форма добавления) — фоновый своп
+        // котировок унёс бы ввод; кнопки фокус-гарду не мешают (клики обновляют список)
+        var ae = document.activeElement;
+        if (host.classList.contains('open') && ae && body.contains(ae) &&
+            (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA')) return;
+        var keep = {};
+        Array.prototype.forEach.call(body.querySelectorAll('[data-skey]'), function (el) {
+            if (el.scrollTop) keep[el.getAttribute('data-skey')] = el.scrollTop;
+        });
+        // .pfc-menu внутри шторки всегда no-anim: входит сама шторка, а не меню
+        var saveJust = menuJustOpened;
+        menuJustOpened = false;
+        body.innerHTML = menuHtml(p);
+        menuJustOpened = saveJust;
+        Array.prototype.forEach.call(body.querySelectorAll('[data-skey]'), function (el) {
+            var k = el.getAttribute('data-skey');
+            if (keep[k]) el.scrollTop = keep[k];
+        });
+        host.querySelector('.pfsd-panel').style.setProperty('--pf-accent', colorVal(p.color));
+        host.classList.add('open');
+        document.body.classList.add('pfsd-open');
+    }
+    window.pfxPortSettings = function (pid) {
+        if (!findPf(pid)) return;
+        // свежеоткрытая шторка — с чистым состоянием (тот же набор, что в pfToggleMenu);
+        // menuJustOpened даёт автофокус на тикер у пустого портфеля (хвост renderPortfolios)
+        openMenu = pid; pfSetDrawerOn = true; menuJustOpened = true;
+        chartOpen = {}; chartAssets = {}; chartAssetsFull = {}; holdsExpand = {};
+        editHold = {}; colorsOpen = false; delArm = false; addOpen = false;
+        renderNoAnim();   // спрячет карточное меню, pfxDrawerSync наполнит шторку
+    };
+    // Esc закрывает шторку (клик по скриму — тоже, см. pfxDrawerEl); pfCloseMenu
+    // сбрасывает openMenu, а pfxDrawerSync по нему гасит и саму шторку
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && pfSetDrawerOn) window.pfCloseMenu();
+    });
+
+    // ---- R9.1: обучающий призрак «Добавить виджет» → постоянная круглая кнопка ----
+    // Первый клик по призраку на вкладке-портфеле улетает анимацией в правый нижний
+    // угол и превращается в FAB «+» над кнопкой смены фона (идея 2026-07-16): так
+    // пользователь СВОИМИ ГЛАЗАМИ видит, куда переехала точка входа, и призрак больше
+    // не занимает сетку. Флаг обучения — локальный (позиция UI, в облако не зеркалится).
+    var PFX_FAB_KEY = 'pf_widget_fab_v1';
+    function pfxFabSeen() { try { return localStorage.getItem(PFX_FAB_KEY) === '1'; } catch (e) { return false; } }
+    // постоянная кнопка: живёт в body, видимость на вкладке «Портфели» гейтит CSS
+    // (body:has(#panel-portfolios.active)), класс .on — «обучение пройдено, десктоп»
+    function pfxFabSync() {
+        var f = document.getElementById('pfWidgetFab');
+        if (!pfxFabSeen() || !pfxWide()) { if (f) f.classList.remove('on'); return; }
+        if (!f) {
+            f = document.createElement('button');
+            f.id = 'pfWidgetFab'; f.type = 'button';
+            f.title = 'Добавить виджет на подвкладку'; f.setAttribute('aria-label', 'Добавить виджет');
+            f.innerHTML = PFD_PLUS_SVG;
+            // stopPropagation: клик по FAB не должен долетать до document — там
+            // «клик-вне» пикера мгновенно закрыл бы только что открытую панель
+            f.onclick = function (e) { if (e) e.stopPropagation(); try { window.pfLayoutToggle(); } catch (err) {} };
+            document.body.appendChild(f);
         }
+        f.classList.add('on');
+    }
+    window.pfxGhostClick = function (ev) {
+        if (ev) ev.stopPropagation();   // «клик-вне» пикера не должен тут же закрыть его
+        // повторный клик после обучения сюда не попадает (призрак уже не рендерится),
+        // но на всякий случай — сразу пикер
+        if (pfxFabSeen()) { window.pfLayoutToggle(); return; }
+        var item = ev.currentTarget.closest('.pfd-item') || ev.currentTarget;
+        var r = item.getBoundingClientRect();
+        // клон-«комета» летит fixed-ом в body: body под zoom 0.9 → визуальные px из
+        // rect делим на фактор (та же самокалибровка, что у призрака драга, pfdGz)
+        var z = r.width / (item.offsetWidth || r.width) || 1;
+        var SZ = 46, RIGHT = 22, BOTTOM = 124;   // геометрия #pfWidgetFab (см. CSS)
+        var fly = document.createElement('div');
+        fly.className = 'pfxg-fly';
+        fly.style.left = (r.left / z) + 'px'; fly.style.top = (r.top / z) + 'px';
+        fly.style.width = (r.width / z) + 'px'; fly.style.height = (r.height / z) + 'px';
+        fly.innerHTML = PFD_PLUS_SVG;
+        document.body.appendChild(fly);
+        try { localStorage.setItem(PFX_FAB_KEY, '1'); } catch (e) {}
+        item.style.visibility = 'hidden';   // исходная ячейка гаснет сразу — летит только комета
+        requestAnimationFrame(function () {
+            fly.classList.add('go');
+            fly.style.left = (window.innerWidth / z - RIGHT - SZ) + 'px';
+            fly.style.top = (window.innerHeight / z - BOTTOM - SZ) + 'px';
+            fly.style.width = SZ + 'px'; fly.style.height = SZ + 'px';
+        });
+        var done = false;
+        var finish = function () {
+            if (done) return; done = true;
+            try { fly.remove(); } catch (e) {}
+            pfxFabSync();               // FAB появляется ровно там, куда прилетела комета
+            window.pfLayoutToggle();    // и сразу открываем пикер — призрак же «Добавить виджет»
+        };
+        fly.addEventListener('transitionend', finish);
+        setTimeout(finish, 950);        // страховка, если transitionend не стрельнёт
     };
     function pfxTabPortsHtml() {
         var vis = visibleItems();
