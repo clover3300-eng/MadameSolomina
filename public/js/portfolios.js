@@ -7846,14 +7846,22 @@
             function kpi(v, cls, extra) {
                 return '<span class="pfpl-kpi"><b class="' + (cls || '') + '">' + v + '</b>' + (extra || '') + '</span>';
             }
+            // R9.3: числа строк — в том же языке, что KPI-плитки «Составов» (крупное
+            // моно + чип с контекстом), иначе рядом с плитками список читался пусто.
+            // Чип у стоимости — доля портфеля в общем капитале (при 2+ портфелях: у
+            // одного она всегда 100% и смысла не несёт), у доходности — процент.
+            function chip(cls, tx) { return '<span class="pfsm-chip ' + cls + '">' + tx + '</span>'; }
+            function absPct(x) { return Math.abs(x).toFixed(1).replace('.', ',') + '%'; }
+            var shareChip = (rows.length > 1 && total > 0 && c.value > 0)
+                ? chip('', Math.round(c.value / total * 100) + '% капитала') : '';
             var yld = has
                 ? kpi((c.pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(c.pnl)), c.pnl >= 0 ? 'pos' : 'neg',
-                    '<em class="' + (c.pnlPct >= 0 ? 'pos' : 'neg') + '">' + fmtPct(c.pnlPct) + '</em>')
+                    chip(c.pnlPct >= 0 ? 'pos' : 'neg', (c.pnlPct >= 0 ? '▲ ' : '▼ ') + absPct(c.pnlPct)))
                 : kpi('—', 'muted');
             return '<div class="pfpl-row" role="button" tabindex="0" onclick="pfxOpenPf(\'' + p.id + '\')" title="Открыть дашборд портфеля">' +
                 '<span class="pfpl-ic" style="--pc:' + ac + '">' + PFPL_CASE_SVG + '</span>' +
                 '<span class="pfpl-id"><b>' + esc(p.name) + '</b><i>' + n + ' ' + plural(n, 'актив', 'актива', 'активов') + '</i></span>' +
-                kpi(fmtRub(c.value)) +
+                kpi(fmtRub(c.value), '', shareChip) +
                 yld +
                 kpi(has ? fmtRub(c.invested) : '—', has ? '' : 'muted') +
                 '<span class="pfpl-spark" data-pid="' + p.id + '">' + pfPlistSparkSvg(p) + '</span>' +
@@ -8182,8 +8190,11 @@
             '</div>';
             var table = c.hs.length
                 ? '<div class="pfpt-tablewrap"><table class="pfpt-table"><thead><tr>' +
+                    // «Доля» — свой класс и на заголовке: колонка левоприжатая (полоска
+                    // растёт слева), и отступ от правоприжатой «Стоимости» задаётся
+                    // ОДИН раз для th и td, чтобы шапка не разъезжалась со значением
                     '<th>Бумага</th><th class="pfpt-num">Кол-во</th><th class="pfpt-num">Средняя</th><th class="pfpt-num">Сейчас</th>' +
-                    '<th class="pfpt-num">Стоимость</th><th>Доля</th><th class="pfpt-num">Доход</th><th class="pfpt-num">Доходность</th>' +
+                    '<th class="pfpt-num">Стоимость</th><th class="pfpt-share">Доля</th><th class="pfpt-num">Доход</th><th class="pfpt-num">Доходность</th>' +
                   '</tr></thead><tbody>' + c.hs.map(function (x) { return pfxPortHoldRowHtml(x, c); }).join('') + '</tbody></table></div>'
                 : '<div class="pfal-empty">Состав пуст — добавьте активы в настройках портфеля ⚙.</div>';
             return '<div class="dash2-card pf-card2 pfpt-card" style="--pf-accent:' + ac + '">' + head + table + '</div>';

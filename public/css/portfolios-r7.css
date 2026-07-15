@@ -529,6 +529,10 @@ td.pfpt-num.pfpt-val { font-weight: 700; color: #0f172a; }
 body.dark-mode td.pfpt-num.pfpt-val { color: #f4f8fd; }
 td.pfpt-num.pos { color: #119d5c; }
 td.pfpt-num.neg { color: #c2410c; }
+/* «Доля» левоприжата (полоска растёт слева), а «Стоимость» перед ней — правоприжата:
+   без своего отступа они сходились в 20px и читались одной кашей. Отступ — общий для
+   th и td, иначе заголовок разъедется со значением. */
+.pfpt-table th.pfpt-share, .pfpt-tr td.pfpt-share { padding-left: 30px; }
 .pfpt-share { white-space: nowrap; }
 .pfpt-share .pfpt-sharebar {
     display: inline-block; vertical-align: middle; width: 54px; height: 6px; margin-right: 8px;
@@ -1544,7 +1548,7 @@ body.dark-mode .pfpl-cols { border-bottom-color: rgba(255, 255, 255, 0.08); }
 .pfpl-row {
     display: grid;
     grid-template-columns: auto minmax(150px, 1.3fr) minmax(120px, 1fr) minmax(130px, 1.1fr) minmax(110px, 1fr) 132px auto;
-    gap: 16px; align-items: center; padding: 14px 2px;
+    gap: 16px; align-items: center; padding: 16px 2px;
     border-bottom: 1px solid #eef2f7; cursor: pointer;
     transition: background 0.1s;
 }
@@ -1566,21 +1570,19 @@ body.dark-mode .pfpl-row:hover { background: rgba(255, 255, 255, 0.04); }
 }
 body.dark-mode .pfpl-id b { color: #f4f8fd; }
 .pfpl-id i { font-family: 'Inter', sans-serif; font-style: normal; font-size: 11px; font-weight: 600; color: #8494a7; }
-.pfpl-kpi { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+/* R9.3: числа строк — в масштабе KPI-плиток (.pfsm-tile b — 19px; в ряду 17px,
+   чтобы список остался списком), под ними чип .pfsm-chip с контекстом */
+.pfpl-kpi { display: flex; flex-direction: column; gap: 5px; min-width: 0; align-items: flex-start; }
 .pfpl-kpi b {
-    font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 14.5px; font-weight: 700;
-    color: #0f172a; white-space: nowrap;
+    font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 17px; font-weight: 800;
+    color: #0f172a; letter-spacing: -0.02em; white-space: nowrap;
 }
 body.dark-mode .pfpl-kpi b { color: #f4f8fd; }
 .pfpl-kpi b.pos { color: #119d5c; }
 .pfpl-kpi b.neg { color: #c2410c; }
 .pfpl-kpi b.muted { color: #94a3b8; }
-.pfpl-kpi em {
-    font-style: normal; font-family: var(--font-num, 'JetBrains Mono', monospace);
-    font-size: 11px; font-weight: 700; white-space: nowrap;
-}
-.pfpl-kpi em.pos { color: #119d5c; }
-.pfpl-kpi em.neg { color: #c2410c; }
+/* чип в ряду тише, чем в плитке: строк много, крупный чип раздул бы список */
+.pfpl-kpi .pfsm-chip { font-size: 10px; padding: 2px 8px; }
 .pfpl-spark { display: block; min-width: 0; height: 38px; }
 .pfpl-spark-svg { width: 100%; height: 100%; display: block; }
 .pfpl-spark-svg .l { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
