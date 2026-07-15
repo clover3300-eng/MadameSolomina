@@ -500,15 +500,22 @@ body.dark-mode .pfpt-head { border-bottom-color: rgba(255, 255, 255, 0.08); }
 /* таблица состава */
 .pfpt-tablewrap { overflow-x: auto; scrollbar-width: thin; }
 .pfpt-table { width: 100%; border-collapse: collapse; min-width: 760px; }
+/* Весь свободный простор таблицы забирает «Бумага» (width:100% в auto-раскладке):
+   числовые колонки становятся по содержимому, и зазор между ними ОДИН И ТОТ ЖЕ —
+   padding ячеек. Иначе слack растекался по колонкам пропорционально их ширине, и
+   соседние числа расходились кто на 52, кто на 94 пикселя: «Доля» липла к
+   «Стоимости» слева и висела в дыре перед «Доходом» справа. */
+.pfpt-table th:first-child, .pfpt-tr td:first-child { width: 100%; padding-left: 0; }
+.pfpt-table th:last-child, .pfpt-tr td:last-child { padding-right: 0; }
 .pfpt-table th {
-    text-align: left; padding: 11px 10px 9px;
+    text-align: left; padding: 11px 15px 9px;
     font-family: 'Inter', sans-serif; font-size: var(--fs-th, 11px); font-weight: 700;
     letter-spacing: 0.06em; text-transform: uppercase; color: #8494a7;
     border-bottom: 1px solid #eef2f7; white-space: nowrap;
 }
 .pfpt-table th.pfpt-num { text-align: right; }
 body.dark-mode .pfpt-table th { border-bottom-color: rgba(255, 255, 255, 0.08); }
-.pfpt-tr td { padding: 12px 10px; border-bottom: 1px solid #f2f5f9; vertical-align: middle; }
+.pfpt-tr td { padding: 12px 15px; border-bottom: 1px solid #f2f5f9; vertical-align: middle; }
 .pfpt-tr:last-child td { border-bottom: 0; }
 body.dark-mode .pfpt-tr td { border-bottom-color: rgba(255, 255, 255, 0.06); }
 .pfpt-tr[role="button"] { cursor: pointer; }
