@@ -29,25 +29,23 @@
         return !!document.getElementById('panel-' + t);
     }
 
-    // Путь может нести подвкладку вторым сегментом: /portfolios/analytics,
-    // /portfolios/pf-<id> (deep-link «Портфелей», см. pfxApplySubPath/pfxSubPath
-    // в portfolios.js). Вкладка — всегда ПЕРВЫЙ сегмент.
-    function pathSegs() {
-        return location.pathname.replace(/^\//, '').replace(/\/$/, '').split('/');
-    }
+    // Подвкладка «Портфелей» живёт в ХЭШЕ: /portfolios#analytics, /portfolios#pf-<id>
+    // (см. pfxApplySubPath/pfxSubPath в portfolios.js). НЕ вторым сегментом пути:
+    // при /portfolios/analytics все относительные src («js/…», «css/…») резолвились
+    // бы от /portfolios/ — SPA-фолбэк отдал бы на них index.html, и приложение
+    // умирало при прямой загрузке. Хэш не ходит на сервер и путей не трогает.
     function tabFromPath() {
-        var t = pathSegs()[0] || '';
+        var t = location.pathname.replace(/^\//, '').replace(/\/$/, '');
         return isValidTab(t) ? t : null;
     }
-    function subFromPath() {
-        var s = pathSegs();
-        return s.length > 1 ? s.slice(1).join('/') : '';
+    function subFromHash() {
+        return location.hash ? location.hash.replace(/^#/, '') : '';
     }
 
     function pathForTab(tabId) {
         if (tabId === 'home') return '/';
         var p = '/' + tabId;
-        // «Портфели» дописывают в путь активную подвкладку — переход на вкладку
+        // «Портфели» дописывают активную подвкладку хэшем — переход на вкладку
         // сразу даёт честный deep-link (дальше его ведёт pfxSyncPath)
         if (tabId === 'portfolios' && typeof window.pfxSubPath === 'function') {
             try { p += window.pfxSubPath(); } catch (e) {}
@@ -69,12 +67,12 @@
     // Кнопки «назад/вперёд» браузера
     window.addEventListener('popstate', function() {
         var t = tabFromPath() || 'home';
-        // подвкладка «Портфелей» из пути: пустая = «Обзор» (вернулись на голый /portfolios);
+        // подвкладка «Портфелей» из хэша: пустой = «Обзор» (вернулись на голый /portfolios);
         // модуль ленивый — если ещё не загружен, оставляем подвкладку в __pfSub (хвост подберёт)
         if (t === 'portfolios') {
             if (typeof window.pfxApplySubPath === 'function') {
-                try { window.pfxApplySubPath(subFromPath() || 'overview'); } catch (e) {}
-            } else window.__pfSub = subFromPath() || null;
+                try { window.pfxApplySubPath(subFromHash() || 'overview'); } catch (e) {}
+            } else window.__pfSub = subFromHash() || null;
         }
         if (t === currentTab) return;
         applyingPath = true;
@@ -90,13 +88,13 @@
     document.addEventListener('DOMContentLoaded', function() {
         var t = tabFromPath();
         if (!t || t === 'home') return;
-        // подвкладку применяем ДО switchTab — первый рендер сразу с ней; пустой хвост
+        // подвкладку применяем ДО switchTab — первый рендер сразу с ней; пустой хэш
         // НЕ трогаем: голый /portfolios возвращает на последнюю подвкладку (localStorage).
         // Ленивый portfolios.js ещё не загружен — подвкладка ждёт его в __pfSub
-        if (t === 'portfolios' && subFromPath()) {
+        if (t === 'portfolios' && subFromHash()) {
             if (typeof window.pfxApplySubPath === 'function') {
-                try { window.pfxApplySubPath(subFromPath()); } catch (e) {}
-            } else window.__pfSub = subFromPath();
+                try { window.pfxApplySubPath(subFromHash()); } catch (e) {}
+            } else window.__pfSub = subFromHash();
         }
         if (typeof currentTab !== 'undefined' && t === currentTab) return;
         applyingPath = true;

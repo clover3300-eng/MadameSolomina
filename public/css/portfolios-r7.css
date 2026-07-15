@@ -121,6 +121,11 @@ body.dark-mode #panel-portfolios .pfc-name-ink {
 .pfx-tab-pf.drag { opacity: 0.35; }
 .pfx-tab-pf { cursor: grab; }
 .pfx-tab-pf:active { cursor: grabbing; }
+/* R9.4: каретка вставки — черта в зазоре у чипа-соседа будущей позиции */
+.pfx-tab-pf.pfx-drop-before { box-shadow: -4px 0 0 -1px #4453ef; }
+.pfx-tab-pf.pfx-drop-after { box-shadow: 4px 0 0 -1px #4453ef; }
+body.dark-mode .pfx-tab-pf.pfx-drop-before { box-shadow: -4px 0 0 -1px #818cf8; }
+body.dark-mode .pfx-tab-pf.pfx-drop-after { box-shadow: 4px 0 0 -1px #818cf8; }
 
 body.dark-mode .pfx-tabs { border-bottom-color: rgba(255, 255, 255, 0.1); }
 body.dark-mode .pfx-tab { color: #93a2b8; }
@@ -1512,6 +1517,10 @@ body.dark-mode .pfdcfg-seg-b { background: rgba(255, 255, 255, 0.04); border-col
 body.dark-mode .pfdcfg-seg-b:hover { border-color: rgba(255, 255, 255, 0.24); color: #f4f8fd; }
 body.dark-mode .pfdcfg-seg-b.on { background: rgba(99, 102, 241, 0.2); border-color: rgba(129, 140, 248, 0.5); color: #c7d2fe; }
 body.dark-mode .pfdcfg-hint { border-top-color: rgba(255, 255, 255, 0.1); color: #7f8ea3; }
+
+/* R9.4: скелетон панели на время ленивой догрузки portfolios.js (рисует switchTab
+   в webapp-tabs.js, первый renderPortfolios сносит его целиком) */
+.pf-lazyskel { display: flex; flex-direction: column; gap: 14px; padding: 18px 2px; }
 
 /* ============ 22. Скелетоны загрузки (.pf-skel) ============
    Пока живые котировки первой загрузки в полёте, суммы (герой карточки, «Доход»,

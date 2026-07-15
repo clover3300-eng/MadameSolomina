@@ -66,27 +66,11 @@
     function ruDate(ds) { if (!ds) return '—'; var p = ds.split('-'); return p.length === 3 ? (p[2] + '.' + p[1] + '.' + p[0]) : ds; }
 
     // ---------- toast ----------
-    function toast(msg, isErr, act) {
-        var t = dq('pfToast');
-        if (!t) { t = document.createElement('div'); t.id = 'pfToast'; t.className = 'pf-toast'; document.body.appendChild(t); }
-        t.textContent = msg; t.classList.toggle('err', !!isErr);
-        // undo-паттерн: кнопка действия («Вернуть») прямо в тосте — скрытое/закрытое
-        // возвращается одним кликом, без похода в «Видимость». Тост с кнопкой живёт
-        // дольше обычного и ловит клики (обычный — pointer-events: none).
-        t.classList.toggle('has-act', !!act);
-        if (act && act.label && typeof act.fn === 'function') {
-            var b = document.createElement('button');
-            b.type = 'button'; b.className = 'pf-toast-act'; b.textContent = act.label;
-            b.onclick = function (ev) {
-                ev.stopPropagation();
-                t.classList.remove('show'); clearTimeout(t._tm);
-                act.fn();
-            };
-            t.appendChild(b);
-        }
-        t.classList.add('show'); clearTimeout(t._tm);
-        t._tm = setTimeout(function () { t.classList.remove('show'); }, act ? 6000 : 2200);
-    }
+    // R9.4: реализация уехала в общий window.msToast (webapp-tabs.js) — одна
+    // машинерия тостов на всё приложение; имя и сигнатура прежние, act — кнопка
+    // «Вернуть» (undo-паттерн). msToast гарантирован: этот модуль грузится лениво
+    // ПОСЛЕ webapp-tabs.
+    function toast(msg, isErr, act) { window.msToast(msg, { err: isErr, act: act }); }
 
     // ---------- модель / persist ----------
     function loadStore() {
@@ -1858,27 +1842,28 @@
                 saved: c.saved || null };                       // снимок сохранённой раскладки (для «Вернуть сохранённую»)
         } catch (e) { return { on: true, order: [], span: {}, h: {}, hidden: {}, col: {}, notes: [], allocPf: 'all', thm: {}, corner: 'std', saved: null }; }
     }
-    // ВНИМАНИЕ: список ручной — новый виджет обязан быть и здесь, иначе saveDashCfg
-    // молча вычистит его из hidden/order, и на дашборде он не появится вовсе.
-    function pfdKnownIds() {
-        var known = { cal: 1, calm: 1, rates: 1, trades: 1, fav: 1, sum: 1, panel: 1,
-            'kpi:cap': 1, 'kpi:day': 1, 'kpi:next': 1, cap: 1, cap2: 1, heat: 1, news: 1, alloc: 1,
-            divs: 1, assets: 1, ops: 1, yield: 1, snaps: 1, movers: 1, idx: 1, passive: 1, conc: 1,
-            plist: 1, pstruct: 1, psum: 1, pdetail: 1, reports: 1,
-            'set:corner': 1, 'set:vis': 1, 'set:layout': 1, 'set:bg': 1 };
-        store.items.forEach(function (p) { known['pf:' + p.id] = 1; });
-        (dashCfg.notes || []).forEach(function (n) { known['note:' + n.id] = 1; });
-        return known;
+    // R9.4: ручной known-список (pfdKnownIds) УДАЛЁН — он молча стирал из конфига
+    // любой виджет, который забыли в него дописать (мина для каждого нового
+    // виджета). Теперь чистим только ЗАВЕДОМО МЁРТВЫЕ динамические ключи:
+    // pf:<id> удалённых портфелей и note:<id> удалённых заметок; всё прочее
+    // конфиг сохраняет как есть (несуществующий id просто не рендерится).
+    function pfdDeadId(id) {
+        if (/^pf:#\d+$/.test(id)) return false;   // позиционный токен пресета — не трогаем
+        if (id.indexOf('pf:') === 0) return !findPf(id.slice(3));
+        if (id.indexOf('note:') === 0) {
+            var nid = id.slice(5);
+            return !(dashCfg.notes || []).some(function (n) { return n.id === nid; });
+        }
+        return false;
     }
     function saveDashCfg() {
         try {
-            // чистим ключи удалённых портфелей — конфиг не копит мусор (и не тащит
-            // его в облако через cloud-sync). Скрытые портфели остаются в store.items,
-            // их раскладка переживает «скрыть/показать».
-            var known = pfdKnownIds();
-            dashCfg.order = (dashCfg.order || []).filter(function (id) { return known[id]; });
+            // чистим ключи удалённых портфелей/заметок — конфиг не копит мусор (и не
+            // тащит его в облако через cloud-sync). Скрытые портфели остаются в
+            // store.items, их раскладка переживает «скрыть/показать».
+            dashCfg.order = (dashCfg.order || []).filter(function (id) { return !pfdDeadId(id); });
             [dashCfg.span, dashCfg.h, dashCfg.hidden, dashCfg.col, dashCfg.thm].forEach(function (m) {
-                Object.keys(m || {}).forEach(function (id) { if (!known[id]) delete m[id]; });
+                Object.keys(m || {}).forEach(function (id) { if (pfdDeadId(id)) delete m[id]; });
             });
             // R8: активная раскладка пер-вкладочная. «Обзор» живёт в старом ключе pf_dash_v1
             // (совместимость + cloud-sync), остальные подвкладки — картой pf_dash_tabs_v1.
@@ -7188,15 +7173,17 @@
         pfxActivateTab(t);
         renderNoAnim();
     };
-    // ---- R9.3: deep-link подвкладок — /portfolios/<sub> ----
+    // ---- R9.3/R9.4: deep-link подвкладок — /portfolios#<sub> ----
     // Слаг для URL: «Обзор» — без хвоста, штатные подвкладки — своим ключом
-    // ('analytics', 'ports'…), вкладка-портфель — 'pf-<id>'. Читает route-hash
+    // ('#analytics', '#ports'…), вкладка-портфель — '#pf-<id>'. Именно ХЭШ, не
+    // сегмент пути: /portfolios/analytics ломал резолв относительных src при
+    // прямой загрузке (см. комментарий в route-hash.js). Читает route-hash
     // (pathForTab композирует путь при switchTab), пишет pfxSyncPath ниже.
     window.pfxSubPath = function () {
         var t = pfxTab;
         if (!t || t === 'overview') return '';
-        if (pfxIsPfTab(t)) return '/pf-' + t.slice(3);
-        return '/' + t;
+        if (pfxIsPfTab(t)) return '#pf-' + t.slice(3);
+        return '#' + t;
     };
     // применить подвкладку из пути (прямая загрузка /portfolios/analytics, popstate);
     // deep-link на вкладку-портфель ОТКРЫВАЕТ её чип — ссылкой можно поделиться
@@ -7356,18 +7343,37 @@
             chip.classList.add('drag');
             try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', pfxDragPid); } catch (err) {}
         });
+        // R9.4: каретка вставки — черта у чипа, ПЕРЕД (или после, если в конец)
+        // которым приземлится перетаскиваемый; без неё место вставки было лотереей
+        function clearDropMarks() {
+            var marked = row.querySelectorAll('.pfx-drop-before, .pfx-drop-after');
+            for (var i = 0; i < marked.length; i++) marked[i].classList.remove('pfx-drop-before', 'pfx-drop-after');
+        }
         row.addEventListener('dragend', function () {
             pfxDragPid = null;
+            clearDropMarks();
             var c = row.querySelector('.pfx-tab-pf.drag'); if (c) c.classList.remove('drag');
         });
         row.addEventListener('dragover', function (e) {
             if (!pfxDragPid) return;
             e.preventDefault();
             try { e.dataTransfer.dropEffect = 'move'; } catch (err) {}
+            var chips = row.querySelectorAll('.pfx-tab-pf');
+            var before = null, last = null;
+            for (var i = 0; i < chips.length; i++) {
+                if (chips[i].getAttribute('data-pid') === pfxDragPid) continue;
+                last = chips[i];
+                var r = chips[i].getBoundingClientRect();
+                if (!before && e.clientX < r.left + r.width / 2) before = chips[i];
+            }
+            clearDropMarks();
+            if (before) before.classList.add('pfx-drop-before');
+            else if (last) last.classList.add('pfx-drop-after');
         });
         row.addEventListener('drop', function (e) {
             if (!pfxDragPid) return;
             e.preventDefault();
+            clearDropMarks();
             var pid = pfxDragPid; pfxDragPid = null;
             // перед КАКИМ чипом бросили: первый, чья середина правее курсора
             var before = null;
@@ -11321,4 +11327,9 @@
     }
     // Первичный рендер, если вкладка уже активна на старте
     if (typeof currentTab !== 'undefined' && currentTab === 'portfolios') renderPortfolios();
+    // R9.4: модуль ленивый и загрузился ПОСЛЕ того, как route-hash записал путь —
+    // на момент записи pfxSubPath ещё не существовал, и в адрес ушёл голый
+    // /portfolios. Дописываем подвкладку, иначе URL врёт до первого переключения
+    // (скопированная ссылка вела бы не туда, куда смотрит человек).
+    pfxSyncPath();
 })();

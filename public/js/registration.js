@@ -10,6 +10,13 @@
 // Элемент #dashToast создаётся лениво, стили — .dash-toast в dashboard.css.
 
 function showDashToast(message, isError) {
+    // R9.4: единый движок тостов — window.msToast (webapp-tabs.js), скин прежний
+    // ('dash': цветная плашка сверху). Фолбэк на свою реализацию нужен, потому что
+    // registration.js в порядке тегов стоит РАНЬШЕ webapp-tabs.js.
+    if (typeof window.msToast === 'function') {
+        window.msToast(message, { skin: 'dash', err: isError, ms: 2500 });
+        return;
+    }
     let toast = document.getElementById('dashToast');
     if (!toast) {
         toast = document.createElement('div');

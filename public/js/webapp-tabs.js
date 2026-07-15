@@ -420,13 +420,8 @@ function populatePanels() {
         // Компактный тост (переиспользует .pf-toast из css/portfolios.css — тот же
         // визуал, что у уведомлений вкладки «Портфели»; toast() там приватная функция
         // модуля, наружу не экспортирована, поэтому здесь свой минимальный вызов).
-        function v3blWarnToast(msg) {
-            var t = document.getElementById('pfToast');
-            if (!t) { t = document.createElement('div'); t.id = 'pfToast'; t.className = 'pf-toast'; document.body.appendChild(t); }
-            t.textContent = msg; t.classList.add('err');
-            t.classList.add('show'); clearTimeout(t._tm);
-            t._tm = setTimeout(function() { t.classList.remove('show'); }, 2200);
-        }
+        // R9.4: дублировавшая toast() реализация заменена делегатом в единый msToast
+        function v3blWarnToast(msg) { window.msToast(msg, { err: true }); }
         // «Создать портфель» из виджета прогресса покупки: переносит рассчитанный
         // состав (ОФЗ + акции) в новый портфель на вкладке «Портфели» под введённым
         // именем. Кнопка всегда активна — без имени просто предупреждаем и не уводим
@@ -634,20 +629,61 @@ function populatePanels() {
     })();
 }
 
-// ===== Ленивая подгрузка js/portfolios.js (R9.3) =====
+// ===== Единый тост приложения (R9.4) =====
+// Один движок — две «шкуры»: тёмная пилюля снизу (.pf-toast — «Портфели»,
+// предупреждения виджетов) и цветная плашка сверху (.dash-toast — auth, облако,
+// админка; skin:'dash'). Раньше было ТРИ независимые реализации (toast в
+// portfolios.js, showDashToast в registration.js, v3blWarnToast здесь) — теперь
+// они тонкие делегаты, вызовы по всему проекту не менялись. role=status +
+// aria-live=polite: скринридер объявляет тосты, включая кнопку «Вернуть».
+// opts: { err: true, skin: 'dash', ms: 2500, act: { label, fn } }
+window.msToast = function (msg, opts) {
+    opts = opts || {};
+    var dash = opts.skin === 'dash';
+    var id = dash ? 'dashToast' : 'pfToast';
+    var t = document.getElementById(id);
+    if (!t) {
+        t = document.createElement('div');
+        t.id = id; t.className = dash ? 'dash-toast' : 'pf-toast';
+        if (dash) t.style.zIndex = '9999';   // поверх модалок и шторок
+        document.body.appendChild(t);
+    }
+    t.setAttribute('role', 'status'); t.setAttribute('aria-live', 'polite');
+    t.textContent = msg;
+    t.classList.toggle(dash ? 'error' : 'err', !!opts.err);
+    var act = opts.act;
+    t.classList.toggle('has-act', !!(act && act.label && typeof act.fn === 'function'));
+    if (act && act.label && typeof act.fn === 'function') {
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'pf-toast-act'; b.textContent = act.label;
+        b.onclick = function (ev) {
+            ev.stopPropagation();
+            t.classList.remove('show'); clearTimeout(t._tm);
+            act.fn();
+        };
+        t.appendChild(b);
+    }
+    t.classList.add('show'); clearTimeout(t._tm);
+    t._tm = setTimeout(function () { t.classList.remove('show'); }, opts.ms || (act ? 6000 : 2200));
+};
+
+// ===== Ленивая подгрузка js/portfolios.js (R9.3, ускорена в R9.4) =====
 // 11 тысяч строк «Портфелей» не парсятся на Главной/Расчёте: настоящий тег в
 // index.html заменён держателем #pfLazySrc (в нём живёт актуальная ?v). Скрипт
 // вставляется при первом входе на вкладку или импорте из расчёта; его хвост сам
 // рендерит вкладку (currentTab === 'portfolios') и оборачивает switchTab.
+function pfLazySrc() {
+    var holder = document.getElementById('pfLazySrc'), src = 'js/portfolios.js';
+    try { src = JSON.parse(holder.textContent).src || src; } catch (e) {}
+    return src;
+}
 var _pfJsCbs = null;   // null — ещё не грузили; массив — запрос в полёте
 window.ensurePortfoliosJs = function (cb) {
     if (typeof window.renderPortfolios === 'function') { if (cb) cb(); return; }
     if (_pfJsCbs) { if (cb) _pfJsCbs.push(cb); return; }
     _pfJsCbs = cb ? [cb] : [];
-    var holder = document.getElementById('pfLazySrc'), src = 'js/portfolios.js';
-    try { src = JSON.parse(holder.textContent).src || src; } catch (e) {}
     var s = document.createElement('script');
-    s.src = src;
+    s.src = pfLazySrc();
     s.onload = function () {
         var q = _pfJsCbs || []; _pfJsCbs = null;
         q.forEach(function (fn) { try { fn(); } catch (e) {} });
@@ -656,6 +692,35 @@ window.ensurePortfoliosJs = function (cb) {
     s.onerror = function () { _pfJsCbs = null; };
     document.head.appendChild(s);
 };
+// R9.4: три пути к «Портфелям» без ожидания 236КБ (gzip) в момент клика.
+//  · Прямой заход на /portfolios* или стартовый раздел «Портфели» — preload ПРЯМО
+//    СЕЙЧАС (качается параллельно с defer-цепочкой) + инъекция на DOMContentLoaded:
+//    исполнение из кэша сразу после всех defer-скриптов, как при старом порядке
+//    тегов — бесшовный старт возвращён (регрессия R9.3).
+//  · Наведение на пункт «Портфели» (сайдбар/док) — полная загрузка до клика.
+//  · Всем остальным — тихий prefetch в простое: скачивание без парсинга,
+//    первый вход исполняет из кэша.
+(function () {
+    var wantsPf = location.pathname.indexOf('/portfolios') === 0;
+    if (!wantsPf) {
+        try { wantsPf = (JSON.parse(localStorage.getItem('profile_settings_v1')) || {}).startTab === 'portfolios'; } catch (e) {}
+    }
+    var link = document.createElement('link');
+    link.href = pfLazySrc(); link.as = 'script';
+    if (wantsPf) {
+        link.rel = 'preload';
+        document.head.appendChild(link);
+        document.addEventListener('DOMContentLoaded', function () { window.ensurePortfoliosJs(); }, { once: true });
+        return;
+    }
+    link.rel = 'prefetch';
+    var idle = window.requestIdleCallback || function (fn) { setTimeout(fn, 2500); };
+    idle(function () { document.head.appendChild(link); });
+})();
+document.addEventListener('pointerover', function (e) {
+    var el = e.target && e.target.closest ? e.target.closest('a[href="/portfolios"], [data-tab="portfolios"]') : null;
+    if (el) window.ensurePortfoliosJs();
+}, { passive: true });
 
 function switchTab(tabId) {
     // «Ежемесячный доход» объединён с «Расчётом»: легаси-вызовы уводим в calc
@@ -665,8 +730,22 @@ function switchTab(tabId) {
         tabId = 'calc';
     }
     currentTab = tabId;
-    // «Портфели» лениво: сам модуль дорисует вкладку, как только загрузится
-    if (tabId === 'portfolios') window.ensurePortfoliosJs();
+    // «Портфели» лениво: сам модуль дорисует вкладку, как только загрузится.
+    // R9.4: пока 236КБ летят по сети — в панели лёгкий скелетон вместо пустоты
+    // (первый renderPortfolios заменит его целиком)
+    if (tabId === 'portfolios') {
+        if (typeof window.renderPortfolios !== 'function') {
+            var pfw = document.getElementById('pfWrap');
+            if (pfw && !pfw.childElementCount) {
+                pfw.innerHTML = '<div class="pf-lazyskel" aria-hidden="true">' +
+                    '<span class="pf-skel" style="width:100%;height:96px"></span>' +
+                    '<span class="pf-skel" style="width:52%;height:34px"></span>' +
+                    '<span class="pf-skel" style="width:100%;height:430px"></span>' +
+                '</div>';
+            }
+        }
+        window.ensurePortfoliosJs();
+    }
 
     // Update tab buttons (top bar legacy + bottom bar)
     document.querySelectorAll('.tab-btn-new, .btab, .sb-item[data-tab]').forEach(btn => {
