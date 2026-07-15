@@ -168,13 +168,13 @@
 /* ─────────────── ДВА БЛОКА (R7) ───────────────
    Вместо единой карты с разделителем — самостоятельные карточки в языке
    карточки регистрации Главной (.hg-auth в home-register.css): белый фон,
-   тонкая рамка, радиус 14px, лёгкая тень. Слева кандидаты (ОФЗ и акции —
-   подвкладки .rbr-*), справа манифест «Зачем ребалансировать».
+   тонкая рамка, радиус 14px, лёгкая тень. Три колонки: манифест «Зачем
+   ребалансировать» → кандидаты·облигации → кандидаты·акции.
    Порядок задан РАЗМЕТКОЙ, а не order/direction: за картинкой должны идти
    и порядок обхода с клавиатуры, и чтение скринридером. */
 .rbx-grid {
     display: grid;
-    grid-template-columns: minmax(0, 2.55fr) minmax(280px, 1fr);
+    grid-template-columns: minmax(250px, 0.95fr) minmax(390px, 1.55fr) minmax(0, 2.1fr);
     /* каждый блок — своей высоты: карточки самостоятельные, без общего низа */
     align-items: start;
     gap: 16px;
@@ -193,65 +193,29 @@ body.dark-mode .rbx-block {
     box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
 }
 
-/* ── Правая колонна: переключатель ОТДЕЛЬНО, карточка таблиц под ним ──
-   «Витрина»: не пилюля и не плашка, а оглавление раздела. Названия — той же
-   Georgia, что заголовок манифест-колонки слева (шрифт задаётся в общем списке
-   заголовков typography-tokens.css), активное подчёркнуто чёрной чертой прямо
-   поверх волосяной линии ряда. Связь колонн держится шрифтом, а не повтором
-   деталей: прописные вразрядку и чёрная заливка кнопки делали ряд крикливым. */
-.rbx-cands { min-width: 0; display: flex; flex-direction: column; }
-.rbx-block-cands { padding: 16px 18px 18px; min-width: 0; }
-.rbr-tabs {
-    display: flex; align-items: flex-end; gap: 22px;
-    padding: 0 2px 10px;
-    margin-bottom: 14px;
+/* ── Заголовок колонки-таблицы («витрина») ──
+   Переключателя нет: у каждой таблицы свой заголовок. Название — той же
+   Georgia, что заголовок манифеста (шрифт в общем списке заголовков
+   typography-tokens.css, здесь НЕ хардкодим), тихий моно-счётчик рядом,
+   инструменты списка справа, снизу волосяная линия. */
+.rbx-block-cands { padding: 18px 18px 18px; min-width: 0; }
+.rbx-bh {
+    display: flex; align-items: baseline; gap: 7px;
+    padding: 0 2px 11px;
+    margin-bottom: 13px;
     border-bottom: 1px solid rgba(18, 22, 31, 0.09);
 }
-body.dark-mode .rbr-tabs { border-bottom-color: rgba(255, 255, 255, 0.08); }
-.rbr-tab {
-    display: inline-flex; align-items: baseline; gap: 7px;
-    /* отрицательный margin ровно на padding ряда + его линию (10 + 1):
-       подчёркивание активной вкладки ложится НА волосяную линию, а не над ней */
-    padding: 0 0 7px; margin-bottom: -11px;
-    border: none; border-bottom: 2px solid transparent;
-    background: transparent; cursor: pointer;
-    white-space: nowrap;
-    transition: border-color 0.2s ease;
-}
-.rbr-tab .t {
-    font-size: 18px; line-height: 1.15; color: #b3bbc8;
-    transition: color 0.2s ease;
-}
-.rbr-tab:hover .t { color: #6b7789; }
-.rbr-tab.act { border-bottom-color: #12161f; }
-.rbr-tab.act .t { color: #12161f; }
-body.dark-mode .rbr-tab .t { color: #5f6b7d; }
-body.dark-mode .rbr-tab:hover .t { color: #8b98ab; }
-body.dark-mode .rbr-tab.act { border-bottom-color: #e8edf4; }
-body.dark-mode .rbr-tab.act .t { color: #F1F5F9; }
-/* счётчик — тихая моно-цифра сбоку, без плашки */
-.rbr-tab .cnt {
+body.dark-mode .rbx-bh { border-bottom-color: rgba(255, 255, 255, 0.08); }
+.rbx-bh .t { font-size: 18px; line-height: 1.15; color: #12161f; }
+body.dark-mode .rbx-bh .t { color: #F1F5F9; }
+.rbx-bh .cnt {
     font-family: var(--font-num, 'JetBrains Mono', monospace);
-    font-size: 11px; font-weight: 600; letter-spacing: 0;
-    color: #c8ced8;
+    font-size: 11px; font-weight: 600; color: #8b96a6;
     font-variant-numeric: tabular-nums;
-    transition: color 0.2s ease;
 }
-.rbr-tab.act .cnt { color: #8b96a6; }
-body.dark-mode .rbr-tab .cnt { color: #4a5464; }
-body.dark-mode .rbr-tab.act .cnt { color: #8b98ab; }
-/* инструменты (сортировка ОФЗ / подсказка эшелонов) прижаты вправо.
-   [hidden] нужен явным правилом: у самих инструментов display:flex/inline-flex,
-   он перебивает дефолтный display:none атрибута */
-#rbxToolsOfz, #rbxToolsStocks { margin-left: auto; }
-#rbxToolsOfz[hidden], #rbxToolsStocks[hidden] { display: none; }
-
-.rbr-sub { display: none; }
-.rbr-sub.act { display: block; animation: rbrSubIn 0.28s cubic-bezier(0.22, 0.61, 0.36, 1); }
-@keyframes rbrSubIn {
-    from { opacity: 0; transform: translateY(5px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
+body.dark-mode .rbx-bh .cnt { color: #8b98ab; }
+/* инструменты (сортировка ОФЗ / подсказка эшелонов) прижаты вправо */
+.rbx-bh .rbx-sort, .rbx-bh .rbx-esh-hint { margin-left: auto; }
 
 /* ── Манифест-колонка «Зачем нужно ребалансировать» ──
    Единственный блок вкладки, где нет ни акцентного зелёного, ни плашек:
@@ -389,7 +353,7 @@ body.dark-mode .rbx-esh-hint:hover { color: #e8edf4; background: rgba(255, 255, 
 
 .rbx-colhead {
     display: grid;
-    grid-template-columns: 34px minmax(0, 1fr) 118px 96px 108px 20px;
+    grid-template-columns: 34px minmax(0, 1fr) 96px 100px 20px;
     gap: 8px; align-items: center;
     padding: 0 12px 9px;
     border-bottom: 1px solid rgba(44, 54, 76, 0.08);
@@ -409,7 +373,7 @@ body.dark-mode .rbx-row { border-bottom-color: rgba(255, 255, 255, 0.05); }
 
 .rbx-row-main {
     display: grid;
-    grid-template-columns: 34px minmax(0, 1fr) 118px 96px 108px 20px;
+    grid-template-columns: 34px minmax(0, 1fr) 96px 100px 20px;
     gap: 8px; align-items: center;
     padding: 13px 12px; cursor: pointer;
     border-radius: 12px;
@@ -441,13 +405,6 @@ body.dark-mode .rbx-row-main .nm { color: #F1F5F9; }
     font-family: inherit;
     font-weight: inherit;
 }
-/* Погашение: колонка второго плана — тем же моно, но тише цифр доходности/цены */
-.rbx-row-main .mt {
-    font-family: var(--font-num, 'JetBrains Mono', monospace);
-    font-size: var(--fs-num-sm, 12.5px); font-weight: 500; color: #8a96aa; text-align: right;
-    font-variant-numeric: tabular-nums; white-space: nowrap;
-}
-body.dark-mode .rbx-row-main .mt { color: #76849a; }
 .rbx-row-main .yl {
     font-family: var(--font-num, 'JetBrains Mono', monospace);
     font-size: var(--fs-num, 15px); font-weight: 700; text-align: right;
@@ -626,12 +583,16 @@ body.dark-mode .rbx-tile .bar { background: rgba(255, 255, 255, 0.09); }
 
 /* ────────────────────────── ПРОЧЕЕ ────────────────────────── */
 
-/* планшет/узкий десктоп: блоки друг под другом, эшелоны 4-в-ряд остаются */
-@media (max-width: 1180px) and (min-width: 1024px) {
-    .rbx-grid { grid-template-columns: 1fr; }
+/* планшет/узкий десктоп: три колонки не помещаются — манифест ложится сверху
+   во всю ширину, таблицы остаются рядом (эшелоны 4-в-ряд сохраняются) */
+@media (max-width: 1320px) and (min-width: 1024px) {
+    .rbx-grid { grid-template-columns: minmax(360px, 1.5fr) minmax(0, 2fr); }
+    .rbx-block-why {
+        grid-column: 1 / -1;
+        align-self: auto;
+    }
+    .rbx-wc-list { margin-bottom: 0; }
     .rbx-wc-btn { width: auto; align-self: flex-start; padding: 14px 32px; }
-    .rbx-block-why { align-self: auto; }
-    .rbr-tab { flex: 1; }
 }
 
 /* уважение к reduced motion: статичный герой */

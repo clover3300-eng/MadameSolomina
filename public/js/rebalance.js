@@ -136,7 +136,6 @@ function renderAuroraOfzList() {
             <div class="rbx-row-main" onclick="toggleAuroraOfzDetails('${b.t}')">
                 <span class="rk">#${index + 1}</span>
                 <span class="nm">${formatNameWithMonoDigits(limitName(b.n))}</span>
-                <span class="mt">${formatDateDMY(details.matDate)}</span>
                 <span class="yl" style="color:${ofzYieldColor(parseFloat(sheetYield), minY, maxY)}">${sheetYield}%</span>
                 <span class="pr">${priceWithNkd} \u20bd</span>
                 <span class="ar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></span>
@@ -629,33 +628,6 @@ function openTradingViewDirect(ticker) {
 
 // ========================================================================
 // КОНЕЦ AURORA REBALANCE ФУНКЦИЙ
-
-// ========================================================================
-// БЛОК КАНДИДАТОВ — переключатель ОФЗ/Акции (лекало подвкладок «Теста»).
-// Списки рендерятся в свои контейнеры как раньше; переключатель только
-// показывает нужную подвкладку и её инструменты (сортировка / эшелоны).
-// ========================================================================
-function rbxCandTab(tab) {
-    document.querySelectorAll('#rbxCandTabs .rbr-tab').forEach(btn => {
-        btn.classList.toggle('act', btn.dataset.ctab === tab);
-    });
-    const subOfz = document.getElementById('rbxSubOfz');
-    const subStocks = document.getElementById('rbxSubStocks');
-    if (subOfz) subOfz.classList.toggle('act', tab === 'ofz');
-    if (subStocks) subStocks.classList.toggle('act', tab === 'stocks');
-    const toolsOfz = document.getElementById('rbxToolsOfz');
-    const toolsStocks = document.getElementById('rbxToolsStocks');
-    if (toolsOfz) toolsOfz.hidden = tab !== 'ofz';
-    if (toolsStocks) toolsStocks.hidden = tab !== 'stocks';
-    // раскрытая строка ОФЗ и попап деталей не должны «висеть» на скрытой вкладке
-    if (tab !== 'ofz') {
-        document.querySelectorAll('.rbx-row.expanded').forEach(el => el.classList.remove('expanded'));
-    }
-    if (window.Telegram?.WebApp?.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.selectionChanged();
-    }
-}
-window.rbxCandTab = rbxCandTab;
 
 // ========================================================================
 // АКАДЕМИЯ РЕБАЛАНСИРОВКИ — выезжающая справа шторка (#rbxAcademy)

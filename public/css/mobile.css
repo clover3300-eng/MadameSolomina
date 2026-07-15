@@ -467,15 +467,13 @@
     .rbx-block-why { align-self: auto; padding: 24px 18px 20px; }
     .rbx-wc-title { font-size: 23px; }
     .rbx-wc-btn { letter-spacing: 0.18em; }
-    /* переключатель-«витрина» отдельно над карточкой: названия в ряд,
-       инструменты строкой ниже (в ряд с ними на 375px они не влезают) */
-    .rbr-tabs { flex-wrap: wrap; row-gap: 10px; gap: 18px; padding: 0 0 10px; margin-bottom: 12px; }
-    .rbr-tab .t { font-size: 16px; }
-    #rbxToolsOfz, #rbxToolsStocks { margin-left: 0; width: 100%; justify-content: flex-end; margin-bottom: -6px; }
+    /* заголовок таблицы: название и инструменты не влезают в строку на 375px —
+       инструменты уходят под название */
+    .rbx-bh { flex-wrap: wrap; row-gap: 8px; padding: 0 0 10px; margin-bottom: 12px; }
+    .rbx-bh .t { font-size: 16px; }
+    .rbx-bh .rbx-sort, .rbx-bh .rbx-esh-hint { width: 100%; justify-content: flex-end; margin-bottom: -4px; }
 
-    /* таблица ОФЗ плотнее; «Погашение» на телефоне не помещается — прячем
-       (дата осталась в раскрытых деталях выпуска) */
-    .rbx-colhead .mt-h, .rbx-row-main .mt { display: none; }
+    /* таблица ОФЗ плотнее */
     .rbx-colhead, .rbx-row-main { grid-template-columns: 22px minmax(0, 1fr) 78px 84px 14px; gap: 5px; }
     .rbx-colhead { padding-left: 8px; padding-right: 8px; font-size: 9.5px; letter-spacing: 0.03em; }
     .rbx-row-main { padding: 12px 8px; }
