@@ -529,10 +529,13 @@ td.pfpt-num.pfpt-val { font-weight: 700; color: #0f172a; }
 body.dark-mode td.pfpt-num.pfpt-val { color: #f4f8fd; }
 td.pfpt-num.pos { color: #119d5c; }
 td.pfpt-num.neg { color: #c2410c; }
-/* «Доля» левоприжата (полоска растёт слева), а «Стоимость» перед ней — правоприжата:
-   без своего отступа они сходились в 20px и читались одной кашей. Отступ — общий для
-   th и td, иначе заголовок разъедется со значением. */
-.pfpt-table th.pfpt-share, .pfpt-tr td.pfpt-share { padding-left: 30px; }
+/* «Доля» — ПО ЦЕНТРУ своей колонки. Соседи-числа прижаты к своим краям, поэтому
+   левый край «Доли» упирался в хвост «Стоимости», а справа зияла дыра до «Дохода»
+   (правый прижим просто менял их местами — дыра переезжала влево). Содержимое здесь
+   — группа постоянной ширины (полоска + процент с фикс-шириной ниже), так что центр
+   даёт РОВНЫЙ воздух с обеих сторон и одну вертикаль полосок во всех строках.
+   Заголовок центрирован тем же правилом (table-header-data-convention). */
+.pfpt-table th.pfpt-share, .pfpt-tr td.pfpt-share { text-align: center; }
 .pfpt-share { white-space: nowrap; }
 .pfpt-share .pfpt-sharebar {
     display: inline-block; vertical-align: middle; width: 54px; height: 6px; margin-right: 8px;
@@ -540,7 +543,13 @@ td.pfpt-num.neg { color: #c2410c; }
 }
 body.dark-mode .pfpt-share .pfpt-sharebar { background: rgba(255, 255, 255, 0.09); }
 .pfpt-share .pfpt-sharebar i { display: block; height: 100%; border-radius: 99px; background: color-mix(in srgb, var(--pf-accent) 75%, #94a3b8); }
-.pfpt-share b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12px; font-weight: 700; color: #334155; vertical-align: middle; }
+/* фикс-ширина процента: при правом выравнивании «5,4%» и «46,6%» иначе двигали бы
+   полоску туда-сюда — с ней полоски встают ровным столбиком, как и сами проценты */
+.pfpt-share b {
+    font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12px; font-weight: 700;
+    color: #334155; vertical-align: middle;
+    display: inline-block; min-width: 44px; text-align: right;
+}
 body.dark-mode .pfpt-share b { color: #cbd6e4; }
 
 /* ============ 11. Подвкладка «Настройки» ============ */
