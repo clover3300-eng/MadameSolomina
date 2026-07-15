@@ -1888,6 +1888,14 @@
     };
     function pfxTabSeed(tab) {
         var cfg = normTabCfg(null);
+        // вкладка-портфель (R9): стартует с его полной карточки во всю ширину; id виджета
+        // карточки совпадает с именем вкладки ('pf:<id>'). «Распределение активов», если
+        // его добавят из пикера, сразу смотрит на этот портфель (allocPf).
+        if (pfxIsPfTab(tab)) {
+            cfg.order.push(tab); cfg.col[tab] = 1; cfg.span[tab] = 12; cfg.hidden[tab] = 0;
+            cfg.allocPf = tab.slice(3);
+            return cfg;
+        }
         (PFX_TAB_SEEDS[tab] || []).forEach(function (r) {
             cfg.order.push(r[0]); cfg.col[r[0]] = r[1]; cfg.span[r[0]] = r[2]; cfg.hidden[r[0]] = 0;
         });
@@ -1897,10 +1905,20 @@
         if (!pfTabCfgs[tab]) pfTabCfgs[tab] = pfTabsStore[tab] ? normTabCfg(pfTabsStore[tab]) : pfxTabSeed(tab);
         return pfTabCfgs[tab];
     }
+    // вкладка-портфель (R9): динамическая подвкладка 'pf:<id>' с дашбордом одного
+    // портфеля — открывается кликом по строке «Моих портфелей» (см. pfxOpenPf)
+    function pfxIsPfTab(t) { return typeof t === 'string' && t.indexOf('pf:') === 0; }
     // эффективная подвкладка: на мобильном и без портфелей всё живёт «Обзором»
     function pfxEffTab() {
         var t = (typeof pfxTab === 'string') ? pfxTab : 'overview';
-        return (t !== 'overview' && store.items.length && pfxWide()) ? t : 'overview';
+        if (t === 'overview' || !store.items.length || !pfxWide()) return 'overview';
+        // вкладка-портфель живёт, пока портфель существует, видим и портфелей 2+
+        // (при одном видимом его дашборд и есть «Обзор» — вкладка не нужна)
+        if (pfxIsPfTab(t)) {
+            var p = findPf(t.slice(3));
+            return (p && !p.hidden && visibleItems().length >= 2) ? t : 'overview';
+        }
+        return t;
     }
     function pfxSyncCfg() {
         var t = pfxEffTab();
@@ -1911,6 +1929,7 @@
         try { window.pfdCfgClose(); } catch (e) {}
     }
     function pfxTabLabel(t) {
+        if (pfxIsPfTab(t)) { var p = findPf(t.slice(3)); return p ? p.name : 'Портфель'; }
         for (var i = 0; i < PFX_TABS.length; i++) if (PFX_TABS[i][0] === t) return PFX_TABS[i][1];
         return 'Обзор';
     }
@@ -1941,13 +1960,17 @@
     function savePresetCache() {
         try { localStorage.setItem(PRESETS_CACHE, JSON.stringify({ presets: pfPresetList, bases: pfBaseMap, at: Date.now() })); } catch (e) {}
     }
+    // R9: у вкладок-портфелей пресеты и базовая ОБЩИЕ (один ключ 'pftab' на все):
+    // раскладка, собранная на одной такой вкладке, подходит любой другой — карточка
+    // «своего» портфеля шаблонизируется позиционно в pf:#0 (см. pfPresetTemplate).
+    function pfPresetTabKey() { return pfxIsPfTab(dashTab) ? 'pftab' : dashTab; }
     // R8: базовая раскладка пер-вкладочная. Для «Обзора» ключ — ЧИСЛО видимых портфелей
     // (как исторически, свои базовые на 1/2/3… портфеля), для подвкладок — имя вкладки.
-    function pfBaseKey() { return dashTab === 'overview' ? String(visibleItems().length) : dashTab; }
+    function pfBaseKey() { return dashTab === 'overview' ? String(visibleItems().length) : pfPresetTabKey(); }
     function pfBaseFor() { return (pfBaseMap || {})[pfBaseKey()] || null; }
     // пресеты ТЕКУЩЕЙ подвкладки (у старых пресетов поля tab нет — они обзорные);
     // с гейтом: скрытые админом (hid) обычный пользователь не видит, админ видит все
-    function pfPresetsOfTab() { return pfPresetList.filter(function (p) { return (p.tab || 'overview') === dashTab; }); }
+    function pfPresetsOfTab() { return pfPresetList.filter(function (p) { return (p.tab || 'overview') === pfPresetTabKey(); }); }
     function pfPresetsVisible() {
         var admin = pfIsAdmin();
         return pfPresetsOfTab().filter(function (p) { return admin || !p.hid; });
@@ -2045,6 +2068,10 @@
         snap = snap || {};
         var order = (snap.order || []).slice();
         var map = {}, i = 0;
+        // R9: на вкладке-портфеле её «хозяин» — всегда pf:#0 (id виджета карточки
+        // совпадает с именем вкладки), чтобы пресет с любой такой вкладки на любой
+        // другой подставил именно ЕЁ портфель, а не первый по порядку
+        if (pfxIsPfTab(dashTab)) map[dashTab] = 'pf:#' + (i++);
         order.forEach(function (id) { if (id.indexOf('pf:') === 0 && !map[id]) map[id] = 'pf:#' + (i++); });
         var tok = function (id) { return map[id] || id; };
         var isNote = function (id) { return id.indexOf('note:') === 0; };
@@ -2056,6 +2083,9 @@
     function pfPresetInstantiate(snap) {
         snap = snap || {};
         var real = visibleItems().map(function (p) { return 'pf:' + p.id; });
+        // R9: на вкладке-портфеле pf:#0 — портфель ЭТОЙ вкладки, прочие номера —
+        // остальные видимые по порядку (зеркало pfPresetTemplate)
+        if (pfxIsPfTab(dashTab)) real = [dashTab].concat(real.filter(function (id) { return id !== dashTab; }));
         function sub(id) { var m = /^pf:#(\d+)$/.exec(id); if (!m) return id; var idx = +m[1]; return idx < real.length ? real[idx] : null; }
         var order = [], seen = {};
         (snap.order || []).forEach(function (id) { var r = sub(id); if (r && !seen[r]) { order.push(r); seen[r] = 1; } });
@@ -3157,6 +3187,7 @@
         pfBaseMap[pfBaseKey()] = pfPresetTemplate(pfdSavedSnap());
         pfPresetsPersist(dashTab === 'overview'
             ? 'Базовая для ' + count + ' портф. сохранена — у всех'
+            : pfxIsPfTab(dashTab) ? 'Базовая вкладок-портфелей сохранена — у всех'
             : 'Базовая «' + pfxTabLabel(dashTab) + '» сохранена — у всех');
     };
     window.pfResetBasePreset = function () {
@@ -3192,9 +3223,12 @@
         pfPresetNameModal('', function (name) {
             var snap = pfPresetTemplate(pfdSavedSnap());
             var by = (pfSupa().session && pfSupa().session.user) ? pfSupa().session.user.id : null;
-            // R8: пресет привязан к подвкладке (tab) — показывается только на ней
-            pfPresetList = pfPresetList.concat([{ id: genId('pre'), name: name.slice(0, 40) || 'Пресет', snap: snap, at: Date.now(), by: by, tab: dashTab }]);
-            pfPresetsPersist('Пресет «' + (name || 'Пресет') + '» доступен всем на подвкладке «' + pfxTabLabel(dashTab) + '»');
+            // R8: пресет привязан к подвкладке (tab) — показывается только на ней;
+            // R9: у вкладок-портфелей ключ общий ('pftab') — пресет виден на всех таких
+            pfPresetList = pfPresetList.concat([{ id: genId('pre'), name: name.slice(0, 40) || 'Пресет', snap: snap, at: Date.now(), by: by, tab: pfPresetTabKey() }]);
+            pfPresetsPersist(pfxIsPfTab(dashTab)
+                ? 'Пресет «' + (name || 'Пресет') + '» доступен всем на вкладках портфелей'
+                : 'Пресет «' + (name || 'Пресет') + '» доступен всем на подвкладке «' + pfxTabLabel(dashTab) + '»');
         });
     };
     window.pfDeletePreset = function (id, ev) {
@@ -6995,28 +7029,106 @@
         ['settings',  'Настройки',  PFDCFG_GEAR_SVG]   // та же шестерёнка, что у виджетов
     ];
     var PFX_TAB_KEY = 'pf_subtab_v1';   // локально (в облако не зеркалится — просто позиция UI)
+    // ---- R9: вкладки-портфели ----
+    // Клик по строке «Моих портфелей» открывает портфелю СВОЮ подвкладку рядом с
+    // «Обзором» (только при 2+ видимых портфелях): у каждой — полноценный дашборд-
+    // конструктор со своим конфигом в pf_dash_tabs_v1 (ключ 'pf:<id>', зеркалится в
+    // облако вместе с остальными). Список ОТКРЫТЫХ вкладок — локальный, как и активная
+    // подвкладка: это позиция UI, не данные. Закрытие крестиком раскладку НЕ стирает —
+    // повторное открытие вернёт вкладку как была; конфиг удаляется только вместе с
+    // портфелем (pfxDropPfTab).
+    var PFX_OPEN_KEY = 'pf_open_tabs_v1';
+    var pfxOpenPfTabs = (function () {
+        try {
+            var a = JSON.parse(localStorage.getItem(PFX_OPEN_KEY) || 'null');
+            return Array.isArray(a) ? a.filter(function (pid) { return findPf(pid); }) : [];
+        } catch (e) { return []; }
+    })();
+    function pfxSaveOpenTabs() { try { localStorage.setItem(PFX_OPEN_KEY, JSON.stringify(pfxOpenPfTabs)); } catch (e) {} }
+    // валидная подвкладка: штатная из PFX_TABS или ОТКРЫТАЯ вкладка живого портфеля
+    function pfxValidTab(t) {
+        if (PFX_TABS.some(function (x) { return x[0] === t; })) return true;
+        return pfxIsPfTab(t) && pfxOpenPfTabs.indexOf(t.slice(3)) >= 0 && !!findPf(t.slice(3));
+    }
     var pfxTab = (function () {
         try {
             var t = localStorage.getItem(PFX_TAB_KEY);
-            return PFX_TABS.some(function (x) { return x[0] === t; }) ? t : 'overview';
+            return pfxValidTab(t) ? t : 'overview';
         } catch (e) { return 'overview'; }
     })();
     function pfxWide() { try { return !window.matchMedia('(max-width: 1023px)').matches; } catch (e) { return true; } }
-    window.pfxGoTab = function (t) {
-        if (!PFX_TABS.some(function (x) { return x[0] === t; }) || pfxTab === t) return;
+    // смена активной подвкладки БЕЗ рендера — общее ядро pfxGoTab/pfxPortSettings
+    function pfxActivateTab(t) {
+        if (pfxTab === t) return;
         if (dashEdit) { dashEdit = false; try { updateLayoutBtn(); } catch (e) {} }   // пикер не тащим на другую подвкладку
         pfl3Open = false;                       // панель раскладок — тоже пер-вкладочная
         pfxTab = t;
         try { localStorage.setItem(PFX_TAB_KEY, t); } catch (e) {}
         closeImpMenus();
         pfxSyncCfg();                           // R8: dashCfg вкладки + сброс undo
+    }
+    window.pfxGoTab = function (t) {
+        if (!pfxValidTab(t) || pfxTab === t) return;
+        pfxActivateTab(t);
         renderNoAnim();
     };
+    // открыть портфелю его вкладку (клик по строке «Моих портфелей»); при одном
+    // видимом портфеле вкладку не плодим — его дашборд и есть «Обзор» (просьба 2026-07-15)
+    window.pfxOpenPf = function (pid) {
+        var p = findPf(pid); if (!p) return;
+        if (p.hidden || visibleItems().length < 2 || !pfxWide()) {
+            var jumped = pfxGoOverviewFor(pid);
+            if (jumped) { renderNoAnim(); toast('Портфель показан на «Обзоре»'); }
+            pfdScrollToBlock('pf:' + pid);
+            return;
+        }
+        if (pfxOpenPfTabs.indexOf(pid) < 0) { pfxOpenPfTabs.push(pid); pfxSaveOpenTabs(); }
+        if (pfxTab === 'pf:' + pid) return;   // уже на своей вкладке — клик ничего не рушит
+        window.pfxGoTab('pf:' + pid);
+    };
+    // закрыть вкладку-портфель (крестик на чипе); раскладка остаётся в pf_dash_tabs_v1
+    window.pfxClosePfTab = function (pid, ev) {
+        if (ev) ev.stopPropagation();
+        var i = pfxOpenPfTabs.indexOf(pid);
+        if (i >= 0) { pfxOpenPfTabs.splice(i, 1); pfxSaveOpenTabs(); }
+        if (pfxTab === 'pf:' + pid) { pfxActivateTab('overview'); }
+        renderNoAnim();
+    };
+    // портфель удалён — вкладка, её раскладка и позиция UI уходят вместе с ним
+    function pfxDropPfTab(pid) {
+        var t = 'pf:' + pid, i = pfxOpenPfTabs.indexOf(pid);
+        if (i >= 0) { pfxOpenPfTabs.splice(i, 1); pfxSaveOpenTabs(); }
+        delete pfTabCfgs[t];
+        if (pfTabsStore[t]) { delete pfTabsStore[t]; try { localStorage.setItem(DASH_TABS_KEY, JSON.stringify(pfTabsStore)); } catch (e) {} }
+        if (pfxTab === t) {
+            pfxTab = 'overview';
+            try { localStorage.setItem(PFX_TAB_KEY, 'overview'); } catch (e) {}
+            pfxSyncCfg();
+        }
+    }
     function pfxTabsHtml() {
         if (!store.items.length || !pfxWide()) return '';
+        // подсветка — по ЭФФЕКТИВНОЙ вкладке: когда вкладка-портфель временно не живёт
+        // (портфель скрыли, остался один видимый) контент показывает «Обзор» — активная
+        // метка обязана показывать то же, иначе ряд остаётся «без выбранного»
+        var eff = pfxEffTab();
+        // чипы открытых вкладок-портфелей — сразу за «Обзором»; при одном видимом
+        // портфеле не показываются вовсе (его дашборд — «Обзор»)
+        var chips = visibleItems().length >= 2 ? pfxOpenPfTabs.map(function (pid) {
+            var p = findPf(pid);
+            if (!p || p.hidden) return '';
+            var t = 'pf:' + pid, on = eff === t;
+            // крестик — span role=button: вложенный <button> в <button> невалиден
+            return '<button type="button" role="tab" class="pfx-tab pfx-tab-pf' + (on ? ' on' : '') + '" aria-selected="' + on + '" onclick="pfxGoTab(\'' + t + '\')" title="Дашборд портфеля «' + attr(p.name) + '»">' +
+                '<span class="pfx-tab-dot" style="background:' + colorVal(p.color) + '" aria-hidden="true"></span>' +
+                '<span class="pfx-tab-nm">' + esc(p.name) + '</span>' +
+                '<span class="pfx-tab-x" role="button" aria-label="Закрыть вкладку" title="Закрыть вкладку" onclick="pfxClosePfTab(\'' + pid + '\', event)">' + XMARK_SVG + '</span>' +
+            '</button>';
+        }).join('') : '';
         return '<div class="pfx-tabs" role="tablist">' + PFX_TABS.map(function (t) {
-            return '<button type="button" role="tab" class="pfx-tab' + (pfxTab === t[0] ? ' on' : '') + '" aria-selected="' + (pfxTab === t[0]) + '" onclick="pfxGoTab(\'' + t[0] + '\')">' +
-                '<span class="pfx-tab-ic" aria-hidden="true">' + t[2] + '</span>' + t[1] + '</button>';
+            return '<button type="button" role="tab" class="pfx-tab' + (eff === t[0] ? ' on' : '') + '" aria-selected="' + (eff === t[0]) + '" onclick="pfxGoTab(\'' + t[0] + '\')">' +
+                '<span class="pfx-tab-ic" aria-hidden="true">' + t[2] + '</span>' + t[1] + '</button>' +
+                (t[0] === 'overview' ? chips : '');
         }).join('') + '</div>';
     }
 
@@ -7686,7 +7798,7 @@
                 ? kpi((c.pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(c.pnl)), c.pnl >= 0 ? 'pos' : 'neg',
                     '<em class="' + (c.pnlPct >= 0 ? 'pos' : 'neg') + '">' + fmtPct(c.pnlPct) + '</em>')
                 : kpi('—', 'muted');
-            return '<div class="pfpl-row" role="button" tabindex="0" onclick="pfxPortSettings(\'' + p.id + '\')" title="Открыть настройки портфеля">' +
+            return '<div class="pfpl-row" role="button" tabindex="0" onclick="pfxOpenPf(\'' + p.id + '\')" title="Открыть дашборд портфеля">' +
                 '<span class="pfpl-ic" style="--pc:' + ac + '">' + PFPL_CASE_SVG + '</span>' +
                 '<span class="pfpl-id"><b>' + esc(p.name) + '</b><i>' + n + ' ' + plural(n, 'актив', 'актива', 'активов') + '</i></span>' +
                 kpi(fmtRub(c.value)) +
@@ -7795,11 +7907,12 @@
             '<td class="pfpt-num ' + (has ? (hc.pnlPct >= 0 ? 'pos' : 'neg') : '') + '">' + (has ? fmtPct(hc.pnlPct) : '—') + '</td>' +
         '</tr>';
     }
-    // ---- переход на «Обзор» ради настроек портфеля (R8) ----
-    // Карточка портфеля с её настройками живёт ТОЛЬКО на «Обзоре», поэтому «+ Портфель»,
-    // шестерёнка в «Моих портфелях» и клик по строке списка уводят туда с любой подвкладки.
-    // Чтобы это не читалось как сбой («нажал — куда-то унесло»), переход ОЗВУЧИВАЕМ тостом
-    // и подсвечиваем карточку, к которой унесло.
+    // ---- переход на «Обзор» ради карточки портфеля (R8) ----
+    // R9: при 2+ видимых портфелях у каждого есть СВОЯ вкладка с карточкой — настройки
+    // открываются там (pfxPortSettings ведёт на неё). «Обзор» остаётся местом карточки
+    // для одного портфеля и фолбэком (узкий экран, скрытый портфель, «+ Портфель»).
+    // Чтобы переход не читался как сбой («нажал — куда-то унесло»), его ОЗВУЧИВАЕМ
+    // тостом и подсвечиваем карточку, к которой унесло.
     function pfxGoOverviewFor(pid) {
         var jumped = pfxEffTab() !== 'overview';
         if (jumped) {
@@ -7832,6 +7945,20 @@
         })();
     }
     window.pfxPortSettings = function (pid) {
+        var p = findPf(pid);
+        // R9: 2+ видимых портфелей → настройки на СОБСТВЕННОЙ вкладке портфеля
+        if (p && !p.hidden && visibleItems().length >= 2 && pfxWide()) {
+            var t = 'pf:' + pid;
+            var far = pfxEffTab() !== t;
+            if (pfxOpenPfTabs.indexOf(pid) < 0) { pfxOpenPfTabs.push(pid); pfxSaveOpenTabs(); }
+            pfxActivateTab(t);
+            // карточку могли убрать с вкладки корзиной — настройкам она нужна, возвращаем
+            // (тот же приём, что у pfxGoOverviewFor); dashCfg после активации = конфиг вкладки
+            if (dashCfg.hidden && dashCfg.hidden[t]) { dashCfg.hidden[t] = 0; saveDashCfg(); }
+            window.pfToggleMenu(pid);   // сам ре-рендерит
+            if (far) { toast('Настройки открыты на вкладке портфеля'); pfxFlashBlock(t); }
+            return;
+        }
         var jumped = pfxGoOverviewFor(pid);
         window.pfToggleMenu(pid);   // откроет карточку с настройками на «Обзоре»
         if (jumped) {
@@ -7956,6 +8083,11 @@
             { id: 'set:bg', name: 'Фон страницы', desc: 'Общая подложка сайта: мозаика, шалфейный, градиент и другие', cats: ['other'] }
         ];
         if (store.items.length >= 2) list.push({ id: 'sum', name: 'Сводка портфелей', desc: 'Суммарный капитал и лидерборд портфелей', cats: ['over', 'profit'] });
+        // R9: карточки портфелей — тоже виджеты каталога: вернуть убранную карточку на
+        // вкладку-портфель или продублировать её на любую другую подвкладку
+        visibleItems().forEach(function (p) {
+            list.push({ id: 'pf:' + p.id, name: 'Портфель «' + p.name + '»', desc: 'Полная карточка портфеля: состав, мини-график и настройки', cats: ['assets'] });
+        });
         return list;
     }
     var pfl2Cat = 'pop', pfl2Q = '', pfl2Sel = 'cap';
@@ -7996,6 +8128,9 @@
         if (id === '__note') return false;
         var m = dashCfg.hidden || {};
         if (id === 'cap') return m.cap === 0 || m.cap2 === 0;
+        // карточки портфелей на «Обзоре» видимы по умолчанию — «нет на дашборде»
+        // только при явном скрытии (hidden=1)
+        if (id.indexOf('pf:') === 0 && dashTab === 'overview') return m[id] !== 1;
         var defOn = dashTab === 'overview' ? { fav: 1, cal: 1, rates: 1, trades: 1, sum: 1 } : {};
         if (defOn[id]) return !m[id];
         return m[id] === 0;
@@ -8228,6 +8363,13 @@
             return '<div class="dm-bgs">' + (window.siteBg ? window.siteBg.list() : []).slice(0, 6).map(function (b) {
                 return '<span class="dm-bg sbgpv-' + esc(b.id) + '"></span>';
             }).join('') + '</div>';
+        }
+        // R9: карточка портфеля (id 'pf:<id>') — демо в духе «Составов», данные статичные
+        if (id.indexOf('pf:') === 0) {
+            return '<div class="dm-rows">' +
+                '<span class="dm-row"><em>SBER</em><i>120 шт · 14,2%</i><b>36 850 ₽</b></span>' +
+                '<span class="dm-row"><em>ОФЗ 26248</em><i>40 шт · 8,9%</i><b>23 152 ₽</b></span>' +
+                '<span class="dm-row"><i>Доходность</i><b class="pos">+12,4%</b></span></div>';
         }
         return '<div class="dm-rows"><span class="dm-row"><em>Виджет</em></span></div>';
     }
@@ -9329,6 +9471,7 @@
         var p = findPf(pid); if (!p) return;
         store.items = store.items.filter(function (x) { return x.id !== pid; }); saveStore();
         if (openMenu === pid) { openMenu = null; }
+        pfxDropPfTab(pid);   // R9: вкладка портфеля и её раскладка уходят вместе с ним
         delArm = false; renderPortfolios(); toast('Портфель удалён');
     };
     // читает форму добавления и записывает актив в модель (БЕЗ ре-рендера/фокуса/тоста).

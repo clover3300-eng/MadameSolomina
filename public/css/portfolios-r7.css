@@ -63,6 +63,8 @@ body.dark-mode #panel-portfolios .pfc-name-ink {
 /* ============ 4. Подвкладки ============ */
 .pfx-tabs {
     display: flex; align-items: center; gap: 4px;
+    /* wrap — на случай многих открытых вкладок-портфелей: ряд переносится, а не давит соседей */
+    flex-wrap: wrap;
     margin: 14px 2px 16px; border-bottom: 1px solid #e7ecf3;
 }
 .pfx-tab {
@@ -84,11 +86,29 @@ body.dark-mode #panel-portfolios .pfc-name-ink {
     content: ''; position: absolute; left: 9px; right: 9px; bottom: -1px; height: 2.5px;
     border-radius: 2px 2px 0 0; background: #4453ef;
 }
+/* Вкладка-портфель (R9): чип с цветной точкой портфеля и крестиком. Открывается
+   кликом по строке «Моих портфелей», закрывается крестиком (раскладка при этом
+   сохраняется). Точка — тот же цветовой язык, что у календаря и «Видимости». */
+.pfx-tab-pf { padding-right: 7px; }
+.pfx-tab-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.pfx-tab-nm { max-width: 128px; overflow: hidden; text-overflow: ellipsis; }
+.pfx-tab-x {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px; margin-left: -2px; border-radius: 6px;
+    opacity: 0.45; transition: opacity 0.13s, background 0.13s;
+}
+.pfx-tab-x svg { width: 11px; height: 11px; display: block; }
+.pfx-tab-pf:hover .pfx-tab-x, .pfx-tab-pf.on .pfx-tab-x { opacity: 0.8; }
+.pfx-tab-x:hover { opacity: 1; background: rgba(15, 23, 42, 0.08); }
+/* подчёркивание активного чипа — до крестика ему хватает 6px справа */
+.pfx-tab-pf.on::after { right: 6px; }
+
 body.dark-mode .pfx-tabs { border-bottom-color: rgba(255, 255, 255, 0.1); }
 body.dark-mode .pfx-tab { color: #93a2b8; }
 body.dark-mode .pfx-tab:hover { color: #e8eef7; }
 body.dark-mode .pfx-tab.on { color: #a5b4fc; }
 body.dark-mode .pfx-tab.on::after { background: #818cf8; }
+body.dark-mode .pfx-tab-x:hover { background: rgba(255, 255, 255, 0.12); }
 
 /* ============ 5. Статичная сетка подвкладок ============ */
 .pfx-grid {
