@@ -1927,11 +1927,14 @@
     function pfxEffTab() {
         var t = (typeof pfxTab === 'string') ? pfxTab : 'overview';
         if (t === 'overview' || !store.items.length || !pfxWide()) return 'overview';
-        // вкладка-портфель живёт, пока портфель существует, видим и портфелей 2+
-        // (при одном видимом его дашборд и есть «Обзор» — вкладка не нужна)
+        // вкладка-портфель живёт, пока портфель существует. R9.2: у СКРЫТОГО
+        // портфеля вкладка живёт тоже — «скрыть» убирает его с «Обзора» и из
+        // сводок, а открытая вкладка остаётся единственным местом, где он виден.
+        // Правило «один видимый — без вкладки (его дашборд и есть „Обзор“)»
+        // касается только видимых портфелей.
         if (pfxIsPfTab(t)) {
             var p = findPf(t.slice(3));
-            return (p && !p.hidden && visibleItems().length >= 2) ? t : 'overview';
+            return (p && (p.hidden || visibleItems().length >= 2)) ? t : 'overview';
         }
         return t;
     }
@@ -2321,6 +2324,12 @@
             // неизвестна, график всегда выезжает вправо от карточки
             blocks.push({ id: 'pf:' + p.id, name: p.name, htmlFn: function () { return cardHtml(p, i, false, narrow, false); }, span: defSpan });
         });
+        // R9.2: СКРЫТЫЙ портфель на СВОЕЙ вкладке карточку сохраняет — «скрыть»
+        // убирает его с «Обзора» и из сводок, но открытая вкладка живёт дальше
+        if (pfxIsPfTab(dashTab)) {
+            var tp = findPf(dashTab.slice(3));
+            if (tp && tp.hidden) blocks.push({ id: 'pf:' + tp.id, name: tp.name, htmlFn: function () { return cardHtml(tp, Math.max(0, store.items.indexOf(tp)), false, narrow, false); }, span: defSpan });
+        }
         blocks.push({ id: 'cal', name: noBonds ? 'Ставки' : 'Календарь выплат', htmlFn: function () { return noBonds ? ratesStackHtml(true, 1, true, 'cal') : paymentCalendarHtml(true, 1, dashTab === 'divs'); }, span: defSpan });
         // обёртка .pf-topgrid-fav сохраняет прицельные стили правой колонки
         // (одноколоночный .pff-grid и т.п.) и в свободной сетке
@@ -7073,7 +7082,9 @@
     };
     var PFX_TABS = [
         ['overview',  'Обзор',      PFXI('<rect x="3" y="3" width="7.5" height="8.5" rx="1.8"/><rect x="13.5" y="3" width="7.5" height="5" rx="1.8"/><rect x="13.5" y="10.5" width="7.5" height="10.5" rx="1.8"/><rect x="3" y="14" width="7.5" height="7" rx="1.8"/>')],
-        ['ports',     'Портфели',   PFXI('<rect x="2.5" y="7" width="19" height="13" rx="2.5"/><path d="M8.5 7V5.5A1.5 1.5 0 0 1 10 4h4a1.5 1.5 0 0 1 1.5 1.5V7"/><path d="M2.5 12.5h19"/>')],
+        // «Мои портфели», не «Портфели»: вкладка сайдбара уже зовётся «Портфели» —
+        // одинаковая подпись уровнем ниже читалась тавтологией (просьба 2026-07-15)
+        ['ports',     'Мои портфели', PFXI('<rect x="2.5" y="7" width="19" height="13" rx="2.5"/><path d="M8.5 7V5.5A1.5 1.5 0 0 1 10 4h4a1.5 1.5 0 0 1 1.5 1.5V7"/><path d="M2.5 12.5h19"/>')],
         ['analytics', 'Аналитика',  PFXI('<path d="M3 3v16.5A1.5 1.5 0 0 0 4.5 21H21"/><path d="M7 15.5l4-4.5 3.5 3L20 7"/>')],
         ['reports',   'Отчёты',     PFXI('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/>')],
         ['divs',      'Дивиденды',  PFXI('<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>')],
@@ -7128,7 +7139,9 @@
     // видимом портфеле вкладку не плодим — его дашборд и есть «Обзор» (просьба 2026-07-15)
     window.pfxOpenPf = function (pid) {
         var p = findPf(pid); if (!p) return;
-        if (p.hidden || visibleItems().length < 2 || !pfxWide()) {
+        // R9.2: СКРЫТЫЙ портфель на широком экране открывается своей вкладкой —
+        // на «Обзоре» его карточки нет; «Обзором» живут одиночка и узкий экран
+        if (!pfxWide() || (!p.hidden && visibleItems().length < 2)) {
             var jumped = pfxGoOverviewFor(pid);
             if (jumped) { renderNoAnim(); toast('Портфель показан на «Обзоре»'); }
             pfdScrollToBlock('pf:' + pid);
@@ -7164,19 +7177,22 @@
         // (портфель скрыли, остался один видимый) контент показывает «Обзор» — активная
         // метка обязана показывать то же, иначе ряд остаётся «без выбранного»
         var eff = pfxEffTab();
-        // чипы открытых вкладок-портфелей — сразу за «Обзором»; при одном видимом
-        // портфеле не показываются вовсе (его дашборд — «Обзор»)
-        var chips = visibleItems().length >= 2 ? pfxOpenPfTabs.map(function (pid) {
+        // чипы открытых вкладок-портфелей — сразу за «Обзором». Видимый портфель
+        // показывает чип только при 2+ видимых (при одном его дашборд — «Обзор»).
+        // R9.2: СКРЫТЫЙ портфель с открытой вкладкой — всегда: «скрыть» на «Обзоре»
+        // вкладку не закрывает, она — единственное место, где портфель остался
+        var chips = pfxOpenPfTabs.map(function (pid) {
             var p = findPf(pid);
-            if (!p || p.hidden) return '';
+            if (!p) return '';
+            if (!p.hidden && visibleItems().length < 2) return '';
             var t = 'pf:' + pid, on = eff === t;
             // крестик — span role=button: вложенный <button> в <button> невалиден
-            return '<button type="button" role="tab" class="pfx-tab pfx-tab-pf' + (on ? ' on' : '') + '" aria-selected="' + on + '" onclick="pfxGoTab(\'' + t + '\')" title="Дашборд портфеля «' + attr(p.name) + '»">' +
+            return '<button type="button" role="tab" class="pfx-tab pfx-tab-pf' + (on ? ' on' : '') + (p.hidden ? ' hid' : '') + '" aria-selected="' + on + '" onclick="pfxGoTab(\'' + t + '\')" title="Дашборд портфеля «' + attr(p.name) + '»' + (p.hidden ? ' — скрыт на «Обзоре»' : '') + '">' +
                 '<span class="pfx-tab-dot" style="background:' + colorVal(p.color) + '" aria-hidden="true"></span>' +
                 '<span class="pfx-tab-nm">' + esc(p.name) + '</span>' +
                 '<span class="pfx-tab-x" role="button" aria-label="Закрыть вкладку" title="Закрыть вкладку" onclick="pfxClosePfTab(\'' + pid + '\', event)">' + XMARK_SVG + '</span>' +
             '</button>';
-        }).join('') : '';
+        }).join('');
         return '<div class="pfx-tabs" role="tablist">' + PFX_TABS.map(function (t) {
             return '<button type="button" role="tab" class="pfx-tab' + (eff === t[0] ? ' on' : '') + '" aria-selected="' + (eff === t[0]) + '" onclick="pfxGoTab(\'' + t[0] + '\')">' +
                 '<span class="pfx-tab-ic" aria-hidden="true">' + t[2] + '</span>' + t[1] + '</button>' +
@@ -8971,31 +8987,46 @@
     // ====================================================================
     window.pfAddPortfolio = function () {
         if (store.items.length >= MAX_CARDS) { toast('Максимум ' + MAX_CARDS + ' ' + plural(MAX_CARDS, 'портфель', 'портфеля', 'портфелей') + ' на странице', true); return; }
-        // новый портфель появляется ВВЕРХУ — и в списке (unshift), и на дашборде
-        // (его блок в начало dashCfg.order; без col-пина masonry кладёт его в
-        // верхний левый угол, приколотые соседи остаются в своих колонках)
+        // до добавления: если видимый портфель был один, его дашборд жил «Обзором» —
+        // на переходе 1→2 откроем чип и ему, ряд читается «две вкладки двух портфелей»
+        var wasVis = visibleItems();
+        var wasSingle = wasVis.length === 1 ? wasVis[0] : null;
+        // новый портфель появляется ВВЕРХУ списка (unshift) — «Мои портфели» и
+        // сводки показывают его первым
         var p = makePortfolio(); store.items.unshift(p); saveStore();
-        // R8: карточка нового портфеля живёт на «Обзоре» — целим в ЕГО конфиг,
-        // даже если кнопку нажали с другой подвкладки
+        // R9.2: карточка на «Обзоре» дописывается В КОНЕЦ сетки — собранная
+        // раскладка не перетасовывается (раньше unshift в начало сдвигал все блоки).
+        // Пустой order не трогаем: его засеет pfxSeedLayout эталонной раскладкой.
         var oc = dashCfgFor('overview');
         var bid = 'pf:' + p.id;
-        if (Array.isArray(oc.order)) {
-            var ix = oc.order.indexOf(bid);
-            if (ix >= 0) oc.order.splice(ix, 1);
-            oc.order.unshift(bid);
+        if (Array.isArray(oc.order) && oc.order.length && oc.order.indexOf(bid) < 0) {
+            oc.order.push(bid);
             if (oc === dashCfg) saveDashCfg();
             else try { localStorage.setItem(DASH_KEY, JSON.stringify(oc)); } catch (e) {}
         }
-        // настройки нового портфеля открываются сразу — с тем же чистым состоянием, что и
-        // через ⚙ (pfToggleMenu): форма добавления раскрыта (портфель пуст), остальное закрыто.
-        // Карточка с настройками живёт на «Обзоре» — переключаемся туда, откуда бы ни нажали
+        pfNoScrollKeep = true;   // ниже сами уводим страницу наверх — сохранять прежнюю позицию не надо
+        // R9.2: при 2+ видимых портфелях новый живёт СВОЕЙ вкладкой — открываем чип
+        // и настройки-шторку прямо там (штатный путь ⚙), «Обзор» не трогаем
+        if (pfxWide() && visibleItems().length >= 2) {
+            if (wasSingle && pfxOpenPfTabs.indexOf(wasSingle.id) < 0) pfxOpenPfTabs.push(wasSingle.id);
+            if (pfxOpenPfTabs.indexOf(p.id) < 0) pfxOpenPfTabs.push(p.id);
+            pfxSaveOpenTabs();
+            pfxActivateTab('pf:' + p.id);
+            window.pfxPortSettings(p.id);   // чистое состояние настроек + renderNoAnim
+            var sct = document.getElementById('contentArea');
+            if (sct) { try { sct.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { sct.scrollTop = 0; } }
+            toast('Портфель создан — открыт на своей вкладке');
+            pfxFlashBlock('pf:' + p.id);
+            return;
+        }
+        // первый портфель / узкий экран: прежний путь — карточка и настройки на «Обзоре».
+        // Настройки открываются сразу — с тем же чистым состоянием, что и через ⚙
         // (переход озвучиваем тостом ниже, см. pfxGoOverviewFor).
         var jumped = pfxGoOverviewFor(p.id);
         openMenu = p.id; menuJustOpened = true;
         // форма добавления СВЁРНУТА по умолчанию (раскрывается кнопкой «＋ Добавить актив») —
         // раньше открывалась сразу, что мешало
         editHold = {}; colorsOpen = false; delArm = false; addOpen = false;
-        pfNoScrollKeep = true;   // ниже сами уводим страницу наверх — сохранять прежнюю позицию не надо
         renderPortfolios();
         // и прокручиваем к нему наверх — портфель создаётся с открытыми настройками,
         // пользователь должен его сразу видеть
@@ -9134,7 +9165,12 @@
             if (m) { m.classList.add('open'); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); }
         };
         saveStore(); renderSmooth(keepOpen ? reopenEye : null);
-        toast(p.hidden ? 'Портфель «' + p.name + '» скрыт из сетки' : 'Портфель «' + p.name + '» снова показан');
+        // R9.2: открытая вкладка скрытого портфеля живёт дальше — озвучиваем,
+        // чтобы «скрыть» не читалось как пропажа вкладки
+        var tabKept = p.hidden && pfxWide() && pfxOpenPfTabs.indexOf(pid) >= 0;
+        toast(p.hidden
+            ? 'Портфель «' + p.name + '» скрыт из сетки' + (tabKept ? ' — его вкладка осталась открытой' : '')
+            : 'Портфель «' + p.name + '» снова показан');
     };
     window.pfShowAllHidden = function () {
         store.items.forEach(function (p) { p.hidden = false; });

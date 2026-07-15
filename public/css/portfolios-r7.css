@@ -102,6 +102,10 @@ body.dark-mode #panel-portfolios .pfc-name-ink {
 .pfx-tab-x:hover { opacity: 1; background: rgba(15, 23, 42, 0.08); }
 /* подчёркивание активного чипа — до крестика ему хватает 6px справа */
 .pfx-tab-pf.on::after { right: 6px; }
+/* R9.2: чип СКРЫТОГО портфеля (убран с «Обзора», вкладка живёт) — приглушён */
+.pfx-tab-pf.hid .pfx-tab-dot { opacity: 0.35; }
+.pfx-tab-pf.hid .pfx-tab-nm { opacity: 0.6; }
+.pfx-tab-pf.hid.on .pfx-tab-nm { opacity: 0.85; }
 
 body.dark-mode .pfx-tabs { border-bottom-color: rgba(255, 255, 255, 0.1); }
 body.dark-mode .pfx-tab { color: #93a2b8; }
