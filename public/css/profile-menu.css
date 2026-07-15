@@ -138,7 +138,11 @@ body.sd-drawer-open #navBackFab { display: none !important; }
     --phr: 24px;
     position: fixed; top: 66px; right: 26px; z-index: 1250;
     width: 380px; max-width: calc(100vw - 20px);
-    max-height: min(620px, calc(var(--real-vh, 100vh) - 110px));
+    /* 620px резали список даже в свёрнутом виде: содержимому нужно ~641px гостю и
+       ~704px облачному аккаунту (у него шестая секция «Безопасность»). Лимит поднят
+       под полный список — панель всё равно ограничена вторым слагаемым min() и не
+       вылезет за экран, а на высоком окне скролла в свёрнутом виде больше нет. */
+    max-height: min(710px, calc(var(--real-vh, 100vh) - 110px));
     display: flex; flex-direction: column;
     background: #fff; border: 1px solid #e7ecf3; border-radius: var(--phr);
     /* тень глубже прежней: панель всплывает и над тёмными героями (Портфели, Ребаланс),

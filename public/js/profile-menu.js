@@ -794,6 +794,26 @@
             if (e.key === 'Escape') closeHub();
         });
 
+        // Подкручиваем список так, чтобы РАСКРЫТАЯ секция была видна целиком: секции
+        // внизу («Данные», «Безопасность») разворачивались за нижним краем, и до полей
+        // приходилось доскроллировать руками. Двигаем на минимум — если секция и так
+        // помещается, не трогаем вовсе. Секцию выше окна прижимаем шапкой к верху:
+        // показать её низ ценой ухода заголовка за край — хуже, чем не двигать.
+        function phRevealSec(sec) {
+            var list = hub.querySelector('.ph-list');
+            if (!list) return;
+            var pad = 8;
+            var sr = sec.getBoundingClientRect(), lr = list.getBoundingClientRect();
+            var delta = 0;
+            if (sr.height > lr.height - pad * 2 || sr.top < lr.top) delta = sr.top - lr.top - pad;
+            else if (sr.bottom > lr.bottom) delta = sr.bottom - lr.bottom + pad;
+            if (Math.abs(delta) < 1) return;
+            // rect'ы отдают ЗУМЛЕННЫЕ пиксели (desktop-zoom 0.9), scrollTop — слои
+            // вёрстки: без деления на зум прокрутка недолетает
+            var zoom = lr.height / (list.clientHeight || lr.height) || 1;
+            list.scrollTo({ top: list.scrollTop + delta / zoom, behavior: 'smooth' });
+        }
+
         // аккордеоны (открыт максимум один)
         hub.querySelectorAll('.ph-row').forEach(function (row) {
             row.addEventListener('click', function () {
@@ -806,6 +826,17 @@
                 if (!on) {
                     sec.classList.add('on');
                     row.setAttribute('aria-expanded', 'true');
+                    // ждём конца раскрытия (.ph-body, grid-template-rows 0fr→1fr):
+                    // до него высота секции ещё старая и скроллить не по чему
+                    var body = sec.querySelector('.ph-body');
+                    var done = function (e) {
+                        if (e && e.target !== body) return;
+                        body.removeEventListener('transitionend', done);
+                        clearTimeout(tmr);
+                        phRevealSec(sec);
+                    };
+                    var tmr = setTimeout(done, 320); // страховка, если transitionend не придёт
+                    body.addEventListener('transitionend', done);
                 }
             });
         });
