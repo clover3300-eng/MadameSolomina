@@ -131,13 +131,17 @@ body.sd-drawer-open #navBackFab { display: none !important; }
 @media (max-width: 1023px) { #navBackFab { display: none !important; } }
 
 /* ===== ПАНЕЛЬ ПРОФИЛЯ ===== */
+/* Огранка — как у карточек «Портфелей» R7 (portfolios-r7.css §1): светлая рамка 1px
+   #e7ecf3 и мягкая двойная тень вместо прежней жирной обводки 2px #131a2b. Радиус
+   держим в токене --phr, чтобы шапка-герой и низ панели скруглялись согласованно. */
 #profileHub {
+    --phr: 24px;
     position: fixed; top: 66px; right: 26px; z-index: 1250;
-    width: 356px; max-width: calc(100vw - 20px);
+    width: 380px; max-width: calc(100vw - 20px);
     max-height: min(620px, calc(var(--real-vh, 100vh) - 110px));
     display: flex; flex-direction: column;
-    background: #fff; border: 2px solid #131a2b; border-radius: 28px;
-    box-shadow: 0 24px 54px -20px rgba(24,38,60,0.34);
+    background: #fff; border: 1px solid #e7ecf3; border-radius: var(--phr);
+    box-shadow: 0 1px 2px rgba(15,23,42,0.03), 0 26px 56px -22px rgba(24,38,60,0.32);
     font-family: 'Inter', sans-serif;
     opacity: 0; transform: translateY(-6px) scale(0.985); transform-origin: top right;
     pointer-events: none; visibility: hidden;
@@ -147,41 +151,81 @@ body.sd-drawer-open #navBackFab { display: none !important; }
     opacity: 1; transform: none; pointer-events: auto; visibility: visible;
     transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s;
 }
-body.dark-mode #profileHub { background: #18222e; border-color: rgba(255,255,255,0.40); box-shadow: 0 24px 54px -20px rgba(0,0,0,0.55); }
+body.dark-mode #profileHub { background: #141c27; border-color: rgba(255,255,255,0.12); box-shadow: 0 26px 56px -22px rgba(0,0,0,0.6); }
 @media (max-width: 1023px) { #profileHub { top: 58px; right: 10px; } }
 @media (prefers-reduced-motion: reduce) { #profileHub { transition-duration: 0.01ms; } }
 
-/* ---- шапка панели: аватар + имя + статус ---- */
+/* ---- шапка панели: тёмный герой (аватар + имя + статус + KPI-полоска) ----
+   Один в один язык «Панели управления» Портфелей (.pfp-panel в portfolios.css):
+   тот же градиент 120deg, тот же декоративный слой (мятный glow, синий glow, сетка
+   точек под маской). Тема ему не нужна — герой тёмный всегда, как и на Портфелях. */
 .ph-head {
-    flex-shrink: 0; display: flex; align-items: center; gap: 12px;
-    padding: 18px 18px 15px; border-bottom: 1px solid rgba(24,38,60,0.07);
-    border-radius: 26px 26px 0 0;
-    background: radial-gradient(120% 200% at 0% 0%, rgba(59,130,246,0.10), transparent 60%);
+    position: relative; overflow: hidden; flex-shrink: 0;
+    display: flex; flex-direction: column; gap: 13px;
+    padding: 16px 18px 15px;
+    border-radius: calc(var(--phr) - 1px) calc(var(--phr) - 1px) 0 0;
+    background: linear-gradient(120deg, #0c1219 0%, #182231 55%, #131e2b 100%);
 }
-body.dark-mode .ph-head { border-color: rgba(255,255,255,0.07); background: radial-gradient(120% 200% at 0% 0%, rgba(59,130,246,0.18), transparent 60%); }
+.ph-fx { position: absolute; inset: 0; z-index: 0; overflow: hidden; border-radius: inherit; pointer-events: none; }
+.ph-fx i { position: absolute; display: block; }
+.ph-fx .g1 { width: 260px; height: 190px; top: -110px; right: 10%; background: radial-gradient(closest-side, rgba(52,211,153,0.22), transparent 70%); filter: blur(6px); }
+.ph-fx .g2 { width: 230px; height: 170px; bottom: -120px; left: 14%; background: radial-gradient(closest-side, rgba(90,124,255,0.18), transparent 70%); filter: blur(8px); }
+.ph-fx .mesh {
+    inset: 0; background-image: radial-gradient(rgba(255,255,255,0.10) 1px, transparent 1.4px); background-size: 18px 18px;
+    -webkit-mask-image: linear-gradient(100deg, transparent 40%, rgba(0,0,0,0.5) 74%, rgba(0,0,0,0.8));
+    mask-image: linear-gradient(100deg, transparent 40%, rgba(0,0,0,0.5) 74%, rgba(0,0,0,0.8));
+}
+.ph-head-top, .ph-strip { position: relative; z-index: 1; }
+.ph-head-top { display: flex; align-items: center; gap: 12px; }
 .ph-ava {
     position: relative; overflow: hidden;
-    width: 46px; height: 46px; border-radius: 15px; flex-shrink: 0;
+    width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0;
     display: grid; place-items: center; color: #fff;
     background: linear-gradient(135deg, #3b82f6, #6366f1);
-    box-shadow: 0 10px 20px -8px rgba(59,130,246,0.55);
-    font-family: 'Inter', sans-serif; font-weight: 800; font-size: 16px; letter-spacing: 0.02em;
+    box-shadow: inset 0 0 0 1.5px rgba(255,255,255,0.28);
+    font-family: 'Inter', sans-serif; font-weight: 800; font-size: 15px; letter-spacing: 0.02em;
 }
-.ph-ava.guest { background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(139,92,246,0.12)); color: #3b82f6; box-shadow: none; }
-.ph-ava svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; }
+/* гость: на тёмном герое светлая заливка прежнего аватара не читалась */
+.ph-ava.guest { background: rgba(255,255,255,0.08); color: #8ab4ff; box-shadow: inset 0 0 0 1px rgba(138,180,255,0.3); }
+.ph-ava svg { width: 21px; height: 21px; stroke: currentColor; fill: none; stroke-width: 2; }
 .ph-id { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.ph-name { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 16px; color: #1b2433; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-body.dark-mode .ph-name { color: #f4f8fd; }
-.ph-mail { font-size: 11.5px; font-weight: 600; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* статус-пилюля: «локально» сейчас, «онлайн» после подключения базы */
+/* семейство (сериф 400) задаёт общий список заголовков в typography-tokens.css */
+.ph-name { font-size: 19px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.dark-mode .ph-name { color: #fff; }
+.ph-mail { font-size: 11.5px; font-weight: 600; color: rgba(255,255,255,0.55); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* статус-пилюля: «локально» ↔ «облако» (зелёная) */
 .ph-pill {
-    flex-shrink: 0; align-self: flex-start; display: inline-flex; align-items: center; gap: 5px;
+    flex-shrink: 0; align-self: center; display: inline-flex; align-items: center; gap: 5px;
     padding: 4px 8px; border-radius: 99px; cursor: help;
     font-size: 9px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
-    color: #8a94a6; background: rgba(148,163,184,0.13);
+    color: rgba(255,255,255,0.62); background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
 }
 .ph-pill i { width: 6px; height: 6px; border-radius: 99px; background: #f59e0b; }
-body.dark-mode .ph-pill { color: #9fb1c6; background: rgba(255,255,255,0.07); }
+body.dark-mode .ph-pill { color: rgba(255,255,255,0.62); background: rgba(255,255,255,0.08); }
+
+/* ---- KPI-полоска героя: капитал · портфелей · тариф ----
+   Подпись ПОД числом, а не сбоку: на 380px три пары «число + метка в строку»
+   налезали друг на друга. Разделители — левые грани ячеек. */
+.ph-strip { display: flex; gap: 0; }
+.ph-strip[hidden] { display: none; }
+.ph-strip-i {
+    flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;
+    padding-left: 13px; border-left: 1px solid rgba(255,255,255,0.12);
+}
+/* Капиталу — половина ширины сверх равной доли: он единственный растёт с числом
+   разрядов, а обрезанная сумма («127 584 3…») хуже, чем никакой. Соседям хватает:
+   там счётчик портфелей и слово «Базовый». */
+.ph-strip-i:first-child { flex: 1.5; padding-left: 0; border-left: 0; }
+.ph-strip-i b {
+    font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 15px; font-weight: 700;
+    color: #fff; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* «Базовый» — слово, а не число: моно ему не по адресу */
+.ph-strip-i b.txt { font-family: 'Inter', sans-serif; font-size: 14px; }
+.ph-strip-i span {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    color: rgba(255,255,255,0.5); white-space: nowrap;
+}
 
 /* ---- список секций-аккордеонов ---- */
 .ph-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; display: flex; flex-direction: column; gap: 8px; padding: 12px 12px 6px; }
@@ -195,10 +239,15 @@ body.dark-mode .ph-pill { color: #9fb1c6; background: rgba(255,255,255,0.07); }
 }
 .ph-grp:first-child { margin-top: 0; }
 body.dark-mode .ph-grp { color: #7d8da0; }
-.ph-sec { flex-shrink: 0; border: 1px solid rgba(24,38,60,0.08); border-radius: 16px; background: #fbfcfe; transition: border-color 0.15s, background 0.15s; }
-.ph-sec.on { border-color: rgba(59,130,246,0.35); background: #fff; }
-body.dark-mode .ph-sec { border-color: rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); }
-body.dark-mode .ph-sec.on { border-color: rgba(96,165,250,0.4); background: rgba(255,255,255,0.05); }
+/* Секция — не карточка с рамкой, а строка списка: восемь бордюров подряд под
+   тёмным героем дробили панель на восемь «плиток». Рамка появляется только у
+   РАСКРЫТОЙ секции — там она отделяет тело от соседей, и это единственное место,
+   где она что-то значит. Синий — акцент R7 Портфелей (#4453ef). */
+.ph-sec { flex-shrink: 0; border: 1px solid transparent; border-radius: 16px; background: transparent; transition: border-color 0.15s, background 0.15s; }
+.ph-sec:hover:not(.on) { background: rgba(24,38,60,0.04); }
+.ph-sec.on { border-color: #e7ecf3; background: #fbfcfe; }
+body.dark-mode .ph-sec:hover:not(.on) { background: rgba(255,255,255,0.05); }
+body.dark-mode .ph-sec.on { border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); }
 
 .ph-row { display: flex; align-items: center; gap: 11px; width: 100%; padding: 11px 12px; cursor: pointer; border: none; background: transparent; text-align: left; border-radius: 16px; font-family: inherit; }
 .ph-row-ic { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; flex-shrink: 0; background: rgba(59,130,246,0.10); color: #3b82f6; }
@@ -330,8 +379,8 @@ body.dark-mode .ph-plan-badge { color: #7fb2ff; }
 .ph-plan .ph-hint { margin-top: 9px; margin-bottom: 0; }
 
 /* ---- футер: примечание сверху, ряд одинаковых кнопок снизу ---- */
-.ph-foot { flex-shrink: 0; display: flex; flex-direction: column; align-items: stretch; gap: 9px; padding: 11px 16px 15px; border-top: 1px solid rgba(24,38,60,0.07); }
-body.dark-mode .ph-foot { border-color: rgba(255,255,255,0.07); }
+.ph-foot { flex-shrink: 0; display: flex; flex-direction: column; align-items: stretch; gap: 9px; padding: 11px 16px 15px; border-top: 1px solid #e7ecf3; }
+body.dark-mode .ph-foot { border-color: rgba(255,255,255,0.1); }
 .ph-note { min-width: 0; font-size: 10px; line-height: 1.4; font-weight: 600; color: #b6c0cd; }
 body.dark-mode .ph-note { color: #64748b; }
 #phFootBtn { display: flex; gap: 8px; }

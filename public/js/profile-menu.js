@@ -186,10 +186,17 @@
         hub.setAttribute('role', 'dialog');
         hub.setAttribute('aria-label', 'Личный кабинет');
         hub.innerHTML =
+            // Шапка — тёмный герой на языке «Портфелей» (.pfp-panel): тот же градиент,
+            // тот же декоративный слой glow+сетка точек в .ph-fx. Под именем — полоска
+            // KPI (.ph-strip), чтобы кабинет что-то показывал, а не только прятал.
             '<div class="ph-head">' +
-                '<div class="ph-ava" id="phAva"></div>' +
-                '<div class="ph-id"><div class="ph-name" id="phName"></div><div class="ph-mail" id="phMail"></div></div>' +
-                '<div class="ph-pill" id="phPill" title="Данные хранятся в этом браузере. Синхронизация и вход с любого устройства появятся после подключения базы данных."><i></i>локально</div>' +
+                '<div class="ph-fx" aria-hidden="true"><i class="g1"></i><i class="g2"></i><i class="mesh"></i></div>' +
+                '<div class="ph-head-top">' +
+                    '<div class="ph-ava" id="phAva"></div>' +
+                    '<div class="ph-id"><div class="ph-name" id="phName"></div><div class="ph-mail" id="phMail"></div></div>' +
+                    '<div class="ph-pill" id="phPill" title="Данные хранятся в этом браузере. Синхронизация и вход с любого устройства появятся после подключения базы данных."><i></i>локально</div>' +
+                '</div>' +
+                '<div class="ph-strip" id="phStrip"></div>' +
             '</div>' +
             // Разделы сгруппированы по смыслу: шесть равнозначных строк подряд не давали
             // понять, где искать пароль, а где выгрузку данных. Групп ровно три, и в каждой
@@ -392,6 +399,53 @@
         if (backFab) backFab.classList.toggle('on', navHist.length > 0);
     }
 
+    // ---------- KPI-полоска героя ----------
+    // Живых котировок у кабинета нет (они в замыкании portfolios.js), поэтому капитал
+    // берём из ПОСЛЕДНЕГО дневного снимка pf_snapshots_v1 — его пишет вкладка «Портфели»
+    // при живых ценах. Число честное, но может быть вчерашним: подпись «капитал», а не
+    // «сейчас». Нет снимков (портфель только создан) — ячейку не показываем вовсе.
+    function phPlural(n, one, few, many) {
+        var a = Math.abs(n) % 100, b = a % 10;
+        if (a > 10 && a < 20) return many;
+        if (b > 1 && b < 5) return few;
+        if (b === 1) return one;
+        return many;
+    }
+    function phStats() {
+        var items = [], snaps = {};
+        try {
+            var st = JSON.parse(localStorage.getItem('portfolios_v1')) || {};
+            items = (Array.isArray(st.items) ? st.items : []).filter(function (p) { return !p.hidden; });
+            snaps = JSON.parse(localStorage.getItem('pf_snapshots_v1')) || {};
+        } catch (e) { return null; }
+        if (!items.length) return null;
+        var cap = 0, hasCap = false;
+        items.forEach(function (p) {
+            var m = snaps[p.id]; if (!m) return;
+            var last = null;
+            for (var d in m) if (last == null || d > last) last = d;
+            if (last != null && isFinite(m[last])) { cap += m[last]; hasCap = true; }
+        });
+        return { n: items.length, cap: hasCap ? cap : null };
+    }
+    function renderStrip() {
+        var el = hub && hub.querySelector('#phStrip');
+        if (!el) return;
+        var st = phStats();
+        // гостю и пустому кабинету полоска не нужна — три прочерка ничего не сообщают
+        if (!st) { el.innerHTML = ''; el.hidden = true; return; }
+        el.hidden = false;
+        var cells = [];
+        if (st.cap != null) {
+            cells.push('<div class="ph-strip-i"><b>' + Math.round(st.cap).toLocaleString('ru-RU') + ' ₽</b>' +
+                '<span>капитал</span></div>');
+        }
+        cells.push('<div class="ph-strip-i"><b>' + st.n + '</b>' +
+            '<span>' + phPlural(st.n, 'портфель', 'портфеля', 'портфелей') + '</span></div>');
+        cells.push('<div class="ph-strip-i"><b class="txt">Базовый</b><span>тариф</span></div>');
+        el.innerHTML = cells.join('');
+    }
+
     // ---------- рендер динамики (шапка панели, сабтайтлы, футер, аватар в шапке сайта) ----------
     function renderIdentity() {
         if (!hub || !btn) return;
@@ -451,6 +505,7 @@
                 ? 'Данные синхронизируются с облаком — можно входить с любого устройства.'
                 : 'Задел под личный кабинет — данные пока хранятся в этом браузере.';
         }
+        renderStrip();
 
         // сабтайтл «Профиль»
         var subProf = hub.querySelector('#phSubProf');

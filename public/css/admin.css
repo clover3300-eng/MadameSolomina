@@ -506,9 +506,10 @@ body.adm-modal-open { overflow: hidden; }
 }
 .ph-adm:hover { background: rgba(59, 130, 246, 0.14); transform: translateY(-1px); }
 .ph-adm svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
-/* пилюля «облако» в шапке кабинета */
-#profileHub .ph-pill.cloud { background: rgba(16, 185, 129, 0.12); color: #059669; }
-#profileHub .ph-pill.cloud i { background: #10b981; }
+/* пилюля «облако» в шапке кабинета: шапка теперь тёмный герой (profile-menu.css),
+   прежний #059669 на ней не читался — берём мятный R7 с тёмных панелей Портфелей */
+#profileHub .ph-pill.cloud { background: rgba(75, 227, 160, 0.14); color: #4be3a0; border-color: rgba(75, 227, 160, 0.32); }
+#profileHub .ph-pill.cloud i { background: #4be3a0; }
 
 /* кнопка формы на Главной: занятое состояние + зелёная заметка */
 .hr-submit.is-busy { opacity: 0.75; pointer-events: none; }

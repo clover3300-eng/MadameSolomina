@@ -91,6 +91,7 @@ body { font-family: var(--font-text); }
 .rbx-hero-title,                                        /* Ребаланс */
 .btx-title, .bt2-ttl, #btResults .bt-assets-title,      /* Тест */
 .adm-hero-title, .adm-card-t,                           /* Админка */
+.ph-name,                                               /* Личный кабинет */
 .company-hero-name,                                     /* Компания */
 .mh-title,                                              /* Рынок */
 .nd-hdr-title,                                          /* Расчёт */
