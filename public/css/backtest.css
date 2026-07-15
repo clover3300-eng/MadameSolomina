@@ -57,7 +57,8 @@ body.dark-mode #panel-backtest {
     position: relative;
     background: var(--bt-card);
     border: 1.5px solid #edf0f6;
-    border-radius: 26px;
+    /* скругление в языке карточки регистрации Главной (.hg-auth) */
+    border-radius: 14px;
     box-shadow: 0 14px 34px rgba(28, 42, 66, .05), 0 2px 6px rgba(28, 42, 66, .03);
     padding: 24px;
     margin: 0;
@@ -695,7 +696,7 @@ body.dark-mode .btb-pill.active { background: rgba(255, 255, 255, 0.14); color: 
 #btResults .bt-assets-card {
     background: #ffffff;
     border: 1.5px solid #d8dfeb;
-    border-radius: 22px;
+    border-radius: 14px;
     box-shadow: 0 12px 32px rgba(28, 42, 66, .08), 0 2px 8px rgba(28, 42, 66, .04);
     overflow: hidden;
     margin-bottom: 16px;
@@ -929,7 +930,7 @@ body.dark-mode #btResults .bt-pay-sub .bt-asset-price { color: #9aa8bc; }
 #btResults .bt-pay-empty {
     background: #ffffff;
     border: 1.5px dashed #d8dfeb;
-    border-radius: 22px;
+    border-radius: 14px;
     padding: 34px 20px;
     text-align: center;
     font-size: 13px; color: #8593a6;
@@ -1054,7 +1055,7 @@ body.dark-mode .bt-stale-note b { color: #f0b357; }
     position: relative;   /* якорь для ховер-тултипа графика */
     background: #ffffff;
     border: 1.5px solid #d8dfeb;
-    border-radius: 22px;
+    border-radius: 14px;
     box-shadow: 0 12px 32px rgba(28, 42, 66, .08), 0 2px 8px rgba(28, 42, 66, .04);
     padding: 18px 20px;
     margin-bottom: 14px;
@@ -1178,7 +1179,7 @@ body.dark-mode .bt-imoex-leg .v.neg { color: #F87171; }
     max-width: 400px;
     background: #ffffff;
     border: 1.5px solid #d8dfeb;
-    border-radius: 20px;
+    border-radius: 14px;
     box-shadow: 0 10px 26px rgba(28, 42, 66, .07), 0 2px 8px rgba(28, 42, 66, .04);
     padding: 16px 18px;
     margin-bottom: 14px;

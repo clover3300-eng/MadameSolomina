@@ -18,7 +18,9 @@
 
     var LS_PROFILE = 'home_profile_v1';
     var LS_SEEN = 'supa_seen_ping_v1';       // троттлинг last_seen_at
-    var SEEN_EVERY = 30 * 60 * 1000;         // не чаще раза в 30 минут
+    // Админка считает «онлайн» = last_seen_at свежее 5 минут, поэтому пингуем
+    // заметно чаще этого окна (был раз в 30 минут — активные висели «оффлайн»)
+    var SEEN_EVERY = 4 * 60 * 1000;          // не чаще раза в 4 минуты
 
     var lib = window.supabase;               // UMD-сборка из js/vendor/
     var url = window.SUPABASE_URL || '';
@@ -270,6 +272,15 @@
 
     function signOut(opts) {
         opts = opts || {};
+        // Сбрасываем троттлинг last_seen_at: при следующем входе пинг должен
+        // уйти сразу, иначе после «выход → вход» админка держит юзера оффлайн
+        try {
+            if (S.session) {
+                var marks = JSON.parse(localStorage.getItem(LS_SEEN)) || {};
+                delete marks[S.session.user.id];
+                localStorage.setItem(LS_SEEN, JSON.stringify(marks));
+            }
+        } catch (e) {}
         var pre = opts.silent ? Promise.resolve() : logEvent('logout');
         // Дожимаем несохранённые изменения в облако перед выходом
         if (window.supaSync && typeof window.supaSync.flush === 'function') {
@@ -404,6 +415,11 @@
         document.addEventListener('visibilitychange', function () {
             if (!document.hidden) pingSeen();
         });
+        // …и тикером, пока вкладка видима: чаще пятиминутного окна «онлайн»
+        // в админке, реальную частоту записи держит троттлинг SEEN_EVERY
+        setInterval(function () {
+            if (!document.hidden) pingSeen();
+        }, 2 * 60 * 1000);
     } else {
         S.ready = true;
         if (window.SUPABASE_URL === '') {

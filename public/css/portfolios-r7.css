@@ -1499,7 +1499,25 @@ body.dark-mode .pf-skel, .pfd-item.pfd-thm-dark .pf-skel {
 .pfpl-add:hover { background: linear-gradient(#6672f8, #4f5ef4); }
 .pfpl-add:active { transform: translateY(1px); }
 .pfpl-add svg { width: 13px; height: 13px; }
-.pfpl-list { display: flex; flex-direction: column; margin-top: 4px; }
+.pfpl-list { display: flex; flex-direction: column; }
+/* подписи колонок один раз над списком — сетка 1в1 со строкой .pfpl-row
+   («Портфель» накрывает иконку и имя), стиль — заголовки колонок проекта */
+.pfpl-cols {
+    display: grid;
+    grid-template-columns: auto minmax(150px, 1.3fr) minmax(120px, 1fr) minmax(130px, 1.1fr) minmax(110px, 1fr) 132px auto;
+    gap: 16px; align-items: center;
+    margin-top: 6px; padding: 0 2px 9px;
+    border-bottom: 1px solid #eef2f7;
+}
+body.dark-mode .pfpl-cols { border-bottom-color: rgba(255, 255, 255, 0.08); }
+.pfpl-cols span {
+    font-family: var(--font-ui, 'Inter', sans-serif); font-size: var(--fs-th, 11px);
+    font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--c-th, #94A3B8); white-space: nowrap; min-width: 0;
+}
+.pfpl-cols .c-name { grid-column: 1 / 3; }
+/* шестерёнка в строках 38px — держим её колонку и в шапке */
+.pfpl-cols .c-gear { width: 38px; }
 .pfpl-row {
     display: grid;
     grid-template-columns: auto minmax(150px, 1.3fr) minmax(120px, 1fr) minmax(130px, 1.1fr) minmax(110px, 1fr) 132px auto;
@@ -1526,10 +1544,6 @@ body.dark-mode .pfpl-row:hover { background: rgba(255, 255, 255, 0.04); }
 body.dark-mode .pfpl-id b { color: #f4f8fd; }
 .pfpl-id i { font-family: 'Inter', sans-serif; font-style: normal; font-size: 11px; font-weight: 600; color: #8494a7; }
 .pfpl-kpi { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.pfpl-kpi i {
-    font-family: 'Inter', sans-serif; font-style: normal; font-size: 10px; font-weight: 700;
-    letter-spacing: 0.07em; text-transform: uppercase; color: #8494a7;
-}
 .pfpl-kpi b {
     font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 14.5px; font-weight: 700;
     color: #0f172a; white-space: nowrap;
@@ -1558,15 +1572,19 @@ body.dark-mode .pfpl-spark-svg.flat line { stroke: rgba(255, 255, 255, 0.2); }
 .pfpl-gear svg { width: 16px; height: 16px; }
 /* узкий блок (span<9): прячем «Вложено» и спарклайн, ряды не ломаются.
    Дети ряда по порядку: 1 иконка · 2 имя · 3 стоимость · 4 доходность ·
-   5 вложено · 6 спарклайн · 7 шестерёнка */
+   5 вложено · 6 спарклайн · 7 шестерёнка. Шапка .pfpl-cols зеркалит
+   строку: 1 портфель (span 2) · 2 стоимость · 3 доходность · 4 вложено ·
+   5 динамика · 6 колонка шестерёнки */
 .pf-plistblk { container-type: inline-size; }
 @container (max-width: 760px) {
-    .pfpl-row { grid-template-columns: auto minmax(130px, 1.3fr) minmax(110px, 1fr) minmax(120px, 1fr) auto; }
+    .pfpl-row, .pfpl-cols { grid-template-columns: auto minmax(130px, 1.3fr) minmax(110px, 1fr) minmax(120px, 1fr) auto; }
     .pfpl-row > :nth-child(5), .pfpl-row > .pfpl-spark { display: none; }
+    .pfpl-cols > :nth-child(4), .pfpl-cols > .c-spark { display: none; }
 }
 @container (max-width: 470px) {
-    .pfpl-row { grid-template-columns: auto minmax(0, 1.3fr) minmax(90px, 1fr) auto; }
+    .pfpl-row, .pfpl-cols { grid-template-columns: auto minmax(0, 1.3fr) minmax(90px, 1fr) auto; }
     .pfpl-row > :nth-child(4) { display: none; }
+    .pfpl-cols > :nth-child(3) { display: none; }
     .pfpl-head-r .pfpl-sort { display: none; }
 }
 

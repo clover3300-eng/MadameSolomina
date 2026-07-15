@@ -99,6 +99,7 @@ body { font-family: var(--font-text); }
 .cx-rows.r5 .cxm-q, .cx-rows.r5 .cxm-tn,                /* Расчёт — выбор режима */
 .placeholder-title, .empty-title, .dp-empty-title,      /* пустые состояния */
 #pfRightCol .portfolio-coupon-title,                    /* Портфель */
+.pf-table-thead .ti b,                                  /* Портфель — заголовки таблиц ОФЗ/акций */
 .ofz-analogs-title,
 .hr-title {                                             /* Главная — эталон */
     font-family: var(--font-title);

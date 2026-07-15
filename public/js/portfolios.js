@@ -1876,7 +1876,10 @@
     // сиды подвкладок: [id, col, span] — повторяют прежние статичные раскладки
     // pfxTabBodyHtml, только теперь это стартовая точка конструктора, а не бетон
     var PFX_TAB_SEEDS = {
-        ports: [['plist', 1, 12], ['pstruct', 1, 6], ['psum', 7, 6], ['pdetail', 1, 12]],
+        // просто и читаемо: сводный список сверху, ниже — полные составы.
+        // Кольцо структуры и сводные плитки дублировали те же цифры третий
+        // раз — из сида убраны, но доступны из пикера виджетов (pstruct/psum)
+        ports: [['plist', 1, 12], ['pdetail', 1, 12]],
         analytics: [['cap', 1, 8], ['alloc', 9, 4], ['yield', 1, 4], ['movers', 5, 4], ['conc', 9, 4], ['assets', 1, 8], ['idx', 9, 4]],
         reports: [['reports', 1, 6], ['snaps', 7, 6]],
         divs: [['divs', 1, 4], ['kpi:next', 5, 4], ['passive', 9, 4], ['cal', 1, 8], ['calm', 9, 4]],
@@ -7662,23 +7665,33 @@
             return '<button type="button" class="pft-kind' + (pfPlistSort === x[0] ? ' on' : '') + '" onclick="pfPlistSetSort(\'' + x[0] + '\', event)">' + x[1] + '</button>';
         }).join('') + '</div>';
         var add = '<button type="button" class="pfpl-add" onclick="pfAddPortfolio()" title="Создать новый портфель">' + PFD_PLUS_SVG + '<span>Новый портфель</span></button>';
-        var body = '<div class="pfpl-list">' + rows.map(function (r) {
+        // подписи колонок — ОДИН раз над списком (эталон — таблица ОФЗ,
+        // см. table-header-data-convention), а не в каждой строке заново
+        var cols = '<div class="pfpl-cols" aria-hidden="true">' +
+            '<span class="c-name">Портфель</span>' +
+            '<span>Стоимость</span>' +
+            '<span>Доходность</span>' +
+            '<span>Вложено</span>' +
+            '<span class="c-spark">Динамика</span>' +
+            '<span class="c-gear"></span>' +
+        '</div>';
+        var body = cols + '<div class="pfpl-list">' + rows.map(function (r) {
             var p = r.p, c = r.c, ac = colorVal(p.color);
             var n = (p.holdings || []).filter(function (h) { return aggHolding(h).qty > 0; }).length;
             var has = c.invested > 0;
-            function kpi(l, v, cls, extra) {
-                return '<span class="pfpl-kpi"><i>' + l + '</i><b class="' + (cls || '') + '">' + v + '</b>' + (extra || '') + '</span>';
+            function kpi(v, cls, extra) {
+                return '<span class="pfpl-kpi"><b class="' + (cls || '') + '">' + v + '</b>' + (extra || '') + '</span>';
             }
             var yld = has
-                ? kpi('Доходность', (c.pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(c.pnl)), c.pnl >= 0 ? 'pos' : 'neg',
+                ? kpi((c.pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(c.pnl)), c.pnl >= 0 ? 'pos' : 'neg',
                     '<em class="' + (c.pnlPct >= 0 ? 'pos' : 'neg') + '">' + fmtPct(c.pnlPct) + '</em>')
-                : kpi('Доходность', '—', 'muted');
+                : kpi('—', 'muted');
             return '<div class="pfpl-row" role="button" tabindex="0" onclick="pfxPortSettings(\'' + p.id + '\')" title="Открыть настройки портфеля">' +
                 '<span class="pfpl-ic" style="--pc:' + ac + '">' + PFPL_CASE_SVG + '</span>' +
                 '<span class="pfpl-id"><b>' + esc(p.name) + '</b><i>' + n + ' ' + plural(n, 'актив', 'актива', 'активов') + '</i></span>' +
-                kpi('Стоимость', fmtRub(c.value)) +
+                kpi(fmtRub(c.value)) +
                 yld +
-                kpi('Вложено', has ? fmtRub(c.invested) : '—', has ? '' : 'muted') +
+                kpi(has ? fmtRub(c.invested) : '—', has ? '' : 'muted') +
                 '<span class="pfpl-spark" data-pid="' + p.id + '">' + pfPlistSparkSvg(p) + '</span>' +
                 '<button type="button" class="pfc-act pfpl-gear" onclick="event.stopPropagation(); pfxPortSettings(\'' + p.id + '\')" title="Настройки портфеля" aria-label="Настройки портфеля">' + PFPL_GEAR_SVG + '</button>' +
             '</div>';

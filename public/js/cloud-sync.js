@@ -214,8 +214,21 @@
                             }
                             m.keys[k] = row.updated_at;
                         }
+                    } else if (m.keys[k]) {
+                        // ключ раньше был в облаке, а теперь его нет — данные стёрли
+                        // с другого устройства или админ («Очистить данные»).
+                        // Убираем и локальную копию, иначе она уедет обратно наверх
+                        // и удаление «не сработает».
+                        delete m.keys[k];
+                        if (localStr != null) {
+                            applying = true;
+                            try { localStorage.removeItem(k); } catch (e) {}
+                            applying = false;
+                            changed = true;
+                        }
                     } else if (localStr != null) {
-                        // в облаке ключа нет — поднимаем локальный (первый вход, новый аккаунт)
+                        // в облаке ключа нет и не было — поднимаем локальный
+                        // (первый вход, новый аккаунт)
                         pending[k] = true;
                     }
                 });
@@ -259,11 +272,25 @@
         if (Object.keys(pending).length) { clearTimeout(pushTimer); pushPending(); }
     });
 
+    // Стереть данные и на этом устройстве, не отправляя удаления в облако —
+    // для админской «Очистки данных» собственного аккаунта (иначе локальная
+    // копия тут же перезальётся обратно). Вызывающий сам делает reload:
+    // модули держат данные в памяти и при следующем сохранении воскресят их.
+    function wipeLocal() {
+        clearTimeout(pushTimer);
+        pending = {};
+        applying = true;
+        WATCH.forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
+        try { localStorage.removeItem(META_KEY); } catch (e) {}
+        applying = false;
+    }
+
     window.supaSync = {
         onStartup: function () { pull('startup'); },
         onSignIn: function () { pull('signin'); },
         onSignOut: onSignOut,
         flush: flush,
+        wipeLocal: wipeLocal,
         WATCH: WATCH
     };
 })();

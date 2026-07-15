@@ -103,7 +103,29 @@
             ? '<img class="adm-ava-img" src="' + esc(p.tg_photo_url) + '" alt="" onerror="this.remove()">'
             : '';
     }
-    function isOnline(p) { return p.last_seen_at && (Date.now() - new Date(p.last_seen_at).getTime()) < 5 * 60 * 1000; }
+    // «Онлайн» = активность свежее 5 минут И последнее auth-событие — не выход.
+    // Иначе после «Выйти» пользователь ещё до 5 минут горел бы онлайн:
+    // last_seen_at остаётся свежим, гасит его только событие logout.
+    var lastAuthEv = {};   // uid -> { ev: 'login'|'logout'|'register', ts }
+    function rebuildAuthIndex() {
+        lastAuthEv = {};
+        // D.events отсортированы новые→старые: первое попавшееся и есть свежайшее
+        for (var i = 0; i < D.events.length; i++) {
+            var e = D.events[i];
+            if (!e.user_id || lastAuthEv[e.user_id]) continue;
+            if (e.event === 'login' || e.event === 'logout' || e.event === 'register') {
+                lastAuthEv[e.user_id] = { ev: e.event, ts: new Date(e.created_at).getTime() };
+            }
+        }
+    }
+    function isOnline(p) {
+        if (!p.last_seen_at) return false;
+        var seen = new Date(p.last_seen_at).getTime();
+        if (Date.now() - seen >= 5 * 60 * 1000) return false;
+        var a = lastAuthEv[p.id];
+        if (a && a.ev === 'logout' && a.ts >= seen) return false;
+        return true;
+    }
     function isMe(p) { return supa().session && p.id === supa().session.user.id; }
 
     var EVENT_META = {
@@ -195,6 +217,7 @@
             D.profiles = res[0].data || [];
             D.dataMeta = res[1].data || [];
             D.events = res[2].data || [];
+            rebuildAuthIndex();
             D.eventsTotal = res[3].count || 0;
             D.eventsHasMore = D.events.length < D.eventsTotal;
             D.events24 = res[4].count || 0;
@@ -495,6 +518,10 @@
     // одна карта с внутренним разделителем (как секции rbx-card):
     // слева график с переключателями, справа лента событий
     function renderOverview() {
+        // Поллинг сбрасывает D.logins в null и дозагружает их только с открытым
+        // Обзором. Если «Входы» выбраны, а раздел открыли позже, без этого
+        // вызова карточка навсегда застревала на «Загружаем входы…».
+        if (chartKind === 'login' && D.logins === null) loadLogins();
         var byUser = dataByUser();
         var withPf = Object.keys(byUser).filter(function (uid) {
             return byUser[uid].some(function (r) { return r.key === 'portfolios_v1'; });
@@ -1023,6 +1050,18 @@
         client().from('user_data').delete().eq('user_id', id)
             .then(function (res) {
                 if (res.error) { toast(supa().errRu(res.error), true); return; }
+                // Чистим свой аккаунт: локальная копия и модули в памяти тут же
+                // перезальют данные обратно в облако — стираем её и перезагружаемся
+                // (route-hash вернёт на эту же вкладку). Чужие устройства подхватят
+                // удаление при следующем pull (см. cloud-sync.js).
+                if (isMe({ id: id }) && window.supaSync && window.supaSync.wipeLocal) {
+                    supa().logEvent('admin_clear_data', { target: id, target_email: supa().session.user.email })
+                        .then(function () {
+                            window.supaSync.wipeLocal();
+                            location.reload();
+                        });
+                    return;
+                }
                 D.dataMeta = D.dataMeta.filter(function (r) { return r.user_id !== id; });
                 if (modalUser && modalUser.id === id) { modalData = []; renderModal(); }
                 var em = (D.profiles.filter(function (p) { return p.id === id; })[0] || {}).email;

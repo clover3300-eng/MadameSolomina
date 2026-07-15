@@ -174,7 +174,7 @@
    и порядок обхода с клавиатуры, и чтение скринридером. */
 .rbx-grid {
     display: grid;
-    grid-template-columns: minmax(250px, 0.95fr) minmax(390px, 1.55fr) minmax(0, 2.1fr);
+    grid-template-columns: minmax(330px, 1.35fr) minmax(380px, 1.5fr) minmax(0, 1.9fr);
     /* каждый блок — своей высоты: карточки самостоятельные, без общего низа */
     align-items: start;
     gap: 16px;
