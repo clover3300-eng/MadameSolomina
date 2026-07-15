@@ -192,45 +192,52 @@ body.dark-mode .rbx-block {
 }
 
 /* ── Правая колонна: переключатель ОТДЕЛЬНО, карточка таблиц под ним ──
-   Переключатель намеренно не карточка и не пилюля: плоский ряд у волосяной
-   линии, в языке манифест-колонки слева (монохром, прописные вразрядку,
-   активный — плоский чёрный прямоугольник радиусом 4px, как .rbx-wc-btn).
-   Так он читается как заголовок раздела, а не как часть таблицы. */
+   «Витрина»: не пилюля и не плашка, а оглавление раздела. Названия — той же
+   Georgia, что заголовок манифест-колонки слева (шрифт задаётся в общем списке
+   заголовков typography-tokens.css), активное подчёркнуто чёрной чертой прямо
+   поверх волосяной линии ряда. Связь колонн держится шрифтом, а не повтором
+   деталей: прописные вразрядку и чёрная заливка кнопки делали ряд крикливым. */
 .rbx-cands { min-width: 0; display: flex; flex-direction: column; }
 .rbx-block-cands { padding: 16px 18px 18px; min-width: 0; }
 .rbr-tabs {
-    display: flex; align-items: center; gap: 4px;
-    padding: 0 2px 12px;
+    display: flex; align-items: flex-end; gap: 22px;
+    padding: 0 2px 10px;
     margin-bottom: 14px;
     border-bottom: 1px solid rgba(18, 22, 31, 0.09);
 }
 body.dark-mode .rbr-tabs { border-bottom-color: rgba(255, 255, 255, 0.08); }
 .rbr-tab {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 8px 13px;
-    border: none; border-radius: 4px;
+    display: inline-flex; align-items: baseline; gap: 7px;
+    /* отрицательный margin ровно на padding ряда + его линию (10 + 1):
+       подчёркивание активной вкладки ложится НА волосяную линию, а не над ней */
+    padding: 0 0 7px; margin-bottom: -11px;
+    border: none; border-bottom: 2px solid transparent;
     background: transparent; cursor: pointer;
-    font-family: 'Inter', sans-serif;
-    font-size: 10.5px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.16em;
-    color: #8b96a6; white-space: nowrap;
-    transition: background 0.2s ease, color 0.2s ease;
+    white-space: nowrap;
+    transition: border-color 0.2s ease;
 }
-.rbr-tab:hover { color: #12161f; }
-.rbr-tab.act { background: #12161f; color: #ffffff; }
-body.dark-mode .rbr-tab { color: #6b7889; }
-body.dark-mode .rbr-tab:hover { color: #e8edf4; }
-body.dark-mode .rbr-tab.act { background: #e8edf4; color: #12161f; }
-/* счётчик — тихая моно-цифра, без плашки: плашка вернула бы «интерфейс» в ряд */
+.rbr-tab .t {
+    font-size: 18px; line-height: 1.15; color: #b3bbc8;
+    transition: color 0.2s ease;
+}
+.rbr-tab:hover .t { color: #6b7789; }
+.rbr-tab.act { border-bottom-color: #12161f; }
+.rbr-tab.act .t { color: #12161f; }
+body.dark-mode .rbr-tab .t { color: #5f6b7d; }
+body.dark-mode .rbr-tab:hover .t { color: #8b98ab; }
+body.dark-mode .rbr-tab.act { border-bottom-color: #e8edf4; }
+body.dark-mode .rbr-tab.act .t { color: #F1F5F9; }
+/* счётчик — тихая моно-цифра сбоку, без плашки */
 .rbr-tab .cnt {
     font-family: var(--font-num, 'JetBrains Mono', monospace);
     font-size: 11px; font-weight: 600; letter-spacing: 0;
-    color: #b3bbc8;
+    color: #c8ced8;
     font-variant-numeric: tabular-nums;
+    transition: color 0.2s ease;
 }
-.rbr-tab.act .cnt { color: rgba(255, 255, 255, 0.6); }
-body.dark-mode .rbr-tab .cnt { color: #5f6b7d; }
-body.dark-mode .rbr-tab.act .cnt { color: rgba(18, 22, 31, 0.5); }
+.rbr-tab.act .cnt { color: #8b96a6; }
+body.dark-mode .rbr-tab .cnt { color: #4a5464; }
+body.dark-mode .rbr-tab.act .cnt { color: #8b98ab; }
 /* инструменты (сортировка ОФЗ / подсказка эшелонов) прижаты вправо.
    [hidden] нужен явным правилом: у самих инструментов display:flex/inline-flex,
    он перебивает дефолтный display:none атрибута */

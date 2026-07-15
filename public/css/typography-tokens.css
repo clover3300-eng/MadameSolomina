@@ -89,6 +89,7 @@ body { font-family: var(--font-text); }
 .pfs2-eyebrow-t,                                        /* «Суммарный капитал» */
 .pfo-name, .pfcf-t, .pf-empty-t, .pfpc-state-t, .pfcap-empty-t,
 .rbx-hero-title, .rbx-wc-title, .rbxa-title, .rbxa-h,   /* Ребаланс */
+.rbr-tab .t,                                            /* Ребаланс — «Витрина» */
 .btx-title, .bt2-ttl, #btResults .bt-assets-title,      /* Тест */
 .adm-hero-title, .adm-card-t,                           /* Админка */
 .ph-name,                                               /* Личный кабинет */
