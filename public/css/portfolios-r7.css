@@ -121,6 +121,10 @@ body.dark-mode #panel-portfolios .pfc-name-ink {
 .pfx-tab-pf.drag { opacity: 0.35; }
 .pfx-tab-pf { cursor: grab; }
 .pfx-tab-pf:active { cursor: grabbing; }
+/* R9.5: клавиатурный фокус в ряду (стрелки ←/→, Home/End; Ctrl/Cmd+стрелка
+   двигает чип) — без видимого кольца roving tabindex был бы слепым */
+.pfx-tab:focus-visible { outline: 2px solid #4453ef; outline-offset: -2px; border-radius: 9px; }
+body.dark-mode .pfx-tab:focus-visible { outline-color: #818cf8; }
 /* R9.4: каретка вставки — черта в зазоре у чипа-соседа будущей позиции */
 .pfx-tab-pf.pfx-drop-before { box-shadow: -4px 0 0 -1px #4453ef; }
 .pfx-tab-pf.pfx-drop-after { box-shadow: 4px 0 0 -1px #4453ef; }

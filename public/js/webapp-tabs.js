@@ -717,10 +717,21 @@ window.ensurePortfoliosJs = function (cb) {
     var idle = window.requestIdleCallback || function (fn) { setTimeout(fn, 2500); };
     idle(function () { document.head.appendChild(link); });
 })();
-document.addEventListener('pointerover', function (e) {
+// Наведение на пункт «Портфели» — грузим модуль целиком до клика. Слушатель
+// одноразовый: после загрузки модуля (этим ли путём, другим ли) снимаем его —
+// иначе closest() дёргался бы на каждое движение мыши до конца сессии.
+function pfHoverPrime(e) {
+    if (typeof window.renderPortfolios === 'function') {
+        document.removeEventListener('pointerover', pfHoverPrime);
+        return;
+    }
     var el = e.target && e.target.closest ? e.target.closest('a[href="/portfolios"], [data-tab="portfolios"]') : null;
-    if (el) window.ensurePortfoliosJs();
-}, { passive: true });
+    if (el) {
+        document.removeEventListener('pointerover', pfHoverPrime);
+        window.ensurePortfoliosJs();
+    }
+}
+document.addEventListener('pointerover', pfHoverPrime, { passive: true });
 
 function switchTab(tabId) {
     // «Ежемесячный доход» объединён с «Расчётом»: легаси-вызовы уводим в calc

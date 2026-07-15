@@ -1298,13 +1298,16 @@
             // Портфели | Аналитика | …). R8: у КАЖДОЙ подвкладки свой дашборд-конструктор
             // (pfdBodyHtml с её конфигом), «Обзор» дополнительно умеет классический вид.
             var chrome = pfxHeroHtml() + pfxTabsHtml();
+            // R9.5: при живом ряде вкладок контент оборачивается в role=tabpanel
+            // (aria-controls вкладок ведёт на #pfxTabPanel); без ряда — как есть
+            var wrapPanel = chrome ? pfxPanelWrap : function (x) { return x; };
             var body;
             if (pfxEffTab() !== 'overview') {
-                body = chrome + pfdBodyHtml(favStr, noBonds);
+                body = chrome + wrapPanel(pfdBodyHtml(favStr, noBonds));
             } else if (pfdActive()) {
                 // Конструктор: пользовательская раскладка — единая 12-колоночная
                 // сетка, порядок и размеры блоков из pf_dash_v1 (см. секцию выше)
-                body = chrome + pfdBodyHtml(favStr, noBonds);
+                body = chrome + wrapPanel(pfdBodyHtml(favStr, noBonds));
             } else {
             var gridPart = gridHtml(needCell ? cellCard : '');
             // Календарь/ставки — ВНУТРИ левой колонки (не отдельным блоком во всю ширину
@@ -1319,10 +1322,10 @@
             // Сводка по всем портфелям (2+) — компактной карточкой ПОД «Избранным» в правой
             // колонке. Рыночная лента (бывший LIVE-виджет) больше не карточка тут — она
             // вшита в фон глобального топ-бара, см. renderTopBarMarket().
-            body = chrome + '<div class="pf-topgrid">' +
+            body = chrome + wrapPanel('<div class="pf-topgrid">' +
                     '<div class="pf-topgrid-left">' + left + '</div>' +
                     '<div class="pf-topgrid-fav">' + favStr + (store.items.length >= 2 ? summaryCardHtml() : '') + '</div>' +
-                '</div>';
+                '</div>');
             }
             // Позиции скролла внутренних списков (мини-таблица состава, календарь, избранное,
             // настройки): innerHTML-своп сбрасывал их в ноль на каждом фоновом обновлении
@@ -7287,18 +7290,30 @@
             // у скрытого портфеля — мини-глазок: одна прозрачность не объясняла, ПОЧЕМУ
             // чип бледный (тултип видел только тот, кто навёл)
             // крестик — span role=button: вложенный <button> в <button> невалиден
-            return '<button type="button" role="tab" draggable="true" data-pid="' + attr(pid) + '" class="pfx-tab pfx-tab-pf' + (on ? ' on' : '') + (p.hidden ? ' hid' : '') + '" aria-selected="' + on + '" onclick="pfxGoTab(\'' + t + '\')" title="Дашборд портфеля «' + attr(p.name) + '»' + (p.hidden ? ' — убран с «Обзора»' : '') + '">' +
+            return '<button type="button" role="tab" id="pfxTab-pf-' + attr(pid) + '" aria-controls="pfxTabPanel" tabindex="' + (on ? '0' : '-1') + '" draggable="true" data-pid="' + attr(pid) + '" class="pfx-tab pfx-tab-pf' + (on ? ' on' : '') + (p.hidden ? ' hid' : '') + '" aria-selected="' + on + '" onclick="pfxGoTab(\'' + t + '\')" title="Дашборд портфеля «' + attr(p.name) + '»' + (p.hidden ? ' — убран с «Обзора»' : '') + '">' +
                 '<span class="pfx-tab-dot" style="background:' + colorVal(p.color) + '" aria-hidden="true"></span>' +
                 (p.hidden ? '<span class="pfx-tab-eyeoff" aria-hidden="true">' + EYEOFF_SVG + '</span>' : '') +
                 '<span class="pfx-tab-nm">' + esc(p.name) + '</span>' +
                 '<span class="pfx-tab-x" role="button" aria-label="Закрыть вкладку" title="Закрыть вкладку" onclick="pfxClosePfTab(\'' + pid + '\', event)">' + XMARK_SVG + '</span>' +
             '</button>';
         }).join('');
-        return '<div class="pfx-tabs" role="tablist">' + PFX_TABS.map(function (t) {
-            return '<button type="button" role="tab" class="pfx-tab' + (eff === t[0] ? ' on' : '') + '" aria-selected="' + (eff === t[0]) + '" onclick="pfxGoTab(\'' + t[0] + '\')">' +
+        // R9.5: честный tablist — roving tabindex (в Tab-обходе ровно одна вкладка,
+        // остальное стрелками, см. pfxTabsKeydown), aria-controls ведёт на
+        // #pfxTabPanel (обёртка контента, pfxPanelWrap)
+        return '<div class="pfx-tabs" role="tablist" aria-label="Разделы «Портфелей»">' + PFX_TABS.map(function (t) {
+            var on = eff === t[0];
+            return '<button type="button" role="tab" id="pfxTab-' + t[0] + '" aria-controls="pfxTabPanel" tabindex="' + (on ? '0' : '-1') + '" class="pfx-tab' + (on ? ' on' : '') + '" aria-selected="' + on + '" onclick="pfxGoTab(\'' + t[0] + '\')">' +
                 '<span class="pfx-tab-ic" aria-hidden="true">' + t[2] + '</span>' + t[1] + '</button>' +
                 (t[0] === 'overview' ? chips : '');
         }).join('') + '</div>';
+    }
+    // R9.5: контент под рядом — настоящий tabpanel: aria-controls вкладок ведёт
+    // сюда, aria-labelledby называет активную. Оборачиваем только когда ряд
+    // вообще есть (широкий экран, есть портфели) — на мобильном ролей нет
+    function pfxPanelWrap(inner) {
+        var eff = pfxEffTab();
+        var slug = pfxIsPfTab(eff) ? 'pf-' + eff.slice(3) : eff;
+        return '<div id="pfxTabPanel" role="tabpanel" aria-labelledby="pfxTab-' + slug + '">' + inner + '</div>';
     }
     // ---- R9.3: ряд вкладок скроллится, а не переносится ----
     // Затухание краёв показывает, что ряд продолжается (маска .fade-l/.fade-r по
@@ -7317,6 +7332,7 @@
         if (!row._pfxBound) {
             row._pfxBound = true;
             row.addEventListener('scroll', function () { pfxTabsFade(row); }, { passive: true });
+            row.addEventListener('keydown', pfxTabsKeydown);
             pfxBindChipDnd(row);
         }
         if (row.scrollWidth > row.clientWidth + 4) {
@@ -7329,6 +7345,47 @@
             }
         }
         pfxTabsFade(row);
+    }
+    // ---- R9.5: клавиатура ряда вкладок (паттерн tablist, «ручная активация») ----
+    // Стрелки ←/→ и Home/End гуляют ФОКУСОМ по вкладкам (roving tabindex), Enter/
+    // Space активируют (нативный клик кнопки) — без ре-рендера на каждый шаг.
+    // Ctrl/Cmd+стрелка на чипе двигает вкладку — клавиатурный аналог перетаскивания.
+    function pfxTabsKeydown(e) {
+        var row = e.currentTarget;
+        var cur = e.target && e.target.closest ? e.target.closest('.pfx-tab') : null;
+        if (!cur) return;
+        if ((e.ctrlKey || e.metaKey) && cur.classList.contains('pfx-tab-pf') &&
+            (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+            e.preventDefault();
+            pfxMoveChip(cur.getAttribute('data-pid'), e.key === 'ArrowRight' ? 1 : -1);
+            return;
+        }
+        var tabs = Array.prototype.slice.call(row.querySelectorAll('.pfx-tab'));
+        var i = tabs.indexOf(cur);
+        if (i < 0) return;
+        var to = null;
+        if (e.key === 'ArrowRight') to = tabs[(i + 1) % tabs.length];
+        else if (e.key === 'ArrowLeft') to = tabs[(i - 1 + tabs.length) % tabs.length];
+        else if (e.key === 'Home') to = tabs[0];
+        else if (e.key === 'End') to = tabs[tabs.length - 1];
+        if (!to) return;
+        e.preventDefault();
+        tabs.forEach(function (b) { b.tabIndex = -1; });
+        to.tabIndex = 0;
+        to.focus();
+    }
+    // передвинуть чип на позицию влево/вправо в pfxOpenPfTabs; фокус остаётся
+    // на нём (ряд пересоздан рендером — находим по data-pid заново)
+    function pfxMoveChip(pid, dir) {
+        var i = pfxOpenPfTabs.indexOf(pid);
+        if (i < 0) return;
+        var j = i + dir;
+        if (j < 0 || j >= pfxOpenPfTabs.length) return;
+        var tmp = pfxOpenPfTabs[i]; pfxOpenPfTabs[i] = pfxOpenPfTabs[j]; pfxOpenPfTabs[j] = tmp;
+        pfxSaveOpenTabs();
+        renderNoAnim();
+        var el = document.querySelector('#pfWrap .pfx-tab-pf[data-pid="' + pid + '"]');
+        if (el) { el.tabIndex = 0; try { el.focus(); } catch (e) {} }
     }
     // ---- R9.3: перетаскивание чипов — свой порядок вкладок-портфелей ----
     // HTML5 DnD на строке (делегирование: чипы пересоздаются каждый рендер, строка

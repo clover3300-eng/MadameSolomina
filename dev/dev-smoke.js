@@ -1,18 +1,22 @@
 /* ============================================
-   Smoke-набор «Портфелей» — dev-инструмент, в index.html НЕ подключён.
+   Smoke-набор «Портфелей» — dev-инструмент. Лежит ВНЕ public/ и потому не
+   попадает в деплой (wrangler публикует только public/).
 
-   Запуск: открыть сайт, в консоли —
-     var s = document.createElement('script'); s.src = 'js/dev-smoke.js?ts=' + Date.now(); document.head.appendChild(s);
+   Запуск: открыть сайт (локальный превью или прод), скопировать СОДЕРЖИМОЕ
+   этого файла в консоль браузера целиком и нажать Enter. (Скриптом по src
+   его больше не подгрузить — файл сознательно не раздаётся сервером.)
 
-   Что делает: снимает бэкап затрагиваемых localStorage-ключей, гоняет ~12
-   проверок ПУБЛИЧНОГО API вкладки «Портфели» (создание → своя вкладка,
-   скрытие → вкладка живёт, undo-тосты, deep-link-путь, DnD чипов), затем
-   восстанавливает данные и перезагружает страницу (замусоренное тестами
-   состояние в памяти умирает вместе с ней). Отчёт: console.table по ходу +
-   localStorage['__smoke_last'] (переживает перезагрузку).
+   Что делает: снимает бэкап затрагиваемых localStorage-ключей, гоняет два
+   десятка проверок ПУБЛИЧНОГО API вкладки «Портфели» (создание → своя
+   вкладка, скрытие → вкладка живёт, undo-тосты, deep-link хэшем, DnD чипов,
+   клавиатура ряда), затем восстанавливает данные и перезагружает страницу
+   (замусоренное тестами состояние в памяти умирает вместе с ней). Отчёт:
+   console.table по ходу + localStorage['__smoke_last'] (переживает
+   перезагрузку).
 
    Гварды: НЕ запускается под облачной сессией Supabase (мутации утекли бы в
-   cloud-sync) и при 7+ портфелях (нужно два свободных слота из MAX 8).
+   cloud-sync), при 7+ портфелях (нужно два свободных слота из MAX 8) и на
+   узком экране.
    ============================================ */
 (function () {
     'use strict';
@@ -136,6 +140,35 @@
                 domOrder.join(',') !== order0 && stored.join(',') === domOrder.join(','),
                 'до=' + order0 + ' после=' + domOrder.join(','));
         } else ok('DnD: два чипа для теста', false, 'чипов меньше двух');
+
+        // --- доступность ряда вкладок (R9.5) ---
+        var panel = document.getElementById('pfxTabPanel');
+        var onTab = document.querySelector('#pfWrap .pfx-tab.on');
+        ok('a11y: контент — role=tabpanel, подписан активной вкладкой',
+            !!panel && !!onTab && panel.getAttribute('aria-labelledby') === onTab.id,
+            'labelledby=' + (panel ? panel.getAttribute('aria-labelledby') : null) + ' on=' + (onTab ? onTab.id : null));
+        ok('a11y: roving tabindex — в Tab-обходе ровно одна вкладка',
+            document.querySelectorAll('#pfWrap .pfx-tab[tabindex="0"]').length === 1);
+        var rowKb = document.querySelector('#pfWrap .pfx-tabs');
+        var tabsKb = rowKb.querySelectorAll('.pfx-tab');
+        tabsKb[0].focus();
+        // keydown диспатчим от сфокусированной вкладки — как в жизни
+        document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+        ok('a11y: стрелка → двигает фокус по ряду',
+            document.activeElement !== tabsKb[0] && document.activeElement.classList.contains('pfx-tab'),
+            'фокус на ' + (document.activeElement.id || document.activeElement.className));
+        var kbChip = document.querySelector('#pfWrap .pfx-tab-pf');
+        if (kbChip) {
+            var kbPid = kbChip.getAttribute('data-pid');
+            var kbBefore = chipPids().join(',');
+            kbChip.focus();
+            kbChip.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', ctrlKey: true, bubbles: true }));
+            await sleep(150);
+            ok('a11y: Ctrl+→ двигает чип и возвращает фокус',
+                chipPids().join(',') !== kbBefore &&
+                document.activeElement === document.querySelector('#pfWrap .pfx-tab-pf[data-pid="' + kbPid + '"]'),
+                'до=' + kbBefore + ' после=' + chipPids().join(','));
+        } else ok('a11y: чип для Ctrl+→', false, 'нет чипов');
 
         // --- переименование виджета ---
         window.pfxGoTab('ports'); await sleep(150);
