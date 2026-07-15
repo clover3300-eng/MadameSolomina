@@ -133,6 +133,11 @@
         //             из-за чего экран был «двухэтажным»).
         // Последний выбор восстанавливается из mh_prefs_v1 (loadPrefs).
         view: 'map',
+        // Режим таблицы: 'simple' — только цена, сектор и изменение (дефолт:
+        // столько и нужно, чтобы «пробежать глазами»); 'full' — плюс вес в
+        // индексе и объём торгов. Прячем КОЛОНКИ классом на карточке, данные
+        // те же (см. mh-table-simple в CSS).
+        tableMode: 'simple',
         sortKey: 'weight', sortDir: -1,
         prevPrices: {},      // последняя цена по тикеру (для вспышек)
         tileEls: {}, secEls: {},  // переиспользуемые DOM-узлы (плавные переходы)
@@ -154,6 +159,7 @@
             else if (typeof p.chartMode === 'boolean') state.view = p.chartMode ? 'chart' : 'map';
             if (p.period === 'day' || p.period === 'week' || p.period === 'month') state.period = p.period;
             if (p.sizeMode === 'weight' || p.sizeMode === 'value' || p.sizeMode === 'change') state.sizeMode = p.sizeMode;
+            if (p.tableMode === 'simple' || p.tableMode === 'full') state.tableMode = p.tableMode;
             if (p.sortKey && COLS.some(function (c) { return c.key === p.sortKey; })) state.sortKey = p.sortKey;
             if (p.sortDir === 1 || p.sortDir === -1) state.sortDir = p.sortDir;
         } catch (e) {}
@@ -162,7 +168,7 @@
         try {
             localStorage.setItem(PREFS_KEY, JSON.stringify({
                 view: state.view, period: state.period, sizeMode: state.sizeMode,
-                sortKey: state.sortKey, sortDir: state.sortDir
+                tableMode: state.tableMode, sortKey: state.sortKey, sortDir: state.sortDir
             }));
         } catch (e) {}
     }
@@ -863,12 +869,29 @@
         if (typeof window.switchTab === 'function') window.switchTab('market-stocks');
     }
 
+    // ---------- Режим таблицы: кратко / подробно ----------
+    // «Кратко» прячет вес и объём — остаются цена, сектор и изменение. Данные не
+    // трогаем, прячем колонки классом (сортировка по скрытой колонке остаётся в
+    // силе: пользователь выбрал «показывать меньше», а не «переупорядочить»).
+    function setTableMode(v) {
+        if (state.tableMode === v) return;
+        state.tableMode = v;
+        var c = card();
+        if (c) {
+            c.classList.toggle('mh-table-simple', v === 'simple');
+            c.querySelectorAll('.mh-seg-tmode .mh-seg-btn').forEach(function (b) {
+                b.classList.toggle('active', b.getAttribute('data-tmode') === v);
+            });
+        }
+        savePrefs();
+    }
+
     // ---------- Переключение вида: карта / график / таблица ----------
     // Один переключатель в шапке — один главный объект на экране. Раньше таблица
     // висела ПОД холстом всегда, и вкладка читалась «двухэтажной».
-    // Контролы: .mh-map-ctrl — только карта (размер плитки); .mh-data-ctrl —
-    // карта и таблица (LIVE, период, обновить: период задаёт и цвет плиток,
-    // и колонку «Изм.»); в графике скрыты и те, и другие.
+    // Инструменты ряда .mh-tools показываются по виду (см. CSS): .mh-map-ctrl —
+    // только карта, .mh-table-ctrl — только таблица, общие (актуальность, период,
+    // «Обновить») — в обоих; у графика ряда инструментов нет вовсе.
     function applyView() {
         var plot = $('.mh-plot'), host = $('.mh-chart-host'), tbl = $('.mh-table-wrap'), c = card();
         if (!plot || !host || !tbl || !c) return;
@@ -876,6 +899,7 @@
         c.classList.toggle('mh-view-map', v === 'map');
         c.classList.toggle('mh-view-chart', v === 'chart');
         c.classList.toggle('mh-view-table', v === 'table');
+        c.classList.toggle('mh-table-simple', state.tableMode === 'simple');
         plot.style.display = v === 'map' ? '' : 'none';
         host.hidden = v !== 'chart';
         tbl.hidden = v !== 'table';
@@ -922,36 +946,45 @@
             '      <span class="mh-title">Индекс МосБиржи · IMOEX</span>' +
             '    </div>' +
             '  </div>' +
-            '  <div class="mh-head-ctrl">' +
-            '    <span class="mh-live mh-data-ctrl" title="Время последнего обновления данных Мосбиржи (задержка ~15 мин)">' +
-            '      <i class="mh-live-dot"></i>' +
-            '      <span class="mh-live-meta"><span class="mh-live-cap">обновлено</span><span class="mh-live-time">—</span></span>' +
-            '    </span>' +
-            // active-классы сегментов берём из state (восстановленного из mh_prefs_v1),
-            // а не хардкодим «День»/«Вес»/«График» — иначе подсветка врёт после перезагрузки
-            '    <span class="mh-seg mh-seg-period mh-data-ctrl" role="tablist" title="Период изменения (цвет карты и колонки «Изм.»)">' +
-            '      <button class="mh-seg-btn' + (state.period === 'day' ? ' active' : '') + '" type="button" data-period="day">День</button>' +
-            '      <button class="mh-seg-btn' + (state.period === 'week' ? ' active' : '') + '" type="button" data-period="week">Неделя</button>' +
-            '      <button class="mh-seg-btn' + (state.period === 'month' ? ' active' : '') + '" type="button" data-period="month">Месяц</button>' +
-            '    </span>' +
-            '    <span class="mh-seg mh-seg-size mh-map-ctrl" role="tablist" title="Размер плитки">' +
-            '      <button class="mh-seg-btn' + (state.sizeMode === 'weight' ? ' active' : '') + '" type="button" data-size="weight">Вес</button>' +
-            '      <button class="mh-seg-btn' + (state.sizeMode === 'value' ? ' active' : '') + '" type="button" data-size="value">Объём</button>' +
-            '      <button class="mh-seg-btn' + (state.sizeMode === 'change' ? ' active' : '') + '" type="button" data-size="change">% изм.</button>' +
-            '    </span>' +
-            '    <button class="mh-refresh mh-data-ctrl" type="button" title="Обновить" aria-label="Обновить">' + REFRESH_SVG + '</button>' +
-            // Переключатель вида — ПОСЛЕДНИМ в шапке карточки (крайний правый):
-            // так он заметнее, а при скрытии контролов в графике не сдвигается.
+            // Переключатель вида — в ОДНОМ ряду с заголовком и всегда крайний
+            // справа: это навигация («что я смотрю»), а не инструмент. Ряд не
+            // переносится, поэтому кнопки больше не прыгают строкой ниже.
             // active-класс проставит applyView() в конце build() по state.view.
-            '    <span class="mh-seg mh-seg-view" role="tablist" title="Что показывать: тепловая карта, график индекса (месячный ТФ) или таблица состава">' +
-            '      <button class="mh-seg-btn" type="button" data-view="map">' +
-            '        <span class="mh-cb-ico" aria-hidden="true">' + GRID_SVG + '</span>Карта</button>' +
-            '      <button class="mh-seg-btn" type="button" data-view="chart">' +
-            '        <span class="mh-cb-ico" aria-hidden="true">' + CANDLE_SVG + '</span>График</button>' +
-            '      <button class="mh-seg-btn" type="button" data-view="table">' +
-            '        <span class="mh-cb-ico" aria-hidden="true">' + TABLE_SVG + '</span>Таблица</button>' +
-            '    </span>' +
-            '  </div>' +
+            '  <span class="mh-seg mh-seg-view" role="tablist" title="Что показывать: тепловая карта, график индекса (месячный ТФ) или таблица состава">' +
+            '    <button class="mh-seg-btn" type="button" data-view="map">' +
+            '      <span class="mh-cb-ico" aria-hidden="true">' + GRID_SVG + '</span>Карта</button>' +
+            '    <button class="mh-seg-btn" type="button" data-view="chart">' +
+            '      <span class="mh-cb-ico" aria-hidden="true">' + CANDLE_SVG + '</span>График</button>' +
+            '    <button class="mh-seg-btn" type="button" data-view="table">' +
+            '      <span class="mh-cb-ico" aria-hidden="true">' + TABLE_SVG + '</span>Таблица</button>' +
+            '  </span>' +
+            '</div>' +
+            // Инструменты текущего вида — СВОИМ рядом под заголовком (состав
+            // меняется от вида к виду; в одном ряду с заголовком это и двигало
+            // переключатель). active-классы берём из state (восстановлен из
+            // mh_prefs_v1), а не хардкодим «День»/«Вес» — иначе подсветка врёт
+            // после перезагрузки.
+            '<div class="mh-tools">' +
+            '  <span class="mh-live" title="Время последнего обновления данных Мосбиржи (задержка ~15 мин)">' +
+            '    <i class="mh-live-dot"></i>' +
+            '    <span class="mh-live-meta"><span class="mh-live-cap">обновлено</span><span class="mh-live-time">—</span></span>' +
+            '  </span>' +
+            '  <span class="mh-seg mh-seg-period" role="tablist" title="Период изменения (цвет карты и колонки «Изм.»)">' +
+            '    <button class="mh-seg-btn' + (state.period === 'day' ? ' active' : '') + '" type="button" data-period="day">День</button>' +
+            '    <button class="mh-seg-btn' + (state.period === 'week' ? ' active' : '') + '" type="button" data-period="week">Неделя</button>' +
+            '    <button class="mh-seg-btn' + (state.period === 'month' ? ' active' : '') + '" type="button" data-period="month">Месяц</button>' +
+            '  </span>' +
+            '  <span class="mh-seg mh-seg-size mh-map-ctrl" role="tablist" title="Размер плитки">' +
+            '    <button class="mh-seg-btn' + (state.sizeMode === 'weight' ? ' active' : '') + '" type="button" data-size="weight">Вес</button>' +
+            '    <button class="mh-seg-btn' + (state.sizeMode === 'value' ? ' active' : '') + '" type="button" data-size="value">Объём</button>' +
+            '    <button class="mh-seg-btn' + (state.sizeMode === 'change' ? ' active' : '') + '" type="button" data-size="change">% изм.</button>' +
+            '  </span>' +
+            // Режим таблицы: «Кратко» прячет вес и объём (см. mh-table-simple)
+            '  <span class="mh-seg mh-seg-tmode mh-table-ctrl" role="tablist" title="Кратко — только цена, сектор и изменение; Подробно — ещё вес в индексе и объём торгов">' +
+            '    <button class="mh-seg-btn' + (state.tableMode === 'simple' ? ' active' : '') + '" type="button" data-tmode="simple">Кратко</button>' +
+            '    <button class="mh-seg-btn' + (state.tableMode === 'full' ? ' active' : '') + '" type="button" data-tmode="full">Подробно</button>' +
+            '  </span>' +
+            '  <button class="mh-refresh" type="button" title="Обновить" aria-label="Обновить">' + REFRESH_SVG + '</button>' +
             '</div>' +
             '<div class="mh-pulse">' +
             '  <div class="mh-kpi mh-kpi-idx">' +
@@ -1002,6 +1035,10 @@
                 savePrefs();
                 render();
             });
+        });
+        // Режим таблицы (кратко / подробно) — прячет вес и объём
+        c.querySelectorAll('.mh-seg-tmode .mh-seg-btn').forEach(function (b) {
+            b.addEventListener('click', function () { setTableMode(b.getAttribute('data-tmode')); });
         });
         // Переключатель периода (день / неделя / месяц) — меняет базу изменения (цвет/таблица)
         c.querySelectorAll('.mh-seg-period .mh-seg-btn').forEach(function (b) {

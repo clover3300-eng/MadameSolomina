@@ -213,10 +213,12 @@
     }
     .mh-seg-view .mh-seg-btn { flex: 1; justify-content: center; }
 
-    /* Контролы карты (период/размер/обновить) в 2 ряда без распорок */
-    .mh-head-ctrl { gap: 8px; }
-    .mh-head-ctrl .mh-seg { flex: 1 1 auto; display: flex; }
-    .mh-head-ctrl .mh-seg .mh-seg-btn { flex: 1; padding: 0 8px; }
+    /* Инструменты вида (актуальность/период/размер/режим таблицы/обновить) —
+       свой ряд .mh-tools, листается вбок (см. market-heatmap.css). Раньше тут
+       был .mh-head-ctrl: он держал И переключатель вида, И инструменты, из-за
+       чего кнопки прыгали между строками. */
+    .mh-tools { gap: 8px; }
+    .mh-tools .mh-seg .mh-seg-btn { padding: 0 10px; }
 
     /* --- Терминалы Акции/Облигации: тулбар компактной сеткой ---
        Вместо стопки из 4 полноширинных кнопок — поиск на всю ширину,
