@@ -2300,6 +2300,18 @@
     // html — ЛЕНИВЫЙ (htmlFn): для скрытых блоков разметка не собирается вовсе.
     // defHidden: true — опт-ин блоки (KPI, график капитала, карта, новости, заметки):
     // появляются только с полки «Добавить блок», существующие раскладки не трогают.
+    // R9.2: блоки, которые рисуют кнопки виджета САМИ — внутри своей шапки, слева от
+    // собственных контролов (сортировка / «Ребалансировать»). Угловой хром pfdBodyHtml
+    // им не ставится. Тот же приём, что у «Избранного» и «Ставок» (свой глаз в шапке).
+    var PFD_OWN_CHROME = { plist: 1, pdetail: 1 };
+    // пара кнопок блока в поток шапки: настройки виджета + удалить. Поповер настроек
+    // якорится к .pfd-item (см. pfdCfgMount), поэтому от места кнопки не зависит.
+    function pfdInChromeHtml(id) {
+        return '<span class="pfd-inchrome">' +
+            '<button type="button" class="pfd-inbtn" title="Настройки виджета" aria-label="Настройки виджета" onclick="pfdCfgOpen(\'' + jsArg(id) + '\', event)">' + PFDCFG_GEAR_SVG + '</button>' +
+            '<button type="button" class="pfd-inbtn danger" title="Удалить виджет (вернуть — кнопка «Виджет» в шапке)" aria-label="Удалить виджет" onclick="pfdHideBlock(\'' + jsArg(id) + '\')">' + NOTE_TRASH_SVG + '</button>' +
+        '</span>';
+    }
     function pfdBlocks(favStr, noBonds) {
         var blocks = [];
         var narrow = cardViewMode === 'narrow';
@@ -2726,7 +2738,12 @@
             //  • «История сделок» — своего on-card глаза НЕТ (правый угол шапки занят .pft-toggle);
             //    скрыть/показать — из меню «Видимость».
             var hideBtn = '';
-            if (b.isNote || b.id.indexOf('pf:') === 0) {
+            if (b.isNote || b.id.indexOf('pf:') === 0 || PFD_OWN_CHROME[b.id]) {
+                // R9.2: plist/pdetail рисуют кнопки блока САМИ — внутри своей шапки,
+                // слева от собственных контролов (см. pfdInChromeHtml). Угловые кнопки
+                // им не годились: у «Моих портфелей» они выдавливали сортировку 78-px
+                // отступом, а у «Составов» (шапки .pf-ch нет вовсе) падали прямо на
+                // «Ребалансировать» и шестерёнку портфеля.
                 hideBtn = '';
             } else if (b.defHidden) {
                 // корзина ВНУТРИ карточки (как у заметки .pfnt-trash): тихая иконка в правом-верхнем
@@ -7846,8 +7863,10 @@
         return '<div class="dash2-card pf-card2 pf-plistblk">' +
             pfCardHead('', 'Мои портфели', 'всего ' + store.items.length + ' ' + plural(store.items.length, 'портфель', 'портфеля', 'портфелей') + ' · ' + fmtRub(total),
                 // подпись у сегмента — иначе «Стоимость|Доходность|Имя» читается как
-                // фильтр или вкладки, а не сортировка (просьба 2026-07-16)
-                '<div class="pfpl-head-r"><span class="pfpl-sort-cap">Сортировка</span>' + seg + add + '</div>') + body + '</div>';
+                // фильтр или вкладки, а не сортировка (просьба 2026-07-16).
+                // Кнопки виджета — ПЕРВЫМИ в ряду (слева от сортировки), а не в углу
+                '<div class="pfpl-head-r">' + pfdInChromeHtml('plist') +
+                    '<span class="pfpl-sort-cap">Сортировка</span>' + seg + add + '</div>') + body + '</div>';
     }
     // «Структура по портфелям»: кольцо распределения стоимости + легенда
     function pfwPstructHtml() {
@@ -8119,31 +8138,44 @@
         var vis = visibleItems();
         if (!vis.length) return store.items.length ? allHiddenHtml() : emptyHtml();
         var GEAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="8" cy="7" r="2.5"/><circle cx="16" cy="17" r="2.5"/></svg>';
-        return '<div class="pfx-ports">' + vis.map(function (p) {
+        return '<div class="pfx-ports">' + vis.map(function (p, i) {
             var c = calcPf(p), ac = colorVal(p.color);
             var dd = dayDelta(p, c.value);
             var bondP = Math.round(clamp(c.bondPct, 0, 100)), stockP = 100 - bondP;
-            var ddChip = (dd != null && Math.abs(dd) >= 1)
-                ? '<span class="pfc-day ' + (dd >= 0 ? 'pos' : 'neg') + '">' + (dd >= 0 ? '▲' : '▼') + ' ' + fmtRub(Math.abs(dd)) + ' сегодня</span>' : '';
-            function kpi(l, v, cls) {
-                return '<div class="pfpt-kpi"><span>' + l + '</span><b class="' + (cls || '') + '">' + v + '</b></div>';
+            var has = c.invested > 0;
+            // R9.2: показатели — ПЛИТКАМИ в языке «Сводных показателей» (.pfsm-*): подпись,
+            // крупное моно-число и чип с контекстом. Чипы не украшение, а ответ на вопрос
+            // «от чего число»: у капитала — движение за сегодня (раньше чип болтался у
+            // имени), у вложено — число активов, у дохода — процент, у доходности —
+            // «годовых» (величина годовая, и по одному «+2,3%» это было не прочитать).
+            function tile(l, v, cls, chp) {
+                return '<div class="pfsm-tile"><i>' + l + '</i><b class="' + (cls || '') + '">' + v + '</b>' + (chp || '') + '</div>';
             }
+            function chip(cls, tx) { return '<span class="pfsm-chip ' + cls + '">' + tx + '</span>'; }
+            function absPct(x) { return Math.abs(x).toFixed(1).replace('.', ',') + '%'; }
+            var ddChip = (dd != null && Math.abs(dd) >= 1)
+                ? chip(dd >= 0 ? 'pos' : 'neg', (dd >= 0 ? '▲ ' : '▼ ') + fmtRub(Math.abs(dd)) + ' за сегодня')
+                : chip('', 'появится со второго дня');
+            var nA = c.hs.length;
             var head = '<div class="pfpt-head">' +
                 '<div class="pfpt-id">' +
                     '<span class="pfc-name" onclick="pfNameEdit(\'' + p.id + '\',event)" title="Нажмите, чтобы переименовать"><span class="pfc-name-ink">' + esc(p.name) + '</span></span>' +
-                    ddChip +
                 '</div>' +
                 '<div class="pfpt-kpis">' +
-                    kpi('Капитал', fmtRub(c.value)) +
-                    kpi('Вложено', fmtRub(c.invested)) +
-                    kpi('Доход', (c.invested > 0 ? (c.pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(c.pnl)) : '—'), c.pnl >= 0 ? 'pos' : 'neg') +
-                    kpi('Доходность', c.invested > 0 ? fmtPct(c.annual) : '—', c.annual >= 0 ? 'pos' : 'neg') +
+                    tile('Капитал', fmtRub(c.value), '', ddChip) +
+                    tile('Вложено', has ? fmtRub(c.invested) : '—', '', chip('', nA + ' ' + plural(nA, 'актив', 'актива', 'активов'))) +
+                    tile('Доход', has ? (c.pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(c.pnl)) : '—', c.pnl >= 0 ? 'pos' : 'neg',
+                        has ? chip(c.pnlPct >= 0 ? 'pos' : 'neg', (c.pnlPct >= 0 ? '▲ ' : '▼ ') + absPct(c.pnlPct)) : '') +
+                    tile('Доходность', has ? fmtPct(c.annual) : '—', c.annual >= 0 ? 'pos' : 'neg', chip('', 'годовых')) +
                 '</div>' +
                 '<div class="pfpt-alloc">' +
                     '<div class="pfc-dist-bar"><div style="width:' + stockP + '%;background:#D97757"></div><div style="width:' + bondP + '%;background:#7B9BBF"></div></div>' +
                     '<div class="pfc-dist-lbl"><span><i style="background:#D97757"></i>Акции ' + stockP + '%</span><span><i style="background:#7B9BBF"></i>Облигации ' + bondP + '%</span></div>' +
                 '</div>' +
                 '<div class="pfpt-acts">' +
+                    // кнопки виджета — у ПЕРВОЙ карточки блока (блок один, кнопки одни) и
+                    // слева от действий портфеля, а не поверх них
+                    (i === 0 ? pfdInChromeHtml('pdetail') : '') +
                     '<button class="pfc-rebal pfpt-rebal" onclick="pfExpand(\'' + p.id + '\')">' + REBAL_SVG + 'Ребалансировать</button>' +
                     '<button class="pfc-act" onclick="pfxPortSettings(\'' + p.id + '\')" title="Настройки портфеля" aria-label="Настройки портфеля">' + GEAR + '</button>' +
                 '</div>' +

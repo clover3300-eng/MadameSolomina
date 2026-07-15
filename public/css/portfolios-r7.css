@@ -488,13 +488,10 @@ body.dark-mode .pfmv-n b { color: #f4f8fd; }
 }
 body.dark-mode .pfpt-head { border-bottom-color: rgba(255, 255, 255, 0.08); }
 .pfpt-id { grid-area: id; display: flex; align-items: center; gap: 12px; min-width: 0; }
-.pfpt-kpis { grid-area: kpis; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px 28px; align-items: start; }
-.pfpt-kpi { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.pfpt-kpi span { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: #8494a7; }
-.pfpt-kpi b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 17px; font-weight: 700; color: #0f172a; white-space: nowrap; }
-.pfpt-kpi b.pos { color: #119d5c; }
-.pfpt-kpi b.neg { color: #c2410c; }
-body.dark-mode .pfpt-kpi b { color: #f4f8fd; }
+/* R9.2: показатели — плитками «Сводных показателей» (.pfsm-tile, см. §22): подпись,
+   моно-число, чип с контекстом. auto-fit — узкий блок складывает их 2×2, а не режет
+   числа (правило «контент виджета подстраивается под размер»). */
+.pfpt-kpis { grid-area: kpis; display: grid; grid-template-columns: repeat(auto-fit, minmax(152px, 1fr)); gap: 12px; align-items: stretch; }
 .pfpt-alloc { grid-area: alloc; display: flex; flex-direction: column; gap: 7px; min-width: 0; max-width: none; }
 .pfpt-acts { grid-area: acts; display: flex; align-items: center; gap: 9px; justify-self: end; }
 .pfpt-rebal { flex: 0 0 auto !important; padding: 10px 16px !important; }
@@ -1916,3 +1913,33 @@ body.quiz-mode #pfWidgetFab, body.sd-drawer-open #pfWidgetFab { display: none !i
 .pf-plistblk > .pf-ch > .pf-ch-l { flex: 1 1 auto; }
 .pfpl-sort-cap { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: #8494a7; }
 body.dark-mode .pfpl-sort-cap { color: #93a2b8; }
+
+/* ============ R9.2. Кнопки виджета В ПОТОКЕ шапки (.pfd-inchrome) ============ */
+/* «Мои портфели» и «Составы» держат кнопки блока (настройки виджета + удалить)
+   ВНУТРИ своей шапки, слева от собственных контролов — угловой хром .pfd-cardcfg/
+   .pfd-cardrm им не ставится (PFD_OWN_CHROME в portfolios.js). Манера прежняя:
+   тихие иконки, проявляются по наведению на блок. Место они занимают всегда
+   (opacity, не display) — ряд не дёргается на hover. Разделитель отделяет
+   «управление виджетом» от «управления содержимым». */
+.pfd-inchrome {
+    display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0;
+    padding-right: 10px; margin-right: 2px; border-right: 1px solid rgba(24, 38, 60, 0.1);
+    opacity: 0; pointer-events: none; transition: opacity 0.14s;
+}
+.pfd-item:hover .pfd-inchrome, .pfd-inchrome:focus-within,
+.pfd-grid.editing .pfd-inchrome, .pfd-item.pfd-cfgopen .pfd-inchrome { opacity: 1; pointer-events: auto; }
+.pfd-inbtn {
+    width: 26px; height: 26px; border: 0; background: none; padding: 0; cursor: pointer; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center; color: #c3cdd9;
+    transition: color 0.12s, background 0.12s;
+}
+.pfd-inbtn svg { width: 15px; height: 15px; }
+.pfd-inbtn:hover { color: #4453ef; background: rgba(68, 83, 239, 0.09); }
+.pfd-inbtn.danger:hover { color: #e0592b; background: rgba(224, 89, 43, 0.1); }
+.pfd-item.pfd-cfgopen .pfd-inbtn:not(.danger) { color: #4453ef; background: rgba(68, 83, 239, 0.09); }
+body.dark-mode .pfd-inchrome { border-right-color: rgba(255, 255, 255, 0.12); }
+body.dark-mode .pfd-inbtn { color: #5c6c82; }
+body.dark-mode .pfd-inbtn:hover { color: #a5b4fc; background: rgba(129, 140, 248, 0.14); }
+/* у «Моих портфелей» кнопки теперь в ряду — угловой резерв 78px шапке не нужен
+   (перебиваем .pfd-rmable-правило, оно специфичнее базового .pf-plistblk) */
+#panel-portfolios .pfd-item[data-pfd="plist"] > .pfd-body > .dash2-card > .pf-ch { padding-right: 0; }
