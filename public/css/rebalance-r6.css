@@ -191,53 +191,46 @@ body.dark-mode .rbx-block {
     box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
 }
 
-/* ── Блок кандидатов: переключатель + подвкладки ──
-   Лекало — подвкладки результатов «Теста» (.btr-tabs/.btr-sub в backtest.css):
-   ряд-пилюля сверху, инструменты активного списка справа за разделителем. */
-.rbx-block-cands { padding: 14px 16px 18px; min-width: 0; }
+/* ── Правая колонна: переключатель ОТДЕЛЬНО, карточка таблиц под ним ──
+   Переключатель намеренно не карточка и не пилюля: плоский ряд у волосяной
+   линии, в языке манифест-колонки слева (монохром, прописные вразрядку,
+   активный — плоский чёрный прямоугольник радиусом 4px, как .rbx-wc-btn).
+   Так он читается как заголовок раздела, а не как часть таблицы. */
+.rbx-cands { min-width: 0; display: flex; flex-direction: column; }
+.rbx-block-cands { padding: 16px 18px 18px; min-width: 0; }
 .rbr-tabs {
     display: flex; align-items: center; gap: 4px;
-    padding: 4px;
-    background: #ffffff;
-    border: 1.5px solid #d8dfeb;
-    border-radius: 14px;
-    box-shadow: 0 8px 22px rgba(28, 42, 66, 0.06);
+    padding: 0 2px 12px;
     margin-bottom: 14px;
+    border-bottom: 1px solid rgba(18, 22, 31, 0.09);
 }
-body.dark-mode .rbr-tabs { background: #1d2734; border-color: rgba(255, 255, 255, 0.12); }
+body.dark-mode .rbr-tabs { border-bottom-color: rgba(255, 255, 255, 0.08); }
 .rbr-tab {
-    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    padding: 9px 14px;
-    border: none; border-radius: 10px;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 13px;
+    border: none; border-radius: 4px;
     background: transparent; cursor: pointer;
     font-family: 'Inter', sans-serif;
-    font-size: 13px; font-weight: 800; color: #6c7a8d;
-    white-space: nowrap;
-    transition: background 0.15s, color 0.15s;
+    font-size: 10.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.16em;
+    color: #8b96a6; white-space: nowrap;
+    transition: background 0.2s ease, color 0.2s ease;
 }
-.rbr-tab svg { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.75; }
-.rbr-tab:hover { color: #111927; }
-.rbr-tab.act { background: #111927; color: #ffffff; }
-.rbr-tab.act svg { opacity: 1; }
-body.dark-mode .rbr-tab { color: #9aa8bc; }
-body.dark-mode .rbr-tab:hover { color: #f1f6fb; }
-body.dark-mode .rbr-tab.act { background: rgba(255, 255, 255, 0.12); color: #ffffff; }
+.rbr-tab:hover { color: #12161f; }
+.rbr-tab.act { background: #12161f; color: #ffffff; }
+body.dark-mode .rbr-tab { color: #6b7889; }
+body.dark-mode .rbr-tab:hover { color: #e8edf4; }
+body.dark-mode .rbr-tab.act { background: #e8edf4; color: #12161f; }
+/* счётчик — тихая моно-цифра, без плашки: плашка вернула бы «интерфейс» в ряд */
 .rbr-tab .cnt {
     font-family: var(--font-num, 'JetBrains Mono', monospace);
-    font-size: 11px; font-weight: 700;
-    padding: 1px 7px; border-radius: 999px;
-    background: #eef2f8; color: #6c7a8d;
+    font-size: 11px; font-weight: 600; letter-spacing: 0;
+    color: #b3bbc8;
     font-variant-numeric: tabular-nums;
 }
-.rbr-tab.act .cnt { background: rgba(255, 255, 255, 0.16); color: #dfe7f1; }
-body.dark-mode .rbr-tab .cnt { background: rgba(255, 255, 255, 0.08); color: #c4cedd; }
-/* разделитель перед инструментами активного списка */
-.rbr-sep {
-    flex: 0 0 auto; align-self: stretch;
-    width: 1.5px; margin: 4px; border-radius: 1px;
-    background: #e3e9f2;
-}
-body.dark-mode .rbr-sep { background: rgba(255, 255, 255, 0.12); }
+.rbr-tab.act .cnt { color: rgba(255, 255, 255, 0.6); }
+body.dark-mode .rbr-tab .cnt { color: #5f6b7d; }
+body.dark-mode .rbr-tab.act .cnt { color: rgba(18, 22, 31, 0.5); }
 /* инструменты (сортировка ОФЗ / подсказка эшелонов) прижаты вправо.
    [hidden] нужен явным правилом: у самих инструментов display:flex/inline-flex,
    он перебивает дефолтный display:none атрибута */
@@ -345,39 +338,43 @@ body.dark-mode .rbx-wc-quote { border-left-color: rgba(255, 255, 255, 0.18); col
 body.dark-mode .rbx-wc-btn { background: #e8edf4; color: #12161f; }
 body.dark-mode .rbx-wc-btn:hover { background: #ffffff; }
 
-/* кнопки сортировки (Доходность / Цена) — живут в ряду переключателя */
-.rbx-sort { display: flex; gap: 6px; }
+/* Кнопки сортировки (Доходность / Цена) — живут в плоском ряду переключателя,
+   поэтому и сами плоские: рамка с белой заливкой возвращала бы в ряд «интерфейс»,
+   от которого мы там уходим. Активная — только цветом текста и стрелкой. */
+.rbx-sort { display: flex; gap: 2px; }
 .rbx-sc {
     display: inline-flex; align-items: center; gap: 6px;
-    padding: 7px 11px; border-radius: 10px; cursor: pointer;
-    border: 1px solid rgba(44, 54, 76, 0.14); background: #ffffff;
-    font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700; color: #5d6b83;
-    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    padding: 7px 9px; border-radius: 4px; cursor: pointer;
+    border: none; background: transparent;
+    font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.12em; color: #a8b1bf;
+    transition: background 0.18s ease, color 0.18s ease;
 }
-.rbx-sc:hover { border-color: #161B27; }
-.rbx-sc.act { background: #161B27; border-color: #161B27; color: #ffffff; }
-.rbx-sc-ico { position: relative; display: inline-grid; place-items: center; width: 13px; height: 13px; }
-.rbx-sc-ico svg { position: absolute; width: 13px; height: 13px; transition: opacity 0.15s ease, transform 0.2s ease; }
+.rbx-sc:hover { color: #12161f; background: rgba(18, 22, 31, 0.045); }
+.rbx-sc.act { color: #12161f; }
+.rbx-sc-ico { position: relative; display: inline-grid; place-items: center; width: 12px; height: 12px; }
+.rbx-sc-ico svg { position: absolute; width: 12px; height: 12px; transition: opacity 0.15s ease, transform 0.2s ease; }
 .rbx-sc .ic-dir { opacity: 0; }
 .rbx-sc.act .ic-neutral { opacity: 0; }
 .rbx-sc.act .ic-dir { opacity: 1; }
 .rbx-sc.act.asc .ic-dir { transform: rotate(180deg); }
-body.dark-mode .rbx-sc { background: rgba(15, 23, 42, 0.6); border-color: rgba(255, 255, 255, 0.13); color: #cbd5e1; }
-body.dark-mode .rbx-sc:hover { border-color: rgba(255, 255, 255, 0.4); }
-body.dark-mode .rbx-sc.act { background: #ffffff; border-color: #ffffff; color: #141b26; }
+body.dark-mode .rbx-sc { color: #6b7889; }
+body.dark-mode .rbx-sc:hover { color: #e8edf4; background: rgba(255, 255, 255, 0.06); }
+body.dark-mode .rbx-sc.act { color: #e8edf4; }
 
-/* «по эшелонам риска» — тихая кнопка-подсказка про эшелоны */
+/* «по эшелонам риска» — тихая кнопка-подсказка, в том же плоском ключе */
 .rbx-esh-hint {
     margin-left: auto; display: inline-flex; align-items: center; gap: 6px;
-    padding: 7px 10px; border: none; border-radius: 10px; cursor: pointer;
+    padding: 7px 9px; border: none; border-radius: 4px; cursor: pointer;
     background: transparent;
-    font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #8a96aa;
-    transition: color 0.15s ease, background 0.15s ease;
+    font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.12em; color: #a8b1bf;
+    transition: color 0.18s ease, background 0.18s ease;
 }
-.rbx-esh-hint svg { flex-shrink: 0; opacity: 0.75; }
-.rbx-esh-hint:hover { color: #161B27; background: rgba(44, 54, 76, 0.06); }
-body.dark-mode .rbx-esh-hint { color: #94a3b8; }
-body.dark-mode .rbx-esh-hint:hover { color: #e2e8f0; background: rgba(255, 255, 255, 0.07); }
+.rbx-esh-hint svg { flex-shrink: 0; width: 12px; height: 12px; opacity: 0.75; }
+.rbx-esh-hint:hover { color: #12161f; background: rgba(18, 22, 31, 0.045); }
+body.dark-mode .rbx-esh-hint { color: #6b7889; }
+body.dark-mode .rbx-esh-hint:hover { color: #e8edf4; background: rgba(255, 255, 255, 0.06); }
 
 /* ─────────────────────── СЕКЦИЯ ОФЗ: ТАБЛИЦА ─────────────────────── */
 
@@ -418,10 +415,23 @@ body.dark-mode .rbx-row-main:hover { background: rgba(255, 255, 255, 0.045); }
     font-variant-numeric: tabular-nums;
 }
 .rbx-row-main .nm {
-    font-family: 'Inter', sans-serif; font-size: 14.5px; font-weight: 800; color: #161B27;
+    font-family: 'Inter', sans-serif; font-size: 14.5px; font-weight: 700; color: #161B27;
+    letter-spacing: 0.01em;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
 }
 body.dark-mode .rbx-row-main .nm { color: #F1F5F9; }
+/* Название выпуска — ОДНА подпись, один голос.
+   formatNameWithMonoDigits() заворачивает цифры в .mono-digit-span, и в строке
+   выходило два шрифта И два веса внутри одного названия: «ОФЗ» — Inter 800,
+   «26238» — JetBrains Mono 600. Цифры выглядели легче и шире соседних букв —
+   название читалось как склейка из двух кусков.
+   Моно здесь и не нужен по смыслу: номер выпуска — часть ИМЕНИ, а не измеренное
+   число, выравнивать по разрядам нечего (в терминале имя облигации тоже набрано
+   одним голосом). Цифры колонок — Погашение/Доходность/Цена — остаются моно. */
+.rbx-row-main .nm .mono-digit-span {
+    font-family: inherit;
+    font-weight: inherit;
+}
 /* Погашение: колонка второго плана — тем же моно, но тише цифр доходности/цены */
 .rbx-row-main .mt {
     font-family: var(--font-num, 'JetBrains Mono', monospace);

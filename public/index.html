@@ -50,12 +50,12 @@
     <link rel="stylesheet" href="css/notifications.css?v=2">
     <link rel="stylesheet" href="css/tab-gates.css?v=4">
     <link rel="stylesheet" href="css/admin.css?v=11">
-    <link rel="stylesheet" href="css/rebalance-r6.css?v=6">
+    <link rel="stylesheet" href="css/rebalance-r6.css?v=7">
     <link rel="stylesheet" href="css/typography-tokens.css?v=7">
     <link rel="stylesheet" href="css/portfolios-r7.css?v=27">
     <link rel="stylesheet" href="css/desktop-zoom.css?v=4">
     <!-- Мобильный слой (≤1023px) — всегда ПОСЛЕДНИЙ, перебивает всё -->
-    <link rel="stylesheet" href="css/mobile.css?v=18">
+    <link rel="stylesheet" href="css/mobile.css?v=19">
     
     <!-- Telegram WebApp API (fallback — works both in TG and browser) -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -1593,19 +1593,17 @@
             </button>
         </section>
 
-        <section class="rbx-block rbx-block-cands">
-            <!-- Переключатель ОФЗ/Акции — лекало подвкладок «Теста» (.btr-tabs):
-                 сами вкладки слева, инструменты активного списка — справа за разделителем -->
+        <!-- Правая колонна: переключатель стоит САМ ПО СЕБЕ над карточкой таблиц —
+             плоский ряд у волосяной линии, в языке манифест-колонки слева
+             (монохром, прописные вразрядку, без плашек и теней). -->
+        <div class="rbx-cands">
             <div class="rbr-tabs" id="rbxCandTabs">
                 <button type="button" class="rbr-tab act" data-ctab="ofz" onclick="rbxCandTab('ofz')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M7 8V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/><path d="M12 12v4"/><path d="M10 14h4"/></svg>
                     Кандидаты · ОФЗ<span class="cnt" id="ofzCount">—</span>
                 </button>
                 <button type="button" class="rbr-tab" data-ctab="stocks" onclick="rbxCandTab('stocks')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>
                     Кандидаты · Акции<span class="cnt" id="stocksCount">—</span>
                 </button>
-                <span class="rbr-sep" aria-hidden="true"></span>
                 <div class="rbx-sort" id="rbxToolsOfz" role="group" aria-label="Сортировка списка">
                     <button type="button" class="rbx-sc act desc" id="ofzSortYield" onclick="setOfzSort('yield')" title="Сортировать по доходности">
                         Доходность
@@ -1628,6 +1626,7 @@
                 </button>
             </div>
 
+            <section class="rbx-block rbx-block-cands">
             <div class="rbr-sub act" id="rbxSubOfz">
             <div class="rbx-colhead">
                 <span></span>
@@ -1676,7 +1675,8 @@
                 <!-- Динамически заполняется через JS -->
             </div>
             </div>
-        </section>
+            </section>
+        </div>
     </div>
 
     <!-- Карточка деталей тикера (выезжает справа, при открытии переносится в body) -->

@@ -467,10 +467,10 @@
     .rbx-block-why { align-self: auto; padding: 24px 18px 20px; }
     .rbx-wc-title { font-size: 23px; }
     .rbx-wc-btn { letter-spacing: 0.18em; }
-    /* переключатель: вкладки в ряд, инструменты — строкой ниже */
-    .rbr-tabs { flex-wrap: wrap; row-gap: 4px; }
-    .rbr-tab { flex: 1; font-size: 12px; padding: 9px 8px; gap: 6px; }
-    .rbr-sep { display: none; }
+    /* переключатель стоит отдельно над карточкой: вкладки в ряд, инструменты ниже */
+    .rbx-cands { gap: 0; }
+    .rbr-tabs { flex-wrap: wrap; row-gap: 4px; padding: 0 0 10px; margin-bottom: 12px; }
+    .rbr-tab { flex: 1; justify-content: center; font-size: 9.5px; letter-spacing: 0.1em; padding: 9px 6px; gap: 6px; }
     #rbxToolsOfz, #rbxToolsStocks { margin-left: 0; width: 100%; justify-content: flex-end; }
 
     /* таблица ОФЗ плотнее; «Погашение» на телефоне не помещается — прячем
