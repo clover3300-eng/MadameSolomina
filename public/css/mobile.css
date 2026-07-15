@@ -463,8 +463,10 @@
     /* блоки стопкой (R7: карточка «Зачем» + карточка кандидатов с подвкладками) */
     .rbx-grid { display: flex; flex-direction: column; gap: 12px; margin-top: 0; }
     .rbx-block-cands { padding: 10px 12px 14px; }
-    .rbx-block-why { padding: 20px 16px 16px; }
+    /* манифест-колонка: на телефоне она не тянется на высоту ряда, поля скромнее */
+    .rbx-block-why { align-self: auto; padding: 24px 18px 20px; }
     .rbx-wc-title { font-size: 23px; }
+    .rbx-wc-btn { letter-spacing: 0.18em; }
     /* переключатель: вкладки в ряд, инструменты — строкой ниже */
     .rbr-tabs { flex-wrap: wrap; row-gap: 4px; }
     .rbr-tab { flex: 1; font-size: 12px; padding: 9px 8px; gap: 6px; }

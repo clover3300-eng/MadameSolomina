@@ -45,17 +45,17 @@
     <link rel="stylesheet" href="css/calc-r5.css?v=12">
     <link rel="stylesheet" href="css/calc-mode.css?v=12">
     <link rel="stylesheet" href="css/home-register.css?v=21">
-    <link rel="stylesheet" href="css/site-bg.css?v=11">
+    <link rel="stylesheet" href="css/site-bg.css?v=12">
     <link rel="stylesheet" href="css/profile-menu.css?v=15">
     <link rel="stylesheet" href="css/notifications.css?v=2">
     <link rel="stylesheet" href="css/tab-gates.css?v=4">
     <link rel="stylesheet" href="css/admin.css?v=11">
-    <link rel="stylesheet" href="css/rebalance-r6.css?v=5">
+    <link rel="stylesheet" href="css/rebalance-r6.css?v=6">
     <link rel="stylesheet" href="css/typography-tokens.css?v=7">
     <link rel="stylesheet" href="css/portfolios-r7.css?v=27">
     <link rel="stylesheet" href="css/desktop-zoom.css?v=4">
     <!-- Мобильный слой (≤1023px) — всегда ПОСЛЕДНИЙ, перебивает всё -->
-    <link rel="stylesheet" href="css/mobile.css?v=17">
+    <link rel="stylesheet" href="css/mobile.css?v=18">
     
     <!-- Telegram WebApp API (fallback — works both in TG and browser) -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -1552,27 +1552,44 @@
          Карточки в языке карточки регистрации Главной (.hg-auth): белые, радиус 14px,
          тонкая рамка. Кнопка «Подробнее» открывает Академию ребалансировки (#rbxAcademy). ===== -->
     <div class="rbx-grid">
+        <!-- Манифест-колонка: намеренно монохромная и «журнальная» — серифный
+             заголовок, волосяные линии, римская нумерация, разрядка. Акцентный
+             зелёный сюда не заходит: в этом блоке работает только типографика. -->
         <section class="rbx-block rbx-block-why">
+            <div class="rbx-wc-eyebrow">Философия капитала</div>
             <h2 class="rbx-wc-title">Зачем нужно ребалансировать</h2>
-            <div class="rbx-wc-tag">Философия капитала</div>
-            <p class="rbx-why-lead">Со временем доли активов уходят от плана: выросшие бумаги перегружают портфель риском, а недооценённые идеи остаются без внимания. Ребалансировка возвращает портфель к плану.</p>
-            <ul class="rbx-why-list">
+            <div class="rbx-wc-rule" aria-hidden="true"></div>
+            <p class="rbx-wc-lead">Портфель — не памятник. Рынок незаметно переписывает доли: то, что выросло, начинает весить больше положенного, и риск появляется там, где вы его не заказывали.</p>
+
+            <ol class="rbx-wc-list">
                 <li>
-                    <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></i>
-                    <span><b>Фиксируем прибыль</b> в подорожавшем — продаём выросшее, пока оно дорогое.</span>
+                    <span class="n">I</span>
+                    <div class="tx">
+                        <b>Фиксируем прибыль</b>
+                        <p>Продаём выросшее, пока оно дорогое, — и превращаем бумажный рост в настоящий.</p>
+                    </div>
                 </li>
                 <li>
-                    <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></i>
-                    <span><b>Докупаем недооценённое</b> — возвращаем структуру портфеля к целевой.</span>
+                    <span class="n">II</span>
+                    <div class="tx">
+                        <b>Докупаем недооценённое</b>
+                        <p>Возвращаем структуру портфеля к целевой, забирая то, что рынок пока не разглядел.</p>
+                    </div>
                 </li>
                 <li>
-                    <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></i>
-                    <span><b>Без эмоций</b> — дисциплина «дорого продать, дёшево купить» по правилам, а не по настроению.</span>
+                    <span class="n">III</span>
+                    <div class="tx">
+                        <b>Держим риск по плану</b>
+                        <p>Доли остаются теми, на которые согласились вы, а не теми, что выбрал за вас рынок.</p>
+                    </div>
                 </li>
-            </ul>
+            </ol>
+
+            <blockquote class="rbx-wc-quote">Дисциплина вместо настроения: дорого продать, дёшево купить — по правилам.</blockquote>
+
             <button type="button" class="rbx-wc-btn" onclick="rbxAcademyOpen()">
                 <span>Подробнее</span>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
             </button>
         </section>
 
@@ -1756,7 +1773,7 @@
                 </div>
 
                 <div class="rbxi-demo">
-                    <div class="rbxi-cap">На позицию <b>100 000 ₽</b> · пример</div>
+                    <div class="rbxi-cap" id="rbxiCap"></div>
                     <div class="rbxi-pair">
                         <div class="rbxi-card out" id="rbxiOut"></div>
                         <div class="rbxi-arrow" id="rbxiArrow">
@@ -1765,6 +1782,7 @@
                         <div class="rbxi-card in" id="rbxiIn"></div>
                     </div>
                     <div class="rbxi-stats" id="rbxiStats"></div>
+                    <div class="rbxi-punch" id="rbxiPunch"></div>
                     <button type="button" class="rbxi-do" id="rbxiDo" onclick="rbxInsideAct()">Обменять</button>
                 </div>
 
@@ -1778,7 +1796,23 @@
             <!-- Раздел 3: общая ребалансировка раз в год, пример по шагам -->
             <div class="rbxa-pane" id="rbxaPane-annual">
                 <h4 class="rbxa-h">Общая ребалансировка — раз в год</h4>
-                <p class="rbxa-lead">Раз в год сверяем фактические доли акций и облигаций с целевыми и возвращаем портфель к плану. Пройдите пример по шагам.</p>
+                <p class="rbxa-lead">Раз в год сверяем фактические доли акций и облигаций с целевыми и возвращаем портфель к плану. Двигайте ползунок — задайте, каким был год, и пройдите шаги: расчёт пересчитается под ваш сценарий.</p>
+
+                <!-- Ползунок задаёт год: от обвала до ралли. Все шаги считаются от него,
+                     поэтому на падении ребаланс сам разворачивается — покупаем акции. -->
+                <div class="rbxa-dial">
+                    <div class="rbxa-dial-h">
+                        <span>Акции за год</span>
+                        <b id="rbxaGrowthTx">+50%</b>
+                    </div>
+                    <input type="range" id="rbxaGrowth" class="rbxa-range" min="-40" max="60" step="5" value="50"
+                           oninput="rbxAcademyGrowth(this.value)" aria-label="Рост акций за год">
+                    <div class="rbxa-dial-sc">
+                        <span>обвал −40%</span>
+                        <span>ОФЗ: +18% купонами</span>
+                        <span>ралли +60%</span>
+                    </div>
+                </div>
 
                 <div class="rbxa-steps-row">
                     <div class="rbxa-steps" role="group" aria-label="Шаги примера">
@@ -1821,6 +1855,7 @@
                         <div><span>Портфель</span><b id="rbxaSimTotal">100 000 ₽</b></div>
                         <div class="shr"><span>Доли</span><b id="rbxaSimShares">50% / 50%</b></div>
                     </div>
+                    <div class="rbxa-sim-gain" id="rbxaSimGain"></div>
                 </div>
 
                 <div class="rbxa-note">
@@ -2418,7 +2453,7 @@
 <script src="js/core.js?v=11" defer></script>
 <script src="js/calculator-ui.js?v=4" defer></script>
 <script src="js/data.js?v=9" defer></script>
-<script src="js/rebalance.js?v=11" defer></script>
+<script src="js/rebalance.js?v=12" defer></script>
 <script src="js/company.js?v=2" defer></script>
 <script src="js/portfolio.js?v=17" defer></script>
 <script src="js/init.js?v=4" defer></script>
@@ -2443,7 +2478,7 @@
 <script src="js/portfolios.js?v=150" defer></script>
 <!-- Статичный фон-мозаика остальных вкладок: не смотрит на window.supa,
      порядок относительно облака не важен -->
-<script src="js/site-bg.js?v=7" defer></script>
+<script src="js/site-bg.js?v=8" defer></script>
 
 <!-- Облако: конфиг + клиент ДО home-register/profile-menu (они смотрят window.supa),
      notifications (звоночек) — после profile-menu (встаёт рядом с аватаром),

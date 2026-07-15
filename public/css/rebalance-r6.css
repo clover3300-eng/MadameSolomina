@@ -251,40 +251,99 @@ body.dark-mode .rbr-sep { background: rgba(255, 255, 255, 0.12); }
     to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Узкий блок «Зачем нужно ребалансировать» ── */
+/* ── Манифест-колонка «Зачем нужно ребалансировать» ──
+   Единственный блок вкладки, где нет ни акцентного зелёного, ни плашек:
+   только типографика, воздух и волосяные линии. Тянется на всю высоту ряда
+   (align-self: stretch), поэтому колонка читается как страница журнала,
+   а не как обрезок рядом с большой таблицей. */
 .rbx-block-why {
+    align-self: stretch;
     display: flex;
     flex-direction: column;
-    padding: 26px 24px 22px;
+    padding: 34px 30px 30px;
 }
+.rbx-wc-eyebrow {
+    margin-bottom: 16px;
+    font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.28em; color: #a8b1bf;
+}
+body.dark-mode .rbx-wc-eyebrow { color: #6b7889; }
 .rbx-wc-title {
-    margin: 0 0 10px;
-    font-size: 23px; line-height: 1.18; color: #161B27;
+    margin: 0;
+    font-size: 27px; line-height: 1.22; color: #12161f;
 }
 body.dark-mode .rbx-wc-title { color: #F1F5F9; }
-.rbx-wc-tag {
-    margin-bottom: 14px;
-    font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 800;
-    text-transform: uppercase; letter-spacing: 0.16em; color: #9aa5b5;
+/* волосяная черта под заголовком — куотюрная деталь вместо плашки */
+.rbx-wc-rule {
+    width: 34px; height: 1px; margin: 20px 0;
+    background: #12161f;
 }
-.rbx-block-why .rbx-why-lead { font-size: 12.5px; }
+body.dark-mode .rbx-wc-rule { background: rgba(255, 255, 255, 0.5); }
+.rbx-wc-lead {
+    margin: 0 0 26px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px; line-height: 1.75; color: #5b6779;
+}
+body.dark-mode .rbx-wc-lead { color: #94a3b8; }
+
+/* нумерованный список: римские цифры серифом, пункты разделены волосяными линиями.
+   margin-bottom:auto — колонка тянется на всю высоту ряда, и лишний воздух
+   собирается здесь, между списком и репликой, а не рвёт низ карточки */
+.rbx-wc-list { list-style: none; margin: 0 0 auto; padding: 0; }
+.rbx-wc-list li {
+    display: flex; gap: 16px;
+    padding: 17px 0;
+    border-top: 1px solid rgba(18, 22, 31, 0.09);
+}
+.rbx-wc-list li:last-child { border-bottom: 1px solid rgba(18, 22, 31, 0.09); }
+body.dark-mode .rbx-wc-list li { border-top-color: rgba(255, 255, 255, 0.08); }
+body.dark-mode .rbx-wc-list li:last-child { border-bottom-color: rgba(255, 255, 255, 0.08); }
+.rbx-wc-list .n {
+    flex-shrink: 0; width: 22px; padding-top: 1px;
+    font-family: var(--font-title, Georgia, serif);
+    font-size: 13px; letter-spacing: 0.08em; color: #b3bbc8;
+}
+body.dark-mode .rbx-wc-list .n { color: #5f6b7d; }
+.rbx-wc-list .tx { min-width: 0; }
+.rbx-wc-list b {
+    display: block; margin-bottom: 5px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.02em; color: #12161f;
+}
+body.dark-mode .rbx-wc-list b { color: #e8edf4; }
+.rbx-wc-list p {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    font-size: 12.5px; line-height: 1.65; color: #6b7789;
+}
+body.dark-mode .rbx-wc-list p { color: #8b98ab; }
+
+/* реплика-манифест: серифный курсив у вертикальной черты */
+.rbx-wc-quote {
+    margin: 26px 0 0; padding: 2px 0 2px 16px;
+    border-left: 1px solid rgba(18, 22, 31, 0.16);
+    font-family: var(--font-title, Georgia, serif);
+    font-style: italic; font-size: 14px; line-height: 1.6; color: #4a5464;
+}
+body.dark-mode .rbx-wc-quote { border-left-color: rgba(255, 255, 255, 0.18); color: #a3aebe; }
+
+/* кнопка: плоский чёрный прямоугольник, прописные вразрядку — без теней и градиентов */
 .rbx-wc-btn {
-    margin-top: auto;
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-    width: 100%; padding: 14px 18px;
-    border: none; border-radius: 12px; cursor: pointer;
-    background: #141b26; color: #ffffff;
-    font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 700;
-    box-shadow: 0 12px 24px -12px rgba(16, 22, 31, 0.55);
-    transition: background 0.18s ease, transform 0.16s ease, box-shadow 0.16s ease;
+    margin-top: 30px;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; padding: 15px 18px;
+    border: none; border-radius: 4px; cursor: pointer;
+    background: #12161f; color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    font-size: 10.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.22em;
+    transition: background 0.2s ease;
 }
-.rbx-block-why .rbx-why-list { margin-bottom: 22px; }
-.rbx-wc-btn:hover { background: #1e2938; transform: translateY(-1px); box-shadow: 0 16px 30px -12px rgba(16, 22, 31, 0.6); }
-.rbx-wc-btn:active { transform: translateY(0); }
-.rbx-wc-btn svg { flex-shrink: 0; transition: transform 0.25s ease; }
-.rbx-wc-btn:hover svg { transform: translateX(3px); }
-body.dark-mode .rbx-wc-btn { background: #223045; }
-body.dark-mode .rbx-wc-btn:hover { background: #2a3a53; }
+.rbx-wc-btn:hover { background: #2b3444; }
+.rbx-wc-btn svg { flex-shrink: 0; transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1); }
+.rbx-wc-btn:hover svg { transform: translateX(4px); }
+body.dark-mode .rbx-wc-btn { background: #e8edf4; color: #12161f; }
+body.dark-mode .rbx-wc-btn:hover { background: #ffffff; }
 
 /* кнопки сортировки (Доходность / Цена) — живут в ряду переключателя */
 .rbx-sort { display: flex; gap: 6px; }
@@ -468,24 +527,6 @@ body.dark-mode .rbx-chart-btn { background: linear-gradient(135deg, #232f40, #10
     font-family: 'Inter', sans-serif; font-size: 11px; line-height: 1.5; color: #9aa6b8;
 }
 
-/* Текст и чек-список «Зачем ребалансировать» — живут в блоке .rbx-block-why */
-.rbx-why-lead {
-    margin: 0 0 13px;
-    font-family: 'Inter', sans-serif; font-size: 12px; line-height: 1.55; color: #5d6b83;
-}
-.rbx-why-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-.rbx-why-list li { display: flex; gap: 9px; align-items: flex-start; }
-.rbx-why-list li i { flex-shrink: 0; margin-top: 1px; color: #1d9d6c; line-height: 0; }
-.rbx-why-list li i svg { width: 15px; height: 15px; }
-.rbx-why-list span {
-    font-family: 'Inter', sans-serif; font-size: 11.5px; line-height: 1.5; color: #5d6b83;
-}
-.rbx-why-list b { color: #2C364C; font-weight: 700; }
-body.dark-mode .rbx-why-lead,
-body.dark-mode .rbx-why-list span { color: #94a3b8; }
-body.dark-mode .rbx-why-list b { color: #e2e8f0; }
-body.dark-mode .rbx-why-list li i { color: #34d399; }
-
 /* ──────────────── СЕКЦИЯ АКЦИИ: 4 КОЛОНКИ ЭШЕЛОНОВ ──────────────── */
 
 .rbx-esh-grid {
@@ -569,8 +610,8 @@ body.dark-mode .rbx-tile .bar { background: rgba(255, 255, 255, 0.09); }
 /* планшет/узкий десктоп: блоки друг под другом, эшелоны 4-в-ряд остаются */
 @media (max-width: 1180px) and (min-width: 1024px) {
     .rbx-grid { grid-template-columns: 1fr; }
-    .rbx-wc-btn { width: auto; align-self: flex-start; padding: 13px 26px; }
-    .rbx-block-why .rbx-why-list { margin-bottom: 18px; }
+    .rbx-wc-btn { width: auto; align-self: flex-start; padding: 14px 32px; }
+    .rbx-block-why { align-self: auto; }
     .rbr-tab { flex: 1; }
 }
 
@@ -1236,4 +1277,115 @@ body.dark-mode .rbxa-play.playing { background: #2a3a53; color: #ffffff; border-
 
 @media (prefers-reduced-motion: reduce) {
     .rbxl-bar .seg, .rbxl-chip.fresh, .rbxl-bar.steady, .rbxi-card, .rbxi-arrow { transition: none; animation: none; }
+}
+
+/* ─────────── АКАДЕМИЯ · вывод «машина денег» под обменом ─────────── */
+.rbxi-punch {
+    max-height: 0; overflow: hidden;
+    margin: 0; padding: 0 13px;
+    border-radius: 10px;
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid transparent;
+    font-family: 'Inter', sans-serif; font-size: 12.5px; line-height: 1.6; color: #2f6a53;
+    opacity: 0;
+    transition: max-height 0.34s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.24s ease,
+                margin 0.34s ease, padding 0.34s ease, border-color 0.24s ease;
+}
+.rbxi-punch.on {
+    max-height: 200px; opacity: 1;
+    margin-top: 10px; padding: 11px 13px;
+    border-color: rgba(16, 185, 129, 0.24);
+}
+.rbxi-punch b { color: #12604a; font-weight: 800; }
+body.dark-mode .rbxi-punch { background: rgba(52, 211, 153, 0.1); color: #86e3bb; }
+body.dark-mode .rbxi-punch.on { border-color: rgba(52, 211, 153, 0.26); }
+body.dark-mode .rbxi-punch b { color: #4be3a0; }
+
+/* ─────────── АКАДЕМИЯ · ползунок года («Раз в год») ─────────── */
+.rbxa-dial {
+    margin-bottom: 12px; padding: 12px 14px 10px;
+    border: 1px solid #eef2f7; border-radius: 12px;
+    background: #ffffff;
+}
+body.dark-mode .rbxa-dial { background: rgba(255, 255, 255, 0.03); border-color: rgba(255, 255, 255, 0.08); }
+.rbxa-dial-h {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+    margin-bottom: 9px;
+}
+.rbxa-dial-h span {
+    font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.1em; color: #9aa5b5;
+}
+.rbxa-dial-h b {
+    font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 16px; font-weight: 700; color: #159d68;
+    font-variant-numeric: tabular-nums;
+    transition: color 0.2s ease;
+}
+.rbxa-dial-h b.neg { color: #d0455a; }
+body.dark-mode .rbxa-dial-h b { color: #34d399; }
+body.dark-mode .rbxa-dial-h b.neg { color: #f87171; }
+
+.rbxa-range {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 4px; border-radius: 999px; cursor: pointer;
+    background: linear-gradient(90deg, rgba(208, 69, 90, 0.35) 0%, #e3e9f2 40%, rgba(16, 185, 129, 0.45) 100%);
+    outline: none;
+}
+body.dark-mode .rbxa-range {
+    background: linear-gradient(90deg, rgba(248, 113, 113, 0.4) 0%, rgba(255, 255, 255, 0.12) 40%, rgba(52, 211, 153, 0.5) 100%);
+}
+.rbxa-range::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 17px; height: 17px; border-radius: 50%;
+    background: #12161f; border: 2.5px solid #ffffff; cursor: grab;
+    box-shadow: 0 2px 8px rgba(16, 24, 40, 0.3);
+    transition: transform 0.14s ease;
+}
+.rbxa-range::-webkit-slider-thumb:hover { transform: scale(1.14); }
+.rbxa-range:active::-webkit-slider-thumb { cursor: grabbing; transform: scale(1.05); }
+.rbxa-range::-moz-range-thumb {
+    width: 17px; height: 17px; border-radius: 50%;
+    background: #12161f; border: 2.5px solid #ffffff; cursor: grab;
+    box-shadow: 0 2px 8px rgba(16, 24, 40, 0.3);
+}
+body.dark-mode .rbxa-range::-webkit-slider-thumb { background: #e8edf4; border-color: #1d2734; }
+body.dark-mode .rbxa-range::-moz-range-thumb { background: #e8edf4; border-color: #1d2734; }
+
+.rbxa-dial-sc {
+    display: flex; justify-content: space-between; gap: 8px; margin-top: 7px;
+    font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 600; color: #a8b1bf;
+}
+.rbxa-dial-sc span:nth-child(2) { color: #8a96aa; }
+body.dark-mode .rbxa-dial-sc { color: #6b7889; }
+
+/* перекос долей в сцене — рамка просит внимания, как в тренажёре уровней */
+.rbxa-sim-boxes.skew .rbxa-sim-box.st { box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.45); }
+
+/* итог сделки — появляется на шагах «Ребаланс» и «Итог» */
+.rbxa-sim-gain {
+    max-height: 0; overflow: hidden; opacity: 0;
+    margin: 0; padding: 0 12px;
+    border-radius: 10px;
+    background: rgba(16, 185, 129, 0.07);
+    border: 1px solid transparent;
+    font-family: 'Inter', sans-serif; font-size: 12px; line-height: 1.55; color: #2f6a53;
+    transition: max-height 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease,
+                margin 0.32s ease, padding 0.32s ease, border-color 0.22s ease;
+}
+.rbxa-sim-gain.on {
+    max-height: 140px; opacity: 1;
+    margin-top: 8px; padding: 10px 12px;
+    border-color: rgba(16, 185, 129, 0.22);
+}
+.rbxa-sim-gain b {
+    font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-weight: 700; color: #12604a;
+}
+body.dark-mode .rbxa-sim-gain { background: rgba(52, 211, 153, 0.09); color: #86e3bb; }
+body.dark-mode .rbxa-sim-gain.on { border-color: rgba(52, 211, 153, 0.24); }
+body.dark-mode .rbxa-sim-gain b { color: #4be3a0; }
+
+@media (prefers-reduced-motion: reduce) {
+    .rbxi-punch, .rbxa-sim-gain { transition: none; }
 }

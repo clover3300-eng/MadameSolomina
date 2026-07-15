@@ -855,20 +855,24 @@ function rbxLevelFlashBar() {
 // «покупаем» и строка эффекта. Числа иллюстративные, позиция 100 000 ₽.
 const RBXI_DEMO = {
     ofz: {
-        out: { tag: 'Продаём', t: 'ОФЗ 26233', sub: 'подорожала до 720 ₽', k: 'Доходность', v: '15.2%', tone: 'warn' },
-        in:  { tag: 'Покупаем', t: 'ОФЗ 26225', sub: 'торгуется по 584 ₽', k: 'Доходность', v: '18.9%', tone: 'good' },
+        cap: 'Держим <b>10 ОФЗ</b>, куплены по 700 ₽ · пример',
+        out: { tag: 'Продаём', t: 'ОФЗ 26233', sub: '700 → 721 ₽: +3% за месяц', k: 'Доходность', v: '14.0%', tone: 'warn' },
+        in:  { tag: 'Покупаем', t: 'ОФЗ 26225', sub: 'торгуется дешевле — по 655 ₽', k: 'Доходность', v: '18.9%', tone: 'good' },
         stats: [
-            { l: 'Бумаг в позиции', a: '138 шт', b: '171 шт', d: '+33 шт' },
-            { l: 'Купоны в год', a: '15 200 ₽', b: '18 900 ₽', d: '+3 700 ₽' },
-            { l: 'Тело к погашению', a: '138 000 ₽', b: '171 000 ₽', d: '+33 000 ₽' }
+            { l: 'Бумаг в позиции', a: '10 шт', b: '11 шт', d: '+1 шт' },
+            { l: 'Купоны в год', a: '1 010 ₽', b: '1 364 ₽', d: '+354 ₽' },
+            { l: 'Тело к погашению', a: '10 000 ₽', b: '11 000 ₽', d: '+1 000 ₽' }
         ],
+        punch: '<b>Машина денег.</b> Продали 10 бумаг — купили 11, и сверху не вложили ни рубля: лишнюю бумагу оплатил сам рывок цены. Теперь купоны платят 11 бумаг вместо 10 — доход вырос без новых денег.',
         rules: [
-            'Цена ОФЗ выросла — её доходность к цене упала ниже соседних выпусков.',
-            'Меняем на выпуск дешевле: на ту же сумму получаем больше бумаг, купонов и тела к погашению.',
-            'Купоны не копим на счёте, а реинвестируем в самый недооценённый выпуск.'
+            'Продаём <b>не просто «ту, где доходность ниже»</b>, а ту, что резко выросла в цене: +3% за месяц — это около +36% годовых. Такой рывок нужно забирать, пока он есть.',
+            'Прибыль фиксируем сразу — она перестаёт быть бумажной и ложится в карман живыми деньгами.',
+            'На всю сумму берём выпуск, который торгуется дешевле и с высокой доходностью. Цель прямая: продали 10 бумаг — купили 11.',
+            'Купоны тоже не копим на счёте, а реинвестируем сюда же — машина работает и на них.'
         ]
     },
     st: {
+        cap: 'Позиция <b>100 000 ₽</b> · пример',
         out: { tag: 'Продаём', t: 'GAZP', sub: 'дошла до справедливой цены', k: 'Потенциал', v: '+8%', tone: 'warn' },
         in:  { tag: 'Покупаем', t: 'MRKC', sub: 'тот же эшелон риска', k: 'Потенциал', v: '+153%', tone: 'good' },
         stats: [
@@ -876,6 +880,7 @@ const RBXI_DEMO = {
             { l: 'Оценка при росте', a: '108 000 ₽', b: '253 000 ₽', d: '+145 000 ₽' },
             { l: 'Эшелон риска', a: 'II', b: 'II', d: 'не меняем' }
         ],
+        punch: 'Тот же приём, что и в облигациях: забираем реализованный рост и переносим деньги туда, где потенциал ещё не отыгран. Риск при этом не растёт — эшелон прежний.',
         rules: [
             'У каждой бумаги есть потенциал роста до справедливой цены — он виден в таблице кандидатов.',
             'Потенциал реализован — фиксируем прибыль и берём бумагу с наибольшим апсайдом внутри того же эшелона.',
@@ -919,6 +924,16 @@ function rbxInsideRender() {
 
     const arrow = document.getElementById('rbxiArrow');
     if (arrow) arrow.classList.toggle('go', done);
+
+    const cap = document.getElementById('rbxiCap');
+    if (cap) cap.innerHTML = d.cap;
+
+    // вывод-«машина денег» — только после обмена: до него выводить нечего
+    const punch = document.getElementById('rbxiPunch');
+    if (punch) {
+        punch.innerHTML = d.punch;
+        punch.classList.toggle('on', done);
+    }
 
     const stats = document.getElementById('rbxiStats');
     if (stats) {
@@ -970,57 +985,131 @@ function rbxAcademyPlayBtn(playing) {
     if (tx) tx.textContent = playing ? 'Стоп' : 'Проиграть';
 }
 
-// Пример годовой ребалансировки по шагам (раздел «Раз в год»).
-// Цифры иллюстративные: 100 000 ₽ по плану 50/50, за год акции +50%,
-// ОФЗ +18% купонами; ребаланс возвращает доли к целевым.
-const RBXA_STEPS = {
-    1: {
-        st: 50000, ofz: 50000,
-        market: 'Собрали портфель по плану 50/50 — риск ровно тот, на который мы готовы.',
-        action: 'Ничего не делаем. Работает только умная замена внутри классов.'
-    },
-    2: {
-        st: 75000, ofz: 59000,
-        market: 'Акции выросли на 50%, ОФЗ принесли купоны. Доля акций раздулась до 56% — риск уже выше плана.',
-        action: 'Подошла годовая сверка — пора выравнивать доли.'
-    },
-    3: {
-        st: 67000, ofz: 67000,
-        market: 'Цены те же — меняем только структуру портфеля.',
-        action: 'Продаём акции на 8 000 ₽ и перекладываем в ОФЗ. Портфель снова 50/50.'
-    },
-    4: {
-        st: 67000, ofz: 67000,
-        market: 'Прибыль от роста акций «переехала» в надёжные облигации.',
-        action: 'Риск снова по плану. Упадут акции — сделаем наоборот: продадим часть ОФЗ и купим акции дёшево.'
+// ── Раздел 3: живой пример годовой ребалансировки ────────────────────────
+// Шаги считаются от ползунка «Акции за год» (rbxaState.growth), поэтому
+// сценарий рабочий в обе стороны: на росте ребаланс продаёт акции, на
+// падении — покупает. Старт всегда 100 000 ₽ по плану 50/50.
+const RBXA_START = 50000;      // акции на старте
+const RBXA_OFZ_YEAR = 0.18;    // ОФЗ за год: купоны, константа сценария
+
+const rbxaState = { step: 1, growth: 50 };
+
+// Все числа шага из одного расчёта — чтобы подписи не разъезжались с суммами
+function rbxaCalc() {
+    const g = rbxaState.growth / 100;
+    const stYear = RBXA_START * (1 + g);
+    const ofzYear = RBXA_START * (1 + RBXA_OFZ_YEAR);
+    const total = stYear + ofzYear;
+    const half = total / 2;
+    const trade = Math.abs(stYear - half);
+    return {
+        g: rbxaState.growth,
+        stYear, ofzYear, total, half, trade,
+        pctYear: Math.round(stYear / total * 100),
+        sellStocks: stYear > half        // на росте продаём акции, на падении — докупаем
+    };
+}
+
+const rbxaMoney = v => Math.round(v).toLocaleString('ru-RU') + ' ₽';
+const rbxaPct = v => (v > 0 ? '+' : '') + v + '%';
+
+// Тексты и суммы шага. Возвращает готовое состояние сцены.
+function rbxaScene(n) {
+    const c = rbxaCalc();
+    const dir = c.sellStocks ? 'выросли' : 'просели';
+
+    if (n === 1) {
+        return {
+            st: RBXA_START, ofz: RBXA_START,
+            market: 'Собрали портфель по плану 50/50: 50 000 ₽ в акциях, 50 000 ₽ в ОФЗ — риск ровно тот, на который мы готовы.',
+            action: 'Ничего не делаем. Между сверками работает только умная замена внутри классов.'
+        };
     }
-};
+    if (n === 2) {
+        return {
+            st: c.stYear, ofz: c.ofzYear,
+            market: 'Акции за год ' + dir + ' на ' + rbxaPct(c.g) + ', ОФЗ принесли +18% купонами. Доля акций стала <b>' + c.pctYear + '%</b> вместо 50%.',
+            action: c.pctYear === 50
+                ? 'Доли совпали с планом сами — редкий случай, делать нечего.'
+                : (c.sellStocks
+                    ? 'Портфель рискованнее плана: акций стало слишком много. Подошла годовая сверка.'
+                    : 'Портфель консервативнее плана: акции просели и весят меньше положенного. Подошла годовая сверка.')
+        };
+    }
+    if (n === 3) {
+        return {
+            st: c.half, ofz: c.half,
+            market: 'Цены прежние — меняем только структуру портфеля.',
+            action: c.trade < 500
+                ? 'Отклонение меньше 500 ₽ — сделка не окупит комиссий. Оставляем как есть.'
+                : (c.sellStocks
+                    ? 'Продаём акции на <b>' + rbxaMoney(c.trade) + '</b> и перекладываем в ОФЗ. Портфель снова 50/50.'
+                    : 'Продаём ОФЗ на <b>' + rbxaMoney(c.trade) + '</b> и докупаем подешевевшие акции. Портфель снова 50/50.')
+        };
+    }
+    return {
+        st: c.half, ofz: c.half,
+        market: c.sellStocks
+            ? 'Прибыль от роста акций «переехала» в надёжные облигации.'
+            : 'Акции куплены дёшево — на отскоке это принесёт больше, чем простое ожидание.',
+        action: c.sellStocks
+            ? 'Риск снова по плану. Упадут акции — сделаем зеркально: продадим часть ОФЗ и купим акции дёшево.'
+            : 'Риск снова по плану. Вырастут акции — сделаем зеркально: зафиксируем прибыль и переложим в ОФЗ.'
+    };
+}
+
+// Ползунок «Акции за год» — пересчитывает текущий шаг на месте
+function rbxAcademyGrowth(v) {
+    rbxaState.growth = parseInt(v, 10) || 0;
+    const tx = document.getElementById('rbxaGrowthTx');
+    if (tx) {
+        tx.textContent = rbxaPct(rbxaState.growth);
+        tx.classList.toggle('neg', rbxaState.growth < 0);
+    }
+    rbxAcademyStep(rbxaState.step, true);   // не сбивает автопрогон: сцену только пересчитываем
+}
+window.rbxAcademyGrowth = rbxAcademyGrowth;
 
 // fromPlay ставит автопрогон; ручной клик по шагу его останавливает
 function rbxAcademyStep(n, fromPlay) {
-    const step = RBXA_STEPS[n];
-    if (!step) return;
+    if (n < 1 || n > 4) return;
     if (!fromPlay) rbxAcademyStopPlay();
+    rbxaState.step = n;
+    const scene = rbxaScene(n);
     document.querySelectorAll('#rbxAcademy .rbxa-step').forEach(btn => {
         btn.classList.toggle('act', btn.dataset.astep === String(n));
     });
-    const fmt = v => v.toLocaleString('ru-RU') + ' ₽';
-    const total = step.st + step.ofz;
-    const stPct = Math.round(step.st / total * 100);
-    const put = (id, text) => {
+    const total = scene.st + scene.ofz;
+    const stPct = Math.round(scene.st / total * 100);
+    const put = (id, html) => {
         const el = document.getElementById(id);
-        if (el) el.textContent = text;
+        if (el) el.innerHTML = html;
     };
-    put('rbxaSimSt', fmt(step.st));
-    put('rbxaSimOfz', fmt(step.ofz));
-    put('rbxaSimTotal', fmt(total));
+    put('rbxaSimSt', rbxaMoney(scene.st));
+    put('rbxaSimOfz', rbxaMoney(scene.ofz));
+    put('rbxaSimTotal', rbxaMoney(total));
     put('rbxaSimShares', stPct + '% / ' + (100 - stPct) + '%');
-    put('rbxaSimMarket', step.market);
-    put('rbxaSimAction', step.action);
+    put('rbxaSimMarket', scene.market);
+    put('rbxaSimAction', scene.action);
     const stBar = document.getElementById('rbxaSimStBar');
     const ofzBar = document.getElementById('rbxaSimOfzBar');
     if (stBar) stBar.style.width = stPct + '%';
     if (ofzBar) ofzBar.style.width = (100 - stPct) + '%';
+    // перекос долей подсвечиваем — это и есть повод для годовой сверки
+    const boxes = document.querySelector('#rbxAcademy .rbxa-sim-boxes');
+    if (boxes) boxes.classList.toggle('skew', stPct !== 50);
+    // итог портфеля против «ничего не делали» — виден на шагах 3 и 4
+    const gain = document.getElementById('rbxaSimGain');
+    if (gain) {
+        const c = rbxaCalc();
+        const show = n >= 3 && c.trade >= 500;
+        gain.classList.toggle('on', show);
+        if (show) {
+            gain.innerHTML = c.sellStocks
+                ? 'Зафиксировали <b>' + rbxaMoney(c.trade) + '</b> прибыли акций — теперь эти деньги платят купоны, а не зависят от рынка.'
+                : 'Купили акции на <b>' + rbxaMoney(c.trade) + '</b> по низким ценам — на восстановлении рынка это работает на нас.';
+        }
+    }
 }
 
 // Закрытие академии по Esc (карточка тикера обрабатывается своим слушателем)

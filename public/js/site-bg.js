@@ -105,9 +105,10 @@
     //  ВАРИАНТ ФОНА (переключатель в «Портфели · Настройки»)
     // ---------------------------------------------------------------
     // Заливки живут в css/site-bg.css (body.sbg-<key> #siteBgTiles). Здесь — только
-    // список, персист и классы на <body>. Мозаика — дефолт: при пустом ключе классы
-    // не ставим вовсе, и всё работает ровно как до появления переключателя.
+    // список, персист и классы на <body>. Дефолт с 2026-07-15 — «Аврора» (была
+    // «Мозаика»): у кого ключ уже выбран, тот остаётся на своём варианте.
     var BG_KEY = 'site_bg_v1';
+    var BG_DEFAULT = 'aurora';
     var BG_LIST = [
         { id: 'mosaic',   name: 'Мозаика',    sub: 'как сейчас' },
         { id: 'sage',     name: 'Шалфейный',  sub: 'тихий зелёный' },
@@ -118,8 +119,8 @@
     ];
     function bgValid(v) { return BG_LIST.some(function (b) { return b.id === v; }); }
     function bgGet() {
-        try { var v = localStorage.getItem(BG_KEY); return bgValid(v) ? v : 'mosaic'; }
-        catch (e) { return 'mosaic'; }
+        try { var v = localStorage.getItem(BG_KEY); return bgValid(v) ? v : BG_DEFAULT; }
+        catch (e) { return BG_DEFAULT; }
     }
     function bgApply() {
         var cur = bgGet(), b = document.body;
@@ -167,7 +168,12 @@
         fab = document.createElement('div');
         fab.id = 'bgFab';
         fab.innerHTML =
+            // .bgfab-rail-in — внутренняя обёртка ради плавного раскрытия: рейка растёт
+            // через grid-template-rows 0fr→1fr (как подпункты сайдбара), а обёртка держит
+            // overflow:hidden. Раньше была анимация max-height до 460px — она пролетала
+            // реальную высоту рейки за первые кадры и читалась как рывок.
             '<div class="bgfab-rail" role="radiogroup" aria-label="Фон страницы">' +
+                '<div class="bgfab-rail-in">' +
                 BG_LIST.map(function (o) {
                     // data-name → подпись .bgfab-tip слева от образца: варианты фона
                     // намеренно неяркие, и кружком 30px они друг от друга не отличаются —
@@ -175,6 +181,7 @@
                     return '<button type="button" class="bgfab-sw sbgpv-' + o.id + '" role="radio" data-bg="' + o.id + '"' +
                         ' data-name="' + o.name + '" aria-label="' + o.name + ' — ' + o.sub + '"></button>';
                 }).join('') +
+                '</div>' +
             '</div>' +
             '<span class="bgfab-tip" aria-hidden="true"></span>' +
             '<button type="button" class="bgfab-btn" aria-label="Фон страницы" title="Фон страницы">' + WAVE + '</button>';
