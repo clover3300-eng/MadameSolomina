@@ -186,11 +186,11 @@
         hub.setAttribute('role', 'dialog');
         hub.setAttribute('aria-label', 'Личный кабинет');
         hub.innerHTML =
-            // Шапка — тёмный герой на языке «Портфелей» (.pfp-panel): тот же градиент,
-            // тот же декоративный слой glow+сетка точек в .ph-fx. Под именем — полоска
-            // KPI (.ph-strip), чтобы кабинет что-то показывал, а не только прятал.
+            // Шапка светлая, на языке .hg-auth: панель всплывает НАД любой вкладкой, и
+            // прежний тёмный герой (градиент + glow-слой .ph-fx) сливался с тёмными
+            // героями Портфелей/Ребаланса. Под именем — полоска KPI (.ph-strip),
+            // чтобы кабинет что-то показывал, а не только прятал.
             '<div class="ph-head">' +
-                '<div class="ph-fx" aria-hidden="true"><i class="g1"></i><i class="g2"></i><i class="mesh"></i></div>' +
                 '<div class="ph-head-top">' +
                     '<div class="ph-ava" id="phAva"></div>' +
                     '<div class="ph-id"><div class="ph-name" id="phName"></div><div class="ph-mail" id="phMail"></div></div>' +
@@ -399,11 +399,12 @@
         if (backFab) backFab.classList.toggle('on', navHist.length > 0);
     }
 
-    // ---------- KPI-полоска героя ----------
-    // Живых котировок у кабинета нет (они в замыкании portfolios.js), поэтому капитал
-    // берём из ПОСЛЕДНЕГО дневного снимка pf_snapshots_v1 — его пишет вкладка «Портфели»
-    // при живых ценах. Число честное, но может быть вчерашним: подпись «капитал», а не
-    // «сейчас». Нет снимков (портфель только создан) — ячейку не показываем вовсе.
+    // ---------- KPI-полоска шапки ----------
+    // Две ячейки: сколько портфелей и какой тариф. Капитал отсюда убран намеренно —
+    // живых котировок у кабинета нет (они в замыкании portfolios.js), и сумму
+    // приходилось брать из вчерашнего снимка pf_snapshots_v1: цифра честная, но
+    // запаздывающая, а рядом с ней «капитал» читался как «прямо сейчас». Актуальную
+    // сумму показывают сами «Портфели», кабинету дублировать её незачем.
     function phPlural(n, one, few, many) {
         var a = Math.abs(n) % 100, b = a % 10;
         if (a > 10 && a < 20) return many;
@@ -412,34 +413,22 @@
         return many;
     }
     function phStats() {
-        var items = [], snaps = {};
+        var items = [];
         try {
             var st = JSON.parse(localStorage.getItem('portfolios_v1')) || {};
             items = (Array.isArray(st.items) ? st.items : []).filter(function (p) { return !p.hidden; });
-            snaps = JSON.parse(localStorage.getItem('pf_snapshots_v1')) || {};
         } catch (e) { return null; }
         if (!items.length) return null;
-        var cap = 0, hasCap = false;
-        items.forEach(function (p) {
-            var m = snaps[p.id]; if (!m) return;
-            var last = null;
-            for (var d in m) if (last == null || d > last) last = d;
-            if (last != null && isFinite(m[last])) { cap += m[last]; hasCap = true; }
-        });
-        return { n: items.length, cap: hasCap ? cap : null };
+        return { n: items.length };
     }
     function renderStrip() {
         var el = hub && hub.querySelector('#phStrip');
         if (!el) return;
         var st = phStats();
-        // гостю и пустому кабинету полоска не нужна — три прочерка ничего не сообщают
+        // гостю и пустому кабинету полоска не нужна — прочерки ничего не сообщают
         if (!st) { el.innerHTML = ''; el.hidden = true; return; }
         el.hidden = false;
         var cells = [];
-        if (st.cap != null) {
-            cells.push('<div class="ph-strip-i"><b>' + Math.round(st.cap).toLocaleString('ru-RU') + ' ₽</b>' +
-                '<span>капитал</span></div>');
-        }
         cells.push('<div class="ph-strip-i"><b>' + st.n + '</b>' +
             '<span>' + phPlural(st.n, 'портфель', 'портфеля', 'портфелей') + '</span></div>');
         cells.push('<div class="ph-strip-i"><b class="txt">Базовый</b><span>тариф</span></div>');

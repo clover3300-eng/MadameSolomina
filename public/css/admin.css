@@ -506,10 +506,13 @@ body.adm-modal-open { overflow: hidden; }
 }
 .ph-adm:hover { background: rgba(59, 130, 246, 0.14); transform: translateY(-1px); }
 .ph-adm svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
-/* пилюля «облако» в шапке кабинета: шапка теперь тёмный герой (profile-menu.css),
-   прежний #059669 на ней не читался — берём мятный R7 с тёмных панелей Портфелей */
-#profileHub .ph-pill.cloud { background: rgba(75, 227, 160, 0.14); color: #4be3a0; border-color: rgba(75, 227, 160, 0.32); }
-#profileHub .ph-pill.cloud i { background: #4be3a0; }
+/* пилюля «облако» в шапке кабинета: шапка снова светлая (profile-menu.css), поэтому
+   вернулся тёмно-зелёный — мятный #4be3a0 с тёмных панелей Портфелей на белом не читался.
+   В тёмной теме мятный остаётся: там подложка шапки #141c27. */
+#profileHub .ph-pill.cloud { background: rgba(22, 163, 74, 0.12); color: #15803d; border-color: rgba(22, 163, 74, 0.22); }
+#profileHub .ph-pill.cloud i { background: #16a34a; }
+body.dark-mode #profileHub .ph-pill.cloud { background: rgba(75, 227, 160, 0.14); color: #4be3a0; border-color: rgba(75, 227, 160, 0.32); }
+body.dark-mode #profileHub .ph-pill.cloud i { background: #4be3a0; }
 
 /* кнопка формы на Главной: занятое состояние + зелёная заметка */
 .hr-submit.is-busy { opacity: 0.75; pointer-events: none; }
