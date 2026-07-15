@@ -63,10 +63,18 @@ body.dark-mode #panel-portfolios .pfc-name-ink {
 /* ============ 4. Подвкладки ============ */
 .pfx-tabs {
     display: flex; align-items: center; gap: 4px;
-    /* wrap — на случай многих открытых вкладок-портфелей: ряд переносится, а не давит соседей */
-    flex-wrap: wrap;
+    /* R9.3: при многих открытых вкладках-портфелях ряд НЕ переносится (перенос ломал
+       линию подчёркивания и ритм), а скроллится по горизонтали: скроллбар спрятан,
+       края затухают маской (.fade-l/.fade-r вешает pfxTabsScrollSync), активная
+       вкладка сама подъезжает в видимую зону после рендера */
+    flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden;
+    scrollbar-width: none; -ms-overflow-style: none;
     margin: 14px 2px 16px; border-bottom: 1px solid #e7ecf3;
 }
+.pfx-tabs::-webkit-scrollbar { display: none; }
+.pfx-tabs.fade-r { -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 32px), transparent); mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 32px), transparent); }
+.pfx-tabs.fade-l { -webkit-mask-image: linear-gradient(90deg, transparent, #000 32px); mask-image: linear-gradient(90deg, transparent, #000 32px); }
+.pfx-tabs.fade-l.fade-r { -webkit-mask-image: linear-gradient(90deg, transparent, #000 32px, #000 calc(100% - 32px), transparent); mask-image: linear-gradient(90deg, transparent, #000 32px, #000 calc(100% - 32px), transparent); }
 .pfx-tab {
     position: relative; appearance: none; background: none; border: 0; cursor: pointer;
     display: inline-flex; align-items: center; gap: 7px;
@@ -102,10 +110,17 @@ body.dark-mode #panel-portfolios .pfc-name-ink {
 .pfx-tab-x:hover { opacity: 1; background: rgba(15, 23, 42, 0.08); }
 /* подчёркивание активного чипа — до крестика ему хватает 6px справа */
 .pfx-tab-pf.on::after { right: 6px; }
-/* R9.2: чип СКРЫТОГО портфеля (убран с «Обзора», вкладка живёт) — приглушён */
+/* R9.2: чип СКРЫТОГО портфеля (убран с «Обзора», вкладка живёт) — приглушён,
+   R9.3: плюс мини-глазок, объясняющий бледность без наведения */
 .pfx-tab-pf.hid .pfx-tab-dot { opacity: 0.35; }
 .pfx-tab-pf.hid .pfx-tab-nm { opacity: 0.6; }
 .pfx-tab-pf.hid.on .pfx-tab-nm { opacity: 0.85; }
+.pfx-tab-eyeoff { display: inline-flex; flex-shrink: 0; margin: 0 -2px; opacity: 0.55; }
+.pfx-tab-eyeoff svg { width: 12px; height: 12px; display: block; }
+/* R9.3: чип в перетаскивании (свой порядок вкладок) */
+.pfx-tab-pf.drag { opacity: 0.35; }
+.pfx-tab-pf { cursor: grab; }
+.pfx-tab-pf:active { cursor: grabbing; }
 
 body.dark-mode .pfx-tabs { border-bottom-color: rgba(255, 255, 255, 0.1); }
 body.dark-mode .pfx-tab { color: #93a2b8; }

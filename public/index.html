@@ -33,7 +33,7 @@
     <link rel="stylesheet" href="css/backtest.css?v=17">
     <link rel="stylesheet" href="css/rebalance-r4.css?v=10">
     <link rel="stylesheet" href="css/dashboard-panel.css?v=5">
-    <link rel="stylesheet" href="css/portfolios.css?v=135">
+    <link rel="stylesheet" href="css/portfolios.css?v=136">
     <link rel="stylesheet" href="css/rebal-r5.css?v=9">
     <link rel="stylesheet" href="css/monthly-panel.css?v=1">
     <link rel="stylesheet" href="css/monthly-r5.css?v=14">
@@ -51,7 +51,7 @@
     <link rel="stylesheet" href="css/admin.css?v=12">
     <link rel="stylesheet" href="css/rebalance-r6.css?v=11">
     <link rel="stylesheet" href="css/typography-tokens.css?v=10">
-    <link rel="stylesheet" href="css/portfolios-r7.css?v=36">
+    <link rel="stylesheet" href="css/portfolios-r7.css?v=37">
     <link rel="stylesheet" href="css/desktop-zoom.css?v=4">
     <!-- Мобильный слой (≤1023px) — всегда ПОСЛЕДНИЙ, перебивает всё -->
     <link rel="stylesheet" href="css/mobile.css?v=22">
@@ -2448,7 +2448,7 @@
 <script src="js/registration.js?v=2" defer></script>
 <script src="js/menu-controller.js" defer></script>
 <script src="js/vanguard-test.js" defer></script>
-<script src="js/webapp-tabs.js?v=30" defer></script>
+<script src="js/webapp-tabs.js?v=31" defer></script>
 <script src="js/top-search.js?v=1" defer></script>
 <script src="js/income-chart.js?v=1" defer></script>
 <script src="js/backtest.js?v=11" defer></script>
@@ -2463,7 +2463,9 @@
 <script src="js/market-chart.js?v=6" defer></script>
 <script src="js/market-heatmap.js?v=36" defer></script>
 <script src="js/market-livebar.js?v=4" defer></script>
-<script src="js/portfolios.js?v=158" defer></script>
+<!-- «Портфели» (11k строк) грузятся ЛЕНИВО при первом входе на вкладку или импорте
+     из расчёта — ensurePortfoliosJs в webapp-tabs.js; актуальная ?v живёт здесь -->
+<script id="pfLazySrc" type="application/json">{"src":"js/portfolios.js?v=159"}</script>
 <!-- Статичный фон-мозаика остальных вкладок: не смотрит на window.supa,
      порядок относительно облака не важен -->
 <script src="js/site-bg.js?v=8" defer></script>
@@ -2481,6 +2483,6 @@
 <script src="js/sums-privacy.js?v=3" defer></script>
 <script src="js/cloud-sync.js?v=6" defer></script>
 <script src="js/admin.js?v=12" defer></script>
-<script src="js/route-hash.js?v=3" defer></script>
+<script src="js/route-hash.js?v=4" defer></script>
 </body>
 </html>

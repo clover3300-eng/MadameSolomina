@@ -66,12 +66,26 @@
     function ruDate(ds) { if (!ds) return '—'; var p = ds.split('-'); return p.length === 3 ? (p[2] + '.' + p[1] + '.' + p[0]) : ds; }
 
     // ---------- toast ----------
-    function toast(msg, isErr) {
+    function toast(msg, isErr, act) {
         var t = dq('pfToast');
         if (!t) { t = document.createElement('div'); t.id = 'pfToast'; t.className = 'pf-toast'; document.body.appendChild(t); }
         t.textContent = msg; t.classList.toggle('err', !!isErr);
+        // undo-паттерн: кнопка действия («Вернуть») прямо в тосте — скрытое/закрытое
+        // возвращается одним кликом, без похода в «Видимость». Тост с кнопкой живёт
+        // дольше обычного и ловит клики (обычный — pointer-events: none).
+        t.classList.toggle('has-act', !!act);
+        if (act && act.label && typeof act.fn === 'function') {
+            var b = document.createElement('button');
+            b.type = 'button'; b.className = 'pf-toast-act'; b.textContent = act.label;
+            b.onclick = function (ev) {
+                ev.stopPropagation();
+                t.classList.remove('show'); clearTimeout(t._tm);
+                act.fn();
+            };
+            t.appendChild(b);
+        }
         t.classList.add('show'); clearTimeout(t._tm);
-        t._tm = setTimeout(function () { t.classList.remove('show'); }, 2200);
+        t._tm = setTimeout(function () { t.classList.remove('show'); }, act ? 6000 : 2200);
     }
 
     // ---------- модель / persist ----------
@@ -466,7 +480,22 @@
             lots: a.lots, lotCount: a.count, nkd: a.nkd, curNkd: curNkd,
             firstDate: a.firstDate, avgDate: a.avgDate, anyApi: a.anyApi };
     }
+    // R9.3: мемоизация НА ВРЕМЯ ОДНОГО синхронного прохода renderPortfolios.
+    // calcPf зовут герой, «Список портфелей», структура, сводка, карточки, календарь —
+    // при 5–8 портфелях один рендер пересчитывал одни и те же составы десятки раз.
+    // Кэш включает renderPortfolios (calcMemo = {}) и гасит в finally (calcMemo = null):
+    // вне рендера кэша НЕТ вовсе, поэтому обработчики, меняющие лоты между рендерами,
+    // всегда считают по свежим данным — окна устаревания не существует.
+    var calcMemo = null;
     function calcPf(p) {
+        if (calcMemo) {
+            var mc = calcMemo[p.id];
+            if (mc) return mc;
+            return (calcMemo[p.id] = calcPfRaw(p));
+        }
+        return calcPfRaw(p);
+    }
+    function calcPfRaw(p) {
         var hs = (p.holdings || []).map(function (h) { return { h: h, c: calcHold(h) }; });
         // состав всегда отсортирован по величине изменения (сначала те, что больше выросли);
         // позиции без вложений (кол-во 0) — в самом конце. Порядок влияет только на ОТОБРАЖЕНИЕ
@@ -1238,6 +1267,7 @@
         // другие сайты. Повторный вход просто игнорируем.
         if (rendering) return;
         rendering = true;
+        calcMemo = {};   // R9.3: кэш calcPf живёт ровно один синхронный проход рендера
         try {
             ensureQuotes();
             // Раскладка: «Избранное» ВСЕГДА в правой колонке (.pf-topgrid-fav), независимо от
@@ -1357,6 +1387,7 @@
             pfPlistSparksSoon();   // спарклайны «Моих портфелей» без снимков — дорисовать из истории
             pfxDrawerSync();       // R9.1: шторка настроек портфеля обновляется вместе со страницей
             pfxFabSync();          // R9.1: круглая кнопка «+ виджет» справа внизу (после обучения)
+            pfxTabsScrollSync();   // R9.3: активная вкладка в видимой зоне ряда, маски краёв, DnD чипов
             if (openMenu) {
                 var m = dq('pfMenu-' + openMenu); if (m) m.scrollTop = 0;
                 // пустой портфель → сразу ставим фокус на ввод тикера (интуитивнее)
@@ -1375,6 +1406,7 @@
             if (window.pfCfgPopRestore) window.pfCfgPopRestore();   // поповер раскладки — тоже (герой пересобран свопом)
             if (dashEdit) pflInitPreview();   // карточка раскладки открыта — показать превью выбранного блока
         } finally {
+            calcMemo = null;   // вне рендера calcPf всегда считает по свежим данным
             rendering = false;
         }
     }
@@ -1623,14 +1655,20 @@
             : '';
         var pfRows = multi ? (showAll + store.items.map(function (p) {
             var c = calcPf(p), off = !!p.hidden;
+            // R9.3: у скрытого — мини-кнопка «открыть вкладку»: иначе до скрытого
+            // портфеля не добраться, если его чип не был открыт заранее
+            var openTab = (off && pfxWide())
+                ? '<span class="pf-eyego" role="button" title="Открыть вкладку портфеля" aria-label="Открыть вкладку портфеля" onclick="pfEyeOpenTab(\'' + p.id + '\', event)">' + GO_ARROW_SVG + '</span>'
+                : '';
             return '<button class="pf-impitem pf-eyeitem' + (off ? ' off-eye' : '') + '" onclick="pfToggleHidden(\'' + p.id + '\',event)">' +
                 '<span class="pf-eyedot" style="background:' + colorVal(p.color) + '"></span>' +
                 '<span class="pf-impbody"><b>' + esc(p.name) + '</b><i>' + fmtRub(c.value) + (off ? ' · скрыт' : '') + '</i></span>' +
+                openTab +
                 '<span class="pf-eyestate">' + (off ? EYEOFF_SVG : EYE_SVG) + '</span>' +
             '</button>';
         }).join('')) : '';
         var pfGroup = multi ? '<div class="pf-impgrp">Какие портфели показывать</div>' + pfRows +
-            '<div class="pf-eyenote">Скрытые карточки не показываются в сетке и в календаре выплат, но их капитал по-прежнему учитывается в общей сводке.</div>' : '';
+            '<div class="pf-eyenote">Скрытые карточки не показываются в сетке и в календаре выплат, но их капитал по-прежнему учитывается в общей сводке. Открытая вкладка портфеля при скрытии не закрывается.</div>' : '';
         // ---- группа «Секции страницы» — тумблеры видимости блоков ----
         // При включённой своей раскладке (dashCfg.on) сюда попадают скрытые/показанные
         // ИЗНАЧАЛЬНЫЕ блоки, которые МОЖНО скрыть глазом на самой карточке: «Календарь
@@ -1699,7 +1737,7 @@
             return '<div class="pfs2-row' + (i === 0 && r.has && hasMany ? ' lead' : '') + (r.has ? '' : ' empty') + '">' +
                 '<span class="pfs2-rk">' + (i + 1) + '</span>' +
                 '<span class="pfs2-n"><i style="background:' + colorVal(r.color) + '"></i><span class="pfs2-nm">' + esc(r.name) + '</span>' +
-                    (r.hid ? '<span class="pfs2-hid" title="Карточка скрыта из сетки">' + EYEOFF_SVG + '</span>' : '') + '</span>' +
+                    (r.hid ? '<span class="pfs2-hid" title="Карточка убрана с «Обзора» — капитал учитывается в сводке">' + EYEOFF_SVG + '</span>' : '') + '</span>' +
                 '<span class="pfs2-cap">' + (r.value > 0 ? fmtRub(r.value) : '—') + '</span>' +
                 '<span class="pfs2-v ' + (r.has ? (r.pct >= 0 ? 'pos' : 'neg') : 'muted') + '">' + (r.has ? fmtPct(r.pct) : '—') + '</span>' +
             '</div>';
@@ -2361,7 +2399,9 @@
         blocks.push({ id: 'conc', name: 'Диверсификация', htmlFn: pfwConcHtml, span: 4, defHidden: true });
         // R8: виджеты подвкладок (референс-скрин «Мои портфели» и карточки настроек);
         // доступны из пикера на ЛЮБОЙ подвкладке, сиды включают их на своих
-        blocks.push({ id: 'plist', name: 'Мои портфели', htmlFn: pfwPlistHtml, span: 12, defHidden: true });
+        // «Список портфелей», не «Мои портфели»: подвкладка теперь сама зовётся
+        // «Мои портфели» — одноимённый виджет внутри читался бы тавтологией (R9.3)
+        blocks.push({ id: 'plist', name: 'Список портфелей', htmlFn: pfwPlistHtml, span: 12, defHidden: true });
         blocks.push({ id: 'pstruct', name: 'Структура по портфелям', htmlFn: pfwPstructHtml, span: 6, defHidden: true });
         blocks.push({ id: 'psum', name: 'Сводные показатели', htmlFn: pfwPsumHtml, span: 6, defHidden: true });
         blocks.push({ id: 'pdetail', name: 'Составы портфелей', htmlFn: pfxTabPortsHtml, span: 12, defHidden: true });
@@ -2800,12 +2840,24 @@
         // Обычный .pfd-item для masonry-пакера, но БЕЗ chrome (не тянется/не режется)
         // и вне dashCfg.order (saveDashCfg его не знает и не сохранит).
         if (pfxIsPfTab(dashTab) && shown.length && !pfxFabSeen() && !dashEdit) {
+            // R9.3: подпись призрака подстраивается под состав портфеля вкладки —
+            // облигационному предлагаем календарь выплат, акционному — лидеров дня
+            var gsub = 'график капитала, календарь выплат, новости — соберите вкладку под себя';
+            var gp = findPf(dashTab.slice(3));
+            if (gp) {
+                var gc = calcPf(gp);
+                var gB = gc.hs.some(function (x) { return x.h.type === 'bond'; });
+                var gS = gc.hs.some(function (x) { return x.h.type !== 'bond'; });
+                if (gB && !gS) gsub = 'календарь выплат, дивиденды и купоны, график капитала — соберите вкладку под облигации';
+                else if (gS && !gB) gsub = 'лидеры дня, новости по позициям, карта рынка — соберите вкладку под акции';
+                else if (gS && gB) gsub = 'распределение активов, календарь выплат, лидеры дня — соберите вкладку под себя';
+            }
             items += '<div class="pfd-item pfxg-item" data-pfd="__ghost" style="grid-column: span 4;">' +
                 '<div class="pfd-body">' +
                     '<button type="button" class="pfxg-ghost" onclick="pfxGhostClick(event)" title="Открыть пикер виджетов">' +
                         '<span class="pfxg-plus">' + PFD_PLUS_SVG + '</span>' +
                         '<b>Добавить виджет</b>' +
-                        '<i>график капитала, календарь выплат, новости — соберите вкладку под себя</i>' +
+                        '<i>' + gsub + '</i>' +
                     '</button>' +
                 '</div>' +
             '</div>';
@@ -5499,7 +5551,7 @@
                     '<div class="pfc-acts">' +
                         '<button class="pfc-act" onclick="pfCopyComposition(\'' + p.id + '\',event)" aria-label="Скопировать состав" title="Скопировать состав портфеля">' + COPY_SVG + '</button>' +
                         '<button class="pfc-act' + (assetsChartOn ? ' on' : '') + '" onclick="pfOpenChartAssets(\'' + p.id + '\')" aria-label="Полный состав" title="' + (assetsChartOn ? 'Свернуть' : 'Полный состав') + '">' + HOLDS_SVG + '</button>' +
-                        '<button class="pfc-act" onclick="pfToggleHidden(\'' + p.id + '\',event)" aria-label="Скрыть портфель" title="Скрыть карточку из сетки">' + EYEOFF_SVG + '</button>' +
+                        '<button class="pfc-act" onclick="pfToggleHidden(\'' + p.id + '\',event)" aria-label="Убрать карточку с «Обзора»" title="Убрать карточку с «Обзора» — портфель останется в сводках, его вкладка не закроется">' + EYEOFF_SVG + '</button>' +
                         '<button class="pfc-act' + (menuOn ? ' on' : '') + '" onclick="pfToggleMenu(\'' + p.id + '\')" aria-label="Настройки" title="Настройки">' + GEAR_SVG + '</button>' +
                     '</div>' +
                 '</div>' +
@@ -5763,7 +5815,7 @@
         var foot = '<div class="pfm-bottom">' +
             '<div class="pfm-foot">' +
                 (empty ? '' : impWrapHtml('imp-' + p.id, p.id)) +   // у пустого портфеля «Импорт» уже внутри приглашения
-                '<button class="pfm-quiet" onclick="pfToggleHidden(\'' + p.id + '\')" title="Спрятать карточку из сетки — вернуть можно через «Видимость» в шапке">' +
+                '<button class="pfm-quiet" onclick="pfToggleHidden(\'' + p.id + '\')" title="Убрать карточку с «Обзора» (портфель останется в сводках) — вернуть можно через «Видимость» в шапке">' +
                     EYEOFF_SVG + 'Скрыть</button>' +
                 '<i class="pfm-foot-sp"></i>' +
                 '<button class="pfm-del-link' + (delArm ? ' on' : '') + '" onclick="pfDelArm(' + (delArm ? 'false' : 'true') + ')">Удалить портфель</button>' +
@@ -7129,12 +7181,45 @@
         try { localStorage.setItem(PFX_TAB_KEY, t); } catch (e) {}
         closeImpMenus();
         pfxSyncCfg();                           // R8: dashCfg вкладки + сброс undo
+        pfxSyncPath();                          // R9.3: подвкладка отражается в /portfolios/<sub>
     }
     window.pfxGoTab = function (t) {
         if (!pfxValidTab(t) || pfxTab === t) return;
         pfxActivateTab(t);
         renderNoAnim();
     };
+    // ---- R9.3: deep-link подвкладок — /portfolios/<sub> ----
+    // Слаг для URL: «Обзор» — без хвоста, штатные подвкладки — своим ключом
+    // ('analytics', 'ports'…), вкладка-портфель — 'pf-<id>'. Читает route-hash
+    // (pathForTab композирует путь при switchTab), пишет pfxSyncPath ниже.
+    window.pfxSubPath = function () {
+        var t = pfxTab;
+        if (!t || t === 'overview') return '';
+        if (pfxIsPfTab(t)) return '/pf-' + t.slice(3);
+        return '/' + t;
+    };
+    // применить подвкладку из пути (прямая загрузка /portfolios/analytics, popstate);
+    // deep-link на вкладку-портфель ОТКРЫВАЕТ её чип — ссылкой можно поделиться
+    window.pfxApplySubPath = function (sub) {
+        var t = sub === 'overview' ? 'overview'
+              : (sub && sub.indexOf('pf-') === 0) ? 'pf:' + sub.slice(3)
+              : sub;
+        if (!t || t === pfxTab) return;
+        if (pfxIsPfTab(t)) {
+            var pid = t.slice(3);
+            if (!findPf(pid) || !pfxWide()) return;
+            if (pfxOpenPfTabs.indexOf(pid) < 0) { pfxOpenPfTabs.push(pid); pfxSaveOpenTabs(); }
+        } else if (t !== 'overview' && !PFX_TABS.some(function (x) { return x[0] === t; })) return;
+        pfxActivateTab(t);
+        if (typeof currentTab !== 'undefined' && currentTab === 'portfolios' && dq('pfWrap')) renderNoAnim();
+    };
+    // подвкладка сменилась — отразить в адресе (replaceState: без мусора в истории;
+    // сами переходы между вкладками сайта пишет route-hash)
+    function pfxSyncPath() {
+        if (typeof currentTab === 'undefined' || currentTab !== 'portfolios') return;
+        if (location.pathname.indexOf('/portfolios') !== 0) return;
+        try { history.replaceState(history.state, '', '/portfolios' + window.pfxSubPath()); } catch (e) {}
+    }
     // открыть портфелю его вкладку (клик по строке «Моих портфелей»); при одном
     // видимом портфеле вкладку не плодим — его дашборд и есть «Обзор» (просьба 2026-07-15)
     window.pfxOpenPf = function (pid) {
@@ -7151,13 +7236,37 @@
         if (pfxTab === 'pf:' + pid) return;   // уже на своей вкладке — клик ничего не рушит
         window.pfxGoTab('pf:' + pid);
     };
-    // закрыть вкладку-портфель (крестик на чипе); раскладка остаётся в pf_dash_tabs_v1
+    // закрыть вкладку-портфель (крестик на чипе); раскладка остаётся в pf_dash_tabs_v1.
+    // R9.3: в тосте — «Вернуть»: вкладка встаёт на прежнее место и, если была
+    // активной, снова активируется (undo-паттерн, как у скрытия портфеля)
     window.pfxClosePfTab = function (pid, ev) {
         if (ev) ev.stopPropagation();
         var i = pfxOpenPfTabs.indexOf(pid);
         if (i >= 0) { pfxOpenPfTabs.splice(i, 1); pfxSaveOpenTabs(); }
-        if (pfxTab === 'pf:' + pid) { pfxActivateTab('overview'); }
+        var wasOn = pfxTab === 'pf:' + pid;
+        if (wasOn) { pfxActivateTab('overview'); }
         renderNoAnim();
+        var p = findPf(pid);
+        if (p && i >= 0) {
+            toast('Вкладка «' + p.name + '» закрыта', false, { label: 'Вернуть', fn: function () {
+                if (!findPf(pid)) return;   // портфель могли успеть удалить
+                if (pfxOpenPfTabs.indexOf(pid) < 0) {
+                    pfxOpenPfTabs.splice(Math.min(i, pfxOpenPfTabs.length), 0, pid);
+                    pfxSaveOpenTabs();
+                }
+                if (wasOn) pfxActivateTab('pf:' + pid);
+                renderNoAnim();
+            } });
+        }
+    };
+    // R9.3: «открыть вкладку» из попапа «Видимость» — путь к СКРЫТОМУ портфелю
+    // (в «Списке портфелей» его строки нет, карточки на «Обзоре» тоже нет)
+    window.pfEyeOpenTab = function (pid, ev) {
+        if (ev) ev.stopPropagation();
+        var p = findPf(pid); if (!p || !pfxWide()) return;
+        if (pfxOpenPfTabs.indexOf(pid) < 0) { pfxOpenPfTabs.push(pid); pfxSaveOpenTabs(); }
+        if (pfxTab === 'pf:' + pid) { renderNoAnim(); return; }   // уже там — просто закрыть попап рендером
+        window.pfxGoTab('pf:' + pid);
     };
     // портфель удалён — вкладка, её раскладка и позиция UI уходят вместе с ним
     function pfxDropPfTab(pid) {
@@ -7169,6 +7278,7 @@
             pfxTab = 'overview';
             try { localStorage.setItem(PFX_TAB_KEY, 'overview'); } catch (e) {}
             pfxSyncCfg();
+            pfxSyncPath();
         }
     }
     function pfxTabsHtml() {
@@ -7186,9 +7296,13 @@
             if (!p) return '';
             if (!p.hidden && visibleItems().length < 2) return '';
             var t = 'pf:' + pid, on = eff === t;
+            // R9.3: чип перетаскивается (порядок вкладок — свой, см. pfxBindChipDnd);
+            // у скрытого портфеля — мини-глазок: одна прозрачность не объясняла, ПОЧЕМУ
+            // чип бледный (тултип видел только тот, кто навёл)
             // крестик — span role=button: вложенный <button> в <button> невалиден
-            return '<button type="button" role="tab" class="pfx-tab pfx-tab-pf' + (on ? ' on' : '') + (p.hidden ? ' hid' : '') + '" aria-selected="' + on + '" onclick="pfxGoTab(\'' + t + '\')" title="Дашборд портфеля «' + attr(p.name) + '»' + (p.hidden ? ' — скрыт на «Обзоре»' : '') + '">' +
+            return '<button type="button" role="tab" draggable="true" data-pid="' + attr(pid) + '" class="pfx-tab pfx-tab-pf' + (on ? ' on' : '') + (p.hidden ? ' hid' : '') + '" aria-selected="' + on + '" onclick="pfxGoTab(\'' + t + '\')" title="Дашборд портфеля «' + attr(p.name) + '»' + (p.hidden ? ' — убран с «Обзора»' : '') + '">' +
                 '<span class="pfx-tab-dot" style="background:' + colorVal(p.color) + '" aria-hidden="true"></span>' +
+                (p.hidden ? '<span class="pfx-tab-eyeoff" aria-hidden="true">' + EYEOFF_SVG + '</span>' : '') +
                 '<span class="pfx-tab-nm">' + esc(p.name) + '</span>' +
                 '<span class="pfx-tab-x" role="button" aria-label="Закрыть вкладку" title="Закрыть вкладку" onclick="pfxClosePfTab(\'' + pid + '\', event)">' + XMARK_SVG + '</span>' +
             '</button>';
@@ -7198,6 +7312,81 @@
                 '<span class="pfx-tab-ic" aria-hidden="true">' + t[2] + '</span>' + t[1] + '</button>' +
                 (t[0] === 'overview' ? chips : '');
         }).join('') + '</div>';
+    }
+    // ---- R9.3: ряд вкладок скроллится, а не переносится ----
+    // Затухание краёв показывает, что ряд продолжается (маска .fade-l/.fade-r по
+    // фактическому scrollLeft), активная вкладка после рендера подъезжает в видимую
+    // зону. Ряд пересоздаётся innerHTML-свопом каждый рендер — слушатели вешаем
+    // заново по флагу на самом элементе.
+    function pfxTabsFade(row) {
+        var canL = row.scrollLeft > 4;
+        var canR = row.scrollLeft + row.clientWidth < row.scrollWidth - 4;
+        row.classList.toggle('fade-l', canL);
+        row.classList.toggle('fade-r', canR);
+    }
+    function pfxTabsScrollSync() {
+        var row = document.querySelector('#pfWrap .pfx-tabs');
+        if (!row) return;
+        if (!row._pfxBound) {
+            row._pfxBound = true;
+            row.addEventListener('scroll', function () { pfxTabsFade(row); }, { passive: true });
+            pfxBindChipDnd(row);
+        }
+        if (row.scrollWidth > row.clientWidth + 4) {
+            var on = row.querySelector('.pfx-tab.on');
+            if (on) {
+                // прицельно двигаем scrollLeft (scrollIntoView утащил бы и страницу)
+                var rl = row.getBoundingClientRect(), ol = on.getBoundingClientRect();
+                if (ol.left < rl.left + 8) row.scrollLeft += ol.left - rl.left - 28;
+                else if (ol.right > rl.right - 8) row.scrollLeft += ol.right - rl.right + 28;
+            }
+        }
+        pfxTabsFade(row);
+    }
+    // ---- R9.3: перетаскивание чипов — свой порядок вкладок-портфелей ----
+    // HTML5 DnD на строке (делегирование: чипы пересоздаются каждый рендер, строка
+    // тоже — слушатели вешает pfxTabsScrollSync по флагу). Порядок сохраняется в
+    // pfxOpenPfTabs (pf_open_tabs_v1); цель вставки — по серединам соседних чипов.
+    var pfxDragPid = null;
+    function pfxBindChipDnd(row) {
+        row.addEventListener('dragstart', function (e) {
+            var chip = e.target && e.target.closest ? e.target.closest('.pfx-tab-pf') : null;
+            if (!chip) return;
+            pfxDragPid = chip.getAttribute('data-pid');
+            chip.classList.add('drag');
+            try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', pfxDragPid); } catch (err) {}
+        });
+        row.addEventListener('dragend', function () {
+            pfxDragPid = null;
+            var c = row.querySelector('.pfx-tab-pf.drag'); if (c) c.classList.remove('drag');
+        });
+        row.addEventListener('dragover', function (e) {
+            if (!pfxDragPid) return;
+            e.preventDefault();
+            try { e.dataTransfer.dropEffect = 'move'; } catch (err) {}
+        });
+        row.addEventListener('drop', function (e) {
+            if (!pfxDragPid) return;
+            e.preventDefault();
+            var pid = pfxDragPid; pfxDragPid = null;
+            // перед КАКИМ чипом бросили: первый, чья середина правее курсора
+            var before = null;
+            var chips = row.querySelectorAll('.pfx-tab-pf');
+            for (var i = 0; i < chips.length; i++) {
+                var cp = chips[i].getAttribute('data-pid');
+                if (cp === pid) continue;
+                var r = chips[i].getBoundingClientRect();
+                if (e.clientX < r.left + r.width / 2) { before = cp; break; }
+            }
+            var from = pfxOpenPfTabs.indexOf(pid);
+            if (from < 0) return;
+            pfxOpenPfTabs.splice(from, 1);
+            var to = before != null ? pfxOpenPfTabs.indexOf(before) : pfxOpenPfTabs.length;
+            if (to < 0) to = pfxOpenPfTabs.length;
+            pfxOpenPfTabs.splice(to, 0, pid);
+            pfxSaveOpenTabs();
+            renderNoAnim();
+        });
     }
 
     // ---- тёмный герой «Панель управления» — постоянная шапка вкладки (референс R7) ----
@@ -7833,7 +8022,7 @@
         var vis = visibleItems();
         if (!vis.length) {
             return '<div class="dash2-card pf-card2 pf-plistblk">' +
-                pfCardHead('', 'Мои портфели', 'список портфелей со сводкой', null) +
+                pfCardHead('', 'Список портфелей', 'все портфели со сводкой', null) +
                 '<div class="pfal-empty">' + (store.items.length ? 'Все портфели скрыты — верните их в меню «Видимость» в шапке.' : 'Создайте первый портфель кнопкой «Портфель» в шапке.') + '</div></div>';
         }
         var rows = vis.map(function (p) { return { p: p, c: calcPf(p) }; });
@@ -7885,7 +8074,7 @@
             '</div>';
         }).join('') + '</div>';
         return '<div class="dash2-card pf-card2 pf-plistblk">' +
-            pfCardHead('', 'Мои портфели', 'всего ' + store.items.length + ' ' + plural(store.items.length, 'портфель', 'портфеля', 'портфелей') + ' · ' + fmtRub(total),
+            pfCardHead('', 'Список портфелей', 'всего ' + store.items.length + ' ' + plural(store.items.length, 'портфель', 'портфеля', 'портфелей') + ' · ' + fmtRub(total),
                 // подпись у сегмента — иначе «Стоимость|Доходность|Имя» читается как
                 // фильтр или вкладки, а не сортировка (просьба 2026-07-16).
                 // Кнопки виджета — ПЕРВЫМИ в ряду (слева от сортировки), а не в углу
@@ -8000,6 +8189,7 @@
             try { localStorage.setItem(PFX_TAB_KEY, 'overview'); } catch (e) {}
             pfl3Open = false;
             pfxSyncCfg();
+            pfxSyncPath();
         }
         // карточку могли удалить с «Обзора» (hidden=1) — тогда уводить было бы некуда:
         // возвращаем её, раз пользователь сам просит настройки этого портфеля
@@ -8280,7 +8470,7 @@
             { id: 'passive', name: 'Пассивный доход', desc: 'Купоны и дивиденды в пересчёте на месяц', cats: ['divs', 'profit'] },
             { id: 'conc', name: 'Диверсификация', desc: 'Доли крупнейших позиций и вердикт о концентрации', cats: ['charts', 'profit'] },
             // R8: виджеты подвкладок — доступны на любой подвкладке
-            { id: 'plist', name: 'Мои портфели', desc: 'Список портфелей: стоимость, доходность и мини-график', cats: ['pop', 'over', 'assets'] },
+            { id: 'plist', name: 'Список портфелей', desc: 'Все портфели: стоимость, доходность и мини-график', cats: ['pop', 'over', 'assets'] },
             { id: 'pstruct', name: 'Структура по портфелям', desc: 'Кольцо: как капитал распределён между портфелями', cats: ['over', 'charts'] },
             { id: 'psum', name: 'Сводные показатели', desc: 'Общая стоимость, доходность, вложения и число активов', cats: ['over', 'profit'] },
             { id: 'pdetail', name: 'Составы портфелей', desc: 'Полные таблицы бумаг каждого портфеля с показателями', cats: ['assets'] },
@@ -9166,11 +9356,16 @@
         };
         saveStore(); renderSmooth(keepOpen ? reopenEye : null);
         // R9.2: открытая вкладка скрытого портфеля живёт дальше — озвучиваем,
-        // чтобы «скрыть» не читалось как пропажа вкладки
+        // чтобы «скрыть» не читалось как пропажа вкладки. R9.3: словарь честный
+        // («убран с Обзора», капитал в сводке остаётся — см. eyeWrapHtml) и
+        // кнопка «Вернуть» прямо в тосте — не надо искать «Видимость» в шапке.
         var tabKept = p.hidden && pfxWide() && pfxOpenPfTabs.indexOf(pid) >= 0;
-        toast(p.hidden
-            ? 'Портфель «' + p.name + '» скрыт из сетки' + (tabKept ? ' — его вкладка осталась открытой' : '')
-            : 'Портфель «' + p.name + '» снова показан');
+        if (p.hidden) {
+            toast('Портфель «' + p.name + '» убран с «Обзора»' + (tabKept ? ' — его вкладка осталась' : ''), false,
+                { label: 'Вернуть', fn: function () { window.pfToggleHidden(pid); } });
+        } else {
+            toast('Портфель «' + p.name + '» снова показан');
+        }
     };
     window.pfShowAllHidden = function () {
         store.items.forEach(function (p) { p.hidden = false; });
@@ -11118,6 +11313,12 @@
         if (currentTab === 'portfolios') renderPortfolios();
     };
 
+    // R9.3: deep-link мог прийти ДО ленивой загрузки этого файла — route-hash
+    // оставил подвкладку в window.__pfSub, подбираем перед первым рендером
+    if (window.__pfSub) {
+        try { window.pfxApplySubPath(window.__pfSub); } catch (e) {}
+        window.__pfSub = null;
+    }
     // Первичный рендер, если вкладка уже активна на старте
     if (typeof currentTab !== 'undefined' && currentTab === 'portfolios') renderPortfolios();
 })();

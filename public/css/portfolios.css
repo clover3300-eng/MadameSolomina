@@ -1132,6 +1132,15 @@ body.dark-mode .pf-impitem.off .pf-impbody i { color: #5a6577; }
 .pf-eyeitem.off-eye .pf-eyedot { opacity: 0.35; box-shadow: none; }
 .pf-eyeitem.off-eye .pf-impbody b { color: #8a97a8; }
 .pf-eyeitem.off-eye .pf-eyestate { color: #c3ccd8; }
+/* R9.3: «открыть вкладку» у скрытого портфеля — единственный путь к нему без показа */
+.pf-eyego {
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; border-radius: 7px; color: #8a97a8;
+    transition: background 0.13s, color 0.13s;
+}
+.pf-eyego svg { width: 14px; height: 14px; }
+.pf-eyego:hover { background: rgba(68, 83, 239, 0.1); color: #4453ef; }
+body.dark-mode .pf-eyego:hover { background: rgba(165, 180, 252, 0.14); color: #a5b4fc; }
 body.dark-mode .pf-eyeitem .pf-eyedot { box-shadow: 0 0 0 3px rgba(255,255,255,0.06); }
 body.dark-mode .pf-eyestate { color: #7c8aa0; }
 body.dark-mode .pf-eyeitem.off-eye .pf-impbody b { color: #5a6577; }
@@ -1773,6 +1782,16 @@ body.dark-mode .pfo-table .pos { color: #34d399; } body.dark-mode .pfo-table .ne
 .pf-toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(14px); z-index: 5000; background: #0f172a; color: #fff; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 13px; padding: 12px 20px; border-radius: 12px; box-shadow: 0 18px 40px -14px rgba(0,0,0,0.5); opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; }
 .pf-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .pf-toast.err { background: #b91c1c; }
+/* R9.3: тост с кнопкой действия («Вернуть») — undo-паттерн; обычный тост клики
+   пропускает (pointer-events: none), с кнопкой обязан их ловить */
+.pf-toast.has-act { pointer-events: auto; display: flex; align-items: center; gap: 14px; }
+.pf-toast-act {
+    appearance: none; border: 0; cursor: pointer; flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.14); color: #a5b4fc;
+    font: inherit; font-size: 13px; padding: 5px 12px; margin: -3px -6px -3px 0;
+    border-radius: 8px; transition: background 0.13s, color 0.13s;
+}
+.pf-toast-act:hover { background: rgba(255, 255, 255, 0.22); color: #c7d2fe; }
 
 /* ============================================================
    КАЛЕНДАРЬ ДАТ ПОРТФЕЛЯ: поле «вставить дату» над сеткой

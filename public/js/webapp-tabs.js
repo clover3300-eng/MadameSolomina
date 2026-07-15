@@ -441,7 +441,11 @@ function populatePanels() {
                 v3blWarnToast('Придумайте название для портфеля');
                 return;
             }
-            if (typeof window.pfImport === 'function') window.pfImport('calc', 'all', null, name);
+            // portfolios.js ленивый: импорт уезжает в колбэк загрузки (если модуль
+            // уже загружен — выполняется сразу, порядок прежний)
+            window.ensurePortfoliosJs(function () {
+                if (typeof window.pfImport === 'function') window.pfImport('calc', 'all', null, name);
+            });
             switchTab('portfolios');
         };
         window.v3CopyBuyList = function() {
@@ -630,6 +634,29 @@ function populatePanels() {
     })();
 }
 
+// ===== Ленивая подгрузка js/portfolios.js (R9.3) =====
+// 11 тысяч строк «Портфелей» не парсятся на Главной/Расчёте: настоящий тег в
+// index.html заменён держателем #pfLazySrc (в нём живёт актуальная ?v). Скрипт
+// вставляется при первом входе на вкладку или импорте из расчёта; его хвост сам
+// рендерит вкладку (currentTab === 'portfolios') и оборачивает switchTab.
+var _pfJsCbs = null;   // null — ещё не грузили; массив — запрос в полёте
+window.ensurePortfoliosJs = function (cb) {
+    if (typeof window.renderPortfolios === 'function') { if (cb) cb(); return; }
+    if (_pfJsCbs) { if (cb) _pfJsCbs.push(cb); return; }
+    _pfJsCbs = cb ? [cb] : [];
+    var holder = document.getElementById('pfLazySrc'), src = 'js/portfolios.js';
+    try { src = JSON.parse(holder.textContent).src || src; } catch (e) {}
+    var s = document.createElement('script');
+    s.src = src;
+    s.onload = function () {
+        var q = _pfJsCbs || []; _pfJsCbs = null;
+        q.forEach(function (fn) { try { fn(); } catch (e) {} });
+    };
+    // сеть моргнула — сбрасываем флаг, следующий вход на вкладку попробует снова
+    s.onerror = function () { _pfJsCbs = null; };
+    document.head.appendChild(s);
+};
+
 function switchTab(tabId) {
     // «Ежемесячный доход» объединён с «Расчётом»: легаси-вызовы уводим в calc
     // с включением купонного режима (карточки выбора — js/calc-mode.js)
@@ -638,6 +665,8 @@ function switchTab(tabId) {
         tabId = 'calc';
     }
     currentTab = tabId;
+    // «Портфели» лениво: сам модуль дорисует вкладку, как только загрузится
+    if (tabId === 'portfolios') window.ensurePortfoliosJs();
 
     // Update tab buttons (top bar legacy + bottom bar)
     document.querySelectorAll('.tab-btn-new, .btab, .sb-item[data-tab]').forEach(btn => {

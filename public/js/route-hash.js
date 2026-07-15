@@ -29,13 +29,30 @@
         return !!document.getElementById('panel-' + t);
     }
 
+    // Путь может нести подвкладку вторым сегментом: /portfolios/analytics,
+    // /portfolios/pf-<id> (deep-link «Портфелей», см. pfxApplySubPath/pfxSubPath
+    // в portfolios.js). Вкладка — всегда ПЕРВЫЙ сегмент.
+    function pathSegs() {
+        return location.pathname.replace(/^\//, '').replace(/\/$/, '').split('/');
+    }
     function tabFromPath() {
-        var t = location.pathname.replace(/^\//, '').replace(/\/$/, '');
+        var t = pathSegs()[0] || '';
         return isValidTab(t) ? t : null;
+    }
+    function subFromPath() {
+        var s = pathSegs();
+        return s.length > 1 ? s.slice(1).join('/') : '';
     }
 
     function pathForTab(tabId) {
-        return tabId === 'home' ? '/' : '/' + tabId;
+        if (tabId === 'home') return '/';
+        var p = '/' + tabId;
+        // «Портфели» дописывают в путь активную подвкладку — переход на вкладку
+        // сразу даёт честный deep-link (дальше его ведёт pfxSyncPath)
+        if (tabId === 'portfolios' && typeof window.pfxSubPath === 'function') {
+            try { p += window.pfxSubPath(); } catch (e) {}
+        }
+        return p;
     }
 
     // Флаг: сейчас переключаемся ПО адресу, обратно в URL не пишем
@@ -52,6 +69,13 @@
     // Кнопки «назад/вперёд» браузера
     window.addEventListener('popstate', function() {
         var t = tabFromPath() || 'home';
+        // подвкладка «Портфелей» из пути: пустая = «Обзор» (вернулись на голый /portfolios);
+        // модуль ленивый — если ещё не загружен, оставляем подвкладку в __pfSub (хвост подберёт)
+        if (t === 'portfolios') {
+            if (typeof window.pfxApplySubPath === 'function') {
+                try { window.pfxApplySubPath(subFromPath() || 'overview'); } catch (e) {}
+            } else window.__pfSub = subFromPath() || null;
+        }
         if (t === currentTab) return;
         applyingPath = true;
         try { window.switchTab(t); } finally { applyingPath = false; }
@@ -66,6 +90,14 @@
     document.addEventListener('DOMContentLoaded', function() {
         var t = tabFromPath();
         if (!t || t === 'home') return;
+        // подвкладку применяем ДО switchTab — первый рендер сразу с ней; пустой хвост
+        // НЕ трогаем: голый /portfolios возвращает на последнюю подвкладку (localStorage).
+        // Ленивый portfolios.js ещё не загружен — подвкладка ждёт его в __pfSub
+        if (t === 'portfolios' && subFromPath()) {
+            if (typeof window.pfxApplySubPath === 'function') {
+                try { window.pfxApplySubPath(subFromPath()); } catch (e) {}
+            } else window.__pfSub = subFromPath();
+        }
         if (typeof currentTab !== 'undefined' && t === currentTab) return;
         applyingPath = true;
         try { window.switchTab(t); } finally { applyingPath = false; }
