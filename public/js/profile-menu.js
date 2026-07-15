@@ -282,11 +282,12 @@
                     '</div></div></div>' +
                 '</div>' +
 
-                // ---- API брокера ----
+                // ---- API брокера (без аккаунта заперт: см. renderIdentity) ----
                 '<div class="ph-sec ph-sec--api" id="phSecApi">' +
                     '<button class="ph-row" type="button" data-sec="api" aria-expanded="false">' +
                         '<span class="ph-row-ic">' + IC.key + '</span>' +
                         '<span class="ph-row-tt"><span class="ph-row-t">API брокера</span><span class="ph-row-s" id="phSubApi"></span></span>' +
+                        '<span class="ph-lockic">' + IC.lock + '</span>' +
                         IC.chev +
                     '</button>' +
                     '<div class="ph-body"><div class="ph-body-in"><div class="ph-body-pad">' +
@@ -499,6 +500,22 @@
         var dz = hub.querySelector('.ph-danger');
         if (dz) dz.style.display = p ? '' : 'none';
 
+        // «API брокера» без облачного аккаунта — под замком: токен ждёт привязки счёта,
+        // а привязывать его не к чему. Раздел ВИДЕН (понятно, что возможность есть), но
+        // не раскрывается. «Данные» рядом НЕ запираем: экспорт JSON у гостя работает и
+        // ему же нужнее всех — без облака это единственный способ не потерять портфели.
+        var apiSec = hub.querySelector('#phSecApi');
+        if (apiSec) {
+            var lock = !isCloud;
+            apiSec.classList.toggle('locked', lock);
+            var apiRow = apiSec.querySelector('.ph-row');
+            apiRow.setAttribute('aria-disabled', lock ? 'true' : 'false');
+            if (lock) {
+                apiSec.classList.remove('on');           // заперли, пока был раскрыт
+                apiRow.setAttribute('aria-expanded', 'false');
+            }
+        }
+
         // Пилюля состояния + подпись в футере: облако ↔ локально
         var pill = hub.querySelector('#phPill');
         if (pill) {
@@ -585,6 +602,12 @@
     function renderApiSub() {
         var s = getSettings();
         var sub = hub.querySelector('#phSubApi');
+        // под замком «Токен не задан» звучало бы упрёком — говорим, чего не хватает
+        if (hub.dataset.authState !== 'cloud-user') {
+            sub.textContent = 'Доступно с аккаунтом';
+            sub.classList.remove('ok');
+            return;
+        }
         if (getBrokerToken()) {
             var b = BROKERS.filter(function (x) { return x.id === s.brokerId; })[0];
             sub.textContent = (b ? b.name : 'Брокер') + ' · токен сохранён';
@@ -854,6 +877,11 @@
         hub.querySelectorAll('.ph-row').forEach(function (row) {
             row.addEventListener('click', function () {
                 var sec = row.closest('.ph-sec');
+                // запертый раздел не раскрываем, но и не молчим: мёртвый клик злит
+                if (sec.classList.contains('locked')) {
+                    toast('Создайте аккаунт, чтобы подключить брокера');
+                    return;
+                }
                 var on = sec.classList.contains('on');
                 hub.querySelectorAll('.ph-sec.on').forEach(function (x) {
                     x.classList.remove('on');

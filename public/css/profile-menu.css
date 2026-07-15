@@ -312,6 +312,23 @@ body.dark-mode .ph-row-s.ok { color: #34d399; }
 .ph-chev { width: 15px; height: 15px; flex-shrink: 0; color: #b6c0cd; stroke: currentColor; fill: none; stroke-width: 2.4; transition: transform 0.2s; }
 .ph-sec.on .ph-chev { transform: rotate(180deg); color: #3b82f6; }
 
+/* ---- запертый раздел (.locked ставит renderIdentity) ----
+   Раздел ВИДЕН: смысл в том, чтобы возможность была заметна, а не спрятана. Но он
+   не раскрывается, поэтому шеврон «⌄» (обещание «развернётся») меняется на замок —
+   иконка обязана говорить правду о поведении. Гасим только иконку и заголовок:
+   строка должна читаться, а не растворяться. */
+.ph-lockic { display: none; width: 15px; height: 15px; flex-shrink: 0; place-items: center; color: #b6c0cd; }
+.ph-lockic svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; }
+.ph-sec.locked .ph-lockic { display: grid; }
+.ph-sec.locked .ph-chev { display: none; }
+.ph-sec.locked .ph-row { cursor: default; }
+.ph-sec.locked .ph-row-ic { background: rgba(148,163,184,0.12); color: #b6c0cd; }
+.ph-sec.locked .ph-row-t { color: #7a8798; }
+.ph-sec.locked:hover:not(.on) { background: rgba(24,38,60,0.02); }
+body.dark-mode .ph-sec.locked .ph-row-ic { background: rgba(255,255,255,0.06); color: #64748b; }
+body.dark-mode .ph-sec.locked .ph-row-t { color: #9fb1c6; }
+body.dark-mode .ph-sec.locked:hover:not(.on) { background: rgba(255,255,255,0.02); }
+
 /* раскрытие через grid-rows (как подразделы сайдбара) */
 .ph-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.24s ease; }
 .ph-sec.on .ph-body { grid-template-rows: 1fr; }
