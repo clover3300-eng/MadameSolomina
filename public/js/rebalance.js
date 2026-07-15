@@ -628,3 +628,116 @@ function openTradingViewDirect(ticker) {
 
 // ========================================================================
 // КОНЕЦ AURORA REBALANCE ФУНКЦИЙ
+
+// ========================================================================
+// АКАДЕМИЯ РЕБАЛАНСИРОВКИ — выезжающая справа шторка (#rbxAcademy)
+// Открывается кнопкой «Подробнее» блока «Зачем нужно ребалансировать».
+// Паттерн тот же, что у карточки тикера: панель переносится в <body>,
+// чтобы position:fixed считался от окна, а не от трансформированных
+// предков вкладки (tabFadeIn). Стили — в rebalance-r6.css (.rbxa-*).
+// ========================================================================
+
+// Подложка-затемнение за шторкой академии (создаётся один раз)
+function rbxAcademyBackdrop() {
+    let backdrop = document.getElementById('rbxAcademyBackdrop');
+    if (!backdrop) {
+        backdrop = document.createElement('div');
+        backdrop.id = 'rbxAcademyBackdrop';
+        backdrop.addEventListener('click', rbxAcademyClose);
+        document.body.appendChild(backdrop);
+    }
+    return backdrop;
+}
+
+function rbxAcademyOpen() {
+    const panel = document.getElementById('rbxAcademy');
+    if (!panel) return;
+    if (panel.parentElement !== document.body) document.body.appendChild(panel);
+    rbxAcademyBackdrop().classList.add('open');
+    document.body.classList.add('rbxa-open');
+    panel.classList.add('open');
+    const body = panel.querySelector('.rbxa-body');
+    if (body) body.scrollTop = 0;
+    if (window.Telegram?.WebApp?.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.selectionChanged();
+    }
+}
+
+function rbxAcademyClose() {
+    const panel = document.getElementById('rbxAcademy');
+    if (panel) panel.classList.remove('open');
+    const backdrop = document.getElementById('rbxAcademyBackdrop');
+    if (backdrop) backdrop.classList.remove('open');
+    document.body.classList.remove('rbxa-open');
+}
+
+// Переключение разделов академии (Два уровня / Внутри классов / Раз в год)
+function rbxAcademyTab(name) {
+    document.querySelectorAll('#rbxAcademy .rbxa-tab').forEach(btn => {
+        btn.classList.toggle('act', btn.dataset.atab === name);
+    });
+    document.querySelectorAll('#rbxAcademy .rbxa-pane').forEach(pane => {
+        pane.classList.toggle('act', pane.id === 'rbxaPane-' + name);
+    });
+    const body = document.querySelector('#rbxAcademy .rbxa-body');
+    if (body) body.scrollTop = 0;
+}
+
+// Пример годовой ребалансировки по шагам (раздел «Раз в год»).
+// Цифры иллюстративные: 100 000 ₽ по плану 50/50, за год акции +50%,
+// ОФЗ +18% купонами; ребаланс возвращает доли к целевым.
+const RBXA_STEPS = {
+    1: {
+        st: 50000, ofz: 50000,
+        market: 'Собрали портфель по плану 50/50 — риск ровно тот, на который мы готовы.',
+        action: 'Ничего не делаем. Работает только умная замена внутри классов.'
+    },
+    2: {
+        st: 75000, ofz: 59000,
+        market: 'Акции выросли на 50%, ОФЗ принесли купоны. Доля акций раздулась до 56% — риск уже выше плана.',
+        action: 'Подошла годовая сверка — пора выравнивать доли.'
+    },
+    3: {
+        st: 67000, ofz: 67000,
+        market: 'Цены те же — меняем только структуру портфеля.',
+        action: 'Продаём акции на 8 000 ₽ и перекладываем в ОФЗ. Портфель снова 50/50.'
+    },
+    4: {
+        st: 67000, ofz: 67000,
+        market: 'Прибыль от роста акций «переехала» в надёжные облигации.',
+        action: 'Риск снова по плану. Упадут акции — сделаем наоборот: продадим часть ОФЗ и купим акции дёшево.'
+    }
+};
+
+function rbxAcademyStep(n) {
+    const step = RBXA_STEPS[n];
+    if (!step) return;
+    document.querySelectorAll('#rbxAcademy .rbxa-step').forEach(btn => {
+        btn.classList.toggle('act', btn.dataset.astep === String(n));
+    });
+    const fmt = v => v.toLocaleString('ru-RU') + ' ₽';
+    const total = step.st + step.ofz;
+    const stPct = Math.round(step.st / total * 100);
+    const put = (id, text) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+    };
+    put('rbxaSimSt', fmt(step.st));
+    put('rbxaSimOfz', fmt(step.ofz));
+    put('rbxaSimTotal', fmt(total));
+    put('rbxaSimShares', stPct + '% / ' + (100 - stPct) + '%');
+    put('rbxaSimMarket', step.market);
+    put('rbxaSimAction', step.action);
+    const stBar = document.getElementById('rbxaSimStBar');
+    const ofzBar = document.getElementById('rbxaSimOfzBar');
+    if (stBar) stBar.style.width = stPct + '%';
+    if (ofzBar) ofzBar.style.width = (100 - stPct) + '%';
+}
+
+// Закрытие академии по Esc (карточка тикера обрабатывается своим слушателем)
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const panel = document.getElementById('rbxAcademy');
+        if (panel && panel.classList.contains('open')) rbxAcademyClose();
+    }
+});

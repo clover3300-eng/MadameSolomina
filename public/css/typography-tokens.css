@@ -88,7 +88,7 @@ body { font-family: var(--font-text); }
 .pf-ch-t, .pfnt-title, .pfnt-name-edit, .pfp-title,     /* Портфели */
 .pfs2-eyebrow-t,                                        /* «Суммарный капитал» */
 .pfo-name, .pfcf-t, .pf-empty-t, .pfpc-state-t, .pfcap-empty-t,
-.rbx-hero-title,                                        /* Ребаланс */
+.rbx-hero-title, .rbx-wc-title, .rbxa-title, .rbxa-h,   /* Ребаланс */
 .btx-title, .bt2-ttl, #btResults .bt-assets-title,      /* Тест */
 .adm-hero-title, .adm-card-t,                           /* Админка */
 .ph-name,                                               /* Личный кабинет */

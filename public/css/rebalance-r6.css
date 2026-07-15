@@ -165,35 +165,68 @@
 .rbx-hero-cta:hover { transform: translateY(-1px); box-shadow: 0 16px 34px -10px rgba(0, 0, 0, 0.55); }
 .rbx-hero-cta:active { transform: translateY(0); box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.45); }
 
-/* ─────────────────────────── ЕДИНАЯ КАРТА ─────────────────────────── */
-
-.rbx-card {
+/* ─────────────── ТРИ ОТДЕЛЬНЫХ БЛОКА (R7) ───────────────
+   Вместо единой карты с разделителем — три самостоятельные карточки в языке
+   карточки регистрации Главной (.hg-auth в home-register.css): белый фон,
+   тонкая рамка, радиус 14px, лёгкая тень. */
+.rbx-grid {
     display: grid;
-    grid-template-columns: minmax(330px, 2fr) 3fr;
-    align-items: stretch;
-    background: #ffffff;
-    border-radius: 24px;
-    box-shadow: 0 16px 36px rgba(24, 38, 60, 0.08);
+    grid-template-columns: minmax(230px, 0.9fr) minmax(430px, 1.8fr) minmax(0, 2.3fr);
+    /* каждый блок — своей высоты: карточки самостоятельные, без общего низа */
+    align-items: start;
+    gap: 16px;
+    margin-top: 16px;
 }
-body.dark-mode .rbx-card {
+.rbx-block {
+    min-width: 0;
+    background: #ffffff;
+    border: 1px solid rgba(20, 27, 45, 0.09);
+    border-radius: 14px;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 10px 26px -20px rgba(16, 24, 40, 0.22);
+}
+body.dark-mode .rbx-block {
     background: #141c27;
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.07);
     box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
 }
 
 .rbx-sec { padding: 22px 24px 26px; min-width: 0; }
-.rbx-sec-stocks { border-left: 1px solid rgba(44, 54, 76, 0.08); }
-body.dark-mode .rbx-sec-stocks { border-left-color: rgba(255, 255, 255, 0.07); }
+.rbx-sec-ofz { display: flex; flex-direction: column; }
 
-/* тон-подложка секции ОФЗ: своя зона, чтобы блок не «висел» рядом с
-   тёмными пилюлями эшелонов; левые углы повторяют скругление карты */
-.rbx-sec-ofz {
+/* ── Узкий блок «Зачем нужно ребалансировать» ── */
+.rbx-block-why {
     display: flex;
     flex-direction: column;
-    background: #F5F8F6;
-    border-radius: 24px 0 0 24px;
+    padding: 26px 24px 22px;
 }
-body.dark-mode .rbx-sec-ofz { background: rgba(52, 211, 153, 0.045); }
+.rbx-wc-title {
+    margin: 0 0 10px;
+    font-size: 23px; line-height: 1.18; color: #161B27;
+}
+body.dark-mode .rbx-wc-title { color: #F1F5F9; }
+.rbx-wc-tag {
+    margin-bottom: 14px;
+    font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.16em; color: #9aa5b5;
+}
+.rbx-block-why .rbx-why-lead { font-size: 12.5px; }
+.rbx-wc-btn {
+    margin-top: auto;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; padding: 14px 18px;
+    border: none; border-radius: 12px; cursor: pointer;
+    background: #141b26; color: #ffffff;
+    font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 700;
+    box-shadow: 0 12px 24px -12px rgba(16, 22, 31, 0.55);
+    transition: background 0.18s ease, transform 0.16s ease, box-shadow 0.16s ease;
+}
+.rbx-block-why .rbx-why-list { margin-bottom: 22px; }
+.rbx-wc-btn:hover { background: #1e2938; transform: translateY(-1px); box-shadow: 0 16px 30px -12px rgba(16, 22, 31, 0.6); }
+.rbx-wc-btn:active { transform: translateY(0); }
+.rbx-wc-btn svg { flex-shrink: 0; transition: transform 0.25s ease; }
+.rbx-wc-btn:hover svg { transform: translateX(3px); }
+body.dark-mode .rbx-wc-btn { background: #223045; }
+body.dark-mode .rbx-wc-btn:hover { background: #2a3a53; }
 
 /* шапка секции: заголовок + счётчик + сортировка/подсказка */
 .rbx-sh { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; min-height: 32px; }
@@ -387,27 +420,7 @@ body.dark-mode .rbx-chart-btn { background: linear-gradient(135deg, #232f40, #10
     font-family: 'Inter', sans-serif; font-size: 11px; line-height: 1.5; color: #9aa6b8;
 }
 
-/* «Зачем ребалансировать» — обучающий блок, заполняет низ секции ОФЗ,
-   чтобы под коротким списком не оставалось пустого фона; авто-поля сверху
-   и снизу центрируют его по вертикали в свободном пространстве секции */
-.rbx-why {
-    margin: auto 4px;
-}
-/* стек ≤1180px: секция по высоте контента — фиксированный воздух вместо авто */
-@media (max-width: 1180px) {
-    .rbx-why { margin: 20px 4px 16px; }
-}
-.rbx-why-h { display: flex; align-items: center; gap: 9px; margin-bottom: 10px; }
-.rbx-why-ic {
-    flex-shrink: 0; display: grid; place-items: center;
-    width: 24px; height: 24px; border-radius: 8px;
-    color: #1d9d6c; background: rgba(29, 157, 108, 0.12);
-}
-.rbx-why-ic svg { width: 14px; height: 14px; }
-.rbx-why-h b {
-    font-family: 'Inter', sans-serif;
-    font-size: 13.5px; font-weight: 800; color: #161B27; letter-spacing: -0.01em;
-}
+/* Текст и чек-список «Зачем ребалансировать» — живут в блоке .rbx-block-why */
 .rbx-why-lead {
     margin: 0 0 13px;
     font-family: 'Inter', sans-serif; font-size: 12px; line-height: 1.55; color: #5d6b83;
@@ -420,8 +433,6 @@ body.dark-mode .rbx-chart-btn { background: linear-gradient(135deg, #232f40, #10
     font-family: 'Inter', sans-serif; font-size: 11.5px; line-height: 1.5; color: #5d6b83;
 }
 .rbx-why-list b { color: #2C364C; font-weight: 700; }
-body.dark-mode .rbx-why-ic { color: #34d399; background: rgba(52, 211, 153, 0.14); }
-body.dark-mode .rbx-why-h b { color: #F1F5F9; }
 body.dark-mode .rbx-why-lead,
 body.dark-mode .rbx-why-list span { color: #94a3b8; }
 body.dark-mode .rbx-why-list b { color: #e2e8f0; }
@@ -507,12 +518,11 @@ body.dark-mode .rbx-tile .bar { background: rgba(255, 255, 255, 0.09); }
 
 /* ────────────────────────── ПРОЧЕЕ ────────────────────────── */
 
-/* планшет/узкий десктоп: секции друг под другом, эшелоны 4-в-ряд остаются */
+/* планшет/узкий десктоп: блоки друг под другом, эшелоны 4-в-ряд остаются */
 @media (max-width: 1180px) and (min-width: 1024px) {
-    .rbx-card { grid-template-columns: 1fr; }
-    .rbx-sec-ofz { border-radius: 24px 24px 0 0; }
-    .rbx-sec-stocks { border-left: none; border-top: 1px solid rgba(44, 54, 76, 0.08); }
-    body.dark-mode .rbx-sec-stocks { border-top-color: rgba(255, 255, 255, 0.07); }
+    .rbx-grid { grid-template-columns: 1fr; }
+    .rbx-wc-btn { width: auto; align-self: flex-start; padding: 13px 26px; }
+    .rbx-block-why .rbx-why-list { margin-bottom: 18px; }
 }
 
 /* уважение к reduced motion: статичный герой */
@@ -522,4 +532,334 @@ body.dark-mode .rbx-tile .bar { background: rgba(255, 255, 255, 0.09); }
     .rbx-flow .track b:nth-child(1) { left: 8px; }
     .rbx-flow .track b:nth-child(2) { left: 22px; }
     .rbx-flow .track b:nth-child(3) { left: 36px; }
+}
+
+/* ═══════════════════ АКАДЕМИЯ РЕБАЛАНСИРОВКИ (шторка справа) ═══════════════════
+   Паттерн #stockDetailCard (rebalance-r4.css): панель живёт в body (переносится
+   при открытии из #screen-assets), position:fixed + inset — устойчиво под
+   desktop zoom. Открывается кнопкой «Подробнее» блока .rbx-block-why. */
+#rbxAcademy {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; right: 0; bottom: 0; left: auto;
+    width: min(600px, 94vw);
+    background: #ffffff;
+    border-left: 1px solid #e3e9f1;
+    box-shadow: -24px 0 60px rgba(20, 30, 50, 0.20);
+    z-index: 4000;
+    overscroll-behavior: contain;
+    transform: translateX(104%);
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform .42s cubic-bezier(.22, 1, .36, 1), visibility 0s linear .42s;
+    font-family: 'Inter', sans-serif;
+    color: #111927;
+}
+#rbxAcademy.open {
+    transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
+    transition: transform .42s cubic-bezier(.22, 1, .36, 1), visibility 0s;
+}
+body.dark-mode #rbxAcademy { background: #1d2734; border-left-color: rgba(255, 255, 255, 0.1); color: #eef2f7; }
+
+/* Подложка-затемнение (создаётся в JS, живёт в body) */
+#rbxAcademyBackdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.42);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    z-index: 3990;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .32s ease, visibility 0s linear .32s;
+}
+#rbxAcademyBackdrop.open { opacity: 1; visibility: visible; transition: opacity .32s ease; }
+body.rbxa-open { overflow: hidden; }
+
+/* ── Шапка ── */
+.rbxa-head {
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    padding: 18px 22px;
+    background: #f8fafc;
+    border-bottom: 1px solid #eef2f7;
+}
+body.dark-mode .rbxa-head { background: rgba(255, 255, 255, 0.03); border-bottom-color: rgba(255, 255, 255, 0.07); }
+.rbxa-head-id { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.rbxa-head-ico {
+    flex-shrink: 0; display: grid; place-items: center;
+    width: 40px; height: 40px; border-radius: 12px;
+    background: #141b26; color: #ffffff;
+}
+.rbxa-head-ico svg { width: 20px; height: 20px; }
+body.dark-mode .rbxa-head-ico { background: #2a3a53; }
+.rbxa-title { font-size: 19px; color: #161B27; line-height: 1.2; }
+body.dark-mode .rbxa-title { color: #F1F5F9; }
+.rbxa-sub {
+    margin-top: 3px;
+    font-size: 9.5px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.14em; color: #9aa5b5;
+}
+.rbxa-close {
+    flex-shrink: 0; display: grid; place-items: center;
+    width: 38px; height: 38px; border-radius: 50%;
+    background: #ffffff; border: 1px solid #e3e9f1; cursor: pointer;
+    color: #5f6d80;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+    transition: background 0.16s ease, transform 0.16s ease;
+}
+.rbxa-close svg { width: 15px; height: 15px; }
+.rbxa-close:hover { background: #f1f5f9; transform: rotate(90deg); }
+body.dark-mode .rbxa-close { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.1); color: #9aa7ba; }
+body.dark-mode .rbxa-close:hover { background: rgba(255, 255, 255, 0.1); }
+
+/* ── Переключатели разделов ── */
+.rbxa-tabs {
+    flex-shrink: 0;
+    display: flex; gap: 8px;
+    padding: 8px;
+    background: rgba(248, 250, 252, 0.6);
+    border-bottom: 1px solid #eef2f7;
+}
+body.dark-mode .rbxa-tabs { background: rgba(255, 255, 255, 0.02); border-bottom-color: rgba(255, 255, 255, 0.07); }
+.rbxa-tab {
+    flex: 1;
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 9px 12px;
+    border: none; border-radius: 10px; cursor: pointer;
+    background: transparent;
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: #5f6d80;
+    white-space: nowrap;
+    transition: background 0.16s ease, color 0.16s ease;
+}
+.rbxa-tab svg { width: 13px; height: 13px; flex-shrink: 0; }
+.rbxa-tab:hover { background: #f1f5f9; }
+.rbxa-tab.act { background: #141b26; color: #ffffff; font-weight: 700; }
+.rbxa-tab.act:hover { background: #141b26; }
+body.dark-mode .rbxa-tab { color: #9aa7ba; }
+body.dark-mode .rbxa-tab:hover { background: rgba(255, 255, 255, 0.05); }
+body.dark-mode .rbxa-tab.act { background: #2a3a53; color: #ffffff; }
+
+/* ── Контент ── */
+.rbxa-body {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 20px 22px 24px;
+}
+.rbxa-pane { display: none; }
+.rbxa-pane.act { display: block; animation: rbxaPaneIn 0.28s ease; }
+@keyframes rbxaPaneIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.rbxa-h { margin: 0 0 7px; font-size: 20px; line-height: 1.2; color: #161B27; }
+body.dark-mode .rbxa-h { color: #F1F5F9; }
+.rbxa-lead { margin: 0 0 16px; font-size: 12.5px; line-height: 1.6; color: #5f6d80; }
+body.dark-mode .rbxa-lead { color: #9aa7ba; }
+
+/* карточки уровней (раздел «Два уровня») */
+.rbxa-lvl {
+    padding: 14px 16px;
+    border: 1px solid #eef2f7;
+    border-left-width: 3px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    background: #ffffff;
+}
+.rbxa-lvl.lv1 { border-left-color: #10B981; }
+.rbxa-lvl.lv2 { border-left-color: #3D6FD1; }
+body.dark-mode .rbxa-lvl { background: rgba(255, 255, 255, 0.03); border-color: rgba(255, 255, 255, 0.08); }
+body.dark-mode .rbxa-lvl.lv1 { border-left-color: #34d399; }
+body.dark-mode .rbxa-lvl.lv2 { border-left-color: #6b96e8; }
+.rbxa-lvl-badge {
+    font-size: 9.5px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.12em; margin-bottom: 6px;
+}
+.rbxa-lvl.lv1 .rbxa-lvl-badge { color: #159d68; }
+.rbxa-lvl.lv2 .rbxa-lvl-badge { color: #3D6FD1; }
+.rbxa-lvl-t { font-size: 14px; font-weight: 700; color: #161B27; margin-bottom: 6px; }
+body.dark-mode .rbxa-lvl-t { color: #e2e8f0; }
+.rbxa-lvl p { margin: 0; font-size: 12px; line-height: 1.55; color: #5d6b83; }
+body.dark-mode .rbxa-lvl p { color: #94a3b8; }
+
+/* примечание-вывод */
+.rbxa-note {
+    margin-top: 14px;
+    padding: 13px 15px;
+    border-radius: 12px;
+    background: #F5F8F6;
+    border: 1px solid rgba(29, 157, 108, 0.14);
+    font-size: 12px; line-height: 1.55; color: #4a5872;
+}
+.rbxa-note b { color: #161B27; font-weight: 700; }
+body.dark-mode .rbxa-note { background: rgba(52, 211, 153, 0.06); border-color: rgba(52, 211, 153, 0.16); color: #94a3b8; }
+body.dark-mode .rbxa-note b { color: #e2e8f0; }
+
+/* карточки классов (раздел «Внутри классов») */
+.rbxa-cls {
+    padding: 14px 16px;
+    border: 1px solid #eef2f7;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    background: #ffffff;
+}
+body.dark-mode .rbxa-cls { background: rgba(255, 255, 255, 0.03); border-color: rgba(255, 255, 255, 0.08); }
+.rbxa-cls-h { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; }
+.rbxa-cls-h i {
+    flex-shrink: 0; display: grid; place-items: center;
+    width: 26px; height: 26px; border-radius: 8px; line-height: 0;
+}
+.rbxa-cls-h i svg { width: 14px; height: 14px; }
+.rbxa-cls.ofz .rbxa-cls-h i { color: #3D6FD1; background: rgba(61, 111, 209, 0.1); }
+.rbxa-cls.st .rbxa-cls-h i { color: #159d68; background: rgba(29, 157, 108, 0.1); }
+.rbxa-cls-h b { font-size: 13.5px; font-weight: 700; color: #161B27; }
+body.dark-mode .rbxa-cls-h b { color: #e2e8f0; }
+.rbxa-cls ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.rbxa-cls li {
+    position: relative;
+    padding-left: 16px;
+    font-size: 12px; line-height: 1.55; color: #5d6b83;
+}
+.rbxa-cls li::before {
+    content: '';
+    position: absolute; left: 2px; top: 7px;
+    width: 5px; height: 5px; border-radius: 50%;
+}
+.rbxa-cls.ofz li::before { background: #3D6FD1; }
+.rbxa-cls.st li::before { background: #10B981; }
+body.dark-mode .rbxa-cls li { color: #94a3b8; }
+
+/* шаги примера (раздел «Раз в год») */
+.rbxa-steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+    padding: 4px;
+    border-radius: 12px;
+    background: #f1f5f9;
+    margin-bottom: 12px;
+}
+body.dark-mode .rbxa-steps { background: rgba(255, 255, 255, 0.05); }
+.rbxa-step {
+    padding: 9px 4px;
+    border: none; border-radius: 9px; cursor: pointer;
+    background: transparent;
+    font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 700; color: #5f6d80;
+    white-space: nowrap;
+    transition: background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+}
+.rbxa-step:hover { color: #161B27; }
+.rbxa-step.act { background: #ffffff; color: #161B27; box-shadow: 0 1px 3px rgba(16, 24, 40, 0.12); }
+body.dark-mode .rbxa-step { color: #9aa7ba; }
+body.dark-mode .rbxa-step:hover { color: #e2e8f0; }
+body.dark-mode .rbxa-step.act { background: #2a3a53; color: #ffffff; }
+
+/* витрина примера: два актива + подписи + итог */
+.rbxa-sim {
+    border: 1px solid #eef2f7;
+    border-radius: 12px;
+    padding: 14px;
+    background: #ffffff;
+}
+body.dark-mode .rbxa-sim { background: rgba(255, 255, 255, 0.03); border-color: rgba(255, 255, 255, 0.08); }
+.rbxa-sim-boxes {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+.rbxa-sim-box {
+    text-align: center;
+    padding: 11px 10px 12px;
+    border-radius: 11px;
+}
+.rbxa-sim-box.st { background: rgba(16, 185, 129, 0.07); border: 1px solid rgba(16, 185, 129, 0.18); }
+.rbxa-sim-box.of { background: rgba(61, 111, 209, 0.06); border: 1px solid rgba(61, 111, 209, 0.16); }
+.rbxa-sim-box span {
+    display: block;
+    font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em;
+    margin-bottom: 4px;
+}
+.rbxa-sim-box.st span { color: #159d68; }
+.rbxa-sim-box.of span { color: #3D6FD1; }
+.rbxa-sim-box b {
+    display: block;
+    font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 15px; font-weight: 700; color: #161B27;
+    font-variant-numeric: tabular-nums;
+    transition: color 0.3s ease;
+}
+body.dark-mode .rbxa-sim-box b { color: #eef2f7; }
+.rbxa-sim-box .bar {
+    margin-top: 8px; height: 5px; border-radius: 999px; overflow: hidden;
+    background: rgba(20, 27, 45, 0.08);
+}
+body.dark-mode .rbxa-sim-box .bar { background: rgba(255, 255, 255, 0.1); }
+.rbxa-sim-box .bar i { display: block; height: 100%; border-radius: inherit; transition: width 0.5s cubic-bezier(.22, 1, .36, 1); }
+.rbxa-sim-box.st .bar i { background: linear-gradient(90deg, #34d399, #10B981); }
+.rbxa-sim-box.of .bar i { background: linear-gradient(90deg, #6b96e8, #3D6FD1); }
+.rbxa-sim-mid { color: #9aa5b5; line-height: 0; }
+.rbxa-sim-mid svg { width: 22px; height: 22px; }
+
+.rbxa-sim-note {
+    display: flex; align-items: baseline; gap: 8px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 1px solid #eef2f7;
+    margin-bottom: 6px;
+}
+.rbxa-sim-note.act { background: rgba(16, 185, 129, 0.06); border-color: rgba(16, 185, 129, 0.16); }
+.rbxa-sim-note em {
+    flex-shrink: 0;
+    font-style: normal; font-size: 9px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.1em; color: #9aa5b5;
+}
+.rbxa-sim-note.act em { color: #159d68; }
+.rbxa-sim-note span { font-size: 12px; line-height: 1.5; color: #4a5872; }
+body.dark-mode .rbxa-sim-note { background: rgba(255, 255, 255, 0.03); border-color: rgba(255, 255, 255, 0.07); }
+body.dark-mode .rbxa-sim-note.act { background: rgba(52, 211, 153, 0.07); border-color: rgba(52, 211, 153, 0.16); }
+body.dark-mode .rbxa-sim-note span { color: #94a3b8; }
+
+.rbxa-sim-total {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    margin-top: 10px;
+    padding: 11px 14px;
+    border-radius: 11px;
+    background: #141b26; color: #ffffff;
+}
+body.dark-mode .rbxa-sim-total { background: #223045; }
+.rbxa-sim-total span {
+    display: block;
+    font-size: 9px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.1em; color: #8b98ab; margin-bottom: 2px;
+}
+.rbxa-sim-total b {
+    font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 15px; font-weight: 700;
+    font-variant-numeric: tabular-nums; color: #4be3a0;
+}
+.rbxa-sim-total .shr { text-align: right; }
+.rbxa-sim-total .shr b { color: #e2e8f0; font-size: 13.5px; }
+
+/* ── Подвал ── */
+.rbxa-foot {
+    flex-shrink: 0;
+    padding: 12px 20px;
+    background: #f8fafc;
+    border-top: 1px solid #eef2f7;
+    text-align: center;
+    font-size: 9px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.1em; line-height: 1.6; color: #9aa5b5;
+}
+body.dark-mode .rbxa-foot { background: rgba(255, 255, 255, 0.03); border-top-color: rgba(255, 255, 255, 0.07); }
+
+@media (prefers-reduced-motion: reduce) {
+    #rbxAcademy, #rbxAcademyBackdrop, .rbxa-pane.act { transition: none; animation: none; }
 }
