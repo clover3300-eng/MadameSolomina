@@ -138,11 +138,11 @@ body.sd-drawer-open #navBackFab { display: none !important; }
     --phr: 24px;
     position: fixed; top: 66px; right: 26px; z-index: 1250;
     width: 380px; max-width: calc(100vw - 20px);
-    /* 620px резали список даже в свёрнутом виде: содержимому нужно ~641px гостю и
-       ~704px облачному аккаунту (у него шестая секция «Безопасность»). Лимит поднят
-       под полный список — панель всё равно ограничена вторым слагаемым min() и не
-       вылезет за экран, а на высоком окне скролла в свёрнутом виде больше нет. */
-    max-height: min(710px, calc(var(--real-vh, 100vh) - 110px));
+    /* Лимит держим под ПОЛНЫЙ свёрнутый список, иначе панель скроллится в покое:
+       нужно ~735px и гостю (5 секций + карточка регистрации), и облачному аккаунту
+       (6 секций, у него шестая — «Безопасность», зато карточки регистрации нет).
+       Панель всё равно ограничена вторым слагаемым min() и за экран не вылезет. */
+    max-height: min(736px, calc(var(--real-vh, 100vh) - 110px));
     display: flex; flex-direction: column;
     background: #fff; border: 1px solid #e7ecf3; border-radius: var(--phr);
     /* тень глубже прежней: панель всплывает и над тёмными героями (Портфели, Ребаланс),
@@ -168,20 +168,16 @@ body.dark-mode #profileHub { background: #141c27; border-color: rgba(255,255,255
    Портфелей/Ребаланса тёмная шапка сливалась с фоном, силуэт панели пропадал. Теперь
    шапка светлая в языке .hg-auth (home-register.css): белая карточка читается и на
    тёмном герое, и на светлой вкладке, и одинакова в обеих темах. */
-/* Воздуха между именем и KPI больше, чем было на тёмном герое (13px): там ярусы
-   разделяла сама подложка, на белом их разводит только пустота — и её нужно больше.
-   Линию между ними НЕ ставим: снизу уже есть border-bottom шапки, две волосяные
-   черты в двух сантиметрах друг от друга дробят панель.
-   KPI-полоске нужен собственный воздух с ОБЕИХ сторон: блок 35px, зажатый между
-   почтой и границей шапки, читается приклеенным к имени. Отсюда gap 24px сверху.
-   Отступы по вертикали НЕсимметричны намеренно (22 сверху / 17 снизу): равные
+/* Отступы по вертикали НЕсимметричны намеренно (20 сверху / 14 снизу): равные
    выглядели «сверху впритык». Сверху в край упирается аватар 44px, и рядом с ним
-   скругление угла (--phr 24px) съедает воздух; снизу же стоят заглавные подписи
-   10px, у которых пустой низ строки сам добавляет просвет. */
+   скругление угла (--phr 24px) съедает воздух; снизу же стоит мелкая подпись, у
+   которой пустой низ строки сам добавляет просвет.
+   gap 9px — расшифровка это подпись К имени, а не отдельный ярус: KPI уехали из
+   шапки в плитки (.ph-tiles), и разводить здесь больше нечего. */
 .ph-head {
     position: relative; flex-shrink: 0;
-    display: flex; flex-direction: column; gap: 24px;
-    padding: 22px 18px 17px;
+    display: flex; flex-direction: column; gap: 9px;
+    padding: 20px 18px 14px;
     border-radius: calc(var(--phr) - 1px) calc(var(--phr) - 1px) 0 0;
     background: #fff; border-bottom: 1px solid #eef1f6;
 }
@@ -215,36 +211,69 @@ body.dark-mode .ph-mail { color: rgba(255,255,255,0.55); }
 .ph-pill i { width: 6px; height: 6px; border-radius: 99px; background: #f59e0b; }
 body.dark-mode .ph-pill { color: rgba(255,255,255,0.62); background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.12); }
 
-/* ---- KPI-полоска шапки: портфелей · тариф ----
-   Подпись ПОД числом, а не сбоку: пары «число + метка в строку» на 380px налезали
-   друг на друга.
-   Разделители — левые грани ячеек. */
-.ph-strip { display: flex; gap: 0; }
-.ph-strip[hidden] { display: none; }
-.ph-strip-i {
-    flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;
-    padding-left: 15px; border-left: 1px solid #eef1f6;
+/* ---- расшифровка под именем: что означает пилюля ---- */
+.ph-hd-note { font-size: 10.5px; line-height: 1.45; font-weight: 600; color: #b6c0cd; }
+body.dark-mode .ph-hd-note { color: #64748b; }
+
+/* ---- KPI-плитки: портфелей · тариф ----
+   Плитки, а не строка: «3» — самое короткое значение панели, и в голой полоске оно
+   висело без опоры (равные доли достались в наследство от третьей ячейки с капиталом).
+   Плитка даёт числу границы, иконка — беглый якорь. Заливки ПЛОСКИЕ: градиенты в
+   проекте вычищены (плитки ставок Портфелей R7). */
+.ph-tiles { flex-shrink: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 9px; padding: 12px 12px 0; }
+.ph-tiles[hidden] { display: none; }
+.ph-tile {
+    min-width: 0; display: flex; align-items: center; gap: 10px;
+    padding: 11px 12px; border-radius: 14px; background: #f7f9fc;
 }
-body.dark-mode .ph-strip-i { border-left-color: rgba(255,255,255,0.12); }
-/* Доли равные: полоску покинул капитал, а он был единственным, кто рос с числом
-   разрядов и требовал полторы доли. Счётчику и слову «Базовый» хватает половины.
-   Первой ячейке разделитель не нужен (слева от неё край шапки, а не соседка), и
-   потому она НЕ повторяет отступ тарифа: без грани отступ ни от чего не отбивает,
-   а прижатое к краю «3» висело у стенки. Вместо этого содержимое центрируется в
-   своей половине — число и подпись по одной оси, воздух вокруг ровный. */
-.ph-strip-i:first-child { padding-left: 0; border-left: 0; align-items: center; text-align: center; }
-.ph-strip-i b {
-    font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 15px; font-weight: 700;
-    color: #0f172a; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+body.dark-mode .ph-tile { background: rgba(255,255,255,0.04); }
+.ph-tile-ic {
+    width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0; display: grid; place-items: center;
+    background: rgba(59,130,246,0.10); color: #3b82f6;
 }
-body.dark-mode .ph-strip-i b { color: #fff; }
+.ph-tile--plan .ph-tile-ic { background: rgba(139,92,246,0.10); color: #8b5cf6; }
+.ph-tile-ic svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 2; }
+.ph-tile-tt { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.ph-tile b {
+    font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 16px; font-weight: 700;
+    color: #0f172a; letter-spacing: -0.02em; line-height: 1.05;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+body.dark-mode .ph-tile b { color: #fff; }
 /* «Базовый» — слово, а не число: моно ему не по адресу */
-.ph-strip-i b.txt { font-family: 'Inter', sans-serif; font-size: 14px; }
-.ph-strip-i span {
-    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
-    color: #94a3b8; white-space: nowrap;
+.ph-tile b.txt { font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 800; }
+.ph-tile-tt span {
+    font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-body.dark-mode .ph-strip-i span { color: rgba(255,255,255,0.5); }
+body.dark-mode .ph-tile-tt span { color: rgba(255,255,255,0.5); }
+
+/* ---- карточка регистрации (всем, кроме облачного аккаунта) ----
+   Кликается целиком, кнопки внутри НЕТ: вторая крупная синяя кнопка спорила бы с
+   «Войти» в футере — заметное действие в панели должно быть одно. */
+#profileHub[data-auth-state="cloud-user"] #phCta { display: none; }
+.ph-cta {
+    flex-shrink: 0; display: flex; align-items: center; gap: 11px; cursor: pointer;
+    margin: 10px 12px 0; padding: 12px; border-radius: 14px;
+    background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.16);
+    transition: background 0.15s, border-color 0.15s;
+}
+.ph-cta:hover { background: rgba(59,130,246,0.11); border-color: rgba(59,130,246,0.28); }
+.ph-cta:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(59,130,246,0.22); }
+body.dark-mode .ph-cta { background: rgba(96,165,250,0.09); border-color: rgba(96,165,250,0.22); }
+body.dark-mode .ph-cta:hover { background: rgba(96,165,250,0.15); }
+.ph-cta-ic {
+    width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0; display: grid; place-items: center;
+    background: rgba(59,130,246,0.12); color: #3b82f6;
+}
+body.dark-mode .ph-cta-ic { color: #7fb2ff; }
+.ph-cta-ic svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 2; }
+.ph-cta-tt { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+/* сериф — общий голос заголовков проекта (typography-tokens.css) */
+.ph-cta-t { font-family: Georgia, 'Times New Roman', serif; font-weight: 400; font-size: 13.5px; color: #141b2d; }
+body.dark-mode .ph-cta-t { color: #f4f8fd; }
+.ph-cta-s { font-size: 10.5px; line-height: 1.4; font-weight: 600; color: #7a8798; }
+body.dark-mode .ph-cta-s { color: #9fb0c4; }
 
 /* ---- список секций-аккордеонов ---- */
 .ph-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; display: flex; flex-direction: column; gap: 8px; padding: 12px 12px 6px; }

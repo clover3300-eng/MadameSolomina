@@ -159,6 +159,10 @@
         sun: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>',
         moon: '<svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
         card: '<svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>',
+        // для KPI-плиток и карточки регистрации
+        bag: '<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>',
+        crown: '<svg viewBox="0 0 24 24"><path d="M3 7l4 4 5-7 5 7 4-4-2 12H5L3 7z"/><line x1="5" y1="20" x2="19" y2="20"/></svg>',
+        spark: '<svg viewBox="0 0 24 24"><path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9L12 3z"/><line x1="19" y1="15" x2="19" y2="19"/><line x1="17" y1="17" x2="21" y2="17"/></svg>',
         back: '<svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>',
         lock: '<svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
         monitor: '<svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
@@ -188,15 +192,30 @@
         hub.innerHTML =
             // Шапка светлая, на языке .hg-auth: панель всплывает НАД любой вкладкой, и
             // прежний тёмный герой (градиент + glow-слой .ph-fx) сливался с тёмными
-            // героями Портфелей/Ребаланса. Под именем — полоска KPI (.ph-strip),
-            // чтобы кабинет что-то показывал, а не только прятал.
+            // героями Портфелей/Ребаланса.
+            // Шапка = только личность (кто я + где лежат данные). Смысл пилюли продублирован
+            // строкой #phHdNote: раньше он жил в title, то есть был виден лишь при наведении
+            // мышью — с тача не прочитать вовсе.
             '<div class="ph-head">' +
                 '<div class="ph-head-top">' +
                     '<div class="ph-ava" id="phAva"></div>' +
                     '<div class="ph-id"><div class="ph-name" id="phName"></div><div class="ph-mail" id="phMail"></div></div>' +
                     '<div class="ph-pill" id="phPill" title="Данные хранятся в этом браузере. Синхронизация и вход с любого устройства появятся после подключения базы данных."><i></i>локально</div>' +
                 '</div>' +
-                '<div class="ph-strip" id="phStrip"></div>' +
+                '<div class="ph-hd-note" id="phHdNote"></div>' +
+            '</div>' +
+            // KPI плитками, а не строкой: счётчик «3» — самое короткое значение панели, и
+            // в голой полоске он висел без опоры. Плитка даёт числу дом, а иконка — беглый
+            // якорь. Заливки плоские: градиенты в проекте уже вычищены (Портфели R7).
+            '<div class="ph-tiles" id="phStrip"></div>' +
+            // Карточка регистрации — всем, КРОМЕ облачного аккаунта (ему предлагать нечего).
+            // Кликается целиком: вторая крупная синяя кнопка спорила бы с «Войти» внизу.
+            '<div class="ph-cta" id="phCta" role="button" tabindex="0">' +
+                '<span class="ph-cta-ic">' + IC.spark + '</span>' +
+                '<span class="ph-cta-tt">' +
+                    '<span class="ph-cta-t">Создайте аккаунт</span>' +
+                    '<span class="ph-cta-s">Синхронизация и вход с любого устройства</span>' +
+                '</span>' +
             '</div>' +
             // Разделы сгруппированы по смыслу: шесть равнозначных строк подряд не давали
             // понять, где искать пароль, а где выгрузку данных. Групп ровно три, и в каждой
@@ -425,14 +444,15 @@
         var el = hub && hub.querySelector('#phStrip');
         if (!el) return;
         var st = phStats();
-        // гостю и пустому кабинету полоска не нужна — прочерки ничего не сообщают
+        // без портфелей плитки не нужны — «0» и «Базовый» ничего не сообщают
         if (!st) { el.innerHTML = ''; el.hidden = true; return; }
         el.hidden = false;
-        var cells = [];
-        cells.push('<div class="ph-strip-i"><b>' + st.n + '</b>' +
-            '<span>' + phPlural(st.n, 'портфель', 'портфеля', 'портфелей') + '</span></div>');
-        cells.push('<div class="ph-strip-i"><b class="txt">Базовый</b><span>тариф</span></div>');
-        el.innerHTML = cells.join('');
+        el.innerHTML =
+            '<div class="ph-tile"><span class="ph-tile-ic">' + IC.bag + '</span>' +
+                '<span class="ph-tile-tt"><b>' + st.n + '</b>' +
+                '<span>' + phPlural(st.n, 'портфель', 'портфеля', 'портфелей') + '</span></span></div>' +
+            '<div class="ph-tile ph-tile--plan"><span class="ph-tile-ic">' + IC.crown + '</span>' +
+                '<span class="ph-tile-tt"><b class="txt">Базовый</b><span>тариф</span></span></div>';
     }
 
     // ---------- рендер динамики (шапка панели, сабтайтлы, футер, аватар в шапке сайта) ----------
@@ -487,6 +507,13 @@
             pill.title = isCloud
                 ? 'Аккаунт подключён: портфели и настройки синхронизируются, вход доступен с любого устройства.'
                 : 'Данные хранятся в этом браузере. Синхронизация и вход с любого устройства появятся после подключения базы данных.';
+        }
+        // то же, что в title пилюли, но ВИДИМОЙ строкой: с тача title недоступен
+        var hdNote = hub.querySelector('#phHdNote');
+        if (hdNote) {
+            hdNote.textContent = isCloud
+                ? 'Портфели и настройки синхронизируются с облаком'
+                : 'Данные хранятся только на этом устройстве';
         }
         var phNote = hub.querySelector('#phNote');
         if (phNote) {
@@ -793,6 +820,15 @@
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') closeHub();
         });
+
+        // карточка регистрации: ведёт туда же, куда «Войти» — на Главную к форме
+        var cta = hub.querySelector('#phCta');
+        if (cta) {
+            cta.addEventListener('click', goRegister);
+            cta.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goRegister(); }
+            });
+        }
 
         // Подкручиваем список так, чтобы РАСКРЫТАЯ секция была видна целиком: секции
         // внизу («Данные», «Безопасность») разворачивались за нижним краем, и до полей
