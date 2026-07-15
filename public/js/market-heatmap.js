@@ -69,6 +69,10 @@
     // чтобы поведение строки тикера совпадало между вкладками (заливка звезды — класс .active).
     var STAR_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><polygon points="12 3 14.85 8.78 21.23 9.71 16.61 14.21 17.7 20.56 12 17.56 6.3 20.56 7.39 14.21 2.77 9.71 9.15 8.78 12 3"/></svg>';
     var CARD_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M14 4v16"/><path d="M17 9h1M17 13h1"/></svg>';
+    // Таблица состава индекса — третий вид холста (рядом с картой и графиком)
+    var TABLE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M3 15h18"/><path d="M9 10v10"/></svg>';
+    // Стрелка «уйти отсюда» — кнопка «Сектор в Терминале» в крошках
+    var GO_SVG = '<svg class="mh-go-arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>';
 
     // ---------- Избранное ----------
     // Делегируем единому списку избранного из таблицы «Акции» (localStorage stk_fav_v1),
@@ -121,10 +125,14 @@
         refCloses: {},       // { week: {TICKER:close}, month: {...} } — закрытие на опорную дату
         refIndex: {},        // { week: closeIMOEX, month: ... }
         zoom: null,          // имя сектора при drill-down или null
-        // true → вместо холста карты показан график TradingView. Дефолт — КАРТА
-        // (false): это уникальная фишка вкладки, график есть в любом терминале.
-        // Последний выбор пользователя восстанавливается из mh_prefs_v1 (loadPrefs).
-        chartMode: false,
+        // Главный объект вкладки — ОДИН, выбирается переключателем в шапке:
+        //   'map'   — тепловая карта (дефолт: уникальная фишка вкладки,
+        //             график есть в любом терминале);
+        //   'chart' — TradingView (месячный ТФ), монтируется лениво;
+        //   'table' — таблица состава индекса (раньше висела ПОД картой всегда,
+        //             из-за чего экран был «двухэтажным»).
+        // Последний выбор восстанавливается из mh_prefs_v1 (loadPrefs).
+        view: 'map',
         sortKey: 'weight', sortDir: -1,
         prevPrices: {},      // последняя цена по тикеру (для вспышек)
         tileEls: {}, secEls: {},  // переиспользуемые DOM-узлы (плавные переходы)
@@ -133,14 +141,17 @@
     var plotEl = null;
 
     // ---------- Настройки вида (localStorage) ----------
-    // Запоминаем выбор пользователя между сессиями: карта/график, период,
-    // размер плитки, сортировку таблицы. Данные (rows) НЕ кэшируем — только вид.
+    // Запоминаем выбор пользователя между сессиями: вид, период, размер плитки,
+    // сортировку таблицы. Данные (rows) НЕ кэшируем — только вид.
     var PREFS_KEY = 'mh_prefs_v1';
+    var VIEWS = { map: 1, chart: 1, table: 1 };
     function loadPrefs() {
         try {
             var p = JSON.parse(localStorage.getItem(PREFS_KEY));
             if (!p || typeof p !== 'object') return;
-            if (typeof p.chartMode === 'boolean') state.chartMode = p.chartMode;
+            if (p.view && VIEWS[p.view]) state.view = p.view;
+            // до трёх видов вид хранился булевым chartMode — переносим молча
+            else if (typeof p.chartMode === 'boolean') state.view = p.chartMode ? 'chart' : 'map';
             if (p.period === 'day' || p.period === 'week' || p.period === 'month') state.period = p.period;
             if (p.sizeMode === 'weight' || p.sizeMode === 'value' || p.sizeMode === 'change') state.sizeMode = p.sizeMode;
             if (p.sortKey && COLS.some(function (c) { return c.key === p.sortKey; })) state.sortKey = p.sortKey;
@@ -150,7 +161,7 @@
     function savePrefs() {
         try {
             localStorage.setItem(PREFS_KEY, JSON.stringify({
-                chartMode: state.chartMode, period: state.period, sizeMode: state.sizeMode,
+                view: state.view, period: state.period, sizeMode: state.sizeMode,
                 sortKey: state.sortKey, sortDir: state.sortDir
             }));
         } catch (e) {}
@@ -618,14 +629,23 @@
     }
 
     // ---------- Хлебные крошки (drill-down) ----------
+    // Зум по сектору фильтрует И карту, И таблицу — крошки живут в обоих видах
+    // (в графике их прятать: он всегда про индекс целиком). Справа — выход в
+    // «Терминал» с тем же сектором, если тамошний список секторов его знает.
     function renderBread() {
         var b = $('.mh-bread'); if (!b) return;
-        // в режиме графика крошки drill-down скрыты вместе с картой
-        if (!state.zoom || state.chartMode) { b.hidden = true; b.innerHTML = ''; return; }
+        if (!state.zoom || state.view === 'chart') { b.hidden = true; b.innerHTML = ''; return; }
         b.hidden = false;
+        var n = state.rows ? rowsOfSector(state.zoom).length : 0;
         b.innerHTML = '<button class="mh-bread-root" type="button" data-act="bread-root">' + BACK_SVG +
             'Индекс МосБиржи</button><span class="mh-bread-sep">▸</span>' +
-            '<span class="mh-bread-cur">' + esc(state.zoom) + '</span>';
+            '<span class="mh-bread-cur">' + esc(state.zoom) + '</span>' +
+            (n ? '<span class="mh-bread-n">' + n + '</span>' : '') +
+            (sectorInTerminal(state.zoom)
+                ? '<button class="mh-bread-go" type="button" data-act="sec-terminal" ' +
+                  'title="Открыть этот сектор в таблице «Все акции» с показателями компаний">' +
+                  'Сектор в Терминале' + GO_SVG + '</button>'
+                : '');
     }
 
     // ---------- Таблица ----------
@@ -686,7 +706,14 @@
         body.innerHTML = html;
     }
 
-    function render() { renderPulse(); renderBread(); renderPlot(); renderTable(); setMeta(); }
+    // Рисуем ТОЛЬКО то, что на экране: поллинг раз в 30с не должен перестраивать
+    // скрытую таблицу (или карту), пока пользователь смотрит другой вид.
+    function render() {
+        renderPulse(); renderBread();
+        if (state.view === 'map') renderPlot();
+        else if (state.view === 'table') renderTable();
+        setMeta();
+    }
 
     // ====================================================================
     //  СОСТОЯНИЯ / ПОДПИСЬ
@@ -809,25 +836,62 @@
     function enterZoom(name) { if (state.zoom === name) return; state.zoom = name; hideTip(); render(); }
     function exitZoom() { if (!state.zoom) return; state.zoom = null; hideTip(); render(); }
 
-    // ---------- Переключение карта ↔ график TradingView ----------
-    // Сегмент-переключатель «Карта / График» — в KPI-ячейке индекса, рядом с
-    // котировкой, активная кнопка = текущий режим. График (месячный ТФ) занимает
-    // место холста карты (тот же бокс); контролы карты (LIVE, период, размер
-    // плитки, обновить) скрыты в режиме графика через класс mh-view-chart.
-    function applyChartMode() {
-        var plot = $('.mh-plot'), host = $('.mh-chart-host'), c = card();
-        if (!plot || !host || !c) return;
-        c.classList.toggle('mh-view-chart', state.chartMode);
-        plot.style.display = state.chartMode ? 'none' : '';
-        host.hidden = !state.chartMode;
-        renderBread(); // крошки drill-down относятся к карте — прячутся вместе с ней
-        if (state.chartMode && typeof window.mkChartMount === 'function') window.mkChartMount(host);
-        var mapBtn = c.querySelector('[data-act="view-map"]'), chartBtn = c.querySelector('[data-act="view-chart"]');
-        if (mapBtn) mapBtn.classList.toggle('active', !state.chartMode);
-        if (chartBtn) chartBtn.classList.toggle('active', state.chartMode);
-        if (!state.chartMode) renderPlot(); // вернулись к карте — актуализировать раскладку
+    // ---------- Сектор карты → таблица «Все акции» ----------
+    // Словари секторов РАЗНЫЕ: у карты они из ISS, у терминала — из Google-таблицы
+    // («Нефть и газ» vs «Нефть и Газ», «Электроэнергетика» vs «Эллектроэергетика»,
+    // а «Финансы» ISS = «Банки»+«Страхование»+«Финсервисы,Ук,ПИФ» там). По имени
+    // совпадал ОДИН сектор из десяти, поэтому сверяем через ТИКЕРЫ: берём бумаги
+    // сектора на карте, спрашиваем их сектор у терминала и передаём ему уже его
+    // собственные имена. Правки Google-таблицы связку не сломают.
+    // Список компаний терминала грузится фоном (stkEnsureLoaded в onEnter) —
+    // пока не приехал, кнопки просто нет.
+    function terminalSectorsOf(name) {
+        if (!name || !state.rows || typeof window.stkFindCompany !== 'function') return [];
+        var seen = {}, out = [];
+        rowsOfSector(name).forEach(function (r) {
+            var co = window.stkFindCompany(r.ticker);
+            if (co && co.sector && !seen[co.sector]) { seen[co.sector] = 1; out.push(co.sector); }
+        });
+        return out;
     }
-    function setChartMode(v) { if (state.chartMode === v) return; state.chartMode = v; hideTip(); applyChartMode(); savePrefs(); }
+    function sectorInTerminal(name) { return terminalSectorsOf(name).length > 0; }
+    function openSectorInTerminal(name) {
+        var secs = terminalSectorsOf(name);
+        if (!secs.length || typeof window.stkOpenSectors !== 'function') return;
+        if (!window.stkOpenSectors(secs)) return;
+        if (typeof window.mtShowTerminal === 'function') window.mtShowTerminal('stocks');
+        if (typeof window.switchTab === 'function') window.switchTab('market-stocks');
+    }
+
+    // ---------- Переключение вида: карта / график / таблица ----------
+    // Один переключатель в шапке — один главный объект на экране. Раньше таблица
+    // висела ПОД холстом всегда, и вкладка читалась «двухэтажной».
+    // Контролы: .mh-map-ctrl — только карта (размер плитки); .mh-data-ctrl —
+    // карта и таблица (LIVE, период, обновить: период задаёт и цвет плиток,
+    // и колонку «Изм.»); в графике скрыты и те, и другие.
+    function applyView() {
+        var plot = $('.mh-plot'), host = $('.mh-chart-host'), tbl = $('.mh-table-wrap'), c = card();
+        if (!plot || !host || !tbl || !c) return;
+        var v = state.view;
+        c.classList.toggle('mh-view-map', v === 'map');
+        c.classList.toggle('mh-view-chart', v === 'chart');
+        c.classList.toggle('mh-view-table', v === 'table');
+        plot.style.display = v === 'map' ? '' : 'none';
+        host.hidden = v !== 'chart';
+        tbl.hidden = v !== 'table';
+        renderBread();   // крошки drill-down: карта и таблица — да, график — нет
+        // TradingView монтируем ЛЕНИВО: только когда график реально показан
+        if (v === 'chart' && typeof window.mkChartMount === 'function') window.mkChartMount(host);
+        c.querySelectorAll('.mh-seg-view .mh-seg-btn').forEach(function (b) {
+            b.classList.toggle('active', b.getAttribute('data-view') === v);
+        });
+        if (v === 'map') renderPlot();     // вернулись к карте — актуализировать раскладку
+        else if (v === 'table') renderTable();
+    }
+    function setView(v) {
+        if (state.view === v || !VIEWS[v]) return;
+        state.view = v; hideTip(); applyView(); savePrefs();
+    }
 
     // Обновляет подписи легенды ±cap% под выбранный период
     function updateLegend() {
@@ -859,13 +923,13 @@
             '    </div>' +
             '  </div>' +
             '  <div class="mh-head-ctrl">' +
-            '    <span class="mh-live mh-map-ctrl" title="Время последнего обновления данных Мосбиржи (задержка ~15 мин)">' +
+            '    <span class="mh-live mh-data-ctrl" title="Время последнего обновления данных Мосбиржи (задержка ~15 мин)">' +
             '      <i class="mh-live-dot"></i>' +
             '      <span class="mh-live-meta"><span class="mh-live-cap">обновлено</span><span class="mh-live-time">—</span></span>' +
             '    </span>' +
             // active-классы сегментов берём из state (восстановленного из mh_prefs_v1),
             // а не хардкодим «День»/«Вес»/«График» — иначе подсветка врёт после перезагрузки
-            '    <span class="mh-seg mh-seg-period mh-map-ctrl" role="tablist" title="Период изменения (цвет карты)">' +
+            '    <span class="mh-seg mh-seg-period mh-data-ctrl" role="tablist" title="Период изменения (цвет карты и колонки «Изм.»)">' +
             '      <button class="mh-seg-btn' + (state.period === 'day' ? ' active' : '') + '" type="button" data-period="day">День</button>' +
             '      <button class="mh-seg-btn' + (state.period === 'week' ? ' active' : '') + '" type="button" data-period="week">Неделя</button>' +
             '      <button class="mh-seg-btn' + (state.period === 'month' ? ' active' : '') + '" type="button" data-period="month">Месяц</button>' +
@@ -875,15 +939,17 @@
             '      <button class="mh-seg-btn' + (state.sizeMode === 'value' ? ' active' : '') + '" type="button" data-size="value">Объём</button>' +
             '      <button class="mh-seg-btn' + (state.sizeMode === 'change' ? ' active' : '') + '" type="button" data-size="change">% изм.</button>' +
             '    </span>' +
-            '    <button class="mh-refresh mh-map-ctrl" type="button" title="Обновить" aria-label="Обновить">' + REFRESH_SVG + '</button>' +
-            // Переключатель «Карта/График» — ПОСЛЕДНИМ в шапке карточки (крайний правый):
-            // так он заметнее, а при скрытии контролов карты в режиме графика не сдвигается.
-            // active-класс проставит applyChartMode() в конце build() по state.chartMode.
-            '    <span class="mh-seg mh-seg-view" role="tablist" title="Тепловая карта / график индекса (месячный таймфрейм)">' +
-            '      <button class="mh-seg-btn" type="button" data-act="view-map">' +
+            '    <button class="mh-refresh mh-data-ctrl" type="button" title="Обновить" aria-label="Обновить">' + REFRESH_SVG + '</button>' +
+            // Переключатель вида — ПОСЛЕДНИМ в шапке карточки (крайний правый):
+            // так он заметнее, а при скрытии контролов в графике не сдвигается.
+            // active-класс проставит applyView() в конце build() по state.view.
+            '    <span class="mh-seg mh-seg-view" role="tablist" title="Что показывать: тепловая карта, график индекса (месячный ТФ) или таблица состава">' +
+            '      <button class="mh-seg-btn" type="button" data-view="map">' +
             '        <span class="mh-cb-ico" aria-hidden="true">' + GRID_SVG + '</span>Карта</button>' +
-            '      <button class="mh-seg-btn" type="button" data-act="view-chart">' +
+            '      <button class="mh-seg-btn" type="button" data-view="chart">' +
             '        <span class="mh-cb-ico" aria-hidden="true">' + CANDLE_SVG + '</span>График</button>' +
+            '      <button class="mh-seg-btn" type="button" data-view="table">' +
+            '        <span class="mh-cb-ico" aria-hidden="true">' + TABLE_SVG + '</span>Таблица</button>' +
             '    </span>' +
             '  </div>' +
             '</div>' +
@@ -961,9 +1027,11 @@
         // Делегированные клики: ретрай, крошки, сектор-зум, плитка, действия/строка таблицы
         c.addEventListener('click', function (e) {
             if (e.target.closest('[data-act="retry"]')) { refresh(); return; }
-            if (e.target.closest('[data-act="view-map"]')) { setChartMode(false); return; }
-            if (e.target.closest('[data-act="view-chart"]')) { setChartMode(true); return; }
+            var viewBtn = e.target.closest('.mh-seg-view .mh-seg-btn');
+            if (viewBtn) { setView(viewBtn.getAttribute('data-view')); return; }
             if (e.target.closest('[data-act="bread-root"]')) { exitZoom(); return; }
+            var secGo = e.target.closest('[data-act="sec-terminal"]');
+            if (secGo) { openSectorInTerminal(state.zoom); return; }
             // действия в ячейке тикера — проверяем ДО клика по строке
             var favBtn = e.target.closest('[data-act="fav"]');
             if (favBtn) { toggleHeatFav(favBtn.getAttribute('data-tk')); return; }
@@ -984,7 +1052,7 @@
 
         updateLegend(); // подписи легенды ±cap% под восстановленный период
         state.built = true;
-        applyChartMode(); // синхронизировать вид (карта/график) и подсветку тумблера по state.chartMode
+        applyView(); // синхронизировать вид и подсветку переключателя по state.view
     }
 
     // ====================================================================
@@ -993,11 +1061,23 @@
     function startPolling() { if (!state.timer) state.timer = setInterval(function () { if (!document.hidden) refresh(); }, POLL_MS); }
     function stopPolling() { if (state.timer) { clearInterval(state.timer); state.timer = null; } }
     function onEnter() {
-        build(); refresh(); startPolling();
-        // фоном тянем таблицу терминала — нужна для ОДХС в карточке компании по клику
+        build();
+        // applyView и на входе, а не только в build(): при уходе мы сносим виджет
+        // TradingView (onLeave), и без этого вызова возврат на вкладку в режиме
+        // «График» показал бы пустой хост — build() второй раз не выполняется.
+        applyView();
+        refresh(); startPolling();
+        // фоном тянем таблицу терминала — нужна и для ОДХС в карточке компании по
+        // клику, и для кнопки «Сектор в Терминале» (sectorInTerminal)
         if (typeof window.stkEnsureLoaded === 'function') { try { window.stkEnsureLoaded(); } catch (e) {} }
     }
-    function onLeave() { stopPolling(); hideTip(); }
+    // Уходим со вкладки — сносим виджет TradingView: это iframe со своим
+    // рендер-циклом, держать его живым в фоне незачем. Вернёмся — смонтируется
+    // заново (лениво, из applyView).
+    function onLeave() {
+        stopPolling(); hideTip();
+        if (typeof window.mkChartUnmount === 'function') window.mkChartUnmount();
+    }
 
     var relayoutTimer = null;
     function relayout() { clearTimeout(relayoutTimer); relayoutTimer = setTimeout(function () {
@@ -1023,7 +1103,7 @@
             var d = document.body.classList.contains('dark-mode');
             if (d === _lastDark) return;
             _lastDark = d;
-            if (state.rows && isMarketActive()) { renderPlot(); renderPulse(); renderTable(); }
+            if (state.rows && isMarketActive()) render();
         }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
     }
     document.addEventListener('DOMContentLoaded', function () {

@@ -90,12 +90,18 @@ body.dark-mode .mh-card {
     letter-spacing: -0.01em; line-height: 1.1;
 }
 .mh-head-ctrl { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-/* контролы карты (LIVE-капсула, период, размер плитки, обновить) — видны только
-   когда открыта тепловая карта; в режиме графика (по умолчанию) скрыты */
-.mh-card.mh-view-chart .mh-map-ctrl { display: none; }
+/* ── Контролы по видам (карта | график | таблица) ──
+   .mh-map-ctrl  — только карта (размер плитки: у графика и таблицы плиток нет);
+   .mh-data-ctrl — карта И таблица (LIVE-капсула, период, «Обновить»): период
+                   задаёт и цвет плиток, и колонку «Изм.» таблицы;
+   у графика (свои данные внутри виджета TradingView) скрыты и те, и другие. */
+.mh-card.mh-view-chart .mh-map-ctrl,
+.mh-card.mh-view-table .mh-map-ctrl,
+.mh-card.mh-view-chart .mh-data-ctrl { display: none; }
 /* мета-строка (легенда −cap%/+cap% + подпись «размер плитки — …, цвет — …») описывает
-   ТОЛЬКО карту — в режиме графика она не имеет смысла, скрываем вместе с картой */
-.mh-card.mh-view-chart .mh-meta { display: none; }
+   ТОЛЬКО карту — в остальных видах она не имеет смысла */
+.mh-card.mh-view-chart .mh-meta,
+.mh-card.mh-view-table .mh-meta { display: none; }
 
 /* Капсула актуальности: пульсирующая точка + явная подпись «обновлено HH:MM».
    Раньше тут было «LIVE HH:MM» — время путали с текущим; теперь подпись прямо
@@ -235,6 +241,19 @@ body.dark-mode .mh-seg-view .mh-seg-btn.active .mh-cb-ico { color: #10201a; }
 .mh-bread-root svg { width: 14px; height: 14px; }
 .mh-bread-sep { color: var(--mh-muted2); }
 .mh-bread-cur { font-weight: 800; color: var(--mh-text); }
+/* счётчик бумаг в секторе — тихий моно, как счётчики таблиц проекта */
+.mh-bread-n { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: var(--mh-muted2); }
+/* «Сектор в Терминале» — навигация, а не главное действие: лёгкая кнопка-ссылка
+   со стрелкой (тот же ключ, что .tbmk-go в шапке вкладки), прижата вправо */
+.mh-bread-go {
+    appearance: none; border: 0; background: transparent; cursor: pointer;
+    margin-left: auto; padding: 6px 9px; border-radius: 9px;
+    font: 700 12px 'Inter', sans-serif; color: var(--mh-accent);
+    display: inline-flex; align-items: center; gap: 6px;
+    transition: background .15s, gap .15s;
+}
+.mh-bread-go:hover { background: var(--mh-accent-soft); gap: 9px; }
+.mh-bread-go .mh-go-arr { width: 14px; height: 14px; }
 
 /* ============================================================
    ТЕПЛОВАЯ КАРТА — светлый холст + плоские плитки (тёмный текст)
@@ -351,8 +370,12 @@ body.dark-mode .mh-plot.mh-spot .mh-tile:not(:hover) { filter: brightness(.7) sa
     color: #fff; background: var(--mh-brand); border: 0; border-radius: 10px; padding: 9px 18px; }
 body.dark-mode .mh-retry { color: #10201a; }
 
-/* ---------- Таблица под картой (без внутреннего скролла — растёт по контенту) ---------- */
+/* ---------- Таблица состава — ТРЕТИЙ ВИД холста (без внутреннего скролла) ----------
+   Раньше висела ПОД картой всегда, и вкладка читалась «двухэтажной»: главный
+   объект на экране теперь один, его выбирает .mh-seg-view (applyView в JS
+   ставит атрибут hidden). */
 .mh-table-wrap { border-top: 1px solid var(--mh-line); margin-top: 8px; }
+.mh-table-wrap[hidden] { display: none; }
 .mh-table { width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; }
 .mh-table thead th { background: var(--mh-card-soft);
     font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 700; color: var(--mh-muted2);
@@ -472,9 +495,10 @@ body.dark-mode .mh-retry { color: #10201a; }
     .mh-card { border-radius: 14px; margin-bottom: 14px; }
     .mh-head { padding: 16px 14px 12px; gap: 12px; }
     /* контролы карты — не тремя ярусами на всю ширину, а ОДНИМ горизонтально
-       скроллируемым рядом (как панель действий в шапке): главный тумблер
-       «Карта/График» через order:-1 всегда первым и на виду, период/размер/обновить
-       листаются вбок. В режиме графика .mh-map-ctrl скрыты — остаётся только тумблер. */
+       скроллируемым рядом (как панель действий в шапке): главный переключатель
+       вида (Карта/График/Таблица) через order:-1 всегда первым и на виду,
+       период/размер/обновить листаются вбок. В графике .mh-map-ctrl/.mh-data-ctrl
+       скрыты — остаётся только переключатель. */
     .mh-head-ctrl {
         width: 100%; flex-wrap: nowrap; justify-content: flex-start; gap: 8px;
         overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;

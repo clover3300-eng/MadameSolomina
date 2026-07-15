@@ -1565,6 +1565,32 @@
     };
     // весь список компаний таблицы (тикер+имя) — для автокомплита тикеров в «Портфелях»
     window.stkAllCompanies = function () { return state.companies || []; };
+
+    // ---- Переход «сектор карты → эта таблица» (вкладка «Рынок») ----
+    // ВАЖНО: сверять секторы по ИМЕНАМ нельзя. Карта берёт их из ISS, эта таблица —
+    // из Google-таблицы, и словари разошлись: «Нефть и газ» vs «Нефть и Газ» (регистр),
+    // «Электроэнергетика» vs «Эллектроэергетика» (опечатка в таблице), «Финансы» у ISS
+    // = «Банки»+«Страхование»+«Финсервисы,Ук,ПИФ» здесь. Из 10 секторов карты по имени
+    // совпадал ОДИН. Поэтому карта идёт через ТИКЕРЫ (stkFindCompany) и передаёт сюда
+    // уже готовый список НАШИХ секторов — связка переживёт правки Google-таблицы.
+    // Оставить в таблице только эти секторы (как галочки в меню «Секторы»);
+    // переключение вкладки — на стороне вызывающего.
+    window.stkOpenSectors = function (names) {
+        if (!Array.isArray(names) || !names.length || !state.companies) return false;
+        var valid = {};
+        state.companies.forEach(function (co) { if (co.sector) valid[co.sector] = 1; });
+        var pick = names.filter(function (n) { return valid[n]; });
+        if (!pick.length) return false;
+        state.sectors = pick;
+        savePrefs();
+        var el = root();
+        if (el) el.querySelectorAll('.stk-sec-opt input').forEach(function (c) {
+            c.checked = pick.indexOf(c.value) !== -1;
+        });
+        updateSecBadge();
+        if (state.status === 'ready') render();
+        return true;
+    };
     window.stkToggleFav = function (ticker) {
         toggleFav(ticker);
         return state.favorites.indexOf(ticker) !== -1;
