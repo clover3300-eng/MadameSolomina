@@ -50,7 +50,7 @@
     <link rel="stylesheet" href="css/notifications.css?v=2">
     <link rel="stylesheet" href="css/tab-gates.css?v=4">
     <link rel="stylesheet" href="css/admin.css?v=11">
-    <link rel="stylesheet" href="css/rebalance-r6.css?v=8">
+    <link rel="stylesheet" href="css/rebalance-r6.css?v=9">
     <link rel="stylesheet" href="css/typography-tokens.css?v=8">
     <link rel="stylesheet" href="css/portfolios-r7.css?v=27">
     <link rel="stylesheet" href="css/desktop-zoom.css?v=4">
@@ -1552,48 +1552,7 @@
          Карточки в языке карточки регистрации Главной (.hg-auth): белые, радиус 14px,
          тонкая рамка. Кнопка «Подробнее» открывает Академию ребалансировки (#rbxAcademy). ===== -->
     <div class="rbx-grid">
-        <!-- Манифест-колонка: намеренно монохромная и «журнальная» — серифный
-             заголовок, волосяные линии, римская нумерация, разрядка. Акцентный
-             зелёный сюда не заходит: в этом блоке работает только типографика. -->
-        <section class="rbx-block rbx-block-why">
-            <div class="rbx-wc-eyebrow">Философия капитала</div>
-            <h2 class="rbx-wc-title">Зачем нужно ребалансировать</h2>
-            <div class="rbx-wc-rule" aria-hidden="true"></div>
-            <p class="rbx-wc-lead">Портфель — не памятник. Рынок незаметно переписывает доли: то, что выросло, начинает весить больше положенного, и риск появляется там, где вы его не заказывали.</p>
-
-            <ol class="rbx-wc-list">
-                <li>
-                    <span class="n">I</span>
-                    <div class="tx">
-                        <b>Фиксируем прибыль</b>
-                        <p>Продаём выросшее, пока оно дорогое, — и превращаем бумажный рост в настоящий.</p>
-                    </div>
-                </li>
-                <li>
-                    <span class="n">II</span>
-                    <div class="tx">
-                        <b>Докупаем недооценённое</b>
-                        <p>Возвращаем структуру портфеля к целевой, забирая то, что рынок пока не разглядел.</p>
-                    </div>
-                </li>
-                <li>
-                    <span class="n">III</span>
-                    <div class="tx">
-                        <b>Держим риск по плану</b>
-                        <p>Доли остаются теми, на которые согласились вы, а не теми, что выбрал за вас рынок.</p>
-                    </div>
-                </li>
-            </ol>
-
-            <blockquote class="rbx-wc-quote">Дисциплина вместо настроения: дорого продать, дёшево купить — по правилам.</blockquote>
-
-            <button type="button" class="rbx-wc-btn" onclick="rbxAcademyOpen()">
-                <span>Подробнее</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
-            </button>
-        </section>
-
-        <!-- Правая колонна: переключатель стоит САМ ПО СЕБЕ над карточкой таблиц.
+        <!-- Колонна кандидатов (слева): переключатель стоит САМ ПО СЕБЕ над карточкой таблиц.
              Вариант «Витрина»: названия той же Georgia, что заголовок манифеста
              слева, активное подчёркнуто чёрной чертой поверх волосяной линии.
              Слово «Кандидаты» убрано — из контекста и так понятно, а два
@@ -1679,6 +1638,47 @@
             </div>
             </section>
         </div>
+
+        <!-- Манифест-колонка (справа): намеренно монохромная и «журнальная» — серифный
+             заголовок, волосяные линии, римская нумерация, разрядка. Акцентный
+             зелёный сюда не заходит: в этом блоке работает только типографика. -->
+        <section class="rbx-block rbx-block-why">
+            <div class="rbx-wc-eyebrow">Философия капитала</div>
+            <h2 class="rbx-wc-title">Зачем нужно ребалансировать</h2>
+            <div class="rbx-wc-rule" aria-hidden="true"></div>
+            <p class="rbx-wc-lead">Портфель — не памятник. Рынок незаметно переписывает доли: то, что выросло, начинает весить больше положенного, и риск появляется там, где вы его не заказывали.</p>
+
+            <ol class="rbx-wc-list">
+                <li>
+                    <span class="n">I</span>
+                    <div class="tx">
+                        <b>Фиксируем прибыль</b>
+                        <p>Продаём выросшее, пока оно дорогое, — и превращаем бумажный рост в настоящий.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="n">II</span>
+                    <div class="tx">
+                        <b>Докупаем недооценённое</b>
+                        <p>Возвращаем структуру портфеля к целевой, забирая то, что рынок пока не разглядел.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="n">III</span>
+                    <div class="tx">
+                        <b>Держим риск по плану</b>
+                        <p>Доли остаются теми, на которые согласились вы, а не теми, что выбрал за вас рынок.</p>
+                    </div>
+                </li>
+            </ol>
+
+            <blockquote class="rbx-wc-quote">Дисциплина вместо настроения: дорого продать, дёшево купить — по правилам.</blockquote>
+
+            <button type="button" class="rbx-wc-btn" onclick="rbxAcademyOpen()">
+                <span>Подробнее</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+            </button>
+        </section>
     </div>
 
     <!-- Карточка деталей тикера (выезжает справа, при открытии переносится в body) -->
