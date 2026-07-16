@@ -619,7 +619,7 @@
             cashTotal += (+p.cash || 0);
             var po = pfPayouts(p);
             if (po.pending) payPending = true; else paySum += po.sum;
-            rows.push({ name: p.name, color: p.color, pct: c.pnlPct, value: c.value, has: c.invested > 0, hid: !!p.hidden });
+            rows.push({ id: p.id, name: p.name, color: p.color, pct: c.pnlPct, value: c.value, has: c.invested > 0, hid: !!p.hidden });
         });
         var pnl = val - inv, pnlPct = inv > 0 ? pnl / inv * 100 : 0;
         var bondPct = val > 0 ? bondVal / val * 100 : 0, stockPct = 100 - bondPct;
@@ -640,8 +640,10 @@
                 '<span class="pfs2-rk">' + (i + 1) + '</span>' +
                 '<span class="pfs2-n"><i style="background:' + colorVal(r.color) + '"></i><span class="pfs2-nm">' + esc(r.name) + '</span>' +
                     (r.hid ? '<span class="pfs2-hid" title="Карточка убрана с «Обзора» — капитал учитывается в сводке">' + EYEOFF_SVG + '</span>' : '') + '</span>' +
-                '<span class="pfs2-cap">' + (r.value > 0 ? fmtRub(r.value) : '—') + '</span>' +
-                '<span class="pfs2-v ' + (r.has ? (r.pct >= 0 ? 'pos' : 'neg') : 'muted') + '">' + (r.has ? fmtPct(r.pct) : '—') + '</span>' +
+                // data-live: капитал и % строки лидерборда обновляет livePatchers.summary;
+                // МЕСТО в рейтинге (сортировка по живому pct, класс lead) — полному рендеру
+                '<span class="pfs2-cap" data-live="pfs2:' + r.id + ':cap">' + (r.value > 0 ? fmtRub(r.value) : '—') + '</span>' +
+                '<span class="pfs2-v ' + (r.has ? (r.pct >= 0 ? 'pos' : 'neg') : 'muted') + '" data-live="pfs2:' + r.id + ':pct">' + (r.has ? fmtPct(r.pct) : '—') + '</span>' +
             '</div>';
         }).join('');
 
@@ -649,9 +651,11 @@
         var warm = pfQuotesWarming();   // первая загрузка котировок → капитал скелетоном
         return '<div class="dash2-card pf-sumcard">' +
             '<div class="pfs2-eyebrow"><span class="pfs2-eyebrow-t">Суммарный капитал</span><span class="pfs2-eyebrow-c">' + PF.store.items.length + ' ' + plural(PF.store.items.length, 'портфель', 'портфеля', 'портфелей') + '</span></div>' +
-            '<div class="pfs2-capital">' + (warm ? skelHtml(170, 26) : fmtRub(val)) + '</div>' +
-            '<div class="pfs2-sub">Вложено ' + fmtRub(inv) + (warm ? '<span class="pfs2-pnl">' + skelHtml(110, 12) + '</span>'
-                : '<span class="pfs2-pnl ' + (pnl >= 0 ? 'pos' : 'neg') + '">' + (pnl >= 0 ? '▲ ' : '▼ ') + fmtRub(Math.abs(pnl)) + ' · ' + fmtPct(pnlPct) + '</span>') + '</div>' +
+            // data-live: капитал и строку дохода переписывает livePatchers.summary
+            // (скелетоны прогрева заменяются числами первым тиком после прогрева)
+            '<div class="pfs2-capital" data-live="pfs2:cap">' + (warm ? skelHtml(170, 26) : fmtRub(val)) + '</div>' +
+            '<div class="pfs2-sub">Вложено ' + fmtRub(inv) + (warm ? '<span class="pfs2-pnl" data-live="pfs2:pnl">' + skelHtml(110, 12) + '</span>'
+                : '<span class="pfs2-pnl ' + (pnl >= 0 ? 'pos' : 'neg') + '" data-live="pfs2:pnl">' + (pnl >= 0 ? '▲ ' : '▼ ') + fmtRub(Math.abs(pnl)) + ' · ' + fmtPct(pnlPct) + '</span>') + '</div>' +
             extras +
             '<div class="pfs2-alloc">' +
                 '<div class="pfs2-alloc-bar"><span class="pfs2-alloc-stock" style="width:' + stockPct.toFixed(1) + '%"></span><span class="pfs2-alloc-bond" style="width:' + bondPct.toFixed(1) + '%"></span></div>' +
@@ -666,6 +670,31 @@
     }
     function plural(n, one, few, many) { n = Math.abs(n) % 100; var n1 = n % 10;
         if (n > 10 && n < 20) return many; if (n1 > 1 && n1 < 5) return few; if (n1 === 1) return one; return many; }
+
+    // ---- точечный фоновый апдейт сводки (роадмап №6) ----
+    // Капитал, строка «Вложено … ▲ X ₽ · +N%» и числа лидерборда (fmtRub/fmtPct
+    // по каждому портфелю) переписываются по data-live узлам summaryCardHtml.
+    // Полному рендеру оставлены: ПОРЯДОК лидерборда (сортировка по живому pct и
+    // класс lead у первой строки), полоса распределения с легендой (inline-ширины,
+    // как donut в карточках), «Кэш»/«Выплаты» (не котировочные). Пока котировки
+    // греются, капитал/доход не пишем — скелетоны заменит первый тик после прогрева.
+    PF.livePatchers.summary = function () {
+        var inv = 0, val = 0;
+        PF.store.items.forEach(function (p) {
+            var c = calcPf(p); inv += c.invested; val += c.value;
+            var has = c.invested > 0;
+            PF.liveSet('pfs2:' + p.id + ':cap', { text: c.value > 0 ? fmtRub(c.value) : '—' });
+            PF.liveSet('pfs2:' + p.id + ':pct', {
+                text: has ? fmtPct(c.pnlPct) : '—',
+                cls: 'pfs2-v ' + (has ? (c.pnlPct >= 0 ? 'pos' : 'neg') : 'muted') });
+        });
+        if (pfQuotesWarming()) return;
+        var pnl = val - inv, pnlPct = inv > 0 ? pnl / inv * 100 : 0;
+        PF.liveSet('pfs2:cap', { text: fmtRub(val) });
+        PF.liveSet('pfs2:pnl', {
+            text: (pnl >= 0 ? '▲ ' : '▼ ') + fmtRub(Math.abs(pnl)) + ' · ' + fmtPct(pnlPct),
+            cls: 'pfs2-pnl ' + (pnl >= 0 ? 'pos' : 'neg') });
+    };
 
     // ---- donut (conic). Центр — СОСЕД ring'а: CSS-mask клипает потомков ----
     // centerHtml опционален: для карточки/сводки центр оставляем пустым (соотношение
