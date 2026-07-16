@@ -1845,8 +1845,10 @@
             var p = r.p, c = r.c, ac = colorVal(p.color);
             var n = (p.holdings || []).filter(function (h) { return aggHolding(h).qty > 0; }).length;
             var has = c.invested > 0;
-            function kpi(v, cls, extra) {
-                return '<span class="pfpl-kpi"><b class="' + (cls || '') + '">' + v + '</b>' + (extra || '') + '</span>';
+            // key (опционально) — ключ data-live на ячейке: живые «Стоимость» и
+            // «Доходность» (число + чип) переписывает точечно livePatchers.plist
+            function kpi(v, cls, extra, key) {
+                return '<span class="pfpl-kpi"' + (key ? ' data-live="' + key + '"' : '') + '><b class="' + (cls || '') + '">' + v + '</b>' + (extra || '') + '</span>';
             }
             // R9.3: числа строк — в том же языке, что KPI-плитки «Составов» (крупное
             // моно + чип с контекстом), иначе рядом с плитками список читался пусто.
@@ -1858,12 +1860,12 @@
                 ? chip('', Math.round(c.value / total * 100) + '% капитала') : '';
             var yld = has
                 ? kpi((c.pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(c.pnl)), c.pnl >= 0 ? 'pos' : 'neg',
-                    chip(c.pnlPct >= 0 ? 'pos' : 'neg', (c.pnlPct >= 0 ? '▲ ' : '▼ ') + absPct(c.pnlPct)))
-                : kpi('—', 'muted');
+                    chip(c.pnlPct >= 0 ? 'pos' : 'neg', (c.pnlPct >= 0 ? '▲ ' : '▼ ') + absPct(c.pnlPct)), 'pfpl:' + p.id + ':yld')
+                : kpi('—', 'muted', '', 'pfpl:' + p.id + ':yld');
             return '<div class="pfpl-row" role="button" tabindex="0" onclick="pfxOpenPf(\'' + p.id + '\')" title="Открыть дашборд портфеля">' +
                 '<span class="pfpl-ic" style="--pc:' + ac + '">' + PFPL_CASE_SVG + '</span>' +
                 '<span class="pfpl-id"><b>' + esc(p.name) + '</b><i>' + n + ' ' + PF.plural(n, 'актив', 'актива', 'активов') + '</i></span>' +
-                kpi(fmtRub(c.value), '', shareChip) +
+                kpi(fmtRub(c.value), '', shareChip, 'pfpl:' + p.id + ':val') +
                 yld +
                 kpi(has ? fmtRub(c.invested) : '—', has ? '' : 'muted') +
                 '<span class="pfpl-spark" data-pid="' + p.id + '">' + pfPlistSparkSvg(p) + '</span>' +
@@ -1876,8 +1878,37 @@
                 // фильтр или вкладки, а не сортировка (просьба 2026-07-16).
                 // Кнопки виджета — ПЕРВЫМИ в ряду (слева от сортировки), а не в углу
                 '<div class="pfpl-head-r">' + pfdInChromeHtml('plist') +
-                    '<span class="pfpl-sort-cap">Сортировка</span>' + seg + add + '</div>') + body + '</div>';
+                    '<span class="pfpl-sort-cap">Сортировка</span>' + seg + add + '</div>',
+                'pfpl:sub') + body + '</div>';
     }
+
+    // ---- точечный фоновый апдейт «Списка портфелей» (роадмап №6) ----
+    // Переписывает по data-live узлам: общую сумму в подзаголовке шапки
+    // (pfpl:sub) и ячейки строк «Стоимость» (число + чип доли) и «Доходность»
+    // (число + чип %) — pfpl:<pid>:val/yld, разметка зеркалит kpi()/chip() выше.
+    // Полному рендеру оставлены: ПОРЯДОК строк (сортировки «Стоимость» и
+    // «Доходность» живые), спарклайн (свой перерисовщик pfPlistSparksSoon,
+    // живой хвост дорисуется следующим полным рендером) и «Вложено» (не
+    // котировочное). Скелетонов прогрева у виджета нет.
+    PF.livePatchers.plist = function () {
+        var vis = visibleItems();
+        if (!vis.length) return;
+        var total = 0, cs = {};
+        vis.forEach(function (p) { var c = calcPf(p); cs[p.id] = c; total += c.value; });
+        PF.liveSet('pfpl:sub', { text: 'всего ' + PF.store.items.length + ' ' + PF.plural(PF.store.items.length, 'портфель', 'портфеля', 'портфелей') + ' · ' + fmtRub(total) });
+        function chip(cls, tx) { return '<span class="pfsm-chip ' + cls + '">' + tx + '</span>'; }
+        function absPct(x) { return Math.abs(x).toFixed(1).replace('.', ',') + '%'; }
+        vis.forEach(function (p) {
+            var c = cs[p.id], has = c.invested > 0;
+            var shareChip = (vis.length > 1 && total > 0 && c.value > 0)
+                ? chip('', Math.round(c.value / total * 100) + '% капитала') : '';
+            PF.liveSet('pfpl:' + p.id + ':val', { html: '<b class="">' + fmtRub(c.value) + '</b>' + shareChip });
+            PF.liveSet('pfpl:' + p.id + ':yld', { html: has
+                ? '<b class="' + (c.pnl >= 0 ? 'pos' : 'neg') + '">' + (c.pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(c.pnl)) + '</b>' +
+                    chip(c.pnlPct >= 0 ? 'pos' : 'neg', (c.pnlPct >= 0 ? '▲ ' : '▼ ') + absPct(c.pnlPct))
+                : '<b class="muted">—</b>' });
+        });
+    };
     // «Структура по портфелям»: кольцо распределения стоимости + легенда
     function pfwPstructHtml() {
         var vis = visibleItems(), total = 0;

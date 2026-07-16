@@ -857,12 +857,15 @@
             '</div></div>';
     }
 
-    // Шапка вторичной карточки в стиле calc-карточек (.k eyebrow + .t заголовок)
-    function pfCardHead(k, t, sub, right) {
+    // Шапка вторичной карточки в стиле calc-карточек (.k eyebrow + .t заголовок).
+    // subLive (опционально) — ключ data-live на подзаголовке: сабтитул с живым
+    // числом (напр. общая сумма «Списка портфелей») обновляется точечно фоновым
+    // тиком, текст по-прежнему экранируется
+    function pfCardHead(k, t, sub, right, subLive) {
         return '<div class="pf-ch">' +
             '<div class="pf-ch-l">' +
                 (k ? '<span class="pf-ch-k">' + esc(k) + '</span>' : '') +
-                '<span class="pf-ch-t">' + esc(t) + (sub ? '<span class="pf-ch-s">' + esc(sub) + '</span>' : '') + '</span>' +
+                '<span class="pf-ch-t">' + esc(t) + (sub ? '<span class="pf-ch-s"' + (subLive ? ' data-live="' + subLive + '"' : '') + '>' + esc(sub) + '</span>' : '') + '</span>' +
             '</div>' + (right || '') + '</div>';
     }
 
