@@ -1991,8 +1991,10 @@
         var pct = invested > 0 ? pnl / invested * 100 : null;
         var base = value - dd;
         var ddPct = hasDd && base > 0 ? dd / base * 100 : null;
-        function tile(l, v, vCls, chip) {
-            return '<div class="pfsm-tile"><i>' + l + '</i><b class="' + (vCls || '') + '">' + v + '</b>' + (chip || '') + '</div>';
+        // key (опционально) — data-live на плитке: живые «Общая стоимость» и
+        // «Общая доходность» переписывает точечно livePatchers.psum
+        function tile(l, v, vCls, chip, key) {
+            return '<div class="pfsm-tile"' + (key ? ' data-live="' + key + '"' : '') + '><i>' + l + '</i><b class="' + (vCls || '') + '">' + v + '</b>' + (chip || '') + '</div>';
         }
         function chip(cls, tx) { return '<span class="pfsm-chip ' + cls + '">' + tx + '</span>'; }
         // проценты в чипах — БЕЗ знака (направление уже говорит стрелка ▲/▼)
@@ -2001,15 +2003,43 @@
             ? chip(dd >= 0 ? 'pos' : 'neg', (dd >= 0 ? '▲ ' : '▼ ') + (ddPct != null ? absPct(ddPct) : fmtRub(Math.abs(dd))) + ' за сегодня')
             : chip('', 'появится со второго дня');
         var body = '<div class="pfsm-grid">' +
-            tile('Общая стоимость', fmtRub(value), '', ddChip) +
+            tile('Общая стоимость', fmtRub(value), '', ddChip, 'psum:val') +
             tile('Общая доходность', invested > 0 ? (pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(pnl)) : '—', pnl >= 0 ? 'pos' : 'neg',
-                pct != null ? chip(pct >= 0 ? 'pos' : 'neg', (pct >= 0 ? '▲ ' : '▼ ') + absPct(pct)) : '') +
+                pct != null ? chip(pct >= 0 ? 'pos' : 'neg', (pct >= 0 ? '▲ ' : '▼ ') + absPct(pct)) : '', 'psum:pnl') +
             tile('Общая вложенная сумма', invested > 0 ? fmtRub(invested) : '—') +
             tile('Количество активов', String(assets), '', chip('', 'в ' + nPf + ' ' + PF.plural(nPf, 'портфеле', 'портфелях', 'портфелях'))) +
         '</div>';
         return '<div class="dash2-card pf-card2 pf-psumblk">' +
             PF.pfCardHead('', 'Сводные показатели', 'итог по всем видимым портфелям', null) + body + '</div>';
     }
+
+    // ---- точечный фоновый апдейт «Сводных показателей» (роадмап №6) ----
+    // Переписывает содержимое живых плиток целиком (метка + число + чип —
+    // зеркалит tile()/chip() выше): «Общая стоимость» с чипом «за сегодня» и
+    // «Общая доходность» с чипом %. «Вложено» и «Количество активов» — не
+    // котировочные, остаются как есть. Скелетонов прогрева у виджета нет
+    // (до котировок числа считаются по фолбэкам calcPf, как и в htmlFn).
+    PF.livePatchers.psum = function () {
+        var value = 0, invested = 0, pnl = 0, dd = 0, hasDd = false;
+        visibleItems().forEach(function (p) {
+            var c = calcPf(p);
+            value += c.value; invested += c.invested; pnl += c.pnl;
+            var d = dayDelta(p, c.value);
+            if (d != null) { dd += d; hasDd = true; }
+        });
+        var pct = invested > 0 ? pnl / invested * 100 : null;
+        var base = value - dd;
+        var ddPct = hasDd && base > 0 ? dd / base * 100 : null;
+        function chip(cls, tx) { return '<span class="pfsm-chip ' + cls + '">' + tx + '</span>'; }
+        function absPct(x) { return Math.abs(x).toFixed(1).replace('.', ',') + '%'; }
+        var ddChip = hasDd
+            ? chip(dd >= 0 ? 'pos' : 'neg', (dd >= 0 ? '▲ ' : '▼ ') + (ddPct != null ? absPct(ddPct) : fmtRub(Math.abs(dd))) + ' за сегодня')
+            : chip('', 'появится со второго дня');
+        PF.liveSet('psum:val', { html: '<i>Общая стоимость</i><b class="">' + fmtRub(value) + '</b>' + ddChip });
+        PF.liveSet('psum:pnl', { html: '<i>Общая доходность</i><b class="' + (pnl >= 0 ? 'pos' : 'neg') + '">' +
+            (invested > 0 ? (pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(pnl)) : '—') + '</b>' +
+            (pct != null ? chip(pct >= 0 ? 'pos' : 'neg', (pct >= 0 ? '▲ ' : '▼ ') + absPct(pct)) : '') });
+    };
 
     // ==================================================================
     //  ИНТЕРФЕЙС ВИДЖЕТОВ (window.PF)
