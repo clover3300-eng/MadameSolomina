@@ -525,14 +525,44 @@
             sub = ev ? esc(ev.ticker) + ' · ' + ruDate(dateToIso(ev.date)) + ' · ' + esc(PF.daysUntilText(ev.date))
                 : 'нет запланированных выплат на год вперёд';
         }
+        // data-live только у котировочных плиток (cap/day) и НЕ в demo-режиме
+        // (превью пикера с захардкоженными числами патчер трогать не должен);
+        // плитка «Ближайшая выплата» — расписания, не котировки
+        var live = !demo && (kind === 'cap' || kind === 'day');
         return '<div class="dash2-card pf-kpi" style="--ac:' + ac + '">' +
             '<div class="pf-kpi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + ic + '</svg></div>' +
             '<div class="pf-kpi-body">' +
                 '<div class="pf-kpi-l">' + label + '</div>' +
-                '<div class="pf-kpi-v' + vCls + '">' + vHtml + '</div>' +
-                '<div class="pf-kpi-s">' + sub + '</div>' +
+                '<div class="pf-kpi-v' + vCls + '"' + (live ? ' data-live="kpi:' + kind + ':v"' : '') + '>' + vHtml + '</div>' +
+                '<div class="pf-kpi-s"' + (live ? ' data-live="kpi:' + kind + ':s"' : '') + '>' + sub + '</div>' +
             '</div></div>';
     }
+
+    // ---- точечный фоновый апдейт KPI-плиток (роадмап №6) ----
+    // «Суммарный капитал» (значение + саб «Вложено … ▲ X ₽ · +N%») и «За сегодня»
+    // (значение + саб про лидера дня) переписываются по data-live узлам, зеркаля
+    // выражения pfdKpiHtml. Полному рендеру оставлены: акцентный цвет плитки
+    // (--ac в inline-style корня зависит от знака dd) и плитка «Ближайшая
+    // выплата» (меняется приходом расписаний — это структурный softRerender).
+    // Пока котировки греются, не пишем — скелетоны заменит первый тик после.
+    PF.livePatchers.kpi = function () {
+        if (pfQuotesWarming()) return;
+        var inv = 0, val = 0, dd = 0, hasDd = false, mv = null;
+        PF.store.items.forEach(function (p) {
+            var c = calcPf(p); inv += c.invested; val += c.value;
+            var d = dayDelta(p, c.value); if (d != null) { dd += d; hasDd = true; }
+            var m = topMover(p); if (m && (!mv || Math.abs(m.chg) > Math.abs(mv.chg))) mv = m;
+        });
+        var pnl = val - inv, pct = inv > 0 ? pnl / inv * 100 : 0;
+        PF.liveSet('kpi:cap:v', { text: fmtRub(val), cls: 'pf-kpi-v' });
+        PF.liveSet('kpi:cap:s', { html: 'Вложено ' + fmtRub(inv) + ' · <b class="' + (pnl >= 0 ? 'pos' : 'neg') + '">' + (pnl >= 0 ? '▲ ' : '▼ ') + fmtRub(Math.abs(pnl)) + ' · ' + fmtPct(pct) + '</b>' });
+        PF.liveSet('kpi:day:v', {
+            text: hasDd ? (dd >= 0 ? '+' : '−') + fmtRub(Math.abs(dd)) : '—',
+            cls: 'pf-kpi-v' + (hasDd ? (dd >= 0 ? ' pos' : ' neg') : '') });
+        PF.liveSet('kpi:day:s', { html: hasDd
+            ? ((mv && Math.abs(mv.chg) >= 1) ? 'Сильнее всех: ' + esc(mv.t) + ' <b class="' + (mv.chg >= 0 ? 'pos' : 'neg') + '">' + fmtPct(mv.chg) + '</b> за день' : 'к последнему дневному снимку')
+            : 'появится со второго дня наблюдения' });
+    };
 
     // ---- «Панель управления» (виджет-герой): полноширинная тёмная полоса в стиле верхнего
     // блока «Ребаланса». Слева — идентити + KPI «за сегодня», справа — ВСЕ контролы
