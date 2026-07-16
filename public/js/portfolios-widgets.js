@@ -566,12 +566,14 @@
                 '<div class="pfp-sub">' + n + ' ' + PF.plural(n, 'портфель', 'портфеля', 'портфелей') + ' · дашборд под рукой</div></div>' +
         '</div>';
 
+        // data-live: те же ключи, что у героя pfxHeroHtml (portfolios-tabs.js) —
+        // патчер livePatchers.hero обновляет оба места одним проходом
         var ddNum = hasDd
-            ? (pfQuotesWarming() ? skelHtml(92, 20) : '<b class="' + ddCls + '">' + ddVal + '</b>')
-            : '<b>—</b>';
+            ? (pfQuotesWarming() ? '<b data-live="pfp:dd">' + skelHtml(92, 20) + '</b>' : '<b class="' + ddCls + '" data-live="pfp:dd">' + ddVal + '</b>')
+            : '<b data-live="pfp:dd">—</b>';
         var kpis = '<div class="pfp-kpis pfp-kpis--solo">' +
             '<div class="pfp-kpi"><div class="num">' + ddNum + '<span>за сегодня</span></div>' +
-                '<div class="sub">' + (hasDd ? 'к последнему дневному снимку' : 'появится со второго дня') + '</div></div>' +
+                '<div class="sub" data-live="pfp:dd-sub">' + (hasDd ? 'к последнему дневному снимку' : 'появится со второго дня') + '</div></div>' +
         '</div>';
 
         var actions = '<div class="pfp-actions">' +

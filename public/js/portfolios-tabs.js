@@ -394,12 +394,16 @@
         '</div>';
         // «Капитал» из героя убран (просьба 2026-07-14): сумма живёт в KPI-виджете и
         // карточках. Остаётся один KPI «за сегодня» — ему свободнее (.pfp-kpis--solo).
+        // data-live: KPI «за сегодня» и подпись обновляются точечно фоновым тиком
+        // (livePatchers.hero ниже); те же ключи у дубликата в pfdPanelHtml (виджет
+        // «Панель управления» конструктора) — обновятся заодно. Скелетон прогрева
+        // живёт ВНУТРИ <b> (а не вместо него), чтобы патчеру было куда писать число.
         var ddNum = hasDd
-            ? (pfQuotesWarming() ? skelHtml(92, 20) : '<b class="' + ddCls + '">' + ddVal + '</b>')
-            : '<b>—</b>';
+            ? (pfQuotesWarming() ? '<b data-live="pfp:dd">' + skelHtml(92, 20) + '</b>' : '<b class="' + ddCls + '" data-live="pfp:dd">' + ddVal + '</b>')
+            : '<b data-live="pfp:dd">—</b>';
         var kpis = '<div class="pfp-kpis pfp-kpis--solo">' +
             '<div class="pfp-kpi"><div class="num">' + ddNum + '<span>за сегодня</span></div>' +
-                '<div class="sub">' + (hasDd ? 'к последнему дневному снимку' : 'появится со второго дня') + '</div></div>' +
+                '<div class="sub" data-live="pfp:dd-sub">' + (hasDd ? 'к последнему дневному снимку' : 'появится со второго дня') + '</div></div>' +
         '</div>';
         var actions = '<div class="pfp-actions">' +
             '<button type="button" class="pfp-btn primary" onclick="pfxAddWidgetClick()" title="Добавить виджет на дашборд">' + PFD_PLUS_SVG + '<span>Виджет</span></button>' +
@@ -419,6 +423,24 @@
             idBlock + kpis + actions +
         '</div>';
     }
+
+    // ---- точечный фоновый апдейт героя (роадмап №6) ----
+    // KPI «за сегодня» = Σ dayDelta по ВСЕМ портфелям (включая скрытые — как в
+    // pfxHeroHtml). Ключи pfp:dd/pfp:dd-sub стоят и на дубликате разметки в
+    // pfdPanelHtml (виджет «Панель управления») — liveSet обновит оба узла разом.
+    // Пока котировки греются, число не пишем — скелетон заменит первый тик
+    // после прогрева. Счётчик портфелей в .pfp-sub не котировочный — не трогаем.
+    PF.livePatchers.hero = function () {
+        var dd = 0, hasDd = false;
+        PF.store.items.forEach(function (p) {
+            var d = dayDelta(p, calcPf(p).value); if (d != null) { dd += d; hasDd = true; }
+        });
+        if (hasDd && pfQuotesWarming()) return;
+        PF.liveSet('pfp:dd', {
+            text: hasDd ? (dd >= 0 ? '+' : '−') + fmtRub(Math.abs(dd)) : '—',
+            cls: hasDd ? (dd >= 0 ? 'pos' : 'neg') : '' });
+        PF.liveSet('pfp:dd-sub', { text: hasDd ? 'к последнему дневному снимку' : 'появится со второго дня' });
+    };
 
     // ---- скругление карточек: CSS-переменная --pfr на панели, персист в pf_dash_v1 ----
     // R8: настройка ГЛОБАЛЬНАЯ (одна на все подвкладки) — живёт в конфиге «Обзора»,
