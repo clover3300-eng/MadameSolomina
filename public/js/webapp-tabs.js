@@ -667,30 +667,40 @@ window.msToast = function (msg, opts) {
     t._tm = setTimeout(function () { t.classList.remove('show'); }, opts.ms || (act ? 6000 : 2200));
 };
 
-// ===== Ленивая подгрузка js/portfolios.js (R9.3, ускорена в R9.4) =====
-// 11 тысяч строк «Портфелей» не парсятся на Главной/Расчёте: настоящий тег в
-// index.html заменён держателем #pfLazySrc (в нём живёт актуальная ?v). Скрипт
-// вставляется при первом входе на вкладку или импорте из расчёта; его хвост сам
-// рендерит вкладку (currentTab === 'portfolios') и оборачивает switchTab.
+// ===== Ленивая подгрузка js/portfolios*.js (R9.3, ускорена в R9.4) =====
+// «Портфели» не парсятся на Главной/Расчёте: настоящие теги в index.html
+// заменены держателем #pfLazySrc (в нём живут актуальные ?v). Модуль с R10 —
+// ЦЕПОЧКА файлов (src в держателе — список; строка тоже понимается — список из
+// одного): скрипты вставляются при первом входе на вкладку или импорте из
+// расчёта, СТРОГО по порядку — каждый следующий по onload предыдущего. Хвост
+// ПОСЛЕДНЕГО (portfolios.js) объявляет window.renderPortfolios (сентинел
+// «модуль загружен»), сам рендерит вкладку и оборачивает switchTab.
 function pfLazySrc() {
     var holder = document.getElementById('pfLazySrc'), src = 'js/portfolios.js';
     try { src = JSON.parse(holder.textContent).src || src; } catch (e) {}
-    return src;
+    return Array.isArray(src) ? src : [src];
 }
 var _pfJsCbs = null;   // null — ещё не грузили; массив — запрос в полёте
 window.ensurePortfoliosJs = function (cb) {
     if (typeof window.renderPortfolios === 'function') { if (cb) cb(); return; }
     if (_pfJsCbs) { if (cb) _pfJsCbs.push(cb); return; }
     _pfJsCbs = cb ? [cb] : [];
-    var s = document.createElement('script');
-    s.src = pfLazySrc();
-    s.onload = function () {
-        var q = _pfJsCbs || []; _pfJsCbs = null;
-        q.forEach(function (fn) { try { fn(); } catch (e) {} });
-    };
-    // сеть моргнула — сбрасываем флаг, следующий вход на вкладку попробует снова
-    s.onerror = function () { _pfJsCbs = null; };
-    document.head.appendChild(s);
+    var srcs = pfLazySrc();
+    (function next(i) {
+        if (i >= srcs.length) {   // вся цепочка исполнилась — отдаём колбэки
+            var q = _pfJsCbs || []; _pfJsCbs = null;
+            q.forEach(function (fn) { try { fn(); } catch (e) {} });
+            return;
+        }
+        var s = document.createElement('script');
+        s.src = srcs[i];
+        s.onload = function () { next(i + 1); };
+        // сеть моргнула — рвём цепочку и сбрасываем флаг: следующий вход на
+        // вкладку начнёт сначала (сентинела ещё нет, повторное исполнение
+        // уже загруженных частей безопасно — состояние пересоздастся)
+        s.onerror = function () { _pfJsCbs = null; };
+        document.head.appendChild(s);
+    })(0);
 };
 // R9.4: три пути к «Портфелям» без ожидания 236КБ (gzip) в момент клика.
 //  · Прямой заход на /portfolios* или стартовый раздел «Портфели» — preload ПРЯМО
@@ -705,17 +715,22 @@ window.ensurePortfoliosJs = function (cb) {
     if (!wantsPf) {
         try { wantsPf = (JSON.parse(localStorage.getItem('profile_settings_v1')) || {}).startTab === 'portfolios'; } catch (e) {}
     }
-    var link = document.createElement('link');
-    link.href = pfLazySrc(); link.as = 'script';
+    // R10: модуль — цепочка файлов, прогреваем КАЖДЫЙ (закачка параллельная,
+    // исполнение ensurePortfoliosJs всё равно упорядочит)
+    function pfWarmLinks(rel) {
+        pfLazySrc().forEach(function (src) {
+            var link = document.createElement('link');
+            link.href = src; link.as = 'script'; link.rel = rel;
+            document.head.appendChild(link);
+        });
+    }
     if (wantsPf) {
-        link.rel = 'preload';
-        document.head.appendChild(link);
+        pfWarmLinks('preload');
         document.addEventListener('DOMContentLoaded', function () { window.ensurePortfoliosJs(); }, { once: true });
         return;
     }
-    link.rel = 'prefetch';
     var idle = window.requestIdleCallback || function (fn) { setTimeout(fn, 2500); };
-    idle(function () { document.head.appendChild(link); });
+    idle(function () { pfWarmLinks('prefetch'); });
 })();
 // Наведение на пункт «Портфели» — грузим модуль целиком до клика. Слушатель
 // одноразовый: после загрузки модуля (этим ли путём, другим ли) снимаем его —
