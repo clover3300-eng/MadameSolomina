@@ -1,8 +1,23 @@
-// ===== ВКЛАДКА «ПОРТФЕЛИ» · РЕНДЕР И ВСЁ ОСТАЛЬНОЕ (последний файл цепочки #pfLazySrc) =====
-// Ядро (portfolios-core.js) уже загружено и создало window.PF. Здесь пока
-// живёт всё, что не ядро: каркас рендера, дашборд-конструктор, виджеты,
-// карточки, подвкладки, сделки, ребаланс и ИНТЕГРАЦИЯ (window.renderPortfolios
-// объявляется ЗДЕСЬ — это сентинел «цепочка загружена» для ensurePortfoliosJs).
+// ===== ВКЛАДКА «ПОРТФЕЛИ» · КАРКАС РЕНДЕРА (ПОСЛЕДНИЙ файл цепочки #pfLazySrc) =====
+// Дирижёр вкладки: renderPortfolios/renderSmooth/softRerender, сводка,
+// «Видимость», LIVE-таймер, пустые состояния — и ИНТЕГРАЦИЯ в хвосте
+// (обёртка switchTab, подхват __pfSub, первичный рендер).
+//
+// Цепочка модулей (порядок несущий, задаёт #pfLazySrc в index.html):
+//   portfolios-core.js     — данные и расчёт; СОЗДАЁТ window.PF
+//   portfolios-dash.js     — дашборд-конструктор (сетка, пикер, раскладки)
+//   portfolios-widgets.js  — виджеты Обзора (заметки, KPI, капитал, новости…)
+//   portfolios-payouts.js  — календари выплат и «Дивиденды и купоны»
+//   portfolios-tabs.js     — герой, подвкладки/чипы, deep-link
+//   portfolios-cards.js    — карточка портфеля, шторка настроек, действия
+//   portfolios-trades.js   — история сделок и ребаланс-оверлей
+//   portfolios.js          — этот файл; window.renderPortfolios объявляется
+//                            ЗДЕСЬ — сентинел «цепочка загружена» для
+//                            ensurePortfoliosJs (webapp-tabs.js)
+// Правила неймспейса PF: мутабельное общее состояние — ТОЛЬКО свойствами PF
+// (store, quotesTs, dashCfg, openMenu…), алиасы разрешены на функции и
+// константы из РАНЬШЕ загруженных файлов; имена ПОЗЖЕ загружаемых — через
+// PF.* в момент вызова.
 (function () {
     'use strict';
     var PF = window.PF;
@@ -23,7 +38,7 @@
     // --- экспорт в ядро: его колбэки зовут эти функции через PF.* 
     //     (function-декларации хойстятся — блок валиден в начале файла) ---
     PF.softRerender = softRerender;     PF.donutHtml = donutHtml;
-        // импорт конструктора (portfolios-dash.js, загружен до нас):
+    // импорт конструктора (portfolios-dash.js, загружен до нас):
     var dashCfgFor = PF.dashCfgFor, pfLayoutCfgPopHtml = PF.pfLayoutCfgPopHtml, pfPresetsFetch = PF.pfPresetsFetch, pfWGatesFetch = PF.pfWGatesFetch, pfdActive = PF.pfdActive;
     var pfdBodyHtml = PF.pfdBodyHtml, pfdBusy = PF.pfdBusy, pfdCfgRemountSoon = PF.pfdCfgRemountSoon, pfdInChromeHtml = PF.pfdInChromeHtml, pfdLive = PF.pfdLive;
     var pfdNormNote = PF.pfdNormNote, pfdPushUndo = PF.pfdPushUndo, pfdQuiet = PF.pfdQuiet, pfdRepackSoon = PF.pfdRepackSoon, pfdRerender = PF.pfdRerender;
