@@ -389,6 +389,47 @@
         });
     }
 
+    // ---------- точечные обновления живых чисел (роадмап №6) ----------
+    // Разметка виджета вешает data-live="<ключ>" на МАЛЕНЬКИЙ узел с живым
+    // числом, а патчер виджета (PF.livePatchers.<имя>, живёт в файле своей
+    // htmlFn) на фоновом тике котировок пересчитывает значения и зовёт liveSet —
+    // тот переписывает ТОЛЬКО textContent/innerHTML/класс/title узла, не
+    // пересобирая родителя: фокус в полях, открытые попапы, жесты и скроллы
+    // не страдают. Полный рендер остаётся за действиями пользователя и
+    // структурными изменениями (состав, порядок строк, расписания выплат).
+    // Обходит патчеры PF.liveUpdate (файл рендера, рядом с softRerender).
+    PF.livePatchers = {};    // имя виджета -> функция точечного обновления
+    var liveMap = null;      // ключ -> [узлы]; собирается на ОДИН проход liveUpdate
+    var liveWrites = 0;      // счётчик реальных записей за проход (для fitBigSums)
+    function liveBegin() {
+        liveMap = {}; liveWrites = 0;
+        // весь документ, не только #pfWrap: карточки живут и в шторке/оверлеях
+        var nodes = document.querySelectorAll('[data-live]');
+        Array.prototype.forEach.call(nodes, function (el) {
+            var k = el.getAttribute('data-live');
+            (liveMap[k] || (liveMap[k] = [])).push(el);
+        });
+        return nodes.length;
+    }
+    function liveEnd() { liveMap = null; return liveWrites; }
+    // upd: { text?, html?, cls?, title? }. Каждое поле пишется только при
+    // реальном изменении. html сравнивается с последней ЗАПИСАННОЙ строкой
+    // (el._lv): innerHTML-геттер пересериализует разметку (&nbsp; и пр.) и
+    // прямое сравнение всегда «не совпадает». title: null/'' снимает атрибут.
+    function liveSet(key, upd) {
+        var ns = liveMap ? (liveMap[key] || []) : document.querySelectorAll('[data-live="' + key + '"]');
+        Array.prototype.forEach.call(ns, function (el) {
+            if (upd.text != null && el.textContent !== upd.text) { el.textContent = upd.text; liveWrites++; }
+            if (upd.html != null && el._lv !== upd.html) { el.innerHTML = upd.html; el._lv = upd.html; liveWrites++; }
+            if (upd.cls != null && el.className !== upd.cls) { el.className = upd.cls; liveWrites++; }
+            if ('title' in upd) {
+                var t = upd.title;
+                if (t == null || t === '') { if (el.hasAttribute('title')) { el.removeAttribute('title'); liveWrites++; } }
+                else if (el.getAttribute('title') !== t) { el.setAttribute('title', t); liveWrites++; }
+            }
+        });
+    }
+
     // Разовый запрос цены для кнопки «по API»
     function lookupPrice(ticker, type, cb) {
         if (type === 'bond') {
@@ -1203,6 +1244,8 @@
     // — котировки —
     PF.quotes = quotes; PF.ensureQuotes = ensureQuotes; PF.liveBond = liveBond; PF.bondFace = bondFace; PF.bondQuotes = bondQuotes;
     PF.bondNkdNow = bondNkdNow; PF.pfQuotesWarming = pfQuotesWarming; PF.pfCardWarming = pfCardWarming; PF.skelHtml = skelHtml; PF.noQuoteCell = noQuoteCell;
+    // — точечные обновления живых чисел (роадмап №6) —
+    PF.liveBegin = liveBegin; PF.liveEnd = liveEnd; PF.liveSet = liveSet;
     // — график карточки —
     PF.dateToIso = dateToIso; PF.niceTicks = niceTicks; PF.pfBench = pfBench; PF.loadPfChart = loadPfChart; PF.drawPfChart = drawPfChart;
     PF.repaintOpenCharts = repaintOpenCharts; PF.pfChartViewHtml = pfChartViewHtml; PF.pfChartAssetsHtml = pfChartAssetsHtml; PF.chartImoex = chartImoex; PF.chartBusy = chartBusy;

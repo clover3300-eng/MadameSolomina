@@ -41,6 +41,9 @@
         });
     }
 
+    // подсказка стата «Доходность»: одна строка на разметку И точечный патчер
+    // (livePatchers.cards) — чтобы текст не разъезжался между ними
+    var YIELD_TIP = 'Доходность в пересчёте на год (может отличаться от «Дохода» и графика — те показывают фактическое изменение за весь срок, а не годовые)';
     function cardHtml(p, idx, colRight, narrow, colMid) {
         var c = calcPf(p), ac = colorVal(p.color);
         var warm = pfCardWarming(p);   // котировки ещё греются → суммы скелетонами
@@ -84,10 +87,12 @@
             '<div class="pfc-normal">' +
             '<div class="pfc-hero">' +
                 '<div class="pfc-hero-top">' +
-                    (warm ? '<span class="pfc-hero-val">' + skelHtml(118, 21) + '</span>' +
-                            '<span class="pfc-hero-inc">' + skelHtml(96, 13) + '</span>'
-                          : '<span class="pfc-hero-val">' + fmtRub(c.value) + '</span>' +
-                            '<span class="pfc-hero-inc ' + pnlCls + '">' + (c.pnl >= 0 ? '▲ ' : '▼ ') + fmtRub(Math.abs(c.pnl)) + ' · ' + fmtPct(c.pnlPct) + '</span>') +
+                    // data-live: фоновый тик котировок переписывает эти узлы точечно
+                    // (livePatchers.cards ниже) — включая замену скелетонов прогрева числами
+                    (warm ? '<span class="pfc-hero-val" data-live="pfc:' + p.id + ':val">' + skelHtml(118, 21) + '</span>' +
+                            '<span class="pfc-hero-inc" data-live="pfc:' + p.id + ':inc">' + skelHtml(96, 13) + '</span>'
+                          : '<span class="pfc-hero-val" data-live="pfc:' + p.id + ':val">' + fmtRub(c.value) + '</span>' +
+                            '<span class="pfc-hero-inc ' + pnlCls + '" data-live="pfc:' + p.id + ':inc">' + (c.pnl >= 0 ? '▲ ' : '▼ ') + fmtRub(Math.abs(c.pnl)) + ' · ' + fmtPct(c.pnlPct) + '</span>') +
                 '</div>' +
                 (function () {
                     var imOn = !!chartImoex[p.id];
@@ -108,15 +113,17 @@
                 // Оба блока опциональны — сетка статов резиновая (flex), влезает любое число.
                 // R7: в карточке ТОЛЬКО «Доход» и «Доходность» (референс) — кэш и выплаты
                 // не показываем (они остаются в развороте/настройках и общей сводке)
+                // data-live: значения «Доход»/«Доходность» (и класс/подсказка контейнера
+                // доходности) обновляются точечно фоновым тиком — см. livePatchers.cards
                 if (warm) return '<div class="pfc-stats2">' +
                     (narrow ? '' : '<div class="pfc-stat2"><span class="pfc-stat2-l">Вложено</span><span class="pfc-stat2-v">' + fmtRub(c.invested) + '</span></div>') +
-                    '<div class="pfc-stat2 pfc-stat2--inc"><span class="pfc-stat2-l">Доход</span><span class="pfc-stat2-v">' + skelHtml(66, 13) + '</span></div>' +
-                    '<div class="pfc-stat2 pfc-stat2--yield"><span class="pfc-stat2-l">Доходность</span><span class="pfc-stat2-v">' + skelHtml(48, 13) + '</span></div>' +
+                    '<div class="pfc-stat2 pfc-stat2--inc"><span class="pfc-stat2-l">Доход</span><span class="pfc-stat2-v" data-live="pfc:' + p.id + ':pnl">' + skelHtml(66, 13) + '</span></div>' +
+                    '<div class="pfc-stat2 pfc-stat2--yield" data-live="pfc:' + p.id + ':ybox"><span class="pfc-stat2-l">Доходность</span><span class="pfc-stat2-v" data-live="pfc:' + p.id + ':yield">' + skelHtml(48, 13) + '</span></div>' +
                 '</div>';
                 return '<div class="pfc-stats2">' +
                     (narrow ? '' : '<div class="pfc-stat2"><span class="pfc-stat2-l">Вложено</span><span class="pfc-stat2-v">' + fmtRub(c.invested) + '</span></div>') +
-                    '<div class="pfc-stat2 pfc-stat2--inc"><span class="pfc-stat2-l">Доход</span><span class="pfc-stat2-v ' + pnlCls + '">' + fmtRub(c.pnl) + '</span></div>' +
-                    '<div class="pfc-stat2 pfc-stat2--yield is-' + (c.annual >= 0 ? 'gn' : 'rd') + '" title="Доходность в пересчёте на год (может отличаться от «Дохода» и графика — те показывают фактическое изменение за весь срок, а не годовые)"><span class="pfc-stat2-l">Доходность</span><span class="pfc-stat2-v ' + (c.annual >= 0 ? 'pos' : 'neg') + '">' + fmtPct(c.annual) + '</span></div>' +
+                    '<div class="pfc-stat2 pfc-stat2--inc"><span class="pfc-stat2-l">Доход</span><span class="pfc-stat2-v ' + pnlCls + '" data-live="pfc:' + p.id + ':pnl">' + fmtRub(c.pnl) + '</span></div>' +
+                    '<div class="pfc-stat2 pfc-stat2--yield is-' + (c.annual >= 0 ? 'gn' : 'rd') + '" data-live="pfc:' + p.id + ':ybox" title="' + YIELD_TIP + '"><span class="pfc-stat2-l">Доходность</span><span class="pfc-stat2-v ' + (c.annual >= 0 ? 'pos' : 'neg') + '" data-live="pfc:' + p.id + ':yield">' + fmtPct(c.annual) + '</span></div>' +
                 '</div>';
             })() +
             '<div class="pfc-sep"></div>' +
@@ -145,6 +152,52 @@
             '<div class="pfc-holdsover-list" data-skey="ho-' + p.id + '">' + body + '</div>' +
         '</div>';
     }
+
+    // ---- точечный фоновый апдейт карточек (роадмап №6) ----
+    // На тик котировок переписывает живые ЧИСЛА карточки по data-live узлам
+    // (PF.liveSet, ядро), не пересобирая DOM: герой (капитал / доход·%), статы
+    // «Доход»/«Доходность», цена и «Изм.» строк состава — в мини-таблице И в
+    // оверлее «весь состав» разом (общие ключи pfh:<hid>). Пока полному рендеру
+    // сознательно оставлены: ПОРЯДОК строк состава (c.hs отсортирован по живому
+    // pnlPct — пересортировка строк это структурное изменение), кольцо/полоса
+    // распределения и подсказка цели (donut + inline-ширины + условная разметка,
+    // см. cardRingHtml), мини-график (у него свой repaintMiniCharts). Пока
+    // котировки греются (pfCardWarming), патчер карточку не трогает — скелетоны
+    // заменит первый тик после прогрева.
+    PF.livePatchers.cards = function () {
+        visibleItems().forEach(function (p) {
+            if (pfCardWarming(p)) return;
+            var c = calcPf(p);
+            var pnlCls = c.pnl >= 0 ? 'pos' : 'neg';
+            PF.liveSet('pfc:' + p.id + ':val', { text: fmtRub(c.value) });
+            PF.liveSet('pfc:' + p.id + ':inc', {
+                text: (c.pnl >= 0 ? '▲ ' : '▼ ') + fmtRub(Math.abs(c.pnl)) + ' · ' + fmtPct(c.pnlPct),
+                cls: 'pfc-hero-inc ' + pnlCls });
+            PF.liveSet('pfc:' + p.id + ':pnl', { text: fmtRub(c.pnl), cls: 'pfc-stat2-v ' + pnlCls });
+            PF.liveSet('pfc:' + p.id + ':ybox', {
+                cls: 'pfc-stat2 pfc-stat2--yield is-' + (c.annual >= 0 ? 'gn' : 'rd'), title: YIELD_TIP });
+            PF.liveSet('pfc:' + p.id + ':yield', {
+                text: fmtPct(c.annual), cls: 'pfc-stat2-v ' + (c.annual >= 0 ? 'pos' : 'neg') });
+            c.hs.forEach(function (x) {
+                var h = x.h, hc = x.c, isB = h.type === 'bond';
+                // те же выражения, что в pfMiniRowHtml — ячейки после апдейта
+                // выглядят ровно как после полного рендера
+                var noQ = hc.curSrc === 'buy' ? noQuoteCell(h) : null;
+                var dayMark = '';
+                if (!isB && quotes[h.ticker] && quotes[h.ticker].chgPct != null && Math.abs(quotes[h.ticker].chgPct) >= 3) {
+                    var ch = quotes[h.ticker].chgPct;
+                    dayMark = ' <i class="pfc-rowday ' + (ch >= 0 ? 'up' : 'dn') + '" title="За сегодня: ' + fmtPct(ch) + '">' + (ch >= 0 ? '▲' : '▼') + '</i>';
+                }
+                PF.liveSet('pfh:' + h.id + ':now', {
+                    html: noQ ? noQ.txt : fmtPrice(hc.cur) + dayMark,
+                    cls: 'pfc-mnow' + (hc.live ? ' live' : ''),
+                    title: noQ ? noQ.tip : (isB ? BOND_PRICE_TIP : null) });
+                PF.liveSet('pfh:' + h.id + ':chg', {
+                    text: (!noQ && hc.invested > 0 ? fmtPct(hc.pnlPct) : '—'),
+                    cls: 'pfc-mchg ' + (!noQ && hc.invested > 0 ? (hc.pnlPct >= 0 ? 'pos' : 'neg') : '') });
+            });
+        });
+    };
 
     // Кольцо распределения карточки: маленький donut + номер портфеля в центре + полоса-легенда.
     // Если в ⚙ задана целевая доля облигаций (p.targetBond) — на полосе метка цели, под
@@ -222,8 +275,10 @@
         var row = '<tr class="pfc-mtr' + (open ? ' open' : '') + '" data-hid="' + h.id + '" onclick="pfToggleAssetRow(\'' + pid + '\',\'' + h.id + '\')">' +
                 '<td class="pfc-mc-as"><span class="pfc-mtk"><svg class="pfc-mch' + (open ? ' up' : '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg><b>' + esc(h.ticker) + '</b><i class="' + (isB ? 'bond' : 'stock') + '">' + (isB ? 'обл' : 'акц') + '</i>' + lotChip + '</span></td>' +
                 '<td class="pfc-mqty">' + (c.qty || 0) + '</td>' +
-                '<td class="pfc-mnow' + (c.live ? ' live' : '') + '"' + (noQ ? ' title="' + attr(noQ.tip) + '"' : ptip) + '>' + (noQ ? noQ.txt : fmtPrice(c.cur) + dayMark) + '</td>' +
-                '<td class="pfc-mchg ' + (!noQ && c.invested > 0 ? (c.pnlPct >= 0 ? 'pos' : 'neg') : '') + '">' + (!noQ && c.invested > 0 ? fmtPct(c.pnlPct) : '—') + '</td>' +
+                // data-live: цена и «Изм.» обновляются точечно фоновым тиком (livePatchers.cards);
+                // ключ по hid — те же ячейки в оверлее «весь состав» обновятся заодно
+                '<td class="pfc-mnow' + (c.live ? ' live' : '') + '" data-live="pfh:' + h.id + ':now"' + (noQ ? ' title="' + attr(noQ.tip) + '"' : ptip) + '>' + (noQ ? noQ.txt : fmtPrice(c.cur) + dayMark) + '</td>' +
+                '<td class="pfc-mchg ' + (!noQ && c.invested > 0 ? (c.pnlPct >= 0 ? 'pos' : 'neg') : '') + '" data-live="pfh:' + h.id + ':chg">' + (!noQ && c.invested > 0 ? fmtPct(c.pnlPct) : '—') + '</td>' +
             '</tr>';
         return open ? row + pfMiniDetailRowHtml(h, c) : row;
     }
