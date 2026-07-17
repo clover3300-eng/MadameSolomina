@@ -91,14 +91,17 @@
 /* мигающая каретка r5 в пустом поле — оставляем, цвет уже синий */
 
 /* ── Перекрытие: следующий за героем блок выезжает на него ──
-   Карточки у́же героя на 30px с каждой стороны — герой виден по краям
-   ВО ВСЕХ режимах (на экране выбора отступ даёт .cxm-types). */
+   Карточки у́же героя на --cx-inset с каждой стороны — герой выступает по
+   краям во всех режимах одинаково. На экране выбора столько же набегает само:
+   центровка #cxChooser (max-width 940 + margin-inline:auto в calc-mode.css)
+   плюс padding у .cxm-types, поэтому там отступ не задаём. */
+.cx-rows.r5 { --cx-inset: 82px; }
 body.cxm-choose #cxChooser { margin-top: -104px; position: relative; z-index: 2; }
 body.cxm-mix #r5Split {
-  margin-top: -104px; position: relative; z-index: 2; padding: 0 30px;
+  margin-top: -104px; position: relative; z-index: 2; padding: 0 var(--cx-inset);
 }
 body.cxm-monthly #panel-calc #calcAccordion {
-  margin-top: -104px; position: relative; z-index: 2; padding: 0 30px;
+  margin-top: -104px; position: relative; z-index: 2; padding: 0 var(--cx-inset);
 }
 
 /* ── ЭКРАН ВЫБОРА: витрины становятся самостоятельными карточками ── */
@@ -166,6 +169,18 @@ body.cxm-choose #cxChooser {
 .cxr6-ctarow { display: flex; align-items: center; gap: 14px; margin-top: auto; }
 .cxr6-ctarow .cxm-tbtn { margin-top: 0; padding: 15px 28px; }
 .cxr6-meta { margin-left: auto; font-size: 12px; color: var(--r5-muted); text-align: right; }
+
+/* «Новый расчёт» на витрине с сохранённым расчётом — тихая кнопка справа,
+   на месте приписки: втроём они в ширину карточки уже не помещаются. */
+.cxr6-ctarow .cxm-renew {
+  margin-left: auto; white-space: nowrap; cursor: pointer;
+  background: var(--r5-card); color: var(--r5-muted2); border: 1px solid #d8e1ec;
+  font-family: inherit; font-size: 13px; font-weight: 650;
+  padding: 12px 20px; border-radius: 12px;
+  transition: border-color .15s, color .15s;
+}
+.cxr6-ctarow .cxm-renew:hover { border-color: #c2cede; color: var(--r5-text); }
+.cx-rows.r5 .cxm-type.has-saved .cxr6-meta { display: none; }
 
 /* полоса «Не знаете, что выбрать?» — белая, на ширину карточек */
 body.cxm-choose #cxChooser .cxm-cta {
@@ -345,9 +360,11 @@ body.dark-mode #cxFcFacts .f b { color: #e8edf5; }
 body.dark-mode #cxFcFacts .fic { background: rgba(255,255,255,.06); }
 body.dark-mode .cx-rows.r5 .cxm-type { background: var(--r5-card); }
 body.dark-mode body.cxm-choose #cxChooser .cxm-cta { border-color: rgba(255,255,255,.09); }
-body.dark-mode .cxm-cta .cxr6-quizbtn {
+body.dark-mode .cxm-cta .cxr6-quizbtn,
+body.dark-mode .cxr6-ctarow .cxm-renew {
   background: rgba(255,255,255,.03); color: inherit; border-color: rgba(255,255,255,.14);
 }
+body.dark-mode .cxr6-ctarow .cxm-renew:hover { border-color: rgba(255,255,255,.3); }
 body.dark-mode #cxFcCta .nd-fee-trigger { background: rgba(255,255,255,.03); border-color: rgba(255,255,255,.14); }
 
 /* ── Мобайл: стек без перекрытий ───────────────────────────── */

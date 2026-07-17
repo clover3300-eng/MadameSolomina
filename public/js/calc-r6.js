@@ -36,6 +36,13 @@
     return n;
   }
   function fmtInt(v) { return Math.round(v).toLocaleString('ru-RU'); }
+  // 1 вопрос / 2 вопроса / 5 вопросов
+  function plural(n, one, few, many) {
+    var d = n % 10, h = n % 100;
+    if (d === 1 && h !== 11) return one;
+    if (d >= 2 && d <= 4 && (h < 12 || h > 14)) return few;
+    return many;
+  }
   // крупные суммы: «1.93 млн» / «193 000»
   function fmtCap(v) {
     if (v >= 950000) return (v / 1e6).toFixed(2).replace(',', '.') + ' <small>млн ₽</small>';
@@ -409,14 +416,24 @@
         var row = el('div', 'cxr6-ctarow');
         cfg[1].appendChild(row);
         row.appendChild(btn);
+        // «Новый расчёт» ставит calc-mode для сохранённых расчётов — он мог
+        // успеть создать её до нас, тогда забираем в ряд вместе с кнопкой
+        var renew = cfg[1].querySelector('.cxm-renew');
+        if (renew) row.appendChild(renew);
         row.appendChild(el('span', 'cxr6-meta', cfg[2]));
       }
     });
 
-    // полоса «Не знаете, что выбрать?»: добавляем кнопку теста
+    // полоса «Не знаете, что выбрать?»: добавляем кнопку теста.
+    // Число вопросов берём из самого движка (VG_Q объявлен const в
+    // vanguard-test.js — он в глобальной области, но не на window).
     var cta = ch.querySelector('.cxm-cta');
     if (cta && !cta.querySelector('.cxr6-quizbtn')) {
-      var qb = el('button', 'cxr6-quizbtn', 'Тест · 2 мин');
+      var qn = 0;
+      try { if (typeof VG_Q !== 'undefined' && VG_Q) qn = VG_Q.length; } catch (e) {}
+      var qb = el('button', 'cxr6-quizbtn',
+        qn ? ('Тест · ' + qn + ' ' + plural(qn, 'вопрос', 'вопроса', 'вопросов') + ' · 2 мин')
+           : 'Тест · 2 мин');
       qb.type = 'button';
       qb.addEventListener('click', function (e) {
         e.stopPropagation();

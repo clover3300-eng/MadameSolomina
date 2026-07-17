@@ -137,6 +137,38 @@
       return !!(mo && mo.started);
     } catch (e) { return false; }
   }
+
+  // ── Дата расчёта ─────────────────────────────────────────────────────────
+  // Без неё витрина с сохранённым расчётом выглядит как новая. Берём именно
+  // момент расчёта, а не последней записи состояния: lsSave/moSave срабатывают
+  // на каждый ввод и показывали бы «сегодня» всегда.
+  var MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+                'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+  function savedTs(m) {
+    try {
+      if (m === 'mix') {
+        var s = JSON.parse(localStorage.getItem('msolominа_state'));
+        return (s && s.calcTs) || 0;
+      }
+      var mo = JSON.parse(localStorage.getItem(MO_KEY));
+      return (mo && mo.startedTs) || 0;
+    } catch (e) { return 0; }
+  }
+  function fmtDate(ts) {
+    if (!ts) return '';
+    var d = new Date(ts), now = new Date();
+    var s = d.getDate() + ' ' + MONTHS[d.getMonth()];
+    if (d.getFullYear() !== now.getFullYear()) s += ' ' + d.getFullYear();
+    return s;
+  }
+  // ставится только при настоящем расчёте (не при тихом восстановлении)
+  function markMixCalcTs() {
+    try {
+      var st = JSON.parse(localStorage.getItem('msolominа_state')) || {};
+      st.calcTs = Date.now();
+      localStorage.setItem('msolominа_state', JSON.stringify(st));
+    } catch (e) {}
+  }
   // Клик по витрине. Новый расчёт открывает калькулятор, а сохранённый —
   // сразу результат, как обещает надпись «Продолжить»: у смешанного результат
   // живёт на вкладке «Портфель» (тот же переход, что у подпункта calc-mix в
@@ -148,6 +180,28 @@
       return;
     }
     setMode(m);
+  }
+
+  // «Новый расчёт» — открыть калькулятор с чистого листа.
+  // Для смешанного достаточно просто открыть его: витрина уводит в готовый
+  // результат, и другого пути к калькулятору нет. Дата обновится сама, когда
+  // пользователь нажмёт «Рассчитать портфель» (до этого в силе старый расчёт).
+  // Для купонного сохранённый расчёт — это и есть подкрученные руками
+  // количества, поэтому пересобираем корзину и сбрасываем дату: иначе кнопка
+  // ничем не отличалась бы от «Продолжить».
+  function renewCalc(m) {
+    if (m === 'monthly') {
+      try {
+        var mo = JSON.parse(localStorage.getItem(MO_KEY)) || {};
+        delete mo.startedTs;
+        localStorage.setItem(MO_KEY, JSON.stringify(mo));
+      } catch (e) {}
+    }
+    setMode(m);
+    if (m !== 'monthly') return;
+    setTimeout(function () {
+      try { if (typeof distributeMonthlyInvestment === 'function') distributeMonthlyInvestment(); } catch (e) {}
+    }, 80);
   }
 
   function refreshResumeBadges() {
@@ -163,14 +217,39 @@
         if (!btn._baseHTML) btn._baseHTML = btn.innerHTML;
         btn.innerHTML = saved ? ('Продолжить ' + GO_IC) : btn._baseHTML;
       }
+      // Пилюля: не просто «сохранённый», а когда именно посчитан
       var badge = card.querySelector('.cxm-resume');
-      if (saved && !badge) {
-        badge = document.createElement('span');
-        badge.className = 'cxm-resume';
-        badge.innerHTML = '<span class="dot"></span>Сохранённый расчёт';
-        card.insertBefore(badge, card.querySelector('.cxm-tk'));
-      } else if (!saved && badge) {
+      if (saved) {
+        if (!badge) {
+          badge = document.createElement('span');
+          badge.className = 'cxm-resume';
+          card.insertBefore(badge, card.querySelector('.cxm-tk'));
+        }
+        var ds = fmtDate(savedTs(m));
+        badge.innerHTML = '<span class="dot"></span>' +
+          (ds ? ('Расчёт от ' + ds) : 'Сохранённый расчёт');
+      } else if (badge) {
         badge.parentNode.removeChild(badge);
+      }
+      // «Новый расчёт» рядом с «Продолжить»: сама витрина ведёт в готовый
+      // результат, и без этой кнопки пересчитать было бы неоткуда.
+      var renew = card.querySelector('.cxm-renew');
+      if (saved && btn) {
+        if (!renew) {
+          renew = document.createElement('button');
+          renew.type = 'button';
+          renew.className = 'cxm-renew';
+          renew.textContent = 'Новый расчёт';
+          renew.addEventListener('click', function (e) {
+            e.stopPropagation();          // не отдаём клик витрине — она уводит в результат
+            renewCalc(m);
+            haptic('light');
+          });
+        }
+        // держим её сразу за «Продолжить» в CTA-ряду, куда кнопку переносит R6
+        if (renew.previousSibling !== btn) btn.parentNode.insertBefore(renew, btn.nextSibling);
+      } else if (renew) {
+        renew.parentNode.removeChild(renew);
       }
     });
   }
@@ -284,10 +363,15 @@
       var qm = {};
       try { if (typeof bondQtyMap !== 'undefined' && bondQtyMap) qm = bondQtyMap; } catch (e) {}
       var main = document.getElementById('monthlySumInput');
+      var prev = null;
+      try { prev = JSON.parse(localStorage.getItem(MO_KEY)); } catch (e) {}
       localStorage.setItem(MO_KEY, JSON.stringify({
         started: 1,
         sum: main ? (parseInt(main.value, 10) || 0) : 0,
         qty: qm,
+        // startedTs — дата расчёта (ставится один раз, показывается на витрине);
+        // ts обновляется на каждой правке корзины
+        startedTs: (prev && prev.startedTs) || Date.now(),
         ts: Date.now()
       }));
     } catch (e) {}
@@ -386,7 +470,12 @@
       window.calculateAndShowPortfolio = function () {
         _oCalc.apply(this, arguments);
         try {
-          if (typeof isPortfolioCalculated !== 'undefined' && isPortfolioCalculated) showSub('mix');
+          if (typeof isPortfolioCalculated !== 'undefined' && isPortfolioCalculated) {
+            showSub('mix');
+            // дату ставим только за настоящий расчёт: mixRestore прогоняет эту
+            // же функцию при каждой загрузке и сдвинул бы её на «сегодня»
+            if (!window._cxSilentCalc) markMixCalcTs();
+          }
         } catch (e) {}
       };
       window.calculateAndShowPortfolio._cx = true;

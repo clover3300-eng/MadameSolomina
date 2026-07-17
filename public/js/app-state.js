@@ -14,6 +14,7 @@ function lsSave() {
         var sumEl = document.getElementById('sumInput');
         var sliderEl = document.getElementById('ratioSlider');
         var btDate = document.getElementById('btDateInput');
+        var prev = lsLoad();
         var state = {
             sum: sumEl ? sumEl.value : '',
             bondPct: sliderEl ? sliderEl.value : '50',
@@ -28,6 +29,10 @@ function lsSave() {
             // смешанный расчёт произведён — по этому флагу calc-mode.js тихо
             // пересобирает портфель при загрузке (подвкладка «Смешанный портфель»)
             calcDone: typeof isPortfolioCalculated !== 'undefined' ? !!isPortfolioCalculated : false,
+            // Дата расчёта для витрины «Продолжить» — её ставит calc-mode.js в
+            // момент настоящего расчёта. lsSave пересобирает объект целиком на
+            // каждый ввод, поэтому поле надо переносить, иначе оно затрётся.
+            calcTs: (prev && prev.calcTs) || 0,
             lastTab: currentTab || 'home',
             theme: document.body.classList.contains('dark-mode') ? 'dark' : 'light',
             ts: Date.now()
