@@ -621,13 +621,18 @@
         // что и у выезжающей карточки stockDetailCard (см. память «Fixed overlays need body»).
         function positionPop(inp) {
             var r = inp.getBoundingClientRect();
-            var w = 288, h = pop.offsetHeight || 330;
+            // десктопный zoom 0.9 (css/desktop-zoom.css): rect — в ВИЗУАЛЬНЫХ координатах,
+            // а style.left/top попапа в <body> зумится → делим на фактический масштаб
+            // попапа (самокалибровка, тот же приём, что у призрака драга pfdGz)
+            var z = pop.offsetWidth ? (pop.getBoundingClientRect().width / pop.offsetWidth) : 1;
+            if (!(z > 0)) z = 1;
+            var w = (288) * z, h = (pop.offsetHeight || 330) * z;   // визуальные габариты
             var left = r.left;
             if (left + w > window.innerWidth - 8) left = Math.max(8, window.innerWidth - w - 8);
             var top = r.bottom + 8;
             if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 8);
-            pop.style.left = left + 'px';
-            pop.style.top = top + 'px';
+            pop.style.left = (left / z) + 'px';
+            pop.style.top = (top / z) + 'px';
         }
         function openCal(inp) {
             closeCal();
@@ -637,7 +642,9 @@
             var base = sel ? new Date(sel.y, sel.m, 1) : new Date();
             vY = base.getFullYear(); vM = base.getMonth(); view = 'days';
             pop = document.createElement('div');
-            pop.className = 'btcal';
+            // btcal--pf: календарь настроек живёт в <body> и должен всплывать НАД шторкой
+            // настроек #pfSetDrawer (z-index 960) — базовый .btcal (z-index 60) тонул за ней
+            pop.className = 'btcal btcal--pf';
             pop.style.position = 'fixed';
             document.body.appendChild(pop);
             render();

@@ -49,6 +49,7 @@
     window.pfdAddNote = function (batch) {
         pfdFlushNotes();
         if (!batch) pfdPushUndo();
+        delete PF.dashCfg.cleared;   // заметка — тоже виджет: одноразовый призрак очистки уходит
         var id = genId('n');
         PF.dashCfg.notes = (PF.dashCfg.notes || []).concat([pfdNormNote({ id: id })]);
         PF.dashCfg.hidden['note:' + id] = 0;
@@ -1017,10 +1018,83 @@
             var big = w > 52 && h > 34, mid = w > 34 && h > 22;
             var pctTxt = chg == null ? '' : (chg >= 0 ? '+' : '−') + Math.abs(chg).toFixed(1) + '%';
             var label = big ? '<b>' + esc(t.tk) + '</b><i>' + pctTxt + '</i>' : (mid ? '<b>' + esc(t.tk) + '</b>' : '');
+            // нативный title убран: по наведению всплывает своё мини-превью (pfdHeatPvShow)
             var tip = esc(t.tk) + (chg == null ? '' : ' · ' + pctTxt + ' за день');
-            html += '<button type="button" class="pfhm-tile" style="left:' + x.toFixed(1) + 'px;top:' + y.toFixed(1) + 'px;width:' + w.toFixed(1) + 'px;height:' + h.toFixed(1) + 'px;--tc:' + pfdTileColor(chg) + '" title="' + tip + '" onclick="pfOpenTicker(\'' + jsArg(t.tk) + '\')">' + label + '</button>';
+            html += '<button type="button" class="pfhm-tile" data-tk="' + esc(t.tk) + '" style="left:' + x.toFixed(1) + 'px;top:' + y.toFixed(1) + 'px;width:' + w.toFixed(1) + 'px;height:' + h.toFixed(1) + 'px;--tc:' + pfdTileColor(chg) + '" aria-label="' + tip + '" onclick="pfOpenTicker(\'' + jsArg(t.tk) + '\')">' + label + '</button>';
         });
         box.innerHTML = html;
+        pfdHeatPvBind(box);
+    }
+    // ---- мини-превью плитки карты: по наведению всплывает карточка с хвостиком ----
+    // Одно превью на бокс (position:absolute внутри .pfhm-box), над плиткой (у верхнего
+    // ряда — под ней), хвостик всегда указывает на центр плитки даже при клампе к краям.
+    // pointer-events:none — не перехватывает hover/клики, клик по плитке работает как раньше.
+    var pfdHeatPvTile = null, pfdHeatPvHideT = null;
+    function pfdHeatPvHtml(tk) {
+        var co = (typeof window.stkFindCompany === 'function') ? window.stkFindCompany(tk) : null;
+        var name = co && co.name ? co.name : '';
+        var chg = pfdHeatC ? pfdHeatC[tk] : null;
+        if (chg != null && isNaN(+chg)) chg = null; else if (chg != null) chg = +chg;
+        var weight = null;
+        if (pfdHeatW) pfdHeatW.some(function (x) { if (x.tk === tk) { weight = x.value; return true; } return false; });
+        var price = null, pot = null;
+        if (co && co.main) {
+            price = toNum(co.main['Текущая Цена']); if (!isFinite(price)) price = null;
+            pot = toNum(co.main['ОДХС']); if (!isFinite(pot)) pot = null;
+        }
+        function row(l, v, cls) { return v == null ? '' : '<span class="pfhm-pv-r"><i>' + l + '</i><b' + (cls ? ' class="' + cls + '"' : '') + '>' + v + '</b></span>'; }
+        var chgTxt = chg == null ? null : (chg >= 0 ? '+' : '−') + Math.abs(chg).toFixed(2) + '%';
+        var priceTxt = price == null ? null : price.toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' ₽';
+        var wTxt = weight == null ? null : weight.toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + '%';
+        var potTxt = pot == null ? null : fmtPct(pot);
+        return '<div class="pfhm-pv-head"><b>' + esc(tk) + '</b>' + (name ? '<span>' + esc(name) + '</span>' : '') + '</div>' +
+            '<div class="pfhm-pv-rows">' +
+                row('За день', chgTxt, chg != null ? (chg >= 0 ? 'pos' : 'neg') : '') +
+                row('Цена', priceTxt) +
+                row('Вес в IMOEX', wTxt) +
+                row('Потенциал', potTxt, pot != null ? (pot >= 0 ? 'pos' : 'neg') : '') +
+            '</div>' +
+            '<div class="pfhm-pv-hint">нажмите — карточка компании</div>' +
+            '<i class="pfhm-pv-tail"></i>';
+    }
+    function pfdHeatPvShow(box, tile) {
+        clearTimeout(pfdHeatPvHideT);
+        pfdHeatPvTile = tile;
+        var pv = box.querySelector('.pfhm-pv');
+        if (!pv) { pv = document.createElement('div'); pv.className = 'pfhm-pv'; box.appendChild(pv); }
+        pv.innerHTML = pfdHeatPvHtml(tile.getAttribute('data-tk') || '');
+        var bw = box.clientWidth;
+        var pw = pv.offsetWidth, ph = pv.offsetHeight;
+        var cx = tile.offsetLeft + tile.offsetWidth / 2;
+        var left = clamp(cx - pw / 2, 6, Math.max(6, bw - pw - 6));
+        var below = tile.offsetTop - ph - 10 < 4;   // сверху не влезает → показываем под плиткой
+        var top = below ? tile.offsetTop + tile.offsetHeight + 10 : tile.offsetTop - ph - 10;
+        pv.classList.toggle('below', below);
+        pv.style.left = left + 'px';
+        pv.style.top = top + 'px';
+        pv.style.setProperty('--tail-x', clamp(cx - left, 14, pw - 14) + 'px');
+        requestAnimationFrame(function () { if (pfdHeatPvTile === tile) pv.classList.add('on'); });
+    }
+    function pfdHeatPvHide(box) {
+        clearTimeout(pfdHeatPvHideT);
+        // микро-задержка: переход между соседними плитками проскакивает по фону бокса
+        // (зазор 1.5px) — без задержки превью мигало бы на каждом шаге
+        pfdHeatPvHideT = setTimeout(function () {
+            pfdHeatPvTile = null;
+            var pv = box.querySelector('.pfhm-pv');
+            if (pv) pv.classList.remove('on');
+        }, 70);
+    }
+    function pfdHeatPvBind(box) {
+        box.onmouseover = function (e) {
+            var tile = e.target.closest ? e.target.closest('.pfhm-tile') : null;
+            if (!tile || !box.contains(tile)) { pfdHeatPvHide(box); return; }
+            if (tile === pfdHeatPvTile) { clearTimeout(pfdHeatPvHideT); return; }
+            pfdHeatPvShow(box, tile);
+        };
+        box.onmouseleave = function () { pfdHeatPvHide(box); };
+        // клик по плитке открывает карточку компании — превью сразу прячем
+        box.onclick = function () { pfdHeatPvHide(box); };
     }
     var pfdHeatT = null;
     function pfdHeatRepaintSoon() {
@@ -1392,6 +1466,7 @@
             slot.classList.add('link'); slot.setAttribute('role', 'link');
             slot.onclick = function (ev) { ev.stopPropagation(); if (typeof openExternalLink === 'function') openExternalLink(e.link); else window.open(e.link, '_blank'); };
         } else { slot.classList.remove('link'); slot.onclick = null; }
+        pfFavFitSoon();   // высота строки могла дрогнуть — пересчитать, что влезает целиком
     }
     function pumpNewsQueue() {
         while (newsActive < 2 && newsQueue.length) {
@@ -1409,6 +1484,8 @@
         }
     }
     function renderFavNews() {
+        // строки, не влезающие в блок целиком, прячутся (независимо от загрузки новостей)
+        pfFavFitWatch(); pfFavFitSoon();
         // грузим новости для стабильного пула (топ-12 по потенциалу) — он же набор видимых плиток
         // при любом фильтре; сортировка «по свежести» лишь переупорядочивает уже эти тикеры
         var favs = favPool(); if (!favs.length || typeof loadNewsForTicker !== 'function') return;
@@ -1418,6 +1495,37 @@
         });
         // лёгкая задержка старта, чтобы сперва прогрузились данные таблиц, а не новости
         setTimeout(pumpNewsQueue, newsActive ? 0 : 350);
+    }
+    // ---- «Избранное»: показываем только ЦЕЛИКОМ влезающие строки ----
+    // Строка, обрезанная нижним краем блока (виден только тикер или половина новости),
+    // не отображается вовсе (.pff-cut, просьба 2026-07-17): список заканчивается на
+    // последней целой строке. Пересчёт — после каждого рендера избранного (renderFavNews)
+    // и на живой ресайз виджета (ResizeObserver на .pff-body). Первую строку не режем
+    // никогда — совсем пустой блок хуже одной подрезанной строки.
+    var pfFavFitRO = null, pfFavFitT = null;
+    function pfFavFitRows() {
+        var bodies = document.querySelectorAll('#pfWrap .pf-fav .pff-body');
+        Array.prototype.forEach.call(bodies, function (body) {
+            var rows = body.querySelectorAll('.pff2-list .pff-tile');
+            if (!rows.length) return;
+            Array.prototype.forEach.call(rows, function (r) { r.classList.remove('pff-cut'); });
+            if (body.scrollHeight <= body.clientHeight + 1) return;   // всё влезает — не режем
+            body.scrollTop = 0;   // хвост прячем, скроллить больше нечего
+            var bb = body.getBoundingClientRect().bottom;
+            var cut = false;
+            Array.prototype.forEach.call(rows, function (r, i) {
+                if (!cut && i > 0 && r.getBoundingClientRect().bottom > bb + 0.5) cut = true;
+                if (cut) r.classList.add('pff-cut');
+            });
+        });
+    }
+    function pfFavFitSoon() { clearTimeout(pfFavFitT); pfFavFitT = setTimeout(pfFavFitRows, 60); }
+    function pfFavFitWatch() {
+        if (!window.ResizeObserver) return;
+        if (!pfFavFitRO) pfFavFitRO = new ResizeObserver(pfFavFitSoon);
+        else pfFavFitRO.disconnect();
+        var bodies = document.querySelectorAll('#pfWrap .pf-fav .pff-body');
+        Array.prototype.forEach.call(bodies, function (b) { pfFavFitRO.observe(b); });
     }
 
     // ---- ставки рынка (как на дашборде) ----

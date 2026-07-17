@@ -920,6 +920,7 @@
     window.pfdAddWidget = function (id) {
         if (PF.dashCfg.hidden[id] === 0) return;   // уже на дашборде
         pfdPushUndo();
+        delete PF.dashCfg.cleared;   // одноразовый призрак «после очистки» уходит
         PF.dashCfg.hidden[id] = 0;
         // «Панель управления» — всегда верхней полосой во всю ширину: в НАЧАЛО порядка, span 12
         if (id === 'panel') {
@@ -1058,7 +1059,7 @@
         // FAB-ом в правый нижний угол (pfxGhostClick) и больше призрак не показывается.
         // Обычный .pfd-item для masonry-пакера, но БЕЗ chrome (не тянется/не режется)
         // и вне PF.dashCfg.order (saveDashCfg его не знает и не сохранит).
-        if (pfxIsPfTab(PF.dashTab) && shown.length && !PF.pfxFabSeen() && !PF.dashEdit) {
+        if (pfxIsPfTab(PF.dashTab) && shown.length && !PF.pfxFabSeen() && !PF.dashEdit && !PF.dashCfg.cleared) {
             // R9.3: подпись призрака подстраивается под состав портфеля вкладки —
             // облигационному предлагаем календарь выплат, акционному — лидеров дня
             var gsub = 'график капитала, календарь выплат, новости — соберите вкладку под себя';
@@ -1079,6 +1080,31 @@
                         '<i>' + gsub + '</i>' +
                     '</button>' +
                 '</div>' +
+            '</div>';
+        }
+
+        // R10: одноразовый теневой виджет после «Очистить подвкладку» (cfg.cleared):
+        // портфели остались, остальное убрано — призрак предлагает открыть пикер или
+        // применить готовую раскладку прямо на месте. Исчезает с первым добавленным
+        // виджетом/раскладкой (delete cfg.cleared в pfdAddWidget/pfApplyPreset/…).
+        if (PF.dashCfg.cleared && shown.length && !PF.dashEdit && !PF.pfl3Open) {
+            var clays = '';
+            try {
+                pfl3Options().forEach(function (o) {
+                    if (!o.snap || clays.split('pfxg-lay').length > 4) return;
+                    clays += '<button type="button" class="pfxg-lay" onclick="' + pfl3ApplyCall(o) + '" title="Применить раскладку «' + esc(o.name) + '»">' +
+                        PF.PFDGRID_SVG + '<span>' + esc(o.name) + '</span></button>';
+                });
+            } catch (e) {}
+            items += '<div class="pfd-item pfxg-item" data-pfd="__ghost" style="grid-column: span 4;">' +
+                '<div class="pfd-body"><div class="pfxg-ghost pfxg-ghost--clr">' +
+                    '<button type="button" class="pfxg-mainbtn" onclick="pfLayoutToggle(event)" title="Открыть пикер виджетов">' +
+                        '<span class="pfxg-plus">' + PFD_PLUS_SVG + '</span>' +
+                        '<b>Добавить виджет</b>' +
+                        '<i>страница очищена — соберите её заново или примените готовую раскладку</i>' +
+                    '</button>' +
+                    (clays ? '<div class="pfxg-lays"><span class="pfxg-lays-l">или готовая раскладка</span><div class="pfxg-lays-r">' + clays + '</div></div>' : '') +
+                '</div></div>' +
             '</div>';
         }
 
@@ -1412,6 +1438,7 @@
         pfdPushUndo();
         var s = PF.dashCfg.saved;
         PF.dashCfg.on = true;
+        delete PF.dashCfg.cleared;
         PF.dashCfg.order = (s.order || []).slice();
         PF.dashCfg.span = Object.assign({}, s.span); PF.dashCfg.h = Object.assign({}, s.h);
         PF.dashCfg.hidden = Object.assign({}, s.hidden); PF.dashCfg.col = Object.assign({}, s.col);
@@ -1496,6 +1523,7 @@
         // R8: конфиг МУТИРУЕМ (PF.dashCfg — общий объект с pfTabCfgs, пересоздание оторвало
         // бы его от реестра вкладок); corner/notes/saved остаются как были
         PF.dashCfg.on = true;
+        delete PF.dashCfg.cleared;
         PF.dashCfg.order = c.order; PF.dashCfg.span = c.span; PF.dashCfg.h = c.h;
         PF.dashCfg.hidden = c.hidden; PF.dashCfg.col = c.col; PF.dashCfg.thm = {};
         PF.dashCfg.allocPf = c.allocPf;
@@ -1529,6 +1557,37 @@
     window.pfDashToggleEdit = function () { if (PF.dashEdit) window.pfLayoutClose(); else window.pfLayoutToggle(); };
     window.pfDashReset = window.pfLayoutReset;
 
+    // ---- «Очистить подвкладку»: убрать ВСЕ виджеты, оставить только портфели ----
+    // (просьба 2026-07-17). После очистки в сетке живёт ОДНОРАЗОВЫЙ теневой виджет
+    // «Добавить виджет» (флаг cfg.cleared, см. pfdBodyHtml): из него открывается пикер
+    // или applied готовая раскладка. Флаг снимает любое добавление виджета/раскладка.
+    // Обратимо: снимок ложится в undo (Cmd/Ctrl+Z).
+    window.pfLayoutClearAsk = function () {
+        PF.pfConfirm({ danger: true, title: 'Очистить подвкладку?',
+            text: 'Все виджеты будут убраны — останутся только карточки портфелей. Вернуть можно готовой раскладкой из теневого виджета или Cmd/Ctrl+Z.',
+            ok: 'Очистить' }, function () { window.pfLayoutClear(); });
+    };
+    window.pfLayoutClear = function () {
+        pfdPushUndo();
+        PF.dashCfg.on = true;
+        var keep = {};
+        if (pfxIsPfTab(PF.dashTab)) keep['pf:' + PF.dashTab.slice(3)] = 1;
+        else visibleItems().forEach(function (p) { keep['pf:' + p.id] = 1; });
+        var h = PF.dashCfg.hidden = PF.dashCfg.hidden || {};
+        // всё явно включённое (опт-ин виджеты и сиды подвкладок) — выключаем
+        Object.keys(h).forEach(function (id) { if (!keep[id]) h[id] = 1; });
+        // дефолтно-видимые блоки «Обзора» и заметки прячем явно (их нет в hidden)
+        ['cal', 'fav', 'sum', 'rates', 'trades'].forEach(function (id) { if (!keep[id]) h[id] = 1; });
+        (PF.dashCfg.notes || []).forEach(function (nt) { h['note:' + nt.id] = 1; });
+        Object.keys(keep).forEach(function (id) { h[id] = 0; });
+        PF.dashCfg.cleared = 1;
+        PF.dashEdit = false; PF.pfl3Open = false;
+        saveDashCfg();
+        pfdRerender();
+        updateLayoutBtn();
+        toast('Виджеты убраны — остались только портфели');
+    };
+
     // ---- глобальные пресеты: применить (все) / сохранить как пресет (админ) / удалить (админ) ----
     window.pfApplyPreset = function (id) {
         var p = pfPresetList.filter(function (x) { return x.id === id; })[0];
@@ -1537,6 +1596,7 @@
         pfdPushUndo();
         var c = pfPresetInstantiate(p.snap);
         PF.dashCfg.on = true;
+        delete PF.dashCfg.cleared;
         PF.dashCfg.order = c.order; PF.dashCfg.span = c.span; PF.dashCfg.h = c.h;
         PF.dashCfg.hidden = c.hidden; PF.dashCfg.col = c.col; PF.dashCfg.allocPf = c.allocPf;
         saveDashCfg();
@@ -3125,6 +3185,7 @@
         return '<div class="pfl-foot pfl2-foot pfl3-foot" id="pfl3Foot">' +
             '<div class="pfl2-sel"><b>' + title + '</b><span>' + sub + '</span></div>' +
             '<div class="pfl2-foot-r">' +
+                '<button type="button" class="pfl-btn ghost pfl3-clearbtn" onclick="pfLayoutClearAsk()" title="Убрать все виджеты — останутся только карточки портфелей">' + PF.NOTE_TRASH_SVG + '<span>Очистить</span></button>' +
                 '<button type="button" class="pfl-btn ghost' + (saved ? ' done' : '') + '" onclick="pfLayoutSave()" title="' + (saved ? 'Текущий вид уже сохранён' : 'Закрепить текущую раскладку за собой') + '">' + PF.CHECK_SVG + '<span>' + (saved ? 'Сохранено' : 'Сохранить текущий вид') + '</span></button>' +
                 (admin ? '<button type="button" class="pfl-btn ghost" onclick="pfSaveAsPreset()" title="Сделать текущую раскладку общим пресетом подвкладки">' + PFD_PLUS_SVG + '<span>Новый пресет</span></button>' : '') +
                 '<button type="button" class="pfl-btn ghost" onclick="pfLayoutsClose()">Отмена</button>' +
@@ -3213,6 +3274,7 @@
         var body = '<div class="pfx-setlist">' +
             item(PFL3_IC(), 'Панель раскладок', 'пресеты, базовая и ваша сохранённая — у каждой подвкладки своя', 'pfLayoutsToggle(event)') +
             item(PF.CHECK_SVG, 'Сохранить текущий вид', 'закрепить раскладку этой подвкладки за собой', 'pfLayoutSave()') +
+            item(PF.NOTE_TRASH_SVG, 'Очистить подвкладку', 'убрать все виджеты — останутся только портфели', 'pfLayoutClearAsk()') +
         '</div>';
         return '<div class="dash2-card pf-card2 pfx-setcard">' +
             PF.pfCardHead('', 'Раскладки', 'управление видом подвкладок', null) + body + '</div>';

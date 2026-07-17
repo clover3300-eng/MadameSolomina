@@ -302,6 +302,13 @@
                 '<button class="ph-sw' + (tgOn ? ' on' : '') + '" type="button" data-nf="sw-tg" role="switch" aria-checked="' + (tgOn ? 'true' : 'false') + '"' + (tgLinked ? '' : ' disabled') + ' aria-label="Уведомления в Telegram"></button>' +
             '</div>' +
 
+            // Telegram доставляет сообщения только тем, кто сам открыл бота (нажал Start):
+            // без этого sendMessage бота отдаёт 403 — подсказываем зайти в бота ссылкой
+            (tgLinked ? '<div class="nf-tg-hint">' +
+                '<span class="nf-tg-hint-t">Бот может писать только тем, кто открыл его хоть раз. Зайдите в бота и нажмите <b>Start</b> — иначе сообщения не дойдут.</span>' +
+                '<a class="nf-tg-btn" href="https://t.me/' + (window.TELEGRAM_BOT_USERNAME || 'MadameSolominabot') + '" target="_blank" rel="noopener">' + IC.plane + '<span>Открыть бота</span></a>' +
+            '</div>' : '') +
+
             '<div class="ph-set nf-set-off">' +
                 '<span class="nf-set-ic">' + IC.phone + '</span>' +
                 '<span class="ph-set-tt"><span class="ph-set-t">Push на телефон <span class="ph-soon">скоро</span></span>' +
@@ -353,7 +360,7 @@
             .then(function (res) {
                 if (res.error) { toast(supa().errRu(res.error), true); return; }
                 pr.notify_telegram = next;   // локальная копия профиля — чтобы не перечитывать
-                toast(next ? 'Уведомления в Telegram включены' : 'Уведомления в Telegram выключены');
+                toast(next ? 'Уведомления в Telegram включены — проверьте, что бот открыт (Start)' : 'Уведомления в Telegram выключены');
                 renderPrefs();
             });
     }
