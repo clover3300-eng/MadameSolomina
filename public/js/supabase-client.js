@@ -152,10 +152,14 @@
     }
 
     // ---------- журнал событий ----------
-    function logEvent(event, meta) {
-        if (!enabled || !S.session) return Promise.resolve();
+    // uid передаётся явно там, где S.session ещё не выставлен: обработчик
+    // SIGNED_IN уводит присвоение в setTimeout, поэтому в момент входа
+    // S.session ещё null и событие молча терялось (пустой график «Входы»).
+    function logEvent(event, meta, uid) {
+        uid = uid || (S.session && S.session.user.id);
+        if (!enabled || !uid) return Promise.resolve();
         return client.from('app_events')
-            .insert({ user_id: S.session.user.id, event: event, meta: meta || {} })
+            .insert({ user_id: uid, event: event, meta: meta || {} })
             .then(function (res) {
                 if (res.error) console.warn('[supa] событие не записалось:', res.error.message);
             }, function () {});
@@ -182,7 +186,7 @@
         return client.auth.signInWithPassword({ email: email, password: pass })
             .then(function (res) {
                 if (res.error) return { ok: false, error: errRu(res.error) };
-                logEvent('login');
+                logEvent('login', null, res.data.user && res.data.user.id);
                 return { ok: true };
             });
     }
@@ -230,7 +234,7 @@
                 return client.auth.verifyOtp({ token_hash: data.token_hash, type: 'email' })
                     .then(function (res2) {
                         if (res2.error) return { ok: false, error: errRu(res2.error) };
-                        logEvent('login', { via: 'telegram' });
+                        logEvent('login', { via: 'telegram' }, res2.data.user && res2.data.user.id);
                         return { ok: true };
                     });
             });
