@@ -354,8 +354,8 @@ var TI_PATH = '/rest/tinkoff.public.invest.api.contract.v1.';
 var TI_TIMEOUT_MS = 15000;
 var TI_MAX_BODY = 8192;
 
-// Этап 1 — только чтение. Торговые методы (PostOrder, CancelOrder,
-// GetOrders…) добавятся сюда со scope:'trade' на этапе 2.
+// read-методы доступны любому подключению; trade — только режиму «Торговля»
+// (и только если сам токен полного доступа: брокер отвергнет read-only токен).
 var TI_METHODS = {
     GetAccounts:      { svc: 'UsersService',       scope: 'read' },
     GetInfo:          { svc: 'UsersService',       scope: 'read' },
@@ -363,9 +363,16 @@ var TI_METHODS = {
     GetPositions:     { svc: 'OperationsService',  scope: 'read' },
     GetOperations:    { svc: 'OperationsService',  scope: 'read' },
     GetInstrumentBy:  { svc: 'InstrumentsService', scope: 'read' },
+    FindInstrument:   { svc: 'InstrumentsService', scope: 'read' },
     GetLastPrices:    { svc: 'MarketDataService',  scope: 'read' },
     GetOrderBook:     { svc: 'MarketDataService',  scope: 'read' },
-    GetTradingStatus: { svc: 'MarketDataService',  scope: 'read' }
+    GetTradingStatus: { svc: 'MarketDataService',  scope: 'read' },
+    // этап 2 — терминал: чтение заявок и торговля
+    GetOrders:        { svc: 'OrdersService',      scope: 'read' },
+    GetOrderState:    { svc: 'OrdersService',      scope: 'read' },
+    GetMaxLots:       { svc: 'OrdersService',      scope: 'read' },
+    PostOrder:        { svc: 'OrdersService',      scope: 'trade' },
+    CancelOrder:      { svc: 'OrdersService',      scope: 'trade' }
 };
 
 function brokerJson(body, status) {

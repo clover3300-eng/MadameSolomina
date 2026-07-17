@@ -254,6 +254,15 @@
             t = 'Права токена урезали';
             s = 'Токен стал «только для чтения» — торговать им нельзя. Выпустите у брокера токен с полным доступом и обновите его в подключении.';
             btn = '<button type="button" class="pfl-pv-add pfx-emptytab-btn" onclick="brokerConnect.open()"><span>Обновить токен</span></button>';
+        } else if (window.brokerApi && (window.brokerApi.isLocked() || window.brokerApi.isSessionGone())) {
+            var gone = window.brokerApi.isSessionGone();
+            t = gone ? 'Сессия токена закончилась' : 'Токен под PIN-кодом';
+            s = gone ? 'Токен не сохранялся («до закрытия вкладки») — вставьте его ещё раз, и терминал вернётся.'
+                : 'Разблокируйте токен, чтобы терминал получил доступ к счёту.';
+            btn = '<button type="button" class="pfl-pv-add pfx-emptytab-btn" onclick="' + (gone ? 'brokerConnect.open()' : 'pfBrokerUnlock()') + '"><span>' + (gone ? 'Ввести токен' : 'Разблокировать') + '</span></button>';
+        } else if (PF.pftTerminalHtml) {
+            // этап 2: полноценный терминал (portfolios-trading.js в цепочке)
+            return PF.pftTerminalHtml();
         } else {
             t = 'Терминал готовится';
             s = 'Торговое подключение активно' + (conn.sandbox ? ' (песочница)' : '') + ': счёт «' + esc(conn.accountName) +

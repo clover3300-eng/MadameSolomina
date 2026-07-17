@@ -66,6 +66,13 @@
         if (typeof q === 'number') return q;
         return (Number(q.units) || 0) + (Number(q.nano) || 0) / 1e9;
     }
+    // обратно: число → Quotation {units, nano} для тел заявок (units строкой,
+    // как отдаёт сам REST-шлюз; nano < 0 у отрицательных — тут цены, не бывает)
+    function n2q(n) {
+        n = +n || 0;
+        var units = Math.trunc(n);
+        return { units: String(units), nano: Math.round((n - units) * 1e9) };
+    }
     function maskTail(tail) { return tail ? 't.•••…' + tail : ''; }
     function tokenOk(t) { return /^t\.[A-Za-z0-9_\-]{20,200}$/.test(String(t || '')); }
     function fireChange() {
@@ -430,6 +437,27 @@
         });
     }
 
+    // ---------- автолок PIN (банковская классика) ----------
+    // 15 минут без действий пользователя — расшифрованный токен уходит из
+    // памяти, следующий торговый/читающий вызов снова спросит PIN. Только для
+    // storage='pin': session/local режимы пользователь выбрал сознательно.
+    var AUTOLOCK_MS = 15 * 60 * 1000;
+    var lastActivity = Date.now();
+    function noteActivity() { lastActivity = Date.now(); }
+    ['pointerdown', 'keydown'].forEach(function (ev) {
+        try { window.addEventListener(ev, noteActivity, { passive: true }); } catch (e) {}
+    });
+    setInterval(function () {
+        if (!memToken) return;
+        var c = getConn();
+        if (!c || c.storage !== 'pin') return;
+        if (Date.now() - lastActivity > AUTOLOCK_MS) {
+            memToken = null;
+            logEvent('autolock', 'нет активности 15 минут');
+            fireChange();
+        }
+    }, 30000);
+
     // ---------- мелочи для UI ----------
     // Очистка буфера обмена после вставки токена (банковская гигиена).
     // Работает только по жесту пользователя; ошибки молча глотаем.
@@ -469,6 +497,7 @@
         journal: journal,
         logEvent: logEvent,
         q2n: q2n,
+        n2q: n2q,
         maskTail: maskTail,
         tokenOk: tokenOk,
         clearClipboard: clearClipboard

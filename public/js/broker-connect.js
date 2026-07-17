@@ -56,7 +56,11 @@
         pin_wrong: 'Неверный PIN',
         pin_lockout: 'PIN заблокирован (5 попыток)',
         api_error: 'Ошибка запроса',
-        legacy_import: 'Импорт старого токена'
+        legacy_import: 'Импорт старого токена',
+        autolock: 'Автоблокировка PIN',
+        order_submit: 'Заявка выставлена',
+        order_cancel: 'Заявка снята',
+        order_error: 'Заявка отклонена'
     };
 
     var STORE_LABELS = { session: 'до закрытия вкладки', local: 'на этом устройстве', pin: 'под PIN-кодом' };

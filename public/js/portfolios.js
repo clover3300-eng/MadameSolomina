@@ -257,6 +257,7 @@
             renderFavNews();
             renderPosNews();        // блок «Новости по позициям» (no-op, если не включён)
             PF.renderBrokerPos();   // блок «Позиции у брокера»: догрузка из API (no-op без виджета)
+            if (PF.pftAfterRender) PF.pftAfterRender();   // терминал «Торговли»: поллинг только на живой подвкладке
             pfdHeatRepaintSoon();   // блок «Карта рынка»: дорисовать живые плитки
             ensureLiveTick();
             var payBody = document.querySelector('.pf-paycal--cell .pfpc-body');
