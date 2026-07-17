@@ -25,7 +25,7 @@
   var EQ_PREM = 0.03;      // оценочная премия акций к доходности ОФЗ
   var DIV_Y   = 0.08;      // оценочная дивидендная доходность акций
   var FALLBACK_R = 0.145;  // ставка ОФЗ до загрузки цен MOEX
-  var YEARS = 5;
+  var YEARS = 3;           // горизонт прогноза (совпадает с «горизонт от 3 лет»)
 
   // ── helpers ───────────────────────────────────────────────────────────────
   function $(id) { return document.getElementById(id); }
@@ -64,6 +64,10 @@
     var m = elB && elB.textContent.match(/(\d+)/);
     var v = m ? +m[1] : 50;
     return (v >= 0 && v <= 100) ? v : 50;
+  }
+  function stratName() {
+    var t = $('mainCardTitle');
+    return (t && t.textContent.trim()) || 'Гармония';
   }
 
   // ── СИМУЛЯЦИИ ─────────────────────────────────────────────────────────────
@@ -141,11 +145,21 @@
   }
 
   // ── ГРАФИКИ ───────────────────────────────────────────────────────────────
-  // Веер прогноза: коридор lo..hi + базовая линия, подпись у конца
-  function fanSVG(S, g, W, H) {
+  // Рендер графика прогноза В КОНТЕЙНЕР: viewBox 1:1 к пикселям хоста (текст
+  // не искажается), SVG абсолютный — размер хоста не зависит от содержимого,
+  // поэтому ResizeObserver не зацикливается.
+  function renderFan(host, S, g, corridor) {
+    if (!host) return;
+    if (!g) { host.innerHTML = ''; return; }
+    var W = Math.max(220, Math.round(host.clientWidth));
+    var H = Math.max(96, Math.round(host.clientHeight));
+    host.innerHTML = fanSVG(S, g, W, H, corridor);
+  }
+  // Веер прогноза: коридор lo..hi (опционально) + базовая линия, подпись у конца
+  function fanSVG(S, g, W, H, corridor) {
     var padL = 6, padR = 78, padT = 16, padB = 22;
     var x0 = padL, x1 = W - padR, yB = H - padB, yT = padT;
-    var vMin = S, vMax = g.hi;
+    var vMin = S, vMax = corridor ? g.hi : g.base * 1.02;
     function X(t) { return x0 + (x1 - x0) * t / YEARS; }
     function Y(v) {
       if (vMax <= vMin) return yB;
@@ -164,11 +178,20 @@
     function d(p) {
       return p.map(function (q, i) { return (i ? 'L' : 'M') + q[0].toFixed(1) + ',' + q[1].toFixed(1); }).join(' ');
     }
-    var hiR = rate(g.hi), loR = rate(g.lo), baseR = rate(g.base);
-    var area = d(pts(hiR)) + ' ' + d(pts(loR, true)).replace(/^M/, 'L') + ' Z';
+    var baseR = rate(g.base);
+    var basePts = pts(baseR);
     var yEnd = Y(g.base);
     var year0 = new Date().getFullYear();
-    return '<svg viewBox="0 0 ' + W + ' ' + H + '" height="' + H + '" preserveAspectRatio="none">' +
+    var body = '';
+    if (corridor) {
+      var area = d(pts(rate(g.hi))) + ' ' + d(pts(rate(g.lo), true)).replace(/^M/, 'L') + ' Z';
+      body += '<path d="' + area + '" fill="url(#cxr6fan)"/>';
+    } else {
+      // без коридора — мягкая заливка под самой линией
+      var fill = d(basePts) + ' L' + x1.toFixed(1) + ',' + yB.toFixed(1) + ' L' + x0.toFixed(1) + ',' + yB.toFixed(1) + ' Z';
+      body += '<path d="' + fill + '" fill="url(#cxr6fan)"/>';
+    }
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '">' +
       '<defs><linearGradient id="cxr6fan" x1="0" y1="0" x2="0" y2="1">' +
         '<stop offset="0" stop-color="#4a8df0" stop-opacity=".16"/>' +
         '<stop offset="1" stop-color="#4a8df0" stop-opacity=".02"/>' +
@@ -176,9 +199,8 @@
       '<g stroke="var(--r5-line,#e6ecf4)" stroke-width="1">' +
         '<line x1="0" y1="' + Math.round(yT + (yB - yT) * .33) + '" x2="' + W + '" y2="' + Math.round(yT + (yB - yT) * .33) + '"/>' +
         '<line x1="0" y1="' + Math.round(yT + (yB - yT) * .66) + '" x2="' + W + '" y2="' + Math.round(yT + (yB - yT) * .66) + '"/>' +
-      '</g>' +
-      '<path d="' + area + '" fill="url(#cxr6fan)"/>' +
-      '<path d="' + d(pts(baseR)) + '" fill="none" stroke="#4a8df0" stroke-width="2.6"/>' +
+      '</g>' + body +
+      '<path d="' + d(basePts) + '" fill="none" stroke="#4a8df0" stroke-width="2.6"/>' +
       '<circle cx="' + x1 + '" cy="' + yEnd.toFixed(1) + '" r="4" fill="#4a8df0"/>' +
       '<text x="' + (x1 + 8) + '" y="' + (yEnd + 4).toFixed(1) + '" font-family="var(--r5-mono,monospace)" font-size="12" font-weight="700" fill="currentColor">' + fmtCapPlain(g.base) + '</text>' +
       '<text x="4" y="' + (H - 6) + '" font-family="var(--r5-mono,monospace)" font-size="10" fill="#97a3b4">' + year0 + '</text>' +
@@ -188,6 +210,7 @@
 
   // Столбики выплат по месяцам
   var MONS = ['ЯНВ', 'ФЕВ', 'МАР', 'АПР', 'МАЙ', 'ИЮН', 'ИЮЛ', 'АВГ', 'СЕН', 'ОКТ', 'НОЯ', 'ДЕК'];
+  var MONS_L = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
   function barsHTML(inc) {
     var vals = (inc && inc.byMonth) ? inc.byMonth : new Array(12).fill(1);
     var max = Math.max.apply(null, vals.concat([1]));
@@ -213,7 +236,7 @@
     mix: {
       kick: 'Расчёт · <span class="acc-b">Хочу рост</span>',
       title: 'Нарастить капитал за годы',
-      sub: 'Выберите стратегию — прогноз справа пересчитается мгновенно.',
+      sub: 'Выберите стратегию — прогноз пересчитается мгновенно.',
       hint: 'меняйте прямо здесь — всё пересчитается'
     },
     monthly: {
@@ -328,6 +351,50 @@
     return true;
   }
 
+  // ── КОРЗИНА ОФЗ: подстрока «купоны · янв и июл» под названием выпуска ────
+  // Месяцы берём из расписания выплат; строки перерисовывает штатный
+  // renderMonthlyIncomeCards, поэтому подстроки доклеиваем после каждого рендера.
+  function couponMonths() {
+    var map = {};
+    try {
+      if (typeof allScheduledPayments === 'undefined' || !allScheduledPayments) return map;
+      allScheduledPayments.forEach(function (pay) {
+        var t = pay.paymentTicker;
+        if (!t && typeof monthlyIncomeBonds !== 'undefined' && monthlyIncomeBonds) {
+          var pb = monthlyIncomeBonds.find(function (b) { return b.n === pay.displayName; });
+          if (pb) t = pb.t;
+        }
+        if (!t) return;
+        var parts = String(pay.dateStr || '').split('.');
+        var mn = parts.length >= 3 ? parseInt(parts[1], 10) - 1 : parseInt(parts[0], 10) - 1;
+        if (!(mn >= 0 && mn < 12)) return;
+        if (!map[t]) map[t] = [];
+        if (map[t].indexOf(mn) === -1) map[t].push(mn);
+      });
+    } catch (e) {}
+    return map;
+  }
+  function decorateBonds() {
+    var list = $('calc-bonds-input-list');
+    if (!list) return;
+    var map = couponMonths();
+    Array.prototype.forEach.call(list.querySelectorAll('.mi5-bond'), function (row) {
+      var q = row.querySelector('.mi5-step-q');
+      var t = q && q.getAttribute('data-ticker');
+      var info = row.querySelector('.mi5-bond-info');
+      if (!t || !info) return;
+      var mons = (map[t] || []).slice().sort(function (a, b) { return a - b; });
+      var sub = info.querySelector('.cxr6-bmo');
+      if (!mons.length) { if (sub) sub.remove(); return; }
+      var names = mons.map(function (m) { return MONS_L[m]; });
+      var txt = 'купоны · ' + (names.length > 1
+        ? names.slice(0, -1).join(', ') + ' и ' + names[names.length - 1]
+        : names[0]);
+      if (!sub) { sub = el('div', 'cxr6-bmo'); info.appendChild(sub); }
+      if (sub.textContent !== txt) sub.textContent = txt;
+    });
+  }
+
   // ── РЕЖИМ MIX: карточка «Прогноз / Ваш портфель» ─────────────────────────
   function buildForecastCard() {
     if ($('cxFc')) return true;
@@ -343,8 +410,8 @@
     });
     if (!cap || !dist) return false;
 
-    // порядок: стратегия (01) слева, прогноз (02) справа
-    split.appendChild(cap);
+    // порядок: прогноз (01) слева, стратегия (02) справа
+    split.appendChild(dist);
     var setCard = function (card, no, kick, title) {
       var wm = card.querySelector('.wm-clip .wm');
       var k = card.querySelector(':scope > .k');
@@ -353,8 +420,8 @@
       if (k) k.textContent = kick;
       if (t) t.textContent = title;
     };
-    setCard(dist, '01', 'Распределение', 'Стратегия');
-    setCard(cap, '02', 'Прогноз', 'Ваш портфель');
+    setCard(cap, '01', 'Прогноз', 'Ваш портфель');
+    setCard(dist, '02', 'Распределение', 'Стратегия');
 
     var body = cap.querySelector(':scope > .ct');
     var center = cap.querySelector('.cx-cap-center');
@@ -393,15 +460,15 @@
     var inc = hasS ? simIncome(S) : null;
     var g = hasS ? simGrowth(S, inc) : null;
 
-    // витрина «Хочу рост»
+    // витрина «Хочу рост» — без коридора: одна линия прогноза
     var gb = $('cxGrowBig');
     if (gb) {
       if (g) {
-        gb.innerHTML = '≈ ' + fmtCap(g.base) + ' <small>через ' + YEARS + ' лет</small>';
-        $('cxGrowRng').textContent = 'коридор сценариев ' + fmtCapPlain(g.lo) + ' – ' + fmtCapPlain(g.hi);
-        $('cxGrowViz').innerHTML = fanSVG(S, g, 640, 132);
+        gb.innerHTML = '≈ ' + fmtCap(g.base) + ' <small>через ' + YEARS + ' года</small>';
+        $('cxGrowRng').textContent = 'при стратегии «' + stratName() + '» · ' + (g.r * 100).toFixed(1).replace('.', ',') + '% годовых';
+        renderFan($('cxGrowViz'), S, g, false);
       } else {
-        gb.innerHTML = 'Введите сумму <small>— покажем прогноз на ' + YEARS + ' лет</small>';
+        gb.innerHTML = 'Введите сумму <small>— покажем прогноз на ' + YEARS + ' года</small>';
         $('cxGrowRng').textContent = '';
         $('cxGrowViz').innerHTML = '';
       }
@@ -427,9 +494,10 @@
     var fb = $('cxFcBig');
     if (fb) {
       if (g) {
-        fb.innerHTML = '≈ ' + fmtCap(g.base) + ' <small>через ' + YEARS + ' лет</small>';
-        $('cxFcRng').textContent = 'коридор сценариев ' + fmtCapPlain(g.lo) + ' – ' + fmtCapPlain(g.hi) + ' · облигации ' + bondsPct() + '% / акции ' + (100 - bondsPct()) + '%';
-        $('cxFcChart').innerHTML = fanSVG(S, g, 760, 170);
+        fb.innerHTML = '≈ ' + fmtCap(g.base) + ' <small>через ' + YEARS + ' года</small>';
+        $('cxFcRng').textContent = 'коридор сценариев ' + fmtCapPlain(g.lo) + ' – ' + fmtCapPlain(g.hi) +
+          ' · облигации ' + bondsPct() + '% / акции ' + (100 - bondsPct()) + '%';
+        renderFan($('cxFcChart'), S, g, true);
         $('cxFcCash').textContent = '≈ ' + fmtInt(g.cash) + ' ₽';
         $('cxFcYield').textContent = (g.r * 100).toFixed(1).replace('.', ',') + '% годовых';
       } else {
@@ -440,6 +508,7 @@
         $('cxFcYield').textContent = '—';
       }
     }
+    decorateBonds();
   }
   var _rcT = null;
   function scheduleRecalc() { clearTimeout(_rcT); _rcT = setTimeout(recalc, 60); }
@@ -506,6 +575,15 @@
       };
       window.ndFormatInput._r6 = true;
     }
+    // строки корзины перерисовываются штатно — доклеиваем месяцы купонов
+    if (typeof window.renderMonthlyIncomeCards === 'function' && !window.renderMonthlyIncomeCards._r6) {
+      var _oRender = window.renderMonthlyIncomeCards;
+      window.renderMonthlyIncomeCards = function () {
+        _oRender.apply(this, arguments);
+        decorateBonds();
+      };
+      window.renderMonthlyIncomeCards._r6 = true;
+    }
     // степперы mi5 меняют сумму → показываем её и в герое
     if (typeof window.updateMonthlySumFromQuantities === 'function' && !window.updateMonthlySumFromQuantities._r6) {
       var _oUpd = window.updateMonthlySumFromQuantities;
@@ -535,6 +613,17 @@
     host._r6obs = true;
     new MutationObserver(scheduleRecalc)
       .observe(host, { subtree: true, characterData: true, childList: true });
+  }
+
+  // Графики рисуются 1:1 к размеру хоста → перерисовываем при его изменении.
+  // SVG внутри абсолютный, размер хоста от него не зависит — цикла нет.
+  function observeChartSize() {
+    if (typeof ResizeObserver !== 'function') return;
+    var ro = new ResizeObserver(function () { scheduleRecalc(); });
+    ['cxFcChart', 'cxGrowViz'].forEach(function (id) {
+      var n = $(id);
+      if (n) ro.observe(n);
+    });
   }
 
   // цены MOEX приходят асинхронно — до них живые цифры на фолбэке
@@ -570,6 +659,7 @@
     }
     installWraps();
     observeStrategy();
+    observeChartSize();
 
     // режимы: класс на <body> — единственный источник правды
     new MutationObserver(onModeMaybeChanged)

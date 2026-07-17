@@ -86,10 +86,16 @@ body.cxm-mix #cxHeroBack, body.cxm-monthly #cxHeroBack { display: inline-flex; }
 #cxHero .nd-input-hero:not(.has-value) .nd-input-row::before { content: none !important; }
 /* мигающая каретка r5 в пустом поле — оставляем, цвет уже синий */
 
-/* ── Перекрытие: следующий за героем блок выезжает на него ── */
+/* ── Перекрытие: следующий за героем блок выезжает на него ──
+   Карточки у́же героя на 30px с каждой стороны — герой виден по краям
+   ВО ВСЕХ режимах (на экране выбора отступ даёт .cxm-types). */
 body.cxm-choose #cxChooser { margin-top: -104px; position: relative; z-index: 2; }
-body.cxm-mix #r5Split { margin-top: -104px; position: relative; z-index: 2; }
-body.cxm-monthly #panel-calc #calcAccordion { margin-top: -104px; position: relative; z-index: 2; }
+body.cxm-mix #r5Split {
+  margin-top: -104px; position: relative; z-index: 2; padding: 0 30px;
+}
+body.cxm-monthly #panel-calc #calcAccordion {
+  margin-top: -104px; position: relative; z-index: 2; padding: 0 30px;
+}
 
 /* ── ЭКРАН ВЫБОРА: витрины становятся самостоятельными карточками ── */
 body.cxm-choose #cxChooser {
@@ -118,7 +124,14 @@ body.cxm-choose #cxChooser {
   border-top: 1px solid var(--r5-line); padding-top: 16px; margin: 18px 0 20px;
 }
 
-/* живой блок на витрине: число + коридор + мини-график */
+/* Чип «Сохранённый расчёт» — в углу карточки, поверх водяного номера:
+   в потоке он сдвигал весь контент витрины вниз. */
+.cx-rows.r5 .cxm-type .cxm-resume {
+  position: absolute; top: 28px; right: 30px; z-index: 2;
+  margin: 0; align-self: auto;
+}
+
+/* живой блок на витрине: число + подпись + мини-график */
 .cxr6-live { margin-top: 18px; }
 .cxr6-big {
   font-family: var(--r5-mono); font-weight: 700; font-size: 32px;
@@ -126,8 +139,10 @@ body.cxm-choose #cxChooser {
 }
 .cxr6-big small { font-size: 15px; color: var(--r5-muted); font-weight: 600; }
 .cxr6-rng { font-family: var(--r5-mono); font-size: 12.5px; color: var(--r5-muted); margin-top: 2px; }
-.cxr6-viz { margin-top: 16px; }
-.cxr6-viz svg { display: block; width: 100%; }
+.cxr6-rng:empty { display: none; }
+.cxr6-viz { position: relative; height: 132px; margin-top: 16px; }
+.cxr6-viz svg { position: absolute; inset: 0; display: block; }
+.cxr6-viz:has(.cxr6-bars) { height: auto; }
 
 /* столбики купонов по месяцам */
 .cxr6-bars { display: flex; align-items: flex-end; gap: 6px; height: 108px; padding-top: 10px; }
@@ -163,24 +178,27 @@ body.cxm-choose #cxChooser .cxm-cta {
 .cxm-cta .cxr6-quizbtn:hover { border-color: #c2cede; }
 .cxm-cta .cxr6-quizbtn + .btn { margin-left: 10px; }
 
-/* ── РЕЖИМ MIX: «Стратегия» слева, «Прогноз» справа ────────── */
+/* ── РЕЖИМ MIX: «Прогноз» слева (01), «Стратегия» справа (02) ── */
 @media (min-width: 1024px) {
-  body.cxm-mix .cx-rows.r5 .cx-split { grid-template-columns: 1fr 1.12fr; }
+  body.cxm-mix .cx-rows.r5 .cx-split { grid-template-columns: 1.12fr 1fr; }
 }
 /* тёмное кольцо .act в R6 не используется и на рабочих карточках */
 .cx-rows.r5 .pk-card.act { box-shadow: var(--r5-shadow); }
 .cx-rows.r5 .pk-card.act .wm { color: rgba(17,25,39,.05); }
 
-/* содержимое карточки «Прогноз» */
+/* содержимое карточки «Прогноз»: число → график (тянется) → факты → CTA.
+   Карточка держит эталонную высоту пары (--cx-card-h), поэтому свободную
+   высоту забирает график — иначе внизу копится пустота. */
 #cxFc { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 #cxFcBig {
   font-family: var(--r5-mono); font-weight: 700; font-size: 36px;
-  color: var(--r5-text); margin-top: 14px; letter-spacing: -.01em;
+  color: var(--r5-text); margin-top: 16px; letter-spacing: -.01em;
 }
 #cxFcBig small { font-size: 15px; color: var(--r5-muted); font-weight: 600; }
 #cxFcRng { font-family: var(--r5-mono); font-size: 12.5px; color: var(--r5-muted); margin-top: 2px; }
-#cxFcChart { margin-top: 18px; }
-#cxFcChart svg { display: block; width: 100%; }
+/* SVG абсолютный: размер хоста задаёт flex, а не содержимое (см. renderFan) */
+#cxFcChart { position: relative; flex: 1; min-height: 150px; margin-top: 20px; }
+#cxFcChart svg { position: absolute; inset: 0; display: block; }
 #cxFcFacts {
   display: flex; flex-wrap: wrap; gap: 24px;
   border-top: 1px solid var(--r5-line); margin-top: 16px; padding-top: 16px;
@@ -225,6 +243,25 @@ body.cxm-monthly #panel-calc #miStartOverlay { display: none !important; }
 /* сумма и пресеты живут в герое */
 body.cxm-monthly #panel-calc .mi5-calc > .mi5-field { display: none; }
 
+/* Карточка «Корзина ОФЗ» по мокапу: без колонки-ранга, у выпуска —
+   подстрока с месяцами купонов (доклеивает decorateBonds в calc-r6.js). */
+body.cxm-monthly #panel-calc .mi5-bond-rk,
+body.cxm-monthly #panel-calc .mi5-col-head .rk { display: none; }
+body.cxm-monthly #panel-calc .mi5-col-head,
+body.cxm-monthly #panel-calc .mi5-bond { grid-template-columns: minmax(0,1fr) 84px 140px; }
+body.cxm-monthly #panel-calc .mi5-col-head { margin-top: 20px; }
+body.cxm-monthly #panel-calc .mi5-col-head .yd { text-align: right; }
+body.cxm-monthly #panel-calc .mi5-bond { padding: 11px 0; }
+body.cxm-monthly #panel-calc .mi5-bond-nm { font-size: 14.5px; font-weight: 700; }
+body.cxm-monthly #panel-calc .mi5-bond-yield { text-align: right; }
+.cxr6-bmo { font-size: 11px; color: var(--r5-muted); margin-top: 2px; }
+/* налоговые сегменты — компактнее и слева, как в мокапе (flex:1 у сегментов
+   растянул бы их на всю карточку, поэтому ширина по контенту) */
+body.cxm-monthly #panel-calc .mi5-tax { width: max-content; margin-top: 14px; }
+body.cxm-monthly #panel-calc .mi5-tax .tax-segment {
+  flex: 0 0 auto; padding: 8px 16px; white-space: nowrap;
+}
+
 /* ── Тёмная тема ───────────────────────────────────────────── */
 body.dark-mode .cxr6-big, body.dark-mode #cxFcBig { color: #e8edf5; }
 body.dark-mode #cxFcFacts .f b { color: #e8edf5; }
@@ -248,7 +285,8 @@ body.dark-mode #cxFcCta .nd-fee-trigger { background: rgba(255,255,255,.03); bor
   #cxHero .cxh-wm { font-size: 120px; right: 10px; top: -20px; }
   body.cxm-choose #cxChooser,
   body.cxm-mix #r5Split,
-  body.cxm-monthly #panel-calc #calcAccordion { margin-top: 0; }
+  body.cxm-monthly #panel-calc #calcAccordion { margin-top: 0; padding: 0; }
+  .cx-rows.r5 .cxm-type .cxm-resume { top: 20px; right: 18px; }
   .cx-rows.r5 .cxm-types { padding: 0; }
   body.cxm-choose #cxChooser .cxm-cta { margin: 16px 0 0; }
   .cx-rows.r5 .cxm-type { padding: 22px 20px; }
