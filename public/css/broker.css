@@ -214,11 +214,44 @@ body.dark-mode .bk-sub.bk-sub-err { color: #f87171; }
 }
 .pf-brokerblk .pfbrk-btn:hover { filter: brightness(1.06); }
 .pf-brokerblk .pfbrk-btn:active { transform: scale(0.97); }
-.pfbrk-total {
-    display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
-    padding: 2px 2px 8px; font-size: 12.5px; color: #64748b;
+/* мини-состояние (инвайт/замок/ошибка/пусто): плитка-иконка + текст + кнопка */
+.pfbrk-state {
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    gap: 10px; padding: 22px 14px 18px;
 }
-.pfbrk-total b { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #0f172a; white-space: nowrap; }
+.pfbrk-state-slim { padding: 14px 10px 12px; }
+.pfbrk-state-ic {
+    width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center;
+    background: rgba(139, 92, 246, 0.1); color: #8b5cf6;
+}
+.pfbrk-state-slim .pfbrk-state-ic { width: 38px; height: 38px; border-radius: 12px; }
+.pfbrk-state-ic svg { width: 22px; height: 22px; }
+.pfbrk-state-tx { max-width: 340px; font-size: 12.5px; color: #64748b; line-height: 1.5; }
+.pfbrk-state .pfbrk-btn { margin-top: 2px; }
+body.dark-mode .pfbrk-state-ic, .pfd-thm-dark .pfbrk-state-ic { background: rgba(167, 139, 250, 0.16); color: #a78bfa; }
+body.dark-mode .pfbrk-state-tx, .pfd-thm-dark .pfbrk-state-tx { color: #9fb1c6; }
+
+/* кнопка «Подключение» в шапке — чуть компактнее родного .pf-ch-go */
+.pfbrk-go { padding: 6px 11px; font-size: 11.5px; }
+.pfbrk-go svg { width: 13px; height: 13px; }
+
+/* плашка стоимости портфеля */
+.pfbrk-total {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    background: rgba(15, 23, 42, 0.04); border-radius: 12px;
+    padding: 9px 13px; margin-bottom: 8px;
+}
+.pfbrk-total-l { display: flex; flex-direction: column; gap: 1px; }
+.pfbrk-total-l span {
+    font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 800;
+    letter-spacing: 0.07em; text-transform: uppercase; color: #94a3b8;
+}
+.pfbrk-total-l i { font-style: normal; font-size: 10.5px; color: #b3bfce; }
+.pfbrk-total b {
+    font-family: 'JetBrains Mono', monospace; font-size: 16.5px; font-weight: 600;
+    color: #0f172a; white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+body.dark-mode .pfbrk-total, .pfd-thm-dark .pfbrk-total { background: rgba(255, 255, 255, 0.06); }
 .pfbrk-diff {
     display: inline-flex; margin-left: 6px; padding: 1px 6px; border-radius: 999px;
     font-style: normal; font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 800;
@@ -226,10 +259,8 @@ body.dark-mode .bk-sub.bk-sub-err { color: #f87171; }
     background: rgba(217, 119, 6, 0.13); color: #d97706; cursor: help;
 }
 .pfbrk-skel { display: flex; flex-direction: column; gap: 9px; padding: 4px 0; }
-body.dark-mode .pfbrk-total b { color: #f1f5f9; }
-/* пер-виджетная тёмная тема конструктора (пикер: «Тёмная») */
-.pfd-thm-dark .pfbrk-total { color: rgba(255, 255, 255, 0.55); }
-.pfd-thm-dark .pfbrk-total b { color: #f1f5f9; }
+body.dark-mode .pfbrk-total b, .pfd-thm-dark .pfbrk-total b { color: #f1f5f9; }
+body.dark-mode .pfbrk-total-l span, .pfd-thm-dark .pfbrk-total-l span { color: #7f93ab; }
 
 /* ---------- торговый терминал (.btr-*, portfolios-trading.js) ---------- */
 .btr-wrap { display: flex; flex-direction: column; gap: 12px; }
@@ -278,9 +309,11 @@ body.dark-mode .pfbrk-total b { color: #f1f5f9; }
 }
 .btr-obrow {
     position: relative; display: flex; align-items: center; justify-content: space-between;
-    padding: 3px 8px; border-radius: 7px; cursor: pointer; overflow: hidden;
+    padding: 4px 9px; border-radius: 8px; cursor: pointer; overflow: hidden;
     font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+    font-variant-numeric: tabular-nums; transition: outline-color 0.1s;
 }
+.btr-obrow b { font-weight: 600; }
 .btr-obrow i {
     position: absolute; top: 0; bottom: 0; right: 0; border-radius: 7px; pointer-events: none;
 }
@@ -300,14 +333,39 @@ body.dark-mode .pfbrk-total b { color: #f1f5f9; }
 .btr-obwait { padding: 14px 6px; font-size: 12.5px; color: #94a3b8; }
 
 /* тикет */
-.btr-seg { align-self: stretch; display: flex; }
-.btr-seg .mh-seg-btn { flex: 1; }
+/* сегменты в языке .mh-seg, но самодостаточные: родные стили живут на
+   --mh-* переменных своей карточки и классе .active */
+.btr-seg {
+    align-self: stretch; display: flex; height: 38px; padding: 4px;
+    border-radius: 12px; background: rgba(15, 23, 42, 0.05); gap: 3px;
+}
+.btr-seg .mh-seg-btn { flex: 1; color: #64748b; }
+.btr-seg .mh-seg-btn:hover { color: #0f172a; }
+.btr-seg .mh-seg-btn.active { background: #1b2433; color: #fff; box-shadow: 0 5px 14px rgba(16, 24, 38, 0.2); }
+/* направление — трейдерский акцент: покупка зелёная, продажа красная */
+#btSide .mh-seg-btn.active:first-child { background: #16a34a; }
+#btSide .mh-seg-btn.active:last-child { background: #dc2626; }
+body.dark-mode .btr-seg { background: rgba(255, 255, 255, 0.07); }
+body.dark-mode .btr-seg .mh-seg-btn { color: #9fb1c6; }
+body.dark-mode .btr-seg .mh-seg-btn:hover { color: #f1f5f9; }
+body.dark-mode .btr-seg .mh-seg-btn.active { background: #e2e8f0; color: #10201a; }
+body.dark-mode #btSide .mh-seg-btn.active:first-child { background: #16a34a; color: #fff; }
+body.dark-mode #btSide .mh-seg-btn.active:last-child { background: #dc2626; color: #fff; }
 .btr-mktnote { font-size: 12px; color: #94a3b8; padding: 2px 2px 0; }
 .btr-est {
-    display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
-    padding: 6px 2px; font-size: 12.5px; color: #64748b;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    background: rgba(15, 23, 42, 0.04); border-radius: 12px; padding: 9px 13px;
 }
-.btr-est b { font-family: 'JetBrains Mono', monospace; font-size: 15px; color: #0f172a; white-space: nowrap; }
+.btr-est-l { display: flex; flex-direction: column; gap: 1px; }
+.btr-est-l span {
+    font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 800;
+    letter-spacing: 0.07em; text-transform: uppercase; color: #94a3b8;
+}
+.btr-est-l i { font-style: normal; font-size: 10.5px; color: #b3bfce; }
+.btr-est b {
+    font-family: 'JetBrains Mono', monospace; font-size: 17px; font-weight: 600;
+    color: #0f172a; white-space: nowrap; font-variant-numeric: tabular-nums;
+}
 .btr-warns:empty { display: none; }
 .btr-warn {
     background: rgba(217, 119, 6, 0.1); border-radius: 10px; padding: 7px 11px;
@@ -324,6 +382,7 @@ body.dark-mode .pfbrk-total b { color: #f1f5f9; }
 .btr-submit:active { transform: scale(0.98); }
 .btr-submit:disabled { opacity: 0.6; cursor: default; }
 .btr-limitrow { font-size: 11.5px; color: #94a3b8; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.btr-limitrow svg { width: 13px; height: 13px; flex: none; color: #b3bfce; }
 .btr-limitrow input {
     width: 90px; border: 1px solid rgba(15, 23, 42, 0.14); border-radius: 8px;
     padding: 3px 7px; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: #334155;
@@ -333,10 +392,16 @@ body.dark-mode .pfbrk-total b { color: #f1f5f9; }
 /* заявки */
 .btr-ords { display: flex; flex-direction: column; }
 .btr-ordrow {
-    display: flex; align-items: center; gap: 8px; padding: 6px 2px;
-    border-bottom: 1px dashed rgba(15, 23, 42, 0.08); font-size: 12.5px;
+    position: relative; display: flex; align-items: center; gap: 8px;
+    padding: 7px 8px 7px 13px; margin-bottom: 5px; border-radius: 10px;
+    background: rgba(15, 23, 42, 0.03); font-size: 12.5px;
 }
-.btr-ordrow:last-child { border-bottom: none; }
+.btr-ordrow::before {
+    content: ''; position: absolute; left: 5px; top: 7px; bottom: 7px;
+    width: 3px; border-radius: 3px;
+}
+.btr-ordrow.buy::before { background: #16a34a; }
+.btr-ordrow.sell::before { background: #dc2626; }
 .btr-ordrow b { font-family: 'JetBrains Mono', monospace; }
 .btr-ordrow span { color: #64748b; margin-left: auto; font-size: 12px; white-space: nowrap; }
 .btr-ordrow button {
@@ -361,9 +426,11 @@ body.dark-mode .btr-obrow.ask i { background: rgba(248, 113, 113, 0.12); }
 body.dark-mode .btr-obrow.bid i { background: rgba(74, 222, 128, 0.12); }
 body.dark-mode .btr-spread { border-color: rgba(255, 255, 255, 0.1); }
 body.dark-mode .btr-spread b { color: #cbd5e1; }
+body.dark-mode .btr-est { background: rgba(255, 255, 255, 0.06); }
 body.dark-mode .btr-est b { color: #f1f5f9; }
+body.dark-mode .btr-est-l span { color: #7f93ab; }
 body.dark-mode .btr-warn { background: rgba(217, 119, 6, 0.15); color: #fcd34d; }
-body.dark-mode .btr-ordrow { border-bottom-color: rgba(255, 255, 255, 0.07); }
+body.dark-mode .btr-ordrow { background: rgba(255, 255, 255, 0.05); }
 body.dark-mode .btr-ordrow span { color: #9fb1c6; }
 body.dark-mode .btr-limitrow input { border-color: rgba(255, 255, 255, 0.16); color: #cbd5e1; }
 

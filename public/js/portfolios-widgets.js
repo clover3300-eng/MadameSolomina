@@ -1663,44 +1663,54 @@
     var brokerCache = { ts: 0, busy: false, data: null, err: null };
     window.pfBrokerBust = function () { brokerCache = { ts: 0, busy: false, data: null, err: null }; };
     var BRK_TYPES = { share: 'акц', bond: 'обл', etf: 'фонд', futures: 'фьюч' };
+    var BRK_BANK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 4l9 5.5"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8"/><path d="M3 20h18"/></svg>';
+    var BRK_LINK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>';
 
     function pfwBrokerHtml() {
         var A = window.brokerApi;
         var conn = A && A.getConn();
-        var body, sub = 'портфель счёта из API Т-Инвестиций';
+        var body, sub = 'портфель счёта по официальному API';
+        // мини-состояние в языке пустых подвкладок: иконка-плитка + текст + кнопка
         function invite(text, btnLabel, onclick) {
-            return '<div class="pfal-empty">' + text +
-                '<br><button type="button" class="pfbrk-btn" onclick="' + onclick + '">' + btnLabel + '</button></div>';
+            return '<div class="pfbrk-state">' +
+                '<div class="pfbrk-state-ic">' + BRK_BANK_SVG + '</div>' +
+                '<div class="pfbrk-state-tx">' + text + '</div>' +
+                '<button type="button" class="pfbrk-btn" onclick="' + onclick + '">' + btnLabel + '</button></div>';
         }
+        // правый слот шапки — вход в подключение (виден при живом подключении)
+        var right = conn
+            ? '<button type="button" class="pf-ch-go pfbrk-go" onclick="brokerConnect.open()" title="Управлять подключением брокера">' + BRK_LINK_SVG + '<span>Подключение</span></button>'
+            : null;
         // sub уходит в PF.pfCardHead, который экранирует сам — без esc() тут (иначе двойное)
         if (!A || !conn) {
             body = invite('Подключите брокера — покажем позиции счёта, как их видят Т-Инвестиции. Хватит токена «только для чтения».',
                 'Подключить брокера', 'brokerConnect.open()');
         } else if (conn.state === 'revoked') {
-            sub = 'Т-Инвестиции · ' + conn.accountName;
+            sub = conn.accountName;
             body = invite('Брокер не принял токен — он отозван или перевыпущен.', 'Обновить токен', 'brokerConnect.open()');
         } else if (A.isSessionGone()) {
-            sub = 'Т-Инвестиции · ' + conn.accountName;
+            sub = conn.accountName;
             body = invite('Токен не сохранялся («до закрытия вкладки») — сессия закончилась. Вставьте его ещё раз.', 'Ввести токен', 'brokerConnect.open()');
         } else if (A.isLocked()) {
-            sub = 'Т-Инвестиции · ' + conn.accountName;
+            sub = conn.accountName;
             body = invite('Токен под PIN-кодом — разблокируйте, чтобы загрузить позиции.', 'Разблокировать', 'pfBrokerUnlock()');
         } else {
-            sub = 'Т-Инвестиции · ' + conn.accountName + (conn.sandbox ? ' · песочница' : '');
+            sub = conn.accountName + (conn.sandbox ? ' · песочница' : '');
             body = '<div id="pfbrkList">' + (brokerCache.data || brokerCache.err
                 ? pfwBrokerRowsHtml()
                 : '<div class="pfbrk-skel">' + skelHtml(150, 18) + skelHtml(210, 18) + skelHtml(180, 18) + '</div>') + '</div>';
         }
         return '<div class="dash2-card pf-card2 pf-brokerblk">' +
-            PF.pfCardHead('', 'Позиции у брокера', sub, null) + body + '</div>';
+            PF.pfCardHead('Т-Инвестиции', 'Позиции у брокера', sub, right) + body + '</div>';
     }
 
     function pfwBrokerRowsHtml() {
-        if (brokerCache.err) return '<div class="pfal-empty">' + esc(brokerCache.err) + '</div>';
+        if (brokerCache.err) return '<div class="pfbrk-state"><div class="pfbrk-state-ic">' + BRK_BANK_SVG + '</div><div class="pfbrk-state-tx">' + esc(brokerCache.err) + '</div></div>';
         var d = brokerCache.data;
-        if (!d || !d.rows.length) return '<div class="pfal-empty">На счёте нет позиций — только деньги.</div>';
+        if (!d || !d.rows.length) return '<div class="pfbrk-state"><div class="pfbrk-state-ic">' + BRK_BANK_SVG + '</div><div class="pfbrk-state-tx">На счёте нет позиций — только деньги.</div></div>';
         var lim = pfdRowsFor('broker', 6, 34, 130);
-        var head = '<div class="pfbrk-total"><span>Стоимость портфеля у брокера</span><b>' + fmtRub(d.total || 0) + '</b></div>';
+        var at = new Date(brokerCache.ts).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        var head = '<div class="pfbrk-total"><div class="pfbrk-total-l"><span>Стоимость портфеля</span><i>обновлено ' + at + '</i></div><b>' + fmtRub(d.total || 0) + '</b></div>';
         return head + '<div class="pfas-list" data-skey="pfbroker">' + d.rows.slice(0, lim).map(function (r) {
             var chg = r.pnl === 0 ? '<b class="muted">—</b>'
                 : '<b class="' + (r.pnl >= 0 ? 'pos' : 'neg') + '">' + (r.pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(r.pnl)) + '</b>';

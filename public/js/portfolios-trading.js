@@ -81,7 +81,7 @@
         return '<i class="bk-pill ' + (open ? 'bk-pill-green' : 'bk-pill-amber') + '">' + label + '</i>';
     }
     function obCardHtml() {
-        var head = PF.pfCardHead('', 'Стакан', T.meta ? T.meta.name : 'выберите бумагу', null);
+        var head = PF.pfCardHead('Терминал', 'Стакан', T.meta ? T.meta.name : 'выберите бумагу', null);
         var search = '<div class="btr-search"><input class="ph-input" id="btSearch" type="text" ' +
             'placeholder="Поиск: тикер или название…" autocomplete="off" spellcheck="false" value="' + esc(T.searchQ) + '">' +
             '<div class="btr-search-drop" id="btSearchDrop"></div></div>';
@@ -115,11 +115,11 @@
 
     // ---- карточка тикета ----
     function ticketHtml() {
-        var head = PF.pfCardHead('', 'Заявка', T.meta ? T.meta.ticker + ' · лот ' + (T.meta.lot || 1) + ' шт' : 'сначала выберите бумагу', null);
+        var head = PF.pfCardHead('Тикет', 'Заявка', T.meta ? T.meta.ticker + ' · лот ' + (T.meta.lot || 1) + ' шт' : 'сначала выберите бумагу', null);
         if (!T.meta) return head + '<div class="pfal-empty">Тикет откроется после выбора бумаги в стакане.</div>';
         var seg = function (id, items, cur, fn) {
             return '<div class="mh-seg btr-seg" id="' + id + '">' + items.map(function (it) {
-                return '<button type="button" class="mh-seg-btn' + (cur === it[0] ? ' on' : '') + '" onclick="' + fn + '(\'' + it[0] + '\')">' + it[1] + '</button>';
+                return '<button type="button" class="mh-seg-btn' + (cur === it[0] ? ' active' : '') + '" onclick="' + fn + '(\'' + it[0] + '\')">' + it[1] + '</button>';
             }).join('') + '</div>';
         };
         var shares = T.lots * (T.meta.lot || 1);
@@ -134,13 +134,14 @@
                 : '<div class="btr-mktnote">По лучшей цене стакана — итог зависит от рынка.</div>') +
             '<div class="ph-field"><label class="ph-lab" for="btLots">Лоты (1 лот = ' + (T.meta.lot || 1) + ' шт)</label>' +
             '<input class="ph-input" id="btLots" type="number" step="1" min="1" value="' + T.lots + '"></div>' +
-            '<div class="btr-est"><span>' + shares.toLocaleString('ru-RU') + ' шт · примерно</span><b>' + fmtRub(sum) + '</b></div>' +
+            '<div class="btr-est"><div class="btr-est-l"><span>' + (T.kind === 'limit' ? 'Итого' : 'Итого ≈') + '</span><i>' + shares.toLocaleString('ru-RU') + ' шт</i></div><b>' + fmtRub(sum) + '</b></div>' +
             '<div class="btr-warns" id="btWarns">' + warnsHtml() + '</div>' +
             '<button type="button" class="btr-submit ' + T.side + '" id="btSubmit" onclick="pftAsk()">' +
             (T.side === 'buy' ? 'Купить ' : 'Продать ') + esc(T.meta.ticker) + '</button>' +
-            '<div class="btr-limitrow">Подтверждение вводом суммы от ' +
-            '<input id="btSumLimit" type="number" min="1000" step="1000" value="' + sumLimit() + '"> ₽</div>';
+            '<div class="btr-limitrow">' + IC_SHIELD + '<span>Подтверждение вводом суммы от</span>' +
+            '<input id="btSumLimit" type="number" min="1000" step="1000" value="' + sumLimit() + '"><span>₽</span></div>';
     }
+    var IC_SHIELD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5 4.5 5.5v6c0 4.6 3.2 8.1 7.5 9.5 4.3-1.4 7.5-4.9 7.5-9.5v-6z"/></svg>';
     function estPrice() {
         var q2n = A().q2n;
         if (T.kind === 'limit') return +T.price || 0;
@@ -180,17 +181,21 @@
 
     // ---- карточка заявок ----
     function ordersHtml() {
-        var head = PF.pfCardHead('', 'Мои заявки', 'активные на счёте', null);
+        var c = conn();
+        var head = PF.pfCardHead('Счёт', 'Мои заявки', c ? c.accountName : 'активные на счёте', null);
         var q2n = A() ? A().q2n : function () { return 0; };
         var rows;
         if (!T.orders.length) {
-            rows = '<div class="pfal-empty">Активных заявок нет.</div>';
+            rows = '<div class="pfbrk-state pfbrk-state-slim">' +
+                '<div class="pfbrk-state-ic">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg></div>' +
+                '<div class="pfbrk-state-tx">Активных заявок нет — выставленные из тикета появятся здесь.</div></div>';
         } else {
             rows = '<div class="btr-ords">' + T.orders.map(function (o) {
                 var ins = instrMem[o.instrumentUid] || {};
                 var buy = o.direction === 'ORDER_DIRECTION_BUY';
                 var price = q2n(o.initialSecurityPrice);
-                return '<div class="btr-ordrow">' +
+                return '<div class="btr-ordrow ' + (buy ? 'buy' : 'sell') + '">' +
                     '<i class="bk-pill ' + (buy ? 'bk-pill-green' : 'bk-pill-amber') + '">' + (buy ? 'покупка' : 'продажа') + '</i>' +
                     '<b>' + esc(ins.ticker || (o.figi || '').slice(0, 8)) + '</b>' +
                     '<span>' + (o.lotsExecuted || 0) + '/' + (o.lotsRequested || 0) + ' лот · ' + fmtPrice(price) + '</span>' +
@@ -336,7 +341,8 @@
         var el = document.querySelector('.btr-est');
         if (!el || !T.meta) return;
         var shares = T.lots * (T.meta.lot || 1);
-        el.innerHTML = '<span>' + shares.toLocaleString('ru-RU') + ' шт · примерно</span><b>' + fmtRub(estPrice() * shares) + '</b>';
+        el.innerHTML = '<div class="btr-est-l"><span>' + (T.kind === 'limit' ? 'Итого' : 'Итого ≈') + '</span><i>' +
+            shares.toLocaleString('ru-RU') + ' шт</i></div><b>' + fmtRub(estPrice() * shares) + '</b>';
     }
     function renderDrop(list) {
         var d = dq('btSearchDrop'); if (!d) return;
