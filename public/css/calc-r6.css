@@ -200,9 +200,8 @@ body.cxm-choose #cxChooser .cxm-cta {
 }
 #cxFcBig small { font-size: 15px; color: var(--r5-muted); font-weight: 600; }
 #cxFcRng { font-family: var(--r5-mono); font-size: 12.5px; color: var(--r5-muted); margin-top: 2px; }
-/* SVG абсолютный: размер хоста задаёт flex, а не содержимое (см. renderFan).
-   График рисуется лентой ~4:1 и висит по центру свободной высоты — растянутый
-   на весь хост он превращался в жирный клин вместо тонкой линии мокапа. */
+/* SVG абсолютный: размер хоста задаёт flex, а не содержимое (см. renderCols) —
+   столбики по годам занимают всю свободную высоту карточки. */
 #cxFcChart { position: relative; flex: 1; min-height: 150px; margin-top: 20px; }
 #cxFcChart svg {
   position: absolute; left: 0; right: 0; top: 50%;
@@ -338,6 +337,10 @@ body.cxm-monthly #panel-calc #miSchCard .mi5-foot { display: none; }
 
 /* ── Тёмная тема ───────────────────────────────────────────── */
 body.dark-mode .cxr6-big, body.dark-mode #cxFcBig { color: #e8edf5; }
+/* Столбики прогноза: подписи рисуются currentColor, а основание — переменной.
+   На тёмной карточке унаследованный тёмно-синий сливался с фоном, а светло-серое
+   основание светило слишком ярко. */
+body.dark-mode #cxFcChart { color: #e8edf5; --cx-cbase: rgba(255,255,255,.10); }
 body.dark-mode #cxFcFacts .f b { color: #e8edf5; }
 body.dark-mode #cxFcFacts .fic { background: rgba(255,255,255,.06); }
 body.dark-mode .cx-rows.r5 .cxm-type { background: var(--r5-card); }

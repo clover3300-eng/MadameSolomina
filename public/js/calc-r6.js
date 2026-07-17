@@ -153,23 +153,23 @@
   // Высота — не вся доступная, а лента RIBBON: растянутая на всю высоту
   // карточки линия превращается в жирный клин, в мокапе же это тонкая лента,
   // висящая в воздухе по центру свободного места (центрует css).
-  function renderFan(host, S, g, corridor) {
+  function renderFan(host, S, g) {
     if (!host) return;
     if (!g) { host.innerHTML = ''; return; }
     var W = Math.max(220, Math.round(host.clientWidth));
     var H = Math.max(96, Math.min(Math.round(host.clientHeight), Math.round(W / RIBBON)));
-    // id градиентов уникальны на документ: обе карточки живут в DOM
+    // id градиентов уникальны на документ: несколько графиков живут в DOM
     // одновременно, одинаковые id ссылались бы на первый попавшийся
-    host.innerHTML = fanSVG(S, g, W, H, corridor, host.id || 'x');
+    host.innerHTML = fanSVG(S, g, W, H, host.id || 'x');
   }
-  // Веер прогноза: коридор lo..hi (опционально) + базовая линия с мягкой
-  // тенью вниз и градиентной заливкой под ней, подпись у конца
-  function fanSVG(S, g, W, H, corridor, uid) {
+  // Лента прогноза: базовая линия с мягкой тенью вниз и градиентной заливкой
+  // под ней, подпись у конца
+  function fanSVG(S, g, W, H, uid) {
     // Линия идёт во всю ширину: подпись суммы стоит НАД конечной точкой, а не
     // справа от неё — правая колонка под подпись оставляла мёртвое поле.
     var padL = 2, padR = 9, padT = 22, padB = 20;
     var x0 = padL, x1 = W - padR, yB = H - padB, yT = padT;
-    var vMax = corridor ? g.hi : g.base * 1.02;
+    var vMax = g.base * 1.02;
     // Небольшой запас снизу: иначе линия стартует ровно в углу поля и выглядит
     // приклеенной к нему (в мокапе старт приподнят над нижним краем).
     var vMin = S - (vMax - S) * 0.10;
@@ -191,30 +191,20 @@
     function d(p) {
       return p.map(function (q, i) { return (i ? 'L' : 'M') + q[0].toFixed(1) + ',' + q[1].toFixed(1); }).join(' ');
     }
-    var baseR = rate(g.base);
-    var basePts = pts(baseR);
+    var basePts = pts(rate(g.base));
     var yEnd = Y(g.base);
     var year0 = new Date().getFullYear();
-    var gU = 'cxr6u_' + uid, gF = 'cxr6f_' + uid, fS = 'cxr6s_' + uid;
-    var body = '';
-    if (corridor) {
-      var area = d(pts(rate(g.hi))) + ' ' + d(pts(rate(g.lo), true)).replace(/^M/, 'L') + ' Z';
-      body += '<path d="' + area + '" fill="url(#' + gF + ')"/>';
-    }
+    var gU = 'cxr6u_' + uid, fS = 'cxr6s_' + uid;
     // Заливка-«тень» под линией: градиент от линии вниз, до самого низа поля
     var under = d(basePts) + ' L' + x1.toFixed(1) + ',' + yB.toFixed(1) +
                 ' L' + x0.toFixed(1) + ',' + yB.toFixed(1) + ' Z';
-    body += '<path d="' + under + '" fill="url(#' + gU + ')"/>';
+    var body = '<path d="' + under + '" fill="url(#' + gU + ')"/>';
     return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '">' +
       '<defs>' +
         '<linearGradient id="' + gU + '" x1="0" y1="0" x2="0" y2="1">' +
           '<stop offset="0" stop-color="#4a8df0" stop-opacity=".26"/>' +
           '<stop offset=".55" stop-color="#4a8df0" stop-opacity=".08"/>' +
           '<stop offset="1" stop-color="#4a8df0" stop-opacity="0"/>' +
-        '</linearGradient>' +
-        '<linearGradient id="' + gF + '" x1="0" y1="0" x2="0" y2="1">' +
-          '<stop offset="0" stop-color="#4a8df0" stop-opacity=".13"/>' +
-          '<stop offset="1" stop-color="#4a8df0" stop-opacity=".02"/>' +
         '</linearGradient>' +
         '<filter id="' + fS + '" x="-8%" y="-25%" width="116%" height="170%">' +
           '<feDropShadow dx="0" dy="7" stdDeviation="7" flood-color="#2f6fd0" flood-opacity=".30"/>' +
@@ -231,6 +221,63 @@
       '<text x="2" y="' + (H - 5) + '" font-family="var(--r5-mono,monospace)" font-size="10" fill="#97a3b4">' + year0 + '</text>' +
       '<text x="' + x1 + '" y="' + (H - 5) + '" text-anchor="end" font-family="var(--r5-mono,monospace)" font-size="10" fill="#97a3b4">' + (year0 + YEARS) + '</text>' +
     '</svg>';
+  }
+
+  // ── СТОЛБИКИ ПО ГОДАМ (карточка «Прогноз») ────────────────────────────────
+  // Утверждённый мокап 01: серое основание — вложенная сумма, синяя шапка —
+  // прибыль поверх неё. В отличие от ленты, заполняет поле карточки целиком и
+  // читается сразу; видно, как шапка год от года набирает ход (сложный процент).
+  function renderCols(host, S, g) {
+    if (!host) return;
+    if (!g) { host.innerHTML = ''; return; }
+    var W = Math.max(220, Math.round(host.clientWidth));
+    var H = Math.max(150, Math.round(host.clientHeight));
+    host.innerHTML = colsSVG(S, g, W, H, host.id || 'x');
+  }
+
+  // столбик с прибылью: скруглён только сверху, снизу стыкуется с основанием
+  function capPath(x, bw, yTop, yBase) {
+    var r = Math.min(6, Math.max(0, (yBase - yTop) / 2));
+    return 'M' + x + ',' + yBase.toFixed(1) +
+      ' L' + x + ',' + (yTop + r).toFixed(1) +
+      ' Q' + x + ',' + yTop.toFixed(1) + ' ' + (x + r) + ',' + yTop.toFixed(1) +
+      ' L' + (x + bw - r) + ',' + yTop.toFixed(1) +
+      ' Q' + (x + bw) + ',' + yTop.toFixed(1) + ' ' + (x + bw) + ',' + (yTop + r).toFixed(1) +
+      ' L' + (x + bw) + ',' + yBase.toFixed(1) + ' Z';
+  }
+
+  function colsSVG(S, g, W, H, uid) {
+    var padT = 34, padB = 28, bot = H - padB, plot = bot - padT;
+    var vMax = g.base * 1.10;                 // запас над самым высоким столбиком
+    var hOf = function (x) { return (x / vMax) * plot; };
+    var n = YEARS + 1;
+    var gap = Math.max(16, Math.round(W * 0.08));
+    var bw = Math.max(26, Math.floor((W - gap * (n - 1)) / n));
+    var x0 = Math.round((W - (n * bw + (n - 1) * gap)) / 2);
+    var baseH = hOf(S), yBase = bot - baseH;
+    var year0 = new Date().getFullYear();
+    var gid = 'cxr6c_' + uid;
+    var s = '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="#6ba4f5"/><stop offset="1" stop-color="#4a8df0"/>' +
+      '</linearGradient></defs>';
+    for (var i = 0; i < n; i++) {
+      var val = S * Math.pow(1 + g.r, i);
+      var x = x0 + i * (bw + gap), yTop = bot - hOf(val);
+      s += '<rect x="' + x + '" y="' + yBase.toFixed(1) + '" width="' + bw + '" height="' + baseH.toFixed(1) + '" fill="var(--cx-cbase,#dde5f1)"/>';
+      if (i > 0) s += '<path d="' + capPath(x, bw, yTop, yBase) + '" fill="url(#' + gid + ')"/>';
+      s += '<text x="' + (x + bw / 2) + '" y="' + (yTop - 11).toFixed(1) + '" text-anchor="middle" ' +
+        'font-family="var(--r5-mono,monospace)" font-size="12.5" font-weight="700" fill="currentColor">' +
+        fmtCapPlain(val) + '</text>';
+      s += '<text x="' + (x + bw / 2) + '" y="' + (bot + 18) + '" text-anchor="middle" ' +
+        'font-family="var(--r5-mono,monospace)" font-size="10" font-weight="600" fill="#97a3b4">' +
+        (i ? (year0 + i) : 'сегодня') + '</text>';
+    }
+    // легенда — что серое, что синее
+    s += '<rect x="1" y="5" width="9" height="9" rx="2" fill="var(--cx-cbase,#dde5f1)"/>' +
+      '<text x="16" y="13.5" font-family="var(--r5-mono,monospace)" font-size="9.5" font-weight="700" fill="#97a3b4">вложено</text>' +
+      '<rect x="83" y="5" width="9" height="9" rx="2" fill="#4a8df0"/>' +
+      '<text x="98" y="13.5" font-family="var(--r5-mono,monospace)" font-size="9.5" font-weight="700" fill="#97a3b4">прибыль</text>';
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '">' + s + '</svg>';
   }
 
   // Столбики выплат по месяцам
@@ -500,7 +547,7 @@
       if (g) {
         gb.innerHTML = '≈ ' + fmtCap(g.base) + ' <small>через ' + YEARS + ' года</small>';
         $('cxGrowRng').textContent = 'при стратегии «' + stratName() + '» · ' + (g.r * 100).toFixed(1).replace('.', ',') + '% годовых';
-        renderFan($('cxGrowViz'), S, g, false);
+        renderFan($('cxGrowViz'), S, g);
       } else {
         gb.innerHTML = 'Введите сумму <small>— покажем прогноз на ' + YEARS + ' года</small>';
         $('cxGrowRng').textContent = '';
@@ -531,7 +578,7 @@
         fb.innerHTML = '≈ ' + fmtCap(g.base) + ' <small>через ' + YEARS + ' года</small>';
         $('cxFcRng').textContent = 'коридор сценариев ' + fmtCapPlain(g.lo) + ' – ' + fmtCapPlain(g.hi) +
           ' · облигации ' + bondsPct() + '% / акции ' + (100 - bondsPct()) + '%';
-        renderFan($('cxFcChart'), S, g, true);
+        renderCols($('cxFcChart'), S, g);
         $('cxFcCash').textContent = '≈ ' + fmtInt(g.cash) + ' ₽';
         $('cxFcYield').textContent = (g.r * 100).toFixed(1).replace('.', ',') + '% годовых';
       } else {
