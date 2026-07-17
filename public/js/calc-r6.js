@@ -572,6 +572,10 @@
     // заголовок левой карточки — «Корзина ОФЗ»
     var ttl = document.querySelector('#calcAccordion .mi5-calc > .mi5-ttl');
     if (ttl && ttl.textContent !== 'Корзина ОФЗ') ttl.textContent = 'Корзина ОФЗ';
+    // подвал баннера по мокапу: «Итого за год» над суммой (в статике «в год»;
+    // data.js пишет только вложенный #ndIbYearly, подпись не трогает)
+    var yl = document.querySelector('#miBannerCard .mi5-cb-stat:first-child .mi5-cb-sl');
+    if (yl && yl.textContent !== 'Итого за год') yl.textContent = 'Итого за год';
     placeMonthlyCta();
   }
 
