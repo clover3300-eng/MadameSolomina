@@ -182,7 +182,7 @@
     }
 
     function fetchStockQuotes() {
-        return fetchRetry(SHARES_URL, { cache: 'no-PF.store' }, 3, 500).then(function (r) { return r.json(); }).then(function (j) {
+        return fetchRetry(SHARES_URL, { cache: 'no-store' }, 3, 500).then(function (r) { return r.json(); }).then(function (j) {
             var md = j.marketdata; if (!md || !md.data) return;
             var c = md.columns, si = c.indexOf('SECID'), li = c.indexOf('LAST'),
                 bi = c.indexOf('BOARDID'), pi = c.indexOf('LASTTOPREVPRICE');
@@ -220,7 +220,7 @@
     // Батч-запрос цен всех нужных облигаций ОДНИМ обращением к MOEX; для не найденных в
     // батче — откат на поштучный fetchBondData (он же даёт НКД и детали купонов).
     function fetchBondQuotesBatch(isins) {
-        return fetchRetry(BONDS_URL, { cache: 'no-PF.store' }, 2, 500).then(function (r) { return r.json(); }).then(function (j) {
+        return fetchRetry(BONDS_URL, { cache: 'no-store' }, 2, 500).then(function (r) { return r.json(); }).then(function (j) {
             var md = j.marketdata, found = {}; if (!md || !md.data) return found;
             // номиналы из блока securities — кладём в bondFaceMap (нужны и здесь для
             // пересчёта % → ₽, и экономике bondEconAt для суммы погашения)
@@ -1032,7 +1032,7 @@
         var url = ISS + 'history/engines/stock/markets/' + market + '/securities/' + encodeURIComponent(secid) +
             '.json?from=' + from + '&till=' + dateStr + '&iss.meta=off&iss.only=history';
         var MAIN = type === 'bond' ? { TQOB: 1, TQCB: 1, TQOD: 1, TQIR: 1 } : { TQBR: 1, TQTF: 1, TQTD: 1 };
-        fetchRetry(url, { cache: 'no-PF.store' }, 2, 500).then(function (r) { return r.json(); }).then(function (j) {
+        fetchRetry(url, { cache: 'no-store' }, 2, 500).then(function (r) { return r.json(); }).then(function (j) {
             var h = j.history, best = null;
             if (h && h.data && h.data.length) {
                 var c = h.columns, bi = c.indexOf('BOARDID'), di = c.indexOf('TRADEDATE'), cl = c.indexOf('CLOSE'),

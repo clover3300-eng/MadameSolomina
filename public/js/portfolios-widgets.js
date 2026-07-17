@@ -966,7 +966,7 @@
     var pfdHeatW = null;    // [{tk, value}] веса по убыванию
     var pfdHeatC = null;    // {TICKER: изм.% за день}
     var pfdHeatTs = 0, pfdHeatLoading = false;
-    function pfhmJget(u) { return fetch(u, { cache: 'no-PF.store' }).then(function (r) { if (!r.ok) throw 0; return r.json(); }); }
+    function pfhmJget(u) { return fetch(u, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw 0; return r.json(); }); }
     function pfdHeatLoad(cb) {
         if (pfdHeatLoading) return;
         if (pfdHeatW && pfdHeatC && Date.now() - pfdHeatTs < 60000) { cb && cb(); return; }
