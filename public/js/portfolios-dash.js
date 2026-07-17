@@ -9,7 +9,10 @@
     'use strict';
     var PF = window.PF;
     // импорт ядра (уже загружено) — локальные алиасы:
-    var attr = PF.attr, calcPf = PF.calcPf, clamp = PF.clamp, dayDelta = PF.dayDelta, esc = PF.esc, findPf = PF.findPf, genId = PF.genId, jsArg = PF.jsArg, snaps = PF.snaps, toast = PF.toast, visibleItems = PF.visibleItems;
+    // ВАЖНО: dq потерялся при дроблении (этап 2, c51872c) — без него падали все
+    // dq()-вызовы файла: выбор карточек в пикере (pfl2Pick→pfl2KeepScroll), pfl2SetCat,
+    // pflInitPreview, pfl3Repaint, pfdUpdateSaveBtn
+    var attr = PF.attr, calcPf = PF.calcPf, clamp = PF.clamp, dayDelta = PF.dayDelta, dq = PF.dq, esc = PF.esc, findPf = PF.findPf, genId = PF.genId, jsArg = PF.jsArg, snaps = PF.snaps, toast = PF.toast, visibleItems = PF.visibleItems;
     // ============================================================
     //  ДАШБОРД-КОНСТРУКТОР — пользовательская раскладка страницы
     // ============================================================
