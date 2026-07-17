@@ -153,10 +153,13 @@
     if (!g) { host.innerHTML = ''; return; }
     var W = Math.max(220, Math.round(host.clientWidth));
     var H = Math.max(96, Math.round(host.clientHeight));
-    host.innerHTML = fanSVG(S, g, W, H, corridor);
+    // id градиентов уникальны на документ: обе карточки живут в DOM
+    // одновременно, одинаковые id ссылались бы на первый попавшийся
+    host.innerHTML = fanSVG(S, g, W, H, corridor, host.id || 'x');
   }
-  // Веер прогноза: коридор lo..hi (опционально) + базовая линия, подпись у конца
-  function fanSVG(S, g, W, H, corridor) {
+  // Веер прогноза: коридор lo..hi (опционально) + базовая линия с мягкой
+  // тенью вниз и градиентной заливкой под ней, подпись у конца
+  function fanSVG(S, g, W, H, corridor, uid) {
     var padL = 6, padR = 78, padT = 16, padB = 22;
     var x0 = padL, x1 = W - padR, yB = H - padB, yT = padT;
     var vMin = S, vMax = corridor ? g.hi : g.base * 1.02;
@@ -182,25 +185,37 @@
     var basePts = pts(baseR);
     var yEnd = Y(g.base);
     var year0 = new Date().getFullYear();
+    var gU = 'cxr6u_' + uid, gF = 'cxr6f_' + uid, fS = 'cxr6s_' + uid;
     var body = '';
     if (corridor) {
       var area = d(pts(rate(g.hi))) + ' ' + d(pts(rate(g.lo), true)).replace(/^M/, 'L') + ' Z';
-      body += '<path d="' + area + '" fill="url(#cxr6fan)"/>';
-    } else {
-      // без коридора — мягкая заливка под самой линией
-      var fill = d(basePts) + ' L' + x1.toFixed(1) + ',' + yB.toFixed(1) + ' L' + x0.toFixed(1) + ',' + yB.toFixed(1) + ' Z';
-      body += '<path d="' + fill + '" fill="url(#cxr6fan)"/>';
+      body += '<path d="' + area + '" fill="url(#' + gF + ')"/>';
     }
+    // Заливка-«тень» под линией: градиент от линии вниз, до самого низа поля
+    var under = d(basePts) + ' L' + x1.toFixed(1) + ',' + yB.toFixed(1) +
+                ' L' + x0.toFixed(1) + ',' + yB.toFixed(1) + ' Z';
+    body += '<path d="' + under + '" fill="url(#' + gU + ')"/>';
     return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '">' +
-      '<defs><linearGradient id="cxr6fan" x1="0" y1="0" x2="0" y2="1">' +
-        '<stop offset="0" stop-color="#4a8df0" stop-opacity=".16"/>' +
-        '<stop offset="1" stop-color="#4a8df0" stop-opacity=".02"/>' +
-      '</linearGradient></defs>' +
+      '<defs>' +
+        '<linearGradient id="' + gU + '" x1="0" y1="0" x2="0" y2="1">' +
+          '<stop offset="0" stop-color="#4a8df0" stop-opacity=".26"/>' +
+          '<stop offset=".55" stop-color="#4a8df0" stop-opacity=".08"/>' +
+          '<stop offset="1" stop-color="#4a8df0" stop-opacity="0"/>' +
+        '</linearGradient>' +
+        '<linearGradient id="' + gF + '" x1="0" y1="0" x2="0" y2="1">' +
+          '<stop offset="0" stop-color="#4a8df0" stop-opacity=".13"/>' +
+          '<stop offset="1" stop-color="#4a8df0" stop-opacity=".02"/>' +
+        '</linearGradient>' +
+        '<filter id="' + fS + '" x="-8%" y="-25%" width="116%" height="170%">' +
+          '<feDropShadow dx="0" dy="7" stdDeviation="7" flood-color="#2f6fd0" flood-opacity=".30"/>' +
+        '</filter>' +
+      '</defs>' +
       '<g stroke="var(--r5-line,#e6ecf4)" stroke-width="1">' +
         '<line x1="0" y1="' + Math.round(yT + (yB - yT) * .33) + '" x2="' + W + '" y2="' + Math.round(yT + (yB - yT) * .33) + '"/>' +
         '<line x1="0" y1="' + Math.round(yT + (yB - yT) * .66) + '" x2="' + W + '" y2="' + Math.round(yT + (yB - yT) * .66) + '"/>' +
       '</g>' + body +
-      '<path d="' + d(basePts) + '" fill="none" stroke="#4a8df0" stroke-width="2.6"/>' +
+      '<path d="' + d(basePts) + '" fill="none" stroke="#4a8df0" stroke-width="2.6" ' +
+        'stroke-linecap="round" filter="url(#' + fS + ')"/>' +
       '<circle cx="' + x1 + '" cy="' + yEnd.toFixed(1) + '" r="4" fill="#4a8df0"/>' +
       '<text x="' + (x1 + 8) + '" y="' + (yEnd + 4).toFixed(1) + '" font-family="var(--r5-mono,monospace)" font-size="12" font-weight="700" fill="currentColor">' + fmtCapPlain(g.base) + '</text>' +
       '<text x="4" y="' + (H - 6) + '" font-family="var(--r5-mono,monospace)" font-size="10" fill="#97a3b4">' + year0 + '</text>' +
@@ -513,6 +528,26 @@
   var _rcT = null;
   function scheduleRecalc() { clearTimeout(_rcT); _rcT = setTimeout(recalc, 60); }
 
+  // ── MONTHLY: кнопка «Создать портфель» ВНУТРИ правой карточки ────────────
+  // По мокапу CTA живёт в подвале карточки выплат, а не длинной кнопкой под
+  // колонками. Правая колонка переключается баннер ↔ график, поэтому ряд с
+  // кнопкой переносим в ту карточку, что сейчас видима.
+  function placeMonthlyCta() {
+    var btn = $('miCreatePfBtn');
+    if (!btn) return;
+    var banner = $('miBannerCard'), sch = $('miSchCard');
+    var host = (banner && !banner.classList.contains('is-hidden')) ? banner : sch;
+    if (!host) return;
+    var row = $('cxMoCta');
+    if (!row) {
+      row = el('div', 'cxr6-mcta');
+      row.id = 'cxMoCta';
+      row.appendChild(btn);
+      row.appendChild(el('span', 'cxr6-meta', 'портфель появится во вкладке «Портфели»'));
+    }
+    if (row.parentNode !== host) host.appendChild(row);
+  }
+
   // ── MONTHLY: пропуск интро + синхронизация суммы ──────────────────────────
   var _prog = false;   // программное обновление суммы — не гнать синк по кругу
 
@@ -537,6 +572,7 @@
     // заголовок левой карточки — «Корзина ОФЗ»
     var ttl = document.querySelector('#calcAccordion .mi5-calc > .mi5-ttl');
     if (ttl && ttl.textContent !== 'Корзина ОФЗ') ttl.textContent = 'Корзина ОФЗ';
+    placeMonthlyCta();
   }
 
   function syncHeroFromMonthly() {
@@ -574,6 +610,15 @@
         }
       };
       window.ndFormatInput._r6 = true;
+    }
+    // правая колонка переключается баннер ↔ график — CTA едет за видимой карточкой
+    if (typeof window.toggleScheduleView === 'function' && !window.toggleScheduleView._r6) {
+      var _oToggle = window.toggleScheduleView;
+      window.toggleScheduleView = function () {
+        _oToggle.apply(this, arguments);
+        placeMonthlyCta();
+      };
+      window.toggleScheduleView._r6 = true;
     }
     // строки корзины перерисовываются штатно — доклеиваем месяцы купонов
     if (typeof window.renderMonthlyIncomeCards === 'function' && !window.renderMonthlyIncomeCards._r6) {

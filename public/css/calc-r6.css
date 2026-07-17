@@ -262,6 +262,26 @@ body.cxm-monthly #panel-calc .mi5-tax .tax-segment {
   flex: 0 0 auto; padding: 8px 16px; white-space: nowrap;
 }
 
+/* Подвал «Корзины ОФЗ»: по мокапу — простая строка под линейкой .mi5-foot,
+   без плашки-коробки; сумма ближайшей выплаты оранжевая (это деньги). */
+body.cxm-monthly #panel-calc .mi5-next {
+  background: transparent; border: none; border-radius: 0;
+  padding: 0; min-height: 0; cursor: default;
+}
+body.cxm-monthly #panel-calc .mi5-next-r { margin-left: auto; }
+body.cxm-monthly #panel-calc .mi5-next-am { color: var(--r5-orange); font-size: 19px; }
+
+/* Подвал карточки выплат: итоги (штатный блок) + ряд с CTA, как в мокапе.
+   Длинной кнопки под колонками больше нет — она переехала сюда. */
+#panel-calc .cxr6-mcta { display: flex; align-items: center; gap: 14px; margin-top: 14px; }
+#panel-calc .cxr6-mcta .mi5-createpf-btn {
+  margin-top: 0; width: auto; flex: 0 0 auto;
+  border-radius: 14px; padding: 15px 26px; font-size: 14.5px;
+  box-shadow: 0 10px 22px rgba(16, 24, 38, .22);
+}
+#panel-calc .cxr6-mcta .mi5-createpf-btn:hover { box-shadow: 0 14px 28px rgba(16, 24, 38, .30); }
+#panel-calc .cxr6-mcta .cxr6-meta { margin-left: auto; }
+
 /* ── Тёмная тема ───────────────────────────────────────────── */
 body.dark-mode .cxr6-big, body.dark-mode #cxFcBig { color: #e8edf5; }
 body.dark-mode #cxFcFacts .f b { color: #e8edf5; }
