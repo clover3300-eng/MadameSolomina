@@ -965,6 +965,21 @@
         pfl2Paint(['main', 'set', 'foot']);
     }
 
+    // Чипы готовых раскладок для теневых виджетов (обучающий призрак новой вкладки и
+    // призрак после «Очистить»): до 4 вариантов текущей подвкладки из pfl3Options
+    // (базовая/стандартная, ваша сохранённая, общие пресеты) — применяются одним кликом.
+    function pfxgLaysHtml() {
+        var chips = '', cnt = 0;
+        try {
+            pfl3Options().forEach(function (o) {
+                if (!o.snap || cnt >= 4) return;
+                cnt++;
+                chips += '<button type="button" class="pfxg-lay" onclick="' + pfl3ApplyCall(o) + '" title="Применить раскладку «' + esc(o.name) + '»">' +
+                    PF.PFDGRID_SVG + '<span>' + esc(o.name) + '</span></button>';
+            });
+        } catch (e) {}
+        return chips ? '<div class="pfxg-lays"><span class="pfxg-lays-l">или готовая раскладка</span><div class="pfxg-lays-r">' + chips + '</div></div>' : '';
+    }
     function pfdBodyHtml(favStr, noBonds) {
         var blocks = pfdBlocks(favStr, noBonds);
         var byId = {};
@@ -1075,14 +1090,19 @@
                 else if (gS && !gB) gsub = 'лидеры дня, новости по позициям, карта рынка — соберите вкладку под акции';
                 else if (gS && gB) gsub = 'распределение активов, календарь выплат, лидеры дня — соберите вкладку под себя';
             }
+            // тот же блок чипов раскладок, что у призрака очистки: новую вкладку можно
+            // собрать одним кликом, не открывая пикер (просьба 2026-07-17). Кнопка-пикер
+            // теперь ВНУТРИ обёртки (в кнопку нельзя вкладывать кнопки-чипы); полёт
+            // кометы не тронут — pfxGhostClick меряет closest('.pfd-item').
             items += '<div class="pfd-item pfxg-item" data-pfd="__ghost" style="grid-column: span 4;">' +
-                '<div class="pfd-body">' +
-                    '<button type="button" class="pfxg-ghost" onclick="pfxGhostClick(event)" title="Открыть пикер виджетов">' +
+                '<div class="pfd-body"><div class="pfxg-ghost">' +
+                    '<button type="button" class="pfxg-mainbtn" onclick="pfxGhostClick(event)" title="Открыть пикер виджетов">' +
                         '<span class="pfxg-plus">' + PFD_PLUS_SVG + '</span>' +
                         '<b>Добавить виджет</b>' +
                         '<i>' + gsub + '</i>' +
                     '</button>' +
-                '</div>' +
+                    pfxgLaysHtml() +
+                '</div></div>' +
             '</div>';
         }
 
@@ -1091,14 +1111,6 @@
         // применить готовую раскладку прямо на месте. Исчезает с первым добавленным
         // виджетом/раскладкой (delete cfg.cleared в pfdAddWidget/pfApplyPreset/…).
         if (PF.dashCfg.cleared && shown.length && !PF.dashEdit && !PF.pfl3Open) {
-            var clays = '';
-            try {
-                pfl3Options().forEach(function (o) {
-                    if (!o.snap || clays.split('pfxg-lay').length > 4) return;
-                    clays += '<button type="button" class="pfxg-lay" onclick="' + pfl3ApplyCall(o) + '" title="Применить раскладку «' + esc(o.name) + '»">' +
-                        PF.PFDGRID_SVG + '<span>' + esc(o.name) + '</span></button>';
-                });
-            } catch (e) {}
             items += '<div class="pfd-item pfxg-item" data-pfd="__ghost" style="grid-column: span 4;">' +
                 '<div class="pfd-body"><div class="pfxg-ghost pfxg-ghost--clr">' +
                     '<button type="button" class="pfxg-mainbtn" onclick="pfLayoutToggle(event)" title="Открыть пикер виджетов">' +
@@ -1106,7 +1118,7 @@
                         '<b>Добавить виджет</b>' +
                         '<i>страница очищена — соберите её заново или примените готовую раскладку</i>' +
                     '</button>' +
-                    (clays ? '<div class="pfxg-lays"><span class="pfxg-lays-l">или готовая раскладка</span><div class="pfxg-lays-r">' + clays + '</div></div>' : '') +
+                    pfxgLaysHtml() +
                 '</div></div>' +
             '</div>';
         }
