@@ -1,0 +1,259 @@
+/* ============================================================
+   calc-r6.css — «Сцена»: тёмный герой + живые карточки «Расчёта»
+   ------------------------------------------------------------
+   Слой ПОВЕРХ calc-r5.css / calc-mode.css (подключается после них,
+   перед typography-tokens/desktop-zoom). DOM собирает js/calc-r6.js:
+     #cxHero        — тёмная шапка-сцена (одна на все режимы cxm-*):
+                      вопрос слева, живая сумма (#ndInputHero) справа,
+                      кнопка «назад» в режимах mix/monthly;
+     .cxr6-live     — живые цифры на витринах выбора (#cxChooser);
+     #cxFc          — карточка «Прогноз / Ваш портфель» в режиме mix
+                      (бывшая «Капитал», осушенная переносом суммы).
+   Карточки «выезжают» из героя: у героя большой нижний паддинг, у
+   следующего блока отрицательный margin-top (минус gap:20 колонки).
+   ============================================================ */
+
+/* Вкладке «Расчёт» дизайн R6 даёт больше воздуха, чем стандартные 1180 */
+@media (min-width: 1360px) {
+  #calcPane { max-width: 1400px !important; }
+}
+
+/* ── ГЕРОЙ-СЦЕНА ───────────────────────────────────────────── */
+#cxHero {
+  position: relative; overflow: hidden;
+  background: linear-gradient(130deg, #10161f 0%, #1a2330 55%, #233042 100%);
+  border-radius: 24px; color: #fff;
+  padding: 30px 44px 118px;
+}
+#cxHero > * { position: relative; z-index: 1; }
+#cxHero .cxh-wm {
+  position: absolute; right: 34px; top: -34px; z-index: 0;
+  font-family: var(--r5-mono); font-weight: 700; font-size: 190px; line-height: 1;
+  color: rgba(255,255,255,.04); pointer-events: none; user-select: none;
+}
+/* кнопка «назад» — только в рабочих режимах */
+#cxHeroBack {
+  display: none; align-items: center; gap: 8px; margin-bottom: 18px;
+  border: 1px solid rgba(255,255,255,.16); background: transparent; cursor: pointer;
+  font-family: inherit; font-size: 12.5px; font-weight: 650; color: #c6d1de;
+  padding: 8px 16px; border-radius: 999px; transition: border-color .15s, color .15s;
+}
+#cxHeroBack:hover { border-color: rgba(255,255,255,.35); color: #fff; }
+body.cxm-mix #cxHeroBack, body.cxm-monthly #cxHeroBack { display: inline-flex; }
+/* старую кнопку «назад» calc-mode заменяет герой */
+#cxBack { display: none !important; }
+
+#cxHero .cxh-row { display: flex; align-items: flex-end; gap: 50px; flex-wrap: wrap; }
+#cxHero .cxh-kick {
+  font-size: 11px; font-weight: 800; letter-spacing: .14em;
+  text-transform: uppercase; color: #8fa3bd;
+}
+#cxHero .cxh-kick .acc-b { color: var(--r5-blue); }
+#cxHero .cxh-kick .acc-o { color: var(--r5-orange); }
+#cxHero .cxh-title {
+  font-family: var(--font-title, Georgia, serif); font-weight: 400;
+  font-size: 42px; line-height: 1.12; margin: 12px 0 10px; letter-spacing: 0;
+}
+#cxHero .cxh-sub { color: #aab8ca; max-width: 520px; font-size: 14px; line-height: 1.5; }
+
+/* правый блок суммы */
+#cxHero .cxh-amt { margin-left: auto; text-align: right; }
+#cxHero .cxh-amt-k {
+  font-size: 10.5px; font-weight: 800; letter-spacing: .16em;
+  text-transform: uppercase; color: #8fa3bd;
+}
+#cxHero .cxh-hint { font-size: 11.5px; color: #8fa3bd; margin-top: 7px; }
+
+/* ── #ndInputHero внутри героя: компактный, правый, белый ──── */
+/* инлайновый font-size ставит обёртка ndFormatInput в calc-r6.js */
+#cxHero .nd-input-hero.cx-amount-host {
+  flex: none; margin: 8px 0 0; padding: 0 !important;
+  display: flex; flex-direction: column; align-items: flex-end; cursor: text;
+}
+#cxHero .nd-input-row {
+  justify-content: flex-end; align-items: baseline; gap: 6px;
+  border-bottom: 2px solid rgba(255,255,255,.25); padding-bottom: 6px;
+}
+#cxHero .nd-sum-field {
+  background: transparent; border: none; text-align: right;
+  color: #fff !important; caret-color: var(--r5-blue);
+}
+#cxHero .nd-ruble { color: var(--r5-orange) !important; }
+#cxHero #ndZeroSvg { display: none !important; }
+#cxHero .nd-input-hint { display: none; }
+#cxHero .nd-input-line { display: none; }
+/* плейсхолдер-ноль из r5 (::before на пустом поле) гасим */
+#cxHero .nd-input-hero:not(.has-value) .nd-input-row::before { content: none !important; }
+/* мигающая каретка r5 в пустом поле — оставляем, цвет уже синий */
+
+/* ── Перекрытие: следующий за героем блок выезжает на него ── */
+body.cxm-choose #cxChooser { margin-top: -104px; position: relative; z-index: 2; }
+body.cxm-mix #r5Split { margin-top: -104px; position: relative; z-index: 2; }
+body.cxm-monthly #panel-calc #calcAccordion { margin-top: -104px; position: relative; z-index: 2; }
+
+/* ── ЭКРАН ВЫБОРА: витрины становятся самостоятельными карточками ── */
+body.cxm-choose #cxChooser {
+  background: transparent; border-radius: 0; box-shadow: none; padding: 0;
+  max-width: none; min-height: 0;
+}
+#cxChooser .cxm-head { display: none; }   /* вопрос теперь в герое */
+.cx-rows.r5 .cxm-types { gap: 24px; padding: 0 30px; }
+.cx-rows.r5 .cxm-type {
+  background: var(--r5-card); border-color: transparent;
+  border-radius: var(--r5-radius); box-shadow: var(--r5-shadow);
+  padding: 30px 34px;
+}
+.cx-rows.r5 .cxm-type:hover {
+  border-color: transparent; transform: translateY(-2px);
+  box-shadow: 0 22px 44px rgba(24,38,60,.12);
+}
+/* тёмное кольцо «рекомендованной» витрины в R6 не используется */
+.cx-rows.r5 .cxm-type.on, .cx-rows.r5 .cxm-type.on:hover { box-shadow: var(--r5-shadow); }
+.cx-rows.r5 .cxm-type.on:hover { box-shadow: 0 22px 44px rgba(24,38,60,.12); }
+.cx-rows.r5 .cxm-tn { font-size: 26px; }
+.cx-rows.r5 .cxm-ts { max-width: 460px; }
+/* факты — в строку над кнопкой, с верхней линейкой */
+.cx-rows.r5 .cxm-facts {
+  flex-direction: row; flex-wrap: wrap; gap: 24px;
+  border-top: 1px solid var(--r5-line); padding-top: 16px; margin: 18px 0 20px;
+}
+
+/* живой блок на витрине: число + коридор + мини-график */
+.cxr6-live { margin-top: 18px; }
+.cxr6-big {
+  font-family: var(--r5-mono); font-weight: 700; font-size: 32px;
+  color: var(--r5-text); letter-spacing: -.01em;
+}
+.cxr6-big small { font-size: 15px; color: var(--r5-muted); font-weight: 600; }
+.cxr6-rng { font-family: var(--r5-mono); font-size: 12.5px; color: var(--r5-muted); margin-top: 2px; }
+.cxr6-viz { margin-top: 16px; }
+.cxr6-viz svg { display: block; width: 100%; }
+
+/* столбики купонов по месяцам */
+.cxr6-bars { display: flex; align-items: flex-end; gap: 6px; height: 108px; padding-top: 10px; }
+.cxr6-bars .cb { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
+.cxr6-bars .cb i {
+  width: 100%; border-radius: 6px 6px 3px 3px;
+  background: linear-gradient(180deg, #f6b47c, #f08c3a); opacity: .55;
+}
+.cxr6-bars .cb.hl i { opacity: 1; box-shadow: 0 6px 14px rgba(240,140,58,.35); }
+.cxr6-bars .cb b {
+  font-family: var(--r5-mono); font-size: 9px; font-weight: 800;
+  letter-spacing: .04em; color: var(--r5-muted);
+}
+.cxr6-bars .cb.hl b { color: var(--r5-orange); }
+
+/* CTA-ряд витрины: кнопка + приписка */
+.cxr6-ctarow { display: flex; align-items: center; gap: 14px; margin-top: auto; }
+.cxr6-ctarow .cxm-tbtn { margin-top: 0; padding: 15px 28px; }
+.cxr6-meta { margin-left: auto; font-size: 12px; color: var(--r5-muted); text-align: right; }
+
+/* полоса «Не знаете, что выбрать?» — белая, на ширину карточек */
+body.cxm-choose #cxChooser .cxm-cta {
+  margin: 22px 30px 0; background: var(--r5-card); border: 1px solid var(--r5-line);
+  border-radius: 18px; padding: 18px 26px; box-shadow: none;
+}
+/* вторая кнопка полосы — «Тест · 2 мин» */
+.cxm-cta .cxr6-quizbtn {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #fff; color: var(--r5-text); border: 1px solid #d8e1ec; cursor: pointer;
+  font-family: inherit; font-size: 13px; font-weight: 650;
+  padding: 12px 20px; border-radius: 12px; margin-left: auto; white-space: nowrap;
+}
+.cxm-cta .cxr6-quizbtn:hover { border-color: #c2cede; }
+.cxm-cta .cxr6-quizbtn + .btn { margin-left: 10px; }
+
+/* ── РЕЖИМ MIX: «Стратегия» слева, «Прогноз» справа ────────── */
+@media (min-width: 1024px) {
+  body.cxm-mix .cx-rows.r5 .cx-split { grid-template-columns: 1fr 1.12fr; }
+}
+/* тёмное кольцо .act в R6 не используется и на рабочих карточках */
+.cx-rows.r5 .pk-card.act { box-shadow: var(--r5-shadow); }
+.cx-rows.r5 .pk-card.act .wm { color: rgba(17,25,39,.05); }
+
+/* содержимое карточки «Прогноз» */
+#cxFc { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+#cxFcBig {
+  font-family: var(--r5-mono); font-weight: 700; font-size: 36px;
+  color: var(--r5-text); margin-top: 14px; letter-spacing: -.01em;
+}
+#cxFcBig small { font-size: 15px; color: var(--r5-muted); font-weight: 600; }
+#cxFcRng { font-family: var(--r5-mono); font-size: 12.5px; color: var(--r5-muted); margin-top: 2px; }
+#cxFcChart { margin-top: 18px; }
+#cxFcChart svg { display: block; width: 100%; }
+#cxFcFacts {
+  display: flex; flex-wrap: wrap; gap: 24px;
+  border-top: 1px solid var(--r5-line); margin-top: 16px; padding-top: 16px;
+}
+#cxFcFacts .f {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13.5px; color: var(--r5-muted2);
+}
+#cxFcFacts .f b { font-family: var(--r5-mono); color: var(--r5-text); font-weight: 700; }
+#cxFcFacts .fic {
+  width: 30px; height: 30px; border-radius: 10px; background: #f0f4f9;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: var(--r5-muted2); font-family: var(--r5-mono);
+}
+
+/* CTA-ряд прогноза: кнопка «Рассчитать портфель» + комиссия + приписка */
+#cxFcCta { display: flex; align-items: center; gap: 14px; margin-top: auto; padding-top: 22px; }
+#cxFcCta #calcCtaBar { margin: 0; padding: 0; flex: none; }
+#cxFcCta .nd-btn-cta-g {
+  margin: 0; width: auto; border-radius: 14px; padding: 15px 28px;
+  font-size: 14.5px;
+}
+#cxFcCta .nd-btn-cta-g .cta-ic { display: none; }
+#cxFcCta .cxr6-meta { margin-left: auto; }
+/* комиссия — тихая пилюля; дропдаун открывается ВВЕРХ (низ карточки) */
+#cxFcCta .fee-selector-unified { position: relative; flex: none; }
+#cxFcCta .nd-fee-trigger {
+  border: 1px solid var(--r5-line); border-radius: 999px; padding: 9px 16px;
+  background: var(--r5-card); display: inline-flex; align-items: center; gap: 8px;
+}
+#cxFcCta .nd-fee-trigger .nd-broker-icon { display: none; }
+#cxFcCta .nd-broker-lbl { font-size: 12px; font-weight: 650; color: var(--r5-muted2); }
+#cxFcCta .nd-fee-pill { font-family: var(--r5-mono); font-size: 12px; font-weight: 700; }
+#cxFcCta .nd-fee-dd {
+  bottom: calc(100% + 8px); top: auto !important;
+  left: auto !important; right: 0; width: 230px; min-width: 0;
+}
+
+/* ── РЕЖИМ MONTHLY ─────────────────────────────────────────── */
+/* интро-оверлей пропускается (роль выполняет карточка на экране выбора) */
+body.cxm-monthly #panel-calc #miStartOverlay { display: none !important; }
+/* сумма и пресеты живут в герое */
+body.cxm-monthly #panel-calc .mi5-calc > .mi5-field { display: none; }
+
+/* ── Тёмная тема ───────────────────────────────────────────── */
+body.dark-mode .cxr6-big, body.dark-mode #cxFcBig { color: #e8edf5; }
+body.dark-mode #cxFcFacts .f b { color: #e8edf5; }
+body.dark-mode #cxFcFacts .fic { background: rgba(255,255,255,.06); }
+body.dark-mode .cx-rows.r5 .cxm-type { background: var(--r5-card); }
+body.dark-mode body.cxm-choose #cxChooser .cxm-cta { border-color: rgba(255,255,255,.09); }
+body.dark-mode .cxm-cta .cxr6-quizbtn {
+  background: rgba(255,255,255,.03); color: inherit; border-color: rgba(255,255,255,.14);
+}
+body.dark-mode #cxFcCta .nd-fee-trigger { background: rgba(255,255,255,.03); border-color: rgba(255,255,255,.14); }
+
+/* ── Мобайл: стек без перекрытий ───────────────────────────── */
+@media (max-width: 1023px) {
+  #cxHero { padding: 20px 20px 24px; border-radius: 18px; }
+  #cxHero .cxh-title { font-size: 27px; }
+  #cxHero .cxh-row { gap: 18px; }
+  #cxHero .cxh-amt { margin-left: 0; text-align: left; width: 100%; }
+  #cxHero .nd-input-hero.cx-amount-host { align-items: flex-start; }
+  #cxHero .nd-input-row { justify-content: flex-start; }
+  #cxHero .nd-sum-field { text-align: left; }
+  #cxHero .cxh-wm { font-size: 120px; right: 10px; top: -20px; }
+  body.cxm-choose #cxChooser,
+  body.cxm-mix #r5Split,
+  body.cxm-monthly #panel-calc #calcAccordion { margin-top: 0; }
+  .cx-rows.r5 .cxm-types { padding: 0; }
+  body.cxm-choose #cxChooser .cxm-cta { margin: 16px 0 0; }
+  .cx-rows.r5 .cxm-type { padding: 22px 20px; }
+  .cxr6-big { font-size: 27px; }
+  #cxFcBig { font-size: 30px; }
+  #cxFcCta { flex-wrap: wrap; }
+  .cxr6-ctarow { flex-wrap: wrap; }
+}
