@@ -1655,6 +1655,134 @@
             PF.pfCardHead('', 'Список активов', 'все бумаги по убыванию стоимости позиции', null) + body + '</div>';
     }
 
+    // «Позиции у брокера»: живой портфель счёта из T-Invest API (js/broker-api.js,
+    // через воркер-прокси). Каркас рендерится сразу (скелет/инвайт/замок), данные
+    // приходят асинхронно в #pfbrkList (паттерн новостей: fill-slot + pfdRepackSoon);
+    // кэш 60с — ре-рендеры дашборда не дёргают API брокера. Сверка: количество
+    // у брокера ↔ ручные лоты трекера по тикеру.
+    var brokerCache = { ts: 0, busy: false, data: null, err: null };
+    window.pfBrokerBust = function () { brokerCache = { ts: 0, busy: false, data: null, err: null }; };
+    var BRK_TYPES = { share: 'акц', bond: 'обл', etf: 'фонд', futures: 'фьюч' };
+
+    function pfwBrokerHtml() {
+        var A = window.brokerApi;
+        var conn = A && A.getConn();
+        var body, sub = 'портфель счёта из API Т-Инвестиций';
+        function invite(text, btnLabel, onclick) {
+            return '<div class="pfal-empty">' + text +
+                '<br><button type="button" class="pfbrk-btn" onclick="' + onclick + '">' + btnLabel + '</button></div>';
+        }
+        // sub уходит в PF.pfCardHead, который экранирует сам — без esc() тут (иначе двойное)
+        if (!A || !conn) {
+            body = invite('Подключите брокера — покажем позиции счёта, как их видят Т-Инвестиции. Хватит токена «только для чтения».',
+                'Подключить брокера', 'brokerConnect.open()');
+        } else if (conn.state === 'revoked') {
+            sub = 'Т-Инвестиции · ' + conn.accountName;
+            body = invite('Брокер не принял токен — он отозван или перевыпущен.', 'Обновить токен', 'brokerConnect.open()');
+        } else if (A.isSessionGone()) {
+            sub = 'Т-Инвестиции · ' + conn.accountName;
+            body = invite('Токен не сохранялся («до закрытия вкладки») — сессия закончилась. Вставьте его ещё раз.', 'Ввести токен', 'brokerConnect.open()');
+        } else if (A.isLocked()) {
+            sub = 'Т-Инвестиции · ' + conn.accountName;
+            body = invite('Токен под PIN-кодом — разблокируйте, чтобы загрузить позиции.', 'Разблокировать', 'pfBrokerUnlock()');
+        } else {
+            sub = 'Т-Инвестиции · ' + conn.accountName + (conn.sandbox ? ' · песочница' : '');
+            body = '<div id="pfbrkList">' + (brokerCache.data || brokerCache.err
+                ? pfwBrokerRowsHtml()
+                : '<div class="pfbrk-skel">' + skelHtml(150, 18) + skelHtml(210, 18) + skelHtml(180, 18) + '</div>') + '</div>';
+        }
+        return '<div class="dash2-card pf-card2 pf-brokerblk">' +
+            PF.pfCardHead('', 'Позиции у брокера', sub, null) + body + '</div>';
+    }
+
+    function pfwBrokerRowsHtml() {
+        if (brokerCache.err) return '<div class="pfal-empty">' + esc(brokerCache.err) + '</div>';
+        var d = brokerCache.data;
+        if (!d || !d.rows.length) return '<div class="pfal-empty">На счёте нет позиций — только деньги.</div>';
+        var lim = pfdRowsFor('broker', 6, 34, 130);
+        var head = '<div class="pfbrk-total"><span>Стоимость портфеля у брокера</span><b>' + fmtRub(d.total || 0) + '</b></div>';
+        return head + '<div class="pfas-list" data-skey="pfbroker">' + d.rows.slice(0, lim).map(function (r) {
+            var chg = r.pnl === 0 ? '<b class="muted">—</b>'
+                : '<b class="' + (r.pnl >= 0 ? 'pos' : 'neg') + '">' + (r.pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(r.pnl)) + '</b>';
+            // сверка с ручными лотами: количество разошлось — заметная метка
+            var diff = (r.manualQty !== undefined && Math.abs(r.manualQty - r.qty) > 1e-9)
+                ? '<i class="pfbrk-diff" title="В трекере ' + fmtQty(r.manualQty) + ' шт — у брокера ' + fmtQty(r.qty) + ' шт">≠ трекер</i>' : '';
+            var open = r.tkOk ? ' role="button" onclick="pfOpenTicker(\'' + jsArg(r.tk) + '\')"' : '';
+            return '<div class="pfas-row"' + open + '>' +
+                '<span class="pfas-id"><b>' + esc(r.tk) + '</b>' +
+                (BRK_TYPES[r.type] ? '<i class="' + (r.type === 'bond' ? 'bond' : 'stock') + '">' + BRK_TYPES[r.type] + '</i>' : '') +
+                '<span class="pfas-nm">' + esc(r.name) + '</span></span>' +
+                '<span class="pfas-qty">' + fmtQty(r.qty) + ' шт' + diff + '</span>' +
+                '<span class="pfas-val">' + fmtRub(r.value) + '</span>' +
+                chg +
+            '</div>';
+        }).join('') + '</div>';
+    }
+
+    // асинхронная догрузка (зовётся из цикла рендера portfolios.js — no-op без виджета)
+    function renderBrokerPos() {
+        var el = dq('pfbrkList');
+        if (!el) return;
+        var A = window.brokerApi;
+        if (!A || !A.getConn() || A.isLocked() || A.isSessionGone()) return;
+        if (brokerCache.busy || (brokerCache.ts && Date.now() - brokerCache.ts < 60000)) return;
+        brokerCache.busy = true;
+        A.getPortfolio().then(function (pf) {
+            var poss = (pf.positions || []).filter(function (p) {
+                return A.q2n(p.quantity) > 0 && p.instrumentType !== 'currency';
+            });
+            return A.resolveInstruments(poss).then(function (cache) {
+                // ручные количества по тикеру — для сверки с трекером
+                var manual = {};
+                try {
+                    visibleItems().forEach(function (p) {
+                        calcPf(p).hs.forEach(function (x) {
+                            if (x.c.qty > 0) manual[x.h.ticker] = (manual[x.h.ticker] || 0) + x.c.qty;
+                        });
+                    });
+                } catch (e) {}
+                var rows = poss.map(function (p) {
+                    var ins = cache[p.instrumentUid || p.figi] || {};
+                    var qty = A.q2n(p.quantity);
+                    var tk = ins.ticker || '';
+                    return {
+                        tk: tk || (p.figi || '').slice(0, 12), tkOk: !!tk,
+                        name: ins.name || '', type: p.instrumentType || '',
+                        qty: qty,
+                        value: A.q2n(p.currentPrice) * qty,
+                        pnl: A.q2n(p.expectedYield),
+                        manualQty: tk ? manual[tk] : undefined
+                    };
+                });
+                rows.sort(function (a, b) { return b.value - a.value; });
+                brokerCache = { ts: Date.now(), busy: false, err: null,
+                    data: { rows: rows, total: A.q2n(pf.totalAmountPortfolio) } };
+                fillBrokerSlot();
+            });
+        }).catch(function (e) {
+            brokerCache = { ts: Date.now(), busy: false, data: null,
+                err: (e && e.message) || 'Не удалось получить данные брокера' };
+            fillBrokerSlot();
+        });
+    }
+    function fillBrokerSlot() {
+        var el = dq('pfbrkList');
+        if (!el) return;
+        el.innerHTML = pfwBrokerRowsHtml();
+        pfdRepackSoon();
+    }
+    window.pfBrokerUnlock = function () {
+        if (!window.brokerApi) return;
+        window.brokerApi.getToken(true).then(function (t) {
+            if (t) { window.pfBrokerBust(); pfdRerender(); }
+        });
+    };
+    // подключили/отключили/разблокировали брокера — виджет перерисовывается
+    window.addEventListener('broker-conn-change', function () {
+        window.pfBrokerBust();
+        if (document.querySelector('#panel-portfolios.active .pf-brokerblk')) pfdRerender();
+    });
+
     // «Последние операции»: 5 свежих сделок компактным списком (при заданной высоте
     // блока строк больше/меньше — под размер, см. pfdRowsFor)
     function pfwOpsHtml() {
@@ -2163,4 +2291,5 @@
     PF.pfwPassiveHtml = pfwPassiveHtml; PF.pfwPlistHtml = pfwPlistHtml; PF.pfwPstructHtml = pfwPstructHtml; PF.pfwPsumHtml = pfwPsumHtml;
     PF.pfwReportsHtml = pfwReportsHtml; PF.pfwSnapsHtml = pfwSnapsHtml; PF.pfwYieldHtml = pfwYieldHtml; PF.potentialOf = potentialOf;
     PF.ratesHtml = ratesHtml; PF.ratesStackHtml = ratesStackHtml; PF.renderFavNews = renderFavNews; PF.renderPosNews = renderPosNews;
+    PF.pfwBrokerHtml = pfwBrokerHtml; PF.renderBrokerPos = renderBrokerPos;
 })();

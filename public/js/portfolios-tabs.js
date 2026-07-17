@@ -39,6 +39,9 @@
         ['reports',   'Отчёты',     PFXI('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/>')],
         ['divs',      'Дивиденды',  PFXI('<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>')],
         ['ops',       'Операции',   PFXI('<path d="M3 7h13"/><path d="M12.5 3.5 16 7l-3.5 3.5"/><path d="M21 17H8"/><path d="M11.5 13.5 8 17l3.5 3.5"/>')],
+        // «Торговля» — терминал этапа 2 (стакан/тикет/заявки); пока рендерит
+        // гейт-карточку по состоянию подключения брокера (pfxTradingHtml)
+        ['trading',   'Торговля',   PFXI('<path d="M3 17l5-5 3 3 7-8.5"/><polyline points="14 6.5 18 6.5 18 10.5"/><path d="M3 21h18"/>')],
         ['settings',  'Настройки',  PFDCFG_GEAR_SVG]   // та же шестерёнка, что у виджетов
     ];
     var PFX_TAB_KEY = 'pf_subtab_v1';   // локально (в облако не зеркалится — просто позиция UI)
@@ -225,6 +228,45 @@
         var slug = pfxIsPfTab(eff) ? 'pf-' + eff.slice(3) : eff;
         return '<div id="pfxTabPanel" role="tabpanel" aria-labelledby="pfxTab-' + slug + '">' + inner + '</div>';
     }
+
+    // ---- подвкладка «Торговля»: гейт по состоянию подключения брокера ----
+    // Терминал (стакан, тикет заявок, ордера) — этап 2; сейчас подвкладка честно
+    // говорит, что нужно для его включения. Карточка — язык пустых подвкладок
+    // (.pfx-emptytab/.pfpc-state), рендер зовёт portfolios.js вместо pfdBodyHtml.
+    function pfxTradingHtml() {
+        var A = window.brokerApi;
+        var conn = A && A.getConn();
+        var art = PFXI('<path d="M3 17l5-5 3 3 7-8.5"/><polyline points="14 6.5 18 6.5 18 10.5"/><path d="M3 21h18"/>');
+        var t, s, btn;
+        if (!conn) {
+            t = 'Торговый терминал';
+            s = 'Подключите Т-Инвестиции с уровнем «Торговля» — здесь появятся стакан, тикет заявок и ваши ордера. Для начала хватит и «Только чтения»: виджет «Позиции у брокера» уже работает.';
+            btn = '<button type="button" class="pfl-pv-add pfx-emptytab-btn" onclick="brokerConnect.open()"><span>Подключить брокера</span></button>';
+        } else if (conn.scope !== 'trade') {
+            t = 'Нужен торговый доступ';
+            s = 'Брокер подключён в режиме «Только чтение» — торговать им нельзя, и это правильно для просмотра. Для терминала выпустите у брокера токен с полным доступом и переключите режим в подключении.';
+            btn = '<button type="button" class="pfl-pv-add pfx-emptytab-btn" onclick="brokerConnect.open()"><span>Настроить подключение</span></button>';
+        } else if (conn.state === 'revoked') {
+            t = 'Токен не работает';
+            s = 'Брокер не принял токен — его отозвали или перевыпустили. Обновите токен в подключении, и терминал вернётся.';
+            btn = '<button type="button" class="pfl-pv-add pfx-emptytab-btn" onclick="brokerConnect.open()"><span>Обновить токен</span></button>';
+        } else if (conn.state === 'downgraded') {
+            t = 'Права токена урезали';
+            s = 'Токен стал «только для чтения» — торговать им нельзя. Выпустите у брокера токен с полным доступом и обновите его в подключении.';
+            btn = '<button type="button" class="pfl-pv-add pfx-emptytab-btn" onclick="brokerConnect.open()"><span>Обновить токен</span></button>';
+        } else {
+            t = 'Терминал готовится';
+            s = 'Торговое подключение активно' + (conn.sandbox ? ' (песочница)' : '') + ': счёт «' + esc(conn.accountName) +
+                '». Стакан, тикет заявок с подтверждением и журнал ордеров — следующий этап, он появится именно здесь.';
+            btn = '<button type="button" class="pfl-pv-add pfx-emptytab-btn" onclick="brokerConnect.open()"><span>Управлять подключением</span></button>';
+        }
+        return '<div class="pfd-grid pfd-masonry" id="pfdGrid">' +
+            '<div class="pfx-emptytab" style="grid-column: 1 / span 12"><div class="pfpc-state">' +
+            '<div class="pfpc-state-art">' + art + '</div>' +
+            '<div class="pfpc-state-t">' + t + '</div>' +
+            '<div class="pfpc-state-s">' + s + '</div>' + btn +
+            '</div></div></div>';
+    }
     // ---- R9.3: ряд вкладок скроллится, а не переносится ----
     // Затухание краёв показывает, что ряд продолжается (маска .fade-l/.fade-r по
     // фактическому scrollLeft), активная вкладка после рендера подъезжает в видимую
@@ -405,8 +447,11 @@
             '<div class="pfp-kpi"><div class="num">' + ddNum + '<span>за сегодня</span></div>' +
                 '<div class="sub" data-live="pfp:dd-sub">' + (hasDd ? 'к последнему дневному снимку' : 'появится со второго дня') + '</div></div>' +
         '</div>';
+        // «Торговля» — не дашборд-конструктор: кнопки «Виджет»/«Раскладки»
+        // там управляли бы пустым конфигом и только путали
+        var isTrading = pfxEffTab() === 'trading';
         var actions = '<div class="pfp-actions">' +
-            '<button type="button" class="pfp-btn primary" onclick="pfxAddWidgetClick()" title="Добавить виджет на дашборд">' + PFD_PLUS_SVG + '<span>Виджет</span></button>' +
+            (isTrading ? '' : '<button type="button" class="pfp-btn primary" onclick="pfxAddWidgetClick()" title="Добавить виджет на дашборд">' + PFD_PLUS_SVG + '<span>Виджет</span></button>') +
             '<button type="button" class="pfp-btn" onclick="pfAddPortfolio()" title="Создать новый портфель">' + PF.PLUS_SVG + '<span>Портфель</span></button>' +
             '<button type="button" class="pfp-btn icon' + (sumsOn ? ' on' : '') + '" onclick="pfxToggleSums()" title="' + (sumsOn ? 'Показать суммы' : 'Скрывать суммы от посторонних глаз') + '">' + (sumsOn ? PFX_LOCK_SVG : PFX_UNLOCK_SVG) + '</button>' +
             PF.eyeWrapHtml() +
@@ -414,9 +459,9 @@
             // R8: кнопка-слайдеры открывает ПАНЕЛЬ «Раскладки» (pfl3) текущей подвкладки —
             // пресеты с эскизами, базовая, своя сохранённая; прежний поповер остался
             // только в шапке страницы (index.html) как быстрый доступ
-            '<span class="pfl-cfg-wrap pfp-cfg' + (PF.pfl3Open ? ' active' : '') + '" style="display:inline-flex">' +
+            (isTrading ? '' : '<span class="pfl-cfg-wrap pfp-cfg' + (PF.pfl3Open ? ' active' : '') + '" style="display:inline-flex">' +
                 '<button type="button" class="pfl-cfg-btn" onclick="pfLayoutsToggle(event)" title="Раскладки подвкладки: пресеты, базовая, сохранённая" aria-label="Панель раскладок">' + PFP_SLIDERS_SVG + '</button>' +
-            '</span>' +
+            '</span>') +
         '</div>';
         return '<div class="pfp-panel pfx-hero">' +
             '<div class="pfp-fx" aria-hidden="true"><i class="g1"></i><i class="g2"></i><i class="mesh"></i></div>' +
@@ -809,4 +854,5 @@
     PF.pfxOpenPfTabs = pfxOpenPfTabs; PF.pfxPanelWrap = pfxPanelWrap; PF.pfxSaveOpenTabs = pfxSaveOpenTabs; PF.pfxSeedLayout = pfxSeedLayout;
     PF.pfxSetCardHtml = pfxSetCardHtml; PF.pfxSyncPath = pfxSyncPath; PF.pfxTabPortsHtml = pfxTabPortsHtml; PF.pfxTabsHtml = pfxTabsHtml;
     PF.pfxTabsScrollSync = pfxTabsScrollSync; PF.pfxVisRowsHtml = pfxVisRowsHtml; PF.pfxWide = pfxWide;
+    PF.pfxTradingHtml = pfxTradingHtml;
 })();

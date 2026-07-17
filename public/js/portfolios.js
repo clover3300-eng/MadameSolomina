@@ -190,7 +190,11 @@
             // (aria-controls вкладок ведёт на #pfxTabPanel); без ряда — как есть
             var wrapPanel = chrome ? pfxPanelWrap : function (x) { return x; };
             var body;
-            if (pfxEffTab() !== 'overview') {
+            if (pfxEffTab() === 'trading') {
+                // «Торговля»: гейт-карточка по состоянию брокера вместо конструктора
+                // (терминал — этап 2, см. pfxTradingHtml в portfolios-tabs.js)
+                body = chrome + wrapPanel(PF.pfxTradingHtml());
+            } else if (pfxEffTab() !== 'overview') {
                 body = chrome + wrapPanel(pfdBodyHtml(favStr, noBonds));
             } else if (pfdActive()) {
                 // Конструктор: пользовательская раскладка — единая 12-колоночная
@@ -252,6 +256,7 @@
             tickLive();
             renderFavNews();
             renderPosNews();        // блок «Новости по позициям» (no-op, если не включён)
+            PF.renderBrokerPos();   // блок «Позиции у брокера»: догрузка из API (no-op без виджета)
             pfdHeatRepaintSoon();   // блок «Карта рынка»: дорисовать живые плитки
             ensureLiveTick();
             var payBody = document.querySelector('.pf-paycal--cell .pfpc-body');

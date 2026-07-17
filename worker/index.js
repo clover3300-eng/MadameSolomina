@@ -331,14 +331,124 @@ async function handleNotify(request, env) {
     });
 }
 
+// =============================================
+// POST /api/broker/tinkoff/<Метод> — прокси к T-Invest API
+// =============================================
+// Браузер не может ходить в invest-public-api.tinkoff.ru напрямую (CORS),
+// поэтому запросы пробрасывает воркер. Токен брокера приходит в Authorization
+// и НИКОГДА не логируется и не сохраняется — чистый passthrough; ответы
+// не кэшируются, тексты ошибок апстрима наружу не пробрасываем.
+// Защита:
+//   · whitelist методов + требуемый уровень доступа (X-Broker-Scope):
+//     даже если UI по ошибке дёрнет торговый метод при read-подключении,
+//     прокси его не пропустит;
+//   · Origin строго свой — мы не открытый прокси для чужих сайтов
+//     (заодно анти-CSRF: чужая страница наш заголовок не подделает);
+//   · хост назначения фиксирован, клиент влияет только на имя метода;
+//   · лимит тела и таймаут.
+// Песочница: X-Broker-Sandbox: 1 → sandbox-хост T-Invest (тот же контракт).
+
+var TI_HOST = 'https://invest-public-api.tinkoff.ru';
+var TI_SANDBOX_HOST = 'https://sandbox-invest-public-api.tinkoff.ru';
+var TI_PATH = '/rest/tinkoff.public.invest.api.contract.v1.';
+var TI_TIMEOUT_MS = 15000;
+var TI_MAX_BODY = 8192;
+
+// Этап 1 — только чтение. Торговые методы (PostOrder, CancelOrder,
+// GetOrders…) добавятся сюда со scope:'trade' на этапе 2.
+var TI_METHODS = {
+    GetAccounts:      { svc: 'UsersService',       scope: 'read' },
+    GetInfo:          { svc: 'UsersService',       scope: 'read' },
+    GetPortfolio:     { svc: 'OperationsService',  scope: 'read' },
+    GetPositions:     { svc: 'OperationsService',  scope: 'read' },
+    GetOperations:    { svc: 'OperationsService',  scope: 'read' },
+    GetInstrumentBy:  { svc: 'InstrumentsService', scope: 'read' },
+    GetLastPrices:    { svc: 'MarketDataService',  scope: 'read' },
+    GetOrderBook:     { svc: 'MarketDataService',  scope: 'read' },
+    GetTradingStatus: { svc: 'MarketDataService',  scope: 'read' }
+};
+
+function brokerJson(body, status) {
+    return new Response(JSON.stringify(body), {
+        status: status || 200,
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
+    });
+}
+
+async function handleBrokerProxy(request, url) {
+    // только со своих страниц: браузер шлёт Origin на любой кросс- и same-origin POST
+    var origin = request.headers.get('Origin') || '';
+    if (origin !== url.origin) return brokerJson({ error: 'forbidden_origin' }, 403);
+
+    var method = url.pathname.slice('/api/broker/tinkoff/'.length);
+    // hasOwnProperty: голый TI_METHODS['constructor'] truthy через прототип
+    var def = Object.prototype.hasOwnProperty.call(TI_METHODS, method) ? TI_METHODS[method] : null;
+    if (!def) return brokerJson({ error: 'unknown_method' }, 404);
+
+    // read-методы доступны любому подключению, trade — только заявленной «торговле»
+    var scope = request.headers.get('X-Broker-Scope') || 'read';
+    if (def.scope === 'trade' && scope !== 'trade') {
+        return brokerJson({ error: 'scope_not_allowed' }, 403);
+    }
+
+    // токены T-Invest начинаются с «t.» — заодно отсекаем случайно
+    // вставленный не-токен до того, как он уедет к брокеру
+    var auth = request.headers.get('Authorization') || '';
+    if (!/^Bearer t\.[A-Za-z0-9_\-]{20,200}$/.test(auth)) {
+        return brokerJson({ error: 'bad_token_format' }, 401);
+    }
+
+    var bodyText = await request.text();
+    if (bodyText.length > TI_MAX_BODY) return brokerJson({ error: 'body_too_large' }, 413);
+    if (!bodyText) bodyText = '{}';
+
+    var host = request.headers.get('X-Broker-Sandbox') === '1' ? TI_SANDBOX_HOST : TI_HOST;
+    try {
+        var upstream = await fetch(host + TI_PATH + def.svc + '/' + method, {
+            method: 'POST',
+            headers: { Authorization: auth, 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: bodyText,
+            signal: AbortSignal.timeout(TI_TIMEOUT_MS)
+        });
+        // тело отдаём как есть (JSON брокера), заголовки — только свои
+        var text = await upstream.text();
+        return new Response(text, {
+            status: upstream.status,
+            headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
+        });
+    } catch (e) {
+        // таймаут или сеть; деталей не раскрываем и ничего не логируем
+        return brokerJson({ error: 'upstream_unreachable' }, 502);
+    }
+}
+
 // Базовые защитные заголовки для всей статики.
 // frame-ancestors разрешает web.telegram.org: веб-версия Telegram открывает
 // мини-аппы в iframe (мобильный/десктопный клиенты — нативный webview, им
 // заголовок не мешает). Остальным сайтам встраивать нас нельзя (кликджекинг).
+// 2026-07-17 (задел под API брокера): HSTS, Permissions-Policy и полный CSP
+// в режиме Report-Only — он ничего не блокирует, а репортит нарушения в
+// консоль браузера; после обкатки политику можно переносить в боевой
+// Content-Security-Policy. Список источников собран по факту из index.html
+// и fetch'ей в public/js (MOEX ISS, Google CSV, Supabase, TradingView,
+// Telegram, Binance, Яндекс-функции).
 var SECURITY_HEADERS = {
     'Content-Security-Policy': "frame-ancestors 'self' https://web.telegram.org; object-src 'none'; base-uri 'self'",
     'X-Content-Type-Options': 'nosniff',
-    'Referrer-Policy': 'strict-origin-when-cross-origin'
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=()',
+    'Content-Security-Policy-Report-Only':
+        "default-src 'self'; " +
+        "script-src 'self' 'unsafe-inline' https://telegram.org https://s3.tradingview.com; " +
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+        "font-src 'self' data: https://fonts.gstatic.com; " +
+        "img-src 'self' data: blob: https:; " +
+        "connect-src 'self' https://iss.moex.com https://docs.google.com https://*.googleusercontent.com " +
+            "https://*.supabase.co https://functions.yandexcloud.net https://api.binance.com " +
+            "https://*.tradingview.com wss://*.tradingview.com; " +
+        "frame-src https://*.tradingview.com https://www.tradingview-widget.com https://oauth.telegram.org; " +
+        "frame-ancestors 'self' https://web.telegram.org; object-src 'none'; base-uri 'self'; form-action 'self'"
 };
 
 export default {
@@ -349,6 +459,9 @@ export default {
         }
         if (url.pathname === '/api/notify' && request.method === 'POST') {
             return handleNotify(request, env);
+        }
+        if (url.pathname.indexOf('/api/broker/tinkoff/') === 0 && request.method === 'POST') {
+            return handleBrokerProxy(request, url);
         }
         var res = await env.ASSETS.fetch(request);
         res = new Response(res.body, res);

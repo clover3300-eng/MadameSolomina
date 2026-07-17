@@ -87,6 +87,12 @@
     // наружу токен не отправляем, а из старых облачных строк вычищаем.
     var SETTINGS_KEY = 'profile_settings_v1';
     var LOCAL_TOKEN_KEY = 'broker_token_local_v1';
+    // Второй заслон для секретов брокера (broker-api.js): этих ключей нет в
+    // WATCH, но даже если однажды по ошибке появятся — в облако не уедут.
+    var LOCAL_ONLY = [
+        LOCAL_TOKEN_KEY, 'broker_conn_local_v1', 'broker_token_session_v1',
+        'broker_journal_local_v1', 'broker_instr_cache_v1'
+    ];
 
     function stripSecretsForPush(key, value) {
         if (key === SETTINGS_KEY && value && typeof value === 'object' && value.brokerToken !== undefined) {
@@ -126,6 +132,7 @@
     };
 
     function onLocalWrite(key) {
+        if (LOCAL_ONLY.indexOf(key) !== -1) return;
         if (applying || WATCH.indexOf(key) === -1 || !authed()) return;
         pending[key] = true;
         clearTimeout(pushTimer);
@@ -135,8 +142,8 @@
     // ---------- push ----------
     function pushPending() {
         if (!authed()) { pending = {}; return Promise.resolve(); }
-        var keys = Object.keys(pending);
-        if (!keys.length) return Promise.resolve();
+        var keys = Object.keys(pending).filter(function (k) { return LOCAL_ONLY.indexOf(k) === -1; });
+        if (!keys.length) { pending = {}; return Promise.resolve(); }
         pending = {};
 
         var rows = keys.map(function (k) {

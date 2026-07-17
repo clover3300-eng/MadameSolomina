@@ -83,6 +83,14 @@
         try { localStorage.setItem(LS_PROFILE, JSON.stringify(next)); } catch (e) {}
     }
     function logout() {
+        // чужой компьютер: предлагаем забрать с устройства и токен брокера.
+        // Нативный confirm — сознательно: сразу после него страница перезагрузится
+        // (signOut), собственной модалке дожить не дадут.
+        if (window.brokerApi && window.brokerApi.hasConn()) {
+            var wipe = window.confirm('Стереть с этого устройства и подключение брокера вместе с токеном?\n«OK» — стереть (чужой компьютер), «Отмена» — оставить для следующего входа.');
+            if (wipe) window.brokerApi.disconnect('выход из аккаунта', true);
+            else window.brokerApi.lock();
+        }
         if (cloudOn()) {
             // supa.signOut дожимает синхронизацию, чистит устройство и перезагружает
             window.supa.signOut();
@@ -293,13 +301,10 @@
                     '<div class="ph-body"><div class="ph-body-in"><div class="ph-body-pad">' +
                         '<div class="ph-field"><label class="ph-lab" for="phBroker">Брокер</label>' +
                             '<select class="ph-select" id="phBroker">' + buildOptions(BROKERS, s.brokerId || 'tinkoff') + '</select></div>' +
-                        '<div class="ph-field"><label class="ph-lab" for="phToken">API-токен</label>' +
-                            '<div class="ph-tokwrap">' +
-                                '<input class="ph-input" id="phToken" type="password" placeholder="t.xxxxxxxx…" autocomplete="off" spellcheck="false">' +
-                                '<button class="ph-eye" type="button" id="phEye" aria-label="Показать токен">' + IC.eye + '</button>' +
-                            '</div></div>' +
-                        '<div class="ph-hint">' + IC.shield + '<span>Токен хранится только в этом браузере и никуда не отправляется. После подключения аккаунтов он позволит автоматически загружать позиции и сделки от брокера.</span></div>' +
-                        '<button class="ph-save" type="button" id="phSaveTok">' + IC.check + 'Сохранить токен</button>' +
+                        // статус подключения рисует renderBkState() (строки .bk-kv из broker.css)
+                        '<div class="ph-bkstate" id="phBkState"></div>' +
+                        '<div class="ph-hint">' + IC.shield + '<span>Подключение через официальное API брокера: выбираете уровень доступа, мы сверяем его с токеном. Токен хранится только на этом устройстве (можно под PIN-кодом), в облако не попадает. Пароль от банка мы не спрашиваем никогда.</span></div>' +
+                        '<button class="ph-save" type="button" id="phConnectBroker">' + IC.key + '<span id="phConnectLbl">Подключить брокера</span></button>' +
                     '</div></div></div>' +
                 '</div>' +
 
@@ -347,10 +352,7 @@
                 '<span id="phFootBtn"></span>' +
             '</div>';
         document.body.appendChild(hub);
-
-        var tok = hub.querySelector('#phToken');
-        var savedTok = getBrokerToken();
-        if (tok && savedTok) tok.value = savedTok;
+        renderBkState();
     }
 
     function buildFab() {
@@ -596,26 +598,64 @@
         }
 
         renderApiSub();
+        renderBkState();
         applyAuditBadge();   // innerHTML выше стирает «!» на аватаре — возвращаем
     }
 
     function renderApiSub() {
-        var s = getSettings();
         var sub = hub.querySelector('#phSubApi');
-        // под замком «Токен не задан» звучало бы упрёком — говорим, чего не хватает
+        // под замком «Не подключён» звучало бы упрёком — говорим, чего не хватает
         if (hub.dataset.authState !== 'cloud-user') {
             sub.textContent = 'Доступно с аккаунтом';
             sub.classList.remove('ok');
             return;
         }
-        if (getBrokerToken()) {
-            var b = BROKERS.filter(function (x) { return x.id === s.brokerId; })[0];
-            sub.textContent = (b ? b.name : 'Брокер') + ' · токен сохранён';
-            sub.classList.add('ok');
+        var conn = window.brokerApi && window.brokerApi.getConn();
+        if (conn) {
+            var st = conn.state === 'revoked' ? 'токен отозван'
+                : (conn.scope === 'trade' ? 'торговля' : 'чтение');
+            sub.textContent = 'Т-Инвестиции · ' + st + (conn.sandbox ? ' · песочница' : '');
+            sub.classList.toggle('ok', conn.state !== 'revoked');
+        } else if (getBrokerToken()) {
+            // токен, сохранённый по-старому (до визарда) — не потерян, ждёт проверки
+            sub.textContent = 'Токен сохранён — завершите подключение';
+            sub.classList.remove('ok');
         } else {
-            sub.textContent = 'Токен не задан';
+            sub.textContent = 'Не подключён';
             sub.classList.remove('ok');
         }
+    }
+
+    // Статус подключения в теле секции: строки .bk-kv переиспользуем из
+    // broker.css (визард и кабинет говорят на одном визуальном языке)
+    function renderBkState() {
+        var box = hub && hub.querySelector('#phBkState');
+        if (!box) return;
+        var lbl = hub.querySelector('#phConnectLbl');
+        var conn = window.brokerApi && window.brokerApi.getConn();
+        if (!conn) {
+            box.innerHTML = getBrokerToken()
+                ? '<div class="ph-hint">' + IC.key + '<span>Нашли токен, сохранённый по-старому. Пройдите подключение — проверим его у брокера и переведём на новое хранение.</span></div>'
+                : '';
+            if (lbl) lbl.textContent = 'Подключить брокера';
+            return;
+        }
+        var A = window.brokerApi;
+        var stPill = conn.state === 'revoked'
+            ? '<i class="bk-pill">токен отозван</i>'
+            : (conn.state === 'downgraded'
+                ? '<i class="bk-pill bk-pill-amber">права урезаны</i>'
+                : '<i class="bk-pill bk-pill-green">работает</i>');
+        box.innerHTML =
+            '<div class="bk-kv"><span>Счёт</span><b>' + escHtml(conn.accountName) + '</b></div>' +
+            '<div class="bk-kv"><span>Режим</span><b>' + (conn.scope === 'trade' ? 'Торговля' : 'Только чтение') +
+                (conn.sandbox ? ' <i class="bk-pill bk-pill-amber">песочница</i>' : '') + '</b></div>' +
+            '<div class="bk-kv"><span>Токен</span><b class="bk-mono">' + escHtml(A.maskTail(conn.tokenTail)) + ' ' + stPill + '</b></div>';
+        if (lbl) lbl.textContent = 'Управлять подключением';
+    }
+    function escHtml(s) {
+        return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
     // ---------- обработчики ----------
@@ -650,13 +690,17 @@
         });
     }
 
-    function onSaveToken() {
+    function onConnectBroker() {
         var brokerId = hub.querySelector('#phBroker').value;
-        var token = (hub.querySelector('#phToken').value || '').trim();
         saveSettings({ brokerId: brokerId });
-        setBrokerToken(token);
-        renderApiSub();
-        toast(token ? 'Токен сохранён в этом браузере' : 'Токен удалён');
+        if (brokerId !== 'tinkoff') {
+            toast('Пока подключаются только Т-Инвестиции — остальные брокеры на подходе', true);
+            return;
+        }
+        if (window.brokerConnect) {
+            closeHub();
+            window.brokerConnect.open();
+        }
     }
 
     function onLogout(e) {
@@ -736,9 +780,12 @@
     }
     function wipeLocalData() {
         var keys = appDataKeys().concat([
-            'home_profile_v1', LS_TOKEN, 'supa_sync_meta_v1', 'supa_seen_ping_v1'
+            'home_profile_v1', LS_TOKEN, 'supa_sync_meta_v1', 'supa_seen_ping_v1',
+            // подключение брокера: метаданные, журнал, кэш инструментов (см. broker-api.js)
+            'broker_conn_local_v1', 'broker_journal_local_v1', 'broker_instr_cache_v1'
         ]);
         keys.forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
+        try { sessionStorage.removeItem('broker_token_session_v1'); } catch (e) {}
     }
     function onExportData() {
         try {
@@ -905,12 +952,17 @@
             });
         });
 
-        // токен: глаз + сохранить; селекты/переключатели настроек
-        hub.querySelector('#phEye').addEventListener('click', function () {
-            var inp = hub.querySelector('#phToken');
-            inp.type = inp.type === 'password' ? 'text' : 'password';
+        // брокер: визард подключения; селекты/переключатели настроек
+        hub.querySelector('#phConnectBroker').addEventListener('click', onConnectBroker);
+        hub.querySelector('#phBroker').addEventListener('change', function () {
+            saveSettings({ brokerId: this.value });
         });
-        hub.querySelector('#phSaveTok').addEventListener('click', onSaveToken);
+        // визард сообщает о подключении/отключении/блокировке — обновляем статус
+        window.addEventListener('broker-conn-change', function () {
+            if (!hub) return;
+            renderApiSub();
+            renderBkState();
+        });
         hub.querySelector('#phStartTab').addEventListener('change', function () {
             saveSettings({ startTab: this.value });
             toast('Стартовый раздел: ' + this.options[this.selectedIndex].text);

@@ -612,6 +612,7 @@
         // месячная сетка выплат — отдельный виджет рядом со списочным «Календарём выплат» (cal)
         blocks.push({ id: 'calm', name: 'Календарь · месяц', htmlFn: function () { return PF.pfcmCardHtml(); }, span: 4, defHidden: true });
         blocks.push({ id: 'assets', name: 'Список активов', htmlFn: PF.pfwAssetsHtml, span: 4, defHidden: true });
+        blocks.push({ id: 'broker', name: 'Позиции у брокера', htmlFn: PF.pfwBrokerHtml, span: 4, defHidden: true });
         blocks.push({ id: 'ops', name: 'Последние операции', htmlFn: PF.pfwOpsHtml, span: 4, defHidden: true });
         blocks.push({ id: 'yield', name: 'Доходность портфелей', htmlFn: PF.pfwYieldHtml, span: 4, defHidden: true });
         blocks.push({ id: 'snaps', name: 'Снимки капитала', htmlFn: PF.pfwSnapsHtml, span: 4, defHidden: true });
@@ -2581,6 +2582,7 @@
             { id: 'divs', name: 'Дивиденды', desc: 'Ожидаемые и полученные дивиденды и купоны', cats: ['pop', 'divs', 'cal'] },
             { id: 'heat', name: 'Карта рынка', desc: 'Тепловая карта рынка по секторам и компаниям', cats: ['pop', 'market'] },
             { id: 'assets', name: 'Список активов', desc: 'Ваши активы и их текущая стоимость', cats: ['assets', 'over'] },
+            { id: 'broker', name: 'Позиции у брокера', desc: 'Живой портфель счёта из API Т-Инвестиций со сверкой с трекером', cats: ['pop', 'assets', 'over'] },
             { id: 'ops', name: 'Последние операции', desc: 'История последних операций по портфелю', cats: ['assets', 'other'] },
             { id: '__note', name: 'Заметка', desc: 'Быстрая заметка, список задач или идеи', cats: ['notes', 'other'] },
             { id: 'kpi:next', name: 'Ближайшая выплата', desc: 'Ближайший купон или дивиденд — дата и сумма', cats: ['divs', 'cal'] },
@@ -2764,6 +2766,12 @@
             return '<div class="dm-rows">' +
                 '<span class="dm-row"><em>SBER</em><i>100 шт</i><b>31 045 ₽</b></span>' +
                 '<span class="dm-row"><em>LKOH</em><i>12 шт</i><b>84 300 ₽</b></span>' +
+                '<span class="dm-row"><em>ОФЗ 26248</em><i>280 шт</i><b>162 063 ₽</b></span></div>';
+        }
+        if (id === 'broker') {
+            return '<div class="dm-rows">' +
+                '<span class="dm-row"><em>SBER</em><i>Т-Инвестиции</i><b>31 045 ₽</b></span>' +
+                '<span class="dm-row"><em>LKOH</em><i>12 шт</i><b class="pos">+4 210 ₽</b></span>' +
                 '<span class="dm-row"><em>ОФЗ 26248</em><i>280 шт</i><b>162 063 ₽</b></span></div>';
         }
         if (id === 'ops') {
