@@ -110,7 +110,7 @@
     // Витрина целиком кликабельна (кнопка внутри — визуальная, клик всплывает)
     ch.querySelectorAll('.cxm-type').forEach(function (t) {
       t.addEventListener('click', function () {
-        setMode(t.getAttribute('data-mode'));
+        openMode(t.getAttribute('data-mode'));
         haptic('light');
       });
     });
@@ -137,6 +137,19 @@
       return !!(mo && mo.started);
     } catch (e) { return false; }
   }
+  // Клик по витрине. Новый расчёт открывает калькулятор, а сохранённый —
+  // сразу результат, как обещает надпись «Продолжить»: у смешанного результат
+  // живёт на вкладке «Портфель» (тот же переход, что у подпункта calc-mix в
+  // сайдбаре), у купонного результатом служит сама корзина — это режим monthly.
+  function openMode(m) {
+    if (m === 'mix' && savedFor('mix')) {
+      if (typeof window.sbOpenGroup === 'function') window.sbOpenGroup('calc');
+      if (typeof switchTab === 'function') switchTab('portfolio');
+      return;
+    }
+    setMode(m);
+  }
+
   function refreshResumeBadges() {
     var ch = document.getElementById('cxChooser');
     if (!ch) return;

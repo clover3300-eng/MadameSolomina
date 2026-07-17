@@ -713,6 +713,19 @@
         .v3-createpf-btn:hover { transform: translateY(-1px); box-shadow: 0 20px 34px -14px rgba(229,118,106,0.9); }
         .v3-createpf-btn .ic { display: inline-flex; color: #ffffff; }
 
+        /* Чек-лист покупок раскрыт — своё дело кнопка сделала, и акцент внутри
+           списка теперь у «Создать портфель». Гасим её до тихой призрачной:
+           повторный клик закрывает список, поэтому она остаётся читаемой. */
+        #portfolio-page-buy:has(#pfRightCol.v3-buy-open) .pcap-actions .v3-createpf-btn {
+            background: rgba(255,255,255,0.07);
+            color: #c8d3e0; box-shadow: none;
+        }
+        #portfolio-page-buy:has(#pfRightCol.v3-buy-open) .pcap-actions .v3-createpf-btn:hover {
+            background: rgba(255,255,255,0.13);
+            color: #ffffff; transform: none; box-shadow: none;
+        }
+        #portfolio-page-buy:has(#pfRightCol.v3-buy-open) .pcap-actions .v3-createpf-btn .ic { color: inherit; }
+
         /* «Новый расчёт» — лёгкая текстовая мятная кнопка (референс) */
         .v3-recalc-btn {
             display: flex; align-items: center; justify-content: center; gap: 8px;

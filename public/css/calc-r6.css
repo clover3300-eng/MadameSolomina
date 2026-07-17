@@ -271,11 +271,21 @@ body.cxm-monthly #panel-calc .mi5-next {
 body.cxm-monthly #panel-calc .mi5-next-r { margin-left: auto; }
 body.cxm-monthly #panel-calc .mi5-next-am { color: var(--r5-orange); font-size: 19px; }
 
+/* Лента выплат («Подробнее»): ближайшая выплата — оранжевая, как весь акцент
+   экрана дохода и как её же сумма в подвале «Корзины ОФЗ» (была зелёная). */
+body.cxm-monthly #panel-calc .mi5-pay.is-next {
+  background: linear-gradient(90deg, rgba(240,140,58,.09), rgba(240,140,58,0) 78%);
+}
+body.cxm-monthly #panel-calc .mi5-pay.is-next .mi5-pay-rail .dot {
+  border-color: var(--mi-orange); box-shadow: 0 0 0 4px rgba(240,140,58,.16);
+}
+body.cxm-monthly #panel-calc .mi5-pay.is-next .mi5-pay-amt .am { color: var(--mi-orange); }
+
 /* Подвал баннера дохода: «Итого за год / сумма» + «% годовых» — простая
    строка под линейкой .mi5-foot, как в мокапе (была плашка-коробка из двух
    центрованных ячеек). Подпись «в год» → «Итого за год» ставит calc-r6.js. */
 body.cxm-monthly #panel-calc .mi5-cb-stats {
-  display: flex; align-items: flex-end; gap: 20px;
+  display: flex; align-items: flex-end; justify-content: flex-end; gap: 20px;
   background: transparent; border: none; border-radius: 0;
   min-height: 0; overflow: visible;
 }

@@ -32,10 +32,13 @@ document.addEventListener('DOMContentLoaded', function() {
             window.pfFitNumbers && window.pfFitNumbers();
         }, 100);
     });
-    // Init sum input — 64px, width so it's tappable
+    // Init sum input — 64px, width so it's tappable.
+    // В дизайне R6 поле живёт в тёмном герое «Расчёта» и размер ему считает
+    // calc-r6.js (heroSizing) — там 64px/1ch обрезали бы сумму до «1 ₽».
     var sumEl = document.getElementById('sumInput');
     if (sumEl) {
         setTimeout(function() {
+            if (document.getElementById('cxHero')) return;
             sumEl.style.setProperty('font-size', '64px', 'important');
             sumEl.style.setProperty('width', '1ch', 'important');
             sumEl.style.setProperty('min-width', '1ch', 'important');
