@@ -32,10 +32,13 @@
         uid: null, meta: null,        // выбранный инструмент и его паспорт
         ob: null, status: null,       // стакан и статус торгов
         side: 'buy', kind: 'limit', price: '', lots: 1,
-        orders: [], sent: [],         // активные заявки; таймстемпы отправок (velocity)
+        stopKind: 'sl', stopPrice: '',// стоп-заявки: стоп-лосс/тейк-профит + цена активации
+        orders: [], stops: [],        // активные заявки и стоп-заявки
+        tape: [],                     // лента обезличенных сделок
+        sent: [],                     // таймстемпы отправок (velocity)
         orderId: null,                // idempotency-ключ текущего подтверждения
         search: [], searchQ: '',
-        obTimer: null, ordTimer: null, stTimer: null,
+        obTimer: null, ordTimer: null, stTimer: null, tapeTimer: null,
         busy: false
     };
     var instrMem = {};   // uid -> паспорт (lot, шаг цены) на время сессии
@@ -88,7 +91,22 @@
         var title = T.meta
             ? '<div class="btr-instr"><b>' + esc(T.meta.ticker) + '</b><span>' + esc(T.meta.name) + '</span>' + statusPill() + '</div>'
             : '';
-        return head + search + title + '<div id="btOb">' + obHtml() + '</div>';
+        var tape = T.uid
+            ? '<div class="bk-lab btr-jlab">Лента сделок</div><div class="btr-tape" id="btTape">' + tapeHtml() + '</div>'
+            : '';
+        return head + search + title + '<div id="btOb">' + obHtml() + '</div>' + tape;
+    }
+    function tapeHtml() {
+        if (!T.tape.length) return '<div class="btr-tape-empty">Сделок за последние минуты нет.</div>';
+        var q2n = A().q2n;
+        return T.tape.slice(0, 10).map(function (t) {
+            var buy = t.direction === 'TRADE_DIRECTION_BUY';
+            var tm = '';
+            try { tm = new Date(t.time).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }); } catch (e) {}
+            return '<div class="btr-tape-row"><i>' + tm + '</i>' +
+                '<b class="' + (buy ? 'bid' : 'ask') + '">' + fmtPrice(q2n(t.price)) + '</b>' +
+                '<span>' + (+t.quantity || 0).toLocaleString('ru-RU') + '</span></div>';
+        }).join('');
     }
     function obHtml() {
         if (!T.uid) return '<div class="pfal-empty">Найдите бумагу в поиске — стакан появится здесь. Подсказка: тикеры есть в виджете «Позиции у брокера».</div>';
@@ -125,13 +143,22 @@
         var shares = T.lots * (T.meta.lot || 1);
         var est = estPrice();
         var sum = est * shares;
+        var kindFields;
+        if (T.kind === 'limit') {
+            kindFields = '<div class="ph-field"><label class="ph-lab" for="btPrice">Цена, ₽ (шаг ' + fmtPrice(T.meta.minInc || 0.01) + ')</label>' +
+                '<input class="ph-input" id="btPrice" type="number" step="' + (T.meta.minInc || 0.01) + '" min="0" value="' + esc(T.price) + '"></div>';
+        } else if (T.kind === 'stop') {
+            kindFields = seg('btStopKind', [['sl', 'Стоп-лосс'], ['tp', 'Тейк-профит']], T.stopKind, 'pftStopKind') +
+                '<div class="ph-field"><label class="ph-lab" for="btStop">Стоп-цена, ₽ (активация)</label>' +
+                '<input class="ph-input" id="btStop" type="number" step="' + (T.meta.minInc || 0.01) + '" min="0" value="' + esc(T.stopPrice) + '"></div>' +
+                '<div class="btr-mktnote">При достижении стоп-цены уйдёт рыночная заявка. Действует до отмены.</div>';
+        } else {
+            kindFields = '<div class="btr-mktnote">По лучшей цене стакана — итог зависит от рынка.</div>';
+        }
         return head +
             seg('btSide', [['buy', 'Купить'], ['sell', 'Продать']], T.side, 'pftSide') +
-            seg('btKind', [['limit', 'Лимитная'], ['market', 'Рыночная']], T.kind, 'pftKind') +
-            (T.kind === 'limit'
-                ? '<div class="ph-field"><label class="ph-lab" for="btPrice">Цена, ₽ (шаг ' + fmtPrice(T.meta.minInc || 0.01) + ')</label>' +
-                  '<input class="ph-input" id="btPrice" type="number" step="' + (T.meta.minInc || 0.01) + '" min="0" value="' + esc(T.price) + '"></div>'
-                : '<div class="btr-mktnote">По лучшей цене стакана — итог зависит от рынка.</div>') +
+            seg('btKind', [['limit', 'Лимитная'], ['market', 'Рыночная'], ['stop', 'Стоп']], T.kind, 'pftKind') +
+            kindFields +
             '<div class="ph-field"><label class="ph-lab" for="btLots">Лоты (1 лот = ' + (T.meta.lot || 1) + ' шт)</label>' +
             '<input class="ph-input" id="btLots" type="number" step="1" min="1" value="' + T.lots + '"></div>' +
             '<div class="btr-est"><div class="btr-est-l"><span>' + (T.kind === 'limit' ? 'Итого' : 'Итого ≈') + '</span><i>' + shares.toLocaleString('ru-RU') + ' шт</i></div><b>' + fmtRub(sum) + '</b></div>' +
@@ -145,6 +172,7 @@
     function estPrice() {
         var q2n = A().q2n;
         if (T.kind === 'limit') return +T.price || 0;
+        if (T.kind === 'stop') return +T.stopPrice || 0;
         if (!T.ob) return 0;
         var best = T.side === 'buy' ? (T.ob.asks || [])[0] : (T.ob.bids || [])[0];
         return best ? q2n(best.price) : 0;
@@ -162,6 +190,7 @@
         if (T.uid && st && st !== 'SECURITY_TRADING_STATUS_NORMAL_TRADING') {
             out.push('Торговая сессия закрыта: заявка будет ждать открытия, цена исполнения может отличаться.');
         }
+        // fat-finger только для лимитных: стоп-цена по смыслу стоит поодаль от рынка
         if (T.kind === 'limit' && +T.price > 0) {
             var mid = midPrice();
             if (mid > 0 && Math.abs(+T.price - mid) / mid > FF_DEV) {
@@ -202,14 +231,28 @@
                     '<button type="button" title="Снять заявку" onclick="pftCancel(\'' + jsArg(o.orderId) + '\')">✕</button></div>';
             }).join('') + '</div>';
         }
-        var panic = T.orders.length
+        // стоп-заявки — своим списком (у них другой жизненный цикл и отмена)
+        var stops = '';
+        if (T.stops.length) {
+            stops = '<div class="bk-lab btr-jlab">Стоп-заявки</div><div class="btr-ords">' + T.stops.map(function (o) {
+                var ins = instrMem[o.instrumentUid] || {};
+                var buy = o.direction === 'STOP_ORDER_DIRECTION_BUY';
+                var tp = o.stopOrderType === 'STOP_ORDER_TYPE_TAKE_PROFIT';
+                return '<div class="btr-ordrow ' + (buy ? 'buy' : 'sell') + '">' +
+                    '<i class="bk-pill ' + (tp ? 'bk-pill-green' : 'bk-pill-amber') + '">' + (tp ? 'тейк' : 'стоп-лосс') + '</i>' +
+                    '<b>' + esc(ins.ticker || (o.figi || '').slice(0, 8)) + '</b>' +
+                    '<span>' + (o.lotsRequested || 0) + ' лот · от ' + fmtPrice(q2n(o.stopPrice)) + '</span>' +
+                    '<button type="button" title="Снять стоп-заявку" onclick="pftCancelStop(\'' + jsArg(o.stopOrderId) + '\')">✕</button></div>';
+            }).join('') + '</div>';
+        }
+        var panic = (T.orders.length + T.stops.length)
             ? '<button type="button" class="bk-btn bk-btn-danger btr-panic" onclick="pftCancelAll()">Отменить все заявки</button>' : '';
         var jr = (A() ? A().journal() : []).filter(function (e) { return e.ev.indexOf('order_') === 0; }).slice(0, 5)
             .map(function (e) {
                 return '<div class="bk-jrow"><span>' + esc(e.d || e.ev) + '</span><i>' +
                     new Date(e.t).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) + '</i></div>';
             }).join('');
-        return head + rows + panic +
+        return head + rows + stops + panic +
             '<div class="bk-lab btr-jlab">Журнал</div><div class="bk-journal">' + (jr || '<div class="bk-jrow"><span>Событий пока нет</span></div>') + '</div>';
     }
 
@@ -244,15 +287,33 @@
     function pollOrders() {
         if (!stillHere() || document.visibilityState !== 'visible') return;
         var c = conn(); if (!c) return;
-        A().call('GetOrders', { accountId: c.accountId }).then(function (d) {
-            T.orders = (d.orders || []).filter(function (o) {
+        Promise.all([
+            A().call('GetOrders', { accountId: c.accountId }),
+            A().call('GetStopOrders', { accountId: c.accountId }).catch(function () { return { stopOrders: T.stops }; })
+        ]).then(function (rs) {
+            T.orders = (rs[0].orders || []).filter(function (o) {
                 return ['EXECUTION_REPORT_STATUS_NEW', 'EXECUTION_REPORT_STATUS_PARTIALLYFILL'].indexOf(o.executionReportStatus) !== -1;
             });
+            T.stops = rs[1].stopOrders || [];
             // тикеры заявок — дорезолвим в память
-            T.orders.forEach(function (o) {
+            T.orders.concat(T.stops).forEach(function (o) {
                 if (o.instrumentUid && !instrMem[o.instrumentUid]) fetchMeta(o.instrumentUid, true);
             });
             repaintOrders();
+        }).catch(function () {});
+    }
+    function pollTape() {
+        if (!stillHere() || !T.uid || document.visibilityState !== 'visible') return;
+        var now = Date.now();
+        A().call('GetLastTrades', {
+            instrumentId: T.uid,
+            from: new Date(now - 15 * 60000).toISOString(),
+            to: new Date(now).toISOString()
+        }).then(function (d) {
+            var list = (d.trades || []).slice(-12).reverse();
+            T.tape = list;
+            var el = dq('btTape');
+            if (el) el.innerHTML = tapeHtml();
         }).catch(function () {});
     }
     function pollStatus() {
@@ -283,11 +344,12 @@
         if (!T.obTimer) T.obTimer = setInterval(pollOb, 2000);
         if (!T.ordTimer) T.ordTimer = setInterval(pollOrders, 6000);
         if (!T.stTimer) T.stTimer = setInterval(pollStatus, 30000);
-        pollOb(); pollOrders(); pollStatus();
+        if (!T.tapeTimer) T.tapeTimer = setInterval(pollTape, 4000);
+        pollOb(); pollOrders(); pollStatus(); pollTape();
     }
     function stopPolling() {
-        clearInterval(T.obTimer); clearInterval(T.ordTimer); clearInterval(T.stTimer);
-        T.obTimer = T.ordTimer = T.stTimer = null;
+        clearInterval(T.obTimer); clearInterval(T.ordTimer); clearInterval(T.stTimer); clearInterval(T.tapeTimer);
+        T.obTimer = T.ordTimer = T.stTimer = T.tapeTimer = null;
     }
     // зовётся из цикла рендера portfolios.js: включает/гасит поллинг по месту
     function pftAfterRender() {
@@ -321,6 +383,11 @@
         if (p && !p._wired) {
             p._wired = true;
             p.addEventListener('input', function () { T.price = p.value; repaintWarns(); repaintEst(); });
+        }
+        var sp = dq('btStop');
+        if (sp && !sp._wired) {
+            sp._wired = true;
+            sp.addEventListener('input', function () { T.stopPrice = sp.value; repaintEst(); });
         }
         var l = dq('btLots');
         if (l && !l._wired) {
@@ -370,13 +437,19 @@
         }, function (e) { toast(e.message, true); });
     };
     window.pftPickPrice = function (p) {
-        if (T.kind !== 'limit') return;
-        T.price = String(p);
-        var inp = dq('btPrice'); if (inp) inp.value = T.price;
+        // клик по цене стакана заполняет активное ценовое поле тикета
+        if (T.kind === 'limit') {
+            T.price = String(p);
+            var inp = dq('btPrice'); if (inp) inp.value = T.price;
+        } else if (T.kind === 'stop') {
+            T.stopPrice = String(p);
+            var sp = dq('btStop'); if (sp) sp.value = T.stopPrice;
+        } else return;
         repaintWarns(); repaintEst();
     };
     window.pftSide = function (s) { T.side = s; repaintCards(); };
     window.pftKind = function (k) { T.kind = k; repaintCards(); };
+    window.pftStopKind = function (k) { T.stopKind = k; repaintCards(); };
 
     // подтверждение заявки: своя модалка (pfConfirm не умеет ввод суммы)
     window.pftAsk = function () {
@@ -384,21 +457,30 @@
         var vel = velLeft();
         if (vel > 0) { toast('Пауза после ' + VEL_MAX + ' заявок подряд — ещё ' + Math.ceil(vel / 1000) + ' с', true); return; }
         var lots = Math.max(1, Math.floor(+T.lots || 1));
+        var inc = T.meta.minInc || 0.01;
+        // цены — по шагу инструмента, иначе брокер отклонит заявку
+        function snap(v, inputId, label) {
+            var s = +(Math.round(v / inc) * inc).toFixed(6);
+            if (Math.abs(s - v) > 1e-9) {
+                var inp = dq(inputId); if (inp) inp.value = String(s);
+                toast(label + ' округлена до шага ' + fmtPrice(inc));
+            }
+            return s;
+        }
         var price = +T.price || 0;
+        var stopPrice = +T.stopPrice || 0;
         if (T.kind === 'limit') {
             if (!(price > 0)) { toast('Укажите цену лимитной заявки', true); return; }
-            // цена — по шагу инструмента (иначе брокер отклонит)
-            var inc = T.meta.minInc || 0.01;
-            var snapped = Math.round(price / inc) * inc;
-            if (Math.abs(snapped - price) > 1e-9) {
-                price = +snapped.toFixed(6);
-                T.price = String(price);
-                var inp = dq('btPrice'); if (inp) inp.value = T.price;
-                toast('Цена округлена до шага ' + fmtPrice(inc));
-            }
+            price = snap(price, 'btPrice', 'Цена');
+            T.price = String(price);
+        }
+        if (T.kind === 'stop') {
+            if (!(stopPrice > 0)) { toast('Укажите стоп-цену активации', true); return; }
+            stopPrice = snap(stopPrice, 'btStop', 'Стоп-цена');
+            T.stopPrice = String(stopPrice);
         }
         var shares = lots * (T.meta.lot || 1);
-        var est = T.kind === 'limit' ? price : estPrice();
+        var est = T.kind === 'limit' ? price : (T.kind === 'stop' ? stopPrice : estPrice());
         var sum = est * shares;
         T.orderId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
         var needType = sum >= sumLimit();
@@ -406,10 +488,13 @@
         var old = dq('btConfirmOv'); if (old) old.remove();
         var ov = document.createElement('div');
         ov.id = 'btConfirmOv';
+        var kindName = T.kind === 'limit' ? 'Лимитная'
+            : (T.kind === 'stop' ? (T.stopKind === 'tp' ? 'Тейк-профит' : 'Стоп-лосс') : 'Рыночная');
         ov.innerHTML = '<div class="bk-back"></div><div class="bk-card bk-card-pin btr-cf" role="alertdialog" aria-modal="true">' +
             '<div class="bk-title">' + (T.side === 'buy' ? 'Покупка' : 'Продажа') + ' ' + esc(T.meta.ticker) + '</div>' +
-            '<div class="bk-kv"><span>Тип</span><b>' + (T.kind === 'limit' ? 'Лимитная' : 'Рыночная') + '</b></div>' +
+            '<div class="bk-kv"><span>Тип</span><b>' + kindName + '</b></div>' +
             (T.kind === 'limit' ? '<div class="bk-kv"><span>Цена</span><b class="bk-mono">' + fmtPrice(price) + ' ₽</b></div>' : '') +
+            (T.kind === 'stop' ? '<div class="bk-kv"><span>Стоп-цена</span><b class="bk-mono">' + fmtPrice(stopPrice) + ' ₽</b></div>' : '') +
             '<div class="bk-kv"><span>Количество</span><b>' + lots + ' лот = ' + shares.toLocaleString('ru-RU') + ' шт</b></div>' +
             '<div class="bk-kv"><span>' + (T.kind === 'limit' ? 'Сумма' : 'Сумма ≈') + '</span><b class="bk-mono">' + fmtRub(sum) + '</b></div>' +
             warnsHtml() +
@@ -432,7 +517,7 @@
                 }
             }
             closeCf();
-            submitOrder(lots, price, sum);
+            submitOrder(lots, T.kind === 'stop' ? stopPrice : price, sum);
         });
     };
 
@@ -440,22 +525,42 @@
         var c = conn(); if (!c || T.busy) return;
         T.busy = true;
         var btn = dq('btSubmit'); if (btn) { btn.disabled = true; btn.textContent = 'Отправляем…'; }
-        var body = {
-            accountId: c.accountId,
-            instrumentId: T.uid,
-            quantity: String(lots),
-            direction: T.side === 'buy' ? 'ORDER_DIRECTION_BUY' : 'ORDER_DIRECTION_SELL',
-            orderType: T.kind === 'limit' ? 'ORDER_TYPE_LIMIT' : 'ORDER_TYPE_MARKET',
-            orderId: T.orderId
-        };
-        if (T.kind === 'limit') body.price = A().n2q(price);
-        A().call('PostOrder', body).then(function (d) {
+        var isStop = T.kind === 'stop';
+        var method, body;
+        if (isStop) {
+            // у стоп-заявок нет клиентского idempotency-ключа в API —
+            // страхуют busy-флаг и velocity-лимит
+            method = 'PostStopOrder';
+            body = {
+                accountId: c.accountId,
+                instrumentId: T.uid,
+                quantity: String(lots),
+                direction: T.side === 'buy' ? 'STOP_ORDER_DIRECTION_BUY' : 'STOP_ORDER_DIRECTION_SELL',
+                stopPrice: A().n2q(price),
+                stopOrderType: T.stopKind === 'tp' ? 'STOP_ORDER_TYPE_TAKE_PROFIT' : 'STOP_ORDER_TYPE_STOP_LOSS',
+                expirationType: 'STOP_ORDER_EXPIRATION_TYPE_GOOD_TILL_CANCEL'
+            };
+        } else {
+            method = 'PostOrder';
+            body = {
+                accountId: c.accountId,
+                instrumentId: T.uid,
+                quantity: String(lots),
+                direction: T.side === 'buy' ? 'ORDER_DIRECTION_BUY' : 'ORDER_DIRECTION_SELL',
+                orderType: T.kind === 'limit' ? 'ORDER_TYPE_LIMIT' : 'ORDER_TYPE_MARKET',
+                orderId: T.orderId
+            };
+            if (T.kind === 'limit') body.price = A().n2q(price);
+        }
+        A().call(method, body).then(function () {
             T.busy = false;
             T.sent.push(Date.now());
             T.orderId = null;   // исполненный ключ не переиспользуем
+            var kindTxt = isStop ? (T.stopKind === 'tp' ? 'тейк-профит от ' : 'стоп-лосс от ') + fmtPrice(price) + ' ₽'
+                : (T.kind === 'limit' ? fmtPrice(price) + ' ₽' : 'рыночная');
             A().logEvent('order_submit', (T.side === 'buy' ? 'покупка ' : 'продажа ') + T.meta.ticker +
-                ' · ' + lots + ' лот' + (T.kind === 'limit' ? ' · ' + fmtPrice(price) + ' ₽' : ' · рыночная'));
-            toast('Заявка выставлена: ' + T.meta.ticker);
+                ' · ' + lots + ' лот · ' + kindTxt);
+            toast((isStop ? 'Стоп-заявка' : 'Заявка') + ' выставлена: ' + T.meta.ticker);
             pollOrders();
             repaintCards();
         }, function (e) {
@@ -478,10 +583,22 @@
             }, function (e) { toast(e.message, true); });
         });
     };
+    window.pftCancelStop = function (stopOrderId) {
+        var c = conn(); if (!c) return;
+        PF.pfConfirm({ danger: true, title: 'Снять стоп-заявку?', text: 'Стоп-заявка будет отменена.', ok: 'Снять' }, function () {
+            A().call('CancelStopOrder', { accountId: c.accountId, stopOrderId: stopOrderId }).then(function () {
+                A().logEvent('order_cancel', 'стоп-заявка снята');
+                toast('Стоп-заявка снята');
+                pollOrders();
+            }, function (e) { toast(e.message, true); });
+        });
+    };
     window.pftCancelAll = function () {
-        var c = conn(); if (!c || !T.orders.length) return;
+        var c = conn(); if (!c) return;
+        var total = T.orders.length + T.stops.length;
+        if (!total) return;
         PF.pfConfirm({ danger: true, title: 'Отменить все заявки?',
-            text: 'Все ' + T.orders.length + ' активные заявки будут сняты с биржи.', ok: 'Отменить все' }, function () {
+            text: 'Будут сняты все активные заявки (' + T.orders.length + ') и стоп-заявки (' + T.stops.length + ').', ok: 'Отменить все' }, function () {
             var chain = Promise.resolve(), ok = 0;
             T.orders.forEach(function (o) {
                 chain = chain.then(function () {
@@ -489,8 +606,14 @@
                         .then(function () { ok++; }, function () {});
                 });
             });
+            T.stops.forEach(function (o) {
+                chain = chain.then(function () {
+                    return A().call('CancelStopOrder', { accountId: c.accountId, stopOrderId: o.stopOrderId })
+                        .then(function () { ok++; }, function () {});
+                });
+            });
             chain.then(function () {
-                A().logEvent('order_cancel', 'паник-отмена: снято ' + ok);
+                A().logEvent('order_cancel', 'паник-отмена: снято ' + ok + ' из ' + total);
                 toast('Снято заявок: ' + ok);
                 pollOrders();
             });

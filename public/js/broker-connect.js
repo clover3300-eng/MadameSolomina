@@ -57,13 +57,14 @@
         pin_lockout: 'PIN заблокирован (5 попыток)',
         api_error: 'Ошибка запроса',
         legacy_import: 'Импорт старого токена',
-        autolock: 'Автоблокировка PIN',
+        autolock: 'Автоблокировка токена',
+        passkey_fail: 'Passkey: отмена или сбой',
         order_submit: 'Заявка выставлена',
         order_cancel: 'Заявка снята',
         order_error: 'Заявка отклонена'
     };
 
-    var STORE_LABELS = { session: 'до закрытия вкладки', local: 'на этом устройстве', pin: 'под PIN-кодом' };
+    var STORE_LABELS = { session: 'до закрытия вкладки', local: 'на этом устройстве', pin: 'под PIN-кодом', passkey: 'под Touch ID / passkey' };
 
     // ---------- оверлей ----------
     function ensureOverlay() {
@@ -170,7 +171,13 @@
             '<div class="bk-opt-t">' + name + (badge || '') + '</div><div class="bk-opt-s">' + hint + '</div></div>';
     }
     function stepTokenHtml() {
-        var pinBadge = sel.scope === 'trade' ? '<i class="bk-pill bk-pill-green">рекомендуем</i>' : '';
+        // при поддержке passkey рекомендация переезжает на него — PIN остаётся фолбэком
+        var hasPk = !!(api() && api().passkeySupported);
+        var recBadge = sel.scope === 'trade' ? '<i class="bk-pill bk-pill-green">рекомендуем</i>' : '';
+        var pinBadge = hasPk ? '' : recBadge;
+        var pkRow = hasPk
+            ? storeRow('passkey', 'Touch ID / Passkey', 'Ключ шифрования — в аппаратном модуле устройства, разблокировка биометрией', recBadge)
+            : '';
         return headHtml('Вставьте токен', 'Он останется только на этом устройстве', 3) +
             '<div class="bk-body">' +
             '<div class="ph-field"><label class="ph-lab" for="bkToken">API-токен Т-Инвестиций</label>' +
@@ -180,6 +187,7 @@
             '<div class="bk-lab">Как хранить токен</div>' +
             storeRow('session', 'Не сохранять', 'Забудем при закрытии вкладки — самый строгий вариант') +
             storeRow('local', 'На этом устройстве', 'Токен останется в этом браузере, в облако не попадает') +
+            pkRow +
             storeRow('pin', 'Под PIN-кодом', 'Токен шифруется, PIN спрашиваем раз за сессию', pinBadge) +
             '<div id="bkPinFields"' + (sel.storage === 'pin' ? '' : ' hidden') + ' class="ph-2col bk-pin2">' +
             '<div class="ph-field"><label class="ph-lab" for="bkPin1">PIN-код (4–12 цифр)</label><input class="ph-input" id="bkPin1" type="password" inputmode="numeric" autocomplete="off" maxlength="12"></div>' +
@@ -320,8 +328,13 @@
         pickAcc: function (i) { sel.accIdx = i; render(); },
         toHowto: function () { step = 'howto'; render(); },
         toToken: function () {
-            // дефолт хранения от режима — но только пока пользователь не выбрал сам
-            if (!sel.storeTouched) sel.storage = sel.scope === 'trade' ? 'pin' : 'local';
+            // дефолт хранения от режима — но только пока пользователь не выбрал сам;
+            // для торговли при поддержке passkey рекомендуем именно его
+            if (!sel.storeTouched) {
+                sel.storage = sel.scope === 'trade'
+                    ? (api().passkeySupported ? 'passkey' : 'pin')
+                    : 'local';
+            }
             step = 'token';
             render();
         },
@@ -373,9 +386,14 @@
                 toast('Брокер подключён: ' + acc.name);
                 step = 'done';
                 render();
-            }, function () {
+            }, function (e) {
                 setBusy(false, 'Подключить');
-                err('Не удалось сохранить подключение');
+                // passkey не создался (нет PRF, отмена биометрии) — подсказываем фолбэк
+                if (sel.storage === 'passkey') {
+                    err((e && e.message ? e.message + '. ' : '') + 'Можно вернуться на шаг назад и выбрать хранение под PIN-кодом.');
+                } else {
+                    err('Не удалось сохранить подключение');
+                }
             });
         },
         changeToken: function () {

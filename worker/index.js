@@ -372,7 +372,12 @@ var TI_METHODS = {
     GetOrderState:    { svc: 'OrdersService',      scope: 'read' },
     GetMaxLots:       { svc: 'OrdersService',      scope: 'read' },
     PostOrder:        { svc: 'OrdersService',      scope: 'trade' },
-    CancelOrder:      { svc: 'OrdersService',      scope: 'trade' }
+    CancelOrder:      { svc: 'OrdersService',      scope: 'trade' },
+    // этап 3 — стоп-заявки и лента обезличенных сделок
+    GetLastTrades:    { svc: 'MarketDataService',  scope: 'read' },
+    GetStopOrders:    { svc: 'StopOrdersService',  scope: 'read' },
+    PostStopOrder:    { svc: 'StopOrdersService',  scope: 'trade' },
+    CancelStopOrder:  { svc: 'StopOrdersService',  scope: 'trade' }
 };
 
 function brokerJson(body, status) {

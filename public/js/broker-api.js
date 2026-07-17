@@ -125,12 +125,84 @@
         }).catch(function () { return null; });
     }
 
+    // ---------- passkey / Touch ID (WebAuthn + расширение PRF) ----------
+    // Мировая практика защиты локальных секретов: ключ шифрования выводится
+    // аппаратным аутентификатором (Secure Enclave/Windows Hello), на диске его
+    // нет вовсе, разблокировка — биометрией. PIN остаётся фолбэком для
+    // браузеров без PRF. Поддержка определяется асинхронно на старте.
+    var passkeySupported = false;
+    (function () {
+        try {
+            if (window.PublicKeyCredential &&
+                PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
+                PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(function (ok) {
+                    passkeySupported = !!ok;
+                    window.brokerApi && (window.brokerApi.passkeySupported = passkeySupported);
+                }).catch(function () {});
+            }
+        } catch (e) {}
+    })();
+
+    function passkeyCreate() {
+        var challenge = crypto.getRandomValues(new Uint8Array(32));
+        var userId = crypto.getRandomValues(new Uint8Array(16));
+        return navigator.credentials.create({ publicKey: {
+            challenge: challenge,
+            rp: { name: "Madame Solomi'na", id: location.hostname },
+            user: { id: userId, name: 'broker-token', displayName: 'Токен брокера' },
+            pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+            authenticatorSelection: { authenticatorAttachment: 'platform', residentKey: 'preferred', userVerification: 'required' },
+            extensions: { prf: {} }
+        } }).then(function (cred) {
+            var ext = cred.getClientExtensionResults();
+            if (!ext.prf || !ext.prf.enabled) {
+                var err = new Error('Аутентификатор не поддерживает PRF — выберите PIN-код');
+                err.noPrf = true;
+                throw err;
+            }
+            return new Uint8Array(cred.rawId);
+        });
+    }
+    function passkeyKey(credId, salt) {
+        return navigator.credentials.get({ publicKey: {
+            challenge: crypto.getRandomValues(new Uint8Array(32)),
+            allowCredentials: [{ type: 'public-key', id: credId }],
+            userVerification: 'required',
+            extensions: { prf: { eval: { first: salt } } }
+        } }).then(function (assertion) {
+            var ext = assertion.getClientExtensionResults();
+            var secret = ext.prf && ext.prf.results && ext.prf.results.first;
+            if (!secret) throw new Error('PRF недоступен на этом устройстве');
+            return crypto.subtle.importKey('raw', secret, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+        });
+    }
+    // токен → {type:'passkey', credId, salt, iv, ct}; создание и первая
+    // расшифровка требуют жеста пользователя (клик «Подключить» подходит)
+    function encryptTokenPasskey(token) {
+        return passkeyCreate().then(function (credId) {
+            var salt = crypto.getRandomValues(new Uint8Array(32));
+            var iv = crypto.getRandomValues(new Uint8Array(12));
+            return passkeyKey(credId, salt).then(function (key) {
+                return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, new TextEncoder().encode(token));
+            }).then(function (ct) {
+                return { type: 'passkey', credId: b64(credId), salt: b64(salt), iv: b64(iv), ct: b64(ct) };
+            });
+        });
+    }
+    function decryptTokenPasskey(enc) {
+        return passkeyKey(unb64(enc.credId), unb64(enc.salt)).then(function (key) {
+            return crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(enc.iv) }, key, unb64(enc.ct));
+        }).then(function (buf) {
+            return new TextDecoder().decode(buf);
+        }).catch(function () { return null; });   // отмена биометрии/сбой = null
+    }
+
     // ---------- подключение ----------
     function getConn() { return readJSON(localStorage, CONN_KEY); }
     function hasConn() { return !!getConn(); }
     function isLocked() {
         var c = getConn();
-        return !!(c && c.storage === 'pin' && !memToken);
+        return !!(c && (c.storage === 'pin' || c.storage === 'passkey') && !memToken);
     }
     // режим «до закрытия вкладки»: в новой вкладке/после рестарта токена уже нет
     function isSessionGone() {
@@ -148,6 +220,17 @@
         if (c.storage === 'session') {
             if (!memToken) memToken = sessionStorage.getItem(SESSION_KEY) || null;
             return Promise.resolve(memToken);
+        }
+        if (c.storage === 'passkey') {
+            if (memToken) return Promise.resolve(memToken);
+            if (!interactive || !c.enc || c.enc.type !== 'passkey') return Promise.resolve(null);
+            // браузер сам покажет Touch ID/Windows Hello; отмена = null
+            return decryptTokenPasskey(c.enc).then(function (tok) {
+                if (tok == null) { logEvent('passkey_fail', 'биометрия отменена или сбой'); return null; }
+                memToken = tok;
+                fireChange();
+                return tok;
+            });
         }
         // storage === 'pin'
         if (memToken) return Promise.resolve(memToken);
@@ -183,7 +266,7 @@
     }
     function lock() {
         var c = getConn();
-        if (c && c.storage === 'pin') { memToken = null; fireChange(); }
+        if (c && (c.storage === 'pin' || c.storage === 'passkey')) { memToken = null; fireChange(); }
     }
 
     // Сохранить подключение после успешной верификации в визарде.
@@ -226,6 +309,9 @@
         };
         if (opts.storage === 'pin') {
             return encryptToken(opts.token, opts.pin).then(function (enc) { conn.enc = enc; save(); return conn; });
+        }
+        if (opts.storage === 'passkey') {
+            return encryptTokenPasskey(opts.token).then(function (enc) { conn.enc = enc; save(); return conn; });
         }
         save();
         return Promise.resolve(conn);
@@ -450,7 +536,7 @@
     setInterval(function () {
         if (!memToken) return;
         var c = getConn();
-        if (!c || c.storage !== 'pin') return;
+        if (!c || (c.storage !== 'pin' && c.storage !== 'passkey')) return;
         if (Date.now() - lastActivity > AUTOLOCK_MS) {
             memToken = null;
             logEvent('autolock', 'нет активности 15 минут');
@@ -482,6 +568,7 @@
         hasConn: hasConn,
         isLocked: isLocked,
         isSessionGone: isSessionGone,
+        passkeySupported: passkeySupported,   // false до асинхронной проверки, потом обновится
         getToken: getToken,
         lock: lock,
         setPinPrompt: function (fn) { pinPrompt = fn; },
