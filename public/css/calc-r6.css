@@ -31,20 +31,24 @@
   font-family: var(--r5-mono); font-weight: 700; font-size: 190px; line-height: 1;
   color: rgba(255,255,255,.04); pointer-events: none; user-select: none;
 }
-/* кнопка «назад» — только в рабочих режимах */
+/* Крошка «← Расчёт» в кикере рабочих режимов: наследует стиль кикера целиком,
+   поэтому не занимает ни одного лишнего пикселя (отдельной строкой кнопка
+   стоила 50px и опускала весь герой относительно экрана выбора). */
 #cxHeroBack {
-  display: none; align-items: center; gap: 8px; margin-bottom: 18px;
-  border: 1px solid rgba(255,255,255,.16); background: transparent; cursor: pointer;
-  font-family: inherit; font-size: 12.5px; font-weight: 650; color: #c6d1de;
-  padding: 8px 16px; border-radius: 999px; transition: border-color .15s, color .15s;
+  display: inline-flex; align-items: center; gap: 5px;
+  border: none; background: none; padding: 0; cursor: pointer;
+  font: inherit; color: inherit; letter-spacing: inherit;
+  transition: color .15s;
 }
-#cxHeroBack:hover { border-color: rgba(255,255,255,.35); color: #fff; }
-body.cxm-mix #cxHeroBack, body.cxm-monthly #cxHeroBack { display: inline-flex; }
-/* старую кнопку «назад» calc-mode заменяет герой */
+#cxHeroBack svg { width: 11px; height: 11px; }
+#cxHeroBack:hover { color: #fff; }
+#cxHero .cxh-sep { opacity: .5; }
+/* старую кнопку «назад» calc-mode заменяет крошка */
 #cxBack { display: none !important; }
 
 #cxHero .cxh-row { display: flex; align-items: flex-end; gap: 50px; flex-wrap: wrap; }
 #cxHero .cxh-kick {
+  display: flex; align-items: center; gap: 7px;
   font-size: 11px; font-weight: 800; letter-spacing: .14em;
   text-transform: uppercase; color: #8fa3bd;
 }
@@ -196,9 +200,14 @@ body.cxm-choose #cxChooser .cxm-cta {
 }
 #cxFcBig small { font-size: 15px; color: var(--r5-muted); font-weight: 600; }
 #cxFcRng { font-family: var(--r5-mono); font-size: 12.5px; color: var(--r5-muted); margin-top: 2px; }
-/* SVG абсолютный: размер хоста задаёт flex, а не содержимое (см. renderFan) */
+/* SVG абсолютный: размер хоста задаёт flex, а не содержимое (см. renderFan).
+   График рисуется лентой ~4:1 и висит по центру свободной высоты — растянутый
+   на весь хост он превращался в жирный клин вместо тонкой линии мокапа. */
 #cxFcChart { position: relative; flex: 1; min-height: 150px; margin-top: 20px; }
-#cxFcChart svg { position: absolute; inset: 0; display: block; }
+#cxFcChart svg {
+  position: absolute; left: 0; right: 0; top: 50%;
+  transform: translateY(-50%); display: block;
+}
 #cxFcFacts {
   display: flex; flex-wrap: wrap; gap: 24px;
   border-top: 1px solid var(--r5-line); margin-top: 16px; padding-top: 16px;
@@ -214,7 +223,8 @@ body.cxm-choose #cxChooser .cxm-cta {
   font-size: 13px; font-weight: 700; color: var(--r5-muted2); font-family: var(--r5-mono);
 }
 
-/* CTA-ряд прогноза: кнопка «Рассчитать портфель» + комиссия + приписка */
+/* CTA-ряд прогноза: главное действие слева, комиссия тихой пилюлей справа —
+   тот же рисунок, что у ряда «Создать портфель / итоги» на экране дохода. */
 #cxFcCta { display: flex; align-items: center; gap: 14px; margin-top: auto; padding-top: 22px; }
 #cxFcCta #calcCtaBar { margin: 0; padding: 0; flex: none; }
 #cxFcCta .nd-btn-cta-g {
@@ -222,9 +232,13 @@ body.cxm-choose #cxChooser .cxm-cta {
   font-size: 14.5px;
 }
 #cxFcCta .nd-btn-cta-g .cta-ic { display: none; }
-#cxFcCta .cxr6-meta { margin-left: auto; }
-/* комиссия — тихая пилюля; дропдаун открывается ВВЕРХ (низ карточки) */
-#cxFcCta .fee-selector-unified { position: relative; flex: none; }
+/* комиссия — тихая пилюля; дропдаун открывается ВВЕРХ (низ карточки).
+   width:auto обязателен: calc-r5 задаёт селектору width:100%, и при flex:none
+   он забирал всю строку — пилюля болталась слева в 538px-коробке, а приписка
+   уезжала за край карточки. */
+#cxFcCta .fee-selector-unified {
+  position: relative; flex: none; width: auto; margin: 0 0 0 auto;
+}
 #cxFcCta .nd-fee-trigger {
   border: 1px solid var(--r5-line); border-radius: 999px; padding: 9px 16px;
   background: var(--r5-card); display: inline-flex; align-items: center; gap: 8px;
@@ -281,13 +295,15 @@ body.cxm-monthly #panel-calc .mi5-pay.is-next .mi5-pay-rail .dot {
 }
 body.cxm-monthly #panel-calc .mi5-pay.is-next .mi5-pay-amt .am { color: var(--mi-orange); }
 
-/* Подвал баннера дохода: «Итого за год / сумма» + «% годовых» — простая
-   строка под линейкой .mi5-foot, как в мокапе (была плашка-коробка из двух
-   центрованных ячеек). Подпись «в год» → «Итого за год» ставит calc-r6.js. */
+/* Итоги дохода: «Итого за год / сумма» + «% годовых» — простая строка без
+   плашки-коробки (была из двух центрованных ячеек). Живут в одном ряду с
+   «Создать портфель», справа от неё — переносит их туда calc-r6.js.
+   Подпись «в год» → «Итого за год» ставит там же. */
 body.cxm-monthly #panel-calc .mi5-cb-stats {
   display: flex; align-items: flex-end; justify-content: flex-end; gap: 20px;
   background: transparent; border: none; border-radius: 0;
   min-height: 0; overflow: visible;
+  margin-left: auto;
 }
 body.cxm-monthly #panel-calc .mi5-cb-stat {
   flex: 0 0 auto; padding: 0; gap: 5px;
@@ -308,9 +324,10 @@ body.cxm-monthly #panel-calc .mi5-cb-stat + .mi5-cb-stat .mi5-cb-sl {
    Освободившуюся высоту забирает лента выплат (flex:1 + space-between). */
 body.cxm-monthly #panel-calc #miSchCard .mi5-foot { display: none; }
 
-/* Подвал карточки выплат: итоги (штатный блок) + ряд с CTA, как в мокапе.
+/* Подвал карточки выплат: «Создать портфель» слева, итоги справа — тот же
+   рисунок, что у ряда «Рассчитать портфель / комиссия» на экране роста.
    Длинной кнопки под колонками больше нет — она переехала сюда. */
-#panel-calc .cxr6-mcta { display: flex; align-items: center; gap: 14px; margin-top: 14px; }
+#panel-calc .cxr6-mcta { display: flex; align-items: flex-end; gap: 14px; margin-top: 14px; }
 #panel-calc .cxr6-mcta .mi5-createpf-btn {
   margin-top: 0; width: auto; flex: 0 0 auto;
   border-radius: 14px; padding: 15px 26px; font-size: 14.5px;

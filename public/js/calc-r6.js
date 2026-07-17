@@ -145,14 +145,19 @@
   }
 
   // ── ГРАФИКИ ───────────────────────────────────────────────────────────────
+  var RIBBON = 4.1;   // пропорция графика Ш:В из утверждённого мокапа
+
   // Рендер графика прогноза В КОНТЕЙНЕР: viewBox 1:1 к пикселям хоста (текст
   // не искажается), SVG абсолютный — размер хоста не зависит от содержимого,
   // поэтому ResizeObserver не зацикливается.
+  // Высота — не вся доступная, а лента RIBBON: растянутая на всю высоту
+  // карточки линия превращается в жирный клин, в мокапе же это тонкая лента,
+  // висящая в воздухе по центру свободного места (центрует css).
   function renderFan(host, S, g, corridor) {
     if (!host) return;
     if (!g) { host.innerHTML = ''; return; }
     var W = Math.max(220, Math.round(host.clientWidth));
-    var H = Math.max(96, Math.round(host.clientHeight));
+    var H = Math.max(96, Math.min(Math.round(host.clientHeight), Math.round(W / RIBBON)));
     // id градиентов уникальны на документ: обе карточки живут в DOM
     // одновременно, одинаковые id ссылались бы на первый попавшийся
     host.innerHTML = fanSVG(S, g, W, H, corridor, host.id || 'x');
@@ -160,9 +165,14 @@
   // Веер прогноза: коридор lo..hi (опционально) + базовая линия с мягкой
   // тенью вниз и градиентной заливкой под ней, подпись у конца
   function fanSVG(S, g, W, H, corridor, uid) {
-    var padL = 6, padR = 78, padT = 16, padB = 22;
+    // Линия идёт во всю ширину: подпись суммы стоит НАД конечной точкой, а не
+    // справа от неё — правая колонка под подпись оставляла мёртвое поле.
+    var padL = 2, padR = 9, padT = 22, padB = 20;
     var x0 = padL, x1 = W - padR, yB = H - padB, yT = padT;
-    var vMin = S, vMax = corridor ? g.hi : g.base * 1.02;
+    var vMax = corridor ? g.hi : g.base * 1.02;
+    // Небольшой запас снизу: иначе линия стартует ровно в углу поля и выглядит
+    // приклеенной к нему (в мокапе старт приподнят над нижним краем).
+    var vMin = S - (vMax - S) * 0.10;
     function X(t) { return x0 + (x1 - x0) * t / YEARS; }
     function Y(v) {
       if (vMax <= vMin) return yB;
@@ -217,9 +227,9 @@
       '<path d="' + d(basePts) + '" fill="none" stroke="#4a8df0" stroke-width="2.6" ' +
         'stroke-linecap="round" filter="url(#' + fS + ')"/>' +
       '<circle cx="' + x1 + '" cy="' + yEnd.toFixed(1) + '" r="4" fill="#4a8df0"/>' +
-      '<text x="' + (x1 + 8) + '" y="' + (yEnd + 4).toFixed(1) + '" font-family="var(--r5-mono,monospace)" font-size="12" font-weight="700" fill="currentColor">' + fmtCapPlain(g.base) + '</text>' +
-      '<text x="4" y="' + (H - 6) + '" font-family="var(--r5-mono,monospace)" font-size="10" fill="#97a3b4">' + year0 + '</text>' +
-      '<text x="' + (x1 - 30) + '" y="' + (H - 6) + '" font-family="var(--r5-mono,monospace)" font-size="10" fill="#97a3b4">' + (year0 + YEARS) + '</text>' +
+      '<text x="' + (x1 - 9) + '" y="' + (yEnd - 11).toFixed(1) + '" text-anchor="end" font-family="var(--r5-mono,monospace)" font-size="12" font-weight="700" fill="currentColor">' + fmtCapPlain(g.base) + '</text>' +
+      '<text x="2" y="' + (H - 5) + '" font-family="var(--r5-mono,monospace)" font-size="10" fill="#97a3b4">' + year0 + '</text>' +
+      '<text x="' + x1 + '" y="' + (H - 5) + '" text-anchor="end" font-family="var(--r5-mono,monospace)" font-size="10" fill="#97a3b4">' + (year0 + YEARS) + '</text>' +
     '</svg>';
   }
 
@@ -241,6 +251,15 @@
   }
 
   // ── ГЕРОЙ ─────────────────────────────────────────────────────────────────
+  // Кикер рабочих режимов — хлебная крошка: «Расчёт» кликабелен и ведёт назад,
+  // в выбор типа. Отдельной строкой кнопка «назад» стоила 50px и опускала весь
+  // герой на рабочих экранах относительно экрана выбора; крошка — 0px.
+  var CRUMB =
+    '<button type="button" id="cxHeroBack">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/></svg>' +
+      '<span>Расчёт</span>' +
+    '</button><span class="cxh-sep">·</span>';
+
   var TXT = {
     choose: {
       kick: 'Новый расчёт',
@@ -249,13 +268,13 @@
       hint: 'цифры в карточках пересчитаются мгновенно'
     },
     mix: {
-      kick: 'Расчёт · <span class="acc-b">Хочу рост</span>',
+      kick: CRUMB + '<span class="acc-b">Хочу рост</span>',
       title: 'Нарастить капитал за годы',
       sub: 'Выберите стратегию — прогноз пересчитается мгновенно.',
       hint: 'меняйте прямо здесь — всё пересчитается'
     },
     monthly: {
-      kick: 'Расчёт · <span class="acc-o">Хочу доход</span>',
+      kick: CRUMB + '<span class="acc-o">Хочу доход</span>',
       title: 'Получать деньги каждый месяц',
       sub: 'Корзина из 6 выпусков ОФЗ уже разложена под вашу сумму — подкрутите под себя.',
       hint: 'меняйте прямо здесь — всё пересчитается'
@@ -272,10 +291,6 @@
     hero.id = 'cxHero';
     hero.innerHTML =
       '<span class="cxh-wm">₽</span>' +
-      '<button type="button" id="cxHeroBack">' +
-        '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/></svg>' +
-        '<span>Выбор типа портфеля</span>' +
-      '</button>' +
       '<div class="cxh-row">' +
         '<div class="cxh-left">' +
           '<div class="cxh-kick" id="cxHeroKick"></div>' +
@@ -292,7 +307,10 @@
 
     // сумма переезжает в герой; обработчики #sumInput сохраняются
     $('cxHeroAmtHost').appendChild(amountHero);
-    $('cxHeroBack').addEventListener('click', function () {
+    // крошку «Расчёт» syncHero перерисовывает вместе с кикером, поэтому клик
+    // ловим на самом кикере, а не на самой кнопке
+    $('cxHeroKick').addEventListener('click', function (e) {
+      if (!e.target.closest('#cxHeroBack')) return;
       if (typeof window.cxSetMode === 'function') window.cxSetMode('choose');
     });
     return true;
@@ -458,12 +476,13 @@
     if (body) body.insertBefore(fc, body.firstChild);
     if (center) center.style.display = 'none';
 
+    // приписки «считается на лету · MOEX» в ряду нет: в мокапе карточка была
+    // заметно шире, а здесь третий элемент выдавливал комиссию за край
     var ctaRow = $('cxFcCta');
     var bar = $('calcCtaBar');
     if (ctaRow) {
       if (bar) ctaRow.appendChild(bar);
       if (fee) ctaRow.appendChild(fee);
-      ctaRow.appendChild(el('span', 'cxr6-meta', 'считается на лету · MOEX'));
     }
     return true;
   }
@@ -532,6 +551,8 @@
   // По мокапу CTA живёт в подвале карточки выплат, а не длинной кнопкой под
   // колонками. Правая колонка переключается баннер ↔ график, поэтому ряд с
   // кнопкой переносим в ту карточку, что сейчас видима.
+  var _moStats = null, _moStatsHome = null;   // блок «Итого за год / доходность»
+
   function placeMonthlyCta() {
     var btn = $('miCreatePfBtn');
     if (!btn) return;
@@ -543,7 +564,19 @@
       row = el('div', 'cxr6-mcta');
       row.id = 'cxMoCta';
       row.appendChild(btn);
-      row.appendChild(el('span', 'cxr6-meta', 'портфель появится во вкладке «Портфели»'));
+    }
+    // Итоги встают в один ряд с кнопкой — но только в сводке: тот же ряд ездит
+    // в карточку графика, где итоги показывать не надо. Поэтому в «Подробнее»
+    // возвращаем блок на его родное место в подвал баннера — карточка баннера
+    // там скрыта целиком, а узел остаётся в DOM и data.js продолжает писать в
+    // #ndIbYearly/#ndIbYield по id.
+    if (!_moStats) {
+      _moStats = document.querySelector('#miBannerCard .mi5-cb-stats');
+      if (_moStats) _moStatsHome = _moStats.parentNode;
+    }
+    if (_moStats) {
+      var dest = (host === banner) ? row : _moStatsHome;
+      if (dest && _moStats.parentNode !== dest) dest.appendChild(_moStats);
     }
     if (row.parentNode !== host) host.appendChild(row);
   }
