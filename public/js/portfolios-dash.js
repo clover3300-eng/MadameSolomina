@@ -1101,6 +1101,13 @@
                         '<b>Добавить виджет</b>' +
                         '<i>' + gsub + '</i>' +
                     '</button>' +
+                    // R10.1: мини-демо «двигайте и растягивайте» — две плитки-скелета в цикле
+                    // меняются местами и тянут общий край, как настоящие виджеты за .pfd-move
+                    // и .pfd-rs-l/-r; чистая CSS-анимация, кликов не ловит (pointer-events none)
+                    '<div class="pfxg-demo" aria-hidden="true">' +
+                        '<div class="pfxg-demo-stage"><span class="pfxg-dtile pfxg-dtile-a"></span><span class="pfxg-dtile pfxg-dtile-b"></span></div>' +
+                        '<span class="pfxg-demo-t">виджеты живые: тяните за верхнюю грань — поменяются местами, за края — изменят размер</span>' +
+                    '</div>' +
                     pfxgLaysHtml() +
                 '</div></div>' +
             '</div>';

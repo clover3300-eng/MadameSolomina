@@ -1944,6 +1944,53 @@ body.dark-mode .pfxg-ghost b { color: #e8eef7; }
 .pfxg-mainbtn b { font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 800; color: #1e293b; }
 .pfxg-mainbtn i { font-style: normal; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; line-height: 1.55; color: #8494a7; max-width: 250px; }
 body.dark-mode .pfxg-mainbtn b { color: #e8eef7; }
+/* R10.1: мини-демо drag/resize в обучающем призраке — две плитки-скелета в цикле
+   меняются местами (с «подъёмом», как настоящий драг) и тянут общий край (делитель).
+   Сцена 208px, вся геометрия в keyframes: left/width абсолютами, наездов нет. */
+.pfxg-demo { display: flex; flex-direction: column; align-items: center; gap: 9px; margin-top: 2px; pointer-events: none; }
+.pfxg-demo-stage { position: relative; width: 208px; height: 46px; }
+.pfxg-dtile {
+    position: absolute; top: 0; height: 46px; border-radius: 9px; box-sizing: border-box;
+    background: rgba(24, 38, 60, 0.05); border: 1px solid rgba(24, 38, 60, 0.10);
+}
+.pfxg-dtile::before {   /* мини-«шапка» виджета */
+    content: ''; position: absolute; top: 8px; left: 9px; width: 26px; height: 5px;
+    border-radius: 3px; background: rgba(24, 38, 60, 0.16);
+}
+.pfxg-dtile::after {    /* строка-скелет во всю ширину — «дышит» при ресайзе */
+    content: ''; position: absolute; left: 9px; right: 9px; bottom: 9px; height: 5px;
+    border-radius: 3px; background: rgba(24, 38, 60, 0.08);
+}
+.pfxg-dtile-a {
+    z-index: 1;
+    background: rgba(76, 94, 247, 0.09); border-color: rgba(76, 94, 247, 0.40);
+    animation: pfxgDemoA 7s ease-in-out infinite;
+}
+.pfxg-dtile-a::before { background: rgba(76, 94, 247, 0.45); }
+.pfxg-dtile-b { animation: pfxgDemoB 7s ease-in-out infinite; }
+@keyframes pfxgDemoA {
+    0%, 6%    { left: 0; width: 100px; transform: none; box-shadow: 0 0 0 0 rgba(68, 83, 239, 0); }
+    9%, 15%   { transform: translateY(-4px); box-shadow: 0 10px 20px -10px rgba(68, 83, 239, 0.55); }
+    18%, 30%  { left: 108px; width: 100px; transform: none; box-shadow: 0 0 0 0 rgba(68, 83, 239, 0); }
+    42%, 58%  { left: 76px; width: 132px; transform: none; box-shadow: 0 0 0 0 rgba(68, 83, 239, 0); }
+    70%, 74%  { left: 108px; width: 100px; transform: none; box-shadow: 0 0 0 0 rgba(68, 83, 239, 0); }
+    77%, 79%  { transform: translateY(-4px); box-shadow: 0 10px 20px -10px rgba(68, 83, 239, 0.55); }
+    82%, 100% { left: 0; width: 100px; transform: none; box-shadow: 0 0 0 0 rgba(68, 83, 239, 0); }
+}
+@keyframes pfxgDemoB {
+    0%, 6%    { left: 108px; width: 100px; }
+    18%, 30%  { left: 0; width: 100px; }
+    42%, 58%  { left: 0; width: 68px; }
+    70%, 74%  { left: 0; width: 100px; }
+    82%, 100% { left: 108px; width: 100px; }
+}
+.pfxg-demo-t { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; line-height: 1.5; color: #8494a7; max-width: 260px; text-align: center; }
+body.dark-mode .pfxg-dtile { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.12); }
+body.dark-mode .pfxg-dtile::before { background: rgba(255, 255, 255, 0.18); }
+body.dark-mode .pfxg-dtile::after { background: rgba(255, 255, 255, 0.09); }
+body.dark-mode .pfxg-dtile-a { background: rgba(129, 140, 248, 0.13); border-color: rgba(129, 140, 248, 0.45); }
+body.dark-mode .pfxg-dtile-a::before { background: rgba(129, 140, 248, 0.55); }
+@media (prefers-reduced-motion: reduce) { .pfxg-dtile { animation: none !important; } }
 .pfxg-lays { display: flex; flex-direction: column; align-items: center; gap: 7px; margin-top: 4px; }
 .pfxg-lays-l { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: #97a3b4; }
 .pfxg-lays-r { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
