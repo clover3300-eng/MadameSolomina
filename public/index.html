@@ -2162,9 +2162,12 @@
 
         </div>
 
-        <!-- Появляется только после «Приступить к расчёту» (см. miStartCalc в data.js) -->
+        <!-- Появляется только после «Приступить к расчёту» (см. miStartCalc в data.js).
+             «Портфели» ленивые: импорт обязан ждать загрузки модуля в колбэке
+             ensurePortfoliosJs (как v3BlCreatePortfolio) — прямой вызов до неё
+             тихо терял корзину, и вкладка открывалась без нового портфеля -->
         <button type="button" class="mi5-createpf-btn is-hidden" id="miCreatePfBtn"
-                onclick="if (typeof window.pfImport === 'function') window.pfImport('monthly', null, null); switchTab('portfolios');">
+                onclick="window.ensurePortfoliosJs(function () { if (typeof window.pfImport === 'function') window.pfImport('monthly', null, null); }); switchTab('portfolios');">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
           Создать портфель
         </button>
