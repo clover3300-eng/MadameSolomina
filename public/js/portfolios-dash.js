@@ -569,7 +569,9 @@
     // R9.2: блоки, которые рисуют кнопки виджета САМИ — внутри своей шапки, слева от
     // собственных контролов (сортировка / «Ребалансировать»). Угловой хром pfdBodyHtml
     // им не ставится. Тот же приём, что у «Избранного» и «Ставок» (свой глаз в шапке).
-    var PFD_OWN_CHROME = { plist: 1, pdetail: 1 };
+    // Терминал (trade:*) здесь же: его правый угол занят лупой/счётом, угловой
+    // оверлей ложился ПОВЕРХ них — кнопки встают в поток шапки ПЕРЕД этим контентом.
+    var PFD_OWN_CHROME = { plist: 1, pdetail: 1, 'trade:ob': 1, 'trade:ticket': 1, 'trade:orders': 1 };
     // пара кнопок блока в поток шапки: настройки виджета + удалить. Поповер настроек
     // якорится к .pfd-item (см. pfdCfgMount), поэтому от места кнопки не зависит.
     function pfdInChromeHtml(id) {
@@ -1042,11 +1044,11 @@
             //    скрыть/показать — из меню «Видимость».
             var hideBtn = '';
             if (b.isNote || b.id.indexOf('pf:') === 0 || PFD_OWN_CHROME[b.id]) {
-                // R9.2: plist/pdetail рисуют кнопки блока САМИ — внутри своей шапки,
-                // слева от собственных контролов (см. pfdInChromeHtml). Угловые кнопки
-                // им не годились: у «Моих портфелей» они выдавливали сортировку 78-px
-                // отступом, а у «Составов» (шапки .pf-ch нет вовсе) падали прямо на
-                // «Ребалансировать» и шестерёнку портфеля.
+                // R9.2: plist/pdetail/терминал рисуют кнопки блока САМИ — внутри своей
+                // шапки, слева от собственных контролов (см. pfdInChromeHtml). Угловые
+                // кнопки им не годились: у «Моих портфелей» они выдавливали сортировку
+                // 78-px отступом, у «Составов» (шапки .pf-ch нет вовсе) падали прямо на
+                // «Ребалансировать», а у терминала — на лупу и подпись счёта в углу.
                 hideBtn = '';
             } else if (b.defHidden) {
                 // корзина ВНУТРИ карточки (как у заметки .pfnt-trash): тихая иконка в правом-верхнем
@@ -1054,11 +1056,6 @@
                 // .pfd-rmable (padding-right), у KPI шапки нет — угол и так свободен.
                 // Рядом — шестерёнка настроек виджета (тема/высота, у графика — вид/период):
                 // открывает поповер .pfdcfg-pop прямо на блоке (см. pfdCfgOpen ниже)
-                hideBtn = '<button class="pfd-cardcfg" title="Настройки виджета" aria-label="Настройки виджета" onclick="pfdCfgOpen(\'' + jsArg(b.id) + '\', event)">' + PFDCFG_GEAR_SVG + '</button>' +
-                    '<button class="pfd-cardrm" title="Удалить виджет (вернуть — «Добавить блок» в Конструкторе)" aria-label="Удалить виджет" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + PF.NOTE_TRASH_SVG + '</button>';
-            } else if (b.isTrade) {
-                // терминал: тот же chrome, что у виджетов (просьба 2026-07-18) —
-                // шестерёнка и корзина по hover; вернуть — «Добавить блок»
                 hideBtn = '<button class="pfd-cardcfg" title="Настройки виджета" aria-label="Настройки виджета" onclick="pfdCfgOpen(\'' + jsArg(b.id) + '\', event)">' + PFDCFG_GEAR_SVG + '</button>' +
                     '<button class="pfd-cardrm" title="Удалить виджет (вернуть — «Добавить блок» в Конструкторе)" aria-label="Удалить виджет" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + PF.NOTE_TRASH_SVG + '</button>';
             } else if (b.id === 'cal' || b.id === 'sum') {
@@ -1087,7 +1084,7 @@
             // как у плиток тепловой карты) — см. .pfd-thm-* в portfolios-r7.css
             var thmV = (PF.dashCfg.thm || {})[b.id];
             var thmCls = thmV === 'dark' ? ' pfd-thm-dark' : thmV === 'glass' ? ' pfd-thm-glass' : '';
-            return '<div class="pfd-item' + hsetClass + thmCls + ((b.defHidden || b.isTrade) ? ' pfd-rmable' : '') + '" data-pfd="' + esc(b.id) + '" style="' + style + '">' +
+            return '<div class="pfd-item' + hsetClass + thmCls + (b.defHidden ? ' pfd-rmable' : '') + '" data-pfd="' + esc(b.id) + '" style="' + style + '">' +
                 chrome +
                 '<div class="pfd-body">' + html + '</div>' +
             '</div>';

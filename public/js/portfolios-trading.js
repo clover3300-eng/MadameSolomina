@@ -117,7 +117,8 @@
     function obCardHtml() {
         var lens = '<button type="button" class="btr-iconbtn' + (T.searchOpen ? ' on' : '') + '" id="btSearchTg" ' +
             'title="Поиск бумаги" aria-label="Поиск бумаги" onclick="pftSearchToggle()">' + IC_LENS + '</button>';
-        var head = PF.pfCardHead('Терминал', 'Стакан', null, lens);
+        // кнопки конструктора — в потоке шапки ПЕРЕД лупой (PFD_OWN_CHROME, R9.2)
+        var head = PF.pfCardHead('Терминал', 'Стакан', null, PF.pfdInChromeHtml('trade:ob') + lens);
         var search = '<div class="btr-search' + (T.searchOpen ? ' open' : '') + '" id="btSearchWrap">' +
             '<input class="ph-input" id="btSearch" type="text" ' +
             'placeholder="Тикер или название — например, SBER" autocomplete="off" spellcheck="false" value="' + esc(T.searchQ) + '">' +
@@ -272,7 +273,7 @@
                 (accTail() ? ' <b>····' + accTail() + '</b>' : '') +
                 (c.sandbox ? '<i class="btr-sand">песочница</i>' : '') + '</span>' : '') +
         '</div>';
-        var head = PF.pfCardHead('Тикет', 'Заявка', null, note);
+        var head = PF.pfCardHead('Тикет', 'Заявка', null, PF.pfdInChromeHtml('trade:ticket') + note);
         if (!T.meta) return head + '<div class="pfal-empty">Тикет откроется после выбора бумаги в стакане.</div>';
         var inc = T.meta.minInc || 0.01;
         var stepHint = '<i> · шаг ' + fmtPrice(inc) + '</i>';
@@ -420,7 +421,7 @@
                 (accTail() ? ' <b>····' + accTail() + '</b>' : '') +
                 (c.sandbox ? '<i class="btr-sand">песочница</i>' : '') + '</span></div>'
             : '';
-        var head = PF.pfCardHead('Счёт', 'Мои заявки', null, note);
+        var head = PF.pfCardHead('Счёт', 'Мои заявки', null, PF.pfdInChromeHtml('trade:orders') + note);
         var tabs = '<div class="btr-ttabs" id="btOtabs">' +
             '<button type="button"' + (T.otab === 'active' ? ' class="active"' : '') + ' onclick="pftOtab(\'active\')">Активные<span class="btr-cnt">' + T.orders.length + '</span></button>' +
             '<button type="button"' + (T.otab === 'stop' ? ' class="active"' : '') + ' onclick="pftOtab(\'stop\')">Стоп<span class="btr-cnt">' + T.stops.length + '</span></button>' +

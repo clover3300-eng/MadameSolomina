@@ -329,6 +329,12 @@ body.dark-mode .pfbrk-total-l i, .pfd-thm-dark .pfbrk-total-l i { color: #7f93ab
 .btr-hd-acc { display: inline-flex; align-items: baseline; gap: 6px; font-size: 10.5px; font-weight: 600; color: #97a3b4; white-space: nowrap; }
 .btr-hd-acc b { font-family: var(--font-num); font-weight: 600; color: #94a3b8; }
 .btr-sand { font-style: normal; font-size: 9px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: #d97706; }
+/* кнопки конструктора (.pfd-inchrome, R9.2) — в потоке шапки ПЕРЕД угловым контентом:
+   auto-прижим вправо несёт сам блок кнопок, у лупы/подписи счёта за ним auto гасится
+   (иначе свободное место делилось бы на два auto и кнопки повисали бы посередине) */
+.btr-card .pf-ch > .pfd-inchrome { margin-left: auto; margin-top: 4px; }
+.btr-card .pf-ch > .pfd-inchrome ~ .btr-iconbtn,
+.btr-card .pf-ch > .pfd-inchrome ~ .btr-hd-note { margin-left: 0; }
 
 /* поиск инструмента: свёрнут в лупу, разворачивается инлайн-полем */
 .btr-search { position: relative; display: none; }
