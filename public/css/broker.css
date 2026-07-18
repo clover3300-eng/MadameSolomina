@@ -5,13 +5,18 @@
    (position:fixed — transform-предки вкладок им не страшны).
    Формы внутри переиспользуют .ph-* из profile-menu.css. */
 
-#bkOverlay, #bkPinOverlay {
+/* #btConfirmOv — подтверждение заявки из терминала (portfolios-trading.js):
+   он собирает ту же разметку .bk-back + .bk-card, но своим id, поэтому раньше
+   не попадал ни под одно правило — модалка вставала в обычный поток и уезжала
+   ниже экрана, из-за чего кнопка «Купить» выглядела нерабочей. */
+#bkOverlay, #bkPinOverlay, #btConfirmOv {
     position: fixed; inset: 0; z-index: 1400;
     display: flex; align-items: center; justify-content: center;
     opacity: 0; pointer-events: none; transition: opacity 0.18s ease;
 }
-#bkOverlay.open, #bkPinOverlay.open { opacity: 1; pointer-events: auto; }
+#bkOverlay.open, #bkPinOverlay.open, #btConfirmOv.open { opacity: 1; pointer-events: auto; }
 #bkPinOverlay { z-index: 1450; }   /* PIN поверх визарда */
+#btConfirmOv { z-index: 1500; }    /* подтверждение сделки — поверх всего */
 
 .bk-back {
     position: absolute; inset: 0;
@@ -27,7 +32,7 @@
     padding: 22px 24px 20px;
     transform: translateY(8px) scale(0.98); transition: transform 0.18s ease;
 }
-#bkOverlay.open .bk-card, #bkPinOverlay.open .bk-card { transform: none; }
+#bkOverlay.open .bk-card, #bkPinOverlay.open .bk-card, #btConfirmOv.open .bk-card { transform: none; }
 .bk-card-pin { width: 360px; display: flex; flex-direction: column; gap: 12px; }
 
 /* ---------- шапка ---------- */

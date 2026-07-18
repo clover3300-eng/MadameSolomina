@@ -749,7 +749,21 @@
 
     // подтверждение заявки: своя модалка (pfConfirm не умеет ввод суммы)
     window.pftAsk = function () {
-        if (!tradeReady() || !T.meta || T.busy) return;
+        // Молчаливый выход здесь читался как «кнопка не работает»: каждый отказ
+        // должен называть причину, иначе пользователь жмёт в пустоту.
+        if (T.busy) { toast('Заявка уже отправляется — подождите ответа брокера'); return; }
+        if (!T.meta) { toast('Сначала выберите бумагу — найдите её в поиске над стаканом', true); return; }
+        if (!tradeReady()) {
+            var c = conn();
+            if (!c) toast('Брокер не подключён', true);
+            else if (A().isLocked()) { toast('Токен заперт PIN-кодом — разблокируйте его', true); if (window.pfBrokerUnlock) window.pfBrokerUnlock(); }
+            else if (A().isSessionGone()) toast('Сессия токена закончилась — введите токен заново', true);
+            else if (c.scope !== 'trade') toast('Подключение в режиме «Только чтение» — торговать им нельзя', true);
+            else if (c.state === 'revoked') toast('Брокер не принял токен — обновите его в подключении', true);
+            else if (c.state === 'downgraded') toast('Права токена урезали до чтения — выпустите токен с полным доступом', true);
+            else toast('Торговля сейчас недоступна', true);
+            return;
+        }
         var vel = velLeft();
         if (vel > 0) { toast('Пауза после ' + VEL_MAX + ' заявок подряд — ещё ' + Math.ceil(vel / 1000) + ' с', true); return; }
         var lots = Math.max(1, Math.floor(+T.lots || 1));
@@ -804,9 +818,25 @@
             '<div class="bk-foot"><button type="button" class="bk-btn" id="btCfNo">Отмена</button>' +
             '<button type="button" class="bk-btn bk-btn-pri" id="btCfYes">Подтвердить</button></div></div>';
         document.body.appendChild(ov);
-        function closeCf() { ov.remove(); }
+        // класс .open включает не только проявление, но и само позиционирование
+        // оверлея (см. broker.css) — без него модалка уезжает ниже экрана
+        requestAnimationFrame(function () { ov.classList.add('open'); });
+        function closeCf() {
+            document.removeEventListener('keydown', onKey);
+            ov.remove();
+        }
+        function onKey(e) {
+            if (e.key === 'Escape') { e.preventDefault(); closeCf(); }
+        }
+        document.addEventListener('keydown', onKey);
         ov.querySelector('.bk-back').addEventListener('click', closeCf);
         ov.querySelector('#btCfNo').addEventListener('click', closeCf);
+        // фокус сразу в модалку: крупную заявку подтверждают вводом суммы,
+        // обычную — Enter'ом по кнопке
+        setTimeout(function () {
+            var f = dq('btCfSum') || dq('btCfYes');
+            if (f) try { f.focus(); } catch (e) {}
+        }, 30);
         ov.querySelector('#btCfYes').addEventListener('click', function () {
             if (needType) {
                 var got = String((dq('btCfSum') || {}).value || '').replace(/[\s ]/g, '');
@@ -855,7 +885,18 @@
             };
             if (T.kind === 'limit') body.price = A().n2q(price);
         }
-        A().call(method, body).then(function () {
+        // синхронный бросок здесь оставил бы T.busy навсегда взведённым, а с ним
+        // и мёртвую кнопку до перезагрузки страницы
+        var req;
+        try { req = A().call(method, body); }
+        catch (e) {
+            T.busy = false;
+            toast((e && e.message) || 'Не удалось отправить заявку', true);
+            var b0 = dq('btSubmit'); if (b0) b0.disabled = false;
+            repaintTicketBits();
+            return;
+        }
+        req.then(function () {
             T.busy = false;
             T.sent.push(Date.now());
             T.orderId = null;   // исполненный ключ не переиспользуем
