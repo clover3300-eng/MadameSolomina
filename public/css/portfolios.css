@@ -1611,6 +1611,13 @@ body.dark-mode .pft-in { color: #34d399; }
     color: #6d5bd0; background: rgba(109, 91, 208, 0.12); cursor: default; }
 .pft-rebal-ic svg { width: 11px; height: 11px; }
 body.dark-mode .pft-rebal-ic { color: #b3a7f5; background: rgba(179, 167, 245, 0.15); }
+/* Продажа со счёта брокера (этап 2 №10): та же круглая метка-объяснение, что
+   и у ребаланса, но нейтральным серо-синим — это не наш расчёт, а факт счёта */
+.pft-brk-ic { flex-shrink: 0; width: 19px; height: 19px; border-radius: 999px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #5f6b7a; background: rgba(43, 57, 74, 0.09); cursor: default; }
+.pft-brk-ic svg { width: 11px; height: 11px; }
+body.dark-mode .pft-brk-ic { color: #a9b7c8; background: rgba(255, 255, 255, 0.09); }
 .pft-row { position: relative; }
 .pft-undo {
     position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
@@ -3430,6 +3437,15 @@ body.dark-mode .pfbk-re:hover { background: rgba(255, 255, 255, 0.1); }
 /* тихая строка «вне трекера: N позиций · X ₽» между составом и футером */
 .pfbk-extra { margin: 4px 2px 0; font-size: 11px; font-weight: 500; color: #8f9aa8; }
 body.dark-mode .pfbk-extra { color: #74839a; }
+/* строка про разобранную историю сделок (этап 2 №10) — тот же тихий голос,
+   что и «вне трекера»; ссылка-кнопка рядом, а не отдельным элементом шапки */
+.pfbk-ops { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.pfbk-ops.err { color: #c2410c; }
+body.dark-mode .pfbk-ops.err { color: #fb923c; }
+.pfbk-opsbtn { padding: 0; border: none; background: none; font: inherit; font-weight: 700;
+    color: var(--pf-accent, #3b82f6); cursor: pointer; text-decoration: underline;
+    text-decoration-style: dotted; text-underline-offset: 2px; }
+.pfbk-opsbtn:hover { text-decoration-style: solid; }
 /* настройки ⚙ брокерской карточки: заметка об авто-синке вместо формы добавления,
    кэш read-only, строки состава без редактора */
 .pfm-brknote { display: flex; align-items: center; gap: 9px; padding: 10px 12px; border-radius: 11px;

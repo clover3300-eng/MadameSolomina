@@ -513,6 +513,22 @@
         return call('GetPortfolio', { accountId: c.accountId, currency: 'RUB' });
     }
 
+    // История операций счёта (роадмап №10, этап 2). Окно [from, to] — RFC3339;
+    // state задаём в запросе, иначе в ответ приходят и ОТМЕНЁННЫЕ операции
+    // (документированное поведение), и реконструкция лотов по ним разъедется.
+    // ВАЖНО про полноту: legacy-метод отдаёт только ПОСЛЕДНЮЮ ТЫСЯЧУ операций
+    // и молча, без признака усечения, — поэтому зовущая сторона режет историю
+    // окнами по годам и в любом случае сверяет итог с GetPortfolio.
+    function getOperations(from, to) {
+        var c = getConn();
+        if (!c) return Promise.reject(new Error('Брокер не подключён'));
+        return call('GetOperations', {
+            accountId: c.accountId,
+            from: from, to: to,
+            state: 'OPERATION_STATE_EXECUTED'
+        });
+    }
+
     // figi/uid → { ticker, name } с кэшем в localStorage; не больше пачки
     // за раз, чтобы не упереться в лимиты (остальное дорезолвится потом)
     function resolveInstruments(positions) {
@@ -600,6 +616,7 @@
         ensureVerified: ensureVerified,
         call: call,
         getPortfolio: getPortfolio,
+        getOperations: getOperations,
         resolveInstruments: resolveInstruments,
         journal: journal,
         logEvent: logEvent,

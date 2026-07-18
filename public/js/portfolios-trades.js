@@ -18,6 +18,32 @@
     // импорт конструктора, виджетов, выплат и карточек (уже загружены):
     var pfdPushUndo = PF.pfdPushUndo, saveDashCfg = PF.saveDashCfg, GO_ARROW_SVG = PF.GO_ARROW_SVG, potentialOf = PF.potentialOf, FILTER_SVG = PF.FILTER_SVG, nextCouponDate = PF.nextCouponDate;
     var XMARK_SVG = PF.XMARK_SVG, assetDisplayName = PF.assetDisplayName, pfCardHead = PF.pfCardHead, pfConfirm = PF.pfConfirm, pfImpOutside = PF.pfImpOutside;
+    // Журнал p.trades делят два источника: применённые обмены ребалансировки
+    // (у них есть пара «продал → купил» и undo) и продажи со счёта брокера,
+    // приехавшие из GetOperations (роадмап №10, этап 2). Всё, что говорит
+    // именно про обмены — счётчик, панель истории, отмена — работает только
+    // с первыми.
+    function rebalTrades(p) {
+        return (p.trades || []).filter(function (t) { return t.src !== 'broker'; });
+    }
+    // Портфель-зеркало брокерского счёта править нельзя: состав задаётся
+    // замещающим снапшотом, и любая наша правка проживёт до ближайшего синка.
+    // Советы ребалансировки при этом остаются — запрещено только ПРИМЕНЕНИЕ.
+    function brokerRo(p) {
+        if (!p || !p.broker) return false;
+        toast('Это зеркало брокерского счёта — его состав и журнал задаёт сам счёт. Расчёт остаётся подсказкой, сделку нужно совершить у брокера.', true);
+        return true;
+    }
+    // Вместо кнопки «Применить обмен» у карточки счёта — объяснение: расчёт
+    // остаётся полезным (что на что менять), но записать сделку в зеркало
+    // счёта нельзя, её надо совершить у брокера.
+    function rbApplyBlockedHtml() {
+        var ov = dq('pfOverlay'); if (!ov) return '';
+        var p = findPf(ov.dataset.pid);
+        if (!p || !p.broker) return '';
+        return '<div class="rb5-brknote">Это зеркало брокерского счёта — расчёт остаётся подсказкой, ' +
+            'а сам обмен совершается у брокера. Состав карточки придёт следующим синком.</div>';
+    }
     // ====================================================================
     //  ИСТОРИЯ СДЕЛОК — полноширинный журнал ПОД всей сеткой (всегда самая
     //  нижняя секция). Каждая сделка = один лот покупки (модель хранит только
@@ -56,19 +82,30 @@
             // поэтому строку «Продажа» строим из журнала p.trades. Купленный в обмене лот
             // помечаем связкой lotId→trade — для бейджа «ребаланс» и синхронной отмены.
             var rebalByLot = {};
-            var newestUndoable = (p.trades && p.trades.length && p.trades[0].undo) ? p.trades[0].id : null;
+            // Отменять можно только ВЕРХНИЙ обмен (отмены идут стеком). Ищем
+            // первую запись С undo, а не просто нулевую: в брокерском портфеле
+            // журнал делится с продажами со счёта, у которых undo нет и быть
+            // не может (счёт у брокера мы не трогаем).
+            var newestUndoable = null;
+            (p.trades || []).forEach(function (t) { if (!newestUndoable && t.undo) newestUndoable = t.id; });
             (p.trades || []).forEach(function (t) {
                 if (t.undo && t.undo.buyLotId) rebalByLot[t.undo.buyLotId] = t;
                 var w = new Date(t.ts || 0);
-                var iso = w.getFullYear() + '-' + pad2(w.getMonth() + 1) + '-' + pad2(w.getDate());
+                // t.date есть у операций со счёта — там дата уже посчитана по
+                // московскому торговому дню; у обменов её нет, берём из метки времени
+                var iso = t.date || (w.getFullYear() + '-' + pad2(w.getMonth() + 1) + '-' + pad2(w.getDate()));
                 var qty = +t.sellQty || 0;
                 var proceeds = +t.proceeds || 0;
+                var brk = t.src === 'broker';
                 list.push({ date: iso, ticker: t.sellTicker || '', name: t.sellName || t.sellTicker || '',
                     type: t.kind === 'bond' ? 'bond' : 'stock', side: 'sell',
                     price: qty > 0 ? proceeds / qty : 0, nkd: 0, hasNkd: false, qty: qty,
-                    position: proceeds, fee: 0, total: proceeds,
+                    // у продажи со счёта комиссия известна в РУБЛЯХ (t.feeRub);
+                    // t.fee в записи обмена — ставка брокера, в журнал не годится
+                    position: proceeds, fee: brk ? (+t.feeRub || 0) : 0, total: proceeds,
                     pfName: p.name, pfColor: colorVal(p.color), pfNum: visNum[p.id] || '',
-                    rebal: true, pid: p.id, tradeId: t.id, undoable: t.id === newestUndoable });
+                    rebal: !brk, brk: brk, pid: p.id, tradeId: t.id,
+                    undoable: !brk && t.id === newestUndoable });
             });
             (p.holdings || []).forEach(function (h) {
                 if (!h.ticker) return;
@@ -161,6 +198,10 @@
         // сделка из ребалансировки: компактная круглая иконка-метка В ТОЙ ЖЕ строке, что
         // и пилюля типа (не вторым рядом) + (для последней) кнопка синхронной отмены —
         // отмена убирает И продажу, И покупку (общая механика pfRbUndoTrade)
+        // продажа со счёта брокера: та же логика метки, что у ребаланса —
+        // объяснить строку, которую пользователь руками не вводил
+        if (t.brk) side += '<span class="pft-brk-ic" title="Продажа со счёта Т-Инвестиций — из истории операций брокера">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 4l9 5.5"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8"/><path d="M3 20h18"/></svg></span>';
         if (t.rebal) side += '<span class="pft-rebal-ic" title="Сделка из ребалансировки портфеля">' +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 0 1 14.4-6.1L21 8"/><path d="M21 3.5V8.2h-4.7"/><path d="M20.5 12a8.5 8.5 0 0 1-14.4 6.1L3 16"/><path d="M3 20.5V15.8h4.7"/></svg></span>';
         var undoBtn = (t.rebal && t.undoable && t.pid && t.tradeId)
@@ -177,7 +218,10 @@
             // метка портфеля — номер-маркер ПЕРВОЙ колонкой (левая рельса, как в календаре
             // выплат): без имени и без заголовка, имя портфеля — в подсказке при наведении
             (multiPf ? '<span class="pft-pf" style="--c:' + t.pfColor + '" title="' + esc(t.pfName) + '"><b class="pft-pfnum">' + (t.pfNum || '') + '</b></span>' : '') +
-            '<div class="pft-date"><b>' + ruDate(t.date) + '</b>' + (rel ? '<span>' + esc(rel) + '</span>' : '') + '</div>' +
+            // esc обязателен: с этапом 2 дата строки может прийти ПОЛЕМ записи
+            // (t.date у операций со счёта), то есть пережить восстановление
+            // бэкапа — а ruDate возвращает нераспознанную строку как есть
+            '<div class="pft-date"><b>' + esc(ruDate(t.date)) + '</b>' + (rel ? '<span>' + esc(rel) + '</span>' : '') + '</div>' +
             '<div class="pft-c pft-type">' + side + '</div>' +
             '<div class="pft-id"><span class="pft-tk">' + esc(t.ticker) + '</span><span class="pft-nm">' + esc(t.name) + '</span></div>' +
             '<div class="pft-c pft-price">' + fmtPrice(t.price) + '</div>' +
@@ -716,7 +760,7 @@
             '<button class="rb5-hpill' + (rebalParams ? ' on' : '') + '" onclick="pfRbParams()" title="Параметры расчёта — НДФЛ и комиссия брокера">' +
                 '<span class="rb5-hpl">' + (bt ? 'НДФЛ' : 'Комиссия') + '</span><b class="rb5-hpv">' + pillVal + '</b>' +
             '</button>' + rb5ParamsPop(!!bt) + '</div>';
-        var histN = (p.trades || []).length;
+        var histN = rebalTrades(p).length;
         var histBtn = '<button class="rb5-hbtn' + (rebalHistory ? ' on' : '') + '" onclick="pfRbHistory()" aria-label="История сделок" title="История сделок — применённые обмены">' + RB5_HIST +
             (histN ? '<i class="rb5-hbadge">' + (histN > 99 ? '99+' : histN) + '</i>' : '') + '</button>';
         var fxBtn = '<button class="rb5-hbtn' + (rebalFormulas ? ' on' : '') + '" onclick="pfRbFormulas()" aria-label="Методика расчёта" title="Методика расчёта — все формулы">' + PF.INFO_SVG + '</button>';
@@ -1006,10 +1050,10 @@
             rows += '<div class="rb5-vrow"><span class="rb5-vico">' + COIN_SVG + '</span><span class="rb5-vlabel">Прибыль ' + perLbl() + '</span><b>уточняем купоны…</b></div>';
         }
         // применить обмен в портфель одним кликом (есть что покупать → кнопка активна)
-        var apply = d.buyQty > 0
+        var apply = rbApplyBlockedHtml() || (d.buyQty > 0
             ? '<button class="rb5-apply" onclick="pfRbApplyBond()" title="Сделка сразу запишется в портфель и в историю">' + PF.CHECK_SVG +
                 '<span>Применить обмен</span><i>−' + d.qty + ' → +' + d.buyQty + ' шт</i></button>'
-            : '';
+            : '');
         return '<div class="rb5-deal">' + dealHeadHtml() + flow + note + '<div class="rb5-vbox">' + rows + '</div>' + verdict + apply + '</div>';
     }
     function rb5BondCol(bs, c) {
@@ -1136,10 +1180,10 @@
             : (d.potDelta > 0
                 ? '<div class="rb5-verdict ok">' + PF.CHECK_SVG + '<span>Потенциал растёт — обмен имеет смысл</span></div>'
                 : '<div class="rb5-verdict bad">' + XMARK_SVG + '<span>Потенциал не растёт — такой обмен смысла не имеет</span></div>');
-        var apply = d.buyQty > 0
+        var apply = rbApplyBlockedHtml() || (d.buyQty > 0
             ? '<button class="rb5-apply" onclick="pfRbApplyStock()" title="Сделка сразу запишется в портфель и в историю">' + PF.CHECK_SVG +
                 '<span>Применить обмен</span><i>−' + d.qty + ' ' + esc(sellX.h.ticker) + ' → +' + d.buyQty + ' ' + esc(cand.ticker) + '</i></button>'
-            : '';
+            : '');
         return '<div class="rb5-deal">' + dealHeadHtml() + flow + note + '<div class="rb5-vbox">' + rows + '</div>' + verdict + apply + '</div>';
     }
     function rb5StockCol(ss, c) {
@@ -1175,7 +1219,10 @@
     // каждый расчёт можно отследить и проверить постфактум; запись можно удалить крестиком.
     function rb5HistoryHtml(p) {
         if (!rebalHistory) return '';
-        var ts = p.trades || [];
+        // только применённые ОБМЕНЫ: продажи со счёта брокера живут в том же
+        // p.trades, но у них нет пары «продал → купил», и в этой панели им нечего
+        // показать (их место — общий журнал «История операций»)
+        var ts = rebalTrades(p);
         var rows = ts.length ? ts.map(function (t, i) {
             var w = new Date(t.ts || 0);
             var when = pad2(w.getDate()) + '.' + pad2(w.getMonth() + 1) + '.' + w.getFullYear() + ' · ' + pad2(w.getHours()) + ':' + pad2(w.getMinutes());
@@ -1383,7 +1430,7 @@
     // пишет запись в историю и подсвечивает сдвиг «машины денег» в шапке.
     window.pfRbApplyBond = function () {
         var ov = dq('pfOverlay'); if (!ov) return;
-        var p = findPf(ov.dataset.pid); if (!p) return;
+        var p = findPf(ov.dataset.pid); if (!p || brokerRo(p)) return;
         var bs = calcPf(p).hs.filter(function (x) { return x.h.type === 'bond'; });
         var sellX = null; bs.forEach(function (x) { if (x.h.id === rebalPick.bond.sell) sellX = x; });
         var cand = null; ofzMarket().map(ofzCand).forEach(function (cd) { if (cd.t === rebalPick.bond.buy) cand = cd; });
@@ -1428,7 +1475,7 @@
     // Кнопка «Применить обмен» (акции): та же механика, эффект — смена потенциала.
     window.pfRbApplyStock = function () {
         var ov = dq('pfOverlay'); if (!ov) return;
-        var p = findPf(ov.dataset.pid); if (!p) return;
+        var p = findPf(ov.dataset.pid); if (!p || brokerRo(p)) return;
         var ss = calcPf(p).hs.filter(function (x) { return x.h.type !== 'bond'; });
         var sellX = null; ss.forEach(function (x) { if (x.h.id === rebalPick.stock.sell) sellX = x; });
         if (!sellX) return;
@@ -1459,7 +1506,9 @@
         toast('Обмен применён: −' + d.qty + ' ' + sellName + ' → +' + d.buyQty + ' ' + cand.ticker);
     };
     window.pfRbDelTrade = function (pid, tid) {
-        var p = findPf(pid); if (!p) return;
+        // brokerRo уже закрыл единственный портфель, где живут записи со счёта:
+        // удалять их поштучно бессмысленно — ближайший разбор истории вернёт их
+        var p = findPf(pid); if (!p || brokerRo(p)) return;
         p.trades = (p.trades || []).filter(function (t) { return t.id !== tid; });
         saveStore(); rebalRepaint();
     };
@@ -1467,10 +1516,12 @@
     // Разрешена только для верхней записи истории — отмены идут строго стеком,
     // иначе более поздние сделки могли уже перераспределить те же бумаги.
     window.pfRbUndoTrade = function (pid, tid) {
-        var p = findPf(pid); if (!p) return;
+        var p = findPf(pid); if (!p || brokerRo(p)) return;
         var ts = p.trades || [];
-        if (!ts.length || ts[0].id !== tid) { toast('Отменять сделки можно только по порядку — начиная с последней', true); return; }
-        var t = ts[0];
+        // «верхняя» — верхняя СРЕДИ ОБМЕНОВ: продажи со счёта брокера лежат в
+        // том же журнале, но отменять у них нечего (счёт мы не трогаем)
+        var t = rebalTrades(p)[0];
+        if (!t || t.id !== tid) { toast('Отменять сделки можно только по порядку — начиная с последней', true); return; }
         if (!t.undo || !t.undo.sold) { toast('У этой записи нет сохранённого состояния для отмены', true); return; }
         // окно предупреждения: отмена стирает ОБЕ записи обмена (продажу и покупку) —
         // без явного подтверждения так легко потерять сделку случайным кликом
@@ -1498,7 +1549,7 @@
             }
             // 3) забрать обратно остаток выручки, упавший в кэш при применении обмена
             if (t.rest > 0.005) p.cash = Math.max(0, Math.round(((+p.cash || 0) - t.rest) * 100) / 100);
-            ts.shift();
+            p.trades = ts.filter(function (x) { return x.id !== t.id; });
             rebalPick.bond = { sell: null, buy: null, qty: null };
             rebalPick.stock = { sell: null, buy: null, qty: null };
             saveStore(); pfInvalidateCharts(p.id); ensureQuotes(true);

@@ -471,6 +471,15 @@ body.dark-mode .rb5-verdict.bad { color: #f87171; background: rgba(248, 113, 113
 .rb5-apply:hover { transform: translateY(-1px); box-shadow: 0 18px 36px -12px var(--rbc-shadow, rgba(22, 27, 39, 0.65)); }
 .rb5-apply:active { transform: translateY(0); box-shadow: 0 10px 22px -10px var(--rbc-shadow, rgba(22, 27, 39, 0.55)); }
 
+/* Зеркало брокерского счёта (роадмап №10): вместо кнопки «Применить обмен» —
+   объяснение. Расчёт остаётся подсказкой, сделка совершается у брокера. */
+.rb5-brknote {
+    padding: 12px 14px; border: 1px dashed rgba(43, 57, 74, 0.22); border-radius: 14px;
+    background: rgba(43, 57, 74, 0.035);
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; line-height: 1.45; color: #5f6b7a;
+}
+body.dark-mode .rb5-brknote { border-color: rgba(255, 255, 255, 0.16); background: rgba(255, 255, 255, 0.05); color: #a9b7c8; }
+
 /* ---- сегментированный переключатель (в попапе параметров) ---- */
 .rb5-seg {
     display: inline-flex; align-items: center; gap: 2px; padding: 3px;

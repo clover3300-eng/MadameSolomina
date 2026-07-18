@@ -1250,13 +1250,17 @@
         closeImpMenus();
         var rows = [];
         PF.store.items.forEach(function (p) {
-            (p.trades || []).forEach(function (t) {   // продажи обменов ребалансировки
+            (p.trades || []).forEach(function (t) {   // продажи: обмены ребалансировки и операции со счёта
                 var w = new Date(t.ts || 0);
-                var iso = w.getFullYear() + '-' + pad2(w.getMonth() + 1) + '-' + pad2(w.getDate());
+                var iso = t.date || (w.getFullYear() + '-' + pad2(w.getMonth() + 1) + '-' + pad2(w.getDate()));
                 var q = +t.sellQty || 0, proceeds = +t.proceeds || 0;
                 rows.push({ pf: p.name, date: iso, side: 'Продажа', type: t.kind === 'bond' ? 'Облигация' : 'Акция',
                     tk: t.sellTicker || '', nm: t.sellName || t.sellTicker || '', price: q > 0 ? proceeds / q : null,
-                    nkd: null, qty: q, sum: proceeds, feePct: (+t.fee || 0) * 100 });
+                    // комиссия — В РУБЛЯХ: у операции со счёта она известна точно
+                    // (t.feeRub), у обмена ребалансировки t.fee — это СТАВКА, из
+                    // неё рубли считаются от суммы сделки
+                    nkd: null, qty: q, sum: proceeds,
+                    fee: t.src === 'broker' ? (+t.feeRub || 0) : (+t.fee || 0) * proceeds });
             });
             (p.holdings || []).forEach(function (h) {
                 if (!h.ticker) return;
@@ -1266,17 +1270,17 @@
                     var nkd = isB ? (+l.nkd || 0) : null;
                     rows.push({ pf: p.name, date: l.buyDate || '', side: 'Покупка', type: isB ? 'Облигация' : 'Акция',
                         tk: h.ticker, nm: h.name || h.ticker, price: +l.buyPrice || 0, nkd: nkd, qty: q,
-                        sum: ((+l.buyPrice || 0) + (nkd || 0)) * q, feePct: 0 });
+                        sum: ((+l.buyPrice || 0) + (nkd || 0)) * q, fee: +l.fee || 0 });
                 });
             });
         });
         if (!rows.length) { toast('Пока нет сделок для выгрузки', true); return; }
         rows.sort(function (a, b) { return (b.date || '').localeCompare(a.date || ''); });
-        var head = ['Портфель', 'Дата', 'Сторона', 'Тип', 'Тикер', 'Название', 'Цена, ₽', 'НКД, ₽', 'Кол-во', 'Сумма, ₽', 'Комиссия, %'];
+        var head = ['Портфель', 'Дата', 'Сторона', 'Тип', 'Тикер', 'Название', 'Цена, ₽', 'НКД, ₽', 'Кол-во', 'Сумма, ₽', 'Комиссия, ₽'];
         var lines = [head.map(csvCell).join(';')];
         rows.forEach(function (r) {
             lines.push([r.pf, csvRuDate(r.date), r.side, r.type, r.tk, r.nm, csvNum(r.price),
-                r.nkd != null ? csvNum(r.nkd) : '', r.qty, csvNum(r.sum), r.feePct > 0 ? csvNum(r.feePct, 3) : ''
+                r.nkd != null ? csvNum(r.nkd) : '', r.qty, csvNum(r.sum), r.fee > 0 ? csvNum(r.fee) : ''
             ].map(csvCell).join(';'));
         });
         try {
@@ -1316,8 +1320,19 @@
                 ensureLots(h);
             });
             if (!Array.isArray(p.trades)) delete p.trades;
-            // сменились id активов/лотов → сохранённые undo-ссылки сделок больше не сходятся
-            else if (holdIdFixed || idFixed) p.trades.forEach(function (t) { if (t && t.undo) delete t.undo; });
+            else {
+                p.trades = p.trades.filter(function (t) { return t && typeof t === 'object'; });
+                p.trades.forEach(function (t) {
+                    // id уходит СЫРЫМ в onclick журнала, а дата — в разметку строки:
+                    // из файла сюда может приехать что угодно
+                    if (!pfIdOk(t.id)) { t.id = genId('t'); delete t.undo; }
+                    if (t.date != null && !/^\d{4}-\d{2}-\d{2}$/.test(t.date)) delete t.date;
+                    // метка «операция со счёта» имеет смысл только в карточке счёта
+                    if (t.src != null && (t.src !== 'broker' || !p.broker)) delete t.src;
+                });
+                // сменились id активов/лотов → сохранённые undo-ссылки сделок больше не сходятся
+                if (holdIdFixed || idFixed) p.trades.forEach(function (t) { if (t.undo) delete t.undo; });
+            }
         });
         return { items: items, truncated: truncated };
     }
@@ -1818,6 +1833,7 @@
     });
     // Подтянуть цену/НКД закрытия на дату КОНКРЕТНОГО лота
     window.pfFetchLotField = function (pid, hid, lotId, field) {
+        if (brokerLocked(pid)) return;   // лоты карточки счёта задаёт синк, а не мы
         var p = findPf(pid); if (!p) return; var h = findHold(p, hid);
         if (!h || !h.ticker) { toast('Сначала укажите тикер', true); return; }
         var l = findLot(h, lotId); if (!l) return;
