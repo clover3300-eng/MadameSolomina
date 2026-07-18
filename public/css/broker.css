@@ -421,16 +421,21 @@ body.dark-mode .btr-search-none { color: #9fb1c6; }
 .btr-axrow.mine { background: rgba(68, 83, 239, 0.07); }
 .btr-axrow.mine:hover { background: rgba(68, 83, 239, 0.12); }
 .btr-axrow.mine b { color: #4453ef; font-weight: 800; }
+/* обёртка меток: на одной цене может стоять и лимитка, и стоп — две пилюли
+   в ряд у центра оси (позиционируется она, сами пилюли внутри в потоке) */
+.btr-axmk { position: absolute; top: 2px; z-index: 1; display: flex; align-items: center; gap: 3px; }
+.btr-axrow.ask .btr-axmk { left: 4px; }
+.btr-axrow.bid .btr-axmk { right: 4px; }
 .btr-axmine {
-    position: absolute; top: 2px; z-index: 1;
     min-width: 15px; height: 15px; padding: 0 4px; border-radius: 7px;
     display: flex; align-items: center; justify-content: center;
     font-family: var(--font-num, 'JetBrains Mono', monospace);
     font-size: 9.5px; font-weight: 800; line-height: 1;
     color: #fff; background: #4453ef; box-shadow: 0 1px 3px rgba(68, 83, 239, 0.35);
 }
-.btr-axrow.ask .btr-axmine { left: 4px; }
-.btr-axrow.bid .btr-axmine { right: 4px; }
+/* стоп — КОНТУРОМ: этих лотов в очереди стакана ещё нет, они ждут своей цены.
+   Заливка = «стою в очереди», контур = «сработает здесь» */
+.btr-axmine.stop { color: #4453ef; background: #fff; box-shadow: inset 0 0 0 1.5px #4453ef; }
 
 /* заявка вне глубины стакана — полоска над/под лестницей: выставил и не потерял */
 .btr-axout {
@@ -453,6 +458,14 @@ body.dark-mode .btr-search-none { color: #9fb1c6; }
     font-family: var(--font-ui); font-size: 9.5px; font-weight: 700;
     letter-spacing: 0.06em; text-transform: uppercase; color: #97a3b4;
 }
+/* стоп вне лестницы — пунктир и полая точка: та же пара «заливка/контур»,
+   что у меток на строках стакана */
+.btr-axout.stop { border-style: dotted; }
+.btr-axout.stop .btr-axout-d { background: transparent; box-shadow: inset 0 0 0 2px #16a34a; }
+.btr-axout.stop .btr-axout-d.sell { background: transparent; box-shadow: inset 0 0 0 2px #dc2626; }
+/* цену брокер не прислал — полоска приглушена, но заявка на виду */
+.btr-axout.nopx { border-style: dotted; cursor: default; }
+.btr-axout.nopx b { color: #97a3b4; }
 .btr-obwait { padding: 14px 0; font-size: 12.5px; color: #94a3b8; }
 
 /* центр оси — последняя цена между hairline-линиями, без плашки */
@@ -672,6 +685,16 @@ body.dark-mode .btr-axrow.mine b, .pfd-thm-dark .btr-axrow.mine b { color: #a5b4
 body.dark-mode .btr-axmine, .pfd-thm-dark .btr-axmine {
     background: #818cf8; color: #10162a; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
+body.dark-mode .btr-axmine.stop, .pfd-thm-dark .btr-axmine.stop {
+    background: transparent; color: #a5b4fc; box-shadow: inset 0 0 0 1.5px #818cf8;
+}
+body.dark-mode .btr-axout.stop .btr-axout-d, .pfd-thm-dark .btr-axout.stop .btr-axout-d {
+    background: transparent; box-shadow: inset 0 0 0 2px #34d399;
+}
+body.dark-mode .btr-axout.stop .btr-axout-d.sell, .pfd-thm-dark .btr-axout.stop .btr-axout-d.sell {
+    background: transparent; box-shadow: inset 0 0 0 2px #f87171;
+}
+body.dark-mode .btr-axout.nopx b, .pfd-thm-dark .btr-axout.nopx b { color: #9fb1c6; }
 body.dark-mode .btr-axout, .pfd-thm-dark .btr-axout {
     border-color: rgba(129, 140, 248, 0.45); background: rgba(129, 140, 248, 0.09);
 }

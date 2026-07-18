@@ -341,54 +341,128 @@
     // сравнивать их напрямую нельзя (плавающая точка).
     function pxStep(s) { return (s.meta && s.meta.minInc) || 0.01; }
     function pxKey(p, s) { return String(Math.round(p / pxStep(s))); }
+    // Цена заявки ЗА ШТУКУ. initialSecurityPrice приходит не всегда (у части
+    // заявок брокер отдаёт 0 либо не отдаёт поле вовсе) — тогда считаем её из
+    // суммы заявки: initialOrderPrice = цена × лотность × лоты. Без запасного
+    // пути такая заявка молча пропадала из стакана: у брокера висит, а метки
+    // нет — и это читалось как «во втором стакане заявка не показывается».
+    function ordPx(o, s) {
+        var q2n = A().q2n;
+        var px = q2n(o.initialSecurityPrice);
+        if (px > 0) return px;
+        var tot = q2n(o.initialOrderPrice) || q2n(o.totalOrderAmount);
+        var req = +o.lotsRequested || 0;
+        var lot = (s.meta && s.meta.lot) || 1;
+        if (tot > 0 && req > 0) return tot / (req * lot);
+        return q2n(o.averagePositionPrice) || 0;
+    }
+    // ---- свои заявки по цене ----
+    // Лимитка СТОИТ В ОЧЕРЕДИ стакана, стоп ЖДЁТ АКТИВАЦИИ — это разные ответы
+    // на «что здесь моего», поэтому считаем их врозь и метим разными знаками.
+    // out.px — по цене в шагах инструмента; out.noPx — заявки, чью цену брокер
+    // так и не дал: их всё равно показываем полоской, иначе «выставил и потерял».
     function myOrdersByPx(s) {
-        var out = {};
-        if (!s.uid || !T.orders.length || !A()) return out;
-        var q2n = A().q2n, figi = s.meta && s.meta.figi;
+        var out = { px: {}, noPx: [] };
+        if (!s.uid || !A()) return out;
+        var figi = s.meta && s.meta.figi;
+        function isMine(o) { return o.instrumentUid === s.uid || !!(figi && o.figi === figi); }
+        function at(px) {
+            var k = pxKey(px, s);
+            return out.px[k] || (out.px[k] = { px: px, lots: 0, buy: 0, sell: 0, stopLots: 0, stopBuy: 0, stopSell: 0, tp: 0, sl: 0 });
+        }
         T.orders.forEach(function (o) {
-            if (o.instrumentUid !== s.uid && !(figi && o.figi === figi)) return;
+            if (!isMine(o)) return;
             if (o.orderType === 'ORDER_TYPE_MARKET') return;   // у рыночной цены в стакане нет
-            var px = q2n(o.initialSecurityPrice);
-            if (!(px > 0)) return;
             // в очереди стоит только неисполненный остаток
             var left = Math.max(0, (+o.lotsRequested || 0) - (+o.lotsExecuted || 0));
             if (!left) return;
-            var k = pxKey(px, s);
-            var e = out[k] || (out[k] = { px: px, lots: 0, buy: 0, sell: 0 });
+            var buy = o.direction === 'ORDER_DIRECTION_BUY';
+            var px = ordPx(o, s);
+            if (!(px > 0)) { out.noPx.push({ lots: left, buy: buy, stop: false }); return; }
+            var e = at(px);
             e.lots += left;
-            if (o.direction === 'ORDER_DIRECTION_BUY') e.buy += left; else e.sell += left;
+            if (buy) e.buy += left; else e.sell += left;
+        });
+        T.stops.forEach(function (o) {
+            if (!isMine(o)) return;
+            var lots = Math.max(0, Math.floor(+o.lotsRequested || 0));
+            if (!lots) return;
+            var buy = o.direction === 'STOP_ORDER_DIRECTION_BUY';
+            var tp = o.stopOrderType === 'STOP_ORDER_TYPE_TAKE_PROFIT';
+            var px = A().q2n(o.stopPrice);
+            if (!(px > 0)) { out.noPx.push({ lots: lots, buy: buy, stop: true, tp: tp }); return; }
+            var e = at(px);
+            e.stopLots += lots;
+            if (buy) e.stopBuy += lots; else e.stopSell += lots;
+            if (tp) e.tp += lots; else e.sl += lots;
         });
         return out;
     }
-    function myTitle(m, s) {
+    function sideWord(buy, sell) {
+        return (buy && sell) ? 'мои заявки' : buy ? 'моя покупка' : 'моя продажа';
+    }
+    function limTitle(m, s) {
         var side = (m.buy && m.sell) ? 'заявки' : (m.buy ? 'покупка' : 'продажа');
-        return 'Ваша ' + side + ' · ' + m.lots + ' лот по ' + fmtPx(m.px, s) + ' ₽';
+        return 'Ваша ' + side + ' · ' + m.lots + ' лот в очереди по ' + fmtPx(m.px, s) + ' ₽';
+    }
+    function stopTitle(m, s) {
+        var both = m.tp && m.sl;
+        return (both ? 'Ваши стоп-заявки' : 'Ваш ' + (m.tp ? 'тейк-профит' : 'стоп-лосс')) +
+            ' · ' + m.stopLots + ' лот · активация по ' + fmtPx(m.px, s) + ' ₽';
+    }
+    // метки у центра оси: лимит — заливкой (уже в очереди), стоп — контуром
+    // (цена ещё не наступила, в стакане этих лотов нет)
+    function myMarks(m, s) {
+        var h = '';
+        if (m.lots) h += '<span class="btr-axmine" title="' + esc(limTitle(m, s)) + '">' + m.lots + '</span>';
+        if (m.stopLots) h += '<span class="btr-axmine stop" title="' + esc(stopTitle(m, s)) + '">' + m.stopLots + '</span>';
+        return h ? '<span class="btr-axmk">' + h + '</span>' : '';
     }
     // полоска «моя заявка вне лестницы»: цена далеко от рынка либо стакан пуст
-    function myOutRow(m, where, s, n) {
-        return '<div class="btr-axout' + (where ? ' ' + where : '') + '" role="button" ' +
-            'title="' + esc(myTitle(m, s)) + '" onclick="pftPickPrice(' + n + ',\'' + jsArg(String(m.px)) + '\')">' +
-            '<span class="btr-axout-d ' + (m.sell && !m.buy ? 'sell' : 'buy') + '"></span>' +
+    function myOutRow(m, where, s, n, stop) {
+        var lots = stop ? m.stopLots : m.lots;
+        var buy = stop ? m.stopBuy : m.buy, sell = stop ? m.stopSell : m.sell;
+        var what = stop
+            ? ((m.tp && m.sl) ? 'мои стопы' : m.tp ? 'мой тейк-профит' : 'мой стоп-лосс')
+            : sideWord(buy, sell);
+        return '<div class="btr-axout' + (stop ? ' stop' : '') + (where ? ' ' + where : '') + '" role="button" ' +
+            'title="' + esc(stop ? stopTitle(m, s) : limTitle(m, s)) + '" onclick="pftPickPrice(' + n + ',\'' + jsArg(String(m.px)) + '\')">' +
+            '<span class="btr-axout-d ' + (sell && !buy ? 'sell' : 'buy') + '"></span>' +
             '<b>' + fmtPx(m.px, s) + ' ₽</b>' +
-            '<span>' + (m.buy && m.sell ? 'мои заявки' : (m.buy ? 'моя покупка' : 'моя продажа')) +
-                ' · ' + m.lots + ' лот</span>' +
-            '<i>' + (where === 'up' ? 'выше стакана' : where === 'down' ? 'ниже стакана' : 'ждёт очереди') + '</i>' +
+            '<span>' + what + ' · ' + lots + ' лот</span>' +
+            '<i>' + (stop ? 'активация' : where === 'up' ? 'выше стакана' : where === 'down' ? 'ниже стакана' : 'ждёт очереди') + '</i>' +
         '</div>';
+    }
+    // цену брокер не прислал — на ось заявку не поставить, но и потерять нельзя:
+    // показываем без цены, чтобы «выставил и не вижу» не случалось вовсе
+    function myNoPxRow(m) {
+        var what = m.stop ? (m.tp ? 'мой тейк-профит' : 'мой стоп-лосс') : (m.buy ? 'моя покупка' : 'моя продажа');
+        return '<div class="btr-axout nopx" title="Брокер не прислал цену этой заявки — она видна в карточке «Мои заявки»">' +
+            '<span class="btr-axout-d ' + (m.buy ? 'buy' : 'sell') + '"></span>' +
+            '<b>—</b><span>' + what + ' · ' + m.lots + ' лот</span>' +
+            '<i>цена не пришла</i></div>';
     }
     function myOutList(mine, seen, hiPx, loPx, last, s, n) {
         var up = [], down = [];
-        Object.keys(mine).forEach(function (k) {
+        Object.keys(mine.px).forEach(function (k) {
             if (seen[k]) return;
-            var m = mine[k];
+            var m = mine.px[k];
             // между строками разреженного стакана — относим по последней цене
             var above = hiPx == null ? false : (m.px > hiPx || (m.px >= loPx && m.px > last));
             (above ? up : down).push(m);
         });
-        up.sort(function (a, b) { return b.px - a.px; });
-        down.sort(function (a, b) { return b.px - a.px; });
+        // на одной цене могут стоять и лимитка, и стоп — тогда это две полоски:
+        // очередь и активация живут по разным правилам, в одну строку не сводятся
+        function rows(list, where) {
+            list.sort(function (a, b) { return b.px - a.px; });
+            return list.map(function (m) {
+                return (m.lots ? myOutRow(m, where, s, n, false) : '') +
+                       (m.stopLots ? myOutRow(m, where, s, n, true) : '');
+            }).join('');
+        }
         return {
-            up: up.map(function (m) { return myOutRow(m, hiPx == null ? '' : 'up', s, n); }).join(''),
-            down: down.map(function (m) { return myOutRow(m, hiPx == null ? '' : 'down', s, n); }).join('')
+            up: rows(up, hiPx == null ? '' : 'up'),
+            down: rows(down, hiPx == null ? '' : 'down') + mine.noPx.map(myNoPxRow).join('')
         };
     }
     // стакан по оси цены: [объём спроса ←] цена [→ объём предложения];
@@ -413,10 +487,10 @@
         function row(r, side, best) {
             var p = q2n(r.price), q = +r.quantity || 0;
             var w = Math.max(4, Math.round(q / maxQ * 100));
-            var k = pxKey(p, s), m = mine[k];
+            var k = pxKey(p, s), m = mine.px[k];
             if (m) seen[k] = 1;
             // метка стоит у центра оси (рядом с ценой), где начинается полоса объёма
-            var badge = m ? '<span class="btr-axmine" title="' + esc(myTitle(m, s)) + '">' + m.lots + '</span>' : '';
+            var badge = m ? myMarks(m, s) : '';
             var half = '<span class="btr-axh"><i style="width:' + w + '%"></i><em>' + q.toLocaleString('ru-RU') + '</em>' + badge + '</span>';
             return '<div class="btr-axrow ' + side + (best ? ' best' : '') + (m ? ' mine' : '') + '" role="button" onclick="pftPickPrice(' + n + ',\'' + jsArg(String(p)) + '\')">' +
                 (side === 'bid' ? half : '<span class="btr-axh"></span>') +
@@ -619,8 +693,9 @@
     function ordRow(o) {
         var ins = instrMem[o.instrumentUid] || {};
         var buy = o.direction === 'ORDER_DIRECTION_BUY';
-        var q2n = A().q2n;
-        var price = q2n(o.initialSecurityPrice);
+        // цена — тем же запасным путём, что и метка в стакане (ordPx): иначе
+        // заявка стоит в лестнице с ценой, а в списке у неё прочерк
+        var price = ordPx(o, metaSlot(o.instrumentUid));
         var req = +o.lotsRequested || 0, exec = +o.lotsExecuted || 0;
         var pct = req ? Math.round(exec / req * 100) : 0;
         var part = o.executionReportStatus === 'EXECUTION_REPORT_STATUS_PARTIALLYFILL' || exec > 0;
