@@ -149,7 +149,10 @@
         reports: [['reports', 1, 6], ['snaps', 7, 6]],
         divs: [['divs', 1, 4], ['kpi:next', 5, 4], ['passive', 9, 4], ['cal', 1, 8], ['calm', 9, 4]],
         ops: [['trades', 1, 12]],
-        settings: [['set:corner', 1, 6], ['set:bg', 7, 6], ['set:vis', 1, 6], ['set:layout', 7, 6], ['reports', 1, 6]]
+        settings: [['set:corner', 1, 6], ['set:bg', 7, 6], ['set:vis', 1, 6], ['set:layout', 7, 6], ['reports', 1, 6]],
+        // «Торговля»: три карточки терминала стартуют в ряд (стакан ýже, тикету и
+        // заявкам просторнее) — дальше пользователь двигает и меняет размер сам
+        trading: [['trade:ob', 1, 4], ['trade:ticket', 5, 4], ['trade:orders', 9, 4]]
     };
     function pfxTabSeed(tab) {
         var cfg = normTabCfg(null);
@@ -641,10 +644,19 @@
         // «История сделок»: на подвкладке «Операции» — полноэкранный журнал (asPage)
         var tr = PF.tradesHtml(PF.dashTab === 'ops');
         if (tr) blocks.push({ id: 'trades', name: 'История сделок', htmlFn: function () { return tr; }, span: 12 });
+        // «Торговля»: карточки терминала — блоки ТОЛЬКО этой подвкладки (в пикер
+        // других вкладок не попадают). isTrade освобождает их от опт-ин ниже:
+        // остаются видимыми и НЕудаляемыми (chrome без корзины), но двигаются и
+        // меняют размер — терминал без стакана бессмыслен, потерять его нельзя
+        if (PF.dashTab === 'trading' && PF.pftObCard) {
+            blocks.push({ id: 'trade:ob', name: 'Стакан', htmlFn: PF.pftObCard, span: 4, isTrade: true });
+            blocks.push({ id: 'trade:ticket', name: 'Тикет', htmlFn: PF.pftTicketCard, span: 4, isTrade: true });
+            blocks.push({ id: 'trade:orders', name: 'Мои заявки', htmlFn: PF.pftOrdersCard, span: 4, isTrade: true });
+        }
         // R8: на подвкладках ВСЕ блоки опт-ин — что показано, решает сид (hidden[id]=0)
         // и пользователь через пикер; дефолтно-видимых блоков там нет (включая новые
         // карточки портфелей pf:*, которые на «Обзоре» видимы по умолчанию)
-        if (PF.dashTab !== 'overview') blocks.forEach(function (b) { if (!b.isNote) b.defHidden = true; });
+        if (PF.dashTab !== 'overview') blocks.forEach(function (b) { if (!b.isNote && !b.isTrade) b.defHidden = true; });
         return blocks;
     }
     // скрыт ли блок: явный выбор пользователя (cfg.hidden) главнее дефолта блока

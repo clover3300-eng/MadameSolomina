@@ -191,9 +191,15 @@
             var wrapPanel = chrome ? pfxPanelWrap : function (x) { return x; };
             var body;
             if (pfxEffTab() === 'trading') {
-                // «Торговля»: гейт-карточка по состоянию брокера вместо конструктора
-                // (терминал — этап 2, см. pfxTradingHtml в portfolios-tabs.js)
-                body = chrome + wrapPanel(PF.pfxTradingHtml());
+                // «Торговля»: подключён с торговлей — три карточки терминала живут
+                // дашборд-конструктором (drag/resize, как все виджеты «Портфелей»);
+                // иначе гейт по состоянию брокера (нет подключения / только чтение /
+                // заперт / отозван) — см. pfxTradingHtml в portfolios-tabs.js
+                if (PF.pftTradeReady && PF.pftTradeReady()) {
+                    body = chrome + wrapPanel(PF.pftLiveBanner() + pfdBodyHtml(favStr, noBonds));
+                } else {
+                    body = chrome + wrapPanel(PF.pfxTradingHtml());
+                }
             } else if (pfxEffTab() !== 'overview') {
                 body = chrome + wrapPanel(pfdBodyHtml(favStr, noBonds));
             } else if (pfdActive()) {

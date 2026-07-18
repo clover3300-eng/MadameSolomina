@@ -359,6 +359,27 @@ body.dark-mode .pfbrk-total-l i, .pfd-thm-dark .pfbrk-total-l i { color: #7f93ab
 }
 .btr-spread b { font-family: var(--font-num); color: #334155; }
 .btr-obwait { padding: 14px 6px; font-size: 12.5px; color: #94a3b8; }
+/* пустой стакан (закрытая сессия / неликвид) — плашка со статусом и ценой */
+.btr-obempty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 7px; padding: 22px 14px 18px; }
+.btr-obempty-ic {
+    width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center;
+    background: rgba(139, 92, 246, 0.1); color: #8b5cf6;
+}
+.btr-obempty-ic svg { width: 21px; height: 21px; }
+.btr-obempty-tt { font-family: var(--font-title); font-size: 15px; color: #0f172a; }
+.btr-obempty-tx { max-width: 300px; font-size: 12.5px; color: #64748b; line-height: 1.5; }
+.btr-obempty-px { display: flex; gap: 8px; margin-top: 6px; }
+.btr-obempty-px div {
+    display: flex; flex-direction: column; gap: 2px; align-items: center;
+    background: rgba(15, 23, 42, 0.04); border-radius: 11px; padding: 8px 14px;
+}
+.btr-obempty-px span { font-family: var(--font-ui); font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; }
+.btr-obempty-px b { font-family: var(--font-num); font-size: 14px; font-weight: var(--fw-num-bold); color: #0f172a; font-variant-numeric: tabular-nums; }
+body.dark-mode .btr-obempty-ic, .pfd-thm-dark .btr-obempty-ic { background: rgba(167, 139, 250, 0.16); color: #a78bfa; }
+body.dark-mode .btr-obempty-tt, .pfd-thm-dark .btr-obempty-tt { color: #f1f5f9; }
+body.dark-mode .btr-obempty-tx, .pfd-thm-dark .btr-obempty-tx { color: #9fb1c6; }
+body.dark-mode .btr-obempty-px div, .pfd-thm-dark .btr-obempty-px div { background: rgba(255, 255, 255, 0.06); }
+body.dark-mode .btr-obempty-px b, .pfd-thm-dark .btr-obempty-px b { color: #f1f5f9; }
 
 /* лента обезличенных сделок (под стаканом) */
 .btr-tape { display: flex; flex-direction: column; }

@@ -59,20 +59,27 @@
     }
 
     // ---------- разметка ----------
-    function pftTerminalHtml() {
+    // баннер боевого контура (над сеткой конструктора и в fallback-раскладке)
+    function bannerHtml() {
         var c = conn();
-        var banner = (!c.sandbox && !localStorage.getItem(LIVE_SEEN_KEY))
+        return (c && !c.sandbox && !localStorage.getItem(LIVE_SEEN_KEY))
             ? '<div class="btr-live" id="btLive"><b>Боевой контур:</b> заявки уходят на настоящую биржу. ' +
               'Потренироваться без риска можно в песочнице (подключение брокера → песочница).' +
               '<button type="button" onclick="pftLiveOk()">Понятно</button></div>'
             : '';
+    }
+    // три карточки терминала — каждая самостоятельный блок дашборд-конструктора
+    // (drag/resize через .pfd-chrome, как у всех виджетов «Портфелей»); классы
+    // .btr-ob/.btr-ticket/.btr-orders — якоря точечных перерисовок из поллинга
+    function obCard() { return '<div class="dash2-card pf-card2 btr-card btr-ob">' + obCardHtml() + '</div>'; }
+    function ticketCard() { return '<div class="dash2-card pf-card2 btr-card btr-ticket">' + ticketHtml() + '</div>'; }
+    function ordersCard() { return '<div class="dash2-card pf-card2 btr-card btr-orders">' + ordersHtml() + '</div>'; }
+    // fallback-раскладка (фиксированная сетка) — если конструктор недоступен;
+    // основной путь рендерит карточки блоками через pfdBodyHtml (portfolios.js)
+    function pftTerminalHtml() {
         return '<div class="pfd-grid" id="pfdGrid"><div class="btr-wrap" style="grid-column: 1 / span 12">' +
-            banner +
-            '<div class="btr-grid">' +
-            '<div class="dash2-card pf-card2 btr-card btr-ob">' + obCardHtml() + '</div>' +
-            '<div class="dash2-card pf-card2 btr-card btr-ticket">' + ticketHtml() + '</div>' +
-            '<div class="dash2-card pf-card2 btr-card btr-orders">' + ordersHtml() + '</div>' +
-            '</div></div></div>';
+            bannerHtml() +
+            '<div class="btr-grid">' + obCard() + ticketCard() + ordersCard() + '</div></div></div>';
     }
 
     // ---- карточка стакана ----
@@ -108,12 +115,33 @@
                 '<span>' + (+t.quantity || 0).toLocaleString('ru-RU') + '</span></div>';
         }).join('');
     }
+    // пустой стакан (закрытая сессия / неликвид) — не голый текст, а плашка со
+    // статусом и последней/закрывающей ценой: пользователю есть на что смотреть
+    var OB_EMPTY_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h8M4 12h13M4 17h6"/><circle cx="17" cy="8" r="3.2"/><path d="m19.4 10.4 2.1 2.1"/></svg>';
+    function obEmptyHtml(q2n) {
+        var lp = q2n(T.ob.lastPrice), cp = q2n(T.ob.closePrice);
+        var closed = !!(T.status && T.status.tradingStatus &&
+            T.status.tradingStatus !== 'SECURITY_TRADING_STATUS_NORMAL_TRADING');
+        var px = (lp || cp)
+            ? '<div class="btr-obempty-px">' +
+                (lp ? '<div><span>Последняя</span><b>' + fmtPrice(lp) + ' ₽</b></div>' : '') +
+                (cp ? '<div><span>Закрытие</span><b>' + fmtPrice(cp) + ' ₽</b></div>' : '') +
+              '</div>' : '';
+        return '<div class="btr-obempty">' +
+            '<div class="btr-obempty-ic">' + OB_EMPTY_SVG + '</div>' +
+            '<div class="btr-obempty-tt">' + (closed ? 'Сессия закрыта' : 'Заявок сейчас нет') + '</div>' +
+            '<div class="btr-obempty-tx">' + (closed
+                ? 'Стакан наполнится с открытием торгов. Лимитную заявку можно выставить заранее — она дождётся открытия.'
+                : 'В стакане по этой бумаге сейчас нет активных заявок.') + '</div>' +
+            px + '</div>';
+    }
     function obHtml() {
         if (!T.uid) return '<div class="pfal-empty">Найдите бумагу в поиске — стакан появится здесь. Подсказка: тикеры есть в виджете «Позиции у брокера».</div>';
         if (!T.ob) return '<div class="btr-obwait">Загружаем стакан…</div>';
         var q2n = A().q2n;
         var asks = (T.ob.asks || []).slice(0, OB_DEPTH);
         var bids = (T.ob.bids || []).slice(0, OB_DEPTH);
+        if (!asks.length && !bids.length) return obEmptyHtml(q2n);
         var maxQ = 1;
         asks.concat(bids).forEach(function (r) { maxQ = Math.max(maxQ, +r.quantity || 0); });
         function row(r, side) {
@@ -127,8 +155,7 @@
         return '<div class="btr-obhead"><span>Цена</span><span>Лоты</span></div>' +
             asks.slice().reverse().map(function (r) { return row(r, 'ask'); }).join('') +
             spread +
-            bids.map(function (r) { return row(r, 'bid'); }).join('') +
-            (!asks.length && !bids.length ? '<div class="pfal-empty">Стакан пуст — торги по бумаге сейчас не идут.</div>' : '');
+            bids.map(function (r) { return row(r, 'bid'); }).join('');
     }
 
     // ---- карточка тикета ----
@@ -272,7 +299,8 @@
     // ушли с подвкладки/вкладки браузера — таймеры гасим прямо из тика
     // (рендер «Портфелей» при уходе на другой раздел не перезапускается)
     function stillHere() {
-        if (document.querySelector('#panel-portfolios.active .btr-grid')) return true;
+        // .btr-ob есть и в конструкторе (блок), и в fallback-сетке (.btr-grid ушёл)
+        if (document.querySelector('#panel-portfolios.active .btr-ob')) return true;
         stopPolling();
         return false;
     }
@@ -353,7 +381,7 @@
     }
     // зовётся из цикла рендера portfolios.js: включает/гасит поллинг по месту
     function pftAfterRender() {
-        var live = document.querySelector('#panel-portfolios.active .btr-grid');
+        var live = document.querySelector('#panel-portfolios.active .btr-ob');
         if (live && tradeReady()) { wire(); startPolling(); }
         else stopPolling();
     }
@@ -620,12 +648,23 @@
         });
     };
 
-    // подключение сменилось (отключили/заблокировали) — гасим таймеры,
-    // вкладка перерисуется гейтом при следующем рендере
+    // подключение сменилось (подключили/отключили/заблокировали) — гасим
+    // таймеры при уходе и СРАЗУ перерисовываем вкладку «Торговля», чтобы гейт
+    // сменился терминалом (и наоборот) без ручной перезагрузки страницы
     window.addEventListener('broker-conn-change', function () {
         if (!tradeReady()) stopPolling();
+        if (document.querySelector('#panel-portfolios.active') &&
+            PF.pfxEffTab && PF.pfxEffTab() === 'trading') {
+            PF.pfdRerender();
+        }
     });
 
     PF.pftTerminalHtml = pftTerminalHtml;
     PF.pftAfterRender = pftAfterRender;
+    // карточки-блоки для дашборд-конструктора «Торговли» (см. portfolios-dash.js)
+    PF.pftObCard = obCard;
+    PF.pftTicketCard = ticketCard;
+    PF.pftOrdersCard = ordersCard;
+    PF.pftLiveBanner = bannerHtml;
+    PF.pftTradeReady = tradeReady;
 })();

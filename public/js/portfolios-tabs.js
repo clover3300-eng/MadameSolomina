@@ -456,9 +456,10 @@
             '<div class="pfp-kpi"><div class="num">' + ddNum + '<span>за сегодня</span></div>' +
                 '<div class="sub" data-live="pfp:dd-sub">' + (hasDd ? 'к последнему дневному снимку' : 'появится со второго дня') + '</div></div>' +
         '</div>';
-        // «Торговля» — не дашборд-конструктор: кнопки «Виджет»/«Раскладки»
-        // там управляли бы пустым конфигом и только путали
-        var isTrading = pfxEffTab() === 'trading';
+        // «Торговля»: при живом терминале это полноценный конструктор — кнопки
+        // «Виджет»/«Раскладки» доступны (двигать/добавлять карточки); пока стоит
+        // гейт (нет подключения/только чтение) конфигом управлять нечем — прячем
+        var isTrading = pfxEffTab() === 'trading' && !(PF.pftTradeReady && PF.pftTradeReady());
         var actions = '<div class="pfp-actions">' +
             (isTrading ? '' : '<button type="button" class="pfp-btn primary" onclick="pfxAddWidgetClick()" title="Добавить виджет на дашборд">' + PFD_PLUS_SVG + '<span>Виджет</span></button>') +
             '<button type="button" class="pfp-btn" onclick="pfAddPortfolio()" title="Создать новый портфель">' + PF.PLUS_SVG + '<span>Портфель</span></button>' +
