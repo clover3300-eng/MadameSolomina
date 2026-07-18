@@ -33,10 +33,10 @@
 /* ---------- шапка ---------- */
 .bk-head { position: relative; margin-bottom: 14px; padding-right: 34px; }
 .bk-step {
-    font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 800;
-    letter-spacing: 0.08em; text-transform: uppercase; color: #8b5cf6; margin-bottom: 4px;
+    font-family: var(--font-ui); font-size: 10.5px; font-weight: 800;
+    letter-spacing: 0.07em; text-transform: uppercase; color: #8b5cf6; margin-bottom: 4px;
 }
-.bk-title { font-family: Georgia, 'Times New Roman', serif; font-weight: 400; font-size: 22px; color: #0f172a; }
+.bk-title { font-family: var(--font-title); font-weight: 400; font-size: 22px; color: #0f172a; }
 .bk-sub { font-size: 13px; color: #64748b; margin-top: 3px; }
 .bk-sub-err { color: #dc2626; }
 .bk-x {
@@ -50,7 +50,7 @@
 /* атрибут hidden обязан побеждать display у классов (.ph-2col ставит grid) */
 .bk-card [hidden] { display: none !important; }
 .bk-lab {
-    font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 800;
+    font-family: var(--font-ui); font-size: 10.5px; font-weight: 800;
     letter-spacing: 0.07em; text-transform: uppercase; color: #94a3b8; margin-top: 4px;
 }
 
@@ -66,13 +66,13 @@
 .bk-opt-slim { padding: 9px 13px; }
 .bk-opt-t {
     display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
-    font-family: 'Inter', sans-serif; font-weight: 700; font-size: 13.5px; color: #0f172a;
+    font-family: var(--font-ui); font-weight: 700; font-size: 13.5px; color: #0f172a;
 }
 .bk-opt-s { font-size: 12.5px; color: #64748b; margin-top: 2px; line-height: 1.45; }
 
 .bk-pill {
     display: inline-flex; align-items: center; font-style: normal;
-    font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 800;
+    font-family: var(--font-ui); font-size: 10px; font-weight: 800;
     letter-spacing: 0.03em; text-transform: uppercase;
     padding: 2px 7px; border-radius: 999px;
     background: rgba(100, 116, 139, 0.14); color: #64748b;
@@ -107,6 +107,8 @@
 .bk-verdict-bad svg { color: #dc2626; }
 .bk-verdict-warn { background: rgba(217, 119, 6, 0.1); color: #92400e; }
 .bk-verdict-warn svg { color: #d97706; }
+.bk-verdict-info { background: rgba(59, 130, 246, 0.09); color: #1e40af; }
+.bk-verdict-info svg { color: #3b82f6; }
 .bk-verdict-lock { background: rgba(100, 116, 139, 0.1); color: #334155; align-items: center; }
 .bk-verdict-lock svg { color: #64748b; }
 .bk-verdict-lock .bk-btn { margin-left: auto; flex: none; }
@@ -117,7 +119,7 @@
 .bk-pin2 { margin-top: 2px; }
 .bk-clip {
     align-self: flex-start; margin-top: 6px; border: none; background: none; cursor: pointer;
-    font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700; color: #2563eb; padding: 0;
+    font-family: var(--font-ui); font-size: 11.5px; font-weight: 700; color: #2563eb; padding: 0;
 }
 .bk-clip:hover { text-decoration: underline; }
 
@@ -127,7 +129,7 @@
 }
 .bk-kv span { color: #64748b; }
 .bk-kv b { font-weight: 700; color: #0f172a; text-align: right; }
-.bk-mono { font-family: 'JetBrains Mono', monospace; font-weight: 600; letter-spacing: 0.02em; }
+.bk-mono { font-family: var(--font-num); font-weight: 600; letter-spacing: 0.02em; }
 
 .bk-journal { display: flex; flex-direction: column; }
 .bk-jrow {
@@ -135,7 +137,7 @@
     font-size: 12px; color: #475569; border-bottom: 1px dashed rgba(15, 23, 42, 0.06);
 }
 .bk-jrow:last-child { border-bottom: none; }
-.bk-jrow i { font-style: normal; color: #94a3b8; font-family: 'JetBrains Mono', monospace; font-size: 11px; flex: none; }
+.bk-jrow i { font-style: normal; color: #94a3b8; font-family: var(--font-num); font-size: 11px; flex: none; }
 
 /* ---------- кнопки ---------- */
 .bk-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 16px; }
@@ -144,7 +146,7 @@
     display: inline-flex; align-items: center; justify-content: center; gap: 6px;
     border: 1.5px solid rgba(15, 23, 42, 0.12); border-radius: 11px; cursor: pointer;
     background: #fff; color: #334155; text-decoration: none;
-    font-family: 'Inter', sans-serif; font-weight: 700; font-size: 12.5px; padding: 8px 14px;
+    font-family: var(--font-ui); font-weight: 700; font-size: 12.5px; padding: 8px 14px;
     transition: filter 0.15s, transform 0.12s, background 0.15s, color 0.15s;
 }
 .bk-btn:hover { background: rgba(15, 23, 42, 0.04); }
@@ -187,6 +189,7 @@ body.dark-mode .bk-kv b { color: #f1f5f9; }
 body.dark-mode .bk-jrow { color: #b6c5d8; border-bottom-color: rgba(255, 255, 255, 0.06); }
 body.dark-mode .bk-verdict-bad { background: rgba(220, 38, 38, 0.14); color: #fca5a5; }
 body.dark-mode .bk-verdict-warn { background: rgba(217, 119, 6, 0.14); color: #fcd34d; }
+body.dark-mode .bk-verdict-info { background: rgba(59, 130, 246, 0.16); color: #93c5fd; }
 body.dark-mode .bk-verdict-lock { background: rgba(255, 255, 255, 0.06); color: #cbd5e1; }
 body.dark-mode .bk-err { background: rgba(220, 38, 38, 0.12); border-color: rgba(220, 38, 38, 0.35); color: #fca5a5; }
 body.dark-mode .bk-btn { background: transparent; border-color: rgba(255, 255, 255, 0.16); color: #cbd5e1; }
@@ -195,7 +198,9 @@ body.dark-mode .bk-btn-pri { background: #8b5cf6; border: none; color: #fff; }
 body.dark-mode .bk-btn-danger { border-color: rgba(248, 113, 113, 0.4); color: #f87171; }
 body.dark-mode .bk-btn-danger.arm { background: #dc2626; color: #fff; }
 body.dark-mode .bk-pill { background: rgba(148, 163, 184, 0.16); color: #94a3b8; }
-body.dark-mode .bk-pill-green { background: rgba(34, 197, 94, 0.14); color: #4ade80; }
+body.dark-mode .bk-pill-green { background: rgba(52, 211, 153, 0.14); color: #34d399; }
+body.dark-mode .bk-step { color: #a78bfa; }
+body.dark-mode .bk-shield svg { color: #34d399; }
 body.dark-mode .bk-pill-amber { background: rgba(251, 191, 36, 0.14); color: #fbbf24; }
 body.dark-mode .bk-clip { color: #60a5fa; }
 /* специфичность: body.dark-mode .bk-sub перебивал бы одиночный .bk-sub-err */
@@ -209,7 +214,7 @@ body.dark-mode .bk-sub.bk-sub-err { color: #f87171; }
     display: inline-flex; align-items: center; margin-top: 10px;
     border: none; border-radius: 10px; cursor: pointer;
     background: #8b5cf6; color: #fff;
-    font-family: 'Inter', sans-serif; font-weight: 800; font-size: 12px; padding: 8px 14px;
+    font-family: var(--font-ui); font-weight: 800; font-size: 12px; padding: 8px 14px;
     box-shadow: 0 8px 18px -9px rgba(139, 92, 246, 0.9); transition: filter 0.15s, transform 0.12s;
 }
 .pf-brokerblk .pfbrk-btn:hover { filter: brightness(1.06); }
@@ -234,6 +239,14 @@ body.dark-mode .pfbrk-state-tx, .pfd-thm-dark .pfbrk-state-tx { color: #9fb1c6; 
 /* кнопка «Подключение» в шапке — чуть компактнее родного .pf-ch-go */
 .pfbrk-go { padding: 6px 11px; font-size: 11.5px; }
 .pfbrk-go svg { width: 13px; height: 13px; }
+/* узкий виджет: кикер не переносим, кнопка сжимается до иконки —
+   иначе заголовок «Позиции у брокера» ломается на три строки */
+.pf-brokerblk { container-type: inline-size; }
+.pf-brokerblk .pf-ch-k { white-space: nowrap; }
+@container (max-width: 380px) {
+    .pf-brokerblk .pfbrk-go span { display: none; }
+    .pf-brokerblk .pfbrk-go { padding: 6px 8px; }
+}
 
 /* плашка стоимости портфеля */
 .pfbrk-total {
@@ -243,31 +256,44 @@ body.dark-mode .pfbrk-state-tx, .pfd-thm-dark .pfbrk-state-tx { color: #9fb1c6; 
 }
 .pfbrk-total-l { display: flex; flex-direction: column; gap: 1px; }
 .pfbrk-total-l span {
-    font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 800;
-    letter-spacing: 0.07em; text-transform: uppercase; color: #94a3b8;
+    font-family: var(--font-ui); font-size: 10.5px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase; color: #94a3b8;
 }
-.pfbrk-total-l i { font-style: normal; font-size: 10.5px; color: #b3bfce; }
+.pfbrk-total-l i { font-style: normal; font-size: 10.5px; color: #94a3b8; }
 .pfbrk-total b {
-    font-family: 'JetBrains Mono', monospace; font-size: 16.5px; font-weight: 600;
+    font-family: var(--font-num); font-size: var(--fs-total); font-weight: var(--fw-num-bold);
     color: #0f172a; white-space: nowrap; font-variant-numeric: tabular-nums;
 }
 body.dark-mode .pfbrk-total, .pfd-thm-dark .pfbrk-total { background: rgba(255, 255, 255, 0.06); }
 .pfbrk-diff {
     display: inline-flex; margin-left: 6px; padding: 1px 6px; border-radius: 999px;
-    font-style: normal; font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 800;
+    font-style: normal; font-family: var(--font-ui); font-size: 10px; font-weight: 800;
     letter-spacing: 0.03em; text-transform: uppercase; white-space: nowrap;
     background: rgba(217, 119, 6, 0.13); color: #d97706; cursor: help;
 }
+body.dark-mode .pfbrk-diff, .pfd-thm-dark .pfbrk-diff { background: rgba(251, 191, 36, 0.16); color: #fbbf24; }
 .pfbrk-skel { display: flex; flex-direction: column; gap: 9px; padding: 4px 0; }
 body.dark-mode .pfbrk-total b, .pfd-thm-dark .pfbrk-total b { color: #f1f5f9; }
-body.dark-mode .pfbrk-total-l span, .pfd-thm-dark .pfbrk-total-l span { color: #7f93ab; }
+body.dark-mode .pfbrk-total-l span, .pfd-thm-dark .pfbrk-total-l span,
+body.dark-mode .pfbrk-total-l i, .pfd-thm-dark .pfbrk-total-l i { color: #7f93ab; }
+/* пер-виджетная тёмная тема: pos/neg строк перекрыты только через body.dark-mode
+   (portfolios.css:29) — добираем .pfd-thm-dark, заодно чинит «Список активов» */
+.pfd-thm-dark .pfas-list .pos { color: #34d399; }
+.pfd-thm-dark .pfas-list .neg { color: #f87171; }
+.pfd-thm-dark .pfas-list .muted { color: #6b7d92; }
 
 /* ---------- торговый терминал (.btr-*, portfolios-trading.js) ---------- */
-.btr-wrap { display: flex; flex-direction: column; gap: 12px; }
+.btr-wrap { display: flex; flex-direction: column; gap: 14px; }
+/* стакану хватает узкой колонки (цена|лоты), заявкам — самые длинные строки */
 .btr-grid {
-    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; align-items: start;
+    display: grid; gap: 16px; align-items: start;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr) minmax(0, 1.15fr);
 }
-@media (max-width: 1450px) { .btr-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 1450px) {
+    .btr-grid { grid-template-columns: 1fr 1fr; }
+    /* в две колонки заявки занимают всю вторую строку — без пустой ячейки */
+    .btr-grid .btr-orders { grid-column: 1 / -1; }
+}
 .btr-card { display: flex; flex-direction: column; gap: 10px; }
 
 .btr-live {
@@ -278,7 +304,7 @@ body.dark-mode .pfbrk-total-l span, .pfd-thm-dark .pfbrk-total-l span { color: #
 .btr-live b { font-weight: 800; }
 .btr-live button {
     margin-left: auto; border: none; border-radius: 9px; cursor: pointer;
-    background: #d97706; color: #fff; font-family: 'Inter', sans-serif;
+    background: #d97706; color: #fff; font-family: var(--font-ui);
     font-weight: 800; font-size: 11.5px; padding: 6px 12px;
 }
 
@@ -294,29 +320,31 @@ body.dark-mode .pfbrk-total-l span, .pfd-thm-dark .pfbrk-total-l span { color: #
     display: flex; align-items: baseline; gap: 9px; padding: 8px 12px; cursor: pointer; font-size: 13px;
 }
 .btr-search-row:hover { background: rgba(59, 130, 246, 0.07); }
-.btr-search-row b { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
+.btr-search-row b { font-family: var(--font-num); font-size: 12.5px; }
 .btr-search-row span { color: #64748b; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .btr-instr { display: flex; align-items: center; gap: 8px; font-size: 13px; }
-.btr-instr b { font-family: 'JetBrains Mono', monospace; font-size: 14px; }
+.btr-instr b { font-family: var(--font-num); font-size: 14px; }
 .btr-instr span { color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* стакан */
 .btr-obhead {
-    display: flex; justify-content: space-between; padding: 2px 6px;
-    font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 800;
-    letter-spacing: 0.07em; text-transform: uppercase; color: #94a3b8;
+    display: flex; justify-content: space-between; padding: 2px 9px;
+    font-family: var(--font-ui); font-size: var(--fs-th); font-weight: 800;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--c-th);
 }
 .btr-obrow {
     position: relative; display: flex; align-items: center; justify-content: space-between;
     padding: 4px 9px; border-radius: 8px; cursor: pointer; overflow: hidden;
-    font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+    font-family: var(--font-num); font-size: 12.5px;
     font-variant-numeric: tabular-nums; transition: outline-color 0.1s;
 }
 .btr-obrow b { font-weight: 600; }
+/* глубина зеркальна вокруг спреда: аски растут от правого края, биды — от левого */
 .btr-obrow i {
     position: absolute; top: 0; bottom: 0; right: 0; border-radius: 7px; pointer-events: none;
 }
+.btr-obrow.bid i { left: 0; right: auto; }
 .btr-obrow.ask i { background: rgba(220, 38, 38, 0.09); }
 .btr-obrow.bid i { background: rgba(22, 163, 74, 0.1); }
 .btr-obrow.ask b { color: #dc2626; }
@@ -325,18 +353,18 @@ body.dark-mode .pfbrk-total-l span, .pfd-thm-dark .pfbrk-total-l span { color: #
 .btr-obrow span { color: #64748b; font-size: 11.5px; }
 .btr-obrow:hover { outline: 1.5px solid rgba(59, 130, 246, 0.45); }
 .btr-spread {
-    display: flex; justify-content: space-between; padding: 4px 8px; margin: 2px 0;
+    display: flex; justify-content: space-between; padding: 4px 9px; margin: 2px 0;
     border-top: 1px dashed rgba(15, 23, 42, 0.12); border-bottom: 1px dashed rgba(15, 23, 42, 0.12);
     font-size: 11px; color: #94a3b8;
 }
-.btr-spread b { font-family: 'JetBrains Mono', monospace; color: #334155; }
+.btr-spread b { font-family: var(--font-num); color: #334155; }
 .btr-obwait { padding: 14px 6px; font-size: 12.5px; color: #94a3b8; }
 
 /* лента обезличенных сделок (под стаканом) */
 .btr-tape { display: flex; flex-direction: column; }
 .btr-tape-row {
-    display: flex; align-items: baseline; gap: 10px; padding: 2.5px 6px;
-    font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
+    display: flex; align-items: baseline; gap: 10px; padding: 2.5px 9px;
+    font-family: var(--font-num); font-size: 11.5px;
     font-variant-numeric: tabular-nums; border-radius: 6px;
 }
 .btr-tape-row:nth-child(odd) { background: rgba(15, 23, 42, 0.025); }
@@ -345,9 +373,9 @@ body.dark-mode .pfbrk-total-l span, .pfd-thm-dark .pfbrk-total-l span { color: #
 .btr-tape-row b.bid { color: #16a34a; }
 .btr-tape-row b.ask { color: #dc2626; }
 .btr-tape-row span { margin-left: auto; color: #64748b; }
-.btr-tape-empty { font-size: 12px; color: #94a3b8; padding: 4px 6px; }
+.btr-tape-empty { font-size: 12px; color: #94a3b8; padding: 4px 9px; }
 body.dark-mode .btr-tape-row:nth-child(odd) { background: rgba(255, 255, 255, 0.04); }
-body.dark-mode .btr-tape-row b.bid { color: #4ade80; }
+body.dark-mode .btr-tape-row b.bid { color: #34d399; }
 body.dark-mode .btr-tape-row b.ask { color: #f87171; }
 body.dark-mode .btr-tape-row span { color: #9fb1c6; }
 
@@ -367,32 +395,37 @@ body.dark-mode .btr-tape-row span { color: #9fb1c6; }
 body.dark-mode .btr-seg { background: rgba(255, 255, 255, 0.07); }
 body.dark-mode .btr-seg .mh-seg-btn { color: #9fb1c6; }
 body.dark-mode .btr-seg .mh-seg-btn:hover { color: #f1f5f9; }
-body.dark-mode .btr-seg .mh-seg-btn.active { background: #e2e8f0; color: #10201a; }
+body.dark-mode .btr-seg .mh-seg-btn.active { background: #e2e8f0; color: #0f172a; }
 body.dark-mode #btSide .mh-seg-btn.active:first-child { background: #16a34a; color: #fff; }
 body.dark-mode #btSide .mh-seg-btn.active:last-child { background: #dc2626; color: #fff; }
 .btr-mktnote { font-size: 12px; color: #94a3b8; padding: 2px 2px 0; }
+/* цена, стоп-цена, лоты и сумма подтверждения — цифры, значит моно */
+.btr-card .ph-input[type="number"], #btCfSum {
+    font-family: var(--font-num); font-variant-numeric: tabular-nums; letter-spacing: 0.02em;
+}
 .btr-est {
     display: flex; align-items: center; justify-content: space-between; gap: 10px;
     background: rgba(15, 23, 42, 0.04); border-radius: 12px; padding: 9px 13px;
 }
 .btr-est-l { display: flex; flex-direction: column; gap: 1px; }
 .btr-est-l span {
-    font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 800;
-    letter-spacing: 0.07em; text-transform: uppercase; color: #94a3b8;
+    font-family: var(--font-ui); font-size: 10.5px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase; color: #94a3b8;
 }
-.btr-est-l i { font-style: normal; font-size: 10.5px; color: #b3bfce; }
+.btr-est-l i { font-style: normal; font-size: 10.5px; color: #94a3b8; }
 .btr-est b {
-    font-family: 'JetBrains Mono', monospace; font-size: 17px; font-weight: 600;
+    font-family: var(--font-num); font-size: var(--fs-total); font-weight: var(--fw-num-bold);
     color: #0f172a; white-space: nowrap; font-variant-numeric: tabular-nums;
 }
 .btr-warns:empty { display: none; }
 .btr-warn {
     background: rgba(217, 119, 6, 0.1); border-radius: 10px; padding: 7px 11px;
-    font-size: 12px; color: #92400e; line-height: 1.4; margin-bottom: 6px;
+    font-size: 12px; color: #92400e; line-height: 1.4;
 }
+.btr-warn + .btr-warn { margin-top: 6px; }
 .btr-submit {
     border: none; border-radius: 12px; cursor: pointer; padding: 12px 16px;
-    font-family: 'Inter', sans-serif; font-weight: 800; font-size: 14px; color: #fff;
+    font-family: var(--font-ui); font-weight: 800; font-size: 14px; color: #fff;
     transition: filter 0.15s, transform 0.12s;
 }
 .btr-submit.buy { background: #16a34a; box-shadow: 0 10px 22px -10px rgba(22, 163, 74, 0.8); }
@@ -400,11 +433,15 @@ body.dark-mode #btSide .mh-seg-btn.active:last-child { background: #dc2626; colo
 .btr-submit:hover { filter: brightness(1.07); }
 .btr-submit:active { transform: scale(0.98); }
 .btr-submit:disabled { opacity: 0.6; cursor: default; }
-.btr-limitrow { font-size: 11.5px; color: #94a3b8; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+/* служебная настройка отделена швом от цветной кнопки CTA */
+.btr-limitrow {
+    font-size: 11.5px; color: #94a3b8; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    margin-top: 2px; padding-top: 8px; border-top: 1px dashed rgba(15, 23, 42, 0.1);
+}
 .btr-limitrow svg { width: 13px; height: 13px; flex: none; color: #b3bfce; }
 .btr-limitrow input {
     width: 90px; border: 1px solid rgba(15, 23, 42, 0.14); border-radius: 8px;
-    padding: 3px 7px; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: #334155;
+    padding: 3px 7px; font-family: var(--font-num); font-size: 11.5px; color: #334155;
     background: transparent;
 }
 
@@ -421,7 +458,7 @@ body.dark-mode #btSide .mh-seg-btn.active:last-child { background: #dc2626; colo
 }
 .btr-ordrow.buy::before { background: #16a34a; }
 .btr-ordrow.sell::before { background: #dc2626; }
-.btr-ordrow b { font-family: 'JetBrains Mono', monospace; }
+.btr-ordrow b { font-family: var(--font-num); }
 .btr-ordrow span { color: #64748b; margin-left: auto; font-size: 12px; white-space: nowrap; }
 .btr-ordrow button {
     flex: none; width: 22px; height: 22px; border: none; border-radius: 7px; cursor: pointer;
@@ -430,7 +467,7 @@ body.dark-mode #btSide .mh-seg-btn.active:last-child { background: #dc2626; colo
 .btr-ordrow button:hover { background: rgba(220, 38, 38, 0.16); }
 .btr-panic { align-self: flex-start; }
 .btr-jlab { margin-top: 6px; }
-.btr-cf .btr-warn { margin-bottom: 0; }
+.btr-ordrow span { font-variant-numeric: tabular-nums; }
 
 /* тёмная тема терминала */
 body.dark-mode .btr-live { background: rgba(217, 119, 6, 0.14); color: #fcd34d; }
@@ -440,9 +477,9 @@ body.dark-mode .btr-search-row span { color: #9fb1c6; }
 body.dark-mode .btr-instr span { color: #9fb1c6; }
 body.dark-mode .btr-obrow span { color: #9fb1c6; }
 body.dark-mode .btr-obrow.ask b { color: #f87171; }
-body.dark-mode .btr-obrow.bid b { color: #4ade80; }
+body.dark-mode .btr-obrow.bid b { color: #34d399; }
 body.dark-mode .btr-obrow.ask i { background: rgba(248, 113, 113, 0.12); }
-body.dark-mode .btr-obrow.bid i { background: rgba(74, 222, 128, 0.12); }
+body.dark-mode .btr-obrow.bid i { background: rgba(52, 211, 153, 0.12); }
 body.dark-mode .btr-spread { border-color: rgba(255, 255, 255, 0.1); }
 body.dark-mode .btr-spread b { color: #cbd5e1; }
 body.dark-mode .btr-est { background: rgba(255, 255, 255, 0.06); }
@@ -451,6 +488,9 @@ body.dark-mode .btr-est-l span { color: #7f93ab; }
 body.dark-mode .btr-warn { background: rgba(217, 119, 6, 0.15); color: #fcd34d; }
 body.dark-mode .btr-ordrow { background: rgba(255, 255, 255, 0.05); }
 body.dark-mode .btr-ordrow span { color: #9fb1c6; }
+body.dark-mode .btr-ordrow button { background: rgba(248, 113, 113, 0.13); color: #f87171; }
+body.dark-mode .btr-ordrow button:hover { background: rgba(248, 113, 113, 0.22); }
+body.dark-mode .btr-limitrow { border-top-color: rgba(255, 255, 255, 0.1); }
 body.dark-mode .btr-limitrow input { border-color: rgba(255, 255, 255, 0.16); color: #cbd5e1; }
 
 /* ---------- мобильный ---------- */

@@ -377,7 +377,12 @@ var TI_METHODS = {
     GetLastTrades:    { svc: 'MarketDataService',  scope: 'read' },
     GetStopOrders:    { svc: 'StopOrdersService',  scope: 'read' },
     PostStopOrder:    { svc: 'StopOrdersService',  scope: 'trade' },
-    CancelStopOrder:  { svc: 'StopOrdersService',  scope: 'trade' }
+    CancelStopOrder:  { svc: 'StopOrdersService',  scope: 'trade' },
+    // песочница: счёт там существует только после явного OpenSandboxAccount
+    // (кабинет Т-Банка его не создаёт) — визард открывает и пополняет сам.
+    // sandboxOnly: на боевом хосте этих методов нет, и не надо
+    OpenSandboxAccount: { svc: 'SandboxService', scope: 'read', sandboxOnly: true },
+    SandboxPayIn:       { svc: 'SandboxService', scope: 'read', sandboxOnly: true }
 };
 
 function brokerJson(body, status) {
@@ -402,6 +407,10 @@ async function handleBrokerProxy(request, url) {
     if (def.scope === 'trade' && scope !== 'trade') {
         return brokerJson({ error: 'scope_not_allowed' }, 403);
     }
+    var sandbox = request.headers.get('X-Broker-Sandbox') === '1';
+    if (def.sandboxOnly && !sandbox) {
+        return brokerJson({ error: 'sandbox_only' }, 403);
+    }
 
     // токены T-Invest начинаются с «t.» — заодно отсекаем случайно
     // вставленный не-токен до того, как он уедет к брокеру
@@ -414,7 +423,7 @@ async function handleBrokerProxy(request, url) {
     if (bodyText.length > TI_MAX_BODY) return brokerJson({ error: 'body_too_large' }, 413);
     if (!bodyText) bodyText = '{}';
 
-    var host = request.headers.get('X-Broker-Sandbox') === '1' ? TI_SANDBOX_HOST : TI_HOST;
+    var host = sandbox ? TI_SANDBOX_HOST : TI_HOST;
     try {
         var upstream = await fetch(host + TI_PATH + def.svc + '/' + method, {
             method: 'POST',

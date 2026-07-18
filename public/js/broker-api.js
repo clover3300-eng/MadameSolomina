@@ -442,6 +442,25 @@
         });
     }
 
+    // Песочница: счёт там существует только после явного OpenSandboxAccount —
+    // кабинет Т-Банка его не создаёт, и свежий песочный токен видит ноль счетов.
+    // Открываем счёт и сразу зачисляем виртуальный миллион, чтобы терминал было
+    // чем пробовать. Зовётся из визарда ДО сохранения подключения — через rawCall.
+    function sandboxSetup(token) {
+        return rawCall('OpenSandboxAccount', { name: 'Песочница' }, token, 'read', true)
+            .then(function (data) {
+                return rawCall('SandboxPayIn', {
+                    accountId: data.accountId,
+                    amount: { units: '1000000', nano: 0, currency: 'rub' }
+                }, token, 'read', true)
+                    .catch(function () { /* без пополнения счёт всё равно открыт */ })
+                    .then(function () {
+                        logEvent('sandbox_open', 'счёт песочницы, зачислен 1 000 000 ₽ виртуально');
+                        return data.accountId;
+                    });
+            });
+    }
+
     // Тихая ре-верификация раз за сессию: токен могли отозвать или урезать.
     // Не интерактивна: PIN-режим в запертом состоянии просто пропускаем.
     function ensureVerified() {
@@ -577,6 +596,7 @@
         levelOf: levelOf,
         checkScope: checkScope,
         verifyToken: verifyToken,
+        sandboxSetup: sandboxSetup,
         ensureVerified: ensureVerified,
         call: call,
         getPortfolio: getPortfolio,

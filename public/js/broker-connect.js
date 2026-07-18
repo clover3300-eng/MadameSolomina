@@ -56,6 +56,7 @@
         pin_wrong: 'Неверный PIN',
         pin_lockout: 'PIN заблокирован (5 попыток)',
         api_error: 'Ошибка запроса',
+        sandbox_open: 'Счёт песочницы открыт',
         legacy_import: 'Импорт старого токена',
         autolock: 'Автоблокировка токена',
         passkey_fail: 'Passkey: отмена или сбой',
@@ -206,8 +207,19 @@
     function stepAccountsHtml() {
         var A = api();
         var anyOk = sel.accounts.some(function (a) { return A.checkScope(sel.scope, a.accessLevel) !== 'weaker'; });
+        // боевой контур токен не принял, а песочница узнала — говорим об этом прямо
+        var sbNote = sel.sandboxAuto
+            ? '<div class="bk-verdict bk-verdict-info">' + IC.shield + '<div><b>Это токен песочницы.</b> Включили тестовый контур: сделки и деньги здесь виртуальные, до настоящей биржи они не доходят.</div></div>'
+            : '';
         var verdict = '';
-        if (!anyOk) {
+        if (!sel.accounts.length) {
+            // пустой список — это НЕ «токен слабее»: в песочнице счёт открывается
+            // только через API, у боевого токена могли отрезать все счета при выпуске
+            verdict = sel.sandbox
+                ? '<div class="bk-verdict bk-verdict-warn">' + IC.warn + '<div><b>В песочнице пока нет счетов.</b> Кабинет Т-Банка их не открывает — счёт песочницы создаётся только через API. Мы сделаем это за вас и сразу зачислим 1 000 000 ₽ виртуальных денег.</div></div>' +
+                  '<button type="button" class="bk-btn bk-btn-ghost" id="bkSbOpen" onclick="brokerConnect.sandboxOpen()">Открыть счёт в песочнице</button>'
+                : '<div class="bk-verdict bk-verdict-bad">' + IC.warn + '<div><b>Брокер не вернул ни одного счёта.</b> Проверьте, для тех ли счетов выпущен токен, — или перевыпустите его с доступом ко всем счетам.</div></div>';
+        } else if (!anyOk) {
             var wantTrade = sel.scope === 'trade';
             verdict = '<div class="bk-verdict bk-verdict-bad">' + IC.warn + '<div><b>Токен слабее выбранного режима.</b> ' +
                 (wantTrade
@@ -215,7 +227,8 @@
                     : 'Этому токену брокер не дал доступа к счетам. Проверьте, для тех ли счетов он выпущен.') +
                 '</div></div>' +
                 (wantTrade ? '<button type="button" class="bk-btn bk-btn-ghost" onclick="brokerConnect.fallbackRead()">Переключиться на «Только чтение»</button>' : '');
-        } else if (sel.accounts.some(function (a) { return A.checkScope(sel.scope, a.accessLevel) === 'stronger'; })) {
+        } else if (!sel.sandbox && sel.accounts.some(function (a) { return A.checkScope(sel.scope, a.accessLevel) === 'stronger'; })) {
+            // в песочнице токен всегда полного доступа — пугать «перевыпустите» не за что
             verdict = '<div class="bk-verdict bk-verdict-warn">' + IC.warn + '<div><b>Токен умеет больше, чем вы разрешили нам.</b> ' +
                 'Работать будем только в режиме чтения — торговые запросы наш сервер не пропустит. Надёжнее перевыпустить токен «только для чтения».</div></div>';
         }
@@ -227,11 +240,11 @@
                 '<div class="bk-opt-t">' + esc(a.name) + ' ' + levelBadge(a) + '</div>' +
                 '<div class="bk-opt-s">' + esc(api().ACC_TYPES[a.type] || 'Счёт') + (weak ? ' · токен не даёт нужного уровня' : '') + '</div></div>';
         }).join('');
-        if (!sel.accounts.length) {
-            cards = '<div class="bk-opt-s">Брокер не вернул ни одного открытого счёта для этого токена.</div>';
-        }
-        return headHtml('Выберите счёт', 'Мы сверили токен с выбранным режимом', 4) +
-            '<div class="bk-body">' + verdict + '<div class="bk-lab">Счета, доступные токену</div>' + cards + '</div>' +
+        // без счетов список и его заголовок не рисуем — вердикт выше сказал всё
+        var listHtml = sel.accounts.length ? '<div class="bk-lab">Счета, доступные токену</div>' + cards : '';
+        return headHtml('Выберите счёт', 'Мы сверили токен с выбранным режимом' +
+                (sel.sandbox ? ' · <i class="bk-pill bk-pill-amber">песочница</i>' : ''), 4) +
+            '<div class="bk-body">' + sbNote + verdict + listHtml + '<div class="bk-err" id="bkErr" hidden></div></div>' +
             footHtml('token', 'Подключить', 'connect', sel.accIdx < 0);
     }
 
@@ -258,7 +271,7 @@
             '<div class="bk-kv"><span>Режим</span><b>' + scopeName + '</b></div>' +
             '<div class="bk-kv"><span>Токен</span><b class="bk-mono">' + esc(A.maskTail(c.tokenTail)) + '</b></div>' +
             '<div class="bk-kv"><span>Хранение</span><b>' + (STORE_LABELS[c.storage] || c.storage) + '</b></div>' +
-            '<div class="bk-kv"><span>Проверен</span><b>' + ruDateTime(c.lastVerifiedAt) + '</b></div>' +
+            '<div class="bk-kv"><span>Проверен</span><b class="bk-mono">' + ruDateTime(c.lastVerifiedAt) + '</b></div>' +
             '<div class="bk-lab">Журнал действий</div><div class="bk-journal">' + jr + '</div>' +
             '<div class="bk-actions">' +
             '<button type="button" class="bk-btn" onclick="brokerConnect.changeToken()">Сменить токен</button>' +
@@ -356,20 +369,63 @@
                 sel.pin = p1;
             }
             sel.token = tok;
+            sel.sandboxAuto = false;
             setBusy(true, 'Проверяем у брокера…');
-            A.verifyToken(tok, sel.sandbox).then(function (res) {
-                sel.accounts = res.accounts;
-                // единственный подходящий счёт выбираем сразу
+            // единственный подходящий счёт выбираем сразу
+            function autoPick(accounts) {
                 var okIdx = -1, okCount = 0;
-                res.accounts.forEach(function (a, i) {
+                accounts.forEach(function (a, i) {
                     if (A.checkScope(sel.scope, a.accessLevel) !== 'weaker') { okCount++; if (okIdx < 0) okIdx = i; }
                 });
-                sel.accIdx = okCount === 1 ? okIdx : -1;
+                return okCount === 1 ? okIdx : -1;
+            }
+            function toAccounts(res) {
+                sel.accounts = res.accounts;
+                sel.accIdx = autoPick(res.accounts);
                 step = 'accounts';
                 render();
-            }, function (e) {
+            }
+            A.verifyToken(tok, sel.sandbox).then(toAccounts, function (e) {
+                // боевой контур ответил 401 — молча пробуем песочницу: песочные
+                // токены выглядят так же, и галочку про них легко не заметить
+                if (e && e.status === 401 && !sel.sandbox) {
+                    A.verifyToken(tok, true).then(function (res) {
+                        sel.sandbox = true;
+                        sel.sandboxAuto = true;
+                        toAccounts(res);
+                    }, function () {
+                        setBusy(false, 'Проверить и продолжить');
+                        err(e.message);
+                    });
+                    return;
+                }
                 setBusy(false, 'Проверить и продолжить');
-                err(e && e.message ? e.message : 'Не удалось проверить токен');
+                if (e && e.status === 401 && sel.sandbox) {
+                    err('Песочница не приняла токен. Если это обычный боевой токен — снимите галочку «Песочница» и попробуйте ещё раз.');
+                } else {
+                    err(e && e.message ? e.message : 'Не удалось проверить токен');
+                }
+            });
+        },
+        // счёт в песочнице: OpenSandboxAccount + виртуальный миллион, затем
+        // повторная проверка токена возвращает уже непустой список счетов
+        sandboxOpen: function () {
+            if (busy) return;
+            busy = true;
+            var A = api();
+            var b = card().querySelector('#bkSbOpen');
+            if (b) { b.disabled = true; b.textContent = 'Открываем счёт…'; }
+            A.sandboxSetup(sel.token).then(function () {
+                return A.verifyToken(sel.token, true);
+            }).then(function (res) {
+                sel.accounts = res.accounts;
+                sel.accIdx = res.accounts.length ? 0 : -1;
+                render();
+                toast('Счёт в песочнице открыт — на нём 1 000 000 ₽ виртуальных денег');
+            }, function (e) {
+                busy = false;
+                if (b) { b.disabled = false; b.textContent = 'Открыть счёт в песочнице'; }
+                err(e && e.message ? e.message : 'Не удалось открыть счёт в песочнице');
             });
         },
         connect: function () {

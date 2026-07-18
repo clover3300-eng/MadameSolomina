@@ -1695,7 +1695,8 @@
             sub = conn.accountName;
             body = invite('Токен под PIN-кодом — разблокируйте, чтобы загрузить позиции.', 'Разблокировать', 'pfBrokerUnlock()');
         } else {
-            sub = conn.accountName + (conn.sandbox ? ' · песочница' : '');
+            // счёт песочницы так и зовётся «Песочница» — не дублируем суффикс
+            sub = conn.accountName + (conn.sandbox && !/песочниц/i.test(conn.accountName) ? ' · песочница' : '');
             body = '<div id="pfbrkList">' + (brokerCache.data || brokerCache.err
                 ? pfwBrokerRowsHtml()
                 : '<div class="pfbrk-skel">' + skelHtml(150, 18) + skelHtml(210, 18) + skelHtml(180, 18) + '</div>') + '</div>';
