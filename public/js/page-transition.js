@@ -169,6 +169,17 @@
         setTimeout(open, CAP);
     }
 
+    // Загрузка кончилась — возвращаем анимации фона (тему теперь можно менять
+    // плавно). Класс ставит инлайн в <head>, чтобы правка цвета на старте не
+    // читалась как вспышка; см. комментарий там же.
+    (function () {
+        function animOn() {
+            setTimeout(function () { ROOT.classList.remove('boot-anim-off'); }, 80);
+        }
+        if (document.readyState === 'complete') animOn();
+        else window.addEventListener('load', animOn);
+    })();
+
     window.pageTransition = {
         cover: cover,
         reload: reload,

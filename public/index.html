@@ -16,7 +16,26 @@
          Вся логика (когда поднимать и раскрывать) — js/page-transition.js.
          ::before на <html>, а не элемент в <body>: body сжат zoom:0.9
          (desktop-zoom.css) и не покрыл бы настоящий вьюпорт. -->
+    <!-- ТЕМА ДО ПЕРВОГО ПЕЙНТА.
+         Тему проставляет JS (initTheme в core.js) — а он доезжает только к
+         DOMContentLoaded. Замер загрузки: первый пейнт на 29мс — светлый,
+         класс dark-mode появляется на 127мс, и правка ещё и АНИМИРУЕТСЯ
+         (body { transition: background .3s }). Отсюда две белые вспышки на
+         каждой загрузке тёмной страницы. Здесь считаем ту же тему теми же
+         правилами (Главная — theme_home, дефолт тёмная; прочие — user_theme,
+         дефолт светлая) и красим холст сразу, до разметки и css.
+         Класс на <html>, потому что <body> в <head> ещё не существует, а
+         фон холста берётся именно с <html>. -->
     <style>
+        html.boot-dark{ background:#0f172a; }
+        html.boot-light{ background:#F1F6FB; }
+        /* до появления настоящего класса темы красим body сами; как только
+           core.js проставит dark-mode/light-mode — правило само отключится */
+        html.boot-dark body:not(.dark-mode):not(.light-mode){ background:#0f172a; }
+        /* на загрузке фон не анимируем: иначе исправление цвета само читается
+           как вспышка. Класс снимает js/page-transition.js после отрисовки */
+        html.boot-anim-off body{ transition:none !important; }
+
         html.pg-cloak::before{
             content:''; position:fixed; inset:0; z-index:2147483000;
             background:#F1F6FB; opacity:1;
@@ -38,6 +57,18 @@
         @keyframes pgLabelIn{ to{ opacity:1 } }
     </style>
     <script>
+        // Тема холста до первого пейнта (правила — как в core.js _themeWantDark)
+        (function () {
+            try {
+                var p = location.pathname.replace(/^\//, '').replace(/\/$/, '').replace(/index\.html?$/i, '');
+                var home = (p === '' || p === 'home');
+                var dark;
+                if (home) { var th = localStorage.getItem('theme_home'); dark = th ? th === 'dark' : true; }
+                else { var ut = localStorage.getItem('user_theme'); dark = ut ? ut === 'dark' : false; }
+                var c = document.documentElement.classList;
+                c.add(dark ? 'boot-dark' : 'boot-light', 'boot-anim-off');
+            } catch (e) {}
+        })();
         // Прошлая страница подняла занавес перед reload — стартуем под ним.
         (function () {
             try {
@@ -2496,8 +2527,8 @@
 
 <!-- Занавес переходов — ПЕРВЫМ: им пользуются cloud-sync (вход) и profile-menu
      (выход). Разметки не требует, стиль инлайном в <head>. -->
-<script src="js/page-transition.js?v=1" defer></script>
-<script src="js/core.js?v=12" defer></script>
+<script src="js/page-transition.js?v=2" defer></script>
+<script src="js/core.js?v=13" defer></script>
 <script src="js/calculator-ui.js?v=4" defer></script>
 <script src="js/data.js?v=10" defer></script>
 <script src="js/rebalance.js?v=13" defer></script>

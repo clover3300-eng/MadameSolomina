@@ -1064,6 +1064,18 @@ function toggleInterestingMore() {
                 body.classList.remove('light-mode'); body.classList.add('dark-mode');
                 if (btn) btn.innerHTML = _THEME_SUN;
             }
+            _syncCanvasTheme();
+        }
+
+        // Холст (<html>) красится вместе с body. Инлайн в <head> ставит
+        // boot-dark/boot-light до первого пейнта — здесь держим их в согласии
+        // с темой дальше. Иначе на тёмной теме сквозь щели (overscroll, полоса
+        // под appShell) светит светлый холст.
+        function _syncCanvasTheme() {
+            var dark = document.body.classList.contains('dark-mode');
+            var r = document.documentElement.classList;
+            r.toggle('boot-dark', dark);
+            r.toggle('boot-light', !dark);
         }
 
         // Запомнить выбранную тему в нужный ключ.
@@ -1095,6 +1107,7 @@ function toggleInterestingMore() {
             const btn = document.getElementById('themeBtn');
             if (wantDark) { document.body.classList.add('dark-mode'); if (btn) btn.innerHTML = _THEME_SUN; }
             else { document.body.classList.add('light-mode'); if (btn) btn.innerHTML = _THEME_MOON; }
+            _syncCanvasTheme();   // холст уже покрашен инлайном в <head>, держим согласие
         }
 
         // Применить тему, положенную вкладке, при её открытии. Вызывается из
