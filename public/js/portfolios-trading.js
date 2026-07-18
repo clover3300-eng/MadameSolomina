@@ -144,18 +144,29 @@
         if (!asks.length && !bids.length) return obEmptyHtml(q2n);
         var maxQ = 1;
         asks.concat(bids).forEach(function (r) { maxQ = Math.max(maxQ, +r.quantity || 0); });
-        function row(r, side) {
+        // best — лучшая цена (верх бидов / низ асков), примыкает к центру: акцент
+        function row(r, side, best) {
             var p = q2n(r.price), q = +r.quantity || 0;
             var w = Math.max(3, Math.round(q / maxQ * 100));
-            return '<div class="btr-obrow ' + side + '" role="button" onclick="pftPickPrice(\'' + jsArg(String(p)) + '\')">' +
+            return '<div class="btr-obrow ' + side + (best ? ' best' : '') + '" role="button" onclick="pftPickPrice(\'' + jsArg(String(p)) + '\')">' +
                 '<i style="width:' + w + '%"></i><b>' + fmtPrice(p) + '</b><span>' + q.toLocaleString('ru-RU') + '</span></div>';
         }
         var bb = bids.length ? q2n(bids[0].price) : 0, ba = asks.length ? q2n(asks[0].price) : 0;
-        var spread = (bb && ba) ? '<div class="btr-spread"><span>спред</span><b>' + fmtPrice(ba - bb) + '</b></div>' : '';
-        return '<div class="btr-obhead"><span>Цена</span><span>Лоты</span></div>' +
-            asks.slice().reverse().map(function (r) { return row(r, 'ask'); }).join('') +
-            spread +
-            bids.map(function (r) { return row(r, 'bid'); }).join('');
+        // центральная плашка — сердце стакана: последняя цена крупно (со стрелкой
+        // к закрытию) + спред мелко; фокус, вокруг которого дышит вся сетка
+        var last = q2n(T.ob.lastPrice) || ((bb && ba) ? (bb + ba) / 2 : 0);
+        var close = q2n(T.ob.closePrice);
+        var dir = (last && close) ? (last > close ? 'up' : last < close ? 'down' : '') : '';
+        var mid = '<div class="btr-mid ' + dir + '">' +
+            '<div class="btr-mid-px">' + (dir ? '<i class="btr-mid-ar">' + (dir === 'up' ? '▲' : '▼') + '</i>' : '') +
+                '<b>' + fmtPrice(last) + '</b><em>₽</em></div>' +
+            ((bb && ba) ? '<div class="btr-mid-spread">спред&nbsp;<b>' + fmtPrice(ba - bb) + '</b></div>' : '') +
+        '</div>';
+        var askArr = asks.slice().reverse();
+        return '<div class="btr-obhead"><span>Цена</span><span>Объём, лотов</span></div>' +
+            askArr.map(function (r, i) { return row(r, 'ask', i === askArr.length - 1); }).join('') +
+            mid +
+            bids.map(function (r, i) { return row(r, 'bid', i === 0); }).join('');
     }
 
     // ---- карточка тикета ----
@@ -251,11 +262,18 @@
                 var ins = instrMem[o.instrumentUid] || {};
                 var buy = o.direction === 'ORDER_DIRECTION_BUY';
                 var price = q2n(o.initialSecurityPrice);
+                var req = +o.lotsRequested || 0, exec = +o.lotsExecuted || 0;
+                var pct = req ? Math.round(exec / req * 100) : 0;
                 return '<div class="btr-ordrow ' + (buy ? 'buy' : 'sell') + '">' +
-                    '<i class="bk-pill ' + (buy ? 'bk-pill-green' : 'bk-pill-amber') + '">' + (buy ? 'покупка' : 'продажа') + '</i>' +
-                    '<b>' + esc(ins.ticker || (o.figi || '').slice(0, 8)) + '</b>' +
-                    '<span>' + (o.lotsExecuted || 0) + '/' + (o.lotsRequested || 0) + ' лот · ' + fmtPrice(price) + '</span>' +
-                    '<button type="button" title="Снять заявку" onclick="pftCancel(\'' + jsArg(o.orderId) + '\')">✕</button></div>';
+                    '<div class="btr-ord-top">' +
+                        '<i class="bk-pill ' + (buy ? 'bk-pill-green' : 'bk-pill-amber') + '">' + (buy ? 'покупка' : 'продажа') + '</i>' +
+                        '<b>' + esc(ins.ticker || (o.figi || '').slice(0, 8)) + '</b>' +
+                        '<span class="btr-ord-px">' + fmtPrice(price) + '&nbsp;₽</span>' +
+                        '<button type="button" title="Снять заявку" onclick="pftCancel(\'' + jsArg(o.orderId) + '\')">✕</button>' +
+                    '</div>' +
+                    '<div class="btr-ord-fill"><span class="btr-ord-track ' + (buy ? 'buy' : 'sell') + '"><i style="width:' + pct + '%"></i></span>' +
+                        '<em>' + exec + ' / ' + req + ' лот</em></div>' +
+                '</div>';
             }).join('') + '</div>';
         }
         // стоп-заявки — своим списком (у них другой жизненный цикл и отмена)
@@ -265,11 +283,13 @@
                 var ins = instrMem[o.instrumentUid] || {};
                 var buy = o.direction === 'STOP_ORDER_DIRECTION_BUY';
                 var tp = o.stopOrderType === 'STOP_ORDER_TYPE_TAKE_PROFIT';
-                return '<div class="btr-ordrow ' + (buy ? 'buy' : 'sell') + '">' +
-                    '<i class="bk-pill ' + (tp ? 'bk-pill-green' : 'bk-pill-amber') + '">' + (tp ? 'тейк' : 'стоп-лосс') + '</i>' +
-                    '<b>' + esc(ins.ticker || (o.figi || '').slice(0, 8)) + '</b>' +
-                    '<span>' + (o.lotsRequested || 0) + ' лот · от ' + fmtPrice(q2n(o.stopPrice)) + '</span>' +
-                    '<button type="button" title="Снять стоп-заявку" onclick="pftCancelStop(\'' + jsArg(o.stopOrderId) + '\')">✕</button></div>';
+                return '<div class="btr-ordrow btr-ordrow-1 ' + (buy ? 'buy' : 'sell') + '">' +
+                    '<div class="btr-ord-top">' +
+                        '<i class="bk-pill ' + (tp ? 'bk-pill-green' : 'bk-pill-amber') + '">' + (tp ? 'тейк' : 'стоп-лосс') + '</i>' +
+                        '<b>' + esc(ins.ticker || (o.figi || '').slice(0, 8)) + '</b>' +
+                        '<span class="btr-ord-px">' + (o.lotsRequested || 0) + '&nbsp;лот · от ' + fmtPrice(q2n(o.stopPrice)) + '&nbsp;₽</span>' +
+                        '<button type="button" title="Снять стоп-заявку" onclick="pftCancelStop(\'' + jsArg(o.stopOrderId) + '\')">✕</button>' +
+                    '</div></div>';
             }).join('') + '</div>';
         }
         var panic = (T.orders.length + T.stops.length)

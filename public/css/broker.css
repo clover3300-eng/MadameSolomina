@@ -340,25 +340,46 @@ body.dark-mode .pfbrk-total-l i, .pfd-thm-dark .pfbrk-total-l i { color: #7f93ab
     font-variant-numeric: tabular-nums; transition: outline-color 0.1s;
 }
 .btr-obrow b { font-weight: 600; }
-/* глубина зеркальна вокруг спреда: аски растут от правого края, биды — от левого */
+/* глубина зеркальна вокруг центра (аски справа, биды слева) и градиентом
+   тает к цене — «стакан дышит», ширина едет плавно на каждом тике */
 .btr-obrow i {
-    position: absolute; top: 0; bottom: 0; right: 0; border-radius: 7px; pointer-events: none;
+    position: absolute; top: 1px; bottom: 1px; right: 0; border-radius: 7px; pointer-events: none;
+    transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .btr-obrow.bid i { left: 0; right: auto; }
-.btr-obrow.ask i { background: rgba(220, 38, 38, 0.09); }
-.btr-obrow.bid i { background: rgba(22, 163, 74, 0.1); }
+.btr-obrow.ask i { background: linear-gradient(270deg, rgba(220, 38, 38, 0.17), rgba(220, 38, 38, 0.035)); }
+.btr-obrow.bid i { background: linear-gradient(90deg, rgba(22, 163, 74, 0.18), rgba(22, 163, 74, 0.04)); }
 .btr-obrow.ask b { color: #dc2626; }
 .btr-obrow.bid b { color: #16a34a; }
 .btr-obrow b, .btr-obrow span { position: relative; }
 .btr-obrow span { color: #64748b; font-size: 11.5px; }
-.btr-obrow:hover { outline: 1.5px solid rgba(59, 130, 246, 0.45); }
-.btr-spread {
-    display: flex; justify-content: space-between; padding: 4px 9px; margin: 2px 0;
-    border-top: 1px dashed rgba(15, 23, 42, 0.12); border-bottom: 1px dashed rgba(15, 23, 42, 0.12);
-    font-size: 11px; color: #94a3b8;
-}
-.btr-spread b { font-family: var(--font-num); color: #334155; }
+.btr-obrow:hover { background: rgba(59, 130, 246, 0.07); }
+/* лучшая цена (примыкает к центру) — жирнее и крупнее: топ книги виден сразу */
+.btr-obrow.best b { font-weight: 800; font-size: 13.5px; }
 .btr-obwait { padding: 14px 6px; font-size: 12.5px; color: #94a3b8; }
+
+/* центральная плашка — сердце стакана: последняя цена крупно + спред */
+.btr-mid {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    margin: 5px 0; padding: 7px 12px; border-radius: 12px;
+    background: rgba(15, 23, 42, 0.045); border: 1px solid rgba(15, 23, 42, 0.05);
+}
+.btr-mid-px { display: flex; align-items: baseline; gap: 4px; }
+.btr-mid-ar { font-style: normal; font-size: 11px; margin-right: 2px; }
+.btr-mid-px b {
+    font-family: var(--font-num); font-size: 20px; font-weight: 700; letter-spacing: -0.01em;
+    color: #0f172a; font-variant-numeric: tabular-nums; line-height: 1;
+}
+.btr-mid-px em { font-style: normal; font-size: 12px; color: #94a3b8; }
+.btr-mid.up .btr-mid-px b, .btr-mid.up .btr-mid-ar { color: #16a34a; }
+.btr-mid.down .btr-mid-px b, .btr-mid.down .btr-mid-ar { color: #dc2626; }
+.btr-mid-spread { font-size: 11px; color: #94a3b8; white-space: nowrap; }
+.btr-mid-spread b { font-family: var(--font-num); font-weight: 600; color: #334155; }
+body.dark-mode .btr-mid, .pfd-thm-dark .btr-mid { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.06); }
+body.dark-mode .btr-mid-px b, .pfd-thm-dark .btr-mid-px b { color: #f1f5f9; }
+body.dark-mode .btr-mid.up .btr-mid-px b, body.dark-mode .btr-mid.up .btr-mid-ar { color: #34d399; }
+body.dark-mode .btr-mid.down .btr-mid-px b, body.dark-mode .btr-mid.down .btr-mid-ar { color: #f87171; }
+body.dark-mode .btr-mid-spread b, .pfd-thm-dark .btr-mid-spread b { color: #cbd5e1; }
 /* пустой стакан (закрытая сессия / неликвид) — плашка со статусом и ценой */
 .btr-obempty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 7px; padding: 22px 14px 18px; }
 .btr-obempty-ic {
@@ -424,9 +445,11 @@ body.dark-mode #btSide .mh-seg-btn.active:last-child { background: #dc2626; colo
 .btr-card .ph-input[type="number"], #btCfSum {
     font-family: var(--font-num); font-variant-numeric: tabular-nums; letter-spacing: 0.02em;
 }
+/* ИТОГО — герой тикета: главная цифра сделки, плашка с лёгким объёмом */
 .btr-est {
     display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    background: rgba(15, 23, 42, 0.04); border-radius: 12px; padding: 9px 13px;
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.055), rgba(15, 23, 42, 0.03));
+    border: 1px solid rgba(15, 23, 42, 0.05); border-radius: 13px; padding: 11px 14px;
 }
 .btr-est-l { display: flex; flex-direction: column; gap: 1px; }
 .btr-est-l span {
@@ -435,8 +458,12 @@ body.dark-mode #btSide .mh-seg-btn.active:last-child { background: #dc2626; colo
 }
 .btr-est-l i { font-style: normal; font-size: 10.5px; color: #94a3b8; }
 .btr-est b {
-    font-family: var(--font-num); font-size: var(--fs-total); font-weight: var(--fw-num-bold);
+    font-family: var(--font-num); font-size: 18px; font-weight: 700; letter-spacing: -0.01em;
     color: #0f172a; white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+body.dark-mode .btr-est, .pfd-thm-dark .btr-est {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.035));
+    border-color: rgba(255, 255, 255, 0.06);
 }
 .btr-warns:empty { display: none; }
 .btr-warn {
@@ -466,29 +493,47 @@ body.dark-mode #btSide .mh-seg-btn.active:last-child { background: #dc2626; colo
     background: transparent;
 }
 
-/* заявки */
-.btr-ords { display: flex; flex-direction: column; }
+/* заявки — карточка-строка: верх (тип·тикер·цена·отмена) + полоса исполнения */
+.btr-ords { display: flex; flex-direction: column; gap: 6px; }
 .btr-ordrow {
-    position: relative; display: flex; align-items: center; gap: 8px;
-    padding: 7px 8px 7px 13px; margin-bottom: 5px; border-radius: 10px;
-    background: rgba(15, 23, 42, 0.03); font-size: 12.5px;
+    position: relative; display: flex; flex-direction: column; gap: 7px;
+    padding: 8px 10px 9px 15px; border-radius: 11px; font-size: 12.5px;
+    background: rgba(15, 23, 42, 0.03); border: 1px solid rgba(15, 23, 42, 0.05);
+    transition: background 0.14s;
 }
+.btr-ordrow:hover { background: rgba(15, 23, 42, 0.05); }
 .btr-ordrow::before {
-    content: ''; position: absolute; left: 5px; top: 7px; bottom: 7px;
+    content: ''; position: absolute; left: 6px; top: 9px; bottom: 9px;
     width: 3px; border-radius: 3px;
 }
+.btr-ordrow-1::before { bottom: 9px; }
 .btr-ordrow.buy::before { background: #16a34a; }
 .btr-ordrow.sell::before { background: #dc2626; }
-.btr-ordrow b { font-family: var(--font-num); }
-.btr-ordrow span { color: #64748b; margin-left: auto; font-size: 12px; white-space: nowrap; }
+.btr-ord-top { display: flex; align-items: center; gap: 8px; }
+.btr-ord-top .bk-pill { flex: none; white-space: nowrap; }
+.btr-ord-top b { font-family: var(--font-num); font-size: 13px; flex: none; }
+.btr-ord-px {
+    margin-left: auto; font-family: var(--font-num); font-size: 12px; color: #334155;
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+}
 .btr-ordrow button {
     flex: none; width: 22px; height: 22px; border: none; border-radius: 7px; cursor: pointer;
     background: rgba(220, 38, 38, 0.09); color: #dc2626; font-size: 11px;
 }
 .btr-ordrow button:hover { background: rgba(220, 38, 38, 0.16); }
-.btr-panic { align-self: flex-start; }
+/* полоса исполнения: сколько лотов уже исполнено из заявленных */
+.btr-ord-fill { display: flex; align-items: center; gap: 9px; }
+.btr-ord-track { flex: 1; height: 5px; border-radius: 3px; background: rgba(15, 23, 42, 0.08); overflow: hidden; }
+.btr-ord-track i { display: block; height: 100%; border-radius: 3px; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.btr-ord-track.buy i { background: #16a34a; }
+.btr-ord-track.sell i { background: #dc2626; }
+.btr-ord-fill em { font-style: normal; font-family: var(--font-num); font-size: 10.5px; color: #94a3b8; white-space: nowrap; }
+.btr-panic { align-self: flex-start; margin-top: 2px; }
 .btr-jlab { margin-top: 6px; }
-.btr-ordrow span { font-variant-numeric: tabular-nums; }
+body.dark-mode .btr-ord-px, .pfd-thm-dark .btr-ord-px { color: #cbd5e1; }
+body.dark-mode .btr-ord-track, .pfd-thm-dark .btr-ord-track { background: rgba(255, 255, 255, 0.1); }
+body.dark-mode .btr-ord-track.buy i { background: #34d399; }
+body.dark-mode .btr-ord-track.sell i { background: #f87171; }
 
 /* тёмная тема терминала */
 body.dark-mode .btr-live { background: rgba(217, 119, 6, 0.14); color: #fcd34d; }
@@ -507,8 +552,8 @@ body.dark-mode .btr-est { background: rgba(255, 255, 255, 0.06); }
 body.dark-mode .btr-est b { color: #f1f5f9; }
 body.dark-mode .btr-est-l span { color: #7f93ab; }
 body.dark-mode .btr-warn { background: rgba(217, 119, 6, 0.15); color: #fcd34d; }
-body.dark-mode .btr-ordrow { background: rgba(255, 255, 255, 0.05); }
-body.dark-mode .btr-ordrow span { color: #9fb1c6; }
+body.dark-mode .btr-ordrow { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.06); }
+body.dark-mode .btr-ordrow:hover { background: rgba(255, 255, 255, 0.08); }
 body.dark-mode .btr-ordrow button { background: rgba(248, 113, 113, 0.13); color: #f87171; }
 body.dark-mode .btr-ordrow button:hover { background: rgba(248, 113, 113, 0.22); }
 body.dark-mode .btr-limitrow { border-top-color: rgba(255, 255, 255, 0.1); }
