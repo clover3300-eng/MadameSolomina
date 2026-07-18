@@ -80,6 +80,25 @@
         return JSON.stringify(value);
     }
 
+    // Каноничный вид для СРАВНЕНИЯ (не для записи!). В Postgres value — jsonb,
+    // а jsonb НЕ хранит порядок ключей: он его нормализует. Поэтому строка,
+    // приехавшая с сервера, побайтно не равна локальной, даже когда данные
+    // совпадают один в один. Старое сравнение `incoming !== localStr` на этом
+    // ловилось, ставило changed=true и дёргало softReload — то есть у вошедшего
+    // пользователя КАЖДАЯ загрузка страницы заканчивалась второй загрузкой.
+    // Ровно это и выглядит как «две белые вспышки на любой странице».
+    function stableStr(v) {
+        if (v === null || typeof v !== 'object') return JSON.stringify(v);
+        if (Array.isArray(v)) return '[' + v.map(stableStr).join(',') + ']';
+        return '{' + Object.keys(v).sort().map(function (k) {
+            return JSON.stringify(k) + ':' + stableStr(v[k]);
+        }).join(',') + '}';
+    }
+    function canon(str) {
+        if (str == null) return null;
+        try { return stableStr(JSON.parse(str)); } catch (e) { return String(str); }
+    }
+
     // ---------- защита секретов ----------
     // API-токен брокера исторически лежал внутри profile_settings_v1 и уезжал
     // в облако, где виден админам через user_data. Теперь он живёт только в
@@ -210,7 +229,10 @@
                         if (fresher) {
                             var incoming = row.value == null ? null : fromJsonb(row.value);
                             incoming = stripSecretsForPull(k, incoming);
-                            if (incoming !== localStr) {
+                            // сравниваем КАНОНИЧНО (см. canon): побайтное сравнение
+                            // врало из-за порядка ключей в jsonb и перезагружало
+                            // страницу на каждой загрузке
+                            if (canon(incoming) !== canon(localStr)) {
                                 applying = true;
                                 try {
                                     if (incoming == null) localStorage.removeItem(k);
