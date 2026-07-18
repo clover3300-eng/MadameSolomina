@@ -652,6 +652,53 @@ body.dark-mode .btr-search-none { color: #9fb1c6; }
 .btr-jr:last-child { border-bottom: none; }
 .btr-jr i { font-style: normal; font-family: var(--font-num); font-size: 10.5px; color: #94a3b8; margin-left: auto; white-space: nowrap; }
 
+/* ---- виджеты терминала живут по размеру карточки ---- */
+/* Высоту виджету ЗАДАЛИ (.pfd-hset) — карточка растянута ровно на блок и режет
+   всё, что не влезло. Реагирует каждая карточка по-своему:
+     · стакан отдаёт лишние уровни (глубину считает JS, fitOb) — лестнице
+       отдаём ВСЮ свободную высоту, по её боксу и идёт замер;
+     · тикету этого мало: у него внизу КНОПКА, и обрезать её нельзя — поля
+       скроллятся, подвал прибит ко дну;
+     · «Мои заявки» — тем же приёмом: лента скроллится, «Отменить все» на виду. */
+.btr-tk-body { display: flex; flex-direction: column; gap: 12px; }
+.btr-tk-foot { display: flex; flex-direction: column; gap: 10px; }
+.pfd-hset .btr-ob, .pfd-hset .btr-ticket, .pfd-hset .btr-orders { overflow: hidden; }
+/* Скролл лестницы — страховка, а не режим: глубина подбирается ровно под бокс,
+   и полоса не появляется. Но свои заявки ВНЕ стакана (.btr-axout) из лестницы
+   не выкидываются ни при каком размере — если их много, а карточка мала, они
+   должны остаться доступны, а не оказаться за нижней кромкой. */
+.pfd-hset .btr-ob > .btr-obhost { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+.pfd-hset .btr-ticket > .pf-ch, .pfd-hset .btr-ticket > .btr-tk-foot { flex: none; }
+.pfd-hset .btr-ticket > .btr-tk-body,
+.pfd-hset .btr-orders > .btr-ords {
+    flex: 0 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin;
+    /* полоса прокрутки не должна наезжать на крупные цифры полей */
+    padding-right: 3px; margin-right: -3px;
+}
+
+/* Совсем тесная карточка — плотный режим: цифры мельче, воздух убран.
+   Порог держит JS (TIGHT_H): от ширины он не зависит, а высоту блока в CSS
+   не спросить. Служебная строка порога подтверждения в тесноте не нужна —
+   настройка редкая, а место занимает как половина поля. */
+.btr-tight.btr-card { gap: 9px; }
+.btr-tight .btr-side-b { height: 36px; font-size: 13px; }
+.btr-tight .btr-ttabs { gap: 16px; }
+.btr-tight .btr-ttabs button { padding: 2px 0 7px; font-size: 12.5px; }
+.btr-tight .btr-bf { padding: 2px 0 10px; }
+.btr-tight .btr-bigrow { margin-top: 5px; }
+.btr-tight .btr-big { font-size: 22px; }
+.btr-tight .btr-submit { padding: 11px 14px; border-radius: 11px; }
+.btr-tight .btr-sb-l { font-size: 13.5px; }
+.btr-tight .btr-sb-s { font-size: 15px; }
+.btr-tight .btr-subnote { display: none; }
+.btr-tight .btr-axrow { height: 21px; }
+.btr-tight .btr-axh { height: 16px; }
+.btr-tight .btr-axh em { line-height: 16px; font-size: 10.5px; }
+.btr-tight .btr-axmid { padding: 7px 0; margin: 5px 0; }
+.btr-tight .btr-axmid > b { font-size: 19px; }
+.btr-tight .btr-ordrow { padding: 9px 0 9px 12px; }
+.btr-tight .btr-ord2 { margin-top: 5px; }
+
 /* ---- тёмная тема терминала (и пер-виджетная .pfd-thm-dark) ---- */
 body.dark-mode .btr-live { background: rgba(217, 119, 6, 0.14); color: #fcd34d; }
 body.dark-mode .btr-iconbtn, .pfd-thm-dark .btr-iconbtn { border-color: rgba(255, 255, 255, 0.16); color: #9fb1c6; }

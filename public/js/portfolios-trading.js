@@ -45,7 +45,12 @@
     var SUM_LIMIT_KEY = 'bt_sum_limit_v1';   // порог «подтвердить суммой», ₽
     var LIVE_SEEN_KEY = 'bt_live_seen_v1';   // баннер боевого контура закрыт
     var SLOTS_KEY = 'bt_slots_v1';           // выбранные бумаги (переживают перезагрузку)
-    var OB_DEPTH = 10;
+    var OB_DEPTH = 10;      // уровней на сторону в карточке натуральной высоты
+    var OB_MAX = 20;        // ...и сколько просим у брокера: растянутой карточке есть что показать
+    var OB_MIN = 1;         // самый тесный честный стакан: лучший бид, цена, лучший аск
+    // ниже этой высоты карточка уходит в плотный режим (.btr-tight): цифры мельче,
+    // воздух убран — иначе в ужатый блок не влезает даже кнопка тикета
+    var TIGHT_H = 380;
     // потолок слотов: каждый живой стакан — свой запрос раз в 2с, а лимит
     // MarketData у брокера общий на токен; 4 бумаги = 120 запросов/мин с запасом
     var MAX_SLOTS = 4;
@@ -64,6 +69,7 @@
         return {
             uid: null, meta: null,        // выбранный инструмент и его паспорт
             ob: null, status: null,       // стакан и статус торгов
+            depth: OB_DEPTH,              // уровней на сторону — по высоте карточки (fitOb)
             side: 'buy', kind: 'limit', price: '', lots: 1,
             stopKind: 'sl', stopPrice: '',// стоп-заявки: стоп-лосс/тейк-профит + цена активации
             tape: [],                     // лента обезличенных сделок
@@ -295,7 +301,10 @@
                 '<div class="btr-fold-body"><div class="btr-tape" id="' + eid('Tape', n) + '">' + tapeHtml(s) + '</div></div>' +
               '</div>'
             : '';
-        return head + search + title + '<div id="' + eid('Ob', n) + '">' + obHtml(n) + '</div>' + tape;
+        // .btr-obhost забирает всю свободную высоту карточки — по его боксу
+        // считается глубина (fitOb), и замер не зависит от числа строк
+        return head + search + title +
+            '<div class="btr-obhost" id="' + eid('Ob', n) + '">' + obHtml(n) + '</div>' + tape;
     }
     function tapeCnt(s) { return s.tape.length ? s.tape.length + ' за 15 мин' : ''; }
     function tapeHtml(s) {
@@ -473,8 +482,10 @@
         if (!s.uid) return '<div class="pfal-empty">Найдите бумагу в поиске — стакан появится здесь. Подсказка: тикеры есть в виджете «Позиции у брокера».</div>';
         if (!s.ob) return '<div class="btr-obwait">Загружаем стакан…</div>';
         var q2n = A().q2n;
-        var asks = (s.ob.asks || []).slice(0, OB_DEPTH);
-        var bids = (s.ob.bids || []).slice(0, OB_DEPTH);
+        // глубина — по высоте карточки: сколько уровней влезло вокруг центра оси
+        var deep = s.depth || OB_DEPTH;
+        var asks = (s.ob.asks || []).slice(0, deep);
+        var bids = (s.ob.bids || []).slice(0, deep);
         var mine = myOrdersByPx(s), seen = {};
         // стакан пуст (закрытая сессия/неликвид) — заявка всё равно висит: показываем
         if (!asks.length && !bids.length) {
@@ -629,14 +640,22 @@
             '<span id="' + eid('LotsRef', n) + '">' + lotsRefBtn(n) + '</span></div>' +
             '<div class="btr-bigrow"><input class="btr-big" id="' + eid('Lots', n) + '" type="number" step="1" min="1" value="' + s.lots + '">' +
             '<span class="btr-big-suf" id="' + eid('Shares', n) + '">· ' + shares.toLocaleString('ru-RU') + ' шт</span></div></div>';
-        return head + side + kind + kindFields + lotsField +
-            '<div class="btr-deal" id="' + eid('Deal', n) + '">' + dealHtml(s) + '</div>' +
-            '<div class="btr-warns" id="' + eid('Warns', n) + '">' + warnsHtml(s) + '</div>' +
-            '<button type="button" class="btr-submit ' + s.side + '" id="' + eid('Submit', n) + '" onclick="pftAsk(' + n + ')">' +
-                '<span class="btr-sb-l">' + esc(submitLbl(s)) + '</span>' +
-                '<span class="btr-sb-s">' + submitSum(s) + '</span></button>' +
-            '<div class="btr-subnote">' + IC_SHIELD + '<span>Подтверждение вводом суммы от</span>' +
-            '<input id="' + eid('SumLimit', n) + '" type="number" min="1000" step="1000" value="' + sumLimit() + '"><span>₽</span></div>';
+        // Тикет делится на ПОЛЯ и ПОДВАЛ: карточку могут ужать, а обрезать в
+        // тикете можно что угодно, кроме кнопки. Поля скроллятся, подвал прибит
+        // ко дну (CSS .pfd-hset .btr-ticket) — действие всегда на виду.
+        return head +
+            '<div class="btr-tk-body">' +
+                side + kind + kindFields + lotsField +
+                '<div class="btr-deal" id="' + eid('Deal', n) + '">' + dealHtml(s) + '</div>' +
+                '<div class="btr-warns" id="' + eid('Warns', n) + '">' + warnsHtml(s) + '</div>' +
+            '</div>' +
+            '<div class="btr-tk-foot">' +
+                '<button type="button" class="btr-submit ' + s.side + '" id="' + eid('Submit', n) + '" onclick="pftAsk(' + n + ')">' +
+                    '<span class="btr-sb-l">' + esc(submitLbl(s)) + '</span>' +
+                    '<span class="btr-sb-s">' + submitSum(s) + '</span></button>' +
+                '<div class="btr-subnote">' + IC_SHIELD + '<span>Подтверждение вводом суммы от</span>' +
+                '<input id="' + eid('SumLimit', n) + '" type="number" min="1000" step="1000" value="' + sumLimit() + '"><span>₽</span></div>' +
+            '</div>';
     }
     var IC_SHIELD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5 4.5 5.5v6c0 4.6 3.2 8.1 7.5 9.5 4.3-1.4 7.5-4.9 7.5-9.5v-6z"/></svg>';
     function estPrice(s) {
@@ -772,7 +791,7 @@
     // ---------- точечные перерисовки ----------
     function obCardEl(n) { return document.querySelector('.btr-ob[data-slot="' + slotNo(n) + '"]'); }
     function tkCardEl(n) { return document.querySelector('.btr-ticket[data-slot="' + slotNo(n) + '"]'); }
-    function repaintOb(n) { var el = dqs('Ob', n); if (el) el.innerHTML = obHtml(n); }
+    function repaintOb(n) { var el = dqs('Ob', n); if (el) { el.innerHTML = obHtml(n); fitSoon(); } }
     function repaintObAll() { liveSlots().forEach(repaintOb); }
     function repaintWarns(n) { var el = dqs('Warns', n); if (el) el.innerHTML = warnsHtml(S(n)); }
     // полная перерисовка карточек ОДНОГО слота без общего ре-рендера вкладки
@@ -780,8 +799,78 @@
         var w = obCardEl(n); if (w) w.innerHTML = obCardHtml(n);
         var t = tkCardEl(n); if (t) t.innerHTML = ticketHtml(n);
         wire();
+        fitSoon();
     }
     function repaintOrders() { var el = document.querySelector('.btr-orders'); if (el) { el.innerHTML = ordersHtml(); } }
+
+    // ---------- виджеты живут по размеру карточки ----------
+    // Общее правило дашборда (у списочных виджетов — pfdRowsFor): контент
+    // подстраивается под размер блока, а не клипуется молча. Здесь размер
+    // ЗАМЕРЯЕТСЯ, а не читается из cfg.h — тогда карточка перестраивается прямо
+    // во время жеста, а не прыгает после отпускания кромки. Кто как тянется:
+    //   · стакан — меняет ГЛУБИНУ: столько уровней вокруг центра оси, сколько влезло;
+    //   · тикет и «Мои заявки» — скроллят середину, оставляя кнопку на виду (CSS);
+    //   · обе карточки ниже TIGHT_H — в плотном режиме (.btr-tight).
+    // ЛОВУШКА: мерим только offsetHeight/clientHeight. На десктопе к оболочке
+    // применён zoom 0.9 (css/desktop-zoom.css), и getBoundingClientRect отдаёт
+    // ВИЗУАЛЬНЫЕ пиксели (строка 25px → 22.5), а clientHeight — layout-пиксели.
+    // Смешаешь — бюджет делится на заниженную строку, влезает на 11% больше
+    // уровней, чем на самом деле, и низ стакана всё-таки уезжает за кромку.
+    function hOf(el, def) { return el ? el.offsetHeight : def; }
+    // высота, ЗАДАННАЯ виджету (.pfd-hset). Ноль — карточка растёт по контенту:
+    // подстраивать не подо что, да и замер зависел бы от собственного результата
+    function boxH(card) {
+        var item = card.closest ? card.closest('.pfd-item') : null;
+        return (item && item.classList.contains('pfd-hset')) ? card.clientHeight : 0;
+    }
+    function fitCards() { return document.querySelectorAll('#panel-portfolios.active .btr-card'); }
+    var fitRO = null, fitRaf = 0;
+    function fitAll() { Array.prototype.forEach.call(fitCards(), fitCard); }
+    // ресайз идёт непрерывно во время жеста — считаем раз в кадр, а не на пиксель
+    function fitSoon() {
+        if (fitRaf) return;
+        fitRaf = requestAnimationFrame(function () { fitRaf = 0; fitAll(); });
+    }
+    // карточки пересоздаются каждым рендером — подписку обновляем целиком
+    function fitObserve() {
+        if (!window.ResizeObserver) return;
+        if (!fitRO) fitRO = new ResizeObserver(fitSoon);
+        fitRO.disconnect();
+        Array.prototype.forEach.call(fitCards(), function (el) { fitRO.observe(el); });
+    }
+    function fitCard(card) {
+        var h = boxH(card);
+        card.classList.toggle('btr-tight', !!h && h < TIGHT_H);
+        if (card.classList.contains('btr-ob')) fitOb(card, h);
+    }
+    function fitOb(card, h) {
+        var n = slotNo(card.getAttribute('data-slot'));
+        var s = S(n);
+        var host = dqs('Ob', n);
+        var ax = host && host.querySelector('.btr-ax');
+        var want = OB_DEPTH;
+        if (h && ax) {
+            var rowH = hOf(ax.querySelector('.btr-axrow'), 25);
+            // всё, что в лестнице НЕ строка: шапка колонок, центр оси и свои
+            // заявки вне глубины — они остаются при любом размере (+ margin из CSS)
+            var fixed = hOf(ax.querySelector('.btr-ax-head'), 0) + 6 +
+                        hOf(ax.querySelector('.btr-axmid'), 0) + 14;
+            Array.prototype.forEach.call(ax.querySelectorAll('.btr-axout'), function (el) {
+                fixed += el.offsetHeight + 6;
+            });
+            var rows = Math.floor((host.clientHeight - fixed) / rowH);
+            var nAsk = ((s.ob && s.ob.asks) || []).length, nBid = ((s.ob && s.ob.bids) || []).length;
+            // стороны бывают разной длины (тонкая книга) — ищем самую глубокую,
+            // которая ещё влезает, а не делим свободные строки пополам
+            want = OB_MIN;
+            for (var k = OB_MIN; k <= OB_MAX; k++) {
+                if (Math.min(k, nAsk) + Math.min(k, nBid) <= rows) want = k; else break;
+            }
+        }
+        if (want === s.depth) return;
+        s.depth = want;
+        repaintOb(n);
+    }
     // живые кусочки тикета: суффикс штук, сводка, сумма в кнопке, референсы —
     // точечно, не трогая инпуты (фокус и ввод не сбиваются)
     function repaintTicketBits(n) {
@@ -810,17 +899,23 @@
         return false;
     }
     function awake() { return stillHere() && document.visibilityState === 'visible'; }
+    var obAsk = OB_MAX;   // сколько уровней просим у брокера (см. catch ниже)
     function pollOb() {
         if (!awake()) return;
         liveSlots().forEach(function (n) {
             var s = S(n);
             if (!s.uid) return;
-            A().call('GetOrderBook', { instrumentId: s.uid, depth: OB_DEPTH }).then(function (d) {
+            A().call('GetOrderBook', { instrumentId: s.uid, depth: obAsk }).then(function (d) {
                 s.ob = d;
                 repaintOb(n);
                 repaintWarns(n);
                 repaintTicketBits(n);
-            }).catch(function () { /* тихо: следующий тик попробует снова */ });
+            }).catch(function () {
+                // Глубину просим с запасом — но если брокер такую не отдаёт,
+                // молчаливый catch оставил бы стакан пустым навсегда. Один раз
+                // откатываемся на проверенные 10 и больше с запасом не просим.
+                if (obAsk > OB_DEPTH) obAsk = OB_DEPTH;
+            });
         });
     }
     function pollOrders() {
@@ -943,8 +1038,8 @@
     // зовётся из цикла рендера portfolios.js: включает/гасит поллинг по месту
     function pftAfterRender() {
         var live = document.querySelector('#panel-portfolios.active .btr-card');
-        if (live && tradeReady()) { wire(); startPolling(); }
-        else stopPolling();
+        if (live && tradeReady()) { wire(); fitObserve(); fitSoon(); startPolling(); }
+        else { if (fitRO) fitRO.disconnect(); stopPolling(); }
     }
 
     // ---------- обработчики ----------
