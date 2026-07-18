@@ -29,6 +29,10 @@
     var CFG_KEY = 'bt_chart_v1';   // ТФ/индикаторы/чертежи по слотам — ЛОКАЛЬНО, как bt_slots_v1
     var MIN_BARS = 180;            // сколько свечей набрать при первой загрузке
     var MAX_CHUNKS = 6;            // потолок запросов на одну догрузку истории
+    // Потолок истории на график. Движок просит ещё, ПОКА видимое окно упирается
+    // в левый край, и на пустом/сброшенном графике это условие верно на каждом
+    // кадре: без потолка виджет уходил в петлю и выдавал тысячи запросов к бирже.
+    var MAX_BARS = 2500;
     var DAY = 86400000;
 
     // Таймфреймы подобраны так, чтобы КАЖДЫЙ существовал в обоих источниках:
@@ -81,14 +85,48 @@
     var IC_IND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17.5 8.5 11l4 3.5L21 5"/><path d="M15.5 5H21v5.5"/></svg>';
     var IC_DRAW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15.2 4.6a2 2 0 0 1 2.8 0l1.4 1.4a2 2 0 0 1 0 2.8L8.6 19.6 4 20.4l.8-4.6z"/><path d="m13.8 6 4.2 4.2"/></svg>';
     var IC_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7"/></svg>';
+    // те же лупа и плюс, что в шапке стакана: жест «найти бумагу» и «добавить ещё»
+    // должен выглядеть одинаково в обеих карточках терминала
+    var IC_LENS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>';
+    var IC_PLUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
 
     // ---------- состояние ----------
-    // n -> { host, chart, uid, ticker, tf, src, timer, liveCb, loading }
+    // n -> { host, chart, slot, instr, tf, src, timer, liveCb, loading }
     var CH = {};
+    // Графиков может быть несколько, и нумерация у них СВОЯ, не слотов терминала:
+    // график живёт своей бумагой (можно смотреть один тикер, торгуя другим) и
+    // опрашивает биржу редко, поэтому его копии не расходуют лимит слотов.
+    var MAX_CHARTS = 4;
     function slotNo(n) { n = Math.floor(+n || 1); return n >= 1 ? n : 1; }
     function chId(n) { return slotNo(n) === 1 ? 'trade:chart' : 'trade:chart:' + slotNo(n); }
+    function chartNums() {
+        var set = { 1: 1 };
+        ((PF.dashCfg && PF.dashCfg.order) || []).forEach(function (id) {
+            var m = /^trade:chart:(\d+)$/.exec(id);
+            if (m) set[slotNo(m[1])] = 1;
+        });
+        Object.keys(CH).forEach(function (n) { set[slotNo(n)] = 1; });
+        return Object.keys(set).map(Number).sort(function (a, b) { return a - b; });
+    }
+    function nextFreeChart() {
+        var used = chartNums();
+        for (var i = 1; i <= MAX_CHARTS; i++) if (used.indexOf(i) < 0) return i;
+        return 0;
+    }
     function A() { return window.brokerApi; }
-    function instr(n) { return (PF.pftSlotInstr && PF.pftSlotInstr(slotNo(n))) || null; }
+    // Бумага графика: сначала СВОЙ выбор (поиск в шапке), и лишь если его не было —
+    // бумага одноимённого слота терминала. Так первый график из коробки показывает
+    // то, что в стакане, но перестаёт за ним следовать, как только выбрали своё.
+    function instr(n) {
+        var own = cfg(n).ins;
+        if (own && own.uid) return own;
+        return (PF.pftSlotInstr && PF.pftSlotInstr(slotNo(n))) || null;
+    }
+    function chartLabel(n) {
+        var i = instr(n);
+        if (i) return 'График · ' + i.ticker;
+        return chartNums().length > 1 ? 'График ' + slotNo(n) : 'График';
+    }
     function kc() { return window.klinecharts; }
 
     // Движок (228 КБ) грузим ЛЕНИВО — в тот момент, когда блок графика впервые
@@ -124,10 +162,29 @@
         var all = cfgAll(), k = String(slotNo(n));
         var c = all[k];
         if (!c || typeof c !== 'object') c = all[k] = {};
+        // Из коробки — чистый график: дневные свечи и объём, без единого
+        // осциллятора. Индикаторы добавляют те, кому они нужны.
         if (!tfExists(c.tf)) c.tf = '1d';
         if (!Array.isArray(c.inds)) c.inds = ['VOL'];
         if (!Array.isArray(c.ovs)) c.ovs = [];
+        c.ins = normIns(c.ins);
         return c;
+    }
+    // Паспорт бумаги приходит из localStorage — то есть может быть подделан или
+    // протух: приводим типы руками и не пускаем внутрь ничего сверх известных
+    // полей (тот же приём, что у слотов терминала).
+    function normIns(m) {
+        if (!m || typeof m !== 'object') return null;
+        var t = String(m.ticker || '').slice(0, 24);
+        var uid = String(m.uid || '').slice(0, 64);
+        if (!t || !/^[A-Za-z0-9_-]+$/.test(uid)) return null;
+        return {
+            uid: uid, ticker: t,
+            name: String(m.name || '').slice(0, 160),
+            figi: /^[A-Za-z0-9_-]*$/.test(String(m.figi || '')) ? String(m.figi || '').slice(0, 64) : '',
+            lot: Math.max(1, Math.floor(+m.lot || 1)),
+            minInc: +m.minInc > 0 ? +m.minInc : 0.01
+        };
     }
     function tfExists(k) { for (var i = 0; i < TF.length; i++) if (TF[i].k === k) return true; return false; }
     var saveT = null;
@@ -350,10 +407,18 @@
             if (!data || !data.close) return;
             if (window.pftPickPrice) window.pftPickPrice(n, round(data.close, c.instr));
         });
-        // свой ResizeObserver: карточку тянут за угол конструктора, и движку
-        // надо пересчитать канву под новый бокс
+        // Свой ResizeObserver: карточку тянут за угол конструктора, и движку надо
+        // не только пересчитать канву, но и переразложить панели под новый бокс.
+        // Ресайз идёт непрерывно во время жеста — считаем на следующем кадре,
+        // чтобы не дёргать движок по разу на каждый пиксель.
         try {
-            c.ro = new ResizeObserver(function () { try { chart.resize(); } catch (e) {} });
+            c.ro = new ResizeObserver(function () {
+                if (c.roRaf) return;
+                c.roRaf = requestAnimationFrame(function () {
+                    c.roRaf = 0;
+                    try { chart.resize(); sizePanes(c); } catch (e) {}
+                });
+            });
             c.ro.observe(host);
         } catch (e) {}
         return c;
@@ -383,6 +448,13 @@
                 // Правее «сейчас» свечей не существует, а 'init' грузит ровно до
                 // текущего момента — на запрос вправо честный ответ всегда пустой.
                 if (p.type === 'backward') { p.callback([], { backward: false }); return; }
+                // набрали столько, что дальше листать бессмысленно — закрываем
+                // подкачку, иначе левый край графика просит историю без конца
+                var loaded = (c.chart.getDataList() || []).length;
+                if (p.type === 'forward' && loaded >= MAX_BARS) {
+                    p.callback([], { forward: false, backward: false });
+                    return;
+                }
                 mark(c, true);
                 var to = p.type === 'forward' && p.timestamp ? p.timestamp : Date.now();
                 var want = p.type === 'init' ? MIN_BARS : 60;
@@ -390,7 +462,11 @@
                     if (p.type === 'forward' && p.timestamp) {
                         rows = rows.filter(function (r) { return r.timestamp < p.timestamp; });
                     }
-                    rows = fresh(c, rows);
+                    // Дубли отсекаем только на ДОГРУЗКЕ истории. На 'init' список
+                    // ещё держит свечи прошлой бумаги, а у дневок разных бумаг
+                    // одни и те же даты — фильтр вырезал бы всю новую бумагу
+                    // целиком, и смена тикера давала пустой график.
+                    if (p.type !== 'init') rows = fresh(c, rows);
                     mark(c, false);
                     // forward:false движок понимает как «история кончилась» и
                     // больше её не просит — ставим его только на пустой ответ
@@ -436,9 +512,23 @@
     }
 
     // ---------- индикаторы и чертежи ----------
+    function isOverlayInd(name) { return IND_OVER.some(function (x) { return x.n === name; }); }
+    // Свечам нужно место. Если карточку сжали так, что осцилляторам пришлось бы
+    // отдать треть бокса, панели прячем совсем: чистый график читается, а полоска
+    // свечей в восемь пикселей — нет. Настройки не трогаем: вернули высоту —
+    // вернулись и индикаторы.
+    function tightNow(c, n) {
+        var h = c.host ? c.host.clientHeight : 0;
+        var need = cfg(n).inds.filter(function (x) { return !isOverlayInd(x); }).length;
+        if (!h || !need) return false;
+        return (h - 26) < 140 + need * 32;
+    }
     function applyInds(c, n) {
         if (!c.chart) return;
-        var want = cfg(n).inds;
+        c.tight = tightNow(c, n);
+        // наложения (скользящие, полосы) живут на самих свечах и места не просят —
+        // их прячем только по прямому выбору пользователя
+        var want = cfg(n).inds.filter(function (name) { return !c.tight || isOverlayInd(name); });
         var have = c.chart.getIndicators() || [];
         have.forEach(function (ind) {
             if (want.indexOf(ind.name) < 0) c.chart.removeIndicator({ paneId: ind.paneId, name: ind.name });
@@ -448,19 +538,45 @@
             if (haveNames.indexOf(name) >= 0) return;
             var over = IND_OVER.some(function (x) { return x.n === name; });
             try {
-                var indId = c.chart.createIndicator(over ? { name: name, paneId: 'candle_pane' } : { name: name }, true);
-                // Своя панель осциллятора по умолчанию делит высоту поровну со
-                // свечами: включил объём и MACD — и от свечей осталась полоска.
-                // Держим осцилляторы низкими, главная панель забирает остаток.
-                // createIndicator отдаёт id ИНДИКАТОРА, а не панели — id панели
-                // достаём из самого индикатора, иначе setPaneOptions бьёт мимо.
-                if (!over && indId) {
-                    var made = (c.chart.getIndicators({ id: indId }) || [])[0];
-                    if (made && made.paneId) c.chart.setPaneOptions({ id: made.paneId, height: 74, minHeight: 40 });
-                }
+                // Объём рисуем ГОЛОЙ гистограммой: со скользящими по умолчанию его
+                // легенда занимает строку «VOL(5,10,20) MA5 … MA10 … MA20 …» и
+                // спорит со свечами за внимание.
+                var mk = { name: name };
+                if (name === 'VOL') mk.calcParams = [];
+                if (over) mk.paneId = 'candle_pane';
+                c.chart.createIndicator(mk, true);
             } catch (e) {}
         });
+        sizePanes(c);
     }
+    // Высота панелей осцилляторов — ДОЛЯ от карточки, а не фикс: виджет тянут за
+    // угол конструктора, и 74px, разумные в высокой карточке, съедали бы все
+    // свечи в низкой. Свечам всегда остаётся большая часть.
+    function sizePanes(c) {
+        if (!c.chart || !c.host || c.sizing) return;
+        var h = c.host.clientHeight || 0;
+        if (!h) return;
+        var n = c.slot;
+        // порог «тесно» перешли в другую сторону — пересобрать набор индикаторов
+        // (applyInds сам вернётся сюда, поэтому закрываемся флагом от петли)
+        if (n && tightNow(c, n) !== !!c.tight) {
+            c.sizing = true;
+            try { applyInds(c, n); } finally { c.sizing = false; }
+        }
+        var panes = (c.chart.getPaneOptions() || []).filter(function (p) {
+            return p.id !== 'candle_pane' && p.id !== 'x_axis_pane';
+        });
+        if (!panes.length) return;
+        // на каждую доп. панель — 18% высоты, но в разумных пределах; и вместе
+        // они не должны отнять у свечей больше 40% бокса
+        var each = clampNum(Math.round(h * 0.18), 34, 92);
+        var cap = Math.floor((h - 26) * 0.4);
+        if (each * panes.length > cap) each = Math.max(28, Math.floor(cap / panes.length));
+        panes.forEach(function (p) {
+            try { c.chart.setPaneOptions({ id: p.id, height: each, minHeight: 28 }); } catch (e) {}
+        });
+    }
+    function clampNum(v, a, b) { return v < a ? a : v > b ? b : v; }
     // Начерченное переживает уход со вкладки: сохраняем имя и точки (время+цена),
     // при следующей загрузке данных рисуем заново. Без этого трендовые линии
     // пропадали бы при каждом переключении подвкладки.
@@ -507,9 +623,18 @@
             : '';
         return '<div class="btc-menu" id="btcMenu' + kind + '_' + n + '">' + rows + foot + '</div>';
     }
+    var SOPEN = {};   // n -> развёрнут ли поиск бумаги (переживает своп карточки)
+    var SRES = {};    // n -> последняя выдача поиска (по индексу из onclick)
     function chartCardHtml(n) {
         var ins = instr(n);
-        var title = ins ? 'График · ' + ins.ticker : 'График';
+        var open = SOPEN[n] || !ins;   // без бумаги поиск открыт сразу — иначе тупик
+        var lens = '<button type="button" class="btr-iconbtn' + (open ? ' on' : '') + '" ' +
+            'title="Выбрать бумагу" aria-label="Выбрать бумагу" onclick="pfcSearchToggle(' + n + ')">' + IC_LENS + '</button>';
+        // «+» — второй график, не заходя в «Добавить виджет» (как «+» у стакана)
+        var add = nextFreeChart()
+            ? '<button type="button" class="btr-iconbtn" title="Ещё один график" ' +
+              'aria-label="Добавить ещё один график" onclick="pfcAddChart()">' + IC_PLUS + '</button>'
+            : '';
         var right = PF.pfdInChromeHtml(chId(n)) +
             '<span class="btc-mwrap">' +
                 '<button type="button" class="btr-iconbtn" title="Индикаторы" aria-label="Индикаторы" ' +
@@ -520,15 +645,19 @@
                 '<button type="button" class="btr-iconbtn" title="Инструменты рисования" aria-label="Инструменты рисования" ' +
                     'onclick="pfcMenu(' + n + ',\'draw\',event)">' + IC_DRAW + '</button>' +
                 menuHtml(n, 'draw') +
-            '</span>';
-        var head = PF.pfCardHead('', title, null, right);
+            '</span>' + add + lens;
+        var head = PF.pfCardHead('', chartLabel(n), null, right);
+        var search = '<div class="btr-search' + (open ? ' open' : '') + '" id="btcSearchWrap_' + n + '">' +
+            '<input class="ph-input" id="btcSearch_' + n + '" type="text" ' +
+            'placeholder="Тикер или название — например, SBER" autocomplete="off" spellcheck="false">' +
+            '<div class="btr-search-drop" id="btcSearchDrop_' + n + '"></div></div>';
         if (!ins) {
-            return head + '<div class="btc-empty">' +
+            return head + search + '<div class="btc-empty">' +
                 '<div class="btc-empty-tt">Бумага не выбрана</div>' +
-                '<div class="btc-empty-tx">Выберите бумагу в стакане этого слота — график встанет на неё сам.</div>' +
+                '<div class="btc-empty-tx">Найдите бумагу в поиске выше — или выберите её в стакане, и график встанет на неё сам.</div>' +
                 '</div>';
         }
-        return head + tfHtml(n) +
+        return head + search + tfHtml(n) +
             '<div class="btc-note" id="btcNote_' + n + '"></div>' +
             '<div class="btc-mount" data-slot="' + n + '"></div>';
     }
@@ -554,6 +683,11 @@
     // якоря и переносит в них живые узлы графиков.
     function afterRender() {
         var live = {};
+        // поиск подключаем у ВСЕХ карточек, включая пустые: там он — единственный
+        // способ выбрать бумагу, а якоря графика в них ещё нет
+        Array.prototype.forEach.call(document.querySelectorAll('#panel-portfolios.active .btc-card'), function (card) {
+            wireSearch(slotNo(card.getAttribute('data-slot')));
+        });
         var mounts = document.querySelectorAll('#panel-portfolios.active .btc-mount');
         // движка ещё нет: качаем и возвращаемся сюда же, когда он появится
         if (!kc()) {
@@ -592,19 +726,27 @@
         });
     }
     // бумага слота сменилась (или появилась впервые) — перезаряжаем данные
+    // Каждый из setSymbol/setPeriod внутри движка делает полный resetData и
+    // запускает загрузку заново. Вызвать оба подряд — значит стартовать две
+    // гонящиеся инициализации: первая успевает записать свечи, вторая их
+    // затирает, и график остаётся пустым. Поэтому дёргаем ровно то, что реально
+    // изменилось, и только один раз.
     function syncInstr(c, n) {
         var ins = instr(n);
         if (!ins) return;
-        var same = c.instr && c.instr.uid === ins.uid;
+        var newSym = !c.instr || c.instr.uid !== ins.uid;
+        var newTf = c.tf !== cfg(n).tf;
         c.instr = ins;
-        if (same && c.tf === cfg(n).tf) return;
+        if (!newSym && !newTf) return;
         c.tf = cfg(n).tf;
         c.src = 'ti';
         c.ovsDone = false;
-        var tf = tfBy(c.tf);
         try {
-            c.chart.setSymbol({ ticker: ins.ticker, pricePrecision: decOf(ins.minInc), volumePrecision: 0 });
-            c.chart.setPeriod(tf.per);
+            // период — первым, бумагу — второй: загрузку запускает ПОСЛЕДНИЙ
+            // вызов, и он должен видеть уже актуальный таймфрейм
+            var per = tfBy(c.tf).per, cur = c.chart.getPeriod();
+            if (!cur || cur.type !== per.type || cur.span !== per.span) c.chart.setPeriod(per);
+            if (newSym) c.chart.setSymbol({ ticker: ins.ticker, pricePrecision: decOf(ins.minInc), volumePrecision: 0 });
         } catch (e) {}
         if (c.liveCb) startLive(c);
     }
@@ -666,6 +808,94 @@
         cfgSave();
         closeMenus();
     };
+    // ---------- выбор бумаги ----------
+    window.pfcSearchToggle = function (n) {
+        n = slotNo(n);
+        SOPEN[n] = !SOPEN[n];
+        var w = document.getElementById('btcSearchWrap_' + n);
+        if (w) w.classList.toggle('open', !!SOPEN[n]);
+        // кнопку-лупу подсвечиваем как у стакана и сразу отдаём ей фокус
+        var card = document.querySelector('.btc-card[data-slot="' + n + '"]');
+        var lens = card ? card.querySelector('.pf-ch .btr-iconbtn:last-child') : null;
+        if (lens) lens.classList.toggle('on', !!SOPEN[n]);
+        if (SOPEN[n]) {
+            var i = document.getElementById('btcSearch_' + n);
+            if (i) { try { i.focus(); } catch (e) {} }
+        }
+    };
+    var searchT = {};
+    // Поиск — общий с терминалом (PF.pftFindInstruments): то же ранжирование, что
+    // в стакане. Без брокера искать нечем: у ISS нет поиска по uid, а график всё
+    // равно возьмёт бумагу из слота.
+    function wireSearch(n) {
+        var inp = document.getElementById('btcSearch_' + n);
+        if (!inp || inp._wired) return;
+        inp._wired = true;
+        inp.addEventListener('input', function () {
+            var q = inp.value.trim();
+            clearTimeout(searchT[n]);
+            if (q.length < 2) { drawDrop(n, [], ''); return; }
+            searchT[n] = setTimeout(function () {
+                if (!PF.pftFindInstruments) { drawDrop(n, [], q); return; }
+                PF.pftFindInstruments(q).then(function (list) {
+                    drawDrop(n, list.slice(0, 8), q);
+                }).catch(function (e) { toast(e.message, true); });
+            }, 350);
+        });
+    }
+    function drawDrop(n, list, q) {
+        var d = document.getElementById('btcSearchDrop_' + n);
+        if (!d) return;
+        SRES[n] = list;
+        if (!list.length) {
+            d.innerHTML = q ? '<div class="btr-search-none">Ничего не нашли по запросу «' + esc(q) + '»</div>' : '';
+            d.classList.toggle('open', !!q);
+            return;
+        }
+        d.innerHTML = list.map(function (i, k) {
+            var tag = PF.pftInstrTag ? PF.pftInstrTag(i) : '';
+            return '<div class="btr-search-row" role="button" onclick="pfcPick(' + n + ',' + k + ')">' +
+                '<b>' + esc(i.ticker || '') + '</b><span>' + esc(i.name || '') + '</span>' +
+                (tag ? '<i class="btr-search-tag">' + tag + '</i>' : '') + '</div>';
+        }).join('');
+        d.classList.add('open');
+    }
+    window.pfcPick = function (n, k) {
+        n = slotNo(n);
+        var i = (SRES[n] || [])[k];
+        if (!i || !i.uid) return;
+        // паспорт нужен ради шага цены: клик по свече кладёт цену в тикет, а её
+        // надо округлить к шагу инструмента — иначе брокер отвергнет заявку
+        var base = { uid: i.uid, ticker: i.ticker || '', name: i.name || '', figi: i.figi || '', lot: 1, minInc: 0.01 };
+        applyPick(n, base);
+        if (PF.pftInstrMeta) {
+            PF.pftInstrMeta(i.uid).then(function (m) {
+                if (m && m.ticker) applyPick(n, m, true);
+            }, function () {});
+        }
+    };
+    function applyPick(n, ins, quiet) {
+        var c2 = cfg(n);
+        c2.ins = normIns(ins);
+        c2.ovs = [];              // построения были по другой бумаге — не переносим
+        cfgSave();
+        var c = CH[n];
+        if (c) { c.instr = null; c.ovsDone = false; }
+        SOPEN[n] = false;
+        if (!quiet) {
+            if (PF.pfdRerender) PF.pfdRerender();
+            else if (PF.renderNoAnim) PF.renderNoAnim();
+        }
+    }
+    // «+» в шапке и «Ещё один график» из пикера
+    window.pfcAddChart = function (quiet) {
+        var n = nextFreeChart();
+        if (!n) { toast('Больше ' + MAX_CHARTS + ' графиков на подвкладке не держим', true); return false; }
+        if (!PF.pfdAddChart) { toast('Конструктор не готов — обновите страницу', true); return false; }
+        PF.pfdAddChart(n, quiet);
+        return true;
+    };
+
     window.pfcMenu = function (n, kind, ev) {
         if (ev) ev.stopPropagation();
         var id = 'btcMenu' + kind + '_' + slotNo(n);
@@ -717,19 +947,27 @@
         try { localStorage.setItem(CFG_KEY, JSON.stringify(cfgAll())); } catch (e) {}
     });
 
-    // слот удалён из конструктора — инстанс больше не нужен
-    PF.pfcDropSlot = function (n) {
+    // график убран из конструктора — инстанс и его настройки больше не нужны
+    PF.pfcDropChart = function (n) {
         n = slotNo(n);
         var c = CH[n];
-        if (!c) return;
-        stopLive(c);
-        try { if (c.ro) c.ro.disconnect(); } catch (e) {}
-        try { kc().dispose(c.host); } catch (e) {}
-        delete CH[n];
+        if (c) {
+            stopLive(c);
+            try { if (c.ro) c.ro.disconnect(); } catch (e) {}
+            try { kc().dispose(c.host); } catch (e) {}
+            delete CH[n];
+        }
+        // со второго графика и дальше номер освобождается под новый — старые
+        // настройки (бумага, ТФ, построения) не должны всплыть у следующего
+        if (n > 1) { delete cfgAll()[String(n)]; cfgSave(); }
+        delete SOPEN[n]; delete SRES[n];
     };
 
     PF.pfcChartCard = chartCard;
     PF.pfcAfterRender = afterRender;
-    // инстанс движка по номеру слота — точка входа для отладки с консоли
+    PF.pfcChartNums = chartNums;
+    PF.pfcChartLabel = chartLabel;
+    PF.pfcMaxCharts = MAX_CHARTS;
+    // инстанс движка по номеру графика — точка входа для отладки с консоли
     PF.pfcChart = function (n) { var c = CH[slotNo(n)]; return c ? c.chart : null; };
 })();

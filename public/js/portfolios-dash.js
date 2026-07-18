@@ -580,11 +580,19 @@
     function pftTkId(n) { return +n === 1 ? 'trade:ticket' : 'trade:ticket:' + n; }
     function pftChId(n) { return +n === 1 ? 'trade:chart' : 'trade:chart:' + n; }
     function pftSlotOf(id) {
-        var m = /^trade:(?:ob|ticket|chart)(?::(\d+))?$/.exec(id);
+        var m = /^trade:(?:ob|ticket)(?::(\d+))?$/.exec(id);
         return m ? (+m[1] || 1) : 0;
     }
-    // все блоки слота: пара «стакан + заявка» плюс необязательный график свечей
-    function pftSlotIds(n) { return [pftObId(n), pftTkId(n), pftChId(n)]; }
+    // График — САМОСТОЯТЕЛЬНЫЙ блок со своей нумерацией, а не часть слота: у него
+    // своя бумага (можно смотреть один тикер, торгуя другим) и свой лимит числа
+    // копий. Поэтому он не входит в pftSlotIds и не держит слот живым.
+    function pftChartOf(id) {
+        var m = /^trade:chart(?::(\d+))?$/.exec(id);
+        return m ? (+m[1] || 1) : 0;
+    }
+    function pftChartNums() { return PF.pfcChartNums ? PF.pfcChartNums() : [1]; }
+    // блоки слота: пара «стакан + заявка»
+    function pftSlotIds(n) { return [pftObId(n), pftTkId(n)]; }
     // Новая бумага в терминал: показываем ОБА блока слота и ставим их сразу за
     // блоками предыдущего — иначе стакан улетал в конец сетки, отдельно от
     // своего тикета, и пару приходилось собирать драгом руками.
@@ -609,6 +617,37 @@
         pfdScrollToBlock(ids[0]);
         // из пикера пачкой — тост общий, свой был бы вторым подряд
         if (!quiet) toast('Добавлены стакан и заявка — выберите бумагу в поиске');
+    };
+    // Ещё один график: встаёт сразу за предыдущим графиком (а не в конец сетки),
+    // шириной как у соседа — два графика рядом читаются парой сравнения
+    PF.pfdAddChart = function (n, quiet) {
+        var id = pftChId(n);
+        pfdPushUndo();
+        PF.dashCfg.order = PF.dashCfg.order || [];
+        PF.dashCfg.span = PF.dashCfg.span || {};
+        // Первый график мог никогда не попадать в order — он показан «по месту»,
+        // а блоки вне order рендерятся ПОСЛЕ всех перечисленных. Без этой фиксации
+        // новый график вставал бы ПЕРЕД тем, из чьей шапки его и добавили.
+        pftChartNums().forEach(function (k) {
+            var kid = pftChId(k);
+            if (kid !== id && (PF.dashCfg.hidden || {})[kid] === 0 && PF.dashCfg.order.indexOf(kid) < 0) {
+                PF.dashCfg.order.push(kid);
+            }
+        });
+        var after = -1, prevSpan = 0;
+        PF.dashCfg.order.forEach(function (x, i) {
+            if (pftChartOf(x)) { after = i; prevSpan = +PF.dashCfg.span[x] || 0; }
+        });
+        PF.dashCfg.hidden[id] = 0;
+        PF.dashCfg.span[id] = prevSpan || 8;
+        var at = PF.dashCfg.order.indexOf(id);
+        if (at >= 0) PF.dashCfg.order.splice(at, 1);
+        if (after >= 0) PF.dashCfg.order.splice(after + 1, 0, id);
+        else PF.dashCfg.order.push(id);
+        saveDashCfg();
+        pfdRerender();
+        pfdScrollToBlock(id);
+        if (!quiet) toast('Добавлен график — выберите бумагу в поиске');
     };
     // пара кнопок блока в поток шапки: настройки виджета + удалить. Поповер настроек
     // якорится к .pfd-item (см. pfdCfgMount), поэтому от места кнопки не зависит.
@@ -697,14 +736,15 @@
                     htmlFn: function () { return PF.pftObCard(n); }, span: 4, isTrade: true });
                 blocks.push({ id: pftTkId(n), name: PF.pftSlotLabel('ticket', n),
                     htmlFn: function () { return PF.pftTicketCard(n); }, span: 4, isTrade: true });
-                // График свечей — опциональный третий блок слота: тяжелее пары
-                // «стакан + заявка» (canvas, история свечей), поэтому включается
-                // руками, а не появляется с каждой новой бумагой
-                if (PF.pfcChartCard) {
-                    blocks.push({ id: pftChId(n), name: PF.pftSlotLabel('chart', n),
-                        htmlFn: function () { return PF.pfcChartCard(n); }, span: 8, isTrade: true, defHidden: true });
-                }
             });
+            // Графики — своим рядом, независимо от слотов: тяжелее пары «стакан +
+            // заявка» (canvas, история свечей), поэтому включаются руками
+            if (PF.pfcChartCard) {
+                pftChartNums().forEach(function (n) {
+                    blocks.push({ id: pftChId(n), name: PF.pfcChartLabel ? PF.pfcChartLabel(n) : 'График',
+                        htmlFn: function () { return PF.pfcChartCard(n); }, span: 8, isTrade: true, defHidden: true });
+                });
+            }
             blocks.push({ id: 'trade:orders', name: 'Мои заявки', htmlFn: PF.pftOrdersCard, span: 4, isTrade: true });
         }
         // R8: на подвкладках ВСЕ блоки опт-ин — что показано, решает сид (hidden[id]=0)
@@ -1772,14 +1812,7 @@
         var n = pftSlotOf(id);
         if (n && PF.pftDropSlot) {
             var h = PF.dashCfg.hidden || {};
-            var ord = PF.dashCfg.order || [];
-            // Слот жив, пока на экране хоть один его блок. График опциональный:
-            // его может не быть в раскладке вовсе — тогда он и не держит слот.
-            var alive = pftSlotIds(n).some(function (bid) {
-                if (h[bid] === 1) return false;
-                return bid === pftObId(n) || bid === pftTkId(n) || ord.indexOf(bid) >= 0;
-            });
-            if (!alive) {
+            if (h[pftObId(n)] === 1 && h[pftTkId(n)] === 1) {
                 if (n > 1) {
                     pftSlotIds(n).forEach(function (bid) {
                         PF.dashCfg.order = (PF.dashCfg.order || []).filter(function (x) { return x !== bid; });
@@ -1789,6 +1822,17 @@
                 }
                 PF.pftDropSlot(n);
             }
+        }
+        // Убрали график — гасим его движок и (со второго и дальше) освобождаем
+        // номер, чтобы «+ ещё график» снова его занял
+        var cn = pftChartOf(id);
+        if (cn) {
+            if (cn > 1) {
+                PF.dashCfg.order = (PF.dashCfg.order || []).filter(function (x) { return x !== id; });
+                [PF.dashCfg.span, PF.dashCfg.h, PF.dashCfg.hidden, PF.dashCfg.col, PF.dashCfg.thm]
+                    .forEach(function (m) { if (m) delete m[id]; });
+            }
+            if (PF.pfcDropChart) PF.pfcDropChart(cn);
         }
         saveDashCfg();
         pfdRerender();
@@ -1833,10 +1877,9 @@
         if (w) return w.name;
         // карточки слотов терминала зовутся по бумаге: «Стакан · SBER»
         var n = pftSlotOf(id);
-        if (n && PF.pftSlotLabel) {
-            return PF.pftSlotLabel(id.indexOf('trade:ob') === 0 ? 'ob'
-                : id.indexOf('trade:chart') === 0 ? 'chart' : 'ticket', n);
-        }
+        if (n && PF.pftSlotLabel) return PF.pftSlotLabel(id.indexOf('trade:ob') === 0 ? 'ob' : 'ticket', n);
+        var cn = pftChartOf(id);
+        if (cn && PF.pfcChartLabel) return PF.pfcChartLabel(cn);
         return id === 'panel' ? 'Панель управления' : 'Виджет';
     }
     // текущий пресет высоты — те же значения, что пишет пикер (s=300 / l=560 / m=авто);
@@ -2720,12 +2763,19 @@
                     desc: 'Биржевой стакан по оси цены — клик подставляет цену в заявку', cats: ['pop', 'market'] });
                 list.push({ id: pftTkId(n), name: PF.pftSlotLabel('ticket', n),
                     desc: 'Заявка: лимитная, рыночная или стоп, с предохранителями', cats: ['pop', 'market'] });
-                if (PF.pfcChartCard) {
-                    list.push({ id: pftChId(n), name: PF.pftSlotLabel('chart', n),
-                        desc: 'Свечи с зумом, индикаторами и построениями — по бумаге этого слота',
+            });
+            if (PF.pfcChartCard) {
+                pftChartNums().forEach(function (n) {
+                    list.push({ id: pftChId(n), name: PF.pfcChartLabel ? PF.pfcChartLabel(n) : 'График',
+                        desc: 'Свечи с зумом, индикаторами и построениями — со своим выбором бумаги',
+                        cats: ['pop', 'market', 'charts'] });
+                });
+                if (pftChartNums().length < (PF.pfcMaxCharts || 4)) {
+                    list.push({ id: '__chart', name: 'Ещё один график',
+                        desc: 'Второй график рядом с первым — сравнить бумаги или таймфреймы',
                         cats: ['pop', 'market', 'charts'] });
                 }
-            });
+            }
             list.push({ id: 'trade:orders', name: 'Мои заявки',
                 desc: 'Активные и стоп-заявки счёта: статус, исполнение, отмена', cats: ['pop', 'market'] });
             if (PF.pftSlotNums().length < (PF.pftMaxSlots || 4)) {
@@ -2775,7 +2825,7 @@
     // виджет уже на дашборде? (деф-видимые блоки — если не скрыты; defHidden — при явном
     // показе). R8: деф-видимые есть только на «Обзоре», на подвкладках всё опт-ин.
     function pfl2IsAdded(id) {
-        if (id === '__note' || id === '__trade') return false;   // «плодящие» — всегда доступны
+        if (id === '__note' || id === '__trade' || id === '__chart') return false;   // «плодящие» — всегда доступны
         var m = PF.dashCfg.hidden || {};
         if (id === 'cap') return m.cap === 0 || m.cap2 === 0;
         // карточки портфелей на «Обзоре» видимы по умолчанию — «нет на дашборде»
@@ -3022,7 +3072,7 @@
         }
         // График свечей слота: демо рисуем эскизом, а не живым движком — карточка
         // пикера не должна тянуть 228 КБ библиотеки ради превью
-        if (id.indexOf('trade:chart') === 0) {
+        if (id.indexOf('trade:chart') === 0 || id === '__chart') {
             var bars = [
                 [4, 20, 30, 1], [11, 16, 27, 0], [18, 12, 24, 0], [25, 15, 30, 1],
                 [32, 10, 22, 0], [39, 6, 18, 1], [46, 9, 25, 1], [53, 14, 30, 0],
@@ -3193,6 +3243,8 @@
             // «Ещё одна бумага» заводит ПАРУ блоков нового слота — своим путём
             // (ему нужен свободный номер и место рядом с прошлым стаканом)
             if (id === '__trade') { if (window.pftAddSlot && window.pftAddSlot(true)) notes++; return; }
+            // «Ещё один график» — тоже плодящий: заводит блок со следующим свободным номером
+            if (id === '__chart') { if (window.pfcAddChart && window.pfcAddChart(true)) notes++; return; }
             var o = pfl2OptsOf(id);
             // «График капитала» — одно имя каталога на два блока-дизайна (линия/столбцы)
             var real = (id === 'cap' && o.view === 'bars') ? 'cap2' : id;

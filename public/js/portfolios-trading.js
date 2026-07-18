@@ -93,7 +93,7 @@
     function slotNums() {
         var set = { 1: 1 };
         ((PF.dashCfg && PF.dashCfg.order) || []).forEach(function (id) {
-            var m = /^trade:(?:ob|ticket|chart):(\d+)$/.exec(id);
+            var m = /^trade:(?:ob|ticket):(\d+)$/.exec(id);
             if (m) set[slotNo(m[1])] = 1;
         });
         // слот с выбранной бумагой жив даже без записи в раскладке (восстановился
@@ -1154,7 +1154,6 @@
         n = slotNo(n);
         if (n === 1) { SLOTS[1] = newSlot(); } else { delete SLOTS[n]; }
         saveSlots();
-        if (PF.pfcDropSlot) PF.pfcDropSlot(n);   // график этой бумаги тоже не нужен
     };
     PF.pftSlotNums = slotNums;
     PF.pftSlotLabel = function (kind, n) {
@@ -1171,6 +1170,18 @@
             figi: s.meta.figi, lot: s.meta.lot, minInc: s.meta.minInc
         };
     };
+    // Поиск бумаги и её паспорт — общие с графиком свечей (js/portfolios-chart.js):
+    // у него свой выбор тикера, но ранжирование выдачи и подписи типов должны быть
+    // теми же, что в стакане, иначе один и тот же запрос даёт разный порядок.
+    PF.pftFindInstruments = function (q) {
+        if (!A()) return Promise.reject(new Error('Брокер не подключён'));
+        return A().call('FindInstrument', { query: q }).then(function (d) {
+            return rankInstruments(d.instruments || [], q);
+        });
+    };
+    PF.pftInstrTag = instrTag;
+    PF.pftInstrMeta = function (uid) { return fetchMeta(uid); };
+
     // бумага слота сменилась — соседние блоки перезагружают свои данные
     function emitSlotChange(n) {
         try { window.dispatchEvent(new CustomEvent('pft-slot-change', { detail: { slot: slotNo(n) } })); } catch (e) {}
