@@ -757,6 +757,7 @@
         'trade:ob': 'Биржевой стакан по оси цены — клик подставляет цену в заявку',
         'trade:ticket': 'Заявка: лимитная, рыночная или стоп, с предохранителями',
         'trade:orders': 'Активные и стоп-заявки счёта: статус, исполнение, отмена',
+        'trade:chart': 'Свечи с зумом, индикаторами и построениями — по бумаге слота',
         '__trade': 'Второй стакан и заявка по другому тикеру — рядом с первым'
     };
     // цветные иконки-плитки строк списка «Блоки для дашборда» (как в макете): узнаваемая
@@ -1832,7 +1833,10 @@
         if (w) return w.name;
         // карточки слотов терминала зовутся по бумаге: «Стакан · SBER»
         var n = pftSlotOf(id);
-        if (n && PF.pftSlotLabel) return PF.pftSlotLabel(id.indexOf('trade:ob') === 0 ? 'ob' : 'ticket', n);
+        if (n && PF.pftSlotLabel) {
+            return PF.pftSlotLabel(id.indexOf('trade:ob') === 0 ? 'ob'
+                : id.indexOf('trade:chart') === 0 ? 'chart' : 'ticket', n);
+        }
         return id === 'panel' ? 'Панель управления' : 'Виджет';
     }
     // текущий пресет высоты — те же значения, что пишет пикер (s=300 / l=560 / m=авто);
@@ -2716,6 +2720,11 @@
                     desc: 'Биржевой стакан по оси цены — клик подставляет цену в заявку', cats: ['pop', 'market'] });
                 list.push({ id: pftTkId(n), name: PF.pftSlotLabel('ticket', n),
                     desc: 'Заявка: лимитная, рыночная или стоп, с предохранителями', cats: ['pop', 'market'] });
+                if (PF.pfcChartCard) {
+                    list.push({ id: pftChId(n), name: PF.pftSlotLabel('chart', n),
+                        desc: 'Свечи с зумом, индикаторами и построениями — по бумаге этого слота',
+                        cats: ['pop', 'market', 'charts'] });
+                }
             });
             list.push({ id: 'trade:orders', name: 'Мои заявки',
                 desc: 'Активные и стоп-заявки счёта: статус, исполнение, отмена', cats: ['pop', 'market'] });
@@ -3010,6 +3019,22 @@
             return '<div class="dm-bgs">' + (window.siteBg ? window.siteBg.list() : []).slice(0, 6).map(function (b) {
                 return '<span class="dm-bg sbgpv-' + esc(b.id) + '"></span>';
             }).join('') + '</div>';
+        }
+        // График свечей слота: демо рисуем эскизом, а не живым движком — карточка
+        // пикера не должна тянуть 228 КБ библиотеки ради превью
+        if (id.indexOf('trade:chart') === 0) {
+            var bars = [
+                [4, 20, 30, 1], [11, 16, 27, 0], [18, 12, 24, 0], [25, 15, 30, 1],
+                [32, 10, 22, 0], [39, 6, 18, 1], [46, 9, 25, 1], [53, 14, 30, 0],
+                [60, 8, 21, 1], [67, 4, 16, 1], [74, 7, 23, 0], [81, 11, 28, 1]
+            ].map(function (b) {
+                var x = b[0], top = b[1], bot = b[2], up = b[3];
+                var col = up ? '#16a34a' : '#dc2626';
+                return '<line x1="' + (x + 2.5) + '" y1="' + (top - 3) + '" x2="' + (x + 2.5) + '" y2="' + (bot + 3) + '" stroke="' + col + '" stroke-width="1"/>' +
+                    '<rect x="' + x + '" y="' + top + '" width="5" height="' + (bot - top) + '" rx="1" fill="' + col + '"/>';
+            }).join('');
+            return '<div class="dm-cap"><svg viewBox="0 0 92 40" class="dm-line" preserveAspectRatio="none">' +
+                bars + '</svg></div>';
         }
         // R9: карточка портфеля (id 'pf:<id>') — демо в духе «Составов», данные статичные
         if (id.indexOf('pf:') === 0) {
