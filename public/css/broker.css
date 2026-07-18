@@ -283,18 +283,25 @@ body.dark-mode .pfbrk-total-l i, .pfd-thm-dark .pfbrk-total-l i { color: #7f93ab
 .pfd-thm-dark .pfas-list .muted { color: #6b7d92; }
 
 /* ---------- торговый терминал (.btr-*, portfolios-trading.js) ---------- */
+/* Минимал-редизайн 2026-07-18: стакан «ось цены» (объёмы разлетаются от
+   центральной цены), тикет с крупными цифрами и суммой прямо в кнопке,
+   заявки-лента из двух строк. Язык: моно-цифры как герои, hairline-линии
+   вместо плашек, тихие референс-подписи вместо рядов кнопок; цвет живёт
+   только на CTA и семантике покупка/продажа. */
 .btr-wrap { display: flex; flex-direction: column; gap: 14px; }
-/* стакану хватает узкой колонки (цена|лоты), заявкам — самые длинные строки */
+/* стакану хватает узкой колонки, заявкам — самые длинные строки */
 .btr-grid {
     display: grid; gap: 16px; align-items: start;
-    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr) minmax(0, 1.15fr);
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1fr) minmax(0, 1.06fr);
 }
 @media (max-width: 1450px) {
     .btr-grid { grid-template-columns: 1fr 1fr; }
     /* в две колонки заявки занимают всю вторую строку — без пустой ячейки */
     .btr-grid .btr-orders { grid-column: 1 / -1; }
 }
-.btr-card { display: flex; flex-direction: column; gap: 10px; }
+/* карточка сама держит боковые поля — шапка .pf-ch внутри них не дублирует свои */
+.btr-card { display: flex; flex-direction: column; gap: 12px; padding: 0 22px 20px; }
+.btr-card .pf-ch { padding: 20px 0 0; }
 
 .btr-live {
     display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
@@ -308,8 +315,24 @@ body.dark-mode .pfbrk-total-l i, .pfd-thm-dark .pfbrk-total-l i { color: #7f93ab
     font-weight: 800; font-size: 11.5px; padding: 6px 12px;
 }
 
-/* поиск инструмента */
-.btr-search { position: relative; }
+/* правый слот шапки: лупа у стакана, счёт-подпись у тикета и заявок */
+.btr-iconbtn {
+    margin-left: auto; width: 34px; height: 34px; flex: none; cursor: pointer;
+    border: 1px solid rgba(15, 23, 42, 0.12); border-radius: 10px; background: transparent;
+    color: #64748b; display: grid; place-items: center;
+    transition: color 0.14s, border-color 0.14s;
+}
+.btr-iconbtn:hover, .btr-iconbtn.on { color: #0f172a; border-color: #3b82f6; }
+.btr-iconbtn svg { width: 16px; height: 16px; }
+.btr-hd-note { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; padding-top: 5px; min-width: 0; }
+.btr-hd-ins { font-family: var(--font-num); font-size: 11.5px; font-weight: 600; color: #64748b; white-space: nowrap; }
+.btr-hd-acc { display: inline-flex; align-items: baseline; gap: 6px; font-size: 10.5px; font-weight: 600; color: #97a3b4; white-space: nowrap; }
+.btr-hd-acc b { font-family: var(--font-num); font-weight: 600; color: #94a3b8; }
+.btr-sand { font-style: normal; font-size: 9px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: #d97706; }
+
+/* поиск инструмента: свёрнут в лупу, разворачивается инлайн-полем */
+.btr-search { position: relative; display: none; }
+.btr-search.open { display: block; }
 .btr-search-drop {
     position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 30;
     background: #fff; border: 1px solid rgba(15, 23, 42, 0.1); border-radius: 12px;
@@ -323,63 +346,68 @@ body.dark-mode .pfbrk-total-l i, .pfd-thm-dark .pfbrk-total-l i { color: #7f93ab
 .btr-search-row b { font-family: var(--font-num); font-size: 12.5px; }
 .btr-search-row span { color: #64748b; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.btr-instr { display: flex; align-items: center; gap: 8px; font-size: 13px; }
-.btr-instr b { font-family: var(--font-num); font-size: 14px; }
-.btr-instr span { color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* строка инструмента: тикер · имя · статус торгов точкой */
+.btr-instr { display: flex; align-items: center; gap: 9px; }
+.btr-instr b { font-family: var(--font-num); font-size: 15px; font-weight: 700; }
+.btr-instr span { color: #64748b; font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.btr-st { display: inline-flex; align-items: center; gap: 6px; flex: none; font-size: 10.5px; font-weight: 600; white-space: nowrap; }
+.btr-st i { font-style: normal; width: 7px; height: 7px; border-radius: 50%; }
+.btr-st.ok { color: #16a34a; }
+.btr-st.ok i { background: #16a34a; box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12); }
+.btr-st.off { color: #d97706; }
+.btr-st.off i { background: #d97706; box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.12); }
 
-/* стакан */
-.btr-obhead {
-    display: flex; justify-content: space-between; padding: 2px 9px;
-    font-family: var(--font-ui); font-size: var(--fs-th); font-weight: 800;
-    letter-spacing: 0.06em; text-transform: uppercase; color: var(--c-th);
+/* стакан по оси цены: [спрос ←] цена [→ предложение] */
+.btr-ax { display: flex; flex-direction: column; }
+.btr-ax-head, .btr-axrow { display: grid; grid-template-columns: 1fr minmax(68px, auto) 1fr; gap: 0 6px; }
+.btr-ax-head { margin-bottom: 6px; }
+.btr-ax-head span {
+    font-family: var(--font-ui); font-size: 9.5px; font-weight: 700;
+    letter-spacing: 0.09em; text-transform: uppercase; color: #97a3b4; white-space: nowrap;
 }
-.btr-obrow {
-    position: relative; display: flex; align-items: center; justify-content: space-between;
-    padding: 4px 9px; border-radius: 8px; cursor: pointer; overflow: hidden;
-    font-family: var(--font-num); font-size: 12.5px;
-    font-variant-numeric: tabular-nums; transition: outline-color 0.1s;
+.btr-ax-head span:first-child { text-align: right; padding-right: 8px; }
+.btr-ax-head span:nth-child(2) { text-align: center; }
+.btr-ax-head span:last-child { padding-left: 8px; }
+.btr-axrow {
+    align-items: center; height: 25px; border-radius: 8px; cursor: pointer;
+    font-family: var(--font-num); font-variant-numeric: tabular-nums;
+    transition: background 0.12s;
 }
-.btr-obrow b { font-weight: 600; }
-/* глубина зеркальна вокруг центра (аски справа, биды слева) и градиентом
-   тает к цене — «стакан дышит», ширина едет плавно на каждом тике */
-.btr-obrow i {
-    position: absolute; top: 1px; bottom: 1px; right: 0; border-radius: 7px; pointer-events: none;
+.btr-axrow:hover { background: rgba(59, 130, 246, 0.06); }
+.btr-axh { position: relative; height: 19px; overflow: hidden; }
+.btr-axh i {
+    position: absolute; top: 0; bottom: 0;
     transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.btr-obrow.bid i { left: 0; right: auto; }
-.btr-obrow.ask i { background: linear-gradient(270deg, rgba(220, 38, 38, 0.17), rgba(220, 38, 38, 0.035)); }
-.btr-obrow.bid i { background: linear-gradient(90deg, rgba(22, 163, 74, 0.18), rgba(22, 163, 74, 0.04)); }
-.btr-obrow.ask b { color: #dc2626; }
-.btr-obrow.bid b { color: #16a34a; }
-.btr-obrow b, .btr-obrow span { position: relative; }
-.btr-obrow span { color: #64748b; font-size: 11.5px; }
-.btr-obrow:hover { background: rgba(59, 130, 246, 0.07); }
-/* лучшая цена (примыкает к центру) — жирнее и крупнее: топ книги виден сразу */
-.btr-obrow.best b { font-weight: 800; font-size: 13.5px; }
-.btr-obwait { padding: 14px 6px; font-size: 12.5px; color: #94a3b8; }
+.btr-axrow.ask .btr-axh i { left: 0; border-radius: 0 6px 6px 0; background: linear-gradient(90deg, rgba(220, 38, 38, 0.16), rgba(220, 38, 38, 0.05)); }
+.btr-axrow.bid .btr-axh i { right: 0; border-radius: 6px 0 0 6px; background: linear-gradient(270deg, rgba(22, 163, 74, 0.16), rgba(22, 163, 74, 0.05)); }
+.btr-axh em { position: absolute; top: 0; font-style: normal; line-height: 19px; font-size: 11px; color: #64748b; }
+.btr-axrow.ask .btr-axh em { right: 7px; }
+.btr-axrow.bid .btr-axh em { left: 7px; }
+.btr-axrow b { text-align: center; font-size: 12.5px; font-weight: 600; padding: 0 5px; }
+.btr-axrow.ask b { color: #dc2626; }
+.btr-axrow.bid b { color: #16a34a; }
+/* лучшая цена (примыкает к центру) — крупнее: топ книги виден сразу */
+.btr-axrow.best b { font-weight: 800; font-size: 13.5px; }
+.btr-obwait { padding: 14px 0; font-size: 12.5px; color: #94a3b8; }
 
-/* центральная плашка — сердце стакана: последняя цена крупно + спред */
-.btr-mid {
-    display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    margin: 5px 0; padding: 7px 12px; border-radius: 12px;
-    background: rgba(15, 23, 42, 0.045); border: 1px solid rgba(15, 23, 42, 0.05);
+/* центр оси — последняя цена между hairline-линиями, без плашки */
+.btr-axmid {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    padding: 11px 0; margin: 7px 0;
+    border-top: 1px solid rgba(15, 23, 42, 0.07); border-bottom: 1px solid rgba(15, 23, 42, 0.07);
 }
-.btr-mid-px { display: flex; align-items: baseline; gap: 4px; }
-.btr-mid-ar { font-style: normal; font-size: 11px; margin-right: 2px; }
-.btr-mid-px b {
-    font-family: var(--font-num); font-size: 20px; font-weight: 700; letter-spacing: -0.01em;
-    color: #0f172a; font-variant-numeric: tabular-nums; line-height: 1;
+.btr-axmid .ar { font-style: normal; font-size: 12px; }
+.btr-axmid > b {
+    font-family: var(--font-num); font-size: 24px; font-weight: 700; letter-spacing: -0.01em;
+    line-height: 1; color: #0f172a; font-variant-numeric: tabular-nums;
 }
-.btr-mid-px em { font-style: normal; font-size: 12px; color: #94a3b8; }
-.btr-mid.up .btr-mid-px b, .btr-mid.up .btr-mid-ar { color: #16a34a; }
-.btr-mid.down .btr-mid-px b, .btr-mid.down .btr-mid-ar { color: #dc2626; }
-.btr-mid-spread { font-size: 11px; color: #94a3b8; white-space: nowrap; }
-.btr-mid-spread b { font-family: var(--font-num); font-weight: 600; color: #334155; }
-body.dark-mode .btr-mid, .pfd-thm-dark .btr-mid { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.06); }
-body.dark-mode .btr-mid-px b, .pfd-thm-dark .btr-mid-px b { color: #f1f5f9; }
-body.dark-mode .btr-mid.up .btr-mid-px b, body.dark-mode .btr-mid.up .btr-mid-ar { color: #34d399; }
-body.dark-mode .btr-mid.down .btr-mid-px b, body.dark-mode .btr-mid.down .btr-mid-ar { color: #f87171; }
-body.dark-mode .btr-mid-spread b, .pfd-thm-dark .btr-mid-spread b { color: #cbd5e1; }
+.btr-axmid em { font-style: normal; font-size: 12px; color: #94a3b8; }
+.btr-axmid.up > b, .btr-axmid.up .ar { color: #16a34a; }
+.btr-axmid.down > b, .btr-axmid.down .ar { color: #dc2626; }
+.btr-axmid .sp { font-size: 10.5px; color: #94a3b8; border-left: 1px solid rgba(15, 23, 42, 0.08); padding-left: 10px; white-space: nowrap; }
+.btr-axmid .sp b { font-family: var(--font-num); font-size: 11px; font-weight: 700; color: #334155; font-variant-numeric: tabular-nums; }
+
 /* пустой стакан (закрытая сессия / неликвид) — плашка со статусом и ценой */
 .btr-obempty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 7px; padding: 22px 14px 18px; }
 .btr-obempty-ic {
@@ -396,168 +424,220 @@ body.dark-mode .btr-mid-spread b, .pfd-thm-dark .btr-mid-spread b { color: #cbd5
 }
 .btr-obempty-px span { font-family: var(--font-ui); font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; }
 .btr-obempty-px b { font-family: var(--font-num); font-size: 14px; font-weight: var(--fw-num-bold); color: #0f172a; font-variant-numeric: tabular-nums; }
+
+/* сворачиваемый блок под шевроном (лента сделок) */
+.btr-fold { border-top: 1px solid rgba(15, 23, 42, 0.07); padding-top: 10px; margin-top: 2px; }
+.btr-fold-btn {
+    width: 100%; display: flex; align-items: center; gap: 8px;
+    background: none; border: none; cursor: pointer; padding: 2px 0; font-family: var(--font-ui);
+}
+.btr-fold-lab { font-size: 10.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #64748b; }
+.btr-fold-cnt { font-family: var(--font-num); font-size: 10.5px; color: #94a3b8; }
+.btr-fold-ch { margin-left: auto; color: #94a3b8; display: grid; place-items: center; transition: transform 0.22s ease; }
+.btr-fold-ch svg { width: 15px; height: 15px; }
+.btr-fold.open .btr-fold-ch { transform: rotate(180deg); }
+.btr-fold-body { display: none; margin-top: 8px; }
+.btr-fold.open .btr-fold-body { display: block; }
+
+/* лента обезличенных сделок */
+.btr-tape { display: flex; flex-direction: column; gap: 1px; }
+.btr-tape-row {
+    display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: baseline;
+    padding: 3.5px 2px; font-family: var(--font-num); font-size: 11.5px; font-variant-numeric: tabular-nums;
+}
+.btr-tape-row i { font-style: normal; color: #94a3b8; font-size: 10.5px; }
+.btr-tape-row b { font-weight: 600; }
+.btr-tape-row b.bid { color: #16a34a; }
+.btr-tape-row b.ask { color: #dc2626; }
+.btr-tape-row span { text-align: right; color: #64748b; }
+.btr-tape-empty { font-size: 12px; color: #94a3b8; padding: 4px 0; }
+
+/* ---- тикет ---- */
+/* Купить/Продать: контур → заливка активного, без серой подложки */
+.btr-side { display: flex; gap: 10px; }
+.btr-side-b {
+    flex: 1; height: 44px; border-radius: 12px; cursor: pointer;
+    border: 1px solid rgba(15, 23, 42, 0.13); background: transparent;
+    font-family: var(--font-ui); font-size: 14px; font-weight: 700; color: #64748b;
+    transition: background 0.14s, color 0.14s, border-color 0.14s, box-shadow 0.14s;
+}
+.btr-side-b:hover { color: #0f172a; border-color: #94a3b8; }
+.btr-side-b.buy.active { background: #16a34a; border-color: #16a34a; color: #fff; box-shadow: 0 12px 24px -12px rgba(22, 163, 74, 0.8); }
+.btr-side-b.sell.active { background: #dc2626; border-color: #dc2626; color: #fff; box-shadow: 0 12px 24px -12px rgba(220, 38, 38, 0.8); }
+
+/* текстовые табы с подчёркиванием (тип заявки; те же — списки заявок) */
+.btr-ttabs { display: flex; gap: 22px; border-bottom: 1px solid rgba(15, 23, 42, 0.08); }
+.btr-ttabs button {
+    border: none; background: none; cursor: pointer; padding: 2px 0 10px; position: relative;
+    font-family: var(--font-ui); font-size: 13px; font-weight: 600; color: #97a3b4; transition: color 0.14s;
+}
+.btr-ttabs button:hover { color: #64748b; }
+.btr-ttabs button.active { color: #1b2433; }
+.btr-ttabs button.active::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
+    background: #1b2433; border-radius: 2px;
+}
+.btr-cnt { font-family: var(--font-num); font-size: 11px; font-weight: 600; color: #97a3b4; margin-left: 3px; }
+.btr-ttabs button.active .btr-cnt { color: #8b5cf6; }
+
+/* поле-цифра: мелкий лейбл + тихая референс-подпись справа, крупный инпут снизу */
+.btr-bf { padding: 4px 0 15px; border-bottom: 1px solid rgba(15, 23, 42, 0.07); }
+.btr-bf-lab { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.btr-bf-lab label { font-family: var(--font-ui); font-size: 10.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #64748b; }
+.btr-bf-lab label i { font-style: normal; color: #b3bfce; font-weight: 600; letter-spacing: 0.04em; text-transform: none; }
+.btr-ref { border: none; background: none; cursor: pointer; padding: 0; font-family: var(--font-ui); font-size: 11px; color: #94a3b8; white-space: nowrap; transition: color 0.14s; }
+.btr-ref b { font-family: var(--font-num); font-variant-numeric: tabular-nums; font-weight: 600; color: #64748b; margin-left: 5px; transition: color 0.14s; }
+.btr-ref:hover b { color: #3b82f6; }
+.btr-bigrow { display: flex; align-items: baseline; gap: 8px; margin-top: 9px; }
+.btr-big {
+    border: none; background: none; padding: 0; line-height: 1.1;
+    font-family: var(--font-num); font-variant-numeric: tabular-nums;
+    font-size: 29px; font-weight: 700; letter-spacing: -0.015em; color: #0f172a;
+    width: 4ch; min-width: 2ch; max-width: 100%;
+    -moz-appearance: textfield; appearance: textfield;
+}
+.btr-big:focus { outline: none; }
+.btr-big::-webkit-outer-spin-button, .btr-big::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.btr-big::placeholder { color: #cbd5e1; }
+.btr-big-suf { font-family: var(--font-num); font-size: 14px; color: #94a3b8; white-space: nowrap; }
+.btr-note { font-size: 12px; color: #94a3b8; line-height: 1.45; padding: 4px 0 2px; }
+
+/* сводка сделки — тихая строка над кнопкой */
+.btr-deal { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 11.5px; color: #94a3b8; margin-top: 2px; }
+.btr-deal b { font-family: var(--font-num); font-variant-numeric: tabular-nums; font-weight: 600; color: #64748b; }
+
+.btr-warns:empty { display: none; }
+.btr-warn {
+    background: rgba(217, 119, 6, 0.09); border-radius: 10px; padding: 7px 11px;
+    font-size: 12px; color: #92400e; line-height: 1.4;
+}
+.btr-warn + .btr-warn { margin-top: 6px; }
+
+/* кнопка-кульминация: действие слева, сумма-итог справа за тонким швом */
+.btr-submit {
+    border: none; border-radius: 13px; cursor: pointer; padding: 15px 18px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    font-family: var(--font-ui); color: #fff; transition: filter 0.15s, transform 0.12s;
+}
+.btr-sb-l { font-weight: 800; font-size: 14.5px; letter-spacing: 0.01em; }
+.btr-sb-s {
+    font-family: var(--font-num); font-variant-numeric: tabular-nums;
+    font-size: 17px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap;
+    padding-left: 13px; border-left: 1px solid rgba(255, 255, 255, 0.28);
+}
+.btr-sb-s:empty { display: none; }
+.btr-submit.buy { background: #16a34a; box-shadow: 0 14px 28px -12px rgba(22, 163, 74, 0.8); }
+.btr-submit.sell { background: #dc2626; box-shadow: 0 14px 28px -12px rgba(220, 38, 38, 0.8); }
+.btr-submit:hover { filter: brightness(1.06); }
+.btr-submit:active { transform: scale(0.99); }
+.btr-submit:disabled { opacity: 0.6; cursor: default; }
+
+/* служебная настройка порога подтверждения — тихой строкой под кнопкой */
+.btr-subnote { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; font-size: 11px; color: #94a3b8; }
+.btr-subnote svg { width: 13px; height: 13px; flex: none; color: #b3bfce; }
+.btr-subnote input {
+    width: 74px; border: none; border-bottom: 1px solid rgba(15, 23, 42, 0.14); border-radius: 0;
+    background: transparent; padding: 2px; text-align: right;
+    font-family: var(--font-num); font-size: 11.5px; color: #64748b;
+}
+.btr-subnote input:focus { outline: none; border-bottom-color: #3b82f6; }
+
+/* ---- мои заявки: лента из двух строк + тонкая цветная метка слева ---- */
+.btr-ords { display: flex; flex-direction: column; }
+.btr-ordrow { position: relative; padding: 13px 0 13px 14px; border-bottom: 1px solid rgba(15, 23, 42, 0.06); }
+.btr-ordrow::before { content: ''; position: absolute; left: 0; top: 15px; bottom: 15px; width: 2px; border-radius: 2px; }
+.btr-ordrow.buy::before { background: #16a34a; }
+.btr-ordrow.sell::before { background: #dc2626; }
+.btr-ord1 { display: flex; align-items: baseline; gap: 9px; }
+.btr-ord1 > b { font-family: var(--font-num); font-size: 14.5px; font-weight: 700; color: #1b2433; flex: none; }
+.btr-ord-meta { font-size: 11.5px; color: #97a3b4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btr-ord-px { margin-left: auto; font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 13px; font-weight: 600; color: #1b2433; white-space: nowrap; }
+.btr-ordx {
+    width: 24px; height: 24px; border: none; border-radius: 7px; cursor: pointer; flex: none;
+    background: transparent; color: #b3bfce; font-size: 12px; margin-left: 2px; align-self: center;
+    transition: background 0.12s, color 0.12s;
+}
+.btr-ordx:hover { background: rgba(220, 38, 38, 0.1); color: #dc2626; }
+.btr-ord2 { display: flex; align-items: baseline; gap: 9px; margin-top: 7px; font-size: 11px; color: #97a3b4; }
+.btr-ord2 i { font-style: normal; font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+.btr-fill { font-family: var(--font-num); font-variant-numeric: tabular-nums; color: #64748b; }
+.btr-ost { margin-left: auto; font-weight: 700; }
+.btr-ost.part { color: #92400e; }
+.btr-ost.queue { color: #97a3b4; }
+.btr-none { font-size: 12.5px; color: #94a3b8; line-height: 1.5; padding: 12px 0 4px; }
+.btr-panic {
+    align-self: flex-start; border: none; background: none; cursor: pointer; padding: 2px 0;
+    font-family: var(--font-ui); font-weight: 600; font-size: 12.5px; color: #dc2626;
+}
+.btr-panic:hover { text-decoration: underline; text-underline-offset: 3px; }
+/* история (журнал заявок) — строки с временем справа */
+.btr-jr { display: flex; align-items: baseline; gap: 10px; padding: 7px 0; font-size: 12px; color: #64748b; border-bottom: 1px solid rgba(15, 23, 42, 0.05); line-height: 1.4; }
+.btr-jr:last-child { border-bottom: none; }
+.btr-jr i { font-style: normal; font-family: var(--font-num); font-size: 10.5px; color: #94a3b8; margin-left: auto; white-space: nowrap; }
+
+/* ---- тёмная тема терминала (и пер-виджетная .pfd-thm-dark) ---- */
+body.dark-mode .btr-live { background: rgba(217, 119, 6, 0.14); color: #fcd34d; }
+body.dark-mode .btr-iconbtn, .pfd-thm-dark .btr-iconbtn { border-color: rgba(255, 255, 255, 0.16); color: #9fb1c6; }
+body.dark-mode .btr-iconbtn:hover, body.dark-mode .btr-iconbtn.on, .pfd-thm-dark .btr-iconbtn:hover, .pfd-thm-dark .btr-iconbtn.on { color: #f1f5f9; border-color: #60a5fa; }
+body.dark-mode .btr-hd-ins, .pfd-thm-dark .btr-hd-ins { color: #9fb1c6; }
+body.dark-mode .btr-sand, .pfd-thm-dark .btr-sand { color: #fbbf24; }
+body.dark-mode .btr-search-drop { background: #141c27; border-color: rgba(255, 255, 255, 0.12); }
+body.dark-mode .btr-search-row:hover { background: rgba(96, 165, 250, 0.1); }
+body.dark-mode .btr-search-row span { color: #9fb1c6; }
+body.dark-mode .btr-instr span, .pfd-thm-dark .btr-instr span { color: #9fb1c6; }
+body.dark-mode .btr-st.ok, .pfd-thm-dark .btr-st.ok { color: #34d399; }
+body.dark-mode .btr-st.ok i, .pfd-thm-dark .btr-st.ok i { background: #34d399; box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.14); }
+body.dark-mode .btr-st.off, .pfd-thm-dark .btr-st.off { color: #fbbf24; }
+body.dark-mode .btr-st.off i, .pfd-thm-dark .btr-st.off i { background: #fbbf24; box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.14); }
+body.dark-mode .btr-axrow:hover, .pfd-thm-dark .btr-axrow:hover { background: rgba(96, 165, 250, 0.08); }
+body.dark-mode .btr-axrow.ask b, .pfd-thm-dark .btr-axrow.ask b { color: #f87171; }
+body.dark-mode .btr-axrow.bid b, .pfd-thm-dark .btr-axrow.bid b { color: #34d399; }
+body.dark-mode .btr-axrow.ask .btr-axh i, .pfd-thm-dark .btr-axrow.ask .btr-axh i { background: linear-gradient(90deg, rgba(248, 113, 113, 0.14), rgba(248, 113, 113, 0.04)); }
+body.dark-mode .btr-axrow.bid .btr-axh i, .pfd-thm-dark .btr-axrow.bid .btr-axh i { background: linear-gradient(270deg, rgba(52, 211, 153, 0.14), rgba(52, 211, 153, 0.04)); }
+body.dark-mode .btr-axh em, .pfd-thm-dark .btr-axh em { color: #9fb1c6; }
+body.dark-mode .btr-axmid, .pfd-thm-dark .btr-axmid { border-color: rgba(255, 255, 255, 0.08); }
+body.dark-mode .btr-axmid > b, .pfd-thm-dark .btr-axmid > b { color: #f1f5f9; }
+body.dark-mode .btr-axmid.up > b, body.dark-mode .btr-axmid.up .ar, .pfd-thm-dark .btr-axmid.up > b, .pfd-thm-dark .btr-axmid.up .ar { color: #34d399; }
+body.dark-mode .btr-axmid.down > b, body.dark-mode .btr-axmid.down .ar, .pfd-thm-dark .btr-axmid.down > b, .pfd-thm-dark .btr-axmid.down .ar { color: #f87171; }
+body.dark-mode .btr-axmid .sp, .pfd-thm-dark .btr-axmid .sp { border-color: rgba(255, 255, 255, 0.1); }
+body.dark-mode .btr-axmid .sp b, .pfd-thm-dark .btr-axmid .sp b { color: #cbd5e1; }
 body.dark-mode .btr-obempty-ic, .pfd-thm-dark .btr-obempty-ic { background: rgba(167, 139, 250, 0.16); color: #a78bfa; }
 body.dark-mode .btr-obempty-tt, .pfd-thm-dark .btr-obempty-tt { color: #f1f5f9; }
 body.dark-mode .btr-obempty-tx, .pfd-thm-dark .btr-obempty-tx { color: #9fb1c6; }
 body.dark-mode .btr-obempty-px div, .pfd-thm-dark .btr-obempty-px div { background: rgba(255, 255, 255, 0.06); }
 body.dark-mode .btr-obempty-px b, .pfd-thm-dark .btr-obempty-px b { color: #f1f5f9; }
-
-/* лента обезличенных сделок (под стаканом) */
-.btr-tape { display: flex; flex-direction: column; }
-.btr-tape-row {
-    display: flex; align-items: baseline; gap: 10px; padding: 2.5px 9px;
-    font-family: var(--font-num); font-size: 11.5px;
-    font-variant-numeric: tabular-nums; border-radius: 6px;
-}
-.btr-tape-row:nth-child(odd) { background: rgba(15, 23, 42, 0.025); }
-.btr-tape-row i { font-style: normal; color: #94a3b8; font-size: 10.5px; }
-.btr-tape-row b { font-weight: 600; }
-.btr-tape-row b.bid { color: #16a34a; }
-.btr-tape-row b.ask { color: #dc2626; }
-.btr-tape-row span { margin-left: auto; color: #64748b; }
-.btr-tape-empty { font-size: 12px; color: #94a3b8; padding: 4px 9px; }
-body.dark-mode .btr-tape-row:nth-child(odd) { background: rgba(255, 255, 255, 0.04); }
+body.dark-mode .btr-fold, .pfd-thm-dark .btr-fold { border-color: rgba(255, 255, 255, 0.08); }
+body.dark-mode .btr-fold-lab, .pfd-thm-dark .btr-fold-lab { color: #9fb1c6; }
 body.dark-mode .btr-tape-row b.bid { color: #34d399; }
 body.dark-mode .btr-tape-row b.ask { color: #f87171; }
 body.dark-mode .btr-tape-row span { color: #9fb1c6; }
-
-/* тикет */
-/* сегменты в языке .mh-seg, но самодостаточные: родные стили живут на
-   --mh-* переменных своей карточки и классе .active */
-.btr-seg {
-    align-self: stretch; display: flex; height: 38px; padding: 4px;
-    border-radius: 12px; background: rgba(15, 23, 42, 0.05); gap: 3px;
-}
-.btr-seg .mh-seg-btn { flex: 1; color: #64748b; }
-.btr-seg .mh-seg-btn:hover { color: #0f172a; }
-.btr-seg .mh-seg-btn.active { background: #1b2433; color: #fff; box-shadow: 0 5px 14px rgba(16, 24, 38, 0.2); }
-/* направление — трейдерский акцент: покупка зелёная, продажа красная */
-#btSide .mh-seg-btn.active:first-child { background: #16a34a; }
-#btSide .mh-seg-btn.active:last-child { background: #dc2626; }
-body.dark-mode .btr-seg { background: rgba(255, 255, 255, 0.07); }
-body.dark-mode .btr-seg .mh-seg-btn { color: #9fb1c6; }
-body.dark-mode .btr-seg .mh-seg-btn:hover { color: #f1f5f9; }
-body.dark-mode .btr-seg .mh-seg-btn.active { background: #e2e8f0; color: #0f172a; }
-body.dark-mode #btSide .mh-seg-btn.active:first-child { background: #16a34a; color: #fff; }
-body.dark-mode #btSide .mh-seg-btn.active:last-child { background: #dc2626; color: #fff; }
-.btr-mktnote { font-size: 12px; color: #94a3b8; padding: 2px 2px 0; }
-/* цена, стоп-цена, лоты и сумма подтверждения — цифры, значит моно */
-.btr-card .ph-input[type="number"], #btCfSum {
-    font-family: var(--font-num); font-variant-numeric: tabular-nums; letter-spacing: 0.02em;
-}
-/* ИТОГО — герой тикета: главная цифра сделки, плашка с лёгким объёмом */
-.btr-est {
-    display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.055), rgba(15, 23, 42, 0.03));
-    border: 1px solid rgba(15, 23, 42, 0.05); border-radius: 13px; padding: 11px 14px;
-}
-.btr-est-l { display: flex; flex-direction: column; gap: 1px; }
-.btr-est-l span {
-    font-family: var(--font-ui); font-size: 10.5px; font-weight: 700;
-    letter-spacing: 0.14em; text-transform: uppercase; color: #94a3b8;
-}
-.btr-est-l i { font-style: normal; font-size: 10.5px; color: #94a3b8; }
-.btr-est b {
-    font-family: var(--font-num); font-size: 18px; font-weight: 700; letter-spacing: -0.01em;
-    color: #0f172a; white-space: nowrap; font-variant-numeric: tabular-nums;
-}
-body.dark-mode .btr-est, .pfd-thm-dark .btr-est {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.035));
-    border-color: rgba(255, 255, 255, 0.06);
-}
-.btr-warns:empty { display: none; }
-.btr-warn {
-    background: rgba(217, 119, 6, 0.1); border-radius: 10px; padding: 7px 11px;
-    font-size: 12px; color: #92400e; line-height: 1.4;
-}
-.btr-warn + .btr-warn { margin-top: 6px; }
-.btr-submit {
-    border: none; border-radius: 12px; cursor: pointer; padding: 12px 16px;
-    font-family: var(--font-ui); font-weight: 800; font-size: 14px; color: #fff;
-    transition: filter 0.15s, transform 0.12s;
-}
-.btr-submit.buy { background: #16a34a; box-shadow: 0 10px 22px -10px rgba(22, 163, 74, 0.8); }
-.btr-submit.sell { background: #dc2626; box-shadow: 0 10px 22px -10px rgba(220, 38, 38, 0.8); }
-.btr-submit:hover { filter: brightness(1.07); }
-.btr-submit:active { transform: scale(0.98); }
-.btr-submit:disabled { opacity: 0.6; cursor: default; }
-/* служебная настройка отделена швом от цветной кнопки CTA */
-.btr-limitrow {
-    font-size: 11.5px; color: #94a3b8; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
-    margin-top: 2px; padding-top: 8px; border-top: 1px dashed rgba(15, 23, 42, 0.1);
-}
-.btr-limitrow svg { width: 13px; height: 13px; flex: none; color: #b3bfce; }
-.btr-limitrow input {
-    width: 90px; border: 1px solid rgba(15, 23, 42, 0.14); border-radius: 8px;
-    padding: 3px 7px; font-family: var(--font-num); font-size: 11.5px; color: #334155;
-    background: transparent;
-}
-
-/* заявки — карточка-строка: верх (тип·тикер·цена·отмена) + полоса исполнения */
-.btr-ords { display: flex; flex-direction: column; gap: 6px; }
-.btr-ordrow {
-    position: relative; display: flex; flex-direction: column; gap: 7px;
-    padding: 8px 10px 9px 15px; border-radius: 11px; font-size: 12.5px;
-    background: rgba(15, 23, 42, 0.03); border: 1px solid rgba(15, 23, 42, 0.05);
-    transition: background 0.14s;
-}
-.btr-ordrow:hover { background: rgba(15, 23, 42, 0.05); }
-.btr-ordrow::before {
-    content: ''; position: absolute; left: 6px; top: 9px; bottom: 9px;
-    width: 3px; border-radius: 3px;
-}
-.btr-ordrow-1::before { bottom: 9px; }
-.btr-ordrow.buy::before { background: #16a34a; }
-.btr-ordrow.sell::before { background: #dc2626; }
-.btr-ord-top { display: flex; align-items: center; gap: 8px; }
-.btr-ord-top .bk-pill { flex: none; white-space: nowrap; }
-.btr-ord-top b { font-family: var(--font-num); font-size: 13px; flex: none; }
-.btr-ord-px {
-    margin-left: auto; font-family: var(--font-num); font-size: 12px; color: #334155;
-    font-variant-numeric: tabular-nums; white-space: nowrap;
-}
-.btr-ordrow button {
-    flex: none; width: 22px; height: 22px; border: none; border-radius: 7px; cursor: pointer;
-    background: rgba(220, 38, 38, 0.09); color: #dc2626; font-size: 11px;
-}
-.btr-ordrow button:hover { background: rgba(220, 38, 38, 0.16); }
-/* полоса исполнения: сколько лотов уже исполнено из заявленных */
-.btr-ord-fill { display: flex; align-items: center; gap: 9px; }
-.btr-ord-track { flex: 1; height: 5px; border-radius: 3px; background: rgba(15, 23, 42, 0.08); overflow: hidden; }
-.btr-ord-track i { display: block; height: 100%; border-radius: 3px; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-.btr-ord-track.buy i { background: #16a34a; }
-.btr-ord-track.sell i { background: #dc2626; }
-.btr-ord-fill em { font-style: normal; font-family: var(--font-num); font-size: 10.5px; color: #94a3b8; white-space: nowrap; }
-.btr-panic { align-self: flex-start; margin-top: 2px; }
-.btr-jlab { margin-top: 6px; }
-body.dark-mode .btr-ord-px, .pfd-thm-dark .btr-ord-px { color: #cbd5e1; }
-body.dark-mode .btr-ord-track, .pfd-thm-dark .btr-ord-track { background: rgba(255, 255, 255, 0.1); }
-body.dark-mode .btr-ord-track.buy i { background: #34d399; }
-body.dark-mode .btr-ord-track.sell i { background: #f87171; }
-
-/* тёмная тема терминала */
-body.dark-mode .btr-live { background: rgba(217, 119, 6, 0.14); color: #fcd34d; }
-body.dark-mode .btr-search-drop { background: #141c27; border-color: rgba(255, 255, 255, 0.12); }
-body.dark-mode .btr-search-row:hover { background: rgba(96, 165, 250, 0.1); }
-body.dark-mode .btr-search-row span { color: #9fb1c6; }
-body.dark-mode .btr-instr span { color: #9fb1c6; }
-body.dark-mode .btr-obrow span { color: #9fb1c6; }
-body.dark-mode .btr-obrow.ask b { color: #f87171; }
-body.dark-mode .btr-obrow.bid b { color: #34d399; }
-body.dark-mode .btr-obrow.ask i { background: rgba(248, 113, 113, 0.12); }
-body.dark-mode .btr-obrow.bid i { background: rgba(52, 211, 153, 0.12); }
-body.dark-mode .btr-spread { border-color: rgba(255, 255, 255, 0.1); }
-body.dark-mode .btr-spread b { color: #cbd5e1; }
-body.dark-mode .btr-est { background: rgba(255, 255, 255, 0.06); }
-body.dark-mode .btr-est b { color: #f1f5f9; }
-body.dark-mode .btr-est-l span { color: #7f93ab; }
+body.dark-mode .btr-side-b, .pfd-thm-dark .btr-side-b { border-color: rgba(255, 255, 255, 0.16); color: #9fb1c6; }
+body.dark-mode .btr-side-b:hover, .pfd-thm-dark .btr-side-b:hover { color: #f1f5f9; border-color: #7f93ab; }
+body.dark-mode .btr-side-b.buy.active, .pfd-thm-dark .btr-side-b.buy.active { background: #16a34a; border-color: #16a34a; color: #fff; }
+body.dark-mode .btr-side-b.sell.active, .pfd-thm-dark .btr-side-b.sell.active { background: #dc2626; border-color: #dc2626; color: #fff; }
+body.dark-mode .btr-ttabs, .pfd-thm-dark .btr-ttabs { border-color: rgba(255, 255, 255, 0.1); }
+body.dark-mode .btr-ttabs button:hover, .pfd-thm-dark .btr-ttabs button:hover { color: #cbd5e1; }
+body.dark-mode .btr-ttabs button.active, .pfd-thm-dark .btr-ttabs button.active { color: #f1f5f9; }
+body.dark-mode .btr-ttabs button.active::after, .pfd-thm-dark .btr-ttabs button.active::after { background: #e2e8f0; }
+body.dark-mode .btr-ttabs button.active .btr-cnt, .pfd-thm-dark .btr-ttabs button.active .btr-cnt { color: #a78bfa; }
+body.dark-mode .btr-bf, .pfd-thm-dark .btr-bf { border-color: rgba(255, 255, 255, 0.08); }
+body.dark-mode .btr-bf-lab label, .pfd-thm-dark .btr-bf-lab label { color: #9fb1c6; }
+body.dark-mode .btr-bf-lab label i, .pfd-thm-dark .btr-bf-lab label i { color: #7f93ab; }
+body.dark-mode .btr-ref b, .pfd-thm-dark .btr-ref b { color: #9fb1c6; }
+body.dark-mode .btr-ref:hover b, .pfd-thm-dark .btr-ref:hover b { color: #60a5fa; }
+body.dark-mode .btr-big, .pfd-thm-dark .btr-big { color: #f1f5f9; }
+body.dark-mode .btr-big::placeholder, .pfd-thm-dark .btr-big::placeholder { color: #475569; }
+body.dark-mode .btr-deal b, .pfd-thm-dark .btr-deal b { color: #9fb1c6; }
 body.dark-mode .btr-warn { background: rgba(217, 119, 6, 0.15); color: #fcd34d; }
-body.dark-mode .btr-ordrow { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.06); }
-body.dark-mode .btr-ordrow:hover { background: rgba(255, 255, 255, 0.08); }
-body.dark-mode .btr-ordrow button { background: rgba(248, 113, 113, 0.13); color: #f87171; }
-body.dark-mode .btr-ordrow button:hover { background: rgba(248, 113, 113, 0.22); }
-body.dark-mode .btr-limitrow { border-top-color: rgba(255, 255, 255, 0.1); }
-body.dark-mode .btr-limitrow input { border-color: rgba(255, 255, 255, 0.16); color: #cbd5e1; }
+body.dark-mode .btr-subnote input, .pfd-thm-dark .btr-subnote input { border-bottom-color: rgba(255, 255, 255, 0.16); color: #cbd5e1; }
+body.dark-mode .btr-ordrow, .pfd-thm-dark .btr-ordrow { border-color: rgba(255, 255, 255, 0.07); }
+body.dark-mode .btr-ord1 > b, .pfd-thm-dark .btr-ord1 > b { color: #f1f5f9; }
+body.dark-mode .btr-ord-px, .pfd-thm-dark .btr-ord-px { color: #f1f5f9; }
+body.dark-mode .btr-ordx:hover, .pfd-thm-dark .btr-ordx:hover { background: rgba(248, 113, 113, 0.14); color: #f87171; }
+body.dark-mode .btr-fill, .pfd-thm-dark .btr-fill { color: #9fb1c6; }
+body.dark-mode .btr-ost.part, .pfd-thm-dark .btr-ost.part { color: #fcd34d; }
+body.dark-mode .btr-panic, .pfd-thm-dark .btr-panic { color: #f87171; }
+body.dark-mode .btr-jr, .pfd-thm-dark .btr-jr { color: #9fb1c6; border-color: rgba(255, 255, 255, 0.06); }
 
 /* ---------- мобильный ---------- */
 @media (max-width: 640px) {

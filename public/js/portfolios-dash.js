@@ -645,9 +645,9 @@
         var tr = PF.tradesHtml(PF.dashTab === 'ops');
         if (tr) blocks.push({ id: 'trades', name: 'История сделок', htmlFn: function () { return tr; }, span: 12 });
         // «Торговля»: карточки терминала — блоки ТОЛЬКО этой подвкладки (в пикер
-        // других вкладок не попадают). isTrade освобождает их от опт-ин ниже:
-        // остаются видимыми и НЕудаляемыми (chrome без корзины), но двигаются и
-        // меняют размер — терминал без стакана бессмыслен, потерять его нельзя
+        // других вкладок не попадают). isTrade освобождает их от опт-ин ниже
+        // (видимы по умолчанию), но chrome у них полный, как у всех виджетов:
+        // шестерёнка + корзина; удалённая карточка возвращается из «Добавить блок»
         if (PF.dashTab === 'trading' && PF.pftObCard) {
             blocks.push({ id: 'trade:ob', name: 'Стакан', htmlFn: PF.pftObCard, span: 4, isTrade: true });
             blocks.push({ id: 'trade:ticket', name: 'Тикет', htmlFn: PF.pftTicketCard, span: 4, isTrade: true });
@@ -699,7 +699,10 @@
         'alloc': 'Доли акций, облигаций и кэша — по портфелю или по всем сразу',
         'heat': 'Тепловая карта индекса Мосбиржи — размер по весу, цвет за день',
         'news': 'Свежие новости по бумагам ваших портфелей',
-        '__note': 'Заметки, списки задач и сроки прямо на дашборде'
+        '__note': 'Заметки, списки задач и сроки прямо на дашборде',
+        'trade:ob': 'Биржевой стакан по оси цены — клик подставляет цену в тикет',
+        'trade:ticket': 'Тикет заявки: лимитная, рыночная или стоп, с предохранителями',
+        'trade:orders': 'Активные и стоп-заявки счёта: статус, исполнение, отмена'
     };
     // цветные иконки-плитки строк списка «Блоки для дашборда» (как в макете): узнаваемая
     // пиктограмма + мягкая тонировка по типу блока
@@ -1053,6 +1056,11 @@
                 // открывает поповер .pfdcfg-pop прямо на блоке (см. pfdCfgOpen ниже)
                 hideBtn = '<button class="pfd-cardcfg" title="Настройки виджета" aria-label="Настройки виджета" onclick="pfdCfgOpen(\'' + jsArg(b.id) + '\', event)">' + PFDCFG_GEAR_SVG + '</button>' +
                     '<button class="pfd-cardrm" title="Удалить виджет (вернуть — «Добавить блок» в Конструкторе)" aria-label="Удалить виджет" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + PF.NOTE_TRASH_SVG + '</button>';
+            } else if (b.isTrade) {
+                // терминал: тот же chrome, что у виджетов (просьба 2026-07-18) —
+                // шестерёнка и корзина по hover; вернуть — «Добавить блок»
+                hideBtn = '<button class="pfd-cardcfg" title="Настройки виджета" aria-label="Настройки виджета" onclick="pfdCfgOpen(\'' + jsArg(b.id) + '\', event)">' + PFDCFG_GEAR_SVG + '</button>' +
+                    '<button class="pfd-cardrm" title="Удалить виджет (вернуть — «Добавить блок» в Конструкторе)" aria-label="Удалить виджет" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + PF.NOTE_TRASH_SVG + '</button>';
             } else if (b.id === 'cal' || b.id === 'sum') {
                 // глаз-скрытие — ТОЧНО как в карточке портфеля (.pfc-act), в правом-верхнем углу
                 // напротив заголовка, видимый постоянно (не в зазоре-бирке). Исключение: когда
@@ -1079,7 +1087,7 @@
             // как у плиток тепловой карты) — см. .pfd-thm-* в portfolios-r7.css
             var thmV = (PF.dashCfg.thm || {})[b.id];
             var thmCls = thmV === 'dark' ? ' pfd-thm-dark' : thmV === 'glass' ? ' pfd-thm-glass' : '';
-            return '<div class="pfd-item' + hsetClass + thmCls + (b.defHidden ? ' pfd-rmable' : '') + '" data-pfd="' + esc(b.id) + '" style="' + style + '">' +
+            return '<div class="pfd-item' + hsetClass + thmCls + ((b.defHidden || b.isTrade) ? ' pfd-rmable' : '') + '" data-pfd="' + esc(b.id) + '" style="' + style + '">' +
                 chrome +
                 '<div class="pfd-body">' + html + '</div>' +
             '</div>';
