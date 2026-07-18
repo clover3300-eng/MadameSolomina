@@ -503,17 +503,24 @@
         // источников НЕ подмешивает бумаги в текущий портфель — pid игнорируется,
         // это всегда find-or-create ОДНОЙ выделенной карточки счёта (ручной
         // портфель нельзя сделать зеркалом счёта: замещающий снапшот затёр бы
-        // ручные лоты). Пункт виден только при живом подключении брокера;
-        // формулировка — «счёт отдельной карточкой», а не «перенести сюда».
-        var brkItem = '';
-        if (brokerPfAlive()) {
-            var brkPf = brokerPfGet();
-            brkItem = '<button class="pf-impitem" onclick="pfBrokerPfImport()">' +
-                '<span class="pf-impico">' + IMPBANK_SVG + '</span>' +
-                '<span class="pf-impbody"><b>' + (brkPf ? 'Обновить из Т-Инвестиций' : 'Из Т-Инвестиций') + '</b><i>' +
-                    (brkPf ? 'карточка счёта уже на странице — обновить и показать' : 'счёт отдельной карточкой · обновляется сам') + '</i></span>' +
-                '<span class="pf-impgo">' + CHEV_SVG + '</span></button>';
-        }
+        // ручные лоты). Формулировка — «счёт отдельной карточкой», а не
+        // «перенести сюда».
+        // Пункт показываем ВСЕГДА, в том числе без подключения: раньше он
+        // прятался до подключения брокера, и о самой возможности можно было
+        // никогда не узнать — меню «Импорт» и есть то место, где её ищут.
+        var brkPf = brokerPfGet();
+        var brkOn = brokerPfAlive();
+        var brkTitle = brkPf ? 'Обновить из Т-Инвестиций' : 'Из Т-Инвестиций';
+        var brkSub = brkPf
+            ? (brkOn ? 'карточка счёта уже на странице — обновить и показать'
+                     : 'карточка счёта уже на странице — показать её')
+            : (brkOn ? 'счёт отдельной карточкой · обновляется сам'
+                     : 'подключить брокера — счёт станет отдельной карточкой');
+        var brkItem = '<button class="pf-impitem" onclick="' +
+                (brkOn || brkPf ? 'pfBrokerPfImport()' : 'PF.closeImpMenus();brokerConnect.open()') + '">' +
+            '<span class="pf-impico">' + IMPBANK_SVG + '</span>' +
+            '<span class="pf-impbody"><b>' + brkTitle + '</b><i>' + brkSub + '</i></span>' +
+            '<span class="pf-impgo">' + CHEV_SVG + '</span></button>';
         return '<div class="pf-impmenu' + (up ? ' up' : '') + '" id="pfImp-' + key + '">' +
             '<div class="pf-impgrp">Откуда перенести бумаги</div>' +
             card('calc', 'all', IMPCALC_SVG, 'Из расчёта', 'нет сохранённого расчёта', calcAll, calcBreakdown) +

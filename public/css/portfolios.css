@@ -3437,15 +3437,12 @@ body.dark-mode .pfbk-re:hover { background: rgba(255, 255, 255, 0.1); }
 /* тихая строка «вне трекера: N позиций · X ₽» между составом и футером */
 .pfbk-extra { margin: 4px 2px 0; font-size: 11px; font-weight: 500; color: #8f9aa8; }
 body.dark-mode .pfbk-extra { color: #74839a; }
-/* строка про разобранную историю сделок (этап 2 №10) — тот же тихий голос,
-   что и «вне трекера»; ссылка-кнопка рядом, а не отдельным элементом шапки */
+/* Строка про историю сделок (этап 2 №10) — тот же тихий голос, что и «вне
+   трекера». Появляется только когда есть что сказать (идёт разбор, история
+   неполная, не далась): об успехе карточка молчит, его видно по датам. */
 .pfbk-ops { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
 .pfbk-ops.err { color: #c2410c; }
 body.dark-mode .pfbk-ops.err { color: #fb923c; }
-.pfbk-opsbtn { padding: 0; border: none; background: none; font: inherit; font-weight: 700;
-    color: var(--pf-accent, #3b82f6); cursor: pointer; text-decoration: underline;
-    text-decoration-style: dotted; text-underline-offset: 2px; }
-.pfbk-opsbtn:hover { text-decoration-style: solid; }
 /* настройки ⚙ брокерской карточки: заметка об авто-синке вместо формы добавления,
    кэш read-only, строки состава без редактора */
 .pfm-brknote { display: flex; align-items: center; gap: 9px; padding: 10px 12px; border-radius: 11px;
