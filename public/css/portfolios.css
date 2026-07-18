@@ -3399,3 +3399,48 @@ body.dark-mode .pfnw-empty { color: #8fa2b8; }
 body.dark-mode .pfnw-pk { border-color: #27324a; background: #131c2b; color: #b9c6d6; }
 body.dark-mode .pfnw-pk:hover { border-color: #34425c; color: #f4f8fd; }
 body.dark-mode .pfnw-addinput { background: #0f1826; color: #e7eef7; }
+
+/* ============================================================
+   №10 · КАРТОЧКА-ПОРТФЕЛЬ ИЗ Т-ИНВЕСТИЦИЙ (авто-синк счёта)
+   Бейдж-пилюля в шапке карточки, тихая строка «вне трекера»,
+   read-only настройки, жёлтый warn-вариант pfConfirm.
+   ============================================================ */
+/* бейдж: банк-иконка + «Т-Инвестиции · 12:34» (+ оранжевая метка песочницы,
+   как .btr-sand в терминале); off — снапшот без живого подключения */
+.pfbk-badge { display: inline-flex; align-items: center; gap: 5px; min-width: 0; max-width: 100%;
+    padding: 3px 9px; border: 1px solid rgba(43, 57, 74, 0.14); border-radius: 999px;
+    background: rgba(43, 57, 74, 0.04); font-family: 'Inter', sans-serif; font-size: 10.5px;
+    font-weight: 600; color: #5f6b7a; white-space: nowrap; }
+.pfbk-badge > svg { width: 12px; height: 12px; flex: none; }
+.pfbk-t { overflow: hidden; text-overflow: ellipsis; }
+.pfbk-t b { font-weight: 700; font-variant-numeric: tabular-nums; }
+.pfbk-sand { font-style: normal; font-size: 9px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: #d97706; }
+.pfbk-badge.off { border-style: dashed; opacity: 0.75; }
+.pfbk-note { font-style: italic; font-weight: 500; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; }
+.pfbk-re { display: inline-flex; align-items: center; justify-content: center; flex: none;
+    width: 18px; height: 18px; margin: -2px -5px -2px -1px; padding: 0; border: none; border-radius: 50%;
+    background: transparent; color: #8494a7; cursor: pointer; }
+.pfbk-re svg { width: 11px; height: 11px; }
+.pfbk-re:hover { color: var(--pf-accent, #3b82f6); background: rgba(43, 57, 74, 0.08); }
+body.dark-mode .pfbk-badge { border-color: rgba(255, 255, 255, 0.13); background: rgba(255, 255, 255, 0.05); color: #a9b7c8; }
+body.dark-mode .pfbk-sand { color: #fbbf24; }
+body.dark-mode .pfbk-note { color: #74839a; }
+body.dark-mode .pfbk-re { color: #8fa2b8; }
+body.dark-mode .pfbk-re:hover { background: rgba(255, 255, 255, 0.1); }
+/* тихая строка «вне трекера: N позиций · X ₽» между составом и футером */
+.pfbk-extra { margin: 4px 2px 0; font-size: 11px; font-weight: 500; color: #8f9aa8; }
+body.dark-mode .pfbk-extra { color: #74839a; }
+/* настройки ⚙ брокерской карточки: заметка об авто-синке вместо формы добавления,
+   кэш read-only, строки состава без редактора */
+.pfm-brknote { display: flex; align-items: center; gap: 9px; padding: 10px 12px; border-radius: 11px;
+    border: 1px dashed rgba(43, 57, 74, 0.2); font-size: 11.5px; line-height: 1.45; color: #64748b; }
+.pfm-brknote svg { width: 16px; height: 16px; flex: none; color: #8494a7; }
+body.dark-mode .pfm-brknote { border-color: rgba(255, 255, 255, 0.14); color: #93a3b5; }
+.pfm-extra-ro { font-size: 12.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.pfm-vrow.ro { cursor: default; }
+.pfm-vrow.ro .pfm-vch { visibility: hidden; }
+/* прокрутка «покажи карточку счёта» подсвечивает и классическую карточку */
+.pf-card.pfd-flash { animation: pfdFlash 1.4s ease-out; }
+/* жёлтый warn-вариант окна подтверждения (варн о задвоении бумаг) */
+.pfcf-ico.warn { background: rgba(217, 119, 6, 0.12); color: #d97706; }
+body.dark-mode .pfcf-ico.warn { background: rgba(251, 191, 36, 0.13); color: #fbbf24; }

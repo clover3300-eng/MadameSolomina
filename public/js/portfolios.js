@@ -11,6 +11,8 @@
 //   portfolios-tabs.js     — герой, подвкладки/чипы, deep-link
 //   portfolios-cards.js    — карточка портфеля, шторка настроек, действия
 //   portfolios-trades.js   — история сделок и ребаланс-оверлей
+//   portfolios-trading.js  — терминал подвкладки «Торговля» (стакан, тикет, заявки)
+//   portfolios-broker-pf.js— карточка-портфель из Т-Инвестиций (авто-синк счёта, №10)
 //   portfolios.js          — этот файл; window.renderPortfolios объявляется
 //                            ЗДЕСЬ — сентинел «цепочка загружена» для
 //                            ensurePortfoliosJs (webapp-tabs.js)
@@ -68,6 +70,8 @@
     var paintPfChartMini = PF.paintPfChartMini, pfCardHead = PF.pfCardHead, pfConfirm = PF.pfConfirm, pfImpOutside = PF.pfImpOutside, repaintMiniCharts = PF.repaintMiniCharts;
     // импорт сделок и ребаланса (portfolios-trades.js, загружен до нас):
     var collectTrades = PF.collectTrades, hasAnyTrades = PF.hasAnyTrades, pfInvalidateCharts = PF.pfInvalidateCharts, rebalRepaint = PF.rebalRepaint, tradesHtml = PF.tradesHtml;
+    // импорт брокерской карточки (portfolios-broker-pf.js, загружен до нас):
+    var brokerPfSync = PF.brokerPfSync, brokerPfGet = PF.brokerPfGet, brokerPfAlive = PF.brokerPfAlive;
 
     // ====================================================================
     //  РЕНДЕР
@@ -263,6 +267,7 @@
             renderFavNews();
             renderPosNews();        // блок «Новости по позициям» (no-op, если не включён)
             PF.renderBrokerPos();   // блок «Позиции у брокера»: догрузка из API (no-op без виджета)
+            brokerPfSync();         // карточка-портфель счёта Т-Инвестиций: тихий синк (троттл 60с, no-op без карточки)
             if (PF.pftAfterRender) PF.pftAfterRender();   // терминал «Торговли»: поллинг только на живой подвкладке
             pfdHeatRepaintSoon();   // блок «Карта рынка»: дорисовать живые плитки
             ensureLiveTick();
@@ -454,6 +459,8 @@
     var IMPMON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/><circle cx="16.5" cy="15" r="1.4" fill="currentColor" stroke="none"/></svg>';
     // «Из CSV-файла» — лист со строками (брокерский отчёт)
     var IMPCSV_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2.5H6.5a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V8z"/><polyline points="14 2.5 14 8 19.5 8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="16" y2="16"/></svg>';
+    // «Из Т-Инвестиций» — банк (контур виджета «Позиции у брокера»)
+    var IMPBANK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 4l9 5.5"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8"/><path d="M3 20h18"/></svg>';
     // глаз / перечёркнутый глаз — управление видимостью карточек портфелей
     var EYE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
     var EYEOFF_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.4 10.4 0 0 1 12 19c-6.5 0-10-7-10-7a19.3 19.3 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.9 9.9 0 0 1 12 4c6.5 0 10 7 10 7a19.4 19.4 0 0 1-3.23 4.35"/><path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"/><line x1="2" y1="2" x2="22" y2="22"/></svg>';
@@ -492,6 +499,21 @@
             '<span class="pf-impico">' + IMPCSV_SVG + '</span>' +
             '<span class="pf-impbody"><b>Из CSV-файла</b><i>отчёт брокера: тикер · дата · цена · кол-во · [НКД]</i></span>' +
             '<span class="pf-impgo">' + CHEV_SVG + '</span></button>';
+        // «Из Т-Инвестиций» (portfolios-broker-pf.js): в отличие от остальных
+        // источников НЕ подмешивает бумаги в текущий портфель — pid игнорируется,
+        // это всегда find-or-create ОДНОЙ выделенной карточки счёта (ручной
+        // портфель нельзя сделать зеркалом счёта: замещающий снапшот затёр бы
+        // ручные лоты). Пункт виден только при живом подключении брокера;
+        // формулировка — «счёт отдельной карточкой», а не «перенести сюда».
+        var brkItem = '';
+        if (brokerPfAlive()) {
+            var brkPf = brokerPfGet();
+            brkItem = '<button class="pf-impitem" onclick="pfBrokerPfImport()">' +
+                '<span class="pf-impico">' + IMPBANK_SVG + '</span>' +
+                '<span class="pf-impbody"><b>' + (brkPf ? 'Обновить из Т-Инвестиций' : 'Из Т-Инвестиций') + '</b><i>' +
+                    (brkPf ? 'карточка счёта уже на странице — обновить и показать' : 'счёт отдельной карточкой · обновляется сам') + '</i></span>' +
+                '<span class="pf-impgo">' + CHEV_SVG + '</span></button>';
+        }
         return '<div class="pf-impmenu' + (up ? ' up' : '') + '" id="pfImp-' + key + '">' +
             '<div class="pf-impgrp">Откуда перенести бумаги</div>' +
             card('calc', 'all', IMPCALC_SVG, 'Из расчёта', 'нет сохранённого расчёта', calcAll, calcBreakdown) +
@@ -499,6 +521,7 @@
             card('fav', null, IMPFAV_SVG, 'Из избранного', 'нет отмеченных звёздочкой бумаг', fav) +
             card('monthly', null, IMPMON_SVG, 'Из ежемесячного дохода', 'нет облигаций в калькуляторе дохода', mon) +
             csvItem +
+            brkItem +
             '</div>';
     }
     function impWrapHtml(key, pid) {
@@ -762,7 +785,7 @@
         return '<div class="dash2-card pf-empty">' +
             '<div class="pf-empty-art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="13" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></div>' +
             '<div class="pf-empty-t">Пока нет портфелей</div>' +
-            '<div class="pf-empty-s">Создайте портфель вручную или импортируйте состав из расчёта, избранного или ежемесячного дохода.</div>' +
+            '<div class="pf-empty-s">Создайте портфель вручную или импортируйте состав из расчёта, избранного, ежемесячного дохода или подключённого брокера.</div>' +
             '<div class="pf-empty-cta">' +
                 '<button class="d3-quick" onclick="pfAddPortfolio()">Создать вручную</button>' +
                 impWrapHtml('empty', null) +

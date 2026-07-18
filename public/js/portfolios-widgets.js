@@ -1743,10 +1743,12 @@
                 return A.q2n(p.quantity) > 0 && p.instrumentType !== 'currency';
             });
             return A.resolveInstruments(poss).then(function (cache) {
-                // ручные количества по тикеру — для сверки с трекером
+                // ручные количества по тикеру — для сверки с трекером. Только
+                // РУЧНЫЕ портфели: карточка счёта (p.broker, №10) наполняется из
+                // этого же API — с ней сверка всегда сходилась бы «ок»
                 var manual = {};
                 try {
-                    visibleItems().forEach(function (p) {
+                    visibleItems().filter(function (p) { return !p.broker; }).forEach(function (p) {
                         calcPf(p).hs.forEach(function (x) {
                             if (x.c.qty > 0) manual[x.h.ticker] = (manual[x.h.ticker] || 0) + x.c.qty;
                         });

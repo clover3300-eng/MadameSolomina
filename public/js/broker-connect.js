@@ -265,8 +265,23 @@
         var jr = A.journal().slice(0, 6).map(function (e) {
             return '<div class="bk-jrow"><span>' + esc(EV_LABELS[e.ev] || e.ev) + (e.d ? ' · ' + esc(e.d) : '') + '</span><i>' + ruDateTime(e.t) + '</i></div>';
         }).join('') || '<div class="bk-jrow"><span>Пока пусто</span></div>';
+        // Оффер «Портфелей» (роадмап №10): счёт — отдельной авто-карточкой.
+        // portfolios_v1 читаем напрямую: цепочка «Портфелей» ленивая и может быть
+        // не загружена; сам импорт делает pfBrokerPfImport после её загрузки.
+        var pfOffer = '';
+        if (c.state !== 'revoked') {
+            var hasCard = false;
+            try {
+                var st = JSON.parse(localStorage.getItem('portfolios_v1'));
+                hasCard = !!(st && st.items && st.items.some(function (p) { return p && p.broker; }));
+            } catch (e) {}
+            pfOffer = '<div class="bk-pfoffer">' +
+                '<div class="bk-pfoffer-tx"><b>' + (hasCard ? 'Карточка счёта уже в «Портфелях»' : 'Счёт — карточкой в «Портфелях»') + '</b>' +
+                '<span>' + (hasCard ? 'Наполняется из счёта сама — примерно раз в минуту.' : 'Позиции счёта станут обычным портфелем: сводка, аналитика, календарь выплат. Обновляется сам.') + '</span></div>' +
+                '<button type="button" class="bk-btn" onclick="brokerConnect.toPortfolio()">' + (hasCard ? 'Показать' : 'Добавить') + '</button></div>';
+        }
         return headHtml('Брокер подключён', 'Т-Инвестиции' + (c.sandbox ? ' · <i class="bk-pill bk-pill-amber">песочница</i>' : '')) +
-            '<div class="bk-body">' + banner +
+            '<div class="bk-body">' + banner + pfOffer +
             '<div class="bk-kv"><span>Счёт</span><b>' + esc(c.accountName) + '</b></div>' +
             '<div class="bk-kv"><span>Режим</span><b>' + scopeName + '</b></div>' +
             '<div class="bk-kv"><span>Токен</span><b class="bk-mono">' + esc(A.maskTail(c.tokenTail)) + '</b></div>' +
@@ -450,6 +465,15 @@
                 } else {
                     err('Не удалось сохранить подключение');
                 }
+            });
+        },
+        // оффер финального шага → карточка-портфель счёта на вкладке «Портфели»
+        // (find-or-create делает pfBrokerPfImport из ленивой цепочки «Портфелей»)
+        toPortfolio: function () {
+            close();
+            try { window.switchTab('portfolios'); } catch (e) {}
+            if (window.ensurePortfoliosJs) window.ensurePortfoliosJs(function () {
+                if (window.pfBrokerPfImport) window.pfBrokerPfImport();
             });
         },
         changeToken: function () {

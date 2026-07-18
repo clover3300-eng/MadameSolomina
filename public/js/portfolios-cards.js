@@ -67,10 +67,15 @@
 
         // чип «за сегодня» под названием убран (просьба 2026-07-14): дневное изменение
         // живёт в герое «Панель управления» и KPI-виджете, в карточке он дублировался
-        return '<div class="dash2-card pf-card' + (menuOn ? ' menu-open' : '') + tall + (chartOn ? ' chart-open' : '') + (chartOn && PF.chartAssets[p.id] ? ' assets-open' : '') + (holdsOn ? ' holds-open' : '') + (colRight ? ' col-right' : '') + (narrow ? ' pf-card--narrow' : '') + (colMid ? ' col-mid' : '') + '" style="--pf-accent:' + ac + '">' +
+        // data-pfid — адрес карточки для прокрутки «покажи счёт» (scrollToCard в
+        // portfolios-broker-pf.js работает и в классической сетке, не только в конструкторе)
+        return '<div class="dash2-card pf-card' + (menuOn ? ' menu-open' : '') + tall + (chartOn ? ' chart-open' : '') + (chartOn && PF.chartAssets[p.id] ? ' assets-open' : '') + (holdsOn ? ' holds-open' : '') + (colRight ? ' col-right' : '') + (narrow ? ' pf-card--narrow' : '') + (colMid ? ' col-mid' : '') + '" style="--pf-accent:' + ac + '" data-pfid="' + p.id + '">' +
             '<div class="pfc-top">' +
                 '<div class="pfc-titles">' +
                     '<span class="pfc-name" onclick="pfNameEdit(\'' + p.id + '\',event)" title="Нажмите, чтобы переименовать"><span class="pfc-name-ink">' + esc(p.name) + '</span></span>' +
+                    // бейдж брокерской карточки (№10): PF.* в момент вызова — файл
+                    // portfolios-broker-pf.js грузится ПОСЛЕ этого
+                    (p.broker && PF.brokerPfBadgeHtml ? PF.brokerPfBadgeHtml(p) : '') +
                 '</div>' +
                 '<div class="pfc-ctrls">' +
                     '<div class="pfc-acts">' +
@@ -128,6 +133,8 @@
             })() +
             '<div class="pfc-sep"></div>' +
             '<div class="pfc-massets" data-skey="ma-' + p.id + '">' + assetsBody + '</div>' +
+            // тихая строка «вне трекера: N позиций · X ₽» — прочие типы со счёта брокера
+            (p.broker && PF.brokerPfExtraHtml ? PF.brokerPfExtraHtml(p) : '') +
             '<div class="pfc-foot">' +
                 '<button class="pfc-rebal" onclick="pfExpand(\'' + p.id + '\')">' + PF.REBAL_SVG + 'Ребалансировать</button>' +
                 (c.hs.length > MANY ? '<button class="pfc-more' + (holdsOn ? ' on' : '') + '" onclick="pfToggleHolds(\'' + p.id + '\')" aria-label="' + (holdsOn ? 'Свернуть состав' : 'Показать весь состав') + '" title="' + (holdsOn ? 'Свернуть' : 'Показать всё · ' + c.hs.length) + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>' : '') +
@@ -320,6 +327,13 @@
     // раскрыта сразу), цвет — точка в шапке с палитрой-поповером, «Удалить портфель» —
     // тихая ссылка в футере, раскрывающая данжер-зону с подтверждением НА МЕСТЕ (без модалки).
     function menuHtml(p) {
+        // Карточка счёта брокера (№10): состав, лоты и кэш наполняются синком
+        // (portfolios-broker-pf.js) — ручная правка ЗАТЁРЛАСЬ бы следующим
+        // замещающим снапшотом, поэтому форма добавления, редакторы лотов,
+        // «Свободные деньги» и импорт состава скрыты; вместо «Удалить портфель» —
+        // «Отключить импорт» (pfConfirm с объяснением). Имя, цвет и цель по
+        // облигациям остаются пользовательскими.
+        var isBrk = !!p.broker;
         // цвета, занятые ДРУГИМИ портфелями, приглушены и недоступны — у каждого
         // портфеля свой цвет, карточки не путаются
         var takenColors = {};
@@ -346,7 +360,13 @@
         var UP_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="6 11 12 5 18 11"/></svg>';
         // пустое состояние — «портфель с плюсом» в тонированной плашке (а не безликий
         // квадрат), заголовок-приглашение и понятные шаги: форма сверху или импорт снизу
-        var noneBox = '<div class="pfm-none">' +
+        var noneBox = isBrk
+            ? '<div class="pfm-none">' +
+                '<span class="pfm-none-art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 4l9 5.5"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8"/><path d="M3 20h18"/></svg></span>' +
+                '<span class="pfm-none-t">Счёт пока пуст</span>' +
+                '<span class="pfm-none-s">Позиции появятся здесь сами после первой покупки на счёте у брокера.</span>' +
+            '</div>'
+            : '<div class="pfm-none">' +
             '<span class="pfm-none-arrow up">' + UP_SVG + '</span>' +
             '<span class="pfm-none-art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="13" rx="2.5"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M12 11v5"/><path d="M9.5 13.5h5"/></svg></span>' +
             '<span class="pfm-none-t">Портфель ждёт первые активы</span>' +
@@ -369,14 +389,22 @@
         // деньги и цель: свободный кэш портфеля (пополняется остатком ребалансировок) и
         // целевая доля облигаций (маркер на полосе распределения + подсказка «докупите…»)
         var extras = '<div class="pfm-extras">' +
-            '<label class="pfm-extra" title="Свободные деньги портфеля — не вложены в бумаги; сюда автоматически падает остаток от обменов ребалансировки">' +
-                '<span>Свободные деньги</span><span class="pfm-extra-f"><input class="pfm-in pfm-in-num" type="number" min="0" step="0.01" value="' + (p.cash > 0 ? p.cash : '') + '" placeholder="0" onchange="pfSetCash(\'' + p.id + '\',this.value)"><i>₽</i></span></label>' +
+            (isBrk
+                ? '<label class="pfm-extra" title="Свободные деньги счёта — приходят из брокера при синке, руками не правятся">' +
+                    '<span>Свободные деньги</span><span class="pfm-extra-f"><b class="pfm-extra-ro">' + fmtRub(p.cash || 0) + '</b></span></label>'
+                : '<label class="pfm-extra" title="Свободные деньги портфеля — не вложены в бумаги; сюда автоматически падает остаток от обменов ребалансировки">' +
+                '<span>Свободные деньги</span><span class="pfm-extra-f"><input class="pfm-in pfm-in-num" type="number" min="0" step="0.01" value="' + (p.cash > 0 ? p.cash : '') + '" placeholder="0" onchange="pfSetCash(\'' + p.id + '\',this.value)"><i>₽</i></span></label>') +
             '<label class="pfm-extra" title="Целевая структура: сколько процентов портфеля должно быть в облигациях. На карточке появится метка цели и подсказка, чего докупить. Пусто — выключено">' +
                 '<span>Цель · облигации</span><span class="pfm-extra-f"><input class="pfm-in pfm-in-num" type="number" min="0" max="100" step="1" value="' + (p.targetBond != null ? p.targetBond : '') + '" placeholder="выкл" onchange="pfSetTarget(\'' + p.id + '\',this.value)"><i>%</i></span></label>' +
         '</div>';
         // добавление: свёрнуто в пунктирную кнопку-строку; раскрытая панель — та же форма
-        // «за один подход» (addFormHtml), шапка панели сворачивает её обратно
-        var addBlock = '<div class="pfm-addwrap' + (PF.addOpen ? ' on' : '') + (empty ? ' is-empty' : '') + '">' +
+        // «за один подход» (addFormHtml), шапка панели сворачивает её обратно.
+        // У брокерской карточки формы нет — вместо неё тихая заметка об авто-синке
+        var addBlock = isBrk
+            ? '<div class="pfm-brknote" title="Карточка наполняется из счёта Т-Инвестиций (примерно раз в минуту). Ручные правки затёр бы следующий синк, поэтому они выключены.">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 4l9 5.5"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8"/><path d="M3 20h18"/></svg>' +
+                'Состав, количество и деньги обновляются из счёта Т-Инвестиций сами. Ваши здесь — имя, цвет и цель по облигациям.</div>'
+            : '<div class="pfm-addwrap' + (PF.addOpen ? ' on' : '') + (empty ? ' is-empty' : '') + '">' +
             (PF.addOpen
                 ? '<button class="pfm-addghost on" onclick="pfAddToggle(\'' + p.id + '\')" title="Свернуть форму добавления">' +
                     '<span class="pfm-addhead-ic">' + PF.PLUS_SVG + '</span><span class="pfm-addghost-t">Добавить актив</span>' +
@@ -389,15 +417,19 @@
         var vhead = n ? '<div class="pfm-vhead"><span>Тикер</span><span>Шт</span><span>Цена покупки</span><span>Дата</span></div>' : '';
         // футер: рутинные действия — тихим текстом слева; «Удалить портфель» — тихой красной
         // ссылкой справа, раскрывающей данжер-зону (само удаление — только внутри зоны)
+        // у брокерской карточки импорта состава нет, а вместо данжер-зоны удаления —
+        // «Отключить импорт» (pfConfirm в portfolios-broker-pf.js: счёт у брокера не трогаем)
         var foot = '<div class="pfm-bottom">' +
             '<div class="pfm-foot">' +
-                (empty ? '' : PF.impWrapHtml('imp-' + p.id, p.id)) +   // у пустого портфеля «Импорт» уже внутри приглашения
+                (empty || isBrk ? '' : PF.impWrapHtml('imp-' + p.id, p.id)) +   // у пустого портфеля «Импорт» уже внутри приглашения
                 '<button class="pfm-quiet" onclick="pfToggleHidden(\'' + p.id + '\')" title="Убрать карточку с «Обзора» (портфель останется в сводках) — вернуть можно через «Видимость» в шапке">' +
                     PF.EYEOFF_SVG + 'Скрыть</button>' +
                 '<i class="pfm-foot-sp"></i>' +
-                '<button class="pfm-del-link' + (PF.delArm ? ' on' : '') + '" onclick="pfDelArm(' + (PF.delArm ? 'false' : 'true') + ')">Удалить портфель</button>' +
+                (isBrk
+                    ? '<button class="pfm-del-link" onclick="pfBrokerPfDetach(\'' + p.id + '\')">Отключить импорт</button>'
+                    : '<button class="pfm-del-link' + (PF.delArm ? ' on' : '') + '" onclick="pfDelArm(' + (PF.delArm ? 'false' : 'true') + ')">Удалить портфель</button>') +
             '</div>' +
-            (PF.delArm ? dangerHtml(p) : '') +
+            (PF.delArm && !isBrk ? dangerHtml(p) : '') +
         '</div>';
         // Оверлей на всю карточку: шапка · добавление · список состава · футер.
         // PF.menuJustOpened=true только на ПЕРВЫЙ рендер после открытия (⚙) — на всех
@@ -768,7 +800,9 @@
     // покупки (у облигаций подстрока НКД) · дата. Клик раскрывает редактор именно этого
     // актива под строкой; у актива с несколькими лотами в строке чип «×N».
     function viewRowHtml(pid, h) {
-        var isB = h.type === 'bond', agg = aggHolding(h), open = !!PF.editHold[h.id];
+        // брокерская карточка (№10): строки состава read-only — без редактора
+        var pf = findPf(pid), ro = !!(pf && pf.broker);
+        var isB = h.type === 'bond', agg = aggHolding(h), open = !ro && !!PF.editHold[h.id];
         var multi = agg.count > 1;
         var lotChip = multi ? '<i class="pfm-vlotn">×' + agg.count + '</i>' : '';
         var nkd = isB && agg.nkd > 0 ? '<i class="pfm-vnkd">НКД ' + fmtPrice(agg.nkd) + '</i>' : '';
@@ -776,7 +810,9 @@
         var dateVal = multi ? ruDate(agg.avgDate) : ruDate(agg.firstDate);
         var dateTip = multi ? ' title="Средняя (взвешенная) дата покупки"' : '';
         return '<div class="pfm-vwrap">' +
-            '<div class="pfm-vrow' + (open ? ' open' : '') + '" onclick="pfMenuRowToggle(\'' + pid + '\',\'' + h.id + '\')" title="' + (open ? 'Свернуть' : 'Изменить — даты, цены, количество') + '">' +
+            '<div class="pfm-vrow' + (open ? ' open' : '') + (ro ? ' ro' : '') + '"' +
+                (ro ? ' title="Позиция счёта у брокера — правится только сделками на счёте"'
+                    : ' onclick="pfMenuRowToggle(\'' + pid + '\',\'' + h.id + '\')" title="' + (open ? 'Свернуть' : 'Изменить — даты, цены, количество') + '"') + '>' +
                 '<span class="pfm-vtk"><svg class="pfm-vch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>' +
                     '<b>' + esc(h.ticker) + '</b><span class="pfm-tag ' + h.type + '">' + (isB ? 'обл' : 'акц') + '</span>' + lotChip + '</span>' +
                 '<span class="pfm-vnum">' + fmtQty(agg.qty) + '</span>' +
@@ -1120,6 +1156,7 @@
         var holds = compositionFrom(source, sub);
         if (!holds || !holds.length) { toast('Нет данных для импорта — выполните расчёт / добавьте избранное', true); return; }
         if (pid) {
+            if (brokerLocked(pid)) return;   // в карточку счёта брокера состав не подмешиваем
             var p = findPf(pid); if (!p) return;
             p.holdings = (p.holdings || []).concat(holds); saveStore();
             PF.pfInvalidateCharts(pid);   // состав изменился → серия графика доходности устарела
@@ -1417,6 +1454,7 @@
                 toast('В файле не нашлось сделок. Нужны колонки: тикер · дата · цена · кол-во' + (parsed.skipped ? ' (строк пропущено: ' + parsed.skipped + ')' : ''), true);
                 return;
             }
+            if (csvImportPid && brokerLocked(csvImportPid)) return;   // карточка счёта брокера — read-only
             var p = csvImportPid ? findPf(csvImportPid) : null;
             if (!p) {
                 if (PF.store.items.length >= MAX_CARDS) { toast('Максимум ' + MAX_CARDS + ' ' + PF.plural(MAX_CARDS, 'портфель', 'портфеля', 'портфелей'), true); return; }
@@ -1567,7 +1605,9 @@
         var ov = document.createElement('div');
         ov.id = 'pfConfirmOv';
         ov.innerHTML = '<div class="pfcf-card" role="alertdialog" aria-modal="true">' +
-            '<div class="pfcf-ico' + (opts.danger ? ' danger' : '') + '">' + (opts.icon || TRASH) + '</div>' +
+            // warn — жёлтый предупреждающий вариант (не красный danger): например,
+            // варн о задвоении бумаг при создании брокерской карточки (№10)
+            '<div class="pfcf-ico' + (opts.danger ? ' danger' : '') + (opts.warn ? ' warn' : '') + '">' + (opts.icon || TRASH) + '</div>' +
             '<div class="pfcf-t">' + opts.title + '</div>' +
             '<div class="pfcf-s">' + opts.text + '</div>' +
             '<div class="pfcf-btns">' +
@@ -1604,11 +1644,20 @@
         pfxDropPfTab(pid);   // R9: вкладка портфеля и её раскладка уходят вместе с ним
         PF.delArm = false; PF.renderPortfolios(); toast('Портфель удалён');
     };
+    // Read-only гард брокерской карточки (№10): состав наполняется синком
+    // (portfolios-broker-pf.js), ручную правку затёр бы следующий замещающий
+    // снапшот. UI правок скрыт (menuHtml/viewRowHtml), это — вторая линия
+    // обороны для прямых вызовов onclick-глобалов.
+    function brokerLocked(pid) {
+        var p = findPf(pid);
+        if (p && p.broker) { toast('Портфель наполняется из счёта брокера — правка руками выключена', true); return true; }
+        return false;
+    }
     // читает форму добавления и записывает актив в модель (БЕЗ ре-рендера/фокуса/тоста).
     // Возвращает {ticker, restocked} если добавлено, иначе null (нет тикера). Общая логика
     // для кнопки «Добавить» и для «Готово» (чтобы заполненный, но не добавленный тикер не пропал).
     function pfReadAddForm(pid) {
-        var p = findPf(pid); if (!p) return null;
+        var p = findPf(pid); if (!p || p.broker) return null;
         var tkEl = dq('pfNewTk-' + pid), tyEl = dq('pfNewType-' + pid), dEl = dq('pfNewDate-' + pid),
             prEl = dq('pfNewPrice-' + pid), nkEl = dq('pfNewNkd-' + pid), qEl = dq('pfNewQty-' + pid);
         var tk = (tkEl && tkEl.value || '').trim().toUpperCase();
@@ -1633,6 +1682,7 @@
         return { ticker: tk, restocked: restocked };
     }
     window.pfAddHolding = function (pid) {
+        if (brokerLocked(pid)) return;
         var r = pfReadAddForm(pid);
         if (!r) { toast('Введите тикер', true); var t = dq('pfNewTk-' + pid); if (t) try { t.focus(); } catch (e) {} return; }
         if (r.restocked) toast(r.ticker + ': докуплено · +лот');
@@ -1659,6 +1709,7 @@
     };
     // свободные деньги портфеля (кэш): правится в ⚙, пополняется остатком ребалансировок
     window.pfSetCash = function (pid, val) {
+        if (brokerLocked(pid)) return;
         var p = findPf(pid); if (!p) return;
         var n = toNum(val);
         p.cash = (isFinite(n) && n > 0) ? Math.round(n * 100) / 100 : 0;
@@ -1706,11 +1757,13 @@
         else lookupHistPrice(tk, type, date, function (p) { fin(p && p > 0 ? p : null); });
     };
     window.pfRemoveHolding = function (pid, hid) {
+        if (brokerLocked(pid)) return;
         var p = findPf(pid); if (!p) return;
         p.holdings = (p.holdings || []).filter(function (h) { return h.id !== hid; });
         delete PF.editHold[hid]; saveStore(); PF.pfInvalidateCharts(pid); PF.renderPortfolios();
     };
     window.pfEdit = function (pid, hid, field, val) {
+        if (brokerLocked(pid)) return;
         var p = findPf(pid); if (!p) return; var h = findHold(p, hid); if (!h) return;
         if (field === 'ticker') {
             h.ticker = (val || '').trim().toUpperCase(); h.name = lookupName(h.ticker, h.type);
@@ -1723,6 +1776,7 @@
     // ---- журнал лотов: правка/добавление/удаление отдельных покупок ----
     function findLot(h, lotId) { var ls = ensureLots(h); for (var i = 0; i < ls.length; i++) if (ls[i].id === lotId) return ls[i]; return null; }
     window.pfEditLot = function (pid, hid, lotId, field, val) {
+        if (brokerLocked(pid)) return;
         var p = findPf(pid); if (!p) return; var h = findHold(p, hid); if (!h) return;
         var l = findLot(h, lotId); if (!l) return;
         if (field === 'buyDate') { l.buyDate = val; l.priceFromApi = false; l.nkdFromApi = false; delete PF.loadStatus[lotId + ':price']; delete PF.loadStatus[lotId + ':nkd']; }
@@ -1732,11 +1786,13 @@
         saveStore(); PF.pfInvalidateCharts(pid); ensureQuotes(); PF.renderPortfolios();
     };
     window.pfAddLot = function (pid, hid) {
+        if (brokerLocked(pid)) return;
         var p = findPf(pid); if (!p) return; var h = findHold(p, hid); if (!h) return;
         ensureLots(h).push({ id: genId('l'), buyDate: todayStr(), buyPrice: 0, qty: 0, nkd: 0, priceFromApi: false, nkdFromApi: false });
         PF.editHold[hid] = true; saveStore(); PF.pfInvalidateCharts(pid); PF.renderPortfolios();
     };
     window.pfRemoveLot = function (pid, hid, lotId) {
+        if (brokerLocked(pid)) return;
         var p = findPf(pid); if (!p) return; var h = findHold(p, hid); if (!h) return;
         var ls = ensureLots(h);
         if (ls.length <= 1) return;   // последний лот не удаляем — есть «Удалить актив»
