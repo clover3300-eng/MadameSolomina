@@ -93,6 +93,9 @@
                 // Главная мозаику-фон не показывает; настоящий body.tab-home
                 // появится только на DCL, до тех пор держим признак здесь
                 if (home) c.add('boot-home');
+                // Какую вкладку реально откроет приложение — скрипт после блока
+                // панелей включит её сразу, чтобы первым кадром не мелькала Главная
+                document.documentElement.setAttribute('data-boot-tab', tab);
             } catch (e) {}
         })();
         // Прошлая страница подняла занавес перед reload — стартуем под ним.
@@ -862,6 +865,32 @@
         </div>
 
     </div><!-- /contentArea -->
+
+    <!-- ПРАВИЛЬНАЯ ВКЛАДКА ДО ПЕРВОГО ПЕЙНТА.
+         В разметке жёстко активна Главная (#panel-home class="tab-panel active"),
+         а нужную вкладку включает switchTab только на DOMContentLoaded. Поэтому
+         у того, у кого в кабинете задан «Раздел при запуске» (или кто зашёл по
+         прямой ссылке /portfolios), ПЕРВЫЙ КАДР — Главная с формой регистрации,
+         даже если он давно вошёл; следом кадр подменяется на нужную вкладку, а
+         затем в неё догружается содержимое. Это и есть «два мерцания», и к теме
+         они отношения не имеют — поэтому правки темы их не убирали.
+         Скрипт стоит ЗДЕСЬ, а не в <head>: панели должны быть уже разобраны.
+         Чистить за собой не нужно — switchTab всё равно снимает .active со всех
+         панелей и ставит заново (см. webapp-tabs.js), так что это просто более
+         ранний, но точно такой же результат. -->
+    <script>
+        (function () {
+            try {
+                var t = document.documentElement.getAttribute('data-boot-tab');
+                if (!t || t === 'home') return;
+                var target = document.getElementById('panel-' + t);
+                if (!target) return;            // неизвестная вкладка — оставляем как было
+                var home = document.getElementById('panel-home');
+                if (home) home.classList.remove('active');
+                target.classList.add('active');
+            } catch (e) {}
+        })();
+    </script>
 
     <!-- BOTTOM TAB BAR (iOS-style) -->
     <div id="bottomTabBar">
