@@ -5,11 +5,14 @@
 // раздела «Вкладки»), читают все — включая гостей. Формат:
 //   { tabs:   { calc: { off: true }, market: { msg: '…', msgKind: 'warn' },
 //               mobile: { off: true } },        // 'mobile' — ВСЯ мобильная версия
-//     custom: { newtab: { label: 'Новая вкладка' } } }  // задел на будущие вкладки
+//     custom: { newtab: { label: 'Новая вкладка' } },  // задел на будущие вкладки
+//     titles: { backtest: 'Бэктест' } }                // переименование вкладок
 //   off — вкладка закрыта заглушкой «раздел в разработке»;
 //   msg — баннер-сообщение поверх вкладки (не блокирует работу);
 //   custom — вкладки, добавленные админом заранее: заглушка применится сама,
-//   как только в DOM появится #panel-<key> (пока панели нет — просто ждёт).
+//   как только в DOM появится #panel-<key> (пока панели нет — просто ждёт);
+//   titles — своё название вкладки вместо встроенного (пусто = встроенное).
+//   Переименование НЕ трогает id: роутинг, ключи конфига и панели те же.
 //
 // Заглушка — ГЛАВНАЯ ОДИН В ОДИН: та же сетка .hg-cover (манифест слева,
 // плотная белая колонна справа), те же классы hc-*/hr-*/hg-* из
@@ -65,6 +68,7 @@
 
     var gates = {};          // tab -> { off, msg, msgKind }
     var customTabs = {};     // key -> { label } (добавленные админом)
+    var titles = {};         // tab -> своё название (переименование из админки)
     var fetchedAt = 0;
     var fetching = false;
     var myWaitlist = null;   // tab -> channel (подписки текущего пользователя), null = не грузили
@@ -85,12 +89,21 @@
         var n = (pr && pr.name || '').trim();
         return n ? n.split(/\s+/)[0] : '';
     }
+    // Явное переименование из админки (пусто — вкладка зовётся как встроено)
+    function titleOf(k) {
+        var t = titles[k];
+        return t == null ? '' : String(t).trim();
+    }
+    // Итоговое имя вкладки: переименование → встроенное → label своей → ключ
+    function tabTitle(k) {
+        return titleOf(k) || BASE_TABS[k] || (customTabs[k] && customTabs[k].label) || k;
+    }
     function tabsAll() {
         var m = {}, k;
-        for (k in BASE_TABS) m[k] = BASE_TABS[k];
+        for (k in BASE_TABS) m[k] = tabTitle(k);
         for (k in customTabs) {
             if (m[k] || k === MOBILE_KEY || k === 'home' || k === 'admin') continue;
-            m[k] = (customTabs[k] && customTabs[k].label) || k;
+            m[k] = tabTitle(k);
         }
         return m;
     }
@@ -104,7 +117,7 @@
         catch (e) { return {}; }
     }
     function writeCache() {
-        try { localStorage.setItem(LS_CACHE, JSON.stringify({ tabs: gates, custom: customTabs, at: Date.now() })); } catch (e) {}
+        try { localStorage.setItem(LS_CACHE, JSON.stringify({ tabs: gates, custom: customTabs, titles: titles, at: Date.now() })); } catch (e) {}
     }
 
     function fetchConfig(force) {
@@ -119,6 +132,7 @@
                 var v = (res.data && res.data[0] && res.data[0].value) || {};
                 gates = v.tabs || {};
                 customTabs = v.custom || {};
+                titles = v.titles || {};
                 writeCache();
                 applyAll();
             }, function () { fetching = false; });
@@ -138,6 +152,10 @@
         refresh: function () { fetchedAt = 0; return fetchConfig(true); },
         get: function () { return gates; },
         getCustom: function () { return customTabs; },
+        // titleOf — только явное переименование ('' если его нет, зовёт sidebar.js);
+        // tabTitle — итоговое имя вкладки для показа
+        titleOf: titleOf,
+        tabTitle: tabTitle,
         BASE_TABS: BASE_TABS,
         MOBILE_KEY: MOBILE_KEY,
         // совместимость со старым API (admin.js читал TABS)
@@ -150,6 +168,7 @@
     function applyAll() {
         syncPanels();
         syncSidebar();
+        syncLabels();
         var all = tabsAll();
         Object.keys(all).forEach(function (tab) { applyTab(tab); });
         applyMobile();
@@ -203,7 +222,7 @@
             if (!customTabs[stale[i].getAttribute('data-tab')]) stale[i].remove();
         }
         customKeys().forEach(function (key) {
-            var label = (customTabs[key] && customTabs[key].label) || key;
+            var label = tabTitle(key);   // своя вкладка тоже переименовывается
             var el = nav.querySelector('.sb-item.gx-custom[data-tab="' + key + '"]');
             if (!el) {
                 el = document.createElement('a');
@@ -222,6 +241,38 @@
             el.title = label;
             el.querySelector('.sb-label').textContent = label;
         });
+    }
+
+    // ---------- переименование вкладок ----------
+    // Админ даёт вкладке своё имя (раздел «Вкладки»), id при этом не меняется.
+    // Подписи встроенных вкладок лежат в СТАТИЧЕСКОЙ разметке index.html, своего
+    // JS-владельца у них нет — патчим живые узлы: пункт сайдбара (title +
+    // .sb-label) и кнопку мобильного дока. Исходную подпись прячем в data-gx-l0:
+    // сброс имени обязан вернуть ровно её, а в сайдбаре подписи короче полного
+    // имени («Тест» при title «Тест портфеля») — брать их из BASE_TABS нельзя.
+    function labelNode(el, txt) {
+        if (!el) return;
+        if (el.getAttribute('data-gx-l0') == null) el.setAttribute('data-gx-l0', el.textContent);
+        el.textContent = txt || el.getAttribute('data-gx-l0');
+    }
+    function syncLabels() {
+        var keys = {}, k;
+        for (k in BASE_TABS) keys[k] = 1;
+        for (k in titles) keys[k] = 1;
+        Object.keys(keys).forEach(function (tab) {
+            // свои вкладки целиком рисует syncSidebar (там же и их имя)
+            if (!BASE_TABS[tab] && customTabs[tab]) return;
+            var t = titleOf(tab);
+            var sb = document.querySelector('.sb-item[data-tab="' + tab + '"]');
+            if (sb) {
+                labelNode(sb.querySelector('.sb-label'), t);
+                if (sb.getAttribute('data-gx-t0') == null) sb.setAttribute('data-gx-t0', sb.getAttribute('title') || '');
+                sb.setAttribute('title', t || sb.getAttribute('data-gx-t0'));
+            }
+            labelNode(document.querySelector('#mobileDock .dock-item[data-tab="' + tab + '"] span'), t);
+        });
+        // хлебная крошка шапки берёт имя из своего словаря — перерисовываем её
+        if (typeof window.renderHeaderBadge === 'function') window.renderHeaderBadge(curTab());
     }
 
     // ---------- полноэкранная сцена: фон как на Главной ----------
@@ -514,6 +565,7 @@
         var c = readCache();       // мгновенно, до сети
         gates = c.tabs || {};
         customTabs = c.custom || {};
+        titles = c.titles || {};
         applyAll();
         if (!cloudOn()) return;    // демо-режим — заглушек нет
         fetchMyWaitlist().then(function () { applyAll(); });

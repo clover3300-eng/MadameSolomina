@@ -771,6 +771,23 @@ body.dark-mode .adm-nfk.warn    { color: #fcd34d; background: rgba(245, 158, 11,
 .adm-gt-name { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .adm-gt-name b { font-size: 13px; font-weight: 800; color: var(--text-deep, #1b2433); }
 .adm-gt-name small { font-size: 10.5px; font-weight: 600; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* название вкладки правится на месте: поле выглядит как прежний заголовок строки
+   и проявляет рамку по наведению/фокусу — восемь полей с постоянной обводкой
+   превратили бы список в форму. Плейсхолдер = встроенное имя, поэтому пустое
+   поле читается как «зовётся как раньше». font-family: inherit — иначе UA даст
+   форме свой шрифт (см. css/typography-tokens.css) */
+.adm-gt-nm {
+    width: 100%; min-width: 0; padding: 4px 7px; margin-left: -7px;
+    border: 1px solid transparent; border-radius: 8px; background: transparent;
+    font-family: inherit; font-size: 13px; font-weight: 800;
+    color: var(--text-deep, #1b2433);
+    transition: border-color 0.13s, background 0.13s;
+}
+.adm-gt-nm::placeholder { color: var(--text-deep, #1b2433); opacity: 0.5; font-weight: 800; }
+.adm-gt-nm:hover { border-color: rgba(19, 26, 43, 0.14); }
+.adm-gt-nm:focus { outline: none; background: #fff; border-color: rgba(59, 130, 246, 0.55); }
+/* чип уехал в строку подписи — он там первый, отступ нужен справа */
+.adm-gt-name small .adm-gt-chip { margin-left: 0; margin-right: 6px; }
 .adm-gt-gate { display: flex; align-items: center; gap: 8px; }
 .adm-gt-gate-l { font-size: 11px; font-weight: 800; color: #94a3b8; letter-spacing: 0.02em; }
 .adm-gt-row.off .adm-gt-gate-l { color: #b45309; }
@@ -801,6 +818,10 @@ body.dark-mode .adm-nfk.warn    { color: #fcd34d; background: rgba(245, 158, 11,
 body.dark-mode .adm-gt-row { border-color: rgba(255, 255, 255, 0.06); }
 body.dark-mode .adm-gt-row.off { background: rgba(245, 158, 11, 0.08); }
 body.dark-mode .adm-gt-name b { color: #f4f8fd; }
+body.dark-mode .adm-gt-nm { color: #f4f8fd; }
+body.dark-mode .adm-gt-nm::placeholder { color: #f4f8fd; opacity: 0.45; }
+body.dark-mode .adm-gt-nm:hover { border-color: rgba(255, 255, 255, 0.16); }
+body.dark-mode .adm-gt-nm:focus { background: #0f1722; border-color: rgba(59, 130, 246, 0.55); }
 body.dark-mode .adm-gt-gate-l { color: #9fb1c6; }
 body.dark-mode .adm-gt-row.off .adm-gt-gate-l { color: #fcd34d; }
 body.dark-mode .adm-gt-chip { background: rgba(148, 163, 184, 0.14); color: #9fb1c6; }

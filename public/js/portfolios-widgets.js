@@ -573,9 +573,11 @@
     function pfdPanelActive() {
         // R7: «Панель управления» — теперь ПОСТОЯННЫЙ герой-шапка вкладки (pfxHeroHtml),
         // а не опциональный виджет. Все контролы страницы живут в ней, поэтому кнопки
-        // в глобальной шапке сайта прячем всегда, когда есть хоть один портфель.
+        // в глобальной шапке сайта прячем всегда, когда герой на экране — а он на
+        // десктопе есть ВСЕГДА, включая 0 портфелей (иначе «Добавить портфель» двоилось
+        // бы: и в шапке сайта, и в самой панели).
         try { if (window.matchMedia('(max-width: 1023px)').matches) return false; } catch (e) {}
-        return PF.store.items.length > 0;
+        return true;
     }
     var PFP_EXCEL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M9.5 12.5l5 5M14.5 12.5l-5 5"/></svg>';
     var PFP_SLIDERS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="8" x2="14" y2="8"/><line x1="18" y1="8" x2="20" y2="8"/><circle cx="16" cy="8" r="2"/><line x1="4" y1="16" x2="6" y2="16"/><line x1="10" y1="16" x2="20" y2="16"/><circle cx="8" cy="16" r="2"/></svg>';
@@ -2227,15 +2229,34 @@
                     '<b class="pfps-lv">' + fmtRub(r.v) + '</b>' +
                     '<em class="pfps-lp">' + pct.toFixed(1).replace('.', ',') + '%</em></div>';
             }).join('');
+            // Центр кольца ПУСТОЙ — как у pfdAllocDonut выше: сумма в дырке
+            // сжималась до 15px, чтобы влезть, и спорила с сегментами. Общая
+            // стоимость переехала в подзаголовок шапки — то же место и тот же
+            // приём, что у «Списка портфелей» (и обновляется так же точечно).
             body = '<div class="pfps-wrap">' +
-                '<div class="pfps-ring"><svg viewBox="0 0 140 140"><g transform="rotate(-90 70 70)">' + segs + '</g></svg>' +
-                    '<div class="pfps-center"><b>' + fmtRub(total) + '</b><span>общая стоимость</span></div></div>' +
+                '<div class="pfps-ring"><svg viewBox="0 0 140 140"><g transform="rotate(-90 70 70)">' + segs + '</g></svg></div>' +
                 '<div class="pfps-legend">' + legend + '</div>' +
             '</div>';
         }
         return '<div class="dash2-card pf-card2 pf-pstructblk">' +
-            PF.pfCardHead('', 'Структура по портфелям', 'распределение стоимости', null) + body + '</div>';
+            PF.pfCardHead('', 'Структура по портфелям', pfwPstructSub(total), null, 'pfps:sub') + body + '</div>';
     }
+    // подзаголовок «Структуры»: описание + общая стоимость (пока считать нечего —
+    // одно описание, иначе в шапке висел бы «0 ₽»)
+    function pfwPstructSub(total) {
+        return total ? 'общая стоимость · ' + fmtRub(total) : 'распределение стоимости';
+    }
+    // ---- точечный фоновый апдейт «Структуры» (роадмап №6) ----
+    // Живёт только сумма в шапке: сегменты кольца и суммы легенды — геометрия и
+    // порядок строк, их пересчитывает полный рендер.
+    PF.livePatchers.pstruct = function () {
+        var total = 0;
+        visibleItems().forEach(function (p) {
+            var v = calcPf(p).value;
+            if (v > 0) total += v;
+        });
+        PF.liveSet('pfps:sub', { text: pfwPstructSub(total) });
+    };
     // «Сводные показатели»: 4 плитки — стоимость (+за сегодня), доходность, вложено, активы
     function pfwPsumHtml() {
         var value = 0, invested = 0, pnl = 0, dd = 0, hasDd = false, assets = 0, nPf = 0;

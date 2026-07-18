@@ -121,6 +121,8 @@ body.dark-mode #panel-portfolios .pfc-name-ink {
 .pfx-tab-pf.drag { opacity: 0.35; }
 .pfx-tab-pf { cursor: grab; }
 .pfx-tab-pf:active { cursor: grabbing; }
+/* крестик — обычная кнопка, а не ручка перетаскивания: ладошка на нём врала */
+.pfx-tab-x { cursor: pointer; }
 /* R9.5: клавиатурный фокус в ряду (стрелки ←/→, Home/End; Ctrl/Cmd+стрелка
    двигает чип) — без видимого кольца roving tabindex был бы слепым */
 .pfx-tab:focus-visible { outline: 2px solid #4453ef; outline-offset: -2px; border-radius: 9px; }
@@ -1672,18 +1674,10 @@ body.dark-mode .pfpl-spark-svg.flat line { stroke: rgba(255, 255, 255, 0.2); }
 
 /* — «Структура по портфелям»: кольцо + легенда — */
 .pfps-wrap { display: flex; align-items: center; gap: 26px; margin-top: 10px; flex-wrap: wrap; }
+/* центр кольца пуст — общая стоимость живёт в подзаголовке шапки (см.
+   pfwPstructHtml); прежний .pfps-center пришлось бы жать до 15px, чтобы влезть */
 .pfps-ring { position: relative; width: 170px; height: 170px; flex-shrink: 0; }
 .pfps-ring svg { width: 100%; height: 100%; display: block; }
-.pfps-center {
-    position: absolute; inset: 0; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 2px; text-align: center; padding: 0 26px;
-}
-.pfps-center b {
-    font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 15px; font-weight: 800;
-    color: #0f172a; letter-spacing: -0.02em; white-space: nowrap;
-}
-body.dark-mode .pfps-center b { color: #f4f8fd; }
-.pfps-center span { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 600; color: #8494a7; }
 .pfps-legend { flex: 1 1 220px; min-width: 0; display: flex; flex-direction: column; }
 .pfps-lrow {
     display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto;

@@ -452,6 +452,17 @@
                 if (sv) sv.disabled = !(gatesDirty() && !GC.saving);
             });
         });
+        // переименование вкладок — тот же паттерн: черновик живёт в GC.titles
+        root.querySelectorAll('input[data-gt-title]').forEach(function (inp) {
+            var gtTab = inp.getAttribute('data-gt-title');
+            inp.value = (GC.titles && GC.titles[gtTab]) || '';
+            inp.addEventListener('input', function () {
+                if (!GC.titles) GC.titles = {};
+                GC.titles[gtTab] = this.value;
+                var sv = dq('admGtSave');
+                if (sv) sv.disabled = !(gatesDirty() && !GC.saving);
+            });
+        });
         // черновик формы «добавить вкладку» — тоже переживает перерисовки
         var gtK = dq('admGtKey');
         if (gtK) {
@@ -1289,7 +1300,8 @@
     var GATE_MOBILE = { id: 'mobile', t: 'Мобильная версия', mobile: true };
     // addKey/addLabel — черновик формы «добавить вкладку» (переживает
     // перерисовки, тот же паттерн, что NC у оповещений)
-    var GC = { cfg: null, custom: {}, saved: '', wl: null, loading: false, saving: false, notifying: false, error: null, addKey: '', addLabel: '' };
+    // titles — переименование вкладок: id -> своё имя (пусто = встроенное)
+    var GC = { cfg: null, custom: {}, titles: {}, saved: '', wl: null, loading: false, saving: false, notifying: false, error: null, addKey: '', addLabel: '' };
 
     // Полный список строк раздела: мобильная версия + встроенные вкладки +
     // добавленные админом (custom — задел под будущие вкладки: заглушка
@@ -1323,8 +1335,20 @@
         });
         return tabs;
     }
-    // Снапшот для «есть несохранённые правки»: настройки вкладок + список custom
-    function gatesSnap() { return JSON.stringify({ t: gatesClean(), c: GC.custom }); }
+    // Переименование вкладок: храним только осмысленное — пустое имя и имя,
+    // совпавшее со встроенным, значат «зовётся как раньше» и в конфиг не идут.
+    // Мобильная строка — не вкладка, а тумблер всей мобильной версии: без имени.
+    function titlesClean() {
+        var out = {};
+        gateList().forEach(function (t) {
+            if (t.mobile) return;
+            var v = String((GC.titles && GC.titles[t.id]) || '').trim().slice(0, 40);
+            if (v && v !== t.t) out[t.id] = v;
+        });
+        return out;
+    }
+    // Снапшот для «есть несохранённые правки»: настройки + custom + переименования
+    function gatesSnap() { return JSON.stringify({ t: gatesClean(), c: GC.custom, n: titlesClean() }); }
     function gatesDirty() { return gatesSnap() !== GC.saved; }
     function wlByTab(tab) {
         return (GC.wl || []).filter(function (r) { return r.tab === tab; });
@@ -1347,6 +1371,7 @@
                 var v = (res[0].data && res[0].data[0] && res[0].data[0].value) || {};
                 var tabs = v.tabs || {};
                 GC.custom = v.custom || {};   // до gateList(): custom-строки читаются из конфига
+                GC.titles = v.titles || {};
                 GC.cfg = {};
                 gateList().forEach(function (t) {
                     var g = tabs[t.id] || {};
@@ -1367,15 +1392,15 @@
         if (GC.saving || !GC.cfg) return;
         GC.saving = true;
         renderApp();
-        var tabs = gatesClean();
+        var tabs = gatesClean(), titles = titlesClean();
         client().from('app_config').upsert({
             key: 'tab_gates',
-            value: { tabs: tabs, custom: GC.custom },
+            value: { tabs: tabs, custom: GC.custom, titles: titles },
             updated_by: supa().session.user.id
         }, { onConflict: 'key' }).then(function (res) {
             GC.saving = false;
             if (res.error) { toast(supa().errRu(res.error), true); renderApp(); return; }
-            GC.saved = JSON.stringify({ t: tabs, c: GC.custom });
+            GC.saved = JSON.stringify({ t: tabs, c: GC.custom, n: titles });
             supa().logEvent('admin_gate', { off: Object.keys(tabs).filter(function (k) { return tabs[k].off; }) });
             // применяем на своей странице сразу — увидеть заглушку можно тут же
             if (window.tabGates) window.tabGates.refresh();
@@ -1474,6 +1499,16 @@
             }
             var chip = t.mobile ? '<span class="adm-gt-chip">весь сайт ≤1023px</span>'
                 : (t.custom ? '<span class="adm-gt-chip blue">своя</span>' : '');
+            // Имя вкладки правится прямо в строке. Плейсхолдер = встроенное имя,
+            // поэтому пустое поле честно читается как «зовётся как раньше», а
+            // очистка — это и есть сброс. id вкладки переименование не трогает.
+            // Мобильная строка — не вкладка, а тумблер всей мобильной версии.
+            var nameCell = t.mobile
+                ? '<b>' + esc(t.t) + '</b>'
+                : '<input class="adm-gt-nm" type="text" maxlength="40" data-gt-title="' + t.id + '"' +
+                    ' placeholder="' + esc(t.t) + '" autocomplete="off" spellcheck="false"' +
+                    ' aria-label="Название вкладки «' + esc(t.t) + '»"' +
+                    ' title="Своё название вкладки. Пусто — вернётся «' + esc(t.t) + '»">';
             // мобильной строке баннер не положен: вместо поля и пилюль — пояснение
             var msgCell = t.mobile
                 ? '<div class="adm-gt-note">Заглушка закрывает всю мобильную версию — на компьютере сайт работает как обычно.</div>'
@@ -1484,7 +1519,7 @@
                     ctlPill('gt-kind:' + t.id, 'warn', 'Важно', g.msgKind === 'warn') +
                 '</div>';
             return '<div class="adm-gt-row' + (g.off ? ' off' : '') + (t.mobile ? ' mob' : '') + '">' +
-                '<div class="adm-gt-name"><b>' + esc(t.t) + chip + '</b><small>' + wlTxt + '</small></div>' +
+                '<div class="adm-gt-name">' + nameCell + '<small>' + chip + wlTxt + '</small></div>' +
                 '<div class="adm-gt-gate">' +
                     '<button class="ph-sw' + (g.off ? ' on' : '') + '" type="button" data-act="gt-off" data-tab="' + t.id + '" role="switch" aria-checked="' + (g.off ? 'true' : 'false') + '" aria-label="Заглушка: ' + esc(t.t) + '"></button>' +
                     '<span class="adm-gt-gate-l">' + (g.off ? 'Заглушка' : 'Открыта') + '</span>' +
@@ -1505,8 +1540,8 @@
         return '<div class="adm-card adm-gt">' +
             '<div class="adm-gt-head">' +
                 '<div>' +
-                    '<div class="adm-card-t">Заглушки и сообщения вкладок</div>' +
-                    '<div class="adm-gt-s">Заглушка закрывает раздел тёмной сценой в стиле Главной — авторизованные могут подписаться на новость о готовности. Сообщение — баннер поверх работающей вкладки. «Мобильная версия» закрывает весь сайт на телефонах. Главную и Админку закрыть нельзя.</div>' +
+                    '<div class="adm-card-t">Названия, заглушки и сообщения вкладок</div>' +
+                    '<div class="adm-gt-s">Название в первой колонке можно переписать — вкладка переименуется в меню, в мобильном доке и в шапке у всех; пустое поле возвращает встроенное имя, адрес вкладки не меняется. Заглушка закрывает раздел тёмной сценой в стиле Главной — авторизованные могут подписаться на новость о готовности. Сообщение — баннер поверх работающей вкладки. «Мобильная версия» закрывает весь сайт на телефонах. Главную и Админку закрыть нельзя.</div>' +
                 '</div>' +
                 '<button class="adm-btn sm" data-act="gt-refresh" title="Перечитать настройки и подписчиков"' + (GC.loading ? ' disabled' : '') + '>' + IC.refresh + '</button>' +
             '</div>' +
@@ -1547,6 +1582,7 @@
     function removeGateTab(key) {
         if (!GC.custom[key]) return;
         delete GC.custom[key];
+        if (GC.titles) delete GC.titles[key];   // переименование уходит вместе с вкладкой
         delete GC.cfg[key];
         renderApp();
     }

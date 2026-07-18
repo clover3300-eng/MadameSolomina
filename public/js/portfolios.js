@@ -189,10 +189,14 @@
             // Шапка вкладки: тёмный герой «Панель управления» + ряд подвкладок (Обзор |
             // Портфели | Аналитика | …). R8: у КАЖДОЙ подвкладки свой дашборд-конструктор
             // (pfdBodyHtml с её конфигом), «Обзор» дополнительно умеет классический вид.
-            var chrome = pfxHeroHtml() + pfxTabsHtml();
+            var tabsHtml = pfxTabsHtml();
+            var chrome = pfxHeroHtml() + tabsHtml;
             // R9.5: при живом ряде вкладок контент оборачивается в role=tabpanel
-            // (aria-controls вкладок ведёт на #pfxTabPanel); без ряда — как есть
-            var wrapPanel = chrome ? pfxPanelWrap : function (x) { return x; };
+            // (aria-controls вкладок ведёт на #pfxTabPanel); без ряда — как есть.
+            // Завязка именно на РЯД, а не на chrome: у гостя (0 портфелей) герой
+            // уже есть, а ряда ещё нет — обёртка ссылалась бы на несуществующий
+            // #pfxTab-overview
+            var wrapPanel = tabsHtml ? pfxPanelWrap : function (x) { return x; };
             var body;
             if (pfxEffTab() === 'trading') {
                 // «Торговля»: подключён с торговлей — три карточки терминала живут

@@ -429,7 +429,11 @@
     // (раньше кнопка принудительно уводила на «Обзор»)
     window.pfxAddWidgetClick = function () { window.pfLayoutToggle(); };
     function pfxHeroHtml() {
-        if (!PF.store.items.length || !pfxWide()) return '';
+        // Ряд подвкладок ждёт первого портфеля, а герой — НЕТ: у гостя (0 портфелей)
+        // панель управления единственное место, где живут «Портфель» и импорт из
+        // бэкапа, и без неё вкладка выглядела пустой до первого клика
+        if (!pfxWide()) return '';
+        var empty = !PF.store.items.length;
         var dd = 0, hasDd = false;
         PF.store.items.forEach(function (p) {
             var d = dayDelta(p, calcPf(p).value); if (d != null) { dd += d; hasDd = true; }
@@ -441,7 +445,8 @@
         var idBlock = '<div class="pfp-id">' +
             '<div class="pfp-ico">' + PF.PFDGRID_SVG + '</div>' +
             '<div class="pfp-id-t"><div class="pfp-title">Панель управления</div>' +
-                '<div class="pfp-sub">' + n + ' ' + PF.plural(n, 'портфель', 'портфеля', 'портфелей') + ' · дашборд под рукой</div></div>' +
+                '<div class="pfp-sub">' + (empty ? 'пока ни одного портфеля — создайте или импортируйте'
+                    : n + ' ' + PF.plural(n, 'портфель', 'портфеля', 'портфелей') + ' · дашборд под рукой') + '</div></div>' +
         '</div>';
         // «Капитал» из героя убран (просьба 2026-07-14): сумма живёт в KPI-виджете и
         // карточках. Остаётся один KPI «за сегодня» — ему свободнее (.pfp-kpis--solo).
@@ -460,16 +465,19 @@
         // «Виджет»/«Раскладки» доступны (двигать/добавлять карточки); пока стоит
         // гейт (нет подключения/только чтение) конфигом управлять нечем — прячем
         var isTrading = pfxEffTab() === 'trading' && !(PF.pftTradeReady && PF.pftTradeReady());
+        // конструктором нечего настраивать: и на гейте «Торговли», и у гостя, где
+        // вместо дашборда стоит пустое состояние — виджет было бы некуда положить
+        var noCfg = isTrading || empty;
         var actions = '<div class="pfp-actions">' +
-            (isTrading ? '' : '<button type="button" class="pfp-btn primary" onclick="pfxAddWidgetClick()" title="Добавить виджет на дашборд">' + PFD_PLUS_SVG + '<span>Виджет</span></button>') +
-            '<button type="button" class="pfp-btn" onclick="pfAddPortfolio()" title="Создать новый портфель">' + PF.PLUS_SVG + '<span>Портфель</span></button>' +
+            (noCfg ? '' : '<button type="button" class="pfp-btn primary" onclick="pfxAddWidgetClick()" title="Добавить виджет на дашборд">' + PFD_PLUS_SVG + '<span>Виджет</span></button>') +
+            '<button type="button" class="pfp-btn' + (empty ? ' primary' : '') + '" onclick="pfAddPortfolio()" title="Создать новый портфель">' + PF.PLUS_SVG + '<span>Портфель</span></button>' +
             '<button type="button" class="pfp-btn icon' + (sumsOn ? ' on' : '') + '" onclick="pfxToggleSums()" title="' + (sumsOn ? 'Показать суммы' : 'Скрывать суммы от посторонних глаз') + '">' + (sumsOn ? PFX_LOCK_SVG : PFX_UNLOCK_SVG) + '</button>' +
             PF.eyeWrapHtml() +
             PF.backupWrapHtml() +
             // R8: кнопка-слайдеры открывает ПАНЕЛЬ «Раскладки» (pfl3) текущей подвкладки —
             // пресеты с эскизами, базовая, своя сохранённая; прежний поповер остался
             // только в шапке страницы (index.html) как быстрый доступ
-            (isTrading ? '' : '<span class="pfl-cfg-wrap pfp-cfg' + (PF.pfl3Open ? ' active' : '') + '" style="display:inline-flex">' +
+            (noCfg ? '' : '<span class="pfl-cfg-wrap pfp-cfg' + (PF.pfl3Open ? ' active' : '') + '" style="display:inline-flex">' +
                 '<button type="button" class="pfl-cfg-btn" onclick="pfLayoutsToggle(event)" title="Раскладки подвкладки: пресеты, базовая, сохранённая" aria-label="Панель раскладок">' + PFP_SLIDERS_SVG + '</button>' +
             '</span>') +
         '</div>';

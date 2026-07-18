@@ -187,8 +187,17 @@
 
     function buildOptions(list, selected) {
         return list.map(function (o) {
-            return '<option value="' + o.id + '"' + (o.id === selected ? ' selected' : '') + '>' + o.name + '</option>';
+            // «Раздел при запуске»: вкладку могли переименовать в админке
+            // (js/tab-gates.js). Для брокеров titleOf вернёт пусто — имя своё.
+            var nm = (window.tabGates && window.tabGates.titleOf && window.tabGates.titleOf(o.id)) || o.name;
+            return '<option value="' + o.id + '"' + (o.id === selected ? ' selected' : '') + '>' + escHtml(nm) + '</option>';
         }).join('');
+    }
+    // имя раздела теперь может прийти из конфига — экранируем
+    function escHtml(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
     }
 
     function buildHub() {

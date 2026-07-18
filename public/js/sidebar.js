@@ -2,6 +2,12 @@
 (function() {
     var sbMqDesktop = window.matchMedia ? window.matchMedia('(min-width: 1024px)') : { matches: false };
     var sbIsDesktop = function() { return sbMqDesktop.matches; };
+    // имя раздела в крошке может прийти из конфига (переименование вкладок) — экранируем
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
 
     // Default state: on desktop the sidebar rests collapsed (icon rail) and
     // expands on hover; on mobile it's an off-canvas drawer. The user can pin
@@ -128,8 +134,11 @@
         if (!crumb) return;
         var s = hdrSections[tabId];
         if (s) {
+            // вкладку могли переименовать в админке (js/tab-gates.js) — своё имя
+            // старше словаря; пустой titleOf значит «зовётся как встроено»
+            var nm = (window.tabGates && window.tabGates.titleOf && window.tabGates.titleOf(tabId)) || s.name;
             crumb.innerHTML = '<span class="hdr-chip"><svg viewBox="0 0 24 24">' + s.icon + '</svg></span>' +
-                              '<span class="hdr-sec">' + s.name + '</span>';
+                              '<span class="hdr-sec">' + esc(nm) + '</span>';
             crumb.style.display = 'flex';
         } else {
             crumb.style.display = 'none';
