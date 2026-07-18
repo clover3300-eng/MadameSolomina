@@ -1095,7 +1095,7 @@
         var keepOpen = !!(eyeMenu && eyeMenu.classList.contains('open'));
         var reopenEye = function () {
             var m = dq('pfImp-eye');
-            if (m) { m.classList.add('open'); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); }
+            if (m) { m.classList.add('open'); if (PF.placeImpMenu) PF.placeImpMenu(m); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); }
         };
         saveStore(); PF.renderSmooth(keepOpen ? reopenEye : null);
         // R9.2: открытая вкладка скрытого портфеля живёт дальше — озвучиваем,
@@ -1117,7 +1117,7 @@
     // «Показать все»/«Скрыть все» внутри попапа «Видимость» — попап оставляем открытым
     function pfEyeReopen() {
         var m = dq('pfImp-eye');
-        if (m) { m.classList.add('open'); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); }
+        if (m) { m.classList.add('open'); if (PF.placeImpMenu) PF.placeImpMenu(m); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); }
     }
     window.pfEyeShowAll = function (ev) {
         if (ev) ev.stopPropagation();
@@ -1171,17 +1171,71 @@
     };
     function closeImpMenus() {
         var any = document.querySelectorAll('.pf-impmenu.open');
-        for (var i = 0; i < any.length; i++) any[i].classList.remove('open');
+        for (var i = 0; i < any.length; i++) {
+            any[i].classList.remove('open');
+            // размеры и сдвиг заново посчитает placeImpMenu при следующем открытии
+            any[i].style.maxHeight = ''; any[i].style.left = ''; any[i].style.right = '';
+        }
         document.removeEventListener('click', pfImpOutside);
     }
     function pfImpOutside(e) { if (!e.target.closest('.pf-impwrap')) closeImpMenus(); }
+    // Куда раскрыть попап и какой высоты его пустить. Класс .up в разметке —
+    // лишь догадка места вызова («в шапке места хватит»), а по факту его может
+    // не хватить: попап абсолютный, а выше по дереву есть предки с
+    // overflow:hidden, которые обрезают МОЛЧА — попап просто оказывается
+    // подрезанным снизу. Поэтому сторону выбираем по реальному запасу, а высоту
+    // в любом случае ограничиваем видимой областью и включаем свой скролл.
+    function placeImpMenu(menu) {
+        var wrap = menu.closest && menu.closest('.pf-impwrap');
+        if (!wrap) return;
+        menu.classList.remove('up');
+        menu.style.maxHeight = ''; menu.style.left = ''; menu.style.right = '';
+        var GAP = 10, EDGE = 12, MIN = 160;
+        var r = wrap.getBoundingClientRect();
+        // видимая область = окно, урезанное всеми режущими предками
+        var top = 0, bottom = window.innerHeight, left = 0, right = window.innerWidth;
+        var el = wrap.parentElement;
+        while (el && el !== document.documentElement) {
+            var cs = getComputedStyle(el);
+            if (cs.overflow !== 'visible' || cs.overflowY !== 'visible' || cs.overflowX !== 'visible') {
+                var er = el.getBoundingClientRect();
+                if (er.top > top) top = er.top;
+                if (er.bottom < bottom) bottom = er.bottom;
+                if (er.left > left) left = er.left;
+                if (er.right < right) right = er.right;
+            }
+            el = el.parentElement;
+        }
+        // по вертикали: сторона — по реальному запасу, высота — не больше него
+        var below = bottom - r.bottom - GAP - EDGE;
+        var above = r.top - top - GAP - EDGE;
+        var need = menu.scrollHeight;
+        if (below < need && above > below) menu.classList.add('up');
+        var room = Math.max(MIN, menu.classList.contains('up') ? above : below);
+        if (need > room) menu.style.maxHeight = Math.round(room) + 'px';
+        // по горизонтали: попап шире своей кнопки и по умолчанию прижат к её
+        // ПРАВОМУ краю — у кнопки в левой части экрана он уезжал за левый край
+        // (у «Импорта» в подвале настроек это было видно как обрезанные подписи)
+        var mr = menu.getBoundingClientRect(), dx = 0;
+        if (mr.left < left + EDGE) dx = left + EDGE - mr.left;
+        else if (mr.right > right - EDGE) dx = right - EDGE - mr.right;
+        if (dx) {
+            menu.style.right = 'auto';
+            menu.style.left = Math.round(mr.left - r.left + dx) + 'px';
+        }
+    }
     window.pfToggleImp = function (ev, key) {
         if (ev) ev.stopPropagation();
         var menu = dq('pfImp-' + key); if (!menu) return;
         var willOpen = !menu.classList.contains('open');
         closeImpMenus();
-        if (willOpen) { menu.classList.add('open'); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); }
+        if (willOpen) {
+            menu.classList.add('open');
+            placeImpMenu(menu);
+            setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0);
+        }
     };
+    PF.placeImpMenu = placeImpMenu;
 
     // ---- бэкап: выгрузка/загрузка всех портфелей в JSON-файл ----
     window.pfExportData = function () {

@@ -1109,9 +1109,13 @@ body.dark-mode .pfm-danger-no { background: #111925; border-color: rgba(255,255,
    и «мигал» при каждом клике по строкам внутри («Видимость» и т.п.). Открыт всегда
    максимум один (closeImpMenus), так что имя уникально. */
 .pf-impmenu.open { view-transition-name: pf-imp-menu; }
+/* высоту ограничивает placeImpMenu (portfolios-cards.js) по реальному запасу
+   места — здесь только свой скролл, чтобы длинный список не обрезался молча
+   предком с overflow:hidden, а прокручивался внутри попапа */
 .pf-impmenu { position: absolute; top: calc(100% + 8px); right: 0; z-index: 200; min-width: 288px;
     background: #fff; border: 1px solid rgba(24,38,60,0.1); border-radius: 16px; padding: 8px;
     box-shadow: 0 24px 50px -18px rgba(24,38,60,0.4);
+    overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
     opacity: 0; visibility: hidden; transform: translateY(-6px); transition: opacity 0.15s, transform 0.15s, visibility 0.15s; }
 .pf-impmenu.up { top: auto; bottom: calc(100% + 8px); transform: translateY(6px); }
 .pf-impmenu.open { opacity: 1; visibility: visible; transform: translateY(0); }

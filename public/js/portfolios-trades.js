@@ -332,7 +332,7 @@
     function reRenderKeepTradeMenu() {
         var open = !!(dq('pfImp-trades') && dq('pfImp-trades').classList.contains('open'));
         PF.renderPortfolios();
-        if (open) { var m = dq('pfImp-trades'); if (m) { m.classList.add('open'); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); } }
+        if (open) { var m = dq('pfImp-trades'); if (m) { m.classList.add('open'); if (PF.placeImpMenu) PF.placeImpMenu(m); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); } }
     }
     window.pfTradeShowAll = function (ev) { if (ev) ev.stopPropagation(); tradeSel = null; reRenderKeepTradeMenu(); };
     window.pfToggleTradePf = function (pid, ev) {
@@ -351,7 +351,7 @@
         var keepOpen = !!(dq('pfImp-eye') && dq('pfImp-eye').classList.contains('open'));
         PF.renderSmooth(keepOpen ? function () {
             var m = dq('pfImp-eye');
-            if (m) { m.classList.add('open'); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); }
+            if (m) { m.classList.add('open'); if (PF.placeImpMenu) PF.placeImpMenu(m); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); }
         } : null);
         toast(PF.tradesHidden ? 'История сделок скрыта' : 'История сделок показана');
     };
@@ -367,7 +367,7 @@
         PF.pfdWantRender = true;   // явная правка конструктора — не глушим рендер
         PF.renderSmooth(keepOpen ? function () {
             var m = dq('pfImp-eye');
-            if (m) { m.classList.add('open'); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); }
+            if (m) { m.classList.add('open'); if (PF.placeImpMenu) PF.placeImpMenu(m); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); }
         } : null);
         toast(wasHidden ? 'Блок показан' : 'Блок скрыт');
     };

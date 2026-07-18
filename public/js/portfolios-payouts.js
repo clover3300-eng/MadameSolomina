@@ -279,7 +279,7 @@
     function reRenderKeepCalMenu() {
         var open = !!(dq('pfImp-paycal') && dq('pfImp-paycal').classList.contains('open'));
         PF.renderPortfolios();
-        if (open) { var m = dq('pfImp-paycal'); if (m) { m.classList.add('open'); setTimeout(function () { document.addEventListener('click', PF.pfImpOutside); }, 0); } }
+        if (open) { var m = dq('pfImp-paycal'); if (m) { m.classList.add('open'); if (PF.placeImpMenu) PF.placeImpMenu(m); setTimeout(function () { document.addEventListener('click', PF.pfImpOutside); }, 0); } }
     }
     window.pfCalShowAll = function (ev) { if (ev) ev.stopPropagation(); payCalSel = null; reRenderKeepCalMenu(); };
     window.pfToggleCalPf = function (pid, ev) {
