@@ -1076,6 +1076,11 @@ function toggleInterestingMore() {
             var r = document.documentElement.classList;
             r.toggle('boot-dark', dark);
             r.toggle('boot-light', !dark);
+            // boot-home нужен был только до появления настоящего body.tab-home
+            // (он держал мозаику-фон скрытой на первом кадре Главной). Дальше
+            // им управляет обычное правило css/site-bg.css — иначе после
+            // перехода на другую вкладку фон остался бы спрятанным навсегда.
+            r.remove('boot-home');
         }
 
         // Запомнить выбранную тему в нужный ключ.
