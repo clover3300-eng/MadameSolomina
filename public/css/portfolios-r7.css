@@ -1614,9 +1614,18 @@ body.dark-mode .pfpl-row:hover { background: rgba(255, 255, 255, 0.04); }
 .pfpl-id { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .pfpl-id b {
     font-family: 'Inter', sans-serif; font-size: 14.5px; font-weight: 800; letter-spacing: -0.01em;
-    color: #0f172a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    color: #0f172a; overflow: hidden;
+    display: flex; align-items: center; gap: 6px;
 }
+.pfpl-nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 body.dark-mode .pfpl-id b { color: #f4f8fd; }
+/* портфель убран с «Обзора»: в списке он остаётся, но помечен глазом и приглушён —
+   строка читается как «есть, просто не на витрине», а не как обычная */
+.pfpl-hid { flex-shrink: 0; display: flex; color: #7c8aa0; opacity: 0.85; }
+.pfpl-hid svg { width: 13px; height: 13px; }
+.pfpl-row.hid .pfpl-ic { opacity: 0.5; }
+.pfpl-row.hid .pfpl-nm { color: #64748b; }
+body.dark-mode .pfpl-row.hid .pfpl-nm { color: #9fb1c6; }
 .pfpl-id i { font-family: 'Inter', sans-serif; font-style: normal; font-size: 11px; font-weight: 600; color: #8494a7; }
 /* R9.3: числа строк — в масштабе KPI-плиток (.pfsm-tile b — 19px; в ряду 17px,
    чтобы список остался списком), под ними чип .pfsm-chip с контекстом */

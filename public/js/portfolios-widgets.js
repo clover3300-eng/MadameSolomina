@@ -2071,7 +2071,7 @@
     var pfplSparkTimer = null;
     function pfPlistSparksSoon() {
         var pend = [];
-        visibleItems().forEach(function (p) {
+        PF.store.items.forEach(function (p) {   // спарклайны нужны и скрытым: они в списке
             var el = document.querySelector('#pfWrap .pfpl-spark[data-pid="' + p.id + '"]');
             if (!el) return;
             if (Object.keys(snaps[p.id] || {}).length >= 2) return;
@@ -2095,13 +2095,17 @@
         }, 700);
     }
     function pfwPlistHtml() {
-        var vis = visibleItems();
-        if (!vis.length) {
+        // Список — ПОЛНЫЙ, включая скрытые (просьба 2026-07-18): «скрыть» убирает
+        // карточку с «Обзора», но не сам портфель — иначе спрятанный портфель
+        // пропадал из единственного места, где виден весь их перечень.
+        // Скрытые помечены значком-глазом, числа у них настоящие.
+        var all = PF.store.items;
+        if (!all.length) {
             return '<div class="dash2-card pf-card2 pf-plistblk">' +
                 PF.pfCardHead('', 'Список портфелей', 'все портфели со сводкой', null) +
-                '<div class="pfal-empty">' + (PF.store.items.length ? 'Все портфели скрыты — верните их в меню «Видимость» в шапке.' : 'Создайте первый портфель кнопкой «Портфель» в шапке.') + '</div></div>';
+                '<div class="pfal-empty">Создайте первый портфель кнопкой «Портфель» в шапке.</div></div>';
         }
-        var rows = vis.map(function (p) { return { p: p, c: calcPf(p) }; });
+        var rows = all.map(function (p) { return { p: p, c: calcPf(p) }; });
         var total = 0; rows.forEach(function (r) { total += r.c.value; });
         if (pfPlistSort === 'name') rows.sort(function (a, b) { return a.p.name.localeCompare(b.p.name, 'ru'); });
         else if (pfPlistSort === 'yield') rows.sort(function (a, b) { return (b.c.invested > 0 ? b.c.pnlPct : -1e9) - (a.c.invested > 0 ? a.c.pnlPct : -1e9); });
@@ -2141,9 +2145,15 @@
                 ? kpi((c.pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(c.pnl)), c.pnl >= 0 ? 'pos' : 'neg',
                     chip(c.pnlPct >= 0 ? 'pos' : 'neg', (c.pnlPct >= 0 ? '▲ ' : '▼ ') + absPct(c.pnlPct)), 'pfpl:' + p.id + ':yld')
                 : kpi('—', 'muted', '', 'pfpl:' + p.id + ':yld');
-            return '<div class="pfpl-row" role="button" tabindex="0" onclick="pfxOpenPf(\'' + p.id + '\')" title="Открыть дашборд портфеля">' +
+            var hid = !!p.hidden;
+            var hidMark = hid
+                ? '<span class="pfpl-hid" title="Карточка убрана с «Обзора» — в списке и в общем капитале портфель остаётся">' + PF.EYEOFF_SVG + '</span>'
+                : '';
+            return '<div class="pfpl-row' + (hid ? ' hid' : '') + '" role="button" tabindex="0" onclick="pfxOpenPf(\'' + p.id + '\')" title="Открыть дашборд портфеля">' +
                 '<span class="pfpl-ic" style="--pc:' + ac + '">' + PFPL_CASE_SVG + '</span>' +
-                '<span class="pfpl-id"><b>' + esc(p.name) + '</b><i>' + n + ' ' + PF.plural(n, 'актив', 'актива', 'активов') + '</i></span>' +
+                '<span class="pfpl-id"><b><span class="pfpl-nm">' + esc(p.name) + '</span>' + hidMark + '</b>' +
+                    '<i>' + n + ' ' + PF.plural(n, 'актив', 'актива', 'активов') +
+                    (hid ? ' · скрыт с «Обзора»' : '') + '</i></span>' +
                 kpi(fmtRub(c.value), '', shareChip, 'pfpl:' + p.id + ':val') +
                 yld +
                 kpi(has ? fmtRub(c.invested) : '—', has ? '' : 'muted') +
@@ -2170,7 +2180,7 @@
     // живой хвост дорисуется следующим полным рендером) и «Вложено» (не
     // котировочное). Скелетонов прогрева у виджета нет.
     PF.livePatchers.plist = function () {
-        var vis = visibleItems();
+        var vis = PF.store.items;   // список полный, включая скрытые — как в pfwPlistHtml
         if (!vis.length) return;
         var total = 0, cs = {};
         vis.forEach(function (p) { var c = calcPf(p); cs[p.id] = c; total += c.value; });

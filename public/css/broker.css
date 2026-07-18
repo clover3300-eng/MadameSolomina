@@ -409,6 +409,45 @@ body.dark-mode .btr-search-none { color: #9fb1c6; }
 .btr-axrow.bid b { color: #16a34a; }
 /* лучшая цена (примыкает к центру) — крупнее: топ книги виден сразу */
 .btr-axrow.best b { font-weight: 800; font-size: 13.5px; }
+
+/* своя заявка на строке стакана: пилюля с числом лотов у центра оси (там же,
+   где начинается полоса объёма) + подсветка строки. Цвет свой, не бид/аск:
+   метка отвечает на «сколько тут МОЕГО», а не «сколько всего» */
+.btr-axrow.mine { background: rgba(68, 83, 239, 0.07); }
+.btr-axrow.mine:hover { background: rgba(68, 83, 239, 0.12); }
+.btr-axrow.mine b { color: #4453ef; font-weight: 800; }
+.btr-axmine {
+    position: absolute; top: 2px; z-index: 1;
+    min-width: 15px; height: 15px; padding: 0 4px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 9.5px; font-weight: 800; line-height: 1;
+    color: #fff; background: #4453ef; box-shadow: 0 1px 3px rgba(68, 83, 239, 0.35);
+}
+.btr-axrow.ask .btr-axmine { left: 4px; }
+.btr-axrow.bid .btr-axmine { right: 4px; }
+
+/* заявка вне глубины стакана — полоска над/под лестницей: выставил и не потерял */
+.btr-axout {
+    display: flex; align-items: center; gap: 8px;
+    height: 25px; padding: 0 8px; margin: 3px 0; border-radius: 8px; cursor: pointer;
+    border: 1px dashed rgba(68, 83, 239, 0.4); background: rgba(68, 83, 239, 0.05);
+    font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-variant-numeric: tabular-nums; transition: background 0.12s;
+}
+.btr-axout:hover { background: rgba(68, 83, 239, 0.11); }
+.btr-axout-d { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; background: #16a34a; }
+.btr-axout-d.sell { background: #dc2626; }
+.btr-axout b { font-size: 12.5px; font-weight: 800; color: #4453ef; }
+.btr-axout span {
+    font-family: var(--font-ui); font-size: 10.5px; font-weight: 600; color: #64748b;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.btr-axout i {
+    margin-left: auto; flex-shrink: 0; font-style: normal;
+    font-family: var(--font-ui); font-size: 9.5px; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase; color: #97a3b4;
+}
 .btr-obwait { padding: 14px 0; font-size: 12.5px; color: #94a3b8; }
 
 /* центр оси — последняя цена между hairline-линиями, без плашки */
@@ -621,6 +660,21 @@ body.dark-mode .btr-axmid.up > b, body.dark-mode .btr-axmid.up .ar, .pfd-thm-dar
 body.dark-mode .btr-axmid.down > b, body.dark-mode .btr-axmid.down .ar, .pfd-thm-dark .btr-axmid.down > b, .pfd-thm-dark .btr-axmid.down .ar { color: #f87171; }
 body.dark-mode .btr-axmid .sp, .pfd-thm-dark .btr-axmid .sp { border-color: rgba(255, 255, 255, 0.1); }
 body.dark-mode .btr-axmid .sp b, .pfd-thm-dark .btr-axmid .sp b { color: #cbd5e1; }
+/* свои заявки в стакане — на тёмном индиго тускнеет, берём светлее */
+body.dark-mode .btr-axrow.mine, .pfd-thm-dark .btr-axrow.mine { background: rgba(129, 140, 248, 0.12); }
+body.dark-mode .btr-axrow.mine:hover, .pfd-thm-dark .btr-axrow.mine:hover { background: rgba(129, 140, 248, 0.2); }
+body.dark-mode .btr-axrow.mine b, .pfd-thm-dark .btr-axrow.mine b { color: #a5b4fc; }
+body.dark-mode .btr-axmine, .pfd-thm-dark .btr-axmine {
+    background: #818cf8; color: #10162a; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+body.dark-mode .btr-axout, .pfd-thm-dark .btr-axout {
+    border-color: rgba(129, 140, 248, 0.45); background: rgba(129, 140, 248, 0.09);
+}
+body.dark-mode .btr-axout:hover, .pfd-thm-dark .btr-axout:hover { background: rgba(129, 140, 248, 0.17); }
+body.dark-mode .btr-axout b, .pfd-thm-dark .btr-axout b { color: #a5b4fc; }
+body.dark-mode .btr-axout span, .pfd-thm-dark .btr-axout span { color: #9fb1c6; }
+body.dark-mode .btr-axout-d, .pfd-thm-dark .btr-axout-d { background: #34d399; }
+body.dark-mode .btr-axout-d.sell, .pfd-thm-dark .btr-axout-d.sell { background: #f87171; }
 body.dark-mode .btr-obempty-ic, .pfd-thm-dark .btr-obempty-ic { background: rgba(167, 139, 250, 0.16); color: #a78bfa; }
 body.dark-mode .btr-obempty-tt, .pfd-thm-dark .btr-obempty-tt { color: #f1f5f9; }
 body.dark-mode .btr-obempty-tx, .pfd-thm-dark .btr-obempty-tx { color: #9fb1c6; }

@@ -9,6 +9,8 @@
 // и суммой прямо в кнопке; «Мои заявки» — табы Активные/Стоп/История,
 // заявка = две строки с тонкой цветной меткой. Счёт (имя + хвост id +
 // песочница) виден в шапках тикета/заявок и в модалке подтверждения.
+// Свои заявки видны и в САМОМ стакане (myOrdersByPx): на цене — пилюля с
+// остатком лотов, вне глубины лестницы — полоска «выше/ниже стакана».
 //
 // Предохранители (мировая практика бирж, обсуждение 2026-07-17):
 //   · каждая заявка — модалка подтверждения с полными деталями;
@@ -118,7 +120,7 @@
         var lens = '<button type="button" class="btr-iconbtn' + (T.searchOpen ? ' on' : '') + '" id="btSearchTg" ' +
             'title="Поиск бумаги" aria-label="Поиск бумаги" onclick="pftSearchToggle()">' + IC_LENS + '</button>';
         // кнопки конструктора — в потоке шапки ПЕРЕД лупой (PFD_OWN_CHROME, R9.2)
-        var head = PF.pfCardHead('Терминал', 'Стакан', null, PF.pfdInChromeHtml('trade:ob') + lens);
+        var head = PF.pfCardHead('', 'Стакан', null, PF.pfdInChromeHtml('trade:ob') + lens);
         var search = '<div class="btr-search' + (T.searchOpen ? ' open' : '') + '" id="btSearchWrap">' +
             '<input class="ph-input" id="btSearch" type="text" ' +
             'placeholder="Тикер или название — например, SBER" autocomplete="off" spellcheck="false" value="' + esc(T.searchQ) + '">' +
@@ -169,6 +171,65 @@
                 : 'В стакане по этой бумаге сейчас нет активных заявок.') + '</div>' +
             px + '</div>';
     }
+    // ---- свои заявки прямо в стакане ----
+    // Своя лимитная заявка по ВЫБРАННОЙ бумаге отмечается на строке стакана: видно,
+    // на какой цене она стоит и сколько лотов очереди — мои. Заявку вне глубины
+    // стакана (далеко от рынка) строкой не покажешь — она уходит в отдельную
+    // полоску над/под лестницей, иначе выставил и «потерял».
+    // Ключ — цена в шагах инструмента: и стакан, и заявка приходят как units+nano,
+    // сравнивать их напрямую нельзя (плавающая точка).
+    function pxStep() { return (T.meta && T.meta.minInc) || 0.01; }
+    function pxKey(p) { return String(Math.round(p / pxStep())); }
+    function myOrdersByPx() {
+        var out = {};
+        if (!T.uid || !T.orders.length || !A()) return out;
+        var q2n = A().q2n, figi = T.meta && T.meta.figi;
+        T.orders.forEach(function (o) {
+            if (o.instrumentUid !== T.uid && !(figi && o.figi === figi)) return;
+            if (o.orderType === 'ORDER_TYPE_MARKET') return;   // у рыночной цены в стакане нет
+            var px = q2n(o.initialSecurityPrice);
+            if (!(px > 0)) return;
+            // в очереди стоит только неисполненный остаток
+            var left = Math.max(0, (+o.lotsRequested || 0) - (+o.lotsExecuted || 0));
+            if (!left) return;
+            var k = pxKey(px);
+            var e = out[k] || (out[k] = { px: px, lots: 0, buy: 0, sell: 0 });
+            e.lots += left;
+            if (o.direction === 'ORDER_DIRECTION_BUY') e.buy += left; else e.sell += left;
+        });
+        return out;
+    }
+    function myTitle(m) {
+        var side = (m.buy && m.sell) ? 'заявки' : (m.buy ? 'покупка' : 'продажа');
+        return 'Ваша ' + side + ' · ' + m.lots + ' лот по ' + fmtPrice(m.px) + ' ₽';
+    }
+    // полоска «моя заявка вне лестницы»: цена далеко от рынка либо стакан пуст
+    function myOutRow(m, where) {
+        return '<div class="btr-axout' + (where ? ' ' + where : '') + '" role="button" ' +
+            'title="' + esc(myTitle(m)) + '" onclick="pftPickPrice(\'' + jsArg(String(m.px)) + '\')">' +
+            '<span class="btr-axout-d ' + (m.sell && !m.buy ? 'sell' : 'buy') + '"></span>' +
+            '<b>' + fmtPrice(m.px) + ' ₽</b>' +
+            '<span>' + (m.buy && m.sell ? 'мои заявки' : (m.buy ? 'моя покупка' : 'моя продажа')) +
+                ' · ' + m.lots + ' лот</span>' +
+            '<i>' + (where === 'up' ? 'выше стакана' : where === 'down' ? 'ниже стакана' : 'ждёт очереди') + '</i>' +
+        '</div>';
+    }
+    function myOutList(mine, seen, hiPx, loPx, last) {
+        var up = [], down = [];
+        Object.keys(mine).forEach(function (k) {
+            if (seen[k]) return;
+            var m = mine[k];
+            // между строками разреженного стакана — относим по последней цене
+            var above = hiPx == null ? false : (m.px > hiPx || (m.px >= loPx && m.px > last));
+            (above ? up : down).push(m);
+        });
+        up.sort(function (a, b) { return b.px - a.px; });
+        down.sort(function (a, b) { return b.px - a.px; });
+        return {
+            up: up.map(function (m) { return myOutRow(m, hiPx == null ? '' : 'up'); }).join(''),
+            down: down.map(function (m) { return myOutRow(m, hiPx == null ? '' : 'down'); }).join('')
+        };
+    }
     // стакан по оси цены: [объём спроса ←] цена [→ объём предложения];
     // клик по строке кладёт цену в активное ценовое поле тикета
     function obHtml() {
@@ -177,15 +238,24 @@
         var q2n = A().q2n;
         var asks = (T.ob.asks || []).slice(0, OB_DEPTH);
         var bids = (T.ob.bids || []).slice(0, OB_DEPTH);
-        if (!asks.length && !bids.length) return obEmptyHtml(q2n);
+        var mine = myOrdersByPx(), seen = {};
+        // стакан пуст (закрытая сессия/неликвид) — заявка всё равно висит: показываем
+        if (!asks.length && !bids.length) {
+            var solo = myOutList(mine, seen, null, null, 0);
+            return obEmptyHtml(q2n) + (solo.up + solo.down);
+        }
         var maxQ = 1;
         asks.concat(bids).forEach(function (r) { maxQ = Math.max(maxQ, +r.quantity || 0); });
         // best — лучшая цена (верх бидов / низ асков), примыкает к центру: акцент
         function row(r, side, best) {
             var p = q2n(r.price), q = +r.quantity || 0;
             var w = Math.max(4, Math.round(q / maxQ * 100));
-            var half = '<span class="btr-axh"><i style="width:' + w + '%"></i><em>' + q.toLocaleString('ru-RU') + '</em></span>';
-            return '<div class="btr-axrow ' + side + (best ? ' best' : '') + '" role="button" onclick="pftPickPrice(\'' + jsArg(String(p)) + '\')">' +
+            var k = pxKey(p), m = mine[k];
+            if (m) seen[k] = 1;
+            // метка стоит у центра оси (рядом с ценой), где начинается полоса объёма
+            var badge = m ? '<span class="btr-axmine" title="' + esc(myTitle(m)) + '">' + m.lots + '</span>' : '';
+            var half = '<span class="btr-axh"><i style="width:' + w + '%"></i><em>' + q.toLocaleString('ru-RU') + '</em>' + badge + '</span>';
+            return '<div class="btr-axrow ' + side + (best ? ' best' : '') + (m ? ' mine' : '') + '" role="button" onclick="pftPickPrice(\'' + jsArg(String(p)) + '\')">' +
                 (side === 'bid' ? half : '<span class="btr-axh"></span>') +
                 '<b>' + fmtPrice(p) + '</b>' +
                 (side === 'ask' ? half : '<span class="btr-axh"></span>') +
@@ -203,11 +273,16 @@
             ((bb && ba) ? '<span class="sp">спред <b>' + fmtPrice(ba - bb) + '</b></span>' : '') +
         '</div>';
         var askArr = asks.slice().reverse();
+        // строки собираем ДО myOutList: row() по ходу отмечает в seen цены,
+        // на которых своя заявка уже показана внутри лестницы
+        var askHtml = askArr.map(function (r, i) { return row(r, 'ask', i === askArr.length - 1); }).join('');
+        var bidHtml = bids.map(function (r, i) { return row(r, 'bid', i === 0); }).join('');
+        var hiPx = askArr.length ? q2n(askArr[0].price) : q2n(bids[0].price);
+        var loPx = bids.length ? q2n(bids[bids.length - 1].price) : q2n(askArr[askArr.length - 1].price);
+        var out = myOutList(mine, seen, hiPx, loPx, last);
         return '<div class="btr-ax">' +
             '<div class="btr-ax-head"><span>Лоты · спрос</span><span>Цена</span><span>Предложение · лоты</span></div>' +
-            askArr.map(function (r, i) { return row(r, 'ask', i === askArr.length - 1); }).join('') +
-            mid +
-            bids.map(function (r, i) { return row(r, 'bid', i === 0); }).join('') +
+            out.up + askHtml + mid + bidHtml + out.down +
         '</div>';
     }
 
@@ -273,7 +348,7 @@
                 (accTail() ? ' <b>····' + accTail() + '</b>' : '') +
                 (c.sandbox ? '<i class="btr-sand">песочница</i>' : '') + '</span>' : '') +
         '</div>';
-        var head = PF.pfCardHead('Тикет', 'Заявка', null, PF.pfdInChromeHtml('trade:ticket') + note);
+        var head = PF.pfCardHead('', 'Заявка', null, PF.pfdInChromeHtml('trade:ticket') + note);
         if (!T.meta) return head + '<div class="pfal-empty">Тикет откроется после выбора бумаги в стакане.</div>';
         var inc = T.meta.minInc || 0.01;
         var stepHint = '<i> · шаг ' + fmtPrice(inc) + '</i>';
@@ -421,7 +496,7 @@
                 (accTail() ? ' <b>····' + accTail() + '</b>' : '') +
                 (c.sandbox ? '<i class="btr-sand">песочница</i>' : '') + '</span></div>'
             : '';
-        var head = PF.pfCardHead('Счёт', 'Мои заявки', null, PF.pfdInChromeHtml('trade:orders') + note);
+        var head = PF.pfCardHead('', 'Мои заявки', null, PF.pfdInChromeHtml('trade:orders') + note);
         var tabs = '<div class="btr-ttabs" id="btOtabs">' +
             '<button type="button"' + (T.otab === 'active' ? ' class="active"' : '') + ' onclick="pftOtab(\'active\')">Активные<span class="btr-cnt">' + T.orders.length + '</span></button>' +
             '<button type="button"' + (T.otab === 'stop' ? ' class="active"' : '') + ' onclick="pftOtab(\'stop\')">Стоп<span class="btr-cnt">' + T.stops.length + '</span></button>' +
@@ -505,6 +580,7 @@
                 if (o.instrumentUid && !instrMem[o.instrumentUid]) fetchMeta(o.instrumentUid, true);
             });
             repaintOrders();
+            repaintOb();   // метки своих заявок на лестнице — сразу, не ждя тика стакана
         }).catch(function () {});
     }
     // свободные деньги и остатки бумаг — для референсов «доступно» и «свободно»
