@@ -1069,6 +1069,7 @@
                     supa().logEvent('admin_clear_data', { target: id, target_email: supa().session.user.email })
                         .then(function () {
                             window.supaSync.wipeLocal();
+                            if (window.pageTransition) { window.pageTransition.reload({ label: 'Очищаем данные…' }); return; }
                             location.reload();
                         });
                     return;

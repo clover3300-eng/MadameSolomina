@@ -92,6 +92,14 @@
             else window.brokerApi.lock();
         }
         if (cloudOn()) {
+            // Занавес поднимаем ЗДЕСЬ, до signOut: выход дёргает notify('signout'),
+            // и приложение на пару кадров перерисовывается «гостем» (аватар гаснет,
+            // вкладки закрываются заглушками) — этот промежуточный кадр и читался
+            // как рывок. Цвет сразу по Главной: onSignOut уводит именно туда, а она
+            // тёмная — иначе занавес пришлось бы перекрашивать на полпути.
+            if (window.pageTransition) {
+                window.pageTransition.cover({ tab: 'home', label: 'Выходим из аккаунта…' });
+            }
             // supa.signOut дожимает синхронизацию, чистит устройство и перезагружает
             window.supa.signOut();
             return;
@@ -819,7 +827,11 @@
         if (!armToggle(e.currentTarget, 'Точно очистить?')) return;
         wipeLocalData();
         toast('Данные на устройстве очищены');
-        setTimeout(function () { location.reload(); }, 450);
+        // Пауза — чтобы тост успели прочитать, дальше занавес вместо вспышки
+        setTimeout(function () {
+            if (window.pageTransition) { window.pageTransition.reload({ label: 'Очищаем устройство…' }); return; }
+            location.reload();
+        }, 450);
     }
     function onDeleteAccount(e) {
         if (!armToggle(e.currentTarget, 'Точно удалить аккаунт?')) return;
@@ -830,7 +842,10 @@
                 if (!r.ok) { toast(r.error, true); return; }
                 wipeLocalData();
                 toast('Аккаунт удалён');
-                setTimeout(function () { location.href = '/'; }, 600);
+                setTimeout(function () {
+                    if (window.pageTransition) { window.pageTransition.go('/', { tab: 'home' }); return; }
+                    location.href = '/';
+                }, 600);
             });
         } else {
             // локальный профиль — стираем всё и уходим в гости

@@ -8,7 +8,58 @@
     <meta name="apple-mobile-web-app-title" content="Terminal">
     <meta name="theme-color" content="#F1F6FB">
     <title>Terminal Madame Solomi'na · v2</title>
-     
+
+    <!-- ЗАНАВЕС между перезагрузками (вход / выход / очистка устройства).
+         Стиль и «взвод» — ИНЛАЙНОМ и в самом верху <head> сознательно: занавес
+         обязан существовать до первого пейнта и до загрузки css, иначе между
+         перезагрузками остаётся ровно та белая вспышка, ради которой он и нужен.
+         Вся логика (когда поднимать и раскрывать) — js/page-transition.js.
+         ::before на <html>, а не элемент в <body>: body сжат zoom:0.9
+         (desktop-zoom.css) и не покрыл бы настоящий вьюпорт. -->
+    <style>
+        html.pg-cloak::before{
+            content:''; position:fixed; inset:0; z-index:2147483000;
+            background:#F1F6FB; opacity:1;
+        }
+        html.pg-cloak.pg-dark::before{ background:#0f172a; }
+        html.pg-cloak.pg-anim::before{ transition:opacity .32s ease; }
+        html.pg-cloak.pg-clear::before{ opacity:0; }
+        /* Подпись проявляется с задержкой: быстрый переход проходит молча,
+           «висит» — только если сеть реально задумалась */
+        html.pg-cloak[data-pg-label]::after{
+            content:attr(data-pg-label);
+            position:fixed; left:0; right:0; top:50%; z-index:2147483001;
+            transform:translateY(-50%); text-align:center;
+            font:400 15px/1.4 Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+            letter-spacing:.01em; color:#94a3b8;
+            opacity:0; animation:pgLabelIn .45s ease .45s forwards;
+        }
+        html.pg-cloak.pg-clear[data-pg-label]::after{ animation:none; opacity:0; }
+        @keyframes pgLabelIn{ to{ opacity:1 } }
+    </style>
+    <script>
+        // Прошлая страница подняла занавес перед reload — стартуем под ним.
+        (function () {
+            try {
+                var raw = sessionStorage.getItem('pg_cloak_v1');
+                if (!raw) return;
+                sessionStorage.removeItem('pg_cloak_v1');   // одноразовый: F5 грузится обычно
+                var d = JSON.parse(raw) || {};
+                if (!d.ts || Date.now() - d.ts > 15000) return;   // протух — обычная загрузка
+                var c = document.documentElement.classList;
+                c.add('pg-cloak');
+                if (d.dark) c.add('pg-dark');
+                if (d.label) document.documentElement.setAttribute('data-pg-label', d.label);
+                // Страховка: page-transition.js не доехал (сеть) — не держим экран
+                setTimeout(function () {
+                    if (window.pageTransition) return;
+                    c.remove('pg-cloak', 'pg-dark');
+                    document.documentElement.removeAttribute('data-pg-label');
+                }, 4000);
+            } catch (e) {}
+        })();
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <!-- Manrope и Onest убраны 2026-07-14: типографика сведена к трём голосам —
@@ -2443,6 +2494,9 @@
 
 
 
+<!-- Занавес переходов — ПЕРВЫМ: им пользуются cloud-sync (вход) и profile-menu
+     (выход). Разметки не требует, стиль инлайном в <head>. -->
+<script src="js/page-transition.js?v=1" defer></script>
 <script src="js/core.js?v=12" defer></script>
 <script src="js/calculator-ui.js?v=4" defer></script>
 <script src="js/data.js?v=10" defer></script>
@@ -2486,12 +2540,12 @@
 <script src="js/home-register.js?v=19" defer></script>
 <script src="js/broker-api.js?v=7" defer></script>
 <script src="js/broker-connect.js?v=6" defer></script>
-<script src="js/profile-menu.js?v=24" defer></script>
+<script src="js/profile-menu.js?v=25" defer></script>
 <script src="js/notifications.js?v=3" defer></script>
 <script src="js/tab-gates.js?v=4" defer></script>
 <script src="js/sums-privacy.js?v=3" defer></script>
-<script src="js/cloud-sync.js?v=7" defer></script>
-<script src="js/admin.js?v=13" defer></script>
+<script src="js/cloud-sync.js?v=8" defer></script>
+<script src="js/admin.js?v=14" defer></script>
 <script src="js/route-hash.js?v=5" defer></script>
 </body>
 </html>

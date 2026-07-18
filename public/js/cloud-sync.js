@@ -255,9 +255,19 @@
             if (Date.now() - last < 30000) return;
             sessionStorage.setItem(RELOAD_GUARD, String(Date.now()));
         } catch (e) {}
+        // Занавес прячет сам стык: пользователь не видит ни кадра со старыми
+        // (ещё не облачными) данными, ни белой вспышки. Цвет — по вкладке, на которой
+        // страница откроется: путь форма уже подменила (history.replaceState
+        // в home-register.successAndGo), поэтому берём его из адреса.
+        if (window.pageTransition) {
+            window.pageTransition.reload({
+                label: mode === 'signin' ? 'Загружаем ваши данные…' : ''
+            });
+            return;
+        }
         if (mode === 'signin') toast('Загружаем ваши данные из облака…');
-        // при входе ждём чуть дольше: форма успевает переключить вкладку (pushState),
-        // и после reload пользователь оказывается уже в приложении с облачными данными
+        // Без занавеса при входе ждём дольше: форма успевает переключить вкладку
+        // (pushState), и после reload пользователь уже в приложении с облачными данными
         setTimeout(function () { location.reload(); }, mode === 'signin' ? 1300 : 120);
     }
 
@@ -271,6 +281,10 @@
         applying = false;
         pending = {};
         try { history.replaceState(null, '', '/'); } catch (e) {}
+        // Занавес обычно уже поднят (profile-menu.logout поднял его до
+        // supa.signOut, чтобы гостевой перерендер не мелькнул) — здесь вызов
+        // только уточняет тему: уходим на Главную, а она тёмная.
+        if (window.pageTransition) { window.pageTransition.reload({ tab: 'home' }); return; }
         location.reload();
     }
 
