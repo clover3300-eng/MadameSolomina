@@ -12,18 +12,28 @@
 // Свои заявки видны и в САМОМ стакане (myOrdersByPx): на цене — пилюля с
 // остатком лотов, вне глубины лестницы — полоска «выше/ниже стакана».
 //
+// СЛОТЫ БУМАГ (2026-07-18): терминал держит НЕСКОЛЬКО бумаг разом. Слот —
+// это пара «стакан + тикет» с собственной бумагой; блоки конструктора
+// зовутся trade:ob / trade:ob:2 / trade:ob:3 (и так же trade:ticket:N),
+// номер слота = суффикс. Состояние слота живёт в SLOTS[n], общее по счёту
+// (заявки, позиции, лимит частоты) — в T. Выбранные бумаги переживают
+// перезагрузку страницы: bt_slots_v1 в localStorage (ЛОКАЛЬНО, не в облако —
+// брокерское наружу не ходит). «Мои заявки» — один виджет на счёт: заявки
+// приходят по всем бумагам сразу.
+//
 // Предохранители (мировая практика бирж, обсуждение 2026-07-17):
 //   · каждая заявка — модалка подтверждения с полными деталями;
 //   · сумма выше порога — подтверждение вводом суммы руками;
 //   · idempotency: клиентский orderId (UUID) на попытку — двойной клик и
 //     ретрай после таймаута не продублируют заявку;
 //   · fat-finger: лимит-цена дальше 5% от середины стакана — жёлтый варн;
-//   · velocity: больше 5 заявок за минуту — пауза;
+//   · velocity: больше 5 заявок за минуту — пауза (общая на счёт);
 //   · вне торговой сессии — предупреждение в тикете;
 //   · паник-кнопка «Отменить все заявки»;
 //   · боевой контур (не песочница) — баннер до первого «понятно».
-// Поллинг: стакан 2с, заявки 6с, позиции 15с — ТОЛЬКО на активной подвкладке
-// и видимой вкладке браузера; таймеры гасятся при уходе (pftAfterRender).
+// Поллинг: стакан 2с (по каждому живому слоту), заявки 6с, позиции 15с,
+// лента 4с только у РАЗВЁРНУТОЙ ленты — ТОЛЬКО на активной подвкладке и
+// видимой вкладке браузера; таймеры гасятся при уходе (pftAfterRender).
 
 (function () {
     'use strict';
@@ -34,26 +44,152 @@
     var VEL_MAX = 5, VEL_WIN = 60000;   // velocity: 5 заявок в минуту
     var SUM_LIMIT_KEY = 'bt_sum_limit_v1';   // порог «подтвердить суммой», ₽
     var LIVE_SEEN_KEY = 'bt_live_seen_v1';   // баннер боевого контура закрыт
+    var SLOTS_KEY = 'bt_slots_v1';           // выбранные бумаги (переживают перезагрузку)
     var OB_DEPTH = 10;
+    // потолок слотов: каждый живой стакан — свой запрос раз в 2с, а лимит
+    // MarketData у брокера общий на токен; 4 бумаги = 120 запросов/мин с запасом
+    var MAX_SLOTS = 4;
 
-    // рабочее состояние терминала (живёт до перезагрузки страницы)
+    // ---------- состояние ----------
+    // общее по СЧЁТУ (одно на терминал, от бумаги не зависит)
     var T = {
-        uid: null, meta: null,        // выбранный инструмент и его паспорт
-        ob: null, status: null,       // стакан и статус торгов
-        side: 'buy', kind: 'limit', price: '', lots: 1,
-        stopKind: 'sl', stopPrice: '',// стоп-заявки: стоп-лосс/тейк-профит + цена активации
-        orders: [], stops: [],        // активные заявки и стоп-заявки
-        tape: [],                     // лента обезличенных сделок
+        orders: [], stops: [],        // активные заявки и стоп-заявки — по всем бумагам
         pos: { money: null, secs: {} },   // свободные ₽ и остатки бумаг (GetPositions)
-        sent: [],                     // таймстемпы отправок (velocity)
-        orderId: null,                // idempotency-ключ текущего подтверждения
-        search: [], searchQ: '',
-        searchOpen: true,             // поиск виден, пока бумага не выбрана; дальше — лупой
-        tapeOpen: false,              // лента сделок под шевроном, по умолчанию свёрнута
+        sent: [],                     // таймстемпы отправок (velocity — лимит счёта)
         otab: 'active',               // вкладка «Моих заявок»: active | stop | hist
-        obTimer: null, ordTimer: null, stTimer: null, tapeTimer: null, posTimer: null,
-        busy: false
+        obTimer: null, ordTimer: null, stTimer: null, tapeTimer: null, posTimer: null
     };
+    // состояние ОДНОЙ бумаги (у каждого слота своё)
+    function newSlot() {
+        return {
+            uid: null, meta: null,        // выбранный инструмент и его паспорт
+            ob: null, status: null,       // стакан и статус торгов
+            side: 'buy', kind: 'limit', price: '', lots: 1,
+            stopKind: 'sl', stopPrice: '',// стоп-заявки: стоп-лосс/тейк-профит + цена активации
+            tape: [],                     // лента обезличенных сделок
+            search: [], searchQ: '',
+            searchOpen: true,             // поиск виден, пока бумага не выбрана; дальше — лупой
+            tapeOpen: false,              // лента сделок под шевроном, по умолчанию свёрнута
+            orderId: null,                // idempotency-ключ текущего подтверждения
+            metaStale: false,             // паспорт из localStorage — обновить с сервера
+            busy: false                   // идёт отправка заявки ИЗ ЭТОГО слота
+        };
+    }
+    var SLOTS = {};
+    function S(n) {
+        n = slotNo(n);
+        return SLOTS[n] || (SLOTS[n] = newSlot());
+    }
+    function slotNo(n) { n = Math.floor(+n || 1); return n >= 1 ? n : 1; }
+    // id блоков конструктора: первый слот исторически без суффикса
+    function obId(n) { return slotNo(n) === 1 ? 'trade:ob' : 'trade:ob:' + slotNo(n); }
+    function tkId(n) { return slotNo(n) === 1 ? 'trade:ticket' : 'trade:ticket:' + slotNo(n); }
+    // id элементов внутри карточки слота (btPrice_2 и т.д.)
+    function eid(base, n) { return 'bt' + base + '_' + slotNo(n); }
+    function dqs(base, n) { return dq(eid(base, n)); }
+
+    // какие слоты вообще заведены: первый всегда + всё, что записано в раскладку
+    // подвкладки (конструктор — источник правды о существовании блока)
+    function slotNums() {
+        var set = { 1: 1 };
+        ((PF.dashCfg && PF.dashCfg.order) || []).forEach(function (id) {
+            var m = /^trade:(?:ob|ticket):(\d+)$/.exec(id);
+            if (m) set[slotNo(m[1])] = 1;
+        });
+        // слот с выбранной бумагой жив даже без записи в раскладке (восстановился
+        // из localStorage); пустые заготовки от S(n) сюда не попадают
+        Object.keys(SLOTS).forEach(function (n) { if (SLOTS[n].uid) set[slotNo(n)] = 1; });
+        return Object.keys(set).map(Number).sort(function (a, b) { return a - b; });
+    }
+    // какие слоты СЕЙЧАС на экране: только их и опрашиваем (скрытый блок молчит)
+    function liveSlots() {
+        var out = [], seen = {};
+        var els = document.querySelectorAll('#panel-portfolios.active .btr-card[data-slot]');
+        Array.prototype.forEach.call(els, function (el) {
+            var n = slotNo(el.getAttribute('data-slot'));
+            if (!seen[n]) { seen[n] = 1; out.push(n); }
+        });
+        return out;
+    }
+    function nextFreeSlot() {
+        var used = slotNums();
+        for (var i = 1; i <= MAX_SLOTS; i++) if (used.indexOf(i) < 0) return i;
+        return 0;
+    }
+
+    // ---------- персист выбранных бумаг ----------
+    // Паспорт приходит из localStorage — значит, может быть подделан или протух:
+    // приводим типы руками и не пускаем внутрь ничего сверх известных полей.
+    // идентификаторы брокера — только буквы, цифры, дефис и подчёркивание:
+    // «[object Object]» из битой записи не должен изображать figi
+    function normId(v) {
+        var s = String(v == null ? '' : v).slice(0, 64);
+        return /^[A-Za-z0-9_-]*$/.test(s) ? s : '';
+    }
+    function normMeta(m) {
+        if (!m || typeof m !== 'object') return null;
+        var t = String(m.ticker || '').slice(0, 24);
+        if (!t) return null;
+        return {
+            uid: normId(m.uid),
+            ticker: t,
+            name: String(m.name || '').slice(0, 160),
+            figi: normId(m.figi),
+            lot: Math.max(1, Math.floor(+m.lot || 1)),
+            minInc: +m.minInc > 0 ? +m.minInc : 0.01
+        };
+    }
+    function saveSlots() {
+        var out = {};
+        Object.keys(SLOTS).forEach(function (n) {
+            var s = SLOTS[n];
+            if (!s.uid || !s.meta) return;
+            out[n] = {
+                uid: s.uid, meta: s.meta, side: s.side, kind: s.kind,
+                price: String(s.price || '').slice(0, 24),
+                stopKind: s.stopKind, stopPrice: String(s.stopPrice || '').slice(0, 24),
+                lots: s.lots, tapeOpen: !!s.tapeOpen
+            };
+        });
+        try { localStorage.setItem(SLOTS_KEY, JSON.stringify(out)); } catch (e) {}
+    }
+    var slotsLoaded = false;
+    function loadSlots() {
+        if (slotsLoaded) return;
+        slotsLoaded = true;
+        var o;
+        try { o = JSON.parse(localStorage.getItem(SLOTS_KEY) || 'null'); } catch (e) { return; }
+        if (!o || typeof o !== 'object') return;
+        Object.keys(o).forEach(function (k) {
+            // ключ — НОМЕР слота: без этой проверки битый ключ ('abc' → NaN → 1)
+            // молча садился на первый слот и вытеснял настоящую бумагу
+            if (!/^[1-9]\d*$/.test(k)) return;
+            var n = slotNo(k), v = o[k];
+            if (n > MAX_SLOTS || !v || typeof v !== 'object') return;
+            var meta = normMeta(v.meta);
+            var uid = normId(v.uid);
+            if (!meta || !uid) return;
+            var s = S(n);
+            s.uid = uid;
+            s.meta = meta;
+            s.side = v.side === 'sell' ? 'sell' : 'buy';
+            s.kind = ['limit', 'market', 'stop'].indexOf(v.kind) >= 0 ? v.kind : 'limit';
+            s.stopKind = v.stopKind === 'tp' ? 'tp' : 'sl';
+            s.price = numStr(v.price);
+            s.stopPrice = numStr(v.stopPrice);
+            s.lots = Math.max(1, Math.floor(+v.lots || 1));
+            s.tapeOpen = !!v.tapeOpen;
+            s.searchOpen = false;      // бумага уже выбрана — поиск свёрнут в лупу
+            s.metaStale = true;        // лотность/шаг могли смениться — обновим с сервера
+            instrMem[s.uid] = meta;
+        });
+    }
+    // в поле цены пускаем только число (из хранилища может прийти что угодно)
+    function numStr(v) {
+        var s = String(v == null ? '' : v).trim();
+        return /^\d{0,12}(\.\d{0,6})?$/.test(s) ? s : '';
+    }
+
     var instrMem = {};   // uid -> паспорт (lot, шаг цены, figi) на время сессии
 
     function A() { return window.brokerApi; }
@@ -66,8 +202,9 @@
         var v = +localStorage.getItem(SUM_LIMIT_KEY);
         return v > 0 ? v : 100000;
     }
-    function fmtPrice(n) {
-        var d = T.meta && T.meta.minInc < 0.01 ? 4 : 2;
+    // цену печатаем по шагу СВОЕЙ бумаги: у слотов он разный
+    function fmtPx(n, s) {
+        var d = s && s.meta && s.meta.minInc < 0.01 ? 4 : 2;
         return (+n || 0).toLocaleString('ru-RU', { minimumFractionDigits: d, maximumFractionDigits: d });
     }
     // хвост id счёта — маркировка «куда уходят заявки» в шапках и модалке
@@ -86,82 +223,105 @@
               '<button type="button" onclick="pftLiveOk()">Понятно</button></div>'
             : '';
     }
-    // три карточки терминала — каждая самостоятельный блок дашборд-конструктора
+    // карточки терминала — самостоятельные блоки дашборд-конструктора
     // (drag/resize/шестерёнка/корзина через .pfd-chrome, как у всех виджетов);
-    // классы .btr-ob/.btr-ticket/.btr-orders — якоря точечных перерисовок
-    function obCard() { return '<div class="dash2-card pf-card2 btr-card btr-ob">' + obCardHtml() + '</div>'; }
-    function ticketCard() { return '<div class="dash2-card pf-card2 btr-card btr-ticket">' + ticketHtml() + '</div>'; }
+    // data-slot — якорь точечных перерисовок и опроса живых слотов
+    function obCard(n) {
+        n = slotNo(n);
+        return '<div class="dash2-card pf-card2 btr-card btr-ob" data-slot="' + n + '">' + obCardHtml(n) + '</div>';
+    }
+    function ticketCard(n) {
+        n = slotNo(n);
+        return '<div class="dash2-card pf-card2 btr-card btr-ticket" data-slot="' + n + '">' + ticketHtml(n) + '</div>';
+    }
     function ordersCard() { return '<div class="dash2-card pf-card2 btr-card btr-orders">' + ordersHtml() + '</div>'; }
     // fallback-раскладка (фиксированная сетка) — если конструктор недоступен;
     // основной путь рендерит карточки блоками через pfdBodyHtml (portfolios.js)
     function pftTerminalHtml() {
+        loadSlots();
+        var cards = slotNums().map(function (n) { return obCard(n) + ticketCard(n); }).join('');
         return '<div class="pfd-grid" id="pfdGrid"><div class="btr-wrap" style="grid-column: 1 / span 12">' +
             bannerHtml() +
-            '<div class="btr-grid">' + obCard() + ticketCard() + ordersCard() + '</div></div></div>';
+            '<div class="btr-grid">' + cards + ordersCard() + '</div></div></div>';
     }
 
     var IC_LENS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>';
     var IC_CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
+    var IC_PLUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
 
     // ---- карточка стакана ----
     // статус торгов — тихая точка с подписью (без пилюли)
-    function statusDot() {
-        if (!T.uid) return '';
-        var st = T.status && T.status.tradingStatus;
+    function statusDot(s) {
+        if (!s.uid) return '';
+        var st = s.status && s.status.tradingStatus;
         var open = st === 'SECURITY_TRADING_STATUS_NORMAL_TRADING';
         return '<span class="btr-st ' + (open ? 'ok' : 'off') + '"><i></i>' +
             (open ? 'торги идут' : 'сессия закрыта') + '</span>';
     }
-    function instrHtml() {
-        if (!T.meta) return '';
-        return '<b>' + esc(T.meta.ticker) + '</b><span>' + esc(T.meta.name) + '</span>' + statusDot();
+    function instrHtml(s) {
+        if (!s.meta) return '';
+        return '<b>' + esc(s.meta.ticker) + '</b><span>' + esc(s.meta.name) + '</span>' + statusDot(s);
     }
-    function obCardHtml() {
-        var lens = '<button type="button" class="btr-iconbtn' + (T.searchOpen ? ' on' : '') + '" id="btSearchTg" ' +
-            'title="Поиск бумаги" aria-label="Поиск бумаги" onclick="pftSearchToggle()">' + IC_LENS + '</button>';
+    // заголовок блока называет БУМАГУ: со вторым стаканом «Стакан» и «Стакан»
+    // не различить, а карточки конструктора можно растащить по разным углам
+    function slotTitle(base, n) {
+        var s = S(n);
+        return s.meta ? base + ' · ' + s.meta.ticker : (slotNums().length > 1 ? base + ' ' + n : base);
+    }
+    function obCardHtml(n) {
+        n = slotNo(n);
+        var s = S(n);
+        var lens = '<button type="button" class="btr-iconbtn' + (s.searchOpen ? ' on' : '') + '" id="' + eid('SearchTg', n) + '" ' +
+            'title="Поиск бумаги" aria-label="Поиск бумаги" onclick="pftSearchToggle(' + n + ')">' + IC_LENS + '</button>';
+        // «+» — быстрый путь ко второй бумаге, не заходя в «Добавить виджет»
+        var add = nextFreeSlot()
+            ? '<button type="button" class="btr-iconbtn" title="Ещё одна бумага: стакан и заявка" ' +
+              'aria-label="Добавить стакан по другой бумаге" onclick="pftAddSlot()">' + IC_PLUS + '</button>'
+            : '';
         // кнопки конструктора — в потоке шапки ПЕРЕД лупой (PFD_OWN_CHROME, R9.2)
-        var head = PF.pfCardHead('', 'Стакан', null, PF.pfdInChromeHtml('trade:ob') + lens);
-        var search = '<div class="btr-search' + (T.searchOpen ? ' open' : '') + '" id="btSearchWrap">' +
-            '<input class="ph-input" id="btSearch" type="text" ' +
-            'placeholder="Тикер или название — например, SBER" autocomplete="off" spellcheck="false" value="' + esc(T.searchQ) + '">' +
-            '<div class="btr-search-drop" id="btSearchDrop"></div></div>';
-        var title = T.meta ? '<div class="btr-instr">' + instrHtml() + '</div>' : '';
-        var tape = T.uid
-            ? '<div class="btr-fold' + (T.tapeOpen ? ' open' : '') + '" id="btTapeFold">' +
-                '<button type="button" class="btr-fold-btn" onclick="pftTapeToggle()">' +
+        var head = PF.pfCardHead('', slotTitle('Стакан', n), null, PF.pfdInChromeHtml(obId(n)) + add + lens);
+        var search = '<div class="btr-search' + (s.searchOpen ? ' open' : '') + '" id="' + eid('SearchWrap', n) + '">' +
+            '<input class="ph-input" id="' + eid('Search', n) + '" type="text" ' +
+            'placeholder="Тикер или название — например, SBER" autocomplete="off" spellcheck="false" value="' + esc(s.searchQ) + '">' +
+            '<div class="btr-search-drop" id="' + eid('SearchDrop', n) + '"></div></div>';
+        var title = s.meta ? '<div class="btr-instr" id="' + eid('Instr', n) + '">' + instrHtml(s) + '</div>' : '';
+        var tape = s.uid
+            ? '<div class="btr-fold' + (s.tapeOpen ? ' open' : '') + '" id="' + eid('TapeFold', n) + '">' +
+                '<button type="button" class="btr-fold-btn" onclick="pftTapeToggle(' + n + ')">' +
                     '<span class="btr-fold-lab">Лента сделок</span>' +
-                    '<span class="btr-fold-cnt" id="btTapeCnt">' + tapeCnt() + '</span>' +
+                    '<span class="btr-fold-cnt" id="' + eid('TapeCnt', n) + '">' + tapeCnt(s) + '</span>' +
                     '<span class="btr-fold-ch">' + IC_CHEV + '</span>' +
                 '</button>' +
-                '<div class="btr-fold-body"><div class="btr-tape" id="btTape">' + tapeHtml() + '</div></div>' +
+                '<div class="btr-fold-body"><div class="btr-tape" id="' + eid('Tape', n) + '">' + tapeHtml(s) + '</div></div>' +
               '</div>'
             : '';
-        return head + search + title + '<div id="btOb">' + obHtml() + '</div>' + tape;
+        return head + search + title + '<div id="' + eid('Ob', n) + '">' + obHtml(n) + '</div>' + tape;
     }
-    function tapeCnt() { return T.tape.length ? T.tape.length + ' за 15 мин' : ''; }
-    function tapeHtml() {
-        if (!T.tape.length) return '<div class="btr-tape-empty">Сделок за последние минуты нет.</div>';
+    function tapeCnt(s) { return s.tape.length ? s.tape.length + ' за 15 мин' : ''; }
+    function tapeHtml(s) {
+        if (!s.tapeOpen) return '<div class="btr-tape-empty">Раскройте ленту — покажем сделки за последние 15 минут.</div>';
+        if (!s.tape.length) return '<div class="btr-tape-empty">Сделок за последние минуты нет.</div>';
         var q2n = A().q2n;
-        return T.tape.slice(0, 10).map(function (t) {
+        return s.tape.slice(0, 10).map(function (t) {
             var buy = t.direction === 'TRADE_DIRECTION_BUY';
             var tm = '';
             try { tm = new Date(t.time).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }); } catch (e) {}
             return '<div class="btr-tape-row"><i>' + tm + '</i>' +
-                '<b class="' + (buy ? 'bid' : 'ask') + '">' + fmtPrice(q2n(t.price)) + '</b>' +
+                '<b class="' + (buy ? 'bid' : 'ask') + '">' + fmtPx(q2n(t.price), s) + '</b>' +
                 '<span>' + (+t.quantity || 0).toLocaleString('ru-RU') + '</span></div>';
         }).join('');
     }
     // пустой стакан (закрытая сессия / неликвид) — не голый текст, а плашка со
     // статусом и последней/закрывающей ценой: пользователю есть на что смотреть
     var OB_EMPTY_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h8M4 12h13M4 17h6"/><circle cx="17" cy="8" r="3.2"/><path d="m19.4 10.4 2.1 2.1"/></svg>';
-    function obEmptyHtml(q2n) {
-        var lp = q2n(T.ob.lastPrice), cp = q2n(T.ob.closePrice);
-        var closed = !!(T.status && T.status.tradingStatus &&
-            T.status.tradingStatus !== 'SECURITY_TRADING_STATUS_NORMAL_TRADING');
+    function obEmptyHtml(s, q2n) {
+        var lp = q2n(s.ob.lastPrice), cp = q2n(s.ob.closePrice);
+        var closed = !!(s.status && s.status.tradingStatus &&
+            s.status.tradingStatus !== 'SECURITY_TRADING_STATUS_NORMAL_TRADING');
         var px = (lp || cp)
             ? '<div class="btr-obempty-px">' +
-                (lp ? '<div><span>Последняя</span><b>' + fmtPrice(lp) + ' ₽</b></div>' : '') +
-                (cp ? '<div><span>Закрытие</span><b>' + fmtPrice(cp) + ' ₽</b></div>' : '') +
+                (lp ? '<div><span>Последняя</span><b>' + fmtPx(lp, s) + ' ₽</b></div>' : '') +
+                (cp ? '<div><span>Закрытие</span><b>' + fmtPx(cp, s) + ' ₽</b></div>' : '') +
               '</div>' : '';
         return '<div class="btr-obempty">' +
             '<div class="btr-obempty-ic">' + OB_EMPTY_SVG + '</div>' +
@@ -171,50 +331,51 @@
                 : 'В стакане по этой бумаге сейчас нет активных заявок.') + '</div>' +
             px + '</div>';
     }
+
     // ---- свои заявки прямо в стакане ----
-    // Своя лимитная заявка по ВЫБРАННОЙ бумаге отмечается на строке стакана: видно,
+    // Своя лимитная заявка по бумаге СЛОТА отмечается на строке стакана: видно,
     // на какой цене она стоит и сколько лотов очереди — мои. Заявку вне глубины
     // стакана (далеко от рынка) строкой не покажешь — она уходит в отдельную
     // полоску над/под лестницей, иначе выставил и «потерял».
     // Ключ — цена в шагах инструмента: и стакан, и заявка приходят как units+nano,
     // сравнивать их напрямую нельзя (плавающая точка).
-    function pxStep() { return (T.meta && T.meta.minInc) || 0.01; }
-    function pxKey(p) { return String(Math.round(p / pxStep())); }
-    function myOrdersByPx() {
+    function pxStep(s) { return (s.meta && s.meta.minInc) || 0.01; }
+    function pxKey(p, s) { return String(Math.round(p / pxStep(s))); }
+    function myOrdersByPx(s) {
         var out = {};
-        if (!T.uid || !T.orders.length || !A()) return out;
-        var q2n = A().q2n, figi = T.meta && T.meta.figi;
+        if (!s.uid || !T.orders.length || !A()) return out;
+        var q2n = A().q2n, figi = s.meta && s.meta.figi;
         T.orders.forEach(function (o) {
-            if (o.instrumentUid !== T.uid && !(figi && o.figi === figi)) return;
+            if (o.instrumentUid !== s.uid && !(figi && o.figi === figi)) return;
             if (o.orderType === 'ORDER_TYPE_MARKET') return;   // у рыночной цены в стакане нет
             var px = q2n(o.initialSecurityPrice);
             if (!(px > 0)) return;
             // в очереди стоит только неисполненный остаток
             var left = Math.max(0, (+o.lotsRequested || 0) - (+o.lotsExecuted || 0));
             if (!left) return;
-            var k = pxKey(px);
+            var k = pxKey(px, s);
             var e = out[k] || (out[k] = { px: px, lots: 0, buy: 0, sell: 0 });
             e.lots += left;
             if (o.direction === 'ORDER_DIRECTION_BUY') e.buy += left; else e.sell += left;
         });
         return out;
     }
-    function myTitle(m) {
+    function myTitle(m, s) {
         var side = (m.buy && m.sell) ? 'заявки' : (m.buy ? 'покупка' : 'продажа');
-        return 'Ваша ' + side + ' · ' + m.lots + ' лот по ' + fmtPrice(m.px) + ' ₽';
+        return 'Ваша ' + side + ' · ' + m.lots + ' лот по ' + fmtPx(m.px, s) + ' ₽';
     }
     // полоска «моя заявка вне лестницы»: цена далеко от рынка либо стакан пуст
-    function myOutRow(m, where) {
+    function myOutRow(m, where, s, n) {
         return '<div class="btr-axout' + (where ? ' ' + where : '') + '" role="button" ' +
-            'title="' + esc(myTitle(m)) + '" onclick="pftPickPrice(\'' + jsArg(String(m.px)) + '\')">' +
+            'title="' + esc(myTitle(m, s)) + '" onclick="pftPickPrice(' + n + ',\'' + jsArg(String(m.px)) + '\')">' +
             '<span class="btr-axout-d ' + (m.sell && !m.buy ? 'sell' : 'buy') + '"></span>' +
-            '<b>' + fmtPrice(m.px) + ' ₽</b>' +
+            '<b>' + fmtPx(m.px, s) + ' ₽</b>' +
             '<span>' + (m.buy && m.sell ? 'мои заявки' : (m.buy ? 'моя покупка' : 'моя продажа')) +
                 ' · ' + m.lots + ' лот</span>' +
             '<i>' + (where === 'up' ? 'выше стакана' : where === 'down' ? 'ниже стакана' : 'ждёт очереди') + '</i>' +
         '</div>';
     }
-    function myOutList(mine, seen, hiPx, loPx, last) {
+    function myOutList(mine, seen, hiPx, loPx, last, s, n) {
         var up = [], down = [];
         Object.keys(mine).forEach(function (k) {
             if (seen[k]) return;
@@ -226,23 +387,25 @@
         up.sort(function (a, b) { return b.px - a.px; });
         down.sort(function (a, b) { return b.px - a.px; });
         return {
-            up: up.map(function (m) { return myOutRow(m, hiPx == null ? '' : 'up'); }).join(''),
-            down: down.map(function (m) { return myOutRow(m, hiPx == null ? '' : 'down'); }).join('')
+            up: up.map(function (m) { return myOutRow(m, hiPx == null ? '' : 'up', s, n); }).join(''),
+            down: down.map(function (m) { return myOutRow(m, hiPx == null ? '' : 'down', s, n); }).join('')
         };
     }
     // стакан по оси цены: [объём спроса ←] цена [→ объём предложения];
     // клик по строке кладёт цену в активное ценовое поле тикета
-    function obHtml() {
-        if (!T.uid) return '<div class="pfal-empty">Найдите бумагу в поиске — стакан появится здесь. Подсказка: тикеры есть в виджете «Позиции у брокера».</div>';
-        if (!T.ob) return '<div class="btr-obwait">Загружаем стакан…</div>';
+    function obHtml(n) {
+        n = slotNo(n);
+        var s = S(n);
+        if (!s.uid) return '<div class="pfal-empty">Найдите бумагу в поиске — стакан появится здесь. Подсказка: тикеры есть в виджете «Позиции у брокера».</div>';
+        if (!s.ob) return '<div class="btr-obwait">Загружаем стакан…</div>';
         var q2n = A().q2n;
-        var asks = (T.ob.asks || []).slice(0, OB_DEPTH);
-        var bids = (T.ob.bids || []).slice(0, OB_DEPTH);
-        var mine = myOrdersByPx(), seen = {};
+        var asks = (s.ob.asks || []).slice(0, OB_DEPTH);
+        var bids = (s.ob.bids || []).slice(0, OB_DEPTH);
+        var mine = myOrdersByPx(s), seen = {};
         // стакан пуст (закрытая сессия/неликвид) — заявка всё равно висит: показываем
         if (!asks.length && !bids.length) {
-            var solo = myOutList(mine, seen, null, null, 0);
-            return obEmptyHtml(q2n) + (solo.up + solo.down);
+            var solo = myOutList(mine, seen, null, null, 0, s, n);
+            return obEmptyHtml(s, q2n) + (solo.up + solo.down);
         }
         var maxQ = 1;
         asks.concat(bids).forEach(function (r) { maxQ = Math.max(maxQ, +r.quantity || 0); });
@@ -250,27 +413,27 @@
         function row(r, side, best) {
             var p = q2n(r.price), q = +r.quantity || 0;
             var w = Math.max(4, Math.round(q / maxQ * 100));
-            var k = pxKey(p), m = mine[k];
+            var k = pxKey(p, s), m = mine[k];
             if (m) seen[k] = 1;
             // метка стоит у центра оси (рядом с ценой), где начинается полоса объёма
-            var badge = m ? '<span class="btr-axmine" title="' + esc(myTitle(m)) + '">' + m.lots + '</span>' : '';
+            var badge = m ? '<span class="btr-axmine" title="' + esc(myTitle(m, s)) + '">' + m.lots + '</span>' : '';
             var half = '<span class="btr-axh"><i style="width:' + w + '%"></i><em>' + q.toLocaleString('ru-RU') + '</em>' + badge + '</span>';
-            return '<div class="btr-axrow ' + side + (best ? ' best' : '') + (m ? ' mine' : '') + '" role="button" onclick="pftPickPrice(\'' + jsArg(String(p)) + '\')">' +
+            return '<div class="btr-axrow ' + side + (best ? ' best' : '') + (m ? ' mine' : '') + '" role="button" onclick="pftPickPrice(' + n + ',\'' + jsArg(String(p)) + '\')">' +
                 (side === 'bid' ? half : '<span class="btr-axh"></span>') +
-                '<b>' + fmtPrice(p) + '</b>' +
+                '<b>' + fmtPx(p, s) + '</b>' +
                 (side === 'ask' ? half : '<span class="btr-axh"></span>') +
             '</div>';
         }
         var bb = bids.length ? q2n(bids[0].price) : 0, ba = asks.length ? q2n(asks[0].price) : 0;
         // центр оси — последняя цена крупно (стрелка к закрытию) + спред,
         // между hairline-линиями; фокус, вокруг которого дышит стакан
-        var last = q2n(T.ob.lastPrice) || ((bb && ba) ? (bb + ba) / 2 : 0);
-        var close = q2n(T.ob.closePrice);
+        var last = q2n(s.ob.lastPrice) || ((bb && ba) ? (bb + ba) / 2 : 0);
+        var close = q2n(s.ob.closePrice);
         var dir = (last && close) ? (last > close ? 'up' : last < close ? 'down' : '') : '';
         var mid = '<div class="btr-axmid ' + dir + '">' +
             (dir ? '<i class="ar">' + (dir === 'up' ? '▲' : '▼') + '</i>' : '') +
-            '<b>' + fmtPrice(last) + '</b><em>₽</em>' +
-            ((bb && ba) ? '<span class="sp">спред <b>' + fmtPrice(ba - bb) + '</b></span>' : '') +
+            '<b>' + fmtPx(last, s) + '</b><em>₽</em>' +
+            ((bb && ba) ? '<span class="sp">спред <b>' + fmtPx(ba - bb, s) + '</b></span>' : '') +
         '</div>';
         var askArr = asks.slice().reverse();
         // строки собираем ДО myOutList: row() по ходу отмечает в seen цены,
@@ -279,7 +442,7 @@
         var bidHtml = bids.map(function (r, i) { return row(r, 'bid', i === 0); }).join('');
         var hiPx = askArr.length ? q2n(askArr[0].price) : q2n(bids[0].price);
         var loPx = bids.length ? q2n(bids[bids.length - 1].price) : q2n(askArr[askArr.length - 1].price);
-        var out = myOutList(mine, seen, hiPx, loPx, last);
+        var out = myOutList(mine, seen, hiPx, loPx, last, s, n);
         return '<div class="btr-ax">' +
             '<div class="btr-ax-head"><span>Лоты · спрос</span><span>Цена</span><span>Предложение · лоты</span></div>' +
             out.up + askHtml + mid + bidHtml + out.down +
@@ -288,141 +451,146 @@
 
     // ---- карточка тикета ----
     // референс у цены: середина стакана — клик подставляет (по шагу)
-    function pxRefBtn() {
-        var m = midPrice();
+    function pxRefBtn(n) {
+        var s = S(n), m = midPrice(s);
         return m > 0
-            ? '<button type="button" class="btr-ref" onclick="pftUseMarket()">рынок <b>' + fmtPrice(m) + ' ₽</b></button>'
+            ? '<button type="button" class="btr-ref" onclick="pftUseMarket(' + n + ')">рынок <b>' + fmtPx(m, s) + ' ₽</b></button>'
             : '';
     }
     // референс у лотов: «доступно» (покупка — от свободных денег,
     // продажа — остаток бумаги на счёте) — клик подставляет
-    function availLots() {
-        if (!T.meta) return 0;
-        var lot = T.meta.lot || 1;
-        if (T.side === 'sell') {
-            var units = T.pos.secs[T.uid];
-            if (units == null && T.meta.figi) units = T.pos.secs[T.meta.figi];
+    function availLots(s) {
+        if (!s.meta) return 0;
+        var lot = s.meta.lot || 1;
+        if (s.side === 'sell') {
+            var units = T.pos.secs[s.uid];
+            if (units == null && s.meta.figi) units = T.pos.secs[s.meta.figi];
             return units > 0 ? Math.floor(units / lot) : 0;
         }
-        var price = estPrice() || midPrice();
+        var price = estPrice(s) || midPrice(s);
         if (!(T.pos.money > 0) || !(price > 0)) return 0;
         return Math.floor(T.pos.money / (price * lot));
     }
-    function lotsRefBtn() {
-        if (!T.meta) return '';
-        if (T.side === 'sell') {
-            var n = availLots();
+    function lotsRefBtn(n) {
+        var s = S(n);
+        if (!s.meta) return '';
+        if (s.side === 'sell') {
+            var k = availLots(s);
             // 0 в позиции — тоже показываем: сразу видно, что продавать нечего
-            if (T.pos.secs[T.uid] == null && !(T.meta.figi && T.pos.secs[T.meta.figi] != null)) return '';
-            return '<button type="button" class="btr-ref" onclick="pftUseAvail()">в позиции <b>' + n + ' лот</b></button>';
+            if (T.pos.secs[s.uid] == null && !(s.meta.figi && T.pos.secs[s.meta.figi] != null)) return '';
+            return '<button type="button" class="btr-ref" onclick="pftUseAvail(' + n + ')">в позиции <b>' + k + ' лот</b></button>';
         }
-        var a = availLots();
-        return a > 0 ? '<button type="button" class="btr-ref" onclick="pftUseAvail()">доступно <b>' + a.toLocaleString('ru-RU') + ' лот</b></button>' : '';
+        var a = availLots(s);
+        return a > 0 ? '<button type="button" class="btr-ref" onclick="pftUseAvail(' + n + ')">доступно <b>' + a.toLocaleString('ru-RU') + ' лот</b></button>' : '';
     }
     // сводка сделки над кнопкой: цена × штуки · свободные деньги счёта
-    function dealHtml() {
-        if (!T.meta) return '';
-        var shares = T.lots * (T.meta.lot || 1);
-        var est = estPrice();
+    function dealHtml(s) {
+        if (!s.meta) return '';
+        var shares = s.lots * (s.meta.lot || 1);
+        var est = estPrice(s);
         var left = (est > 0 && shares > 0)
-            ? '<span>' + fmtPrice(est) + ' ₽ × ' + shares.toLocaleString('ru-RU') + ' шт</span>' : '<span></span>';
+            ? '<span>' + fmtPx(est, s) + ' ₽ × ' + shares.toLocaleString('ru-RU') + ' шт</span>' : '<span></span>';
         var right = T.pos.money != null
             ? '<span>свободно <b>' + fmtRub(T.pos.money) + '</b></span>' : '';
         return left + right;
     }
     // чистый текст (без esc) — идёт и в textContent при точечном обновлении
-    function submitLbl() {
-        return (T.side === 'buy' ? 'Купить ' : 'Продать ') + T.meta.ticker + ' · ' + T.lots + ' лот';
+    function submitLbl(s) {
+        return (s.side === 'buy' ? 'Купить ' : 'Продать ') + s.meta.ticker + ' · ' + s.lots + ' лот';
     }
     // пустая сумма (цена ещё не введена) → пустая строка: шов и цифра скрыты CSS-ом
-    function submitSum() {
-        var sum = estPrice() * T.lots * (T.meta.lot || 1);
+    function submitSum(s) {
+        var sum = estPrice(s) * s.lots * (s.meta.lot || 1);
         if (!(sum > 0)) return '';
-        return (T.kind === 'limit' ? '' : '≈ ') + fmtRub(sum);
+        return (s.kind === 'limit' ? '' : '≈ ') + fmtRub(sum);
     }
-    function ticketHtml() {
+    function ticketHtml(n) {
+        n = slotNo(n);
+        var s = S(n);
         var c = conn();
+        // порядок в шапке: сперва СЧЁТ (куда уйдёт заявка), потом бумага с лотностью
+        // (просьба 2026-07-18) — сам тикер вынесен в заголовок карточки
         var note = '<div class="btr-hd-note">' +
-            (T.meta ? '<span class="btr-hd-ins">' + esc(T.meta.ticker) + ' · лот ' + (T.meta.lot || 1) + '</span>' : '') +
             (c ? '<span class="btr-hd-acc">' + esc(c.accountName || 'Счёт') +
                 (accTail() ? ' <b>····' + accTail() + '</b>' : '') +
                 (c.sandbox ? '<i class="btr-sand">песочница</i>' : '') + '</span>' : '') +
+            (s.meta ? '<span class="btr-hd-ins">' + esc(s.meta.ticker) + ' · лот ' + (s.meta.lot || 1) + '</span>' : '') +
         '</div>';
-        var head = PF.pfCardHead('', 'Заявка', null, PF.pfdInChromeHtml('trade:ticket') + note);
-        if (!T.meta) return head + '<div class="pfal-empty">Тикет откроется после выбора бумаги в стакане.</div>';
-        var inc = T.meta.minInc || 0.01;
-        var stepHint = '<i> · шаг ' + fmtPrice(inc) + '</i>';
-        var side = '<div class="btr-side" id="btSide">' +
-            '<button type="button" class="btr-side-b buy' + (T.side === 'buy' ? ' active' : '') + '" onclick="pftSide(\'buy\')">Купить</button>' +
-            '<button type="button" class="btr-side-b sell' + (T.side === 'sell' ? ' active' : '') + '" onclick="pftSide(\'sell\')">Продать</button></div>';
+        var head = PF.pfCardHead('', slotTitle('Заявка', n), null, PF.pfdInChromeHtml(tkId(n)) + note);
+        if (!s.meta) return head + '<div class="pfal-empty">Тикет откроется после выбора бумаги в стакане.</div>';
+        var inc = s.meta.minInc || 0.01;
+        var stepHint = '<i> · шаг ' + fmtPx(inc, s) + '</i>';
+        var side = '<div class="btr-side" id="' + eid('Side', n) + '">' +
+            '<button type="button" class="btr-side-b buy' + (s.side === 'buy' ? ' active' : '') + '" onclick="pftSide(' + n + ',\'buy\')">Купить</button>' +
+            '<button type="button" class="btr-side-b sell' + (s.side === 'sell' ? ' active' : '') + '" onclick="pftSide(' + n + ',\'sell\')">Продать</button></div>';
         var tabs = function (id, items, cur, fn) {
             return '<div class="btr-ttabs" id="' + id + '">' + items.map(function (it) {
-                return '<button type="button"' + (cur === it[0] ? ' class="active"' : '') + ' onclick="' + fn + '(\'' + it[0] + '\')">' + it[1] + '</button>';
+                return '<button type="button"' + (cur === it[0] ? ' class="active"' : '') + ' onclick="' + fn + '(' + n + ',\'' + it[0] + '\')">' + it[1] + '</button>';
             }).join('') + '</div>';
         };
-        var kind = tabs('btKind', [['limit', 'Лимитная'], ['market', 'Рыночная'], ['stop', 'Стоп']], T.kind, 'pftKind');
+        var kind = tabs(eid('Kind', n), [['limit', 'Лимитная'], ['market', 'Рыночная'], ['stop', 'Стоп']], s.kind, 'pftKind');
         var kindFields;
-        if (T.kind === 'limit') {
+        if (s.kind === 'limit') {
             kindFields = '<div class="btr-bf"><div class="btr-bf-lab">' +
-                '<label for="btPrice">Цена' + stepHint + '</label>' +
-                '<span id="btPxRef">' + pxRefBtn() + '</span></div>' +
-                '<div class="btr-bigrow"><input class="btr-big" id="btPrice" type="number" step="' + inc + '" min="0" ' +
-                'placeholder="0" value="' + esc(T.price) + '"><span class="btr-big-suf">₽</span></div></div>';
-        } else if (T.kind === 'stop') {
-            kindFields = tabs('btStopKind', [['sl', 'Стоп-лосс'], ['tp', 'Тейк-профит']], T.stopKind, 'pftStopKind') +
+                '<label for="' + eid('Price', n) + '">Цена' + stepHint + '</label>' +
+                '<span id="' + eid('PxRef', n) + '">' + pxRefBtn(n) + '</span></div>' +
+                '<div class="btr-bigrow"><input class="btr-big" id="' + eid('Price', n) + '" type="number" step="' + inc + '" min="0" ' +
+                'placeholder="0" value="' + esc(s.price) + '"><span class="btr-big-suf">₽</span></div></div>';
+        } else if (s.kind === 'stop') {
+            kindFields = tabs(eid('StopKind', n), [['sl', 'Стоп-лосс'], ['tp', 'Тейк-профит']], s.stopKind, 'pftStopKind') +
                 '<div class="btr-bf"><div class="btr-bf-lab">' +
-                '<label for="btStop">Стоп-цена' + stepHint + '</label>' +
-                '<span id="btPxRef">' + pxRefBtn() + '</span></div>' +
-                '<div class="btr-bigrow"><input class="btr-big" id="btStop" type="number" step="' + inc + '" min="0" ' +
-                'placeholder="0" value="' + esc(T.stopPrice) + '"><span class="btr-big-suf">₽</span></div>' +
+                '<label for="' + eid('Stop', n) + '">Стоп-цена' + stepHint + '</label>' +
+                '<span id="' + eid('PxRef', n) + '">' + pxRefBtn(n) + '</span></div>' +
+                '<div class="btr-bigrow"><input class="btr-big" id="' + eid('Stop', n) + '" type="number" step="' + inc + '" min="0" ' +
+                'placeholder="0" value="' + esc(s.stopPrice) + '"><span class="btr-big-suf">₽</span></div>' +
                 '<div class="btr-note">При достижении стоп-цены уйдёт рыночная заявка. Действует до отмены.</div></div>';
         } else {
-            var m = midPrice();
+            var m = midPrice(s);
             kindFields = '<div class="btr-note">Исполнится по лучшей цене стакана' +
-                (m > 0 ? ' — сейчас ≈ ' + fmtPrice(m) + ' ₽' : '') + '. Итог зависит от рынка.</div>';
+                (m > 0 ? ' — сейчас ≈ ' + fmtPx(m, s) + ' ₽' : '') + '. Итог зависит от рынка.</div>';
         }
-        var shares = T.lots * (T.meta.lot || 1);
+        var shares = s.lots * (s.meta.lot || 1);
         var lotsField = '<div class="btr-bf"><div class="btr-bf-lab">' +
-            '<label for="btLots">Лоты<i> · 1 лот = ' + (T.meta.lot || 1) + ' шт</i></label>' +
-            '<span id="btLotsRef">' + lotsRefBtn() + '</span></div>' +
-            '<div class="btr-bigrow"><input class="btr-big" id="btLots" type="number" step="1" min="1" value="' + T.lots + '">' +
-            '<span class="btr-big-suf" id="btShares">· ' + shares.toLocaleString('ru-RU') + ' шт</span></div></div>';
+            '<label for="' + eid('Lots', n) + '">Лоты<i> · 1 лот = ' + (s.meta.lot || 1) + ' шт</i></label>' +
+            '<span id="' + eid('LotsRef', n) + '">' + lotsRefBtn(n) + '</span></div>' +
+            '<div class="btr-bigrow"><input class="btr-big" id="' + eid('Lots', n) + '" type="number" step="1" min="1" value="' + s.lots + '">' +
+            '<span class="btr-big-suf" id="' + eid('Shares', n) + '">· ' + shares.toLocaleString('ru-RU') + ' шт</span></div></div>';
         return head + side + kind + kindFields + lotsField +
-            '<div class="btr-deal" id="btDeal">' + dealHtml() + '</div>' +
-            '<div class="btr-warns" id="btWarns">' + warnsHtml() + '</div>' +
-            '<button type="button" class="btr-submit ' + T.side + '" id="btSubmit" onclick="pftAsk()">' +
-                '<span class="btr-sb-l">' + esc(submitLbl()) + '</span>' +
-                '<span class="btr-sb-s">' + submitSum() + '</span></button>' +
+            '<div class="btr-deal" id="' + eid('Deal', n) + '">' + dealHtml(s) + '</div>' +
+            '<div class="btr-warns" id="' + eid('Warns', n) + '">' + warnsHtml(s) + '</div>' +
+            '<button type="button" class="btr-submit ' + s.side + '" id="' + eid('Submit', n) + '" onclick="pftAsk(' + n + ')">' +
+                '<span class="btr-sb-l">' + esc(submitLbl(s)) + '</span>' +
+                '<span class="btr-sb-s">' + submitSum(s) + '</span></button>' +
             '<div class="btr-subnote">' + IC_SHIELD + '<span>Подтверждение вводом суммы от</span>' +
-            '<input id="btSumLimit" type="number" min="1000" step="1000" value="' + sumLimit() + '"><span>₽</span></div>';
+            '<input id="' + eid('SumLimit', n) + '" type="number" min="1000" step="1000" value="' + sumLimit() + '"><span>₽</span></div>';
     }
     var IC_SHIELD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5 4.5 5.5v6c0 4.6 3.2 8.1 7.5 9.5 4.3-1.4 7.5-4.9 7.5-9.5v-6z"/></svg>';
-    function estPrice() {
+    function estPrice(s) {
         var q2n = A().q2n;
-        if (T.kind === 'limit') return +T.price || 0;
-        if (T.kind === 'stop') return +T.stopPrice || 0;
-        if (!T.ob) return 0;
-        var best = T.side === 'buy' ? (T.ob.asks || [])[0] : (T.ob.bids || [])[0];
+        if (s.kind === 'limit') return +s.price || 0;
+        if (s.kind === 'stop') return +s.stopPrice || 0;
+        if (!s.ob) return 0;
+        var best = s.side === 'buy' ? (s.ob.asks || [])[0] : (s.ob.bids || [])[0];
         return best ? q2n(best.price) : 0;
     }
-    function midPrice() {
-        if (!T.ob) return 0;
+    function midPrice(s) {
+        if (!s.ob) return 0;
         var q2n = A().q2n;
-        var b = (T.ob.bids || [])[0], a = (T.ob.asks || [])[0];
+        var b = (s.ob.bids || [])[0], a = (s.ob.asks || [])[0];
         if (b && a) return (q2n(b.price) + q2n(a.price)) / 2;
         return q2n((b || a || {}).price);
     }
-    function warnsHtml() {
+    function warnsHtml(s) {
         var out = [];
-        var st = T.status && T.status.tradingStatus;
-        if (T.uid && st && st !== 'SECURITY_TRADING_STATUS_NORMAL_TRADING') {
+        var st = s.status && s.status.tradingStatus;
+        if (s.uid && st && st !== 'SECURITY_TRADING_STATUS_NORMAL_TRADING') {
             out.push('Торговая сессия закрыта: заявка будет ждать открытия, цена исполнения может отличаться.');
         }
         // fat-finger только для лимитных: стоп-цена по смыслу стоит поодаль от рынка
-        if (T.kind === 'limit' && +T.price > 0) {
-            var mid = midPrice();
-            if (mid > 0 && Math.abs(+T.price - mid) / mid > FF_DEV) {
-                out.push('Цена дальше 5% от рынка (' + fmtPrice(mid) + ' сейчас) — проверьте, нет ли опечатки.');
+        if (s.kind === 'limit' && +s.price > 0) {
+            var mid = midPrice(s);
+            if (mid > 0 && Math.abs(+s.price - mid) / mid > FF_DEV) {
+                out.push('Цена дальше 5% от рынка (' + fmtPx(mid, s) + ' сейчас) — проверьте, нет ли опечатки.');
             }
         }
         var vel = velLeft();
@@ -437,9 +605,16 @@
     }
 
     // ---- карточка заявок: табы Активные / Стоп / История ----
+    // Виджет ОДИН на счёт: заявки приходят по всем бумагам сразу, дробить их по
+    // слотам нечестно — часть заявок оказалась бы не видна ни в одном стакане.
     function ordTime(iso) {
         try { return new Date(iso).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }); }
         catch (e) { return ''; }
+    }
+    // цена заявки печатается по шагу ЕЁ бумаги (у слотов он разный)
+    function metaSlot(uid) {
+        var m = instrMem[uid];
+        return { meta: m || null };
     }
     function ordRow(o) {
         var ins = instrMem[o.instrumentUid] || {};
@@ -454,7 +629,7 @@
             '<div class="btr-ord1">' +
                 '<b>' + esc(ins.ticker || (o.figi || '').slice(0, 8)) + '</b>' +
                 '<span class="btr-ord-meta">' + (buy ? 'покупка' : 'продажа') + ' · ' + kindTxt + '</span>' +
-                '<span class="btr-ord-px">' + (price > 0 ? fmtPrice(price) + '&nbsp;₽' : '—') + '</span>' +
+                '<span class="btr-ord-px">' + (price > 0 ? fmtPx(price, metaSlot(o.instrumentUid)) + '&nbsp;₽' : '—') + '</span>' +
                 '<button type="button" class="btr-ordx" title="Снять заявку" aria-label="Снять заявку" onclick="pftCancel(\'' + jsArg(o.orderId) + '\')">✕</button>' +
             '</div>' +
             '<div class="btr-ord2">' +
@@ -472,7 +647,7 @@
             '<div class="btr-ord1">' +
                 '<b>' + esc(ins.ticker || (o.figi || '').slice(0, 8)) + '</b>' +
                 '<span class="btr-ord-meta">' + (tp ? 'тейк-профит' : 'стоп-лосс') + ' · ' + (buy ? 'покупка' : 'продажа') + '</span>' +
-                '<span class="btr-ord-px">от ' + fmtPrice(q2n(o.stopPrice)) + '&nbsp;₽</span>' +
+                '<span class="btr-ord-px">от ' + fmtPx(q2n(o.stopPrice), metaSlot(o.instrumentUid)) + '&nbsp;₽</span>' +
                 '<button type="button" class="btr-ordx" title="Снять стоп-заявку" aria-label="Снять стоп-заявку" onclick="pftCancelStop(\'' + jsArg(o.stopOrderId) + '\')">✕</button>' +
             '</div>' +
             '<div class="btr-ord2">' +
@@ -520,52 +695,61 @@
     }
 
     // ---------- точечные перерисовки ----------
-    function repaintOb() { var el = dq('btOb'); if (el) el.innerHTML = obHtml(); }
-    function repaintWarns() { var el = dq('btWarns'); if (el) el.innerHTML = warnsHtml(); }
-    function repaintCards() {
-        // полная перерисовка трёх карточек без общего ре-рендера вкладки
-        var w = document.querySelector('.btr-ob'); if (w) w.innerHTML = obCardHtml();
-        var t = document.querySelector('.btr-ticket'); if (t) t.innerHTML = ticketHtml();
-        var o = document.querySelector('.btr-orders'); if (o) o.innerHTML = ordersHtml();
+    function obCardEl(n) { return document.querySelector('.btr-ob[data-slot="' + slotNo(n) + '"]'); }
+    function tkCardEl(n) { return document.querySelector('.btr-ticket[data-slot="' + slotNo(n) + '"]'); }
+    function repaintOb(n) { var el = dqs('Ob', n); if (el) el.innerHTML = obHtml(n); }
+    function repaintObAll() { liveSlots().forEach(repaintOb); }
+    function repaintWarns(n) { var el = dqs('Warns', n); if (el) el.innerHTML = warnsHtml(S(n)); }
+    // полная перерисовка карточек ОДНОГО слота без общего ре-рендера вкладки
+    function repaintSlot(n) {
+        var w = obCardEl(n); if (w) w.innerHTML = obCardHtml(n);
+        var t = tkCardEl(n); if (t) t.innerHTML = ticketHtml(n);
         wire();
     }
     function repaintOrders() { var el = document.querySelector('.btr-orders'); if (el) { el.innerHTML = ordersHtml(); } }
     // живые кусочки тикета: суффикс штук, сводка, сумма в кнопке, референсы —
     // точечно, не трогая инпуты (фокус и ввод не сбиваются)
-    function repaintTicketBits() {
-        if (!T.meta || T.busy) return;
-        var sh = dq('btShares');
-        if (sh) sh.textContent = '· ' + (T.lots * (T.meta.lot || 1)).toLocaleString('ru-RU') + ' шт';
-        var d = dq('btDeal'); if (d) d.innerHTML = dealHtml();
-        var btn = dq('btSubmit');
+    function repaintTicketBits(n) {
+        var s = S(n);
+        if (!s.meta || s.busy) return;
+        var sh = dqs('Shares', n);
+        if (sh) sh.textContent = '· ' + (s.lots * (s.meta.lot || 1)).toLocaleString('ru-RU') + ' шт';
+        var d = dqs('Deal', n); if (d) d.innerHTML = dealHtml(s);
+        var btn = dqs('Submit', n);
         if (btn) {
-            var l = btn.querySelector('.btr-sb-l'); if (l) l.textContent = submitLbl();
-            var s = btn.querySelector('.btr-sb-s'); if (s) s.textContent = submitSum();
+            var l = btn.querySelector('.btr-sb-l'); if (l) l.textContent = submitLbl(s);
+            var sm = btn.querySelector('.btr-sb-s'); if (sm) sm.textContent = submitSum(s);
         }
-        var pr = dq('btPxRef'); if (pr) pr.innerHTML = pxRefBtn();
-        var lr = dq('btLotsRef'); if (lr) lr.innerHTML = lotsRefBtn();
+        var pr = dqs('PxRef', n); if (pr) pr.innerHTML = pxRefBtn(n);
+        var lr = dqs('LotsRef', n); if (lr) lr.innerHTML = lotsRefBtn(n);
     }
 
     // ---------- данные ----------
     // ушли с подвкладки/вкладки браузера — таймеры гасим прямо из тика
     // (рендер «Портфелей» при уходе на другой раздел не перезапускается)
     function stillHere() {
-        // .btr-ob есть и в конструкторе (блок), и в fallback-сетке (.btr-grid ушёл)
-        if (document.querySelector('#panel-portfolios.active .btr-ob')) return true;
+        // .btr-card есть у любой карточки терминала: стакан могли удалить,
+        // а тикет и «Мои заявки» оставить — поллинг им всё ещё нужен
+        if (document.querySelector('#panel-portfolios.active .btr-card')) return true;
         stopPolling();
         return false;
     }
+    function awake() { return stillHere() && document.visibilityState === 'visible'; }
     function pollOb() {
-        if (!stillHere() || !T.uid || document.visibilityState !== 'visible') return;
-        A().call('GetOrderBook', { instrumentId: T.uid, depth: OB_DEPTH }).then(function (d) {
-            T.ob = d;
-            repaintOb();
-            repaintWarns();
-            repaintTicketBits();
-        }).catch(function () { /* тихо: следующий тик попробует снова */ });
+        if (!awake()) return;
+        liveSlots().forEach(function (n) {
+            var s = S(n);
+            if (!s.uid) return;
+            A().call('GetOrderBook', { instrumentId: s.uid, depth: OB_DEPTH }).then(function (d) {
+                s.ob = d;
+                repaintOb(n);
+                repaintWarns(n);
+                repaintTicketBits(n);
+            }).catch(function () { /* тихо: следующий тик попробует снова */ });
+        });
     }
     function pollOrders() {
-        if (!stillHere() || document.visibilityState !== 'visible') return;
+        if (!awake()) return;
         var c = conn(); if (!c) return;
         Promise.all([
             A().call('GetOrders', { accountId: c.accountId }),
@@ -580,12 +764,12 @@
                 if (o.instrumentUid && !instrMem[o.instrumentUid]) fetchMeta(o.instrumentUid, true);
             });
             repaintOrders();
-            repaintOb();   // метки своих заявок на лестнице — сразу, не ждя тика стакана
+            repaintObAll();   // метки своих заявок — сразу, не ждя тика стакана
         }).catch(function () {});
     }
     // свободные деньги и остатки бумаг — для референсов «доступно» и «свободно»
     function pollPos() {
-        if (!stillHere() || document.visibilityState !== 'visible') return;
+        if (!awake()) return;
         var c = conn(); if (!c) return;
         A().call('GetPositions', { accountId: c.accountId }).then(function (d) {
             var q2n = A().q2n;
@@ -599,33 +783,43 @@
                 if (s.figi) secs[s.figi] = units;
             });
             T.pos = { money: rub ? q2n(rub) : null, secs: secs };
-            repaintTicketBits();
+            liveSlots().forEach(repaintTicketBits);
         }).catch(function () { /* тихо: рефы просто не покажутся */ });
     }
-    function pollTape() {
-        if (!stillHere() || !T.uid || document.visibilityState !== 'visible') return;
-        var now = Date.now();
-        A().call('GetLastTrades', {
-            instrumentId: T.uid,
-            from: new Date(now - 15 * 60000).toISOString(),
-            to: new Date(now).toISOString()
-        }).then(function (d) {
-            var list = (d.trades || []).slice(-12).reverse();
-            T.tape = list;
-            var el = dq('btTape');
-            if (el) el.innerHTML = tapeHtml();
-            var cnt = dq('btTapeCnt');
-            if (cnt) cnt.textContent = tapeCnt();
-        }).catch(function () {});
+    // лента — только у РАЗВЁРНУТЫХ: свёрнутая никому не видна, а запрос стоит
+    // столько же, сколько стакан (на четырёх слотах это заметная разница)
+    function pollTape(only) {
+        if (!awake()) return;
+        var list = only ? [slotNo(only)] : liveSlots();
+        list.forEach(function (n) {
+            var s = S(n);
+            if (!s.uid || !s.tapeOpen) return;
+            var now = Date.now();
+            A().call('GetLastTrades', {
+                instrumentId: s.uid,
+                from: new Date(now - 15 * 60000).toISOString(),
+                to: new Date(now).toISOString()
+            }).then(function (d) {
+                s.tape = (d.trades || []).slice(-12).reverse();
+                var el = dqs('Tape', n);
+                if (el) el.innerHTML = tapeHtml(s);
+                var cnt = dqs('TapeCnt', n);
+                if (cnt) cnt.textContent = tapeCnt(s);
+            }).catch(function () {});
+        });
     }
     function pollStatus() {
-        if (!stillHere() || !T.uid) return;
-        A().call('GetTradingStatus', { instrumentId: T.uid }).then(function (d) {
-            T.status = d;
-            repaintWarns();
-            var el = document.querySelector('.btr-instr');
-            if (el && T.meta) el.innerHTML = instrHtml();
-        }).catch(function () {});
+        if (!stillHere()) return;
+        liveSlots().forEach(function (n) {
+            var s = S(n);
+            if (!s.uid) return;
+            A().call('GetTradingStatus', { instrumentId: s.uid }).then(function (d) {
+                s.status = d;
+                repaintWarns(n);
+                var el = dqs('Instr', n);
+                if (el && s.meta) el.innerHTML = instrHtml(s);
+            }).catch(function () {});
+        });
     }
     function fetchMeta(uid, quiet) {
         return A().call('GetInstrumentBy', { idType: 'INSTRUMENT_ID_TYPE_UID', id: uid }).then(function (d) {
@@ -639,14 +833,31 @@
             return instrMem[uid];
         });
     }
+    // паспорт из localStorage мог протухнуть (сплит, смена лотности) — сверяем
+    // с сервером на первом же живом такте и молча обновляем карточки слота
+    function refreshStaleMeta() {
+        liveSlots().forEach(function (n) {
+            var s = S(n);
+            if (!s.metaStale || !s.uid) return;
+            s.metaStale = false;
+            fetchMeta(s.uid).then(function (m) {
+                if (!m || !m.ticker) return;
+                var was = s.meta || {};
+                s.meta = m;
+                saveSlots();
+                if (was.lot !== m.lot || was.minInc !== m.minInc || was.ticker !== m.ticker) repaintSlot(n);
+            }, function () { /* тихо: работаем с сохранённым паспортом */ });
+        });
+    }
 
     // ---------- таймеры ----------
     function startPolling() {
         if (!T.obTimer) T.obTimer = setInterval(pollOb, 2000);
         if (!T.ordTimer) T.ordTimer = setInterval(pollOrders, 6000);
         if (!T.stTimer) T.stTimer = setInterval(pollStatus, 30000);
-        if (!T.tapeTimer) T.tapeTimer = setInterval(pollTape, 4000);
+        if (!T.tapeTimer) T.tapeTimer = setInterval(function () { pollTape(); }, 4000);
         if (!T.posTimer) T.posTimer = setInterval(pollPos, 15000);
+        refreshStaleMeta();
         pollOb(); pollOrders(); pollStatus(); pollTape(); pollPos();
     }
     function stopPolling() {
@@ -656,7 +867,7 @@
     }
     // зовётся из цикла рендера portfolios.js: включает/гасит поллинг по месту
     function pftAfterRender() {
-        var live = document.querySelector('#panel-portfolios.active .btr-ob');
+        var live = document.querySelector('#panel-portfolios.active .btr-card');
         if (live && tradeReady()) { wire(); startPolling(); }
         else stopPolling();
     }
@@ -668,42 +879,50 @@
         var len = String(inp.value || inp.placeholder || '').length;
         inp.style.width = (Math.max(1, len) + 0.7) + 'ch';
     }
-    var searchT = null;
+    var saveT = null;
+    function saveSoon() { clearTimeout(saveT); saveT = setTimeout(saveSlots, 400); }
+    // Слот у инпута берём из data-slot карточки, а не из замыкания: карточки
+    // перерисовываются целиком, и старое замыкание указывало бы в пустоту.
     function wire() {
-        var s = dq('btSearch');
-        if (s && !s._wired) {
-            s._wired = true;
-            s.addEventListener('input', function () {
-                T.searchQ = s.value.trim();
-                clearTimeout(searchT);
-                if (T.searchQ.length < 2) { renderDrop([]); return; }
-                searchT = setTimeout(function () {
-                    var q = T.searchQ;
+        liveSlots().forEach(function (n) { wireSlot(n); });
+    }
+    var searchT = {};
+    function wireSlot(n) {
+        var s = S(n);
+        var se = dqs('Search', n);
+        if (se && !se._wired) {
+            se._wired = true;
+            se.addEventListener('input', function () {
+                s.searchQ = se.value.trim();
+                clearTimeout(searchT[n]);
+                if (s.searchQ.length < 2) { renderDrop(n, []); return; }
+                searchT[n] = setTimeout(function () {
+                    var q = s.searchQ;
                     A().call('FindInstrument', { query: q }).then(function (d) {
-                        renderDrop(rankInstruments(d.instruments || [], q).slice(0, 8), q);
+                        renderDrop(n, rankInstruments(d.instruments || [], q).slice(0, 8), q);
                     }).catch(function (e) { toast(e.message, true); });
                 }, 350);
             });
         }
-        var p = dq('btPrice');
+        var p = dqs('Price', n);
         if (p && !p._wired) {
             p._wired = true;
             fitBig(p);
-            p.addEventListener('input', function () { T.price = p.value; fitBig(p); repaintWarns(); repaintTicketBits(); });
+            p.addEventListener('input', function () { s.price = p.value; fitBig(p); repaintWarns(n); repaintTicketBits(n); saveSoon(); });
         }
-        var sp = dq('btStop');
+        var sp = dqs('Stop', n);
         if (sp && !sp._wired) {
             sp._wired = true;
             fitBig(sp);
-            sp.addEventListener('input', function () { T.stopPrice = sp.value; fitBig(sp); repaintTicketBits(); });
+            sp.addEventListener('input', function () { s.stopPrice = sp.value; fitBig(sp); repaintTicketBits(n); saveSoon(); });
         }
-        var l = dq('btLots');
+        var l = dqs('Lots', n);
         if (l && !l._wired) {
             l._wired = true;
             fitBig(l);
-            l.addEventListener('input', function () { T.lots = Math.max(1, Math.floor(+l.value || 1)); fitBig(l); repaintTicketBits(); });
+            l.addEventListener('input', function () { s.lots = Math.max(1, Math.floor(+l.value || 1)); fitBig(l); repaintTicketBits(n); saveSoon(); });
         }
-        var sl = dq('btSumLimit');
+        var sl = dqs('SumLimit', n);
         if (sl && !sl._wired) {
             sl._wired = true;
             sl.addEventListener('change', function () {
@@ -750,23 +969,24 @@
         if (k.indexOf('currency') >= 0) return 'валюта';
         return '';
     }
-    function renderDrop(list, q) {
-        var d = dq('btSearchDrop'); if (!d) return;
+    function renderDrop(n, list, q) {
+        var d = dqs('SearchDrop', n); if (!d) return;
+        var s = S(n);
         if (!list.length) {
             // молчаливо пустой список читался как «поиск не работает»
             d.innerHTML = q ? '<div class="btr-search-none">Ничего не нашли по запросу «' + esc(q) + '»</div>' : '';
             d.classList.toggle('open', !!q);
-            T.search = [];
+            s.search = [];
             return;
         }
-        d.innerHTML = list.map(function (i, n) {
+        d.innerHTML = list.map(function (i, k) {
             var tag = instrTag(i);
-            return '<div class="btr-search-row" role="button" onclick="pftPick(' + n + ')">' +
+            return '<div class="btr-search-row" role="button" onclick="pftPick(' + n + ',' + k + ')">' +
                 '<b>' + esc(i.ticker || '') + '</b><span>' + esc(i.name || '') + '</span>' +
                 (tag ? '<i class="btr-search-tag">' + tag + '</i>' : '') + '</div>';
         }).join('');
         d.classList.add('open');
-        T.search = list;
+        s.search = list;
     }
 
     // ---------- публичные действия (onclick) ----------
@@ -774,101 +994,144 @@
         try { localStorage.setItem(LIVE_SEEN_KEY, '1'); } catch (e) {}
         var b = dq('btLive'); if (b) b.remove();
     };
-    window.pftSearchToggle = function () {
-        T.searchOpen = !T.searchOpen;
-        var w = dq('btSearchWrap'); if (w) w.classList.toggle('open', T.searchOpen);
-        var b = dq('btSearchTg'); if (b) b.classList.toggle('on', T.searchOpen);
-        if (T.searchOpen) { var i = dq('btSearch'); if (i) i.focus(); }
+    window.pftSearchToggle = function (n) {
+        var s = S(n);
+        s.searchOpen = !s.searchOpen;
+        var w = dqs('SearchWrap', n); if (w) w.classList.toggle('open', s.searchOpen);
+        var b = dqs('SearchTg', n); if (b) b.classList.toggle('on', s.searchOpen);
+        if (s.searchOpen) { var i = dqs('Search', n); if (i) i.focus(); }
     };
-    window.pftTapeToggle = function () {
-        T.tapeOpen = !T.tapeOpen;
-        var f = dq('btTapeFold'); if (f) f.classList.toggle('open', T.tapeOpen);
+    window.pftTapeToggle = function (n) {
+        var s = S(n);
+        s.tapeOpen = !s.tapeOpen;
+        var f = dqs('TapeFold', n); if (f) f.classList.toggle('open', s.tapeOpen);
+        var el = dqs('Tape', n); if (el) el.innerHTML = tapeHtml(s);
+        if (s.tapeOpen) pollTape(n);   // развернули — не ждём общего тика
+        saveSlots();
     };
     window.pftOtab = function (k) { T.otab = k; repaintOrders(); };
-    window.pftPick = function (n) {
-        var i = T.search[n]; if (!i) return;
-        T.uid = i.uid; T.ob = null; T.status = null; T.price = ''; T.searchQ = '';
-        T.searchOpen = false;   // бумага выбрана — поиск сворачивается в лупу
+    window.pftPick = function (n, k) {
+        var s = S(n);
+        var i = s.search[k]; if (!i) return;
+        s.uid = i.uid; s.ob = null; s.status = null; s.price = ''; s.searchQ = ''; s.tape = [];
+        s.searchOpen = false;   // бумага выбрана — поиск сворачивается в лупу
         fetchMeta(i.uid).then(function (m) {
-            T.meta = m;
-            repaintCards();
-            pollOb(); pollStatus(); pollTape(); pollPos();
+            s.meta = m;
+            s.metaStale = false;
+            saveSlots();
+            repaintSlot(n);
+            pollOb(); pollStatus(); pollTape(n); pollPos();
         }, function (e) { toast(e.message, true); });
     };
-    window.pftPickPrice = function (p) {
+    window.pftPickPrice = function (n, p) {
         // клик по цене стакана заполняет активное ценовое поле тикета
-        if (T.kind === 'limit') {
-            T.price = String(p);
-            var inp = dq('btPrice'); if (inp) { inp.value = T.price; fitBig(inp); }
-        } else if (T.kind === 'stop') {
-            T.stopPrice = String(p);
-            var sp = dq('btStop'); if (sp) { sp.value = T.stopPrice; fitBig(sp); }
+        var s = S(n);
+        if (s.kind === 'limit') {
+            s.price = String(p);
+            var inp = dqs('Price', n); if (inp) { inp.value = s.price; fitBig(inp); }
+        } else if (s.kind === 'stop') {
+            s.stopPrice = String(p);
+            var sp = dqs('Stop', n); if (sp) { sp.value = s.stopPrice; fitBig(sp); }
         } else return;
-        repaintWarns(); repaintTicketBits();
+        repaintWarns(n); repaintTicketBits(n); saveSoon();
     };
     // референс «рынок» — середина стакана, округлённая до шага инструмента
-    window.pftUseMarket = function () {
-        var m = midPrice(); if (!(m > 0) || !T.meta) return;
-        var inc = T.meta.minInc || 0.01;
-        window.pftPickPrice(String(+(Math.round(m / inc) * inc).toFixed(6)));
+    window.pftUseMarket = function (n) {
+        var s = S(n), m = midPrice(s);
+        if (!(m > 0) || !s.meta) return;
+        var inc = s.meta.minInc || 0.01;
+        window.pftPickPrice(n, String(+(Math.round(m / inc) * inc).toFixed(6)));
     };
     // референс «доступно / в позиции» — подставляет максимум лотов
-    window.pftUseAvail = function () {
-        var n = availLots(); if (!(n > 0)) return;
-        T.lots = n;
-        var l = dq('btLots'); if (l) { l.value = n; fitBig(l); }
-        repaintTicketBits();
+    window.pftUseAvail = function (n) {
+        var s = S(n), k = availLots(s);
+        if (!(k > 0)) return;
+        s.lots = k;
+        var l = dqs('Lots', n); if (l) { l.value = k; fitBig(l); }
+        repaintTicketBits(n); saveSlots();
     };
-    window.pftSide = function (s) { T.side = s; repaintCards(); };
-    window.pftKind = function (k) { T.kind = k; repaintCards(); };
-    window.pftStopKind = function (k) { T.stopKind = k; repaintCards(); };
+    window.pftSide = function (n, v) { S(n).side = v; saveSlots(); repaintSlot(n); };
+    window.pftKind = function (n, k) { S(n).kind = k; saveSlots(); repaintSlot(n); };
+    window.pftStopKind = function (n, k) { S(n).stopKind = k; saveSlots(); repaintSlot(n); };
+
+    // ---- слоты: добавить бумагу / убрать её состояние ----
+    // «+» в шапке стакана: заводим следующий свободный слот и показываем ОБА
+    // его блока — стакан без тикета торговать не даёт, а тикет без стакана
+    // слеп; поодиночке их всё равно можно убрать корзиной.
+    window.pftAddSlot = function (quiet) {
+        var n = nextFreeSlot();
+        if (!n) { toast('Больше ' + MAX_SLOTS + ' бумаг разом терминал не держит — лимит запросов брокера', true); return false; }
+        if (!PF.pfdAddTradeSlot) { toast('Конструктор не готов — обновите страницу', true); return false; }
+        PF.pfdAddTradeSlot(n, quiet);
+        // фокус в поиск новой карточки: добавили — сразу набираем тикер
+        var tries = 0;
+        (function poll() {
+            var i = dqs('Search', n);
+            if (i) { try { i.focus(); } catch (e) {} return; }
+            if (tries++ < 45) requestAnimationFrame(poll);
+        })();
+        return true;
+    };
+    // конструктор снёс оба блока слота — забываем бумагу, чтобы она не всплыла
+    // при следующем добавлении и не считалась «занятым» номером
+    PF.pftDropSlot = function (n) {
+        n = slotNo(n);
+        if (n === 1) { SLOTS[1] = newSlot(); } else { delete SLOTS[n]; }
+        saveSlots();
+    };
+    PF.pftSlotNums = slotNums;
+    PF.pftSlotLabel = function (kind, n) {
+        return slotTitle(kind === 'ob' ? 'Стакан' : 'Заявка', n);
+    };
 
     // подтверждение заявки: своя модалка (pfConfirm не умеет ввод суммы)
-    window.pftAsk = function () {
+    window.pftAsk = function (n) {
+        n = slotNo(n);
+        var s = S(n);
         // Молчаливый выход здесь читался как «кнопка не работает»: каждый отказ
         // должен называть причину, иначе пользователь жмёт в пустоту.
-        if (T.busy) { toast('Заявка уже отправляется — подождите ответа брокера'); return; }
-        if (!T.meta) { toast('Сначала выберите бумагу — найдите её в поиске над стаканом', true); return; }
+        if (s.busy) { toast('Заявка уже отправляется — подождите ответа брокера'); return; }
+        if (!s.meta) { toast('Сначала выберите бумагу — найдите её в поиске над стаканом', true); return; }
         if (!tradeReady()) {
-            var c = conn();
-            if (!c) toast('Брокер не подключён', true);
+            var c0 = conn();
+            if (!c0) toast('Брокер не подключён', true);
             else if (A().isLocked()) { toast('Токен заперт PIN-кодом — разблокируйте его', true); if (window.pfBrokerUnlock) window.pfBrokerUnlock(); }
             else if (A().isSessionGone()) toast('Сессия токена закончилась — введите токен заново', true);
-            else if (c.scope !== 'trade') toast('Подключение в режиме «Только чтение» — торговать им нельзя', true);
-            else if (c.state === 'revoked') toast('Брокер не принял токен — обновите его в подключении', true);
-            else if (c.state === 'downgraded') toast('Права токена урезали до чтения — выпустите токен с полным доступом', true);
+            else if (c0.scope !== 'trade') toast('Подключение в режиме «Только чтение» — торговать им нельзя', true);
+            else if (c0.state === 'revoked') toast('Брокер не принял токен — обновите его в подключении', true);
+            else if (c0.state === 'downgraded') toast('Права токена урезали до чтения — выпустите токен с полным доступом', true);
             else toast('Торговля сейчас недоступна', true);
             return;
         }
         var vel = velLeft();
         if (vel > 0) { toast('Пауза после ' + VEL_MAX + ' заявок подряд — ещё ' + Math.ceil(vel / 1000) + ' с', true); return; }
-        var lots = Math.max(1, Math.floor(+T.lots || 1));
-        var inc = T.meta.minInc || 0.01;
+        var lots = Math.max(1, Math.floor(+s.lots || 1));
+        var inc = s.meta.minInc || 0.01;
         // цены — по шагу инструмента, иначе брокер отклонит заявку
-        function snap(v, inputId, label) {
-            var s = +(Math.round(v / inc) * inc).toFixed(6);
-            if (Math.abs(s - v) > 1e-9) {
-                var inp = dq(inputId); if (inp) { inp.value = String(s); fitBig(inp); }
-                toast(label + ' округлена до шага ' + fmtPrice(inc));
+        function snap(v, base, label) {
+            var x = +(Math.round(v / inc) * inc).toFixed(6);
+            if (Math.abs(x - v) > 1e-9) {
+                var inp = dqs(base, n); if (inp) { inp.value = String(x); fitBig(inp); }
+                toast(label + ' округлена до шага ' + fmtPx(inc, s));
             }
-            return s;
+            return x;
         }
-        var price = +T.price || 0;
-        var stopPrice = +T.stopPrice || 0;
-        if (T.kind === 'limit') {
+        var price = +s.price || 0;
+        var stopPrice = +s.stopPrice || 0;
+        if (s.kind === 'limit') {
             if (!(price > 0)) { toast('Укажите цену лимитной заявки', true); return; }
-            price = snap(price, 'btPrice', 'Цена');
-            T.price = String(price);
+            price = snap(price, 'Price', 'Цена');
+            s.price = String(price);
         }
-        if (T.kind === 'stop') {
+        if (s.kind === 'stop') {
             if (!(stopPrice > 0)) { toast('Укажите стоп-цену активации', true); return; }
-            stopPrice = snap(stopPrice, 'btStop', 'Стоп-цена');
-            T.stopPrice = String(stopPrice);
+            stopPrice = snap(stopPrice, 'Stop', 'Стоп-цена');
+            s.stopPrice = String(stopPrice);
         }
-        var shares = lots * (T.meta.lot || 1);
-        var est = T.kind === 'limit' ? price : (T.kind === 'stop' ? stopPrice : estPrice());
+        var shares = lots * (s.meta.lot || 1);
+        var est = s.kind === 'limit' ? price : (s.kind === 'stop' ? stopPrice : estPrice(s));
         var sum = est * shares;
-        T.orderId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
+        s.orderId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
         var needType = sum >= sumLimit();
         var typed = Math.round(sum);
         var c = conn();
@@ -876,17 +1139,17 @@
         var old = dq('btConfirmOv'); if (old) old.remove();
         var ov = document.createElement('div');
         ov.id = 'btConfirmOv';
-        var kindName = T.kind === 'limit' ? 'Лимитная'
-            : (T.kind === 'stop' ? (T.stopKind === 'tp' ? 'Тейк-профит' : 'Стоп-лосс') : 'Рыночная');
+        var kindName = s.kind === 'limit' ? 'Лимитная'
+            : (s.kind === 'stop' ? (s.stopKind === 'tp' ? 'Тейк-профит' : 'Стоп-лосс') : 'Рыночная');
         ov.innerHTML = '<div class="bk-back"></div><div class="bk-card bk-card-pin btr-cf" role="alertdialog" aria-modal="true">' +
-            '<div class="bk-title">' + (T.side === 'buy' ? 'Покупка' : 'Продажа') + ' ' + esc(T.meta.ticker) + '</div>' +
+            '<div class="bk-title">' + (s.side === 'buy' ? 'Покупка' : 'Продажа') + ' ' + esc(s.meta.ticker) + '</div>' +
             '<div class="bk-kv"><span>Тип</span><b>' + kindName + '</b></div>' +
-            (T.kind === 'limit' ? '<div class="bk-kv"><span>Цена</span><b class="bk-mono">' + fmtPrice(price) + ' ₽</b></div>' : '') +
-            (T.kind === 'stop' ? '<div class="bk-kv"><span>Стоп-цена</span><b class="bk-mono">' + fmtPrice(stopPrice) + ' ₽</b></div>' : '') +
+            (s.kind === 'limit' ? '<div class="bk-kv"><span>Цена</span><b class="bk-mono">' + fmtPx(price, s) + ' ₽</b></div>' : '') +
+            (s.kind === 'stop' ? '<div class="bk-kv"><span>Стоп-цена</span><b class="bk-mono">' + fmtPx(stopPrice, s) + ' ₽</b></div>' : '') +
             '<div class="bk-kv"><span>Количество</span><b>' + lots + ' лот = ' + shares.toLocaleString('ru-RU') + ' шт</b></div>' +
-            '<div class="bk-kv"><span>' + (T.kind === 'limit' ? 'Сумма' : 'Сумма ≈') + '</span><b class="bk-mono">' + fmtRub(sum) + '</b></div>' +
+            '<div class="bk-kv"><span>' + (s.kind === 'limit' ? 'Сумма' : 'Сумма ≈') + '</span><b class="bk-mono">' + fmtRub(sum) + '</b></div>' +
             (accStr ? '<div class="bk-kv"><span>Счёт</span><b>' + esc(accStr) + '</b></div>' : '') +
-            warnsHtml() +
+            warnsHtml(s) +
             (needType
                 ? '<div class="ph-field"><label class="ph-lab" for="btCfSum">Крупная заявка — введите сумму цифрами (' + typed.toLocaleString('ru-RU') + ')</label>' +
                   '<input class="ph-input" id="btCfSum" type="text" inputmode="numeric" autocomplete="off" placeholder="' + typed.toLocaleString('ru-RU') + '"></div>'
@@ -922,19 +1185,20 @@
                 }
             }
             closeCf();
-            submitOrder(lots, T.kind === 'stop' ? stopPrice : price, sum);
+            submitOrder(n, lots, s.kind === 'stop' ? stopPrice : price, sum);
         });
     };
 
-    function submitOrder(lots, price, sum) {
-        var c = conn(); if (!c || T.busy) return;
-        T.busy = true;
-        var btn = dq('btSubmit');
+    function submitOrder(n, lots, price, sum) {
+        var s = S(n);
+        var c = conn(); if (!c || s.busy) return;
+        s.busy = true;
+        var btn = dqs('Submit', n);
         if (btn) {
             btn.disabled = true;
             var bl = btn.querySelector('.btr-sb-l'); if (bl) bl.textContent = 'Отправляем…';
         }
-        var isStop = T.kind === 'stop';
+        var isStop = s.kind === 'stop';
         var method, body;
         if (isStop) {
             // у стоп-заявок нет клиентского idempotency-ключа в API —
@@ -942,54 +1206,54 @@
             method = 'PostStopOrder';
             body = {
                 accountId: c.accountId,
-                instrumentId: T.uid,
+                instrumentId: s.uid,
                 quantity: String(lots),
-                direction: T.side === 'buy' ? 'STOP_ORDER_DIRECTION_BUY' : 'STOP_ORDER_DIRECTION_SELL',
+                direction: s.side === 'buy' ? 'STOP_ORDER_DIRECTION_BUY' : 'STOP_ORDER_DIRECTION_SELL',
                 stopPrice: A().n2q(price),
-                stopOrderType: T.stopKind === 'tp' ? 'STOP_ORDER_TYPE_TAKE_PROFIT' : 'STOP_ORDER_TYPE_STOP_LOSS',
+                stopOrderType: s.stopKind === 'tp' ? 'STOP_ORDER_TYPE_TAKE_PROFIT' : 'STOP_ORDER_TYPE_STOP_LOSS',
                 expirationType: 'STOP_ORDER_EXPIRATION_TYPE_GOOD_TILL_CANCEL'
             };
         } else {
             method = 'PostOrder';
             body = {
                 accountId: c.accountId,
-                instrumentId: T.uid,
+                instrumentId: s.uid,
                 quantity: String(lots),
-                direction: T.side === 'buy' ? 'ORDER_DIRECTION_BUY' : 'ORDER_DIRECTION_SELL',
-                orderType: T.kind === 'limit' ? 'ORDER_TYPE_LIMIT' : 'ORDER_TYPE_MARKET',
-                orderId: T.orderId
+                direction: s.side === 'buy' ? 'ORDER_DIRECTION_BUY' : 'ORDER_DIRECTION_SELL',
+                orderType: s.kind === 'limit' ? 'ORDER_TYPE_LIMIT' : 'ORDER_TYPE_MARKET',
+                orderId: s.orderId
             };
-            if (T.kind === 'limit') body.price = A().n2q(price);
+            if (s.kind === 'limit') body.price = A().n2q(price);
         }
-        // синхронный бросок здесь оставил бы T.busy навсегда взведённым, а с ним
+        // синхронный бросок здесь оставил бы busy навсегда взведённым, а с ним
         // и мёртвую кнопку до перезагрузки страницы
         var req;
         try { req = A().call(method, body); }
         catch (e) {
-            T.busy = false;
+            s.busy = false;
             toast((e && e.message) || 'Не удалось отправить заявку', true);
-            var b0 = dq('btSubmit'); if (b0) b0.disabled = false;
-            repaintTicketBits();
+            var b0 = dqs('Submit', n); if (b0) b0.disabled = false;
+            repaintTicketBits(n);
             return;
         }
         req.then(function () {
-            T.busy = false;
+            s.busy = false;
             T.sent.push(Date.now());
-            T.orderId = null;   // исполненный ключ не переиспользуем
-            var kindTxt = isStop ? (T.stopKind === 'tp' ? 'тейк-профит от ' : 'стоп-лосс от ') + fmtPrice(price) + ' ₽'
-                : (T.kind === 'limit' ? fmtPrice(price) + ' ₽' : 'рыночная');
-            A().logEvent('order_submit', (T.side === 'buy' ? 'покупка ' : 'продажа ') + T.meta.ticker +
+            s.orderId = null;   // исполненный ключ не переиспользуем
+            var kindTxt = isStop ? (s.stopKind === 'tp' ? 'тейк-профит от ' : 'стоп-лосс от ') + fmtPx(price, s) + ' ₽'
+                : (s.kind === 'limit' ? fmtPx(price, s) + ' ₽' : 'рыночная');
+            A().logEvent('order_submit', (s.side === 'buy' ? 'покупка ' : 'продажа ') + s.meta.ticker +
                 ' · ' + lots + ' лот · ' + kindTxt);
-            toast((isStop ? 'Стоп-заявка' : 'Заявка') + ' выставлена: ' + T.meta.ticker);
+            toast((isStop ? 'Стоп-заявка' : 'Заявка') + ' выставлена: ' + s.meta.ticker);
             pollOrders(); pollPos();
-            repaintCards();
+            repaintSlot(n);
         }, function (e) {
-            T.busy = false;
-            // T.orderId сохраняем: повтор той же попытки не продублирует заявку
-            A().logEvent('order_error', T.meta.ticker + ' · ' + (e.message || '').slice(0, 120));
+            s.busy = false;
+            // s.orderId сохраняем: повтор той же попытки не продублирует заявку
+            A().logEvent('order_error', s.meta.ticker + ' · ' + (e.message || '').slice(0, 120));
             toast(e.message || 'Заявка не прошла', true);
-            var b = dq('btSubmit'); if (b) b.disabled = false;
-            repaintTicketBits();
+            var b = dqs('Submit', n); if (b) b.disabled = false;
+            repaintTicketBits(n);
             repaintOrders();
         });
     }
@@ -1052,6 +1316,8 @@
         }
     });
 
+    loadSlots();
+
     PF.pftTerminalHtml = pftTerminalHtml;
     PF.pftAfterRender = pftAfterRender;
     // карточки-блоки для дашборд-конструктора «Торговли» (см. portfolios-dash.js)
@@ -1060,4 +1326,5 @@
     PF.pftOrdersCard = ordersCard;
     PF.pftLiveBanner = bannerHtml;
     PF.pftTradeReady = tradeReady;
+    PF.pftMaxSlots = MAX_SLOTS;
 })();

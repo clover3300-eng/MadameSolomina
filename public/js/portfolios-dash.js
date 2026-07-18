@@ -572,6 +572,41 @@
     // Терминал (trade:*) здесь же: его правый угол занят лупой/счётом, угловой
     // оверлей ложился ПОВЕРХ них — кнопки встают в поток шапки ПЕРЕД этим контентом.
     var PFD_OWN_CHROME = { plist: 1, pdetail: 1, 'trade:ob': 1, 'trade:ticket': 1, 'trade:orders': 1 };
+    // слоты бумаг (trade:ob:2, trade:ticket:3…) — те же карточки терминала, только
+    // с номером: свой хром в шапке им нужен ровно так же, как первому слоту
+    function pfdOwnChrome(id) { return !!(PFD_OWN_CHROME[id] || /^trade:(ob|ticket):\d+$/.test(id)); }
+    // id блоков слота: первый исторически без суффикса (старые раскладки живы)
+    function pftObId(n) { return +n === 1 ? 'trade:ob' : 'trade:ob:' + n; }
+    function pftTkId(n) { return +n === 1 ? 'trade:ticket' : 'trade:ticket:' + n; }
+    function pftSlotOf(id) {
+        var m = /^trade:(?:ob|ticket)(?::(\d+))?$/.exec(id);
+        return m ? (+m[1] || 1) : 0;
+    }
+    // Новая бумага в терминал: показываем ОБА блока слота и ставим их сразу за
+    // блоками предыдущего — иначе стакан улетал в конец сетки, отдельно от
+    // своего тикета, и пару приходилось собирать драгом руками.
+    PF.pfdAddTradeSlot = function (n, quiet) {
+        var ids = [pftObId(n), pftTkId(n)];
+        pfdPushUndo();
+        PF.dashCfg.order = PF.dashCfg.order || [];
+        PF.dashCfg.span = PF.dashCfg.span || {};
+        // за каким блоком встать: последний известный блок терминала
+        var after = -1;
+        PF.dashCfg.order.forEach(function (id, i) { if (pftSlotOf(id)) after = i; });
+        ids.forEach(function (id, k) {
+            PF.dashCfg.hidden[id] = 0;
+            PF.dashCfg.span[id] = 4;
+            var at = PF.dashCfg.order.indexOf(id);
+            if (at >= 0) PF.dashCfg.order.splice(at, 1);
+            if (after >= 0) PF.dashCfg.order.splice(after + 1 + k, 0, id);
+            else PF.dashCfg.order.push(id);
+        });
+        saveDashCfg();
+        pfdRerender();
+        pfdScrollToBlock(ids[0]);
+        // из пикера пачкой — тост общий, свой был бы вторым подряд
+        if (!quiet) toast('Добавлены стакан и заявка — выберите бумагу в поиске');
+    };
     // пара кнопок блока в поток шапки: настройки виджета + удалить. Поповер настроек
     // якорится к .pfd-item (см. pfdCfgMount), поэтому от места кнопки не зависит.
     function pfdInChromeHtml(id) {
@@ -650,9 +685,16 @@
         // других вкладок не попадают). isTrade освобождает их от опт-ин ниже
         // (видимы по умолчанию), но chrome у них полный, как у всех виджетов:
         // шестерёнка + корзина; удалённая карточка возвращается из «Добавить блок»
+        // Слот — пара «стакан + тикет» по ОДНОЙ бумаге; их может быть несколько
+        // (trade:ob:2 и т.д.), номер живёт в id блока. Имя блока называет бумагу:
+        // «Стакан» и «Стакан» рядом друг от друга не отличить.
         if (PF.dashTab === 'trading' && PF.pftObCard) {
-            blocks.push({ id: 'trade:ob', name: 'Стакан', htmlFn: PF.pftObCard, span: 4, isTrade: true });
-            blocks.push({ id: 'trade:ticket', name: 'Тикет', htmlFn: PF.pftTicketCard, span: 4, isTrade: true });
+            (PF.pftSlotNums ? PF.pftSlotNums() : [1]).forEach(function (n) {
+                blocks.push({ id: pftObId(n), name: PF.pftSlotLabel('ob', n),
+                    htmlFn: function () { return PF.pftObCard(n); }, span: 4, isTrade: true });
+                blocks.push({ id: pftTkId(n), name: PF.pftSlotLabel('ticket', n),
+                    htmlFn: function () { return PF.pftTicketCard(n); }, span: 4, isTrade: true });
+            });
             blocks.push({ id: 'trade:orders', name: 'Мои заявки', htmlFn: PF.pftOrdersCard, span: 4, isTrade: true });
         }
         // R8: на подвкладках ВСЕ блоки опт-ин — что показано, решает сид (hidden[id]=0)
@@ -702,9 +744,10 @@
         'heat': 'Тепловая карта индекса Мосбиржи — размер по весу, цвет за день',
         'news': 'Свежие новости по бумагам ваших портфелей',
         '__note': 'Заметки, списки задач и сроки прямо на дашборде',
-        'trade:ob': 'Биржевой стакан по оси цены — клик подставляет цену в тикет',
-        'trade:ticket': 'Тикет заявки: лимитная, рыночная или стоп, с предохранителями',
-        'trade:orders': 'Активные и стоп-заявки счёта: статус, исполнение, отмена'
+        'trade:ob': 'Биржевой стакан по оси цены — клик подставляет цену в заявку',
+        'trade:ticket': 'Заявка: лимитная, рыночная или стоп, с предохранителями',
+        'trade:orders': 'Активные и стоп-заявки счёта: статус, исполнение, отмена',
+        '__trade': 'Второй стакан и заявка по другому тикеру — рядом с первым'
     };
     // цветные иконки-плитки строк списка «Блоки для дашборда» (как в макете): узнаваемая
     // пиктограмма + мягкая тонировка по типу блока
@@ -1043,7 +1086,7 @@
             //  • «История сделок» — своего on-card глаза НЕТ (правый угол шапки занят .pft-toggle);
             //    скрыть/показать — из меню «Видимость».
             var hideBtn = '';
-            if (b.isNote || b.id.indexOf('pf:') === 0 || PFD_OWN_CHROME[b.id]) {
+            if (b.isNote || b.id.indexOf('pf:') === 0 || pfdOwnChrome(b.id)) {
                 // R9.2: plist/pdetail/терминал рисуют кнопки блока САМИ — внутри своей
                 // шапки, слева от собственных контролов (см. pfdInChromeHtml). Угловые
                 // кнопки им не годились: у «Моих портфелей» они выдавливали сортировку
@@ -1711,6 +1754,24 @@
     window.pfdHideBlock = function (id) {
         pfdPushUndo();
         PF.dashCfg.hidden[id] = 1;
+        // Убрали ОБА блока слота — терминалу эта бумага больше не нужна: забываем
+        // её и (для второго и дальше) вычищаем id из раскладки, чтобы номер снова
+        // стал свободен для «+». Cmd+Z вернёт карточки, но бумагу придётся выбрать
+        // заново — состояние слота живёт отдельно от снимка раскладки.
+        var n = pftSlotOf(id);
+        if (n && PF.pftDropSlot) {
+            var h = PF.dashCfg.hidden || {};
+            if (h[pftObId(n)] === 1 && h[pftTkId(n)] === 1) {
+                if (n > 1) {
+                    [pftObId(n), pftTkId(n)].forEach(function (bid) {
+                        PF.dashCfg.order = (PF.dashCfg.order || []).filter(function (x) { return x !== bid; });
+                        [PF.dashCfg.span, PF.dashCfg.h, PF.dashCfg.hidden, PF.dashCfg.col, PF.dashCfg.thm]
+                            .forEach(function (m) { if (m) delete m[bid]; });
+                    });
+                }
+                PF.pftDropSlot(n);
+            }
+        }
         saveDashCfg();
         pfdRerender();
     };
@@ -1752,6 +1813,9 @@
     function pfdCfgName(id) {
         var w = pfl2ById(id === 'cap2' ? 'cap' : id);
         if (w) return w.name;
+        // карточки слотов терминала зовутся по бумаге: «Стакан · SBER»
+        var n = pftSlotOf(id);
+        if (n && PF.pftSlotLabel) return PF.pftSlotLabel(id.indexOf('trade:ob') === 0 ? 'ob' : 'ticket', n);
         return id === 'panel' ? 'Панель управления' : 'Виджет';
     }
     // текущий пресет высоты — те же значения, что пишет пикер (s=300 / l=560 / m=авто);
@@ -2626,6 +2690,23 @@
             { id: 'set:bg', name: 'Фон страницы', desc: 'Общая подложка сайта: мозаика, шалфейный, градиент и другие', cats: ['other'] }
         ];
         if (PF.store.items.length >= 2) list.push({ id: 'sum', name: 'Сводка портфелей', desc: 'Суммарный капитал и лидерборд портфелей', cats: ['over', 'profit'] });
+        // Карточки терминала — только на своей подвкладке: на «Обзоре» им неоткуда
+        // взять поллинг и подключение. Раньше их в каталоге не было вовсе, и
+        // удалённый корзиной стакан вернуть было нечем.
+        if (PF.dashTab === 'trading' && PF.pftSlotNums) {
+            PF.pftSlotNums().forEach(function (n) {
+                list.push({ id: pftObId(n), name: PF.pftSlotLabel('ob', n),
+                    desc: 'Биржевой стакан по оси цены — клик подставляет цену в заявку', cats: ['pop', 'market'] });
+                list.push({ id: pftTkId(n), name: PF.pftSlotLabel('ticket', n),
+                    desc: 'Заявка: лимитная, рыночная или стоп, с предохранителями', cats: ['pop', 'market'] });
+            });
+            list.push({ id: 'trade:orders', name: 'Мои заявки',
+                desc: 'Активные и стоп-заявки счёта: статус, исполнение, отмена', cats: ['pop', 'market'] });
+            if (PF.pftSlotNums().length < (PF.pftMaxSlots || 4)) {
+                list.push({ id: '__trade', name: 'Ещё одна бумага',
+                    desc: 'Второй стакан и заявка по другому тикеру — рядом с первым', cats: ['pop', 'market'] });
+            }
+        }
         // R9: карточки портфелей — тоже виджеты каталога: вернуть убранную карточку на
         // вкладку-портфель или продублировать её на любую другую подвкладку
         visibleItems().forEach(function (p) {
@@ -2668,7 +2749,7 @@
     // виджет уже на дашборде? (деф-видимые блоки — если не скрыты; defHidden — при явном
     // показе). R8: деф-видимые есть только на «Обзоре», на подвкладках всё опт-ин.
     function pfl2IsAdded(id) {
-        if (id === '__note') return false;
+        if (id === '__note' || id === '__trade') return false;   // «плодящие» — всегда доступны
         var m = PF.dashCfg.hidden || {};
         if (id === 'cap') return m.cap === 0 || m.cap2 === 0;
         // карточки портфелей на «Обзоре» видимы по умолчанию — «нет на дашборде»
@@ -3067,6 +3148,9 @@
         pfdPushUndo();
         pfl2SelIds.forEach(function (id) {
             if (id === '__note') { pfdAddNote(true); notes++; return; }
+            // «Ещё одна бумага» заводит ПАРУ блоков нового слота — своим путём
+            // (ему нужен свободный номер и место рядом с прошлым стаканом)
+            if (id === '__trade') { if (window.pftAddSlot && window.pftAddSlot(true)) notes++; return; }
             var o = pfl2OptsOf(id);
             // «График капитала» — одно имя каталога на два блока-дизайна (линия/столбцы)
             var real = (id === 'cap' && o.view === 'bars') ? 'cap2' : id;
