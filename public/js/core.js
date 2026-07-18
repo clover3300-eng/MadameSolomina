@@ -1104,11 +1104,23 @@ function toggleInterestingMore() {
         };
 
         function initTheme() {
-            // Стартовая вкладка — по пути (прямые ссылки /market и т.п.), а не по
-            // ещё дефолтному currentTab='home', иначе на не-Главной мигнёт тёмная.
-            var _lt = location.pathname.replace(/^\//, '').replace(/\/$/, '').replace(/index\.html?$/i, '');
-            var landingHome = (_lt === '' || _lt === 'home');
-            var wantDark = _themeWantDark(landingHome ? 'home' : 'other');
+            // Тему уже посчитал инлайн в <head> и применил её к холсту и <body>
+            // ДО первого пейнта. Здесь просто подхватываем его решение, а не
+            // считаем заново: инлайн учитывает ещё и «Раздел при запуске» из
+            // кабинета (на чистом заходе «/» приложение уходит на него на DCL),
+            // а прежний расчёт по одному только пути этого не знал — и тема
+            // переворачивалась уже после первого кадра.
+            var _boot = document.documentElement.classList;
+            var wantDark;
+            if (_boot.contains('boot-dark') || _boot.contains('boot-light')) {
+                wantDark = _boot.contains('boot-dark');
+            } else {
+                // фолбэк, если инлайн почему-то не отработал: как было раньше —
+                // по пути (прямые ссылки /market и т.п.), а не по currentTab
+                var _lt = location.pathname.replace(/^\//, '').replace(/\/$/, '').replace(/index\.html?$/i, '');
+                var landingHome = (_lt === '' || _lt === 'home');
+                wantDark = _themeWantDark(landingHome ? 'home' : 'other');
+            }
             const btn = document.getElementById('themeBtn');
             if (wantDark) { document.body.classList.add('dark-mode'); if (btn) btn.innerHTML = _THEME_SUN; }
             else { document.body.classList.add('light-mode'); if (btn) btn.innerHTML = _THEME_MOON; }

@@ -73,7 +73,18 @@
         (function () {
             try {
                 var p = location.pathname.replace(/^\//, '').replace(/\/$/, '').replace(/index\.html?$/i, '');
-                var home = (p === '' || p === 'home');
+                var tab = (p === '' || p === 'home') ? 'home' : p;
+                // «Раздел при запуске» из кабинета: на ЧИСТОМ заходе «/» приложение
+                // уже на DCL уйдёт на него (profile-menu.js) и применит его тему.
+                // Если не учесть это здесь, первый кадр красится темой Главной
+                // (тёмной), а через мгновение приложение светлеет — лишний
+                // тёмно-светлый переворот, которого без этой строки не было.
+                // Условие «только при пустом пути» — точь-в-точь как там.
+                if (tab === 'home' && p === '') {
+                    var st = (JSON.parse(localStorage.getItem('profile_settings_v1')) || {}).startTab;
+                    if (st && st !== 'home') tab = st;
+                }
+                var home = (tab === 'home');
                 var dark;
                 if (home) { var th = localStorage.getItem('theme_home'); dark = th ? th === 'dark' : true; }
                 else { var ut = localStorage.getItem('user_theme'); dark = ut ? ut === 'dark' : false; }
@@ -2569,7 +2580,7 @@
 <!-- Занавес переходов — ПЕРВЫМ: им пользуются cloud-sync (вход) и profile-menu
      (выход). Разметки не требует, стиль инлайном в <head>. -->
 <script src="js/page-transition.js?v=2" defer></script>
-<script src="js/core.js?v=14" defer></script>
+<script src="js/core.js?v=15" defer></script>
 <script src="js/calculator-ui.js?v=4" defer></script>
 <script src="js/data.js?v=10" defer></script>
 <script src="js/rebalance.js?v=13" defer></script>
