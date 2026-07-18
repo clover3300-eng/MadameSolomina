@@ -69,12 +69,71 @@
             return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
         });
     }
-    function updateAuthView() {
+    // Вид «гость ↔ вошёл» меняет ВЕСЬ первый экран: манифест слева и колонну
+    // справа. Голая подмена делала это за один кадр — самый заметный рывок на
+    // сайте. Поэтому: первая отрисовка (загрузка страницы) — молча, а НАСТОЯЩАЯ
+    // смена состояния — короткой сменой через ноль (класс .hg-swap, стили в
+    // home-register.css). Тот же приём, что у .pfo-anim-in: анимируем событие,
+    // а не каждую перерисовку.
+    var _authShown = null;          // null = ещё ни разу не рисовали
+    var _authSwapT = null;
+
+    function updateAuthView(opts) {
         var form = el('hsAuthInner');
         var done = el('hgAuthed');
         if (!form || !done) return;
         var authed = !!(window.supa && window.supa.isAuthed());
         var showDone = authed && authMode !== 'recovery';
+
+        // silent — вид ставится молча. Обязателен на 'init': до ответа облака
+        // вид отрисован «гостевым», и появление сессии выглядело бы сменой
+        // состояния — вошедший ловил бы перемигивание манифеста НА КАЖДОЙ
+        // загрузке страницы. Анимируем только настоящие вход и выход.
+        var silent = !!(opts && opts.silent);
+        var first = (_authShown === null);
+        var changed = !first && !silent && _authShown !== showDone;
+        _authShown = showDone;
+        if (changed) { softSwapAuthView(showDone); return; }
+        applyAuthView(showDone);
+    }
+
+    function authZones() {
+        return [document.querySelector('.hg-main'), el('homeRegister')].filter(Boolean);
+    }
+    function clearAuthSwap() {
+        authZones().forEach(function (z) { z.classList.remove('hg-swap'); });
+    }
+
+    // Гасим обе зоны → подменяем содержимое под ноль → проявляем обратно
+    function softSwapAuthView(showDone) {
+        var zones = authZones();
+        // В фоновой вкладке кадры не приходят, а таймеры throttled: анимация
+        // не доиграет и оставит манифест с колонной на opacity:0 — то есть
+        // ПУСТОЙ экран вместо плавности. Смотреть там всё равно некому —
+        // меняем вид мгновенно. Тот же урок, что и с занавесом переходов.
+        if (!zones.length || document.hidden) { applyAuthView(showDone); clearAuthSwap(); return; }
+        clearTimeout(_authSwapT);
+        zones.forEach(function (z) { z.classList.add('hg-swap'); });
+        _authSwapT = setTimeout(function () {
+            applyAuthView(showDone);
+            // следующий кадр — иначе браузер склеит подмену и проявление в один шаг
+            requestAnimationFrame(clearAuthSwap);
+            setTimeout(clearAuthSwap, 60);   // если кадр не придёт
+        }, 200);
+    }
+
+    // Ушли со вкладки посреди смены — вернувшийся не должен застать пустоту
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden) return;
+        clearTimeout(_authSwapT);
+        if (_authShown !== null) applyAuthView(_authShown);
+        clearAuthSwap();
+    });
+
+    function applyAuthView(showDone) {
+        var form = el('hsAuthInner');
+        var done = el('hgAuthed');
+        if (!form || !done) return;
         form.style.display = showDone ? 'none' : '';
         done.hidden = !showDone;
         if (showDone) {
@@ -383,8 +442,10 @@
             toast('Придумайте новый пароль');
             return;
         }
-        // Колонна: гостю — форма, вошедшему — приветствие «В кабинет»
-        updateAuthView();
+        // Колонна: гостю — форма, вошедшему — приветствие «В кабинет».
+        // 'init' — не смена состояния, а первое знакомство с ним при загрузке
+        // страницы: ставим молча (см. updateAuthView)
+        updateAuthView({ silent: kind === 'init' });
         var authed = !!(window.supa && window.supa.isAuthed());
         // Если форма всё же видна при активной сессии (recovery) — подпись честная
         var foot = el('hsFoot');

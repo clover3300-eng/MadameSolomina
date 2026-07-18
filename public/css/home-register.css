@@ -544,6 +544,27 @@ body.tab-home #hgHeatWrap { display: block; }
 .dark-mode .hc-cta-dark:hover { box-shadow: 0 20px 44px -12px rgba(0, 0, 0, 0.65); }
 .dark-mode .hc-cta-dark svg { stroke: #10151F; }
 
+/* ---- Мягкая смена вида «гость ↔ вошёл» ----
+   Вход и выход переписывают ВЕСЬ первый экран разом: заголовок манифеста,
+   лид, подпись кнопки и колонну справа (форма ↔ приветствие). Голая подмена
+   в updateAuthView делала это за один кадр — самый заметный рывок на сайте.
+   Гасим обе зоны, подменяем содержимое под ноль и проявляем обратно.
+   Класс вешает и снимает js/home-register.js, только на НАСТОЯЩЕЙ смене
+   состояния — при первой отрисовке страницы вид ставится молча. */
+.hg-main,
+#homeRegister {
+    transition: opacity .19s ease, transform .19s ease;
+}
+.hg-main.hg-swap,
+#homeRegister.hg-swap {
+    opacity: 0;
+    transform: translateY(6px);
+}
+@media (prefers-reduced-motion: reduce) {
+    .hg-main, #homeRegister { transition-duration: .01ms; }
+    .hg-main.hg-swap, #homeRegister.hg-swap { transform: none; }
+}
+
 /* =====================  УЗКИЕ ЭКРАНЫ  ===================== */
 @media (max-width: 1023px) {
     body.tab-home #contentArea {
