@@ -93,7 +93,7 @@
     function slotNums() {
         var set = { 1: 1 };
         ((PF.dashCfg && PF.dashCfg.order) || []).forEach(function (id) {
-            var m = /^trade:(?:ob|ticket):(\d+)$/.exec(id);
+            var m = /^trade:(?:ob|ticket|chart):(\d+)$/.exec(id);
             if (m) set[slotNo(m[1])] = 1;
         });
         // слот с выбранной бумагой жив даже без записи в раскладке (восстановился
@@ -1095,6 +1095,7 @@
             s.metaStale = false;
             saveSlots();
             repaintSlot(n);
+            emitSlotChange(n);
             pollOb(); pollStatus(); pollTape(n); pollPos();
         }, function (e) { toast(e.message, true); });
     };
@@ -1153,11 +1154,27 @@
         n = slotNo(n);
         if (n === 1) { SLOTS[1] = newSlot(); } else { delete SLOTS[n]; }
         saveSlots();
+        if (PF.pfcDropSlot) PF.pfcDropSlot(n);   // график этой бумаги тоже не нужен
     };
     PF.pftSlotNums = slotNums;
     PF.pftSlotLabel = function (kind, n) {
-        return slotTitle(kind === 'ob' ? 'Стакан' : 'Заявка', n);
+        return slotTitle(kind === 'ob' ? 'Стакан' : kind === 'chart' ? 'График' : 'Заявка', n);
     };
+    // Паспорт выбранной бумаги слота для СОСЕДНИХ блоков (график свечей —
+    // js/portfolios-chart.js): копия, а не сам s.meta, чтобы чужой блок не мог
+    // испортить состояние терминала.
+    PF.pftSlotInstr = function (n) {
+        var s = S(n);
+        if (!s.uid || !s.meta) return null;
+        return {
+            uid: s.uid, ticker: s.meta.ticker, name: s.meta.name,
+            figi: s.meta.figi, lot: s.meta.lot, minInc: s.meta.minInc
+        };
+    };
+    // бумага слота сменилась — соседние блоки перезагружают свои данные
+    function emitSlotChange(n) {
+        try { window.dispatchEvent(new CustomEvent('pft-slot-change', { detail: { slot: slotNo(n) } })); } catch (e) {}
+    }
 
     // подтверждение заявки: своя модалка (pfConfirm не умеет ввод суммы)
     window.pftAsk = function (n) {

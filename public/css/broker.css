@@ -756,3 +756,70 @@ body.dark-mode .btr-jr, .pfd-thm-dark .btr-jr { color: #9fb1c6; border-color: rg
 .bk-pfoffer .bk-btn { flex: none; }
 body.dark-mode .bk-pfoffer { border-color: rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.04); }
 body.dark-mode .bk-pfoffer-tx span { color: #93a3b5; }
+
+/* ==================================================================
+   ГРАФИК СВЕЧЕЙ ТЕРМИНАЛА (js/portfolios-chart.js, блок trade:chart)
+   Карточка живёт по правилам терминала (.btr-card), поэтому здесь —
+   только то, чего у стакана и тикета нет: бокс канвы, меню ТА и
+   подпись источника данных.
+   ================================================================== */
+.btc-card { min-height: 470px; }
+/* Канва растягивается на всю свободную высоту карточки: пользователь тянет
+   блок за угол конструктора, и график обязан занять новый бокс, а не жить
+   фиксированными 360px в растянутой карточке. */
+.btc-mount { flex: 1 1 auto; min-height: 390px; position: relative; }
+.btc-host { position: absolute; inset: 0; }
+/* карточке задали высоту (.pfd-hset) — внутренний скролл терминала здесь
+   не нужен, канва сама подстраивается под бокс */
+.pfd-hset .btc-card { overflow: hidden; }
+
+/* подпись источника: тихая строка под сегментом таймфреймов */
+.btc-note {
+    font-family: var(--font-ui); font-size: 10.5px; font-weight: 600;
+    letter-spacing: 0.04em; color: #97a3b4; min-height: 13px; margin-top: -4px;
+}
+.btc-note.warn { color: #d97706; }
+
+/* меню индикаторов и построений — выпадают из кнопки в шапке */
+.btc-mwrap { position: relative; display: inline-flex; flex: none; }
+.btc-menu {
+    position: absolute; right: 0; top: calc(100% + 6px); z-index: 40; display: none;
+    min-width: 232px; padding: 6px; background: #fff;
+    border: 1px solid rgba(15, 23, 42, 0.1); border-radius: 12px;
+    box-shadow: 0 16px 34px -18px rgba(15, 23, 42, 0.4);
+}
+.btc-menu.open { display: block; }
+.btc-mi {
+    display: flex; align-items: center; gap: 10px; width: 100%; cursor: pointer;
+    border: none; background: none; border-radius: 8px; padding: 7px 9px; text-align: left;
+    font-family: var(--font-ui); font-size: 12.5px; font-weight: 600; color: #475569;
+    transition: background 0.12s, color 0.12s;
+}
+.btc-mi span { flex: 1; min-width: 0; }
+.btc-mi i { display: grid; place-items: center; width: 14px; height: 14px; flex: none; color: #3b82f6; }
+.btc-mi i svg { width: 13px; height: 13px; }
+.btc-mi:hover { background: rgba(15, 23, 42, 0.05); color: #1b2433; }
+.btc-mi.on { color: #1b2433; }
+.btc-mi.danger { color: #dc2626; margin-top: 4px; border-top: 1px solid rgba(15, 23, 42, 0.08); border-radius: 0 0 8px 8px; padding-top: 9px; }
+.btc-mi.danger:hover { background: rgba(220, 38, 38, 0.08); color: #dc2626; }
+
+/* бумага в слоте ещё не выбрана / движок не доехал */
+.btc-empty, .btc-err {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6px; text-align: center; padding: 46px 20px; min-height: 240px;
+}
+.btc-empty-tt { font-family: var(--font-ui); font-size: 13.5px; font-weight: 700; color: #64748b; }
+.btc-empty-tx, .btc-err { font-size: 12px; line-height: 1.5; color: #97a3b4; max-width: 320px; }
+
+/* ---------- тёмная тема ---------- */
+body.dark-mode .btc-menu, .pfd-thm-dark .btc-menu {
+    background: #1b2433; border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 18px 38px -20px rgba(0, 0, 0, 0.8);
+}
+body.dark-mode .btc-mi, .pfd-thm-dark .btc-mi { color: #9fb1c6; }
+body.dark-mode .btc-mi:hover, .pfd-thm-dark .btc-mi:hover { background: rgba(255, 255, 255, 0.07); color: #f1f5f9; }
+body.dark-mode .btc-mi.on, .pfd-thm-dark .btc-mi.on { color: #f1f5f9; }
+body.dark-mode .btc-mi i, .pfd-thm-dark .btc-mi i { color: #60a5fa; }
+body.dark-mode .btc-mi.danger, .pfd-thm-dark .btc-mi.danger { color: #f87171; border-top-color: rgba(255, 255, 255, 0.1); }
+body.dark-mode .btc-empty-tt, .pfd-thm-dark .btc-empty-tt { color: #cbd5e1; }
+body.dark-mode .btc-note, .pfd-thm-dark .btc-note { color: #7f8ea3; }

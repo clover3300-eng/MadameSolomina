@@ -375,6 +375,8 @@ var TI_METHODS = {
     CancelOrder:      { svc: 'OrdersService',      scope: 'trade' },
     // этап 3 — стоп-заявки и лента обезличенных сделок
     GetLastTrades:    { svc: 'MarketDataService',  scope: 'read' },
+    // этап 4 — свечи для графика терминала (виджет «График», js/portfolios-chart.js)
+    GetCandles:       { svc: 'MarketDataService',  scope: 'read' },
     GetStopOrders:    { svc: 'StopOrdersService',  scope: 'read' },
     PostStopOrder:    { svc: 'StopOrdersService',  scope: 'trade' },
     CancelStopOrder:  { svc: 'StopOrdersService',  scope: 'trade' },

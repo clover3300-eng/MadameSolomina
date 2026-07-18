@@ -571,17 +571,20 @@
     // им не ставится. Тот же приём, что у «Избранного» и «Ставок» (свой глаз в шапке).
     // Терминал (trade:*) здесь же: его правый угол занят лупой/счётом, угловой
     // оверлей ложился ПОВЕРХ них — кнопки встают в поток шапки ПЕРЕД этим контентом.
-    var PFD_OWN_CHROME = { plist: 1, pdetail: 1, 'trade:ob': 1, 'trade:ticket': 1, 'trade:orders': 1 };
+    var PFD_OWN_CHROME = { plist: 1, pdetail: 1, 'trade:ob': 1, 'trade:ticket': 1, 'trade:orders': 1, 'trade:chart': 1 };
     // слоты бумаг (trade:ob:2, trade:ticket:3…) — те же карточки терминала, только
     // с номером: свой хром в шапке им нужен ровно так же, как первому слоту
-    function pfdOwnChrome(id) { return !!(PFD_OWN_CHROME[id] || /^trade:(ob|ticket):\d+$/.test(id)); }
+    function pfdOwnChrome(id) { return !!(PFD_OWN_CHROME[id] || /^trade:(ob|ticket|chart):\d+$/.test(id)); }
     // id блоков слота: первый исторически без суффикса (старые раскладки живы)
     function pftObId(n) { return +n === 1 ? 'trade:ob' : 'trade:ob:' + n; }
     function pftTkId(n) { return +n === 1 ? 'trade:ticket' : 'trade:ticket:' + n; }
+    function pftChId(n) { return +n === 1 ? 'trade:chart' : 'trade:chart:' + n; }
     function pftSlotOf(id) {
-        var m = /^trade:(?:ob|ticket)(?::(\d+))?$/.exec(id);
+        var m = /^trade:(?:ob|ticket|chart)(?::(\d+))?$/.exec(id);
         return m ? (+m[1] || 1) : 0;
     }
+    // все блоки слота: пара «стакан + заявка» плюс необязательный график свечей
+    function pftSlotIds(n) { return [pftObId(n), pftTkId(n), pftChId(n)]; }
     // Новая бумага в терминал: показываем ОБА блока слота и ставим их сразу за
     // блоками предыдущего — иначе стакан улетал в конец сетки, отдельно от
     // своего тикета, и пару приходилось собирать драгом руками.
@@ -694,6 +697,13 @@
                     htmlFn: function () { return PF.pftObCard(n); }, span: 4, isTrade: true });
                 blocks.push({ id: pftTkId(n), name: PF.pftSlotLabel('ticket', n),
                     htmlFn: function () { return PF.pftTicketCard(n); }, span: 4, isTrade: true });
+                // График свечей — опциональный третий блок слота: тяжелее пары
+                // «стакан + заявка» (canvas, история свечей), поэтому включается
+                // руками, а не появляется с каждой новой бумагой
+                if (PF.pfcChartCard) {
+                    blocks.push({ id: pftChId(n), name: PF.pftSlotLabel('chart', n),
+                        htmlFn: function () { return PF.pfcChartCard(n); }, span: 8, isTrade: true, defHidden: true });
+                }
             });
             blocks.push({ id: 'trade:orders', name: 'Мои заявки', htmlFn: PF.pftOrdersCard, span: 4, isTrade: true });
         }
@@ -1761,9 +1771,16 @@
         var n = pftSlotOf(id);
         if (n && PF.pftDropSlot) {
             var h = PF.dashCfg.hidden || {};
-            if (h[pftObId(n)] === 1 && h[pftTkId(n)] === 1) {
+            var ord = PF.dashCfg.order || [];
+            // Слот жив, пока на экране хоть один его блок. График опциональный:
+            // его может не быть в раскладке вовсе — тогда он и не держит слот.
+            var alive = pftSlotIds(n).some(function (bid) {
+                if (h[bid] === 1) return false;
+                return bid === pftObId(n) || bid === pftTkId(n) || ord.indexOf(bid) >= 0;
+            });
+            if (!alive) {
                 if (n > 1) {
-                    [pftObId(n), pftTkId(n)].forEach(function (bid) {
+                    pftSlotIds(n).forEach(function (bid) {
                         PF.dashCfg.order = (PF.dashCfg.order || []).filter(function (x) { return x !== bid; });
                         [PF.dashCfg.span, PF.dashCfg.h, PF.dashCfg.hidden, PF.dashCfg.col, PF.dashCfg.thm]
                             .forEach(function (m) { if (m) delete m[bid]; });

@@ -273,6 +273,7 @@
             PF.renderBrokerPos();   // блок «Позиции у брокера»: догрузка из API (no-op без виджета)
             brokerPfSync();         // карточка-портфель счёта Т-Инвестиций: тихий синк (троттл 60с, no-op без карточки)
             if (PF.pftAfterRender) PF.pftAfterRender();   // терминал «Торговли»: поллинг только на живой подвкладке
+            if (PF.pfcAfterRender) PF.pfcAfterRender();   // график свечей: живой canvas переезжает в свежий якорь
             pfdHeatRepaintSoon();   // блок «Карта рынка»: дорисовать живые плитки
             ensureLiveTick();
             var payBody = document.querySelector('.pf-paycal--cell .pfpc-body');
