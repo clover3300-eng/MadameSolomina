@@ -902,9 +902,17 @@
             '<svg class="pfcv-assets-more-ch' + (full ? ' up' : '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>' : '';
         return '<div class="pfcv-assets' + (full ? ' full' : '') + '"><div class="pfcv-assets-in">' + pfHoldsTableHtml(c) + more + '</div></div>';
     }
+    // Есть ли в портфеле облигации. Если нет — колонки НКД показывать незачем:
+    // они дают тринадцатую и десятую колонку с прочерком в каждой строке, из-за
+    // чего «Стоимость», «Доход» и «Изменение» уезжали за правый край панели, и
+    // раскрытие выглядело обрезанным.
+    function pfHasBonds(c) {
+        return (c.hs || []).some(function (x) { return x.h.type === 'bond'; });
+    }
     // строки состава для таблицы большой карточки (переиспользуются разворотом и графиком)
     function pfHoldsRowsHtml(c) {
-        if (!c.hs.length) return '<tr><td colspan="13" class="pfo-empty">Состав портфеля пуст</td></tr>';
+        var nkd = pfHasBonds(c);
+        if (!c.hs.length) return '<tr><td colspan="' + (nkd ? 13 : 11) + '" class="pfo-empty">Состав портфеля пуст</td></tr>';
         return c.hs.map(function (x, i) {
             var h = x.h, cc = x.c, isB = h.type === 'bond';
             var ptip = isB ? ' title="' + attr(BOND_PRICE_TIP) + '"' : '';
@@ -922,11 +930,11 @@
                 '<td class="pfo-c-tp"><span class="pfo-tag ' + h.type + '">' + (isB ? 'обл' : 'акц') + '</span></td>' +
                 '<td>' + ruDate(cc.firstDate) + lotChip + '</td>' +
                 '<td' + buyTip + '>' + fmtPrice(cc.buy) + '</td>' +
-                '<td class="pfo-nkdcol' + (isB ? '' : ' muted') + '"' + (isB ? ' title="НКД на дату покупки (взвеш. по лотам)"' : '') + '>' + (isB ? fmtPrice(cc.nkd || 0) : '—') + '</td>' +
+                (nkd ? '<td class="pfo-nkdcol' + (isB ? '' : ' muted') + '"' + (isB ? ' title="НКД на дату покупки (взвеш. по лотам)"' : '') + '>' + (isB ? fmtPrice(cc.nkd || 0) : '—') + '</td>' : '') +
                 '<td>' + (cc.qty || 0) + '</td>' +
                 '<td>' + fmtRub(cc.invested) + '</td>' +
                 '<td class="' + (cc.live ? 'pfo-live' : '') + '"' + (noQ ? ' title="' + attr(noQ.tip) + '"' : ptip) + '>' + (noQ ? noQ.txt : fmtPrice(cc.cur)) + '</td>' +
-                '<td class="pfo-nkdcol' + (isB ? '' : ' muted') + '"' + (isB ? ' title="Текущий накопленный купонный доход — НКД сейчас (MOEX)"' : '') + '>' + (isB ? (nkdNow != null ? fmtPrice(nkdNow) : '—') : '—') + '</td>' +
+                (nkd ? '<td class="pfo-nkdcol' + (isB ? '' : ' muted') + '"' + (isB ? ' title="Текущий накопленный купонный доход — НКД сейчас (MOEX)"' : '') + '>' + (isB ? (nkdNow != null ? fmtPrice(nkdNow) : '—') : '—') + '</td>' : '') +
                 '<td>' + fmtRub(cc.value) + '</td>' +
                 '<td class="' + (cc.pnl >= 0 ? 'pos' : 'neg') + '">' + fmtRub(cc.pnl) + '</td>' +
                 '<td class="' + (!hasInv || noQ ? '' : (cc.pnlPct >= 0 ? 'pos' : 'neg')) + '">' + (!hasInv || noQ ? '—' : fmtPct(cc.pnlPct)) + '</td>' +
@@ -934,8 +942,13 @@
         }).join('');
     }
     function pfHoldsTableHtml(c) {
+        var nkd = pfHasBonds(c);
         return '<div class="pfo-tablewrap"><table class="pfo-table"><thead><tr>' +
-            '<th class="pfo-c-rk">#</th><th class="pfo-c-as">Актив</th><th class="pfo-c-tp">Тип</th><th>Дата покупки</th><th>Цена покупки</th><th>НКД покупки</th><th>Кол-во</th><th>Вложено</th><th>Цена сейчас</th><th>НКД сейчас</th><th>Стоимость</th><th>Доход</th><th>Изменение</th>' +
+            '<th class="pfo-c-rk">#</th><th class="pfo-c-as">Актив</th><th class="pfo-c-tp">Тип</th><th>Дата покупки</th><th>Цена покупки</th>' +
+            (nkd ? '<th>НКД покупки</th>' : '') +
+            '<th>Кол-во</th><th>Вложено</th><th>Цена сейчас</th>' +
+            (nkd ? '<th>НКД сейчас</th>' : '') +
+            '<th>Стоимость</th><th>Доход</th><th>Изменение</th>' +
             '</tr></thead><tbody>' + pfHoldsRowsHtml(c) + '</tbody></table></div>';
     }
 

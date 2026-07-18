@@ -634,6 +634,13 @@ body.dark-mode .pfcv-assetbtn.on { background: color-mix(in srgb, var(--pf-accen
 body.dark-mode .pf-card.assets-open .pfcv-assets { border-top-color: rgba(255,255,255,0.06); }
 .pfcv-assets-in { min-height: 0; overflow: hidden; }
 .pfcv-assets .pfo-tablewrap { max-height: 340px; overflow: auto; padding: 6px 24px 14px; }
+/* Раскрытие живёт в панели уже карточки-ребаланса, а колонок тринадцать:
+   с общими отступами таблицы «Стоимость/Доход/Изменение» не помещались и
+   выглядели обрезанными. Здесь колонки чуть плотнее — состав из акций
+   (без колонок НКД, см. pfHoldsTableHtml) влезает целиком. */
+.pfcv-assets .pfo-table thead th { padding-left: 10px; padding-right: 10px; }
+.pfcv-assets .pfo-table tbody td { padding-left: 11px; padding-right: 11px; }
+.pfcv-assets .pfo-table .pfo-c-rk { padding-left: 14px; padding-right: 4px; }
 .pfcv-assets.full .pfo-tablewrap { max-height: none; }
 /* шапка таблицы состава здесь — под цвет портфеля (не нейтральный серый), с скруглением
    в тон карточке, чтобы вписывалась в остальной дизайн раскрытия, а не смотрелась чужеродно.

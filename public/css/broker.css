@@ -351,6 +351,15 @@ body.dark-mode .pfbrk-total-l i, .pfd-thm-dark .pfbrk-total-l i { color: #7f93ab
 .btr-search-row:hover { background: rgba(59, 130, 246, 0.07); }
 .btr-search-row b { font-family: var(--font-num); font-size: 12.5px; }
 .btr-search-row span { color: #64748b; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* тип инструмента справа: на короткий тикер брокер отдаёт и акцию, и облигации
+   того же эмитента — без метки их не различить */
+.btr-search-row { justify-content: flex-start; }
+.btr-search-row span { flex: 1; min-width: 0; }
+.btr-search-tag { flex: none; font-style: normal; font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+    color: #94a3b8; text-transform: uppercase; }
+.btr-search-none { padding: 10px 12px; font-size: 12px; color: #64748b; }
+body.dark-mode .btr-search-tag { color: #74839a; }
+body.dark-mode .btr-search-none { color: #9fb1c6; }
 
 /* строка инструмента: тикер · имя · статус торгов точкой */
 .btr-instr { display: flex; align-items: center; gap: 9px; }

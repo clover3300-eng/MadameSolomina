@@ -602,12 +602,9 @@
                 clearTimeout(searchT);
                 if (T.searchQ.length < 2) { renderDrop([]); return; }
                 searchT = setTimeout(function () {
-                    A().call('FindInstrument', { query: T.searchQ }).then(function (d) {
-                        var list = (d.instruments || []).filter(function (i) {
-                            return ['share', 'bond', 'etf', 'INSTRUMENT_TYPE_SHARE', 'INSTRUMENT_TYPE_BOND', 'INSTRUMENT_TYPE_ETF']
-                                .indexOf(i.instrumentType || i.instrumentKind) !== -1 || true;   // рынок сам ранжирует
-                        }).slice(0, 8);
-                        renderDrop(list);
+                    var q = T.searchQ;
+                    A().call('FindInstrument', { query: q }).then(function (d) {
+                        renderDrop(rankInstruments(d.instruments || [], q).slice(0, 8), q);
                     }).catch(function (e) { toast(e.message, true); });
                 }, 350);
             });
@@ -640,12 +637,57 @@
             });
         }
     }
-    function renderDrop(list) {
+    // Брокер отдаёт совпадения в своём порядке, а на короткий тикер их десятки:
+    // на «sber» приезжают облигации Сбербанка, ноты и фонды, и сама акция в
+    // первую восьмёрку не попадала — поиск выглядел сломанным. Ранжируем сами:
+    // точное совпадение тикера — всегда первым.
+    function rankInstruments(list, q) {
+        var Q = String(q || '').trim().toUpperCase();
+        function kind(i) { return String(i.instrumentType || i.instrumentKind || '').toLowerCase(); }
+        function score(i) {
+            var tk = String(i.ticker || '').toUpperCase();
+            var nm = String(i.name || '').toUpperCase();
+            var s = 0;
+            if (tk === Q) s += 1000;                       // ровно тот тикер, что набрали
+            else if (tk.indexOf(Q) === 0) s += 600;        // тикер начинается с запроса
+            else if (nm.indexOf(Q) === 0) s += 300;        // название начинается с запроса
+            else if (tk.indexOf(Q) > 0) s += 120;
+            else if (nm.indexOf(Q) > 0) s += 60;
+            if (i.apiTradeAvailableFlag === false) s -= 500;   // купить всё равно нельзя
+            var k = kind(i);
+            if (k.indexOf('share') >= 0) s += 40;          // акции выше облигаций и фондов
+            else if (k.indexOf('etf') >= 0) s += 20;
+            if (i.forQualInvestorFlag) s -= 30;            // только для квалов — ниже
+            s -= Math.min(20, tk.length);                  // короткий тикер ближе к запросу
+            return s;
+        }
+        return list.slice().map(function (i, n) { return { i: i, n: n, s: score(i) }; })
+            .sort(function (a, b) { return b.s - a.s || a.n - b.n; })
+            .map(function (x) { return x.i; });
+    }
+    function instrTag(i) {
+        var k = String(i.instrumentType || i.instrumentKind || '').toLowerCase();
+        if (k.indexOf('share') >= 0) return 'акция';
+        if (k.indexOf('bond') >= 0) return 'облигация';
+        if (k.indexOf('etf') >= 0) return 'фонд';
+        if (k.indexOf('futures') >= 0) return 'фьючерс';
+        if (k.indexOf('currency') >= 0) return 'валюта';
+        return '';
+    }
+    function renderDrop(list, q) {
         var d = dq('btSearchDrop'); if (!d) return;
-        if (!list.length) { d.innerHTML = ''; d.classList.remove('open'); return; }
+        if (!list.length) {
+            // молчаливо пустой список читался как «поиск не работает»
+            d.innerHTML = q ? '<div class="btr-search-none">Ничего не нашли по запросу «' + esc(q) + '»</div>' : '';
+            d.classList.toggle('open', !!q);
+            T.search = [];
+            return;
+        }
         d.innerHTML = list.map(function (i, n) {
+            var tag = instrTag(i);
             return '<div class="btr-search-row" role="button" onclick="pftPick(' + n + ')">' +
-                '<b>' + esc(i.ticker || '') + '</b><span>' + esc(i.name || '') + '</span></div>';
+                '<b>' + esc(i.ticker || '') + '</b><span>' + esc(i.name || '') + '</span>' +
+                (tag ? '<i class="btr-search-tag">' + tag + '</i>' : '') + '</div>';
         }).join('');
         d.classList.add('open');
         T.search = list;
