@@ -7,10 +7,34 @@
 let _searchResults = [];   // текущий набор совпадений
 let _searchActive = -1;    // индекс подсвеченного результата (для стрелок)
 
+// Точка роста палитры — центр кнопки «Поиск» в шапке: шторка выезжает
+// ИЗ КНОПКИ, а не из своего угла. Считаем каждый раз: кнопка ездит по
+// горизонтали (соседи в #topBarActions разные на разных вкладках).
+// ЛОВУШКА: на десктопе body сжат zoom 0.9 (desktop-zoom.css) — getBoundingClientRect
+// отдаёт ВИДИМЫЕ px, а transform-origin считается в css-px палитры, поэтому делим.
+function syncSearchOrigin() {
+    const btn = document.getElementById('topSearchBtn');
+    const pal = document.getElementById('searchPalette');
+    const overlay = document.getElementById('searchOverlay');
+    if (!btn || !pal || !overlay) return;
+    const z = parseFloat(getComputedStyle(document.body).zoom) || 1;
+    const b = btn.getBoundingClientRect();
+    const ov = overlay.getBoundingClientRect();
+    if (!b.width || !ov.width) return;
+    // левый край палитры считаем АРИФМЕТИКОЙ, а не rect'ом: в закрытом виде на ней
+    // висит transform-заготовка scale(0.88) и rect вернул бы съехавшую рамку
+    const padR = parseFloat(getComputedStyle(overlay).paddingRight) || 0;
+    const palLeft = ov.width / z - padR - pal.offsetWidth;
+    const btnMid = (b.left + b.width / 2 - ov.left) / z;
+    pal.style.setProperty('--ts-ox', (btnMid - palLeft).toFixed(1) + 'px');
+}
+
 function openTopSearch() {
     const overlay = document.getElementById('searchOverlay');
     if (!overlay) return;
+    syncSearchOrigin();
     overlay.classList.add('open');
+    document.body.classList.add('ts-open');
     const inp = document.getElementById('searchInput');
     if (inp) {
         inp.value = '';
@@ -22,8 +46,13 @@ function openTopSearch() {
 function closeTopSearch() {
     const overlay = document.getElementById('searchOverlay');
     if (overlay) overlay.classList.remove('open');
+    document.body.classList.remove('ts-open');
+    // список гасим ПОСЛЕ ухода палитры: иначе карточка схлопывается в поле
+    // ввода прямо на глазах, вместо того чтобы уехать целиком в кнопку
     const box = document.getElementById('searchResults');
-    if (box) box.classList.remove('show');
+    if (box) setTimeout(() => {
+        if (!overlay || !overlay.classList.contains('open')) box.classList.remove('show');
+    }, 240);
     _searchResults = [];
     _searchActive = -1;
 }

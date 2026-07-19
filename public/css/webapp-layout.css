@@ -488,63 +488,80 @@
         to { opacity: 1; transform: translateY(0); }
     }
     
-    /* ===== SEARCH — ARC-STYLE FLOATING PALETTE ===== */
-    /* Прозрачный слой: НЕ затемняет контент, только ловит клик мимо для закрытия */
+    /* ===== SEARCH — ТЁМНАЯ ПАЛИТРА, ВЫДВИГАЕТСЯ ИЗ КНОПКИ «ПОИСК» ===== */
+    /* Палитра висит под кнопкой в правом углу шапки — на той же высоте, что и
+       панель профиля (#profileHub: top 66), чтобы две шторки из одной шапки
+       открывались по одной линии. Тёмная она в ОБЕИХ темах: это всплывающий
+       слой над страницей, а не её карточка.
+       ЛОВУШКА: слой лежит в <body> с zoom 0.9 (desktop-zoom.css), поэтому все
+       отступы здесь — в тех же сжатых px, что и padding #topBar. */
     #searchOverlay {
-        display: none;
+        display: flex;
         position: fixed;
         top: 0; left: 0; right: 0; bottom: 0;
         background: transparent;
         z-index: 1200;
         flex-direction: column;
-        align-items: center;
+        align-items: flex-end;
         justify-content: flex-start;
-        /* чуть выше середины экрана */
-        padding-top: 20vh;
-        padding-left: 16px;
-        padding-right: 16px;
+        /* 32px справа — ровно поле #topBar: правый край палитры встаёт в одну
+           линию с кнопками шапки, а не «почти» в неё */
+        padding: 66px 32px 0;
         box-sizing: border-box;
+        /* закрытый слой не перехватывает клики и уводит поле из таба;
+           видимость гасим ПОСЛЕ анимации ухода (задержка в transition) */
+        visibility: hidden;
+        pointer-events: none;
+        transition: visibility 0s linear 0.24s;
     }
 
-    #searchOverlay.open { display: flex; }
+    #searchOverlay.open {
+        visibility: visible;
+        pointer-events: auto;
+        transition: visibility 0s;
+    }
 
-    /* Компактная колонка: поле ввода + выпадающие результаты */
+    /* Одна карточка: поле ввода сверху, результаты под волосяной линией.
+       Ширина — как у панели профиля, чтобы шторки шапки читались парой. */
     #searchPalette {
-        width: 100%;
-        max-width: 540px;
+        width: 380px;
+        max-width: 100%;
         display: flex;
         flex-direction: column;
-        gap: 10px;
-        animation: searchPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        overflow: hidden;
+        border-radius: 20px;
+        background: linear-gradient(150deg, #182130 0%, #131b27 55%, #10161f 100%);
+        border: 1px solid rgba(255,255,255,0.10);
+        box-shadow: 0 1px 2px rgba(8,14,24,0.4), 0 30px 64px -22px rgba(3,7,14,0.75);
+        /* «выдвигается из кнопки»: точку роста по горизонтали ставит JS
+           (--ts-ox, центр кнопки «Поиск»), по вертикали — верхний край */
+        transform-origin: var(--ts-ox, 100%) 0;
+        opacity: 0;
+        transform: translateY(-10px) scale(0.88);
+        transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                    transform 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    #searchOverlay.open #searchPalette {
+        opacity: 1;
+        transform: none;
     }
 
-    @keyframes searchPop {
-        from { transform: translateY(-10px) scale(0.98); opacity: 0; }
-        to   { transform: translateY(0) scale(1);        opacity: 1; }
+    @media (prefers-reduced-motion: reduce) {
+        #searchOverlay { transition-delay: 0s; }
+        #searchPalette { transition-duration: 0.01ms; transform: none; }
+        #searchResults.show { animation: none; }
     }
 
     #searchBox {
-        background: rgba(255,255,255,0.92);
-        backdrop-filter: blur(24px) saturate(180%);
-        -webkit-backdrop-filter: blur(24px) saturate(180%);
-        padding: 12px 14px;
+        padding: 13px 14px;
         display: flex;
         align-items: center;
         gap: 11px;
-        border: 1px solid rgba(0,0,0,0.06);
-        border-radius: 16px;
-        box-shadow: 0 14px 40px rgba(15,23,42,0.18), 0 2px 8px rgba(15,23,42,0.08);
         width: 100%;
         box-sizing: border-box;
     }
 
-    body.dark-mode #searchBox {
-        background: rgba(28,33,46,0.92);
-        border-color: rgba(255,255,255,0.08);
-        box-shadow: 0 14px 40px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.3);
-    }
-
-    .search-lead-icon { flex-shrink: 0; }
+    .search-lead-icon { flex-shrink: 0; stroke: rgba(226,232,240,0.45); }
 
     #searchInput {
         flex: 1;
@@ -552,51 +569,46 @@
         border: none;
         background: transparent;
         font-family: 'Inter', sans-serif;
-        font-size: 16px;
+        font-size: 15px;
         font-weight: 500;
-        color: var(--text-deep);
+        color: #eef2f8;
         outline: none;
     }
 
-    #searchInput::placeholder { color: var(--text-muted); }
+    #searchInput::placeholder { color: rgba(226,232,240,0.38); }
 
     #searchCloseBtn {
         flex-shrink: 0;
         padding: 6px;
         border: none;
-        background: rgba(0,0,0,0.04);
+        background: rgba(255,255,255,0.06);
         border-radius: 8px;
         cursor: pointer;
-        color: var(--text-slate);
+        color: rgba(226,232,240,0.6);
         display: flex;
-        transition: background 0.15s ease;
+        transition: background 0.15s ease, color 0.15s ease;
     }
-    #searchCloseBtn:hover { background: rgba(0,0,0,0.08); }
-    body.dark-mode #searchCloseBtn { background: rgba(255,255,255,0.06); }
-    body.dark-mode #searchCloseBtn:hover { background: rgba(255,255,255,0.12); }
+    #searchCloseBtn:hover { background: rgba(255,255,255,0.13); color: #eef2f8; }
 
-    /* Живые результаты под полем ввода */
+    /* Живые результаты — нижний ярус той же карточки */
     #searchResults {
         width: 100%;
         box-sizing: border-box;
-        background: rgba(255,255,255,0.96);
-        backdrop-filter: blur(24px) saturate(180%);
-        -webkit-backdrop-filter: blur(24px) saturate(180%);
-        border: 1px solid rgba(0,0,0,0.06);
-        border-radius: 16px;
-        box-shadow: 0 14px 40px rgba(15,23,42,0.16), 0 2px 8px rgba(15,23,42,0.06);
+        border-top: 1px solid rgba(255,255,255,0.07);
         padding: 6px;
-        max-height: 52vh;
+        /* var(--real-vh) — реальная высота окна из JS: vh под zoom 0.9 врёт */
+        max-height: min(430px, calc(var(--real-vh, 100vh) - 150px));
         overflow-y: auto;
         display: none;
-        animation: searchPop 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    #searchResults.show { display: block; }
+    #searchResults.show { display: block; animation: searchResIn 0.2s ease both; }
+    /* полоса прокрутки — как у списков дашборда, но всегда «тёмного» набора */
+    #searchResults::-webkit-scrollbar { width: 6px; }
+    #searchResults::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.16); border-radius: 99px; }
 
-    body.dark-mode #searchResults {
-        background: rgba(28,33,46,0.96);
-        border-color: rgba(255,255,255,0.08);
-        box-shadow: 0 14px 40px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.3);
+    @keyframes searchResIn {
+        from { opacity: 0; transform: translateY(-4px); }
+        to   { opacity: 1; transform: none; }
     }
 
     .search-res-item {
@@ -610,10 +622,6 @@
     }
     .search-res-item:hover,
     .search-res-item.active {
-        background: rgba(99,102,241,0.10);
-    }
-    body.dark-mode .search-res-item:hover,
-    body.dark-mode .search-res-item.active {
         background: rgba(129,140,248,0.16);
     }
 
@@ -640,14 +648,14 @@
         font-family: 'Inter', sans-serif;
         font-weight: 700;
         font-size: 14px;
-        color: var(--text-deep);
+        color: #e9eef6;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
     .search-res-name {
         font-size: 12px;
-        color: var(--text-muted);
+        color: rgba(226,232,240,0.48);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -657,12 +665,11 @@
         flex-shrink: 0;
         font-size: 11px;
         font-weight: 600;
-        color: var(--text-slate);
+        color: rgba(226,232,240,0.55);
         padding: 3px 9px;
         border-radius: 999px;
-        background: rgba(0,0,0,0.04);
+        background: rgba(255,255,255,0.06);
     }
-    body.dark-mode .search-res-type { background: rgba(255,255,255,0.06); }
 
     .search-res-fav {
         flex-shrink: 0;
@@ -674,26 +681,25 @@
         background: transparent;
         border-radius: 8px;
         cursor: pointer;
-        color: var(--text-muted);
+        color: rgba(226,232,240,0.4);
         transition: background 0.12s ease, color 0.12s ease, transform 0.1s ease;
     }
     .search-res-fav svg { width: 18px; height: 18px; }
-    .search-res-fav:hover { background: rgba(0,0,0,0.06); color: var(--text-slate); }
+    .search-res-fav:hover { background: rgba(255,255,255,0.1); color: rgba(226,232,240,0.8); }
     .search-res-fav:active { transform: scale(0.85); }
     .search-res-fav.active { color: #F59E0B; }
     .search-res-fav.active svg { fill: #F59E0B; stroke: #F59E0B; }
-    body.dark-mode .search-res-fav:hover { background: rgba(255,255,255,0.08); }
 
     .search-res-empty {
         padding: 22px 14px;
         text-align: center;
         font-size: 13px;
-        color: var(--text-muted);
+        color: rgba(226,232,240,0.45);
     }
     .search-res-hint {
         padding: 7px 12px 9px;
         font-size: 11px;
-        color: var(--text-muted);
+        color: rgba(226,232,240,0.42);
         display: flex;
         align-items: center;
         gap: 6px;
@@ -704,10 +710,18 @@
         font-weight: 600;
         padding: 2px 6px;
         border-radius: 5px;
-        background: rgba(0,0,0,0.06);
-        color: var(--text-slate);
+        background: rgba(255,255,255,0.08);
+        color: rgba(226,232,240,0.6);
     }
-    body.dark-mode .search-res-hint kbd { background: rgba(255,255,255,0.08); }
+
+    /* Кнопка-источник, пока палитра открыта: темнеет заодно с ней — видно,
+       откуда шторка выехала и чем её закрыть */
+    body.ts-open #topSearchBtn,
+    body.dark-mode.ts-open #topSearchBtn {
+        background: #1b2432;
+        border-color: rgba(255,255,255,0.14);
+        color: #e9eef6;
+    }
     
     /* ===== LEGACY SCREEN COMPAT LAYER ===== */
     /* Screens that open as overlays (company, vanguard) */
