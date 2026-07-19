@@ -250,6 +250,13 @@
     // .sb-label) и кнопку мобильного дока. Исходную подпись прячем в data-gx-l0:
     // сброс имени обязан вернуть ровно её, а в сайдбаре подписи короче полного
     // имени («Тест» при title «Тест портфеля») — брать их из BASE_TABS нельзя.
+    // ЛОВУШКА: не у каждой вкладки есть свой .sb-item — «Портфель» и «Терминал»
+    // живут ПОДПУНКТАМИ (.sb-sub[data-sub] с текстом в .sb-sub-tx) внутри групп
+    // «Расчёт» и «Рынок». Без этой карты их переименование до сайдбара не доходило.
+    var SB_SUB = {
+        portfolio:       'calc-mix',
+        'market-stocks': 'market-terminal'
+    };
     function labelNode(el, txt) {
         if (!el) return;
         if (el.getAttribute('data-gx-l0') == null) el.setAttribute('data-gx-l0', el.textContent);
@@ -269,6 +276,8 @@
                 if (sb.getAttribute('data-gx-t0') == null) sb.setAttribute('data-gx-t0', sb.getAttribute('title') || '');
                 sb.setAttribute('title', t || sb.getAttribute('data-gx-t0'));
             }
+            var sub = SB_SUB[tab] && document.querySelector('.sb-sub[data-sub="' + SB_SUB[tab] + '"]');
+            if (sub) labelNode(sub.querySelector('.sb-sub-tx'), t);
             labelNode(document.querySelector('#mobileDock .dock-item[data-tab="' + tab + '"] span'), t);
         });
         // хлебная крошка шапки берёт имя из своего словаря — перерисовываем её
