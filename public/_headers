@@ -1,0 +1,32 @@
+# КЭШ СТАТИКИ (Cloudflare Workers Static Assets)
+#
+# По умолчанию Static Assets отдают ВСЁ с `public, max-age=0, must-revalidate`:
+# браузеру запрещено взять файл из кэша, не переспросив сервер. Статики здесь
+# 93 файла (43 css + 50 js), и замер на бою дал 1814мс до последнего css и
+# 1826мс до domInteractive — при 28 КБ реально переданных байт. То есть почти
+# две секунды пустого экрана уходило на 304-ответы «у тебя всё уже есть».
+# Это и читалось как вспышки при каждом F5: внутри приложения переходы идут
+# без перезагрузки, а вход — под занавесом (js/page-transition.js), поэтому
+# цену платило именно обновление страницы.
+#
+# ПОЧЕМУ immutable БЕЗОПАСЕН: все css/js подключены с ?v=N (конвенция проекта,
+# номера живут в index.html) — правка файла меняет URL, и старый ответ из кэша
+# никому не достанется. Сам index.html под это правило НЕ попадает и остаётся
+# must-revalidate: в нём и лежат номера версий, он обязан быть свежим.
+#
+# ЛОВУШКА: раньше забытый бамп ?v=N означал лишнюю секунду у пользователя,
+# теперь — что он останется на старом файле НАВСЕГДА (до смены версии).
+# Бампать ?v=N при правке css/js стало жёстко обязательным.
+# Поэтому же 2026-07-19 доверсионированы 11 файлов, живших без ?v=
+# (base.css, fonts.css, calculator.css, calc-results.css, portfolio-tables.css,
+# navigation.css, strategies.css, rebalance.css, rebalance-stocks.css,
+# menu-controller.js, vanguard-test.js) — под immutable без версии нельзя.
+
+/css/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/js/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/img/*
+  Cache-Control: public, max-age=31536000, immutable
