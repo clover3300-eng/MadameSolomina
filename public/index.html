@@ -169,14 +169,28 @@
     <!-- Мобильный слой (≤1023px) — всегда ПОСЛЕДНИЙ, перебивает всё -->
     <link rel="stylesheet" href="css/mobile.css?v=22">
     
-    <!-- Telegram WebApp API (fallback — works both in TG and browser) -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- ВСЕ скрипты здесь — defer, и это несущее требование, а не уборка.
+         Без defer классический <script> в <head> ПАРСЕР-БЛОКИРУЮЩИЙ: браузер
+         обязан скачать и выполнить его до того, как начнёт разбирать <body>.
+         Здесь это было 550 КБ локальных вендоров плюс запрос на чужой домен —
+         то есть до первого содержательного кадра страница висела пустым
+         холстом. Локально (localhost, 0 мс) не воспроизводится вовсе, на бою
+         по реальной сети — это и есть пустой экран перед тем, как всё
+         появляется разом. Порядок выполнения defer сохраняется (документный),
+         поэтому эти три по-прежнему идут ДО defer-скриптов внизу body.
+         Новый <script> в <head> без defer не добавлять. -->
+    <!-- Telegram WebApp API (fallback — works both in TG and browser).
+         defer безопасен: единственное обращение к Telegram.WebApp во всём
+         проекте — HapticFeedback в обработчиках кликов, и везде через guard. -->
+    <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
     <!-- Telegram Login Widget API (Telegram.Login.auth — попап входа в браузере) -->
     <script src="https://telegram.org/js/telegram-widget.js?22" defer></script>
     <!-- PDF-экспорт: html2canvas 1.4.1 и jsPDF 2.5.1 вендорены локально —
-         не зависим от чужих CDN и не пускаем их код на страницу с сессией -->
-    <script src="js/vendor/html2canvas.min.js?v=1"></script>
-    <script src="js/vendor/jspdf.umd.min.js?v=1"></script>
+         не зависим от чужих CDN и не пускаем их код на страницу с сессией.
+         Нужны только внутри кнопки экспорта в portfolio.js, к моменту клика
+         defer давно отработал. -->
+    <script src="js/vendor/html2canvas.min.js?v=1" defer></script>
+    <script src="js/vendor/jspdf.umd.min.js?v=1" defer></script>
     <!-- Supabase (UMD, self-hosted): defer в <head> выполняется ДО defer-скриптов внизу body -->
     <script src="js/vendor/supabase.js?v=1" defer></script>
     
