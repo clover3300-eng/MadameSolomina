@@ -681,6 +681,19 @@ body.dark-mode .btr-search-none { color: #9fb1c6; }
 /* шапка и журнал не участвуют в скролле ленты — скроллится только сам список */
 .pfd-hset .btr-orders > .btr-hbar, .pfd-hset .btr-orders > .btr-fold { flex: none; }
 
+/* ---- предложение включить уведомления (только пока есть живые заявки) ---- */
+.btr-notify {
+    display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 10px;
+    padding: 10px 12px; border: 1px dashed rgba(59, 130, 246, 0.35); border-radius: 11px;
+    background: rgba(59, 130, 246, 0.04); cursor: pointer; text-align: left;
+    font-family: var(--font-ui); transition: border-color 0.14s, background 0.14s;
+}
+.btr-notify svg { width: 15px; height: 15px; flex: none; color: #3b82f6; }
+.btr-notify span { font-size: 12px; font-weight: 700; color: #1b2433; }
+.btr-notify i { font-style: normal; font-size: 10.5px; color: #97a3b4; margin-left: auto; text-align: right; }
+.btr-notify:hover { border-color: #3b82f6; background: rgba(59, 130, 246, 0.08); }
+.pfd-hset .btr-orders > .btr-notify { flex: none; }
+
 /* ---- звезда и колокольчик в строке бумаги ---- */
 .btr-itools { display: inline-flex; align-items: center; gap: 2px; margin-left: auto; flex: none; }
 .btr-itool {
@@ -932,6 +945,10 @@ body.dark-mode .btr-fill, .pfd-thm-dark .btr-fill { color: #9fb1c6; }
 body.dark-mode .btr-ost.part, .pfd-thm-dark .btr-ost.part { color: #fcd34d; }
 body.dark-mode .btr-panic, .pfd-thm-dark .btr-panic { color: #f87171; }
 body.dark-mode .btr-jr, .pfd-thm-dark .btr-jr { color: #9fb1c6; border-color: rgba(255, 255, 255, 0.06); }
+body.dark-mode .btr-notify, .pfd-thm-dark .btr-notify { border-color: rgba(96, 165, 250, 0.35); background: rgba(96, 165, 250, 0.07); }
+body.dark-mode .btr-notify span, .pfd-thm-dark .btr-notify span { color: #f1f5f9; }
+body.dark-mode .btr-notify i, .pfd-thm-dark .btr-notify i { color: #7f93ab; }
+body.dark-mode .btr-notify svg, .pfd-thm-dark .btr-notify svg { color: #60a5fa; }
 body.dark-mode .btr-itool, .pfd-thm-dark .btr-itool { color: #7f93ab; }
 body.dark-mode .btr-itool:hover, .pfd-thm-dark .btr-itool:hover { background: rgba(255, 255, 255, 0.07); color: #f1f5f9; }
 body.dark-mode .btr-itool.on, .pfd-thm-dark .btr-itool.on { color: #fcd34d; }

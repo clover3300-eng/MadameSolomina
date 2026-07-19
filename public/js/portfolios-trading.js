@@ -376,21 +376,26 @@
     function alertsFor(uid) { return ALERTS.filter(function (a) { return a.uid === uid; }); }
     // проверка на тике стакана: последняя цена пересекла порог — уведомляем и
     // ГАСИМ алерт (иначе он звенел бы каждые две секунды)
-    function checkAlerts(s) {
-        if (!ALERTS.length || !s.uid || !s.ob) return;
-        var last = A().q2n(s.ob.lastPrice);
-        if (!(last > 0)) return;
+    // Ядро проверки принимает ЦЕНУ, а не слот: на экране её приносит стакан, а
+    // в фоне — один общий GetLastPrices на все бумаги с алертами.
+    function checkAlertsAt(uid, last) {
+        if (!ALERTS.length || !uid || !(last > 0)) return;
         var hit = ALERTS.filter(function (a) {
-            return a.uid === s.uid && (a.dir === 'up' ? last >= a.px : last <= a.px);
+            return a.uid === uid && (a.dir === 'up' ? last >= a.px : last <= a.px);
         });
         if (!hit.length) return;
         ALERTS = ALERTS.filter(function (a) { return hit.indexOf(a) < 0; });
         saveAlerts();
+        var ms = { meta: instrMem[uid] || null };
         hit.forEach(function (a) {
             var txt = (a.ticker || '') + ' · цена ' + (a.dir === 'up' ? 'выше' : 'ниже') + ' ' +
-                fmtPx(a.px, s) + ' ₽ (сейчас ' + fmtPx(last, s) + ')';
+                fmtPx(a.px, ms) + ' ₽ (сейчас ' + fmtPx(last, ms) + ')';
             announce('Сработал алерт', txt);
         });
+    }
+    function checkAlerts(s) {
+        if (!s.uid || !s.ob) return;
+        checkAlertsAt(s.uid, A().q2n(s.ob.lastPrice));
     }
     window.pftAlertDrop = function (i) {
         ALERTS.splice(i, 1); saveAlerts();
@@ -1186,7 +1191,16 @@
         }
         var panic = (T.otab !== 'hist' && T.orders.length + T.stops.length)
             ? '<button type="button" class="btr-panic" onclick="pftCancelAll()">Отменить все заявки</button>' : '';
-        return head + tabs + body + panic;
+        // Предложение включить уведомления показываем ТОЛЬКО когда есть чего
+        // ждать (висят заявки) и они ещё не включены: иначе это реклама.
+        // Без разрешения браузера фоновая слежка бесполезна — сделка случится,
+        // а сказать о ней будет нечем.
+        var ask = (T.otab !== 'hist' && (T.orders.length + T.stops.length) && !notifyOn() && ('Notification' in window))
+            ? '<button type="button" class="btr-notify" onclick="pftNotifyOn()">' + IC_BELL +
+                '<span>Уведомлять об исполнении</span>' +
+                '<i>придёт, даже если уйти на другую вкладку</i></button>'
+            : '';
+        return head + tabs + body + ask + panic;
     }
 
     // ---------- карточка «Позиции»: что открыто и сколько на этом заработано ----------
@@ -1444,6 +1458,15 @@
         return false;
     }
     function awake() { return stillHere() && document.visibilityState === 'visible'; }
+    // ФОНОВЫЙ РЕЖИМ. Всё, что рисуется (стакан, лента, статус, позиции), в
+    // невидимой вкладке смысла не имеет и остаётся на awake(). Но исполнение
+    // заявки и срабатывание алерта — ровно то, ради чего уходят на другую
+    // вкладку: их проверяем и в фоне, только реже и дешевле.
+    // Что тут важно знать: браузер сам троттлит таймеры скрытых вкладок (Chrome
+    // — до одного тика в минуту после нескольких минут в фоне), поэтому
+    // BG_MS — это «не чаще», а не «ровно». Для сделок такой точности достаточно.
+    function alive() { return stillHere(); }
+    var BG_MS = 20000;
     var obAsk = OB_MAX;   // сколько уровней просим у брокера (см. catch ниже)
     function pollOb() {
         if (!awake()) return;
@@ -1464,8 +1487,10 @@
             });
         });
     }
-    function pollOrders() {
-        if (!awake()) return;
+    // bg=true — такт из фона: те же данные, но без перерисовок (рисовать
+    // некому) и без дорезолва тикеров пачкой запросов
+    function pollOrders(bg) {
+        if (bg ? !alive() : !awake()) return;
         var c = conn(); if (!c) return;
         Promise.all([
             A().call('GetOrders', { accountId: c.accountId }),
@@ -1476,15 +1501,59 @@
             });
             T.stops = rs[1].stopOrders || [];
             // тикеры заявок — дорезолвим в память
-            T.orders.concat(T.stops).forEach(function (o) {
-                if (o.instrumentUid && !instrMem[o.instrumentUid]) fetchMeta(o.instrumentUid, true);
-            });
+            if (!bg) {
+                T.orders.concat(T.stops).forEach(function (o) {
+                    if (o.instrumentUid && !instrMem[o.instrumentUid]) fetchMeta(o.instrumentUid, true);
+                });
+            }
             traceOrders();        // что случилось с заявками, пропавшими из активных
             reconcileBrackets();  // сработала одна нога защиты — снять вторую
+            if (bg) return;       // вкладка не на экране — перерисовывать нечего
             repaintOrders();
             repaintObAll();   // метки своих заявок — сразу, не ждя тика стакана
         }).catch(function () {});
     }
+
+    // ---------- фоновый такт ----------
+    // Цена для алертов в фоне берётся ОДНИМ запросом GetLastPrices на все
+    // бумаги сразу, а не стаканом на каждую: стакан в невидимой вкладке никто
+    // не смотрит, а лимит запросов брокера общий на токен.
+    function pollAlertsBg() {
+        if (!alive() || !ALERTS.length) return;
+        var uids = [];
+        ALERTS.forEach(function (a) { if (uids.indexOf(a.uid) < 0) uids.push(a.uid); });
+        if (!uids.length) return;
+        A().call('GetLastPrices', { instrumentId: uids }).then(function (d) {
+            var q2n = A().q2n;
+            (d.lastPrices || []).forEach(function (lp) {
+                var uid = lp.instrumentUid || lp.figi;
+                var px = q2n(lp.price);
+                if (!uid || !(px > 0)) return;
+                checkAlertsAt(uid, px);
+            });
+        }).catch(function () {});
+    }
+    var bgTimer = null;
+    function startBg() { if (!bgTimer) bgTimer = setInterval(bgTick, BG_MS); }
+    function stopBg() { clearInterval(bgTimer); bgTimer = null; }
+    function bgTick() {
+        if (!alive()) { stopBg(); return; }
+        if (document.visibilityState === 'visible') return;   // видимую вкладку ведут обычные таймеры
+        pollOrders(true);
+        pollAlertsBg();
+    }
+    // Переключение вкладки браузера: показали — возвращаем полный поллинг и
+    // сразу подтягиваем данные (иначе первые секунды на экране висят цифры
+    // минутной давности); спрятали — оставляем только фоновый такт.
+    document.addEventListener('visibilitychange', function () {
+        if (!alive()) { stopBg(); return; }
+        if (document.visibilityState === 'visible') {
+            pollOb(); pollOrders(); pollStatus(); pollPos(); pollMaxLots(); pollPortfolio();
+        } else {
+            startBg();
+            bgTick();
+        }
+    });
 
     // ---------- судьба заявки: исполнилась или снята ----------
     // GetOrders отдаёт ТОЛЬКО активные, поэтому исполнение выглядит как
@@ -1639,16 +1708,28 @@
     // туда состав сделок значило бы отправить торговую активность в облако.
     // Поэтому: вкладка на глазах — тост, вкладка в фоне — браузерное уведомление
     // (тем же флагом notifyBrowser, которым пользователь уже управляет в профиле).
+    var noticeSeq = 0;
+    function notifyOn() {
+        if (!('Notification' in window) || Notification.permission !== 'granted') return false;
+        try { return !!(JSON.parse(localStorage.getItem('profile_settings_v1') || '{}') || {}).notifyBrowser; }
+        catch (e) { return false; }
+    }
     function announce(title, body) {
         if (!document.hidden) { toast(body); return; }
-        var on = false;
-        try { on = !!(JSON.parse(localStorage.getItem('profile_settings_v1') || '{}') || {}).notifyBrowser; }
-        catch (e) {}
-        if (!on || !('Notification' in window) || Notification.permission !== 'granted') { toast(body); return; }
-        // без icon: модуль звоночка тоже его не ставит, а битый путь дал бы
-        // пустой квадрат вместо иконки сайта
-        try { new Notification(title, { body: body, tag: 'pft-fill' }); }
-        catch (e) { toast(body); }
+        if (!notifyOn()) { toast(body); return; }
+        // tag РАЗНЫЙ у разных событий: с общим тегом второе уведомление молча
+        // затирало бы первое, и две сделки подряд выглядели бы как одна.
+        // Без icon: модуль звоночка тоже его не ставит, а битый путь дал бы
+        // пустой квадрат вместо иконки сайта.
+        try {
+            var nt = new Notification(title, { body: body, tag: 'pft-' + (++noticeSeq) });
+            // клик возвращает на вкладку терминала — иначе уведомление сообщает
+            // о сделке и не даёт на неё посмотреть
+            nt.onclick = function () {
+                try { window.focus(); } catch (e2) {}
+                try { nt.close(); } catch (e2) {}
+            };
+        } catch (e) { toast(body); }
     }
     // свободные деньги и остатки бумаг — для референсов «доступно» и «свободно»
     function pollPos() {
@@ -1842,6 +1923,9 @@
         // лимиты идут в такт с позициями: обе цифры отвечают на один вопрос
         // «сколько я могу», и дёргать брокера отдельным таймером незачем
         if (!T.posTimer) T.posTimer = setInterval(function () { pollPos(); pollMaxLots(); pollPortfolio(); }, 15000);
+        // фоновый такт живёт рядом с обычными и сам пропускает ходы, пока
+        // вкладка на экране: так он уже на месте, когда с неё уходят
+        startBg();
         refreshStaleMeta();
         pollOb(); pollOrders(); pollStatus(); pollTape(); pollPos(); pollMaxLots(); pollPortfolio();
     }
@@ -1849,6 +1933,7 @@
         clearInterval(T.obTimer); clearInterval(T.ordTimer); clearInterval(T.stTimer);
         clearInterval(T.tapeTimer); clearInterval(T.posTimer);
         T.obTimer = T.ordTimer = T.stTimer = T.tapeTimer = T.posTimer = null;
+        stopBg();
     }
     // зовётся из цикла рендера portfolios.js: включает/гасит поллинг по месту
     function pftAfterRender() {
@@ -2034,6 +2119,24 @@
         T.otab = k;
         repaintOrders();
         if (k === 'hist') loadHist(false);   // TTL внутри: повторный вход брокера не дёргает
+    };
+    // Включение уведомлений из терминала. Пишем в ТОТ ЖЕ ключ, которым управляет
+    // переключатель в личном кабинете (profile_settings_v1.notifyBrowser), —
+    // две независимые настройки одного и того же расходились бы.
+    window.pftNotifyOn = function () {
+        if (!('Notification' in window)) { toast('Этот браузер не поддерживает уведомления', true); return; }
+        Notification.requestPermission().then(function (perm) {
+            if (perm !== 'granted') {
+                toast('Браузер не дал разрешение — включите уведомления для сайта в его настройках', true);
+                return;
+            }
+            var s = {};
+            try { s = JSON.parse(localStorage.getItem('profile_settings_v1') || '{}') || {}; } catch (e) {}
+            s.notifyBrowser = true;
+            try { localStorage.setItem('profile_settings_v1', JSON.stringify(s)); } catch (e) {}
+            toast('Уведомления включены — сообщим об исполнении заявки');
+            repaintOrders();
+        });
     };
     window.pftHistReload = function () { loadHist(true); };
     window.pftJournalFold = function () { T.histJournal = !T.histJournal; repaintOrders(); };
