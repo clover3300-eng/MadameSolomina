@@ -1527,11 +1527,16 @@ body:has(#pftBar) #pftScreens { display: none !important; }
 body:has(#pftBar) #pfxTabPanel { padding-bottom: 0; }
 /* у панели было padding: 24px 40px 84px — сверху и снизу это чистая потеря
    высоты, ради которой режим и затевался; по бокам оставляем немного воздуха */
-body:has(#pftBar) #panel-portfolios { padding: 0 16px 0 !important; }
+body:has(#pftBar) #panel-portfolios { padding: 0 !important; }
+/* #pfWrap — флекс-колонка с gap:16px: между полосой и работой он давал те самые
+   14 экранных пикселей, которых в макете нет (.work2 начинается на 44px ровно) */
+body:has(#pftBar) #pfWrap { gap: 0; }
 
 .pftb {
+    /* margin-bottom НЕТ: в макете работа начинается сразу под строкой
+       (.work2{top:44px}), и любой отступ здесь — потерянная высота */
     display: flex; align-items: center; gap: 0; height: 44px; flex: none;
-    padding: 0 12px 0 8px; margin-bottom: 10px;
+    padding: 0 12px 0 8px;
     background: var(--card, #fff);
     border-bottom: 1px solid var(--border-color, rgba(15, 23, 42, 0.09));
     position: sticky; top: 0; z-index: 30;
@@ -1942,16 +1947,25 @@ body.dark-mode .sx-mact button { border-color: rgba(255, 255, 255, 0.14); color:
    Пять групп вместо девяти: тип заявки уехал в строку лейбла цены, срок —
    тихой подписью, защита — одной строкой, разбивка суммы осталась только в
    подтверждении. Поля и их id те же, что в обычном тикете. */
-.btr-slim .btr-bf { margin-bottom: 14px; }
-.btr-slim .btr-bf-lab { display: flex; align-items: center; gap: 8px; }
+/* Ритм макета: 26px между группами. Воздух роздан поровну по швам — раньше он
+   весь сваливался в одну дыру перед кнопкой. */
+.btr-slim > * + * { margin-top: 26px; }
+.btr-slim .btr-bf { margin-bottom: 0; }
+.btr-slim .btr-bf-lab { display: flex; align-items: baseline; gap: 9px; font-size: 11.5px; color: #94a3b8; margin-bottom: 5px; }
+.btr-slim .btr-big { font-size: 28px; }
+.btr-slim .btr-big-suf { font-size: 13px; color: #94a3b8; }
+/* тип заявки — ПИЛЮЛЯ В РАМКЕ рядом с лейблом, а не голый селект */
 .btr-slim-kind {
-    appearance: none; border: 0; background: none; cursor: pointer; padding: 1px 16px 1px 4px;
-    font-family: var(--font-ui); font-size: 11.5px; font-weight: 700; color: #475569;
+    appearance: none; cursor: pointer; padding: 2px 22px 2px 9px;
+    border: 1px solid var(--border-color, rgba(15, 23, 42, 0.12)); border-radius: 7px;
+    font-family: var(--font-ui); font-size: 11px; font-weight: 600; color: #0f172a; background: none;
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.4' stroke-linecap='round'><path d='m6 9 6 6 6-6'/></svg>");
-    background-repeat: no-repeat; background-position: right center; background-size: 11px;
+    background-repeat: no-repeat; background-position: right 6px center; background-size: 10px;
 }
-.btr-slim-kind:focus-visible { outline: 2px solid #2563eb; border-radius: 4px; }
-.btr-slim-ref { margin-left: auto; font-size: 10.5px; color: #94a3b8; white-space: nowrap; }
+.btr-slim-kind:focus-visible { outline: 2px solid #4453ef; }
+/* референсы («лучшая», «максимум») — акцентом: это подсказки-действия, по ним кликают */
+.btr-slim-ref { margin-left: auto; font-family: var(--font-num); font-size: 10.5px; font-weight: 600; color: #4453ef; white-space: nowrap; }
+.btr-slim .btr-bf-lab .btr-ref, .btr-slim .btr-bf-lab button { color: #4453ef; }
 .btr-slim-sub { margin-top: 5px; font-size: 11px; color: #94a3b8; }
 .btr-slim-edit {
     border: 0; background: none; padding: 0; cursor: pointer;
@@ -1959,20 +1973,19 @@ body.dark-mode .sx-mact button { border-color: rgba(255, 255, 255, 0.14); color:
 }
 .btr-slim-tif { margin-top: 6px; }
 .btr-slim-mkt { font-size: 12.5px; color: #64748b; padding: 6px 0 2px; }
-/* защита — ОДНОЙ строкой: состояние словом справа, поля только когда включена */
-.btr-slim-opt { margin-bottom: 12px; }
+/* защита — ОДНОЙ строкой между хайрлайнами (макет), поля только когда включена */
+.btr-slim-opt { border-top: 1px solid rgba(15, 23, 42, 0.07); border-bottom: 1px solid rgba(15, 23, 42, 0.07); }
 .btr-slim-opt > button {
     display: flex; align-items: center; gap: 9px; width: 100%;
-    border: 0; background: none; cursor: pointer; padding: 8px 0; text-align: left;
+    border: 0; background: none; cursor: pointer; padding: 12px 0; text-align: left;
 }
 .btr-slim-opt-l { font-family: var(--font-ui); font-size: 13px; color: #334155; }
 .btr-slim-opt-v { margin-left: auto; font-size: 11.5px; color: #94a3b8; }
 .btr-slim-opt.on .btr-slim-opt-v { color: #16a34a; font-weight: 700; }
 /* своя позиция — одной строкой вместо блока */
-.btr-slim-hold {
-    padding: 9px 11px; border-radius: 10px; background: rgba(15, 23, 42, 0.04);
-    font-size: 12px; color: #64748b; margin-bottom: 10px;
-}
+/* своя позиция прижата ко ДНУ полей (margin-top:auto) — она справочная и не
+   должна тесниться между рабочими группами */
+.btr-slim-hold { margin-top: auto !important; padding-top: 18px; font-size: 11.5px; line-height: 1.5; color: #64748b; }
 .btr-slim-hold b { font-family: var(--font-num); font-weight: 700; color: #0f172a; }
 .btr-slim-hold b.up { color: #16a34a; } .btr-slim-hold b.dn { color: #dc2626; }
 .btr-slim-note { margin-top: 8px; font-size: 11px; color: #94a3b8; text-align: center; }
@@ -2119,7 +2132,8 @@ body:has(#pftBar) .pfd-grid.pfd-fs {
        его из columnGap, так что хайрлайн получается и по вертикали. */
     column-gap: 1px; row-gap: 0;
     background: var(--border-color, rgba(15, 23, 42, 0.1));
-    border: 1px solid var(--border-color, rgba(15, 23, 42, 0.1)); border-radius: 14px; overflow: hidden;
+    /* ни рамки, ни скругления: сетка доходит до кромок окна, как .work2 в макете */
+    border-top: 1px solid var(--border-color, rgba(15, 23, 42, 0.1));
 }
 body:has(#pftBar) .pfd-grid.pfd-fs .dash2-card,
 body:has(#pftBar) .pfd-grid.pfd-fs .pf-card2 {

@@ -609,10 +609,15 @@
     function obCardHtml(n) {
         n = slotNo(n);
         var s = S(n);
-        var lens = '<button type="button" class="btr-iconbtn' + (s.searchOpen ? ' on' : '') + '" id="' + eid('SearchTg', n) + '" ' +
+        // В ФОКУСЕ шапка панели несёт только шестерёнку (макет 01): поиск бумаги
+        // уехал в строку 44px («Тикер или название» + «/»), вторая бумага — в
+        // меню «Добавить виджет». Дублировать их в каждой карточке незачем.
+        var fs = fsOn();
+        var lens = fs ? '' :
+            '<button type="button" class="btr-iconbtn' + (s.searchOpen ? ' on' : '') + '" id="' + eid('SearchTg', n) + '" ' +
             'title="Поиск бумаги" aria-label="Поиск бумаги" onclick="pftSearchToggle(' + n + ')">' + IC_LENS + '</button>';
         // «+» — быстрый путь ко второй бумаге, не заходя в «Добавить виджет»
-        var add = nextFreeSlot()
+        var add = (!fs && nextFreeSlot())
             ? '<button type="button" class="btr-iconbtn" title="Ещё одна бумага: стакан и заявка" ' +
               'aria-label="Добавить стакан по другой бумаге" onclick="pftAddSlot()">' + IC_PLUS + '</button>'
             : '';
@@ -623,16 +628,25 @@
             'placeholder="Тикер или название — например, SBER" autocomplete="off" spellcheck="false" value="' + esc(s.searchQ) + '">' +
             '<div class="btr-search-drop" id="' + eid('SearchDrop', n) + '"></div>' + favChips(n) + '</div>';
         var title = s.meta ? '<div class="btr-instr" id="' + eid('Instr', n) + '">' + instrHtml(s, n) + '</div>' : '';
-        var tape = s.uid
-            ? '<div class="btr-fold' + (s.tapeOpen ? ' open' : '') + '" id="' + eid('TapeFold', n) + '">' +
+        // ЛЕНТА. В фокусе она ПОСТОЯННЫЙ блок у нижней кромки карточки (макет 01):
+        // прижата margin-top:auto, заголовок капсом со счётчиком, шеврона нет —
+        // сворачивать её тут нечем и незачем, места хватает. В дашборде остаётся
+        // раскрывашкой: там карточка низкая и лента съела бы стакан.
+        var tape = !s.uid ? ''
+            : fs
+            ? '<div class="btr-tape2">' +
+                '<div class="btr-tape2-h"><span class="btr-tape2-l">Лента</span>' +
+                    '<span class="btr-tape2-c" id="' + eid('TapeCnt', n) + '">' + tapeCnt(s) + '</span></div>' +
+                '<div class="btr-tape" id="' + eid('Tape', n) + '">' + tapeHtml(s) + '</div>' +
+              '</div>'
+            : '<div class="btr-fold' + (s.tapeOpen ? ' open' : '') + '" id="' + eid('TapeFold', n) + '">' +
                 '<button type="button" class="btr-fold-btn" onclick="pftTapeToggle(' + n + ')">' +
                     '<span class="btr-fold-lab">Лента сделок</span>' +
                     '<span class="btr-fold-cnt" id="' + eid('TapeCnt', n) + '">' + tapeCnt(s) + '</span>' +
                     '<span class="btr-fold-ch">' + IC_CHEV + '</span>' +
                 '</button>' +
                 '<div class="btr-fold-body"><div class="btr-tape" id="' + eid('Tape', n) + '">' + tapeHtml(s) + '</div></div>' +
-              '</div>'
-            : '';
+              '</div>';
         // .btr-obhost забирает всю свободную высоту карточки — по его боксу
         // считается глубина (fitOb), и замер не зависит от числа строк
         // гашение при рендере — той же меткой, что ставит freshTick: карточку
@@ -643,7 +657,8 @@
     }
     function tapeCnt(s) { return s.tape.length ? s.tape.length + ' за 15 мин' : ''; }
     function tapeHtml(s) {
-        if (!s.tapeOpen) return '<div class="btr-tape-empty">Раскройте ленту — покажем сделки за последние 15 минут.</div>';
+        // в фокусе лента постоянна — «раскройте ленту» там нечему предлагать
+        if (!s.tapeOpen && !fsOn()) return '<div class="btr-tape-empty">Раскройте ленту — покажем сделки за последние 15 минут.</div>';
         if (!s.tape.length) return '<div class="btr-tape-empty">Сделок за последние минуты нет.</div>';
         var q2n = A().q2n;
         return s.tape.slice(0, 10).map(function (t) {
@@ -2276,7 +2291,7 @@
         var list = only ? [slotNo(only)] : liveSlots();
         list.forEach(function (n) {
             var s = S(n);
-            if (!s.uid || !s.tapeOpen) return;
+            if (!s.uid || (!s.tapeOpen && !fsOn())) return;   // в фокусе лента видна всегда
             var now = Date.now();
             A().call('GetLastTrades', {
                 instrumentId: s.uid,
