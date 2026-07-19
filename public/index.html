@@ -111,6 +111,66 @@
                 document.documentElement.setAttribute('data-boot-tab', tab);
             } catch (e) {}
         })();
+
+        // ВРЕМЕННЫЙ ДИАГНОСТИЧЕСКИЙ КЛЮЧ (белые вспышки при F5, 2026-07-19).
+        // Без параметра ?fx=... не делает РОВНО НИЧЕГО — обычная загрузка не
+        // затронута. С параметром отключает по одному подозреваемому, чтобы
+        // понять, какой слой даёт вспышку, вместо очередной догадки:
+        //   ?fx=noaurora — убрать аврору, шум и мозаику (оставить плоский фон)
+        //   ?fx=noblur   — убрать ВСЕ backdrop-filter (200 правил в 29 файлах)
+        //   ?fx=nozoom   — вернуть zoom:1 вместо 0.9 на <body>
+        //   ?fx=flat     — всё три сразу
+        // Стоит инлайном в <head>, до стилей: иначе слой успеет отрисоваться
+        // и замер будет врать. УДАЛИТЬ, когда причина найдена.
+        (function () {
+            try {
+                // Режим ЛИПКИЙ: route-hash.js переписывает адрес через pushState и
+                // стирает query, поэтому после первой загрузки ?fx= в адресе нет —
+                // а вспышку надо ловить именно на F5. Держим выбор в sessionStorage:
+                // живёт до закрытия вкладки, снимается через ?fx=off.
+                var q = (location.search.match(/[?&]fx=([a-z,]+)/) || [])[1];
+                if (q === 'off') { sessionStorage.removeItem('fx_diag'); return; }
+                if (q) sessionStorage.setItem('fx_diag', q);
+                var fx = q || sessionStorage.getItem('fx_diag');
+                if (!fx) return;
+
+                var has = function (k) { return fx === 'flat' || fx.indexOf(k) !== -1; };
+                var css = '';
+                if (has('noaurora')) {
+                    css += '.aurora-container,.aurora-spot,.noise-overlay,#siteBgTiles,'
+                         + '.luxury-depth-layer{display:none !important}'
+                         // html body — чтобы перебить `#appShell{...!important}` из
+                         // site-layout.css: там та же специфичность, но он идёт позже
+                         + 'html body #appShell{background:#F1F6FB !important}'
+                         + 'html body.dark-mode #appShell{background:#0f172a !important}';
+                }
+                if (has('noblur')) {
+                    // :not(#fxN) — несуществующие id, поднимают специфичность до
+                    // (3,0,0), не меняя того, что селектор матчит всё.
+                    // Голого `*` мало: в проекте 30 правил задают backdrop-filter
+                    // с !important, а при равном !important решает специфичность.
+                    // Одного :not тоже мало — правила вроде
+                    // `#marketPanelContent .rates-glass-card` дают (1,1,0).
+                    var ANY = '*:not(#fx1):not(#fx2):not(#fx3)';
+                    css += ANY + ',' + ANY + '::before,' + ANY + '::after'
+                         + '{backdrop-filter:none !important;'
+                         + '-webkit-backdrop-filter:none !important}';
+                }
+                if (has('nozoom')) css += 'html body{zoom:1 !important}';
+
+                // Вставляем ПОСЛЕ всех <link rel=stylesheet>: при равной
+                // специфичности выигрывает тот, кто позже. На DCL ещё раз
+                // переносим в конец head — стили доезжают позже этого скрипта.
+                var s = document.createElement('style');
+                s.id = 'fxDiag';
+                s.textContent = css;
+                document.head.appendChild(s);
+                document.addEventListener('DOMContentLoaded', function () {
+                    document.head.appendChild(s);   // перенос в самый конец
+                });
+            } catch (e) {}
+        })();
+
         // Прошлая страница подняла занавес перед reload — стартуем под ним.
         (function () {
             try {
