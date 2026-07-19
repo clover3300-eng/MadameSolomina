@@ -136,7 +136,35 @@
         var notes = Array.isArray(c.notes) ? c.notes.filter(function (n) { return n && n.id; }).map(pfdNormNote) : [];
         return { on: true, order: Array.isArray(c.order) ? c.order : [], span: c.span || {}, h: c.h || {},
             hidden: c.hidden || {}, col: c.col || {}, thm: (c.thm && typeof c.thm === 'object') ? c.thm : {},
+            // name — подпись ЭКРАНА «Торговли» (см. pfxIsTradeTab): имя живёт в самом
+            // конфиге, а не отдельным ключом, поэтому едет в облако вместе с раскладкой
+            // (pf_dash_tabs_v1 в cloud-sync.WATCH). У прочих подвкладок поле пустует.
+            name: (typeof c.name === 'string') ? c.name.slice(0, 40) : '',
             notes: notes, allocPf: c.allocPf || 'all', saved: c.saved || null };
+    }
+    // ---- ЭКРАНЫ «ТОРГОВЛИ» ----------------------------------------------
+    // Терминал держит бумагу парой «стакан + тикет», и на одной странице их
+    // больше 3–4 не помещается. Экран — ещё одна подвкладка того же
+    // конструктора: ключ 'trading' (первый, исторический) и 'trading:2',
+    // 'trading:3'… у остальных. Раскладки, имена и всё прочее у них уже
+    // пер-вкладочные — заводить отдельную модель не потребовалось. Ряд
+    // экранов — парящая полоса внизу (js/portfolios-screens.js).
+    function pfxIsTradeTab(t) { return t === 'trading' || /^trading:\d+$/.test(String(t)); }
+    // номер экрана (первый — 1): им же нумеруется подпись «Экран N» по умолчанию
+    function pfxTradeNo(t) { var m = /^trading:(\d+)$/.exec(String(t)); return m ? +m[1] : 1; }
+    // экран существует, пока у него есть конфиг (первый — всегда). Экран мог
+    // приехать/уехать из облака, поэтому проверяем оба хранилища
+    function pfxTradeAlive(t) {
+        return t === 'trading' || (pfxIsTradeTab(t) && !!(pfTabCfgs[t] || pfTabsStore[t]));
+    }
+    // все экраны по порядку номеров — источник правды для полосы и для
+    // распределения номеров слотов (терминал не должен выдать занятый номер)
+    function pfxTradeTabs() {
+        var set = { trading: 1 };
+        [pfTabCfgs, pfTabsStore].forEach(function (m) {
+            Object.keys(m || {}).forEach(function (k) { if (pfxIsTradeTab(k)) set[k] = 1; });
+        });
+        return Object.keys(set).sort(function (a, b) { return pfxTradeNo(a) - pfxTradeNo(b); });
     }
     // сиды подвкладок: [id, col, span] — повторяют прежние статичные раскладки
     // pfxTabBodyHtml, только теперь это стартовая точка конструктора, а не бетон
@@ -173,6 +201,25 @@
         if (pfxIsPfTab(tab)) {
             cfg.order.push(tab); cfg.col[tab] = 1; cfg.span[tab] = 5; cfg.hidden[tab] = 0;
             cfg.allocPf = tab.slice(3);
+            return cfg;
+        }
+        // НОВЫЙ экран «Торговли»: та же раскладка, что у первого (график | стакан |
+        // заявка), но по СВОЕЙ бумаге — блокам выдаётся свободный номер слота и своя
+        // копия графика. Иначе второй экран показывал бы тот же тикер, что первый:
+        // состояние слота общее по номеру, а не по экрану. «Мои заявки» — виджет
+        // счёта, а не бумаги: он одинаков на всех экранах, поэтому просто повторён.
+        if (pfxIsTradeTab(tab) && tab !== 'trading') {
+            var sn = PF.pftNextFreeSlot ? PF.pftNextFreeSlot() : 0;
+            var cn = PF.pfcNextFreeChart ? PF.pfcNextFreeChart() : 0;
+            var sfx = sn > 1 ? ':' + sn : '', csfx = cn > 1 ? ':' + cn : '';
+            var rows = [];
+            if (cn) rows.push(['trade:chart' + csfx, 1, 5, 430]);
+            if (sn) rows.push(['trade:ob' + sfx, 6, 3], ['trade:ticket' + sfx, 9, 4]);
+            rows.push(['trade:orders', 1, 12]);
+            rows.forEach(function (r) {
+                cfg.order.push(r[0]); cfg.col[r[0]] = r[1]; cfg.span[r[0]] = r[2]; cfg.hidden[r[0]] = 0;
+                if (r[3]) cfg.h[r[0]] = r[3];
+            });
             return cfg;
         }
         (PFX_TAB_SEEDS[tab] || []).forEach(function (r) {
@@ -218,6 +265,10 @@
             var p = findPf(t.slice(3));
             return (p && (p.hidden || visibleItems().length >= 2)) ? t : 'overview';
         }
+        // экран «Торговли» мог исчезнуть (удалили его здесь или на другом
+        // устройстве — раскладки едут через облако): возвращаемся на первый,
+        // а не показываем пустую сетку с чужим именем
+        if (pfxIsTradeTab(t) && !pfxTradeAlive(t)) return 'trading';
         return t;
     }
     function pfxSyncCfg() {
@@ -230,8 +281,24 @@
     }
     function pfxTabLabel(t) {
         if (pfxIsPfTab(t)) { var p = findPf(t.slice(3)); return p ? p.name : 'Портфель'; }
+        if (pfxIsTradeTab(t) && t !== 'trading') return pfxTradeName(t);
         for (var i = 0; i < PF.PFX_TABS.length; i++) if (PF.PFX_TABS[i][0] === t) return PF.PFX_TABS[i][1];
         return 'Обзор';
+    }
+    // подпись экрана: своё имя из конфига или «Экран N» по номеру ключа
+    function pfxTradeName(t) {
+        var c = pfTabCfgs[t] || pfTabsStore[t];
+        var nm = c && typeof c.name === 'string' ? c.name.trim() : '';
+        return nm || ('Экран ' + pfxTradeNo(t));
+    }
+    // удалить раскладку подвкладки (экран «Торговли», вкладка-портфель): из памяти,
+    // из хранилища и из localStorage. Тот же порядок, что у pfxDropPfTab
+    function pfxDropTabCfg(t) {
+        delete pfTabCfgs[t];
+        if (pfTabsStore[t]) {
+            delete pfTabsStore[t];
+            try { localStorage.setItem(DASH_TABS_KEY, JSON.stringify(pfTabsStore)); } catch (e) {}
+        }
     }
 
     // ============ ГЛОБАЛЬНЫЕ ПРЕСЕТЫ РАСКЛАДКИ ============================
@@ -263,7 +330,13 @@
     // R9: у вкладок-портфелей пресеты и базовая ОБЩИЕ (один ключ 'pftab' на все):
     // раскладка, собранная на одной такой вкладке, подходит любой другой — карточка
     // «своего» портфеля шаблонизируется позиционно в pf:#0 (см. pfPresetTemplate).
-    function pfPresetTabKey() { return pfxIsPfTab(PF.dashTab) ? 'pftab' : PF.dashTab; }
+    // Экраны «Торговли» делят пресеты и базовую раскладку одним ключом 'trading',
+    // как вкладки-портфели — ключом 'pftab': расстановка терминала (где стакан, где
+    // график, какой ширины) от экрана не зависит и собирается один раз на всех
+    function pfPresetTabKey() {
+        if (pfxIsPfTab(PF.dashTab)) return 'pftab';
+        return pfxIsTradeTab(PF.dashTab) ? 'trading' : PF.dashTab;
+    }
     // R8: базовая раскладка пер-вкладочная. Для «Обзора» ключ — ЧИСЛО видимых портфелей
     // (как исторически, свои базовые на 1/2/3… портфеля), для подвкладок — имя вкладки.
     function pfBaseKey() { return PF.dashTab === 'overview' ? String(visibleItems().length) : pfPresetTabKey(); }
@@ -749,7 +822,7 @@
         // Слот — пара «стакан + тикет» по ОДНОЙ бумаге; их может быть несколько
         // (trade:ob:2 и т.д.), номер живёт в id блока. Имя блока называет бумагу:
         // «Стакан» и «Стакан» рядом друг от друга не отличить.
-        if (PF.dashTab === 'trading' && PF.pftObCard) {
+        if (pfxIsTradeTab(PF.dashTab) && PF.pftObCard) {
             (PF.pftSlotNums ? PF.pftSlotNums() : [1]).forEach(function (n) {
                 blocks.push({ id: pftObId(n), name: PF.pftSlotLabel('ob', n),
                     htmlFn: function () { return PF.pftObCard(n); }, span: 4, isTrade: true });
@@ -2780,7 +2853,7 @@
         // Карточки терминала — только на своей подвкладке: на «Обзоре» им неоткуда
         // взять поллинг и подключение. Раньше их в каталоге не было вовсе, и
         // удалённый корзиной стакан вернуть было нечем.
-        if (PF.dashTab === 'trading' && PF.pftSlotNums) {
+        if (pfxIsTradeTab(PF.dashTab) && PF.pftSlotNums) {
             PF.pftSlotNums().forEach(function (n) {
                 list.push({ id: pftObId(n), name: PF.pftSlotLabel('ob', n),
                     desc: 'Биржевой стакан по оси цены — клик подставляет цену в заявку', cats: ['pop', 'market'] });
@@ -3554,4 +3627,8 @@
     PF.pfxIsPfTab = pfxIsPfTab; PF.pfxSyncCfg = pfxSyncCfg; PF.saveDashCfg = saveDashCfg; PF.updateLayoutBtn = updateLayoutBtn;
     PF.DASH_KEY = DASH_KEY; PF.DASH_TABS_KEY = DASH_TABS_KEY; PF.PFDCFG_GEAR_SVG = PFDCFG_GEAR_SVG; PF.PFD_NOTE_COLORS = PFD_NOTE_COLORS;
     PF.PFD_PLUS_SVG = PFD_PLUS_SVG; PF.pfTabCfgs = pfTabCfgs; PF.pfTabsStore = pfTabsStore;
+    // экраны «Торговли» (полосу рисует js/portfolios-screens.js)
+    PF.pfxIsTradeTab = pfxIsTradeTab; PF.pfxTradeNo = pfxTradeNo; PF.pfxTradeTabs = pfxTradeTabs;
+    PF.pfxTradeName = pfxTradeName; PF.pfxTradeAlive = pfxTradeAlive; PF.pfxDropTabCfg = pfxDropTabCfg;
+    PF.pfxTabSeed = pfxTabSeed; PF.normTabCfg = normTabCfg;
 })();

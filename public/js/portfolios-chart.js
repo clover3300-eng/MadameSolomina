@@ -96,21 +96,44 @@
     // Графиков может быть несколько, и нумерация у них СВОЯ, не слотов терминала:
     // график живёт своей бумагой (можно смотреть один тикер, торгуя другим) и
     // опрашивает биржу редко, поэтому его копии не расходуют лимит слотов.
+    // ...на ОДНОМ экране: «Торговля» держит несколько экранов (см. pfxIsTradeTab),
+    // и графики соседнего экрана не рисуются, пока на него не переключились
     var MAX_CHARTS = 4;
+    // сквозной потолок номеров на все экраны: состояние графика (CH[n]) общее по
+    // номеру, поэтому один номер на двух экранах показывал бы одну бумагу дважды
+    var MAX_CHARTS_ALL = 16;
     function slotNo(n) { n = Math.floor(+n || 1); return n >= 1 ? n : 1; }
     function chId(n) { return slotNo(n) === 1 ? 'trade:chart' : 'trade:chart:' + slotNo(n); }
-    function chartNums() {
-        var set = { 1: 1 };
-        ((PF.dashCfg && PF.dashCfg.order) || []).forEach(function (id) {
-            var m = /^trade:chart:(\d+)$/.exec(id);
-            if (m) set[slotNo(m[1])] = 1;
+    function cfgCharts(cfg, out) {
+        ((cfg && cfg.order) || []).forEach(function (id) {
+            var m = /^trade:chart(?::(\d+))?$/.exec(id);
+            if (m) out[slotNo(m[1] || 1)] = 1;
         });
-        Object.keys(CH).forEach(function (n) { set[slotNo(n)] = 1; });
-        return Object.keys(set).map(Number).sort(function (a, b) { return a - b; });
+        return out;
     }
+    function tradeTabs() { return PF.pfxTradeTabs ? PF.pfxTradeTabs() : ['trading']; }
+    // конфиг экрана. dashCfgFor безопасен: сид (а с ним nextFreeChart) он зовёт
+    // только на НЕЗНАКОМОМ ключе, а tradeTabs перечисляет уже существующие —
+    // зато у первого экрана записи в pf_dash_tabs_v1 может не быть вовсе
+    function cfgOf(t) {
+        if (t === PF.dashTab) return PF.dashCfg;
+        try { return PF.dashCfgFor(t); } catch (e) { return null; }
+    }
+    // графики ЭТОГО экрана: что в его раскладке + свои графики, никем не занятые
+    function chartNums() {
+        var elsewhere = {};
+        tradeTabs().forEach(function (t) { if (t !== PF.dashTab) cfgCharts(cfgOf(t), elsewhere); });
+        var set = cfgCharts(PF.dashCfg, {});
+        Object.keys(CH).forEach(function (n) { if (!elsewhere[slotNo(n)]) set[slotNo(n)] = 1; });
+        var out = Object.keys(set).map(Number).sort(function (a, b) { return a - b; });
+        return out.length ? out : [1];
+    }
+    // свободный номер ищем по ВСЕМ экранам разом
     function nextFreeChart() {
-        var used = chartNums();
-        for (var i = 1; i <= MAX_CHARTS; i++) if (used.indexOf(i) < 0) return i;
+        var used = {};
+        tradeTabs().forEach(function (t) { cfgCharts(cfgOf(t), used); });
+        Object.keys(CH).forEach(function (n) { used[slotNo(n)] = 1; });
+        for (var i = 1; i <= MAX_CHARTS_ALL; i++) if (!used[i]) return i;
         return 0;
     }
     function A() { return window.brokerApi; }
@@ -985,8 +1008,13 @@
     }
     // «+» в шапке и «Ещё один график» из пикера
     window.pfcAddChart = function (quiet) {
+        // потолок экранный: упёрлись — новый экран внизу даёт ещё четыре
+        if (chartNums().length >= MAX_CHARTS) {
+            toast('Больше ' + MAX_CHARTS + ' графиков на одном экране не держим — заведите новый экран внизу', true);
+            return false;
+        }
         var n = nextFreeChart();
-        if (!n) { toast('Больше ' + MAX_CHARTS + ' графиков на подвкладке не держим', true); return false; }
+        if (!n) { toast('Больше ' + MAX_CHARTS_ALL + ' графиков разом терминал не держит', true); return false; }
         if (!PF.pfdAddChart) { toast('Конструктор не готов — обновите страницу', true); return false; }
         PF.pfdAddChart(n, quiet);
         return true;
@@ -1064,6 +1092,24 @@
     PF.pfcChartNums = chartNums;
     PF.pfcChartLabel = chartLabel;
     PF.pfcMaxCharts = MAX_CHARTS;
+    // новому экрану «Торговли» нужен свободный номер графика (pfxTabSeed)
+    PF.pfcNextFreeChart = nextFreeChart;
+    // ...а дублированию экрана — СРАЗУ НЕСКОЛЬКО: nextFreeChart смотрит на
+    // раскладки, и подряд он вернул бы один и тот же номер (новых блоков там
+    // ещё нет). Отдаём столько свободных, сколько нашлось, по возрастанию
+    PF.pfcFreeCharts = function (count) {
+        var used = {};
+        tradeTabs().forEach(function (t) { cfgCharts(cfgOf(t), used); });
+        Object.keys(CH).forEach(function (n) { used[slotNo(n)] = 1; });
+        var out = [];
+        for (var i = 1; i <= MAX_CHARTS_ALL && out.length < count; i++) if (!used[i]) out.push(i);
+        return out;
+    };
+    // экран удалили — забываем его графики тем же путём, что корзина конструктора:
+    // номера освобождаются, настройки и построения не всплывают у следующего
+    PF.pfcForgetCharts = function (nums) {
+        (nums || []).forEach(function (n) { PF.pfcDropChart(n); });
+    };
     // инстанс движка по номеру графика — точка входа для отладки с консоли
     PF.pfcChart = function (n) { var c = CH[slotNo(n)]; return c ? c.chart : null; };
 })();

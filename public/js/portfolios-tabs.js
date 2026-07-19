@@ -17,6 +17,7 @@
     var DASH_KEY = PF.DASH_KEY, DASH_TABS_KEY = PF.DASH_TABS_KEY, PFDCFG_GEAR_SVG = PF.PFDCFG_GEAR_SVG, PFD_PLUS_SVG = PF.PFD_PLUS_SVG, dashCfgFor = PF.dashCfgFor, pfTabCfgs = PF.pfTabCfgs;
     var pfTabsStore = PF.pfTabsStore, pfdInChromeHtml = PF.pfdInChromeHtml, pfdScrollToBlock = PF.pfdScrollToBlock, pfdStandardCfg = PF.pfdStandardCfg, pfxEffTab = PF.pfxEffTab, pfxIsPfTab = PF.pfxIsPfTab;
     var pfxSyncCfg = PF.pfxSyncCfg, saveDashCfg = PF.saveDashCfg, updateLayoutBtn = PF.updateLayoutBtn;
+    var pfxIsTradeTab = PF.pfxIsTradeTab, pfxTradeAlive = PF.pfxTradeAlive, pfxTradeNo = PF.pfxTradeNo;
     // импорт виджетов (portfolios-widgets.js, уже загружен):
     var PFP_SLIDERS_SVG = PF.PFP_SLIDERS_SVG;
     // ====================================================================
@@ -45,6 +46,7 @@
         ['settings',  'Настройки',  PFDCFG_GEAR_SVG]   // та же шестерёнка, что у виджетов
     ];
     var PFX_TAB_KEY = 'pf_subtab_v1';   // локально (в облако не зеркалится — просто позиция UI)
+    var PFX_TRADE_KEY = 'pf_trade_screen_v1';   // последний открытый экран «Торговли» — тоже позиция UI
     // ---- R9: вкладки-портфели ----
     // Клик по строке «Моих портфелей» открывает портфелю СВОЮ подвкладку рядом с
     // «Обзором» (только при 2+ видимых портфелях): у каждой — полноценный дашборд-
@@ -61,9 +63,11 @@
         } catch (e) { return []; }
     })();
     function pfxSaveOpenTabs() { try { localStorage.setItem(PFX_OPEN_KEY, JSON.stringify(pfxOpenPfTabs)); } catch (e) {} }
-    // валидная подвкладка: штатная из PFX_TABS или ОТКРЫТАЯ вкладка живого портфеля
+    // валидная подвкладка: штатная из PFX_TABS, ОТКРЫТАЯ вкладка живого портфеля
+    // или существующий экран «Торговли» ('trading:2' и далее, см. pfxIsTradeTab)
     function pfxValidTab(t) {
         if (PFX_TABS.some(function (x) { return x[0] === t; })) return true;
+        if (pfxIsTradeTab(t)) return pfxTradeAlive(t);
         return pfxIsPfTab(t) && pfxOpenPfTabs.indexOf(t.slice(3)) >= 0 && !!findPf(t.slice(3));
     }
     PF.pfxTab = (function () {
@@ -79,7 +83,11 @@
         if (PF.dashEdit) { PF.dashEdit = false; try { updateLayoutBtn(); } catch (e) {} }   // пикер не тащим на другую подвкладку
         PF.pfl3Open = false;                       // панель раскладок — тоже пер-вкладочная
         PF.pfxTab = t;
-        try { localStorage.setItem(PFX_TAB_KEY, t); } catch (e) {}
+        try {
+            localStorage.setItem(PFX_TAB_KEY, t);
+            // какой экран «Торговли» был последним — для возврата из верхнего ряда
+            if (pfxIsTradeTab(t)) localStorage.setItem(PFX_TRADE_KEY, t);
+        } catch (e) {}
         PF.closeImpMenus();
         pfxSyncCfg();                           // R8: PF.dashCfg вкладки + сброс undo
         pfxSyncPath();                          // R9.3: подвкладка отражается в /portfolios/<sub>
@@ -88,6 +96,14 @@
         if (!pfxValidTab(t) || PF.pfxTab === t) return;
         pfxActivateTab(t);
         PF.renderNoAnim();
+    };
+    // «Торговля» в верхнем ряду возвращает на ПОСЛЕДНИЙ открытый экран: уйти в
+    // «Аналитику» и вернуться к своему стакану — обычный жест, а сброс на первый
+    // экран каждый раз заставлял бы искать нужный в полосе внизу
+    window.pfxGoTrading = function () {
+        var last = '';
+        try { last = localStorage.getItem(PFX_TRADE_KEY) || ''; } catch (e) {}
+        window.pfxGoTab(pfxIsTradeTab(last) && pfxTradeAlive(last) ? last : 'trading');
     };
     // ---- R9.3/R9.4: deep-link подвкладок — /portfolios#<sub> ----
     // Слаг для URL: «Обзор» — без хвоста, штатные подвкладки — своим ключом
@@ -99,6 +115,9 @@
         var t = PF.pfxTab;
         if (!t || t === 'overview') return '';
         if (pfxIsPfTab(t)) return '#pf-' + t.slice(3);
+        // экран «Торговли» — '#trading-2': двоеточие в хэше выглядело бы как
+        // протокол и не переживало бы копирование ссылки из мессенджера
+        if (pfxIsTradeTab(t) && t !== 'trading') return '#trading-' + pfxTradeNo(t);
         return '#' + t;
     };
     // применить подвкладку из пути (прямая загрузка /portfolios/analytics, popstate);
@@ -106,12 +125,18 @@
     window.pfxApplySubPath = function (sub) {
         var t = sub === 'overview' ? 'overview'
               : (sub && sub.indexOf('pf-') === 0) ? 'pf:' + sub.slice(3)
+              : /^trading-\d+$/.test(sub || '') ? 'trading:' + sub.slice(8)
               : sub;
         if (!t || t === PF.pfxTab) return;
         if (pfxIsPfTab(t)) {
             var pid = t.slice(3);
             if (!findPf(pid) || !pfxWide()) return;
             if (pfxOpenPfTabs.indexOf(pid) < 0) { pfxOpenPfTabs.push(pid); pfxSaveOpenTabs(); }
+        } else if (pfxIsTradeTab(t)) {
+            // ссылка на несуществующий экран (его удалили) — открываем первый,
+            // а не оставляем пользователя на прежней подвкладке молча
+            if (!pfxTradeAlive(t)) t = 'trading';
+            if (t === PF.pfxTab) return;
         } else if (t !== 'overview' && !PFX_TABS.some(function (x) { return x[0] === t; })) return;
         pfxActivateTab(t);
         if (typeof currentTab !== 'undefined' && currentTab === 'portfolios' && dq('pfWrap')) PF.renderNoAnim();
@@ -214,8 +239,12 @@
         // остальное стрелками, см. pfxTabsKeydown), aria-controls ведёт на
         // #pfxTabPanel (обёртка контента, pfxPanelWrap)
         return '<div class="pfx-tabs" role="tablist" aria-label="Разделы «Портфелей»">' + PFX_TABS.map(function (t) {
-            var on = eff === t[0];
-            return '<button type="button" role="tab" id="pfxTab-' + t[0] + '" aria-controls="pfxTabPanel" tabindex="' + (on ? '0' : '-1') + '" class="pfx-tab' + (on ? ' on' : '') + '" aria-selected="' + on + '" onclick="pfxGoTab(\'' + t[0] + '\')">' +
+            // «Торговля» подсвечена на ЛЮБОМ своём экране (trading:2 и далее): экраны —
+            // это её внутренний ряд внизу, а не отдельные пункты верхнего ряда. Клик
+            // возвращает на последний открытый экран, а не сбрасывает на первый
+            var on = t[0] === 'trading' ? pfxIsTradeTab(eff) : eff === t[0];
+            var go = t[0] === 'trading' ? 'pfxGoTrading()' : 'pfxGoTab(\'' + t[0] + '\')';
+            return '<button type="button" role="tab" id="pfxTab-' + t[0] + '" aria-controls="pfxTabPanel" tabindex="' + (on ? '0' : '-1') + '" class="pfx-tab' + (on ? ' on' : '') + '" aria-selected="' + on + '" onclick="' + go + '">' +
                 '<span class="pfx-tab-ic" aria-hidden="true">' + t[2] + '</span>' + t[1] + '</button>' +
                 (t[0] === 'overview' ? chips : '');
         }).join('') + '</div>';
@@ -225,7 +254,9 @@
     // вообще есть (широкий экран, есть портфели) — на мобильном ролей нет
     function pfxPanelWrap(inner) {
         var eff = pfxEffTab();
-        var slug = pfxIsPfTab(eff) ? 'pf-' + eff.slice(3) : eff;
+        // экраны «Торговли» называет одна и та же вкладка ряда (#pfxTab-trading):
+        // aria-labelledby обязан указывать на СУЩЕСТВУЮЩИЙ id, а чипа 'trading:2' нет
+        var slug = pfxIsPfTab(eff) ? 'pf-' + eff.slice(3) : (pfxIsTradeTab(eff) ? 'trading' : eff);
         return '<div id="pfxTabPanel" role="tabpanel" aria-labelledby="pfxTab-' + slug + '">' + inner + '</div>';
     }
 
@@ -440,7 +471,8 @@
     var PFTG_SEED = [['trade:chart', 5, 1, 430], ['trade:ob', 3, 6], ['trade:ticket', 4, 9], ['trade:orders', 12, 1]];
     function pftgGhostHtml() {
         var cfg = null;
-        try { cfg = dashCfgFor('trading'); } catch (e) {}
+        // раскладка АКТИВНОГО экрана: гейт стоит и на втором-третьем экране тоже
+        try { cfg = dashCfgFor(pfxIsTradeTab(pfxEffTab()) ? pfxEffTab() : 'trading'); } catch (e) {}
         var rows;
         if (cfg && cfg.order && cfg.order.length) {
             // [id, ширина, колонка, высота] — ровно то, чем живёт настоящая раскладка
@@ -730,7 +762,7 @@
         // «Торговля»: при живом терминале это полноценный конструктор — кнопки
         // «Виджет»/«Раскладки» доступны (двигать/добавлять карточки); пока стоит
         // гейт (нет подключения/только чтение) конфигом управлять нечем — прячем
-        var isTrading = pfxEffTab() === 'trading' && !(PF.pftTradeReady && PF.pftTradeReady());
+        var isTrading = pfxIsTradeTab(pfxEffTab()) && !(PF.pftTradeReady && PF.pftTradeReady());
         // конструктором нечего настраивать: и на гейте «Торговли», и у гостя, где
         // вместо дашборда стоит пустое состояние — виджет было бы некуда положить
         var noCfg = isTrading || empty;

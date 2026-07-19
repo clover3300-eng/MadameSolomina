@@ -54,9 +54,15 @@
     // ниже этой высоты карточка уходит в плотный режим (.btr-tight): цифры мельче,
     // воздух убран — иначе в ужатый блок не влезает даже кнопка тикета
     var TIGHT_H = 380;
-    // потолок слотов: каждый живой стакан — свой запрос раз в 2с, а лимит
-    // MarketData у брокера общий на токен; 4 бумаги = 120 запросов/мин с запасом
-    var MAX_SLOTS = 4;
+    // потолок слотов НА ЭКРАНЕ: каждый живой стакан — свой запрос раз в 2с, а лимит
+    // MarketData у брокера общий на токен; 4 бумаги = 120 запросов/мин с запасом.
+    // Опрашиваются только слоты НА ЭКРАНЕ (liveSlots смотрит в DOM), поэтому с
+    // приходом экранов («Торговля» держит их полосой внизу) лимит стал именно
+    // экранным: бумаги соседнего экрана молчат, пока на него не переключились.
+    var MAX_SLOTS_SCREEN = 4;
+    // ...и сквозной потолок номеров на все экраны разом: состояние слота (SLOTS[n],
+    // bt_slots_v1) общее по номеру, так что номера не должны кончиться на четвёртом
+    var MAX_SLOTS = 16;
     // история сделок: окно и потолок строк. Месяц — компромисс между «вкладка
     // не пустует в тихую неделю» и «один запрос, а не окна по годам», как в
     // portfolios-broker-pf.js (там глубина 9 лет, но и синк там редкий)
@@ -128,17 +134,52 @@
     function eid(base, n) { return 'bt' + base + '_' + slotNo(n); }
     function dqs(base, n) { return dq(eid(base, n)); }
 
-    // какие слоты вообще заведены: первый всегда + всё, что записано в раскладку
-    // подвкладки (конструктор — источник правды о существовании блока)
-    function slotNums() {
-        var set = { 1: 1 };
-        ((PF.dashCfg && PF.dashCfg.order) || []).forEach(function (id) {
-            var m = /^trade:(?:ob|ticket):(\d+)$/.exec(id);
-            if (m) set[slotNo(m[1])] = 1;
+    // ---- слоты и ЭКРАНЫ ----
+    // Экран «Торговли» — отдельная раскладка конструктора ('trading', 'trading:2'…,
+    // см. pfxIsTradeTab в portfolios-dash.js), и слот принадлежит тому экрану, в
+    // чьей раскладке лежат его блоки. Номера слотов при этом СКВОЗНЫЕ: состояние
+    // SLOTS[n] общее, поэтому один и тот же номер на двух экранах показывал бы
+    // одну бумагу дважды. Отсюда две разные выборки: slotNums — слоты ЭТОГО
+    // экрана (рендер, пикер, «+»), slotNumsAll — занятые вообще (выдача номера).
+    // Конфиг берём через dashCfgFor: у первого экрана записи в pf_dash_tabs_v1 может
+    // не быть вовсе (его никто не правил), и «сырое» чтение показало бы пустую
+    // раскладку — а его бумага тогда считалась бы бесхозной и всплыла бы на соседнем
+    // экране. Рекурсии тут нет: dashCfgFor зовёт сид (а сид — nextFreeSlot) только
+    // на НЕЗНАКОМОМ ключе, а tradeTabs перечисляет ровно уже существующие.
+    function cfgSlots(cfg, out) {
+        ((cfg && cfg.order) || []).forEach(function (id) {
+            var m = /^trade:(?:ob|ticket)(?::(\d+))?$/.exec(id);
+            if (m) out[slotNo(m[1] || 1)] = 1;
         });
-        // слот с выбранной бумагой жив даже без записи в раскладке (восстановился
-        // из localStorage); пустые заготовки от S(n) сюда не попадают
-        Object.keys(SLOTS).forEach(function (n) { if (SLOTS[n].uid) set[slotNo(n)] = 1; });
+        return out;
+    }
+    function tradeTabs() { return PF.pfxTradeTabs ? PF.pfxTradeTabs() : ['trading']; }
+    function cfgOf(t) {
+        if (t === PF.dashTab) return PF.dashCfg;
+        try { return PF.dashCfgFor(t); } catch (e) { return null; }
+    }
+    // слоты, разложенные на ДРУГИХ экранах — на этом их показывать нельзя
+    function slotsElsewhere() {
+        var out = {};
+        tradeTabs().forEach(function (t) { if (t !== PF.dashTab) cfgSlots(cfgOf(t), out); });
+        return out;
+    }
+    // слоты ЭТОГО экрана: что записано в его раскладку + бесхозные бумаги
+    // (раскладку почистили, а выбор бумаги остался в localStorage)
+    function slotNums() {
+        var set = cfgSlots(PF.dashCfg, {});
+        var taken = slotsElsewhere();
+        Object.keys(SLOTS).forEach(function (n) {
+            if (SLOTS[n].uid && !taken[slotNo(n)]) set[slotNo(n)] = 1;
+        });
+        var out = Object.keys(set).map(Number).sort(function (a, b) { return a - b; });
+        return out.length ? out : [1];   // терминал без единого слота не бывает
+    }
+    // все занятые номера — по всем экранам разом
+    function slotNumsAll() {
+        var set = {};
+        tradeTabs().forEach(function (t) { cfgSlots(cfgOf(t), set); });
+        Object.keys(SLOTS).forEach(function (n) { set[slotNo(n)] = 1; });
         return Object.keys(set).map(Number).sort(function (a, b) { return a - b; });
     }
     // какие слоты СЕЙЧАС на экране: только их и опрашиваем (скрытый блок молчит)
@@ -152,7 +193,7 @@
         return out;
     }
     function nextFreeSlot() {
-        var used = slotNums();
+        var used = slotNumsAll();
         for (var i = 1; i <= MAX_SLOTS; i++) if (used.indexOf(i) < 0) return i;
         return 0;
     }
@@ -2201,6 +2242,11 @@
     // его блока — стакан без тикета торговать не даёт, а тикет без стакана
     // слеп; поодиночке их всё равно можно убрать корзиной.
     window.pftAddSlot = function (quiet) {
+        // потолок теперь ЭКРАННЫЙ: упёрлись — предлагаем новый экран, а не тупик
+        if (slotNums().length >= MAX_SLOTS_SCREEN) {
+            toast('На одном экране больше ' + MAX_SLOTS_SCREEN + ' бумаг терминал не держит — заведите новый экран внизу', true);
+            return false;
+        }
         var n = nextFreeSlot();
         if (!n) { toast('Больше ' + MAX_SLOTS + ' бумаг разом терминал не держит — лимит запросов брокера', true); return false; }
         if (!PF.pfdAddTradeSlot) { toast('Конструктор не готов — обновите страницу', true); return false; }
@@ -2557,7 +2603,9 @@
         var inp = dq('btMvPx');
         // тот же fat-finger, что в тикете: 5% от середины стакана по этой бумаге
         var slot = 0;
-        slotNums().forEach(function (k) { if (S(k).uid === o.instrumentUid) slot = k; });
+        // бумага заявки может стоять на ДРУГОМ экране — ищем по всем слотам:
+        // проверка «цена дальше 5% от рынка» не должна молчать из-за этого
+        slotNumsAll().forEach(function (k) { if (S(k).uid === o.instrumentUid) slot = k; });
         function recheck() {
             var w = dq('btMvWarn'); if (!w) return;
             var v = +inp.value || 0;
@@ -2679,7 +2727,7 @@
             toast('Подключите брокера в режиме «Торговля» — тогда план можно будет исполнить', true);
             return;
         }
-        legs = (legs || []).filter(function (l) { return l && l.ticker; }).slice(0, MAX_SLOTS);
+        legs = (legs || []).filter(function (l) { return l && l.ticker; }).slice(0, MAX_SLOTS_SCREEN);
         if (!legs.length) return;
         var used = [];
         toast('Ищем бумаги плана у брокера…');
@@ -2814,5 +2862,22 @@
     };
     PF.pftLiveBanner = bannerHtml;
     PF.pftTradeReady = tradeReady;
-    PF.pftMaxSlots = MAX_SLOTS;
+    // пикер конструктора считает слоты ЭТОГО экрана (PF.pftSlotNums) — и лимит
+    // ему нужен экранный; сквозной MAX_SLOTS сторожит только выдачу номеров
+    PF.pftMaxSlots = MAX_SLOTS_SCREEN;
+    // новому экрану нужен свободный номер слота (см. pfxTabSeed в portfolios-dash.js)
+    PF.pftNextFreeSlot = nextFreeSlot;
+    PF.pftSlotNumsAll = slotNumsAll;
+    // ...а дублированию экрана — сразу несколько: nextFreeSlot читает раскладки,
+    // и подряд он вернул бы один и тот же номер (новых блоков там ещё нет)
+    PF.pftFreeSlots = function (count) {
+        var used = slotNumsAll(), out = [];
+        for (var i = 1; i <= MAX_SLOTS && out.length < count; i++) if (used.indexOf(i) < 0) out.push(i);
+        return out;
+    };
+    // экран удалили — его бумаги больше нигде не разложены: гасим их состояние,
+    // иначе номера считались бы занятыми, а тикеры всплыли бы в новом экране
+    PF.pftForgetSlots = function (nums) {
+        (nums || []).forEach(function (n) { PF.pftDropSlot(n); });
+    };
 })();

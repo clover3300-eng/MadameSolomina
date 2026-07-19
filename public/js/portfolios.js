@@ -13,6 +13,8 @@
 //   portfolios-trades.js   — история сделок и ребаланс-оверлей
 //   portfolios-trading.js  — терминал подвкладки «Торговля» (стакан, тикет, заявки)
 //   portfolios-broker-pf.js— карточка-портфель из Т-Инвестиций (авто-синк счёта, №10)
+//   portfolios-chart.js    — график свечей терминала (KLineChart, блок trade:chart)
+//   portfolios-screens.js  — экраны «Торговли»: парящая полоса внизу подвкладки
 //   portfolios.js          — этот файл; window.renderPortfolios объявляется
 //                            ЗДЕСЬ — сентинел «цепочка загружена» для
 //                            ensurePortfoliosJs (webapp-tabs.js)
@@ -198,7 +200,7 @@
             // #pfxTab-overview
             var wrapPanel = tabsHtml ? pfxPanelWrap : function (x) { return x; };
             var body;
-            if (pfxEffTab() === 'trading') {
+            if (PF.pfxIsTradeTab(pfxEffTab())) {
                 // «Торговля»: подключён с торговлей — три карточки терминала живут
                 // дашборд-конструктором (drag/resize, как все виджеты «Портфелей»);
                 // иначе гейт по состоянию брокера (нет подключения / только чтение /
@@ -274,6 +276,7 @@
             brokerPfSync();         // карточка-портфель счёта Т-Инвестиций: тихий синк (троттл 60с, no-op без карточки)
             if (PF.pftAfterRender) PF.pftAfterRender();   // терминал «Торговли»: поллинг только на живой подвкладке
             if (PF.pfcAfterRender) PF.pfcAfterRender();   // график свечей: живой canvas переезжает в свежий якорь
+            if (PF.pftScreensSync) PF.pftScreensSync();   // парящая полоса экранов «Торговли» (в body, см. модуль)
             pfdHeatRepaintSoon();   // блок «Карта рынка»: дорисовать живые плитки
             ensureLiveTick();
             var payBody = document.querySelector('.pf-paycal--cell .pfpc-body');
