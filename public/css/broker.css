@@ -1612,3 +1612,75 @@ body.dark-mode .pftb-money s { color: #3c4a5e; }
 body.dark-mode .pftb-acct, body.dark-mode .pftb-search { border-color: rgba(255, 255, 255, 0.12); }
 body.dark-mode .pftb-st.ok { color: #34d399; }
 body.dark-mode .pftb-st.stale { color: #f87171; }
+
+/* меню полосы — СЛОВАМИ, не рядом безымянных иконок (три иконки в этой же
+   полосе уже были отвергнуты: по картинке не угадать, что «глаз» — это
+   «скрывать суммы», а не «предпросмотр») */
+.pftb-more {
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
+    width: 28px; height: 28px; padding: 0; border: 0; background: none; cursor: pointer;
+    border-radius: 8px; color: #94a3b8; transition: background 0.14s, color 0.14s;
+}
+.pftb-more svg { width: 16px; height: 16px; }
+.pftb-more:hover, .pftb-more.on { background: rgba(15, 23, 42, 0.07); color: #0f172a; }
+.pftb-menu {
+    position: absolute; top: 42px; right: 8px; z-index: 70; width: 248px;
+    padding: 6px; border-radius: 14px;
+    background: var(--card, #fff); border: 1px solid rgba(15, 23, 42, 0.1);
+    box-shadow: 0 18px 44px -14px rgba(15, 23, 42, 0.3);
+}
+.pftb-mi {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    padding: 9px 10px; border: 0; background: none; cursor: pointer; border-radius: 9px;
+    font-family: var(--font-ui); font-size: 13px; color: #334155; text-align: left;
+    transition: background 0.12s;
+}
+.pftb-mi svg { width: 16px; height: 16px; flex: none; color: #94a3b8; }
+.pftb-mi span { flex: 1; }
+.pftb-mi i {
+    font-style: normal; font-family: var(--font-num); font-size: 10.5px; flex: none;
+    padding: 2px 6px; border-radius: 5px; background: rgba(15, 23, 42, 0.06); color: #94a3b8;
+}
+.pftb-mi:hover { background: rgba(15, 23, 42, 0.05); }
+.pftb-mi.on svg { color: #16a34a; }
+.pftb-msep { height: 1px; margin: 5px 8px; background: rgba(15, 23, 42, 0.08); }
+
+/* шеврон дока: сворачивает «Мои заявки» — высвободившееся уходит верхнему ряду
+   само, потому что высоты в этом режиме доли, а не пиксели */
+.btr-dock-chev {
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
+    width: 26px; height: 26px; padding: 0; border: 0; background: none; cursor: pointer;
+    border-radius: 8px; color: #94a3b8; transition: background 0.14s, color 0.14s, transform 0.18s;
+}
+.btr-dock-chev svg { width: 15px; height: 15px; }
+.btr-dock-chev:hover { background: rgba(15, 23, 42, 0.06); color: #0f172a; }
+.btr-dock-chev.off { transform: rotate(180deg); }
+
+/* подсказка по клавишам: они были реализованы, но не названы нигде */
+.btr-keys h3 { font-family: var(--font-head); font-size: 19px; margin: 0 0 14px; }
+.btr-keys-list { display: flex; flex-direction: column; gap: 2px; }
+.btr-keys-row { display: flex; align-items: center; gap: 12px; padding: 7px 0; border-top: 1px solid rgba(15, 23, 42, 0.06); }
+.btr-keys-row:first-child { border-top: 0; }
+.btr-keys-row kbd {
+    flex: none; min-width: 46px; text-align: center;
+    font-family: var(--font-num); font-size: 12px; font-weight: 700;
+    padding: 4px 8px; border-radius: 7px;
+    background: rgba(15, 23, 42, 0.06); color: #334155;
+}
+.btr-keys-row span { font-size: 13px; color: #475569; }
+.btr-keys-note {
+    margin-top: 14px; padding: 10px 12px; border-radius: 10px;
+    background: rgba(22, 163, 74, 0.08); font-size: 12.5px; line-height: 1.5; color: #15803d;
+}
+
+body.dark-mode .pftb-more:hover, body.dark-mode .pftb-more.on { background: rgba(255, 255, 255, 0.08); color: #f1f6fb; }
+body.dark-mode .pftb-menu { background: #141c27; border-color: rgba(255, 255, 255, 0.12); }
+body.dark-mode .pftb-mi { color: #dbe4f0; }
+body.dark-mode .pftb-mi:hover { background: rgba(255, 255, 255, 0.07); }
+body.dark-mode .pftb-mi i { background: rgba(255, 255, 255, 0.09); color: #9fb1c6; }
+body.dark-mode .pftb-msep { background: rgba(255, 255, 255, 0.1); }
+body.dark-mode .btr-dock-chev:hover { background: rgba(255, 255, 255, 0.08); color: #f1f6fb; }
+body.dark-mode .btr-keys-row { border-top-color: rgba(255, 255, 255, 0.08); }
+body.dark-mode .btr-keys-row kbd { background: rgba(255, 255, 255, 0.09); color: #dbe4f0; }
+body.dark-mode .btr-keys-row span { color: #9fb1c6; }
+body.dark-mode .btr-keys-note { background: rgba(52, 211, 153, 0.12); color: #6ee7b7; }

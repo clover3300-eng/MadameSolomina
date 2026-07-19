@@ -1285,14 +1285,31 @@
                 (accTail() ? ' <b>····' + accTail() + '</b>' : '') +
                 (c.sandbox ? '<i class="btr-sand">песочница</i>' : '') + '</span></div>'
             : '';
-        var head = PF.pfCardHead('', 'Мои заявки', null, PF.pfdInChromeHtml('trade:orders') + note);
+        // Шеврон сворачивает док: свёрнутый занимает одну строку, и высвободившееся
+        // отдаётся верхнему ряду само — высоты в полноэкранном режиме доли, а не
+        // пиксели (см. pfdFsFill). Только там он и нужен: в обычном дашборде блок
+        // и так тянется мышью.
+        var chev = fsOn()
+            ? '<button type="button" class="btr-dock-chev' + (dockOpen() ? '' : ' off') + '" ' +
+                'onclick="pftDockToggle()" aria-expanded="' + dockOpen() + '" ' +
+                'title="' + (dockOpen() ? 'Свернуть — место уйдёт стакану и графику' : 'Развернуть') + '" ' +
+                'aria-label="Свернуть панель">' + IC_CHEV + '</button>'
+            : '';
+        var head = PF.pfCardHead('', 'Мои заявки', null, PF.pfdInChromeHtml('trade:orders') + note + chev);
+        // «Позиции» — вкладкой здесь: свой виджет trade:pos по умолчанию скрыт, и
+        // открытых позиций было не видно вовсе. В доке они рядом с заявками —
+        // один вопрос «что у меня сейчас», один блок.
         var tabs = '<div class="btr-ttabs" id="btOtabs">' +
             '<button type="button"' + (T.otab === 'active' ? ' class="active"' : '') + ' onclick="pftOtab(\'active\')">Активные<span class="btr-cnt">' + T.orders.length + '</span></button>' +
             '<button type="button"' + (T.otab === 'stop' ? ' class="active"' : '') + ' onclick="pftOtab(\'stop\')">Стоп<span class="btr-cnt">' + T.stops.length + '</span></button>' +
+            '<button type="button"' + (T.otab === 'pos' ? ' class="active"' : '') + ' onclick="pftOtab(\'pos\')">Позиции<span class="btr-cnt">' + (T.port.list || []).length + '</span></button>' +
             '<button type="button"' + (T.otab === 'hist' ? ' class="active"' : '') + ' onclick="pftOtab(\'hist\')">История</button>' +
         '</div>';
+        if (!dockOpen()) return head + tabs;   // свёрнут — только шапка и корешки вкладок
         var body;
-        if (T.otab === 'hist') {
+        if (T.otab === 'pos') {
+            body = posBodyHtml();
+        } else if (T.otab === 'hist') {
             body = '<div class="btr-ords">' + histRows() + '</div>';
         } else if (T.otab === 'stop') {
             body = T.stops.length
@@ -1303,13 +1320,13 @@
                 ? '<div class="btr-ords">' + T.orders.map(ordRow).join('') + '</div>'
                 : '<div class="btr-none">Активных заявок нет — выставленные из тикета появятся здесь.</div>';
         }
-        var panic = (T.otab !== 'hist' && T.orders.length + T.stops.length)
+        var panic = (T.otab !== 'hist' && T.otab !== 'pos' && T.orders.length + T.stops.length)
             ? '<button type="button" class="btr-panic" onclick="pftCancelAll()">Отменить все заявки</button>' : '';
         // Предложение включить уведомления показываем ТОЛЬКО когда есть чего
         // ждать (висят заявки) и они ещё не включены: иначе это реклама.
         // Без разрешения браузера фоновая слежка бесполезна — сделка случится,
         // а сказать о ней будет нечем.
-        var ask = (T.otab !== 'hist' && (T.orders.length + T.stops.length) && !notifyOn() && ('Notification' in window))
+        var ask = (T.otab !== 'hist' && T.otab !== 'pos' && (T.orders.length + T.stops.length) && !notifyOn() && ('Notification' in window))
             ? '<button type="button" class="btr-notify" onclick="pftNotifyOn()">' + IC_BELL +
                 '<span>Уведомлять об исполнении</span>' +
                 '<i>придёт, даже если уйти на другую вкладку</i></button>'
@@ -1352,12 +1369,17 @@
                 (c.sandbox ? '<i class="btr-sand">песочница</i>' : '') + '</span></div>'
             : '';
         var head = PF.pfCardHead('', 'Позиции', null, PF.pfdInChromeHtml('trade:pos') + note);
+        return head + posBodyHtml();
+    }
+    // Тело «Позиций» отдельно от карточки: тот же список идёт вкладкой в нижний
+    // док полноэкранного режима, где своей шапки у него нет
+    function posBodyHtml() {
         var list = T.port.list;
         if (!list.length) {
             var txt = T.port.ts
                 ? 'Открытых позиций нет — купленное появится здесь.'
                 : 'Загружаем позиции…';
-            return head + '<div class="btr-none">' + esc(txt) + '</div>';
+            return '<div class="btr-none">' + esc(txt) + '</div>';
         }
         var pnl = list.reduce(function (a, p) { return a + p.pnl; }, 0);
         var val = list.reduce(function (a, p) { return a + p.val; }, 0);
@@ -1369,15 +1391,16 @@
             '<span class="btr-postot-p ' + (up ? 'pos' : 'neg') + '">' +
                 (up ? '+' : '−') + fmtRub(Math.abs(pnl)) + '</span>' +
         '</div>';
-        return head + '<div class="btr-ords btr-poss">' + list.map(posRow).join('') + '</div>' + total;
+        return '<div class="btr-ords btr-poss">' + list.map(posRow).join('') + '</div>' + total;
     }
     // GetPortfolio — только пока виджет на экране: без него эти данные никому не
     // нужны, а запрос стоит столько же, сколько остальные
     function posCardEl() { return document.querySelector('.btr-pos'); }
     function pollPortfolio() {
-        // в полноэкранном режиме стоимость портфеля висит в полосе всегда —
-        // значит и опрашивать её надо, даже когда виджета «Позиции» на экране нет
-        if (!awake() || (!posCardEl() && !fsOn())) return;
+        // Позиции нужны в трёх случаях: открыт свой виджет, они выбраны вкладкой
+        // дока, или включён полноэкранный режим (там стоимость портфеля висит в
+        // полосе постоянно). Иначе запрос никому не нужен — а стоит он столько же.
+        if (!awake() || (!posCardEl() && T.otab !== 'pos' && !fsOn())) return;
         var c = conn(); if (!c) return;
         A().call('GetPortfolio', { accountId: c.accountId }).then(function (d) {
             var q2n = A().q2n;
@@ -1412,7 +1435,11 @@
             });
         }).catch(function () { /* тихо: карточка покажет прошлый снимок */ });
     }
-    function repaintPos() { var el = posCardEl(); if (el) el.innerHTML = posCardHtml(); }
+    // позиции живут в двух местах: своим виджетом и вкладкой дока — обновляем оба
+    function repaintPos() {
+        var el = posCardEl(); if (el) el.innerHTML = posCardHtml();
+        if (T.otab === 'pos') repaintOrders();
+    }
     // клик по позиции — поставить её бумагу в первый слот терминала
     function slotForInstrument(uid) {
         var nums = slotNums();
@@ -2121,7 +2148,7 @@
     // зовётся из цикла рендера portfolios.js: включает/гасит поллинг по месту
     function pftAfterRender() {
         var live = document.querySelector('#panel-portfolios.active .btr-card');
-        if (live && tradeReady()) { wire(); fitObserve(); fitSoon(); startPolling(); }
+        if (live && tradeReady()) { wire(); fitObserve(); fitSoon(); startPolling(); fsTapeOnce(); }
         else { if (fitRO) fitRO.disconnect(); stopPolling(); }
     }
 
@@ -2302,8 +2329,13 @@
     };
     window.pftOtab = function (k) {
         T.otab = k;
+        // Свёрнутый док вкладку не показывает — нажатие по корешку и означает
+        // «покажи её», а не «переключи вслепую то, чего не видно»
+        if (!dockOpen()) { dockState = true; try { localStorage.setItem(DOCK_KEY, '1'); } catch (e) {} }
         repaintOrders();
+        if (PF.pfdRepackSoon) PF.pfdRepackSoon();
         if (k === 'hist') loadHist(false);   // TTL внутри: повторный вход брокера не дёргает
+        if (k === 'pos') pollPortfolio();    // до этого позиции могли и не опрашиваться
     };
     // Включение уведомлений из терминала. Пишем в ТОТ ЖЕ ключ, которым управляет
     // переключатель в личном кабинете (profile_settings_v1.notifyBrowser), —
@@ -2982,7 +3014,43 @@
         if (PF.renderNoAnim) PF.renderNoAnim();
     }
     window.pftFsToggle = function () { fsSet(!fsState); };
+    // Лента сделок в полноэкранном режиме задумана ПОСТОЯННЫМ блоком, и места на
+    // неё тут хватает. Раскрываем один раз за сессию — не в обработчике кнопки:
+    // режим переживает перезагрузку, и после F5 кнопку никто не нажимает.
+    // Дальше решает шеврон ленты: своё решение человека переигрывать не будем.
+    var fsTapeDone = false;
+    function fsTapeOnce() {
+        if (fsTapeDone || !fsOn()) return;
+        fsTapeDone = true;
+        var any = false;
+        liveSlots().forEach(function (n) {
+            var s = S(n);
+            if (s.uid && !s.tapeOpen) { s.tapeOpen = true; any = true; }
+        });
+        if (!any) return;
+        saveSlots();
+        liveSlots().forEach(repaintSlot);
+        pollTape();
+        if (PF.pfdRepackSoon) PF.pfdRepackSoon();
+    }
     window.pftFsExit = function () { if (fsState) fsSet(false); };
+
+    // Нижний док (блок «Мои заявки») сворачивается шевроном — высвободившееся
+    // уходит наверх само, потому что высоты в этом режиме доли, а не пиксели.
+    var DOCK_KEY = 'bt_dock_v1';
+    var dockState = null;
+    function dockOpen() {
+        if (dockState === null) {
+            try { dockState = localStorage.getItem(DOCK_KEY) !== '0'; } catch (e) { dockState = true; }
+        }
+        return dockState;
+    }
+    window.pftDockToggle = function () {
+        dockState = !dockOpen();
+        try { localStorage.setItem(DOCK_KEY, dockState ? '1' : '0'); } catch (e) {}
+        repaintOrders();
+        if (PF.pfdRepackSoon) PF.pfdRepackSoon();   // высота блока изменилась — пересобрать сетку
+    };
 
     // Деньги в полосе — два настоящих числа. Стоимость портфеля считает
     // pollPortfolio, а он до сих пор работал, только пока виден виджет
@@ -3034,9 +3102,79 @@
                 '<button type="button" class="pftb-search" onclick="pftFsSearch()" ' +
                     'title="Найти бумагу">' + IC_LENS + '<span>Тикер или название</span><kbd>/</kbd></button>' +
                 fsMoneyHtml() + fsAcctHtml() + fsLinkHtml() +
+                '<button type="button" class="pftb-more" onclick="pftFsMenu(event)" ' +
+                    'aria-label="Меню терминала" aria-haspopup="true">' + IC_DOTS3 + '</button>' +
             '</div>' +
+            (fsMenuOpen ? fsMenuHtml() : '') +
         '</div>';
     };
+    // МЕНЮ — СЛОВАМИ, не рядом безымянных иконок: три иконки («+», глаз, стрелки)
+    // в этой же полосе уже были отвергнуты — по картинке не угадать, что «глаз»
+    // это «скрывать суммы», а не «предпросмотр».
+    var fsMenuOpen = false;
+    function fsMenuHtml() {
+        var dark = document.body.classList.contains('dark-mode');
+        var hid = !!(window.sumsPrivacy && window.sumsPrivacy.isOn && window.sumsPrivacy.isOn());
+        function item(fn, ic, label, key, on) {
+            return '<button type="button" class="pftb-mi' + (on ? ' on' : '') + '" onclick="' + fn + '">' +
+                ic + '<span>' + label + '</span>' + (key ? '<i>' + key + '</i>' : '') + '</button>';
+        }
+        return '<div class="pftb-menu" id="pftbMenu">' +
+            item('pftFsAddWidget()', IC_PLUS, 'Добавить виджет', '') +
+            item('pftFsSums()', IC_EYE, 'Скрывать суммы', '', hid) +
+            item('pftFsTheme()', IC_MOON, dark ? 'Светлая тема' : 'Тёмная тема', '') +
+            item('pftFsKeys()', IC_KEYS, 'Клавиши терминала', '?') +
+            '<div class="pftb-msep"></div>' +
+            item('pftFsExit()', IC_OUT, 'Выйти из терминала', 'Esc') +
+        '</div>';
+    }
+    function fsMenuClose() {
+        if (!fsMenuOpen) return;
+        fsMenuOpen = false;
+        var m = dq('pftbMenu'); if (m) m.remove();
+        var b = document.querySelector('.pftb-more'); if (b) b.classList.remove('on');
+    }
+    window.pftFsMenu = function (ev) {
+        if (ev) ev.stopPropagation();
+        if (fsMenuOpen) { fsMenuClose(); return; }
+        fsMenuOpen = true;
+        var bar = dq('pftBar'); if (!bar) return;
+        bar.insertAdjacentHTML('beforeend', fsMenuHtml());
+        var b = bar.querySelector('.pftb-more'); if (b) b.classList.add('on');
+        // закрытие по клику мимо — вешаем на СЛЕДУЮЩИЙ тик, иначе этот же клик
+        // долетит до документа и закроет меню в момент открытия
+        setTimeout(function () {
+            document.addEventListener('click', function once(e) {
+                if (e.target.closest && e.target.closest('#pftbMenu')) return;
+                document.removeEventListener('click', once);
+                fsMenuClose();
+            });
+        }, 0);
+    };
+    // тот же пикер, что у кнопки-плюса дашборда (она в этом режиме спрятана)
+    window.pftFsAddWidget = function () {
+        fsMenuClose();
+        if (typeof window.pfLayoutToggle === 'function') window.pfLayoutToggle();
+        else toast('Пикер виджетов недоступен', true);
+    };
+    window.pftFsSums = function () {
+        fsMenuClose();
+        if (!window.sumsPrivacy) { toast('Скрытие сумм недоступно', true); return; }
+        var next = !window.sumsPrivacy.isOn();
+        window.sumsPrivacy.set(next);
+        toast(next ? 'Суммы скрыты' : 'Суммы показаны');
+    };
+    window.pftFsTheme = function () {
+        fsMenuClose();
+        // тот же переключатель, что у всего проекта: заводить терминалу свою
+        // тему значило бы держать две правды об одном
+        if (typeof window.toggleTheme === 'function') window.toggleTheme();
+    };
+    var IC_DOTS3 = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>';
+    var IC_EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7"/><circle cx="12" cy="12" r="3"/></svg>';
+    var IC_MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5"/></svg>';
+    var IC_KEYS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg>';
+    var IC_OUT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17l5-5-5-5M20 12H9M11 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5"/></svg>';
     var IC_BACK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>';
     // Поиск в полосе открывает поиск ПЕРВОГО слота — та же лупа, что в стакане,
     // и та же клавиша «/»: заводить второй поиск бумаги в одном экране незачем.
@@ -3065,6 +3203,43 @@
         e.preventDefault();
         fsSet(false);
     });
+
+    // ПОДСКАЗКА ПО КЛАВИШАМ. Клавиши были реализованы давно, но не названы нигде —
+    // то есть их не существовало ни для кого, кроме автора. Список тут ЗЕРКАЛИТ
+    // обработчик ниже: добавляя клавишу туда, добавляй строку сюда.
+    var KEYS = [
+        ['B', 'Купить — переключить тикет на покупку'],
+        ['S', 'Продать — переключить тикет на продажу'],
+        ['/', 'Найти бумагу'],
+        ['↑ ↓', 'Цена на шаг инструмента (лимитная и стоп-заявка)'],
+        ['Esc', 'Выйти из поля ввода, затем — из полноэкранного режима'],
+        ['?', 'Эта подсказка']
+    ];
+    window.pftFsKeys = function () {
+        fsMenuClose();
+        var old = dq('btKeysOv'); if (old) old.remove();
+        var ov = document.createElement('div');
+        ov.id = 'btKeysOv';
+        ov.className = 'bk-ov';
+        ov.innerHTML = '<div class="bk-card btr-keys">' +
+            '<button type="button" class="bk-back" aria-label="Закрыть">✕</button>' +
+            '<h3>Клавиши терминала</h3>' +
+            '<div class="btr-keys-list">' + KEYS.map(function (k) {
+                return '<div class="btr-keys-row"><kbd>' + esc(k[0]) + '</kbd><span>' + esc(k[1]) + '</span></div>';
+            }).join('') + '</div>' +
+            // это не мелкий шрифт внизу, а главное свойство: в терминале с
+            // деньгами случайное нажатие не должно совершать сделку
+            '<div class="btr-keys-note">Ни одна клавиша не отправляет заявку. Они только заполняют тикет — ' +
+            'отправка остаётся кнопкой с подтверждением.</div>' +
+        '</div>';
+        document.body.appendChild(ov);
+        requestAnimationFrame(function () { ov.classList.add('open'); });
+        function close() { document.removeEventListener('keydown', onKey); ov.remove(); }
+        function onKey(e) { if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); close(); } }
+        document.addEventListener('keydown', onKey);
+        ov.querySelector('.bk-back').addEventListener('click', close);
+        ov.addEventListener('click', function (e) { if (e.target === ov) close(); });
+    };
 
     // ---------- горячие клавиши ----------
     // ЖЁСТКОЕ ПРАВИЛО: ни одна клавиша не отправляет заявку. Терминал с деньгами
@@ -3101,6 +3276,8 @@
         }
         if (e.code === 'Slash') {                  // «/» — открыть поиск бумаги
             e.preventDefault();
+            // «?» — это Shift+«/»: та же клавиша, но вопрос про клавиши, а не поиск
+            if (e.shiftKey) { window.pftFsKeys(); return; }
             if (window.pftSearchToggle) window.pftSearchToggle(n);
             return;
         }
