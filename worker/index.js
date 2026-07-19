@@ -373,6 +373,8 @@ var TI_METHODS = {
     GetMaxLots:       { svc: 'OrdersService',      scope: 'read' },
     PostOrder:        { svc: 'OrdersService',      scope: 'trade' },
     CancelOrder:      { svc: 'OrdersService',      scope: 'trade' },
+    // перенос цены заявки без снятия: отмена+выставление теряли очередь в стакане
+    ReplaceOrder:     { svc: 'OrdersService',      scope: 'trade' },
     // этап 3 — стоп-заявки и лента обезличенных сделок
     GetLastTrades:    { svc: 'MarketDataService',  scope: 'read' },
     // этап 4 — свечи для графика терминала (виджет «График», js/portfolios-chart.js)

@@ -151,8 +151,11 @@
         ops: [['trades', 1, 12]],
         settings: [['set:corner', 1, 6], ['set:bg', 7, 6], ['set:vis', 1, 6], ['set:layout', 7, 6], ['reports', 1, 6]],
         // «Торговля»: три карточки терминала стартуют в ряд (стакан ýже, тикету и
-        // заявкам просторнее) — дальше пользователь двигает и меняет размер сам
-        trading: [['trade:ob', 1, 4], ['trade:ticket', 5, 4], ['trade:orders', 9, 4]]
+        // заявкам просторнее), под ними — график во всю ширину. График остаётся
+        // defHidden как БЛОК (его копии 2..4 включают руками), но в сиде первый
+        // явно показан: без свечей терминал выглядел половиной инструмента, а
+        // найти их можно было только в пикере. Библиотеку он тянет лениво.
+        trading: [['trade:ob', 1, 4], ['trade:ticket', 5, 4], ['trade:orders', 9, 4], ['trade:chart', 1, 12]]
     };
     function pfxTabSeed(tab) {
         var cfg = normTabCfg(null);
@@ -179,6 +182,15 @@
             // пользователя (виджеты, заметки, другой span) конфиг от миграции уводит
             if (pfxIsPfTab(tab) && pfTabsStore[tab] && c.order.length === 1 && c.order[0] === tab &&
                 +c.span[tab] === 12 && !c.notes.length) c.span[tab] = 5;
+            // та же мягкая миграция для «Торговли»: НЕТРОНУТЫЙ старый сид (ровно
+            // три карточки терминала) получает график во всю ширину. Любая правка
+            // раскладки — свои слоты, другой порядок, заметки — миграцию отменяет:
+            // чужую расстановку виджетов трогать нельзя
+            if (tab === 'trading' && pfTabsStore[tab] && c.order.length === 3 && !c.notes.length &&
+                c.order[0] === 'trade:ob' && c.order[1] === 'trade:ticket' && c.order[2] === 'trade:orders' &&
+                !c.hidden['trade:chart']) {
+                c.order.push('trade:chart'); c.col['trade:chart'] = 1; c.span['trade:chart'] = 12; c.hidden['trade:chart'] = 0;
+            }
             pfTabCfgs[tab] = c;
         }
         return pfTabCfgs[tab];
@@ -571,7 +583,7 @@
     // им не ставится. Тот же приём, что у «Избранного» и «Ставок» (свой глаз в шапке).
     // Терминал (trade:*) здесь же: его правый угол занят лупой/счётом, угловой
     // оверлей ложился ПОВЕРХ них — кнопки встают в поток шапки ПЕРЕД этим контентом.
-    var PFD_OWN_CHROME = { plist: 1, pdetail: 1, 'trade:ob': 1, 'trade:ticket': 1, 'trade:orders': 1, 'trade:chart': 1 };
+    var PFD_OWN_CHROME = { plist: 1, pdetail: 1, 'trade:ob': 1, 'trade:ticket': 1, 'trade:orders': 1, 'trade:chart': 1, 'trade:pos': 1 };
     // слоты бумаг (trade:ob:2, trade:ticket:3…) — те же карточки терминала, только
     // с номером: свой хром в шапке им нужен ровно так же, как первому слоту
     function pfdOwnChrome(id) { return !!(PFD_OWN_CHROME[id] || /^trade:(ob|ticket|chart):\d+$/.test(id)); }
@@ -746,6 +758,9 @@
                 });
             }
             blocks.push({ id: 'trade:orders', name: 'Мои заявки', htmlFn: PF.pftOrdersCard, span: 4, isTrade: true });
+            // «Позиции» — опт-ин, как график: свой запрос GetPortfolio раз в 15с
+            // держим только для тех, кому карточка правда нужна
+            if (PF.pftPosCard) blocks.push({ id: 'trade:pos', name: 'Позиции', htmlFn: PF.pftPosCard, span: 4, isTrade: true, defHidden: true });
         }
         // R8: на подвкладках ВСЕ блоки опт-ин — что показано, решает сид (hidden[id]=0)
         // и пользователь через пикер; дефолтно-видимых блоков там нет (включая новые
@@ -797,6 +812,7 @@
         'trade:ob': 'Биржевой стакан по оси цены — клик подставляет цену в заявку',
         'trade:ticket': 'Заявка: лимитная, рыночная или стоп, с предохранителями',
         'trade:orders': 'Активные и стоп-заявки счёта: статус, исполнение, отмена',
+        'trade:pos': 'Что открыто: средняя цена, текущая, прибыль по каждой бумаге',
         'trade:chart': 'Свечи с зумом, индикаторами и построениями — по бумаге слота',
         '__trade': 'Второй стакан и заявка по другому тикеру — рядом с первым'
     };
@@ -2778,6 +2794,10 @@
             }
             list.push({ id: 'trade:orders', name: 'Мои заявки',
                 desc: 'Активные и стоп-заявки счёта: статус, исполнение, отмена', cats: ['pop', 'market'] });
+            if (PF.pftPosCard) {
+                list.push({ id: 'trade:pos', name: 'Позиции',
+                    desc: 'Что открыто: средняя цена, текущая, прибыль по каждой бумаге', cats: ['pop', 'market', 'assets'] });
+            }
             if (PF.pftSlotNums().length < (PF.pftMaxSlots || 4)) {
                 list.push({ id: '__trade', name: 'Ещё одна бумага',
                     desc: 'Второй стакан и заявка по другому тикеру — рядом с первым', cats: ['pop', 'market'] });
@@ -3085,6 +3105,13 @@
             }).join('');
             return '<div class="dm-cap"><svg viewBox="0 0 92 40" class="dm-line" preserveAspectRatio="none">' +
                 bars + '</svg></div>';
+        }
+        // Позиции терминала: строка = бумага, справа прибыль знаком и цветом
+        if (id === 'trade:pos') {
+            return '<div class="dm-rows">' +
+                '<span class="dm-row"><em>SBER</em><i>120 шт · 305,10</i><b class="pos">+1 842 ₽</b></span>' +
+                '<span class="dm-row"><em>LKOH</em><i>3 шт · 7 210,0</i><b class="neg">−930 ₽</b></span>' +
+                '<span class="dm-row"><i>Стоимость</i><b>58 340 ₽</b></span></div>';
         }
         // R9: карточка портфеля (id 'pf:<id>') — демо в духе «Составов», данные статичные
         if (id.indexOf('pf:') === 0) {
