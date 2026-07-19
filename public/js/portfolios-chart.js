@@ -88,6 +88,10 @@
     // те же лупа и плюс, что в шапке стакана: жест «найти бумагу» и «добавить ещё»
     // должен выглядеть одинаково в обеих карточках терминала
     var IC_LENS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>';
+    // звено цепи — связь графика со стаканом и тикетом экрана; разорванное
+    // звено (с косой чертой) читается как «график живёт своей бумагой»
+    var IC_LINK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 14.5a4 4 0 0 1 0-5.7l2.1-2.1a4 4 0 1 1 5.7 5.7l-1 1"/><path d="M14.5 9.5a4 4 0 0 1 0 5.7l-2.1 2.1a4 4 0 1 1-5.7-5.7l1-1"/></svg>';
+    var IC_UNLINK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 14.5a4 4 0 0 1 0-5.7l2.1-2.1a4 4 0 1 1 5.7 5.7l-1 1"/><path d="M14.5 9.5a4 4 0 0 1 0 5.7l-2.1 2.1a4 4 0 1 1-5.7-5.7l1-1"/><path d="M3.5 3.5 20.5 20.5"/></svg>';
     var IC_PLUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
 
     // ---------- состояние ----------
@@ -143,7 +147,10 @@
     function instr(n) {
         var own = cfg(n).ins;
         if (own && own.uid) return own;
-        return (PF.pftSlotInstr && PF.pftSlotInstr(slotNo(n))) || null;
+        // своего выбора не было — берём бумагу ПАРНОГО слота экрана: номера у
+        // графиков и слотов из разных пулов и совпадают не всегда (см. pftScreenPair)
+        var slot = (linkOn(n) && PF.pftSlotOfChart && PF.pftSlotOfChart(n)) || slotNo(n);
+        return (PF.pftSlotInstr && PF.pftSlotInstr(slot)) || null;
     }
     function chartLabel(n) {
         var i = instr(n);
@@ -191,8 +198,13 @@
         if (!Array.isArray(c.inds)) c.inds = ['VOL'];
         if (!Array.isArray(c.ovs)) c.ovs = [];
         c.ins = normIns(c.ins);
+        // связь с парным слотом экрана: по умолчанию ВКЛЮЧЕНА — бумага, выбранная
+        // в графике, встаёт в стакан и тикет, и наоборот (см. pftScreenPair).
+        // Кнопка-звено в шапке рвёт связь тем, кто смотрит одну бумагу, торгуя другой
+        c.link = (c.link === 0 || c.link === false) ? 0 : 1;
         return c;
     }
+    function linkOn(n) { return !!cfg(n).link; }
     // Паспорт бумаги приходит из localStorage — то есть может быть подделан или
     // протух: приводим типы руками и не пускаем внутрь ничего сверх известных
     // полей (тот же приём, что у слотов терминала).
@@ -751,6 +763,17 @@
             ? '<button type="button" class="btr-iconbtn" title="Ещё один график" ' +
               'aria-label="Добавить ещё один график" onclick="pfcAddChart()">' + IC_PLUS + '</button>'
             : '';
+        // звено показываем, только когда паре есть с кем связываться (на экране
+        // есть свой стакан): у одинокого графика кнопка ничего не значила бы
+        var pairSlot = PF.pftSlotOfChart ? PF.pftSlotOfChart(n) : 0;
+        var on = linkOn(n);
+        var link = pairSlot
+            ? '<button type="button" class="btr-iconbtn btc-link' + (on ? ' on' : '') + '" ' +
+              'title="' + (on ? 'Бумага общая со стаканом и заявкой — нажмите, чтобы отвязать график' :
+                                'График живёт своей бумагой — нажмите, чтобы вести его за стаканом') + '" ' +
+              'aria-pressed="' + on + '" aria-label="Связать график со стаканом" ' +
+              'onclick="pfcLink(' + n + ')">' + (on ? IC_LINK : IC_UNLINK) + '</button>'
+            : '';
         var right = PF.pfdInChromeHtml(chId(n)) +
             '<span class="btc-mwrap">' +
                 '<button type="button" class="btr-iconbtn" title="Индикаторы" aria-label="Индикаторы" ' +
@@ -761,7 +784,7 @@
                 '<button type="button" class="btr-iconbtn" title="Инструменты рисования" aria-label="Инструменты рисования" ' +
                     'onclick="pfcMenu(' + n + ',\'draw\',event)">' + IC_DRAW + '</button>' +
                 menuHtml(n, 'draw') +
-            '</span>' + add + lens;
+            '</span>' + link + add + lens;
         var head = PF.pfCardHead('', chartLabel(n), null, right);
         var search = '<div class="btr-search' + (open ? ' open' : '') + '" id="btcSearchWrap_' + n + '">' +
             '<input class="ph-input" id="btcSearch_' + n + '" type="text" ' +
@@ -989,6 +1012,13 @@
                 if (m && m.ticker) applyPick(n, m, true);
             }, function () {});
         }
+        // связанный график ведёт за собой стакан и тикет своего экрана: тикер
+        // вводят ОДИН раз, в любом из трёх виджетов. Слот сам пришлёт
+        // pft-slot-change — обработчик ниже увидит ту же бумагу и не зациклится
+        if (linkOn(n) && PF.pftLoadInstrument) {
+            var slot = PF.pftSlotOfChart ? PF.pftSlotOfChart(n) : 0;
+            if (slot) PF.pftLoadInstrument(slot, i.uid);
+        }
     };
     function applyPick(n, ins, quiet) {
         var c2 = cfg(n);
@@ -1020,6 +1050,25 @@
         return true;
     };
 
+    // звено: включили — график сразу встаёт на бумагу своего стакана (иначе
+    // «связал», а ничего не произошло, и связь выглядит сломанной)
+    window.pfcLink = function (n) {
+        n = slotNo(n);
+        var c = cfg(n);
+        c.link = c.link ? 0 : 1;
+        cfgSave();
+        if (c.link) {
+            var slot = PF.pftSlotOfChart ? PF.pftSlotOfChart(n) : 0;
+            var ins = slot && PF.pftSlotInstr ? PF.pftSlotInstr(slot) : null;
+            // бумага есть только у графика — ведём стакан за ним, а не гасим выбор
+            if (ins) applyPick(n, ins, true);
+            else if (slot && c.ins && PF.pftLoadInstrument) PF.pftLoadInstrument(slot, c.ins.uid);
+            toast('График связан со стаканом и заявкой этого экрана');
+        } else toast('График отвязан — теперь у него своя бумага');
+        if (PF.pfdRerender) PF.pfdRerender();
+        else if (PF.renderNoAnim) PF.renderNoAnim();
+    };
+
     window.pfcMenu = function (n, kind, ev) {
         if (ev) ev.stopPropagation();
         var id = 'btcMenu' + kind + '_' + slotNo(n);
@@ -1043,6 +1092,16 @@
         var n = slotNo(e.detail && e.detail.slot);
         var c = CH[n];
         if (c) { c.instr = null; syncInstr(c, n); }
+        // СВЯЗАННЫЙ график экрана идёт за бумагой слота, даже если у него был свой
+        // выбор: выбрал тикер в стакане — свечи те же, вводить второй раз не надо.
+        // Номер графика с номером слота совпадать не обязан (пулы номеров разные),
+        // пару держит порядок блоков в раскладке — pftChartOfSlot
+        var ch = PF.pftChartOfSlot ? PF.pftChartOfSlot(n) : 0;
+        if (ch && linkOn(ch)) {
+            var ins = PF.pftSlotInstr ? PF.pftSlotInstr(n) : null;
+            var cur = cfg(ch).ins;
+            if (ins && (!cur || cur.uid !== ins.uid)) applyPick(ch, ins, true);
+        }
         if (PF.pfdRerender) PF.pfdRerender();
     });
     // тема переключилась — движок не знает о наших классах на body

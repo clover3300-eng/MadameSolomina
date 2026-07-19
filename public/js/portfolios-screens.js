@@ -30,6 +30,8 @@
     var MAX_SCREENS = 8;
     var renaming = '';       // ключ экрана, чьё имя сейчас правят инлайном
     var menuOf = '';         // ключ экрана с открытым меню
+    // поиск «экран сразу по тикеру»: лупа рядом с «плюсом»
+    var findOpen = false, findRes = [], findBusy = false, findMsg = '', findT = null;
 
     function tabs() { return PF.pfxTradeTabs ? PF.pfxTradeTabs() : ['trading']; }
     function nameOf(t) { return PF.pfxTradeName ? PF.pfxTradeName(t) : 'Экран'; }
@@ -45,6 +47,9 @@
     // ---------- разметка ----------
     var IC_PLUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
     var IC_DOTS = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg>';
+    // та же лупа, что в шапках стакана и графика: жест «найти бумагу» по всему
+    // терминалу обязан выглядеть одинаково
+    var IC_LENS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>';
 
     // подпись бумаг экрана: полоса должна отвечать «что там», не открывая экран.
     // Тикеры берём из слотов, разложенных в конфиге ЭТОГО экрана
@@ -63,6 +68,9 @@
     function pillHtml(t, on) {
         var tick = tickersOf(t);
         var sub = tick.length ? tick.slice(0, 3).join(' · ') + (tick.length > 3 ? ' +' + (tick.length - 3) : '') : '';
+        // экран, заведённый лупой, зовётся своим тикером — вторая строка с тем же
+        // словом была бы эхом (см. pftScreenFindPick)
+        if (sub === nameOf(t)) sub = '';
         if (renaming === t) {
             return '<span class="pfts-pill pfts-editing">' +
                 '<input type="text" class="pfts-input" id="pftsRename" maxlength="24" value="' + PF.attr(nameOf(t)) + '" ' +
@@ -96,15 +104,40 @@
         '</div>';
     }
 
+    // выпадашка лупы: экран заводится сразу по бумаге — стакан, заявка и график
+    // встают на неё, а сам экран называется тикером
+    function findHtml() {
+        return '<div class="pfts-find" id="pftsFind">' +
+            '<input type="text" class="pfts-find-inp" id="pftsFindInp" autocomplete="off" spellcheck="false" ' +
+                'placeholder="Тикер или название — например, SBER" aria-label="Бумага нового экрана" ' +
+                'oninput="pftScreenFindInput(this.value)" onkeydown="pftScreenFindKey(event)">' +
+            '<div class="pfts-find-drop" id="pftsFindDrop">' + findDropHtml() + '</div></div>';
+    }
+    function findDropHtml() {
+        if (findMsg) return '<div class="pfts-find-note">' + esc(findMsg) + '</div>';
+        if (findBusy && !findRes.length) return '<div class="pfts-find-note">Ищем бумагу…</div>';
+        if (!findRes.length) return '<div class="pfts-find-note">Введите тикер — новый экран откроется уже с этой бумагой.</div>';
+        return findRes.map(function (i, k) {
+            var tag = PF.pftInstrTag ? PF.pftInstrTag(i) : '';
+            return '<div class="pfts-find-row" role="button" tabindex="-1" onclick="pftScreenFindPick(' + k + ')">' +
+                '<b>' + esc(i.ticker || '') + '</b><span>' + esc(i.name || '') + '</span>' +
+                (tag ? '<i>' + esc(tag) + '</i>' : '') + '</div>';
+        }).join('');
+    }
+
     function barHtml() {
         var act = active();
         var list = tabs().map(function (t) { return pillHtml(t, t === act); }).join('');
         var full = tabs().length >= MAX_SCREENS;
         return '<div class="pfts-row" role="tablist" aria-label="Экраны терминала">' + list +
+            '<button type="button" class="pfts-lens' + (findOpen ? ' on' : '') + '" onclick="pftScreenFind(event)" ' +
+                (full ? 'disabled title="Больше ' + MAX_SCREENS + ' экранов терминал не держит"'
+                      : 'title="Экран по тикеру: стакан, заявка и график сразу на этой бумаге"') +
+                ' aria-label="Новый экран по тикеру">' + IC_LENS + '</button>' +
             '<button type="button" class="pfts-add" onclick="pftScreenAdd()" ' +
                 (full ? 'disabled title="Больше ' + MAX_SCREENS + ' экранов терминал не держит"' : 'title="Новый экран: свой стакан, заявка и график"') + '>' +
                 IC_PLUS + '<span>Экран</span></button>' +
-        '</div>' + (menuOf && menuOf === act ? menuHtml(menuOf) : '');
+        '</div>' + (menuOf && menuOf === act ? menuHtml(menuOf) : '') + (findOpen ? findHtml() : '');
     }
 
     // ---------- синхронизация с рендером ----------
@@ -129,7 +162,9 @@
             el.id = 'pftScreens';
             document.body.appendChild(el);
         }
-        var key = [active(), menuOf, renaming, tabs().map(function (t) {
+        // findRes в ключ НЕ входит: выдачу перерисовывает paintDrop точечно,
+        // пересборка полосы выбивала бы каретку из поля поиска
+        var key = [active(), menuOf, renaming, findOpen, tabs().map(function (t) {
             return t + '=' + nameOf(t) + '/' + tickersOf(t).join(',');
         }).join('|')].join('§');
         if (key === lastKey && el.classList.contains('on')) return;
@@ -163,11 +198,11 @@
         menuOf = (menuOf === t) ? '' : t;
         sync();
     };
-    // клик мимо — меню закрывается (как у всех поповеров вкладки)
+    // клик мимо — меню и поиск закрываются (как у всех поповеров вкладки)
     document.addEventListener('click', function (e) {
-        if (!menuOf) return;
+        if (!menuOf && !findOpen) return;
         if (e.target.closest && e.target.closest('#pftScreens')) return;
-        menuOf = '';
+        menuOf = ''; findOpen = false;
         sync();
     });
 
@@ -177,18 +212,81 @@
         return 0;
     }
 
-    window.pftScreenAdd = function () {
-        menuOf = '';
-        if (tabs().length >= MAX_SCREENS) { toast('Больше ' + MAX_SCREENS + ' экранов терминал не держит', true); return; }
+    // общий ход «завести экран»: сид (график | стакан | заявка по СВОБОДНОЙ
+    // бумаге + «Мои заявки») собирает конструктор — см. pfxTabSeed
+    function createScreen() {
+        if (tabs().length >= MAX_SCREENS) { toast('Больше ' + MAX_SCREENS + ' экранов терминал не держит', true); return ''; }
         var no = nextScreenNo();
-        if (!no) { toast('Свободных номеров экранов не осталось', true); return; }
+        if (!no) { toast('Свободных номеров экранов не осталось', true); return ''; }
         var t = 'trading:' + no;
-        // сид нового экрана (график | стакан | заявка по СВОБОДНОЙ бумаге +
-        // «Мои заявки») собирает конструктор — см. pfxTabSeed
         PF.dashCfgFor(t);
         window.pfxGoTab(t);
         PF.saveDashCfg();       // экран должен пережить перезагрузку и уехать в облако
-        toast('Новый экран — выберите бумагу в поиске над стаканом');
+        return t;
+    }
+    window.pftScreenAdd = function () {
+        menuOf = ''; findOpen = false;
+        if (createScreen()) toast('Новый экран — выберите бумагу в поиске над стаканом');
+    };
+
+    // ---------- лупа: экран сразу по тикеру ----------
+    window.pftScreenFind = function (ev) {
+        if (ev) ev.stopPropagation();
+        menuOf = '';
+        findOpen = !findOpen;
+        findRes = []; findMsg = ''; findBusy = false;
+        sync();
+        if (findOpen) { var i = dq('pftsFindInp'); if (i) i.focus(); }
+    };
+    window.pftScreenFindInput = function (v) {
+        clearTimeout(findT);
+        var q = String(v || '').trim();
+        findRes = []; findMsg = '';
+        if (q.length < 2) { findBusy = false; paintDrop(); return; }
+        if (!PF.pftFindInstruments) { findMsg = 'Поиск недоступен — брокер не подключён'; paintDrop(); return; }
+        findBusy = true; paintDrop();
+        // пауза как в поиске стакана: пока печатают тикер, брокера не дёргаем
+        findT = setTimeout(function () {
+            PF.pftFindInstruments(q).then(function (list) {
+                findBusy = false;
+                findRes = (list || []).slice(0, 7);
+                findMsg = findRes.length ? '' : 'Ничего не нашлось — попробуйте другой тикер';
+                paintDrop();
+            }, function (e) {
+                findBusy = false; findRes = [];
+                findMsg = (e && e.message) || 'Брокер не ответил';
+                paintDrop();
+            });
+        }, 280);
+    };
+    // выдачу перерисовываем ТОЧЕЧНО: пересборка всей полосы выбила бы каретку
+    // из поля на первой же букве
+    function paintDrop() {
+        var d = dq('pftsFindDrop');
+        if (d) d.innerHTML = findDropHtml();
+    }
+    window.pftScreenFindKey = function (e) {
+        if (e.key === 'Escape') { e.preventDefault(); findOpen = false; sync(); return; }
+        // Enter без выбора берёт первую строку выдачи — самый частый случай:
+        // набрал тикер, нажал Enter, экран открылся
+        if (e.key === 'Enter') { e.preventDefault(); if (findRes.length) window.pftScreenFindPick(0); }
+    };
+    window.pftScreenFindPick = function (k) {
+        var ins = findRes[k];
+        if (!ins || !ins.uid) return;
+        findOpen = false; findRes = [];
+        var t = createScreen();
+        if (!t) return;
+        // экран зовётся тикером: в полосе он узнаётся с одного взгляда
+        var cfg = PF.dashCfgFor(t);
+        cfg.name = String(ins.ticker || '').slice(0, 24);
+        if (PF.dashTab === t) PF.saveDashCfg();
+        // бумага — в стакан и тикет нового экрана; связанный график встанет
+        // на неё сам по событию pft-slot-change (см. portfolios-chart.js)
+        var pair = PF.pftScreenPair ? PF.pftScreenPair() : { slots: [] };
+        if (pair.slots[0] && PF.pftLoadInstrument) PF.pftLoadInstrument(pair.slots[0], ins.uid);
+        else toast('Экран создан, но стакана на нём нет — добавьте виджет', true);
+        sync();
     };
 
     window.pftScreenRename = function (t) {

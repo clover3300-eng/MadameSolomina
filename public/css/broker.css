@@ -1331,6 +1331,51 @@ body.pfsd-open #pftScreens { display: none !important; }
 .pfts-add:disabled:hover { color: #64748b; border-color: rgba(15, 23, 42, 0.18); background: none; }
 .pfts-add svg { width: 13px; height: 13px; }
 
+/* лупа: экран сразу по тикеру. Стоит перед «плюсом» — сперва частый жест
+   («хочу экран под SBER»), потом пустой экран под ручную сборку */
+.pfts-lens {
+    flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+    width: 32px; align-self: stretch; border-radius: 11px; border: 1px dashed rgba(15, 23, 42, 0.18);
+    background: none; color: #64748b; margin-right: 2px;
+    transition: color 0.14s, border-color 0.14s, background 0.14s;
+}
+.pfts-lens svg { width: 15px; height: 15px; }
+.pfts-lens:hover, .pfts-lens.on { color: #4453ef; border-color: rgba(68, 83, 239, 0.45); background: rgba(68, 83, 239, 0.06); }
+.pfts-lens:disabled { opacity: 0.4; cursor: default; }
+.pfts-lens:disabled:hover { color: #64748b; border-color: rgba(15, 23, 42, 0.18); background: none; }
+
+/* выпадашка поиска — вверх от полосы, как меню экрана */
+.pfts-find {
+    position: absolute; right: 0; bottom: calc(100% + 8px); z-index: 3;
+    width: 340px; padding: 8px; border-radius: 14px;
+    background: #fff; border: 1px solid rgba(15, 23, 42, 0.1);
+    box-shadow: 0 20px 44px -20px rgba(15, 23, 42, 0.5);
+}
+.pfts-find-inp {
+    width: 100%; padding: 8px 11px; border-radius: 10px; outline: none;
+    border: 1px solid rgba(15, 23, 42, 0.14); background: #f8fafc; color: #1f2937;
+    font-family: var(--font-ui); font-size: 13px; font-weight: 600;
+}
+.pfts-find-inp:focus { border-color: rgba(68, 83, 239, 0.5); background: #fff; }
+.pfts-find-drop { margin-top: 6px; max-height: 250px; overflow-y: auto; }
+.pfts-find-row {
+    display: flex; align-items: baseline; gap: 8px; cursor: pointer;
+    padding: 7px 9px; border-radius: 9px; transition: background 0.12s;
+}
+.pfts-find-row:hover { background: rgba(68, 83, 239, 0.07); }
+.pfts-find-row b { font-family: var(--font-num); font-size: 12px; font-weight: 700; color: #1f2937; flex: none; }
+.pfts-find-row span {
+    font-family: var(--font-ui); font-size: 11.5px; color: #64748b; flex: 1; min-width: 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pfts-find-row i {
+    font-family: var(--font-ui); font-style: normal; font-size: 9.5px; font-weight: 700;
+    letter-spacing: 0.05em; text-transform: uppercase; color: #94a3b8; flex: none;
+}
+.pfts-find-note {
+    padding: 9px 10px; font-family: var(--font-ui); font-size: 11.5px; line-height: 1.45; color: #8494a7;
+}
+
 /* инлайн-переименование прямо в пилюле */
 .pfts-editing { flex: 0 0 auto; display: flex; align-items: center; padding: 4px; }
 .pfts-input {
@@ -1380,6 +1425,17 @@ body.dark-mode .pfts-menu { background: #1b2433; border-color: rgba(255, 255, 25
 body.dark-mode .pfts-menu button { color: #cbd5e1; }
 body.dark-mode .pfts-menu button:hover { background: rgba(255, 255, 255, 0.07); color: #f4f8fd; }
 body.dark-mode .pfts-menu .pfts-del { color: #f87171; }
+body.dark-mode .pfts-lens { border-color: rgba(255, 255, 255, 0.16); color: #94a3b8; }
+body.dark-mode .pfts-lens:hover, body.dark-mode .pfts-lens.on {
+    color: #a5b4fc; border-color: rgba(129, 140, 248, 0.5); background: rgba(129, 140, 248, 0.1);
+}
+body.dark-mode .pfts-find { background: #1b2433; border-color: rgba(255, 255, 255, 0.1); }
+body.dark-mode .pfts-find-inp { background: #131c2a; border-color: rgba(255, 255, 255, 0.12); color: #e2e8f0; }
+body.dark-mode .pfts-find-inp:focus { background: #0f1725; border-color: rgba(129, 140, 248, 0.6); }
+body.dark-mode .pfts-find-row:hover { background: rgba(129, 140, 248, 0.14); }
+body.dark-mode .pfts-find-row b { color: #f4f8fd; }
+body.dark-mode .pfts-find-row span { color: #93a3b5; }
+body.dark-mode .pfts-find-note { color: #6b7c93; }
 
 /* мобильная «Торговля» живёт «Обзором» (pfxEffTab) — полосе там не место */
 @media (max-width: 1023px) { #pftScreens { display: none !important; } }

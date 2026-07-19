@@ -2868,6 +2868,36 @@
     // новому экрану нужен свободный номер слота (см. pfxTabSeed в portfolios-dash.js)
     PF.pftNextFreeSlot = nextFreeSlot;
     PF.pftSlotNumsAll = slotNumsAll;
+    // Поставить бумагу в слот извне: поиском графика (он ведёт за собой стакан и
+    // тикет — см. связку ниже) и лупой полосы экранов, заводящей экран сразу по тикеру
+    PF.pftLoadInstrument = function (n, uid, then) { loadInstrument(slotNo(n), uid, then); };
+    // ---- СВЯЗКА «график ↔ слот» ВНУТРИ ЭКРАНА ----------------------------
+    // Нумерация у графиков своя, у слотов своя, и совпадать они не обязаны
+    // (новый экран берёт первые свободные номера из РАЗНЫХ пулов). Парой их
+    // делает ПОРЯДОК в раскладке экрана: первый график ходит за первым слотом,
+    // второй — за вторым. Выбрал бумагу в любом из них — второй встаёт следом,
+    // и тикер не приходится вводить дважды. Лишний график (слотов меньше)
+    // остаётся сам по себе, как и лишний слот.
+    function screenPair() {
+        var slots = [], charts = [];
+        ((PF.dashCfg && PF.dashCfg.order) || []).forEach(function (id) {
+            var m = /^trade:(?:ob|ticket)(?::(\d+))?$/.exec(id);
+            if (m) { var n = slotNo(m[1] || 1); if (slots.indexOf(n) < 0) slots.push(n); }
+            var c = /^trade:chart(?::(\d+))?$/.exec(id);
+            if (c) { var k = slotNo(c[1] || 1); if (charts.indexOf(k) < 0) charts.push(k); }
+        });
+        return { slots: slots, charts: charts };
+    }
+    PF.pftScreenPair = screenPair;
+    // парный слот для графика и наоборот (0 — пары нет)
+    PF.pftSlotOfChart = function (ch) {
+        var p = screenPair(), i = p.charts.indexOf(slotNo(ch));
+        return i >= 0 ? (p.slots[i] || 0) : 0;
+    };
+    PF.pftChartOfSlot = function (n) {
+        var p = screenPair(), i = p.slots.indexOf(slotNo(n));
+        return i >= 0 ? (p.charts[i] || 0) : 0;
+    };
     // ...а дублированию экрана — сразу несколько: nextFreeSlot читает раскладки,
     // и подряд он вернул бы один и тот же номер (новых блоков там ещё нет)
     PF.pftFreeSlots = function (count) {
