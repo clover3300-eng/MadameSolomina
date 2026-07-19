@@ -1319,7 +1319,7 @@ body.pfsd-open #pftScreens { display: none !important; }
 .pfts-more:hover { opacity: 1; background: rgba(255, 255, 255, 0.16); }
 .pfts-more svg { width: 13px; height: 13px; }
 
-/* вторая капсула — «новый экран»: лупа (по тикеру) и плюс (пустой), одним
+/* вторая капсула — «новый экран»: плюс (пустой) и лупа (по тикеру), одним
    блоком через волосок. Свои рамки кнопкам не нужны — их держит капсула */
 .pfts-new {
     position: relative; flex: 0 0 auto; display: flex; align-items: stretch; gap: 2px;
@@ -1340,9 +1340,9 @@ body.pfsd-open #pftScreens { display: none !important; }
 .pfts-nbtn:disabled:hover { color: #64748b; background: none; }
 .pfts-nbtn svg { width: 14px; height: 14px; flex: none; }
 .pfts-lens { padding-left: 10px; padding-right: 10px; }
-/* волосок между «по тикеру» и «пустой»: два действия одного блока */
-.pfts-lens + .pfts-add { position: relative; }
-.pfts-lens + .pfts-add::before {
+/* волосок между «пустой» и «по тикеру»: два действия одного блока */
+.pfts-add + .pfts-lens { position: relative; }
+.pfts-add + .pfts-lens::before {
     content: ''; position: absolute; left: -2px; top: 6px; bottom: 6px;
     width: 1px; background: rgba(15, 23, 42, 0.1);
 }
@@ -1435,7 +1435,7 @@ body.dark-mode .pfts-new {
 body.dark-mode .pfts-nbtn { color: #94a3b8; }
 body.dark-mode .pfts-nbtn:hover, body.dark-mode .pfts-nbtn.on { color: #a5b4fc; background: rgba(129, 140, 248, 0.14); }
 body.dark-mode .pfts-nbtn:disabled:hover { color: #94a3b8; background: none; }
-body.dark-mode .pfts-lens + .pfts-add::before { background: rgba(255, 255, 255, 0.14); }
+body.dark-mode .pfts-add + .pfts-lens::before { background: rgba(255, 255, 255, 0.14); }
 body.dark-mode .pfts-find { background: #1b2433; border-color: rgba(255, 255, 255, 0.1); }
 body.dark-mode .pfts-find-inp { background: #131c2a; border-color: rgba(255, 255, 255, 0.12); color: #e2e8f0; }
 body.dark-mode .pfts-find-inp:focus { background: #0f1725; border-color: rgba(129, 140, 248, 0.6); }

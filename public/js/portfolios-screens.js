@@ -138,13 +138,13 @@
         return '<div class="pfts-row" role="tablist" aria-label="Экраны терминала">' + list + '</div>' +
             (menuOf && menuOf === act ? menuHtml(menuOf) : '') +
             '<div class="pfts-new">' +
+                '<button type="button" class="pfts-nbtn pfts-add"' + dis + ' onclick="pftScreenAdd()" ' +
+                    'title="' + (full ? fullT : 'Пустой экран: соберёте виджеты сами') + '">' +
+                    IC_PLUS + '<span>Экран</span></button>' +
                 '<button type="button" class="pfts-nbtn pfts-lens' + (findOpen ? ' on' : '') + '"' + dis +
                     ' onclick="pftScreenFind(event)" aria-label="Новый экран по тикеру" aria-expanded="' + findOpen + '" ' +
                     'title="' + (full ? fullT : 'Экран по тикеру: стакан, заявка и график сразу на этой бумаге') + '">' +
                     IC_LENS + '</button>' +
-                '<button type="button" class="pfts-nbtn pfts-add"' + dis + ' onclick="pftScreenAdd()" ' +
-                    'title="' + (full ? fullT : 'Пустой экран: соберёте виджеты сами') + '">' +
-                    IC_PLUS + '<span>Экран</span></button>' +
                 (findOpen ? findHtml() : '') +
             '</div>';
     }
