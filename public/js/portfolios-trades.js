@@ -44,6 +44,29 @@
         return '<div class="rb5-brknote">Это зеркало брокерского счёта — расчёт остаётся подсказкой, ' +
             'а сам обмен совершается у брокера. Состав карточки придёт следующим синком.</div>';
     }
+    // Мост в терминал: расчёт знает, ЧТО и СКОЛЬКО менять, — остаётся исполнить.
+    // Особенно нужен на зеркале брокерского счёта, где «Применить обмен» вообще
+    // недоступно (сделку там совершают у брокера, см. rbApplyBlockedHtml).
+    // Кнопка ТОЛЬКО заполняет тикеты — заявки не отправляет.
+    function rbToTerminalHtml(sellT, sellQty, buyT, buyQty) {
+        if (!PF.pftLoadPlan || !PF.pftTradeReady || !PF.pftTradeReady()) return '';
+        if (!buyT || !(buyQty > 0)) return '';
+        // четыре скаляра, а не JSON в атрибуте: кавычки внутри onclick — лишний
+        // источник хрупкости там, где данные приходят из имён бумаг
+        return '<button class="rb5-term" onclick="pfRbToTerminal(\'' + jsArg(sellT || '') + '\',' +
+            Math.max(0, Math.floor(+sellQty || 0)) + ',\'' + jsArg(buyT) + '\',' +
+            Math.max(0, Math.floor(+buyQty || 0)) + ')" ' +
+            'title="Заполнит тикеты терминала — заявки не отправляются">' +
+            '<span>В терминал</span><i>исполнить у брокера</i></button>';
+    }
+    window.pfRbToTerminal = function (sellT, sellQty, buyT, buyQty) {
+        if (!PF.pftLoadPlan) return;
+        var plan = [];
+        if (sellT && sellQty > 0) plan.push({ ticker: String(sellT), side: 'sell', qty: +sellQty });
+        if (buyT && buyQty > 0) plan.push({ ticker: String(buyT), side: 'buy', qty: +buyQty });
+        if (plan.length) PF.pftLoadPlan(plan);
+    };
+
     // ====================================================================
     //  ИСТОРИЯ СДЕЛОК — полноширинный журнал ПОД всей сеткой (всегда самая
     //  нижняя секция). Каждая сделка = один лот покупки (модель хранит только
@@ -1050,10 +1073,12 @@
             rows += '<div class="rb5-vrow"><span class="rb5-vico">' + COIN_SVG + '</span><span class="rb5-vlabel">Прибыль ' + perLbl() + '</span><b>уточняем купоны…</b></div>';
         }
         // применить обмен в портфель одним кликом (есть что покупать → кнопка активна)
-        var apply = rbApplyBlockedHtml() || (d.buyQty > 0
+        var apply = (rbApplyBlockedHtml() || (d.buyQty > 0
             ? '<button class="rb5-apply" onclick="pfRbApplyBond()" title="Сделка сразу запишется в портфель и в историю">' + PF.CHECK_SVG +
                 '<span>Применить обмен</span><i>−' + d.qty + ' → +' + d.buyQty + ' шт</i></button>'
-            : '');
+            : '')) +
+            // у облигаций «тикер» — это имя выпуска; поиск брокера принимает и его
+            rbToTerminalHtml(sellX.h.ticker || sellX.h.name, d.qty, cand.t || cand.n, d.buyQty);
         return '<div class="rb5-deal">' + dealHeadHtml() + flow + note + '<div class="rb5-vbox">' + rows + '</div>' + verdict + apply + '</div>';
     }
     function rb5BondCol(bs, c) {
@@ -1180,10 +1205,11 @@
             : (d.potDelta > 0
                 ? '<div class="rb5-verdict ok">' + PF.CHECK_SVG + '<span>Потенциал растёт — обмен имеет смысл</span></div>'
                 : '<div class="rb5-verdict bad">' + XMARK_SVG + '<span>Потенциал не растёт — такой обмен смысла не имеет</span></div>');
-        var apply = rbApplyBlockedHtml() || (d.buyQty > 0
+        var apply = (rbApplyBlockedHtml() || (d.buyQty > 0
             ? '<button class="rb5-apply" onclick="pfRbApplyStock()" title="Сделка сразу запишется в портфель и в историю">' + PF.CHECK_SVG +
                 '<span>Применить обмен</span><i>−' + d.qty + ' ' + esc(sellX.h.ticker) + ' → +' + d.buyQty + ' ' + esc(cand.ticker) + '</i></button>'
-            : '');
+            : '')) +
+            rbToTerminalHtml(sellX.h.ticker, d.qty, cand.ticker, d.buyQty);
         return '<div class="rb5-deal">' + dealHeadHtml() + flow + note + '<div class="rb5-vbox">' + rows + '</div>' + verdict + apply + '</div>';
     }
     function rb5StockCol(ss, c) {

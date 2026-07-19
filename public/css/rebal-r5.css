@@ -471,6 +471,23 @@ body.dark-mode .rb5-verdict.bad { color: #f87171; background: rgba(248, 113, 113
 .rb5-apply:hover { transform: translateY(-1px); box-shadow: 0 18px 36px -12px var(--rbc-shadow, rgba(22, 27, 39, 0.65)); }
 .rb5-apply:active { transform: translateY(0); box-shadow: 0 10px 22px -10px var(--rbc-shadow, rgba(22, 27, 39, 0.55)); }
 
+/* «В терминал» — вторичное действие рядом с «Применить обмен»: то же намерение,
+   но исполняется у брокера. Контурная, а не градиентная: главная кнопка в
+   карточке должна остаться одна. На зеркале счёта она единственная — там
+   «Применить обмен» недоступно, и кнопка встаёт под пояснением. */
+.rb5-term {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    margin-top: 8px; padding: 11px 16px; border-radius: 13px; cursor: pointer;
+    border: 1px solid rgba(43, 57, 74, 0.22); background: none;
+    font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 700; color: #2C364C;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.rb5-term i { font-style: normal; font-size: 11px; font-weight: 600; color: #8a95a6; }
+.rb5-term:hover { border-color: var(--rbc, #2C364C); background: rgba(43, 57, 74, 0.04); }
+body.dark-mode .rb5-term { border-color: rgba(255, 255, 255, 0.18); color: #e8eef7; }
+body.dark-mode .rb5-term i { color: #9fb1c6; }
+body.dark-mode .rb5-term:hover { border-color: rgba(255, 255, 255, 0.4); background: rgba(255, 255, 255, 0.05); }
+
 /* Зеркало брокерского счёта (роадмап №10): вместо кнопки «Применить обмен» —
    объяснение. Расчёт остаётся подсказкой, сделка совершается у брокера. */
 .rb5-brknote {

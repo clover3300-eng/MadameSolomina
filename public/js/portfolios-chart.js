@@ -471,7 +471,9 @@
                     // forward:false движок понимает как «история кончилась» и
                     // больше её не просит — ставим его только на пустой ответ
                     p.callback(rows, { forward: rows.length > 0, backward: false });
-                    if (p.type === 'init') restoreOverlays(c);
+                    // линии заявок ставим после первой загрузки данных: до неё у
+                    // графика нет ценовой шкалы, и overlay лёг бы в пустоту
+                    if (p.type === 'init') { restoreOverlays(c); syncOrderLines(c); }
                 }).catch(function () {
                     mark(c, false);
                     p.callback([], { forward: false, backward: false });
@@ -582,7 +584,12 @@
     // пропадали бы при каждом переключении подвкладки.
     function saveOverlays(c, n) {
         if (!c.chart) return;
-        var list = (c.chart.getOverlays() || []).map(function (o) {
+        var list = (c.chart.getOverlays() || []).filter(function (o) {
+            // линии заявок рисует терминал, а не пользователь: попади они в
+            // сохранённые построения — остались бы на графике призраками
+            // давно исполненных заявок
+            return String(o.id || '').indexOf(ORD_OV) !== 0;
+        }).map(function (o) {
             return { name: o.name, points: (o.points || []).map(function (p) {
                 return { timestamp: p.timestamp, value: p.value };
             }) };
@@ -590,6 +597,49 @@
         cfg(n).ovs = list.slice(0, 60);
         cfgSave();
     }
+
+    // ---------- заявки и позиция линиями на графике ----------
+    // Здесь график и стакан наконец срастаются: видно, где стоят свои заявки,
+    // где защита и по какой цене набрана позиция — не сверяя два списка глазами.
+    // Линии ЗАБЛОКИРОВАНЫ (lock): перетаскивание двигало бы реальную заявку
+    // без подтверждения — перенос цены живёт в «Моих заявках» с модалкой.
+    var ORD_OV = 'pfcord_';
+    var ORD_COL = { buy: '#16a34a', sell: '#dc2626', avg: '#3b82f6' };
+    function clearOrderLines(c) {
+        (c.ordOv || []).forEach(function (id) {
+            try { c.chart.removeOverlay({ id: id }); } catch (e) {}
+        });
+        c.ordOv = [];
+    }
+    function syncOrderLines(c) {
+        if (!c || !c.chart || !c.instr || !c.instr.uid) return;
+        if (!PF.pftLinesFor) return;
+        clearOrderLines(c);
+        var lines = [];
+        try { lines = PF.pftLinesFor(c.instr.uid) || []; } catch (e) { return; }
+        lines.slice(0, 24).forEach(function (l, i) {
+            var id = ORD_OV + c.slot + '_' + i;
+            var col = l.kind === 'avg' ? ORD_COL.avg : (l.buy ? ORD_COL.buy : ORD_COL.sell);
+            var lab = l.kind === 'avg' ? 'средняя'
+                : (l.kind === 'stop' ? (l.tp ? 'тейк' : 'стоп') : (l.buy ? 'покупка' : 'продажа'));
+            if (l.lots) lab += ' ' + l.lots + ' лот';
+            try {
+                c.chart.createOverlay({
+                    id: id, name: 'priceLine', lock: true, points: [{ value: l.px }],
+                    styles: {
+                        line: { color: col, size: 1, style: l.kind === 'avg' ? 'solid' : 'dashed' },
+                        text: { color: '#fff', backgroundColor: col, size: 10, family: 'inherit' }
+                    },
+                    extendData: lab
+                });
+                c.ordOv.push(id);
+            } catch (e) { /* движок мог не принять стиль — линия просто не появится */ }
+        });
+    }
+    // зовётся из терминала в такт с обновлением «Моих заявок»
+    PF.pfcSyncLines = function () {
+        Object.keys(CH).forEach(function (k) { syncOrderLines(CH[k]); });
+    };
     function restoreOverlays(c) {
         var saved = cfg(c.slot).ovs || [];
         if (!saved.length || c.ovsDone) return;
@@ -880,6 +930,9 @@
         c2.ovs = [];              // построения были по другой бумаге — не переносим
         cfgSave();
         var c = CH[n];
+        // линии заявок были по ПРЕЖНЕЙ бумаге — снимаем сразу, не дожидаясь
+        // загрузки новой: иначе на чужих свечах висят чужие цены
+        if (c && c.chart) clearOrderLines(c);
         if (c) { c.instr = null; c.ovsDone = false; }
         SOPEN[n] = false;
         if (!quiet) {
