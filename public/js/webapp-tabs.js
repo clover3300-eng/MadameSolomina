@@ -812,6 +812,10 @@ function switchTab(tabId) {
     
     const target = document.getElementById('panel-' + tabId);
     if (target) {
+        // boot-shown ставит page-transition.js панели, которая уже была на экране
+        // при загрузке, чтобы она не проявилась задним числом. Здесь переключение
+        // настоящее — метку снимаем, и tabFadeIn играет как прежде.
+        target.classList.remove('boot-shown');
         target.classList.add('active');
     }
     

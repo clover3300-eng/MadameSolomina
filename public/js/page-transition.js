@@ -174,7 +174,21 @@
     // читалась как вспышка; см. комментарий там же.
     (function () {
         function animOn() {
-            setTimeout(function () { ROOT.classList.remove('boot-anim-off'); }, 80);
+            setTimeout(function () {
+                // Снять `animation:none` — значит ЗАПУСТИТЬ анимацию с нуля, а не
+                // «оставить как есть». Из-за этого сам boot-anim-off и давал вспышку:
+                // уже видимая панель на 80мс после load падала в opacity:0 и заново
+                // проявлялась (дорожка Animations в профиле: ~394мс, ~500мс длиной).
+                // Поэтому глушитель не снимаем, а передаём на метку boot-shown —
+                // ровно тем панелям, что СЕЙЧАС на экране. Скрытые (display:none)
+                // не красятся, им метка не нужна: они честно анимируются при показе.
+                // Метку снимает switchTab при настоящем переключении вкладки.
+                try {
+                    document.querySelectorAll('.tab-panel.active')
+                        .forEach(function (p) { p.classList.add('boot-shown'); });
+                } catch (e) {}
+                ROOT.classList.remove('boot-anim-off');
+            }, 80);
         }
         if (document.readyState === 'complete') animOn();
         else window.addEventListener('load', animOn);
