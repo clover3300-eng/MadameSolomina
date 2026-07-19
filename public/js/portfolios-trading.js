@@ -329,12 +329,31 @@
     // баннер боевого контура (над сеткой конструктора и в fallback-раскладке)
     function bannerHtml() {
         var c = conn();
-        return (c && !c.sandbox && !localStorage.getItem(LIVE_SEEN_KEY))
+        var live = (c && !c.sandbox && !localStorage.getItem(LIVE_SEEN_KEY))
             ? '<div class="btr-live" id="btLive"><b>Боевой контур:</b> заявки уходят на настоящую биржу. ' +
               'Потренироваться без риска можно в песочнице (подключение брокера → песочница).' +
               '<button type="button" onclick="pftLiveOk()">Понятно</button></div>'
             : '';
+        return acctBannerHtml() + live;
     }
+    // ЧЕЙ ЭТО СЧЁТ. «Торговля» стоит в ряду подвкладок «Портфелей» рядом с
+    // ручными портфелями, и легко решить, что сделки идут «в текущий портфель».
+    // Это не так: терминал работает на БРОКЕРСКОМ счёте Т-Инвестиций, а портфели
+    // слева — отдельный ручной учёт. Плашка говорит это прямо и постоянно (в
+    // полноэкранном режиме то же самое несёт строка 44px, там баннер не нужен).
+    function acctBannerHtml() {
+        if (fsOn()) return '';
+        var c = conn(); if (!c) return '';
+        var tail = accTail() ? ' ····' + esc(accTail()) : '';
+        return '<div class="btr-acctb">' +
+            '<span class="btr-acctb-ic">' + IC_BROKER + '</span>' +
+            '<span class="btr-acctb-t">Сделки идут на брокерский счёт <b>' +
+                esc(c.accountName || 'Т-Инвестиции') + tail + '</b>' +
+                (c.sandbox ? '<i class="btr-sand">песочница</i>' : '') + '</span>' +
+            '<span class="btr-acctb-sub">Портфели слева — ваш ручной учёт, сюда сделки не попадают.</span>' +
+        '</div>';
+    }
+    var IC_BROKER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M4 21V10l8-5 8 5v11M9 21v-6h6v6"/></svg>';
     // карточки терминала — самостоятельные блоки дашборд-конструктора
     // (drag/resize/шестерёнка/корзина через .pfd-chrome, как у всех виджетов);
     // data-slot — якорь точечных перерисовок и опроса живых слотов

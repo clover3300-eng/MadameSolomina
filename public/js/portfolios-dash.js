@@ -157,15 +157,44 @@
     function pfxTradeAlive(t) {
         return t === 'trading' || (pfxIsTradeTab(t) && !!(pfTabCfgs[t] || pfTabsStore[t]));
     }
-    // все экраны по порядку номеров — источник правды для полосы и для
-    // распределения номеров слотов (терминал не должен выдать занятый номер)
+    // ПОРЯДОК ЭКРАНОВ, заданный перетаскиванием. Отдельный ключ, а не номера в
+    // именах: номер вшит в id блоков (trade:ob:2), переименовывать их на каждом
+    // перетаскивании — дёшево испортить раскладку. Здесь просто список ключей.
+    var TRADE_ORDER_KEY = 'pf_trade_order_v1';
+    function pfxTradeOrder() {
+        try {
+            var a = JSON.parse(localStorage.getItem(TRADE_ORDER_KEY) || '[]');
+            return Array.isArray(a) ? a.filter(function (x) { return typeof x === 'string'; }) : [];
+        } catch (e) { return []; }
+    }
+    // все экраны — источник правды для полосы и для распределения номеров слотов.
+    // Порядок: сперва как расставил человек (pfxTradeOrder), следом новые, ещё
+    // не попавшие в список, — по номеру. Так свежесозданный экран всегда виден
+    // в хвосте, а не теряется, пока его не тронули.
     function pfxTradeTabs() {
         var set = { trading: 1 };
         [pfTabCfgs, pfTabsStore].forEach(function (m) {
             Object.keys(m || {}).forEach(function (k) { if (pfxIsTradeTab(k)) set[k] = 1; });
         });
-        return Object.keys(set).sort(function (a, b) { return pfxTradeNo(a) - pfxTradeNo(b); });
+        var all = Object.keys(set);
+        var order = pfxTradeOrder().filter(function (k) { return set[k]; });
+        var rest = all.filter(function (k) { return order.indexOf(k) < 0; })
+                      .sort(function (a, b) { return pfxTradeNo(a) - pfxTradeNo(b); });
+        return order.concat(rest);
     }
+    // перестановка: двигаем drag ПЕРЕД target (или в самый конец, если target пуст)
+    PF.pfxReorderTrade = function (drag, target) {
+        if (!drag || drag === target || !pfxIsTradeTab(drag)) return false;
+        var list = pfxTradeTabs();                 // текущий полный порядок
+        var i = list.indexOf(drag);
+        if (i < 0) return false;
+        list.splice(i, 1);
+        var j = target ? list.indexOf(target) : list.length;
+        if (j < 0) j = list.length;
+        list.splice(j, 0, drag);
+        try { localStorage.setItem(TRADE_ORDER_KEY, JSON.stringify(list)); } catch (e) {}
+        return true;
+    };
     // сиды подвкладок: [id, col, span] — повторяют прежние статичные раскладки
     // pfxTabBodyHtml, только теперь это стартовая точка конструктора, а не бетон
     var PFX_TAB_SEEDS = {

@@ -79,7 +79,10 @@
                     'aria-label="Название экрана" onkeydown="pftScreenRenameKey(event)" onblur="pftScreenRenameDone()">' +
             '</span>';
         }
-        return '<button type="button" class="pfts-pill' + (on ? ' on' : '') + '" role="tab" aria-selected="' + !!on + '" ' +
+        // draggable только когда экранов 2+: тащить единственный некуда, а
+        // серый «призрак» перетаскивания сбивал бы с толку
+        var drag = tabs().length > 1 ? ' draggable="true" data-tab="' + t + '"' : '';
+        return '<button type="button" class="pfts-pill' + (on ? ' on' : '') + '"' + drag + ' role="tab" aria-selected="' + !!on + '" ' +
             'onclick="pftScreenGo(\'' + t + '\')" ondblclick="pftScreenRename(\'' + t + '\')" ' +
             // правый клик по своему экрану — то же меню, что под «⋮»: привычка
             // из вкладок браузера, и мишень «⋮» перестаёт быть единственной
@@ -145,7 +148,8 @@
         }
         var nm = nameOf(t);
         var tick = tickersOf(t).filter(function (x) { return x !== nm; });
-        return '<button type="button" class="tb-s' + (on ? ' on' : '') + '" role="tab" aria-selected="' + !!on + '" ' +
+        var drag = tabs().length > 1 ? ' draggable="true" data-tab="' + t + '"' : '';
+        return '<button type="button" class="tb-s' + (on ? ' on' : '') + '"' + drag + ' role="tab" aria-selected="' + !!on + '" ' +
             'onclick="pftScreenGo(\'' + t + '\')" ondblclick="pftScreenRename(\'' + t + '\')" ' +
             (on ? 'oncontextmenu="pftScreenMenu(\'' + t + '\', event); return false;" ' : '') +
             'title="' + PF.attr(nm + (tick.length ? ' — ' + tick.join(' · ') : '')) + '">' +
@@ -240,6 +244,63 @@
         if (el) { el.classList.remove('on'); el.innerHTML = ''; }
         try { document.body.style.removeProperty('--pfts-h'); } catch (e) {}
     }
+
+    // ---------- перетаскивание экранов ----------
+    // Порядок хранит portfolios-dash.js (pfxReorderTrade), полоса лишь ведёт
+    // жест. Обработчики делегированы на документ и ставятся ОДИН раз: ряд
+    // пересобирается на каждый sync, и слушатели на самих пилюлях не пережили бы.
+    // Работает и в плавающей полосе (.pfts-pill), и в компактной (.tb-s) — обе
+    // несут data-tab; переносим бумагу только на бумагу того же ряда.
+    var dragTab = '';
+    function pillOf(t) { return document.querySelector('[data-tab="' + t + '"]'); }
+    function clearDragMark() {
+        var m = document.querySelectorAll('.pfts-dragover, .pfts-dragging');
+        Array.prototype.forEach.call(m, function (el) { el.classList.remove('pfts-dragover', 'pfts-dragging'); });
+    }
+    function wireDrag() {
+        if (document._pftsDragWired) return;
+        document._pftsDragWired = true;
+        document.addEventListener('dragstart', function (e) {
+            var p = e.target.closest && e.target.closest('[data-tab]');
+            if (!p) return;
+            dragTab = p.getAttribute('data-tab');
+            p.classList.add('pfts-dragging');
+            try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragTab); } catch (er) {}
+        });
+        document.addEventListener('dragover', function (e) {
+            if (!dragTab) return;
+            var p = e.target.closest && e.target.closest('[data-tab]');
+            if (!p || p.getAttribute('data-tab') === dragTab) return;
+            e.preventDefault();                       // без этого drop не случится
+            try { e.dataTransfer.dropEffect = 'move'; } catch (er) {}
+            var over = document.querySelector('.pfts-dragover');
+            if (over && over !== p) over.classList.remove('pfts-dragover');
+            p.classList.add('pfts-dragover');
+        });
+        document.addEventListener('drop', function (e) {
+            if (!dragTab) return;
+            var p = e.target.closest && e.target.closest('[data-tab]');
+            if (!p) { clearDragMark(); dragTab = ''; return; }
+            e.preventDefault();
+            var target = p.getAttribute('data-tab');
+            // левая половина пилюли — встать ПЕРЕД ней, правая — после (= перед
+            // следующей). Так курсор кладёт экран туда, куда указывает, а не всегда слева.
+            var r = p.getBoundingClientRect();
+            var after = (e.clientX - r.left) > r.width / 2;
+            if (after) {
+                var sib = p.nextElementSibling;
+                target = (sib && sib.getAttribute('data-tab')) || '';   // '' = в самый конец
+            }
+            var drag = dragTab;
+            clearDragMark(); dragTab = '';
+            if (PF.pfxReorderTrade && PF.pfxReorderTrade(drag, target)) {
+                lastKey = '';                          // порядок сменился — заставить sync перерисовать
+                if (PF.renderNoAnim) PF.renderNoAnim(); else if (PF.pfdRerender) PF.pfdRerender();
+            }
+        });
+        document.addEventListener('dragend', function () { clearDragMark(); dragTab = ''; });
+    }
+    wireDrag();
     function sync() {
         var el = document.getElementById('pftScreens');
         // В полноэкранном режиме ряд уехал в строку 44px. Состояние (меню, поле

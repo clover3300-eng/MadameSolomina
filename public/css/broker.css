@@ -2267,3 +2267,35 @@ body.dark-mode .tb-s u { color: #6b7c93; }
 body.dark-mode .tb-add { border-color: rgba(255, 255, 255, 0.18); color: #9fb1c6; }
 body.dark-mode .tb-add:hover { border-color: rgba(255, 255, 255, 0.32); color: #f1f6fb; }
 body.dark-mode .tb-s-edit input { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.16); color: #f1f6fb; }
+
+/* ЧЕЙ СЧЁТ: постоянная плашка над сеткой «Торговли» (не в фокусе — там это
+   несёт строка 44px). «Торговля» стоит рядом с ручными портфелями, и без неё
+   легко решить, что сделки идут «в текущий портфель». */
+.btr-acctb {
+    display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
+    margin-bottom: 12px; padding: 9px 13px; border-radius: 12px;
+    background: rgba(15, 23, 42, 0.035); border: 1px solid rgba(15, 23, 42, 0.06);
+    font-size: 12.5px; color: #475569;
+}
+.btr-acctb-ic { display: inline-flex; flex: none; color: #64748b; }
+.btr-acctb-ic svg { width: 17px; height: 17px; }
+.btr-acctb-t b { font-family: var(--font-num); font-weight: 700; color: #0f172a; }
+.btr-acctb-t .btr-sand {
+    font-style: normal; margin-left: 7px; font-size: 10.5px; font-weight: 700;
+    padding: 1px 7px; border-radius: 999px; background: rgba(217, 119, 6, 0.14); color: #b45309;
+}
+.btr-acctb-sub { color: #94a3b8; }
+.btr-acctb-sub::before { content: "·"; margin-right: 9px; color: #cbd5e1; }
+@media (max-width: 720px) { .btr-acctb-sub { flex-basis: 100%; } .btr-acctb-sub::before { display: none; } }
+
+/* перетаскивание экранов: тянущаяся пилюля бледнеет, у цели — вертикальная
+   линия-указатель слева (куда встанет экран) */
+.pfts-pill[draggable="true"], .tb-s[draggable="true"] { cursor: grab; }
+.pfts-dragging { opacity: 0.4; }
+.pfts-dragover { box-shadow: inset 2px 0 0 #4453ef; }
+
+body.dark-mode .btr-acctb { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.08); color: #9fb1c6; }
+body.dark-mode .btr-acctb-ic { color: #9fb1c6; }
+body.dark-mode .btr-acctb-t b { color: #f1f6fb; }
+body.dark-mode .btr-acctb-sub { color: #6b7c93; }
+body.dark-mode .btr-acctb-sub::before { color: #3c4a5e; }
