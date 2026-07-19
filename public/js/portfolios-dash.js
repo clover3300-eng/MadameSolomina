@@ -600,6 +600,21 @@
         var colW = (grid.clientWidth - gap * 11) / 12;
         var bottom = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         var colPref = PF.dashCfg.col || {};
+        // ПОЛНОЭКРАННЫЙ РЕЖИМ. Пакер и так считает всё в «строках» сетки, а строка
+        // равна пикселю (grid-auto-rows: 1px) — значит растянуть раскладку на всю
+        // высоту можно, НЕ трогая упаковку: достаточно поменять размер строки.
+        // МЕРИТЬ НАДО БЕЗ РАСТЯЖКИ. Растянутый блок мерит собственную растянутую
+        // высоту — замер становится вырожденным (1px → span 1 → снова 1px, сетка
+        // схлопывается в нитку). Поэтому на время замера снимаем и растяжку, и
+        // масштаб строки: тогда offsetHeight отдаёт ПРОЕКТНУЮ высоту (inline из
+        // cfg.h либо натуральную по содержимому), от которой и считаются доли.
+        var fs = grid.classList.contains('pfd-fs');
+        var placed = [];
+        if (fs) {
+            grid.classList.add('pfd-fs-measure');
+            grid.style.setProperty('--pft-row', '1px');
+            void grid.offsetHeight;   // заставляем применить ДО замеров ниже
+        }
         items.forEach(function (item) {
             var span = pfdSpanOf(item, colW, gap);
             var h = Math.max(1, Math.ceil(item.offsetHeight));
@@ -627,9 +642,60 @@
             item.style.gridRow = (Math.round(topY) + 1) + ' / span ' + h;
             var nb = topY + h + gap;
             for (var k2 = bestC; k2 < bestC + span; k2++) bottom[k2] = nb;
+            if (fs) placed.push({ el: item, c: bestC, span: span, top: topY, h: h });
         });
+        // Колонки кончаются на разной высоте, и масонри честно кладёт нижний
+        // блок под САМУЮ ДЛИННУЮ — под короткими остаётся дыра (под графиком она
+        // была в 212px). В полноэкранном режиме такая дыра — ровно та пустота,
+        // ради избавления от которой режим и делался: дотягиваем последний блок
+        // каждой колонки до общего низа. Порядок и доли при этом не меняются.
+        if (fs) pfdFsCloseGaps(placed, bottom, gap);
+        if (fs) { grid.classList.remove('pfd-fs-measure'); pfdFsFill(grid, bottom, gap); }
         PF.pfdHeatRepaintSoon();   // ширина окна/блока изменилась → плитки карты заново
     }
+    // Растяжка на весь экран: во сколько раз увеличить (или сжать) строку сетки,
+    // чтобы самая длинная колонка кончилась ровно у нижней кромки. Доли блоков
+    // при этом сохраняются — человек собрал раскладку конструктором, и ломать её
+    // ради «во весь экран» нельзя; меняется только масштаб.
+    // Каждый блок тянем вниз до НАЧАЛА следующего блока в его же колонках, а если
+    // такого нет — до низа раскладки. «Последний в колонке» тут не годится: блок
+    // во всю ширину («Мои заявки») стоит под всеми колонками сразу, и последних
+    // не остаётся вовсе. А так верхний ряд честно выравнивается по общей нижней
+    // кромке — ровно как в утверждённом макете, — и дыра под коротким блоком
+    // (под графиком было 212px) закрывается, не сдвигая ничего по горизонтали.
+    function pfdFsCloseGaps(placed, bottom, gap) {
+        var total = 0, i;
+        for (i = 0; i < bottom.length; i++) if (bottom[i] > total) total = bottom[i];
+        placed.forEach(function (p, idx) {
+            var limit = total;
+            for (var j = idx + 1; j < placed.length; j++) {
+                var q = placed[j];
+                if (q.c + q.span <= p.c || q.c >= p.c + p.span) continue;   // колонки не пересекаются
+                if (q.top + 0.5 < p.top + p.h) continue;                     // стоит не под ним
+                if (q.top < limit) limit = q.top;
+            }
+            var want = Math.round(limit - gap - p.top);
+            if (want > p.h) p.el.style.gridRow = (Math.round(p.top) + 1) + ' / span ' + want;
+        });
+    }
+    function pfdFsFill(grid, bottom, gap) {
+        var total = 0;
+        for (var i = 0; i < bottom.length; i++) if (bottom[i] > total) total = bottom[i];
+        total -= gap;                      // хвостовой зазор за последним блоком не считаем
+        if (!(total > 40)) return;
+        // ЛОВУШКА ZOOM: на десктопе body { zoom: .9 } — innerHeight приходит в
+        // экранных пикселях, а координаты внутри страницы в своих. Приводим к
+        // одной системе тем же делителем, что и весь desktop-zoom.css.
+        var z = parseFloat(getComputedStyle(document.body).zoom) || 1;
+        var top = grid.getBoundingClientRect().top;
+        var avail = (window.innerHeight - top) / z - PFD_FS_PAD;
+        if (!(avail > 120)) return;
+        var k = avail / total;
+        // Границы — чтобы промах в замерах не выдал сетку в лапшу или в простыню
+        k = Math.max(0.55, Math.min(2.2, k));
+        grid.style.setProperty('--pft-row', k + 'px');
+    }
+    var PFD_FS_PAD = 14;   // воздух под нижним рядом
     function pfdRepackSoon() { if (!pfdPackRaf) pfdPackRaf = requestAnimationFrame(pfdPack); }
     // (пере)подписываем ResizeObserver на актуальные блоки: их высота меняется от
     // шрифтов/состава/ресайза/ширины окна — тогда пере-упаковываем. Смена grid-row
@@ -1358,7 +1424,8 @@
         // и список блоков с превью. Сама сетка ниже остаётся живой (drag/resize/скрытие).
         // R8: вторым жильцом того же места может быть панель «Раскладки» (pfl3).
         var panel = PF.dashEdit ? pflPanelHtml() : (PF.pfl3Open ? pfl3PanelHtml() : '');
-        return panel + '<div class="pfd-grid pfd-masonry pfd-live' + (PF.dashEdit ? ' editing' : '') + '" id="pfdGrid">' + items + '</div>';
+        var fsCls = (PF.pftFsOn && PF.pftFsOn()) ? ' pfd-fs' : '';
+        return panel + '<div class="pfd-grid pfd-masonry pfd-live' + fsCls + (PF.dashEdit ? ' editing' : '') + '" id="pfdGrid">' + items + '</div>';
     }
     // ---- сохранённая раскладка: снимок + сравнение (для «Сохранено» и «Вернуть сохранённую») ----
     // Каждая правка автосохраняется в pf_dash_v1 (рабочее состояние переживает перезагрузку),

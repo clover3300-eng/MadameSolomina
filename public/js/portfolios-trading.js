@@ -1375,7 +1375,9 @@
     // нужны, а запрос стоит столько же, сколько остальные
     function posCardEl() { return document.querySelector('.btr-pos'); }
     function pollPortfolio() {
-        if (!awake() || !posCardEl()) return;
+        // в полноэкранном режиме стоимость портфеля висит в полосе всегда —
+        // значит и опрашивать её надо, даже когда виджета «Позиции» на экране нет
+        if (!awake() || (!posCardEl() && !fsOn())) return;
         var c = conn(); if (!c) return;
         A().call('GetPortfolio', { accountId: c.accountId }).then(function (d) {
             var q2n = A().q2n;
@@ -1406,6 +1408,7 @@
                 out.sort(function (a, b) { return b.val - a.val; });
                 T.port = { list: out, ts: Date.now() };
                 repaintPos();
+                fsRepaintBits();   // «портфель» в полосе полноэкранного режима
             });
         }).catch(function () { /* тихо: карточка покажет прошлый снимок */ });
     }
@@ -1482,6 +1485,7 @@
             var host = dqs('Ob', n);
             if (host) host.classList.toggle('btr-stale', l.state !== 'live');
             repaintTicketBits(n);   // кнопка называет причину и перестаёт нажиматься
+            fsRepaintBits();        // и точка связи в полосе — из того же факта
         });
         // Обрыв связи — ОДНО событие, а не четыре по числу слотов: флаг общий.
         // Говорим по разу на переход, иначе тост повторялся бы каждую секунду.
@@ -1920,6 +1924,7 @@
             });
             T.pos = { money: rub ? q2n(rub) : null, secs: secs };
             liveSlots().forEach(repaintTicketBits);
+            fsRepaintBits();   // «свободно» в полосе полноэкранного режима
         }).catch(function () { /* тихо: рефы просто не покажутся */ });
     }
     // ---------- лимиты «сколько можно купить/продать» ----------
@@ -2278,9 +2283,11 @@
         try { localStorage.setItem(LIVE_SEEN_KEY, '1'); } catch (e) {}
         var b = dq('btLive'); if (b) b.remove();
     };
-    window.pftSearchToggle = function (n) {
+    // force=true — «открой», а не «переключи»: из полосы полноэкранного режима
+    // повторное нажатие лупы закрывало бы уже открытый поиск
+    window.pftSearchToggle = function (n, force) {
         var s = S(n);
-        s.searchOpen = !s.searchOpen;
+        s.searchOpen = force ? true : !s.searchOpen;
         var w = dqs('SearchWrap', n); if (w) w.classList.toggle('open', s.searchOpen);
         var b = dqs('SearchTg', n); if (b) b.classList.toggle('on', s.searchOpen);
         if (s.searchOpen) { var i = dqs('Search', n); if (i) i.focus(); }
@@ -2946,6 +2953,118 @@
         if (!ticker) return;
         PF.pftLoadPlan([{ ticker: String(ticker), side: side === 'sell' ? 'sell' : 'buy', qty: 0 }]);
     };
+
+    // ================= ПОЛНОЭКРАННЫЙ РЕЖИМ =================
+    // Замер живой страницы: хром над сеткой (герой «Панель управления», ряд
+    // подвкладок, шапка сайта) съедал 256 px — 26% экрана при 1600×1000 и
+    // zoom 0.9, — и ни один его элемент не нужен, пока выставляешь заявку.
+    // Здесь он схлопывается в ОДНУ строку 44 px, которая забирает себе всё
+    // действительно нужное: выход, экраны, поиск, деньги, счёт, связь.
+    // Режим переживает перезагрузку: работающий в терминале не должен входить
+    // в него заново после каждого F5.
+    var FS_KEY = 'bt_fs_v1';
+    var fsState = null;
+    function fsOn() {
+        if (fsState === null) {
+            try { fsState = localStorage.getItem(FS_KEY) === '1'; } catch (e) { fsState = false; }
+        }
+        // Гейт (брокер не подключён) в полноэкранный режим не уходит: там
+        // навигация нужнее терминала, а прятать её не за чем — терминала нет.
+        return fsState && tradeReady();
+    }
+    PF.pftFsOn = fsOn;
+    // Класс на body НЕ ставим: он бы «залипал» при уходе на другую вкладку сайта
+    // (renderPortfolios там не зовётся). CSS режима висит на body:has(#pftBar) —
+    // полоса существует ровно тогда, когда режим отрисован, и рассинхрона не бывает.
+    function fsSet(on) {
+        fsState = !!on;
+        try { localStorage.setItem(FS_KEY, fsState ? '1' : '0'); } catch (e) {}
+        if (PF.renderNoAnim) PF.renderNoAnim();
+    }
+    window.pftFsToggle = function () { fsSet(!fsState); };
+    window.pftFsExit = function () { if (fsState) fsSet(false); };
+
+    // Деньги в полосе — два настоящих числа. Стоимость портфеля считает
+    // pollPortfolio, а он до сих пор работал, только пока виден виджет
+    // «Позиции»: в полноэкранном режиме число висит в шапке всегда, поэтому
+    // опрос там разрешён и без виджета (см. гвард в pollPortfolio).
+    function portValue() {
+        var v = 0, any = false;
+        (T.port.list || []).forEach(function (p) { v += p.val || 0; any = true; });
+        return any ? v : null;
+    }
+    function fsMoneyHtml() {
+        var free = T.pos.money, val = portValue();
+        if (free == null && val == null) return '';
+        // одной строкой: два столбика с надстрочными капс-лейблами забракованы
+        return '<span class="pftb-money">' +
+            (free != null ? '<i>свободно</i><b>' + fmtRub(free) + '</b>' : '') +
+            (free != null && val != null ? '<s>·</s>' : '') +
+            (val != null ? '<i>портфель</i><b>' + fmtRub(val) + '</b>' : '') +
+        '</span>';
+    }
+    // Статус СВЯЗИ (не биржевой сессии) — тот же факт, что метка в стакане:
+    // linkState первого слота. Здесь он в шапке и потому виден всегда.
+    function fsLinkHtml() {
+        var nums = liveSlots();
+        var worst = null;
+        for (var i = 0; i < nums.length; i++) {
+            var l = linkState(S(nums[i]));
+            if (l.state === 'stale') { worst = l; break; }
+            if (l.state === 'wait' && !worst) worst = l;
+        }
+        if (!worst) return '<span class="pftb-st ok" title="Данные приходят"><i></i>онлайн</span>';
+        return '<span class="pftb-st ' + worst.state + '" title="' + esc(worst.msg) + '"><i></i>' +
+            (worst.state === 'wait' ? 'ждём данные' : 'нет связи · ' + ageTxt(worst.ageMs)) + '</span>';
+    }
+    function fsAcctHtml() {
+        var c = conn(); if (!c) return '';
+        return '<span class="pftb-acct">' + (accTail() ? '····' + esc(accTail()) : esc(c.accountName || 'Счёт')) +
+            (c.sandbox ? '<i class="btr-sand">песочница</i>' : '') + '</span>';
+    }
+    // Полоса 44px вместо всего хрома. Экраны сюда ПЕРЕЕЗЖАЮТ с нижней плавающей
+    // полосы (pftScreens гаснет в этом режиме): две навигации на один экран не нужны.
+    PF.pftBarHtml = function () {
+        return '<div class="pftb" id="pftBar">' +
+            '<button type="button" class="pftb-back" onclick="pftFsExit()" ' +
+                'title="Выйти из терминала (Esc)">' + IC_BACK + 'Портфели</button>' +
+            '<span class="pftb-sep"></span>' +
+            '<div class="pftb-scr">' + (PF.pftsBarHtml ? PF.pftsBarHtml() : '') + '</div>' +
+            '<div class="pftb-r">' +
+                '<button type="button" class="pftb-search" onclick="pftFsSearch()" ' +
+                    'title="Найти бумагу">' + IC_LENS + '<span>Тикер или название</span><kbd>/</kbd></button>' +
+                fsMoneyHtml() + fsAcctHtml() + fsLinkHtml() +
+            '</div>' +
+        '</div>';
+    };
+    var IC_BACK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>';
+    // Поиск в полосе открывает поиск ПЕРВОГО слота — та же лупа, что в стакане,
+    // и та же клавиша «/»: заводить второй поиск бумаги в одном экране незачем.
+    window.pftFsSearch = function () {
+        var n = liveSlots()[0] || slotNums()[0] || 1;
+        if (window.pftSearchToggle) window.pftSearchToggle(n, true);
+    };
+    // живые куски полосы — точечно, в такт с данными (полную полосу не трогаем:
+    // в ней ряд экранов с меню и полем переименования)
+    function fsRepaintBits() {
+        var bar = dq('pftBar'); if (!bar) return;
+        var m = bar.querySelector('.pftb-money');
+        if (m) m.outerHTML = fsMoneyHtml() || '<span class="pftb-money"></span>';
+        var st = bar.querySelector('.pftb-st');
+        if (st) st.outerHTML = fsLinkHtml();
+    }
+    PF.pftFsRepaintBits = fsRepaintBits;
+    // Esc — выход. Ставится один раз на документ: полоса перерисовывается, а
+    // обработчик должен пережить перерисовку.
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape' || !fsState) return;
+        // Esc сперва закрывает то, что открыто ПОВЕРХ терминала (модалка
+        // подтверждения, шторка, меню экрана) — их обработчики стоят раньше и
+        // вызывают stopPropagation; сюда событие доходит, только если сверху пусто
+        if (document.querySelector('#btConfirmOv, .pfo-card, #pftsMenu, #pftsFind')) return;
+        e.preventDefault();
+        fsSet(false);
+    });
 
     // ---------- горячие клавиши ----------
     // ЖЁСТКОЕ ПРАВИЛО: ни одна клавиша не отправляет заявку. Терминал с деньгами

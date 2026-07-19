@@ -50,6 +50,7 @@
     // та же лупа, что в шапках стакана и графика: жест «найти бумагу» по всему
     // терминалу обязан выглядеть одинаково
     var IC_LENS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>';
+    var IC_FS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H4v5M15 4h5v5M15 20h5v-5M9 20H4v-5"/></svg>';
 
     // подпись бумаг экрана: полоса должна отвечать «что там», не открывая экран.
     // Тикеры берём из слотов, разложенных в конфиге ЭТОГО экрана
@@ -141,6 +142,12 @@
         return '<div class="pfts-row" role="tablist" aria-label="Экраны терминала">' + list + '</div>' +
             (menuOf && menuOf === act ? menuHtml(menuOf) : '') +
             '<div class="pfts-new">' +
+                // вход в полноэкранный режим — здесь же, где живёт навигация по
+                // экранам: полоса в этом режиме переезжает наверх целиком, и кнопка
+                // уезжает вместе с ней (там она уже «← Портфели»)
+                '<button type="button" class="pfts-nbtn pfts-fs" onclick="pftFsToggle()" ' +
+                    'title="Терминал во весь экран: убрать всё, кроме торговли">' +
+                    IC_FS + '<span>Во весь экран</span></button>' +
                 '<button type="button" class="pfts-nbtn pfts-add' + off + '" onclick="pftScreenAdd()" ' +
                     'title="' + (full ? fullT : 'Пустой экран: соберёте виджеты сами') + '">' +
                     IC_PLUS + '<span>Экран</span></button>' +
@@ -159,15 +166,60 @@
     // Терминал перерисовывается на каждом тике котировок, а полоса меняется
     // редко — пересобираем её ТОЛЬКО когда что-то правда изменилось. Иначе
     // innerHTML-своп выбивал бы каретку из поля переименования и мигал.
+    // Ряд экранов умеет жить в ДВУХ местах: плавающей полосой внизу (обычный
+    // режим) и внутри строки 44px полноэкранного (туда он переезжает целиком).
+    // Разметка одна на оба — иначе в ней завелись бы одинаковые id (pftsMenu,
+    // pftsRename) сразу в двух копиях.
+    PF.pftsBarHtml = function () { return barHtml(); };
     var lastKey = '';
+    // findRes в ключ НЕ входит: выдачу перерисовывает paintDrop точечно,
+    // пересборка полосы выбивала бы каретку из поля поиска
+    function stateKey() {
+        return [active(), menuOf, renaming, findOpen, tabs().map(function (t) {
+            return t + '=' + nameOf(t) + '/' + tickersOf(t).join(',');
+        }).join('|')].join('§');
+    }
+    // после пересборки ряда — вернуть каретку в переименование и подвесить меню
+    // ПОД СВОЕЙ пилюлей, а не у левого края: активный экран может быть пятым по
+    // счёту, и меню «ниоткуда» читалось бы чужим
+    function afterPaint(host) {
+        if (renaming) {
+            var i = dq('pftsRename');
+            if (i) { i.focus(); i.select(); }
+        }
+        var menu = dq('pftsMenu');
+        var pill = host.querySelector('.pfts-pill.on');
+        if (menu && pill) {
+            var row = host.querySelector('.pfts-row');
+            var left = pill.offsetLeft - (row ? row.scrollLeft : 0);
+            menu.style.left = Math.max(0, left) + 'px';
+        }
+    }
+    function hideFloating(el) {
+        if (el) { el.classList.remove('on'); el.innerHTML = ''; }
+        try { document.body.style.removeProperty('--pfts-h'); } catch (e) {}
+    }
     function sync() {
         var el = document.getElementById('pftScreens');
+        // В полноэкранном режиме ряд уехал в строку 44px. Состояние (меню, поле
+        // переименования, лупа) при этом НЕ сбрасываем — оно общее для обоих
+        // мест вывода, и обнуление здесь просто ломало бы их в шапке.
+        if (PF.pftFsOn && PF.pftFsOn()) {
+            hideFloating(el);
+            var host = document.querySelector('#pftBar .pftb-scr');
+            if (!host) return;
+            var k = stateKey();
+            if (k === lastKey && host.firstChild) return;
+            lastKey = k;
+            host.innerHTML = barHtml();
+            afterPaint(host);
+            return;
+        }
         var on = isTrade(active()) && !!(PF.pftTradeReady && PF.pftTradeReady()) &&
                  !!(PF.pfxWide && PF.pfxWide());
         if (!on) {
-            if (el) { el.classList.remove('on'); el.innerHTML = ''; }
+            hideFloating(el);
             menuOf = ''; renaming = ''; findOpen = false; lastKey = '';
-            try { document.body.style.removeProperty('--pfts-h'); } catch (e) {}
             return;
         }
         if (!el) {
@@ -175,11 +227,7 @@
             el.id = 'pftScreens';
             document.body.appendChild(el);
         }
-        // findRes в ключ НЕ входит: выдачу перерисовывает paintDrop точечно,
-        // пересборка полосы выбивала бы каретку из поля поиска
-        var key = [active(), menuOf, renaming, findOpen, tabs().map(function (t) {
-            return t + '=' + nameOf(t) + '/' + tickersOf(t).join(',');
-        }).join('|')].join('§');
+        var key = stateKey();
         if (key === lastKey && el.classList.contains('on')) return;
         lastKey = key;
         el.innerHTML = barHtml();
@@ -189,19 +237,7 @@
         // («не получается нажать»), а тост С ДЕЙСТВИЕМ (.has-act) ещё и ел клики.
         // Отдаём высоту полосы в CSS — тост встаёт над ней (см. broker.css)
         try { document.body.style.setProperty('--pfts-h', el.offsetHeight + 'px'); } catch (e) {}
-        if (renaming) {
-            var i = dq('pftsRename');
-            if (i) { i.focus(); i.select(); }
-        }
-        // меню — под своей пилюлей, а не у левого края полосы: активный экран
-        // может быть пятым по счёту, и меню «ниоткуда» читалось бы чужим
-        var menu = dq('pftsMenu');
-        var pill = el.querySelector('.pfts-pill.on');
-        if (menu && pill) {
-            var row = el.querySelector('.pfts-row');
-            var left = pill.offsetLeft - (row ? row.scrollLeft : 0);
-            menu.style.left = Math.max(0, left) + 'px';
-        }
+        afterPaint(el);
     }
 
     // ---------- действия ----------

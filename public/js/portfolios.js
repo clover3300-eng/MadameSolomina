@@ -206,7 +206,13 @@
                 // иначе гейт по состоянию брокера (нет подключения / только чтение /
                 // заперт / отозван) — см. pfxTradingHtml в portfolios-tabs.js
                 if (PF.pftTradeReady && PF.pftTradeReady()) {
-                    body = chrome + wrapPanel(PF.pftLiveBanner() + pfdBodyHtml(favStr, noBonds));
+                    // ПОЛНОЭКРАННЫЙ РЕЖИМ: весь хром (герой + ряд подвкладок) заменяет
+                    // одна строка 44px. Не прячем его стилями, а НЕ РИСУЕМ вовсе —
+                    // скрытый герой всё равно считался бы и мерялся при упаковке сетки.
+                    var fs = PF.pftFsOn && PF.pftFsOn();
+                    body = fs
+                        ? PF.pftBarHtml() + wrapPanel(pfdBodyHtml(favStr, noBonds))
+                        : chrome + wrapPanel(PF.pftLiveBanner() + pfdBodyHtml(favStr, noBonds));
                 } else {
                     body = chrome + wrapPanel(PF.pfxTradingHtml());
                 }

@@ -1498,3 +1498,117 @@ body.dark-mode .pfts-find-note { color: #6b7c93; }
 
 /* мобильная «Торговля» живёт «Обзором» (pfxEffTab) — полосе там не место */
 @media (max-width: 1023px) { #pftScreens { display: none !important; } }
+
+/* ==================================================================
+   ПОЛНОЭКРАННЫЙ ТЕРМИНАЛ
+   ==================================================================
+   Замер живой страницы: хром над сеткой (шапка сайта, герой «Панель
+   управления», ряд подвкладок) съедал 256px — 26% высоты при 1600×1000 и
+   zoom 0.9, — и ни один его элемент не нужен, пока выставляешь заявку.
+   Всё это заменяет ОДНА строка 44px.
+   Гейт режима — :has(#pftBar), а не класс на body: полоса существует ровно
+   тогда, когда режим отрисован, поэтому рассинхрону взяться неоткуда (класс
+   на body «залипал» бы при уходе на другую вкладку сайта — там
+   renderPortfolios не зовётся и снять его было бы некому).
+   В мокапе экран 01 — это ровно полоса + рабочая область: ни боковой панели,
+   ни шапки сайта. Выход из режима даёт сама полоса («← Портфели») и Esc. */
+body:has(#pftBar) #headerWrapper,
+body:has(#pftBar) #sideBar,
+body:has(#pftBar) .ms-nav-widget,
+body:has(#pftBar) #pfWidgetFab,
+body:has(#pftBar) #bgFab,
+body:has(#pftBar) #themeFab { display: none !important; }
+/* нижняя плавающая полоса экранов уехала в шапку — и её место под сеткой
+   больше не бронируем (74px мёртвой зоны) */
+/* #appShell — CSS-grid, и боковая панель занимает в нём КОЛОНКУ: display:none на
+   самой панели трек не убирает, ширина осталась бы зарезервированной впустую */
+body:has(#pftBar) #appShell { grid-template-columns: 0 1fr !important; }
+body:has(#pftBar) #pftScreens { display: none !important; }
+body:has(#pftBar) #pfxTabPanel { padding-bottom: 0; }
+/* у панели было padding: 24px 40px 84px — сверху и снизу это чистая потеря
+   высоты, ради которой режим и затевался; по бокам оставляем немного воздуха */
+body:has(#pftBar) #panel-portfolios { padding: 0 16px 0 !important; }
+
+.pftb {
+    display: flex; align-items: center; gap: 0; height: 44px; flex: none;
+    padding: 0 12px 0 8px; margin-bottom: 10px;
+    background: var(--card, #fff);
+    border-bottom: 1px solid var(--border-color, rgba(15, 23, 42, 0.09));
+    position: sticky; top: 0; z-index: 30;
+}
+.pftb-back {
+    display: inline-flex; align-items: center; gap: 7px; flex: none;
+    padding: 6px 11px 6px 8px; border: 0; background: none; cursor: pointer;
+    border-radius: 9px; font-family: var(--font-ui); font-size: 12.5px; font-weight: 600;
+    color: #64748b; transition: background 0.14s, color 0.14s;
+}
+.pftb-back svg { width: 14px; height: 14px; }
+.pftb-back:hover { background: rgba(15, 23, 42, 0.05); color: #0f172a; }
+.pftb-sep { width: 1px; height: 20px; flex: none; margin: 0 10px 0 4px; background: rgba(15, 23, 42, 0.1); }
+/* ряд экранов переехал сюда с нижней полосы: внутри та же разметка .pfts-*,
+   но без матового стекла и тени — в строке они были бы плашкой на плашке */
+.pftb-scr { min-width: 0; display: flex; align-items: center; position: relative; }
+.pftb-scr .pfts-row {
+    padding: 0; border: 0; background: none; backdrop-filter: none; box-shadow: none; border-radius: 0;
+}
+.pftb-scr .pfts-new { padding: 0 0 0 6px; border: 0; background: none; backdrop-filter: none; box-shadow: none; }
+.pftb-scr .pfts-menu, .pftb-scr .pfts-find { top: 40px; bottom: auto; }
+
+.pftb-r { margin-left: auto; display: flex; align-items: center; gap: 9px; flex: none; }
+.pftb-search {
+    display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+    padding: 5px 9px 5px 10px; border-radius: 9px;
+    border: 1px solid var(--border-color, rgba(15, 23, 42, 0.1)); background: none;
+    font-family: var(--font-ui); font-size: 12px; color: #94a3b8; transition: border-color 0.14s, color 0.14s;
+}
+.pftb-search svg { width: 14px; height: 14px; }
+.pftb-search:hover { border-color: rgba(15, 23, 42, 0.22); color: #475569; }
+.pftb-search kbd {
+    font-family: var(--font-num); font-size: 10px; padding: 1px 5px; border-radius: 5px;
+    background: rgba(15, 23, 42, 0.06); color: #94a3b8;
+}
+/* деньги — ОДНОЙ строкой: два столбика с надстрочными капс-лейблами отвергнуты */
+.pftb-money { display: flex; align-items: baseline; gap: 7px; white-space: nowrap; }
+.pftb-money:empty { display: none; }
+.pftb-money i { font-style: normal; font-size: 11px; color: #94a3b8; }
+.pftb-money b {
+    font-family: var(--font-num); font-size: 13px; font-weight: 700;
+    color: #0f172a; font-variant-numeric: tabular-nums;
+}
+.pftb-money s { text-decoration: none; color: #cbd5e1; margin: 0 2px; }
+.pftb-acct {
+    display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;
+    border: 1px solid var(--border-color, rgba(15, 23, 42, 0.1)); border-radius: 9px; padding: 4px 10px;
+    font-family: var(--font-num); font-size: 11.5px; font-weight: 600; color: #64748b;
+}
+/* статус СВЯЗИ (не биржевой сессии) — тот же факт, что метка в стакане */
+.pftb-st {
+    display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; flex: none;
+    font-size: 10.5px; font-weight: 700;
+}
+.pftb-st i { font-style: normal; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.pftb-st.ok { color: #16a34a; }
+.pftb-st.wait { color: #94a3b8; }
+.pftb-st.stale { color: #dc2626; }
+
+/* СЕТКА ВО ВЕСЬ ЭКРАН. Пакер считает всё в «строках», строка = пиксель
+   (grid-auto-rows), поэтому растяжка не трогает упаковку вовсе: JS меняет
+   размер строки (--pft-row = свободная высота / высота раскладки), и все
+   блоки масштабируются пропорционально, сохраняя доли, которые человек
+   собрал конструктором. Блоки при этом обязаны тянуться на свою область —
+   иначе они остались бы прежней высоты внутри выросших ячеек.
+   .pfd-fs-measure — такт замера внутри pfdPack: растяжка на нём СНЯТА, иначе
+   блок мерил бы собственную растянутую высоту и замер вырождался бы в нитку. */
+.pfd-grid.pfd-fs { grid-auto-rows: var(--pft-row, 1px); }
+.pfd-grid.pfd-fs:not(.pfd-fs-measure) { align-items: stretch; }
+.pfd-grid.pfd-fs:not(.pfd-fs-measure) > .pfd-item { height: 100% !important; min-height: 0 !important; }
+
+body.dark-mode .pftb { background: #141c27; border-bottom-color: rgba(255, 255, 255, 0.1); }
+body.dark-mode .pftb-back { color: #9fb1c6; }
+body.dark-mode .pftb-back:hover { background: rgba(255, 255, 255, 0.07); color: #f1f6fb; }
+body.dark-mode .pftb-sep { background: rgba(255, 255, 255, 0.12); }
+body.dark-mode .pftb-money b { color: #f1f6fb; }
+body.dark-mode .pftb-money s { color: #3c4a5e; }
+body.dark-mode .pftb-acct, body.dark-mode .pftb-search { border-color: rgba(255, 255, 255, 0.12); }
+body.dark-mode .pftb-st.ok { color: #34d399; }
+body.dark-mode .pftb-st.stale { color: #f87171; }
