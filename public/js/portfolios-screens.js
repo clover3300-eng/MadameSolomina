@@ -51,6 +51,7 @@
     // терминалу обязан выглядеть одинаково
     var IC_LENS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>';
     var IC_FS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H4v5M15 4h5v5M15 20h5v-5M9 20H4v-5"/></svg>';
+    var IC_SIMPLE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>';
 
     // подпись бумаг экрана: полоса должна отвечать «что там», не открывая экран.
     // Тикеры берём из слотов, разложенных в конфиге ЭТОГО экрана
@@ -145,6 +146,11 @@
                 // вход в полноэкранный режим — здесь же, где живёт навигация по
                 // экранам: полоса в этом режиме переезжает наверх целиком, и кнопка
                 // уезжает вместе с ней (там она уже «← Портфели»)
+                // «Просто» — вход для новичка: из обычного дашборда до него иначе
+                // не добраться (сегмент в полосе виден, только когда полоса уже есть)
+                '<button type="button" class="pfts-nbtn pfts-simple" onclick="pftSimpleGo(true)" ' +
+                    'title="Простой режим: сумма в рублях вместо лотов и типов заявок">' +
+                    IC_SIMPLE + '<span>Просто</span></button>' +
                 '<button type="button" class="pfts-nbtn pfts-fs" onclick="pftFsToggle()" ' +
                     'title="Терминал во весь экран: убрать всё, кроме торговли">' +
                     IC_FS + '<span>Во весь экран</span></button>' +
@@ -206,6 +212,8 @@
         // мест вывода, и обнуление здесь просто ломало бы их в шапке.
         if (PF.pftFsOn && PF.pftFsOn()) {
             hideFloating(el);
+            // в «Просто» ряда экранов нет вовсе: бумага там одна, и «Экран 3»
+            // ни о чём не говорит — host не найдётся, выходим тихо
             var host = document.querySelector('#pftBar .pftb-scr');
             if (!host) return;
             var k = stateKey();

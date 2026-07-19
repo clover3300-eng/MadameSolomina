@@ -210,9 +210,15 @@
                     // одна строка 44px. Не прячем его стилями, а НЕ РИСУЕМ вовсе —
                     // скрытый герой всё равно считался бы и мерялся при упаковке сетки.
                     var fs = PF.pftFsOn && PF.pftFsOn();
-                    body = fs
-                        ? PF.pftBarHtml() + wrapPanel(pfdBodyHtml(favStr, noBonds))
-                        : chrome + wrapPanel(PF.pftLiveBanner() + pfdBodyHtml(favStr, noBonds));
+                    // «Просто» — та же вкладка и тот же счёт, но вместо сетки
+                    // конструктора одна колонка карточек: сложность разная,
+                    // данные одни (см. pftSimpleHtml)
+                    var simple = PF.pftSimpleOn && PF.pftSimpleOn();
+                    body = simple
+                        ? PF.pftBarHtml() + wrapPanel(PF.pftSimpleHtml())
+                        : fs
+                            ? PF.pftBarHtml() + wrapPanel(pfdBodyHtml(favStr, noBonds))
+                            : chrome + wrapPanel(PF.pftLiveBanner() + pfdBodyHtml(favStr, noBonds));
                 } else {
                     body = chrome + wrapPanel(PF.pfxTradingHtml());
                 }

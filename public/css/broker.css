@@ -1684,3 +1684,169 @@ body.dark-mode .btr-keys-row { border-top-color: rgba(255, 255, 255, 0.08); }
 body.dark-mode .btr-keys-row kbd { background: rgba(255, 255, 255, 0.09); color: #dbe4f0; }
 body.dark-mode .btr-keys-row span { color: #9fb1c6; }
 body.dark-mode .btr-keys-note { background: rgba(52, 211, 153, 0.12); color: #6ee7b7; }
+
+/* ==================================================================
+   РЕЖИМ «ПРОСТО»
+   ==================================================================
+   Одна колонка карточек вместо сетки конструктора. Свёрстан сразу
+   мобильно: колонка, крупные мишени, никаких горизонтальных таблиц —
+   на телефоне меняется только ширина, а не раскладка. */
+.pftb-seg {
+    display: inline-flex; align-items: center; flex: none; gap: 2px; padding: 2px;
+    border-radius: 10px; background: rgba(15, 23, 42, 0.06);
+}
+.pftb-seg button {
+    border: 0; background: none; cursor: pointer; padding: 5px 12px; border-radius: 8px;
+    font-family: var(--font-ui); font-size: 12.5px; font-weight: 600; color: #64748b;
+    transition: background 0.14s, color 0.14s;
+}
+.pftb-seg button.on { background: var(--card, #fff); color: #0f172a; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1); }
+
+.sx { display: flex; flex-direction: column; gap: 14px; max-width: 760px; margin: 0 auto; padding-bottom: 24px; }
+.sx-card {
+    background: var(--card, #fff); border-radius: 18px; padding: 20px 22px;
+    border: 1px solid var(--border-color, rgba(15, 23, 42, 0.07));
+}
+.sx-card h4 { font-family: var(--font-head); font-size: 17px; margin: 0 0 10px; }
+.sx-pick p { font-size: 13.5px; line-height: 1.55; color: #64748b; margin: 0 0 14px; }
+.sx-empty { font-size: 13.5px; color: #94a3b8; padding: 10px 0; }
+
+/* шапка бумаги: имя слева, цена справа крупно */
+.sx-co { display: flex; align-items: center; gap: 14px; }
+.sx-logo {
+    flex: none; width: 46px; height: 46px; border-radius: 13px; display: inline-flex;
+    align-items: center; justify-content: center; background: rgba(22, 163, 74, 0.1);
+    font-family: var(--font-num); font-size: 11px; font-weight: 800; color: #15803d;
+}
+.sx-conm { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.sx-conm b { font-size: 15.5px; font-weight: 700; }
+.sx-conm i { font-style: normal; font-size: 12px; color: #94a3b8; }
+.sx-px { text-align: right; display: flex; flex-direction: column; gap: 2px; flex: none; }
+.sx-px b { font-family: var(--font-num); font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+.sx-px i { font-style: normal; font-size: 12px; }
+.sx-px i.up, .sx-mcell b.up, .tot b.up { color: #16a34a; }
+.sx-px i.dn, .sx-mcell b.dn, .tot b.dn { color: #dc2626; }
+
+/* «Что нужно знать» — три факта, которые обычно узнают после первой сделки */
+.sx-know { display: flex; flex-direction: column; gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(15, 23, 42, 0.07); }
+.sx-know > div { display: flex; gap: 11px; align-items: flex-start; }
+.sx-know i {
+    flex: none; width: 20px; height: 20px; border-radius: 50%; font-style: normal;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(15, 23, 42, 0.06); font-size: 11px; font-weight: 700; color: #64748b;
+}
+.sx-know b { display: block; font-size: 13.5px; font-weight: 700; margin-bottom: 2px; }
+.sx-know p { margin: 0; font-size: 12.5px; line-height: 1.5; color: #64748b; }
+.sx-know-more { margin-top: 14px; font-size: 12.5px; line-height: 1.5; color: #94a3b8; }
+
+/* карточка сделки */
+.sx-side { display: flex; gap: 6px; padding: 4px; border-radius: 12px; background: rgba(15, 23, 42, 0.05); margin-bottom: 18px; }
+.sx-side button {
+    flex: 1; border: 0; background: none; cursor: pointer; padding: 10px; border-radius: 9px;
+    font-family: var(--font-ui); font-size: 14px; font-weight: 700; color: #64748b; transition: background 0.14s, color 0.14s;
+}
+.sx-side button.on { background: #16a34a; color: #fff; }
+.sx-side button.on.sell { background: #dc2626; }
+.sx-lab { font-size: 12.5px; color: #94a3b8; margin-bottom: 6px; }
+.sx-sum { display: flex; align-items: baseline; gap: 8px; }
+.sx-sum input {
+    width: 100%; max-width: 240px; border: 0; background: none; padding: 0;
+    font-family: var(--font-num); font-size: 40px; font-weight: 700; letter-spacing: -0.02em;
+    color: inherit; -moz-appearance: textfield;
+}
+.sx-sum input::-webkit-outer-spin-button, .sx-sum input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.sx-sum input:focus { outline: none; }
+.sx-sum > span { font-size: 15px; color: #94a3b8; white-space: nowrap; }
+.sx-quick { display: flex; flex-wrap: wrap; gap: 7px; margin: 14px 0 16px; }
+.sx-quick button {
+    border: 1px solid rgba(15, 23, 42, 0.1); background: none; cursor: pointer;
+    padding: 8px 14px; border-radius: 999px; font-family: var(--font-ui); font-size: 13px; color: #475569;
+    transition: border-color 0.14s, background 0.14s, color 0.14s;
+}
+.sx-quick button:hover { border-color: rgba(15, 23, 42, 0.25); }
+.sx-quick button.on { background: #0f172a; border-color: #0f172a; color: #fff; }
+/* перевод «рубли → бумаги» с объяснением, почему не ровно */
+.sx-conv { padding: 14px 16px; border-radius: 13px; background: rgba(22, 163, 74, 0.07); }
+.sx-conv.muted { background: rgba(15, 23, 42, 0.04); }
+.sx-conv b { display: block; font-family: var(--font-num); font-size: 22px; font-weight: 700; color: #15803d; }
+.sx-conv.muted b { color: #64748b; }
+.sx-conv p { margin: 4px 0 0; font-size: 12.5px; line-height: 1.5; color: #64748b; }
+.sx-tot { margin-top: 16px; display: flex; flex-direction: column; }
+.sx-tot > div { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid rgba(15, 23, 42, 0.06); }
+.sx-tot > div:first-child { border-top: 0; }
+.sx-tot span { font-size: 13px; color: #64748b; }
+.sx-tot b { font-family: var(--font-num); font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.sx-tot .big { border-top-width: 1px; border-top-color: rgba(15, 23, 42, 0.14); padding-top: 12px; margin-top: 4px; }
+.sx-tot .big span { color: #0f172a; font-weight: 600; }
+.sx-tot .big b { font-size: 18px; font-weight: 700; }
+.sx-tax { display: flex; gap: 10px; margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: rgba(217, 119, 6, 0.08); }
+.sx-tax svg { width: 16px; height: 16px; flex: none; color: #d97706; margin-top: 1px; }
+.sx-tax span { font-size: 12.5px; line-height: 1.5; color: #92610a; }
+.sx-alt { display: block; width: 100%; margin-top: 14px; border: 0; background: none; cursor: pointer; padding: 8px 0; text-align: left; font-family: var(--font-ui); font-size: 13px; color: #2563eb; }
+.sx-alt:hover { text-decoration: underline; }
+.sx-cta {
+    display: block; width: 100%; margin-top: 14px; border: 0; cursor: pointer;
+    padding: 16px; border-radius: 14px; background: #16a34a; color: #fff;
+    font-family: var(--font-ui); font-size: 15.5px; font-weight: 700;
+    box-shadow: 0 14px 28px -12px rgba(22, 163, 74, 0.8); transition: filter 0.15s;
+}
+.sx-cta.sell { background: #dc2626; box-shadow: 0 14px 28px -12px rgba(220, 38, 38, 0.8); }
+.sx-cta:hover { filter: brightness(1.06); }
+.sx-cta.off { background: #e2e8f0; color: #64748b; box-shadow: none; cursor: default; }
+.sx-note { margin-top: 10px; font-size: 12px; color: #94a3b8; text-align: center; }
+
+/* «Мои вложения» человеческим языком */
+.sx-mh { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+.sx-mh h4 { margin: 0; }
+.sx-mh .tot { font-size: 12.5px; color: #94a3b8; }
+.sx-mh .tot b { font-family: var(--font-num); font-weight: 700; color: #0f172a; }
+.sx-mrow { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-top: 1px solid rgba(15, 23, 42, 0.06); flex-wrap: wrap; }
+.sx-mnm { flex: 1 1 150px; min-width: 0; display: flex; flex-direction: column; }
+.sx-mnm b { font-family: var(--font-num); font-size: 13.5px; font-weight: 700; }
+.sx-mnm span { font-size: 12px; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sx-mcell { flex: 0 0 auto; display: flex; flex-direction: column; gap: 1px; min-width: 96px; }
+.sx-mcell span { font-size: 10.5px; color: #94a3b8; }
+.sx-mcell b { font-family: var(--font-num); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.sx-mact { display: flex; gap: 6px; flex: none; }
+.sx-mact button {
+    border: 1px solid rgba(15, 23, 42, 0.12); background: none; cursor: pointer;
+    padding: 7px 12px; border-radius: 9px; font-family: var(--font-ui); font-size: 12.5px; color: #475569;
+}
+.sx-mact button.buy { border-color: rgba(22, 163, 74, 0.35); color: #15803d; }
+.sx-mact button:hover { background: rgba(15, 23, 42, 0.04); }
+
+/* МОБИЛЬНАЯ ВЁРСТКА. Раскладка не меняется — она и была колонкой; меняются
+   только размеры и то, что кнопки строки уезжают под неё на всю ширину. */
+@media (max-width: 700px) {
+    .sx { gap: 10px; }
+    .sx-card { padding: 16px; border-radius: 15px; }
+    .sx-co { flex-wrap: wrap; }
+    .sx-px { text-align: left; width: 100%; }
+    .sx-sum input { font-size: 34px; }
+    .sx-quick button { flex: 1 1 auto; text-align: center; }
+    .sx-mrow { gap: 8px; }
+    .sx-mcell { min-width: 88px; flex: 1 1 88px; }
+    .sx-mact { width: 100%; }
+    .sx-mact button { flex: 1; }
+}
+
+body.dark-mode .pftb-seg { background: rgba(255, 255, 255, 0.08); }
+body.dark-mode .pftb-seg button { color: #9fb1c6; }
+body.dark-mode .pftb-seg button.on { background: #1e2836; color: #f1f6fb; }
+body.dark-mode .sx-card { background: #141c27; border-color: rgba(255, 255, 255, 0.09); }
+body.dark-mode .sx-conm i, body.dark-mode .sx-know p, body.dark-mode .sx-tot span,
+body.dark-mode .sx-mcell span, body.dark-mode .sx-mh .tot { color: #9fb1c6; }
+body.dark-mode .sx-know { border-top-color: rgba(255, 255, 255, 0.09); }
+body.dark-mode .sx-know i { background: rgba(255, 255, 255, 0.09); color: #9fb1c6; }
+body.dark-mode .sx-side, body.dark-mode .sx-conv.muted { background: rgba(255, 255, 255, 0.06); }
+body.dark-mode .sx-conv { background: rgba(52, 211, 153, 0.12); }
+body.dark-mode .sx-conv b { color: #6ee7b7; }
+body.dark-mode .sx-quick button { border-color: rgba(255, 255, 255, 0.14); color: #dbe4f0; }
+body.dark-mode .sx-quick button.on { background: #f1f6fb; border-color: #f1f6fb; color: #0f172a; }
+body.dark-mode .sx-tot > div, body.dark-mode .sx-mrow { border-top-color: rgba(255, 255, 255, 0.08); }
+body.dark-mode .sx-tot .big { border-top-color: rgba(255, 255, 255, 0.18); }
+body.dark-mode .sx-tot .big span, body.dark-mode .sx-mh .tot b { color: #f1f6fb; }
+body.dark-mode .sx-tax { background: rgba(251, 191, 36, 0.12); }
+body.dark-mode .sx-tax span { color: #fcd34d; }
+body.dark-mode .sx-cta.off { background: rgba(255, 255, 255, 0.1); color: #9fb1c6; }
+body.dark-mode .sx-mact button { border-color: rgba(255, 255, 255, 0.14); color: #dbe4f0; }

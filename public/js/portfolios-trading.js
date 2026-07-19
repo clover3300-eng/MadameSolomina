@@ -198,6 +198,12 @@
     }
     // какие слоты СЕЙЧАС на экране: только их и опрашиваем (скрытый блок молчит)
     function liveSlots() {
+        // «Просто» рисует не карточки терминала, а одну колонку — но цена ему
+        // нужна та же и берётся тем же стаканом, значит слот у него живой
+        if (simpleOn() && document.querySelector('#panel-portfolios.active .sx')) {
+            var one = slotNums()[0] || 1;
+            return S(one).uid ? [one] : [];
+        }
         var out = [], seen = {};
         var els = document.querySelectorAll('#panel-portfolios.active .btr-card[data-slot]');
         Array.prototype.forEach.call(els, function (el) {
@@ -231,7 +237,9 @@
             name: String(m.name || '').slice(0, 160),
             figi: normId(m.figi),
             lot: Math.max(1, Math.floor(+m.lot || 1)),
-            minInc: +m.minInc > 0 ? +m.minInc : 0.01
+            minInc: +m.minInc > 0 ? +m.minInc : 0.01,
+            aci: +m.aci > 0 ? +m.aci : 0,
+            kind: String(m.kind || '').slice(0, 24)
         };
     }
     function saveSlots() {
@@ -1432,6 +1440,7 @@
                 T.port = { list: out, ts: Date.now() };
                 repaintPos();
                 fsRepaintBits();   // «портфель» в полосе полноэкранного режима
+                sxTick();          // «Мои вложения» в «Просто»
             });
         }).catch(function () { /* тихо: карточка покажет прошлый снимок */ });
     }
@@ -1643,8 +1652,9 @@
     // (рендер «Портфелей» при уходе на другой раздел не перезапускается)
     function stillHere() {
         // .btr-card есть у любой карточки терминала: стакан могли удалить,
-        // а тикет и «Мои заявки» оставить — поллинг им всё ещё нужен
-        if (document.querySelector('#panel-portfolios.active .btr-card')) return true;
+        // а тикет и «Мои заявки» оставить — поллинг им всё ещё нужен.
+        // .sx — режим «Просто»: карточек терминала там нет вовсе, а данные те же
+        if (document.querySelector('#panel-portfolios.active .btr-card, #panel-portfolios.active .sx')) return true;
         stopPolling();
         return false;
     }
@@ -1671,6 +1681,7 @@
                 repaintOb(n);
                 repaintWarns(n);
                 repaintTicketBits(n);
+                sxTick();         // в «Просто» цена и разбивка живут тем же тиком
                 freshTick();      // связь вернулась — снять гашение сразу, не ждя такта
             }).catch(function (e) {
                 // Глубину просим с запасом — но если брокер такую не отдаёт,
@@ -2094,7 +2105,12 @@
             var i = d.instrument || {};
             instrMem[uid] = {
                 uid: uid, ticker: i.ticker || '', name: i.name || '', figi: i.figi || '',
-                lot: +i.lot || 1, minInc: A().q2n(i.minPriceIncrement) || 0.01
+                lot: +i.lot || 1, minInc: A().q2n(i.minPriceIncrement) || 0.01,
+                // для режима «Просто»: НКД за штуку и вид бумаги. У акций НКД нет
+                // и поле не придёт — тогда 0, и формула полной цены схлопывается
+                // до «цена + комиссия», как и должна
+                aci: A().q2n(i.aciValue) || 0,
+                kind: String(i.instrumentType || i.instrumentKind || '')
             };
             if (!quiet) return instrMem[uid];
             repaintOrders();
@@ -2147,6 +2163,11 @@
     }
     // зовётся из цикла рендера portfolios.js: включает/гасит поллинг по месту
     function pftAfterRender() {
+        // «Просто» живёт без карточек терминала (.btr-card), но данные ему нужны
+        // те же самые — стакан для цены, позиции для «Мои вложения»
+        if (simpleOn() && document.querySelector('#panel-portfolios.active .sx')) {
+            sxWire(); startPolling(); return;
+        }
         var live = document.querySelector('#panel-portfolios.active .btr-card');
         if (live && tradeReady()) { wire(); fitObserve(); fitSoon(); startPolling(); fsTapeOnce(); }
         else { if (fitRO) fitRO.disconnect(); stopPolling(); }
@@ -2994,16 +3015,29 @@
     // действительно нужное: выход, экраны, поиск, деньги, счёт, связь.
     // Режим переживает перезагрузку: работающий в терминале не должен входить
     // в него заново после каждого F5.
-    var FS_KEY = 'bt_fs_v1';
-    var fsState = null;
-    function fsOn() {
+    var FS_KEY = 'bt_fs_v1', SIMPLE_KEY = 'bt_simple_v1';
+    var fsState = null, simpleState = null;
+    function rawFs() {
         if (fsState === null) {
             try { fsState = localStorage.getItem(FS_KEY) === '1'; } catch (e) { fsState = false; }
         }
-        // Гейт (брокер не подключён) в полноэкранный режим не уходит: там
-        // навигация нужнее терминала, а прятать её не за чем — терминала нет.
-        return fsState && tradeReady();
+        return fsState;
     }
+    function rawSimple() {
+        if (simpleState === null) {
+            try { simpleState = localStorage.getItem(SIMPLE_KEY) === '1'; } catch (e) { simpleState = false; }
+        }
+        return simpleState;
+    }
+    // «Просто» — не отдельная вкладка, а ДРУГАЯ СЛОЖНОСТЬ той же: счёт один,
+    // бумага одна, меняется только способ разговора. Поэтому полосу режим делит
+    // с полноэкранным терминалом, а вместо сетки рисует одну колонку карточек.
+    function simpleOn() { return rawSimple() && tradeReady(); }
+    PF.pftSimpleOn = simpleOn;
+    // fsOn = «полоса вместо хрома»: она одна на оба режима.
+    // Гейт (брокер не подключён) сюда не уходит: там навигация нужнее терминала,
+    // а прятать её не за чем — терминала нет.
+    function fsOn() { return (rawFs() || rawSimple()) && tradeReady(); }
     PF.pftFsOn = fsOn;
     // Класс на body НЕ ставим: он бы «залипал» при уходе на другую вкладку сайта
     // (renderPortfolios там не зовётся). CSS режима висит на body:has(#pftBar) —
@@ -3013,7 +3047,15 @@
         try { localStorage.setItem(FS_KEY, fsState ? '1' : '0'); } catch (e) {}
         if (PF.renderNoAnim) PF.renderNoAnim();
     }
-    window.pftFsToggle = function () { fsSet(!fsState); };
+    function simpleSet(on) {
+        simpleState = !!on;
+        try { localStorage.setItem(SIMPLE_KEY, simpleState ? '1' : '0'); } catch (e) {}
+        if (PF.renderNoAnim) PF.renderNoAnim();
+    }
+    window.pftFsToggle = function () { fsSet(!rawFs()); };
+    // Переключатель ведёт В ОБЕ стороны и не теряет обратной дороги: «Просто» и
+    // «Терминал» — это один счёт и одна бумага, только разной сложности.
+    window.pftSimpleGo = function (on) { simpleSet(!!on); };
     // Лента сделок в полноэкранном режиме задумана ПОСТОЯННЫМ блоком, и места на
     // неё тут хватает. Раскрываем один раз за сессию — не в обработчике кнопки:
     // режим переживает перезагрузку, и после F5 кнопку никто не нажимает.
@@ -3033,7 +3075,14 @@
         pollTape();
         if (PF.pfdRepackSoon) PF.pfdRepackSoon();
     }
-    window.pftFsExit = function () { if (fsState) fsSet(false); };
+    // Выход гасит ОБА режима сразу: «← Портфели» обещает возврат к обычным
+    // «Портфелям», а не переход из «Просто» в терминал.
+    window.pftFsExit = function () {
+        if (!rawFs() && !rawSimple()) return;
+        fsState = false; simpleState = false;
+        try { localStorage.setItem(FS_KEY, '0'); localStorage.setItem(SIMPLE_KEY, '0'); } catch (e) {}
+        if (PF.renderNoAnim) PF.renderNoAnim();
+    };
 
     // Нижний док (блок «Мои заявки») сворачивается шевроном — высвободившееся
     // уходит наверх само, потому что высоты в этом режиме доли, а не пиксели.
@@ -3097,7 +3146,16 @@
             '<button type="button" class="pftb-back" onclick="pftFsExit()" ' +
                 'title="Выйти из терминала (Esc)">' + IC_BACK + 'Портфели</button>' +
             '<span class="pftb-sep"></span>' +
-            '<div class="pftb-scr">' + (PF.pftsBarHtml ? PF.pftsBarHtml() : '') + '</div>' +
+            // переключатель сложности — первым делом после выхода: он и есть
+            // ответ на «мне тут слишком сложно», и терять обратную дорогу нельзя
+            '<div class="pftb-seg" role="tablist" aria-label="Сложность">' +
+                '<button type="button" role="tab" aria-selected="' + simpleOn() + '"' +
+                    (simpleOn() ? ' class="on"' : '') + ' onclick="pftSimpleGo(true)">Просто</button>' +
+                '<button type="button" role="tab" aria-selected="' + !simpleOn() + '"' +
+                    (simpleOn() ? '' : ' class="on"') + ' onclick="pftSimpleGo(false)">Терминал</button>' +
+            '</div>' +
+            // экраны — только у терминала: в «Просто» бумага одна и «экран 3» ни о чём
+            (simpleOn() ? '' : '<div class="pftb-scr">' + (PF.pftsBarHtml ? PF.pftsBarHtml() : '') + '</div>') +
             '<div class="pftb-r">' +
                 '<button type="button" class="pftb-search" onclick="pftFsSearch()" ' +
                     'title="Найти бумагу">' + IC_LENS + '<span>Тикер или название</span><kbd>/</kbd></button>' +
@@ -3203,6 +3261,306 @@
         e.preventDefault();
         fsSet(false);
     });
+
+    // ================= РЕЖИМ «ПРОСТО» =================
+    // Новичок считает не в лотах, а в рублях: «вложу 30 000». Интерфейс сам
+    // переводит это в бумаги и честно объясняет, почему не ровно.
+    //
+    // ГЛАВНОЕ ПРАВИЛО СЧЁТА: количество делится на ПОЛНУЮ цену покупки —
+    // цена + НКД + комиссия. Считать по одной цене — самая частая ловушка:
+    // в «вложу 30 000 ₽» влезет 48 облигаций, а спишется 30 830 ₽. Человек
+    // воспримет это как обман, а заявка может и вовсе не пройти по деньгам.
+    // Из этого же правила само собой получается «Всё»: если делитель включает
+    // комиссию, сумма никогда не вылезает за свободные деньги.
+    var simpleSum = '';   // что человек ввёл (рубли при покупке, штуки при продаже)
+    // ДЕНЬГИ ЗДЕСЬ — С КОПЕЙКАМИ. Общий fmtRub округляет до рубля, и в терминале
+    // это правильно: там смотрят на порядок. Но «Просто» обещает «спишется
+    // ровно столько» — а кнопка «Купить на 29 974 ₽» при списании 29 973,78
+    // это обещание не держит. Ради одного этого экрана берём копейки.
+    function fmtKop(n) {
+        if (n == null || !isFinite(n)) return '—';
+        var neg = n < 0;
+        return (neg ? '−' : '') + Math.abs(n).toLocaleString('ru-RU',
+            { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₽';
+    }
+    function aciOf(s) { return (s.meta && +s.meta.aci) || 0; }   // НКД за штуку, 0 у акций
+    function isBond(s) { return !!(s.meta && /bond/i.test(String(s.meta.kind || ''))); }
+    // Покупка: сколько бумаг влезает в сумму. Возвращает всё, что нужно разбивке.
+    function simpleBuyCalc(s, rub) {
+        var px = estPrice(s) || midPrice(s);
+        var lot = (s.meta && s.meta.lot) || 1;
+        var aci = aciOf(s);
+        var fee = feePct() / 100;
+        var perOne = (px + aci) * (1 + fee);           // полная цена ОДНОЙ бумаги
+        if (!(px > 0) || !(perOne > 0) || !(rub > 0)) return null;
+        var lots = Math.floor(rub / (perOne * lot));
+        if (lots < 1) return { lots: 0, px: px, lot: lot, need: perOne * lot };
+        var qty = lots * lot;
+        var gross = px * qty;
+        var aciSum = aci * qty;
+        var feeSum = (gross + aciSum) * fee;
+        return {
+            lots: lots, qty: qty, px: px, lot: lot, aci: aciSum,
+            gross: gross, fee: feeSum, total: gross + aciSum + feeSum,
+            // «следующая пачка уже не влезет» — объяснение лотности числом
+            nextNeed: perOne * lot * (lots + 1)
+        };
+    }
+    // Продажа: считаем от ШТУК (человек мыслит долями позиции, не рублями)
+    function simpleSellCalc(s, qty) {
+        var px = estPrice(s) || midPrice(s);
+        var lot = (s.meta && s.meta.lot) || 1;
+        var aci = aciOf(s);
+        var fee = feePct() / 100;
+        if (!(px > 0) || !(qty > 0)) return null;
+        var lots = Math.floor(qty / lot);
+        if (lots < 1) return { lots: 0, px: px, lot: lot };
+        var q = lots * lot;
+        var gross = px * q;
+        var aciSum = aci * q;                          // при продаже НКД ПОЛУЧАЮТ
+        var feeSum = (gross + aciSum) * fee;
+        return { lots: lots, qty: q, px: px, lot: lot, aci: aciSum,
+                 gross: gross, fee: feeSum, total: gross + aciSum - feeSum };
+    }
+    // сколько этих бумаг у человека на руках (для продажи и долей)
+    function haveQty(s) {
+        var secs = (T.pos && T.pos.secs) || {};
+        var v = secs[s.uid];
+        if (v == null && s.meta && s.meta.figi) v = secs[s.meta.figi];
+        return Math.max(0, +v || 0);
+    }
+
+    function sxSlot() { return liveSlots()[0] || slotNums()[0] || 1; }
+    // «Что нужно знать» — три факта, которые обычно узнают уже ПОСЛЕ первой
+    // сделки: лотность, комиссия, подвижная цена
+    function sxKnowHtml(s, c) {
+        var lot = (s.meta && s.meta.lot) || 1;
+        var fee = feePct();
+        var ex = c && c.gross > 0 ? ' С покупки на ' + fmtKop(c.gross) + ' это ' + fmtKop(c.fee) + '.' : '';
+        var rows = [];
+        if (lot > 1) rows.push(['Покупать можно по ' + lot + ' штук',
+            'Биржа продаёт эту бумагу пачками по ' + lot + ' — это называется лот.']);
+        rows.push(['Комиссия ' + String(fee).replace('.', ',') + '%',
+            'Берётся брокером с суммы сделки.' + ex + ' Она уже посчитана ниже.']);
+        rows.push(['Цена всё время меняется',
+            'Пока заявка идёт на биржу, цена может немного сдвинуться.']);
+        return '<div class="sx-know">' + rows.map(function (r) {
+            return '<div><i>?</i><span><b>' + esc(r[0]) + '</b><p>' + esc(r[1]) + '</p></span></div>';
+        }).join('') + '</div>' +
+        '<div class="sx-know-more">Передумать можно в любой момент: заявку — отменить, пока она не ' +
+        'исполнилась, купленное — продать в любой торговый день.</div>';
+    }
+    function sxMoneyRow(k, v, big) {
+        return '<div' + (big ? ' class="big"' : '') + '><span>' + k + '</span><b>' + v + '</b></div>';
+    }
+    // карточка сделки: слева крупно цена, ниже — сумма, перевод, разбивка, кнопка
+    function sxDealHtml(n) {
+        var s = S(n);
+        var buy = s.side !== 'sell';
+        var free = T.pos.money;
+        var have = haveQty(s);
+        var head = '<div class="sx-side">' +
+            '<button type="button" class="' + (buy ? 'on' : '') + '" onclick="pftSxSide(\'buy\')">Купить</button>' +
+            '<button type="button" class="' + (buy ? '' : 'on sell') + '" onclick="pftSxSide(\'sell\')">Продать</button></div>';
+        if (!buy && !(have > 0)) {
+            return '<div class="sx-card">' + head +
+                '<div class="sx-empty">Этой бумаги у вас нет — продавать нечего.</div></div>';
+        }
+        var c = buy ? simpleBuyCalc(s, +simpleSum || 0) : simpleSellCalc(s, +simpleSum || 0);
+        var lot = (s.meta && s.meta.lot) || 1;
+        // Быстрые кнопки. «Всё» при покупке — ВСЕ свободные деньги: делитель уже
+        // включает комиссию, поэтому итог не вылезет за них (см. simpleBuyCalc).
+        var quick = buy
+            ? [['5 000', 5000], ['10 000', 10000], ['30 000', 30000]]
+                .concat(free > 0 ? [['Всё', Math.floor(free)]] : [])
+            : [['Четверть', Math.floor(have / 4)], ['Половина', Math.floor(have / 2)], ['Всё', have]];
+        var quickHtml = '<div class="sx-quick">' + quick.map(function (q) {
+            var on = +simpleSum === q[1] ? ' class="on"' : '';
+            return '<button type="button"' + on + ' onclick="pftSxQuick(' + q[1] + ')">' + esc(q[0]) + '</button>';
+        }).join('') + '</div>';
+        var sum = '<div class="sx-lab">' + (buy ? 'Сколько вложить' : 'Сколько продать') + '</div>' +
+            '<div class="sx-sum"><input id="btSxSum" type="number" min="0" step="' + (buy ? '100' : lot) + '" ' +
+                'inputmode="numeric" value="' + esc(simpleSum) + '" placeholder="0" aria-label="' +
+                (buy ? 'Сумма в рублях' : 'Количество бумаг') + '">' +
+            '<span>' + (buy ? '₽' : 'шт из ' + have.toLocaleString('ru-RU')) + '</span></div>';
+        // перевод «рубли → бумаги» с объяснением, почему не ровно
+        var conv;
+        if (!c) conv = '<div class="sx-conv muted">Укажите сумму — покажем, сколько получится бумаг.</div>';
+        else if (!c.lots) conv = '<div class="sx-conv muted"><b>Пока не хватает</b><p>' +
+            (buy ? 'Минимальная покупка — ' + lot + ' шт, это ' + fmtKop(c.need) + ' с комиссией.'
+                 : 'Продавать можно пачками по ' + lot + ' шт.') + '</p></div>';
+        else conv = '<div class="sx-conv"><b>' + c.qty.toLocaleString('ru-RU') + ' ' + (buy ? 'шт' : 'шт') + '</b><p>' +
+            (buy
+                ? (lot > 1 ? 'Больше не получится: следующая пачка из ' + lot + ' шт уже выйдет за ' +
+                    fmtKop(+simpleSum) + ' (нужно ' + fmtKop(c.nextNeed) + ').'
+                    : 'По текущей цене это всё, что помещается в сумму.')
+                : 'Столько стоит ' + fmtKop(c.gross) + ' по текущей цене ' + fmtPx(c.px, s) + ' ₽.') +
+            '</p></div>';
+        var body = '';
+        if (c && c.lots) {
+            var rows = sxMoneyRow(c.qty.toLocaleString('ru-RU') + ' шт по ' + fmtPx(c.px, s) + ' ₽', fmtKop(c.gross));
+            if (c.aci > 0) rows += sxMoneyRow('Накопленный купон', (buy ? '' : '+') + fmtKop(c.aci));
+            rows += sxMoneyRow('Комиссия брокера', fmtKop(c.fee));
+            if (free != null) {
+                rows += sxMoneyRow(buy ? 'Останется свободно' : 'Станет свободно',
+                    fmtKop(buy ? free - c.total : free + c.total), true);
+            }
+            body = '<div class="sx-tot">' + rows + '</div>';
+        }
+        // Налог — единственное, о чём новичок не догадывается сам. Говорим фактом,
+        // без обещаний, и сразу снимаем панику: удержат по итогам года.
+        var tax = (!buy && c && c.lots)
+            ? '<div class="sx-tax">' + IC_SHIELD + '<span>Если продаёте с прибылью, с неё удержат налог 13%. ' +
+              'Обычно это происходит по итогам года, а не в момент продажи.</span></div>' : '';
+        var alt = '<button type="button" class="sx-alt" onclick="pftSxLimit()">Хочу ' +
+            (buy ? 'дождаться цены пониже' : 'дождаться цены повыше') + ' →</button>';
+        var can = !!(c && c.lots);
+        var blk = submitBlock(s);
+        var cta = '<button type="button" class="sx-cta' + (buy ? '' : ' sell') + (can && !blk ? '' : ' off') + '" ' +
+            (can && !blk ? '' : 'disabled ') + 'onclick="pftSxGo()">' +
+            (blk ? esc(blk) : (can ? (buy ? 'Купить на ' + fmtKop(c.total) : 'Продать на ' + fmtKop(c.total))
+                                   : (buy ? 'Купить' : 'Продать'))) + '</button>';
+        return '<div class="sx-card">' + head + sum + quickHtml + conv + body + tax + alt + cta +
+            '<div class="sx-note">Дальше — проверка заказа. ' +
+            (buy ? 'Деньги спишутся' : 'Бумаги спишутся') + ' только после неё.</div></div>';
+    }
+    // «Мои вложения» человеческим языком: вложено · сейчас стоит · заработано.
+    // Ни средней цены, ни переоценки — эти слова тут не нужны.
+    function sxMineHtml() {
+        var list = T.port.list || [];
+        if (!list.length) {
+            return '<div class="sx-card sx-mine"><h4>Мои вложения</h4>' +
+                '<div class="sx-empty">' + esc(T.port.ts ? 'Пока ничего не куплено.' : 'Загружаем…') + '</div></div>';
+        }
+        var inv = 0, now = 0;
+        list.forEach(function (p) { inv += p.avg * p.qty; now += p.val; });
+        var d = now - inv, up = d >= 0;
+        var rows = list.map(function (p) {
+            var pd = p.pnl, pu = pd >= 0;
+            var ms = { meta: p.meta || null };
+            return '<div class="sx-mrow">' +
+                '<span class="sx-mnm"><b>' + esc(p.ticker) + '</b><span>' +
+                    esc((p.meta && p.meta.name) || '') + '</span></span>' +
+                '<span class="sx-mcell"><span>вложено</span><b>' + fmtKop(p.avg * p.qty) + '</b></span>' +
+                '<span class="sx-mcell"><span>сейчас стоит</span><b>' + fmtKop(p.val) + '</b></span>' +
+                '<span class="sx-mcell"><span>заработано</span><b class="' + (pu ? 'up' : 'dn') + '">' +
+                    (pu ? '+' : '−') + fmtKop(Math.abs(pd)) + '</b></span>' +
+                '<span class="sx-mact">' +
+                    '<button type="button" onclick="pftSxPick(\'' + jsArg(p.uid) + '\',\'sell\')">Продать</button>' +
+                    '<button type="button" class="buy" onclick="pftSxPick(\'' + jsArg(p.uid) + '\',\'buy\')">Купить ещё</button>' +
+                '</span></div>';
+        }).join('');
+        return '<div class="sx-card sx-mine">' +
+            '<div class="sx-mh"><h4>Мои вложения</h4>' +
+            '<span class="tot">Всего вложено <b>' + fmtKop(inv) + '</b> · сейчас стоит <b>' + fmtKop(now) +
+            '</b> · заработано <b class="' + (up ? 'up' : 'dn') + '">' + (up ? '+' : '−') +
+            fmtKop(Math.abs(d)) + '</b></span></div>' + rows + '</div>';
+    }
+    PF.pftSimpleHtml = function () {
+        var n = sxSlot(), s = S(n);
+        if (!s.meta) {
+            return '<div class="sx"><div class="sx-card sx-pick">' +
+                '<h4>Выберите бумагу</h4><p>Нажмите «Найти компанию» в строке сверху — покажем цену, ' +
+                'график и посчитаем, сколько бумаг выйдет на вашу сумму.</p></div>' + sxMineHtml() + '</div>';
+        }
+        // ОБЛИГАЦИИ пока не пускаем: их котировка идёт в процентах от номинала,
+        // и без проверки на живом счёте счёт в рублях был бы гаданием. Ошибиться
+        // в деньгах хуже, чем честно отправить в терминал.
+        if (isBond(s)) {
+            return '<div class="sx"><div class="sx-card sx-pick">' +
+                '<h4>' + esc(s.meta.ticker) + ' — облигация</h4>' +
+                '<p>Простой режим пока считает только акции и фонды: у облигаций цена указывается ' +
+                'в процентах от номинала, и показывать приблизительные рубли здесь нельзя.</p>' +
+                '<button type="button" class="sx-cta" onclick="pftSimpleGo(false)">Открыть в терминале</button>' +
+                '</div>' + sxMineHtml() + '</div>';
+        }
+        var c = simpleBuyCalc(s, +simpleSum || 0);
+        var last = s.ob ? (A().q2n(s.ob.lastPrice) || estPrice(s)) : estPrice(s);
+        var close = s.ob ? A().q2n(s.ob.closePrice) : 0;
+        var d = (last > 0 && close > 0) ? last - close : 0;
+        var head = '<div class="sx-card">' +
+            '<div class="sx-co">' +
+                '<span class="sx-logo">' + esc(String(s.meta.ticker).slice(0, 4)) + '</span>' +
+                '<span class="sx-conm"><b>' + esc(s.meta.name || s.meta.ticker) + '</b>' +
+                    '<i>' + esc(s.meta.ticker) + ' · Московская биржа</i></span>' +
+                '<span class="sx-px"><b>' + (last > 0 ? fmtPx(last, s) + ' ₽' : '—') + '</b>' +
+                    (d ? '<i class="' + (d > 0 ? 'up' : 'dn') + '">' + (d > 0 ? '+' : '−') +
+                        fmtPx(Math.abs(d), s) + ' ₽ за сегодня</i>' : '') + '</span>' +
+            '</div>' + sxKnowHtml(s, c) + '</div>';
+        return '<div class="sx">' + head + sxDealHtml(n) + sxMineHtml() + '</div>';
+    };
+    function sxRepaint() {
+        var host = document.querySelector('.sx');
+        if (!host) return;
+        var f = document.activeElement, wasSum = f && f.id === 'btSxSum';
+        var pos = wasSum ? f.selectionStart : 0;
+        host.outerHTML = PF.pftSimpleHtml();
+        if (wasSum) {
+            var i = dq('btSxSum');
+            if (i) { i.focus(); try { i.setSelectionRange(pos, pos); } catch (e) {} }
+        }
+        sxWire();   // разметку заменили целиком — обработчик ввода вешаем заново
+    }
+    // тик данных: цена и «Мои вложения» живые. Пока человек ПЕЧАТАЕТ сумму, не
+    // трогаем — перерисовка под пальцами читается как сбой ввода
+    function sxTick() {
+        if (!simpleOn() || !document.querySelector('.sx')) return;
+        var f = document.activeElement;
+        if (f && f.id === 'btSxSum') return;
+        sxRepaint();
+    }
+    PF.pftSxRepaint = sxRepaint;
+    // Ввод суммы перерисовывает разбивку на каждый символ, но БЕЗ запроса к
+    // брокеру: всё считается из уже полученной цены. Каретку sxRepaint бережёт.
+    var sxT = null;
+    function sxWire() {
+        var i = dq('btSxSum');
+        if (!i || i._wired) return;
+        i._wired = true;
+        i.addEventListener('input', function () {
+            simpleSum = i.value.replace(/[^\d]/g, '');
+            clearTimeout(sxT);
+            sxT = setTimeout(sxRepaint, 120);
+        });
+    }
+    window.pftSxSide = function (side) {
+        var s = S(sxSlot());
+        s.side = side === 'sell' ? 'sell' : 'buy';
+        // единица счёта меняется вместе с задачей — прежнее число тут бессмысленно
+        simpleSum = '';
+        saveSlots(); sxRepaint();
+    };
+    window.pftSxQuick = function (v) { simpleSum = String(v); sxRepaint(); };
+    window.pftSxLimit = function () {
+        // «дождаться цены» — это лимитная заявка, но словом. Уводим в терминал
+        // с уже выбранным типом, а не заводим второй интерфейс цены.
+        var s = S(sxSlot());
+        s.kind = 'limit'; saveSlots();
+        simpleSet(false);
+        toast('Это лимитная заявка: укажите свою цену и подтвердите');
+    };
+    window.pftSxPick = function (uid, side) {
+        var n = sxSlot();
+        loadInstrument(n, uid, function (s) {
+            s.side = side === 'sell' ? 'sell' : 'buy';
+            simpleSum = ''; saveSlots(); sxRepaint();
+        });
+        var s0 = S(n);
+        if (s0.uid === uid) { s0.side = side === 'sell' ? 'sell' : 'buy'; simpleSum = ''; saveSlots(); sxRepaint(); }
+    };
+    // Отправка идёт ТЕМ ЖЕ путём, что из терминала: pftAsk — модалка со всеми
+    // деталями, подтверждение суммой и гвард свежести. Заводить для новичка
+    // отдельный, более короткий путь к деньгам было бы ровно наоборот.
+    window.pftSxGo = function () {
+        var n = sxSlot(), s = S(n);
+        var buy = s.side !== 'sell';
+        var c = buy ? simpleBuyCalc(s, +simpleSum || 0) : simpleSellCalc(s, +simpleSum || 0);
+        if (!c || !c.lots) { toast(buy ? 'Укажите сумму покупки' : 'Укажите, сколько продать', true); return; }
+        s.lots = c.lots;
+        s.kind = 'market';   // «купить сейчас» — это рыночная заявка
+        saveSlots();
+        window.pftAsk(n);
+    };
 
     // ПОДСКАЗКА ПО КЛАВИШАМ. Клавиши были реализованы давно, но не названы нигде —
     // то есть их не существовало ни для кого, кроме автора. Список тут ЗЕРКАЛИТ
