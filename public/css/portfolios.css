@@ -1228,6 +1228,22 @@ body.dark-mode .pff-tk { color: #f4f8fd; }
 .pff-tile:hover .pff-del { width: 22px; opacity: 1; }
 .pff-del:hover { color: #e0592b; background: rgba(224, 89, 43, 0.1); }
 body.dark-mode .pff-del { color: #5c6c82; }
+/* «Купить» — короткий путь из избранного в терминал. Тем же приёмом, что корзина
+   рядом: в покое схлопнута в ноль и не теснит имя бумаги в узкой колонке,
+   разворачивается по ховеру плитки. Схлопывается max-width, а не width: у текста
+   своя ширина, и анимировать её от нуля можно только потолком. */
+.pff-buy {
+    flex-shrink: 0; max-width: 0; height: 22px; overflow: hidden; opacity: 0; white-space: nowrap;
+    padding: 0; border: 0; cursor: pointer; border-radius: 999px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: var(--font-ui); font-size: 11px; font-weight: 700;
+    color: #15803d; background: rgba(22, 163, 74, 0.12);
+    transition: opacity 0.14s, max-width 0.14s, padding 0.14s, color 0.12s, background 0.12s;
+}
+.pff-tile:hover .pff-buy, .pff-buy:focus-visible { max-width: 78px; opacity: 1; padding: 0 10px; }
+.pff-buy:hover { color: #fff; background: #16a34a; }
+body.dark-mode .pff-buy { color: #7ee2a8; background: rgba(126, 226, 168, 0.16); }
+body.dark-mode .pff-buy:hover { color: #10201a; background: #7ee2a8; }
 .pff-pot-wrap { text-align: right; flex-shrink: 0; }
 .pff-pot-l { display: block; font-size: 8px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #94a3b8; }
 .pff-pot { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; }

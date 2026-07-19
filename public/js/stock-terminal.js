@@ -672,6 +672,12 @@
              + '<span class="stk-name">' + esc(co.name) + '</span></span>'
              + '</span>'
              + '<span class="stk-first-actions">'
+             // «Купить» — СЛОВОМ, а не иконкой: действие ведёт к деньгам и обязано
+             // называться. Кнопка есть в разметке всегда, показывает её класс
+             // .stk-cantrade на корне (см. syncTradeReady): решать это условием
+             // здесь значило бы перерисовывать таблицу на каждую смену подключения,
+             // схлопывая раскрытые аккордеоны и сбрасывая скролл.
+             + '<button class="stk-buybtn" type="button" data-act="buy" data-ticker="' + esc(co.ticker) + '" title="Открыть тикет на покупку в терминале — заявка не отправляется">Купить</button>'
              + '<button class="stk-cardbtn" type="button" data-act="card" data-ticker="' + esc(co.ticker) + '" data-echelon="' + (isFinite(ech) ? ech : 1) + '" title="Карточка компании: новости и дивиденды" aria-label="Карточка компании">' + CARD_SVG + '</button>'
              + '<button class="stk-fav' + (isFav ? ' active' : '') + '" type="button" data-act="fav" data-ticker="' + esc(co.ticker) + '" title="' + (isFav ? 'Убрать из избранного' : 'В избранное') + '" aria-label="Избранное">' + STAR_SVG + '</button>'
              + '</span>'
@@ -1082,6 +1088,9 @@
         // звезда «в избранное» в строке (проверяем ДО клика по тикеру)
         var favBtn = e.target.closest('[data-act="fav"]');
         if (favBtn) { toggleFav(favBtn.getAttribute('data-ticker')); return; }
+        // «Купить» — короткий путь в терминал (тоже ДО клика по тикеру)
+        var buyBtn = e.target.closest('[data-act="buy"]');
+        if (buyBtn) { goBuy(buyBtn.getAttribute('data-ticker')); return; }
 
         // тумблер режима «По секторам/Общий список». ВАЖНО: подсветку active меняем
         // только у кнопок с data-mode — рядом стоит сегмент класса активов из тех же
@@ -1312,6 +1321,7 @@
             + '<div class="stk-state"></div>'
             + '<div class="stk-scroll"></div>';
         el.addEventListener('click', onClick);
+        syncTradeReady();   // показать/спрятать «Купить» по состоянию подключения
         // Shift+клик по заголовку — не даём браузеру начать выделение текста,
         // иначе жест «добавить столбец в сортировку» выглядит сломанным
         el.addEventListener('mousedown', function (e) {
@@ -1632,6 +1642,43 @@
             b.classList.toggle('active', b.getAttribute('data-asset') === window._mtMode);
         });
     };
+
+    // ---------- короткий путь к сделке ----------
+    // Кнопки «Купить» видны, только когда торговать реально можно. Условие
+    // спрашиваем у brokerApi (он НЕ ленивый) — предикат один на проект, см.
+    // canTrade в broker-api.js. Переключаем КЛАСС на корне, а не перерисовываем
+    // таблицу: перерисовка схлопнула бы раскрытые аккордеоны и сбросила скролл.
+    function syncTradeReady() {
+        var el = root(); if (!el) return;
+        el.classList.toggle('stk-cantrade', !!(window.brokerApi && window.brokerApi.canTrade()));
+    }
+    window.addEventListener('broker-conn-change', syncTradeReady);
+    // «Портфели» — ленивая цепочка: на этой вкладке PF может ещё не существовать,
+    // поэтому точку входа терминала зовём только из колбэка загрузчика.
+    function goBuy(ticker) {
+        if (!ticker) return;
+        var A = window.brokerApi;
+        if (!A || !A.canTrade()) {
+            // сюда попадают мимо кнопки (класс сняли, а клик уже летел) —
+            // молчать нельзя, но и звать в терминал бессмысленно
+            if (typeof window.msToast === 'function') {
+                window.msToast('Подключите брокера в режиме «Торговля» — тогда сделку можно будет выставить', { err: true });
+            }
+            syncTradeReady();
+            return;
+        }
+        if (typeof window.ensurePortfoliosJs !== 'function') return;
+        // Вкладку НЕ переключаем сами: это делает pftLoadPlan и только если
+        // бумага реально нашлась. Иначе человека уносило бы от таблицы в пустой
+        // терминал каждый раз, когда бумаги у брокера нет (делистинг, неторгуемая).
+        // Пока цепочка «Портфелей» качается, клик остался бы без ответа — говорим.
+        if (typeof window.renderPortfolios !== 'function' && typeof window.msToast === 'function') {
+            window.msToast('Открываем терминал…');
+        }
+        window.ensurePortfoliosJs(function () {
+            if (window.PF && PF.pftBuyTicker) PF.pftBuyTicker(ticker, 'buy');
+        });
+    }
 
     // пересчёт ширины sticky-карточек и смещения закреплённых столбцов при ресайзе окна
     window.addEventListener('resize', function () {

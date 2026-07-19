@@ -210,6 +210,15 @@
         if (!c || c.storage !== 'session' || memToken) return false;
         try { return !sessionStorage.getItem(SESSION_KEY); } catch (e) { return true; }
     }
+    // «Можно ли прямо сейчас выставить заявку» — ОДИН источник правды на проект.
+    // Жил в portfolios-trading.js (tradeReady), но тот приезжает только с ленивой
+    // цепочкой «Портфелей»: на вкладке «Рынок» его нет вовсе, а кнопка «Купить»
+    // там нужна. Условие про деньги не должно существовать в двух копиях —
+    // терминал теперь спрашивает отсюда же.
+    function canTrade() {
+        var c = getConn();
+        return !!(c && c.scope === 'trade' && c.state === 'ok' && !isLocked() && !isSessionGone());
+    }
 
     // Токен по режиму хранения. interactive=true разрешает спросить PIN
     // (модалку регистрирует broker-connect.js через setPinPrompt).
@@ -603,6 +612,7 @@
         hasConn: hasConn,
         isLocked: isLocked,
         isSessionGone: isSessionGone,
+        canTrade: canTrade,
         passkeySupported: passkeySupported,   // false до асинхронной проверки, потом обновится
         getToken: getToken,
         lock: lock,

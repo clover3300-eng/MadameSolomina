@@ -1397,16 +1397,24 @@
         } else {
             // R7: не плитки, а спокойный СПИСОК (референс): тикер + имя слева, «потенциал»
             // колонкой справа, строка новости с источником и стрелкой ↗, тонкие разделители.
+            // «Купить» — тот же короткий путь, что из строки «Рынок · Акции»:
+            // считаем предикат ОДИН раз на карточку, а не на каждую строку
+            var canBuy = !!(window.brokerApi && window.brokerApi.canTrade() && PF.pftBuyTicker);
             inner = '<div class="pff-grid pff2-list">' + favs.map(function (tk) {
                 var co = (typeof window.stkFindCompany === 'function') ? window.stkFindCompany(tk) : null;
                 var name = co && co.name ? co.name : tk;
                 var pot = potentialOf(tk);
                 var potHtml = pot == null ? '<span class="pff-pot muted">—</span>'
                     : '<span class="pff-pot ' + (pot >= 0 ? 'pos' : 'neg') + '">' + fmtPct(pot) + '</span>';
+                var buy = canBuy
+                    ? '<button class="pff-buy" onclick="pfBuyFav(\'' + jsArg(tk) + '\', event)" ' +
+                        'title="Открыть тикет на покупку в терминале — заявка не отправляется">Купить</button>'
+                    : '';
                 return '<div class="pff-tile pff2-row">' +
                     '<div class="pff-thead">' +
                         '<button class="pff-id" onclick="pfOpenTicker(\'' + jsArg(tk) + '\')" title="Открыть карточку компании">' +
                             '<span class="pff-tk">' + esc(tk) + '</span><span class="pff-nm">' + esc(name) + '</span></button>' +
+                        buy +
                         '<button class="pff-del" onclick="pfRemoveFav(\'' + jsArg(tk) + '\', event)" title="Убрать из избранного" aria-label="Убрать из избранного">' + NOTE_TRASH_SVG + '</button>' +
                         '<div class="pff-pot-wrap"><span class="pff-pot-l">потенциал</span>' + potHtml + '</div>' +
                     '</div>' +
@@ -1626,6 +1634,14 @@
         }
         pfRepaintFav();
         toast(tk + ' убран из избранного');
+    };
+
+    // Короткий путь к сделке прямо из «Избранного»: строка ведёт в терминал с
+    // заряженным тикетом. stopPropagation обязателен — под кнопкой лежит клик
+    // всей плитки (карточка компании), и без него откроются оба.
+    window.pfBuyFav = function (tk, ev) {
+        if (ev) { try { ev.stopPropagation(); ev.preventDefault(); } catch (e) {} }
+        if (tk && PF.pftBuyTicker) PF.pftBuyTicker(tk, 'buy');
     };
 
     // «Список активов»: все бумаги всех портфелей по убыванию стоимости позиции

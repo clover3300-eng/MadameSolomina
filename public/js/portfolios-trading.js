@@ -299,10 +299,9 @@
 
     function A() { return window.brokerApi; }
     function conn() { return A() && A().getConn(); }
-    function tradeReady() {
-        var c = conn();
-        return !!(c && c.scope === 'trade' && c.state === 'ok' && !A().isLocked() && !A().isSessionGone());
-    }
+    // Условие живёт в broker-api.js (canTrade): его спрашивает и «Рынок», где
+    // ленивой цепочки «Портфелей» ещё нет. Здесь — только доступ к нему.
+    function tradeReady() { return !!(A() && A().canTrade()); }
     function sumLimit() {
         var v = +localStorage.getItem(SUM_LIMIT_KEY);
         return v > 0 ? v : 100000;
@@ -2883,7 +2882,10 @@
         legs = (legs || []).filter(function (l) { return l && l.ticker; }).slice(0, MAX_SLOTS_SCREEN);
         if (!legs.length) return;
         var used = [];
-        toast('Ищем бумаги плана у брокера…');
+        // одна бумага — не «план»: приходим сюда и из строки «Рынок · Акции»,
+        // где слово «план» ничего не значит (см. pftBuyTicker)
+        var solo = legs.length === 1 ? String(legs[0].ticker).toUpperCase() : '';
+        toast(solo ? 'Ищем ' + solo + ' у брокера…' : 'Ищем бумаги плана у брокера…');
         Promise.all(legs.map(function (l) {
             return findByTicker(l.ticker).then(function (i) { return { leg: l, ins: i }; },
                 function () { return { leg: l, ins: null }; });
@@ -2910,16 +2912,39 @@
                 });
             });
             return chain.then(function () {
-                if (window.pfxGoTab) window.pfxGoTab('trading');
-                else if (PF.pfdRerender) PF.pfdRerender();
-                setTimeout(function () { pollOb(); pollStatus(); pollMaxLots(); }, 100);
+                // В терминал уводим, ТОЛЬКО если там что-то появилось. Из «Рынка»
+                // это прыжок через весь сайт: утащить человека от таблицы в пустой
+                // терминал из-за бумаги, которой у брокера нет, — обмен плохой.
+                if (ok) {
+                    // Зовут и с ДРУГОЙ вкладки сайта («Рынок · Акции»), поэтому
+                    // сперва вкладка, потом подвкладка. Гвард обязателен:
+                    // switchTab не проверяет, что вкладка уже открыта, и повторный
+                    // вызов заново перерисовал бы «Портфели» под своим же вызовом.
+                    if (!document.querySelector('#panel-portfolios.active') && window.switchTab) {
+                        window.switchTab('portfolios');
+                    }
+                    if (window.pfxGoTab) window.pfxGoTab('trading');
+                    else if (PF.pfdRerender) PF.pfdRerender();
+                    setTimeout(function () { pollOb(); pollStatus(); pollMaxLots(); }, 100);
+                }
                 if (ok && miss.length) toast('Заряжено ' + ok + ' из ' + res.length + '; не нашлись: ' + miss.join(', '), true);
-                else if (ok) toast('План в терминале: проверьте цену и объём — заявки НЕ отправлены');
-                else toast('Ни одну бумагу плана не удалось найти у брокера', true);
+                else if (ok) toast(solo
+                    ? solo + ' в терминале: укажите цену и объём — заявка НЕ отправлена'
+                    : 'План в терминале: проверьте цену и объём — заявки НЕ отправлены');
+                else toast(solo ? solo + ' у брокера не нашлась' : 'Ни одну бумагу плана не удалось найти у брокера', true);
             });
         }).catch(function (e) {
             toast((e && e.message) || 'Не удалось загрузить план в терминал', true);
         });
+    };
+
+    // Короткий путь к сделке из «Рынок · Акции» и из «Избранного»: до этого от
+    // акции в таблице до тикета было четыре шага (запомнить тикер → «Портфели»
+    // → «Торговля» → лупа → набрать → выбрать). Объём НЕ подставляем — сделку
+    // назначает человек; тикет открывается с одним лотом и лимитной ценой.
+    PF.pftBuyTicker = function (ticker, side) {
+        if (!ticker) return;
+        PF.pftLoadPlan([{ ticker: String(ticker), side: side === 'sell' ? 'sell' : 'buy', qty: 0 }]);
     };
 
     // ---------- горячие клавиши ----------

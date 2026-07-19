@@ -575,6 +575,27 @@ body.dark-mode .stk-table > tbody > tr > td.stk-pin-2.stk-hl { background-color:
 .stk-cardbtn:hover { color: var(--claude-accent, #D97757); background: rgba(217,119,87,0.10); }
 /* На тач-устройствах наведения нет — показываем постоянно */
 @media (hover: none) { .stk-cardbtn { opacity: 1; } }
+
+/* «Купить» — короткий путь в терминал. СЛОВОМ, а не иконкой: действие ведёт к
+   деньгам и обязано называться (три безымянные иконки в терминале уже были
+   отвергнуты в пользу слов). Появляется по ховеру строки, как соседняя
+   карточка компании, и только у того, кто реально может торговать: без
+   .stk-cantrade на корне кнопки нет вовсе — она не занимает даже места. */
+.stk-buybtn { display: none; }
+.stk-cantrade .stk-buybtn {
+    display: inline-flex; align-items: center;
+    appearance: none; border: 0; cursor: pointer; padding: 3px 9px; margin-right: 2px;
+    flex-shrink: 0; border-radius: 999px; white-space: nowrap;
+    font-family: var(--font-ui); font-size: 11px; font-weight: 700; letter-spacing: 0.01em;
+    color: #15803d; background: rgba(22, 163, 74, 0.12);
+    opacity: 0; transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.stk-row:hover .stk-buybtn,
+.stk-buybtn:focus-visible { opacity: 1; }
+.stk-cantrade .stk-buybtn:hover { color: #fff; background: #16a34a; }
+@media (hover: none) { .stk-cantrade .stk-buybtn { opacity: 1; } }
+body.dark-mode .stk-cantrade .stk-buybtn { color: #7ee2a8; background: rgba(126, 226, 168, 0.16); }
+body.dark-mode .stk-cantrade .stk-buybtn:hover { color: #10201a; background: #7ee2a8; }
 .stk-id-text { display: flex; flex-direction: column; gap: 1px; line-height: 1.2; text-align: left; }
 .stk-tkr {
     font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px;
