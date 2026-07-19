@@ -1916,3 +1916,101 @@ body.dark-mode .btr-slim-hold b { color: #f1f6fb; }
 body.dark-mode .sx-per button.on { background: rgba(255, 255, 255, 0.09); color: #f1f6fb; }
 body.dark-mode .sx-ax { stroke: rgba(255, 255, 255, 0.12); }
 body.dark-mode .sx-axt { fill: #6b7c93; }
+
+/* ---- ЗАЯВКИ ТАБЛИЦЕЙ (док полноэкранного режима, макет 01) ----
+   Колонки те же и в шапке, и в строке — одна grid-раскладка на оба, иначе
+   заголовок и данные разъезжаются при любой правке ширин. */
+.btr-orh, .btr-orr {
+    display: grid; grid-template-columns: 64px 78px 62px 1fr 96px 96px 104px 26px;
+    gap: 0 10px; align-items: center;
+}
+.btr-orh { padding: 9px 2px 6px; }
+.btr-orh span {
+    font-family: var(--font-ui); font-size: 8.5px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8;
+}
+.btr-orh span.r, .btr-orr .r { text-align: right; }
+.btr-ortab { overflow-y: auto; scrollbar-width: thin; }
+.btr-orr {
+    height: 32px; padding: 0 2px; border-top: 1px solid rgba(15, 23, 42, 0.06);
+    font-family: var(--font-num); font-size: 11.5px; color: #0f172a; font-variant-numeric: tabular-nums;
+}
+.btr-orr .mut { color: #94a3b8; }
+.btr-orr .buy { color: #16a34a; font-weight: 700; }
+.btr-orr .sell { color: #dc2626; font-weight: 700; }
+.btr-orr .nm { font-family: var(--font-ui); font-size: 11.5px; color: #64748b; }
+.btr-orr .btr-ord-move {
+    border: 0; background: none; padding: 0; cursor: pointer; font: inherit; color: inherit;
+    border-bottom: 1px dashed rgba(15, 23, 42, 0.3);
+}
+.btr-orr .btr-ord-move:hover { color: #2563eb; border-bottom-color: #2563eb; }
+.btr-prog { display: block; height: 3px; border-radius: 2px; background: rgba(15, 23, 42, 0.07); width: 58px; position: relative; }
+.btr-prog i { position: absolute; inset: 0 auto 0 0; border-radius: 2px; background: #2563eb; }
+.btr-orx {
+    border: 0; background: none; cursor: pointer; padding: 0; color: #cbd5e1;
+    font-size: 12px; line-height: 1; text-align: center; transition: color 0.14s;
+}
+.btr-orx:hover { color: #dc2626; }
+
+/* ---- шапка графика в фокусе: одной строкой (макет 01) ---- */
+.btc-h { display: flex; align-items: center; gap: 12px; }
+.btc-h > * { white-space: nowrap; }
+.btc-h-tk { font-family: var(--font-num); font-size: 15px; font-weight: 700; }
+.btc-h-nm { font-size: 12px; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; }
+.btc-h-px { font-family: var(--font-num); font-size: 15px; font-weight: 700; }
+.btc-h-dt { font-family: var(--font-num); font-size: 11.5px; font-weight: 600; }
+.btc-h-dt.up, .btc-h-px { color: #16a34a; } .btc-h-dt.dn { color: #dc2626; }
+.btc-h .btc-tf { margin-left: auto; }
+
+/* ---- подтверждение в «Просто» (макет 07) ---- */
+.sx-cf { max-width: 460px; }
+.sx-cf h3 { font-family: var(--font-head); font-size: 22px; margin: 0 0 4px; }
+.sx-cf-sub { font-size: 13px; color: #94a3b8; margin-bottom: 18px; }
+.sx-cf-rows { display: flex; flex-direction: column; }
+.sx-cf-r { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; padding: 10px 0; border-top: 1px solid rgba(15, 23, 42, 0.06); }
+.sx-cf-r:first-child { border-top: 0; }
+.sx-cf-r span { font-size: 13px; color: #64748b; }
+.sx-cf-r b { font-family: var(--font-num); font-size: 14px; font-weight: 600; text-align: right; }
+.sx-cf-r.tot { border-top-color: rgba(15, 23, 42, 0.16); padding-top: 13px; margin-top: 4px; }
+.sx-cf-r.tot span { color: #0f172a; font-weight: 600; }
+.sx-cf-r.tot b { font-size: 19px; font-weight: 700; }
+.sx-cf-warn { display: flex; gap: 10px; margin-top: 16px; padding: 12px 14px; border-radius: 12px; background: rgba(37, 99, 235, 0.07); }
+.sx-cf-warn svg { width: 16px; height: 16px; flex: none; color: #2563eb; margin-top: 1px; }
+.sx-cf-warn span { font-size: 12.5px; line-height: 1.5; color: #475569; }
+.sx-cf-type { display: block; margin-top: 14px; font-size: 12.5px; color: #64748b; }
+.sx-cf-type input {
+    display: block; width: 100%; margin-top: 6px; padding: 11px 13px; border-radius: 11px;
+    border: 1px solid rgba(15, 23, 42, 0.14); font-family: var(--font-num); font-size: 16px;
+}
+.sx-cf-act { display: flex; gap: 10px; margin-top: 18px; }
+.sx-cf-b {
+    flex: 1; border: 0; cursor: pointer; padding: 14px; border-radius: 13px;
+    font-family: var(--font-ui); font-size: 14.5px; font-weight: 700; transition: filter 0.15s;
+}
+.sx-cf-b.ghost { flex: 0 0 auto; padding: 14px 20px; background: rgba(15, 23, 42, 0.06); color: #475569; }
+.sx-cf-b.go { background: #16a34a; color: #fff; }
+.sx-cf-b.go.sell { background: #dc2626; }
+.sx-cf-b:hover { filter: brightness(1.06); }
+.sx-cf-sand { margin-top: 12px; font-size: 12px; color: #d97706; text-align: center; }
+
+/* ---- аватар в полосе ---- */
+.pftb-av {
+    position: relative; flex: none; width: 26px; height: 26px; border-radius: 50%;
+    border: 1px solid var(--border-color, rgba(15, 23, 42, 0.12)); cursor: pointer;
+    background: linear-gradient(140deg, #cbd5e1, #94a3b8); color: #fff; padding: 0;
+    font-family: var(--font-ui); font-size: 10px; font-weight: 700; overflow: hidden;
+}
+.pftb-av img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+body.dark-mode .btr-orr { color: #f1f6fb; border-top-color: rgba(255, 255, 255, 0.08); }
+body.dark-mode .btr-orr .mut, body.dark-mode .btr-orr .nm { color: #9fb1c6; }
+body.dark-mode .btr-orr .buy { color: #34d399; } body.dark-mode .btr-orr .sell { color: #f87171; }
+body.dark-mode .btr-prog { background: rgba(255, 255, 255, 0.1); }
+body.dark-mode .btc-h-nm { color: #9fb1c6; }
+body.dark-mode .sx-cf-r { border-top-color: rgba(255, 255, 255, 0.08); }
+body.dark-mode .sx-cf-r.tot { border-top-color: rgba(255, 255, 255, 0.2); }
+body.dark-mode .sx-cf-r.tot span { color: #f1f6fb; }
+body.dark-mode .sx-cf-r span, body.dark-mode .sx-cf-warn span { color: #9fb1c6; }
+body.dark-mode .sx-cf-warn { background: rgba(96, 165, 250, 0.12); }
+body.dark-mode .sx-cf-b.ghost { background: rgba(255, 255, 255, 0.08); color: #dbe4f0; }
+body.dark-mode .sx-cf-type input { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.14); color: #f1f6fb; }

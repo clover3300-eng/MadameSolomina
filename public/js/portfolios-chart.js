@@ -728,6 +728,28 @@
     }
 
     // ---------- карточка ----------
+    // Шапка графика в фокусе — ОДНОЙ строкой (макет 01): тикер, имя, цена,
+    // дельта за день и таймфреймы. Отдельного ряда под таймфреймы больше нет:
+    // в полноэкранном каждая строка хрома отнимает высоту у самого графика.
+    // Цену берём у терминала (PF.pftLastFor) — стакан её и так опрашивает.
+    function chartHeadFs(n, ins, right) {
+        var px = PF.pftLastFor ? PF.pftLastFor(ins.uid) : null;
+        var d = 2, num = '';
+        if (px) {
+            d = px.minInc < 0.01 ? 4 : 2;
+            num = '<span class="btc-h-px">' + px.last.toLocaleString('ru-RU',
+                { minimumFractionDigits: d, maximumFractionDigits: d }) + ' ₽</span>';
+            if (px.close > 0) {
+                var dt = (px.last / px.close - 1) * 100;
+                num += '<span class="btc-h-dt ' + (dt >= 0 ? 'up' : 'dn') + '">' +
+                    (dt >= 0 ? '+' : '−') + Math.abs(dt).toFixed(2).replace('.', ',') + '%</span>';
+            }
+        }
+        return '<div class="pf-ch btc-h">' +
+            '<span class="btc-h-tk">' + esc(ins.ticker || '') + '</span>' +
+            '<span class="btc-h-nm">' + esc(ins.name || '') + '</span>' + num +
+            tfHtml(n) + right + '</div>';
+    }
     function tfHtml(n) {
         var cur = cfg(n).tf;
         return '<div class="btr-ttabs btc-tf">' + TF.map(function (t) {
@@ -785,7 +807,14 @@
                     'onclick="pfcMenu(' + n + ',\'draw\',event)">' + IC_DRAW + '</button>' +
                 menuHtml(n, 'draw') +
             '</span>' + link + add + lens;
-        var head = PF.pfCardHead('', chartLabel(n), null, right);
+        // ШАПКА В ФОКУСЕ — одной строкой (макет 01): тикер · имя · цена · дельта
+        // за день, таймфреймы туда же, отдельного ряда под ними больше нет. В
+        // дашборде остаётся прежний заголовок: там карточка узкая и в строку
+        // всё это не встанет.
+        var fs = !!(PF.pftFsOn && PF.pftFsOn());
+        var head = (fs && ins)
+            ? chartHeadFs(n, ins, right)
+            : PF.pfCardHead('', chartLabel(n), null, right);
         var search = '<div class="btr-search' + (open ? ' open' : '') + '" id="btcSearchWrap_' + n + '">' +
             '<input class="ph-input" id="btcSearch_' + n + '" type="text" ' +
             'placeholder="Тикер или название — например, SBER" autocomplete="off" spellcheck="false">' +
@@ -796,7 +825,8 @@
                 '<div class="btc-empty-tx">Найдите бумагу в поиске выше — или выберите её в стакане, и график встанет на неё сам.</div>' +
                 '</div>';
         }
-        return head + search + tfHtml(n) +
+        // таймфреймы в фокусе уже стоят в шапке — вторым рядом их не повторяем
+        return head + search + (fs ? '' : tfHtml(n)) +
             '<div class="btc-note" id="btcNote_' + n + '"></div>' +
             '<div class="btc-mount" data-slot="' + n + '"></div>';
     }
