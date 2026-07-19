@@ -1354,6 +1354,9 @@ body.pfsd-open #pftScreens { display: none !important; }
 }
 
 /* выпадашка поиска — вверх от своей капсулы, как меню экрана */
+/* ЛОВУШКА: глобальный reset проекта ставит border-box кнопкам, но НЕ полям
+   ввода — width:100% + padding + рамка вылезали за правый край выпадашки */
+.pfts-find, .pfts-find-inp, .pfts-input { box-sizing: border-box; }
 .pfts-find {
     position: absolute; right: 0; bottom: calc(100% + 8px); z-index: 3;
     width: 340px; padding: 8px; border-radius: 14px;
@@ -1361,7 +1364,7 @@ body.pfsd-open #pftScreens { display: none !important; }
     box-shadow: 0 20px 44px -20px rgba(15, 23, 42, 0.5);
 }
 .pfts-find-inp {
-    width: 100%; padding: 8px 11px; border-radius: 10px; outline: none;
+    display: block; width: 100%; padding: 8px 11px; border-radius: 10px; outline: none;
     border: 1px solid rgba(15, 23, 42, 0.14); background: #f8fafc; color: #1f2937;
     font-family: var(--font-ui); font-size: 13px; font-weight: 600;
 }
