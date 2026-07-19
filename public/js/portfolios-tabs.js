@@ -230,52 +230,162 @@
     }
 
     // ---- подвкладка «Торговля»: гейт по состоянию подключения брокера ----
-    // Терминал (стакан, тикет заявок, ордера) — этап 2; сейчас подвкладка честно
-    // говорит, что нужно для его включения. Карточка — язык пустых подвкладок
-    // (.pfx-emptytab/.pfpc-state), рендер зовёт portfolios.js вместо pfdBodyHtml.
+    // Пока терминала нет, подвкладка показывает ЕГО САМОГО: за матовым стеклом
+    // стоит «призрак» — стакан, тикет и лента заявок из тех же .btr-*-классов,
+    // что и живая раскладка. Экран перестаёт быть пустым прямоугольником, и
+    // сразу видно, ЧТО откроется; замок поверх объясняет, чего не хватает.
+    // Призрак — inert (вне фокуса и вне a11y-дерева) и pointer-events:none;
+    // цифры в нём выдуманы, и подпись в карточке говорит об этом прямо.
+
+    // лестница стакана: [цена, лоты, ширина полосы %]. Числа декоративные —
+    // за блюром важен только ритм: ступеньки, объёмы и лучшие цены у центра
+    var PFTG_ASK = [['268,60', 412, 46], ['268,54', 268, 30], ['268,48', 731, 82], ['268,42', 190, 21], ['268,36', 356, 40]];
+    var PFTG_BID = [['268,24', 505, 57], ['268,18', 244, 27], ['268,12', 668, 75], ['268,06', 301, 34], ['268,00', 889, 100]];
+    var PFTG_ORD = [
+        ['buy',  'SBER', 'лимитная · 4 лота',      '268,30 ₽',   '10:42 · исполнено 0 из 4'],
+        ['sell', 'LKOH', 'лимитная · 1 лот',       '7 214,00 ₽', '10:15 · исполнено 0 из 1'],
+        ['buy',  'GAZP', 'стоп-лосс · 12 лотов',   '128,40 ₽',   'до отмены']
+    ];
+    function pftgAxRow(r, side, best) {
+        var half = '<span class="btr-axh"><u style="width:' + Math.min(100, r[2] + 18) + '%"></u>' +
+            '<i style="width:' + r[2] + '%"></i><em>' + r[1] + '</em></span>';
+        return '<div class="btr-axrow ' + side + (best ? ' best' : '') + '">' +
+            (side === 'bid' ? half : '<span class="btr-axh"></span>') + '<b>' + r[0] + '</b>' +
+            (side === 'ask' ? half : '<span class="btr-axh"></span>') + '</div>';
+    }
+    // поле-цифра тикета: инпуты настоящие (по ним считана вся вёрстка .btr-big),
+    // но readonly и вне обхода табом — призрак ничего не принимает
+    function pftgBigField(lab, hint, val, suf, ref) {
+        return '<div class="btr-bf"><div class="btr-bf-lab">' +
+            '<label>' + lab + '<i> · ' + hint + '</i></label>' +
+            (ref ? '<span class="btr-ref">рынок <b>' + ref + '</b></span>' : '') + '</div>' +
+            '<div class="btr-bigrow"><input class="btr-big" type="text" value="' + val + '" readonly tabindex="-1">' +
+            '<span class="btr-big-suf">' + suf + '</span></div></div>';
+    }
+    function pftgGhostHtml() {
+        var head = PF.pfCardHead;
+        var ob = '<div class="dash2-card pf-card2 btr-card btr-ob">' +
+            head('', 'Стакан · SBER') +
+            '<div class="btr-instr"><b>SBER</b><span>Сбербанк</span>' +
+                '<span class="btr-st ok"><i></i>торги идут</span></div>' +
+            '<div class="btr-ax">' +
+                '<div class="btr-ax-head"><span>Лоты · спрос</span><span>Цена</span><span>Предложение · лоты</span></div>' +
+                PFTG_ASK.map(function (r, i) { return pftgAxRow(r, 'ask', i === PFTG_ASK.length - 1); }).join('') +
+                '<div class="btr-axmid up"><i class="ar">▲</i><b>268,30</b><em>₽</em>' +
+                    '<span class="sp">спред <b>0,12</b></span></div>' +
+                PFTG_BID.map(function (r, i) { return pftgAxRow(r, 'bid', !i); }).join('') +
+            '</div></div>';
+        var ticket = '<div class="dash2-card pf-card2 btr-card btr-ticket">' +
+            head('', 'Заявка · SBER', null, '<div class="btr-hd-note">' +
+                '<span class="btr-hd-acc">Брокерский счёт <b>····4417</b></span>' +
+                '<span class="btr-hd-ins">SBER · лот 10</span></div>') +
+            '<div class="btr-tk-body">' +
+                '<div class="btr-side">' +
+                    '<button type="button" class="btr-side-b buy active" tabindex="-1">Купить</button>' +
+                    '<button type="button" class="btr-side-b sell" tabindex="-1">Продать</button></div>' +
+                '<div class="btr-ttabs">' +
+                    '<button type="button" class="active" tabindex="-1">Лимитная</button>' +
+                    '<button type="button" tabindex="-1">Рыночная</button>' +
+                    '<button type="button" tabindex="-1">Стоп</button></div>' +
+                pftgBigField('Цена', 'шаг 0,01', '268,30', '₽', '268,30 ₽') +
+                pftgBigField('Лоты', '1 лот = 10 шт', '4', '· 40 шт', '') +
+                '<div class="btr-deal"><span>Сумма <b>10 732 ₽</b></span>' +
+                    '<span>Комиссия <b>≈ 4,29 ₽</b></span></div>' +
+            '</div>' +
+            '<div class="btr-tk-foot"><div class="btr-submit buy">' +
+                '<span class="btr-sb-l">Купить 4 лота</span><span class="btr-sb-s">10 732 ₽</span></div></div>' +
+        '</div>';
+        var orders = '<div class="dash2-card pf-card2 btr-card btr-orders">' +
+            head('', 'Мои заявки') +
+            '<div class="btr-ords">' + PFTG_ORD.map(function (o) {
+                return '<div class="btr-ordrow ' + o[0] + '">' +
+                    '<div class="btr-ord1"><b>' + o[1] + '</b>' +
+                        '<span class="btr-ord-meta">' + o[2] + '</span>' +
+                        '<span class="btr-ord-px">' + o[3] + '</span></div>' +
+                    '<div class="btr-ord2"><i>' + o[4] + '</i></div></div>';
+            }).join('') + '</div></div>';
+        return '<div class="pftg-ghost" inert aria-hidden="true">' +
+            '<div class="btr-grid">' + ob + ticket + orders + '</div></div>';
+    }
+    // состояние гейта: акцент, надзаголовок-статус, текст и действие.
+    // Порядок веток — от «брокера нет вовсе» к «всё есть, но заперто»
+    function pftgState(conn) {
+        if (!conn) return {
+            a: 'idle', eyebrow: 'брокер не подключён', t: 'Торговый терминал',
+            s: 'Подключите Т-Инвестиции с уровнем «Торговля» — здесь появятся стакан, тикет заявок и ваши ордера. Для начала хватит и «Только чтения»: виджет «Позиции у брокера» уже работает.',
+            b: 'Подключить брокера', go: 'brokerConnect.open()'
+        };
+        if (conn.scope !== 'trade') return {
+            a: 'warn', eyebrow: 'только чтение', t: 'Нужен торговый доступ',
+            s: 'Брокер подключён в режиме «Только чтение» — торговать им нельзя, и это правильно для просмотра. Для терминала выпустите у брокера токен с полным доступом и переключите режим в подключении.',
+            b: 'Настроить подключение', go: 'brokerConnect.open()'
+        };
+        if (conn.state === 'revoked') return {
+            a: 'bad', eyebrow: 'токен отозван', t: 'Токен не работает',
+            s: 'Брокер не принял токен — его отозвали или перевыпустили. Обновите токен в подключении, и терминал вернётся.',
+            b: 'Обновить токен', go: 'brokerConnect.open()'
+        };
+        if (conn.state === 'downgraded') return {
+            a: 'warn', eyebrow: 'права урезаны', t: 'Права токена урезали',
+            s: 'Токен стал «только для чтения» — торговать им нельзя. Выпустите у брокера токен с полным доступом и обновите его в подключении.',
+            b: 'Обновить токен', go: 'brokerConnect.open()'
+        };
+        var A = window.brokerApi;
+        if (A && A.isSessionGone()) return {
+            a: 'idle', eyebrow: 'сессия закончилась', t: 'Сессия токена закончилась',
+            s: 'Токен не сохранялся («до закрытия вкладки») — вставьте его ещё раз, и терминал вернётся.',
+            b: 'Ввести токен', go: 'brokerConnect.open()'
+        };
+        if (A && A.isLocked()) return {
+            a: 'lock', eyebrow: 'заперто PIN-кодом', t: 'Токен под PIN-кодом', lock: true,
+            s: 'Ключ от счёта лежит зашифрованным в этом браузере. Введите PIN — и стакан за стеклом станет живым.',
+            b: 'Разблокировать', go: 'pfBrokerUnlock()'
+        };
+        return {
+            a: 'idle', eyebrow: 'скоро', t: 'Терминал готовится',
+            s: 'Торговое подключение активно' + (conn.sandbox ? ' (песочница)' : '') + ': счёт «' + esc(conn.accountName) +
+               '». Стакан, тикет заявок с подтверждением и журнал ордеров — следующий этап, он появится именно здесь.',
+            b: 'Управлять подключением', go: 'brokerConnect.open()'
+        };
+    }
+    // замок с отдельной дужкой: .pftg-shk поворачивается вокруг правой ноги
+    // (transform-box: fill-box) — на ховере кнопки замок приоткрывается
+    var PFTG_LOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">' +
+        '<path class="pftg-shk" d="M8 11V7.5a4 4 0 0 1 8 0V11"/>' +
+        '<rect x="4.2" y="11" width="15.6" height="10" rx="2.8"/><path d="M12 15v2.4"/></svg>';
     function pfxTradingHtml() {
         var A = window.brokerApi;
         var conn = A && A.getConn();
-        var art = PFXI('<path d="M3 17l5-5 3 3 7-8.5"/><polyline points="14 6.5 18 6.5 18 10.5"/><path d="M3 21h18"/>');
-        var t, s, btn;
-        if (!conn) {
-            t = 'Торговый терминал';
-            s = 'Подключите Т-Инвестиции с уровнем «Торговля» — здесь появятся стакан, тикет заявок и ваши ордера. Для начала хватит и «Только чтения»: виджет «Позиции у брокера» уже работает.';
-            btn = '<button type="button" class="pfl-pv-add pfx-emptytab-btn" onclick="brokerConnect.open()"><span>Подключить брокера</span></button>';
-        } else if (conn.scope !== 'trade') {
-            t = 'Нужен торговый доступ';
-            s = 'Брокер подключён в режиме «Только чтение» — торговать им нельзя, и это правильно для просмотра. Для терминала выпустите у брокера токен с полным доступом и переключите режим в подключении.';
-            btn = '<button type="button" class="pfl-pv-add pfx-emptytab-btn" onclick="brokerConnect.open()"><span>Настроить подключение</span></button>';
-        } else if (conn.state === 'revoked') {
-            t = 'Токен не работает';
-            s = 'Брокер не принял токен — его отозвали или перевыпустили. Обновите токен в подключении, и терминал вернётся.';
-            btn = '<button type="button" class="pfl-pv-add pfx-emptytab-btn" onclick="brokerConnect.open()"><span>Обновить токен</span></button>';
-        } else if (conn.state === 'downgraded') {
-            t = 'Права токена урезали';
-            s = 'Токен стал «только для чтения» — торговать им нельзя. Выпустите у брокера токен с полным доступом и обновите его в подключении.';
-            btn = '<button type="button" class="pfl-pv-add pfx-emptytab-btn" onclick="brokerConnect.open()"><span>Обновить токен</span></button>';
-        } else if (window.brokerApi && (window.brokerApi.isLocked() || window.brokerApi.isSessionGone())) {
-            var gone = window.brokerApi.isSessionGone();
-            t = gone ? 'Сессия токена закончилась' : 'Токен под PIN-кодом';
-            s = gone ? 'Токен не сохранялся («до закрытия вкладки») — вставьте его ещё раз, и терминал вернётся.'
-                : 'Разблокируйте токен, чтобы терминал получил доступ к счёту.';
-            btn = '<button type="button" class="pfl-pv-add pfx-emptytab-btn" onclick="' + (gone ? 'brokerConnect.open()' : 'pfBrokerUnlock()') + '"><span>' + (gone ? 'Ввести токен' : 'Разблокировать') + '</span></button>';
-        } else if (PF.pftTerminalHtml) {
-            // этап 2: полноценный терминал (portfolios-trading.js в цепочке)
-            return PF.pftTerminalHtml();
-        } else {
-            t = 'Терминал готовится';
-            s = 'Торговое подключение активно' + (conn.sandbox ? ' (песочница)' : '') + ': счёт «' + esc(conn.accountName) +
-                '». Стакан, тикет заявок с подтверждением и журнал ордеров — следующий этап, он появится именно здесь.';
-            btn = '<button type="button" class="pfl-pv-add pfx-emptytab-btn" onclick="brokerConnect.open()"><span>Управлять подключением</span></button>';
-        }
-        return '<div class="pfd-grid pfd-masonry" id="pfdGrid">' +
-            '<div class="pfx-emptytab" style="grid-column: 1 / span 12"><div class="pfpc-state">' +
-            '<div class="pfpc-state-art">' + art + '</div>' +
-            '<div class="pfpc-state-t">' + t + '</div>' +
-            '<div class="pfpc-state-s">' + s + '</div>' + btn +
-            '</div></div></div>';
+        // терминал открыт — гейта нет (этап 2, portfolios-trading.js в цепочке)
+        if (conn && conn.scope === 'trade' && conn.state !== 'revoked' && conn.state !== 'downgraded' &&
+            !(A.isLocked() || A.isSessionGone()) && PF.pftTerminalHtml) return PF.pftTerminalHtml();
+        var st = pftgState(conn);
+        return '<div class="pfd-grid" id="pfdGrid">' +
+            '<div class="pftg pftg-a-' + st.a + '" style="grid-column: 1 / span 12">' +
+                pftgGhostHtml() +
+                '<div class="pftg-veil" aria-hidden="true"></div>' +
+                '<div class="pftg-lock"><div class="pftg-card">' +
+                    '<div class="pftg-ic">' + PFTG_LOCK_SVG + '</div>' +
+                    '<div class="pftg-eyebrow"><i></i>' + esc(st.eyebrow) + '</div>' +
+                    '<div class="pftg-t">' + esc(st.t) + '</div>' +
+                    '<div class="pftg-s">' + st.s + '</div>' +
+                    '<button type="button" class="pftg-btn' + (st.lock ? ' pftg-btn-lock' : '') + '" ' +
+                        'onclick="pftGatePeek(this); ' + st.go + '">' +
+                        '<span class="pftg-btn-ic">' + PFTG_LOCK_SVG + '</span>' +
+                        '<span>' + esc(st.b) + '</span></button>' +
+                    '<div class="pftg-fine">За стеклом — как выглядит терминал: цифры для примера.</div>' +
+                '</div></div>' +
+            '</div></div>';
     }
+    // клик по кнопке приоткрывает стекло: блюр на полсекунды спадает — «дверь
+    // приотворилась». Удалось разблокировать — подвкладка перерисуется терминалом
+    // и класс уедет вместе с узлом; не удалось — снимаем по таймеру
+    window.pftGatePeek = function (el) {
+        var g = el && el.closest ? el.closest('.pftg') : null;
+        if (!g) return;
+        g.classList.add('pftg-peek');
+        setTimeout(function () { g.classList.remove('pftg-peek'); }, 640);
+    };
     // ---- R9.3: ряд вкладок скроллится, а не переносится ----
     // Затухание краёв показывает, что ряд продолжается (маска .fade-l/.fade-r по
     // фактическому scrollLeft), активная вкладка после рендера подъезжает в видимую

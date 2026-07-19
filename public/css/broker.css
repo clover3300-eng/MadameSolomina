@@ -1078,3 +1078,142 @@ body.dark-mode .btc-mi i, .pfd-thm-dark .btc-mi i { color: #60a5fa; }
 body.dark-mode .btc-mi.danger, .pfd-thm-dark .btc-mi.danger { color: #f87171; border-top-color: rgba(255, 255, 255, 0.1); }
 body.dark-mode .btc-empty-tt, .pfd-thm-dark .btc-empty-tt { color: #cbd5e1; }
 body.dark-mode .btc-note, .pfd-thm-dark .btc-note { color: #7f8ea3; }
+
+/* ====================================================================
+   ГЕЙТ «ТОРГОВЛИ» — ТЕРМИНАЛ ЗА МАТОВЫМ СТЕКЛОМ (.pftg-*)
+   Пока доступа нет, подвкладка показывает себя саму: «призрак» терминала
+   из тех же .btr-*-классов размывается фильтром, поверх — карточка-замок.
+   Пустой экран перестаёт быть пустым, и видно, ЧТО откроется.
+   Разметка — pfxTradingHtml() в js/portfolios-tabs.js.
+   ==================================================================== */
+.pftg {
+    position: relative; isolation: isolate;
+    border-radius: 22px; overflow: hidden;
+    max-height: 640px; min-height: 460px;
+}
+/* призрак: блюр размывает и КРАЯ раскладки, поэтому она выходит за рамку
+   отрицательными полями — размытая кромка остаётся за клипом .pftg, а сами
+   карточки не масштабируются и ничего не срезает */
+.pftg-ghost {
+    pointer-events: none; user-select: none;
+    margin: -16px -18px; padding: 16px 18px;
+    filter: blur(5.5px) saturate(0.85); opacity: 1;
+    transition: filter 0.42s ease, opacity 0.42s ease;
+}
+/* карточки призрака не тянутся по высоте — верхний край раскладки ровный,
+   а низ уходит за кадр: терминал «продолжается» за границей гейта */
+.pftg-ghost .btr-grid { align-items: start; }
+.pftg-ghost .btr-card { padding: 0 22px 22px; }
+
+/* стекло: гуще к центру (под карточкой) и прозрачнее к краям — по углам
+   призрак читается, и сразу понятно, что за замком стоит настоящий экран */
+.pftg-veil {
+    position: absolute; inset: 0; pointer-events: none;
+    background:
+        radial-gradient(78% 62% at 50% 50%,
+            rgba(244, 247, 252, 0.82) 0%, rgba(244, 247, 252, 0.6) 46%,
+            rgba(244, 247, 252, 0.18) 78%, rgba(244, 247, 252, 0) 100%),
+        linear-gradient(180deg, rgba(244, 247, 252, 0.4) 0%, rgba(244, 247, 252, 0) 20%,
+            rgba(244, 247, 252, 0) 76%, rgba(244, 247, 252, 0.55) 100%);
+    transition: opacity 0.42s ease;
+}
+.pftg-lock { position: absolute; inset: 0; display: grid; place-items: center; padding: 28px 20px; }
+
+/* акценты состояний: цвет живёт в иконке и точке статуса, кнопка у всех
+   одна и та же — гейт остаётся одним экраном, а не шестью разными */
+.pftg-a-idle { --pftg-acc: #4453ef; }
+.pftg-a-lock { --pftg-acc: #4453ef; }
+.pftg-a-warn { --pftg-acc: #d97706; }
+.pftg-a-bad  { --pftg-acc: #dc2626; }
+
+.pftg-card {
+    width: min(432px, 100%); text-align: center;
+    padding: 28px 30px 22px; border-radius: 22px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(15, 23, 42, 0.07);
+    box-shadow: 0 34px 74px -34px rgba(15, 23, 42, 0.5), 0 2px 10px -6px rgba(15, 23, 42, 0.2);
+    -webkit-backdrop-filter: blur(9px) saturate(1.2); backdrop-filter: blur(9px) saturate(1.2);
+    transition: transform 0.42s ease, opacity 0.42s ease;
+}
+.pftg-ic {
+    width: 46px; height: 46px; margin: 0 auto 14px; border-radius: 15px; display: grid; place-items: center;
+    color: var(--pftg-acc);
+    background: color-mix(in srgb, var(--pftg-acc) 11%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pftg-acc) 18%, transparent);
+}
+.pftg-ic svg { width: 23px; height: 23px; }
+.pftg-eyebrow {
+    display: inline-flex; align-items: center; gap: 7px; margin-bottom: 9px;
+    font-family: var(--font-ui); font-size: 9.5px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--pftg-acc);
+}
+.pftg-eyebrow i {
+    font-style: normal; width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--pftg-acc) 14%, transparent);
+}
+/* заголовок — сериф проекта (список в typography-tokens.css) */
+.pftg-t { font-size: 20px; font-weight: 400; color: #0f172a; line-height: 1.22; }
+.pftg-s { margin-top: 9px; font-size: 12.5px; line-height: 1.55; color: #64748b; }
+
+/* кнопка-ключ: чернильная пилюля терминала, замок слева приоткрывается */
+.pftg-btn {
+    position: relative; overflow: hidden; isolation: isolate;
+    display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+    margin-top: 18px; padding: 12px 22px; border: none; border-radius: 13px; cursor: pointer;
+    background: linear-gradient(135deg, #2c3852, #161e2e); color: #fff;
+    font-family: var(--font-ui); font-size: 13.5px; font-weight: 700; letter-spacing: 0.01em;
+    box-shadow: 0 16px 30px -14px rgba(15, 23, 42, 0.75);
+    transition: filter 0.15s, transform 0.12s, box-shadow 0.2s;
+}
+.pftg-btn:hover { filter: brightness(1.14); box-shadow: 0 20px 36px -14px rgba(15, 23, 42, 0.8); }
+.pftg-btn:active { transform: translateY(1px); }
+.pftg-btn:focus-visible { outline: 2px solid var(--pftg-acc); outline-offset: 3px; }
+.pftg-btn-ic { display: grid; place-items: center; width: 17px; height: 17px; flex: none; }
+.pftg-btn-ic svg { width: 17px; height: 17px; stroke-width: 2; }
+/* блик по стеклу — проходит слева направо на ховере */
+.pftg-btn::after {
+    content: ''; position: absolute; inset: -1px; z-index: -1; pointer-events: none;
+    background: linear-gradient(105deg, transparent 34%, rgba(255, 255, 255, 0.3) 50%, transparent 66%);
+    transform: translateX(-130%); transition: transform 0.65s ease;
+}
+.pftg-btn:hover::after { transform: translateX(130%); }
+/* дужка замка: поворот вокруг правой ноги (fill-box → правый нижний угол
+   бокса самой дужки), поэтому левая нога поднимается — замок открывается */
+.pftg-shk { transform-box: fill-box; transform-origin: 100% 100%; transition: transform 0.28s cubic-bezier(0.34, 1.4, 0.64, 1); }
+.pftg-btn-lock:hover .pftg-shk, .pftg-btn-lock:focus-visible .pftg-shk { transform: rotate(-26deg); }
+.pftg-btn-lock:active .pftg-shk { transform: rotate(-26deg) translateY(-0.6px); }
+
+.pftg-fine { margin-top: 14px; font-size: 10.5px; color: #b3bfce; letter-spacing: 0.01em; }
+
+/* клик — стекло на мгновение проясняется: «дверь приотворилась» */
+.pftg-peek .pftg-ghost { filter: blur(1.4px) saturate(0.92); opacity: 1; }
+.pftg-peek .pftg-veil { opacity: 0.3; }
+.pftg-peek .pftg-card { transform: scale(0.985); opacity: 0.92; }
+
+@media (prefers-reduced-motion: reduce) {
+    .pftg-ghost, .pftg-veil, .pftg-card, .pftg-shk, .pftg-btn::after { transition: none; }
+    .pftg-btn:hover::after { transform: translateX(-130%); }
+    .pftg-btn-lock:hover .pftg-shk, .pftg-btn-lock:focus-visible .pftg-shk { transform: none; }
+}
+
+/* ---------- тёмная тема ---------- */
+body.dark-mode .pftg-ghost { opacity: 0.92; filter: blur(5.5px) saturate(0.8); }
+body.dark-mode .pftg-veil {
+    background:
+        radial-gradient(78% 62% at 50% 50%,
+            rgba(15, 21, 33, 0.84) 0%, rgba(15, 21, 33, 0.62) 46%,
+            rgba(15, 21, 33, 0.2) 78%, rgba(15, 21, 33, 0) 100%),
+        linear-gradient(180deg, rgba(15, 21, 33, 0.4) 0%, rgba(15, 21, 33, 0) 20%,
+            rgba(15, 21, 33, 0) 76%, rgba(15, 21, 33, 0.6) 100%);
+}
+body.dark-mode .pftg-card {
+    background: rgba(27, 36, 51, 0.88); border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 34px 74px -34px rgba(0, 0, 0, 0.9), 0 2px 10px -6px rgba(0, 0, 0, 0.6);
+}
+body.dark-mode .pftg-a-idle, body.dark-mode .pftg-a-lock { --pftg-acc: #8b9bff; }
+body.dark-mode .pftg-a-warn { --pftg-acc: #fbbf24; }
+body.dark-mode .pftg-a-bad { --pftg-acc: #f87171; }
+body.dark-mode .pftg-t { color: #f4f8fd; }
+body.dark-mode .pftg-s { color: #9fb1c6; }
+body.dark-mode .pftg-fine { color: #64748b; }
+body.dark-mode .pftg-btn { background: linear-gradient(135deg, #3a4664, #232d40); box-shadow: 0 16px 30px -14px rgba(0, 0, 0, 0.75); }
