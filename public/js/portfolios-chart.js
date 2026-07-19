@@ -399,6 +399,7 @@
             styles: styles()
         });
         if (!chart) { try { mount.removeChild(host); } catch (e) {} return null; }
+        fixZoomPointer(chart);
         c = CH[n] = { host: host, chart: chart, slot: n, instr: null, tf: cfg(n).tf, src: 'ti', timer: null, liveCb: null };
         chart.setDataLoader(makeLoader(c));
         // клик по свече кладёт её закрытие в ценовое поле тикета — тот же жест,
@@ -423,6 +424,48 @@
         } catch (e) {}
         return c;
     }
+    // ЗУМ И КУРСОР. У сайта body{zoom:.9} (css/desktop-zoom.css), и движок на этом
+    // спотыкается: канву он меряет в layout-px (clientWidth), а позицию курсора
+    // берёт как clientX - rect.left, то есть в ВИЗУАЛЬНЫХ px. Пространства разные,
+    // и перекрестье садится левее курсора на 10% расстояния до левого края графика
+    // (замер: курсор в 400 px от края — линия даты в 360). Вправо ошибка растёт,
+    // и на широком виджете это уже почти сотня пикселей.
+    //
+    // Все координаты движка — мышь, тач, протяжка, колесо — идут через один метод
+    // _makeCompatEvent, поэтому чиним в нём, а не перехватом событий: сам патч
+    // одноразовый, на прототипе. Вендорный файл не трогаем, чтобы обновление
+    // движка не пришлось накатывать поверх наших правок.
+    //
+    // Коэффициент берём у САМОГО элемента (currentCSSZoom, запасной путь —
+    // отношение визуальной ширины к layout-ширине): при zoom:1 на мобиле и на
+    // случай, если общий множитель когда-нибудь сменится, множитель сам себя
+    // калибрует. pageX/pageY движок использует только как ОТНОШЕНИЕ (масштаб оси
+    // времени щипком), там поправка не нужна.
+    var zoomFixed = false;
+    function fixZoomPointer(chart) {
+        if (zoomFixed) return;
+        try {
+            var ev = chart._chartEvent && chart._chartEvent._event;
+            var proto = ev && Object.getPrototypeOf(ev);
+            if (!proto || typeof proto._makeCompatEvent !== 'function') return;
+            var orig = proto._makeCompatEvent;
+            proto._makeCompatEvent = function (e, touch) {
+                var r = orig.call(this, e, touch);
+                var z = zoomOf(this._target);
+                if (Math.abs(z - 1) > 0.001) { r.x /= z; r.y /= z; }
+                return r;
+            };
+            zoomFixed = true;
+        } catch (e) {}
+    }
+    function zoomOf(el) {
+        if (!el) return 1;
+        var z = el.currentCSSZoom;                       // Chrome 128+, точное значение
+        if (typeof z === 'number' && z > 0) return z;
+        var w = el.getBoundingClientRect().width, lw = el.offsetWidth;
+        return (w > 0 && lw > 0) ? w / lw : 1;
+    }
+
     // цена в поле тикета должна лечь на шаг инструмента, иначе брокер отвергнет
     function round(v, ins) {
         var st = (ins && ins.minInc) || 0.01;
