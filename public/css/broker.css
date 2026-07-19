@@ -1657,7 +1657,7 @@ body.dark-mode .pftb-st.stale { color: #f87171; }
 .btr-dock-chev.off { transform: rotate(180deg); }
 
 /* подсказка по клавишам: они были реализованы, но не названы нигде */
-.btr-keys h3 { font-family: var(--font-head); font-size: 19px; margin: 0 0 14px; }
+.btr-keys h3 { font-family: var(--font-title); font-size: 19px; margin: 0 0 14px; }
 .btr-keys-list { display: flex; flex-direction: column; gap: 2px; }
 .btr-keys-row { display: flex; align-items: center; gap: 12px; padding: 7px 0; border-top: 1px solid rgba(15, 23, 42, 0.06); }
 .btr-keys-row:first-child { border-top: 0; }
@@ -1702,133 +1702,220 @@ body.dark-mode .btr-keys-note { background: rgba(52, 211, 153, 0.12); color: #6e
 }
 .pftb-seg button.on { background: var(--card, #fff); color: #0f172a; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1); }
 
-.sx { display: flex; flex-direction: column; gap: 14px; max-width: 760px; margin: 0 auto; padding-bottom: 24px; }
+/* Раскладка макета 04: слева бумага с графиком во всю высоту, справа карточка
+   сделки фиксированной ширины, внизу во всю ширину «Мои вложения». Высота
+   считается от экрана — иначе график не знает, куда тянуться.
+   ЛОВУШКА ZOOM: --real-vh приходит в экранных пикселях (webapp-tabs.js), а
+   вёрстка живёт под body{zoom:.9} — делим тем же множителем, что desktop-zoom.css.
+   54px = полоса 44 + её нижний отступ 10. */
+.sx {
+    display: grid; grid-template-columns: 1fr 452px; grid-template-rows: 1fr 226px;
+    gap: 16px; padding: 4px 0 14px;
+    /* высоту ставит sxFit() замером: константа в calc() разъезжалась бы от
+       любой правки хрома над сеткой. Здесь — запасное значение до первого замера */
+    height: calc(var(--real-vh, 100vh) / 0.9 - 130px);
+}
 .sx-card {
-    background: var(--card, #fff); border-radius: 18px; padding: 20px 22px;
-    border: 1px solid var(--border-color, rgba(15, 23, 42, 0.07));
+    background: var(--card, #fff); border: 1px solid var(--border-color, rgba(15, 23, 42, 0.08));
+    border-radius: 18px; padding: 20px 22px;
+    display: flex; flex-direction: column; min-height: 0;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
 }
-.sx-card h4 { font-family: var(--font-head); font-size: 17px; margin: 0 0 10px; }
-.sx-pick p { font-size: 13.5px; line-height: 1.55; color: #64748b; margin: 0 0 14px; }
-.sx-empty { font-size: 13.5px; color: #94a3b8; padding: 10px 0; }
+.sx-mine { grid-column: 1 / -1; }
+.sx-pick { grid-column: 1 / -1; justify-content: center; align-items: flex-start; }
+.sx-card h4 { font-family: var(--font-title); font-weight: 400; font-size: 18px; margin: 0; }
+.sx-pick h4 { font-size: 21px; margin-bottom: 8px; }
+.sx-pick p { font-size: 13.5px; line-height: 1.6; color: #64748b; margin: 0 0 16px; max-width: 520px; }
+.sx-pick .sx-cta { max-width: 260px; margin-top: 0; }
+.sx-empty { font-size: 13px; color: #94a3b8; padding: 12px 0; }
 
-/* шапка бумаги: имя слева, цена справа крупно */
-.sx-co { display: flex; align-items: center; gap: 14px; }
+/* шапка бумаги: логотип · имя серифом · цена крупно справа */
+.sx-co { display: flex; align-items: center; gap: 13px; flex: none; }
 .sx-logo {
-    flex: none; width: 46px; height: 46px; border-radius: 13px; display: inline-flex;
-    align-items: center; justify-content: center; background: rgba(22, 163, 74, 0.1);
-    font-family: var(--font-num); font-size: 11px; font-weight: 800; color: #15803d;
+    flex: none; width: 46px; height: 46px; border-radius: 15px; display: grid; place-items: center;
+    background: rgba(22, 163, 74, 0.11); color: #16a34a;
+    font-family: var(--font-num); font-size: 11px; font-weight: 800;
 }
-.sx-conm { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.sx-conm b { font-size: 15.5px; font-weight: 700; }
-.sx-conm i { font-style: normal; font-size: 12px; color: #94a3b8; }
-.sx-px { text-align: right; display: flex; flex-direction: column; gap: 2px; flex: none; }
-.sx-px b { font-family: var(--font-num); font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
-.sx-px i { font-style: normal; font-size: 12px; }
-.sx-px i.up, .sx-mcell b.up, .tot b.up { color: #16a34a; }
-.sx-px i.dn, .sx-mcell b.dn, .tot b.dn { color: #dc2626; }
+.sx-nm { font-family: var(--font-title); font-weight: 400; font-size: 21px; line-height: 1.15; }
+.sx-sub { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+.sx-px { margin-left: auto; text-align: right; }
+.sx-px b { font-family: var(--font-num); font-size: 31px; font-weight: 700; letter-spacing: -0.01em; display: block; }
+.sx-px span { display: block; font-family: var(--font-num); font-size: 12.5px; margin-top: 2px; }
+.sx-px span.up { color: #16a34a; } .sx-px span.dn { color: #dc2626; }
 
-/* «Что нужно знать» — три факта, которые обычно узнают после первой сделки */
-.sx-know { display: flex; flex-direction: column; gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(15, 23, 42, 0.07); }
-.sx-know > div { display: flex; gap: 11px; align-items: flex-start; }
+/* период + график: график забирает всю оставшуюся высоту карточки */
+.sx-per { display: flex; gap: 5px; margin: 15px 0 4px; flex: none; }
+.sx-per button {
+    border: 0; background: none; cursor: pointer; font-size: 12px; color: #94a3b8;
+    padding: 5px 13px; border-radius: 9px; font-family: var(--font-ui);
+    transition: background 0.14s, color 0.14s;
+}
+.sx-per button.on { background: rgba(15, 23, 42, 0.06); color: #0f172a; font-weight: 600; }
+.sx-chart { flex: 1; min-height: 0; position: relative; }
+.sx-chart svg { width: 100%; height: 100%; display: block; }
+.sx-chart-note { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 12.5px; color: #94a3b8; }
+.sx-line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.sx-line.up { stroke: #16a34a; } .sx-line.dn { stroke: #dc2626; }
+.sx-fill { stroke: none; }
+.sx-fill.up { fill: rgba(22, 163, 74, 0.1); } .sx-fill.dn { fill: rgba(220, 38, 38, 0.09); }
+.sx-ax { stroke: rgba(15, 23, 42, 0.09); }
+.sx-axt { font-family: var(--font-num); font-size: 9.5px; fill: #8a97a8; }
+
+/* «Что нужно знать» — ТРИ КОЛОНКИ, а не список: три факта равнозначны */
+.sx-know {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; flex: none;
+    margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(15, 23, 42, 0.07);
+}
+.sx-know > div { display: flex; gap: 9px; }
 .sx-know i {
-    flex: none; width: 20px; height: 20px; border-radius: 50%; font-style: normal;
-    display: inline-flex; align-items: center; justify-content: center;
-    background: rgba(15, 23, 42, 0.06); font-size: 11px; font-weight: 700; color: #64748b;
+    flex: none; width: 19px; height: 19px; border-radius: 50%; font-style: normal;
+    display: grid; place-items: center; background: rgba(68, 83, 239, 0.1); color: #4453ef;
+    font-size: 11px; font-weight: 700;
 }
-.sx-know b { display: block; font-size: 13.5px; font-weight: 700; margin-bottom: 2px; }
-.sx-know p { margin: 0; font-size: 12.5px; line-height: 1.5; color: #64748b; }
-.sx-know-more { margin-top: 14px; font-size: 12.5px; line-height: 1.5; color: #94a3b8; }
+.sx-know b { display: block; font-size: 12.5px; font-weight: 600; color: #0f172a; margin-bottom: 2px; }
+.sx-know p { margin: 0; font-size: 11.5px; line-height: 1.5; color: #64748b; }
+.sx-know-more { margin-top: 11px; font-size: 11.5px; line-height: 1.5; color: #94a3b8; flex: none; }
 
-/* карточка сделки */
-.sx-side { display: flex; gap: 6px; padding: 4px; border-radius: 12px; background: rgba(15, 23, 42, 0.05); margin-bottom: 18px; }
+/* карточка сделки: воздух роздан поровну по швам, кнопка прижата ко дну */
+.sx-side { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: none; }
 .sx-side button {
-    flex: 1; border: 0; background: none; cursor: pointer; padding: 10px; border-radius: 9px;
-    font-family: var(--font-ui); font-size: 14px; font-weight: 700; color: #64748b; transition: background 0.14s, color 0.14s;
+    text-align: center; padding: 12px 0; border-radius: 12px; cursor: pointer;
+    border: 1px solid var(--border-color, rgba(15, 23, 42, 0.12)); background: none;
+    font-family: var(--font-ui); font-size: 14px; font-weight: 700; color: #94a3b8;
+    transition: background 0.14s, color 0.14s, border-color 0.14s;
 }
-.sx-side button.on { background: #16a34a; color: #fff; }
-.sx-side button.on.sell { background: #dc2626; }
-.sx-lab { font-size: 12.5px; color: #94a3b8; margin-bottom: 6px; }
-.sx-sum { display: flex; align-items: baseline; gap: 8px; }
+.sx-side button.on { background: #16a34a; border-color: #16a34a; color: #fff; box-shadow: 0 10px 24px -13px rgba(22, 163, 74, 0.9); }
+.sx-side button.on.sell { background: #dc2626; border-color: #dc2626; box-shadow: 0 10px 24px -13px rgba(220, 38, 38, 0.9); }
+.sx-lab { font-size: 12.5px; color: #94a3b8; margin: 25px 0 8px; flex: none; }
+.sx-sum {
+    display: flex; align-items: baseline; gap: 8px; flex: none;
+    border-bottom: 2px solid #0f172a; padding-bottom: 7px;
+}
 .sx-sum input {
-    width: 100%; max-width: 240px; border: 0; background: none; padding: 0;
-    font-family: var(--font-num); font-size: 40px; font-weight: 700; letter-spacing: -0.02em;
-    color: inherit; -moz-appearance: textfield;
+    width: 100%; min-width: 0; border: 0; background: none; padding: 0; color: inherit;
+    font-family: var(--font-num); font-size: 35px; font-weight: 700; letter-spacing: -0.02em;
+    -moz-appearance: textfield;
 }
 .sx-sum input::-webkit-outer-spin-button, .sx-sum input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .sx-sum input:focus { outline: none; }
-.sx-sum > span { font-size: 15px; color: #94a3b8; white-space: nowrap; }
-.sx-quick { display: flex; flex-wrap: wrap; gap: 7px; margin: 14px 0 16px; }
+.sx-sum > span { font-size: 19px; color: #94a3b8; white-space: nowrap; }
+.sx-quick { display: flex; gap: 7px; margin-top: 23px; flex: none; }
 .sx-quick button {
-    border: 1px solid rgba(15, 23, 42, 0.1); background: none; cursor: pointer;
-    padding: 8px 14px; border-radius: 999px; font-family: var(--font-ui); font-size: 13px; color: #475569;
-    transition: border-color 0.14s, background 0.14s, color 0.14s;
+    flex: 1; text-align: center; cursor: pointer; padding: 7px 0; border-radius: 9px;
+    border: 1px solid var(--border-color, rgba(15, 23, 42, 0.12)); background: none;
+    font-family: var(--font-num); font-size: 11.5px; color: #64748b;
+    transition: border-color 0.14s, color 0.14s, background 0.14s;
 }
-.sx-quick button:hover { border-color: rgba(15, 23, 42, 0.25); }
-.sx-quick button.on { background: #0f172a; border-color: #0f172a; color: #fff; }
-/* перевод «рубли → бумаги» с объяснением, почему не ровно */
-.sx-conv { padding: 14px 16px; border-radius: 13px; background: rgba(22, 163, 74, 0.07); }
+.sx-quick button.on { border-color: #4453ef; color: #4453ef; background: rgba(68, 83, 239, 0.05); }
+/* перевод «рубли → бумаги»: число и объяснение В СТРОКУ, не столбиком */
+.sx-conv {
+    display: flex; align-items: center; gap: 12px; flex: none;
+    margin-top: 24px; padding: 10px 13px; border-radius: 12px; background: rgba(68, 83, 239, 0.05);
+}
+.sx-conv b { font-family: var(--font-num); font-size: 16px; font-weight: 700; white-space: nowrap; }
+.sx-conv p { margin: 0; font-size: 11.5px; line-height: 1.45; color: #64748b; }
 .sx-conv.muted { background: rgba(15, 23, 42, 0.04); }
-.sx-conv b { display: block; font-family: var(--font-num); font-size: 22px; font-weight: 700; color: #15803d; }
 .sx-conv.muted b { color: #64748b; }
-.sx-conv p { margin: 4px 0 0; font-size: 12.5px; line-height: 1.5; color: #64748b; }
-.sx-tot { margin-top: 16px; display: flex; flex-direction: column; }
-.sx-tot > div { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid rgba(15, 23, 42, 0.06); }
-.sx-tot > div:first-child { border-top: 0; }
-.sx-tot span { font-size: 13px; color: #64748b; }
-.sx-tot b { font-family: var(--font-num); font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
-.sx-tot .big { border-top-width: 1px; border-top-color: rgba(15, 23, 42, 0.14); padding-top: 12px; margin-top: 4px; }
-.sx-tot .big span { color: #0f172a; font-weight: 600; }
-.sx-tot .big b { font-size: 18px; font-weight: 700; }
-.sx-tax { display: flex; gap: 10px; margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: rgba(217, 119, 6, 0.08); }
-.sx-tax svg { width: 16px; height: 16px; flex: none; color: #d97706; margin-top: 1px; }
-.sx-tax span { font-size: 12.5px; line-height: 1.5; color: #92610a; }
-.sx-alt { display: block; width: 100%; margin-top: 14px; border: 0; background: none; cursor: pointer; padding: 8px 0; text-align: left; font-family: var(--font-ui); font-size: 13px; color: #2563eb; }
-.sx-alt:hover { text-decoration: underline; }
-.sx-cta {
-    display: block; width: 100%; margin-top: 14px; border: 0; cursor: pointer;
-    padding: 16px; border-radius: 14px; background: #16a34a; color: #fff;
-    font-family: var(--font-ui); font-size: 15.5px; font-weight: 700;
-    box-shadow: 0 14px 28px -12px rgba(22, 163, 74, 0.8); transition: filter 0.15s;
+.sx-tot {
+    margin-top: 26px; padding-top: 12px; border-top: 1px solid rgba(15, 23, 42, 0.07);
+    display: flex; flex-direction: column; gap: 7px; flex: none;
 }
-.sx-cta.sell { background: #dc2626; box-shadow: 0 14px 28px -12px rgba(220, 38, 38, 0.8); }
+.sx-tot > div { display: flex; justify-content: space-between; align-items: baseline; font-size: 12.5px; color: #64748b; }
+.sx-tot > div b { font-family: var(--font-num); color: #0f172a; font-weight: 600; }
+.sx-tot > div.big { padding-top: 4px; }
+.sx-tot > div.big span { color: #0f172a; font-weight: 600; font-size: 13px; }
+.sx-tot > div.big b { font-size: 18px; font-weight: 700; }
+.sx-tax {
+    display: flex; gap: 9px; align-items: flex-start; flex: none;
+    margin-top: 24px; padding: 10px 12px; border-radius: 11px; background: rgba(217, 119, 6, 0.07);
+}
+.sx-tax svg { width: 14px; height: 14px; flex: none; color: #d97706; margin-top: 1px; }
+.sx-tax span { font-size: 11.5px; line-height: 1.5; color: #92610a; }
+.sx-alt {
+    display: block; width: 100%; text-align: center; border: 0; background: none; cursor: pointer;
+    font-family: var(--font-ui); font-size: 12.5px; color: #4453ef; margin-top: 23px; flex: none;
+}
+.sx-alt:hover { text-decoration: underline; }
+/* margin-top:auto — кнопка всегда у нижней кромки карточки, как в макете */
+.sx-cta {
+    margin-top: auto; border: 0; cursor: pointer; width: 100%; flex: none;
+    background: #16a34a; color: #fff; border-radius: 14px; padding: 16px; text-align: center;
+    font-family: var(--font-ui); font-size: 15px; font-weight: 700;
+    box-shadow: 0 14px 30px -15px rgba(22, 163, 74, 0.95); transition: filter 0.15s;
+}
+.sx-cta.sell { background: #dc2626; box-shadow: 0 14px 30px -15px rgba(220, 38, 38, 0.95); }
 .sx-cta:hover { filter: brightness(1.06); }
 .sx-cta.off { background: #e2e8f0; color: #64748b; box-shadow: none; cursor: default; }
-.sx-note { margin-top: 10px; font-size: 12px; color: #94a3b8; text-align: center; }
+.sx-note { text-align: center; font-size: 11.5px; color: #94a3b8; margin-top: 9px; flex: none; }
 
-/* «Мои вложения» человеческим языком */
-.sx-mh { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
-.sx-mh h4 { margin: 0; }
-.sx-mh .tot { font-size: 12.5px; color: #94a3b8; }
-.sx-mh .tot b { font-family: var(--font-num); font-weight: 700; color: #0f172a; }
-.sx-mrow { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-top: 1px solid rgba(15, 23, 42, 0.06); flex-wrap: wrap; }
-.sx-mnm { flex: 1 1 150px; min-width: 0; display: flex; flex-direction: column; }
-.sx-mnm b { font-family: var(--font-num); font-size: 13.5px; font-weight: 700; }
-.sx-mnm span { font-size: 12px; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sx-mcell { flex: 0 0 auto; display: flex; flex-direction: column; gap: 1px; min-width: 96px; }
-.sx-mcell span { font-size: 10.5px; color: #94a3b8; }
-.sx-mcell b { font-family: var(--font-num); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
-.sx-mact { display: flex; gap: 6px; flex: none; }
-.sx-mact button {
-    border: 1px solid rgba(15, 23, 42, 0.12); background: none; cursor: pointer;
-    padding: 7px 12px; border-radius: 9px; font-family: var(--font-ui); font-size: 12.5px; color: #475569;
+/* «Мои вложения»: вложено · сейчас стоит · заработано — без средней цены */
+.sx-mh { display: flex; align-items: baseline; gap: 12px; margin-bottom: 4px; flex: none; }
+.sx-mh > span { font-size: 12px; color: #94a3b8; }
+.sx-mh .tot { margin-left: auto; font-size: 12.5px; color: #94a3b8; }
+.sx-mh .tot b { font-family: var(--font-num); font-weight: 700; font-size: 14px; color: #0f172a; }
+.sx-mh .tot b.up { color: #16a34a; } .sx-mh .tot b.dn { color: #dc2626; }
+.sx-mlist { overflow-y: auto; min-height: 0; scrollbar-width: thin; }
+.sx-mrow {
+    display: grid; grid-template-columns: 216px 1fr 1fr 1fr 216px; gap: 0 16px;
+    align-items: center; padding: 11px 0; border-top: 1px solid rgba(15, 23, 42, 0.06);
 }
-.sx-mact button.buy { border-color: rgba(22, 163, 74, 0.35); color: #15803d; }
-.sx-mact button:hover { background: rgba(15, 23, 42, 0.04); }
+.sx-mrow:first-child { border-top: 0; }
+.sx-mco { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.sx-mlogo {
+    flex: none; width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center;
+    font-family: var(--font-num); font-size: 10px; font-weight: 800;
+}
+.sx-mnm { min-width: 0; display: flex; flex-direction: column; }
+.sx-mnm b { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sx-mnm > span { font-family: var(--font-num); font-size: 11px; color: #94a3b8; }
+.sx-mcell span { display: block; font-size: 10.5px; color: #94a3b8; margin-bottom: 2px; }
+.sx-mcell b { font-family: var(--font-num); font-size: 14px; font-weight: 600; }
+.sx-mcell b.up { color: #16a34a; } .sx-mcell b.dn { color: #dc2626; }
+.sx-mact { display: flex; gap: 8px; justify-content: flex-end; }
+.sx-mbtn {
+    border: 1px solid var(--border-color, rgba(15, 23, 42, 0.12)); background: none; cursor: pointer;
+    border-radius: 10px; padding: 7px 14px; font-family: var(--font-ui); font-size: 12px;
+    font-weight: 600; color: #0f172a; white-space: nowrap;
+}
+.sx-mbtn.buy { background: #16a34a; border-color: #16a34a; color: #fff; }
+.sx-mbtn:hover { filter: brightness(1.04); }
 
-/* МОБИЛЬНАЯ ВЁРСТКА. Раскладка не меняется — она и была колонкой; меняются
-   только размеры и то, что кнопки строки уезжают под неё на всю ширину. */
-@media (max-width: 700px) {
-    .sx { gap: 10px; }
-    .sx-card { padding: 16px; border-radius: 15px; }
-    .sx-co { flex-wrap: wrap; }
-    .sx-px { text-align: left; width: 100%; }
-    .sx-sum input { font-size: 34px; }
-    .sx-quick button { flex: 1 1 auto; text-align: center; }
-    .sx-mrow { gap: 8px; }
-    .sx-mcell { min-width: 88px; flex: 1 1 88px; }
-    .sx-mact { width: 100%; }
-    .sx-mact button { flex: 1; }
+/* УЗКИЙ ЭКРАН. Сетка макета рассчитана на десктоп; ниже 1100px две колонки не
+   живут — раскладываем в одну и снимаем фиксированную высоту, чтобы страница
+   могла прокрутиться. Мобильная версия проекта пока закрыта заглушкой, так что
+   это задел, а не проверенный на телефоне результат. */
+@media (max-width: 1100px) {
+    .sx { grid-template-columns: 1fr; grid-template-rows: none; height: auto; }
+    .sx-chart { height: 190px; flex: none; }
+    .sx-know { grid-template-columns: 1fr; gap: 12px; }
+    .sx-cta { margin-top: 18px; }
+    .sx-mrow { grid-template-columns: 1fr 1fr; gap: 8px 12px; }
+    .sx-mco { grid-column: 1 / -1; }
+    .sx-mact { grid-column: 1 / -1; }
+    .sx-mbtn { flex: 1; text-align: center; }
+    .sx-px b { font-size: 26px; }
+    .sx-sum input { font-size: 30px; }
 }
+
+body.dark-mode .sx-card { background: #141c27; border-color: rgba(255, 255, 255, 0.09); }
+body.dark-mode .sx-sub, body.dark-mode .sx-know p, body.dark-mode .sx-tot > div,
+body.dark-mode .sx-mcell span, body.dark-mode .sx-mh > span, body.dark-mode .sx-mh .tot,
+body.dark-mode .sx-conv p, body.dark-mode .sx-mnm > span { color: #9fb1c6; }
+body.dark-mode .sx-know { border-top-color: rgba(255, 255, 255, 0.09); }
+body.dark-mode .sx-know b, body.dark-mode .sx-tot > div b, body.dark-mode .sx-tot > div.big span,
+body.dark-mode .sx-mh .tot b, body.dark-mode .sx-mbtn { color: #f1f6fb; }
+body.dark-mode .sx-per button.on { background: rgba(255, 255, 255, 0.09); color: #f1f6fb; }
+body.dark-mode .sx-ax { stroke: rgba(255, 255, 255, 0.12); }
+body.dark-mode .sx-axt { fill: #6b7c93; }
+body.dark-mode .sx-sum { border-bottom-color: #f1f6fb; }
+body.dark-mode .sx-side button, body.dark-mode .sx-quick button, body.dark-mode .sx-mbtn { border-color: rgba(255, 255, 255, 0.14); }
+body.dark-mode .sx-tot, body.dark-mode .sx-mrow { border-top-color: rgba(255, 255, 255, 0.08); }
+body.dark-mode .sx-conv { background: rgba(96, 165, 250, 0.1); }
+body.dark-mode .sx-conv.muted { background: rgba(255, 255, 255, 0.05); }
+body.dark-mode .sx-tax { background: rgba(251, 191, 36, 0.12); }
+body.dark-mode .sx-tax span { color: #fcd34d; }
+body.dark-mode .sx-cta.off { background: rgba(255, 255, 255, 0.1); color: #9fb1c6; }
+body.dark-mode .sx-pick p, body.dark-mode .sx-empty { color: #9fb1c6; }
 
 body.dark-mode .pftb-seg { background: rgba(255, 255, 255, 0.08); }
 body.dark-mode .pftb-seg button { color: #9fb1c6; }
@@ -1964,7 +2051,7 @@ body.dark-mode .sx-axt { fill: #6b7c93; }
 
 /* ---- подтверждение в «Просто» (макет 07) ---- */
 .sx-cf { max-width: 460px; }
-.sx-cf h3 { font-family: var(--font-head); font-size: 22px; margin: 0 0 4px; }
+.sx-cf h3 { font-family: var(--font-title); font-size: 22px; margin: 0 0 4px; }
 .sx-cf-sub { font-size: 13px; color: #94a3b8; margin-bottom: 18px; }
 .sx-cf-rows { display: flex; flex-direction: column; }
 .sx-cf-r { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; padding: 10px 0; border-top: 1px solid rgba(15, 23, 42, 0.06); }

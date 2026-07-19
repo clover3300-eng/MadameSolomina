@@ -2370,7 +2370,7 @@
         // «Просто» живёт без карточек терминала (.btr-card), но данные ему нужны
         // те же самые — стакан для цены, позиции для «Мои вложения»
         if (simpleOn() && document.querySelector('#panel-portfolios.active .sx')) {
-            sxWire(); startPolling(); return;
+            sxWire(); sxFit(); startPolling(); return;
         }
         var live = document.querySelector('#panel-portfolios.active .btr-card');
         if (live && tradeReady()) { wire(); fitObserve(); fitSoon(); startPolling(); fsTapeOnce(); }
@@ -3760,24 +3760,38 @@
         var d = now - inv, up = d >= 0;
         var rows = list.map(function (p) {
             var pd = p.pnl, pu = pd >= 0;
-            var ms = { meta: p.meta || null };
+            var col = tickerHue(p.ticker);
             return '<div class="sx-mrow">' +
-                '<span class="sx-mnm"><b>' + esc(p.ticker) + '</b><span>' +
-                    esc((p.meta && p.meta.name) || '') + '</span></span>' +
+                '<span class="sx-mco">' +
+                    '<span class="sx-mlogo" style="background:' + col + '1a;color:' + col + '">' +
+                        esc(String(p.ticker).slice(0, 4)) + '</span>' +
+                    '<span class="sx-mnm"><b>' + esc((p.meta && p.meta.name) || p.ticker) + '</b>' +
+                        '<span>' + esc(p.ticker) + '</span></span>' +
+                '</span>' +
                 '<span class="sx-mcell"><span>вложено</span><b>' + fmtKop(p.avg * p.qty) + '</b></span>' +
                 '<span class="sx-mcell"><span>сейчас стоит</span><b>' + fmtKop(p.val) + '</b></span>' +
                 '<span class="sx-mcell"><span>заработано</span><b class="' + (pu ? 'up' : 'dn') + '">' +
                     (pu ? '+' : '−') + fmtKop(Math.abs(pd)) + '</b></span>' +
                 '<span class="sx-mact">' +
-                    '<button type="button" onclick="pftSxPick(\'' + jsArg(p.uid) + '\',\'sell\')">Продать</button>' +
-                    '<button type="button" class="buy" onclick="pftSxPick(\'' + jsArg(p.uid) + '\',\'buy\')">Купить ещё</button>' +
+                    '<button type="button" class="sx-mbtn" onclick="pftSxPick(\'' + jsArg(p.uid) + '\',\'sell\')">Продать</button>' +
+                    '<button type="button" class="sx-mbtn buy" onclick="pftSxPick(\'' + jsArg(p.uid) + '\',\'buy\')">Купить ещё</button>' +
                 '</span></div>';
         }).join('');
         return '<div class="sx-card sx-mine">' +
             '<div class="sx-mh"><h4>Мои вложения</h4>' +
+            '<span>' + list.length + ' ' + PF.plural(list.length, 'бумага', 'бумаги', 'бумаг') + '</span>' +
             '<span class="tot">Всего вложено <b>' + fmtKop(inv) + '</b> · сейчас стоит <b>' + fmtKop(now) +
             '</b> · заработано <b class="' + (up ? 'up' : 'dn') + '">' + (up ? '+' : '−') +
-            fmtKop(Math.abs(d)) + '</b></span></div>' + rows + '</div>';
+            fmtKop(Math.abs(d)) + '</b></span></div>' +
+            '<div class="sx-mlist">' + rows + '</div></div>';
+    }
+    // цвет плашки тикера — детерминированный, чтобы бумага не меняла цвет
+    // от перерисовки к перерисовке (в макете у каждой строки свой)
+    var SX_HUES = ['#16a34a', '#3b82f6', '#8b5cf6', '#e0592b', '#0891b2', '#d97706'];
+    function tickerHue(tk) {
+        var h = 0, str = String(tk || '');
+        for (var i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 997;
+        return SX_HUES[h % SX_HUES.length];
     }
     PF.pftSimpleHtml = function () {
         var n = sxSlot(), s = S(n);
@@ -3801,18 +3815,32 @@
         var last = sxPrice(s);   // та же цена, что в расчёте — одно число на карточку
         var close = s.ob ? A().q2n(s.ob.closePrice) : 0;
         var d = (last > 0 && close > 0) ? last - close : 0;
+        var kindWord = /etf|fund/i.test(String(s.meta.kind || '')) ? 'Фонд' : 'Акция';
         var head = '<div class="sx-card">' +
             '<div class="sx-co">' +
                 '<span class="sx-logo">' + esc(String(s.meta.ticker).slice(0, 4)) + '</span>' +
-                '<span class="sx-conm"><b>' + esc(s.meta.name || s.meta.ticker) + '</b>' +
-                    '<i>' + esc(s.meta.ticker) + ' · Московская биржа</i></span>' +
+                '<span><div class="sx-nm">' + esc(s.meta.name || s.meta.ticker) + '</div>' +
+                    '<div class="sx-sub">' + kindWord + ' · Московская биржа</div></span>' +
                 '<span class="sx-px"><b>' + (last > 0 ? fmtPx(last, s) + ' ₽' : '—') + '</b>' +
-                    (d ? '<i class="' + (d > 0 ? 'up' : 'dn') + '">' + (d > 0 ? '+' : '−') +
-                        fmtPx(Math.abs(d), s) + ' ₽ за сегодня</i>' : '') + '</span>' +
+                    (d ? '<span class="' + (d > 0 ? 'up' : 'dn') + '">' + (d > 0 ? '+' : '−') +
+                        fmtPx(Math.abs(d), s) + ' ₽ за сегодня</span>' : '') + '</span>' +
             '</div>' + sxChartHtml(s) + sxKnowHtml(s, c) + '</div>';
         sxLoadCandles(s.uid);
         return '<div class="sx">' + head + sxDealHtml(n) + sxMineHtml() + '</div>';
     };
+    // Высоту «Просто» СЧИТАЕМ ПО ФАКТУ, а не формулой от высоты экрана: сверху
+    // набегает переменное (полоса, её отступ, обёртки), и константа в calc()
+    // разъезжается от любой правки хрома. Тот же приём, что у pfdFsFill.
+    // ЛОВУШКА ZOOM: rect в экранных пикселях, вёрстка — в локальных, делим.
+    function sxFit() {
+        var el = document.querySelector('.sx');
+        if (!el || window.innerWidth < 1100) return;   // на узком раскладка своя, высота авто
+        var z = parseFloat(getComputedStyle(document.body).zoom) || 1;
+        var h = (window.innerHeight - el.getBoundingClientRect().top) / z - SX_PAD;
+        if (h > 320) el.style.height = h + 'px';
+    }
+    var SX_PAD = 20;   // воздух под нижней карточкой
+    window.addEventListener('resize', sxFit);
     function sxRepaint() {
         var host = document.querySelector('.sx');
         if (!host) return;
@@ -3824,6 +3852,7 @@
             if (i) { i.focus(); try { i.setSelectionRange(pos, pos); } catch (e) {} }
         }
         sxWire();   // разметку заменили целиком — обработчик ввода вешаем заново
+        sxFit();
     }
     // тик данных: цена и «Мои вложения» живые. Пока человек ПЕЧАТАЕТ сумму, не
     // трогаем — перерисовка под пальцами читается как сбой ввода
@@ -3876,9 +3905,9 @@
     // «Что покупаете · Сколько · Примерно по · Комиссия · Спишется · Останется».
     // Единственное предупреждение — про цену: не список рисков мелким шрифтом,
     // а одна вещь, которая реально может пойти не так.
-    // ПРЕДОХРАНИТЕЛИ ТЕРМИНАЛА СОХРАНЕНЫ: свежесть цен, лимит частоты и ввод
-    // суммы руками выше порога. В макете поля ввода нет, потому что там сумма
-    // ниже порога; убирать этот рубеж для НОВИЧКА было бы ровно наоборот.
+    // Предохранители терминала, которые здесь ОСТАЮТСЯ: свежесть цен (по
+    // замершей цене заявка не уйдёт) и лимит частоты. Ввода суммы руками здесь
+    // НЕТ — по решению владельца продукта карточка повторяет макет буквально.
     window.pftSxGo = function () {
         var n = sxSlot(), s = S(n);
         var buy = s.side !== 'sell';
@@ -3897,8 +3926,6 @@
     function sxConfirm(n, s, c, buy) {
         var cn = conn() || {};
         var free = T.pos.money;
-        var needType = c.total >= sumLimit();
-        var typed = Math.round(c.total);
         var old = dq('btSxCfOv'); if (old) old.remove();
         var ov = document.createElement('div');
         ov.id = 'btSxCfOv';
@@ -3922,10 +3949,6 @@
             '</div>' +
             '<div class="sx-cf-warn">' + IC_SHIELD + '<span>Цена может немного отличаться. Заявка исполнится по ' +
                 'лучшей цене на бирже в этот момент — обычно разница в копейки, но на редких бумагах бывает заметнее.</span></div>' +
-            (needType
-                ? '<label class="sx-cf-type">Сумма крупная — наберите её цифрами, чтобы подтвердить' +
-                  '<input id="btSxCfSum" type="number" inputmode="numeric" placeholder="' + typed + '" autocomplete="off"></label>'
-                : '') +
             '<div class="sx-cf-act">' +
                 '<button type="button" class="sx-cf-b ghost" id="btSxCfNo">Отмена</button>' +
                 '<button type="button" class="sx-cf-b go' + (buy ? '' : ' sell') + '" id="btSxCfYes">' +
@@ -3941,14 +3964,10 @@
         ov.querySelector('#btSxCfNo').addEventListener('click', close);
         ov.addEventListener('click', function (e) { if (e.target === ov) close(); });
         setTimeout(function () {
-            var f = dq('btSxCfSum') || dq('btSxCfYes');
+            var f = dq('btSxCfYes');
             if (f) try { f.focus(); } catch (e) {}
         }, 30);
         ov.querySelector('#btSxCfYes').addEventListener('click', function () {
-            if (needType) {
-                var got = String((dq('btSxCfSum') || {}).value || '').replace(/[\s ]/g, '');
-                if (got !== String(typed)) { toast('Сумма не совпала — проверьте ещё раз', true); return; }
-            }
             // связь могла умереть, пока читали заказ — та же проверка, что в терминале
             var late = submitBlock(s);
             if (late) { close(); toast(late + ': проверьте цену заново, заявка не отправлена', true); return; }
