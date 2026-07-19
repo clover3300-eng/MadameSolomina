@@ -1271,7 +1271,7 @@ body.dark-mode .pftg-sk-row i { background: rgba(255, 255, 255, 0.08); }
 body:has(#panel-portfolios.active) #pftScreens.on {
     position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
     z-index: 878;   /* под шторкой портфеля и модалками, над сеткой */
-    display: flex; align-items: flex-end; gap: 8px;
+    display: flex; align-items: stretch; gap: 8px;
     max-width: min(980px, calc(100vw - 190px));   /* правый угол занят #pfWidgetFab/#bgFab */
 }
 /* уходит вместе с остальным хромом, когда открыт «полноэкранный» слой */
@@ -1319,32 +1319,35 @@ body.pfsd-open #pftScreens { display: none !important; }
 .pfts-more:hover { opacity: 1; background: rgba(255, 255, 255, 0.16); }
 .pfts-more svg { width: 13px; height: 13px; }
 
-.pfts-add {
-    flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
-    padding: 6px 12px; border-radius: 11px; border: 1px dashed rgba(15, 23, 42, 0.18);
-    background: none; color: #64748b;
+/* вторая капсула — «новый экран»: лупа (по тикеру) и плюс (пустой), одним
+   блоком через волосок. Свои рамки кнопкам не нужны — их держит капсула */
+.pfts-new {
+    position: relative; flex: 0 0 auto; display: flex; align-items: stretch; gap: 2px;
+    padding: 5px; border-radius: 16px;
+    background: rgba(255, 255, 255, 0.82); backdrop-filter: blur(14px) saturate(1.3);
+    border: 1px solid rgba(15, 23, 42, 0.09);
+    box-shadow: 0 18px 40px -22px rgba(15, 23, 42, 0.55), 0 1px 3px -1px rgba(15, 23, 42, 0.12);
+}
+.pfts-nbtn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer;
+    padding: 6px 11px; border: 0; border-radius: 11px; background: none; color: #64748b;
     font-family: var(--font-ui); font-size: 12px; font-weight: 700;
-    transition: color 0.14s, border-color 0.14s, background 0.14s;
+    transition: color 0.14s, background 0.14s;
 }
-.pfts-add:hover { color: #4453ef; border-color: rgba(68, 83, 239, 0.45); background: rgba(68, 83, 239, 0.06); }
-.pfts-add:disabled { opacity: 0.4; cursor: default; }
-.pfts-add:disabled:hover { color: #64748b; border-color: rgba(15, 23, 42, 0.18); background: none; }
-.pfts-add svg { width: 13px; height: 13px; }
-
-/* лупа: экран сразу по тикеру. Стоит перед «плюсом» — сперва частый жест
-   («хочу экран под SBER»), потом пустой экран под ручную сборку */
-.pfts-lens {
-    flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
-    width: 32px; align-self: stretch; border-radius: 11px; border: 1px dashed rgba(15, 23, 42, 0.18);
-    background: none; color: #64748b; margin-right: 2px;
-    transition: color 0.14s, border-color 0.14s, background 0.14s;
+.pfts-nbtn:hover { color: #4453ef; background: rgba(68, 83, 239, 0.08); }
+.pfts-nbtn.on { color: #4453ef; background: rgba(68, 83, 239, 0.1); }
+.pfts-nbtn:disabled { opacity: 0.4; cursor: default; }
+.pfts-nbtn:disabled:hover { color: #64748b; background: none; }
+.pfts-nbtn svg { width: 14px; height: 14px; flex: none; }
+.pfts-lens { padding-left: 10px; padding-right: 10px; }
+/* волосок между «по тикеру» и «пустой»: два действия одного блока */
+.pfts-lens + .pfts-add { position: relative; }
+.pfts-lens + .pfts-add::before {
+    content: ''; position: absolute; left: -2px; top: 6px; bottom: 6px;
+    width: 1px; background: rgba(15, 23, 42, 0.1);
 }
-.pfts-lens svg { width: 15px; height: 15px; }
-.pfts-lens:hover, .pfts-lens.on { color: #4453ef; border-color: rgba(68, 83, 239, 0.45); background: rgba(68, 83, 239, 0.06); }
-.pfts-lens:disabled { opacity: 0.4; cursor: default; }
-.pfts-lens:disabled:hover { color: #64748b; border-color: rgba(15, 23, 42, 0.18); background: none; }
 
-/* выпадашка поиска — вверх от полосы, как меню экрана */
+/* выпадашка поиска — вверх от своей капсулы, как меню экрана */
 .pfts-find {
     position: absolute; right: 0; bottom: calc(100% + 8px); z-index: 3;
     width: 340px; padding: 8px; border-radius: 14px;
@@ -1425,10 +1428,14 @@ body.dark-mode .pfts-menu { background: #1b2433; border-color: rgba(255, 255, 25
 body.dark-mode .pfts-menu button { color: #cbd5e1; }
 body.dark-mode .pfts-menu button:hover { background: rgba(255, 255, 255, 0.07); color: #f4f8fd; }
 body.dark-mode .pfts-menu .pfts-del { color: #f87171; }
-body.dark-mode .pfts-lens { border-color: rgba(255, 255, 255, 0.16); color: #94a3b8; }
-body.dark-mode .pfts-lens:hover, body.dark-mode .pfts-lens.on {
-    color: #a5b4fc; border-color: rgba(129, 140, 248, 0.5); background: rgba(129, 140, 248, 0.1);
+body.dark-mode .pfts-new {
+    background: rgba(23, 31, 45, 0.86); border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 44px -22px rgba(0, 0, 0, 0.8);
 }
+body.dark-mode .pfts-nbtn { color: #94a3b8; }
+body.dark-mode .pfts-nbtn:hover, body.dark-mode .pfts-nbtn.on { color: #a5b4fc; background: rgba(129, 140, 248, 0.14); }
+body.dark-mode .pfts-nbtn:disabled:hover { color: #94a3b8; background: none; }
+body.dark-mode .pfts-lens + .pfts-add::before { background: rgba(255, 255, 255, 0.14); }
 body.dark-mode .pfts-find { background: #1b2433; border-color: rgba(255, 255, 255, 0.1); }
 body.dark-mode .pfts-find-inp { background: #131c2a; border-color: rgba(255, 255, 255, 0.12); color: #e2e8f0; }
 body.dark-mode .pfts-find-inp:focus { background: #0f1725; border-color: rgba(129, 140, 248, 0.6); }

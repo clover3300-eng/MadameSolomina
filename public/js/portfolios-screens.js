@@ -66,11 +66,11 @@
     }
 
     function pillHtml(t, on) {
-        var tick = tickersOf(t);
+        // экран, заведённый лупой, зовётся своим тикером — повторять его во
+        // второй строке незачем (эхо); прочие бумаги экрана там остаются
+        var nm = nameOf(t);
+        var tick = tickersOf(t).filter(function (x) { return x !== nm; });
         var sub = tick.length ? tick.slice(0, 3).join(' · ') + (tick.length > 3 ? ' +' + (tick.length - 3) : '') : '';
-        // экран, заведённый лупой, зовётся своим тикером — вторая строка с тем же
-        // словом была бы эхом (см. pftScreenFindPick)
-        if (sub === nameOf(t)) sub = '';
         if (renaming === t) {
             return '<span class="pfts-pill pfts-editing">' +
                 '<input type="text" class="pfts-input" id="pftsRename" maxlength="24" value="' + PF.attr(nameOf(t)) + '" ' +
@@ -125,19 +125,28 @@
         }).join('');
     }
 
+    // Полоса — ДВЕ капсулы: слева ряд экранов (он скроллится, когда их много),
+    // справа «новый экран». Раньше обе кнопки стояли внутри ряда с пунктирными
+    // рамками: пунктир рябил рядом с пилюлями, а на седьмом экране кнопки
+    // уезжали в скролл — до них нельзя было дотянуться, не прокрутив ряд.
     function barHtml() {
         var act = active();
         var list = tabs().map(function (t) { return pillHtml(t, t === act); }).join('');
         var full = tabs().length >= MAX_SCREENS;
-        return '<div class="pfts-row" role="tablist" aria-label="Экраны терминала">' + list +
-            '<button type="button" class="pfts-lens' + (findOpen ? ' on' : '') + '" onclick="pftScreenFind(event)" ' +
-                (full ? 'disabled title="Больше ' + MAX_SCREENS + ' экранов терминал не держит"'
-                      : 'title="Экран по тикеру: стакан, заявка и график сразу на этой бумаге"') +
-                ' aria-label="Новый экран по тикеру">' + IC_LENS + '</button>' +
-            '<button type="button" class="pfts-add" onclick="pftScreenAdd()" ' +
-                (full ? 'disabled title="Больше ' + MAX_SCREENS + ' экранов терминал не держит"' : 'title="Новый экран: свой стакан, заявка и график"') + '>' +
-                IC_PLUS + '<span>Экран</span></button>' +
-        '</div>' + (menuOf && menuOf === act ? menuHtml(menuOf) : '') + (findOpen ? findHtml() : '');
+        var dis = full ? ' disabled' : '';
+        var fullT = 'Больше ' + MAX_SCREENS + ' экранов терминал не держит';
+        return '<div class="pfts-row" role="tablist" aria-label="Экраны терминала">' + list + '</div>' +
+            (menuOf && menuOf === act ? menuHtml(menuOf) : '') +
+            '<div class="pfts-new">' +
+                '<button type="button" class="pfts-nbtn pfts-lens' + (findOpen ? ' on' : '') + '"' + dis +
+                    ' onclick="pftScreenFind(event)" aria-label="Новый экран по тикеру" aria-expanded="' + findOpen + '" ' +
+                    'title="' + (full ? fullT : 'Экран по тикеру: стакан, заявка и график сразу на этой бумаге') + '">' +
+                    IC_LENS + '</button>' +
+                '<button type="button" class="pfts-nbtn pfts-add"' + dis + ' onclick="pftScreenAdd()" ' +
+                    'title="' + (full ? fullT : 'Пустой экран: соберёте виджеты сами') + '">' +
+                    IC_PLUS + '<span>Экран</span></button>' +
+                (findOpen ? findHtml() : '') +
+            '</div>';
     }
 
     // ---------- синхронизация с рендером ----------
