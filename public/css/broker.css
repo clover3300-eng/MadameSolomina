@@ -1118,11 +1118,24 @@ body.dark-mode .btc-note, .pfd-thm-dark .btc-note { color: #7f8ea3; }
 .pftg-chart-plot line.dn { stroke: #dc2626; stroke-width: 1.1; }
 .pftg-chart-plot rect.up { fill: #16a34a; }
 .pftg-chart-plot rect.dn { fill: #dc2626; }
+/* гистограмма объёма — та же пара цветов приглушённой заливкой: столбики
+   поддерживают свечи, а не спорят с ними за внимание */
+.pftg-chart-plot rect.vol { opacity: 0.28; }
 .pftg-chart-plot line.gr { stroke: rgba(15, 23, 42, 0.07); stroke-width: 1; }
+.pftg-chart-plot line.lastpx { stroke: #4453ef; stroke-width: 1; stroke-dasharray: 4 4; opacity: 0.55; }
+/* подписи стоят абсолютом на своих уровнях (top в процентах приходит из
+   разметки) — обычный поток развесил бы их по всей высоте, включая полосу
+   объёма, и цифры разошлись бы со своими линиями */
 .pftg-chart-ax {
-    display: flex; flex-direction: column; justify-content: space-between; flex: none;
+    position: relative; flex: none; min-width: 52px;
     font-family: var(--font-num); font-variant-numeric: tabular-nums;
-    font-size: 10.5px; color: #94a3b8; text-align: right;
+    font-size: 10.5px; color: #94a3b8;
+}
+.pftg-chart-ax span, .pftg-chart-ax b { position: absolute; right: 0; transform: translateY(-50%); white-space: nowrap; }
+/* последняя цена — плашкой, как в терминале */
+.pftg-chart-ax b {
+    font-weight: 600; color: #fff;
+    background: #4453ef; border-radius: 5px; padding: 2px 5px;
 }
 
 /* силуэт неопознанного виджета: шапка и строки-скелетоны */

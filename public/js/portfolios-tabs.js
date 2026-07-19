@@ -342,7 +342,7 @@
     // Свечи призрака: считаются ОДИН раз своим LCG вместо Math.random —
     // призрак обязан быть одинаковым при каждой перерисовке, иначе картинка
     // за стеклом дёргается на каждый ре-рендер вкладки. Значения — проценты
-    // высоты поля (0 внизу): [открытие, закрытие, максимум, минимум]
+    // высоты поля (0 внизу): [открытие, закрытие, максимум, минимум, объём]
     var PFTG_CANDLES = (function (n) {
         var out = [], seed = 20260719, px = 22;
         function rnd() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
@@ -352,30 +352,52 @@
             // ведёт серию снизу вверх, шум даёт откаты — силуэт «график»
             var trend = 20 + (i / (n - 1)) * 52;
             var o = px, c = clamp(px + (trend - px) * 0.22 + (rnd() - 0.5) * 13, 8, 92);
-            out.push([o, c, Math.min(96, Math.max(o, c) + rnd() * 4.5), Math.max(4, Math.min(o, c) - rnd() * 4.5)]);
+            // объём привязан к размаху свечи: на широких днях столбик выше —
+            // так гистограмма читается вместе со свечами, а не своей жизнью
+            var vol = clamp(Math.abs(c - o) * 5 + rnd() * 34 + 8, 8, 100);
+            out.push([o, c, Math.min(96, Math.max(o, c) + rnd() * 4.5), Math.max(4, Math.min(o, c) - rnd() * 4.5), vol]);
             px = c;
         }
         return out;
     })(64);
+    // Поле делится по высоте: цены живут в верхних PFTG_PX_H процентах, ниже
+    // зазор и гистограмма объёма до самого низа. Отсюда ДВА разных перевода
+    // «значение → y», и путать их нельзя: свечи и столбики иначе наезжают
+    var PFTG_PX_H = 74, PFTG_VOL_H = 22;
+    function pftgPxY(v) { return (100 - v) * PFTG_PX_H / 100; }   // цена (0 внизу шкалы) → y
     function pftgChartCard(n) {
-        var p = pftgPaper(n), w = 100 / PFTG_CANDLES.length;
+        var p = pftgPaper(n), w = 100 / PFTG_CANDLES.length, d = p[3] < 0.01 ? 4 : 2;
+        var last = PFTG_CANDLES[PFTG_CANDLES.length - 1][1];
+        // шкала цены: середина поля = текущая цена бумаги, края ±10%
+        function pxAt(v) { return p[2] * (0.9 + v / 100 * 0.2); }
         // non-scaling-stroke: viewBox тянется непропорционально (preserveAspectRatio
-        // none), иначе тени свечей и сетка растянулись бы вместе с ним
+        // none), иначе тени свечей, сетка и пунктир растянулись бы вместе с ним
         var body = PFTG_CANDLES.map(function (c, i) {
-            var x = i * w, cx = x + w / 2, up = c[1] >= c[0];
-            var top = Math.max(c[0], c[1]), bot = Math.min(c[0], c[1]);
+            var x = i * w, cx = x + w / 2, up = c[1] >= c[0], bx = (x + w * 0.22).toFixed(2), bw = (w * 0.56).toFixed(2);
+            var yTop = pftgPxY(Math.max(c[0], c[1])), yBot = pftgPxY(Math.min(c[0], c[1]));
+            var vh = c[4] * PFTG_VOL_H / 100;
             return '<line class="' + (up ? 'up' : 'dn') + '" vector-effect="non-scaling-stroke" x1="' + cx.toFixed(2) +
-                    '" y1="' + (100 - c[2]).toFixed(2) + '" x2="' + cx.toFixed(2) + '" y2="' + (100 - c[3]).toFixed(2) + '"/>' +
-                '<rect class="' + (up ? 'up' : 'dn') + '" x="' + (x + w * 0.22).toFixed(2) + '" y="' + (100 - top).toFixed(2) +
-                    '" width="' + (w * 0.56).toFixed(2) + '" height="' + Math.max(0.7, top - bot).toFixed(2) + '"/>';
+                    '" y1="' + pftgPxY(c[2]).toFixed(2) + '" x2="' + cx.toFixed(2) + '" y2="' + pftgPxY(c[3]).toFixed(2) + '"/>' +
+                '<rect class="' + (up ? 'up' : 'dn') + '" x="' + bx + '" y="' + yTop.toFixed(2) +
+                    '" width="' + bw + '" height="' + Math.max(0.7, yBot - yTop).toFixed(2) + '"/>' +
+                '<rect class="vol ' + (up ? 'up' : 'dn') + '" x="' + bx + '" y="' + (100 - vh).toFixed(2) +
+                    '" width="' + bw + '" height="' + vh.toFixed(2) + '"/>';
         }).join('');
-        var grid = [20, 40, 60, 80].map(function (y) {
+        var LEVELS = [90, 70, 50, 30, 10];
+        var grid = LEVELS.map(function (v) {
+            var y = pftgPxY(v).toFixed(2);
             return '<line class="gr" vector-effect="non-scaling-stroke" x1="0" y1="' + y + '" x2="100" y2="' + y + '"/>';
         }).join('');
-        // ось цены справа — тем же моно-шрифтом, что и весь терминал
-        var axis = [1.06, 1.02, 0.98, 0.94, 0.9].map(function (k) {
-            return '<span>' + pftgNum(p[2] * k, p[3] < 0.01 ? 4 : 2) + '</span>';
-        }).join('');
+        // линия последней цены — пунктиром через всё поле, как в терминале
+        var ly = pftgPxY(last).toFixed(2);
+        var lastLine = '<line class="lastpx" vector-effect="non-scaling-stroke" x1="0" y1="' + ly +
+            '" x2="100" y2="' + ly + '"/>';
+        // Ось цены справа — тем же моно-шрифтом, что и весь терминал. Подписи
+        // стоят АБСОЛЮТНО напротив своих линий (space-between развесил бы их по
+        // всей высоте карточки, включая полосу объёма), последняя цена — плашкой
+        var axis = LEVELS.map(function (v) {
+            return '<span style="top:' + pftgPxY(v).toFixed(2) + '%">' + pftgNum(pxAt(v), d) + '</span>';
+        }).join('') + '<b style="top:' + ly + '%">' + pftgNum(pxAt(last), d) + '</b>';
         return '<div class="dash2-card pf-card2 btr-card pftg-chart">' +
             PF.pfCardHead('', 'График · ' + p[0], null,
                 '<div class="btr-hd-note"><span class="btr-hd-ins">1 день · свечи</span></div>') +
@@ -384,7 +406,8 @@
                 // пропорция 1:1, и в потоке он раздувал карточку до квадрата в
                 // полторы тысячи пикселей. Абсолютный слой в разметку не растёт
                 '<div class="pftg-chart-svg">' +
-                    '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' + grid + body + '</svg>' +
+                    '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
+                        grid + body + lastLine + '</svg>' +
                 '</div>' +
                 '<div class="pftg-chart-ax">' + axis + '</div>' +
             '</div></div>';
@@ -412,8 +435,9 @@
         if (kind === 'note') return pftgGenericCard('Заметка');
         return pftgGenericCard('Виджет');
     }
-    // сид на случай, если конструктор недоступен (конфига нет вовсе)
-    var PFTG_SEED = [['trade:ob', 4], ['trade:ticket', 4], ['trade:orders', 4], ['trade:chart', 12]];
+    // сид на случай, если конструктор недоступен (конфига нет вовсе) —
+    // [id, ширина, колонка, высота], зеркало PFX_TAB_SEEDS.trading
+    var PFTG_SEED = [['trade:chart', 5, 1, 430], ['trade:ob', 3, 6], ['trade:ticket', 4, 9], ['trade:orders', 12, 1]];
     function pftgGhostHtml() {
         var cfg = null;
         try { cfg = dashCfgFor('trading'); } catch (e) {}
@@ -425,7 +449,7 @@
                     return [id, +(cfg.span || {})[id] || 4, +(cfg.col || {})[id] || 0, +(cfg.h || {})[id] || 0];
                 });
         }
-        if (!rows || !rows.length) rows = PFTG_SEED.map(function (r) { return [r[0], r[1], 0, 0]; });
+        if (!rows || !rows.length) rows = PFTG_SEED.map(function (r) { return [r[0], r[1], r[2] || 0, r[3] || 0]; });
         var items = rows.map(function (r) {
             var span = clamp(r[1], 3, 12), col = r[2], h = r[3];
             // колонку пользователь мог задать перетаскиванием — повторяем её явно
