@@ -3336,6 +3336,22 @@
         if (PF.renderNoAnim) PF.renderNoAnim();
     }
     window.pftFsToggle = function () { fsSet(!rawFs()); };
+    // ЕДИНАЯ ТОЧКА ВХОДА (кнопка «Терминал» в шапке «Портфелей»). Зовётся с
+    // ЛЮБОЙ подвкладки, поэтому сама переводит на «Торговлю» и включает режим —
+    // раньше вход жил только в плавающей полосе внизу, а она показывается лишь
+    // на «Торговле»: с «Обзора» в терминал было не попасть вовсе.
+    // Порядок важен: сперва флаг, потом подвкладка — иначе pfxGoTab отрисует
+    // обычный дашборд, и тут же придёт второй рендер уже в режиме.
+    window.pftEnterTerminal = function () {
+        if (!tradeReady()) { toast('Подключите брокера в режиме «Торговля»', true); return; }
+        simpleState = false;
+        try { localStorage.setItem(SIMPLE_KEY, '0'); localStorage.setItem(FS_KEY, '1'); } catch (e) {}
+        fsState = true;
+        var t = PF.pfxTab;
+        if (PF.pfxIsTradeTab && PF.pfxIsTradeTab(t) && PF.renderNoAnim) PF.renderNoAnim();
+        else if (window.pfxGoTrading) window.pfxGoTrading();
+        else if (window.pfxGoTab) window.pfxGoTab('trading');
+    };
     // Переключатель ведёт В ОБЕ стороны и не теряет обратной дороги: «Просто» и
     // «Терминал» — это один счёт и одна бумага, только разной сложности.
     window.pftSimpleGo = function (on) { simpleSet(!!on); };

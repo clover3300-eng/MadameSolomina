@@ -2585,6 +2585,11 @@ body.dark-mode .pfcf-input:focus { border-color: #818cf8; box-shadow: 0 0 0 3px 
 }
 .pfp-btn svg, .pfp-actions .d3-quick.pf-impbtn svg { width: 16px; height: 16px; }
 .pfp-btn:hover, .pfp-actions .d3-quick.pf-impbtn:hover { background: rgba(255, 255, 255, 0.13); border-color: rgba(255, 255, 255, 0.24); }
+/* «Терминал» — вход в полноэкранный режим прямо из шапки, с любой подвкладки.
+   Выделен зелёным среди прочих кнопок героя: это не настройка дашборда, а
+   переход в другой режим работы, и путать его с «Виджет»/«Портфель» не нужно. */
+.pfp-btn.pfp-term { background: rgba(52, 211, 153, 0.16); border-color: rgba(52, 211, 153, 0.34); color: #a7f3d0; }
+.pfp-btn.pfp-term:hover { background: rgba(52, 211, 153, 0.26); border-color: rgba(52, 211, 153, 0.5); }
 .pfp-btn:active { transform: translateY(1px); }
 .pfp-btn.icon { padding: 0; width: 38px; justify-content: center; }
 .pfp-btn.primary { background: #fff; color: #14261a; border-color: transparent; box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.5); }

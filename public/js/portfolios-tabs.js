@@ -714,6 +714,8 @@
     // ---- тёмный герой «Панель управления» — постоянная шапка вкладки (референс R7) ----
     var PFX_LOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
     var PFX_UNLOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 7.7-1.5"/></svg>';
+    // «во весь экран» — та же метафора, что у кнопки входа в полосе экранов
+    var PFX_TERM_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H4v5M15 4h5v5M15 20h5v-5M9 20H4v-5"/></svg>';
     window.pfxToggleSums = function () {
         var s = {};
         try { s = JSON.parse(localStorage.getItem('profile_settings_v1')) || {}; } catch (e) {}
@@ -766,7 +768,20 @@
         // конструктором нечего настраивать: и на гейте «Торговли», и у гостя, где
         // вместо дашборда стоит пустое состояние — виджет было бы некуда положить
         var noCfg = isTrading || empty;
-        var actions = '<div class="pfp-actions">' +
+        // ВХОД В ТЕРМИНАЛ — из героя, то есть с ЛЮБОЙ подвкладки, включая «Обзор».
+        // До этого он жил кнопкой в плавающей полосе внизу, которая появляется
+        // только на «Торговле»: с «Обзора» в полноэкранный терминал попасть было
+        // неоткуда вовсе. Кнопка сама переключает подвкладку и включает режим —
+        // один клик вместо «найди Торговлю → найди полосу внизу → найди кнопку».
+        // Показываем только тем, кто реально может торговать (canTrade в
+        // broker-api.js): вести остальных в гейт кнопкой из шапки нечестно.
+        var canTrade = !!(window.brokerApi && window.brokerApi.canTrade());
+        var termBtn = canTrade
+            ? '<button type="button" class="pfp-btn pfp-term" onclick="pftEnterTerminal()" ' +
+              'title="Полноэкранный терминал: стакан, заявка и график во весь экран">' +
+              PFX_TERM_SVG + '<span>Терминал</span></button>'
+            : '';
+        var actions = '<div class="pfp-actions">' + termBtn +
             (noCfg ? '' : '<button type="button" class="pfp-btn primary" onclick="pfxAddWidgetClick()" title="Добавить виджет на дашборд">' + PFD_PLUS_SVG + '<span>Виджет</span></button>') +
             '<button type="button" class="pfp-btn' + (empty ? ' primary' : '') + '" onclick="pfAddPortfolio()" title="Создать новый портфель">' + PF.PLUS_SVG + '<span>Портфель</span></button>' +
             '<button type="button" class="pfp-btn icon' + (sumsOn ? ' on' : '') + '" onclick="pfxToggleSums()" title="' + (sumsOn ? 'Показать суммы' : 'Скрывать суммы от посторонних глаз') + '">' + (sumsOn ? PFX_LOCK_SVG : PFX_UNLOCK_SVG) + '</button>' +
