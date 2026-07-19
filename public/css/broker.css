@@ -1549,15 +1549,37 @@ body:has(#pftBar) #pfWrap { gap: 0; }
 }
 .pftb-back svg { width: 14px; height: 14px; }
 .pftb-back:hover { background: rgba(15, 23, 42, 0.05); color: #0f172a; }
-.pftb-sep { width: 1px; height: 20px; flex: none; margin: 0 10px 0 4px; background: rgba(15, 23, 42, 0.1); }
+.pftb-sep { width: 1px; height: 20px; flex: none; margin: 0 12px; background: rgba(15, 23, 42, 0.1); }
 /* ряд экранов переехал сюда с нижней полосы: внутри та же разметка .pfts-*,
    но без матового стекла и тени — в строке они были бы плашкой на плашке */
 .pftb-scr { min-width: 0; display: flex; align-items: center; position: relative; }
-.pftb-scr .pfts-row {
-    padding: 0; border: 0; background: none; backdrop-filter: none; box-shadow: none; border-radius: 0;
+/* ряд экранов В ПОЛОСЕ (макет 01): компактные пилюли «точка · имя · тикер» и
+   одна пунктирная «+». Подстроки, «⋮» и лупы тут нет — в строке 44px они
+   превращали навигацию в частокол. */
+.tb-scr { display: flex; align-items: center; gap: 3px; min-width: 0; }
+.tb-s {
+    display: inline-flex; align-items: center; gap: 7px; flex: none;
+    border: 0; background: none; cursor: pointer; padding: 5px 11px; border-radius: 9px;
+    font-family: var(--font-ui); font-size: 12.5px; color: #64748b; white-space: nowrap;
+    transition: background 0.14s, color 0.14s;
 }
-.pftb-scr .pfts-new { padding: 0 0 0 6px; border: 0; background: none; backdrop-filter: none; box-shadow: none; }
-.pftb-scr .pfts-menu, .pftb-scr .pfts-find { top: 40px; bottom: auto; }
+.tb-s:hover { background: rgba(15, 23, 42, 0.04); }
+.tb-s.on { background: rgba(15, 23, 42, 0.055); color: #0f172a; font-weight: 600; }
+.tb-s .dot { width: 5px; height: 5px; border-radius: 50%; background: #16a34a; flex: none; }
+.tb-s u { text-decoration: none; font-family: var(--font-num); font-size: 10px; color: #94a3b8; }
+.tb-s-edit { padding: 2px 4px; }
+.tb-s-edit input {
+    width: 110px; border: 1px solid rgba(15, 23, 42, 0.16); border-radius: 7px;
+    padding: 3px 7px; font-family: var(--font-ui); font-size: 12.5px;
+}
+.tb-add {
+    width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; flex: none;
+    border: 1px dashed rgba(15, 23, 42, 0.18); background: none; cursor: pointer; color: #94a3b8;
+    transition: border-color 0.14s, color 0.14s;
+}
+.tb-add svg { width: 13px; height: 13px; }
+.tb-add:hover { border-color: rgba(15, 23, 42, 0.35); color: #475569; }
+.pftb-scr .pfts-menu { top: 40px; bottom: auto; }
 
 .pftb-r { margin-left: auto; display: flex; align-items: center; gap: 9px; flex: none; }
 .pftb-search {
@@ -1715,7 +1737,10 @@ body.dark-mode .btr-keys-note { background: rgba(52, 211, 153, 0.12); color: #6e
    54px = полоса 44 + её нижний отступ 10. */
 .sx {
     display: grid; grid-template-columns: 1fr 452px; grid-template-rows: 1fr 226px;
-    gap: 16px; padding: 4px 0 14px;
+    gap: 16px; padding: 20px 24px;   /* ровно как .sx в макете 04 */
+    /* высоту ставит sxFit() замером — она должна ВКЛЮЧАТЬ поля, иначе они
+       прибавляются сверх и нижняя карточка уезжает за кромку экрана */
+    box-sizing: border-box;
     /* высоту ставит sxFit() замером: константа в calc() разъезжалась бы от
        любой правки хрома над сеткой. Здесь — запасное значение до первого замера */
     height: calc(var(--real-vh, 100vh) / 0.9 - 130px);
@@ -2207,3 +2232,11 @@ body.dark-mode .btr-share .bar { background: rgba(255, 255, 255, 0.1); }
 body.dark-mode .btr-psh > :nth-child(8), body.dark-mode .btr-psr > :nth-child(8) { box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.1); }
 body.dark-mode .btr-pstot { border-top-color: rgba(255, 255, 255, 0.1); }
 body.dark-mode .btr-dock-keys kbd { border-color: rgba(255, 255, 255, 0.14); color: #9fb1c6; }
+
+body.dark-mode .tb-s { color: #9fb1c6; }
+body.dark-mode .tb-s:hover { background: rgba(255, 255, 255, 0.05); }
+body.dark-mode .tb-s.on { background: rgba(255, 255, 255, 0.08); color: #f1f6fb; }
+body.dark-mode .tb-s u { color: #6b7c93; }
+body.dark-mode .tb-add { border-color: rgba(255, 255, 255, 0.18); color: #9fb1c6; }
+body.dark-mode .tb-add:hover { border-color: rgba(255, 255, 255, 0.32); color: #f1f6fb; }
+body.dark-mode .tb-s-edit input { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.16); color: #f1f6fb; }

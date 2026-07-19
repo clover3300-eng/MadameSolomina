@@ -187,9 +187,13 @@
         // в сиде первый явно показан: без свечей терминал выглядел половиной
         // инструмента, а найти их можно было только в пикере. Библиотеку он тянет
         // лениво. Четвёртый элемент строки сида — высота блока (px), необязателен.
-        // ширины: тикету 4 колонки, а не 3 — он самый плотный (стороны, типы,
-        // два крупных поля, сводка, кнопка), и в трёх у него ломался заголовок
-        trading: [['trade:chart', 1, 5, 430], ['trade:ob', 6, 3], ['trade:ticket', 9, 4], ['trade:orders', 1, 12]]
+        // РАСКЛАДКА ПО МАКЕТУ 01: график | стакан | заявка одной строкой и док во
+        // всю ширину под ними. В макете `.row1{grid-template-columns:1fr 296px 348px}`
+        // при кадре ~1280 — это доли 50% / 23% / 27%, то есть 6 / 3 / 3 колонки из
+        // двенадцати. Высоты дают пропорцию `1fr 196px`: верхний ряд 480, док 196
+        // (в полноэкранном режиме важны именно ДОЛИ — см. pfdFsFill).
+        trading: [['trade:chart', 1, 6, 480], ['trade:ob', 7, 3, 480],
+                  ['trade:ticket', 10, 3, 480], ['trade:orders', 1, 12, 196]]
     };
     function pfxTabSeed(tab) {
         var cfg = normTabCfg(null);
@@ -213,9 +217,10 @@
             var cn = PF.pfcNextFreeChart ? PF.pfcNextFreeChart() : 0;
             var sfx = sn > 1 ? ':' + sn : '', csfx = cn > 1 ? ':' + cn : '';
             var rows = [];
-            if (cn) rows.push(['trade:chart' + csfx, 1, 5, 430]);
-            if (sn) rows.push(['trade:ob' + sfx, 6, 3], ['trade:ticket' + sfx, 9, 4]);
-            rows.push(['trade:orders', 1, 12]);
+            // те же доли макета, что у первого экрана — раскладка одна на все
+            if (cn) rows.push(['trade:chart' + csfx, 1, 6, 480]);
+            if (sn) rows.push(['trade:ob' + sfx, 7, 3, 480], ['trade:ticket' + sfx, 10, 3, 480]);
+            rows.push(['trade:orders', 1, 12, 196]);
             rows.forEach(function (r) {
                 cfg.order.push(r[0]); cfg.col[r[0]] = r[1]; cfg.span[r[0]] = r[2]; cfg.hidden[r[0]] = 0;
                 if (r[3]) cfg.h[r[0]] = r[3];

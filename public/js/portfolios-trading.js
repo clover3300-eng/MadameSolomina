@@ -3456,16 +3456,18 @@
             '<button type="button" class="pftb-back" onclick="pftFsExit()" ' +
                 'title="Выйти из терминала (Esc)">' + IC_BACK + 'Портфели</button>' +
             '<span class="pftb-sep"></span>' +
-            // переключатель сложности — первым делом после выхода: он и есть
-            // ответ на «мне тут слишком сложно», и терять обратную дорогу нельзя
-            '<div class="pftb-seg" role="tablist" aria-label="Сложность">' +
-                '<button type="button" role="tab" aria-selected="' + simpleOn() + '"' +
-                    (simpleOn() ? ' class="on"' : '') + ' onclick="pftSimpleGo(true)">Просто</button>' +
-                '<button type="button" role="tab" aria-selected="' + !simpleOn() + '"' +
-                    (simpleOn() ? '' : ' class="on"') + ' onclick="pftSimpleGo(false)">Терминал</button>' +
-            '</div>' +
-            // экраны — только у терминала: в «Просто» бумага одна и «экран 3» ни о чём
-            (simpleOn() ? '' : '<div class="pftb-scr">' + (PF.pftsBarHtml ? PF.pftsBarHtml() : '') + '</div>') +
+            // Слева РАЗНОЕ по режимам (макеты 01 и 04): у терминала — ряд экранов,
+            // у «Просто» — переключатель сложности. Показывать сегмент и там и там
+            // значило бы держать в терминале кнопку, которой в макете нет; обратная
+            // дорога из терминала в «Просто» лежит через меню «…».
+            (simpleOn()
+                ? '<div class="pftb-seg" role="tablist" aria-label="Сложность">' +
+                    '<button type="button" role="tab" aria-selected="true" class="on" ' +
+                        'onclick="pftSimpleGo(true)">Просто</button>' +
+                    '<button type="button" role="tab" aria-selected="false" ' +
+                        'onclick="pftSimpleGo(false)">Терминал</button>' +
+                  '</div>'
+                : '<div class="pftb-scr">' + (PF.pftsBarHtml ? PF.pftsBarHtml() : '') + '</div>') +
             '<div class="pftb-r">' +
                 '<button type="button" class="pftb-search" onclick="pftFsSearch()" ' +
                     'title="Найти бумагу">' + IC_LENS + '<span>Тикер или название</span><kbd>/</kbd></button>' +
@@ -3492,6 +3494,10 @@
                 ic + '<span>' + label + '</span>' + (key ? '<i>' + key + '</i>' : '') + '</button>';
         }
         return '<div class="pftb-menu" id="pftbMenu">' +
+            // обратная дорога в «Просто»: в полосе терминала сегмента нет (макет 01),
+            // и без этого пункта путь к простому режиму из терминала терялся
+            item('pftSimpleGo(true)', IC_SIMPLE2, 'Простой режим', '') +
+            '<div class="pftb-msep"></div>' +
             item('pftFsAddWidget()', IC_PLUS, 'Добавить виджет', '') +
             item('pftFsSums()', IC_EYE, 'Скрывать суммы', '', hid) +
             item('pftFsTheme()', IC_MOON, dark ? 'Светлая тема' : 'Тёмная тема', '') +
@@ -3554,6 +3560,7 @@
         else toast('Личный кабинет недоступен', true);
     };
     var IC_DOTS3 = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>';
+    var IC_SIMPLE2 = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>';
     var IC_EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7"/><circle cx="12" cy="12" r="3"/></svg>';
     var IC_MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5"/></svg>';
     var IC_KEYS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg>';

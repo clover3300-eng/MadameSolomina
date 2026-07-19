@@ -131,7 +131,41 @@
     // справа «новый экран». Раньше обе кнопки стояли внутри ряда с пунктирными
     // рамками: пунктир рябил рядом с пилюлями, а на седьмом экране кнопки
     // уезжали в скролл — до них нельзя было дотянуться, не прокрутив ряд.
+    // ---- ряд экранов ВНУТРИ полосы 44px (макет 01) ----
+    // Там он выглядит иначе: компактная пилюля «точка · имя · тикер», без
+    // подстроки и без «⋮», и одна пунктирная кнопка «+». Всё остальное
+    // (полноэкранный, «Просто», лупа) в полосе не нужно — режим уже включён,
+    // а переключатель сложности живёт в меню «…».
+    function pillBarHtml(t, on) {
+        if (renaming === t) {
+            return '<span class="tb-s tb-s-edit">' +
+                '<input type="text" class="pfts-input" id="pftsRename" maxlength="24" value="' + PF.attr(nameOf(t)) + '" ' +
+                    'aria-label="Название экрана" onkeydown="pftScreenRenameKey(event)" onblur="pftScreenRenameDone()">' +
+            '</span>';
+        }
+        var nm = nameOf(t);
+        var tick = tickersOf(t).filter(function (x) { return x !== nm; });
+        return '<button type="button" class="tb-s' + (on ? ' on' : '') + '" role="tab" aria-selected="' + !!on + '" ' +
+            'onclick="pftScreenGo(\'' + t + '\')" ondblclick="pftScreenRename(\'' + t + '\')" ' +
+            (on ? 'oncontextmenu="pftScreenMenu(\'' + t + '\', event); return false;" ' : '') +
+            'title="' + PF.attr(nm + (tick.length ? ' — ' + tick.join(' · ') : '')) + '">' +
+            (on ? '<span class="dot"></span>' : '') + esc(nm) +
+            (tick.length ? '<u>' + esc(tick[0]) + '</u>' : '') +
+        '</button>';
+    }
+    function barCompactHtml() {
+        var act = active();
+        var full = tabs().length >= MAX_SCREENS;
+        return '<div class="tb-scr" role="tablist" aria-label="Экраны терминала">' +
+            tabs().map(function (t) { return pillBarHtml(t, t === act); }).join('') +
+            '<button type="button" class="tb-add' + (full ? ' pfts-off' : '') + '" onclick="pftScreenAdd()" ' +
+                'aria-label="Новый экран" title="' + (full
+                    ? 'Экранов уже ' + MAX_SCREENS + ' — больше терминал не держит'
+                    : 'Пустой экран: соберёте виджеты сами') + '">' + IC_PLUS + '</button>' +
+        '</div>' + (menuOf && menuOf === act ? menuHtml(menuOf) : '');
+    }
     function barHtml() {
+        if (PF.pftFsOn && PF.pftFsOn()) return barCompactHtml();
         var act = active();
         var list = tabs().map(function (t) { return pillHtml(t, t === act); }).join('');
         var full = tabs().length >= MAX_SCREENS;
@@ -194,9 +228,10 @@
             if (i) { i.focus(); i.select(); }
         }
         var menu = dq('pftsMenu');
-        var pill = host.querySelector('.pfts-pill.on');
+        // в полосе 44px ряд компактный (.tb-scr/.tb-s), в плавающей — прежний
+        var pill = host.querySelector('.pfts-pill.on, .tb-s.on');
         if (menu && pill) {
-            var row = host.querySelector('.pfts-row');
+            var row = host.querySelector('.pfts-row, .tb-scr');
             var left = pill.offsetLeft - (row ? row.scrollLeft : 0);
             menu.style.left = Math.max(0, left) + 'px';
         }
