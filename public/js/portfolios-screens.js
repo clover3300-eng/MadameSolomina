@@ -133,16 +133,19 @@
         var act = active();
         var list = tabs().map(function (t) { return pillHtml(t, t === act); }).join('');
         var full = tabs().length >= MAX_SCREENS;
-        var dis = full ? ' disabled' : '';
-        var fullT = 'Больше ' + MAX_SCREENS + ' экранов терминал не держит';
+        // На лимите кнопки НЕ отключаем: disabled-кнопка молчит в ответ на клик, и
+        // это читается как «не работает» (так и было). Кнопка остаётся живой, гаснет
+        // только на вид, а причину называет тостом — отказ обязан себя объяснять
+        var off = full ? ' pfts-off' : '';
+        var fullT = 'Экранов уже ' + MAX_SCREENS + ' — больше терминал не держит';
         return '<div class="pfts-row" role="tablist" aria-label="Экраны терминала">' + list + '</div>' +
             (menuOf && menuOf === act ? menuHtml(menuOf) : '') +
             '<div class="pfts-new">' +
-                '<button type="button" class="pfts-nbtn pfts-add"' + dis + ' onclick="pftScreenAdd()" ' +
+                '<button type="button" class="pfts-nbtn pfts-add' + off + '" onclick="pftScreenAdd()" ' +
                     'title="' + (full ? fullT : 'Пустой экран: соберёте виджеты сами') + '">' +
                     IC_PLUS + '<span>Экран</span></button>' +
-                '<button type="button" class="pfts-nbtn pfts-lens' + (findOpen ? ' on' : '') + '"' + dis +
-                    ' onclick="pftScreenFind(event)" aria-label="Новый экран по тикеру" aria-expanded="' + findOpen + '" ' +
+                '<button type="button" class="pfts-nbtn pfts-lens' + (findOpen ? ' on' : '') + off +
+                    '" onclick="pftScreenFind(event)" aria-label="Новый экран по тикеру" aria-expanded="' + findOpen + '" ' +
                     'title="' + (full ? fullT : 'Экран по тикеру: стакан, заявка и график сразу на этой бумаге') + '">' +
                     IC_LENS + '</button>' +
                 (findOpen ? findHtml() : '') +
@@ -163,7 +166,8 @@
                  !!(PF.pfxWide && PF.pfxWide());
         if (!on) {
             if (el) { el.classList.remove('on'); el.innerHTML = ''; }
-            menuOf = ''; renaming = ''; lastKey = '';
+            menuOf = ''; renaming = ''; findOpen = false; lastKey = '';
+            try { document.body.style.removeProperty('--pfts-h'); } catch (e) {}
             return;
         }
         if (!el) {
@@ -180,6 +184,11 @@
         lastKey = key;
         el.innerHTML = barHtml();
         el.classList.add('on');
+        // Тосты вкладки живут внизу по центру — ровно там же, где полоса, и
+        // накрывали её целиком: кнопка исчезала под плашкой сразу после нажатия
+        // («не получается нажать»), а тост С ДЕЙСТВИЕМ (.has-act) ещё и ел клики.
+        // Отдаём высоту полосы в CSS — тост встаёт над ней (см. broker.css)
+        try { document.body.style.setProperty('--pfts-h', el.offsetHeight + 'px'); } catch (e) {}
         if (renaming) {
             var i = dq('pftsRename');
             if (i) { i.focus(); i.select(); }
@@ -224,7 +233,10 @@
     // общий ход «завести экран»: сид (график | стакан | заявка по СВОБОДНОЙ
     // бумаге + «Мои заявки») собирает конструктор — см. pfxTabSeed
     function createScreen() {
-        if (tabs().length >= MAX_SCREENS) { toast('Больше ' + MAX_SCREENS + ' экранов терминал не держит', true); return ''; }
+        if (tabs().length >= MAX_SCREENS) {
+            toast('Экранов уже ' + MAX_SCREENS + ' — удалите ненужный через «⋮» на его вкладке', true);
+            return '';
+        }
         var no = nextScreenNo();
         if (!no) { toast('Свободных номеров экранов не осталось', true); return ''; }
         var t = 'trading:' + no;
@@ -242,6 +254,11 @@
     window.pftScreenFind = function (ev) {
         if (ev) ev.stopPropagation();
         menuOf = '';
+        // на лимите поиск не открываем — но говорим почему, а не молчим
+        if (!findOpen && tabs().length >= MAX_SCREENS) {
+            toast('Экранов уже ' + MAX_SCREENS + ' — удалите ненужный через «⋮» на его вкладке', true);
+            return;
+        }
         findOpen = !findOpen;
         findRes = []; findMsg = ''; findBusy = false;
         sync();

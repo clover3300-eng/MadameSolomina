@@ -1270,7 +1270,9 @@ body.dark-mode .pftg-sk-row i { background: rgba(255, 255, 255, 0.08); }
 #pftScreens { display: none; }
 body:has(#panel-portfolios.active) #pftScreens.on {
     position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
-    z-index: 878;   /* под шторкой портфеля и модалками, над сеткой */
+    /* выше плавающих кнопок #pfWidgetFab (879) и #bgFab: на узком окне полоса
+       доезжает до них, и перехватывать её клики они не должны */
+    z-index: 881;   /* под шторкой портфеля и модалками, над сеткой и FAB'ами */
     display: flex; align-items: stretch; gap: 8px;
     max-width: min(980px, calc(100vw - 190px));   /* правый угол занят #pfWidgetFab/#bgFab */
 }
@@ -1330,16 +1332,20 @@ body.pfsd-open #pftScreens { display: none !important; }
 }
 .pfts-nbtn {
     display: inline-flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer;
-    padding: 6px 11px; border: 0; border-radius: 11px; background: none; color: #64748b;
+    min-height: 34px; padding: 6px 13px; border: 0; border-radius: 11px; background: none; color: #64748b;
     font-family: var(--font-ui); font-size: 12px; font-weight: 700;
-    transition: color 0.14s, background 0.14s;
+    transition: color 0.14s, background 0.14s, transform 0.1s;
 }
 .pfts-nbtn:hover { color: #4453ef; background: rgba(68, 83, 239, 0.08); }
 .pfts-nbtn.on { color: #4453ef; background: rgba(68, 83, 239, 0.1); }
-.pfts-nbtn:disabled { opacity: 0.4; cursor: default; }
-.pfts-nbtn:disabled:hover { color: #64748b; background: none; }
+/* нажатие обязано быть видно: без отклика кнопка кажется мёртвой */
+.pfts-nbtn:active { transform: scale(0.94); }
+.pfts-pill:active { transform: scale(0.97); }
+/* лимит экранов: кнопка гаснет, но ОСТАЁТСЯ живой — клик объяснит причину тостом */
+.pfts-nbtn.pfts-off { opacity: 0.45; }
+.pfts-nbtn.pfts-off:hover { color: #64748b; background: rgba(15, 23, 42, 0.05); }
 .pfts-nbtn svg { width: 14px; height: 14px; flex: none; }
-.pfts-lens { padding-left: 10px; padding-right: 10px; }
+.pfts-lens { padding-left: 12px; padding-right: 12px; }
 /* волосок между «пустой» и «по тикеру»: два действия одного блока */
 .pfts-add + .pfts-lens { position: relative; }
 .pfts-add + .pfts-lens::before {
@@ -1407,6 +1413,11 @@ body.pfsd-open #pftScreens { display: none !important; }
 
 /* полоса перекрывает низ сетки — освобождаем ей место под последним виджетом */
 body:has(#pftScreens.on) #pfxTabPanel { padding-bottom: 74px; }
+/* ...и уводим тост НАД полосу: он живёт внизу по центру, то есть ровно на её
+   месте — накрывал пилюли и кнопки, а с кнопкой действия (.has-act, у него
+   pointer-events: auto) ещё и перехватывал клики. --pfts-h ставит сам модуль
+   по фактической высоте полосы (js/portfolios-screens.js) */
+body:has(#pftScreens.on) .pf-toast { bottom: calc(var(--pfts-h, 47px) + 30px); }
 
 /* ---------- тёмная тема ---------- */
 body.dark-mode .pfts-row {
