@@ -374,13 +374,37 @@ body.dark-mode .btr-search-none { color: #9fb1c6; }
 /* строка инструмента: тикер · имя · статус торгов точкой */
 .btr-instr { display: flex; align-items: center; gap: 9px; }
 .btr-instr b { font-family: var(--font-num); font-size: 15px; font-weight: 700; }
-.btr-instr span { color: #64748b; font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+/* Правило метит ИМЕННО название бумаги, а не «любой span в строке». Пока оно
+   было `.btr-instr span`, оно било по специфичности всех соседей — и точка
+   сессии, и иконки жили с чужими flex:1 и 12.5px вместо своих. Заметно стало,
+   когда рядом встала метка связи: третий претендент на ширину начал резаться. */
+.btr-instr .btr-iname { color: #64748b; font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 .btr-st { display: inline-flex; align-items: center; gap: 6px; flex: none; font-size: 10.5px; font-weight: 600; white-space: nowrap; }
 .btr-st i { font-style: normal; width: 7px; height: 7px; border-radius: 50%; }
 .btr-st.ok { color: #16a34a; }
 .btr-st.ok i { background: #16a34a; box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12); }
 .btr-st.off { color: #d97706; }
 .btr-st.off i { background: #d97706; box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.12); }
+
+/* СВЯЗЬ — не то же самое, что торговая сессия рядом. Метка молчит, пока цены
+   живые (пустой span схлопывается), и становится пилюлей, когда данные замерли:
+   тревога должна отличаться от вечнозелёной лампочки, которую не замечают. */
+.btr-linkw:empty { display: none; }
+.btr-link {
+    display: inline-flex; align-items: center; gap: 6px; flex: none;
+    padding: 3px 8px; border-radius: 999px; white-space: nowrap;
+    font-size: 10.5px; font-weight: 700;
+}
+.btr-link i { font-style: normal; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.btr-link.stale { color: #dc2626; background: rgba(220, 38, 38, 0.1); }
+.btr-link.wait { color: #94a3b8; background: rgba(148, 163, 184, 0.14); }
+
+/* Замершие данные. Стакан остаётся виден — полезно знать, какой была картина, —
+   но больше не читается как живой и не отдаёт цену в тикет по клику. Гасим
+   только лестницу: переключатель шага рядом не должен выглядеть сломанным. */
+.btr-obhost.btr-stale .btr-ax,
+.btr-obhost.btr-stale .btr-obempty { opacity: 0.4; filter: grayscale(0.7); }
+.btr-obhost.btr-stale .btr-axrow { pointer-events: none; }
 
 /* стакан по оси цены: [спрос ←] цена [→ предложение] */
 .btr-ax { display: flex; flex-direction: column; }
@@ -617,6 +641,13 @@ body.dark-mode .btr-search-none { color: #9fb1c6; }
 .btr-submit:hover { filter: brightness(1.06); }
 .btr-submit:active { transform: scale(0.99); }
 .btr-submit:disabled { opacity: 0.6; cursor: default; }
+/* заблокирована обрывом связи: не приглушённая «купить», а серая кнопка с
+   причиной вместо действия — зелёная под 60% прозрачности всё ещё зовёт нажать */
+.btr-submit.blocked, .btr-submit.blocked.buy, .btr-submit.blocked.sell {
+    background: #e2e8f0; color: #64748b; box-shadow: none; opacity: 1;
+}
+.btr-submit.blocked .btr-sb-l { font-weight: 700; font-size: 13.5px; }
+.btr-submit.blocked:hover { filter: none; }
 
 /* служебная настройка порога подтверждения — тихой строкой под кнопкой */
 .btr-subnote { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; font-size: 11px; color: #94a3b8; }
@@ -866,11 +897,18 @@ body.dark-mode .btr-sand, .pfd-thm-dark .btr-sand { color: #fbbf24; }
 body.dark-mode .btr-search-drop { background: #141c27; border-color: rgba(255, 255, 255, 0.12); }
 body.dark-mode .btr-search-row:hover { background: rgba(96, 165, 250, 0.1); }
 body.dark-mode .btr-search-row span { color: #9fb1c6; }
-body.dark-mode .btr-instr span, .pfd-thm-dark .btr-instr span { color: #9fb1c6; }
+body.dark-mode .btr-instr .btr-iname, .pfd-thm-dark .btr-instr .btr-iname { color: #9fb1c6; }
 body.dark-mode .btr-st.ok, .pfd-thm-dark .btr-st.ok { color: #34d399; }
 body.dark-mode .btr-st.ok i, .pfd-thm-dark .btr-st.ok i { background: #34d399; box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.14); }
 body.dark-mode .btr-st.off, .pfd-thm-dark .btr-st.off { color: #fbbf24; }
 body.dark-mode .btr-st.off i, .pfd-thm-dark .btr-st.off i { background: #fbbf24; box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.14); }
+body.dark-mode .btr-link.stale, .pfd-thm-dark .btr-link.stale { color: #f87171; background: rgba(248, 113, 113, 0.16); }
+body.dark-mode .btr-link.wait, .pfd-thm-dark .btr-link.wait { color: #9fb1c6; background: rgba(159, 177, 198, 0.16); }
+body.dark-mode .btr-submit.blocked, .pfd-thm-dark .btr-submit.blocked,
+body.dark-mode .btr-submit.blocked.buy, .pfd-thm-dark .btr-submit.blocked.buy,
+body.dark-mode .btr-submit.blocked.sell, .pfd-thm-dark .btr-submit.blocked.sell {
+    background: rgba(255, 255, 255, 0.1); color: #9fb1c6;
+}
 body.dark-mode .btr-axrow:hover, .pfd-thm-dark .btr-axrow:hover { background: rgba(96, 165, 250, 0.08); }
 body.dark-mode .btr-axrow.ask b, .pfd-thm-dark .btr-axrow.ask b { color: #f87171; }
 body.dark-mode .btr-axrow.bid b, .pfd-thm-dark .btr-axrow.bid b { color: #34d399; }

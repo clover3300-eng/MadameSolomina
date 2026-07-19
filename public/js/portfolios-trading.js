@@ -51,6 +51,13 @@
     var OB_DEPTH = 10;      // уровней на сторону в карточке натуральной высоты
     var OB_MAX = 20;        // ...и сколько просим у брокера: растянутой карточке есть что показать
     var OB_MIN = 1;         // самый тесный честный стакан: лучший бид, цена, лучший аск
+    // СВЕЖЕСТЬ ДАННЫХ. fetch к брокеру идёт без таймаута (broker-api.js), то есть
+    // зависший запрос не отклоняется НИКОГДА — по ошибкам обрыв не поймать вовсе.
+    // Поэтому «живы ли цены» считается по времени последнего УСПЕШНОГО ответа
+    // стакана: он самый частый (2с) и именно на нём считаются деньги.
+    // 8 секунд = четыре пропущенных такта подряд: одиночный сетевой чих терминал
+    // не глушит, а настоящий обрыв виден почти сразу.
+    var LIVE_MS = 8000;
     // ниже этой высоты карточка уходит в плотный режим (.btr-tight): цифры мельче,
     // воздух убран — иначе в ужатый блок не влезает даже кнопка тикета
     var TIGHT_H = 380;
@@ -97,13 +104,20 @@
         // открытые позиции со средней ценой и P&L (GetPortfolio) — для виджета
         // «Позиции»; опрашивается, только пока виджет на экране
         port: { list: [], ts: 0 },
-        obTimer: null, ordTimer: null, stTimer: null, tapeTimer: null, posTimer: null
+        // свежесть данных: с какого момента идёт поллинг (гвард ложной тревоги
+        // при возврате на вкладку) и сказали ли уже про обрыв — см. freshTick
+        pollSince: 0, linkWarned: false,
+        obTimer: null, ordTimer: null, stTimer: null, tapeTimer: null, posTimer: null,
+        freshTimer: null
     };
     // состояние ОДНОЙ бумаги (у каждого слота своё)
     function newSlot() {
         return {
             uid: null, meta: null,        // выбранный инструмент и его паспорт
             ob: null, status: null,       // стакан и статус торгов
+            obTs: 0,                      // время последнего УСПЕШНОГО стакана (свежесть, см. LIVE_MS)
+            obFail: 0, obErr: '',         // отказов подряд и причина последнего — в тултип метки связи
+            linkKey: '',                  // что уже нарисовано про связь (freshTick не трогает DOM зря)
             depth: OB_DEPTH,              // уровней на сторону — по высоте карточки (fitOb)
             agg: 1,                       // склейка соседних цен: множитель шага инструмента
             side: 'buy', kind: 'limit', price: '', lots: 1,
@@ -388,7 +402,7 @@
         var m = FAVS[i];
         if (!m || !m.uid) return;
         var s = S(n);
-        s.uid = m.uid; s.meta = m; s.ob = null; s.status = null; s.price = ''; s.tape = [];
+        s.uid = m.uid; s.meta = m; clearBook(s); s.price = ''; s.tape = [];
         s.max = null; s.searchQ = ''; s.searchOpen = false; s.metaStale = true;
         instrMem[m.uid] = m;
         saveSlots(); repaintSlot(n); emitSlotChange(n);
@@ -488,6 +502,55 @@
         });
     };
 
+    // ---- свежесть данных: жива ли СВЯЗЬ ----
+    // Статус сессии (statusDot ниже) и статус связи — РАЗНЫЕ факты, и путать их
+    // опасно: при обрыве сети зелёная точка «торги идут» продолжала бы уверенно
+    // светить над замершим стаканом, а по этой цене отправляется заявка.
+    //   live — успешный ответ моложе LIVE_MS;
+    //   wait — успеха ещё не было вовсе (первый заход, спящая вкладка проснулась);
+    //   stale — успех был, но протух: цены на экране больше не цены рынка.
+    // Возвращает и причину: у пустого catch её было негде взять.
+    function linkState(s) {
+        if (!s || !s.uid) return { state: 'live', ageMs: 0, msg: '' };
+        if (!s.obTs) return { state: 'wait', ageMs: 0, msg: s.obErr || 'Ждём первые данные от брокера' };
+        var age = Date.now() - s.obTs;
+        if (age < LIVE_MS) return { state: 'live', ageMs: age, msg: '' };
+        return { state: 'stale', ageMs: age, msg: s.obErr || 'Брокер перестал отвечать' };
+    }
+    // строка 44px полноэкранного режима возьмёт ТОТ ЖЕ факт, а не заведёт второй
+    PF.pftLinkState = function (n) { return linkState(S(n)); };
+    function ageTxt(ms) {
+        var sec = Math.floor(ms / 1000);
+        if (sec < 90) return sec + ' с';
+        var m = Math.floor(sec / 60);
+        return m < 60 ? m + ' мин' : Math.floor(m / 60) + ' ч';
+    }
+    // Метка связи МОЛЧИТ, пока всё живо: язык терминала — знак только на беду,
+    // иначе ещё одна вечнозелёная лампочка, которую перестают замечать.
+    function linkDot(s) {
+        var l = linkState(s);
+        if (l.state === 'live') return '';
+        return '<span class="btr-link ' + l.state + '" title="' + esc(l.msg) + '"><i></i>' +
+            (l.state === 'wait' ? 'ждём данные' : 'нет связи · ' + ageTxt(l.ageMs)) + '</span>';
+    }
+    // Смена бумаги: стакан прежней к делу больше не относится. Отметку свежести
+    // обнуляем ВМЕСТЕ с ним, одним движением — иначе новая бумага стартует
+    // «живой» с чужим временем последнего успеха, и кнопка разрешает заявку по
+    // ещё пустому стакану (у рыночной заявки это цена вслепую).
+    function clearBook(s) {
+        s.ob = null; s.status = null;
+        s.obTs = 0; s.obFail = 0; s.obErr = ''; s.linkKey = '';
+    }
+    // Причина, по которой кнопку жать нельзя. Пусто — можно.
+    // Блокируются ОБА вида заявок: у рыночной замершая цена бьёт по деньгам
+    // прямо, а лимитную выставляют вслепую — не видно, что рынок ушёл.
+    function submitBlock(s) {
+        var st = linkState(s).state;
+        if (st === 'wait') return 'Ждём данные от брокера';
+        if (st === 'stale') return 'Нет связи — цена устарела';
+        return '';
+    }
+
     // ---- карточка стакана ----
     // статус торгов — тихая точка с подписью (без пилюли)
     function statusDot(s) {
@@ -510,7 +573,11 @@
             '<button type="button" class="btr-itool' + (al ? ' on' : '') + '" title="Алерт по цене" ' +
                 'onclick="pftAlertOpen(' + n + ')">' + IC_BELL + (al ? '<i>' + al + '</i>' : '') + '</button>' +
         '</span>';
-        return '<b>' + esc(s.meta.ticker) + '</b><span>' + esc(s.meta.name) + '</span>' + statusDot(s) + tools;
+        // метка связи — в СВОЁЙ обёртке с id: возраст данных тикает раз в секунду,
+        // и обновлять её надо точечно, не перерисовывая строку бумаги целиком
+        var link = '<span class="btr-linkw" id="' + eid('Link', n) + '">' + linkDot(s) + '</span>';
+        return '<b>' + esc(s.meta.ticker) + '</b><span class="btr-iname">' + esc(s.meta.name) + '</span>' +
+            link + statusDot(s) + tools;
     }
     // заголовок блока называет БУМАГУ: со вторым стаканом «Стакан» и «Стакан»
     // не различить, а карточки конструктора можно растащить по разным углам
@@ -547,8 +614,11 @@
             : '';
         // .btr-obhost забирает всю свободную высоту карточки — по его боксу
         // считается глубина (fitOb), и замер не зависит от числа строк
+        // гашение при рендере — той же меткой, что ставит freshTick: карточку
+        // перерисовывают и во время обрыва (смена размера, конструктор)
+        var stale = linkState(s).state !== 'live' ? ' btr-stale' : '';
         return head + search + title +
-            '<div class="btr-obhost" id="' + eid('Ob', n) + '">' + obHtml(n) + '</div>' + tape;
+            '<div class="btr-obhost' + stale + '" id="' + eid('Ob', n) + '">' + obHtml(n) + '</div>' + tape;
     }
     function tapeCnt(s) { return s.tape.length ? s.tape.length + ' за 15 мин' : ''; }
     function tapeHtml(s) {
@@ -1008,6 +1078,7 @@
             '<span id="' + eid('LotsRef', n) + '">' + lotsRefBtn(n) + '</span></div>' +
             '<div class="btr-bigrow"><input class="btr-big" id="' + eid('Lots', n) + '" type="number" step="1" min="1" value="' + s.lots + '">' +
             '<span class="btr-big-suf" id="' + eid('Shares', n) + '">· ' + shares.toLocaleString('ru-RU') + ' шт</span></div></div>';
+        var blk = submitBlock(s);   // связь оборвалась — кнопка не нажимается
         // Тикет делится на ПОЛЯ и ПОДВАЛ: карточку могут ужать, а обрезать в
         // тикете можно что угодно, кроме кнопки. Поля скроллятся, подвал прибит
         // ко дну (CSS .pfd-hset .btr-ticket) — действие всегда на виду.
@@ -1018,9 +1089,12 @@
                 '<div class="btr-warns" id="' + eid('Warns', n) + '">' + warnsHtml(s) + '</div>' +
             '</div>' +
             '<div class="btr-tk-foot">' +
-                '<button type="button" class="btr-submit ' + s.side + '" id="' + eid('Submit', n) + '" onclick="pftAsk(' + n + ')">' +
-                    '<span class="btr-sb-l">' + esc(submitLbl(s)) + '</span>' +
-                    '<span class="btr-sb-s">' + submitSum(s) + '</span></button>' +
+                // рендер во время обрыва обязан отдать кнопку УЖЕ заблокированной:
+                // repaintTicketBits придёт только следующим тактом
+                '<button type="button" class="btr-submit ' + s.side + (blk ? ' blocked' : '') + '" id="' + eid('Submit', n) + '"' +
+                    (blk ? ' disabled title="' + esc(linkState(s).msg) + '"' : '') + ' onclick="pftAsk(' + n + ')">' +
+                    '<span class="btr-sb-l">' + esc(blk || submitLbl(s)) + '</span>' +
+                    '<span class="btr-sb-s">' + (blk ? '' : submitSum(s)) + '</span></button>' +
                 '<div class="btr-subnote">' + IC_SHIELD + '<span>Подтверждение вводом суммы от</span>' +
                 '<input id="' + eid('SumLimit', n) + '" type="number" min="1000" step="1000" value="' + sumLimit() + '"><span>₽</span>' +
                 '<span class="btr-subnote-sep">·</span><span>комиссия</span>' +
@@ -1346,7 +1420,7 @@
     function loadInstrument(n, uid, then) {
         var s = S(n);
         if (s.uid === uid) { if (then) then(s); return; }
-        s.uid = uid; s.ob = null; s.status = null; s.price = ''; s.tape = []; s.max = null;
+        s.uid = uid; clearBook(s); s.price = ''; s.tape = []; s.max = null;
         s.searchOpen = false;
         fetchMeta(uid).then(function (m) {
             s.meta = m; s.metaStale = false;
@@ -1385,6 +1459,46 @@
     function repaintOb(n) { var el = dqs('Ob', n); if (el) { el.innerHTML = obHtml(n); fitSoon(); } }
     function repaintObAll() { liveSlots().forEach(repaintOb); }
     function repaintWarns(n) { var el = dqs('Warns', n); if (el) el.innerHTML = warnsHtml(S(n)); }
+    // ---------- такт свежести ----------
+    // Возраст данных растёт САМ, без единого ответа брокера. Если пересчитывать
+    // состояние только в ответах, при полном обрыве оно бы и не поменялось
+    // никогда: ответов-то больше нет. Отсюда отдельный таймер — он ничего не
+    // спрашивает у сети, только сверяет часы.
+    // Перерисовка идёт по КЛЮЧУ состояния, а не каждый такт: пока связь жива,
+    // ключ не меняется и DOM никто не трогает.
+    function freshTick() {
+        // Спящая вкладка поллинг НЕ ведёт (awake в pollOb) — данные в ней стареют
+        // законно, и кричать об этом некому и незачем.
+        if (!awake()) return;
+        var anyStale = false;
+        liveSlots().forEach(function (n) {
+            var s = S(n);
+            if (!s.uid) return;
+            var l = linkState(s);
+            if (l.state === 'stale') anyStale = true;
+            var key = l.state + '|' + (l.state === 'stale' ? ageTxt(l.ageMs) : '');
+            if (key === s.linkKey) return;
+            s.linkKey = key;
+            var lw = dqs('Link', n); if (lw) lw.innerHTML = linkDot(s);
+            var host = dqs('Ob', n);
+            if (host) host.classList.toggle('btr-stale', l.state !== 'live');
+            repaintTicketBits(n);   // кнопка называет причину и перестаёт нажиматься
+        });
+        // Обрыв связи — ОДНО событие, а не четыре по числу слотов: флаг общий.
+        // Говорим по разу на переход, иначе тост повторялся бы каждую секунду.
+        // Гвард pollSince: сразу после возврата на вкладку данные ЗАКОННО стары
+        // (пока летит первый запрос), и тост «связь потеряна» был бы враньём.
+        // Гасить стакан и держать кнопку в эти доли секунды всё равно правильно —
+        // цена-то и правда старая, поэтому гвард стоит только на тосте.
+        if (anyStale && Date.now() - T.pollSince < LIVE_MS) return;
+        if (anyStale && !T.linkWarned) {
+            T.linkWarned = true;
+            toast('Связь с брокером потеряна: цены на экране замерли, заявку отправить нельзя', true);
+        } else if (!anyStale && T.linkWarned) {
+            T.linkWarned = false;
+            toast('Связь с брокером восстановлена');
+        }
+    }
     // полная перерисовка карточек ОДНОГО слота без общего ре-рендера вкладки
     function repaintSlot(n) {
         var w = obCardEl(n); if (w) w.innerHTML = obCardHtml(n);
@@ -1481,8 +1595,14 @@
         var d = dqs('Deal', n); if (d) d.innerHTML = dealHtml(s);
         var btn = dqs('Submit', n);
         if (btn) {
-            var l = btn.querySelector('.btr-sb-l'); if (l) l.textContent = submitLbl(s);
-            var sm = btn.querySelector('.btr-sb-s'); if (sm) sm.textContent = submitSum(s);
+            // Замершие цены — причина ПРЯМО В КНОПКЕ: серая кнопка без объяснения
+            // читается как «сайт сломался», а тут дело в связи и это надо сказать.
+            var blk = submitBlock(s);
+            btn.disabled = !!blk;
+            btn.classList.toggle('blocked', !!blk);
+            btn.title = blk ? linkState(s).msg : '';
+            var l = btn.querySelector('.btr-sb-l'); if (l) l.textContent = blk || submitLbl(s);
+            var sm = btn.querySelector('.btr-sb-s'); if (sm) sm.textContent = blk ? '' : submitSum(s);
         }
         var pr = dqs('PxRef', n); if (pr) pr.innerHTML = pxRefBtn(n);
         var lr = dqs('LotsRef', n); if (lr) lr.innerHTML = lotsRefBtn(n);
@@ -1516,15 +1636,24 @@
             if (!s.uid) return;
             A().call('GetOrderBook', { instrumentId: s.uid, depth: obAsk }).then(function (d) {
                 s.ob = d;
+                s.obTs = Date.now(); s.obFail = 0; s.obErr = '';   // отсчёт свежести — только отсюда
                 checkAlerts(s);   // цена пересекла порог — сказать об этом
                 repaintOb(n);
                 repaintWarns(n);
                 repaintTicketBits(n);
-            }).catch(function () {
+                freshTick();      // связь вернулась — снять гашение сразу, не ждя такта
+            }).catch(function (e) {
                 // Глубину просим с запасом — но если брокер такую не отдаёт,
                 // молчаливый catch оставил бы стакан пустым навсегда. Один раз
                 // откатываемся на проверенные 10 и больше с запасом не просим.
                 if (obAsk > OB_DEPTH) obAsk = OB_DEPTH;
+                // Отказ стакана — единственная ошибка поллинга, которую терминал
+                // обязан ПОКАЗАТЬ: на этих ценах считаются деньги. Стакан при этом
+                // не стираем (полезно видеть, какой была картина) — его пометит
+                // freshTick, когда последний успех протухнет.
+                s.obFail++;
+                s.obErr = (e && e.message) || 'Брокер не ответил';
+                freshTick();
             });
         });
     }
@@ -1589,6 +1718,9 @@
     document.addEventListener('visibilitychange', function () {
         if (!alive()) { stopBg(); return; }
         if (document.visibilityState === 'visible') {
+            // поллинг начинается ЗАНОВО: пока летит первый запрос, данные стары
+            // законно — freshTick не должен принять это за обрыв связи
+            T.pollSince = Date.now();
             pollOb(); pollOrders(); pollStatus(); pollPos(); pollMaxLots(); pollPortfolio();
         } else {
             startBg();
@@ -1964,6 +2096,12 @@
         // лимиты идут в такт с позициями: обе цифры отвечают на один вопрос
         // «сколько я могу», и дёргать брокера отдельным таймером незачем
         if (!T.posTimer) T.posTimer = setInterval(function () { pollPos(); pollMaxLots(); pollPortfolio(); }, 15000);
+        // такт свежести сети не касается — сверяет часы с последним успехом
+        if (!T.freshTimer) T.freshTimer = setInterval(freshTick, 1000);
+        // каждый заход в терминал начинается с чистого листа: иначе тревога,
+        // взведённая в прошлый раз, отзовётся «связь восстановлена» на пустом месте
+        T.pollSince = Date.now();
+        T.linkWarned = false;
         // фоновый такт живёт рядом с обычными и сам пропускает ходы, пока
         // вкладка на экране: так он уже на месте, когда с неё уходят
         startBg();
@@ -1972,8 +2110,8 @@
     }
     function stopPolling() {
         clearInterval(T.obTimer); clearInterval(T.ordTimer); clearInterval(T.stTimer);
-        clearInterval(T.tapeTimer); clearInterval(T.posTimer);
-        T.obTimer = T.ordTimer = T.stTimer = T.tapeTimer = T.posTimer = null;
+        clearInterval(T.tapeTimer); clearInterval(T.posTimer); clearInterval(T.freshTimer);
+        T.obTimer = T.ordTimer = T.stTimer = T.tapeTimer = T.posTimer = T.freshTimer = null;
         stopBg();
     }
     // зовётся из цикла рендера portfolios.js: включает/гасит поллинг по месту
@@ -2184,7 +2322,7 @@
     window.pftPick = function (n, k) {
         var s = S(n);
         var i = s.search[k]; if (!i) return;
-        s.uid = i.uid; s.ob = null; s.status = null; s.price = ''; s.searchQ = ''; s.tape = [];
+        s.uid = i.uid; clearBook(s); s.price = ''; s.searchQ = ''; s.tape = [];
         s.max = null;           // лимиты были посчитаны по ПРЕЖНЕЙ бумаге
         s.searchOpen = false;   // бумага выбрана — поиск сворачивается в лупу
         fetchMeta(i.uid).then(function (m) {
@@ -2318,6 +2456,11 @@
             else toast('Торговля сейчас недоступна', true);
             return;
         }
+        // ЗАМЕРШИЕ ЦЕНЫ. Кнопка на этот случай уже заблокирована, но клавиатура,
+        // старая разметка и гонка с тактом свежести мимо неё проходят — а цена
+        // отсюда идёт в деньги. Гвард дублируется на отправке (см. ниже).
+        var stop = submitBlock(s);
+        if (stop) { toast(stop + ': отправлять заявку по замершей цене нельзя', true); return; }
         var vel = velLeft();
         if (vel > 0) { toast('Пауза после ' + VEL_MAX + ' заявок подряд — ещё ' + Math.ceil(vel / 1000) + ' с', true); return; }
         var lots = Math.max(1, Math.floor(+s.lots || 1));
@@ -2449,6 +2592,16 @@
                     toast('Сумма не совпала — проверьте ещё раз', true);
                     return;
                 }
+            }
+            // ГЛАВНАЯ ПРОВЕРКА свежести. Диалог читают неспешно — сумму сверяют,
+            // детали перечитывают, — и связь умирает именно здесь, между показом
+            // цифр и нажатием «Отправить». Цифры в диалоге к этому моменту уже
+            // ложь: пересчитать их молча нельзя, поэтому закрываем и объясняем.
+            var late = submitBlock(s);
+            if (late) {
+                closeCf();
+                toast(late + ': проверьте цену заново, заявка не отправлена', true);
+                return;
             }
             closeCf();
             submitOrder(n, lots, s.kind === 'stop' ? stopPrice : price, sum);
@@ -2744,7 +2897,7 @@
                     used.push(n);
                     return fetchMeta(r.ins.uid).then(function (m) {
                         var s = S(n);
-                        s.uid = r.ins.uid; s.meta = m; s.ob = null; s.status = null;
+                        s.uid = r.ins.uid; s.meta = m; clearBook(s);
                         s.price = ''; s.tape = []; s.max = null; s.searchOpen = false; s.metaStale = false;
                         s.side = r.leg.side === 'sell' ? 'sell' : 'buy';
                         // план считает в ШТУКАХ, тикет — в ЛОТАХ

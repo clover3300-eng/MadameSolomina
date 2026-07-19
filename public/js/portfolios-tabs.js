@@ -314,7 +314,7 @@
         for (var j = 0; j < 5; j++) rows += pftgAxRow(mid - st * (j + 1), PFTG_VOL[5 + j], PFTG_BAR[5 + j], 'bid', !j, d);
         return '<div class="dash2-card pf-card2 btr-card btr-ob">' +
             PF.pfCardHead('', 'Стакан · ' + p[0]) +
-            '<div class="btr-instr"><b>' + p[0] + '</b><span>' + p[1] + '</span>' +
+            '<div class="btr-instr"><b>' + p[0] + '</b><span class="btr-iname">' + p[1] + '</span>' +
                 '<span class="btr-st ok"><i></i>торги идут</span></div>' +
             '<div class="btr-ax">' +
                 '<div class="btr-ax-head"><span>Лоты · спрос</span><span>Цена</span><span>Предложение · лоты</span></div>' +
