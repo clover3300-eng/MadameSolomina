@@ -136,12 +136,32 @@
 
                 var has = function (k) { return fx === 'flat' || fx.indexOf(k) !== -1; };
                 var css = '';
-                if (has('noaurora')) {
-                    css += '.aurora-container,.aurora-spot,.noise-overlay,#siteBgTiles,'
-                         + '.luxury-depth-layer{display:none !important}'
-                         // html body — чтобы перебить `#appShell{...!important}` из
-                         // site-layout.css: там та же специфичность, но он идёт позже
-                         + 'html body #appShell{background:#F1F6FB !important}'
+                // noaurora гасит ПЯТЬ слоёв разом — годится, чтобы понять
+                // «фон виноват / не виноват», но не какой именно. Ниже те же
+                // слои поодиночке, чтобы делить пополам:
+                //   ?fx=notiles — только #siteBgTiles (мозаика/градиент вкладок;
+                //                 его цвет ставит sbg-* класс, а тот приезжает
+                //                 на DOMContentLoaded — то есть ПОСЛЕ первого кадра)
+                //   ?fx=nospots — только блобы .aurora-spot
+                //   ?fx=nonoise — только .noise-overlay
+                //   ?fx=nodepth — только .luxury-depth-layer
+                //   ?fx=noshell — только градиент #appShell (делаем плоским)
+                if (has('noaurora') || has('nospots')) {
+                    css += '.aurora-container,.aurora-spot{display:none !important}';
+                }
+                if (has('noaurora') || has('nonoise')) {
+                    css += '.noise-overlay{display:none !important}';
+                }
+                if (has('noaurora') || has('notiles')) {
+                    css += '#siteBgTiles{display:none !important}';
+                }
+                if (has('noaurora') || has('nodepth')) {
+                    css += '.luxury-depth-layer{display:none !important}';
+                }
+                if (has('noaurora') || has('noshell')) {
+                    // html body — чтобы перебить `#appShell{...!important}` из
+                    // site-layout.css: там та же специфичность, но он идёт позже
+                    css += 'html body #appShell{background:#F1F6FB !important}'
                          + 'html body.dark-mode #appShell{background:#0f172a !important}';
                 }
                 if (has('noblur')) {
