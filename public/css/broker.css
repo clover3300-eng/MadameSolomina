@@ -1089,7 +1089,7 @@ body.dark-mode .btc-note, .pfd-thm-dark .btc-note { color: #7f8ea3; }
 .pftg {
     position: relative; isolation: isolate;
     border-radius: 22px; overflow: hidden;
-    max-height: 640px; min-height: 460px;
+    max-height: 700px; min-height: 460px;
 }
 /* призрак: блюр размывает и КРАЯ раскладки, поэтому она выходит за рамку
    отрицательными полями — размытая кромка остаётся за клипом .pftg, а сами
@@ -1100,10 +1100,34 @@ body.dark-mode .btc-note, .pfd-thm-dark .btc-note { color: #7f8ea3; }
     filter: blur(5.5px) saturate(0.85); opacity: 1;
     transition: filter 0.42s ease, opacity 0.42s ease;
 }
-/* карточки призрака не тянутся по высоте — верхний край раскладки ровный,
-   а низ уходит за кадр: терминал «продолжается» за границей гейта */
-.pftg-ghost .btr-grid { align-items: start; }
 .pftg-ghost .btr-card { padding: 0 22px 22px; }
+
+/* график-призрак: свечи рисуем сами. Настоящая карточка тянет KLineChart и
+   историю с брокера — ради размытой картинки это лишний вес и лишний запрос.
+   viewBox тянется непропорционально (preserveAspectRatio=none), поэтому все
+   линии внутри — non-scaling-stroke (в разметке), иначе тени свечей и сетка
+   растянулись бы вместе с полем */
+.pftg-chart { min-height: 244px; }
+.pftg-chart-plot { flex: 1; min-height: 196px; display: flex; align-items: stretch; gap: 10px; }
+/* ЛОВУШКА: у viewBox 100×100 своя пропорция 1:1 — svg в потоке раздувал
+   карточку до квадрата. Поле — позиционирующий бокс, svg лежит в нём
+   абсолютом и в разметку не растёт */
+.pftg-chart-svg { flex: 1; min-width: 0; position: relative; }
+.pftg-chart-svg svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.pftg-chart-plot line.up { stroke: #16a34a; stroke-width: 1.1; }
+.pftg-chart-plot line.dn { stroke: #dc2626; stroke-width: 1.1; }
+.pftg-chart-plot rect.up { fill: #16a34a; }
+.pftg-chart-plot rect.dn { fill: #dc2626; }
+.pftg-chart-plot line.gr { stroke: rgba(15, 23, 42, 0.07); stroke-width: 1; }
+.pftg-chart-ax {
+    display: flex; flex-direction: column; justify-content: space-between; flex: none;
+    font-family: var(--font-num); font-variant-numeric: tabular-nums;
+    font-size: 10.5px; color: #94a3b8; text-align: right;
+}
+
+/* силуэт неопознанного виджета: шапка и строки-скелетоны */
+.pftg-sk-body { display: flex; flex-direction: column; gap: 13px; padding: 8px 0 4px; }
+.pftg-sk-row i { display: block; height: 11px; border-radius: 6px; background: rgba(15, 23, 42, 0.07); }
 
 /* стекло: гуще к центру (под карточкой) и прозрачнее к краям — по углам
    призрак читается, и сразу понятно, что за замком стоит настоящий экран */
@@ -1217,3 +1241,5 @@ body.dark-mode .pftg-t { color: #f4f8fd; }
 body.dark-mode .pftg-s { color: #9fb1c6; }
 body.dark-mode .pftg-fine { color: #64748b; }
 body.dark-mode .pftg-btn { background: linear-gradient(135deg, #3a4664, #232d40); box-shadow: 0 16px 30px -14px rgba(0, 0, 0, 0.75); }
+body.dark-mode .pftg-chart-plot line.gr { stroke: rgba(255, 255, 255, 0.08); }
+body.dark-mode .pftg-sk-row i { background: rgba(255, 255, 255, 0.08); }

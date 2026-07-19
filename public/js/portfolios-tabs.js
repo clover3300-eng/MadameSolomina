@@ -231,27 +231,64 @@
 
     // ---- подвкладка «Торговля»: гейт по состоянию подключения брокера ----
     // Пока терминала нет, подвкладка показывает ЕГО САМОГО: за матовым стеклом
-    // стоит «призрак» — стакан, тикет и лента заявок из тех же .btr-*-классов,
-    // что и живая раскладка. Экран перестаёт быть пустым прямоугольником, и
-    // сразу видно, ЧТО откроется; замок поверх объясняет, чего не хватает.
+    // стоит «призрак» — стакан, тикет, график и лента заявок из тех же
+    // .btr-*-классов, что и живая раскладка. Экран перестаёт быть пустым
+    // прямоугольником, и сразу видно, ЧТО откроется; замок поверх объясняет,
+    // чего не хватает.
+    //
+    // ВАЖНО: раскладку призрак берёт из конструктора — dashCfgFor('trading'),
+    // тот же конфиг, по которому живёт живой терминал. Кто уже собрал вкладку
+    // под себя (второй стакан, график во всю ширину, свои ширины и высоты) —
+    // за стеклом увидит СВОЮ раскладку, а не образцовую. Новому пользователю
+    // достаётся сид PFX_TAB_SEEDS: стакан | заявка | мои заявки + график.
+    // Рисуем при этом СИЛУЭТЫ, а не настоящие виджеты: без доступа к брокеру
+    // каждый из них показал бы собственную заглушку «разблокируйте токен» —
+    // за стеклом стояли бы четыре копии одного и того же сообщения.
+    //
     // Призрак — inert (вне фокуса и вне a11y-дерева) и pointer-events:none;
     // цифры в нём выдуманы, и подпись в карточке говорит об этом прямо.
 
-    // лестница стакана: [цена, лоты, ширина полосы %]. Числа декоративные —
-    // за блюром важен только ритм: ступеньки, объёмы и лучшие цены у центра
-    var PFTG_ASK = [['268,60', 412, 46], ['268,54', 268, 30], ['268,48', 731, 82], ['268,42', 190, 21], ['268,36', 356, 40]];
-    var PFTG_BID = [['268,24', 505, 57], ['268,18', 244, 27], ['268,12', 668, 75], ['268,06', 301, 34], ['268,00', 889, 100]];
-    var PFTG_ORD = [
-        ['buy',  'SBER', 'лимитная · 4 лота',      '268,30 ₽',   '10:42 · исполнено 0 из 4'],
-        ['sell', 'LKOH', 'лимитная · 1 лот',       '7 214,00 ₽', '10:15 · исполнено 0 из 1'],
-        ['buy',  'GAZP', 'стоп-лосс · 12 лотов',   '128,40 ₽',   'до отмены']
+    // бумаги слотов: [тикер, название, цена, шаг, лотность]. Второй стакан
+    // не должен быть копией первого — у каждого слота своя бумага
+    var PFTG_PAPERS = [
+        ['SBER', 'Сбербанк',  268.3,  0.06, 10],
+        ['LKOH', 'ЛУКОЙЛ',   7214,    2,     1],
+        ['GAZP', 'Газпром',   128.4,  0.04, 10],
+        ['ROSN', 'Роснефть',  512.6,  0.2,   1]
     ];
-    function pftgAxRow(r, side, best) {
-        var half = '<span class="btr-axh"><u style="width:' + Math.min(100, r[2] + 18) + '%"></u>' +
-            '<i style="width:' + r[2] + '%"></i><em>' + r[1] + '</em></span>';
+    // ритм лестницы: объёмы и ширины полос, 5 асков сверху + 5 бидов снизу.
+    // За блюром важен только он — сами цены считаются от бумаги слота
+    var PFTG_VOL = [412, 268, 731, 190, 356, 505, 244, 668, 301, 889];
+    var PFTG_BAR = [46, 30, 82, 21, 40, 57, 27, 75, 34, 100];
+    function pftgPaper(n) {
+        var i = Math.max(0, (Math.floor(+n) || 1) - 1);
+        return PFTG_PAPERS[i % PFTG_PAPERS.length];
+    }
+    function pftgNum(v, d) {
+        return (+v || 0).toLocaleString('ru-RU', { minimumFractionDigits: d, maximumFractionDigits: d });
+    }
+    function pftgAxRow(px, vol, bar, side, best, d) {
+        var half = '<span class="btr-axh"><u style="width:' + Math.min(100, bar + 18) + '%"></u>' +
+            '<i style="width:' + bar + '%"></i><em>' + vol + '</em></span>';
         return '<div class="btr-axrow ' + side + (best ? ' best' : '') + '">' +
-            (side === 'bid' ? half : '<span class="btr-axh"></span>') + '<b>' + r[0] + '</b>' +
+            (side === 'bid' ? half : '<span class="btr-axh"></span>') + '<b>' + pftgNum(px, d) + '</b>' +
             (side === 'ask' ? half : '<span class="btr-axh"></span>') + '</div>';
+    }
+    function pftgObCard(n) {
+        var p = pftgPaper(n), d = p[3] < 0.01 ? 4 : 2, mid = p[2], st = p[3];
+        var rows = '';
+        for (var i = 0; i < 5; i++) rows += pftgAxRow(mid + st * (5 - i), PFTG_VOL[i], PFTG_BAR[i], 'ask', i === 4, d);
+        rows += '<div class="btr-axmid up"><i class="ar">▲</i><b>' + pftgNum(mid, d) + '</b><em>₽</em>' +
+            '<span class="sp">спред <b>' + pftgNum(st * 2, d) + '</b></span></div>';
+        for (var j = 0; j < 5; j++) rows += pftgAxRow(mid - st * (j + 1), PFTG_VOL[5 + j], PFTG_BAR[5 + j], 'bid', !j, d);
+        return '<div class="dash2-card pf-card2 btr-card btr-ob">' +
+            PF.pfCardHead('', 'Стакан · ' + p[0]) +
+            '<div class="btr-instr"><b>' + p[0] + '</b><span>' + p[1] + '</span>' +
+                '<span class="btr-st ok"><i></i>торги идут</span></div>' +
+            '<div class="btr-ax">' +
+                '<div class="btr-ax-head"><span>Лоты · спрос</span><span>Цена</span><span>Предложение · лоты</span></div>' +
+                rows +
+            '</div></div>';
     }
     // поле-цифра тикета: инпуты настоящие (по ним считана вся вёрстка .btr-big),
     // но readonly и вне обхода табом — призрак ничего не принимает
@@ -262,23 +299,12 @@
             '<div class="btr-bigrow"><input class="btr-big" type="text" value="' + val + '" readonly tabindex="-1">' +
             '<span class="btr-big-suf">' + suf + '</span></div></div>';
     }
-    function pftgGhostHtml() {
-        var head = PF.pfCardHead;
-        var ob = '<div class="dash2-card pf-card2 btr-card btr-ob">' +
-            head('', 'Стакан · SBER') +
-            '<div class="btr-instr"><b>SBER</b><span>Сбербанк</span>' +
-                '<span class="btr-st ok"><i></i>торги идут</span></div>' +
-            '<div class="btr-ax">' +
-                '<div class="btr-ax-head"><span>Лоты · спрос</span><span>Цена</span><span>Предложение · лоты</span></div>' +
-                PFTG_ASK.map(function (r, i) { return pftgAxRow(r, 'ask', i === PFTG_ASK.length - 1); }).join('') +
-                '<div class="btr-axmid up"><i class="ar">▲</i><b>268,30</b><em>₽</em>' +
-                    '<span class="sp">спред <b>0,12</b></span></div>' +
-                PFTG_BID.map(function (r, i) { return pftgAxRow(r, 'bid', !i); }).join('') +
-            '</div></div>';
-        var ticket = '<div class="dash2-card pf-card2 btr-card btr-ticket">' +
-            head('', 'Заявка · SBER', null, '<div class="btr-hd-note">' +
+    function pftgTicketCard(n) {
+        var p = pftgPaper(n), d = p[3] < 0.01 ? 4 : 2, lots = 4, sum = p[2] * p[4] * lots;
+        return '<div class="dash2-card pf-card2 btr-card btr-ticket">' +
+            PF.pfCardHead('', 'Заявка · ' + p[0], null, '<div class="btr-hd-note">' +
                 '<span class="btr-hd-acc">Брокерский счёт <b>····4417</b></span>' +
-                '<span class="btr-hd-ins">SBER · лот 10</span></div>') +
+                '<span class="btr-hd-ins">' + p[0] + ' · лот ' + p[4] + '</span></div>') +
             '<div class="btr-tk-body">' +
                 '<div class="btr-side">' +
                     '<button type="button" class="btr-side-b buy active" tabindex="-1">Купить</button>' +
@@ -287,16 +313,24 @@
                     '<button type="button" class="active" tabindex="-1">Лимитная</button>' +
                     '<button type="button" tabindex="-1">Рыночная</button>' +
                     '<button type="button" tabindex="-1">Стоп</button></div>' +
-                pftgBigField('Цена', 'шаг 0,01', '268,30', '₽', '268,30 ₽') +
-                pftgBigField('Лоты', '1 лот = 10 шт', '4', '· 40 шт', '') +
-                '<div class="btr-deal"><span>Сумма <b>10 732 ₽</b></span>' +
-                    '<span>Комиссия <b>≈ 4,29 ₽</b></span></div>' +
+                pftgBigField('Цена', 'шаг ' + pftgNum(p[3], d), pftgNum(p[2], d), '₽', pftgNum(p[2], d) + ' ₽') +
+                pftgBigField('Лоты', '1 лот = ' + p[4] + ' шт', lots, '· ' + (lots * p[4]) + ' шт', '') +
+                '<div class="btr-deal"><span>Сумма <b>' + pftgNum(sum, 0) + ' ₽</b></span>' +
+                    '<span>Комиссия <b>≈ ' + pftgNum(sum * 0.0004, 2) + ' ₽</b></span></div>' +
             '</div>' +
             '<div class="btr-tk-foot"><div class="btr-submit buy">' +
-                '<span class="btr-sb-l">Купить 4 лота</span><span class="btr-sb-s">10 732 ₽</span></div></div>' +
+                '<span class="btr-sb-l">Купить ' + lots + ' лота</span>' +
+                '<span class="btr-sb-s">' + pftgNum(sum, 0) + ' ₽</span></div></div>' +
         '</div>';
-        var orders = '<div class="dash2-card pf-card2 btr-card btr-orders">' +
-            head('', 'Мои заявки') +
+    }
+    var PFTG_ORD = [
+        ['buy',  'SBER', 'лимитная · 4 лота',    '268,30 ₽',   '10:42 · исполнено 0 из 4'],
+        ['sell', 'LKOH', 'лимитная · 1 лот',     '7 214,00 ₽', '10:15 · исполнено 0 из 1'],
+        ['buy',  'GAZP', 'стоп-лосс · 12 лотов', '128,40 ₽',   'до отмены']
+    ];
+    function pftgOrdersCard() {
+        return '<div class="dash2-card pf-card2 btr-card btr-orders">' +
+            PF.pfCardHead('', 'Мои заявки') +
             '<div class="btr-ords">' + PFTG_ORD.map(function (o) {
                 return '<div class="btr-ordrow ' + o[0] + '">' +
                     '<div class="btr-ord1"><b>' + o[1] + '</b>' +
@@ -304,8 +338,106 @@
                         '<span class="btr-ord-px">' + o[3] + '</span></div>' +
                     '<div class="btr-ord2"><i>' + o[4] + '</i></div></div>';
             }).join('') + '</div></div>';
+    }
+    // Свечи призрака: считаются ОДИН раз своим LCG вместо Math.random —
+    // призрак обязан быть одинаковым при каждой перерисовке, иначе картинка
+    // за стеклом дёргается на каждый ре-рендер вкладки. Значения — проценты
+    // высоты поля (0 внизу): [открытие, закрытие, максимум, минимум]
+    var PFTG_CANDLES = (function (n) {
+        var out = [], seed = 20260719, px = 22;
+        function rnd() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
+        for (var i = 0; i < n; i++) {
+            // блуждание с возвратом к тренду: чистый random walk топтался узкой
+            // полосой посреди поля и читался пунктиром, а не графиком. Тренд
+            // ведёт серию снизу вверх, шум даёт откаты — силуэт «график»
+            var trend = 20 + (i / (n - 1)) * 52;
+            var o = px, c = clamp(px + (trend - px) * 0.22 + (rnd() - 0.5) * 13, 8, 92);
+            out.push([o, c, Math.min(96, Math.max(o, c) + rnd() * 4.5), Math.max(4, Math.min(o, c) - rnd() * 4.5)]);
+            px = c;
+        }
+        return out;
+    })(64);
+    function pftgChartCard(n) {
+        var p = pftgPaper(n), w = 100 / PFTG_CANDLES.length;
+        // non-scaling-stroke: viewBox тянется непропорционально (preserveAspectRatio
+        // none), иначе тени свечей и сетка растянулись бы вместе с ним
+        var body = PFTG_CANDLES.map(function (c, i) {
+            var x = i * w, cx = x + w / 2, up = c[1] >= c[0];
+            var top = Math.max(c[0], c[1]), bot = Math.min(c[0], c[1]);
+            return '<line class="' + (up ? 'up' : 'dn') + '" vector-effect="non-scaling-stroke" x1="' + cx.toFixed(2) +
+                    '" y1="' + (100 - c[2]).toFixed(2) + '" x2="' + cx.toFixed(2) + '" y2="' + (100 - c[3]).toFixed(2) + '"/>' +
+                '<rect class="' + (up ? 'up' : 'dn') + '" x="' + (x + w * 0.22).toFixed(2) + '" y="' + (100 - top).toFixed(2) +
+                    '" width="' + (w * 0.56).toFixed(2) + '" height="' + Math.max(0.7, top - bot).toFixed(2) + '"/>';
+        }).join('');
+        var grid = [20, 40, 60, 80].map(function (y) {
+            return '<line class="gr" vector-effect="non-scaling-stroke" x1="0" y1="' + y + '" x2="100" y2="' + y + '"/>';
+        }).join('');
+        // ось цены справа — тем же моно-шрифтом, что и весь терминал
+        var axis = [1.06, 1.02, 0.98, 0.94, 0.9].map(function (k) {
+            return '<span>' + pftgNum(p[2] * k, p[3] < 0.01 ? 4 : 2) + '</span>';
+        }).join('');
+        return '<div class="dash2-card pf-card2 btr-card pftg-chart">' +
+            PF.pfCardHead('', 'График · ' + p[0], null,
+                '<div class="btr-hd-note"><span class="btr-hd-ins">1 день · свечи</span></div>') +
+            '<div class="pftg-chart-plot">' +
+                // svg — абсолютом внутри .pftg-chart-svg: у viewBox 100×100 своя
+                // пропорция 1:1, и в потоке он раздувал карточку до квадрата в
+                // полторы тысячи пикселей. Абсолютный слой в разметку не растёт
+                '<div class="pftg-chart-svg">' +
+                    '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' + grid + body + '</svg>' +
+                '</div>' +
+                '<div class="pftg-chart-ax">' + axis + '</div>' +
+            '</div></div>';
+    }
+    // силуэт любого другого виджета: шапка и строки-скелетоны. Раскладку
+    // пользователь мог собрать из чего угодно — форму блока сохраняем, чтобы
+    // за стеклом стояла ЕГО вкладка, а не только карточки терминала
+    function pftgGenericCard(name) {
+        var rows = [92, 74, 84, 62, 78].map(function (w) {
+            return '<div class="pftg-sk-row"><i style="width:' + w + '%"></i></div>';
+        }).join('');
+        return '<div class="dash2-card pf-card2 btr-card pftg-sk">' +
+            PF.pfCardHead('', name) + '<div class="pftg-sk-body">' + rows + '</div></div>';
+    }
+    // id блока → силуэт. Слоты нумерованные ('trade:ob:2'), поэтому хвост-номер
+    // отрезаем: вид карточки задают первые два сегмента
+    function pftgBlockHtml(id) {
+        var seg = String(id).split(':');
+        var kind = seg.slice(0, 2).join(':'), n = +seg[2] || 1;
+        if (kind === 'trade:ob') return pftgObCard(n);
+        if (kind === 'trade:ticket') return pftgTicketCard(n);
+        if (kind === 'trade:chart') return pftgChartCard(n);
+        if (kind === 'trade:orders') return pftgOrdersCard();
+        if (kind === 'trade:pos') return pftgGenericCard('Позиции');
+        if (kind === 'note') return pftgGenericCard('Заметка');
+        return pftgGenericCard('Виджет');
+    }
+    // сид на случай, если конструктор недоступен (конфига нет вовсе)
+    var PFTG_SEED = [['trade:ob', 4], ['trade:ticket', 4], ['trade:orders', 4], ['trade:chart', 12]];
+    function pftgGhostHtml() {
+        var cfg = null;
+        try { cfg = dashCfgFor('trading'); } catch (e) {}
+        var rows;
+        if (cfg && cfg.order && cfg.order.length) {
+            // [id, ширина, колонка, высота] — ровно то, чем живёт настоящая раскладка
+            rows = cfg.order.filter(function (id) { return !(cfg.hidden || {})[id]; })
+                .map(function (id) {
+                    return [id, +(cfg.span || {})[id] || 4, +(cfg.col || {})[id] || 0, +(cfg.h || {})[id] || 0];
+                });
+        }
+        if (!rows || !rows.length) rows = PFTG_SEED.map(function (r) { return [r[0], r[1], 0, 0]; });
+        var items = rows.map(function (r) {
+            var span = clamp(r[1], 3, 12), col = r[2], h = r[3];
+            // колонку пользователь мог задать перетаскиванием — повторяем её явно
+            // (клампом, чтобы col+span не вылезли за 12 и не сломали ряд); в живом
+            // терминале то же место считает masonry-пакер, здесь он не нужен
+            var place = col ? clamp(col, 1, 13 - span) + ' / span ' + span : 'span ' + span;
+            return '<div class="pfd-item' + (h ? ' pfd-hset' : '') + '" style="grid-column: ' + place + ';' +
+                (h ? 'height:' + clamp(h, 72, 1400) + 'px;' : '') + '">' +
+                '<div class="pfd-body">' + pftgBlockHtml(r[0]) + '</div></div>';
+        }).join('');
         return '<div class="pftg-ghost" inert aria-hidden="true">' +
-            '<div class="btr-grid">' + ob + ticket + orders + '</div></div>';
+            '<div class="pfd-grid">' + items + '</div></div>';
     }
     // состояние гейта: акцент, надзаголовок-статус, текст и действие.
     // Порядок веток — от «брокера нет вовсе» к «всё есть, но заперто»
