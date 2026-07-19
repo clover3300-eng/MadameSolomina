@@ -915,8 +915,11 @@ body.dark-mode .screen.swipe-prev {
 
     /* Глубокий, дорогой цвет фона */
     background: radial-gradient(circle at 50% 50%, #2C364C 0%, #111827 100%);
-    
-    display: flex;
+
+    /* Здесь был `display: flex` — снят вместе с включением слоя.
+       ВНИМАНИЕ на будущее: display:none выше по блоку он молча перебивал
+       (в одном правиле побеждает последнее объявление), и отключение слоя
+       не работало вовсе. Возвращать flex только вместе со снятием display:none. */
     align-items: center;
     justify-content: center;
     overflow: hidden; /* Обрезаем лишнее */
