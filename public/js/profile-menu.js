@@ -184,7 +184,8 @@
         monitor: '<svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
         download: '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
         db: '<svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>',
-        trash: '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>'
+        trash: '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+        phone: '<svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>'
     };
 
     // ---------- сборка DOM ----------
@@ -305,6 +306,20 @@
                             '<button class="ph-sw' + (s.brokerSync ? ' on' : '') + '" type="button" id="phSwSync" role="switch" aria-label="Синхронизация с брокером"></button>' +
                         '</div>' +
                     '</div></div></div>' +
+                '</div>' +
+
+                // ---- Мобильная версия: подписка «сообщим о запуске» ----
+                // Заглушка мобильной версии видна ТОЛЬКО с телефона, а там гость не может
+                // войти (fixed-оверлей закрывает всё приложение) — то есть подписаться было
+                // негде. Раздел появляется, лишь пока мобильная версия закрыта конфигом
+                // (renderMobSec прячет его совсем), тело рисуется там же.
+                '<div class="ph-sec ph-sec--mob" id="phSecMob" style="display:none">' +
+                    '<button class="ph-row" type="button" data-sec="mob" aria-expanded="false">' +
+                        '<span class="ph-row-ic">' + IC.phone + '</span>' +
+                        '<span class="ph-row-tt"><span class="ph-row-t">Мобильная версия</span><span class="ph-row-s" id="phSubMob"></span></span>' +
+                        IC.chev +
+                    '</button>' +
+                    '<div class="ph-body"><div class="ph-body-in"><div class="ph-body-pad" id="phMobBody"></div></div></div>' +
                 '</div>' +
 
                 // ---- API брокера (без аккаунта заперт: см. renderIdentity) ----
@@ -615,6 +630,7 @@
         }
 
         renderApiSub();
+        renderMobSec();
         renderBkState();
         applyAuditBadge();   // innerHTML выше стирает «!» на аватаре — возвращаем
     }
@@ -642,6 +658,82 @@
             sub.classList.remove('ok');
         }
     }
+
+    // ---- Мобильная версия: подписка на запуск ----
+    // Раздел существует, только пока мобильная версия закрыта заглушкой
+    // (tabGates.get().mobile.off); открыли её — секция исчезает сама.
+    // Каналы те же три, что под заглушкой, и уходят в тот же feature_waitlist
+    // через tabGates.subscribe — вторая реализация подписки нам не нужна.
+    function mobileGateOff() {
+        var g = window.tabGates && window.tabGates.get && window.tabGates.get();
+        return !!(g && g.mobile && g.mobile.off);
+    }
+    function renderMobSec() {
+        if (!hub) return;
+        var sec = hub.querySelector('#phSecMob');
+        if (!sec) return;
+        if (!mobileGateOff()) { sec.style.display = 'none'; sec.classList.remove('on'); return; }
+        sec.style.display = '';
+
+        var sub = hub.querySelector('#phSubMob');
+        var body = hub.querySelector('#phMobBody');
+        var isCloud = hub.dataset.authState === 'cloud-user';
+
+        if (!isCloud) {
+            sub.textContent = 'Доступно с аккаунтом';
+            sub.classList.remove('ok');
+            body.innerHTML =
+                '<div class="ph-hint">' + IC.phone + '<span>Мобильная версия ещё в работе — собираем тот же терминал под экран телефона. Создайте аккаунт, и мы сообщим о запуске.</span></div>' +
+                '<button class="ph-save" type="button" id="phMobReg">' + IC.userPlus + 'Создать аккаунт</button>';
+            body.querySelector('#phMobReg').addEventListener('click', goRegister);
+            return;
+        }
+
+        var chan = window.tabGates.waitlistOf('mobile');   // null = ещё грузим
+        if (chan === null) {
+            sub.textContent = 'Проверяем подписку…';
+            sub.classList.remove('ok');
+            body.innerHTML = '<div class="ph-hint">' + IC.phone + '<span>Смотрим, подписаны ли вы на запуск мобильной версии…</span></div>';
+            window.tabGates.waitlistReady();               // ответ придёт событием gx-waitlist
+            return;
+        }
+
+        if (chan) {
+            var where = chan === 'telegram' ? 'в Telegram' : (chan === 'browser' ? 'уведомлением в браузере' : 'под звоночком в шапке');
+            sub.textContent = 'Вы в списке';
+            sub.classList.add('ok');
+            body.innerHTML =
+                '<div class="ph-hint">' + IC.check + '<span>Вы подписаны: как только мобильная версия откроется, сообщим ' + where + '. Одно оповещение, без спама.</span></div>' +
+                '<button class="ph-adm ph-adm--wide" type="button" id="phMobOff">' + IC.trash + '<span>Отписаться</span></button>';
+            body.querySelector('#phMobOff').addEventListener('click', function () {
+                window.tabGates.unsubscribe('mobile');
+            });
+            return;
+        }
+
+        var p = getProfile() || {};
+        var canTg = !!p.telegramLinked;
+        var canBrowser = ('Notification' in window);
+        sub.textContent = 'Сообщим о запуске';
+        sub.classList.remove('ok');
+        body.innerHTML =
+            '<div class="ph-hint">' + IC.phone + '<span>Мобильная версия ещё в мастерской. Выберите канал — оповестим один раз, когда она откроется.</span></div>' +
+            '<div class="ph-field"><label class="ph-lab" for="phMobChan">Куда сообщить</label>' +
+                '<select class="ph-select" id="phMobChan">' +
+                    '<option value="site">Под звоночком на сайте</option>' +
+                    '<option value="browser"' + (canBrowser ? '' : ' disabled') + '>Уведомлением в браузере' + (canBrowser ? '' : ' — браузер не поддерживает') + '</option>' +
+                    '<option value="telegram"' + (canTg ? '' : ' disabled') + '>В Telegram' + (canTg ? '' : ' — сначала привяжите в «Профиле»') + '</option>' +
+                '</select></div>' +
+            '<button class="ph-save" type="button" id="phMobOn">' + IC.check + 'Подписаться</button>';
+        body.querySelector('#phMobOn').addEventListener('click', function () {
+            var sel = body.querySelector('#phMobChan');
+            window.tabGates.subscribe('mobile', sel ? sel.value : 'site');
+        });
+    }
+    // подписка изменилась (или список наконец приехал) — перерисовать раздел;
+    // gx-config — конфиг заглушек приехал уже после сборки панели
+    document.addEventListener('gx-waitlist', function () { renderMobSec(); });
+    document.addEventListener('gx-config', function () { renderMobSec(); });
 
     // Статус подключения в теле секции: строки .bk-kv переиспользуем из
     // broker.css (визард и кабинет говорят на одном визуальном языке)

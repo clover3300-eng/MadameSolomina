@@ -144,7 +144,8 @@
             .then(function (res) {
                 myWaitlist = {};
                 if (!res.error) (res.data || []).forEach(function (r) { myWaitlist[r.tab] = r.channel; });
-            }, function () { myWaitlist = {}; });
+                waitlistChanged();
+            }, function () { myWaitlist = {}; waitlistChanged(); });
     }
 
     // Мгновенное применение свежесохранённого конфига (зовёт админка)
@@ -158,9 +159,21 @@
         tabTitle: tabTitle,
         BASE_TABS: BASE_TABS,
         MOBILE_KEY: MOBILE_KEY,
+        // Подписка «сообщим о запуске» наружу (её зовёт личный кабинет — заглушка
+        // мобильной версии видна только с телефона, а подписаться логично и с
+        // компьютера). null = список подписок ещё не загружен, '' = не подписан.
+        waitlistOf: function (tab) { return myWaitlist ? (myWaitlist[tab] || '') : null; },
+        waitlistReady: function () { return authed() ? fetchMyWaitlist() : Promise.resolve(); },
+        subscribe: subscribe,
+        unsubscribe: unsubscribe,
         // совместимость со старым API (admin.js читал TABS)
         TABS: BASE_TABS
     };
+
+    // Подписка изменилась — слушатели (личный кабинет) перерисовывают себя
+    function waitlistChanged() {
+        try { document.dispatchEvent(new CustomEvent('gx-waitlist')); } catch (e) {}
+    }
 
     // ---------- применение ----------
     function panelOf(tab) { return document.getElementById('panel-' + tab); }
@@ -169,6 +182,9 @@
         syncPanels();
         syncSidebar();
         syncLabels();
+        // конфиг мог приехать ПОСЛЕ того, как личный кабинет уже собрался
+        // (раздел «Мобильная версия» живёт только при tabs.mobile.off)
+        try { document.dispatchEvent(new CustomEvent('gx-config')); } catch (e) {}
         var all = tabsAll();
         Object.keys(all).forEach(function (tab) { applyTab(tab); });
         applyMobile();
@@ -440,7 +456,7 @@
                     '<span class="hr-label">Оповещение о запуске</span>' +
                     '<h2 class="hr-title">Не пропустите запуск</h2>' +
                     '<p class="hr-sub">' + (isMobile
-                        ? 'Откройте сайт с компьютера, войдите в аккаунт — и подпишитесь на новость о запуске мобильной версии.'
+                        ? 'Откройте сайт с компьютера и войдите в аккаунт: аватар в шапке → «Мобильная версия» — там подписка на новость о запуске.'
                         : 'Войдите или создайте аккаунт — и здесь появится подписка: пришлём новость, когда раздел откроется.') + '</p>' +
                     (isMobile ? '' :
                         '<button class="hr-submit" type="button" data-gx="go-home"><span>Войти на Главной</span>' + SVG_ARROW + '</button>') +
@@ -503,12 +519,12 @@
 
     // ---------- подписка ----------
     function subscribe(tab, channel) {
-        if (!authed()) return;
+        if (!authed()) return Promise.resolve(false);
         var uid = supa().session.user.id;
-        supa().client.from('feature_waitlist')
+        return supa().client.from('feature_waitlist')
             .upsert({ user_id: uid, tab: tab, channel: channel }, { onConflict: 'user_id,tab' })
             .then(function (res) {
-                if (res.error) { toast(supa().errRu(res.error), true); return; }
+                if (res.error) { toast(supa().errRu(res.error), true); return false; }
                 myWaitlist = myWaitlist || {};
                 myWaitlist[tab] = channel;
 
@@ -529,20 +545,26 @@
                         }
                     });
                 }
-                toast('Подписка оформлена — сообщим, когда раздел откроется');
+                toast(tab === MOBILE_KEY
+                    ? 'Подписка оформлена — сообщим, когда откроется мобильная версия'
+                    : 'Подписка оформлена — сообщим, когда раздел откроется');
                 if (tab === MOBILE_KEY) applyMobile(); else applyTab(tab);
+                waitlistChanged();
+                return true;
             });
     }
 
     function unsubscribe(tab) {
-        if (!authed()) return;
-        supa().client.from('feature_waitlist').delete()
+        if (!authed()) return Promise.resolve(false);
+        return supa().client.from('feature_waitlist').delete()
             .eq('user_id', supa().session.user.id).eq('tab', tab)
             .then(function (res) {
-                if (res.error) { toast(supa().errRu(res.error), true); return; }
+                if (res.error) { toast(supa().errRu(res.error), true); return false; }
                 if (myWaitlist) delete myWaitlist[tab];
                 toast('Подписка снята');
                 if (tab === MOBILE_KEY) applyMobile(); else applyTab(tab);
+                waitlistChanged();
+                return true;
             });
     }
 
