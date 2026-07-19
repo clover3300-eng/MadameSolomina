@@ -987,9 +987,19 @@
             ? '<span>свободно <b>' + fmtRub(T.pos.money) + '</b></span>' : '';
         return left + mid + right;
     }
-    // чистый текст (без esc) — идёт и в textContent при точечном обновлении
+    // чистый текст (без esc) — идёт и в textContent при точечном обновлении.
+    // В ужатом тикете объём НЕ повторяем: он крупно стоит полем выше, а в кнопке
+    // и так есть сумма — три экземпляра одного числа на карточку это перебор.
     function submitLbl(s) {
-        return (s.side === 'buy' ? 'Купить ' : 'Продать ') + s.meta.ticker + ' · ' + s.lots + ' лот';
+        return (s.side === 'buy' ? 'Купить ' : 'Продать ') + s.meta.ticker +
+            (fsOn() ? '' : ' · ' + s.lots + ' лот');
+    }
+    // 1 лот · 2 лота · 5 лотов — иначе «максимум 34 лот» в референсе
+    function lotsWord(k) {
+        var a = Math.abs(k) % 100, b = a % 10;
+        if (a > 10 && a < 20) return 'лотов';
+        if (b > 1 && b < 5) return 'лота';
+        return b === 1 ? 'лот' : 'лотов';
     }
     // пустая сумма (цена ещё не введена) → пустая строка: шов и цифра скрыты CSS-ом
     function submitSum(s) {
@@ -997,6 +1007,113 @@
         if (!(sum > 0)) return '';
         return (s.kind === 'limit' ? '' : '≈ ') + fmtRub(sum);
     }
+    // ---- УЖАТЫЙ ТИКЕТ полноэкранного режима (макеты 01/02) ----
+    // Девять групп обычного тикета в фокусе мешают: пока выставляешь заявку,
+    // нужны цена, объём и кнопка, а всё остальное — справочно. Здесь пять групп:
+    // цена (с типом заявки в строке лейбла и сроком тихой подписью), количество,
+    // защита одной строкой, своя позиция одной строкой, кнопка.
+    var KIND_NAMES = { limit: 'Лимитная', market: 'Рыночная', stop: 'Стоп' };
+    function slimKindSel(n, s) {
+        return '<select class="btr-slim-kind" aria-label="Тип заявки" onchange="pftKind(' + n + ', this.value)">' +
+            ['limit', 'market', 'stop'].map(function (k) {
+                return '<option value="' + k + '"' + (s.kind === k ? ' selected' : '') + '>' + KIND_NAMES[k] + '</option>';
+            }).join('') + '</select>';
+    }
+    // «У вас 240 шт по 264,12 ₽ · +1 982 ₽» — позиция одной строкой вместо блока
+    function slimHold(s) {
+        var p = null;
+        (T.port.list || []).forEach(function (x) { if (x.uid === s.uid) p = x; });
+        if (!p || !(Math.abs(p.qty) > 0)) return '';
+        var up = p.pnl >= 0;
+        return '<div class="btr-slim-hold">У вас <b>' + Math.abs(p.qty).toLocaleString('ru-RU') + ' шт</b> по <b>' +
+            fmtPx(p.avg, { meta: p.meta || null }) + ' ₽</b> · <b class="' + (up ? 'up' : 'dn') + '">' +
+            (up ? '+' : '−') + fmtRub(Math.abs(p.pnl)) + '</b></div>';
+    }
+    function slimBody(n, s, inc, side, blk) {
+        var lot = s.meta.lot || 1;
+        var maxL = s.max ? (s.side === 'buy' ? s.max.buy : s.max.sell) : null;
+        var maxRef = maxL != null ? '<span class="btr-slim-ref">максимум ' + maxL + ' ' + lotsWord(maxL) + '</span>' : '';
+        // ЦЕНА. Тип заявки — в строке лейбла (был отдельный ряд табов),
+        // срок — подписью под полем (был второй ряд табов).
+        var priceRow;
+        if (s.kind === 'market') {
+            var m = midPrice(s);
+            priceRow = '<div class="btr-slim-mkt">По лучшей цене стакана' +
+                (m > 0 ? ' — сейчас ≈ ' + fmtPx(m, s) + ' ₽' : '') + '</div>';
+        } else if (s.kind === 'stop') {
+            priceRow = '<div class="btr-bigrow"><input class="btr-big" id="' + eid('Stop', n) + '" type="number" step="' + inc + '" ' +
+                'min="0" placeholder="0" value="' + esc(s.stopPrice) + '"><span class="btr-big-suf">₽</span></div>' +
+                (s.stopKind === 'lim'
+                    ? '<div class="btr-bigrow"><input class="btr-big" id="' + eid('StopLim', n) + '" type="number" step="' + inc + '" ' +
+                      'min="0" placeholder="0" value="' + esc(s.stopLimit) + '"><span class="btr-big-suf">₽ заявки</span></div>' : '');
+        } else {
+            priceRow = '<div class="btr-bigrow"><input class="btr-big" id="' + eid('Price', n) + '" type="number" step="' + inc + '" ' +
+                'min="0" placeholder="0" value="' + esc(s.price) + '"><span class="btr-big-suf">₽</span></div>';
+        }
+        var tifSub = s.kind === 'limit'
+            ? (s.tifOpen
+                ? '<div class="btr-ttabs btr-slim-tif" id="' + eid('Tif', n) + '">' + TIF_TABS.map(function (it) {
+                        return '<button type="button"' + (s.tif === it[0] ? ' class="active"' : '') +
+                            ' onclick="pftTif(' + n + ',\'' + it[0] + '\')">' + it[1] + '</button>';
+                  }).join('') + '</div>'
+                : '<div class="btr-slim-sub">' + esc(TIF_TABS.filter(function (t) { return t[0] === s.tif; })[0][1]).toLowerCase() +
+                  ' · <button type="button" class="btr-slim-edit" onclick="pftTifOpen(' + n + ')">изменить</button></div>')
+            : '';
+        var price = '<div class="btr-bf">' +
+            '<div class="btr-bf-lab"><label for="' + eid(s.kind === 'stop' ? 'Stop' : 'Price', n) + '">' +
+                (s.kind === 'stop' ? 'Стоп-цена' : 'Цена') + '</label>' + slimKindSel(n, s) +
+                '<span id="' + eid('PxRef', n) + '">' + pxRefBtn(n) + '</span></div>' +
+            priceRow + tifSub + '</div>';
+        // КОЛИЧЕСТВО
+        var shares = s.lots * lot;
+        var qty = '<div class="btr-bf">' +
+            '<div class="btr-bf-lab"><label for="' + eid('Lots', n) + '">Количество</label>' +
+                '<span id="' + eid('LotsRef', n) + '">' + lotsRefBtn(n) + '</span>' + maxRef + '</div>' +
+            '<div class="btr-bigrow"><input class="btr-big" id="' + eid('Lots', n) + '" type="number" step="1" min="1" value="' + s.lots + '">' +
+                '<span class="btr-big-suf">лотов</span></div>' +
+            '<div class="btr-slim-sub" id="' + eid('Shares', n) + '">= ' + shares.toLocaleString('ru-RU') +
+                ' штук · шаг цены ' + fmtPx(inc, s) + ' ₽</div></div>';
+        // ЗАЩИТА — одной строкой. Поля раскрываются, только когда её включили.
+        var prot = '';
+        if (s.kind !== 'stop') {
+            prot = '<div class="btr-slim-opt' + (s.prot ? ' on' : '') + '">' +
+                '<button type="button" onclick="pftProt(' + n + ')" aria-pressed="' + (s.prot ? 'true' : 'false') + '">' +
+                    '<span class="btr-prot-box">' + (s.prot ? IC_CHECK : '') + '</span>' +
+                    '<span class="btr-slim-opt-l">Защита позиции</span>' +
+                    '<span class="btr-slim-opt-v">' + (s.prot ? 'вкл' : 'выкл') + '</span></button>' +
+                (s.prot
+                    ? '<div class="btr-prot-fields">' +
+                        '<label class="btr-prot-f"><span>Стоп-лосс</span><span class="btr-prot-f-row">' +
+                        '<input id="' + eid('ProtSl', n) + '" type="number" step="' + inc + '" min="0" placeholder="0" value="' + esc(s.protSl) + '"><i>₽</i></span></label>' +
+                        '<label class="btr-prot-f"><span>Тейк-профит</span><span class="btr-prot-f-row">' +
+                        '<input id="' + eid('ProtTp', n) + '" type="number" step="' + inc + '" min="0" placeholder="0" value="' + esc(s.protTp) + '"><i>₽</i></span></label>' +
+                      '</div>' : '') +
+            '</div>';
+        }
+        // Предупреждения ОСТАЮТСЯ: в макете их не видно, потому что там всё в
+        // порядке. Это предохранители (цена далеко от рынка, сессия закрыта,
+        // частота) — убирать их ради компактности нельзя.
+        var est = estPrice(s) * shares;
+        var fee = feeOf(est);
+        return '<div class="btr-tk-body btr-slim">' + side + price + qty + prot + slimHold(s) +
+            '<div class="btr-warns" id="' + eid('Warns', n) + '">' + warnsHtml(s) + '</div>' +
+            '</div>' +
+            '<div class="btr-tk-foot">' +
+                '<button type="button" class="btr-submit ' + s.side + (blk ? ' blocked' : '') + '" id="' + eid('Submit', n) + '"' +
+                    (blk ? ' disabled title="' + esc(linkState(s).msg) + '"' : '') + ' onclick="pftAsk(' + n + ')">' +
+                    '<span class="btr-sb-l">' + esc(blk || submitLbl(s)) + '</span>' +
+                    '<span class="btr-sb-s">' + (blk ? '' : submitSum(s)) + '</span></button>' +
+                // Настройки порога и комиссии остались в обычном тикете: здесь они
+                // фразой, потому что правят их раз в жизни, а место дорого.
+                '<div class="btr-slim-note">' + (fee > 0 ? 'включая комиссию ' + fmtRub(fee) + ' · ' : '') +
+                'подтверждение вводом суммы от ' + fmtRub(sumLimit()) + '</div>' +
+            '</div>';
+    }
+    window.pftTifOpen = function (n) {
+        S(n).tifOpen = true;
+        repaintSlot(slotNo(n));
+    };
+
     function ticketHtml(n) {
         n = slotNo(n);
         var s = S(n);
@@ -1086,6 +1203,12 @@
             '<div class="btr-bigrow"><input class="btr-big" id="' + eid('Lots', n) + '" type="number" step="1" min="1" value="' + s.lots + '">' +
             '<span class="btr-big-suf" id="' + eid('Shares', n) + '">· ' + shares.toLocaleString('ru-RU') + ' шт</span></div></div>';
         var blk = submitBlock(s);   // связь оборвалась — кнопка не нажимается
+        // В полноэкранном режиме тикет ужат с девяти групп до пяти (макет 01/02):
+        // тип заявки уехал в строку лейбла цены, срок — тихой подписью, защита —
+        // одной строкой, разбивка суммы осталась только в подтверждении. Поля и
+        // их id те же самые, поэтому обработчики (wireSlot) и точечные
+        // перерисовки (repaintTicketBits) работают на обоих вариантах.
+        if (fsOn()) return head + slimBody(n, s, inc, side, blk);
         // Тикет делится на ПОЛЯ и ПОДВАЛ: карточку могут ужать, а обрезать в
         // тикете можно что угодно, кроме кнопки. Поля скроллятся, подвал прибит
         // ко дну (CSS .pfd-hset .btr-ticket) — действие всегда на виду.
@@ -1630,7 +1753,14 @@
         var s = S(n);
         if (!s.meta || s.busy) return;
         var sh = dqs('Shares', n);
-        if (sh) sh.textContent = '· ' + (s.lots * (s.meta.lot || 1)).toLocaleString('ru-RU') + ' шт';
+        // подпись под количеством у обычного и ужатого тикета РАЗНАЯ — точечное
+        // обновление должно писать ту, что там сейчас, а не свою единственную
+        if (sh) {
+            var shares = (s.lots * (s.meta.lot || 1)).toLocaleString('ru-RU');
+            sh.textContent = fsOn()
+                ? '= ' + shares + ' штук · шаг цены ' + fmtPx(s.meta.minInc || 0.01, s) + ' ₽'
+                : '· ' + shares + ' шт';
+        }
         var d = dqs('Deal', n); if (d) d.innerHTML = dealHtml(s);
         var btn = dqs('Submit', n);
         if (btn) {
@@ -3113,11 +3243,15 @@
     function fsMoneyHtml() {
         var free = T.pos.money, val = portValue();
         if (free == null && val == null) return '';
+        // Слова разные по режимам (макеты 01 и 04): в терминале коротко —
+        // «свободно / портфель», в «Просто» полными словами. Тот же приём, что
+        // с «вложено / сейчас стоит» вместо «средняя цена / переоценка».
+        var sx = simpleOn();
         // одной строкой: два столбика с надстрочными капс-лейблами забракованы
         return '<span class="pftb-money">' +
-            (free != null ? '<i>свободно</i><b>' + fmtRub(free) + '</b>' : '') +
+            (free != null ? '<i>' + (sx ? 'свободные деньги' : 'свободно') + '</i><b>' + fmtRub(free) + '</b>' : '') +
             (free != null && val != null ? '<s>·</s>' : '') +
-            (val != null ? '<i>портфель</i><b>' + fmtRub(val) + '</b>' : '') +
+            (val != null ? '<i>' + (sx ? 'мои вложения' : 'портфель') + '</i><b>' + fmtRub(val) + '</b>' : '') +
         '</span>';
     }
     // Статус СВЯЗИ (не биржевой сессии) — тот же факт, что метка в стакане:
@@ -3136,6 +3270,13 @@
     }
     function fsAcctHtml() {
         var c = conn(); if (!c) return '';
+        // В «Просто» номер счёта ничего не значит, а песочница — значит очень
+        // много: там она называется словами, которые новичок понимает (макет 04).
+        if (simpleOn()) {
+            return c.sandbox
+                ? '<span class="pftb-acct sx-acct"><i class="btr-sand">тренировочный счёт</i></span>'
+                : '<span class="pftb-acct sx-acct">настоящие деньги</span>';
+        }
         return '<span class="pftb-acct">' + (accTail() ? '····' + esc(accTail()) : esc(c.accountName || 'Счёт')) +
             (c.sandbox ? '<i class="btr-sand">песочница</i>' : '') + '</span>';
     }
@@ -3331,6 +3472,86 @@
     }
 
     function sxSlot() { return liveSlots()[0] || slotNums()[0] || 1; }
+    // ---- график «Просто»: линия с заливкой и датами ----
+    // Свечей и объёмов здесь намеренно нет — новичку нужна ФОРМА («росло или
+    // падало») и срок. Даты обязательны: без них непонятно, за какой период рост.
+    var SX_PERIODS = [
+        ['week', 'Неделя', 'CANDLE_INTERVAL_HOUR', 7],
+        ['month', 'Месяц', 'CANDLE_INTERVAL_DAY', 31],
+        ['year', 'Год', 'CANDLE_INTERVAL_DAY', 365],
+        ['all', 'Всё время', 'CANDLE_INTERVAL_WEEK', 1825]
+    ];
+    var sxPeriod = 'month';
+    var sxCandles = {};   // uid|period -> массив свечей (или 'busy' / 'err')
+    function sxPer() {
+        for (var i = 0; i < SX_PERIODS.length; i++) if (SX_PERIODS[i][0] === sxPeriod) return SX_PERIODS[i];
+        return SX_PERIODS[1];
+    }
+    function sxLoadCandles(uid) {
+        var p = sxPer(), key = uid + '|' + p[0];
+        if (sxCandles[key]) return;
+        sxCandles[key] = 'busy';
+        var now = Date.now();
+        A().call('GetCandles', {
+            instrumentId: uid,
+            from: new Date(now - p[3] * 86400000).toISOString(),
+            to: new Date(now).toISOString(),
+            interval: p[2]
+        }).then(function (d) {
+            var q2n = A().q2n;
+            sxCandles[key] = ((d && d.candles) || []).map(function (c) {
+                return { t: Date.parse(c.time), v: q2n(c.close) };
+            }).filter(function (c) { return c.t && c.v > 0; });
+            sxTick();
+        }, function () { sxCandles[key] = 'err'; sxTick(); });
+    }
+    function sxChartHtml(s) {
+        var p = sxPer();
+        var tabs = '<div class="sx-per">' + SX_PERIODS.map(function (x) {
+            return '<button type="button"' + (x[0] === sxPeriod ? ' class="on"' : '') +
+                ' onclick="pftSxPeriod(\'' + x[0] + '\')">' + x[1] + '</button>';
+        }).join('') + '</div>';
+        var data = sxCandles[s.uid + '|' + p[0]];
+        var body;
+        if (!data || data === 'busy') body = '<div class="sx-chart-note">Загружаем график…</div>';
+        else if (data === 'err' || data.length < 2) body = '<div class="sx-chart-note">График за этот срок недоступен</div>';
+        else {
+            var W = 700, H = 200, AX = 22, PAD = 6;
+            var vals = data.map(function (c) { return c.v; });
+            var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals);
+            var span = (max - min) || 1;
+            min -= span * 0.08; max += span * 0.08; span = max - min;
+            var X = function (i) { return PAD + i * ((W - PAD * 2) / (data.length - 1)); };
+            var Y = function (v) { return (H - AX - 8) - (v - min) / span * (H - AX - 24); };
+            var line = data.map(function (c, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(c.v).toFixed(1); }).join(' ');
+            var base = H - AX + 2;
+            var area = line + ' L' + X(data.length - 1).toFixed(1) + ' ' + base + ' L' + X(0).toFixed(1) + ' ' + base + ' Z';
+            var up = data[data.length - 1].v >= data[0].v;
+            // пять дат по оси — ровно как в макете
+            var marks = '';
+            for (var k = 0; k < 5; k++) {
+                var idx = Math.round(k * (data.length - 1) / 4);
+                var x = X(idx).toFixed(1);
+                var dt = new Date(data[idx].t);
+                var lab = dt.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+                marks += '<line x1="' + x + '" y1="' + base + '" x2="' + x + '" y2="' + (base + 4) + '" class="sx-ax"/>' +
+                    '<text x="' + x + '" y="' + (H - 4) + '" text-anchor="middle" class="sx-axt">' + esc(lab) + '</text>';
+            }
+            body = '<div class="sx-chart"><svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" ' +
+                'role="img" aria-label="График цены за период ' + esc(p[1].toLowerCase()) + '">' +
+                '<path d="' + area + '" class="sx-fill ' + (up ? 'up' : 'dn') + '"/>' +
+                '<path d="' + line + '" class="sx-line ' + (up ? 'up' : 'dn') + '"/>' +
+                '<line x1="0" y1="' + base + '" x2="' + W + '" y2="' + base + '" class="sx-ax"/>' + marks +
+            '</svg></div>';
+        }
+        return tabs + body;
+    }
+    window.pftSxPeriod = function (k) {
+        sxPeriod = k;
+        var s = S(sxSlot());
+        if (s.uid) sxLoadCandles(s.uid);
+        sxRepaint();
+    };
     // «Что нужно знать» — три факта, которые обычно узнают уже ПОСЛЕ первой
     // сделки: лотность, комиссия, подвижная цена
     function sxKnowHtml(s, c) {
@@ -3486,7 +3707,8 @@
                 '<span class="sx-px"><b>' + (last > 0 ? fmtPx(last, s) + ' ₽' : '—') + '</b>' +
                     (d ? '<i class="' + (d > 0 ? 'up' : 'dn') + '">' + (d > 0 ? '+' : '−') +
                         fmtPx(Math.abs(d), s) + ' ₽ за сегодня</i>' : '') + '</span>' +
-            '</div>' + sxKnowHtml(s, c) + '</div>';
+            '</div>' + sxChartHtml(s) + sxKnowHtml(s, c) + '</div>';
+        sxLoadCandles(s.uid);
         return '<div class="sx">' + head + sxDealHtml(n) + sxMineHtml() + '</div>';
     };
     function sxRepaint() {
