@@ -1535,8 +1535,8 @@ body:has(#pftBar) #pfWrap { gap: 0; }
 .pftb {
     /* margin-bottom НЕТ: в макете работа начинается сразу под строкой
        (.work2{top:44px}), и любой отступ здесь — потерянная высота */
-    display: flex; align-items: center; gap: 0; height: 44px; flex: none;
-    padding: 0 12px 0 8px;
+    display: flex; align-items: center; gap: 0; height: 54px; flex: none;
+    padding: 0 14px 0 10px;
     background: var(--card, #fff);
     border-bottom: 1px solid var(--border-color, rgba(15, 23, 42, 0.09));
     position: sticky; top: 0; z-index: 30;
@@ -1579,7 +1579,7 @@ body:has(#pftBar) #pfWrap { gap: 0; }
 }
 .tb-add svg { width: 13px; height: 13px; }
 .tb-add:hover { border-color: rgba(15, 23, 42, 0.35); color: #475569; }
-.pftb-scr .pfts-menu { top: 40px; bottom: auto; }
+.pftb-scr .pfts-menu { top: 50px; bottom: auto; }
 
 .pftb-r { margin-left: auto; display: flex; align-items: center; gap: 9px; flex: none; }
 .pftb-search {
@@ -1590,6 +1590,32 @@ body:has(#pftBar) #pfWrap { gap: 0; }
 }
 .pftb-search svg { width: 14px; height: 14px; }
 .pftb-search:hover { border-color: rgba(15, 23, 42, 0.22); color: #475569; }
+/* в «Просто» поиск — главное действие полосы: без бумаги экран пуст, а найти
+   её больше негде (карточки стакана с лупой там нет) */
+.pftb-search-lit {
+    border-color: rgba(68, 83, 239, 0.4); color: #4453ef; background: rgba(68, 83, 239, 0.06);
+    font-weight: 600; min-width: 190px;
+}
+.pftb-search-lit:hover, .pftb-search.on { border-color: #4453ef; color: #4453ef; background: rgba(68, 83, 239, 0.12); }
+.pftb-find {
+    position: absolute; top: 52px; right: 14px; z-index: 70; width: 340px;
+    padding: 8px; border-radius: 14px; background: var(--card, #fff);
+    border: 1px solid rgba(15, 23, 42, 0.1); box-shadow: 0 18px 44px -14px rgba(15, 23, 42, 0.3);
+}
+.pftb-find input {
+    width: 100%; padding: 9px 11px; border-radius: 10px;
+    border: 1px solid rgba(15, 23, 42, 0.14); font-family: var(--font-ui); font-size: 13px;
+}
+.pftb-find input:focus { outline: none; border-color: #4453ef; }
+.pftb-find-drop { margin-top: 6px; max-height: 260px; overflow-y: auto; scrollbar-width: thin; }
+.pftb-find-note { padding: 10px 11px; font-size: 12.5px; line-height: 1.45; color: #94a3b8; }
+.pftb-find-row {
+    display: flex; align-items: baseline; gap: 9px; width: 100%; text-align: left;
+    border: 0; background: none; cursor: pointer; padding: 8px 11px; border-radius: 9px;
+}
+.pftb-find-row:hover { background: rgba(68, 83, 239, 0.07); }
+.pftb-find-row b { font-family: var(--font-num); font-size: 13px; font-weight: 700; flex: none; }
+.pftb-find-row span { font-size: 12px; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pftb-search kbd {
     font-family: var(--font-num); font-size: 10px; padding: 1px 5px; border-radius: 5px;
     background: rgba(15, 23, 42, 0.06); color: #94a3b8;
@@ -1651,7 +1677,7 @@ body.dark-mode .pftb-st.stale { color: #f87171; }
 .pftb-more svg { width: 16px; height: 16px; }
 .pftb-more:hover, .pftb-more.on { background: rgba(15, 23, 42, 0.07); color: #0f172a; }
 .pftb-menu {
-    position: absolute; top: 42px; right: 8px; z-index: 70; width: 248px;
+    position: absolute; top: 52px; right: 8px; z-index: 70; width: 248px;
     padding: 6px; border-radius: 14px;
     background: var(--card, #fff); border: 1px solid rgba(15, 23, 42, 0.1);
     box-shadow: 0 18px 44px -14px rgba(15, 23, 42, 0.3);
@@ -1737,19 +1763,20 @@ body.dark-mode .btr-keys-note { background: rgba(52, 211, 153, 0.12); color: #6e
    54px = полоса 44 + её нижний отступ 10. */
 .sx {
     display: grid; grid-template-columns: 1fr 452px; grid-template-rows: 1fr 226px;
-    gap: 16px; padding: 20px 24px;   /* ровно как .sx в макете 04 */
-    /* высоту ставит sxFit() замером — она должна ВКЛЮЧАТЬ поля, иначе они
-       прибавляются сверх и нижняя карточка уезжает за кромку экрана */
+    /* ЗАЗОРЫ КАК В ТЕРМИНАЛЕ (просьба владельца продукта, отступление от макета
+       04): карточки встык, разделены хайрлайном в 1px, работа от кромки до
+       кромки окна. Два режима одного экрана должны ощущаться одним продуктом,
+       а не двумя разными вёрстками. */
+    gap: 1px; padding: 0; background: var(--border-color, rgba(15, 23, 42, 0.1));
+    border-top: 1px solid var(--border-color, rgba(15, 23, 42, 0.1));
     box-sizing: border-box;
     /* высоту ставит sxFit() замером: константа в calc() разъезжалась бы от
        любой правки хрома над сеткой. Здесь — запасное значение до первого замера */
     height: calc(var(--real-vh, 100vh) / 0.9 - 130px);
 }
 .sx-card {
-    background: var(--card, #fff); border: 1px solid var(--border-color, rgba(15, 23, 42, 0.08));
-    border-radius: 18px; padding: 20px 22px;
+    background: var(--card, #fff); border: 0; border-radius: 0; padding: 20px 22px;
     display: flex; flex-direction: column; min-height: 0;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
 }
 .sx-mine { grid-column: 1 / -1; }
 .sx-pick { grid-column: 1 / -1; justify-content: center; align-items: flex-start; }

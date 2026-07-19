@@ -200,7 +200,7 @@
     function liveSlots() {
         // «Просто» рисует не карточки терминала, а одну колонку — но цена ему
         // нужна та же и берётся тем же стаканом, значит слот у него живой
-        if (simpleOn() && document.querySelector('#panel-portfolios.active .sx')) {
+        if (simpleOn() && document.querySelector('#panel-portfolios.active #sxRoot')) {
             var one = slotNums()[0] || 1;
             return S(one).uid ? [one] : [];
         }
@@ -1937,7 +1937,7 @@
         // .btr-card есть у любой карточки терминала: стакан могли удалить,
         // а тикет и «Мои заявки» оставить — поллинг им всё ещё нужен.
         // .sx — режим «Просто»: карточек терминала там нет вовсе, а данные те же
-        if (document.querySelector('#panel-portfolios.active .btr-card, #panel-portfolios.active .sx')) return true;
+        if (document.querySelector('#panel-portfolios.active .btr-card, #panel-portfolios.active #sxRoot')) return true;
         stopPolling();
         return false;
     }
@@ -2448,7 +2448,7 @@
     function pftAfterRender() {
         // «Просто» живёт без карточек терминала (.btr-card), но данные ему нужны
         // те же самые — стакан для цены, позиции для «Мои вложения»
-        if (simpleOn() && document.querySelector('#panel-portfolios.active .sx')) {
+        if (simpleOn() && document.querySelector('#panel-portfolios.active #sxRoot')) {
             sxWire(); sxFit(); startPolling(); return;
         }
         var live = document.querySelector('#panel-portfolios.active .btr-card');
@@ -3354,7 +3354,16 @@
     };
     // Переключатель ведёт В ОБЕ стороны и не теряет обратной дороги: «Просто» и
     // «Терминал» — это один счёт и одна бумага, только разной сложности.
-    window.pftSimpleGo = function (on) { simpleSet(!!on); };
+    // Он меняет СЛОЖНОСТЬ ВНУТРИ режима, а не выходит из него: уйти совсем —
+    // это «← Портфели». Поэтому при переходе в «Терминал» включаем полноэкранный,
+    // иначе кнопка с надписью «Терминал» роняла в обычный дашборд.
+    window.pftSimpleGo = function (on) {
+        if (!on) {
+            fsState = true;
+            try { localStorage.setItem(FS_KEY, '1'); } catch (e) {}
+        }
+        simpleSet(!!on);
+    };
     // Лента сделок в полноэкранном режиме задумана ПОСТОЯННЫМ блоком, и места на
     // неё тут хватает. Раскрываем один раз за сессию — не в обработчике кнопки:
     // режим переживает перезагрузку, и после F5 кнопку никто не нажимает.
@@ -3469,8 +3478,17 @@
                   '</div>'
                 : '<div class="pftb-scr">' + (PF.pftsBarHtml ? PF.pftsBarHtml() : '') + '</div>') +
             '<div class="pftb-r">' +
-                '<button type="button" class="pftb-search" onclick="pftFsSearch()" ' +
-                    'title="Найти бумагу">' + IC_LENS + '<span>Тикер или название</span><kbd>/</kbd></button>' +
+                // В «Просто» поиск — ГЛАВНОЕ действие полосы: без выбранной бумаги
+                // весь экран пустой, а найти её больше негде (стакана с лупой там
+                // нет). Поэтому там он назван человеческими словами и подсвечен,
+                // а не притворяется тихим полем, как в терминале.
+                // класс НЕ 'sx': document.querySelector('.sx') ищет контейнер режима
+                // «Просто», и кнопка с таким классом попадала под него первой —
+                // sxRepaint заменял кнопку всем телом режима
+                '<button type="button" class="pftb-search' + (simpleOn() ? ' pftb-search-lit' : '') + '" onclick="pftFsSearch()" ' +
+                    'title="Найти бумагу">' + IC_LENS + '<span>' +
+                    (simpleOn() ? 'Найти компанию' : 'Тикер или название') + '</span>' +
+                    (simpleOn() ? '' : '<kbd>/</kbd>') + '</button>' +
                 fsMoneyHtml() + fsAcctHtml() + fsLinkHtml() +
                 '<button type="button" class="pftb-more" onclick="pftFsMenu(event)" ' +
                     'aria-label="Меню терминала" aria-haspopup="true">' + IC_DOTS3 + '</button>' +
@@ -3566,11 +3584,86 @@
     var IC_KEYS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg>';
     var IC_OUT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17l5-5-5-5M20 12H9M11 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5"/></svg>';
     var IC_BACK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>';
-    // Поиск в полосе открывает поиск ПЕРВОГО слота — та же лупа, что в стакане,
-    // и та же клавиша «/»: заводить второй поиск бумаги в одном экране незачем.
+    // ПОИСК В ПОЛОСЕ. В терминале он открывает поле в карточке стакана — та же
+    // лупа, что там, и та же клавиша «/». В «Просто» карточки стакана НЕТ ВООБЩЕ,
+    // и прежний вызов не делал ровно ничего: кнопка была, а поиска не было.
+    // Поэтому там у полосы свой выпадающий поиск, живущий прямо под кнопкой.
     window.pftFsSearch = function () {
+        if (simpleOn()) { sxSearchToggle(); return; }
         var n = liveSlots()[0] || slotNums()[0] || 1;
         if (window.pftSearchToggle) window.pftSearchToggle(n, true);
+    };
+    var sxFind = { open: false, q: '', busy: false, msg: '', res: [] };
+    function sxFindHtml() {
+        var rows;
+        if (sxFind.msg) rows = '<div class="pftb-find-note">' + esc(sxFind.msg) + '</div>';
+        else if (sxFind.busy && !sxFind.res.length) rows = '<div class="pftb-find-note">Ищем…</div>';
+        else if (!sxFind.res.length) rows = '<div class="pftb-find-note">Начните вводить название или тикер — например, «Сбер».</div>';
+        else rows = sxFind.res.map(function (i, k) {
+            return '<button type="button" class="pftb-find-row" onclick="pftSxFindPick(' + k + ')">' +
+                '<b>' + esc(i.ticker || '') + '</b><span>' + esc(i.name || '') + '</span></button>';
+        }).join('');
+        return '<div class="pftb-find" id="pftbFind">' +
+            '<input type="text" id="pftbFindInp" autocomplete="off" spellcheck="false" ' +
+                'placeholder="Название компании или тикер" aria-label="Поиск компании" ' +
+                'value="' + esc(sxFind.q) + '" oninput="pftSxFindInput(this.value)">' +
+            '<div class="pftb-find-drop">' + rows + '</div></div>';
+    }
+    function sxFindRepaint() {
+        var el = dq('pftbFind'); if (!el) return;
+        var inp = dq('pftbFindInp');
+        var pos = inp ? inp.selectionStart : 0, had = document.activeElement === inp;
+        el.outerHTML = sxFindHtml();
+        if (had) { var i2 = dq('pftbFindInp'); if (i2) { i2.focus(); try { i2.setSelectionRange(pos, pos); } catch (e) {} } }
+    }
+    function sxSearchToggle() {
+        sxFind.open = !sxFind.open;
+        var bar = dq('pftBar'); if (!bar) return;
+        var old = dq('pftbFind'); if (old) old.remove();
+        var btn = bar.querySelector('.pftb-search');
+        if (btn) btn.classList.toggle('on', sxFind.open);
+        if (!sxFind.open) return;
+        bar.insertAdjacentHTML('beforeend', sxFindHtml());
+        var i = dq('pftbFindInp'); if (i) i.focus();
+        setTimeout(function () {
+            document.addEventListener('click', function once(e) {
+                if (e.target.closest && (e.target.closest('#pftbFind') || e.target.closest('.pftb-search'))) return;
+                document.removeEventListener('click', once);
+                sxFind.open = false;
+                var el = dq('pftbFind'); if (el) el.remove();
+                var b = document.querySelector('.pftb-search'); if (b) b.classList.remove('on');
+            });
+        }, 0);
+    }
+    var sxFindT = null;
+    window.pftSxFindInput = function (v) {
+        sxFind.q = v; sxFind.msg = '';
+        clearTimeout(sxFindT);
+        if (String(v).trim().length < 2) { sxFind.res = []; sxFind.busy = false; sxFindRepaint(); return; }
+        sxFind.busy = true; sxFindRepaint();
+        sxFindT = setTimeout(function () {
+            var q = sxFind.q;
+            PF.pftFindInstruments(q).then(function (list) {
+                if (sxFind.q !== q) return;            // ответ на устаревший запрос
+                sxFind.busy = false;
+                sxFind.res = (list || []).slice(0, 7);
+                if (!sxFind.res.length) sxFind.msg = 'Ничего не нашлось — попробуйте другое написание.';
+                sxFindRepaint();
+            }, function (e) {
+                if (sxFind.q !== q) return;
+                sxFind.busy = false; sxFind.res = [];
+                sxFind.msg = (e && e.message) || 'Поиск недоступен';
+                sxFindRepaint();
+            });
+        }, 280);
+    };
+    window.pftSxFindPick = function (k) {
+        var i = sxFind.res[k]; if (!i || !i.uid) return;
+        sxFind.open = false; sxFind.q = ''; sxFind.res = [];
+        var el = dq('pftbFind'); if (el) el.remove();
+        var b = document.querySelector('.pftb-search'); if (b) b.classList.remove('on');
+        simpleSum = '';
+        loadInstrument(sxSlot(), i.uid, function () { sxRepaint(); });
     };
     // живые куски полосы — точечно, в такт с данными (полную полосу не трогаем:
     // в ней ряд экранов с меню и полем переименования)
@@ -3898,7 +3991,7 @@
     PF.pftSimpleHtml = function () {
         var n = sxSlot(), s = S(n);
         if (!s.meta) {
-            return '<div class="sx"><div class="sx-card sx-pick">' +
+            return '<div class="sx" id="sxRoot"><div class="sx-card sx-pick">' +
                 '<h4>Выберите бумагу</h4><p>Нажмите «Найти компанию» в строке сверху — покажем цену, ' +
                 'график и посчитаем, сколько бумаг выйдет на вашу сумму.</p></div>' + sxMineHtml() + '</div>';
         }
@@ -3906,7 +3999,7 @@
         // и без проверки на живом счёте счёт в рублях был бы гаданием. Ошибиться
         // в деньгах хуже, чем честно отправить в терминал.
         if (isBond(s)) {
-            return '<div class="sx"><div class="sx-card sx-pick">' +
+            return '<div class="sx" id="sxRoot"><div class="sx-card sx-pick">' +
                 '<h4>' + esc(s.meta.ticker) + ' — облигация</h4>' +
                 '<p>Простой режим пока считает только акции и фонды: у облигаций цена указывается ' +
                 'в процентах от номинала, и показывать приблизительные рубли здесь нельзя.</p>' +
@@ -3928,14 +4021,14 @@
                         fmtPx(Math.abs(d), s) + ' ₽ за сегодня</span>' : '') + '</span>' +
             '</div>' + sxChartHtml(s) + sxKnowHtml(s, c) + '</div>';
         sxLoadCandles(s.uid);
-        return '<div class="sx">' + head + sxDealHtml(n) + sxMineHtml() + '</div>';
+        return '<div class="sx" id="sxRoot">' + head + sxDealHtml(n) + sxMineHtml() + '</div>';
     };
     // Высоту «Просто» СЧИТАЕМ ПО ФАКТУ, а не формулой от высоты экрана: сверху
     // набегает переменное (полоса, её отступ, обёртки), и константа в calc()
     // разъезжается от любой правки хрома. Тот же приём, что у pfdFsFill.
     // ЛОВУШКА ZOOM: rect в экранных пикселях, вёрстка — в локальных, делим.
     function sxFit() {
-        var el = document.querySelector('.sx');
+        var el = dq('sxRoot');
         if (!el || window.innerWidth < 1100) return;   // на узком раскладка своя, высота авто
         var z = parseFloat(getComputedStyle(document.body).zoom) || 1;
         var h = (window.innerHeight - el.getBoundingClientRect().top) / z - SX_PAD;
@@ -3944,7 +4037,10 @@
     var SX_PAD = 20;   // воздух под нижней карточкой
     window.addEventListener('resize', sxFit);
     function sxRepaint() {
-        var host = document.querySelector('.sx');
+        // по ID, а не по классу: любой посторонний узел с классом `sx`, стоящий
+        // в документе раньше, подменял бы собой контейнер режима (так и вышло с
+        // модификатором кнопки поиска — sxRepaint заменил кнопку всем телом)
+        var host = dq('sxRoot');
         if (!host) return;
         var f = document.activeElement, wasSum = f && f.id === 'btSxSum';
         var pos = wasSum ? f.selectionStart : 0;
@@ -3959,7 +4055,7 @@
     // тик данных: цена и «Мои вложения» живые. Пока человек ПЕЧАТАЕТ сумму, не
     // трогаем — перерисовка под пальцами читается как сбой ввода
     function sxTick() {
-        if (!simpleOn() || !document.querySelector('.sx')) return;
+        if (!simpleOn() || !dq('sxRoot')) return;
         var f = document.activeElement;
         if (f && f.id === 'btSxSum') return;
         sxRepaint();
