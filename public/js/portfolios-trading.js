@@ -1488,13 +1488,24 @@
         // отдаётся верхнему ряду само — высоты в полноэкранном режиме доли, а не
         // пиксели (см. pfdFsFill). Только там он и нужен: в обычном дашборде блок
         // и так тянется мышью.
+        // ПОДСКАЗКА ПО КЛАВИШАМ — прямо в шапке дока (макет 01), а не только в
+        // модалке: клавиши были реализованы, но невидимы, и спрятать их за пункт
+        // меню значило бы оставить ту же беду, только на этаж ближе.
+        var keys = fsOn()
+            ? '<span class="btr-dock-keys">' + [
+                ['/', 'бумага'], ['B', ''], ['S', 'сторона'],
+                ['↑', ''], ['↓', 'цена шагом'], ['Esc', 'выход']
+              ].map(function (k) {
+                  return '<kbd>' + k[0] + '</kbd>' + (k[1] ? '<span>' + k[1] + '</span>' : '');
+              }).join('') + '</span>'
+            : '';
         var chev = fsOn()
             ? '<button type="button" class="btr-dock-chev' + (dockOpen() ? '' : ' off') + '" ' +
                 'onclick="pftDockToggle()" aria-expanded="' + dockOpen() + '" ' +
                 'title="' + (dockOpen() ? 'Свернуть — место уйдёт стакану и графику' : 'Развернуть') + '" ' +
                 'aria-label="Свернуть панель">' + IC_CHEV + '</button>'
             : '';
-        var head = PF.pfCardHead('', 'Мои заявки', null, PF.pfdInChromeHtml('trade:orders') + note + chev);
+        var head = PF.pfCardHead('', 'Мои заявки', null, PF.pfdInChromeHtml('trade:orders') + note + keys + chev);
         // «Позиции» — вкладкой здесь: свой виджет trade:pos по умолчанию скрыт, и
         // открытых позиций было не видно вовсе. В доке они рядом с заявками —
         // один вопрос «что у меня сейчас», один блок.
@@ -1507,7 +1518,9 @@
         if (!dockOpen()) return head + tabs;   // свёрнут — только шапка и корешки вкладок
         var body;
         if (T.otab === 'pos') {
-            body = posBodyHtml();
+            // в доке — таблица с долей портфеля и итогом (макет 01),
+            // в узкой карточке дашборда прежний двухстрочный список
+            body = fsOn() ? posTableHtml() : posBodyHtml();
         } else if (T.otab === 'hist') {
             body = '<div class="btr-ords">' + histRows() + '</div>';
         } else if (T.otab === 'stop') {
@@ -1575,6 +1588,57 @@
             : '';
         var head = PF.pfCardHead('', 'Позиции', null, PF.pfdInChromeHtml('trade:pos') + note);
         return head + posBodyHtml();
+    }
+    // ---- ПОЗИЦИИ ТАБЛИЦЕЙ (док полноэкранного режима, макет 01) ----
+    // Прибыль ₽ и доходность % — РАЗНЫЕ колонки (одной строкой «+1 982 ₽ · +3,13%»
+    // их приходилось разбирать глазом), доля портфеля отделена просветом и
+    // волосяной линией, снизу — итог по всем позициям.
+    var POS_COLS = [['бумага', ''], ['количество', ''], ['средняя', 'r'], ['текущая', 'r'],
+        ['стоимость', 'r'], ['прибыль, ₽', 'r'], ['доходность', 'r'], ['доля портфеля', ''], ['', '']];
+    function posTableHtml() {
+        var list = T.port.list || [];
+        if (!list.length) {
+            return '<div class="btr-none">' +
+                esc(T.port.ts ? 'Открытых позиций нет — купленное появится здесь.' : 'Загружаем позиции…') + '</div>';
+        }
+        var total = 0;
+        list.forEach(function (p) { total += Math.abs(p.val); });
+        var head = '<div class="btr-psh">' + POS_COLS.map(function (c) {
+            return '<span' + (c[1] ? ' class="r"' : '') + '>' + c[0] + '</span>';
+        }).join('') + '</div>';
+        var rows = list.map(function (p) {
+            var ms = { meta: p.meta || null };
+            var up = p.pnl >= 0;
+            var pct = p.avg > 0 ? (p.last / p.avg - 1) * 100 : 0;
+            var lot = (p.meta && p.meta.lot) || 1;
+            var share = total > 0 ? Math.round(Math.abs(p.val) / total * 100) : 0;
+            return '<div class="btr-psr" role="button" tabindex="0" onclick="pftPosOpen(\'' + jsArg(p.uid) + '\')">' +
+                '<span class="pstk">' + esc(p.ticker) + '</span>' +
+                '<span class="mut">' + Math.abs(p.qty).toLocaleString('ru-RU') + ' шт' +
+                    (lot > 1 ? ' · ' + Math.floor(Math.abs(p.qty) / lot) + ' ' + lotsWord(Math.floor(Math.abs(p.qty) / lot)) : '') + '</span>' +
+                '<span class="r mut">' + fmtPx(p.avg, ms) + '</span>' +
+                '<span class="r">' + fmtPx(p.last, ms) + '</span>' +
+                '<span class="r">' + fmtRub(p.val) + '</span>' +
+                '<span class="r ' + (up ? 'up' : 'dn') + '">' + (up ? '+' : '−') + fmtRub(Math.abs(p.pnl)) + '</span>' +
+                '<span class="r ' + (up ? 'up' : 'dn') + '">' + (up ? '+' : '−') +
+                    Math.abs(pct).toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + '%</span>' +
+                '<span class="btr-share"><span class="bar"><i style="width:' + share + '%"></i></span><b>' + share + '%</b></span>' +
+                '<button type="button" class="btr-psx" title="Закрыть позицию" aria-label="Закрыть позицию" ' +
+                    'onclick="event.stopPropagation();pftPosClose(\'' + jsArg(p.uid) + '\')">✕</button>' +
+            '</div>';
+        }).join('');
+        var pnl = list.reduce(function (a, p) { return a + p.pnl; }, 0);
+        var val = list.reduce(function (a, p) { return a + p.val; }, 0);
+        var inv = val - pnl;
+        var pu = pnl >= 0;
+        var yld = inv > 0 ? pnl / inv * 100 : 0;
+        var tot = '<div class="btr-pstot">' +
+            '<span>Стоимость позиций <b>' + fmtRub(val) + '</b></span>' +
+            '<span>Прибыль <b class="' + (pu ? 'up' : 'dn') + '">' + (pu ? '+' : '−') + fmtRub(Math.abs(pnl)) + '</b></span>' +
+            '<span>Доходность <b class="' + (pu ? 'up' : 'dn') + '">' + (pu ? '+' : '−') +
+                Math.abs(yld).toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + '%</b></span>' +
+        '</div>';
+        return head + '<div class="btr-pstab">' + rows + '</div>' + tot;
     }
     // Тело «Позиций» отдельно от карточки: тот же список идёт вкладкой в нижний
     // док полноэкранного режима, где своей шапки у него нет

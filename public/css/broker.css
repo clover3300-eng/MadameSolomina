@@ -2101,3 +2101,95 @@ body.dark-mode .sx-cf-r span, body.dark-mode .sx-cf-warn span { color: #9fb1c6; 
 body.dark-mode .sx-cf-warn { background: rgba(96, 165, 250, 0.12); }
 body.dark-mode .sx-cf-b.ghost { background: rgba(255, 255, 255, 0.08); color: #dbe4f0; }
 body.dark-mode .sx-cf-type input { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.14); color: #f1f6fb; }
+
+/* ---- ЯЗЫК ФОКУСА: панели ВСТЫК, разделённые хайрлайном (макет 01) ----
+   В дашборде виджеты — скруглённые карточки с зазором 16px: там они плавают
+   среди прочего и должны быть отделимы взглядом. В терминале наоборот: экран
+   отдан торговле целиком, и каждый зазор со скруглением — потерянные пиксели
+   и лишняя рябь. Зазор становится линией в 1px: её даёт фон самой сетки,
+   проступающий между блоками, — тот же приём, что в макете (gap:1px + background). */
+body:has(#pftBar) .pfd-grid.pfd-fs {
+    /* --pfr — переменная скругления карточек самого проекта (pfxApplyCorner).
+       Обнулить её честнее, чем перебивать десяток селекторов: карточка лежит
+       не прямым ребёнком .pfd-item, и путь до неё хрупкий. */
+    --pfr: 0px;
+    /* ТОЛЬКО column-gap. `gap:1px` задал бы ещё и row-gap, а строк сетки здесь
+       под тысячу (строка = пиксель) — это добавляло к раскладке ~800px и она
+       уезжала вдвое ниже экрана. Вертикальный зазор пакер считает сам и берёт
+       его из columnGap, так что хайрлайн получается и по вертикали. */
+    column-gap: 1px; row-gap: 0;
+    background: var(--border-color, rgba(15, 23, 42, 0.1));
+    border: 1px solid var(--border-color, rgba(15, 23, 42, 0.1)); border-radius: 14px; overflow: hidden;
+}
+body:has(#pftBar) .pfd-grid.pfd-fs .dash2-card,
+body:has(#pftBar) .pfd-grid.pfd-fs .pf-card2 {
+    box-shadow: none !important; border: 0 !important;
+}
+/* height:100% — ТОЛЬКО вне такта замера. Безусловное правило схлопывало
+   карточку внутри авто-высотного блока, и замер снова вырождался: та же
+   ловушка, что с самими блоками, только этажом ниже. */
+body:has(#pftBar) .pfd-grid.pfd-fs:not(.pfd-fs-measure) .dash2-card,
+body:has(#pftBar) .pfd-grid.pfd-fs:not(.pfd-fs-measure) .pf-card2 { height: 100%; }
+/* вертикальную линию между соседями рисует край блока: фон сетки проступает
+   только по горизонтали (вертикальный зазор пакер считает сам, см. pfdPack) */
+body:has(#pftBar) .pfd-grid.pfd-fs > .pfd-item + .pfd-item { box-shadow: -1px 0 0 var(--border-color, rgba(15, 23, 42, 0.1)); }
+
+/* ---- ПОЗИЦИИ ТАБЛИЦЕЙ в доке (макет 01) ---- */
+.btr-psh, .btr-psr {
+    display: grid; grid-template-columns: 120px 158px 128px 128px 176px 176px 132px 1fr 28px;
+    gap: 0 14px; align-items: center; padding: 0 2px;
+}
+/* доля портфеля отделена просветом и волосяной линией — это уже не про деньги,
+   а про структуру, и мешать их в один ряд цифр нельзя */
+.btr-psh > :nth-child(8), .btr-psr > :nth-child(8) {
+    padding-left: 26px; margin-left: 12px; box-shadow: inset 1px 0 0 rgba(15, 23, 42, 0.09);
+}
+.btr-psh { padding-top: 9px; padding-bottom: 6px; }
+.btr-psh span {
+    font-family: var(--font-ui); font-size: 8.5px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8;
+}
+.btr-psh span.r, .btr-psr .r { text-align: right; }
+.btr-pstab { overflow-y: auto; min-height: 0; scrollbar-width: thin; }
+.btr-psr {
+    height: 31px; border-top: 1px solid rgba(15, 23, 42, 0.06); cursor: pointer;
+    font-family: var(--font-num); font-size: 12px; font-variant-numeric: tabular-nums;
+}
+.btr-psr:hover { background: rgba(15, 23, 42, 0.025); }
+.btr-psr .pstk { font-weight: 700; }
+.btr-psr .up { color: #16a34a; font-weight: 600; }
+.btr-psr .dn { color: #dc2626; font-weight: 600; }
+.btr-psr .mut { color: #94a3b8; }
+.btr-share { display: flex; align-items: center; gap: 11px; }
+.btr-share .bar { flex: 1; max-width: 148px; height: 5px; border-radius: 3px; background: rgba(15, 23, 42, 0.08); position: relative; }
+.btr-share .bar i { position: absolute; inset: 0 auto 0 0; border-radius: 2px; background: #4453ef; opacity: 0.6; }
+.btr-share b { font-family: var(--font-num); font-size: 11px; color: #94a3b8; font-weight: 600; }
+.btr-psx { border: 0; background: none; cursor: pointer; padding: 0; color: #cbd5e1; font-size: 12px; text-align: center; }
+.btr-psx:hover { color: #dc2626; }
+.btr-pstot {
+    display: flex; justify-content: flex-end; gap: 24px; margin-top: auto;
+    padding: 9px 2px 4px; border-top: 1px solid rgba(15, 23, 42, 0.09);
+    font-size: 11.5px; color: #64748b;
+}
+.btr-pstot b { font-family: var(--font-num); color: #0f172a; font-weight: 700; }
+.btr-pstot b.up { color: #16a34a; } .btr-pstot b.dn { color: #dc2626; }
+
+/* подсказка по клавишам в шапке дока — там, где на неё смотрят */
+.btr-dock-keys { display: flex; align-items: center; gap: 7px; font-size: 10.5px; color: #94a3b8; white-space: nowrap; }
+.btr-dock-keys kbd {
+    font-family: var(--font-num); font-size: 9.5px; border: 1px solid rgba(15, 23, 42, 0.12);
+    border-radius: 4px; padding: 1px 5px; color: #64748b;
+}
+@media (max-width: 1400px) { .btr-dock-keys { display: none; } }
+
+body.dark-mode:has(#pftBar) .pfd-grid.pfd-fs,
+body.dark-mode:has(#pftBar) .pfd-grid.pfd-fs > .pfd-item + .pfd-item { border-color: rgba(255, 255, 255, 0.1); }
+body.dark-mode:has(#pftBar) .pfd-grid.pfd-fs { background: rgba(255, 255, 255, 0.1); }
+body.dark-mode .btr-psr { border-top-color: rgba(255, 255, 255, 0.08); }
+body.dark-mode .btr-psr:hover { background: rgba(255, 255, 255, 0.03); }
+body.dark-mode .btr-psr .mut, body.dark-mode .btr-share b, body.dark-mode .btr-pstot { color: #9fb1c6; }
+body.dark-mode .btr-pstot b { color: #f1f6fb; }
+body.dark-mode .btr-share .bar { background: rgba(255, 255, 255, 0.1); }
+body.dark-mode .btr-psh > :nth-child(8), body.dark-mode .btr-psr > :nth-child(8) { box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.1); }
+body.dark-mode .btr-pstot { border-top-color: rgba(255, 255, 255, 0.1); }
+body.dark-mode .btr-dock-keys kbd { border-color: rgba(255, 255, 255, 0.14); color: #9fb1c6; }
