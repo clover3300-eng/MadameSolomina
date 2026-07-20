@@ -14,7 +14,7 @@
     var esc = PF.esc, findPf = PF.findPf, fmtPct = PF.fmtPct, fmtPrice = PF.fmtPrice, fmtQty = PF.fmtQty, fmtRub = PF.fmtRub;
     var jsArg = PF.jsArg, pfQuotesWarming = PF.pfQuotesWarming, skelHtml = PF.skelHtml, toast = PF.toast, visibleItems = PF.visibleItems;
     // импорт конструктора (portfolios-dash.js, уже загружен):
-    var DASH_KEY = PF.DASH_KEY, DASH_TABS_KEY = PF.DASH_TABS_KEY, PFDCFG_GEAR_SVG = PF.PFDCFG_GEAR_SVG, PFD_PLUS_SVG = PF.PFD_PLUS_SVG, dashCfgFor = PF.dashCfgFor, pfTabCfgs = PF.pfTabCfgs;
+    var DASH_KEY = PF.DASH_KEY, DASH_TABS_KEY = PF.DASH_TABS_KEY, PFD_PLUS_SVG = PF.PFD_PLUS_SVG, dashCfgFor = PF.dashCfgFor, pfTabCfgs = PF.pfTabCfgs;
     var pfTabsStore = PF.pfTabsStore, pfdInChromeHtml = PF.pfdInChromeHtml, pfdScrollToBlock = PF.pfdScrollToBlock, pfdStandardCfg = PF.pfdStandardCfg, pfxEffTab = PF.pfxEffTab, pfxIsPfTab = PF.pfxIsPfTab;
     var pfxSyncCfg = PF.pfxSyncCfg, saveDashCfg = PF.saveDashCfg, updateLayoutBtn = PF.updateLayoutBtn;
     var pfxIsTradeTab = PF.pfxIsTradeTab, pfxTradeAlive = PF.pfxTradeAlive, pfxTradeNo = PF.pfxTradeNo;
@@ -25,25 +25,24 @@
     //  пикер «Добавить виджет» с демо-превью, настройка скруглений карточек.
     // ====================================================================
     // ---- подвкладки (Обзор | Портфели | Аналитика | Отчёты | Дивиденды | Операции | Настройки) ----
-    // [ключ, подпись, иконка]. Иконка — чтобы вкладка узнавалась по силуэту и ряд не
-    // приходилось перечитывать целиком. Третий элемент добавлен, а не подменил второй:
-    // подпись [1] читает ещё и pfxTabLabel — она уходит в текст, не в разметку.
-    var PFXI = function (d) {
-        return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
-    };
+    // [ключ, подпись]. Иконок у пунктов НЕТ (убраны 2026-07-20): восемь значков в ряд
+    // читались шумом — каждый тянул на себя внимание, а узнавался ряд всё равно по
+    // подписям. Ряд стал чисто типографическим, поэтому кегль подписи подрос
+    // (13,5→14,5px), а начертание, наоборот, стало легче (700→600) — см. .pfx-tab:
+    // жирный при таком размере превращал строку в сплошную тёмную полосу.
     var PFX_TABS = [
-        ['overview',  'Обзор',      PFXI('<rect x="3" y="3" width="7.5" height="8.5" rx="1.8"/><rect x="13.5" y="3" width="7.5" height="5" rx="1.8"/><rect x="13.5" y="10.5" width="7.5" height="10.5" rx="1.8"/><rect x="3" y="14" width="7.5" height="7" rx="1.8"/>')],
+        ['overview',  'Обзор'],
         // «Мои портфели», не «Портфели»: вкладка сайдбара уже зовётся «Портфели» —
         // одинаковая подпись уровнем ниже читалась тавтологией (просьба 2026-07-15)
-        ['ports',     'Мои портфели', PFXI('<rect x="2.5" y="7" width="19" height="13" rx="2.5"/><path d="M8.5 7V5.5A1.5 1.5 0 0 1 10 4h4a1.5 1.5 0 0 1 1.5 1.5V7"/><path d="M2.5 12.5h19"/>')],
-        ['analytics', 'Аналитика',  PFXI('<path d="M3 3v16.5A1.5 1.5 0 0 0 4.5 21H21"/><path d="M7 15.5l4-4.5 3.5 3L20 7"/>')],
-        ['reports',   'Отчёты',     PFXI('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/>')],
-        ['divs',      'Дивиденды',  PFXI('<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>')],
-        ['ops',       'Операции',   PFXI('<path d="M3 7h13"/><path d="M12.5 3.5 16 7l-3.5 3.5"/><path d="M21 17H8"/><path d="M11.5 13.5 8 17l3.5 3.5"/>')],
+        ['ports',     'Мои портфели'],
+        ['analytics', 'Аналитика'],
+        ['reports',   'Отчёты'],
+        ['divs',      'Дивиденды'],
+        ['ops',       'Операции'],
         // «Торговля» — терминал этапа 2 (стакан/тикет/заявки); пока рендерит
         // гейт-карточку по состоянию подключения брокера (pfxTradingHtml)
-        ['trading',   'Торговля',   PFXI('<path d="M3 17l5-5 3 3 7-8.5"/><polyline points="14 6.5 18 6.5 18 10.5"/><path d="M3 21h18"/>')],
-        ['settings',  'Настройки',  PFDCFG_GEAR_SVG]   // та же шестерёнка, что у виджетов
+        ['trading',   'Торговля'],
+        ['settings',  'Настройки']
     ];
     var PFX_TAB_KEY = 'pf_subtab_v1';   // локально (в облако не зеркалится — просто позиция UI)
     var PFX_TRADE_KEY = 'pf_trade_screen_v1';   // последний открытый экран «Торговли» — тоже позиция UI
@@ -245,7 +244,7 @@
             var on = t[0] === 'trading' ? pfxIsTradeTab(eff) : eff === t[0];
             var go = t[0] === 'trading' ? 'pfxGoTrading()' : 'pfxGoTab(\'' + t[0] + '\')';
             return '<button type="button" role="tab" id="pfxTab-' + t[0] + '" aria-controls="pfxTabPanel" tabindex="' + (on ? '0' : '-1') + '" class="pfx-tab' + (on ? ' on' : '') + '" aria-selected="' + on + '" onclick="' + go + '">' +
-                '<span class="pfx-tab-ic" aria-hidden="true">' + t[2] + '</span>' + t[1] + '</button>' +
+                t[1] + '</button>' +
                 (t[0] === 'overview' ? chips : '');
         }).join('') + '</div>';
     }
