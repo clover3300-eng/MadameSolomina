@@ -175,6 +175,10 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
            padding-bottom:8px;border-bottom:1px solid var(--hair);white-space:nowrap}
 .pn-tbl th,.pn-tbl td{text-align:right}
 .pn-tbl th:first-child,.pn-tbl td:first-child{text-align:left}
+/* гарантированный зазор между колонками: при table-layout:fixed паддинг
+   входит в ширину колонки, поэтому он и есть та самая «воздушная» щель */
+.pn-tbl th+th,.pn-tbl td+td{padding-left:14px}
+.pn.narrow .pn-tbl th+th,.pn.narrow .pn-tbl td+td{padding-left:11px}
 .pn-tbl td{padding:9px 0;border-bottom:1px solid var(--hair);font-family:var(--fN);font-size:13px;font-weight:600;
            font-variant-numeric:tabular-nums;white-space:nowrap}
 .pn-tbl tr:last-child td{border-bottom:0}
@@ -535,12 +539,17 @@ function posRow(h, cols){
   return o;
 }
 function posTable(cols, list){
-  var w = cols.buy ? ['34%', '13%', '15%', '15%', '12%', '11%'] : ['32%', '13%', '', '25%', '15%', '15%'];
-  var o = '<table class="pn-tbl"><colgroup><col style="width:' + w[0] + '"><col style="width:' + w[1] + '">' +
-    (cols.buy ? '<col style="width:' + w[2] + '">' : '') + '<col style="width:' + w[3] + '"><col style="width:' + w[4] + '">' +
-    (cols.share ? '<col style="width:' + w[5] + '">' : '') + '</colgroup><thead><tr>';
-  o += '<th>Актив</th><th>' + (cols.buy ? 'Кол-во' : 'Кол.') + '</th>' + (cols.buy ? '<th>Цена покупки</th>' : '') +
-       '<th>' + (cols.buy ? 'Текущая цена' : 'Цена') + '</th><th>' + (cols.buy ? 'Изменение' : 'Изм.') + '</th>' +
+  /* ширины под фактический набор колонок: паддинг-щель входит в ширину,
+     поэтому чем меньше колонок, тем больше достаётся каждой */
+  var cw = cols.buy ? ['31%', '13%', '16%', '16%', '12%', '12%']
+         : cols.share ? ['28%', '16%', '24%', '16%', '16%']
+         : ['38%', '17%', '26%', '19%'];
+  var o = '<table class="pn-tbl"><colgroup>' +
+    cw.map(function(x){ return '<col style="width:' + x + '">'; }).join('') + '</colgroup><thead><tr>';
+  /* короткие имена — не ради экономии места, а те же, что в таблице подвкладки
+     «Портфель» и в нынешней мини-таблице: Средняя · Сейчас · Изм. */
+  o += '<th>Актив</th><th>' + (cols.buy ? 'Кол-во' : 'Кол.') + '</th>' + (cols.buy ? '<th>Средняя</th>' : '') +
+       '<th>Сейчас</th><th>Изм.</th>' +
        (cols.share ? '<th>Доля</th>' : '') + '</tr></thead><tbody>';
   var span = 4 + (cols.buy ? 1 : 0) + (cols.share ? 1 : 0), grp = null;
   (list || HOLD).forEach(function(h){
@@ -639,7 +648,9 @@ function cardWork(opt){
 
   /* позиции */
   o += '<div class="pn-pos"><div class="pn-pos-h"><h4>Позиции</h4><span class="pn-cnt">' + HOLD.length + '</span></div>';
-  o += posTable({buy: !narrow, share: true, open: opt.open, plates: !!opt.plates, groups: !!opt.groups}, list) + '</div>';
+  /* в узком блоке «Доля» уходит вслед за «Средней»: пять колонок на 380 px
+     дают колонки уже своих же значений */
+  o += posTable({buy: !narrow, share: !narrow, open: opt.open, plates: !!opt.plates, groups: !!opt.groups}, list) + '</div>';
 
   /* подвал */
   o += '<div class="pn-foot">';
