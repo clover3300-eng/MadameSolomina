@@ -551,13 +551,9 @@
     // СРЕДНЕЙ даты покупок до сегодня. Данные — историческая цена закрытия MOEX за период
     // (механизм вкладки «Тест»: btBuildPortfolioSeries/btFetchHistorySeries/btAlignReturns),
     // считаются асинхронно и кешируются. Можно наложить кривую индекса IMOEX за тот же период.
-    // раскрытия/кеши графика карточки: PF.* — их СБРАСЫВАЮТ (реассайнят) другие
-    // файлы (сворачивание при переключениях, восстановление бэкапа)
-    PF.chartOpen = {};      // pid → график раскрыт (одновременно открыт только один)
-    var chartImoex = {};     // pid → наложена кривая индекса IMOEX
-    PF.chartAssets = {};    // pid → раскрыта таблица состава под графиком
-    PF.chartAssetsFull = {}; // pid → таблица состава раскрыта на всю высоту (без скролла 340px)
-    PF.holdsExpand = {};    // pid → раскрыт оверлей «весь состав» (вниз поверх контента)
+    // Оверлеи графика/состава на карточке снесены при переделке карточки (2026-07-22,
+    // блок 1 плана PF-CARD): график живёт в герое карточки, полный состав — в подвкладке.
+    var chartImoex = {};     // pid → наложена кривая индекса (нет UI после переделки; сравнение с индексом переедет в подвкладку «Портфель»)
     PF.chartCache = {};     // pid → { imoex, points, pfFinal, imFinal, from, err }
     PF.chartRaw = {};       // pid → { from, series } — сырая серия стоимости (кеш под toggle IMOEX)
     var chartBusy = {};      // pid → идёт загрузка (защита от двойного запроса)
@@ -680,11 +676,6 @@
             chartBusy[pid] = false; repaintCharts(pid);
         });
     }
-    // после полного ре-рендера пейн графика сбрасывается в «загрузку» — дорисовываем
-    // из кеша (или дозапускаем загрузку) для всех раскрытых графиков
-    function repaintOpenCharts() {
-        Object.keys(PF.chartOpen).forEach(function (pid) { if (PF.chartOpen[pid] && dq('pfcvChart-' + pid)) loadPfChart(pid); });
-    }
     function pfChartLoadingHtml() {
         return '<div class="pfcv-load"><span class="pfcv-spin"></span><span>Загружаем котировки Мосбиржи…</span></div>';
     }
@@ -725,7 +716,10 @@
     // рисуем серию в пейн графика (mi5-стиль): площадь + плавная линия + точки/тултипы
     // рисуем серию в ПЕРЕДАННЫЙ контейнер (uid — суффикс id градиента: два графика одного
     // портфеля — в карточке и во встроенной сводке одиночного портфеля — не делят <linearGradient>)
-    function drawPfChart(pid, wrap, dynEl, legEl, uid, maxPts) {
+    // fromDate (опционально, ISO) — окно периода карточки: точки до даты отбрасываются,
+    // остальные ПЕРЕБАЗИРУЮТСЯ к началу окна (кривая = доходность за период, согласована
+    // с дельтой в герое карточки), живой процент последней точки перебазируется так же
+    function drawPfChart(pid, wrap, dynEl, legEl, uid, maxPts, fromDate) {
         if (!wrap) return;
         var data = PF.chartCache[pid];
         if (chartBusy[pid] || !data) { wrap.innerHTML = pfChartLoadingHtml();
@@ -741,6 +735,17 @@
         // линия остаётся плавной, а точки-маркеры не сливаются. Итоговый % берётся из
         // сырых данных (data.pfFinal), поэтому от прореживания не страдает.
         var raw = data.points, pts = raw, MAXP = maxPts || 40;
+        var rebase = 0;
+        if (fromDate) {
+            var wnd = raw.filter(function (q) { return q.d >= fromDate; });
+            if (wnd.length >= 2) {
+                rebase = wnd[0].pf;
+                var imBase = wnd[0].im;
+                raw = wnd.map(function (q) { return { d: q.d, pf: q.pf - rebase,
+                    im: (q.im != null && imBase != null) ? q.im - imBase : q.im }; });
+                pts = raw;
+            }
+        }
         if (raw.length > MAXP) {
             var stepP = (raw.length - 1) / (MAXP - 1);
             pts = [];
@@ -760,6 +765,7 @@
         // (последний отрезок кривой отражает реальное движение с последнего закрытия) и не трогает
         // форму остальной кривой.
         var pfEntity = findPf(pid), livePct = pfEntity ? calcPf(pfEntity).pnlPct : null;
+        if (livePct != null) livePct -= rebase;   // окно периода: живой % в системе окна
         if (N && livePct != null && isFinite(livePct) && pts[N - 1].pf !== livePct) {
             var lastPt = pts[N - 1];
             pts = pts.slice(0, N - 1).concat([{ d: lastPt.d, pf: livePct, im: lastPt.im }]);
@@ -845,63 +851,10 @@
             legEl.innerHTML = lgh;
         }
     }
-    function paintPfChart(pid) { drawPfChart(pid, dq('pfcvChart-' + pid), dq('pfcvDyn-' + pid), dq('pfcvLeg-' + pid), pid); }
-    function repaintCharts(pid) { paintPfChart(pid); PF.paintPfChartMini(pid); PF.pfdCapMaybeRepaint(); }
-    function pfcvStat(l, v, cls) { return '<div class="pfcv-stat"><span class="pfcv-stat-l">' + esc(l) + '</span><span class="pfcv-stat-v ' + (cls || '') + '">' + v + '</span></div>'; }
-    // пейн графика в карточке: слева — сводка, справа — кривая доходности (выезжает справа)
-    function pfChartViewHtml(p, c, idx) {
-        var pid = p.id, pnlCls = c.pnl >= 0 ? 'pos' : 'neg', imOn = !!chartImoex[pid], asOn = !!PF.chartAssets[pid];
-        var bench = pfBench(p);
-        var fromTxt = ruDate(dateToIso(pfFirstBuyDate(p)));
-        // в центре кольца — номер портфеля (как в мини-карточке), не капитал
-        var ringNum = '<span class="pfc-ringnum">' + (((idx || 0) + 1)) + '</span>';
-        return '<div class="pfc-chartview">' +
-            '<div class="pfcv-left">' +
-                '<div class="pfcv-ring">' +
-                    PF.donutHtml(c.bondPct, 104, ringNum) +
-                    (function () { var bp = Math.round(clamp(c.bondPct, 0, 100)); return '<div class="pfcv-ringleg">' +
-                        '<span class="pfc-lg"><i class="stock"></i>Акции<b>' + (100 - bp) + '%</b></span>' +
-                        '<span class="pfc-lg"><i class="bond"></i>Облигации<b>' + bp + '%</b></span>' +
-                    '</div>'; })() +
-                '</div>' +
-                '<div class="pfcv-stats">' +
-                    pfcvStat('Вложено', fmtRub(c.invested), '') +
-                    pfcvStat('Доход', fmtRub(c.pnl), pnlCls) +
-                    (function () {   // полученные купоны/дивиденды — в «Доход» и кривую не входят
-                        var po = pfPayouts(p);
-                        return (po.any && (po.pending || po.sum > 0.005))
-                            ? pfcvStat('Выплаты получено', po.pending ? '…' : '+' + fmtRub(po.sum), po.pending ? '' : 'pos') : '';
-                    })() +
-                    '<div class="pfcv-stat pfcv-stat--dyn"><span class="pfcv-stat-l">Динамика за период</span><span class="pfcv-stat-v" id="pfcvDyn-' + pid + '">—</span></div>' +
-                '</div>' +
-                '<button class="pfcv-assetbtn' + (asOn ? ' on' : '') + '" data-pid="' + pid + '" onclick="pfToggleChartAssets(\'' + pid + '\')" title="Показать состав портфеля">' +
-                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>' +
-                    '<span class="pfcv-assetbtn-t">' + (asOn ? 'Скрыть активы' : 'Показать активы') + '</span>' +
-                    '<svg class="pfcv-assetbtn-ch' + (asOn ? ' up' : '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
-                '</button>' +
-            '</div>' +
-            '<div class="pfcv-right">' +
-                '<div class="pfcv-rhead">' +
-                    '<div class="pfcv-rtt"><span class="pfcv-rk">Доходность портфеля</span><span class="pfcv-rsub">с ' + fromTxt + ' · первая покупка</span></div>' +
-                    '<button class="pfcv-imbtn' + (imOn ? ' on' : '') + '" onclick="pfToggleChartImoex(\'' + pid + '\')" title="Наложить кривую — ' + bench.full + '">' +
-                        '<span class="pfcv-imdot"></span>' + bench.label + '</button>' +
-                    '<button class="pfcv-close" onclick="pfToggleChart(\'' + pid + '\')" aria-label="Свернуть график" title="Свернуть график"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
-                '</div>' +
-                '<div class="pfcv-leg" id="pfcvLeg-' + pid + '"></div>' +
-                '<div class="pfcv-chart" id="pfcvChart-' + pid + '">' + pfChartLoadingHtml() + '</div>' +
-            '</div>' +
-        '</div>';
-    }
-    // раскрывающаяся таблица состава под графиком (та же, что в карточке ребалансировки)
-    // при многих активах под таблицей — кнопка «развернуть всю таблицу» (снимает скролл 340px)
-    function pfChartAssetsHtml(p, c) {
-        var full = !!PF.chartAssetsFull[p.id];
-        var many = c.hs.length > 6;   // таблица упирается в скролл → предлагаем развернуть
-        var more = many ? '<button class="pfcv-assets-more' + (full ? ' on' : '') + '" data-pid="' + p.id + '" onclick="pfToggleAssetsFull(\'' + p.id + '\')">' +
-            '<span class="pfcv-assets-more-t">' + (full ? 'Свернуть таблицу' : 'Показать все активы · ' + c.hs.length) + '</span>' +
-            '<svg class="pfcv-assets-more-ch' + (full ? ' up' : '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>' : '';
-        return '<div class="pfcv-assets' + (full ? ' full' : '') + '"><div class="pfcv-assets-in">' + pfHoldsTableHtml(c) + more + '</div></div>';
-    }
+    // Перерисовка графиков портфеля после прихода серии: мини-график в герое карточки
+    // и виджет «График капитала». Большой пейн графика-оверлея снесён вместе с оверлеями
+    // карточки (переделка 2026-07-22); сравнение с индексом переедет в подвкладку «Портфель».
+    function repaintCharts(pid) { PF.paintPfChartMini(pid); PF.pfdCapMaybeRepaint(); }
     // Есть ли в портфеле облигации. Если нет — колонки НКД показывать незачем:
     // они дают тринадцатую и десятую колонку с прочерком в каждой строке, из-за
     // чего «Стоимость», «Доход» и «Изменение» уезжали за правый край панели, и
@@ -1242,8 +1195,7 @@
     // ==================================================================
     // Всё, чем пользуются остальные файлы цепочки. Мутабельное общее
     // состояние объявлено выше сразу свойствами PF (store, quotesTs,
-    // cardViewMode, chartOpen, chartAssets, chartAssetsFull, holdsExpand,
-    // chartCache, chartRaw, noChartAnim) — на него алиасы ЗАПРЕЩЕНЫ.
+    // cardViewMode, chartCache, chartRaw, noChartAnim) — на него алиасы ЗАПРЕЩЕНЫ.
     // — помощники —
     PF.dq = dq; PF.esc = esc; PF.attr = attr; PF.jsArg = jsArg; PF.toNum = toNum;
     PF.genId = genId; PF.clamp = clamp; PF.fmtRub = fmtRub; PF.fmtPrice = fmtPrice; PF.fmtPct = fmtPct;
@@ -1261,7 +1213,7 @@
     PF.liveBegin = liveBegin; PF.liveEnd = liveEnd; PF.liveSet = liveSet;
     // — график карточки —
     PF.dateToIso = dateToIso; PF.niceTicks = niceTicks; PF.pfBench = pfBench; PF.loadPfChart = loadPfChart; PF.drawPfChart = drawPfChart;
-    PF.repaintOpenCharts = repaintOpenCharts; PF.pfChartViewHtml = pfChartViewHtml; PF.pfChartAssetsHtml = pfChartAssetsHtml; PF.chartImoex = chartImoex; PF.chartBusy = chartBusy;
+    PF.pfFirstBuyDate = pfFirstBuyDate; PF.chartBusy = chartBusy;
     // — составы для импорта —
     PF.getCalcComposition = getCalcComposition; PF.getFavComposition = getFavComposition; PF.getMonthlyComposition = getMonthlyComposition; PF.compositionFrom = compositionFrom; PF.importName = importName;
     PF.fullBondId = fullBondId;

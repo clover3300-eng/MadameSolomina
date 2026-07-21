@@ -1246,7 +1246,6 @@
         // свежеоткрытая шторка — с чистым состоянием (тот же набор, что в pfToggleMenu);
         // PF.menuJustOpened даёт автофокус на тикер у пустого портфеля (хвост renderPortfolios)
         PF.openMenu = pid; PF.pfSetDrawerOn = true; PF.menuJustOpened = true;
-        PF.chartOpen = {}; PF.chartAssets = {}; PF.chartAssetsFull = {}; PF.holdsExpand = {};
         PF.editHold = {}; PF.colorsOpen = false; PF.delArm = false; PF.addOpen = false;
         PF.renderNoAnim();   // спрячет карточное меню, pfxDrawerSync наполнит шторку
     };

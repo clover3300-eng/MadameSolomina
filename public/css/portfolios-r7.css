@@ -20,32 +20,15 @@ body.dark-mode #panel-portfolios .pf-card2 {
     box-shadow: 0 16px 36px rgba(0, 0, 0, 0.32);
 }
 /* всё, что раньше жёстко держало 26–28px — теперь следует за токеном */
-#panel-portfolios .pf-wm-clip { border-radius: calc(var(--pfr, 20px) - 2px); }
 #panel-portfolios .pfd-item.pfd-hset .pfd-body { border-radius: var(--pfr, 20px); }
 #panel-portfolios .pfd-grid.pfd-live .pfd-item { border-radius: var(--pfr, 20px); }
 #panel-portfolios .pfd-item.pfd-flash { border-radius: var(--pfr, 20px); }
-#panel-portfolios .pfc-chartwrap,
 #panel-portfolios .pfc-menu { border-radius: var(--pfr, 20px); }
 #panel-portfolios .pf-topgrid-fav .pff-body { border-radius: 0 0 calc(var(--pfr, 20px) - 2px) calc(var(--pfr, 20px) - 2px); }
 
-/* ============ 2. Имя портфеля — моно-пилюля (референс «НОВЫЙ ПОРТФЕЛЬ») ============ */
-#panel-portfolios .pfc-name-ink {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
-    color: color-mix(in srgb, var(--pf-accent) 82%, #1b2433);
-    background: color-mix(in srgb, var(--pf-accent) 11%, transparent);
-    border-radius: 9px;
-    padding: 6px 11px 5px; margin-left: 0;
-    transform: none;
-}
-#panel-portfolios .pfc-name:hover .pfc-name-ink {
-    transform: none; box-shadow: none;
-    background: color-mix(in srgb, var(--pf-accent) 18%, transparent);
-}
-body.dark-mode #panel-portfolios .pfc-name-ink {
-    color: color-mix(in srgb, var(--pf-accent) 60%, #f7fbff);
-    background: color-mix(in srgb, var(--pf-accent) 22%, transparent);
-}
+/* ============ 2. Имя портфеля ============
+   Моно-пилюля снесена при переделке карточки (макет 02): имя — сериф с цветовой
+   меткой-квадратиком, базовый стиль в portfolios.css (.pfc-name / .pfc-name-dot). */
 
 /* ============ 3. Герой «Панель управления» — снесён 2026-07-21 ============
    Полоса .pfx-hero съедала первый экран; её контролы теперь в парящих узлах:
@@ -353,16 +336,9 @@ body.dark-mode .pfcap-rb.on { background: rgba(99, 102, 241, 0.2); border-color:
 }
 body.dark-mode .pfcap-yt { color: #8fa0b6; }
 
-/* ============ 7б. Кнопка «Ребалансировать» — светлая (референс) ============ */
-#panel-portfolios .pfc-rebal {
-    background: #f1f4f9; color: #1b2433; border: 1px solid #e4e9f1;
-    transition: background 0.14s, border-color 0.14s, transform 0.12s;
-}
-#panel-portfolios .pfc-rebal:hover { background: #e8edf5; border-color: #d7dfeb; }
-#panel-portfolios .pfc-rebal svg { color: #46566e; }
-body.dark-mode #panel-portfolios .pfc-rebal { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.12); color: #e8eef7; }
-body.dark-mode #panel-portfolios .pfc-rebal:hover { background: rgba(255, 255, 255, 0.13); }
-body.dark-mode #panel-portfolios .pfc-rebal svg { color: #b7c2d3; }
+/* ============ 7б. Кнопка «Ребаланс» ============
+   Светлый override снесён при переделке карточки (макет 02): CTA снова тёмный
+   primary из portfolios.css — цвет остаётся за знаком дохода и CTA. */
 
 /* ============ 7в. Ставки рынка — карточки как в референсе ============ */
 #panel-portfolios .drt-tile {
@@ -1251,8 +1227,6 @@ body.dark-mode .dm-news b { color: #e8eef7; }
 #panel-portfolios .pf-ch-t,
 #panel-portfolios .pfnt-title,
 #panel-portfolios .pfnt-name-edit { font-size: 22px; }
-/* пилюля дневного изменения на карточке портфеля — мягче */
-#panel-portfolios .pfc-day { border-radius: 999px; }
 /* узкий экран: ряд подвкладок не рендерится (см. pfxWide) — правил не нужно,
    но на всякий случай глушим и по медиа */
 @media (max-width: 1023px) {

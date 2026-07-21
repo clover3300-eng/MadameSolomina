@@ -35,13 +35,12 @@
     var dayDelta = PF.dayDelta, topMover = PF.topMover, recordSnapshots = PF.recordSnapshots, snaps = PF.snaps, quotes = PF.quotes, ensureQuotes = PF.ensureQuotes;
     var liveBond = PF.liveBond, bondFace = PF.bondFace, bondQuotes = PF.bondQuotes, bondNkdNow = PF.bondNkdNow, pfQuotesWarming = PF.pfQuotesWarming, pfCardWarming = PF.pfCardWarming;
     var skelHtml = PF.skelHtml, noQuoteCell = PF.noQuoteCell, dateToIso = PF.dateToIso, niceTicks = PF.niceTicks, pfBench = PF.pfBench, loadPfChart = PF.loadPfChart;
-    var drawPfChart = PF.drawPfChart, repaintOpenCharts = PF.repaintOpenCharts, pfChartViewHtml = PF.pfChartViewHtml, pfChartAssetsHtml = PF.pfChartAssetsHtml, chartImoex = PF.chartImoex, chartBusy = PF.chartBusy;
     var getCalcComposition = PF.getCalcComposition, getFavComposition = PF.getFavComposition, getMonthlyComposition = PF.getMonthlyComposition, compositionFrom = PF.compositionFrom, importName = PF.importName, fullBondId = PF.fullBondId;
     var lookupHistPrice = PF.lookupHistPrice, lookupHistNkd = PF.lookupHistNkd, bondDetail = PF.bondDetail, parseBondDate = PF.parseBondDate, coupSched = PF.coupSched, divSched = PF.divSched;
     var ensureSchedule = PF.ensureSchedule, qtyAtDate = PF.qtyAtDate, pfPayouts = PF.pfPayouts, pfParseAnyDate = PF.pfParseAnyDate;
     // --- экспорт в ядро: его колбэки зовут эти функции через PF.* 
     //     (function-декларации хойстятся — блок валиден в начале файла) ---
-    PF.softRerender = softRerender;     PF.donutHtml = donutHtml;
+    PF.softRerender = softRerender;
     // импорт конструктора (portfolios-dash.js, загружен до нас):
     var dashCfgFor = PF.dashCfgFor, pfLayoutCfgPopHtml = PF.pfLayoutCfgPopHtml, pfPresetsFetch = PF.pfPresetsFetch, pfWGatesFetch = PF.pfWGatesFetch, pfdActive = PF.pfdActive;
     var pfdBodyHtml = PF.pfdBodyHtml, pfdBusy = PF.pfdBusy, pfdCfgRemountSoon = PF.pfdCfgRemountSoon, pfdInChromeHtml = PF.pfdInChromeHtml, pfdLive = PF.pfdLive;
@@ -69,7 +68,7 @@
     var pfxTabPortsHtml = PF.pfxTabPortsHtml, pfxTabsHtml = PF.pfxTabsHtml, pfxTabsScrollSync = PF.pfxTabsScrollSync, pfxVisRowsHtml = PF.pfxVisRowsHtml, pfxWide = PF.pfxWide;
     var pfxCrumbSync = PF.pfxCrumbSync, pfxGearSync = PF.pfxGearSync;
     // импорт карточек (portfolios-cards.js, загружен до нас):
-    var XMARK_SVG = PF.XMARK_SVG, assetDisplayName = PF.assetDisplayName, cardHtml = PF.cardHtml, closeImpMenus = PF.closeImpMenus, ensureDefaultImoexFlags = PF.ensureDefaultImoexFlags, menuHtml = PF.menuHtml;
+    var XMARK_SVG = PF.XMARK_SVG, assetDisplayName = PF.assetDisplayName, cardHtml = PF.cardHtml, closeImpMenus = PF.closeImpMenus, menuHtml = PF.menuHtml;
     var paintPfChartMini = PF.paintPfChartMini, pfCardHead = PF.pfCardHead, pfConfirm = PF.pfConfirm, pfImpOutside = PF.pfImpOutside, repaintMiniCharts = PF.repaintMiniCharts;
     // импорт сделок и ребаланса (portfolios-trades.js, загружен до нас):
     var collectTrades = PF.collectTrades, hasAnyTrades = PF.hasAnyTrades, pfInvalidateCharts = PF.pfInvalidateCharts, rebalRepaint = PF.rebalRepaint, tradesHtml = PF.tradesHtml;
@@ -294,9 +293,7 @@
             ensureLiveTick();
             var payBody = document.querySelector('.pf-paycal--cell .pfpc-body');
             if (payBody) window.pfPayCalScroll(payBody);   // начальное состояние затухания списка выплат
-            ensureDefaultImoexFlags(); // флаг IMOEX по умолчанию — ДО первого loadPfChart (см. комментарий выше)
-            repaintOpenCharts();   // если какой-то график раскрыт — дорисовываем после ре-рендера
-            repaintMiniCharts();   // мини-график «портфель vs IMOEX» в каждой карточке
+            repaintMiniCharts();   // мини-график доходности в герое каждой карточки
             pfPlistSparksSoon();   // спарклайны «Моих портфелей» без снимков — дорисовать из истории
             pfxDrawerSync();       // R9.1: шторка настроек портфеля обновляется вместе со страницей
             pfxFabSync();          // парящие узлы: слот столбика #cornerStack + панель действий #pfActBar
@@ -327,19 +324,10 @@
     }
     window.renderPortfolios = renderPortfolios;
 
-    // Автоподгонка крупных сумм: «100 000 000 000 ₽» должна влезать в строку карточки
-    // целиком — без переноса «₽» и сдвига сетки. Меряем переполнение строки и плавно
-    // уменьшаем кегль суммы до влезания.
+    // Автоподгонка крупных сумм: «100 000 000 000 ₽» должна влезать в строку целиком —
+    // без переноса «₽» и сдвига сетки. Герой КАРТОЧКИ сюда больше не входит: его кегль
+    // ступенями задаёт heroValParts по числу цифр (scrollWidth при zoom 0.9 врёт).
     function fitBigSums() {
-        document.querySelectorAll('#pfWrap .pfc-hero-top').forEach(function (row) {
-            var val = row.querySelector('.pfc-hero-val'); if (!val) return;
-            val.style.fontSize = '';
-            var size = parseFloat(getComputedStyle(val).fontSize) || 21;
-            var guard = 0;
-            while (row.scrollWidth > row.clientWidth + 1 && size > 12 && guard < 40) {
-                size -= 0.5; val.style.fontSize = size + 'px'; guard++;
-            }
-        });
         document.querySelectorAll('#pfWrap .pfs2-capital').forEach(function (el) {
             el.style.fontSize = '';
             var size = parseFloat(getComputedStyle(el).fontSize) || 26;
@@ -414,7 +402,6 @@
             // а дожидается покоя.
             if (pfdQuiet()) { softRerender(); return; }
             if (PF.openMenu) return;   // не сбиваем открытый редактор
-            for (var ck in PF.chartOpen) { if (PF.chartOpen[ck]) return; }   // не перерисовываем раскрытый график (сбилась бы анимация)
             if (document.querySelector('.pf-impmenu.open')) return;   // не сбиваем открытое меню «Импорт»
             // фоновое обновление (котировки/НКД/новости) — не «настоящее» изменение графика,
             // без PF.noChartAnim мини-графики каждый раз переигрывали 1-секундную анимацию
@@ -776,17 +763,6 @@
             cls: 'pfs2-pnl ' + (pnl >= 0 ? 'pos' : 'neg') });
     };
 
-    // ---- donut (conic). Центр — СОСЕД ring'а: CSS-mask клипает потомков ----
-    // centerHtml опционален: для карточки/сводки центр оставляем пустым (соотношение
-    // акций/облигаций показывает легенда рядом), для разворота — пишем капитал.
-    function donutHtml(bondPct, size, centerHtml) {
-        size = size || 96;
-        var bp = clamp(bondPct, 0, 100);
-        return '<div class="pf-ring-wrap" style="width:' + size + 'px;height:' + size + 'px">' +
-            '<div class="pf-ring" style="--bp:' + bp.toFixed(1) + '"></div>' +
-            (centerHtml ? '<div class="pf-ring-c">' + centerHtml + '</div>' : '') + '</div>';
-    }
-
     // ---- сетка карточек (calCell — HTML «Календаря выплат», занимает свободную ячейку
     // сетки при нечётном числе портфелей: та же высота, что у карточки портфеля) ----
     function gridHtml(calCell) {
@@ -796,11 +772,8 @@
         // рендерим ВСЕ видимые портфели (MAX_CARDS ограничивает только создание новых):
         // раньше slice(0,4) молча прятал карточки 5+ после импорта бэкапа
         var items = vis;
-        var narrow = PF.cardViewMode === 'narrow', cols = narrow ? 3 : 2;
-        // Раскрытый график выезжает ОВЕРЛЕЕМ в сторону поверх контента (position:absolute) —
-        // сетка НЕ перестраивается, карточка не смещается, соседи не «прыгают». Направление
-        // выезда зависит от колонки: последняя в ряду тянет влево (.col-right).
-        var cards = items.map(function (p, i) { return cardHtml(p, i, i % cols === cols - 1, narrow, narrow && i % cols === 1); }).join('');
+        var narrow = PF.cardViewMode === 'narrow';
+        var cards = items.map(function (p) { return cardHtml(p, narrow); }).join('');
         return '<div class="pf-grid' + (narrow ? ' pf-grid--narrow' : '') + '">' + cards + (calCell || '') + '</div>';
     }
     function allHiddenHtml() {

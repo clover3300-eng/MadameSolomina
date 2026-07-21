@@ -32,25 +32,6 @@ body.dark-mode .pf-wrap .pos { color: #34d399; }
 body.dark-mode .pf-wrap .neg { color: #f87171; }
 
 /* ============================================================
-   DONUT (conic). Центр — сосед ring'а, т.к. mask клипает потомков.
-   ============================================================ */
-.pf-ring-wrap { position: relative; flex-shrink: 0; }
-.pf-ring {
-    --bp: 50; position: absolute; inset: 0; border-radius: 50%;
-    background: conic-gradient(#7B9BBF 0 calc(var(--bp) * 1%), #D97757 calc(var(--bp) * 1%) 100%);
-    -webkit-mask: radial-gradient(transparent 58%, #000 59%);
-            mask: radial-gradient(transparent 58%, #000 59%);
-}
-.pf-ring-c { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; pointer-events: none; }
-.pf-ring-top { font-size: 8.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #94a3b8; }
-.pf-ring-val { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: #0f172a; }
-body.dark-mode .pf-ring-val { color: #f4f8fd; }
-/* номер портфеля в центре кольца — нейтральный и неброский (одинаковый у всех) */
-.pfc-ringnum { font-family: 'Inter', sans-serif; font-weight: 800; font-size: 29px; line-height: 1; letter-spacing: -0.04em;
-    color: #c4cedb; }
-body.dark-mode .pfc-ringnum { color: #45525f; }
-
-/* ============================================================
    СВОДКА ПО ВСЕМ ПОРТФЕЛЯМ (2+) — компактная тёмная карточка ПОД «Избранным»
    в правой колонке: капитал, вложено/доход, распределение, мини-лидерборд
    и кнопки быстрого перехода к таблицам «Рынок · Акции» / «Рынок · Облигации».
@@ -131,10 +112,11 @@ body.dark-mode .pf-sumcard {
 @media (max-width: 1520px) { .pf-grid--narrow { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 1040px) { .pf-grid--narrow { grid-template-columns: 1fr; } }
 
-/* «Календарь выплат» ячейкой сетки (нечётное число портфелей): высота = карточке
-   портфеля, шапка фиксирована, список выплат скроллится внутри */
-.pf-paycal--cell { height: 674px; display: flex; flex-direction: column; min-width: 0; }
-@media (max-width: 1040px) { .pf-paycal--cell { height: auto; max-height: 654px; } }
+/* «Календарь выплат» ячейкой сетки (нечётное число портфелей): шапка фиксирована,
+   список выплат скроллится внутри. Карточка портфеля теперь свободной высоты —
+   ячейка тянется stretch'ем сетки от min-height, а не держит жёсткие 674px */
+.pf-paycal--cell { height: auto; min-height: 674px; display: flex; flex-direction: column; min-width: 0; }
+@media (max-width: 1040px) { .pf-paycal--cell { min-height: 0; height: auto; max-height: 654px; } }
 /* узкий вид (3 в ряд): календарь-ячейка растягивается на 2 колонки (до «Избранного»),
    когда портфель всего 1 — на схлопнутой сетке (см. .pf-grid--narrow media) сбрасываем,
    чтобы span не создавал лишнюю неявную колонку */
@@ -209,10 +191,12 @@ body.dark-mode .pf-sumcard {
     padding: 0; border: 2px solid #131a2b; border-radius: 28px;
     box-shadow: 0 16px 36px rgba(24,38,60,0.08);
 }
-/* фиксированная высота → все карточки одинаковы независимо от числа тикеров;
-   список состава растягивается (flex:1) и скроллится внутри */
-.pf-card { display: flex; flex-direction: column; height: 674px; }
-@media (max-width: 1040px) { .pf-card { height: 654px; } }
+/* высота свободная (макет 2026-07-21): на «Обзоре» карточка растёт под содержимое,
+   сетка stretch ровняет соседей по ряду, подвал прижат margin-top:auto.
+   В блоке конструктора с заданной высотой (.pfd-hset) карточка заполняет блок,
+   а список позиций скроллится внутри — см. правила .pfd-item ниже. */
+.pf-card { display: flex; flex-direction: column; }
+.pfd-item.pfd-hset .pf-card { height: 100%; min-height: 0; }
 body.dark-mode .pf-card, body.dark-mode .pf-card2 { box-shadow: 0 16px 36px rgba(0,0,0,0.32); --pf-gn: #34d399; --pf-rd: #f87171;
     border-color: rgba(255,255,255,0.40); }
 .pf-card.menu-open { z-index: 50; box-shadow: 0 0 0 1.5px var(--pf-accent), 0 28px 60px -18px rgba(24,38,60,0.34); }
@@ -227,54 +211,31 @@ body.dark-mode .pf-card--tall .pfc-menu { box-shadow: 0 0 0 1.5px var(--pf-accen
 .pf-card--tall .pfm-mid { flex: 0 0 auto; }
 .pf-card--tall .pfm-rows { overflow: visible; }
 
-/* водяной номер 01/02 (как в «Расчёте») */
-.pf-wm-clip { position: absolute; inset: 0; border-radius: 26px; overflow: hidden; pointer-events: none; }
-.pf-wm { position: absolute; top: -24px; right: -4px; font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 128px; line-height: 1; letter-spacing: -0.04em; color: color-mix(in srgb, var(--pf-accent) 8%, transparent); }
-body.dark-mode .pf-wm { color: color-mix(in srgb, var(--pf-accent) 13%, transparent); }
-
-/* шапка: eyebrow + название слева · P&L + ⚙ справа */
-.pfc-top { position: relative; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 24px 24px 0; }
-.pfc-titles { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
-.pfc-k { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #97a3b4; white-space: nowrap; }
-.pfc-dot { width: 9px; height: 9px; border-radius: 99px; background: var(--pf-accent); flex-shrink: 0; box-shadow: 0 0 0 3px color-mix(in srgb, var(--pf-accent) 16%, transparent); }
-/* название портфеля — «закрашено маркером» цветом портфеля; клик → инлайн-правка */
-.pfc-name { display: inline-flex; max-width: 100%; min-width: 0; cursor: text; line-height: 1.25; padding-top: 2px; }
+/* шапка (макет 02): имя серифом с цветовой меткой · бейдж брокера слева;
+   период + служебные иконки справа */
+.pfc-top { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 16px 18px 0; }
+.pfc-titles { min-width: 0; display: flex; align-items: center; gap: 8px; }
+/* название портфеля — сериф + квадратик цвета портфеля; клик → инлайн-правка */
+.pfc-name { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; min-width: 0; cursor: text; line-height: 1.1; }
+.pfc-name-dot { width: 8px; height: 8px; border-radius: 3px; background: var(--pf-accent); flex: none; }
 .pfc-name-ink {
     display: inline-block; max-width: 100%;
-    font-family: 'Inter', sans-serif; font-size: 20px; font-weight: 800; color: #1b2433; letter-spacing: -0.015em;
+    font-family: Georgia, 'Times New Roman', serif; font-size: 19px; font-weight: 400; color: #0f172a;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    padding: 1px 9px 2px; margin-left: -4px;
-    background: linear-gradient(101deg,
-        transparent 1%,
-        color-mix(in srgb, var(--pf-accent) 30%, transparent) 3%,
-        color-mix(in srgb, var(--pf-accent) 36%, transparent) 50%,
-        color-mix(in srgb, var(--pf-accent) 24%, transparent) 97%,
-        transparent 99.5%);
-    border-radius: 8px 14px 9px 13px / 13px 8px 14px 7px;
-    transform: rotate(-0.7deg);
-    transition: background 0.15s, transform 0.12s, box-shadow 0.15s;
 }
-body.dark-mode .pfc-name-ink { color: #f7fbff;
-    background: linear-gradient(101deg,
-        transparent 1%,
-        color-mix(in srgb, var(--pf-accent) 42%, transparent) 3%,
-        color-mix(in srgb, var(--pf-accent) 50%, transparent) 50%,
-        color-mix(in srgb, var(--pf-accent) 36%, transparent) 97%,
-        transparent 99.5%); }
-.pfc-name:hover .pfc-name-ink { transform: rotate(-0.7deg) translateY(-1px); box-shadow: 0 4px 12px -7px color-mix(in srgb, var(--pf-accent) 90%, transparent); }
+body.dark-mode .pfc-name-ink { color: #e8eef7; }
 .pfc-name-edit {
     width: 100%; min-width: 120px; box-sizing: border-box;
-    font-family: 'Inter', sans-serif; font-size: 20px; font-weight: 800; color: #1b2433; letter-spacing: -0.015em;
+    font-family: Georgia, 'Times New Roman', serif; font-size: 19px; font-weight: 400; color: #0f172a;
     border: none; border-bottom: 2px solid var(--pf-accent); border-radius: 7px 7px 2px 2px;
-    background: color-mix(in srgb, var(--pf-accent) 12%, transparent); padding: 2px 8px 3px; outline: none; }
+    background: color-mix(in srgb, var(--pf-accent) 10%, transparent); padding: 2px 8px 3px; outline: none; }
 body.dark-mode .pfc-name-edit { color: #f7fbff; background: color-mix(in srgb, var(--pf-accent) 20%, transparent); }
-.pfc-ctrls { display: flex; align-items: center; gap: 9px; flex-shrink: 0; }
-.pfc-pnl { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px; padding: 5px 11px; border-radius: 999px; }
-.pfc-pnl.pos { color: #16a34a; background: rgba(22,163,74,0.12); }
-.pfc-pnl.neg { color: #dc2626; background: rgba(220,38,38,0.12); }
-body.dark-mode .pfc-pnl.pos { color: #34d399; background: rgba(52,211,153,0.15); }
-body.dark-mode .pfc-pnl.neg { color: #f87171; background: rgba(248,113,113,0.15); }
-/* три кнопки-иконки в шапке (график/полный состав/настройки) — единый компактный стиль,
+.pfc-ctrls { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+/* переключатель периода: тот же контрол, что в настройках виджета (.pfdcfg-seg-b),
+   не свой — модификатор лишь ужимает его до размеров шапки карточки */
+.pfc-seg { display: inline-flex; gap: 4px; }
+.pfc-seg .pfdcfg-seg-b { flex: none; padding: 5px 9px; font-size: 11px; border-radius: 8px; }
+/* кнопки-иконки в шапке (копировать/скрыть/настройки) — единый компактный стиль,
    активная (открытая) — заливка тёмным (как «pc-act.on» в референсе) */
 .pfc-acts { display: flex; gap: 6px; flex-shrink: 0; }
 .pfc-act { width: 30px; height: 30px; border-radius: 9px; border: 1px solid rgba(24,38,60,0.1); background: #fff; color: #64748b; cursor: pointer; display: grid; place-items: center; flex-shrink: 0; transition: background 0.15s, color 0.15s, border-color 0.15s; }
@@ -298,23 +259,27 @@ body.dark-mode .pf-ch-t { color: #f4f8fd; }
 body.dark-mode .pf-ch-go { border-color: rgba(255,255,255,0.09); background: rgba(255,255,255,0.04); color: #cdd8e6; }
 body.dark-mode .pf-ch-go:hover { background: rgba(255,255,255,0.12); color: #fff; }
 
-/* ---- герой: капитал + изменение + мини-график «портфель vs IMOEX» ---- */
-.pfc-foot { position: relative; }
-.pfc-hero { display: flex; flex-direction: column; gap: 6px; margin: 12px 24px 0; padding: 12px 12px 0;
-    border-radius: 14px; background: linear-gradient(180deg, rgba(24,38,60,0.035), transparent); }
-body.dark-mode .pfc-hero { background: linear-gradient(180deg, rgba(255,255,255,0.035), transparent); }
-.pfc-hero-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: nowrap; min-width: 0; }
-/* сумма не переносит «₽» на новую строку — при переполнении JS уменьшает кегль (fitBigSums) */
-.pfc-hero-val { font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 21px; letter-spacing: -0.01em; color: #0f172a; white-space: nowrap; }
+/* ---- герой (макет 02): «Стоимость портфеля» + дельта за период · график справа ----
+   Колонки 46% / остаток ДОЛЕЙ, не auto: длинное число меняет свой кегль
+   (ступени .l10/.l13 из heroValParts), а не отжимает график. */
+.pfc-hero { display: grid; grid-template-columns: 46% 1fr; gap: 20px; align-items: center; padding: 16px 18px 20px; }
+.pfc-hero-l { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
+.pfc-hero-k { font-size: 11px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: #94a3b8; }
+.pfc-hero-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 38px; letter-spacing: -0.02em; line-height: 1.05; margin-top: 9px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #0f172a; }
 body.dark-mode .pfc-hero-val { color: #f4f8fd; }
-.pfc-hero-inc { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12px; white-space: nowrap; padding: 5px 11px; border-radius: 999px; }
-.pfc-hero-inc.pos { color: #16a34a; background: rgba(22,163,74,0.12); } .pfc-hero-inc.neg { color: #dc2626; background: rgba(220,38,38,0.12); }
-body.dark-mode .pfc-hero-inc.pos { color: #34d399; background: rgba(52,211,153,0.15); } body.dark-mode .pfc-hero-inc.neg { color: #f87171; background: rgba(248,113,113,0.15); }
-.pfc-mini-chart { position: relative; display: flex; flex-direction: column; gap: 4px; }
+.pfc-hero-val small { font-size: 0.63em; font-weight: 600; color: #64748b; margin-left: 0.06em; }
+/* ступени кегля по числу цифр: до 7 — 38px, 8–10 — 30px, 11+ — 25px */
+.pfc-hero-val.l10 { font-size: 30px; }
+.pfc-hero-val.l13 { font-size: 25px; letter-spacing: -0.03em; }
+.pfc-hero-inc { margin-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; color: #94a3b8; white-space: nowrap; }
+.pfc-hero-inc.pos { color: #16a34a; } .pfc-hero-inc.neg { color: #dc2626; }
+body.dark-mode .pfc-hero-inc.pos { color: #34d399; } body.dark-mode .pfc-hero-inc.neg { color: #f87171; }
+.pfc-hero-inc u { text-decoration: none; font-family: 'Inter', sans-serif; font-weight: 500; color: #64748b; font-size: 12px; }
+body.dark-mode .pfc-hero-inc u { color: #8b98ad; }
 /* мини-график переиспользует drawPfChart (шкала процентов слева + наводимые точки с тултипом
    «дата+значение» — как в большом графике), поэтому .pfc-mchart-plot — это просто увеличенный
-   и уплотнённый .pfcv-chart: те же .pfcv-yaxis/.pfcv-plot внутри, размеры подогнаны компактнее. */
-.pfc-mchart-plot { position: relative; display: flex; width: 100%; height: 118px; }
+   и уплотнённый пейн: те же .pfcv-yaxis/.pfcv-plot внутри, размеры подогнаны компактнее. */
+.pfc-mchart-plot { position: relative; display: flex; width: 100%; height: 148px; min-width: 0; }
 .pfc-mchart-plot .pfcv-yaxis { flex: 0 0 28px; }
 .pfc-mchart-plot .pfcv-ytick { font-size: 8px; right: 4px; }
 .pfc-mchart-plot .pfcv-x { display: none; }
@@ -328,251 +293,122 @@ body.dark-mode .pfc-hero-inc.pos { color: #34d399; background: rgba(52,211,153,0
 .pfc-mchart-plot .pfcv-msg-t { font-size: 10.5px; }
 .pfc-mchart-plot .pfcv-msg-s { display: none; }
 .pfc-mchart-plot .pfcv-spin { width: 18px; height: 18px; }
-/* верхняя плашка мини-графика — СВОЯ строка над полем графика (не поверх него):
-   раньше висела absolute в правом верхнем углу поля и перекрывала точки кривой —
-   тултип точки не открывался под кнопкой IMOEX. Справа значение IMOEX (если наложен)
-   и тумблер включения — одна группа, чтобы не раскидывать управление по углам. */
-.pfc-mchart-top { display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-height: 22px; }
-.pfc-mchart-leg { display: flex; gap: 8px; min-height: 0; }
-body.dark-mode .pfc-mchart-leg { color: #93a3b8; }
-.pfc-mchart-leg:empty { display: none; }
-.pfc-mchart-leg .pfcv-lgi { font-size: 10px; }
-/* тумблер IMOEX на мини-графике — включает/выключает кривую индекса (второстепенную —
-   пунктирная линия на графике, см. .pfcv-imline) */
-.pfc-imtgl { display: inline-flex; align-items: center; gap: 5px;
-    padding: 3px 7px; border-radius: 7px; border: 1px solid rgba(24,38,60,0.1); background: rgba(255,255,255,0.78);
-    font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
-    color: #a3adbc; cursor: pointer; transition: color .15s, border-color .15s, opacity .15s; flex-shrink: 0; }
-body.dark-mode .pfc-imtgl { background: rgba(17,25,37,0.7); border-color: rgba(255,255,255,0.12); color: #66748a; }
-.pfc-imtgl-dot { width: 12px; height: 0; border-top: 2px dashed #cbd5e1; border-radius: 0; transition: border-color .15s; }
-.pfc-imtgl.on { color: #64748b; border-color: rgba(24,38,60,0.16); }
-.pfc-imtgl.on .pfc-imtgl-dot { border-top-color: #94a3b8; }
-body.dark-mode .pfc-imtgl.on { color: #9fb0c4; }
-.pfc-imtgl:not(.on) { opacity: 0.6; }
-.pfc-imtgl:not(.on) .pfc-imtgl-dot { border-top-color: #cbd5e1; }
-.pfc-imtgl:hover { color: var(--pf-accent); border-color: color-mix(in srgb, var(--pf-accent) 45%, transparent); }
-
-/* ---- распределение: маленький donut + горизонтальная полоса-легенда ---- */
-.pfc-alloc { display: flex; align-items: center; gap: 12px; margin: 12px 24px 0; }
-.pfc-alloc .pfc-ringnum { font-size: 12px; }
-.pfc-dist { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
-.pfc-dist-bar { display: flex; height: 4px; border-radius: 99px; overflow: hidden; background: rgba(24,38,60,0.08); }
-body.dark-mode .pfc-dist-bar { background: rgba(255,255,255,0.1); }
-.pfc-dist-bar > div { display: block; }
-.pfc-dist-lbl { display: flex; gap: 12px; font-size: 11px; font-weight: 700; color: #64748b; }
-body.dark-mode .pfc-dist-lbl { color: #aab8c8; }
-.pfc-dist-lbl i { display: inline-block; width: 6px; height: 6px; border-radius: 99px; margin-right: 4px; vertical-align: middle; }
-
-/* ---- карточки-статы: вложено / доход / [выплаты] / [кэш] / доходность.
-   Раньше жёсткая сетка 3 колонок — теперь flex с равными ячейками: статов может
-   быть 2–5 («Выплаты» и «Кэш» появляются по данным), ряд делится поровну всегда */
-.pfc-stats2 { display: flex; gap: 8px; margin: 12px 24px 0; }
-.pfc-stats2 .pfc-stat2 { flex: 1 1 0; }
-.pfc-stat2 { min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: 8px 12px; background: rgba(24,38,60,0.035); border-radius: 11px; border: 1px solid rgba(24,38,60,0.06); }
-body.dark-mode .pfc-stat2 { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.06); }
-.pfc-stat2--yield.is-gn { background: color-mix(in srgb, var(--pf-gn) 8%, rgba(24,38,60,0.035)); border-color: color-mix(in srgb, var(--pf-gn) 18%, rgba(24,38,60,0.08)); }
-.pfc-stat2--yield.is-rd { background: color-mix(in srgb, var(--pf-rd) 8%, rgba(24,38,60,0.035)); border-color: color-mix(in srgb, var(--pf-rd) 18%, rgba(24,38,60,0.08)); }
-body.dark-mode .pfc-stat2--yield.is-gn { background: color-mix(in srgb, var(--pf-gn) 14%, rgba(255,255,255,0.04)); }
-body.dark-mode .pfc-stat2--yield.is-rd { background: color-mix(in srgb, var(--pf-rd) 14%, rgba(255,255,255,0.04)); }
-.pfc-stat2-l { font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; letter-spacing: 0.08em; color: #94a3b8; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pfc-stat2-v { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 800; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* ---- KPI-полоса (макет 02): 4 равные колонки, разделённые хайрлайном;
+   крайние прижаты к полям, третья строка каждой ячейки — тоже число (моно) ---- */
+.pfc-stats2 { display: grid; grid-template-columns: repeat(4, 1fr); background: rgba(15,23,42,0.03); border-top: 1px solid rgba(15,23,42,0.07); border-bottom: 1px solid rgba(15,23,42,0.07); padding: 14px 0 15px; }
+body.dark-mode .pfc-stats2 { background: rgba(255,255,255,0.025); border-color: rgba(255,255,255,0.07); }
+.pfc-stat2 { min-width: 0; padding: 0 16px; border-left: 1px solid rgba(15,23,42,0.07); }
+body.dark-mode .pfc-stat2 { border-color: rgba(255,255,255,0.07); }
+.pfc-stat2:first-child { border-left: 0; padding-left: 18px; }
+.pfc-stat2:last-child { padding-right: 18px; }
+.pfc-stat2-l { display: block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pfc-stat2-v { display: block; font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; margin-top: 7px; font-variant-numeric: tabular-nums; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 body.dark-mode .pfc-stat2-v { color: #eef3f9; }
 .pfc-stat2-v.pos { color: #16a34a; } .pfc-stat2-v.neg { color: #dc2626; }
-/* «Доходность» — те же шрифты/размеры/паддинги, что и «Вложено»/«Доход» (отличается только
-   лёгким цветным фоном is-gn/is-rd). Отдельных font-size переопределений больше нет. */
 body.dark-mode .pfc-stat2-v.pos { color: #34d399; } body.dark-mode .pfc-stat2-v.neg { color: #f87171; }
-.pfc-sep { height: 1px; background: rgba(24,38,60,0.07); margin: 12px 24px 0; flex-shrink: 0; }
-body.dark-mode .pfc-sep { background: rgba(255,255,255,0.06); }
+/* подпись — своя строка данных, поэтому моно и цифры табличные, как у значения */
+.pfc-stat2-s { display: block; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; color: #94a3b8; margin-top: 4px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.dark-mode .pfc-stat2-s { color: #67748a; }
 
-/* ---- превью состава: усечённая мини-таблица (4 строки) + «Показать всё» ----
-   Настоящая <table> (как pfo-table в ребалансе), а не css-grid с фикс px-колонками —
-   шапка и строки гарантированно совпадают по ширине, числа не «наезжают» друг на друга. */
-/* padding-top:0 — чтобы липкая шапка садилась ровно на край обрезки скролла (иначе
-   строка «выглядывала» бы над шапкой в зазоре верхнего паддинга); отступ над шапкой
-   даёт её собственный padding-top */
-/* список активов мини-карточки: не выше 5 тикеров (шапка 23 + 5×30 + пик 6-й ≈ 184px),
-   остальные — прокруткой. Ограничение стабильно при любой высоте карточки (в т.ч. после
-   ресайза): max-height не даёт списку разворачиваться на весь блок. «Весь состав» — по
-   шеврону в подвале (.pfc-holdsover, без ограничения). */
-.pfc-massets { flex: 0 1 auto; min-height: 0; max-height: 184px; overflow-y: auto; scrollbar-width: thin; display: flex; flex-direction: column; padding: 0 24px 0; }
+/* ---- полоса распределения (макет 02, вариант A «тихий»): одна краска в трёх
+   плотностях (62/32/20% чернил; тёмная тема — светлая краска 72/38/24%),
+   высота 4px. Доли — от ПОЛНОЙ стоимости, включая свободные деньги. ---- */
+.pfc-alloc { padding: 11px 18px 12px; border-bottom: 1px solid rgba(15,23,42,0.07); }
+body.dark-mode .pfc-alloc { border-color: rgba(255,255,255,0.07); }
+.pfc-dist-bar { display: flex; gap: 2px; height: 4px; margin-bottom: 8px; }
+.pfc-dist-bar i { display: block; border-radius: 2px; }
+.pfc-dist-bar i.s1, .pfc-dist-lbl em.s1 { background: rgba(15,23,42,0.62); }
+.pfc-dist-bar i.s2, .pfc-dist-lbl em.s2 { background: rgba(15,23,42,0.32); }
+.pfc-dist-bar i.s3, .pfc-dist-lbl em.s3 { background: rgba(15,23,42,0.20); }
+body.dark-mode .pfc-dist-bar i.s1, body.dark-mode .pfc-dist-lbl em.s1 { background: rgba(232,238,247,0.72); }
+body.dark-mode .pfc-dist-bar i.s2, body.dark-mode .pfc-dist-lbl em.s2 { background: rgba(232,238,247,0.38); }
+body.dark-mode .pfc-dist-bar i.s3, body.dark-mode .pfc-dist-lbl em.s3 { background: rgba(232,238,247,0.24); }
+.pfc-dist-lbl { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; }
+.pfc-dist-lbl span { display: inline-flex; align-items: baseline; gap: 6px; font-size: 11.5px; color: #64748b; white-space: nowrap; }
+body.dark-mode .pfc-dist-lbl span { color: #8b98ad; }
+.pfc-dist-lbl em { font-style: normal; width: 6px; height: 6px; border-radius: 2px; align-self: center; flex: none; }
+.pfc-dist-lbl b { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 600; color: #64748b; font-variant-numeric: tabular-nums; }
+body.dark-mode .pfc-dist-lbl b { color: #8b98ad; }
+
+/* ---- позиции: серифный заголовок секции + счётчик ---- */
+.pfc-pos-h { display: flex; align-items: center; gap: 9px; padding: 15px 18px 0; margin-bottom: 11px; }
+.pfc-pos-t { font-family: Georgia, 'Times New Roman', serif; font-weight: 400; font-size: 17px; color: #0f172a; }
+body.dark-mode .pfc-pos-t { color: #eef3f9; }
+.pfc-cnt { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #64748b; background: rgba(15,23,42,0.07); border-radius: 7px; padding: 2px 7px; }
+body.dark-mode .pfc-cnt { color: #8b98ad; background: rgba(255,255,255,0.07); }
+
+/* ---- таблица позиций: настоящая <table> с table-layout:fixed (ширины в <colgroup>
+   из pfMiniTableHtml). На «Обзоре» список не режется — карточка растёт; скролл
+   остаётся только в блоке конструктора с заданной высотой (.pfd-hset выше). ---- */
+.pfc-massets { min-height: 0; display: flex; flex-direction: column; padding: 0 18px; }
 /* flex-shrink:0 обязателен — иначе flex-контейнер сжимает обёртку и обрезает список
    активов ВМЕСТО скролла в .pfc-massets. overflow:visible (не hidden!) — чтобы sticky-шапка
    таблицы липла к скроллеру .pfc-massets, а не запиралась внутри самой обёртки */
 .pfc-mtablewrap { overflow: visible; flex-shrink: 0; }
-.pfc-mtable { width: 100%; border-collapse: collapse; }
-/* шапка колонок ПРИЛИПАЕТ к верху при скролле состава — непрозрачный фон под цвет
-   карточки перекрывает уезжающие под неё строки. top:-1px (не 0!) — уводит верхнюю
-   кромку шапки ЗА край обрезки скроллера: при дробном скролле (scrollTop 37.78 и т.п.)
-   её антиалиасинг иначе оставлял бы 1px-шов, сквозь который просвечивала строка;
+.pfc-mtable { width: 100%; border-collapse: collapse; table-layout: fixed; }
+/* шапка колонок ПРИЛИПАЕТ к верху при скролле состава (актуально в блоке конструктора
+   с заданной высотой) — непрозрачный фон под цвет карточки перекрывает уезжающие под
+   неё строки. top:-1px (не 0!) — уводит верхнюю кромку шапки ЗА край обрезки скроллера:
+   при дробном скролле её антиалиасинг иначе оставлял бы 1px-шов;
    +1px верхнего паддинга компенсирует сдвиг, текст остаётся на месте */
 .pfc-mtable thead th { position: sticky; top: -1px; z-index: 3; background: #fff;
-    text-align: right; padding: 7px 0 6px; font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; letter-spacing: 0.08em; color: #94a3b8; text-transform: uppercase; border-bottom: 1px solid rgba(24,38,60,0.06); }
-body.dark-mode .pfc-mtable thead th { background: #1a232f; border-color: rgba(255,255,255,0.06); }
-/* оверлей «весь состав» — свой фон карточки (темнее card), чтобы липкая шапка совпадала */
-body.dark-mode .pfc-holdsover-list .pfc-mtable thead th { background: #18222e; }
+    text-align: right; padding: 8px 0; font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em; color: #94a3b8; text-transform: uppercase; border-bottom: 1px solid rgba(15,23,42,0.07); white-space: nowrap; }
+body.dark-mode .pfc-mtable thead th { background: #1a232f; border-color: rgba(255,255,255,0.07); }
 .pfc-mtable thead th.pfc-mc-as, .pfc-mtable td.pfc-mc-as { text-align: left; }
-.pfc-mtable thead th:last-child { padding-right: 2px; }
-.pfc-mtable tbody tr.pfc-mtr td { padding: 8px 0; font-size: 11.5px; border-bottom: 1px solid rgba(24,38,60,0.045); }
+/* гарантированный зазор между колонками: при table-layout:fixed паддинг ВХОДИТ в
+   ширину колонки (colgroup из pfMiniTableHtml) — менять ширины и паддинг только вместе */
+.pfc-mtable th + th, .pfc-mtable td + td { padding-left: 14px; }
+.pf-card--narrow .pfc-mtable th + th, .pf-card--narrow .pfc-mtable td + td { padding-left: 11px; }
+.pfc-mtable tbody tr.pfc-mtr td { padding: 9px 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-bottom: 1px solid rgba(15,23,42,0.045); }
 body.dark-mode .pfc-mtable tbody tr.pfc-mtr td { border-color: rgba(255,255,255,0.045); }
 .pfc-mtable tbody tr.pfc-mtr:last-child td { border-bottom: none; }
 /* строка актива кликабельна → раскрывает субданные (.pfc-mdet). Убираем нижнюю границу у
    строки, когда её субданные раскрыты, чтобы актив + детали читались единым блоком. */
 .pfc-mtable tbody tr.pfc-mtr { cursor: pointer; transition: background 0.12s; }
-.pfc-mtable tbody tr.pfc-mtr:hover td { background: rgba(24,38,60,0.02); }
+.pfc-mtable tbody tr.pfc-mtr:hover td { background: rgba(15,23,42,0.025); }
 body.dark-mode .pfc-mtable tbody tr.pfc-mtr:hover td { background: rgba(255,255,255,0.03); }
 .pfc-mtable tbody tr.pfc-mtr.open td { border-bottom-color: transparent; }
-.pfc-mch { width: 11px; height: 11px; flex-shrink: 0; color: #b3bccb; transition: transform 0.18s; align-self: center; margin-right: 1px; }
-.pfc-mch.up { transform: rotate(90deg); color: var(--pf-accent); }
+/* актив: шеврон-раскрыватель + тикер и название в две строки (без плашек) */
+.pfc-mtk { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.pfc-mch { width: 14px; height: 14px; flex: none; color: #b3bccb; transition: transform 0.18s; }
+.pfc-mch.up { transform: rotate(90deg); color: #64748b; }
 body.dark-mode .pfc-mch { color: #667488; }
-.pfc-mtr.open .pfc-mtk b { color: var(--pf-accent); }
-/* строка субданных под активом (дата покупки · цена/средняя · НКД) */
-.pfc-mdet td { padding: 0 0 9px !important; border-bottom: 1px solid rgba(24,38,60,0.045) !important; }
+body.dark-mode .pfc-mch.up { color: #aab8c8; }
+.pfc-mtt { min-width: 0; }
+.pfc-mtt b { display: block; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; font-weight: 700; letter-spacing: -0.01em; color: #0f172a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.dark-mode .pfc-mtt b { color: #eef3f9; }
+.pfc-mnm { display: block; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 500; color: #94a3b8; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.dark-mode .pfc-mnm { color: #67748a; }
+/* второстепенные колонки (кол-во, средняя) — приглушены; «Сейчас» — основной вес */
+.pfc-mqty, .pfc-mbuy { color: #64748b; font-weight: 500; }
+body.dark-mode .pfc-mqty, body.dark-mode .pfc-mbuy { color: #8b98ad; }
+.pfc-mnow { color: #334155; }
+.pfc-mnow.live { color: #0f172a; }
+body.dark-mode .pfc-mnow { color: #aab8c8; }
+body.dark-mode .pfc-mnow.live { color: #eef3f9; }
+.pfc-mchg.pos { color: #16a34a; font-weight: 700; } .pfc-mchg.neg { color: #dc2626; font-weight: 700; }
+body.dark-mode .pfc-mchg.pos { color: #34d399; } body.dark-mode .pfc-mchg.neg { color: #f87171; }
+/* «Доля»: процент + мини-полоса заполнения (цвет — акцент портфеля) */
+.pfc-share { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.pfc-sharebar { display: block; width: 46px; height: 3px; border-radius: 2px; background: rgba(15,23,42,0.09); overflow: hidden; }
+body.dark-mode .pfc-sharebar { background: rgba(255,255,255,0.1); }
+.pfc-sharebar i { display: block; height: 100%; background: var(--pf-accent); border-radius: 2px; }
+/* строка субданных под активом (временно чипы; блок 2 заменит на лоты) */
+.pfc-mdet td { padding: 0 0 9px !important; border-bottom: 1px solid rgba(15,23,42,0.045) !important; white-space: normal; }
 body.dark-mode .pfc-mdet td { border-bottom-color: rgba(255,255,255,0.045) !important; }
 .pfc-mtable tbody tr.pfc-mdet:last-child td { border-bottom: none !important; }
-.pfc-mdet-in { display: flex; flex-wrap: wrap; gap: 6px 8px; padding: 4px 2px 2px 16px; }
-.pfc-det-i { display: inline-flex; flex-direction: column; gap: 1px; padding: 4px 9px; border-radius: 8px; background: rgba(24,38,60,0.035); }
+.pfc-mdet-in { display: flex; flex-wrap: wrap; gap: 6px 8px; padding: 4px 2px 2px 24px; }
+.pfc-det-i { display: inline-flex; flex-direction: column; gap: 1px; padding: 4px 9px; border-radius: 8px; background: rgba(15,23,42,0.035); }
 body.dark-mode .pfc-det-i { background: rgba(255,255,255,0.045); }
 .pfc-det-l { font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: #94a3b8; }
 .pfc-det-v { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 800; color: #0f172a; }
 body.dark-mode .pfc-det-v { color: #eef3f9; }
-/* название актива в субданных — текст, а не число: обычный шрифт + перенос по словам */
-.pfc-det-i--nm { max-width: 100%; }
-.pfc-det-v--nm { font-family: 'Inter', sans-serif; font-weight: 700; white-space: normal; overflow-wrap: anywhere; }
-/* строка-заголовок группы («Акции» / «Облигации») в мини-таблице оверлея «весь состав» */
-.pfc-mgrp td { padding: 12px 0 5px !important; border-bottom: 1px solid rgba(24,38,60,0.06); }
-body.dark-mode .pfc-mgrp td { border-bottom-color: rgba(255,255,255,0.06); }
-.pfc-mgrp-in { display: inline-flex; align-items: center; gap: 7px; font-family: 'Inter', sans-serif;
-    font-size: 10px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: #7f8ea3; }
-body.dark-mode .pfc-mgrp-in { color: #93a3b8; }
-.pfc-mgrp-in b { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; font-weight: 700; color: #94a3b8;
-    background: rgba(24,38,60,0.06); padding: 1px 6px; border-radius: 99px; }
-body.dark-mode .pfc-mgrp-in b { background: rgba(255,255,255,0.07); }
-.pfc-mgrp-dot { width: 8px; height: 8px; border-radius: 99px; flex-shrink: 0; }
-.pfc-mgrp-dot.stock { background: #D97757; }
-.pfc-mgrp-dot.bond { background: #7B9BBF; }
-.pfc-mtk { display: inline-flex; align-items: baseline; gap: 4px; min-width: 0; font-weight: 700; }
-.pfc-mtk b { font-weight: 800; color: #0f172a; }
-body.dark-mode .pfc-mtk b { color: #eef3f9; }
-.pfc-mtk i { font-style: normal; font-size: 9px; font-weight: 700; text-transform: uppercase; color: #94a3b8; background: rgba(24,38,60,0.06); padding: 1px 5px; border-radius: 5px; }
-body.dark-mode .pfc-mtk i { background: rgba(255,255,255,0.07); }
-.pfc-mtk i.stock { color: #b45309; background: rgba(217,119,87,0.14); }
-.pfc-mtk i.bond { color: #3a5d80; background: rgba(123,155,191,0.18); }
-body.dark-mode .pfc-mtk i.stock { color: #f0a868; background: rgba(217,119,87,0.20); }
-body.dark-mode .pfc-mtk i.bond { color: #9bc0e6; background: rgba(123,155,191,0.22); }
-.pfc-mtk .pfc-lotn { font-size: 8.5px; font-weight: 800; color: var(--pf-accent); background: color-mix(in srgb, var(--pf-accent) 14%, transparent); text-transform: none; padding: 1px 4px; }
-.pfc-mqty, .pfc-mnow, .pfc-mchg { font-family: 'JetBrains Mono', monospace; text-align: right; white-space: nowrap; padding-left: 14px; }
-.pfc-mqty { color: #64748b; } body.dark-mode .pfc-mqty { color: #aab8c8; }
-.pfc-mnow.live { color: #0f172a; } body.dark-mode .pfc-mnow.live { color: #eef3f9; }
-.pfc-mchg { padding-right: 2px; }
-.pfc-mchg.pos { color: #16a34a; font-weight: 700; } .pfc-mchg.neg { color: #dc2626; font-weight: 700; }
-body.dark-mode .pfc-mchg.pos { color: #34d399; } body.dark-mode .pfc-mchg.neg { color: #f87171; }
-/* короткая дата покупки прямо у тикера — вместо отдельной строки «Куплен/Цена/НКД»;
-   полная сводка (дата + цена + НКД) — во всплывающей подсказке при наведении на тикер */
-.pfc-mdate { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; font-weight: 600; color: #b0bac8; }
-body.dark-mode .pfc-mdate { color: #5c6a7a; }
 .pfc-empty { padding: 22px 0; text-align: center; font-size: 12.5px; color: #94a3b8; }
 
-/* ---- оверлей «весь состав»: та же мини-таблица, без ограничения в 4 строки ---- */
-.pfc-holdsover-list { overflow-y: auto; padding: 0 18px 16px; }
-.pfc-holdsover-list .pfc-mtablewrap { padding-left: 2px; padding-right: 2px; }
-
-/* режим графика — карточка НЕ перестраивает сетку: график выезжает оверлеем в сторону */
-.pf-card.chart-open { z-index: 60; }
 .pfc-normal { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
-/* оверлей графика: position:absolute поверх карточки и соседей — сама карточка остаётся в
-   своей ячейке (не смещается вниз), сетка не перестраивается, соседи не «прыгают».
-   Ширина = 2 колонки (200% + gap сетки): левая колонка тянет ВПРАВО, правая (.col-right) —
-   ВЛЕВО. Высота auto — растёт ВНИЗ поверх нижнего контента. */
-.pfc-chartwrap { position: absolute; top: 0; left: 0; z-index: 61; width: calc(200% + 16px); min-height: 100%; height: auto;
-    display: flex; flex-direction: column; background: #fff; border-radius: 26px;
-    box-shadow: 0 0 0 1.5px var(--pf-accent), 0 34px 80px -26px rgba(24,38,60,0.5); animation: pfMenuIn 0.18s ease both; }
-body.dark-mode .pfc-chartwrap { background: #141c27; box-shadow: 0 0 0 1.5px var(--pf-accent), 0 34px 80px -26px rgba(0,0,0,0.62); }
-.pf-card.col-right .pfc-chartwrap { left: auto; right: 0; }
-@media (max-width: 1040px) { .pfc-chartwrap { width: 100%; left: 0; right: auto; } }
-/* «узкий» вид (3 карточки в ряд) — сама карточка уже, но раскрытие («Полный состав»
-   вверху карточки) должно выглядеть так же просторно, как в обычном виде: растягиваем
-   оверлей на весь ряд из 3 узких колонок (было 2 колонки = целый ряд обычного вида).
-   Средняя карточка (.col-mid) сдвигает левый край назад, чтобы оверлей стартовал
-   с начала ряда, а не с середины. */
-.pf-card--narrow .pfc-chartwrap { width: calc(300% + 32px); }
-.pf-card--narrow.col-mid .pfc-chartwrap { left: calc(-100% - 16px); }
-/* сетка узкого вида сама схлопывается до 2/1 колонок на меньших экранах (см. .pf-grid--narrow
-   media выше) — тройная раскладка (300%/col-mid) там уже не соответствует реальным
-   колонкам, откатываем к обычной паре-колонке формуле */
-@media (max-width: 1520px) {
-    .pf-card--narrow .pfc-chartwrap { width: calc(200% + 16px); left: 0; right: auto; }
-    .pf-card--narrow.col-right .pfc-chartwrap { left: auto; right: 0; }
-    .pf-card--narrow.col-mid .pfc-chartwrap { left: 0; right: auto; }
-}
-@media (max-width: 1040px) { .pf-card--narrow .pfc-chartwrap, .pf-card--narrow.col-mid .pfc-chartwrap { width: 100%; left: 0; right: auto; } }
-/* кнопка «свернуть график» в шапке графика */
-.pfcv-close { display: inline-grid; place-items: center; width: 32px; height: 32px; flex-shrink: 0; border-radius: 9px; border: 1px solid rgba(24,38,60,0.1); background: #fff; color: #64748b; cursor: pointer; transition: background 0.14s, color 0.14s, border-color 0.14s; }
-.pfcv-close svg { width: 16px; height: 16px; }
-.pfcv-close:hover { background: rgba(220,38,38,0.1); color: #dc2626; border-color: transparent; }
-body.dark-mode .pfcv-close { border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #9fb0c4; }
 
-/* две колонки: слева сводка, справа график (выезжает справа) */
-/* overflow:visible — иначе тултип точки графика (всплывает НАД точкой) обрезается этим
-   контейнером и не виден для точек в верхней части кривой */
-.pfc-chartview { display: flex; flex: 1 1 auto; min-height: 320px; gap: 22px; padding: 14px 24px 20px; overflow: visible;
-    animation: pfcvViewIn 0.4s cubic-bezier(.2,.7,.2,1) both; }
-.pfcv-left { flex: 0 0 280px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-.pfcv-right { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0;
-    animation: pfcvRightIn 0.55s cubic-bezier(.2,.7,.2,1) both; }
-@keyframes pfcvViewIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes pfcvRightIn { from { opacity: 0; transform: translateX(46px); } to { opacity: 1; transform: translateX(0); } }
-@media (prefers-reduced-motion: reduce) { .pfc-chartview, .pfcv-right { animation: none; } }
-
-/* левая колонка: кольцо распределения + сводные показатели */
-.pfcv-ring { display: flex; align-items: center; gap: 16px; }
-.pfcv-ringleg { flex: 1 1 auto; display: flex; flex-direction: column; gap: 7px; min-width: 0; }
-/* распределение акции/облигации рядом с кольцом — цветная точка (в тон кольцу) + подпись
-   слева, доля справа моноширинным жирным — раньше класс не был описан в CSS вовсе и строки
-   рендерились неоформленным текстом без цвета/точек/выравнивания */
-.pfc-lg { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 9px;
-    background: rgba(24,38,60,0.035); font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700; color: #5f6b7d; }
-body.dark-mode .pfc-lg { background: rgba(255,255,255,0.045); color: #aab8c8; }
-.pfc-lg i { width: 9px; height: 9px; border-radius: 99px; flex-shrink: 0; }
-.pfc-lg i.stock { background: #D97757; } .pfc-lg i.bond { background: #7B9BBF; }
-.pfc-lg b { margin-left: auto; font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 13.5px; color: #0f172a; letter-spacing: -0.01em; }
-body.dark-mode .pfc-lg b { color: #eef3f9; }
-.pfcv-stats { display: flex; flex-direction: column; gap: 1px; border: 1px solid rgba(24,38,60,0.08); border-radius: 13px; overflow: hidden; background: rgba(24,38,60,0.07); margin-top: 2px; }
-body.dark-mode .pfcv-stats { border-color: rgba(255,255,255,0.07); background: rgba(255,255,255,0.06); }
-.pfcv-stat { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 15px; background: #fff; }
-body.dark-mode .pfcv-stat { background: #161d27; }
-.pfcv-stat-l { font-size: 11px; font-weight: 600; color: #7f8ea3; }
-body.dark-mode .pfcv-stat-l { color: #93a3b8; }
-.pfcv-stat-v { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; color: #1b2433; letter-spacing: -0.01em; }
-body.dark-mode .pfcv-stat-v { color: #eef3f9; }
-.pfcv-stat-v.pos { color: #16a34a; } .pfcv-stat-v.neg { color: #dc2626; }
-body.dark-mode .pfcv-stat-v.pos { color: #34d399; } body.dark-mode .pfcv-stat-v.neg { color: #f87171; }
-.pfcv-stat--dyn { background: color-mix(in srgb, var(--pf-accent) 7%, #fff); }
-body.dark-mode .pfcv-stat--dyn { background: color-mix(in srgb, var(--pf-accent) 16%, #161d27); }
-.pfcv-stat--dyn .pfcv-stat-l { color: color-mix(in srgb, var(--pf-accent) 55%, #6b7d92); font-weight: 700; }
-
-/* правая колонка: заголовок + переключатель IMOEX + легенда + график */
-.pfcv-rhead { display: flex; align-items: center; gap: 10px; }
-.pfcv-rtt { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; }
-.pfcv-rk { font-size: 12px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: #6b7d92; }
-body.dark-mode .pfcv-rk { color: #93a8c2; }
-.pfcv-rsub { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #9aa7b6; }
-.pfcv-imbtn { display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0; cursor: pointer; border: 1px solid rgba(24,38,60,0.12); background: #fff; color: #64748b; border-radius: 999px; padding: 6px 13px; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 11.5px; transition: background 0.15s, color 0.15s, border-color 0.15s; }
-.pfcv-imbtn .pfcv-imdot { width: 16px; height: 0; border-top: 2.5px dashed #94a3b8; }
-.pfcv-imbtn:hover { background: rgba(24,38,60,0.05); color: #1b2433; }
-.pfcv-imbtn.on { background: #475569; color: #fff; border-color: transparent; }
-.pfcv-imbtn.on .pfcv-imdot { border-top-color: #fff; }
-body.dark-mode .pfcv-imbtn { border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #9fb0c4; }
-body.dark-mode .pfcv-imbtn.on { background: #64748b; color: #fff; }
-.pfcv-leg { display: flex; flex-wrap: wrap; gap: 14px; margin: 9px 0 2px; min-height: 16px; }
-.pfcv-lgi { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: #7f8ea3; }
-.pfcv-lgi i { width: 14px; height: 3px; border-radius: 2px; }
-.pfcv-lgi .pfcv-imdot { width: 14px; height: 0; border-top: 2.5px dashed #94a3b8; }
-.pfcv-lgi b { font-family: 'JetBrains Mono', monospace; font-weight: 800; }
-.pfcv-lgi b.pos { color: #16a34a; } .pfcv-lgi b.neg { color: #dc2626; }
-body.dark-mode .pfcv-lgi b.pos { color: #34d399; } body.dark-mode .pfcv-lgi b.neg { color: #f87171; }
-
-/* поле графика (mi5-стиль): слева шкала %, справа площадь + плавная линия + точки */
-.pfcv-chart { position: relative; flex: 1 1 auto; min-height: 150px; margin-top: 6px; display: flex; }
+/* ---- поле графика drawPfChart (mi5-стиль): шкала %, площадь, линия, точки.
+   Живёт внутри .pfc-mchart-plot героя карточки (и любого будущего пейна). ---- */
 /* шкала процентов: деления выровнены по кривой (top в % высоты поля) */
 .pfcv-yaxis { position: relative; flex: 0 0 40px; }
 .pfcv-ytick { position: absolute; right: 8px; transform: translateY(-50%); font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; color: #94a3b8; white-space: nowrap; }
@@ -619,102 +455,35 @@ body.dark-mode .pfcv-spin { border-color: rgba(255,255,255,0.12); border-top-col
 body.dark-mode .pfcv-msg-t { color: #f4f8fd; }
 .pfcv-msg-s { font-size: 11.5px; color: #94a3b8; max-width: 240px; }
 
-/* кнопка «Показать активы» — низ левой колонки (прижата к низу через margin-top:auto) */
-.pfcv-assetbtn { margin-top: auto; display: inline-flex; align-items: center; gap: 9px; cursor: pointer;
-    border: 1px solid rgba(24,38,60,0.1); background: rgba(24,38,60,0.02); border-radius: 11px; padding: 10px 13px;
-    font-family: 'Inter', sans-serif; font-weight: 700; font-size: 12.5px; color: #46566e;
-    transition: background 0.15s, color 0.15s, border-color 0.15s; }
-.pfcv-assetbtn svg { width: 15px; height: 15px; flex-shrink: 0; }
-.pfcv-assetbtn-t { margin-right: auto; }
-.pfcv-assetbtn-ch { transition: transform 0.22s; }
-.pfcv-assetbtn-ch.up { transform: rotate(180deg); }
-.pfcv-assetbtn:hover { background: var(--pf-accent); color: #fff; border-color: transparent; }
-.pfcv-assetbtn.on { background: color-mix(in srgb, var(--pf-accent) 12%, transparent); color: var(--pf-accent); border-color: color-mix(in srgb, var(--pf-accent) 30%, transparent); }
-body.dark-mode .pfcv-assetbtn { border-color: rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); color: #cdd8e6; }
-body.dark-mode .pfcv-assetbtn.on { background: color-mix(in srgb, var(--pf-accent) 20%, transparent); color: #eaf1f8; }
-
-/* раскрывающаяся таблица состава под графиком (grid-rows 0fr→1fr — как в сайдбаре) */
-.pfcv-assets { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.38s cubic-bezier(.4,0,.2,1);
-    border-top: 1px solid transparent; }
-.pf-card.assets-open .pfcv-assets { grid-template-rows: 1fr; border-top-color: rgba(24,38,60,0.07); }
-body.dark-mode .pf-card.assets-open .pfcv-assets { border-top-color: rgba(255,255,255,0.06); }
-.pfcv-assets-in { min-height: 0; overflow: hidden; }
-.pfcv-assets .pfo-tablewrap { max-height: 340px; overflow: auto; padding: 6px 24px 14px; }
-/* Раскрытие живёт в панели уже карточки-ребаланса, а колонок тринадцать:
-   с общими отступами таблицы «Стоимость/Доход/Изменение» не помещались и
-   выглядели обрезанными. Здесь колонки чуть плотнее — состав из акций
-   (без колонок НКД, см. pfHoldsTableHtml) влезает целиком. */
-.pfcv-assets .pfo-table thead th { padding-left: 10px; padding-right: 10px; }
-.pfcv-assets .pfo-table tbody td { padding-left: 11px; padding-right: 11px; }
-.pfcv-assets .pfo-table .pfo-c-rk { padding-left: 14px; padding-right: 4px; }
-.pfcv-assets.full .pfo-tablewrap { max-height: none; }
-/* шапка таблицы состава здесь — под цвет портфеля (не нейтральный серый), с скруглением
-   в тон карточке, чтобы вписывалась в остальной дизайн раскрытия, а не смотрелась чужеродно.
-   top:-1px (вместо 0) закрывает субпиксельную щель между sticky-шапкой и строками при
-   скролле в связке с border-collapse:collapse — без этого сквозь шапку на стыке «просвечивал»
-   фон строк под ней. */
-.pfcv-assets .pfo-table thead th { position: sticky; top: -1px; background: color-mix(in srgb, var(--pf-accent) 12%, #eef1f6); color: color-mix(in srgb, var(--pf-accent) 60%, #46566e); border-bottom-color: color-mix(in srgb, var(--pf-accent) 30%, rgba(24,38,60,0.12)); }
-body.dark-mode .pfcv-assets .pfo-table thead th { background: color-mix(in srgb, var(--pf-accent) 22%, #1f2937); color: color-mix(in srgb, var(--pf-accent) 65%, #cdd8e6); border-bottom-color: color-mix(in srgb, var(--pf-accent) 42%, rgba(255,255,255,0.12)); }
-.pfcv-assets .pfo-table thead th:first-child { border-top-left-radius: 10px; }
-.pfcv-assets .pfo-table thead th:last-child { border-top-right-radius: 10px; }
-/* когда список обрезан лимитом высоты — плавное затухание внизу таблицы вместо жёсткого
-   среза строки, чтобы переход к кнопке «показать все» читался как единая композиция */
-.pfcv-assets:not(.full) .pfo-tablewrap { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 30px), transparent 100%); mask-image: linear-gradient(to bottom, #000 calc(100% - 30px), transparent 100%); }
-/* кнопка «показать все активы» — визуально продолжает таблицу (без зазора, скруглена в её
-   тон), а не висит отдельным блоком под ней */
-.pfcv-assets-more { display: flex; align-items: center; justify-content: center; gap: 6px; width: calc(100% - 48px);
-    margin: -14px 24px 16px; padding: 9px; border-radius: 0 0 12px 12px; border: 1px solid rgba(24,38,60,0.08); border-top: none;
-    background: rgba(24,38,60,0.03); color: #46566e; font-family: 'Inter', sans-serif; font-weight: 800;
-    font-size: 11.5px; cursor: pointer; position: relative; z-index: 1; transition: background 0.15s, color 0.15s, border-color 0.15s; }
-.pfcv-assets-more:hover { background: color-mix(in srgb, var(--pf-accent) 10%, transparent);
-    border-color: color-mix(in srgb, var(--pf-accent) 35%, transparent); color: var(--pf-accent); }
-.pfcv-assets-more.on { margin-top: 0; border-radius: 12px; border-top: 1px solid rgba(24,38,60,0.08); }
-.pfcv-assets-more-ch { width: 13px; height: 13px; transition: transform 0.2s; }
-.pfcv-assets-more-ch.up { transform: rotate(180deg); }
-body.dark-mode .pfcv-assets-more { border-color: rgba(255,255,255,0.07); background: rgba(255,255,255,0.035); color: #cdd8e6; }
-body.dark-mode .pfcv-assets-more.on { border-top-color: rgba(255,255,255,0.07); }
-body.dark-mode .pfcv-assets-more:hover { color: #eaf1f8; }
-
-@media (max-width: 1040px) {
-    .pf-card.chart-open { height: auto; }
-    .pfc-chartview { flex-direction: column; gap: 16px; min-height: 0; }
-    .pfcv-left { flex: 0 0 auto; }
-    .pfcv-chart { min-height: 190px; }
-}
-
-/* ---- футер: «Ребалансировать» — тёмная кнопка на всю ширину (как в референсе) ---- */
-.pfc-foot { padding: 14px 24px 20px; margin-top: auto; display: flex; align-items: stretch; gap: 8px; }
-.pfc-rebal { flex: 1 1 auto; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; border: none; background: #141b26; border-radius: 12px; padding: 11px; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 12.5px; color: #fff; transition: opacity 0.15s, transform 0.12s; }
-.pfc-rebal svg { width: 15px; height: 15px; color: #7ee2a8; }
+/* ---- подвал (макет 02): «Все позиции ›» + тёмная кнопка «Ребаланс» ---- */
+.pfc-foot { padding: 12px 18px 14px; margin-top: auto; display: flex; align-items: stretch; gap: 9px; }
+.pfc-all { flex: 1.3 1 0; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; border: 1px solid rgba(15,23,42,0.09); background: #fff; border-radius: 11px; padding: 11px 14px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; color: #0f172a; transition: background 0.15s, border-color 0.15s; }
+.pfc-all svg { width: 13px; height: 13px; color: #94a3b8; flex: none; }
+.pfc-all:hover { background: rgba(15,23,42,0.04); border-color: rgba(15,23,42,0.16); }
+body.dark-mode .pfc-all { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.12); color: #e8eef7; }
+body.dark-mode .pfc-all:hover { background: rgba(255,255,255,0.08); }
+.pfc-rebal { flex: 1 1 0; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; border: 1px solid #141b26; background: #141b26; border-radius: 11px; padding: 11px; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 13px; color: #fff; transition: opacity 0.15s, transform 0.12s; }
+.pfc-rebal svg { width: 15px; height: 15px; }
 .pfc-rebal:hover { opacity: 0.88; }
 .pfc-rebal:active { transform: scale(0.985); }
-body.dark-mode .pfc-rebal { background: #0c1118; color: #fff; }
-/* маленькая кнопка «показать весь состав» — шеврон рядом с «Ребалансировать» */
-.pfc-more { flex: 0 0 44px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; border: none; background: rgba(24,38,60,0.06); border-radius: 12px; color: #64748b; transition: background 0.15s, color 0.15s; }
-.pfc-more svg { width: 16px; height: 16px; transition: transform 0.18s; }
-.pfc-more.on svg { transform: rotate(180deg); }
-.pfc-more:hover { background: rgba(24,38,60,0.11); color: #1b2433; }
-.pfc-more.on { background: #141b26; color: #7ee2a8; }
-body.dark-mode .pfc-more { background: rgba(255,255,255,0.06); color: #9fb0c4; }
-body.dark-mode .pfc-more:hover { background: rgba(255,255,255,0.11); color: #f4f8fd; }
-body.dark-mode .pfc-more.on { background: #0c1118; color: #7ee2a8; }
+/* тёмная тема — инверсия, как .pn-btn.pri мокапа: светлая кнопка, тёмный текст */
+body.dark-mode .pfc-rebal { background: #e8eef7; border-color: #e8eef7; color: #0c1016; }
 
-/* ---- оверлей «весь состав» (вниз поверх контента, как меню настроек) ---- */
-.pfc-holdsover { position: absolute; inset: 0; bottom: auto; height: auto; min-height: 100%; z-index: 62;
-    display: flex; flex-direction: column; overflow: hidden; background: #fff; border-radius: 26px;
-    box-shadow: 0 0 0 1.5px var(--pf-accent), 0 30px 70px -22px rgba(24,38,60,0.42); animation: pfMenuIn 0.18s ease both; }
-body.dark-mode .pfc-holdsover { background: #18222e; box-shadow: 0 0 0 1.5px var(--pf-accent), 0 30px 70px -22px rgba(0,0,0,0.6); }
-.pfc-holdsover-h { display: flex; align-items: center; gap: 10px; padding: 16px 18px 12px; border-bottom: 1px solid rgba(24,38,60,0.07); flex-shrink: 0; }
-body.dark-mode .pfc-holdsover-h { border-color: rgba(255,255,255,0.07); }
-.pfc-holdsover-t { display: inline-flex; align-items: center; gap: 8px; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 14px; color: #1b2433; }
-body.dark-mode .pfc-holdsover-t { color: #f4f8fd; }
-.pfc-holdsover-dot { width: 9px; height: 9px; border-radius: 99px; background: var(--pf-accent); }
-.pfc-holdsover-n { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #94a3b8; background: rgba(24,38,60,0.06); padding: 2px 8px; border-radius: 6px; }
-body.dark-mode .pfc-holdsover-n { background: rgba(255,255,255,0.07); }
-.pfc-holdsover-x { margin-left: auto; width: 30px; height: 30px; border-radius: 9px; border: none; background: rgba(24,38,60,0.06); color: #64748b; cursor: pointer; display: grid; place-items: center; }
-.pfc-holdsover-x svg { width: 15px; height: 15px; }
-.pfc-holdsover-x:hover { background: rgba(220,38,38,0.12); color: #dc2626; }
-body.dark-mode .pfc-holdsover-x { background: rgba(255,255,255,0.07); color: #9fb0c4; }
+/* ---- узкий вид (3-в-ряд «Обзора» и узкий блок конструктора), макет 07 ---- */
+.pf-card--narrow .pfc-hero { grid-template-columns: 1fr; gap: 12px; }
+.pf-card--narrow .pfc-hero-val { font-size: 30px; }
+.pf-card--narrow .pfc-hero-val.l10 { font-size: 26px; }
+.pf-card--narrow .pfc-hero-val.l13 { font-size: 21px; }
+.pf-card--narrow .pfc-mchart-plot { height: 96px; }
+.pf-card--narrow .pfc-stats2 { grid-template-columns: 1fr 1fr; row-gap: 14px; }
+.pf-card--narrow .pfc-stat2:nth-child(odd) { border-left: 0; padding-left: 18px; }
+.pf-card--narrow .pfc-stat2:nth-child(even) { padding-right: 18px; }
+.pf-card--narrow .pfc-stat2-v { font-size: 16px; }
+.pf-card--narrow .pfc-top { gap: 6px; }
+.pf-card--narrow .pfc-seg .pfdcfg-seg-b { padding: 4px 6px; font-size: 10px; }
+.pf-card--narrow .pfc-mtable tbody tr.pfc-mtr td { font-size: 12px; }
+.pf-card--narrow .pfc-mtt b { font-size: 12px; }
+.pf-card--narrow .pfc-foot { flex-direction: column; }
 
 /* ---- карточка «добавить» (компактная, в стиле новых карточек) ---- */
 .pf-add { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; min-height: 200px; cursor: pointer; border-radius: 28px; border: 1.5px dashed rgba(24,38,60,0.14); background: rgba(24,38,60,0.015); text-align: center; transition: border-color 0.18s, background 0.18s, transform 0.18s, box-shadow 0.18s; }
@@ -758,7 +527,9 @@ body.dark-mode .pf-empty-t { color: #f4f8fd; }
    как в обычном виде (иначе редактировать состав неудобно) — расширяем оверлей
    примерно до ширины обычной (не узкой) карточки, поверх соседней узкой карточки. */
 .pf-card--narrow.menu-open .pfc-menu { width: calc(150% + 8px); }
-.pf-card--narrow.col-right.menu-open .pfc-menu { left: auto; right: 0; }
+/* правая колонка ряда (3n-я карточка сетки): оверлей тянет ВЛЕВО, а не за край.
+   Раньше это делал класс .col-right из рендера — теперь чистый CSS по позиции. */
+.pf-grid--narrow .pf-card:nth-child(3n).menu-open .pfc-menu { left: auto; right: 0; }
 @media (max-width: 1520px) { .pf-card--narrow.menu-open .pfc-menu { width: 100%; left: 0; right: auto; } }
 /* повторные ре-рендеры уже открытой панели (добавление/удаление лота, сворачивание
    журнала докупок) пересоздают весь .pfc-menu — без этого анимация входа проигрывалась
@@ -2161,28 +1932,13 @@ body.dark-mode .tbmk-go:hover { border-color: rgba(255,255,255,0.28); color: #f1
    РАУНД «АУДИТ»: выплаты · кэш · цель · дневные маркеры · CSV
    ============================================================ */
 
-/* --- чип «▲ 1 234 ₽ сегодня» в шапке карточки (снимки стоимости по дням) --- */
-.pfc-titles { flex-direction: row; align-items: center; gap: 10px; flex-wrap: wrap; }
-.pfc-day { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 99px; cursor: default; }
-.pfc-day.pos { color: #15803d; background: rgba(22,163,74,0.09); }
-.pfc-day.neg { color: #b91c1c; background: rgba(220,38,38,0.08); }
-body.dark-mode .pfc-day.pos { color: #34d399; background: rgba(52,211,153,0.12); }
-body.dark-mode .pfc-day.neg { color: #f87171; background: rgba(248,113,113,0.12); }
-
-/* --- дневной маркер ▲/▼ (≥3% за день) возле цены в мини-таблице --- */
-.pfc-rowday { font-style: normal; font-size: 9px; margin-left: 3px; vertical-align: 1px; }
-.pfc-rowday.up { color: #16a34a; }
-.pfc-rowday.dn { color: #dc2626; }
-body.dark-mode .pfc-rowday.up { color: #34d399; }
-body.dark-mode .pfc-rowday.dn { color: #f87171; }
-
 /* --- целевая структура: метка цели на полосе распределения + строка отклонения --- */
 .pfc-dist-barwrap { position: relative; }
 .pfc-dist-tgt { position: absolute; top: -3px; bottom: -3px; width: 2px; border-radius: 2px;
     background: #1b2433; opacity: 0.55; transform: translateX(-1px); pointer-events: auto; }
 body.dark-mode .pfc-dist-tgt { background: #eef3f9; opacity: 0.6; }
-.pfc-tgt-hint { margin: 8px 24px 0; font-size: 11.5px; font-weight: 650; line-height: 1.35;
+/* подсказка живёт внутри .pfc-alloc — боковые поля даёт его паддинг */
+.pfc-tgt-hint { margin: 8px 0 0; font-size: 11.5px; font-weight: 650; line-height: 1.35;
     display: flex; align-items: center; gap: 6px; }
 .pfc-tgt-hint svg { width: 12px; height: 12px; flex: 0 0 auto; }
 .pfc-tgt-hint.ok { color: #6b7c92; }
@@ -2272,13 +2028,11 @@ body.dark-mode .pfpc-kind.kind-red { color: #93c5fd; background: rgba(61,111,209
    из-за чего после ресайза показывались ВСЕ тикеры; теперь ограничение стабильно. */
 .pfd-item.pfd-hset .pfc-top { flex-shrink: 0; }
 .pfd-item.pfd-hset .pfc-normal { overflow-y: auto; scrollbar-width: thin; }
-/* список активов наследует базовое ограничение (max-height 5 тикеров + свой скролл) —
-   в hset его больше НЕ разворачиваем на все строки */
 /* когда в карточке открыт флайаут (настройки/график/меню выходят ЗА блок) — снимаем
    клип, иначе в блоке с ручной высотой они бы обрезались; флайаут overlay-ем ложится
    поверх соседей, как и в обычной сетке. .pf-impmenu.open — дропдауны-фильтры
    («Портфели» в календаре и истории сделок): в коротком блоке выпадали бы за обрез */
-.pfd-item.pfd-hset:has(.menu-open, .chart-open, .pf-card--tall, .pf-impmenu.open) .pfd-body { overflow: visible; }
+.pfd-item.pfd-hset:has(.menu-open, .pf-card--tall, .pf-impmenu.open) .pfd-body { overflow: visible; }
 /* «Ставки» с ручной высотой: полоса-флекс тянет сетку плиток на всю высоту блока,
    ряды растягиваются равномерно — потянув блок выше, пользователь ЗАПОЛНЯЕТ пустоту
    плитками, а не оставляет мёртвое поле снизу (жалоба «пространство не заполнить») */
