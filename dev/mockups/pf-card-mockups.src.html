@@ -122,6 +122,15 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .pn-alleg em{font-style:normal;width:8px;height:8px;border-radius:3px;align-self:center;flex:none}
 .pn-alleg b{font-family:var(--fN);font-size:12.5px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
 .pn-alleg u{text-decoration:none;font-family:var(--fN);font-size:11.5px;color:var(--dim)}
+/* тихий вариант: одна краска в трёх плотностях, полоса вдвое тоньше,
+   подписи мельче — блок перестаёт спорить с суммой в герое */
+.pn-alloc.q{padding:11px 18px 12px}
+.pn-alloc.q .pn-albar{height:4px;gap:2px;margin-bottom:8px}
+.pn-alloc.q .pn-albar i{border-radius:2px}
+.pn-alloc.q .pn-alleg{gap:4px 16px}
+.pn-alloc.q .pn-alleg span{font-size:11.5px;gap:6px}
+.pn-alloc.q .pn-alleg em{width:6px;height:6px;border-radius:2px}
+.pn-alloc.q .pn-alleg b{font-size:11.5px;font-weight:600;color:var(--mut)}
 .pn-alt{margin-left:auto;font-size:11px;color:var(--dim)}
 /* «как прислан» — исходные, более плоские пропорции героя */
 .pn.flat .pn-hero{padding:14px 18px 16px;grid-template-columns:minmax(190px,auto) 1fr;gap:18px}
@@ -173,6 +182,14 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .pn-as .nm{font-family:var(--fU);font-size:11px;font-weight:500;color:var(--dim);margin-top:1px;
            overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;max-width:134px}
 .pn-mut{color:var(--mut);font-weight:500}
+/* строка без плашки: тикер выходит на первый план, места больше */
+.pn-as.bare{gap:8px}
+.pn-as.bare .tk{font-size:13.5px;max-width:190px}
+.pn-as.bare .nm{max-width:190px}
+/* заголовок группы вместо цветовой метки класса актива */
+.pn-grp td{padding:12px 0 5px;border-bottom:0;font-family:var(--fU);font-size:9.5px;font-weight:700;
+           letter-spacing:.08em;text-transform:uppercase;color:var(--dim);text-align:left}
+.pn-tbl tbody tr:first-child.pn-grp td{padding-top:2px}
 /* раскрытая строка */
 .pn-tbl tr.open td{border-bottom:0}
 .pn-chev{display:inline-grid;place-items:center;width:14px;height:14px;color:var(--dim);flex:none;
@@ -183,6 +200,7 @@ tr.open .pn-chev{transform:rotate(90deg);color:var(--mut)}
 .pn-det-in{display:grid;grid-template-columns:1fr auto;gap:14px 22px;align-items:start;
            background:color-mix(in srgb,var(--ink) 3%,transparent);border-radius:12px;padding:12px 14px;margin-left:40px}
 .scr.dark .pn-det-in{background:rgba(255,255,255,.03)}
+.pn-det.bare .pn-det-in{margin-left:22px}
 .pn-det-h{font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:8px}
 .pn-lot{display:grid;grid-template-columns:78px 62px 78px 1fr;gap:0 12px;align-items:baseline;
         font-family:var(--fN);font-size:11.5px;font-weight:600;padding:4px 0;font-variant-numeric:tabular-nums}
@@ -323,9 +341,17 @@ tr.open .pn-chev{transform:rotate(90deg);color:var(--mut)}
     <div class="notes" id="notesOpen"></div>
   </section>
 
-  <!-- ================= 06. ТЁМНАЯ + ВИДЖЕТ ================= -->
+  <!-- ================= 06. ТИШЕ ================= -->
   <section class="mk">
-    <div class="mk-h"><span class="mk-n">06</span><h2>Тёмная тема и узкая колонка</h2><span class="mk-tag mute">проверка на прочность</span></div>
+    <div class="mk-h"><span class="mk-n">06</span><h2>Тише: без плашек и с приглушённой полосой</h2><span class="mk-tag">принято, стоит в 02</span></div>
+    <div class="mk-sub">Оба замечания про одно и то же — про цвет. Плашки тикеров и трёхцветная полоса вместе давали пять цветовых пятен на карточку, и ни одно из них не несло смысла: цвет плашки взят из бренда компании, цвет сегмента назначен произвольно. По правилу проекта цвет остаётся за знаком прибыли и за CTA — всё остальное живёт на серой шкале. Слева — как было, справа — как стало.</div>
+    <div class="scroller"><div class="scr" id="scrQuiet"></div></div>
+    <div class="notes" id="notesQuiet"></div>
+  </section>
+
+  <!-- ================= 07. ТЁМНАЯ + ВИДЖЕТ ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">07</span><h2>Тёмная тема и узкая колонка</h2><span class="mk-tag mute">проверка на прочность</span></div>
     <div class="mk-sub">Та же вёрстка на токенах тёмной темы (<code>--pf-gn/--pf-rd</code> уже переопределены в <code>portfolios.css:216</code>) и она же в блоке конструктора <code>pf:&lt;id&gt;</code> шириной в треть: KPI сворачиваются в 2×2, список позиций режется по высоте виджета через <code>pfdRowsFor</code>/ResizeObserver.</div>
     <div class="scroller"><div class="scr dark" id="scr03"></div></div>
     <div class="notes" id="notes03"></div>
@@ -371,13 +397,18 @@ var ANNUAL = 14.2;                // c.annual, CAGR
 var DAY    = 1508, DAYPCT = 0.76; // dayDelta(p, value)
 var BONDVAL = 10149 + 8164 + 7050, STOCKVAL = POSVAL - BONDVAL;
 
-/* распределение считаем от ПОЛНОЙ стоимости — свободные деньги тоже доля */
+/* распределение считаем от ПОЛНОЙ стоимости — свободные деньги тоже доля.
+   q — тихая заливка: одна краска в трёх плотностях вместо трёх цветов */
 var ALLOC = [
-  {n:'Акции',      v:STOCKVAL, c:'#4453ef'},
-  {n:'Облигации',  v:BONDVAL,  c:'#7c8cf8'},
-  {n:'Свободно',   v:CASH,     c:'#cbd5e1'}
+  {n:'Акции',      v:STOCKVAL, c:'#4453ef', q:'rgba(15,23,42,.62)'},
+  {n:'Облигации',  v:BONDVAL,  c:'#7c8cf8', q:'rgba(15,23,42,.30)'},
+  {n:'Свободно',   v:CASH,     c:'#cbd5e1', q:'rgba(15,23,42,.13)'}
 ];
 ALLOC.forEach(function(a){ a.p = a.v / VALUE * 100; });
+/* в тёмной теме та же логика, но краска светлая */
+var ALLOC_D = ALLOC.map(function(a, i){
+  return {n:a.n, v:a.v, p:a.p, c:a.c, q:['rgba(232,238,247,.72)', 'rgba(232,238,247,.34)', 'rgba(232,238,247,.15)'][i]};
+});
 
 HOLD.forEach(function(h){
   h.chg = (h.cur / h.buy - 1) * 100;
@@ -447,7 +478,7 @@ function logo(h){
    лоты, НКД, деньги позиции и срок владения */
 function detailRow(h, cols){
   var span = 4 + (cols.buy ? 1 : 0) + (cols.share ? 1 : 0);
-  var o = '<tr class="pn-det"><td colspan="' + span + '"><div class="pn-det-in">';
+  var o = '<tr class="pn-det' + (cols.plates ? '' : ' bare') + '"><td colspan="' + span + '"><div class="pn-det-in">';
 
   o += '<div><div class="pn-det-h">' + (h.lots.length > 1 ? 'Лоты · ' + h.lots.length : 'Покупка') + '</div>';
   h.lots.forEach(function(l){
@@ -475,8 +506,9 @@ function detailRow(h, cols){
 }
 
 function posRow(h, cols){
-  var o = '<tr' + (cols.open && cols.open[h.tk] ? ' class="open"' : '') + '><td><span class="pn-as">' +
-    '<span class="pn-chev">' + IC.right + '</span>' + logo(h) +
+  var o = '<tr' + (cols.open && cols.open[h.tk] ? ' class="open"' : '') + '><td><span class="pn-as' +
+    (cols.plates ? '' : ' bare') + '">' +
+    '<span class="pn-chev">' + IC.right + '</span>' + (cols.plates ? logo(h) : '') +
     '<span class="t"><span class="tk">' + h.tk + '</span><span class="nm">' + h.nm + '</span></span></span></td>';
   o += '<td class="pn-mut">' + rub(h.qty) + NB + 'шт</td>';
   if (cols.buy) o += '<td class="pn-mut">' + rub(h.buy, 2) + (h.bond ? '%' : NB + '₽') + '</td>';
@@ -496,7 +528,14 @@ function posTable(cols, list){
   o += '<th>Актив</th><th>' + (cols.buy ? 'Кол-во' : 'Кол.') + '</th>' + (cols.buy ? '<th>Цена покупки</th>' : '') +
        '<th>' + (cols.buy ? 'Текущая цена' : 'Цена') + '</th><th>' + (cols.buy ? 'Изменение' : 'Изм.') + '</th>' +
        (cols.share ? '<th>Доля</th>' : '') + '</tr></thead><tbody>';
-  (list || HOLD).forEach(function(h){ o += posRow(h, cols); });
+  var span = 4 + (cols.buy ? 1 : 0) + (cols.share ? 1 : 0), grp = null;
+  (list || HOLD).forEach(function(h){
+    if (cols.groups) {
+      var g = h.bond ? 'Облигации' : 'Акции';
+      if (g !== grp) { grp = g; o += '<tr class="pn-grp"><td colspan="' + span + '">' + g + '</td></tr>'; }
+    }
+    o += posRow(h, cols);
+  });
   return o + '</tbody></table>';
 }
 
@@ -508,12 +547,13 @@ function valHtml(n){
 }
 
 /* ================= распределение ================= */
-function allocBar(parts, showRub){
-  var o = '<div class="pn-alloc"><div class="pn-albar">';
-  parts.forEach(function(a){ o += '<i style="flex:' + a.p.toFixed(2) + ';background:' + a.c + '"></i>'; });
+function allocBar(parts, showRub, quiet){
+  var col = function(a){ return quiet ? a.q : a.c; };
+  var o = '<div class="pn-alloc' + (quiet ? ' q' : '') + '"><div class="pn-albar">';
+  parts.forEach(function(a){ o += '<i style="flex:' + a.p.toFixed(2) + ';background:' + col(a) + '"></i>'; });
   o += '</div><div class="pn-alleg">';
   parts.forEach(function(a){
-    o += '<span><em style="background:' + a.c + '"></em>' + a.n + ' <b>' + pct1(a.p).replace('+', '') + '</b>' +
+    o += '<span><em style="background:' + col(a) + '"></em>' + a.n + ' <b>' + pct1(a.p).replace('+', '') + '</b>' +
          (showRub ? ' <u>' + rub(a.v) + NB + '₽</u>' : '') + '</span>';
   });
   return o + '</div></div>';
@@ -541,7 +581,7 @@ function cardMockup(){
        kpi('Изменение за день', '+' + rub(DAY) + NB + '₽', 'pos') +
        kpi('Изменение за всё время', pct(PNLPCT), 'pos') + '</div>';
   o += '<div class="pn-pos"><div class="pn-pos-h"><h4>Позиции</h4><span class="pn-cnt">6</span></div>' +
-       posTable({buy: true, share: true}) + '</div>';
+       posTable({buy: true, share: true, plates: true}) + '</div>';
   o += '<div class="pn-foot"><span class="pn-btn all">Все позиции ' + IC.right + '</span></div>';
   return o + '</div>';
 }
@@ -580,11 +620,12 @@ function cardWork(opt){
        kpi('За день', '+' + rub(DAY) + NB + '₽', 'pos', pct(DAYPCT) + ' сегодня') + '</div>';
 
   /* распределение — полоса во всю ширину вместо кольца */
-  o += allocBar(ALLOC, !narrow);
+  var quiet = !opt.loud;
+  o += allocBar(opt.dark ? ALLOC_D : ALLOC, !narrow && !quiet, quiet);
 
   /* позиции */
   o += '<div class="pn-pos"><div class="pn-pos-h"><h4>Позиции</h4><span class="pn-cnt">' + HOLD.length + '</span></div>';
-  o += posTable({buy: !narrow, share: true, open: opt.open}, list) + '</div>';
+  o += posTable({buy: !narrow, share: true, open: opt.open, plates: !!opt.plates, groups: !!opt.groups}, list) + '</div>';
 
   /* подвал */
   o += '<div class="pn-foot">';
@@ -771,11 +812,28 @@ document.getElementById('notesOpen').innerHTML =
   '<div class="note"><i>!</i><span><b>Что делать с высотой.</b> Сейчас карточка жёстко 674 px, а прирост съедает внутренний скролл <code>.pfc-massets</code> (<code>max-height:184px</code>). В новой карточке высота свободная, поэтому предлагаю: на «Обзоре» карточка <b>растёт</b> (сетка это допускает), а в блоке конструктора с заданной высотой — прежний внутренний скролл списка. Так раскрытие не ломает ни одну из раскладок.</span></div>' +
   '<div class="note"><i>!</i><span><b>Живое обновление раскрытие не схлопнет.</b> <code>livePatchers.cards</code> правит только <code>data-live</code>-узлы, а полный своп пересобирает разметку из <code>PF.openRows</code> и восстанавливает <code>scrollTop</code> по <code>data-skey</code>. Новым узлам нужны свои ключи <code>pfh:&lt;hid&gt;</code>, иначе цифры в раскрытой части застынут.</span></div>';
 
+document.getElementById('scrQuiet').innerHTML =
+  '<div class="cap">Слева громко: плашки + трёхцветная полоса · справа тихо: одна серая шкала</div>' +
+  '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">' +
+    '<div><div class="demo-t">Было<u>5 цветовых пятен</u></div>' + cardWork({loud: true, plates: true, uid: 'w1'}) + '</div>' +
+    '<div><div class="demo-t">Стало<u>цвет только на знаке дохода и кнопке</u></div>' + cardWork({uid: 'w2'}) + '</div>' +
+  '</div>' +
+  '<div style="margin-top:22px"><div class="demo-t">Третий вариант списка: вместо метки класса — заголовки групп</div>' +
+    '<div style="width:660px">' + cardWork({groups: true, uid: 'w3'}) + '</div></div>' +
+  '<div class="pin" style="left:706px;top:452px">1</div>' +
+  '<div class="pin" style="left:706px;top:376px">2</div>';
+
+document.getElementById('notesQuiet').innerHTML =
+  '<div class="note"><i>1</i><span><b>Плашки убраны — да, гармоничнее.</b> Это были не логотипы, а четыре буквы тикера на цветном квадрате: настоящих логотипов в проекте нет и не будет, CSP режет любой CDN. То есть плашка не опознавала бумагу, а только красила строку. Без неё тикер вышел на первый план (13,5&nbsp;px вместо 13) и в колонке «Актив» освободилось 40&nbsp;px — длинные ISIN облигаций перестали упираться в обрезку.</span></div>' +
+  '<div class="note"><i>2</i><span><b>Полоса тише вчетверо.</b> Высота 8&nbsp;→&nbsp;4&nbsp;px, три цвета заменены одной краской в трёх плотностях (62% / 30% / 13% чернил), проценты в подписи стали не чёрными, а серыми, рубли убраны — они и так есть в KPI «Вложено». Пропорция читается ровно так же, но блок больше не спорит с суммой в герое.</span></div>' +
+  '<div class="note"><i>3</i><span>Что теряется без плашек: мгновенное разделение акций и облигаций по цвету. Компенсируется само собой — у ОФЗ подпись под тикером и так начинается с «ОФЗ», а ISIN ни с чем не спутать. Если этого мало, третий вариант внизу возвращает структуру заголовками групп: такая группировка в коде уже есть — <code>pfMiniTableGroupedHtml</code> (<code>portfolios-cards.js:252</code>), сейчас она работает только в оверлее «весь состав».</span></div>' +
+  '<div class="note"><i>4</i><span>Тёмная тема получает ту же шкалу, но светлой краской (72% / 34% / 15%): прозрачность от <code>--ink</code> в обеих темах даёт одинаковый контраст, а фиксированные серые — нет.</span></div>';
+
 document.getElementById('scr03').innerHTML =
   '<div class="cap">Тёмная тема · и та же карточка в блоке конструктора</div>' +
   '<div style="display:grid;grid-template-columns:660px 380px;gap:24px;align-items:start;justify-content:start">' +
-    '<div>' + cardWork() + '</div>' +
-    '<div>' + cardWork({narrow: true}) + '</div>' +
+    '<div>' + cardWork({dark: true}) + '</div>' +
+    '<div>' + cardWork({narrow: true, dark: true}) + '</div>' +
   '</div>' +
   '<div class="pin" style="left:14px;top:56px">1</div>' +
   '<div class="pin" style="left:703px;top:56px">2</div>';
