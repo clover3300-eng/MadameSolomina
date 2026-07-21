@@ -144,6 +144,44 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .pn-alrow{display:flex;flex-wrap:wrap;gap:4px 16px;padding:0 0 12px;margin-top:-2px}
 .pn-alrow span{font-size:12px;color:var(--mut);white-space:nowrap}
 .pn-alrow b{font-family:var(--fN);font-size:12.5px;font-weight:700;color:var(--ink)}
+/* ---------- краевые состояния ---------- */
+.pn-sk{display:inline-block;border-radius:6px;vertical-align:middle;position:relative;overflow:hidden;
+       background:color-mix(in srgb,var(--ink) 9%,transparent)}
+.pn-sk::after{content:'';position:absolute;inset:0;
+              background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--card) 75%,transparent),transparent);
+              animation:pnsk 1.5s ease-in-out infinite}
+@keyframes pnsk{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+/* тихая плашка-предупреждение над списком */
+.pn-warn{display:flex;gap:9px;align-items:flex-start;margin:0 0 12px;padding:9px 11px;border-radius:10px;
+         background:color-mix(in srgb,var(--amb) 9%,transparent);font-size:11.5px;line-height:1.45;color:var(--mut)}
+.pn-warn b{color:var(--ink);font-weight:600}
+.pn-warn i{font-style:normal;color:var(--amb);font-weight:800;flex:none}
+/* пустые состояния внутри карточки */
+.pn-blank{padding:26px 18px 28px;text-align:center}
+.pn-blank h5{font-family:var(--fT);font-weight:400;font-size:17px;margin-bottom:7px}
+.pn-blank p{font-size:12.5px;line-height:1.55;color:var(--mut);max-width:300px;margin:0 auto 14px}
+.pn-blank .row{display:flex;gap:8px;justify-content:center}
+/* заглушка на месте графика */
+.pn-nochart{height:100%;min-height:96px;border-radius:12px;border:1px dashed var(--line);display:grid;place-items:center;
+            font-size:11.5px;color:var(--dim);text-align:center;padding:0 14px;line-height:1.45}
+/* «—» вместо числа, которого нет */
+.pn-dash{color:var(--dim);font-weight:500}
+.pn-tbl tr.stale td{color:var(--dim)}
+.pn-tbl tr.stale .tk{color:var(--mut)}
+/* пометки в шапке карточки */
+.pn-flag{font-family:var(--fU);font-size:9px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;
+         padding:3px 7px;border-radius:6px;background:color-mix(in srgb,var(--ink) 7%,transparent);color:var(--mut)}
+.pn.dim{opacity:.62}
+.pn-ro{font-size:10.5px;color:var(--dim);padding:2px 0 0}
+.pn-seg b.off{opacity:.35}
+/* «День» без графика: движения бумаг за сегодня */
+.pn-mov{display:flex;flex-direction:column;gap:7px;justify-content:center;height:100%}
+.pn-mov div{display:flex;align-items:baseline;gap:9px;font-size:12px}
+.pn-mov .t{font-family:var(--fN);font-size:12px;font-weight:700;width:52px;flex:none}
+.pn-mov .n{color:var(--dim);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pn-mov .p{font-family:var(--fN);font-size:12px;font-weight:700}
+.pn-mov .p.pos{color:var(--grn)} .pn-mov .p.neg{color:var(--red)}
+
 .demo{display:grid;gap:18px}
 .demo-t{font-size:12px;font-weight:700;color:var(--ink);margin-bottom:4px}
 .demo-t u{text-decoration:none;font-weight:500;color:var(--mut);margin-left:7px}
@@ -375,6 +413,22 @@ tr.open .pn-chev{transform:rotate(90deg);color:var(--mut)}
     <div class="mk-sub">Та же вёрстка на токенах тёмной темы (<code>--pf-gn/--pf-rd</code> уже переопределены в <code>portfolios.css:216</code>) и она же в блоке конструктора <code>pf:&lt;id&gt;</code> шириной в треть: KPI сворачиваются в 2×2, список позиций режется по высоте виджета через <code>pfdRowsFor</code>/ResizeObserver.</div>
     <div class="scroller"><div class="scr dark" id="scr03"></div></div>
     <div class="notes" id="notes03"></div>
+  </section>
+
+  <!-- ================= 08. КРАЕВЫЕ СОСТОЯНИЯ ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">08</span><h2>Шесть состояний, в которых карточка живёт на самом деле</h2><span class="mk-tag warn">без этого нельзя в код</span></div>
+    <div class="mk-sub">Все экраны выше рисуют идеальные условия: шесть позиций, живые котировки, полгода истории. В жизни так не всегда — и первое же состояние, прогрев, пользователь видит при <b>каждой</b> загрузке страницы. Ниже то, чего мокап до сих пор не показывал.</div>
+    <div class="scroller"><div class="scr" id="scrStates"></div></div>
+    <div class="notes" id="notesStates"></div>
+  </section>
+
+  <!-- ================= 09. СЕГМЕНТ «ДЕНЬ» ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">09</span><h2>Сегменту «День» нечем наполниться</h2><span class="mk-tag warn">решение нужно сейчас</span></div>
+    <div class="mk-sub">Переключатель периода я нарисовал раньше, чем проверил данные. Внутридневных точек в проекте нет: <code>chartRaw[pid].series</code> строится по дням из «Теста», <code>snaps</code> — это один снимок стоимости в день. Значит «День» может нарисовать ровно одну точку. Три выхода, из которых я бы взял первый.</div>
+    <div class="scroller"><div class="scr" id="scrDay"></div></div>
+    <div class="notes" id="notesDay"></div>
   </section>
 
 </div>
@@ -717,6 +771,187 @@ function heroDemo(val, uid, narrow){
   return o + '</div>';
 }
 
+/* ================= краевые состояния ================= */
+function sk(w, h){ return '<span class="pn-sk" style="width:' + w + 'px;height:' + h + 'px"></span>'; }
+
+/* шапка карточки, общая для всех состояний */
+function stHead(opt){
+  opt = opt || {};
+  var o = '<div class="pn-top"><div class="pn-name"><em></em>' + (opt.name || 'Портфель 2') + '</div>';
+  if (opt.badge) o += '<span class="pn-badge">' + opt.badge + '</span>';
+  if (opt.flag) o += '<span class="pn-flag">' + opt.flag + '</span>';
+  o += '<div class="pn-top-r"><span class="pn-seg"><b>День</b><b class="on">30д</b><b>Год</b><b>Всё</b></span>' +
+       '<span class="pn-ico">' + IC.gear + '</span></div></div>';
+  return o;
+}
+/* KPI-ячейка, у которой значения ещё/уже нет */
+function kpiSk(k){ return '<div class="pn-kpi"><div class="k">' + k + '</div><div class="v">' + sk(84, 18) +
+  '</div><div class="s">' + sk(58, 11) + '</div></div>'; }
+function kpiDash(k, s){ return '<div class="pn-kpi"><div class="k">' + k + '</div><div class="v pn-dash">—</div>' +
+  '<div class="s">' + (s || '') + '</div></div>'; }
+/* та же шапка таблицы, что у рабочей карточки, — состояния показываем
+   в настоящей ширине, иначе колонки врут */
+function stTableHead(){
+  return '<table class="pn-tbl"><colgroup><col style="width:31%"><col style="width:13%"><col style="width:16%">' +
+         '<col style="width:16%"><col style="width:12%"><col style="width:12%"></colgroup><thead><tr>' +
+         '<th>Актив</th><th>Кол-во</th><th>Средняя</th><th>Сейчас</th><th>Изм.</th><th>Доля</th></tr></thead><tbody>';
+}
+
+function stateCard(kind){
+  var o, i;
+
+  /* 1. ПРОГРЕВ: состав известен из localStorage сразу, цены — нет */
+  if (kind === 'warm') {
+    o = '<div class="pn">' + stHead();
+    o += '<div class="pn-hero"><div><div class="pn-lbl">Стоимость портфеля</div>' +
+         '<div class="pn-val">' + sk(196, 34) + '</div>' +
+         '<div class="pn-delta">' + sk(128, 13) + '</div></div>' +
+         '<div class="pn-spark"><div class="pn-nochart">Загружаем историю</div></div></div>';
+    o += '<div class="pn-kpis" style="grid-template-columns:repeat(4,1fr)">' +
+         kpiSk('Вложено') + kpiSk('Доход') + kpiSk('Доходность') + kpiSk('За день') + '</div>';
+    o += '<div class="pn-alloc q"><div class="pn-albar">' + sk(999, 4) + '</div>' +
+         '<div class="pn-alleg">' + sk(78, 12) + sk(96, 12) + sk(86, 12) + '</div></div>';
+    o += '<div class="pn-pos"><div class="pn-pos-h"><h4>Позиции</h4><span class="pn-cnt">6</span></div>';
+    o += stTableHead();
+    HOLD.slice(0, 4).forEach(function(h){
+      o += '<tr><td><span class="pn-as bare"><span class="pn-chev">' + IC.right + '</span>' +
+           '<span class="t"><span class="tkline"><span class="tk">' + h.tk + '</span></span>' +
+           '<span class="nm">' + h.nm + '</span></span></span></td>' +
+           '<td class="pn-mut">' + rub(h.qty) + NB + 'шт</td>' +
+           '<td class="pn-mut">' + rub(h.buy, 2) + (h.bond ? '%' : NB + '₽') + '</td>' +
+           '<td>' + sk(62, 13) + '</td><td>' + sk(44, 13) + '</td><td>' + sk(40, 13) + '</td></tr>';
+    });
+    o += '</tbody></table></div>';
+    o += '<div class="pn-foot"><span class="pn-btn all" style="flex:1.3">Все позиции ' + IC.right + '</span>' +
+         '<span class="pn-btn pri">' + IC.scale + ' Ребаланс</span></div>';
+    return o + '</div>';
+  }
+
+  /* 2. ПУСТОЙ ПОРТФЕЛЬ */
+  if (kind === 'empty') {
+    o = '<div class="pn">' + stHead({name: 'Новый портфель'});
+    o += '<div class="pn-hero"><div><div class="pn-lbl">Стоимость портфеля</div>' +
+         '<div class="pn-val">0<small>' + NB + '₽</small></div>' +
+         '<div class="pn-delta"><u>пока нечего считать</u></div></div>' +
+         '<div class="pn-spark"><div class="pn-nochart">График появится после первой покупки</div></div></div>';
+    o += '<div class="pn-blank"><h5>В портфеле пока нет бумаг</h5>' +
+         '<p>Добавьте первую покупку вручную или подтяните состав из брокера — тогда появятся и доход, и распределение.</p>' +
+         '<div class="row"><span class="pn-btn pri" style="flex:none;padding:10px 16px">Добавить бумагу</span>' +
+         '<span class="pn-btn" style="flex:none;padding:10px 16px">Импорт из брокера</span></div></div>';
+    return o + '</div>';
+  }
+
+  /* 3. ВСЁ КУПЛЕНО СЕГОДНЯ */
+  if (kind === 'today') {
+    o = '<div class="pn">' + stHead();
+    o += '<div class="pn-hero"><div><div class="pn-lbl">Стоимость портфеля</div>' +
+         valHtml(179382) +
+         '<div class="pn-delta"><span class="pn-dash">—</span><u>куплено сегодня</u></div></div>' +
+         '<div class="pn-spark"><div class="pn-nochart">Кривая появится завтра:<br>нужен хотя бы один закрытый торговый день</div></div></div>';
+    o += '<div class="pn-kpis" style="grid-template-columns:repeat(4,1fr)">' +
+         kpi('Вложено', rub(179382) + NB + '₽', '', '0' + NB + '₽ свободно') +
+         kpi('Доход', '+' + rub(84) + NB + '₽', 'pos', 'за 1 день') +
+         kpiDash('Доходность', 'нужен день') +
+         kpiDash('За день', 'нет вчерашней цены') + '</div>';
+    o += allocBar(ALLOC, false, true);
+    o += '<div class="pn-pos"><div class="pn-pos-h"><h4>Позиции</h4><span class="pn-cnt">6</span></div>' +
+         posTable({buy: true, share: true}, HOLD.slice(0, 3)) + '</div>';
+    return o + '</div>';
+  }
+
+  /* 4. НЕТ КОТИРОВКИ */
+  if (kind === 'noquote') {
+    o = '<div class="pn">' + stHead();
+    o += '<div class="pn-hero"><div><div class="pn-lbl">Стоимость портфеля</div>' +
+         valHtml(VALUE) +
+         '<div class="pn-delta pos">▲' + NB + rub(6411) + NB + '₽ (3,19%)<u>за 30 дней</u></div></div>' +
+         '<div class="pn-spark">' + spark(300, 96, SERIES, '#16a34a', false, 'st4') + '</div></div>';
+    o += '<div class="pn-pos"><div class="pn-warn"><i>!</i><span>По одной бумаге биржа не отдала цену. ' +
+         'Её стоимость считаем <b>по цене покупки</b>, поэтому итог занижен или завышен.</span></div>' +
+         '<div class="pn-pos-h"><h4>Позиции</h4><span class="pn-cnt">6</span></div>';
+    o += stTableHead();
+    o += posRow(HOLD[0], {buy: true, share: true});
+    o += '<tr class="stale"><td><span class="pn-as bare"><span class="pn-chev">' + IC.right + '</span>' +
+         '<span class="t"><span class="tkline"><span class="tk">GAZP</span></span><span class="nm">Газпром</span>' +
+         '</span></span></td><td>160' + NB + 'шт</td><td>83,84' + NB + '₽</td><td class="pn-dash">…</td>' +
+         '<td class="pn-dash">—</td><td class="pn-dash">—</td></tr>';
+    o += posRow(HOLD[3], {buy: true, share: true});
+    o += '</tbody></table></div>';
+    o += '<div class="pn-foot"><span class="pn-btn all" style="flex:1.3">Все позиции ' + IC.right + '</span>' +
+         '<span class="pn-btn pri">' + IC.scale + ' Ребаланс</span></div>';
+    return o + '</div>';
+  }
+
+  /* 5. БРОКЕРСКИЙ, READ-ONLY */
+  if (kind === 'broker') {
+    o = '<div class="pn">' + stHead({name: 'Т-Инвестиции', badge: 'Брокер', flag: 'Только чтение'});
+    o += '<div class="pn-hero"><div><div class="pn-lbl">Стоимость портфеля</div>' + valHtml(VALUE) +
+         '<div class="pn-delta pos">▲' + NB + rub(1508) + NB + '₽ (0,76%)<u>сегодня</u></div></div>' +
+         '<div class="pn-spark">' + spark(300, 96, SERIES, '#16a34a', false, 'st5') + '</div></div>';
+    o += '<div class="pn-pos"><div class="pn-warn"><i>↺</i><span>Состав приходит от брокера и ' +
+         '<b>перезаписывается при каждом обновлении</b>. Ручные правки здесь не сохранятся — ' +
+         'докупку и продажу делайте в «Торговле».</span></div>' +
+         '<div class="pn-pos-h"><h4>Позиции</h4><span class="pn-cnt">6</span></div>' +
+         posTable({buy: true, share: true}, HOLD.slice(0, 3)) + '</div>';
+    o += '<div class="pn-pos" style="padding-top:10px"><div class="pn-ro">Ещё 3 позиции вне трекера — ' +
+         'валюта и фонды, которых нет в справочнике</div></div>';
+    o += '<div class="pn-foot"><span class="pn-btn all" style="flex:1.3">Все позиции ' + IC.right + '</span>' +
+         '<span class="pn-btn">Обновить</span></div>';
+    return o + '</div>';
+  }
+
+  /* 6. СКРЫТЫЙ */
+  o = '<div class="pn dim">' + stHead({flag: 'Скрыт'});
+  o += '<div class="pn-hero"><div><div class="pn-lbl">Стоимость портфеля</div>' + valHtml(VALUE) +
+       '<div class="pn-delta pos">▲' + NB + rub(1508) + NB + '₽ (0,76%)<u>сегодня</u></div></div>' +
+       '<div class="pn-spark">' + spark(300, 96, SERIES, '#16a34a', false, 'st6') + '</div></div>';
+  o += '<div class="pn-pos"><div class="pn-warn"><i>◍</i><span>Портфель скрыт с «Обзора», но ' +
+       '<b>из расчётов не выпал</b>: капитал, «Список портфелей» и аналитика считают его как обычно.</span></div>' +
+       '<div class="pn-pos-h"><h4>Позиции</h4><span class="pn-cnt">6</span></div>' +
+       posTable({buy: true, share: true}, HOLD.slice(0, 3)) + '</div>';
+  o += '<div class="pn-foot"><span class="pn-btn all" style="flex:1.3">Показать на «Обзоре» ' + IC.right + '</span></div>';
+  return o + '</div>';
+}
+
+/* ================= варианты сегмента «День» ================= */
+var MOVERS = [
+  {t:'SBER', n:'Сбербанк', p:1.2}, {t:'GAZP', n:'Газпром', p:2.1}, {t:'LKOH', n:'Лукойл', p:-0.4}
+];
+function daySeg(mode){
+  var b = mode === 'drop' ? '' :
+          mode === 'off'  ? '<b class="off">День</b>' : '<b class="on">День</b>';
+  var rest = mode === 'day' ? '<b>30д</b><b>Год</b><b>Всё</b>' : '<b class="on">30д</b><b>Год</b><b>Всё</b>';
+  return '<span class="pn-seg">' + b + rest + '</span>';
+}
+function dayDemo(mode){
+  var o = '<div class="pn" style="width:100%">';
+  o += '<div class="pn-top"><div class="pn-name"><em></em>Портфель 2</div><div class="pn-top-r">' +
+       daySeg(mode) + '<span class="pn-ico">' + IC.gear + '</span></div></div>';
+  o += '<div class="pn-hero"><div><div class="pn-lbl">Стоимость портфеля</div>' + valHtml(VALUE);
+  if (mode === 'day') {
+    o += '<div class="pn-delta pos">▲' + NB + rub(DAY) + NB + '₽ (' + pct(DAYPCT).replace('+', '') + ')<u>сегодня</u></div>';
+  } else {
+    o += '<div class="pn-delta pos">▲' + NB + rub(6411) + NB + '₽ (3,19%)<u>за 30 дней</u></div>';
+  }
+  o += '</div><div class="pn-spark">';
+  if (mode === 'day') {
+    o += '<div class="pn-mov">';
+    MOVERS.forEach(function(m){
+      o += '<div><span class="t">' + m.t + '</span><span class="n">' + m.n + '</span>' +
+           '<span class="p ' + (m.p >= 0 ? 'pos' : 'neg') + '">' + (m.p >= 0 ? '▲' : '▼') + NB +
+           pct1(m.p).replace('+', '').replace('−', '') + '</span></div>';
+    });
+    o += '</div>';
+  } else {
+    o += spark(300, 96, SERIES, '#16a34a', false, 'dy' + mode);
+  }
+  o += '</div></div>';
+  o += '<div class="pn-kpis" style="grid-template-columns:1fr 1fr">' +
+       kpi('Доходность', pct(PNLPCT), 'pos', pct1(ANNUAL) + ' годовых') +
+       kpi('За день', '+' + rub(DAY) + NB + '₽', 'pos', pct(DAYPCT) + ' сегодня') + '</div>';
+  return o + '</div>';
+}
+
 /* ================= экран 00: как сейчас ================= */
 function cardNow(){
   var o = '<div class="pc">';
@@ -876,6 +1111,39 @@ document.getElementById('notesQuiet').innerHTML =
   '<div class="note"><i>2</i><span><b>Полоса тише вчетверо.</b> Высота 8&nbsp;→&nbsp;4&nbsp;px, три цвета заменены одной краской в трёх плотностях (62% / 30% / 13% чернил), проценты в подписи стали не чёрными, а серыми, рубли убраны — они и так есть в KPI «Вложено». Пропорция читается ровно так же, но блок больше не спорит с суммой в герое.</span></div>' +
   '<div class="note"><i>3</i><span>Что теряется без плашек: мгновенное разделение акций и облигаций по цвету. Компенсируется само собой — у ОФЗ подпись под тикером и так начинается с «ОФЗ», а ISIN ни с чем не спутать. Если этого мало, третий вариант внизу возвращает структуру заголовками групп: такая группировка в коде уже есть — <code>pfMiniTableGroupedHtml</code> (<code>portfolios-cards.js:252</code>), сейчас она работает только в оверлее «весь состав».</span></div>' +
   '<div class="note"><i>4</i><span>Тёмная тема получает ту же шкалу, но светлой краской (72% / 34% / 15%): прозрачность от <code>--ink</code> в обеих темах даёт одинаковый контраст, а фиксированные серые — нет.</span></div>';
+
+document.getElementById('scrStates').innerHTML =
+  '<div class="cap">Шесть состояний · карточка 660 px, как в двухколоночной сетке «Обзора»</div>' +
+  '<div style="display:grid;grid-template-columns:repeat(2,660px);gap:24px;align-items:start;justify-content:start">' +
+    '<div><div class="demo-t">1 · Прогрев котировок<u>видно при каждой загрузке</u></div>' + stateCard('warm') + '</div>' +
+    '<div><div class="demo-t">2 · Портфель пуст<u>сразу после создания</u></div>' + stateCard('empty') + '</div>' +
+    '<div><div class="demo-t">3 · Всё куплено сегодня<u>истории ещё нет</u></div>' + stateCard('today') + '</div>' +
+    '<div><div class="demo-t">4 · Биржа не отдала цену<u>по одной бумаге</u></div>' + stateCard('noquote') + '</div>' +
+    '<div><div class="demo-t">5 · Портфель из брокера<u>только чтение</u></div>' + stateCard('broker') + '</div>' +
+    '<div><div class="demo-t">6 · Скрыт с «Обзора»<u>но считается</u></div>' + stateCard('hidden') + '</div>' +
+  '</div>';
+
+document.getElementById('notesStates').innerHTML =
+  '<div class="note"><i>1</i><span><b>Прогрев — самое частое состояние карточки, и его логика неочевидна.</b> Состав портфеля лежит в localStorage и известен мгновенно, а цены приходят с MOEX. Поэтому тикеры, названия и количество рисуются сразу настоящие, а скелетоны стоят только там, где ждём биржу. Так карточка не «мигает» составом и не создаёт ощущения, что данные потерялись. Механизм в коде есть — <code>pfCardWarming</code> + <code>skelHtml</code> (<code>portfolios-core.js:372</code>).</span></div>' +
+  '<div class="note"><i>2</i><span><b>Пустой портфель обрывается сразу после героя.</b> KPI, полоса и таблица не показываются вовсе: делить на ноль нечего, а четыре прочерка подряд выглядят как поломка. Вместо них — одно объяснение и два входа: вручную и импортом из брокера.</span></div>' +
+  '<div class="note"><i>3</i><span><b>Куплено сегодня.</b> Доход уже есть (цена ушла от цены покупки), а вот доходность и дневное изменение — нет: годовые от одного дня дают бессмыслицу вроде «+3000% годовых», а вчерашнего снимка в <code>snaps</code> ещё не существует. Ставим «—» и говорим словами, чего ждём. Случай в коде уже отдельно распознаётся — <code>pfAllBoughtToday</code>.</span></div>' +
+  '<div class="note"><i>4</i><span><b>Нет котировки.</b> <code>curPriceInfo</code> молча падает на цену покупки, и это опасно: итог выглядит настоящим, но врёт. Строка гасится, «Сейчас» — многоточие, «Изм.» и «Доля» — прочерк, а над списком плашка объясняет, почему сумма в герое неточная. Прочерк честнее нуля: ноль читается как «упало в ноль».</span></div>' +
+  '<div class="note"><i>5</i><span><b>Брокерский портфель.</b> Снапшот перезаписывается при каждом обновлении, поэтому в раскрытии строки не должно быть «Докупки» и «Продать» — они создадут лоты, которые исчезнут при следующей синхронизации. Плюс честная строка про позиции вне трекера: валюту и фонды мы не показываем, но в сумме брокера они есть.</span></div>' +
+  '<div class="note"><i>6</i><span><b>Скрытый портфель.</b> Главное — снять недопонимание: «скрыт» означает только «не показывать карточку на Обзоре», из капитала и аналитики он не выпадает. Сейчас об этом не сказано нигде, и это регулярный источник вопросов «почему сумма не сходится».</span></div>';
+
+document.getElementById('scrDay').innerHTML =
+  '<div class="cap">Один и тот же переключатель в трёх решениях</div>' +
+  '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:start">' +
+    '<div><div class="demo-t">A · «День» убран<u>рекомендую</u></div>' + dayDemo('drop') + '</div>' +
+    '<div><div class="demo-t">B · «День» без графика<u>движения бумаг</u></div>' + dayDemo('day') + '</div>' +
+    '<div><div class="demo-t">C · «День» недоступен<u>до внутридневных данных</u></div>' + dayDemo('off') + '</div>' +
+  '</div>';
+
+document.getElementById('notesDay').innerHTML =
+  '<div class="note"><i>A</i><span><b>Убрать — и ничего не потерять.</b> Дневное изменение уже стоит отдельным KPI «За день» (<code>dayDelta</code>), поэтому сегмент «День» дублировал бы его и при этом рисовал график из одной точки. Остаются 30д&nbsp;/&nbsp;Год&nbsp;/&nbsp;Всё — ровно те периоды, на которые у нас есть кривая. Меньше кнопок и ни одного обещания, которого мы не выполняем.</span></div>' +
+  '<div class="note"><i>B</i><span>Если «День» всё-таки нужен, он должен показывать <b>не график, а движения бумаг за сегодня</b> — это единственные дневные данные, которые у нас есть (<code>quotes[ticker].chgPct</code>, а самое сильное движение уже считает <code>topMover</code>). Честно и полезно, но это второй тип содержимого в одном месте: график на трёх периодах и список на четвёртом.</span></div>' +
+  '<div class="note"><i>C</i><span>Оставить кнопку неактивной — худший из трёх. Она занимает место, привлекает клик и отвечает отказом; «появится позже» в интерфейсе почти всегда означает «не появится».</span></div>' +
+  '<div class="note"><i>!</i><span>То же ограничение стоит помнить для периода «Год» и «Всё» у молодого портфеля: если он живёт 40 дней, кривой за год нет. Правило одно — <b>период, для которого нет данных, не показываем вовсе</b>, а не показываем пустым.</span></div>';
 
 document.getElementById('scr03').innerHTML =
   '<div class="cap">Тёмная тема · и та же карточка в блоке конструктора</div>' +
