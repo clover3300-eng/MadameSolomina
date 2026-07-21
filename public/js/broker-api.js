@@ -37,6 +37,8 @@
     var verifiedThisSession = false;
     var pinPrompt = null;       // регистрирует broker-connect.js: function(attempt) -> Promise<pin|null>
     var pinFails = 0, pinLockUntil = 0;   // кулдаун подбора PIN (5 промахов → 60с паузы)
+    var cooldownUntil = 0;      // 429 от брокера: до этого времени call() отвечает отказом сам
+    var tokenFlight = null;     // single-flight PIN/биометрии: пуллеры не плодят модалки наперегонки
 
     // Режимы взаимодействия — модель на вырост: у Т-Инвестиций переводов
     // в API нет (пополнение/вывод невозможны технически), пункт остаётся
@@ -233,19 +235,26 @@
         if (c.storage === 'passkey') {
             if (memToken) return Promise.resolve(memToken);
             if (!interactive || !c.enc || c.enc.type !== 'passkey') return Promise.resolve(null);
+            // single-flight: параллельные вызовы ждут ОДНУ биометрию, а не зовут свою
+            if (tokenFlight) return tokenFlight;
             // браузер сам покажет Touch ID/Windows Hello; отмена = null
-            return decryptTokenPasskey(c.enc).then(function (tok) {
+            tokenFlight = decryptTokenPasskey(c.enc).then(function (tok) {
+                tokenFlight = null;
                 if (tok == null) { logEvent('passkey_fail', 'биометрия отменена или сбой'); return null; }
                 memToken = tok;
                 fireChange();
                 return tok;
-            });
+            }, function (e) { tokenFlight = null; throw e; });
+            return tokenFlight;
         }
         // storage === 'pin'
         if (memToken) return Promise.resolve(memToken);
         if (!interactive || typeof pinPrompt !== 'function' || !c.enc) return Promise.resolve(null);
         // кулдаун: после пяти неверных PIN — пауза, иначе «блокировка» была бы пустым словом
         if (Date.now() < pinLockUntil) return Promise.resolve(null);
+        // single-flight: после автолока таймеры 2/4/6/15с стартуют почти разом —
+        // без этого каждый вешал бы СВОЮ PIN-модалку поверх предыдущей
+        if (tokenFlight) return tokenFlight;
         var attempt = 0;
         function ask() {
             attempt++;
@@ -271,7 +280,11 @@
                 });
             });
         }
-        return ask();
+        tokenFlight = ask().then(
+            function (t) { tokenFlight = null; return t; },
+            function (e) { tokenFlight = null; throw e; }
+        );
+        return tokenFlight;
     }
     function lock() {
         var c = getConn();
@@ -385,6 +398,12 @@
                 var data = null;
                 try { data = JSON.parse(text); } catch (e) {}
                 if (!res.ok) {
+                    if (res.status === 429) {
+                        // лимит запросов: замолкаем на Retry-After (пробрасывает
+                        // воркер), без него — на консервативные 5 секунд
+                        var ra = parseFloat(res.headers.get('Retry-After'));
+                        cooldownUntil = Date.now() + 1000 * Math.min(60, Math.max(1, isFinite(ra) && ra > 0 ? ra : 5));
+                    }
                     var err = new Error(ruError(res.status, data && data.message));
                     err.status = res.status;
                     err.brokerCode = data && data.code;
@@ -399,10 +418,19 @@
             throw err;
         });
     }
-    function call(method, body) {
+    // opts.interactive === false — вызов из пуллера: PIN/биометрию не зовём,
+    // при запертом токене тихо отказываем (модалку покажет действие пользователя)
+    function call(method, body, opts) {
         var c = getConn();
         if (!c) return Promise.reject(new Error('Брокер не подключён'));
-        return getToken(true).then(function (token) {
+        // после 429 брокер просил паузу — молотить его до её конца бессмысленно
+        if (Date.now() < cooldownUntil) {
+            var err429 = new Error('Лимит запросов брокера — пауза ' +
+                Math.ceil((cooldownUntil - Date.now()) / 1000) + ' с');
+            err429.status = 429;
+            return Promise.reject(err429);
+        }
+        return getToken(!(opts && opts.interactive === false)).then(function (token) {
             if (!token) {
                 var err = new Error(c.storage === 'session'
                     ? 'Сессионный токен закончился — введите токен заново'
@@ -553,7 +581,8 @@
                 var body = p.instrumentUid
                     ? { idType: 'INSTRUMENT_ID_TYPE_UID', id: p.instrumentUid }
                     : { idType: 'INSTRUMENT_ID_TYPE_FIGI', id: p.figi };
-                return call('GetInstrumentBy', body).then(function (data) {
+                // бест-эффорт дорезолв (в т.ч. из пуллеров) — PIN-модалку не зовём
+                return call('GetInstrumentBy', body, { interactive: false }).then(function (data) {
                     var ins = data.instrument || {};
                     cache[p.instrumentUid || p.figi] = {
                         ticker: ins.ticker || '', name: ins.name || '', lot: ins.lot || 1

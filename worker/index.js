@@ -437,10 +437,14 @@ async function handleBrokerProxy(request, url) {
         });
         // тело отдаём как есть (JSON брокера), заголовки — только свои
         var text = await upstream.text();
-        return new Response(text, {
-            status: upstream.status,
-            headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
-        });
+        var respHeaders = { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' };
+        // 429 — исключение из «только свои»: клиент по Retry-After выдерживает
+        // паузу (cooldown в broker-api.js), иначе пуллеры молотят лимит дальше
+        if (upstream.status === 429) {
+            var ra = upstream.headers.get('Retry-After') || upstream.headers.get('x-ratelimit-reset');
+            if (ra) respHeaders['Retry-After'] = ra;
+        }
+        return new Response(text, { status: upstream.status, headers: respHeaders });
     } catch (e) {
         // таймаут или сеть; деталей не раскрываем и ничего не логируем
         return brokerJson({ error: 'upstream_unreachable' }, 502);

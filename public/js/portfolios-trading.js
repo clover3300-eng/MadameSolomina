@@ -107,9 +107,14 @@
         // свежесть данных: с какого момента идёт поллинг (гвард ложной тревоги
         // при возврате на вкладку) и сказали ли уже про обрыв — см. freshTick
         pollSince: 0, linkWarned: false,
+        // тихая протухлость (данные стоят при живом стакане): возраст снимка
+        // заявок, был ли обрыв (второй шанс GetMaxLots) и что уже нарисовано
+        ordTs: 0, wasStale: false, ageKey: '',
         obTimer: null, ordTimer: null, stTimer: null, tapeTimer: null, posTimer: null,
         freshTimer: null
     };
+    // старше этого — считаем снимок заявок/позиций протухшим и говорим об этом
+    var DATA_AGE_MS = 45000;
     // состояние ОДНОЙ бумаги (у каждого слота своё)
     function newSlot() {
         return {
@@ -130,6 +135,8 @@
             searchOpen: true,             // поиск виден, пока бумага не выбрана; дальше — лупой
             tapeOpen: false,              // лента сделок под шевроном, по умолчанию свёрнута
             orderId: null,                // idempotency-ключ текущего подтверждения
+            orderFp: '',                  // параметры попытки, под которые выдан orderId
+            gen: 0,                       // поколение бумаги: clearBook++, опоздавшие ответы отбрасываются
             metaStale: false,             // паспорт из localStorage — обновить с сервера
             max: null,                    // лимиты брокера (GetMaxLots): {buy, sell, ts}
             busy: false                   // идёт отправка заявки ИЗ ЭТОГО слота
@@ -580,6 +587,11 @@
     function clearBook(s) {
         s.ob = null; s.status = null;
         s.obTs = 0; s.obFail = 0; s.obErr = ''; s.linkKey = '';
+        // поколение бумаги: каждый пуллер запоминает его при отправке запроса и
+        // отбрасывает ответ, если бумага сменилась, пока запрос летел. Без этого
+        // опоздавший ответ писал чужой стакан/ленту/лимиты, омолаживал obTs
+        // (ломая гвард выше) и мог ложно сработать алертом по цене СТАРОЙ бумаги.
+        s.gen = (s.gen || 0) + 1;
     }
     // Причина, по которой кнопку жать нельзя. Пусто — можно.
     // Блокируются ОБА вида заявок: у рыночной замершая цена бьёт по деньгам
@@ -1516,7 +1528,9 @@
         var note = c
             ? '<div class="btr-hd-note"><span class="btr-hd-acc">' + esc(c.accountName || 'Счёт') +
                 (accTail() ? ' <b>····' + accTail() + '</b>' : '') +
-                (c.sandbox ? '<i class="btr-sand">песочница</i>' : '') + '</span></div>'
+                (c.sandbox ? '<i class="btr-sand">песочница</i>' : '') + '</span>' +
+                (T.otab === 'pos' ? ageHint(T.port.ts, 'позиции')
+                    : T.otab === 'hist' ? '' : ageHint(T.ordTs, 'заявки')) + '</div>'
             : '';
         // Шеврон сворачивает док: свёрнутый занимает одну строку, и высвободившееся
         // отдаётся верхнему ряду само — высоты в полноэкранном режиме доли, а не
@@ -1613,12 +1627,21 @@
                 '<button type="button" class="btr-posx" onclick="event.stopPropagation();pftPosClose(\'' + jsArg(p.uid) + '\')">закрыть</button>' +
             '</div></div>';
     }
+    // Метка тихой протухлости: стакан может жить, а заявки/позиции — стоять
+    // (их пуллеры глотают ошибки молча). Возраст показываем ТОЛЬКО когда снимок
+    // старше DATA_AGE_MS — вечнозелёная подпись «обновлено» стала бы шумом.
+    function ageHint(ts, word) {
+        if (!ts || Date.now() - ts < DATA_AGE_MS) return '';
+        return '<i class="btr-hd-age" title="Данные не обновляются — показан последний успешный снимок">' +
+            word + ' от ' + new Date(ts).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) + '</i>';
+    }
     function posCardHtml() {
         var c = conn();
         var note = c
             ? '<div class="btr-hd-note"><span class="btr-hd-acc">' + esc(c.accountName || 'Счёт') +
                 (accTail() ? ' <b>····' + accTail() + '</b>' : '') +
-                (c.sandbox ? '<i class="btr-sand">песочница</i>' : '') + '</span></div>'
+                (c.sandbox ? '<i class="btr-sand">песочница</i>' : '') + '</span>' +
+                ageHint(T.port.ts, 'позиции') + '</div>'
             : '';
         var head = PF.pfCardHead('', 'Позиции', null, PF.pfdInChromeHtml('trade:pos') + note);
         return head + posBodyHtml();
@@ -1705,7 +1728,7 @@
         // полосе постоянно). Иначе запрос никому не нужен — а стоит он столько же.
         if (!awake() || (!posCardEl() && T.otab !== 'pos' && !fsOn())) return;
         var c = conn(); if (!c) return;
-        A().call('GetPortfolio', { accountId: c.accountId }).then(function (d) {
+        A().call('GetPortfolio', { accountId: c.accountId }, { interactive: false }).then(function (d) {
             var q2n = A().q2n;
             var out = [], need = [];
             (d.positions || []).forEach(function (p) {
@@ -1818,6 +1841,21 @@
             repaintTicketBits(n);   // кнопка называет причину и перестаёт нажиматься
             fsRepaintBits();        // и точка связи в полосе — из того же факта
         });
+        // Связь вернулась после обрыва: GetMaxLots мог выключиться НАВСЕГДА из-за
+        // двух сетевых чихов (maxLotsOff) — обрыв не приговор методу, даём второй
+        // шанс. Отказы самого метода (права, песочница) сюда не попадают: без
+        // обрыва wasStale не взводится, и off остаётся выключенным честно.
+        if (anyStale) T.wasStale = true;
+        else if (T.wasStale) {
+            T.wasStale = false;
+            if (maxLotsOff || maxLotsFails) { maxLotsOff = false; maxLotsFails = 0; pollMaxLots(); }
+        }
+        // Заявки/позиции могли протухнуть ТИХО при живом стакане (их пуллеры
+        // глотают ошибки): следим за возрастом снимков и перерисовываем шапки
+        // на переходах — там появляется метка «заявки от чч:мм».
+        var ageKey = (T.ordTs && Date.now() - T.ordTs > DATA_AGE_MS ? 'o' : '') +
+            (T.port.ts && Date.now() - T.port.ts > DATA_AGE_MS ? 'p' : '');
+        if (ageKey !== T.ageKey) { T.ageKey = ageKey; repaintOrders(); repaintPos(); }
         // Обрыв связи — ОДНО событие, а не четыре по числу слотов: флаг общий.
         // Говорим по разу на переход, иначе тост повторялся бы каждую секунду.
         // Гвард pollSince: сразу после возврата на вкладку данные ЗАКОННО стары
@@ -1971,15 +2009,24 @@
     function alive() { return stillHere(); }
     var BG_MS = 20000;
     var obAsk = OB_MAX;   // сколько уровней просим у брокера (см. catch ниже)
+    // опоздавший ответ пуллера принимаем только для ТОЙ ЖЕ бумаги того же
+    // поколения (см. clearBook); pftDropSlot подменяет сам объект слота —
+    // поэтому сверяем свежий S(n), а не замкнутый s
+    function slotAlive(n, u0, g0) {
+        var s = S(n);
+        return s.uid === u0 && (s.gen || 0) === g0 ? s : null;
+    }
     function pollOb() {
         if (!awake()) return;
         liveSlots().forEach(function (n) {
             var s = S(n);
             if (!s.uid) return;
-            A().call('GetOrderBook', { instrumentId: s.uid, depth: obAsk }).then(function (d) {
-                s.ob = d;
-                s.obTs = Date.now(); s.obFail = 0; s.obErr = '';   // отсчёт свежести — только отсюда
-                checkAlerts(s);   // цена пересекла порог — сказать об этом
+            var u0 = s.uid, g0 = s.gen || 0;
+            A().call('GetOrderBook', { instrumentId: s.uid, depth: obAsk }, { interactive: false }).then(function (d) {
+                var s2 = slotAlive(n, u0, g0); if (!s2) return;   // бумага уже другая
+                s2.ob = d;
+                s2.obTs = Date.now(); s2.obFail = 0; s2.obErr = '';   // отсчёт свежести — только отсюда
+                checkAlerts(s2);   // цена пересекла порог — сказать об этом
                 repaintOb(n);
                 repaintWarns(n);
                 repaintTicketBits(n);
@@ -1990,12 +2037,13 @@
                 // молчаливый catch оставил бы стакан пустым навсегда. Один раз
                 // откатываемся на проверенные 10 и больше с запасом не просим.
                 if (obAsk > OB_DEPTH) obAsk = OB_DEPTH;
+                var s2 = slotAlive(n, u0, g0); if (!s2) return;   // отказ чужой бумаги не считаем
                 // Отказ стакана — единственная ошибка поллинга, которую терминал
                 // обязан ПОКАЗАТЬ: на этих ценах считаются деньги. Стакан при этом
                 // не стираем (полезно видеть, какой была картина) — его пометит
                 // freshTick, когда последний успех протухнет.
-                s.obFail++;
-                s.obErr = (e && e.message) || 'Брокер не ответил';
+                s2.obFail++;
+                s2.obErr = (e && e.message) || 'Брокер не ответил';
                 freshTick();
             });
         });
@@ -2006,13 +2054,14 @@
         if (bg ? !alive() : !awake()) return;
         var c = conn(); if (!c) return;
         Promise.all([
-            A().call('GetOrders', { accountId: c.accountId }),
-            A().call('GetStopOrders', { accountId: c.accountId }).catch(function () { return { stopOrders: T.stops }; })
+            A().call('GetOrders', { accountId: c.accountId }, { interactive: false }),
+            A().call('GetStopOrders', { accountId: c.accountId }, { interactive: false }).catch(function () { return { stopOrders: T.stops }; })
         ]).then(function (rs) {
             T.orders = (rs[0].orders || []).filter(function (o) {
                 return ['EXECUTION_REPORT_STATUS_NEW', 'EXECUTION_REPORT_STATUS_PARTIALLYFILL'].indexOf(o.executionReportStatus) !== -1;
             });
             T.stops = rs[1].stopOrders || [];
+            T.ordTs = Date.now();   // возраст снимка — для метки протухлости в доке
             // тикеры заявок — дорезолвим в память
             if (!bg) {
                 T.orders.concat(T.stops).forEach(function (o) {
@@ -2036,7 +2085,7 @@
         var uids = [];
         ALERTS.forEach(function (a) { if (uids.indexOf(a.uid) < 0) uids.push(a.uid); });
         if (!uids.length) return;
-        A().call('GetLastPrices', { instrumentId: uids }).then(function (d) {
+        A().call('GetLastPrices', { instrumentId: uids }, { interactive: false }).then(function (d) {
             var q2n = A().q2n;
             (d.lastPrices || []).forEach(function (lp) {
                 var uid = lp.instrumentUid || lp.figi;
@@ -2091,7 +2140,7 @@
     }
     function resolveFate(orderId, was) {
         var c = conn(); if (!c) return;
-        A().call('GetOrderState', { accountId: c.accountId, orderId: orderId }).then(function (o) {
+        A().call('GetOrderState', { accountId: c.accountId, orderId: orderId }, { interactive: false }).then(function (o) {
             var ins = instrMem[o.instrumentUid] || instrMem[(was || {}).instrumentUid] || {};
             var tk = ins.ticker || '';
             var buy = o.direction === 'ORDER_DIRECTION_BUY';
@@ -2251,7 +2300,7 @@
     function pollPos() {
         if (!awake()) return;
         var c = conn(); if (!c) return;
-        A().call('GetPositions', { accountId: c.accountId }).then(function (d) {
+        A().call('GetPositions', { accountId: c.accountId }, { interactive: false }).then(function (d) {
             var q2n = A().q2n;
             var rub = (d.money || []).filter(function (m) {
                 return String(m.currency || '').toLowerCase() === 'rub';
@@ -2285,20 +2334,23 @@
             var body = { accountId: c.accountId, instrumentId: s.uid };
             var px = s.kind === 'limit' ? +s.price : 0;
             if (px > 0) body.price = A().n2q(px);
-            A().call('GetMaxLots', body).then(function (d) {
+            var u0 = s.uid, g0 = s.gen || 0;
+            A().call('GetMaxLots', body, { interactive: false }).then(function (d) {
+                var s2 = slotAlive(n, u0, g0); if (!s2) return;   // лимиты чужой бумаги
                 maxLotsFails = 0;
                 var bl = d.buyLimits || {}, sl = d.sellLimits || {};
                 // берём лимиты СВОИХ средств, не маржинальные: «доступно» должно
                 // означать «на свои», иначе кнопка молча предлагает влезть в долг
-                s.max = {
+                s2.max = {
                     buy: Math.max(0, Math.floor(+bl.buyMaxLots || 0)),
                     sell: Math.max(0, Math.floor(+sl.sellMaxLots || 0)),
                     ts: Date.now()
                 };
                 repaintTicketBits(n);
             }).catch(function () {
+                var s2 = slotAlive(n, u0, g0); if (!s2) return;   // и отказ тоже не её
                 if (++maxLotsFails >= 2) maxLotsOff = true;
-                s.max = null;
+                s2.max = null;
                 repaintTicketBits(n);
             });
         });
@@ -2312,16 +2364,18 @@
             var s = S(n);
             if (!s.uid || (!s.tapeOpen && !fsOn())) return;   // в фокусе лента видна всегда
             var now = Date.now();
+            var u0 = s.uid, g0 = s.gen || 0;
             A().call('GetLastTrades', {
                 instrumentId: s.uid,
                 from: new Date(now - 15 * 60000).toISOString(),
                 to: new Date(now).toISOString()
-            }).then(function (d) {
-                s.tape = (d.trades || []).slice(-12).reverse();
+            }, { interactive: false }).then(function (d) {
+                var s2 = slotAlive(n, u0, g0); if (!s2) return;
+                s2.tape = (d.trades || []).slice(-12).reverse();
                 var el = dqs('Tape', n);
-                if (el) el.innerHTML = tapeHtml(s);
+                if (el) el.innerHTML = tapeHtml(s2);
                 var cnt = dqs('TapeCnt', n);
-                if (cnt) cnt.textContent = tapeCnt(s);
+                if (cnt) cnt.textContent = tapeCnt(s2);
             }).catch(function () {});
         });
     }
@@ -2394,16 +2448,19 @@
         liveSlots().forEach(function (n) {
             var s = S(n);
             if (!s.uid) return;
-            A().call('GetTradingStatus', { instrumentId: s.uid }).then(function (d) {
-                s.status = d;
+            var u0 = s.uid, g0 = s.gen || 0;
+            A().call('GetTradingStatus', { instrumentId: s.uid }, { interactive: false }).then(function (d) {
+                var s2 = slotAlive(n, u0, g0); if (!s2) return;
+                s2.status = d;
                 repaintWarns(n);
                 var el = dqs('Instr', n);
-                if (el && s.meta) el.innerHTML = instrHtml(s, n);
+                if (el && s2.meta) el.innerHTML = instrHtml(s2, n);
             }).catch(function () {});
         });
     }
     function fetchMeta(uid, quiet) {
-        return A().call('GetInstrumentBy', { idType: 'INSTRUMENT_ID_TYPE_UID', id: uid }).then(function (d) {
+        // quiet = дорезолв из пуллера заявок: PIN-модалку звать не имеет права
+        return A().call('GetInstrumentBy', { idType: 'INSTRUMENT_ID_TYPE_UID', id: uid }, quiet ? { interactive: false } : undefined).then(function (d) {
             var i = d.instrument || {};
             instrMem[uid] = {
                 uid: uid, ticker: i.ticker || '', name: i.name || '', figi: i.figi || '',
@@ -2438,6 +2495,12 @@
 
     // ---------- таймеры ----------
     function startPolling() {
+        // Зовётся из КАЖДОГО цикла рендера (pftAfterRender), в том числе с
+        // фонового тика котировок. Таймеры от повтора защищены, но «чистый
+        // лист» и стартовый залп из 7 запросов — только когда поллинг реально
+        // начинается: иначе каждый ре-рендер сбрасывал гвард тоста (и «связь
+        // потеряна» повторялась заново), а залп дёргал брокера впустую.
+        var fresh = !T.obTimer;
         if (!T.obTimer) T.obTimer = setInterval(pollOb, 2000);
         if (!T.ordTimer) T.ordTimer = setInterval(pollOrders, 6000);
         if (!T.stTimer) T.stTimer = setInterval(pollStatus, 30000);
@@ -2449,13 +2512,15 @@
         if (!T.freshTimer) T.freshTimer = setInterval(freshTick, 1000);
         // каждый заход в терминал начинается с чистого листа: иначе тревога,
         // взведённая в прошлый раз, отзовётся «связь восстановлена» на пустом месте
-        T.pollSince = Date.now();
-        T.linkWarned = false;
+        if (fresh) {
+            T.pollSince = Date.now();
+            T.linkWarned = false;
+        }
         // фоновый такт живёт рядом с обычными и сам пропускает ходы, пока
         // вкладка на экране: так он уже на месте, когда с неё уходят
         startBg();
         refreshStaleMeta();
-        pollOb(); pollOrders(); pollStatus(); pollTape(); pollPos(); pollMaxLots(); pollPortfolio();
+        if (fresh) { pollOb(); pollOrders(); pollStatus(); pollTape(); pollPos(); pollMaxLots(); pollPortfolio(); }
     }
     function stopPolling() {
         clearInterval(T.obTimer); clearInterval(T.ordTimer); clearInterval(T.stTimer);
@@ -2799,6 +2864,16 @@
     }
 
     // подтверждение заявки: своя модалка (pfConfirm не умеет ввод суммы)
+    function genOrderId() {
+        return crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2);
+    }
+    // Idempotency-ключ живёт, пока не изменились ПАРАМЕТРЫ попытки. Повис
+    // запрос (fetch у брокера без таймаута) → пользователь жмёт ещё раз →
+    // та же заявка уходит с ТЕМ ЖЕ ключом, и брокер сам гасит дубль. Новый
+    // ключ — только под новые параметры; успех обнуляет (submitOrder).
+    function ensureOrderId(s, fp) {
+        if (!s.orderId || s.orderFp !== fp) { s.orderId = genOrderId(); s.orderFp = fp; }
+    }
     window.pftAsk = function (n) {
         n = slotNo(n);
         var s = S(n);
@@ -2886,7 +2961,7 @@
         var est = s.kind === 'limit' ? price
             : (s.kind === 'stop' ? (stopLimit > 0 ? stopLimit : stopPrice) : estPrice(s));
         var sum = est * shares;
-        s.orderId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
+        ensureOrderId(s, [s.uid, s.side, s.kind, s.stopKind, s.tif, lots, price, stopPrice, stopLimit, protSl, protTp].join('|'));
         var needType = sum >= sumLimit();
         var typed = Math.round(sum);
         var c = conn();
@@ -3143,7 +3218,7 @@
             A().call('ReplaceOrder', {
                 accountId: c.accountId,
                 orderId: orderId,
-                idempotencyKey: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2)),
+                idempotencyKey: genOrderId(),
                 quantity: String(left),
                 price: A().n2q(snapped),
                 priceType: 'PRICE_TYPE_CURRENCY'
@@ -3813,7 +3888,7 @@
             from: new Date(now - p[3] * 86400000).toISOString(),
             to: new Date(now).toISOString(),
             interval: p[2]
-        }).then(function (d) {
+        }, { interactive: false }).then(function (d) {
             var q2n = A().q2n;
             sxCandles[key] = ((d && d.candles) || []).map(function (c) {
                 return { t: Date.parse(c.time), v: q2n(c.close) };
@@ -4136,7 +4211,7 @@
         if (vel > 0) { toast('Пауза после ' + VEL_MAX + ' заявок подряд — ещё ' + Math.ceil(vel / 1000) + ' с', true); return; }
         s.lots = c.lots;
         s.kind = 'market';   // «купить сейчас» — это рыночная заявка
-        s.orderId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
+        ensureOrderId(s, ['sx', s.uid, s.side, c.lots].join('|'));
         saveSlots();
         sxConfirm(n, s, c, buy);
     };
