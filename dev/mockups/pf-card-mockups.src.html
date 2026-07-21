@@ -98,17 +98,46 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .pn-ico{width:28px;height:28px;border-radius:9px;border:1px solid var(--line);display:grid;place-items:center;color:var(--dim)}
 .pn-ico svg{width:14px;height:14px}
 
-/* герой */
-.pn-hero{padding:14px 18px 16px;display:grid;grid-template-columns:minmax(190px,auto) 1fr;gap:18px;align-items:center}
+/* герой — суммa и график живут в двух колонках фиксированной доли, чтобы
+   длинное число НИКОГДА не отжимало график, а только меняло свой кегль */
+.pn-hero{padding:16px 18px 20px;display:grid;grid-template-columns:46% 1fr;gap:20px;align-items:center}
 .pn-lbl{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--dim)}
-.pn-val{font-family:var(--fN);font-weight:700;font-size:38px;letter-spacing:-.02em;line-height:1.05;margin-top:7px;
-        font-variant-numeric:tabular-nums}
-.pn-val small{font-size:24px;font-weight:600;color:var(--mut);margin-left:2px}
-.pn-delta{margin-top:8px;font-family:var(--fN);font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.pn-val{font-family:var(--fN);font-weight:700;font-size:38px;letter-spacing:-.02em;line-height:1.05;margin-top:9px;
+        font-variant-numeric:tabular-nums;white-space:nowrap}
+.pn-val small{font-size:.63em;font-weight:600;color:var(--mut);margin-left:.06em}
+/* ступени кегля по длине числа: до 7 знаков — 38, до 10 — 30, дальше — 25 */
+.pn-val.l10{font-size:30px} .pn-val.l13{font-size:25px;letter-spacing:-.03em}
+.pn-delta{margin-top:10px;font-family:var(--fN);font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
 .pn-delta.pos{color:var(--grn)} .pn-delta.neg{color:var(--red)}
 .pn-delta u{text-decoration:none;font-family:var(--fU);font-weight:500;color:var(--mut);font-size:12px}
-.pn-spark{position:relative;height:104px}
+.pn-spark{position:relative;height:148px}
 .pn-spark svg{display:block;width:100%;height:100%;overflow:visible}
+
+/* распределение — полоса-стек во всю ширину */
+.pn-alloc{padding:14px 18px 15px;border-bottom:1px solid var(--hair)}
+.pn-albar{display:flex;gap:3px;height:8px;margin-bottom:9px}
+.pn-albar i{display:block;border-radius:3px;transition:none}
+.pn-alleg{display:flex;flex-wrap:wrap;gap:5px 18px;align-items:baseline}
+.pn-alleg span{display:inline-flex;align-items:baseline;gap:7px;font-size:12px;color:var(--mut);white-space:nowrap}
+.pn-alleg em{font-style:normal;width:8px;height:8px;border-radius:3px;align-self:center;flex:none}
+.pn-alleg b{font-family:var(--fN);font-size:12.5px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.pn-alleg u{text-decoration:none;font-family:var(--fN);font-size:11.5px;color:var(--dim)}
+.pn-alt{margin-left:auto;font-size:11px;color:var(--dim)}
+/* «как прислан» — исходные, более плоские пропорции героя */
+.pn.flat .pn-hero{padding:14px 18px 16px;grid-template-columns:minmax(190px,auto) 1fr;gap:18px}
+.pn.flat .pn-spark{height:104px}
+/* распределение, вариант B — в шапке списка */
+.pn-alsm{display:flex;align-items:center;gap:9px}
+.pn-alsm .b{display:flex;gap:2px;width:64px;height:6px}
+.pn-alsm .b i{display:block;border-radius:2px}
+.pn-alsm .t{font-family:var(--fN);font-size:11px;font-weight:600;color:var(--mut);white-space:nowrap}
+/* распределение, вариант C — строкой, без графики */
+.pn-alrow{display:flex;flex-wrap:wrap;gap:4px 16px;padding:0 0 12px;margin-top:-2px}
+.pn-alrow span{font-size:12px;color:var(--mut);white-space:nowrap}
+.pn-alrow b{font-family:var(--fN);font-size:12.5px;font-weight:700;color:var(--ink)}
+.demo{display:grid;gap:18px}
+.demo-t{font-size:12px;font-weight:700;color:var(--ink);margin-bottom:4px}
+.demo-t u{text-decoration:none;font-weight:500;color:var(--mut);margin-left:7px}
 
 /* KPI-полоса */
 .pn-kpis{display:grid;background:color-mix(in srgb,var(--ink) 3%,transparent);border-top:1px solid var(--hair);
@@ -185,9 +214,13 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .pc-tbl td:first-child{text-align:left}
 
 /* виджет-вариант (узкая колонка конструктора) */
-.pn.narrow .pn-hero{grid-template-columns:1fr;gap:10px}
+.pn.narrow .pn-hero{grid-template-columns:1fr;gap:12px}
 .pn.narrow .pn-val{font-size:30px}
-.pn.narrow .pn-spark{height:74px}
+.pn.narrow .pn-val.l10{font-size:26px} .pn.narrow .pn-val.l13{font-size:21px}
+.pn.narrow .pn-spark{height:96px}
+.pn.narrow .pn-alloc{padding:12px 18px}
+.pn.narrow .pn-alleg{gap:4px 12px}
+.pn.narrow .pn-alleg span{font-size:11.5px}
 .pn.narrow .pn-kpis{grid-template-columns:1fr 1fr;gap:12px 14px}
 .pn.narrow .pn-kpi .v{font-size:16px}
 .pn.narrow .pn-top{gap:6px}
@@ -236,15 +269,31 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   <!-- ================= 02. РАБОЧИЙ ВАРИАНТ ================= -->
   <section class="mk">
     <div class="mk-h"><span class="mk-n">02</span><h2>Рабочий вариант</h2><span class="mk-tag">рекомендую</span></div>
-    <div class="mk-sub">Тот же макет, но четыре KPI больше не повторяют друг друга, период переключает и график, и дельту, а вернувшиеся из старой карточки вещи (кольцо «акции/облигации», меню, скрытие, кнопка ребаланса) живут в шапке и подвале, не воруя место у главного.</div>
+    <div class="mk-sub">Тот же макет, но четыре KPI больше не повторяют друг друга, период переключает и график, и дельту, распределение стало полосой во всю ширину, а вернувшиеся из старой карточки вещи (меню, скрытие, кнопка ребаланса) живут в шапке и подвале, не воруя место у главного.</div>
     <div class="scroller"><div class="scr" id="scr02"></div></div>
     <div class="notes" id="notes02"></div>
     <table class="map" id="mapTbl"></table>
   </section>
 
-  <!-- ================= 03. ТЁМНАЯ + ВИДЖЕТ ================= -->
+  <!-- ================= 03. РАСПРЕДЕЛЕНИЕ ================= -->
   <section class="mk">
-    <div class="mk-h"><span class="mk-n">03</span><h2>Тёмная тема и узкая колонка</h2><span class="mk-tag mute">проверка на прочность</span></div>
+    <div class="mk-h"><span class="mk-n">03</span><h2>Распределение — три варианта</h2><span class="mk-tag warn">выбрать один</span></div>
+    <div class="mk-sub">Кольцо в шапке списка выглядело инородно: 30&nbsp;px — слишком мало, чтобы читаться как график, и слишком много, чтобы быть значком. Плюс оно считало доли от одних только бумаг и молчало про свободные деньги. Ниже три замены; в экране&nbsp;02 уже стоит вариант&nbsp;A.</div>
+    <div class="scroller"><div class="scr" id="scrAlloc"></div></div>
+    <div class="notes" id="notesAlloc"></div>
+  </section>
+
+  <!-- ================= 04. КРУПНЫЕ СУММЫ ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">04</span><h2>Влезет ли миллиард</h2><span class="mk-tag">проверка</span></div>
+    <div class="mk-sub">Колонки героя заданы долей (46%&nbsp;/&nbsp;остаток), а не содержимым, — поэтому длинное число не может отжать график, оно только меняет собственный кегль. Три ступени по числу цифр: до&nbsp;7 — 38&nbsp;px, 8–10 — 30&nbsp;px, 11 и больше — 25&nbsp;px. Миллиард попадает во вторую ступень и занимает 249&nbsp;px из 286 доступных — с запасом. Справа то же самое в узком блоке конструктора.</div>
+    <div class="scroller"><div class="scr" id="scrBig"></div></div>
+    <div class="notes" id="notesBig"></div>
+  </section>
+
+  <!-- ================= 05. ТЁМНАЯ + ВИДЖЕТ ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">05</span><h2>Тёмная тема и узкая колонка</h2><span class="mk-tag mute">проверка на прочность</span></div>
     <div class="mk-sub">Та же вёрстка на токенах тёмной темы (<code>--pf-gn/--pf-rd</code> уже переопределены в <code>portfolios.css:216</code>) и она же в блоке конструктора <code>pf:&lt;id&gt;</code> шириной в треть: KPI сворачиваются в 2×2, список позиций режется по высоте виджета через <code>pfdRowsFor</code>/ResizeObserver.</div>
     <div class="scroller"><div class="scr dark" id="scr03"></div></div>
     <div class="notes" id="notes03"></div>
@@ -281,6 +330,14 @@ var PNLPCT = PNL / INVEST * 100;  // 5,56
 var ANNUAL = 14.2;                // c.annual, CAGR
 var DAY    = 1508, DAYPCT = 0.76; // dayDelta(p, value)
 var BONDVAL = 10149 + 8164 + 7050, STOCKVAL = POSVAL - BONDVAL;
+
+/* распределение считаем от ПОЛНОЙ стоимости — свободные деньги тоже доля */
+var ALLOC = [
+  {n:'Акции',      v:STOCKVAL, c:'#4453ef'},
+  {n:'Облигации',  v:BONDVAL,  c:'#7c8cf8'},
+  {n:'Свободно',   v:CASH,     c:'#cbd5e1'}
+];
+ALLOC.forEach(function(a){ a.p = a.v / VALUE * 100; });
 
 HOLD.forEach(function(h){
   h.chg = (h.cur / h.buy - 1) * 100;
@@ -355,7 +412,7 @@ function posRow(h, cols){
   return o + '</tr>';
 }
 function posTable(cols, list){
-  var w = cols.buy ? ['34%', '13%', '15%', '15%', '12%', '11%'] : ['40%', '15%', '', '21%', '13%', '11%'];
+  var w = cols.buy ? ['34%', '13%', '15%', '15%', '12%', '11%'] : ['32%', '13%', '', '25%', '15%', '15%'];
   var o = '<table class="pn-tbl"><colgroup><col style="width:' + w[0] + '"><col style="width:' + w[1] + '">' +
     (cols.buy ? '<col style="width:' + w[2] + '">' : '') + '<col style="width:' + w[3] + '"><col style="width:' + w[4] + '">' +
     (cols.share ? '<col style="width:' + w[5] + '">' : '') + '</colgroup><thead><tr>';
@@ -366,6 +423,25 @@ function posTable(cols, list){
   return o + '</tbody></table>';
 }
 
+/* ================= сумма: ступень кегля по длине ================= */
+function valHtml(n){
+  var s = rub(n), digits = s.replace(/\D/g, '').length;
+  var cls = digits > 10 ? ' l13' : digits > 7 ? ' l10' : '';
+  return '<div class="pn-val' + cls + '">' + s + '<small>' + NB + '₽</small></div>';
+}
+
+/* ================= распределение ================= */
+function allocBar(parts, showRub){
+  var o = '<div class="pn-alloc"><div class="pn-albar">';
+  parts.forEach(function(a){ o += '<i style="flex:' + a.p.toFixed(2) + ';background:' + a.c + '"></i>'; });
+  o += '</div><div class="pn-alleg">';
+  parts.forEach(function(a){
+    o += '<span><em style="background:' + a.c + '"></em>' + a.n + ' <b>' + pct1(a.p).replace('+', '') + '</b>' +
+         (showRub ? ' <u>' + rub(a.v) + NB + '₽</u>' : '') + '</span>';
+  });
+  return o + '</div></div>';
+}
+
 /* ================= KPI ================= */
 function kpi(k, v, cls, s){
   return '<div class="pn-kpi"><div class="k">' + k + '</div><div class="v' + (cls ? ' ' + cls : '') + '">' + v + '</div>' +
@@ -374,7 +450,7 @@ function kpi(k, v, cls, s){
 
 /* ================= карточка по макету (01) ================= */
 function cardMockup(){
-  var o = '<div class="pn">';
+  var o = '<div class="pn flat">';
   o += '<div class="pn-top"><div class="pn-name"><em></em>Портфель 2</div>' +
        '<div class="pn-top-r"><span class="pn-per">За сегодня ' + IC.chev + '</span></div></div>';
   o += '<div class="pn-hero"><div><div class="pn-lbl">Стоимость портфеля</div>' +
@@ -397,6 +473,7 @@ function cardMockup(){
 function cardWork(opt){
   opt = opt || {};
   var narrow = !!opt.narrow;
+  var val = opt.value == null ? VALUE : opt.value;
   var list = narrow ? HOLD.slice(0, 3) : HOLD;
   var o = '<div class="pn' + (narrow ? ' narrow' : '') + '">';
 
@@ -413,10 +490,10 @@ function cardWork(opt){
 
   /* герой */
   o += '<div class="pn-hero"><div><div class="pn-lbl">Стоимость портфеля</div>' +
-       '<div class="pn-val">' + rub(VALUE) + '<small>' + NB + '₽</small></div>' +
-       '<div class="pn-delta pos">▲' + NB + rub(6420) + NB + '₽ (' + pct(3.30).replace('+', '') + ')' +
+       valHtml(val) +
+       '<div class="pn-delta pos">▲' + NB + rub(Math.round(val * 0.0319)) + NB + '₽ (' + pct(3.19).replace('+', '') + ')' +
        '<u>за 30 дней</u></div></div>' +
-       '<div class="pn-spark">' + spark(narrow ? 300 : 420, narrow ? 74 : 104, SERIES, '#16a34a', !narrow, narrow ? 'c' : 'b') + '</div></div>';
+       '<div class="pn-spark">' + spark(narrow ? 300 : 420, narrow ? 96 : 148, SERIES, '#16a34a', !narrow, opt.uid || (narrow ? 'c' : 'b')) + '</div></div>';
 
   /* KPI — четыре разных числа */
   o += '<div class="pn-kpis" style="grid-template-columns:repeat(' + (narrow ? 2 : 4) + ',1fr)">' +
@@ -425,13 +502,11 @@ function cardWork(opt){
        kpi('Доходность', pct(PNLPCT), 'pos', pct1(ANNUAL).replace('+', '+') + ' годовых') +
        kpi('За день', '+' + rub(DAY) + NB + '₽', 'pos', pct(DAYPCT) + ' сегодня') + '</div>';
 
+  /* распределение — полоса во всю ширину вместо кольца */
+  o += allocBar(ALLOC, !narrow);
+
   /* позиции */
-  o += '<div class="pn-pos"><div class="pn-pos-h"><h4>Позиции</h4><span class="pn-cnt">' + HOLD.length + '</span>';
-  o += '<span class="r">' + (narrow ? '' :
-       '<span class="pn-ring">' + ring(30, 7, [{v: STOCKVAL / POSVAL * 100, c: '#4453ef'}, {v: BONDVAL / POSVAL * 100, c: '#94a3b8'}]) +
-       '<span class="pn-rl"><div><i style="background:#4453ef"></i>Акции <b>' + (STOCKVAL / POSVAL * 100).toFixed(0) + '%</b></div>' +
-       '<div><i style="background:#94a3b8"></i>Облигации <b>' + (BONDVAL / POSVAL * 100).toFixed(0) + '%</b></div></span></span>') +
-       '</span></div>';
+  o += '<div class="pn-pos"><div class="pn-pos-h"><h4>Позиции</h4><span class="pn-cnt">' + HOLD.length + '</span></div>';
   o += posTable({buy: !narrow, share: true}, list) + '</div>';
 
   /* подвал */
@@ -439,6 +514,42 @@ function cardWork(opt){
   o += '<span class="pn-btn all" style="flex:1.3">Все позиции' + (narrow ? ' (6)' : '') + ' ' + IC.right + '</span>';
   o += '<span class="pn-btn pri">' + IC.scale + ' Ребаланс</span>';
   o += '</div>';
+  return o + '</div>';
+}
+
+/* ================= демо: варианты распределения ================= */
+function allocDemo(kind){
+  var o = '<div class="pn" style="width:100%">';
+  o += '<div class="pn-kpis" style="grid-template-columns:1fr 1fr;border-top:0">' +
+       kpi('Доходность', pct(PNLPCT), 'pos', pct1(ANNUAL) + ' годовых') +
+       kpi('За день', '+' + rub(DAY) + NB + '₽', 'pos', pct(DAYPCT) + ' сегодня') + '</div>';
+  if (kind === 'A') o += allocBar(ALLOC, false);
+  o += '<div class="pn-pos"><div class="pn-pos-h"><h4>Позиции</h4><span class="pn-cnt">6</span>';
+  if (kind === 'B') {
+    o += '<span class="r"><span class="pn-alsm"><span class="b">';
+    ALLOC.forEach(function(a){ o += '<i style="flex:' + a.p.toFixed(2) + ';background:' + a.c + '"></i>'; });
+    o += '</span><span class="t">' + ALLOC.map(function(a){ return pct1(a.p).replace('+', ''); }).join(' · ') + '</span></span></span>';
+  }
+  o += '</div>';
+  if (kind === 'C') {
+    o += '<div class="pn-alrow">';
+    ALLOC.forEach(function(a){ o += '<span>' + a.n + ' <b>' + pct1(a.p).replace('+', '') + '</b></span>'; });
+    o += '</div>';
+  }
+  o += posTable({buy: false, share: true}, HOLD.slice(0, 3)) + '</div></div>';
+  return o;
+}
+
+/* ================= демо: герой с разными суммами ================= */
+function heroDemo(val, uid, narrow){
+  var o = '<div class="pn' + (narrow ? ' narrow' : '') + '" style="width:100%">';
+  o += '<div class="pn-top"><div class="pn-name"><em></em>Портфель 2</div>' +
+       '<div class="pn-top-r"><span class="pn-seg"><b>День</b><b class="on">30д</b><b>Год</b><b>Всё</b></span>' +
+       '<span class="pn-ico">' + IC.gear + '</span></div></div>';
+  o += '<div class="pn-hero"><div><div class="pn-lbl">Стоимость портфеля</div>' + valHtml(val) +
+       '<div class="pn-delta pos">▲' + NB + rub(Math.round(val * 0.0319)) + NB + '₽ (' + pct(3.19).replace('+', '') + ')' +
+       '<u>за 30 дней</u></div></div>' +
+       '<div class="pn-spark">' + spark(narrow ? 300 : 420, narrow ? 96 : 148, SERIES, '#16a34a', !narrow, uid) + '</div></div>';
   return o + '</div>';
 }
 
@@ -503,16 +614,16 @@ document.getElementById('scr02').innerHTML =
   '<div class="cap">Рабочий вариант · карточка выросла до ~640 px и стала читаться сверху вниз</div>' +
   '<div style="width:660px">' + cardWork() + '</div>' +
   '<div class="pin" style="left:706px;top:56px">1</div>' +
-  '<div class="pin" style="left:706px;top:190px">2</div>' +
-  '<div class="pin" style="left:706px;top:246px">3</div>' +
-  '<div class="pin" style="left:706px;top:336px">4</div>' +
-  '<div class="pin" style="left:706px;top:704px">5</div>';
+  '<div class="pin" style="left:706px;top:216px">2</div>' +
+  '<div class="pin" style="left:706px;top:296px">3</div>' +
+  '<div class="pin" style="left:706px;top:384px">4</div>' +
+  '<div class="pin" style="left:706px;top:802px">5</div>';
 
 document.getElementById('notes02').innerHTML =
   '<div class="note"><i>1</i><span>Период — сегментированный контрол вместо выпадашки: ровно тот <code>segBtn()</code>, что уже стоит в настройках виджета «Капитал» (<code>portfolios-dash.js:2105</code>). Служебные иконки ужаты до трёх и уехали вправо, к периоду.</span></div>' +
   '<div class="note"><i>2</i><span>Дельта под суммой <b>следует за периодом</b>: «за сегодня» берётся из <code>dayDelta()</code>, остальные — из <code>chartRaw[pid].series</code>. Если данных за период нет, период просто недоступен — а не показывает ноль.</span></div>' +
   '<div class="note"><i>3</i><span>Четыре KPI — четыре <b>разных</b> числа: Вложено (+ свободные деньги <code>p.cash</code>), Доход ₽, Доходность % с CAGR подписью (<code>c.annual</code>), За день. Ни одного повтора.</span></div>' +
-  '<div class="note"><i>4</i><span>Кольцо «акции/облигации» не выброшено, а сжато до 30 px и переехало в шапку списка — туда, где оно и объясняет состав. Долю каждой позиции считаем как в <code>pfxPortHoldRowHtml</code> (<code>portfolios-tabs.js:1132</code>).</span></div>' +
+  '<div class="note"><i>4</i><span>Кольцо заменено полосой-стеком во всю ширину (варианты — в экране 03) и считает доли от полной стоимости, вместе со свободными деньгами. Долю каждой позиции берём как в <code>pfxPortHoldRowHtml</code> (<code>portfolios-tabs.js:1132</code>).</span></div>' +
   '<div class="note"><i>5</i><span>Подвал держит оба действия: «Все позиции» ведёт в подвкладку портфеля, «Ребаланс» — прежний <code>pfExpand</code>. Кнопка-действие не клипуется ни при какой высоте виджета.</span></div>';
 
 document.getElementById('mapTbl').innerHTML =
@@ -530,6 +641,41 @@ document.getElementById('mapTbl').innerHTML =
   '<tr><td>Изменение</td><td><code>c.pnlPct</code></td><td class="ok">есть</td><td>За всё время. Дневное движение бумаги (<code>quotes[t].chgPct</code>) — под тем же периодом, что и герой.</td></tr>' +
   '<tr><td>Доля</td><td><code>hc.value / c.value * 100</code></td><td class="ok">есть</td><td>Формула уже живёт в <code>pfxPortHoldRowHtml</code>, в карточке её не было.</td></tr>' +
   '</tbody>';
+
+document.getElementById('scrAlloc').innerHTML =
+  '<div class="cap">Три замены кольцу · фрагмент карточки от KPI до первых строк списка</div>' +
+  '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:start">' +
+    '<div><div class="demo-t">A · полоса во всю ширину<u>в экране 02</u></div>' + allocDemo('A') + '</div>' +
+    '<div><div class="demo-t">B · компактно в шапке списка</div>' + allocDemo('B') + '</div>' +
+    '<div><div class="demo-t">C · только цифры, без графики</div>' + allocDemo('C') + '</div>' +
+  '</div>';
+
+document.getElementById('notesAlloc').innerHTML =
+  '<div class="note"><i>A</i><span><b>Полоса-стек во всю ширину.</b> Читается мгновенно и без легенды, показывает третью долю — свободные деньги (<code>p.cash</code>), которую кольцо игнорировало. Рядом с процентом рубли, так что строка отвечает сразу на два вопроса. Стоит ровно там, где карточка переходит от «сколько всего» к «из чего» — между KPI и списком. Минус: занимает ~54 px.</span></div>' +
+  '<div class="note"><i>B</i><span><b>Компактно в шапке «Позиции».</b> Ноль лишней высоты, полоса 64 px и три числа подряд. Минус: без подписей нужно помнить, что синий — акции; на узком блоке не помещается вовсе, придётся прятать.</span></div>' +
+  '<div class="note"><i>C</i><span><b>Только цифры.</b> Самое честное к языку терминала — цвет уходит на CTA, а не на диаграммы. Минус: пропорция не видна глазом, «77 / 13 / 11» надо прочитать и сложить в голове. Годится, если распределение — не то, ради чего открывают карточку.</span></div>' +
+  '<div class="note"><i>!</i><span>Во всех трёх доли считаются от <b>полной стоимости</b>, включая свободные деньги, — иначе сумма процентов не сойдётся с суммой в герое. У кольца в старой карточке было именно так: 86% + 14% от одних бумаг.</span></div>';
+
+document.getElementById('scrBig').innerHTML =
+  '<div class="cap">Одно и то же место при разных порядках суммы</div>' +
+  '<div style="display:grid;grid-template-columns:660px 380px;gap:24px;align-items:start;justify-content:start">' +
+    '<div class="demo">' +
+      '<div><div class="demo-t">6 цифр — 200 тысяч<u>38 px, базовый кегль</u></div>' + heroDemo(200982, 'q1') + '</div>' +
+      '<div><div class="demo-t">7 цифр — 9 миллионов<u>38 px, тот же</u></div>' + heroDemo(9384720, 'q2') + '</div>' +
+      '<div><div class="demo-t">10 цифр — миллиард<u>30 px, вторая ступень</u></div>' + heroDemo(1000000000, 'q3') + '</div>' +
+      '<div><div class="demo-t">12 цифр — сто миллиардов<u>25 px, предел</u></div>' + heroDemo(100000000000, 'q6') + '</div>' +
+    '</div>' +
+    '<div class="demo">' +
+      '<div><div class="demo-t">узкий блок, 380 px</div>' + heroDemo(200982, 'q4', true) + '</div>' +
+      '<div><div class="demo-t">он же с миллиардом</div>' + heroDemo(1000000000, 'q5', true) + '</div>' +
+    '</div>' +
+  '</div>';
+
+document.getElementById('notesBig').innerHTML =
+  '<div class="note"><i>1</i><span>Ступень выбирается по <b>числу цифр</b>, а не по ширине в пикселях: считать <code>scrollWidth</code> в карточке нельзя — при zoom 0.9 замеры врут, это уже ловило нас на виджетах.</span></div>' +
+  '<div class="note"><i>2</i><span>Знак ₽ — доля от кегля числа (<code>0.63em</code>), поэтому уменьшается вместе с ним и не начинает торчать. Разряды разделены неразрывным пробелом, как в <code>fmtRub()</code>.</span></div>' +
+  '<div class="note"><i>3</i><span>График не резиновый по содержимому: колонки героя 46%&nbsp;/&nbsp;остаток. Миллиард просто мельчает, а спарклайн остаётся той же ширины — сравнивать две карточки в сетке по-прежнему можно.</span></div>' +
+  '<div class="note"><i>4</i><span>В узком блоке сумма и график встают друг под друга, ступени те же на 4 px мельче. Миллиард там читается — это и был предел, ради которого проверка.</span></div>';
 
 document.getElementById('scr03').innerHTML =
   '<div class="cap">Тёмная тема · и та же карточка в блоке конструктора</div>' +
