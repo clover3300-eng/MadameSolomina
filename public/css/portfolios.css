@@ -337,10 +337,22 @@ body.dark-mode .pfc-pos-t { color: #eef3f9; }
 .pfc-cnt { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #64748b; background: rgba(15,23,42,0.07); border-radius: 7px; padding: 2px 7px; }
 body.dark-mode .pfc-cnt { color: #8b98ad; background: rgba(255,255,255,0.07); }
 
-/* ---- таблица позиций: настоящая <table> с table-layout:fixed (ширины в <colgroup>
-   из pfMiniTableHtml). На «Обзоре» список не режется — карточка растёт; скролл
-   остаётся только в блоке конструктора с заданной высотой (.pfd-hset выше). ---- */
-.pfc-massets { min-height: 0; display: flex; flex-direction: column; padding: 0 18px; }
+/* ---- таблица позиций: настоящая <table> с table-layout:fixed (ширины ниже по
+   номеру колонки). Список НЕ разворачивается на все бумаги: видно пять строк и
+   «пик» шестой (намёк, что список продолжается), остальное — прокруткой внутри.
+   Иначе карточка с большим составом вырастала на пол-экрана и «Обзор» переставал
+   быть обзором. Полный состав — по кнопке подвала «Все позиции ›».
+   Высоты вынесены в переменные: блок 5 (виджет) будет считать число строк по
+   фактической высоте блока конструктора и переопределять --pfc-rows. ---- */
+/* ЛОВУШКА ЗАМЕРА: на десктопе действует zoom 0.9 (desktop-zoom.css), поэтому
+   getBoundingClientRect отдаёт визуальные пиксели — на 10% меньше CSS-овских.
+   Числа ниже — именно CSS-пиксели (замерено как rect / (rect/clientHeight)). */
+.pfc-massets {
+    --pfc-head-h: 30px; --pfc-row-h: 54px; --pfc-rows: 5; --pfc-peek: 18px;
+    min-height: 0; display: flex; flex-direction: column; padding: 0 18px;
+    max-height: calc(var(--pfc-head-h) + var(--pfc-rows) * var(--pfc-row-h) + var(--pfc-peek));
+    overflow-y: auto; scrollbar-width: thin;
+}
 /* flex-shrink:0 обязателен — иначе flex-контейнер сжимает обёртку и обрезает список
    активов ВМЕСТО скролла в .pfc-massets. overflow:visible (не hidden!) — чтобы sticky-шапка
    таблицы липла к скроллеру .pfc-massets, а не запиралась внутри самой обёртки */
@@ -610,6 +622,8 @@ body.dark-mode .pfc-rebal { background: #e8eef7; border-color: #e8eef7; color: #
     .pfc-mtable thead th { font-size: 9px; letter-spacing: 0.05em; }
     .pfc-mtt b { font-size: 12px; }
     .pfc-sharebar { display: none; }
+    /* строка чуть ниже из-за мельче кегля — порог списка следует за ней */
+    .pfc-massets { --pfc-row-h: 52px; --pfc-head-h: 29px; }
     /* счётчик состава переезжает в кнопку — колонки «Доля» рядом уже нет */
     .pfc-all-n { display: inline; }
     .pfc-foot { flex-direction: column; }
