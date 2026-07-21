@@ -772,8 +772,8 @@
         // рендерим ВСЕ видимые портфели (MAX_CARDS ограничивает только создание новых):
         // раньше slice(0,4) молча прятал карточки 5+ после импорта бэкапа
         var items = vis;
-        var narrow = PF.cardViewMode === 'narrow';
-        var cards = items.map(function (p) { return cardHtml(p, narrow); }).join('');
+        var narrow = PF.cardViewMode === 'narrow';   // 3 карточки в ряд вместо 2 (только раскладка сетки)
+        var cards = items.map(function (p) { return cardHtml(p); }).join('');
         return '<div class="pf-grid' + (narrow ? ' pf-grid--narrow' : '') + '">' + cards + (calCell || '') + '</div>';
     }
     function allHiddenHtml() {

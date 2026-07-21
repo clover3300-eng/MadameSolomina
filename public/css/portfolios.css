@@ -346,6 +346,15 @@ body.dark-mode .pfc-cnt { color: #8b98ad; background: rgba(255,255,255,0.07); }
    таблицы липла к скроллеру .pfc-massets, а не запиралась внутри самой обёртки */
 .pfc-mtablewrap { overflow: visible; flex-shrink: 0; }
 .pfc-mtable { width: 100%; border-collapse: collapse; table-layout: fixed; }
+/* Ширины колонок — здесь, а не в <colgroup>: в узкой карточке «Средняя» и «Доля»
+   скрываются (@container ниже), и проценты пересчитываются на 4 оставшиеся колонки.
+   Паддинг-щель th+th/td+td ВХОДИТ в эти проценты — менять только вместе. */
+.pfc-mtable th:nth-child(1) { width: 31%; }
+.pfc-mtable th:nth-child(2) { width: 13%; }
+.pfc-mtable th:nth-child(3) { width: 16%; }
+.pfc-mtable th:nth-child(4) { width: 16%; }
+.pfc-mtable th:nth-child(5) { width: 12%; }
+.pfc-mtable th:nth-child(6) { width: 12%; }
 /* шапка колонок ПРИЛИПАЕТ к верху при скролле состава (актуально в блоке конструктора
    с заданной высотой) — непрозрачный фон под цвет карточки перекрывает уезжающие под
    неё строки. top:-1px (не 0!) — уводит верхнюю кромку шапки ЗА край обрезки скроллера:
@@ -358,7 +367,6 @@ body.dark-mode .pfc-mtable thead th { background: #1a232f; border-color: rgba(25
 /* гарантированный зазор между колонками: при table-layout:fixed паддинг ВХОДИТ в
    ширину колонки (colgroup из pfMiniTableHtml) — менять ширины и паддинг только вместе */
 .pfc-mtable th + th, .pfc-mtable td + td { padding-left: 14px; }
-.pf-card--narrow .pfc-mtable th + th, .pf-card--narrow .pfc-mtable td + td { padding-left: 11px; }
 .pfc-mtable tbody tr.pfc-mtr td { padding: 9px 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-bottom: 1px solid rgba(15,23,42,0.045); }
 body.dark-mode .pfc-mtable tbody tr.pfc-mtr td { border-color: rgba(255,255,255,0.045); }
 .pfc-mtable tbody tr.pfc-mtr:last-child td { border-bottom: none; }
@@ -506,6 +514,8 @@ body.dark-mode .pfcv-msg-t { color: #f4f8fd; }
 /* ---- подвал (макет 02): «Все позиции ›» + тёмная кнопка «Ребаланс» ---- */
 .pfc-foot { padding: 12px 18px 14px; margin-top: auto; display: flex; align-items: stretch; gap: 9px; }
 .pfc-all { flex: 1.3 1 0; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; border: 1px solid rgba(15,23,42,0.09); background: #fff; border-radius: 11px; padding: 11px 14px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; color: #0f172a; transition: background 0.15s, border-color 0.15s; }
+/* счётчик состава в кнопке — только в узкой карточке (см. @container) */
+.pfc-all-n { display: none; font-style: normal; font-family: 'JetBrains Mono', monospace; font-weight: 600; color: #94a3b8; margin-left: 6px; }
 .pfc-all svg { width: 13px; height: 13px; color: #94a3b8; flex: none; }
 .pfc-all:hover { background: rgba(15,23,42,0.04); border-color: rgba(15,23,42,0.16); }
 body.dark-mode .pfc-all { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.12); color: #e8eef7; }
@@ -517,24 +527,49 @@ body.dark-mode .pfc-all:hover { background: rgba(255,255,255,0.08); }
 /* тёмная тема — инверсия, как .pn-btn.pri мокапа: светлая кнопка, тёмный текст */
 body.dark-mode .pfc-rebal { background: #e8eef7; border-color: #e8eef7; color: #0c1016; }
 
-/* ---- узкий вид (3-в-ряд «Обзора» и узкий блок конструктора), макет 07 ---- */
-.pf-card--narrow .pfc-hero { grid-template-columns: 1fr; gap: 12px; }
-.pf-card--narrow .pfc-hero-val { font-size: 30px; }
-.pf-card--narrow .pfc-hero-val.l10 { font-size: 26px; }
-.pf-card--narrow .pfc-hero-val.l13 { font-size: 21px; }
-.pf-card--narrow .pfc-mchart-plot { height: 96px; }
-.pf-card--narrow .pfc-stats2 { grid-template-columns: 1fr 1fr; row-gap: 14px; }
-.pf-card--narrow .pfc-stat2:nth-child(odd) { border-left: 0; padding-left: 18px; }
-.pf-card--narrow .pfc-stat2:nth-child(even) { padding-right: 18px; }
-.pf-card--narrow .pfc-stat2-v { font-size: 16px; }
-.pf-card--narrow .pfc-top { gap: 6px; }
-.pf-card--narrow .pfc-seg .pfdcfg-seg-b { padding: 4px 6px; font-size: 10px; }
-.pf-card--narrow .pfc-mtable tbody tr.pfc-mtr td { font-size: 12px; }
-.pf-card--narrow .pfc-mtt b { font-size: 12px; }
-.pf-card--narrow .pfc-foot { flex-direction: column; }
-/* раскрытие в узкой карточке: лоты и деньги друг под другом, плитки влево */
-.pf-card--narrow .pfc-mdet-in { grid-template-columns: 1fr; gap: 10px; }
-.pf-card--narrow .pfc-facts { justify-content: flex-start; max-width: none; }
+/* ---- адаптация к ФАКТИЧЕСКОЙ ширине карточки (макет 07) ----
+   Раньше «узкий вид» приходил классом от раскладки (3-в-ряд ⇒ .pf-card--narrow), и
+   карточка 465px на «Обзоре» сворачивала KPI в 2×2 и мельчила таблицу, хотя места
+   хватало на все четыре в линию. Теперь порог смотрит на саму карточку: 2×2 и
+   4 колонки включаются только там, где ширины действительно не хватает (узкий блок
+   конструктора ~380px из макета 07). Правило проекта: контент подстраивается под
+   размер виджета. `container-type: inline-size` безопасен — внутри карточки нет
+   position:fixed (все оверлеи живут в body), а .pfc-menu позиционируется от неё же. */
+.pf-card { container-type: inline-size; container-name: pfcard; }
+@container pfcard (max-width: 440px) {
+    .pfc-hero { grid-template-columns: 1fr; gap: 12px; }
+    .pfc-hero-val { font-size: 30px; }
+    .pfc-hero-val.l10 { font-size: 26px; }
+    .pfc-hero-val.l13 { font-size: 21px; }
+    .pfc-mchart-plot { height: 96px; }
+    /* KPI 2×2: разделители только между колонками, строки разведены отступом */
+    .pfc-stats2 { grid-template-columns: 1fr 1fr; row-gap: 14px; }
+    .pfc-stat2:nth-child(odd) { border-left: 0; padding-left: 18px; }
+    .pfc-stat2:nth-child(even) { padding-right: 18px; }
+    .pfc-stat2-v { font-size: 16px; }
+    .pfc-top { gap: 6px; }
+    .pfc-seg .pfdcfg-seg-b { padding: 4px 6px; font-size: 10px; }
+    /* служебные иконки уходят первыми — шестерёнка остаётся всегда */
+    .pfc-act--sec { display: none; }
+    /* «Средняя» и «Доля» уходят: пять колонок на 380px уже своих же значений.
+       Оставшиеся четыре пересчитаны на полную ширину (38/17/26/19) */
+    .pfc-mc-buy, .pfc-mc-share { display: none; }
+    .pfc-mtable th:nth-child(1) { width: 38%; }
+    .pfc-mtable th:nth-child(2) { width: 17%; }
+    .pfc-mtable th:nth-child(4) { width: 26%; }
+    .pfc-mtable th:nth-child(5) { width: 19%; }
+    .pfc-mtable th + th, .pfc-mtable td + td { padding-left: 11px; }
+    .pfc-mtable tbody tr.pfc-mtr td { font-size: 12px; }
+    .pfc-mtable thead th { font-size: 9px; letter-spacing: 0.05em; }
+    .pfc-mtt b { font-size: 12px; }
+    .pfc-sharebar { display: none; }
+    /* счётчик состава переезжает в кнопку — колонки «Доля» рядом уже нет */
+    .pfc-all-n { display: inline; }
+    .pfc-foot { flex-direction: column; }
+    /* раскрытие: лоты и деньги друг под другом, плитки влево */
+    .pfc-mdet-in { grid-template-columns: 1fr; gap: 10px; }
+    .pfc-facts { justify-content: flex-start; max-width: none; }
+}
 
 /* ---- карточка «добавить» (компактная, в стиле новых карточек) ---- */
 .pf-add { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; min-height: 200px; cursor: pointer; border-radius: 28px; border: 1.5px dashed rgba(24,38,60,0.14); background: rgba(24,38,60,0.015); text-align: center; transition: border-color 0.18s, background 0.18s, transform 0.18s, box-shadow 0.18s; }
@@ -574,14 +609,16 @@ body.dark-mode .pf-empty-t { color: #f4f8fd; }
     to   { opacity: 1; transform: scale(1); }
 }
 @media (prefers-reduced-motion: reduce) { .pfc-menu { animation-duration: 0.01ms; } }
-/* «узкий» вид (3 карточки в ряд): настройки (⚙) должны открываться такой же ширины,
-   как в обычном виде (иначе редактировать состав неудобно) — расширяем оверлей
-   примерно до ширины обычной (не узкой) карточки, поверх соседней узкой карточки. */
-.pf-card--narrow.menu-open .pfc-menu { width: calc(150% + 8px); }
+/* «узкий» вид сетки (3 карточки в ряд): настройки (⚙) должны открываться такой же
+   ширины, как в обычном виде (иначе редактировать состав неудобно) — расширяем
+   оверлей примерно до ширины обычной (не узкой) карточки, поверх соседней.
+   Правило раскладочное, поэтому висит на сетке (.pf-grid--narrow), а не на карточке:
+   сама карточка про свою «узость» больше не знает (см. @container pfcard). */
+.pf-grid--narrow .pf-card.menu-open .pfc-menu { width: calc(150% + 8px); }
 /* правая колонка ряда (3n-я карточка сетки): оверлей тянет ВЛЕВО, а не за край.
    Раньше это делал класс .col-right из рендера — теперь чистый CSS по позиции. */
 .pf-grid--narrow .pf-card:nth-child(3n).menu-open .pfc-menu { left: auto; right: 0; }
-@media (max-width: 1520px) { .pf-card--narrow.menu-open .pfc-menu { width: 100%; left: 0; right: auto; } }
+@media (max-width: 1520px) { .pf-grid--narrow .pf-card.menu-open .pfc-menu { width: 100%; left: 0; right: auto; } }
 /* повторные ре-рендеры уже открытой панели (добавление/удаление лота, сворачивание
    журнала докупок) пересоздают весь .pfc-menu — без этого анимация входа проигрывалась
    бы заново на каждое действие, и панель заметно «мигала» */

@@ -860,13 +860,13 @@
         var narrow = PF.cardViewMode === 'narrow';
         var defSpan = narrow ? 4 : 6;
         visibleItems().forEach(function (p) {
-            blocks.push({ id: 'pf:' + p.id, name: p.name, htmlFn: function () { return PF.cardHtml(p, narrow); }, span: defSpan });
+            blocks.push({ id: 'pf:' + p.id, name: p.name, htmlFn: function () { return PF.cardHtml(p); }, span: defSpan });
         });
         // R9.2: СКРЫТЫЙ портфель на СВОЕЙ вкладке карточку сохраняет — «скрыть»
         // убирает его с «Обзора» и из сводок, но открытая вкладка живёт дальше
         if (pfxIsPfTab(PF.dashTab)) {
             var tp = findPf(PF.dashTab.slice(3));
-            if (tp && tp.hidden) blocks.push({ id: 'pf:' + tp.id, name: tp.name, htmlFn: function () { return PF.cardHtml(tp, narrow); }, span: defSpan });
+            if (tp && tp.hidden) blocks.push({ id: 'pf:' + tp.id, name: tp.name, htmlFn: function () { return PF.cardHtml(tp); }, span: defSpan });
         }
         blocks.push({ id: 'cal', name: noBonds ? 'Ставки' : 'Календарь выплат', htmlFn: function () { return noBonds ? PF.ratesStackHtml(true, 1, true, 'cal') : PF.paymentCalendarHtml(true, 1, PF.dashTab === 'divs'); }, span: defSpan });
         // обёртка .pf-topgrid-fav сохраняет прицельные стили правой колонки

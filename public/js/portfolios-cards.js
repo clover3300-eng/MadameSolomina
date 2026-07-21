@@ -130,7 +130,12 @@
     // подсказка KPI «Доходность»: одна строка на разметку И точечный патчер
     // (livePatchers.cards) — чтобы текст не разъезжался между ними
     var YIELD_TIP = 'Доходность за всё время владения; строкой ниже — в пересчёте на год (CAGR, может отличаться от фактического изменения)';
-    function cardHtml(p, narrow) {
+    // Разметка карточки ОДНА на любую ширину: под размер её подгоняет CSS по
+    // ФАКТИЧЕСКОЙ ширине самой карточки (@container в portfolios.css), а не по флагу
+    // сетки. Раньше «узость» приходила параметром от раскладки (3-в-ряд ⇒ narrow), и
+    // карточка 465px на «Обзоре» сворачивала KPI в 2×2 и мельчила таблицу, хотя места
+    // хватало. Правило проекта: контент подстраивается под размер виджета.
+    function cardHtml(p) {
         var c = calcPf(p), ac = colorVal(p.color);
         var warm = pfCardWarming(p);   // котировки ещё греются → живые числа скелетонами
         // R9.1: когда настройки открыты ШТОРКОЙ (PF.pfSetDrawerOn), карточное меню не
@@ -149,14 +154,15 @@
                 '<span class="pfc-name" onclick="pfNameEdit(\'' + p.id + '\',event)" title="Нажмите, чтобы переименовать"><em class="pfc-name-dot"></em><span class="pfc-name-ink">' + esc(p.name) + '</span></span>' +
                 // бейдж брокерской карточки (№10): PF.* в момент вызова — файл
                 // portfolios-broker-pf.js грузится ПОСЛЕ этого
-                (!narrow && p.broker && PF.brokerPfBadgeHtml ? PF.brokerPfBadgeHtml(p) : '') +
+                (p.broker && PF.brokerPfBadgeHtml ? PF.brokerPfBadgeHtml(p) : '') +
             '</div>' +
             '<div class="pfc-ctrls">' +
                 (hasHold ? cardSegHtml(p, cardRangeOf(p), cardRanges(p)) : '') +
+                // .pfc-act--sec — служебные иконки, которые в узкой карточке уходят
+                // первыми (см. @container): шестерёнка остаётся всегда
                 '<div class="pfc-acts">' +
-                    (narrow ? '' :
-                        '<button class="pfc-act" onclick="pfCopyComposition(\'' + p.id + '\',event)" aria-label="Скопировать состав" title="Скопировать состав портфеля">' + PF.COPY_SVG + '</button>' +
-                        '<button class="pfc-act" onclick="pfToggleHidden(\'' + p.id + '\',event)" aria-label="Убрать карточку с «Обзора»" title="Убрать карточку с «Обзора» — портфель останется в сводках, его вкладка не закроется">' + PF.EYEOFF_SVG + '</button>') +
+                    '<button class="pfc-act pfc-act--sec" onclick="pfCopyComposition(\'' + p.id + '\',event)" aria-label="Скопировать состав" title="Скопировать состав портфеля">' + PF.COPY_SVG + '</button>' +
+                    '<button class="pfc-act pfc-act--sec" onclick="pfToggleHidden(\'' + p.id + '\',event)" aria-label="Убрать карточку с «Обзора»" title="Убрать карточку с «Обзора» — портфель останется в сводках, его вкладка не закроется">' + PF.EYEOFF_SVG + '</button>' +
                     '<button class="pfc-act' + (menuOn ? ' on' : '') + '" onclick="pfToggleMenu(\'' + p.id + '\')" aria-label="Настройки" title="Настройки">' + PF.GEAR_SVG + '</button>' +
                 '</div>' +
             '</div>' +
@@ -182,7 +188,7 @@
         // пустой портфель обрывается сразу после героя: KPI, полосы и таблицы нет
         // (делить на ноль нечего); полноценное приглашение — блок 3 плана
         if (!hasHold) {
-            return '<div class="dash2-card pf-card' + (menuOn ? ' menu-open' : '') + tall + (narrow ? ' pf-card--narrow' : '') + '" style="--pf-accent:' + ac + '" data-pfid="' + p.id + '">' +
+            return '<div class="dash2-card pf-card' + (menuOn ? ' menu-open' : '') + tall + '" style="--pf-accent:' + ac + '" data-pfid="' + p.id + '">' +
                 top + menu + '<div class="pfc-normal">' + hero +
                 '<div class="pfc-empty">Состав пуст — добавьте активы в настройках ⚙</div></div></div>';
         }
@@ -211,17 +217,19 @@
         // никуда не делась — она в своей колонке «Изм.»
         var list = c.hs.slice().sort(function (a, b) { return b.c.value - a.c.value; });
         var pos = '<div class="pfc-pos-h"><span class="pfc-pos-t">Позиции</span><span class="pfc-cnt">' + c.hs.length + '</span></div>' +
-            '<div class="pfc-massets" data-skey="ma-' + p.id + '">' + pfMiniTableHtml(list, p.id, fullV, narrow) + '</div>';
+            '<div class="pfc-massets" data-skey="ma-' + p.id + '">' + pfMiniTableHtml(list, p.id, fullV) + '</div>';
 
-        // подвал: «Все позиции» → подвкладка портфеля, «Ребаланс» — прежний pfExpand
+        // подвал: «Все позиции» → подвкладка портфеля, «Ребаланс» — прежний pfExpand.
+        // Счётчик в кнопке показывается только в узкой карточке (@container), где
+        // колонка «Доля» скрыта и вес состава иначе не прочесть
         var foot = '<div class="pfc-foot">' +
-            '<button class="pfc-all" onclick="pfxOpenPf(\'' + p.id + '\')"><span>Все позиции' + (narrow ? ' (' + c.hs.length + ')' : '') + '</span>' + CHEVR_SVG + '</button>' +
+            '<button class="pfc-all" onclick="pfxOpenPf(\'' + p.id + '\')"><span>Все позиции<i class="pfc-all-n">' + c.hs.length + '</i></span>' + CHEVR_SVG + '</button>' +
             '<button class="pfc-rebal" onclick="pfExpand(\'' + p.id + '\')">' + PF.REBAL_SVG + 'Ребаланс</button>' +
         '</div>';
 
         // data-pfid — адрес карточки для прокрутки «покажи счёт» (scrollToCard в
         // portfolios-broker-pf.js работает и в классической сетке, не только в конструкторе)
-        return '<div class="dash2-card pf-card' + (menuOn ? ' menu-open' : '') + tall + (narrow ? ' pf-card--narrow' : '') + '" style="--pf-accent:' + ac + '" data-pfid="' + p.id + '">' +
+        return '<div class="dash2-card pf-card' + (menuOn ? ' menu-open' : '') + tall + '" style="--pf-accent:' + ac + '" data-pfid="' + p.id + '">' +
             top + menu +
             '<div class="pfc-normal">' +
                 hero + kpis + distHtml(p, c, fullV, cash) + pos +
@@ -320,20 +328,19 @@
         });
     };
 
-    // мини-таблица состава: НАСТОЯЩАЯ <table> с table-layout:fixed и явными ширинами
-    // колонок (31/13/16/16/12/12%) — шапка и строки гарантированно совпадают, а зазор
-    // между колонками даёт паддинг, который ВХОДИТ в ширину колонки (менять только
-    // вместе, см. CSS). Узкий вид: «Средняя» и «Доля» уходят, остаются 4 колонки.
-    function pfMiniTableHtml(list, pid, fullV, narrow) {
-        var cw = narrow ? ['38%', '17%', '26%', '19%'] : ['31%', '13%', '16%', '16%', '12%', '12%'];
+    // мини-таблица состава: НАСТОЯЩАЯ <table> с table-layout:fixed — шапка и строки
+    // гарантированно совпадают по колонкам. Ширины (31/13/16/16/12/12%) заданы в CSS
+    // по номеру колонки, а не <colgroup>: в узкой карточке «Средняя» и «Доля» уходят
+    // (@container), и проценты там пересчитываются на 4 оставшиеся колонки — из
+    // разметки этим не управлять. Зазор между колонками даёт паддинг, который ВХОДИТ
+    // в ширину колонки: менять ширины и паддинг только вместе.
+    function pfMiniTableHtml(list, pid, fullV) {
         // имена колонок — те, что уже приняты в проекте (pfxPortHoldRowHtml):
         // Средняя · Сейчас · Изм.
-        var head = '<tr><th class="pfc-mc-as">Актив</th><th>' + (narrow ? 'Кол.' : 'Кол-во') + '</th>' +
-            (narrow ? '' : '<th>Средняя</th>') + '<th>Сейчас</th><th>Изм.</th>' + (narrow ? '' : '<th>Доля</th>') + '</tr>';
-        var body = list.map(function (x) { return pfMiniRowHtml(x, pid, fullV, narrow); }).join('');
-        return '<div class="pfc-mtablewrap"><table class="pfc-mtable"><colgroup>' +
-            cw.map(function (w) { return '<col style="width:' + w + '">'; }).join('') +
-            '</colgroup><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>';
+        var head = '<tr><th class="pfc-mc-as">Актив</th><th class="pfc-mc-qty">Кол-во</th>' +
+            '<th class="pfc-mc-buy">Средняя</th><th>Сейчас</th><th>Изм.</th><th class="pfc-mc-share">Доля</th></tr>';
+        var body = list.map(function (x) { return pfMiniRowHtml(x, pid, fullV); }).join('');
+        return '<div class="pfc-mtablewrap"><table class="pfc-mtable"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>';
     }
     // «Изм.» строки: стрелка + процент без знака (знак несут стрелка и цвет);
     // без котировки или вложений — прочерк, а не «+0,0%»
@@ -354,7 +361,7 @@
     // АКЦИИ уводит в терминал (stopPropagation, чтобы не дёргать раскрытие);
     // аффорданса (пунктир + «↗ терминал») — только при наведении на сам тикер.
     // У облигаций тикер некликабелен: терминала для ОФЗ нет, в подвкладке так же.
-    function pfMiniRowHtml(x, pid, fullV, narrow) {
+    function pfMiniRowHtml(x, pid, fullV) {
         var h = x.h, c = x.c, isB = h.type === 'bond';
         var open = !!PF.openRows[h.id];
         var ptip = isB ? ' title="' + attr(BOND_PRICE_TIP) + '"' : '';
@@ -372,16 +379,16 @@
                 '<svg class="pfc-mch' + (open ? ' up' : '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>' +
                 '<span class="pfc-mtt"><span class="pfc-tkline">' + tk + '</span>' + (nm && nm !== h.ticker ? '<span class="pfc-mnm">' + esc(nm) + '</span>' : '') + '</span>' +
             '</span></td>' +
-            '<td class="pfc-mqty">' + fmtQty(c.qty) + ' шт</td>' +
-            (narrow ? '' : '<td class="pfc-mbuy"' + ptip + '>' + fmtPrice(c.buy) + '</td>') +
+            '<td class="pfc-mqty pfc-mc-qty">' + fmtQty(c.qty) + ' шт</td>' +
+            '<td class="pfc-mbuy pfc-mc-buy"' + ptip + '>' + fmtPrice(c.buy) + '</td>' +
             // data-live: цена, «Изм.» и «Доля» обновляются точечно фоновым тиком
             // (livePatchers.cards); ключ по hid — копии той же бумаги в других
             // экземплярах карточки (конструктор) обновятся заодно
             '<td class="pfc-mnow' + (c.live ? ' live' : '') + '" data-live="pfh:' + h.id + ':now"' + (noQ ? ' title="' + attr(noQ.tip) + '"' : ptip) + '>' + (noQ ? noQ.txt : fmtPrice(c.cur)) + '</td>' +
             '<td class="pfc-mchg' + (ch.cls ? ' ' + ch.cls : '') + '" data-live="pfh:' + h.id + ':chg">' + ch.txt + '</td>' +
-            (narrow ? '' : '<td class="pfc-mshare" data-live="pfh:' + h.id + ':share">' + shareCellHtml(fullV > 0 ? c.value / fullV * 100 : 0) + '</td>') +
+            '<td class="pfc-mshare pfc-mc-share" data-live="pfh:' + h.id + ':share">' + shareCellHtml(fullV > 0 ? c.value / fullV * 100 : 0) + '</td>' +
         '</tr>';
-        return open ? row + pfMiniDetailRowHtml(h, c, narrow ? 4 : 6, pid) : row;
+        return open ? row + pfMiniDetailRowHtml(h, c, 6, pid) : row;
     }
     // Полное название актива: своё имя (если отличается от тикера) → таблица акций →
     // гугл-таблица облигаций (bonds из data.js; тикер портфеля может быть коротким ISIN).
