@@ -6,8 +6,10 @@ const fs = require('fs');
 const path = require('path');
 
 const DIR = __dirname;
-const SRC = path.join(DIR, 'trading-mockups.src.html');
-const OUT = path.join(DIR, 'trading-mockups.html');
+/* имя набора: `node build-mockups.js pf-card` соберёт pf-card-mockups.src.html */
+const SET = (process.argv[2] || 'trading').replace(/(-mockups)?(\.src)?\.html$/, '');
+const SRC = path.join(DIR, SET + '-mockups.src.html');
+const OUT = path.join(DIR, SET + '-mockups.html');
 
 const html = fs.readFileSync(SRC, 'utf8');
 
@@ -30,9 +32,9 @@ new Function('document', m[1])(shim);
 
 let out = html;
 Object.keys(parts).forEach(function (id) {
-    const re = new RegExp('(<div[^>]*id="' + id + '"[^>]*>)\\s*</div>');
+    const re = new RegExp('(<(\\w+)[^>]*id="' + id + '"[^>]*>)\\s*</\\2>');
     if (!re.test(out)) { console.error('не нашёл контейнер #' + id); process.exit(1); }
-    out = out.replace(re, function (_, open) { return open + parts[id] + '</div>'; });
+    out = out.replace(re, function (_, open, tag) { return open + parts[id] + '</' + tag + '>'; });
 });
 
 // скрипт больше не нужен — страница уже нарисована
@@ -48,6 +50,6 @@ const title = (out.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || 'Мокап�
 const style = (out.match(/<style>[\s\S]*?<\/style>/) || [])[0] || '';
 const bodyInner = (out.match(/<body>([\s\S]*?)<\/body>/) || [])[1] || '';
 const art = '<title>' + title + '</title>\n' + style + '\n' + bodyInner.trim() + '\n';
-const ART = path.join(DIR, 'trading-mockups-artifact.html');
+const ART = path.join(DIR, SET + '-mockups-artifact.html');
 fs.writeFileSync(ART, art, 'utf8');
 console.log('файл:', path.basename(ART), Math.round(art.length / 1024) + ' КБ');
