@@ -463,7 +463,13 @@
                 }).join('') + '</div>';
         }
         return '<div class="dash2-card pf-card2 pf-calmblk">' +
-            PF.pfCardHead('', 'Календарь выплат', 'купоны, дивиденды и погашения по дням', '<div class="pfcm-head-r">' + totalPill + '</div>') +
+            // кнопки конструктора — в потоке шапки ПЕРЕД пилюлей «за месяц» (PFD_OWN_CHROME).
+            // Раньше они висели угловым оверлеем и всплывали по ховеру на 7px выше пилюли,
+            // ломая ровный ряд, — из-за этого их пришлось сделать ВИДНЫМИ ВСЕГДА и
+            // подгонять top:22.5px. В потоке они встают на одну линию с пилюлей сами и
+            // снова прячутся до наведения, как у всех остальных виджетов.
+            PF.pfCardHead('', 'Календарь выплат', 'купоны, дивиденды и погашения по дням',
+                '<div class="pfcm-head-r">' + PF.pfdInChromeHtml('calm') + totalPill + '</div>') +
             nav +
             '<div class="pfcm-wds">' + PFCM_WD.map(function (w) { return '<span class="pfcm-wd">' + w + '</span>'; }).join('') + '</div>' +
             '<div class="pfcm-grid">' + cells + '</div>' +

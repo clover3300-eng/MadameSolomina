@@ -910,6 +910,8 @@
     function pfdHeatHtml() {
         return '<div class="dash2-card pf-card2 pf-heatblk">' +
             PF.pfCardHead('', 'Карта рынка', 'индекс Мосбиржи · размер — вес, цвет — за день',
+                // кнопки конструктора — в потоке шапки ПЕРЕД «Открыть» (PFD_OWN_CHROME)
+                pfdInChromeHtml('heat') +
                 '<button class="d3-quick ghost pfhm-go" onclick="switchTab(\'market\')">Открыть' + GO_ARROW_SVG + '</button>') +
             '<div class="pfhm-box"><div class="pfhm-state">Загружаем карту рынка…</div></div>' +
         '</div>';
@@ -1119,14 +1121,21 @@
         var list = pfdNewsList();
         if (!list.length && !pfdNewsAdding) {
             return '<div class="dash2-card pf-card2 pf-newsblk">' +
-                PF.pfCardHead('', 'Новости по позициям', 'свежая новость по бумагам портфелей', '<button class="pff-add" onclick="pfdNewsAddToggle()" title="Добавить тикер не из портфеля" aria-label="Добавить тикер">' + PFD_PLUS_SVG + '</button>') +
+                PF.pfCardHead('', 'Новости по позициям', 'свежая новость по бумагам портфелей',
+                    // кнопки конструктора — в потоке шапки ПЕРЕД «+» (PFD_OWN_CHROME):
+                    // сдвинутая шестерёнка не доставала до «+» всего 2px
+                    pfdInChromeHtml('news') +
+                    '<button class="pff-add" onclick="pfdNewsAddToggle()" title="Добавить тикер не из портфеля" aria-label="Добавить тикер">' + PFD_PLUS_SVG + '</button>') +
                 '<div class="pfnw-body" data-skey="posnews"><div class="pfnw-empty">Добавьте акции в портфель — или введите любой тикер по кнопке «+» справа.</div></div></div>';
         }
         if (pfdNewsPick && !list.some(function (x) { return x.tk === pfdNewsPick; })) pfdNewsPick = null;
         var shown = pfdNewsPick ? list.filter(function (x) { return x.tk === pfdNewsPick; }) : list;
         var rows = shown.map(function (x) { return pfdNewsItemHtml(x); }).join('');
         return '<div class="dash2-card pf-card2 pf-newsblk">' +
-            PF.pfCardHead('', 'Новости по позициям', 'наведите бумагу — новость раскроется, нажмите — откроется') +
+            // и в основной ветке тоже: news в PFD_OWN_CHROME, углового оверлея больше нет —
+            // без своей пары кнопок виджет стало бы нечем настроить и удалить
+            PF.pfCardHead('', 'Новости по позициям', 'наведите бумагу — новость раскроется, нажмите — откроется',
+                pfdInChromeHtml('news')) +
             pfdNewsChips(list) +
             '<div class="pfnw-body" data-skey="posnews"><div class="pfnw-list">' + rows + '</div></div></div>';
     }
@@ -1380,6 +1389,12 @@
                 // «+» → терминал стоит НАПРОТИВ заголовка: вынесен ИЗ .pff-head-r (тот в узкой
                 // колонке переносится на 2-ю строку под заголовок), margin-left:auto уводит его
                 // вправо на строку заголовка. Внутри head-r он ломал space-between фильтра.
+                // R9.3: шестерёнка и корзина конструктора — СЛЕВА от «+», в потоке шапки
+                // (PFD_OWN_CHROME). Угловой оверлей ложился ровно на «+» (замерено: обе
+                // кнопки 408-459 против «+» 428-452). Корзина заменила прежний глаз
+                // .pff-hide — действие то же (pfdHideBlock), но пара «настройки+удалить»
+                // такая же, как у всех виджетов конструктора.
+                (showHide ? pfdInChromeHtml('fav') : '') +
                 '<button class="pff-add" type="button" onclick="pfGoTerminal(event)" aria-label="Открыть терминал" title="Открыть терминал — все акции и облигации в таблице">' +
                     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>' +
                 '</button>' +
@@ -1388,11 +1403,9 @@
                     // задержкой и в системном стиле — свой показывается мгновенно и в тоне приложения
                     '<span class="pff-info-wrap"><button class="pff-info" type="button" aria-label="Что такое потенциал">' + PF.INFO_SVG + '<span>Что такое потенциал?</span></button>' +
                     '<span class="pff-tipbox" role="tooltip">' + esc(POT_TIP) + '</span></span>' +
-                    // глаз-скрытие — РЯДОМ с инфо-иконкой (не в углу карточки, где раньше
-                    // наезжал на «+»): тихая иконка, проявляется только по hover карточки,
-                    // как и корзина/шестерёнка виджетов (.pfd-cardrm). Только в конструкторе —
-                    // у классической правой колонки нет «Видимости» в шапке, скрывать нечем.
-                    (showHide ? '<button class="pff-hide" type="button" onclick="pfdHideBlock(\'fav\')" title="Скрыть блок (вернуть — «Видимость» в шапке)" aria-label="Скрыть блок">' + PF.EYEOFF_SVG + '</button>' : '') +
+                    // R9.3: глаз-скрытие отсюда убран — его роль взяла корзина в паре
+                    // .pfd-inchrome на строке заголовка (см. выше). Две кнопки с одним и
+                    // тем же pfdHideBlock('fav') в одной шапке только путали.
                     // фильтр сортировки избранного (вместо кнопки «Все акции»): по потенциалу / по свежести новостей
                     '<div class="pff-sort" role="tablist">' +
                         '<button class="pff-sort-b' + (favSort === 'pot' ? ' on' : '') + '" onclick="pfSetFavSort(\'pot\')" title="Сначала с наибольшим потенциалом">Потенциал</button>' +
@@ -1524,8 +1537,15 @@
     // у полосы нет шапки, и угловой оверлей .pfd-eye лёг бы поверх значения плитки.
     function ratesHtml(hideId) {
         var tiles = rateTiles();
+        // R9.3: вместо одинокого глаза — ПАРА кнопок конструктора ('rates' в PFD_OWN_CHROME).
+        // Прежде глаз сидел на top:7/right:7 последней плитки, а на подвкладках блок
+        // дополнительно получал угловой оверлей: корзина ложилась ровно на глаз (замерено —
+        // корзина 1408-1432 против глаза 1417-1438), две hover-иконки с одним pfdHideBlock
+        // в одной точке. Заодно у полосы наконец появились настройки виджета.
+        // ratesStackHtml (режим «Ставки» у блока 'cal') намеренно оставлен на глазе: cal
+        // не в PFD_OWN_CHROME, и пара кнопок встретилась бы там с его угловым хромом.
         var eye = hideId
-            ? '<button class="pfc-act pf-ratestile-eye" title="Скрыть блок (вернуть — «Видимость» в шапке)" aria-label="Скрыть блок ставок" onclick="pfdHideBlock(\'' + jsArg(hideId) + '\')">' + PF.EYEOFF_SVG + '</button>'
+            ? '<span class="pf-ratestile-chrome">' + pfdInChromeHtml(hideId) + '</span>'
             : '';
         return '<div class="d3-ratesband pf-ratesband"><div class="drt-grid">' +
             tiles.map(function (t, i) {
@@ -1924,6 +1944,8 @@
         }).join('');
         return '<div class="dash2-card pf-card2 pf-idxblk">' +
             PF.pfCardHead('', 'Рынок сейчас', 'индекс, валюта и криптовалюта — живые значения',
+                // кнопки конструктора — в потоке шапки ПЕРЕД «Рынок» (PFD_OWN_CHROME)
+                pfdInChromeHtml('idx') +
                 '<button class="d3-quick ghost pfhm-go" onclick="switchTab(\'market\')">Рынок' + GO_ARROW_SVG + '</button>') +
             '<div class="pfix-rows">' + rows + '</div></div>';
     }
@@ -2073,7 +2095,9 @@
         var all = PF.store.items;
         if (!all.length) {
             return '<div class="dash2-card pf-card2 pf-plistblk">' +
-                PF.pfCardHead('', 'Список портфелей', 'все портфели со сводкой', null) +
+                // пустое состояние — тоже со своими кнопками: plist в PFD_OWN_CHROME,
+                // углового оверлея нет, и без этого виджет нельзя было ни настроить, ни убрать
+                PF.pfCardHead('', 'Список портфелей', 'все портфели со сводкой', pfdInChromeHtml('plist')) +
                 '<div class="pfal-empty">Создайте первый портфель кнопкой «Портфель» в шапке.</div></div>';
         }
         var rows = all.map(function (p) { return { p: p, c: calcPf(p) }; });

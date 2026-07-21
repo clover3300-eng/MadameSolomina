@@ -75,8 +75,12 @@ body.dark-mode .pf-sumcard {
 .pfs2-eyebrow { display: flex; flex-direction: column; gap: 3px; }
 .pfs2-eyebrow-t { font-family: 'Inter', sans-serif; font-size: 21px; font-weight: 800; letter-spacing: -0.015em; color: #fff; line-height: 1.1; }
 .pfs2-eyebrow-c { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #8ea0b6; }
-/* в сетке над заголовком висит глаз-скрытие (.pfd-eye) — освобождаем справа место, чтобы не наезжал */
-.pfd-item[data-pfd="sum"] .pfs2-eyebrow { padding-right: 36px; }
+/* В сетке над заголовком висит угловой хром — освобождаем справа место, чтобы не наезжал.
+   36px хватало на ОДИН глаз (.pfd-eye) на «Обзоре». Но на подвкладках блок получает
+   defHidden, а с ним ПАРУ кнопок (шестерёнка + корзина, см. pfdBodyHtml), и они
+   заезжали на «Суммарный капитал» — замерено: кнопки 408-459 против заголовка 20-453.
+   78px — тот же резерв, что у .pfd-rmable в portfolios-r7.css. */
+.pfd-item[data-pfd="sum"] .pfs2-eyebrow { padding-right: 78px; }
 .pfs2-capital { margin-top: 14px; font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 700; letter-spacing: -0.025em; color: #fff; line-height: 1; white-space: nowrap; overflow: hidden; }
 .pfs2-sub { margin-top: 7px; display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; font-weight: 600; color: #aebbcc; }
 .pfs2-pnl { white-space: nowrap; }
@@ -2004,6 +2008,11 @@ body.dark-mode .tbmk-c.neg { color: #f87171; }
    в ratesHtml/ratesStackHtml — классический вызов его не передаёт), поэтому кнопка всегда
    внутри .pfd-item, и проявляется по hover блока — как .pfd-cardrm/.pff-hide, не отдельным
    полупрозрачным пятном поверх плитки. */
+/* R9.3: у полосы 'rates' в том же углу теперь ПАРА кнопок (.pfd-inchrome) вместо глаза —
+   тот же тихий hover-режим, только шире. Разделитель пары внутри плитки лишний. */
+.pf-ratestile-chrome { position: absolute; top: 5px; right: 7px; z-index: 2; }
+.pf-ratestile-chrome .pfd-inchrome { padding-right: 0; margin-right: 0; border-right: 0; }
+.drt-grid > .drt-tile:last-child { position: relative; }
 .pf-ratesstack-grid .drt-tile--eye { position: relative; }
 .pf-ratestile-eye.pfc-act {
     position: absolute; top: 7px; right: 7px; width: 24px; height: 24px; border-radius: 7px;
@@ -2359,10 +2368,9 @@ body.pfd-dragging-now .pfd-grid.editing .pfd-item { cursor: grabbing; }
 .pfd-rmable > .pfd-body > .dash2-card > .pf-ch { padding-right: 46px; }
 /* виджеты с полноценной шапкой (заголовок начинается на 22px от верха карточки) —
    опускаем корзину на УРОВЕНЬ ЗАГОЛОВКА, а не под самый верх блока */
+/* heat/news здесь больше нет: их кнопки уехали в поток шапки (PFD_OWN_CHROME) */
 .pfd-item[data-pfd="cap"] .pfd-cardrm,
 .pfd-item[data-pfd="cap2"] .pfd-cardrm,
-.pfd-item[data-pfd="heat"] .pfd-cardrm,
-.pfd-item[data-pfd="news"] .pfd-cardrm,
 .pfd-item[data-pfd="alloc"] .pfd-cardrm { top: 24px; right: 20px; }
 /* бейдж текущего размера — появляется только во время ресайза (JS пишет текст) */
 .pfd-size {

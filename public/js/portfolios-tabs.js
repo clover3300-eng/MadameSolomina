@@ -1040,8 +1040,14 @@
     // ---- скругление карточек: CSS-переменная --pfr на панели, персист в pf_dash_v1 ----
     // R8: настройка ГЛОБАЛЬНАЯ (одна на все подвкладки) — живёт в конфиге «Обзора»,
     // какая бы подвкладка ни была активна
+    // ЕДИНЫЙ источник правды: настройка глобальная и живёт в конфиге «Обзора».
+    // Читать её из PF.dashCfg нельзя — на подвкладке это конфиг ЭТОЙ подвкладки,
+    // где ключа corner нет вовсе. Из-за такого расхождения виджет «Отображение
+    // карточек» выглядел неработающим: подсветка всегда падала на 'std', а клик по
+    // реально выбранному варианту гасился ранним выходом (oc.corner === v).
+    function pfxCornerCur() { return (pfTabCfgs.overview || PF.dashCfg).corner || 'std'; }
     function pfxCornerPx() {
-        var c = (pfTabCfgs.overview || PF.dashCfg).corner;
+        var c = pfxCornerCur();
         return c === 'main' ? '14px' : c === 'lg' ? '28px' : '20px';
     }
     function pfxApplyCorner() {
@@ -1059,7 +1065,7 @@
         try { updateLayoutBtn(); } catch (e) {}
     };
     function pfxCornerRowHtml(big) {
-        var cur = PF.dashCfg.corner || 'std';
+        var cur = pfxCornerCur();   // не PF.dashCfg — см. pfxCornerCur
         var opts = [
             ['std', 'Мягкие', '20px', 'по умолчанию'],
             ['main', 'Как на Главной', '14px', 'как карточка входа'],
@@ -1348,7 +1354,15 @@
     };
     function pfxTabPortsHtml() {
         var vis = visibleItems();
-        if (!vis.length) return PF.store.items.length ? PF.allHiddenHtml() : PF.emptyHtml();
+        // Пустое состояние — в обёртке со своими кнопками: pdetail в PFD_OWN_CHROME,
+        // угловой оверлей ему не ставится, а ранний выход отдавал голую заглушку —
+        // виджет висел на дашборде без шестерёнки и корзины, убрать его было нечем.
+        if (!vis.length) {
+            return '<div class="pfx-ports"><div class="dash2-card pf-card2 pfpt-card">' +
+                PF.pfCardHead('', 'Составы портфелей', 'полные таблицы бумаг каждого портфеля', pfdInChromeHtml('pdetail')) +
+                (PF.store.items.length ? PF.allHiddenHtml() : PF.emptyHtml()) +
+            '</div></div>';
+        }
         var GEAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="8" cy="7" r="2.5"/><circle cx="16" cy="17" r="2.5"/></svg>';
         return '<div class="pfx-ports">' + vis.map(function (p, i) {
             var c = calcPf(p), ac = colorVal(p.color);

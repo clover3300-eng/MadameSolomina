@@ -391,9 +391,10 @@ body.dark-mode #panel-portfolios .pfc-rebal svg { color: #b7c2d3; }
 body.dark-mode #panel-portfolios .drt-tile { background: #141c27; border-color: rgba(255, 255, 255, 0.1); }
 body.dark-mode #panel-portfolios .drt-v { color: #f4f8fd; }
 
-/* ============ 7г. Карта рынка: «Открыть» у правого края, корзина слева от неё ============ */
+/* ============ 7г. Карта рынка: «Открыть» у правого края, кнопки конструктора слева ============ */
+/* Резерв справа не нужен: кнопки больше не висят оверлеем в углу, а стоят в потоке
+   шапки перед «Открыть» (PFD_OWN_CHROME + pfdInChromeHtml, см. §19). */
 #panel-portfolios .pfd-item[data-pfd="heat"] .pf-heatblk > .pf-ch { padding-right: 0; }
-#panel-portfolios .pfd-item[data-pfd="heat"] .pfd-cardrm { top: 21px; right: 144px; }
 
 /* ============ 8. «Календарь выплат»: пилюли и месяцы (референс) ============ */
 #panel-portfolios .pfpc-soon {
@@ -459,9 +460,14 @@ body.dark-mode .pft-side.pay { color: #34d399; background: rgba(52, 211, 153, 0.
 .pfd-item.pfd-hset .pf-divsblk, .pfd-item.pfd-hset .pf-assetsblk, .pfd-item.pfd-hset .pf-opsblk,
 .pfd-item.pfd-hset .pf-yieldblk, .pfd-item.pfd-hset .pf-snapsblk,
 .pfd-item.pfd-hset .pf-moversblk, .pfd-item.pfd-hset .pf-idxblk,
-.pfd-item.pfd-hset .pf-passiveblk, .pfd-item.pfd-hset .pf-concblk { height: 100%; }
+.pfd-item.pfd-hset .pf-passiveblk, .pfd-item.pfd-hset .pf-concblk,
+.pfd-item.pfd-hset .pfx-setcard { height: 100%; }
+/* max-height: none обязателен: у .pfas-list/.pfsn-list свой потолок 420px (см. §10
+   ниже). Без снятия он бил ровно по правилу «контент подстраивается под размер»:
+   блок тянут выше — список упирается в 420px, под ним мёртвое поле, а часть строк
+   всё равно спрятана за скроллом (замерено: пустых 66px при 69px недокрута). */
 .pfd-item.pfd-hset .pfas-list, .pfd-item.pfd-hset .pfsn-list,
-.pfd-item.pfd-hset .pfop-list, .pfd-item.pfd-hset .pfyl-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+.pfd-item.pfd-hset .pfop-list, .pfd-item.pfd-hset .pfyl-list { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; scrollbar-width: thin; }
 /* виджеты с малым числом строк (Рынок сейчас, Пассивный доход, Дивиденды) при заданной
    высоте РАСПРЕДЕЛЯЮТ строки по высоте — данные подстраиваются, а не жмутся к шапке */
 .pfd-item.pfd-hset .pfix-rows, .pfd-item.pfd-hset .pfpv-rows,
@@ -638,6 +644,12 @@ body.dark-mode .pfmv-n b { color: #f4f8fd; }
 
 /* ============ 11а. Подвкладка «Портфели» — обзор портфеля + полный состав ============ */
 .pfx-ports { display: flex; flex-direction: column; gap: 16px; }
+/* Задана высота блока: стопка карточек составов — растущая колонка со скроллом.
+   Без этого .pfd-body{overflow:hidden} резал второй и следующие портфели насмерть —
+   строки таблиц пропадали, и добраться до них было нельзя (замерено: 65 обрезанных
+   строк при 8 портфелях, ни одного скроллера). Правило «контент подстраивается под
+   размер виджета», как у .pfas-list/.pfsn-list. */
+.pfd-item.pfd-hset .pfx-ports { height: 100%; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
 .pfpt-card { padding: 20px 22px; }
 /* R9.1: шапка карточки состава — СЕТКА вместо flex-каши (просьба 2026-07-16
    «добавить воздуха и равномерно распределить»): ряд 1 — имя и действия по краям,
@@ -725,6 +737,12 @@ body.dark-mode .pfpt-share b { color: #cbd6e4; }
 /* ============ 11. Подвкладка «Настройки» ============ */
 .pfx-setbody { display: flex; flex-direction: column; }
 .pfx-setlist { display: flex; flex-direction: column; gap: 4px; }
+/* Задана высота: тело настроек — растущая колонка, список строк скроллится.
+   Раньше цепочка flex обрывалась на .pfx-setbody: контент прижимался к шапке,
+   под ним копилась пустота (замерено 329px у «Видимости», 155px у «Отчётов»), а
+   при 8 портфелях нижние строки и сноска уходили под кромку без скролла. */
+.pfd-item.pfd-hset .pfx-setbody { flex: 1 1 auto; min-height: 0; }
+.pfd-item.pfd-hset .pfx-setlist { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
 .pfx-setlist .pf-impgrp { padding: 12px 2px 6px; }
 .pfx-setlist .pf-impitem { border: 1px solid #eef2f7; background: #fbfcfe; }
 .pfx-setlist .pf-impitem:hover { background: #f4f7fb; }
@@ -1246,14 +1264,12 @@ body.dark-mode .dm-news b { color: #e8eef7; }
    портфелей — нейтральный акцент и точки по цветам. */
 .pf-calmblk { display: flex; flex-direction: column; box-sizing: border-box; padding: 0 22px 20px; }
 .pf-calmblk > .pf-ch { padding-left: 0; padding-right: 0; }
-/* Шестерёнка и корзина в шапке «Календаря» — ВИДНЫ ВСЕГДА и стоят на одной линии с
-   пилюлей «за месяц». У остальных виджетов угол пустой, и там тихая манера (opacity 0
-   до наведения) читается как чистота; здесь же в углу уже стоит пилюля, и иконки,
-   выныривая по ховеру на 7px выше неё, ломали ровный ряд у всех на виду.
-   top: 22.5px — не подгонка «на глаз»: иконка 26px, её центр (22.5 + 13) совпадает с
-   центром пилюли (22px паддинга шапки + половина её 23px высоты). */
-.pfd-item[data-pfd="calm"] .pfd-cardcfg,
-.pfd-item[data-pfd="calm"] .pfd-cardrm { opacity: 1; pointer-events: auto; top: 22.5px; }
+/* R9.3: прежде здесь шестерёнка и корзина были ВИДНЫ ВСЕГДА и прибиты на top:22.5px —
+   угловой оверлей выныривал по ховеру на 7px выше пилюли «за месяц» и ломал ровный ряд,
+   и это лечили постоянной видимостью. Теперь кнопки живут В ПОТОКЕ шапки перед пилюлей
+   (calm в PFD_OWN_CHROME, см. pfcmCardHtml): по одной линии их равняет сам flex, а
+   прячутся они до наведения — как у всех остальных виджетов. Правило больше не нужно. */
+.pfcm-head-r > .pfd-inchrome { margin-left: 0; }
 /* итог месяца в шапке — компактная пилюля одной строкой: nowrap не даёт «₽»
    переноситься на новую строку при узком виджете */
 .pfcm-head-r { display: flex; align-items: center; margin-left: auto; flex-shrink: 0; }
@@ -1546,11 +1562,23 @@ body.dark-mode .pfd-item.pfd-thm-glass > .pfd-body > .dash2-card::before {
 /* виджеты с полноценной шапкой — на уровень заголовка, слева от их корзины */
 .pfd-item[data-pfd="cap"] .pfd-cardcfg,
 .pfd-item[data-pfd="cap2"] .pfd-cardcfg,
-.pfd-item[data-pfd="news"] .pfd-cardcfg,
 .pfd-item[data-pfd="alloc"] .pfd-cardcfg { top: 24px; right: 50px; }
-#panel-portfolios .pfd-item[data-pfd="heat"] .pfd-cardcfg { top: 21px; right: 174px; }
+/* heat/idx/news/fav — больше НЕ угловым оверлеем: их правый угол занят собственной
+   кнопкой («Открыть» / «Рынок» / «+»), и кнопки конструктора теперь стоят СЛЕВА от
+   неё в потоке шапки (PFD_OWN_CHROME + pfdInChromeHtml). Прежний адресный сдвиг
+   right:174px здесь убран: он был привязан к ширине карточки и на узкой (222px)
+   выкидывал обе кнопки на заголовок. */
+
+/* Кнопки в потоке шапки (.pfd-inchrome) — см. §R9.2 в конце файла. */
 /* в углу теперь ДВЕ кнопки — шапке нужно больше места справа (база 46px в portfolios.css) */
 .pfd-rmable > .pfd-body > .dash2-card > .pf-ch { padding-right: 78px; }
+/* ...но ТОЛЬКО пока кнопки висят угловым оверлеем. У виджетов из PFD_OWN_CHROME они
+   стоят в потоке шапки, оверлея нет — и резерв превращается в дыру: собственная
+   кнопка виджета не доходит до угла (замерено у «Рынок сейчас»: «Рынок» кончалась
+   на 361 при шапке 432, то есть в 71px от края, тогда как у «Карты рынка» с
+   padding-right:0 — ровно в углу). Правило само снимается, как только виджет
+   получает .pfd-inchrome, — отдельный адресный костыль на каждый новый не нужен. */
+.pfd-rmable > .pfd-body > .dash2-card > .pf-ch:has(> .pfd-inchrome) { padding-right: 0; }
 /* тёмная тема сайта и тёмные/стеклянные виджеты: иконка чуть светлее, hover — индиго */
 body.dark-mode .pfd-cardcfg, .pfd-item.pfd-thm-dark .pfd-cardcfg { color: #5c6c82; }
 body.dark-mode .pfd-cardcfg:hover, body.dark-mode .pfd-item.pfd-cfgopen .pfd-cardcfg,
@@ -1820,6 +1848,12 @@ body.dark-mode .pfpl-spark-svg.flat line { stroke: rgba(255, 255, 255, 0.2); }
 .pfps-ring { position: relative; width: 170px; height: 170px; flex-shrink: 0; }
 .pfps-ring svg { width: 100%; height: 100%; display: block; }
 .pfps-legend { flex: 1 1 220px; min-width: 0; display: flex; flex-direction: column; }
+/* Задана высота: пара «кольцо + легенда» забирает остаток блока, легенда скроллится.
+   Прежде .pfps-wrap не рос — при 8 портфелях под ним оставалось 388px пустоты, а
+   строки легенды сверх пары обрезались без скролла. Кольцо остаётся 170px и
+   центрируется по вертикали — растягивать его нечем и незачем. */
+.pfd-item.pfd-hset .pfps-wrap { flex: 1 1 auto; min-height: 0; }
+.pfd-item.pfd-hset .pfps-legend { align-self: stretch; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
 .pfps-lrow {
     display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto;
     gap: 10px; align-items: center; padding: 9px 2px; border-bottom: 1px solid #eef2f7;
@@ -1864,7 +1898,10 @@ body.dark-mode .pfsm-tile b { color: #f4f8fd; }
 body.dark-mode .pfsm-chip { background: rgba(255, 255, 255, 0.07); color: #b7c2d3; }
 .pfsm-chip.pos { color: #0f7a44; background: rgba(18, 163, 92, 0.1); }
 .pfsm-chip.neg { color: #b0421c; background: rgba(224, 89, 43, 0.1); }
-.pfd-item.pfd-hset .pf-psumblk .pfsm-grid { flex: 1 1 auto; min-height: 0; align-content: stretch; }
+/* grid-auto-rows: 1fr — без него align-content:stretch не тянул РЯДЫ: сетка вырастала
+   на всю высоту, а плитки оставались по содержимому и жались к шапке (замерено 170px
+   пустоты снизу при высоте блока 620). Ряды равными долями — плитки растут вместе с блоком. */
+.pfd-item.pfd-hset .pf-psumblk .pfsm-grid { flex: 1 1 auto; min-height: 0; align-content: stretch; grid-auto-rows: 1fr; }
 
 /* — пустая подвкладка: приглашение собрать дашборд — */
 .pfx-emptytab {
@@ -1986,7 +2023,9 @@ body.dark-mode .pfl3-abtn:hover { background: rgba(255, 255, 255, 0.08); color: 
 .pfsd-body .pfm-extra { flex: 1 1 220px; }
 
 /* ============ 17. «Избранное»: глаз-скрытие и поповер «Что такое потенциал» ============ */
-/* Глаз-скрытие «Избранного» (.pff-hide) — РЯДОМ с инфо-иконкой внутри .pff-head-r
+/* R9.3: НЕ РЕНДЕРИТСЯ БОЛЬШЕ — роль глаза взяла корзина в паре .pfd-inchrome на
+   строке заголовка (favHtml). Стили оставлены на случай возврата кнопки.
+   Глаз-скрытие «Избранного» (.pff-hide) — РЯДОМ с инфо-иконкой внутри .pff-head-r
    (см. favHtml/showHide в portfolios.js), а не угловым оверлеем .pfd-eye поверх карточки:
    тот наезжал на «+» → терминал (margin-left:auto тянет его в тот же угол) и заставлял
    держать под него специальный padding-right, отчего «+» съезжал левее своего обычного
@@ -2242,6 +2281,14 @@ body.dark-mode .pfpl-sort-cap { color: #93a2b8; }
 }
 .pfd-item:hover .pfd-inchrome, .pfd-inchrome:focus-within,
 .pfd-grid.editing .pfd-inchrome, .pfd-item.pfd-cfgopen .pfd-inchrome { opacity: 1; pointer-events: auto; }
+/* Пара сама прижимается вправо, а собственный контент угла («Открыть» / «Рынок» /
+   «+») встаёт СПРАВА от неё вплотную: его margin-left:auto надо погасить, иначе он
+   уедет к краю, а кнопки останутся висеть у заголовка посреди шапки. Тот же приём,
+   что у карточек терминала (broker.css). Заголовкам с flex:1 (fav) auto не мешает. */
+#panel-portfolios .pf-ch > .pfd-inchrome { margin-left: auto; }
+#panel-portfolios .pf-ch > .pfd-inchrome ~ .pfhm-go,
+#panel-portfolios .pf-ch > .pfd-inchrome ~ .pff-add,
+#panel-portfolios .pf-ch > .pfd-inchrome ~ .pf-ch-go { margin-left: 8px; }
 .pfd-inbtn {
     width: 26px; height: 26px; border: 0; background: none; padding: 0; cursor: pointer; border-radius: 8px;
     display: inline-flex; align-items: center; justify-content: center; color: #c3cdd9;
