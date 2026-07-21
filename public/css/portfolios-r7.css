@@ -54,9 +54,11 @@ body.dark-mode #panel-portfolios .pfc-name-ink {
 
 /* ============ 4. Подвкладки — в СЕРЕДИНЕ глобальной шапки ============
    С 2026-07-21 ряд живёт не на странице, а в слоте #topBarPfMarket (мокап
-   «Подвкладки переезжают в шапку»). Кегль и поля пересобраны под второй
-   уровень навигации: 13,5px/600, поля 9px 10px — на странице ряд был первым
-   уровнем и был крупнее (14,5px). Чипов портфелей в ряду нет (уехали в
+   «Подвкладки переезжают в шапку»). Кегль 14,5px/600, поля 9px 10px: с
+   2026-07-22 ряд вернулся к прежнему размеру — под zoom:0.9 сжатые 13,5px
+   давали на экране 12,15px против 12,6px у пилюли-родителя, и второй уровень
+   навигации не читался как отдельный. Иерархию держат вес (600 против 700)
+   и цвет, а не кегль. Чипов портфелей в ряду нет (уехали в
    селектор на пилюле, секция 4а ниже), переполнение решает свёртка хвоста
    в «⋯» (pfxTabsFit), а не горизонтальный скролл.
    Ряд ПРИЖАТ К ПИЛЮЛЕ (flex-start, 2026-07-22): по центру свободной середины
@@ -71,7 +73,7 @@ body.dark-mode #panel-portfolios .pfc-name-ink {
     position: relative; appearance: none; background: none; border: 0; cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center;
     flex: 0 0 auto; padding: 9px 10px; border-radius: 8px; white-space: nowrap;
-    font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 600; letter-spacing: -0.01em;
+    font-family: 'Inter', sans-serif; font-size: 14.5px; font-weight: 600; letter-spacing: -0.01em;
     color: #64748b; transition: color 0.13s, background 0.13s;
 }
 .pfx-tab:hover { color: #1e293b; background: rgba(15, 23, 42, 0.06); }
@@ -120,7 +122,7 @@ body.dark-mode .pfx-gearbtn.on { background: rgba(129, 140, 248, 0.22); border-c
 .pfx-more {
     appearance: none; border: 0; background: transparent; cursor: pointer;
     padding: 9px 9px; border-radius: 8px;
-    font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 700; line-height: 1;
+    font-family: 'Inter', sans-serif; font-size: 14.5px; font-weight: 700; line-height: 1;
     color: #64748b; transition: color 0.13s, background 0.13s;
 }
 .pfx-more:hover, .pfx-more.open { color: #1e293b; background: rgba(15, 23, 42, 0.08); }
@@ -2246,7 +2248,7 @@ body.quiz-mode #pfActBar, body.sd-drawer-open #pfActBar { display: none !importa
     display: inline-flex; align-items: center; gap: 7px; box-sizing: border-box;
     height: 38px; padding: 0 14px; margin: 0; border: 0; border-radius: 999px;
     background: transparent; color: var(--text-slate, #64748B); cursor: pointer;
-    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; white-space: nowrap;
+    font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 700; white-space: nowrap;
     box-shadow: none; transition: background 0.15s, color 0.15s, transform 0.15s;
 }
 #pfActBar .pfab-btn svg, #pfActBar .d3-quick.pf-impbtn svg { width: 16px; height: 16px; flex: 0 0 auto; }

@@ -1336,21 +1336,21 @@ body.pfsd-open #pftScreens { display: none !important; }
 
 .pfts-pill {
     position: relative; flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-start;
-    gap: 1px; max-width: 210px; padding: 6px 12px; cursor: pointer;
+    gap: 1px; max-width: 230px; padding: 6px 12px; cursor: pointer;
     border: 1px solid transparent; border-radius: 11px; background: none;
     text-align: left; transition: background 0.14s, border-color 0.14s, color 0.14s;
 }
 .pfts-pill:hover { background: rgba(15, 23, 42, 0.05); }
 .pfts-pill.on { background: #1f2937; border-color: #1f2937; }
 .pfts-nm {
-    font-family: var(--font-ui); font-size: 12.5px; font-weight: 700; color: #334155;
+    font-family: var(--font-ui); font-size: 13.5px; font-weight: 700; color: #334155;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
 }
 .pfts-pill.on .pfts-nm { color: #fff; }
 /* тикеры экрана — моно, как все «цифры» терминала: полоса отвечает «что там»,
    не заставляя открывать экран */
 .pfts-sub {
-    font-family: var(--font-num); font-size: 9.5px; font-weight: 600; letter-spacing: 0.02em;
+    font-family: var(--font-num); font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
     color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
 }
 .pfts-pill.on .pfts-sub { color: rgba(255, 255, 255, 0.62); }
@@ -1377,7 +1377,7 @@ body.pfsd-open #pftScreens { display: none !important; }
 .pfts-nbtn {
     display: inline-flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer;
     min-height: 34px; padding: 6px 13px; border: 0; border-radius: 11px; background: none; color: #64748b;
-    font-family: var(--font-ui); font-size: 12px; font-weight: 700;
+    font-family: var(--font-ui); font-size: 13px; font-weight: 700;
     transition: color 0.14s, background 0.14s, transform 0.1s;
 }
 .pfts-nbtn:hover { color: #4453ef; background: rgba(68, 83, 239, 0.08); }
