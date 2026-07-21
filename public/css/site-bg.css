@@ -184,6 +184,15 @@ body.sbg-dawn #siteBgTiles {
    «рейка раскрыта»: подсветка держится, пока курсор над рейкой */
 #bgFab:hover .bgfab-btn, #bgFab.open .bgfab-btn { color: var(--text-deep, #1b2433); background: rgba(24, 38, 60, 0.08); }
 body.dark-mode #bgFab:hover .bgfab-btn, body.dark-mode #bgFab.open .bgfab-btn { background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.85); }
+/* невидимый МОСТИК через зазор кнопка↔рейка: зазор — мёртвая зона, на его
+   пересечении :hover рвался, рейка начинала закрываться и мгновенно теряла
+   pointer-events — выбрать фон наведением было нельзя, только кликом-«пришпилив».
+   Мостик существует лишь ПОКА ховер уже есть (иначе прозрачная полоса глотала
+   бы клики по контенту под углом), с запасом по высоте под диагональный путь. */
+#bgFab:hover::before, #bgFab.open::before {
+    content: ''; position: absolute; right: 100%; width: 16px;
+    top: -8px; height: calc(100% + 16px);
+}
 
 /* Рейка: высота = высоте кнопки, живёт своей естественной шириной (max-content —
    прежний трюк 0fr→1fr тут не работает: у absolute-контейнера ширина
