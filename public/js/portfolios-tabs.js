@@ -1,5 +1,5 @@
-// ===== «ПОРТФЕЛИ» · ПОДВКЛАДКИ И ГЕРОЙ (модуль цепочки #pfLazySrc) =====
-// R7-редизайн вкладки: тёмный герой-шапка (pfxHeroHtml), ряд подвкладок
+// ===== «ПОРТФЕЛИ» · ПОДВКЛАДКИ И ПАРЯЩИЕ УЗЛЫ (модуль цепочки #pfLazySrc) =====
+// R7-редизайн вкладки: парящие узлы управления (pfxFabSync), ряд подвкладок
 // с чипами-портфелями (tablist, roving tabindex, DnD чипов, скролл с
 // масками), deep-link подвкладки в хэше (pfxSyncPath + window.pfxGoTab/
 // pfxApplySubPath/pfxSubPath), сиды раскладок подвкладок (PFX_TAB_SEEDS),
@@ -710,11 +710,14 @@
         });
     }
 
-    // ---- тёмный герой «Панель управления» — постоянная шапка вкладки (референс R7) ----
+    // ---- контролы страницы: жили в тёмном герое, с 2026-07-21 — в парящих узлах ----
     var PFX_LOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
     var PFX_UNLOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 7.7-1.5"/></svg>';
     // «во весь экран» — та же метафора, что у кнопки входа в полосе экранов
     var PFX_TERM_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H4v5M15 4h5v5M15 20h5v-5M9 20H4v-5"/></svg>';
+    // «сетка с плюсом» у «Виджета»: он добавляет блок В СЕТКУ, а не сущность —
+    // чистый плюс в углу рядом с «Портфелем» читался как то же самое действие
+    var PFX_WIDGETPLUS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6"/><line x1="17.25" y1="3.2" x2="17.25" y2="10.3"/><line x1="13.7" y1="6.75" x2="20.8" y2="6.75"/></svg>';
     window.pfxToggleSums = function () {
         var s = {};
         try { s = JSON.parse(localStorage.getItem('profile_settings_v1')) || {}; } catch (e) {}
@@ -727,95 +730,11 @@
     // R8: пикер работает на ЛЮБОЙ подвкладке — виджет добавляется на текущую
     // (раньше кнопка принудительно уводила на «Обзор»)
     window.pfxAddWidgetClick = function () { window.pfLayoutToggle(); };
-    function pfxHeroHtml() {
-        // Ряд подвкладок ждёт первого портфеля, а герой — НЕТ: у гостя (0 портфелей)
-        // панель управления единственное место, где живут «Портфель» и импорт из
-        // бэкапа, и без неё вкладка выглядела пустой до первого клика
-        if (!pfxWide()) return '';
-        var empty = !PF.store.items.length;
-        var dd = 0, hasDd = false;
-        PF.store.items.forEach(function (p) {
-            var d = dayDelta(p, calcPf(p).value); if (d != null) { dd += d; hasDd = true; }
-        });
-        var n = visibleItems().length;
-        var ddCls = hasDd ? (dd >= 0 ? 'pos' : 'neg') : '';
-        var ddVal = hasDd ? (dd >= 0 ? '+' : '−') + fmtRub(Math.abs(dd)) : '—';
-        var sumsOn = !!(window.sumsPrivacy && window.sumsPrivacy.isOn && window.sumsPrivacy.isOn());
-        var idBlock = '<div class="pfp-id">' +
-            '<div class="pfp-ico">' + PF.PFDGRID_SVG + '</div>' +
-            '<div class="pfp-id-t"><div class="pfp-title">Панель управления</div>' +
-                '<div class="pfp-sub">' + (empty ? 'пока ни одного портфеля — создайте или импортируйте'
-                    : n + ' ' + PF.plural(n, 'портфель', 'портфеля', 'портфелей') + ' · дашборд под рукой') + '</div></div>' +
-        '</div>';
-        // «Капитал» из героя убран (просьба 2026-07-14): сумма живёт в KPI-виджете и
-        // карточках. Остаётся один KPI «за сегодня» — ему свободнее (.pfp-kpis--solo).
-        // data-live: KPI «за сегодня» и подпись обновляются точечно фоновым тиком
-        // (livePatchers.hero ниже); те же ключи у дубликата в pfdPanelHtml (виджет
-        // «Панель управления» конструктора) — обновятся заодно. Скелетон прогрева
-        // живёт ВНУТРИ <b> (а не вместо него), чтобы патчеру было куда писать число.
-        var ddNum = hasDd
-            ? (pfQuotesWarming() ? '<b data-live="pfp:dd">' + skelHtml(92, 20) + '</b>' : '<b class="' + ddCls + '" data-live="pfp:dd">' + ddVal + '</b>')
-            : '<b data-live="pfp:dd">—</b>';
-        var kpis = '<div class="pfp-kpis pfp-kpis--solo">' +
-            '<div class="pfp-kpi"><div class="num">' + ddNum + '<span>за сегодня</span></div>' +
-                '<div class="sub" data-live="pfp:dd-sub">' + (hasDd ? 'к последнему дневному снимку' : 'появится со второго дня') + '</div></div>' +
-        '</div>';
-        // «Торговля»: при живом терминале это полноценный конструктор — кнопки
-        // «Виджет»/«Раскладки» доступны (двигать/добавлять карточки); пока стоит
-        // гейт (нет подключения/только чтение) конфигом управлять нечем — прячем
-        var isTrading = pfxIsTradeTab(pfxEffTab()) && !(PF.pftTradeReady && PF.pftTradeReady());
-        // конструктором нечего настраивать: и на гейте «Торговли», и у гостя, где
-        // вместо дашборда стоит пустое состояние — виджет было бы некуда положить
-        var noCfg = isTrading || empty;
-        // ВХОД В ТЕРМИНАЛ — из героя, то есть с ЛЮБОЙ подвкладки, включая «Обзор».
-        // До этого он жил кнопкой в плавающей полосе внизу, которая появляется
-        // только на «Торговле»: с «Обзора» в полноэкранный терминал попасть было
-        // неоткуда вовсе. Кнопка сама переключает подвкладку и включает режим —
-        // один клик вместо «найди Торговлю → найди полосу внизу → найди кнопку».
-        // Показываем только тем, кто реально может торговать (canTrade в
-        // broker-api.js): вести остальных в гейт кнопкой из шапки нечестно.
-        var canTrade = !!(window.brokerApi && window.brokerApi.canTrade());
-        var termBtn = canTrade
-            ? '<button type="button" class="pfp-btn pfp-term" onclick="pftEnterTerminal()" ' +
-              'title="Полноэкранный терминал: стакан, заявка и график во весь экран">' +
-              PFX_TERM_SVG + '<span>Терминал</span></button>'
-            : '';
-        var actions = '<div class="pfp-actions">' + termBtn +
-            (noCfg ? '' : '<button type="button" class="pfp-btn primary" onclick="pfxAddWidgetClick()" title="Добавить виджет на дашборд">' + PFD_PLUS_SVG + '<span>Виджет</span></button>') +
-            '<button type="button" class="pfp-btn' + (empty ? ' primary' : '') + '" onclick="pfAddPortfolio()" title="Создать новый портфель">' + PF.PLUS_SVG + '<span>Портфель</span></button>' +
-            '<button type="button" class="pfp-btn icon' + (sumsOn ? ' on' : '') + '" onclick="pfxToggleSums()" title="' + (sumsOn ? 'Показать суммы' : 'Скрывать суммы от посторонних глаз') + '">' + (sumsOn ? PFX_LOCK_SVG : PFX_UNLOCK_SVG) + '</button>' +
-            PF.eyeWrapHtml() +
-            PF.backupWrapHtml() +
-            // R8: кнопка-слайдеры открывает ПАНЕЛЬ «Раскладки» (pfl3) текущей подвкладки —
-            // пресеты с эскизами, базовая, своя сохранённая; прежний поповер остался
-            // только в шапке страницы (index.html) как быстрый доступ
-            (noCfg ? '' : '<span class="pfl-cfg-wrap pfp-cfg' + (PF.pfl3Open ? ' active' : '') + '" style="display:inline-flex">' +
-                '<button type="button" class="pfl-cfg-btn" onclick="pfLayoutsToggle(event)" title="Раскладки подвкладки: пресеты, базовая, сохранённая" aria-label="Панель раскладок">' + PFP_SLIDERS_SVG + '</button>' +
-            '</span>') +
-        '</div>';
-        return '<div class="pfp-panel pfx-hero">' +
-            '<div class="pfp-fx" aria-hidden="true"><i class="g1"></i><i class="g2"></i><i class="mesh"></i></div>' +
-            idBlock + kpis + actions +
-        '</div>';
-    }
-
-    // ---- точечный фоновый апдейт героя (роадмап №6) ----
-    // KPI «за сегодня» = Σ dayDelta по ВСЕМ портфелям (включая скрытые — как в
-    // pfxHeroHtml). Ключи pfp:dd/pfp:dd-sub стоят и на дубликате разметки в
-    // pfdPanelHtml (виджет «Панель управления») — liveSet обновит оба узла разом.
-    // Пока котировки греются, число не пишем — скелетон заменит первый тик
-    // после прогрева. Счётчик портфелей в .pfp-sub не котировочный — не трогаем.
-    PF.livePatchers.hero = function () {
-        var dd = 0, hasDd = false;
-        PF.store.items.forEach(function (p) {
-            var d = dayDelta(p, calcPf(p).value); if (d != null) { dd += d; hasDd = true; }
-        });
-        if (hasDd && pfQuotesWarming()) return;
-        PF.liveSet('pfp:dd', {
-            text: hasDd ? (dd >= 0 ? '+' : '−') + fmtRub(Math.abs(dd)) : '—',
-            cls: hasDd ? (dd >= 0 ? 'pos' : 'neg') : '' });
-        PF.liveSet('pfp:dd-sub', { text: hasDd ? 'к последнему дневному снимку' : 'появится со второго дня' });
-    };
+    // Тёмный герой «Панель управления» (pfxHeroHtml) снесён 2026-07-21: полоса
+    // съедала первый экран, а работала в ней один KPI «за сегодня» — дубль
+    // карточки «Обзора». Все её контролы переехали в парящие узлы (pfxFabSync
+    // ниже): столбик #cornerStack и панель действий #pfActBar. Вместе с героем
+    // ушёл и livePatchers.hero — точечно обновлять стало нечего.
 
     // ---- скругление карточек: CSS-переменная --pfr на панели, персист в pf_dash_v1 ----
     // R8: настройка ГЛОБАЛЬНАЯ (одна на все подвкладки) — живёт в конфиге «Обзора»,
@@ -1030,29 +949,55 @@
         if (e.key === 'Escape' && PF.pfSetDrawerOn) window.pfCloseMenu();
     });
 
-    // ---- R9.1: обучающий призрак «Добавить виджет» → постоянная круглая кнопка ----
+    // ---- R9.1: обучающий призрак «Добавить виджет» (комета летит в столбик) ----
     // Первый клик по призраку на вкладке-портфеле улетает анимацией в правый нижний
-    // угол и превращается в FAB «+» над кнопкой смены фона (идея 2026-07-16): так
-    // пользователь СВОИМИ ГЛАЗАМИ видит, куда переехала точка входа, и призрак больше
-    // не занимает сетку. Флаг обучения — локальный (позиция UI, в облако не зеркалится).
+    // угол — к верхней кнопке стеклянного столбика: так пользователь СВОИМИ ГЛАЗАМИ
+    // видит, куда переехала точка входа, и призрак больше не занимает сетку.
+    // Флаг обучения — локальный (позиция UI, в облако не зеркалится).
     var PFX_FAB_KEY = 'pf_widget_fab_v1';
     function pfxFabSeen() { try { return localStorage.getItem(PFX_FAB_KEY) === '1'; } catch (e) { return false; } }
-    // постоянная кнопка: живёт в body, видимость на вкладке «Портфели» гейтит CSS
-    // (body:has(#panel-portfolios.active)), класс .on — «обучение пройдено, десктоп»
+    // ---- парящие узлы управления вкладки (мокап «панель управления → парящие кнопки») ----
+    // Столбик #cornerStack — ОБЩИЙ компонент сайта (js/corner-stack.js): фон и тема
+    // живут в нём на всех вкладках, а «Портфели» доливают в слот #cstPage своё
+    // страничное над чертой: виджет / раскладки / замок. Панель действий #pfActBar
+    // (Терминал · Портфель · Видимость · Бэкап) — своя, и обязана жить в <body>:
+    // у панелей вкладок на предках transform из tabFadeIn, он ловит position:fixed.
+    // Видимость обоих узлов гейтит CSS по body:has(#panel-portfolios.active) —
+    // JS только наполняет разметку на каждый рендер. Своп пропускаем, пока HTML
+    // не изменился: фоновый тик котировок не должен без причины закрывать
+    // открытые меню «Видимость»/«Бэкап».
     function pfxFabSync() {
-        var f = document.getElementById('pfWidgetFab');
-        if (!pfxFabSeen() || !pfxWide()) { if (f) f.classList.remove('on'); return; }
-        if (!f) {
-            f = document.createElement('button');
-            f.id = 'pfWidgetFab'; f.type = 'button';
-            f.title = 'Добавить виджет на подвкладку'; f.setAttribute('aria-label', 'Добавить виджет');
-            f.innerHTML = PFD_PLUS_SVG;
-            // stopPropagation: клик по FAB не должен долетать до document — там
-            // «клик-вне» пикера мгновенно закрыл бы только что открытую панель
-            f.onclick = function (e) { if (e) e.stopPropagation(); try { window.pfLayoutToggle(); } catch (err) {} };
-            document.body.appendChild(f);
+        if (!pfxWide()) return;
+        var empty = !PF.store.items.length;
+        // как у прежней полосы: на гейте «Торговли» и у гостя конструктором нечего
+        // настраивать — «Виджет» и «Раскладки» не рисуем (замок остаётся)
+        var isTrading = pfxIsTradeTab(pfxEffTab()) && !(PF.pftTradeReady && PF.pftTradeReady());
+        var noCfg = isTrading || empty;
+        var sumsOn = !!(window.sumsPrivacy && window.sumsPrivacy.isOn && window.sumsPrivacy.isOn());
+        var host = document.getElementById('cstPage');
+        if (host) {
+            // stopPropagation у «Виджета» — как у прежнего FAB: «клик-вне» пикера на
+            // document мгновенно закрыл бы только что открытую панель (pfLayoutsToggle
+            // глушит всплытие сам — ему хватает переданного event)
+            var stackHtml = (noCfg ? '' :
+                '<button type="button" class="cst-btn cst-widget" id="cstWidgetBtn" onclick="event.stopPropagation();pfxAddWidgetClick()" title="Добавить виджет на подвкладку" aria-label="Добавить виджет">' + PFX_WIDGETPLUS_SVG + '</button>' +
+                '<button type="button" class="cst-btn' + (PF.pfl3Open ? ' on' : '') + '" onclick="pfLayoutsToggle(event)" title="Раскладки подвкладки: пресеты, базовая, сохранённая" aria-label="Раскладки">' + PFP_SLIDERS_SVG + '</button>') +
+                '<button type="button" class="cst-btn cst-lock' + (sumsOn ? ' on' : '') + '" onclick="pfxToggleSums()" aria-pressed="' + (sumsOn ? 'true' : 'false') + '" title="' + (sumsOn ? 'Показать суммы' : 'Скрывать суммы от посторонних глаз') + '">' + (sumsOn ? PFX_LOCK_SVG : PFX_UNLOCK_SVG) + '</button>';
+            if (host.__cstHtml !== stackHtml) { host.innerHTML = stackHtml; host.__cstHtml = stackHtml; }
         }
-        f.classList.add('on');
+        var bar = document.getElementById('pfActBar');
+        if (!bar) { bar = document.createElement('div'); bar.id = 'pfActBar'; document.body.appendChild(bar); }
+        // ВХОД В ТЕРМИНАЛ — из панели, то есть с ЛЮБОЙ подвкладки, включая «Обзор».
+        // Показываем только тем, кто реально может торговать (canTrade в
+        // broker-api.js): вести остальных в гейт кнопкой из угла нечестно.
+        var canTrade = !!(window.brokerApi && window.brokerApi.canTrade());
+        var barHtml =
+            (canTrade && !empty ? '<button type="button" class="pfab-btn pfab-term" onclick="pftEnterTerminal()" title="Полноэкранный терминал: стакан, заявка и график во весь экран">' + PFX_TERM_SVG + '<span>Терминал</span></button><span class="pfab-hr" aria-hidden="true"></span>' : '') +
+            // у гостя «Портфель» — единственное осмысленное действие: подсвечен синим
+            '<button type="button" class="pfab-btn' + (empty ? ' primary' : '') + '" onclick="pfAddPortfolio()" title="Создать новый портфель">' + PF.PLUS_SVG + '<span>Портфель</span></button>' +
+            (empty ? '' : PF.eyeWrapHtml()) +
+            PF.backupWrapHtml();
+        if (bar.__cstHtml !== barHtml) { bar.innerHTML = barHtml; bar.__cstHtml = barHtml; }
     }
     window.pfxGhostClick = function (ev) {
         if (ev) ev.stopPropagation();   // «клик-вне» пикера не должен тут же закрыть его
@@ -1064,7 +1009,11 @@
         // клон-«комета» летит fixed-ом в body: body под zoom 0.9 → визуальные px из
         // rect делим на фактор (та же самокалибровка, что у призрака драга, pfdGz)
         var z = r.width / (item.offsetWidth || r.width) || 1;
-        var SZ = 46, RIGHT = 22, BOTTOM = 124;   // геометрия #pfWidgetFab (см. CSS)
+        // цель — верхняя кнопка столбика («Виджет»); rect в тех же визуальных px,
+        // что и у ячейки, поэтому делится тем же фактором. Фолбэк-константы — её
+        // расчётное место, если столбик почему-то не отрисован
+        var SZ = 38, RIGHT = 26, BOTTOM = 193;
+        var tgt = document.getElementById('cstWidgetBtn');
         var fly = document.createElement('div');
         fly.className = 'pfxg-fly';
         fly.style.left = (r.left / z) + 'px'; fly.style.top = (r.top / z) + 'px';
@@ -1075,16 +1024,21 @@
         item.style.visibility = 'hidden';   // исходная ячейка гаснет сразу — летит только комета
         requestAnimationFrame(function () {
             fly.classList.add('go');
-            fly.style.left = (window.innerWidth / z - RIGHT - SZ) + 'px';
-            fly.style.top = (window.innerHeight / z - BOTTOM - SZ) + 'px';
-            fly.style.width = SZ + 'px'; fly.style.height = SZ + 'px';
+            if (tgt) {
+                var tr = tgt.getBoundingClientRect();
+                fly.style.left = (tr.left / z) + 'px'; fly.style.top = (tr.top / z) + 'px';
+                fly.style.width = (tr.width / z) + 'px'; fly.style.height = (tr.height / z) + 'px';
+            } else {
+                fly.style.left = (window.innerWidth / z - RIGHT - SZ) + 'px';
+                fly.style.top = (window.innerHeight / z - BOTTOM - SZ) + 'px';
+                fly.style.width = SZ + 'px'; fly.style.height = SZ + 'px';
+            }
         });
         var done = false;
         var finish = function () {
             if (done) return; done = true;
             try { fly.remove(); } catch (e) {}
-            pfxFabSync();               // FAB появляется ровно там, куда прилетела комета
-            window.pfLayoutToggle();    // и сразу открываем пикер — призрак же «Добавить виджет»
+            window.pfLayoutToggle();    // сразу открываем пикер — призрак же «Добавить виджет»
         };
         fly.addEventListener('transitionend', finish);
         setTimeout(finish, 950);        // страховка, если transitionend не стрельнёт
@@ -1180,7 +1134,7 @@
     // каркасе рендера свойствами PF — алиасы на него запрещены.
     PF.PFX_TABS = PFX_TABS; PF.pfxActivateTab = pfxActivateTab; PF.pfxApplyCorner = pfxApplyCorner; PF.pfxBgRowHtml = pfxBgRowHtml;
     PF.pfxCornerRowHtml = pfxCornerRowHtml; PF.pfxDrawerSync = pfxDrawerSync; PF.pfxDropPfTab = pfxDropPfTab; PF.pfxFabSeen = pfxFabSeen;
-    PF.pfxFabSync = pfxFabSync; PF.pfxFlashBlock = pfxFlashBlock; PF.pfxGoOverviewFor = pfxGoOverviewFor; PF.pfxHeroHtml = pfxHeroHtml;
+    PF.pfxFabSync = pfxFabSync; PF.pfxFlashBlock = pfxFlashBlock; PF.pfxGoOverviewFor = pfxGoOverviewFor;
     PF.pfxOpenPfTabs = pfxOpenPfTabs; PF.pfxPanelWrap = pfxPanelWrap; PF.pfxSaveOpenTabs = pfxSaveOpenTabs; PF.pfxSeedLayout = pfxSeedLayout;
     PF.pfxSetCardHtml = pfxSetCardHtml; PF.pfxSyncPath = pfxSyncPath; PF.pfxTabPortsHtml = pfxTabPortsHtml; PF.pfxTabsHtml = pfxTabsHtml;
     PF.pfxTabsScrollSync = pfxTabsScrollSync; PF.pfxVisRowsHtml = pfxVisRowsHtml; PF.pfxWide = pfxWide;

@@ -390,10 +390,12 @@
     function buildFab() {
         fab = document.createElement('div');
         fab.id = 'themeFab';
+        fab.className = 'cst-btn';   // обычная кнопка стеклянного столбика угла (corner-stack.js)
         fab.title = 'Сменить тему';
         fab.setAttribute('role', 'button');
         fab.setAttribute('aria-label', 'Сменить тему');
-        document.body.appendChild(fab);
+        // нижняя кнопка капсулы #cornerStack; фолбэк в body — если corner-stack.js не доехал
+        ((window.cornerStack && window.cornerStack.ensure()) || document.body).appendChild(fab);
         fab.addEventListener('click', function () {
             // Фаб живёт только вне Главной — переключаем тему проекта без вопроса.
             if (typeof window.requestThemeToggle === 'function') window.requestThemeToggle();

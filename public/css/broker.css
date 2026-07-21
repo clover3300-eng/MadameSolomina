@@ -1308,12 +1308,18 @@ body.dark-mode .pftg-sk-row i { background: rgba(255, 255, 255, 0.08); }
 #pftScreens { display: none; }
 body:has(#panel-portfolios.active) #pftScreens.on {
     position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
-    /* выше плавающих кнопок #pfWidgetFab (879) и #bgFab: на узком окне полоса
-       доезжает до них, и перехватывать её клики они не должны */
+    /* выше стеклянного столбика #cornerStack (880): на узком окне полоса
+       доезжает до него, и перехватывать её клики он не должен */
     z-index: 881;   /* под шторкой портфеля и модалками, над сеткой и FAB'ами */
     display: flex; align-items: stretch; gap: 8px;
-    max-width: min(980px, calc(100vw - 190px));   /* правый угол занят #pfWidgetFab/#bgFab */
+    max-width: min(980px, calc(100vw - 190px));   /* правый угол занят столбиком #cornerStack */
 }
+/* пока полоса экранов на экране, панель действий #pfActBar не рисуем: обе живут
+   у нижнего края, и на обычных ширинах полоса легла бы ПОВЕРХ панели (z 881),
+   перехватывая клики. Вход в полноэкранный терминал в полосе и так есть, а
+   Портфель/Видимость/Бэкап доступны с любой другой подвкладки. Столбик у
+   правого края остаётся — его 68px полоса и раньше обходила (max-width выше). */
+body:has(#pftScreens.on) #pfActBar { display: none !important; }
 /* уходит вместе с остальным хромом, когда открыт «полноэкранный» слой */
 body.quiz-mode #pftScreens, body.sd-drawer-open #pftScreens,
 body.pfsd-open #pftScreens { display: none !important; }
@@ -1515,9 +1521,8 @@ body.dark-mode .pfts-find-note { color: #6b7c93; }
 body:has(#pftBar) #headerWrapper,
 body:has(#pftBar) #sideBar,
 body:has(#pftBar) .ms-nav-widget,
-body:has(#pftBar) #pfWidgetFab,
-body:has(#pftBar) #bgFab,
-body:has(#pftBar) #themeFab { display: none !important; }
+body:has(#pftBar) #cornerStack,
+body:has(#pftBar) #pfActBar { display: none !important; }
 /* нижняя плавающая полоса экранов уехала в шапку — и её место под сеткой
    больше не бронируем (74px мёртвой зоны) */
 /* #appShell — CSS-grid, и боковая панель занимает в нём КОЛОНКУ: display:none на

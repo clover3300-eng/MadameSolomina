@@ -72,27 +72,11 @@ body.dark-mode #topProfileBtn .ph-alert { box-shadow: 0 0 0 2px #0f1722, 0 2px 6
 }
 @media (prefers-reduced-motion: reduce) { #topProfileBtn .ph-alert { animation: none; } }
 
-/* ===== ПЛАВАЮЩАЯ КНОПКА ТЕМЫ (правый нижний угол) ===== */
-#themeFab {
-    position: fixed; right: 22px; bottom: 20px; z-index: 880;
-    width: 42px; height: 42px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center; cursor: pointer;
-    background: var(--card-glass-aurora, rgba(255,255,255,0.72));
-    border: 1px solid var(--card-border-aurora, rgba(255,255,255,0.45));
-    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-    color: var(--text-slate, #64748B);
-    box-shadow: 0 10px 24px -10px rgba(24,38,60,0.35);
-    transition: transform 0.15s, box-shadow 0.2s, background 0.2s, color 0.2s;
-}
-#themeFab:hover { transform: translateY(-2px); color: var(--text-deep, #1b2433); background: rgba(255,255,255,0.9); }
-#themeFab:active { transform: scale(0.95); }
+/* ===== КНОПКА ТЕМЫ — НИЖНЯЯ В СТОЛБИКЕ УГЛА ===== */
+/* Сама кнопка — обычный .cst-btn стеклянной капсулы #cornerStack
+   (corner-stack.js/css): позицию, стекло и ховер даёт капсула, здесь только
+   иконка. На мобиле #themeFab прячет mobile.css — тумблер темы в шторке. */
 #themeFab svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 2; }
-body.dark-mode #themeFab { background: rgba(30,41,59,0.8); border-color: rgba(255,255,255,0.1); color: rgba(255,255,255,0.55); }
-body.dark-mode #themeFab:hover { background: rgba(30,41,59,0.95); color: rgba(255,255,255,0.85); }
-/* на мобильном поднимаем над нижним доком (#mobileDock: bottom ~12px, высота ~60px) */
-@media (max-width: 1023px) {
-    #themeFab { right: 14px; bottom: calc(max(env(safe-area-inset-bottom, 0px), 12px) + 72px); }
-}
 
 /* ===== КНОПКА «НАЗАД» (слева от кнопки темы) =====
    Возвращает на раздел, с которого пришли. Раньше была полупрозрачной иконкой без
@@ -128,6 +112,10 @@ body.dark-mode #navBackFab:hover { background: rgba(30,41,59,0.96); border-color
 body.tab-home #navBackFab,
 body.quiz-mode #navBackFab,
 body.sd-drawer-open #navBackFab { display: none !important; }
+/* на «Портфелях» «Назад» не нужна: её место (right 80 · bottom 20) занимает
+   панель действий #pfActBar, а сама вкладка — стартовый хаб со своим рядом
+   подвкладок (мокап «панель управления → парящие кнопки») */
+body:has(#panel-portfolios.active) #navBackFab { display: none !important; }
 @media (max-width: 1023px) { #navBackFab { display: none !important; } }
 
 /* ===== ПАНЕЛЬ ПРОФИЛЯ ===== */

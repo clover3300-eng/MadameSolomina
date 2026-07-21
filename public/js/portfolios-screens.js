@@ -17,7 +17,7 @@
 //
 // ГДЕ ЖИВЁТ ПОЛОСА. В <body>, а не внутри панели: у вкладок сайта на предках
 // стоит transform (анимация tabFadeIn), а он ловит position:fixed — тот же
-// приём, что у шторки #stockDetailCard и кнопки #pfWidgetFab. Видимость
+// приём, что у шторки #stockDetailCard и панели действий #pfActBar. Видимость
 // гейтит CSS (body:has(#panel-portfolios.active)) плюс класс .on отсюда.
 (function () {
     'use strict';

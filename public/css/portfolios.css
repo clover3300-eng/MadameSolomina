@@ -9,7 +9,9 @@
 
 /* ===== FULL-BLEED (id перебивает .tab-panel{max-width} из site-layout.css) ===== */
 #panel-portfolios { width: 100%; max-width: none !important; }
-@media (min-width: 1024px) { #panel-portfolios { max-width: none !important; padding: 20px 30px 64px !important; margin: 0 !important; } }
+/* низ 82px = 46 панели действий #pfActBar + 20 от низа + 16 зазора: последняя
+   карточка вкладки не должна уходить под парящую панель (шире 1440 и так 84px) */
+@media (min-width: 1024px) { #panel-portfolios { max-width: none !important; padding: 20px 30px 82px !important; margin: 0 !important; } }
 @media (min-width: 1440px) { #panel-portfolios { padding: 24px 40px 84px !important; } }
 @media (min-width: 1800px) { #panel-portfolios { padding: 26px 56px 84px !important; } }
 
@@ -2529,126 +2531,6 @@ body.dark-mode .pfl-cfg-item.add b, body.dark-mode .pfl-cfg-item.add svg { color
 .pfcf-input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15); }
 body.dark-mode .pfcf-input { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.14); color: #f4f8fd; }
 body.dark-mode .pfcf-input:focus { border-color: #818cf8; box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2); }
-
-/* ============================================================
-   «ПАНЕЛЬ УПРАВЛЕНИЯ» (виджет .pfp-panel) — полноширинный тёмный герой в стиле
-   верхнего блока «Ребаланса»: идентити + KPI слева, все контролы страницы справа.
-   overflow у самой панели — visible (иначе поповер раскладки/меню обрежутся);
-   декоративный glow клипуется своим слоем .pfp-fx.
-   ============================================================ */
-.pfp-panel {
-    position: relative; width: 100%; box-sizing: border-box;      /* иначе width:100%+padding шире ячейки → правый край за краем */
-    container-type: inline-size; container-name: pfpanel;          /* адаптив по ширине САМОГО блока (квадрат/прямоугольник) */
-    display: flex; align-items: center; align-content: center; flex-wrap: wrap; gap: 14px 26px;
-    padding: 18px 22px; border-radius: 22px;
-    background: linear-gradient(120deg, #0c1219 0%, #182231 55%, #131e2b 100%);
-    box-shadow: 0 20px 44px rgba(24, 38, 60, 0.16); border: 1px solid rgba(255, 255, 255, 0.05);
-}
-/* «Панель управления» — корзина удаления в правом-верхнем углу; освобождаем ей место */
-.pfd-item[data-pfd="panel"] .pfp-panel { padding-right: 46px; }
-/* панель заполняет min-height блока (контент центрируется); при узкой ширине контент
-   переносится и блок РАСТЁТ под него — masonry меряет реальную высоту, наезда нет */
-.pfd-item[data-pfd="panel"] .pfd-body > .pfp-panel { flex: 1 1 auto; }
-.pfp-fx { position: absolute; inset: 0; z-index: 0; overflow: hidden; border-radius: inherit; pointer-events: none; }
-.pfp-fx i { position: absolute; display: block; }
-.pfp-fx .g1 { width: 380px; height: 260px; top: -150px; right: 14%; background: radial-gradient(closest-side, rgba(52, 211, 153, 0.22), transparent 70%); filter: blur(6px); }
-.pfp-fx .g2 { width: 320px; height: 240px; bottom: -160px; left: 22%; background: radial-gradient(closest-side, rgba(90, 124, 255, 0.16), transparent 70%); filter: blur(8px); }
-.pfp-fx .mesh { inset: 0; background-image: radial-gradient(rgba(255, 255, 255, 0.10) 1px, transparent 1.4px); background-size: 18px 18px; -webkit-mask-image: linear-gradient(100deg, transparent 40%, rgba(0, 0, 0, 0.5) 74%, rgba(0, 0, 0, 0.8)); mask-image: linear-gradient(100deg, transparent 40%, rgba(0, 0, 0, 0.5) 74%, rgba(0, 0, 0, 0.8)); }
-.pfp-panel > .pfp-id, .pfp-panel > .pfp-kpis, .pfp-panel > .pfp-actions { position: relative; z-index: 1; }
-/* идентити */
-.pfp-id { display: flex; align-items: center; gap: 14px; min-width: 0; }
-.pfp-ico { flex-shrink: 0; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 13px; color: #8ab4ff; background: linear-gradient(135deg, rgba(90, 124, 255, 0.22), rgba(90, 124, 255, 0.05)); border: 1px solid rgba(90, 124, 255, 0.30); }
-.pfp-ico svg { width: 21px; height: 21px; }
-.pfp-id-t { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.pfp-title { font-family: 'Inter', sans-serif; font-size: 19px; font-weight: 800; letter-spacing: -0.01em; color: #fff; white-space: nowrap; }
-.pfp-sub { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, 0.55); white-space: nowrap; }
-/* KPI */
-.pfp-kpis { display: flex; align-items: center; gap: 22px; margin-left: auto; }
-.pfp-kpi { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.pfp-kpi .num { display: flex; align-items: baseline; gap: 7px; }
-.pfp-kpi .num b { font-family: 'Inter', sans-serif; font-size: 20px; font-weight: 800; letter-spacing: -0.01em; color: #fff; }
-.pfp-kpi .num b.pos { color: #4be3a0; }
-.pfp-kpi .num b.neg { color: #ff9d7a; }
-.pfp-kpi .num span { font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: rgba(255, 255, 255, 0.5); }
-.pfp-kpi .sub { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: rgba(255, 255, 255, 0.55); white-space: nowrap; }
-.pfp-kpi .sub b { font-weight: 800; }
-.pfp-kpi .sub b.pos { color: #4be3a0; }
-.pfp-kpi .sub b.neg { color: #ff9d7a; }
-.pfp-div { width: 1px; height: 34px; background: rgba(255, 255, 255, 0.12); flex-shrink: 0; }
-/* действия: свои кнопки + переиспользованные .pf-impwrap (видимость/бэкап) на тёмном фоне */
-.pfp-actions { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
-.pfp-btn, .pfp-actions .d3-quick.pf-impbtn {
-    display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 14px;
-    border-radius: 11px; border: 1px solid rgba(255, 255, 255, 0.14); background: rgba(255, 255, 255, 0.07);
-    color: #e8eef7; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; white-space: nowrap;
-    transition: background 0.14s, border-color 0.14s, transform 0.1s; box-shadow: none;
-}
-.pfp-btn svg, .pfp-actions .d3-quick.pf-impbtn svg { width: 16px; height: 16px; }
-.pfp-btn:hover, .pfp-actions .d3-quick.pf-impbtn:hover { background: rgba(255, 255, 255, 0.13); border-color: rgba(255, 255, 255, 0.24); }
-/* «Терминал» — вход в полноэкранный режим прямо из шапки, с любой подвкладки.
-   Выделен зелёным среди прочих кнопок героя: это не настройка дашборда, а
-   переход в другой режим работы, и путать его с «Виджет»/«Портфель» не нужно. */
-.pfp-btn.pfp-term { background: rgba(52, 211, 153, 0.16); border-color: rgba(52, 211, 153, 0.34); color: #a7f3d0; }
-.pfp-btn.pfp-term:hover { background: rgba(52, 211, 153, 0.26); border-color: rgba(52, 211, 153, 0.5); }
-.pfp-btn:active { transform: translateY(1px); }
-.pfp-btn.icon { padding: 0; width: 38px; justify-content: center; }
-.pfp-btn.primary { background: #fff; color: #14261a; border-color: transparent; box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.5); }
-.pfp-btn.primary svg { color: #119d5c; }
-.pfp-btn.primary:hover { background: #f1fbf5; }
-.pfp-actions .pf-impwrap { position: relative; }
-.pfp-actions .pf-eyecnt { background: rgba(255, 255, 255, 0.16); color: #eaf1fb; }
-/* иконка раскладки внутри панели — тоже translucent-light на тёмном */
-.pfp-cfg .pfl-cfg-btn { width: 38px; height: 38px; background: rgba(255, 255, 255, 0.07); border-color: rgba(255, 255, 255, 0.14); color: #cdd7e6; }
-.pfp-cfg.open .pfl-cfg-btn, .pfp-cfg .pfl-cfg-btn:hover { background: rgba(255, 255, 255, 0.13); border-color: rgba(255, 255, 255, 0.24); color: #fff; }
-/* «воздух» KPI «за сегодня»: единственный показатель героя дышит свободнее */
-.pfp-kpis--solo { padding: 0 30px 0 26px; gap: 0; }
-.pfp-kpis--solo .pfp-kpi { gap: 5px; }
-/* Адаптив по ширине БЛОКА: сузили панель / сделали квадратом → контент перестраивается,
-   ничего не вылезает за край (container queries, не оконные media). Как только панель уже
-   не влезает одной строкой (полная ширина span 12 ≈ 1180px, а урезанная — меньше), три
-   секции (идентити · KPI · кнопки) встают ЧИСТЫМИ ярусами по всей ширине — так аккуратнее,
-   чем когда идентити и KPI жмутся в одну строку. */
-@container pfpanel (max-width: 820px) {
-    .pfp-id, .pfp-kpis, .pfp-actions { flex-basis: 100%; }
-    .pfp-kpis { margin-left: 0; }
-    .pfp-actions { padding-top: 2px; }
-}
-@container pfpanel (max-width: 440px) {
-    .pfp-kpis { flex-wrap: wrap; gap: 10px 18px; }
-    .pfp-div { display: none; }
-    .pfp-actions { gap: 7px; }
-    .pfp-btn span, .pfp-actions .d3-quick.pf-impbtn span { display: none; }   /* очень узко → только иконки */
-    .pfp-btn { padding: 0 11px; }
-    .pfp-actions .d3-quick.pf-impbtn { padding: 0 10px; }
-}
-/* Поповер раскладки в панели (.pfp-actions z-index:1 замыкает стек-контекст, а сама
-   .pfd-item панели — z-index:auto): без подъёма поповер уходит ПОД соседние карточки
-   сетки, что идут ниже по DOM. Пока панель под курсором (= поповер открыт по hover) —
-   поднимаем всю ячейку панели над соседями. */
-.pfd-grid .pfd-item[data-pfd="panel"]:hover,
-.pfd-grid .pfd-item[data-pfd="panel"]:focus-within { z-index: 60; }
-/* Высокую панель (пользователь растянул по высоте) раскладываем колонкой во всю высоту:
-   идентити сверху, KPI акцентом по центру, кнопки снизу — контент ЗАПОЛНЯЕТ карточку, а не
-   висит компактной группой в пустоте. Цифры KPI крупнее — большая карточка тянет акцент. */
-.pfd-item.pfd-ptall .pfp-panel {
-    flex-direction: column; flex-wrap: nowrap; align-items: stretch;
-    justify-content: space-between; gap: clamp(16px, 2cqw, 34px); padding: clamp(20px, 2cqw, 34px);
-}
-.pfd-item.pfd-ptall[data-pfd="panel"] .pfp-panel { padding-right: clamp(46px, 3cqw, 54px); }
-.pfd-item.pfd-ptall .pfp-id, .pfd-item.pfd-ptall .pfp-kpis, .pfd-item.pfd-ptall .pfp-actions { flex: 0 0 auto; }
-.pfd-item.pfd-ptall .pfp-kpis { margin-left: 0; gap: 12px clamp(28px, 4cqw, 64px); flex-wrap: wrap; }
-/* Крупнее панель — крупнее контент: размеры тянутся за ШИРИНОЙ блока (cqw контейнера
-   pfpanel; cqh с container-type:size тут даёт 0 — высота от flex-fill «неопределённа»),
-   поэтому растянутый герой выглядит соразмерно, а не как компактная полоса. */
-.pfd-item.pfd-ptall .pfp-ico { width: clamp(44px, 6cqw, 68px); height: clamp(44px, 6cqw, 68px); border-radius: clamp(13px, 1.7cqw, 20px); }
-.pfd-item.pfd-ptall .pfp-ico svg { width: 47%; height: 47%; }
-.pfd-item.pfd-ptall .pfp-title { font-size: clamp(20px, 3.2cqw, 34px); }
-.pfd-item.pfd-ptall .pfp-sub { font-size: clamp(12px, 1.7cqw, 16px); }
-.pfd-item.pfd-ptall .pfp-kpi .num b { font-size: clamp(23px, 3.9cqw, 42px); }
-.pfd-item.pfd-ptall .pfp-kpi .num span { font-size: clamp(10.5px, 1.3cqw, 13.5px); }
-.pfd-item.pfd-ptall .pfp-kpi .sub { font-size: clamp(11.5px, 1.55cqw, 15px); }
-.pfd-item.pfd-ptall .pfp-div { height: clamp(34px, 6cqw, 60px); }
-.pfd-item.pfd-ptall .pfp-actions { align-content: flex-end; }
 
 /* сама карточка: докнутый сверху диалог с внутренним скроллом (шапка всегда видна).
    Высоту держим умеренной (не во весь экран), чтобы под карточкой была видна сетка —

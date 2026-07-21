@@ -85,7 +85,7 @@ body { font-family: var(--font-text); }
    заголовки: сериф в 10–11px с разрядкой нечитаем. Они остаются Inter.
    Файл подключён после тематических → равная специфичность выигрывает
    порядком; где в оригинале ID — он повторён здесь. */
-.pf-ch-t, .pfnt-title, .pfnt-name-edit, .pfp-title,     /* Портфели */
+.pf-ch-t, .pfnt-title, .pfnt-name-edit,                 /* Портфели */
 .pfs2-eyebrow-t,                                        /* «Суммарный капитал» */
 .pfo-name, .pfcf-t, .pf-empty-t, .pfpc-state-t, .pfcap-empty-t,
 .pftg-t,                                                /* Торговля — гейт */

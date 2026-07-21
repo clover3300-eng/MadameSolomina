@@ -1,0 +1,55 @@
+/* ============================================================
+   СТЕКЛЯННЫЙ СТОЛБИК ПРАВОГО НИЖНЕГО УГЛА (#cornerStack)
+   ============================================================
+   Одна капсула на все плавающие кнопки (js/corner-stack.js): сверху страничный
+   слот .cst-page (кнопки «Портфелей» — их стили в portfolios-r7.css), затем
+   черта .cst-hr, ниже глобальные #bgFab и #themeFab. Порядок задают
+   order-правила, а не порядок аппенда: модули приезжают каждый в своё время.
+   Стекло и геометрия — те же, что были у отдельных FAB (мокап: right 22 ·
+   bottom 20, ширина 46, радиус 23, кнопки 38, паддинг 3, зазор 2).
+   Только десктоп: на мобиле темой управляет шторка (mobile.css прячет
+   #themeFab), а фон и раньше жил с 1024px. */
+#cornerStack { display: none; }
+@media (min-width: 1024px) {
+    body:not(.tab-home) #cornerStack {
+        position: fixed; right: 22px; bottom: 20px; z-index: 880;
+        box-sizing: border-box; width: 46px; padding: 3px; border-radius: 23px;
+        display: flex; flex-direction: column; align-items: center; gap: 2px;
+        background: var(--card-glass-aurora, rgba(255, 255, 255, 0.72));
+        border: 1px solid var(--card-border-aurora, rgba(255, 255, 255, 0.45));
+        backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        box-shadow: 0 10px 24px -10px rgba(24, 38, 60, 0.35);
+    }
+}
+body.dark-mode #cornerStack { background: rgba(30, 41, 59, 0.8); border-color: rgba(255, 255, 255, 0.1); }
+/* столбик уходит вместе с прочим хромом полноэкранных слоёв — список тот же,
+   что был у #themeFab/#bgFab; полноэкранный терминал — в broker.css
+   (body:has(#pftBar)), квиз/шторки — здесь */
+body.quiz-mode #cornerStack, body.sd-drawer-open #cornerStack, body.pfsd-open #cornerStack { display: none !important; }
+
+/* слот страничных кнопок: контент кладёт вкладка (пока умеют только «Портфели»,
+   pfxFabSync), видимость гейтит активная панель — как у прежнего #pfWidgetFab.
+   display:contents — кнопки слота становятся флекс-элементами самой капсулы
+   (order 0, то есть выше черты с order 2) */
+#cornerStack .cst-page { display: none; }
+body:has(#panel-portfolios.active) #cornerStack .cst-page { display: contents; }
+/* черта между страничным и глобальным: есть только пока есть страничное */
+#cornerStack .cst-hr { display: none; order: 2; width: 22px; height: 1px; margin: 3px 0; background: rgba(24, 38, 60, 0.12); flex: 0 0 auto; }
+body:has(#panel-portfolios.active) #cornerStack .cst-hr { display: block; }
+body.dark-mode #cornerStack .cst-hr { background: rgba(255, 255, 255, 0.14); }
+#cornerStack #bgFab { order: 3; }
+#cornerStack #themeFab { order: 4; }
+
+/* общая кнопка столбика: прозрачная, заливка по ховеру, нажатие сжимает */
+.cst-btn {
+    box-sizing: border-box; width: 38px; height: 38px; flex: 0 0 auto;
+    border: 0; padding: 0; border-radius: 50%; background: transparent;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    color: var(--text-slate, #64748B); box-shadow: none;
+    transition: background 0.15s, color 0.15s, transform 0.15s;
+}
+.cst-btn:hover { background: rgba(24, 38, 60, 0.08); color: var(--text-deep, #1b2433); }
+.cst-btn:active { transform: scale(0.92); }
+.cst-btn svg { width: 18px; height: 18px; }
+body.dark-mode .cst-btn { color: rgba(255, 255, 255, 0.55); }
+body.dark-mode .cst-btn:hover { background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.85); }

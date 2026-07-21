@@ -565,67 +565,20 @@
             : 'появится со второго дня наблюдения' });
     };
 
-    // ---- «Панель управления» (виджет-герой): полноширинная тёмная полоса в стиле верхнего
-    // блока «Ребаланса». Слева — идентити + KPI «за сегодня», справа — ВСЕ контролы
-    // страницы (добавить виджет/портфель, Excel, видимость, бэкап, раскладка). Пока панель на
-    // дашборде — те же кнопки в шапке страницы скрыты (topBarActionsHtml/updateLayoutBtn через
-    // pfdPanelActive). Удаляется штатной корзиной .pfd-cardrm (defHidden) → кнопки возвращаются.
+    // ---- pfdPanelActive: «контролы страницы живут не в шапке сайта» ----
+    // Исторически проверка называлась по виджету «Панель управления», потом по
+    // герою-полосе; с 2026-07-21 контролы в ПАРЯЩИХ УЗЛАХ (pfxFabSync: столбик
+    // #cornerStack + панель #pfActBar) — а те на десктопе есть ВСЕГДА, включая
+    // 0 портфелей. Поэтому кнопки в глобальной шапке сайта прячем на любом
+    // широком экране; мобильный верхний ряд (topBarActionsHtml) остаётся.
     function pfdPanelActive() {
-        // R7: «Панель управления» — теперь ПОСТОЯННЫЙ герой-шапка вкладки (pfxHeroHtml),
-        // а не опциональный виджет. Все контролы страницы живут в ней, поэтому кнопки
-        // в глобальной шапке сайта прячем всегда, когда герой на экране — а он на
-        // десктопе есть ВСЕГДА, включая 0 портфелей (иначе «Добавить портфель» двоилось
-        // бы: и в шапке сайта, и в самой панели).
         try { if (window.matchMedia('(max-width: 1023px)').matches) return false; } catch (e) {}
         return true;
     }
-    var PFP_EXCEL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v5h5"/><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M9.5 12.5l5 5M14.5 12.5l-5 5"/></svg>';
     var PFP_SLIDERS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="8" x2="14" y2="8"/><line x1="18" y1="8" x2="20" y2="8"/><circle cx="16" cy="8" r="2"/><line x1="4" y1="16" x2="6" y2="16"/><line x1="10" y1="16" x2="20" y2="16"/><circle cx="8" cy="16" r="2"/></svg>';
-    function pfdPanelHtml() {
-        // KPI считаем как в pfdKpiHtml — по ВСЕМ портфелям (скрытые тоже: деньги не исчезают).
-        // «Капитал» убран из панели, как и в герое pfxHeroHtml (просьба 2026-07-14) —
-        // остаётся один KPI «за сегодня» со свободными отступами (.pfp-kpis--solo).
-        var dd = 0, hasDd = false;
-        PF.store.items.forEach(function (p) {
-            var d = dayDelta(p, calcPf(p).value); if (d != null) { dd += d; hasDd = true; }
-        });
-        var n = visibleItems().length;
-        var ddCls = hasDd ? (dd >= 0 ? 'pos' : 'neg') : '';
-        var ddVal = hasDd ? (dd >= 0 ? '+' : '−') + fmtRub(Math.abs(dd)) : '—';
-
-        var idBlock = '<div class="pfp-id">' +
-            '<div class="pfp-ico">' + PF.PFDGRID_SVG + '</div>' +
-            '<div class="pfp-id-t"><div class="pfp-title">Панель управления</div>' +
-                '<div class="pfp-sub">' + n + ' ' + PF.plural(n, 'портфель', 'портфеля', 'портфелей') + ' · дашборд под рукой</div></div>' +
-        '</div>';
-
-        // data-live: те же ключи, что у героя pfxHeroHtml (portfolios-tabs.js) —
-        // патчер livePatchers.hero обновляет оба места одним проходом
-        var ddNum = hasDd
-            ? (pfQuotesWarming() ? '<b data-live="pfp:dd">' + skelHtml(92, 20) + '</b>' : '<b class="' + ddCls + '" data-live="pfp:dd">' + ddVal + '</b>')
-            : '<b data-live="pfp:dd">—</b>';
-        var kpis = '<div class="pfp-kpis pfp-kpis--solo">' +
-            '<div class="pfp-kpi"><div class="num">' + ddNum + '<span>за сегодня</span></div>' +
-                '<div class="sub" data-live="pfp:dd-sub">' + (hasDd ? 'к последнему дневному снимку' : 'появится со второго дня') + '</div></div>' +
-        '</div>';
-
-        var actions = '<div class="pfp-actions">' +
-            '<button type="button" class="pfp-btn primary" onclick="pfLayoutToggle(event)" title="Добавить виджет на дашборд">' + PFD_PLUS_SVG + '<span>Виджет</span></button>' +
-            '<button type="button" class="pfp-btn" onclick="pfAddPortfolio()" title="Создать новый портфель">' + PF.PLUS_SVG + '<span>Портфель</span></button>' +
-            '<button type="button" class="pfp-btn icon" onclick="pfExportExcelAll()" title="Выгрузить все позиции в Excel">' + PFP_EXCEL_SVG + '</button>' +
-            PF.eyeWrapHtml() +
-            PF.backupWrapHtml() +
-            '<span class="pfl-cfg-wrap pfp-cfg" style="display:inline-flex">' +
-                '<button type="button" class="pfl-cfg-btn" onclick="pfCfgPopToggle(event)" title="Раскладка: базовая, индивидуальная, сохранить" aria-label="Настройки раскладки">' + PFP_SLIDERS_SVG + '</button>' +
-                '<div class="pfl-cfg-pop">' + pfLayoutCfgPopHtml() + '</div>' +
-            '</span>' +
-        '</div>';
-
-        return '<div class="pfp-panel">' +
-            '<div class="pfp-fx" aria-hidden="true"><i class="g1"></i><i class="g2"></i><i class="mesh"></i></div>' +
-            idBlock + kpis + actions +
-        '</div>';
-    }
+    // pfdPanelHtml (виджет-герой «Панель управления») удалён 2026-07-21: из набора
+    // блоков он выпал ещё в R7 (см. комментарий у списка блоков в portfolios-dash.js),
+    // рендерить его стало некому, а его наследник-полоса pfxHeroHtml снесён тоже.
 
     // ---- «График капитала»: линия суммарной стоимости по дневным снимкам ----
     // Данные уже копятся в pf_snapshots_v1 (recordSnapshots, до 400 дней) — блок

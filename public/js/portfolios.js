@@ -64,7 +64,7 @@
     var paymentCalendarHtml = PF.paymentCalendarHtml, pfcmCardHtml = PF.pfcmCardHtml, pfwDivsHtml = PF.pfwDivsHtml;
     // импорт подвкладок (portfolios-tabs.js, загружен до нас):
     var PFX_TABS = PF.PFX_TABS, pfxActivateTab = PF.pfxActivateTab, pfxApplyCorner = PF.pfxApplyCorner, pfxBgRowHtml = PF.pfxBgRowHtml, pfxCornerRowHtml = PF.pfxCornerRowHtml, pfxDrawerSync = PF.pfxDrawerSync;
-    var pfxDropPfTab = PF.pfxDropPfTab, pfxFabSeen = PF.pfxFabSeen, pfxFabSync = PF.pfxFabSync, pfxFlashBlock = PF.pfxFlashBlock, pfxGoOverviewFor = PF.pfxGoOverviewFor, pfxHeroHtml = PF.pfxHeroHtml;
+    var pfxDropPfTab = PF.pfxDropPfTab, pfxFabSeen = PF.pfxFabSeen, pfxFabSync = PF.pfxFabSync, pfxFlashBlock = PF.pfxFlashBlock, pfxGoOverviewFor = PF.pfxGoOverviewFor;
     var pfxOpenPfTabs = PF.pfxOpenPfTabs, pfxPanelWrap = PF.pfxPanelWrap, pfxSaveOpenTabs = PF.pfxSaveOpenTabs, pfxSeedLayout = PF.pfxSeedLayout, pfxSetCardHtml = PF.pfxSetCardHtml, pfxSyncPath = PF.pfxSyncPath;
     var pfxTabPortsHtml = PF.pfxTabPortsHtml, pfxTabsHtml = PF.pfxTabsHtml, pfxTabsScrollSync = PF.pfxTabsScrollSync, pfxVisRowsHtml = PF.pfxVisRowsHtml, pfxWide = PF.pfxWide;
     // импорт карточек (portfolios-cards.js, загружен до нас):
@@ -188,11 +188,12 @@
             pfxSyncCfg();      // R8: PF.dashCfg = конфиг активной подвкладки
             pfxApplyCorner();
             pfxSeedLayout();
-            // Шапка вкладки: тёмный герой «Панель управления» + ряд подвкладок (Обзор |
-            // Портфели | Аналитика | …). R8: у КАЖДОЙ подвкладки свой дашборд-конструктор
-            // (pfdBodyHtml с её конфигом), «Обзор» дополнительно умеет классический вид.
+            // Шапка вкладки: ряд подвкладок (Обзор | Портфели | Аналитика | …) — тёмный
+            // герой снесён 2026-07-21, его контролы в парящих узлах (pfxFabSync).
+            // R8: у КАЖДОЙ подвкладки свой дашборд-конструктор (pfdBodyHtml с её
+            // конфигом), «Обзор» дополнительно умеет классический вид.
             var tabsHtml = pfxTabsHtml();
-            var chrome = pfxHeroHtml() + tabsHtml;
+            var chrome = tabsHtml;
             // R9.5: при живом ряде вкладок контент оборачивается в role=tabpanel
             // (aria-controls вкладок ведёт на #pfxTabPanel); без ряда — как есть.
             // Завязка именно на РЯД, а не на chrome: у гостя (0 портфелей) герой
@@ -298,7 +299,7 @@
             repaintMiniCharts();   // мини-график «портфель vs IMOEX» в каждой карточке
             pfPlistSparksSoon();   // спарклайны «Моих портфелей» без снимков — дорисовать из истории
             pfxDrawerSync();       // R9.1: шторка настроек портфеля обновляется вместе со страницей
-            pfxFabSync();          // R9.1: круглая кнопка «+ виджет» справа внизу (после обучения)
+            pfxFabSync();          // парящие узлы: слот столбика #cornerStack + панель действий #pfActBar
             pfxTabsScrollSync();   // R9.3: активная вкладка в видимой зоне ряда, маски краёв, DnD чипов
             if (PF.openMenu) {
                 var m = dq('pfMenu-' + PF.openMenu); if (m) m.scrollTop = 0;
@@ -594,7 +595,8 @@
     // иконка конструктора: сетка 2×2 (LAYOUT_SVG занят пунктом «Вид»)
     var PFDGRID_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.6"/></svg>';
     function topBarActionsHtml() {
-        // «Панель управления» на дашборде собирает ВСЕ контролы страницы — шапку оставляем пустой
+        // на десктопе ВСЕ контролы страницы живут в парящих узлах (pfxFabSync) —
+        // шапку оставляем пустой; кнопки ниже — МОБИЛЬНЫЙ верхний ряд (mobile.css)
         if (pfdPanelActive()) return '';
         return '<button class="d3-quick" onclick="pfAddPortfolio()">' + PLUS_SVG + '<span>Добавить портфель</span></button>' +
             // «Видимость» показываем при 2+ портфелях, при наличии сделок ИЛИ когда включена
@@ -683,6 +685,9 @@
                 (multi && vis < total ? '<i class="pf-eyecnt">' + vis + '/' + total + '</i>' : '') + CHEV_SVG + '</button>' +
             '<div class="pf-impmenu" id="pfImp-eye">' + pfGroup + secGroup + '</div></div>';
     }
+    // Esc закрывает попапы «Импорт»/«Видимость»/«Бэкап»: клик-вне у них был всегда
+    // (pfImpOutside), а клавиатуры не было — в панели действий это заметно
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeImpMenus(); });
 
     // ---- сводка по всем портфелям (только при 2+ портфелях) — компактная карточка ПОД
     // «Избранным» в правой колонке: капитал + вложено/доход + распределение + мини-лидерборд

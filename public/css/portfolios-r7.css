@@ -26,7 +26,6 @@ body.dark-mode #panel-portfolios .pf-card2 {
 #panel-portfolios .pfd-item.pfd-flash { border-radius: var(--pfr, 20px); }
 #panel-portfolios .pfc-chartwrap,
 #panel-portfolios .pfc-menu { border-radius: var(--pfr, 20px); }
-#panel-portfolios .pfp-panel { border-radius: var(--pfr, 20px); }
 #panel-portfolios .pf-topgrid-fav .pff-body { border-radius: 0 0 calc(var(--pfr, 20px) - 2px) calc(var(--pfr, 20px) - 2px); }
 
 /* ============ 2. Имя портфеля — моно-пилюля (референс «НОВЫЙ ПОРТФЕЛЬ») ============ */
@@ -48,17 +47,10 @@ body.dark-mode #panel-portfolios .pfc-name-ink {
     background: color-mix(in srgb, var(--pf-accent) 22%, transparent);
 }
 
-/* ============ 3. Герой «Панель управления» (постоянная шапка) ============ */
-.pfx-hero { margin-bottom: 4px; border-radius: 18px !important; }
-/* кнопка «+ Виджет» — синяя, как в референсе */
-.pfx-hero .pfp-btn.primary {
-    background: linear-gradient(#5563f6, #4453ef); color: #fff; border-color: transparent;
-    box-shadow: 0 8px 20px -8px rgba(78, 92, 245, 0.8);
-}
-.pfx-hero .pfp-btn.primary svg { color: #fff; }
-.pfx-hero .pfp-btn.primary:hover { background: linear-gradient(#6672f8, #4f5ef4); }
-/* замок «Скрывать суммы»: активное состояние */
-.pfx-hero .pfp-btn.icon.on { background: rgba(75, 227, 160, 0.16); border-color: rgba(75, 227, 160, 0.4); color: #4be3a0; }
+/* ============ 3. Герой «Панель управления» — снесён 2026-07-21 ============
+   Полоса .pfx-hero съедала первый экран; её контролы теперь в парящих узлах:
+   столбик #cornerStack (corner-stack.css + секция R9.1 ниже) и панель действий
+   #pfActBar (секция R9.1 ниже). */
 
 /* ============ 4. Подвкладки ============ */
 .pfx-tabs {
@@ -72,6 +64,10 @@ body.dark-mode #panel-portfolios .pfc-name-ink {
     margin: 14px 2px 16px; border-bottom: 1px solid #e7ecf3;
 }
 .pfx-tabs::-webkit-scrollbar { display: none; }
+/* «Настройки» прижаты вправо: семь видов данных слева, конфиг отдельно.
+   margin-left:auto работает, пока ряду хватает ширины; при скролле (много
+   открытых вкладок-портфелей) свободного места нет — ряд остаётся сплошным */
+.pfx-tabs #pfxTab-settings { margin-left: auto; }
 .pfx-tabs.fade-r { -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 32px), transparent); mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 32px), transparent); }
 .pfx-tabs.fade-l { -webkit-mask-image: linear-gradient(90deg, transparent, #000 32px); mask-image: linear-gradient(90deg, transparent, #000 32px); }
 .pfx-tabs.fade-l.fade-r { -webkit-mask-image: linear-gradient(90deg, transparent, #000 32px, #000 calc(100% - 32px), transparent); mask-image: linear-gradient(90deg, transparent, #000 32px, #000 calc(100% - 32px), transparent); }
@@ -1100,16 +1096,12 @@ body.dark-mode .dm-news b { color: #e8eef7; }
 #panel-portfolios .pf-ch-t,
 #panel-portfolios .pfnt-title,
 #panel-portfolios .pfnt-name-edit { font-size: 22px; }
-#panel-portfolios .pfp-title { font-size: 24px; }
-/* растянутый герой в конструкторе масштабирует заголовок по ширине блока —
-   сериф без веса 800 держим в той же вилке */
-#panel-portfolios .pfd-item.pfd-ptall .pfp-title { font-weight: 400; }
 /* пилюля дневного изменения на карточке портфеля — мягче */
 #panel-portfolios .pfc-day { border-radius: 999px; }
-/* узкий экран: герой и подвкладки не рендерятся (см. pfxWide) — правил не нужно,
+/* узкий экран: ряд подвкладок не рендерится (см. pfxWide) — правил не нужно,
    но на всякий случай глушим и по медиа */
 @media (max-width: 1023px) {
-    .pfx-hero, .pfx-tabs { display: none !important; }
+    .pfx-tabs { display: none !important; }
 }
 
 /* ============ 16. Виджет «Календарь выплат · месяц» (.pfcm-) ============
@@ -1541,8 +1533,7 @@ body.dark-mode .pfdcfg-hint { border-top-color: rgba(255, 255, 255, 0.1); color:
     animation: pfSkelWave 1.3s ease-in-out infinite;
 }
 @keyframes pfSkelWave { from { background-position: 130% 0; } to { background-position: -70% 0; } }
-/* тёмные поверхности: герой «Панели управления», тёмная тема сайта, тёмные виджеты */
-.pfx-hero .pf-skel, .pfp-panel .pf-skel,
+/* тёмные поверхности: тёмная тема сайта, тёмные виджеты */
 body.dark-mode .pf-skel, .pfd-item.pfd-thm-dark .pf-skel {
     background: linear-gradient(100deg, rgba(255, 255, 255, 0.1) 40%, rgba(255, 255, 255, 0.22) 50%, rgba(255, 255, 255, 0.1) 60%);
     background-size: 200% 100%;
@@ -1830,9 +1821,6 @@ body.dark-mode .pfl3-abtn:hover { background: rgba(255, 255, 255, 0.08); color: 
 .pfl3-foot .pfl2-foot-r { flex-wrap: wrap; justify-content: flex-end; }
 /* «Применена» в подвале — некликабельная метка, а не кнопка */
 .pfl3-applied { cursor: default; }
-/* кнопка-слайдеры героя: активное состояние, пока панель открыта */
-.pfx-hero .pfp-cfg.active .pfl-cfg-btn { background: rgba(255, 255, 255, 0.22); color: #fff; }
-
 /* ============ 16. Настройки портфеля: ровно по своей карточке (R8) ============ */
 /* База (portfolios.css: «.pf-card--narrow.menu-open .pfc-menu { width: calc(150% + 8px) }»)
    растягивает оверлей настроек в полтора раза шире карточки. Это правило из классической
@@ -1930,13 +1918,14 @@ body.dark-mode .pfsd-head { border-bottom-color: rgba(255, 255, 255, 0.08); }
 body.dark-mode .pfsd-head-t b { color: #f4f8fd; }
 body.dark-mode .pfsd-x { background: rgba(255, 255, 255, 0.07); color: #93a2b8; }
 body.dark-mode .pfsd-x:hover { background: rgba(255, 255, 255, 0.13); color: #e8eef7; }
-/* пока шторка открыта — угловые кнопки не спорят с ней */
-body.pfsd-open #bgFab, body.pfsd-open #themeFab, body.pfsd-open #pfWidgetFab { display: none !important; }
+/* пока шторка открыта — панель действий не спорит с ней
+   (столбик #cornerStack по body.pfsd-open прячет corner-stack.css) */
+body.pfsd-open #pfActBar { display: none !important; }
 
-/* ============ R9.1. Теневой виджет «Добавить виджет» + FAB ============ */
+/* ============ R9.1. Теневой виджет «Добавить виджет» + комета ============ */
 /* Обучающая ячейка на вкладке-портфеле: пунктирный «призрак» рядом с карточкой.
-   Первый клик улетает кометой в правый нижний угол и остаётся там круглой кнопкой
-   #pfWidgetFab (над кнопкой смены фона) — пользователь видит переезд своими глазами. */
+   Первый клик улетает кометой в правый нижний угол — к кнопке «Виджет» в
+   стеклянном столбике #cornerStack — пользователь видит переезд своими глазами. */
 .pfxg-item { min-height: 300px; }
 /* обёртка теперь div (кнопка-пикер и чипы раскладок внутри) — курсор у самих кнопок */
 .pfxg-ghost {
@@ -2035,21 +2024,69 @@ body.dark-mode .pfxg-lay:hover { border-color: rgba(129, 140, 248, 0.6); color: 
 }
 .pfxg-fly.go { border-radius: 50%; }
 .pfxg-fly svg { width: 20px; height: 20px; }
-/* постоянная кнопка: над #bgFab (bottom 72 + 42 кнопка + 10 зазор = 124) */
-#pfWidgetFab { display: none; }
-body:has(#panel-portfolios.active) #pfWidgetFab.on {
-    position: fixed; right: 22px; bottom: 124px; z-index: 879;
-    width: 46px; height: 46px; border-radius: 50%; border: 0; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    background: linear-gradient(#5b67f2, #4453ef); color: #fff;
-    box-shadow: 0 14px 30px -12px rgba(68, 83, 239, 0.65);
-    animation: pfxFabPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-    transition: transform 0.15s, box-shadow 0.2s;
+/* ============ Парящие узлы «Портфелей» (мокап «панель управления → парящие кнопки») ============
+   Страничные кнопки столбика #cornerStack (слот #cstPage: виджет / раскладки /
+   замок — база .cst-btn в corner-stack.css) и панель действий #pfActBar.
+   Оба узла наполняет pfxFabSync (portfolios-tabs.js), видимость гейтит
+   body:has(#panel-portfolios.active). */
+/* «Виджет» — синяя, единственный цветной акцент столбика */
+#cornerStack .cst-widget { background: linear-gradient(#5b67f2, #4453ef); color: #fff; box-shadow: 0 8px 18px -8px rgba(68, 83, 239, 0.85); }
+#cornerStack .cst-widget:hover { background: linear-gradient(#6672f8, #4f5ef4); color: #fff; }
+/* «Раскладки» при открытой панели pfl3 */
+#cornerStack .cst-btn.on { background: rgba(24, 38, 60, 0.1); color: var(--text-deep, #1b2433); }
+body.dark-mode #cornerStack .cst-btn.on { background: rgba(255, 255, 255, 0.14); color: #e8eef7; }
+/* замок «Скрывать суммы»: активное состояние — зелёное, как было в герое */
+#cornerStack .cst-lock.on { background: rgba(15, 157, 99, 0.16); color: #0f9d63; }
+body.dark-mode #cornerStack .cst-lock.on { background: rgba(63, 202, 144, 0.18); color: #3fca90; }
+
+/* панель действий: то же стекло, что у столбика; на месте кнопки «Назад» */
+#pfActBar { display: none; }
+@media (min-width: 1024px) {
+    body:has(#panel-portfolios.active) #pfActBar {
+        position: fixed; right: 80px; bottom: 20px; z-index: 879;
+        box-sizing: border-box; height: 46px; padding: 3px; border-radius: 999px;
+        display: flex; align-items: center; gap: 2px;
+        background: var(--card-glass-aurora, rgba(255, 255, 255, 0.72));
+        border: 1px solid var(--card-border-aurora, rgba(255, 255, 255, 0.45));
+        backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        box-shadow: 0 10px 24px -10px rgba(24, 38, 60, 0.35);
+    }
 }
-@keyframes pfxFabPop { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-body:has(#panel-portfolios.active) #pfWidgetFab.on:hover { transform: translateY(-2px); box-shadow: 0 18px 36px -12px rgba(68, 83, 239, 0.75); }
-#pfWidgetFab svg { width: 18px; height: 18px; }
-body.quiz-mode #pfWidgetFab, body.sd-drawer-open #pfWidgetFab { display: none !important; }
+body.dark-mode #pfActBar { background: rgba(30, 41, 59, 0.8); border-color: rgba(255, 255, 255, 0.1); }
+/* квиз и шторка компании гасят панель так же, как столбик (corner-stack.css);
+   pfsd-open — выше, в правиле шторки настроек; полноэкранный терминал — broker.css */
+body.quiz-mode #pfActBar, body.sd-drawer-open #pfActBar { display: none !important; }
+/* кнопка панели: свои .pfab-btn и переиспользованные «Видимость»/«Бэкап»
+   (.d3-quick.pf-impbtn из eyeWrapHtml/backupWrapHtml) — один вид на всех */
+#pfActBar .pfab-btn, #pfActBar .d3-quick.pf-impbtn {
+    display: inline-flex; align-items: center; gap: 7px; box-sizing: border-box;
+    height: 38px; padding: 0 14px; margin: 0; border: 0; border-radius: 999px;
+    background: transparent; color: var(--text-slate, #64748B); cursor: pointer;
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; white-space: nowrap;
+    box-shadow: none; transition: background 0.15s, color 0.15s, transform 0.15s;
+}
+#pfActBar .pfab-btn svg, #pfActBar .d3-quick.pf-impbtn svg { width: 16px; height: 16px; flex: 0 0 auto; }
+#pfActBar .pfab-btn:hover, #pfActBar .d3-quick.pf-impbtn:hover { background: rgba(24, 38, 60, 0.08); color: var(--text-deep, #1b2433); }
+#pfActBar .pfab-btn:active, #pfActBar .d3-quick.pf-impbtn:active { transform: scale(0.97); }
+body.dark-mode #pfActBar .pfab-btn, body.dark-mode #pfActBar .d3-quick.pf-impbtn { color: rgba(255, 255, 255, 0.55); }
+body.dark-mode #pfActBar .pfab-btn:hover, body.dark-mode #pfActBar .d3-quick.pf-impbtn:hover { background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.85); }
+/* «Терминал» — зелёный: не настройка дашборда, а переход в другой режим работы */
+#pfActBar .pfab-term { background: rgba(52, 211, 153, 0.16); color: #0f9d63; }
+#pfActBar .pfab-term:hover { background: rgba(52, 211, 153, 0.26); color: #0b7d4f; }
+body.dark-mode #pfActBar .pfab-term { background: rgba(63, 202, 144, 0.16); color: #3fca90; }
+body.dark-mode #pfActBar .pfab-term:hover { background: rgba(63, 202, 144, 0.26); color: #6ee7b7; }
+/* «Портфель» у гостя — синий: единственное осмысленное действие пустого экрана */
+#pfActBar .pfab-btn.primary { background: linear-gradient(#5b67f2, #4453ef); color: #fff; }
+#pfActBar .pfab-btn.primary:hover { background: linear-gradient(#6672f8, #4f5ef4); color: #fff; }
+/* разделитель после «Терминала» (прячется вместе с ним — pfxFabSync) */
+#pfActBar .pfab-hr { width: 1px; height: 22px; margin: 0 3px; background: rgba(24, 38, 60, 0.12); flex: 0 0 auto; }
+body.dark-mode #pfActBar .pfab-hr { background: rgba(255, 255, 255, 0.14); }
+/* счётчик «2/3» у «Видимости» — базовый .pf-eyecnt уже светлый, оставляем */
+/* меню «Видимость»/«Бэкап» раскрываются ВВЕРХ: панель у нижнего края, вниз некуда.
+   placeImpMenu придёт к тому же выводу сам, но правило делает исход детерминированным */
+#pfActBar .pf-impwrap { position: relative; display: inline-flex; }
+#pfActBar .pf-impmenu { top: auto; bottom: calc(100% + 10px); transform: translateY(6px); transform-origin: bottom right; }
+#pfActBar .pf-impmenu.open { transform: translateY(0); }
 
 /* ============ R9.1. Шапка «Моих портфелей»: инструменты справа ============ */
 .pf-plistblk > .pf-ch > .pf-ch-l { flex: 1 1 auto; }

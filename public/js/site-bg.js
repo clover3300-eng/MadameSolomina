@@ -144,9 +144,10 @@
     // API для переключателя (js/portfolios.js — карточка «Фон страницы»)
     window.siteBg = { list: function () { return BG_LIST.slice(); }, get: bgGet, set: bgSet, apply: bgApply };
 
-    // --- плавающий переключатель фона (#bgFab) ---
-    // Круглая кнопка с волной над кнопкой темы; по наведению вверх раскрывается
-    // рейка образцов шириной в саму кнопку. Живёт здесь, а не в profile-menu.js,
+    // --- переключатель фона (#bgFab) — кнопка стеклянного столбика угла ---
+    // Живёт в капсуле #cornerStack (js/corner-stack.js) под чертой, в глобальной
+    // зоне; по наведению ВЛЕВО раскрывается рейка образцов (вверх ей нельзя —
+    // упрётся в кнопки столбика над ней). Модуль этот, а не profile-menu.js,
     // потому что это про фон: список вариантов и bgSet() уже рядом.
     // Раскрытие — по наведению И по клику: наведение удобно мышью, клик нужен
     // для клавиатуры и тач-экранов, где hover не наступает вовсе.
@@ -169,9 +170,10 @@
         fab.id = 'bgFab';
         fab.innerHTML =
             // .bgfab-rail-in — внутренняя обёртка ради плавного раскрытия: рейка растёт
-            // через grid-template-rows 0fr→1fr (как подпункты сайдбара), а обёртка держит
-            // overflow:hidden. Раньше была анимация max-height до 460px — она пролетала
-            // реальную высоту рейки за первые кадры и читалась как рывок.
+            // через grid-template-columns 0fr→1fr (та же идиома, что у подпунктов
+            // сайдбара, только по горизонтали), а обёртка держит overflow:hidden.
+            // Раньше была анимация max-height до 460px — она пролетала реальную
+            // высоту рейки за первые кадры и читалась как рывок.
             '<div class="bgfab-rail" role="radiogroup" aria-label="Фон страницы">' +
                 '<div class="bgfab-rail-in">' +
                 BG_LIST.map(function (o) {
@@ -184,22 +186,25 @@
                 '</div>' +
             '</div>' +
             '<span class="bgfab-tip" aria-hidden="true"></span>' +
-            '<button type="button" class="bgfab-btn" aria-label="Фон страницы" title="Фон страницы">' + WAVE + '</button>';
-        document.body.appendChild(fab);
+            '<button type="button" class="bgfab-btn cst-btn" aria-label="Фон страницы" title="Фон страницы">' + WAVE + '</button>';
+        // в стеклянный столбик угла; фолбэк в body — если corner-stack.js не доехал
+        ((window.cornerStack && window.cornerStack.ensure()) || document.body).appendChild(fab);
         var tip = fab.querySelector('.bgfab-tip');
         fab.addEventListener('click', function (e) {
             var sw = e.target.closest('.bgfab-sw');
             if (sw) { bgSet(sw.getAttribute('data-bg')); return; }
             if (e.target.closest('.bgfab-btn')) fab.classList.toggle('open');
         });
-        // подпись ведём по наведённому образцу: ставим её ровно напротив кружка.
-        // offsetTop, а НЕ getBoundingClientRect: на десктопе у body zoom 0.9, и rect
-        // отдаёт уже отмасштабированные px, а `top` в CSS — свои, до масштаба;
-        // подпись съезжала бы на те самые 10%. offsetTop живёт в тех же координатах, что CSS.
+        // подпись ведём по наведённому образцу: ставим её ровно НАД кружком
+        // (рейка теперь горизонтальная). offsetLeft, а НЕ getBoundingClientRect:
+        // на десктопе у body zoom 0.9, и rect отдаёт уже отмасштабированные px,
+        // а `left` в CSS — свои, до масштаба; подпись съезжала бы на те самые 10%.
+        // offsetParent образца — сама рейка (absolute), поэтому её сдвиг прибавляем.
         fab.addEventListener('mouseover', function (e) {
             var sw = e.target.closest('.bgfab-sw'); if (!sw) return;
+            var rail = fab.querySelector('.bgfab-rail');
             tip.textContent = sw.getAttribute('data-name');
-            tip.style.top = (sw.offsetTop + sw.offsetHeight / 2) + 'px';
+            tip.style.left = (rail.offsetLeft + sw.offsetLeft + sw.offsetWidth / 2) + 'px';
             tip.classList.add('on');
         });
         fab.addEventListener('mouseout', function (e) {

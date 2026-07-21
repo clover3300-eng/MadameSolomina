@@ -165,75 +165,59 @@ body.sbg-dawn #siteBgTiles {
 }
 
 /* =========================================================
-   ПЛАВАЮЩИЙ ПЕРЕКЛЮЧАТЕЛЬ ФОНА (#bgFab)
+   ПЕРЕКЛЮЧАТЕЛЬ ФОНА (#bgFab) — КНОПКА СТОЛБИКА УГЛА
    =========================================================
-   Стоит НАД кнопкой темы (#themeFab: right 22, bottom 20, 42px), той же
-   «стеклянной» плашкой. Раскрывается ВВЕРХ: контейнер прижат к низу, поэтому
-   рейка, вырастая, толкает границу вверх — без анимации самой позиции.
+   Больше не отдельный кружок: обычная кнопка стеклянной капсулы #cornerStack
+   (corner-stack.js/css), под чертой — глобальная зона. Раскрывается ВЛЕВО:
+   вверх рейка упёрлась бы в кнопки столбика над ней.
 
    Показываем ровно там, где фон вообще виден (см. #siteBgTiles выше): десктоп,
    светлая тема, не Главная. В тёмной теме и на телефоне кнопка ничего бы не
-   меняла — а кнопка, которая ничего не делает, хуже её отсутствия. */
+   меняла — а кнопка, которая ничего не делает, хуже её отсутствия; её место
+   в столбике просто схлопывается. */
 #bgFab { display: none; }
 @media (min-width: 1024px) {
-    body:not(.dark-mode):not(.tab-home) #bgFab {
-        display: flex; flex-direction: column; align-items: center; gap: 8px;
-        position: fixed; right: 22px; bottom: 72px; z-index: 880;
-    }
+    body:not(.dark-mode):not(.tab-home) #bgFab { display: flex; position: relative; }
 }
-body.quiz-mode #bgFab, body.sd-drawer-open #bgFab { display: none; }
 
-.bgfab-btn {
-    width: 42px; height: 42px; flex-shrink: 0; border-radius: 50%; padding: 0;
-    display: flex; align-items: center; justify-content: center; cursor: pointer;
-    background: var(--card-glass-aurora, rgba(255, 255, 255, 0.72));
-    border: 1px solid var(--card-border-aurora, rgba(255, 255, 255, 0.45));
-    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-    color: var(--text-slate, #64748B);
-    box-shadow: 0 10px 24px -10px rgba(24, 38, 60, 0.35);
-    transition: transform 0.15s, box-shadow 0.2s, background 0.2s, color 0.2s;
-}
-.bgfab-btn svg { width: 18px; height: 18px; }
-#bgFab:hover .bgfab-btn, #bgFab.open .bgfab-btn { color: var(--text-deep, #1b2433); background: rgba(255, 255, 255, 0.9); }
-.bgfab-btn:active { transform: scale(0.95); }
+/* сама кнопка — базовый .cst-btn (corner-stack.css); здесь только состояние
+   «рейка раскрыта»: подсветка держится, пока курсор над рейкой */
+#bgFab:hover .bgfab-btn, #bgFab.open .bgfab-btn { color: var(--text-deep, #1b2433); background: rgba(24, 38, 60, 0.08); }
+body.dark-mode #bgFab:hover .bgfab-btn, body.dark-mode #bgFab.open .bgfab-btn { background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.85); }
 
-/* Рейка: ширина = ширине кнопки (42px), поэтому раскрытие читается как «кнопка
-   вытянулась вверх», а не как выехавшее откуда-то меню.
-   Растём через grid-template-rows 0fr→1fr (та же идиома, что у подпунктов
-   сайдбара): браузер сам знает реальную высоту рейки и ведёт к ней ровно.
-   Раньше здесь была max-height 0→460px — она пролетала настоящую высоту
-   (~230px) за первую треть времени, и дальше «ехала» пустота: на глаз это
-   рывок в начале и мёртвая пауза в конце. */
+/* Рейка: высота = высоте кнопки, живёт своей естественной шириной (max-content —
+   прежний трюк 0fr→1fr тут не работает: у absolute-контейнера ширина
+   неопределённая, и fr-трек схлопывается в ноль). Раскрытие ведёт clip-path:
+   левый инсет 100%→край, поэтому рейка ПРОЯВЛЯЕТСЯ от кнопки влево — в ту же
+   сторону, в какую «растёт». Отрицательный инсет в открытом виде оставляет
+   место тени (clip-path режет и её). */
 .bgfab-rail {
-    box-sizing: border-box; width: 42px;
-    display: grid; grid-template-rows: 0fr;
-    border-radius: 21px; padding: 0;
-    /* НЕ стекло, в отличие от кнопки: рейка всплывает над чем угодно — над тёмным
+    position: absolute; right: calc(100% + 12px); top: 50%;
+    box-sizing: border-box; width: max-content; height: 42px;
+    display: flex; align-items: center; gap: 6px; padding: 5px 6px;
+    border-radius: 21px;
+    /* НЕ стекло, в отличие от капсулы: рейка всплывает над чем угодно — над тёмным
        героем, над белой карточкой, — а образцы фона сами очень светлые. Сквозь
        полупрозрачную подложку они меняли вид вместе с тем, что под ней, и «Спокойный»
        над тёмной карточкой выглядел темнее «Мрамора» над белой. Плотный белый фон
        даёт всем образцам одну и ту же подложку — их можно честно сравнивать. */
     background: #fff;
     border: 1px solid transparent;
-    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-    opacity: 0; transform: translateY(6px); pointer-events: none;
-    transition: grid-template-rows 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity: 0; transform: translateY(-50%) translateX(6px);
+    clip-path: inset(-28px -28px -28px 100%); pointer-events: none;
+    transition: clip-path 0.42s cubic-bezier(0.22, 1, 0.36, 1),
                 opacity 0.26s ease,
                 transform 0.42s cubic-bezier(0.22, 1, 0.36, 1),
-                padding 0.42s cubic-bezier(0.22, 1, 0.36, 1),
                 box-shadow 0.3s ease;
 }
-/* обёртка режет содержимое, пока строка грида схлопнута в 0fr */
-.bgfab-rail-in {
-    min-height: 0; overflow: hidden;
-    display: flex; flex-direction: column; align-items: center; gap: 6px;
-}
+/* внутренняя обёртка осталась от вертикальной рейки — теперь просто ряд */
+.bgfab-rail-in { display: flex; flex-direction: row; align-items: center; gap: 6px; }
 /* :has(:focus-visible), а НЕ :focus-within — иначе клик по образцу оставляет на нём
    фокус, и рейка висит раскрытой после ухода мыши. :focus-visible ставится только
    при работе с клавиатуры — ровно тот случай, ради которого правило и нужно. */
 #bgFab:hover .bgfab-rail, #bgFab.open .bgfab-rail, #bgFab:has(:focus-visible) .bgfab-rail {
-    grid-template-rows: 1fr; opacity: 1; transform: none; pointer-events: auto;
-    padding: 6px; border-color: rgba(24, 38, 60, 0.08);
+    clip-path: inset(-28px); opacity: 1; transform: translateY(-50%); pointer-events: auto;
+    border-color: rgba(24, 38, 60, 0.08);
     box-shadow: 0 14px 30px -12px rgba(24, 38, 60, 0.45);
 }
 /* заливку даёт .sbgpv-<id> — здесь НЕ трогаем background-size/repeat:
@@ -241,9 +225,9 @@ body.quiz-mode #bgFab, body.sd-drawer-open #bgFab { display: none; }
 .bgfab-sw {
     width: 30px; height: 30px; flex-shrink: 0; border-radius: 50%; padding: 0;
     border: 1px solid rgba(24, 38, 60, 0.16); cursor: pointer;
-    /* образцы проявляются каскадом снизу вверх — от кнопки к началу палитры,
+    /* образцы проявляются каскадом справа налево — от кнопки к началу палитры,
        в ту же сторону, в какую растёт сама рейка */
-    opacity: 0; transform: translateY(8px) scale(0.85);
+    opacity: 0; transform: translateX(8px) scale(0.85);
     transition: opacity 0.24s ease, transform 0.34s cubic-bezier(0.22, 1, 0.36, 1),
                 box-shadow 0.16s, border-color 0.16s;
 }
@@ -265,19 +249,19 @@ body.quiz-mode #bgFab, body.sd-drawer-open #bgFab { display: none; }
     .bgfab-rail, .bgfab-sw { transition-duration: 0.01s; transition-delay: 0s !important; }
 }
 
-/* Подпись слева от образца. Нужна не для красоты: заливки различаются оттенком в
+/* Подпись НАД образцом. Нужна не для красоты: заливки различаются оттенком в
    пределах пары процентов светлоты (см. правило коридора выше), и кружком 30px
    «Спокойный» от «Мрамора» не отличить. Нативный title всплывает через секунду и в
    системном стиле — здесь тот же приём, что у .pff-tipbox «Избранного».
-   Живёт РЯДОМ с рейкой, а не внутри: рейка растёт через max-height + overflow:hidden,
-   и подпись внутри неё была бы срезана по ширине кружка. Позицию по вертикали ставит
-   JS по наведённому образцу — CSS этого не умеет, а список вариантов не фиксирован. */
+   Живёт РЯДОМ с рейкой, а не внутри: рейка растёт через 0fr→1fr + overflow:hidden,
+   и подпись внутри неё была бы срезана по высоте кружка. Позицию по горизонтали
+   ставит JS по наведённому образцу — CSS этого не умеет, а список не фиксирован. */
 .bgfab-tip {
-    position: absolute; right: 52px; pointer-events: none; z-index: 1;
+    position: absolute; bottom: calc(100% + 10px); pointer-events: none; z-index: 1;
     padding: 5px 9px; border-radius: 8px; white-space: nowrap;
     font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700; color: #fff;
     background: rgba(19, 26, 43, 0.92);
     box-shadow: 0 8px 18px -8px rgba(24, 38, 60, 0.5);
-    opacity: 0; transform: translate(4px, -50%); transition: opacity 0.14s, transform 0.14s;
+    opacity: 0; transform: translate(-50%, 4px); transition: opacity 0.14s, transform 0.14s;
 }
-.bgfab-tip.on { opacity: 1; transform: translate(0, -50%); }
+.bgfab-tip.on { opacity: 1; transform: translate(-50%, 0); }
