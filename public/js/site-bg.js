@@ -160,6 +160,11 @@
             el.classList.toggle('on', on);
             el.setAttribute('aria-checked', on ? 'true' : 'false');
         });
+        // кружок-подложка кнопки несёт заливку ТЕКУЩЕГО варианта — видно, что
+        // выбрано, до раскрытия рейки. Отдельный span, а не класс на кнопке:
+        // background из .cst-btn:hover перебивал бы заливку по специфичности
+        var curSw = fab.querySelector('.bgfab-cur');
+        if (curSw) curSw.className = 'bgfab-cur sbgpv-' + cur;
     }
     function buildFab() {
         if (document.getElementById('bgFab')) return;
@@ -186,7 +191,8 @@
                 '</div>' +
             '</div>' +
             '<span class="bgfab-tip" aria-hidden="true"></span>' +
-            '<button type="button" class="bgfab-btn cst-btn" aria-label="Фон страницы" title="Фон страницы">' + WAVE + '</button>';
+            '<button type="button" class="bgfab-btn cst-btn" aria-label="Фон страницы" title="Фон страницы">' +
+                '<span class="bgfab-cur" aria-hidden="true"></span>' + WAVE + '</button>';
         // в стеклянный столбик угла; фолбэк в body — если corner-stack.js не доехал
         ((window.cornerStack && window.cornerStack.ensure()) || document.body).appendChild(fab);
         var tip = fab.querySelector('.bgfab-tip');

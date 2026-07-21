@@ -680,8 +680,10 @@
             : '';
         var secInner = dashSecRows + tradesRow;
         var secGroup = secInner ? '<div class="pf-impgrp">Секции страницы</div>' + secInner : '';
+        // .has-off — янтарная точка «часть портфелей скрыта»: счётчик «2/3» тонет
+        // среди подписей, а скрытый портфель без сигнала легко забыть насовсем
         return '<div class="pf-impwrap">' +
-            '<button class="d3-quick ghost pf-impbtn" onclick="pfToggleImp(event,\'eye\')">' + EYE_SVG + '<span>Видимость</span>' +
+            '<button class="d3-quick ghost pf-impbtn' + (multi && vis < total ? ' has-off' : '') + '" onclick="pfToggleImp(event,\'eye\')">' + EYE_SVG + '<span>Видимость</span>' +
                 (multi && vis < total ? '<i class="pf-eyecnt">' + vis + '/' + total + '</i>' : '') + CHEV_SVG + '</button>' +
             '<div class="pf-impmenu" id="pfImp-eye">' + pfGroup + secGroup + '</div></div>';
     }

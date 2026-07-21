@@ -979,10 +979,12 @@
             // stopPropagation у «Виджета» — как у прежнего FAB: «клик-вне» пикера на
             // document мгновенно закрыл бы только что открытую панель (pfLayoutsToggle
             // глушит всплытие сам — ему хватает переданного event)
+            // data-tip — мгновенный ярлычок слева (corner-stack.css), вместо
+            // нативного title: тот всплывает через секунду и его легко пропустить
             var stackHtml = (noCfg ? '' :
-                '<button type="button" class="cst-btn cst-widget" id="cstWidgetBtn" onclick="event.stopPropagation();pfxAddWidgetClick()" title="Добавить виджет на подвкладку" aria-label="Добавить виджет">' + PFX_WIDGETPLUS_SVG + '</button>' +
-                '<button type="button" class="cst-btn' + (PF.pfl3Open ? ' on' : '') + '" onclick="pfLayoutsToggle(event)" title="Раскладки подвкладки: пресеты, базовая, сохранённая" aria-label="Раскладки">' + PFP_SLIDERS_SVG + '</button>') +
-                '<button type="button" class="cst-btn cst-lock' + (sumsOn ? ' on' : '') + '" onclick="pfxToggleSums()" aria-pressed="' + (sumsOn ? 'true' : 'false') + '" title="' + (sumsOn ? 'Показать суммы' : 'Скрывать суммы от посторонних глаз') + '">' + (sumsOn ? PFX_LOCK_SVG : PFX_UNLOCK_SVG) + '</button>';
+                '<button type="button" class="cst-btn cst-widget" id="cstWidgetBtn" onclick="event.stopPropagation();pfxAddWidgetClick()" data-tip="Добавить виджет" aria-label="Добавить виджет">' + PFX_WIDGETPLUS_SVG + '</button>' +
+                '<button type="button" class="cst-btn' + (PF.pfl3Open ? ' on' : '') + '" onclick="pfLayoutsToggle(event)" data-tip="Раскладки" aria-label="Раскладки">' + PFP_SLIDERS_SVG + '</button>') +
+                '<button type="button" class="cst-btn cst-lock' + (sumsOn ? ' on' : '') + '" onclick="pfxToggleSums()" aria-pressed="' + (sumsOn ? 'true' : 'false') + '" data-tip="' + (sumsOn ? 'Показать суммы' : 'Скрыть суммы') + '" aria-label="Скрывать суммы">' + (sumsOn ? PFX_LOCK_SVG : PFX_UNLOCK_SVG) + '</button>';
             if (host.__cstHtml !== stackHtml) { host.innerHTML = stackHtml; host.__cstHtml = stackHtml; }
         }
         var bar = document.getElementById('pfActBar');

@@ -184,6 +184,15 @@ body.sbg-dawn #siteBgTiles {
    «рейка раскрыта»: подсветка держится, пока курсор над рейкой */
 #bgFab:hover .bgfab-btn, #bgFab.open .bgfab-btn { color: var(--text-deep, #1b2433); background: rgba(24, 38, 60, 0.08); }
 body.dark-mode #bgFab:hover .bgfab-btn, body.dark-mode #bgFab.open .bgfab-btn { background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.85); }
+/* кружок-подложка с заливкой текущего варианта (класс sbgpv-<id> ставит fabSync):
+   волна рисуется поверх; заливки светлые, рамка не даёт им слиться со стеклом */
+#bgFab .bgfab-btn { position: relative; }
+.bgfab-cur {
+    position: absolute; inset: 4px; border-radius: 50%;
+    border: 1px solid rgba(24, 38, 60, 0.16); pointer-events: none;
+}
+#bgFab .bgfab-btn svg { position: relative; }
+#bgFab:hover .bgfab-cur, #bgFab.open .bgfab-cur { border-color: rgba(24, 38, 60, 0.3); }
 /* невидимый МОСТИК через зазор кнопка↔рейка: зазор — мёртвая зона, на его
    пересечении :hover рвался, рейка начинала закрываться и мгновенно теряла
    pointer-events — выбрать фон наведением было нельзя, только кликом-«пришпилив».

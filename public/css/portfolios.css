@@ -1181,6 +1181,14 @@ body.dark-mode .pf-eyeitem.off-eye .pf-eyestate { color: #5a6577; }
 .pf-eyecnt { font-style: normal; font-size: 10px; font-weight: 800; padding: 1px 7px; border-radius: 999px;
     background: rgba(24,38,60,0.08); color: #46566e; font-variant-numeric: tabular-nums; }
 body.dark-mode .pf-eyecnt { background: rgba(255,255,255,0.1); color: #cdd8e6; }
+/* янтарная точка на «Видимости», пока скрыт хотя бы один портфель: внимание,
+   не ошибка — деньги скрытых карточек продолжают считаться в сводке */
+.pf-impbtn.has-off { position: relative; }
+.pf-impbtn.has-off::after {
+    content: ''; position: absolute; top: 5px; right: 7px;
+    width: 6px; height: 6px; border-radius: 50%; background: #f59e0b;
+    pointer-events: none;
+}
 .pf-eyenote { padding: 6px 10px 8px; font-size: 10px; line-height: 1.45; color: #8a97a8; }
 body.dark-mode .pf-eyenote { color: #7c8aa0; }
 /* пометка «скрыт» в лидерборде сводки */

@@ -391,7 +391,8 @@
         fab = document.createElement('div');
         fab.id = 'themeFab';
         fab.className = 'cst-btn';   // обычная кнопка стеклянного столбика угла (corner-stack.js)
-        fab.title = 'Сменить тему';
+        // data-tip вместо title: мгновенный ярлычок слева (corner-stack.css)
+        fab.setAttribute('data-tip', 'Тема');
         fab.setAttribute('role', 'button');
         fab.setAttribute('aria-label', 'Сменить тему');
         // нижняя кнопка капсулы #cornerStack; фолбэк в body — если corner-stack.js не доехал

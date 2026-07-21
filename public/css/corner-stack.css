@@ -53,3 +53,20 @@ body.dark-mode #cornerStack .cst-hr { background: rgba(255, 255, 255, 0.14); }
 .cst-btn svg { width: 18px; height: 18px; }
 body.dark-mode .cst-btn { color: rgba(255, 255, 255, 0.55); }
 body.dark-mode .cst-btn:hover { background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.85); }
+
+/* мгновенный ярлычок слева от кнопки (content: attr(data-tip)) — тот же приём
+   и вид, что у подписи образца фона (.bgfab-tip в site-bg.css): нативный title
+   всплывает через секунду и в системном стиле, его легко пропустить. У кнопки
+   фона (#bgFab) ярлычка нет — по наведению там раскрывается рейка образцов. */
+.cst-btn[data-tip] { position: relative; }
+.cst-btn[data-tip]::after {
+    content: attr(data-tip);
+    position: absolute; right: calc(100% + 14px); top: 50%;
+    padding: 5px 9px; border-radius: 8px; white-space: nowrap;
+    font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700; color: #fff;
+    background: rgba(19, 26, 43, 0.92);
+    box-shadow: 0 8px 18px -8px rgba(24, 38, 60, 0.5);
+    opacity: 0; transform: translate(4px, -50%); pointer-events: none;
+    transition: opacity 0.14s, transform 0.14s;
+}
+.cst-btn[data-tip]:hover::after { opacity: 1; transform: translate(0, -50%); }
