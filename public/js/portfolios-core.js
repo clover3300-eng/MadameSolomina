@@ -1206,6 +1206,7 @@
     PF.saveStore = saveStore; PF.makePortfolio = makePortfolio; PF.findPf = findPf; PF.findHold = findHold; PF.visibleItems = visibleItems;
     PF.colorVal = colorVal; PF.ensureLots = ensureLots; PF.aggHolding = aggHolding; PF.calcHold = calcHold; PF.calcPf = calcPf;
     PF.dayDelta = dayDelta; PF.topMover = topMover; PF.recordSnapshots = recordSnapshots; PF.snaps = snaps;
+    PF.pfAllBoughtToday = pfAllBoughtToday; PF.quoteMissing = quoteMissing;
     // — котировки —
     PF.quotes = quotes; PF.ensureQuotes = ensureQuotes; PF.liveBond = liveBond; PF.bondFace = bondFace; PF.bondQuotes = bondQuotes;
     PF.bondNkdNow = bondNkdNow; PF.pfQuotesWarming = pfQuotesWarming; PF.pfCardWarming = pfCardWarming; PF.skelHtml = skelHtml; PF.noQuoteCell = noQuoteCell;

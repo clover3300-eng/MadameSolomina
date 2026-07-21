@@ -16,7 +16,7 @@
     var drawPfChart = PF.drawPfChart, ensureLots = PF.ensureLots, ensureQuotes = PF.ensureQuotes, esc = PF.esc, findHold = PF.findHold, findPf = PF.findPf;
     var fmtPct = PF.fmtPct, fmtPrice = PF.fmtPrice, fmtQty = PF.fmtQty, fmtRub = PF.fmtRub, genId = PF.genId, importName = PF.importName;
     var loadPfChart = PF.loadPfChart, lookupHistNkd = PF.lookupHistNkd, lookupHistPrice = PF.lookupHistPrice, makePortfolio = PF.makePortfolio, noQuoteCell = PF.noQuoteCell, pad2 = PF.pad2;
-    var pfCardWarming = PF.pfCardWarming, pfFirstBuyDate = PF.pfFirstBuyDate, pfParseAnyDate = PF.pfParseAnyDate, quotes = PF.quotes;
+    var pfAllBoughtToday = PF.pfAllBoughtToday, pfCardWarming = PF.pfCardWarming, pfFirstBuyDate = PF.pfFirstBuyDate, pfParseAnyDate = PF.pfParseAnyDate, quoteMissing = PF.quoteMissing, quotes = PF.quotes;
     var ruDate = PF.ruDate, saveStore = PF.saveStore, skelHtml = PF.skelHtml, toNum = PF.toNum, toast = PF.toast, todayStr = PF.todayStr;
     var visibleItems = PF.visibleItems;
     // импорт конструктора (portfolios-dash.js, уже загружен):
@@ -129,7 +129,19 @@
 
     // подсказка KPI «Доходность»: одна строка на разметку И точечный патчер
     // (livePatchers.cards) — чтобы текст не разъезжался между ними
-    var YIELD_TIP = 'Доходность за всё время владения; строкой ниже — в пересчёте на год (CAGR, может отличаться от фактического изменения)';
+    var YIELD_TIP = 'Доходность за всё время владения. Годовые (CAGR) показываем только после года владения: до этого annualize() их не экстраполирует и они совпали бы с фактическим процентом';
+    // Подпись под «Доходностью». Годовые имеют смысл только после ГОДА владения:
+    // annualize() держит floor 365 дней (иначе −18% за месяц дали бы −90% годовых),
+    // поэтому на сроке меньше года CAGR РАВЕН фактическому проценту — и подпись
+    // «−15,5% годовых» под значением «−15,5%» была бы дублем, ровно тем, за который
+    // мокап критиковал исходный макет.
+    function yieldSubText(c, days, allToday) {
+        // «за 1 день» здесь не пишем: ровно та же подпись стоит у соседнего «Дохода»,
+        // и две одинаковые строки подряд читаются как ошибка вёрстки
+        if (allToday) return 'годовых пока нет';
+        if (days >= 365 && c.annual != null) return fmtPct(c.annual) + ' годовых';
+        return 'за весь срок';
+    }
     // Разметка карточки ОДНА на любую ширину: под размер её подгоняет CSS по
     // ФАКТИЧЕСКОЙ ширине самой карточки (@container в portfolios.css), а не по флагу
     // сетки. Раньше «узость» приходила параметром от раскладки (3-в-ряд ⇒ narrow), и
@@ -147,14 +159,24 @@
         var cash = +p.cash > 0 ? +p.cash : 0;
         var fullV = c.value + cash;   // стоимость портфеля = бумаги + свободные деньги
         var hasHold = c.hs.length > 0;
+        var isBrk = !!p.broker;
+        // краевые состояния (блок 3): всё куплено сегодня — истории ещё нет физически;
+        // нет котировки — curPriceInfo молча падает на цену покупки, и итог врёт.
+        // Во время прогрева про котировки не говорим: там «нет цены» — норма.
+        var allToday = hasHold && pfAllBoughtToday(p.id);
+        var noQuotes = !warm && c.hs.filter(function (x) { return x.c.curSrc === 'buy' && x.c.qty > 0; });
+        var noQuoteN = noQuotes ? noQuotes.length : 0;
 
-        // шапка: имя (цветовая метка + сериф) · бейдж брокера · период · копировать/скрыть/⚙
+        // шапка: имя (цветовая метка + сериф) · бейдж брокера · метки состояния ·
+        // период · копировать/скрыть/⚙
+        var flags = (isBrk ? '<span class="pfc-flag" title="Состав приходит от брокера и перезаписывается при каждом обновлении — ручные правки здесь не сохранятся">Только чтение</span>' : '') +
+            (p.hidden ? '<span class="pfc-flag" title="Карточка убрана с «Обзора». В капитале, «Списке портфелей» и аналитике портфель считается как обычно">Скрыт</span>' : '');
         var top = '<div class="pfc-top">' +
             '<div class="pfc-titles">' +
                 '<span class="pfc-name" onclick="pfNameEdit(\'' + p.id + '\',event)" title="Нажмите, чтобы переименовать"><em class="pfc-name-dot"></em><span class="pfc-name-ink">' + esc(p.name) + '</span></span>' +
                 // бейдж брокерской карточки (№10): PF.* в момент вызова — файл
                 // portfolios-broker-pf.js грузится ПОСЛЕ этого
-                (p.broker && PF.brokerPfBadgeHtml ? PF.brokerPfBadgeHtml(p) : '') +
+                (isBrk && PF.brokerPfBadgeHtml ? PF.brokerPfBadgeHtml(p) : '') + flags +
             '</div>' +
             '<div class="pfc-ctrls">' +
                 (hasHold ? cardSegHtml(p, cardRangeOf(p), cardRanges(p)) : '') +
@@ -162,7 +184,7 @@
                 // первыми (см. @container): шестерёнка остаётся всегда
                 '<div class="pfc-acts">' +
                     '<button class="pfc-act pfc-act--sec" onclick="pfCopyComposition(\'' + p.id + '\',event)" aria-label="Скопировать состав" title="Скопировать состав портфеля">' + PF.COPY_SVG + '</button>' +
-                    '<button class="pfc-act pfc-act--sec" onclick="pfToggleHidden(\'' + p.id + '\',event)" aria-label="Убрать карточку с «Обзора»" title="Убрать карточку с «Обзора» — портфель останется в сводках, его вкладка не закроется">' + PF.EYEOFF_SVG + '</button>' +
+                    '<button class="pfc-act pfc-act--sec' + (p.hidden ? ' on' : '') + '" onclick="pfToggleHidden(\'' + p.id + '\',event)" aria-label="' + (p.hidden ? 'Показать на «Обзоре»' : 'Убрать карточку с «Обзора»') + '" title="' + (p.hidden ? 'Вернуть карточку на «Обзор»' : 'Убрать карточку с «Обзора» — портфель останется в сводках, его вкладка не закроется') + '">' + PF.EYEOFF_SVG + '</button>' +
                     '<button class="pfc-act' + (menuOn ? ' on' : '') + '" onclick="pfToggleMenu(\'' + p.id + '\')" aria-label="Настройки" title="Настройки">' + PF.GEAR_SVG + '</button>' +
                 '</div>' +
             '</div>' +
@@ -170,8 +192,18 @@
 
         // герой: колонки 46% / остаток — длинное число меняет свой кегль, а не жмёт график
         var vh = heroValParts(fullV);
-        var inc = hasHold ? (warm ? null : heroIncParts(p, c))
-                          : { cls: 'pfc-hero-inc', html: '<u>пока нечего считать</u>' };
+        var inc;
+        if (!hasHold) inc = { cls: 'pfc-hero-inc', html: '<u>пока нечего считать</u>' };
+        else if (allToday) inc = { cls: 'pfc-hero-inc', html: '<span class="pfc-dash">—</span><u>куплено сегодня</u>' };
+        else inc = warm ? null : heroIncParts(p, c);
+        // график: пока нет ни одного закрытого торгового дня кривой не существует
+        // физически — вместо пустого поля объясняем, чего ждём (drawPfChart нарисовал
+        // бы то же сообщение, но только после круга запросов к MOEX)
+        var chartCell = (!hasHold || allToday)
+            ? '<div class="pfc-nochart">' + (hasHold
+                ? 'Кривая появится завтра:<br>нужен хотя бы один закрытый торговый день'
+                : 'График появится после первой покупки') + '</div>'
+            : '<div class="pfc-mchart-plot" id="pfmChart-' + p.id + '"></div>';
         var hero = '<div class="pfc-hero">' +
             '<div class="pfc-hero-l">' +
                 '<span class="pfc-hero-k">Стоимость портфеля</span>' +
@@ -181,16 +213,28 @@
                         '<span class="pfc-hero-inc" data-live="pfc:' + p.id + ':inc">' + skelHtml(128, 13) + '</span>'
                       : '<span class="pfc-hero-val' + vh.cls + '" data-live="pfc:' + p.id + ':val">' + vh.html + '</span>' +
                         '<span class="' + inc.cls + '" data-live="pfc:' + p.id + ':inc">' + inc.html + '</span>') +
-            '</div>' +
-            '<div class="pfc-mchart-plot" id="pfmChart-' + p.id + '"></div>' +
+            '</div>' + chartCell +
         '</div>';
 
-        // пустой портфель обрывается сразу после героя: KPI, полосы и таблицы нет
-        // (делить на ноль нечего); полноценное приглашение — блок 3 плана
+        var head = '<div class="dash2-card pf-card' + (menuOn ? ' menu-open' : '') + tall +
+            (p.hidden ? ' pf-card--dim' : '') + '" style="--pf-accent:' + ac + '" data-pfid="' + p.id + '">';
+
+        // ПУСТОЙ ПОРТФЕЛЬ: обрывается сразу после героя — KPI, полосы и таблицы нет
+        // вовсе (делить на ноль нечего, а четыре прочерка подряд читаются как поломка).
+        // Вместо них объяснение и два входа: вручную и импортом.
         if (!hasHold) {
-            return '<div class="dash2-card pf-card' + (menuOn ? ' menu-open' : '') + tall + '" style="--pf-accent:' + ac + '" data-pfid="' + p.id + '">' +
-                top + menu + '<div class="pfc-normal">' + hero +
-                '<div class="pfc-empty">Состав пуст — добавьте активы в настройках ⚙</div></div></div>';
+            var blank = isBrk
+                ? '<div class="pfc-blank"><h5>На счёте пока нет бумаг</h5>' +
+                    '<p>Позиции появятся здесь сами после первой покупки у брокера — состав приходит из Т-Инвестиций.</p></div>'
+                : '<div class="pfc-blank"><h5>В портфеле пока нет бумаг</h5>' +
+                    '<p>Добавьте первую покупку вручную или подтяните состав из брокера — тогда появятся и доход, и распределение.</p>' +
+                    '<div class="pfc-blank-row">' +
+                        '<button class="pfc-rebal" onclick="pfToggleMenu(\'' + p.id + '\')">Добавить бумагу</button>' +
+                        // тот же вход, что в меню «Импорт» шапки: создаёт/показывает
+                        // карточку счёта Т-Инвестиций (визард .bk-*, №10)
+                        '<button class="pfc-mact" onclick="pfBrokerPfImport()">Импорт из брокера</button>' +
+                    '</div></div>';
+            return head + top + menu + '<div class="pfc-normal">' + hero + blank + '</div></div>';
         }
 
         // KPI-полоса: четыре РАЗНЫХ числа, третья строка каждой ячейки — тоже число
@@ -202,39 +246,63 @@
             }).join('') + '</div>';
         } else {
             var days = Math.max(1, Math.floor(pfAgeDays(p)));
-            var dd = dayDelta(p, c.value);
+            var dd = allToday ? null : dayDelta(p, c.value);
             var ddPct = dd != null && c.value - dd > 0 ? dd / (c.value - dd) * 100 : null;
+            // «Куплено сегодня»: доход уже есть (цена ушла от цены покупки), а вчерашнего
+            // снимка в snaps ещё не существует — прочерк и словами, чего ждём.
+            // Прочерк честнее нуля: ноль читался бы как «не изменилось».
+            var daySub = allToday ? 'нет вчерашней цены' : (dd == null ? 'нет вчерашней цены' : (ddPct != null ? fmtPct(ddPct) + ' сегодня' : 'сегодня'));
             kpis = '<div class="pfc-stats2">' +
                 '<div class="pfc-stat2"><span class="pfc-stat2-l">Вложено</span><span class="pfc-stat2-v">' + fmtRub(c.invested) + '</span><span class="pfc-stat2-s">' + fmtRub(cash) + ' свободно</span></div>' +
                 '<div class="pfc-stat2"><span class="pfc-stat2-l">Доход</span><span class="pfc-stat2-v ' + (c.pnl >= 0 ? 'pos' : 'neg') + '" data-live="pfc:' + p.id + ':pnl">' + signRub(c.pnl) + '</span><span class="pfc-stat2-s">за ' + days + ' ' + PF.plural(days, 'день', 'дня', 'дней') + '</span></div>' +
-                '<div class="pfc-stat2" title="' + YIELD_TIP + '"><span class="pfc-stat2-l">Доходность</span><span class="pfc-stat2-v ' + (c.pnlPct >= 0 ? 'pos' : 'neg') + '" data-live="pfc:' + p.id + ':yield">' + fmtPct(c.pnlPct) + '</span><span class="pfc-stat2-s" data-live="pfc:' + p.id + ':ysub">' + (c.annual != null ? fmtPct(c.annual) + ' годовых' : '') + '</span></div>' +
-                '<div class="pfc-stat2"><span class="pfc-stat2-l">За день</span><span class="pfc-stat2-v' + (dd == null ? '' : (dd >= 0 ? ' pos' : ' neg')) + '" data-live="pfc:' + p.id + ':day">' + (dd == null ? '—' : signRub(dd)) + '</span><span class="pfc-stat2-s" data-live="pfc:' + p.id + ':dsub">' + (dd == null ? '' : (ddPct != null ? fmtPct(ddPct) + ' сегодня' : 'сегодня')) + '</span></div>' +
+                '<div class="pfc-stat2" title="' + YIELD_TIP + '"><span class="pfc-stat2-l">Доходность</span><span class="pfc-stat2-v ' + (c.pnlPct >= 0 ? 'pos' : 'neg') + '" data-live="pfc:' + p.id + ':yield">' + fmtPct(c.pnlPct) + '</span><span class="pfc-stat2-s" data-live="pfc:' + p.id + ':ysub">' + yieldSubText(c, days, allToday) + '</span></div>' +
+                '<div class="pfc-stat2"><span class="pfc-stat2-l">За день</span><span class="pfc-stat2-v' + (dd == null ? ' pfc-dash' : (dd >= 0 ? ' pos' : ' neg')) + '" data-live="pfc:' + p.id + ':day">' + (dd == null ? '—' : signRub(dd)) + '</span><span class="pfc-stat2-s" data-live="pfc:' + p.id + ':dsub">' + daySub + '</span></div>' +
             '</div>';
+        }
+
+        // плашки над списком: по одной на состояние, тихие и объясняющие ПОСЛЕДСТВИЕ,
+        // а не факт («итог занижен», «правки не сохранятся», «из расчётов не выпал»)
+        var warns = '';
+        if (noQuoteN) {
+            warns += '<div class="pfc-warn"><i>!</i><span>' +
+                (noQuoteN === 1 ? 'По одной бумаге биржа не отдала цену. Её стоимость считаем <b>по цене покупки</b>'
+                                : 'По ' + noQuoteN + ' ' + PF.plural(noQuoteN, 'бумаге', 'бумагам', 'бумагам') + ' биржа не отдала цену. Их стоимость считаем <b>по цене покупки</b>') +
+                ', поэтому итог неточен.</span></div>';
+        }
+        if (isBrk) {
+            warns += '<div class="pfc-warn quiet"><i>↺</i><span>Состав приходит от брокера и <b>перезаписывается при каждом обновлении</b>. Ручные правки здесь не сохранятся — докупку и продажу делайте в «Торговле».</span></div>';
+        }
+        if (p.hidden) {
+            warns += '<div class="pfc-warn quiet"><i>◍</i><span>Портфель скрыт с «Обзора», но <b>из расчётов не выпал</b>: капитал, «Список портфелей» и аналитика считают его как обычно.</span></div>';
         }
 
         // позиции: порядок по ДОЛЕ (рядом колонка «Доля» и полоса-стек сверху —
         // список, где вес идёт вразнобой, спорил бы сам с собой); доходность
         // никуда не делась — она в своей колонке «Изм.»
         var list = c.hs.slice().sort(function (a, b) { return b.c.value - a.c.value; });
-        var pos = '<div class="pfc-pos-h"><span class="pfc-pos-t">Позиции</span><span class="pfc-cnt">' + c.hs.length + '</span></div>' +
-            '<div class="pfc-massets" data-skey="ma-' + p.id + '">' + pfMiniTableHtml(list, p.id, fullV) + '</div>';
+        var pos = warns +
+            '<div class="pfc-pos-h"><span class="pfc-pos-t">Позиции</span><span class="pfc-cnt">' + c.hs.length + '</span></div>' +
+            '<div class="pfc-massets" data-skey="ma-' + p.id + '">' + pfMiniTableHtml(list, p.id, fullV, warm) + '</div>';
 
         // подвал: «Все позиции» → подвкладка портфеля, «Ребаланс» — прежний pfExpand.
         // Счётчик в кнопке показывается только в узкой карточке (@container), где
-        // колонка «Доля» скрыта и вес состава иначе не прочесть
+        // колонка «Доля» скрыта и вес состава иначе не прочесть.
+        // У скрытой карточки главное действие — вернуть её на «Обзор».
         var foot = '<div class="pfc-foot">' +
             '<button class="pfc-all" onclick="pfxOpenPf(\'' + p.id + '\')"><span>Все позиции<i class="pfc-all-n">' + c.hs.length + '</i></span>' + CHEVR_SVG + '</button>' +
-            '<button class="pfc-rebal" onclick="pfExpand(\'' + p.id + '\')">' + PF.REBAL_SVG + 'Ребаланс</button>' +
+            (p.hidden
+                ? '<button class="pfc-rebal" onclick="pfToggleHidden(\'' + p.id + '\',event)">Показать на «Обзоре»</button>'
+                : '<button class="pfc-rebal" onclick="pfExpand(\'' + p.id + '\')">' + PF.REBAL_SVG + 'Ребаланс</button>') +
         '</div>';
 
         // data-pfid — адрес карточки для прокрутки «покажи счёт» (scrollToCard в
         // portfolios-broker-pf.js работает и в классической сетке, не только в конструкторе)
-        return '<div class="dash2-card pf-card' + (menuOn ? ' menu-open' : '') + tall + '" style="--pf-accent:' + ac + '" data-pfid="' + p.id + '">' +
+        return head +
             top + menu +
             '<div class="pfc-normal">' +
                 hero + kpis + distHtml(p, c, fullV, cash) + pos +
                 // тихая строка «вне трекера: N позиций · X ₽» — прочие типы со счёта брокера
-                (p.broker && PF.brokerPfExtraHtml ? PF.brokerPfExtraHtml(p) : '') +
+                (isBrk && PF.brokerPfExtraHtml ? PF.brokerPfExtraHtml(p) : '') +
                 foot +
             '</div>' +
         '</div>';
@@ -301,11 +369,15 @@
             PF.liveSet('pfc:' + p.id + ':inc', { html: inc.html, cls: inc.cls });
             PF.liveSet('pfc:' + p.id + ':pnl', { text: signRub(c.pnl), cls: 'pfc-stat2-v ' + (c.pnl >= 0 ? 'pos' : 'neg') });
             PF.liveSet('pfc:' + p.id + ':yield', { text: fmtPct(c.pnlPct), cls: 'pfc-stat2-v ' + (c.pnlPct >= 0 ? 'pos' : 'neg') });
-            PF.liveSet('pfc:' + p.id + ':ysub', { text: c.annual != null ? fmtPct(c.annual) + ' годовых' : '' });
-            var dd = dayDelta(p, c.value);
+            // те же правила, что в разметке: годовые — только после года владения,
+            // «за день» у «куплено сегодня» — прочерк (вчерашнего снимка нет)
+            var allToday = pfAllBoughtToday(p.id);
+            var days = Math.max(1, Math.floor(pfAgeDays(p)));
+            PF.liveSet('pfc:' + p.id + ':ysub', { text: yieldSubText(c, days, allToday) });
+            var dd = allToday ? null : dayDelta(p, c.value);
             var ddPct = dd != null && c.value - dd > 0 ? dd / (c.value - dd) * 100 : null;
-            PF.liveSet('pfc:' + p.id + ':day', { text: dd == null ? '—' : signRub(dd), cls: 'pfc-stat2-v' + (dd == null ? '' : (dd >= 0 ? ' pos' : ' neg')) });
-            PF.liveSet('pfc:' + p.id + ':dsub', { text: dd == null ? '' : (ddPct != null ? fmtPct(ddPct) + ' сегодня' : 'сегодня') });
+            PF.liveSet('pfc:' + p.id + ':day', { text: dd == null ? '—' : signRub(dd), cls: 'pfc-stat2-v' + (dd == null ? ' pfc-dash' : (dd >= 0 ? ' pos' : ' neg')) });
+            PF.liveSet('pfc:' + p.id + ':dsub', { text: dd == null ? 'нет вчерашней цены' : (ddPct != null ? fmtPct(ddPct) + ' сегодня' : 'сегодня') });
             c.hs.forEach(function (x) {
                 var h = x.h, hc = x.c;
                 // те же выражения, что в pfMiniRowHtml — ячейки после апдейта
@@ -317,7 +389,9 @@
                     cls: 'pfc-mnow' + (hc.live ? ' live' : ''),
                     title: noQ ? noQ.tip : (h.type === 'bond' ? BOND_PRICE_TIP : null) });
                 PF.liveSet('pfh:' + h.id + ':chg', { text: ch.txt, cls: 'pfc-mchg' + (ch.cls ? ' ' + ch.cls : '') });
-                PF.liveSet('pfh:' + h.id + ':share', { html: shareCellHtml(fullV > 0 ? hc.value / fullV * 100 : 0) });
+                // без котировки доля считалась бы от цены покупки и врала — прочерк
+                PF.liveSet('pfh:' + h.id + ':share', {
+                    html: noQ ? '<span class="pfc-dash">—</span>' : shareCellHtml(fullV > 0 ? hc.value / fullV * 100 : 0) });
                 // деньги позиции в раскрытой строке (узлы есть только у открытых строк)
                 PF.liveSet('pfh:' + h.id + ':dval', { text: fmtRub(hc.value) });
                 PF.liveSet('pfh:' + h.id + ':dpnl', { text: signRub(hc.pnl), cls: 'v ' + (hc.pnl >= 0 ? 'pos' : 'neg') });
@@ -334,12 +408,12 @@
     // (@container), и проценты там пересчитываются на 4 оставшиеся колонки — из
     // разметки этим не управлять. Зазор между колонками даёт паддинг, который ВХОДИТ
     // в ширину колонки: менять ширины и паддинг только вместе.
-    function pfMiniTableHtml(list, pid, fullV) {
+    function pfMiniTableHtml(list, pid, fullV, warm) {
         // имена колонок — те, что уже приняты в проекте (pfxPortHoldRowHtml):
         // Средняя · Сейчас · Изм.
         var head = '<tr><th class="pfc-mc-as">Актив</th><th class="pfc-mc-qty">Кол-во</th>' +
             '<th class="pfc-mc-buy">Средняя</th><th>Сейчас</th><th>Изм.</th><th class="pfc-mc-share">Доля</th></tr>';
-        var body = list.map(function (x) { return pfMiniRowHtml(x, pid, fullV); }).join('');
+        var body = list.map(function (x) { return pfMiniRowHtml(x, pid, fullV, warm); }).join('');
         return '<div class="pfc-mtablewrap"><table class="pfc-mtable"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>';
     }
     // «Изм.» строки: стрелка + процент без знака (знак несут стрелка и цвет);
@@ -361,7 +435,7 @@
     // АКЦИИ уводит в терминал (stopPropagation, чтобы не дёргать раскрытие);
     // аффорданса (пунктир + «↗ терминал») — только при наведении на сам тикер.
     // У облигаций тикер некликабелен: терминала для ОФЗ нет, в подвкладке так же.
-    function pfMiniRowHtml(x, pid, fullV) {
+    function pfMiniRowHtml(x, pid, fullV, warm) {
         var h = x.h, c = x.c, isB = h.type === 'bond';
         var open = !!PF.openRows[h.id];
         var ptip = isB ? ' title="' + attr(BOND_PRICE_TIP) + '"' : '';
@@ -369,12 +443,18 @@
         // «—» если котировки загружены и бумаги в них нет (опечатка в тикере); цену покупки
         // под видом текущей не показываем
         var noQ = c.curSrc === 'buy' ? noQuoteCell(h) : null;
+        // ПРОГРЕВ: состав, количество и средняя цена известны из localStorage сразу —
+        // рисуем их настоящими, скелетон ставим только там, где ждём биржу. Так карточка
+        // не «мигает» составом и не выглядит потерявшей данные.
+        // НЕТ КОТИРОВКИ (вне прогрева): строка гасится, «Изм.» и «Доля» — прочерк.
+        // Прочерк честнее нуля: ноль читается как «упало в ноль».
+        var stale = !warm && !!noQ;
         var ch = chgParts(c, noQ);
         var nm = assetDisplayName(h);
         var tk = isB
             ? '<b>' + esc(h.ticker) + '</b>'
             : '<b class="is-go" onclick="pfOpenTicker(\'' + jsArg(h.ticker) + '\');event.stopPropagation()" title="Открыть в терминале">' + esc(h.ticker) + '</b><i class="pfc-mgo">↗ терминал</i>';
-        var row = '<tr class="pfc-mtr' + (open ? ' open' : '') + '" data-hid="' + h.id + '" onclick="pfToggleAssetRow(\'' + pid + '\',\'' + h.id + '\')">' +
+        var row = '<tr class="pfc-mtr' + (open ? ' open' : '') + (stale ? ' stale' : '') + '" data-hid="' + h.id + '" onclick="pfToggleAssetRow(\'' + pid + '\',\'' + h.id + '\')">' +
             '<td class="pfc-mc-as"><span class="pfc-mtk">' +
                 '<svg class="pfc-mch' + (open ? ' up' : '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>' +
                 '<span class="pfc-mtt"><span class="pfc-tkline">' + tk + '</span>' + (nm && nm !== h.ticker ? '<span class="pfc-mnm">' + esc(nm) + '</span>' : '') + '</span>' +
@@ -384,9 +464,9 @@
             // data-live: цена, «Изм.» и «Доля» обновляются точечно фоновым тиком
             // (livePatchers.cards); ключ по hid — копии той же бумаги в других
             // экземплярах карточки (конструктор) обновятся заодно
-            '<td class="pfc-mnow' + (c.live ? ' live' : '') + '" data-live="pfh:' + h.id + ':now"' + (noQ ? ' title="' + attr(noQ.tip) + '"' : ptip) + '>' + (noQ ? noQ.txt : fmtPrice(c.cur)) + '</td>' +
-            '<td class="pfc-mchg' + (ch.cls ? ' ' + ch.cls : '') + '" data-live="pfh:' + h.id + ':chg">' + ch.txt + '</td>' +
-            '<td class="pfc-mshare pfc-mc-share" data-live="pfh:' + h.id + ':share">' + shareCellHtml(fullV > 0 ? c.value / fullV * 100 : 0) + '</td>' +
+            '<td class="pfc-mnow' + (c.live ? ' live' : '') + '" data-live="pfh:' + h.id + ':now"' + (noQ ? ' title="' + attr(noQ.tip) + '"' : ptip) + '>' + (warm ? skelHtml(62, 13) : (noQ ? noQ.txt : fmtPrice(c.cur))) + '</td>' +
+            '<td class="pfc-mchg' + (ch.cls ? ' ' + ch.cls : '') + '" data-live="pfh:' + h.id + ':chg">' + (warm ? skelHtml(44, 13) : ch.txt) + '</td>' +
+            '<td class="pfc-mshare pfc-mc-share" data-live="pfh:' + h.id + ':share">' + (warm ? skelHtml(40, 13) : (noQ ? '<span class="pfc-dash">—</span>' : shareCellHtml(fullV > 0 ? c.value / fullV * 100 : 0))) + '</td>' +
         '</tr>';
         return open ? row + pfMiniDetailRowHtml(h, c, 6, pid) : row;
     }

@@ -461,6 +461,53 @@ body.dark-mode .pfc-coup b { color: #eef3f9; }
 .pfc-coups-note { font-size: 11px; color: #94a3b8; }
 .pfc-empty { padding: 22px 0; text-align: center; font-size: 12.5px; color: #94a3b8; }
 
+/* ============================================================
+   КРАЕВЫЕ СОСТОЯНИЯ КАРТОЧКИ (макет 08) — шесть штук:
+   прогрев · пустой · куплено сегодня · нет котировки · брокерский · скрытый
+   ============================================================ */
+/* «—» вместо числа, которого нет. Прочерк честнее нуля: ноль читается
+   как «упало в ноль» / «не изменилось», а данных на самом деле просто нет */
+.pfc-dash { color: #94a3b8; font-weight: 500; }
+body.dark-mode .pfc-dash { color: #67748a; }
+/* метка состояния в шапке («Только чтение», «Скрыт») — нейтральная, не тревожная */
+.pfc-flag { font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 800; letter-spacing: 0.07em;
+    text-transform: uppercase; padding: 3px 7px; border-radius: 6px; white-space: nowrap;
+    background: rgba(15,23,42,0.07); color: #64748b; }
+body.dark-mode .pfc-flag { background: rgba(255,255,255,0.09); color: #9fb0c4; }
+/* скрытая карточка (видна только на своей вкладке) — приглушена целиком */
+.pf-card--dim .pfc-normal { opacity: 0.72; }
+.pf-card--dim .pfc-foot, .pf-card--dim .pfc-warn { opacity: 1; }
+/* тихая плашка над списком: янтарная — когда итог неточен (нет котировки),
+   нейтральная (.quiet) — когда всё в порядке, но правила поведения неочевидны */
+.pfc-warn { display: flex; gap: 9px; align-items: flex-start; margin: 0 18px 12px; padding: 9px 11px;
+    border-radius: 10px; background: rgba(217,119,6,0.09); font-size: 11.5px; line-height: 1.45; color: #64748b; }
+.pfc-warn b { color: #0f172a; font-weight: 600; }
+.pfc-warn i { font-style: normal; color: #d97706; font-weight: 800; flex: none; }
+.pfc-warn.quiet { background: rgba(15,23,42,0.04); }
+.pfc-warn.quiet i { color: #94a3b8; }
+body.dark-mode .pfc-warn { background: rgba(217,119,6,0.14); color: #9fb0c4; }
+body.dark-mode .pfc-warn b { color: #eef3f9; }
+body.dark-mode .pfc-warn.quiet { background: rgba(255,255,255,0.05); }
+/* строка без котировки: гасим — числа в ней не настоящие */
+.pfc-mtable tbody tr.pfc-mtr.stale td { color: #94a3b8; }
+.pfc-mtable tbody tr.pfc-mtr.stale .pfc-mtt b { color: #64748b; }
+body.dark-mode .pfc-mtable tbody tr.pfc-mtr.stale td { color: #67748a; }
+body.dark-mode .pfc-mtable tbody tr.pfc-mtr.stale .pfc-mtt b { color: #8b98ad; }
+/* заглушка на месте графика: кривой ещё не существует физически */
+.pfc-nochart { min-height: 96px; height: 100%; border-radius: 12px; border: 1px dashed rgba(15,23,42,0.12);
+    display: grid; place-items: center; text-align: center; padding: 0 14px; line-height: 1.45;
+    font-size: 11.5px; color: #94a3b8; }
+body.dark-mode .pfc-nochart { border-color: rgba(255,255,255,0.12); color: #67748a; }
+/* пустой портфель: карточка обрывается после героя — объяснение и два входа */
+.pfc-blank { padding: 26px 18px 28px; text-align: center; }
+.pfc-blank h5 { font-family: Georgia, 'Times New Roman', serif; font-weight: 400; font-size: 17px; color: #0f172a; margin-bottom: 7px; }
+body.dark-mode .pfc-blank h5 { color: #eef3f9; }
+.pfc-blank p { font-size: 12.5px; line-height: 1.55; color: #64748b; max-width: 320px; margin: 0 auto 14px; }
+body.dark-mode .pfc-blank p { color: #8b98ad; }
+.pfc-blank-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.pfc-blank-row .pfc-rebal { flex: none; padding: 10px 16px; }
+.pfc-blank-row .pfc-mact { padding: 10px 16px; font-size: 13px; }
+
 .pfc-normal { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
 
 /* ---- поле графика drawPfChart (mi5-стиль): шкала %, площадь, линия, точки.
