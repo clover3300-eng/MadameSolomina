@@ -208,32 +208,23 @@
             pfxSyncPath();
         }
     }
+    // шестерёнка «Настроек» — с 2026-07-21 подвкладка рендерится иконкой 32×32:
+    // в шапке это конфиг, а не восьмой вид данных, подпись ему не положена
+    var PFX_GEAR_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.1a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4z"/></svg>';
+    // Ряд подвкладок. С 2026-07-21 живёт НЕ на странице, а в середине глобальной
+    // шапки (#topBarPfMarket, наполняет renderTopBarMarket в portfolios.js).
+    // Чипов открытых портфелей в ряду больше нет — портфели переехали в выпадающий
+    // список на пилюле раздела (#topBarCrumb, см. pfxCrumbSync ниже). Переполнение
+    // решает не скролл, а свёртка хвоста в «⋯» (pfxTabsFit).
     function pfxTabsHtml() {
         if (!PF.store.items.length || !pfxWide()) return '';
         // подсветка — по ЭФФЕКТИВНОЙ вкладке: когда вкладка-портфель временно не живёт
         // (портфель скрыли, остался один видимый) контент показывает «Обзор» — активная
         // метка обязана показывать то же, иначе ряд остаётся «без выбранного»
         var eff = pfxEffTab();
-        // чипы открытых вкладок-портфелей — сразу за «Обзором». Видимый портфель
-        // показывает чип только при 2+ видимых (при одном его дашборд — «Обзор»).
-        // R9.2: СКРЫТЫЙ портфель с открытой вкладкой — всегда: «скрыть» на «Обзоре»
-        // вкладку не закрывает, она — единственное место, где портфель остался
-        var chips = pfxOpenPfTabs.map(function (pid) {
-            var p = findPf(pid);
-            if (!p) return '';
-            if (!p.hidden && visibleItems().length < 2) return '';
-            var t = 'pf:' + pid, on = eff === t;
-            // R9.3: чип перетаскивается (порядок вкладок — свой, см. pfxBindChipDnd);
-            // у скрытого портфеля — мини-глазок: одна прозрачность не объясняла, ПОЧЕМУ
-            // чип бледный (тултип видел только тот, кто навёл)
-            // крестик — span role=button: вложенный <button> в <button> невалиден
-            return '<button type="button" role="tab" id="pfxTab-pf-' + attr(pid) + '" aria-controls="pfxTabPanel" tabindex="' + (on ? '0' : '-1') + '" draggable="true" data-pid="' + attr(pid) + '" class="pfx-tab pfx-tab-pf' + (on ? ' on' : '') + (p.hidden ? ' hid' : '') + '" aria-selected="' + on + '" onclick="pfxGoTab(\'' + t + '\')" title="Дашборд портфеля «' + attr(p.name) + '»' + (p.hidden ? ' — убран с «Обзора»' : '') + '">' +
-                '<span class="pfx-tab-dot" style="background:' + colorVal(p.color) + '" aria-hidden="true"></span>' +
-                (p.hidden ? '<span class="pfx-tab-eyeoff" aria-hidden="true">' + PF.EYEOFF_SVG + '</span>' : '') +
-                '<span class="pfx-tab-nm">' + esc(p.name) + '</span>' +
-                '<span class="pfx-tab-x" role="button" aria-label="Закрыть вкладку" title="Закрыть вкладку" onclick="pfxClosePfTab(\'' + pid + '\', event)">' + PF.XMARK_SVG + '</span>' +
-            '</button>';
-        }).join('');
+        // roving tabindex: когда активна вкладка-портфель, в ряду нет «своей» кнопки —
+        // точкой входа Tab остаётся «Обзор», иначе ряд выпал бы из обхода целиком
+        var rowHasOn = PFX_TABS.some(function (t) { return t[0] === 'trading' ? pfxIsTradeTab(eff) : eff === t[0]; });
         // R9.5: честный tablist — roving tabindex (в Tab-обходе ровно одна вкладка,
         // остальное стрелками, см. pfxTabsKeydown), aria-controls ведёт на
         // #pfxTabPanel (обёртка контента, pfxPanelWrap)
@@ -243,9 +234,19 @@
             // возвращает на последний открытый экран, а не сбрасывает на первый
             var on = t[0] === 'trading' ? pfxIsTradeTab(eff) : eff === t[0];
             var go = t[0] === 'trading' ? 'pfxGoTrading()' : 'pfxGoTab(\'' + t[0] + '\')';
-            return '<button type="button" role="tab" id="pfxTab-' + t[0] + '" aria-controls="pfxTabPanel" tabindex="' + (on ? '0' : '-1') + '" class="pfx-tab' + (on ? ' on' : '') + '" aria-selected="' + on + '" onclick="' + go + '">' +
-                t[1] + '</button>' +
-                (t[0] === 'overview' ? chips : '');
+            var ti = on || (!rowHasOn && t[0] === 'overview') ? '0' : '-1';
+            if (t[0] === 'settings') {
+                // «⋯» стоит ПЕРЕД шестерёнкой: скрытый хвост ряда складывается сюда
+                // (pfxTabsFit), сама кнопка появляется только когда есть что прятать.
+                // Своя обёртка — позиционный якорь выпадающего меню
+                return '<span class="pfx-morewrap">' +
+                    '<button type="button" class="pfx-more" id="pfxTabsMore" aria-haspopup="menu" aria-expanded="false" aria-label="Ещё разделы" title="Ещё разделы" hidden>⋯</button>' +
+                    '<div class="pfx-morepop" id="pfxTabsMorePop" role="menu" aria-label="Ещё разделы"></div>' +
+                '</span>' +
+                '<button type="button" role="tab" id="pfxTab-settings" aria-controls="pfxTabPanel" tabindex="' + ti + '" class="pfx-tab pfx-gear' + (on ? ' on' : '') + '" aria-selected="' + on + '" title="' + t[1] + '" aria-label="' + t[1] + '" onclick="' + go + '">' + PFX_GEAR_SVG + '</button>';
+            }
+            return '<button type="button" role="tab" id="pfxTab-' + t[0] + '" aria-controls="pfxTabPanel" tabindex="' + ti + '" class="pfx-tab' + (on ? ' on' : '') + '" aria-selected="' + on + '" onclick="' + go + '">' +
+                t[1] + '</button>';
         }).join('') + '</div>';
     }
     // R9.5: контент под рядом — настоящий tabpanel: aria-controls вкладок ведёт
@@ -253,9 +254,15 @@
     // вообще есть (широкий экран, есть портфели) — на мобильном ролей нет
     function pfxPanelWrap(inner) {
         var eff = pfxEffTab();
+        // вкладку-портфель в ряду больше ничто не представляет (чипы уехали в список
+        // на пилюле) — панель называем напрямую: aria-labelledby указывал бы в пустоту
+        if (pfxIsPfTab(eff)) {
+            var p = findPf(eff.slice(3));
+            return '<div id="pfxTabPanel" role="tabpanel" aria-label="Дашборд портфеля «' + attr(p ? p.name : '') + '»">' + inner + '</div>';
+        }
         // экраны «Торговли» называет одна и та же вкладка ряда (#pfxTab-trading):
-        // aria-labelledby обязан указывать на СУЩЕСТВУЮЩИЙ id, а чипа 'trading:2' нет
-        var slug = pfxIsPfTab(eff) ? 'pf-' + eff.slice(3) : (pfxIsTradeTab(eff) ? 'trading' : eff);
+        // aria-labelledby обязан указывать на СУЩЕСТВУЮЩИЙ id, а кнопки 'trading:2' нет
+        var slug = pfxIsTradeTab(eff) ? 'trading' : eff;
         return '<div id="pfxTabPanel" role="tabpanel" aria-labelledby="pfxTab-' + slug + '">' + inner + '</div>';
     }
 
@@ -573,52 +580,96 @@
         g.classList.add('pftg-peek');
         setTimeout(function () { g.classList.remove('pftg-peek'); }, 640);
     };
-    // ---- R9.3: ряд вкладок скроллится, а не переносится ----
-    // Затухание краёв показывает, что ряд продолжается (маска .fade-l/.fade-r по
-    // фактическому scrollLeft), активная вкладка после рендера подъезжает в видимую
-    // зону. Ряд пересоздаётся innerHTML-свопом каждый рендер — слушатели вешаем
-    // заново по флагу на самом элементе.
-    function pfxTabsFade(row) {
-        var canL = row.scrollLeft > 4;
-        var canR = row.scrollLeft + row.clientWidth < row.scrollWidth - 4;
-        row.classList.toggle('fade-l', canL);
-        row.classList.toggle('fade-r', canR);
+    // ---- свёртка ряда в «⋯» (2026-07-21, взамен горизонтального скролла) ----
+    // Ряд живёт в середине шапки, где места впритык (1280 + развёрнутый сайдбар +
+    // вход = 515px): показываем всё, меряем и прячем подвкладки С КОНЦА, пока ряд
+    // не влезет. «Обзор» не прячется никогда, шестерёнка — тоже; скрытое —
+    // пунктами меню «⋯». Пересчёт — после каждого рендера и на ресайз слота.
+    function pfxTabsFit() {
+        var host = document.getElementById('topBarPfMarket');
+        var row = host && host.querySelector('.pfx-tabs');
+        if (!row || !host.offsetWidth) return;
+        var more = row.querySelector('#pfxTabsMore');
+        var pop = row.querySelector('#pfxTabsMorePop');
+        var gear = row.querySelector('#pfxTab-settings');
+        if (!more || !pop || !gear) return;
+        var tabs = Array.prototype.filter.call(row.querySelectorAll('.pfx-tab'), function (b) { return b !== gear; });
+        tabs.forEach(function (b) { b.hidden = false; });
+        more.hidden = true;
+        var GAP = 2;   // gap ряда (см. .pfx-tabs)
+        var avail = row.clientWidth - (gear.offsetWidth + GAP + 4);   // 4 — margin-left шестерёнки
+        var w = tabs.map(function (b) { return b.offsetWidth + GAP; });
+        var need = w.reduce(function (a, b) { return a + b; }, 0);
+        var hid = [];
+        if (need > avail) {
+            more.hidden = false;
+            avail -= more.offsetWidth + GAP;
+            for (var i = tabs.length - 1; i >= 1 && need > avail; i--) {
+                tabs[i].hidden = true; hid.unshift(i); need -= w[i];
+            }
+        }
+        pop.innerHTML = hid.map(function (i) {
+            var b = tabs[i], key = b.id.slice(7);   // 'pfxTab-'.length
+            var go = key === 'trading' ? 'pfxGoTrading()' : 'pfxGoTab(\'' + key + '\')';
+            return '<button type="button" role="menuitem" class="pfx-moreit' + (b.classList.contains('on') ? ' on' : '') + '"' +
+                ' onclick="pfxMoreClose();' + go + '">' + b.textContent + '</button>';
+        }).join('');
+        // всё разом влезло — открытое меню теряет смысл (и содержимое)
+        if (!hid.length) window.pfxMoreClose();
     }
+    function pfxMoreToggle() {
+        var more = document.getElementById('pfxTabsMore'), pop = document.getElementById('pfxTabsMorePop');
+        if (!more || !pop) return;
+        var on = !pop.classList.contains('on');
+        pop.classList.toggle('on', on);
+        more.classList.toggle('open', on);
+        more.setAttribute('aria-expanded', on ? 'true' : 'false');
+    }
+    window.pfxMoreClose = function () {
+        var more = document.getElementById('pfxTabsMore'), pop = document.getElementById('pfxTabsMorePop');
+        if (pop) pop.classList.remove('on');
+        if (more) { more.classList.remove('open'); more.setAttribute('aria-expanded', 'false'); }
+    };
+    // Синк ряда после рендера (имя историческое — прежний ряд скроллился, этот
+    // складывается). Ряд пересоздаётся innerHTML-свопом — слушатели по флагу на
+    // элементе; ResizeObserver висит на СЛОТЕ шапки (он переживает свопы).
     function pfxTabsScrollSync() {
-        var row = document.querySelector('#pfWrap .pfx-tabs');
+        var host = document.getElementById('topBarPfMarket');
+        if (!host) return;
+        var row = host.querySelector('.pfx-tabs');
         if (!row) return;
         if (!row._pfxBound) {
             row._pfxBound = true;
-            row.addEventListener('scroll', function () { pfxTabsFade(row); }, { passive: true });
             row.addEventListener('keydown', pfxTabsKeydown);
-            pfxBindChipDnd(row);
+            var more = row.querySelector('#pfxTabsMore');
+            if (more) more.addEventListener('click', function (e) { e.stopPropagation(); pfxMoreToggle(); });
         }
-        if (row.scrollWidth > row.clientWidth + 4) {
-            var on = row.querySelector('.pfx-tab.on');
-            if (on) {
-                // прицельно двигаем scrollLeft (scrollIntoView утащил бы и страницу)
-                var rl = row.getBoundingClientRect(), ol = on.getBoundingClientRect();
-                if (ol.left < rl.left + 8) row.scrollLeft += ol.left - rl.left - 28;
-                else if (ol.right > rl.right - 8) row.scrollLeft += ol.right - rl.right + 28;
-            }
+        if (!host._pfxRo && window.ResizeObserver) {
+            // ЛОВУШКА: обработчик, меняющий размер наблюдаемого узла, зацикливает
+            // ResizeObserver и вешает вкладку без единой ошибки в консоли.
+            // Гвард — выходим, пока ШИРИНА слота не изменилась (высоту не смотрим)
+            host._pfxRoW = -1;
+            host._pfxRo = new ResizeObserver(function () {
+                var w = host.clientWidth;
+                if (w === host._pfxRoW) return;
+                host._pfxRoW = w;
+                pfxTabsFit();
+            });
+            host._pfxRo.observe(host);
+            // поздний Inter меняет ширину подписей, а слот при этом не ресайзится
+            if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { pfxTabsFit(); });
         }
-        pfxTabsFade(row);
+        pfxTabsFit();
     }
     // ---- R9.5: клавиатура ряда вкладок (паттерн tablist, «ручная активация») ----
     // Стрелки ←/→ и Home/End гуляют ФОКУСОМ по вкладкам (roving tabindex), Enter/
     // Space активируют (нативный клик кнопки) — без ре-рендера на каждый шаг.
-    // Ctrl/Cmd+стрелка на чипе двигает вкладку — клавиатурный аналог перетаскивания.
+    // Спрятанные свёрткой подвкладки ([hidden]) в обходе не участвуют.
     function pfxTabsKeydown(e) {
         var row = e.currentTarget;
         var cur = e.target && e.target.closest ? e.target.closest('.pfx-tab') : null;
         if (!cur) return;
-        if ((e.ctrlKey || e.metaKey) && cur.classList.contains('pfx-tab-pf') &&
-            (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
-            e.preventDefault();
-            pfxMoveChip(cur.getAttribute('data-pid'), e.key === 'ArrowRight' ? 1 : -1);
-            return;
-        }
-        var tabs = Array.prototype.slice.call(row.querySelectorAll('.pfx-tab'));
+        var tabs = Array.prototype.filter.call(row.querySelectorAll('.pfx-tab'), function (b) { return !b.hidden; });
         var i = tabs.indexOf(cur);
         if (i < 0) return;
         var to = null;
@@ -632,9 +683,140 @@
         to.tabIndex = 0;
         to.focus();
     }
-    // передвинуть чип на позицию влево/вправо в pfxOpenPfTabs; фокус остаётся
-    // на нём (ряд пересоздан рендером — находим по data-pid заново)
-    function pfxMoveChip(pid, dir) {
+
+    // ==================================================================
+    //  СЕЛЕКТОР ПОРТФЕЛЕЙ НА ПИЛЮЛЕ РАЗДЕЛА (#topBarCrumb), 2026-07-21
+    // ==================================================================
+    // Чипы открытых вкладок-портфелей переехали из ряда в выпадающий список:
+    // пилюля «Портфели» в шапке становится селектором (точка, имя области,
+    // счётчик, шеврон). Всё, что умели чипы, умеет список: открыть (pfxOpenPf),
+    // закрыть с отменой (pfxClosePfTab), путь к скрытому (pfEyeOpenTab),
+    // перетаскивание порядка (pf_open_tabs_v1, формат прежний), Ctrl/Cmd+стрелки.
+    // Бейдж раздела (renderHeaderBadge, sidebar.js) НЕ трогаем — селектор
+    // дописывается рядом, а .hdr-chip/.hdr-sec прячет CSS только на десктопе:
+    // при ресайзе в мобильную ширину пилюля сама возвращается к обычному виду.
+    var pfxSelOn = false;
+    var PFX_GRIP_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>';
+    var PFX_CHEV_SVG = '<svg class="pfsel-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+    var PFX_CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    // содержимое пилюли: активная вкладка-портфель — его цвет и имя; иначе
+    // «Все портфели» со счётчиком. Единственный портфель показываем по имени —
+    // его дашборд и есть «Обзор», надпись «Все портфели» тут врала бы
+    function pfxCrumbSelHtml() {
+        var n = PF.store.items.length;
+        if (!n) return '<span class="pfsel-nm">Портфели</span>' + PFX_CHEV_SVG;
+        var eff = pfxEffTab();
+        var cur = pfxIsPfTab(eff) ? findPf(eff.slice(3)) : null;
+        if (!cur && n === 1) cur = PF.store.items[0];
+        return '<span class="pfsel-dot" style="background:' + (cur ? colorVal(cur.color) : '#4453ef') + '" aria-hidden="true"></span>' +
+            '<span class="pfsel-nm">' + esc(cur ? cur.name : 'Все портфели') + '</span>' +
+            '<i class="pfsel-cnt">' + n + '</i>' + PFX_CHEV_SVG;
+    }
+    // строки списка: сперва ОТКРЫТЫЕ вкладки в своём порядке (pf_open_tabs_v1) —
+    // только их можно перетаскивать, — затем остальные портфели по порядку данных
+    function pfxCrumbPopHtml() {
+        var items = PF.store.items;
+        var add = '<button type="button" role="menuitem" class="pfp-it pfp-add" data-add="1">' + PF.PLUS_SVG + '<span>Новый портфель</span></button>';
+        if (!items.length) return add;
+        var eff = pfxEffTab();
+        var curPid = pfxIsPfTab(eff) ? eff.slice(3) : null;
+        var openSet = {};
+        var ordered = pfxOpenPfTabs.map(function (pid) { openSet[pid] = 1; return findPf(pid); }).filter(Boolean)
+            .concat(items.filter(function (p) { return !openSet[p.id]; }));
+        var rows = ordered.map(function (p) {
+            var isOpen = !!openSet[p.id], on = curPid === p.id;
+            var c = calcPf(p);
+            // строка — <button> с span-инструментами role=button (вложенный <button>
+            // невалиден) — тот же приём, что был у чипов и есть у .pf-impitem
+            return '<button type="button" role="menuitem" class="pfp-it pfp-row' + (on ? ' on' : '') + (p.hidden ? ' dim' : '') + '"' +
+                ' data-pid="' + attr(p.id) + '"' + (isOpen ? ' data-open="1" draggable="true"' : '') +
+                ' title="' + (p.hidden ? 'Открыть вкладку скрытого портфеля' : 'Открыть портфель') + '">' +
+                '<span class="pfp-grab' + (isOpen ? '' : ' off') + '" aria-hidden="true">' + PFX_GRIP_SVG + '</span>' +
+                '<span class="pfp-dot" style="background:' + colorVal(p.color) + '" aria-hidden="true"></span>' +
+                '<span class="pfp-bd"><span>' + esc(p.name) + '</span><i>' + fmtRub(c.value) + (p.hidden ? ' · скрыт' : '') + '</i></span>' +
+                '<span class="pfp-tools">' +
+                    (on ? '<span class="pfp-check" aria-hidden="true">' + PFX_CHECK_SVG + '</span>' : '') +
+                    '<span class="pfp-tl" role="button" tabindex="0" data-eye="' + attr(p.id) + '" title="' + (p.hidden ? 'Показать на «Обзоре»' : 'Скрыть с «Обзора»') + '" aria-label="' + (p.hidden ? 'Показать портфель' : 'Скрыть портфель') + '">' + (p.hidden ? PF.EYEOFF_SVG : PF.EYE_SVG) + '</span>' +
+                    (isOpen ? '<span class="pfp-tl pfp-x" role="button" tabindex="0" data-x="' + attr(p.id) + '" title="Закрыть вкладку" aria-label="Закрыть вкладку">' + PF.XMARK_SVG + '</span>' : '') +
+                '</span>' +
+            '</button>';
+        }).join('');
+        return '<div class="pfp-grp"><span>Показывать</span></div>' +
+            '<button type="button" role="menuitem" class="pfp-it pfp-all' + (!curPid ? ' on' : '') + '" data-all="1">' +
+                '<span class="pfp-dot" style="background:#4453ef" aria-hidden="true"></span>' +
+                '<span class="pfp-bd"><span>Все портфели</span><i>сводный обзор</i></span>' +
+                (!curPid ? '<span class="pfp-tools"><span class="pfp-check" aria-hidden="true">' + PFX_CHECK_SVG + '</span></span>' : '') +
+            '</button>' +
+            '<hr class="pfp-hr">' +
+            '<div class="pfp-grp"><span>Портфели</span><span>' + items.length + '</span></div>' +
+            rows +
+            '<hr class="pfp-hr">' + add;
+    }
+    function pfxSelSetOpen(on) {
+        pfxSelOn = !!on;
+        var sel = document.getElementById('pfCrumbSel'), pop = document.getElementById('pfCrumbPop');
+        if (sel) sel.setAttribute('aria-expanded', pfxSelOn ? 'true' : 'false');
+        if (pop) pop.classList.toggle('on', pfxSelOn);
+    }
+    function pfxSelToggle() {
+        pfxSelSetOpen(!pfxSelOn);
+        if (pfxSelOn) {
+            var pop = document.getElementById('pfCrumbPop');
+            var f = pop && (pop.querySelector('.pfp-it.on') || pop.querySelector('.pfp-it'));
+            if (f) { try { f.focus(); } catch (e) {} }
+        }
+    }
+    function pfxSelClose() { if (pfxSelOn) pfxSelSetOpen(false); }
+    // клик по строке: открыть портфель (та же логика, что у строк «Моих портфелей» —
+    // pfxOpenPf сам решает про одиночку и «Обзор»); скрытому — pfEyeOpenTab,
+    // единственный путь к нему. Глазок и крестик оставляют список открытым
+    function pfxSelPopClick(e) {
+        e.stopPropagation();
+        var t = e.target;
+        if (!t || !t.closest) return;
+        var eye = t.closest('[data-eye]');
+        if (eye) { window.pfToggleHidden(eye.getAttribute('data-eye'), e); return; }
+        var x = t.closest('[data-x]');
+        if (x) { window.pfxClosePfTab(x.getAttribute('data-x'), e); return; }
+        if (t.closest('[data-add]')) { pfxSelClose(); window.pfAddPortfolio(); return; }
+        if (t.closest('[data-all]')) { pfxSelClose(); window.pfxGoTab('overview'); return; }
+        var row = t.closest('.pfp-row');
+        if (row) {
+            var pid = row.getAttribute('data-pid'), p = findPf(pid);
+            if (!p) return;
+            pfxSelClose();
+            if (p.hidden) window.pfEyeOpenTab(pid);
+            else window.pfxOpenPf(pid);
+        }
+    }
+    // клавиатура списка: ↑/↓ и Home/End гуляют фокусом, Ctrl/Cmd+стрелка двигает
+    // ОТКРЫТУЮ вкладку в pf_open_tabs_v1 (клавиатурный аналог перетаскивания;
+    // ←/→ оставлены как синонимы — жест переехал из горизонтального ряда)
+    function pfxSelPopKeydown(e) {
+        var pop = e.currentTarget;
+        var cur = e.target && e.target.closest ? e.target.closest('.pfp-it') : null;
+        if (!cur) return;
+        var arrows = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+        if ((e.ctrlKey || e.metaKey) && cur.getAttribute('data-open') && arrows.indexOf(e.key) >= 0) {
+            e.preventDefault();
+            pfxMoveOpenTab(cur.getAttribute('data-pid'), (e.key === 'ArrowDown' || e.key === 'ArrowRight') ? 1 : -1);
+            return;
+        }
+        var items = Array.prototype.slice.call(pop.querySelectorAll('.pfp-it'));
+        var i = items.indexOf(cur);
+        if (i < 0) return;
+        var to = null;
+        if (e.key === 'ArrowDown') to = items[(i + 1) % items.length];
+        else if (e.key === 'ArrowUp') to = items[(i - 1 + items.length) % items.length];
+        else if (e.key === 'Home') to = items[0];
+        else if (e.key === 'End') to = items[items.length - 1];
+        if (!to) return;
+        e.preventDefault();
+        to.focus();
+    }
+    // передвинуть открытую вкладку на позицию вверх/вниз; фокус остаётся на её
+    // строке (список пересоздан рендером — находим по data-pid заново)
+    function pfxMoveOpenTab(pid, dir) {
         var i = pfxOpenPfTabs.indexOf(pid);
         if (i < 0) return;
         var j = i + dir;
@@ -642,62 +824,60 @@
         var tmp = pfxOpenPfTabs[i]; pfxOpenPfTabs[i] = pfxOpenPfTabs[j]; pfxOpenPfTabs[j] = tmp;
         pfxSaveOpenTabs();
         PF.renderNoAnim();
-        var el = document.querySelector('#pfWrap .pfx-tab-pf[data-pid="' + pid + '"]');
-        if (el) { el.tabIndex = 0; try { el.focus(); } catch (e) {} }
+        var el = document.querySelector('#pfCrumbPop .pfp-row[data-pid="' + pid + '"]');
+        if (el) { try { el.focus(); } catch (e) {} }
     }
-    // ---- R9.3: перетаскивание чипов — свой порядок вкладок-портфелей ----
-    // HTML5 DnD на строке (делегирование: чипы пересоздаются каждый рендер, строка
-    // тоже — слушатели вешает pfxTabsScrollSync по флагу). Порядок сохраняется в
-    // pfxOpenPfTabs (pf_open_tabs_v1); цель вставки — по серединам соседних чипов.
+    // ---- перетаскивание строк списка — свой порядок открытых вкладок ----
+    // HTML5 DnD c делегированием на попапе (строки пересоздаются каждый рендер,
+    // попап — нет). Порядок в pfxOpenPfTabs (pf_open_tabs_v1, формат прежний);
+    // цель вставки — по серединам соседних ОТКРЫТЫХ строк, каретка — черта у цели
     var pfxDragPid = null;
-    function pfxBindChipDnd(row) {
-        row.addEventListener('dragstart', function (e) {
-            var chip = e.target && e.target.closest ? e.target.closest('.pfx-tab-pf') : null;
-            if (!chip) return;
-            pfxDragPid = chip.getAttribute('data-pid');
-            chip.classList.add('drag');
+    function pfxBindListDnd(pop) {
+        function clearDropMarks() {
+            var marked = pop.querySelectorAll('.pfp-drop-before, .pfp-drop-after');
+            for (var i = 0; i < marked.length; i++) marked[i].classList.remove('pfp-drop-before', 'pfp-drop-after');
+        }
+        pop.addEventListener('dragstart', function (e) {
+            var row = e.target && e.target.closest ? e.target.closest('.pfp-row[data-open]') : null;
+            if (!row) return;
+            pfxDragPid = row.getAttribute('data-pid');
+            row.classList.add('drag');
             try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', pfxDragPid); } catch (err) {}
         });
-        // R9.4: каретка вставки — черта у чипа, ПЕРЕД (или после, если в конец)
-        // которым приземлится перетаскиваемый; без неё место вставки было лотереей
-        function clearDropMarks() {
-            var marked = row.querySelectorAll('.pfx-drop-before, .pfx-drop-after');
-            for (var i = 0; i < marked.length; i++) marked[i].classList.remove('pfx-drop-before', 'pfx-drop-after');
-        }
-        row.addEventListener('dragend', function () {
+        pop.addEventListener('dragend', function () {
             pfxDragPid = null;
             clearDropMarks();
-            var c = row.querySelector('.pfx-tab-pf.drag'); if (c) c.classList.remove('drag');
+            var r = pop.querySelector('.pfp-row.drag'); if (r) r.classList.remove('drag');
         });
-        row.addEventListener('dragover', function (e) {
+        pop.addEventListener('dragover', function (e) {
             if (!pfxDragPid) return;
             e.preventDefault();
             try { e.dataTransfer.dropEffect = 'move'; } catch (err) {}
-            var chips = row.querySelectorAll('.pfx-tab-pf');
+            var rows = pop.querySelectorAll('.pfp-row[data-open]');
             var before = null, last = null;
-            for (var i = 0; i < chips.length; i++) {
-                if (chips[i].getAttribute('data-pid') === pfxDragPid) continue;
-                last = chips[i];
-                var r = chips[i].getBoundingClientRect();
-                if (!before && e.clientX < r.left + r.width / 2) before = chips[i];
+            for (var i = 0; i < rows.length; i++) {
+                if (rows[i].getAttribute('data-pid') === pfxDragPid) continue;
+                last = rows[i];
+                var r = rows[i].getBoundingClientRect();
+                if (!before && e.clientY < r.top + r.height / 2) before = rows[i];
             }
             clearDropMarks();
-            if (before) before.classList.add('pfx-drop-before');
-            else if (last) last.classList.add('pfx-drop-after');
+            if (before) before.classList.add('pfp-drop-before');
+            else if (last) last.classList.add('pfp-drop-after');
         });
-        row.addEventListener('drop', function (e) {
+        pop.addEventListener('drop', function (e) {
             if (!pfxDragPid) return;
             e.preventDefault();
             clearDropMarks();
             var pid = pfxDragPid; pfxDragPid = null;
-            // перед КАКИМ чипом бросили: первый, чья середина правее курсора
+            // перед КАКОЙ строкой бросили: первая, чья середина ниже курсора
             var before = null;
-            var chips = row.querySelectorAll('.pfx-tab-pf');
-            for (var i = 0; i < chips.length; i++) {
-                var cp = chips[i].getAttribute('data-pid');
+            var rows = pop.querySelectorAll('.pfp-row[data-open]');
+            for (var i = 0; i < rows.length; i++) {
+                var cp = rows[i].getAttribute('data-pid');
                 if (cp === pid) continue;
-                var r = chips[i].getBoundingClientRect();
-                if (e.clientX < r.left + r.width / 2) { before = cp; break; }
+                var r = rows[i].getBoundingClientRect();
+                if (e.clientY < r.top + r.height / 2) { before = cp; break; }
             }
             var from = pfxOpenPfTabs.indexOf(pid);
             if (from < 0) return;
@@ -709,6 +889,93 @@
             PF.renderNoAnim();
         });
     }
+    // Синк селектора — из renderPortfolios на каждый рендер. Узлы дописываются в
+    // пилюлю ОДИН раз и наполняются свопом только при изменении HTML (фоновый тик
+    // котировок не должен закрывать открытый список и рвать hover). При смене
+    // вкладки сайта renderHeaderBadge пересобирает пилюлю с нуля — узлы селектора
+    // уходят вместе с innerHTML, класс .pf-sel-on снимает обёртка switchTab
+    // renderHeaderBadge (sidebar.js) и переименование вкладок (tab-gates.js) могут
+    // пересобрать пилюлю innerHTML-ом В ЛЮБОЙ момент — в том числе спустя секунды
+    // после входа (поздний конфиг гейтов). Узлы селектора сносятся вместе с
+    // разметкой, а следующего рендера может не быть (пустые портфели не тикают) —
+    // наблюдатель возвращает селектор, пока открыты «Портфели» на широком экране
+    var pfxCrumbMo = null;
+    function pfxCrumbWatch(crumb) {
+        if (pfxCrumbMo || !window.MutationObserver) return;
+        pfxCrumbMo = new MutationObserver(function () {
+            if (typeof currentTab === 'undefined' || currentTab !== 'portfolios') return;
+            if (!pfxWide() || document.getElementById('pfCrumbSel')) return;
+            // микропаузой — дать пересборке пилюли закончиться одним куском
+            setTimeout(function () {
+                if (typeof currentTab !== 'undefined' && currentTab === 'portfolios' &&
+                    !document.getElementById('pfCrumbSel')) pfxCrumbSync();
+            }, 0);
+        });
+        pfxCrumbMo.observe(crumb, { childList: true });
+    }
+    function pfxCrumbSync() {
+        var crumb = document.getElementById('topBarCrumb');
+        if (!crumb) return;
+        pfxCrumbWatch(crumb);
+        if (!pfxWide()) {
+            crumb.classList.remove('pf-sel-on');
+            var s0 = document.getElementById('pfCrumbSel'); if (s0) s0.remove();
+            var p0 = document.getElementById('pfCrumbPop'); if (p0) p0.remove();
+            return;
+        }
+        crumb.classList.add('pf-sel-on');
+        var sel = document.getElementById('pfCrumbSel');
+        if (!sel) {
+            sel = document.createElement('button');
+            sel.type = 'button';
+            sel.id = 'pfCrumbSel';
+            sel.setAttribute('aria-haspopup', 'menu');
+            sel.setAttribute('aria-expanded', 'false');
+            sel.title = 'Портфели: выбрать область';
+            sel.addEventListener('click', function (e) { e.stopPropagation(); pfxSelToggle(); });
+            crumb.appendChild(sel);
+        }
+        var pop = document.getElementById('pfCrumbPop');
+        if (!pop) {
+            // узлы пересоздаются после каждого renderHeaderBadge (смена вкладки
+            // сайта) — свежий список всегда закрыт, открытость не «переживает» уход
+            pfxSelOn = false;
+            pop = document.createElement('div');
+            pop.id = 'pfCrumbPop';
+            pop.setAttribute('role', 'menu');
+            pop.setAttribute('aria-label', 'Портфели');
+            pop.addEventListener('click', pfxSelPopClick);
+            pop.addEventListener('keydown', pfxSelPopKeydown);
+            pfxBindListDnd(pop);
+            crumb.appendChild(pop);
+        }
+        var selHtml = pfxCrumbSelHtml(), popHtml = pfxCrumbPopHtml();
+        if (sel.__pfxHtml !== selHtml) { sel.innerHTML = selHtml; sel.__pfxHtml = selHtml; }
+        if (pop.__pfxHtml !== popHtml) {
+            // фокус клавиатуры переживает своп (перестановка Ctrl+стрелкой и фоновый
+            // тик котировок пересобирают строки — без возврата фокус падал на body)
+            var ae = document.activeElement;
+            var focusRow = pfxSelOn && ae && pop.contains(ae) && ae.closest ? ae.closest('.pfp-row') : null;
+            var focusPid = focusRow ? focusRow.getAttribute('data-pid') : null;
+            pop.innerHTML = popHtml; pop.__pfxHtml = popHtml;
+            if (focusPid) {
+                var fr = pop.querySelector('.pfp-row[data-pid="' + focusPid + '"]');
+                if (fr) { try { fr.focus(); } catch (e) {} }
+            }
+        }
+        sel.setAttribute('aria-expanded', pfxSelOn ? 'true' : 'false');
+        pop.classList.toggle('on', pfxSelOn);
+    }
+    // «⋯» и список портфелей закрываются по Esc и клику вне (сами кнопки-якоря
+    // отфильтрованы по родителю: их собственные обработчики уже переключили)
+    document.addEventListener('click', function (e) {
+        var t = e.target;
+        if (!t || !t.closest || !t.closest('.pfx-morewrap')) window.pfxMoreClose();
+        if (!t || !t.closest || !t.closest('#topBarCrumb')) pfxSelClose();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { window.pfxMoreClose(); pfxSelClose(); }
+    });
 
     // ---- контролы страницы: жили в тёмном герое, с 2026-07-21 — в парящих узлах ----
     var PFX_LOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
@@ -1140,5 +1407,6 @@
     PF.pfxOpenPfTabs = pfxOpenPfTabs; PF.pfxPanelWrap = pfxPanelWrap; PF.pfxSaveOpenTabs = pfxSaveOpenTabs; PF.pfxSeedLayout = pfxSeedLayout;
     PF.pfxSetCardHtml = pfxSetCardHtml; PF.pfxSyncPath = pfxSyncPath; PF.pfxTabPortsHtml = pfxTabPortsHtml; PF.pfxTabsHtml = pfxTabsHtml;
     PF.pfxTabsScrollSync = pfxTabsScrollSync; PF.pfxVisRowsHtml = pfxVisRowsHtml; PF.pfxWide = pfxWide;
+    PF.pfxCrumbSync = pfxCrumbSync;
     PF.pfxTradingHtml = pfxTradingHtml;
 })();

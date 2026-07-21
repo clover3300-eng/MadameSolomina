@@ -52,91 +52,201 @@ body.dark-mode #panel-portfolios .pfc-name-ink {
    столбик #cornerStack (corner-stack.css + секция R9.1 ниже) и панель действий
    #pfActBar (секция R9.1 ниже). */
 
-/* ============ 4. Подвкладки ============ */
+/* ============ 4. Подвкладки — в СЕРЕДИНЕ глобальной шапки ============
+   С 2026-07-21 ряд живёт не на странице, а в слоте #topBarPfMarket (мокап
+   «Подвкладки переезжают в шапку»). Кегль и поля пересобраны под второй
+   уровень навигации: 13,5px/600, поля 9px 10px — на странице ряд был первым
+   уровнем и был крупнее (14,5px). Чипов портфелей в ряду нет (уехали в
+   селектор на пилюле, секция 4а ниже), переполнение решает свёртка хвоста
+   в «⋯» (pfxTabsFit), а не горизонтальный скролл. */
+#topBarPfMarket { padding: 0 14px; overflow: visible; }
 .pfx-tabs {
-    display: flex; align-items: center; gap: 4px;
-    /* R9.3: при многих открытых вкладках-портфелях ряд НЕ переносится (перенос ломал
-       линию подчёркивания и ритм), а скроллится по горизонтали: скроллбар спрятан,
-       края затухают маской (.fade-l/.fade-r вешает pfxTabsScrollSync), активная
-       вкладка сама подъезжает в видимую зону после рендера */
-    flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden;
-    scrollbar-width: none; -ms-overflow-style: none;
-    margin: 14px 2px 16px; border-bottom: 1px solid #e7ecf3;
+    display: flex; align-items: center; justify-content: center; gap: 2px;
+    flex: 1 1 auto; min-width: 0; position: relative;
 }
-.pfx-tabs::-webkit-scrollbar { display: none; }
-/* «Настройки» прижаты вправо: семь видов данных слева, конфиг отдельно.
-   margin-left:auto работает, пока ряду хватает ширины; при скролле (много
-   открытых вкладок-портфелей) свободного места нет — ряд остаётся сплошным */
-.pfx-tabs #pfxTab-settings { margin-left: auto; }
-.pfx-tabs.fade-r { -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 32px), transparent); mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 32px), transparent); }
-.pfx-tabs.fade-l { -webkit-mask-image: linear-gradient(90deg, transparent, #000 32px); mask-image: linear-gradient(90deg, transparent, #000 32px); }
-.pfx-tabs.fade-l.fade-r { -webkit-mask-image: linear-gradient(90deg, transparent, #000 32px, #000 calc(100% - 32px), transparent); mask-image: linear-gradient(90deg, transparent, #000 32px, #000 calc(100% - 32px), transparent); }
-/* Ряд без иконок (2026-07-20) — чистая типографика, поэтому кегль и вес пересобраны:
-   13,5px/700 были рассчитаны на соседство со значком (жирность уравновешивала его
-   пятно). Без иконок тот же bold превращал восемь подписей в сплошную тёмную полосу,
-   а мелкий кегль делал ряд похожим на подпись, а не на навигацию раздела. 14,5/600 —
-   ряд читается пунктами, остаётся тише Georgia-героя и на ступень заметнее
-   сайдбара (Inter 13,5/500). Горизонтальные поля подросли следом (11→14px): без
-   значков подписи иначе слипаются в одно слово. */
 .pfx-tab {
     position: relative; appearance: none; background: none; border: 0; cursor: pointer;
-    display: inline-flex; align-items: center; gap: 7px;
-    padding: 9px 14px 14px; white-space: nowrap;
-    font-family: 'Inter', sans-serif; font-size: 14.5px; font-weight: 600; letter-spacing: -0.01em;
-    color: #64748b; transition: color 0.13s;
-}
-.pfx-tab:hover { color: #1e293b; }
-.pfx-tab.on { color: #4453ef; }
-/* черта уже поля на 2px с каждой стороны — держится за подпись, а не за всю кнопку */
-.pfx-tab.on::after {
-    content: ''; position: absolute; left: 12px; right: 12px; bottom: -1px; height: 2.5px;
-    border-radius: 2px 2px 0 0; background: #4453ef;
-}
-/* Вкладка-портфель (R9): чип с цветной точкой портфеля и крестиком. Открывается
-   кликом по строке «Моих портфелей», закрывается крестиком (раскладка при этом
-   сохраняется). Точка — тот же цветовой язык, что у календаря и «Видимости». */
-.pfx-tab-pf { padding-right: 7px; }
-.pfx-tab-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.pfx-tab-nm { max-width: 128px; overflow: hidden; text-overflow: ellipsis; }
-.pfx-tab-x {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 18px; height: 18px; margin-left: -2px; border-radius: 6px;
-    opacity: 0.45; transition: opacity 0.13s, background 0.13s;
+    flex: 0 0 auto; padding: 9px 10px; border-radius: 8px; white-space: nowrap;
+    font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 600; letter-spacing: -0.01em;
+    color: #64748b; transition: color 0.13s, background 0.13s;
 }
-.pfx-tab-x svg { width: 11px; height: 11px; display: block; }
-.pfx-tab-pf:hover .pfx-tab-x, .pfx-tab-pf.on .pfx-tab-x { opacity: 0.8; }
-.pfx-tab-x:hover { opacity: 1; background: rgba(15, 23, 42, 0.08); }
-/* подчёркивание активного чипа — до крестика ему хватает 6px справа */
-.pfx-tab-pf.on::after { right: 6px; }
-/* R9.2: чип СКРЫТОГО портфеля (убран с «Обзора», вкладка живёт) — приглушён,
-   R9.3: плюс мини-глазок, объясняющий бледность без наведения */
-.pfx-tab-pf.hid .pfx-tab-dot { opacity: 0.35; }
-.pfx-tab-pf.hid .pfx-tab-nm { opacity: 0.6; }
-.pfx-tab-pf.hid.on .pfx-tab-nm { opacity: 0.85; }
-.pfx-tab-eyeoff { display: inline-flex; flex-shrink: 0; margin: 0 -2px; opacity: 0.55; }
-.pfx-tab-eyeoff svg { width: 12px; height: 12px; display: block; }
-/* R9.3: чип в перетаскивании (свой порядок вкладок) */
-.pfx-tab-pf.drag { opacity: 0.35; }
-.pfx-tab-pf { cursor: grab; }
-.pfx-tab-pf:active { cursor: grabbing; }
-/* крестик — обычная кнопка, а не ручка перетаскивания: ладошка на нём врала */
-.pfx-tab-x { cursor: pointer; }
-/* R9.5: клавиатурный фокус в ряду (стрелки ←/→, Home/End; Ctrl/Cmd+стрелка
-   двигает чип) — без видимого кольца roving tabindex был бы слепым */
-.pfx-tab:focus-visible { outline: 2px solid #4453ef; outline-offset: -2px; border-radius: 9px; }
+.pfx-tab:hover { color: #1e293b; background: rgba(15, 23, 42, 0.06); }
+.pfx-tab.on { color: #4453ef; }
+/* черта уже поля — держится за подпись, а не за всю кнопку */
+.pfx-tab.on::after {
+    content: ''; position: absolute; left: 10px; right: 10px; bottom: 2px; height: 2px;
+    border-radius: 2px; background: #4453ef;
+}
+/* спрятана свёрткой в «⋯» (pfxTabsFit ставит [hidden]) */
+.pfx-tab[hidden] { display: none; }
+/* R9.5: клавиатурный фокус в ряду (стрелки ←/→, Home/End) — без видимого
+   кольца roving tabindex был бы слепым */
+.pfx-tab:focus-visible { outline: 2px solid #4453ef; outline-offset: 1px; }
 body.dark-mode .pfx-tab:focus-visible { outline-color: #818cf8; }
-/* R9.4: каретка вставки — черта в зазоре у чипа-соседа будущей позиции */
-.pfx-tab-pf.pfx-drop-before { box-shadow: -4px 0 0 -1px #4453ef; }
-.pfx-tab-pf.pfx-drop-after { box-shadow: 4px 0 0 -1px #4453ef; }
-body.dark-mode .pfx-tab-pf.pfx-drop-before { box-shadow: -4px 0 0 -1px #818cf8; }
-body.dark-mode .pfx-tab-pf.pfx-drop-after { box-shadow: 4px 0 0 -1px #818cf8; }
+/* шестерёнка «Настроек» — 32×32, всегда последняя и в «⋯» не уходит; активность
+   показывает цветом, подчёркивание на квадратной иконке читалось бы мусором */
+.pfx-tab.pfx-gear { width: 32px; height: 32px; padding: 0; margin-left: 4px; }
+.pfx-tab.pfx-gear svg { width: 17px; height: 17px; }
+.pfx-tab.pfx-gear.on { background: rgba(68, 83, 239, 0.10); }
+.pfx-tab.pfx-gear.on::after { display: none; }
+/* «⋯» — кнопка свёрнутого хвоста ряда; видима, только когда есть что прятать */
+.pfx-morewrap { position: relative; flex: 0 0 auto; display: inline-flex; }
+.pfx-more {
+    appearance: none; border: 0; background: transparent; cursor: pointer;
+    padding: 9px 9px; border-radius: 8px;
+    font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 700; line-height: 1;
+    color: #64748b; transition: color 0.13s, background 0.13s;
+}
+.pfx-more:hover, .pfx-more.open { color: #1e293b; background: rgba(15, 23, 42, 0.08); }
+.pfx-more[hidden] { display: none; }
+.pfx-more:focus-visible { outline: 2px solid #4453ef; outline-offset: 1px; }
+/* меню «⋯»: открывается ВНИЗ, к правому краю кнопки; язык попапов пилюли */
+.pfx-morepop {
+    position: absolute; top: calc(100% + 8px); right: 0; z-index: 140; min-width: 180px;
+    background: #fff; border: 1px solid #e7ecf3; border-radius: 14px; padding: 7px;
+    box-shadow: 0 24px 50px -20px rgba(15, 23, 42, 0.5), 0 4px 14px -8px rgba(15, 23, 42, 0.28);
+    opacity: 0; visibility: hidden; transform: translateY(-6px) scale(0.98); transform-origin: top right;
+    transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
+}
+.pfx-morepop.on { opacity: 1; visibility: visible; transform: none; }
+.pfx-moreit {
+    display: flex; width: 100%; padding: 8px 10px; border: 0; border-radius: 9px;
+    background: transparent; cursor: pointer; text-align: left;
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; line-height: 1.3;
+    color: #1e293b;
+}
+.pfx-moreit:hover { background: #f1f5f9; }
+.pfx-moreit.on { color: #3a48e0; background: rgba(68, 83, 239, 0.10); }
 
-body.dark-mode .pfx-tabs { border-bottom-color: rgba(255, 255, 255, 0.1); }
 body.dark-mode .pfx-tab { color: #93a2b8; }
-body.dark-mode .pfx-tab:hover { color: #e8eef7; }
+body.dark-mode .pfx-tab:hover { color: #e8eef7; background: rgba(255, 255, 255, 0.07); }
 body.dark-mode .pfx-tab.on { color: #a5b4fc; }
 body.dark-mode .pfx-tab.on::after { background: #818cf8; }
-body.dark-mode .pfx-tab-x:hover { background: rgba(255, 255, 255, 0.12); }
+body.dark-mode .pfx-tab.pfx-gear.on { background: rgba(129, 140, 248, 0.16); }
+body.dark-mode .pfx-more { color: #93a2b8; }
+body.dark-mode .pfx-more:hover, body.dark-mode .pfx-more.open { color: #e8eef7; background: rgba(255, 255, 255, 0.10); }
+body.dark-mode .pfx-morepop { background: #1a2230; border-color: rgba(255, 255, 255, 0.12); box-shadow: 0 24px 50px -18px rgba(0, 0, 0, 0.7); }
+body.dark-mode .pfx-moreit { color: #dbe4f0; }
+body.dark-mode .pfx-moreit:hover { background: rgba(255, 255, 255, 0.07); }
+body.dark-mode .pfx-moreit.on { color: #a5b4fc; background: rgba(129, 140, 248, 0.16); }
+
+/* ============ 4а. Селектор портфелей на пилюле раздела (#topBarCrumb) ============
+   Пилюля «Портфели» становится кнопкой-селектором: точка, имя области, счётчик,
+   шеврон; список — попапом вниз. Узлы дописывает pfxCrumbSync (portfolios-tabs.js),
+   бейдж раздела (.hdr-chip/.hdr-sec) прячем ТОЛЬКО на десктопе — при ресайзе в
+   мобильную ширину пилюля сама возвращается к обычному виду (mobile.css добивает
+   селектор своим display:none). */
+@media (min-width: 1024px) {
+    #topBarCrumb.pf-sel-on .hdr-chip, #topBarCrumb.pf-sel-on .hdr-sec { display: none; }
+    #topBarCrumb.pf-sel-on { cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+    #topBarCrumb.pf-sel-on:hover { border-color: rgba(68, 83, 239, 0.45); }
+    #topBarCrumb.pf-sel-on:has(#pfCrumbPop.on) {
+        border-color: rgba(68, 83, 239, 0.55);
+        box-shadow: 0 0 0 3px rgba(68, 83, 239, 0.14);
+    }
+    body.dark-mode #topBarCrumb.pf-sel-on:hover { border-color: rgba(129, 140, 248, 0.5); }
+    body.dark-mode #topBarCrumb.pf-sel-on:has(#pfCrumbPop.on) {
+        border-color: rgba(129, 140, 248, 0.6);
+        box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.16);
+    }
+}
+/* кнопка-селектор растянута отрицательными полями на ВСЮ пилюлю (паддинги
+   зеркалят #topBarCrumb в site-layout.css) — кликабельна каждая её точка */
+#pfCrumbSel {
+    appearance: none; border: 0; background: transparent; cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+    margin: -8px -16px -8px -14px; padding: 8px 16px 8px 14px; border-radius: 13px;
+    font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 700; letter-spacing: -0.01em;
+    color: var(--text-deep, #2C364C); white-space: nowrap;
+}
+#pfCrumbSel:focus-visible { outline: 2px solid #4453ef; outline-offset: 2px; }
+.pfsel-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
+.pfsel-nm { max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+.pfsel-cnt {
+    font-style: normal; font-weight: 700; font-size: 11px; padding: 2px 6px; border-radius: 5px;
+    background: rgba(15, 23, 42, 0.08); color: #64748b;
+}
+.pfsel-chev { width: 13px; height: 13px; opacity: 0.55; transition: transform 0.16s; flex: 0 0 auto; }
+#pfCrumbSel[aria-expanded="true"] .pfsel-chev { transform: rotate(180deg); }
+body.dark-mode #pfCrumbSel { color: #f1f6fb; }
+body.dark-mode .pfsel-cnt { background: rgba(255, 255, 255, 0.12); color: #b6c2d1; }
+/* список: попап вниз от пилюли; при шести портфелях скроллится сам — шапка не растёт */
+#pfCrumbPop {
+    position: absolute; top: calc(100% + 8px); left: 0; z-index: 140; width: 290px;
+    max-height: 430px; overflow-y: auto;
+    background: #fff; border: 1px solid #e7ecf3; border-radius: 14px; padding: 7px;
+    box-shadow: 0 24px 50px -20px rgba(15, 23, 42, 0.5), 0 4px 14px -8px rgba(15, 23, 42, 0.28);
+    opacity: 0; visibility: hidden; transform: translateY(-6px) scale(0.98); transform-origin: top left;
+    transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
+    text-align: left; cursor: default;
+}
+#pfCrumbPop.on { opacity: 1; visibility: visible; transform: none; }
+.pfp-grp {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
+    color: #94a3b8; padding: 8px 10px 5px;
+}
+.pfp-it {
+    appearance: none; display: flex; align-items: center; gap: 9px; width: 100%;
+    padding: 8px 9px; border: 0; border-radius: 9px; background: transparent;
+    cursor: pointer; text-align: left;
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; line-height: 1.3;
+    color: #1e293b;
+}
+.pfp-it:hover { background: #f1f5f9; }
+.pfp-it:focus-visible { outline: 2px solid #4453ef; outline-offset: -2px; }
+.pfp-it.on { background: rgba(68, 83, 239, 0.10); color: #3a48e0; }
+/* скрытый портфель приглушён — но строка живая: это единственный путь к нему */
+.pfp-it.dim { opacity: 0.55; }
+.pfp-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
+.pfp-bd { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.pfp-bd > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pfp-bd i {
+    font-style: normal; font-size: 11px; font-weight: 500; color: #64748b;
+    font-family: 'JetBrains Mono', monospace;
+}
+.pfp-tools { display: flex; align-items: center; gap: 2px; margin-left: auto; flex: 0 0 auto; }
+.pfp-check { display: grid; place-items: center; width: 18px; color: #4453ef; }
+.pfp-check svg { width: 13px; height: 13px; }
+.pfp-tl {
+    width: 22px; height: 22px; display: grid; place-items: center; border-radius: 6px;
+    color: #94a3b8; cursor: pointer; transition: background 0.13s, color 0.13s, opacity 0.13s;
+}
+.pfp-tl:hover { background: rgba(15, 23, 42, 0.10); color: #0f172a; }
+.pfp-tl svg { width: 13px; height: 13px; }
+/* крестик «закрыть вкладку» — по наведению на строку (мокап 03), с той же отменой */
+.pfp-row .pfp-x { opacity: 0; }
+.pfp-row:hover .pfp-x, .pfp-row:focus-within .pfp-x { opacity: 1; }
+/* ручка перетаскивания — только у ОТКРЫТЫХ вкладок (их порядок и хранится);
+   у остальных строк место сохраняется, чтобы точки и имена стояли в одну линию */
+.pfp-grab { width: 14px; display: grid; place-items: center; color: #cbd5e1; cursor: grab; flex: 0 0 auto; }
+.pfp-grab svg { width: 12px; height: 12px; }
+.pfp-grab.off { visibility: hidden; }
+.pfp-row[data-open] { cursor: grab; }
+.pfp-row[data-open]:active { cursor: grabbing; }
+.pfp-row.drag { opacity: 0.35; }
+/* каретка вставки — черта у строки-соседа будущей позиции */
+.pfp-row.pfp-drop-before { box-shadow: 0 -2px 0 0 #4453ef; }
+.pfp-row.pfp-drop-after { box-shadow: 0 2px 0 0 #4453ef; }
+.pfp-hr { border: 0; height: 1px; background: #e7ecf3; margin: 6px 8px; }
+.pfp-add { color: #3a48e0; font-weight: 700; }
+.pfp-add svg { width: 15px; height: 15px; color: #4453ef; flex: 0 0 auto; }
+body.dark-mode #pfCrumbPop { background: #1a2230; border-color: rgba(255, 255, 255, 0.12); box-shadow: 0 24px 50px -18px rgba(0, 0, 0, 0.7); }
+body.dark-mode .pfp-it { color: #dbe4f0; }
+body.dark-mode .pfp-it:hover { background: rgba(255, 255, 255, 0.07); }
+body.dark-mode .pfp-it.on { color: #a5b4fc; background: rgba(129, 140, 248, 0.16); }
+body.dark-mode .pfp-bd i { color: #8f9aab; }
+body.dark-mode .pfp-grp { color: #6d7889; }
+body.dark-mode .pfp-tl { color: #8f9aab; }
+body.dark-mode .pfp-tl:hover { background: rgba(255, 255, 255, 0.12); color: #e8eef7; }
+body.dark-mode .pfp-check { color: #a5b4fc; }
+body.dark-mode .pfp-grab { color: #475569; }
+body.dark-mode .pfp-hr { background: rgba(255, 255, 255, 0.10); }
+body.dark-mode .pfp-add { color: #a5b4fc; }
+body.dark-mode .pfp-add svg { color: #818cf8; }
+body.dark-mode .pfp-row.pfp-drop-before { box-shadow: 0 -2px 0 0 #818cf8; }
+body.dark-mode .pfp-row.pfp-drop-after { box-shadow: 0 2px 0 0 #818cf8; }
 
 /* ============ 5. Статичная сетка подвкладок ============ */
 .pfx-grid {
