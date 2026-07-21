@@ -196,6 +196,14 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .pn-as.bare{gap:8px}
 .pn-as.bare .tk{font-size:13.5px;max-width:190px}
 .pn-as.bare .nm{max-width:190px}
+/* два разных клика в одной строке: вся строка раскрывает, тикер уводит
+   в терминал. Аффорданса появляется только при наведении на сам тикер */
+.pn-tbl tbody tr.hov > td{background:color-mix(in srgb,var(--ink) 2.5%,transparent)}
+.pn-tbl tbody tr.hov .pn-chev{color:var(--ink)}
+.pn-as .tkline{display:flex;align-items:baseline;gap:7px;min-width:0}
+.pn-as .go{display:none;font-family:var(--fU);font-size:10px;font-weight:600;color:var(--acc);white-space:nowrap;flex:none}
+.pn-tbl tbody tr.hov-tk .tk{text-decoration:underline dotted;text-underline-offset:3px;text-decoration-color:var(--dim)}
+.pn-tbl tbody tr.hov-tk .go{display:inline}
 /* заголовок группы вместо цветовой метки класса актива */
 .pn-grp td{padding:12px 0 5px;border-bottom:0;font-family:var(--fU);font-size:9.5px;font-weight:700;
            letter-spacing:.08em;text-transform:uppercase;color:var(--dim);text-align:left}
@@ -419,13 +427,13 @@ var BONDVAL = 10149 + 8164 + 7050, STOCKVAL = POSVAL - BONDVAL;
    q — тихая заливка: одна краска в трёх плотностях вместо трёх цветов */
 var ALLOC = [
   {n:'Акции',      v:STOCKVAL, c:'#4453ef', q:'rgba(15,23,42,.62)'},
-  {n:'Облигации',  v:BONDVAL,  c:'#7c8cf8', q:'rgba(15,23,42,.30)'},
-  {n:'Свободно',   v:CASH,     c:'#cbd5e1', q:'rgba(15,23,42,.13)'}
+  {n:'Облигации',  v:BONDVAL,  c:'#7c8cf8', q:'rgba(15,23,42,.32)'},
+  {n:'Свободно',   v:CASH,     c:'#cbd5e1', q:'rgba(15,23,42,.20)'}
 ];
 ALLOC.forEach(function(a){ a.p = a.v / VALUE * 100; });
 /* в тёмной теме та же логика, но краска светлая */
 var ALLOC_D = ALLOC.map(function(a, i){
-  return {n:a.n, v:a.v, p:a.p, c:a.c, q:['rgba(232,238,247,.72)', 'rgba(232,238,247,.34)', 'rgba(232,238,247,.15)'][i]};
+  return {n:a.n, v:a.v, p:a.p, c:a.c, q:['rgba(232,238,247,.72)', 'rgba(232,238,247,.38)', 'rgba(232,238,247,.24)'][i]};
 });
 
 HOLD.forEach(function(h){
@@ -435,6 +443,10 @@ HOLD.forEach(function(h){
   h.pnl = h.val - h.invested;
   h.annual = h.pnl / h.invested * (365 / h.days) * 100;
 });
+/* порядок — по доле в портфеле. В коде calcPf сортирует по pnlPct, но в
+   карточке рядом стоит колонка «Доля»: список, где вес идёт вразнобой,
+   спорит сам с собой, а полоса-стек сверху читается как его продолжение */
+HOLD.sort(function(a, b){ return b.share - a.share; });
 
 /* ================= иконки ================= */
 var IC = {
@@ -524,10 +536,18 @@ function detailRow(h, cols){
 }
 
 function posRow(h, cols){
-  var o = '<tr' + (cols.open && cols.open[h.tk] ? ' class="open"' : '') + '><td><span class="pn-as' +
+  var cls = [];
+  if (cols.open && cols.open[h.tk]) cls.push('open');
+  if (cols.hov === h.tk) cls.push('hov');
+  if (cols.hovTk === h.tk) cls.push('hov', 'hov-tk');
+  /* у облигаций тикер не уводит никуда: терминала для ОФЗ нет,
+     поэтому и подчёркивания у них не появляется */
+  var go = !h.bond ? '<span class="go">↗ терминал</span>' : '';
+  var o = '<tr' + (cls.length ? ' class="' + cls.join(' ') + '"' : '') + '><td><span class="pn-as' +
     (cols.plates ? '' : ' bare') + '">' +
     '<span class="pn-chev">' + IC.right + '</span>' + (cols.plates ? logo(h) : '') +
-    '<span class="t"><span class="tk">' + h.tk + '</span><span class="nm">' + h.nm + '</span></span></span></td>';
+    '<span class="t"><span class="tkline"><span class="tk">' + h.tk + '</span>' + go + '</span>' +
+    '<span class="nm">' + h.nm + '</span></span></span></td>';
   o += '<td class="pn-mut">' + rub(h.qty) + NB + 'шт</td>';
   if (cols.buy) o += '<td class="pn-mut">' + rub(h.buy, 2) + (h.bond ? '%' : NB + '₽') + '</td>';
   o += '<td>' + rub(h.cur, 2) + (h.bond ? '%' : NB + '₽') + '</td>';
@@ -650,7 +670,8 @@ function cardWork(opt){
   o += '<div class="pn-pos"><div class="pn-pos-h"><h4>Позиции</h4><span class="pn-cnt">' + HOLD.length + '</span></div>';
   /* в узком блоке «Доля» уходит вслед за «Средней»: пять колонок на 380 px
      дают колонки уже своих же значений */
-  o += posTable({buy: !narrow, share: !narrow, open: opt.open, plates: !!opt.plates, groups: !!opt.groups}, list) + '</div>';
+  o += posTable({buy: !narrow, share: !narrow, open: opt.open, plates: !!opt.plates, groups: !!opt.groups,
+                 hov: opt.hov, hovTk: opt.hovTk}, list) + '</div>';
 
   /* подвал */
   o += '<div class="pn-foot">';
@@ -821,8 +842,8 @@ document.getElementById('notesBig').innerHTML =
   '<div class="note"><i>4</i><span>В узком блоке сумма и график встают друг под друга, ступени те же на 4 px мельче. Миллиард там читается — это и был предел, ради которого проверка.</span></div>';
 
 document.getElementById('scrOpen').innerHTML =
-  '<div class="cap">Две строки раскрыты одновременно — акция с двумя лотами и облигация с НКД</div>' +
-  '<div style="width:660px">' + cardWork({open: {SBER: true, SU26230RMFS1: true}}) + '</div>' +
+  '<div class="cap">Две строки раскрыты одновременно, третья — под курсором на тикере</div>' +
+  '<div style="width:660px">' + cardWork({open: {SBER: true, SU26230RMFS1: true}, hovTk: 'LKOH'}) + '</div>' +
   '<div class="pin" style="left:14px;top:580px">1</div>' +
   '<div class="pin" style="left:14px;top:928px">2</div>' +
   '<div class="pin" style="left:706px;top:588px">3</div>' +
@@ -833,6 +854,8 @@ document.getElementById('notesOpen').innerHTML =
   '<div class="note"><i>2</i><span>НКД показан <b>строкой под лотом</b>, а не отдельным чипом: он относится к конкретной покупке и объясняет, почему средняя цена выше цены из стакана. У акций строки просто нет.</span></div>' +
   '<div class="note"><i>3</i><span>Справа — деньги позиции, которых нет в строке: стоимость в рублях, доход в рублях, годовых (<code>annualize()</code>) и срок владения от <code>c.firstDate</code>. Проценты изменения не дублируем — они в колонке слева.</span></div>' +
   '<div class="note"><i>4</i><span>Действия ведут туда, где уже есть код: «Докупка» — <code>pfAddLot</code>, «Открыть в терминале» — <code>pfOpenTicker</code> → <code>openStockDetail</code>, у облигаций вместо него купоны (лента <code>.cpx-*</code>).</span></div>' +
+  '<div class="note"><i>5</i><span><b>Два клика в одной строке разведены</b> — строка LKOH показана под курсором. Вся строка раскрывает состав, и только тикер уводит в терминал: подчёркивание и метка «↗ терминал» появляются при наведении именно на него. Иначе привычка из подвкладки «Портфель», где клик по акции сразу открывает терминал (<code>pfOpenTicker</code>, <code>portfolios-tabs.js:1132</code>), спорила бы с новым раскрытием. У облигаций тикер не подчёркивается: терминала для ОФЗ нет, и в подвкладке они тоже некликабельны.</span></div>' +
+  '<div class="note"><i>6</i><span><b>Порядок — по доле в портфеле</b>, а не по доходности, как сейчас в <code>calcPf</code>. Рядом стоит колонка «Доля» и полоса-стек сверху: список, где вес идёт вразнобой, спорит сам с собой. Доходность при этом никуда не делась — она в своей колонке.</span></div>' +
   '<div class="note"><i>!</i><span><b>Раскрытых строк может быть сколько угодно</b> — <code>pfToggleAssetRow</code> кладёт <code>PF.openRows[hid] = true</code> и ничего не закрывает, аккордеона нет. Поэтому карточка обязана переживать состояние «раскрыто всё сразу»: здесь это +2 строки по ~120 px.</span></div>' +
   '<div class="note"><i>!</i><span><b>Что делать с высотой.</b> Сейчас карточка жёстко 674 px, а прирост съедает внутренний скролл <code>.pfc-massets</code> (<code>max-height:184px</code>). В новой карточке высота свободная, поэтому предлагаю: на «Обзоре» карточка <b>растёт</b> (сетка это допускает), а в блоке конструктора с заданной высотой — прежний внутренний скролл списка. Так раскрытие не ломает ни одну из раскладок.</span></div>' +
   '<div class="note"><i>!</i><span><b>Живое обновление раскрытие не схлопнет.</b> <code>livePatchers.cards</code> правит только <code>data-live</code>-узлы, а полный своп пересобирает разметку из <code>PF.openRows</code> и восстанавливает <code>scrollTop</code> по <code>data-skey</code>. Новым узлам нужны свои ключи <code>pfh:&lt;hid&gt;</code>, иначе цифры в раскрытой части застынут.</span></div>';
