@@ -654,7 +654,7 @@
         var tape = !s.uid ? ''
             : fs
             ? '<div class="btr-tape2">' +
-                '<div class="btr-tape2-h"><span class="btr-tape2-l">Лента</span>' +
+                '<div class="btr-tape2-h"><span class="btr-tape2-l">Лента сделок</span>' +
                     '<span class="btr-tape2-c" id="' + eid('TapeCnt', n) + '">' + tapeCnt(s) + '</span></div>' +
                 '<div class="btr-tape" id="' + eid('Tape', n) + '">' + tapeHtml(s) + '</div>' +
               '</div>'
@@ -4147,7 +4147,7 @@
         var ov = document.createElement('div');
         ov.id = 'btSxCfOv';
         ov.className = 'bk-ov sx-cf-ov';
-        ov.innerHTML = '<div class="bk-card sx-cf">' +
+        ov.innerHTML = '<div class="bk-back"></div><div class="bk-card sx-cf">' +
             '<h3>Проверьте заказ</h3>' +
             '<div class="sx-cf-sub">' + (buy ? 'Покупка' : 'Продажа') + ' ' +
                 esc(s.meta.name || s.meta.ticker) + (cn.sandbox ? ' на тренировочном счёте' : '') + '</div>' +
@@ -4179,7 +4179,7 @@
         function onKey(e) { if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); close(); } }
         document.addEventListener('keydown', onKey);
         ov.querySelector('#btSxCfNo').addEventListener('click', close);
-        ov.addEventListener('click', function (e) { if (e.target === ov) close(); });
+        ov.querySelector('.bk-back').addEventListener('click', close);
         setTimeout(function () {
             var f = dq('btSxCfYes');
             if (f) try { f.focus(); } catch (e) {}
@@ -4210,8 +4210,9 @@
         var ov = document.createElement('div');
         ov.id = 'btKeysOv';
         ov.className = 'bk-ov';
-        ov.innerHTML = '<div class="bk-card btr-keys">' +
-            '<button type="button" class="bk-back" aria-label="Закрыть">✕</button>' +
+        // ✕ — именно .bk-x: класс .bk-back здесь был бы подложкой во всю карточку
+        ov.innerHTML = '<div class="bk-back"></div><div class="bk-card btr-keys">' +
+            '<button type="button" class="bk-x" aria-label="Закрыть">✕</button>' +
             '<h3>Клавиши терминала</h3>' +
             '<div class="btr-keys-list">' + KEYS.map(function (k) {
                 return '<div class="btr-keys-row"><kbd>' + esc(k[0]) + '</kbd><span>' + esc(k[1]) + '</span></div>';
@@ -4226,8 +4227,8 @@
         function close() { document.removeEventListener('keydown', onKey); ov.remove(); }
         function onKey(e) { if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); close(); } }
         document.addEventListener('keydown', onKey);
+        ov.querySelector('.bk-x').addEventListener('click', close);
         ov.querySelector('.bk-back').addEventListener('click', close);
-        ov.addEventListener('click', function (e) { if (e.target === ov) close(); });
     };
 
     // ---------- горячие клавиши ----------

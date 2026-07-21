@@ -8,15 +8,18 @@
 /* #btConfirmOv — подтверждение заявки из терминала (portfolios-trading.js):
    он собирает ту же разметку .bk-back + .bk-card, но своим id, поэтому раньше
    не попадал ни под одно правило — модалка вставала в обычный поток и уезжала
-   ниже экрана, из-за чего кнопка «Купить» выглядела нерабочей. */
-#bkOverlay, #bkPinOverlay, #btConfirmOv {
+   ниже экрана, из-за чего кнопка «Купить» выглядела нерабочей.
+   .bk-ov — ОБЩИЙ класс оверлеев этого семейства (#btSxCfOv «Проверьте заказ»,
+   #btKeysOv «Клавиши терминала»): новый оверлей получает класс, а не место в
+   этом списке — «свой id мимо правил» уже дважды ронял модалку в поток. */
+#bkOverlay, #bkPinOverlay, #btConfirmOv, .bk-ov {
     position: fixed; inset: 0; z-index: 1400;
     display: flex; align-items: center; justify-content: center;
     opacity: 0; pointer-events: none; transition: opacity 0.18s ease;
 }
-#bkOverlay.open, #bkPinOverlay.open, #btConfirmOv.open { opacity: 1; pointer-events: auto; }
+#bkOverlay.open, #bkPinOverlay.open, #btConfirmOv.open, .bk-ov.open { opacity: 1; pointer-events: auto; }
 #bkPinOverlay { z-index: 1450; }   /* PIN поверх визарда */
-#btConfirmOv { z-index: 1500; }    /* подтверждение сделки — поверх всего */
+#btConfirmOv, #btSxCfOv { z-index: 1500; }    /* подтверждение сделки — поверх всего */
 
 .bk-back {
     position: absolute; inset: 0;
@@ -561,6 +564,13 @@ body.dark-mode .btr-search-none { color: #9fb1c6; }
 .btr-tape-row b.ask { color: #dc2626; }
 .btr-tape-row span { text-align: right; color: #64748b; }
 .btr-tape-empty { font-size: 12px; color: #94a3b8; padding: 4px 0; }
+/* лента В ФОКУСЕ (макет 01): постоянный блок у нижней кромки карточки —
+   хайрлайн сверху, заголовок капсом со счётчиком, шеврона нет. Язык тот же,
+   что у раскрывашки дашборда (.btr-fold-lab / .btr-fold-cnt). */
+.btr-tape2 { margin-top: auto; border-top: 1px solid rgba(15, 23, 42, 0.07); padding-top: 9px; }
+.btr-tape2-h { display: flex; align-items: baseline; gap: 8px; margin-bottom: 5px; }
+.btr-tape2-l { font-size: 10.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #64748b; }
+.btr-tape2-c { font-family: var(--font-num); font-size: 10.5px; color: #94a3b8; }
 
 /* ---- тикет ---- */
 /* Купить/Продать: контур → заливка активного, без серой подложки */
@@ -953,6 +963,8 @@ body.dark-mode .btr-obempty-px div, .pfd-thm-dark .btr-obempty-px div { backgrou
 body.dark-mode .btr-obempty-px b, .pfd-thm-dark .btr-obempty-px b { color: #f1f5f9; }
 body.dark-mode .btr-fold, .pfd-thm-dark .btr-fold { border-color: rgba(255, 255, 255, 0.08); }
 body.dark-mode .btr-fold-lab, .pfd-thm-dark .btr-fold-lab { color: #9fb1c6; }
+body.dark-mode .btr-tape2, .pfd-thm-dark .btr-tape2 { border-color: rgba(255, 255, 255, 0.08); }
+body.dark-mode .btr-tape2-l, .pfd-thm-dark .btr-tape2-l { color: #9fb1c6; }
 body.dark-mode .btr-tape-row b.bid { color: #34d399; }
 body.dark-mode .btr-tape-row b.ask { color: #f87171; }
 body.dark-mode .btr-tape-row span { color: #9fb1c6; }
@@ -1492,7 +1504,9 @@ body.dark-mode .pfts-new {
 }
 body.dark-mode .pfts-nbtn { color: #94a3b8; }
 body.dark-mode .pfts-nbtn:hover, body.dark-mode .pfts-nbtn.on { color: #a5b4fc; background: rgba(129, 140, 248, 0.14); }
-body.dark-mode .pfts-nbtn:disabled:hover { color: #94a3b8; background: none; }
+/* заглушенное состояние JS ставит классом .pfts-off, не disabled */
+body.dark-mode .pfts-nbtn.pfts-off:hover { color: #94a3b8; background: rgba(255, 255, 255, 0.05); }
+body.dark-mode .pfts-menu .pfts-off:hover { background: none; color: #cbd5e1; }
 body.dark-mode .pfts-add + .pfts-lens::before { background: rgba(255, 255, 255, 0.14); }
 body.dark-mode .pfts-find { background: #1b2433; border-color: rgba(255, 255, 255, 0.1); }
 body.dark-mode .pfts-find-inp { background: #131c2a; border-color: rgba(255, 255, 255, 0.12); color: #e2e8f0; }
@@ -1668,6 +1682,18 @@ body.dark-mode .pftb-sep { background: rgba(255, 255, 255, 0.12); }
 body.dark-mode .pftb-money b { color: #f1f6fb; }
 body.dark-mode .pftb-money s { color: #3c4a5e; }
 body.dark-mode .pftb-acct, body.dark-mode .pftb-search { border-color: rgba(255, 255, 255, 0.12); }
+body.dark-mode .pftb-acct { color: #9fb1c6; }
+body.dark-mode .pftb-search:hover { border-color: rgba(255, 255, 255, 0.22); color: #cbd5e1; }
+body.dark-mode .pftb-search kbd { background: rgba(255, 255, 255, 0.09); color: #9fb1c6; }
+/* панель поиска бумаги: var(--card) сам не темнеет — красим явно, палитра
+   та же, что у .pfts-find нижней полосы */
+body.dark-mode .pftb-find { background: #141c27; border-color: rgba(255, 255, 255, 0.12); }
+body.dark-mode .pftb-find input { background: #131c2a; border-color: rgba(255, 255, 255, 0.12); color: #e2e8f0; }
+body.dark-mode .pftb-find input:focus { border-color: rgba(129, 140, 248, 0.6); }
+body.dark-mode .pftb-find-row:hover { background: rgba(129, 140, 248, 0.14); }
+body.dark-mode .pftb-find-row b { color: #f4f8fd; }
+body.dark-mode .pftb-find-row span { color: #93a3b5; }
+body.dark-mode .pftb-find-note { color: #6b7c93; }
 body.dark-mode .pftb-st.ok { color: #34d399; }
 body.dark-mode .pftb-st.stale { color: #f87171; }
 
@@ -1715,7 +1741,9 @@ body.dark-mode .pftb-st.stale { color: #f87171; }
 .btr-dock-chev.off { transform: rotate(180deg); }
 
 /* подсказка по клавишам: они были реализованы, но не названы нигде */
-.btr-keys h3 { font-family: var(--font-title); font-size: 19px; margin: 0 0 14px; }
+/* «✕» — тот же .bk-x, что в визарде, но тут нет .bk-head: прижимаем к углу сами */
+.btr-keys .bk-x { top: 16px; right: 18px; }
+.btr-keys h3 { font-family: var(--font-title); font-size: 19px; margin: 0 0 14px; padding-right: 34px; }
 .btr-keys-list { display: flex; flex-direction: column; gap: 2px; }
 .btr-keys-row { display: flex; align-items: center; gap: 12px; padding: 7px 0; border-top: 1px solid rgba(15, 23, 42, 0.06); }
 .btr-keys-row:first-child { border-top: 0; }
@@ -1805,8 +1833,12 @@ body.dark-mode .btr-keys-note { background: rgba(52, 211, 153, 0.12); color: #6e
 .sx-px span { display: block; font-family: var(--font-num); font-size: 12.5px; margin-top: 2px; }
 .sx-px span.up { color: #16a34a; } .sx-px span.dn { color: #dc2626; }
 
-/* период + график: график забирает всю оставшуюся высоту карточки */
-.sx-per { display: flex; gap: 5px; margin: 15px 0 4px; flex: none; }
+/* период + график: график забирает всю оставшуюся высоту карточки.
+   Линия с заливкой вместо свечей: новичку нужна ФОРМА и срок, а не структура
+   торгов. Объёмов нет намеренно, даты обязательны.
+   ЕДИНСТВЕННОЕ определение блока: вторая копия в хвосте файла безусловным
+   height:200px убивала медиа @1100px — дописывая график, править здесь. */
+.sx-per { display: flex; gap: 5px; margin: 16px 0 6px; flex: none; flex-wrap: wrap; }
 .sx-per button {
     border: 0; background: none; cursor: pointer; font-size: 12px; color: #94a3b8;
     padding: 5px 13px; border-radius: 9px; font-family: var(--font-ui);
@@ -1948,7 +1980,7 @@ body.dark-mode .btr-keys-note { background: rgba(52, 211, 153, 0.12); color: #6e
    это задел, а не проверенный на телефоне результат. */
 @media (max-width: 1100px) {
     .sx { grid-template-columns: 1fr; grid-template-rows: none; height: auto; }
-    .sx-chart { height: 190px; flex: none; }
+    .sx-chart, .sx-chart-note { height: 190px; flex: none; }
     .sx-know { grid-template-columns: 1fr; gap: 12px; }
     .sx-cta { margin-top: 18px; }
     .sx-mrow { grid-template-columns: 1fr 1fr; gap: 8px 12px; }
@@ -1959,21 +1991,33 @@ body.dark-mode .btr-keys-note { background: rgba(52, 211, 153, 0.12); color: #6e
     .sx-sum input { font-size: 30px; }
 }
 
+/* тёмная тема «Просто» — ЕДИНЫМ блоком. Раньше тут жили ДВЕ конфликтующие
+   копии (вторая — стейл: .sx-conm вместо .sx-co, границы на потомках, у
+   которых их нет, плита фоном на .sx-side в зазоре кнопок). Цвета выбраны
+   явно — те, что реально побеждали в каскаде: перевод «рубли → бумаги»
+   зелёный, быстрые суммы «.on» — инверсной светлой пилюлей. */
 body.dark-mode .sx-card { background: #141c27; border-color: rgba(255, 255, 255, 0.09); }
 body.dark-mode .sx-sub, body.dark-mode .sx-know p, body.dark-mode .sx-tot > div,
 body.dark-mode .sx-mcell span, body.dark-mode .sx-mh > span, body.dark-mode .sx-mh .tot,
 body.dark-mode .sx-conv p, body.dark-mode .sx-mnm > span { color: #9fb1c6; }
 body.dark-mode .sx-know { border-top-color: rgba(255, 255, 255, 0.09); }
+body.dark-mode .sx-know i { background: rgba(255, 255, 255, 0.09); color: #9fb1c6; }
 body.dark-mode .sx-know b, body.dark-mode .sx-tot > div b, body.dark-mode .sx-tot > div.big span,
-body.dark-mode .sx-mh .tot b, body.dark-mode .sx-mbtn { color: #f1f6fb; }
+body.dark-mode .sx-mh .tot b { color: #f1f6fb; }
 body.dark-mode .sx-per button.on { background: rgba(255, 255, 255, 0.09); color: #f1f6fb; }
 body.dark-mode .sx-ax { stroke: rgba(255, 255, 255, 0.12); }
 body.dark-mode .sx-axt { fill: #6b7c93; }
 body.dark-mode .sx-sum { border-bottom-color: #f1f6fb; }
-body.dark-mode .sx-side button, body.dark-mode .sx-quick button, body.dark-mode .sx-mbtn { border-color: rgba(255, 255, 255, 0.14); }
+body.dark-mode .sx-side button { border-color: rgba(255, 255, 255, 0.14); }
+body.dark-mode .sx-quick button { border-color: rgba(255, 255, 255, 0.14); color: #dbe4f0; }
+body.dark-mode .sx-quick button.on { background: #f1f6fb; border-color: #f1f6fb; color: #0f172a; }
+body.dark-mode .sx-mbtn { border-color: rgba(255, 255, 255, 0.14); color: #dbe4f0; }
+body.dark-mode .sx-mbtn.buy { border-color: #16a34a; color: #fff; }
 body.dark-mode .sx-tot, body.dark-mode .sx-mrow { border-top-color: rgba(255, 255, 255, 0.08); }
-body.dark-mode .sx-conv { background: rgba(96, 165, 250, 0.1); }
-body.dark-mode .sx-conv.muted { background: rgba(255, 255, 255, 0.05); }
+body.dark-mode .sx-conv { background: rgba(52, 211, 153, 0.12); }
+body.dark-mode .sx-conv b { color: #6ee7b7; }
+body.dark-mode .sx-conv.muted { background: rgba(255, 255, 255, 0.06); }
+body.dark-mode .sx-conv.muted b { color: #9fb1c6; }
 body.dark-mode .sx-tax { background: rgba(251, 191, 36, 0.12); }
 body.dark-mode .sx-tax span { color: #fcd34d; }
 body.dark-mode .sx-cta.off { background: rgba(255, 255, 255, 0.1); color: #9fb1c6; }
@@ -1982,23 +2026,6 @@ body.dark-mode .sx-pick p, body.dark-mode .sx-empty { color: #9fb1c6; }
 body.dark-mode .pftb-seg { background: rgba(255, 255, 255, 0.08); }
 body.dark-mode .pftb-seg button { color: #9fb1c6; }
 body.dark-mode .pftb-seg button.on { background: #1e2836; color: #f1f6fb; }
-body.dark-mode .sx-card { background: #141c27; border-color: rgba(255, 255, 255, 0.09); }
-body.dark-mode .sx-conm i, body.dark-mode .sx-know p, body.dark-mode .sx-tot span,
-body.dark-mode .sx-mcell span, body.dark-mode .sx-mh .tot { color: #9fb1c6; }
-body.dark-mode .sx-know { border-top-color: rgba(255, 255, 255, 0.09); }
-body.dark-mode .sx-know i { background: rgba(255, 255, 255, 0.09); color: #9fb1c6; }
-body.dark-mode .sx-side, body.dark-mode .sx-conv.muted { background: rgba(255, 255, 255, 0.06); }
-body.dark-mode .sx-conv { background: rgba(52, 211, 153, 0.12); }
-body.dark-mode .sx-conv b { color: #6ee7b7; }
-body.dark-mode .sx-quick button { border-color: rgba(255, 255, 255, 0.14); color: #dbe4f0; }
-body.dark-mode .sx-quick button.on { background: #f1f6fb; border-color: #f1f6fb; color: #0f172a; }
-body.dark-mode .sx-tot > div, body.dark-mode .sx-mrow { border-top-color: rgba(255, 255, 255, 0.08); }
-body.dark-mode .sx-tot .big { border-top-color: rgba(255, 255, 255, 0.18); }
-body.dark-mode .sx-tot .big span, body.dark-mode .sx-mh .tot b { color: #f1f6fb; }
-body.dark-mode .sx-tax { background: rgba(251, 191, 36, 0.12); }
-body.dark-mode .sx-tax span { color: #fcd34d; }
-body.dark-mode .sx-cta.off { background: rgba(255, 255, 255, 0.1); color: #9fb1c6; }
-body.dark-mode .sx-mact button { border-color: rgba(255, 255, 255, 0.14); color: #dbe4f0; }
 
 /* ---- УЖАТЫЙ ТИКЕТ полноэкранного режима (макеты 01/02) ----
    Пять групп вместо девяти: тип заявки уехал в строку лейбла цены, срок —
@@ -2047,32 +2074,15 @@ body.dark-mode .sx-mact button { border-color: rgba(255, 255, 255, 0.14); color:
 .btr-slim-hold b.up { color: #16a34a; } .btr-slim-hold b.dn { color: #dc2626; }
 .btr-slim-note { margin-top: 8px; font-size: 11px; color: #94a3b8; text-align: center; }
 
-/* ---- график режима «Просто» ----
-   Линия с заливкой вместо свечей: новичку нужна ФОРМА и срок, а не структура
-   торгов. Объёмов нет намеренно, даты обязательны. */
-.sx-per { display: flex; gap: 5px; margin: 16px 0 6px; flex-wrap: wrap; }
-.sx-per button {
-    border: 0; background: none; cursor: pointer; padding: 5px 13px; border-radius: 9px;
-    font-family: var(--font-ui); font-size: 12px; color: #94a3b8; transition: background 0.14s, color 0.14s;
-}
-.sx-per button.on { background: rgba(15, 23, 42, 0.06); color: #0f172a; font-weight: 600; }
-.sx-chart { height: 200px; }
-.sx-chart svg { width: 100%; height: 100%; display: block; }
-.sx-chart-note { height: 200px; display: flex; align-items: center; justify-content: center; font-size: 12.5px; color: #94a3b8; }
-.sx-line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
-.sx-line.up { stroke: #16a34a; } .sx-line.dn { stroke: #dc2626; }
-.sx-fill { stroke: none; }
-.sx-fill.up { fill: rgba(22, 163, 74, 0.1); } .sx-fill.dn { fill: rgba(220, 38, 38, 0.09); }
-.sx-ax { stroke: rgba(15, 23, 42, 0.09); }
-.sx-axt { font-family: var(--font-num); font-size: 9.5px; fill: #8a97a8; }
+/* график режима «Просто» живёт ОДНИМ определением в секции карточки бумаги
+   выше (см. «период + график») — здесь была вторая копия, перебивавшая медиа */
 
-body.dark-mode .btr-slim-kind { color: #dbe4f0; }
+body.dark-mode .btr-slim-kind { color: #dbe4f0; border-color: rgba(255, 255, 255, 0.14); }
+/* хайрлайны «Защиты позиции»: без переопределения разделители пропадали в тёмном */
+body.dark-mode .btr-slim-opt { border-color: rgba(255, 255, 255, 0.1); }
 body.dark-mode .btr-slim-opt-l { color: #dbe4f0; }
 body.dark-mode .btr-slim-hold { background: rgba(255, 255, 255, 0.05); color: #9fb1c6; }
 body.dark-mode .btr-slim-hold b { color: #f1f6fb; }
-body.dark-mode .sx-per button.on { background: rgba(255, 255, 255, 0.09); color: #f1f6fb; }
-body.dark-mode .sx-ax { stroke: rgba(255, 255, 255, 0.12); }
-body.dark-mode .sx-axt { fill: #6b7c93; }
 
 /* ---- ЗАЯВКИ ТАБЛИЦЕЙ (док полноэкранного режима, макет 01) ----
    Колонки те же и в шапке, и в строке — одна grid-раскладка на оба, иначе
