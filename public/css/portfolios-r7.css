@@ -650,6 +650,36 @@ body.dark-mode .pfpt-head { border-bottom-color: rgba(255, 255, 255, 0.08); }
 .pfpt-rebal { flex: 0 0 auto !important; padding: 10px 16px !important; }
 .pfpt-acts .pfc-act { width: 38px; height: 38px; border-radius: 11px; }
 .pfpt-acts .pfc-act svg { width: 16px; height: 16px; }
+/* ---- кривая доходности с бенчмарком (переехала сюда из оверлея карточки
+   «Обзора», 2026-07-22: там график отвечает на «как у меня дела», а сравнение
+   с рынком — вопрос отдельный и требует места). Поле переиспользует .pfcv-*
+   из portfolios.css — тот же компонент, что рисует drawPfChart. ---- */
+.pfpt-chart { margin: 4px 0 16px; padding-top: 14px; border-top: 1px solid rgba(15, 23, 42, 0.07); }
+body.dark-mode .pfpt-chart { border-top-color: rgba(255, 255, 255, 0.08); }
+.pfpt-chart-h { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+.pfpt-chart-t { display: flex; flex-direction: column; gap: 2px;
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 800; letter-spacing: 0.04em;
+    text-transform: uppercase; color: #6b7d92; }
+.pfpt-chart-t i { font-style: normal; font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+    font-weight: 500; letter-spacing: 0; text-transform: none; color: #9aa7b6; }
+body.dark-mode .pfpt-chart-t { color: #93a8c2; }
+.pfpt-chart-leg { display: flex; flex-wrap: wrap; gap: 14px; }
+.pfpt-chart-leg:empty { display: none; }
+/* тумблер бенчмарка — справа, в языке кнопок карточки */
+.pfpt-benchbtn { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0;
+    cursor: pointer; border: 1px solid rgba(15, 23, 42, 0.12); background: #fff; color: #64748b;
+    border-radius: 999px; padding: 6px 13px; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 11.5px;
+    transition: background 0.15s, color 0.15s, border-color 0.15s; }
+.pfpt-benchbtn:hover { background: rgba(15, 23, 42, 0.05); color: #0f172a; }
+.pfpt-benchbtn.on { background: #475569; color: #fff; border-color: transparent; }
+.pfpt-benchbtn.on .pfcv-imdot { border-top-color: #fff; }
+body.dark-mode .pfpt-benchbtn { border-color: rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.04); color: #9fb0c4; }
+body.dark-mode .pfpt-benchbtn.on { background: #64748b; color: #fff; }
+/* Само поле: display:flex обязателен — внутри две колонки (шкала % + область
+   построения), а .pfcv-plot тянется по высоте только как flex-элемент. Базовое
+   правило .pfcv-chart исчезло вместе с оверлеем карточки, поэтому задаём здесь. */
+.pfpt-chart .pfcv-chart { position: relative; display: flex; height: 220px; margin-top: 8px; }
+
 /* таблица состава */
 .pfpt-tablewrap { overflow-x: auto; scrollbar-width: thin; }
 .pfpt-table { width: 100%; border-collapse: collapse; min-width: 760px; }

@@ -294,6 +294,7 @@
             var payBody = document.querySelector('.pf-paycal--cell .pfpc-body');
             if (payBody) window.pfPayCalScroll(payBody);   // начальное состояние затухания списка выплат
             repaintMiniCharts();   // мини-график доходности в герое каждой карточки
+            if (PF.pfxPortChartsRepaint) PF.pfxPortChartsRepaint();   // кривая с бенчмарком на подвкладке «Портфель»
             pfPlistSparksSoon();   // спарклайны «Моих портфелей» без снимков — дорисовать из истории
             pfxDrawerSync();       // R9.1: шторка настроек портфеля обновляется вместе со страницей
             pfxFabSync();          // парящие узлы: слот столбика #cornerStack + панель действий #pfActBar

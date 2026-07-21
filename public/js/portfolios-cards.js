@@ -341,24 +341,30 @@
             // граница «акции|облигации» при точном попадании в цель: (100−tgt)% от бумаг,
             // в координатах полосы — умноженные на долю бумаг в полной стоимости
             marker = '<i class="pfc-dist-tgt" style="left:' + ((100 - tgt) * c.value / fullV).toFixed(2) + '%" title="Цель: облигации ' + tgt + '%"></i>';
-            // Строка цели (переверстана 2026-07-22: прежний вариант — сплошной
-            // оранжевый текст — читался как ошибка и рвался на строки, отрывая
-            // сумму). Теперь три части в одном ряду: метка «Цель», отклонение и
-            // действие с суммой; ряд не переносится вразнобой, сумма не отрывается.
-            var dev = c.bondPct - tgt;
+            // Блок цели (переделан дважды: сплошная оранжевая фраза читалась как
+            // ошибка, ряд из трёх текстов — как случайный набор). Теперь это ФАКТ
+            // ПРОТИВ ЦЕЛИ: слева доля облигаций сейчас и цель через стрелку, справа —
+            // действие, которое к цели ведёт. Ни отклонения в п.п., ни длинных фраз:
+            // «6,6% → 20%» показывает то же самое, но читается за один взгляд.
+            var dev = c.bondPct - tgt, nowP = fmtPct(c.bondPct).replace('+', '');
             if (Math.abs(dev) < 3) {
-                hint = '<div class="pfc-tgt ok"><span class="pfc-tgt-k">' + PF.CHECK_SVG + 'Цель ' + tgt + '%</span>' +
-                    '<span class="pfc-tgt-t">структура в балансе</span></div>';
+                hint = '<div class="pfc-tgt ok" title="Целевая структура задана в настройках портфеля (⚙). Отклонение меньше 3 п.п. считаем балансом — ради него не стоит платить комиссию и налог">' +
+                    '<span class="pfc-tgt-w">' + PF.CHECK_SVG + '<b>Облигации ' + nowP + '</b><i>цель ' + tgt + '%</i></span>' +
+                    '<span class="pfc-tgt-note">в балансе</span></div>';
             } else {
                 var need = null, what = '';
                 if (dev > 0 && tgt > 0) { var needS = c.bondVal * 100 / tgt - c.value; if (needS > 1) { need = needS; what = 'акций'; } }
                 else if (dev < 0 && tgt < 100) { var needB = c.stockVal * 100 / (100 - tgt) - c.value; if (needB > 1) { need = needB; what = 'облигаций'; } }
-                // сумма помечена как деньги ЯВНО: текст строки длиннее 40 символов,
-                // и правило «лист с ₽» модуля приватности его не ловит (isMoneyLeaf)
-                hint = '<div class="pfc-tgt off" title="Отклонение от целевой структуры (цель — ' + tgt + '% облигаций). Сумма — сколько докупить недостающего класса, чтобы вернуться к цели без продаж">' +
-                    '<span class="pfc-tgt-k">Цель ' + tgt + '%</span>' +
-                    '<span class="pfc-tgt-t">облигаций на ' + Math.abs(dev).toFixed(0) + ' п.п. ' + (dev > 0 ? 'больше' : 'меньше') + '</span>' +
-                    (need != null ? '<span class="pfc-tgt-b">докупить ' + what + ' <b data-money>~' + fmtRub(need) + '</b></span>' : '') +
+                // Кнопка ведёт в «Ребаланс» — туда, где эту покупку и оформляют:
+                // раньше сумма была просто текстом, и что с ней делать, приходилось
+                // догадываться. Сумма помечена как деньги ЯВНО: строка длиннее 40
+                // символов, и правило «лист с ₽» модуля приватности её не ловит.
+                hint = '<div class="pfc-tgt off" title="' + attr('Целевая структура: ' + tgt + '% облигаций (задаётся в настройках портфеля ⚙). Сейчас ' +
+                        nowP + ' — отклонение ' + Math.abs(dev).toFixed(0) + ' п.п. Сумма — сколько докупить недостающего класса, чтобы вернуться к цели без продаж') + '">' +
+                    '<span class="pfc-tgt-w"><b>Облигации ' + nowP + '</b>' + CHEVR_SVG + '<i>цель ' + tgt + '%</i></span>' +
+                    (need != null
+                        ? '<button class="pfc-tgt-go" onclick="pfExpand(\'' + p.id + '\')">докупить ' + what + ' на <b data-money>~' + fmtRub(need) + '</b></button>'
+                        : '<span class="pfc-tgt-note">отклонение ' + Math.abs(dev).toFixed(0) + ' п.п.</span>') +
                 '</div>';
             }
         }
@@ -513,10 +519,11 @@
         return h.name || h.ticker;
     }
     // ---- раскрытая строка (макет 05): ТОЛЬКО то, чего нет в самой строке ----
-    // Слева список лотов (дата · кол-во · цена · сумма) из ensureLots (через calcHold),
-    // НКД у облигаций — строкой под лотом; справа деньги позиции (стоимость, доход ₽,
-    // годовых, срок от первой покупки); снизу действия. Старые чипы не перенесены:
-    // название и средняя цена теперь в самой строке.
+    // Сверху лоты подписанной сеткой (дата · кол-во · цена · сумма — шапка ставится
+    // ОДИН раз, иначе это был безымянный ряд чисел, где не прочесть, где цена, а где
+    // сумма), ниже деньги позиции ряд-в-хайрлайнах в языке KPI-полосы карточки
+    // (плитки с рамками дробили и без того плотный блок), снизу действия.
+    // Старые чипы не перенесены: название и средняя цена теперь в самой строке.
     // span — число колонок родительской таблицы (6 на «Обзоре», 4 в узком виде)
     function pfMiniDetailRowHtml(h, c, span, pid) {
         var isB = h.type === 'bond';
@@ -524,11 +531,19 @@
         var lots = c.lots || [];
         var lotRows = lots.map(function (l) {
             var q = +l.qty || 0, pr = +l.buyPrice || 0;
-            // НКД — сверх чистой цены лота: в сумме лота его нет, он входит во «Вложено»
+            // НКД — сверх чистой цены лота: в сумме лота его нет, он входит во «Вложено».
+            // Пояснение ушло в подсказку: строкой оно занимало половину блока
             var nkd = (isB && +l.nkd > 0)
-                ? '<span class="pfc-lot-nkd">НКД при покупке ' + fmtPrice(+l.nkd) + '/шт — сверх цены, входит во «Вложено»</span>' : '';
-            return '<div class="pfc-lot"><i>' + ruDate(l.buyDate) + '</i><span data-money>' + fmtQty(q) + ' шт</span><span data-money="off">' + fmtPrice(pr) + '</span><u data-money>' + fmtRub(q * pr) + '</u>' + nkd + '</div>';
+                ? '<span class="pfc-lot-nkd" title="' + attr('Накопленный купонный доход на дату покупки: ' + fmtPrice(+l.nkd) +
+                    ' за бумагу сверх её цены. В сумму лота не входит, но учтён во «Вложено» и в доходе позиции.') + '">+ НКД ' + fmtPrice(+l.nkd) + '</span>'
+                : '';
+            return '<div class="pfc-lot"><i>' + ruDate(l.buyDate) + '</i>' +
+                '<span data-money>' + fmtQty(q) + ' шт</span>' +
+                '<span data-money="off">' + fmtPrice(pr) + '</span>' +
+                '<u data-money>' + fmtRub(q * pr) + '</u>' + nkd + '</div>';
         }).join('');
+        // шапка сетки лотов — те же колонки, что у строк (см. .pfc-lot в CSS)
+        var lotHead = '<div class="pfc-lot pfc-lot--h"><i>Дата</i><span>Кол-во</span><span>Цена</span><u>Сумма</u></div>';
         function fact(k, v, cls, live) {
             var money = /is-money/.test(cls || '');
             return '<div class="pfc-fact"><span class="k">' + k + '</span><span class="v' + (cls ? ' ' + cls.replace(' is-money', '').replace('is-money', '') : '') + '"' + (money ? ' data-money' : '') +
@@ -542,7 +557,7 @@
         var facts = fact('Стоимость', fmtRub(c.value), 'is-money', 'pfh:' + h.id + ':dval') +
             fact('Доход', signRub(c.pnl), (c.pnl >= 0 ? 'pos' : 'neg') + ' is-money', 'pfh:' + h.id + ':dpnl') +
             fact('Годовых', c.annual != null ? fmtPct(c.annual) : '—', c.annual != null ? (c.annual >= 0 ? 'pos' : 'neg') : '', 'pfh:' + h.id + ':dann') +
-            fact('В портфеле', days != null ? days + ' дн.' : '—', '');
+            fact('В портфеле', days != null ? days + ' ' + PF.plural(days, 'день', 'дня', 'дней') : '—', '');
         // Действия: «Докупка» → pfAddLot (у брокерской карточки скрыта — лоты затёр бы
         // следующий синк); у акций «Открыть в терминале» → pfOpenTicker, у облигаций
         // вместо терминала — лента ближайших купонов (pfToggleCoupons ниже).
@@ -554,7 +569,8 @@
         '</div>';
         var coups = (isB && PF.openCoup[h.id]) ? couponsStripHtml(h, c, pid) : '';
         return '<tr class="pfc-mdet" data-hid="' + h.id + '"><td colspan="' + (span || 6) + '"><div class="pfc-mdet-in">' +
-            '<div class="pfc-mdet-l"><div class="pfc-det-h">' + (lots.length > 1 ? 'Лоты · ' + lots.length : 'Покупка') + '</div>' + lotRows + '</div>' +
+            '<div class="pfc-mdet-l"><div class="pfc-det-h">' + (lots.length > 1 ? 'Лоты · ' + lots.length : 'Покупка') + '</div>' +
+                lotHead + lotRows + '</div>' +
             '<div class="pfc-facts">' + facts + '</div>' +
             acts + coups +
         '</div></td></tr>';

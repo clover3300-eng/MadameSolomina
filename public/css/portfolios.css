@@ -439,7 +439,11 @@ body.dark-mode .pfc-sharebar { background: rgba(255,255,255,0.1); }
 .pfc-mdet td { padding: 0 0 12px !important; border-bottom: 1px solid rgba(15,23,42,0.045) !important; white-space: normal; }
 body.dark-mode .pfc-mdet td { border-bottom-color: rgba(255,255,255,0.045) !important; }
 .pfc-mtable tbody tr.pfc-mdet:last-child td { border-bottom: none !important; }
-.pfc-mdet-in { display: grid; grid-template-columns: 1fr auto; gap: 14px 22px; align-items: start;
+/* Одна колонка: лоты → деньги позиции полосой → действия. Прежняя раскладка
+   «лоты слева, деньги справа» (макет 05) держала под деньги фиксированные ~270px
+   и душила строку лота на любой средней ширине; полосой они читаются лучше и
+   повторяют язык KPI карточки. */
+.pfc-mdet-in { display: grid; grid-template-columns: 1fr; gap: 12px; align-items: start;
     background: rgba(15,23,42,0.03); border-radius: 12px; padding: 12px 14px; margin-left: 24px; }
 body.dark-mode .pfc-mdet-in { background: rgba(255,255,255,0.03); }
 .pfc-mdet-l { min-width: 0; }
@@ -462,14 +466,30 @@ body.dark-mode .pfc-lot + .pfc-lot { border-color: rgba(255,255,255,0.07); }
 body.dark-mode .pfc-lot i { color: #8b98ad; }
 .pfc-lot u { text-decoration: none; text-align: right; color: #0f172a; }
 body.dark-mode .pfc-lot u { color: #eef3f9; }
-.pfc-lot-nkd { grid-column: 1 / -1; font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 500; color: #94a3b8; margin-top: 2px; }
+/* шапка сетки лотов: подписи колонок ставятся один раз — без них строка лота
+   была безымянным рядом чисел, где не прочесть, где цена, а где сумма */
+.pfc-lot--h { padding: 0 0 3px; border-bottom: 1px solid rgba(15,23,42,0.07); margin-bottom: 2px; }
+body.dark-mode .pfc-lot--h { border-color: rgba(255,255,255,0.07); }
+.pfc-lot--h i, .pfc-lot--h span, .pfc-lot--h u {
+    font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: #94a3b8; }
+body.dark-mode .pfc-lot--h i, body.dark-mode .pfc-lot--h span, body.dark-mode .pfc-lot--h u { color: #67748a; }
+.pfc-lot--h + .pfc-lot { border-top: 0; }
+/* НКД — короткая метка у суммы лота, пояснение в подсказке (строкой оно занимало
+   половину блока и переносилось на две строки) */
+.pfc-lot-nkd { justify-self: start; margin-left: 2px; font-family: 'Inter', sans-serif; font-size: 10px;
+    font-weight: 600; color: #94a3b8; white-space: nowrap; cursor: help;
+    border-bottom: 1px dotted rgba(148,163,184,0.6); }
 body.dark-mode .pfc-lot-nkd { color: #67748a; }
-/* деньги позиции — плитки справа */
-.pfc-facts { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; max-width: 300px; }
-.pfc-fact { border: 1px solid rgba(15,23,42,0.09); border-radius: 9px; padding: 5px 9px; min-width: 78px; }
-body.dark-mode .pfc-fact { border-color: rgba(255,255,255,0.11); }
-.pfc-fact .k { display: block; font-size: 9px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8; white-space: nowrap; }
-.pfc-fact .v { display: block; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 700; margin-top: 3px; white-space: nowrap; font-variant-numeric: tabular-nums; color: #0f172a; }
+/* Деньги позиции — ряд в хайрлайнах, как KPI-полоса карточки: плитки с рамками
+   дробили и без того плотный блок на четыре мелкие карточки. */
+.pfc-facts { display: grid; grid-template-columns: repeat(4, 1fr); }
+.pfc-fact { min-width: 0; padding: 0 12px; border-left: 1px solid rgba(15,23,42,0.09); }
+body.dark-mode .pfc-fact { border-color: rgba(255,255,255,0.1); }
+.pfc-fact:first-child { border-left: 0; padding-left: 0; }
+.pfc-fact:last-child { padding-right: 0; }
+.pfc-fact .k { display: block; font-size: 9px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pfc-fact .v { display: block; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; margin-top: 4px; white-space: nowrap; font-variant-numeric: tabular-nums; color: #0f172a; overflow: hidden; text-overflow: ellipsis; }
 body.dark-mode .pfc-fact .v { color: #eef3f9; }
 .pfc-fact .v.pos { color: #16a34a; } .pfc-fact .v.neg { color: #dc2626; }
 body.dark-mode .pfc-fact .v.pos { color: #34d399; } body.dark-mode .pfc-fact .v.neg { color: #f87171; }
@@ -651,15 +671,9 @@ body.dark-mode .pfc-rebal { background: #e8eef7; border-color: #e8eef7; color: #
     /* счётчик состава переезжает в кнопку — колонки «Доля» рядом уже нет */
     .pfc-all-n { display: inline; }
     .pfc-foot { flex-direction: column; }
-}
-/* Раскрытие строки складывается РАНЬШЕ остального (700px, не 440): плитки «денег
-   позиции» занимают фиксированные ~270px, и при двух колонках левой оставалось
-   ~140px при 520 и ~280px при 660 — строка лота (дата · кол-во · цена · сумма)
-   туда не помещалась и переполняла ячейку. Две колонки, как в макете 05, остаются
-   только там, где обеим частям хватает места. */
-@container pfcard (max-width: 700px) {
-    .pfc-mdet-in { grid-template-columns: 1fr; gap: 10px; }
-    .pfc-facts { justify-content: flex-start; max-width: none; }
+    /* деньги позиции: четыре колонки в узкой карточке уже своих же чисел */
+    .pfc-facts { grid-template-columns: 1fr 1fr; row-gap: 10px; }
+    .pfc-fact:nth-child(odd) { border-left: 0; padding-left: 0; }
 }
 
 /* ---- карточка «добавить» (компактная, в стиле новых карточек) ---- */
@@ -2116,26 +2130,35 @@ body.dark-mode .tbmk-go:hover { border-color: rgba(255,255,255,0.28); color: #f1
 .pfc-dist-tgt { position: absolute; top: -3px; bottom: -3px; width: 2px; border-radius: 2px;
     background: #1b2433; opacity: 0.55; transform: translateX(-1px); pointer-events: auto; }
 body.dark-mode .pfc-dist-tgt { background: #eef3f9; opacity: 0.6; }
-/* Строка целевой структуры под полосой (переверстана 2026-07-22): ряд из метки
-   «Цель N%», отклонения и действия с суммой. Прежний вариант был сплошной
-   оранжевой фразой — читался как ошибка и переносился, отрывая сумму от текста.
+/* Блок целевой структуры под полосой: слева ФАКТ → ЦЕЛЬ («Облигации 6,6% → цель
+   20%»), справа действие, которое к цели ведёт. Прежние варианты — сплошная
+   оранжевая фраза (читалась как ошибка) и ряд из трёх текстов (читался как набор
+   слов) — заменены: отклонение в п.п. ушло в подсказку, его видно из пары чисел.
    Живёт внутри .pfc-alloc, боковые поля даёт его паддинг. */
-.pfc-tgt { margin: 9px 0 0; display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px;
-    font-size: 11.5px; line-height: 1.3; color: #64748b; }
-body.dark-mode .pfc-tgt { color: #8b98ad; }
-/* метка цели — тихий чип, а не цветной текст */
-.pfc-tgt-k { display: inline-flex; align-items: center; gap: 5px; flex: none;
-    font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 700;
-    padding: 3px 7px; border-radius: 6px; background: rgba(15,23,42,0.06); color: #64748b; white-space: nowrap; }
-body.dark-mode .pfc-tgt-k { background: rgba(255,255,255,0.08); color: #9fb0c4; }
-.pfc-tgt-k svg { width: 11px; height: 11px; color: #16a34a; }
-body.dark-mode .pfc-tgt-k svg { color: #34d399; }
-.pfc-tgt-t { min-width: 0; }
-/* действие с суммой — не переносится внутри себя, сумма всегда рядом с глаголом */
-.pfc-tgt-b { margin-left: auto; white-space: nowrap; color: #64748b; }
-.pfc-tgt-b b { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #0f172a; }
-body.dark-mode .pfc-tgt-b { color: #8b98ad; }
-body.dark-mode .pfc-tgt-b b { color: #eef3f9; }
+.pfc-tgt { margin: 10px 0 0; display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; }
+/* факт → цель: пара чисел через шеврон, моно и одинакового веса — сравнение
+   считывается без чтения текста */
+.pfc-tgt-w { display: inline-flex; align-items: center; gap: 6px; min-width: 0;
+    font-family: 'JetBrains Mono', monospace; font-size: 11.5px; white-space: nowrap; }
+.pfc-tgt-w b { font-weight: 700; color: #0f172a; }
+body.dark-mode .pfc-tgt-w b { color: #eef3f9; }
+.pfc-tgt-w i { font-style: normal; font-weight: 500; color: #94a3b8; }
+.pfc-tgt-w svg { width: 11px; height: 11px; color: #cbd5e1; flex: none; }
+body.dark-mode .pfc-tgt-w svg { color: #4b5768; }
+.pfc-tgt.ok .pfc-tgt-w svg { width: 12px; height: 12px; color: #16a34a; }
+body.dark-mode .pfc-tgt.ok .pfc-tgt-w svg { color: #34d399; }
+/* действие — кнопка, а не текст: ведёт в «Ребаланс», где покупку и оформляют */
+.pfc-tgt-go { margin-left: auto; flex: none; display: inline-flex; align-items: center; gap: 5px;
+    border: 1px solid rgba(15,23,42,0.12); background: transparent; border-radius: 8px; padding: 4px 9px;
+    font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: #64748b; cursor: pointer;
+    white-space: nowrap; transition: background 0.14s, border-color 0.14s, color 0.14s; }
+.pfc-tgt-go b { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #0f172a; }
+.pfc-tgt-go:hover { background: rgba(15,23,42,0.05); border-color: rgba(15,23,42,0.2); color: #0f172a; }
+body.dark-mode .pfc-tgt-go { border-color: rgba(255,255,255,0.14); color: #9fb0c4; }
+body.dark-mode .pfc-tgt-go b { color: #eef3f9; }
+body.dark-mode .pfc-tgt-go:hover { background: rgba(255,255,255,0.07); color: #eef3f9; }
+.pfc-tgt-note { margin-left: auto; font-family: 'Inter', sans-serif; font-size: 11px; color: #94a3b8; white-space: nowrap; }
+body.dark-mode .pfc-tgt-note { color: #67748a; }
 
 /* --- «Свободные деньги» и «Цель · облигации» в настройках ⚙ --- */
 .pfm-extras { display: flex; gap: 10px; margin: 10px 0 2px; }

@@ -1405,6 +1405,25 @@
                     '<button class="pfc-act" onclick="pfxPortSettings(\'' + p.id + '\')" title="Настройки портфеля" aria-label="Настройки портфеля">' + GEAR + '</button>' +
                 '</div>' +
             '</div>';
+            // Сравнение с индексом (решение вопроса 2 плана PF-CARD): из карточки
+            // «Обзора» оно ушло — там график отвечает на «как у меня дела», а не
+            // «обгоняю ли рынок». Здесь для этого есть место: кривая доходности
+            // портфеля от первой покупки с наложением бенчмарка по кнопке.
+            // Бенчмарк выбирается сам: RGBI для чисто облигационного портфеля,
+            // иначе IMOEX (pfBench) — сравнивать ОФЗ с индексом акций бессмысленно.
+            var bench = PF.pfBench(p), benchOn = PF.benchOn(p.id);
+            var chartBlock = c.hs.length
+                ? '<div class="pfpt-chart">' +
+                    '<div class="pfpt-chart-h">' +
+                        '<span class="pfpt-chart-t">Доходность портфеля<i>с ' + PF.ruDate(PF.dateToIso(PF.pfFirstBuyDate(p))) + ' · первая покупка</i></span>' +
+                        '<div class="pfpt-chart-leg" id="pfcvLeg-' + p.id + '"></div>' +
+                        '<button class="pfpt-benchbtn' + (benchOn ? ' on' : '') + '" onclick="pfxBenchToggle(\'' + p.id + '\')" ' +
+                            'title="' + attr((benchOn ? 'Убрать кривую — ' : 'Наложить кривую — ') + bench.full) + '">' +
+                            '<span class="pfcv-imdot"></span>' + bench.label + '</button>' +
+                    '</div>' +
+                    '<div class="pfcv-chart" id="pfcvChart-' + p.id + '"></div>' +
+                '</div>'
+                : '';
             var table = c.hs.length
                 ? '<div class="pfpt-tablewrap"><table class="pfpt-table"><thead><tr>' +
                     // «Доля» — свой класс и на заголовке: колонка левоприжатая (полоска
@@ -1414,9 +1433,29 @@
                     '<th class="pfpt-num">Стоимость</th><th class="pfpt-share">Доля</th><th class="pfpt-num">Доход</th><th class="pfpt-num">Доходность</th>' +
                   '</tr></thead><tbody>' + c.hs.map(function (x) { return pfxPortHoldRowHtml(x, c); }).join('') + '</tbody></table></div>'
                 : '<div class="pfal-empty">Состав пуст — добавьте активы в настройках портфеля ⚙.</div>';
-            return '<div class="dash2-card pf-card2 pfpt-card" style="--pf-accent:' + ac + '">' + head + table + '</div>';
+            return '<div class="dash2-card pf-card2 pfpt-card" style="--pf-accent:' + ac + '">' + head + chartBlock + table + '</div>';
         }).join('') + '</div>';
     }
+    // Кривые подвкладки «Портфель» дорисовываются после полного рендера — как
+    // мини-графики карточек (repaintMiniCharts). Пейн переживает своп разметки:
+    // loadPfChart отдаёт данные из кеша синхронно, если они уже загружены.
+    PF.pfxPortChartsRepaint = function () {
+        visibleItems().forEach(function (p) {
+            if (dq('pfcvChart-' + p.id)) PF.loadPfChart(p.id);
+        });
+    };
+    // тумблер бенчмарка: точечно — класс кнопки и перерисовка ЭТОГО графика,
+    // без PF.renderPortfolios (полный своп перерисовал бы все кривые вкладки)
+    window.pfxBenchToggle = function (pid) {
+        var on = !PF.benchOn(pid);
+        var p = findPf(pid);
+        var btn = document.querySelector('.pfpt-benchbtn[onclick*="\'' + pid + '\'"]');
+        if (btn && p) {
+            btn.classList.toggle('on', on);
+            btn.title = (on ? 'Убрать кривую — ' : 'Наложить кривую — ') + PF.pfBench(p).full;
+        }
+        PF.setBench(pid, on);   // сам перерисует график, когда серия придёт
+    };
     // R8: только видимость ПОРТФЕЛЕЙ (глобальная). Тумблеры секций отсюда убраны:
     // видимость блоков теперь пер-вкладочная и управляется корзиной/глазом на самих
     // виджетах и меню «Видимость» в герое — а этот виджет может жить на любой подвкладке.

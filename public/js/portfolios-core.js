@@ -553,7 +553,12 @@
     // считаются асинхронно и кешируются. Можно наложить кривую индекса IMOEX за тот же период.
     // Оверлеи графика/состава на карточке снесены при переделке карточки (2026-07-22,
     // блок 1 плана PF-CARD): график живёт в герое карточки, полный состав — в подвкладке.
-    var chartImoex = {};     // pid → наложена кривая индекса (нет UI после переделки; сравнение с индексом переедет в подвкладку «Портфель»)
+    var chartImoex = {};     // pid → наложена кривая индекса; переключается на подвкладке «Портфель» (PF.setBench)
+    // Сравнение с индексом (IMOEX для акций, RGBI для чисто облигационного портфеля)
+    // живёт на подвкладке «Портфель» — в карточке «Обзора» его нет сознательно
+    // (решение по вопросу 2 плана PF-CARD). Флаг хранится в памяти сессии.
+    function benchOn(pid) { return !!chartImoex[pid]; }
+    function setBench(pid, on) { chartImoex[pid] = !!on; loadPfChart(pid); }
     PF.chartCache = {};     // pid → { imoex, points, pfFinal, imFinal, from, err }
     PF.chartRaw = {};       // pid → { from, series } — сырая серия стоимости (кеш под toggle IMOEX)
     var chartBusy = {};      // pid → идёт загрузка (защита от двойного запроса)
@@ -841,20 +846,29 @@
             dynEl.className = 'pfcv-stat-v ' + (pos2 ? 'pos' : 'neg');
         }
         if (legEl) {
+            // Легенда нужна там, где кривых может быть ДВЕ, — на подвкладке «Портфель»
+            // (сравнение с бенчмарком). Мини-график карточки её не запрашивает вовсе
+            // (legEl не передаётся): там одна кривая, и её процент уже стоит в герое.
             var pf = dispFinal;
-            // мини-график в карточке (dynEl отсутствует): цифра «Портфель X%» уже показана рядом,
-            // в шапке карточки (pfc-hero-inc) — повторять её тут не нужно, легенда несёт только
-            // IMOEX (бенчмарк для сравнения), компактно поверх графика.
-            var lgh = dynEl ? '<span class="pfcv-lgi"><i style="background:var(--pf-accent)"></i>Портфель <b class="' + (pf >= 0 ? 'pos' : 'neg') + '">' + (pf >= 0 ? '+' : '') + pf.toFixed(1) + '%</b></span>' : '';
-            // в мини-легенде имя индекса опускаем — рядом уже есть тумблер с ним; показываем только %
-            if (showIm && data.imFinal != null) { var im = data.imFinal, imLbl = dynEl ? (data.bench === 'RGBI' ? 'RGBI ' : 'IMOEX ') : ''; lgh += '<span class="pfcv-lgi"><i class="pfcv-imdot"></i>' + imLbl + '<b class="' + (im >= 0 ? 'pos' : 'neg') + '">' + (im >= 0 ? '+' : '') + im.toFixed(1) + '%</b></span>'; }
+            var lgh = '<span class="pfcv-lgi"><i style="background:var(--pf-accent)"></i>Портфель <b class="' + (pf >= 0 ? 'pos' : 'neg') + '">' + (pf >= 0 ? '+' : '') + pf.toFixed(1) + '%</b></span>';
+            if (showIm && data.imFinal != null) {
+                var im = data.imFinal;
+                lgh += '<span class="pfcv-lgi"><i class="pfcv-imdot"></i>' + (data.bench === 'RGBI' ? 'RGBI ' : 'IMOEX ') +
+                    '<b class="' + (im >= 0 ? 'pos' : 'neg') + '">' + (im >= 0 ? '+' : '') + im.toFixed(1) + '%</b></span>';
+            }
             legEl.innerHTML = lgh;
         }
     }
     // Перерисовка графиков портфеля после прихода серии: мини-график в герое карточки
     // и виджет «График капитала». Большой пейн графика-оверлея снесён вместе с оверлеями
     // карточки (переделка 2026-07-22); сравнение с индексом переедет в подвкладку «Портфель».
-    function repaintCharts(pid) { PF.paintPfChartMini(pid); PF.pfdCapMaybeRepaint(); }
+    // серия пришла/пересчиталась — дорисовываем все её пейны: мини-график в герое
+    // карточки, кривую подвкладки «Портфель» (с бенчмарком) и виджет «Капитал»
+    function repaintCharts(pid) {
+        PF.paintPfChartMini(pid);
+        drawPfChart(pid, dq('pfcvChart-' + pid), null, dq('pfcvLeg-' + pid), pid + 'p');
+        PF.pfdCapMaybeRepaint();
+    }
     // Есть ли в портфеле облигации. Если нет — колонки НКД показывать незачем:
     // они дают тринадцатую и десятую колонку с прочерком в каждой строке, из-за
     // чего «Стоимость», «Доход» и «Изменение» уезжали за правый край панели, и
@@ -1214,7 +1228,7 @@
     PF.liveBegin = liveBegin; PF.liveEnd = liveEnd; PF.liveSet = liveSet;
     // — график карточки —
     PF.dateToIso = dateToIso; PF.niceTicks = niceTicks; PF.pfBench = pfBench; PF.loadPfChart = loadPfChart; PF.drawPfChart = drawPfChart;
-    PF.pfFirstBuyDate = pfFirstBuyDate; PF.chartBusy = chartBusy;
+    PF.pfFirstBuyDate = pfFirstBuyDate; PF.chartBusy = chartBusy; PF.benchOn = benchOn; PF.setBench = setBench;
     // — составы для импорта —
     PF.getCalcComposition = getCalcComposition; PF.getFavComposition = getFavComposition; PF.getMonthlyComposition = getMonthlyComposition; PF.compositionFrom = compositionFrom; PF.importName = importName;
     PF.fullBondId = fullBondId;
