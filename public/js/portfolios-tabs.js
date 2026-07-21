@@ -208,11 +208,17 @@
             pfxSyncPath();
         }
     }
-    // шестерёнка «Настроек» — с 2026-07-21 подвкладка рендерится иконкой 32×32:
-    // в шапке это конфиг, а не восьмой вид данных, подпись ему не положена
+    // шестерёнка «Настроек» — с 2026-07-21 подвкладка рендерится иконкой, а с
+    // 2026-07-22 живёт не в ряду, а в ПРАВОМ кластере шапки сразу за «Поиском»
+    // (кнопка #pfGearBtn, скин звоночка #nfBell): это конфиг, а не восьмой вид
+    // данных, и в кластере действий ему место честнее, чем в ряду разделов
     var PFX_GEAR_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.1a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4z"/></svg>';
+    // подвкладки, живущие РЯДОМ (без «Настроек» — они ушли в шестерёнку шапки)
+    function pfxRowTabs() { return PFX_TABS.filter(function (t) { return t[0] !== 'settings'; }); }
     // Ряд подвкладок. С 2026-07-21 живёт НЕ на странице, а в середине глобальной
-    // шапки (#topBarPfMarket, наполняет renderTopBarMarket в portfolios.js).
+    // шапки (#topBarPfMarket, наполняет renderTopBarMarket в portfolios.js), прижат
+    // К ПИЛЮЛЕ раздела: на широком экране центрирование уводило ряд на середину
+    // пустой середины, и он читался оторванным от «Все портфели» рядом.
     // Чипов открытых портфелей в ряду больше нет — портфели переехали в выпадающий
     // список на пилюле раздела (#topBarCrumb, см. pfxCrumbSync ниже). Переполнение
     // решает не скролл, а свёртка хвоста в «⋯» (pfxTabsFit).
@@ -222,32 +228,61 @@
         // (портфель скрыли, остался один видимый) контент показывает «Обзор» — активная
         // метка обязана показывать то же, иначе ряд остаётся «без выбранного»
         var eff = pfxEffTab();
-        // roving tabindex: когда активна вкладка-портфель, в ряду нет «своей» кнопки —
-        // точкой входа Tab остаётся «Обзор», иначе ряд выпал бы из обхода целиком
-        var rowHasOn = PFX_TABS.some(function (t) { return t[0] === 'trading' ? pfxIsTradeTab(eff) : eff === t[0]; });
+        var tabs = pfxRowTabs();
+        // roving tabindex: когда активны «Настройки» или вкладка-портфель, в ряду нет
+        // «своей» кнопки — точкой входа Tab остаётся «Обзор», иначе ряд выпал бы из
+        // обхода целиком
+        var rowHasOn = tabs.some(function (t) { return t[0] === 'trading' ? pfxIsTradeTab(eff) : eff === t[0]; });
         // R9.5: честный tablist — roving tabindex (в Tab-обходе ровно одна вкладка,
         // остальное стрелками, см. pfxTabsKeydown), aria-controls ведёт на
         // #pfxTabPanel (обёртка контента, pfxPanelWrap)
-        return '<div class="pfx-tabs" role="tablist" aria-label="Разделы «Портфелей»">' + PFX_TABS.map(function (t) {
+        return '<div class="pfx-tabs" role="tablist" aria-label="Разделы «Портфелей»">' + tabs.map(function (t) {
             // «Торговля» подсвечена на ЛЮБОМ своём экране (trading:2 и далее): экраны —
             // это её внутренний ряд внизу, а не отдельные пункты верхнего ряда. Клик
             // возвращает на последний открытый экран, а не сбрасывает на первый
             var on = t[0] === 'trading' ? pfxIsTradeTab(eff) : eff === t[0];
             var go = t[0] === 'trading' ? 'pfxGoTrading()' : 'pfxGoTab(\'' + t[0] + '\')';
             var ti = on || (!rowHasOn && t[0] === 'overview') ? '0' : '-1';
-            if (t[0] === 'settings') {
-                // «⋯» стоит ПЕРЕД шестерёнкой: скрытый хвост ряда складывается сюда
-                // (pfxTabsFit), сама кнопка появляется только когда есть что прятать.
-                // Своя обёртка — позиционный якорь выпадающего меню
-                return '<span class="pfx-morewrap">' +
-                    '<button type="button" class="pfx-more" id="pfxTabsMore" aria-haspopup="menu" aria-expanded="false" aria-label="Ещё разделы" title="Ещё разделы" hidden>⋯</button>' +
-                    '<div class="pfx-morepop" id="pfxTabsMorePop" role="menu" aria-label="Ещё разделы"></div>' +
-                '</span>' +
-                '<button type="button" role="tab" id="pfxTab-settings" aria-controls="pfxTabPanel" tabindex="' + ti + '" class="pfx-tab pfx-gear' + (on ? ' on' : '') + '" aria-selected="' + on + '" title="' + t[1] + '" aria-label="' + t[1] + '" onclick="' + go + '">' + PFX_GEAR_SVG + '</button>';
-            }
             return '<button type="button" role="tab" id="pfxTab-' + t[0] + '" aria-controls="pfxTabPanel" tabindex="' + ti + '" class="pfx-tab' + (on ? ' on' : '') + '" aria-selected="' + on + '" onclick="' + go + '">' +
                 t[1] + '</button>';
-        }).join('') + '</div>';
+        }).join('') +
+            // «⋯» — хвост ряда, свёрнутый по нехватке ширины (pfxTabsFit); кнопка
+            // появляется только когда есть что прятать. Обёртка — позиционный якорь меню
+            '<span class="pfx-morewrap">' +
+                '<button type="button" class="pfx-more" id="pfxTabsMore" aria-haspopup="menu" aria-expanded="false" aria-label="Ещё разделы" title="Ещё разделы" hidden>⋯</button>' +
+                '<div class="pfx-morepop" id="pfxTabsMorePop" role="menu" aria-label="Ещё разделы"></div>' +
+            '</span>' +
+        '</div>';
+    }
+    // ---- шестерёнка «Настроек» в правом кластере шапки (сразу за «Поиском») ----
+    // Кнопка живёт вне ленивой цепочки — как и слот ряда, создаётся по месту и
+    // переживает свопы (меняем только класс активности и aria). Роли tab у неё
+    // НЕТ: вне tablist она была бы невалидна — обычная кнопка-переключатель с
+    // aria-pressed. Id сохранён (#pfxTab-settings): на него ссылается
+    // aria-labelledby панели контента, когда открыты «Настройки».
+    function pfxGearSync() {
+        var host = document.getElementById('topBarActions');
+        var anchor = document.getElementById('topSearchBtn');
+        var gear = document.getElementById('pfxTab-settings');
+        var need = pfxWide() && PF.store.items.length &&
+            (typeof currentTab === 'undefined' || currentTab === 'portfolios');
+        if (!need) { if (gear) gear.remove(); return; }
+        if (!host || !anchor) return;
+        if (!gear) {
+            gear = document.createElement('button');
+            gear.type = 'button';
+            gear.id = 'pfxTab-settings';
+            gear.className = 'pfx-gearbtn';
+            gear.title = 'Настройки «Портфелей»';
+            gear.setAttribute('aria-label', 'Настройки «Портфелей»');
+            gear.innerHTML = PFX_GEAR_SVG;
+            gear.addEventListener('click', function () { window.pfxGoTab('settings'); });
+            // сразу ЗА «Поиском»: nextSibling у якоря — тема/звоночек/аватар
+            host.insertBefore(gear, anchor.nextSibling);
+        }
+        var on = pfxEffTab() === 'settings';
+        gear.classList.toggle('on', on);
+        gear.setAttribute('aria-pressed', on ? 'true' : 'false');
     }
     // R9.5: контент под рядом — настоящий tabpanel: aria-controls вкладок ведёт
     // сюда, aria-labelledby называет активную. Оборачиваем только когда ряд
@@ -591,13 +626,12 @@
         if (!row || !host.offsetWidth) return;
         var more = row.querySelector('#pfxTabsMore');
         var pop = row.querySelector('#pfxTabsMorePop');
-        var gear = row.querySelector('#pfxTab-settings');
-        if (!more || !pop || !gear) return;
-        var tabs = Array.prototype.filter.call(row.querySelectorAll('.pfx-tab'), function (b) { return b !== gear; });
+        if (!more || !pop) return;
+        var tabs = Array.prototype.slice.call(row.querySelectorAll('.pfx-tab'));
         tabs.forEach(function (b) { b.hidden = false; });
         more.hidden = true;
         var GAP = 2;   // gap ряда (см. .pfx-tabs)
-        var avail = row.clientWidth - (gear.offsetWidth + GAP + 4);   // 4 — margin-left шестерёнки
+        var avail = row.clientWidth;
         var w = tabs.map(function (b) { return b.offsetWidth + GAP; });
         var need = w.reduce(function (a, b) { return a + b; }, 0);
         var hid = [];
@@ -1407,6 +1441,6 @@
     PF.pfxOpenPfTabs = pfxOpenPfTabs; PF.pfxPanelWrap = pfxPanelWrap; PF.pfxSaveOpenTabs = pfxSaveOpenTabs; PF.pfxSeedLayout = pfxSeedLayout;
     PF.pfxSetCardHtml = pfxSetCardHtml; PF.pfxSyncPath = pfxSyncPath; PF.pfxTabPortsHtml = pfxTabPortsHtml; PF.pfxTabsHtml = pfxTabsHtml;
     PF.pfxTabsScrollSync = pfxTabsScrollSync; PF.pfxVisRowsHtml = pfxVisRowsHtml; PF.pfxWide = pfxWide;
-    PF.pfxCrumbSync = pfxCrumbSync;
+    PF.pfxCrumbSync = pfxCrumbSync; PF.pfxGearSync = pfxGearSync;
     PF.pfxTradingHtml = pfxTradingHtml;
 })();

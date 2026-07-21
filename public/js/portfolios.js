@@ -67,7 +67,7 @@
     var pfxDropPfTab = PF.pfxDropPfTab, pfxFabSeen = PF.pfxFabSeen, pfxFabSync = PF.pfxFabSync, pfxFlashBlock = PF.pfxFlashBlock, pfxGoOverviewFor = PF.pfxGoOverviewFor;
     var pfxOpenPfTabs = PF.pfxOpenPfTabs, pfxPanelWrap = PF.pfxPanelWrap, pfxSaveOpenTabs = PF.pfxSaveOpenTabs, pfxSeedLayout = PF.pfxSeedLayout, pfxSetCardHtml = PF.pfxSetCardHtml, pfxSyncPath = PF.pfxSyncPath;
     var pfxTabPortsHtml = PF.pfxTabPortsHtml, pfxTabsHtml = PF.pfxTabsHtml, pfxTabsScrollSync = PF.pfxTabsScrollSync, pfxVisRowsHtml = PF.pfxVisRowsHtml, pfxWide = PF.pfxWide;
-    var pfxCrumbSync = PF.pfxCrumbSync;
+    var pfxCrumbSync = PF.pfxCrumbSync, pfxGearSync = PF.pfxGearSync;
     // импорт карточек (portfolios-cards.js, загружен до нас):
     var XMARK_SVG = PF.XMARK_SVG, assetDisplayName = PF.assetDisplayName, cardHtml = PF.cardHtml, closeImpMenus = PF.closeImpMenus, ensureDefaultImoexFlags = PF.ensureDefaultImoexFlags, menuHtml = PF.menuHtml;
     var paintPfChartMini = PF.paintPfChartMini, pfCardHead = PF.pfCardHead, pfConfirm = PF.pfConfirm, pfImpOutside = PF.pfImpOutside, repaintMiniCharts = PF.repaintMiniCharts;
@@ -302,6 +302,7 @@
             pfxFabSync();          // парящие узлы: слот столбика #cornerStack + панель действий #pfActBar
             pfxTabsScrollSync();   // ряд подвкладок в шапке: клавиатура, ResizeObserver, свёртка в «⋯»
             pfxCrumbSync();        // селектор портфелей на пилюле раздела (#topBarCrumb)
+            pfxGearSync();         // шестерёнка «Настроек» в правом кластере шапки, за «Поиском»
             if (PF.openMenu) {
                 var m = dq('pfMenu-' + PF.openMenu); if (m) m.scrollTop = 0;
                 // пустой портфель → сразу ставим фокус на ввод тикера (интуитивнее)
@@ -868,6 +869,8 @@
                 if (tbMkt) { tbMkt.style.display = 'none'; tbMkt.innerHTML = ''; tbMkt.__pfxHtml = ''; }
                 var tbCrumb = document.getElementById('topBarCrumb');
                 if (tbCrumb) tbCrumb.classList.remove('pf-sel-on');
+                var tbGear = document.getElementById('pfxTab-settings');
+                if (tbGear) tbGear.remove();
                 var tbLay = document.getElementById('pfLayoutBtn');
                 if (tbLay) tbLay.style.display = 'none';
                 var tbLaySep = document.getElementById('pfLayoutSep');

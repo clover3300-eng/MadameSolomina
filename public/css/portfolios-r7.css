@@ -58,10 +58,13 @@ body.dark-mode #panel-portfolios .pfc-name-ink {
    уровень навигации: 13,5px/600, поля 9px 10px — на странице ряд был первым
    уровнем и был крупнее (14,5px). Чипов портфелей в ряду нет (уехали в
    селектор на пилюле, секция 4а ниже), переполнение решает свёртка хвоста
-   в «⋯» (pfxTabsFit), а не горизонтальный скролл. */
-#topBarPfMarket { padding: 0 14px; overflow: visible; }
+   в «⋯» (pfxTabsFit), а не горизонтальный скролл.
+   Ряд ПРИЖАТ К ПИЛЮЛЕ (flex-start, 2026-07-22): по центру свободной середины
+   на широком экране он отъезжал от «Все портфели» почти на пол-экрана и
+   читался ничьим — навигация раздела обязана держаться за название раздела. */
+#topBarPfMarket { padding: 0 16px; overflow: visible; justify-content: flex-start; }
 .pfx-tabs {
-    display: flex; align-items: center; justify-content: center; gap: 2px;
+    display: flex; align-items: center; justify-content: flex-start; gap: 2px;
     flex: 1 1 auto; min-width: 0; position: relative;
 }
 .pfx-tab {
@@ -84,12 +87,34 @@ body.dark-mode #panel-portfolios .pfc-name-ink {
    кольца roving tabindex был бы слепым */
 .pfx-tab:focus-visible { outline: 2px solid #4453ef; outline-offset: 1px; }
 body.dark-mode .pfx-tab:focus-visible { outline-color: #818cf8; }
-/* шестерёнка «Настроек» — 32×32, всегда последняя и в «⋯» не уходит; активность
-   показывает цветом, подчёркивание на квадратной иконке читалось бы мусором */
-.pfx-tab.pfx-gear { width: 32px; height: 32px; padding: 0; margin-left: 4px; }
-.pfx-tab.pfx-gear svg { width: 17px; height: 17px; }
-.pfx-tab.pfx-gear.on { background: rgba(68, 83, 239, 0.10); }
-.pfx-tab.pfx-gear.on::after { display: none; }
+/* Шестерёнка «Настроек» — с 2026-07-22 не в ряду, а в ПРАВОМ кластере шапки
+   сразу за «Поиском» (#pfxTab-settings, ставит pfxGearSync). Скин — ровно
+   звоночек #nfBell по соседству: круг 36px, то же «стекло» и та же реакция;
+   свой стиль рядом с ним читался бы сбоем, а не отдельным элементом
+   (см. правило «новый контрол переиспользует компонент соседа»). */
+.pfx-gearbtn {
+    width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    appearance: none; padding: 0; cursor: pointer; user-select: none;
+    background: var(--card-glass-aurora, rgba(255,255,255,0.65));
+    border: 1px solid var(--card-border-aurora, rgba(255,255,255,0.4));
+    color: var(--text-slate, #64748B);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    transition: transform 0.15s, background 0.2s, color 0.2s, border-color 0.2s;
+}
+.pfx-gearbtn:hover { transform: translateY(-1px); background: rgba(255,255,255,0.85); color: var(--text-deep, #1b2433); }
+.pfx-gearbtn:active { transform: scale(0.95); }
+.pfx-gearbtn svg { width: 17px; height: 17px; display: block; }
+/* «Настройки» открыты — кнопка держит акцент: подчёркивания у круглой иконки
+   в кластере действий быть не может, роль активного показывает заливка */
+.pfx-gearbtn.on {
+    background: rgba(68, 83, 239, 0.12); border-color: rgba(68, 83, 239, 0.35); color: #3a48e0;
+}
+.pfx-gearbtn.on:hover { background: rgba(68, 83, 239, 0.18); color: #3a48e0; }
+.pfx-gearbtn:focus-visible { outline: 2px solid #4453ef; outline-offset: 2px; }
+body.dark-mode .pfx-gearbtn { background: rgba(30,41,59,0.75); border-color: rgba(255,255,255,0.1); color: rgba(255,255,255,0.5); }
+body.dark-mode .pfx-gearbtn:hover { background: rgba(30,41,59,0.95); color: rgba(255,255,255,0.8); }
+body.dark-mode .pfx-gearbtn.on { background: rgba(129, 140, 248, 0.22); border-color: rgba(129, 140, 248, 0.45); color: #c7cdff; }
 /* «⋯» — кнопка свёрнутого хвоста ряда; видима, только когда есть что прятать */
 .pfx-morewrap { position: relative; flex: 0 0 auto; display: inline-flex; }
 .pfx-more {
