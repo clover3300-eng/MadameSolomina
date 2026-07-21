@@ -148,14 +148,20 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .demo-t{font-size:12px;font-weight:700;color:var(--ink);margin-bottom:4px}
 .demo-t u{text-decoration:none;font-weight:500;color:var(--mut);margin-left:7px}
 
-/* KPI-полоса */
+/* KPI-полоса. Колонки равные и разделены хайрлайном: без него разная длина
+   значений («169 935 ₽» против «+5,56%») читается как сбитое выравнивание */
 .pn-kpis{display:grid;background:color-mix(in srgb,var(--ink) 3%,transparent);border-top:1px solid var(--hair);
-         border-bottom:1px solid var(--hair);padding:13px 18px;gap:14px}
+         border-bottom:1px solid var(--hair);padding:14px 0 15px;gap:0}
 .scr.dark .pn-kpis{background:rgba(255,255,255,.025)}
+.pn-kpi{padding:0 16px;border-left:1px solid var(--hair)}
+.pn-kpi:first-child{border-left:0;padding-left:18px}
+.pn-kpi:last-child{padding-right:18px}
 .pn-kpi .k{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);white-space:nowrap}
-.pn-kpi .v{font-family:var(--fN);font-size:18px;font-weight:700;margin-top:6px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pn-kpi .v{font-family:var(--fN);font-size:18px;font-weight:700;margin-top:7px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .pn-kpi .v.pos{color:var(--grn)} .pn-kpi .v.neg{color:var(--red)}
-.pn-kpi .s{font-family:var(--fU);font-size:11px;color:var(--dim);margin-top:3px}
+/* подпись — своя строка данных, поэтому моно и цифры табличные, как у значения */
+.pn-kpi .s{font-family:var(--fN);font-size:11px;font-weight:500;color:var(--dim);margin-top:4px;
+           font-variant-numeric:tabular-nums;white-space:nowrap}
 
 /* позиции */
 .pn-pos{padding:15px 18px 0}
@@ -263,7 +269,9 @@ tr.open .pn-chev{transform:rotate(90deg);color:var(--mut)}
 .pn.narrow .pn-alloc{padding:12px 18px}
 .pn.narrow .pn-alleg{gap:4px 12px}
 .pn.narrow .pn-alleg span{font-size:11.5px}
-.pn.narrow .pn-kpis{grid-template-columns:1fr 1fr;gap:12px 14px}
+.pn.narrow .pn-kpis{grid-template-columns:1fr 1fr;row-gap:14px}
+.pn.narrow .pn-kpi:nth-child(odd){border-left:0;padding-left:18px}
+.pn.narrow .pn-kpi:nth-child(even){padding-right:18px}
 .pn.narrow .pn-kpi .v{font-size:16px}
 .pn.narrow .pn-top{gap:6px}
 .pn.narrow .pn-seg b{padding:5px 6px;font-size:10px}
@@ -370,6 +378,11 @@ function rub(n, dec){
 }
 function pct(n){ return (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n).toFixed(2).replace('.', ',') + '%'; }
 function pct1(n){ return (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n).toFixed(1).replace('.', ',') + '%'; }
+/* русское склонение: 131 день, 132 дня, 135 дней */
+function plural(n, one, few, many){
+  var a = Math.abs(n) % 100, b = a % 10;
+  return n + NB + (a > 10 && a < 20 ? many : b === 1 ? one : b >= 2 && b <= 4 ? few : many);
+}
 
 /* lots — реальные лоты позиции (в коде: ensureLots(h) / aggHolding(h)):
    средняя цена и вложено СХОДЯТСЯ с агрегатом, как их считает calcHold */
@@ -394,6 +407,7 @@ var INVEST = 169935;              // c.invested
 var PNL    = POSVAL - INVEST;     // 9 447
 var PNLPCT = PNL / INVEST * 100;  // 5,56
 var ANNUAL = 14.2;                // c.annual, CAGR
+var DAYS   = 131;                 // от pfFirstBuyDate(p) до сегодня
 var DAY    = 1508, DAYPCT = 0.76; // dayDelta(p, value)
 var BONDVAL = 10149 + 8164 + 7050, STOCKVAL = POSVAL - BONDVAL;
 
@@ -614,9 +628,9 @@ function cardWork(opt){
 
   /* KPI — четыре разных числа */
   o += '<div class="pn-kpis" style="grid-template-columns:repeat(' + (narrow ? 2 : 4) + ',1fr)">' +
-       kpi('Вложено', rub(INVEST) + NB + '₽', '', 'свободно ' + rub(CASH) + NB + '₽') +
-       kpi('Доход', '+' + rub(PNL) + NB + '₽', 'pos', 'за всё время') +
-       kpi('Доходность', pct(PNLPCT), 'pos', pct1(ANNUAL).replace('+', '+') + ' годовых') +
+       kpi('Вложено', rub(INVEST) + NB + '₽', '', rub(CASH) + NB + '₽ свободно') +
+       kpi('Доход', '+' + rub(PNL) + NB + '₽', 'pos', 'за ' + plural(DAYS, 'день', 'дня', 'дней')) +
+       kpi('Доходность', pct(PNLPCT), 'pos', pct1(ANNUAL) + ' годовых') +
        kpi('За день', '+' + rub(DAY) + NB + '₽', 'pos', pct(DAYPCT) + ' сегодня') + '</div>';
 
   /* распределение — полоса во всю ширину вместо кольца */
