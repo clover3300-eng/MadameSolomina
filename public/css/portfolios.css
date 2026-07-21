@@ -259,18 +259,21 @@ body.dark-mode .pf-ch-t { color: #f4f8fd; }
 body.dark-mode .pf-ch-go { border-color: rgba(255,255,255,0.09); background: rgba(255,255,255,0.04); color: #cdd8e6; }
 body.dark-mode .pf-ch-go:hover { background: rgba(255,255,255,0.12); color: #fff; }
 
-/* ---- герой (макет 02): «Стоимость портфеля» + дельта за период · график справа ----
-   Колонки 46% / остаток ДОЛЕЙ, не auto: длинное число меняет свой кегль
-   (ступени .l10/.l13 из heroValParts), а не отжимает график. */
-.pfc-hero { display: grid; grid-template-columns: 46% 1fr; gap: 20px; align-items: center; padding: 16px 18px 20px; }
+/* ---- герой (макет 02): «Стоимость портфеля» + дельта за период · график ----
+   Сумма НАД графиком, график во всю ширину — одинаково при любой ширине карточки
+   (просьба 2026-07-22: «в широком состоянии как в узком»). Двухколоночная раскладка
+   макета 02 (46% / остаток) снята: в широкой карточке она давала другой кегль суммы
+   и вдвое более высокий график, и две карточки рядом читались как разные компоненты.
+   Ступени кегля (.l10/.l13 из heroValParts) остаются — длинное число мельчает само. */
+.pfc-hero { display: grid; grid-template-columns: 1fr; gap: 12px; padding: 16px 18px 20px; }
 .pfc-hero-l { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
 .pfc-hero-k { font-size: 11px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: #94a3b8; }
-.pfc-hero-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 38px; letter-spacing: -0.02em; line-height: 1.05; margin-top: 9px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #0f172a; }
+.pfc-hero-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 30px; letter-spacing: -0.02em; line-height: 1.05; margin-top: 9px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #0f172a; }
 body.dark-mode .pfc-hero-val { color: #f4f8fd; }
 .pfc-hero-val small { font-size: 0.63em; font-weight: 600; color: #64748b; margin-left: 0.06em; }
-/* ступени кегля по числу цифр: до 7 — 38px, 8–10 — 30px, 11+ — 25px */
-.pfc-hero-val.l10 { font-size: 30px; }
-.pfc-hero-val.l13 { font-size: 25px; letter-spacing: -0.03em; }
+/* ступени кегля по числу цифр: до 7 — 30px, 8–10 — 26px, 11+ — 21px */
+.pfc-hero-val.l10 { font-size: 26px; }
+.pfc-hero-val.l13 { font-size: 21px; letter-spacing: -0.03em; }
 .pfc-hero-inc { margin-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; color: #94a3b8; white-space: nowrap; }
 .pfc-hero-inc.pos { color: #16a34a; } .pfc-hero-inc.neg { color: #dc2626; }
 body.dark-mode .pfc-hero-inc.pos { color: #34d399; } body.dark-mode .pfc-hero-inc.neg { color: #f87171; }
@@ -279,7 +282,7 @@ body.dark-mode .pfc-hero-inc u { color: #8b98ad; }
 /* мини-график переиспользует drawPfChart (шкала процентов слева + наводимые точки с тултипом
    «дата+значение» — как в большом графике), поэтому .pfc-mchart-plot — это просто увеличенный
    и уплотнённый пейн: те же .pfcv-yaxis/.pfcv-plot внутри, размеры подогнаны компактнее. */
-.pfc-mchart-plot { position: relative; display: flex; width: 100%; height: 148px; min-width: 0; }
+.pfc-mchart-plot { position: relative; display: flex; width: 100%; height: 96px; min-width: 0; }
 .pfc-mchart-plot .pfcv-yaxis { flex: 0 0 28px; }
 .pfc-mchart-plot .pfcv-ytick { font-size: 8px; right: 4px; }
 .pfc-mchart-plot .pfcv-x { display: none; }
@@ -431,7 +434,11 @@ body.dark-mode .pfc-mdet-in { background: rgba(255,255,255,0.03); }
 .pfc-mdet-l { min-width: 0; }
 .pfc-det-h { font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #94a3b8; margin-bottom: 8px; }
 /* лот: дата · кол-во · цена · сумма (сумма — чистая, НКД поясняется строкой ниже) */
-.pfc-lot { display: grid; grid-template-columns: 78px 62px 88px 1fr; gap: 0 12px; align-items: baseline;
+/* Колонки лота: дата · кол-во · цена · сумма. Ширины ужимаемые (minmax), а сумме
+   гарантирован минимум — при фиксированных 78/62/88px она получала остаток и
+   сжималась до 37px, обрезая «50 000 ₽». */
+.pfc-lot { display: grid; grid-template-columns: minmax(64px, 70px) minmax(46px, 52px) minmax(58px, 70px) minmax(62px, 1fr);
+    gap: 0 10px; align-items: baseline;
     font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 600; padding: 4px 0; font-variant-numeric: tabular-nums; }
 .pfc-lot + .pfc-lot { border-top: 1px solid rgba(15,23,42,0.07); }
 body.dark-mode .pfc-lot + .pfc-lot { border-color: rgba(255,255,255,0.07); }
@@ -486,6 +493,11 @@ body.dark-mode .pfc-dash { color: #67748a; }
     text-transform: uppercase; padding: 3px 7px; border-radius: 6px; white-space: nowrap;
     background: rgba(15,23,42,0.07); color: #64748b; }
 body.dark-mode .pfc-flag { background: rgba(255,255,255,0.09); color: #9fb0c4; }
+/* индикатор режима «Скрывать суммы»: в разметке всегда, показывается по классу
+   body — тумблер в кабинете переключается без ре-рендера карточек */
+.pfc-flag--priv { display: none; align-items: center; gap: 5px; }
+.pfc-flag--priv svg { width: 11px; height: 11px; }
+body.sums-hidden .pfc-flag--priv { display: inline-flex; }
 /* скрытая карточка (видна только на своей вкладке) — приглушена целиком */
 .pf-card--dim .pfc-normal { opacity: 0.72; }
 .pf-card--dim .pfc-foot, .pf-card--dim .pfc-warn { opacity: 1; }
@@ -596,11 +608,7 @@ body.dark-mode .pfc-rebal { background: #e8eef7; border-color: #e8eef7; color: #
    position:fixed (все оверлеи живут в body), а .pfc-menu позиционируется от неё же. */
 .pf-card { container-type: inline-size; container-name: pfcard; }
 @container pfcard (max-width: 440px) {
-    .pfc-hero { grid-template-columns: 1fr; gap: 12px; }
-    .pfc-hero-val { font-size: 30px; }
-    .pfc-hero-val.l10 { font-size: 26px; }
-    .pfc-hero-val.l13 { font-size: 21px; }
-    .pfc-mchart-plot { height: 96px; }
+    /* герой (сумма + график) одинаков при любой ширине — см. базовые правила выше */
     /* KPI 2×2: разделители только между колонками, строки разведены отступом */
     .pfc-stats2 { grid-template-columns: 1fr 1fr; row-gap: 14px; }
     .pfc-stat2:nth-child(odd) { border-left: 0; padding-left: 18px; }
@@ -627,7 +635,13 @@ body.dark-mode .pfc-rebal { background: #e8eef7; border-color: #e8eef7; color: #
     /* счётчик состава переезжает в кнопку — колонки «Доля» рядом уже нет */
     .pfc-all-n { display: inline; }
     .pfc-foot { flex-direction: column; }
-    /* раскрытие: лоты и деньги друг под другом, плитки влево */
+}
+/* Раскрытие строки складывается РАНЬШЕ остального (700px, не 440): плитки «денег
+   позиции» занимают фиксированные ~270px, и при двух колонках левой оставалось
+   ~140px при 520 и ~280px при 660 — строка лота (дата · кол-во · цена · сумма)
+   туда не помещалась и переполняла ячейку. Две колонки, как в макете 05, остаются
+   только там, где обеим частям хватает места. */
+@container pfcard (max-width: 700px) {
     .pfc-mdet-in { grid-template-columns: 1fr; gap: 10px; }
     .pfc-facts { justify-content: flex-start; max-width: none; }
 }

@@ -13,6 +13,17 @@
 // Прячем только рубли (не проценты — это «суммы», а не доходности).
 // Наведение курсора временно раскрывает конкретное значение (для владельца).
 // Заголовки колонок вроде «Средняя цена, ₽» не трогаем — там нет цифры перед ₽.
+//
+// ЯВНАЯ ПОМЕТКА (data-money) — сильнее правила «лист с ₽»:
+//   data-money        — маскировать ВСЕГДА, даже если элемент не лист и даже если
+//                       знака ₽ в тексте нет вовсе;
+//   data-money="off"  — не маскировать НИКОГДА, вместе со всем поддеревом.
+// Зачем: правило «лист + число + ₽» — свойство ВЁРСТКИ, а не смысла. Стоит вынести
+// знак валюты в <small> (как в герое карточки портфеля) — элемент перестаёт быть
+// листом, и самая крупная сумма экрана остаётся открытой. И наоборот: количество
+// бумаг (300 шт) знака ₽ не содержит, но вместе с публичной ценой даёт размер
+// позиции устным счётом, а цены Мосбиржи («Средняя», «Сейчас») публичны и прятать
+// их бессмысленно — под маской таблица перестаёт читаться, ничего не скрывая.
 
 (function () {
     'use strict';
@@ -43,6 +54,8 @@
         } catch (e) { return false; }
     }
 
+    var OFF_SEL = '[data-money="off"]';
+
     function isMoneyLeaf(el) {
         if (el.nodeType !== 1) return false;          // только элементы
         if (el.firstElementChild) return false;       // только листья (без вложенных тегов)
@@ -50,17 +63,26 @@
         if (!t || t.length > 40) return false;        // длинный текст — не ценник
         return MONEY.test(t);
     }
+    // маскировать ли этот элемент: явная пометка сильнее правила «лист с ₽»
+    function wants(el) {
+        if (el.nodeType !== 1) return false;
+        if (el.hasAttribute('data-money')) return el.getAttribute('data-money') !== 'off';
+        if (!isMoneyLeaf(el)) return false;
+        return !el.closest(OFF_SEL);                  // публичная цена внутри data-money="off"
+    }
 
-    // помечаем листья-суммы внутри поддерева root
+    // помечаем суммы внутри поддерева root
     function tag(root) {
         if (!root || root.nodeType !== 1) return;
         if (root.closest && root.closest(SKIP_SEL)) return;
-        if (isMoneyLeaf(root)) { root.classList.add(CLS); return; }
+        if (wants(root)) { root.classList.add(CLS); return; }
+        // «off» на самом корне гасит всё поддерево — внутрь не идём
+        if (root.getAttribute && root.getAttribute('data-money') === 'off') return;
         var nodes = root.querySelectorAll('*:not(script):not(style)');
         for (var i = 0; i < nodes.length; i++) {
             var el = nodes[i];
             if (el.closest(SKIP_SEL)) continue;
-            if (isMoneyLeaf(el)) el.classList.add(CLS);
+            if (wants(el)) el.classList.add(CLS);
         }
     }
 
@@ -83,6 +105,18 @@
         observer = new MutationObserver(function (recs) {
             for (var i = 0; i < recs.length; i++) {
                 var r = recs[i];
+                if (r.type === 'attributes') {
+                    // Точечные обновления живых чисел (PF.liveSet и такие же патчеры
+                    // других виджетов) пишут элементу ЦЕЛЫЙ className — вместе с ним
+                    // слетает и .sum-mask, а мутации текста при этом может не быть
+                    // (значение не изменилось, изменился только класс). Возвращаем
+                    // маску сразу и БЕЗ обхода поддерева — иначе на каждый hover-класс
+                    // приложения пришлось бы перебирать полкарточки.
+                    var t = r.target;
+                    if (t.nodeType === 1 && !t.classList.contains(CLS) &&
+                        !(t.closest && t.closest(SKIP_SEL)) && wants(t)) t.classList.add(CLS);
+                    continue;
+                }
                 if (r.type === 'characterData') {
                     var p = r.target.parentElement;
                     if (p) queue(p);
@@ -96,7 +130,8 @@
             }
         });
         observer.observe(document.body, {
-            childList: true, characterData: true, subtree: true
+            childList: true, characterData: true, subtree: true,
+            attributes: true, attributeFilter: ['class']
         });
     }
     function stopObserver() {

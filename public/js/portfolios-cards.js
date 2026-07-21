@@ -170,7 +170,12 @@
         // шапка: имя (цветовая метка + сериф) · бейдж брокера · метки состояния ·
         // период · копировать/скрыть/⚙
         var flags = (isBrk ? '<span class="pfc-flag" title="Состав приходит от брокера и перезаписывается при каждом обновлении — ручные правки здесь не сохранятся">Только чтение</span>' : '') +
-            (p.hidden ? '<span class="pfc-flag" title="Карточка убрана с «Обзора». В капитале, «Списке портфелей» и аналитике портфель считается как обычно">Скрыт</span>' : '');
+            (p.hidden ? '<span class="pfc-flag" title="Карточка убрана с «Обзора». В капитале, «Списке портфелей» и аналитике портфель считается как обычно">Скрыт</span>' : '') +
+            // индикатор режима «Скрывать суммы»: размытые числа иначе неотличимы от
+            // скелетонов прогрева. Рисуем ВСЕГДА, показывает CSS по body.sums-hidden —
+            // так переключение тумблера не требует ре-рендера карточек
+            '<span class="pfc-flag pfc-flag--priv" title="Включён режим «Скрывать суммы» (личный кабинет). Цены Мосбиржи и проценты остаются открытыми — прячем только ваши деньги">' +
+                PF.EYEOFF_SVG + 'Суммы скрыты</span>';
         var top = '<div class="pfc-top">' +
             '<div class="pfc-titles">' +
                 '<span class="pfc-name" onclick="pfNameEdit(\'' + p.id + '\',event)" title="Нажмите, чтобы переименовать"><em class="pfc-name-dot"></em><span class="pfc-name-ink">' + esc(p.name) + '</span></span>' +
@@ -211,8 +216,8 @@
                 // (livePatchers.cards ниже) — включая замену скелетонов прогрева числами
                 (warm ? '<span class="pfc-hero-val" data-live="pfc:' + p.id + ':val">' + skelHtml(180, 30) + '</span>' +
                         '<span class="pfc-hero-inc" data-live="pfc:' + p.id + ':inc">' + skelHtml(128, 13) + '</span>'
-                      : '<span class="pfc-hero-val' + vh.cls + '" data-live="pfc:' + p.id + ':val">' + vh.html + '</span>' +
-                        '<span class="' + inc.cls + '" data-live="pfc:' + p.id + ':inc">' + inc.html + '</span>') +
+                      : '<span class="pfc-hero-val' + vh.cls + '" data-money data-live="pfc:' + p.id + ':val">' + vh.html + '</span>' +
+                        '<span class="' + inc.cls + '" data-money data-live="pfc:' + p.id + ':inc">' + inc.html + '</span>') +
             '</div>' + chartCell +
         '</div>';
 
@@ -253,10 +258,10 @@
             // Прочерк честнее нуля: ноль читался бы как «не изменилось».
             var daySub = allToday ? 'нет вчерашней цены' : (dd == null ? 'нет вчерашней цены' : (ddPct != null ? fmtPct(ddPct) + ' сегодня' : 'сегодня'));
             kpis = '<div class="pfc-stats2">' +
-                '<div class="pfc-stat2"><span class="pfc-stat2-l">Вложено</span><span class="pfc-stat2-v">' + fmtRub(c.invested) + '</span><span class="pfc-stat2-s">' + fmtRub(cash) + ' свободно</span></div>' +
-                '<div class="pfc-stat2"><span class="pfc-stat2-l">Доход</span><span class="pfc-stat2-v ' + (c.pnl >= 0 ? 'pos' : 'neg') + '" data-live="pfc:' + p.id + ':pnl">' + signRub(c.pnl) + '</span><span class="pfc-stat2-s">за ' + days + ' ' + PF.plural(days, 'день', 'дня', 'дней') + '</span></div>' +
+                '<div class="pfc-stat2"><span class="pfc-stat2-l">Вложено</span><span class="pfc-stat2-v" data-money>' + fmtRub(c.invested) + '</span><span class="pfc-stat2-s" data-money>' + fmtRub(cash) + ' свободно</span></div>' +
+                '<div class="pfc-stat2"><span class="pfc-stat2-l">Доход</span><span class="pfc-stat2-v ' + (c.pnl >= 0 ? 'pos' : 'neg') + '" data-money data-live="pfc:' + p.id + ':pnl">' + signRub(c.pnl) + '</span><span class="pfc-stat2-s">за ' + days + ' ' + PF.plural(days, 'день', 'дня', 'дней') + '</span></div>' +
                 '<div class="pfc-stat2" title="' + YIELD_TIP + '"><span class="pfc-stat2-l">Доходность</span><span class="pfc-stat2-v ' + (c.pnlPct >= 0 ? 'pos' : 'neg') + '" data-live="pfc:' + p.id + ':yield">' + fmtPct(c.pnlPct) + '</span><span class="pfc-stat2-s" data-live="pfc:' + p.id + ':ysub">' + yieldSubText(c, days, allToday) + '</span></div>' +
-                '<div class="pfc-stat2"><span class="pfc-stat2-l">За день</span><span class="pfc-stat2-v' + (dd == null ? ' pfc-dash' : (dd >= 0 ? ' pos' : ' neg')) + '" data-live="pfc:' + p.id + ':day">' + (dd == null ? '—' : signRub(dd)) + '</span><span class="pfc-stat2-s" data-live="pfc:' + p.id + ':dsub">' + daySub + '</span></div>' +
+                '<div class="pfc-stat2"><span class="pfc-stat2-l">За день</span><span class="pfc-stat2-v' + (dd == null ? ' pfc-dash' : (dd >= 0 ? ' pos' : ' neg')) + '" data-money data-live="pfc:' + p.id + ':day">' + (dd == null ? '—' : signRub(dd)) + '</span><span class="pfc-stat2-s" data-live="pfc:' + p.id + ':dsub">' + daySub + '</span></div>' +
             '</div>';
         }
 
@@ -336,9 +341,12 @@
             if (Math.abs(dev) < 3) {
                 hint = '<div class="pfc-tgt-hint ok">' + PF.CHECK_SVG + 'В балансе с целью ' + tgt + '% облигаций</div>';
             } else {
-                var buyTxt = '';
-                if (dev > 0 && tgt > 0) { var needS = c.bondVal * 100 / tgt - c.value; if (needS > 1) buyTxt = ' — докупить акций на ~' + fmtRub(needS); }
-                else if (dev < 0 && tgt < 100) { var needB = c.stockVal * 100 / (100 - tgt) - c.value; if (needB > 1) buyTxt = ' — докупить облигаций на ~' + fmtRub(needB); }
+                // сумма-рекомендация выдаёт масштаб портфеля, поэтому помечена как
+                // деньги ЯВНО: сам текст подсказки длиннее 40 символов, и правило
+                // «лист с ₽» модуля приватности его не ловит (isMoneyLeaf)
+                var buyTxt = '', money = function (v) { return '<span data-money>~' + fmtRub(v) + '</span>'; };
+                if (dev > 0 && tgt > 0) { var needS = c.bondVal * 100 / tgt - c.value; if (needS > 1) buyTxt = ' — докупить акций на ' + money(needS); }
+                else if (dev < 0 && tgt < 100) { var needB = c.stockVal * 100 / (100 - tgt) - c.value; if (needB > 1) buyTxt = ' — докупить облигаций на ' + money(needB); }
                 hint = '<div class="pfc-tgt-hint off" title="Отклонение от целевой структуры (цель — ' + tgt + '% облигаций). Сумма — сколько докупить недостающего класса, чтобы вернуться к цели без продаж">' +
                     'Облигаций на ' + Math.abs(dev).toFixed(0) + ' п.п. ' + (dev > 0 ? 'больше' : 'меньше') + ' цели' + buyTxt + '</div>';
             }
@@ -459,12 +467,12 @@
                 '<svg class="pfc-mch' + (open ? ' up' : '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>' +
                 '<span class="pfc-mtt"><span class="pfc-tkline">' + tk + '</span>' + (nm && nm !== h.ticker ? '<span class="pfc-mnm">' + esc(nm) + '</span>' : '') + '</span>' +
             '</span></td>' +
-            '<td class="pfc-mqty pfc-mc-qty">' + fmtQty(c.qty) + ' шт</td>' +
-            '<td class="pfc-mbuy pfc-mc-buy"' + ptip + '>' + fmtPrice(c.buy) + '</td>' +
+            '<td class="pfc-mqty pfc-mc-qty" data-money>' + fmtQty(c.qty) + ' шт</td>' +
+            '<td class="pfc-mbuy pfc-mc-buy" data-money="off"' + ptip + '>' + fmtPrice(c.buy) + '</td>' +
             // data-live: цена, «Изм.» и «Доля» обновляются точечно фоновым тиком
             // (livePatchers.cards); ключ по hid — копии той же бумаги в других
             // экземплярах карточки (конструктор) обновятся заодно
-            '<td class="pfc-mnow' + (c.live ? ' live' : '') + '" data-live="pfh:' + h.id + ':now"' + (noQ ? ' title="' + attr(noQ.tip) + '"' : ptip) + '>' + (warm ? skelHtml(62, 13) : (noQ ? noQ.txt : fmtPrice(c.cur))) + '</td>' +
+            '<td class="pfc-mnow' + (c.live ? ' live' : '') + '" data-money="off" data-live="pfh:' + h.id + ':now"' + (noQ ? ' title="' + attr(noQ.tip) + '"' : ptip) + '>' + (warm ? skelHtml(62, 13) : (noQ ? noQ.txt : fmtPrice(c.cur))) + '</td>' +
             '<td class="pfc-mchg' + (ch.cls ? ' ' + ch.cls : '') + '" data-live="pfh:' + h.id + ':chg">' + (warm ? skelHtml(44, 13) : ch.txt) + '</td>' +
             '<td class="pfc-mshare pfc-mc-share" data-live="pfh:' + h.id + ':share">' + (warm ? skelHtml(40, 13) : (noQ ? '<span class="pfc-dash">—</span>' : shareCellHtml(fullV > 0 ? c.value / fullV * 100 : 0))) + '</td>' +
         '</tr>';
@@ -502,10 +510,11 @@
             // НКД — сверх чистой цены лота: в сумме лота его нет, он входит во «Вложено»
             var nkd = (isB && +l.nkd > 0)
                 ? '<span class="pfc-lot-nkd">НКД при покупке ' + fmtPrice(+l.nkd) + '/шт — сверх цены, входит во «Вложено»</span>' : '';
-            return '<div class="pfc-lot"><i>' + ruDate(l.buyDate) + '</i><span>' + fmtQty(q) + ' шт</span><span>' + fmtPrice(pr) + '</span><u>' + fmtRub(q * pr) + '</u>' + nkd + '</div>';
+            return '<div class="pfc-lot"><i>' + ruDate(l.buyDate) + '</i><span data-money>' + fmtQty(q) + ' шт</span><span data-money="off">' + fmtPrice(pr) + '</span><u data-money>' + fmtRub(q * pr) + '</u>' + nkd + '</div>';
         }).join('');
         function fact(k, v, cls, live) {
-            return '<div class="pfc-fact"><span class="k">' + k + '</span><span class="v' + (cls ? ' ' + cls : '') + '"' +
+            var money = /is-money/.test(cls || '');
+            return '<div class="pfc-fact"><span class="k">' + k + '</span><span class="v' + (cls ? ' ' + cls.replace(' is-money', '').replace('is-money', '') : '') + '"' + (money ? ' data-money' : '') +
                 (live ? ' data-live="' + live + '"' : '') + '>' + v + '</span></div>';
         }
         // срок владения — от ПЕРВОЙ покупки (c.firstDate), не от взвешенной даты
@@ -513,8 +522,8 @@
         var days = isFinite(t0) ? Math.max(1, Math.floor((Date.now() - t0) / 864e5)) : null;
         // data-live: деньги позиции живут на фоновом тике (livePatchers.cards) —
         // раскрытие может висеть открытым сколько угодно, цифры не должны застыть
-        var facts = fact('Стоимость', fmtRub(c.value), '', 'pfh:' + h.id + ':dval') +
-            fact('Доход', signRub(c.pnl), c.pnl >= 0 ? 'pos' : 'neg', 'pfh:' + h.id + ':dpnl') +
+        var facts = fact('Стоимость', fmtRub(c.value), 'is-money', 'pfh:' + h.id + ':dval') +
+            fact('Доход', signRub(c.pnl), (c.pnl >= 0 ? 'pos' : 'neg') + ' is-money', 'pfh:' + h.id + ':dpnl') +
             fact('Годовых', c.annual != null ? fmtPct(c.annual) : '—', c.annual != null ? (c.annual >= 0 ? 'pos' : 'neg') : '', 'pfh:' + h.id + ':dann') +
             fact('В портфеле', days != null ? days + ' дн.' : '—', '');
         // Действия: «Докупка» → pfAddLot (у брокерской карточки скрыта — лоты затёр бы
@@ -553,7 +562,7 @@
         var next = sched.filter(function (cp) { return cp.d > today; }).slice(0, 4);
         if (!next.length) return note('Будущих купонов в расписании нет');
         var chips = next.map(function (cp) {
-            return '<span class="pfc-coup"><i>' + ruDate(cp.d) + '</i><b>' + fmtPrice(cp.v) + '/шт</b><u>' + fmtRub(cp.v * (c.qty || 0)) + ' на ' + fmtQty(c.qty || 0) + ' шт</u></span>';
+            return '<span class="pfc-coup"><i>' + ruDate(cp.d) + '</i><b data-money="off">' + fmtPrice(cp.v) + '/шт</b><u data-money>' + fmtRub(cp.v * (c.qty || 0)) + ' на ' + fmtQty(c.qty || 0) + ' шт</u></span>';
         }).join('');
         return '<div class="pfc-coups"><div class="pfc-det-h">Ближайшие купоны</div><div class="pfc-coups-row">' + chips + '</div></div>';
     }
