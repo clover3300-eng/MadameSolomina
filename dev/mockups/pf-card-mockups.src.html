@@ -169,10 +169,34 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .pn-logo.bond{background:color-mix(in srgb,var(--ink) 8%,transparent);color:var(--mut)}
 .pn-as .t{min-width:0}
 .pn-as .tk{font-family:var(--fN);font-size:13px;font-weight:700;letter-spacing:-.01em;
-           overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;max-width:150px}
+           overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;max-width:134px}
 .pn-as .nm{font-family:var(--fU);font-size:11px;font-weight:500;color:var(--dim);margin-top:1px;
-           overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;max-width:150px}
+           overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;max-width:134px}
 .pn-mut{color:var(--mut);font-weight:500}
+/* раскрытая строка */
+.pn-tbl tr.open td{border-bottom:0}
+.pn-chev{display:inline-grid;place-items:center;width:14px;height:14px;color:var(--dim);flex:none;
+         transition:none;transform:rotate(0deg)}
+.pn-chev svg{width:9px;height:9px}
+tr.open .pn-chev{transform:rotate(90deg);color:var(--mut)}
+.pn-det td{padding:0 0 12px;border-bottom:1px solid var(--hair);white-space:normal}
+.pn-det-in{display:grid;grid-template-columns:1fr auto;gap:14px 22px;align-items:start;
+           background:color-mix(in srgb,var(--ink) 3%,transparent);border-radius:12px;padding:12px 14px;margin-left:40px}
+.scr.dark .pn-det-in{background:rgba(255,255,255,.03)}
+.pn-det-h{font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:8px}
+.pn-lot{display:grid;grid-template-columns:78px 62px 78px 1fr;gap:0 12px;align-items:baseline;
+        font-family:var(--fN);font-size:11.5px;font-weight:600;padding:4px 0;font-variant-numeric:tabular-nums}
+.pn-lot+.pn-lot{border-top:1px solid var(--hair)}
+.pn-lot i{font-style:normal;color:var(--mut);font-weight:500}
+.pn-lot u{text-decoration:none;text-align:right;color:var(--ink)}
+.pn-lot .nkd{grid-column:1/-1;font-family:var(--fU);font-size:10.5px;font-weight:500;color:var(--dim);margin-top:2px}
+.pn-facts{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;max-width:300px}
+.pn-fact{border:1px solid var(--line);border-radius:9px;padding:5px 9px;min-width:78px}
+.pn-fact .k{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);white-space:nowrap}
+.pn-fact .v{font-family:var(--fN);font-size:12.5px;font-weight:700;margin-top:3px;white-space:nowrap}
+.pn-fact .v.pos{color:var(--grn)} .pn-fact .v.neg{color:var(--red)}
+.pn-det-act{grid-column:1/-1;display:flex;gap:8px;padding-top:2px}
+.pn-mini{border:1px solid var(--line);border-radius:9px;padding:6px 11px;font-size:11.5px;font-weight:600;color:var(--mut)}
 .pn-chg.pos{color:var(--grn)} .pn-chg.neg{color:var(--red)}
 .pn-share{display:inline-flex;flex-direction:column;align-items:flex-end;gap:4px}
 .pn-bar{width:46px;height:3px;border-radius:2px;background:color-mix(in srgb,var(--ink) 9%,transparent);overflow:hidden}
@@ -291,9 +315,17 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <div class="notes" id="notesBig"></div>
   </section>
 
-  <!-- ================= 05. ТЁМНАЯ + ВИДЖЕТ ================= -->
+  <!-- ================= 05. РАСКРЫТИЕ ================= -->
   <section class="mk">
-    <div class="mk-h"><span class="mk-n">05</span><h2>Тёмная тема и узкая колонка</h2><span class="mk-tag mute">проверка на прочность</span></div>
+    <div class="mk-h"><span class="mk-n">05</span><h2>Раскрытая строка</h2><span class="mk-tag warn">я это упустил</span></div>
+    <div class="mk-sub">В первых экранах строки были статичные — упущение. Сейчас клик по строке раскрывает <code>.pfc-mdet</code> с четырьмя чипами: Название, Куплен, Цена покупки, НКД. <b>Три из четырёх в новой карточке уже стоят в самой строке</b> — название под тикером, цена покупки отдельной колонкой. Значит раскрытию нужно новое содержимое: то, чего в строке нет.</div>
+    <div class="scroller"><div class="scr" id="scrOpen"></div></div>
+    <div class="notes" id="notesOpen"></div>
+  </section>
+
+  <!-- ================= 06. ТЁМНАЯ + ВИДЖЕТ ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">06</span><h2>Тёмная тема и узкая колонка</h2><span class="mk-tag mute">проверка на прочность</span></div>
     <div class="mk-sub">Та же вёрстка на токенах тёмной темы (<code>--pf-gn/--pf-rd</code> уже переопределены в <code>portfolios.css:216</code>) и она же в блоке конструктора <code>pf:&lt;id&gt;</code> шириной в треть: KPI сворачиваются в 2×2, список позиций режется по высоте виджета через <code>pfdRowsFor</code>/ResizeObserver.</div>
     <div class="scroller"><div class="scr dark" id="scr03"></div></div>
     <div class="notes" id="notes03"></div>
@@ -313,13 +345,21 @@ function rub(n, dec){
 function pct(n){ return (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n).toFixed(2).replace('.', ',') + '%'; }
 function pct1(n){ return (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n).toFixed(1).replace('.', ',') + '%'; }
 
+/* lots — реальные лоты позиции (в коде: ensureLots(h) / aggHolding(h)):
+   средняя цена и вложено СХОДЯТСЯ с агрегатом, как их считает calcHold */
 var HOLD = [
-  {tk:'SBER', nm:'Сбербанк',   qty:300, buy:268.40, cur:291.15, val:87345,  bond:false, col:'#1a9f29'},
-  {tk:'LKOH', nm:'Лукойл',     qty:8,   buy:6420.00,cur:6611.50,val:52892,  bond:false, col:'#c8102e'},
-  {tk:'GAZP', nm:'Газпром',    qty:160, buy:83.84,  cur:86.14,  val:13782,  bond:false, col:'#0862a8'},
-  {tk:'SU26230RMFS1', nm:'ОФЗ 26230', qty:10, buy:98.45, cur:101.49, val:10149, bond:true},
-  {tk:'SU26233RMFS5', nm:'ОФЗ 26233', qty:8,  buy:98.76, cur:102.05, val:8164,  bond:true},
-  {tk:'SU26238RMFS4', nm:'ОФЗ 26238', qty:7,  buy:98.50, cur:100.72, val:7050,  bond:true}
+  {tk:'SBER', nm:'Сбербанк',   qty:300, buy:268.40, cur:291.15, val:87345,  bond:false, col:'#1a9f29',
+   days:131, lots:[{d:'12.03.2026', q:200, p:250.00}, {d:'04.06.2026', q:100, p:305.20}]},
+  {tk:'LKOH', nm:'Лукойл',     qty:8,   buy:6420.00,cur:6611.50,val:52892,  bond:false, col:'#c8102e',
+   days:96,  lots:[{d:'16.04.2026', q:8, p:6420.00}]},
+  {tk:'GAZP', nm:'Газпром',    qty:160, buy:83.84,  cur:86.14,  val:13782,  bond:false, col:'#0862a8',
+   days:61,  lots:[{d:'21.05.2026', q:160, p:83.84}]},
+  {tk:'SU26230RMFS1', nm:'ОФЗ 26230', qty:10, buy:98.45, cur:101.49, val:10149, bond:true,
+   days:88,  lots:[{d:'24.04.2026', q:10, p:98.45, nkd:12.45}]},
+  {tk:'SU26233RMFS5', nm:'ОФЗ 26233', qty:8,  buy:98.76, cur:102.05, val:8164,  bond:true,
+   days:54,  lots:[{d:'28.05.2026', q:8, p:98.76, nkd:9.80}]},
+  {tk:'SU26238RMFS4', nm:'ОФЗ 26238', qty:7,  buy:98.50, cur:100.72, val:7050,  bond:true,
+   days:41,  lots:[{d:'10.06.2026', q:7, p:98.50, nkd:7.15}]}
 ];
 var CASH = 21600;
 var POSVAL = 179382;              // сумма value позиций
@@ -342,6 +382,9 @@ ALLOC.forEach(function(a){ a.p = a.v / VALUE * 100; });
 HOLD.forEach(function(h){
   h.chg = (h.cur / h.buy - 1) * 100;
   h.share = h.val / VALUE * 100;
+  h.invested = h.lots.reduce(function(s, l){ return s + l.q * l.p * (h.bond ? 10 : 1); }, 0);
+  h.pnl = h.val - h.invested;
+  h.annual = h.pnl / h.invested * (365 / h.days) * 100;
 });
 
 /* ================= иконки ================= */
@@ -400,8 +443,40 @@ function logo(h){
   if (h.bond) return '<span class="pn-logo bond">ОФЗ</span>';
   return '<span class="pn-logo" style="background:' + h.col + '">' + h.tk.slice(0, 4) + '</span>';
 }
+/* раскрытая часть: показываем ТОЛЬКО то, чего нет в самой строке —
+   лоты, НКД, деньги позиции и срок владения */
+function detailRow(h, cols){
+  var span = 4 + (cols.buy ? 1 : 0) + (cols.share ? 1 : 0);
+  var o = '<tr class="pn-det"><td colspan="' + span + '"><div class="pn-det-in">';
+
+  o += '<div><div class="pn-det-h">' + (h.lots.length > 1 ? 'Лоты · ' + h.lots.length : 'Покупка') + '</div>';
+  h.lots.forEach(function(l){
+    o += '<div class="pn-lot"><i>' + l.d + '</i><span>' + rub(l.q) + NB + 'шт</span><span>' +
+         rub(l.p, 2) + (h.bond ? '%' : NB + '₽') + '</span><u>' + rub(l.q * l.p * (h.bond ? 10 : 1)) + NB + '₽</u>' +
+         (l.nkd ? '<span class="nkd">НКД при покупке ' + rub(l.nkd, 2) + NB + '₽ — уже в средней цене</span>' : '') +
+         '</div>';
+  });
+  o += '</div>';
+
+  o += '<div class="pn-facts">';
+  o += '<div class="pn-fact"><div class="k">Стоимость</div><div class="v">' + rub(h.val) + NB + '₽</div></div>';
+  o += '<div class="pn-fact"><div class="k">Доход</div><div class="v ' + (h.pnl >= 0 ? 'pos' : 'neg') + '">' +
+       (h.pnl >= 0 ? '+' : '−') + rub(Math.abs(h.pnl)) + NB + '₽</div></div>';
+  o += '<div class="pn-fact"><div class="k">Годовых</div><div class="v ' + (h.annual >= 0 ? 'pos' : 'neg') + '">' +
+       pct1(h.annual) + '</div></div>';
+  o += '<div class="pn-fact"><div class="k">В портфеле</div><div class="v">' + h.days + NB + 'дн.</div></div>';
+  o += '</div>';
+
+  o += '<div class="pn-det-act"><span class="pn-mini">Докупка</span>' +
+       (h.bond ? '<span class="pn-mini">Купоны</span>' : '<span class="pn-mini">Открыть в терминале</span>') +
+       '<span class="pn-mini">Продать</span></div>';
+
+  return o + '</div></td></tr>';
+}
+
 function posRow(h, cols){
-  var o = '<tr><td><span class="pn-as">' + logo(h) +
+  var o = '<tr' + (cols.open && cols.open[h.tk] ? ' class="open"' : '') + '><td><span class="pn-as">' +
+    '<span class="pn-chev">' + IC.right + '</span>' + logo(h) +
     '<span class="t"><span class="tk">' + h.tk + '</span><span class="nm">' + h.nm + '</span></span></span></td>';
   o += '<td class="pn-mut">' + rub(h.qty) + NB + 'шт</td>';
   if (cols.buy) o += '<td class="pn-mut">' + rub(h.buy, 2) + (h.bond ? '%' : NB + '₽') + '</td>';
@@ -409,7 +484,9 @@ function posRow(h, cols){
   o += '<td class="pn-chg ' + (h.chg >= 0 ? 'pos' : 'neg') + '">' + (h.chg >= 0 ? '▲' : '▼') + NB + pct1(h.chg).replace('+', '') + '</td>';
   if (cols.share) o += '<td><span class="pn-share">' + pct1(h.share).replace('+', '') +
     '<i class="pn-bar"><i style="width:' + Math.min(100, h.share * 2.2).toFixed(0) + '%"></i></i></span></td>';
-  return o + '</tr>';
+  o += '</tr>';
+  if (cols.open && cols.open[h.tk]) o += detailRow(h, cols);
+  return o;
 }
 function posTable(cols, list){
   var w = cols.buy ? ['34%', '13%', '15%', '15%', '12%', '11%'] : ['32%', '13%', '', '25%', '15%', '15%'];
@@ -507,7 +584,7 @@ function cardWork(opt){
 
   /* позиции */
   o += '<div class="pn-pos"><div class="pn-pos-h"><h4>Позиции</h4><span class="pn-cnt">' + HOLD.length + '</span></div>';
-  o += posTable({buy: !narrow, share: true}, list) + '</div>';
+  o += posTable({buy: !narrow, share: true, open: opt.open}, list) + '</div>';
 
   /* подвал */
   o += '<div class="pn-foot">';
@@ -676,6 +753,23 @@ document.getElementById('notesBig').innerHTML =
   '<div class="note"><i>2</i><span>Знак ₽ — доля от кегля числа (<code>0.63em</code>), поэтому уменьшается вместе с ним и не начинает торчать. Разряды разделены неразрывным пробелом, как в <code>fmtRub()</code>.</span></div>' +
   '<div class="note"><i>3</i><span>График не резиновый по содержимому: колонки героя 46%&nbsp;/&nbsp;остаток. Миллиард просто мельчает, а спарклайн остаётся той же ширины — сравнивать две карточки в сетке по-прежнему можно.</span></div>' +
   '<div class="note"><i>4</i><span>В узком блоке сумма и график встают друг под друга, ступени те же на 4 px мельче. Миллиард там читается — это и был предел, ради которого проверка.</span></div>';
+
+document.getElementById('scrOpen').innerHTML =
+  '<div class="cap">Две строки раскрыты одновременно — акция с двумя лотами и облигация с НКД</div>' +
+  '<div style="width:660px">' + cardWork({open: {SBER: true, SU26230RMFS1: true}}) + '</div>' +
+  '<div class="pin" style="left:14px;top:580px">1</div>' +
+  '<div class="pin" style="left:14px;top:928px">2</div>' +
+  '<div class="pin" style="left:706px;top:588px">3</div>' +
+  '<div class="pin" style="left:706px;top:668px">4</div>';
+
+document.getElementById('notesOpen').innerHTML =
+  '<div class="note"><i>1</i><span><b>Лоты списком — то, чего в карточке никогда не было.</b> Сейчас лоты видно только через ⚙&nbsp;→ редактор позиции (<code>holdEditorHtml</code>, <code>portfolios-cards.js:828</code>), а в раскрытии — лишь «Средняя цена · N лотов». Данные для списка уже есть: <code>ensureLots(h)</code> отдаёт дату, цену, количество и НКД каждого лота.</span></div>' +
+  '<div class="note"><i>2</i><span>НКД показан <b>строкой под лотом</b>, а не отдельным чипом: он относится к конкретной покупке и объясняет, почему средняя цена выше цены из стакана. У акций строки просто нет.</span></div>' +
+  '<div class="note"><i>3</i><span>Справа — деньги позиции, которых нет в строке: стоимость в рублях, доход в рублях, годовых (<code>annualize()</code>) и срок владения от <code>c.firstDate</code>. Проценты изменения не дублируем — они в колонке слева.</span></div>' +
+  '<div class="note"><i>4</i><span>Действия ведут туда, где уже есть код: «Докупка» — <code>pfAddLot</code>, «Открыть в терминале» — <code>pfOpenTicker</code> → <code>openStockDetail</code>, у облигаций вместо него купоны (лента <code>.cpx-*</code>).</span></div>' +
+  '<div class="note"><i>!</i><span><b>Раскрытых строк может быть сколько угодно</b> — <code>pfToggleAssetRow</code> кладёт <code>PF.openRows[hid] = true</code> и ничего не закрывает, аккордеона нет. Поэтому карточка обязана переживать состояние «раскрыто всё сразу»: здесь это +2 строки по ~120 px.</span></div>' +
+  '<div class="note"><i>!</i><span><b>Что делать с высотой.</b> Сейчас карточка жёстко 674 px, а прирост съедает внутренний скролл <code>.pfc-massets</code> (<code>max-height:184px</code>). В новой карточке высота свободная, поэтому предлагаю: на «Обзоре» карточка <b>растёт</b> (сетка это допускает), а в блоке конструктора с заданной высотой — прежний внутренний скролл списка. Так раскрытие не ломает ни одну из раскладок.</span></div>' +
+  '<div class="note"><i>!</i><span><b>Живое обновление раскрытие не схлопнет.</b> <code>livePatchers.cards</code> правит только <code>data-live</code>-узлы, а полный своп пересобирает разметку из <code>PF.openRows</code> и восстанавливает <code>scrollTop</code> по <code>data-skey</code>. Новым узлам нужны свои ключи <code>pfh:&lt;hid&gt;</code>, иначе цифры в раскрытой части застынут.</span></div>';
 
 document.getElementById('scr03').innerHTML =
   '<div class="cap">Тёмная тема · и та же карточка в блоке конструктора</div>' +
