@@ -375,8 +375,15 @@ body.dark-mode .pfc-mtable tbody tr.pfc-mtr:hover td { background: rgba(255,255,
 body.dark-mode .pfc-mch { color: #667488; }
 body.dark-mode .pfc-mch.up { color: #aab8c8; }
 .pfc-mtt { min-width: 0; }
-.pfc-mtt b { display: block; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; font-weight: 700; letter-spacing: -0.01em; color: #0f172a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pfc-tkline { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+.pfc-mtt b { display: block; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; font-weight: 700; letter-spacing: -0.01em; color: #0f172a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 body.dark-mode .pfc-mtt b { color: #eef3f9; }
+/* два клика в одной строке (макет 05): строка раскрывает, тикер АКЦИИ уводит в
+   терминал — аффорданса (пунктир + «↗ терминал») только при наведении на сам тикер */
+.pfc-mtt b.is-go { cursor: pointer; }
+.pfc-mtt b.is-go:hover { text-decoration: underline dotted; text-underline-offset: 3px; text-decoration-color: #94a3b8; }
+.pfc-mgo { display: none; font-style: normal; font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 600; color: var(--pf-accent); white-space: nowrap; flex: none; }
+.pfc-tkline:has(.is-go:hover) .pfc-mgo { display: inline; }
 .pfc-mnm { display: block; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 500; color: #94a3b8; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 body.dark-mode .pfc-mnm { color: #67748a; }
 /* второстепенные колонки (кол-во, средняя) — приглушены; «Сейчас» — основной вес */
@@ -393,16 +400,57 @@ body.dark-mode .pfc-mchg.pos { color: #34d399; } body.dark-mode .pfc-mchg.neg { 
 .pfc-sharebar { display: block; width: 46px; height: 3px; border-radius: 2px; background: rgba(15,23,42,0.09); overflow: hidden; }
 body.dark-mode .pfc-sharebar { background: rgba(255,255,255,0.1); }
 .pfc-sharebar i { display: block; height: 100%; background: var(--pf-accent); border-radius: 2px; }
-/* строка субданных под активом (временно чипы; блок 2 заменит на лоты) */
-.pfc-mdet td { padding: 0 0 9px !important; border-bottom: 1px solid rgba(15,23,42,0.045) !important; white-space: normal; }
+/* ---- раскрытая строка (макет 05): лоты слева · деньги позиции справа · действия
+   снизу · лента купонов у облигаций. Тонированная панель с отступом под шеврон. ---- */
+.pfc-mdet td { padding: 0 0 12px !important; border-bottom: 1px solid rgba(15,23,42,0.045) !important; white-space: normal; }
 body.dark-mode .pfc-mdet td { border-bottom-color: rgba(255,255,255,0.045) !important; }
 .pfc-mtable tbody tr.pfc-mdet:last-child td { border-bottom: none !important; }
-.pfc-mdet-in { display: flex; flex-wrap: wrap; gap: 6px 8px; padding: 4px 2px 2px 24px; }
-.pfc-det-i { display: inline-flex; flex-direction: column; gap: 1px; padding: 4px 9px; border-radius: 8px; background: rgba(15,23,42,0.035); }
-body.dark-mode .pfc-det-i { background: rgba(255,255,255,0.045); }
-.pfc-det-l { font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: #94a3b8; }
-.pfc-det-v { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 800; color: #0f172a; }
-body.dark-mode .pfc-det-v { color: #eef3f9; }
+.pfc-mdet-in { display: grid; grid-template-columns: 1fr auto; gap: 14px 22px; align-items: start;
+    background: rgba(15,23,42,0.03); border-radius: 12px; padding: 12px 14px; margin-left: 24px; }
+body.dark-mode .pfc-mdet-in { background: rgba(255,255,255,0.03); }
+.pfc-mdet-l { min-width: 0; }
+.pfc-det-h { font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #94a3b8; margin-bottom: 8px; }
+/* лот: дата · кол-во · цена · сумма (сумма — чистая, НКД поясняется строкой ниже) */
+.pfc-lot { display: grid; grid-template-columns: 78px 62px 88px 1fr; gap: 0 12px; align-items: baseline;
+    font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 600; padding: 4px 0; font-variant-numeric: tabular-nums; }
+.pfc-lot + .pfc-lot { border-top: 1px solid rgba(15,23,42,0.07); }
+body.dark-mode .pfc-lot + .pfc-lot { border-color: rgba(255,255,255,0.07); }
+.pfc-lot i { font-style: normal; color: #64748b; font-weight: 500; }
+body.dark-mode .pfc-lot i { color: #8b98ad; }
+.pfc-lot u { text-decoration: none; text-align: right; color: #0f172a; }
+body.dark-mode .pfc-lot u { color: #eef3f9; }
+.pfc-lot-nkd { grid-column: 1 / -1; font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 500; color: #94a3b8; margin-top: 2px; }
+body.dark-mode .pfc-lot-nkd { color: #67748a; }
+/* деньги позиции — плитки справа */
+.pfc-facts { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; max-width: 300px; }
+.pfc-fact { border: 1px solid rgba(15,23,42,0.09); border-radius: 9px; padding: 5px 9px; min-width: 78px; }
+body.dark-mode .pfc-fact { border-color: rgba(255,255,255,0.11); }
+.pfc-fact .k { display: block; font-size: 9px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8; white-space: nowrap; }
+.pfc-fact .v { display: block; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 700; margin-top: 3px; white-space: nowrap; font-variant-numeric: tabular-nums; color: #0f172a; }
+body.dark-mode .pfc-fact .v { color: #eef3f9; }
+.pfc-fact .v.pos { color: #16a34a; } .pfc-fact .v.neg { color: #dc2626; }
+body.dark-mode .pfc-fact .v.pos { color: #34d399; } body.dark-mode .pfc-fact .v.neg { color: #f87171; }
+/* действия */
+.pfc-det-act { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; padding-top: 2px; }
+.pfc-mact { border: 1px solid rgba(15,23,42,0.09); border-radius: 9px; padding: 6px 11px; background: transparent;
+    font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #64748b; cursor: pointer;
+    transition: background 0.14s, color 0.14s, border-color 0.14s; }
+.pfc-mact:hover { background: rgba(15,23,42,0.05); color: #0f172a; border-color: rgba(15,23,42,0.16); }
+.pfc-mact.on { background: #141b26; border-color: #141b26; color: #fff; }
+body.dark-mode .pfc-mact { border-color: rgba(255,255,255,0.12); color: #9fb0c4; }
+body.dark-mode .pfc-mact:hover { background: rgba(255,255,255,0.07); color: #eef3f9; }
+body.dark-mode .pfc-mact.on { background: #e8eef7; border-color: #e8eef7; color: #0c1016; }
+/* лента ближайших купонов (кнопка «Купоны» у облигаций) */
+.pfc-coups { grid-column: 1 / -1; border-top: 1px dashed rgba(15,23,42,0.09); padding-top: 9px; }
+body.dark-mode .pfc-coups { border-color: rgba(255,255,255,0.1); }
+.pfc-coups-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.pfc-coup { border: 1px solid rgba(15,23,42,0.09); border-radius: 9px; padding: 5px 9px; }
+body.dark-mode .pfc-coup { border-color: rgba(255,255,255,0.11); }
+.pfc-coup i { display: block; font-style: normal; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; color: #94a3b8; }
+.pfc-coup b { display: block; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; margin-top: 2px; color: #0f172a; font-variant-numeric: tabular-nums; }
+body.dark-mode .pfc-coup b { color: #eef3f9; }
+.pfc-coup u { display: block; text-decoration: none; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; color: #94a3b8; margin-top: 2px; }
+.pfc-coups-note { font-size: 11px; color: #94a3b8; }
 .pfc-empty { padding: 22px 0; text-align: center; font-size: 12.5px; color: #94a3b8; }
 
 .pfc-normal { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
@@ -484,6 +532,9 @@ body.dark-mode .pfc-rebal { background: #e8eef7; border-color: #e8eef7; color: #
 .pf-card--narrow .pfc-mtable tbody tr.pfc-mtr td { font-size: 12px; }
 .pf-card--narrow .pfc-mtt b { font-size: 12px; }
 .pf-card--narrow .pfc-foot { flex-direction: column; }
+/* раскрытие в узкой карточке: лоты и деньги друг под другом, плитки влево */
+.pf-card--narrow .pfc-mdet-in { grid-template-columns: 1fr; gap: 10px; }
+.pf-card--narrow .pfc-facts { justify-content: flex-start; max-width: none; }
 
 /* ---- карточка «добавить» (компактная, в стиле новых карточек) ---- */
 .pf-add { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; min-height: 200px; cursor: pointer; border-radius: 28px; border: 1.5px dashed rgba(24,38,60,0.14); background: rgba(24,38,60,0.015); text-align: center; transition: border-color 0.18s, background 0.18s, transform 0.18s, box-shadow 0.18s; }

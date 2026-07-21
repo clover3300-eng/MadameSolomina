@@ -12,7 +12,7 @@
     var PF = window.PF;
     // импорт ядра (уже загружено):
     var BOND_PRICE_TIP = PF.BOND_PRICE_TIP, COLORS = PF.COLORS, MAX_CARDS = PF.MAX_CARDS, aggHolding = PF.aggHolding, attr = PF.attr, calcHold = PF.calcHold;
-    var calcPf = PF.calcPf, clamp = PF.clamp, colorVal = PF.colorVal, compositionFrom = PF.compositionFrom, dayDelta = PF.dayDelta, dq = PF.dq;
+    var calcPf = PF.calcPf, clamp = PF.clamp, colorVal = PF.colorVal, compositionFrom = PF.compositionFrom, dayDelta = PF.dayDelta, dq = PF.dq, jsArg = PF.jsArg;
     var drawPfChart = PF.drawPfChart, ensureLots = PF.ensureLots, ensureQuotes = PF.ensureQuotes, esc = PF.esc, findHold = PF.findHold, findPf = PF.findPf;
     var fmtPct = PF.fmtPct, fmtPrice = PF.fmtPrice, fmtQty = PF.fmtQty, fmtRub = PF.fmtRub, genId = PF.genId, importName = PF.importName;
     var loadPfChart = PF.loadPfChart, lookupHistNkd = PF.lookupHistNkd, lookupHistPrice = PF.lookupHistPrice, makePortfolio = PF.makePortfolio, noQuoteCell = PF.noQuoteCell, pad2 = PF.pad2;
@@ -310,6 +310,12 @@
                     title: noQ ? noQ.tip : (h.type === 'bond' ? BOND_PRICE_TIP : null) });
                 PF.liveSet('pfh:' + h.id + ':chg', { text: ch.txt, cls: 'pfc-mchg' + (ch.cls ? ' ' + ch.cls : '') });
                 PF.liveSet('pfh:' + h.id + ':share', { html: shareCellHtml(fullV > 0 ? hc.value / fullV * 100 : 0) });
+                // деньги позиции в раскрытой строке (узлы есть только у открытых строк)
+                PF.liveSet('pfh:' + h.id + ':dval', { text: fmtRub(hc.value) });
+                PF.liveSet('pfh:' + h.id + ':dpnl', { text: signRub(hc.pnl), cls: 'v ' + (hc.pnl >= 0 ? 'pos' : 'neg') });
+                PF.liveSet('pfh:' + h.id + ':dann', {
+                    text: hc.annual != null ? fmtPct(hc.annual) : '—',
+                    cls: 'v' + (hc.annual != null ? (hc.annual >= 0 ? ' pos' : ' neg') : '') });
             });
         });
     };
@@ -343,8 +349,11 @@
     }
     // Строка актива: тикер с названием · кол-во · средняя · сейчас · изм. · доля.
     // Буквенных плашек и чипов типа больше нет — класс актива читается по подписи
-    // (имя ОФЗ начинается с «ОФЗ», ISIN ни с чем не спутать). По КЛИКУ строка
-    // раскрывает субданные отдельной строкой под ней (блок 2 перепишет их на лоты).
+    // (имя ОФЗ начинается с «ОФЗ», ISIN ни с чем не спутать).
+    // ДВА клика в одной строке (макет 05): вся строка раскрывает субданные, тикер
+    // АКЦИИ уводит в терминал (stopPropagation, чтобы не дёргать раскрытие);
+    // аффорданса (пунктир + «↗ терминал») — только при наведении на сам тикер.
+    // У облигаций тикер некликабелен: терминала для ОФЗ нет, в подвкладке так же.
     function pfMiniRowHtml(x, pid, fullV, narrow) {
         var h = x.h, c = x.c, isB = h.type === 'bond';
         var open = !!PF.openRows[h.id];
@@ -355,10 +364,13 @@
         var noQ = c.curSrc === 'buy' ? noQuoteCell(h) : null;
         var ch = chgParts(c, noQ);
         var nm = assetDisplayName(h);
+        var tk = isB
+            ? '<b>' + esc(h.ticker) + '</b>'
+            : '<b class="is-go" onclick="pfOpenTicker(\'' + jsArg(h.ticker) + '\');event.stopPropagation()" title="Открыть в терминале">' + esc(h.ticker) + '</b><i class="pfc-mgo">↗ терминал</i>';
         var row = '<tr class="pfc-mtr' + (open ? ' open' : '') + '" data-hid="' + h.id + '" onclick="pfToggleAssetRow(\'' + pid + '\',\'' + h.id + '\')">' +
             '<td class="pfc-mc-as"><span class="pfc-mtk">' +
                 '<svg class="pfc-mch' + (open ? ' up' : '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>' +
-                '<span class="pfc-mtt"><b>' + esc(h.ticker) + '</b>' + (nm && nm !== h.ticker ? '<span class="pfc-mnm">' + esc(nm) + '</span>' : '') + '</span>' +
+                '<span class="pfc-mtt"><span class="pfc-tkline">' + tk + '</span>' + (nm && nm !== h.ticker ? '<span class="pfc-mnm">' + esc(nm) + '</span>' : '') + '</span>' +
             '</span></td>' +
             '<td class="pfc-mqty">' + fmtQty(c.qty) + ' шт</td>' +
             (narrow ? '' : '<td class="pfc-mbuy"' + ptip + '>' + fmtPrice(c.buy) + '</td>') +
@@ -369,7 +381,7 @@
             '<td class="pfc-mchg' + (ch.cls ? ' ' + ch.cls : '') + '" data-live="pfh:' + h.id + ':chg">' + ch.txt + '</td>' +
             (narrow ? '' : '<td class="pfc-mshare" data-live="pfh:' + h.id + ':share">' + shareCellHtml(fullV > 0 ? c.value / fullV * 100 : 0) + '</td>') +
         '</tr>';
-        return open ? row + pfMiniDetailRowHtml(h, c, narrow ? 4 : 6) : row;
+        return open ? row + pfMiniDetailRowHtml(h, c, narrow ? 4 : 6, pid) : row;
     }
     // Полное название актива: своё имя (если отличается от тикера) → таблица акций →
     // гугл-таблица облигаций (bonds из data.js; тикер портфеля может быть коротким ISIN).
@@ -388,19 +400,102 @@
         }
         return h.name || h.ticker;
     }
-    // строка субданных под активом — ВРЕМЕННО прежние чипы (дата/цена/НКД); блок 2
-    // плана заменит содержимое целиком: лоты, НКД строкой, деньги позиции, действия.
+    // ---- раскрытая строка (макет 05): ТОЛЬКО то, чего нет в самой строке ----
+    // Слева список лотов (дата · кол-во · цена · сумма) из ensureLots (через calcHold),
+    // НКД у облигаций — строкой под лотом; справа деньги позиции (стоимость, доход ₽,
+    // годовых, срок от первой покупки); снизу действия. Старые чипы не перенесены:
+    // название и средняя цена теперь в самой строке.
     // span — число колонок родительской таблицы (6 на «Обзоре», 4 в узком виде)
-    function pfMiniDetailRowHtml(h, c, span) {
-        var isB = h.type === 'bond', multi = c.lotCount > 1;
-        // при нескольких лотах показываем СРЕДНИЕ (взвешенные) дату и цену покупки, при одном — фактические
-        var dateLbl = multi ? 'Средняя дата' : 'Куплен';
-        var dateVal = multi ? ruDate(c.avgDate) : ruDate(c.firstDate);
-        var priceLbl = multi ? 'Средняя цена · ' + c.lotCount + ' ' + PF.plural(c.lotCount, 'лот', 'лота', 'лотов') : 'Цена покупки';
-        var det = '<span class="pfc-det-i"><span class="pfc-det-l">' + dateLbl + '</span><span class="pfc-det-v">' + dateVal + '</span></span>' +
-            '<span class="pfc-det-i"><span class="pfc-det-l">' + priceLbl + '</span><span class="pfc-det-v">' + fmtPrice(c.buy) + '</span></span>' +
-            (isB ? '<span class="pfc-det-i"><span class="pfc-det-l">' + (multi ? 'Средний НКД' : 'НКД при покупке') + '</span><span class="pfc-det-v">' + (c.nkd > 0 ? fmtPrice(c.nkd) : '0 ₽') + '</span></span>' : '');
-        return '<tr class="pfc-mdet" data-hid="' + h.id + '"><td colspan="' + (span || 6) + '"><div class="pfc-mdet-in">' + det + '</div></td></tr>';
+    function pfMiniDetailRowHtml(h, c, span, pid) {
+        var isB = h.type === 'bond';
+        var p = findPf(pid), isBrk = !!(p && p.broker);
+        var lots = c.lots || [];
+        var lotRows = lots.map(function (l) {
+            var q = +l.qty || 0, pr = +l.buyPrice || 0;
+            // НКД — сверх чистой цены лота: в сумме лота его нет, он входит во «Вложено»
+            var nkd = (isB && +l.nkd > 0)
+                ? '<span class="pfc-lot-nkd">НКД при покупке ' + fmtPrice(+l.nkd) + '/шт — сверх цены, входит во «Вложено»</span>' : '';
+            return '<div class="pfc-lot"><i>' + ruDate(l.buyDate) + '</i><span>' + fmtQty(q) + ' шт</span><span>' + fmtPrice(pr) + '</span><u>' + fmtRub(q * pr) + '</u>' + nkd + '</div>';
+        }).join('');
+        function fact(k, v, cls, live) {
+            return '<div class="pfc-fact"><span class="k">' + k + '</span><span class="v' + (cls ? ' ' + cls : '') + '"' +
+                (live ? ' data-live="' + live + '"' : '') + '>' + v + '</span></div>';
+        }
+        // срок владения — от ПЕРВОЙ покупки (c.firstDate), не от взвешенной даты
+        var t0 = Date.parse(c.firstDate || '');
+        var days = isFinite(t0) ? Math.max(1, Math.floor((Date.now() - t0) / 864e5)) : null;
+        // data-live: деньги позиции живут на фоновом тике (livePatchers.cards) —
+        // раскрытие может висеть открытым сколько угодно, цифры не должны застыть
+        var facts = fact('Стоимость', fmtRub(c.value), '', 'pfh:' + h.id + ':dval') +
+            fact('Доход', signRub(c.pnl), c.pnl >= 0 ? 'pos' : 'neg', 'pfh:' + h.id + ':dpnl') +
+            fact('Годовых', c.annual != null ? fmtPct(c.annual) : '—', c.annual != null ? (c.annual >= 0 ? 'pos' : 'neg') : '', 'pfh:' + h.id + ':dann') +
+            fact('В портфеле', days != null ? days + ' дн.' : '—', '');
+        // Действия: «Докупка» → pfAddLot (у брокерской карточки скрыта — лоты затёр бы
+        // следующий синк); у акций «Открыть в терминале» → pfOpenTicker, у облигаций
+        // вместо терминала — лента ближайших купонов (pfToggleCoupons ниже).
+        // «Продать» из макета не проведён: ручной продажи в проекте нет (см. план).
+        var acts = '<div class="pfc-det-act">' +
+            (isBrk ? '' : '<button class="pfc-mact" onclick="pfAddLot(\'' + pid + '\',\'' + h.id + '\')">Докупка</button>') +
+            (isB ? '<button class="pfc-mact' + (PF.openCoup[h.id] ? ' on' : '') + '" onclick="pfToggleCoupons(\'' + pid + '\',\'' + h.id + '\')">Купоны</button>'
+                 : '<button class="pfc-mact" onclick="pfOpenTicker(\'' + jsArg(h.ticker) + '\')">Открыть в терминале</button>') +
+        '</div>';
+        var coups = (isB && PF.openCoup[h.id]) ? couponsStripHtml(h, c, pid) : '';
+        return '<tr class="pfc-mdet" data-hid="' + h.id + '"><td colspan="' + (span || 6) + '"><div class="pfc-mdet-in">' +
+            '<div class="pfc-mdet-l"><div class="pfc-det-h">' + (lots.length > 1 ? 'Лоты · ' + lots.length : 'Покупка') + '</div>' + lotRows + '</div>' +
+            '<div class="pfc-facts">' + facts + '</div>' +
+            acts + coups +
+        '</div></td></tr>';
+    }
+
+    // ---- лента ближайших купонов облигации (кнопка «Купоны» в раскрытии) ----
+    // Расписание — то же, что питает «Календарь выплат» (coupSched/ensureSchedule,
+    // ядро); суммы — на ТЕКУЩЕЕ количество бумаг. Раскрытие живёт в PF.openCoup и
+    // переживает полный ре-рендер (pfMiniDetailRowHtml рисует ленту сам).
+    PF.openCoup = {};   // hid → лента купонов раскрыта в субданных
+    function couponsStripHtml(h, c, pid) {
+        function note(txt) { return '<div class="pfc-coups"><div class="pfc-det-h">Ближайшие купоны</div><div class="pfc-coups-note">' + txt + '</div></div>'; }
+        var full = PF.fullBondId(h.ticker);
+        if (!(full in PF.coupSched)) {
+            PF.ensureSchedule('bond', full);
+            coupWait(pid, h.id, 12);   // расписание едет с MOEX — дорисуем, когда придёт
+            return note('Загружаем расписание купонов с MOEX…');
+        }
+        var sched = PF.coupSched[full];
+        if (!sched) return note('MOEX не отдаёт расписание по этой бумаге');
+        var today = todayStr();
+        var next = sched.filter(function (cp) { return cp.d > today; }).slice(0, 4);
+        if (!next.length) return note('Будущих купонов в расписании нет');
+        var chips = next.map(function (cp) {
+            return '<span class="pfc-coup"><i>' + ruDate(cp.d) + '</i><b>' + fmtPrice(cp.v) + '/шт</b><u>' + fmtRub(cp.v * (c.qty || 0)) + ' на ' + fmtQty(c.qty || 0) + ' шт</u></span>';
+        }).join('');
+        return '<div class="pfc-coups"><div class="pfc-det-h">Ближайшие купоны</div><div class="pfc-coups-row">' + chips + '</div></div>';
+    }
+    // поллинг прихода расписания: ensureSchedule не умеет колбэков, а лента должна
+    // дорисоваться сама; гаснет, если ленту успели свернуть или бумага исчезла
+    function coupWait(pid, hid, tries) {
+        setTimeout(function () {
+            if (!PF.openCoup[hid]) return;
+            var p = findPf(pid), h = p && findHold(p, hid); if (!h) return;
+            if (PF.fullBondId(h.ticker) in PF.coupSched) { repaintDetailRows(pid, hid); return; }
+            if (tries > 0) coupWait(pid, hid, tries - 1);
+        }, 700);
+    }
+    window.pfToggleCoupons = function (pid, hid) {
+        if (PF.openCoup[hid]) delete PF.openCoup[hid]; else PF.openCoup[hid] = true;
+        repaintDetailRows(pid, hid);
+    };
+    // точечная пересборка раскрытых субданных ОДНОЙ бумаги (все экземпляры карточки) —
+    // без PF.renderPortfolios, иначе мигают мини-графики всех карточек
+    function repaintDetailRows(pid, hid) {
+        var p = findPf(pid); if (!p) return;
+        var h = findHold(p, hid); if (!h) return;
+        var c = calcHold(h);
+        Array.prototype.forEach.call(document.querySelectorAll('.pfc-mdet[data-hid="' + hid + '"]'), function (det) {
+            var span = det.querySelector('td') ? det.querySelector('td').colSpan : 6;
+            var tmp = document.createElement('tbody');
+            tmp.innerHTML = pfMiniDetailRowHtml(h, c, span, pid);
+            det.parentNode.replaceChild(tmp.firstChild, det);
+        });
     }
 
     // ---- настройки/редактор (дропдаун ⚙): «спокойный список» ----
@@ -1652,7 +1747,7 @@
             if (willOpen && !hasDet) {
                 var tmp = document.createElement('tbody');
                 // colspan по фактическому числу колонок строки: 6 на «Обзоре», 4 в узком виде
-                tmp.innerHTML = pfMiniDetailRowHtml(h, c, row.cells.length);
+                tmp.innerHTML = pfMiniDetailRowHtml(h, c, row.cells.length, pid);
                 row.parentNode.insertBefore(tmp.firstChild, row.nextSibling);
             } else if (!willOpen && hasDet) {
                 next.parentNode.removeChild(next);
@@ -1873,7 +1968,11 @@
         if (brokerLocked(pid)) return;
         var p = findPf(pid); if (!p) return; var h = findHold(p, hid); if (!h) return;
         ensureLots(h).push({ id: genId('l'), buyDate: todayStr(), buyPrice: 0, qty: 0, nkd: 0, priceFromApi: false, nkdFromApi: false });
-        PF.editHold[hid] = true; saveStore(); PF.pfInvalidateCharts(pid); PF.renderPortfolios();
+        PF.editHold[hid] = true;
+        // «Докупка» из раскрытой строки карточки: настройки ещё закрыты — открываем ⚙
+        // этого портфеля сразу с раскрытым редактором актива (свежий лот сверху)
+        if (PF.openMenu !== pid) { PF.openMenu = pid; PF.menuJustOpened = true; PF.colorsOpen = false; PF.delArm = false; PF.addOpen = false; }
+        saveStore(); PF.pfInvalidateCharts(pid); PF.renderPortfolios();
     };
     window.pfRemoveLot = function (pid, hid, lotId) {
         if (brokerLocked(pid)) return;
