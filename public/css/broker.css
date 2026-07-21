@@ -1872,10 +1872,13 @@ body.dark-mode .btr-keys-note { background: rgba(52, 211, 153, 0.12); color: #6e
 .sx-chart-note { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 12.5px; color: #94a3b8; }
 .sx-line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .sx-line.up { stroke: #16a34a; } .sx-line.dn { stroke: #dc2626; }
-.sx-fill { stroke: none; }
-.sx-fill.up { fill: rgba(22, 163, 74, 0.1); } .sx-fill.dn { fill: rgba(220, 38, 38, 0.09); }
+/* заливка — инлайновым градиентом из sxChartHtml (макет 04), классов у неё нет */
 .sx-ax { stroke: rgba(15, 23, 42, 0.09); }
 .sx-axt { font-family: var(--font-num); font-size: 9.5px; fill: #8a97a8; }
+/* точка-конец линии: HTML поверх svg — растянутый viewBox не искажает круг */
+.sx-dot { position: absolute; width: 8px; height: 8px; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+.sx-dot.up { background: #16a34a; box-shadow: 0 0 0 5px rgba(22, 163, 74, 0.16); }
+.sx-dot.dn { background: #dc2626; box-shadow: 0 0 0 5px rgba(220, 38, 38, 0.14); }
 
 /* «Что нужно знать» — ТРИ КОЛОНКИ, а не список: три факта равнозначны */
 .sx-know {
@@ -1949,7 +1952,11 @@ body.dark-mode .btr-keys-note { background: rgba(52, 211, 153, 0.12); color: #6e
 .sx-tax span { font-size: 11.5px; line-height: 1.5; color: #92610a; }
 .sx-alt {
     display: block; width: 100%; text-align: center; border: 0; background: none; cursor: pointer;
-    font-family: var(--font-ui); font-size: 12.5px; color: #4453ef; margin-top: 23px; flex: none;
+    font-family: var(--font-ui); font-size: 12.5px; color: #4453ef; flex: none;
+    /* два auto-шва (здесь и у .sx-cta) делят свободную высоту пополам: раньше
+       весь воздух карточки сваливался одной ямой перед кнопкой (виднее всего
+       при пустой сумме); padding — гарантированный зазор при тесноте */
+    margin-top: auto; padding-top: 20px;
 }
 .sx-alt:hover { text-decoration: underline; }
 /* margin-top:auto — кнопка всегда у нижней кромки карточки, как в макете */

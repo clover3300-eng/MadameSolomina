@@ -3448,7 +3448,15 @@
     }
     function rawSimple() {
         if (simpleState === null) {
-            try { simpleState = localStorage.getItem(SIMPLE_KEY) === '1'; } catch (e) { simpleState = false; }
+            // НОВИЧОК: ключа ещё нет — первый вход в «Торговлю» открывает
+            // «Просто» (решение владельца продукта 2026-07-21). Терминал —
+            // в одном клике: переключатель «Просто | Терминал» стоит в полосе.
+            // Любой явный выбор (переключатель, кнопка «Терминал», выход
+            // «← Портфели») записывает ключ — и дефолт больше не спорит.
+            try {
+                var v = localStorage.getItem(SIMPLE_KEY);
+                simpleState = v === null ? true : v === '1';
+            } catch (e) { simpleState = false; }
         }
         return simpleState;
     }
@@ -3974,12 +3982,24 @@
                 marks += '<line x1="' + x + '" y1="' + base + '" x2="' + x + '" y2="' + (base + 4) + '" class="sx-ax"/>' +
                     '<text x="' + x + '" y="' + (H - 4) + '" text-anchor="middle" class="sx-axt">' + esc(lab) + '</text>';
             }
+            // заливка — градиентом к прозрачному (макет 04): ровная плита цвета
+            // на большом графике давила, особенно красная. Точка-конец — HTML
+            // поверх svg: preserveAspectRatio="none" растянул бы круг в эллипс.
+            var gc = up ? '#16a34a' : '#dc2626';
+            var lastX = (X(data.length - 1) / W * 100).toFixed(2);
+            var lastY = (Y(data[data.length - 1].v) / H * 100).toFixed(2);
             body = '<div class="sx-chart"><svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" ' +
                 'role="img" aria-label="График цены за период ' + esc(p[1].toLowerCase()) + '">' +
-                '<path d="' + area + '" class="sx-fill ' + (up ? 'up' : 'dn') + '"/>' +
+                '<defs><linearGradient id="sxGrad" x1="0" y1="0" x2="0" y2="1">' +
+                    '<stop offset="0" stop-color="' + gc + '" stop-opacity="0.22"/>' +
+                    '<stop offset="1" stop-color="' + gc + '" stop-opacity="0"/>' +
+                '</linearGradient></defs>' +
+                '<path d="' + area + '" style="fill:url(#sxGrad)"/>' +
                 '<path d="' + line + '" class="sx-line ' + (up ? 'up' : 'dn') + '"/>' +
                 '<line x1="0" y1="' + base + '" x2="' + W + '" y2="' + base + '" class="sx-ax"/>' + marks +
-            '</svg></div>';
+            '</svg>' +
+            '<i class="sx-dot ' + (up ? 'up' : 'dn') + '" style="left:' + lastX + '%;top:' + lastY + '%"></i>' +
+            '</div>';
         }
         return tabs + body;
     }
@@ -4096,6 +4116,12 @@
         var rows = list.map(function (p) {
             var pd = p.pnl, pu = pd >= 0;
             var col = tickerHue(p.ticker);
+            // процент рядом с рублями — как в макете 04: «+1 982,40 ₽ · +3,13%»,
+            // без него не понять, много это или мало для этой позиции
+            var pct = p.avg > 0 ? Math.abs(p.last / p.avg - 1) * 100 : 0;
+            var pctTxt = pct > 0
+                ? ' · ' + (pu ? '+' : '−') + pct.toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + '%'
+                : '';
             return '<div class="sx-mrow">' +
                 '<span class="sx-mco">' +
                     '<span class="sx-mlogo" style="background:' + col + '1a;color:' + col + '">' +
@@ -4106,7 +4132,7 @@
                 '<span class="sx-mcell"><span>вложено</span><b>' + fmtKop(p.avg * p.qty) + '</b></span>' +
                 '<span class="sx-mcell"><span>сейчас стоит</span><b>' + fmtKop(p.val) + '</b></span>' +
                 '<span class="sx-mcell"><span>заработано</span><b class="' + (pu ? 'up' : 'dn') + '">' +
-                    (pu ? '+' : '−') + fmtKop(Math.abs(pd)) + '</b></span>' +
+                    (pu ? '+' : '−') + fmtKop(Math.abs(pd)) + pctTxt + '</b></span>' +
                 '<span class="sx-mact">' +
                     '<button type="button" class="sx-mbtn" onclick="pftSxPick(\'' + jsArg(p.uid) + '\',\'sell\')">Продать</button>' +
                     '<button type="button" class="sx-mbtn buy" onclick="pftSxPick(\'' + jsArg(p.uid) + '\',\'buy\')">Купить ещё</button>' +
