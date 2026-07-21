@@ -182,6 +182,19 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .pn-mov .p{font-family:var(--fN);font-size:12px;font-weight:700}
 .pn-mov .p.pos{color:var(--grn)} .pn-mov .p.neg{color:var(--red)}
 
+/* ---------- имитация маски «Скрывать суммы» ----------
+   в проекте это .sum-mask + body.sums-hidden: filter:blur(7px) без transition */
+.mask{filter:blur(7px);border-radius:5px;user-select:none}
+.pn-tbl td .mask,.pn-val .mask{display:inline-block}
+/* метки-обводки: outline не влияет ни на раскладку, ни на scrollWidth */
+.leak{outline:1.5px dashed var(--red);outline-offset:3px;border-radius:4px}
+.over{outline:1.5px dashed var(--amb);outline-offset:3px;border-radius:4px}
+.lg{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:14px;font-size:12px;color:var(--mut)}
+.lg span{display:inline-flex;align-items:center;gap:7px}
+.lg i{width:14px;height:10px;border-radius:3px;flex:none}
+.lg i.l{border:1.5px dashed var(--red)} .lg i.o{border:1.5px dashed var(--amb)}
+.lg i.m{background:color-mix(in srgb,var(--ink) 22%,transparent);filter:blur(2px)}
+
 .demo{display:grid;gap:18px}
 .demo-t{font-size:12px;font-weight:700;color:var(--ink);margin-bottom:4px}
 .demo-t u{text-decoration:none;font-weight:500;color:var(--mut);margin-left:7px}
@@ -431,6 +444,14 @@ tr.open .pn-chev{transform:rotate(90deg);color:var(--mut)}
     <div class="notes" id="notesDay"></div>
   </section>
 
+  <!-- ================= 10. СКРЫВАТЬ СУММЫ ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">10</span><h2>Режим «Скрывать суммы»</h2><span class="mk-tag warn">нашлись дыры</span></div>
+    <div class="mk-sub"><code>sums-privacy.js</code> вешает <code>.sum-mask</code> на каждый <b>листовой</b> элемент, чей текст — «число + ₽», и размывает его на 7&nbsp;px. Правило простое и до сих пор работало. Но новая карточка ломает его дважды: в двух самых крупных местах маска <b>не сработает вовсе</b>, а в двух других сработает <b>там, где не нужно</b>. Слева — как ляжет сейчас, справа — что предлагаю.</div>
+    <div class="scroller"><div class="scr" id="scrPriv"></div></div>
+    <div class="notes" id="notesPriv"></div>
+  </section>
+
 </div>
 
 <script>
@@ -508,6 +529,7 @@ var IC = {
   right:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
   gear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.4a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H1a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 2.6 7a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H7a1.7 1.7 0 0 0 1-1.5V1a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V7a1.7 1.7 0 0 0 1.5 1H23a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" transform="scale(.86) translate(2 2)"/></svg>',
   eye:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>',
+  eyeoff:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" style="width:11px;height:11px;vertical-align:-1px;margin-right:4px"><path d="M3 3l18 18"/><path d="M10.6 6.2A9.9 9.9 0 0 1 12 6c6.4 0 10 6 10 6a17 17 0 0 1-3.2 3.9M6.6 6.7A17 17 0 0 0 2 12s3.6 6 10 6a9.7 9.7 0 0 0 4.1-.9"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>',
   copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="12" height="12" rx="2.5"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>',
   chart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>',
   scale:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 4v16M4 8h16M6 8l-3 6h6zM18 8l-3 6h6z"/></svg>'
@@ -913,6 +935,89 @@ function stateCard(kind){
   return o + '</div>';
 }
 
+/* ================= «Скрывать суммы» ================= */
+function m(txt, on, mark){ return on ? '<span class="mask' + (mark ? ' ' + mark : '') + '">' + txt + '</span>'
+                                     : (mark ? '<span class="' + mark + '">' + txt + '</span>' : txt); }
+
+function privRow(h, fix){
+  /* now: маска ложится на цены (число+₽), количество остаётся открытым
+     fix: наоборот — цены публичные и открыты, закрыто количество */
+  var price = function(v){ return rub(v, 2) + (h.bond ? '%' : NB + '₽'); };
+  var maskPrice = !fix && !h.bond;                 // у ОФЗ цена в % — под маску не попадает
+  var o = '<tr><td><span class="pn-as bare"><span class="pn-chev">' + IC.right + '</span>' +
+    '<span class="t"><span class="tkline"><span class="tk">' + h.tk + '</span></span>' +
+    '<span class="nm">' + h.nm + '</span></span></span></td>';
+  o += '<td class="pn-mut">' + m(rub(h.qty) + NB + 'шт', fix, fix ? '' : 'leak') + '</td>';
+  o += '<td class="pn-mut">' + m(price(h.buy), maskPrice, maskPrice ? 'over' : '') + '</td>';
+  o += '<td>' + m(price(h.cur), maskPrice, maskPrice ? 'over' : '') + '</td>';
+  o += '<td class="pn-chg pos">▲' + NB + pct1(h.chg).replace('+', '') + '</td>';
+  o += '<td><span class="pn-share">' + pct1(h.share).replace('+', '') +
+       '<i class="pn-bar"><i style="width:' + Math.min(100, h.share * 2.2).toFixed(0) + '%"></i></i></span></td></tr>';
+  return o;
+}
+
+function privDetail(h, fix){
+  var o = '<tr class="pn-det bare"><td colspan="6"><div class="pn-det-in">';
+  o += '<div><div class="pn-det-h">Лоты · ' + h.lots.length + '</div>';
+  h.lots.forEach(function(l){
+    o += '<div class="pn-lot"><i>' + l.d + '</i>' +
+         '<span>' + m(rub(l.q) + NB + 'шт', fix) + '</span>' +
+         '<span>' + m(rub(l.p, 2) + NB + '₽', !fix) + '</span>' +
+         '<u>' + m(rub(l.q * l.p) + NB + '₽', true) + '</u></div>';
+  });
+  o += '</div><div class="pn-facts">';
+  o += '<div class="pn-fact"><div class="k">Стоимость</div><div class="v">' + m(rub(h.val) + NB + '₽', true) + '</div></div>';
+  o += '<div class="pn-fact"><div class="k">Доход</div><div class="v pos">' + m('+' + rub(h.pnl) + NB + '₽', true) + '</div></div>';
+  o += '<div class="pn-fact"><div class="k">Годовых</div><div class="v pos">' + pct1(h.annual) + '</div></div>';
+  o += '<div class="pn-fact"><div class="k">В портфеле</div><div class="v">' + h.days + NB + 'дн.</div></div>';
+  o += '</div></div></td></tr>';
+  return o;
+}
+
+function privCard(fix){
+  var o = '<div class="pn">';
+  /* шапка: в исправленном варианте появляется индикатор режима */
+  o += '<div class="pn-top"><div class="pn-name"><em></em>Портфель 2</div>';
+  if (fix) o += '<span class="pn-flag">' + IC.eyeoff + ' Суммы скрыты</span>';
+  o += '<div class="pn-top-r"><span class="pn-seg"><b class="on">30д</b><b>Год</b><b>Всё</b></span>' +
+       '<span class="pn-ico">' + IC.gear + '</span></div></div>';
+
+  /* герой */
+  o += '<div class="pn-hero"><div><div class="pn-lbl">Стоимость портфеля</div>';
+  o += fix ? '<div class="pn-val"><span class="mask">' + rub(VALUE) + NB + '₽</span></div>'
+           : '<div class="pn-val leak">' + rub(VALUE) + '<small>' + NB + '₽</small></div>';
+  o += fix ? '<div class="pn-delta pos">▲' + NB + '<span class="mask">' + rub(6411) + NB + '₽</span> (3,19%)<u>за 30 дней</u></div>'
+           : '<div class="pn-delta pos leak">▲' + NB + rub(6411) + NB + '₽ (3,19%)<u>за 30 дней</u></div>';
+  o += '</div><div class="pn-spark">' + spark(420, 148, SERIES, '#16a34a', false, fix ? 'pv2' : 'pv1') + '</div></div>';
+
+  /* KPI */
+  o += '<div class="pn-kpis" style="grid-template-columns:repeat(4,1fr)">';
+  o += '<div class="pn-kpi"><div class="k">Вложено</div><div class="v">' + m(rub(INVEST) + NB + '₽', true) +
+       '</div><div class="s">' + m(rub(CASH) + NB + '₽', true) + ' свободно</div></div>';
+  o += '<div class="pn-kpi"><div class="k">Доход</div><div class="v pos">' + m('+' + rub(PNL) + NB + '₽', true) +
+       '</div><div class="s">за ' + plural(DAYS, 'день', 'дня', 'дней') + '</div></div>';
+  o += '<div class="pn-kpi"><div class="k">Доходность</div><div class="v pos">' + pct(PNLPCT) +
+       '</div><div class="s">' + pct1(ANNUAL) + ' годовых</div></div>';
+  o += '<div class="pn-kpi"><div class="k">За день</div><div class="v pos">' + m('+' + rub(DAY) + NB + '₽', true) +
+       '</div><div class="s">' + pct(DAYPCT) + ' сегодня</div></div>';
+  o += '</div>';
+
+  o += allocBar(ALLOC, false, true);
+
+  /* позиции */
+  o += '<div class="pn-pos"><div class="pn-pos-h"><h4>Позиции</h4><span class="pn-cnt">6</span></div>';
+  o += '<table class="pn-tbl"><colgroup><col style="width:31%"><col style="width:13%"><col style="width:16%">' +
+       '<col style="width:16%"><col style="width:12%"><col style="width:12%"></colgroup><thead><tr>' +
+       '<th>Актив</th><th>Кол-во</th><th>Средняя</th><th>Сейчас</th><th>Изм.</th><th>Доля</th></tr></thead><tbody>';
+  o += privRow(HOLD[0], fix) + privDetail(HOLD[0], fix);
+  o += privRow(HOLD[1], fix);
+  o += privRow(HOLD[3], fix);
+  o += '</tbody></table></div>';
+  o += '<div class="pn-foot"><span class="pn-btn all" style="flex:1.3">Все позиции ' + IC.right + '</span>' +
+       '<span class="pn-btn pri">' + IC.scale + ' Ребаланс</span></div>';
+  return o + '</div>';
+}
+
 /* ================= варианты сегмента «День» ================= */
 var MOVERS = [
   {t:'SBER', n:'Сбербанк', p:1.2}, {t:'GAZP', n:'Газпром', p:2.1}, {t:'LKOH', n:'Лукойл', p:-0.4}
@@ -1144,6 +1249,24 @@ document.getElementById('notesDay').innerHTML =
   '<div class="note"><i>B</i><span>Если «День» всё-таки нужен, он должен показывать <b>не график, а движения бумаг за сегодня</b> — это единственные дневные данные, которые у нас есть (<code>quotes[ticker].chgPct</code>, а самое сильное движение уже считает <code>topMover</code>). Честно и полезно, но это второй тип содержимого в одном месте: график на трёх периодах и список на четвёртом.</span></div>' +
   '<div class="note"><i>C</i><span>Оставить кнопку неактивной — худший из трёх. Она занимает место, привлекает клик и отвечает отказом; «появится позже» в интерфейсе почти всегда означает «не появится».</span></div>' +
   '<div class="note"><i>!</i><span>То же ограничение стоит помнить для периода «Год» и «Всё» у молодого портфеля: если он живёт 40 дней, кривой за год нет. Правило одно — <b>период, для которого нет данных, не показываем вовсе</b>, а не показываем пустым.</span></div>';
+
+document.getElementById('scrPriv').innerHTML =
+  '<div class="lg"><span><i class="m"></i>размыто маской</span>' +
+  '<span><i class="l"></i>осталось открытым, хотя это капитал</span>' +
+  '<span><i class="o"></i>размыто зря — цена публичная</span></div>' +
+  '<div style="display:grid;grid-template-columns:repeat(2,660px);gap:24px;align-items:start;justify-content:start">' +
+    '<div><div class="demo-t">Как ляжет сейчас<u>по нынешнему правилу «число + ₽»</u></div>' + privCard(false) + '</div>' +
+    '<div><div class="demo-t">Как предлагаю<u>прячем деньги, а не цены</u></div>' + privCard(true) + '</div>' +
+  '</div>';
+
+document.getElementById('notesPriv').innerHTML =
+  '<div class="note"><i>1</i><span><b>Главная сумма не размоется.</b> В герое знак ₽ вынесен в <code>&lt;small&gt;</code>, чтобы быть мельче числа, — значит <code>.pn-val</code> уже <b>не лист</b> (<code>isMoneyLeaf</code> отсекает всё, у чего есть <code>firstElementChild</code>), а в самом <code>&lt;small&gt;</code> текст « ₽» без цифры и под <code>MONEY</code> не подходит. Самое крупное число карточки останется открытым при включённом режиме. То же с дельтой под ним: внутри <code>&lt;u&gt;за 30 дней&lt;/u&gt;</code>, тоже не лист.</span></div>' +
+  '<div class="note"><i>2</i><span><b>Это не теория, а свойство разметки.</b> Любая вёрстка, где к сумме прижат тег — знак валюты, подпись, стрелка, — молча выпадает из-под маски. Поэтому предлагаю не подгонять вёрстку под регулярку, а <b>помечать деньги явно</b>: атрибут на элементе, который модуль уважает наравне со своим правилом. Тогда маска перестаёт зависеть от того, обернули мы ₽ в тег или нет.</span></div>' +
+  '<div class="note"><i>3</i><span><b>Цены размывать бессмысленно.</b> «Средняя» и «Сейчас» — публичные котировки Мосбиржи, их видит кто угодно. Модуль это уже понимает и пропускает целиком вкладку «Рынок» (<code>SKIP_SEL</code>), но в карточке портфеля те же самые числа размывает. В новой карточке ценовых колонок стало две, плюс цены лотов в раскрытии — под маской таблица перестаёт читаться, ничего не пряча.</span></div>' +
+  '<div class="note"><i>4</i><span><b>Заодно вылезает несогласованность.</b> Цена акции «291,15 ₽» размывается, а цена ОФЗ «101,49%» — нет: она в процентах номинала, цифры с ₽ там не встречается. Соседние строки одной таблицы ведут себя по-разному.</span></div>' +
+  '<div class="note"><i>5</i><span><b>А вот количество прятать надо — сейчас оно открыто.</b> «300 шт» под маску не попадает: нет ₽. Но цена SBER публична, поэтому 300 × цена = размер позиции, и режим обходится устным счётом. Если прячем капитал — прячем количество, а цены оставляем. В предложенном варианте так и сделано: маска на количестве и на всех «моих» суммах, цены и проценты открыты.</span></div>' +
+  '<div class="note"><i>6</i><span><b>Проценты остаются открытыми осознанно</b> — «+5,56%», «43,5%», «▲ 8,5%» не выдают абсолютных величин, а без них карточка под маской превращается в сплошной туман и теряет смысл. Это уже заложено в модуле («прячем только рубли»), в новой карточке правило продолжает работать.</span></div>' +
+  '<div class="note"><i>7</i><span><b>Нужен индикатор режима.</b> Сейчас включённое «Скрывать суммы» никак не обозначено на самой карточке — размытые числа легко принять за подгрузку, особенно рядом с настоящими скелетонами прогрева из экрана 08. В шапку добавлена пилюля «Суммы скрыты»: она же даёт место для быстрого выключения.</span></div>';
 
 document.getElementById('scr03').innerHTML =
   '<div class="cap">Тёмная тема · и та же карточка в блоке конструктора</div>' +
