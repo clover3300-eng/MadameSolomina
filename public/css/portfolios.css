@@ -1343,6 +1343,15 @@ body.dark-mode .pff-sort-b:hover { color: #e2e9f2; }
 body.dark-mode .pff-sort-b.on { background: color-mix(in srgb, var(--pf-accent) 30%, rgba(255,255,255,0.06)); color: #fff; box-shadow: none; }
 .pf-topgrid-fav .pff-sort-b { padding: 6px 9px; }
 @media (max-width: 620px) { .pff-sort-b { padding: 6px 9px; } }
+/* «Избранное» в 2 колонки конструктора (~200px): инфо-кнопка сжимается до иконки
+   (поповер остаётся), шапка и фильтр переносятся строками — пилюли не вылезают за карточку */
+.pf-fav { container-type: inline-size; }
+@container (max-width: 300px) {
+    .pf-fav .pf-ch { flex-wrap: wrap; row-gap: 8px; }
+    .pf-fav .pff-head-r { flex-wrap: wrap; justify-content: flex-start; }
+    .pf-fav .pff-info span { display: none; }
+    .pf-fav .pff-info { padding: 8px 10px; }
+}
 /* «+» в правом углу шапки избранного → терминал. БЕЗ кружка/плашки — голый значок «плюс»
    напротив заголовка: приглушён, чтобы не отвлекать; на ховере темнеет и чуть растёт. */
 .pff-add {

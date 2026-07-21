@@ -22,10 +22,11 @@
     // перетаскиваются местами (HTML5 DnD, живой предпросмотр перестановки) и
     // тянутся за правый нижний угол (ширина квантуется в колонки, высота — px).
     // Раскладка живёт в pf_dash_v1 (+ cloud-sync.WATCH — едет за пользователем):
-    //   { on, order: ['pf:<id>','cal','fav',…], span: {id: 3..12}, h: {id: px} }
+    //   { on, order: ['pf:<id>','cal','fav',…], span: {id: MIN_SPAN..12}, h: {id: px} }
     // Пока on=false — страница рендерится классической двухколоночной вёрсткой.
     // Только десктоп: на ≤1023px всегда обычная колонка (pfdActive()).
     var DASH_KEY = 'pf_dash_v1';
+    var PFD_MIN_SPAN = 2;   // минимальная ширина виджета в колонках (и для соседей при «делителе»)
     var PFD_NOTE_COLORS = ['slate', 'blue', 'green', 'amber', 'violet', 'rose'];
     // Заметка нового формата: цвет + список строк (тип text | bullet | check) + необяз.
     // срок (due, timestamp). Нормализуем при загрузке; старую одну строку text режем по
@@ -548,7 +549,7 @@
         var COLS = 12, bottom = [], i; for (i = 0; i < COLS; i++) bottom[i] = 0;
         var placed = order.map(function (id) {
             var mt = meta(id);
-            var span = Math.max(3, Math.min(COLS, spanM[id] || defSpan(id)));
+            var span = Math.max(PFD_MIN_SPAN, Math.min(COLS, spanM[id] || defSpan(id)));
             var x, c, k, yy;
             if (colM[id]) { x = Math.max(0, Math.min(COLS - span, colM[id] - 1)); }
             else { x = 0; var bestY = Infinity; for (c = 0; c <= COLS - span; c++) { yy = 0; for (k = c; k < c + span; k++) yy = Math.max(yy, bottom[k]); if (yy < bestY) { bestY = yy; x = c; } } }
@@ -1308,7 +1309,7 @@
         var items = shown.map(function (b) {
             var html = b.htmlFn();
             if (!html) return '';
-            var span = clamp(+(PF.dashCfg.span[b.id]) || b.span, 3, 12);
+            var span = clamp(+(PF.dashCfg.span[b.id]) || b.span, PFD_MIN_SPAN, 12);
             var h = +(PF.dashCfg.h[b.id]) || 0;
             var isPanel = b.id === 'panel';
             // низкий общий пол (72): ресайз сохраняет высоту только выше натуральной, поэтому
@@ -2719,8 +2720,8 @@
                     var adj = [], lim = toLeft ? 0 : 12;   // предел хода кромки (0-базовая колонка)
                     nb.forEach(function (n) {
                         if (toLeft ? (n.right0 >= near - 0.5) : (n.col0 <= near + 0.5)) {
-                            adj.push(n);   // прилегающий: ужимается максимум до 3 колонок
-                            lim = toLeft ? Math.max(lim, n.col0 + 3) : Math.min(lim, n.right0 - 3);
+                            adj.push(n);   // прилегающий: ужимается максимум до PFD_MIN_SPAN колонок
+                            lim = toLeft ? Math.max(lim, n.col0 + PFD_MIN_SPAN) : Math.min(lim, n.right0 - PFD_MIN_SPAN);
                         } else {           // дальний: стоит как стоял, кромке за него нельзя
                             lim = toLeft ? Math.max(lim, n.right0) : Math.min(lim, n.col0);
                         }
@@ -2753,8 +2754,8 @@
             if (axis === 'x' || axis === 'xl') dy = 0;   // боковые кромки — высоту не трогаем
             if (axis === 'xl' && pushNb) {
                 // левая кромка, слева есть соседи: правый край наш закреплён, левый едет.
-                // Ужать прилегающих можно до 3 колонок, дальше кромка упирается (pushA.lim)
-                newSpan = clamp(Math.round((startW - dx + gap) / (colW + gap)), 3, Math.max(3, pushA.right0 - pushA.lim));
+                // Ужать прилегающих можно до PFD_MIN_SPAN колонок, дальше кромка упирается (pushA.lim)
+                newSpan = clamp(Math.round((startW - dx + gap) / (colW + gap)), PFD_MIN_SPAN, Math.max(PFD_MIN_SPAN, pushA.right0 - pushA.lim));
                 var aLeft = pushA.right0 - newSpan;     // левый край нашего блока (0-базово)
                 newColStart = aLeft + 1;
                 PF.dashCfg.col[id] = newColStart;          // правый край держится: col = right0 − span
@@ -2762,7 +2763,7 @@
                     // правый край прилегающего соседа едет за нашей кромкой; при зазоре
                     // на старте сосед не растёт за свой исходный край — зазор поглощается
                     var wantR = pushA.touch ? aLeft : Math.min(aLeft, n.right0);
-                    var ns = Math.max(3, wantR - n.col0);
+                    var ns = Math.max(PFD_MIN_SPAN, wantR - n.col0);
                     n.el.style.gridColumn = 'span ' + ns;   // pfdSpanOf читает span отсюда
                     PF.dashCfg.col[n.id] = n.col0 + 1;          // левый край соседа на месте
                     n._span = ns;
@@ -2770,19 +2771,19 @@
             } else if (axis === 'xl') {
                 // левая кромка без соседей слева: тянем влево (dx<0) → шире. Правый край
                 // закреплён: новая стартовая колонка = (колонка за правым краем) − новый span.
-                newSpan = clamp(Math.round((startW - dx + gap) / (colW + gap)), 3, 12);
+                newSpan = clamp(Math.round((startW - dx + gap) / (colW + gap)), PFD_MIN_SPAN, 12);
                 newColStart = clamp(rightEdgeCol - newSpan, 1, 12);
                 newSpan = rightEdgeCol - newColStart;   // держим согласованность после clamp
                 PF.dashCfg.col[id] = newColStart;
             } else if (pushNb) {
                 // правая кромка/уголок, справа есть соседи: левый край наш закреплён, правый едет
-                newSpan = clamp(Math.round((startW + dx + gap) / (colW + gap)), 3, Math.max(3, pushA.lim - pushA.col0));
+                newSpan = clamp(Math.round((startW + dx + gap) / (colW + gap)), PFD_MIN_SPAN, Math.max(PFD_MIN_SPAN, pushA.lim - pushA.col0));
                 var aRight = pushA.col0 + newSpan;      // правый край нашего блока (0-базово)
                 PF.dashCfg.col[id] = pushA.col0 + 1;       // левый край нашего блока закреплён
                 pushNb.forEach(function (n) {
                     // левый край прилегающего соседа едет за нашей кромкой (симметрично слева)
                     var wantL = pushA.touch ? aRight : Math.max(aRight, n.col0);
-                    var ns = Math.max(3, n.right0 - wantL);
+                    var ns = Math.max(PFD_MIN_SPAN, n.right0 - wantL);
                     n.el.style.gridColumn = 'span ' + ns;   // pfdSpanOf читает span отсюда
                     PF.dashCfg.col[n.id] = (n.right0 - ns) + 1; // правый край соседа на месте
                     n._span = ns;
@@ -2790,7 +2791,7 @@
             } else {
                 // ширина без соседей по стороне: якорим стартовую колонку — иначе жадная
                 // упаковка могла увезти блок в другое место прямо во время тяги
-                newSpan = clamp(Math.round((startW + dx + gap) / (colW + gap)), 3, axis === 'y' ? 12 : 13 - startColNum);
+                newSpan = clamp(Math.round((startW + dx + gap) / (colW + gap)), PFD_MIN_SPAN, axis === 'y' ? 12 : 13 - startColNum);
                 if (sideAxis) PF.dashCfg.col[id] = startColNum;
             }
             if (!hMode && Math.abs(dy) > 8) hMode = true;
