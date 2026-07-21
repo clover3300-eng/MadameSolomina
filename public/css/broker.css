@@ -5,6 +5,19 @@
    (position:fixed — transform-предки вкладок им не страшны).
    Формы внутри переиспользуют .ph-* из profile-menu.css. */
 
+/* ---------- локальные токены палитры ----------
+   Аудит 2026-07-21: в файле ~1087 цветовых литералов и <3% токенов. НОВЫЙ код
+   пишем на этих переменных, старые секции переводим по мере правок. Сплошным
+   sed'ом НЕ переводить: тёмно-синие (#1b2433, #1f2937…) живут и как фон
+   панелей, и как цвет текста — слепая замена красила бы фон в цвет чернил.
+   Двойники светлых слиты 2026-07-21: #f1f5f9 → #f1f5f9, #94a3b8 → #94a3b8. */
+:root {
+    --bk-ink: #0f172a;                  /* основной текст */
+    --bk-mut: #64748b;                  /* вторичный текст */
+    --bk-dim: #94a3b8;                  /* подписи-референсы */
+    --bk-hair: rgba(15, 23, 42, 0.08);  /* волосяные линии */
+}
+
 /* #btConfirmOv — подтверждение заявки из терминала (portfolios-trading.js):
    он собирает ту же разметку .bk-back + .bk-card, но своим id, поэтому раньше
    не попадал ни под одно правило — модалка вставала в обычный поток и уезжала
@@ -339,7 +352,7 @@ body.dark-mode .pfbrk-total-l i, .pfd-thm-dark .pfbrk-total-l i { color: #7f93ab
 .btr-iconbtn svg { width: 16px; height: 16px; }
 .btr-hd-note { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; padding-top: 5px; min-width: 0; }
 .btr-hd-ins { font-family: var(--font-num); font-size: 11.5px; font-weight: 600; color: #64748b; white-space: nowrap; }
-.btr-hd-acc { display: inline-flex; align-items: baseline; gap: 6px; font-size: 10.5px; font-weight: 600; color: #97a3b4; white-space: nowrap; }
+.btr-hd-acc { display: inline-flex; align-items: baseline; gap: 6px; font-size: 10.5px; font-weight: 600; color: #94a3b8; white-space: nowrap; }
 .btr-hd-acc b { font-family: var(--font-num); font-weight: 600; color: #94a3b8; }
 /* тихая протухлость: снимок заявок/позиций старше DATA_AGE_MS при живом стакане */
 .btr-hd-age { font-style: normal; font-family: var(--font-num); font-size: 10.5px; font-weight: 600; color: #d97706; white-space: nowrap; }
@@ -418,7 +431,7 @@ body.dark-mode .btr-search-none { color: #9fb1c6; }
 .btr-ax-head { margin-bottom: 6px; }
 .btr-ax-head span {
     font-family: var(--font-ui); font-size: 9.5px; font-weight: 700;
-    letter-spacing: 0.09em; text-transform: uppercase; color: #97a3b4; white-space: nowrap;
+    letter-spacing: 0.09em; text-transform: uppercase; color: #94a3b8; white-space: nowrap;
     /* узкий виджет: длинная подпись мягко троеточится, а не режется кромкой */
     min-width: 0; overflow: hidden; text-overflow: ellipsis;
 }
@@ -497,7 +510,7 @@ body.dark-mode .btr-search-none { color: #9fb1c6; }
 .btr-axout i {
     margin-left: auto; flex-shrink: 0; font-style: normal;
     font-family: var(--font-ui); font-size: 9.5px; font-weight: 700;
-    letter-spacing: 0.06em; text-transform: uppercase; color: #97a3b4;
+    letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8;
 }
 /* стоп вне лестницы — пунктир и полая точка: та же пара «заливка/контур»,
    что у меток на строках стакана */
@@ -506,7 +519,7 @@ body.dark-mode .btr-search-none { color: #9fb1c6; }
 .btr-axout.stop .btr-axout-d.sell { background: transparent; box-shadow: inset 0 0 0 2px #dc2626; }
 /* цену брокер не прислал — полоска приглушена, но заявка на виду */
 .btr-axout.nopx { border-style: dotted; cursor: default; }
-.btr-axout.nopx b { color: #97a3b4; }
+.btr-axout.nopx b { color: #94a3b8; }
 .btr-obwait { padding: 14px 0; font-size: 12.5px; color: #94a3b8; }
 
 /* центр оси — последняя цена между hairline-линиями, без плашки */
@@ -574,8 +587,8 @@ body.dark-mode .btr-search-none { color: #9fb1c6; }
    что у раскрывашки дашборда (.btr-fold-lab / .btr-fold-cnt). */
 .btr-tape2 { margin-top: auto; border-top: 1px solid rgba(15, 23, 42, 0.07); padding-top: 9px; }
 .btr-tape2-h { display: flex; align-items: baseline; gap: 8px; margin-bottom: 5px; }
-.btr-tape2-l { font-size: 10.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #64748b; }
-.btr-tape2-c { font-family: var(--font-num); font-size: 10.5px; color: #94a3b8; }
+.btr-tape2-l { font-size: 10.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--bk-mut); }
+.btr-tape2-c { font-family: var(--font-num); font-size: 10.5px; color: var(--bk-dim); }
 
 /* ---- тикет ---- */
 /* Купить/Продать: контур → заливка активного, без серой подложки */
@@ -594,7 +607,7 @@ body.dark-mode .btr-search-none { color: #9fb1c6; }
 .btr-ttabs { display: flex; gap: 22px; border-bottom: 1px solid rgba(15, 23, 42, 0.08); }
 .btr-ttabs button {
     border: none; background: none; cursor: pointer; padding: 2px 0 10px; position: relative;
-    font-family: var(--font-ui); font-size: 13px; font-weight: 600; color: #97a3b4; transition: color 0.14s;
+    font-family: var(--font-ui); font-size: 13px; font-weight: 600; color: #94a3b8; transition: color 0.14s;
 }
 .btr-ttabs button:hover { color: #64748b; }
 .btr-ttabs button.active { color: #1b2433; }
@@ -602,7 +615,7 @@ body.dark-mode .btr-search-none { color: #9fb1c6; }
     content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
     background: #1b2433; border-radius: 2px;
 }
-.btr-cnt { font-family: var(--font-num); font-size: 11px; font-weight: 600; color: #97a3b4; margin-left: 3px; }
+.btr-cnt { font-family: var(--font-num); font-size: 11px; font-weight: 600; color: #94a3b8; margin-left: 3px; }
 .btr-ttabs button.active .btr-cnt { color: #8b5cf6; }
 
 /* поле-цифра: мелкий лейбл + тихая референс-подпись справа, крупный инпут снизу */
@@ -670,7 +683,7 @@ body.dark-mode .btr-search-none { color: #9fb1c6; }
 .btr-subnote-sep { color: #cbd5e1; }
 /* комиссия — прикидка по ставке тарифа, поэтому живёт рядом с ценой,
    но тише её: цифра справочная, а не та, что уйдёт в заявку */
-.btr-deal-fee { color: #97a3b4; }
+.btr-deal-fee { color: #94a3b8; }
 .btr-deal-fee b { font-family: var(--font-num); font-variant-numeric: tabular-nums; font-weight: 600; color: #64748b; }
 .btr-subnote input {
     width: 74px; border: none; border-bottom: 1px solid rgba(15, 23, 42, 0.14); border-radius: 0;
@@ -687,7 +700,7 @@ body.dark-mode .btr-search-none { color: #9fb1c6; }
 .btr-ordrow.sell::before { background: #dc2626; }
 .btr-ord1 { display: flex; align-items: baseline; gap: 9px; }
 .btr-ord1 > b { font-family: var(--font-num); font-size: 14.5px; font-weight: 700; color: #1b2433; flex: none; }
-.btr-ord-meta { font-size: 11.5px; color: #97a3b4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btr-ord-meta { font-size: 11.5px; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .btr-ord-px { margin-left: auto; font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 13px; font-weight: 600; color: #1b2433; white-space: nowrap; }
 /* цена лимитной заявки кликабельна — перенос без снятия; подчёркивание
    появляется на ховере, чтобы лента не пестрела ссылками */
@@ -699,12 +712,12 @@ body.dark-mode .btr-search-none { color: #9fb1c6; }
     transition: background 0.12s, color 0.12s;
 }
 .btr-ordx:hover { background: rgba(220, 38, 38, 0.1); color: #dc2626; }
-.btr-ord2 { display: flex; align-items: baseline; gap: 9px; margin-top: 7px; font-size: 11px; color: #97a3b4; }
+.btr-ord2 { display: flex; align-items: baseline; gap: 9px; margin-top: 7px; font-size: 11px; color: #94a3b8; }
 .btr-ord2 i { font-style: normal; font-family: var(--font-num); font-variant-numeric: tabular-nums; }
 .btr-fill { font-family: var(--font-num); font-variant-numeric: tabular-nums; color: #64748b; }
 .btr-ost { margin-left: auto; font-weight: 700; }
 .btr-ost.part { color: #92400e; }
-.btr-ost.queue { color: #97a3b4; }
+.btr-ost.queue { color: #94a3b8; }
 .btr-none { font-size: 12.5px; color: #94a3b8; line-height: 1.5; padding: 12px 0 4px; }
 .btr-panic {
     align-self: flex-start; border: none; background: none; cursor: pointer; padding: 2px 0;
@@ -717,7 +730,7 @@ body.dark-mode .btr-search-none { color: #9fb1c6; }
 .btr-jr i { font-style: normal; font-family: var(--font-num); font-size: 10.5px; color: #94a3b8; margin-left: auto; white-space: nowrap; }
 /* шапка истории сделок: что показано, когда обновлено, кнопка «обновить».
    Референс-подпись в строке лейбла — тот же приём, что у «рынок»/«доступно». */
-.btr-hbar { display: flex; align-items: baseline; gap: 9px; padding: 2px 0 8px; font-size: 11px; color: #97a3b4; }
+.btr-hbar { display: flex; align-items: baseline; gap: 9px; padding: 2px 0 8px; font-size: 11px; color: #94a3b8; }
 .btr-hbar > span { font-weight: 600; }
 .btr-hbar i { font-style: normal; font-family: var(--font-num); font-size: 10.5px; color: #b3bfce; }
 .btr-hbar .btr-ref { margin-left: auto; }
@@ -736,7 +749,7 @@ body.dark-mode .btr-search-none { color: #9fb1c6; }
 }
 .btr-notify svg { width: 15px; height: 15px; flex: none; color: #3b82f6; }
 .btr-notify span { font-size: 12px; font-weight: 700; color: #1b2433; }
-.btr-notify i { font-style: normal; font-size: 10.5px; color: #97a3b4; margin-left: auto; text-align: right; }
+.btr-notify i { font-style: normal; font-size: 10.5px; color: #94a3b8; margin-left: auto; text-align: right; }
 .btr-notify:hover { border-color: #3b82f6; background: rgba(59, 130, 246, 0.08); }
 .pfd-hset .btr-orders > .btr-notify { flex: none; }
 
@@ -777,7 +790,7 @@ body.dark-mode .btr-search-none { color: #9fb1c6; }
 .btr-agg-k { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #b3bfce; margin-right: 3px; }
 .btr-agg-b {
     border: none; background: none; cursor: pointer; padding: 2px 6px; border-radius: 5px;
-    font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 10.5px; color: #97a3b4;
+    font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 10.5px; color: #94a3b8;
     transition: background 0.14s, color 0.14s;
 }
 .btr-agg-b:hover { color: #3b82f6; }
@@ -799,13 +812,13 @@ body.dark-mode .btr-search-none { color: #9fb1c6; }
 .btr-prot-box svg { width: 11px; height: 11px; }
 .btr-prot.on .btr-prot-box { background: #16a34a; border-color: #16a34a; }
 .btr-prot-lab { font-size: 12.5px; font-weight: 600; color: #1b2433; }
-.btr-prot-hint { font-size: 11px; color: #97a3b4; margin-left: auto; white-space: nowrap; }
+.btr-prot-hint { font-size: 11px; color: #94a3b8; margin-left: auto; white-space: nowrap; }
 /* Подпись НАД полем, а не рядом: карточка терминала бывает в 4 колонки из 12,
    и «СТОП-ЛОСС 298,5 ₽» в одну строку × две колонки за край не влезал. */
 .btr-prot-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
 .btr-prot-f { display: grid; gap: 2px; min-width: 0; border-bottom: 1px solid rgba(15, 23, 42, 0.12); padding-bottom: 4px; }
 .btr-prot-f > span {
-    font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #97a3b4;
+    font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .btr-prot-f-row { display: flex; align-items: baseline; gap: 4px; min-width: 0; }
@@ -813,7 +826,7 @@ body.dark-mode .btr-search-none { color: #9fb1c6; }
     flex: 1; min-width: 0; width: 100%; border: none; background: none; outline: none;
     font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 14px; font-weight: 600; color: #1b2433;
 }
-.btr-prot-f i { font-style: normal; font-family: var(--font-num); font-size: 11px; color: #97a3b4; flex: none; }
+.btr-prot-f i { font-style: normal; font-family: var(--font-num); font-size: 11px; color: #94a3b8; flex: none; }
 .btr-prot-f:focus-within { border-bottom-color: #3b82f6; }
 /* совсем узкая карточка — поля в столбик, иначе цифра ужимается до нечитаемой.
    Контейнером мерим САМ ТИКЕТ, а не окно: ширина карточки задаётся конструктором
@@ -847,7 +860,7 @@ body.dark-mode .btr-search-none { color: #9fb1c6; }
     display: flex; align-items: baseline; gap: 10px; margin-top: 12px; padding-top: 11px;
     border-top: 1px solid rgba(15, 23, 42, 0.09);
 }
-.btr-postot-k { font-size: 10.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #97a3b4; }
+.btr-postot-k { font-size: 10.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #94a3b8; }
 .btr-postot-v { font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 18px; font-weight: 700; color: #1b2433; margin-left: auto; }
 .btr-postot-p { font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 13px; font-weight: 700; }
 .btr-postot-p.pos { color: #16a34a; }
@@ -1086,7 +1099,7 @@ body.dark-mode .bk-pfoffer-tx span { color: #93a3b5; }
 /* подпись источника: тихая строка под сегментом таймфреймов */
 .btc-note {
     font-family: var(--font-ui); font-size: 10.5px; font-weight: 600;
-    letter-spacing: 0.04em; color: #97a3b4; min-height: 13px; margin-top: -4px;
+    letter-spacing: 0.04em; color: #94a3b8; min-height: 13px; margin-top: -4px;
 }
 .btc-note.warn { color: #d97706; }
 
@@ -1119,7 +1132,7 @@ body.dark-mode .bk-pfoffer-tx span { color: #93a3b5; }
     gap: 6px; text-align: center; padding: 46px 20px; min-height: 240px;
 }
 .btc-empty-tt { font-family: var(--font-ui); font-size: 13.5px; font-weight: 700; color: #64748b; }
-.btc-empty-tx, .btc-err { font-size: 12px; line-height: 1.5; color: #97a3b4; max-width: 320px; }
+.btc-empty-tx, .btc-err { font-size: 12px; line-height: 1.5; color: #94a3b8; max-width: 320px; }
 
 /* ---------- тёмная тема ---------- */
 body.dark-mode .btc-menu, .pfd-thm-dark .btc-menu {
@@ -1686,9 +1699,9 @@ body:has(#pftBar) #pfWrap { gap: 0; }
 
 body.dark-mode .pftb { background: #141c27; border-bottom-color: rgba(255, 255, 255, 0.1); }
 body.dark-mode .pftb-back { color: #9fb1c6; }
-body.dark-mode .pftb-back:hover { background: rgba(255, 255, 255, 0.07); color: #f1f6fb; }
+body.dark-mode .pftb-back:hover { background: rgba(255, 255, 255, 0.07); color: #f1f5f9; }
 body.dark-mode .pftb-sep { background: rgba(255, 255, 255, 0.12); }
-body.dark-mode .pftb-money b { color: #f1f6fb; }
+body.dark-mode .pftb-money b { color: #f1f5f9; }
 body.dark-mode .pftb-money s { color: #3c4a5e; }
 body.dark-mode .pftb-acct, body.dark-mode .pftb-search { border-color: rgba(255, 255, 255, 0.12); }
 body.dark-mode .pftb-acct { color: #9fb1c6; }
@@ -1768,13 +1781,13 @@ body.dark-mode .pftb-st.stale { color: #f87171; }
     background: rgba(22, 163, 74, 0.08); font-size: 12.5px; line-height: 1.5; color: #15803d;
 }
 
-body.dark-mode .pftb-more:hover, body.dark-mode .pftb-more.on { background: rgba(255, 255, 255, 0.08); color: #f1f6fb; }
+body.dark-mode .pftb-more:hover, body.dark-mode .pftb-more.on { background: rgba(255, 255, 255, 0.08); color: #f1f5f9; }
 body.dark-mode .pftb-menu { background: #141c27; border-color: rgba(255, 255, 255, 0.12); }
 body.dark-mode .pftb-mi { color: #dbe4f0; }
 body.dark-mode .pftb-mi:hover { background: rgba(255, 255, 255, 0.07); }
 body.dark-mode .pftb-mi i { background: rgba(255, 255, 255, 0.09); color: #9fb1c6; }
 body.dark-mode .pftb-msep { background: rgba(255, 255, 255, 0.1); }
-body.dark-mode .btr-dock-chev:hover { background: rgba(255, 255, 255, 0.08); color: #f1f6fb; }
+body.dark-mode .btr-dock-chev:hover { background: rgba(255, 255, 255, 0.08); color: #f1f5f9; }
 body.dark-mode .btr-keys-row { border-top-color: rgba(255, 255, 255, 0.08); }
 body.dark-mode .btr-keys-row kbd { background: rgba(255, 255, 255, 0.09); color: #dbe4f0; }
 body.dark-mode .btr-keys-row span { color: #9fb1c6; }
@@ -2012,14 +2025,14 @@ body.dark-mode .sx-conv p, body.dark-mode .sx-mnm > span { color: #9fb1c6; }
 body.dark-mode .sx-know { border-top-color: rgba(255, 255, 255, 0.09); }
 body.dark-mode .sx-know i { background: rgba(255, 255, 255, 0.09); color: #9fb1c6; }
 body.dark-mode .sx-know b, body.dark-mode .sx-tot > div b, body.dark-mode .sx-tot > div.big span,
-body.dark-mode .sx-mh .tot b { color: #f1f6fb; }
-body.dark-mode .sx-per button.on { background: rgba(255, 255, 255, 0.09); color: #f1f6fb; }
+body.dark-mode .sx-mh .tot b { color: #f1f5f9; }
+body.dark-mode .sx-per button.on { background: rgba(255, 255, 255, 0.09); color: #f1f5f9; }
 body.dark-mode .sx-ax { stroke: rgba(255, 255, 255, 0.12); }
 body.dark-mode .sx-axt { fill: #6b7c93; }
-body.dark-mode .sx-sum { border-bottom-color: #f1f6fb; }
+body.dark-mode .sx-sum { border-bottom-color: #f1f5f9; }
 body.dark-mode .sx-side button { border-color: rgba(255, 255, 255, 0.14); }
 body.dark-mode .sx-quick button { border-color: rgba(255, 255, 255, 0.14); color: #dbe4f0; }
-body.dark-mode .sx-quick button.on { background: #f1f6fb; border-color: #f1f6fb; color: #0f172a; }
+body.dark-mode .sx-quick button.on { background: #f1f5f9; border-color: #f1f5f9; color: #0f172a; }
 body.dark-mode .sx-mbtn { border-color: rgba(255, 255, 255, 0.14); color: #dbe4f0; }
 body.dark-mode .sx-mbtn.buy { border-color: #16a34a; color: #fff; }
 body.dark-mode .sx-tot, body.dark-mode .sx-mrow { border-top-color: rgba(255, 255, 255, 0.08); }
@@ -2034,7 +2047,7 @@ body.dark-mode .sx-pick p, body.dark-mode .sx-empty { color: #9fb1c6; }
 
 body.dark-mode .pftb-seg { background: rgba(255, 255, 255, 0.08); }
 body.dark-mode .pftb-seg button { color: #9fb1c6; }
-body.dark-mode .pftb-seg button.on { background: #1e2836; color: #f1f6fb; }
+body.dark-mode .pftb-seg button.on { background: #1e2836; color: #f1f5f9; }
 
 /* ---- УЖАТЫЙ ТИКЕТ полноэкранного режима (макеты 01/02) ----
    Пять групп вместо девяти: тип заявки уехал в строку лейбла цены, срок —
@@ -2091,7 +2104,7 @@ body.dark-mode .btr-slim-kind { color: #dbe4f0; border-color: rgba(255, 255, 255
 body.dark-mode .btr-slim-opt { border-color: rgba(255, 255, 255, 0.1); }
 body.dark-mode .btr-slim-opt-l { color: #dbe4f0; }
 body.dark-mode .btr-slim-hold { background: rgba(255, 255, 255, 0.05); color: #9fb1c6; }
-body.dark-mode .btr-slim-hold b { color: #f1f6fb; }
+body.dark-mode .btr-slim-hold b { color: #f1f5f9; }
 
 /* ---- ЗАЯВКИ ТАБЛИЦЕЙ (док полноэкранного режима, макет 01) ----
    Колонки те же и в шапке, и в строке — одна grid-раскладка на оба, иначе
@@ -2178,18 +2191,18 @@ body.dark-mode .btr-slim-hold b { color: #f1f6fb; }
 }
 .pftb-av img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 
-body.dark-mode .btr-orr { color: #f1f6fb; border-top-color: rgba(255, 255, 255, 0.08); }
+body.dark-mode .btr-orr { color: #f1f5f9; border-top-color: rgba(255, 255, 255, 0.08); }
 body.dark-mode .btr-orr .mut, body.dark-mode .btr-orr .nm { color: #9fb1c6; }
 body.dark-mode .btr-orr .buy { color: #34d399; } body.dark-mode .btr-orr .sell { color: #f87171; }
 body.dark-mode .btr-prog { background: rgba(255, 255, 255, 0.1); }
 body.dark-mode .btc-h-nm { color: #9fb1c6; }
 body.dark-mode .sx-cf-r { border-top-color: rgba(255, 255, 255, 0.08); }
 body.dark-mode .sx-cf-r.tot { border-top-color: rgba(255, 255, 255, 0.2); }
-body.dark-mode .sx-cf-r.tot span { color: #f1f6fb; }
+body.dark-mode .sx-cf-r.tot span { color: #f1f5f9; }
 body.dark-mode .sx-cf-r span, body.dark-mode .sx-cf-warn span { color: #9fb1c6; }
 body.dark-mode .sx-cf-warn { background: rgba(96, 165, 250, 0.12); }
 body.dark-mode .sx-cf-b.ghost { background: rgba(255, 255, 255, 0.08); color: #dbe4f0; }
-body.dark-mode .sx-cf-type input { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.14); color: #f1f6fb; }
+body.dark-mode .sx-cf-type input { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.14); color: #f1f5f9; }
 
 /* ---- ЯЗЫК ФОКУСА: панели ВСТЫК, разделённые хайрлайном (макет 01) ----
    В дашборде виджеты — скруглённые карточки с зазором 16px: там они плавают
@@ -2278,7 +2291,7 @@ body.dark-mode:has(#pftBar) .pfd-grid.pfd-fs { background: rgba(255, 255, 255, 0
 body.dark-mode .btr-psr { border-top-color: rgba(255, 255, 255, 0.08); }
 body.dark-mode .btr-psr:hover { background: rgba(255, 255, 255, 0.03); }
 body.dark-mode .btr-psr .mut, body.dark-mode .btr-share b, body.dark-mode .btr-pstot { color: #9fb1c6; }
-body.dark-mode .btr-pstot b { color: #f1f6fb; }
+body.dark-mode .btr-pstot b { color: #f1f5f9; }
 body.dark-mode .btr-share .bar { background: rgba(255, 255, 255, 0.1); }
 body.dark-mode .btr-psh > :nth-child(8), body.dark-mode .btr-psr > :nth-child(8) { box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.1); }
 body.dark-mode .btr-pstot { border-top-color: rgba(255, 255, 255, 0.1); }
@@ -2286,11 +2299,11 @@ body.dark-mode .btr-dock-keys kbd { border-color: rgba(255, 255, 255, 0.14); col
 
 body.dark-mode .tb-s { color: #9fb1c6; }
 body.dark-mode .tb-s:hover { background: rgba(255, 255, 255, 0.05); }
-body.dark-mode .tb-s.on { background: rgba(255, 255, 255, 0.08); color: #f1f6fb; }
+body.dark-mode .tb-s.on { background: rgba(255, 255, 255, 0.08); color: #f1f5f9; }
 body.dark-mode .tb-s u { color: #6b7c93; }
 body.dark-mode .tb-add { border-color: rgba(255, 255, 255, 0.18); color: #9fb1c6; }
-body.dark-mode .tb-add:hover { border-color: rgba(255, 255, 255, 0.32); color: #f1f6fb; }
-body.dark-mode .tb-s-edit input { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.16); color: #f1f6fb; }
+body.dark-mode .tb-add:hover { border-color: rgba(255, 255, 255, 0.32); color: #f1f5f9; }
+body.dark-mode .tb-s-edit input { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.16); color: #f1f5f9; }
 
 /* ЧЕЙ СЧЁТ: постоянная плашка над сеткой «Торговли» (не в фокусе — там это
    несёт строка 44px). «Торговля» стоит рядом с ручными портфелями, и без неё
@@ -2320,6 +2333,6 @@ body.dark-mode .tb-s-edit input { background: rgba(255, 255, 255, 0.06); border-
 
 body.dark-mode .btr-acctb { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.08); color: #9fb1c6; }
 body.dark-mode .btr-acctb-ic { color: #9fb1c6; }
-body.dark-mode .btr-acctb-t b { color: #f1f6fb; }
+body.dark-mode .btr-acctb-t b { color: #f1f5f9; }
 body.dark-mode .btr-acctb-sub { color: #6b7c93; }
 body.dark-mode .btr-acctb-sub::before { color: #3c4a5e; }

@@ -51,13 +51,23 @@
     var OB_DEPTH = 10;      // уровней на сторону в карточке натуральной высоты
     var OB_MAX = 20;        // ...и сколько просим у брокера: растянутой карточке есть что показать
     var OB_MIN = 1;         // самый тесный честный стакан: лучший бид, цена, лучший аск
+    // ИНТЕРВАЛЫ ПОЛЛИНГА — одним конфигом (константы в startPolling разъезжались
+    // с комментариями про «такты», которые молча ломались при смене цифры)
+    var POLL_MS = {
+        ob: 2000,       // стакан — самый частый: на нём считаются деньги
+        tape: 4000,     // лента обезличенных сделок (только развёрнутая/фокус)
+        orders: 6000,   // активные и стоп-заявки
+        pos: 15000,     // позиции + лимиты + портфель (один такт на троих)
+        status: 30000,  // статус торгов инструмента
+        fresh: 1000     // такт свежести: без сети, только сверка часов
+    };
     // СВЕЖЕСТЬ ДАННЫХ. fetch к брокеру идёт без таймаута (broker-api.js), то есть
     // зависший запрос не отклоняется НИКОГДА — по ошибкам обрыв не поймать вовсе.
     // Поэтому «живы ли цены» считается по времени последнего УСПЕШНОГО ответа
-    // стакана: он самый частый (2с) и именно на нём считаются деньги.
-    // 8 секунд = четыре пропущенных такта подряд: одиночный сетевой чих терминал
+    // стакана: он самый частый и именно на нём считаются деньги.
+    // Четыре пропущенных такта подряд: одиночный сетевой чих терминал
     // не глушит, а настоящий обрыв виден почти сразу.
-    var LIVE_MS = 8000;
+    var LIVE_MS = POLL_MS.ob * 4;
     // ниже этой высоты карточка уходит в плотный режим (.btr-tight): цифры мельче,
     // воздух убран — иначе в ужатый блок не влезает даже кнопка тикета
     var TIGHT_H = 380;
@@ -487,18 +497,54 @@
     }
     window.pftAlertDrop = function (i) {
         ALERTS.splice(i, 1); saveAlerts();
-        var ov = dq('btConfirmOv'); if (ov) ov.remove();
+        closeModal('btConfirmOv');
         liveSlots().forEach(function (n) { var el = dqs('Instr', n); if (el && S(n).meta) el.innerHTML = instrHtml(S(n), n); });
     };
+    // ---------- единый каркас модалок терминала ----------
+    // Пять самодельных копий каркаса разошлись деталями, а паттерн
+    // «old.remove()» не снимал document-keydown прежней копии — слушатели
+    // копились и жевали Escape. Теперь: подложка, проявление через rAF,
+    // Escape и клик мимо — в одном месте; замена старой копии честно
+    // снимает её слушатель.
+    var modalKeys = {};   // id оверлея -> его document-keydown
+    function closeModal(id) {
+        if (modalKeys[id]) { document.removeEventListener('keydown', modalKeys[id]); delete modalKeys[id]; }
+        var old = dq(id); if (old) old.remove();
+    }
+    // opts: { id, className?, card (html .bk-card...), onClose? }
+    // возвращает { el, close } — кнопки внутри карточки вешает вызывающий
+    function openModal(opts) {
+        closeModal(opts.id);
+        var ov = document.createElement('div');
+        ov.id = opts.id;
+        // без класса семейства оверлей не попал бы ни под одно правило
+        // позиционирования и лёг бы в поток (грабли броker.css:8)
+        ov.className = opts.className || 'bk-ov';
+        ov.innerHTML = '<div class="bk-back"></div>' + opts.card;
+        document.body.appendChild(ov);
+        requestAnimationFrame(function () { ov.classList.add('open'); });
+        function close() {
+            document.removeEventListener('keydown', onKey);
+            delete modalKeys[opts.id];
+            ov.remove();
+            if (opts.onClose) opts.onClose();
+        }
+        function onKey(e) {
+            if (e.key !== 'Escape') return;
+            e.stopPropagation(); e.preventDefault();
+            close();
+        }
+        document.addEventListener('keydown', onKey);
+        modalKeys[opts.id] = onKey;
+        ov.querySelector('.bk-back').addEventListener('click', close);
+        return { el: ov, close: close };
+    }
     window.pftAlertOpen = function (n) {
         var s = S(n);
         if (!s.meta) return;
         var last = s.ob ? A().q2n(s.ob.lastPrice) : 0;
         var mine = ALERTS.map(function (a, i) { return { a: a, i: i }; }).filter(function (x) { return x.a.uid === s.uid; });
-        var old = dq('btConfirmOv'); if (old) old.remove();
-        var ov = document.createElement('div');
-        ov.id = 'btConfirmOv';
-        ov.innerHTML = '<div class="bk-back"></div><div class="bk-card bk-card-pin btr-cf" role="dialog" aria-modal="true">' +
+        var m = openModal({ id: 'btConfirmOv', card: '<div class="bk-card bk-card-pin btr-cf" role="dialog" aria-modal="true">' +
             '<div class="bk-title">Алерт по цене · ' + esc(s.meta.ticker) + '</div>' +
             (last > 0 ? '<div class="bk-kv"><span>Сейчас</span><b class="bk-mono">' + fmtPx(last, s) + ' ₽</b></div>' : '') +
             '<div class="ph-field"><label class="ph-lab" for="btAlPx">Уведомить, когда цена дойдёт до</label>' +
@@ -512,13 +558,8 @@
                 : '') +
             '<div class="btr-note">Направление определяется само: цена выше текущей — ждём роста, ниже — падения. Алерты проверяются, пока терминал открыт.</div>' +
             '<div class="bk-foot"><button type="button" class="bk-btn" id="btCfNo">Закрыть</button>' +
-            '<button type="button" class="bk-btn bk-btn-pri" id="btCfYes">Поставить</button></div></div>';
-        document.body.appendChild(ov);
-        requestAnimationFrame(function () { ov.classList.add('open'); });
-        function closeCf() { document.removeEventListener('keydown', onKey); ov.remove(); }
-        function onKey(e) { if (e.key === 'Escape') { e.preventDefault(); closeCf(); } }
-        document.addEventListener('keydown', onKey);
-        ov.querySelector('.bk-back').addEventListener('click', closeCf);
+            '<button type="button" class="bk-btn bk-btn-pri" id="btCfYes">Поставить</button></div></div>' });
+        var ov = m.el, closeCf = m.close;
         ov.querySelector('#btCfNo').addEventListener('click', closeCf);
         setTimeout(function () { var f = dq('btAlPx'); if (f) try { f.focus(); } catch (e) {} }, 30);
         ov.querySelector('#btCfYes').addEventListener('click', function () {
@@ -1143,13 +1184,7 @@
                     '<span class="btr-prot-box">' + (s.prot ? IC_CHECK : '') + '</span>' +
                     '<span class="btr-slim-opt-l">Защита позиции</span>' +
                     '<span class="btr-slim-opt-v">' + (s.prot ? 'вкл' : 'выкл') + '</span></button>' +
-                (s.prot
-                    ? '<div class="btr-prot-fields">' +
-                        '<label class="btr-prot-f"><span>Стоп-лосс</span><span class="btr-prot-f-row">' +
-                        '<input id="' + eid('ProtSl', n) + '" type="number" step="' + inc + '" min="0" placeholder="0" value="' + esc(s.protSl) + '"><i>₽</i></span></label>' +
-                        '<label class="btr-prot-f"><span>Тейк-профит</span><span class="btr-prot-f-row">' +
-                        '<input id="' + eid('ProtTp', n) + '" type="number" step="' + inc + '" min="0" placeholder="0" value="' + esc(s.protTp) + '"><i>₽</i></span></label>' +
-                      '</div>' : '') +
+                (s.prot ? protFieldsHtml(n, s, inc) : '') +
             '</div>';
         }
         // Предупреждения ОСТАЮТСЯ: в макете их не видно, потому что там всё в
@@ -1182,10 +1217,7 @@
         var c = conn();
         // порядок в шапке: сперва СЧЁТ (куда уйдёт заявка), потом бумага с лотностью
         // (просьба 2026-07-18) — сам тикер вынесен в заголовок карточки
-        var note = '<div class="btr-hd-note">' +
-            (c ? '<span class="btr-hd-acc">' + esc(c.accountName || 'Счёт') +
-                (accTail() ? ' <b>····' + accTail() + '</b>' : '') +
-                (c.sandbox ? '<i class="btr-sand">песочница</i>' : '') + '</span>' : '') +
+        var note = '<div class="btr-hd-note">' + accNoteHtml() +
             (s.meta ? '<span class="btr-hd-ins">' + esc(s.meta.ticker) + ' · лот ' + (s.meta.lot || 1) + '</span>' : '') +
         '</div>';
         var head = PF.pfCardHead('', slotTitle('Заявка', n), null, PF.pfdInChromeHtml(tkId(n)) + note);
@@ -1248,12 +1280,7 @@
                     '<span class="btr-prot-hint">стоп и тейк после исполнения</span>' +
                 '</button>' +
                 (s.prot
-                    ? '<div class="btr-prot-fields">' +
-                        '<label class="btr-prot-f"><span>Стоп-лосс</span><span class="btr-prot-f-row">' +
-                        '<input id="' + eid('ProtSl', n) + '" type="number" step="' + inc + '" min="0" placeholder="0" value="' + esc(s.protSl) + '"><i>₽</i></span></label>' +
-                        '<label class="btr-prot-f"><span>Тейк-профит</span><span class="btr-prot-f-row">' +
-                        '<input id="' + eid('ProtTp', n) + '" type="number" step="' + inc + '" min="0" placeholder="0" value="' + esc(s.protTp) + '"><i>₽</i></span></label>' +
-                      '</div>' +
+                    ? protFieldsHtml(n, s, inc) +
                       '<div class="btr-note">Обе заявки уйдут, как только исполнится основная. Когда сработает одна, терминал снимет вторую — пока вкладка открыта. Достаточно заполнить любое одно поле.</div>'
                     : '') +
             '</div>';
@@ -1333,6 +1360,32 @@
         T.sent = T.sent.filter(function (t) { return now - t < VEL_WIN; });
         if (T.sent.length < VEL_MAX) return 0;
         return VEL_WIN - (now - T.sent[0]);
+    }
+    // velocity-гвард перед отправкой: один текст на все три пути
+    // (тикет, перенос цены, «Просто») — копии уже начинали расходиться
+    function velBlock() {
+        var vel = velLeft();
+        if (!(vel > 0)) return false;
+        toast('Пауза после ' + VEL_MAX + ' заявок подряд — ещё ' + Math.ceil(vel / 1000) + ' с', true);
+        return true;
+    }
+    // поля «Защиты позиции» — одни на оба тикета (обычный и слим): копии
+    // одинаковые, но правка одной молча пропускала бы вторую
+    function protFieldsHtml(n, s, inc) {
+        return '<div class="btr-prot-fields">' +
+            '<label class="btr-prot-f"><span>Стоп-лосс</span><span class="btr-prot-f-row">' +
+            '<input id="' + eid('ProtSl', n) + '" type="number" step="' + inc + '" min="0" placeholder="0" value="' + esc(s.protSl) + '"><i>₽</i></span></label>' +
+            '<label class="btr-prot-f"><span>Тейк-профит</span><span class="btr-prot-f-row">' +
+            '<input id="' + eid('ProtTp', n) + '" type="number" step="' + inc + '" min="0" placeholder="0" value="' + esc(s.protTp) + '"><i>₽</i></span></label>' +
+          '</div>';
+    }
+    // плашка счёта в шапке виджета (тикет, «Мои заявки», «Позиции») — одна на всех
+    function accNoteHtml() {
+        var c = conn();
+        if (!c) return '';
+        return '<span class="btr-hd-acc">' + esc(c.accountName || 'Счёт') +
+            (accTail() ? ' <b>····' + accTail() + '</b>' : '') +
+            (c.sandbox ? '<i class="btr-sand">песочница</i>' : '') + '</span>';
     }
 
     // ---- карточка заявок: табы Активные / Стоп / История ----
@@ -1528,9 +1581,7 @@
     function ordersHtml() {
         var c = conn();
         var note = c
-            ? '<div class="btr-hd-note"><span class="btr-hd-acc">' + esc(c.accountName || 'Счёт') +
-                (accTail() ? ' <b>····' + accTail() + '</b>' : '') +
-                (c.sandbox ? '<i class="btr-sand">песочница</i>' : '') + '</span>' +
+            ? '<div class="btr-hd-note">' + accNoteHtml() +
                 (T.otab === 'pos' ? ageHint(T.port.ts, 'позиции')
                     : T.otab === 'hist' ? '' : ageHint(T.ordTs, 'заявки')) + '</div>'
             : '';
@@ -1640,10 +1691,7 @@
     function posCardHtml() {
         var c = conn();
         var note = c
-            ? '<div class="btr-hd-note"><span class="btr-hd-acc">' + esc(c.accountName || 'Счёт') +
-                (accTail() ? ' <b>····' + accTail() + '</b>' : '') +
-                (c.sandbox ? '<i class="btr-sand">песочница</i>' : '') + '</span>' +
-                ageHint(T.port.ts, 'позиции') + '</div>'
+            ? '<div class="btr-hd-note">' + accNoteHtml() + ageHint(T.port.ts, 'позиции') + '</div>'
             : '';
         var head = PF.pfCardHead('', 'Позиции', null, PF.pfdInChromeHtml('trade:pos') + note);
         return head + posBodyHtml();
@@ -1764,9 +1812,18 @@
             });
         }).catch(function () { /* тихо: карточка покажет прошлый снимок */ });
     }
+    // Присваиваем innerHTML только когда разметка реально изменилась: пересборка
+    // каждые 6/15 секунд рушила DOM (и фокус на кнопках дока) даже в тихом
+    // рынке. Строку сравниваем целиком — это дешевле и надёжнее ключа по полям:
+    // забытое поле в ключе означало бы «данные изменились, а экран нет».
+    function setHtmlIfChanged(el, html) {
+        if (el.__btHtml === html) return;
+        el.__btHtml = html;
+        el.innerHTML = html;
+    }
     // позиции живут в двух местах: своим виджетом и вкладкой дока — обновляем оба
     function repaintPos() {
-        var el = posCardEl(); if (el) el.innerHTML = posCardHtml();
+        var el = posCardEl(); if (el) setHtmlIfChanged(el, posCardHtml());
         if (T.otab === 'pos') repaintOrders();
     }
     // клик по позиции — поставить её бумагу в первый слот терминала
@@ -1881,7 +1938,7 @@
         fitSoon();
     }
     function repaintOrders() {
-        var el = document.querySelector('.btr-orders'); if (el) { el.innerHTML = ordersHtml(); }
+        var el = document.querySelector('.btr-orders'); if (el) setHtmlIfChanged(el, ordersHtml());
         // график рисует те же заявки линиями — обновляем их в одном такте с
         // лентой, иначе линии отстают от списка на целый цикл поллинга
         if (PF.pfcSyncLines) PF.pfcSyncLines();
@@ -2161,8 +2218,10 @@
                 loadHist(true); pollPos(); pollMaxLots();
                 syncBrokerCard();
             } else if (st === 'EXECUTION_REPORT_STATUS_CANCELLED') {
+                delete pendingProt[orderId];   // заявка не исполнится — защита не понадобится
                 A().logEvent('order_cancel', tk + ' · заявка снята');
             } else if (st === 'EXECUTION_REPORT_STATUS_REJECTED') {
+                delete pendingProt[orderId];
                 A().logEvent('order_error', tk + ' · заявка отклонена биржей');
                 announce('Заявка отклонена', tk + ' · биржа не приняла заявку');
             }
@@ -2503,15 +2562,15 @@
         // начинается: иначе каждый ре-рендер сбрасывал гвард тоста (и «связь
         // потеряна» повторялась заново), а залп дёргал брокера впустую.
         var fresh = !T.obTimer;
-        if (!T.obTimer) T.obTimer = setInterval(pollOb, 2000);
-        if (!T.ordTimer) T.ordTimer = setInterval(pollOrders, 6000);
-        if (!T.stTimer) T.stTimer = setInterval(pollStatus, 30000);
-        if (!T.tapeTimer) T.tapeTimer = setInterval(function () { pollTape(); }, 4000);
+        if (!T.obTimer) T.obTimer = setInterval(pollOb, POLL_MS.ob);
+        if (!T.ordTimer) T.ordTimer = setInterval(pollOrders, POLL_MS.orders);
+        if (!T.stTimer) T.stTimer = setInterval(pollStatus, POLL_MS.status);
+        if (!T.tapeTimer) T.tapeTimer = setInterval(function () { pollTape(); }, POLL_MS.tape);
         // лимиты идут в такт с позициями: обе цифры отвечают на один вопрос
         // «сколько я могу», и дёргать брокера отдельным таймером незачем
-        if (!T.posTimer) T.posTimer = setInterval(function () { pollPos(); pollMaxLots(); pollPortfolio(); }, 15000);
+        if (!T.posTimer) T.posTimer = setInterval(function () { pollPos(); pollMaxLots(); pollPortfolio(); }, POLL_MS.pos);
         // такт свежести сети не касается — сверяет часы с последним успехом
-        if (!T.freshTimer) T.freshTimer = setInterval(freshTick, 1000);
+        if (!T.freshTimer) T.freshTimer = setInterval(freshTick, POLL_MS.fresh);
         // каждый заход в терминал начинается с чистого листа: иначе тревога,
         // взведённая в прошлый раз, отзовётся «связь восстановлена» на пустом месте
         if (fresh) {
@@ -2899,8 +2958,7 @@
         // отсюда идёт в деньги. Гвард дублируется на отправке (см. ниже).
         var stop = submitBlock(s);
         if (stop) { toast(stop + ': отправлять заявку по замершей цене нельзя', true); return; }
-        var vel = velLeft();
-        if (vel > 0) { toast('Пауза после ' + VEL_MAX + ' заявок подряд — ещё ' + Math.ceil(vel / 1000) + ' с', true); return; }
+        if (velBlock()) return;
         var lots = Math.max(1, Math.floor(+s.lots || 1));
         var inc = s.meta.minInc || 0.01;
         // цены — по шагу инструмента, иначе брокер отклонит заявку
@@ -2968,13 +3026,10 @@
         var typed = Math.round(sum);
         var c = conn();
         var accStr = c ? (c.accountName || 'Счёт') + (accTail() ? ' ····' + accTail() : '') + (c.sandbox ? ' · песочница' : '') : '';
-        var old = dq('btConfirmOv'); if (old) old.remove();
-        var ov = document.createElement('div');
-        ov.id = 'btConfirmOv';
         var STOP_NAME = { tp: 'Тейк-профит', lim: 'Стоп-лимит', sl: 'Стоп-лосс' };
         var kindName = s.kind === 'limit' ? 'Лимитная'
             : (s.kind === 'stop' ? (STOP_NAME[s.stopKind] || 'Стоп-лосс') : 'Рыночная');
-        ov.innerHTML = '<div class="bk-back"></div><div class="bk-card bk-card-pin btr-cf" role="alertdialog" aria-modal="true">' +
+        var m = openModal({ id: 'btConfirmOv', card: '<div class="bk-card bk-card-pin btr-cf" role="alertdialog" aria-modal="true">' +
             '<div class="bk-title">' + (s.side === 'buy' ? 'Покупка' : 'Продажа') + ' ' + esc(s.meta.ticker) + '</div>' +
             '<div class="bk-kv"><span>Тип</span><b>' + kindName + '</b></div>' +
             (s.kind === 'limit' ? '<div class="bk-kv"><span>Цена</span><b class="bk-mono">' + fmtPx(price, s) + ' ₽</b></div>' : '') +
@@ -3002,20 +3057,8 @@
                   '<input class="ph-input" id="btCfSum" type="text" inputmode="numeric" autocomplete="off" placeholder="' + typed.toLocaleString('ru-RU') + '"></div>'
                 : '') +
             '<div class="bk-foot"><button type="button" class="bk-btn" id="btCfNo">Отмена</button>' +
-            '<button type="button" class="bk-btn bk-btn-pri" id="btCfYes">Подтвердить</button></div></div>';
-        document.body.appendChild(ov);
-        // класс .open включает не только проявление, но и само позиционирование
-        // оверлея (см. broker.css) — без него модалка уезжает ниже экрана
-        requestAnimationFrame(function () { ov.classList.add('open'); });
-        function closeCf() {
-            document.removeEventListener('keydown', onKey);
-            ov.remove();
-        }
-        function onKey(e) {
-            if (e.key === 'Escape') { e.preventDefault(); closeCf(); }
-        }
-        document.addEventListener('keydown', onKey);
-        ov.querySelector('.bk-back').addEventListener('click', closeCf);
+            '<button type="button" class="bk-btn bk-btn-pri" id="btCfYes">Подтвердить</button></div></div>' });
+        var ov = m.el, closeCf = m.close;
         ov.querySelector('#btCfNo').addEventListener('click', closeCf);
         // фокус сразу в модалку: крупную заявку подтверждают вводом суммы,
         // обычную — Enter'ом по кнопке
@@ -3172,10 +3215,7 @@
         var left = Math.max(0, (+o.lotsRequested || 0) - (+o.lotsExecuted || 0));
         var buy = o.direction === 'ORDER_DIRECTION_BUY';
         var tk = (instrMem[o.instrumentUid] || {}).ticker || '';
-        var old = dq('btConfirmOv'); if (old) old.remove();
-        var ov = document.createElement('div');
-        ov.id = 'btConfirmOv';
-        ov.innerHTML = '<div class="bk-back"></div><div class="bk-card bk-card-pin btr-cf" role="alertdialog" aria-modal="true">' +
+        var m = openModal({ id: 'btConfirmOv', card: '<div class="bk-card bk-card-pin btr-cf" role="alertdialog" aria-modal="true">' +
             '<div class="bk-title">Перенести цену · ' + esc(tk) + '</div>' +
             '<div class="bk-kv"><span>Заявка</span><b>' + (buy ? 'покупка' : 'продажа') + ' ' + left + ' лот</b></div>' +
             '<div class="bk-kv"><span>Сейчас</span><b class="bk-mono">' + fmtPx(cur, ms) + ' ₽</b></div>' +
@@ -3183,13 +3223,8 @@
             '<input class="ph-input" id="btMvPx" type="number" step="' + inc + '" min="0" value="' + esc(String(cur)) + '"></div>' +
             '<div class="btr-warns" id="btMvWarn"></div>' +
             '<div class="bk-foot"><button type="button" class="bk-btn" id="btCfNo">Отмена</button>' +
-            '<button type="button" class="bk-btn bk-btn-pri" id="btCfYes">Перенести</button></div></div>';
-        document.body.appendChild(ov);
-        requestAnimationFrame(function () { ov.classList.add('open'); });
-        function closeCf() { document.removeEventListener('keydown', onKey); ov.remove(); }
-        function onKey(e) { if (e.key === 'Escape') { e.preventDefault(); closeCf(); } }
-        document.addEventListener('keydown', onKey);
-        ov.querySelector('.bk-back').addEventListener('click', closeCf);
+            '<button type="button" class="bk-btn bk-btn-pri" id="btCfYes">Перенести</button></div></div>' });
+        var ov = m.el, closeCf = m.close;
         ov.querySelector('#btCfNo').addEventListener('click', closeCf);
         var inp = dq('btMvPx');
         // тот же fat-finger, что в тикете: 5% от середины стакана по этой бумаге
@@ -3213,10 +3248,8 @@
             var snapped = +(Math.round(v / inc) * inc).toFixed(6);
             if (Math.abs(snapped - v) > 1e-9) toast('Цена округлена до шага ' + fmtPx(inc, ms));
             if (Math.abs(snapped - cur) < 1e-9) { toast('Цена та же — переносить нечего', true); return; }
-            var vel = velLeft();
-            if (vel > 0) { toast('Пауза после ' + VEL_MAX + ' заявок подряд — ещё ' + Math.ceil(vel / 1000) + ' с', true); return; }
+            if (velBlock()) return;
             closeCf();
-            var btn = null;
             A().call('ReplaceOrder', {
                 accountId: c.accountId,
                 orderId: orderId,
@@ -3236,7 +3269,6 @@
                 A().logEvent('order_error', tk + ' · перенос: ' + (e.message || '').slice(0, 120));
                 toast(e.message || 'Перенести заявку не удалось', true);
             });
-            if (btn) btn.disabled = false;
         });
     };
 
@@ -4144,6 +4176,30 @@
     }
     var SX_PAD = 20;   // воздух под нижней карточкой
     window.addEventListener('resize', sxFit);
+    // Точечная перерисовка вместо outerHTML всего режима: узлы сравниваются
+    // ПОБЛОЧНО и заменяются только изменившиеся. Тик цены больше не рушит
+    // фокус на кнопках сумм/периодов/сторон — их блоки от цены не зависят.
+    // В контейнеры с «живым» текстом вперемешку с элементами не спускаемся:
+    // морф ходит только по элементам и пропустил бы изменившийся текст.
+    function sxHasText(el) {
+        for (var c = el.firstChild; c; c = c.nextSibling)
+            if (c.nodeType === 3 && /\S/.test(c.nodeValue)) return true;
+        return false;
+    }
+    function sxMorph(a, b) {
+        if (a.className !== b.className) a.className = b.className;
+        var ka = Array.prototype.slice.call(a.children);
+        var kb = Array.prototype.slice.call(b.children);
+        if (ka.length !== kb.length) { a.innerHTML = b.innerHTML; return; }
+        for (var i = 0; i < ka.length; i++) {
+            if (ka[i].outerHTML === kb[i].outerHTML) continue;
+            var deeper = ka[i].tagName === kb[i].tagName && ka[i].className === kb[i].className &&
+                ka[i].children.length && kb[i].children.length &&
+                !sxHasText(ka[i]) && !sxHasText(kb[i]);
+            if (deeper) sxMorph(ka[i], kb[i]);
+            else a.replaceChild(kb[i], ka[i]);
+        }
+    }
     function sxRepaint() {
         // по ID, а не по классу: любой посторонний узел с классом `sx`, стоящий
         // в документе раньше, подменял бы собой контейнер режима (так и вышло с
@@ -4152,12 +4208,20 @@
         if (!host) return;
         var f = document.activeElement, wasSum = f && f.id === 'btSxSum';
         var pos = wasSum ? f.selectionStart : 0;
-        host.outerHTML = PF.pftSimpleHtml();
+        var tpl = document.createElement('template');
+        tpl.innerHTML = PF.pftSimpleHtml();
+        var neu = tpl.content.firstElementChild;
+        if (!neu) return;
+        if (host.tagName === neu.tagName) sxMorph(host, neu);
+        else host.outerHTML = neu.outerHTML;
         if (wasSum) {
             var i = dq('btSxSum');
-            if (i) { i.focus(); try { i.setSelectionRange(pos, pos); } catch (e) {} }
+            if (i && document.activeElement !== i) {
+                i.focus();
+                try { i.setSelectionRange(pos, pos); } catch (e) {}
+            }
         }
-        sxWire();   // разметку заменили целиком — обработчик ввода вешаем заново
+        sxWire();   // поле суммы могли заменить — обработчик ввода вешаем заново
         sxFit();
     }
     // тик данных: цена и «Мои вложения» живые. Пока человек ПЕЧАТАЕТ сумму, не
@@ -4199,13 +4263,12 @@
         toast('Это лимитная заявка: укажите свою цену и подтвердите');
     };
     window.pftSxPick = function (uid, side) {
-        var n = sxSlot();
-        loadInstrument(n, uid, function (s) {
+        // одной ветки хватает: при совпадающем uid loadInstrument зовёт
+        // колбэк синхронно сам (вторая копия задваивала перерисовку)
+        loadInstrument(sxSlot(), uid, function (s) {
             s.side = side === 'sell' ? 'sell' : 'buy';
             simpleSum = ''; saveSlots(); sxRepaint();
         });
-        var s0 = S(n);
-        if (s0.uid === uid) { s0.side = side === 'sell' ? 'sell' : 'buy'; simpleSum = ''; saveSlots(); sxRepaint(); }
     };
     // ПОДТВЕРЖДЕНИЕ В «ПРОСТО» (макет 07) — своё, человеческими словами:
     // «Что покупаете · Сколько · Примерно по · Комиссия · Спишется · Останется».
@@ -4221,8 +4284,7 @@
         if (!c || !c.lots) { toast(buy ? 'Укажите сумму покупки' : 'Укажите, сколько продать', true); return; }
         var stop = submitBlock(s);
         if (stop) { toast(stop + ': отправлять заявку по замершей цене нельзя', true); return; }
-        var vel = velLeft();
-        if (vel > 0) { toast('Пауза после ' + VEL_MAX + ' заявок подряд — ещё ' + Math.ceil(vel / 1000) + ' с', true); return; }
+        if (velBlock()) return;
         s.lots = c.lots;
         s.kind = 'market';   // «купить сейчас» — это рыночная заявка
         ensureOrderId(s, ['sx', s.uid, s.side, c.lots].join('|'));
@@ -4232,11 +4294,7 @@
     function sxConfirm(n, s, c, buy) {
         var cn = conn() || {};
         var free = T.pos.money;
-        var old = dq('btSxCfOv'); if (old) old.remove();
-        var ov = document.createElement('div');
-        ov.id = 'btSxCfOv';
-        ov.className = 'bk-ov sx-cf-ov';
-        ov.innerHTML = '<div class="bk-back"></div><div class="bk-card sx-cf">' +
+        var m = openModal({ id: 'btSxCfOv', className: 'bk-ov sx-cf-ov', card: '<div class="bk-card sx-cf">' +
             '<h3>Проверьте заказ</h3>' +
             '<div class="sx-cf-sub">' + (buy ? 'Покупка' : 'Продажа') + ' ' +
                 esc(s.meta.name || s.meta.ticker) + (cn.sandbox ? ' на тренировочном счёте' : '') + '</div>' +
@@ -4261,14 +4319,9 @@
                     (buy ? 'Купить' : 'Продать') + '</button>' +
             '</div>' +
             (cn.sandbox ? '<div class="sx-cf-sand">Это тренировочный счёт — деньги не настоящие</div>' : '') +
-        '</div>';
-        document.body.appendChild(ov);
-        requestAnimationFrame(function () { ov.classList.add('open'); });
-        function close() { document.removeEventListener('keydown', onKey); ov.remove(); }
-        function onKey(e) { if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); close(); } }
-        document.addEventListener('keydown', onKey);
+        '</div>' });
+        var ov = m.el, close = m.close;
         ov.querySelector('#btSxCfNo').addEventListener('click', close);
-        ov.querySelector('.bk-back').addEventListener('click', close);
         setTimeout(function () {
             var f = dq('btSxCfYes');
             if (f) try { f.focus(); } catch (e) {}
@@ -4295,12 +4348,8 @@
     ];
     window.pftFsKeys = function () {
         fsMenuClose();
-        var old = dq('btKeysOv'); if (old) old.remove();
-        var ov = document.createElement('div');
-        ov.id = 'btKeysOv';
-        ov.className = 'bk-ov';
         // ✕ — именно .bk-x: класс .bk-back здесь был бы подложкой во всю карточку
-        ov.innerHTML = '<div class="bk-back"></div><div class="bk-card btr-keys">' +
+        var m = openModal({ id: 'btKeysOv', card: '<div class="bk-card btr-keys">' +
             '<button type="button" class="bk-x" aria-label="Закрыть">✕</button>' +
             '<h3>Клавиши терминала</h3>' +
             '<div class="btr-keys-list">' + KEYS.map(function (k) {
@@ -4310,14 +4359,8 @@
             // деньгами случайное нажатие не должно совершать сделку
             '<div class="btr-keys-note">Ни одна клавиша не отправляет заявку. Они только заполняют тикет — ' +
             'отправка остаётся кнопкой с подтверждением.</div>' +
-        '</div>';
-        document.body.appendChild(ov);
-        requestAnimationFrame(function () { ov.classList.add('open'); });
-        function close() { document.removeEventListener('keydown', onKey); ov.remove(); }
-        function onKey(e) { if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); close(); } }
-        document.addEventListener('keydown', onKey);
-        ov.querySelector('.bk-x').addEventListener('click', close);
-        ov.querySelector('.bk-back').addEventListener('click', close);
+        '</div>' });
+        m.el.querySelector('.bk-x').addEventListener('click', m.close);
     };
 
     // ---------- горячие клавиши ----------

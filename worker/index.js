@@ -180,7 +180,9 @@ async function findOrCreateTelegramUser(env, tgUser) {
 function json(body, status) {
     return new Response(JSON.stringify(body), {
         status: status || 200,
-        headers: { 'Content-Type': 'application/json' }
+        // ответы авторизации (в т.ч. /api/telegram-auth) нельзя кэшировать:
+        // в них токены и персональные данные
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
     });
 }
 
@@ -336,8 +338,10 @@ async function handleNotify(request, env) {
 // =============================================
 // Браузер не может ходить в invest-public-api.tinkoff.ru напрямую (CORS),
 // поэтому запросы пробрасывает воркер. Токен брокера приходит в Authorization
-// и НИКОГДА не логируется и не сохраняется — чистый passthrough; ответы
-// не кэшируются, тексты ошибок апстрима наружу не пробрасываем.
+// и НИКОГДА не логируется и не сохраняется — чистый passthrough; ответы не
+// кэшируются. ТЕЛО ответа (включая тексты ошибок брокера) пробрасывается
+// как есть — клиент показывает их пользователю (ruError в broker-api.js);
+// из заголовков апстрима наружу уходит только Retry-After при 429.
 // Защита:
 //   · whitelist методов + требуемый уровень доступа (X-Broker-Scope):
 //     даже если UI по ошибке дёрнет торговый метод при read-подключении,

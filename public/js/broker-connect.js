@@ -131,11 +131,13 @@
     }
 
     // ---------- куски разметки ----------
-    function headHtml(title, subtitle, stepNo) {
+    // title экранируется здесь; subHtml — ДОВЕРЕННАЯ разметка (пилюли шагов),
+    // пользовательских данных в неё не класть — только esc()-нутыми
+    function headHtml(title, subHtml, stepNo) {
         return '<div class="bk-head">' +
             (stepNo ? '<div class="bk-step">Шаг ' + stepNo + ' из 4</div>' : '') +
-            '<div class="bk-title">' + title + '</div>' +
-            (subtitle ? '<div class="bk-sub">' + subtitle + '</div>' : '') +
+            '<div class="bk-title">' + esc(title) + '</div>' +
+            (subHtml ? '<div class="bk-sub">' + subHtml + '</div>' : '') +
             '<button type="button" class="bk-x" aria-label="Закрыть" onclick="brokerConnect.close()">✕</button></div>';
     }
     function footHtml(backStep, nextLabel, nextFn, nextDisabled) {
@@ -207,7 +209,7 @@
             pkRow +
             storeRow('pin', 'Под PIN-кодом', 'Токен шифруется, PIN спрашиваем раз за сессию', pinBadge) +
             '<div id="bkPinFields"' + (sel.storage === 'pin' ? '' : ' hidden') + ' class="ph-2col bk-pin2">' +
-            '<div class="ph-field"><label class="ph-lab" for="bkPin1">PIN-код (4–12 цифр)</label><input class="ph-input" id="bkPin1" type="password" inputmode="numeric" autocomplete="off" maxlength="12"></div>' +
+            '<div class="ph-field"><label class="ph-lab" for="bkPin1">PIN-код (4–12 цифр, надёжнее 6+)</label><input class="ph-input" id="bkPin1" type="password" inputmode="numeric" autocomplete="off" maxlength="12"></div>' +
             '<div class="ph-field"><label class="ph-lab" for="bkPin2">Ещё раз</label><input class="ph-input" id="bkPin2" type="password" inputmode="numeric" autocomplete="off" maxlength="12"></div></div>' +
             '<label class="bk-chk"><input type="checkbox" id="bkSandbox"' + (sel.sandbox ? ' checked' : '') + '><span>Песочница T-Invest — тестовый контур с виртуальными деньгами (нужен отдельный токен песочницы)</span></label>' +
             '<div class="bk-err" id="bkErr" hidden></div>' +
@@ -409,6 +411,8 @@
                 var p1 = card().querySelector('#bkPin1').value, p2 = card().querySelector('#bkPin2').value;
                 if (!/^\d{4,12}$/.test(p1)) return err('PIN — от 4 до 12 цифр.');
                 if (p1 !== p2) return err('PIN-коды не совпадают.');
+                // не блокируем — подталкиваем: короткий PIN проще подсмотреть и подобрать
+                if (p1.length < 6) toast('Совет: PIN из 6+ цифр заметно надёжнее четырёх');
                 sel.pin = p1;
             }
             sel.token = tok;
