@@ -86,7 +86,7 @@ body { font-family: var(--font-text); }
    Файл подключён после тематических → равная специфичность выигрывает
    порядком; где в оригинале ID — он повторён здесь. */
 .pf-ch-t, .pfnt-title, .pfnt-name-edit,                 /* Портфели */
-.pfc-name-ink, .pfc-name-edit, .pfc-pos-t,              /* Портфели — карточка портфеля */
+.pfc-pos-t,                                             /* Портфели — карточка портфеля */
 .pfs2-eyebrow-t,                                        /* «Суммарный капитал» */
 .pfo-name, .pfcf-t, .pf-empty-t, .pfpc-state-t, .pfcap-empty-t,
 .pftg-t,                                                /* Торговля — гейт */

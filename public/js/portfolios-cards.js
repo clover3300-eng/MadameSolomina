@@ -285,6 +285,10 @@
         // список, где вес идёт вразнобой, спорил бы сам с собой); доходность
         // никуда не делась — она в своей колонке «Изм.»
         var list = c.hs.slice().sort(function (a, b) { return b.c.value - a.c.value; });
+        // Блок 5: в конструкторе с заданной вручную высотой список РАСТЯГИВАЕТСЯ на
+        // остаток блока (CSS .pfd-hset ниже), поэтому считать число строк в JS не
+        // нужно — вычислять «хром» карточки формулой значило бы держать в коде
+        // магическое число, которое разъедется от любой правки вёрстки.
         var pos = warns +
             '<div class="pfc-pos-h"><span class="pfc-pos-t">Позиции</span><span class="pfc-cnt">' + c.hs.length + '</span></div>' +
             '<div class="pfc-massets" data-skey="ma-' + p.id + '">' + pfMiniTableHtml(list, p.id, fullV, warm) + '</div>';
@@ -337,18 +341,25 @@
             // граница «акции|облигации» при точном попадании в цель: (100−tgt)% от бумаг,
             // в координатах полосы — умноженные на долю бумаг в полной стоимости
             marker = '<i class="pfc-dist-tgt" style="left:' + ((100 - tgt) * c.value / fullV).toFixed(2) + '%" title="Цель: облигации ' + tgt + '%"></i>';
+            // Строка цели (переверстана 2026-07-22: прежний вариант — сплошной
+            // оранжевый текст — читался как ошибка и рвался на строки, отрывая
+            // сумму). Теперь три части в одном ряду: метка «Цель», отклонение и
+            // действие с суммой; ряд не переносится вразнобой, сумма не отрывается.
             var dev = c.bondPct - tgt;
             if (Math.abs(dev) < 3) {
-                hint = '<div class="pfc-tgt-hint ok">' + PF.CHECK_SVG + 'В балансе с целью ' + tgt + '% облигаций</div>';
+                hint = '<div class="pfc-tgt ok"><span class="pfc-tgt-k">' + PF.CHECK_SVG + 'Цель ' + tgt + '%</span>' +
+                    '<span class="pfc-tgt-t">структура в балансе</span></div>';
             } else {
-                // сумма-рекомендация выдаёт масштаб портфеля, поэтому помечена как
-                // деньги ЯВНО: сам текст подсказки длиннее 40 символов, и правило
-                // «лист с ₽» модуля приватности его не ловит (isMoneyLeaf)
-                var buyTxt = '', money = function (v) { return '<span data-money>~' + fmtRub(v) + '</span>'; };
-                if (dev > 0 && tgt > 0) { var needS = c.bondVal * 100 / tgt - c.value; if (needS > 1) buyTxt = ' — докупить акций на ' + money(needS); }
-                else if (dev < 0 && tgt < 100) { var needB = c.stockVal * 100 / (100 - tgt) - c.value; if (needB > 1) buyTxt = ' — докупить облигаций на ' + money(needB); }
-                hint = '<div class="pfc-tgt-hint off" title="Отклонение от целевой структуры (цель — ' + tgt + '% облигаций). Сумма — сколько докупить недостающего класса, чтобы вернуться к цели без продаж">' +
-                    'Облигаций на ' + Math.abs(dev).toFixed(0) + ' п.п. ' + (dev > 0 ? 'больше' : 'меньше') + ' цели' + buyTxt + '</div>';
+                var need = null, what = '';
+                if (dev > 0 && tgt > 0) { var needS = c.bondVal * 100 / tgt - c.value; if (needS > 1) { need = needS; what = 'акций'; } }
+                else if (dev < 0 && tgt < 100) { var needB = c.stockVal * 100 / (100 - tgt) - c.value; if (needB > 1) { need = needB; what = 'облигаций'; } }
+                // сумма помечена как деньги ЯВНО: текст строки длиннее 40 символов,
+                // и правило «лист с ₽» модуля приватности его не ловит (isMoneyLeaf)
+                hint = '<div class="pfc-tgt off" title="Отклонение от целевой структуры (цель — ' + tgt + '% облигаций). Сумма — сколько докупить недостающего класса, чтобы вернуться к цели без продаж">' +
+                    '<span class="pfc-tgt-k">Цель ' + tgt + '%</span>' +
+                    '<span class="pfc-tgt-t">облигаций на ' + Math.abs(dev).toFixed(0) + ' п.п. ' + (dev > 0 ? 'больше' : 'меньше') + '</span>' +
+                    (need != null ? '<span class="pfc-tgt-b">докупить ' + what + ' <b data-money>~' + fmtRub(need) + '</b></span>' : '') +
+                '</div>';
             }
         }
         return '<div class="pfc-alloc">' +
@@ -459,13 +470,19 @@
         var stale = !warm && !!noQ;
         var ch = chgParts(c, noQ);
         var nm = assetDisplayName(h);
+        // У ОБЛИГАЦИЙ первой строкой идёт ИМЯ («ОФЗ 26230»), а ISIN — подписью:
+        // 12-значный SU26230RMFS1 не помещался в колонку «Актив» и обрезался
+        // многоточием, из-за чего строки облигаций визуально не выравнивались с
+        // акциями (просьба 2026-07-22). У акций порядок прежний: тикер + компания.
+        var head = isB ? (nm && nm !== h.ticker ? nm : h.ticker) : h.ticker;
+        var sub = isB ? (nm && nm !== h.ticker ? h.ticker : '') : (nm && nm !== h.ticker ? nm : '');
         var tk = isB
-            ? '<b>' + esc(h.ticker) + '</b>'
-            : '<b class="is-go" onclick="pfOpenTicker(\'' + jsArg(h.ticker) + '\');event.stopPropagation()" title="Открыть в терминале">' + esc(h.ticker) + '</b><i class="pfc-mgo">↗ терминал</i>';
+            ? '<b>' + esc(head) + '</b>'
+            : '<b class="is-go" onclick="pfOpenTicker(\'' + jsArg(h.ticker) + '\');event.stopPropagation()" title="Открыть в терминале">' + esc(head) + '</b><i class="pfc-mgo">↗ терминал</i>';
         var row = '<tr class="pfc-mtr' + (open ? ' open' : '') + (stale ? ' stale' : '') + '" data-hid="' + h.id + '" onclick="pfToggleAssetRow(\'' + pid + '\',\'' + h.id + '\')">' +
             '<td class="pfc-mc-as"><span class="pfc-mtk">' +
                 '<svg class="pfc-mch' + (open ? ' up' : '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>' +
-                '<span class="pfc-mtt"><span class="pfc-tkline">' + tk + '</span>' + (nm && nm !== h.ticker ? '<span class="pfc-mnm">' + esc(nm) + '</span>' : '') + '</span>' +
+                '<span class="pfc-mtt"><span class="pfc-tkline">' + tk + '</span>' + (sub ? '<span class="pfc-mnm">' + esc(sub) + '</span>' : '') + '</span>' +
             '</span></td>' +
             '<td class="pfc-mqty pfc-mc-qty" data-money>' + fmtQty(c.qty) + ' шт</td>' +
             '<td class="pfc-mbuy pfc-mc-buy" data-money="off"' + ptip + '>' + fmtPrice(c.buy) + '</td>' +
@@ -1845,11 +1862,28 @@
                 // colspan по фактическому числу колонок строки: 6 на «Обзоре», 4 в узком виде
                 tmp.innerHTML = pfMiniDetailRowHtml(h, c, row.cells.length, pid);
                 row.parentNode.insertBefore(tmp.firstChild, row.nextSibling);
+                revealRow(row);
             } else if (!willOpen && hasDet) {
                 next.parentNode.removeChild(next);
             }
         });
     };
+    // Список позиций ограничен пятью строками и скроллится внутри, поэтому
+    // раскрытая деталь может оказаться за нижней кромкой — подкручиваем список так,
+    // чтобы строка и её субданные были видны целиком. Скроллим ТОЛЬКО контейнер
+    // списка (не scrollIntoView: тот утащил бы и саму страницу).
+    function revealRow(row) {
+        var list = row.closest('.pfc-massets'); if (!list) return;
+        var det = row.nextElementSibling;
+        var top = row.offsetTop, bottom = (det && det.classList.contains('pfc-mdet') ? det.offsetTop + det.offsetHeight : row.offsetTop + row.offsetHeight);
+        var head = list.querySelector('thead');
+        var headH = head ? head.offsetHeight : 0;   // липкая шапка перекрывает верх
+        requestAnimationFrame(function () {
+            var visTop = list.scrollTop + headH, visBottom = list.scrollTop + list.clientHeight;
+            if (bottom > visBottom) list.scrollTop = Math.min(bottom - list.clientHeight + 6, top - headH);
+            else if (top < visTop) list.scrollTop = top - headH;
+        });
+    }
     window.pfCloseMenu = function () {
         // не терять начатый ввод: если форма добавления заполнена (есть тикер) — добавляем актив
         // перед закрытием. Частая ошибка: заполнил поля и жмёшь «Готово» вместо «Добавить».

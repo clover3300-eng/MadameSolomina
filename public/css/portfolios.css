@@ -215,20 +215,31 @@ body.dark-mode .pf-card--tall .pfc-menu { box-shadow: 0 0 0 1.5px var(--pf-accen
    период + служебные иконки справа */
 .pfc-top { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 16px 18px 0; }
 .pfc-titles { min-width: 0; display: flex; align-items: center; gap: 8px; }
-/* название портфеля — сериф + квадратик цвета портфеля; клик → инлайн-правка */
-.pfc-name { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; min-width: 0; cursor: text; line-height: 1.1; }
-.pfc-name-dot { width: 8px; height: 8px; border-radius: 3px; background: var(--pf-accent); flex: none; }
+/* Название портфеля — моно-пилюля цвета портфеля (возврат к прежнему виду по
+   просьбе 2026-07-22; серифный вариант макета 02 с квадратиком-меткой отменён).
+   Клик по пилюле → инлайн-правка имени. */
+.pfc-name { display: inline-flex; align-items: center; max-width: 100%; min-width: 0; cursor: text; line-height: 1.1; }
+.pfc-name-dot { display: none; }   /* метка цвета не нужна: пилюля сама в цвете портфеля */
 .pfc-name-ink {
     display: inline-block; max-width: 100%;
-    font-family: Georgia, 'Times New Roman', serif; font-size: 19px; font-weight: 400; color: #0f172a;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
+    color: color-mix(in srgb, var(--pf-accent) 82%, #1b2433);
+    background: color-mix(in srgb, var(--pf-accent) 11%, transparent);
+    border-radius: 9px; padding: 6px 11px 5px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    transition: background 0.15s;
 }
-body.dark-mode .pfc-name-ink { color: #e8eef7; }
+.pfc-name:hover .pfc-name-ink { background: color-mix(in srgb, var(--pf-accent) 18%, transparent); }
+body.dark-mode .pfc-name-ink {
+    color: color-mix(in srgb, var(--pf-accent) 60%, #f7fbff);
+    background: color-mix(in srgb, var(--pf-accent) 22%, transparent); }
 .pfc-name-edit {
     width: 100%; min-width: 120px; box-sizing: border-box;
-    font-family: Georgia, 'Times New Roman', serif; font-size: 19px; font-weight: 400; color: #0f172a;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; letter-spacing: 0.09em;
+    color: #0f172a;
     border: none; border-bottom: 2px solid var(--pf-accent); border-radius: 7px 7px 2px 2px;
-    background: color-mix(in srgb, var(--pf-accent) 10%, transparent); padding: 2px 8px 3px; outline: none; }
+    background: color-mix(in srgb, var(--pf-accent) 12%, transparent); padding: 6px 10px 5px; outline: none; }
 body.dark-mode .pfc-name-edit { color: #f7fbff; background: color-mix(in srgb, var(--pf-accent) 20%, transparent); }
 .pfc-ctrls { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 /* переключатель периода: тот же контрол, что в настройках виджета (.pfdcfg-seg-b),
@@ -436,8 +447,13 @@ body.dark-mode .pfc-mdet-in { background: rgba(255,255,255,0.03); }
 /* лот: дата · кол-во · цена · сумма (сумма — чистая, НКД поясняется строкой ниже) */
 /* Колонки лота: дата · кол-во · цена · сумма. Ширины ужимаемые (minmax), а сумме
    гарантирован минимум — при фиксированных 78/62/88px она получала остаток и
-   сжималась до 37px, обрезая «50 000 ₽». */
-.pfc-lot { display: grid; grid-template-columns: minmax(64px, 70px) minmax(46px, 52px) minmax(58px, 70px) minmax(62px, 1fr);
+   сжималась до 37px, обрезая «50 000 ₽».
+   Последняя колонка НЕ 1fr (правка 2026-07-22): растягиваясь на всю оставшуюся
+   ширину, она уносила сумму к правому краю и между ценой и суммой зияла пустота
+   в треть строки. Теперь ряд прижат влево (justify-content), сумма идёт сразу
+   за ценой, а суммы соседних лотов по-прежнему выровнены по своей колонке. */
+.pfc-lot { display: grid; justify-content: start;
+    grid-template-columns: minmax(64px, 70px) minmax(46px, 52px) minmax(58px, 72px) minmax(72px, 96px);
     gap: 0 10px; align-items: baseline;
     font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 600; padding: 4px 0; font-variant-numeric: tabular-nums; }
 .pfc-lot + .pfc-lot { border-top: 1px solid rgba(15,23,42,0.07); }
@@ -2100,15 +2116,26 @@ body.dark-mode .tbmk-go:hover { border-color: rgba(255,255,255,0.28); color: #f1
 .pfc-dist-tgt { position: absolute; top: -3px; bottom: -3px; width: 2px; border-radius: 2px;
     background: #1b2433; opacity: 0.55; transform: translateX(-1px); pointer-events: auto; }
 body.dark-mode .pfc-dist-tgt { background: #eef3f9; opacity: 0.6; }
-/* подсказка живёт внутри .pfc-alloc — боковые поля даёт его паддинг */
-.pfc-tgt-hint { margin: 8px 0 0; font-size: 11.5px; font-weight: 650; line-height: 1.35;
-    display: flex; align-items: center; gap: 6px; }
-.pfc-tgt-hint svg { width: 12px; height: 12px; flex: 0 0 auto; }
-.pfc-tgt-hint.ok { color: #6b7c92; }
-.pfc-tgt-hint.ok svg { color: #16a34a; }
-.pfc-tgt-hint.off { color: #9a6a1f; }
-body.dark-mode .pfc-tgt-hint.ok { color: #93a3b8; }
-body.dark-mode .pfc-tgt-hint.off { color: #e0b465; }
+/* Строка целевой структуры под полосой (переверстана 2026-07-22): ряд из метки
+   «Цель N%», отклонения и действия с суммой. Прежний вариант был сплошной
+   оранжевой фразой — читался как ошибка и переносился, отрывая сумму от текста.
+   Живёт внутри .pfc-alloc, боковые поля даёт его паддинг. */
+.pfc-tgt { margin: 9px 0 0; display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px;
+    font-size: 11.5px; line-height: 1.3; color: #64748b; }
+body.dark-mode .pfc-tgt { color: #8b98ad; }
+/* метка цели — тихий чип, а не цветной текст */
+.pfc-tgt-k { display: inline-flex; align-items: center; gap: 5px; flex: none;
+    font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 700;
+    padding: 3px 7px; border-radius: 6px; background: rgba(15,23,42,0.06); color: #64748b; white-space: nowrap; }
+body.dark-mode .pfc-tgt-k { background: rgba(255,255,255,0.08); color: #9fb0c4; }
+.pfc-tgt-k svg { width: 11px; height: 11px; color: #16a34a; }
+body.dark-mode .pfc-tgt-k svg { color: #34d399; }
+.pfc-tgt-t { min-width: 0; }
+/* действие с суммой — не переносится внутри себя, сумма всегда рядом с глаголом */
+.pfc-tgt-b { margin-left: auto; white-space: nowrap; color: #64748b; }
+.pfc-tgt-b b { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #0f172a; }
+body.dark-mode .pfc-tgt-b { color: #8b98ad; }
+body.dark-mode .pfc-tgt-b b { color: #eef3f9; }
 
 /* --- «Свободные деньги» и «Цель · облигации» в настройках ⚙ --- */
 .pfm-extras { display: flex; gap: 10px; margin: 10px 0 2px; }
@@ -2190,7 +2217,16 @@ body.dark-mode .pfpc-kind.kind-red { color: #93c5fd; background: rgba(61,111,209
    правила) — раньше в hset его разворачивали на все строки (overflow:visible;flex:0 0 auto),
    из-за чего после ресайза показывались ВСЕ тикеры; теперь ограничение стабильно. */
 .pfd-item.pfd-hset .pfc-top { flex-shrink: 0; }
+/* Блок 5: у блока с ЗАДАННОЙ ВРУЧНУЮ высотой список позиций растягивается на весь
+   остаток карточки и скроллится сам — виджет L показывает больше строк, а не
+   пустоту под пятью (правило «контент подстраивается под размер виджета»).
+   Число строк НЕ считается формулой: любая оценка «хрома» карточки разъехалась бы
+   от первой же правки вёрстки — за нас это делает flex.
+   min-height — на случай, когда блок ниже собственного хрома карточки: без него
+   список схлопывался в ноль, а подвал с «Ребалансом» уезжал за кромку. Тогда
+   прокручивается вся начинка (.pfc-normal), и кнопка остаётся достижимой. */
 .pfd-item.pfd-hset .pfc-normal { overflow-y: auto; scrollbar-width: thin; }
+.pfd-item.pfd-hset .pfc-massets { flex: 1 1 auto; max-height: none; min-height: 108px; }
 /* когда в карточке открыт флайаут (настройки/график/меню выходят ЗА блок) — снимаем
    клип, иначе в блоке с ручной высотой они бы обрезались; флайаут overlay-ем ложится
    поверх соседей, как и в обычной сетке. .pf-impmenu.open — дропдауны-фильтры
