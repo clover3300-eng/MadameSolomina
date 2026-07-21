@@ -976,7 +976,9 @@
         var loPx = bids.length ? bids[bids.length - 1].px : askArr[askArr.length - 1].px;
         var out = myOutList(mine, seen, hiPx, loPx, last, s, n);
         return '<div class="btr-ax">' +
-            '<div class="btr-ax-head"><span>Лоты · спрос</span><span>Цена</span><span>Предложение · лоты</span></div>' +
+            // «Покупка/Продажа» — как в стакане самих Т-Инвестиций; прежнее
+            // «Предложение · лоты» клипалось в карточке обычной ширины
+            '<div class="btr-ax-head"><span>Лоты · покупка</span><span>Цена</span><span>Продажа · лоты</span></div>' +
             out.up + askHtml + mid + bidHtml + out.down +
         '</div>' + aggBar(n, s);
     }
@@ -3244,22 +3246,34 @@
         if (!total) return;
         PF.pfConfirm({ danger: true, title: 'Отменить все заявки?',
             text: 'Будут сняты все активные заявки (' + T.orders.length + ') и стоп-заявки (' + T.stops.length + ').', ok: 'Отменить все' }, function () {
-            var chain = Promise.resolve(), ok = 0;
+            var chain = Promise.resolve(), ok = 0, failed = [];
+            // «снято N из M» не говорит, ЧТО осталось висеть — а висящая заявка
+            // это заблокированные деньги/бумаги; называем несниёмные поимённо
+            function tkOf(o) {
+                var m = instrMem[o.instrumentUid];
+                return (m && m.ticker) || 'заявка ' + String(o.orderId || o.stopOrderId || '?').slice(0, 6) + '…';
+            }
             T.orders.forEach(function (o) {
                 chain = chain.then(function () {
                     return A().call('CancelOrder', { accountId: c.accountId, orderId: o.orderId })
-                        .then(function () { ok++; }, function () {});
+                        .then(function () { ok++; }, function () { failed.push(tkOf(o)); });
                 });
             });
             T.stops.forEach(function (o) {
                 chain = chain.then(function () {
                     return A().call('CancelStopOrder', { accountId: c.accountId, stopOrderId: o.stopOrderId })
-                        .then(function () { ok++; }, function () {});
+                        .then(function () { ok++; }, function () { failed.push(tkOf(o)); });
                 });
             });
             chain.then(function () {
-                A().logEvent('order_cancel', 'паник-отмена: снято ' + ok + ' из ' + total);
-                toast('Снято заявок: ' + ok);
+                A().logEvent('order_cancel', 'паник-отмена: снято ' + ok + ' из ' + total +
+                    (failed.length ? ', не снялись: ' + failed.join(', ') : ''));
+                if (failed.length) {
+                    toast('Снято ' + ok + ' из ' + total + '. Не снялись: ' + failed.join(', ') +
+                        ' — попробуйте снять их по одной', true);
+                } else {
+                    toast('Снято заявок: ' + ok);
+                }
                 pollOrders();
             });
         });

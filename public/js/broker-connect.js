@@ -74,12 +74,28 @@
         overlay.id = 'bkOverlay';
         overlay.innerHTML = '<div class="bk-back"></div><div class="bk-card" role="dialog" aria-modal="true" aria-label="Подключение брокера"></div>';
         document.body.appendChild(overlay);
-        overlay.querySelector('.bk-back').addEventListener('click', close);
+        overlay.querySelector('.bk-back').addEventListener('click', softClose);
         document.addEventListener('keydown', function (e) {
             // Escape в открытой PIN-модалке закрывает только её, не визард под ней
             if (pinOverlay && pinOverlay.classList.contains('open')) return;
-            if (e.key === 'Escape' && overlay.classList.contains('open')) close();
+            if (e.key === 'Escape' && overlay.classList.contains('open')) softClose();
         });
+    }
+    // Случайный клик мимо окна (или Escape) на середине пути молча терял
+    // введённый токен и проверенные счета. С прогрессом закрываем только со
+    // второго раза — тот же приём, что «Точно отключить?». «✕» закрывает сразу:
+    // это прицельное действие, промахнуться по нему нельзя.
+    var closeArm = 0;
+    function riskyProgress() {
+        if (step === 'accounts') return true;
+        if (step !== 'token') return false;
+        var t = card().querySelector('#bkToken');
+        return !!(t && t.value.trim());
+    }
+    function softClose() {
+        if (!riskyProgress() || Date.now() - closeArm < 2800) { close(); return; }
+        closeArm = Date.now();
+        toast('Введённое потеряется — чтобы закрыть, кликните мимо окна ещё раз');
     }
     function card() { return overlay.querySelector('.bk-card'); }
 
@@ -182,7 +198,7 @@
         return headHtml('Вставьте токен', 'Он останется только на этом устройстве', 3) +
             '<div class="bk-body">' +
             '<div class="ph-field"><label class="ph-lab" for="bkToken">API-токен Т-Инвестиций</label>' +
-            '<div class="ph-tokwrap"><input class="ph-input" id="bkToken" type="password" placeholder="t.xxxxxxxx…" autocomplete="off" spellcheck="false">' +
+            '<div class="ph-tokwrap"><input class="ph-input" id="bkToken" type="password" placeholder="t.xxxxxxxx…" autocomplete="one-time-code" spellcheck="false">' +
             '<button class="ph-eye" type="button" id="bkEye" aria-label="Показать токен">' + IC.eye + '</button></div>' +
             '<button type="button" class="bk-clip" id="bkClip" hidden onclick="brokerConnect.clearClip()">Очистить буфер обмена</button></div>' +
             '<div class="bk-lab">Как хранить токен</div>' +
@@ -312,6 +328,13 @@
         wireStep();
     }
     function wireStep() {
+        // Enter в поле токена и PIN-полях — то же, что «Проверить и продолжить»:
+        // рука уже на клавиатуре, тянуться мышью к кнопке незачем
+        function submitOnEnter(e) {
+            if (e.key !== 'Enter') return;
+            e.preventDefault();
+            brokerConnect.verify();
+        }
         var tok = card().querySelector('#bkToken');
         if (tok) {
             if (sel.token) tok.value = sel.token;
@@ -319,8 +342,13 @@
                 var clip = card().querySelector('#bkClip');
                 if (clip) clip.hidden = false;
             });
+            tok.addEventListener('keydown', submitOnEnter);
             setTimeout(function () { try { tok.focus(); } catch (e) {} }, 60);
         }
+        ['#bkPin1', '#bkPin2'].forEach(function (sel2) {
+            var p = card().querySelector(sel2);
+            if (p) p.addEventListener('keydown', submitOnEnter);
+        });
         var eye = card().querySelector('#bkEye');
         if (eye) eye.addEventListener('click', function () {
             tok.type = tok.type === 'password' ? 'text' : 'password';
@@ -484,8 +512,18 @@
             render();
         },
         unlock: function () {
+            // кнопка не должна молчать: null приходит и при кулдауне после пяти
+            // неверных PIN, и при отмене — без объяснения она выглядит сломанной
+            var waitMs = api().pinCooldownLeft ? api().pinCooldownLeft() : 0;
+            if (waitMs > 0) {
+                toast('После пяти неверных PIN — пауза ещё ' + Math.ceil(waitMs / 1000) + ' с', true);
+                return;
+            }
             api().getToken(true).then(function (t) {
-                if (t) { toast('Токен разблокирован'); render(); }
+                if (t) { toast('Токен разблокирован'); render(); return; }
+                var left = api().pinCooldownLeft ? api().pinCooldownLeft() : 0;
+                if (left > 0) toast('Пять неверных PIN — пауза ' + Math.ceil(left / 1000) + ' с, потом можно снова', true);
+                // отмена самим пользователем — молчим, он и так в курсе
             });
         },
         // двухкликовое подтверждение как у выхода из аккаунта
@@ -536,6 +574,7 @@
             setTimeout(function () { try { input.focus(); } catch (e) {} }, 60);
             function done(val) {
                 pinOverlay.classList.remove('open');
+                input.value = '';   // PIN не должен лежать в DOM скрытой модалки
                 ok.removeEventListener('click', onOk);
                 cancel.removeEventListener('click', onCancel);
                 input.removeEventListener('keydown', onKey);

@@ -644,6 +644,9 @@
         canTrade: canTrade,
         passkeySupported: passkeySupported,   // false до асинхронной проверки, потом обновится
         getToken: getToken,
+        // сколько осталось паузы после пяти неверных PIN (0 = можно вводить) —
+        // визард объясняет этим молчание кнопки «Разблокировать»
+        pinCooldownLeft: function () { return Math.max(0, pinLockUntil - Date.now()); },
         lock: lock,
         setPinPrompt: function (fn) { pinPrompt = fn; },
         connect: connect,

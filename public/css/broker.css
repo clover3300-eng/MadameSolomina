@@ -419,6 +419,8 @@ body.dark-mode .btr-search-none { color: #9fb1c6; }
 .btr-ax-head span {
     font-family: var(--font-ui); font-size: 9.5px; font-weight: 700;
     letter-spacing: 0.09em; text-transform: uppercase; color: #97a3b4; white-space: nowrap;
+    /* узкий виджет: длинная подпись мягко троеточится, а не режется кромкой */
+    min-width: 0; overflow: hidden; text-overflow: ellipsis;
 }
 .btr-ax-head span:first-child { text-align: right; padding-right: 8px; }
 .btr-ax-head span:nth-child(2) { text-align: center; }
@@ -1473,8 +1475,12 @@ body.pfsd-open #pftScreens { display: none !important; }
 .pfts-menu .pfts-off { opacity: 0.4; cursor: default; }
 .pfts-menu .pfts-off:hover { background: none; color: #475569; }
 
-/* полоса перекрывает низ сетки — освобождаем ей место под последним виджетом */
-body:has(#pftScreens.on) #pfxTabPanel { padding-bottom: 74px; }
+/* Полоса перекрывает низ сетки — освобождаем ей место под последним виджетом.
+   Запас считан по фактам (замер 1600×1000, zoom 0.9): столбик #cornerStack
+   вторгается снизу на ~155 layout-px, полоса — на ~75; padding панели даёт 84.
+   Прежних 74px хватало ровно впритык — последняя строка «Моих заявок» и
+   «Отменить все» упирались в столбик правым краем. */
+body:has(#pftScreens.on) #pfxTabPanel { padding-bottom: 100px; }
 /* ...и уводим тост НАД полосу: он живёт внизу по центру, то есть ровно на её
    месте — накрывал пилюли и кнопки, а с кнопкой действия (.has-act, у него
    pointer-events: auto) ещё и перехватывал клики. --pfts-h ставит сам модуль
