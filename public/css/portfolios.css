@@ -2122,9 +2122,12 @@ body.dark-mode .pf-ratestile-eye.pfc-act:hover { background: rgba(255,255,255,0.
    получает всю ширину плитки, и «Ставка по вкладам» / «Доходность ОФЗ 10 лет»
    переносятся целиком. */
 .pfd-item .pf-ratesband .drt-tile, .pf-ratesstack .drt-tile {
-    display: grid; grid-template-columns: minmax(0, 1fr); align-items: center;
+    display: grid; grid-template-columns: minmax(0, 1fr); align-items: stretch;
 }
-.pfd-item .pf-ratesband .drt-body, .pf-ratesstack .drt-body { min-width: 0; justify-content: center; gap: 4px; }
+/* В узкой плитке название переносится на 2 строки, у соседа остаётся одной — при
+   центрировании значения «плясали» по высоте ряда. Тело растянуто на плитку,
+   подпись прижата к верху, значение к низу: в ряду всё по одной линии. */
+.pfd-item .pf-ratesband .drt-body, .pf-ratesstack .drt-body { min-width: 0; justify-content: space-between; gap: 4px; }
 
 /* ---- КОНСТРУКТОР: полоса адаптируется к ширине БЛОКА, а не окна ----
    Базовая .drt-grid — repeat(4,1fr) с переносами по ШИРИНЕ ОКНА; в конструкторе блок
