@@ -1308,8 +1308,7 @@
         var list = pfdNewsList();
         // кнопки конструктора — в потоке шапки ПЕРЕД «+» (news в PFD_OWN_CHROME):
         // без своей пары кнопок виджет стало бы нечем настроить и удалить
-        var head = PF.pfCardHead('', 'Новости по позициям',
-            'кольцо — есть непрочитанное; клик по кольцу — плеер, по имени — фокус бумаги',
+        var head = PF.pfCardHead('', 'Новости по позициям', '',
             pfdInChromeHtml('news') +
             '<button class="pff-add" onclick="pfdNewsAddToggle()" title="Добавить тикер не из портфеля" aria-label="Добавить тикер">' + PFD_PLUS_SVG + '</button>');
         if (!list.length && !pfdNewsAdding) {
