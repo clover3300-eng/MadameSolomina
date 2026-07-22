@@ -3124,7 +3124,8 @@ body.dark-mode .pfhm-pv-hint { border-top-color: rgba(255, 255, 255, 0.12); colo
 .pf-newsblk .nwf-row:last-child { border-bottom: 0; }
 .pf-newsblk .nwf-row[role="link"] { cursor: pointer; }
 .pf-newsblk .nwf-row .nws-dot { top: 16px; }
-.pf-newsblk .nwf-row .nwd-nt { white-space: normal; overflow: visible; }
+/* фокус — режим чтения: крупнее однострочной ленты (12.5px там — размер подписи) */
+.pf-newsblk .nwf-row .nwd-nt { white-space: normal; overflow: visible; font-size: 13.5px; line-height: 1.45; }
 .pf-newsblk .nwf-row[role="link"]:hover .nwd-nt { color: var(--pf-accent); }
 .pf-newsblk .nwf-row.read .nwd-nt { color: #8494a7; }
 /* узкий виджет (конструктор): тикер+изменение в строку, заголовок в две строки */
@@ -3132,7 +3133,9 @@ body.dark-mode .pfhm-pv-hint { border-top-color: rgba(255, 255, 255, 0.12); colo
     .pf-newsblk .nws-strip { gap: 11px; }
     .pf-newsblk .nwd-row { grid-template-columns: 1fr; gap: 7px; }
     .pf-newsblk .nwd-tkb { flex-direction: row; align-items: baseline; gap: 8px; }
-    .pf-newsblk .nwd-nt { white-space: normal; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    /* кламп в 2 строки — ТОЛЬКО строкам ленты: в фокусе overflow:visible, и клампованный
+       -webkit-box рисовал обрезанную третью строку поверх меты (наезд текста) */
+    .pf-newsblk .nwd-row .nwd-nt { white-space: normal; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
     .pf-newsblk .nwf-nm { white-space: normal; }
     .pf-newsblk .nwp-nav.l { left: -8px; }
     .pf-newsblk .nwp-nav.r { right: -8px; }
