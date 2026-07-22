@@ -804,6 +804,67 @@
 .bts .pal-foot kbd { font-family: var(--font-num); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; margin-right: 4px; }
 .bts .pal-foot .pf-r { margin-left: auto; }
 
+/* ═══════ край сцены (экраны 05, 11) ═══════ */
+.bts .fresh.dimm { color: var(--dim); }
+.bts .fresh.dimm i { background: var(--dim); }
+/* баннер обрыва: честный возраст данных вместо молчаливо замерших цифр */
+.bts .eg-bannerw:empty { display: none; }
+.bts .eg-banner {
+    display: flex; align-items: center; gap: 9px;
+    font: 600 11px/1.45 var(--font-ui); color: var(--amb);
+    background: color-mix(in srgb, var(--amb) 9%, transparent);
+    border-radius: 10px; padding: 9px 12px;
+}
+.bts .eg-banner i { width: 7px; height: 7px; border-radius: 50%; background: var(--amb); flex: none; }
+/* пустая сторона стакана: пустоту показываем, не прячем */
+.bts .eg-empty {
+    font: 400 11px var(--font-ui); color: var(--dim); text-align: center;
+    padding: 14px 0; border: 1px dashed var(--line); border-radius: 10px; margin: 4px 0;
+}
+/* онбординг: три опоры под кнопкой поиска */
+.bts-hello button kbd {
+    font: 400 10px var(--font-num); color: color-mix(in srgb, var(--bg) 70%, transparent);
+    border: 1px solid color-mix(in srgb, var(--bg) 35%, transparent);
+    border-radius: 6px; padding: 2px 6px; margin-left: 4px;
+}
+.bts-hello .eg-steps {
+    margin-top: 26px; text-align: left;
+    display: flex; flex-direction: column; gap: 7px;
+    font: 400 11.5px/1.5 var(--font-ui); color: var(--mut);
+}
+.bts-hello .eg-steps b { color: var(--ink); font-weight: 600; }
+/* отказ брокера словами */
+.bts-fail-ic, .btr-cf .bts-fail-ic {
+    width: 44px; height: 44px; border-radius: 50%; margin: 4px auto 10px;
+    background: color-mix(in srgb, #dc2626 12%, transparent); color: #dc2626;
+    display: grid; place-items: center; font-size: 19px;
+}
+.bts-fail-raw { margin-top: 10px; font: 400 11px var(--font-ui); color: var(--dim, #94a3b8); }
+.bts-fail-raw summary { cursor: pointer; }
+.bts-fail-raw code { display: block; margin-top: 6px; font: 400 10.5px var(--font-num); word-break: break-all; opacity: 0.8; }
+/* рост ступени: подсветка новых слоёв + тост с откатом (один показ) */
+.bts .grow {
+    position: absolute; z-index: 47; pointer-events: none;
+    border: 1.5px dashed color-mix(in srgb, var(--acc) 55%, transparent);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--acc) 6%, transparent);
+}
+.bts .grow span {
+    position: absolute; left: 8px; top: -9px;
+    font: 700 10px var(--font-ui); color: var(--acc);
+    background: var(--card); border-radius: 5px; padding: 1px 7px;
+}
+.bts .grow-toast {
+    position: absolute; left: 50%; bottom: 70px; transform: translateX(-50%);
+    width: 400px; background: var(--card);
+    border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px;
+    z-index: 48; text-align: center;
+    box-shadow: 0 28px 64px -28px rgba(24, 38, 60, 0.5);
+}
+.bts .grow-toast b { font: 400 17px var(--font-title); }
+.bts .grow-toast p { font: 400 11.5px/1.55 var(--font-ui); color: var(--mut); margin: 6px 0 10px; }
+.bts .grow-toast .ub-row { justify-content: center; margin-top: 0; }
+
 /* ---------- узкие десктопы ----------
    Зазор тикет↔сцена держим ЯВНО на каждой ступени: right героя = right тикета
    + его ширина + гэп. На «Разгоне» тикет шире (400), и без своей пары правил

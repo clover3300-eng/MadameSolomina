@@ -2242,6 +2242,35 @@
             }
         }).catch(function () { /* тихо: судьбу заявки покажет история */ });
     }
+    // ---------- отказ брокера словами (экран 11, карточка d) ----------
+    // Причина — словами человека; код ошибки — в раскрываемой подсказке, для
+    // письма в поддержку. Деньги при отказе не списываются — говорим прямо.
+    var ERR_WORDS = [
+        [/30042|недостаточно средств|insufficient/i, 'Недостаточно средств на счёте. Деньги не списаны.'],
+        [/30079|не.?доступен для торг|instrument .*unavailable/i, 'Бумага сейчас недоступна для торгов.'],
+        [/30027|торги.*приостановлен|not available for trading/i, 'Торги по бумаге приостановлены биржей.'],
+        [/30081|аукцион/i, 'Идёт аукцион — рыночная заявка невозможна, поставьте лимитку.'],
+        [/минимальн.*шаг|min.?price.?increment|30057/i, 'Цена не ложится на шаг инструмента — тикет подставит ближайшую.'],
+        [/лот|lot|30063/i, 'Количество не кратно лоту этой бумаги.'],
+        [/лимит.*заявок|too many|429/i, 'Слишком много заявок подряд — подождите минуту.'],
+        [/токен|unauthorized|401|40003/i, 'Брокер не узнал токен — проверьте подключение в кабинете.']
+    ];
+    function humanErr(msg) {
+        for (var i = 0; i < ERR_WORDS.length; i++) if (ERR_WORDS[i][0].test(msg)) return ERR_WORDS[i][1];
+        return 'Брокер не принял заявку. Деньги не списаны — попробуйте ещё раз или уточните параметры.';
+    }
+    function scnOrderFail(e) {
+        var raw = String((e && e.message) || '').slice(0, 200);
+        var m = openModal({ id: 'btConfirmOv', card: '<div class="bk-card bk-card-pin btr-cf" role="alertdialog" aria-modal="true">' +
+            '<div class="bts-fail-ic">✕</div>' +
+            '<div class="bk-title" style="text-align:center">Заявка не принята</div>' +
+            '<div class="btr-note" style="text-align:center">' + esc(humanErr(raw)) + '</div>' +
+            (raw ? '<details class="bts-fail-raw"><summary>Ответ брокера — для письма в поддержку</summary>' +
+                '<code>' + esc(raw) + '</code></details>' : '') +
+            '<div class="bk-foot"><button type="button" class="bk-btn bk-btn-pri" id="btCfNo">Понятно</button></div></div>' });
+        m.el.querySelector('#btCfNo').addEventListener('click', m.close);
+    }
+
     // ---------- частичное исполнение (экран 10, карточка 5) ----------
     // Лимитка стоит в стакане, а часть уже откушена: говорим ОДИН РАЗ на
     // изменение исполненного, не каждый тик. Купленное — в портфеле сразу.
@@ -2693,6 +2722,8 @@
         if (sceneLive()) {
             sxWire(); scnFit(); startPolling();
             scnKMount();   // свечи «Разгона»: движок и канвас переживают ре-рендер
+            // подсветка роста — после раскладки: рамки меряются от живых элементов
+            if (scnGrowFrom) requestAnimationFrame(scnGrowPaint);
             return;
         }
         var live = document.querySelector('#panel-portfolios.active .btr-card');
@@ -3268,7 +3299,10 @@
             s.busy = false;
             // s.orderId сохраняем: повтор той же попытки не продублирует заявку
             A().logEvent('order_error', s.meta.ticker + ' · ' + (e.message || '').slice(0, 120));
-            toast(e.message || 'Заявка не прошла', true);
+            // на сцене отказ брокера говорит словами человека (экран 11);
+            // старым карточкам терминала остаётся прежний тост
+            if (sceneLive()) scnOrderFail(e);
+            else toast(e.message || 'Заявка не прошла', true);
             var b = dqs('Submit', n); if (b) b.disabled = false;
             repaintTicketBits(n);
             repaintOrders();
@@ -3564,13 +3598,59 @@
         stageState = o;
         return o;
     }
+    // рост ступени (вверх) показывается один раз: подсветка новых слоёв +
+    // тост с честным откатом (экран 05). Отдельного ключа нет — флаг сессии,
+    // срабатывает на смену того же bt_stage_v1
+    var STAGE_ORDER = { start: 0, accel: 1, control: 2 };
+    var scnGrowFrom = '';
     function setStage(k) {
         if (!stageName(k)) return;
         var o = stageObj();
         if (o.stage === k) return;
+        scnGrowFrom = STAGE_ORDER[k] > STAGE_ORDER[o.stage] ? o.stage : '';
         o.stage = k;
         saveStageRaw(o);
         if (PF.renderNoAnim) PF.renderNoAnim();
+    }
+    // подсветка живёт один показ: рамки считаются от ФАКТИЧЕСКИХ элементов
+    // (координаты в сцене), тост стоит внизу; «Хорошо» гасит, «Вернуть» —
+    // честный откат: слои гаснут, данные и заявки остаются
+    window.pftScGrowOk = function () {
+        scnGrowFrom = '';
+        var t = dq('btScnGrow'); if (t) t.remove();
+    };
+    window.pftScGrowBack = function () {
+        var back = scnGrowFrom || 'start';
+        scnGrowFrom = '';
+        setStage(back);
+    };
+    function scnGrowPaint() {
+        var old = dq('btScnGrow'); if (old) old.remove();
+        if (!scnGrowFrom) return;
+        var sc = dq('btScene'); if (!sc) return;
+        var st = stageObj().stage;
+        // новые слои ступени: что подсвечиваем и как зовём
+        var zones = st === 'accel'
+            ? [['btScnTabs', 'Вкладки бумаг'], ['btScnDepth', 'Стакан'], ['btScnPx', 'Строка цены']]
+            : [['btScnScr', 'Экраны'], ['btScnDock', 'Док: заявки и позиции'], ['btScnProt', 'Защита позиции']];
+        var scR = sc.getBoundingClientRect();
+        var marks = '';
+        zones.forEach(function (z) {
+            var el = dq(z[0]); if (!el) return;
+            var r = el.getBoundingClientRect();
+            if (!(r.width > 0)) return;
+            marks += '<div class="grow" style="left:' + Math.round(r.left - scR.left - 6) + 'px;top:' +
+                Math.round(r.top - scR.top - 6) + 'px;width:' + Math.round(r.width + 12) + 'px;height:' +
+                Math.round(r.height + 12) + 'px"><span>' + z[1] + '</span></div>';
+        });
+        var was = stageName(scnGrowFrom);
+        sc.insertAdjacentHTML('beforeend', '<div id="btScnGrow">' + marks +
+            '<div class="grow-toast"><b>Сцена выросла — это «' + stageName(st) + '»</b>' +
+            '<p>Новые места подсвечены. Всё, что вы знали со ступени «' + was + '», не сдвинулось ни на пиксель.</p>' +
+            '<div class="ub-row">' +
+            '<button type="button" class="ub pri" onclick="pftScGrowOk()">Хорошо</button>' +
+            '<button type="button" class="ub gh" onclick="pftScGrowBack()">Вернуть «' + was + '»</button>' +
+            '</div></div></div>');
     }
     // ТЕМА СЦЕНЫ — свой ключ, независимый от темы сайта (решение набора):
     // светлая по умолчанию, тёмная — вторая полноценная тема, не инверсия.
@@ -4338,11 +4418,42 @@
     }
 
     // ---- тикет-колонка «Старта»: сумма в рублях, «что нужно знать» развёрнуто ----
+    // ---- состояние рынка: торги / аукцион / закрыто (экран 11) ----
+    // GetTradingStatus уже опрашивается (pollStatus, s.status). Аукцион —
+    // четвёртое состояние связи: не торги, не закрытие и не обрыв.
+    function scnMktState(s) {
+        var st = s.status && s.status.tradingStatus;
+        if (!st) return null;   // статус ещё не пришёл — не пугаем зря
+        if (st === 'SECURITY_TRADING_STATUS_NORMAL_TRADING' ||
+            st === 'SECURITY_TRADING_STATUS_DEALER_NORMAL_TRADING') return 'open';
+        if (/AUCTION/.test(st)) return 'auction';
+        return 'closed';
+    }
     function scnFreshInner() {
-        var l = linkState(S(sxSlot()));
+        var s = S(sxSlot());
+        var l = linkState(s);
+        // закрытая биржа — не обрыв: стакан отвечает, но это цена закрытия
+        var mkt = scnMktState(s);
+        if (l.state === 'live' && mkt === 'closed') return '<span class="fresh dimm"><i></i>биржа закрыта</span>';
+        if (l.state === 'live' && mkt === 'auction') return '<span class="fresh amber"><i></i>аукцион</span>';
         if (l.state === 'live') return '<span class="fresh"><i></i>цена живая</span>';
         if (l.state === 'wait') return '<span class="fresh amber"><i></i>ждём цену</span>';
         return '<span class="fresh amber"><i></i>цена замерла · ' + ageTxt(l.ageMs) + '</span>';
+    }
+    // причина, по которой кнопку сцены жать нельзя (поверх гварда свежести)
+    function scnSubmitBlock(n) {
+        var s = S(n);
+        var l = linkState(s).state;
+        if (l === 'wait') return 'Ждём данные от брокера';
+        if (l === 'stale') return 'Ждём связь…';
+        var mkt = scnMktState(s);
+        if (mkt === 'closed') return 'Биржа закрыта — откроется в 10:00';
+        // рыночной заявке нужна противоположная сторона стакана (неликвид)
+        if (s.kind !== 'limit' && mkt === 'open' && s.ob) {
+            var opp = s.side === 'sell' ? s.ob.bids : s.ob.asks;
+            if (!opp || !opp.length) return 'Рыночной цены нет — поставьте лимитку';
+        }
+        return '';
     }
     function feeTxt() { return String(feePct()).replace('.', ','); }
     function posOf(uid) {
@@ -4592,14 +4703,17 @@
     function scnCtaHtml(n) {
         var s = S(n), buy = s.side !== 'sell';
         var c = scnCalc(n);
-        var blk = submitBlock(s);
+        var blk = scnSubmitBlock(n);
+        var auction = scnMktState(s) === 'auction';
         var short = buy ? scnShortfall(n) : 0;
         var have = haveQty(s);
         var sellOver = !buy && c && c.qty > have;
         var can = !!(c && c.lots) && !blk && !(short > 0) && !sellOver;
         var label, note = 'Комиссия ' + feeTxt() + ' % уже включена';
-        if (blk) label = esc(blk);
-        else if (short > 0) {
+        if (blk) {
+            label = esc(blk);
+            if (blk.indexOf('Биржа закрыта') === 0) note = 'Черновик переживёт ночь в тикете — утром цена будет свежей';
+        } else if (short > 0) {
             label = 'Не хватает ' + fmtRub(short);
             note = 'Пресет «Макс» подставит достижимую сумму';
         } else if (sellOver) {
@@ -4609,6 +4723,11 @@
         else if (!c || !c.lots) {
             label = buy ? 'Мало для одного лота' : 'Меньше одного лота';
             if (buy && c && c.need > 0) note = 'Кнопка оживёт от ' + fmtRub(Math.ceil(c.need));
+        } else if (auction) {
+            // рыночной заявки в аукционе не существует: уйдёт лимитка по
+            // индикативной цене, исполнение дешевле лимита возможно — «до»
+            label = 'В аукцион — спишется до ' + fmtKop(c.total);
+            note = 'Аукцион: лимитка по индикативной цене, дешевле — можно, дороже — никогда';
         } else label = (buy ? 'Купить на ' : 'Продать на ') + fmtKop(c.total);
         return '<button type="button" class="cta' + (buy ? '' : ' sell') + (can ? '' : ' dis') + '" ' +
             (can ? '' : 'disabled ') + 'onclick="pftSxGo()">' + label + '</button>' +
@@ -4659,6 +4778,7 @@
             '<div class="seg">' +
                 '<span class="' + (buy ? 'on' : '') + '" role="button" tabindex="0" onclick="pftSxSide(\'buy\')">Купить</span>' +
                 '<span class="' + (buy ? '' : 'on sell') + '" role="button" tabindex="0" onclick="pftSxSide(\'sell\')">Продать</span></div>' +
+            '<div class="eg-bannerw" id="btScnStale">' + scnStaleInner(n) + '</div>' +
             priceRow +
             '<div class="fld" id="btScnFld"><em>' + (unit === 'rub' ? 'Сумма' : 'Количество') + cap + '</em>' +
                 '<div class="fld-in"><input id="btSxSum" type="text" inputmode="numeric" autocomplete="off" ' +
@@ -5259,11 +5379,18 @@
                 '<span class="d-bar"><i style="width:' + Math.max(4, Math.round(l.lots / maxLots * 100)) + '%"></i></span>' +
                 '<span class="d-vol">' + l.lots.toLocaleString('ru-RU') + '</span></div>';
         }
+        // пустую сторону неликвида показываем, не прячем (экран 11): рыночной
+        // цены без неё не существует — кнопку тикета гасит scnSubmitBlock
         var sp = spreadInfo(s);
-        return head +
-            asks.slice().reverse().map(function (l) { return row(l, 'd-ask'); }).join('') +
+        var askPart = asks.length
+            ? asks.slice().reverse().map(function (l) { return row(l, 'd-ask'); }).join('')
+            : '<div class="eg-empty">продавцов сейчас нет — спред не определён</div>';
+        var bidPart = bids.length
+            ? bids.map(function (l) { return row(l, 'd-bid'); }).join('')
+            : '<div class="eg-empty">покупателей сейчас нет — спред не определён</div>';
+        return head + askPart +
             '<div class="d-spread"><i></i><b>' + (sp ? 'спред ' + fmtPx(sp.ask - sp.bid, s) : 'спред —') + '</b><i></i></div>' +
-            bids.map(function (l) { return row(l, 'd-bid'); }).join('');
+            bidPart;
     }
     // ---- лента-пульс: последние сделки одной строкой ----
     function scnTapeHtml(s) {
@@ -5808,12 +5935,18 @@
     // ---- сцена целиком ----
     // пустая сцена: токен есть, бумага ещё не выбрана (онбординг этапа «край
     // сцены» доскажет остальное — пока одно действие, как решено мокапом 11)
+    // онбординг первого входа (экран 11): токен есть, бумаги нет. Полоса
+    // позиций у новичка и так пуста (scnPosInner молчит) — приглашение одно
     function scnHelloHtml() {
         return '<div class="bts-hello">' +
             '<h3>Одна бумага — в центре сцены</h3>' +
-            '<p>Найдите её по названию или тикеру: цена встанет крупно, график займёт весь холст, ' +
-            'тикет посчитает сумму в рублях. Остальное появится по мере опыта.</p>' +
-            '<button type="button" onclick="pftFsSearch()">' + IC_LENS + '<span>Найти бумагу</span></button>' +
+            '<p>Найдите её по названию или тикеру: цена встанет крупно, график займёт весь холст. ' +
+            'Остальное появится по мере опыта.</p>' +
+            '<button type="button" onclick="pftFsSearch()">' + IC_LENS + '<span>Найти первую бумагу</span><kbd>⌘K</kbd></button>' +
+            '<div class="eg-steps">' +
+            '<span><b>Тикет считает сам:</b> вы называете сумму в рублях, лоты и комиссию он объяснит словами.</span>' +
+            '<span><b>Итог списания — только в кнопке,</b> с копейками. Ни одна клавиша не отправляет заявку.</span>' +
+            '<span><b>Передумать можно,</b> пока заявка не исполнена.</span></div>' +
         '</div>';
     }
     PF.pftSceneHtml = function () {
@@ -5901,11 +6034,21 @@
         var free = T.pos.money;
         return free != null ? 'свободно ' + fmtRub(free) : '';
     }
+    // баннер обрыва (экран 11): честно называем возраст данных на экране.
+    // Уже отправленные заявки живут на бирже и от нашей связи не зависят.
+    function scnStaleInner(n) {
+        var l = linkState(S(n));
+        if (l.state !== 'stale') return '';
+        return '<div class="eg-banner" title="Уже отправленные заявки живут на бирже и не зависят ' +
+            'от вашей связи — их статус обновится при восстановлении. Ничего не отменяется молча.">' +
+            '<i></i>Показываем последние известные данные — им ' + ageTxt(l.ageMs) + '</div>';
+    }
     function scnTicketBits() {
         if (!sceneLive()) return;
         var n = sxSlot();
         if (!S(n).meta) return;
         scnSet('btScnCap', scnCapInner());
+        scnSet('btScnStale', scnStaleInner(n));   // возраст данных в баннере тикает
         scnSet('btScnPre', scnPresetsHtml(n));
         scnSet('btScnApx', scnApxHtml(n));
         scnSet('btScnAvg', scnAvgHtml(n));
@@ -6003,13 +6146,15 @@
         var c = scnCalc(n);
         if (!c || !c.lots) { toast(buy ? 'Укажите сумму покупки' : 'Укажите, сколько продать', true); return; }
         if (scnShortfall(n) > 0 || (!buy && c.qty > haveQty(s))) return;   // кнопка и так гашена с причиной
-        var stop = submitBlock(s);
-        if (stop) { toast(stop + ': отправлять заявку по замершей цене нельзя', true); return; }
+        var stop = scnSubmitBlock(n);
+        if (stop) { toast(stop, true); return; }
         if (velBlock()) return;
         s.lots = c.lots;
         // лимитка сцены (строка цены «Разгона» или гвард «Старта») — уважаем;
-        // иначе «купить сейчас» остаётся рыночной заявкой
+        // иначе «купить сейчас» остаётся рыночной заявкой. В АУКЦИОНЕ рыночной
+        // не существует — уходит лимитка по индикативной цене («спишется до»)
         var lim = scnLimPx(s);
+        if (!(lim > 0) && scnMktState(s) === 'auction') lim = sxPrice(s);
         if (lim > 0) { s.kind = 'limit'; s.price = String(scnSnap(lim, s)); }
         else s.kind = 'market';
         ensureOrderId(s, ['sx', s.uid, s.side, s.kind, c.lots].join('|'));
@@ -6059,8 +6204,10 @@
             if (f) try { f.focus(); } catch (e) {}
         }, 30);
         ov.querySelector('#btSxCfYes').addEventListener('click', function () {
-            // связь могла умереть, пока читали заказ — та же проверка, что в терминале
-            var late = submitBlock(s);
+            // связь могла умереть, пока читали заказ, — гвард свежести
+            // продублирован в диалоге (закон раунда 1); он же ловит закрытие
+            // биржи и исчезнувшую сторону стакана
+            var late = scnSubmitBlock(n);
             if (late) { close(); toast(late + ': проверьте цену заново, заявка не отправлена', true); return; }
             close();
             submitOrder(n, c.lots, c.px, c.total);
