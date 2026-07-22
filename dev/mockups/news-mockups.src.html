@@ -234,6 +234,84 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .nws-frow.read .nw-nt{color:var(--mut)}
 
 /* ======================================================================
+   Д2 — ДОРАБОТКА «СТОРИС»: полоса v2, плеер (nwp-*), фокус v2, прочитанность
+   ====================================================================== */
+/* полоса v2: под монограммой тикер + дневное изменение, «+» в конце */
+.nws-tkc{display:flex;flex-direction:column;align-items:center;gap:2px}
+.nws-chg{font-family:var(--fN);font-size:9.5px;font-weight:600;line-height:1;color:var(--dim)}
+.nws-chg.pos{color:var(--grn)} .nws-chg.neg{color:var(--red)}
+.nws-plus{width:44px;height:44px;border-radius:50%;border:1px dashed color-mix(in srgb,var(--dim) 60%,transparent);
+          display:grid;place-items:center;color:var(--mut);background:transparent}
+.nws-plus svg{width:15px;height:15px}
+/* панель под шапкой: счётчик новых + «прочитать всё» */
+.nws-bar{display:flex;align-items:center;gap:10px;margin:13px 0 0}
+.nws-new{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;letter-spacing:.04em;
+         text-transform:uppercase;color:var(--acc);background:color-mix(in srgb,var(--acc) 11%,transparent);
+         border-radius:999px;padding:4px 10px}
+.nws-new b{font-family:var(--fN);font-size:11px}
+.nws-new svg{width:10px;height:10px}
+.nws-mark{margin-left:auto;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);
+          border-radius:999px;padding:5px 11px;font-size:11px;font-weight:600;color:var(--mut);background:transparent}
+.nws-mark svg{width:12px;height:12px}
+/* лента «Все» с прочитанностью: точка слева, прочитанные гаснут */
+.nwd-row{padding-left:16px}
+.nwd-row .nws-dot{top:14px}
+.nwd-row.read .nw-nt{color:var(--mut)}
+.nwd-row.read .nw-tk{color:var(--mut)}
+/* --- плеер непрочитанного --- */
+.nwp{position:relative;margin-top:12px;border:1px solid var(--line);border-radius:16px;padding:14px 18px 16px;
+     background:linear-gradient(160deg,color-mix(in srgb,var(--ink) 3%,var(--card)),var(--card) 55%)}
+.nwp-segs{display:flex;gap:4px;margin-bottom:12px}
+.nwp-segs i{flex:1;height:3px;border-radius:2px;background:var(--hair)}
+.nwp-segs i.done{background:color-mix(in srgb,var(--ink) 55%,transparent)}
+/* «now», не «cur»: класс .cur занят виджетом «как сейчас» — i.cur ловил его паддинги */
+.nwp-segs i.now{background:var(--acc)}
+.nwp-head{display:flex;align-items:center;gap:9px;margin-bottom:11px}
+.nwp-ava{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-family:var(--fT);
+         font-size:13px;color:#fff;flex:none}
+.nwp-head b{font-family:var(--fN);font-size:12.5px;font-weight:700}
+/* имени — свой класс: правило «.nwp-head span» с flex:1 перебивало flex:none аватара и крестика */
+.nwp-nm{font-size:11.5px;font-weight:600;color:var(--mut);flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nwp-head .chg{font-family:var(--fN);font-size:11.5px;font-weight:700;flex:none}
+.nwp-head .chg.pos{color:var(--grn)} .nwp-head .chg.neg{color:var(--red)}
+.nwp-x{flex:none;width:26px;height:26px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;
+       color:var(--dim);font-size:13px;line-height:1;background:transparent}
+.nwp-t{font-size:16.5px;font-weight:650;line-height:1.4;letter-spacing:-.005em;color:var(--ink);text-wrap:balance}
+.nwp-meta{margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.nwp-pos{margin-top:11px;padding-top:10px;border-top:1px dashed var(--hair);display:flex;align-items:center;
+         gap:12px;flex-wrap:wrap;font-size:11px;color:var(--mut)}
+.nwp-pos b{font-family:var(--fN);font-size:11px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.nwp-foot{margin-top:13px;display:flex;align-items:center;gap:10px}
+.nwp-cta{display:inline-flex;align-items:center;gap:7px;background:var(--ink);color:var(--card);border-radius:10px;
+         padding:8px 14px;font-size:12px;font-weight:700;line-height:1}
+.nwp-cta svg{width:12px;height:12px}
+.nwp-cnt{font-family:var(--fN);font-size:10.5px;font-weight:600;color:var(--dim)}
+.nwp-next{margin-left:auto;display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:600;color:var(--mut)}
+.nwp-next .nwp-ava{width:20px;height:20px;font-size:9px}
+.nwp-nav{position:absolute;top:50%;width:30px;height:30px;margin-top:-15px;border-radius:50%;
+         border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--mut);
+         box-shadow:0 4px 12px -4px rgba(24,38,60,.3)}
+.nwp-nav svg{width:13px;height:13px}
+.nwp-nav.l{left:-15px} .nwp-nav.r{right:-15px}
+.nwp-nav.r{color:var(--ink)}
+/* --- фокус v2: спарклайн 30д + действия + реакция «с новости» --- */
+.nws-fh .nws-spark{width:92px;height:26px;flex:none;overflow:visible;margin-left:8px}
+.nws-spark polyline{fill:none;stroke:var(--grn);stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}
+.nws-fact{display:flex;align-items:center;gap:7px;margin:9px 2px 3px}
+.nws-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:10px;
+         padding:6px 11px;font-size:11px;font-weight:700;color:var(--ink);background:transparent;line-height:1}
+.nws-btn svg{width:12px;height:12px;color:var(--dim)}
+.nws-rx{font-family:var(--fN);font-size:10px;font-weight:700;margin-left:2px}
+.nws-rx.pos{color:var(--grn)} .nws-rx.neg{color:var(--red)}
+.nws-rx span{font-family:var(--fU);font-weight:600;color:var(--dim)}
+/* --- «всё прочитано» + узкая колонка --- */
+.nws-zero{padding:18px 6px 10px;text-align:center}
+.nws-zero .zt{font-family:var(--fT);font-size:15.5px;color:var(--ink)}
+.nws-zero .zs{margin-top:5px;font-size:11.5px;line-height:1.5;color:var(--mut)}
+.nw.narrow .nws-strip{gap:11px}
+.nw.narrow .nws-fh span{white-space:normal}
+
+/* ======================================================================
    «КАК СЕЙЧАС» (cur-*) — для сравнения
    ====================================================================== */
 .cur{width:640px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px 22px 16px;
@@ -400,6 +478,81 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   </div>
 </div>
 
+<!-- Д2: ДОРАБОТКА «СТОРИС» -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">Д2</span><h2>Вариант Д — доработка</h2><span class="mk-tag">выбранное направление</span></div>
+  <p class="mk-sub">Пять ходов поверх экрана 8: <b>полоса v2</b> (непрочитанные первыми, изменение цены под монограммой,
+     «+» в конце полосы), <b>счётчик новых</b> и «прочитать всё», <b>плеер</b> — последовательный просмотр
+     непрочитанного с сегментами прогресса как в настоящих сторис, <b>фокус v2</b> с графиком 30 дней,
+     действиями и реакцией цены, и <b>краевые состояния</b> — «всё прочитано» и узкая колонка.</p>
+</div>
+
+<!-- ЭКРАН 9 -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">ЭКРАН 9</span><h2>Обзор Д2 — полоса v2 и лента с прочитанностью</h2><span class="mk-tag">основа</span></div>
+  <p class="mk-sub">Полоса: непрочитанные бумаги первыми (внутри — по весу позиции), под монограммой тикер и дневное
+     изменение, «+» для внешнего тикера — в конце полосы. Под шапкой — счётчик «5 новых» и «Прочитать всё».
+     Режим «Все» — хронологическая лента: непрочитанные с точкой, прочитанные гаснут.</p>
+  <div class="scroller"><div class="scr" id="m9"></div></div>
+  <div class="notes">
+    <div class="note"><i>1</i>Порядок полосы: сначала бумаги с непрочитанным (по весу позиции), затем прочитанные. Кольцо и бейдж — как на экране 8.</div>
+    <div class="note"><i>2</i>«5 новых» — сумма непрочитанных по всем бумагам; пересчитывается при открытии новости, фокуса или «Прочитать всё».</div>
+    <div class="note"><i>3</i>Изменение цены под монограммой — из quotes[tk].chgPct, уже собирается. Полоса скроллится горизонтально, ничего не клипуется.</div>
+    <div class="note"><i>4</i>В ленте «Все» прочитанная строка гаснет (заголовок и тикер — серые), но не исчезает: порядок стабилен, ничего не прыгает.</div>
+    <div class="note"><i>5</i>«Прочитать всё» — одним действием гасит кольца и точки (bulk-запись в nw_read_v1); с модалкой pfConfirm не нужен — действие обратимо только визуально, поэтому мягкий тост.</div>
+    <div class="note"><i>6</i>Фильтр портфелей из варианта А сюда не тащим: полоса сама — фильтр по бумаге. Портфельный срез остаётся в фокусе бумаги (веса) и ховере.</div>
+  </div>
+</div>
+
+<!-- ЭКРАН 10 -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">ЭКРАН 10</span><h2>Плеер непрочитанного — сегменты как в сторис</h2><span class="mk-tag">ключевой ход</span></div>
+  <p class="mk-sub">Клик по кольцу бумаги открывает плеер: сверху сегменты прогресса (по числу непрочитанных новостей
+     бумаги), крупный заголовок, мета, строка «позиция», CTA «Читать на Smart-Lab». Стрелки ‹ › листают новости;
+     после последней — автопереход к следующей бумаге с кольцом (подсказка «дальше — LKOH»). Просмотренная
+     новость гасится сама.</p>
+  <div class="scroller"><div class="scr" id="m10"></div></div>
+  <div class="notes">
+    <div class="note"><i>1</i>Плеер — чистый UI-стейт поверх уже загруженного массива новостей: ни одного нового запроса. Сегменты = непрочитанные новости бумаги.</div>
+    <div class="note"><i>2</i>Показ новости в плеере ≥2с = прочитано (пишем в nw_read_v1); сегмент закрашивается, кольцо на полосе гаснет после последней.</div>
+    <div class="note"><i>3</i>Клавиатура: ←/→ — новости, Esc — закрыть, Enter — открыть ссылку. Крестик возвращает к ленте «Все».</div>
+    <div class="note"><i>4</i>CTA — единственная залитая кнопка виджета (минимал-язык: цвет только на CTA); «1 из 3» — моно-счётчик.</div>
+    <div class="note"><i>5</i>«Дальше — LKOH» показывает мини-монограмму следующей бумаги с непрочитанным; когда таких нет — плеер закрывается на состояние «всё прочитано» (экран 13).</div>
+    <div class="note"><i>6</i>Стрелки-кружки выступают за карточку плеера (как nav у каруселей); внутри виджета им хватает поля 22px.</div>
+  </div>
+</div>
+
+<!-- ЭКРАН 11 -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">ЭКРАН 11</span><h2>Фокус бумаги v2 — график, действия, реакция цены</h2><span class="mk-tag">синергия с Г</span></div>
+  <p class="mk-sub">Клик по имени бумаги (не по кольцу) — спокойный фокус: в шапке спарклайн 30 дней,
+     под позицией — действия «Карточка компании» и «Купить», в мете каждой новости — сдвиг цены
+     «с новости» из варианта Г. Все новости бумаги, непрочитанные — с точкой.</p>
+  <div class="scroller"><div class="scr" id="m11"></div></div>
+  <div class="notes">
+    <div class="note"><i>1</i>Спарклайн 30 дней — пайплайн «Избранного» R10 уже готов (кэш на сессию, очередь). Цвет — знак изменения за период.</div>
+    <div class="note"><i>2</i>«Карточка компании» = pfOpenTicker, «Купить» = pfBuyFav — обе функции существуют, кнопки-призраки в языке терминала.</div>
+    <div class="note"><i>3</i>«С новости +1,4%» — тот же расчёт, что вариант Г (интрадей-свечи); если фетч свечей не делаем — мета просто без этого хвоста, макет не ломается.</div>
+  </div>
+</div>
+
+<!-- ЭКРАН 12 -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">ЭКРАН 12</span><h2>Тёмная тема Д2</h2></div>
+  <p class="mk-sub">Обзор и плеер на тёмном: кольца непрочитанного — светлый акцент, сегменты прогресса читаются
+     на тёмной карточке, CTA — светлая заливка. Монограммы не меняются — их цвета детерминированы.</p>
+  <div class="scroller"><div class="scr dark" id="m12"></div></div>
+</div>
+
+<!-- ЭКРАН 13 -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">ЭКРАН 13</span><h2>Узкая колонка и «всё прочитано»</h2><span class="mk-tag warn">адаптация</span></div>
+  <p class="mk-sub">Слева — узкий виджет с непрочитанным: полоса скроллится, фокус переносит имя на вторую строку,
+     ничего не клипуется. Справа — состояние «всё прочитано»: кольца серые, бейджей нет, вместо ленты —
+     тихая строка «Вы в курсе всего» и последние прочитанные приглушённо.</p>
+  <div class="scroller"><div class="scr" id="m13"></div></div>
+</div>
+
 <!-- карта данных -->
 <div class="mk">
   <div class="mk-h"><span class="mk-n">ДАННЫЕ</span><h2>Поле макета → откуда берётся</h2></div>
@@ -419,6 +572,10 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <tr><td>Интрадей-спарклайн + «с новости» (вариант Г)</td><td>MOEX ISS <code>/candles</code> interval=10 — пайплайн спарклайнов «Избранного» R10 (очередь, кэш на сессию)</td><td class="no">новый фетч</td></tr>
     <tr><td>Прочитанность (вариант Д)</td><td>новый ключ <code>nw_read_v1</code> в localStorage + WATCH cloud-sync (не писать из самого cloud-sync)</td><td class="no">новый стейт</td></tr>
     <tr><td>Монограммы сторис</td><td>буква тикера + детерминированный цвет — как логотипы «Избранного» R10</td><td class="ok">приём готов</td></tr>
+    <tr><td>Порядок полосы + счётчик «новых» (Д2)</td><td>непрочитанное из <code>nw_read_v1</code> × вес <code>map[tk].val</code>; счётчик — сумма непрочитанных</td><td class="no">вычисляется, новое</td></tr>
+    <tr><td>Плеер: сегменты, автопереход, клавиатура (Д2)</td><td>чистый UI-стейт поверх расширенного кэша новостей — ни одного нового запроса</td><td class="no">новый стейт</td></tr>
+    <tr><td>Спарклайн 30 дней в фокусе (Д2)</td><td>пайплайн спарклайнов «Избранного» R10 (кэш на сессию, очередь на 2)</td><td class="ok">пайплайн готов</td></tr>
+    <tr><td>Действия «Карточка компании» / «Купить» (Д2)</td><td><code>pfOpenTicker()</code> / <code>pfBuyFav()</code></td><td class="ok">да</td></tr>
   </table>
 </div>
 
@@ -637,6 +794,132 @@ function storiesWidget(){
     strip + focus + '</div>';
 }
 
+/* ---------- Д2: доработка «сторис» ---------- */
+var CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+var CHEV_L = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
+var CHEV_R = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+var CART = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>',
+    CARD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/></svg>';
+/* полоса v2: непрочитанные первыми (по весу), тикер + изменение под монограммой, «+» в конце */
+var STORY = [
+  { tk:'SBER', chg:'+0,8%', dir:'pos', cnt:3, unread:true },
+  { tk:'GAZP', chg:'−1,2%', dir:'neg', cnt:2, unread:true },
+  { tk:'LKOH', chg:'−0,4%', dir:'neg', cnt:1, unread:true },
+  { tk:'OZON', chg:'+2,1%', dir:'pos', cnt:1, unread:true },
+  { tk:'TATN', chg:'+0,3%', dir:'pos', cnt:1, unread:false },
+  { tk:'NVTK', chg:'+0,1%', dir:'pos', cnt:1, unread:false }
+];
+function d2Strip(o){
+  o = o || {};
+  return '<div class="nws-strip">' +
+    '<div class="nws-it' + (o.sel === null ? ' sel' : '') + '"><span class="nws-all">Все</span><span class="nws-nm">лента</span></div>' +
+    STORY.map(function (s) {
+      var unread = s.unread && !o.allRead, sel = o.sel === s.tk;
+      return '<div class="nws-it' + (unread ? ' unread' : '') + (sel ? ' sel' : '') + '">' +
+        '<span class="nws-ava" style="background:' + MONO[s.tk] + '">' + s.tk.charAt(0) +
+        (unread && s.cnt > 1 ? '<span class="nws-cnt">' + s.cnt + '</span>' : '') + '</span>' +
+        '<span class="nws-tkc"><span class="nws-nm">' + s.tk + '</span><span class="nws-chg ' + s.dir + '">' + s.chg + '</span></span></div>';
+    }).join('') +
+    '<div class="nws-it"><span class="nws-plus">' + I.plus + '</span><span class="nws-nm">тикер</span></div>' +
+  '</div>';
+}
+function d2Bar(n){
+  return '<div class="nws-bar">' +
+    '<span class="nws-new">' + STAR + '<b>' + n + '</b>&nbsp;новых</span>' +
+    '<span class="nws-mark">' + CHECK + 'Прочитать всё</span></div>';
+}
+/* лента «Все» с прочитанностью: SBER/LKOH/GAZP/OZON — новые, TATN/NVTK — прочитаны */
+var D2_READ = { TATN:1, NVTK:1 };
+function d2Feed(){
+  var cur = null, out = '';
+  ROWS.forEach(function (d) {
+    if (d.day !== cur){ cur = d.day; out += day(d.day, d.none || d.ext); }
+    var read = D2_READ[d.tk] || d.none;
+    out += '<div class="nw-row nwd-row' + (d.none ? ' none' : '') + (read ? ' read' : '') + '">' +
+      (read ? '' : '<span class="nws-dot"></span>') +
+      '<div class="nw-tkb"><b class="nw-tk">' + d.tk + '</b><span class="nw-chg ' + d.dir + '">' + d.chg + '</span></div>' +
+      '<div class="nw-news"><div class="nw-nt">' + d.nt + '</div>' + meta(d) + '</div>' +
+      '<div class="nw-pfs">' + pfsCol(d) + '</div></div>';
+  });
+  return '<div class="nw-list">' + out + '</div>';
+}
+function d2Overview(cls){
+  return '<div class="nw' + (cls ? ' ' + cls : '') + '">' +
+    headHtml('кольцо — есть непрочитанное; клик по кольцу — плеер, по имени — фокус бумаги') +
+    d2Bar(5) + d2Strip({ sel:null }) + d2Feed() + '</div>';
+}
+/* плеер: сегменты прогресса, крупный заголовок, позиция, CTA, автопереход */
+function d2Player(cls){
+  var d = ROWS[0];
+  var player = '<div class="nwp">' +
+    '<div class="nwp-segs"><i class="done"></i><i class="now"></i><i></i></div>' +
+    '<div class="nwp-head"><span class="nwp-ava" style="background:' + MONO.SBER + '">S</span>' +
+      '<b>SBER</b><span class="nwp-nm">Сбербанк России ПАО ао</span><span class="chg pos">+0,8%</span>' +
+      '<span class="nwp-x">×</span></div>' +
+    '<div class="nwp-t">Сбер запускает семейную ипотеку с комбинированной ставкой на новостройки — банк ждёт +12% к выдачам во II полугодии</div>' +
+    '<div class="nwp-meta nw-nmeta"><i>Smart-Lab</i><em>вчера</em><span class="nws-rx pos"><span>с новости&nbsp;</span>+0,6%</span></div>' +
+    '<div class="nwp-pos"><span>Позиция&nbsp;<b>124 800 ₽</b></span>' +
+      d.pfs.map(function (k) {
+        return '<span class="nw-pf"><i style="background:' + PFS[k].c + '"></i><span>' + PFS[k].nm + '&nbsp;</span><b>' + d.wgt[k] + '</b></span>';
+      }).join('') + '</div>' +
+    '<div class="nwp-foot"><span class="nwp-cta">Читать на Smart-Lab' + I.go + '</span>' +
+      '<span class="nwp-cnt">2 из 3</span>' +
+      '<span class="nwp-next">дальше — <span class="nwp-ava" style="background:' + MONO.LKOH + '">L</span>LKOH</span></div>' +
+    '<span class="nwp-nav l">' + CHEV_L + '</span><span class="nwp-nav r">' + CHEV_R + '</span></div>';
+  return '<div class="nw' + (cls ? ' ' + cls : '') + '">' +
+    headHtml('плеер непрочитанного: сегменты — новости бумаги, ‹ › листают, после последней — следующая бумага') +
+    d2Strip({ sel:'SBER' }) + player + '</div>';
+}
+/* фокус v2: спарклайн 30д, действия, «с новости» в мете */
+function d2Focus(cls){
+  var d = ROWS[0];
+  var news = [
+    { nt:d.full, rel:'2 ч назад', rx:'+1,4%', rd:'pos', unread:true },
+    { nt:'Сбер запускает семейную ипотеку с комбинированной ставкой на новостройки', rel:'вчера', rx:'+0,6%', rd:'pos', unread:true },
+    { nt:'Набсовет Сбера утвердил дату ГОСА и рекомендацию по дивидендам за 2025 год', rel:'4 дн назад', rx:'−0,2%', rd:'neg', unread:false }
+  ];
+  return '<div class="nw' + (cls ? ' ' + cls : '') + '">' +
+    headHtml('фокус бумаги: график 30 дней, действия и все новости со сдвигом цены «с новости»') +
+    d2Strip({ sel:'SBER' }) +
+    '<div class="nws-fh"><b>SBER</b><span>Сбербанк России ПАО ао</span><span class="chg pos">+0,8%</span>' +
+      '<svg class="nws-spark" viewBox="0 0 92 26" preserveAspectRatio="none"><polyline points="0,21 8,19 16,20 24,17 32,18 40,15 48,16 56,13 64,15 72,11 80,12 92,8"/></svg></div>' +
+    '<div class="nws-fpos"><span>Позиция&nbsp;<b>124 800 ₽</b></span>' +
+      d.pfs.map(function (k) {
+        return '<span class="nw-pf"><i style="background:' + PFS[k].c + '"></i><span>' + PFS[k].nm + '&nbsp;</span><b>' + d.wgt[k] + '</b></span>';
+      }).join('') + '</div>' +
+    '<div class="nws-fact"><span class="nws-btn">' + CARD + 'Карточка компании</span><span class="nws-btn">' + CART + 'Купить</span></div>' +
+    '<div class="nw-list">' + news.map(function (n) {
+      return '<div class="nws-frow' + (n.unread ? '' : ' read') + '"><span class="nws-dot"></span><div class="nw-nt">' + n.nt + '</div>' +
+        '<div class="nw-nmeta"><i>Smart-Lab</i><em>' + n.rel + '</em><span class="nws-rx ' + n.rd + '"><span>с новости&nbsp;</span>' + n.rx + '</span>' + I.go + '</div></div>';
+    }).join('') + '</div></div>';
+}
+/* узкая колонка + «всё прочитано» */
+function d2NarrowUnread(){
+  var rows = ROWS.slice(0, 3).map(function (d) {
+    return '<div class="nw-row nwd-row"><span class="nws-dot"></span>' +
+      '<div class="nw-tkb"><b class="nw-tk">' + d.tk + '</b><span class="nw-chg ' + d.dir + '">' + d.chg + '</span></div>' +
+      '<div class="nw-news"><div class="nw-nt">' + d.nt + '</div>' + meta(d) + '</div>' +
+      '<div class="nw-pfs">' + pfsCol(d) + '</div></div>';
+  }).join('');
+  return '<div class="nw narrow">' +
+    headHtml('узкая колонка: полоса скроллится, лента в две строки') +
+    d2Bar(5) + d2Strip({ sel:null }) + '<div class="nw-list">' + rows + '</div></div>';
+}
+function d2NarrowZero(){
+  var rows = ROWS.slice(0, 2).map(function (d) {
+    return '<div class="nw-row nwd-row read">' +
+      '<div class="nw-tkb"><b class="nw-tk">' + d.tk + '</b><span class="nw-chg ' + d.dir + '">' + d.chg + '</span></div>' +
+      '<div class="nw-news"><div class="nw-nt">' + d.nt + '</div>' + meta(d) + '</div>' +
+      '<div class="nw-pfs">' + pfsCol(d) + '</div></div>';
+  }).join('');
+  return '<div class="nw narrow">' +
+    headHtml('всё прочитано: кольца гаснут, счётчика нет') +
+    d2Strip({ sel:null, allRead:true }) +
+    '<div class="nws-zero"><div class="zt">Вы в курсе всего</div>' +
+      '<div class="zs">Новых новостей по бумагам портфелей нет — последние прочитанные ниже.</div></div>' +
+    '<div class="nw-list">' + rows + '</div></div>';
+}
+
 /* ---------- «как сейчас» ---------- */
 function curWidget(){
   var chips = '<span class="cur-pk on">Все</span>' + ROWS.map(function (d) {
@@ -668,6 +951,11 @@ document.getElementById('m5').innerHTML = widgetA('narrow', {});
 document.getElementById('m6').innerHTML = digestWidget();
 document.getElementById('m7').innerHTML = reactWidget();
 document.getElementById('m8').innerHTML = storiesWidget();
+document.getElementById('m9').innerHTML = d2Overview('');
+document.getElementById('m10').innerHTML = d2Player('');
+document.getElementById('m11').innerHTML = d2Focus('');
+document.getElementById('m12').innerHTML = d2Overview('') + d2Player('');
+document.getElementById('m13').innerHTML = d2NarrowUnread() + d2NarrowZero();
 </script>
 </body>
 </html>
