@@ -3655,90 +3655,244 @@
     var IC_OUT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17l5-5-5-5M20 12H9M11 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5"/></svg>';
     var IC_BACK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>';
 
-    // ---------- поиск бумаги (временно на месте омнибокса) ----------
-    // Полный омнибокс (команды сцены, парсер «сбер 30к») — этап 6; до него
-    // строка открывает готовый поиск раунда 1 (pftFindInstruments).
-    window.pftFsSearch = function () { sxSearchToggle(); };
-    var sxFind = { open: false, q: '', busy: false, msg: '', res: [] };
-    function sxFindHtml() {
-        var rows;
-        if (sxFind.msg) rows = '<div class="pftb-find-note">' + esc(sxFind.msg) + '</div>';
-        else if (sxFind.busy && !sxFind.res.length) rows = '<div class="pftb-find-note">Ищем…</div>';
-        else if (!sxFind.res.length) rows = '<div class="pftb-find-note">Начните вводить название или тикер — например, «Сбер».</div>';
-        else rows = sxFind.res.map(function (i, k) {
-            return '<button type="button" class="pftb-find-row" onclick="pftSxFindPick(' + k + ')">' +
-                '<b>' + esc(i.ticker || '') + '</b><span>' + esc(i.name || '') + '</span></button>';
-        }).join('');
-        return '<div class="pftb-find" id="pftbFind">' +
-            '<input type="text" id="pftbFindInp" autocomplete="off" spellcheck="false" ' +
-                'placeholder="Название компании или тикер" aria-label="Поиск бумаги" ' +
-                'value="' + esc(sxFind.q) + '" oninput="pftSxFindInput(this.value)">' +
-            '<div class="pftb-find-drop">' + rows + '</div></div>';
+    // ---------- ОМНИБОКС ⌘K (этап 6, экран 07) ----------
+    // Одна строка на всё: поиск бумаги, команды сцены, намерение «сбер 30к».
+    // Парсер собирает из фразы черновик сделки — Enter лишь ПОДСТАВЛЯЕТ его в
+    // тикет, отправляет всегда человек кнопкой (закон «ни одна клавиша не
+    // отправляет заявку» действует и здесь).
+    var omni = { open: false, q: '', busy: false, sel: 0, papers: [], intent: null };
+    var omniPx = {};   // uid -> последняя цена для intent-карточки (GetLastPrices)
+    window.pftFsSearch = function () { omniToggle(); };
+    function omniToggle() {
+        if (omni.open) { omniClose(); return; }
+        if (!sceneLive()) return;
+        omni.open = true; omni.q = ''; omni.sel = 0; omni.papers = []; omni.intent = null;
+        var host = dq('btScene');
+        if (!host) { omni.open = false; return; }
+        host.insertAdjacentHTML('beforeend',
+            '<div class="veil" id="btOmniVeil"></div>' +
+            '<div class="pal" id="btOmni" role="dialog" aria-modal="true" aria-label="Омнибокс">' +
+                '<div class="pal-in">⌕<input id="btOmniIn" type="text" autocomplete="off" spellcheck="false" ' +
+                    'placeholder="Бумага, команда или «сбер 30к»" aria-label="Поиск и команды">' +
+                    '<kbd>esc</kbd></div>' +
+                '<div class="pal-body" id="btOmniBody">' + omniBodyHtml() + '</div>' +
+                '<div class="pal-foot"><span><kbd>↑↓</kbd>выбрать</span><span><kbd>Enter</kbd>подставить</span>' +
+                '<span><kbd>Esc</kbd>закрыть</span>' +
+                '<span class="pf-r">отправка — только кнопкой в тикете</span></div>' +
+            '</div>');
+        var omniEl = dq('btOmni');
+        var b = document.querySelector('.bts-omni'); if (b) b.classList.add('on');
+        dq('btOmniVeil').addEventListener('click', omniClose);
+        var i = dq('btOmniIn');
+        i.addEventListener('input', function () { omniInput(i.value); });
+        i.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); omniClose(); return; }
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                var max = omniRows().length - 1;
+                if (max < 0) return;
+                omni.sel = Math.max(0, Math.min(max, omni.sel + (e.key === 'ArrowDown' ? 1 : -1)));
+                omniPaint();
+                return;
+            }
+            if (e.key === 'Enter') { e.preventDefault(); omniGo(omni.sel); }
+        });
+        try { i.focus(); } catch (e) {}
+        // клик по строке — мышь равноправна клавишам
+        omniEl.addEventListener('click', function (e) {
+            var row = e.target.closest && e.target.closest('[data-omni]');
+            if (row) omniGo(+row.getAttribute('data-omni'));
+        });
     }
-    function sxFindRepaint() {
-        var el = dq('pftbFind'); if (!el) return;
-        var inp = dq('pftbFindInp');
-        var pos = inp ? inp.selectionStart : 0, had = document.activeElement === inp;
-        el.outerHTML = sxFindHtml();
-        if (had) { var i2 = dq('pftbFindInp'); if (i2) { i2.focus(); try { i2.setSelectionRange(pos, pos); } catch (e) {} } }
-    }
-    function sxSearchToggle() {
-        sxFind.open = !sxFind.open;
-        var bar = dq('pftBar'); if (!bar) return;
-        var old = dq('pftbFind'); if (old) old.remove();
-        var btn = bar.querySelector('.bts-omni');
-        if (btn) btn.classList.toggle('on', sxFind.open);
-        if (!sxFind.open) return;
-        bar.insertAdjacentHTML('beforeend', sxFindHtml());
-        var i = dq('pftbFindInp'); if (i) i.focus();
-        setTimeout(function () {
-            document.addEventListener('click', function once(e) {
-                if (e.target.closest && (e.target.closest('#pftbFind') || e.target.closest('.bts-omni'))) return;
-                document.removeEventListener('click', once);
-                sxFind.open = false;
-                var el = dq('pftbFind'); if (el) el.remove();
-                var b = document.querySelector('.bts-omni'); if (b) b.classList.remove('on');
-            });
-        }, 0);
-    }
-    var sxFindT = null;
-    window.pftSxFindInput = function (v) {
-        sxFind.q = v; sxFind.msg = '';
-        clearTimeout(sxFindT);
-        if (String(v).trim().length < 2) { sxFind.res = []; sxFind.busy = false; sxFindRepaint(); return; }
-        sxFind.busy = true; sxFindRepaint();
-        sxFindT = setTimeout(function () {
-            var q = sxFind.q;
-            PF.pftFindInstruments(q).then(function (list) {
-                if (sxFind.q !== q) return;            // ответ на устаревший запрос
-                sxFind.busy = false;
-                sxFind.res = (list || []).slice(0, 7);
-                if (!sxFind.res.length) sxFind.msg = 'Ничего не нашлось — попробуйте другое написание.';
-                sxFindRepaint();
-            }, function (e) {
-                if (sxFind.q !== q) return;
-                sxFind.busy = false; sxFind.res = [];
-                sxFind.msg = (e && e.message) || 'Поиск недоступен';
-                sxFindRepaint();
-            });
-        }, 280);
-    };
-    window.pftSxFindPick = function (k) {
-        var i = sxFind.res[k]; if (!i || !i.uid) return;
-        sxFind.open = false; sxFind.q = ''; sxFind.res = [];
-        var el = dq('pftbFind'); if (el) el.remove();
+    function omniClose() {
+        omni.open = false;
+        var v = dq('btOmniVeil'); if (v) v.remove();
+        var p = dq('btOmni'); if (p) p.remove();
         var b = document.querySelector('.bts-omni'); if (b) b.classList.remove('on');
-        simpleSum = ''; scnUnit = ''; scnLim = 0;
-        // «＋» вкладок бумаг открывает поиск с целевым СВОБОДНЫМ слотом —
-        // выбранная бумага встаёт новой вкладкой, активная переключается на неё
-        var target = scnFindTarget || sxSlot();
         scnFindTarget = 0;
-        // сцена могла стоять пустой (без бумаги) — нужна полная перерисовка
-        loadInstrument(target, i.uid, function () {
+    }
+    var omniT = null;
+    function omniInput(v) {
+        omni.q = v; omni.sel = 0;
+        omni.intent = omniParse(v);
+        omniPaint();
+        clearTimeout(omniT);
+        var word = omni.intent ? omni.intent.word : String(v).trim();
+        if (word.length < 2) { omni.papers = []; omni.busy = false; omniPaint(); return; }
+        omni.busy = true;
+        omniT = setTimeout(function () {
+            var q = omni.q;
+            PF.pftFindInstruments(word).then(function (list) {
+                if (omni.q !== q || !omni.open) return;   // ответ на устаревший ввод
+                omni.busy = false;
+                omni.papers = (list || []).slice(0, 4);
+                omniFetchPx();
+                omniPaint();
+            }, function () {
+                if (omni.q !== q) return;
+                omni.busy = false; omni.papers = [];
+                omniPaint();
+            });
+        }, 250);
+    }
+    // цены выдачи — одним GetLastPrices: у FindInstrument цен нет, а intent
+    // обещает «≈ 110 акций по 271,45 ₽» и дельту в строках бумаг
+    function omniFetchPx() {
+        var need = omni.papers.filter(function (p) { return p.uid && omniPx[p.uid] == null; })
+            .map(function (p) { return p.uid; });
+        if (!need.length) return;
+        A().call('GetLastPrices', { instrumentId: need }, { interactive: false }).then(function (d) {
+            var q2n = A().q2n;
+            ((d && d.lastPrices) || []).forEach(function (lp) {
+                var uid = lp.instrumentUid || lp.figi, px = q2n(lp.price);
+                if (uid && px > 0) omniPx[uid] = px;
+            });
+            if (omni.open) omniPaint();
+        }).catch(function () {});
+    }
+    // ---- парсер намерения: [купить|продать] <слово> <сумма>[к|k|тыс] ----
+    // Сумма обязательна — без неё это обычный поиск. «30к» → 30 000.
+    function omniParse(v) {
+        var s = String(v || '').trim().toLowerCase();
+        if (!s) return null;
+        var m = /^(купить\s+|продать\s+)?(.+?)\s+(?:на\s+)?(\d+(?:[.,]\d+)?)\s*(к|k|тыс\.?)?\s*(?:₽|р|руб\.?|рублей)?$/.exec(s);
+        if (!m || !m[2]) return null;
+        var rub = parseFloat(m[3].replace(',', '.'));
+        if (m[4]) rub *= 1000;
+        rub = Math.floor(rub);
+        if (!(rub >= 100)) return null;   // «сбер 5» — скорее опечатка, чем сделка
+        return { side: (m[1] || '').indexOf('продать') === 0 ? 'sell' : 'buy', word: m[2].trim(), rub: rub };
+    }
+    // ---- реестр команд сцены: фильтр по вводу, полный список при пустом ----
+    function omniCmds() {
+        var st = stageObj().stage;
+        var out = [];
+        // «Старт» видит только простые команды — сложность растёт со ступенью
+        if (st === 'start') {
+            out.push({ ic: '〣', t: 'Открыть стакан', em: 'ступень «Разгон»', go: function () { setStage('accel'); } });
+        } else {
+            out.push(candlesOn()
+                ? { ic: '◫', t: 'Линия вместо свечей', em: 'холст', go: function () { window.pftScMode(0); } }
+                : { ic: '◫', t: 'Свечи вместо линии', em: 'холст', go: function () { window.pftScMode(1); } });
+        }
+        out.push({ ic: '◐', t: sceneNight() ? 'Светлая сцена' : 'Тёмная сцена',
+            em: 'тумблер — и в строке среды', go: function () { window.pftSceneTheme(); } });
+        STAGES.forEach(function (x) {
+            if (x[0] === st) return;
+            // «Старт» видит только «Открыть стакан» выше: прыжок сразу в
+            // «Контроль» — не простая команда, сложность растёт со ступенью
+            if (st === 'start') return;
+            out.push({ ic: '▲', t: 'Насыщенность: ' + x[1], em: 'ступень',
+                go: (function (k) { return function () { setStage(k); }; })(x[0]) });
+        });
+        if (st === 'control') {
+            out.push({ ic: '＋', t: 'Новый экран', em: 'свои бумаги и раскладка', go: function () { window.pftScScreenAdd(); } });
+        }
+        var word = (omni.intent ? '' : String(omni.q).trim().toLowerCase());
+        if (!word) return out;
+        var hit = out.filter(function (c) { return c.t.toLowerCase().indexOf(word) >= 0; });
+        return hit.length ? hit : out;   // не совпало — полный список, как в мокапе
+    }
+    // плоский список строк: intent → бумаги → команды (индекс = data-omni)
+    function omniRows() {
+        var rows = [];
+        if (omni.intent) rows.push({ kind: 'intent' });
+        omni.papers.forEach(function (p) { rows.push({ kind: 'paper', p: p }); });
+        omniCmds().forEach(function (c) { rows.push({ kind: 'cmd', c: c }); });
+        return rows;
+    }
+    function omniBodyHtml() {
+        var rows = omniRows();
+        var html = '', idx = 0, sect = '';
+        if (!rows.length) {
+            return '<div class="pal-note">' + (omni.busy ? 'Ищем…' :
+                'Начните вводить название, тикер или «сбер 30к».') + '</div>';
+        }
+        rows.forEach(function (r) {
+            var on = idx === omni.sel;
+            if (r.kind === 'intent') {
+                var it = omni.intent;
+                var tk = omni.papers[0];
+                var px = tk && omniPx[tk.uid];
+                var sub;
+                if (tk && px > 0) {
+                    var lot = Math.max(1, Math.floor(+tk.lot || 1));
+                    var qty = Math.floor(it.rub / (px * (1 + feePct() / 100) * lot)) * lot;
+                    sub = qty > 0
+                        ? '≈ ' + qty.toLocaleString('ru-RU') + ' ' + PF.plural(qty, 'акция', 'акции', 'акций') +
+                          ' по ' + fmtPx(px, { meta: tk }) + ' ₽ · комиссия включена'
+                        : 'меньше одного лота — тикет подскажет минимум';
+                } else sub = tk ? 'считаем цену…' : (omni.busy ? 'ищем бумагу…' : 'бумага не нашлась — уточните');
+                html += '<div class="intent' + (on ? ' on' : '') + '" data-omni="' + idx + '"><span class="iic">₽</span><div>' +
+                    '<h5>' + (it.side === 'sell' ? 'Продать' : 'Купить') + ' ' +
+                        esc(tk ? tk.ticker : it.word.toUpperCase()) + ' на ' + it.rub.toLocaleString('ru-RU') + ' ₽</h5>' +
+                    '<p>' + sub + '</p></div><kbd>Enter — в тикет</kbd></div>';
+                idx++;
+                return;
+            }
+            if (r.kind === 'paper') {
+                if (sect !== 'p') { sect = 'p'; html += '<div class="pal-sec">Бумаги</div>'; }
+                var p = r.p, ppx = omniPx[p.uid];
+                html += '<div class="pal-row' + (on ? ' on' : '') + '" data-omni="' + idx + '">' +
+                    '<span class="pm" style="background:' + scnHue(p.ticker) + '">' +
+                        esc(String(p.ticker).slice(0, 2).toUpperCase()) + '</span>' +
+                    '<span><b>' + esc(p.name || p.ticker) + '</b> <em>' + esc(p.ticker) + '</em></span>' +
+                    (ppx > 0 ? '<span class="pr">' + fmtPx(ppx, { meta: p }) + '</span>' : '') +
+                '</div>';
+                idx++;
+                return;
+            }
+            if (sect !== 'c') { sect = 'c'; html += '<div class="pal-sec">Команды сцены</div>'; }
+            html += '<div class="pal-row' + (on ? ' on' : '') + '" data-omni="' + idx + '">' +
+                '<span class="cic">' + r.c.ic + '</span>' +
+                '<span><b>' + esc(r.c.t) + '</b>' + (r.c.em ? ' <em>' + esc(r.c.em) + '</em>' : '') + '</span></div>';
+            idx++;
+        });
+        return html;
+    }
+    function omniPaint() {
+        var el = dq('btOmniBody');
+        if (el) el.innerHTML = omniBodyHtml();
+    }
+    // действие строки. Intent и бумага ЗАПОЛНЯЮТ тикет — не отправляют.
+    function omniGo(i) {
+        var rows = omniRows();
+        var r = rows[i];
+        if (!r) return;
+        if (r.kind === 'cmd') { omniClose(); r.c.go(); return; }
+        var target = scnFindTarget || sxSlot();
+        if (r.kind === 'intent') {
+            var it = omni.intent, tk = omni.papers[0];
+            if (!tk || !tk.uid) { toast('Бумага ещё ищется — секунду', true); return; }
+            omniClose();
+            loadInstrument(target, tk.uid, function (s) {
+                s.side = it.side;
+                // черновик намерения — РЫНОЧНЫЙ: лимитка, оставшаяся в слоте с
+                // прошлой сессии, молча пересчитала бы «30к» по чужой цене
+                s.kind = 'market'; s.price = '';
+                simpleSum = String(it.rub);
+                scnUnit = 'rub'; scnLim = 0; scnActive = target;
+                saveSlots();
+                if (PF.renderNoAnim) PF.renderNoAnim();
+            });
+            return;
+        }
+        // бумага: в сцену (слот-цель «＋» вкладок уважаем)
+        omniClose();
+        simpleSum = ''; scnUnit = ''; scnLim = 0;
+        loadInstrument(target, r.p.uid, function () {
             scnActive = target;
             if (PF.renderNoAnim) PF.renderNoAnim();
         });
-    };
+    }
+    // ⌘K / Ctrl+K — из любого места сцены; слушатель один, на документ
+    document.addEventListener('keydown', function (e) {
+        if ((e.metaKey || e.ctrlKey) && e.code === 'KeyK' && sceneLive()) {
+            e.preventDefault();
+            omniToggle();
+        }
+    });
+
     // живые куски строки среды и тикета — в такт данным (freshTick, pollOb)
     function fsRepaintBits() {
         if (!sceneLive()) return;
@@ -4594,7 +4748,7 @@
             return;
         }
         scnFindTarget = f;
-        if (!sxFind.open) sxSearchToggle();
+        if (!omni.open) omniToggle();   // выбранная бумага встанет новой вкладкой
     };
 
     // ---- свечи сцены: KLineChart (движок и патчи — экспорт portfolios-chart) ----

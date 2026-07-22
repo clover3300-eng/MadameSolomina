@@ -738,6 +738,72 @@
 .bts .sct.on { color: var(--ink); border-color: var(--line); background: var(--card); }
 .bts .bts-omni-s { width: 280px; margin: 0; }
 
+/* ═══════ омнибокс ⌘K (экран 07) ═══════ */
+.bts .veil { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.34); backdrop-filter: blur(5px); z-index: 50; }
+.bts.night .veil { background: rgba(4, 7, 12, 0.62); }
+.bts .pal {
+    position: absolute; left: 50%; top: 96px; transform: translateX(-50%);
+    width: 640px; max-width: calc(100% - 48px);
+    background: var(--card); border: 1px solid var(--line); border-radius: 20px;
+    z-index: 55; overflow: hidden;
+    box-shadow: 0 50px 120px -40px rgba(15, 23, 42, 0.55);
+}
+.bts.night .pal { background: #0f141f; box-shadow: 0 50px 120px -30px rgba(0, 0, 0, 0.8); }
+.bts .pal-in {
+    display: flex; align-items: center; gap: 11px;
+    padding: 16px 18px; border-bottom: 1px solid var(--line);
+    color: var(--dim);
+}
+.bts .pal-in input {
+    flex: 1; min-width: 0; border: 0; background: none; padding: 0;
+    font: 500 17px var(--font-num); color: var(--ink);
+}
+.bts .pal-in input:focus { outline: none; }
+.bts .pal-in input::placeholder { color: var(--dim); font-family: var(--font-ui); font-size: 14px; }
+.bts .pal-in kbd { font: 400 10px var(--font-num); color: var(--dim); border: 1px solid var(--line); border-radius: 6px; padding: 2px 7px; }
+.bts .pal-body { max-height: 420px; overflow-y: auto; scrollbar-width: thin; padding-bottom: 8px; }
+.bts .pal-note { padding: 18px; font: 400 12.5px var(--font-ui); color: var(--dim); }
+.bts .intent {
+    margin: 14px 16px; display: flex; align-items: center; gap: 13px; cursor: pointer;
+    border: 1px solid color-mix(in srgb, var(--acc) 35%, transparent);
+    background: color-mix(in srgb, var(--acc) 7%, transparent);
+    border-radius: 14px; padding: 13px 16px;
+}
+.bts .intent.on { border-color: var(--acc); background: color-mix(in srgb, var(--acc) 12%, transparent); }
+.bts .intent .iic {
+    flex: none; width: 36px; height: 36px; border-radius: 12px;
+    background: color-mix(in srgb, var(--acc) 14%, transparent); color: var(--acc);
+    display: grid; place-items: center; font: 700 15px var(--font-num);
+}
+.bts .intent h5 { font: 700 14.5px var(--font-ui); color: var(--ink); margin: 0; }
+.bts .intent p { font: 400 11px var(--font-ui); color: var(--mut); margin: 2px 0 0; }
+.bts .intent kbd {
+    margin-left: auto; font: 400 10px var(--font-num); color: var(--acc);
+    border: 1px solid color-mix(in srgb, var(--acc) 40%, transparent);
+    border-radius: 6px; padding: 3px 8px; white-space: nowrap;
+}
+.bts .pal-sec {
+    font: 800 9px var(--font-ui); letter-spacing: 0.11em; text-transform: uppercase;
+    color: var(--dim); padding: 10px 18px 6px;
+}
+.bts .pal-row { display: flex; align-items: center; gap: 11px; padding: 8px 18px; font: 400 12.5px var(--font-ui); color: var(--mut); cursor: pointer; }
+.bts .pal-row.on, .bts .pal-row:hover { background: color-mix(in srgb, var(--acc) 7%, transparent); }
+.bts .pal-row .pm {
+    width: 28px; height: 28px; border-radius: 9px;
+    font: 700 10px var(--font-num); color: #fff;
+    display: grid; place-items: center; flex: none;
+}
+.bts .pal-row b { font-weight: 600; color: var(--ink); }
+.bts .pal-row em { font: 400 10.5px var(--font-num); font-style: normal; color: var(--dim); }
+.bts .pal-row .pr { margin-left: auto; font: 400 11.5px var(--font-num); color: var(--mut); }
+.bts .pal-row .cic {
+    width: 28px; height: 28px; border-radius: 9px; border: 1px solid var(--line);
+    display: grid; place-items: center; color: var(--mut); font-size: 12px; flex: none;
+}
+.bts .pal-foot { display: flex; gap: 16px; padding: 11px 18px; border-top: 1px solid var(--line); font: 400 10px var(--font-ui); color: var(--dim); }
+.bts .pal-foot kbd { font-family: var(--font-num); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; margin-right: 4px; }
+.bts .pal-foot .pf-r { margin-left: auto; }
+
 /* ---------- узкие десктопы ----------
    Зазор тикет↔сцена держим ЯВНО на каждой ступени: right героя = right тикета
    + его ширина + гэп. На «Разгоне» тикет шире (400), и без своей пары правил
