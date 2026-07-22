@@ -2444,11 +2444,13 @@ body.quiz-mode #pfxFab, body.sd-drawer-open #pfxFab, body.pfsd-open #pfxFab { di
     }
 }
 
-/* панель действий: то же стекло, что было у столбика; прижата к углу — столбика нет */
+/* панель действий: то же стекло, что было у столбика; сдвинута левее угла на
+   полширины FAB (22+29), чтобы правый край проходил под центром #pfxFab —
+   кнопка «Добавить виджет» словно сидит на краю панели */
 #pfActBar { display: none; }
 @media (min-width: 1024px) {
     body:has(#panel-portfolios.active) #pfActBar {
-        position: fixed; right: 22px; bottom: 20px; z-index: 879;
+        position: fixed; right: 51px; bottom: 20px; z-index: 879;
         box-sizing: border-box; height: 46px; padding: 3px; border-radius: 999px;
         display: flex; align-items: center; gap: 2px;
         background: var(--card-glass-aurora, rgba(255, 255, 255, 0.72));
