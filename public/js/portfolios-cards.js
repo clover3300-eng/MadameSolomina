@@ -512,6 +512,18 @@
                     if (t && (t.indexOf(h.ticker) === 0 || String(h.ticker).indexOf(t) === 0)) return bonds[i].n || h.ticker;
                 }
             } catch (e) {}
+            // bonds[] — только эшелоны; ПОЛНАЯ таблица терминала облигаций знает все
+            // бумаги (грузится фоном при старте, см. bndEnsureLoaded в bond-terminal.js)
+            try {
+                if (typeof window.bndFindBond === 'function') {
+                    var bb = window.bndFindBond(h.ticker);
+                    if (bb && bb.name) return bb.name;
+                }
+            } catch (e2) {}
+            // ОФЗ узнаваема по самому ISIN — SU<серия>RMFS<цифра> (или короткому
+            // SU<серия> из старых портфелей): имя выводится без каких-либо таблиц
+            var mo = /^SU(\d{5})(?:RMFS\d)?$/.exec(String(h.ticker));
+            if (mo) return 'ОФЗ ' + mo[1];
         } else if (typeof window.stkFindCompany === 'function') {
             var co = window.stkFindCompany(h.ticker);
             if (co && co.name) return co.name;
