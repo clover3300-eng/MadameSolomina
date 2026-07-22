@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<title>Карточка портфеля · верх, раунд 2 · мокапы</title>
+<title>Карточка портфеля · «Табло», чистовик · мокапы</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -50,6 +50,14 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .scroller{overflow-x:auto;padding:4px 0 44px;margin-bottom:-32px}
 @media (max-width:1000px){ .notes{grid-template-columns:1fr} .doc-h h1{font-size:30px} }
 
+/* таблица «элемент → данные» */
+.map{margin-top:20px;width:100%;border-collapse:collapse;font-size:13px;background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:12px;overflow:hidden}
+.map th{text-align:left;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--doc-dim);padding:10px 14px;border-bottom:1px solid var(--doc-line)}
+.map td{padding:9px 14px;border-bottom:1px solid var(--doc-line);color:var(--doc-quote);line-height:1.5;vertical-align:top}
+.map tr:last-child td{border-bottom:0}
+.map code{font-family:var(--fN);font-size:11.5px;background:color-mix(in srgb,var(--doc-acc) 9%,transparent);color:var(--doc-acc);padding:1px 5px;border-radius:5px}
+.map .ok{color:#16a34a;font-weight:700}
+
 /* ---------- экран ---------- */
 .scr{--ink:#0f172a; --mut:#64748b; --dim:#94a3b8; --line:#e7ecf3; --hair:rgba(15,23,42,.07);
      --bg:#f4f6fa; --card:#fff; --acc:#4453ef; --grn:#16a34a; --red:#dc2626; --amb:#d97706;
@@ -68,38 +76,39 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .rowflex{display:flex;gap:22px;align-items:flex-start;justify-content:center}
 
 /* ======================================================================
-   КАРТОЧКА (px-*): позиции и подвал заморожены, верх — три композиции
+   КАРТОЧКА «ТАБЛО» (px-*): позиции и подвал заморожены
    ====================================================================== */
 .px{position:relative;width:880px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:18px;
     overflow:hidden;display:flex;flex-direction:column;
     box-shadow:0 1px 2px rgba(15,23,42,.04),0 12px 28px -20px rgba(24,38,60,.5)}
 .scr.dark .px{box-shadow:none}
 .px>*{position:relative;z-index:1}
-/* сцена: свет усилен против раунда 1 — 9% почти не читалось на белом */
-.px.scene::before{content:'';position:absolute;top:0;left:0;right:0;height:420px;z-index:0;pointer-events:none;
-    background:radial-gradient(105% 130% at 24% -12%, color-mix(in srgb,var(--pfa) 12%,transparent) 0%, transparent 64%)}
-.scr.dark .px.scene::before{background:radial-gradient(105% 130% at 24% -12%, color-mix(in srgb,var(--pfa) 17%,transparent) 0%, transparent 66%)}
-/* у «Табло» и «Иммерсива» свет симметричен композиции — из центра */
-.px.v1.scene::before,.px.v2.scene::before{background:radial-gradient(120% 130% at 50% -14%, color-mix(in srgb,var(--pfa) 12%,transparent) 0%, transparent 64%)}
-.scr.dark .px.v1.scene::before,.scr.dark .px.v2.scene::before{background:radial-gradient(120% 130% at 50% -14%, color-mix(in srgb,var(--pfa) 17%,transparent) 0%, transparent 66%)}
+/* сцена: свет из центра, под ось симметрии */
+.px.scene::before{content:'';position:absolute;top:0;left:0;right:0;height:440px;z-index:0;pointer-events:none;
+    background:radial-gradient(120% 130% at 50% -14%, color-mix(in srgb,var(--pfa) 12%,transparent) 0%, transparent 64%)}
+.scr.dark .px.scene::before{background:radial-gradient(120% 130% at 50% -14%, color-mix(in srgb,var(--pfa) 17%,transparent) 0%, transparent 66%)}
 
-/* шапка */
-.px-top{display:flex;align-items:center;gap:10px;padding:14px 18px 0}
+/* шапка: пилюля имени + периоды + иконки; MOEX-бейджа больше нет */
+.px-top{display:flex;align-items:center;gap:10px;padding:16px 18px 0}
 .px-pill{font-family:var(--fN);font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
          color:var(--pfa);background:color-mix(in srgb,var(--pfa) 13%,transparent);border-radius:9px;padding:5px 11px}
-.px-live{display:inline-flex;align-items:center;gap:6px;font-family:var(--fN);font-size:10px;font-weight:600;color:var(--dim)}
-.px-live i{width:6px;height:6px;border-radius:50%;background:var(--grn);animation:pxlive 2.4s ease-out infinite}
-@keyframes pxlive{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--grn) 45%,transparent)}
-                  70%{box-shadow:0 0 0 6px transparent}100%{box-shadow:0 0 0 0 transparent}}
-.px-top-r{margin-left:auto;display:flex;align-items:center;gap:6px}
+.px-top-r{margin-left:auto;display:flex;align-items:center;gap:10px}
+/* периоды — пилюли, как .pfdcfg-seg-b в проде */
+.px-seg{display:inline-flex;gap:4px}
+.px-seg b{font-family:var(--fN);font-size:11px;font-weight:600;color:var(--mut);border:1px solid var(--line);
+          border-radius:8px;padding:4px 10px;line-height:1.35}
+.px-seg b.on{background:color-mix(in srgb,var(--ink) 7%,transparent);border-color:transparent;color:var(--ink);font-weight:700}
+.px-icons{display:flex;gap:6px}
 .px-ico{width:28px;height:28px;border-radius:9px;border:1px solid var(--line);display:grid;place-items:center;color:var(--dim)}
 .px-ico svg{width:14px;height:14px}
 
-/* общие атомы героя */
+/* герой «Табло»: выше, чем в раунде 2 — сумма дальше и от шапки, и от графика */
+.px1-hero{padding:30px 18px 0;text-align:center}
 .px-hero-k{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--dim)}
 .px-val{display:block;font-family:var(--fN);font-weight:700;letter-spacing:-.02em;line-height:1.06;
-        font-variant-numeric:tabular-nums;white-space:nowrap}
+        font-variant-numeric:tabular-nums;white-space:nowrap;font-size:54px;margin-top:12px}
 .px-val small{font-size:.58em;font-weight:600;color:var(--mut);margin-left:.08em}
+.px-val.l10{font-size:42px} .px-val.l13{font-size:32px}
 .px-day{display:inline-flex;align-items:center;gap:7px;font-family:var(--fN);font-size:13.5px;font-weight:700;
         padding:6px 11px;border-radius:10px}
 .px-day.neg{color:var(--red);background:color-mix(in srgb,var(--red) 9%,transparent)}
@@ -107,55 +116,33 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .px-day u{text-decoration:none;font-family:var(--fU);font-weight:500;font-size:11.5px;opacity:.8}
 .px-all{font-family:var(--fN);font-size:12px;font-weight:600;color:var(--mut)}
 .px-all u{text-decoration:none;font-family:var(--fU);font-weight:500;color:var(--dim);margin-right:4px}
-.px-dayrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.px-dayrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px;justify-content:center}
+.px1-hero .px-spark{margin:30px -18px 0;text-align:left}
 
-/* график: x оверлеев в процентах, y — в пикселях контейнера */
+/* график */
 .px-spark{position:relative}
 .px-spark svg{display:block;width:100%;height:100%;overflow:visible}
 .px-fl{position:absolute;transform:translateX(-50%);font-family:var(--fN);font-size:10px;font-weight:600;color:var(--mut);
        background:color-mix(in srgb,var(--card) 84%,transparent);padding:1px 6px;border-radius:6px;white-space:nowrap;
        backdrop-filter:blur(2px)}
+.px-fl.pay{color:var(--grn);font-weight:700}
 .px-ax{position:absolute;right:10px;font-family:var(--fN);font-size:9.5px;font-weight:500;color:var(--dim)}
 .px-pulse{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--pfa);transform:translate(-50%,-50%)}
 .px-pulse::after{content:'';position:absolute;inset:-3px;border-radius:50%;border:1.5px solid var(--pfa);
                  animation:pxping 2s ease-out infinite}
 @keyframes pxping{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2.1);opacity:0}}
-.px-nochart{position:absolute;inset:0;display:grid;place-items:center;font-size:11.5px;color:var(--dim)}
+.px-nochart{height:100%;border-radius:12px;border:1px dashed var(--line);display:grid;place-items:center;
+            font-size:11.5px;color:var(--dim);margin:0 18px}
 
-/* KPI-ячейка (общая для полосы, воздуха, стекла) */
+/* KPI на воздухе + доли одной строкой */
 .px-kpi{padding:0 16px;border-left:1px solid var(--hair)}
-.px-kpi:first-child{border-left:0;padding-left:18px}
+.px-kpi:first-child{border-left:0}
 .px-kpi .k{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);white-space:nowrap}
 .px-kpi .v{font-family:var(--fN);font-size:17px;font-weight:700;margin-top:6px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .px-kpi .v.pos{color:var(--grn)} .px-kpi .v.neg{color:var(--red)}
 .px-kpi .s{font-family:var(--fN);font-size:10.5px;font-weight:500;color:var(--dim);margin-top:4px;white-space:nowrap}
-
-/* --- раунд 1, вариант А: точка отсчёта --- */
-.pxA-hero{padding:10px 18px 0}
-.pxA-hero .px-val{font-size:42px;margin-top:10px}
-.pxA-hero .px-dayrow{margin-top:12px}
-.pxA-hero .px-spark{height:150px;margin-top:14px}
-.pxA-kpis{display:grid;grid-template-columns:repeat(4,1fr);background:color-mix(in srgb,var(--ink) 3%,transparent);
-          border-bottom:1px solid var(--hair);padding:13px 0 14px}
-.scr.dark .pxA-kpis{background:rgba(255,255,255,.025)}
-.pxA-alloc{padding:11px 18px 12px;border-bottom:1px solid var(--hair)}
-.pxA-albar{position:relative;display:flex;gap:2px;height:4px;margin-bottom:8px}
-.pxA-albar i{display:block;border-radius:2px}
-.pxA-alleg{display:flex;gap:4px 16px;align-items:baseline}
-.pxA-alleg span{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--mut);white-space:nowrap}
-.pxA-alleg em{font-style:normal;width:6px;height:6px;border-radius:2px;flex:none}
-.pxA-alleg b{font-family:var(--fN);font-size:11.5px;font-weight:600;color:var(--mut)}
-
-/* --- В1 «Табло»: ось симметрии --- */
-.px1-hero{padding:18px 18px 0;text-align:center}
-.px1-hero .px-val{font-size:54px;margin-top:10px}
-.px1-hero .px-val.l10{font-size:42px} .px1-hero .px-val.l13{font-size:32px}
-.px1-hero .px-dayrow{margin-top:13px;justify-content:center}
-.px1-hero .px-spark{height:170px;margin:16px -18px 0;text-align:left}
-/* KPI на воздухе: без серой подложки, колонки по центру */
-.px1-kpis{display:grid;grid-template-columns:repeat(4,1fr);padding:14px 0 15px;border-top:1px solid var(--hair)}
+.px1-kpis{display:grid;grid-template-columns:repeat(4,1fr);padding:15px 0 16px;border-top:1px solid var(--hair)}
 .px1-kpis .px-kpi{text-align:center;padding:0 12px}
-/* доли одной строкой: подписи по краям, полоса между ними */
 .px-thin{display:flex;align-items:center;gap:14px;padding:10px 18px 12px;border-bottom:1px solid var(--hair)}
 .px-thin span{font-size:11.5px;color:var(--mut);white-space:nowrap}
 .px-thin b{font-family:var(--fN);font-size:11.5px;font-weight:600;color:var(--ink)}
@@ -163,44 +150,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .px-thin .tr i{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:color-mix(in srgb,var(--ink) 55%,transparent)}
 .px-thin .tr u{position:absolute;top:-4px;bottom:-4px;width:2px;border-radius:2px;background:var(--mut)}
 
-/* --- В2 «Иммерсив»: сумма на графике, как манифест на Главной --- */
-.px2{position:relative;height:310px;overflow:hidden}
-.px2 .px-spark{position:absolute;inset:0;z-index:1}
-.px2-txt{position:absolute;left:0;right:0;top:16px;z-index:3;text-align:center}
-.px2-txt::before{content:'';position:absolute;left:50%;top:-30px;width:640px;height:190px;transform:translateX(-50%);
-    background:radial-gradient(60% 75% at 50% 40%, color-mix(in srgb,var(--card) 78%,transparent), transparent 72%);z-index:-1}
-.px2-txt .px-val{font-size:50px;margin-top:9px}
-.px2-txt .px-val.l10{font-size:40px} .px2-txt .px-val.l13{font-size:30px}
-.px2-txt .px-dayrow{margin-top:12px;justify-content:center}
-/* сводка на стекле по нижней кромке сцены */
-.px2-glass{position:absolute;left:0;right:0;bottom:0;z-index:2;display:grid;grid-template-columns:repeat(4,1fr);
-    padding:8px 0 10px;background:color-mix(in srgb,var(--card) 55%,transparent);
-    backdrop-filter:blur(8px);border-top:1px solid var(--hair)}
-.px2.warm .px-nochart{z-index:0}
-
-/* --- В3 «Разворот»: сумма слева, сводка столбиком справа --- */
-.px3-hero{padding:14px 18px 0;display:grid;grid-template-columns:1fr 280px;gap:26px;align-items:start}
-.px3-hero .px-val{font-size:56px;margin-top:12px}
-.px3-hero .px-val.l10{font-size:44px} .px3-hero .px-val.l13{font-size:33px}
-.px3-hero .px-dayrow{margin-top:14px}
-.px3-col{display:flex;flex-direction:column;padding-top:2px}
-.px3-row{display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid var(--hair)}
-.px3-row:last-child{border-bottom:0}
-.px3-row .k{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);white-space:nowrap}
-.px3-row .vw{text-align:right}
-.px3-row .v{font-family:var(--fN);font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
-.px3-row .v.pos{color:var(--grn)} .px3-row .v.neg{color:var(--red)}
-.px3-row .s{font-family:var(--fN);font-size:10px;font-weight:500;color:var(--dim);margin-top:2px;white-space:nowrap}
-.px3-spark{height:150px;margin-top:6px}
-
-/* замороженная зона на промежуточных экранах */
-.px-rest{position:relative}
-.px-rest.dimmed{opacity:.45}
-.px-freeze{position:absolute;right:18px;top:10px;z-index:5;font-size:9px;font-weight:800;letter-spacing:.07em;
-    text-transform:uppercase;color:var(--dim);background:color-mix(in srgb,var(--ink) 6%,transparent);
-    border-radius:6px;padding:3px 8px}
-
-/* позиции — как в проде, БЕЗ ИЗМЕНЕНИЙ */
+/* позиции и подвал — как в проде, БЕЗ ИЗМЕНЕНИЙ */
 .px-pos{padding:14px 18px 0}
 .px-pos-h{display:flex;align-items:center;gap:9px;margin-bottom:10px}
 .px-pos-h h4{font-family:var(--fT);font-weight:400;font-size:17px}
@@ -237,29 +187,31 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .px-btn.all{flex:1.25;justify-content:space-between;padding:11px 14px;color:var(--ink)}
 .px-btn.pri{background:var(--ink);border-color:var(--ink);color:var(--card)}
 
-/* узкий блок конструктора (на В2) */
+/* узкий блок конструктора */
 .px.narrow{width:400px;margin:0}
-.px.narrow .px2{height:330px}
-.px.narrow .px2-txt .px-val{font-size:34px;margin-top:7px}
-.px.narrow .px2-txt::before{width:380px;height:150px}
-.px.narrow .px2-glass{grid-template-columns:1fr 1fr;row-gap:10px}
-.px.narrow .px2-glass .px-kpi:nth-child(odd){border-left:0;padding-left:16px}
-.px.narrow .px2-glass .px-kpi .v{font-size:14px}
-.px.narrow .px2-glass .px-kpi .s{display:none}
+.px.narrow .px-top{padding:12px 14px 0;gap:8px}
+.px.narrow .px-icons{display:none}
+.px.narrow .px1-hero{padding:22px 14px 0}
+.px.narrow .px-val{font-size:38px}
+.px.narrow .px1-hero .px-spark{margin:22px -14px 0}
 .px.narrow .px-day{font-size:12.5px;padding:5px 9px}
+.px.narrow .px-all{width:100%}
+.px.narrow .px1-kpis{grid-template-columns:1fr 1fr;row-gap:13px;padding:13px 0 14px}
+.px.narrow .px1-kpis .px-kpi:nth-child(odd){border-left:0}
+.px.narrow .px1-kpis .px-kpi .v{font-size:15px}
+.px.narrow .px-thin{padding:9px 14px 10px}
 .px.narrow .px-tbl td{font-size:12px}
 .px.narrow .px-as .tk,.px.narrow .px-as .nm{max-width:110px}
 .px.narrow .px-mass{max-height:272px}
-.px.narrow .px-foot{flex-direction:column}
-.px.narrow .px-top{padding:12px 14px 0}
 .px.narrow .px-pos{padding:12px 14px 0}
-.px.narrow .px-thin{padding:9px 14px 10px}
-.px.narrow .px-foot{padding:10px 14px 12px}
+.px.narrow .px-foot{flex-direction:column;padding:10px 14px 12px}
 
-/* герой-огрызок для проверок */
+/* карточка-огрызок для демо графиков и краевых */
 .px.hero-only{width:640px;margin:0}
-.px.hero-only .px2{height:300px}
-.px.hero-only .px2-txt::before{width:560px;height:170px}
+.px.hero-only .px-val{font-size:44px}
+.px.hero-only .px-val.l10{font-size:36px} .px.hero-only .px-val.l13{font-size:28px}
+.px.hero-only .px1-hero{padding-top:24px}
+.px.hero-only .px1-hero .px-spark{margin-top:24px}
 
 /* скелетоны и маска сумм */
 .px-sk{display:inline-block;border-radius:6px;vertical-align:middle;position:relative;overflow:hidden;
@@ -275,69 +227,46 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 <div class="page">
 
   <div class="doc-h">
-    <div class="doc-kicker">Портфели · Обзор · карточка · раунд 2</div>
-    <h1>Верх карточки: три композиции громче «Сцены»</h1>
-    <p>Решения раунда: направление А («Сцена») принято за основу, «Пульс» отложен, <b>позиции и подвал заморожены</b> — на всех экранах они ровно как в проде. Переделывается всё, что выше списка: шапка, герой, график, KPI-полоса и полоса долей. Новых данных не нужно — всё, что здесь нарисовано, уже считается в коде.</p>
+    <div class="doc-kicker">Портфели · Обзор · карточка · раунд 3</div>
+    <h1>«Табло» — чистовик: выше, с выплатами и периодами</h1>
+    <p>Выбран вариант «Табло» из раунда 2, к нему четыре правки: <b>шапка выше</b> — сумма дальше и от края карточки, и от графика; <b>MOEX-бейдж убран</b> — живость показывает пульс-точка; <b>метки выплат на графике</b> — прошедшие купоны и дивиденды на самой линии, ближайшая — пунктиром впереди; <b>переключатель периода 30д / Год / Всё</b> — те же пилюли, что в проде. Позиции и подвал по-прежнему заморожены.</p>
     <div class="verdict">
-      <p><b>Почему «Сцена» всё ещё «не то».</b> Сумма выросла до 42&nbsp;px, но композиция осталась прежней: левый верхний угол, как первая строка таблицы, — у карточки нет лица, есть начало списка. Серая KPI-полоса — самый большой прямоугольник верха, и выглядит канцелярией. Полоса долей добавляет третий горизонтальный разделитель подряд. Свет на 9% на белом фоне почти не читался.</p>
-      <p><b>Три композиции ниже чинят это по-разному.</b> «Табло» строит ось симметрии — сумма и день по центру, сводка на воздухе без подложки. «Иммерсив» кладёт сумму прямо на график — тот же ход, что манифест поверх живой карты IMOEX на Главной. «Разворот» отдаёт левую половину сумме, а сводку ставит столбиком справа. Во всех трёх: доли — одна строка вместо двух, свет усилен до 12/17%.</p>
+      <p><b>Выплаты уже посчитаны:</b> расписание купонов строит <code>coupSched</code> (им кормится «Календарь выплат»), даты и суммы прошедших — оттуда же; остаётся спроецировать их на ось времени графика. Метка — зелёная точка на линии с подписью суммы; клик — календарь выплат. Ближайшая выплата рисуется продолжением оси: пунктир от «сейчас» до даты, полая точка, подпись «через N дней».</p>
+      <p><b>Честность про периоды:</b> по решению прошлого раунда период без данных не показывается — у «Портфеля 4» (21 день) была бы одна пилюля «Всё». В мокапе нарисованы все три, чтобы видеть карточку взрослого портфеля; правило скрытия остаётся в силе. Дельта под суммой следует за периодом: серая часть «за всё время» меняется на «за 30 дней» и т.д.</p>
     </div>
   </div>
 
-  <!-- ================= 00. ТОЧКА ОТСЧЁТА ================= -->
+  <!-- ================= 00. ЧИСТОВИК ================= -->
   <section class="mk">
-    <div class="mk-h"><span class="mk-n">00</span><h2>Точка отсчёта — вариант А из раунда 1</h2><span class="mk-tag mute">диагноз верха</span></div>
-    <div class="mk-sub">То, что было рекомендовано и показалось «уже лучше, но не то». Ниже списка всё устраивает — пины только на верхней зоне.</div>
+    <div class="mk-h"><span class="mk-n">00</span><h2>«Табло» с правками</h2><span class="mk-tag">рекомендую</span></div>
+    <div class="mk-sub">Карточка целиком: шапка с периодами, герой выше, график с выплатами, воздушная сводка, доли одной строкой — и нетронутые позиции с подвалом.</div>
     <div class="scroller"><div class="scr" id="scr0"></div></div>
     <div class="notes" id="notes0"></div>
+    <table class="map" id="mapTbl"></table>
   </section>
 
-  <!-- ================= 01. ТАБЛО ================= -->
+  <!-- ================= 01. ПЕРИОДЫ И ВЫПЛАТЫ ================= -->
   <section class="mk">
-    <div class="mk-h"><span class="mk-n">01</span><h2>В1 «Табло» — ось симметрии</h2><span class="mk-tag">вариант</span></div>
-    <div class="mk-sub">Сумма и день по центру, как на табло терминала. График — отдельный этаж. Сводка без серой подложки: четыре колонки на воздухе. Доли — одна строка. Позиции пригашены, чтобы был виден масштаб изменений, — в реальности они обычные.</div>
+    <div class="mk-h"><span class="mk-n">01</span><h2>Периоды и выплаты на графике</h2><span class="mk-tag mute">как это масштабируется</span></div>
+    <div class="mk-sub">Слева — «Год» взрослого портфеля: выплат много, близкие складываются в одну метку «2 выплаты». Справа — «30 дней»: одна выплата в периоде и ближайшая пунктиром. Подписи чередуются над/под линией, чтобы не слипаться.</div>
     <div class="scroller"><div class="scr" id="scr1"></div></div>
     <div class="notes" id="notes1"></div>
   </section>
 
-  <!-- ================= 02. ИММЕРСИВ ================= -->
+  <!-- ================= 02. ТЁМНАЯ + УЗКИЙ ================= -->
   <section class="mk">
-    <div class="mk-h"><span class="mk-n">02</span><h2>В2 «Иммерсив» — сумма на графике</h2><span class="mk-tag">вариант</span></div>
-    <div class="mk-sub">График становится фоном всего верха, сумма живёт на нём, сводка — стеклянной строкой по нижней кромке. Прямая рифма с Главной, где манифест лежит поверх живой карты рынка. Верх из четырёх этажей превращается в одну сцену.</div>
-    <div class="scroller"><div class="scr" id="scr2"></div></div>
+    <div class="mk-h"><span class="mk-n">02</span><h2>Тёмная тема и узкий блок</h2><span class="mk-tag mute">проверка на прочность</span></div>
+    <div class="mk-sub">Узкий блок 400&nbsp;px: служебные иконки скрываются (как в проде на пороге 440), пилюли периода остаются, сумма 38&nbsp;px, метки выплат — точками без подписей.</div>
+    <div class="scroller"><div class="scr dark" id="scr2"></div></div>
     <div class="notes" id="notes2"></div>
   </section>
 
-  <!-- ================= 03. РАЗВОРОТ ================= -->
+  <!-- ================= 03. КРАЕВЫЕ ================= -->
   <section class="mk">
-    <div class="mk-h"><span class="mk-n">03</span><h2>В3 «Разворот» — сумма слева, сводка справа</h2><span class="mk-tag">вариант</span></div>
-    <div class="mk-sub">Редакционный разворот: левая половина — сумме и дню, правая — сводка столбиком, строки «метка — значение» без подложки. График ниже во всю ширину. Самый спокойный из трёх.</div>
+    <div class="mk-h"><span class="mk-n">03</span><h2>Миллиард, приватность, прогрев, зелёный день</h2><span class="mk-tag warn">без этого нельзя в код</span></div>
+    <div class="mk-sub">Ступени кегля по числу цифр: 54&nbsp;→&nbsp;42&nbsp;→&nbsp;32. «Скрывать суммы» маскирует и подписи выплат — это ₽. Если выплат в периоде не было — меток просто нет, пустое состояние не нужно.</div>
     <div class="scroller"><div class="scr" id="scr3"></div></div>
     <div class="notes" id="notes3"></div>
-  </section>
-
-  <!-- ================= 04. РАБОЧИЙ ================= -->
-  <section class="mk">
-    <div class="mk-h"><span class="mk-n">04</span><h2>Рабочий вариант: «Иммерсив»</h2><span class="mk-tag">рекомендую</span></div>
-    <div class="mk-sub">Единственная композиция, где верх — одна сцена, а не стопка этажей, и она же — фирменный ход проекта с Главной. Позиции и подвал в полном виде: видно, как новая сцена сидит над замороженной зоной.</div>
-    <div class="scroller"><div class="scr" id="scr4"></div></div>
-    <div class="notes" id="notes4"></div>
-  </section>
-
-  <!-- ================= 05. ТЁМНАЯ + УЗКИЙ ================= -->
-  <section class="mk">
-    <div class="mk-h"><span class="mk-n">05</span><h2>Тёмная тема и узкий блок</h2><span class="mk-tag mute">проверка на прочность</span></div>
-    <div class="mk-sub">В тёмной теме стекло сводки работает лучше всего: полупрозрачная подложка карточного цвета + блюр, под ней продолжает жить график. Узкий блок 400&nbsp;px: сцена 300&nbsp;px, сумма 34&nbsp;px, сводка 2×2 без подписей.</div>
-    <div class="scroller"><div class="scr dark" id="scr5"></div></div>
-    <div class="notes" id="notes5"></div>
-  </section>
-
-  <!-- ================= 06. КРАЕВЫЕ ================= -->
-  <section class="mk">
-    <div class="mk-h"><span class="mk-n">06</span><h2>Миллиард, приватность, прогрев, зелёный день</h2><span class="mk-tag warn">без этого нельзя в код</span></div>
-    <div class="mk-sub">Четыре проверки новой сцены. Ступени кегля: 50&nbsp;→&nbsp;40&nbsp;→&nbsp;30 (по числу цифр, механика <code>heroValParts</code>). «Скрывать суммы» — та же явная метка <code>data-money</code>; график остаётся открытым, он в процентах и сумм не выдаёт.</div>
-    <div class="scroller"><div class="scr" id="scr6"></div></div>
-    <div class="notes" id="notes6"></div>
   </section>
 
 </div>
@@ -354,10 +283,15 @@ function rub(n, dec){
 function pct1(n){ return (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n).toFixed(1).replace('.', ',') + '%'; }
 
 var VALUE = 199491, INVEST = 199662;
+/* «Всё» = 21 день */
 var SERIES = [0,1.8,4.2,6.9,8.2,7.3,6.1,5.2,4.4,3.6,3.1,3.4,2.6,2.1,1.4,0.6,-0.6,-1.8,-3.2,-4.7,-5.2,-3.4,-1.6,-0.1];
 var IMAX = 4, IMIN = 20;
 var FLMAX = rub(Math.round(INVEST * 1.082)) + NB + '₽ · 5' + NB + 'июл';
 var FLMIN = rub(Math.round(INVEST * 0.948)) + NB + '₽ · 19' + NB + 'июл';
+/* «Год» взрослого портфеля — для демо масштабирования выплат */
+var SERIES_Y = [0,0.8,1.9,1.2,2.4,3.1,2.6,3.8,4.6,4.1,5.2,6.0,5.4,6.6,7.1,6.4,7.6,8.4,7.9,8.8,9.6,9.0,8.2,8.9,9.8,10.5,9.9,10.8,11.4,10.7,11.6,12.3,11.8,12.6,13.1,12.4,13.2,12.7,12.2,12.9,13.6,13.0,12.4,12.8,13.4,12.9,12.3,12.4];
+/* «30 дней» */
+var SERIES_M = [0,0.6,1.4,1.1,1.9,2.4,2.0,2.7,2.2,1.6,1.9,1.2,0.6,0.9,0.3,-0.4,-0.9,-0.5,-1.2,-1.8,-2.4,-2.0,-2.6,-3.1,-2.5,-1.8,-1.2,-0.7,-0.3,-0.1];
 
 var HOLD = [
   {tk:'ZAYM', nm:'Займер',              qty:102, buy:129.45, cur:130.60, chg: 0.9, share:6.7},
@@ -380,18 +314,21 @@ var PAL_L = {line:'#7c5cf5', grn:'#16a34a', red:'#dc2626', dot:'#fff'};
 var PAL_D = {line:'#9b8cff', grn:'#34d399', red:'#f87171', dot:'#141a24'};
 
 /* ================= график =================
-   o: {w,h,padT,padB,pal,uid,flags,flagsUp,pulse,axis,fillTo} */
+   o: {w,h,vals,pal,uid,flags,pulse,axis,pays,future,futText,noflags}
+   pays: [{i, lbl, up}] — выплаты на линии; future — пунктирное продолжение
+   оси до ближайшей выплаты (полая точка + подпись) */
 function bigChart(o){
-  var w = o.w || 880, h = o.h, vals = SERIES, pal = o.pal || PAL_L;
-  var padT = o.padT == null ? 14 : o.padT, padB = o.padB == null ? 10 : o.padB, padX = 6;
+  var w = o.w || 880, h = o.h, vals = o.vals || SERIES, pal = o.pal || PAL_L;
+  var padT = 16, padB = 12, padX = 6;
+  /* под будущую выплату серия ужимается: хвост оси отдаётся пунктиру */
+  var span = o.future ? 0.86 : 1;
   var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals), rng = (max - min) || 1;
-  var iw = w - padX * 2, ih = h - padT - padB;
+  var iw = (w - padX * 2) * span, ih = h - padT - padB;
   var pts = vals.map(function(v, i){
     return [padX + iw * (i / (vals.length - 1)), padT + ih - ih * ((v - min) / rng)];
   });
   var d = pts.map(function(p, i){ return (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' ');
-  var fb = o.fillTo == null ? h : o.fillTo;
-  var area = d + ' L' + pts[pts.length - 1][0].toFixed(1) + ' ' + fb + ' L' + pts[0][0].toFixed(1) + ' ' + fb + ' Z';
+  var area = d + ' L' + pts[pts.length - 1][0].toFixed(1) + ' ' + h + ' L' + pts[0][0].toFixed(1) + ' ' + h + ' Z';
   var uid = o.uid || 'x';
 
   var svg = '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">';
@@ -406,23 +343,38 @@ function bigChart(o){
   }
   svg += '<path d="' + area + '" fill="url(#pg' + uid + ')"/>';
   svg += '<path d="' + d + '" fill="none" stroke="' + pal.line + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>';
-  if (!o.pulse) {
-    var lp = pts[pts.length - 1];
-    svg += '<circle cx="' + lp[0].toFixed(1) + '" cy="' + lp[1].toFixed(1) + '" r="3.5" fill="' + pal.line + '"/>';
-  }
-  svg += '</svg>';
 
+  var last = pts[pts.length - 1];
   var over = '';
+
+  /* выплаты: зелёная точка на линии + подпись суммы */
+  (o.pays || []).forEach(function(p){
+    var pt = pts[p.i];
+    svg += '<circle cx="' + pt[0].toFixed(1) + '" cy="' + pt[1].toFixed(1) + '" r="3.6" fill="' + pal.dot +
+           '" stroke="' + pal.grn + '" stroke-width="2" vector-effect="non-scaling-stroke"/>';
+    if (p.lbl) over += '<span class="px-fl pay" style="left:' + (pt[0] / w * 100).toFixed(1) + '%;top:' +
+        (p.up ? Math.max(0, pt[1] - 26) : Math.min(h - 16, pt[1] + 10)).toFixed(0) + 'px">' + p.lbl + '</span>';
+  });
+
+  /* ближайшая выплата: пунктир от «сейчас» вперёд, полая точка, подпись */
+  if (o.future) {
+    var fx = w - padX - 10;
+    svg += '<line x1="' + last[0].toFixed(1) + '" y1="' + last[1].toFixed(1) + '" x2="' + fx + '" y2="' + last[1].toFixed(1) +
+           '" stroke="' + pal.grn + '" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="2 5" vector-effect="non-scaling-stroke"/>';
+    svg += '<circle cx="' + fx + '" cy="' + last[1].toFixed(1) + '" r="3.6" fill="' + pal.dot + '" stroke="' + pal.grn +
+           '" stroke-width="2" stroke-dasharray="2.5 2.5" vector-effect="non-scaling-stroke"/>';
+    if (o.futText) over += '<span class="px-fl pay" style="left:' + (fx / w * 100).toFixed(1) + '%;top:' +
+        Math.max(0, last[1] - 26).toFixed(0) + 'px;transform:translateX(-100%)">' + o.futText + '</span>';
+  }
+
   if (o.flags) {
-    var mx = pts[IMAX], mn = pts[IMIN];
-    over += '<span class="px-fl" style="left:' + (mx[0] / w * 100).toFixed(1) + '%;top:' + Math.max(0, mx[1] - 24).toFixed(0) + 'px">' + FLMAX + '</span>';
-    var mny = o.flagsUp ? mn[1] - 24 : Math.min(h - 16, mn[1] + 8);
-    over += '<span class="px-fl" style="left:' + (mn[0] / w * 100).toFixed(1) + '%;top:' + mny.toFixed(0) + 'px">' + FLMIN + '</span>';
+    var mx = pts[o.imax == null ? IMAX : o.imax], mn = pts[o.imin == null ? IMIN : o.imin];
+    over += '<span class="px-fl" style="left:' + (mx[0] / w * 100).toFixed(1) + '%;top:' + Math.max(0, mx[1] - 24).toFixed(0) + 'px">' + (o.flmax || FLMAX) + '</span>';
+    over += '<span class="px-fl" style="left:' + (mn[0] / w * 100).toFixed(1) + '%;top:' + Math.min(h - 16, mn[1] + 8).toFixed(0) + 'px">' + (o.flmin || FLMIN) + '</span>';
   }
-  if (o.pulse) {
-    var last = pts[pts.length - 1];
-    over += '<span class="px-pulse" style="left:' + (last[0] / w * 100).toFixed(1) + '%;top:' + last[1].toFixed(0) + 'px"></span>';
-  }
+  if (o.pulse) over += '<span class="px-pulse" style="left:' + (last[0] / w * 100).toFixed(1) + '%;top:' + last[1].toFixed(0) + 'px"></span>';
+  else svg += '<circle cx="' + last[0].toFixed(1) + '" cy="' + last[1].toFixed(1) + '" r="3.5" fill="' + pal.line + '"/>';
+  svg += '</svg>';
   if (y0 != null && o.axis) over += '<span class="px-ax" style="top:' + (y0 - 14).toFixed(0) + 'px">0%</span>';
   return svg + over;
 }
@@ -430,11 +382,16 @@ function bigChart(o){
 /* ================= кусочки ================= */
 function sk(w, h){ return '<span class="px-sk" style="width:' + w + 'px;height:' + h + 'px"></span>'; }
 
-function topBar(){
+/* шапка: имя + периоды + иконки; MOEX-бейдж убран по замечанию */
+function topBar(o){
+  o = o || {};
+  var seg = '<span class="px-seg">' + ['30д', 'Год', 'Всё'].map(function(x){
+    return '<b' + (x === (o.on || 'Всё') ? ' class="on"' : '') + '>' + x + '</b>';
+  }).join('') + '</span>';
   return '<div class="px-top"><span class="px-pill">Портфель 4</span>' +
-    '<span class="px-live"><i></i>MOEX · 12:31</span>' +
-    '<div class="px-top-r"><span class="px-ico">' + IC.copy + '</span><span class="px-ico">' + IC.eye +
-    '</span><span class="px-ico">' + IC.gear + '</span></div></div>';
+    '<div class="px-top-r">' + seg +
+    '<span class="px-icons"><span class="px-ico">' + IC.copy + '</span><span class="px-ico">' + IC.eye +
+    '</span><span class="px-ico">' + IC.gear + '</span></span></div></div>';
 }
 
 function valHtml(n, priv){
@@ -444,16 +401,17 @@ function valHtml(n, priv){
          '<small>' + NB + '₽</small></span>';
 }
 
+/* дельта: чип дня + серый хвост, следующий за периодом */
 function dayRow(o){
   o = o || {};
   var pos = o.pos;
   var dr = pos ? '▲' + NB + '<b>812' + NB + '₽ · 0,4%</b>'
              : '▼' + NB + '<b>' + (o.priv ? '<span class="mask">554 ₽</span>' : '554' + NB + '₽') + ' · 0,3%</b>';
   return '<div class="px-dayrow"><span class="px-day ' + (pos ? 'pos' : 'neg') + '">' + dr + '<u>сегодня</u></span>' +
-         '<span class="px-all"><u>за всё время</u>' + (pos ? '+641 ₽ · +0,3%' : '−171' + NB + '₽ · −0,1%') + '</span></div>';
+         '<span class="px-all"><u>' + (o.per || 'за всё время') + '</u>' +
+         (o.perVal || (pos ? '+641 ₽ · +0,3%' : '−171' + NB + '₽ · −0,1%')) + '</span></div>';
 }
 
-/* KPI-ячейки: одна разметка для полосы, воздуха и стекла */
 function kpiCells(o){
   o = o || {};
   function c(k, v, cls, s){
@@ -468,18 +426,15 @@ function kpiCells(o){
     c('За день', (o.priv ? '<span class="mask">−554 ₽</span>' : '−554' + NB + '₽'), 'neg', '−0,3% сегодня');
 }
 
-/* доли одной строкой: подписи по краям, полоса с маркером цели между ними */
 function thinAlloc(){
   return '<div class="px-thin"><span>Акции <b>50,0%</b></span>' +
     '<div class="tr"><i style="width:50%"></i><u style="left:50%"></u></div>' +
     '<span>Облигации <b>50,0%</b></span></div>';
 }
 
-/* позиции + подвал: ЗАМОРОЖЕНЫ, как в проде */
 function frozen(o){
   o = o || {};
-  var r = '<div class="px-rest' + (o.dim ? ' dimmed' : '') + '">';
-  if (o.dim) r += '<span class="px-freeze">ниже — без изменений</span>';
+  var r = '<div class="px-rest">';
   r += '<div class="px-pos"><div class="px-pos-h"><h4>Позиции</h4><span class="px-cnt">20</span></div>';
   r += '<div class="px-mass"><table class="px-tbl"><colgroup>' +
     ['31%', '13%', '16%', '16%', '12%', '12%'].map(function(x){ return '<col style="width:' + x + '">'; }).join('') +
@@ -501,77 +456,39 @@ function frozen(o){
   return r + '</div>';
 }
 
-/* ================= верх: четыре сборки ================= */
-
-/* точка отсчёта — вариант А раунда 1 (свет намеренно прежний, 9%) */
-function cardA(){
-  return '<div class="px" style="--sc:9"><div style="position:absolute;inset:0 0 auto 0;height:400px;z-index:0;pointer-events:none;' +
-    'background:radial-gradient(105% 130% at 22% -12%, color-mix(in srgb,var(--pfa) 9%,transparent) 0%, transparent 62%)"></div>' +
-    topBar() +
-    '<div class="pxA-hero"><span class="px-hero-k">Стоимость портфеля</span>' + valHtml(VALUE) + dayRow() +
-    '<div class="px-spark" style="height:150px;margin-top:14px">' + bigChart({h:150, flags:true, pulse:true, axis:true, uid:'a0'}) + '</div></div>' +
-    '<div class="pxA-kpis">' + kpiCells() + '</div>' +
-    '<div class="pxA-alloc"><div class="pxA-albar">' +
-    '<i style="flex:50;background:color-mix(in srgb,var(--ink) 62%,transparent)"></i>' +
-    '<i style="flex:50;background:color-mix(in srgb,var(--ink) 30%,transparent)"></i></div>' +
-    '<div class="pxA-alleg"><span><em style="background:color-mix(in srgb,var(--ink) 62%,transparent)"></em>Акции <b>50,0%</b></span>' +
-    '<span><em style="background:color-mix(in srgb,var(--ink) 30%,transparent)"></em>Облигации <b>50,0%</b></span></div></div>' +
-    frozen() + '</div>';
-}
-
-/* В1 «Табло» */
-function cardV1(o){
+/* ================= карточка «Табло» ================= */
+function card(o){
   o = o || {};
-  return '<div class="px v1 scene">' + topBar() +
-    '<div class="px1-hero"><span class="px-hero-k">Стоимость портфеля</span>' + valHtml(VALUE) + dayRow() +
-    '<div class="px-spark" style="height:170px;margin-top:16px">' + bigChart({h:170, flags:true, pulse:true, axis:true, uid:'v1'}) + '</div></div>' +
-    '<div class="px1-kpis">' + kpiCells() + '</div>' +
-    thinAlloc() +
-    frozen({dim: true}) + '</div>';
-}
-
-/* В2 «Иммерсив»: o = {pal, uid, narrow, heroOnly, value, priv, warm, dayPos, dim} */
-function cardV2(o){
-  o = o || {};
-  /* поля держат линию между текстом и стеклом: текст кончается на ~134,
-     стекло начинается на H−76 — линии остаётся средняя треть сцены */
-  var H = o.narrow ? 330 : (o.heroOnly ? 300 : 310);
-  var padT = o.narrow ? 116 : 144;
-  var padB = o.narrow ? 130 : 96;
-  var cls = 'px v2 scene' + (o.narrow ? ' narrow' : '') + (o.heroOnly ? ' hero-only' : '');
-  var r = '<div class="' + cls + '">' + topBar();
-  r += '<div class="px2' + (o.warm ? ' warm' : '') + '">';
+  var cls = 'px scene' + (o.narrow ? ' narrow' : '') + (o.heroOnly ? ' hero-only' : '');
+  var W = o.narrow ? 400 : (o.heroOnly ? 640 : 880);
+  var H = o.narrow ? 140 : (o.heroOnly ? 150 : 170);
+  var r = '<div class="' + cls + '">' + topBar({on: o.on});
+  r += '<div class="px1-hero"><span class="px-hero-k">Стоимость портфеля</span>';
   if (o.warm) {
-    r += '<div class="px-nochart">Загружаем историю…</div>';
+    r += '<span class="px-val">' + sk(280, 48) + '</span><div class="px-dayrow">' + sk(150, 26) + sk(120, 13) + '</div>';
+    r += '<div class="px-spark" style="height:' + H + 'px"><div class="px-nochart">Загружаем историю…</div></div>';
   } else {
-    r += '<div class="px-spark" style="position:absolute;inset:0">' +
-      bigChart({w: o.narrow ? 400 : (o.heroOnly ? 640 : 880), h: H, padT: padT, padB: padB,
-                flags: !o.narrow, flagsUp: true, pulse: true, pal: o.pal, uid: o.uid || 'v2'}) + '</div>';
+    r += valHtml(o.value == null ? VALUE : o.value, o.priv) + dayRow({pos: o.dayPos, priv: o.priv});
+    r += '<div class="px-spark" style="height:' + H + 'px">' +
+      bigChart({w: W, h: H, pal: o.pal, uid: o.uid, flags: !o.narrow && !o.noflags, pulse: true, axis: !o.narrow,
+                pays: o.pays, future: o.future, futText: o.narrow ? null : o.futText}) + '</div>';
   }
-  r += '<div class="px2-txt"><span class="px-hero-k">Стоимость портфеля</span>' +
-    (o.warm ? '<span class="px-val" style="font-size:50px">' + sk(250, 44) + '</span><div class="px-dayrow" style="justify-content:center;margin-top:12px">' + sk(150, 26) + '</div>'
-            : valHtml(o.value == null ? VALUE : o.value, o.priv) + dayRow({pos: o.dayPos, priv: o.priv})) +
-    '</div>';
-  r += '<div class="px2-glass">' + kpiCells({skel: o.warm, priv: o.priv}) + '</div>';
   r += '</div>';
+  r += '<div class="px1-kpis">' + kpiCells({skel: o.warm, priv: o.priv}) + '</div>';
   r += thinAlloc();
-  if (o.heroOnly) return r + '<div style="height:6px"></div></div>';
-  return r + frozen({dim: o.dim}) + '</div>';
+  if (o.heroOnly) return r + '</div>';
+  return r + frozen() + '</div>';
 }
 
-/* В3 «Разворот» */
-function cardV3(){
-  var col = '<div class="px3-col">' +
-    '<div class="px3-row"><span class="k">Вложено</span><span class="vw"><div class="v">' + rub(INVEST) + NB + '₽</div><div class="s">0' + NB + '₽ свободно</div></span></div>' +
-    '<div class="px3-row"><span class="k">Доход</span><span class="vw"><div class="v neg">−171' + NB + '₽</div><div class="s">за 21 день</div></span></div>' +
-    '<div class="px3-row"><span class="k">Доходность</span><span class="vw"><div class="v neg">−0,1%</div><div class="s">за весь срок</div></span></div>' +
-    '<div class="px3-row"><span class="k">За день</span><span class="vw"><div class="v neg">−554' + NB + '₽</div><div class="s">−0,3% сегодня</div></span></div>' +
-    '</div>';
-  return '<div class="px v3 scene">' + topBar() +
-    '<div class="px3-hero"><div><span class="px-hero-k">Стоимость портфеля</span>' + valHtml(VALUE) + dayRow() + '</div>' + col + '</div>' +
-    '<div class="px-spark px3-spark">' + bigChart({h:150, flags:true, pulse:true, axis:true, uid:'v3'}) + '</div>' +
-    thinAlloc() +
-    frozen({dim: true}) + '</div>';
+/* демо-огрызок: только шапка + герой с графиком (для экрана периодов) */
+function chartDemo(o){
+  var r = '<div class="px scene hero-only">' + topBar({on: o.on});
+  r += '<div class="px1-hero"><span class="px-hero-k">Стоимость портфеля</span>' + valHtml(o.value) +
+    dayRow({pos: o.dayPos, per: o.per, perVal: o.perVal}) +
+    '<div class="px-spark" style="height:150px">' +
+    bigChart({w: 640, h: 150, vals: o.vals, uid: o.uid, pulse: true, axis: true, noflags: true,
+              pays: o.pays, future: o.future, futText: o.futText}) + '</div></div>';
+  return r + '<div style="height:16px"></div></div>';
 }
 
 /* ================= пины и заметки ================= */
@@ -586,88 +503,91 @@ function notes(id, arr){
   }).join('');
 }
 
+/* выплаты «Портфеля 4» за 21 день: один прошедший купон + ближайший впереди */
+var PAYS_ALL = [{i: 9, lbl: 'купон 26230 · +693' + NB + '₽'}];
+var FUT_TEXT = 'купон 26233 · через 7 дней · +669' + NB + '₽';
+
 /* ================= 00 ================= */
-document.getElementById('scr0').innerHTML = cardA() +
-  pins([[268, 130], [1152, 420], [1152, 505], [268, 90]]);
+document.getElementById('scr0').innerHTML =
+  card({uid: 't0', pays: PAYS_ALL, future: true, futText: FUT_TEXT}) +
+  pins([[268, 145], [1152, 64], [268, 64], [268, 355], [1152, 375], [1152, 490], [1152, 600]]);
 notes('notes0', [
-  'Сумма 42&nbsp;px, но композиция прежняя: левый верхний угол, как первая строка таблицы. У карточки нет лица — есть начало списка.',
-  'KPI-полоса — самый большой прямоугольник верха, серый и канцелярский: подложка воюет со сценой и дробит карточку.',
-  'Полоса долей — третий горизонтальный разделитель подряд (график → KPI → доли): верх слоится на этажи одинаковой толщины.',
-  'Свет сцены 9% на белом почти не читается — «сцены» фактически нет.'
+  'Герой выше: сумма дальше и от шапки (30&nbsp;px), и от графика (30&nbsp;px) — «табло» дышит, а не прилипает к линии.',
+  'Периоды — пилюли 30д / Год / Всё в шапке, тот же контрол, что в проде (<code>.pfdcfg-seg-b</code>). Правило прошлого раунда в силе: период без данных не показывается, у 21-дневного портфеля была бы одна пилюля «Всё» — здесь три, чтобы видеть взрослый вид.',
+  'MOEX-бейдж убран по замечанию — живость карточки показывает пульс-точка на последней цене.',
+  'Выплаты на линии: зелёная точка в день зачисления, подпись — источник и сумма. Клик — «Календарь выплат».',
+  'Ближайшая выплата — продолжение оси: пунктир от «сейчас», полая точка, «через 7 дней». Будущее честно отделено от факта пунктиром.',
+  'Сводка на воздухе и доли одной строкой — без изменений из раунда 2.',
+  'Ниже — замороженная зона: позиции и подвал ровно как в проде.'
 ]);
 
+document.getElementById('mapTbl').innerHTML =
+  '<thead><tr><th style="width:26%">Элемент</th><th>Откуда данные</th><th style="width:14%">Статус</th></tr></thead><tbody>' +
+  '<tr><td>Метки выплат на линии</td><td><code>coupSched</code> — расписание купонов уже строится для «Календаря выплат»; дата → индекс точки серии <code>chartRaw[pid].series</code></td><td><span class="ok">есть</span></td></tr>' +
+  '<tr><td>Ближайшая выплата (пунктир)</td><td>первая будущая запись того же <code>coupSched</code>; серия ужимается до 86% ширины, хвост оси — пунктиру</td><td><span class="ok">есть</span></td></tr>' +
+  '<tr><td>Пилюли 30д / Год / Всё</td><td><code>PF.cardRange</code> + перебазировка <code>drawPfChart(fromDate)</code> — механика раунда 1 карточки, живёт в проде</td><td><span class="ok">есть</span></td></tr>' +
+  '<tr><td>Дельта следует за периодом</td><td><code>heroIncParts</code> — уже так работает; серифная часть «за всё время» → «за 30 дней»</td><td><span class="ok">есть</span></td></tr>' +
+  '<tr><td>Кластер «2 выплаты»</td><td>две метки ближе N&nbsp;px схлопываются в одну с суммой — правило рендера, не данных</td><td><span class="ok">дёшево</span></td></tr>' +
+  '</tbody>';
+
 /* ================= 01 ================= */
-document.getElementById('scr1').innerHTML = cardV1() +
-  pins([[268, 130], [268, 300], [1152, 470], [1152, 517], [1152, 95]]);
+document.getElementById('scr1').innerHTML =
+  '<div class="rowflex">' +
+  chartDemo({on: 'Год', value: 187240, uid: 'y', vals: SERIES_Y, per: 'за год', perVal: '+20' + NB + '640' + NB + '₽ · +12,4%', dayPos: true,
+    pays: [{i: 5, lbl: 'купон 26233 · +652' + NB + '₽'}, {i: 16, lbl: 'дивиденды BSPB · +1' + NB + '240' + NB + '₽', up: true},
+           {i: 27, lbl: '2 выплаты · +1' + NB + '362' + NB + '₽'}, {i: 40, lbl: 'купон 26230 · +693' + NB + '₽', up: true}]}) +
+  chartDemo({on: '30д', value: VALUE, uid: 'm', vals: SERIES_M, per: 'за 30 дней', perVal: '−201' + NB + '₽ · −0,1%',
+    pays: [{i: 11, lbl: 'купон 26230 · +693' + NB + '₽'}], future: true, futText: FUT_TEXT}) +
+  '</div>' +
+  pins([[55, 300], [512, 296], [55, 195], [1390, 300]]);
 notes('notes1', [
-  'Ось симметрии: метка, сумма 54&nbsp;px, чип дня — по центру. Карточка получает «лицо», как табло терминала; свет сцены тоже бьёт из центра.',
-  'График — отдельный этаж 170&nbsp;px во всю ширину, флажки экстремумов и пульс на месте.',
-  'Сводка без серой подложки: четыре колонки на воздухе, между ними хайрлайны, состав и подписи прежние.',
-  'Доли — одна строка вместо двух: подписи по краям, полоса 3&nbsp;px с маркером цели между ними.',
-  'Минус композиции: сумма и график всё же разные этажи — стопка осталась, просто красивее.'
+  '«Год»: выплаты рассыпаны по линии, подписи чередуются над и под точкой — при плотном расписании не слипаются.',
+  'Две выплаты ближе порога складываются в одну метку «2 выплаты · сумма» — правило рендера, клик раскрывает календарь.',
+  'Пилюля периода активна та, что выбрана; дельта под суммой следует за ней: «за год +20 640 ₽ · +12,4%».',
+  '«30 дней»: один купон в периоде и ближайший — пунктиром. Если выплат не было, меток просто нет.'
 ]);
 
 /* ================= 02 ================= */
-document.getElementById('scr2').innerHTML = cardV2({dim: true, uid: 'v2s'}) +
-  pins([[268, 135], [268, 240], [1152, 330], [1152, 402], [268, 90]]);
+document.getElementById('scr2').innerHTML =
+  '<div class="rowflex">' +
+  card({uid: 'd', pal: PAL_D, pays: PAYS_ALL, future: true, futText: FUT_TEXT}) +
+  card({uid: 'n', pal: PAL_D, narrow: true, pays: [{i: 9}], future: true}) +
+  '</div>' +
+  pins([[55, 140], [1390, 60], [1390, 280], [1390, 700]]);
 notes('notes2', [
-  'Сумма живёт на графике по центру — тот же ход, что манифест поверх живой карты на Главной. Мягкий скрим карточного цвета за текстом бережёт читаемость.',
-  'График — фон всего верха (280&nbsp;px): линия идёт в нижних двух третях, под текст не заходит. Флажки экстремумов подняты над линией.',
-  'Сводка — стеклянная строка по нижней кромке: полупрозрачная подложка + блюр, график продолжает жить под ней, цифры читаются.',
-  'Доли — одна тонкая строка, единственный разделитель между сценой и списком.',
-  'Верх из четырёх этажей стал одной сценой: шапка → сцена → доли → список.'
+  'Тёмная тема: свет из центра 17%, метки выплат зелёные из токенов — контраст на тёмном сохраняется.',
+  'Узкий блок: служебные иконки скрыты (порог 440, как в проде), пилюли периода остаются — переключать график в виджете нужно.',
+  'Метки выплат — точками без подписей: направление видно, сумма — по клику в календаре. Пунктир будущей выплаты остаётся.',
+  'Ниже сцены узкий блок как в проде: позиции, подвал столбиком.'
 ]);
 
 /* ================= 03 ================= */
-document.getElementById('scr3').innerHTML = cardV3() +
-  pins([[268, 135], [1152, 175], [268, 330], [1152, 465]]);
-notes('notes3', [
-  'Редакционный разворот: левая половина — сумме 56&nbsp;px и дню. Самый крупный кегль из трёх вариантов.',
-  'Сводка столбиком справа: строки «метка — значение» с выключкой значений вправо, подписи под ними, подложки нет.',
-  'График ниже во всю ширину, 150&nbsp;px, с флажками и пульсом.',
-  'Минус: ось симметрии не появляется — карточка остаётся «строкой», просто богатой. И правая колонка спорит с колонками таблицы ниже.'
-]);
-
-/* ================= 04 ================= */
-document.getElementById('scr4').innerHTML = cardV2({uid: 'v2r'}) +
-  pins([[268, 135], [268, 250], [1152, 330], [1152, 402], [1152, 560], [268, 90]]);
-notes('notes4', [
-  'Почему «Иммерсив»: единственная композиция, где верх — одна сцена, а не стопка этажей, и это прямая рифма с Главной страницей.',
-  'Порядок чтения: сумма → день → график (фон) → сводка на кромке → доли → список.',
-  'Стекло сводки: состав KPI и подписи не менялись — сменилась только подача (кромка сцены вместо серого этажа).',
-  'Доли — одна строка с маркером цели; тот же смысл, вдвое меньше высоты.',
-  'Позиции и подвал не тронуты — новая сцена сидит над замороженной зоной без швов.',
-  'Данных новых нет: график, экстремумы, день, KPI, доли — всё уже считается. Правка чисто CSS+вёрстка.'
-]);
-
-/* ================= 05 ================= */
-document.getElementById('scr5').innerHTML =
-  '<div class="rowflex">' +
-  cardV2({pal: PAL_D, uid: 'v2d'}) +
-  cardV2({pal: PAL_D, uid: 'v2n', narrow: true}) +
-  '</div>' +
-  pins([[55, 140], [1390, 150], [1390, 340], [1390, 700]]);
-notes('notes5', [
-  'Тёмная тема: свет сцены 17%, стекло сводки на тёмном особенно выразительно. Ни одного нового цвета — токены прежние.',
-  'Узкий блок 400&nbsp;px: сцена 300&nbsp;px, сумма 34&nbsp;px, скрим шире относительно карточки.',
-  'Сводка 2×2 без подписей — цифры остаются, вторые строки уходят; флажки экстремумов скрыты, пульс остаётся.',
-  'Ниже сцены узкий блок как в проде: те же позиции, подвал столбиком.'
-]);
-
-/* ================= 06 ================= */
-document.getElementById('scr6').innerHTML =
+document.getElementById('scr3').innerHTML =
   '<div class="g2">' +
-  '<div><div class="cap">Миллиард — вторая ступень, 40 px</div>' + cardV2({heroOnly: true, value: 1084320500, uid: 'e1'}) + '</div>' +
-  '<div><div class="cap">«Скрывать суммы» — маска точечная</div>' + cardV2({heroOnly: true, priv: true, uid: 'e2'}) + '</div>' +
-  '<div><div class="cap">Прогрев — сцена и стекло со скелетонами</div>' + cardV2({heroOnly: true, warm: true, uid: 'e3'}) + '</div>' +
-  '<div><div class="cap">Зелёный день — меняется только чип и пульс</div>' + cardV2({heroOnly: true, dayPos: true, uid: 'e4'}) + '</div>' +
+  '<div><div class="cap">Миллиард — вторая ступень, 42 px</div>' +
+  '<div class="px scene hero-only">' + topBar({}) + '<div class="px1-hero"><span class="px-hero-k">Стоимость портфеля</span>' +
+  valHtml(1084320500) + dayRow({pos: true}) + '<div class="px-spark" style="height:150px">' +
+  bigChart({w: 640, h: 150, uid: 'e1', pulse: true, axis: true, noflags: true, pays: PAYS_ALL}) + '</div></div><div style="height:16px"></div></div></div>' +
+  '<div><div class="cap">«Скрывать суммы» — маскируются и выплаты</div>' +
+  '<div class="px scene hero-only">' + topBar({}) + '<div class="px1-hero"><span class="px-hero-k">Стоимость портфеля</span>' +
+  valHtml(VALUE, true) + dayRow({priv: true}) + '<div class="px-spark" style="height:150px">' +
+  bigChart({w: 640, h: 150, uid: 'e2', pulse: true, axis: true, noflags: true,
+            pays: [{i: 9, lbl: 'купон 26230 · <span class="mask">+693' + NB + '₽</span>'}]}) + '</div></div><div style="height:16px"></div></div></div>' +
+  '<div><div class="cap">Прогрев — табло узнаваемо без котировок</div>' +
+  '<div class="px scene hero-only">' + topBar({}) + '<div class="px1-hero"><span class="px-hero-k">Стоимость портфеля</span>' +
+  '<span class="px-val">' + sk(280, 48) + '</span><div class="px-dayrow">' + sk(150, 26) + sk(120, 13) + '</div>' +
+  '<div class="px-spark" style="height:150px"><div class="px-nochart">Загружаем историю…</div></div></div><div style="height:16px"></div></div></div>' +
+  '<div><div class="cap">Зелёный день — меняется только чип и пульс</div>' +
+  '<div class="px scene hero-only">' + topBar({}) + '<div class="px1-hero"><span class="px-hero-k">Стоимость портфеля</span>' +
+  valHtml(200045) + dayRow({pos: true}) + '<div class="px-spark" style="height:150px">' +
+  bigChart({w: 640, h: 150, uid: 'e4', pulse: true, axis: true, noflags: true, pays: PAYS_ALL, future: true, futText: FUT_TEXT}) + '</div></div><div style="height:16px"></div></div></div>' +
   '</div>' +
-  pins([[28, 160], [1408, 160], [28, 600], [712, 600]]);
-notes('notes6', [
-  'Миллиард: 1&nbsp;084&nbsp;320&nbsp;500&nbsp;₽ — вторая ступень 40&nbsp;px (третья, 30&nbsp;px, — от 11 цифр), скрим и центрирование держат любую длину.',
-  '«Скрывать суммы»: <code>data-money</code> маскирует сумму, ₽ чипа дня и ₽-значения в сводке. График открыт — он в процентах и сумм не выдаёт; доходность в % тоже открыта.',
-  'Прогрев: сцена горит сразу, в центре скелетоны суммы и чипа, стекло — со скелетонами. Карточка узнаваема до прихода котировок.',
-  'Зелёный день: меняются чип дня и пульс. Сцена остаётся цвета портфеля — карточка не перекрашивается по знаку дня.'
+  pins([[28, 175], [1408, 175], [28, 620], [712, 660]]);
+notes('notes3', [
+  'Миллиард: 1&nbsp;084&nbsp;320&nbsp;500&nbsp;₽ — вторая ступень 42&nbsp;px (третья, 32&nbsp;px, — от 11 цифр); центрирование держит любую длину.',
+  '«Скрывать суммы»: <code>data-money</code> маскирует сумму, ₽ чипа дня, ₽ сводки и суммы в подписях выплат; проценты и даты открыты.',
+  'Прогрев: скелетоны в сумме и чипе, рамка на месте графика. Пилюли и сцена горят сразу — карточка узнаваема.',
+  'Зелёный день: чип и пульс меняют цвет, сцена остаётся цвета портфеля.'
 ]);
 </script>
 </body>
