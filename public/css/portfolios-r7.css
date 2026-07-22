@@ -335,9 +335,13 @@ body.dark-mode #panel-portfolios .pff3-news { border-left-color: rgba(255,255,25
 body.dark-mode #panel-portfolios .pff3-news .pff-news-t { color: #d2ddea; }
 #panel-portfolios .pff3-news .pff-news-m { margin-top: 4px; }
 /* поповер полного заголовка (ховер новости, см. portfolios.css) — в новой сетке
-   раскрывается от своей колонки; волосок-разделитель на время разворота гасим */
+   раскрывается от своей колонки; волосок-разделитель на время разворота гасим.
+   Разворот ПОЛНОГО заголовка повторяем здесь со специфичностью выше клампов
+   .pff3-news выше/ниже — базовое правило portfolios.css (0,3,1) они перебивали,
+   и поповер оставался обрезанным в 2 строки (замечание 2026-07-22). */
 #panel-portfolios .pff3-news.link:hover { border-left-color: transparent; border-top-color: transparent; }
 #panel-portfolios .pff3-news.link:hover .pff-news-inner { left: 2px; right: -8px; top: -10px; padding: 9px 12px 11px; }
+#panel-portfolios .pff3-news.link:hover .pff-news-t { -webkit-line-clamp: unset; }
 /* потенциал: моно-число со стрелкой + спарклайн 30 дней */
 #panel-portfolios .pff3-pot { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; min-width: 0; }
 #panel-portfolios .pff3-pot .pff-pot {
