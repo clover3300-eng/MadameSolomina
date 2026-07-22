@@ -1859,11 +1859,12 @@
         function rvOk(s) { s = String(s == null ? '' : s); return /\d/.test(s) && s.indexOf('---') < 0 && s.indexOf('#') < 0; }
         function rv(id, fb) { var e = dq(id); var t = e ? (e.textContent || '').trim() : '';
             if (t && rvOk(t)) return t; if (fb != null && rvOk(fb)) return fb; return '—'; }
+        // иконки-значки слева убраны по просьбе — плитка = только подпись и значение
         return [
-            { l: 'Ключевая ставка', v: rv('val-key-rate', rd.keyRate), ac: '#119d5c', ic: '<line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>' },
-            { l: 'Ставка по вкладам', v: rv('val-deposit-rate', rd.depositRate), ac: '#5B7C99', ic: '<polygon points="12 2 21 7 3 7"/><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="12" y1="18" x2="12" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/>' },
-            { l: 'Инфляция, год', v: rv('val-inflation', rd.inflation), ac: '#D97757', ic: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>' },
-            { l: 'Доходность ОФЗ 10 лет', v: rv('val-ofz10', rd.ofz10), ac: '#3d6fd1', ic: '<path d="M3 3v18h18"/><polyline points="7 14 11 10 14 13 20 7"/>' }
+            { l: 'Ключевая ставка', v: rv('val-key-rate', rd.keyRate), ac: '#119d5c' },
+            { l: 'Ставка по вкладам', v: rv('val-deposit-rate', rd.depositRate), ac: '#5B7C99' },
+            { l: 'Инфляция, год', v: rv('val-inflation', rd.inflation), ac: '#D97757' },
+            { l: 'Доходность ОФЗ 10 лет', v: rv('val-ofz10', rd.ofz10), ac: '#3d6fd1' }
         ];
     }
     function rateTileHtml(t, extra) {
@@ -1871,7 +1872,7 @@
         // вторым аргументом прилетает ИНДЕКС массива (0,1,2,3) — он не должен попасть в плитку
         // «сырой» цифрой (был баг «1 2 3» под плитками ставок); принимаем только строку.
         var ex = (typeof extra === 'string') ? extra : '';
-        return '<div class="drt-tile' + (ex ? ' drt-tile--eye' : '') + '" style="--ac:' + t.ac + '"><div class="drt-ic"><svg viewBox="0 0 24 24">' + t.ic + '</svg></div>' +
+        return '<div class="drt-tile' + (ex ? ' drt-tile--eye' : '') + '" style="--ac:' + t.ac + '">' +
             '<div class="drt-body"><div class="drt-l">' + esc(t.l) + '</div><div class="drt-v">' + esc(t.v) + '</div></div>' + ex + '</div>';
     }
     // полноширинная горизонтальная полоса ставок под сеткой — показывается ВСЕГДА,
