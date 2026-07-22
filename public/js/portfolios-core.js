@@ -929,15 +929,19 @@
             // Включённый чип — и легенда пунктирной линии: образец + финальный %
             // бенчмарка В ОКНЕ выбранного периода (последняя точка перебазированной
             // серии, а не глобальный imFinal)
+            // позиция чипа продублирована инлайном: при рассинхроне кэша (старый css
+            // при новом js) неоформленная кнопка вставала В ПОТОК поверх кривой —
+            // с инлайном она хотя бы стоит на своём месте до прихода свежего css
+            var chipPos = ' style="position:absolute;top:8px;right:10px;z-index:6"';
             if (showIm) {
                 var bLbl = data.bench === 'RUSFAR' ? 'Депозит' : (data.bench || 'IMOEX');
                 var imv = pts[N - 1].im, imTxt = '';
                 if (imv != null && isFinite(imv)) imTxt = ' ' + (imv >= 0 ? '+' : '−') + Math.abs(imv).toFixed(1).replace('.', ',') + '%';
-                exHtml += '<button class="pfcv-benchchip on" onclick="pfCardBench(\'' + pid + '\')" ' +
+                exHtml += '<button class="pfcv-benchchip on"' + chipPos + ' onclick="pfCardBench(\'' + pid + '\')" ' +
                     'title="Сравнение: ' + (data.bench === 'RUSFAR' ? 'депозит по ставке RUSFAR (как линия «Депозит» в «Тесте»)' : 'индекс ' + data.bench) +
                     ' за тот же период. Клик — следующий режим"><i></i>' + bLbl + imTxt + '</button>';
             } else {
-                exHtml += '<button class="pfcv-benchchip" onclick="pfCardBench(\'' + pid + '\')" ' +
+                exHtml += '<button class="pfcv-benchchip"' + chipPos + ' onclick="pfCardBench(\'' + pid + '\')" ' +
                     'title="Наложить для сравнения индекс (IMOEX, для облигационного портфеля — RGBI) или депозит по ставке RUSFAR">⇄ сравнить</button>';
             }
         }
