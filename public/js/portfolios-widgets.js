@@ -2074,10 +2074,17 @@
         visibleItems().forEach(function (p) {
             calcPf(p).hs.forEach(function (x) {
                 if (!(x.c.qty > 0) || !(x.c.value > 0)) return;
-                m[x.h.ticker] = (m[x.h.ticker] || 0) + x.c.value; total += x.c.value;
+                if (!m[x.h.ticker]) m[x.h.ticker] = { v: 0, nm: '' };
+                m[x.h.ticker].v += x.c.value; total += x.c.value;
+                // облигации: в строке ИМЯ («ОФЗ 26238»), а не 12-значный ISIN —
+                // тот же принцип, что в составе портфеля (assetDisplayName)
+                if (!m[x.h.ticker].nm && x.h.type === 'bond') {
+                    var bn = PF.assetDisplayName(x.h);
+                    if (bn && bn !== x.h.ticker) m[x.h.ticker].nm = bn;
+                }
             });
         });
-        var list = Object.keys(m).map(function (tk) { return { tk: tk, v: m[tk] }; })
+        var list = Object.keys(m).map(function (tk) { return { tk: m[tk].nm || tk, v: m[tk].v }; })
             .sort(function (a, b) { return b.v - a.v; });
         var body;
         if (!list.length || !(total > 0)) {
