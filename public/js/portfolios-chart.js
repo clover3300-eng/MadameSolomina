@@ -1238,4 +1238,16 @@
     };
     // инстанс движка по номеру графика — точка входа для отладки с консоли
     PF.pfcChart = function (n) { var c = CH[slotNo(n)]; return c ? c.chart : null; };
+    // ---- сцене «Эволюции» (portfolios-trading.js) нужен тот же движок ----
+    // Экспортируем готовые куски вместо их дублирования: ленивая загрузка
+    // вендора, русская локаль (без неё 'ru-RU' роняет отрисовку, см. выше) и
+    // зум-патч указателя. Патч ОБЩИЙ через флаг этого модуля — вторая копия
+    // обёртки делила бы координаты на zoom дважды.
+    PF.pfcEngineReady = function () {
+        return ensureEngine().then(function (ok) {
+            if (ok) ensureLocale();
+            return ok;
+        });
+    };
+    PF.pfcZoomFix = fixZoomPointer;
 })();
