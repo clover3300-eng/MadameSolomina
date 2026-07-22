@@ -357,8 +357,18 @@ body.dark-mode .pfcv-pay b { color: #34d399; background: color-mix(in srgb, #1a2
 body.dark-mode .pfcv-futline { stroke: #34d399; }
 .pfcv-payf { position: absolute; width: 9px; height: 9px; border-radius: 50%; transform: translate(-50%, -50%); background: transparent; border: 2px dashed #16a34a; z-index: 4; }
 body.dark-mode .pfcv-payf { border-color: #34d399; }
-.pfcv-futlbl { position: absolute; transform: translate(-100%, calc(-100% - 10px)); font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; color: #16a34a; background: color-mix(in srgb, #fff 84%, transparent); padding: 1px 6px; border-radius: 6px; white-space: nowrap; backdrop-filter: blur(2px); z-index: 4; }
-body.dark-mode .pfcv-futlbl { color: #34d399; background: color-mix(in srgb, #1a232f 84%, transparent); }
+/* подпись будущей выплаты — СТОЛБИКОМ у своей точки (строка наезжала на тултип
+   пульса и читалась как его подпись): источник и срок тихие, сумма зелёная.
+   .b — столбик вниз (линия в верхней половине сцены), иначе вверх */
+.pfcv-futlbl { position: absolute; display: flex; flex-direction: column; align-items: flex-end; gap: 1px; text-align: right; transform: translate(-100%, calc(-100% - 12px)); font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; color: #64748b; background: color-mix(in srgb, #fff 84%, transparent); padding: 2px 6px; border-radius: 6px; white-space: nowrap; backdrop-filter: blur(2px); z-index: 4; pointer-events: none; transition: opacity 0.15s; }
+/* наведение на график = работа с тултипами точек: метка будущей выплаты гаснет,
+   чтобы не спорить с тултипом пульса за место над последней точкой */
+.pfc-mchart-plot:hover .pfcv-futlbl { opacity: 0.15; }
+.pfcv-futlbl.b { transform: translate(-100%, 14px); }
+.pfcv-futlbl i { font-style: normal; display: block; }
+.pfcv-futlbl i.s { font-weight: 700; color: #16a34a; }
+body.dark-mode .pfcv-futlbl { color: #8b98ad; background: color-mix(in srgb, #1a232f 84%, transparent); }
+body.dark-mode .pfcv-futlbl i.s { color: #34d399; }
 /* пульс «сейчас» на последней точке кривой */
 .pfcv-pulse { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: var(--pf-accent); transform: translate(-50%, -50%); z-index: 5; pointer-events: none; }
 .pfcv-pulse::after { content: ''; position: absolute; inset: -3px; border-radius: 50%; border: 1.5px solid var(--pf-accent); animation: pfcPulse 2s ease-out infinite; }
@@ -701,7 +711,6 @@ body.dark-mode .pfcv-msg-t { color: #f4f8fd; }
 .pfc-foot { padding: 12px 18px 14px; margin-top: auto; display: flex; align-items: stretch; gap: 9px; }
 .pfc-all { flex: 1.3 1 0; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; border: 1px solid rgba(15,23,42,0.09); background: #fff; border-radius: 11px; padding: 11px 14px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; color: #0f172a; transition: background 0.15s, border-color 0.15s; }
 /* счётчик состава в кнопке — только в узкой карточке (см. @container) */
-.pfc-all-n { display: none; font-style: normal; font-family: 'JetBrains Mono', monospace; font-weight: 600; color: #94a3b8; margin-left: 6px; }
 .pfc-all svg { width: 13px; height: 13px; color: #94a3b8; flex: none; }
 .pfc-all:hover { background: rgba(15,23,42,0.04); border-color: rgba(15,23,42,0.16); }
 body.dark-mode .pfc-all { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.12); color: #e8eef7; }
@@ -755,8 +764,6 @@ body.dark-mode .pfc-rebal { background: #e8eef7; border-color: #e8eef7; color: #
     .pfc-sharebar { display: none; }
     /* строка чуть ниже из-за мельче кегля — порог списка следует за ней */
     .pfc-massets { --pfc-row-h: 52px; --pfc-head-h: 29px; }
-    /* счётчик состава переезжает в кнопку — колонки «Доля» рядом уже нет */
-    .pfc-all-n { display: inline; }
     .pfc-foot { flex-direction: column; }
     /* деньги позиции: четыре колонки в узкой карточке уже своих же чисел */
     .pfc-facts { grid-template-columns: 1fr 1fr; row-gap: 10px; }

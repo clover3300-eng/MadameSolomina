@@ -367,12 +367,16 @@
             '<div class="pfc-pos-h"><span class="pfc-pos-t">Позиции</span><span class="pfc-cnt">' + c.hs.length + '</span></div>' +
             '<div class="pfc-massets" data-skey="ma-' + p.id + '">' + pfMiniTableHtml(list, p.id, fullV, warm) + '</div>';
 
-        // подвал: «Все позиции» → подвкладка портфеля, «Ребаланс» — прежний pfExpand.
-        // Счётчик в кнопке показывается только в узкой карточке (@container), где
-        // колонка «Доля» скрыта и вес состава иначе не прочесть.
+        // подвал: «Открыть портфель» → вкладка портфеля (pfxOpenPf), «Ребаланс» —
+        // прежний pfExpand. При ОДНОМ видимом портфеле кнопки-перехода нет (его
+        // дашборд и есть «Обзор», вкладку не плодим — то же правило, что в
+        // pfxOpenPf), остаётся одна длинная «Ребаланс»; скрытый портфель
+        // открывается вкладкой всегда (R9.2). Счётчик позиций из кнопки убран:
+        // он всегда стоит в шапке списка (.pfc-cnt).
         // У скрытой карточки главное действие — вернуть её на «Обзор».
+        var showOpen = visibleItems().length >= 2 || p.hidden;
         var foot = '<div class="pfc-foot">' +
-            '<button class="pfc-all" onclick="pfxOpenPf(\'' + p.id + '\')"><span>Все позиции<i class="pfc-all-n">' + c.hs.length + '</i></span>' + CHEVR_SVG + '</button>' +
+            (showOpen ? '<button class="pfc-all" onclick="pfxOpenPf(\'' + p.id + '\')"><span>Открыть портфель</span>' + CHEVR_SVG + '</button>' : '') +
             (p.hidden
                 ? '<button class="pfc-rebal" onclick="pfToggleHidden(\'' + p.id + '\',event)">Показать на «Обзоре»</button>'
                 : '<button class="pfc-rebal" onclick="pfExpand(\'' + p.id + '\')">' + PF.REBAL_SVG + 'Ребаланс</button>') +

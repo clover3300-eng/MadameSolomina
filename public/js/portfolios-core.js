@@ -873,14 +873,18 @@
                         '<b>' + txt + ' · <span data-money>+' + fmtRub(m.sum) + '</span></b></span>';
                 });
             }
-            // ближайшая выплата: полая точка на конце пунктира + подпись «через N дней»
+            // ближайшая выплата: полая точка на конце пунктира + подпись СТОЛБИКОМ
+            // (одна длинная строка тянулась влево и при наведении на пульс читалась
+            // как его подпись — замечание 2026-07-22). Столбик прижат к своей точке
+            // и уходит вниз, если линия в верхней половине сцены, иначе вверх.
             if (ex.future) {
                 var fy = pPts[N - 1].y;
                 exHtml += '<span class="pfcv-payf" style="left:' + futX + '%;top:' + fy.toFixed(2) + '%"></span>' +
-                    '<span class="pfcv-futlbl" style="left:' + futX + '%;top:' + fy.toFixed(2) + '%">' +
-                        ex.future.lbl + ' · через ' + ex.future.days + ' ' +
-                        (PF.plural ? PF.plural(ex.future.days, 'день', 'дня', 'дней') : 'дн.') +
-                        ' · <span data-money>+' + fmtRub(ex.future.sum) + '</span></span>';
+                    '<span class="pfcv-futlbl' + (fy < 58 ? ' b' : '') + '" style="left:' + futX + '%;top:' + fy.toFixed(2) + '%">' +
+                        '<i>' + ex.future.lbl + '</i>' +
+                        '<i>через ' + ex.future.days + ' ' +
+                            (PF.plural ? PF.plural(ex.future.days, 'день', 'дня', 'дней') : 'дн.') + '</i>' +
+                        '<i class="s" data-money>+' + fmtRub(ex.future.sum) + '</i></span>';
             }
             // пульс «сейчас» — карточка живая, а не нарисованная
             exHtml += '<span class="pfcv-pulse" style="left:' + pPts[N - 1].x.toFixed(2) + '%;top:' + pPts[N - 1].y.toFixed(2) + '%"></span>';
