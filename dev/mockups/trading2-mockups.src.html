@@ -138,14 +138,32 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 /* герой бумаги */
 .glow{position:absolute;left:16%;top:6%;width:640px;height:420px;border-radius:50%;pointer-events:none;
       background:radial-gradient(closest-side,color-mix(in srgb,var(--acc) 12%,transparent),transparent 70%)}
+/* шапка бумаги: монограммы нет — имя и цена сами держат сцену;
+   цветные метки остаются там, где списки (вкладки бумаг, сплит, омнибокс) */
 .ih{display:flex;align-items:center;gap:14px}
-.ih-mono{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#1d9a55,#15703d);color:#fff;font-family:var(--fN);font-size:15px;font-weight:700;display:grid;place-items:center}
 .ih-nm h3{font-family:var(--fT);font-weight:400;font-size:26px;line-height:1.1}
 .ih-nm em{font-style:normal;font-family:var(--fN);font-size:10.5px;color:var(--dim);letter-spacing:.05em}
 .ih-r{margin-left:auto;display:flex;align-items:center;gap:8px}
 .ih-per{display:flex;gap:2px;border:1px solid var(--line);border-radius:10px;padding:3px;background:var(--card)}
 .ih-per span{font-size:10.5px;font-weight:600;color:var(--dim);border-radius:7px;padding:4px 9px}
 .ih-per span.on{background:color-mix(in srgb,var(--acc) 16%,transparent);color:var(--ink)}
+/* звоночек: подписка на достижение цены */
+.ih-bell{width:30px;height:30px;border-radius:10px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--mut)}
+.ih-bell.on{color:var(--acc);border-color:color-mix(in srgb,var(--acc) 45%,transparent);background:color-mix(in srgb,var(--acc) 8%,transparent)}
+.bellpop{position:absolute;width:252px;background:var(--card);border:1px solid var(--line);border-radius:15px;padding:14px 15px;
+        display:flex;flex-direction:column;gap:10px;z-index:45;box-shadow:0 24px 54px -26px rgba(24,38,60,.5);backdrop-filter:blur(16px)}
+.bellpop::before{content:'';position:absolute;top:-5.5px;right:10px;width:9px;height:9px;background:var(--card);
+        border-left:1px solid var(--line);border-top:1px solid var(--line);transform:rotate(45deg)}
+.bellpop em{font-style:normal;font-size:9.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--dim)}
+.bp-in{display:flex;align-items:baseline;gap:6px;border:1px solid var(--line);border-radius:11px;padding:8px 12px}
+.bp-in b{font-family:var(--fN);font-size:19px;font-weight:600}
+.bp-in u{text-decoration:none;font-size:12px;color:var(--mut)}
+.bp-in .caret{width:2px;height:17px;background:var(--acc);border-radius:2px;align-self:center}
+.bp-pre{display:flex;gap:6px;font-family:var(--fN);font-size:10px;color:var(--mut)}
+.bp-pre span{border:1px solid var(--line);border-radius:8px;padding:4px 8px}
+.bp-pre span.on{border-color:color-mix(in srgb,var(--acc) 50%,transparent);color:var(--ink);background:color-mix(in srgb,var(--acc) 9%,transparent)}
+.bp-cta{border-radius:11px;text-align:center;font-size:12px;font-weight:700;color:var(--bg);background:var(--ink);padding:9px 0}
+.bp-note{font-size:10px;color:var(--dim);line-height:1.45}
 .price-row{display:flex;align-items:flex-end;gap:16px;margin-top:14px}
 .price-big{font-family:var(--fN);font-size:58px;font-weight:700;line-height:.95;letter-spacing:-.02em}
 .price-big small{font-size:24px;font-weight:500;color:var(--mut)}
@@ -246,6 +264,10 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .fee{font-size:10px;color:var(--dim);text-align:center}
 .know{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--mut);border-top:1px solid var(--hair);padding-top:10px}
 .know u{text-decoration:none;margin-left:auto;color:var(--acc);font-weight:600}
+/* «что нужно знать» развёрнуто — заполняет высокий тикет «Старта» смыслом */
+.knowx{display:flex;flex-direction:column;gap:8px;font-size:11px;color:var(--mut);line-height:1.5;border-top:1px solid var(--hair);padding-top:12px}
+.knowx em{font-style:normal;font-size:9.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--dim)}
+.knowx b{font-family:var(--fN);font-weight:600;color:var(--ink)}
 .fld-price{display:flex;align-items:center;gap:8px}
 .fld-price .mkt{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--ink);border:1px solid var(--line);border-radius:9px;padding:6px 10px}
 .fld-price .lim{font-family:var(--fN);font-size:13px;color:var(--mut)}
@@ -464,11 +486,12 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   <div class="notes">
     <div class="note"><i>1</i><span>Строка среды 52px — только среда: выход, омнибокс, связь, песочница, тумблер темы, аватар. Деньги из шапки уехали к местам решения: «свободно» — к полю суммы тикета, «портфель» — к полосе позиций.</span></div>
     <div class="note"><i>2</i><span>Цена — самое крупное число экрана (58px, моно), чип дня рядом. Под ними — тихая строка фактов дня (открытие, диапазон, объём, дивиденд) без карточек. График — линия на весь холст; свечи появятся на «Разгоне».</span></div>
-    <div class="note"><i>3</i><span>Тикет наследует финал раунда 1: пресеты сумм, «≈ 110 акций» с объяснением лотности, «останется свободно», комиссия включена, «Максимум» считает за вычетом комиссии.</span></div>
+    <div class="note"><i>3</i><span>Тикет — колонка на всю высоту сцены: ввод сверху, деньги и кнопка у низа, а середину держит развёрнутое «Что нужно знать» — новичок по ссылкам не ходит. Пресеты, «≈ 110 акций», «Максимум» за вычетом комиссии — финал раунда 1.</span></div>
     <div class="note"><i>4</i><span>Гвард свежести из раунда 1 живёт в тикете: точка «цена живая» — тот же <code style="font-family:var(--fN);font-size:11px">pftLinkState</code>; замерла — кнопка гаснет (экран 08).</span></div>
     <div class="note"><i>5</i><span>Пилюля насыщенности в углу — честный указатель ступени и ручной вход в следующую («открыть больше»).</span></div>
     <div class="note"><i>6</i><span>Позиции-чипы вместо таблицы: тикер + дневная дельта; итог портфеля — тихой суммой в конце полосы. Полный разбор позиций остаётся «Портфелям» — торговля не дублирует трекер.</span></div>
     <div class="note"><i>7</i><span>Ховер чипа раскрывает два действия: «в сцену» и «продать» — продажа открывает тикет сразу с долями позиции, путь «увидел минус → продал» укорачивается до двух кликов. Клик по самому чипу, как раньше, грузит бумагу.</span></div>
+    <div class="note"><i>8</i><span>Звоночек у периодов — подписка на достижение цены (поповер — на экране 04). Монограмма из шапки ушла: имя и цена сами держат сцену, цветные метки остаются там, где списки, — вкладки бумаг, сплит, омнибокс.</span></div>
   </div>
 </section>
 
@@ -488,6 +511,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <div class="note"><i>5</i><span>Тикет получил строку цены и честную строку докупки: «у вас 240 по 254,10 — средняя станет 259,55» — средняя цена позиции уже приходит из портфеля брокера, считать нечего.</span></div>
     <div class="note"><i>6</i><span>Лимитная заявка живёт прямо на графике: пунктирная линия на своей цене, ярлык с количеством, ✕ снимает. Линию можно тащить — цена в тикете следует; до дока «Контроля» это единственное место, где заявка видна.</span></div>
     <div class="note"><i>7</i><span>Индикаторы встроены в холст, не в отдельные панели: «Объём» и «MA 20» — чипы в углу графика, «＋» открывает реестр (RSI, MACD и прочие из KLineChart). На «Старте» индикаторов нет — линия чистая.</span></div>
+    <div class="note"><i>8</i><span>Звоночек активен — открыт поповер алерта: цена, пресеты −1 %/−3 % от текущей, «Следить». Сработает один раз и погаснет; придёт пушем и в звоночек сайта. Тот же bt_alerts_v1, что у призрака на графике.</span></div>
   </div>
 </section>
 
@@ -632,7 +656,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <tr><td>Средняя после докупки</td><td>средняя цена позиции уже в ответе портфеля брокера (<code>pollPos</code>); строка тикета — новый рендер</td><td class="ok">есть</td></tr>
     <tr><td>Частичное исполнение</td><td>исполненные лоты уже в заявках дока (<code>lots_executed</code>); диалог «оставить/отменить остаток» — новое</td><td class="no">новое</td></tr>
     <tr><td>Исполнение в фоне</td><td>звоночек сайта готов (модуль уведомлений); связка с поллером заявок + точка в заголовке вкладки — новое</td><td class="no">новое</td></tr>
-    <tr><td>Алерты по цене</td><td>новый ключ <code>bt_alerts_v1</code>; проверка — в уже идущем поллере стакана; создание — с графика (призрак) и из омнибокса</td><td class="no">новое</td></tr>
+    <tr><td>Алерты по цене</td><td>новый ключ <code>bt_alerts_v1</code>; проверка — в уже идущем поллере стакана; создание — звоночком в шапке бумаги, с графика (призрак) и из омнибокса; доставка — пуш + звоночек сайта</td><td class="no">новое</td></tr>
     <tr><td>Ось цены и кроссхейр</td><td>KLineChart из коробки (ось свечей, crosshair с ценой и временем) — только включить в конфиге</td><td class="ok">есть</td></tr>
   </table>
   <p class="mk-sub" style="margin-top:16px">Пересборка: <code style="font-family:var(--fN);font-size:12px">node dev/mockups/build-mockups.js trading2</code></p>
@@ -717,14 +741,19 @@ function topbar(o){
 }
 
 /* ─── герой бумаги ─── */
+function bellSvg(s){
+    return '<svg viewBox="0 0 24 24" width="' + s + '" height="' + s + '" fill="none" stroke="currentColor"'
+        + ' stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'
+        + '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>';
+}
 function instrHead(o){
     o = o || {};
     return '<div class="ih">'
-        + '<span class="ih-mono">SB</span>'
         + '<span class="ih-nm"><h3>Сбербанк</h3><em>SBER · MOEX · лот 10 шт</em></span>'
         + '<span class="ih-r">'
         + (o.candles ? '<span class="ih-per"><span>Линия</span><span class="on">Свечи</span></span>' : '')
         + '<span class="ih-per"><span class="on">Д</span><span>Н</span><span>М</span><span>Г</span><span>Всё</span></span>'
+        + '<span class="ih-bell' + (o.bellOn ? ' on' : '') + '">' + bellSvg(14) + '</span>'
         + '</span></div>'
         + '<div class="price-row">'
         + '<span class="price-big">' + (o.down ? '262,10' : '271,45') + '<small> ₽</small></span>'
@@ -790,6 +819,12 @@ function ticket(o){
            + '<div class="prot"><b>тейк 285 ₽ · стоп 262 ₽</b><u>изменить</u></div></div>';
     /* высокий тикет: ввод сверху, деньги и кнопка прижаты к низу — воздух между ними */
     if (o.tall) h += '<div style="flex:1"></div>';
+    /* «Старт»: «что нужно знать» развёрнуто прямо в тикете — ссылки мало, новичок не кликает */
+    if (o.know)
+        h += '<div class="knowx"><em>Что нужно знать</em>'
+           + '<span>Купится по рыночной цене — сейчас <b>' + (o.down ? '262,10' : '271,45') + ' ₽</b> за акцию.</span>'
+           + '<span>Комиссия 0,3 % уже в сумме кнопки — списаний сверх неё не будет.</span>'
+           + '<span>Передумать можно, пока заявка не исполнена.</span></div>';
     /* деньги сходятся: 418 240 − итог кнопки (покупка) / + выручка за вычетом комиссии (продажа);
        o.down — красный день, цена 262,10 */
     h += '<div class="rest"><span>' + (sell ? 'Станет свободно' : 'Останется свободно') + '</span><b>'
@@ -798,7 +833,8 @@ function ticket(o){
         ? '<div class="cta sell">Продать на 32 476,28 ₽</div>'
         : '<div class="cta">Купить на ' + (o.limit ? '29 789,10' : (o.down ? '28 917,49' : '29 949,08')) + ' ₽</div>';
     h += '<div class="fee">Комиссия 0,3 % уже включена</div>';
-    h += '<div class="know">🛈 Что нужно знать ' + (sell ? 'о налоге при продаже' : 'перед покупкой') + '<u>Открыть</u></div>';
+    if (!o.know)
+        h += '<div class="know">🛈 Что нужно знать ' + (sell ? 'о налоге при продаже' : 'перед покупкой') + '<u>Открыть</u></div>';
     return h + '</div>';
 }
 
@@ -923,11 +959,12 @@ function scene1(o){
         + dates(DAY) + '</div></div>';
     var h = '<div class="glow"></div>' + topbar()
         + hero
-        + ticket({ down: o.down, style: 'position:absolute;right:36px;top:110px;width:368px' })
+        + ticket({ down: o.down, tall: 1, know: 1, style: 'position:absolute;right:36px;top:110px;bottom:96px;width:368px' })
         + posStrip({ hov: o.hov, down: o.down }) + stagePill('Старт', 'открыть больше');
     if (o.pins)
         h += pin(1, 1262, 17, 1) + pin(2, 295, 176, 1) + pin(3, 1005, 117, 1)
-           + pin(4, 1288, 127, 1) + pin(5, 1138, 860, 1) + pin(6, 60, 838, 1) + pin(7, 311, 860, 1);
+           + pin(4, 1288, 127, 1) + pin(5, 1138, 860, 1) + pin(6, 60, 838, 1) + pin(7, 311, 860, 1)
+           + pin(8, 923, 111, 1);
     return h;
 }
 document.getElementById('m2').innerHTML = scene1({ pins: 1, hov: 1 });
@@ -941,7 +978,7 @@ function scene2(o){
         + '<span class="pp on">SBER <em class="pup">+1,2 %</em></span>'
         + '<span class="pp">LKOH <em class="pdn">−0,4 %</em></span>'
         + '<span class="pp-add">＋</span></div>'
-        + instrHead({ candles: 1 })
+        + instrHead({ candles: 1, bellOn: 1 })
         + '<div style="flex:1;display:flex;gap:20px;min-height:0;margin-top:16px">'
         + '<div class="chart-wrap" style="flex:1;margin-top:0">' + indRow() + candleChart(38, 680, 385, { vol: 1, ma: 1 })
         + '<span class="ptag" style="top:34%">271,45</span>'
@@ -950,8 +987,17 @@ function scene2(o){
         + depthPanel('width:252px;flex:none', 0, 1)
         + '</div>'
         + tapeRow() + '</div>';
+    /* поповер звоночка: подписка на достижение цены, привязан к колокольчику шапки */
+    var bellpop = '<div class="bellpop" style="right:457px;top:185px">'
+        + '<em>Уведомить о цене</em>'
+        + '<div class="bp-in"><b>268,40</b><u>₽</u><span class="caret"></span></div>'
+        + '<div class="bp-pre"><span>сейчас 271,45</span><span class="on">−1 %</span><span>−3 %</span></div>'
+        + '<div class="bp-cta">Следить</div>'
+        + '<span class="bp-note">Придёт пушем и в звоночек сайта. Сработает один раз — алерт гаснет, не спамит.</span>'
+        + '</div>';
     var h = '<div class="glow"></div>' + topbar({ dark: o.dark })
         + hero
+        + bellpop
         + ticket({ price: 1, avg: 1, tall: 1, style: 'position:absolute;right:36px;top:102px;bottom:96px;width:400px' })
         + '<div class="unlock" style="left:56px;bottom:66px"><span class="uic">≡</span><div>'
         + '<h5>Открыть ленту всех сделок?</h5><p>Вы часто смотрите пульс. Полная лента покажет каждую сделку по бумаге отдельной колонкой.</p>'
@@ -959,7 +1005,8 @@ function scene2(o){
         + posStrip() + stagePill('Разгон', 'открыть больше');
     if (o.pins)
         h += pin(1, 724, 267, 1) + pin(2, 26, 786, 1) + pin(3, 26, 708, 1)
-           + pin(4, 330, 94, 1) + pin(5, 971, 238, 1) + pin(6, 478, 556, 1) + pin(7, 204, 272, 1);
+           + pin(4, 330, 94, 1) + pin(5, 1372, 238, 1) + pin(6, 478, 556, 1) + pin(7, 204, 272, 1)
+           + pin(8, 703, 190, 1);
     return h;
 }
 document.getElementById('m3').innerHTML = scene2({ pins: 1 });
@@ -974,7 +1021,7 @@ document.getElementById('m3').innerHTML = scene2({ pins: 1 });
     /* стакан живёт внутри карточки графика — одна плоскость; лента — рядом со вторым графиком */
     var left = '<div style="position:absolute;left:20px;width:964px;top:72px;bottom:196px;display:flex;flex-direction:column;gap:12px">'
         + '<div class="pane" style="flex:1.7">' + paneHead('SB', 'linear-gradient(135deg,#1d9a55,#15703d)', 'Сбербанк', '271,45 · +1,24 %', 1,
-            '<span class="pane-ic on">〣</span><span class="pane-ic">◱</span><span class="pane-ic">⋯</span>')
+            '<span class="pane-ic">' + bellSvg(10) + '</span><span class="pane-ic on">〣</span><span class="pane-ic">◱</span><span class="pane-ic">⋯</span>')
         + '<div style="flex:1;display:flex;gap:18px;min-height:0">'
         + '<div style="flex:1;min-height:0;position:relative">' + indRow() + candleChart(40, 620, 240, { vol: 1, ma: 1 })
         + '<div class="ax-price"><span>272,4</span><span>271,2</span><span>270,0</span><span>268,8</span></div>'
@@ -1005,7 +1052,7 @@ document.getElementById('m3').innerHTML = scene2({ pins: 1 });
         + '</div>';
     document.getElementById('m4').innerHTML = '<div class="glow" style="left:6%"></div>' + topbar({ screens: 1 })
         + left
-        + ticket({ price: 1, limit: 1, lots: 1, prot: 1, avg: 1, style: 'position:absolute;right:20px;top:72px;width:400px' })
+        + ticket({ price: 1, limit: 1, lots: 1, prot: 1, avg: 1, tall: 1, style: 'position:absolute;right:20px;top:72px;bottom:196px;width:400px' })
         + dock
         + pin(1, 365, 17, 1) + pin(2, 700, 760, 1) + pin(3, 1275, 757, 1)
         + pin(4, 992, 374, 1) + pin(5, 618, 490, 1) + pin(6, 519, 318, 1) + pin(7, 648, 226, 1);
