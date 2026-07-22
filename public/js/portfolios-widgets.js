@@ -1348,6 +1348,15 @@
         if (favSort === 'news') pool = pool.slice().sort(function (a, b) { return newsDateOf(b) - newsDateOf(a); });
         return pool;
     }
+    // Монограмма вместо логотипа (источника логотипов компаний нет): первая буква
+    // тикера на цветном круге, цвет детерминирован из тикера — стабилен между рендерами
+    var FAV_LOGO_COLORS = ['#1d4ed8', '#16a34a', '#7c3aed', '#334155', '#b45309', '#0e7490', '#be185d', '#4d7c0f'];
+    function favLogoColor(tk) {
+        var h = 0; for (var i = 0; i < tk.length; i++) h = (h * 31 + tk.charCodeAt(i)) % 997;
+        return FAV_LOGO_COLORS[h % FAV_LOGO_COLORS.length];
+    }
+    var FAV_ARROW_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><polyline points="5 12 12 5 19 12"/></svg>';
+    var FAV_STAR_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
     function favHtml(showHide) {
         if (typeof window.stkEnsureLoaded === 'function') { try { window.stkEnsureLoaded(); } catch (e) {} }
         var favs = favShown();
@@ -1357,38 +1366,55 @@
                 '<div class="pff-empty-t">Нет избранных акций</div>' +
                 '<div class="pff-empty-s">Отмечайте акции звёздочкой в разделе «Рынок · Акции» — здесь появятся их потенциал и свежие новости.</div></div>';
         } else {
-            // R7: не плитки, а спокойный СПИСОК (референс): тикер + имя слева, «потенциал»
-            // колонкой справа, строка новости с источником и стрелкой ↗, тонкие разделители.
+            // R10 (мокап fav-mockups, утверждён 2026-07-22): строки-КАРТОЧКИ с воздухом —
+            // монограмма + тикер/имя | новость (заголовок + пилюля источника + дата) |
+            // потенциал моно-цифрой со стрелкой + спарклайн 30 дней (MOEX ISS).
+            // Лидер по потенциалу — бейдж «Топ 1» + лёгкая зелёная подложка, БЕЗ зелёной
+            // обводки/канта (замечание к мокапу). В узком виджете (<460px контейнера)
+            // спарклайн скрыт, потенциал в строке тикера — см. @container в CSS.
             // «Купить» — тот же короткий путь, что из строки «Рынок · Акции»:
             // считаем предикат ОДИН раз на карточку, а не на каждую строку
             var canBuy = !!(window.brokerApi && window.brokerApi.canTrade() && PF.pftBuyTicker);
-            inner = '<div class="pff-grid pff2-list">' + favs.map(function (tk) {
+            inner = '<div class="pff-grid pff2-list pff3-list">' + favs.map(function (tk, i) {
                 var co = (typeof window.stkFindCompany === 'function') ? window.stkFindCompany(tk) : null;
                 var name = co && co.name ? co.name : tk;
                 var pot = potentialOf(tk);
+                var dir = pot == null ? 'mut' : (pot >= 0 ? 'pos' : 'neg');
                 var potHtml = pot == null ? '<span class="pff-pot muted">—</span>'
-                    : '<span class="pff-pot ' + (pot >= 0 ? 'pos' : 'neg') + '">' + fmtPct(pot) + '</span>';
+                    : '<span class="pff-pot ' + (pot >= 0 ? 'pos' : 'neg') + '">' + FAV_ARROW_SVG + fmtPct(pot) + '</span>';
+                // «Топ 1» — только при сортировке «Потенциал», только у первой строки
+                // и только при положительном потенциале; при «Новизне» бейджа нет
+                var top1 = favSort === 'pot' && i === 0 && pot != null && pot > 0;
                 var buy = canBuy
                     ? '<button class="pff-buy" onclick="pfBuyFav(\'' + jsArg(tk) + '\', event)" ' +
                         'title="Открыть тикет на покупку в терминале — заявка не отправляется">Купить</button>'
                     : '';
-                return '<div class="pff-tile pff2-row">' +
-                    '<div class="pff-thead">' +
-                        '<button class="pff-id" onclick="pfOpenTicker(\'' + jsArg(tk) + '\')" title="Открыть карточку компании">' +
-                            '<span class="pff-tk">' + esc(tk) + '</span><span class="pff-nm">' + esc(name) + '</span></button>' +
-                        buy +
-                        '<button class="pff-del" onclick="pfRemoveFav(\'' + jsArg(tk) + '\', event)" title="Убрать из избранного" aria-label="Убрать из избранного">' + NOTE_TRASH_SVG + '</button>' +
-                        '<div class="pff-pot-wrap"><span class="pff-pot-l">потенциал</span>' + potHtml + '</div>' +
+                return '<div class="pff-tile pff3-row' + (top1 ? ' pff3-top1' : '') + '">' +
+                    (top1 ? '<div class="pff3-badge">' + FAV_STAR_SVG + 'Топ 1</div>' : '') +
+                    '<div class="pff3-line">' +
+                        '<button class="pff-id pff3-id" onclick="pfOpenTicker(\'' + jsArg(tk) + '\')" title="Открыть карточку компании">' +
+                            '<span class="pff3-logo" style="background:' + favLogoColor(tk) + '">' + esc(tk.charAt(0)) + '</span>' +
+                            '<span class="pff3-idt"><span class="pff-tk">' + esc(tk) + '</span><span class="pff-nm">' + esc(name) + '</span></span>' +
+                        '</button>' +
+                        '<div class="pff-news pff3-news" id="pf-news-' + esc(tk) + '"><div class="pff-news-inner"><span class="pff-news-load">загрузка новости…</span></div></div>' +
+                        '<div class="pff3-pot">' + potHtml +
+                            // слот спарклайна заполняет renderFavSparks (кэш на сессию);
+                            // класс знака красит линию в цвет потенциала
+                            '<span class="pff3-spark ' + dir + '" id="pf-spk-' + esc(tk) + '"></span>' +
+                        '</div>' +
                     '</div>' +
-                    '<div class="pff-news" id="pf-news-' + esc(tk) + '"><div class="pff-news-inner"><span class="pff-news-load">загрузка новости…</span></div></div>' +
+                    // «Купить» и корзина — по hover строки, поверх декоративного спарклайна
+                    // (число потенциала остаётся видно); раскрытие кнопок — базовые правила
+                    // .pff-tile:hover .pff-buy/.pff-del из portfolios.css
+                    '<div class="pff3-act">' + buy +
+                        '<button class="pff-del" onclick="pfRemoveFav(\'' + jsArg(tk) + '\', event)" title="Убрать из избранного" aria-label="Убрать из избранного">' + NOTE_TRASH_SVG + '</button>' +
+                    '</div>' +
                 '</div>';
             }).join('') + '</div>';
         }
         return '<div class="dash2-card pf-card2 pf-fav">' +
-            PF.pfCardHead('', 'Избранное', 'потенциал и свежая новость по тикеру',
-                // «+» → терминал стоит НАПРОТИВ заголовка: вынесен ИЗ .pff-head-r (тот в узкой
-                // колонке переносится на 2-ю строку под заголовок), margin-left:auto уводит его
-                // вправо на строку заголовка. Внутри head-r он ломал space-between фильтра.
+            PF.pfCardHead('', 'Избранное', 'главное по вашим акциям: потенциал аналитиков и свежие новости',
+                // «+» → терминал стоит НАПРОТИВ заголовка (голый плюс, без плашки).
                 // R9.3: шестерёнка и корзина конструктора — СЛЕВА от «+», в потоке шапки
                 // (PFD_OWN_CHROME). Угловой оверлей ложился ровно на «+» (замерено: обе
                 // кнопки 408-459 против «+» 428-452). Корзина заменила прежний глаз
@@ -1397,21 +1423,21 @@
                 (showHide ? pfdInChromeHtml('fav') : '') +
                 '<button class="pff-add" type="button" onclick="pfGoTerminal(event)" aria-label="Открыть терминал" title="Открыть терминал — все акции и облигации в таблице">' +
                     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>' +
-                '</button>' +
-                '<div class="pff-head-r">' +
-                    // кастомный поповер вместо нативного title: тот всплывает с секундной
-                    // задержкой и в системном стиле — свой показывается мгновенно и в тоне приложения
-                    '<span class="pff-info-wrap"><button class="pff-info" type="button" aria-label="Что такое потенциал">' + PF.INFO_SVG + '<span>Что такое потенциал?</span></button>' +
-                    '<span class="pff-tipbox" role="tooltip">' + esc(POT_TIP) + '</span></span>' +
-                    // R9.3: глаз-скрытие отсюда убран — его роль взяла корзина в паре
-                    // .pfd-inchrome на строке заголовка (см. выше). Две кнопки с одним и
-                    // тем же pfdHideBlock('fav') в одной шапке только путали.
-                    // фильтр сортировки избранного (вместо кнопки «Все акции»): по потенциалу / по свежести новостей
+                '</button>') +
+            // R10: строка управления МЕЖДУ шапкой и списком (мокап): инфо-кружок слева,
+            // сортировка справа. Раньше оба жили в .pff-head-r внутри шапки.
+            '<div class="pff3-bar">' +
+                // кастомный поповер вместо нативного title: тот всплывает с секундной
+                // задержкой и в системном стиле — свой показывается мгновенно и в тоне приложения
+                '<span class="pff-info-wrap"><button class="pff-info" type="button" aria-label="Что такое потенциал">' + PF.INFO_SVG + '<span>Что такое потенциал?</span></button>' +
+                '<span class="pff-tipbox" role="tooltip">' + esc(POT_TIP) + '</span></span>' +
+                '<div class="pff3-sortwrap"><span class="pff3-sortl">Сортировка:</span>' +
                     '<div class="pff-sort" role="tablist">' +
                         '<button class="pff-sort-b' + (favSort === 'pot' ? ' on' : '') + '" onclick="pfSetFavSort(\'pot\')" title="Сначала с наибольшим потенциалом">Потенциал</button>' +
                         '<button class="pff-sort-b' + (favSort === 'news' ? ' on' : '') + '" onclick="pfSetFavSort(\'news\')" title="Сначала со свежими новостями">Новизна</button>' +
                     '</div>' +
-                '</div>') +
+                '</div>' +
+            '</div>' +
             '<div class="pff-body" data-skey="fav">' + inner + '</div></div>';
     }
     // Готовый HTML новости + ссылку складываем в кэш (новость = клик по ссылке, не карточка)
@@ -1459,9 +1485,67 @@
             })(tk);
         }
     }
+    // ---- спарклайны избранного: 30 дней дневных свечей MOEX ISS ----
+    // Новые данные редизайна R10: лёгкий фетч close-цен (interval=24) с кэшем НА СЕССИЮ
+    // и той же дисциплиной, что у новостей — очередь, максимум 2 запроса одновременно.
+    // Слот .pff3-spark заполняется точечно (без ререндера); после innerHTML-свопа
+    // renderFavSparks восстанавливает svg из кэша синхронно, сеть не трогается.
+    var favSparkCache = {};                                   // tk -> [closes] | 'none'
+    var favSparkStarted = {}, favSparkQueue = [], favSparkActive = 0;
+    function favSparkSvg(closes) {
+        if (!closes || closes.length < 2) return '';
+        var min = Math.min.apply(null, closes), max = Math.max.apply(null, closes);
+        var span = (max - min) || 1;
+        var W = 120, H = 36, pad = 2, n = closes.length - 1;
+        var pts = closes.map(function (v, i) {
+            return (i * W / n).toFixed(1) + ',' + (pad + (H - 2 * pad) * (1 - (v - min) / span)).toFixed(1);
+        });
+        // заливка-площадь под линией + сама линия (цвет — по классу знака на слоте)
+        return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" aria-hidden="true">' +
+            '<path d="M' + pts.join(' L') + ' L' + W + ',' + H + ' L0,' + H + ' Z"/>' +
+            '<polyline points="' + pts.join(' ') + '"/></svg>';
+    }
+    function fillSparkSlot(tk) {
+        var el = dq('pf-spk-' + tk), c = favSparkCache[tk];
+        if (!el || !c || c === 'none') return;
+        el.innerHTML = favSparkSvg(c);
+    }
+    function pumpSparkQueue() {
+        while (favSparkActive < 2 && favSparkQueue.length) {
+            var tk = favSparkQueue.shift(); favSparkActive++;
+            (function (tk) {
+                var from = new Date(Date.now() - 31 * 864e5).toISOString().slice(0, 10);
+                fetch('https://iss.moex.com/iss/engines/stock/markets/shares/securities/' + encodeURIComponent(tk) +
+                      '/candles.json?iss.meta=off&interval=24&from=' + from, { credentials: 'omit' })
+                    .then(function (r) { if (!r.ok) throw new Error('iss ' + r.status); return r.json(); })
+                    .then(function (j) {
+                        var c = j && j.candles, cols = (c && c.columns) || [], rows = (c && c.data) || [];
+                        var iC = cols.indexOf('close');
+                        var closes = iC < 0 ? [] : rows.map(function (r2) { return +r2[iC] || 0; })
+                            .filter(function (v) { return v > 0; });
+                        favSparkCache[tk] = closes.length > 1 ? closes : 'none';
+                    })
+                    .catch(function () { favSparkCache[tk] = 'none'; })
+                    .then(function () { favSparkActive--; fillSparkSlot(tk); pumpSparkQueue(); });
+            })(tk);
+        }
+    }
+    function renderFavSparks() {
+        // слотов нет (пустое избранное / узкий вид без спарклайнов рендерит слоты всё
+        // равно — их прячет CSS, заполняем на вырост) — но без виджета выходим сразу
+        if (!document.querySelector('#pfWrap .pff3-spark')) return;
+        favPool().forEach(function (tk) {
+            if (favSparkCache[tk]) { fillSparkSlot(tk); return; }   // кэш сессии → без сети
+            if (!favSparkStarted[tk]) { favSparkStarted[tk] = true; favSparkQueue.push(tk); }
+        });
+        // задержка чуть больше новостной: сперва котировки и таблицы, потом декор
+        setTimeout(pumpSparkQueue, favSparkActive ? 0 : 500);
+    }
+
     function renderFavNews() {
         // строки, не влезающие в блок целиком, прячутся (независимо от загрузки новостей)
         pfFavFitWatch(); pfFavFitSoon();
+        renderFavSparks();   // спарклайны живут тем же циклом рендера, что и новости
         // грузим новости для стабильного пула (топ-12 по потенциалу) — он же набор видимых плиток
         // при любом фильтре; сортировка «по свежести» лишь переупорядочивает уже эти тикеры
         var favs = favPool(); if (!favs.length || typeof loadNewsForTicker !== 'function') return;
