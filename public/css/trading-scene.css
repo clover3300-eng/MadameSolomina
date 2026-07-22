@@ -609,11 +609,148 @@
 .bts .bp-cta { border: 0; border-radius: 11px; text-align: center; font: 700 12px var(--font-ui); color: var(--bg); background: var(--ink); padding: 9px 0; cursor: pointer; }
 .bts .bp-note { font: 400 10px/1.45 var(--font-ui); color: var(--dim); }
 
-/* ---------- узкие десктопы ---------- */
+/* ═══════ ступень «Контроль» (экран 06) ═══════ */
+/* панели плавают на холсте с воздухом; тикет и панели делят низ с доком.
+   Низ — от ФАКТИЧЕСКОЙ высоты дока (--bts-dock ставит scnDockFit): высота
+   дока живёт контентом, а зазор к нему обязан оставаться воздухом 12px,
+   не дырой в пол-экрана */
+.bts[data-stage="control"] .tkt { top: 72px; right: 20px; bottom: var(--bts-dock, 196px); }
+.bts-ctl {
+    position: absolute; left: 20px; right: 456px; top: 72px;
+    bottom: var(--bts-dock, 196px);
+    display: flex; flex-direction: column; gap: 12px; z-index: 5;
+}
+.bts .pane {
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    padding: 12px 14px; display: flex; flex-direction: column; min-height: 0;
+    backdrop-filter: blur(14px);
+}
+.bts .pane-main { flex: 1.7; }
+.bts .pane-body { flex: 1; display: flex; gap: 18px; min-height: 0; }
+.bts .pane-h { display: flex; align-items: center; gap: 9px; margin-bottom: 6px; flex: none; }
+.bts .pane-h .pm {
+    width: 26px; height: 26px; border-radius: 9px;
+    font: 700 10px var(--font-num); color: #fff;
+    display: grid; place-items: center; flex: none;
+}
+.bts .pane-h b { font: 700 13px var(--font-ui); }
+.bts .pane-px .num { font: 600 12px var(--font-num); }
+.bts .pane-px .up { color: var(--grn); }
+.bts .pane-px .dn { color: var(--red); }
+.bts .pane-r { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.bts .pane-ic {
+    width: 22px; height: 22px; border-radius: 7px; border: 1px solid var(--line);
+    background: none; display: grid; place-items: center;
+    color: var(--dim); font-size: 10px; cursor: pointer;
+}
+.bts .pane-ic svg { width: 11px; height: 11px; }
+.bts .pane-ic.on, .bts .pane-ic:hover { color: var(--acc); border-color: color-mix(in srgb, var(--acc) 45%, transparent); }
+.bts-row2 { display: flex; gap: 12px; flex: 1; min-height: 0; }
+.bts .pane-2 { flex: 1.6; }
+.bts .pane-line { flex: 1; min-height: 0; position: relative; }
+.bts .pane-line svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.bts .pane-tape { flex: 1; overflow: hidden; }
+.bts .d-row.d-t { grid-template-columns: 52px 1fr 46px; cursor: default; }
+.bts .d-row.d-t:hover { background: none; }
+.bts .d-t .tt { color: var(--dim); }
+.bts .d-t .pr.g { color: var(--grn); }
+.bts .d-t .pr.r { color: var(--red); }
+/* «Контроль» — плоскость внутри главной панели, стакан у её края */
+.bts[data-stage="control"] .depth-fused { width: 230px; }
+/* тейк/стоп вне видимого диапазона — метки у края со стрелкой */
+.bts .ord-off {
+    position: absolute; right: 34px;
+    font: 700 9.5px var(--font-num); border-radius: 6px; padding: 2px 7px;
+    z-index: 6; white-space: nowrap; pointer-events: none;
+}
+.bts .ord-off.up { color: var(--grn); background: color-mix(in srgb, var(--grn) 10%, var(--card)); }
+.bts .ord-off.dn { color: var(--red); background: color-mix(in srgb, var(--red) 10%, var(--card)); }
+/* призрак-черновик по клику на уровень: «лимитка или алерт» */
+.bts .ord-ghost {
+    position: absolute; display: inline-flex; align-items: center; gap: 5px;
+    font: 600 10px var(--font-ui); color: var(--mut);
+    background: var(--card); border: 1px dashed var(--dim); border-radius: 7px;
+    padding: 3px 9px; z-index: 8; white-space: nowrap;
+}
+.bts .ord-ghost u { text-decoration: none; color: var(--acc); font-weight: 700; cursor: pointer; }
+/* строка защиты в тикете */
+.bts .prot { display: flex; align-items: center; gap: 8px; font: 400 11px var(--font-ui); color: var(--mut); }
+.bts .prot b { color: var(--ink); font: 600 11px var(--font-num); }
+.bts .prot u { text-decoration: none; margin-left: auto; color: var(--acc); font-weight: 600; cursor: pointer; }
+.bts .prot-e { gap: 10px; }
+.bts .prot-e label { display: inline-flex; align-items: baseline; gap: 5px; font: 600 10px var(--font-ui); color: var(--dim); }
+.bts .prot-e input {
+    width: 7ch; border: 0; border-bottom: 1px dashed var(--dim);
+    background: none; padding: 0; font: 600 12px var(--font-num); color: var(--ink);
+}
+.bts .prot-e input:focus { outline: none; border-bottom-color: var(--acc); }
+/* док: Заявки · Позиции · История · Алерты */
+.bts .dock {
+    position: absolute; left: 20px; right: 20px; bottom: 14px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    padding: 10px 16px 12px; z-index: 25; backdrop-filter: blur(16px);
+}
+.bts .dock-tabs { display: flex; align-items: center; gap: 18px; border-bottom: 1px solid var(--hair); padding-bottom: 8px; }
+.bts .dock-tabs span[role="tab"] {
+    font: 600 11.5px var(--font-ui); color: var(--dim);
+    display: inline-flex; gap: 6px; align-items: center; cursor: pointer; user-select: none;
+}
+.bts .dock-tabs span[role="tab"].on { color: var(--ink); }
+.bts .dock-tabs span[role="tab"] em {
+    font-style: normal; font: 700 9.5px var(--font-num); color: var(--acc);
+    background: color-mix(in srgb, var(--acc) 14%, transparent);
+    border-radius: 6px; padding: 1px 6px;
+}
+.bts .dock-tabs .keys {
+    margin-left: auto; border: 1px solid var(--line); border-radius: 7px;
+    background: none; padding: 3px 8px; cursor: pointer;
+    font: 400 10px var(--font-num); color: var(--dim);
+}
+.bts .dock-tabs .shev { border: 0; background: none; color: var(--dim); cursor: pointer; font-size: 13px; }
+.bts .dk-hd, .bts .dk-r {
+    display: grid; grid-template-columns: 120px 70px 1fr 90px 90px 110px 90px;
+    gap: 10px; align-items: center; font: 400 11px var(--font-ui);
+}
+.bts .dk-hd {
+    font: 800 9px var(--font-ui); letter-spacing: 0.09em; text-transform: uppercase;
+    color: var(--dim); padding: 8px 0 6px;
+}
+.bts .dk-body { max-height: 96px; overflow-y: auto; scrollbar-width: thin; }
+.bts .dk-r { height: 30px; border-top: 1px solid var(--hair); color: var(--mut); }
+.bts .dk-r b { font: 600 11px var(--font-num); color: var(--ink); }
+.bts .dk-r .g { color: var(--grn); }
+.bts .dk-r .r { color: var(--red); }
+.bts .dk-st { font: 700 10px var(--font-ui); }
+.bts .dk-st.act { color: var(--acc); }
+.bts .dk-st.done { color: var(--grn); }
+.bts .dk-x { font: 600 10px var(--font-ui); color: var(--red); text-align: right; cursor: pointer; }
+.bts .dk-pos { cursor: pointer; }
+.bts .dk-pos:hover { background: color-mix(in srgb, var(--acc) 5%, transparent); }
+.bts .dk-go { font: 600 10px var(--font-ui); color: var(--acc); text-align: right; }
+.bts .dk-empty { padding: 12px 0 6px; font: 400 11.5px var(--font-ui); color: var(--dim); }
+/* экраны trading:N — вкладки в строке среды */
+.bts .sc-tabs { display: flex; align-items: center; gap: 6px; margin-right: auto; }
+.bts .sct {
+    font: 600 11px var(--font-ui); color: var(--dim);
+    border: 1px solid transparent; border-radius: 9px; padding: 5px 11px;
+    cursor: pointer; user-select: none; white-space: nowrap;
+}
+.bts .sct.on { color: var(--ink); border-color: var(--line); background: var(--card); }
+.bts .bts-omni-s { width: 280px; margin: 0; }
+
+/* ---------- узкие десктопы ----------
+   Зазор тикет↔сцена держим ЯВНО на каждой ступени: right героя = right тикета
+   + его ширина + гэп. На «Разгоне» тикет шире (400), и без своей пары правил
+   стакан прижимался к тикету вплотную (оставалось 4px). */
 @media (max-width: 1360px) {
-    .bts-hero { left: 32px; right: 428px; }
+    .bts-hero { left: 32px; right: 428px; }                     /* Старт: 24+360+44 */
     .bts .tkt { right: 24px; width: 360px; }
+    .bts[data-stage="accel"] .bts-hero,
+    .bts[data-stage="control"] .bts-hero { right: 448px; }      /* 24+400+24 */
+    .bts[data-stage="accel"] .tkt,
+    .bts[data-stage="control"] .tkt { right: 24px; width: 400px; }
     .bts .pos-strip { right: 300px; }
     .bts-omni { width: 340px; }
     .bts .facts { gap: 20px; }
+    .bts-ctl { right: 448px; }      /* 24 + 400 + 24 */
 }
