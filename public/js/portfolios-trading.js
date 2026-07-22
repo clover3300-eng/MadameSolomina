@@ -2140,6 +2140,7 @@
                 });
             }
             traceOrders();        // что случилось с заявками, пропавшими из активных
+            tracePartials();      // лимитка исполнилась частично — сказать один раз
             reconcileBrackets();  // сработала одна нога защиты — снять вторую
             if (bg) return;       // вкладка не на экране — перерисовывать нечего
             repaintOrders();
@@ -2241,6 +2242,70 @@
             }
         }).catch(function () { /* тихо: судьбу заявки покажет история */ });
     }
+    // ---------- частичное исполнение (экран 10, карточка 5) ----------
+    // Лимитка стоит в стакане, а часть уже откушена: говорим ОДИН РАЗ на
+    // изменение исполненного, не каждый тик. Купленное — в портфеле сразу.
+    var partialSeen = {};   // orderId -> lotsExecuted, о которых уже сказали
+    function tracePartials() {
+        var now = {};
+        T.orders.forEach(function (o) {
+            if (!o.orderId) return;
+            var done = +o.lotsExecuted || 0, req = +o.lotsRequested || 0;
+            if (!(done > 0) || done >= req) return;
+            now[o.orderId] = done;
+            var was = partialSeen[o.orderId] || 0;
+            if (done <= was) return;
+            var tk = (instrMem[o.instrumentUid] || {}).ticker || '';
+            announce('Частичное исполнение',
+                tk + ': исполнено ' + done + ' из ' + req + ' лотов — остаток стоит в заявке');
+        });
+        partialSeen = now;
+    }
+    // Отмена частично исполненной — свой диалог: разбивка по мокапу (комиссия
+    // только с исполненного) и честный выбор «оставить / отменить остаток».
+    // Отмена остатка не трогает купленное.
+    window.pftScCancelPart = function (orderId) {
+        var o = null;
+        T.orders.forEach(function (x) { if (x.orderId === orderId) o = x; });
+        if (!o) { toast('Заявка уже исполнена или снята', true); return; }
+        var done = +o.lotsExecuted || 0, req = +o.lotsRequested || 0;
+        if (!(done > 0)) { window.pftCancel(orderId); return; }   // чистая — прежний путь
+        var ms = metaSlot(o.instrumentUid);
+        var ins = instrMem[o.instrumentUid] || {};
+        var lot = ins.lot || 1;
+        var px = ordPx(o, ms);
+        var buy = o.direction === 'ORDER_DIRECTION_BUY';
+        var doneQty = done * lot, sum = px * doneQty;
+        var fee = feeOf(sum);
+        var m = openModal({ id: 'btConfirmOv', card: '<div class="bk-card bk-card-pin btr-cf" role="dialog" aria-modal="true">' +
+            '<div class="bk-title">Исполнено ' + doneQty.toLocaleString('ru-RU') + ' из ' +
+                (req * lot).toLocaleString('ru-RU') + ' × ' + esc(ins.ticker || '') + '</div>' +
+            '<div class="btr-note">Лимитка ' + fmtPx(px, ms) + ' стоит в стакане; ' +
+                (buy ? 'купленные' : 'проданные') + ' ' + doneQty.toLocaleString('ru-RU') +
+                ' уже в портфеле. Остаток можно снять в любой момент.</div>' +
+            '<div class="bk-kv"><span>Исполнено ' + doneQty.toLocaleString('ru-RU') + ' × ' + fmtPx(px, ms) + ' ₽</span><b class="bk-mono">' +
+                fmtKop(sum) + '</b></div>' +
+            '<div class="bk-kv"><span>Комиссия с исполненного</span><b class="bk-mono">≈ ' + fmtKop(fee) + '</b></div>' +
+            '<div class="bk-kv"><span>Осталось в заявке</span><b class="bk-mono">' +
+                ((req - done) * lot).toLocaleString('ru-RU') + ' шт</b></div>' +
+            '<div class="bk-kv"><span>' + (buy ? 'Списано сейчас' : 'Пришло сейчас') + '</span><b class="bk-mono">' +
+                fmtKop(buy ? sum + fee : sum - fee) + '</b></div>' +
+            '<div class="btr-note">Отмена остатка не трогает ' + (buy ? 'купленное' : 'проданное') +
+                ': комиссия — только с исполненной части.</div>' +
+            '<div class="bk-foot"><button type="button" class="bk-btn bk-btn-pri" id="btCfNo">Оставить заявку</button>' +
+            '<button type="button" class="bk-btn" id="btCfYes">Отменить остаток</button></div></div>' });
+        m.el.querySelector('#btCfNo').addEventListener('click', m.close);
+        m.el.querySelector('#btCfYes').addEventListener('click', function () {
+            m.close();
+            var c = conn(); if (!c) return;
+            A().call('CancelOrder', { accountId: c.accountId, orderId: orderId }).then(function () {
+                A().logEvent('order_cancel', 'остаток частично исполненной заявки снят');
+                toast('Остаток снят — исполненная часть в портфеле');
+                pollOrders(); pollPos();
+            }, function (e) { toast(e.message, true); });
+        });
+    };
+
     // ---------- брекет: защита позиции стопом и тейком ----------
     // У Т-Инвестиций НЕТ родного OCO: две стоп-заявки живут независимо, и после
     // срабатывания одной вторая осталась бы висеть — на продажу бумаг, которых
@@ -2354,7 +2419,24 @@
         try { return !!(JSON.parse(localStorage.getItem('profile_settings_v1') || '{}') || {}).notifyBrowser; }
         catch (e) { return false; }
     }
+    // Точка в заголовке вкладки: исполнение в фоне не должно пропасть, даже
+    // если пуш выключен. Снимается при возврате на вкладку (мокап 10, пин 5).
+    function titleDot() {
+        if (!document.hidden) return;
+        if (!/^● /.test(document.title)) document.title = '● ' + document.title;
+    }
+    document.addEventListener('visibilitychange', function () {
+        if (!document.hidden && /^● /.test(document.title)) {
+            document.title = document.title.replace(/^● /, '');
+        }
+    });
     function announce(title, body) {
+        // событие терминала — в звоночек сайта (локальный слой msNotify.local:
+        // брокерский контур не уходит в облачную таблицу notifications)
+        if (window.msNotify && window.msNotify.local) {
+            window.msNotify.local(/исполнен|куплено|продано/i.test(title + body) ? 'success' : 'info', title, body);
+        }
+        titleDot();
         if (!document.hidden) { toast(body); return; }
         if (!notifyOn()) { toast(body); return; }
         // tag РАЗНЫЙ у разных событий: с общим тегом второе уведомление молча
@@ -5122,7 +5204,7 @@
             html += '<span class="ord-tag" style="top:' + Math.round(y) + 'px">' +
                 (w.buy ? 'ваша заявка · ' : 'ваша продажа · ') + fmtPx(w.px, s) + ' × ' +
                 (w.left * ((s.meta || {}).lot || 1)).toLocaleString('ru-RU') + ' шт' +
-                '<u onclick="pftCancel(\'' + jsArg(id) + '\')" title="Снять заявку">✕</u></span>';
+                '<u onclick="pftScCancelPart(\'' + jsArg(id) + '\')" title="Снять заявку">✕</u></span>';
         });
         // тейк/стоп: в диапазоне их держат линии-оверлеи, вне — метки у края
         if (stageObj().stage === 'control' && s.uid === K.uid) {
@@ -5241,7 +5323,9 @@
                     fmtPx(x.a.px, s) + ' ₽</b></span><u onclick="pftScBellDrop(' + x.i + ')">убрать</u></div>';
             }).join('') + '</div>' : '') +
             '<button type="button" class="bp-cta" onclick="pftScBellGo()">Следить</button>' +
-            '<span class="bp-note">Сработает один раз — алерт гаснет, не спамит.</span>' +
+            // с этапа 7 обещание честное: announce кладёт событие в звоночек
+            // сайта (msNotify.local) и шлёт пуш при включённом notifyBrowser
+            '<span class="bp-note">Придёт пушем и в звоночек сайта. Сработает один раз — алерт гаснет, не спамит.</span>' +
         '</div>';
     }
     function scnBellClose() { var p = dq('btScnBellPop'); if (p) p.remove(); }
@@ -5590,8 +5674,9 @@
                 '<span>' + (lim ? 'Лимит · <b>' + fmtPx(px, ms) + ' ₽</b>' : 'По рынку') + '</span>' +
                 '<span><b>' + (req * lot).toLocaleString('ru-RU') + '</b> шт</span>' +
                 '<span>' + done + ' из ' + req + '</span>' +
-                '<span class="dk-st act">Активна</span>' +
-                '<span class="dk-x" role="button" tabindex="0" onclick="pftCancel(\'' + jsArg(o.orderId) + '\')">Отменить</span></div>';
+                '<span class="dk-st act">' + (done > 0 ? 'Частично · ' + done + '/' + req : 'Активна') + '</span>' +
+                // частично исполненную снимает свой диалог (разбивка и выбор)
+                '<span class="dk-x" role="button" tabindex="0" onclick="pftScCancelPart(\'' + jsArg(o.orderId) + '\')">Отменить</span></div>';
         });
         T.stops.forEach(function (o) {
             var ms = metaSlot(o.instrumentUid);

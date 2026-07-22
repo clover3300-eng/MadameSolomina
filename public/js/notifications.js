@@ -27,10 +27,16 @@
 
     var LS_SETTINGS = 'profile_settings_v1';   // notifyBrowser живёт тут (ключ уже в cloud-sync.WATCH)
     var LS_LAST = 'nf_seen_ts_v1';             // локальная метка «до сюда браузером уже оповещали» (вне WATCH)
+    // ЛОКАЛЬНЫЕ уведомления (msNotify.local) — события УСТРОЙСТВА: сделки и
+    // алерты терминала. В облачную таблицу notifications им нельзя: брокерский
+    // контур не покидает устройство (cloud-sync.LOCAL_ONLY), поэтому свой ключ
+    // ВНЕ WATCH — живут в том же звоночке, но не синкаются
+    var LS_LOCAL = 'nf_local_v1', LOCAL_MAX = 30;
     var POLL_MS = 5 * 60000;
 
     var bell = null, panel = null, pollT = null;
     var NF = {
+        local: [],       // локальные (сделки/алерты терминала), новые сверху
         list: [],        // оповещения, новые сверху
         read: {},        // id -> true (прочитано)
         pending: {},     // id -> true: отметили локально, сервер мог ещё не подтвердить —
@@ -94,6 +100,48 @@
     };
     function kindIc(kind) { return IC[kind] || IC.info; }
 
+    // ---------- локальные уведомления (терминал) ----------
+    function loadLocal() {
+        var o;
+        try { o = JSON.parse(localStorage.getItem(LS_LOCAL) || 'null'); } catch (e) { return; }
+        if (!Array.isArray(o)) return;
+        NF.local = o.filter(function (n) {
+            return n && typeof n === 'object' && n.id && n.title;
+        }).slice(0, LOCAL_MAX).map(function (n) {
+            return { id: String(n.id), kind: n.kind === 'success' || n.kind === 'warn' ? n.kind : 'info',
+                     title: String(n.title).slice(0, 140), body: String(n.body || '').slice(0, 240),
+                     created_at: n.created_at, read: !!n.read, local: true };
+        });
+    }
+    function saveLocal() {
+        try { localStorage.setItem(LS_LOCAL, JSON.stringify(NF.local.slice(0, LOCAL_MAX))); } catch (e) {}
+    }
+    var localSeq = 0;
+    function addLocal(kind, title, body) {
+        NF.local.unshift({
+            id: 'loc-' + Date.now() + '-' + (++localSeq),
+            kind: kind === 'success' || kind === 'warn' ? kind : 'info',
+            title: String(title || '').slice(0, 140),
+            body: String(body || '').slice(0, 240),
+            created_at: new Date().toISOString(), read: false, local: true
+        });
+        NF.local = NF.local.slice(0, LOCAL_MAX);
+        saveLocal();
+        recount();
+        syncBell();
+        if (panel && panel.classList.contains('open') && NF.view === 'list') renderPanel();
+    }
+    // общий список панели: локальные и облачные вперемешку, новые сверху
+    function allItems() {
+        return NF.local.concat(NF.list).sort(function (a, b) {
+            return (Date.parse(b.created_at) || 0) - (Date.parse(a.created_at) || 0);
+        });
+    }
+    function isRead(n) { return n.local ? !!n.read : !!NF.read[n.id]; }
+    function recount() {
+        NF.unread = allItems().filter(function (n) { return !isRead(n); }).length;
+    }
+
     // ---------- данные ----------
     function fetchData() {
         if (!cloudOn() || NF.loading) return Promise.resolve();
@@ -118,7 +166,7 @@
                 if (NF.read[id]) delete NF.pending[id];
                 else NF.read[id] = true;
             });
-            NF.unread = NF.list.filter(function (n) { return !NF.read[n.id]; }).length;
+            recount();
             NF.loaded = true;
             syncBell();
             maybeBrowserNotify();
@@ -129,6 +177,12 @@
     // Открытие панели = «всё прочитано»: пишем отметки на сервер (крест-девайсно),
     // локально гасим бейдж сразу — при ошибке сети он просто вернётся с поллингом.
     function markAllRead() {
+        // локальные читаются локально же — облако о них не знает
+        var dirty = false;
+        NF.local.forEach(function (n) { if (!n.read) { n.read = true; dirty = true; } });
+        if (dirty) saveLocal();
+        NF.unread = 0;
+        syncBell();
         if (!cloudOn()) return;
         var ids = NF.list.filter(function (n) { return !NF.read[n.id]; }).map(function (n) { return n.id; });
         if (!ids.length) return;
@@ -138,8 +192,6 @@
                 { onConflict: 'user_id,notification_id', ignoreDuplicates: true })
             .then(function () {}, function () {});
         ids.forEach(function (id) { NF.read[id] = true; NF.pending[id] = true; });
-        NF.unread = 0;
-        syncBell();
     }
 
     // Браузерное уведомление о свежепришедших — только когда вкладка в фоне
@@ -219,8 +271,8 @@
         // снимок непрочитанных — подсветка «новых» живёт, пока панель открыта
         NF.snap = {};
         NF.snapCount = 0;
-        NF.list.forEach(function (n) {
-            if (!NF.read[n.id]) { NF.snap[n.id] = true; NF.snapCount++; }
+        allItems().forEach(function (n) {
+            if (!isRead(n)) { NF.snap[n.id] = true; NF.snapCount++; }
         });
         renderPanel();
         panel.classList.add('open');
@@ -247,16 +299,17 @@
             '<button class="nf-hbtn" type="button" data-nf="prefs" title="Настроить доставку уведомлений" aria-label="Настройки уведомлений">' + IC.gear + '</button>' +
         '</div>';
 
-        if (!NF.loaded && NF.loading) {
+        var items = allItems();
+        if (!items.length && !NF.loaded && NF.loading) {
             h += '<div class="nf-empty"><div class="nf-empty-s">Загружаем…</div></div>';
-        } else if (!NF.list.length) {
+        } else if (!items.length) {
             h += '<div class="nf-empty">' +
                 '<div class="nf-empty-ic">' + IC.zzz + '</div>' +
                 '<div class="nf-empty-t">Пока тихо</div>' +
                 '<div class="nf-empty-s">Здесь будут появляться сообщения от сервиса — о новых возможностях и важных событиях.</div>' +
             '</div>';
         } else {
-            h += '<div class="nf-list">' + NF.list.map(function (n) {
+            h += '<div class="nf-list">' + items.map(function (n) {
                 var kind = (n.kind === 'success' || n.kind === 'warn') ? n.kind : 'info';
                 var fresh = !!NF.snap[n.id];
                 return '<div class="nf-item' + (fresh ? ' new' : '') + '">' +
@@ -264,7 +317,8 @@
                     '<span class="nf-item-m">' +
                         '<span class="nf-item-t">' + esc(n.title) + (fresh ? '<i class="nf-dot"></i>' : '') + '</span>' +
                         (n.body ? '<span class="nf-item-b">' + esc(n.body) + '</span>' : '') +
-                        '<span class="nf-item-d">' + fmtAgo(n.created_at) + (n.user_id ? ' · лично вам' : '') + '</span>' +
+                        '<span class="nf-item-d">' + fmtAgo(n.created_at) +
+                            (n.local ? ' · терминал' : n.user_id ? ' · лично вам' : '') + '</span>' +
                     '</span>' +
                 '</div>';
             }).join('') + '</div>';
@@ -425,7 +479,9 @@
                         startPoll();
                     }
                 } else if (kind === 'signout') {
-                    NF.list = []; NF.read = {}; NF.pending = {}; NF.unread = 0; NF.loaded = false;
+                    // локальные (события устройства) переживают выход из облака
+                    NF.list = []; NF.read = {}; NF.pending = {}; NF.loaded = false;
+                    recount();
                     stopPoll();
                     syncBell();
                 }
@@ -444,7 +500,10 @@
         };
     }
 
-    window.msNotify = { refresh: fetchData, open: openPanel };
+    loadLocal();
+    recount();
+    // local(kind, title, body) — событие терминала в звоночек, минуя облако
+    window.msNotify = { refresh: fetchData, open: openPanel, local: addLocal };
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();
