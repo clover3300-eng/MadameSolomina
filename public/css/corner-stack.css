@@ -1,10 +1,10 @@
 /* ============================================================
    СТЕКЛЯННЫЙ СТОЛБИК ПРАВОГО НИЖНЕГО УГЛА (#cornerStack)
    ============================================================
-   Одна капсула на все плавающие кнопки (js/corner-stack.js): сверху страничный
-   слот .cst-page (кнопки «Портфелей» — их стили в portfolios-r7.css), затем
-   черта .cst-hr, ниже глобальные #bgFab и #themeFab. Порядок задают
-   order-правила, а не порядок аппенда: модули приезжают каждый в своё время.
+   Капсула глобальных плавающих кнопок (js/corner-stack.js): #bgFab и #themeFab.
+   Порядок задают order-правила, а не порядок аппенда: модули приезжают каждый
+   в своё время. На «Портфелях» капсула скрыта: фон и тема переезжают в кластер
+   панели действий #pfActBar (pfxFabSync, стили кластера в portfolios-r7.css).
    Стекло и геометрия — те же, что были у отдельных FAB (мокап: right 22 ·
    bottom 20, ширина 46, радиус 23, кнопки 38, паддинг 3, зазор 2).
    Только десктоп: на мобиле темой управляет шторка (mobile.css прячет
@@ -27,16 +27,15 @@ body.dark-mode #cornerStack { background: rgba(30, 41, 59, 0.8); border-color: r
    (body:has(#pftBar)), квиз/шторки — здесь */
 body.quiz-mode #cornerStack, body.sd-drawer-open #cornerStack, body.pfsd-open #cornerStack { display: none !important; }
 
-/* слот страничных кнопок: контент кладёт вкладка (пока умеют только «Портфели»,
-   pfxFabSync), видимость гейтит активная панель — как у прежнего #pfWidgetFab.
-   display:contents — кнопки слота становятся флекс-элементами самой капсулы
-   (order 0, то есть выше черты с order 2) */
+/* слот страничных кнопок и черта — наследие мокапа «столбик»: с 2026-07-22
+   страничные кнопки «Портфелей» живут в панели действий (pfxFabSync), слот
+   всегда пуст. На самих «Портфелях» столбика нет ВООБЩЕ: фон и тема физически
+   переезжают в кластер панели (#pfabGlobals), пустую капсулу прячем —
+   :has(#panel-portfolios) в селекторе даёт id-специфичность, правило бьёт
+   показ body:not(.tab-home) выше без !important */
 #cornerStack .cst-page { display: none; }
-body:has(#panel-portfolios.active) #cornerStack .cst-page { display: contents; }
-/* черта между страничным и глобальным: есть только пока есть страничное */
-#cornerStack .cst-hr { display: none; order: 2; width: 22px; height: 1px; margin: 3px 0; background: rgba(24, 38, 60, 0.12); flex: 0 0 auto; }
-body:has(#panel-portfolios.active) #cornerStack .cst-hr { display: block; }
-body.dark-mode #cornerStack .cst-hr { background: rgba(255, 255, 255, 0.14); }
+#cornerStack .cst-hr { display: none; }
+body:has(#panel-portfolios.active) #cornerStack { display: none; }
 #cornerStack #bgFab { order: 3; }
 #cornerStack #themeFab { order: 4; }
 

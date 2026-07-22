@@ -2343,26 +2343,112 @@ body.dark-mode .pfxg-lay:hover { border-color: rgba(129, 140, 248, 0.6); color: 
 }
 .pfxg-fly.go { border-radius: 50%; }
 .pfxg-fly svg { width: 20px; height: 20px; }
-/* ============ Парящие узлы «Портфелей» (мокап «панель управления → парящие кнопки») ============
-   Страничные кнопки столбика #cornerStack (слот #cstPage: виджет / раскладки /
-   замок — база .cst-btn в corner-stack.css) и панель действий #pfActBar.
+/* ============ Парящие узлы «Портфелей» (мокап «угол: круглый FAB + панель») ============
+   С 2026-07-22 столбика на «Портфелях» нет (corner-stack.css прячет капсулу):
+   панель действий #pfActBar прижата к углу и заканчивается кластером кружков
+   Раскладки · Замок · Фон · Тема (.cst-btn — база в corner-stack.css; фон и
+   тема — живые #bgFab/#themeFab, затащенные в слот #pfabGlobals), а «Добавить
+   виджет» — круглый FAB #pfxFab 58px, парящий над правым краем панели.
    Оба узла наполняет pfxFabSync (portfolios-tabs.js), видимость гейтит
    body:has(#panel-portfolios.active). */
-/* «Виджет» — синяя, единственный цветной акцент столбика */
-#cornerStack .cst-widget { background: linear-gradient(#5b67f2, #4453ef); color: #fff; box-shadow: 0 8px 18px -8px rgba(68, 83, 239, 0.85); }
-#cornerStack .cst-widget:hover { background: linear-gradient(#6672f8, #4f5ef4); color: #fff; }
 /* «Раскладки» при открытой панели pfl3 */
-#cornerStack .cst-btn.on { background: rgba(24, 38, 60, 0.1); color: var(--text-deep, #1b2433); }
-body.dark-mode #cornerStack .cst-btn.on { background: rgba(255, 255, 255, 0.14); color: #e8eef7; }
+#pfActBar .cst-btn.on { background: rgba(24, 38, 60, 0.1); color: var(--text-deep, #1b2433); }
+body.dark-mode #pfActBar .cst-btn.on { background: rgba(255, 255, 255, 0.14); color: #e8eef7; }
 /* замок «Скрывать суммы»: активное состояние — зелёное, как было в герое */
-#cornerStack .cst-lock.on { background: rgba(15, 157, 99, 0.16); color: #0f9d63; }
-body.dark-mode #cornerStack .cst-lock.on { background: rgba(63, 202, 144, 0.18); color: #3fca90; }
+#pfActBar .cst-lock.on { background: rgba(15, 157, 99, 0.16); color: #0f9d63; }
+body.dark-mode #pfActBar .cst-lock.on { background: rgba(63, 202, 144, 0.18); color: #3fca90; }
+/* слот фон+тема: display:contents — #bgFab и #themeFab становятся флекс-
+   элементами самой панели, зазор 2px даёт её gap */
+#pfActBar .pfab-globals { display: contents; }
+/* ярлычки кружков кластера — СВЕРХУ (слева места нет — там соседние кнопки);
+   перебиваем «левую» позицию corner-stack.css двумя id в селекторе */
+body #pfActBar .cst-btn[data-tip]::after {
+    right: auto; top: auto; left: 50%; bottom: calc(100% + 12px);
+    transform: translate(-50%, 4px);
+}
+body #pfActBar .cst-btn[data-tip]:hover::after { transform: translate(-50%, 0); }
 
-/* панель действий: то же стекло, что у столбика; на месте кнопки «Назад» */
+/* — рейка образцов фона: в панели раскрывается ВВЕРХ, а не влево —
+   правый край рейки на 39px левее кнопки: над кнопкой висит FAB (right 22),
+   рейка уходит из-под него влево (мокап: правый край на ~104px от края окна) */
+#pfActBar .bgfab-rail {
+    left: auto; right: 39px; top: auto; bottom: calc(100% + 14px);
+    transform: translateY(6px); clip-path: none;
+}
+#pfActBar #bgFab:hover .bgfab-rail, #pfActBar #bgFab.open .bgfab-rail,
+#pfActBar #bgFab:has(:focus-visible) .bgfab-rail { transform: translateY(0); clip-path: none; }
+/* мостик через зазор кнопка↔рейка — теперь ГОРИЗОНТАЛЬНАЯ полоса над кнопкой,
+   тянется влево под всю рейку (диагональный путь курсора не рвёт :hover) */
+#pfActBar #bgFab:hover::before, #pfActBar #bgFab.open::before {
+    right: 0; left: -280px; width: auto; top: auto; bottom: 100%; height: 16px;
+}
+/* подпись образца — над рейкой (рейка теперь над кнопкой, а не сбоку) */
+#pfActBar #bgFab .bgfab-tip { bottom: calc(100% + 64px); }
+
+/* — круглый FAB «Добавить виджет»: 58px, парит в 12px над панелью (панель
+   46px на bottom 20 → bottom 78); z-index выше панели — тень ложится на неё */
+#pfxFab { display: none; }
+@media (min-width: 1024px) {
+    body:has(#panel-portfolios.active) #pfxFab { display: block; position: fixed; right: 22px; bottom: 78px; z-index: 881; }
+}
+/* прячется вместе с панелью: квиз/шторки здесь, полноэкранный терминал — broker.css */
+body.quiz-mode #pfxFab, body.sd-drawer-open #pfxFab, body.pfsd-open #pfxFab { display: none !important; }
+.pfx-fab {
+    position: relative; box-sizing: border-box; width: 58px; height: 58px;
+    border: 0; padding: 0; border-radius: 50%; cursor: pointer;
+    display: grid; place-items: center; color: #fff;
+    background: linear-gradient(#5b67f2, #4453ef);
+    box-shadow: 0 6px 14px -6px rgba(68, 83, 239, 0.55), 0 18px 36px -12px rgba(68, 83, 239, 0.85);
+    transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+.pfx-fab:hover { background: linear-gradient(#6672f8, #4f5ef4); }
+.pfx-fab:active { transform: scale(0.94); }
+.pfx-fab svg { width: 24px; height: 24px; }
+/* мгновенный ярлычок слева — тот же вид, что у кнопок столбика (corner-stack.css) */
+.pfx-fab[data-tip]::after {
+    content: attr(data-tip);
+    position: absolute; right: calc(100% + 14px); top: 50%;
+    padding: 5px 9px; border-radius: 8px; white-space: nowrap;
+    font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700; color: #fff;
+    background: rgba(19, 26, 43, 0.92);
+    box-shadow: 0 8px 18px -8px rgba(24, 38, 60, 0.5);
+    opacity: 0; transform: translate(4px, -50%); pointer-events: none;
+    transition: opacity 0.14s, transform 0.14s;
+}
+.pfx-fab[data-tip]:hover::after { opacity: 1; transform: translate(0, -50%); }
+
+/* — узкий десктоп: серые текстовые кнопки сворачиваются до кружков-иконок,
+   ярлычки (data-tip) всплывают сверху; зелёный «Терминал» подпись не теряет —
+   это переход в другой режим, а не настройка (правило «кнопка-действие
+   не клипуется») — */
+@media (min-width: 1024px) and (max-width: 1300px) {
+    #pfActBar .pfab-btn:not(.pfab-term):not(.primary) span,
+    #pfActBar .d3-quick.pf-impbtn span,
+    #pfActBar .d3-quick.pf-impbtn .pf-eyecnt,
+    #pfActBar .d3-quick.pf-impbtn .pf-chev { display: none; }
+    #pfActBar .pfab-btn:not(.pfab-term):not(.primary),
+    #pfActBar .d3-quick.pf-impbtn { width: 38px; padding: 0; justify-content: center; border-radius: 50%; }
+    /* ярлычки свёрнутых кнопок — тот же вид, что у кружков кластера */
+    #pfActBar .pfab-btn[data-tip]::after, #pfActBar .pf-impbtn[data-tip]::after {
+        content: attr(data-tip);
+        position: absolute; left: 50%; bottom: calc(100% + 12px);
+        padding: 5px 9px; border-radius: 8px; white-space: nowrap;
+        font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700; color: #fff;
+        background: rgba(19, 26, 43, 0.92);
+        box-shadow: 0 8px 18px -8px rgba(24, 38, 60, 0.5);
+        opacity: 0; transform: translate(-50%, 4px); pointer-events: none;
+        transition: opacity 0.14s, transform 0.14s;
+    }
+    #pfActBar .pfab-btn[data-tip]:hover::after, #pfActBar .pf-impbtn[data-tip]:hover::after {
+        opacity: 1; transform: translate(-50%, 0);
+    }
+}
+
+/* панель действий: то же стекло, что было у столбика; прижата к углу — столбика нет */
 #pfActBar { display: none; }
 @media (min-width: 1024px) {
     body:has(#panel-portfolios.active) #pfActBar {
-        position: fixed; right: 80px; bottom: 20px; z-index: 879;
+        position: fixed; right: 22px; bottom: 20px; z-index: 879;
         box-sizing: border-box; height: 46px; padding: 3px; border-radius: 999px;
         display: flex; align-items: center; gap: 2px;
         background: var(--card-glass-aurora, rgba(255, 255, 255, 0.72));
@@ -2378,6 +2464,7 @@ body.quiz-mode #pfActBar, body.sd-drawer-open #pfActBar { display: none !importa
 /* кнопка панели: свои .pfab-btn и переиспользованные «Видимость»/«Бэкап»
    (.d3-quick.pf-impbtn из eyeWrapHtml/backupWrapHtml) — один вид на всех */
 #pfActBar .pfab-btn, #pfActBar .d3-quick.pf-impbtn {
+    position: relative;   /* якорь ярлычков data-tip на узком десктопе */
     display: inline-flex; align-items: center; gap: 7px; box-sizing: border-box;
     height: 38px; padding: 0 14px; margin: 0; border: 0; border-radius: 999px;
     background: transparent; color: var(--text-slate, #64748B); cursor: pointer;

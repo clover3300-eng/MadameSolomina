@@ -551,7 +551,7 @@
     var XLSTBL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M9 10v10"/><path d="M15 10v10"/></svg>';
     function backupWrapHtml() {
         return '<div class="pf-impwrap">' +
-            '<button class="d3-quick ghost pf-impbtn" onclick="pfToggleImp(event,\'bkp\')">' + SHIELD_SVG + '<span>Бэкап</span>' + CHEV_SVG + '</button>' +
+            '<button class="d3-quick ghost pf-impbtn" onclick="pfToggleImp(event,\'bkp\')" data-tip="Бэкап">' + SHIELD_SVG + '<span>Бэкап</span>' + CHEV_SVG + '</button>' +
             '<div class="pf-impmenu" id="pfImp-bkp">' +
                 '<div class="pf-impgrp">Резервная копия</div>' +
                 '<button class="pf-impitem" onclick="pfExportData()">' + DL_SVG + 'Выгрузить в файл (JSON)</button>' +
@@ -671,7 +671,7 @@
         // .has-off — янтарная точка «часть портфелей скрыта»: счётчик «2/3» тонет
         // среди подписей, а скрытый портфель без сигнала легко забыть насовсем
         return '<div class="pf-impwrap">' +
-            '<button class="d3-quick ghost pf-impbtn' + (multi && vis < total ? ' has-off' : '') + '" onclick="pfToggleImp(event,\'eye\')">' + EYE_SVG + '<span>Видимость</span>' +
+            '<button class="d3-quick ghost pf-impbtn' + (multi && vis < total ? ' has-off' : '') + '" onclick="pfToggleImp(event,\'eye\')" data-tip="Видимость' + (multi && vis < total ? ' · ' + vis + '/' + total : '') + '">' + EYE_SVG + '<span>Видимость</span>' +
                 (multi && vis < total ? '<i class="pf-eyecnt">' + vis + '/' + total + '</i>' : '') + CHEV_SVG + '</button>' +
             '<div class="pf-impmenu" id="pfImp-eye">' + pfGroup + secGroup + '</div></div>';
     }

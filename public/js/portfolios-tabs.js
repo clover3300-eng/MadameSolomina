@@ -1255,57 +1255,97 @@
         if (e.key === 'Escape' && PF.pfSetDrawerOn) window.pfCloseMenu();
     });
 
-    // ---- R9.1: обучающий призрак «Добавить виджет» (комета летит в столбик) ----
+    // ---- R9.1: обучающий призрак «Добавить виджет» (комета летит в FAB) ----
     // Первый клик по призраку на вкладке-портфеле улетает анимацией в правый нижний
-    // угол — к верхней кнопке стеклянного столбика: так пользователь СВОИМИ ГЛАЗАМИ
+    // угол — к круглому FAB над панелью действий: так пользователь СВОИМИ ГЛАЗАМИ
     // видит, куда переехала точка входа, и призрак больше не занимает сетку.
     // Флаг обучения — локальный (позиция UI, в облако не зеркалится).
     var PFX_FAB_KEY = 'pf_widget_fab_v1';
     function pfxFabSeen() { try { return localStorage.getItem(PFX_FAB_KEY) === '1'; } catch (e) { return false; } }
-    // ---- парящие узлы управления вкладки (мокап «панель управления → парящие кнопки») ----
-    // Столбик #cornerStack — ОБЩИЙ компонент сайта (js/corner-stack.js): фон и тема
-    // живут в нём на всех вкладках, а «Портфели» доливают в слот #cstPage своё
-    // страничное над чертой: виджет / раскладки / замок. Панель действий #pfActBar
-    // (Терминал · Портфель · Видимость · Бэкап) — своя, и обязана жить в <body>:
+    // ---- парящие узлы управления вкладки (мокап «угол: круглый FAB + панель») ----
+    // С 2026-07-22 столбик #cornerStack на «Портфелях» НЕ показывается вовсе:
+    // фон (#bgFab) и тема (#themeFab) ФИЗИЧЕСКИ переезжают в кластер панели
+    // действий (слот #pfabGlobals), а «Виджет» — отдельный круглый FAB #pfxFab,
+    // парящий над правым краем панели. Панель #pfActBar (Терминал | Портфель ·
+    // Видимость · Бэкап | Раскладки · Замок · Фон · Тема) обязана жить в <body>:
     // у панелей вкладок на предках transform из tabFadeIn, он ловит position:fixed.
-    // Видимость обоих узлов гейтит CSS по body:has(#panel-portfolios.active) —
-    // JS только наполняет разметку на каждый рендер. Своп пропускаем, пока HTML
-    // не изменился: фоновый тик котировок не должен без причины закрывать
-    // открытые меню «Видимость»/«Бэкап».
+    // Видимость узлов гейтит CSS по body:has(#panel-portfolios.active) — JS только
+    // наполняет разметку на каждый рендер. Своп пропускаем, пока HTML не изменился:
+    // фоновый тик котировок не должен без причины закрывать открытые меню
+    // «Видимость»/«Бэкап» и рейку фона.
+    // ЛОВУШКА: innerHTML-своп панели УНИЧТОЖИЛ бы живые #bgFab/#themeFab (их
+    // держат site-bg.js/profile-menu.js, пересоздать некому) — перед свопом
+    // возвращаем их в столбик (pfxReleaseGlobals), после — затаскиваем обратно.
+    function pfxAdoptGlobals() {
+        var slot = document.getElementById('pfabGlobals'); if (!slot) return;
+        var bg = document.getElementById('bgFab'), th = document.getElementById('themeFab');
+        if (bg && bg.parentNode !== slot) slot.appendChild(bg);
+        if (th && th.parentNode !== slot) slot.appendChild(th);
+    }
+    function pfxReleaseGlobals() {
+        var stack = window.cornerStack && window.cornerStack.ensure(); if (!stack) return;
+        var bg = document.getElementById('bgFab'), th = document.getElementById('themeFab');
+        if (bg && bg.parentNode !== stack) stack.appendChild(bg);
+        if (th && th.parentNode !== stack) stack.appendChild(th);
+    }
+    // уход с «Портфелей» обязан вернуть фон+тему в столбик: на прочих вкладках
+    // панель скрыта CSS-ом, и кнопки бы пропали вместе с ней. switchTab к моменту
+    // ленивой загрузки этого файла давно определён — мы внешний слой обёрток.
+    (function () {
+        if (window.__pfxGlobalsWrap || typeof window.switchTab !== 'function') return;
+        window.__pfxGlobalsWrap = true;
+        var prev = window.switchTab;
+        window.switchTab = function (tabId) {
+            var r = prev.apply(this, arguments);
+            if (tabId !== 'portfolios') pfxReleaseGlobals();
+            return r;
+        };
+    })();
     function pfxFabSync() {
         if (!pfxWide()) return;
         var empty = !PF.store.items.length;
         // как у прежней полосы: на гейте «Торговли» и у гостя конструктором нечего
-        // настраивать — «Виджет» и «Раскладки» не рисуем (замок остаётся)
+        // настраивать — FAB «Виджет» и «Раскладки» не рисуем (замок остаётся)
         var isTrading = pfxIsTradeTab(pfxEffTab()) && !(PF.pftTradeReady && PF.pftTradeReady());
         var noCfg = isTrading || empty;
         var sumsOn = !!(window.sumsPrivacy && window.sumsPrivacy.isOn && window.sumsPrivacy.isOn());
+        // слот столбика больше не наполняем — страничных кнопок в нём нет
         var host = document.getElementById('cstPage');
-        if (host) {
-            // stopPropagation у «Виджета» — как у прежнего FAB: «клик-вне» пикера на
-            // document мгновенно закрыл бы только что открытую панель (pfLayoutsToggle
-            // глушит всплытие сам — ему хватает переданного event)
-            // data-tip — мгновенный ярлычок слева (corner-stack.css), вместо
-            // нативного title: тот всплывает через секунду и его легко пропустить
-            var stackHtml = (noCfg ? '' :
-                '<button type="button" class="cst-btn cst-widget" id="cstWidgetBtn" onclick="event.stopPropagation();pfxAddWidgetClick()" data-tip="Добавить виджет" aria-label="Добавить виджет">' + PFX_WIDGETPLUS_SVG + '</button>' +
-                '<button type="button" class="cst-btn' + (PF.pfl3Open ? ' on' : '') + '" onclick="pfLayoutsToggle(event)" data-tip="Раскладки" aria-label="Раскладки">' + PFP_SLIDERS_SVG + '</button>') +
-                '<button type="button" class="cst-btn cst-lock' + (sumsOn ? ' on' : '') + '" onclick="pfxToggleSums()" aria-pressed="' + (sumsOn ? 'true' : 'false') + '" data-tip="' + (sumsOn ? 'Показать суммы' : 'Скрыть суммы') + '" aria-label="Скрывать суммы">' + (sumsOn ? PFX_LOCK_SVG : PFX_UNLOCK_SVG) + '</button>';
-            if (host.__cstHtml !== stackHtml) { host.innerHTML = stackHtml; host.__cstHtml = stackHtml; }
-        }
+        if (host && host.__cstHtml !== '') { host.innerHTML = ''; host.__cstHtml = ''; }
         var bar = document.getElementById('pfActBar');
         if (!bar) { bar = document.createElement('div'); bar.id = 'pfActBar'; document.body.appendChild(bar); }
         // ВХОД В ТЕРМИНАЛ — из панели, то есть с ЛЮБОЙ подвкладки, включая «Обзор».
         // Показываем только тем, кто реально может торговать (canTrade в
         // broker-api.js): вести остальных в гейт кнопкой из угла нечестно.
         var canTrade = !!(window.brokerApi && window.brokerApi.canTrade());
+        // data-tip у серых кнопок показывается ТОЛЬКО на узком десктопе, когда
+        // подписи свёрнуты (медиа-правило в portfolios-r7.css); кластер за волоском —
+        // те же кружки .cst-btn, что были в столбике, ярлычки у них всплывают сверху
         var barHtml =
             (canTrade && !empty ? '<button type="button" class="pfab-btn pfab-term" onclick="pftEnterTerminal()" title="Полноэкранный терминал: стакан, заявка и график во весь экран">' + PFX_TERM_SVG + '<span>Терминал</span></button><span class="pfab-hr" aria-hidden="true"></span>' : '') +
             // у гостя «Портфель» — единственное осмысленное действие: подсвечен синим
-            '<button type="button" class="pfab-btn' + (empty ? ' primary' : '') + '" onclick="pfAddPortfolio()" title="Создать новый портфель">' + PF.PLUS_SVG + '<span>Портфель</span></button>' +
+            '<button type="button" class="pfab-btn' + (empty ? ' primary' : '') + '" onclick="pfAddPortfolio()" data-tip="Портфель" title="Создать новый портфель">' + PF.PLUS_SVG + '<span>Портфель</span></button>' +
             (empty ? '' : PF.eyeWrapHtml()) +
-            PF.backupWrapHtml();
-        if (bar.__cstHtml !== barHtml) { bar.innerHTML = barHtml; bar.__cstHtml = barHtml; }
+            PF.backupWrapHtml() +
+            '<span class="pfab-hr" aria-hidden="true"></span>' +
+            (noCfg ? '' :
+                '<button type="button" class="cst-btn' + (PF.pfl3Open ? ' on' : '') + '" onclick="pfLayoutsToggle(event)" data-tip="Раскладки" aria-label="Раскладки">' + PFP_SLIDERS_SVG + '</button>') +
+            '<button type="button" class="cst-btn cst-lock' + (sumsOn ? ' on' : '') + '" onclick="pfxToggleSums()" aria-pressed="' + (sumsOn ? 'true' : 'false') + '" data-tip="' + (sumsOn ? 'Показать суммы' : 'Скрыть суммы') + '" aria-label="Скрывать суммы">' + (sumsOn ? PFX_LOCK_SVG : PFX_UNLOCK_SVG) + '</button>' +
+            '<span class="pfab-globals" id="pfabGlobals"></span>';
+        if (bar.__cstHtml !== barHtml) {
+            pfxReleaseGlobals();   // спасаем фон+тему от innerHTML-свопа
+            bar.innerHTML = barHtml; bar.__cstHtml = barHtml;
+        }
+        pfxAdoptGlobals();
+        // круглый FAB «Добавить виджет» — 58px над правым краем панели.
+        // stopPropagation — как у прежней кнопки столбика: «клик-вне» пикера на
+        // document мгновенно закрыл бы только что открытую панель (pfLayoutsToggle
+        // глушит всплытие сам — ему хватает переданного event)
+        var fabHost = document.getElementById('pfxFab');
+        if (!fabHost) { fabHost = document.createElement('div'); fabHost.id = 'pfxFab'; document.body.appendChild(fabHost); }
+        var fabHtml = noCfg ? '' :
+            '<button type="button" class="pfx-fab" id="cstWidgetBtn" onclick="event.stopPropagation();pfxAddWidgetClick()" data-tip="Добавить виджет" aria-label="Добавить виджет">' + PFX_WIDGETPLUS_SVG + '</button>';
+        if (fabHost.__cstHtml !== fabHtml) { fabHost.innerHTML = fabHtml; fabHost.__cstHtml = fabHtml; }
     }
     window.pfxGhostClick = function (ev) {
         if (ev) ev.stopPropagation();   // «клик-вне» пикера не должен тут же закрыть его
@@ -1317,10 +1357,10 @@
         // клон-«комета» летит fixed-ом в body: body под zoom 0.9 → визуальные px из
         // rect делим на фактор (та же самокалибровка, что у призрака драга, pfdGz)
         var z = r.width / (item.offsetWidth || r.width) || 1;
-        // цель — верхняя кнопка столбика («Виджет»); rect в тех же визуальных px,
-        // что и у ячейки, поэтому делится тем же фактором. Фолбэк-константы — её
-        // расчётное место, если столбик почему-то не отрисован
-        var SZ = 38, RIGHT = 26, BOTTOM = 193;
+        // цель — круглый FAB «Добавить виджет» над панелью; rect в тех же визуальных
+        // px, что и у ячейки, поэтому делится тем же фактором. Фолбэк-константы —
+        // его расчётное место (right 22 · bottom 78 · 58px), если FAB не отрисован
+        var SZ = 58, RIGHT = 22, BOTTOM = 78;
         var tgt = document.getElementById('cstWidgetBtn');
         var fly = document.createElement('div');
         fly.className = 'pfxg-fly';

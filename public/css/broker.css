@@ -1558,6 +1558,7 @@ body:has(#pftBar) #headerWrapper,
 body:has(#pftBar) #sideBar,
 body:has(#pftBar) .ms-nav-widget,
 body:has(#pftBar) #cornerStack,
+body:has(#pftBar) #pfxFab,
 body:has(#pftBar) #pfActBar { display: none !important; }
 /* нижняя плавающая полоса экранов уехала в шапку — и её место под сеткой
    больше не бронируем (74px мёртвой зоны) */
