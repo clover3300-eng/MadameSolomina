@@ -10,6 +10,10 @@
    Полноэкранность даёт прежний гейт body:has(#pftBar) из broker.css:
    id pftBar несёт строка среды .bts-top. */
 
+/* Геометрия мокапа считана при border-box (в мокапе он глобальный, на сайте —
+   нет): без этого паддинги тикета съедали задуманный зазор 52px до графика */
+.bts, .bts *, .bts *::before, .bts *::after { box-sizing: border-box; }
+
 .bts {
     --ink: #0f172a; --mut: #64748b; --dim: #94a3b8;
     --line: #e7ecf3; --hair: rgba(15, 23, 42, 0.07);
@@ -253,6 +257,9 @@
 .bts .seg span.on { background: color-mix(in srgb, var(--grn) 16%, transparent); color: var(--grn); }
 .bts .seg span.on.sell { background: color-mix(in srgb, var(--red) 14%, transparent); color: var(--red); }
 .bts .fld { border: 1px solid var(--line); border-radius: 12px; padding: 9px 13px; }
+/* «не хватает денег»: поле краснеет вместе с подписью (мокап 08) */
+.bts .fld.err { border-color: color-mix(in srgb, var(--red) 50%, transparent); }
+.bts .fld.err .fld-cap { color: var(--red); }
 .bts .fld em {
     display: flex; align-items: center; font-style: normal;
     font: 700 9.5px var(--font-ui); letter-spacing: 0.09em; text-transform: uppercase;
@@ -268,6 +275,8 @@
 .bts .fld-in input:focus { outline: none; }
 .bts .fld-in input::placeholder { color: var(--dim); }
 .bts .fld-in u { text-decoration: none; font: 400 13px var(--font-ui); color: var(--mut); white-space: nowrap; }
+/* переключатель единицы ₽ ⇄ лоты — прямо в поле (мокап 08) */
+.bts .fld-sw { margin-left: auto; font: 600 10px var(--font-ui); color: var(--acc); white-space: nowrap; cursor: pointer; user-select: none; }
 .bts .presets { display: flex; gap: 6px; }
 .bts .pch {
     flex: 1; text-align: center;
@@ -283,6 +292,17 @@
 .bts .apx { font: 400 11.5px/1.5 var(--font-ui); color: var(--mut); }
 .bts .apx b { font: 600 12px var(--font-num); color: var(--ink); }
 .bts .apx .mut { color: var(--dim); }
+.bts .apx:empty, .bts .presets:empty { display: none; }
+/* спред-гвард: предупреждение, не замок (мокап 08) */
+.bts .warn {
+    display: flex; align-items: center; gap: 8px;
+    font: 400 11px/1.45 var(--font-ui); color: var(--amb);
+    background: color-mix(in srgb, var(--amb) 9%, transparent);
+    border-radius: 10px; padding: 8px 11px;
+}
+.bts .warn:empty { display: none; }
+.bts .warn b { font: 600 11px var(--font-num); }
+.bts .warn u { text-decoration: none; font-weight: 700; color: var(--acc); margin-left: auto; white-space: nowrap; cursor: pointer; }
 .bts .tkt-space { flex: 1; }
 /* глоссарий новичка: пунктир + тултип одной фразой */
 .bts .gl {
