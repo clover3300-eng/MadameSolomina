@@ -153,6 +153,10 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
           background:color-mix(in srgb,var(--grn) 12%,transparent);border-radius:9px;padding:6px 11px;margin-bottom:7px}
 .day-chip.dn{color:var(--red);background:color-mix(in srgb,var(--red) 10%,transparent)}
 .day-chip em{font-style:normal;font-family:var(--fU);font-size:10px;font-weight:600;color:var(--mut)}
+/* факты дня — тихая строка под ценой, наполняет «Старт» без карточек */
+.facts{display:flex;gap:30px;margin-top:20px}
+.fact em{display:block;font-style:normal;font-size:9px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);margin-bottom:3px}
+.fact b{font-family:var(--fN);font-size:13px;font-weight:600;color:var(--mut)}
 .chart-wrap{position:relative;margin-top:8px}
 .chart-wrap svg{display:block;width:100%}
 .ax-dates{display:flex;justify-content:space-between;font-family:var(--fN);font-size:9.5px;color:var(--dim);padding:6px 2px 0}
@@ -199,6 +203,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 /* тикет */
 .tkt{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:11px;
      backdrop-filter:blur(14px);box-shadow:0 24px 60px -30px rgba(0,0,0,.55)}
+.tkt.tall{padding:20px;gap:13px}
 .scr:not(.night) .tkt{box-shadow:0 24px 54px -30px rgba(24,38,60,.45)}
 .tkt-h{display:flex;align-items:center;gap:9px}
 .tkt-h b{font-family:var(--fT);font-weight:400;font-size:16px}
@@ -458,7 +463,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   <div class="scroller"><div class="scr"><div id="m2"></div></div></div>
   <div class="notes">
     <div class="note"><i>1</i><span>Строка среды 52px — только среда: выход, омнибокс, связь, песочница, тумблер темы, аватар. Деньги из шапки уехали к местам решения: «свободно» — к полю суммы тикета, «портфель» — к полосе позиций.</span></div>
-    <div class="note"><i>2</i><span>Цена — самое крупное число экрана (58px, моно). Чип дня рядом, а не в таблице. График — линия с градиентом; свечи появятся на «Разгоне».</span></div>
+    <div class="note"><i>2</i><span>Цена — самое крупное число экрана (58px, моно), чип дня рядом. Под ними — тихая строка фактов дня (открытие, диапазон, объём, дивиденд) без карточек. График — линия на весь холст; свечи появятся на «Разгоне».</span></div>
     <div class="note"><i>3</i><span>Тикет наследует финал раунда 1: пресеты сумм, «≈ 110 акций» с объяснением лотности, «останется свободно», комиссия включена, «Максимум» считает за вычетом комиссии.</span></div>
     <div class="note"><i>4</i><span>Гвард свежести из раунда 1 живёт в тикете: точка «цена живая» — тот же <code style="font-family:var(--fN);font-size:11px">pftLinkState</code>; замерла — кнопка гаснет (экран 08).</span></div>
     <div class="note"><i>5</i><span>Пилюля насыщенности в углу — честный указатель ступени и ручной вход в следующую («открыть больше»).</span></div>
@@ -737,11 +742,23 @@ function scalePts(w, h){
 }
 var DAY = ['10:00','11:30','13:00','14:30','16:00','17:30','18:40'];
 
+/* ─── факты дня: тихая строка под ценой («Старт») ─── */
+function factsRow(down){
+    function f(em, b){ return '<span class="fact"><em>' + em + '</em><b>' + b + '</b></span>'; }
+    return '<div class="facts">'
+        + f('Открытие', down ? '270,60 ₽' : '268,90 ₽')
+        + f('Диапазон дня', down ? '261,85 – 270,90' : '267,80 – 271,60')
+        + f('Объём', down ? '132,6 млрд ₽' : '84,3 млрд ₽')
+        + f('За год', down ? '+29 %' : '+37 %')
+        + f('Дивиденд', '34,84 ₽ · июль')
+        + '</div>';
+}
+
 /* ─── тикет ─── */
 function ticket(o){
     o = o || {};
     var sell = o.side === 'sell';
-    var h = '<div class="tkt"' + (o.style ? ' style="' + o.style + '"' : '') + '>'
+    var h = '<div class="tkt' + (o.tall ? ' tall' : '') + '"' + (o.style ? ' style="' + o.style + '"' : '') + '>'
         + '<div class="tkt-h"><b>Сделка</b><span class="fresh"><i></i>цена живая</span></div>'
         + '<div class="seg"><span class="' + (sell ? '' : 'on') + '">Купить</span><span class="' + (sell ? 'on sell' : '') + '">Продать</span></div>';
     if (o.price)
@@ -771,6 +788,8 @@ function ticket(o){
     if (o.prot)
         h += '<div class="fld"><em>' + (o.npin4 ? '<span class="npin" style="margin-right:5px">4</span>' : '') + 'Защита позиции</em>'
            + '<div class="prot"><b>тейк 285 ₽ · стоп 262 ₽</b><u>изменить</u></div></div>';
+    /* высокий тикет: ввод сверху, деньги и кнопка прижаты к низу — воздух между ними */
+    if (o.tall) h += '<div style="flex:1"></div>';
     /* деньги сходятся: 418 240 − итог кнопки (покупка) / + выручка за вычетом комиссии (продажа);
        o.down — красный день, цена 262,10 */
     h += '<div class="rest"><span>' + (sell ? 'Станет свободно' : 'Останется свободно') + '</span><b>'
@@ -891,14 +910,16 @@ function stagePill(name, next){
 /* ═════════════ 03 · ступень 1 ═════════════ */
 function scene1(o){
     o = o || {};
-    /* красный день: та же прогулка, отражённая по вертикали; пунктир — вчерашнее закрытие */
+    /* линия растянута на весь вертикальный диапазон холста — сцена не выглядит пустой;
+       красный день — та же прогулка, отражённая по вертикали; пунктир — вчерашнее закрытие */
     var pts = o.down
-        ? PTS.map(function(p){ return [Math.round(p[0] * 920 / 644), Math.round((490 - p[1]) * 520 / 430)]; })
-        : scalePts(920, 520);
+        ? PTS.map(function(p){ return [Math.round(p[0] * 920 / 644), Math.round((490 - p[1] - 150) * 2.3 + 30)]; })
+        : PTS.map(function(p){ return [Math.round(p[0] * 920 / 644), Math.round((p[1] - 150) * 2.3 + 30)]; });
     var hero = '<div style="position:absolute;left:56px;right:456px;top:96px;bottom:96px;display:flex;flex-direction:column">'
         + instrHead({ down: o.down })
-        + '<div class="chart-wrap" style="flex:1;margin-top:22px">' + lineChart(pts, 920, 520, o.down ? 208 : 351)
-        + '<span class="ptag" style="top:' + (o.down ? '70%' : '39%') + '">' + (o.down ? '262,10' : '271,45') + '</span>'
+        + factsRow(o.down)
+        + '<div class="chart-wrap" style="flex:1;margin-top:20px">' + lineChart(pts, 920, 520, o.down ? 74 : 430)
+        + '<span class="ptag" style="top:' + (o.down ? '78%' : '15%') + '">' + (o.down ? '262,10' : '271,45') + '</span>'
         + dates(DAY) + '</div></div>';
     var h = '<div class="glow"></div>' + topbar()
         + hero
@@ -915,7 +936,7 @@ document.getElementById('m2').innerHTML = scene1({ pins: 1, hov: 1 });
 function scene2(o){
     o = o || {};
     /* стакан — правый край того же холста: одна плоскость с графиком, общая шапка бумаги */
-    var hero = '<div style="position:absolute;left:56px;right:424px;top:88px;bottom:96px;display:flex;flex-direction:column">'
+    var hero = '<div style="position:absolute;left:56px;right:456px;top:88px;bottom:96px;display:flex;flex-direction:column">'
         + '<div class="pp-row">'
         + '<span class="pp on">SBER <em class="pup">+1,2 %</em></span>'
         + '<span class="pp">LKOH <em class="pdn">−0,4 %</em></span>'
@@ -931,14 +952,14 @@ function scene2(o){
         + tapeRow() + '</div>';
     var h = '<div class="glow"></div>' + topbar({ dark: o.dark })
         + hero
-        + ticket({ price: 1, avg: 1, style: 'position:absolute;right:36px;top:102px;width:368px' })
+        + ticket({ price: 1, avg: 1, tall: 1, style: 'position:absolute;right:36px;top:102px;bottom:96px;width:400px' })
         + '<div class="unlock" style="left:56px;bottom:66px"><span class="uic">≡</span><div>'
         + '<h5>Открыть ленту всех сделок?</h5><p>Вы часто смотрите пульс. Полная лента покажет каждую сделку по бумаге отдельной колонкой.</p>'
         + '<div class="ub-row"><span class="ub pri">Открыть</span><span class="ub gh">Не сейчас</span></div></div></div>'
         + posStrip() + stagePill('Разгон', 'открыть больше');
     if (o.pins)
-        h += pin(1, 756, 267, 1) + pin(2, 26, 786, 1) + pin(3, 26, 708, 1)
-           + pin(4, 330, 94, 1) + pin(5, 1022, 230, 1) + pin(6, 510, 556, 1) + pin(7, 204, 272, 1);
+        h += pin(1, 724, 267, 1) + pin(2, 26, 786, 1) + pin(3, 26, 708, 1)
+           + pin(4, 330, 94, 1) + pin(5, 971, 238, 1) + pin(6, 478, 556, 1) + pin(7, 204, 272, 1);
     return h;
 }
 document.getElementById('m3').innerHTML = scene2({ pins: 1 });
