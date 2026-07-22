@@ -171,6 +171,69 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .nw.narrow .nw-nt{white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 
 /* ======================================================================
+   ПРОДВИНУТЫЕ ВАРИАНТЫ: дайджест (nwx-*), реакция цены (nwr-*), сторис (nws-*)
+   ====================================================================== */
+/* --- вариант В: герой-«дайджест» — самая важная новость дня --- */
+.nwx{position:relative;margin:12px 0 2px;border:1px solid var(--line);border-radius:14px;padding:13px 16px 14px;
+     background:linear-gradient(135deg,color-mix(in srgb,var(--acc) 6%,var(--card)),var(--card) 62%)}
+.nwx-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:800;letter-spacing:.06em;
+           text-transform:uppercase;color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,transparent);
+           border-radius:999px;padding:3px 9px;margin-bottom:8px}
+.nwx-badge svg{width:10px;height:10px}
+.nwx-t{font-size:15px;font-weight:650;line-height:1.35;color:var(--ink);letter-spacing:-.005em;text-wrap:balance}
+.nwx-why{margin-top:9px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.nwx-why b{font-family:var(--fN);font-size:12px;font-weight:700}
+.nwx-why .chg{font-family:var(--fN);font-size:11.5px;font-weight:600}
+.nwx-why .chg.pos{color:var(--grn)} .nwx-why .chg.neg{color:var(--red)}
+.nwx-why .w{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--mut)}
+.nwx-why .w i{width:7px;height:7px;border-radius:50%;flex:none}
+.nwx-why .w b{font-size:11px}
+.nwx-meta{margin-left:auto;display:flex;align-items:center;gap:7px}
+
+/* --- вариант Г: колонка «реакция цены» — интрадей-спарклайн + сдвиг с новости --- */
+.nwr-row{grid-template-columns:88px minmax(0,1fr) 100px}
+.nwr-re{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.nwr-spark{width:96px;height:26px;display:block;overflow:visible}
+.nwr-spark polyline{fill:none;stroke:var(--dim);stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}
+.nwr-spark circle{fill:var(--acc);stroke:var(--card);stroke-width:1.5}
+.nwr-rx{font-family:var(--fN);font-size:10px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1;color:var(--dim)}
+.nwr-rx.pos{color:var(--grn)} .nwr-rx.neg{color:var(--red)}
+.nwr-rx span{font-family:var(--fU);font-weight:600;color:var(--dim);letter-spacing:0}
+.nw-nmeta .nw-pf{margin-left:2px}
+/* точка портфеля в мете — тоже <i>: снять с неё стиль янтарной пилюли источника */
+.nw-nmeta .nw-pf i{padding:0;border-radius:50%;background:none}
+
+/* --- вариант Д: «сторис»-полоса бумаг + фокус бумаги со всеми новостями --- */
+.nws-strip{display:flex;align-items:flex-start;gap:13px;margin:14px 0 2px;padding:2px 2px 12px;
+           border-bottom:1px solid var(--hair);overflow-x:auto;scrollbar-width:none}
+.nws-it{display:flex;flex-direction:column;align-items:center;gap:6px;width:54px;flex:none}
+.nws-ava{position:relative;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;
+         font-family:var(--fT);font-size:17px;line-height:1;color:#fff;
+         box-shadow:0 0 0 2px var(--card),0 0 0 4px var(--line)}
+.nws-it.unread .nws-ava{box-shadow:0 0 0 2px var(--card),0 0 0 4px var(--acc)}
+.nws-it.sel .nws-nm{color:var(--ink);font-weight:700}
+.nws-cnt{position:absolute;top:-4px;right:-6px;min-width:17px;height:17px;border-radius:999px;background:var(--ink);
+         color:var(--card);font-family:var(--fN);font-size:9.5px;font-weight:700;display:grid;place-items:center;
+         padding:0 4px;box-shadow:0 0 0 2px var(--card)}
+.nws-nm{font-family:var(--fN);font-size:10px;font-weight:600;color:var(--mut);line-height:1}
+.nws-all{width:44px;height:44px;border-radius:50%;border:1px dashed color-mix(in srgb,var(--dim) 60%,transparent);
+         display:grid;place-items:center;color:var(--mut);font-size:10px;font-weight:700;background:transparent}
+/* фокус бумаги: шапка-строка + принадлежность + все новости */
+.nws-fh{display:flex;align-items:baseline;gap:9px;margin:14px 2px 2px}
+.nws-fh b{font-family:var(--fN);font-size:14px;font-weight:700}
+.nws-fh span{font-size:12px;font-weight:600;color:var(--mut);flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nws-fh .chg{font-family:var(--fN);font-size:12px;font-weight:700;flex:none}
+.nws-fh .chg.pos{color:var(--grn)} .nws-fh .chg.neg{color:var(--red)}
+.nws-fpos{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:6px 2px 4px;font-size:11px;color:var(--mut)}
+.nws-fpos b{font-family:var(--fN);font-size:11px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.nws-frow{position:relative;padding:10px 2px 10px 16px;border-bottom:1px solid var(--hair)}
+.nws-frow:last-child{border-bottom:0}
+.nws-frow .nw-nt{white-space:normal;overflow:visible}
+.nws-dot{position:absolute;left:1px;top:16px;width:7px;height:7px;border-radius:50%;background:var(--acc)}
+.nws-frow.read .nws-dot{display:none}
+.nws-frow.read .nw-nt{color:var(--mut)}
+
+/* ======================================================================
    «КАК СЕЙЧАС» (cur-*) — для сравнения
    ====================================================================== */
 .cur{width:640px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px 22px 16px;
@@ -285,6 +348,58 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   <div class="scroller"><div class="scr" id="m5"></div></div>
 </div>
 
+<!-- ПРОДВИНУТЫЕ ВАРИАНТЫ -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">ДАЛЬШЕ</span><h2>Продвинутые варианты</h2><span class="mk-tag warn">смелее</span></div>
+  <p class="mk-sub">Три хода поверх варианта А — каждый добавляет новый источник данных или стейт:
+     <b>дайджест</b> — скоринг важности новости, <b>реакция цены</b> — интрадей-свечи MOEX ISS,
+     <b>сторис</b> — прочитанность и ВСЕ новости бумаги (массив уже приходит, кэшируем только первую).
+     Они совместимы между собой и с вариантом А: дайджест-шапка + лента с реакцией, сторис — как режим
+     узкой колонки. Можно утвердить любую комбинацию.</p>
+</div>
+
+<!-- ЭКРАН 6 -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">ЭКРАН 6</span><h2>Вариант В — «Дайджест»: главная новость дня</h2><span class="mk-tag">скоринг</span></div>
+  <p class="mk-sub">Виджет сам выбирает самую значимую новость: score = вес позиции × |движение цены| × свежесть.
+     Герой-карточка сверху — заголовок целиком, тикер, изменение и «почему это главное» (вес в портфелях).
+     Ниже — обычная лента варианта А без дубля героя.</p>
+  <div class="scroller"><div class="scr" id="m6"></div></div>
+  <div class="notes">
+    <div class="note"><i>1</i>Скоринг — чистая функция от уже собранного: map[tk].val (вес), quotes[tk].chgPct (движение), newsHtmlCache[tk].date (свежесть). Никаких новых запросов.</div>
+    <div class="note"><i>2</i>Герой перерисовывается при смене фильтра портфеля: «главное» считается среди бумаг выбранного портфеля.</div>
+    <div class="note"><i>3</i>Акцентная подложка героя — 6% тона, в духе «Топ 1» из «Избранного»; на тёмном глушится так же, как экран 4.</div>
+  </div>
+</div>
+
+<!-- ЭКРАН 7 -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">ЭКРАН 7</span><h2>Вариант Г — реакция цены на новость</h2><span class="mk-tag">новые данные</span></div>
+  <p class="mk-sub">Справа у каждой строки — интрадей-спарклайн с точкой в момент публикации и сдвиг цены
+     «с новости»: видно, отыграл ли рынок событие. Принадлежность портфелям уходит в мету строкой
+     точек-имён. Самый «терминальный» из вариантов.</p>
+  <div class="scroller"><div class="scr" id="m7"></div></div>
+  <div class="notes">
+    <div class="note"><i>1</i>Свечи — MOEX ISS /candles interval=10 за день: тот же пайплайн, что спарклайны «Избранного» (очередь на 2 запроса, кэш на сессию).</div>
+    <div class="note"><i>2</i>Точка = свеча, ближайшая к дате новости; «с новости» = текущая цена против close той свечи. Для вчерашних и старше — сдвиг за день после публикации.</div>
+    <div class="note"><i>3</i>Линия — нейтрально-серая, цвет несёт только цифра сдвига: не раскрашиваем весь виджет (минимал-язык терминала).</div>
+  </div>
+</div>
+
+<!-- ЭКРАН 8 -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">ЭКРАН 8</span><h2>Вариант Д — «сторис» бумаг + фокус со всеми новостями</h2><span class="mk-tag">прочитанность</span></div>
+  <p class="mk-sub">Полоса монограмм как сторис: акцентное кольцо = есть непрочитанное, бейдж — число новостей
+     за неделю, серое кольцо — всё прочитано. Клик по бумаге — фокус: принадлежность с весами и ВСЕ её
+     новости (не только последняя), непрочитанные — с точкой. «Все» возвращает ленту варианта А.</p>
+  <div class="scroller"><div class="scr" id="m8"></div></div>
+  <div class="notes">
+    <div class="note"><i>1</i>loadNewsForTicker уже возвращает массив целиком — buildNewsEntry кэширует только news[0]. Расширяем кэш, запросов больше не становится.</div>
+    <div class="note"><i>2</i>Прочитанность — localStorage nw_read_v1 (набор ссылок), в облако через WATCH cloud-sync; открытие новости или фокуса бумаги гасит кольцо.</div>
+    <div class="note"><i>3</i>Монограмма — буква тикера на детерминированном цвете, как в «Избранном» R10. В узкой колонке сторис-полоса — естественный верхний ярус.</div>
+  </div>
+</div>
+
 <!-- карта данных -->
 <div class="mk">
   <div class="mk-h"><span class="mk-n">ДАННЫЕ</span><h2>Поле макета → откуда берётся</h2></div>
@@ -299,7 +414,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <tr><td>Полный заголовок + ссылка</td><td><code>buildNewsEntry()</code> → <code>title/link/rel</code> (Smart-Lab)</td><td class="ok">да</td></tr>
     <tr><td>«Нет свежих новостей», внешние тикеры</td><td><code>e.none</code>, <code>pfdNewsCustom</code> + «+» в шапке</td><td class="ok">да</td></tr>
     <tr><td>Порядок ленты до загрузки новостей</td><td>очередь <code>newsQueue</code> (2 запроса, Apps Script медленный): даты приходят постепенно — строки всплывают из группы «Загружается» без прыжков уже показанных</td><td class="no">ловушка реализации</td></tr>
-    <tr><td>Больше одной новости на тикер</td><td><code>loadNewsForTicker()</code> возвращает массив, кэшируется только <code>news[0]</code> — задел на «все новости бумаги» в ховере, в этот заход не делаем</td><td class="no">за скоупом</td></tr>
+    <tr><td>Больше одной новости на тикер</td><td><code>loadNewsForTicker()</code> возвращает массив, кэшируется только <code>news[0]</code> — для варианта Д расширить кэш, запросов не прибавится</td><td class="ok">данные приходят</td></tr>
+    <tr><td>Скоринг «главного» (вариант В)</td><td>чистая функция: <code>map[tk].val</code> × <code>|quotes[tk].chgPct|</code> × свежесть из <code>newsHtmlCache[tk].date</code></td><td class="no">вычисляется, новое</td></tr>
+    <tr><td>Интрадей-спарклайн + «с новости» (вариант Г)</td><td>MOEX ISS <code>/candles</code> interval=10 — пайплайн спарклайнов «Избранного» R10 (очередь, кэш на сессию)</td><td class="no">новый фетч</td></tr>
+    <tr><td>Прочитанность (вариант Д)</td><td>новый ключ <code>nw_read_v1</code> в localStorage + WATCH cloud-sync (не писать из самого cloud-sync)</td><td class="no">новый стейт</td></tr>
+    <tr><td>Монограммы сторис</td><td>буква тикера + детерминированный цвет — как логотипы «Избранного» R10</td><td class="ok">приём готов</td></tr>
   </table>
 </div>
 
@@ -430,6 +549,94 @@ function widgetB(){
     '<div class="nw-list" style="margin-top:2px">' + out + '</div></div>';
 }
 
+/* ---------- продвинутые варианты ---------- */
+var STAR = '<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+/* В: герой-дайджест (SBER — максимум вес × движение × свежесть) + лента без дубля */
+function digestWidget(){
+  var d = ROWS[0];
+  var hero = '<div class="nwx">' +
+    '<div class="nwx-badge">' + STAR + 'Главное по вашим позициям</div>' +
+    '<div class="nwx-t">' + d.full + '</div>' +
+    '<div class="nwx-why"><b>' + d.tk + '</b><span class="chg ' + d.dir + '">' + d.chg + ' сегодня</span>' +
+      d.pfs.map(function (k) {
+        return '<span class="w"><i style="background:' + PFS[k].c + '"></i>' + PFS[k].nm + '&nbsp;<b>' + d.wgt[k] + '</b></span>';
+      }).join('') +
+      '<span class="nwx-meta nw-nmeta"><i>Smart-Lab</i><em>' + d.rel + '</em>' + I.go + '</span></div></div>';
+  var cur = null, out = '';
+  ROWS.slice(1).forEach(function (r) {
+    if (r.day !== cur){ cur = r.day; out += day(r.day, r.none || r.ext); }
+    out += rowHtml(r, {});
+  });
+  return '<div class="nw">' +
+    headHtml('главная новость дня — по весу позиции, движению цены и свежести; ниже — вся лента') +
+    pillsHtml(null) + hero + '<div class="nw-list">' + out + '</div></div>';
+}
+/* Г: интрадей-спарклайн с точкой публикации + сдвиг «с новости» */
+var RX = {
+  SBER:{ sp:'0,20 10,18 20,19 28,16 34,14 44,12 54,13 64,10 74,11 84,8 96,7', dx:34, dy:14, rx:'+1,4%', dir:'pos' },
+  LKOH:{ sp:'0,12 10,13 20,11 30,14 40,15 50,17 60,16 70,18 80,17 88,19 96,19', dx:40, dy:15, rx:'−0,6%', dir:'neg' },
+  GAZP:{ sp:'0,10 12,12 24,11 36,14 48,16 60,15 72,17 84,18 96,17', dx:12, dy:12, rx:'−0,9%', dir:'neg' },
+  OZON:{ sp:'0,22 12,20 24,21 36,17 48,14 60,15 72,11 84,9 96,8', dx:24, dy:21, rx:'+3,2%', dir:'pos' },
+  TATN:{ sp:'0,16 12,15 24,17 36,14 48,15 60,13 72,14 84,12 96,13', dx:36, dy:14, rx:'+0,5%', dir:'pos' },
+  NVTK:{ sp:'0,15 12,14 24,16 36,15 48,13 60,14 72,12 84,13 96,12', dx:0,  dy:15, rx:'+0,3%', dir:'pos' }
+};
+function sparkRe(tk){
+  var r = RX[tk]; if (!r) return '';
+  return '<div class="nwr-re"><svg class="nwr-spark" viewBox="0 0 96 26" preserveAspectRatio="none">' +
+    '<polyline points="' + r.sp + '"/><circle cx="' + r.dx + '" cy="' + r.dy + '" r="2.4"/></svg>' +
+    '<span class="nwr-rx ' + r.dir + '"><span>с новости&nbsp;</span>' + r.rx + '</span></div>';
+}
+function reactRow(d){
+  var m = d.none ? '' :
+    '<div class="nw-nmeta"><i>Smart-Lab</i><em>' + d.rel + '</em>' +
+    (d.ext ? '<span class="nw-ext">внеш.</span>' : d.pfs.map(pfTag).join('')) + I.go + '</div>';
+  return '<div class="nw-row nwr-row' + (d.none ? ' none' : '') + '">' +
+    '<div class="nw-tkb"><b class="nw-tk">' + d.tk + '</b><span class="nw-chg ' + d.dir + '">' + d.chg + '</span></div>' +
+    '<div class="nw-news"><div class="nw-nt">' + d.nt + '</div>' + m + '</div>' +
+    (d.none ? '<span></span>' : sparkRe(d.tk)) + '</div>';
+}
+function reactWidget(){
+  var cur = null, out = '';
+  ROWS.forEach(function (d) {
+    if (d.day !== cur){ cur = d.day; out += day(d.day, d.none || d.ext); }
+    out += reactRow(d);
+  });
+  return '<div class="nw">' +
+    headHtml('лента с реакцией цены: точка — момент публикации, цифра — сдвиг цены с новости') +
+    pillsHtml(null) + '<div class="nw-list">' + out + '</div></div>';
+}
+/* Д: сторис-полоса + фокус бумаги со всеми новостями */
+var MONO = { SBER:'#16a34a', LKOH:'#b91c1c', GAZP:'#334155', OZON:'#7c3aed', TATN:'#0e7490', NVTK:'#b45309', MGNT:'#be185d' };
+function storiesWidget(){
+  var strip = '<div class="nws-strip">' +
+    '<div class="nws-it"><span class="nws-all">Все</span><span class="nws-nm">лента</span></div>' +
+    ROWS.filter(function (d) { return !d.none; }).map(function (d, i) {
+      var unread = i < 4, sel = d.tk === 'SBER';
+      var cnt = { SBER:3, LKOH:1, GAZP:2, OZON:1, TATN:1, NVTK:1 }[d.tk];
+      return '<div class="nws-it' + (unread ? ' unread' : '') + (sel ? ' sel' : '') + '">' +
+        '<span class="nws-ava" style="background:' + MONO[d.tk] + '">' + d.tk.charAt(0) +
+        (cnt > 1 ? '<span class="nws-cnt">' + cnt + '</span>' : '') + '</span>' +
+        '<span class="nws-nm">' + d.tk + '</span></div>';
+    }).join('') + '</div>';
+  var d = ROWS[0];
+  var focus = '<div class="nws-fh"><b>SBER</b><span>Сбербанк России ПАО ао</span><span class="chg pos">+0,8%</span></div>' +
+    '<div class="nws-fpos"><span>Позиция&nbsp;<b>124 800 ₽</b></span>' +
+      d.pfs.map(function (k) {
+        return '<span class="nw-pf"><i style="background:' + PFS[k].c + '"></i><span>' + PFS[k].nm + '&nbsp;</span><b>' + d.wgt[k] + '</b></span>';
+      }).join('') + '</div>' +
+    '<div class="nw-list">' +
+      '<div class="nws-frow"><span class="nws-dot"></span><div class="nw-nt">' + d.full + '</div>' +
+        '<div class="nw-nmeta"><i>Smart-Lab</i><em>2 ч назад</em>' + I.go + '</div></div>' +
+      '<div class="nws-frow"><span class="nws-dot"></span><div class="nw-nt">Сбер запускает семейную ипотеку с комбинированной ставкой на новостройки</div>' +
+        '<div class="nw-nmeta"><i>Smart-Lab</i><em>вчера</em>' + I.go + '</div></div>' +
+      '<div class="nws-frow read"><span class="nws-dot"></span><div class="nw-nt">Набсовет Сбера утвердил дату ГОСА и рекомендацию по дивидендам за 2025 год</div>' +
+        '<div class="nw-nmeta"><i>Smart-Lab</i><em>4 дн назад</em>' + I.go + '</div></div>' +
+    '</div>';
+  return '<div class="nw">' +
+    headHtml('кольцо — есть непрочитанное, бейдж — сколько новостей; клик по бумаге — все её новости') +
+    strip + focus + '</div>';
+}
+
 /* ---------- «как сейчас» ---------- */
 function curWidget(){
   var chips = '<span class="cur-pk on">Все</span>' + ROWS.map(function (d) {
@@ -458,6 +665,9 @@ document.getElementById('m2').innerHTML = widgetA('', { hoverTk:'SBER' });
 document.getElementById('m3').innerHTML = widgetB();
 document.getElementById('m4').innerHTML = widgetA('', { pick:null });
 document.getElementById('m5').innerHTML = widgetA('narrow', {});
+document.getElementById('m6').innerHTML = digestWidget();
+document.getElementById('m7').innerHTML = reactWidget();
+document.getElementById('m8').innerHTML = storiesWidget();
 </script>
 </body>
 </html>
