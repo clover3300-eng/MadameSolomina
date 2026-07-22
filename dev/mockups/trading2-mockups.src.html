@@ -121,9 +121,6 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
       border-radius:12px;padding:8px 12px;font-size:12.5px;color:var(--dim)}
 .omni kbd{margin-left:auto;font-family:var(--fN);font-size:10px;border:1px solid var(--line);border-radius:6px;padding:2px 6px;color:var(--dim)}
 .tb2-right{display:flex;align-items:center;gap:13px}
-.tb2-money{display:flex;align-items:baseline;gap:6px;font-size:11px;color:var(--dim)}
-.tb2-money b{font-family:var(--fN);font-size:12.5px;font-weight:600;color:var(--ink)}
-.tb2-sep{width:1px;height:16px;background:var(--line)}
 .tb2-link{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:600;color:var(--grn)}
 .tb2-link i{width:6px;height:6px;border-radius:50%;background:var(--grn);box-shadow:0 0 0 3px color-mix(in srgb,var(--grn) 18%,transparent)}
 .tb2-sand{font-size:8.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--amb);border:1px solid color-mix(in srgb,var(--amb) 45%,transparent);border-radius:999px;padding:3px 8px}
@@ -149,7 +146,6 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .ih-per{display:flex;gap:2px;border:1px solid var(--line);border-radius:10px;padding:3px;background:var(--card)}
 .ih-per span{font-size:10.5px;font-weight:600;color:var(--dim);border-radius:7px;padding:4px 9px}
 .ih-per span.on{background:color-mix(in srgb,var(--acc) 16%,transparent);color:var(--ink)}
-.ih-tool{width:28px;height:28px;border-radius:9px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--dim);font-size:12px}
 .price-row{display:flex;align-items:flex-end;gap:16px;margin-top:14px}
 .price-big{font-family:var(--fN);font-size:58px;font-weight:700;line-height:.95;letter-spacing:-.02em}
 .price-big small{font-size:24px;font-weight:500;color:var(--mut)}
@@ -159,6 +155,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .chart-wrap{position:relative;margin-top:8px}
 .chart-wrap svg{display:block;width:100%}
 .ax-dates{display:flex;justify-content:space-between;font-family:var(--fN);font-size:9.5px;color:var(--dim);padding:6px 2px 0}
+/* индикаторы — встроены в холст графика, не отдельные панели */
+.ind-row{position:absolute;left:0;top:4px;display:flex;gap:6px;z-index:7}
+.ind{font-size:9px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--dim);
+     background:color-mix(in srgb,var(--mut) 10%,transparent);border-radius:6px;padding:3px 8px}
+.ind.on{color:var(--acc);background:color-mix(in srgb,var(--acc) 10%,transparent)}
 .ptag{position:absolute;right:0;font-family:var(--fN);font-size:10.5px;font-weight:700;color:#fff;background:var(--acc);border-radius:6px;padding:2px 7px;transform:translateY(-50%)}
 
 /* заявка на графике: пунктирная линия на своей цене, ярлык с отменой; призрак — черновик по клику */
@@ -199,7 +200,8 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .seg span.on{background:color-mix(in srgb,var(--grn) 16%,transparent);color:var(--grn)}
 .seg span.on.sell{background:color-mix(in srgb,var(--red) 14%,transparent);color:var(--red)}
 .fld{border:1px solid var(--line);border-radius:12px;padding:9px 13px}
-.fld em{display:block;font-style:normal;font-size:9.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);margin-bottom:4px}
+.fld em{display:flex;align-items:center;font-style:normal;font-size:9.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);margin-bottom:4px}
+.fld-cap{margin-left:auto;font-family:var(--fN);font-size:10px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--mut)}
 .fld-in{display:flex;align-items:baseline;gap:6px}
 .fld-in b{font-family:var(--fN);font-size:23px;font-weight:600}
 .fld-in u{text-decoration:none;font-size:13px;color:var(--mut)}
@@ -231,8 +233,9 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .prot u{text-decoration:none;margin-left:auto;color:var(--acc);font-weight:600}
 .npin{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:var(--acc);color:#fff;font-family:var(--fN);font-size:9px;font-weight:700;flex:none}
 
-/* стакан-глубина */
+/* стакан-глубина; .depth-fused — правый край графика: одна плоскость, без своей карточки */
 .depth{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;backdrop-filter:blur(14px)}
+.depth-fused{background:none;border:0;border-radius:0;backdrop-filter:none;padding:0 0 0 20px;border-left:1px solid var(--hair)}
 .d-h{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
 .d-h b{font-family:var(--fT);font-weight:400;font-size:14px}
 .d-h em{font-style:normal;font-size:9.5px;color:var(--dim);margin-left:auto}
@@ -249,13 +252,15 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .d-spread b{font-family:var(--fN);font-weight:600;color:var(--mut)}
 
 /* полоса позиций */
-.pos-strip{position:absolute;left:20px;right:200px;bottom:14px;display:flex;align-items:center;gap:9px;z-index:25}
+.pos-strip{position:absolute;left:20px;right:320px;bottom:14px;display:flex;align-items:center;gap:9px;z-index:25}
 .ps-t{flex:none;font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
 .ps-chip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--card);border-radius:11px;padding:7px 12px;backdrop-filter:blur(10px)}
 .ps-chip b{font-family:var(--fN);font-size:11px;font-weight:700}
 .ps-chip em{font-style:normal;font-family:var(--fN);font-size:10px;font-weight:600}
 .ps-chip .pup{color:var(--grn)} .ps-chip .pdn{color:var(--red)}
 .ps-more{font-size:11px;font-weight:600;color:var(--acc)}
+.ps-sum{margin-left:auto;font-size:10.5px;font-weight:600;color:var(--dim)}
+.ps-sum b{font-family:var(--fN);font-weight:600;color:var(--mut)}
 
 /* подсказка-раскрытие */
 .unlock{position:absolute;display:flex;gap:12px;align-items:flex-start;width:330px;background:var(--card);border:1px solid color-mix(in srgb,var(--acc) 40%,transparent);
@@ -425,12 +430,12 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
      только в кнопке. Внизу — позиции-чипы: клик грузит бумагу в сцену.</p>
   <div class="scroller"><div class="scr"><div id="m2"></div></div></div>
   <div class="notes">
-    <div class="note"><i>1</i><span>Строка среды 52px — всё, что осталось от хрома: выход, омнибокс, деньги одной строкой, связь, песочница, тумблер темы, аватар. Ни вкладок панелей, ни полосы экранов.</span></div>
+    <div class="note"><i>1</i><span>Строка среды 52px — только среда: выход, омнибокс, связь, песочница, тумблер темы, аватар. Деньги из шапки уехали к местам решения: «свободно» — к полю суммы тикета, «портфель» — к полосе позиций.</span></div>
     <div class="note"><i>2</i><span>Цена — самое крупное число экрана (58px, моно). Чип дня рядом, а не в таблице. График — линия с градиентом; свечи появятся на «Разгоне».</span></div>
     <div class="note"><i>3</i><span>Тикет наследует финал раунда 1: пресеты сумм, «≈ 110 акций» с объяснением лотности, «останется свободно», комиссия включена, «Максимум» считает за вычетом комиссии.</span></div>
     <div class="note"><i>4</i><span>Гвард свежести из раунда 1 живёт в тикете: точка «цена живая» — тот же <code style="font-family:var(--fN);font-size:11px">pftLinkState</code>; замерла — кнопка гаснет (экран 08).</span></div>
     <div class="note"><i>5</i><span>Пилюля насыщенности в углу — честный указатель ступени и ручной вход в следующую («открыть больше»).</span></div>
-    <div class="note"><i>6</i><span>Позиции-чипы вместо таблицы: тикер + дневная дельта. Полный разбор позиций остаётся «Портфелям» — торговля не дублирует трекер.</span></div>
+    <div class="note"><i>6</i><span>Позиции-чипы вместо таблицы: тикер + дневная дельта; итог портфеля — тихой суммой в конце полосы. Полный разбор позиций остаётся «Портфелям» — торговля не дублирует трекер.</span></div>
   </div>
 </section>
 
@@ -438,16 +443,18 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 <section class="mk">
   <div class="mk-h"><span class="mk-n">04</span><h2>Ступень «Разгон»: стакан, лимитки, вторая бумага</h2><span class="mk-tag">основной</span></div>
   <p class="mk-sub">Та же сцена спустя несколько сделок. Добавились — не перестроились: вкладки бумаг над
-     героем, свечи по тумблеру, стакан-глубина между графиком и тикетом, лента-пульс одной строкой под
-     графиком, строка цены в тикете («По рынку ▾» → лимит). Слева — карточка-предложение: так сцена растёт.</p>
+     героем, свечи по тумблеру со встроенными индикаторами (объём, MA 20), стакан-глубина — правым краем
+     самого графика, одной плоскостью под общей шапкой бумаги, лента-пульс одной строкой под ними,
+     строка цены в тикете («По рынку ▾» → лимит). Слева — карточка-предложение: так сцена растёт.</p>
   <div class="scroller"><div class="scr"><div id="m3"></div></div></div>
   <div class="notes">
-    <div class="note"><i>1</i><span>Стакан — не таблица, а глубина: гистограммы объёмов к центру, спред отдельной строкой. Клик по цене подставляет её лимиткой в тикет — связка «график ↔ стакан ↔ тикет» из раунда 1 сохранена.</span></div>
+    <div class="note"><i>1</i><span>Стакан — не вторая панель, а правый край графика: одна плоскость, общая шапка бумаги, вместо рамки — волосяная линия. Гистограммы объёмов к центру, спред строкой; клик по цене подставляет её лимиткой в тикет — связка из раунда 1 сохранена.</span></div>
     <div class="note"><i>2</i><span>Лента сделок — строка-пульс, а не панель: последние сделки бегут под графиком. Раскрытие в полноценную колонку — на «Контроле».</span></div>
     <div class="note"><i>3</i><span>Карточка-предложение — механика эволюции, видимая глазами: тихо появляется у края, один клик «Открыть», «Не сейчас» без чувства вины. Не модал, сцену не блокирует.</span></div>
     <div class="note"><i>4</i><span>Вкладки бумаг ≤ 4 — это прежние «слоты», но видимые по одному: сцена всегда про одну бумагу, остальные ждут во вкладках с живой дельтой.</span></div>
     <div class="note"><i>5</i><span>Тикет получил одну новую строку (цена), всё прочее стоит на месте — новичок со ступени 1 узнаёт свой тикет.</span></div>
     <div class="note"><i>6</i><span>Лимитная заявка живёт прямо на графике: пунктирная линия на своей цене, ярлык с количеством, ✕ снимает. Линию можно тащить — цена в тикете следует; до дока «Контроля» это единственное место, где заявка видна.</span></div>
+    <div class="note"><i>7</i><span>Индикаторы встроены в холст, не в отдельные панели: «Объём» и «MA 20» — чипы в углу графика, «＋» открывает реестр (RSI, MACD и прочие из KLineChart). На «Старте» индикаторов нет — линия чистая.</span></div>
   </div>
 </section>
 
@@ -455,8 +462,9 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 <section class="mk">
   <div class="mk-h"><span class="mk-n">05</span><h2>Ступень «Контроль»: рабочее место</h2><span class="mk-tag">основной</span></div>
   <p class="mk-sub">Максимальная насыщенность — и всё ещё сцена, не сетка: панели плавают на холсте с
-     воздухом между ними. Сплит на две бумаги, полный стакан, док Заявки/Позиции/История/Алерты,
-     экраны-вкладки в строке среды, подсказка клавиш. Тикет — всё тот же, плюс строка защиты.</p>
+     воздухом между ними. Сплит на две бумаги, стакан — в одной плоскости с главным графиком, лента —
+     рядом со вторым, док Заявки/Позиции/История/Алерты, экраны-вкладки в строке среды, подсказка
+     клавиш. Тикет — всё тот же, плюс строка защиты.</p>
   <div class="scroller"><div class="scr"><div id="m4"></div></div></div>
   <div class="notes">
     <div class="note"><i>1</i><span>Экраны (trading:N из раунда 1) переезжают в строку среды как вкладки — механика и хранилище остаются, исчезает отдельная плавающая полоса.</span></div>
@@ -548,6 +556,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <tr><td>Позиции-чипы</td><td><code>pollPos</code> уже опрашивает позиции; чипы — новый рендер</td><td class="ok">есть</td></tr>
     <tr><td>НКД облигаций</td><td>формула из «Просто» считает верно; в UI пускаем после проверки единиц на живом счёте</td><td class="no">хвост</td></tr>
     <tr><td>Раскладка сцены</td><td><b>решение:</b> на «Торговле» конструктор <code>.pfd-grid</code> не используется — фиксированная сцена; виджеты trade:* в реестре остаются для обратной совместимости</td><td class="no">новое</td></tr>
+    <tr><td>Индикаторы графика (объём, MA, ＋)</td><td>встроенные индикаторы KLineChart (<code>createIndicator</code>: VOL, MA, RSI…) — включение чипами на холсте; на линии «Старта» индикаторов нет по замыслу</td><td class="ok">есть</td></tr>
     <tr><td>Тумблер темы сцены</td><td>новый ключ <code>bt_theme_v1</code> (light по умолчанию), независим от темы сайта; тёмные токены сцены — свои, не инверсия и не глобальный <code>toggleTheme</code></td><td class="no">новое</td></tr>
     <tr><td>Заявка на графике (линия, drag, ✕)</td><td>активные заявки уже опрашиваются (док); линия — оверлей KLineChart (<code>createOverlay</code>) поверх <code>portfolios-chart.js</code>, на линии-графике — свой рендер; отмена — тот же <code>pftAsk</code></td><td class="no">новое</td></tr>
     <tr><td>«Биржа закрыта» (статус торгов)</td><td>метод GetTradingStatus есть в API Т-Инвестиций — воркер-прокси его пока не проксирует, добавить; до тех пор косвенно по пустому стакану</td><td class="no">новое</td></tr>
@@ -578,19 +587,39 @@ function lineChart(pts, w, h, dash){
         + '</svg>';
 }
 /* свечи: детерминированная прогулка от i; рост — заливка, падение — полый контур
-   (два носителя смысла: цвет и форма — читается и в ч/б) */
-function candleChart(n, w, h){
-    var cw = w / n, out = '', y = h * .62, i, o, c, hi, lo, up, x, bw;
+   (два носителя смысла: цвет и форма — читается и в ч/б).
+   opts.vol — гистограмма объёмов у нижней кромки; opts.ma — скользящая средняя поверх */
+function candleChart(n, w, h, opts){
+    opts = opts || {};
+    var cw = w / n, out = '', vols = '', y = h * .62, i, o, c, hi, lo, up, x, bw, closes = [];
     for (i = 0; i < n; i++){
         o = y; y += Math.sin(i * 2.7) * h * .045 - h * .008; c = y;
+        closes.push(c);
         hi = Math.min(o, c) - h * .03; lo = Math.max(o, c) + h * .03;
         up = c <= o; x = i * cw + cw / 2; bw = cw * .52;
         out += '<line x1="' + x + '" y1="' + hi + '" x2="' + x + '" y2="' + lo + '" stroke="var(--' + (up ? 'grn' : 'red') + ')" stroke-width="1" opacity=".5"/>'
              + (up
                 ? '<rect x="' + (x - bw / 2) + '" y="' + Math.min(o, c) + '" width="' + bw + '" height="' + Math.max(2, Math.abs(c - o)) + '" rx="1" fill="var(--grn)" opacity=".85"/>'
                 : '<rect x="' + (x - bw / 2 + .6) + '" y="' + (Math.min(o, c) + .6) + '" width="' + (bw - 1.2) + '" height="' + Math.max(2, Math.abs(c - o) - 1.2) + '" rx="1" fill="none" stroke="var(--red)" stroke-width="1.2" opacity=".85"/>');
+        if (opts.vol){
+            var vh = (Math.abs(Math.sin(i * 1.9)) * .11 + .03) * h;
+            vols += '<rect x="' + (x - bw / 2) + '" y="' + (h - vh) + '" width="' + bw + '" height="' + vh + '" rx="1" fill="var(--' + (up ? 'grn' : 'red') + ')" opacity=".16"/>';
+        }
     }
-    return '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" style="height:' + h + 'px">' + out + '</svg>';
+    var ma = '';
+    if (opts.ma){
+        var pts = [], j, s, cnt;
+        for (i = 0; i < n; i++){
+            s = 0; cnt = 0;
+            for (j = Math.max(0, i - 4); j <= i; j++){ s += closes[j]; cnt++; }
+            pts.push((i * cw + cw / 2) + ',' + (s / cnt + h * .015));
+        }
+        ma = '<polyline points="' + pts.join(' ') + '" fill="none" stroke="var(--acc)" stroke-width="1.4" opacity=".6"/>';
+    }
+    return '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" style="height:' + h + 'px">' + vols + out + ma + '</svg>';
+}
+function indRow(){
+    return '<div class="ind-row"><span class="ind on">Объём</span><span class="ind on">MA 20</span><span class="ind">＋</span></div>';
 }
 function dates(list){
     return '<div class="ax-dates">' + list.map(function(d){ return '<span>' + d + '</span>'; }).join('') + '</div>';
@@ -606,8 +635,6 @@ function topbar(o){
               + '<span class="omni" style="margin:0;width:280px">⌕ Бумага или команда<kbd>⌘K</kbd></span>'
             : '<span class="omni">⌕ Бумага, команда или «сбер 30к»<kbd>⌘K</kbd></span>')
         + '<span class="tb2-right">'
-        + '<span class="tb2-money">свободно<b>418 240 ₽</b></span><span class="tb2-sep"></span>'
-        + '<span class="tb2-money">портфель<b>184 775 ₽</b></span><span class="tb2-sep"></span>'
         + '<span class="tb2-link"><i></i>связь</span>'
         + '<span class="tb2-sand">Песочница</span>'
         + (o.dark ? '<span class="tb2-th"><i>☀</i><i class="on">☾</i></span>'
@@ -626,7 +653,6 @@ function instrHead(o){
         + '<span class="ih-r">'
         + (o.candles ? '<span class="ih-per"><span>Линия</span><span class="on">Свечи</span></span>' : '')
         + '<span class="ih-per"><span class="on">Д</span><span>Н</span><span>М</span><span>Г</span><span>Всё</span></span>'
-        + '<span class="ih-tool">🔔</span>'
         + '</span></div>'
         + '<div class="price-row">'
         + '<span class="price-big">271,45<small> ₽</small></span>'
@@ -653,11 +679,14 @@ function ticket(o){
         h += '<div class="fld"><em>' + (o.npin2 ? '<span class="npin" style="margin-right:5px">2</span>' : '') + 'Цена</em>'
            + '<div class="fld-price"><span class="mkt">' + (o.limit ? 'Лимит 270,00 ₽' : 'По рынку') + ' ▾</span><span class="lim">'
            + (o.limit ? 'сейчас 271,45 ₽' : 'или укажите лимит') + '</span></div></div>';
+    /* «свободно» живёт у поля ввода — там, где им пользуются пресеты и «Максимум» */
     if (o.lots)
-        h += '<div class="fld"><em>Количество</em><div class="fld-in"><b>' + (sell ? '120' : '110') + '</b><u>' + (sell ? 'акций из 240' : 'акций · 11 лотов') + '</u>'
+        h += '<div class="fld"><em>Количество' + (sell ? '' : '<span class="fld-cap">свободно 418 240 ₽</span>') + '</em>'
+           + '<div class="fld-in"><b>' + (sell ? '120' : '110') + '</b><u>' + (sell ? 'акций из 240' : 'акций · 11 лотов') + '</u>'
            + '<span class="caret"></span><span class="fld-sw">' + (o.npin5 ? '<span class="npin" style="margin-right:5px">5</span>' : '') + 'в рублях ⇄</span></div></div>';
     else
-        h += '<div class="fld"><em>Сумма</em><div class="fld-in"><b>30 000</b><u>₽</u><span class="caret"></span><span class="fld-sw">в лотах ⇄</span></div></div>';
+        h += '<div class="fld"><em>Сумма<span class="fld-cap">свободно 418 240 ₽</span></em>'
+           + '<div class="fld-in"><b>30 000</b><u>₽</u><span class="caret"></span><span class="fld-sw">в лотах ⇄</span></div></div>';
     if (sell)
         h += '<div class="presets"><span class="pch">Четверть</span><span class="pch on">Половина</span><span class="pch">Всё</span></div>';
     else if (!o.lots)
@@ -684,7 +713,7 @@ function ticket(o){
 /* ─── стакан-глубина ─── */
 var ASK = [['271,60','840',34],['271,57','120',10],['271,54','2 310',88],['271,52','95',8],['271,49','430',22],['271,47','1 205',52]];
 var BID = [['271,45','3 320',100],['271,43','610',26],['271,40','1 150',48],['271,38','85',7],['271,35','930',40],['271,31','260',14]];
-function depthPanel(style, tall){
+function depthPanel(style, tall, fused){
     function row(cls, d){
         return '<div class="d-row ' + cls + '"><span class="pr">' + d[0] + '</span>'
             + '<span class="d-bar"><i style="width:' + d[2] + '%"></i></span><span class="d-vol">' + d[1] + '</span></div>';
@@ -692,7 +721,7 @@ function depthPanel(style, tall){
     /* asks сверху вниз: дорогие вверху, лучшая продажа — у спреда */
     var asks = tall ? [['271,68','1 640',66],['271,64','520',24]].concat(ASK) : ASK;
     var bids = tall ? BID.concat([['271,28','770',33],['271,24','1 980',80]]) : BID;
-    return '<div class="depth" style="' + (style || '') + '">'
+    return '<div class="depth' + (fused ? ' depth-fused' : '') + '" style="' + (style || '') + '">'
         + '<div class="d-h"><b>Стакан</b><em>клик — лимитка</em></div>'
         + asks.map(function(d){ return row('d-ask', d); }).join('')
         + '<div class="d-spread"><i></i><b>спред 0,02</b><i></i></div>'
@@ -717,7 +746,8 @@ function posStrip(){
     return '<div class="pos-strip"><span class="ps-t">Мои позиции</span>'
         + c('GAZP', '0,7 %', 0) + c('ZAYM', '0,8 %', 1) + c('BSPB', '1,9 %', 0)
         + c('ОФЗ 26230', '0,3 %', 1) + c('ОФЗ 26233', '0,2 %', 0)
-        + '<span class="ps-more">ещё 15 →</span></div>';
+        + '<span class="ps-more">ещё 15 →</span>'
+        + '<span class="ps-sum">портфель <b>184 775 ₽</b></span></div>';
 }
 function stagePill(name, next){
     return '<div class="stage-pill">Насыщенность: <b>' + name + '</b>' + (next ? ' · <s>' + next + '</s>' : '') + '</div>';
@@ -802,28 +832,31 @@ document.getElementById('m2').innerHTML = scene1({ pins: 1 });
 /* ═════════════ 04 · ступень 2 ═════════════ */
 function scene2(o){
     o = o || {};
-    var hero = '<div style="position:absolute;left:56px;right:724px;top:88px;bottom:96px;display:flex;flex-direction:column">'
+    /* стакан — правый край того же холста: одна плоскость с графиком, общая шапка бумаги */
+    var hero = '<div style="position:absolute;left:56px;right:424px;top:88px;bottom:96px;display:flex;flex-direction:column">'
         + '<div class="pp-row">'
         + '<span class="pp on">SBER <em class="pup">+1,2 %</em></span>'
         + '<span class="pp">LKOH <em class="pdn">−0,4 %</em></span>'
         + '<span class="pp-add">＋</span></div>'
         + instrHead({ candles: 1 })
-        + '<div class="chart-wrap" style="flex:1;margin-top:16px">' + candleChart(38, 660, 385)
+        + '<div style="flex:1;display:flex;gap:20px;min-height:0;margin-top:16px">'
+        + '<div class="chart-wrap" style="flex:1;margin-top:0">' + indRow() + candleChart(38, 680, 385, { vol: 1, ma: 1 })
         + '<span class="ptag" style="top:34%">271,45</span>'
         + '<div class="ord-line" style="top:56%"><i></i><span class="ord-tag">ваша заявка · 270,00 × 100 шт<u>✕</u></span></div>'
         + dates(DAY) + '</div>'
+        + depthPanel('width:252px;flex:none', 0, 1)
+        + '</div>'
         + tapeRow() + '</div>';
     var h = '<div class="glow"></div>' + topbar({ dark: o.dark })
         + hero
-        + depthPanel('position:absolute;left:736px;width:280px;top:102px;bottom:96px')
         + ticket({ price: 1, style: 'position:absolute;right:36px;top:102px;width:368px' })
         + '<div class="unlock" style="left:56px;bottom:66px"><span class="uic">≡</span><div>'
         + '<h5>Открыть ленту всех сделок?</h5><p>Вы часто смотрите пульс. Полная лента покажет каждую сделку по бумаге отдельной колонкой.</p>'
         + '<div class="ub-row"><span class="ub pri">Открыть</span><span class="ub gh">Не сейчас</span></div></div></div>'
         + posStrip() + stagePill('Разгон', 'открыть больше');
     if (o.pins)
-        h += pin(1, 724, 114, 1) + pin(2, 26, 786, 1) + pin(3, 26, 708, 1)
-           + pin(4, 330, 94, 1) + pin(5, 1022, 230, 1) + pin(6, 482, 556, 1);
+        h += pin(1, 756, 267, 1) + pin(2, 26, 786, 1) + pin(3, 26, 708, 1)
+           + pin(4, 330, 94, 1) + pin(5, 1022, 230, 1) + pin(6, 510, 556, 1) + pin(7, 204, 272, 1);
     return h;
 }
 document.getElementById('m3').innerHTML = scene2({ pins: 1 });
@@ -835,25 +868,28 @@ document.getElementById('m3').innerHTML = scene2({ pins: 1 });
             + '<span class="num ' + (up ? 'up' : 'dn') + '" style="color:var(--' + (up ? 'grn' : 'red') + ')">' + price + '</span>'
             + '<span class="pane-r">' + (tools || '') + '</span></div>';
     }
-    var left = '<div style="position:absolute;left:20px;width:640px;top:72px;bottom:196px;display:flex;flex-direction:column;gap:12px">'
+    /* стакан живёт внутри карточки графика — одна плоскость; лента — рядом со вторым графиком */
+    var left = '<div style="position:absolute;left:20px;width:964px;top:72px;bottom:196px;display:flex;flex-direction:column;gap:12px">'
         + '<div class="pane" style="flex:1.7">' + paneHead('SB', 'linear-gradient(135deg,#1d9a55,#15703d)', 'Сбербанк', '271,45 · +1,24 %', 1,
             '<span class="pane-ic on">〣</span><span class="pane-ic">◱</span><span class="pane-ic">⋯</span>')
-        + '<div style="flex:1;min-height:0;position:relative">' + candleChart(40, 600, 240)
+        + '<div style="flex:1;display:flex;gap:18px;min-height:0">'
+        + '<div style="flex:1;min-height:0;position:relative">' + indRow() + candleChart(40, 620, 240, { vol: 1, ma: 1 })
         + '<div class="ord-line" style="top:58%"><i></i><span class="ord-tag">заявка · 270,00 × 100 шт<u>✕</u></span></div>'
-        + '<span class="ord-ghost" style="left:38%;top:80%">＋ лимитка 268,40 — клик по уровню</span>'
-        + '</div>' + dates(['12:00','14:00','16:00','18:40']) + '</div>'
-        + '<div class="pane" style="flex:1">' + paneHead('LK', 'linear-gradient(135deg,#b3452e,#8a2f1d)', 'Лукойл', '6 743,5 · −0,4 %', 0,
+        + '<span class="ord-ghost" style="left:34%;top:62%">＋ лимитка 268,40 — клик по уровню</span>'
+        + dates(['12:00','14:00','16:00','18:40']) + '</div>'
+        + depthPanel('width:230px;flex:none', 0, 1)
+        + '</div></div>'
+        + '<div style="display:flex;gap:12px;flex:1;min-height:0">'
+        + '<div class="pane" style="flex:1.6">' + paneHead('LK', 'linear-gradient(135deg,#b3452e,#8a2f1d)', 'Лукойл', '6 743,5 · −0,4 %', 0,
             '<span class="pane-ic">〣</span><span class="pane-ic">✕</span>')
-        + '<div style="flex:1;min-height:0">' + lineChart(scalePts(600, 120).map(function(p){ return [p[0], 120 - p[1] * .8]; }), 600, 120) + '</div></div>'
-        + '</div>';
-    var mid = '<div style="position:absolute;left:676px;width:296px;top:72px;bottom:196px;display:flex;flex-direction:column;gap:12px">'
-        + depthPanel('flex:1.6', 1)
+        + '<div style="flex:1;min-height:0">' + lineChart(scalePts(560, 120).map(function(p){ return [p[0], 120 - p[1] * .8]; }), 560, 120) + '</div></div>'
         + '<div class="depth" style="flex:1"><div class="d-h"><b>Лента</b><em>SBER · все сделки</em></div>'
         + [['14:32:05','271,45','30',1],['14:32:01','271,45','120',1],['14:31:58','271,43','610',0],
            ['14:31:52','271,44','80',1],['14:31:47','271,43','250',0],['14:31:40','271,45','1 205',1]].map(function(t){
             return '<div class="d-row" style="grid-template-columns:52px 1fr 46px"><span style="color:var(--dim)">' + t[0] + '</span>'
                 + '<span class="pr" style="color:var(--' + (t[3] ? 'grn' : 'red') + ')">' + t[1] + '</span><span class="d-vol">×' + t[2] + '</span></div>';
-        }).join('') + '</div></div>';
+        }).join('') + '</div>'
+        + '</div></div>';
     var dock = '<div class="dock"><div class="dock-tabs">'
         + '<span class="on">Заявки <em>2</em></span><span>Позиции <em>20</em></span><span>История</span><span>Алерты <em>1</em></span>'
         + '<span class="keys">? клавиши</span><span class="shev">⌄</span></div>'
@@ -862,11 +898,11 @@ document.getElementById('m3').innerHTML = scene2({ pins: 1 });
         + '<div class="dk-r"><b>LKOH</b><span style="color:var(--red)">Продажа</span><span>По рынку</span><span><b>2</b> шт</span><span>2 из 2</span><span class="dk-st done">Исполнена · 14:02</span><span></span></div>'
         + '</div>';
     document.getElementById('m4').innerHTML = '<div class="glow" style="left:6%"></div>' + topbar({ screens: 1 })
-        + left + mid
+        + left
         + ticket({ price: 1, limit: 1, lots: 1, prot: 1, style: 'position:absolute;right:20px;top:72px;width:400px' })
         + dock
         + pin(1, 365, 17, 1) + pin(2, 700, 760, 1) + pin(3, 1275, 757, 1)
-        + pin(4, 992, 372, 1) + pin(5, 655, 483, 1) + pin(6, 443, 296, 1);
+        + pin(4, 992, 374, 1) + pin(5, 618, 490, 1) + pin(6, 519, 318, 1);
 })();
 
 /* ═════════════ 06 · омнибокс ═════════════ */
