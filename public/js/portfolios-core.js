@@ -723,8 +723,13 @@
     // портфеля — в карточке и во встроенной сводке одиночного портфеля — не делят <linearGradient>)
     // fromDate (опционально, ISO) — окно периода карточки: точки до даты отбрасываются,
     // остальные ПЕРЕБАЗИРУЮТСЯ к началу окна (кривая = доходность за период, согласована
-    // с дельтой в герое карточки), живой процент последней точки перебазируется так же
-    function drawPfChart(pid, wrap, dynEl, legEl, uid, maxPts, fromDate) {
+    // с дельтой в герое карточки), живой процент последней точки перебазируется так же.
+    // ex (опционально, «Табло» 2026-07-22) — оверлеи карточного мини-графика:
+    //   { card:true,                          — флажки экстремумов в ₽ + пульс «сейчас»
+    //     pays:[{d,sum,n,lbl}],               — метки выплат на линии (cardPayMarks)
+    //     future:{d,days,sum,lbl} }           — ближайшая выплата: пунктир вперёд по оси
+    // Прочие пейны (подвкладка «Портфель», «Капитал») ex не передают и не меняются.
+    function drawPfChart(pid, wrap, dynEl, legEl, uid, maxPts, fromDate, ex) {
         if (!wrap) return;
         var data = PF.chartCache[pid];
         if (chartBusy[pid] || !data) { wrap.innerHTML = pfChartLoadingHtml();
@@ -789,7 +794,10 @@
         if (minV === maxV) { minV -= 1; maxV += 1; }
         if (minV > 0) minV = 0; if (maxV < 0) maxV = 0;   // 0% всегда в кадре — опорная линия
         var span = (maxV - minV) || 1, padX = 4, topY = 14, botY = 84;
-        var xAt = function (i) { return padX + (N === 1 ? 0 : (i / (N - 1))) * (100 - 2 * padX); };
+        // под будущую выплату серия ужимается до 86% ширины: хвост оси отдаётся
+        // пунктиру «от сейчас до даты выплаты» (мокап «Табло»)
+        var xSpan = (100 - 2 * padX) * (ex && ex.future ? 0.86 : 1);
+        var xAt = function (i) { return padX + (N === 1 ? 0 : (i / (N - 1))) * xSpan; };
         var yAt = function (v) { return botY - ((v - minV) / span) * (botY - topY); };
         var zeroY = yAt(0);
         var pPts = pts.map(function (q, i) { var vv = pfv(q); return { x: xAt(i), y: yAt(vv), v: vv, d: q.d }; });
@@ -800,12 +808,20 @@
             var iPts = pts.map(function (q, i) { return { x: xAt(i), y: yAt(q.im) }; });
             imLine = '<path class="pfcv-imline" d="' + smoothD(iPts) + '" fill="none" vector-effect="non-scaling-stroke"/>';
         }
+        // пунктир будущей выплаты — горизонталь от последней точки до правого поля
+        // (полая точка и подпись — DOM-оверлеи ниже: круг в svg 100×100 с
+        // preserveAspectRatio:none растянулся бы в эллипс)
+        var futX = 100 - padX - 1;
+        var futLine = (ex && ex.future && N > 1)
+            ? '<line class="pfcv-futline" x1="' + pPts[N - 1].x.toFixed(2) + '" y1="' + pPts[N - 1].y.toFixed(2) +
+              '" x2="' + futX + '" y2="' + pPts[N - 1].y.toFixed(2) + '" vector-effect="non-scaling-stroke"/>'
+            : '';
         var svg = '<svg class="pfcv-svg" viewBox="0 0 100 100" preserveAspectRatio="none">' +
             '<defs><linearGradient id="pfcvGrad-' + uid + '" x1="0" y1="0" x2="0" y2="1">' +
             '<stop offset="0" stop-color="var(--pf-accent)" stop-opacity="0.34"/>' +
             '<stop offset="1" stop-color="var(--pf-accent)" stop-opacity="0"/></linearGradient></defs>' +
             '<line class="pfcv-zero" x1="0" y1="' + zeroY.toFixed(2) + '" x2="100" y2="' + zeroY.toFixed(2) + '"/>' +
-            '<path class="pfcv-area" d="' + area + '" fill="url(#pfcvGrad-' + uid + ')"/>' + imLine +
+            '<path class="pfcv-area" d="' + area + '" fill="url(#pfcvGrad-' + uid + ')"/>' + imLine + futLine +
             '<path class="pfcv-line" pathLength="1" d="' + line + '" fill="none" stroke="var(--pf-accent)" stroke-width="2.4" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/></svg>';
         var lblEvery = Math.max(1, Math.ceil(N / 6));
         var overlay = pPts.map(function (q, i) {
@@ -816,12 +832,65 @@
                 (showLbl ? '<span class="pfcv-x">' + ruShortDate(q.d) + '</span>' : '') +
             '</div>';
         }).join('');
+        // ---- оверлеи «Табло» (только карточный мини-график, ex.card) ----
+        var exHtml = '';
+        if (ex && ex.card && N > 1) {
+            // флажки экстремумов: ₽ на дату — стоимость БУМАГ из chartRaw (без свободных
+            // денег: их истории в серии нет — названное отступление плана). Если серия
+            // прорежена и точной даты нет — флажок честно пропускаем.
+            var exSeries = (PF.chartRaw[pid] || {}).series || null;
+            var rubAt = function (d) {
+                if (!exSeries) return null;
+                for (var k = 0; k < exSeries.length; k++) if (exSeries[k].d === d) return exSeries[k].c;
+                return null;
+            };
+            var iMax = 0, iMin = 0;
+            pPts.forEach(function (q, k) { if (q.v > pPts[iMax].v) iMax = k; if (q.v < pPts[iMin].v) iMin = k; });
+            if (iMax !== iMin) [[iMax, 'max'], [iMin, 'min']].forEach(function (fx) {
+                var q = pPts[fx[0]], rubV = rubAt(q.d);
+                if (rubV == null) return;
+                var edge = q.x > 80 ? ' r' : q.x < 20 ? ' l' : '';
+                exHtml += '<span class="pfcv-ext ' + fx[1] + edge + '" style="left:' + q.x.toFixed(2) + '%;top:' + q.y.toFixed(2) + '%">' +
+                    '<span data-money>' + fmtRub(rubV) + '</span> · ' + ruShortDate(q.d) + '</span>';
+            });
+            // метки выплат: дата → последняя точка кривой не позже даты; близкие метки
+            // (< 7 единиц вьюбокса) склеиваются в «N выплат · сумма», подписи чередуются
+            // над/под линией, чтобы при плотном расписании не слипаться
+            if (ex.pays && ex.pays.length) {
+                var marks = [];
+                ex.pays.forEach(function (pm) {
+                    var bi = 0;
+                    for (var k2 = 0; k2 < pts.length; k2++) if (pts[k2].d <= pm.d) bi = k2;
+                    var q2 = pPts[bi], prev = marks[marks.length - 1];
+                    if (prev && q2.x - prev.x < 7) { prev.sum += pm.sum; prev.n += pm.n; }
+                    else marks.push({ x: q2.x, y: q2.y, sum: pm.sum, n: pm.n, lbl: pm.lbl });
+                });
+                marks.forEach(function (m, mi) {
+                    var txt = m.n > 1
+                        ? m.n + ' ' + (PF.plural ? PF.plural(m.n, 'выплата', 'выплаты', 'выплат') : 'выплаты')
+                        : m.lbl;
+                    exHtml += '<span class="pfcv-pay' + (mi % 2 ? ' up' : '') + '" style="left:' + m.x.toFixed(2) + '%;top:' + m.y.toFixed(2) + '%">' +
+                        '<b>' + txt + ' · <span data-money>+' + fmtRub(m.sum) + '</span></b></span>';
+                });
+            }
+            // ближайшая выплата: полая точка на конце пунктира + подпись «через N дней»
+            if (ex.future) {
+                var fy = pPts[N - 1].y;
+                exHtml += '<span class="pfcv-payf" style="left:' + futX + '%;top:' + fy.toFixed(2) + '%"></span>' +
+                    '<span class="pfcv-futlbl" style="left:' + futX + '%;top:' + fy.toFixed(2) + '%">' +
+                        ex.future.lbl + ' · через ' + ex.future.days + ' ' +
+                        (PF.plural ? PF.plural(ex.future.days, 'день', 'дня', 'дней') : 'дн.') +
+                        ' · <span data-money>+' + fmtRub(ex.future.sum) + '</span></span>';
+            }
+            // пульс «сейчас» — карточка живая, а не нарисованная
+            exHtml += '<span class="pfcv-pulse" style="left:' + pPts[N - 1].x.toFixed(2) + '%;top:' + pPts[N - 1].y.toFixed(2) + '%"></span>';
+        }
         // шкала процентов слева: «красивые» деления между minV и maxV (выравнены по кривой)
         var yaxis = niceTicks(minV, maxV, 4).map(function (v) {
             var lbl = (Math.round(v) === v) ? String(v) : v.toFixed(1);
             return '<span class="pfcv-ytick' + (v === 0 ? ' zero' : '') + '" style="top:' + yAt(v).toFixed(2) + '%">' + lbl + '%</span>';
         }).join('');
-        wrap.innerHTML = '<div class="pfcv-yaxis">' + yaxis + '</div><div class="pfcv-plot">' + svg + overlay + '</div>';
+        wrap.innerHTML = '<div class="pfcv-yaxis">' + yaxis + '</div><div class="pfcv-plot">' + svg + overlay + exHtml + '</div>';
         // анимация прорисовки линии (и индекса) — линия «рисуется» слева направо.
         // При ре-рендере из переключателей видимости/вида (PF.noChartAnim, см. renderNoAnim)
         // пропускаем: график сразу в конечном состоянии, вкладка не мерцает.

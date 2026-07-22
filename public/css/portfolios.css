@@ -195,7 +195,15 @@ body.dark-mode .pf-sumcard {
    сетка stretch ровняет соседей по ряду, подвал прижат margin-top:auto.
    В блоке конструктора с заданной высотой (.pfd-hset) карточка заполняет блок,
    а список позиций скроллится внутри — см. правила .pfd-item ниже. */
-.pf-card { display: flex; flex-direction: column; }
+/* isolation: собственный стек — сцена .pfc-scene с z-index:-1 ложится НАД фоном
+   карточки, но ПОД всем контентом (иначе минус-слой ушёл бы за саму карточку) */
+.pf-card { display: flex; flex-direction: column; isolation: isolate; }
+/* сцена «Табло»: радиальный свет цвета портфеля из центра (мокап 2026-07-22);
+   12% в светлой теме, 17% в тёмной — 9% на белом не читались */
+.pfc-scene { position: absolute; top: 0; left: 0; right: 0; height: 420px; z-index: -1; pointer-events: none;
+    background: radial-gradient(120% 130% at 50% -14%, color-mix(in srgb, var(--pf-accent) 12%, transparent) 0%, transparent 64%); }
+body.dark-mode .pfc-scene {
+    background: radial-gradient(120% 130% at 50% -14%, color-mix(in srgb, var(--pf-accent) 17%, transparent) 0%, transparent 66%); }
 .pfd-item.pfd-hset .pf-card { height: 100%; min-height: 0; }
 body.dark-mode .pf-card, body.dark-mode .pf-card2 { box-shadow: 0 16px 36px rgba(0,0,0,0.32); --pf-gn: #34d399; --pf-rd: #f87171;
     border-color: rgba(255,255,255,0.40); }
@@ -290,28 +298,72 @@ body.dark-mode .pf-ch-go:hover { background: rgba(255,255,255,0.12); color: #fff
    макета 02 (46% / остаток) снята: в широкой карточке она давала другой кегль суммы
    и вдвое более высокий график, и две карточки рядом читались как разные компоненты.
    Ступени кегля (.l10/.l13 из heroValParts) остаются — длинное число мельчает само. */
-.pfc-hero { display: grid; grid-template-columns: 1fr; gap: 12px; padding: 16px 18px 20px; }
-.pfc-hero-l { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
+/* ---- герой «Табло» (мокап 2026-07-22): ось симметрии — метка, сумма 54px и
+   строка дельт по центру, график этажом ниже. Герой выше прежнего: 30px и от
+   шапки, и от графика — сумма не прилипает ни к краю, ни к линии. ---- */
+.pfc-hero { display: grid; grid-template-columns: 1fr; gap: 0; padding: 30px 18px 0; }
+.pfc-hero-l { min-width: 0; display: flex; flex-direction: column; align-items: center; text-align: center; }
 .pfc-hero-k { font-size: 11px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: #94a3b8; }
-.pfc-hero-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 30px; letter-spacing: -0.02em; line-height: 1.05; margin-top: 9px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #0f172a; }
+.pfc-hero-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 54px; letter-spacing: -0.02em; line-height: 1.06; margin-top: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #0f172a; }
 body.dark-mode .pfc-hero-val { color: #f4f8fd; }
-.pfc-hero-val small { font-size: 0.63em; font-weight: 600; color: #64748b; margin-left: 0.06em; }
+.pfc-hero-val small { font-size: 0.58em; font-weight: 600; color: #64748b; margin-left: 0.08em; }
+/* двойная дельта: чип дня (цвет знака) + серый хвост периода */
+.pfc-dayrow { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+.pfc-day { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; font-weight: 700; padding: 6px 11px; border-radius: 10px; color: #64748b; background: rgba(15,23,42,0.05); white-space: nowrap; }
+.pfc-day.pos { color: #16a34a; background: color-mix(in srgb, #16a34a 10%, transparent); }
+.pfc-day.neg { color: #dc2626; background: color-mix(in srgb, #dc2626 9%, transparent); }
+body.dark-mode .pfc-day { color: #8b98ad; background: rgba(255,255,255,0.06); }
+body.dark-mode .pfc-day.pos { color: #34d399; background: color-mix(in srgb, #34d399 12%, transparent); }
+body.dark-mode .pfc-day.neg { color: #f87171; background: color-mix(in srgb, #f87171 11%, transparent); }
+.pfc-day u { text-decoration: none; font-family: 'Inter', sans-serif; font-weight: 500; font-size: 11.5px; opacity: 0.8; }
 /* ступени кегля по числу цифр: до 7 — 30px, 8–10 — 26px, 11+ — 21px */
-.pfc-hero-val.l10 { font-size: 26px; }
-.pfc-hero-val.l13 { font-size: 21px; letter-spacing: -0.03em; }
-.pfc-hero-inc { margin-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; color: #94a3b8; white-space: nowrap; }
-.pfc-hero-inc.pos { color: #16a34a; } .pfc-hero-inc.neg { color: #dc2626; }
-body.dark-mode .pfc-hero-inc.pos { color: #34d399; } body.dark-mode .pfc-hero-inc.neg { color: #f87171; }
-.pfc-hero-inc u { text-decoration: none; font-family: 'Inter', sans-serif; font-weight: 500; color: #64748b; font-size: 12px; }
-body.dark-mode .pfc-hero-inc u { color: #8b98ad; }
+.pfc-hero-val.l10 { font-size: 42px; }
+.pfc-hero-val.l13 { font-size: 32px; letter-spacing: -0.03em; }
+/* хвост периода: тихая моно-строка БЕЗ цвета знака — цвет остаётся за чипом дня.
+   Классы .pos/.neg больше не приходят (heroIncParts), правил под них нет. */
+.pfc-hero-inc { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; color: #64748b; white-space: nowrap; }
+body.dark-mode .pfc-hero-inc { color: #8b98ad; }
+.pfc-hero-inc u { text-decoration: none; font-family: 'Inter', sans-serif; font-weight: 500; color: #94a3b8; font-size: 12px; margin-right: 4px; }
+body.dark-mode .pfc-hero-inc u { color: #67748a; }
 /* мини-график переиспользует drawPfChart (шкала процентов слева + наводимые точки с тултипом
    «дата+значение» — как в большом графике), поэтому .pfc-mchart-plot — это просто увеличенный
    и уплотнённый пейн: те же .pfcv-yaxis/.pfcv-plot внутри, размеры подогнаны компактнее. */
-.pfc-mchart-plot { position: relative; display: flex; width: 100%; height: 96px; min-width: 0; }
+/* «Табло»: график — этаж 170px во всю ширину карточки (кровля за паддинг героя),
+   в 30px от строки дельт. Ось процентов слева СОХРАНЕНА (решение раунда 1:
+   «честно подписываем ось») — названное отступление от «голого» мокапа. */
+.pfc-mchart-plot { position: relative; display: flex; width: auto; height: 170px; min-width: 0; margin: 30px -18px 0; }
 .pfc-mchart-plot .pfcv-yaxis { flex: 0 0 28px; }
 .pfc-mchart-plot .pfcv-ytick { font-size: 8px; right: 4px; }
 .pfc-mchart-plot .pfcv-x { display: none; }
-.pfc-mchart-plot .pfcv-dot { width: 6px; height: 6px; }
+/* точки каждой даты по мокапу не рисуются — но остаются ховер-целями тултипов
+   (названное отступление: мокап статичен и ховер не показывает) */
+.pfc-mchart-plot .pfcv-dot { width: 6px; height: 6px; opacity: 0; transition: opacity 0.12s; }
+.pfc-mchart-plot .pfcv-lp:hover .pfcv-dot { opacity: 1; }
+/* ---- оверлеи «Табло» (рисуются только с ex.card из paintPfChartMini) ---- */
+/* флажки экстремумов: ₽ и дата у максимума/минимума кривой */
+.pfcv-ext { position: absolute; transform: translate(-50%, calc(-100% - 8px)); font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; color: #64748b; background: color-mix(in srgb, #fff 84%, transparent); padding: 1px 6px; border-radius: 6px; white-space: nowrap; backdrop-filter: blur(2px); pointer-events: none; z-index: 4; }
+.pfcv-ext.min { transform: translate(-50%, 10px); }
+.pfcv-ext.l { transform: translate(0, calc(-100% - 8px)); } .pfcv-ext.min.l { transform: translate(0, 10px); }
+.pfcv-ext.r { transform: translate(-100%, calc(-100% - 8px)); } .pfcv-ext.min.r { transform: translate(-100%, 10px); }
+body.dark-mode .pfcv-ext { color: #8b98ad; background: color-mix(in srgb, #1a232f 84%, transparent); }
+/* метка выплаты: зелёная точка на линии + подпись суммы (чередуется над/под) */
+.pfcv-pay { position: absolute; width: 9px; height: 9px; border-radius: 50%; transform: translate(-50%, -50%); background: #fff; border: 2px solid #16a34a; z-index: 4; }
+body.dark-mode .pfcv-pay { background: #1a232f; border-color: #34d399; }
+.pfcv-pay b { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; color: #16a34a; background: color-mix(in srgb, #fff 84%, transparent); padding: 1px 6px; border-radius: 6px; white-space: nowrap; backdrop-filter: blur(2px); }
+.pfcv-pay.up b { top: auto; bottom: 12px; }
+body.dark-mode .pfcv-pay b { color: #34d399; background: color-mix(in srgb, #1a232f 84%, transparent); }
+/* ближайшая выплата: пунктир вперёд по оси + полая точка + подпись */
+.pfcv-futline { stroke: #16a34a; stroke-opacity: 0.55; stroke-width: 1.5; stroke-dasharray: 2 5; }
+body.dark-mode .pfcv-futline { stroke: #34d399; }
+.pfcv-payf { position: absolute; width: 9px; height: 9px; border-radius: 50%; transform: translate(-50%, -50%); background: transparent; border: 2px dashed #16a34a; z-index: 4; }
+body.dark-mode .pfcv-payf { border-color: #34d399; }
+.pfcv-futlbl { position: absolute; transform: translate(-100%, calc(-100% - 10px)); font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; color: #16a34a; background: color-mix(in srgb, #fff 84%, transparent); padding: 1px 6px; border-radius: 6px; white-space: nowrap; backdrop-filter: blur(2px); z-index: 4; }
+body.dark-mode .pfcv-futlbl { color: #34d399; background: color-mix(in srgb, #1a232f 84%, transparent); }
+/* пульс «сейчас» на последней точке кривой */
+.pfcv-pulse { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: var(--pf-accent); transform: translate(-50%, -50%); z-index: 5; pointer-events: none; }
+.pfcv-pulse::after { content: ''; position: absolute; inset: -3px; border-radius: 50%; border: 1.5px solid var(--pf-accent); animation: pfcPulse 2s ease-out infinite; }
+@keyframes pfcPulse { 0% { transform: scale(0.6); opacity: 0.9; } 100% { transform: scale(2.1); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .pfcv-pulse::after { animation: none; opacity: 0; } }
 .pfc-mchart-plot .pfcv-tip { padding: 6px 9px; border-radius: 8px; }
 .pfc-mchart-plot .pfcv-tip b { font-size: 12px; }
 .pfc-mchart-plot .pfcv-tip span { font-size: 9px; }
@@ -323,14 +375,16 @@ body.dark-mode .pfc-hero-inc u { color: #8b98ad; }
 .pfc-mchart-plot .pfcv-spin { width: 18px; height: 18px; }
 /* ---- KPI-полоса (макет 02): 4 равные колонки, разделённые хайрлайном;
    крайние прижаты к полям, третья строка каждой ячейки — тоже число (моно) ---- */
-.pfc-stats2 { display: grid; grid-template-columns: repeat(4, 1fr); background: rgba(15,23,42,0.03); border-top: 1px solid rgba(15,23,42,0.07); border-bottom: 1px solid rgba(15,23,42,0.07); padding: 14px 0 15px; }
-body.dark-mode .pfc-stats2 { background: rgba(255,255,255,0.025); border-color: rgba(255,255,255,0.07); }
-.pfc-stat2 { min-width: 0; padding: 0 16px; border-left: 1px solid rgba(15,23,42,0.07); }
+/* «Табло»: сводка НА ВОЗДУХЕ — серая подложка снята (самый большой прямоугольник
+   верха выглядел канцелярией), колонки по центру, между ними хайрлайны, сверху
+   одна линия. Нижней линии нет — её даёт строка долей ниже. */
+.pfc-stats2 { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid rgba(15,23,42,0.07); padding: 15px 0 16px; }
+body.dark-mode .pfc-stats2 { border-color: rgba(255,255,255,0.07); }
+.pfc-stat2 { min-width: 0; padding: 0 12px; border-left: 1px solid rgba(15,23,42,0.07); text-align: center; }
 body.dark-mode .pfc-stat2 { border-color: rgba(255,255,255,0.07); }
-.pfc-stat2:first-child { border-left: 0; padding-left: 18px; }
-.pfc-stat2:last-child { padding-right: 18px; }
+.pfc-stat2:first-child { border-left: 0; }
 .pfc-stat2-l { display: block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pfc-stat2-v { display: block; font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; margin-top: 7px; font-variant-numeric: tabular-nums; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pfc-stat2-v { display: block; font-family: 'JetBrains Mono', monospace; font-size: 17px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 body.dark-mode .pfc-stat2-v { color: #eef3f9; }
 .pfc-stat2-v.pos { color: #16a34a; } .pfc-stat2-v.neg { color: #dc2626; }
 body.dark-mode .pfc-stat2-v.pos { color: #34d399; } body.dark-mode .pfc-stat2-v.neg { color: #f87171; }
@@ -341,9 +395,20 @@ body.dark-mode .pfc-stat2-s { color: #67748a; }
 /* ---- полоса распределения (макет 02, вариант A «тихий»): одна краска в трёх
    плотностях (62/32/20% чернил; тёмная тема — светлая краска 72/38/24%),
    высота 4px. Доли — от ПОЛНОЙ стоимости, включая свободные деньги. ---- */
-.pfc-alloc { padding: 11px 18px 12px; border-bottom: 1px solid rgba(15,23,42,0.07); }
+/* «Табло»: доли ОДНОЙ строкой — первая подпись слева, полоса 3px, остальные
+   подписи справа (двухэтажная «полоса + легенда» слоила верх лишним этажом) */
+.pfc-alloc { padding: 10px 18px 12px; border-bottom: 1px solid rgba(15,23,42,0.07); }
 body.dark-mode .pfc-alloc { border-color: rgba(255,255,255,0.07); }
-.pfc-dist-bar { display: flex; gap: 2px; height: 4px; margin-bottom: 8px; }
+.pfc-thinrow { display: flex; align-items: center; gap: 14px; }
+.pfc-thin-l, .pfc-thin-r { flex: none; }
+.pfc-thin-sep { font-style: normal; color: #94a3b8; margin: 0 6px; }
+body.dark-mode .pfc-thin-sep { color: #67748a; }
+.pfc-thin-l span, .pfc-thin-r span { font-size: 11.5px; color: #64748b; white-space: nowrap; }
+body.dark-mode .pfc-thin-l span, body.dark-mode .pfc-thin-r span { color: #8b98ad; }
+.pfc-thin-l b, .pfc-thin-r b { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 600; color: #0f172a; font-variant-numeric: tabular-nums; }
+body.dark-mode .pfc-thin-l b, body.dark-mode .pfc-thin-r b { color: #eef3f9; }
+.pfc-dist-barwrap { flex: 1; min-width: 40px; }
+.pfc-dist-bar { display: flex; gap: 2px; height: 3px; }
 .pfc-dist-bar i { display: block; border-radius: 2px; }
 .pfc-dist-bar i.s1, .pfc-dist-lbl em.s1 { background: rgba(15,23,42,0.62); }
 .pfc-dist-bar i.s2, .pfc-dist-lbl em.s2 { background: rgba(15,23,42,0.32); }
@@ -568,7 +633,7 @@ body.dark-mode .pfc-warn.quiet { background: rgba(255,255,255,0.05); }
 body.dark-mode .pfc-mtable tbody tr.pfc-mtr.stale td { color: #67748a; }
 body.dark-mode .pfc-mtable tbody tr.pfc-mtr.stale .pfc-mtt b { color: #8b98ad; }
 /* заглушка на месте графика: кривой ещё не существует физически */
-.pfc-nochart { min-height: 96px; height: 100%; border-radius: 12px; border: 1px dashed rgba(15,23,42,0.12);
+.pfc-nochart { min-height: 170px; height: 100%; margin-top: 30px; border-radius: 12px; border: 1px dashed rgba(15,23,42,0.12);
     display: grid; place-items: center; text-align: center; padding: 0 14px; line-height: 1.45;
     font-size: 11.5px; color: #94a3b8; }
 body.dark-mode .pfc-nochart { border-color: rgba(255,255,255,0.12); color: #67748a; }
@@ -658,12 +723,20 @@ body.dark-mode .pfc-rebal { background: #e8eef7; border-color: #e8eef7; color: #
    position:fixed (все оверлеи живут в body), а .pfc-menu позиционируется от неё же. */
 .pf-card { container-type: inline-size; container-name: pfcard; }
 @container pfcard (max-width: 440px) {
-    /* герой (сумма + график) одинаков при любой ширине — см. базовые правила выше */
+    /* «Табло» в узком блоке: сумма 38px (ступени вслед), график 140px,
+       подписи меток выплат и флажки экстремумов уходят — остаются точки */
+    .pfc-hero { padding: 22px 14px 0; }
+    .pfc-hero-val { font-size: 38px; }
+    .pfc-hero-val.l10 { font-size: 32px; }
+    .pfc-hero-val.l13 { font-size: 26px; }
+    .pfc-dayrow { gap: 8px; margin-top: 13px; }
+    .pfc-day { font-size: 12.5px; padding: 5px 9px; }
+    .pfc-mchart-plot { height: 140px; margin: 22px -14px 0; }
+    .pfcv-ext, .pfcv-pay b, .pfcv-futlbl { display: none; }
     /* KPI 2×2: разделители только между колонками, строки разведены отступом */
     .pfc-stats2 { grid-template-columns: 1fr 1fr; row-gap: 14px; }
-    .pfc-stat2:nth-child(odd) { border-left: 0; padding-left: 18px; }
-    .pfc-stat2:nth-child(even) { padding-right: 18px; }
-    .pfc-stat2-v { font-size: 16px; }
+    .pfc-stat2:nth-child(odd) { border-left: 0; }
+    .pfc-stat2-v { font-size: 15px; }
     .pfc-top { gap: 6px; }
     .pfc-seg .pfdcfg-seg-b { padding: 4px 6px; font-size: 10px; }
     /* служебные иконки уходят первыми — шестерёнка остаётся всегда */

@@ -32,8 +32,58 @@
     // периода в герое (patchHeroInc): серия приходит с MOEX асинхронно, к моменту
     // рендера карточки её может ещё не быть.
     function paintPfChartMini(pid) {
-        drawPfChart(pid, dq('pfmChart-' + pid), null, null, pid + 'm', 16, cardRangeFrom(pid));
+        // «Табло» (мокап 2026-07-22): графику карточки передаются флажки экстремумов,
+        // пульс последней точки и метки выплат (cardPayMarks ниже) — всё рисует
+        // drawPfChart по 8-му параметру, остальные пейны (подвкладка, «Капитал»)
+        // его не передают и не меняются
+        var p = findPf(pid), pm = p ? cardPayMarks(p) : null;
+        drawPfChart(pid, dq('pfmChart-' + pid), null, null, pid + 'm', 16, cardRangeFrom(pid),
+            pm ? { card: true, pays: pm.past, future: pm.future } : null);
         patchHeroInc(pid);
+    }
+    // ---- выплаты для меток на графике ----
+    // То же расписание, что кормит «Календарь выплат» (coupSched/divSched, ядро):
+    // купоны облигаций по датам зачисления, дивиденды — по дате отсечки (фактическая
+    // выплата приходит позже — то же приближение, что в holdPayouts). Прошедшие
+    // выплаты режутся окном периода карточки; будущая — ближайшая одна.
+    // Пока расписание грузится, меток просто нет: pumpSchedQueue по приходе зовёт
+    // softRerender, и paintPfChartMini дорисует их сам.
+    function cardPayMarks(p) {
+        var from = cardRangeFrom(p.id), today = todayStr();
+        var byDate = {}, fut = null;
+        (p.holdings || []).forEach(function (h) {
+            if (!h.ticker || !(aggHolding(h).qty > 0)) return;
+            var isB = h.type === 'bond', sched;
+            if (isB) {
+                var full = PF.fullBondId(h.ticker);
+                if (!(full in PF.coupSched)) { PF.ensureSchedule('bond', full); return; }
+                sched = PF.coupSched[full];
+            } else {
+                if (!(h.ticker in PF.divSched)) { PF.ensureSchedule('div', h.ticker); return; }
+                sched = PF.divSched[h.ticker];
+            }
+            if (!sched) return;
+            // подпись как в мокапе: «купон 26230» / «дивиденды SBER» — у ОФЗ слово
+            // «ОФЗ» в метке лишнее, его несёт само слово «купон»
+            var nm = assetDisplayName(h) || h.ticker;
+            var word = isB ? 'купон' : 'дивиденды';
+            var short = isB ? String(nm !== h.ticker ? nm : h.ticker).replace(/^ОФЗ\s*/i, '') : h.ticker;
+            sched.forEach(function (cp) {
+                if (!(+cp.v > 0)) return;
+                var q = PF.qtyAtDate(h, cp.d); if (!(q > 0)) return;
+                var sum = cp.v * q;
+                if (cp.d <= today) {
+                    if (from && cp.d < from) return;
+                    var e = byDate[cp.d] || (byDate[cp.d] = { d: cp.d, sum: 0, n: 0, lbl: '' });
+                    e.sum += sum; e.n++; if (!e.lbl) e.lbl = word + ' ' + short;
+                } else if (!fut || cp.d < fut.d) {
+                    fut = { d: cp.d, sum: sum, lbl: word + ' ' + short,
+                        days: Math.max(1, Math.ceil((new Date(cp.d + 'T00:00:00') - new Date(today + 'T00:00:00')) / 864e5)) };
+                }
+            });
+        });
+        var past = Object.keys(byDate).sort().map(function (k) { return byDate[k]; });
+        return { past: past, future: fut };
     }
     // на каждый видимый портфель — своя загрузка/перерисовка мини-графика (переиспользует loadPfChart)
     function repaintMiniCharts() {
@@ -100,12 +150,15 @@
         return { cls: digits >= 11 ? ' l13' : digits >= 8 ? ' l10' : '',
             html: s.slice(0, -2) + '<small> ₽</small>' };
     }
-    // дельта под суммой следует за периодом: «за всё время» — живые c.pnl/pnlPct,
-    // окна 30д/год — по chartRaw[pid].series: изменение ПРИБЫЛИ за окно (докупка —
-    // довнесение капитала, а не рост), процент — к стоимости на начало окна.
+    // дельта периода — серый «хвост» двойной дельты «Табло» (мокап 2026-07-22):
+    // главный факт дня живёт в чипе (heroDayParts), а дельта выбранного периода —
+    // тихой моно-строкой рядом, БЕЗ цвета знака (цвет остаётся за чипом дня).
+    // «за всё время» — живые c.pnl/pnlPct, окна 30д/год — по chartRaw[pid].series:
+    // изменение ПРИБЫЛИ за окно (докупка — довнесение капитала, а не рост),
+    // процент — к стоимости на начало окна.
     // Пока серия не пришла с MOEX — «…», допишет patchHeroInc после загрузки.
     function heroIncParts(p, c) {
-        var r = cardRangeOf(p), lbl = ' <u>' + RANGE_LBL[r] + '</u>';
+        var r = cardRangeOf(p), lbl = '<u>' + RANGE_LBL[r] + '</u>';
         var dRub = null, dPct = null;
         if (r === 'all') { dRub = c.pnl; dPct = c.pnlPct; }
         else {
@@ -113,11 +166,21 @@
             if (raw && raw.series) for (var i = 0; i < raw.series.length; i++) { if (raw.series[i].d >= from) { q = raw.series[i]; break; } }
             if (q) { dRub = c.pnl - (q.c - q.inv); dPct = q.c > 0 ? dRub / q.c * 100 : null; }
         }
-        if (dRub == null) return { cls: 'pfc-hero-inc', html: '…' + lbl };
-        var pos = dRub >= 0;
-        return { cls: 'pfc-hero-inc ' + (pos ? 'pos' : 'neg'),
-            html: (pos ? '▲ ' : '▼ ') + fmtRub(Math.abs(dRub)) +
-                (dPct != null ? ' (' + fmtPct(Math.abs(dPct)).replace('+', '') + ')' : '') + lbl };
+        if (dRub == null) return { cls: 'pfc-hero-inc', html: lbl + '…' };
+        return { cls: 'pfc-hero-inc',
+            html: lbl + signRub(dRub) + (dPct != null ? ' · ' + fmtPct(dPct) : '') };
+    }
+    // чип дня: то же dayDelta, что KPI «За день», но у суммы — событие с цветом
+    // знака. Прочерк (нет вчерашней цены) — нейтральный чип с подсказкой:
+    // краевое состояние, мокапом не покрытое, названо в плане.
+    function heroDayParts(p, c) {
+        var dd = dayDelta(p, c.value);
+        if (dd == null) return { cls: 'pfc-day', title: 'Нет вчерашней цены — дельта дня появится после следующего закрытия торгов', html: '—<u>сегодня</u>' };
+        var ddPct = c.value - dd > 0 ? dd / (c.value - dd) * 100 : null;
+        var pos = dd >= 0;
+        return { cls: 'pfc-day ' + (pos ? 'pos' : 'neg'), title: null,
+            html: (pos ? '▲ ' : '▼ ') + '<b><span data-money>' + fmtRub(Math.abs(dd)) + '</span>' +
+                (ddPct != null ? ' · ' + fmtPct(Math.abs(ddPct)).replace('+', '') : '') + '</b><u>сегодня</u>' };
     }
     function patchHeroInc(pid) {
         var p = findPf(pid); if (!p || pfCardWarming(p) || !(p.holdings || []).length) return;
@@ -209,20 +272,31 @@
                 ? 'Кривая появится завтра:<br>нужен хотя бы один закрытый торговый день'
                 : 'График появится после первой покупки') + '</div>'
             : '<div class="pfc-mchart-plot" id="pfmChart-' + p.id + '"></div>';
+        // «Табло»: ось симметрии — метка, сумма и строка дельт по центру, график ниже.
+        // Чип дня не рисуем у пустого портфеля и у «куплено сегодня» (там прочерк
+        // уже стоит в хвосте — два прочерка подряд читались бы как поломка).
+        var day = hasHold && !warm && !allToday ? heroDayParts(p, c) : null;
         var hero = '<div class="pfc-hero">' +
             '<div class="pfc-hero-l">' +
                 '<span class="pfc-hero-k">Стоимость портфеля</span>' +
                 // data-live: фоновый тик котировок переписывает эти узлы точечно
                 // (livePatchers.cards ниже) — включая замену скелетонов прогрева числами
-                (warm ? '<span class="pfc-hero-val" data-live="pfc:' + p.id + ':val">' + skelHtml(180, 30) + '</span>' +
-                        '<span class="pfc-hero-inc" data-live="pfc:' + p.id + ':inc">' + skelHtml(128, 13) + '</span>'
+                (warm ? '<span class="pfc-hero-val" data-live="pfc:' + p.id + ':val">' + skelHtml(240, 40) + '</span>' +
+                        '<div class="pfc-dayrow">' + skelHtml(150, 28) + skelHtml(120, 13) + '</div>'
                       : '<span class="pfc-hero-val' + vh.cls + '" data-money data-live="pfc:' + p.id + ':val">' + vh.html + '</span>' +
-                        '<span class="' + inc.cls + '" data-money data-live="pfc:' + p.id + ':inc">' + inc.html + '</span>') +
+                        '<div class="pfc-dayrow">' +
+                            (day ? '<span class="' + day.cls + '"' + (day.title ? ' title="' + attr(day.title) + '"' : '') +
+                                ' data-live="pfc:' + p.id + ':hday">' + day.html + '</span>' : '') +
+                            '<span class="' + inc.cls + '" data-money data-live="pfc:' + p.id + ':inc">' + inc.html + '</span>' +
+                        '</div>') +
             '</div>' + chartCell +
         '</div>';
 
         var head = '<div class="dash2-card pf-card' + (menuOn ? ' menu-open' : '') + tall +
-            (p.hidden ? ' pf-card--dim' : '') + '" style="--pf-accent:' + ac + '" data-pfid="' + p.id + '">';
+            (p.hidden ? ' pf-card--dim' : '') + '" style="--pf-accent:' + ac + '" data-pfid="' + p.id + '">' +
+            // сцена «Табло»: радиальный свет цвета портфеля из центра (z-index:-1,
+            // карточка изолирована isolation:isolate — свет НАД фоном, ПОД контентом)
+            '<i class="pfc-scene"></i>';
 
         // ПУСТОЙ ПОРТФЕЛЬ: обрывается сразу после героя — KPI, полосы и таблицы нет
         // вовсе (делить на ноль нечего, а четыре прочерка подряд читаются как поломка).
@@ -332,9 +406,15 @@
             { k: 's3', n: 'Свободно', v: cash }
         ].filter(function (s) { return s.v > 0.005; });
         var bar = segs.map(function (s) { return '<i class="' + s.k + '" style="flex:' + (s.v / fullV * 100).toFixed(2) + '"></i>'; }).join('');
-        var leg = segs.map(function (s) {
-            return '<span><em class="' + s.k + '"></em>' + s.n + ' <b>' + (s.v / fullV * 100).toFixed(1).replace('.', ',') + '%</b></span>';
-        }).join('');
+        // «Табло»: доли ОДНОЙ строкой — первая подпись слева, остальные справа,
+        // полоса 3px между ними (двухэтажная «полоса + легенда» слоила верх на
+        // лишний этаж). Цветовые метки em не нужны: сегментов максимум три и
+        // подписи стоят в порядке сегментов по краям самой полосы.
+        var lbl = function (s) {
+            return '<span>' + s.n + ' <b>' + (s.v / fullV * 100).toFixed(1).replace('.', ',') + '%</b></span>';
+        };
+        var legL = segs.length ? lbl(segs[0]) : '';
+        var legR = segs.slice(1).map(lbl).join('<i class="pfc-thin-sep">·</i>');
         var tgt = (p.targetBond != null && isFinite(+p.targetBond)) ? clamp(Math.round(+p.targetBond), 0, 100) : null;
         var marker = '', hint = '';
         if (tgt != null && c.value > 0) {
@@ -369,8 +449,11 @@
             }
         }
         return '<div class="pfc-alloc">' +
-            '<div class="pfc-dist-barwrap"><div class="pfc-dist-bar">' + bar + '</div>' + marker + '</div>' +
-            '<div class="pfc-dist-lbl">' + leg + '</div>' + hint +
+            '<div class="pfc-thinrow">' +
+                '<span class="pfc-thin-l">' + legL + '</span>' +
+                '<div class="pfc-dist-barwrap"><div class="pfc-dist-bar">' + bar + '</div>' + marker + '</div>' +
+                '<span class="pfc-thin-r">' + legR + '</span>' +
+            '</div>' + hint +
         '</div>';
     }
 
@@ -403,6 +486,12 @@
             var ddPct = dd != null && c.value - dd > 0 ? dd / (c.value - dd) * 100 : null;
             PF.liveSet('pfc:' + p.id + ':day', { text: dd == null ? '—' : signRub(dd), cls: 'pfc-stat2-v' + (dd == null ? ' pfc-dash' : (dd >= 0 ? ' pos' : ' neg')) });
             PF.liveSet('pfc:' + p.id + ':dsub', { text: dd == null ? 'нет вчерашней цены' : (ddPct != null ? fmtPct(ddPct) + ' сегодня' : 'сегодня') });
+            // чип дня в герое: своя пара html+cls (у KPI «За день» другой класс,
+            // общий ключ перезаписывал бы его). У «куплено сегодня» чипа нет.
+            if (!allToday) {
+                var dh = heroDayParts(p, c);
+                PF.liveSet('pfc:' + p.id + ':hday', { html: dh.html, cls: dh.cls, title: dh.title });
+            }
             c.hs.forEach(function (x) {
                 var h = x.h, hc = x.c;
                 // те же выражения, что в pfMiniRowHtml — ячейки после апдейта
