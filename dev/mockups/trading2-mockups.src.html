@@ -60,9 +60,9 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .map .no{color:#c2760a;font-weight:700}
 
 /* ---------- экран ----------
-   Палитра живёт на экране: сцена «Торговли» тёмная ПО ЗАМЫСЛУ (как герой
-   «Расчёта»), поэтому не следует за темой просмотрщика. Светлый вариант —
-   отдельное предложение (экран 09). */
+   Палитра живёт на экране и не следует за темой просмотрщика документа.
+   Сцена «Торговли» СВЕТЛАЯ по умолчанию — продолжение сайта; тёмная — вторая
+   полноценная тема по видимому тумблеру в строке среды (проверка — экран 10). */
 .scr{--ink:#0f172a; --mut:#64748b; --dim:#94a3b8; --line:#e7ecf3; --hair:rgba(15,23,42,.07);
      --bg:#f4f6fa; --card:#fff; --acc:#4453ef; --grn:#16a34a; --red:#dc2626; --amb:#d97706;
      position:relative;width:1440px;height:900px;background:var(--bg);color:var(--ink);border-radius:16px;overflow:hidden;
@@ -129,6 +129,9 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .tb2-sand{font-size:8.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--amb);border:1px solid color-mix(in srgb,var(--amb) 45%,transparent);border-radius:999px;padding:3px 8px}
 .tb2-av{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#7c8cff,#4453ef);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center}
 .tb2-dots{width:28px;height:28px;border-radius:9px;border:1px solid var(--line);display:grid;place-items:center;color:var(--dim);font-weight:700;letter-spacing:.08em}
+.tb2-th{display:inline-flex;gap:1px;border:1px solid var(--line);border-radius:999px;padding:2px;background:var(--card)}
+.tb2-th i{width:21px;height:21px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:10.5px;color:var(--dim)}
+.tb2-th i.on{background:var(--ink);color:var(--bg)}
 
 .stage-pill{position:absolute;right:20px;bottom:16px;display:inline-flex;align-items:center;gap:8px;font-size:10.5px;font-weight:600;color:var(--dim);
             border:1px solid var(--line);border-radius:999px;padding:6px 12px;background:var(--card);z-index:35}
@@ -158,6 +161,16 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .ax-dates{display:flex;justify-content:space-between;font-family:var(--fN);font-size:9.5px;color:var(--dim);padding:6px 2px 0}
 .ptag{position:absolute;right:0;font-family:var(--fN);font-size:10.5px;font-weight:700;color:#fff;background:var(--acc);border-radius:6px;padding:2px 7px;transform:translateY(-50%)}
 
+/* заявка на графике: пунктирная линия на своей цене, ярлык с отменой; призрак — черновик по клику */
+.ord-line{position:absolute;left:0;right:0;display:flex;align-items:center;gap:8px;z-index:6}
+.ord-line i{flex:1;border-top:1.5px dashed color-mix(in srgb,var(--acc) 55%,transparent)}
+.ord-tag{flex:none;display:inline-flex;align-items:center;gap:7px;font-family:var(--fN);font-size:10px;font-weight:600;color:var(--acc);
+        background:color-mix(in srgb,var(--acc) 8%,var(--card));border:1px solid color-mix(in srgb,var(--acc) 35%,transparent);
+        border-radius:7px;padding:3px 8px;white-space:nowrap}
+.ord-tag u{text-decoration:none;color:var(--dim);font-family:var(--fU);font-size:10px}
+.ord-ghost{position:absolute;display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:600;color:var(--mut);
+        background:var(--card);border:1px dashed var(--dim);border-radius:7px;padding:3px 9px;z-index:6;white-space:nowrap}
+
 /* лента-пульс */
 .tape{display:flex;align-items:center;gap:14px;font-family:var(--fN);font-size:10.5px;color:var(--dim);border-top:1px solid var(--hair);padding-top:9px;overflow:hidden;white-space:nowrap}
 .tape b{font-weight:600;color:var(--mut)}
@@ -178,7 +191,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .scr:not(.night) .tkt{box-shadow:0 24px 54px -30px rgba(24,38,60,.45)}
 .tkt-h{display:flex;align-items:center;gap:9px}
 .tkt-h b{font-family:var(--fT);font-weight:400;font-size:16px}
-.fresh{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:600;color:var(--grn)}
+.fresh{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:600;color:var(--grn);white-space:nowrap}
 .fresh i{width:6px;height:6px;border-radius:50%;background:var(--grn)}
 .fresh.amber{color:var(--amb)} .fresh.amber i{background:var(--amb)}
 .seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;border:1px solid var(--line);border-radius:12px;padding:4px}
@@ -199,10 +212,14 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .apx b{font-family:var(--fN);color:var(--ink);font-weight:600}
 .rest{display:flex;justify-content:space-between;font-size:11.5px;color:var(--mut);border-top:1px dashed var(--line);padding-top:9px}
 .rest b{font-family:var(--fN);font-weight:600;color:var(--ink)}
-.cta{border-radius:13px;text-align:center;font-size:14px;font-weight:700;color:#04120a;padding:13px 0;
-     background:linear-gradient(180deg,#3fe39b,#26c47e);box-shadow:0 14px 30px -14px rgba(38,196,126,.55)}
-.cta.sell{background:linear-gradient(180deg,#fb8d8d,#ef6262);color:#180404;box-shadow:0 14px 30px -14px rgba(239,98,98,.5)}
-.cta.dis{background:var(--line);color:var(--dim);box-shadow:none}
+/* кнопка: чернильная, сторона — точкой, не заливкой (зелёно-красные плиты ушли с раундом 1) */
+.cta{display:flex;align-items:center;justify-content:center;gap:9px;border-radius:13px;font-size:13.5px;font-weight:700;
+     color:var(--bg);padding:13px 0;background:var(--ink);box-shadow:0 16px 34px -20px rgba(15,23,42,.55)}
+.cta::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--grn)}
+.cta.sell::before{background:var(--red)}
+.cta.dis{background:var(--hair);color:var(--dim);box-shadow:none}
+.cta.dis::before{display:none}
+.scr.night .cta{box-shadow:0 16px 34px -20px rgba(0,0,0,.65)}
 .fee{font-size:10px;color:var(--dim);text-align:center}
 .know{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--mut);border-top:1px solid var(--hair);padding-top:10px}
 .know u{text-decoration:none;margin-left:auto;color:var(--acc);font-weight:600}
@@ -282,31 +299,33 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .sct{font-size:11px;font-weight:600;color:var(--dim);border:1px solid transparent;border-radius:9px;padding:5px 11px}
 .sct.on{color:var(--ink);border-color:var(--line);background:var(--card)}
 
-/* ═══════════ омнибокс ═══════════ */
-.veil{position:absolute;inset:0;background:rgba(4,7,12,.62);backdrop-filter:blur(5px);z-index:50}
-.pal{position:absolute;left:50%;top:96px;transform:translateX(-50%);width:640px;background:#0f141f;border:1px solid rgba(255,255,255,.12);
-     border-radius:20px;z-index:55;box-shadow:0 50px 120px -30px rgba(0,0,0,.8);overflow:hidden}
-.pal-in{display:flex;align-items:center;gap:11px;padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.08)}
-.pal-in .q{font-family:var(--fN);font-size:17px;font-weight:500;color:#e9eef8}
+/* ═══════════ омнибокс (токены сцены — живёт в обеих темах) ═══════════ */
+.veil{position:absolute;inset:0;background:rgba(15,23,42,.34);backdrop-filter:blur(5px);z-index:50}
+.scr.night .veil{background:rgba(4,7,12,.62)}
+.pal{position:absolute;left:50%;top:96px;transform:translateX(-50%);width:640px;background:var(--card);border:1px solid var(--line);
+     border-radius:20px;z-index:55;box-shadow:0 50px 120px -40px rgba(15,23,42,.55);overflow:hidden}
+.scr.night .pal{background:#0f141f;box-shadow:0 50px 120px -30px rgba(0,0,0,.8)}
+.pal-in{display:flex;align-items:center;gap:11px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.pal-in .q{font-family:var(--fN);font-size:17px;font-weight:500;color:var(--ink)}
 .pal-in .caret{width:2px;height:22px;background:var(--acc);border-radius:2px}
-.pal-in kbd{margin-left:auto;font-family:var(--fN);font-size:10px;color:#5e6c84;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:2px 7px}
-.intent{margin:14px 16px;border:1px solid color-mix(in srgb,var(--grn) 40%,transparent);background:color-mix(in srgb,var(--grn) 8%,transparent);border-radius:14px;padding:13px 16px;display:flex;align-items:center;gap:13px}
-.intent .iic{flex:none;width:36px;height:36px;border-radius:12px;background:color-mix(in srgb,var(--grn) 18%,transparent);color:var(--grn);display:grid;place-items:center;font-size:15px}
-.intent h5{font-size:14.5px;font-weight:700;color:#e9eef8}
-.intent p{font-size:11px;color:#93a1b8;margin-top:2px}
-.intent kbd{margin-left:auto;font-family:var(--fN);font-size:10px;color:var(--grn);border:1px solid color-mix(in srgb,var(--grn) 45%,transparent);border-radius:6px;padding:3px 8px;white-space:nowrap}
-.pal-sec{font-size:9px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:#5e6c84;padding:10px 18px 6px}
-.pal-row{display:flex;align-items:center;gap:11px;padding:8px 18px;font-size:12.5px;color:#c6d0e0}
-.pal-row.on{background:rgba(255,255,255,.05)}
+.pal-in kbd{margin-left:auto;font-family:var(--fN);font-size:10px;color:var(--dim);border:1px solid var(--line);border-radius:6px;padding:2px 7px}
+.intent{margin:14px 16px;border:1px solid color-mix(in srgb,var(--acc) 35%,transparent);background:color-mix(in srgb,var(--acc) 7%,transparent);border-radius:14px;padding:13px 16px;display:flex;align-items:center;gap:13px}
+.intent .iic{flex:none;width:36px;height:36px;border-radius:12px;background:color-mix(in srgb,var(--acc) 14%,transparent);color:var(--acc);display:grid;place-items:center;font-size:15px}
+.intent h5{font-size:14.5px;font-weight:700;color:var(--ink)}
+.intent p{font-size:11px;color:var(--mut);margin-top:2px}
+.intent kbd{margin-left:auto;font-family:var(--fN);font-size:10px;color:var(--acc);border:1px solid color-mix(in srgb,var(--acc) 40%,transparent);border-radius:6px;padding:3px 8px;white-space:nowrap}
+.pal-sec{font-size:9px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--dim);padding:10px 18px 6px}
+.pal-row{display:flex;align-items:center;gap:11px;padding:8px 18px;font-size:12.5px;color:var(--mut)}
+.pal-row.on{background:color-mix(in srgb,var(--acc) 7%,transparent)}
 .pal-row .pm{width:28px;height:28px;border-radius:9px;font-family:var(--fN);font-size:10px;font-weight:700;color:#fff;display:grid;place-items:center;flex:none}
-.pal-row b{font-weight:600;color:#e9eef8}
-.pal-row em{font-style:normal;font-size:10.5px;color:#5e6c84}
-.pal-row .pr{margin-left:auto;font-family:var(--fN);font-size:11.5px;color:#93a1b8}
+.pal-row b{font-weight:600;color:var(--ink)}
+.pal-row em{font-style:normal;font-size:10.5px;color:var(--dim)}
+.pal-row .pr{margin-left:auto;font-family:var(--fN);font-size:11.5px;color:var(--mut)}
 .pal-row .pd{font-family:var(--fN);font-size:10.5px;width:56px;text-align:right}
 .pal-row .pd.pup{color:var(--grn)} .pal-row .pd.pdn{color:var(--red)}
-.pal-row .cic{width:28px;height:28px;border-radius:9px;border:1px solid rgba(255,255,255,.1);display:grid;place-items:center;color:#93a1b8;font-size:12px;flex:none}
-.pal-foot{display:flex;gap:16px;padding:11px 18px;border-top:1px solid rgba(255,255,255,.08);font-size:10px;color:#5e6c84}
-.pal-foot kbd{font-family:var(--fN);border:1px solid rgba(255,255,255,.12);border-radius:5px;padding:1px 5px;margin-right:4px}
+.pal-row .cic{width:28px;height:28px;border-radius:9px;border:1px solid var(--line);display:grid;place-items:center;color:var(--mut);font-size:12px;flex:none}
+.pal-foot{display:flex;gap:16px;padding:11px 18px;border-top:1px solid var(--line);font-size:10px;color:var(--dim)}
+.pal-foot kbd{font-family:var(--fN);border:1px solid var(--line);border-radius:5px;padding:1px 5px;margin-right:4px}
 
 /* ═══════════ анатомия тикета ═══════════ */
 .an{display:grid;grid-template-columns:repeat(3,340px);gap:40px;justify-content:center;padding:30px 0;position:relative}
@@ -329,9 +348,20 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .cf-r.total b{font-size:15px}
 .cf-note{font-size:10.5px;line-height:1.5;color:var(--dim);border-left:2px solid var(--line);padding-left:10px}
 .done-ic{width:44px;height:44px;border-radius:50%;background:color-mix(in srgb,var(--grn) 16%,transparent);color:var(--grn);display:grid;place-items:center;font-size:19px;margin:4px auto 0}
+.done-ic.bad{background:color-mix(in srgb,var(--red) 12%,transparent);color:var(--red)}
 .cf-center{text-align:center}
 .cf-center h4{font-family:var(--fT);font-weight:400;font-size:19px;margin-top:6px}
 .cf-center p{font-size:11.5px;color:var(--mut);margin-top:4px;line-height:1.55}
+
+/* ═══════════ край сцены: особые состояния ═══════════ */
+.cf-kick{font-family:var(--fN);font-size:9.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
+.eg-banner{display:flex;align-items:center;gap:9px;font-size:11.5px;font-weight:600;color:var(--amb);
+        background:color-mix(in srgb,var(--amb) 9%,transparent);border-radius:10px;padding:9px 12px}
+.eg-banner i{width:7px;height:7px;border-radius:50%;background:var(--amb);flex:none}
+.eg-omni{display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:12px;padding:10px 13px;font-size:12.5px;color:var(--dim)}
+.eg-omni kbd{margin-left:auto;font-family:var(--fN);font-size:10px;border:1px solid var(--line);border-radius:6px;padding:2px 6px;color:var(--dim)}
+.eg-steps{display:flex;flex-direction:column;gap:7px;font-size:11.5px;color:var(--mut);line-height:1.5}
+.eg-steps b{color:var(--ink);font-weight:600}
 </style>
 </head>
 <body>
@@ -342,7 +372,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   <h1>Одна сцена, которая растёт вместе с пользователем</h1>
   <p>Полный пересмотр «Торговли» с чистого листа. Раунд 1 (терминал-сетка + отдельный режим «Просто»)
      реализован и отвергнут: два мира вместо одного, визуальный язык таблиц из 2010-х, перегруз.
-     Здесь — новая концепция: никаких режимов, единая тёмная сцена вокруг одной бумаги,
+     Здесь — новая концепция: никаких режимов, единая светлая сцена вокруг одной бумаги,
      слои открываются по мере роста опыта.</p>
   <div class="verdict"><div>
     <p><b>Диагноз раунда 1.</b> «Просто» и «Терминал» — два разных приложения с переключателем: новичок
@@ -351,8 +381,9 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <p><b>Решение.</b> <b>Сцена</b>: одна бумага в центре, цена крупно, график во весь холст, тикет — плавающая
        карточка справа. <b>Три ступени</b> насыщенности (Старт → Разгон → Контроль): интерфейс сам предлагает
        следующий слой после порогов опыта, любой слой можно открыть или убрать вручную — это пресет, а не клетка.
-       <b>Омнибокс</b> ⌘K — одна строка на поиск, команды и «купить сбер на 30 000». Сцена тёмная по замыслу
-       (прецедент — герой «Расчёта»); светлая тема — опция. Выстраданное из раунда 1 остаётся законом:
+       <b>Омнибокс</b> ⌘K — одна строка на поиск, команды и «купить сбер на 30 000». Сцена светлая по умолчанию —
+       продолжение сайта; тёмная — полноценная вторая тема по видимому тумблеру в строке среды, не инверсия.
+       Выстраданное из раунда 1 остаётся законом:
        гвард свежести цены, «ни одна клавиша не отправляет заявку», итог списания только в кнопке, НКД по полной цене.</p>
   </div></div>
 </header>
@@ -392,9 +423,9 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   <p class="mk-sub">Первая сделка. На экране ровно четыре сущности: строка среды, бумага с ценой крупно,
      график во весь холст, тикет. Сумма — в рублях с пресетами; лоты объяснены словами; итог списания —
      только в кнопке. Внизу — позиции-чипы: клик грузит бумагу в сцену.</p>
-  <div class="scroller"><div class="scr night"><div id="m2"></div></div></div>
+  <div class="scroller"><div class="scr"><div id="m2"></div></div></div>
   <div class="notes">
-    <div class="note"><i>1</i><span>Строка среды 52px — всё, что осталось от хрома: выход, омнибокс, деньги одной строкой, связь, песочница, аватар. Ни вкладок панелей, ни полосы экранов.</span></div>
+    <div class="note"><i>1</i><span>Строка среды 52px — всё, что осталось от хрома: выход, омнибокс, деньги одной строкой, связь, песочница, тумблер темы, аватар. Ни вкладок панелей, ни полосы экранов.</span></div>
     <div class="note"><i>2</i><span>Цена — самое крупное число экрана (58px, моно). Чип дня рядом, а не в таблице. График — линия с градиентом; свечи появятся на «Разгоне».</span></div>
     <div class="note"><i>3</i><span>Тикет наследует финал раунда 1: пресеты сумм, «≈ 110 акций» с объяснением лотности, «останется свободно», комиссия включена, «Максимум» считает за вычетом комиссии.</span></div>
     <div class="note"><i>4</i><span>Гвард свежести из раунда 1 живёт в тикете: точка «цена живая» — тот же <code style="font-family:var(--fN);font-size:11px">pftLinkState</code>; замерла — кнопка гаснет (экран 08).</span></div>
@@ -409,13 +440,14 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   <p class="mk-sub">Та же сцена спустя несколько сделок. Добавились — не перестроились: вкладки бумаг над
      героем, свечи по тумблеру, стакан-глубина между графиком и тикетом, лента-пульс одной строкой под
      графиком, строка цены в тикете («По рынку ▾» → лимит). Слева — карточка-предложение: так сцена растёт.</p>
-  <div class="scroller"><div class="scr night"><div id="m3"></div></div></div>
+  <div class="scroller"><div class="scr"><div id="m3"></div></div></div>
   <div class="notes">
     <div class="note"><i>1</i><span>Стакан — не таблица, а глубина: гистограммы объёмов к центру, спред отдельной строкой. Клик по цене подставляет её лимиткой в тикет — связка «график ↔ стакан ↔ тикет» из раунда 1 сохранена.</span></div>
     <div class="note"><i>2</i><span>Лента сделок — строка-пульс, а не панель: последние сделки бегут под графиком. Раскрытие в полноценную колонку — на «Контроле».</span></div>
     <div class="note"><i>3</i><span>Карточка-предложение — механика эволюции, видимая глазами: тихо появляется у края, один клик «Открыть», «Не сейчас» без чувства вины. Не модал, сцену не блокирует.</span></div>
     <div class="note"><i>4</i><span>Вкладки бумаг ≤ 4 — это прежние «слоты», но видимые по одному: сцена всегда про одну бумагу, остальные ждут во вкладках с живой дельтой.</span></div>
     <div class="note"><i>5</i><span>Тикет получил одну новую строку (цена), всё прочее стоит на месте — новичок со ступени 1 узнаёт свой тикет.</span></div>
+    <div class="note"><i>6</i><span>Лимитная заявка живёт прямо на графике: пунктирная линия на своей цене, ярлык с количеством, ✕ снимает. Линию можно тащить — цена в тикете следует; до дока «Контроля» это единственное место, где заявка видна.</span></div>
   </div>
 </section>
 
@@ -425,13 +457,14 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   <p class="mk-sub">Максимальная насыщенность — и всё ещё сцена, не сетка: панели плавают на холсте с
      воздухом между ними. Сплит на две бумаги, полный стакан, док Заявки/Позиции/История/Алерты,
      экраны-вкладки в строке среды, подсказка клавиш. Тикет — всё тот же, плюс строка защиты.</p>
-  <div class="scroller"><div class="scr night"><div id="m4"></div></div></div>
+  <div class="scroller"><div class="scr"><div id="m4"></div></div></div>
   <div class="notes">
     <div class="note"><i>1</i><span>Экраны (trading:N из раунда 1) переезжают в строку среды как вкладки — механика и хранилище остаются, исчезает отдельная плавающая полоса.</span></div>
     <div class="note"><i>2</i><span>Док — таблица заявок в один клик от отмены; «Отменить все» — поимённо, как решено в ревью. Сворачивается шевроном, место уходит графикам.</span></div>
     <div class="note"><i>3</i><span>Горячие клавиши раунда 1 работают здесь без изменений; «?» в доке — та же справка. Правило «ни одна клавиша не отправляет заявку» — закон.</span></div>
     <div class="note"><i>4</i><span>Защита позиции (тейк/стоп) — одна строка тикета, как в утверждённом ужатом тикете раунда 1.</span></div>
     <div class="note"><i>5</i><span>Вторая панель графика — по желанию: сплит включается из «⋯» панели. Панели не таскаются свободно — порядок фиксирован, конструктора на сцене нет.</span></div>
+    <div class="note"><i>6</i><span>Заявка из дока видна и на графике той же линией — одна сущность, два представления. Клик по пустому уровню цены предлагает призрак-черновик «＋ лимитка»; Enter из него, как всюду, лишь заполняет тикет.</span></div>
   </div>
 </section>
 
@@ -440,9 +473,9 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   <div class="mk-h"><span class="mk-n">06</span><h2>Омнибокс ⌘K: строка вместо форм</h2><span class="mk-tag">новое</span></div>
   <p class="mk-sub">Одна строка на всё: поиск бумаги, команды сцены, намерение «сбер 30к». Парсер собирает
      из фразы черновик сделки — Enter лишь подставляет его в тикет, отправляет всегда человек кнопкой.</p>
-  <div class="scroller"><div class="scr night" style="height:760px"><div id="m5"></div></div></div>
+  <div class="scroller"><div class="scr" style="height:760px"><div id="m5"></div></div></div>
   <div class="notes">
-    <div class="note"><i>1</i><span>Намерение — зелёная карточка с разбором фразы: бумага, сумма, ≈ количество. Enter заполняет тикет и закрывает омнибокс; правило «клавиша не отправляет» действует и здесь.</span></div>
+    <div class="note"><i>1</i><span>Намерение — карточка с разбором фразы: бумага, сумма, ≈ количество. Enter заполняет тикет и закрывает омнибокс; правило «клавиша не отправляет» действует и здесь.</span></div>
     <div class="note"><i>2</i><span>Поиск бумаг — существующий <code style="font-family:var(--fN);font-size:11px">pftFindInstruments</code>; команды — реестр действий сцены (стакан, свечи, тема, ступень, экраны). Лупа из полосы экранов уходит сюда.</span></div>
     <div class="note"><i>3</i><span>На ступени «Старт» омнибокс уже есть, но показывает только бумаги и простые команды — сложность растёт вместе со ступенью.</span></div>
   </div>
@@ -453,7 +486,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   <div class="mk-h"><span class="mk-n">07</span><h2>Единый тикет: одна анатомия на все ступени</h2><span class="mk-tag mute">анатомия</span></div>
   <p class="mk-sub">Тот же компонент трижды. Строки добавляются сверху вниз, ни одна не меняет места —
      мышечная память переживает рост. Сумма ⇄ лоты — переключение единицы прямо в поле.</p>
-  <div class="scroller"><div class="scr night" style="height:780px"><div id="m6"></div></div></div>
+  <div class="scroller"><div class="scr" style="height:780px"><div id="m6"></div></div></div>
   <div class="notes">
     <div class="note"><i>1</i><span>Сегмент Купить/Продать и поле суммы — незыблемы. «Продать» на любой ступени предлагает доли позиции (¼ · ½ · Всё); «Всё» считает за вычетом комиссии.</span></div>
     <div class="note"><i>2</i><span>Строка цены появляется на «Разгоне» со значением «По рынку» — лимитка в одном касании, но по умолчанию ничего не усложняет.</span></div>
@@ -468,7 +501,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   <div class="mk-h"><span class="mk-n">08</span><h2>Подтверждение, защита, квитанция</h2><span class="mk-tag mute">состояния</span></div>
   <p class="mk-sub">Четыре состояния диалога сделки: живая цена с полной разбивкой · замершая цена
      (кнопка погашена гвардом свежести) · облигация с НКД строкой в разбивке · квитанция после исполнения.</p>
-  <div class="scroller"><div class="scr night" style="height:840px"><div id="m7"></div></div></div>
+  <div class="scroller"><div class="scr" style="height:840px"><div id="m7"></div></div></div>
   <div class="notes">
     <div class="note"><i>1</i><span>Кнопка подтверждения повторяет точную сумму списания — «спишется ровно столько» с копейками (<code style="font-family:var(--fN);font-size:11px">fmtKop</code>), обещание раунда 1.</span></div>
     <div class="note"><i>2</i><span>«Цена замерла» — тот же гвард (порог 8 с от последнего успешного стакана), продублированный в диалоге: связь умирает именно пока читают текст.</span></div>
@@ -476,17 +509,32 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   </div>
 </section>
 
-<!-- ═══════════════ 09 · светлая тема ═══════════════ -->
+<!-- ═══════════════ 09 · край сцены ═══════════════ -->
 <section class="mk">
-  <div class="mk-h"><span class="mk-n">09</span><h2>Светлая сцена: для тех, кто включит</h2><span class="mk-tag mute">проверка</span></div>
-  <p class="mk-sub">Сцена тёмная по умолчанию независимо от темы сайта — как кинозал. Но в «⋯» есть
-     «следовать теме сайта»: проверяем, что язык сцены живёт и на светлых токенах. Ступень «Разгон».</p>
-  <div class="scroller"><div class="scr"><div id="m8"></div></div></div>
+  <div class="mk-h"><span class="mk-n">09</span><h2>Край сцены: пустые и особые состояния</h2><span class="mk-tag mute">состояния</span></div>
+  <p class="mk-sub">То, что обычно вспоминают после релиза. Первый вход без позиций — онбординг из одной
+     строки; биржа закрыта — честная кнопка вместо обмана «отправим потом»; полный обрыв связи — судьба
+     уже отправленных заявок; отказ брокера — причина словами, а не кодом.</p>
+  <div class="scroller"><div class="scr" style="height:820px"><div id="m9"></div></div></div>
+  <div class="notes">
+    <div class="note"><i>1</i><span>«Нет токена брокера» здесь не показан: состояние уже решено «стеклом» — призрак терминала за размытием и карточка-замок (модуль trading-gate-glass). Сцена наследует его без изменений.</span></div>
+    <div class="note"><i>2</i><span>Доступность: тумблер темы и слои — обычные кнопки с видимым фокусом; цвет нигде не единственный носитель смысла (стрелки у дельт, слова у статусов); «цена живая/замерла» объявляется скрин-ридеру через aria-live, но не каждым тиком цены.</span></div>
+    <div class="note"><i>3</i><span>Отмена заявки с графика и из дока — одно действие: заявка не «принадлежит» панели. Подтверждения отмена не требует — она обратима повторной заявкой, а промедление стоит денег.</span></div>
+  </div>
 </section>
 
-<!-- ═══════════════ 10 · данные ═══════════════ -->
+<!-- ═══════════════ 10 · тёмная сцена ═══════════════ -->
 <section class="mk">
-  <div class="mk-h"><span class="mk-n">10</span><h2>Поле макета → откуда данные</h2></div>
+  <div class="mk-h"><span class="mk-n">10</span><h2>Тёмная сцена: вторая тема, не инверсия</h2><span class="mk-tag mute">проверка</span></div>
+  <p class="mk-sub">Тумблер — видимый, в строке среды (☀ ⇄ ☾), state хранится отдельно от темы сайта.
+     Тёмные токены собраны заново: приглушённый фон, полупрозрачные карточки, свои оттенки роста и падения.
+     Проверка на самой насыщенной из лёгких ступеней — «Разгоне».</p>
+  <div class="scroller"><div class="scr night"><div id="m8"></div></div></div>
+</section>
+
+<!-- ═══════════════ 11 · данные ═══════════════ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">11</span><h2>Поле макета → откуда данные</h2></div>
   <table class="map">
     <tr><th style="width:30%">Элемент</th><th>Источник</th><th style="width:10%">Статус</th></tr>
     <tr><td>Сцена: цена, график, свечи</td><td>GetOrderBook/GetCandles уже опрашиваются; линия — путь <code>sxChartHtml</code>, свечи — KLineChart из <code>portfolios-chart.js</code></td><td class="ok">есть</td></tr>
@@ -500,6 +548,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <tr><td>Позиции-чипы</td><td><code>pollPos</code> уже опрашивает позиции; чипы — новый рендер</td><td class="ok">есть</td></tr>
     <tr><td>НКД облигаций</td><td>формула из «Просто» считает верно; в UI пускаем после проверки единиц на живом счёте</td><td class="no">хвост</td></tr>
     <tr><td>Раскладка сцены</td><td><b>решение:</b> на «Торговле» конструктор <code>.pfd-grid</code> не используется — фиксированная сцена; виджеты trade:* в реестре остаются для обратной совместимости</td><td class="no">новое</td></tr>
+    <tr><td>Тумблер темы сцены</td><td>новый ключ <code>bt_theme_v1</code> (light по умолчанию), независим от темы сайта; тёмные токены сцены — свои, не инверсия и не глобальный <code>toggleTheme</code></td><td class="no">новое</td></tr>
+    <tr><td>Заявка на графике (линия, drag, ✕)</td><td>активные заявки уже опрашиваются (док); линия — оверлей KLineChart (<code>createOverlay</code>) поверх <code>portfolios-chart.js</code>, на линии-графике — свой рендер; отмена — тот же <code>pftAsk</code></td><td class="no">новое</td></tr>
+    <tr><td>«Биржа закрыта» (статус торгов)</td><td>метод GetTradingStatus есть в API Т-Инвестиций — воркер-прокси его пока не проксирует, добавить; до тех пор косвенно по пустому стакану</td><td class="no">новое</td></tr>
+    <tr><td>Отказ брокера словами</td><td>ответ PostOrder уже приходит в <code>pftAsk</code>; новое — словарь причин человеческим языком, код ошибки — в подсказке</td><td class="no">новое</td></tr>
+    <tr><td>Онбординг первого входа</td><td>условие готово: есть токен, позиций нет (<code>pollPos</code>); сам экран-приглашение — новый рендер</td><td class="no">новое</td></tr>
   </table>
   <p class="mk-sub" style="margin-top:16px">Пересборка: <code style="font-family:var(--fN);font-size:12px">node dev/mockups/build-mockups.js trading2</code></p>
 </section>
@@ -524,15 +577,18 @@ function lineChart(pts, w, h, dash){
         + '<circle cx="' + last[0] + '" cy="' + last[1] + '" r="9" fill="var(--acc)" opacity=".18"/>'
         + '</svg>';
 }
-/* свечи: детерминированная прогулка от i */
+/* свечи: детерминированная прогулка от i; рост — заливка, падение — полый контур
+   (два носителя смысла: цвет и форма — читается и в ч/б) */
 function candleChart(n, w, h){
-    var cw = w / n, out = '', y = h * .62, i, o, c, hi, lo, up, x;
+    var cw = w / n, out = '', y = h * .62, i, o, c, hi, lo, up, x, bw;
     for (i = 0; i < n; i++){
         o = y; y += Math.sin(i * 2.7) * h * .045 - h * .008; c = y;
         hi = Math.min(o, c) - h * .03; lo = Math.max(o, c) + h * .03;
-        up = c <= o; x = i * cw + cw / 2;
-        out += '<line x1="' + x + '" y1="' + hi + '" x2="' + x + '" y2="' + lo + '" stroke="var(--' + (up ? 'grn' : 'red') + ')" stroke-width="1" opacity=".7"/>'
-             + '<rect x="' + (x - cw * .3) + '" y="' + Math.min(o, c) + '" width="' + cw * .6 + '" height="' + Math.max(2, Math.abs(c - o)) + '" rx="1" fill="var(--' + (up ? 'grn' : 'red') + ')" opacity=".9"/>';
+        up = c <= o; x = i * cw + cw / 2; bw = cw * .52;
+        out += '<line x1="' + x + '" y1="' + hi + '" x2="' + x + '" y2="' + lo + '" stroke="var(--' + (up ? 'grn' : 'red') + ')" stroke-width="1" opacity=".5"/>'
+             + (up
+                ? '<rect x="' + (x - bw / 2) + '" y="' + Math.min(o, c) + '" width="' + bw + '" height="' + Math.max(2, Math.abs(c - o)) + '" rx="1" fill="var(--grn)" opacity=".85"/>'
+                : '<rect x="' + (x - bw / 2 + .6) + '" y="' + (Math.min(o, c) + .6) + '" width="' + (bw - 1.2) + '" height="' + Math.max(2, Math.abs(c - o) - 1.2) + '" rx="1" fill="none" stroke="var(--red)" stroke-width="1.2" opacity=".85"/>');
     }
     return '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" style="height:' + h + 'px">' + out + '</svg>';
 }
@@ -554,6 +610,8 @@ function topbar(o){
         + '<span class="tb2-money">портфель<b>184 775 ₽</b></span><span class="tb2-sep"></span>'
         + '<span class="tb2-link"><i></i>связь</span>'
         + '<span class="tb2-sand">Песочница</span>'
+        + (o.dark ? '<span class="tb2-th"><i>☀</i><i class="on">☾</i></span>'
+                  : '<span class="tb2-th"><i class="on">☀</i><i>☾</i></span>')
         + '<span class="tb2-dots">⋯</span>'
         + '<span class="tb2-av">М</span>'
         + '</span></div>';
@@ -596,7 +654,7 @@ function ticket(o){
            + '<div class="fld-price"><span class="mkt">' + (o.limit ? 'Лимит 270,00 ₽' : 'По рынку') + ' ▾</span><span class="lim">'
            + (o.limit ? 'сейчас 271,45 ₽' : 'или укажите лимит') + '</span></div></div>';
     if (o.lots)
-        h += '<div class="fld"><em>Количество</em><div class="fld-in"><b>110</b><u>' + (sell ? 'акций из 240' : 'акций · 11 лотов') + '</u>'
+        h += '<div class="fld"><em>Количество</em><div class="fld-in"><b>' + (sell ? '120' : '110') + '</b><u>' + (sell ? 'акций из 240' : 'акций · 11 лотов') + '</u>'
            + '<span class="caret"></span><span class="fld-sw">' + (o.npin5 ? '<span class="npin" style="margin-right:5px">5</span>' : '') + 'в рублях ⇄</span></div></div>';
     else
         h += '<div class="fld"><em>Сумма</em><div class="fld-in"><b>30 000</b><u>₽</u><span class="caret"></span><span class="fld-sw">в лотах ⇄</span></div></div>';
@@ -605,17 +663,18 @@ function ticket(o){
     else if (!o.lots)
         h += '<div class="presets"><span class="pch">5 000</span><span class="pch">15 000</span><span class="pch on">30 000</span><span class="pch">Макс</span></div>';
     h += sell
-        ? '<div class="apx">У вас <b>240 акций</b> по 254,10 ₽ — останется 130</div>'
+        ? '<div class="apx">У вас <b>240 акций</b> по 254,10 ₽ — останется 120</div>'
         : (o.lots
             ? '<div class="apx">110 акций = <b>29 700,00 ₽</b> по лимиту · комиссия 89,10 ₽</div>'
             : '<div class="apx">≈ <b>110 акций</b> — 11 лотов по 10 шт</div>');
     if (o.prot)
         h += '<div class="fld"><em>' + (o.npin4 ? '<span class="npin" style="margin-right:5px">4</span>' : '') + 'Защита позиции</em>'
            + '<div class="prot"><b>тейк 285 ₽ · стоп 262 ₽</b><u>изменить</u></div></div>';
+    /* деньги сходятся: 418 240 − итог кнопки (покупка) / + выручка за вычетом комиссии (продажа) */
     h += '<div class="rest"><span>' + (sell ? 'Станет свободно' : 'Останется свободно') + '</span><b>'
-        + (sell ? '448 095 ₽' : '388 291 ₽') + '</b></div>';
+        + (sell ? '450 716 ₽' : (o.limit ? '388 451 ₽' : '388 291 ₽')) + '</b></div>';
     h += sell
-        ? '<div class="cta sell">Продать на 29 769,92 ₽</div>'
+        ? '<div class="cta sell">Продать на 32 476,28 ₽</div>'
         : '<div class="cta">Купить на ' + (o.limit ? '29 789,10' : '29 949,08') + ' ₽</div>';
     h += '<div class="fee">Комиссия 0,3 % уже включена</div>';
     h += '<div class="know">🛈 Что нужно знать ' + (sell ? 'о налоге при продаже' : 'перед покупкой') + '<u>Открыть</u></div>';
@@ -734,8 +793,8 @@ function scene1(o){
         + ticket({ style: 'position:absolute;right:36px;top:110px;width:368px' })
         + posStrip() + stagePill('Старт', 'открыть больше');
     if (o.pins)
-        h += pin(1, 737, 17, 1) + pin(2, 516, 183, 1) + pin(3, 1005, 160, 1)
-           + pin(4, 1288, 127, 1) + pin(5, 1132, 860, 1) + pin(6, 60, 822, 1);
+        h += pin(1, 1262, 17, 1) + pin(2, 295, 176, 1) + pin(3, 1005, 117, 1)
+           + pin(4, 1288, 127, 1) + pin(5, 1138, 860, 1) + pin(6, 60, 838, 1);
     return h;
 }
 document.getElementById('m2').innerHTML = scene1({ pins: 1 });
@@ -750,9 +809,11 @@ function scene2(o){
         + '<span class="pp-add">＋</span></div>'
         + instrHead({ candles: 1 })
         + '<div class="chart-wrap" style="flex:1;margin-top:16px">' + candleChart(38, 660, 385)
-        + '<span class="ptag" style="top:34%">271,45</span>' + dates(DAY) + '</div>'
+        + '<span class="ptag" style="top:34%">271,45</span>'
+        + '<div class="ord-line" style="top:56%"><i></i><span class="ord-tag">ваша заявка · 270,00 × 100 шт<u>✕</u></span></div>'
+        + dates(DAY) + '</div>'
         + tapeRow() + '</div>';
-    var h = '<div class="glow"></div>' + topbar()
+    var h = '<div class="glow"></div>' + topbar({ dark: o.dark })
         + hero
         + depthPanel('position:absolute;left:736px;width:280px;top:102px;bottom:96px')
         + ticket({ price: 1, style: 'position:absolute;right:36px;top:102px;width:368px' })
@@ -761,8 +822,8 @@ function scene2(o){
         + '<div class="ub-row"><span class="ub pri">Открыть</span><span class="ub gh">Не сейчас</span></div></div></div>'
         + posStrip() + stagePill('Разгон', 'открыть больше');
     if (o.pins)
-        h += pin(1, 707, 140, 1) + pin(2, 26, 782, 1) + pin(3, 26, 706, 1)
-           + pin(4, 330, 94, 1) + pin(5, 1022, 225, 1);
+        h += pin(1, 724, 114, 1) + pin(2, 26, 786, 1) + pin(3, 26, 708, 1)
+           + pin(4, 330, 94, 1) + pin(5, 1022, 230, 1) + pin(6, 482, 556, 1);
     return h;
 }
 document.getElementById('m3').innerHTML = scene2({ pins: 1 });
@@ -777,7 +838,10 @@ document.getElementById('m3').innerHTML = scene2({ pins: 1 });
     var left = '<div style="position:absolute;left:20px;width:640px;top:72px;bottom:196px;display:flex;flex-direction:column;gap:12px">'
         + '<div class="pane" style="flex:1.7">' + paneHead('SB', 'linear-gradient(135deg,#1d9a55,#15703d)', 'Сбербанк', '271,45 · +1,24 %', 1,
             '<span class="pane-ic on">〣</span><span class="pane-ic">◱</span><span class="pane-ic">⋯</span>')
-        + '<div style="flex:1;min-height:0">' + candleChart(40, 600, 240) + '</div>' + dates(['12:00','14:00','16:00','18:40']) + '</div>'
+        + '<div style="flex:1;min-height:0;position:relative">' + candleChart(40, 600, 240)
+        + '<div class="ord-line" style="top:58%"><i></i><span class="ord-tag">заявка · 270,00 × 100 шт<u>✕</u></span></div>'
+        + '<span class="ord-ghost" style="left:38%;top:80%">＋ лимитка 268,40 — клик по уровню</span>'
+        + '</div>' + dates(['12:00','14:00','16:00','18:40']) + '</div>'
         + '<div class="pane" style="flex:1">' + paneHead('LK', 'linear-gradient(135deg,#b3452e,#8a2f1d)', 'Лукойл', '6 743,5 · −0,4 %', 0,
             '<span class="pane-ic">〣</span><span class="pane-ic">✕</span>')
         + '<div style="flex:1;min-height:0">' + lineChart(scalePts(600, 120).map(function(p){ return [p[0], 120 - p[1] * .8]; }), 600, 120) + '</div></div>'
@@ -801,8 +865,8 @@ document.getElementById('m3').innerHTML = scene2({ pins: 1 });
         + left + mid
         + ticket({ price: 1, limit: 1, lots: 1, prot: 1, style: 'position:absolute;right:20px;top:72px;width:400px' })
         + dock
-        + pin(1, 365, 17, 1) + pin(2, 700, 760, 1) + pin(3, 1275, 756, 1)
-        + pin(4, 1020, 410, 1) + pin(5, 655, 483, 1);
+        + pin(1, 365, 17, 1) + pin(2, 700, 760, 1) + pin(3, 1275, 757, 1)
+        + pin(4, 992, 372, 1) + pin(5, 655, 483, 1) + pin(6, 443, 296, 1);
 })();
 
 /* ═════════════ 06 · омнибокс ═════════════ */
@@ -825,13 +889,13 @@ document.getElementById('m3').innerHTML = scene2({ pins: 1 });
         + '<div class="pal-sec">Команды сцены</div>'
         + cmd('〣', 'Открыть стакан', 'слой сцены')
         + cmd('◫', 'Свечи вместо линии')
-        + cmd('◐', 'Следовать теме сайта')
+        + cmd('◐', 'Тёмная сцена', 'тумблер — и в строке среды')
         + cmd('▲', 'Насыщенность: Разгон', 'ступень')
         + '<div class="pal-foot"><span><kbd>↑↓</kbd>выбрать</span><span><kbd>Enter</kbd>подставить</span><span><kbd>Esc</kbd>закрыть</span>'
         + '<span style="margin-left:auto">отправка — только кнопкой в тикете</span></div>'
         + '</div>';
     document.getElementById('m5').innerHTML = scene1() + '<div class="veil"></div>' + pal
-        + pin(1, 1050, 190, 1) + pin(2, 1050, 380, 1) + pin(3, 1050, 570, 1);
+        + pin(1, 1047, 190, 1) + pin(2, 1047, 300, 1) + pin(3, 1047, 440, 1);
 })();
 
 /* ═════════════ 07 · анатомия тикета ═════════════ */
@@ -844,7 +908,7 @@ document.getElementById('m3').innerHTML = scene2({ pins: 1 });
         + '<span class="an-arr" style="left:calc(33.3% - 8px)">→</span>'
         + '<span class="an-arr" style="left:calc(66.6% - 20px)">→</span>'
         + '</div>'
-        + pin(1, 157, 138, 1) + pin(3, 157, 368, 1);
+        + pin(1, 157, 138, 1) + pin(3, 157, 369, 1);
 })();
 
 /* ═════════════ 08 · подтверждение ═════════════ */
@@ -872,15 +936,47 @@ document.getElementById('m3').innerHTML = scene2({ pins: 1 });
         + '<div class="cf-note">НКД вернётся целиком с ближайшим купоном — это не потеря, а аванс прежнему владельцу.</div></div>';
     var c4 = '<div class="cf"><div class="cf-center"><span class="done-ic">✓</span>'
         + '<h4>Куплено: 110 акций SBER</h4>'
-        + '<p>Исполнено по 271,44 ₽ — на 1,10 ₽ дешевле оценки.<br>Свободно теперь <b class="num">388 292,48 ₽</b>.</p></div>'
+        + '<p>Исполнено по 271,44 ₽ — на 1,10 ₽ дешевле оценки.<br>Свободно теперь <b class="num">388 292,02 ₽</b>.</p></div>'
         + '<div class="ub-row" style="display:flex;gap:8px;justify-content:center;margin-top:6px">'
         + '<span class="ub pri">К сцене</span><span class="ub gh">Открыть в портфеле</span></div></div>';
     document.getElementById('m7').innerHTML = '<div class="cf-grid">' + c1 + c2 + c3 + c4 + '</div>'
-        + pin(1, 296, 214, 1) + pin(2, 973, 20, 1) + pin(3, 287, 460, 1);
+        + pin(1, 298, 214, 1) + pin(2, 975, 20, 1) + pin(3, 289, 460, 1);
 })();
 
-/* ═════════════ 09 · светлая сцена ═════════════ */
-document.getElementById('m8').innerHTML = scene2();
+/* ═════════════ 09 · край сцены ═════════════ */
+(function(){
+    var a = '<div class="cf"><span class="cf-kick">Первый вход · позиций нет</span>'
+        + '<div class="cf-h"><b>Онбординг из одной строки</b></div>'
+        + '<div class="cf-sub">Токен подключён, сделок ещё не было. Полоса позиций скрыта — пустой ряд чипов не выставляем. Сцена предлагает единственное действие.</div>'
+        + '<div class="eg-omni">⌕ Найдите первую бумагу — название или тикер<kbd>⌘K</kbd></div>'
+        + '<div class="eg-steps">'
+        + '<span><b>Сцена — одна бумага.</b> Цена крупно, график во весь холст; остальное появится по мере опыта.</span>'
+        + '<span><b>Тикет считает сам:</b> вы называете сумму в рублях, лоты и комиссию он объяснит словами.</span>'
+        + '<span><b>Итог списания — только в кнопке,</b> с копейками. Ни одна клавиша не отправляет заявку.</span></div></div>';
+    var b = '<div class="cf"><span class="cf-kick">Биржа закрыта</span>'
+        + '<div class="cf-h"><b>Черновик остаётся, кнопка говорит правду</b><span class="fresh" style="color:var(--dim)"><i style="background:var(--dim)"></i>закрытие · 18:40</span></div>'
+        + '<div class="cf-sub">Вечер или выходной — не обрыв связи: цена помечена временем закрытия, тикет остаётся черновиком. Отложенных заявок не отправляем — до открытия цена неизвестна.</div>'
+        + '<div class="cf-r"><span>Цена закрытия</span><b>271,45 ₽</b></div>'
+        + '<div class="cf-r"><span>Черновик</span><b>Купить · 30 000 ₽</b></div>'
+        + '<div class="cta dis">Биржа закрыта — откроется завтра в 10:00</div>'
+        + '<div class="cf-note">Черновик переживёт ночь в тикете. Утром цена будет свежей — пересчёт до копейки произойдёт до отправки.</div></div>';
+    var c = '<div class="cf"><span class="cf-kick">Обрыв связи</span>'
+        + '<div class="cf-h"><b>Гвард свежести гасит отправку везде</b><span class="fresh amber"><i></i>данные замерли · 14 с</span></div>'
+        + '<div class="cf-sub">Точка «связь» в строке среды краснеет; тикет и открытый диалог подтверждения гаснут одним и тем же гвардом — 8 секунд от последнего успешного стакана.</div>'
+        + '<div class="eg-banner"><i></i>Показываем последние известные данные — им 14 секунд</div>'
+        + '<div class="cta dis">Ждём связь…</div>'
+        + '<div class="cf-note">Уже отправленные заявки живут на бирже и не зависят от вашей связи — их статус обновится при восстановлении. Ничего не отменяется молча.</div></div>';
+    var d = '<div class="cf"><div class="cf-center"><span class="done-ic bad">✕</span>'
+        + '<h4>Заявка не принята</h4>'
+        + '<p>Недостаточно средств: нужно <b class="num" style="white-space:nowrap">29 949,08 ₽</b>,<br>свободно <b class="num" style="white-space:nowrap">12 340,00 ₽</b>. Деньги не списаны.</p></div>'
+        + '<div class="ub-row" style="display:flex;gap:8px;justify-content:center;margin-top:6px">'
+        + '<span class="ub pri">Уменьшить сумму</span><span class="ub gh">Понятно</span></div>'
+        + '<div class="cf-note">Причина — словами человека; код ошибки брокера — в раскрываемой подсказке, для письма в поддержку.</div></div>';
+    document.getElementById('m9').innerHTML = '<div class="cf-grid" style="grid-template-columns:repeat(2,430px)">' + a + b + c + d + '</div>';
+})();
+
+/* ═════════════ 10 · тёмная сцена ═════════════ */
+document.getElementById('m8').innerHTML = scene2({ dark: 1 });
 </script>
 </body>
 </html>
