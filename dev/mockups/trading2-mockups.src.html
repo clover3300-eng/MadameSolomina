@@ -194,6 +194,16 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .ord-tag u{text-decoration:none;color:var(--dim);font-family:var(--fU);font-size:10px}
 .ord-ghost{position:absolute;display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:600;color:var(--mut);
         background:var(--card);border:1px dashed var(--dim);border-radius:7px;padding:3px 9px;z-index:6;white-space:nowrap}
+/* тейк/стоп вне видимого диапазона — прижаты к краю стрелкой (off-screen markers) */
+.ord-off{position:absolute;right:34px;font-family:var(--fN);font-size:9.5px;font-weight:700;border-radius:6px;padding:2px 7px;z-index:6;white-space:nowrap}
+.ord-off.up{color:var(--grn);background:color-mix(in srgb,var(--grn) 10%,var(--card))}
+.ord-off.dn{color:var(--red);background:color-mix(in srgb,var(--red) 10%,var(--card))}
+/* маркер своей сделки на графике */
+.trm{position:absolute;width:9px;height:9px;border-radius:50%;background:var(--grn);z-index:6;
+        box-shadow:0 0 0 3px color-mix(in srgb,var(--grn) 22%,transparent),0 0 0 1.5px var(--card) inset}
+.trm-tag{position:absolute;display:inline-flex;align-items:center;gap:6px;font-family:var(--fN);font-size:10px;font-weight:600;
+        color:var(--grn);background:color-mix(in srgb,var(--grn) 8%,var(--card));border:1px solid color-mix(in srgb,var(--grn) 35%,transparent);
+        border-radius:7px;padding:3px 8px;z-index:6;white-space:nowrap}
 /* ось цены и кроссхейр («Контроль»): KLineChart умеет из коробки */
 .ax-price{position:absolute;right:2px;top:10%;bottom:26%;display:flex;flex-direction:column;justify-content:space-between;
         font-family:var(--fN);font-size:9px;color:var(--dim);text-align:right;z-index:4}
@@ -264,6 +274,25 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .fee{font-size:10px;color:var(--dim);text-align:center}
 .know{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--mut);border-top:1px solid var(--hair);padding-top:10px}
 .know u{text-decoration:none;margin-left:auto;color:var(--acc);font-weight:600}
+/* глоссарий новичка: пунктирное подчёркивание + тултип в одну фразу */
+.gl{text-decoration:underline dotted;text-decoration-color:var(--dim);text-underline-offset:3px}
+.gl-tip{position:absolute;width:238px;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:12px 14px;
+        z-index:46;box-shadow:0 20px 44px -22px rgba(24,38,60,.45);font-size:11px;line-height:1.5;color:var(--mut)}
+.gl-tip em{display:block;font-style:normal;font-size:9.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);margin-bottom:4px}
+.gl-tip::after{content:'';position:absolute;right:-5.5px;top:22px;width:9px;height:9px;background:var(--card);
+        border-right:1px solid var(--line);border-top:1px solid var(--line);transform:rotate(45deg)}
+/* момент роста ступени: подсветка новых слоёв + тост */
+.grow{position:absolute;border:1.5px dashed color-mix(in srgb,var(--acc) 55%,transparent);border-radius:14px;
+        background:color-mix(in srgb,var(--acc) 6%,transparent);display:grid;place-items:center;
+        color:var(--acc);font-weight:700;font-size:12px;z-index:40}
+.grow-toast{position:absolute;left:50%;bottom:70px;transform:translateX(-50%);width:400px;background:var(--card);
+        border:1px solid var(--line);border-radius:16px;padding:16px 18px;z-index:48;
+        box-shadow:0 28px 64px -28px rgba(24,38,60,.5);text-align:center}
+.grow-toast b{font-family:var(--fT);font-weight:400;font-size:17px}
+.grow-toast p{font-size:11.5px;color:var(--mut);line-height:1.55;margin:6px 0 10px}
+.grow-toast .ub-row{display:flex;gap:8px;justify-content:center}
+/* пустая сторона стакана */
+.eg-empty{font-size:11px;color:var(--dim);text-align:center;padding:14px 0;border:1px dashed var(--line);border-radius:10px}
 /* «что нужно знать» развёрнуто — заполняет высокий тикет «Старта» смыслом */
 .knowx{display:flex;flex-direction:column;gap:8px;font-size:11px;color:var(--mut);line-height:1.5;border-top:1px solid var(--hair);padding-top:12px}
 .knowx em{font-style:normal;font-size:9.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--dim)}
@@ -492,6 +521,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <div class="note"><i>6</i><span>Позиции-чипы вместо таблицы: тикер + дневная дельта; итог портфеля — тихой суммой в конце полосы. Полный разбор позиций остаётся «Портфелям» — торговля не дублирует трекер.</span></div>
     <div class="note"><i>7</i><span>Ховер чипа раскрывает два действия: «в сцену» и «продать» — продажа открывает тикет сразу с долями позиции, путь «увидел минус → продал» укорачивается до двух кликов. Клик по самому чипу, как раньше, грузит бумагу.</span></div>
     <div class="note"><i>8</i><span>Звоночек у периодов — подписка на достижение цены (поповер — на экране 04). Монограмма из шапки ушла: имя и цена сами держат сцену, цветные метки остаются там, где списки, — вкладки бумаг, сплит, омнибокс.</span></div>
+    <div class="note"><i>9</i><span>Своя сделка видна на графике точкой с ярлыком — «вы купили тут» учит лучше любых курсов (история за годы придёт со вторым этапом брокера). Термины в тикете подчёркнуты пунктиром: тултип объясняет «лот» одной фразой.</span></div>
   </div>
 </section>
 
@@ -515,9 +545,23 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   </div>
 </section>
 
-<!-- ═══════════════ 05 · ступень 3 ═══════════════ -->
+<!-- ═══════════════ 05 · момент перехода ═══════════════ -->
 <section class="mk">
-  <div class="mk-h"><span class="mk-n">05</span><h2>Ступень «Контроль»: рабочее место</h2><span class="mk-tag">основной</span></div>
+  <div class="mk-h"><span class="mk-n">05</span><h2>Сцена растёт: момент перехода</h2><span class="mk-tag">механика</span></div>
+  <p class="mk-sub">Пользователь согласился на карточку-предложение — сцена включает слои «Разгона» прямо
+     под руками: ничего не перезагружается, новые места подсвечены пунктиром один раз. Тост назвал
+     ступень и честно предлагает вернуть как было.</p>
+  <div class="scroller"><div class="scr"><div id="m12"></div></div></div>
+  <div class="notes">
+    <div class="note"><i>1</i><span>Переход — не перестройка: всё со «Старта» стоит на местах, добавились только подсвеченные области. Мышечная память не страдает — в этом и был смысл ступеней.</span></div>
+    <div class="note"><i>2</i><span>«Вернуть „Старт“» — честный откат в один клик: слои гаснут, данные и заявки остаются. Пороги — предложения, не билет в один конец.</span></div>
+    <div class="note"><i>3</i><span>Подсветка живёт один показ: при следующем входе сцена — обычный «Разгон». Тост срабатывает на смену того же ключа bt_stage_v1, отдельного состояния нет.</span></div>
+  </div>
+</section>
+
+<!-- ═══════════════ 06 · ступень 3 ═══════════════ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">06</span><h2>Ступень «Контроль»: рабочее место</h2><span class="mk-tag">основной</span></div>
   <p class="mk-sub">Максимальная насыщенность — и всё ещё сцена, не сетка: панели плавают на холсте с
      воздухом между ними. Сплит на две бумаги, стакан — в одной плоскости с главным графиком, лента —
      рядом со вторым, док Заявки/Позиции/История/Алерты, экраны-вкладки в строке среды, подсказка
@@ -527,7 +571,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <div class="note"><i>1</i><span>Экраны (trading:N из раунда 1) переезжают в строку среды как вкладки — механика и хранилище остаются, исчезает отдельная плавающая полоса.</span></div>
     <div class="note"><i>2</i><span>Док — таблица заявок в один клик от отмены; «Отменить все» — поимённо, как решено в ревью. Сворачивается шевроном, место уходит графикам.</span></div>
     <div class="note"><i>3</i><span>Горячие клавиши раунда 1 работают здесь без изменений; «?» в доке — та же справка. Правило «ни одна клавиша не отправляет заявку» — закон.</span></div>
-    <div class="note"><i>4</i><span>Защита позиции (тейк/стоп) — одна строка тикета, как в утверждённом ужатом тикете раунда 1.</span></div>
+    <div class="note"><i>4</i><span>Защита позиции — строка тикета И линии на графике: тейк и стоп рисуются как заявка, перетаскивание меняет уровень, строка тикета следует. Уровни вне видимого диапазона прижаты к краю стрелкой — как здесь 285 и 262.</span></div>
     <div class="note"><i>5</i><span>Вторая панель графика — по желанию: сплит включается из «⋯» панели. Панели не таскаются свободно — порядок фиксирован, конструктора на сцене нет.</span></div>
     <div class="note"><i>6</i><span>Заявка из дока видна и на графике той же линией — одна сущность, два представления. Клик по пустому уровню предлагает призрак-черновик: лимитка (заполняет тикет) или алерт — так же создаются записи вкладки «Алерты» дока.</span></div>
     <div class="note"><i>7</i><span>Ось цены и кроссхейр с ценой и временем — из коробки KLineChart; без них «клик по уровню» неточен. На «Разгоне» оси нет — там цену ведёт ярлык последней свечи.</span></div>
@@ -536,7 +580,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 
 <!-- ═══════════════ 06 · омнибокс ═══════════════ -->
 <section class="mk">
-  <div class="mk-h"><span class="mk-n">06</span><h2>Омнибокс ⌘K: строка вместо форм</h2><span class="mk-tag">новое</span></div>
+  <div class="mk-h"><span class="mk-n">07</span><h2>Омнибокс ⌘K: строка вместо форм</h2><span class="mk-tag">новое</span></div>
   <p class="mk-sub">Одна строка на всё: поиск бумаги, команды сцены, намерение «сбер 30к». Парсер собирает
      из фразы черновик сделки — Enter лишь подставляет его в тикет, отправляет всегда человек кнопкой.</p>
   <div class="scroller"><div class="scr" style="height:760px"><div id="m5"></div></div></div>
@@ -549,7 +593,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 
 <!-- ═══════════════ 07 · тикет ═══════════════ -->
 <section class="mk">
-  <div class="mk-h"><span class="mk-n">07</span><h2>Единый тикет: одна анатомия на все ступени</h2><span class="mk-tag mute">анатомия</span></div>
+  <div class="mk-h"><span class="mk-n">08</span><h2>Единый тикет: одна анатомия на все ступени</h2><span class="mk-tag mute">анатомия</span></div>
   <p class="mk-sub">Тот же компонент трижды. Строки добавляются сверху вниз, ни одна не меняет места —
      мышечная память переживает рост. Сумма ⇄ лоты — переключение единицы прямо в поле.</p>
   <div class="scroller"><div class="scr" style="height:780px"><div id="m6"></div></div></div>
@@ -564,7 +608,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 
 <!-- ═══════════════ 08 · валидация тикета ═══════════════ -->
 <section class="mk">
-  <div class="mk-h"><span class="mk-n">08</span><h2>Тикет говорит правду до кнопки</h2><span class="mk-tag mute">состояния</span></div>
+  <div class="mk-h"><span class="mk-n">09</span><h2>Тикет говорит правду до кнопки</h2><span class="mk-tag mute">состояния</span></div>
   <p class="mk-sub">Три отказа без модалов: сумма меньше одного лота · денег не хватает (и честный
      «Максимум») · спред-гвард — родной брат гварда свежести: рыночная заявка в широкий спред
      предупреждает о переплате в рублях и предлагает лимитку, но не запрещает.</p>
@@ -578,7 +622,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 
 <!-- ═══════════════ 09 · подтверждение ═══════════════ -->
 <section class="mk">
-  <div class="mk-h"><span class="mk-n">09</span><h2>Подтверждение, защита, квитанция</h2><span class="mk-tag mute">состояния</span></div>
+  <div class="mk-h"><span class="mk-n">10</span><h2>Подтверждение, защита, квитанция</h2><span class="mk-tag mute">состояния</span></div>
   <p class="mk-sub">Шесть состояний диалога сделки: живая цена с полной разбивкой · замершая цена
      (кнопка погашена гвардом свежести) · облигация с НКД строкой в разбивке · квитанция после
      исполнения · частичное исполнение лимитки · исполнение в фоне, пока вкладка закрыта.</p>
@@ -594,10 +638,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 
 <!-- ═══════════════ 10 · край сцены ═══════════════ -->
 <section class="mk">
-  <div class="mk-h"><span class="mk-n">10</span><h2>Край сцены: пустые и особые состояния</h2><span class="mk-tag mute">состояния</span></div>
+  <div class="mk-h"><span class="mk-n">11</span><h2>Край сцены: пустые и особые состояния</h2><span class="mk-tag mute">состояния</span></div>
   <p class="mk-sub">То, что обычно вспоминают после релиза. Первый вход без позиций — онбординг из одной
-     строки; биржа закрыта — честная кнопка вместо обмана «отправим потом»; полный обрыв связи — судьба
-     уже отправленных заявок; отказ брокера — причина словами, а не кодом.</p>
+     строки; биржа закрыта — честная кнопка вместо обмана «отправим потом»; аукцион открытия — четвёртое
+     состояние связи; обрыв — судьба уже отправленных заявок; отказ брокера — причина словами, а не кодом;
+     пустой стакан неликвида — пустоту показываем, не прячем.</p>
   <div class="scroller"><div class="scr" style="height:820px"><div id="m9"></div></div></div>
   <div class="notes">
     <div class="note"><i>1</i><span>«Нет токена брокера» здесь не показан: состояние уже решено «стеклом» — призрак терминала за размытием и карточка-замок (модуль trading-gate-glass). Сцена наследует его без изменений.</span></div>
@@ -608,7 +653,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 
 <!-- ═══════════════ 11 · красный день ═══════════════ -->
 <section class="mk">
-  <div class="mk-h"><span class="mk-n">11</span><h2>Красный день: минус держат данные, не интерфейс</h2><span class="mk-tag mute">проверка</span></div>
+  <div class="mk-h"><span class="mk-n">12</span><h2>Красный день: минус держат данные, не интерфейс</h2><span class="mk-tag mute">проверка</span></div>
   <p class="mk-sub">Сцена «Старта» в день −3,44 %. Красного ровно столько, сколько его в данных: чип дня
      и дельты позиций — всё. Фон не краснеет, кнопка остаётся чернильной, тикет считает те же честные
      копейки от новой цены. Советов «держать/продавать» сцена не даёт — это терминал, не советник.</p>
@@ -622,7 +667,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 
 <!-- ═══════════════ 12 · тёмная сцена ═══════════════ -->
 <section class="mk">
-  <div class="mk-h"><span class="mk-n">12</span><h2>Тёмная сцена: вторая тема, не инверсия</h2><span class="mk-tag mute">проверка</span></div>
+  <div class="mk-h"><span class="mk-n">13</span><h2>Тёмная сцена: вторая тема, не инверсия</h2><span class="mk-tag mute">проверка</span></div>
   <p class="mk-sub">Тумблер — видимый, в строке среды (☀ ⇄ ☾), state хранится отдельно от темы сайта.
      Тёмные токены собраны заново: приглушённый фон, полупрозрачные карточки, свои оттенки роста и падения.
      Проверка на самой насыщенной из лёгких ступеней — «Разгоне».</p>
@@ -631,7 +676,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 
 <!-- ═══════════════ 13 · данные ═══════════════ -->
 <section class="mk">
-  <div class="mk-h"><span class="mk-n">13</span><h2>Поле макета → откуда данные</h2></div>
+  <div class="mk-h"><span class="mk-n">14</span><h2>Поле макета → откуда данные</h2></div>
   <table class="map">
     <tr><th style="width:30%">Элемент</th><th>Источник</th><th style="width:10%">Статус</th></tr>
     <tr><td>Сцена: цена, график, свечи</td><td>GetOrderBook/GetCandles уже опрашиваются; линия — путь <code>sxChartHtml</code>, свечи — KLineChart из <code>portfolios-chart.js</code></td><td class="ok">есть</td></tr>
@@ -658,6 +703,12 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <tr><td>Исполнение в фоне</td><td>звоночек сайта готов (модуль уведомлений); связка с поллером заявок + точка в заголовке вкладки — новое</td><td class="no">новое</td></tr>
     <tr><td>Алерты по цене</td><td>новый ключ <code>bt_alerts_v1</code>; проверка — в уже идущем поллере стакана; создание — звоночком в шапке бумаги, с графика (призрак) и из омнибокса; доставка — пуш + звоночек сайта</td><td class="no">новое</td></tr>
     <tr><td>Ось цены и кроссхейр</td><td>KLineChart из коробки (ось свечей, crosshair с ценой и временем) — только включить в конфиге</td><td class="ok">есть</td></tr>
+    <tr><td>Маркеры своих сделок на графике</td><td>сегодняшние — из уже приходящих ответов заявок; история за годы — этап 2 брокера (GetOperations); рендер — оверлей KLineChart</td><td class="no">новое</td></tr>
+    <tr><td>Тейк/стоп линиями на графике</td><td>рисуются тем же оверлеем, что заявка; drag меняет уровень, строка тикета следует; вне диапазона — метка у края</td><td class="no">новое</td></tr>
+    <tr><td>Аукцион открытия</td><td>SecurityTradingStatus из GetTradingStatus различает аукционы; тексты и «спишется до» — новое</td><td class="no">новое</td></tr>
+    <tr><td>Пустой стакан неликвида</td><td>GetOrderBook честно отдаёт пустую сторону — нужен рендер пустоты и погашенная рыночная кнопка</td><td class="no">новое</td></tr>
+    <tr><td>Тост «сцена выросла» и откат</td><td>срабатывает на смену <code>bt_stage_v1</code>; подсветка новых слоёв — один показ, отдельного ключа нет</td><td class="no">новое</td></tr>
+    <tr><td>Глоссарий терминов</td><td>словарик из ~десятка статей (лот, лимитка, спред, НКД…); пунктир в тикете, тултип одной фразой</td><td class="no">новое</td></tr>
   </table>
   <p class="mk-sub" style="margin-top:16px">Пересборка: <code style="font-family:var(--fN);font-size:12px">node dev/mockups/build-mockups.js trading2</code></p>
 </section>
@@ -810,7 +861,7 @@ function ticket(o){
         ? '<div class="apx">У вас <b>240 акций</b> по 254,10 ₽ — останется 120</div>'
         : (o.lots
             ? '<div class="apx">110 акций = <b>29 700,00 ₽</b> по лимиту · комиссия 89,10 ₽</div>'
-            : '<div class="apx">≈ <b>110 акций</b> — 11 лотов по 10 шт</div>');
+            : '<div class="apx">≈ <b>110 акций</b> — <u class="gl">11 лотов</u> по 10 шт</div>');
     /* докупка: средняя из позиции брокера, (240×254,10 + 110×цена) / 350 */
     if (o.avg && !sell)
         h += '<div class="apx">У вас 240 по 254,10 ₽ — <b>средняя станет ' + (o.limit ? '259,10' : '259,55') + ' ₽</b></div>';
@@ -956,6 +1007,9 @@ function scene1(o){
         + factsRow(o.down)
         + '<div class="chart-wrap" style="flex:1;margin-top:20px">' + lineChart(pts, 920, 520, o.down ? 74 : 430)
         + '<span class="ptag" style="top:' + (o.down ? '78%' : '15%') + '">' + (o.down ? '262,10' : '271,45') + '</span>'
+        /* маркер своей сегодняшней сделки на линии; история за годы придёт с GetOperations */
+        + (o.down ? '' : '<span class="trm" style="left:8%;top:71.6%"></span>'
+            + '<span class="trm-tag" style="left:9.6%;top:64%">вы купили · 269,20 × 110 · 10:12</span>')
         + dates(DAY) + '</div></div>';
     var h = '<div class="glow"></div>' + topbar()
         + hero
@@ -967,7 +1021,11 @@ function scene1(o){
            + pin(8, 923, 111, 1);
     return h;
 }
-document.getElementById('m2').innerHTML = scene1({ pins: 1, hov: 1 });
+document.getElementById('m2').innerHTML = scene1({ pins: 1, hov: 1 })
+    /* глоссарий: тултип к пунктирному «11 лотов» в тикете */
+    + '<div class="gl-tip" style="left:786px;top:321px"><em>Лот</em>'
+    + 'Минимальная пачка бумаг на бирже. У SBER в лоте 10 акций: купить 5 нельзя, 110 — можно. '
+    + 'Тикет всегда округляет до целых лотов сам.</div>';
 
 /* ═════════════ 04 · ступень 2 ═════════════ */
 function scene2(o){
@@ -1029,6 +1087,9 @@ document.getElementById('m3').innerHTML = scene2({ pins: 1 });
         + '<span class="xh-chip" style="top:34%">271,80</span><span class="xh-time" style="left:64%">15:42</span>'
         + '<div class="ord-line" style="top:58%"><i></i><span class="ord-tag">заявка · 270,00 × 100 шт<u>✕</u></span></div>'
         + '<span class="ord-ghost" style="left:34%;top:62%">＋ 268,40 · лимитка или алерт</span>'
+        /* тейк/стоп из тикета — линии на графике; уровни вне диапазона прижаты к краю стрелкой */
+        + '<span class="ord-off up" style="top:6px">тейк 285,00 ↑</span>'
+        + '<span class="ord-off dn" style="bottom:28px">стоп 262,00 ↓</span>'
         + dates(['12:00','14:00','16:00','18:40']) + '</div>'
         + depthPanel('width:230px;flex:none', 0, 1)
         + '</div></div>'
@@ -1173,7 +1234,23 @@ document.getElementById('m3').innerHTML = scene2({ pins: 1 });
         + '<div class="ub-row" style="display:flex;gap:8px;justify-content:center;margin-top:6px">'
         + '<span class="ub pri">Уменьшить сумму</span><span class="ub gh">Понятно</span></div>'
         + '<div class="cf-note">Причина — словами человека; код ошибки брокера — в раскрываемой подсказке, для письма в поддержку.</div></div>';
-    document.getElementById('m9').innerHTML = '<div class="cf-grid" style="grid-template-columns:repeat(2,430px)">' + a + b + c + d + '</div>';
+    /* аукцион: 110 × лимит 271,90 = 29 909,00 + 0,3 % (89,73) = 29 998,73 */
+    var e = '<div class="cf"><span class="cf-kick">Аукцион открытия · 10:00–10:01</span>'
+        + '<div class="cf-h"><b>Не закрыто и не обрыв — четвёртое состояние</b><span class="fresh amber"><i></i>аукцион</span></div>'
+        + '<div class="cf-sub">Биржа собирает заявки и вычисляет цену открытия. Рыночной заявки не существует; лимитная встанет в очередь аукциона.</div>'
+        + '<div class="cf-r"><span>Индикативная цена</span><b>271,90 ₽</b></div>'
+        + '<div class="cf-r"><span>Ваш лимит</span><b>271,90 ₽</b></div>'
+        + '<div class="cta">В аукцион — спишется до 29 998,73 ₽</div>'
+        + '<div class="cf-note">«До», а не «ровно»: аукцион может исполнить дешевле лимита, дороже — никогда. После открытия гвард свежести вернётся к стакану.</div></div>';
+    var f = '<div class="cf"><span class="cf-kick">Неликвид · пустой стакан</span>'
+        + '<div class="cf-h"><b>Пустоту показываем, не прячем</b><span class="fresh"><i></i>цена живая</span></div>'
+        + '<div class="cf-sub">Дальний выпуск ОФЗ: продавцы есть, покупателей сейчас нет. Рыночной продажи не существует — кнопка гаснет с причиной, лимитка работает.</div>'
+        + '<div class="d-row d-ask"><span class="pr">552,40</span><span class="d-bar"><i style="width:44%"></i></span><span class="d-vol">120</span></div>'
+        + '<div class="d-row d-ask"><span class="pr">552,10</span><span class="d-bar"><i style="width:18%"></i></span><span class="d-vol">35</span></div>'
+        + '<div class="d-row d-ask"><span class="pr">551,80</span><span class="d-bar"><i style="width:9%"></i></span><span class="d-vol">10</span></div>'
+        + '<div class="eg-empty">покупателей сейчас нет — спред не определён</div>'
+        + '<div class="cta dis">Рыночной цены нет — поставьте лимитку</div></div>';
+    document.getElementById('m9').innerHTML = '<div class="cf-grid" style="grid-template-columns:repeat(3,430px)">' + a + b + e + c + d + f + '</div>';
 })();
 
 /* ═════════════ 08 · валидация тикета ═════════════ */
@@ -1215,7 +1292,17 @@ document.getElementById('m3').innerHTML = scene2({ pins: 1 });
         + pin(1, 157, 366, 1) + pin(2, 537, 318, 1) + pin(3, 917, 312, 1);
 })();
 
-/* ═════════════ 11 · красный день ═════════════ */
+/* ═════════════ 05 · момент перехода ═════════════ */
+document.getElementById('m12').innerHTML = scene1()
+    + '<div class="grow" style="left:56px;top:56px;width:300px;height:36px">Вкладки бумаг</div>'
+    + '<div class="grow" style="left:722px;top:300px;width:252px;height:420px">Стакан</div>'
+    + '<div class="grow" style="left:1054px;top:206px;width:330px;height:52px">Строка цены</div>'
+    + '<div class="grow-toast"><b>Сцена выросла — это «Разгон»</b>'
+    + '<p>Стакан, свечи и лимитная цена уже на местах. Всё, что вы знали со «Старта», не сдвинулось ни на пиксель.</p>'
+    + '<div class="ub-row"><span class="ub pri">Хорошо</span><span class="ub gh">Вернуть «Старт»</span></div></div>'
+    + pin(1, 690, 306, 1) + pin(2, 926, 795, 1) + pin(3, 1022, 212, 1);
+
+/* ═════════════ 12 · красный день ═════════════ */
 document.getElementById('m11').innerHTML = scene1({ down: 1 })
     + pin(1, 524, 182, 1) + pin(2, 1022, 400, 1) + pin(3, 981, 860, 1);
 
