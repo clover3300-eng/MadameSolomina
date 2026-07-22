@@ -2116,12 +2116,13 @@ body.dark-mode .pf-ratestile-eye.pfc-act:hover { background: rgba(255,255,255,0.
 .pfd-item .pf-ratesband .drt-l, .pf-ratesstack .drt-l {
     white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.2; letter-spacing: 0.03em;
 }
-/* Плитка ставки в конструкторе — на СЕТКУ (auto | 1fr), а не flex: во flex-раскладке
+/* Плитка ставки в конструкторе — на СЕТКУ, а не flex: во flex-раскладке
    тело схлопывалось до самого узкого слова (flex-grow тут игнорировался из-за content-box
-   плитки), и название резалось в «…». Грид-колонка 1fr надёжно отдаёт телу всю ширину
-   справа от иконки, и «Ставка по вкладам» / «Доходность ОФЗ 10 лет» переносятся целиком. */
+   плитки), и название резалось в «…». Иконок-значков больше нет — колонка одна, тело
+   получает всю ширину плитки, и «Ставка по вкладам» / «Доходность ОФЗ 10 лет»
+   переносятся целиком. */
 .pfd-item .pf-ratesband .drt-tile, .pf-ratesstack .drt-tile {
-    display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center;
+    display: grid; grid-template-columns: minmax(0, 1fr); align-items: center;
 }
 .pfd-item .pf-ratesband .drt-body, .pf-ratesstack .drt-body { min-width: 0; justify-content: center; gap: 4px; }
 
