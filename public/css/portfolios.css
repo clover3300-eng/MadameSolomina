@@ -260,6 +260,20 @@ body.dark-mode .pfc-act.on { background: #0c1118; color: #7ee2a8; }
 /* шапка вторичных карточек (Избранное / Сравнение) — eyebrow + заголовок */
 .pf-ch { display: flex; align-items: flex-start; gap: 12px; padding: 22px 24px 14px; }
 .pf-ch-l { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+/* Шапка виджета адаптируется под РЕАЛЬНУЮ ширину виджета (а не вьюпорта): .pf-card2 —
+   общая карточка всех виджетов дашборда — становится query-контейнером. Безопасно:
+   карточка уже position:relative + overflow:visible, а высоту (block-size) inline-size
+   не контейнит (masonry-замер offsetHeight не страдает). */
+.pf-card2 { container-type: inline-size; container-name: pfw; }
+/* В самом узком виджете подпись под заголовком (.pf-ch-s) должна занимать ВСЮ ширину,
+   а не ужиматься в левую колонку рядом с кнопкой действия. Отдаём левому блоку шапки
+   полную строку — заголовок и подпись растекаются во всю ширину карточки, а кнопки
+   конструктора и действие («Открыть»/«+»/«Рынок») переносятся строкой ниже. Правило
+   общее для ВСЕХ виджетов с подписью (единый pfCardHead). */
+@container pfw (max-width: 300px) {
+    #panel-portfolios .pf-ch { flex-wrap: wrap; row-gap: 10px; }
+    #panel-portfolios .pf-ch > .pf-ch-l { flex-basis: 100%; }
+}
 .pf-ch-k { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #97a3b4; }
 .pf-ch-t { font-family: 'Inter', sans-serif; font-size: 21px; font-weight: 800; color: #1b2433; letter-spacing: -0.015em; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 body.dark-mode .pf-ch-t { color: #f4f8fd; }
@@ -2854,6 +2868,13 @@ body.dark-mode .pfl-pv-add.is-added { background: rgba(18, 163, 92, 0.16); color
 body.dark-mode .pfhm-box { background: #0b1220; }
 body.dark-mode .pfhm-tile { color: #e7eef7; }
 body.dark-mode .pfhm-tile:hover { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.28); }
+/* Поповер плитки виден ПОВЕРХ всего контента: пока превью открыто (.pfhm-pv.on),
+   снимаем обрезку с бокса карты и тела блока, а карточку поднимаем над соседями по
+   сетке (тот же приём, что у .pff-info-wrap / .pfc-menu в portfolios-r7.css). Без
+   этого превью упиралось в нижнюю/боковую грань .pfhm-box (overflow:hidden) и обрезалось. */
+.pf-heatblk .pfhm-box:has(.pfhm-pv.on) { overflow: visible; }
+#panel-portfolios .pfd-item:has(.pfhm-pv.on) > .pfd-body { overflow: visible; }
+#panel-portfolios .pfd-item:has(.pfhm-pv.on) { z-index: 40; }
 /* мини-превью плитки (hover): белая карточка с хвостиком над плиткой, у верхнего ряда —
    под ней (.below). pointer-events:none — не мешает hover/клику по плиткам */
 .pfhm-pv {
