@@ -383,6 +383,10 @@ var TI_METHODS = {
     GetLastTrades:    { svc: 'MarketDataService',  scope: 'read' },
     // этап 4 — свечи для графика терминала (виджет «График», js/portfolios-chart.js)
     GetCandles:       { svc: 'MarketDataService',  scope: 'read' },
+    // раунд 2 «Эволюция»: дневная дельта чипов позиций (цены закрытия одним
+    // запросом) и факт «Дивиденд» в строке под ценой — оба только чтение
+    GetClosePrices:   { svc: 'MarketDataService',  scope: 'read' },
+    GetDividends:     { svc: 'InstrumentsService', scope: 'read' },
     GetStopOrders:    { svc: 'StopOrdersService',  scope: 'read' },
     PostStopOrder:    { svc: 'StopOrdersService',  scope: 'trade' },
     CancelStopOrder:  { svc: 'StopOrdersService',  scope: 'trade' },

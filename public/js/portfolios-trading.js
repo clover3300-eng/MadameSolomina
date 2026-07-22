@@ -215,9 +215,9 @@
     }
     // какие слоты СЕЙЧАС на экране: только их и опрашиваем (скрытый блок молчит)
     function liveSlots() {
-        // «Просто» рисует не карточки терминала, а одну колонку — но цена ему
-        // нужна та же и берётся тем же стаканом, значит слот у него живой
-        if (simpleOn() && document.querySelector('#panel-portfolios.active #sxRoot')) {
+        // Сцена «Эволюции» рисует не карточки терминала, а один герой — но цена
+        // ей нужна та же и берётся тем же стаканом, значит слот у неё живой
+        if (sceneLive()) {
             var one = slotNums()[0] || 1;
             return S(one).uid ? [one] : [];
         }
@@ -1774,9 +1774,9 @@
     function posCardEl() { return document.querySelector('.btr-pos'); }
     function pollPortfolio() {
         // Позиции нужны в трёх случаях: открыт свой виджет, они выбраны вкладкой
-        // дока, или включён полноэкранный режим (там стоимость портфеля висит в
-        // полосе постоянно). Иначе запрос никому не нужен — а стоит он столько же.
-        if (!awake() || (!posCardEl() && T.otab !== 'pos' && !fsOn())) return;
+        // дока, или живёт сцена «Эволюции» (чипы позиций и итог портфеля в полосе).
+        // Иначе запрос никому не нужен — а стоит он столько же.
+        if (!awake() || (!posCardEl() && T.otab !== 'pos' && !sceneLive())) return;
         var c = conn(); if (!c) return;
         A().call('GetPortfolio', { accountId: c.accountId }, { interactive: false }).then(function (d) {
             var q2n = A().q2n;
@@ -1806,9 +1806,10 @@
                 // крупные позиции вверху: взгляд идёт по деньгам, а не по алфавиту
                 out.sort(function (a, b) { return b.val - a.val; });
                 T.port = { list: out, ts: Date.now() };
+                scnFetchCloses(out);   // цены закрытия — дневная дельта чипов сцены
                 repaintPos();
-                fsRepaintBits();   // «портфель» в полосе полноэкранного режима
-                sxTick();          // «Мои вложения» в «Просто»
+                fsRepaintBits();   // связь и свежесть в строке среды сцены
+                sxTick();          // чипы позиций и итог портфеля в сцене
             });
         }).catch(function () { /* тихо: карточка покажет прошлый снимок */ });
     }
@@ -2052,8 +2053,8 @@
     function stillHere() {
         // .btr-card есть у любой карточки терминала: стакан могли удалить,
         // а тикет и «Мои заявки» оставить — поллинг им всё ещё нужен.
-        // .sx — режим «Просто»: карточек терминала там нет вовсе, а данные те же
-        if (document.querySelector('#panel-portfolios.active .btr-card, #panel-portfolios.active #sxRoot')) return true;
+        // #btScene — сцена «Эволюции»: карточек терминала там нет, а данные те же
+        if (document.querySelector('#panel-portfolios.active .btr-card, #panel-portfolios.active #btScene')) return true;
         stopPolling();
         return false;
     }
@@ -2213,6 +2214,8 @@
                     (px > 0 ? ' по ' + fmtPx(px, { meta: ins }) + ' ₽' : '');
                 A().logEvent('order_fill', txt);
                 announce((buy ? 'Покупка исполнена' : 'Продажа исполнена'), txt);
+                // маркер «вы купили тут» на линии сцены — штуки, не лоты
+                addFill(o.instrumentUid || (was || {}).instrumentUid, px, lots * ((ins && ins.lot) || 1), buy);
                 armProtection(o, ins);   // если к заявке заказывали защиту — ставим её
                 // сделка появилась на счёте — история и лимиты устарели
                 loadHist(true); pollPos(); pollMaxLots();
@@ -2591,13 +2594,13 @@
     }
     // зовётся из цикла рендера portfolios.js: включает/гасит поллинг по месту
     function pftAfterRender() {
-        // «Просто» живёт без карточек терминала (.btr-card), но данные ему нужны
-        // те же самые — стакан для цены, позиции для «Мои вложения»
-        if (simpleOn() && document.querySelector('#panel-portfolios.active #sxRoot')) {
-            sxWire(); sxFit(); startPolling(); return;
+        // Сцена «Эволюции» живёт без карточек терминала (.btr-card), но данные
+        // ей нужны те же — стакан для цены, портфель для чипов позиций
+        if (sceneLive()) {
+            sxWire(); scnFit(); startPolling(); return;
         }
         var live = document.querySelector('#panel-portfolios.active .btr-card');
-        if (live && tradeReady()) { wire(); fitObserve(); fitSoon(); startPolling(); fsTapeOnce(); }
+        if (live && tradeReady()) { wire(); fitObserve(); fitSoon(); startPolling(); }
         else { if (fitRO) fitRO.disconnect(); stopPolling(); }
     }
 
@@ -3430,114 +3433,79 @@
         PF.pftLoadPlan([{ ticker: String(ticker), side: side === 'sell' ? 'sell' : 'buy', qty: 0 }]);
     };
 
-    // ================= ПОЛНОЭКРАННЫЙ РЕЖИМ =================
-    // Замер живой страницы: хром над сеткой (герой «Панель управления», ряд
-    // подвкладок, шапка сайта) съедал 256 px — 26% экрана при 1600×1000 и
-    // zoom 0.9, — и ни один его элемент не нужен, пока выставляешь заявку.
-    // Здесь он схлопывается в ОДНУ строку 44 px, которая забирает себе всё
-    // действительно нужное: выход, экраны, поиск, деньги, счёт, связь.
-    // Режим переживает перезагрузку: работающий в терминале не должен входить
-    // в него заново после каждого F5.
-    var FS_KEY = 'bt_fs_v1', SIMPLE_KEY = 'bt_simple_v1';
-    var fsState = null, simpleState = null;
-    function rawFs() {
-        if (fsState === null) {
-            try { fsState = localStorage.getItem(FS_KEY) === '1'; } catch (e) { fsState = false; }
-        }
-        return fsState;
+    // ================= СЦЕНА «ЭВОЛЮЦИЯ» · СТУПЕНЬ И ТЕМА (раунд 2) =================
+    // Раунд 1 (полноэкранная сетка bt_fs_v1 + отдельный режим «Просто»
+    // bt_simple_v1) отвергнут владельцем: два мира вместо одного. Вместо
+    // режимов — ОДНА сцена, которая растёт ступенями насыщенности
+    // (Старт → Разгон → Контроль): слои добавляются, ничего не перестраивается.
+    // Сцена всегда полноэкранная; конструктор .pfd-grid на «Торговле» больше
+    // не используется. Гейт CSS остался прежним — body:has(#pftBar), id несёт
+    // строка среды (см. envRowHtml ниже).
+    var STAGE_KEY = 'bt_stage_v1';
+    var STAGES = [['start', 'Старт'], ['accel', 'Разгон'], ['control', 'Контроль']];
+    var stageState = null;   // {stage, layers}; layers — ручные флаги слоёв (этапы «Разгона»/«Контроля»)
+    function stageName(k) {
+        for (var i = 0; i < STAGES.length; i++) if (STAGES[i][0] === k) return STAGES[i][1];
+        return '';
     }
-    function rawSimple() {
-        if (simpleState === null) {
-            // НОВИЧОК: ключа ещё нет — первый вход в «Торговлю» открывает
-            // «Просто» (решение владельца продукта 2026-07-21). Терминал —
-            // в одном клике: переключатель «Просто | Терминал» стоит в полосе.
-            // Любой явный выбор (переключатель, кнопка «Терминал», выход
-            // «← Портфели») записывает ключ — и дефолт больше не спорит.
-            try {
-                var v = localStorage.getItem(SIMPLE_KEY);
-                simpleState = v === null ? true : v === '1';
-            } catch (e) { simpleState = false; }
+    function saveStageRaw(o) { try { localStorage.setItem(STAGE_KEY, JSON.stringify(o)); } catch (e) {} }
+    // Миграция с раунда 1: явный выбор терминала (bt_simple_v1 = '0') →
+    // «Контроль», всё остальное — в том числе отсутствие ключа (новичок,
+    // дефолтом раунда 1 был «Просто») → «Старт». bt_fs_v1 стирается не глядя:
+    // сцена всегда полноэкранная, флагу отвечать больше не на что.
+    function stageObj() {
+        if (stageState) return stageState;
+        var o = null;
+        try { o = JSON.parse(localStorage.getItem(STAGE_KEY) || 'null'); } catch (e) {}
+        if (!o || typeof o !== 'object' || !stageName(o.stage)) {
+            var simple = null;
+            try { simple = localStorage.getItem('bt_simple_v1'); } catch (e) {}
+            o = { stage: simple === '0' ? 'control' : 'start', layers: {} };
+            saveStageRaw(o);
         }
-        return simpleState;
+        if (!o.layers || typeof o.layers !== 'object') o.layers = {};
+        try { localStorage.removeItem('bt_simple_v1'); localStorage.removeItem('bt_fs_v1'); } catch (e) {}
+        stageState = o;
+        return o;
     }
-    // «Просто» — не отдельная вкладка, а ДРУГАЯ СЛОЖНОСТЬ той же: счёт один,
-    // бумага одна, меняется только способ разговора. Поэтому полосу режим делит
-    // с полноэкранным терминалом, а вместо сетки рисует одну колонку карточек.
-    function simpleOn() { return rawSimple() && tradeReady(); }
-    PF.pftSimpleOn = simpleOn;
-    // fsOn = «полоса вместо хрома»: она одна на оба режима.
-    // Гейт (брокер не подключён) сюда не уходит: там навигация нужнее терминала,
-    // а прятать её не за чем — терминала нет.
-    function fsOn() { return (rawFs() || rawSimple()) && tradeReady(); }
-    PF.pftFsOn = fsOn;
-    // Класс на body НЕ ставим: он бы «залипал» при уходе на другую вкладку сайта
-    // (renderPortfolios там не зовётся). CSS режима висит на body:has(#pftBar) —
-    // полоса существует ровно тогда, когда режим отрисован, и рассинхрона не бывает.
-    function fsSet(on) {
-        fsState = !!on;
-        try { localStorage.setItem(FS_KEY, fsState ? '1' : '0'); } catch (e) {}
+    function setStage(k) {
+        if (!stageName(k)) return;
+        var o = stageObj();
+        if (o.stage === k) return;
+        o.stage = k;
+        saveStageRaw(o);
         if (PF.renderNoAnim) PF.renderNoAnim();
     }
-    function simpleSet(on) {
-        simpleState = !!on;
-        try { localStorage.setItem(SIMPLE_KEY, simpleState ? '1' : '0'); } catch (e) {}
-        if (PF.renderNoAnim) PF.renderNoAnim();
+    // ТЕМА СЦЕНЫ — свой ключ, независимый от темы сайта (решение набора):
+    // светлая по умолчанию, тёмная — вторая полноценная тема, не инверсия.
+    var THEME_KEY = 'bt_theme_v1';
+    function sceneNight() {
+        try { return localStorage.getItem(THEME_KEY) === 'dark'; } catch (e) { return false; }
     }
-    window.pftFsToggle = function () { fsSet(!rawFs()); };
-    // ЕДИНАЯ ТОЧКА ВХОДА (кнопка «Терминал» в шапке «Портфелей»). Зовётся с
-    // ЛЮБОЙ подвкладки, поэтому сама переводит на «Торговлю» и включает режим —
-    // раньше вход жил только в плавающей полосе внизу, а она показывается лишь
-    // на «Торговле»: с «Обзора» в терминал было не попасть вовсе.
-    // Порядок важен: сперва флаг, потом подвкладка — иначе pfxGoTab отрисует
-    // обычный дашборд, и тут же придёт второй рендер уже в режиме.
+    window.pftSceneTheme = function () {
+        var night = !sceneNight();
+        try { localStorage.setItem(THEME_KEY, night ? 'dark' : 'light'); } catch (e) {}
+        var el = dq('btScene'); if (el) el.classList.toggle('night', night);
+        var th = document.querySelector('#pftBar .bts-th'); if (th) th.outerHTML = scnThemeHtml();
+    };
+    // Раунд 1 умер, но его вопросы задают соседние модули (portfolios-dash,
+    // portfolios-chart) — отвечаем «нет»: полноэкранной СЕТКИ больше не бывает
+    // (сцена — не сетка), режима «Просто» тоже.
+    function fsOn() { return false; }
+    function simpleOn() { return false; }
+    // сцена на экране: единственный признак, по которому живут пуллеры и тики
+    function sceneLive() { return !!document.querySelector('#panel-portfolios.active #btScene'); }
+    // Кнопка «Терминал» в шапке «Портфелей» (pfxHeroHtml) зовёт по-прежнему её:
+    // теперь это просто переход на «Торговлю» — сцена включена всегда.
     window.pftEnterTerminal = function () {
         if (!tradeReady()) { toast('Подключите брокера в режиме «Торговля»', true); return; }
-        simpleState = false;
-        try { localStorage.setItem(SIMPLE_KEY, '0'); localStorage.setItem(FS_KEY, '1'); } catch (e) {}
-        fsState = true;
-        var t = PF.pfxTab;
-        if (PF.pfxIsTradeTab && PF.pfxIsTradeTab(t) && PF.renderNoAnim) PF.renderNoAnim();
-        else if (window.pfxGoTrading) window.pfxGoTrading();
+        if (window.pfxGoTrading) window.pfxGoTrading();
         else if (window.pfxGoTab) window.pfxGoTab('trading');
     };
-    // Переключатель ведёт В ОБЕ стороны и не теряет обратной дороги: «Просто» и
-    // «Терминал» — это один счёт и одна бумага, только разной сложности.
-    // Он меняет СЛОЖНОСТЬ ВНУТРИ режима, а не выходит из него: уйти совсем —
-    // это «← Портфели». Поэтому при переходе в «Терминал» включаем полноэкранный,
-    // иначе кнопка с надписью «Терминал» роняла в обычный дашборд.
-    window.pftSimpleGo = function (on) {
-        if (!on) {
-            fsState = true;
-            try { localStorage.setItem(FS_KEY, '1'); } catch (e) {}
-        }
-        simpleSet(!!on);
-    };
-    // Лента сделок в полноэкранном режиме задумана ПОСТОЯННЫМ блоком, и места на
-    // неё тут хватает. Раскрываем один раз за сессию — не в обработчике кнопки:
-    // режим переживает перезагрузку, и после F5 кнопку никто не нажимает.
-    // Дальше решает шеврон ленты: своё решение человека переигрывать не будем.
-    var fsTapeDone = false;
-    function fsTapeOnce() {
-        if (fsTapeDone || !fsOn()) return;
-        fsTapeDone = true;
-        var any = false;
-        liveSlots().forEach(function (n) {
-            var s = S(n);
-            if (s.uid && !s.tapeOpen) { s.tapeOpen = true; any = true; }
-        });
-        if (!any) return;
-        saveSlots();
-        liveSlots().forEach(repaintSlot);
-        pollTape();
-        if (PF.pfdRepackSoon) PF.pfdRepackSoon();
-    }
-    // Выход гасит ОБА режима сразу: «← Портфели» обещает возврат к обычным
-    // «Портфелям», а не переход из «Просто» в терминал.
-    window.pftFsExit = function () {
-        if (!rawFs() && !rawSimple()) return;
-        fsState = false; simpleState = false;
-        try { localStorage.setItem(FS_KEY, '0'); localStorage.setItem(SIMPLE_KEY, '0'); } catch (e) {}
-        if (PF.renderNoAnim) PF.renderNoAnim();
+    // «← Портфели» строки среды: сцена — сама подвкладка, выходить из режима
+    // нечего — уходим на «Обзор»
+    window.pftSceneBack = function () {
+        if (window.pfxGoTab) window.pfxGoTab('overview');
     };
 
     // Нижний док (блок «Мои заявки») сворачивается шевроном — высвободившееся
@@ -3557,126 +3525,74 @@
         if (PF.pfdRepackSoon) PF.pfdRepackSoon();   // высота блока изменилась — пересобрать сетку
     };
 
-    // Деньги в полосе — два настоящих числа. Стоимость портфеля считает
-    // pollPortfolio, а он до сих пор работал, только пока виден виджет
-    // «Позиции»: в полноэкранном режиме число висит в шапке всегда, поэтому
-    // опрос там разрешён и без виджета (см. гвард в pollPortfolio).
+    // ---------- строка среды (52px) ----------
+    // Только среда: выход, омнибокс, связь, песочница, тумблер темы, «⋯», аватар.
+    // Денег здесь НЕТ (решение набора): «свободно» живёт у поля суммы тикета,
+    // «портфель» — итогом полосы позиций. id="pftBar" несёт прежний гейт CSS
+    // body:has(#pftBar): шапка сайта и боковая колонка прячутся, пока сцена жива.
     function portValue() {
         var v = 0, any = false;
         (T.port.list || []).forEach(function (p) { v += p.val || 0; any = true; });
         return any ? v : null;
     }
-    function fsMoneyHtml() {
-        var free = T.pos.money, val = portValue();
-        if (free == null && val == null) return '';
-        // Слова разные по режимам (макеты 01 и 04): в терминале коротко —
-        // «свободно / портфель», в «Просто» полными словами. Тот же приём, что
-        // с «вложено / сейчас стоит» вместо «средняя цена / переоценка».
-        var sx = simpleOn();
-        // одной строкой: два столбика с надстрочными капс-лейблами забракованы
-        return '<span class="pftb-money">' +
-            (free != null ? '<i>' + (sx ? 'свободные деньги' : 'свободно') + '</i><b>' + fmtRub(free) + '</b>' : '') +
-            (free != null && val != null ? '<s>·</s>' : '') +
-            (val != null ? '<i>' + (sx ? 'мои вложения' : 'портфель') + '</i><b>' + fmtRub(val) + '</b>' : '') +
-        '</span>';
-    }
-    // Статус СВЯЗИ (не биржевой сессии) — тот же факт, что метка в стакане:
-    // linkState первого слота. Здесь он в шапке и потому виден всегда.
-    function fsLinkHtml() {
-        var nums = liveSlots();
-        var worst = null;
+    // Связь — тот же linkState, что гасит кнопку тикета. В отличие от раунда 1
+    // зелёное состояние ВИДНО («связь» с точкой): так решено мокапом строки среды.
+    function scnLinkHtml() {
+        var nums = liveSlots(), worst = null;
         for (var i = 0; i < nums.length; i++) {
             var l = linkState(S(nums[i]));
             if (l.state === 'stale') { worst = l; break; }
             if (l.state === 'wait' && !worst) worst = l;
         }
-        if (!worst) return '<span class="pftb-st ok" title="Данные приходят"><i></i>онлайн</span>';
-        return '<span class="pftb-st ' + worst.state + '" title="' + esc(worst.msg) + '"><i></i>' +
+        if (!worst) return '<span class="bts-link ok" title="Данные приходят"><i></i>связь</span>';
+        return '<span class="bts-link ' + worst.state + '" title="' + esc(worst.msg) + '"><i></i>' +
             (worst.state === 'wait' ? 'ждём данные' : 'нет связи · ' + ageTxt(worst.ageMs)) + '</span>';
     }
-    function fsAcctHtml() {
-        var c = conn(); if (!c) return '';
-        // В «Просто» номер счёта ничего не значит, а песочница — значит очень
-        // много: там она называется словами, которые новичок понимает (макет 04).
-        if (simpleOn()) {
-            return c.sandbox
-                ? '<span class="pftb-acct sx-acct"><i class="btr-sand">тренировочный счёт</i></span>'
-                : '<span class="pftb-acct sx-acct">настоящие деньги</span>';
-        }
-        return '<span class="pftb-acct">' + (accTail() ? '····' + esc(accTail()) : esc(c.accountName || 'Счёт')) +
-            (c.sandbox ? '<i class="btr-sand">песочница</i>' : '') + '</span>';
+    // тумблер ☀⇄☾ — видимый, в строке среды: тема сцены не следует за темой сайта
+    function scnThemeHtml() {
+        var night = sceneNight();
+        return '<button type="button" class="bts-th" onclick="pftSceneTheme()" ' +
+            'title="Тема сцены — светлая или тёмная" aria-label="Переключить тему сцены">' +
+            '<i class="' + (night ? '' : 'on') + '">☀</i><i class="' + (night ? 'on' : '') + '">☾</i></button>';
     }
-    // Полоса 44px вместо всего хрома. Экраны сюда ПЕРЕЕЗЖАЮТ с нижней плавающей
-    // полосы (pftScreens гаснет в этом режиме): две навигации на один экран не нужны.
-    PF.pftBarHtml = function () {
-        return '<div class="pftb" id="pftBar">' +
-            '<button type="button" class="pftb-back" onclick="pftFsExit()" ' +
-                'title="Выйти из терминала (Esc)">' + IC_BACK + 'Портфели</button>' +
-            '<span class="pftb-sep"></span>' +
-            // Слева РАЗНОЕ по режимам (макеты 01 и 04): у терминала — ряд экранов,
-            // у «Просто» — переключатель сложности. Показывать сегмент и там и там
-            // значило бы держать в терминале кнопку, которой в макете нет; обратная
-            // дорога из терминала в «Просто» лежит через меню «…».
-            (simpleOn()
-                ? '<div class="pftb-seg" role="tablist" aria-label="Сложность">' +
-                    '<button type="button" role="tab" aria-selected="true" class="on" ' +
-                        'onclick="pftSimpleGo(true)">Просто</button>' +
-                    '<button type="button" role="tab" aria-selected="false" ' +
-                        'onclick="pftSimpleGo(false)">Терминал</button>' +
-                  '</div>'
-                : '<div class="pftb-scr">' + (PF.pftsBarHtml ? PF.pftsBarHtml() : '') + '</div>') +
-            '<div class="pftb-r">' +
-                // В «Просто» поиск — ГЛАВНОЕ действие полосы: без выбранной бумаги
-                // весь экран пустой, а найти её больше негде (стакана с лупой там
-                // нет). Поэтому там он назван человеческими словами и подсвечен,
-                // а не притворяется тихим полем, как в терминале.
-                // класс НЕ 'sx': document.querySelector('.sx') ищет контейнер режима
-                // «Просто», и кнопка с таким классом попадала под него первой —
-                // sxRepaint заменял кнопку всем телом режима
-                '<button type="button" class="pftb-search' + (simpleOn() ? ' pftb-search-lit' : '') + '" onclick="pftFsSearch()" ' +
-                    'title="Найти бумагу">' + IC_LENS + '<span>' +
-                    (simpleOn() ? 'Найти компанию' : 'Тикер или название') + '</span>' +
-                    (simpleOn() ? '' : '<kbd>/</kbd>') + '</button>' +
-                fsMoneyHtml() + fsAcctHtml() + fsLinkHtml() +
-                '<button type="button" class="pftb-more" onclick="pftFsMenu(event)" ' +
-                    'aria-label="Меню терминала" aria-haspopup="true">' + IC_DOTS3 + '</button>' +
-                // аватар — последним в полосе (макет): личный кабинет остаётся под
-                // рукой и в фокусе, где шапки сайта с ним больше нет
-                '<button type="button" class="pftb-av" onclick="pftFsProfile()" ' +
+    function envRowHtml() {
+        var c = conn();
+        return '<div class="bts-top" id="pftBar">' +
+            '<button type="button" class="bts-back" onclick="pftSceneBack()">' + IC_BACK + '<span>Портфели</span></button>' +
+            // омнибокс ⌘K (этап 6) пока открывает готовый поиск бумаг раунда 1
+            '<button type="button" class="bts-omni" onclick="pftFsSearch()" title="Найти бумагу">' + IC_LENS +
+                '<span>Бумага, команда или «сбер 30к»</span><kbd>⌘K</kbd></button>' +
+            '<span class="bts-right">' +
+                scnLinkHtml() +
+                (c && c.sandbox ? '<span class="bts-sand">Песочница</span>' : '') +
+                scnThemeHtml() +
+                '<button type="button" class="bts-dots" onclick="pftFsMenu(event)" ' +
+                    'aria-label="Меню сцены" aria-haspopup="true">' + IC_DOTS3 + '</button>' +
+                '<button type="button" class="bts-av" onclick="pftFsProfile()" ' +
                     'aria-label="Личный кабинет" title="Личный кабинет">' + fsAvaHtml() + '</button>' +
-            '</div>' +
-            (fsMenuOpen ? fsMenuHtml() : '') +
+            '</span>' +
         '</div>';
-    };
-    // МЕНЮ — СЛОВАМИ, не рядом безымянных иконок: три иконки («+», глаз, стрелки)
-    // в этой же полосе уже были отвергнуты — по картинке не угадать, что «глаз»
-    // это «скрывать суммы», а не «предпросмотр».
+    }
+    // меню «⋯» — словами, не рядом безымянных иконок (решение живёт с раунда 1)
     var fsMenuOpen = false;
     function fsMenuHtml() {
-        var dark = document.body.classList.contains('dark-mode');
         var hid = !!(window.sumsPrivacy && window.sumsPrivacy.isOn && window.sumsPrivacy.isOn());
         function item(fn, ic, label, key, on) {
-            return '<button type="button" class="pftb-mi' + (on ? ' on' : '') + '" onclick="' + fn + '">' +
+            return '<button type="button" class="bts-mi' + (on ? ' on' : '') + '" onclick="' + fn + '">' +
                 ic + '<span>' + label + '</span>' + (key ? '<i>' + key + '</i>' : '') + '</button>';
         }
-        return '<div class="pftb-menu" id="pftbMenu">' +
-            // обратная дорога в «Просто»: в полосе терминала сегмента нет (макет 01),
-            // и без этого пункта путь к простому режиму из терминала терялся
-            item('pftSimpleGo(true)', IC_SIMPLE2, 'Простой режим', '') +
-            '<div class="pftb-msep"></div>' +
-            item('pftFsAddWidget()', IC_PLUS, 'Добавить виджет', '') +
+        return '<div class="bts-menu" id="pftbMenu">' +
             item('pftFsSums()', IC_EYE, 'Скрывать суммы', '', hid) +
-            item('pftFsTheme()', IC_MOON, dark ? 'Светлая тема' : 'Тёмная тема', '') +
             item('pftFsKeys()', IC_KEYS, 'Клавиши терминала', '?') +
-            '<div class="pftb-msep"></div>' +
-            item('pftFsExit()', IC_OUT, 'Выйти из терминала', 'Esc') +
+            '<div class="bts-msep"></div>' +
+            item('pftSceneBack()', IC_OUT, 'В «Портфели»', '') +
         '</div>';
     }
     function fsMenuClose() {
         if (!fsMenuOpen) return;
         fsMenuOpen = false;
         var m = dq('pftbMenu'); if (m) m.remove();
-        var b = document.querySelector('.pftb-more'); if (b) b.classList.remove('on');
+        var b = document.querySelector('.bts-dots'); if (b) b.classList.remove('on');
     }
     window.pftFsMenu = function (ev) {
         if (ev) ev.stopPropagation();
@@ -3684,9 +3600,9 @@
         fsMenuOpen = true;
         var bar = dq('pftBar'); if (!bar) return;
         bar.insertAdjacentHTML('beforeend', fsMenuHtml());
-        var b = bar.querySelector('.pftb-more'); if (b) b.classList.add('on');
-        // закрытие по клику мимо — вешаем на СЛЕДУЮЩИЙ тик, иначе этот же клик
-        // долетит до документа и закроет меню в момент открытия
+        var b = bar.querySelector('.bts-dots'); if (b) b.classList.add('on');
+        // закрытие по клику мимо — на СЛЕДУЮЩИЙ тик, иначе этот же клик долетит
+        // до документа и закроет меню в момент открытия
         setTimeout(function () {
             document.addEventListener('click', function once(e) {
                 if (e.target.closest && e.target.closest('#pftbMenu')) return;
@@ -3695,12 +3611,6 @@
             });
         }, 0);
     };
-    // тот же пикер, что у кнопки-плюса дашборда (она в этом режиме спрятана)
-    window.pftFsAddWidget = function () {
-        fsMenuClose();
-        if (typeof window.pfLayoutToggle === 'function') window.pfLayoutToggle();
-        else toast('Пикер виджетов недоступен', true);
-    };
     window.pftFsSums = function () {
         fsMenuClose();
         if (!window.sumsPrivacy) { toast('Скрытие сумм недоступно', true); return; }
@@ -3708,13 +3618,7 @@
         window.sumsPrivacy.set(next);
         toast(next ? 'Суммы скрыты' : 'Суммы показаны');
     };
-    window.pftFsTheme = function () {
-        fsMenuClose();
-        // тот же переключатель, что у всего проекта: заводить терминалу свою
-        // тему значило бы держать две правды об одном
-        if (typeof window.toggleTheme === 'function') window.toggleTheme();
-    };
-    // аватар полосы берёт личность у profile-menu.js — второй копии профиля нет
+    // аватар строки среды берёт личность у profile-menu.js — второй копии профиля нет
     function fsAvaHtml() {
         var id = window.pmIdentity ? window.pmIdentity() : null;
         if (!id || id.guest) return '';
@@ -3726,21 +3630,15 @@
         else toast('Личный кабинет недоступен', true);
     };
     var IC_DOTS3 = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>';
-    var IC_SIMPLE2 = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>';
     var IC_EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7"/><circle cx="12" cy="12" r="3"/></svg>';
-    var IC_MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5"/></svg>';
     var IC_KEYS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg>';
     var IC_OUT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17l5-5-5-5M20 12H9M11 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5"/></svg>';
     var IC_BACK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>';
-    // ПОИСК В ПОЛОСЕ. В терминале он открывает поле в карточке стакана — та же
-    // лупа, что там, и та же клавиша «/». В «Просто» карточки стакана НЕТ ВООБЩЕ,
-    // и прежний вызов не делал ровно ничего: кнопка была, а поиска не было.
-    // Поэтому там у полосы свой выпадающий поиск, живущий прямо под кнопкой.
-    window.pftFsSearch = function () {
-        if (simpleOn()) { sxSearchToggle(); return; }
-        var n = liveSlots()[0] || slotNums()[0] || 1;
-        if (window.pftSearchToggle) window.pftSearchToggle(n, true);
-    };
+
+    // ---------- поиск бумаги (временно на месте омнибокса) ----------
+    // Полный омнибокс (команды сцены, парсер «сбер 30к») — этап 6; до него
+    // строка открывает готовый поиск раунда 1 (pftFindInstruments).
+    window.pftFsSearch = function () { sxSearchToggle(); };
     var sxFind = { open: false, q: '', busy: false, msg: '', res: [] };
     function sxFindHtml() {
         var rows;
@@ -3753,7 +3651,7 @@
         }).join('');
         return '<div class="pftb-find" id="pftbFind">' +
             '<input type="text" id="pftbFindInp" autocomplete="off" spellcheck="false" ' +
-                'placeholder="Название компании или тикер" aria-label="Поиск компании" ' +
+                'placeholder="Название компании или тикер" aria-label="Поиск бумаги" ' +
                 'value="' + esc(sxFind.q) + '" oninput="pftSxFindInput(this.value)">' +
             '<div class="pftb-find-drop">' + rows + '</div></div>';
     }
@@ -3768,18 +3666,18 @@
         sxFind.open = !sxFind.open;
         var bar = dq('pftBar'); if (!bar) return;
         var old = dq('pftbFind'); if (old) old.remove();
-        var btn = bar.querySelector('.pftb-search');
+        var btn = bar.querySelector('.bts-omni');
         if (btn) btn.classList.toggle('on', sxFind.open);
         if (!sxFind.open) return;
         bar.insertAdjacentHTML('beforeend', sxFindHtml());
         var i = dq('pftbFindInp'); if (i) i.focus();
         setTimeout(function () {
             document.addEventListener('click', function once(e) {
-                if (e.target.closest && (e.target.closest('#pftbFind') || e.target.closest('.pftb-search'))) return;
+                if (e.target.closest && (e.target.closest('#pftbFind') || e.target.closest('.bts-omni'))) return;
                 document.removeEventListener('click', once);
                 sxFind.open = false;
                 var el = dq('pftbFind'); if (el) el.remove();
-                var b = document.querySelector('.pftb-search'); if (b) b.classList.remove('on');
+                var b = document.querySelector('.bts-omni'); if (b) b.classList.remove('on');
             });
         }, 0);
     }
@@ -3809,31 +3707,21 @@
         var i = sxFind.res[k]; if (!i || !i.uid) return;
         sxFind.open = false; sxFind.q = ''; sxFind.res = [];
         var el = dq('pftbFind'); if (el) el.remove();
-        var b = document.querySelector('.pftb-search'); if (b) b.classList.remove('on');
+        var b = document.querySelector('.bts-omni'); if (b) b.classList.remove('on');
         simpleSum = '';
-        loadInstrument(sxSlot(), i.uid, function () { sxRepaint(); });
+        // сцена могла стоять пустой (без бумаги) — нужна полная перерисовка
+        loadInstrument(sxSlot(), i.uid, function () {
+            if (PF.renderNoAnim) PF.renderNoAnim();
+        });
     };
-    // живые куски полосы — точечно, в такт с данными (полную полосу не трогаем:
-    // в ней ряд экранов с меню и полем переименования)
+    // живые куски строки среды и тикета — в такт данным (freshTick, pollOb)
     function fsRepaintBits() {
-        var bar = dq('pftBar'); if (!bar) return;
-        var m = bar.querySelector('.pftb-money');
-        if (m) m.outerHTML = fsMoneyHtml() || '<span class="pftb-money"></span>';
-        var st = bar.querySelector('.pftb-st');
-        if (st) st.outerHTML = fsLinkHtml();
+        if (!sceneLive()) return;
+        var st = document.querySelector('#pftBar .bts-link');
+        if (st) st.outerHTML = scnLinkHtml();
+        scnSet('btScnFresh', scnFreshInner());
+        scnTicketBits();
     }
-    PF.pftFsRepaintBits = fsRepaintBits;
-    // Esc — выход. Ставится один раз на документ: полоса перерисовывается, а
-    // обработчик должен пережить перерисовку.
-    document.addEventListener('keydown', function (e) {
-        if (e.key !== 'Escape' || !fsState) return;
-        // Esc сперва закрывает то, что открыто ПОВЕРХ терминала (модалка
-        // подтверждения, шторка, меню экрана) — их обработчики стоят раньше и
-        // вызывают stopPropagation; сюда событие доходит, только если сверху пусто
-        if (document.querySelector('#btConfirmOv, .pfo-card, #pftsMenu, #pftsFind')) return;
-        e.preventDefault();
-        fsSet(false);
-    });
 
     // ================= РЕЖИМ «ПРОСТО» =================
     // Новичок считает не в лотах, а в рублях: «вложу 30 000». Интерфейс сам
@@ -3917,23 +3805,27 @@
     }
 
     function sxSlot() { return liveSlots()[0] || slotNums()[0] || 1; }
-    // ---- график «Просто»: линия с заливкой и датами ----
-    // Свечей и объёмов здесь намеренно нет — новичку нужна ФОРМА («росло или
-    // падало») и срок. Даты обязательны: без них непонятно, за какой период рост.
+
+    // ---- график сцены: линия во весь холст ----
+    // Свечи и индикаторы придут со ступенью «Разгон» (KLineChart); на «Старте»
+    // линия чистая — форма и срок, ничего больше (мокап 03).
     var SX_PERIODS = [
-        ['week', 'Неделя', 'CANDLE_INTERVAL_HOUR', 7],
-        ['month', 'Месяц', 'CANDLE_INTERVAL_DAY', 31],
-        ['year', 'Год', 'CANDLE_INTERVAL_DAY', 365],
-        ['all', 'Всё время', 'CANDLE_INTERVAL_WEEK', 1825]
+        ['day', 'Д', 'CANDLE_INTERVAL_15_MIN', 1],
+        ['week', 'Н', 'CANDLE_INTERVAL_HOUR', 7],
+        ['month', 'М', 'CANDLE_INTERVAL_DAY', 31],
+        ['year', 'Г', 'CANDLE_INTERVAL_DAY', 365],
+        ['all', 'Всё', 'CANDLE_INTERVAL_WEEK', 1825]
     ];
-    var sxPeriod = 'month';
-    var sxCandles = {};   // uid|period -> массив свечей (или 'busy' / 'err')
-    function sxPer() {
-        for (var i = 0; i < SX_PERIODS.length; i++) if (SX_PERIODS[i][0] === sxPeriod) return SX_PERIODS[i];
-        return SX_PERIODS[1];
+    var sxPeriod = 'day';
+    var sxCandles = {};   // uid|period -> [{t,v,o,h,l,vol}] | 'busy' | 'err'
+    function sxPer(k) {
+        for (var i = 0; i < SX_PERIODS.length; i++) if (SX_PERIODS[i][0] === (k || sxPeriod)) return SX_PERIODS[i];
+        return SX_PERIODS[0];
     }
-    function sxLoadCandles(uid) {
-        var p = sxPer(), key = uid + '|' + p[0];
+    // Свечи периода. Помимо close храним open/high/low/volume: из дневной серии
+    // собирается строка фактов (открытие, диапазон, объём) — брокера не дёргаем.
+    function sxLoadCandles(uid, perKey) {
+        var p = sxPer(perKey), key = uid + '|' + p[0];
         if (sxCandles[key]) return;
         sxCandles[key] = 'busy';
         var now = Date.now();
@@ -3945,322 +3837,506 @@
         }, { interactive: false }).then(function (d) {
             var q2n = A().q2n;
             sxCandles[key] = ((d && d.candles) || []).map(function (c) {
-                return { t: Date.parse(c.time), v: q2n(c.close) };
+                return { t: Date.parse(c.time), v: q2n(c.close), o: q2n(c.open),
+                         h: q2n(c.high), l: q2n(c.low), vol: +c.volume || 0 };
             }).filter(function (c) { return c.t && c.v > 0; });
             sxTick();
         }, function () { sxCandles[key] = 'err'; sxTick(); });
     }
-    function sxChartHtml(s) {
-        var p = sxPer();
-        var tabs = '<div class="sx-per">' + SX_PERIODS.map(function (x) {
-            return '<button type="button"' + (x[0] === sxPeriod ? ' class="on"' : '') +
-                ' onclick="pftSxPeriod(\'' + x[0] + '\')">' + x[1] + '</button>';
-        }).join('') + '</div>';
-        var data = sxCandles[s.uid + '|' + p[0]];
-        var body;
-        if (!data || data === 'busy') body = '<div class="sx-chart-note">Загружаем график…</div>';
-        else if (data === 'err' || data.length < 2) body = '<div class="sx-chart-note">График за этот срок недоступен</div>';
-        else {
-            var W = 700, H = 200, AX = 22, PAD = 6;
-            var vals = data.map(function (c) { return c.v; });
-            var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals);
-            var span = (max - min) || 1;
-            min -= span * 0.08; max += span * 0.08; span = max - min;
-            var X = function (i) { return PAD + i * ((W - PAD * 2) / (data.length - 1)); };
-            var Y = function (v) { return (H - AX - 8) - (v - min) / span * (H - AX - 24); };
-            var line = data.map(function (c, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(c.v).toFixed(1); }).join(' ');
-            var base = H - AX + 2;
-            var area = line + ' L' + X(data.length - 1).toFixed(1) + ' ' + base + ' L' + X(0).toFixed(1) + ' ' + base + ' Z';
-            var up = data[data.length - 1].v >= data[0].v;
-            // пять дат по оси — ровно как в макете
-            var marks = '';
-            for (var k = 0; k < 5; k++) {
-                var idx = Math.round(k * (data.length - 1) / 4);
-                var x = X(idx).toFixed(1);
-                var dt = new Date(data[idx].t);
-                var lab = dt.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
-                marks += '<line x1="' + x + '" y1="' + base + '" x2="' + x + '" y2="' + (base + 4) + '" class="sx-ax"/>' +
-                    '<text x="' + x + '" y="' + (H - 4) + '" text-anchor="middle" class="sx-axt">' + esc(lab) + '</text>';
-            }
-            // заливка — градиентом к прозрачному (макет 04): ровная плита цвета
-            // на большом графике давила, особенно красная. Точка-конец — HTML
-            // поверх svg: preserveAspectRatio="none" растянул бы круг в эллипс.
-            var gc = up ? '#16a34a' : '#dc2626';
-            var lastX = (X(data.length - 1) / W * 100).toFixed(2);
-            var lastY = (Y(data[data.length - 1].v) / H * 100).toFixed(2);
-            body = '<div class="sx-chart"><svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" ' +
-                'role="img" aria-label="График цены за период ' + esc(p[1].toLowerCase()) + '">' +
-                '<defs><linearGradient id="sxGrad" x1="0" y1="0" x2="0" y2="1">' +
-                    '<stop offset="0" stop-color="' + gc + '" stop-opacity="0.22"/>' +
-                    '<stop offset="1" stop-color="' + gc + '" stop-opacity="0"/>' +
-                '</linearGradient></defs>' +
-                '<path d="' + area + '" style="fill:url(#sxGrad)"/>' +
-                '<path d="' + line + '" class="sx-line ' + (up ? 'up' : 'dn') + '"/>' +
-                '<line x1="0" y1="' + base + '" x2="' + W + '" y2="' + base + '" class="sx-ax"/>' + marks +
-            '</svg>' +
-            '<i class="sx-dot ' + (up ? 'up' : 'dn') + '" style="left:' + lastX + '%;top:' + lastY + '%"></i>' +
-            '</div>';
-        }
-        return tabs + body;
+    function perPillsHtml() {
+        return '<span class="ih-per" id="btScnPer">' + SX_PERIODS.map(function (x) {
+            return '<span class="' + (x[0] === sxPeriod ? 'on' : '') + '" role="button" tabindex="0" ' +
+                'onclick="pftSxPeriod(\'' + x[0] + '\')">' + x[1] + '</span>';
+        }).join('') + '</span>';
     }
     window.pftSxPeriod = function (k) {
-        sxPeriod = k;
+        sxPeriod = sxPer(k)[0];
         var s = S(sxSlot());
         if (s.uid) sxLoadCandles(s.uid);
-        sxRepaint();
+        var el = dq('btScnPer'); if (el) el.outerHTML = perPillsHtml();
+        sxTick();
     };
-    // «Что нужно знать» — три факта, которые обычно узнают уже ПОСЛЕ первой
-    // сделки: лотность, комиссия, подвижная цена
-    function sxKnowHtml(s, c) {
-        var lot = (s.meta && s.meta.lot) || 1;
-        var fee = feePct();
-        var ex = c && c.gross > 0 ? ' С покупки на ' + fmtKop(c.gross) + ' это ' + fmtKop(c.fee) + '.' : '';
-        var rows = [];
-        if (lot > 1) rows.push(['Покупать можно по ' + lot + ' штук',
-            'Биржа продаёт эту бумагу пачками по ' + lot + ' — это называется лот.']);
-        rows.push(['Комиссия ' + String(fee).replace('.', ',') + '%',
-            'Берётся брокером с суммы сделки.' + ex + ' Она уже посчитана ниже.']);
-        rows.push(['Цена всё время меняется',
-            'Пока заявка идёт на биржу, цена может немного сдвинуться.']);
-        return '<div class="sx-know">' + rows.map(function (r) {
-            return '<div><i>?</i><span><b>' + esc(r[0]) + '</b><p>' + esc(r[1]) + '</p></span></div>';
-        }).join('') + '</div>' +
-        '<div class="sx-know-more">Передумать можно в любой момент: заявку — отменить, пока она не ' +
-        'исполнилась, купленное — продать в любой торговый день.</div>';
+    // дивиденд для строки фактов: ближайшая к сегодняшнему дню выплата
+    var scnDivs = {};   // uid -> {v, t} | 'busy' | 'none' | 'err'
+    function scnLoadDivs(uid) {
+        if (scnDivs[uid]) return;
+        scnDivs[uid] = 'busy';
+        var now = Date.now();
+        A().call('GetDividends', {
+            instrumentId: uid,
+            from: new Date(now - 400 * 86400000).toISOString(),
+            to: new Date(now + 200 * 86400000).toISOString()
+        }, { interactive: false }).then(function (d) {
+            var q2n = A().q2n, best = null;
+            ((d && d.dividends) || []).forEach(function (x) {
+                var v = q2n(x.dividendNet);
+                var t = Date.parse(x.paymentDate || x.recordDate || x.declaredDate || '');
+                if (!(v > 0) || !t) return;
+                if (!best || Math.abs(t - now) < Math.abs(best.t - now)) best = { v: v, t: t };
+            });
+            scnDivs[uid] = best || 'none';
+            sxTick();
+        }, function () { scnDivs[uid] = 'err'; });
     }
-    function sxMoneyRow(k, v, big) {
-        return '<div' + (big ? ' class="big"' : '') + '><span>' + k + '</span><b>' + v + '</b></div>';
+
+    // ---- свои сделки на графике ----
+    // Сегодняшние исполнения — из ответов заявок (resolveFate зовёт addFill);
+    // история за годы придёт со вторым этапом брокера (GetOperations).
+    // Ключ локальный, в облако не ходит (как всё брокерское).
+    var FILLS_KEY = 'bt_fills_v1', FILLS = [];
+    function sameDay(a, b) { return new Date(a).toDateString() === new Date(b).toDateString(); }
+    function loadFills() {
+        var o;
+        try { o = JSON.parse(localStorage.getItem(FILLS_KEY) || 'null'); } catch (e) { return; }
+        if (!Array.isArray(o)) return;
+        var now = Date.now();
+        FILLS = o.filter(function (f) {
+            return f && normId(f.uid) && +f.px > 0 && +f.qty > 0 && +f.ts > 0 && sameDay(+f.ts, now);
+        }).slice(-30).map(function (f) {
+            return { uid: normId(f.uid), px: +f.px, qty: Math.floor(+f.qty), buy: !!f.buy, ts: +f.ts };
+        });
     }
-    // карточка сделки: слева крупно цена, ниже — сумма, перевод, разбивка, кнопка
-    function sxDealHtml(n) {
-        var s = S(n);
-        var buy = s.side !== 'sell';
-        var free = T.pos.money;
-        var have = haveQty(s);
-        var head = '<div class="sx-side">' +
-            '<button type="button" class="' + (buy ? 'on' : '') + '" onclick="pftSxSide(\'buy\')">Купить</button>' +
-            '<button type="button" class="' + (buy ? '' : 'on sell') + '" onclick="pftSxSide(\'sell\')">Продать</button></div>';
-        if (!buy && !(have > 0)) {
-            return '<div class="sx-card">' + head +
-                '<div class="sx-empty">Этой бумаги у вас нет — продавать нечего.</div></div>';
-        }
-        var c = buy ? simpleBuyCalc(s, +simpleSum || 0) : simpleSellCalc(s, +simpleSum || 0);
-        var lot = (s.meta && s.meta.lot) || 1;
-        // Быстрые кнопки. «Всё» при покупке — ВСЕ свободные деньги: делитель уже
-        // включает комиссию, поэтому итог не вылезет за них (см. simpleBuyCalc).
-        var quick = buy
-            ? [['5 000', 5000], ['10 000', 10000], ['30 000', 30000]]
-                .concat(free > 0 ? [['Всё', Math.floor(free)]] : [])
-            : [['Четверть', Math.floor(have / 4)], ['Половина', Math.floor(have / 2)], ['Всё', have]];
-        var quickHtml = '<div class="sx-quick">' + quick.map(function (q) {
-            var on = +simpleSum === q[1] ? ' class="on"' : '';
-            return '<button type="button"' + on + ' onclick="pftSxQuick(' + q[1] + ')">' + esc(q[0]) + '</button>';
-        }).join('') + '</div>';
-        var sum = '<div class="sx-lab">' + (buy ? 'Сколько вложить' : 'Сколько продать') + '</div>' +
-            '<div class="sx-sum"><input id="btSxSum" type="number" min="0" step="' + (buy ? '100' : lot) + '" ' +
-                'inputmode="numeric" value="' + esc(simpleSum) + '" placeholder="0" aria-label="' +
-                (buy ? 'Сумма в рублях' : 'Количество бумаг') + '">' +
-            '<span>' + (buy ? '₽' : 'шт из ' + have.toLocaleString('ru-RU')) + '</span></div>';
-        // перевод «рубли → бумаги» с объяснением, почему не ровно
-        var conv;
-        if (!c) conv = '<div class="sx-conv muted">Укажите сумму — покажем, сколько получится бумаг.</div>';
-        else if (!c.lots) conv = '<div class="sx-conv muted"><b>Пока не хватает</b><p>' +
-            (buy ? 'Минимальная покупка — ' + lot + ' шт, это ' + fmtKop(c.need) + ' с комиссией.'
-                 : 'Продавать можно пачками по ' + lot + ' шт.') + '</p></div>';
-        else conv = '<div class="sx-conv"><b>' + c.qty.toLocaleString('ru-RU') + ' ' + (buy ? 'шт' : 'шт') + '</b><p>' +
-            (buy
-                ? (lot > 1 ? 'Больше не получится: следующая пачка из ' + lot + ' шт уже выйдет за ' +
-                    fmtKop(+simpleSum) + ' (нужно ' + fmtKop(c.nextNeed) + ').'
-                    : 'По текущей цене это всё, что помещается в сумму.')
-                : 'Столько стоит ' + fmtKop(c.gross) + ' по текущей цене ' + fmtPx(c.px, s) + ' ₽.') +
-            '</p></div>';
-        var body = '';
-        if (c && c.lots) {
-            var rows = sxMoneyRow(c.qty.toLocaleString('ru-RU') + ' шт по ' + fmtPx(c.px, s) + ' ₽', fmtKop(c.gross));
-            if (c.aci > 0) rows += sxMoneyRow('Накопленный купон', (buy ? '' : '+') + fmtKop(c.aci));
-            rows += sxMoneyRow('Комиссия брокера', fmtKop(c.fee));
-            if (free != null) {
-                rows += sxMoneyRow(buy ? 'Останется свободно' : 'Станет свободно',
-                    fmtKop(buy ? free - c.total : free + c.total), true);
-            }
-            body = '<div class="sx-tot">' + rows + '</div>';
-        }
-        // Налог — единственное, о чём новичок не догадывается сам. Говорим фактом,
-        // без обещаний, и сразу снимаем панику: удержат по итогам года.
-        var tax = (!buy && c && c.lots)
-            ? '<div class="sx-tax">' + IC_SHIELD + '<span>Если продаёте с прибылью, с неё удержат налог 13%. ' +
-              'Обычно это происходит по итогам года, а не в момент продажи.</span></div>' : '';
-        var alt = '<button type="button" class="sx-alt" onclick="pftSxLimit()">Хочу ' +
-            (buy ? 'дождаться цены пониже' : 'дождаться цены повыше') + ' →</button>';
-        var can = !!(c && c.lots);
-        var blk = submitBlock(s);
-        var cta = '<button type="button" class="sx-cta' + (buy ? '' : ' sell') + (can && !blk ? '' : ' off') + '" ' +
-            (can && !blk ? '' : 'disabled ') + 'onclick="pftSxGo()">' +
-            (blk ? esc(blk) : (can ? (buy ? 'Купить на ' + fmtKop(c.total) : 'Продать на ' + fmtKop(c.total))
-                                   : (buy ? 'Купить' : 'Продать'))) + '</button>';
-        return '<div class="sx-card">' + head + sum + quickHtml + conv + body + tax + alt + cta +
-            '<div class="sx-note">Дальше — проверка заказа. ' +
-            (buy ? 'Деньги спишутся' : 'Бумаги спишутся') + ' только после неё.</div></div>';
+    function addFill(uid, px, qty, buy) {
+        if (!uid || !(px > 0) || !(qty > 0)) return;
+        FILLS.push({ uid: normId(uid), px: px, qty: Math.floor(qty), buy: !!buy, ts: Date.now() });
+        FILLS = FILLS.slice(-30);
+        try { localStorage.setItem(FILLS_KEY, JSON.stringify(FILLS)); } catch (e) {}
+        sxTick();
     }
-    // «Мои вложения» человеческим языком: вложено · сейчас стоит · заработано.
-    // Ни средней цены, ни переоценки — эти слова тут не нужны.
-    function sxMineHtml() {
-        var list = T.port.list || [];
-        if (!list.length) {
-            return '<div class="sx-card sx-mine"><h4>Мои вложения</h4>' +
-                '<div class="sx-empty">' + esc(T.port.ts ? 'Пока ничего не куплено.' : 'Загружаем…') + '</div></div>';
+
+    // Линия растянута на весь вертикальный диапазон холста — сцена не выглядит
+    // пустой (мокап 03/12). Пунктир — вчерашнее закрытие (масштаб дня без второй
+    // оси), ярлык у правого края — последняя цена, точки — свои сделки за сегодня.
+    function scnChartHtml(s) {
+        var p = sxPer(), key = s.uid + '|' + p[0];
+        var data = sxCandles[key];
+        if (!data || data === 'busy') return '<div class="bts-cnote">Загружаем график…</div>';
+        if (data === 'err' || data.length < 2) return '<div class="bts-cnote">График за этот срок недоступен</div>';
+        var W = 1000, H = 520;
+        var vals = data.map(function (c) { return c.v; });
+        var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals);
+        var close = (p[0] === 'day' && s.ob) ? A().q2n(s.ob.closePrice) : 0;
+        if (close > 0) { min = Math.min(min, close); max = Math.max(max, close); }
+        var span = (max - min) || 1;
+        min -= span * 0.06; max += span * 0.06; span = max - min;
+        function X(i) { return i * (W / (data.length - 1)); }
+        function Y(v) { return H - (v - min) / span * H; }
+        var line = data.map(function (c, i) { return X(i).toFixed(1) + ',' + Y(c.v).toFixed(1); }).join(' ');
+        var area = 'M0,' + H + ' L' + line.split(' ').join(' L') + ' L' + W + ',' + H + ' Z';
+        var lastY = Y(data[data.length - 1].v);
+        var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" ' +
+            'aria-label="График цены за период">' +
+            (close > 0 ? '<line x1="0" y1="' + Y(close).toFixed(1) + '" x2="' + W + '" y2="' + Y(close).toFixed(1) + '" class="bts-close"/>' : '') +
+            '<path d="' + area + '" class="bts-area"/>' +
+            '<polyline points="' + line + '" class="bts-line"/>' +
+            '<circle cx="' + W + '" cy="' + lastY.toFixed(1) + '" r="4" class="bts-cdot"/>' +
+            '<circle cx="' + W + '" cy="' + lastY.toFixed(1) + '" r="9" class="bts-cdot halo"/>' +
+        '</svg>';
+        // маркеры своих сделок — только на дневной линии: на месяцах точка врёт
+        var marks = '';
+        if (p[0] === 'day') {
+            var t0 = data[0].t, t1 = data[data.length - 1].t;
+            FILLS.forEach(function (f) {
+                if (f.uid !== s.uid || !(t1 > t0)) return;
+                var fx = Math.min(1, Math.max(0, (f.ts - t0) / (t1 - t0))) * 100;
+                var fy = Math.min(96, Math.max(2, (max - f.px) / span * 100));
+                var tm = new Date(f.ts).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+                marks += '<span class="trm' + (f.buy ? '' : ' sell') + '" style="left:' + fx.toFixed(1) + '%;top:' + fy.toFixed(1) + '%"></span>' +
+                    '<span class="trm-tag' + (f.buy ? '' : ' sell') + '" style="left:' + Math.min(fx + 1.6, 72).toFixed(1) + '%;top:' + Math.max(fy - 9, 2).toFixed(1) + '%">' +
+                    'вы ' + (f.buy ? 'купили' : 'продали') + ' · ' + fmtPx(f.px, s) + ' × ' + f.qty + ' · ' + tm + '</span>';
+            });
         }
-        var inv = 0, now = 0;
-        list.forEach(function (p) { inv += p.avg * p.qty; now += p.val; });
-        var d = now - inv, up = d >= 0;
-        var rows = list.map(function (p) {
-            var pd = p.pnl, pu = pd >= 0;
-            var col = tickerHue(p.ticker);
-            // процент рядом с рублями — как в макете 04: «+1 982,40 ₽ · +3,13%»,
-            // без него не понять, много это или мало для этой позиции
-            var pct = p.avg > 0 ? Math.abs(p.last / p.avg - 1) * 100 : 0;
-            var pctTxt = pct > 0
-                ? ' · ' + (pu ? '+' : '−') + pct.toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + '%'
-                : '';
-            return '<div class="sx-mrow">' +
-                '<span class="sx-mco">' +
-                    '<span class="sx-mlogo" style="background:' + col + '1a;color:' + col + '">' +
-                        esc(String(p.ticker).slice(0, 4)) + '</span>' +
-                    '<span class="sx-mnm"><b>' + esc((p.meta && p.meta.name) || p.ticker) + '</b>' +
-                        '<span>' + esc(p.ticker) + '</span></span>' +
-                '</span>' +
-                '<span class="sx-mcell"><span>вложено</span><b>' + fmtKop(p.avg * p.qty) + '</b></span>' +
-                '<span class="sx-mcell"><span>сейчас стоит</span><b>' + fmtKop(p.val) + '</b></span>' +
-                '<span class="sx-mcell"><span>заработано</span><b class="' + (pu ? 'up' : 'dn') + '">' +
-                    (pu ? '+' : '−') + fmtKop(Math.abs(pd)) + pctTxt + '</b></span>' +
-                '<span class="sx-mact">' +
-                    '<button type="button" class="sx-mbtn" onclick="pftSxPick(\'' + jsArg(p.uid) + '\',\'sell\')">Продать</button>' +
-                    '<button type="button" class="sx-mbtn buy" onclick="pftSxPick(\'' + jsArg(p.uid) + '\',\'buy\')">Купить ещё</button>' +
-                '</span></div>';
-        }).join('');
-        return '<div class="sx-card sx-mine">' +
-            '<div class="sx-mh"><h4>Мои вложения</h4>' +
-            '<span>' + list.length + ' ' + PF.plural(list.length, 'бумага', 'бумаги', 'бумаг') + '</span>' +
-            '<span class="tot">Всего вложено <b>' + fmtKop(inv) + '</b> · сейчас стоит <b>' + fmtKop(now) +
-            '</b> · заработано <b class="' + (up ? 'up' : 'dn') + '">' + (up ? '+' : '−') +
-            fmtKop(Math.abs(d)) + '</b></span></div>' +
-            '<div class="sx-mlist">' + rows + '</div></div>';
+        var last = sxPrice(s);
+        var ptag = last > 0
+            ? '<span class="ptag" style="top:' + Math.min(97, Math.max(2, (max - last) / span * 100)).toFixed(1) + '%">' + fmtPx(last, s) + '</span>'
+            : '';
+        var cnt = p[0] === 'day' ? 7 : 5, dts = '';
+        for (var k = 0; k < cnt; k++) {
+            var idx = Math.round(k * (data.length - 1) / (cnt - 1));
+            var d = new Date(data[idx].t);
+            var lab = p[0] === 'day'
+                ? d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+                : (p[0] === 'week' || p[0] === 'month')
+                    ? d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+                    : d.toLocaleDateString('ru-RU', { month: 'short', year: '2-digit' });
+            dts += '<span>' + esc(lab) + '</span>';
+        }
+        return '<div class="bts-canvas">' + svg + ptag + marks + '</div><div class="ax-dates">' + dts + '</div>';
     }
-    // цвет плашки тикера — детерминированный, чтобы бумага не меняла цвет
-    // от перерисовки к перерисовке (в макете у каждой строки свой)
-    var SX_HUES = ['#16a34a', '#3b82f6', '#8b5cf6', '#e0592b', '#0891b2', '#d97706'];
-    function tickerHue(tk) {
-        var h = 0, str = String(tk || '');
-        for (var i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 997;
-        return SX_HUES[h % SX_HUES.length];
+
+    // ---- герой бумаги: шапка без монограммы, цена 58px, факты дня ----
+    function scnHeadHtml(s) {
+        var m = s.meta;
+        var al = alertsFor(s.uid).length;
+        // звоночек: подписка на цену. Пока открывает модалку алертов раунда 1;
+        // поповер с пресетами −1 %/−3 % — этап алертов (мокап 04)
+        return '<span class="ih-nm"><h3>' + esc(m.name || m.ticker) + '</h3>' +
+            '<em>' + esc(m.ticker) + ' · MOEX · лот ' + m.lot + ' шт</em></span>' +
+            '<span class="ih-r">' + perPillsHtml() +
+            '<button type="button" class="ih-bell' + (al ? ' on' : '') + '" onclick="pftAlertOpen(' + sxSlot() + ')" ' +
+                'title="Уведомить о цене" aria-label="Алерт по цене">' + IC_BELL + '</button></span>';
     }
-    PF.pftSimpleHtml = function () {
-        var n = sxSlot(), s = S(n);
-        if (!s.meta) {
-            return '<div class="sx" id="sxRoot"><div class="sx-card sx-pick">' +
-                '<h4>Выберите бумагу</h4><p>Нажмите «Найти компанию» в строке сверху — покажем цену, ' +
-                'график и посчитаем, сколько бумаг выйдет на вашу сумму.</p></div>' + sxMineHtml() + '</div>';
-        }
-        // ОБЛИГАЦИИ пока не пускаем: их котировка идёт в процентах от номинала,
-        // и без проверки на живом счёте счёт в рублях был бы гаданием. Ошибиться
-        // в деньгах хуже, чем честно отправить в терминал.
-        if (isBond(s)) {
-            return '<div class="sx" id="sxRoot"><div class="sx-card sx-pick">' +
-                '<h4>' + esc(s.meta.ticker) + ' — облигация</h4>' +
-                '<p>Простой режим пока считает только акции и фонды: у облигаций цена указывается ' +
-                'в процентах от номинала, и показывать приблизительные рубли здесь нельзя.</p>' +
-                '<button type="button" class="sx-cta" onclick="pftSimpleGo(false)">Открыть в терминале</button>' +
-                '</div>' + sxMineHtml() + '</div>';
-        }
-        var c = simpleBuyCalc(s, +simpleSum || 0);
-        var last = sxPrice(s);   // та же цена, что в расчёте — одно число на карточку
+    function scnPriceHtml(s) {
+        var last = sxPrice(s);
         var close = s.ob ? A().q2n(s.ob.closePrice) : 0;
-        var d = (last > 0 && close > 0) ? last - close : 0;
-        var kindWord = /etf|fund/i.test(String(s.meta.kind || '')) ? 'Фонд' : 'Акция';
-        var head = '<div class="sx-card">' +
-            '<div class="sx-co">' +
-                '<span class="sx-logo">' + esc(String(s.meta.ticker).slice(0, 4)) + '</span>' +
-                '<span><div class="sx-nm">' + esc(s.meta.name || s.meta.ticker) + '</div>' +
-                    '<div class="sx-sub">' + kindWord + ' · Московская биржа</div></span>' +
-                '<span class="sx-px"><b>' + (last > 0 ? fmtPx(last, s) + ' ₽' : '—') + '</b>' +
-                    (d ? '<span class="' + (d > 0 ? 'up' : 'dn') + '">' + (d > 0 ? '+' : '−') +
-                        fmtPx(Math.abs(d), s) + ' ₽ за сегодня</span>' : '') + '</span>' +
-            '</div>' + sxChartHtml(s) + sxKnowHtml(s, c) + '</div>';
-        sxLoadCandles(s.uid);
-        return '<div class="sx" id="sxRoot">' + head + sxDealHtml(n) + sxMineHtml() + '</div>';
+        var chip = '';
+        if (last > 0 && close > 0 && Math.abs(last - close) > 1e-9) {
+            var d = last - close, up = d >= 0, pct = Math.abs(d / close * 100);
+            chip = '<span class="day-chip' + (up ? '' : ' dn') + '">' + (up ? '▲ +' : '▼ −') +
+                fmtPx(Math.abs(d), s) + ' · ' + (up ? '+' : '−') +
+                pct.toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' % <em>сегодня</em></span>';
+        }
+        return '<span class="price-big">' + (last > 0 ? fmtPx(last, s) : '—') + '<small> ₽</small></span>' + chip;
+    }
+    function fmtBigRub(v) {
+        if (!(v > 0)) return '';
+        if (v >= 1e9) return (v / 1e9).toLocaleString('ru-RU', { maximumFractionDigits: 1 }) + ' млрд ₽';
+        if (v >= 1e6) return (v / 1e6).toLocaleString('ru-RU', { maximumFractionDigits: 1 }) + ' млн ₽';
+        return fmtRub(v);
+    }
+    // тихая строка фактов дня под ценой — всё из уже загруженных свечей,
+    // дивиденд из GetDividends; чего нет — того и не показываем
+    function scnFactsHtml(s) {
+        function f(k, v) { return v ? '<span class="fact"><em>' + k + '</em><b>' + v + '</b></span>' : ''; }
+        var day = sxCandles[s.uid + '|day'], year = sxCandles[s.uid + '|year'];
+        var open = '', range = '', vol = '', yr = '';
+        if (Array.isArray(day) && day.length) {
+            var lo = Infinity, hi = 0, rub = 0, lot = (s.meta && s.meta.lot) || 1;
+            day.forEach(function (c) {
+                if (c.l > 0) lo = Math.min(lo, c.l);
+                hi = Math.max(hi, c.h || c.v);
+                rub += (c.vol || 0) * lot * c.v;   // объём свечи — в лотах
+            });
+            open = fmtPx(day[0].o || day[0].v, s) + ' ₽';
+            if (hi > 0 && isFinite(lo)) range = fmtPx(lo, s) + ' – ' + fmtPx(hi, s);
+            vol = fmtBigRub(rub);
+        }
+        if (Array.isArray(year) && year.length > 1) {
+            var d = year[year.length - 1].v / year[0].v - 1;
+            yr = (d >= 0 ? '+' : '−') + Math.abs(d * 100).toLocaleString('ru-RU', { maximumFractionDigits: 0 }) + ' %';
+        }
+        var dv = scnDivs[s.uid], div = '';
+        if (dv && typeof dv === 'object') {
+            div = fmtPx(dv.v, s) + ' ₽ · ' + new Date(dv.t).toLocaleDateString('ru-RU', { month: 'long' });
+        }
+        return f('Открытие', open) + f('Диапазон дня', range) + f('Объём', vol) + f('За год', yr) + f('Дивиденд', div);
+    }
+    function scnHeroHtml(n, s) {
+        return '<div class="bts-hero">' +
+            '<div class="ih" id="btScnHead">' + scnHeadHtml(s) + '</div>' +
+            '<div class="price-row" id="btScnPrice">' + scnPriceHtml(s) + '</div>' +
+            '<div class="facts" id="btScnFacts">' + scnFactsHtml(s) + '</div>' +
+            '<div class="bts-chart" id="btScnChart">' + scnChartHtml(s) + '</div>' +
+        '</div>';
+    }
+
+    // ---- тикет-колонка «Старта»: сумма в рублях, «что нужно знать» развёрнуто ----
+    function scnFreshInner() {
+        var l = linkState(S(sxSlot()));
+        if (l.state === 'live') return '<span class="fresh"><i></i>цена живая</span>';
+        if (l.state === 'wait') return '<span class="fresh amber"><i></i>ждём цену</span>';
+        return '<span class="fresh amber"><i></i>цена замерла · ' + ageTxt(l.ageMs) + '</span>';
+    }
+    function feeTxt() { return String(feePct()).replace('.', ','); }
+    function posOf(uid) {
+        var out = null;
+        (T.port.list || []).forEach(function (p) { if (p.uid === uid) out = p; });
+        return out;
+    }
+    // глоссарий новичка: пунктир под «11 лотов», тултип одной фразой (мокап 03)
+    function glLot(s, lotsTxt) {
+        var m = s.meta, half = Math.max(1, Math.floor(m.lot / 2));
+        return '<u class="gl">' + lotsTxt +
+            '<span class="gl-tip"><em>Лот</em>Минимальная пачка бумаг на бирже. У ' + esc(m.ticker) +
+            ' в лоте ' + m.lot + ' ' + PF.plural(m.lot, 'акция', 'акции', 'акций') + ': купить ' + half +
+            ' нельзя, ' + m.lot + ' — можно. Тикет всегда округляет до целых лотов сам.</span></u>';
+    }
+    function scnCalc(n) {
+        var s = S(n);
+        return s.side === 'sell' ? simpleSellCalc(s, +simpleSum || 0) : simpleBuyCalc(s, +simpleSum || 0);
+    }
+    function scnApxHtml(n) {
+        var s = S(n), buy = s.side !== 'sell';
+        var c = scnCalc(n);
+        var lot = (s.meta && s.meta.lot) || 1;
+        if (buy) {
+            if (!(+simpleSum > 0)) return '<span class="mut">Укажите сумму — посчитаем бумаги и комиссию.</span>';
+            if (!c) return '<span class="mut">Ждём цену от брокера…</span>';
+            if (!c.lots) return 'Меньше одного лота: лот ' + esc(s.meta.ticker) + ' — ' + lot + ' ' +
+                PF.plural(lot, 'акция', 'акции', 'акций') + ', <b>' + fmtKop(c.need) + '</b> с комиссией';
+            return '≈ <b>' + c.qty.toLocaleString('ru-RU') + ' ' + PF.plural(c.qty, 'акция', 'акции', 'акций') + '</b>' +
+                (lot > 1
+                    ? ' — ' + glLot(s, c.lots.toLocaleString('ru-RU') + ' ' + PF.plural(c.lots, 'лот', 'лота', 'лотов')) + ' по ' + lot + ' шт'
+                    : '');
+        }
+        var have = haveQty(s), p = posOf(s.uid);
+        if (!(have > 0)) return '<span class="mut">Этой бумаги у вас нет — продавать нечего.</span>';
+        var left = (c && c.qty) ? have - c.qty : have;
+        return 'У вас <b>' + have.toLocaleString('ru-RU') + ' ' + PF.plural(have, 'акция', 'акции', 'акций') + '</b>' +
+            (p && p.avg > 0 ? ' по ' + fmtPx(p.avg, s) + ' ₽' : '') +
+            (c && c.qty ? ' — останется ' + left.toLocaleString('ru-RU') : '');
+    }
+    function scnPresetsHtml(n) {
+        var s = S(n), buy = s.side !== 'sell';
+        function pch(lab, v, fn, off) {
+            return '<span class="pch' + (v > 0 && +simpleSum === v ? ' on' : '') + (off ? ' off' : '') +
+                '" role="button" tabindex="0" onclick="' + fn + '">' + lab + '</span>';
+        }
+        if (buy) {
+            var free = T.pos.money;
+            return pch('5 000', 5000, 'pftSxQuick(5000)') +
+                pch('15 000', 15000, 'pftSxQuick(15000)') +
+                pch('30 000', 30000, 'pftSxQuick(30000)') +
+                // «Максимум» — все свободные деньги; делитель расчёта уже включает
+                // комиссию, поэтому итог не вылезет за них (закон раунда 1)
+                pch('Макс', free > 0 ? Math.floor(free) : 0, 'pftSxMax()', !(free > 0));
+        }
+        var have = haveQty(s);
+        return pch('Четверть', Math.floor(have / 4), 'pftSxQuick(' + Math.floor(have / 4) + ')', !(have >= 4)) +
+            pch('Половина', Math.floor(have / 2), 'pftSxQuick(' + Math.floor(have / 2) + ')', !(have >= 2)) +
+            pch('Всё', have, 'pftSxQuick(' + have + ')', !(have > 0));
+    }
+    function scnRestHtml(n) {
+        var s = S(n), buy = s.side !== 'sell';
+        var c = scnCalc(n);
+        var free = T.pos.money;
+        if (free == null || !c || !c.lots) return '';
+        return '<span>' + (buy ? 'Останется свободно' : 'Станет свободно') + '</span><b>' +
+            fmtRub(buy ? free - c.total : free + c.total) + '</b>';
+    }
+    function scnCtaHtml(n) {
+        var s = S(n), buy = s.side !== 'sell';
+        var c = scnCalc(n);
+        var blk = submitBlock(s);
+        var can = !!(c && c.lots) && !blk;
+        var label;
+        if (blk) label = esc(blk);
+        else if (!(+simpleSum > 0)) label = buy ? 'Купить' : 'Продать';
+        else if (!c || !c.lots) label = buy ? 'Мало для одного лота' : 'Меньше одного лота';
+        else label = (buy ? 'Купить на ' : 'Продать на ') + fmtKop(c.total);
+        // итог списания — ТОЛЬКО в кнопке, с копейками (fmtKop): закон раунда 1
+        return '<button type="button" class="cta' + (buy ? '' : ' sell') + (can ? '' : ' dis') + '" ' +
+            (can ? '' : 'disabled ') + 'onclick="pftSxGo()">' + label + '</button>' +
+            '<div class="fee">Комиссия ' + feeTxt() + ' % уже включена</div>';
+    }
+    // «что нужно знать» — развёрнуто прямо в тикете: новичок по ссылкам не ходит
+    function scnKnowHtml(n) {
+        var s = S(n), buy = s.side !== 'sell';
+        var last = sxPrice(s);
+        var px = last > 0 ? fmtPx(last, s) + ' ₽' : '—';
+        var rows = buy ? [
+            'Купится по рыночной цене — сейчас <b>' + px + '</b> за акцию.',
+            'Комиссия ' + feeTxt() + ' % уже в сумме кнопки — списаний сверх неё не будет.',
+            'Передумать можно, пока заявка не исполнена.'
+        ] : [
+            'Продастся по рыночной цене — сейчас <b>' + px + '</b> за акцию.',
+            'Комиссия ' + feeTxt() + ' % уже вычтена из суммы кнопки.',
+            'Если продаёте с прибылью, налог 13 % удержат по итогам года.'
+        ];
+        return '<em>Что нужно знать</em>' + rows.map(function (r) { return '<span>' + r + '</span>'; }).join('');
+    }
+    function scnTicketHtml(n) {
+        var s = S(n), buy = s.side !== 'sell';
+        // облигации в тикет не пущены (хвост набора): котировка в % от номинала,
+        // рубли без проверки единиц на живом счёте были бы гаданием
+        if (isBond(s)) {
+            return '<div class="tkt-h"><b>Сделка</b></div>' +
+                '<div class="apx"><span class="mut">' + esc(s.meta.ticker) + ' — облигация: цена в процентах от ' +
+                'номинала. Тикет откроется после проверки единиц на живом счёте; пока облигации живут в «Портфелях».</span></div>';
+        }
+        // «свободно» живёт у поля суммы (решение набора). Обёртка с id всегда
+        // на месте: деньги приходят ПОЗЖЕ первого рендера (pollPos), и без неё
+        // подпись не появлялась бы до полной перерисовки сцены
+        var cap = buy ? '<span class="fld-cap" id="btScnCap">' + scnCapInner() + '</span>' : '';
+        var have = haveQty(s);
+        return '<div class="tkt-h"><b>Сделка</b><span class="freshw" id="btScnFresh">' + scnFreshInner() + '</span></div>' +
+            '<div class="seg">' +
+                '<span class="' + (buy ? 'on' : '') + '" role="button" tabindex="0" onclick="pftSxSide(\'buy\')">Купить</span>' +
+                '<span class="' + (buy ? '' : 'on sell') + '" role="button" tabindex="0" onclick="pftSxSide(\'sell\')">Продать</span></div>' +
+            '<div class="fld"><em>' + (buy ? 'Сумма' : 'Количество') + cap + '</em>' +
+                '<div class="fld-in"><input id="btSxSum" type="text" inputmode="numeric" autocomplete="off" ' +
+                    'spellcheck="false" value="' + esc(simpleSum) + '" placeholder="0" ' +
+                    'aria-label="' + (buy ? 'Сумма в рублях' : 'Количество бумаг') + '">' +
+                '<u>' + (buy ? '₽' : 'шт из ' + have.toLocaleString('ru-RU')) + '</u></div></div>' +
+            '<div class="presets" id="btScnPre">' + scnPresetsHtml(n) + '</div>' +
+            '<div class="apx" id="btScnApx">' + scnApxHtml(n) + '</div>' +
+            '<div class="tkt-space"></div>' +
+            '<div class="knowx" id="btScnKnow">' + scnKnowHtml(n) + '</div>' +
+            '<div class="rest" id="btScnRest">' + scnRestHtml(n) + '</div>' +
+            '<div class="ctaw" id="btScnCta">' + scnCtaHtml(n) + '</div>';
+    }
+
+    // ---- полоса позиций: чипы вместо таблицы (мокап 03, пины 6–7) ----
+    var scnClosesTs = 0;
+    // цены закрытия для дневной дельты чипов — одним запросом на все позиции
+    function scnFetchCloses(list) {
+        if (!list || !list.length || Date.now() - scnClosesTs < 60000) return;
+        scnClosesTs = Date.now();
+        var ins = [];
+        list.slice(0, 40).forEach(function (p) { if (p.uid) ins.push({ instrumentId: p.uid }); });
+        if (!ins.length) return;
+        A().call('GetClosePrices', { instruments: ins }, { interactive: false }).then(function (d) {
+            var q2n = A().q2n, map = {};
+            ((d && d.closePrices) || []).forEach(function (x) {
+                var uid = x.instrumentUid || x.figi, px = q2n(x.price);
+                if (uid && px > 0) map[uid] = px;
+            });
+            T.closes = map;
+            sxTick();
+        }).catch(function () { /* тихо: чипы просто без дневной дельты */ });
+    }
+    var POS_CHIPS = 5;
+    function scnPosInner() {
+        var list = T.port.list || [];
+        if (!list.length) return '';
+        var chips = list.slice(0, POS_CHIPS).map(function (p) {
+            var cl = (T.closes || {})[p.uid];
+            var d = (cl > 0 && p.last > 0) ? (p.last / cl - 1) * 100 : null;
+            var em = d == null ? '' :
+                '<em class="' + (d >= 0 ? 'pup up' : 'pdn dn') + '">' +
+                Math.abs(d).toLocaleString('ru-RU', { maximumFractionDigits: 1 }) + ' %</em>';
+            var uid = jsArg(p.uid);
+            // клик всей плитки грузит бумагу; ховер раскрывает два действия
+            return '<span class="ps-chip" role="button" tabindex="0" onclick="pftScChip(\'' + uid + '\')">' +
+                '<b>' + esc(p.ticker) + '</b>' + em +
+                '<span class="ps-acts"><u class="act" onclick="event.stopPropagation();pftScChip(\'' + uid + '\')">в сцену</u>' +
+                '<u class="act sell" onclick="event.stopPropagation();pftScChipSell(\'' + uid + '\')">продать</u></span></span>';
+        }).join('');
+        var more = list.length > POS_CHIPS
+            ? '<button type="button" class="ps-more" onclick="pftSceneBack()" ' +
+              'title="Полный разбор позиций — в «Портфелях»">ещё ' + (list.length - POS_CHIPS) + ' →</button>'
+            : '';
+        var val = portValue();
+        return '<span class="ps-t">Мои позиции</span>' + chips + more +
+            (val != null ? '<span class="ps-sum">портфель <b>' + fmtRub(val) + '</b></span>' : '');
+    }
+    window.pftScChip = function (uid) {
+        loadInstrument(sxSlot(), uid, function () {
+            simpleSum = '';
+            if (PF.renderNoAnim) PF.renderNoAnim();
+        });
     };
-    // Высоту «Просто» СЧИТАЕМ ПО ФАКТУ, а не формулой от высоты экрана: сверху
-    // набегает переменное (полоса, её отступ, обёртки), и константа в calc()
-    // разъезжается от любой правки хрома. Тот же приём, что у pfdFsFill.
-    // ЛОВУШКА ZOOM: rect в экранных пикселях, вёрстка — в локальных, делим.
-    function sxFit() {
-        var el = dq('sxRoot');
-        if (!el || window.innerWidth < 1100) return;   // на узком раскладка своя, высота авто
-        var z = parseFloat(getComputedStyle(document.body).zoom) || 1;
-        var h = (window.innerHeight - el.getBoundingClientRect().top) / z - SX_PAD;
-        if (h > 320) el.style.height = h + 'px';
+    // продажа с чипа: тикет открывается сразу с долями позиции — путь
+    // «увидел минус → продал» в два клика (мокап 03, пин 7)
+    window.pftScChipSell = function (uid) {
+        loadInstrument(sxSlot(), uid, function (s) {
+            s.side = 'sell'; simpleSum = '';
+            saveSlots();
+            if (PF.renderNoAnim) PF.renderNoAnim();
+        });
+    };
+
+    // ---- пилюля насыщенности: честный указатель ступени + ручной переход ----
+    function stagePillHtml() {
+        var o = stageObj();
+        return '<div class="bts-pillw"><button type="button" class="stage-pill" onclick="pftStageMenu(event)" ' +
+            'aria-haspopup="true">Насыщенность: <b>' + stageName(o.stage) + '</b>' +
+            (o.stage !== 'control' ? ' · <s>открыть больше</s>' : '') + '</button></div>';
     }
-    var SX_PAD = 20;   // воздух под нижней карточкой
-    window.addEventListener('resize', sxFit);
-    // Точечная перерисовка вместо outerHTML всего режима: узлы сравниваются
-    // ПОБЛОЧНО и заменяются только изменившиеся. Тик цены больше не рушит
-    // фокус на кнопках сумм/периодов/сторон — их блоки от цены не зависят.
-    // В контейнеры с «живым» текстом вперемешку с элементами не спускаемся:
-    // морф ходит только по элементам и пропустил бы изменившийся текст.
-    function sxHasText(el) {
-        for (var c = el.firstChild; c; c = c.nextSibling)
-            if (c.nodeType === 3 && /\S/.test(c.nodeValue)) return true;
-        return false;
+    function scnMenuCloseAll() {
+        fsMenuClose();
+        var m = dq('btStageMenu'); if (m) m.remove();
     }
-    function sxMorph(a, b) {
-        if (a.className !== b.className) a.className = b.className;
-        var ka = Array.prototype.slice.call(a.children);
-        var kb = Array.prototype.slice.call(b.children);
-        if (ka.length !== kb.length) { a.innerHTML = b.innerHTML; return; }
-        for (var i = 0; i < ka.length; i++) {
-            if (ka[i].outerHTML === kb[i].outerHTML) continue;
-            var deeper = ka[i].tagName === kb[i].tagName && ka[i].className === kb[i].className &&
-                ka[i].children.length && kb[i].children.length &&
-                !sxHasText(ka[i]) && !sxHasText(kb[i]);
-            if (deeper) sxMorph(ka[i], kb[i]);
-            else a.replaceChild(kb[i], ka[i]);
+    window.pftStagePick = function (k) { scnMenuCloseAll(); setStage(k); };
+    window.pftStageMenu = function (ev) {
+        if (ev) ev.stopPropagation();
+        var old = dq('btStageMenu'); if (old) { old.remove(); return; }
+        var host = document.querySelector('#btScene .bts-pillw'); if (!host) return;
+        var o = stageObj();
+        host.insertAdjacentHTML('beforeend', '<div class="bts-stmenu" id="btStageMenu">' +
+            STAGES.map(function (x) {
+                return '<button type="button" class="' + (x[0] === o.stage ? 'on' : '') +
+                    '" onclick="pftStagePick(\'' + x[0] + '\')">' + x[1] + '</button>';
+            }).join('') +
+            '<div class="bts-stnote">Слои «Разгона» и «Контроля» собираются следующими этапами</div>' +
+        '</div>');
+        setTimeout(function () {
+            document.addEventListener('click', function once(e) {
+                if (e.target.closest && e.target.closest('#btStageMenu')) return;
+                document.removeEventListener('click', once);
+                var m = dq('btStageMenu'); if (m) m.remove();
+            });
+        }, 0);
+    };
+
+    // ---- сцена целиком ----
+    // пустая сцена: токен есть, бумага ещё не выбрана (онбординг этапа «край
+    // сцены» доскажет остальное — пока одно действие, как решено мокапом 11)
+    function scnHelloHtml() {
+        return '<div class="bts-hello">' +
+            '<h3>Одна бумага — в центре сцены</h3>' +
+            '<p>Найдите её по названию или тикеру: цена встанет крупно, график займёт весь холст, ' +
+            'тикет посчитает сумму в рублях. Остальное появится по мере опыта.</p>' +
+            '<button type="button" onclick="pftFsSearch()">' + IC_LENS + '<span>Найти бумагу</span></button>' +
+        '</div>';
+    }
+    PF.pftSceneHtml = function () {
+        loadSlots();
+        var st = stageObj();
+        var n = sxSlot(), s = S(n);
+        if (s.uid) {
+            sxLoadCandles(s.uid);
+            sxLoadCandles(s.uid, 'day');
+            sxLoadCandles(s.uid, 'year');
+            scnLoadDivs(s.uid);
         }
+        var body = s.meta
+            ? scnHeroHtml(n, s) + '<aside class="tkt" id="btScnTicket">' + scnTicketHtml(n) + '</aside>'
+            : scnHelloHtml();
+        return '<div class="bts' + (sceneNight() ? ' night' : '') + '" id="btScene" data-stage="' + st.stage + '">' +
+            envRowHtml() +
+            '<div class="bts-glow"></div>' +
+            body +
+            '<div class="pos-strip" id="btScnPos">' + scnPosInner() + '</div>' +
+            stagePillHtml() +
+        '</div>';
+    };
+
+    // ---- точечные перерисовки сцены ----
+    function scnSet(id, html) {
+        var el = dq(id);
+        if (el && el.__btHtml !== html) { el.__btHtml = html; el.innerHTML = html; }
     }
-    function sxRepaint() {
-        // по ID, а не по классу: любой посторонний узел с классом `sx`, стоящий
-        // в документе раньше, подменял бы собой контейнер режима (так и вышло с
-        // модификатором кнопки поиска — sxRepaint заменил кнопку всем телом)
-        var host = dq('sxRoot');
-        if (!host) return;
-        var f = document.activeElement, wasSum = f && f.id === 'btSxSum';
-        var pos = wasSum ? f.selectionStart : 0;
-        var tpl = document.createElement('template');
-        tpl.innerHTML = PF.pftSimpleHtml();
-        var neu = tpl.content.firstElementChild;
-        if (!neu) return;
-        if (host.tagName === neu.tagName) sxMorph(host, neu);
-        else host.outerHTML = neu.outerHTML;
-        if (wasSum) {
-            var i = dq('btSxSum');
-            if (i && document.activeElement !== i) {
-                i.focus();
-                try { i.setSelectionRange(pos, pos); } catch (e) {}
-            }
-        }
-        sxWire();   // поле суммы могли заменить — обработчик ввода вешаем заново
-        sxFit();
-    }
-    // тик данных: цена и «Мои вложения» живые. Пока человек ПЕЧАТАЕТ сумму, не
-    // трогаем — перерисовка под пальцами читается как сбой ввода
+    // тик данных: цена, факты, график, тикет и чипы — точечно, поле ввода не трогаем
     function sxTick() {
-        if (!simpleOn() || !dq('sxRoot')) return;
-        var f = document.activeElement;
-        if (f && f.id === 'btSxSum') return;
-        sxRepaint();
+        if (!sceneLive()) return;
+        var n = sxSlot(), s = S(n);
+        if (s.meta) {
+            scnSet('btScnPrice', scnPriceHtml(s));
+            scnSet('btScnFacts', scnFactsHtml(s));
+            scnSet('btScnChart', scnChartHtml(s));
+            scnSet('btScnFresh', scnFreshInner());
+            scnSet('btScnKnow', scnKnowHtml(n));
+            scnTicketBits();
+        }
+        scnSet('btScnPos', scnPosInner());
     }
-    PF.pftSxRepaint = sxRepaint;
-    // Ввод суммы перерисовывает разбивку на каждый символ, но БЕЗ запроса к
-    // брокеру: всё считается из уже полученной цены. Каретку sxRepaint бережёт.
+    // куски тикета, зависящие от суммы: сам инпут никогда не пересобирается —
+    // каретка и фокус переживают любой тик котировок
+    function scnCapInner() {
+        var free = T.pos.money;
+        return free != null ? 'свободно ' + fmtRub(free) : '';
+    }
+    function scnTicketBits() {
+        if (!sceneLive()) return;
+        var n = sxSlot();
+        if (!S(n).meta) return;
+        scnSet('btScnCap', scnCapInner());
+        scnSet('btScnPre', scnPresetsHtml(n));
+        scnSet('btScnApx', scnApxHtml(n));
+        scnSet('btScnRest', scnRestHtml(n));
+        scnSet('btScnCta', scnCtaHtml(n));
+    }
+    // высота сцены — по факту, как sxFit раунда 1: сверху набегает переменный
+    // хром, а zoom 0.9 отдаёт rect в экранных пикселях (делим на zoom)
+    function scnFit() {
+        var el = dq('btScene');
+        if (!el) return;
+        var z = parseFloat(getComputedStyle(document.body).zoom) || 1;
+        var h = (window.innerHeight - el.getBoundingClientRect().top) / z;
+        if (h > 480) el.style.height = h + 'px';
+    }
+    window.addEventListener('resize', scnFit);
     var sxT = null;
     function sxWire() {
         var i = dq('btSxSum');
@@ -4268,45 +4344,40 @@
         i._wired = true;
         i.addEventListener('input', function () {
             simpleSum = i.value.replace(/[^\d]/g, '');
+            if (i.value !== simpleSum) i.value = simpleSum;
             clearTimeout(sxT);
-            sxT = setTimeout(sxRepaint, 120);
+            sxT = setTimeout(scnTicketBits, 120);
+        });
+        // Enter только пересчитывает тикет — НЕ отправляет (закон клавиш)
+        i.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); scnTicketBits(); }
         });
     }
     window.pftSxSide = function (side) {
-        var s = S(sxSlot());
+        var n = sxSlot(), s = S(n);
         s.side = side === 'sell' ? 'sell' : 'buy';
         // единица счёта меняется вместе с задачей — прежнее число тут бессмысленно
         simpleSum = '';
-        saveSlots(); sxRepaint();
+        saveSlots();
+        var el = dq('btScnTicket');
+        if (el) { el.innerHTML = scnTicketHtml(n); sxWire(); }
     };
-    window.pftSxQuick = function (v) { simpleSum = String(v); sxRepaint(); };
-    window.pftSxLimit = function () {
-        // «дождаться цены» — это лимитная заявка, но словом. Уводим в терминал
-        // с уже выбранным типом, а не заводим второй интерфейс цены.
-        var s = S(sxSlot());
-        s.kind = 'limit'; saveSlots();
-        simpleSet(false);
-        toast('Это лимитная заявка: укажите свою цену и подтвердите');
+    window.pftSxQuick = function (v) {
+        v = Math.max(0, Math.floor(+v || 0));
+        simpleSum = v > 0 ? String(v) : '';
+        var i = dq('btSxSum'); if (i) i.value = simpleSum;
+        scnTicketBits();
     };
-    window.pftSxPick = function (uid, side) {
-        // одной ветки хватает: при совпадающем uid loadInstrument зовёт
-        // колбэк синхронно сам (вторая копия задваивала перерисовку)
-        loadInstrument(sxSlot(), uid, function (s) {
-            s.side = side === 'sell' ? 'sell' : 'buy';
-            simpleSum = ''; saveSlots(); sxRepaint();
-        });
+    window.pftSxMax = function () {
+        var free = T.pos.money;
+        if (!(free > 0)) { toast('Свободные деньги ещё не пришли от брокера — секунду', true); return; }
+        window.pftSxQuick(Math.floor(free));
     };
-    // ПОДТВЕРЖДЕНИЕ В «ПРОСТО» (макет 07) — своё, человеческими словами:
-    // «Что покупаете · Сколько · Примерно по · Комиссия · Спишется · Останется».
-    // Единственное предупреждение — про цену: не список рисков мелким шрифтом,
-    // а одна вещь, которая реально может пойти не так.
-    // Предохранители терминала, которые здесь ОСТАЮТСЯ: свежесть цен (по
-    // замершей цене заявка не уйдёт) и лимит частоты. Ввода суммы руками здесь
-    // НЕТ — по решению владельца продукта карточка повторяет макет буквально.
+    // отправка — только этой кнопкой; дальше модалка «Проверьте заказ»
     window.pftSxGo = function () {
         var n = sxSlot(), s = S(n);
         var buy = s.side !== 'sell';
-        var c = buy ? simpleBuyCalc(s, +simpleSum || 0) : simpleSellCalc(s, +simpleSum || 0);
+        var c = scnCalc(n);
         if (!c || !c.lots) { toast(buy ? 'Укажите сумму покупки' : 'Укажите, сколько продать', true); return; }
         var stop = submitBlock(s);
         if (stop) { toast(stop + ': отправлять заявку по замершей цене нельзя', true); return; }
@@ -4317,6 +4388,8 @@
         saveSlots();
         sxConfirm(n, s, c, buy);
     };
+    loadFills();
+
     function sxConfirm(n, s, c, buy) {
         var cn = conn() || {};
         var free = T.pos.money;

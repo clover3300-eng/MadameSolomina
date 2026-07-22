@@ -201,27 +201,14 @@
             var wrapPanel = tabsHtml ? pfxPanelWrap : function (x) { return x; };
             var body;
             if (PF.pfxIsTradeTab(pfxEffTab())) {
-                // «Торговля»: подключён с торговлей — три карточки терминала живут
-                // дашборд-конструктором (drag/resize, как все виджеты «Портфелей»);
-                // иначе гейт по состоянию брокера (нет подключения / только чтение /
-                // заперт / отозван) — см. pfxTradingHtml в portfolios-tabs.js
-                if (PF.pftTradeReady && PF.pftTradeReady()) {
-                    // ПОЛНОЭКРАННЫЙ РЕЖИМ: весь хром (герой + ряд подвкладок) заменяет
-                    // одна строка 44px. Не прячем его стилями, а НЕ РИСУЕМ вовсе —
-                    // скрытый герой всё равно считался бы и мерялся при упаковке сетки.
-                    var fs = PF.pftFsOn && PF.pftFsOn();
-                    // «Просто» — та же вкладка и тот же счёт, но вместо сетки
-                    // конструктора одна колонка карточек: сложность разная,
-                    // данные одни (см. pftSimpleHtml)
-                    var simple = PF.pftSimpleOn && PF.pftSimpleOn();
-                    body = simple
-                        ? PF.pftBarHtml() + wrapPanel(PF.pftSimpleHtml())
-                        : fs
-                            ? PF.pftBarHtml() + wrapPanel(pfdBodyHtml(favStr, noBonds))
-                            : wrapPanel(PF.pftLiveBanner() + pfdBodyHtml(favStr, noBonds));
-                } else {
-                    body = wrapPanel(PF.pfxTradingHtml());
-                }
+                // «Торговля», раунд 2 «Эволюция»: сцена всегда полноэкранная и
+                // рисует свой хром (строку среды) — герой, ряд подвкладок и
+                // конструктор .pfd-grid здесь не используются вовсе. Нет
+                // торгующего подключения — гейт по состоянию брокера
+                // (стекло trading-gate-glass) — см. pfxTradingHtml в portfolios-tabs.js
+                body = (PF.pftTradeReady && PF.pftTradeReady() && PF.pftSceneHtml)
+                    ? PF.pftSceneHtml()
+                    : wrapPanel(PF.pfxTradingHtml());
             } else if (pfxEffTab() !== 'overview') {
                 body = wrapPanel(pfdBodyHtml(favStr, noBonds));
             } else if (pfdActive()) {
