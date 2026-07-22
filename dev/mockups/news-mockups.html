@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Виджет «Новости по позициям» · мокапы редизайна</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fT:Georgia,'Times New Roman',serif;
+  --fU:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --fN:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+  --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+         --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+}
+:root[data-theme="dark"]{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+       --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+:root[data-theme="light"]{ --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+       --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding:44px 0 90px;-webkit-font-smoothing:antialiased}
+.page{width:1440px;max-width:100%;margin:0 auto;padding:0 20px}
+
+/* ---------- документ ---------- */
+.doc-h{margin-bottom:34px}
+.doc-kicker{font-family:var(--fN);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--doc-acc);margin-bottom:9px}
+.doc-h h1{font-family:var(--fT);font-weight:400;font-size:38px;line-height:1.15;letter-spacing:-.01em;text-wrap:balance}
+.doc-h p{margin-top:12px;font-size:15px;line-height:1.6;color:var(--doc-mut);max-width:860px}
+.verdict{margin-top:20px;display:flex;gap:14px;align-items:flex-start;background:var(--doc-panel);border:1px solid var(--doc-line);border-left:3px solid var(--doc-acc);border-radius:14px;padding:16px 20px;max-width:940px}
+.verdict b{font-weight:700;color:var(--doc-ink)}
+.verdict p{margin:0;font-size:14.5px;line-height:1.6;color:var(--doc-quote)}
+.verdict p+p{margin-top:10px}
+
+.mk{margin-top:52px}
+.mk-h{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.mk-n{font-family:var(--fN);font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--doc-dim)}
+.mk-h h2{font-family:var(--fT);font-weight:400;font-size:25px}
+.mk-tag{font-family:var(--fU);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--doc-acc) 14%,transparent);color:var(--doc-acc)}
+.mk-tag.warn{background:rgba(217,119,6,.14);color:#c2760a}
+.mk-tag.mute{background:color-mix(in srgb,var(--doc-mut) 16%,transparent);color:var(--doc-mut)}
+.mk-sub{font-size:14px;color:var(--doc-mut);line-height:1.6;max-width:940px;margin-bottom:18px}
+.notes{margin-top:18px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px 26px}
+.note{display:flex;gap:9px;font-size:13px;line-height:1.5;color:var(--doc-quote)}
+.note i{flex:none;width:18px;height:18px;border-radius:50%;background:var(--doc-ink);color:var(--doc-bg);font-style:normal;font-family:var(--fN);font-size:10px;font-weight:700;display:grid;place-items:center;margin-top:1px}
+.scroller{overflow-x:auto;padding:4px 0 44px;margin-bottom:-32px}
+@media (max-width:1000px){ .notes{grid-template-columns:1fr} .doc-h h1{font-size:30px} }
+
+/* таблица «поле макета → откуда данные» */
+.map{margin-top:20px;width:100%;border-collapse:collapse;font-size:13px;background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:12px;overflow:hidden}
+.map th{text-align:left;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--doc-dim);padding:10px 14px;border-bottom:1px solid var(--doc-line)}
+.map td{padding:9px 14px;border-bottom:1px solid var(--doc-line);color:var(--doc-quote);line-height:1.5;vertical-align:top}
+.map tr:last-child td{border-bottom:0}
+.map code{font-family:var(--fN);font-size:11.5px;background:color-mix(in srgb,var(--doc-acc) 9%,transparent);color:var(--doc-acc);padding:1px 5px;border-radius:5px}
+.map .ok{color:#16a34a;font-weight:700}
+.map .no{color:#c2760a;font-weight:700}
+
+/* ---------- экран ---------- */
+.scr{--ink:#0f172a; --mut:#64748b; --dim:#94a3b8; --line:#e7ecf3; --hair:rgba(15,23,42,.07);
+     --bg:#f4f6fa; --card:#fff; --acc:#4453ef; --grn:#16a34a; --red:#dc2626; --amb:#d97706;
+     position:relative;background:var(--bg);color:var(--ink);border-radius:16px;overflow:hidden;
+     box-shadow:0 2px 4px rgba(15,23,42,.05),0 34px 70px -34px rgba(24,38,60,.4);border:1px solid rgba(15,23,42,.09);
+     padding:34px 40px;display:flex;gap:30px;align-items:flex-start;width:max-content;max-width:none}
+.scr.dark{--ink:#e8eef7;--mut:#8b98ad;--dim:#63718a;--line:rgba(255,255,255,.09);--hair:rgba(255,255,255,.08);
+          --bg:#0c1016;--card:#141a24;--acc:#6b7cff;--grn:#34d399;--red:#f87171;--amb:#fbbf24}
+
+/* ======================================================================
+   НОВЫЙ ЯЗЫК ВИДЖЕТА (nw-*)
+   ====================================================================== */
+.nw{width:640px;background:var(--card);border:1px solid var(--line);border-radius:20px;
+    padding:20px 22px;display:flex;flex-direction:column;
+    box-shadow:0 1px 2px rgba(15,23,42,.04),0 12px 28px -20px rgba(24,38,60,.5)}
+.scr.dark .nw{box-shadow:none}
+.nw.narrow{width:352px}
+
+/* шапка: сериф-заголовок + подпись, справа chrome конструктора и «+» */
+.nw-head{display:flex;align-items:flex-start;gap:8px}
+.nw-ht h3{font-family:var(--fT);font-weight:400;font-size:23px;line-height:1.15}
+.nw-sub{margin-top:5px;font-size:12.5px;line-height:1.45;color:var(--mut);max-width:400px}
+.nw-chrome{margin-left:auto;display:flex;align-items:center;gap:6px}
+.nw-ico{width:32px;height:32px;border-radius:10px;border:1px solid var(--line);background:transparent;
+        display:grid;place-items:center;color:var(--dim);flex:none}
+.nw-ico svg{width:15px;height:15px}
+.nw-ico.ghost{opacity:.4}
+.nw-add{width:32px;height:32px;border:0;background:transparent;display:grid;place-items:center;color:var(--ink);flex:none}
+.nw-add svg{width:17px;height:17px}
+
+/* панель фильтра: пилюли ПОРТФЕЛЕЙ слева, тумблер сортировки справа */
+.nw-bar{display:flex;align-items:center;gap:10px;margin:14px 0 4px;flex-wrap:wrap}
+.nw-pills{display:flex;align-items:center;gap:6px;min-width:0;overflow-x:auto;scrollbar-width:none}
+.nw-pill{display:inline-flex;align-items:center;gap:6px;flex:none;border:1px solid var(--line);border-radius:999px;
+         padding:6px 12px;font-size:12px;font-weight:600;color:var(--mut);background:transparent;line-height:1;cursor:default}
+.nw-pill i{width:8px;height:8px;border-radius:50%;flex:none}
+.nw-pill.on{background:var(--ink);border-color:var(--ink);color:var(--card);font-weight:700}
+.nw-pill.on i{box-shadow:0 0 0 1.5px color-mix(in srgb,var(--card) 55%,transparent)}
+.nw-sort{margin-left:auto;display:inline-flex;gap:3px;background:color-mix(in srgb,var(--ink) 4%,transparent);
+         border:1px solid var(--line);border-radius:12px;padding:3px}
+.nw-sort b{font-weight:600;font-size:12px;color:var(--mut);padding:5px 12px;border-radius:9px;line-height:1;cursor:default}
+.nw-sort b.on{background:var(--ink);color:var(--card);font-weight:700}
+
+/* заголовок дня: моно-каптал + волосок до края */
+.nw-day{margin:13px 0 1px;display:flex;align-items:center;gap:10px}
+.nw-day b{font-family:var(--fN);font-size:10px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
+.nw-day::after{content:'';flex:1;height:1px;background:var(--hair)}
+.nw-day.quiet b{letter-spacing:.09em}
+
+/* строка: тикер+изменение | новость | принадлежность портфелям */
+.nw-list{display:flex;flex-direction:column}
+.nw-row{position:relative;display:grid;grid-template-columns:88px minmax(0,1fr) auto;gap:14px;
+        align-items:flex-start;padding:10px 2px;border-bottom:1px solid var(--hair)}
+.nw-row:last-child,.nw-row.nb{border-bottom:0}
+.nw-tkb{display:flex;flex-direction:column;gap:3px;padding-top:1px}
+.nw-tk{font-family:var(--fN);font-size:13px;font-weight:700;letter-spacing:.01em;line-height:1.1}
+.nw-chg{font-family:var(--fN);font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.1;color:var(--dim)}
+.nw-chg.pos{color:var(--grn)} .nw-chg.neg{color:var(--red)}
+.nw-news{min-width:0}
+.nw-nt{font-size:12.5px;line-height:1.4;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nw-row.none .nw-nt{color:var(--dim);font-style:italic;font-weight:500}
+.nw-nmeta{margin-top:4px;display:flex;align-items:center;gap:7px}
+.nw-nmeta i{font-style:normal;font-size:10px;font-weight:800;letter-spacing:.03em;color:#c2760a;
+            background:rgba(217,119,6,.12);border-radius:6px;padding:2.5px 7px}
+.scr.dark .nw-nmeta i{color:var(--amb);background:rgba(251,191,36,.13)}
+.nw-nmeta em{font-style:normal;font-size:11px;color:var(--dim)}
+.nw-nmeta svg{width:11px;height:11px;color:var(--dim)}
+/* принадлежность: точка + имя портфеля, столбиком справа (максимум две + «+1») */
+.nw-pfs{display:flex;flex-direction:column;gap:4px;align-items:flex-end;padding-top:2px}
+.nw-pf{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:600;color:var(--mut);white-space:nowrap;line-height:1.1}
+.nw-pf i{width:7px;height:7px;border-radius:50%;flex:none}
+.nw-pf.more{color:var(--dim);font-family:var(--fN);font-size:10px}
+.nw-ext{font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);
+        border:1px dashed color-mix(in srgb,var(--dim) 55%,transparent);border-radius:6px;padding:2.5px 6px;line-height:1}
+
+/* ховер строки: полный заголовок поповером ПОВЕРХ соседей + строка «позиция» */
+.nw-row.hov{z-index:6}
+.nw-pop{position:absolute;left:74px;right:-14px;top:-12px;z-index:7;background:var(--card);
+        border:1px solid var(--line);border-radius:12px;padding:12px 15px;
+        box-shadow:0 2px 6px rgba(15,23,42,.08),0 22px 48px -18px rgba(24,38,60,.5)}
+.scr.dark .nw-pop{box-shadow:0 2px 6px rgba(0,0,0,.4),0 22px 48px -14px rgba(0,0,0,.75)}
+.nw-pop .nw-nt{white-space:normal;overflow:visible;text-overflow:clip}
+.nw-pos{margin-top:9px;padding-top:8px;border-top:1px dashed var(--hair);display:flex;align-items:center;
+        gap:12px;flex-wrap:wrap;font-size:11px;color:var(--mut)}
+.nw-pos b{font-family:var(--fN);font-size:11px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.nw-pos .nw-pf b{color:var(--ink)}
+.nw-cursor{position:absolute;right:24px;bottom:-9px;width:17px;height:17px;color:var(--ink);
+           filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
+
+/* --- вариант Б: группировка по портфелям, справа — вес позиции --- */
+.nw-grp{margin:14px 0 1px;display:flex;align-items:center;gap:8px}
+.nw-grp i{width:9px;height:9px;border-radius:50%;flex:none}
+.nw-grp b{font-size:13px;font-weight:700;color:var(--ink)}
+.nw-grp span{font-family:var(--fN);font-size:10.5px;color:var(--dim)}
+.nw-grp::after{content:'';flex:1;height:1px;background:var(--hair)}
+.nw-w{display:flex;flex-direction:column;align-items:flex-end;gap:2px;padding-top:1px}
+.nw-w b{font-family:var(--fN);font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+.nw-w span{font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--dim)}
+
+/* --- узкая колонка: имена портфелей → точки в строке тикера, новость вниз --- */
+.nw.narrow .nw-sub{max-width:230px}
+.nw.narrow .nw-bar{gap:8px}
+.nw.narrow .nw-sort b{padding:5px 9px}
+.nw.narrow .nw-row{grid-template-columns:1fr auto;grid-template-areas:"tk pf" "news news";gap:7px 12px}
+.nw.narrow .nw-tkb{grid-area:tk;flex-direction:row;align-items:baseline;gap:8px}
+.nw.narrow .nw-pfs{grid-area:pf;flex-direction:row;align-items:center;gap:4px;padding-top:3px}
+.nw.narrow .nw-pf span{display:none}
+.nw.narrow .nw-pf i{width:8px;height:8px}
+.nw.narrow .nw-news{grid-area:news}
+.nw.narrow .nw-nt{white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+
+/* ======================================================================
+   «КАК СЕЙЧАС» (cur-*) — для сравнения
+   ====================================================================== */
+.cur{width:640px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px 22px 16px;
+     box-shadow:0 1px 2px rgba(15,23,42,.04),0 12px 28px -20px rgba(24,38,60,.5)}
+.scr.dark .cur{box-shadow:none}
+.cur-head{display:flex;align-items:flex-start;gap:8px}
+.cur-ht h3{font-family:var(--fT);font-weight:400;font-size:21px}
+.cur-sub{margin-top:3px;font-size:12px;color:var(--mut)}
+.cur-hr{margin-left:auto;display:flex;align-items:center;gap:6px}
+.cur-picks{display:flex;align-items:center;gap:6px;margin:12px 0 8px;overflow:hidden}
+.cur-pk{display:inline-flex;align-items:center;gap:6px;flex:none;border:1px solid var(--line);border-radius:999px;
+        padding:5px 11px;font-family:var(--fN);font-size:11px;font-weight:700;color:var(--mut);line-height:1}
+.cur-pk.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.cur-pk .dots{display:inline-flex;gap:3px}
+.cur-pk .dots i{width:7px;height:7px;border-radius:50%}
+.cur-row{display:flex;align-items:flex-start;gap:11px;padding:9px 11px;border:1px solid color-mix(in srgb,var(--ink) 6%,transparent);
+         background:color-mix(in srgb,var(--ink) 1.5%,var(--card));border-radius:12px;margin-bottom:5px}
+.scr.dark .cur-row{border-color:#212c40;background:#121a29}
+.cur-tkb{flex:none;width:62px;display:flex;flex-direction:column;gap:3px}
+.cur-tk{font-family:var(--fN);font-size:12px;font-weight:800}
+.cur-dots{display:inline-flex;gap:3px}
+.cur-dots i{width:7px;height:7px;border-radius:50%}
+.cur-ext{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--dim)}
+.cur-nw{flex:1;min-width:0}
+.cur-nt{font-size:12.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
+.cur-row.none .cur-nt{color:var(--dim);font-weight:500;font-style:italic}
+.cur-nm{margin-top:2px;display:flex;align-items:center;gap:5px;font-size:10.5px;font-weight:600;color:var(--dim)}
+.cur-nm i{font-style:normal;color:var(--acc);font-weight:700}
+.cur-nm svg{width:12px;height:12px;color:var(--acc);opacity:.8;margin-left:auto;flex:none}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="doc-h">
+  <div class="doc-kicker">Портфели · Обзор · виджет «Новости по позициям»</div>
+  <h1>«Новости по позициям» для нескольких портфелей: фильтр, лента, принадлежность</h1>
+  <p>Сейчас виджет собирает бумаги всех портфелей в один список по размеру позиции, а принадлежность
+     показывает только точками 7px — при нескольких портфелях не видно ни «чья» это бумага,
+     ни что случилось сегодня. Редизайн отвечает на три вопроса: <b>что нового</b> (лента по свежести
+     с группами дней), <b>по какому портфелю</b> (пилюли-фильтры портфелей с именем и цветом)
+     и <b>насколько это важно</b> (дневное изменение у тикера, вес позиции на ховере).</p>
+  <div class="verdict">
+    <p><b>Что меняется против текущего вида (назвать до утверждения):</b>
+       1)&nbsp;чипы-тикеры убраны — они дублировали сам список; фильтр теперь по портфелям, «+» для внешних тикеров остаётся;
+       2)&nbsp;сортировка по умолчанию — «Свежесть» с группами Сегодня/Вчера/Ранее (тумблер «Вес» возвращает текущий порядок);
+       3)&nbsp;дневное изменение тикера показано — оно уже собирается в <span style="font-family:var(--fN);font-size:12px">pfdNewsList</span>, но не выводится;
+       4)&nbsp;принадлежность — точка + имя портфеля (до двух, дальше «+1»), а не безымянные точки;
+       5)&nbsp;строки без рамок-карточек — волосяные разделители в минимал-языке виджетов;
+       6)&nbsp;ховер-раскрытие заголовка сохранено и дополнено строкой «позиция»: сумма и вес в каждом портфеле.</p>
+  </div>
+</div>
+
+<!-- ЭКРАН 0 -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">ЭКРАН 0</span><h2>Как сейчас</h2><span class="mk-tag mute">для сравнения</span></div>
+  <p class="mk-sub">Чипы-тикеры с точками, строки-карточки по размеру позиции. Принадлежность нечитаема
+     (точки без имён), свежее тонет внизу, изменение цены не показано, чипы съедают ярус и дублируют список.</p>
+  <div class="scroller"><div class="scr" id="m0"><div class="cur"><div class="cur-head"><div class="cur-ht"><h3>Новости по позициям</h3><div class="cur-sub">наведите бумагу — новость раскроется, нажмите — откроется</div></div><div class="cur-hr"><span class="nw-ico ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span class="nw-ico ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span></div></div><div class="cur-picks"><span class="cur-pk on">Все</span><span class="cur-pk">SBER<span class="dots"><i style="background:#3b82f6"></i><i style="background:#10b981"></i></span></span><span class="cur-pk">LKOH<span class="dots"><i style="background:#3b82f6"></i></span></span><span class="cur-pk">GAZP<span class="dots"><i style="background:#3b82f6"></i><i style="background:#8b5cf6"></i></span></span><span class="cur-pk">OZON<span class="dots"><i style="background:#8b5cf6"></i></span></span><span class="cur-pk">TATN<span class="dots"><i style="background:#10b981"></i></span></span><span class="cur-pk">NVTK ×</span><span class="cur-pk">MGNT<span class="dots"><i style="background:#3b82f6"></i></span></span><span class="cur-pk"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></div><div class="cur-row"><div class="cur-tkb"><b class="cur-tk">SBER</b><span class="cur-dots"><i style="background:#3b82f6"></i><i style="background:#10b981"></i></span></div><div class="cur-nw"><div class="cur-nt">Сбер отчитался за I полугодие: 826 млрд ₽ чистой прибыли, рентабельность капитала 22,9%</div><div class="cur-nm"><i>Smart-Lab</i> · 2 ч назад<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div></div><div class="cur-row"><div class="cur-tkb"><b class="cur-tk">LKOH</b><span class="cur-dots"><i style="background:#3b82f6"></i></span></div><div class="cur-nw"><div class="cur-nt">ЛУКОЙЛ созывает совет директоров: в повестке промежуточные дивиденды за полугодие</div><div class="cur-nm"><i>Smart-Lab</i> · 5 ч назад<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div></div><div class="cur-row"><div class="cur-tkb"><b class="cur-tk">GAZP</b><span class="cur-dots"><i style="background:#3b82f6"></i><i style="background:#8b5cf6"></i></span></div><div class="cur-nw"><div class="cur-nt">Газпром и CNPC согласовали график поставок по «Силе Сибири — 2» на 2027 год</div><div class="cur-nm"><i>Smart-Lab</i> · вчера<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div></div><div class="cur-row"><div class="cur-tkb"><b class="cur-tk">OZON</b><span class="cur-dots"><i style="background:#8b5cf6"></i></span></div><div class="cur-nw"><div class="cur-nt">Ozon повысил прогноз оборота на 2026 год: рост GMV до 45% при выходе в плюс по EBITDA</div><div class="cur-nm"><i>Smart-Lab</i> · вчера<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div></div><div class="cur-row"><div class="cur-tkb"><b class="cur-tk">TATN</b><span class="cur-dots"><i style="background:#10b981"></i></span></div><div class="cur-nw"><div class="cur-nt">Татнефть направит на дивиденды 75% чистой прибыли по РСБУ за полугодие</div><div class="cur-nm"><i>Smart-Lab</i> · вчера<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div></div><div class="cur-row"><div class="cur-tkb"><b class="cur-tk">NVTK</b><span class="cur-ext">внеш.</span></div><div class="cur-nw"><div class="cur-nt">НОВАТЭК отгрузил первую партию СПГ с «Арктик СПГ — 2» азиатскому покупателю</div><div class="cur-nm"><i>Smart-Lab</i> · 3 дн назад<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div></div><div class="cur-row none"><div class="cur-tkb"><b class="cur-tk">MGNT</b><span class="cur-dots"><i style="background:#3b82f6"></i></span></div><div class="cur-nw"><div class="cur-nt">нет свежих новостей</div></div></div></div></div></div>
+</div>
+
+<!-- ЭКРАН 1 -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">ЭКРАН 1</span><h2>Вариант А — лента по свежести с фильтром портфелей</h2><span class="mk-tag">основной вариант</span></div>
+  <p class="mk-sub">Пилюли портфелей (цвет + имя) вместо чипов-тикеров, тумблер «Свежесть/Вес» как в «Избранном»,
+     группы Сегодня/Вчера/Ранее, у тикера — дневное изменение, справа — именованная принадлежность.
+     Бумаги без новостей и внешние тикеры — вниз, отдельными группами.</p>
+  <div class="scroller"><div class="scr" id="m1"><div class="nw"><div class="nw-head"><div class="nw-ht"><h3>Новости по позициям</h3><div class="nw-sub">свежее по бумагам всех портфелей — фильтр по портфелю, клик по тикеру откроет компанию</div></div><div class="nw-chrome"><span class="nw-ico ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span class="nw-ico ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span><span class="nw-add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></div></div><div class="nw-bar"><div class="nw-pills"><span class="nw-pill on">Все</span><span class="nw-pill"><i style="background:#3b82f6"></i>Основной</span><span class="nw-pill"><i style="background:#10b981"></i>ИИС</span><span class="nw-pill"><i style="background:#8b5cf6"></i>Спекулятивный</span></div><div class="nw-sort"><b class="on">Свежесть</b><b>Вес</b></div></div><div class="nw-list"><div class="nw-day"><b>Сегодня</b></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">SBER</b><span class="nw-chg pos">+0,8%</span></div><div class="nw-news"><div class="nw-nt">Сбер отчитался за I полугодие: 826 млрд ₽ чистой прибыли, рентабельность капитала 22,9%</div><div class="nw-nmeta"><i>Smart-Lab</i><em>2 ч назад</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-pfs"><span class="nw-pf"><i style="background:#3b82f6"></i><span>Основной</span></span><span class="nw-pf"><i style="background:#10b981"></i><span>ИИС</span></span></div></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">LKOH</b><span class="nw-chg neg">−0,4%</span></div><div class="nw-news"><div class="nw-nt">ЛУКОЙЛ созывает совет директоров: в повестке промежуточные дивиденды за полугодие</div><div class="nw-nmeta"><i>Smart-Lab</i><em>5 ч назад</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-pfs"><span class="nw-pf"><i style="background:#3b82f6"></i><span>Основной</span></span></div></div><div class="nw-day"><b>Вчера</b></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">GAZP</b><span class="nw-chg neg">−1,2%</span></div><div class="nw-news"><div class="nw-nt">Газпром и CNPC согласовали график поставок по «Силе Сибири — 2» на 2027 год</div><div class="nw-nmeta"><i>Smart-Lab</i><em>вчера</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-pfs"><span class="nw-pf"><i style="background:#3b82f6"></i><span>Основной</span></span><span class="nw-pf"><i style="background:#8b5cf6"></i><span>Спекулятивный</span></span></div></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">OZON</b><span class="nw-chg pos">+2,1%</span></div><div class="nw-news"><div class="nw-nt">Ozon повысил прогноз оборота на 2026 год: рост GMV до 45% при выходе в плюс по EBITDA</div><div class="nw-nmeta"><i>Smart-Lab</i><em>вчера</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-pfs"><span class="nw-pf"><i style="background:#8b5cf6"></i><span>Спекулятивный</span></span></div></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">TATN</b><span class="nw-chg pos">+0,3%</span></div><div class="nw-news"><div class="nw-nt">Татнефть направит на дивиденды 75% чистой прибыли по РСБУ за полугодие</div><div class="nw-nmeta"><i>Smart-Lab</i><em>вчера</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-pfs"><span class="nw-pf"><i style="background:#10b981"></i><span>ИИС</span></span></div></div><div class="nw-day quiet"><b>Ранее</b></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">NVTK</b><span class="nw-chg pos">+0,1%</span></div><div class="nw-news"><div class="nw-nt">НОВАТЭК отгрузил первую партию СПГ с «Арктик СПГ — 2» азиатскому покупателю</div><div class="nw-nmeta"><i>Smart-Lab</i><em>3 дн назад</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-pfs"><span class="nw-ext">внеш.</span></div></div><div class="nw-day quiet"><b>Пока без новостей</b></div><div class="nw-row none"><div class="nw-tkb"><b class="nw-tk">MGNT</b><span class="nw-chg neg">−0,2%</span></div><div class="nw-news"><div class="nw-nt">нет свежих новостей</div></div><div class="nw-pfs"><span class="nw-pf"><i style="background:#3b82f6"></i><span>Основной</span></span></div></div></div></div></div></div>
+  <div class="notes">
+    <div class="note"><i>1</i>Пилюля портфеля: точка фирменного цвета + имя. Активная — чернильная заливка, как у контролов «Избранного». Повторный клик — назад к «Все».</div>
+    <div class="note"><i>2</i>Тумблер «Свежесть/Вес» — тот же контрол, что сортировка «Избранного» (.fv-sort). «Вес» возвращает текущий порядок по размеру позиции, группы дней исчезают.</div>
+    <div class="note"><i>3</i>Группы Сегодня/Вчера/Ранее — моно-каптал с волоском. Пока Apps Script не ответил по тикеру, строка ждёт в нижней группе «Загружается».</div>
+    <div class="note"><i>4</i>Дневное изменение под тикером уже собирается в pfdNewsList (quotes[tk].chgPct) — сейчас просто не рендерится. Клик по тикеру — карточка компании, как сейчас.</div>
+    <div class="note"><i>5</i>Принадлежность: до двух портфелей именами, дальше «+1» (полный список — на ховере). Внешний тикер — пунктирная метка «внеш.».</div>
+    <div class="note"><i>6</i>Заголовок новости — одна строка с обрезкой; полный текст раскрывается ховером поповером (экран 2), клик открывает Smart-Lab.</div>
+  </div>
+</div>
+
+<!-- ЭКРАН 2 -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">ЭКРАН 2</span><h2>Наведение: заголовок целиком + позиция в портфелях</h2><span class="mk-tag">ховер</span></div>
+  <p class="mk-sub">Курсор на новости SBER: поповер поверх соседних строк (контент не сдвигается) — полный заголовок,
+     мета и новая строка «Позиция»: сумма по бумаге и вес в каждом портфеле. Это ответ на «насколько
+     эта новость меня касается» — главный вопрос при нескольких портфелях.</p>
+  <div class="scroller"><div class="scr" id="m2"><div class="nw"><div class="nw-head"><div class="nw-ht"><h3>Новости по позициям</h3><div class="nw-sub">свежее по бумагам всех портфелей — фильтр по портфелю, клик по тикеру откроет компанию</div></div><div class="nw-chrome"><span class="nw-ico ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span class="nw-ico ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span><span class="nw-add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></div></div><div class="nw-bar"><div class="nw-pills"><span class="nw-pill on">Все</span><span class="nw-pill"><i style="background:#3b82f6"></i>Основной</span><span class="nw-pill"><i style="background:#10b981"></i>ИИС</span><span class="nw-pill"><i style="background:#8b5cf6"></i>Спекулятивный</span></div><div class="nw-sort"><b class="on">Свежесть</b><b>Вес</b></div></div><div class="nw-list"><div class="nw-day"><b>Сегодня</b></div><div class="nw-row hov"><div class="nw-tkb"><b class="nw-tk">SBER</b><span class="nw-chg pos">+0,8%</span></div><div class="nw-news"><div class="nw-nt">Сбер отчитался за I полугодие: 826 млрд ₽ чистой прибыли, рентабельность капитала 22,9%</div><div class="nw-nmeta"><i>Smart-Lab</i><em>2 ч назад</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div><div class="nw-pop"><div class="nw-nt">Сбер отчитался за I полугодие: 826 млрд ₽ чистой прибыли, рентабельность капитала 22,9% — банк подтвердил прогноз по дивидендам за 2026 год</div><div class="nw-nmeta"><i>Smart-Lab</i><em>2 ч назад</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div><div class="nw-pos"><span>Позиция&nbsp;<b>124 800 ₽</b></span><span class="nw-pf"><i style="background:#3b82f6"></i><span>Основной&nbsp;</span><b>6,2%</b></span><span class="nw-pf"><i style="background:#10b981"></i><span>ИИС&nbsp;</span><b>3,4%</b></span></div><svg class="nw-cursor" viewBox="0 0 24 24" fill="currentColor" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"><path d="M5 3l14 8.5-6.4 1.2L9.5 19z"/></svg></div></div><div class="nw-pfs"><span class="nw-pf"><i style="background:#3b82f6"></i><span>Основной</span></span><span class="nw-pf"><i style="background:#10b981"></i><span>ИИС</span></span></div></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">LKOH</b><span class="nw-chg neg">−0,4%</span></div><div class="nw-news"><div class="nw-nt">ЛУКОЙЛ созывает совет директоров: в повестке промежуточные дивиденды за полугодие</div><div class="nw-nmeta"><i>Smart-Lab</i><em>5 ч назад</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-pfs"><span class="nw-pf"><i style="background:#3b82f6"></i><span>Основной</span></span></div></div><div class="nw-day"><b>Вчера</b></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">GAZP</b><span class="nw-chg neg">−1,2%</span></div><div class="nw-news"><div class="nw-nt">Газпром и CNPC согласовали график поставок по «Силе Сибири — 2» на 2027 год</div><div class="nw-nmeta"><i>Smart-Lab</i><em>вчера</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-pfs"><span class="nw-pf"><i style="background:#3b82f6"></i><span>Основной</span></span><span class="nw-pf"><i style="background:#8b5cf6"></i><span>Спекулятивный</span></span></div></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">OZON</b><span class="nw-chg pos">+2,1%</span></div><div class="nw-news"><div class="nw-nt">Ozon повысил прогноз оборота на 2026 год: рост GMV до 45% при выходе в плюс по EBITDA</div><div class="nw-nmeta"><i>Smart-Lab</i><em>вчера</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-pfs"><span class="nw-pf"><i style="background:#8b5cf6"></i><span>Спекулятивный</span></span></div></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">TATN</b><span class="nw-chg pos">+0,3%</span></div><div class="nw-news"><div class="nw-nt">Татнефть направит на дивиденды 75% чистой прибыли по РСБУ за полугодие</div><div class="nw-nmeta"><i>Smart-Lab</i><em>вчера</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-pfs"><span class="nw-pf"><i style="background:#10b981"></i><span>ИИС</span></span></div></div><div class="nw-day quiet"><b>Ранее</b></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">NVTK</b><span class="nw-chg pos">+0,1%</span></div><div class="nw-news"><div class="nw-nt">НОВАТЭК отгрузил первую партию СПГ с «Арктик СПГ — 2» азиатскому покупателю</div><div class="nw-nmeta"><i>Smart-Lab</i><em>3 дн назад</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-pfs"><span class="nw-ext">внеш.</span></div></div><div class="nw-day quiet"><b>Пока без новостей</b></div><div class="nw-row none"><div class="nw-tkb"><b class="nw-tk">MGNT</b><span class="nw-chg neg">−0,2%</span></div><div class="nw-news"><div class="nw-nt">нет свежих новостей</div></div><div class="nw-pfs"><span class="nw-pf"><i style="background:#3b82f6"></i><span>Основной</span></span></div></div></div></div></div></div>
+</div>
+
+<!-- ЭКРАН 3 -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">ЭКРАН 3</span><h2>Вариант Б — группировка по портфелям</h2><span class="mk-tag mute">альтернатива</span></div>
+  <p class="mk-sub">Вместо фильтра — постоянные секции: заголовок-портфель (цвет + имя + счёт бумаг), внутри строки
+     по весу позиции, справа — доля бумаги в ЭТОМ портфеле. Бумага в двух портфелях повторяется в обеих секциях
+     (новость из кэша, второй раз не грузится). Выбрать против экрана 1 — или сделать третьим
+     положением тумблера: «Свежесть / Вес / По портфелям».</p>
+  <div class="scroller"><div class="scr" id="m3"><div class="nw"><div class="nw-head"><div class="nw-ht"><h3>Новости по позициям</h3><div class="nw-sub">свежая новость по каждой бумаге — по портфелям, справа доля бумаги в портфеле</div></div><div class="nw-chrome"><span class="nw-ico ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span class="nw-ico ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span><span class="nw-add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></div></div><div class="nw-list" style="margin-top:2px"><div class="nw-grp"><i style="background:#3b82f6"></i><b>Основной</b><span>4 бум.</span></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">SBER</b><span class="nw-chg pos">+0,8%</span></div><div class="nw-news"><div class="nw-nt">Сбер отчитался за I полугодие: 826 млрд ₽ чистой прибыли, рентабельность капитала 22,9%</div><div class="nw-nmeta"><i>Smart-Lab</i><em>2 ч назад</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-w"><b>6,2%</b><span>доля</span></div></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">GAZP</b><span class="nw-chg neg">−1,2%</span></div><div class="nw-news"><div class="nw-nt">Газпром и CNPC согласовали график поставок по «Силе Сибири — 2» на 2027 год</div><div class="nw-nmeta"><i>Smart-Lab</i><em>вчера</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-w"><b>4,8%</b><span>доля</span></div></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">LKOH</b><span class="nw-chg neg">−0,4%</span></div><div class="nw-news"><div class="nw-nt">ЛУКОЙЛ созывает совет директоров: в повестке промежуточные дивиденды за полугодие</div><div class="nw-nmeta"><i>Smart-Lab</i><em>5 ч назад</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-w"><b>3,9%</b><span>доля</span></div></div><div class="nw-row none"><div class="nw-tkb"><b class="nw-tk">MGNT</b><span class="nw-chg neg">−0,2%</span></div><div class="nw-news"><div class="nw-nt">нет свежих новостей</div></div><div class="nw-w"><b>1,2%</b><span>доля</span></div></div><div class="nw-grp"><i style="background:#10b981"></i><b>ИИС</b><span>2 бум.</span></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">TATN</b><span class="nw-chg pos">+0,3%</span></div><div class="nw-news"><div class="nw-nt">Татнефть направит на дивиденды 75% чистой прибыли по РСБУ за полугодие</div><div class="nw-nmeta"><i>Smart-Lab</i><em>вчера</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-w"><b>5,1%</b><span>доля</span></div></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">SBER</b><span class="nw-chg pos">+0,8%</span></div><div class="nw-news"><div class="nw-nt">Сбер отчитался за I полугодие: 826 млрд ₽ чистой прибыли, рентабельность капитала 22,9%</div><div class="nw-nmeta"><i>Smart-Lab</i><em>2 ч назад</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-w"><b>3,4%</b><span>доля</span></div></div><div class="nw-grp"><i style="background:#8b5cf6"></i><b>Спекулятивный</b><span>2 бум.</span></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">OZON</b><span class="nw-chg pos">+2,1%</span></div><div class="nw-news"><div class="nw-nt">Ozon повысил прогноз оборота на 2026 год: рост GMV до 45% при выходе в плюс по EBITDA</div><div class="nw-nmeta"><i>Smart-Lab</i><em>вчера</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-w"><b>12,4%</b><span>доля</span></div></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">GAZP</b><span class="nw-chg neg">−1,2%</span></div><div class="nw-news"><div class="nw-nt">Газпром и CNPC согласовали график поставок по «Силе Сибири — 2» на 2027 год</div><div class="nw-nmeta"><i>Smart-Lab</i><em>вчера</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-w"><b>7,7%</b><span>доля</span></div></div><div class="nw-grp"><i style="background:#94a3b8"></i><b>Вне портфелей</b><span>1 бум.</span></div><div class="nw-row nb"><div class="nw-tkb"><b class="nw-tk">NVTK</b><span class="nw-chg pos">+0,1%</span></div><div class="nw-news"><div class="nw-nt">НОВАТЭК отгрузил первую партию СПГ с «Арктик СПГ — 2» азиатскому покупателю</div><div class="nw-nmeta"><i>Smart-Lab</i><em>3 дн назад</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><span class="nw-ext">внеш.</span></div></div></div></div></div>
+</div>
+
+<!-- ЭКРАН 4 -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">ЭКРАН 4</span><h2>Тёмная тема</h2></div>
+  <p class="mk-sub">Вариант А на тёмном: волоски светлеют, активные пилюли остаются чернильными (светлая заливка
+     на тёмном), Smart-Lab-пилюля — янтарная светлая, точки портфелей не меняются.</p>
+  <div class="scroller"><div class="scr dark" id="m4"><div class="nw"><div class="nw-head"><div class="nw-ht"><h3>Новости по позициям</h3><div class="nw-sub">свежее по бумагам всех портфелей — фильтр по портфелю, клик по тикеру откроет компанию</div></div><div class="nw-chrome"><span class="nw-ico ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span class="nw-ico ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span><span class="nw-add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></div></div><div class="nw-bar"><div class="nw-pills"><span class="nw-pill on">Все</span><span class="nw-pill"><i style="background:#3b82f6"></i>Основной</span><span class="nw-pill"><i style="background:#10b981"></i>ИИС</span><span class="nw-pill"><i style="background:#8b5cf6"></i>Спекулятивный</span></div><div class="nw-sort"><b class="on">Свежесть</b><b>Вес</b></div></div><div class="nw-list"><div class="nw-day"><b>Сегодня</b></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">SBER</b><span class="nw-chg pos">+0,8%</span></div><div class="nw-news"><div class="nw-nt">Сбер отчитался за I полугодие: 826 млрд ₽ чистой прибыли, рентабельность капитала 22,9%</div><div class="nw-nmeta"><i>Smart-Lab</i><em>2 ч назад</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-pfs"><span class="nw-pf"><i style="background:#3b82f6"></i><span>Основной</span></span><span class="nw-pf"><i style="background:#10b981"></i><span>ИИС</span></span></div></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">LKOH</b><span class="nw-chg neg">−0,4%</span></div><div class="nw-news"><div class="nw-nt">ЛУКОЙЛ созывает совет директоров: в повестке промежуточные дивиденды за полугодие</div><div class="nw-nmeta"><i>Smart-Lab</i><em>5 ч назад</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-pfs"><span class="nw-pf"><i style="background:#3b82f6"></i><span>Основной</span></span></div></div><div class="nw-day"><b>Вчера</b></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">GAZP</b><span class="nw-chg neg">−1,2%</span></div><div class="nw-news"><div class="nw-nt">Газпром и CNPC согласовали график поставок по «Силе Сибири — 2» на 2027 год</div><div class="nw-nmeta"><i>Smart-Lab</i><em>вчера</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-pfs"><span class="nw-pf"><i style="background:#3b82f6"></i><span>Основной</span></span><span class="nw-pf"><i style="background:#8b5cf6"></i><span>Спекулятивный</span></span></div></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">OZON</b><span class="nw-chg pos">+2,1%</span></div><div class="nw-news"><div class="nw-nt">Ozon повысил прогноз оборота на 2026 год: рост GMV до 45% при выходе в плюс по EBITDA</div><div class="nw-nmeta"><i>Smart-Lab</i><em>вчера</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-pfs"><span class="nw-pf"><i style="background:#8b5cf6"></i><span>Спекулятивный</span></span></div></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">TATN</b><span class="nw-chg pos">+0,3%</span></div><div class="nw-news"><div class="nw-nt">Татнефть направит на дивиденды 75% чистой прибыли по РСБУ за полугодие</div><div class="nw-nmeta"><i>Smart-Lab</i><em>вчера</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-pfs"><span class="nw-pf"><i style="background:#10b981"></i><span>ИИС</span></span></div></div><div class="nw-day quiet"><b>Ранее</b></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">NVTK</b><span class="nw-chg pos">+0,1%</span></div><div class="nw-news"><div class="nw-nt">НОВАТЭК отгрузил первую партию СПГ с «Арктик СПГ — 2» азиатскому покупателю</div><div class="nw-nmeta"><i>Smart-Lab</i><em>3 дн назад</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-pfs"><span class="nw-ext">внеш.</span></div></div><div class="nw-day quiet"><b>Пока без новостей</b></div><div class="nw-row none"><div class="nw-tkb"><b class="nw-tk">MGNT</b><span class="nw-chg neg">−0,2%</span></div><div class="nw-news"><div class="nw-nt">нет свежих новостей</div></div><div class="nw-pfs"><span class="nw-pf"><i style="background:#3b82f6"></i><span>Основной</span></span></div></div></div></div></div></div>
+</div>
+
+<!-- ЭКРАН 5 -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">ЭКРАН 5</span><h2>Узкая колонка конструктора</h2><span class="mk-tag warn">адаптация</span></div>
+  <p class="mk-sub">На ширине ≤ ~380px имена портфелей сворачиваются в точки у тикера, заголовок новости получает
+     две строки, пилюли скроллятся горизонтально. Правило «контент подстраивается под размер виджета»
+     соблюдено: ни строка, ни пилюля не клипуются.</p>
+  <div class="scroller"><div class="scr" id="m5"><div class="nw narrow"><div class="nw-head"><div class="nw-ht"><h3>Новости по позициям</h3><div class="nw-sub">свежее по бумагам всех портфелей — фильтр по портфелю, клик по тикеру откроет компанию</div></div><div class="nw-chrome"><span class="nw-ico ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span class="nw-ico ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span><span class="nw-add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></div></div><div class="nw-bar"><div class="nw-pills"><span class="nw-pill on">Все</span><span class="nw-pill"><i style="background:#3b82f6"></i>Основной</span><span class="nw-pill"><i style="background:#10b981"></i>ИИС</span><span class="nw-pill"><i style="background:#8b5cf6"></i>Спекулятивный</span></div><div class="nw-sort"><b class="on">Свежесть</b><b>Вес</b></div></div><div class="nw-list"><div class="nw-day"><b>Сегодня</b></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">SBER</b><span class="nw-chg pos">+0,8%</span></div><div class="nw-news"><div class="nw-nt">Сбер отчитался за I полугодие: 826 млрд ₽ чистой прибыли, рентабельность капитала 22,9%</div><div class="nw-nmeta"><i>Smart-Lab</i><em>2 ч назад</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-pfs"><span class="nw-pf"><i style="background:#3b82f6"></i><span>Основной</span></span><span class="nw-pf"><i style="background:#10b981"></i><span>ИИС</span></span></div></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">LKOH</b><span class="nw-chg neg">−0,4%</span></div><div class="nw-news"><div class="nw-nt">ЛУКОЙЛ созывает совет директоров: в повестке промежуточные дивиденды за полугодие</div><div class="nw-nmeta"><i>Smart-Lab</i><em>5 ч назад</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-pfs"><span class="nw-pf"><i style="background:#3b82f6"></i><span>Основной</span></span></div></div><div class="nw-day"><b>Вчера</b></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">GAZP</b><span class="nw-chg neg">−1,2%</span></div><div class="nw-news"><div class="nw-nt">Газпром и CNPC согласовали график поставок по «Силе Сибири — 2» на 2027 год</div><div class="nw-nmeta"><i>Smart-Lab</i><em>вчера</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-pfs"><span class="nw-pf"><i style="background:#3b82f6"></i><span>Основной</span></span><span class="nw-pf"><i style="background:#8b5cf6"></i><span>Спекулятивный</span></span></div></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">OZON</b><span class="nw-chg pos">+2,1%</span></div><div class="nw-news"><div class="nw-nt">Ozon повысил прогноз оборота на 2026 год: рост GMV до 45% при выходе в плюс по EBITDA</div><div class="nw-nmeta"><i>Smart-Lab</i><em>вчера</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-pfs"><span class="nw-pf"><i style="background:#8b5cf6"></i><span>Спекулятивный</span></span></div></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">TATN</b><span class="nw-chg pos">+0,3%</span></div><div class="nw-news"><div class="nw-nt">Татнефть направит на дивиденды 75% чистой прибыли по РСБУ за полугодие</div><div class="nw-nmeta"><i>Smart-Lab</i><em>вчера</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-pfs"><span class="nw-pf"><i style="background:#10b981"></i><span>ИИС</span></span></div></div><div class="nw-day quiet"><b>Ранее</b></div><div class="nw-row"><div class="nw-tkb"><b class="nw-tk">NVTK</b><span class="nw-chg pos">+0,1%</span></div><div class="nw-news"><div class="nw-nt">НОВАТЭК отгрузил первую партию СПГ с «Арктик СПГ — 2» азиатскому покупателю</div><div class="nw-nmeta"><i>Smart-Lab</i><em>3 дн назад</em><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg></div></div><div class="nw-pfs"><span class="nw-ext">внеш.</span></div></div><div class="nw-day quiet"><b>Пока без новостей</b></div><div class="nw-row none"><div class="nw-tkb"><b class="nw-tk">MGNT</b><span class="nw-chg neg">−0,2%</span></div><div class="nw-news"><div class="nw-nt">нет свежих новостей</div></div><div class="nw-pfs"><span class="nw-pf"><i style="background:#3b82f6"></i><span>Основной</span></span></div></div></div></div></div></div>
+</div>
+
+<!-- карта данных -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">ДАННЫЕ</span><h2>Поле макета → откуда берётся</h2></div>
+  <table class="map">
+    <tr><th>Поле макета</th><th>Источник в коде</th><th>Есть сейчас</th></tr>
+    <tr><td>Пилюли портфелей (имя + цвет)</td><td><code>visibleItems()</code> → <code>p.name</code>, <code>colorVal(p.color)</code> — уже собираются в <code>map[tk].pfs</code></td><td class="ok">да, показываются точками</td></tr>
+    <tr><td>Дневное изменение тикера</td><td><code>pfdNewsList()</code> уже кладёт <code>chg</code> из <code>quotes[tk].chgPct</code></td><td class="ok">собирается, не рендерится</td></tr>
+    <tr><td>Лента по свежести + группы дней</td><td><code>newsHtmlCache[tk].date</code> — уже хранится для сортировки «Избранного»</td><td class="ok">да</td></tr>
+    <tr><td>Фильтр по портфелю</td><td>новый стейт <code>pfdNewsPfPick</code> вместо тикерного <code>pfdNewsPick</code>; фильтр по <code>x.pfs</code></td><td class="no">новое, данные есть</td></tr>
+    <tr><td>Вес позиции в портфеле (ховер, вариант Б)</td><td><code>aggHolding(h)</code> × цена / <code>calcPf(p)</code> — считать при сборке <code>pfs</code></td><td class="no">вычисляется, новое</td></tr>
+    <tr><td>Сумма позиции на ховере</td><td><code>map[tk].val</code> — уже считается для сортировки по весу; формат с «Скрывать суммы» (<code>data-money</code>)</td><td class="ok">да</td></tr>
+    <tr><td>Полный заголовок + ссылка</td><td><code>buildNewsEntry()</code> → <code>title/link/rel</code> (Smart-Lab)</td><td class="ok">да</td></tr>
+    <tr><td>«Нет свежих новостей», внешние тикеры</td><td><code>e.none</code>, <code>pfdNewsCustom</code> + «+» в шапке</td><td class="ok">да</td></tr>
+    <tr><td>Порядок ленты до загрузки новостей</td><td>очередь <code>newsQueue</code> (2 запроса, Apps Script медленный): даты приходят постепенно — строки всплывают из группы «Загружается» без прыжков уже показанных</td><td class="no">ловушка реализации</td></tr>
+    <tr><td>Больше одной новости на тикер</td><td><code>loadNewsForTicker()</code> возвращает массив, кэшируется только <code>news[0]</code> — задел на «все новости бумаги» в ховере, в этот заход не делаем</td><td class="no">за скоупом</td></tr>
+  </table>
+</div>
+
+</div>
+</body>
+</html>
