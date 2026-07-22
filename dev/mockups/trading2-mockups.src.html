@@ -151,6 +151,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .price-big small{font-size:24px;font-weight:500;color:var(--mut)}
 .day-chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--fN);font-size:13px;font-weight:600;color:var(--grn);
           background:color-mix(in srgb,var(--grn) 12%,transparent);border-radius:9px;padding:6px 11px;margin-bottom:7px}
+.day-chip.dn{color:var(--red);background:color-mix(in srgb,var(--red) 10%,transparent)}
 .day-chip em{font-style:normal;font-family:var(--fU);font-size:10px;font-weight:600;color:var(--mut)}
 .chart-wrap{position:relative;margin-top:8px}
 .chart-wrap svg{display:block;width:100%}
@@ -171,6 +172,15 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .ord-tag u{text-decoration:none;color:var(--dim);font-family:var(--fU);font-size:10px}
 .ord-ghost{position:absolute;display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:600;color:var(--mut);
         background:var(--card);border:1px dashed var(--dim);border-radius:7px;padding:3px 9px;z-index:6;white-space:nowrap}
+/* ось цены и кроссхейр («Контроль»): KLineChart умеет из коробки */
+.ax-price{position:absolute;right:2px;top:10%;bottom:26%;display:flex;flex-direction:column;justify-content:space-between;
+        font-family:var(--fN);font-size:9px;color:var(--dim);text-align:right;z-index:4}
+.xh-v{position:absolute;top:0;bottom:26px;border-left:1px dashed color-mix(in srgb,var(--mut) 50%,transparent);z-index:5}
+.xh-h{position:absolute;left:0;right:0;border-top:1px dashed color-mix(in srgb,var(--mut) 50%,transparent);z-index:5}
+.xh-chip{position:absolute;right:0;transform:translateY(-55%);font-family:var(--fN);font-size:9px;font-weight:700;
+        color:var(--bg);background:var(--ink);border-radius:5px;padding:2px 6px;z-index:8}
+.xh-time{position:absolute;bottom:2px;transform:translateX(-50%);font-family:var(--fN);font-size:9px;font-weight:700;
+        color:var(--bg);background:var(--ink);border-radius:5px;padding:2px 6px;z-index:8}
 
 /* лента-пульс */
 .tape{display:flex;align-items:center;gap:14px;font-family:var(--fN);font-size:10.5px;color:var(--dim);border-top:1px solid var(--hair);padding-top:9px;overflow:hidden;white-space:nowrap}
@@ -200,6 +210,12 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .seg span.on{background:color-mix(in srgb,var(--grn) 16%,transparent);color:var(--grn)}
 .seg span.on.sell{background:color-mix(in srgb,var(--red) 14%,transparent);color:var(--red)}
 .fld{border:1px solid var(--line);border-radius:12px;padding:9px 13px}
+.fld.err{border-color:color-mix(in srgb,var(--red) 50%,transparent)}
+.fld.err .fld-cap{color:var(--red)}
+/* спред-гвард: предупреждение, не замок */
+.warn{display:flex;align-items:center;gap:8px;font-size:11px;line-height:1.45;color:var(--amb);
+      background:color-mix(in srgb,var(--amb) 9%,transparent);border-radius:10px;padding:8px 11px}
+.warn u{text-decoration:none;font-weight:700;color:var(--acc);margin-left:auto;white-space:nowrap}
 .fld em{display:flex;align-items:center;font-style:normal;font-size:9.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);margin-bottom:4px}
 .fld-cap{margin-left:auto;font-family:var(--fN);font-size:10px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--mut)}
 .fld-in{display:flex;align-items:baseline;gap:6px}
@@ -258,6 +274,10 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .ps-chip b{font-family:var(--fN);font-size:11px;font-weight:700}
 .ps-chip em{font-style:normal;font-family:var(--fN);font-size:10px;font-weight:600}
 .ps-chip .pup{color:var(--grn)} .ps-chip .pdn{color:var(--red)}
+/* ховер чипа: два действия, клик всей плитки по-прежнему грузит бумагу */
+.ps-chip.hov{border-color:color-mix(in srgb,var(--acc) 40%,transparent);box-shadow:0 10px 24px -12px rgba(15,23,42,.35)}
+.ps-chip .act{text-decoration:none;font-size:10px;font-weight:700;color:var(--acc);border-left:1px solid var(--line);padding-left:9px;margin-left:2px}
+.ps-chip .act.sell{color:var(--red)}
 .ps-more{font-size:11px;font-weight:600;color:var(--acc)}
 .ps-sum{margin-left:auto;font-size:10.5px;font-weight:600;color:var(--dim)}
 .ps-sum b{font-family:var(--fN);font-weight:600;color:var(--mut)}
@@ -358,6 +378,13 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .cf-center h4{font-family:var(--fT);font-weight:400;font-size:19px;margin-top:6px}
 .cf-center p{font-size:11.5px;color:var(--mut);margin-top:4px;line-height:1.55}
 
+/* уведомление об исполнении в фоне — строка звоночка сайта */
+.ntf{display:flex;align-items:center;gap:11px;border:1px solid var(--line);border-left:3px solid var(--grn);border-radius:12px;padding:10px 13px;background:var(--card)}
+.ntf i{font-style:normal;width:26px;height:26px;border-radius:9px;background:color-mix(in srgb,var(--grn) 14%,transparent);color:var(--grn);display:grid;place-items:center;font-size:12px;flex:none}
+.ntf b{display:block;font-size:12px}
+.ntf span{display:block;font-size:10.5px;color:var(--mut);margin-top:1px}
+.ntf u{text-decoration:none;margin-left:auto;font-size:11px;font-weight:700;color:var(--acc);white-space:nowrap}
+
 /* ═══════════ край сцены: особые состояния ═══════════ */
 .cf-kick{font-family:var(--fN);font-size:9.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
 .eg-banner{display:flex;align-items:center;gap:9px;font-size:11.5px;font-weight:600;color:var(--amb);
@@ -436,6 +463,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <div class="note"><i>4</i><span>Гвард свежести из раунда 1 живёт в тикете: точка «цена живая» — тот же <code style="font-family:var(--fN);font-size:11px">pftLinkState</code>; замерла — кнопка гаснет (экран 08).</span></div>
     <div class="note"><i>5</i><span>Пилюля насыщенности в углу — честный указатель ступени и ручной вход в следующую («открыть больше»).</span></div>
     <div class="note"><i>6</i><span>Позиции-чипы вместо таблицы: тикер + дневная дельта; итог портфеля — тихой суммой в конце полосы. Полный разбор позиций остаётся «Портфелям» — торговля не дублирует трекер.</span></div>
+    <div class="note"><i>7</i><span>Ховер чипа раскрывает два действия: «в сцену» и «продать» — продажа открывает тикет сразу с долями позиции, путь «увидел минус → продал» укорачивается до двух кликов. Клик по самому чипу, как раньше, грузит бумагу.</span></div>
   </div>
 </section>
 
@@ -452,7 +480,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <div class="note"><i>2</i><span>Лента сделок — строка-пульс, а не панель: последние сделки бегут под графиком. Раскрытие в полноценную колонку — на «Контроле».</span></div>
     <div class="note"><i>3</i><span>Карточка-предложение — механика эволюции, видимая глазами: тихо появляется у края, один клик «Открыть», «Не сейчас» без чувства вины. Не модал, сцену не блокирует.</span></div>
     <div class="note"><i>4</i><span>Вкладки бумаг ≤ 4 — это прежние «слоты», но видимые по одному: сцена всегда про одну бумагу, остальные ждут во вкладках с живой дельтой.</span></div>
-    <div class="note"><i>5</i><span>Тикет получил одну новую строку (цена), всё прочее стоит на месте — новичок со ступени 1 узнаёт свой тикет.</span></div>
+    <div class="note"><i>5</i><span>Тикет получил строку цены и честную строку докупки: «у вас 240 по 254,10 — средняя станет 259,55» — средняя цена позиции уже приходит из портфеля брокера, считать нечего.</span></div>
     <div class="note"><i>6</i><span>Лимитная заявка живёт прямо на графике: пунктирная линия на своей цене, ярлык с количеством, ✕ снимает. Линию можно тащить — цена в тикете следует; до дока «Контроля» это единственное место, где заявка видна.</span></div>
     <div class="note"><i>7</i><span>Индикаторы встроены в холст, не в отдельные панели: «Объём» и «MA 20» — чипы в углу графика, «＋» открывает реестр (RSI, MACD и прочие из KLineChart). На «Старте» индикаторов нет — линия чистая.</span></div>
   </div>
@@ -472,7 +500,8 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <div class="note"><i>3</i><span>Горячие клавиши раунда 1 работают здесь без изменений; «?» в доке — та же справка. Правило «ни одна клавиша не отправляет заявку» — закон.</span></div>
     <div class="note"><i>4</i><span>Защита позиции (тейк/стоп) — одна строка тикета, как в утверждённом ужатом тикете раунда 1.</span></div>
     <div class="note"><i>5</i><span>Вторая панель графика — по желанию: сплит включается из «⋯» панели. Панели не таскаются свободно — порядок фиксирован, конструктора на сцене нет.</span></div>
-    <div class="note"><i>6</i><span>Заявка из дока видна и на графике той же линией — одна сущность, два представления. Клик по пустому уровню цены предлагает призрак-черновик «＋ лимитка»; Enter из него, как всюду, лишь заполняет тикет.</span></div>
+    <div class="note"><i>6</i><span>Заявка из дока видна и на графике той же линией — одна сущность, два представления. Клик по пустому уровню предлагает призрак-черновик: лимитка (заполняет тикет) или алерт — так же создаются записи вкладки «Алерты» дока.</span></div>
+    <div class="note"><i>7</i><span>Ось цены и кроссхейр с ценой и временем — из коробки KLineChart; без них «клик по уровню» неточен. На «Разгоне» оси нет — там цену ведёт ярлык последней свечи.</span></div>
   </div>
 </section>
 
@@ -504,22 +533,39 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   </div>
 </section>
 
-<!-- ═══════════════ 08 · подтверждение ═══════════════ -->
+<!-- ═══════════════ 08 · валидация тикета ═══════════════ -->
 <section class="mk">
-  <div class="mk-h"><span class="mk-n">08</span><h2>Подтверждение, защита, квитанция</h2><span class="mk-tag mute">состояния</span></div>
-  <p class="mk-sub">Четыре состояния диалога сделки: живая цена с полной разбивкой · замершая цена
-     (кнопка погашена гвардом свежести) · облигация с НКД строкой в разбивке · квитанция после исполнения.</p>
+  <div class="mk-h"><span class="mk-n">08</span><h2>Тикет говорит правду до кнопки</h2><span class="mk-tag mute">состояния</span></div>
+  <p class="mk-sub">Три отказа без модалов: сумма меньше одного лота · денег не хватает (и честный
+     «Максимум») · спред-гвард — родной брат гварда свежести: рыночная заявка в широкий спред
+     предупреждает о переплате в рублях и предлагает лимитку, но не запрещает.</p>
+  <div class="scroller"><div class="scr" style="height:640px"><div id="m10"></div></div></div>
+  <div class="notes">
+    <div class="note"><i>1</i><span>Кнопка гаснет с причиной, а не серым молчанием: «мало для одного лота», «не хватает 81 760 ₽» — сумма недостачи прямо в кнопке, как сумма списания в счастливом пути.</span></div>
+    <div class="note"><i>2</i><span>«Максимум» — не совет, а расчёт: 1 530 акций за 416 564,46 ₽ с комиссией. Пресет чинит ошибку одним касанием — форма не ругается, а предлагает выход.</span></div>
+    <div class="note"><i>3</i><span>Спред-гвард предупреждает, не запирает (пороги — предложения): переплата посчитана в рублях, «лимитка у спреда» подставляет цену — отправка всё равно только кнопкой.</span></div>
+  </div>
+</section>
+
+<!-- ═══════════════ 09 · подтверждение ═══════════════ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">09</span><h2>Подтверждение, защита, квитанция</h2><span class="mk-tag mute">состояния</span></div>
+  <p class="mk-sub">Шесть состояний диалога сделки: живая цена с полной разбивкой · замершая цена
+     (кнопка погашена гвардом свежести) · облигация с НКД строкой в разбивке · квитанция после
+     исполнения · частичное исполнение лимитки · исполнение в фоне, пока вкладка закрыта.</p>
   <div class="scroller"><div class="scr" style="height:840px"><div id="m7"></div></div></div>
   <div class="notes">
     <div class="note"><i>1</i><span>Кнопка подтверждения повторяет точную сумму списания — «спишется ровно столько» с копейками (<code style="font-family:var(--fN);font-size:11px">fmtKop</code>), обещание раунда 1.</span></div>
     <div class="note"><i>2</i><span>«Цена замерла» — тот же гвард (порог 8 с от последнего успешного стакана), продублированный в диалоге: связь умирает именно пока читают текст.</span></div>
     <div class="note"><i>3</i><span>НКД — строкой в разбивке с объяснением прямо в карточке; количество облигаций считано по полной цене (цена + НКД + комиссия), иначе заявка не пройдёт по деньгам.</span></div>
+    <div class="note"><i>4</i><span>Частичное исполнение: комиссия — только с исполненной части, отмена остатка не трогает купленное. Купленные бумаги в портфеле сразу, не «после закрытия заявки».</span></div>
+    <div class="note"><i>5</i><span>Исполнение в фоне — через существующий звоночек сайта, вкладка браузера получает точку в заголовке. Внутри сцены — тихий тост: исполнение — хорошая новость, не тревога, модала нет.</span></div>
   </div>
 </section>
 
-<!-- ═══════════════ 09 · край сцены ═══════════════ -->
+<!-- ═══════════════ 10 · край сцены ═══════════════ -->
 <section class="mk">
-  <div class="mk-h"><span class="mk-n">09</span><h2>Край сцены: пустые и особые состояния</h2><span class="mk-tag mute">состояния</span></div>
+  <div class="mk-h"><span class="mk-n">10</span><h2>Край сцены: пустые и особые состояния</h2><span class="mk-tag mute">состояния</span></div>
   <p class="mk-sub">То, что обычно вспоминают после релиза. Первый вход без позиций — онбординг из одной
      строки; биржа закрыта — честная кнопка вместо обмана «отправим потом»; полный обрыв связи — судьба
      уже отправленных заявок; отказ брокера — причина словами, а не кодом.</p>
@@ -531,18 +577,32 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   </div>
 </section>
 
-<!-- ═══════════════ 10 · тёмная сцена ═══════════════ -->
+<!-- ═══════════════ 11 · красный день ═══════════════ -->
 <section class="mk">
-  <div class="mk-h"><span class="mk-n">10</span><h2>Тёмная сцена: вторая тема, не инверсия</h2><span class="mk-tag mute">проверка</span></div>
+  <div class="mk-h"><span class="mk-n">11</span><h2>Красный день: минус держат данные, не интерфейс</h2><span class="mk-tag mute">проверка</span></div>
+  <p class="mk-sub">Сцена «Старта» в день −3,44 %. Красного ровно столько, сколько его в данных: чип дня
+     и дельты позиций — всё. Фон не краснеет, кнопка остаётся чернильной, тикет считает те же честные
+     копейки от новой цены. Советов «держать/продавать» сцена не даёт — это терминал, не советник.</p>
+  <div class="scroller"><div class="scr"><div id="m11"></div></div></div>
+  <div class="notes">
+    <div class="note"><i>1</i><span>Чип дня — единственное крупное красное пятно: минус без смягчений, но и без сирен. Сама цена остаётся чернильной — 58px красного давили бы на решение.</span></div>
+    <div class="note"><i>2</i><span>Кнопка не меняет цвет от знака дня: сторона сделки — по-прежнему точка. Числа тикета пересчитаны от 262,10 — «спишется ровно столько» живёт и в минус.</span></div>
+    <div class="note"><i>3</i><span>Пунктир вчерашнего закрытия над линией даёт масштаб падения без второй оси; портфель в полосе позиций честно похудел до 181 020 ₽.</span></div>
+  </div>
+</section>
+
+<!-- ═══════════════ 12 · тёмная сцена ═══════════════ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">12</span><h2>Тёмная сцена: вторая тема, не инверсия</h2><span class="mk-tag mute">проверка</span></div>
   <p class="mk-sub">Тумблер — видимый, в строке среды (☀ ⇄ ☾), state хранится отдельно от темы сайта.
      Тёмные токены собраны заново: приглушённый фон, полупрозрачные карточки, свои оттенки роста и падения.
      Проверка на самой насыщенной из лёгких ступеней — «Разгоне».</p>
   <div class="scroller"><div class="scr night"><div id="m8"></div></div></div>
 </section>
 
-<!-- ═══════════════ 11 · данные ═══════════════ -->
+<!-- ═══════════════ 13 · данные ═══════════════ -->
 <section class="mk">
-  <div class="mk-h"><span class="mk-n">11</span><h2>Поле макета → откуда данные</h2></div>
+  <div class="mk-h"><span class="mk-n">13</span><h2>Поле макета → откуда данные</h2></div>
   <table class="map">
     <tr><th style="width:30%">Элемент</th><th>Источник</th><th style="width:10%">Статус</th></tr>
     <tr><td>Сцена: цена, график, свечи</td><td>GetOrderBook/GetCandles уже опрашиваются; линия — путь <code>sxChartHtml</code>, свечи — KLineChart из <code>portfolios-chart.js</code></td><td class="ok">есть</td></tr>
@@ -562,6 +622,13 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <tr><td>«Биржа закрыта» (статус торгов)</td><td>метод GetTradingStatus есть в API Т-Инвестиций — воркер-прокси его пока не проксирует, добавить; до тех пор косвенно по пустому стакану</td><td class="no">новое</td></tr>
     <tr><td>Отказ брокера словами</td><td>ответ PostOrder уже приходит в <code>pftAsk</code>; новое — словарь причин человеческим языком, код ошибки — в подсказке</td><td class="no">новое</td></tr>
     <tr><td>Онбординг первого входа</td><td>условие готово: есть токен, позиций нет (<code>pollPos</code>); сам экран-приглашение — новый рендер</td><td class="no">новое</td></tr>
+    <tr><td>Валидация тикета (лот / не хватает)</td><td>лотность и максимум уже считает <code>simpleBuyCalc</code>; состояния поля и тексты кнопки — новый рендер</td><td class="no">новое</td></tr>
+    <tr><td>Спред-гвард</td><td>спред уже приходит в GetOrderBook; порог (~1 %) и переплата в рублях — новое; предупреждение, не замок</td><td class="no">новое</td></tr>
+    <tr><td>Средняя после докупки</td><td>средняя цена позиции уже в ответе портфеля брокера (<code>pollPos</code>); строка тикета — новый рендер</td><td class="ok">есть</td></tr>
+    <tr><td>Частичное исполнение</td><td>исполненные лоты уже в заявках дока (<code>lots_executed</code>); диалог «оставить/отменить остаток» — новое</td><td class="no">новое</td></tr>
+    <tr><td>Исполнение в фоне</td><td>звоночек сайта готов (модуль уведомлений); связка с поллером заявок + точка в заголовке вкладки — новое</td><td class="no">новое</td></tr>
+    <tr><td>Алерты по цене</td><td>новый ключ <code>bt_alerts_v1</code>; проверка — в уже идущем поллере стакана; создание — с графика (призрак) и из омнибокса</td><td class="no">новое</td></tr>
+    <tr><td>Ось цены и кроссхейр</td><td>KLineChart из коробки (ось свечей, crosshair с ценой и временем) — только включить в конфиге</td><td class="ok">есть</td></tr>
   </table>
   <p class="mk-sub" style="margin-top:16px">Пересборка: <code style="font-family:var(--fN);font-size:12px">node dev/mockups/build-mockups.js trading2</code></p>
 </section>
@@ -655,8 +722,10 @@ function instrHead(o){
         + '<span class="ih-per"><span class="on">Д</span><span>Н</span><span>М</span><span>Г</span><span>Всё</span></span>'
         + '</span></div>'
         + '<div class="price-row">'
-        + '<span class="price-big">271,45<small> ₽</small></span>'
-        + '<span class="day-chip">▲ +3,32 · +1,24 % <em>сегодня</em></span>'
+        + '<span class="price-big">' + (o.down ? '262,10' : '271,45') + '<small> ₽</small></span>'
+        + (o.down
+            ? '<span class="day-chip dn">▼ −9,35 · −3,44 % <em>сегодня</em></span>'
+            : '<span class="day-chip">▲ +3,32 · +1,24 % <em>сегодня</em></span>')
         + '</div>';
 }
 
@@ -696,15 +765,19 @@ function ticket(o){
         : (o.lots
             ? '<div class="apx">110 акций = <b>29 700,00 ₽</b> по лимиту · комиссия 89,10 ₽</div>'
             : '<div class="apx">≈ <b>110 акций</b> — 11 лотов по 10 шт</div>');
+    /* докупка: средняя из позиции брокера, (240×254,10 + 110×цена) / 350 */
+    if (o.avg && !sell)
+        h += '<div class="apx">У вас 240 по 254,10 ₽ — <b>средняя станет ' + (o.limit ? '259,10' : '259,55') + ' ₽</b></div>';
     if (o.prot)
         h += '<div class="fld"><em>' + (o.npin4 ? '<span class="npin" style="margin-right:5px">4</span>' : '') + 'Защита позиции</em>'
            + '<div class="prot"><b>тейк 285 ₽ · стоп 262 ₽</b><u>изменить</u></div></div>';
-    /* деньги сходятся: 418 240 − итог кнопки (покупка) / + выручка за вычетом комиссии (продажа) */
+    /* деньги сходятся: 418 240 − итог кнопки (покупка) / + выручка за вычетом комиссии (продажа);
+       o.down — красный день, цена 262,10 */
     h += '<div class="rest"><span>' + (sell ? 'Станет свободно' : 'Останется свободно') + '</span><b>'
-        + (sell ? '450 716 ₽' : (o.limit ? '388 451 ₽' : '388 291 ₽')) + '</b></div>';
+        + (sell ? '450 716 ₽' : (o.limit ? '388 451 ₽' : (o.down ? '389 323 ₽' : '388 291 ₽'))) + '</b></div>';
     h += sell
         ? '<div class="cta sell">Продать на 32 476,28 ₽</div>'
-        : '<div class="cta">Купить на ' + (o.limit ? '29 789,10' : '29 949,08') + ' ₽</div>';
+        : '<div class="cta">Купить на ' + (o.limit ? '29 789,10' : (o.down ? '28 917,49' : '29 949,08')) + ' ₽</div>';
     h += '<div class="fee">Комиссия 0,3 % уже включена</div>';
     h += '<div class="know">🛈 Что нужно знать ' + (sell ? 'о налоге при продаже' : 'перед покупкой') + '<u>Открыть</u></div>';
     return h + '</div>';
@@ -739,15 +812,20 @@ function tapeRow(){
 }
 
 /* ─── полоса позиций ─── */
-function posStrip(){
-    function c(tk, d, up){
-        return '<span class="ps-chip"><b>' + tk + '</b><em class="' + (up ? 'pup up' : 'pdn dn') + '">' + d + '</em></span>';
+function posStrip(o){
+    o = o || {};
+    function c(tk, d, up, hov){
+        return '<span class="ps-chip' + (hov ? ' hov' : '') + '"><b>' + tk + '</b><em class="' + (up ? 'pup up' : 'pdn dn') + '">' + d + '</em>'
+            + (hov ? '<u class="act">в сцену</u><u class="act sell">продать</u>' : '') + '</span>';
     }
-    return '<div class="pos-strip"><span class="ps-t">Мои позиции</span>'
-        + c('GAZP', '0,7 %', 0) + c('ZAYM', '0,8 %', 1) + c('BSPB', '1,9 %', 0)
-        + c('ОФЗ 26230', '0,3 %', 1) + c('ОФЗ 26233', '0,2 %', 0)
+    var chips = o.down
+        ? c('GAZP', '2,1 %', 0) + c('ZAYM', '1,4 %', 0) + c('BSPB', '3,0 %', 0)
+          + c('ОФЗ 26230', '0,1 %', 1) + c('ОФЗ 26233', '0,2 %', 0)
+        : c('GAZP', '0,7 %', 0) + c('ZAYM', '0,8 %', 1) + c('BSPB', '1,9 %', 0, o.hov)
+          + c('ОФЗ 26230', '0,3 %', 1) + c('ОФЗ 26233', '0,2 %', 0);
+    return '<div class="pos-strip"><span class="ps-t">Мои позиции</span>' + chips
         + '<span class="ps-more">ещё 15 →</span>'
-        + '<span class="ps-sum">портфель <b>184 775 ₽</b></span></div>';
+        + '<span class="ps-sum">портфель <b>' + (o.down ? '181 020 ₽' : '184 775 ₽') + '</b></span></div>';
 }
 function stagePill(name, next){
     return '<div class="stage-pill">Насыщенность: <b>' + name + '</b>' + (next ? ' · <s>' + next + '</s>' : '') + '</div>';
@@ -813,21 +891,25 @@ function stagePill(name, next){
 /* ═════════════ 03 · ступень 1 ═════════════ */
 function scene1(o){
     o = o || {};
-    var pts = scalePts(920, 520);
+    /* красный день: та же прогулка, отражённая по вертикали; пунктир — вчерашнее закрытие */
+    var pts = o.down
+        ? PTS.map(function(p){ return [Math.round(p[0] * 920 / 644), Math.round((490 - p[1]) * 520 / 430)]; })
+        : scalePts(920, 520);
     var hero = '<div style="position:absolute;left:56px;right:456px;top:96px;bottom:96px;display:flex;flex-direction:column">'
-        + instrHead()
-        + '<div class="chart-wrap" style="flex:1;margin-top:22px">' + lineChart(pts, 920, 520, 351)
-        + '<span class="ptag" style="top:39%">271,45</span>' + dates(DAY) + '</div></div>';
+        + instrHead({ down: o.down })
+        + '<div class="chart-wrap" style="flex:1;margin-top:22px">' + lineChart(pts, 920, 520, o.down ? 208 : 351)
+        + '<span class="ptag" style="top:' + (o.down ? '70%' : '39%') + '">' + (o.down ? '262,10' : '271,45') + '</span>'
+        + dates(DAY) + '</div></div>';
     var h = '<div class="glow"></div>' + topbar()
         + hero
-        + ticket({ style: 'position:absolute;right:36px;top:110px;width:368px' })
-        + posStrip() + stagePill('Старт', 'открыть больше');
+        + ticket({ down: o.down, style: 'position:absolute;right:36px;top:110px;width:368px' })
+        + posStrip({ hov: o.hov, down: o.down }) + stagePill('Старт', 'открыть больше');
     if (o.pins)
         h += pin(1, 1262, 17, 1) + pin(2, 295, 176, 1) + pin(3, 1005, 117, 1)
-           + pin(4, 1288, 127, 1) + pin(5, 1138, 860, 1) + pin(6, 60, 838, 1);
+           + pin(4, 1288, 127, 1) + pin(5, 1138, 860, 1) + pin(6, 60, 838, 1) + pin(7, 311, 860, 1);
     return h;
 }
-document.getElementById('m2').innerHTML = scene1({ pins: 1 });
+document.getElementById('m2').innerHTML = scene1({ pins: 1, hov: 1 });
 
 /* ═════════════ 04 · ступень 2 ═════════════ */
 function scene2(o){
@@ -849,7 +931,7 @@ function scene2(o){
         + tapeRow() + '</div>';
     var h = '<div class="glow"></div>' + topbar({ dark: o.dark })
         + hero
-        + ticket({ price: 1, style: 'position:absolute;right:36px;top:102px;width:368px' })
+        + ticket({ price: 1, avg: 1, style: 'position:absolute;right:36px;top:102px;width:368px' })
         + '<div class="unlock" style="left:56px;bottom:66px"><span class="uic">≡</span><div>'
         + '<h5>Открыть ленту всех сделок?</h5><p>Вы часто смотрите пульс. Полная лента покажет каждую сделку по бумаге отдельной колонкой.</p>'
         + '<div class="ub-row"><span class="ub pri">Открыть</span><span class="ub gh">Не сейчас</span></div></div></div>'
@@ -874,8 +956,11 @@ document.getElementById('m3').innerHTML = scene2({ pins: 1 });
             '<span class="pane-ic on">〣</span><span class="pane-ic">◱</span><span class="pane-ic">⋯</span>')
         + '<div style="flex:1;display:flex;gap:18px;min-height:0">'
         + '<div style="flex:1;min-height:0;position:relative">' + indRow() + candleChart(40, 620, 240, { vol: 1, ma: 1 })
+        + '<div class="ax-price"><span>272,4</span><span>271,2</span><span>270,0</span><span>268,8</span></div>'
+        + '<span class="xh-v" style="left:64%"></span><span class="xh-h" style="top:34%"></span>'
+        + '<span class="xh-chip" style="top:34%">271,80</span><span class="xh-time" style="left:64%">15:42</span>'
         + '<div class="ord-line" style="top:58%"><i></i><span class="ord-tag">заявка · 270,00 × 100 шт<u>✕</u></span></div>'
-        + '<span class="ord-ghost" style="left:34%;top:62%">＋ лимитка 268,40 — клик по уровню</span>'
+        + '<span class="ord-ghost" style="left:34%;top:62%">＋ 268,40 · лимитка или алерт</span>'
         + dates(['12:00','14:00','16:00','18:40']) + '</div>'
         + depthPanel('width:230px;flex:none', 0, 1)
         + '</div></div>'
@@ -899,10 +984,10 @@ document.getElementById('m3').innerHTML = scene2({ pins: 1 });
         + '</div>';
     document.getElementById('m4').innerHTML = '<div class="glow" style="left:6%"></div>' + topbar({ screens: 1 })
         + left
-        + ticket({ price: 1, limit: 1, lots: 1, prot: 1, style: 'position:absolute;right:20px;top:72px;width:400px' })
+        + ticket({ price: 1, limit: 1, lots: 1, prot: 1, avg: 1, style: 'position:absolute;right:20px;top:72px;width:400px' })
         + dock
         + pin(1, 365, 17, 1) + pin(2, 700, 760, 1) + pin(3, 1275, 757, 1)
-        + pin(4, 992, 374, 1) + pin(5, 618, 490, 1) + pin(6, 519, 318, 1);
+        + pin(4, 992, 374, 1) + pin(5, 618, 490, 1) + pin(6, 519, 318, 1) + pin(7, 648, 226, 1);
 })();
 
 /* ═════════════ 06 · омнибокс ═════════════ */
@@ -975,8 +1060,20 @@ document.getElementById('m3').innerHTML = scene2({ pins: 1 });
         + '<p>Исполнено по 271,44 ₽ — на 1,10 ₽ дешевле оценки.<br>Свободно теперь <b class="num">388 292,02 ₽</b>.</p></div>'
         + '<div class="ub-row" style="display:flex;gap:8px;justify-content:center;margin-top:6px">'
         + '<span class="ub pri">К сцене</span><span class="ub gh">Открыть в портфеле</span></div></div>';
-    document.getElementById('m7').innerHTML = '<div class="cf-grid">' + c1 + c2 + c3 + c4 + '</div>'
-        + pin(1, 298, 214, 1) + pin(2, 975, 20, 1) + pin(3, 289, 460, 1);
+    var c5 = '<div class="cf"><div class="cf-h"><b>Исполнено 40 из 100 × SBER</b><span class="fresh"><i></i>заявка активна</span></div>'
+        + '<div class="cf-sub">Лимитка 270,00 стоит в стакане; купленные 40 уже в портфеле. Остаток можно снять в любой момент.</div>'
+        + rows([['Исполнено 40 × 270,00 ₽', '10 800,00 ₽'], ['Комиссия с исполненного', '32,40 ₽'],
+                ['Осталось в заявке', '60 шт', ' hl'], ['Списано сейчас', '10 832,40 ₽', ' total']])
+        + '<div class="ub-row" style="display:flex;gap:8px;margin-top:4px">'
+        + '<span class="ub pri">Оставить заявку</span><span class="ub gh">Отменить остаток</span></div>'
+        + '<div class="cf-note">Отмена остатка не трогает купленное: комиссия — только с исполненной части.</div></div>';
+    var c6 = '<div class="cf"><span class="cf-kick">Исполнилось в фоне</span>'
+        + '<div class="cf-h"><b>Вы были на «Рынке» — сцена не молчит</b></div>'
+        + '<div class="cf-sub">Лимитка исполнилась, пока вкладка «Торговли» закрыта. Слово получает звоночек сайта — тот же, что у остальных уведомлений.</div>'
+        + '<div class="ntf"><i>✓</i><div><b>SBER: куплено 100 × 270,00 ₽</b><span>лимитная заявка исполнена целиком · 14:02</span></div><u>к сцене</u></div>'
+        + '<div class="cf-note">Внутри сцены — тихий тост; вкладка браузера получает точку в заголовке. Модала нет: исполнение — хорошая новость, а не тревога.</div></div>';
+    document.getElementById('m7').innerHTML = '<div class="cf-grid" style="grid-template-columns:repeat(3,430px)">' + c1 + c2 + c3 + c4 + c5 + c6 + '</div>'
+        + pin(1, 40, 214, 1) + pin(2, 777, 20, 1) + pin(3, 945, 128, 1) + pin(4, 489, 529, 1) + pin(5, 954, 498, 1);
 })();
 
 /* ═════════════ 09 · край сцены ═════════════ */
@@ -1011,7 +1108,50 @@ document.getElementById('m3').innerHTML = scene2({ pins: 1 });
     document.getElementById('m9').innerHTML = '<div class="cf-grid" style="grid-template-columns:repeat(2,430px)">' + a + b + c + d + '</div>';
 })();
 
-/* ═════════════ 10 · тёмная сцена ═════════════ */
+/* ═════════════ 08 · валидация тикета ═════════════ */
+(function(){
+    function shell(label, em, body){
+        return '<div class="an-col"><div class="an-lab"><b>' + label + '</b><em>' + em + '</em></div>'
+            + '<div class="tkt">'
+            + '<div class="tkt-h"><b>Сделка</b><span class="fresh"><i></i>цена живая</span></div>'
+            + '<div class="seg"><span class="on">Купить</span><span>Продать</span></div>'
+            + body + '</div></div>';
+    }
+    /* лот SBER 2 714,50; ×1,003 = 2 722,64 */
+    var t1 = shell('Меньше лота', 'SBER · 271,45 ₽ · лот 10 шт',
+          '<div class="fld"><em>Сумма<span class="fld-cap">свободно 418 240 ₽</span></em>'
+        + '<div class="fld-in"><b>2 000</b><u>₽</u><span class="caret"></span><span class="fld-sw">в лотах ⇄</span></div></div>'
+        + '<div class="presets"><span class="pch">5 000</span><span class="pch">15 000</span><span class="pch">30 000</span><span class="pch">Макс</span></div>'
+        + '<div class="apx">Меньше одного лота: лот SBER — 10 акций, <b>2 714,50 ₽</b> (2 722,64 ₽ с комиссией)</div>'
+        + '<div class="cta dis">Мало для одного лота</div>'
+        + '<div class="fee">Кнопка оживёт от 2 723 ₽</div>');
+    /* 418 240 / 1,003 → 153 лота = 1 530 акций; 415 318,50 + 1 245,96 = 416 564,46 */
+    var t2 = shell('Не хватает денег', 'SBER · свободно 418 240 ₽',
+          '<div class="fld err"><em>Сумма<span class="fld-cap">свободно 418 240 ₽</span></em>'
+        + '<div class="fld-in"><b>500 000</b><u>₽</u><span class="caret"></span><span class="fld-sw">в лотах ⇄</span></div></div>'
+        + '<div class="presets"><span class="pch">5 000</span><span class="pch">15 000</span><span class="pch">30 000</span><span class="pch on">Макс</span></div>'
+        + '<div class="apx">Не хватает <b>81 760 ₽</b>. «Максимум» — 1 530 акций за <b>416 564,46 ₽</b> с комиссией</div>'
+        + '<div class="cta dis">Не хватает 81 760 ₽</div>'
+        + '<div class="fee">Пресет «Макс» подставит достижимую сумму</div>');
+    /* BSPB: bid 378,00 / ask 384,80 (спред 6,80 = 1,8 %); 70 шт: 26 936,00 + 80,81 = 27 016,81;
+       переплата к лимитке 378,10: 70 × 6,70 = 469 → ≈470 ₽; остаток 418 240 − 27 016,81 = 391 223,19 */
+    var t3 = shell('Широкий спред', 'BSPB · продают по 384,80 · купят по 378,00',
+          '<div class="fld"><em>Сумма<span class="fld-cap">свободно 418 240 ₽</span></em>'
+        + '<div class="fld-in"><b>30 000</b><u>₽</u><span class="caret"></span><span class="fld-sw">в лотах ⇄</span></div></div>'
+        + '<div class="apx">≈ <b>70 акций</b> — 7 лотов по 10 шт</div>'
+        + '<div class="warn">Спред 1,8 % — по рынку переплата ≈ 470 ₽<u>Лимитка 378,10 ₽</u></div>'
+        + '<div class="rest"><span>Останется свободно</span><b>391 223 ₽</b></div>'
+        + '<div class="cta">Купить на 27 016,81 ₽</div>'
+        + '<div class="fee">Комиссия 0,3 % уже включена</div>');
+    document.getElementById('m10').innerHTML = '<div class="an" style="padding-top:44px">' + t1 + t2 + t3 + '</div>'
+        + pin(1, 157, 366, 1) + pin(2, 537, 318, 1) + pin(3, 917, 312, 1);
+})();
+
+/* ═════════════ 11 · красный день ═════════════ */
+document.getElementById('m11').innerHTML = scene1({ down: 1 })
+    + pin(1, 524, 182, 1) + pin(2, 1022, 400, 1) + pin(3, 981, 860, 1);
+
+/* ═════════════ 12 · тёмная сцена ═════════════ */
 document.getElementById('m8').innerHTML = scene2({ dark: 1 });
 </script>
 </body>
