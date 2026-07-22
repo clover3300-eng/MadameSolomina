@@ -1089,11 +1089,45 @@
         }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
     } catch (e) {}
 
-    // ---- «Новости по позициям»: свежая новость по каждой акции портфелей ----
-    // Переиспользует пайплайн новостей «Избранного» (loadNewsForTicker + newsHtmlCache +
-    // очередь newsQueue): та же лента Smart-Lab, тот же кэш — общие тикеры не грузятся дважды.
+    // ---- «Новости по позициям»: Д2 «сторис» (мокап news-mockups, утверждён 2026-07-22) ----
+    // Полоса монограмм бумаг (кольцо = есть непрочитанное, бейдж — счёт новостей),
+    // плеер непрочитанного с сегментами прогресса, фокус бумаги со всеми её новостями,
+    // лента с группами дней и прочитанностью. Пайплайн новостей общий с «Избранным»
+    // (loadNewsForTicker + newsHtmlCache + очередь): общие тикеры не грузятся дважды.
+    var NW_READ_KEY = 'nw_read_v1';   // прочитанные ссылки (localStorage, ключ в WATCH cloud-sync)
+    var NW_FRESH_MS = 7 * 864e5;      // «непрочитанным» считаем только новость за последнюю неделю
+    var nwRead = null;                // { link: 1 } — лениво из localStorage
     var pfdNewsCustom = [];    // тикеры не из портфеля, добавленные вручную (сессия)
     var pfdNewsAdding = false;  // раскрыт ли инпут добавления тикера
+    var nwView = { mode: 'feed' };    // 'feed' | 'player' (tk, idx, list-снапшот) | 'focus' (tk)
+    var nwReadTimer = null;           // «показ ≥2с в плеере = прочитано»
+    var nwRepaintT = null;            // дебаунс перерисовки при прогрессивной загрузке новостей
+    function nwReadSet() {
+        if (nwRead) return nwRead;
+        nwRead = {};
+        try { (JSON.parse(localStorage.getItem(NW_READ_KEY) || '[]') || []).forEach(function (l) { nwRead[l] = 1; }); } catch (e) {}
+        return nwRead;
+    }
+    function nwSaveRead() {
+        var keys = Object.keys(nwReadSet());
+        if (keys.length > 600) {   // не раздуваем ключ: порядок вставки = старые первыми
+            keys = keys.slice(keys.length - 600);
+            nwRead = {}; keys.forEach(function (l) { nwRead[l] = 1; });
+        }
+        try { localStorage.setItem(NW_READ_KEY, JSON.stringify(keys)); } catch (e) {}
+    }
+    function nwMarkRead(link) {
+        if (!link || nwReadSet()[link]) return false;
+        nwRead[link] = 1; nwSaveRead(); return true;
+    }
+    function nwUnreadOf(tk) {
+        var e = newsHtmlCache[tk], now = Date.now(), rs = nwReadSet();
+        if (!e || !e.items) return [];
+        return e.items.filter(function (it) { return it.link && !rs[it.link] && it.date && now - it.date < NW_FRESH_MS; });
+    }
+    function nwTotalUnread(list) {
+        var n = 0; list.forEach(function (x) { n += nwUnreadOf(x.tk).length; }); return n;
+    }
     function pfdNewsList() {
         var map = {}, order = [];
         visibleItems().forEach(function (p) {
@@ -1117,67 +1151,275 @@
         return list.slice(0, 16);
     }
     function pfdNewsTickers() { return pfdNewsList().map(function (x) { return x.tk; }); }
-    var pfdNewsPick = null;   // выбранный тикер-фильтр (null = все)
-    function pfdNewsDots(x) { return x.pfs.slice(0, 3).map(function (p) { return '<i class="pfnw-pfdot" style="background:' + p.color + '" title="' + attr(p.name) + '"></i>'; }).join(''); }
-    function pfdNewsChips(list) {
-        var chips = '<button class="pfnw-pk' + (pfdNewsPick === null ? ' on' : '') + '" onclick="pfdNewsSetPick(\'\')">Все</button>';
-        chips += list.map(function (x) {
-            return '<button class="pfnw-pk' + (pfdNewsPick === x.tk ? ' on' : '') + '" onclick="pfdNewsSetPick(\'' + jsArg(x.tk) + '\')">' + esc(x.tk) +
-                (x.custom ? '<i class="pfnw-pkx" onclick="event.stopPropagation();pfdNewsDelCustom(\'' + jsArg(x.tk) + '\')" title="Убрать тикер">×</i>' : '<span class="pfnw-pkdots">' + pfdNewsDots(x) + '</span>') + '</button>';
+    function nwCoName(tk) {
+        var co = (typeof window.stkFindCompany === 'function') ? window.stkFindCompany(tk) : null;
+        return co && co.name ? co.name : '';
+    }
+    // дневное изменение моно-цифрой: '+0,8%' / '−1,2%' (знак минуса — типографский)
+    function nwChgHtml(chg, cls) {
+        if (chg == null || isNaN(chg)) return '';
+        var s = (chg > 0 ? '+' : '') + Number(chg).toFixed(1).replace('.', ',').replace('-', '−') + '%';
+        return '<span class="' + cls + (chg > 0 ? ' pos' : chg < 0 ? ' neg' : '') + '">' + s + '</span>';
+    }
+    // полоса: бумаги с непрочитанным первыми (внутри — порядок списка, т.е. по весу позиции)
+    function nwStripOrder(list) {
+        var un = [], rd = [];
+        list.forEach(function (x) { (nwUnreadOf(x.tk).length ? un : rd).push(x); });
+        return un.concat(rd);
+    }
+    function nwStripHtml(list) {
+        var selTk = nwView.mode === 'feed' ? null : nwView.tk;
+        var t = '<div class="nws-it' + (selTk === null ? ' sel' : '') + '">' +
+            '<button type="button" class="nws-all" onclick="pfdNwFeed()" title="Вся лента">Все</button>' +
+            '<span class="nws-nm">лента</span></div>';
+        t += nwStripOrder(list).map(function (x) {
+            var un = nwUnreadOf(x.tk);
+            var badge = x.custom
+                ? '<i class="nws-del" onclick="event.stopPropagation();pfdNewsDelCustom(\'' + jsArg(x.tk) + '\')" title="Убрать тикер">×</i>'
+                : (un.length > 1 ? '<i class="nws-cnt">' + un.length + '</i>' : '');
+            return '<div class="nws-it' + (un.length ? ' unread' : '') + (selTk === x.tk ? ' sel' : '') + '">' +
+                '<button type="button" class="nws-ava" style="background:' + favLogoColor(x.tk) + '" onclick="pfdNwRing(\'' + jsArg(x.tk) + '\')" title="' + (un.length ? 'Смотреть непрочитанное' : 'Новости бумаги') + '">' +
+                    esc(x.tk.charAt(0)) + badge + '</button>' +
+                '<button type="button" class="nws-tkc" onclick="pfdNwFocus(\'' + jsArg(x.tk) + '\')" title="Все новости бумаги">' +
+                    '<span class="nws-nm">' + esc(x.tk) + '</span>' + (nwChgHtml(x.chg, 'nws-chg') || '<span class="nws-chg">&nbsp;</span>') + '</button></div>';
         }).join('');
-        chips += pfdNewsAdding
-            ? '<span class="pfnw-addwrap"><input class="pfnw-addinput" placeholder="ТИКЕР" maxlength="12" onkeydown="pfdNewsAddKey(event)" onblur="pfdNewsAddBlur(this)"></span>'
-            : '<button class="pfnw-pk pfnw-pkadd" onclick="pfdNewsAddToggle()" title="Добавить тикер не из портфеля" aria-label="Добавить тикер">' + PFD_PLUS_SVG + '</button>';
-        return '<div class="pfnw-picks">' + chips + '</div>';
+        t += pfdNewsAdding
+            ? '<div class="nws-it"><span class="nws-addwrap"><input class="pfnw-addinput" placeholder="ТИКЕР" maxlength="12" onkeydown="pfdNewsAddKey(event)" onblur="pfdNewsAddBlur(this)"></span><span class="nws-nm">тикер</span></div>'
+            : '<div class="nws-it"><button type="button" class="nws-plus" onclick="pfdNewsAddToggle()" title="Добавить тикер не из портфеля" aria-label="Добавить тикер">' + PFD_PLUS_SVG + '</button><span class="nws-nm">тикер</span></div>';
+        return '<div class="nws-strip">' + t + '</div>';
+    }
+    // панель под шапкой: «N новых» + «Прочитать всё» (только в ленте и только при непрочитанном)
+    function nwBarHtml(n) {
+        if (!n) return '';
+        return '<div class="nws-bar"><span class="nws-new">' + FAV_STAR_SVG + '<b>' + n + '</b>&nbsp;новых</span>' +
+            '<button type="button" class="nws-mark" onclick="pfdNwReadAll()">' + NW_CHECK_SVG + 'Прочитать всё</button></div>';
+    }
+    // группа дня для ленты: 0 — Сегодня, 1 — Вчера, 2 — Ранее
+    function nwDayGroup(ts) {
+        if (!ts) return 2;
+        var d = new Date(ts).toDateString(), now = new Date();
+        if (d === now.toDateString()) return 0;
+        if (d === new Date(now.getTime() - 864e5).toDateString()) return 1;
+        return 2;
+    }
+    function nwRowHtml(x) {
+        var e = newsHtmlCache[x.tk];
+        var it = (e && !e.none && e.items && e.items.length) ? e.items[0] : null;
+        var loading = !e;
+        var unread = !!nwUnreadOf(x.tk).length;
+        var mark = x.custom ? '<span class="nwd-ext">внеш.</span>'
+            : '<span class="nwd-dots">' + (x.pfs || []).map(function (p) { return '<i style="background:' + p.color + '" title="' + attr(p.name) + '"></i>'; }).join('') + '</span>';
+        var meta = it
+            ? '<div class="nwd-meta"><i>Smart-Lab</i><em>' + esc(it.rel || '') + '</em>' + mark + (it.link ? PFNW_GO_SVG : '') + '</div>'
+            : (loading ? '' : '<div class="nwd-meta">' + mark + '</div>');
+        var title = loading ? 'загрузка новости…' : (it ? it.t : 'нет свежих новостей');
+        var news = it && it.link
+            ? '<div class="nwd-news" role="link" onclick="pfdNwOpenRow(\'' + jsArg(x.tk) + '\')"><div class="nwd-nt">' + esc(title) + '</div>' + meta + '</div>'
+            : '<div class="nwd-news"><div class="nwd-nt">' + esc(title) + '</div>' + meta + '</div>';
+        return '<div class="nwd-row' + (it ? '' : ' none') + (!unread && !loading ? ' read' : '') + '" data-tk="' + esc(x.tk) + '">' +
+            (unread ? '<span class="nws-dot"></span>' : '') +
+            '<button type="button" class="nwd-tkb" onclick="pfOpenTicker(\'' + jsArg(x.tk) + '\')" title="Открыть карточку компании">' +
+                '<b class="nwd-tk">' + esc(x.tk) + '</b>' + nwChgHtml(x.chg, 'nwd-chg') + '</button>' + news + '</div>';
+    }
+    // лента «Все»: группы Сегодня/Вчера/Ранее по дате свежей новости, затем
+    // «Пока без новостей» и «Загружается» — уже показанные строки не прыгают
+    function nwFeedHtml(list) {
+        var g = { s: [], v: [], r: [], n: [], l: [] };
+        list.forEach(function (x) {
+            var e = newsHtmlCache[x.tk];
+            if (!e) { g.l.push(x); return; }
+            if (e.none || !e.items || !e.items.length) { g.n.push(x); return; }
+            var grp = nwDayGroup(e.items[0].date);
+            (grp === 0 ? g.s : grp === 1 ? g.v : g.r).push(x);
+        });
+        var dOf = function (x) { var e = newsHtmlCache[x.tk]; return (e && e.items && e.items[0]) ? e.items[0].date : 0; };
+        var by = function (a, b) { return dOf(b) - dOf(a); };
+        var out = '';
+        var sect = function (t, arr, quiet) {
+            if (!arr.length) return;
+            out += '<div class="nwd-day' + (quiet ? ' quiet' : '') + '"><b>' + t + '</b></div>' +
+                arr.map(function (x) { return nwRowHtml(x); }).join('');
+        };
+        sect('Сегодня', g.s.sort(by)); sect('Вчера', g.v.sort(by)); sect('Ранее', g.r.sort(by), true);
+        sect('Пока без новостей', g.n, true); sect('Загружается', g.l, true);
+        return '<div class="nwd-list">' + out + '</div>';
+    }
+    function nwZeroHtml() {
+        return '<div class="nws-zero"><div class="zt">Вы в курсе всего</div>' +
+            '<div class="zs">Новых новостей по бумагам портфелей нет — последние прочитанные ниже.</div></div>';
+    }
+    // следующая бумага с непрочитанным (для автоперехода плеера и подсказки «дальше — …»)
+    function nwNextUnreadTk(exceptTk) {
+        var c = nwStripOrder(pfdNewsList()).filter(function (x) { return x.tk !== exceptTk && nwUnreadOf(x.tk).length; })[0];
+        return c ? c.tk : null;
+    }
+    // плеер: сегменты = снапшот непрочитанного бумаги на момент открытия (индексы стабильны)
+    function nwPlayerHtml() {
+        var tk = nwView.tk, list = nwView.list || [];
+        if (!list.length) return '';
+        var idx = nwView.idx = Math.max(0, Math.min(nwView.idx || 0, list.length - 1));
+        var it = list[idx];
+        var segs = list.map(function (_, i) { return '<i class="' + (i < idx ? 'done' : i === idx ? 'now' : '') + '"></i>'; }).join('');
+        var x = pfdNewsList().filter(function (r) { return r.tk === tk; })[0] || {};
+        var nxt = nwNextUnreadTk(tk);
+        return '<div class="nwp">' +
+            '<div class="nwp-segs">' + segs + '</div>' +
+            '<div class="nwp-head"><span class="nwp-ava" style="background:' + favLogoColor(tk) + '">' + esc(tk.charAt(0)) + '</span>' +
+                '<b>' + esc(tk) + '</b><span class="nwp-nm">' + esc(nwCoName(tk)) + '</span>' + nwChgHtml(x.chg, 'nwp-chg') +
+                '<button type="button" class="nwp-x" onclick="pfdNwFeed()" title="Закрыть (Esc)">×</button></div>' +
+            '<div class="nwp-t">' + esc(it.t) + '</div>' +
+            '<div class="nwd-meta nwp-meta"><i>Smart-Lab</i><em>' + esc(it.rel || '') + '</em></div>' +
+            '<div class="nwp-foot">' +
+                (it.link ? '<button type="button" class="nwp-cta" onclick="pfdNwOpenCur()">Читать на Smart-Lab' + PFNW_GO_SVG + '</button>' : '') +
+                '<span class="nwp-cnt">' + (idx + 1) + ' из ' + list.length + '</span>' +
+                (nxt ? '<span class="nwp-next">дальше —&nbsp;<span class="nwp-ava mini" style="background:' + favLogoColor(nxt) + '">' + esc(nxt.charAt(0)) + '</span>' + esc(nxt) + '</span>' : '') +
+            '</div>' +
+            '<button type="button" class="nwp-nav l" onclick="pfdNwPrev()" aria-label="Предыдущая новость">' + NW_CHEV_L_SVG + '</button>' +
+            '<button type="button" class="nwp-nav r" onclick="pfdNwNext()" aria-label="Следующая новость">' + NW_CHEV_R_SVG + '</button>' +
+        '</div>';
+    }
+    // фокус бумаги: только все её новости (график/позиция/кнопки убраны по замечанию
+    // 2026-07-22 — детали открывает клик по тикеру, это карточка компании)
+    function nwFocusHtml() {
+        var tk = nwView.tk, e = newsHtmlCache[tk], now = Date.now(), rs = nwReadSet();
+        var x = pfdNewsList().filter(function (r) { return r.tk === tk; })[0] || {};
+        var rows;
+        if (e && !e.none && e.items && e.items.length) {
+            rows = e.items.map(function (it, i) {
+                var rd = !it.link || rs[it.link] || !(it.date && now - it.date < NW_FRESH_MS);
+                return '<div class="nwf-row' + (rd ? ' read' : '') + '"' +
+                    (it.link ? ' role="link" onclick="pfdNwOpenItem(\'' + jsArg(tk) + '\',' + i + ')"' : '') + '>' +
+                    (rd ? '' : '<span class="nws-dot"></span>') +
+                    '<div class="nwd-nt">' + esc(it.t) + '</div>' +
+                    '<div class="nwd-meta"><i>Smart-Lab</i><em>' + esc(it.rel || '') + '</em>' + (it.link ? PFNW_GO_SVG : '') + '</div></div>';
+            }).join('');
+        } else {
+            rows = '<div class="pfnw-empty">' + (e ? 'Свежих новостей по бумаге нет.' : 'Загружаем новости…') + '</div>';
+        }
+        return '<div class="nwf-h"><button type="button" class="nwf-tk" onclick="pfOpenTicker(\'' + jsArg(tk) + '\')" title="Открыть карточку компании">' + esc(tk) + '</button>' +
+            '<span class="nwf-nm">' + esc(nwCoName(tk)) + '</span>' + nwChgHtml(x.chg, 'nwf-chg') + '</div>' +
+            '<div class="nwd-list">' + rows + '</div>';
     }
     function pfdNewsHtml() {
         var list = pfdNewsList();
+        // кнопки конструктора — в потоке шапки ПЕРЕД «+» (news в PFD_OWN_CHROME):
+        // без своей пары кнопок виджет стало бы нечем настроить и удалить
+        var head = PF.pfCardHead('', 'Новости по позициям',
+            'кольцо — есть непрочитанное; клик по кольцу — плеер, по имени — фокус бумаги',
+            pfdInChromeHtml('news') +
+            '<button class="pff-add" onclick="pfdNewsAddToggle()" title="Добавить тикер не из портфеля" aria-label="Добавить тикер">' + PFD_PLUS_SVG + '</button>');
         if (!list.length && !pfdNewsAdding) {
-            return '<div class="dash2-card pf-card2 pf-newsblk">' +
-                PF.pfCardHead('', 'Новости по позициям', 'свежая новость по бумагам портфелей',
-                    // кнопки конструктора — в потоке шапки ПЕРЕД «+» (PFD_OWN_CHROME):
-                    // сдвинутая шестерёнка не доставала до «+» всего 2px
-                    pfdInChromeHtml('news') +
-                    '<button class="pff-add" onclick="pfdNewsAddToggle()" title="Добавить тикер не из портфеля" aria-label="Добавить тикер">' + PFD_PLUS_SVG + '</button>') +
+            return '<div class="dash2-card pf-card2 pf-newsblk">' + head +
                 '<div class="pfnw-body" data-skey="posnews"><div class="pfnw-empty">Добавьте акции в портфель — или введите любой тикер по кнопке «+» справа.</div></div></div>';
         }
-        if (pfdNewsPick && !list.some(function (x) { return x.tk === pfdNewsPick; })) pfdNewsPick = null;
-        var shown = pfdNewsPick ? list.filter(function (x) { return x.tk === pfdNewsPick; }) : list;
-        var rows = shown.map(function (x) { return pfdNewsItemHtml(x); }).join('');
-        return '<div class="dash2-card pf-card2 pf-newsblk">' +
-            // и в основной ветке тоже: news в PFD_OWN_CHROME, углового оверлея больше нет —
-            // без своей пары кнопок виджет стало бы нечем настроить и удалить
-            PF.pfCardHead('', 'Новости по позициям', 'наведите бумагу — новость раскроется, нажмите — откроется',
-                pfdInChromeHtml('news')) +
-            pfdNewsChips(list) +
-            '<div class="pfnw-body" data-skey="posnews"><div class="pfnw-list">' + rows + '</div></div></div>';
+        // выбранная бумага могла исчезнуть из списка — назад к ленте
+        if (nwView.mode !== 'feed' && !list.some(function (x) { return x.tk === nwView.tk; })) nwView = { mode: 'feed' };
+        var un = nwTotalUnread(list);
+        var body;
+        if (nwView.mode === 'player') body = nwPlayerHtml() || nwFeedHtml(list);
+        else if (nwView.mode === 'focus') body = nwFocusHtml();
+        else body = (un ? '' : nwZeroHtml()) + nwFeedHtml(list);
+        return '<div class="dash2-card pf-card2 pf-newsblk">' + head +
+            (nwView.mode === 'feed' ? nwBarHtml(un) : '') +
+            nwStripHtml(list) +
+            '<div class="pfnw-body" data-skey="posnews">' + body + '</div></div>';
     }
-    // строка новости в стиле «Избранного»: слева тикер-чип (→ карточка компании), справа
-    // блок новости, который РАСКРЫВАЕТСЯ по наведению (полный заголовок всплывает поверх),
-    // клик по нему открывает саму новость. Наполняется асинхронно в fillPosNewsSlot.
-    function pfdNewsItemHtml(x) {
-        var mark = x.custom ? '<span class="pfnw-item-nopf" title="Не в портфеле">внеш.</span>' : '<span class="pfnw-pfdots">' + pfdNewsDots(x) + '</span>';
-        return '<div class="pfnw-item" data-tk="' + esc(x.tk) + '" id="pfnw-' + esc(x.tk) + '">' +
-            '<button type="button" class="pfnw-item-tkbtn" onclick="pfOpenTicker(\'' + jsArg(x.tk) + '\')" title="Открыть карточку компании">' +
-                '<span class="pfnw-item-tk">' + esc(x.tk) + '</span>' + mark + '</button>' +
-            '<div class="pfnw-item-news"><div class="pfnw-item-news-inner">' +
-                '<span class="pfnw-item-title">загрузка новости…</span>' +
-                '<span class="pfnw-item-meta"></span>' +
-            '</div></div>' +
-        '</div>';
-    }
-    var PFNW_GO_SVG = '<svg class="pfnw-item-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg>';
-    window.pfdNewsSetPick = function (tk) {
-        var next = tk || null;
-        if (pfdNewsPick === next) next = null;   // повторный клик по активному чипу — назад к «Все»
-        pfdNewsPick = next;
+    var PFNW_GO_SVG = '<svg class="nwd-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><polyline points="8 7 17 7 17 16"/></svg>';
+    var NW_CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    var NW_CHEV_L_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
+    var NW_CHEV_R_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+    // --- действия Д2 ---
+    window.pfdNwFeed = function () { clearTimeout(nwReadTimer); nwView = { mode: 'feed' }; pfdNewsRepaint(); };
+    window.pfdNwFocus = function (tk) { clearTimeout(nwReadTimer); nwView = { mode: 'focus', tk: tk }; pfdNewsRepaint(); };
+    // клик по кольцу: есть непрочитанное — плеер, нет — фокус
+    window.pfdNwRing = function (tk) {
+        var un = nwUnreadOf(tk);
+        if (!un.length) { window.pfdNwFocus(tk); return; }
+        nwView = { mode: 'player', tk: tk, idx: 0, list: un };
         pfdNewsRepaint();
     };
+    window.pfdNwPrev = function () {
+        if (nwView.mode !== 'player' || !(nwView.idx > 0)) return;
+        nwView.idx--; pfdNewsRepaint();
+    };
+    window.pfdNwNext = function () {
+        if (nwView.mode !== 'player') return;
+        if (nwView.idx + 1 < nwView.list.length) { nwView.idx++; pfdNewsRepaint(); return; }
+        var cur = nwView.list[nwView.idx];          // долистал до конца — последняя тоже прочитана
+        if (cur) nwMarkRead(cur.link);
+        var nxt = nwNextUnreadTk(nwView.tk);
+        if (nxt) window.pfdNwRing(nxt); else window.pfdNwFeed();
+    };
+    window.pfdNwOpenCur = function () {
+        if (nwView.mode !== 'player') return;
+        var it = nwView.list[nwView.idx];
+        if (!it || !it.link) return;
+        nwMarkRead(it.link); nwPatchStrip();
+        window.pfdNewsOpenLink(it.link);
+    };
+    window.pfdNwOpenRow = function (tk) {
+        var e = newsHtmlCache[tk], it = e && e.items && e.items[0];
+        if (!it || !it.link) return;
+        var was = nwMarkRead(it.link);
+        window.pfdNewsOpenLink(it.link);
+        if (was) pfdNewsRepaint();
+    };
+    window.pfdNwOpenItem = function (tk, i) {
+        var e = newsHtmlCache[tk], it = e && e.items && e.items[i];
+        if (!it || !it.link) return;
+        var was = nwMarkRead(it.link);
+        window.pfdNewsOpenLink(it.link);
+        if (was) pfdNewsRepaint();
+    };
+    // «Прочитать всё»: bulk-запись, мягкий тост (действие не разрушительное — без модалки)
+    window.pfdNwReadAll = function () {
+        var now = Date.now(), n = 0;
+        pfdNewsTickers().forEach(function (tk) {
+            var e = newsHtmlCache[tk];
+            ((e && e.items) || []).forEach(function (it) {
+                if (it.link && it.date && now - it.date < NW_FRESH_MS && nwMarkRead(it.link)) n++;
+            });
+        });
+        if (n) toast('Все новости отмечены прочитанными');
+        pfdNewsRepaint();
+    };
+    // точечно обновить полосу (кольца/бейджи) без полного репейнта — не дёргаем плеер
+    function nwPatchStrip() {
+        var card = document.querySelector('#pfWrap .pf-newsblk'); if (!card) return;
+        var s = card.querySelector('.nws-strip'); if (!s) return;
+        var tmp = document.createElement('div'); tmp.innerHTML = nwStripHtml(pfdNewsList());
+        s.parentNode.replaceChild(tmp.firstChild, s);
+    }
+    // «показ ≥2с = прочитано»: взводится при каждом рендере плеера (renderPosNews)
+    function nwArmReadTimer() {
+        clearTimeout(nwReadTimer);
+        if (nwView.mode !== 'player') return;
+        var it = (nwView.list || [])[nwView.idx];
+        if (!it || !it.link || nwReadSet()[it.link]) return;
+        nwReadTimer = setTimeout(function () {
+            if (nwView.mode !== 'player' || (nwView.list || [])[nwView.idx] !== it) return;
+            nwMarkRead(it.link); nwPatchStrip();
+        }, 2000);
+    }
+    // клавиатура плеера: ←/→ — новости, Esc — закрыть, Enter — открыть ссылку
+    document.addEventListener('keydown', function (ev) {
+        if (nwView.mode !== 'player' || !document.querySelector('#pfWrap .pf-newsblk .nwp')) return;
+        var tg = ev.target, tag = tg && tg.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || (tg && tg.isContentEditable)) return;
+        if (ev.key === 'Enter' && tag === 'BUTTON') return;   // Enter по кнопке = её клик, не наш
+        if (ev.key === 'Escape') { ev.preventDefault(); window.pfdNwFeed(); }
+        else if (ev.key === 'ArrowLeft') { ev.preventDefault(); window.pfdNwPrev(); }
+        else if (ev.key === 'ArrowRight') { ev.preventDefault(); window.pfdNwNext(); }
+        else if (ev.key === 'Enter') { ev.preventDefault(); window.pfdNwOpenCur(); }
+    });
     window.pfdNewsAddToggle = function () { pfdNewsAdding = !pfdNewsAdding; pfdNewsRepaint(); if (pfdNewsAdding) setTimeout(function () { var i = document.querySelector('#pfWrap .pfnw-addinput'); if (i) i.focus(); }, 30); };
     function pfdNewsCommitAdd(val) {
         var tk = String(val || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
         pfdNewsAdding = false;
-        if (tk.length >= 2 && pfdNewsCustom.indexOf(tk) < 0) { pfdNewsCustom.push(tk); pfdNewsPick = tk; }
+        if (tk.length >= 2 && pfdNewsCustom.indexOf(tk) < 0) {
+            pfdNewsCustom.push(tk);
+            nwView = { mode: 'focus', tk: tk };   // сразу к новостям добавленной бумаги
+        }
         pfdNewsRepaint();
     }
     window.pfdNewsAddKey = function (ev) {
@@ -1187,7 +1429,7 @@
     window.pfdNewsAddBlur = function (el) { if (!pfdNewsAdding) return; if (String(el.value || '').trim()) pfdNewsCommitAdd(el.value); else { pfdNewsAdding = false; pfdNewsRepaint(); } };
     window.pfdNewsDelCustom = function (tk) {
         pfdNewsCustom = pfdNewsCustom.filter(function (t) { return t !== tk; });
-        if (pfdNewsPick === tk) pfdNewsPick = null;
+        if (nwView.mode !== 'feed' && nwView.tk === tk) nwView = { mode: 'feed' };
         pfdNewsRepaint();
     };
     function pfdNewsRepaint() {
@@ -1197,31 +1439,25 @@
         renderPosNews(); pfdRepackSoon();
     }
     window.pfdNewsOpenLink = function (link) { if (typeof openExternalLink === 'function') openExternalLink(link); else window.open(link, '_blank'); };
-    // Наполнить строку новости (как fillNewsSlot «Избранного»): заголовок + мета; если есть
-    // ссылка — строка кликабельна (открывает новость), нет — помечаем «нет свежих новостей».
+    // Новость по тикеру доехала (общий пайплайн «Избранного» зовёт нас из fillNewsSlot):
+    // строки ленты живут в группах дней, поэтому точечного слота нет — дебаунсим полный
+    // репейнт. Открытый плеер не трогаем (листание не сбивается) — ему хватает полосы.
     function fillPosNewsSlot(tk) {
-        var row = document.querySelector('#pfWrap .pfnw-item[data-tk="' + tk + '"]'), e = newsHtmlCache[tk];
-        if (!row || !e) return;
-        var titleEl = row.querySelector('.pfnw-item-title'), metaEl = row.querySelector('.pfnw-item-meta');
-        var news = row.querySelector('.pfnw-item-news');
-        row.classList.toggle('is-none', !!e.none);
-        if (titleEl) titleEl.textContent = e.none ? 'нет свежих новостей' : (e.title || '');
-        if (metaEl) metaEl.innerHTML = e.none ? '' : ('<i>' + esc(e.src || 'Smart-Lab') + '</i>' + (e.rel ? ' · ' + esc(e.rel) : '') + (e.link ? PFNW_GO_SVG : ''));
-        if (e.link) {
-            row.classList.add('link');
-            if (news) { news.setAttribute('role', 'link'); news.onclick = function (ev) { ev.stopPropagation(); window.pfdNewsOpenLink(e.link); }; }
-        } else {
-            row.classList.remove('link');
-            if (news) { news.removeAttribute('role'); news.onclick = null; }
-        }
+        if (!document.querySelector('#pfWrap .pf-newsblk')) return;
+        clearTimeout(nwRepaintT);
+        nwRepaintT = setTimeout(function () {
+            if (nwView.mode === 'player') { nwPatchStrip(); return; }
+            pfdNewsRepaint();
+        }, 150);
     }
     function renderPosNews() {
         if (!document.querySelector('#pfWrap .pf-newsblk') || typeof loadNewsForTicker !== 'function') return;
         pfdNewsTickers().forEach(function (tk) {
-            if (newsHtmlCache[tk]) { fillPosNewsSlot(tk); return; }
-            if (!newsStarted[tk]) { newsStarted[tk] = true; newsQueue.push(tk); }
+            if (newsHtmlCache[tk] || newsStarted[tk]) return;
+            newsStarted[tk] = true; newsQueue.push(tk);
         });
         setTimeout(pumpNewsQueue, newsActive ? 0 : 400);
+        nwArmReadTimer();
     }
 
     // ---- «Заметки»: мультиблок; у каждой цвет-точка, строки (текст/пункт/задача) и срок ----
@@ -1455,7 +1691,16 @@
     }
     // Готовый HTML новости + ссылку складываем в кэш (новость = клик по ссылке, не карточка)
     function buildNewsEntry(news) {
-        if (!news || !news.length) return { html: '<span class="pff-news-none">нет свежих новостей</span>', link: '', none: true };
+        if (!news || !news.length) return { html: '<span class="pff-news-none">нет свежих новостей</span>', link: '', none: true, items: [] };
+        // ВЕСЬ массив (до 8) — для «Новостей по позициям» Д2 (плеер/фокус/прочитанность);
+        // «Избранное» по-прежнему использует поля первой новости ниже
+        var items = news.slice(0, 8).map(function (n) {
+            var nd = new Date(n.date), bad = isNaN(nd.getTime());
+            var nrel = (typeof getRelativeDateText === 'function' && !bad) ? getRelativeDateText(nd)
+                : (bad ? '' : nd.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }));
+            var nt = String(n.title || '');
+            return { t: nt.slice(0, 300) + (nt.length > 300 ? '…' : ''), link: n.link || '', date: bad ? 0 : nd.getTime(), rel: nrel };
+        }).filter(function (n) { return n.t; });
         var item = news[0], d = new Date(item.date);
         var rel = (typeof getRelativeDateText === 'function' && !isNaN(d.getTime())) ? getRelativeDateText(d)
             : (isNaN(d.getTime()) ? '' : d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }));
@@ -1469,7 +1714,8 @@
         return { html: '<span class="pff-news-t">' + esc(title) + (full.length > 300 ? '…' : '') + '</span>' +
             '<span class="pff-news-m"><i>Smart-Lab</i>' + (rel ? '<em>' + esc(rel) + '</em>' : '') + go + '</span>', link: link,
             title: title + (full.length > 300 ? '…' : ''), rel: rel, src: 'Smart-Lab',
-            date: isNaN(d.getTime()) ? 0 : d.getTime() };   // для сортировки избранного «по свежести»
+            date: isNaN(d.getTime()) ? 0 : d.getTime(),   // для сортировки избранного «по свежести»
+            items: items };                               // все новости тикера — для Д2
     }
     function fillNewsSlot(tk) {
         // новость по тикеру может ждать и блок «Новости по позициям» (конструктор)

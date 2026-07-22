@@ -2911,42 +2911,145 @@ body.dark-mode .pfhm-pv-r b.pos { color: #4be3a0; }
 body.dark-mode .pfhm-pv-r b.neg { color: #f08e88; }
 body.dark-mode .pfhm-pv-hint { border-top-color: rgba(255, 255, 255, 0.12); color: #7c8aa0; }
 
-/* --- «Новости по позициям»: строки в стиле «Избранного» — раскрытие по наведению --- */
+/* --- «Новости по позициям»: Д2 «сторис» (мокап news-mockups, утверждён 2026-07-22) ---
+   Полоса монограмм (кольцо = непрочитанное) + лента с группами дней, плеер, фокус.
+   Всё скоупится под .pf-newsblk: классы короткие (nws-/nwd-/nwp-/nwf-), как в мокапе. */
 .pf-newsblk { position: relative; }
-.pfnw-body { flex: 1; min-height: 0; margin-top: 6px; }
+.pfnw-body { flex: 1; min-height: 0; margin-top: 4px; }
 .pfd-item.pfd-hset .pf-newsblk .pfnw-body { overflow-y: auto; scrollbar-width: thin; }
 /* заметка при РУЧНОЙ высоте: список строк заполняет середину карточки, панель «Текст/Пункт/
    Задача» и срок прижаты книзу (иначе тянешь блок выше — данные не адаптируются, снизу пустота) */
 .pfd-item.pfd-hset .pf-noteblk .pfnt-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
-.pfnw-list { display: flex; flex-direction: column; gap: 5px; }
-.pfnw-item {
-    position: relative; box-sizing: border-box; display: flex; align-items: flex-start; gap: 11px; width: 100%; text-align: left;
-    padding: 9px 11px; border-radius: 12px; border: 1px solid #eef2f7; background: #fbfcfe;
-    transition: border-color 0.13s, background 0.13s;
-}
-.pfnw-item:hover { border-color: #d3e0f2; background: #f4f8ff; z-index: 20; }
-/* тикер-чип слева: открывает карточку компании */
-.pfnw-item-tkbtn { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; width: 62px; padding: 0; border: 0; background: none; cursor: pointer; text-align: left; }
-.pfnw-item-tk { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12px; font-weight: 800; color: #1e293b; letter-spacing: 0.01em; transition: color 0.12s; }
-.pfnw-item-tkbtn:hover .pfnw-item-tk { color: var(--pf-accent); }
-.pfnw-pfdots { display: inline-flex; gap: 3px; }
-.pfnw-pfdot { width: 7px; height: 7px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9); }
-.pfnw-item-nopf { font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #b0bccb; }
-/* блок новости раскрывается по наведению (как .pff-news «Избранного»): всплывает поверх, заголовок целиком */
-.pfnw-item-news { position: relative; flex: 1; min-width: 0; min-height: 32px; }
-.pfnw-item.link .pfnw-item-news { cursor: pointer; }
-.pfnw-item-news-inner { position: absolute; left: 0; right: 0; top: 0; display: flex; flex-direction: column; gap: 1px;
-    border: 1px solid transparent; border-radius: 11px;
-    transition: background 0.15s, box-shadow 0.15s, padding 0.15s, left 0.15s, right 0.15s, top 0.15s, border-color 0.15s; }
-.pfnw-item.link:hover .pfnw-item-news-inner { left: -11px; right: -11px; top: -9px; padding: 9px 11px 11px;
-    background: #fff; border-color: #d3e0f2; box-shadow: 0 16px 30px -18px rgba(24, 38, 60, 0.5); z-index: 40; }
-.pfnw-item-title { font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 600; color: #273244; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.12s; }
-.pfnw-item.link:hover .pfnw-item-title { white-space: normal; overflow: visible; text-overflow: clip; color: var(--pf-accent); }
-.pfnw-item.is-none .pfnw-item-title { color: #a5b1c0; font-weight: 500; font-style: italic; }
-.pfnw-item-meta { display: flex; align-items: center; gap: 5px; font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 600; color: #9aa7b8; margin-top: 1px; }
-.pfnw-item-meta i { font-style: normal; color: var(--pf-accent); font-weight: 700; }
-.pfnw-item-go { width: 12px; height: 12px; margin-left: auto; color: var(--pf-accent); opacity: 0.8; flex-shrink: 0; }
 .pfnw-empty { padding: 22px 6px; font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 600; color: #8494a7; line-height: 1.5; }
+/* панель под шапкой: «N новых» + «Прочитать всё» */
+/* боковые отступы даёт сама карточка (.pf-newsblk { padding: 0 22px 20px }) */
+.pf-newsblk .nws-bar { display: flex; align-items: center; gap: 10px; margin-top: 2px; }
+.pf-newsblk .nws-new { display: inline-flex; align-items: center; gap: 6px; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--pf-accent); background: color-mix(in srgb, var(--pf-accent) 11%, transparent); border-radius: 999px; padding: 4px 10px; }
+.pf-newsblk .nws-new b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11px; }
+.pf-newsblk .nws-new svg { width: 10px; height: 10px; }
+.pf-newsblk .nws-mark { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; border: 1px solid #e6ebf2; border-radius: 999px; padding: 5px 11px;
+    font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: #64748b; background: transparent; cursor: pointer; transition: border-color 0.13s, color 0.13s; }
+.pf-newsblk .nws-mark:hover { border-color: #c7d2e0; color: #1e293b; }
+.pf-newsblk .nws-mark svg { width: 12px; height: 12px; }
+/* полоса-сторис */
+.pf-newsblk .nws-strip { display: flex; align-items: flex-start; gap: 13px; padding: 12px 2px; margin: 0;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.07); overflow-x: auto; scrollbar-width: none; }
+.pf-newsblk .nws-strip::-webkit-scrollbar { display: none; }
+.pf-newsblk .nws-it { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 54px; flex: none; }
+.pf-newsblk .nws-ava { position: relative; width: 44px; height: 44px; border-radius: 50%; border: 0; cursor: pointer; display: grid; place-items: center;
+    font-family: Georgia, 'Times New Roman', serif; font-size: 17px; line-height: 1; color: #fff; padding: 0;
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px #e7ecf3; transition: box-shadow 0.15s, transform 0.12s; }
+.pf-newsblk .nws-ava:hover { transform: scale(1.05); }
+.pf-newsblk .nws-it.unread .nws-ava { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--pf-accent); }
+.pf-newsblk .nws-cnt, .pf-newsblk .nws-del { position: absolute; top: -4px; right: -6px; min-width: 17px; height: 17px; border-radius: 999px; background: #141b26; color: #fff;
+    font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 9.5px; font-weight: 700; font-style: normal; display: grid; place-items: center; padding: 0 4px; box-shadow: 0 0 0 2px #fff; }
+.pf-newsblk .nws-del { background: #64748b; font-size: 11px; cursor: pointer; }
+.pf-newsblk .nws-del:hover { background: #d64545; }
+.pf-newsblk .nws-tkc { display: flex; flex-direction: column; align-items: center; gap: 2px; border: 0; background: none; padding: 0; cursor: pointer; }
+.pf-newsblk .nws-nm { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 10px; font-weight: 600; color: #64748b; line-height: 1; }
+.pf-newsblk .nws-it.sel .nws-nm { color: #1e293b; font-weight: 700; }
+.pf-newsblk .nws-tkc:hover .nws-nm { color: var(--pf-accent); }
+.pf-newsblk .nws-chg { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 9.5px; font-weight: 600; line-height: 1; color: #94a3b8; }
+.pf-newsblk .nws-chg.pos { color: #12a35c; }
+.pf-newsblk .nws-chg.neg { color: #d64545; }
+.pf-newsblk .nws-all, .pf-newsblk .nws-plus { width: 44px; height: 44px; border-radius: 50%; border: 1px dashed rgba(148, 163, 184, 0.75); background: transparent; cursor: pointer;
+    display: grid; place-items: center; color: #64748b; font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700; transition: border-color 0.13s, color 0.13s; }
+.pf-newsblk .nws-all:hover, .pf-newsblk .nws-plus:hover { border-color: var(--pf-accent); color: var(--pf-accent); }
+.pf-newsblk .nws-it.sel .nws-all { border-style: solid; border-color: #1e293b; color: #1e293b; }
+.pf-newsblk .nws-plus svg { width: 15px; height: 15px; }
+.pf-newsblk .nws-addwrap { height: 44px; display: grid; place-items: center; }
+/* лента: группы дней + строки с прочитанностью */
+.pf-newsblk .nwd-day { margin: 13px 0 1px; display: flex; align-items: center; gap: 10px; }
+.pf-newsblk .nwd-day b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 10px; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase; color: #94a3b8; }
+.pf-newsblk .nwd-day::after { content: ''; flex: 1; height: 1px; background: rgba(15, 23, 42, 0.07); }
+.pf-newsblk .nwd-day.quiet b { letter-spacing: 0.09em; }
+.pf-newsblk .nwd-row { position: relative; display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 14px; align-items: flex-start;
+    padding: 10px 2px 10px 16px; border-bottom: 1px solid rgba(15, 23, 42, 0.07); }
+.pf-newsblk .nwd-row:last-child { border-bottom: 0; }
+.pf-newsblk .nws-dot { position: absolute; left: 1px; top: 14px; width: 7px; height: 7px; border-radius: 50%; background: var(--pf-accent); }
+.pf-newsblk .nwd-tkb { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 1px 0 0; border: 0; background: none; cursor: pointer; text-align: left; }
+.pf-newsblk .nwd-tk { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 13px; font-weight: 700; letter-spacing: 0.01em; line-height: 1.1; color: #1e293b; transition: color 0.12s; }
+.pf-newsblk .nwd-tkb:hover .nwd-tk { color: var(--pf-accent); }
+.pf-newsblk .nwd-chg { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; color: #94a3b8; }
+.pf-newsblk .nwd-chg.pos { color: #12a35c; }
+.pf-newsblk .nwd-chg.neg { color: #d64545; }
+.pf-newsblk .nwd-news { min-width: 0; }
+.pf-newsblk .nwd-news[role="link"] { cursor: pointer; }
+.pf-newsblk .nwd-nt { font-family: 'Inter', sans-serif; font-size: 12.5px; line-height: 1.4; color: #273244; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.12s; }
+.pf-newsblk .nwd-news[role="link"]:hover .nwd-nt { color: var(--pf-accent); }
+.pf-newsblk .nwd-row.none .nwd-nt { color: #a5b1c0; font-style: italic; font-weight: 500; }
+.pf-newsblk .nwd-row.read .nwd-nt, .pf-newsblk .nwd-row.read .nwd-tk { color: #8494a7; }
+.pf-newsblk .nwd-meta { margin-top: 4px; display: flex; align-items: center; gap: 7px; }
+.pf-newsblk .nwd-meta i { font-style: normal; font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 800; letter-spacing: 0.03em; color: #c2760a; background: rgba(217, 119, 6, 0.12); border-radius: 6px; padding: 2.5px 7px; }
+.pf-newsblk .nwd-meta em { font-style: normal; font-family: 'Inter', sans-serif; font-size: 11px; color: #94a3b8; }
+.pf-newsblk .nwd-dots { display: inline-flex; gap: 3px; margin-left: 2px; }
+.pf-newsblk .nwd-dots i { width: 7px; height: 7px; border-radius: 50%; padding: 0; background: none; }
+.pf-newsblk .nwd-ext { font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8;
+    border: 1px dashed rgba(148, 163, 184, 0.7); border-radius: 6px; padding: 2.5px 6px; line-height: 1; }
+.pf-newsblk .nwd-go { width: 11px; height: 11px; color: #94a3b8; flex-shrink: 0; }
+/* «всё прочитано» */
+.pf-newsblk .nws-zero { padding: 18px 6px 10px; text-align: center; }
+.pf-newsblk .nws-zero .zt { font-family: Georgia, 'Times New Roman', serif; font-size: 15.5px; color: #1e293b; }
+.pf-newsblk .nws-zero .zs { margin-top: 5px; font-family: 'Inter', sans-serif; font-size: 11.5px; line-height: 1.5; color: #64748b; }
+/* плеер непрочитанного */
+.pf-newsblk .nwp { position: relative; margin-top: 12px; border: 1px solid #e7ecf3; border-radius: 16px; padding: 14px 18px 16px;
+    background: linear-gradient(160deg, rgba(15, 23, 42, 0.03), #fff 55%); }
+.pf-newsblk .nwp-segs { display: flex; gap: 4px; margin-bottom: 12px; }
+.pf-newsblk .nwp-segs i { flex: 1; height: 3px; border-radius: 2px; background: rgba(15, 23, 42, 0.07); }
+.pf-newsblk .nwp-segs i.done { background: rgba(15, 23, 42, 0.55); }
+.pf-newsblk .nwp-segs i.now { background: var(--pf-accent); }
+.pf-newsblk .nwp-head { display: flex; align-items: center; gap: 9px; margin-bottom: 11px; }
+.pf-newsblk .nwp-ava { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #fff; flex: none; }
+.pf-newsblk .nwp-ava.mini { width: 20px; height: 20px; font-size: 9px; }
+.pf-newsblk .nwp-head b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12.5px; font-weight: 700; color: #1e293b; }
+.pf-newsblk .nwp-nm { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #64748b; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf-newsblk .nwp-chg { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11.5px; font-weight: 700; flex: none; color: #94a3b8; }
+.pf-newsblk .nwp-chg.pos { color: #12a35c; }
+.pf-newsblk .nwp-chg.neg { color: #d64545; }
+.pf-newsblk .nwp-x { flex: none; width: 26px; height: 26px; border-radius: 50%; border: 1px solid #e7ecf3; background: transparent; cursor: pointer;
+    display: grid; place-items: center; color: #94a3b8; font-size: 13px; line-height: 1; padding: 0; }
+.pf-newsblk .nwp-x:hover { color: #1e293b; border-color: #c7d2e0; }
+.pf-newsblk .nwp-t { font-family: 'Inter', sans-serif; font-size: 16.5px; font-weight: 650; line-height: 1.4; letter-spacing: -0.005em; color: #0f172a; text-wrap: balance; }
+.pf-newsblk .nwp-meta { margin-top: 10px; }
+.pf-newsblk .nwp-foot { margin-top: 13px; padding-top: 12px; border-top: 1px dashed rgba(15, 23, 42, 0.1); display: flex; align-items: center; gap: 10px; }
+.pf-newsblk .nwp-cta { display: inline-flex; align-items: center; gap: 7px; background: #141b26; color: #fff; border: 0; border-radius: 10px; padding: 8px 14px;
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700; line-height: 1; cursor: pointer; transition: transform 0.12s; }
+.pf-newsblk .nwp-cta:hover { transform: translateY(-1px); }
+.pf-newsblk .nwp-cta svg { width: 12px; height: 12px; color: #fff; }
+.pf-newsblk .nwp-cnt { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 10.5px; font-weight: 600; color: #94a3b8; }
+.pf-newsblk .nwp-next { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: #64748b; }
+.pf-newsblk .nwp-nav { position: absolute; top: 50%; width: 30px; height: 30px; margin-top: -15px; border-radius: 50%; border: 1px solid #e7ecf3; background: #fff; cursor: pointer;
+    display: grid; place-items: center; color: #64748b; box-shadow: 0 4px 12px -4px rgba(24, 38, 60, 0.3); padding: 0; }
+.pf-newsblk .nwp-nav svg { width: 13px; height: 13px; }
+.pf-newsblk .nwp-nav.l { left: -13px; }
+.pf-newsblk .nwp-nav.r { right: -13px; color: #1e293b; }
+.pf-newsblk .nwp-nav:hover { border-color: var(--pf-accent); color: var(--pf-accent); }
+/* фокус бумаги: шапка-строка + все новости */
+.pf-newsblk .nwf-h { display: flex; align-items: baseline; gap: 9px; margin: 12px 2px 2px; }
+.pf-newsblk .nwf-tk { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 14px; font-weight: 700; color: #1e293b; border: 0; background: none; padding: 0; cursor: pointer; transition: color 0.12s; }
+.pf-newsblk .nwf-tk:hover { color: var(--pf-accent); }
+.pf-newsblk .nwf-nm { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: #64748b; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf-newsblk .nwf-chg { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12px; font-weight: 700; flex: none; color: #94a3b8; }
+.pf-newsblk .nwf-chg.pos { color: #12a35c; }
+.pf-newsblk .nwf-chg.neg { color: #d64545; }
+.pf-newsblk .nwf-row { position: relative; padding: 10px 2px 10px 16px; border-bottom: 1px solid rgba(15, 23, 42, 0.07); }
+.pf-newsblk .nwf-row:last-child { border-bottom: 0; }
+.pf-newsblk .nwf-row[role="link"] { cursor: pointer; }
+.pf-newsblk .nwf-row .nws-dot { top: 16px; }
+.pf-newsblk .nwf-row .nwd-nt { white-space: normal; overflow: visible; }
+.pf-newsblk .nwf-row[role="link"]:hover .nwd-nt { color: var(--pf-accent); }
+.pf-newsblk .nwf-row.read .nwd-nt { color: #8494a7; }
+/* узкий виджет (конструктор): тикер+изменение в строку, заголовок в две строки */
+@container pfw (max-width: 380px) {
+    .pf-newsblk .nws-strip { gap: 11px; }
+    .pf-newsblk .nwd-row { grid-template-columns: 1fr; gap: 7px; }
+    .pf-newsblk .nwd-tkb { flex-direction: row; align-items: baseline; gap: 8px; }
+    .pf-newsblk .nwd-nt { white-space: normal; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .pf-newsblk .nwf-nm { white-space: normal; }
+    .pf-newsblk .nwp-nav.l { left: -8px; }
+    .pf-newsblk .nwp-nav.r { right: -8px; }
+}
 
 /* --- «Заметки»: мультиблок; цвет-точка, строки (текст/пункт/задача), срок --- */
 .pf-noteblk {
@@ -3313,37 +3416,58 @@ body.dark-mode .pfcap-delta.neg { color: #fb923c; background: rgba(224, 89, 43, 
 body.dark-mode .pfcap-grid { stroke: rgba(148, 163, 184, 0.12); }
 body.dark-mode .pfcap-cdot { background: #0b1220; }
 
-/* --- «Новости по позициям»: селектор тикеров + карточка выбранной бумаги --- */
-.pfnw-picks { display: flex; align-items: center; gap: 6px; margin-top: 10px; margin-bottom: 4px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
-.pfnw-picks::-webkit-scrollbar { display: none; }
-.pfnw-pk {
-    flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 999px; cursor: pointer; border: 1px solid #e6ebf2; background: #f8fafc;
-    font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11.5px; font-weight: 700; color: #475569; transition: border-color 0.13s, color 0.13s, background 0.13s;
-}
-.pfnw-pk:hover { border-color: #c7d2e0; color: #1e293b; }
-.pfnw-pk.on { background: var(--pf-accent); border-color: var(--pf-accent); color: #fff; }
-.pfnw-pk.on .pfnw-pfdot { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.55); }
-.pfnw-pkdots { display: inline-flex; gap: 3px; }
-.pfnw-pkx { font-style: normal; font-size: 13px; line-height: 1; opacity: 0.6; padding: 0 1px; }
-.pfnw-pkx:hover { opacity: 1; }
-.pfnw-pkadd { padding: 5px 8px; color: #64748b; }
-.pfnw-pkadd svg { width: 13px; height: 13px; }
+/* --- «Новости по позициям» Д2: инпут добавления тикера + тёмная тема ---
+   Тёмные правила сразу для ОБОИХ случаев: глобальная тема (body.dark-mode)
+   и пер-виджетная тема конструктора (.pfd-item.pfd-thm-dark). */
 .pfnw-addwrap { flex-shrink: 0; display: inline-flex; }
-.pfnw-addinput { width: 92px; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--pf-accent); outline: none;
+.pfnw-addinput { width: 76px; padding: 5px 9px; border-radius: 999px; border: 1px solid var(--pf-accent); outline: none;
     font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11.5px; font-weight: 700; color: #1e293b; text-transform: uppercase;
     background: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, var(--pf-accent) 15%, transparent); }
-body.dark-mode .pfnw-item { border-color: #212c40; background: #121a29; }
-body.dark-mode .pfnw-item:hover { border-color: #33507e; background: #16233b; }
-body.dark-mode .pfnw-item-tk { color: #e7eef7; }
-body.dark-mode .pfnw-item-title { color: #c7d2e0; }
-body.dark-mode .pfnw-item.is-none .pfnw-item-title { color: #64748b; }
-body.dark-mode .pfnw-item-meta { color: #74839a; }
-body.dark-mode .pfnw-item.link:hover .pfnw-item-news-inner { background: #16233b; border-color: #33507e; box-shadow: 0 16px 30px -16px rgba(0, 0, 0, 0.65); }
-body.dark-mode .pfnw-pfdot { box-shadow: 0 0 0 1px rgba(11, 18, 32, 0.9); }
-body.dark-mode .pfnw-empty { color: #8fa2b8; }
-body.dark-mode .pfnw-pk { border-color: #27324a; background: #131c2b; color: #b9c6d6; }
-body.dark-mode .pfnw-pk:hover { border-color: #34425c; color: #f4f8fd; }
-body.dark-mode .pfnw-addinput { background: #0f1826; color: #e7eef7; }
+body.dark-mode .pfnw-empty, .pfd-item.pfd-thm-dark .pfnw-empty { color: #8fa2b8; }
+body.dark-mode .pfnw-addinput, .pfd-item.pfd-thm-dark .pfnw-addinput { background: #0f1826; color: #e7eef7; }
+body.dark-mode .pf-newsblk .nws-mark, .pfd-item.pfd-thm-dark .nws-mark { border-color: #27324a; color: #b9c6d6; }
+body.dark-mode .pf-newsblk .nws-mark:hover, .pfd-item.pfd-thm-dark .nws-mark:hover { border-color: #34425c; color: #f4f8fd; }
+body.dark-mode .pf-newsblk .nws-strip, .pfd-item.pfd-thm-dark .nws-strip { border-bottom-color: rgba(255, 255, 255, 0.08); }
+body.dark-mode .pf-newsblk .nws-ava, .pfd-item.pfd-thm-dark .nws-ava { box-shadow: 0 0 0 2px #1a232f, 0 0 0 4px rgba(255, 255, 255, 0.14); }
+body.dark-mode .pf-newsblk .nws-it.unread .nws-ava, .pfd-item.pfd-thm-dark .nws-it.unread .nws-ava { box-shadow: 0 0 0 2px #1a232f, 0 0 0 4px #6b7cff; }
+body.dark-mode .pf-newsblk .nws-cnt, .pfd-item.pfd-thm-dark .nws-cnt { background: #e8eef7; color: #0f172a; box-shadow: 0 0 0 2px #1a232f; }
+body.dark-mode .pf-newsblk .nws-del, .pfd-item.pfd-thm-dark .nws-del { background: #64748b; color: #fff; box-shadow: 0 0 0 2px #1a232f; }
+body.dark-mode .pf-newsblk .nws-nm, .pfd-item.pfd-thm-dark .nws-nm { color: #8b98ad; }
+body.dark-mode .pf-newsblk .nws-it.sel .nws-nm, .pfd-item.pfd-thm-dark .nws-it.sel .nws-nm { color: #f4f8fd; }
+body.dark-mode .pf-newsblk .nws-chg.pos, .pfd-item.pfd-thm-dark .nws-chg.pos { color: #4be3a0; }
+body.dark-mode .pf-newsblk .nws-chg.neg, .pfd-item.pfd-thm-dark .nws-chg.neg { color: #f08e88; }
+body.dark-mode .pf-newsblk .nws-it.sel .nws-all, .pfd-item.pfd-thm-dark .nws-it.sel .nws-all { border-color: #e8eef7; color: #e8eef7; }
+body.dark-mode .pf-newsblk .nwd-day b, .pfd-item.pfd-thm-dark .nwd-day b { color: #63718a; }
+body.dark-mode .pf-newsblk .nwd-day::after, .pfd-item.pfd-thm-dark .nwd-day::after { background: rgba(255, 255, 255, 0.08); }
+body.dark-mode .pf-newsblk .nwd-row, .pfd-item.pfd-thm-dark .nwd-row,
+body.dark-mode .pf-newsblk .nwf-row, .pfd-item.pfd-thm-dark .nwf-row { border-bottom-color: rgba(255, 255, 255, 0.08); }
+body.dark-mode .pf-newsblk .nwd-tk, .pfd-item.pfd-thm-dark .nwd-tk { color: #e7eef7; }
+body.dark-mode .pf-newsblk .nwd-nt, .pfd-item.pfd-thm-dark .nwd-nt { color: #c7d2e0; }
+body.dark-mode .pf-newsblk .nwd-row.none .nwd-nt, .pfd-item.pfd-thm-dark .nwd-row.none .nwd-nt { color: #64748b; }
+body.dark-mode .pf-newsblk .nwd-row.read .nwd-nt, .pfd-item.pfd-thm-dark .nwd-row.read .nwd-nt,
+body.dark-mode .pf-newsblk .nwd-row.read .nwd-tk, .pfd-item.pfd-thm-dark .nwd-row.read .nwd-tk,
+body.dark-mode .pf-newsblk .nwf-row.read .nwd-nt, .pfd-item.pfd-thm-dark .nwf-row.read .nwd-nt { color: #74839a; }
+body.dark-mode .pf-newsblk .nwd-chg.pos, .pfd-item.pfd-thm-dark .nwd-chg.pos { color: #4be3a0; }
+body.dark-mode .pf-newsblk .nwd-chg.neg, .pfd-item.pfd-thm-dark .nwd-chg.neg { color: #f08e88; }
+body.dark-mode .pf-newsblk .nwd-meta i, .pfd-item.pfd-thm-dark .nwd-meta i { color: #fbbf24; background: rgba(251, 191, 36, 0.13); }
+body.dark-mode .pf-newsblk .nws-zero .zt, .pfd-item.pfd-thm-dark .nws-zero .zt { color: #e8eef7; }
+body.dark-mode .pf-newsblk .nws-zero .zs, .pfd-item.pfd-thm-dark .nws-zero .zs { color: #8b98ad; }
+body.dark-mode .pf-newsblk .nwp, .pfd-item.pfd-thm-dark .nwp { border-color: rgba(255, 255, 255, 0.09); background: linear-gradient(160deg, rgba(255, 255, 255, 0.04), #1a232f 55%); }
+body.dark-mode .pf-newsblk .nwp-segs i, .pfd-item.pfd-thm-dark .nwp-segs i { background: rgba(255, 255, 255, 0.1); }
+body.dark-mode .pf-newsblk .nwp-segs i.done, .pfd-item.pfd-thm-dark .nwp-segs i.done { background: rgba(232, 238, 247, 0.55); }
+body.dark-mode .pf-newsblk .nwp-segs i.now, .pfd-item.pfd-thm-dark .nwp-segs i.now { background: #6b7cff; }
+body.dark-mode .pf-newsblk .nwp-head b, .pfd-item.pfd-thm-dark .nwp-head b { color: #e7eef7; }
+body.dark-mode .pf-newsblk .nwp-t, .pfd-item.pfd-thm-dark .nwp-t { color: #e8eef7; }
+body.dark-mode .pf-newsblk .nwp-x, .pfd-item.pfd-thm-dark .nwp-x { border-color: rgba(255, 255, 255, 0.12); }
+body.dark-mode .pf-newsblk .nwp-foot, .pfd-item.pfd-thm-dark .nwp-foot { border-top-color: rgba(255, 255, 255, 0.12); }
+body.dark-mode .pf-newsblk .nwp-cta, .pfd-item.pfd-thm-dark .nwp-cta { background: #e8eef7; color: #0f172a; }
+body.dark-mode .pf-newsblk .nwp-cta svg, .pfd-item.pfd-thm-dark .nwp-cta svg { color: #0f172a; }
+body.dark-mode .pf-newsblk .nwp-chg.pos, .pfd-item.pfd-thm-dark .nwp-chg.pos { color: #4be3a0; }
+body.dark-mode .pf-newsblk .nwp-chg.neg, .pfd-item.pfd-thm-dark .nwp-chg.neg { color: #f08e88; }
+body.dark-mode .pf-newsblk .nwp-nav, .pfd-item.pfd-thm-dark .nwp-nav { background: #1a232f; border-color: rgba(255, 255, 255, 0.12); color: #b9c6d6; }
+body.dark-mode .pf-newsblk .nwf-tk, .pfd-item.pfd-thm-dark .nwf-tk { color: #e7eef7; }
+body.dark-mode .pf-newsblk .nwf-chg.pos, .pfd-item.pfd-thm-dark .nwf-chg.pos { color: #4be3a0; }
+body.dark-mode .pf-newsblk .nwf-chg.neg, .pfd-item.pfd-thm-dark .nwf-chg.neg { color: #f08e88; }
 
 /* ============================================================
    №10 · КАРТОЧКА-ПОРТФЕЛЬ ИЗ Т-ИНВЕСТИЦИЙ (авто-синк счёта)

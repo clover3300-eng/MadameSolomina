@@ -35,6 +35,7 @@
         'pf_trades_hidden_v1',  // свёрнутость истории сделок
         'pf_rebal_params',      // параметры ребаланса (налог/комиссия/период)
         'sl_checked_v1',        // отмеченные строки покупок
+        'nw_read_v1',           // прочитанные новости «Новостей по позициям» (Д2, пишет portfolios-widgets.js)
         'invest_settings',      // параметры расчёта
         'portfolio_snapshot',   // рассчитанный портфель
         'msolominа_state'       // состояние калькулятора (app-state.js)
