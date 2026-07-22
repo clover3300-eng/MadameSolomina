@@ -129,6 +129,12 @@
                 '" onclick="pfCardRange(\'' + p.id + '\',\'' + x[0] + '\')">' + x[1] + '</button>';
         }).join('') + '</span>';
     }
+    // чип сравнения на графике: цикл выкл → индекс → депозит → выкл; setBenchMode
+    // сам перерисует график (и чип вместе с ним) через loadPfChart/repaintCharts
+    window.pfCardBench = function (pid) {
+        var m = PF.benchMode(pid);
+        PF.setBenchMode(pid, m === 'off' ? 'idx' : m === 'idx' ? 'dep' : 'off');
+    };
     // смена периода: точечно (подсветка сегментов + перерисовка графика и дельты
     // ЭТОЙ карточки), без PF.renderPortfolios — полный своп мигает всеми графиками
     window.pfCardRange = function (pid, r) {

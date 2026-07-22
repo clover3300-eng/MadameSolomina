@@ -369,6 +369,15 @@ body.dark-mode .pfcv-payf { border-color: #34d399; }
 .pfcv-futlbl i.s { font-weight: 700; color: #16a34a; }
 body.dark-mode .pfcv-futlbl { color: #8b98ad; background: color-mix(in srgb, #1a232f 84%, transparent); }
 body.dark-mode .pfcv-futlbl i.s { color: #34d399; }
+/* чип сравнения (правый верхний угол графика): выкл — тихий «⇄ сравнить»,
+   вкл — легенда пунктира: образец линии + имя бенчмарка + его % за период */
+.pfcv-benchchip { position: absolute; top: 8px; right: 10px; z-index: 6; display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; color: #94a3b8; background: color-mix(in srgb, #fff 72%, transparent); border: 1px dashed rgba(15,23,42,0.14); border-radius: 8px; padding: 3px 8px; cursor: pointer; backdrop-filter: blur(2px); transition: color 0.15s, border-color 0.15s, background 0.15s; }
+.pfcv-benchchip:hover { color: #0f172a; border-color: rgba(15,23,42,0.3); }
+.pfcv-benchchip.on { color: #475569; border-style: solid; border-color: rgba(15,23,42,0.14); }
+.pfcv-benchchip i { width: 14px; height: 0; border-top: 2px dashed #94a3b8; opacity: 0.85; }
+body.dark-mode .pfcv-benchchip { color: #67748a; background: color-mix(in srgb, #1a232f 72%, transparent); border-color: rgba(255,255,255,0.14); }
+body.dark-mode .pfcv-benchchip:hover { color: #e8eef7; border-color: rgba(255,255,255,0.3); }
+body.dark-mode .pfcv-benchchip.on { color: #9fb0c4; }
 /* пульс «сейчас» на последней точке кривой */
 .pfcv-pulse { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: var(--pf-accent); transform: translate(-50%, -50%); z-index: 5; pointer-events: none; }
 .pfcv-pulse::after { content: ''; position: absolute; inset: -3px; border-radius: 50%; border: 1.5px solid var(--pf-accent); animation: pfcPulse 2s ease-out infinite; }
@@ -742,6 +751,7 @@ body.dark-mode .pfc-rebal { background: #e8eef7; border-color: #e8eef7; color: #
     .pfc-day { font-size: 12.5px; padding: 5px 9px; }
     .pfc-mchart-plot { height: 140px; margin: 22px -14px 0; }
     .pfcv-ext, .pfcv-pay b, .pfcv-futlbl { display: none; }
+    .pfcv-benchchip { font-size: 9px; padding: 2px 6px; gap: 5px; }
     /* KPI 2×2: разделители только между колонками, строки разведены отступом */
     .pfc-stats2 { grid-template-columns: 1fr 1fr; row-gap: 14px; }
     .pfc-stat2:nth-child(odd) { border-left: 0; }

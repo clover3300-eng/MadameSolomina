@@ -559,6 +559,14 @@
     // (решение по вопросу 2 плана PF-CARD). Флаг хранится в памяти сессии.
     function benchOn(pid) { return !!chartImoex[pid]; }
     function setBench(pid, on) { chartImoex[pid] = !!on; loadPfChart(pid); }
+    // Режим сравнения карточки (чип на графике «Табло», 2026-07-22):
+    // 'off' — только портфель; 'idx' — индекс (IMOEX, для чисто облигационного —
+    // RGBI, решает pfBench); 'dep' — «Депозит»: капитализация ставки RUSFAR, как
+    // линия «Депозит» вкладки «Тест». Хранится в том же chartImoex (false|true|'dep'),
+    // поэтому тумблер подвкладки «Портфель» (setBench) остаётся совместим: 'dep' для
+    // него «включено», выключение сбрасывает оба.
+    function benchMode(pid) { return chartImoex[pid] === 'dep' ? 'dep' : (chartImoex[pid] ? 'idx' : 'off'); }
+    function setBenchMode(pid, mode) { chartImoex[pid] = mode === 'dep' ? 'dep' : mode === 'idx'; loadPfChart(pid); }
     PF.chartCache = {};     // pid → { imoex, points, pfFinal, imFinal, from, err }
     PF.chartRaw = {};       // pid → { from, series } — сырая серия стоимости (кеш под toggle IMOEX)
     var chartBusy = {};      // pid → идёт загрузка (защита от двойного запроса)
@@ -650,10 +658,15 @@
     }
     function loadPfChart(pid) {
         var p = findPf(pid); if (!p) return;
-        var wantImoex = !!chartImoex[pid];
-        var bench = pfBench(p);
+        var mode = benchMode(pid);
+        var wantImoex = mode !== 'off';
+        // «Депозит» — не индекс цен, а капитализация ставки RUSFAR (формула линии
+        // «Депозит» вкладки «Тест», btAttachDeposit); код бенчмарка в кеше — RUSFAR
+        var bench = mode === 'dep'
+            ? { code: 'RUSFAR', label: 'Депозит', full: 'депозит по ставке RUSFAR' }
+            : pfBench(p);
         var cached = PF.chartCache[pid];
-        if (cached && cached.imoex === wantImoex && cached.bench === bench.code && !cached.err) { repaintCharts(pid); return; }
+        if (cached && cached.imoex === wantImoex && (!wantImoex || cached.bench === bench.code) && !cached.err) { repaintCharts(pid); return; }
         if (chartBusy[pid]) return;
         if (typeof btBuildPortfolioSeries !== 'function') { PF.chartCache[pid] = { imoex: wantImoex, err: 'NO_BT' }; repaintCharts(pid); return; }
         var assets = pfChartAssets(p);
@@ -666,10 +679,33 @@
             : btBuildPortfolioSeries(assets, fromStr, tillStr).then(function (s) { PF.chartRaw[pid] = { from: fromStr, series: s }; return s; });
         pfPromise.then(function (pfSeries) {
             if (!pfSeries || pfSeries.length < 2) throw new Error('NO_PF');
-            if (wantImoex && typeof btFetchHistorySeries === 'function' && typeof btAlignReturns === 'function') {
+            if (mode === 'idx' && typeof btFetchHistorySeries === 'function' && typeof btAlignReturns === 'function') {
                 return btFetchHistorySeries('/iss/history/engines/stock/markets/index/securities/' + bench.code + '.json', fromStr, tillStr).then(function (im) {
                     var al = im && im.length ? btAlignReturns(pfSeries, im) : null;
                     return (al && al.points.length >= 2) ? { points: al.points, pfFinal: al.pfFinal, imFinal: al.imFinal } : pfOnlyPoints(pfSeries);
+                });
+            }
+            if (mode === 'dep' && typeof btFetchHistorySeries === 'function') {
+                return btFetchHistorySeries('/iss/history/engines/stock/markets/index/securities/RUSFAR.json', fromStr, tillStr).then(function (rates) {
+                    var res0 = pfOnlyPoints(pfSeries);
+                    if (rates && rates.length >= 2) {
+                        // капитализация дневной ставки по календарным дням (btAttachDeposit,
+                        // вкладка «Тест»); результат кладём в тот же канал .im — рисовалка
+                        // и перебазировка окна периода работают без изменений
+                        var pts0 = res0.points, ri = 0, rate = null, factor = 1, prevD = null;
+                        for (var i = 0; i < pts0.length; i++) {
+                            var dd = pts0[i].d;
+                            while (ri < rates.length && rates[ri].d <= dd) { rate = rates[ri].c; ri++; }
+                            if (prevD !== null && rate !== null) {
+                                var days = Math.round((new Date(dd) - new Date(prevD)) / 86400000);
+                                if (days > 0) factor *= Math.pow(1 + rate / 100, days / 365);
+                            }
+                            pts0[i].im = (factor - 1) * 100;
+                            prevD = dd;
+                        }
+                        res0.imFinal = pts0[pts0.length - 1].im;
+                    }
+                    return res0;
                 });
             }
             return pfOnlyPoints(pfSeries);
@@ -888,6 +924,22 @@
             }
             // пульс «сейчас» — карточка живая, а не нарисованная
             exHtml += '<span class="pfcv-pulse" style="left:' + pPts[N - 1].x.toFixed(2) + '%;top:' + pPts[N - 1].y.toFixed(2) + '%"></span>';
+            // чип сравнения (правый верхний угол): выкл → «⇄ сравнить», клик циклит
+            // выкл → индекс (IMOEX/RGBI по составу) → «Депозит» (RUSFAR) → выкл.
+            // Включённый чип — и легенда пунктирной линии: образец + финальный %
+            // бенчмарка В ОКНЕ выбранного периода (последняя точка перебазированной
+            // серии, а не глобальный imFinal)
+            if (showIm) {
+                var bLbl = data.bench === 'RUSFAR' ? 'Депозит' : (data.bench || 'IMOEX');
+                var imv = pts[N - 1].im, imTxt = '';
+                if (imv != null && isFinite(imv)) imTxt = ' ' + (imv >= 0 ? '+' : '−') + Math.abs(imv).toFixed(1).replace('.', ',') + '%';
+                exHtml += '<button class="pfcv-benchchip on" onclick="pfCardBench(\'' + pid + '\')" ' +
+                    'title="Сравнение: ' + (data.bench === 'RUSFAR' ? 'депозит по ставке RUSFAR (как линия «Депозит» в «Тесте»)' : 'индекс ' + data.bench) +
+                    ' за тот же период. Клик — следующий режим"><i></i>' + bLbl + imTxt + '</button>';
+            } else {
+                exHtml += '<button class="pfcv-benchchip" onclick="pfCardBench(\'' + pid + '\')" ' +
+                    'title="Наложить для сравнения индекс (IMOEX, для облигационного портфеля — RGBI) или депозит по ставке RUSFAR">⇄ сравнить</button>';
+            }
         }
         // шкала процентов слева: «красивые» деления между minV и maxV (выравнены по кривой)
         var yaxis = niceTicks(minV, maxV, 4).map(function (v) {
@@ -1302,6 +1354,7 @@
     // — график карточки —
     PF.dateToIso = dateToIso; PF.niceTicks = niceTicks; PF.pfBench = pfBench; PF.loadPfChart = loadPfChart; PF.drawPfChart = drawPfChart;
     PF.pfFirstBuyDate = pfFirstBuyDate; PF.chartBusy = chartBusy; PF.benchOn = benchOn; PF.setBench = setBench;
+    PF.benchMode = benchMode; PF.setBenchMode = setBenchMode;
     // — составы для импорта —
     PF.getCalcComposition = getCalcComposition; PF.getFavComposition = getFavComposition; PF.getMonthlyComposition = getMonthlyComposition; PF.compositionFrom = compositionFrom; PF.importName = importName;
     PF.fullBondId = fullBondId;
