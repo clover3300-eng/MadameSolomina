@@ -289,7 +289,10 @@
             if (PF.pftAfterRender) PF.pftAfterRender();   // терминал «Торговли»: поллинг только на живой подвкладке
             if (PF.pfcAfterRender) PF.pfcAfterRender();   // график свечей: живой canvas переезжает в свежий якорь
             if (PF.pftScreensSync) PF.pftScreensSync();   // парящая полоса экранов «Торговли» (в body, см. модуль)
-            pfdHeatRepaintSoon();   // блок «Карта рынка»: дорисовать живые плитки
+            // блок «Карта рынка»: живые плитки СИНХРОННО, до пейнта — иначе бокс
+            // мигает пустым на каждом ре-рендере вкладки (дебаунс 90мс остаётся
+            // только у ресайзов, см. pfdHeatRepaintSoon)
+            if (PF.pfdHeatRenderNow) PF.pfdHeatRenderNow(); else pfdHeatRepaintSoon();
             ensureLiveTick();
             var payBody = document.querySelector('.pf-paycal--cell .pfpc-body');
             if (payBody) window.pfPayCalScroll(payBody);   // начальное состояние затухания списка выплат

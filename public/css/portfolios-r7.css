@@ -1714,6 +1714,14 @@ body.dark-mode .pfd-item.pfd-thm-glass > .pfd-body > .dash2-card::before {
    заголовок оставался зажат между ним и кнопками — 123px на шапке в 398px, текст
    переносился в 5 строк, шапка вырастала до 127px. */
 .pfd-rmable > .pfd-body > .dash2-card > .pf-ch:has(.pfd-inchrome) { padding-right: 0; }
+/* В УЗКОМ виджете угловой резерв 78px съедает четверть шапки: подпись (.pf-ch-s)
+   переносилась задолго до правого края («Диверсификация» на span 3 — 240px текста
+   в карточке 350px). Резерв снимаем — подпись растекается во всю ширину карточки.
+   Безопасно: угловые шестерёнка/корзина проявляются только по hover и висят на
+   строке ЗАГОЛОВКА (top 15px), а короткие заголовки виджетов до них не дотягиваются. */
+@container pfw (max-width: 380px) {
+    .pfd-rmable > .pfd-body > .dash2-card > .pf-ch { padding-right: 0; }
+}
 /* тёмная тема сайта и тёмные/стеклянные виджеты: иконка чуть светлее, hover — индиго */
 body.dark-mode .pfd-cardcfg, .pfd-item.pfd-thm-dark .pfd-cardcfg { color: #5c6c82; }
 body.dark-mode .pfd-cardcfg:hover, body.dark-mode .pfd-item.pfd-cfgopen .pfd-cardcfg,
@@ -2426,6 +2434,11 @@ body.dark-mode .pfpl-sort-cap { color: #93a2b8; }
 #panel-portfolios .pf-ch > .pfd-inchrome ~ .pfhm-go,
 #panel-portfolios .pf-ch > .pfd-inchrome ~ .pff-add,
 #panel-portfolios .pf-ch > .pfd-inchrome ~ .pf-ch-go { margin-left: 8px; }
+/* «Избранное»: пара шестерёнка+корзина и «+» должны читаться ОДНИМ кластером —
+   набегало 29px (10px паддинг + 2px + flex-gap 12px + 8px margin) при 2px между
+   самими иконками (замечание 2026-07-22). Зазор вокруг разделителя — по 8px. */
+#panel-portfolios .pf-fav .pf-ch > .pfd-inchrome { padding-right: 8px; margin-right: 0; }
+#panel-portfolios .pf-fav .pf-ch > .pfd-inchrome ~ .pff-add { margin-left: -4px; }   /* flex-gap 12 − 4 = 8px после черты */
 .pfd-inbtn {
     width: 26px; height: 26px; border: 0; background: none; padding: 0; cursor: pointer; border-radius: 8px;
     display: inline-flex; align-items: center; justify-content: center; color: #c3cdd9;

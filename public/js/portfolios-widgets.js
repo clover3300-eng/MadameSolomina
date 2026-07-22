@@ -913,7 +913,11 @@
                 // кнопки конструктора — в потоке шапки ПЕРЕД «Открыть» (PFD_OWN_CHROME)
                 pfdInChromeHtml('heat') +
                 '<button class="d3-quick ghost pfhm-go" onclick="switchTab(\'market\')">Открыть' + GO_ARROW_SVG + '</button>') +
-            '<div class="pfhm-box"><div class="pfhm-state">Загружаем карту рынка…</div></div>' +
+            // заглушка «Загружаем…» — только при ПЕРВОЙ загрузке (данных ещё нет).
+            // При любом ре-рендере вкладки с закэшированными данными бокс остаётся
+            // пустым на долю кадра и тут же наполняется синхронно (pfdHeatRenderNow
+            // в renderPortfolios) — текст заглушки мигал бы на каждом переключении.
+            '<div class="pfhm-box">' + (pfdHeatW && pfdHeatC ? '' : '<div class="pfhm-state">Загружаем карту рынка…</div>') + '</div>' +
         '</div>';
     }
     // ---- собственный squarified-treemap (свои плитки, а не декоративный фон Главной):
@@ -1058,6 +1062,15 @@
         var box = document.querySelector('#pfWrap .pfhm-box'); if (!box) return;
         clearTimeout(pfdHeatT);
         pfdHeatT = setTimeout(pfdHeatRender, 90);
+    }
+    // Синхронная дорисовка ПОСЛЕ innerHTML-свопа вкладки (renderPortfolios): при
+    // закэшированных данных плитки встают в том же кадре, что и своп, — карта не
+    // мигает пустым боксом 90мс дебаунса на каждом переключении внутри страницы
+    // (сортировка «Избранного», тумблеры и т.п.). Без кэша — прежний путь с загрузкой.
+    function pfdHeatRenderNow() {
+        var box = document.querySelector('#pfWrap .pfhm-box'); if (!box) return;
+        clearTimeout(pfdHeatT);
+        pfdHeatRender();
     }
     // живое обновление карты: раз в 60с, только когда блок на экране и вкладка видна
     setInterval(function () {
@@ -2406,7 +2419,7 @@
     PF.newsHtmlCache = newsHtmlCache; PF.pfPlistSparksSoon = pfPlistSparksSoon; PF.pfd2 = pfd2; PF.pfdAllocCompute = pfdAllocCompute;
     PF.pfdAllocHtml = pfdAllocHtml; PF.pfdAllocScope = pfdAllocScope; PF.pfdCapChartHtml = pfdCapChartHtml; PF.pfdCapChartHtmlB = pfdCapChartHtmlB;
     PF.pfdCapMaybeRepaint = pfdCapMaybeRepaint; PF.pfdCapRepaint = pfdCapRepaint; PF.pfdCapSeries = pfdCapSeries; PF.pfdFlushNotes = pfdFlushNotes;
-    PF.pfdHeatHtml = pfdHeatHtml; PF.pfdHeatRepaintSoon = pfdHeatRepaintSoon; PF.pfdKpiHtml = pfdKpiHtml; PF.pfdNewsHtml = pfdNewsHtml;
+    PF.pfdHeatHtml = pfdHeatHtml; PF.pfdHeatRepaintSoon = pfdHeatRepaintSoon; PF.pfdHeatRenderNow = pfdHeatRenderNow; PF.pfdKpiHtml = pfdKpiHtml; PF.pfdNewsHtml = pfdNewsHtml;
     PF.pfdNewsList = pfdNewsList; PF.pfdNoteHtml = pfdNoteHtml; PF.pfdPanelActive = pfdPanelActive; PF.pfwAssetsHtml = pfwAssetsHtml;
     PF.pfwConcHtml = pfwConcHtml; PF.pfwIdxHtml = pfwIdxHtml; PF.pfwMoversHtml = pfwMoversHtml; PF.pfwOpsHtml = pfwOpsHtml;
     PF.pfwPassiveHtml = pfwPassiveHtml; PF.pfwPlistHtml = pfwPlistHtml; PF.pfwPstructHtml = pfwPstructHtml; PF.pfwPsumHtml = pfwPsumHtml;
