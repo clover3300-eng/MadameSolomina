@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Правый нижний угол · круглая кнопка «Добавить виджет»</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fT:Georgia,'Times New Roman',serif;
+  --fU:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --fN:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+  --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+         --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+}
+:root[data-theme="dark"]{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+       --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+:root[data-theme="light"]{ --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+       --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding:44px 0 90px;-webkit-font-smoothing:antialiased}
+.page{width:1440px;max-width:100%;margin:0 auto;padding:0 20px}
+
+/* ---------- документ ---------- */
+.doc-h{margin-bottom:34px}
+.doc-kicker{font-family:var(--fN);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--doc-acc);margin-bottom:9px}
+.doc-h h1{font-family:var(--fT);font-weight:400;font-size:38px;line-height:1.15;letter-spacing:-.01em;text-wrap:balance}
+.doc-h p{margin-top:12px;font-size:15px;line-height:1.6;color:var(--doc-mut);max-width:860px}
+.verdict{margin-top:20px;display:flex;gap:14px;align-items:flex-start;background:var(--doc-panel);border:1px solid var(--doc-line);border-left:3px solid var(--doc-acc);border-radius:14px;padding:16px 20px;max-width:940px}
+.verdict b{font-weight:700;color:var(--doc-ink)}
+.verdict p{margin:0;font-size:14.5px;line-height:1.6;color:var(--doc-quote)}
+.verdict p+p{margin-top:10px}
+
+.mk{margin-top:52px}
+.mk-h{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.mk-n{font-family:var(--fN);font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--doc-dim)}
+.mk-h h2{font-family:var(--fT);font-weight:400;font-size:25px}
+.mk-tag{font-family:var(--fU);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--doc-acc) 14%,transparent);color:var(--doc-acc)}
+.mk-tag.warn{background:rgba(217,119,6,.14);color:#c2760a}
+.mk-tag.mute{background:color-mix(in srgb,var(--doc-mut) 16%,transparent);color:var(--doc-mut)}
+.mk-sub{font-size:14px;color:var(--doc-mut);line-height:1.6;max-width:940px;margin-bottom:18px}
+.notes{margin-top:18px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px 26px}
+.note{display:flex;gap:9px;font-size:13px;line-height:1.5;color:var(--doc-quote)}
+.note i{flex:none;width:18px;height:18px;border-radius:50%;background:var(--doc-ink);color:var(--doc-bg);font-style:normal;font-family:var(--fN);font-size:10px;font-weight:700;display:grid;place-items:center;margin-top:1px}
+.scroller{overflow-x:auto;padding:4px 0 44px;margin-bottom:-32px}
+@media (max-width:1000px){ .notes{grid-template-columns:1fr} .doc-h h1{font-size:30px} }
+
+/* таблица «кнопка → куда переезжает» */
+.map{margin-top:20px;width:100%;border-collapse:collapse;font-size:13px;background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:12px;overflow:hidden}
+.map th{text-align:left;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--doc-dim);padding:10px 14px;border-bottom:1px solid var(--doc-line)}
+.map td{padding:9px 14px;border-bottom:1px solid var(--doc-line);color:var(--doc-quote);line-height:1.5;vertical-align:top}
+.map tr:last-child td{border-bottom:0}
+.map code{font-family:var(--fN);font-size:11.5px;background:color-mix(in srgb,var(--doc-acc) 9%,transparent);color:var(--doc-acc);padding:1px 5px;border-radius:5px}
+.map .ok{color:#16a34a;font-weight:700}
+.map .no{color:#c2760a;font-weight:700}
+
+/* ---------- экран ---------- */
+.scr{--ink:#0f172a; --mut:#64748b; --dim:#94a3b8; --line:#e7ecf3; --hair:rgba(15,23,42,.07);
+     --bg:#f4f6fa; --card:#fff; --acc:#4453ef; --grn:#16a34a; --red:#dc2626;
+     --glass:rgba(255,255,255,.72); --glassbrd:rgba(255,255,255,.55); --gsh:0 10px 24px -10px rgba(24,38,60,.35);
+     position:relative;background:var(--bg);color:var(--ink);border-radius:16px;overflow:hidden;
+     box-shadow:0 2px 4px rgba(15,23,42,.05),0 34px 70px -34px rgba(24,38,60,.4);border:1px solid rgba(15,23,42,.09);
+     padding:34px 40px;display:flex;gap:34px;align-items:flex-start;width:max-content;max-width:none;
+     font-family:var(--fU)}
+.scr.dark{--ink:#e8eef7;--mut:#8b98ad;--dim:#63718a;--line:rgba(255,255,255,.09);--hair:rgba(255,255,255,.08);
+          --bg:#0c1016;--card:#141a24;--acc:#6b7cff;--grn:#34d399;--red:#f87171;
+          --glass:rgba(30,41,59,.85);--glassbrd:rgba(255,255,255,.1);--gsh:0 10px 24px -10px rgba(0,0,0,.6)}
+
+/* сцена: фрагмент страницы, контролы прижаты к правому нижнему углу */
+.stage{position:relative;width:940px;height:330px;border-radius:14px;background:var(--bg);
+       border:1px solid var(--hair);overflow:hidden;flex:none}
+.stage.sm{width:452px;height:280px}
+.st-cap{position:absolute;left:14px;top:12px;font-size:10.5px;font-weight:800;letter-spacing:.08em;
+        text-transform:uppercase;color:var(--dim);z-index:5}
+
+/* призраки виджетов дашборда за контролами */
+.gh{position:absolute;border-radius:16px;background:var(--card);border:1px solid var(--line);padding:16px 18px}
+.gh i{display:block;border-radius:6px;background:color-mix(in srgb,var(--ink) 7%,transparent)}
+.gh .t{width:38%;height:13px;margin-bottom:13px;background:color-mix(in srgb,var(--ink) 11%,transparent)}
+.gh .l{height:8px;margin-top:9px}
+.gh .l.s{width:62%}
+
+/* --- стеклянный столбик (как #cornerStack) --- */
+.cap{position:absolute;right:22px;bottom:20px;width:46px;padding:3px;border-radius:23px;
+     display:flex;flex-direction:column;align-items:center;gap:2px;z-index:8;
+     background:var(--glass);border:1px solid var(--glassbrd);
+     backdrop-filter:blur(12px);box-shadow:var(--gsh)}
+.cb{position:relative;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;
+    color:var(--mut);flex:none}
+.cb svg{width:18px;height:18px;position:relative}
+.cb.widget{background:linear-gradient(#5b67f2,#4453ef);color:#fff;box-shadow:0 8px 18px -8px rgba(68,83,239,.85)}
+.cb .cur{position:absolute;inset:4px;border-radius:50%;border:1px solid color-mix(in srgb,var(--ink) 16%,transparent);background:#eef2f7}
+.scr.dark .cb .cur{background:#232f42}
+.chr{width:22px;height:1px;margin:3px 0;background:color-mix(in srgb,var(--ink) 12%,transparent);flex:none}
+
+/* --- панель действий (как #pfActBar) --- */
+.bar{position:absolute;bottom:20px;height:46px;padding:3px;border-radius:999px;z-index:8;
+     display:flex;align-items:center;gap:2px;
+     background:var(--glass);border:1px solid var(--glassbrd);
+     backdrop-filter:blur(12px);box-shadow:var(--gsh)}
+.ab{height:38px;padding:0 14px;border-radius:999px;display:inline-flex;align-items:center;gap:7px;
+    font-size:14px;font-weight:700;color:var(--mut);white-space:nowrap}
+.ab svg{width:16px;height:16px;flex:none}
+.ab.term{background:rgba(52,211,153,.16);color:#0f9d63}
+.scr.dark .ab.term{background:rgba(63,202,144,.16);color:#3fca90}
+.ab .cnt{font-family:var(--fN);font-size:11px;font-weight:700;background:color-mix(in srgb,var(--ink) 8%,transparent);
+         border-radius:999px;padding:2px 7px;color:var(--mut)}
+.ab .chev{width:12px;height:12px;opacity:.7}
+.abhr{width:1px;height:22px;margin:0 3px;background:color-mix(in srgb,var(--ink) 12%,transparent);flex:none}
+.abi{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:var(--mut);flex:none}
+.abi svg{width:18px;height:18px}
+
+/* --- большой круглый FAB «Добавить виджет»: 58px, парит НАД панелью --- */
+.fab{position:absolute;width:58px;height:58px;border-radius:50%;z-index:9;
+     display:grid;place-items:center;color:#fff;
+     background:linear-gradient(#5b67f2,#4453ef);
+     box-shadow:0 6px 14px -6px rgba(68,83,239,.55),0 18px 36px -12px rgba(68,83,239,.85)}
+.fab svg{width:24px;height:24px}
+
+/* спутники FAB (вариант Б): мелкие стеклянные кружки, выезжают вверх по ховеру */
+.sat{position:absolute;width:40px;height:40px;border-radius:50%;z-index:9;
+     display:grid;place-items:center;color:var(--mut);
+     background:var(--glass);border:1px solid var(--glassbrd);
+     backdrop-filter:blur(12px);box-shadow:var(--gsh)}
+.sat svg{width:18px;height:18px}
+
+/* мгновенный ярлычок (data-tip) слева от кнопки */
+.tip{position:absolute;right:calc(100% + 14px);top:50%;transform:translateY(-50%);
+     padding:5px 9px;border-radius:8px;white-space:nowrap;font-size:11.5px;font-weight:700;color:#fff;
+     background:rgba(19,26,43,.92);box-shadow:0 8px 18px -8px rgba(24,38,60,.5)}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="doc-h">
+  <div class="doc-kicker">Правый нижний угол · #cornerStack → круглая кнопка</div>
+  <h1>Столбик из пяти кнопок → один большой круглый «Виджет»</h1>
+  <p>Сейчас в углу «Портфелей» стеклянный столбик из пяти кнопок: Виджет, Раскладки, Замок,
+     Фон, Тема. Главная точка входа — добавить виджет — такой же кружок 38px, как смена фона.
+     Предложение: «Виджет» становится большим круглым FAB 58px и приподнимается над панелью
+     действий, а столбик сокращается до пары фон+тема — ровно такой же, как на всех
+     остальных вкладках.</p>
+  <div class="verdict">
+    <p><b>Куда деваются остальные кнопки:</b> Тема и Фон — никуда: остаются мини-столбиком
+       в самом углу, как на Рынке и Расчёте (их и было две до «Портфелей»). Переезжают только
+       страничные: Раскладки и Замок — в панель действий рядом с Видимостью и Бэкапом (вариант А)
+       или спутниками за самим FAB, по наведению (вариант Б).</p>
+    <p><b>Что сравнить:</b> А проще и всё на виду, но панель длиннее на ~120px.
+       Б оставляет панель как есть, но Раскладки и Замок скрыты за наведением на FAB.
+       Выбор между А и Б — ваше решение.</p>
+  </div>
+</div>
+
+<!-- ЭКРАН 0 -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">ЭКРАН 0</span><h2>Как сейчас</h2><span class="mk-tag mute">для сравнения</span></div>
+  <p class="mk-sub">Столбик из пяти кнопок высотой ~210px: синий «Виджет» теряется среди
+     одинаковых кружков, назначение читается только по ховер-ярлычкам. Рядом — панель действий
+     (Терминал · Портфель · Видимость · Бэкап).</p>
+  <div class="scroller"><div class="scr" id="m0"></div></div>
+</div>
+
+<!-- ЭКРАН 1 -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">ЭКРАН 1</span><h2>Вариант А — FAB над панелью, Раскладки и Замок в панели</h2><span class="mk-tag">основной вариант</span></div>
+  <p class="mk-sub">Круглая кнопка 58px парит над правым краем панели действий — единственный
+     цветной акцент угла, промахнуться мимо неё нельзя. Раскладки встают в панель рядом
+     с Видимостью, замок — икон-кнопкой в конце. В самом углу — привычная пара фон+тема.</p>
+  <div class="scroller"><div class="scr" id="m1"></div></div>
+  <div class="notes">
+    <div class="note"><i>1</i>FAB 58px против нынешних 38px: та же синяя заливка, тень глубже — кнопка «парит» в 12px над панелью.</div>
+    <div class="note"><i>2</i>Ярлычок «Добавить виджет» — мгновенный, слева, как у кнопок столбика сейчас (показан на макете).</div>
+    <div class="note"><i>3</i>«Раскладки» в панели — иконка-слайдеры + подпись; открытая панель раскладок подсвечивает кнопку.</div>
+    <div class="note"><i>4</i>Замок — круглая икон-кнопка 38px после Бэкапа, за волоском: он про приватность, а не про состав дашборда. Активный — зелёный, как сейчас.</div>
+    <div class="note"><i>5</i>Мини-столбик фон+тема не меняется вовсе — тот же, что на Рынке, Расчёте и Тесте.</div>
+    <div class="note"><i>6</i>У гостя и на гейте «Торговли» FAB и «Раскладки» не рисуются (конструктора нет) — остаются панель и фон+тема.</div>
+  </div>
+</div>
+
+<!-- ЭКРАН 2 -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">ЭКРАН 2</span><h2>Вариант Б — Раскладки и Замок за самим FAB</h2><span class="mk-tag mute">альтернатива</span></div>
+  <p class="mk-sub">Панель действий не меняется вовсе. По наведению на FAB из-под него
+     выезжают вверх два стеклянных спутника — Раскладки и Замок — с ярлычками слева
+     (тот же приём, что рейка образцов у кнопки фона). Слева — покой, справа — наведение.</p>
+  <div class="scroller"><div class="scr" id="m2"></div></div>
+  <div class="notes">
+    <div class="note"><i>1</i>В покое угол = FAB + пара фон+тема: три кружка вместо пяти, панель прежней длины.</div>
+    <div class="note"><i>2</i>Спутники проявляются вверх с каскадной задержкой, как образцы фона; клик по FAB по-прежнему открывает пикер виджетов.</div>
+    <div class="note"><i>3</i>Минус: Раскладки и Замок не видны, пока не наведёшься — для редких действий терпимо, но А честнее.</div>
+  </div>
+</div>
+
+<!-- ЭКРАН 3 -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">ЭКРАН 3</span><h2>Вариант А — тёмная тема</h2></div>
+  <p class="mk-sub">Стекло панели и мини-столбика глушится до тёмного, синий FAB остаётся
+     единственным цветовым акцентом угла.</p>
+  <div class="scroller"><div class="scr dark" id="m3"></div></div>
+</div>
+
+<!-- ЭКРАН 4 -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">ЭКРАН 4</span><h2>Прочие вкладки — без изменений</h2><span class="mk-tag warn">следствие</span></div>
+  <p class="mk-sub">На Рынке, Расчёте и Тесте угол уже такой, каким станет низ столбика
+     «Портфелей»: пара фон+тема. Ничего не переезжает и не пропадает — «Портфели» просто
+     перестают быть исключением с пятью кнопками.</p>
+  <div class="scroller"><div class="scr" id="m4"></div></div>
+</div>
+
+<!-- карта переездов -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">ИТОГ</span><h2>Кнопка → куда переезжает</h2></div>
+  <table class="map">
+    <tr><th>Кнопка столбика</th><th>Вариант А (основной)</th><th>Вариант Б (спутники)</th></tr>
+    <tr><td>Виджет <code>cstWidgetBtn</code></td><td class="ok">круглый FAB 58px над панелью действий</td><td class="ok">то же</td></tr>
+    <tr><td>Раскладки <code>pfLayoutsToggle</code></td><td>панель действий, между «Портфелем» и «Видимостью»</td><td>спутник FAB, по наведению</td></tr>
+    <tr><td>Замок «Скрывать суммы» <code>pfxToggleSums</code></td><td>панель действий, икон-кнопка после «Бэкапа»</td><td>спутник FAB, по наведению</td></tr>
+    <tr><td>Фон <code>#bgFab</code></td><td class="ok">остаётся в мини-столбике угла</td><td class="ok">то же</td></tr>
+    <tr><td>Тема <code>#themeFab</code></td><td class="ok">остаётся в мини-столбике угла</td><td class="ok">то же</td></tr>
+    <tr><td>Угол на прочих вкладках</td><td class="ok">как сейчас: фон+тема</td><td class="ok">как сейчас: фон+тема</td></tr>
+    <tr><td>Гость / гейт «Торговли»</td><td>FAB и «Раскладки» не рисуются; замок остаётся в панели</td><td>FAB не рисуется; замок — куда деть? (вопрос)</td></tr>
+    <tr><td>«Комета» обучения <code>pfxGhostClick</code></td><td>летит в FAB — цель стала только заметнее</td><td>то же</td></tr>
+  </table>
+</div>
+
+</div>
+<script>
+/* ---------- иконки (1в1 из кода проекта, где они там есть) ---------- */
+var I = {
+  widget:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6"/><line x1="17.25" y1="3.2" x2="17.25" y2="10.3"/><line x1="13.7" y1="6.75" x2="20.8" y2="6.75"/></svg>',
+  sliders:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="8" x2="14" y2="8"/><line x1="18" y1="8" x2="20" y2="8"/><circle cx="16" cy="8" r="2"/><line x1="4" y1="16" x2="6" y2="16"/><line x1="10" y1="16" x2="20" y2="16"/><circle cx="8" cy="16" r="2"/></svg>',
+  unlock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 7.7-1.5"/></svg>',
+  term:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H4v5M15 4h5v5M15 20h5v-5M9 20H4v-5"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  eye:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+  shield:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+  chev:'<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>',
+  moon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
+  wave:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8c2.5-2.6 5-2.6 7.5 0S15 10.6 17.5 8 22 5.4 22 8"/><path d="M2 16c2.5-2.6 5-2.6 7.5 0s5 2.6 7.5 0 4.5-2.6 4.5 0"/></svg>'
+};
+
+/* ---------- призраки дашборда за контролами ---------- */
+function ghosts(){
+  return '<div class="gh" style="left:26px;top:34px;width:560px;bottom:-30px"><i class="t"></i><i class="l"></i><i class="l s"></i><i class="l"></i><i class="l s"></i></div>' +
+         '<div class="gh" style="right:26px;top:34px;width:300px;height:130px"><i class="t"></i><i class="l"></i><i class="l s"></i></div>' +
+         '<div class="gh" style="right:26px;top:178px;width:300px;bottom:-30px"><i class="t"></i><i class="l"></i><i class="l s"></i></div>';
+}
+function ghostsSm(){
+  return '<div class="gh" style="left:20px;top:30px;right:110px;bottom:-30px"><i class="t"></i><i class="l"></i><i class="l s"></i><i class="l"></i></div>';
+}
+function cb(cls, icon, extra){ return '<span class="cb ' + (cls||'') + '">' + (extra||'') + icon + '</span>'; }
+
+/* ---------- узлы угла ---------- */
+/* столбик «как сейчас»: Виджет · Раскладки · Замок · черта · Фон · Тема */
+function capNow(withTip){
+  return '<div class="cap">' +
+    cb('widget', I.widget, withTip ? '<span class="tip">Добавить виджет</span>' : '') +
+    cb('', I.sliders) +
+    cb('', I.unlock) +
+    '<span class="chr"></span>' +
+    cb('', I.wave, '<span class="cur"></span>') +
+    cb('', I.moon) +
+  '</div>';
+}
+/* мини-столбик прочих вкладок: только Фон · Тема — он же низ угла в А и Б */
+function capGlobal(){
+  return '<div class="cap">' + cb('', I.wave, '<span class="cur"></span>') + cb('', I.moon) + '</div>';
+}
+/* панель действий; mode: 'now' | 'a' (с Раскладками и замком) */
+function bar(mode, right){
+  var inner = '<span class="ab term">' + I.term + 'Терминал</span><span class="abhr"></span>' +
+    '<span class="ab">' + I.plus + 'Портфель</span>' +
+    (mode === 'a' ? '<span class="ab">' + I.sliders + 'Раскладки</span>' : '') +
+    '<span class="ab">' + I.eye + 'Видимость <span class="cnt">2/3</span>' + I.chev + '</span>' +
+    '<span class="ab">' + I.shield + 'Бэкап' + I.chev + '</span>' +
+    (mode === 'a' ? '<span class="abhr"></span><span class="abi">' + I.unlock + '</span>' : '');
+  return '<div class="bar" style="right:' + right + 'px">' + inner + '</div>';
+}
+/* FAB: right — прижат к правому краю панели действий; bottom 78 = панель 46 на
+   bottom 20 + зазор 12 (кнопка «парит» над панелью) */
+function fab(right, withTip){
+  return '<span class="fab" style="right:' + right + 'px;bottom:78px">' +
+    (withTip ? '<span class="tip">Добавить виджет</span>' : '') + I.widget + '</span>';
+}
+/* спутники варианта Б: над FAB, с ярлычками */
+function sats(right){
+  var cx = right + 9;   /* центрируем 40px спутник по оси 58px FAB */
+  return '<span class="sat" style="right:' + cx + 'px;bottom:146px"><span class="tip">Раскладки</span>' + I.sliders + '</span>' +
+         '<span class="sat" style="right:' + cx + 'px;bottom:194px"><span class="tip">Скрывать суммы</span>' + I.unlock + '</span>';
+}
+
+function stage(cls, cap, html){
+  return '<div class="stage' + (cls ? ' ' + cls : '') + '">' +
+    (cap ? '<span class="st-cap">' + cap + '</span>' : '') + html + '</div>';
+}
+
+/* ---------- ЭКРАН 0: как сейчас ---------- */
+document.getElementById('m0').innerHTML =
+  stage('', 'Портфели · Обзор — сейчас', ghosts() + bar('now', 80) + capNow(true));
+
+/* ---------- ЭКРАН 1: вариант А ---------- */
+/* мини-столбик фон+тема в углу (right 22), панель за ним (right 80),
+   FAB над правым краем панели */
+document.getElementById('m1').innerHTML =
+  stage('', 'Портфели · Обзор — вариант А', ghosts() + bar('a', 80) + capGlobal() + fab(80, true));
+
+/* ---------- ЭКРАН 2: вариант Б — спутники ---------- */
+document.getElementById('m2').innerHTML =
+  stage('sm', 'Покой', ghostsSm() + bar('now', 80) + capGlobal() + fab(80, false)) +
+  stage('sm', 'Наведение на кнопку', ghostsSm() + bar('now', 80) + capGlobal() + fab(80, true) + sats(80));
+
+/* ---------- ЭКРАН 3: вариант А, тёмная ---------- */
+document.getElementById('m3').innerHTML =
+  stage('', 'Портфели · Обзор — вариант А, тёмная тема', ghosts() + bar('a', 80) + capGlobal() + fab(80, false));
+
+/* ---------- ЭКРАН 4: прочие вкладки ---------- */
+document.getElementById('m4').innerHTML =
+  stage('sm', 'Рынок, Расчёт, Тест — сейчас', ghostsSm() + capGlobal()) +
+  stage('sm', 'Рынок, Расчёт, Тест — станет', ghostsSm() + capGlobal());
+</script>
+</body>
+</html>
