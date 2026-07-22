@@ -1222,7 +1222,10 @@
                 '<b class="nwd-tk">' + esc(x.tk) + '</b>' + nwChgHtml(x.chg, 'nwd-chg') + '</button>' + news + '</div>';
     }
     // лента «Все»: группы Сегодня/Вчера/Ранее по дате свежей новости, затем
-    // «Пока без новостей» и «Загружается» — уже показанные строки не прыгают
+    // «Пока без новостей» и «Загружается» — уже показанные строки не прыгают.
+    // Лента укорочена до NW_FEED_MAX строк: остальное рассказывает полоса-сторис,
+    // а плеер, открываясь на месте ленты, не дёргает высоту виджета
+    var NW_FEED_MAX = 2;
     function nwFeedHtml(list) {
         var g = { s: [], v: [], r: [], n: [], l: [] };
         list.forEach(function (x) {
@@ -1234,11 +1237,12 @@
         });
         var dOf = function (x) { var e = newsHtmlCache[x.tk]; return (e && e.items && e.items[0]) ? e.items[0].date : 0; };
         var by = function (a, b) { return dOf(b) - dOf(a); };
-        var out = '';
+        var out = '', left = NW_FEED_MAX;
         var sect = function (t, arr, quiet) {
-            if (!arr.length) return;
+            if (!arr.length || left <= 0) return;
+            var take = arr.slice(0, left); left -= take.length;
             out += '<div class="nwd-day' + (quiet ? ' quiet' : '') + '"><b>' + t + '</b></div>' +
-                arr.map(function (x) { return nwRowHtml(x); }).join('');
+                take.map(function (x) { return nwRowHtml(x); }).join('');
         };
         sect('Сегодня', g.s.sort(by)); sect('Вчера', g.v.sort(by)); sect('Ранее', g.r.sort(by), true);
         sect('Пока без новостей', g.n, true); sect('Загружается', g.l, true);
