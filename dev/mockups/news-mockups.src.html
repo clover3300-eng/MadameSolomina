@@ -308,6 +308,33 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .nw.narrow .nws-fh span{white-space:normal}
 
 /* ======================================================================
+   Д3 — «ТИШИНА» (nwq-*): лента не живёт на «Обзоре» постоянно
+   ====================================================================== */
+/* тихий виджет: полоса — нижний ярус, волосок дальше несут сами строки-двери */
+.nw.quiet .nws-strip{border-bottom:0;padding-bottom:4px}
+/* Т2: строка-дайджест — одна важнейшая непрочитанная, хвост «ещё N» зовёт в плеер */
+.nwq-dg{display:flex;align-items:center;gap:9px;margin-top:2px;padding:12px 2px 1px;border-top:1px solid var(--hair)}
+.nwq-dot{width:7px;height:7px;border-radius:50%;background:var(--acc);flex:none}
+.nwq-tk{font-family:var(--fN);font-size:11.5px;font-weight:700;flex:none}
+.nwq-dg .nw-nt{flex:1 1 auto;min-width:0}
+.nwq-more{margin-left:12px;flex:none;display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--mut);white-space:nowrap}
+.nwq-more svg{width:12px;height:12px;color:var(--dim)}
+/* Т3: «дверь» хроники — свёрнутая строка, раскрытая получает шеврон вниз */
+.nwq-ch{display:flex;align-items:center;gap:8px;margin-top:2px;padding:12px 2px 1px;border-top:1px solid var(--hair);font-size:11.5px;font-weight:600;color:var(--mut);line-height:1}
+.nwq-ch svg{width:12px;height:12px;color:var(--dim);flex:none}
+.nwq-ch.open svg{transform:rotate(90deg)}
+.nwq-ch .nwq-n{font-family:var(--fN);font-size:11px;font-weight:700;color:var(--ink)}
+.nwq-ch .nwq-tail{margin-left:auto;font-family:var(--fN);font-size:10.5px;font-weight:600;color:var(--acc)}
+.nwq-ch.open .nwq-tail{color:var(--dim)}
+/* тихое «всё прочитано»: одна строка с галочкой вместо дайджеста */
+.nwq-zero{display:flex;align-items:center;gap:8px;margin-top:2px;padding:12px 2px 1px;border-top:1px solid var(--hair);font-size:11.5px;font-weight:600;color:var(--dim);line-height:1.4}
+.nwq-zero svg{width:12px;height:12px;color:var(--grn);flex:none}
+/* узкий тихий: дайджест переносит заголовок в две строки */
+.nw.narrow .nwq-dg{flex-wrap:wrap;gap:7px 9px}
+.nw.narrow .nwq-dg .nw-nt{flex:1 1 100%;order:3;white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.nw.narrow .nwq-more{margin-left:auto}
+
+/* ======================================================================
    «КАК СЕЙЧАС» (cur-*) — для сравнения
    ====================================================================== */
 .cur{width:640px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px 22px 16px;
@@ -551,6 +578,78 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   <div class="scroller"><div class="scr" id="m13"></div></div>
 </div>
 
+<!-- Д3: ЛЕНТА — ШУМ -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">Д3</span><h2>«Тишина»: лента не живёт на «Обзоре» постоянно</h2><span class="mk-tag">новый раунд</span></div>
+  <p class="mk-sub">Д2 реализован — и выяснилось: лента «Все» под полосой шумит. Шесть строк текста стоят
+     на «Обзоре» всегда, хотя читают новости через плеер и фокус — лента дублирует их и спорит
+     за внимание с героем страницы. Три способа убрать шум, по нарастанию радикальности:
+     <b>Т3</b> — лента за «дверью» (свёрнута по умолчанию, раскрывается кликом),
+     <b>Т2</b> — вместо ленты одна строка-дайджест по скорингу из варианта В,
+     <b>Т1</b> — полоса и есть весь виджет. Во всех трёх плеер, фокус, счётчик «новых»
+     и «Прочитать всё» работают как сейчас — читать есть где, текст просто не стоит на странице.</p>
+</div>
+
+<!-- ЭКРАН 14 -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">ЭКРАН 14</span><h2>Т1 — «только полоса» против реализованного Д2</h2><span class="mk-tag warn">радикальный</span></div>
+  <p class="mk-sub">Слева — как реализовано (полоса + постоянная лента), справа — Т1: виджет заканчивается полосой.
+     Высота падает втрое, «Обзор» дышит. Кольца и счётчик уже говорят «что нового», клик по кольцу —
+     плеер, по имени — фокус: оба и сейчас рисуются на месте ленты, ничего не переделывается.</p>
+  <div class="scroller"><div class="scr" id="m14"></div></div>
+  <div class="notes">
+    <div class="note"><i>1</i>Реализация — вычитание: d2Feed не рендерится в режиме «Все». Плеер и фокус уже живут под полосой (экраны 10–11), им лента не нужна.</div>
+    <div class="note"><i>2</i>Минус: без текста не решить «стоит ли открывать» — кольца называют бумагу, но не событие. Это лечит Т2.</div>
+    <div class="note"><i>3</i>В высоком слоте конструктора виджет не тянется пустотой — контент подстраивается под размер, лишняя высота уходит соседям.</div>
+  </div>
+</div>
+
+<!-- ЭКРАН 15 -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">ЭКРАН 15</span><h2>Т2 — полоса + строка-дайджест</h2><span class="mk-tag">рекомендация</span></div>
+  <p class="mk-sub">Под полосой — ровно одна строка: самая важная непрочитанная новость (скоринг варианта В:
+     вес позиции × |движение| × свежесть), хвост «ещё 4 ›» открывает плеер с этой новости.
+     Виджет отвечает «что случилось главного» без чтения, но не превращается в ленту:
+     одна строка — это подпись, а не список.</p>
+  <div class="scroller"><div class="scr" id="m15"></div></div>
+  <div class="notes">
+    <div class="note"><i>1</i>Скоринг — чистая функция от уже собранного (map[tk].val, quotes[tk].chgPct, даты из кэша новостей): ни одного нового запроса, считается среди непрочитанных.</div>
+    <div class="note"><i>2</i>Клик по строке — плеер с этой новости (не Smart-Lab сразу): дочитал — сегменты повели дальше. «Ещё 4» — остальные непрочитанные.</div>
+    <div class="note"><i>3</i>Прочитал всё — строка меняется на тихую «Вы в курсе всего» с галочкой (экран 18): виджет не пустеет, но и не зовёт.</div>
+  </div>
+</div>
+
+<!-- ЭКРАН 16 -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">ЭКРАН 16</span><h2>Т3 — хроника за «дверью»</h2><span class="mk-tag mute">консервативный</span></div>
+  <p class="mk-sub">Лента остаётся, но по умолчанию свёрнута в строку-«дверь»: «Хроника · 6 новостей · 4 новых».
+     Клик раскрывает знакомую ленту Д2 целиком (справа), повторный — сворачивает; состояние
+     запоминается на виджете. Для тех, кто ленту любит: ничего не отнимаем, просто не навязываем.</p>
+  <div class="scroller"><div class="scr" id="m16"></div></div>
+  <div class="notes">
+    <div class="note"><i>1</i>Открытость — настройка конкретного виджета в pf_dash_v1 (как прочий стейт конструктора), не глобальный ключ: на разных раскладках можно по-разному.</div>
+    <div class="note"><i>2</i>«4 новых» в двери — акцентным моно: дверь и есть ответ «есть ли что читать». Раскрытая лента — d2Feed без изменений.</div>
+    <div class="note"><i>3</i>Совместимо с Т2: дверь может стоять ПОД строкой-дайджестом. Но два яруса-крючка — уже перебор, выбрать одно.</div>
+  </div>
+</div>
+
+<!-- ЭКРАН 17 -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">ЭКРАН 17</span><h2>Тёмная тема Д3</h2></div>
+  <p class="mk-sub">Т2 и Т1 на тёмном: дайджест-строка с акцентной точкой непрочитанного, дверь хроники
+     с акцентным счётчиком. Полоса и плеер — как на экране 12, без изменений.</p>
+  <div class="scroller"><div class="scr dark" id="m17"></div></div>
+</div>
+
+<!-- ЭКРАН 18 -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">ЭКРАН 18</span><h2>Узкая колонка и «всё прочитано»</h2><span class="mk-tag warn">адаптация</span></div>
+  <p class="mk-sub">Слева — узкий Т2: заголовок дайджеста переносится в две строки, «ещё N ›» уходит вправо,
+     ничего не клипуется. Справа — тихое «всё прочитано»: кольца серые, вместо дайджеста одна строка
+     с галочкой «Вы в курсе всего» — без пустого центра и без призыва.</p>
+  <div class="scroller"><div class="scr" id="m18"></div></div>
+</div>
+
 <!-- карта данных -->
 <div class="mk">
   <div class="mk-h"><span class="mk-n">ДАННЫЕ</span><h2>Поле макета → откуда берётся</h2></div>
@@ -573,6 +672,9 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <tr><td>Порядок полосы + счётчик «новых» (Д2)</td><td>непрочитанное из <code>nw_read_v1</code> × вес <code>map[tk].val</code>; счётчик — сумма непрочитанных</td><td class="no">вычисляется, новое</td></tr>
     <tr><td>Плеер: сегменты, автопереход, клавиатура (Д2)</td><td>чистый UI-стейт поверх расширенного кэша новостей — ни одного нового запроса</td><td class="no">новый стейт</td></tr>
     <tr><td>Точки портфелей в мете строки (Д2)</td><td><code>map[tk].pfs</code> — цвет точкой, имя портфеля в <code>title</code>; график/позиция/кнопки из фокуса и плеера убраны по замечанию 2026-07-22</td><td class="ok">да</td></tr>
+    <tr><td>Т1: виджет без ленты</td><td>вычитание: в режиме «Все» не рендерить ленту; плеер и фокус уже рисуются на её месте</td><td class="ok">всё готово</td></tr>
+    <tr><td>Т2: строка-дайджест</td><td>скоринг варианта В среди непрочитанных: <code>map[tk].val</code> × <code>|quotes[tk].chgPct|</code> × свежесть; клик — плеер с этой новости</td><td class="no">вычисляется, новое</td></tr>
+    <tr><td>Т3: открытость «двери» хроники</td><td>стейт конкретного виджета в <code>pf_dash_v1</code> (как прочие настройки конструктора), не глобальный ключ</td><td class="no">новый стейт</td></tr>
   </table>
 </div>
 
@@ -911,6 +1013,45 @@ function d2NarrowZero(){
     '<div class="nw-list">' + rows + '</div></div>';
 }
 
+/* ---------- Д3: «тишина» ---------- */
+/* Т1: полоса — весь виджет; лента не рендерится, плеер/фокус — на её месте по клику */
+function d3T1(cls){
+  return '<div class="nw quiet' + (cls ? ' ' + cls : '') + '">' +
+    headHtml('полоса — весь виджет: кольцо зовёт в плеер, лента не занимает «Обзор»') +
+    d2Bar(5) + d2Strip({ sel:null }) + '</div>';
+}
+/* Т2: полоса + одна строка-дайджест (скоринг варианта В среди непрочитанных) */
+function d3Digest(){
+  var d = ROWS[0];
+  return '<div class="nwq-dg"><span class="nwq-dot"></span><b class="nwq-tk">' + d.tk + '</b>' +
+    '<div class="nw-nt">' + d.nt + '</div>' +
+    '<span class="nwq-more">ещё 4' + CHEV_R + '</span></div>';
+}
+function d3T2(cls){
+  return '<div class="nw quiet' + (cls ? ' ' + cls : '') + '">' +
+    headHtml('одна строка вместо ленты: самая важная непрочитанная, клик — плеер с неё') +
+    d2Bar(5) + d2Strip({ sel:null }) + d3Digest() + '</div>';
+}
+/* Т2, всё прочитано: тихая строка с галочкой вместо дайджеста */
+function d3T2Zero(cls){
+  return '<div class="nw quiet' + (cls ? ' ' + cls : '') + '">' +
+    headHtml('всё прочитано: кольца гаснут, вместо дайджеста — тихая строка') +
+    d2Strip({ sel:null, allRead:true }) +
+    '<div class="nwq-zero">' + CHECK + 'Вы в курсе всего — новые новости появятся здесь</div></div>';
+}
+/* Т3: «дверь» хроники — свёрнута по умолчанию, раскрытая отдаёт ленту Д2 целиком */
+function d3Door(open){
+  return '<div class="nwq-ch' + (open ? ' open' : '') + '">' + CHEV_R +
+    '<span>Хроника</span><span class="nwq-n">6</span><span>новостей за неделю</span>' +
+    '<span class="nwq-tail">' + (open ? 'свернуть' : '4 новых') + '</span></div>';
+}
+function d3T3(open, cls){
+  return '<div class="nw quiet' + (cls ? ' ' + cls : '') + '">' +
+    headHtml(open ? 'дверь раскрыта: знакомая лента Д2, повторный клик сворачивает'
+                  : 'лента за дверью: строка-«Хроника» раскрывает её по клику, состояние запоминается') +
+    d2Bar(5) + d2Strip({ sel:null }) + d3Door(open) + (open ? d2Feed() : '') + '</div>';
+}
+
 /* ---------- «как сейчас» ---------- */
 function curWidget(){
   var chips = '<span class="cur-pk on">Все</span>' + ROWS.map(function (d) {
@@ -947,6 +1088,11 @@ document.getElementById('m10').innerHTML = d2Player('');
 document.getElementById('m11').innerHTML = d2Focus('');
 document.getElementById('m12').innerHTML = d2Overview('') + d2Player('');
 document.getElementById('m13').innerHTML = d2NarrowUnread() + d2NarrowZero();
+document.getElementById('m14').innerHTML = d2Overview('') + d3T1('');
+document.getElementById('m15').innerHTML = d3T2('');
+document.getElementById('m16').innerHTML = d3T3(false, '') + d3T3(true, '');
+document.getElementById('m17').innerHTML = d3T2('') + d3T1('');
+document.getElementById('m18').innerHTML = d3T2('narrow') + d3T2Zero('narrow');
 </script>
 </body>
 </html>
