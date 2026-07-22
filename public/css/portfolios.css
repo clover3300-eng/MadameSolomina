@@ -2937,12 +2937,18 @@ body.dark-mode .pfhm-pv-hint { border-top-color: rgba(255, 255, 255, 0.12); colo
     border-bottom: 1px solid rgba(15, 23, 42, 0.07); overflow-x: auto; scrollbar-width: none; }
 .pf-newsblk .nws-strip::-webkit-scrollbar { display: none; }
 .pf-newsblk .nws-it { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 54px; flex: none; }
-.pf-newsblk .nws-ava { position: relative; width: 44px; height: 44px; border-radius: 50%; border: 0; cursor: pointer; display: grid; place-items: center;
-    font-family: Georgia, 'Times New Roman', serif; font-size: 17px; line-height: 1; color: #fff; padding: 0;
-    box-shadow: 0 0 0 2px #fff, 0 0 0 4px #e7ecf3; transition: box-shadow 0.15s, transform 0.12s; }
+/* R11 (мокап «Обзора» 2026-07-22): монограммы в один цвет — бумага/линия/чернила
+   вместо пяти цветных подложек favLogoColor; цвет остался только у сигналов:
+   кольцо и счётчик непрочитанного — акцент, изменение дня — зелёный/красный.
+   Прочитанные бумаги гаснут до полупрозрачного контура. */
+.pf-newsblk .nws-ava { position: relative; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: grid; place-items: center;
+    font-family: Georgia, 'Times New Roman', serif; font-size: 17px; line-height: 1; color: #1b2433; padding: 0;
+    background: #eef2f7; border: 1px solid rgba(15, 23, 42, 0.08); transition: box-shadow 0.15s, transform 0.12s, opacity 0.15s; }
 .pf-newsblk .nws-ava:hover { transform: scale(1.05); }
+.pf-newsblk .nws-it:not(.unread):not(.sel) .nws-ava { opacity: 0.55; }
+.pf-newsblk .nws-it:not(.unread):not(.sel) .nws-ava:hover { opacity: 1; }
 .pf-newsblk .nws-it.unread .nws-ava { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--pf-accent); }
-.pf-newsblk .nws-cnt, .pf-newsblk .nws-del { position: absolute; top: -4px; right: -6px; min-width: 17px; height: 17px; border-radius: 999px; background: #141b26; color: #fff;
+.pf-newsblk .nws-cnt, .pf-newsblk .nws-del { position: absolute; top: -4px; right: -6px; min-width: 17px; height: 17px; border-radius: 999px; background: var(--pf-accent); color: #fff;
     font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 9.5px; font-weight: 700; font-style: normal; display: grid; place-items: center; padding: 0 4px; box-shadow: 0 0 0 2px #fff; }
 .pf-newsblk .nws-del { background: #64748b; font-size: 11px; cursor: pointer; }
 .pf-newsblk .nws-del:hover { background: #d64545; }
@@ -3000,7 +3006,8 @@ body.dark-mode .pfhm-pv-hint { border-top-color: rgba(255, 255, 255, 0.12); colo
 .pf-newsblk .nwp-segs i.done { background: rgba(15, 23, 42, 0.55); }
 .pf-newsblk .nwp-segs i.now { background: var(--pf-accent); }
 .pf-newsblk .nwp-head { display: flex; align-items: center; gap: 9px; margin-bottom: 11px; }
-.pf-newsblk .nwp-ava { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #fff; flex: none; }
+.pf-newsblk .nwp-ava { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-family: Georgia, 'Times New Roman', serif; font-size: 13px; color: #1b2433;
+    background: #eef2f7; border: 1px solid rgba(15, 23, 42, 0.08); flex: none; }
 .pf-newsblk .nwp-ava.mini { width: 20px; height: 20px; font-size: 9px; }
 .pf-newsblk .nwp-head b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12.5px; font-weight: 700; color: #1e293b; }
 .pf-newsblk .nwp-nm { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #64748b; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -3428,9 +3435,10 @@ body.dark-mode .pfnw-addinput, .pfd-item.pfd-thm-dark .pfnw-addinput { backgroun
 body.dark-mode .pf-newsblk .nws-mark, .pfd-item.pfd-thm-dark .nws-mark { border-color: #27324a; color: #b9c6d6; }
 body.dark-mode .pf-newsblk .nws-mark:hover, .pfd-item.pfd-thm-dark .nws-mark:hover { border-color: #34425c; color: #f4f8fd; }
 body.dark-mode .pf-newsblk .nws-strip, .pfd-item.pfd-thm-dark .nws-strip { border-bottom-color: rgba(255, 255, 255, 0.08); }
-body.dark-mode .pf-newsblk .nws-ava, .pfd-item.pfd-thm-dark .nws-ava { box-shadow: 0 0 0 2px #1a232f, 0 0 0 4px rgba(255, 255, 255, 0.14); }
+body.dark-mode .pf-newsblk .nws-ava, .pfd-item.pfd-thm-dark .nws-ava { background: rgba(255, 255, 255, 0.07); border-color: rgba(255, 255, 255, 0.13); color: #e8eef7; }
+body.dark-mode .pf-newsblk .nwp-ava, .pfd-item.pfd-thm-dark .nwp-ava { background: rgba(255, 255, 255, 0.07); border-color: rgba(255, 255, 255, 0.13); color: #e8eef7; }
 body.dark-mode .pf-newsblk .nws-it.unread .nws-ava, .pfd-item.pfd-thm-dark .nws-it.unread .nws-ava { box-shadow: 0 0 0 2px #1a232f, 0 0 0 4px #6b7cff; }
-body.dark-mode .pf-newsblk .nws-cnt, .pfd-item.pfd-thm-dark .nws-cnt { background: #e8eef7; color: #0f172a; box-shadow: 0 0 0 2px #1a232f; }
+body.dark-mode .pf-newsblk .nws-cnt, .pfd-item.pfd-thm-dark .nws-cnt { background: #6b7cff; color: #fff; box-shadow: 0 0 0 2px #1a232f; }
 body.dark-mode .pf-newsblk .nws-del, .pfd-item.pfd-thm-dark .nws-del { background: #64748b; color: #fff; box-shadow: 0 0 0 2px #1a232f; }
 body.dark-mode .pf-newsblk .nws-nm, .pfd-item.pfd-thm-dark .nws-nm { color: #8b98ad; }
 body.dark-mode .pf-newsblk .nws-it.sel .nws-nm, .pfd-item.pfd-thm-dark .nws-it.sel .nws-nm { color: #f4f8fd; }

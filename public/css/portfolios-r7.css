@@ -719,13 +719,25 @@ body.dark-mode .pfpv-row b { color: #e8eef7; }
 .pfmv-n b { font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 800; color: #0f172a; }
 .pfmv-n em { font-style: normal; font-size: 11px; font-weight: 600; color: #8494a7; margin-left: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 body.dark-mode .pfmv-n b { color: #f4f8fd; }
+/* R11 (мокап «Обзора» 2026-07-22): полоски долей — тонкие и нейтральные, вердикт —
+   тихая строка с цветной иконкой вместо цветной плашки; о концентрации говорит
+   только он (красная полоса при доле >40% ушла вместе с зелёным градиентом) */
+.pfcc-list .pfyl-barwrap { height: 4px; background: rgba(24, 38, 60, 0.07); }
+.pfcc-list .pfyl-bar.pos, .pfcc-list .pfyl-bar.neg { background: rgba(30, 41, 59, 0.5); }
+.pfcc-list .pfyl-row > b { color: #64748b; font-size: 12px; font-weight: 600; }
+body.dark-mode .pfcc-list .pfyl-bar.pos, body.dark-mode .pfcc-list .pfyl-bar.neg,
+.pfd-item.pfd-thm-dark .pfcc-list .pfyl-bar.pos, .pfd-item.pfd-thm-dark .pfcc-list .pfyl-bar.neg { background: rgba(232, 238, 247, 0.45); }
+body.dark-mode .pfcc-list .pfyl-row > b, .pfd-item.pfd-thm-dark .pfcc-list .pfyl-row > b { color: #8b98ad; }
 .pfcc-verdict {
-    margin-top: 12px; padding: 10px 13px; border-radius: 11px;
-    font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700; line-height: 1.45;
+    display: flex; align-items: center; gap: 7px; margin-top: 12px;
+    font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; line-height: 1.45; color: #64748b;
 }
-.pfcc-verdict.ok { color: #0f7a44; background: rgba(18, 163, 92, 0.09); }
-.pfcc-verdict.mid { color: #92610c; background: rgba(244, 183, 64, 0.14); }
-.pfcc-verdict.hot { color: #b0421c; background: rgba(224, 89, 43, 0.11); }
+body.dark-mode .pfcc-verdict, .pfd-item.pfd-thm-dark .pfcc-verdict { color: #8b98ad; }
+.pfcc-verdict i { font-style: normal; font-weight: 800; flex: none; display: grid; place-items: center; }
+.pfcc-verdict i svg { width: 12px; height: 12px; }
+.pfcc-verdict.ok i { color: #12a35c; }
+.pfcc-verdict.mid i { color: #c2760a; }
+.pfcc-verdict.hot i { color: #d64545; }
 
 /* ============ 11а. Подвкладка «Портфели» — обзор портфеля + полный состав ============ */
 .pfx-ports { display: flex; flex-direction: column; gap: 16px; }
@@ -1292,12 +1304,13 @@ body.dark-mode .dm-news b { color: #e8eef7; }
 .pfd-item.pfd-thm-dark .pfnw-pk:hover { border-color: #34425c; color: #f4f8fd; }
 .pfd-item.pfd-thm-dark .pfnw-addinput { background: #0f1826; color: #e7eef7; }
 /* Календарь · месяц — дополнение к зеркалам §16 */
-.pfd-item.pfd-thm-dark .pfcm-tot b,
+.pfd-item.pfd-thm-dark .pfcm-foot-tot b,
+.pfd-item.pfd-thm-dark .pfcm-next em,
 .pfd-item.pfd-thm-dark .pfcm-day-h span, .pfd-item.pfd-thm-dark .pfcm-day-r b { color: #34d399; }
-.pfd-item.pfd-thm-dark .pfcm-tot { background: rgba(52, 211, 153, 0.1); box-shadow: inset 0 0 0 1px rgba(52, 211, 153, 0.22); }
-.pfd-item.pfd-thm-dark .pfcm-tot i { color: #7fc4a4; }
-.pfd-item.pfd-thm-dark .pfcm-tot.empty { background: rgba(255,255,255,0.05); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1); }
-.pfd-item.pfd-thm-dark .pfcm-tot.empty i, .pfd-item.pfd-thm-dark .pfcm-tot.empty b { color: #8fa2b8; }
+.pfd-item.pfd-thm-dark .pfcm-next { border-color: rgba(255,255,255,0.1); }
+.pfd-item.pfd-thm-dark .pfcm-next:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.16); }
+.pfd-item.pfd-thm-dark .pfcm-next strong { color: #f4f8fd; }
+.pfd-item.pfd-thm-dark .pfcm-foot-tot.empty b { color: #8fa2b8; }
 .pfd-item.pfd-thm-dark .pfcm-d.today { box-shadow: inset 0 0 0 1.5px rgba(255,255,255,0.2); }
 .pfd-item.pfd-thm-dark .pfcm-d.today .pfcm-n,
 .pfd-item.pfd-thm-dark .pfcm-d.multi .pfcm-n { color: #f4f8fd; }
@@ -1401,44 +1414,47 @@ body.dark-mode .dm-news b { color: #e8eef7; }
    (calm в PFD_OWN_CHROME, см. pfcmCardHtml): по одной линии их равняет сам flex, а
    прячутся они до наведения — как у всех остальных виджетов. Правило больше не нужно. */
 .pfcm-head-r > .pfd-inchrome { margin-left: 0; }
-/* итог месяца в шапке — компактная пилюля одной строкой: nowrap не даёт «₽»
-   переноситься на новую строку при узком виджете */
 .pfcm-head-r { display: flex; align-items: center; margin-left: auto; flex-shrink: 0; }
-.pfcm-tot {
-    display: inline-flex; align-items: baseline; gap: 6px; white-space: nowrap;
-    padding: 5px 11px; border-radius: 99px;
-    background: rgba(18, 163, 92, 0.08); box-shadow: inset 0 0 0 1px rgba(18, 163, 92, 0.18);
+/* R11 (мокап «Обзора» 2026-07-22): «Ближайшая выплата» — заголовок-карточка над сеткой:
+   кикер / дата с бумагой / сумма зелёным. Клик подсвечивает день в сетке. */
+.pfcm-next {
+    display: block; width: 100%; text-align: left; margin: 2px 0 12px; padding: 11px 13px;
+    border: 1px solid #e6ebf2; border-radius: 12px; background: none; cursor: pointer;
+    transition: background 0.13s, border-color 0.13s;
 }
-.pfcm-tot i { font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #56906f; font-style: normal; }
-.pfcm-tot b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 13px; font-weight: 700; color: #12a35c; white-space: nowrap; }
-.pfcm-tot.empty { background: #f2f5f9; box-shadow: inset 0 0 0 1px #e6ebf2; }
-.pfcm-tot.empty i { color: #9aa7b8; }
-.pfcm-tot.empty b { color: #9aa7b8; font-size: 11.5px; font-family: 'Inter', sans-serif; }
+.pfcm-next:hover { background: #f8fafc; border-color: #d3dbe6; }
+.pfcm-next b { display: block; font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 0.11em; text-transform: uppercase; color: #9aa7b8; }
+.pfcm-next strong { display: block; margin-top: 5px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; color: #1b2433; letter-spacing: -0.01em; }
+.pfcm-next em { display: block; margin-top: 3px; font-style: normal; font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11.5px; font-weight: 700; color: #12a35c; }
 
-/* шапка-навигация месяца */
-.pfcm-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 2px 0 10px; }
-.pfcm-mon { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #1e293b; letter-spacing: -0.01em; }
+/* нижняя строка: ‹ месяц › слева, итог месяца справа (вместо большого ряда навигации
+   и пилюли в шапке) */
+.pfcm-foot { display: flex; align-items: center; gap: 2px; margin-top: 10px; }
+.pfcm-mon { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 700; color: #64748b; margin: 0 3px; }
 .pfcm-arw {
-    width: 28px; height: 28px; flex-shrink: 0; border-radius: 9px; border: 1px solid #e6ebf2; background: #f8fafc;
-    cursor: pointer; display: inline-flex; align-items: center; justify-content: center; color: #64748b;
-    transition: background 0.12s, color 0.12s, border-color 0.12s;
+    width: 22px; height: 22px; flex-shrink: 0; border-radius: 7px; border: 0; background: none;
+    cursor: pointer; display: inline-flex; align-items: center; justify-content: center; color: #9aa7b8;
+    transition: background 0.12s, color 0.12s;
 }
-.pfcm-arw svg { width: 14px; height: 14px; }
+.pfcm-arw svg { width: 13px; height: 13px; }
 .pfcm-arw.prev svg { transform: rotate(180deg); }
-.pfcm-arw:hover:not([disabled]) { background: #eef2f7; color: #1b2433; border-color: #d3dbe6; }
+.pfcm-arw:hover:not([disabled]) { background: #eef2f7; color: #1b2433; }
 .pfcm-arw[disabled] { opacity: 0.35; cursor: default; }
+.pfcm-foot-tot { margin-left: auto; display: inline-flex; align-items: baseline; gap: 5px; white-space: nowrap; font-family: 'Inter', sans-serif; font-size: 10.5px; color: #9aa7b8; }
+.pfcm-foot-tot b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11.5px; font-weight: 700; color: #12a35c; }
+.pfcm-foot-tot.empty b { color: #9aa7b8; font-weight: 600; font-family: 'Inter', sans-serif; }
 
 /* сетка */
 .pfcm-wds, .pfcm-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
 .pfcm-wd { text-align: center; font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700; color: #a5b0be; padding-bottom: 4px; }
-.pfcm-e { min-height: 40px; }
+.pfcm-e { min-height: 34px; }
 /* Обводка/подложка — на самой ЯЧЕЙКЕ (скруглённый прямоугольник по её границам).
    justify-content: center — содержимое (число, а под ним точки портфелей) стоит РОВНО
    в середине ячейки. Было flex-start + несимметричный padding (3px сверху, 2px снизу):
    число прижималось к верхней грани, и обводка облегала его неравномерно — сверху
    впритык, снизу с зазором. Центрируем по обеим осям, padding симметричный. */
 .pfcm-d {
-    position: relative; min-height: 40px; box-sizing: border-box; padding: 3px 2px;
+    position: relative; min-height: 34px; box-sizing: border-box; padding: 3px 2px;
     border: 0; border-radius: 9px; background: none; text-align: center;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
 }
@@ -1483,7 +1499,7 @@ body.dark-mode .dm-news b { color: #e8eef7; }
 .pfcm-day-r b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12px; font-weight: 700; color: #12a35c; }
 
 /* тёмная тема */
-body.dark-mode .pfcm-mon { color: #e8eef7; }
+body.dark-mode .pfcm-mon { color: #a9b6c6; }
 body.dark-mode .pfcm-arw { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.09); color: #a9b6c6; }
 body.dark-mode .pfcm-arw:hover:not([disabled]) { background: rgba(255,255,255,0.1); color: #fff; }
 body.dark-mode .pfcm-n { color: #8fa0b6; }
@@ -1494,13 +1510,15 @@ body.dark-mode .pfcm-d.one .pfcm-n { color: color-mix(in srgb, var(--c) 55%, #e8
 body.dark-mode .pfcm-d.has.today, body.dark-mode .pfcm-d.sel { box-shadow: inset 0 0 0 2px #fff; }
 body.dark-mode .pfcm-day, body.dark-mode .pfcm-day-r { border-color: rgba(255,255,255,0.08); }
 body.dark-mode .pfcm-day-h b, body.dark-mode .pfcm-day-tk { color: #e8eef7; }
-body.dark-mode .pfcm-tot b, body.dark-mode .pfcm-day-h span, body.dark-mode .pfcm-day-r b { color: #34d399; }
-body.dark-mode .pfcm-tot { background: rgba(52, 211, 153, 0.1); box-shadow: inset 0 0 0 1px rgba(52, 211, 153, 0.22); }
-body.dark-mode .pfcm-tot i { color: #7fc4a4; }
-body.dark-mode .pfcm-tot.empty { background: rgba(255,255,255,0.05); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1); }
-body.dark-mode .pfcm-tot.empty i, body.dark-mode .pfcm-tot.empty b { color: #8fa2b8; }
+body.dark-mode .pfcm-foot-tot b, body.dark-mode .pfcm-next em,
+body.dark-mode .pfcm-day-h span, body.dark-mode .pfcm-day-r b { color: #34d399; }
+body.dark-mode .pfcm-next { border-color: rgba(255,255,255,0.1); }
+body.dark-mode .pfcm-next:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.16); }
+body.dark-mode .pfcm-next strong { color: #f4f8fd; }
+body.dark-mode .pfcm-foot-tot.empty b { color: #8fa2b8; }
 /* тёмный ВИДЖЕТ (настройка «Тема: тёмная» в пикере) — те же правила, но по классу блока */
-.pfd-item.pfd-thm-dark .pfcm-mon, .pfd-item.pfd-thm-dark .pfcm-day-h b, .pfd-item.pfd-thm-dark .pfcm-day-tk { color: #e8eef7; }
+.pfd-item.pfd-thm-dark .pfcm-mon { color: #a9b6c6; }
+.pfd-item.pfd-thm-dark .pfcm-day-h b, .pfd-item.pfd-thm-dark .pfcm-day-tk { color: #e8eef7; }
 .pfd-item.pfd-thm-dark .pfcm-n { color: #8fa0b6; }
 .pfd-item.pfd-thm-dark .pfcm-arw { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.09); color: #a9b6c6; }
 .pfd-item.pfd-thm-dark .pfcm-day, .pfd-item.pfd-thm-dark .pfcm-day-r { border-color: rgba(255,255,255,0.08); }

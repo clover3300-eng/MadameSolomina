@@ -1178,7 +1178,7 @@
                 ? '<i class="nws-del" onclick="event.stopPropagation();pfdNewsDelCustom(\'' + jsArg(x.tk) + '\')" title="Убрать тикер">×</i>'
                 : (un.length > 1 ? '<i class="nws-cnt">' + un.length + '</i>' : '');
             return '<div class="nws-it' + (un.length ? ' unread' : '') + (selTk === x.tk ? ' sel' : '') + '">' +
-                '<button type="button" class="nws-ava" style="background:' + favLogoColor(x.tk) + '" onclick="pfdNwRing(\'' + jsArg(x.tk) + '\')" title="' + (un.length ? 'Смотреть непрочитанное' : 'Новости бумаги') + '">' +
+                '<button type="button" class="nws-ava" onclick="pfdNwRing(\'' + jsArg(x.tk) + '\')" title="' + (un.length ? 'Смотреть непрочитанное' : 'Новости бумаги') + '">' +
                     esc(x.tk.charAt(0)) + badge + '</button>' +
                 '<button type="button" class="nws-tkc" onclick="pfdNwFocus(\'' + jsArg(x.tk) + '\')" title="Все новости бумаги">' +
                     '<span class="nws-nm">' + esc(x.tk) + '</span>' + (nwChgHtml(x.chg, 'nws-chg') || '<span class="nws-chg">&nbsp;</span>') + '</button></div>';
@@ -1264,7 +1264,7 @@
         var nxt = nwNextUnreadTk(tk);
         return '<div class="nwp">' +
             '<div class="nwp-segs">' + segs + '</div>' +
-            '<div class="nwp-head"><span class="nwp-ava" style="background:' + favLogoColor(tk) + '">' + esc(tk.charAt(0)) + '</span>' +
+            '<div class="nwp-head"><span class="nwp-ava">' + esc(tk.charAt(0)) + '</span>' +
                 '<b>' + esc(tk) + '</b><span class="nwp-nm">' + esc(nwCoName(tk)) + '</span>' + nwChgHtml(x.chg, 'nwp-chg') +
                 '<button type="button" class="nwp-x" onclick="pfdNwFeed()" title="Закрыть (Esc)">×</button></div>' +
             '<div class="nwp-t">' + esc(it.t) + '</div>' +
@@ -1272,7 +1272,7 @@
             '<div class="nwp-foot">' +
                 (it.link ? '<button type="button" class="nwp-cta" onclick="pfdNwOpenCur()">Читать на Smart-Lab' + PFNW_GO_SVG + '</button>' : '') +
                 '<span class="nwp-cnt">' + (idx + 1) + ' из ' + list.length + '</span>' +
-                (nxt ? '<span class="nwp-next">дальше —&nbsp;<span class="nwp-ava mini" style="background:' + favLogoColor(nxt) + '">' + esc(nxt.charAt(0)) + '</span>' + esc(nxt) + '</span>' : '') +
+                (nxt ? '<span class="nwp-next">дальше —&nbsp;<span class="nwp-ava mini">' + esc(nxt.charAt(0)) + '</span>' + esc(nxt) + '</span>' : '') +
             '</div>' +
             '<button type="button" class="nwp-nav l" onclick="pfdNwPrev()" aria-label="Предыдущая новость">' + NW_CHEV_L_SVG + '</button>' +
             '<button type="button" class="nwp-nav r" onclick="pfdNwNext()" aria-label="Следующая новость">' + NW_CHEV_R_SVG + '</button>' +
@@ -2349,14 +2349,16 @@
                 '</div>';
             }).join('');
             var topSum = top5Sum;
-            var verdict = topSum <= 45 ? ['ok', 'Хорошая диверсификация — топ-5 бумаг занимают ' + Math.round(topSum) + '% портфеля']
-                : topSum <= 70 ? ['mid', 'Умеренная концентрация — топ-5 бумаг занимают ' + Math.round(topSum) + '% портфеля']
-                : ['hot', 'Высокая концентрация — топ-5 бумаг занимают ' + Math.round(topSum) + '% портфеля'];
+            // R11 (мокап «Обзора» 2026-07-22): вердикт — тихая строка с цветной иконкой
+            // вместо цветной плашки; формулировка короче («топ-5 = 33% — …»)
+            var verdict = topSum <= 45 ? ['ok', 'топ-5 = ' + Math.round(topSum) + '% — хорошая диверсификация']
+                : topSum <= 70 ? ['mid', 'топ-5 = ' + Math.round(topSum) + '% — умеренная концентрация']
+                : ['hot', 'топ-5 = ' + Math.round(topSum) + '% — высокая концентрация'];
             body = '<div class="pfyl-list pfcc-list">' + rows + '</div>' +
-                '<div class="pfcc-verdict ' + verdict[0] + '">' + verdict[1] + '</div>';
+                '<div class="pfcc-verdict ' + verdict[0] + '"><i>' + (verdict[0] === 'ok' ? NW_CHECK_SVG : '!') + '</i>' + verdict[1] + '</div>';
         }
         return '<div class="dash2-card pf-card2 pf-concblk">' +
-            PF.pfCardHead('', 'Диверсификация', 'доли крупнейших позиций по всем портфелям', null) + body + '</div>';
+            PF.pfCardHead('', 'Диверсификация', '', null) + body + '</div>';
     }
 
     // ====================================================================

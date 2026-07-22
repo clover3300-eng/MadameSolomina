@@ -176,6 +176,8 @@
     var PAY_MON = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
     // короткая подпись месяца — внутри квадратика даты («29 / июл»)
     var PAY_MON_SHORT = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+    // родительный падеж — заголовок «Ближайшая выплата»: «29 июля — ОФЗ 26230»
+    var PAY_MON_GEN = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
     function payMonKey(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1); }
     var FILTER_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>';
     // Попап «Какие портфели показывать» в шапке календаря: строка «Показать все» + по строке
@@ -400,6 +402,16 @@
         pfcmSelKey = (pfcmSelKey === k) ? null : k;
         PF.renderNoAnim();
     };
+    // клик по «Ближайшая выплата»: перейти к её месяцу и раскрыть день под сеткой
+    window.pfcmFocusNext = function (ev) {
+        if (ev) ev.stopPropagation();
+        var all = collectUpcomingPayouts();
+        if (!all.length) return;
+        var d = all[0].date, now = new Date();
+        pfcmOffset = Math.max(0, Math.min(12, (d.getFullYear() - now.getFullYear()) * 12 + d.getMonth() - now.getMonth()));
+        pfcmSelKey = pfcmKey(d);
+        PF.renderNoAnim();
+    };
     function pfcmCardHtml(demoMap) {
         var mon = demoMap ? new Date(new Date().getFullYear(), new Date().getMonth(), 1) : pfcmShownMonth();
         var byDay = demoMap || pfcmByDay(mon);
@@ -439,14 +451,41 @@
                 : '<span class="' + cls + '">' + inner + '</span>';
         }
         var CH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
-        var nav = '<div class="pfcm-nav">' +
+        // R11 (мокап «Обзора» 2026-07-22): большой ряд навигации и пилюля «за месяц»
+        // в шапке ушли — месяц со стрелками и итог живут одной тихой строкой ПОД сеткой
+        var foot = '<div class="pfcm-foot">' +
             '<button type="button" class="pfcm-arw prev"' + (pfcmOffset <= 0 && !demoMap ? ' disabled' : '') + ' aria-label="Предыдущий месяц" onclick="pfcmNav(-1, event)">' + CH + '</button>' +
             '<span class="pfcm-mon">' + PFCM_MON[m] + ' ' + y + '</span>' +
             '<button type="button" class="pfcm-arw next"' + (pfcmOffset >= 12 && !demoMap ? ' disabled' : '') + ' aria-label="Следующий месяц" onclick="pfcmNav(1, event)">' + CH + '</button>' +
+            (monthCnt
+                ? '<span class="pfcm-foot-tot">за месяц<b>+' + fmtRub(monthSum) + '</b></span>'
+                : '<span class="pfcm-foot-tot empty">за месяц<b>выплат нет</b></span>') +
         '</div>';
-        var totalPill = monthCnt
-            ? '<span class="pfcm-tot"><i>за месяц</i><b>+' + fmtRub(monthSum) + '</b></span>'
-            : '<span class="pfcm-tot empty"><i>за месяц</i><b>выплат нет</b></span>';
+        // «Ближайшая выплата» — заголовок виджета (мокап «Обзора»): дата и бумага крупно,
+        // сумма зелёным; несколько выплат в один день — счётчик и сумма за день.
+        // Клик подсвечивает этот день в сетке (переключая месяц, если он дальше).
+        var next = '';
+        if (!demoMap) {
+            var all = collectUpcomingPayouts();
+            if (all.length) {
+                var e0 = all[0];
+                var sameD = all.filter(function (e) { return sameCalDay(e.date, e0.date); });
+                var kindW = e0.kind === 'div' ? 'дивиденды' : e0.kind === 'redeem' ? 'погашение' : 'купон';
+                var when = e0.date.getDate() + ' ' + PAY_MON_GEN[e0.date.getMonth()];
+                // облигации подписываем именем («ОФЗ 26233»), не 12-значным secid —
+                // как в строках списка-календаря (там имя стоит второй строкой)
+                var nTk = (e0.kind === 'div' ? e0.ticker : (e0.name || e0.ticker));
+                var nTitle = sameD.length > 1
+                    ? when + ' — ' + sameD.length + ' ' + PF.plural(sameD.length, 'выплата', 'выплаты', 'выплат')
+                    : when + ' — ' + esc(nTk);
+                var nAmt = sameD.length > 1
+                    ? '+' + fmtRub(sameD.reduce(function (s, e) { return s + e.amount; }, 0)) + ' за день'
+                    : kindW + ' · +' + fmtRub(e0.amount);
+                next = '<button type="button" class="pfcm-next" onclick="pfcmFocusNext(event)" title="Показать день в календаре">' +
+                    '<b>Ближайшая · ' + daysUntilText(e0.date) + '</b>' +
+                    '<strong>' + nTitle + '</strong><em>' + nAmt + '</em></button>';
+            }
+        }
         // список выбранного дня — раскрывается ПОД сеткой, чтобы суммы можно было прочитать
         // по бумагам, а не только сводной цифрой в клетке
         var detail = '';
@@ -463,17 +502,15 @@
                 }).join('') + '</div>';
         }
         return '<div class="dash2-card pf-card2 pf-calmblk">' +
-            // кнопки конструктора — в потоке шапки ПЕРЕД пилюлей «за месяц» (PFD_OWN_CHROME).
-            // Раньше они висели угловым оверлеем и всплывали по ховеру на 7px выше пилюли,
-            // ломая ровный ряд, — из-за этого их пришлось сделать ВИДНЫМИ ВСЕГДА и
-            // подгонять top:22.5px. В потоке они встают на одну линию с пилюлей сами и
-            // снова прячутся до наведения, как у всех остальных виджетов.
-            PF.pfCardHead('', 'Календарь выплат', 'купоны, дивиденды и погашения по дням',
-                '<div class="pfcm-head-r">' + PF.pfdInChromeHtml('calm') + totalPill + '</div>') +
-            nav +
+            // кнопки конструктора — в потоке шапки (PFD_OWN_CHROME): подзаголовок и пилюля
+            // «за месяц» ушли по мокапу «Обзора», но свой хром виджету по-прежнему нужен
+            PF.pfCardHead('', 'Календарь выплат', '',
+                '<div class="pfcm-head-r">' + PF.pfdInChromeHtml('calm') + '</div>') +
+            next +
             '<div class="pfcm-wds">' + PFCM_WD.map(function (w) { return '<span class="pfcm-wd">' + w + '</span>'; }).join('') + '</div>' +
             '<div class="pfcm-grid">' + cells + '</div>' +
             detail +
+            foot +
         '</div>';
     }
 
