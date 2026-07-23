@@ -313,32 +313,55 @@
     background: var(--grn);
     box-shadow: 0 5px 13px -6px color-mix(in srgb, var(--grn) 90%, transparent);
 }
-/* ИКОНОЧНЫЙ переключатель (владелец 2026-07-24): заголовок слева называет режим,
-   значки справа; активный залит акцентом, стакан — зелёным. .freshw уже
-   margin-left:auto (см. выше) — заголовок слева, чип+значки прижаты вправо */
-.bts .tkt-h .tkt-title { font: 400 17px var(--font-title); letter-spacing: -0.01em; }
-.bts .tkt-h .iseg { margin-left: 6px; }
-.bts .iseg {
-    display: inline-flex; gap: 3px; flex: none;
-    border: 1px solid var(--line); border-radius: 11px; padding: 3px; background: var(--bg);
-}
-.bts .iseg .it {
-    width: 34px; height: 30px; display: grid; place-items: center;
-    border-radius: 8px; color: var(--mut); cursor: pointer;
-    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
-}
-.bts .iseg .it .ico { width: 18px; height: 18px; display: grid; place-items: center; }
-.bts .iseg .it .ico svg { width: 18px; height: 18px; display: block; }
-.bts .iseg .it:hover { color: var(--ink); background: var(--hair); }
-.bts .iseg .it.on {
-    background: var(--acc); color: #fff;
-    box-shadow: 0 5px 13px -6px color-mix(in srgb, var(--acc) 90%, transparent);
-}
-.bts .iseg .it.on:hover { background: var(--acc); color: #fff; }
-.bts .iseg .it.on.book {
-    background: var(--grn);
-    box-shadow: 0 5px 13px -6px color-mix(in srgb, var(--grn) 90%, transparent);
-}
+/* ---- тело карточки: «Сколько и почём» одним блоком + квитанция «Итог»
+   (владелец 2026-07-24): цена и сумма — один вопрос с делителем; apx/avg/rest
+   свёрнуты в один чек ---- */
+.bts .zone { display: flex; flex-direction: column; gap: 8px; }
+.bts .zone-t { display: flex; align-items: baseline; gap: 8px; font: 400 12.5px var(--font-title); color: var(--mut); }
+.bts .zone-t em { font-style: normal; margin-left: auto; font: 600 10.5px var(--font-num); color: var(--dim); }
+.bts .pair { border: 1px solid var(--line); border-radius: 14px; background: var(--card); overflow: hidden; }
+.bts .pair .row { padding: 11px 14px; }
+.bts .pair .row + .row { border-top: 1px solid var(--line); }
+.bts .pair .lab { display: flex; align-items: center; font: 600 11px var(--font-ui); color: var(--mut); margin-bottom: 4px; }
+.bts .pair .row.err .lab { color: var(--red); }
+.bts .pair .big { display: flex; align-items: baseline; gap: 6px; }
+.bts .pair .big .big-v { font: 600 20px var(--font-num); color: var(--ink); }
+.bts .pair .big .big-in { min-width: 0; border: 0; background: none; padding: 0; color: var(--ink); font: 700 20px var(--font-num); font-variant-numeric: tabular-nums; }
+.bts .pair .big #btSxSum { flex: 1; }
+.bts .pair .big #btScnLimIn { width: 5.5em; }
+.bts .pair .big .big-in:focus { outline: none; }
+.bts .pair .big .big-in::placeholder { color: var(--dim); }
+.bts .pair .big small { font: 600 12px var(--font-num); color: var(--mut); }
+.bts .pair .big .gh { margin-left: auto; font: 600 11px var(--font-num); color: var(--dim); white-space: nowrap; }
+.bts .pair .row.err .big .big-in { color: var(--red); }
+/* Рынок/Лимит компактным сегментом в подписи */
+.bts .seg2 { margin-left: auto; display: inline-flex; gap: 1px; border: 1px solid var(--line); border-radius: 8px; padding: 2px; background: var(--bg); }
+.bts .seg2 span { font: 600 10.5px var(--font-ui); color: var(--dim); padding: 3px 9px; border-radius: 6px; cursor: pointer; }
+.bts .seg2 span.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 4px -2px rgba(15, 23, 42, 0.3); }
+/* тонкий слайдер доли: волосяная дорожка, клик ставит сумму */
+.bts .slider { height: 14px; margin: 12px 2px 3px; position: relative; cursor: pointer; display: flex; align-items: center; }
+.bts .slider:empty { display: none; }
+.bts .slider .track { height: 2px; border-radius: 999px; background: var(--line); position: relative; flex: 1; }
+.bts .slider .track i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; background: var(--acc); }
+.bts .slider .track b { position: absolute; top: 50%; width: 11px; height: 11px; border-radius: 50%; background: var(--card); border: 2px solid var(--acc); transform: translate(-50%, -50%); box-shadow: 0 2px 6px -2px rgba(0, 0, 0, 0.35); }
+.bts .pair .presets { margin-top: 9px; }
+/* квитанция «Итог» */
+.bts .sum { display: flex; flex-direction: column; gap: 8px; }
+.bts .sum:empty { display: none; }
+.bts .sum-hint { font: 400 12.5px/1.5 var(--font-ui); color: var(--mut); }
+.bts .sum-hint b { font: 600 13px var(--font-num); color: var(--ink); }
+.bts .sum-hint .mut { color: var(--dim); }
+.bts .sum-lead { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; font: 400 15px var(--font-title); color: var(--ink); }
+.bts .sum-lead b { font-family: var(--font-num); font-weight: 700; }
+.bts .sum-lots { margin-left: auto; font: 400 11px var(--font-ui); color: var(--dim); white-space: nowrap; }
+.bts .sum-lines { display: flex; flex-direction: column; }
+.bts .sum-line { display: flex; align-items: baseline; font: 400 12px var(--font-ui); color: var(--mut); padding: 3px 0; }
+.bts .sum-line b { margin-left: auto; font: 600 12.5px var(--font-num); color: var(--ink); }
+.bts .sum-total { display: flex; align-items: baseline; border-top: 1px solid var(--line); margin-top: 3px; padding-top: 8px; }
+.bts .sum-total > span { font: 600 12px var(--font-ui); color: var(--mut); }
+.bts .sum-total > b { margin-left: auto; font: 700 20px var(--font-num); color: var(--ink); }
+.bts .sum-sub { font: 400 11.5px var(--font-ui); color: var(--mut); }
+.bts .sum-sub b { font-family: var(--font-num); color: var(--ink); font-weight: 700; }
 /* стакан на всю карточку (вид «Стакан») */
 .bts .tkt-depth { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
 /* заголовок стакана в карточках — тем же кеглем, что вкладки заявки */

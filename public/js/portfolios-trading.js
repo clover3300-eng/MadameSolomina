@@ -4964,6 +4964,55 @@
             c.qty.toLocaleString('ru-RU') + ' шт по ' + fmtPx(c.px, s) +
             ' ₽ сдвинет среднюю до ' + fmtPx(na, s) + ' ₽.</span></u>';
     }
+    // ---- квитанция «Итог» (владелец 2026-07-24): свела ≈ акции + комиссию +
+    // средняя + «останется» в один чек. Не-happy состояния — прежним текстом
+    // scnApxHtml (приглашение / «не хватает» / «меньше лота» / нечего продавать)
+    function scnSumHtml(n) {
+        var s = S(n), buy = s.side !== 'sell', c = scnCalc(n);
+        var lot = (s.meta && s.meta.lot) || 1;
+        var ok = c && c.lots && (buy ? scnShortfall(n) <= 0 : (c.qty > 0 && c.qty <= haveQty(s)));
+        if (!ok) return '<div class="sum-hint">' + scnApxHtml(n) + '</div>';
+        var qtyTxt = '<b>' + c.qty.toLocaleString('ru-RU') + ' ' + unitWord(s, c.qty) + '</b>';
+        var lots = lot > 1
+            ? '<span class="sum-lots">' + glLot(s, c.lots.toLocaleString('ru-RU') + ' ' +
+              PF.plural(c.lots, 'лот', 'лота', 'лотов')) + ' × ' + lot + ' шт</span>'
+            : '';
+        var lead = '<div class="sum-lead">' + (buy ? 'Купите' : 'Продадите') + ' ≈ ' + qtyTxt + lots + '</div>';
+        var lines = '<div class="sum-line"><span>' + c.qty.toLocaleString('ru-RU') + ' × ' +
+                fmtPx(c.px, s) + ' ' + (scnLimPx(s) > 0 ? 'лимит' : 'рынок') + '</span><b>' + fmtKop(c.gross) + '</b></div>' +
+            '<div class="sum-line"><span>Комиссия ' + feeTxt() + ' %' + (buy ? '' : ' — вычтена') + '</span><b>' + fmtKop(c.fee) + '</b></div>' +
+            (c.aci > 0 ? '<div class="sum-line"><span>НКД</span><b>' + fmtKop(c.aci) + '</b></div>' : '');
+        var total = '<div class="sum-total"><span>' + (buy ? 'Спишется' : 'Получите') + '</span><b>' + fmtKop(c.total) + '</b></div>';
+        var avg = buy ? scnAvgHtml(n) : '';
+        avg = avg ? '<div class="sum-sub">' + avg + '</div>' : '';
+        var free = scnFree();
+        var rest = (free != null)
+            ? '<div class="sum-sub">' + (buy ? 'Останется свободно ' : 'Станет свободно ') +
+              '<b>' + fmtRub(buy ? free - c.total : free + c.total) + '</b></div>'
+            : '';
+        return lead + '<div class="sum-lines">' + lines + total + '</div>' + avg + rest;
+    }
+    // тонкий слайдер доли: клик по дорожке ставит сумму = доля от свободного
+    // (покупка) / позиции (продажа). Показываем только в «естественной» единице,
+    // как пресеты; в остальных режимах пусто (CSS :empty прячет)
+    function scnSliderInner(n) {
+        var s = S(n), buy = s.side !== 'sell';
+        if (unitOf(s) !== (buy ? 'rub' : 'qty')) return '';
+        var base = buy ? scnFree() : haveQty(s);
+        if (!(base > 0)) return '';
+        var frac = Math.max(0, Math.min(1, (+simpleSum || 0) / base));
+        var pct = (frac * 100).toFixed(1);
+        return '<div class="track"><i style="width:' + pct + '%"></i><b style="left:' + pct + '%"></b></div>';
+    }
+    window.pftScSlide = function (e) {
+        var box = dq('btScnSlider'); if (!box) return;
+        var r = box.getBoundingClientRect(); if (!(r.width > 0)) return;
+        var frac = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+        var s = S(sxSlot()), buy = s.side !== 'sell';
+        var base = buy ? scnFree() : haveQty(s);
+        if (!(base > 0)) return;
+        window.pftSxQuick(Math.round(frac * base));
+    };
     // переплату называем круглым числом: 469 ₽ точности не добавляет, а «≈» честнее
     function scnTen(v) { return v >= 100 ? Math.round(v / 10) * 10 : Math.round(v); }
     // спред-гвард: предупреждение о переплате в рублях + «лимитка у спреда».
@@ -5192,10 +5241,25 @@
         var unit = unitOf(s);
         var uTxt = unit === 'rub' ? '₽'
             : (buy ? 'шт · лот ' + ((s.meta && s.meta.lot) || 1) : 'шт из ' + have.toLocaleString('ru-RU'));
-        // блок заявки един на всех ступенях как на «Контроле» (владелец
-        // 2026-07-23): строка цены «По рынку ⇄ лимит» со значением на глазах
-        // и защита позиции; линии на графике ведёт scnKProt — одна сущность
-        var priceRow = '<div class="fld fld-p" id="btScnPx">' + scnPriceRowInner(n) + '</div>';
+        // «Сколько и почём» — цена и сумма ОДНИМ блоком с делителем (владелец
+        // 2026-07-24): это один вопрос, а не два поля. Строка цены — верхний ряд
+        // (лимит редактируется #btScnLimIn), сумма — нижний со слайдером доли и
+        // пресетами. Защита позиции (живые стоп-заявки) — ниже квитанции; в
+        // реплее её нет. Линии на графике ведёт scnKProt — одна сущность
+        var priceRow = '<div class="row" id="btScnPx">' + scnPriceRowInner(n) + '</div>';
+        var sumRow = '<div class="row" id="btScnFld">' +
+            '<div class="lab">' + (unit === 'rub' ? 'Сумма' : 'Количество') + cap + '</div>' +
+            '<div class="big"><input class="big-in" id="btSxSum" type="text" inputmode="numeric" autocomplete="off" ' +
+                'spellcheck="false" value="' + esc(simpleSum) + '" placeholder="0" ' +
+                'aria-label="' + (unit === 'rub' ? 'Сумма в рублях' : 'Количество бумаг') + '">' +
+            '<small>' + uTxt + '</small>' +
+            '<span class="fld-sw" role="button" tabindex="0" onclick="pftScUnit()">' +
+                (unit === 'rub' ? 'в лотах ⇄' : 'в рублях ⇄') + '</span></div>' +
+            '<div class="slider" id="btScnSlider" onclick="pftScSlide(event)">' + scnSliderInner(n) + '</div>' +
+            '<div class="presets" id="btScnPre">' + scnPresetsHtml(n) + '</div></div>';
+        var scope = '<div class="zone"><div class="zone-t">Сколько и почём<em>' +
+            esc((s.meta && s.meta.ticker) || '') + ' · лот ' + ((s.meta && s.meta.lot) || 1) + '</em></div>' +
+            '<div class="pair">' + priceRow + sumRow + '</div></div>';
         // защита позиции — про живые стоп-заявки брокера: в реплее её нет
         var protRow = RP ? '' :
             '<div class="fld fld-p" id="btScnProt"><em>Защита позиции</em>' + scnProtInner(n) + '</div>';
@@ -5204,17 +5268,8 @@
                 '<span class="' + (buy ? 'on' : '') + '" role="button" tabindex="0" onclick="pftSxSide(\'buy\')">Купить</span>' +
                 '<span class="' + (buy ? '' : 'on sell') + '" role="button" tabindex="0" onclick="pftSxSide(\'sell\')">Продать</span></div>' +
             '<div class="eg-bannerw" id="btScnStale">' + scnStaleInner(n) + '</div>' +
-            priceRow +
-            '<div class="fld" id="btScnFld"><em>' + (unit === 'rub' ? 'Сумма' : 'Количество') + cap + '</em>' +
-                '<div class="fld-in"><input id="btSxSum" type="text" inputmode="numeric" autocomplete="off" ' +
-                    'spellcheck="false" value="' + esc(simpleSum) + '" placeholder="0" ' +
-                    'aria-label="' + (unit === 'rub' ? 'Сумма в рублях' : 'Количество бумаг') + '">' +
-                '<u>' + uTxt + '</u>' +
-                '<span class="fld-sw" role="button" tabindex="0" onclick="pftScUnit()">' +
-                    (unit === 'rub' ? 'в лотах ⇄' : 'в рублях ⇄') + '</span></div></div>' +
-            '<div class="presets" id="btScnPre">' + scnPresetsHtml(n) + '</div>' +
-            '<div class="apx" id="btScnApx">' + scnApxHtml(n) + '</div>' +
-            '<div class="apx" id="btScnAvg">' + scnAvgHtml(n) + '</div>' +
+            scope +
+            '<div class="sum" id="btScnSum">' + scnSumHtml(n) + '</div>' +
             protRow +
             '<div class="warn" id="btScnWarn">' + scnWarnHtml(n) + '</div>' +
             '<div class="tkt-space"></div>' +
@@ -5225,7 +5280,6 @@
                 : '<div class="know" role="button" tabindex="0" onclick="pftScKnow()">' +
                   '<span class="k2q">' + IC_KINFO + '</span>Что нужно знать перед ' + (buy ? 'покупкой' : 'продажей') +
                   '<u>3 факта ›</u></div>') +
-            '<div class="rest" id="btScnRest">' + scnRestHtml(n) + '</div>' +
             '<div class="ctaw" id="btScnCta">' + scnCtaHtml(n) + '</div>';
         // сплит: карточка раздваивается — стакан слева, заявка справа;
         // ширину контейнера и сжатие героя анимирует CSS (data-tkt на сцене)
@@ -7070,22 +7124,25 @@
     // рынок ⇄ лимит — мини-сегмент в идиоме тикета (владелец 2026-07-23
     // поверх мокапа: текстовые ссылки читались плохо); значение цены — рядом
     function scnPriceRowInner(n) {
+        // строка цены — верхний ряд блока «Сколько и почём»: подпись «Цена» с
+        // сегментом Рынок/Лимит справа, крупное значение (лимит редактируется
+        // тем же #btScnLimIn), рыночная цена тихим призраком #btScnPxNow
         var s = S(n);
         var lim = s.kind === 'limit' && +s.price > 0;
         var last = sxPrice(s);
-        var seg = '<span class="px-seg">' +
-            '<span class="' + (lim ? '' : 'on') + '" role="button" tabindex="0" onclick="pftScKind(0)">По рынку</span>' +
+        var seg = '<span class="seg2">' +
+            '<span class="' + (lim ? '' : 'on') + '" role="button" tabindex="0" onclick="pftScKind(0)">Рынок</span>' +
             '<span class="' + (lim ? 'on' : '') + '" role="button" tabindex="0" onclick="pftScKind(1)">Лимит</span></span>';
+        var lab = '<div class="lab">Цена' + seg + '</div>';
         if (!lim) {
-            return '<em>Цена</em><div class="fld-price">' + seg +
-                '<span class="px-now" id="btScnPxNow">' +
+            return lab + '<div class="big"><span class="big-v">По рынку</span>' +
+                '<span class="gh" id="btScnPxNow">' +
                 (last > 0 ? 'сейчас ' + fmtPx(last, s) + ' ₽' : '') + '</span></div>';
         }
-        return '<em>Цена</em><div class="fld-price">' + seg +
-            '<span class="lim-edit"><input id="btScnLimIn" type="text" inputmode="decimal" autocomplete="off" ' +
-                'spellcheck="false" value="' + esc(String(s.price)) + '" aria-label="Лимитная цена"><u>₽</u></span>' +
-            '<span class="px-now" id="btScnPxNow">' +
-                (last > 0 ? 'сейчас ' + fmtPx(last, s) : '') + '</span></div>';
+        return lab + '<div class="big"><input class="big-in" id="btScnLimIn" type="text" inputmode="decimal" ' +
+            'autocomplete="off" spellcheck="false" value="' + esc(String(s.price)) + '" aria-label="Лимитная цена">' +
+            '<small>₽</small><span class="gh" id="btScnPxNow">' +
+            (last > 0 ? 'сейчас ' + fmtPx(last, s) : '') + '</span></div>';
     }
     window.pftScKind = function (toLim) {
         var n = sxSlot(), s = S(n);
@@ -7733,10 +7790,9 @@
         scnSet('btScnCap', scnCapInner());
         scnSet('btScnStale', scnStaleInner(n));   // возраст данных в баннере тикает
         scnSet('btScnPre', scnPresetsHtml(n));
-        scnSet('btScnApx', scnApxHtml(n));
-        scnSet('btScnAvg', scnAvgHtml(n));
+        scnSet('btScnSlider', scnSliderInner(n)); // доля от свободного — за суммой
+        scnSet('btScnSum', scnSumHtml(n));        // квитанция «Итог» (≈ акции + комиссия + средняя + останется)
         scnSet('btScnWarn', scnWarnHtml(n));
-        scnSet('btScnRest', scnRestHtml(n));
         scnSet('btScnCta', scnCtaHtml(n));
         // поле краснеет вместе с недостачей (мокап 08, состояние «не хватает»)
         var fld = dq('btScnFld');
