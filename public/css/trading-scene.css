@@ -429,6 +429,8 @@
     border-radius: 6px; padding: 1px 6px;
 }
 .bts .ps-ord i { font-style: normal; font-size: 9px; }
+/* «счёт» стоит ПОСЛЕ «заявок»: авто-отступ вправо несёт только первая ручка */
+.bts .ps-acct { margin-left: 0; }
 .bts .ps-chip {
     display: inline-flex; align-items: center; gap: 8px;
     border: 1px solid var(--line); background: var(--card);
@@ -473,6 +475,22 @@
 
 .bts-kmount { position: relative; flex: 1; min-height: 0; }
 .bts-khost { position: absolute; inset: 0; }
+/* OHLC-карточка кроссхейра — ВСЕГДА слева вверху холста (владелец 2026-07-23:
+   легенда движка прыгала на сторону от курсора); правее оси, поверх сетки */
+.bts .bts-ohlc {
+    position: absolute; left: 64px; top: 8px; z-index: 9;
+    display: flex; align-items: baseline; gap: 12px;
+    pointer-events: none; white-space: nowrap;
+    background: color-mix(in srgb, var(--card) 94%, transparent);
+    border: 1px solid var(--line); border-radius: 10px; padding: 7px 12px;
+    font: 400 11px var(--font-ui); color: var(--dim);
+    box-shadow: 0 14px 30px -18px rgba(24, 38, 60, 0.4);
+}
+.bts .bts-ohlc:empty { display: none; }
+.bts .bts-ohlc em { font-style: normal; font: 600 11px var(--font-num); color: var(--mut); }
+.bts .bts-ohlc b { font: 600 11.5px var(--font-num); color: var(--ink); }
+.bts .bts-ohlc b.g { color: var(--grn); }
+.bts .bts-ohlc b.r { color: var(--red); }
 /* индикаторы: кнопка у пилюль шапки + попап-реестр двумя группами
    (чипы с холста ушли — владелец 2026-07-23) */
 .bts .ih-ind {
@@ -601,12 +619,16 @@
 .bts .d-row .pr { font-weight: 600; position: relative; }
 .bts .d-ask .pr { color: var(--red); }
 .bts .d-bid .pr { color: var(--grn); }
-/* уровень с ВАШЕЙ заявкой: точка у цены + акцентная кромка слева */
-.bts .d-row.d-mine { box-shadow: inset 2px 0 0 var(--acc); }
-.bts .d-mine .pr::after {
-    content: '●'; font-size: 7px; color: var(--acc);
-    vertical-align: 2px; margin-left: 5px;
+/* уровень с ВАШЕЙ заявкой — плашка с остатком лотов (владелец 2026-07-23:
+   точка и кромка не нравились); исполняется — число на плашке тает */
+.bts .d-my {
+    position: relative; margin-left: auto; margin-right: 8px;
+    font: 700 10px var(--font-num); color: var(--acc); white-space: nowrap;
+    background: color-mix(in srgb, var(--acc) 12%, var(--card));
+    border: 1px solid color-mix(in srgb, var(--acc) 40%, transparent);
+    border-radius: 6px; padding: 1px 6px;
 }
+.bts .d-my:empty { display: none; }
 .bts .d-best .pr { font-weight: 700; font-size: 12.5px; }
 .bts .d-vol { color: var(--dim); text-align: right; position: relative; font-variant-numeric: tabular-nums; }
 .bts .d-big .d-vol { color: var(--ink); font-weight: 600; }
@@ -631,13 +653,15 @@
 }
 .bts .px-seg span.on { background: color-mix(in srgb, var(--acc) 13%, transparent); color: var(--ink); cursor: default; }
 .bts .px-now { margin-left: auto; font: 400 11.5px var(--font-num); color: var(--dim); white-space: nowrap; }
+/* поле лимита крупнее (владелец 2026-07-23: «кажется маленьким») */
 .bts .lim-edit { display: inline-flex; align-items: baseline; gap: 4px; border-bottom: 1px dashed var(--dim); }
 .bts .lim-edit input {
-    width: 7ch; border: 0; background: none; padding: 0;
-    font: 600 14px var(--font-num); color: var(--ink);
+    width: 8ch; border: 0; background: none; padding: 0;
+    font: 600 17px var(--font-num); color: var(--ink);
+    font-variant-numeric: tabular-nums;
 }
 .bts .lim-edit input:focus { outline: none; }
-.bts .lim-edit u { text-decoration: none; font: 400 12px var(--font-ui); color: var(--mut); }
+.bts .lim-edit u { text-decoration: none; font: 400 13px var(--font-ui); color: var(--mut); }
 /* «что нужно знать» свёрнуто в строку («Разгон»+) */
 .bts .know {
     display: flex; align-items: center; gap: 8px;
@@ -724,11 +748,13 @@
 .bts .prot-chip u { text-decoration: none; font: 600 12px var(--font-ui); opacity: 0.55; cursor: pointer; padding: 0 1px; }
 .bts .prot-chip u:hover { opacity: 1; }
 .bts .prot > u { text-decoration: none; margin-left: auto; color: var(--acc); font-weight: 600; cursor: pointer; }
-.bts .prot-e { gap: 10px; }
-.bts .prot-e label { display: inline-flex; align-items: baseline; gap: 5px; font: 600 11px var(--font-ui); color: var(--dim); }
+.bts .prot-e { gap: 12px; }
+.bts .prot-e label { display: inline-flex; align-items: baseline; gap: 6px; font: 600 12px var(--font-ui); color: var(--dim); }
+/* поля тейка/стопа крупнее (владелец 2026-07-23) */
 .bts .prot-e input {
-    width: 7ch; border: 0; border-bottom: 1px dashed var(--dim);
-    background: none; padding: 0; font: 600 13px var(--font-num); color: var(--ink);
+    width: 8ch; border: 0; border-bottom: 1px dashed var(--dim);
+    background: none; padding: 0; font: 600 16px var(--font-num); color: var(--ink);
+    font-variant-numeric: tabular-nums;
 }
 .bts .prot-e input:focus { outline: none; border-bottom-color: var(--acc); }
 /* док-«росток» (вариант А, владелец 2026-07-23): вырастает ВВЕРХ из полосы
@@ -747,6 +773,38 @@
 .bts[data-tkt="split"] .dock { right: 842px; }
 .bts .dock:empty { display: none; animation: none; }
 @keyframes btDeckUp { from { opacity: 0; transform: translateY(14px); } }
+/* «Счёт» — выезжающий блок правого нижнего угла (владелец 2026-07-23):
+   низ карточки = низ ростка позиций (96), растёт вверх из-под тикета */
+.bts .acct {
+    position: absolute; right: 36px; bottom: 96px; width: 400px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    padding: 14px 18px 10px; z-index: 26; backdrop-filter: blur(16px);
+    box-shadow: 0 24px 54px -26px rgba(24, 38, 60, 0.5);
+    animation: btDeckUp 0.45s cubic-bezier(0.25, 0.9, 0.3, 1) backwards;
+}
+.bts.night .acct { box-shadow: 0 24px 60px -26px rgba(0, 0, 0, 0.6); }
+.bts .acct:empty { display: none; animation: none; }
+.bts .ac-h {
+    display: flex; align-items: baseline; gap: 9px;
+    border-bottom: 1px solid var(--hair); padding-bottom: 9px;
+}
+.bts .ac-h b { font: 400 16px var(--font-title); }
+.bts .ac-h em {
+    font-style: normal; font: 700 9px var(--font-ui);
+    letter-spacing: 0.09em; text-transform: uppercase; color: var(--dim);
+}
+.bts .ac-h .shev { margin-left: auto; border: 0; background: none; color: var(--dim); cursor: pointer; font-size: 13px; }
+.bts .ac-r {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font: 400 12.5px var(--font-ui); color: var(--mut);
+    padding: 8px 0; border-top: 1px solid var(--hair);
+}
+.bts .ac-r:nth-child(2) { border-top: 0; }
+.bts .ac-r b { font: 600 13.5px var(--font-num); color: var(--ink); }
+.bts .ac-r.g b { color: var(--grn); }
+.bts .ac-r.r b { color: var(--red); }
+.bts .ac-r.sum { border-top: 1px dashed var(--line); }
+.bts .ac-r.sum b { font: 700 15px var(--font-num); }
 .bts-hero { transition: right 0.45s cubic-bezier(0.25, 0.9, 0.3, 1), bottom 0.45s cubic-bezier(0.25, 0.9, 0.3, 1); }
 .bts[data-deck="1"] .bts-hero { bottom: var(--bts-dock, 262px); }
 .bts .dock-tabs { display: flex; align-items: center; gap: 18px; border-bottom: 1px solid var(--hair); padding-bottom: 8px; }
@@ -911,6 +969,7 @@
     .bts .tkt { right: 24px; }
     .bts .pos-strip { right: 300px; }
     .bts .dock { left: 32px; right: 468px; }
+    .bts .acct { right: 24px; }
     .bts-omni { width: 340px; }
     /* сплит «Старта» на узком: 316 стакан + 14 + 400 заявка */
     .bts[data-stage="start"][data-tkt="split"] .tkt { width: 730px; }

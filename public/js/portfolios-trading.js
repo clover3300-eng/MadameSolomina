@@ -257,9 +257,22 @@
             lot: Math.max(1, Math.floor(+m.lot || 1)),
             minInc: +m.minInc > 0 ? +m.minInc : 0.01,
             aci: +m.aci > 0 ? +m.aci : 0,
+            nom: +m.nom > 0 ? +m.nom : 0,
             kind: String(m.kind || '').slice(0, 24)
         };
     }
+    // ---- облигации: проценты от номинала ⇄ рубли (владелец 2026-07-23) ----
+    // Брокер котирует облигации в ПРОЦЕНТАХ от номинала (ОФЗ: 60,4 = 604 ₽ при
+    // номинале 1000). Сцена работает В РУБЛЯХ; конверсия строго на границах:
+    // рыночные данные ×k при приёме (стакан, свечи, лента, стопы, minInc),
+    // заявки ÷k при отправке. k = номинал/100 (ОФЗ — 10). У акций k = 1.
+    function bondKOf(meta) {
+        if (!meta || !/bond/i.test(String(meta.kind || ''))) return 1;
+        var nom = +meta.nom > 0 ? +meta.nom : 1000;   // ОФЗ и почти весь корп — 1000
+        return nom / 100;
+    }
+    function bondK(s) { return bondKOf(s && s.meta); }
+    function bondKUid(uid) { return bondKOf(instrMem[uid]); }
     function saveSlots() {
         var out = {};
         Object.keys(SLOTS).forEach(function (n) {
@@ -781,7 +794,8 @@
     function ordPx(o, s) {
         var q2n = A().q2n;
         var px = q2n(o.initialSecurityPrice);
-        if (px > 0) return px;
+        // облигации: цена заявки у брокера в процентах — наружу в рублях
+        if (px > 0) return px * bondKOf(instrMem[o.instrumentUid] || (s && s.meta));
         var tot = q2n(o.initialOrderPrice) || q2n(o.totalOrderAmount);
         var req = +o.lotsRequested || 0;
         var lot = (s.meta && s.meta.lot) || 1;
@@ -2089,6 +2103,18 @@
             var u0 = s.uid, g0 = s.gen || 0;
             A().call('GetOrderBook', { instrumentId: s.uid, depth: obAsk }, { interactive: false }).then(function (d) {
                 var s2 = slotAlive(n, u0, g0); if (!s2) return;   // бумага уже другая
+                // облигации: книга приходит в процентах от номинала — в рубли
+                // прямо на границе (см. bondKOf); гвард от двойной конверсии
+                var bk = bondK(s2);
+                if (bk !== 1 && d && !d.__btRub) {
+                    d.__btRub = 1;
+                    var q2n = A().q2n, n2q = A().n2q;
+                    var cv = function (p) { return p == null ? p : n2q(q2n(p) * bk); };
+                    (d.asks || []).forEach(function (l) { l.price = cv(l.price); });
+                    (d.bids || []).forEach(function (l) { l.price = cv(l.price); });
+                    d.lastPrice = cv(d.lastPrice); d.closePrice = cv(d.closePrice);
+                    d.limitUp = cv(d.limitUp); d.limitDown = cv(d.limitDown);
+                }
                 s2.ob = d;
                 s2.obTs = Date.now(); s2.obFail = 0; s2.obErr = '';   // отсчёт свежести — только отсюда
                 checkAlerts(s2);   // цена пересекла порог — сказать об этом
@@ -2155,7 +2181,7 @@
             var q2n = A().q2n;
             (d.lastPrices || []).forEach(function (lp) {
                 var uid = lp.instrumentUid || lp.figi;
-                var px = q2n(lp.price);
+                var px = q2n(lp.price) * bondKUid(uid);   // алерты живут в ₽
                 if (!uid || !(px > 0)) return;
                 checkAlertsAt(uid, px);
             });
@@ -2367,11 +2393,12 @@
         var dir = p.side === 'buy' ? 'STOP_ORDER_DIRECTION_SELL' : 'STOP_ORDER_DIRECTION_BUY';
         var pair = { uid: p.uid, slId: '', tpId: '', ts: Date.now() };
         var jobs = [];
+        var bk = bondKUid(p.uid);   // облигации: уровни защиты в ₽ → брокеру в %
         function place(px, type, key) {
             if (!(px > 0)) return;
             jobs.push(A().call('PostStopOrder', {
                 accountId: c.accountId, instrumentId: p.uid, quantity: String(lots),
-                direction: dir, stopPrice: A().n2q(px), stopOrderType: type,
+                direction: dir, stopPrice: A().n2q(px / bk), stopOrderType: type,
                 expirationType: 'STOP_ORDER_EXPIRATION_TYPE_GOOD_TILL_CANCEL'
             }).then(function (r) { pair[key] = String((r && r.stopOrderId) || ''); },
                 function (e) { toast('Защиту выставить не удалось: ' + (e.message || ''), true); }));
@@ -2513,7 +2540,7 @@
             if (!s.uid) return;
             var body = { accountId: c.accountId, instrumentId: s.uid };
             var px = s.kind === 'limit' ? +s.price : 0;
-            if (px > 0) body.price = A().n2q(px);
+            if (px > 0) body.price = A().n2q(px / bondK(s));   // облигации: ₽ → %
             var u0 = s.uid, g0 = s.gen || 0;
             A().call('GetMaxLots', body, { interactive: false }).then(function (d) {
                 var s2 = slotAlive(n, u0, g0); if (!s2) return;   // лимиты чужой бумаги
@@ -2644,14 +2671,20 @@
         // quiet = дорезолв из пуллера заявок: PIN-модалку звать не имеет права
         return A().call('GetInstrumentBy', { idType: 'INSTRUMENT_ID_TYPE_UID', id: uid }, quiet ? { interactive: false } : undefined).then(function (d) {
             var i = d.instrument || {};
+            var kind = String(i.instrumentType || i.instrumentKind || '');
+            var nom = A().q2n(i.nominal) || 0;
+            // шаг цены облигации приходит в процентах — храним СРАЗУ в рублях
+            // (0,01 % × номинал/100), как и все цены сцены (см. bondKOf)
+            var k = bondKOf({ kind: kind, nom: nom });
             instrMem[uid] = {
                 uid: uid, ticker: i.ticker || '', name: i.name || '', figi: i.figi || '',
-                lot: +i.lot || 1, minInc: A().q2n(i.minPriceIncrement) || 0.01,
-                // для режима «Просто»: НКД за штуку и вид бумаги. У акций НКД нет
-                // и поле не придёт — тогда 0, и формула полной цены схлопывается
-                // до «цена + комиссия», как и должна
+                lot: +i.lot || 1, minInc: (A().q2n(i.minPriceIncrement) || 0.01) * k,
+                // для тикета: НКД за штуку (он в РУБЛЯХ и у API) и вид бумаги.
+                // У акций НКД нет и поле не придёт — тогда 0, и формула полной
+                // цены схлопывается до «цена + комиссия», как и должна
                 aci: A().q2n(i.aciValue) || 0,
-                kind: String(i.instrumentType || i.instrumentKind || '')
+                nom: nom,
+                kind: kind
             };
             if (!quiet) return instrMem[uid];
             repaintOrders();
@@ -2844,9 +2877,19 @@
             s -= Math.min(20, tk.length);                  // короткий тикер ближе к запросу
             return s;
         }
+        // одна бумага приходит НЕСКОЛЬКИМИ инструментами (разные режимы торгов
+        // и классы у брокера, у ОФЗ — особенно): после ранжирования оставляем
+        // лучший на ISIN (владелец 2026-07-23 — «несколько ОФЗ 26233 в выдаче»)
+        var seen = {};
         return list.slice().map(function (i, n) { return { i: i, n: n, s: score(i) }; })
             .sort(function (a, b) { return b.s - a.s || a.n - b.n; })
-            .map(function (x) { return x.i; });
+            .map(function (x) { return x.i; })
+            .filter(function (i) {
+                var key = String(i.isin || (i.ticker + '|' + kind(i))).toUpperCase();
+                if (seen[key]) return false;
+                seen[key] = 1;
+                return true;
+            });
     }
     function instrTag(i) {
         var k = String(i.instrumentType || i.instrumentKind || '').toLowerCase();
@@ -3222,6 +3265,9 @@
             var bl = btn.querySelector('.btr-sb-l'); if (bl) bl.textContent = 'Отправляем…';
         }
         var isStop = s.kind === 'stop';
+        // облигации: сцена живёт в рублях, брокер ждёт проценты от номинала —
+        // обратная конверсия ровно на этой границе (см. bondKOf)
+        var bk = bondK(s);
         var method, body;
         if (isStop) {
             // у стоп-заявок нет клиентского idempotency-ключа в API —
@@ -3233,13 +3279,13 @@
                 instrumentId: s.uid,
                 quantity: String(lots),
                 direction: s.side === 'buy' ? 'STOP_ORDER_DIRECTION_BUY' : 'STOP_ORDER_DIRECTION_SELL',
-                stopPrice: A().n2q(price),
+                stopPrice: A().n2q(price / bk),
                 stopOrderType: lim ? 'STOP_ORDER_TYPE_STOP_LIMIT'
                     : (s.stopKind === 'tp' ? 'STOP_ORDER_TYPE_TAKE_PROFIT' : 'STOP_ORDER_TYPE_STOP_LOSS'),
                 expirationType: 'STOP_ORDER_EXPIRATION_TYPE_GOOD_TILL_CANCEL'
             };
             // у стоп-лимита price — цена ВЫСТАВЛЯЕМОЙ заявки, а не активации
-            if (lim) body.price = A().n2q(+s.stopLimit || 0);
+            if (lim) body.price = A().n2q((+s.stopLimit || 0) / bk);
         } else {
             method = 'PostOrder';
             body = {
@@ -3251,7 +3297,7 @@
                 orderId: s.orderId
             };
             if (s.kind === 'limit') {
-                body.price = A().n2q(price);
+                body.price = A().n2q(price / bk);
                 // 'gtc' — поле не передаём вовсе: это прежнее поведение брокера
                 // по умолчанию, и молча менять его на явное значение не нужно
                 var tif = TIF_API[s.tif];
@@ -3389,13 +3435,15 @@
             if (Math.abs(snapped - cur) < 1e-9) { toast('Цена та же — переносить нечего', true); return; }
             if (velBlock()) return;
             closeCf();
+            // облигации: цена в ₽ на сцене → брокеру в процентах (POINT)
+            var bk = bondKOf(instrMem[o.instrumentUid] || (ms && ms.meta));
             A().call('ReplaceOrder', {
                 accountId: c.accountId,
                 orderId: orderId,
                 idempotencyKey: genOrderId(),
                 quantity: String(left),
-                price: A().n2q(snapped),
-                priceType: 'PRICE_TYPE_CURRENCY'
+                price: A().n2q(snapped / bk),
+                priceType: bk !== 1 ? 'PRICE_TYPE_POINT' : 'PRICE_TYPE_CURRENCY'
             }).then(function () {
                 T.sent.push(Date.now());
                 A().logEvent('order_replace', tk + ' · цена ' + fmtPx(cur, ms) + ' → ' + fmtPx(snapped, ms));
@@ -3848,7 +3896,15 @@
             var q2n = A().q2n;
             ((d && d.lastPrices) || []).forEach(function (lp) {
                 var uid = lp.instrumentUid || lp.figi, px = q2n(lp.price);
-                if (uid && px > 0) omniPx[uid] = px;
+                if (!uid || !(px > 0)) return;
+                // облигация в выдаче: цена в % от номинала — в ₽ по паспорту
+                // строки (номинала у выдачи нет — берём дефолт 1000 из bondKOf)
+                var p0 = null;
+                omni.papers.forEach(function (p) { if (p.uid === uid) p0 = p; });
+                if (p0 && /bond/i.test(String(p0.instrumentType || p0.instrumentKind || ''))) {
+                    px *= bondKOf({ kind: 'bond', nom: 0 });
+                }
+                omniPx[uid] = px;
             });
             if (omni.open) omniPaint();
         }).catch(function () {});
@@ -4025,6 +4081,11 @@
         return midPrice(s) || 0;
     }
     function isBond(s) { return !!(s.meta && /bond/i.test(String(s.meta.kind || ''))); }
+    // словоформы бумаги для тикета: облигации перестали быть «акциями»
+    function unitWord(s, qty) {
+        return isBond(s) ? PF.plural(qty, 'облигация', 'облигации', 'облигаций')
+            : PF.plural(qty, 'акция', 'акции', 'акций');
+    }
     // Покупка: сколько бумаг влезает в сумму. Возвращает всё, что нужно разбивке.
     function simpleBuyCalc(s, rub, pxOver) {
         // pxOver — цена исполнения от сцены (аск при широком спреде, лимитка);
@@ -4115,10 +4176,10 @@
             to: new Date(now).toISOString(),
             interval: p[2]
         }, { interactive: false }).then(function (d) {
-            var q2n = A().q2n;
+            var q2n = A().q2n, k = bondKUid(uid);   // облигации: % → ₽
             sxCandles[key] = ((d && d.candles) || []).map(function (c) {
-                return { t: Date.parse(c.time), v: q2n(c.close), o: q2n(c.open),
-                         h: q2n(c.high), l: q2n(c.low), vol: +c.volume || 0 };
+                return { t: Date.parse(c.time), v: q2n(c.close) * k, o: q2n(c.open) * k,
+                         h: q2n(c.high) * k, l: q2n(c.low) * k, vol: +c.volume || 0 };
             }).filter(function (c) { return c.t && c.v > 0; });
             sxTick();
         }, function () { sxCandles[key] = 'err'; sxTick(); });
@@ -4281,7 +4342,8 @@
         // кнопка «Индикаторы» в шапке рядом с пилюлями (scnIndBtnHtml)
         return '<div class="bts-kmount" id="btScnK"></div>' +
             '<div class="bts-ordt" id="btScnOrdT"></div>' +
-            '<div class="bts-ordt" id="btScnCrossT"></div>';
+            '<div class="bts-ordt" id="btScnCrossT"></div>' +
+            '<div class="bts-ohlc" id="btScnOhlc"></div>';
     }
     // ---- тикет-колонка: сумма в рублях, «что нужно знать» свёрнуто ----
     // ---- состояние рынка: торги / аукцион / закрыто (экран 11) ----
@@ -4332,7 +4394,7 @@
         var m = s.meta, half = Math.max(1, Math.floor(m.lot / 2));
         return '<u class="gl">' + lotsTxt +
             '<span class="gl-tip"><em>Лот</em>Минимальная пачка бумаг на бирже. У ' + esc(m.ticker) +
-            ' в лоте ' + m.lot + ' ' + PF.plural(m.lot, 'акция', 'акции', 'акций') + ': купить ' + half +
+            ' в лоте ' + m.lot + ' ' + unitWord(s, m.lot) + ': купить ' + half +
             ' нельзя, ' + m.lot + ' — можно. Тикет всегда округляет до целых лотов сам.</span></u>';
     }
     // ---- цена исполнения и единый расчёт: ₽ ⇄ штуки (этап 3, экраны 08–09) ----
@@ -4440,7 +4502,7 @@
                 var mx = simpleBuyCalc(s, T.pos.money, scnExecPx(s, 1));
                 return 'Не хватает <b>' + fmtRub(short) + '</b>.' + (mx && mx.lots
                     ? ' «Максимум» — ' + mx.qty.toLocaleString('ru-RU') + ' ' +
-                      PF.plural(mx.qty, 'акция', 'акции', 'акций') + ' за <b>' + fmtKop(mx.total) + '</b> с комиссией'
+                      unitWord(s, mx.qty) + ' за <b>' + fmtKop(mx.total) + '</b> с комиссией'
                     : '');
             }
             if (!(+simpleSum > 0)) return '<span class="mut">' + (unit === 'rub'
@@ -4448,21 +4510,23 @@
                 : 'Укажите количество — посчитаем деньги и комиссию.') + '</span>';
             if (!c) return '<span class="mut">Ждём цену от брокера…</span>';
             if (!c.lots) return 'Меньше одного лота: лот ' + esc(s.meta.ticker) + ' — ' + lot + ' ' +
-                PF.plural(lot, 'акция', 'акции', 'акций') + ', <b>' + fmtKop(c.px * lot) + '</b> (' +
+                unitWord(s, lot) + ', <b>' + fmtKop(c.px * lot) + '</b> (' +
                 fmtKop(c.need) + ' с комиссией)';
+            // НКД облигации — на глазах ДО подтверждения, не сюрпризом в диалоге
+            var aciTxt = c.aci > 0 ? ' · НКД <b>' + fmtKop(c.aci) + '</b>' : '';
             if (unit === 'qty')
-                return c.qty.toLocaleString('ru-RU') + ' ' + PF.plural(c.qty, 'акция', 'акции', 'акций') +
+                return c.qty.toLocaleString('ru-RU') + ' ' + unitWord(s, c.qty) +
                     ' = <b>' + fmtKop(c.gross) + '</b> по ' + (scnLimPx(s) > 0 ? 'лимиту' : 'рынку') +
-                    ' · комиссия ' + fmtKop(c.fee);
-            return '≈ <b>' + c.qty.toLocaleString('ru-RU') + ' ' + PF.plural(c.qty, 'акция', 'акции', 'акций') + '</b>' +
+                    aciTxt + ' · комиссия ' + fmtKop(c.fee);
+            return '≈ <b>' + c.qty.toLocaleString('ru-RU') + ' ' + unitWord(s, c.qty) + '</b>' +
                 (lot > 1
                     ? ' — ' + glLot(s, c.lots.toLocaleString('ru-RU') + ' ' + PF.plural(c.lots, 'лот', 'лота', 'лотов')) + ' по ' + lot + ' шт'
-                    : '');
+                    : '') + aciTxt;
         }
         var have = haveQty(s), p = posOf(s.uid);
         if (!(have > 0)) return '<span class="mut">Этой бумаги у вас нет — продавать нечего.</span>';
         var left = (c && c.qty) ? Math.max(0, have - c.qty) : have;
-        return 'У вас <b>' + have.toLocaleString('ru-RU') + ' ' + PF.plural(have, 'акция', 'акции', 'акций') + '</b>' +
+        return 'У вас <b>' + have.toLocaleString('ru-RU') + ' ' + unitWord(s, have) + '</b>' +
             (p && p.avg > 0 ? ' по ' + fmtPx(p.avg, s) + ' ₽' : '') +
             (c && c.qty ? ' — останется ' + left.toLocaleString('ru-RU') : '');
     }
@@ -4474,8 +4538,13 @@
         var p = posOf(s.uid);
         if (!c || !c.lots || !p || !(p.avg > 0) || !(p.qty > 0) || scnShortfall(n) > 0) return '';
         var na = (p.avg * p.qty + c.px * c.qty) / (p.qty + c.qty);
-        return 'У вас ' + p.qty.toLocaleString('ru-RU') + ' по ' + fmtPx(p.avg, s) +
-            ' ₽ — <b>средняя станет ' + fmtPx(na, s) + ' ₽</b>';
+        // подробности — в тултипе-«деталях» (владелец 2026-07-23: развёрнутая
+        // строка шумела); та же механика .gl, что у глоссария лота
+        return '<u class="gl">средняя станет ' + fmtPx(na, s) + ' ₽' +
+            '<span class="gl-tip"><em>Средняя цена</em>Сейчас у вас ' +
+            p.qty.toLocaleString('ru-RU') + ' шт по ' + fmtPx(p.avg, s) + ' ₽. Докупка ' +
+            c.qty.toLocaleString('ru-RU') + ' шт по ' + fmtPx(c.px, s) +
+            ' ₽ сдвинет среднюю до ' + fmtPx(na, s) + ' ₽.</span></u>';
     }
     // переплату называем круглым числом: 469 ₽ точности не добавляет, а «≈» честнее
     function scnTen(v) { return v >= 100 ? Math.round(v / 10) * 10 : Math.round(v); }
@@ -4600,9 +4669,9 @@
         var lim = s.kind === 'limit' && +s.price > 0 ? fmtPx(+s.price, s) + ' ₽' : '';
         var first = buy
             ? (lim ? 'Купится по вашей лимитной цене <b>' + lim + '</b> или дешевле — дороже никогда.'
-                : 'Купится по рыночной цене — сейчас <b>' + px + '</b> за акцию.')
+                : 'Купится по рыночной цене — сейчас <b>' + px + '</b> за ' + (isBond(s) ? 'облигацию' : 'акцию') + '.')
             : (lim ? 'Продастся по вашей лимитной цене <b>' + lim + '</b> или дороже — дешевле никогда.'
-                : 'Продастся по рыночной цене — сейчас <b>' + px + '</b> за акцию.');
+                : 'Продастся по рыночной цене — сейчас <b>' + px + '</b> за ' + (isBond(s) ? 'облигацию' : 'акцию') + '.');
         var rows = buy ? [
             first,
             'Комиссия ' + feeTxt() + ' % уже в сумме кнопки — списаний сверх неё не будет.',
@@ -4649,16 +4718,13 @@
         var head = '<div class="tkt-h">' + scnTktTabsHtml() +
             '<span class="freshw" id="btScnFresh">' + scnFreshInner() + '</span></div>';
         // стакан на всю карточку — глубже плоскости «Разгона»: высота позволяет
-        if (vw === 'depth' && !isBond(s)) {
+        if (vw === 'depth') {
             return head + '<div class="tkt-depth" id="btScnTkDepth">' + scnDepthHtml(s, 1, SCN_DEPTH_CARD) + '</div>';
         }
-        // облигации в тикет не пущены (хвост набора): котировка в % от номинала,
-        // рубли без проверки единиц на живом счёте были бы гаданием
-        if (isBond(s)) {
-            return (start ? head : '<div class="tkt-h"><b>Сделка</b></div>') +
-                '<div class="apx"><span class="mut">' + esc(s.meta.ticker) + ' — облигация: цена в процентах от ' +
-                'номинала. Тикет откроется после проверки единиц на живом счёте; пока облигации живут в «Портфелях».</span></div>';
-        }
+        // облигации ПУЩЕНЫ в тикет (владелец 2026-07-23): вся сцена живёт в
+        // рублях (bondKOf на границах данных), НКД уже в расчёте simpleBuyCalc/
+        // simpleSellCalc (aci за штуку) — «спишется» честно включает купон.
+        // Единицы на живом счёте всё же сверить при первой реальной сделке.
         // «свободно» живёт у поля суммы (решение набора). Обёртка с id всегда
         // на месте: деньги приходят ПОЗЖЕ первого рендера (pollPos), и без неё
         // подпись не появлялась бы до полной перерисовки сцены
@@ -4746,9 +4812,12 @@
         var ordBtn = '<button type="button" class="ps-ord" onclick="pftScDeck(\'orders\')" ' +
             'title="Мои заявки панелью">заявки' + (nOrd ? ' <b>' + nOrd + '</b>' : '') +
             ' <i>' + (open && dockTab === 'orders' ? '▴' : '▾') + '</i></button>';
+        // ручка «Счёта» — у правого края, под своей картой (правый нижний угол)
+        var acctBtn = '<button type="button" class="ps-ord ps-acct" onclick="pftScAcct()" ' +
+            'title="Деньги и итог счёта">счёт <i>' + (stageObj().layers.acct ? '▴' : '▾') + '</i></button>';
         if (!list.length) {
             // позиций ещё нет, но росток должен быть достижим — полоса-минимум
-            return lab + '<em class="ps-none">пока пусто</em>' + ordBtn;
+            return lab + '<em class="ps-none">пока пусто</em>' + ordBtn + acctBtn;
         }
         var chips = list.slice(0, POS_CHIPS).map(function (p) {
             var cl = (T.closes || {})[p.uid];
@@ -4767,7 +4836,7 @@
             ? '<button type="button" class="ps-more" onclick="pftSceneBack()" ' +
               'title="Полный разбор позиций — в «Портфелях»">ещё ' + (list.length - POS_CHIPS) + ' →</button>'
             : '';
-        return lab + chips + more + ordBtn;
+        return lab + chips + more + ordBtn + acctBtn;
     }
     window.pftScChip = function (uid) {
         loadInstrument(sxSlot(), uid, function () {
@@ -4833,24 +4902,15 @@
                     last: { upColor: up, downColor: down, noChangeColor: txt,
                         line: { show: true }, text: { show: false } }
                 },
-                // легенда — только под кроссхейром, и В ПЛАШКЕ (showType rect,
-                // владелец 2026-07-23): голые цифры терялись под линиями
-                // кроссхейра, карточка-подложка отделяет данные от сетки
-                tooltip: { showRule: 'follow_cross', showType: 'rect',
-                    title: { color: txt, size: 11 },
-                    legend: { color: nightMode ? '#e9eef8' : '#0f172a', size: 11.5,
-                        marginLeft: 10, marginTop: 6, marginBottom: 2 },
-                    rect: {
-                        color: nightMode ? 'rgba(18,23,34,0.94)' : 'rgba(255,255,255,0.94)',
-                        borderColor: nightMode ? 'rgba(255,255,255,0.14)' : 'rgba(15,23,42,0.12)',
-                        borderSize: 1, borderRadius: 10,
-                        paddingLeft: 12, paddingRight: 12, paddingTop: 8, paddingBottom: 8,
-                        offsetLeft: 10, offsetTop: 10, offsetRight: 10, offsetBottom: 10
-                    } }
+                // легенда движка ВЫКЛЮЧЕНА (владелец 2026-07-23: rect-плашка
+                // движка прыгала на сторону, противоположную курсору, а нужна
+                // ТОЛЬКО слева вверху — это не настраивается). ОHLC-карточку
+                // рисует DOM-слой #btScnOhlc из onCrosshairChange (scnKOhlc)
+                tooltip: { showRule: 'none' }
             },
             indicator: {
-                // rect и у индикаторов: их легенда живёт в той же плашке
-                tooltip: { showRule: 'follow_cross', showType: 'rect',
+                // легенды индикаторов движок и так держит слева у своих панелей
+                tooltip: { showRule: 'follow_cross',
                     legend: { color: nightMode ? '#e9eef8' : '#0f172a', size: 11.5 } },
                 ohlc: { upColor: up, downColor: down, noChangeColor: txt },
                 bars: [{ upColor: 'rgba(22,163,74,0.45)', downColor: 'rgba(220,38,38,0.45)', noChangeColor: txt }],
@@ -4915,9 +4975,10 @@
                     interval: per[2]
                 }, { interactive: false }).then(function (d) {
                     if (uid !== K.uid) { p.callback([], { forward: false, backward: false }); return; }
+                    var k = bondKUid(uid);   // облигации: % → ₽
                     var rows = ((d && d.candles) || []).map(function (c) {
-                        return { timestamp: Date.parse(c.time), open: q2n(c.open), high: q2n(c.high),
-                                 low: q2n(c.low), close: q2n(c.close), volume: +c.volume || 0 };
+                        return { timestamp: Date.parse(c.time), open: q2n(c.open) * k, high: q2n(c.high) * k,
+                                 low: q2n(c.low) * k, close: q2n(c.close) * k, volume: +c.volume || 0 };
                     }).filter(function (r) { return r.timestamp && r.close > 0; });
                     if (p.type === 'forward' && p.timestamp) {
                         rows = rows.filter(function (r) { return r.timestamp < p.timestamp; });
@@ -4958,8 +5019,9 @@
                 var cs = (d && d.candles) || [];
                 var c = cs[cs.length - 1];
                 if (!c) return;
-                var bar = { timestamp: Date.parse(c.time), open: q2n(c.open), high: q2n(c.high),
-                            low: q2n(c.low), close: q2n(c.close), volume: +c.volume || 0 };
+                var k = bondKUid(uid);   // облигации: % → ₽
+                var bar = { timestamp: Date.parse(c.time), open: q2n(c.open) * k, high: q2n(c.high) * k,
+                            low: q2n(c.low) * k, close: q2n(c.close) * k, volume: +c.volume || 0 };
                 if (bar.timestamp && bar.close > 0) {
                     K.liveCb(bar);
                     // плашки цены ведёт та же свеча, что и пунктир движка —
@@ -5018,7 +5080,7 @@
             // прокрутка/зум сдвигают шкалу — ярлыки заявок едут следом
             try { chart.subscribeAction('onVisibleRangeChange', function () { scnKTags(); }); } catch (e) {}
             // плашка цены кроссхейра на стороне, противоположной оси
-            try { chart.subscribeAction('onCrosshairChange', function (d) { scnKCross(d); }); } catch (e) {}
+            try { chart.subscribeAction('onCrosshairChange', function (d) { scnKCross(d); scnKOhlc(d); }); } catch (e) {}
             try {
                 K.ro = new ResizeObserver(function () {
                     if (K.roRaf) return;
@@ -5246,6 +5308,47 @@
         } catch (e) {}
         if (el.__btHtml !== html) { el.__btHtml = html; el.innerHTML = html; }
     }
+    // OHLC-карточка кроссхейра — ВСЕГДА слева вверху холста (владелец
+    // 2026-07-23: rect-легенда движка прыгала на сторону от курсора).
+    // Данные — kLineData из того же onCrosshairChange, курсор ушёл — пусто
+    function volTxt(v) {
+        v = +v || 0;
+        if (v >= 1e6) return (v / 1e6).toLocaleString('ru-RU', { maximumFractionDigits: 1 }) + ' млн';
+        if (v >= 1e3) return (v / 1e3).toLocaleString('ru-RU', { maximumFractionDigits: 1 }) + ' тыс';
+        return v.toLocaleString('ru-RU');
+    }
+    function scnKOhlc(d) {
+        var el = dq('btScnOhlc');
+        if (!el) return;
+        var c = d && d.kLineData;
+        // ЛОВУШКА движка: onCrosshairChange отдаёт СЫРОЙ кроссхейр ({x,y,paneId})
+        // без kLineData — свечу достаём сами по x через convertFromPixel
+        if (!c && d && isFinite(d.x) && K.chart) {
+            try {
+                var pt = K.chart.convertFromPixel({ x: d.x }, { paneId: 'candle_pane' });
+                var list = K.chart.getDataList();
+                if (pt && pt.dataIndex != null && list) c = list[pt.dataIndex] || null;
+            } catch (e) {}
+        }
+        var html = '';
+        if (c && isFinite(c.close)) {
+            var s = S(sxSlot());
+            var per = sxPer()[0];
+            var dt = new Date(c.timestamp);
+            var tTxt = per === 'day' || per === 'week'
+                ? dt.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) + ' ' +
+                  dt.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+                : dt.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' });
+            var up = c.close >= c.open;
+            html = '<em>' + esc(tTxt) + '</em>' +
+                '<span>откр <b>' + fmtPx(c.open, s) + '</b></span>' +
+                '<span>макс <b>' + fmtPx(c.high, s) + '</b></span>' +
+                '<span>мин <b>' + fmtPx(c.low, s) + '</b></span>' +
+                '<span>закр <b class="' + (up ? 'g' : 'r') + '">' + fmtPx(c.close, s) + '</b></span>' +
+                (+c.volume > 0 ? '<span>объём <b>' + volTxt(c.volume) + '</b></span>' : '');
+        }
+        if (el.__btHtml !== html) { el.__btHtml = html; el.innerHTML = html; }
+    }
     function scnKTags() {
         var layer = dq('btScnOrdT');
         if (!layer || !K.chart) return;
@@ -5378,11 +5481,13 @@
         }
         function dress(l, side, best) {
             l.w = Math.max(6, Math.round(Math.sqrt(l.lots / maxLots) * 100));
-            var my = myAt(l.px);
+            // плашка «ваши N лот» с ОСТАТКОМ (req − исполнено): исполняется
+            // заявка — число на плашке тает (владелец 2026-07-23)
+            l.my = myAt(l.px);
             l.cls = 'd-row ' + side + (l.lots >= maxLots * 0.6 ? ' d-big' : '') +
-                (best ? ' d-best' : '') + (my ? ' d-mine' : '');
+                (best ? ' d-best' : '') + (l.my ? ' d-mine' : '');
             l.rub = '≈ ' + Math.round(l.px * l.lots * lot).toLocaleString('ru-RU') + ' ₽ на уровне' +
-                (my ? ' · здесь ваша заявка × ' + my + ' лот' : '');
+                (l.my ? ' · ваша заявка: осталось ' + l.my + ' лот' : '');
             return l;
         }
         // ЛОВУШКА мокапа: лучшая продажа стоит У СПРЕДА — аски в обратном
@@ -5402,10 +5507,13 @@
     function scnDepthRow(l, s) {
         // заливка — мягкий градиент ЗА числом лотов, без серых подложек:
         // длиннее заливка → крупнее уровень, стена подсвечена гуще (d-big)
+        // узел d-my ВСЕГДА в строке (пустой спрятан CSS :empty) — точечный
+        // патч scnDepthSet ходит по цепочке firstChild БЕЗ пробелов между тегами
         return '<div class="' + l.cls + '" role="button" tabindex="0" data-px="' + l.px + '" ' +
             'title="' + l.rub + '" onclick="pftScRowPx(+this.dataset.px)">' +
             '<i class="d-fill" style="width:' + l.w + '%"></i>' +
             '<span class="pr">' + fmtPx(l.px, s) + '</span>' +
+            '<span class="d-my">' + (l.my ? l.my + ' лот' : '') + '</span>' +
             '<span class="d-vol">' + l.lots.toLocaleString('ru-RU') + '</span></div>';
     }
     function scnDepthHtml(s, slim, deep) {
@@ -5466,9 +5574,11 @@
             if (r.className !== l.cls) r.className = l.cls;
             if (r.dataset.px !== String(l.px)) r.dataset.px = l.px;
             if (r.title !== l.rub) r.title = l.rub;
-            var pr = r.firstChild.nextSibling, vol = pr.nextSibling;
+            var pr = r.firstChild.nextSibling, my = pr.nextSibling, vol = my.nextSibling;
             var pt = fmtPx(l.px, s), vt = l.lots.toLocaleString('ru-RU');
+            var mt = l.my ? l.my + ' лот' : '';
             if (pr.textContent !== pt) pr.textContent = pt;
+            if (my.textContent !== mt) my.textContent = mt;
             if (vol.textContent !== vt) vol.textContent = vt;
             var w = l.w + '%';
             if (r.firstChild.style.width !== w) r.firstChild.style.width = w;
@@ -5488,12 +5598,12 @@
         // рядов с запасом на весь пробел карточки; лишнее срежет overflow
         var rows = (s.tape || []).slice(0, 16);
         if (!rows.length) return '<div class="bts-cnote">Сделки подтянутся через секунду…</div>';
-        var q2n = A().q2n;
+        var q2n = A().q2n, bk = bondK(s);   // облигации: % → ₽
         return rows.map(function (t) {
             var buy = t.direction === 'TRADE_DIRECTION_BUY';
             var tm = t.time ? new Date(t.time).toLocaleTimeString('ru-RU') : '';
             return '<div class="d-row d-t"><span class="tt">' + esc(tm) + '</span>' +
-                '<span class="pr ' + (buy ? 'g' : 'r') + '">' + fmtPx(q2n(t.price), s) + '</span>' +
+                '<span class="pr ' + (buy ? 'g' : 'r') + '">' + fmtPx(q2n(t.price) * bk, s) + '</span>' +
                 '<span class="d-vol">×' + (+t.quantity || 0).toLocaleString('ru-RU') + '</span></div>';
         }).join('');
     }
@@ -5719,7 +5829,7 @@
         });
         T.stops.forEach(function (o) {
             if (o.instrumentUid !== s.uid) return;
-            var px = A().q2n(o.stopPrice);
+            var px = A().q2n(o.stopPrice) * bondK(s);   // облигации: % → ₽
             if (!(px > 0)) return;
             out.push({ key: 'st:' + o.stopOrderId, px: px,
                 tp: o.stopOrderType === 'STOP_ORDER_TYPE_TAKE_PROFIT' ? 1 : 0,
@@ -5827,7 +5937,7 @@
             var ms = metaSlot(o.instrumentUid);
             var tk = (instrMem[o.instrumentUid] || {}).ticker || '—';
             var buy = o.direction === 'STOP_ORDER_DIRECTION_BUY';
-            var px = A().q2n(o.stopPrice);
+            var px = A().q2n(o.stopPrice) * bondKUid(o.instrumentUid);   // облигации: % → ₽
             var tp = o.stopOrderType === 'STOP_ORDER_TYPE_TAKE_PROFIT';
             rows.push('<div class="dk-r"><b>' + esc(tk) + '</b>' +
                 '<span class="' + (buy ? 'g' : 'r') + '">' + (buy ? 'Покупка' : 'Продажа') + '</span>' +
@@ -5910,6 +6020,57 @@
         return tabs + head + '<div class="dk-body">' + body + '</div>';
     }
 
+    // ---- «Счёт» — выезжающий блок правого нижнего угла (владелец 2026-07-23):
+    // деньги собраны у места, где их тратят. Низ карточки = низ ростка (96),
+    // раскрывается вверх из-под карточки сделки, ручка — в полосе позиций
+    function acctBlocked() {
+        var sum = 0;
+        T.orders.forEach(function (o) {
+            if (o.direction !== 'ORDER_DIRECTION_BUY') return;
+            var left = Math.max(0, (+o.lotsRequested || 0) - (+o.lotsExecuted || 0));
+            var lot = (instrMem[o.instrumentUid] || {}).lot || 1;
+            var px = ordPx(o, metaSlot(o.instrumentUid));
+            if (px > 0 && left > 0) sum += px * left * lot;
+        });
+        return sum;
+    }
+    function acctDayPnl() {
+        var sum = 0, have = false;
+        (T.port.list || []).forEach(function (p) {
+            var cl = (T.closes || {})[p.uid];
+            if (!(cl > 0) || !(p.last > 0)) return;
+            sum += (p.last - cl) * p.qty;
+            have = true;
+        });
+        return have ? sum : null;
+    }
+    function scnAcctHtml() {
+        if (!stageObj().layers.acct) return '';
+        var free = T.pos.money;
+        var val = portValue();
+        var blk = acctBlocked();
+        var pnl = acctDayPnl();
+        function row(lab, v, cls) {
+            return '<div class="ac-r' + (cls || '') + '"><span>' + lab + '</span><b>' + v + '</b></div>';
+        }
+        var total = (free != null || val != null) ? (free || 0) + (val || 0) : null;
+        return '<div class="ac-h"><b>Счёт</b><em>' + ((conn() || {}).sandbox ? 'песочница' : 'брокерский') + '</em>' +
+            '<button type="button" class="shev" onclick="pftScAcct()" aria-label="Свернуть счёт">⌄</button></div>' +
+            row('Свободные деньги', free != null ? fmtRub(free) : '—') +
+            (blk > 0 ? row('Ждут в заявках на покупку', '≈ ' + fmtRub(blk)) : '') +
+            row('Портфель', val != null ? fmtRub(val) : '—') +
+            (pnl != null ? row('Итог дня', (pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(pnl)),
+                pnl >= 0 ? ' g' : ' r') : '') +
+            (total != null ? row('Всего средств', fmtRub(total), ' sum') : '');
+    }
+    window.pftScAcct = function () {
+        var o = stageObj();
+        o.layers.acct = o.layers.acct ? 0 : 1;
+        saveStageRaw(o);
+        scnSet('btScnAcct', scnAcctHtml());
+        scnSet('btScnPos', scnPosInner());   // стрелка на ручке
+    };
+
     // ---- экраны trading:N — вкладки в строке среды (механика раунда 1) ----
     var SCN_SCREENS_MAX = 8;
     function scnScreensHtml() {
@@ -5976,7 +6137,8 @@
         var body = s.meta
             ? scnHeroHtml(n, s) +
               '<aside class="tkt' + (tktVw === 'split' ? ' tkt-x2' : '') + '" id="btScnTicket">' + scnTicketHtml(n) + '</aside>' +
-              '<div class="dock" id="btScnDock">' + scnDockHtml() + '</div>'
+              '<div class="dock" id="btScnDock">' + scnDockHtml() + '</div>' +
+              '<div class="acct" id="btScnAcct">' + scnAcctHtml() + '</div>'
             : scnHelloHtml();
         return '<div class="bts' + (sceneNight() ? ' night' : '') + '" id="btScene" data-stage="start" ' +
             'data-tkt="' + tktVw + '" data-deck="' + (st.layers.deck ? 1 : 0) + '">' +
@@ -6010,6 +6172,8 @@
             if (tv !== 'deal') scnDepthSet('btScnTkDepth', s, tv === 'depth' ? 1 : 0, SCN_DEPTH_CARD);
             // открытый росток заявок/позиций — жив теми же тиками
             if (stageObj().layers.deck) { scnSet('btScnDock', scnDockHtml()); scnDockFit(); }
+            // открытый «Счёт» — деньги и итог дня живут тиками
+            if (stageObj().layers.acct) scnSet('btScnAcct', scnAcctHtml());
         }
         scnSet('btScnPos', scnPosInner());
     }
