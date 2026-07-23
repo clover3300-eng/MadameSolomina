@@ -152,6 +152,14 @@
 .bts .ih { display: flex; align-items: center; gap: 14px; }
 .bts .ih-nm h3 { font: 400 26px/1.1 var(--font-title); margin: 0; }
 .bts .ih-nm em { font: 400 10.5px var(--font-num); font-style: normal; color: var(--dim); letter-spacing: 0.05em; }
+/* звезда «в Избранное» у имени бумаги: тот же стор, что рейка F и «Рынок» */
+.bts .ih-fav {
+    border: 0; background: none; padding: 0 2px; margin-left: 7px;
+    font-size: 17px; line-height: 1; vertical-align: 3px;
+    color: var(--dim); cursor: pointer; opacity: 0.55;
+}
+.bts .ih-fav:hover { opacity: 1; color: var(--amb); }
+.bts .ih-fav.on { opacity: 1; color: var(--amb); }
 .bts .ih-r { margin-left: auto; display: flex; align-items: center; gap: 8px; position: relative; }
 /* контролы шапки графика укрупнены (владелец 2026-07-23: «слишком маленькие») */
 .bts .ih-per { display: flex; gap: 2px; border: 1px solid var(--line); border-radius: 11px; padding: 3px; background: var(--card); }
@@ -259,13 +267,17 @@
 .bts .tkt-h { display: flex; align-items: center; gap: 9px; }
 .bts .tkt-h b { font: 400 16px var(--font-title); }
 .bts .freshw { margin-left: auto; }
-/* вкладки карточки «Старта»: Сделка / Стакан / Сплит (стакан — зелёный) */
-.bts .tkt-tabs { display: inline-flex; align-items: baseline; gap: 8px; }
-.bts .tkt-tabs i { font-style: normal; color: var(--dim); opacity: 0.55; }
-.bts .tkt-tabs .tt { font: 400 16px var(--font-title); color: var(--ink); opacity: 0.38; cursor: pointer; user-select: none; white-space: nowrap; }
-.bts .tkt-tabs .tt:hover { opacity: 0.72; }
-.bts .tkt-tabs .tt.on { opacity: 1; }
-.bts .tkt-tabs .tt.grn { color: var(--grn); }
+/* вкладки карточки «Старта»: Сделка / Стакан / Сплит — СЕГМЕНТОМ в идиоме
+   «Купить/Продать» ниже (владелец 2026-07-24: слова через дробь не читались
+   кнопками); активный «Стакан» остаётся зелёным */
+.bts .tkt-tabs { display: inline-flex; gap: 2px; border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
+.bts .tkt-tabs .tt {
+    font: 600 11.5px var(--font-ui); color: var(--dim); border-radius: 7px;
+    padding: 5px 11px; cursor: pointer; user-select: none; white-space: nowrap;
+}
+.bts .tkt-tabs .tt:hover { color: var(--mut); }
+.bts .tkt-tabs .tt.on { background: color-mix(in srgb, var(--acc) 14%, transparent); color: var(--ink); }
+.bts .tkt-tabs .tt.grn.on { background: color-mix(in srgb, var(--grn) 15%, transparent); color: var(--grn); }
 /* стакан на всю карточку (вид «Стакан») */
 .bts .tkt-depth { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
 /* заголовок стакана в карточках — тем же кеглем, что вкладки заявки */
@@ -284,19 +296,26 @@
 /* вид «Лента»: последние сделки во всю карточку */
 .bts .d-tape-full { flex: 1 1 auto; min-height: 0; overflow: hidden; }
 .bts .d-tape-b { margin-top: 2px; }
-/* вид «Кривая»: канвас кумулятивной глубины */
-.bts .d-curvew { position: relative; flex: 1 1 auto; min-height: 0; cursor: crosshair; }
+/* лесенка уровней — свой блок: в «Лесенке» над мини-лентой, в «Кривой» под
+   горой; лишние ряды срезает overflow, счёт рядов ведёт scnDepthDeep */
+.bts .d-ladder { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+/* «Лесенка»: мини-лента сделок пришита к низу карточки (владелец 2026-07-24:
+   «лесенка вместе с лентой, как было раньше») */
+.bts .d-tape-mini { flex: none; margin-top: auto; border-top: 1px dashed var(--line); padding-top: 7px; }
+.bts .d-tape-mini .d-tape-b { max-height: 144px; overflow: hidden; }
+.bts .d-h2 {
+    font: 700 10.5px var(--font-ui); letter-spacing: 0.09em; text-transform: uppercase;
+    color: var(--dim); margin-bottom: 3px;
+}
+/* вид «Кривая»: гора кумулятивной глубины СВЕРХУ, лесенка под ней */
+.bts .d-curvew { position: relative; flex: 0 0 146px; min-height: 0; cursor: crosshair; }
 .bts .d-curvew canvas { display: block; width: 100%; height: 100%; }
 .bts .dc-x {
     display: flex; align-items: baseline; justify-content: space-between;
-    font: 600 10px var(--font-num); color: var(--dim); padding: 6px 2px 0; flex: none;
+    font: 600 10px var(--font-num); color: var(--dim); padding: 6px 2px; flex: none;
+    border-bottom: 1px dashed var(--line); margin-bottom: 6px;
 }
 .bts .dc-x b { font: 600 10px var(--font-num); color: var(--mut); }
-.bts .dc-note {
-    font: 400 11px var(--font-ui); color: var(--mut); line-height: 1.5;
-    border-top: 1px dashed var(--line); padding-top: 9px; margin-top: 10px; flex: none;
-}
-.bts .dc-note b { font-weight: 600; color: var(--ink); }
 /* сплит: карточка раздваивается на стакан + заявку; ширину контейнера и
    сжатие героя ведут transition (контент слева поджимается, как от сайдбара) */
 .bts .tkt { transition: width 0.45s cubic-bezier(0.25, 0.9, 0.3, 1), bottom 0.45s cubic-bezier(0.25, 0.9, 0.3, 1); }
@@ -580,10 +599,19 @@
 
 /* ---------- полоса позиций ---------- */
 .bts .pos-strip {
-    position: absolute; left: 20px; right: 320px; bottom: 14px;
+    position: absolute; left: 20px; right: 456px; bottom: 14px;
     display: flex; align-items: center; gap: 9px; z-index: 25; min-height: 0;
 }
 .bts .pos-strip:empty { display: none; }
+/* ручка «Счёта» — по центру карточки заявки (владелец 2026-07-24): обёртка
+   повторяет геометрию тикета (right 36 + ширина 400), кнопка центрируется.
+   В сплите правая карточка — та же «Заявка» 400px у правого края */
+.bts .ps-acctw {
+    position: absolute; right: 36px; bottom: 14px; width: 400px;
+    display: flex; justify-content: center; z-index: 25; pointer-events: none;
+}
+.bts .ps-acctw:empty { display: none; }
+.bts .ps-acctw .ps-acct { pointer-events: auto; }
 /* ярлыки полосы — ручки ростка: клик раскрывает панель вверх.
    Итог портфеля живёт в ярлыке «Мои позиции» (владелец 2026-07-23:
    одинокая сумма у правого нижнего угла была не к месту) */
@@ -618,7 +646,7 @@
    позиций (владелец 2026-07-24: голый текст в углу не смотрелся):
    карточка-кнопка со свободными деньгами, открытый — акцентная рамка */
 .bts .ps-acct {
-    flex: none; margin-left: auto;
+    flex: none;
     display: inline-flex; align-items: center; gap: 6px;
     font: 800 10.5px var(--font-ui); letter-spacing: 0.1em; text-transform: uppercase;
     color: var(--dim); border: 1px solid var(--line); background: var(--card);
@@ -772,26 +800,26 @@
 }
 .bts-cmpmenu .cmp-off:hover { background: color-mix(in srgb, var(--red) 8%, transparent); }
 /* холст сравнения: сетка «красивых» процентов, вторая серия пунктиром */
-.bts .cmp-grid { stroke: var(--hair); stroke-width: 1; }
-.bts .cmp-grid.zero { stroke: color-mix(in srgb, var(--mut) 40%, transparent); }
-.bts .cmp-axt { fill: var(--dim); font: 600 10px var(--font-num); text-anchor: end; }
-.bts .cmp-line-b {
-    fill: none; stroke: var(--mut); stroke-width: 1.8;
-    stroke-dasharray: 5 5; opacity: 0.6;
-    stroke-linejoin: round; stroke-linecap: round;
+/* сравнение (пересборка 2026-07-24): линии — канвас-слой ПОВЕРХ свечей
+   движка (между профилем объёма z5 и ярлыками заявок z6+), легенда — DOM
+   в левом верхнем углу холста; ✕ на чипе снимает свою линию */
+.bts-cmp { position: absolute; inset: 0; pointer-events: none; z-index: 6; width: 100%; height: 100%; }
+.bts-cmpleg {
+    position: absolute; left: 10px; top: 8px; z-index: 8;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+    max-width: 70%; pointer-events: none;
 }
-.bts .cmp-leg {
-    position: absolute; left: 2px; top: 2px; z-index: 7;
-    display: flex; align-items: center; gap: 8px;
-}
+.bts-cmpleg:empty { display: none; }
 .bts .cmp-chip {
     display: inline-flex; align-items: center; gap: 7px;
     font: 600 10.5px var(--font-num); color: var(--mut);
     border: 1px solid var(--line); background: var(--card);
     border-radius: 8px; padding: 4px 9px; white-space: nowrap;
+    pointer-events: auto;
 }
-.bts .cmp-chip i { width: 14px; border-top: 2px solid var(--acc); font-style: normal; flex: none; }
-.bts .cmp-chip.ix i { border-top-style: dashed; border-top-color: var(--mut); }
+.bts .cmp-chip i { width: 14px; height: 2px; border-radius: 1px; background: var(--acc); font-style: normal; flex: none; }
+.bts .cmp-chip.hero i { background: var(--ink); }
+.bts .cmp-chip em { font: 400 10px var(--font-ui); font-style: normal; color: var(--dim); }
 .bts .cmp-chip b { font: 700 10.5px var(--font-num); color: var(--ink); }
 .bts .cmp-chip u { text-decoration: none; }
 .bts .cmp-chip u.g { color: var(--grn); }
@@ -801,7 +829,8 @@
     margin-left: 2px; padding: 0 2px;
 }
 .bts .cmp-chip s:hover { color: var(--red); }
-.bts .cmp-leg em { font: 400 10px var(--font-ui); font-style: normal; color: var(--dim); white-space: nowrap; }
+.bts-cmpleg > em { font: 400 10px var(--font-ui); font-style: normal; color: var(--dim); white-space: nowrap; }
+.bts .cmp-hint { font: 400 10px var(--font-ui); color: var(--dim); padding: 2px 10px 6px; }
 /* ярлыки заявок поверх холста: линия — оверлей движка, ярлык — DOM.
    Слой ярлыков ВЫШЕ слоя кроссхейра, а ховер по ярлыку гасит плашку цены
    кроссхейра (владелец 2026-07-23: она замирала ровно на «✕» стопа и не
@@ -1261,7 +1290,8 @@
 @media (max-width: 1360px) {
     .bts-hero { left: 32px; right: 468px; }                     /* Старт: 24+400+44 */
     .bts .tkt { right: 24px; }
-    .bts .pos-strip { right: 300px; }
+    .bts .pos-strip { right: 444px; }
+    .bts .ps-acctw { right: 24px; }
     .bts .dock { left: 32px; right: 468px; }
     .bts .acct { right: 24px; }
     .bts-omni { width: 340px; }
