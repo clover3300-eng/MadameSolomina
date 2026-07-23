@@ -4327,17 +4327,21 @@
     }
 
     // ---- герой бумаги: шапка без монограммы, цена 58px, факты дня ----
+    // тумблер Линия/Свечи + периоды — одним блоком: на «Старте» в шапке,
+    // на «Разгоне» — в зоне графика (шапка героя тянется и над стаканом,
+    // и пилюли висели бы над ним, а не над холстом — владелец 2026-07-23)
+    function scnPillsHtml() {
+        return '<span class="ih-per"><span class="' + (candlesOn() ? '' : 'on') + '" role="button" tabindex="0" ' +
+                'onclick="pftScMode(0)">Линия</span><span class="' + (candlesOn() ? 'on' : '') + '" role="button" ' +
+                'tabindex="0" onclick="pftScMode(1)">Свечи</span></span>' + perPillsHtml();
+    }
     function scnHeadHtml(s) {
         var m = s.meta;
         var al = alertsFor(s.uid).length;
-        // тумблер Линия/Свечи — на всех ступенях: свечи с объёмом теперь
-        // дефолт и «Старта» (владелец 2026-07-23), линия — запасной вид
-        var mode = '<span class="ih-per"><span class="' + (candlesOn() ? '' : 'on') + '" role="button" tabindex="0" ' +
-                'onclick="pftScMode(0)">Линия</span><span class="' + (candlesOn() ? 'on' : '') + '" role="button" ' +
-                'tabindex="0" onclick="pftScMode(1)">Свечи</span></span>';
+        var pills = stageObj().stage === 'start' ? scnPillsHtml() : '';
         return '<span class="ih-nm"><h3>' + esc(m.name || m.ticker) + '</h3>' +
             '<em>' + esc(m.ticker) + ' · MOEX · лот ' + m.lot + ' шт</em></span>' +
-            '<span class="ih-r">' + mode + perPillsHtml() +
+            '<span class="ih-r">' + pills +
             '<button type="button" class="ih-bell' + (al ? ' on' : '') + '" onclick="pftScBell(event)" ' +
                 'title="Уведомить о цене" aria-label="Алерт по цене" aria-haspopup="true">' + IC_BELL + '</button></span>';
     }
@@ -4403,12 +4407,17 @@
             '<div class="bts-ordt" id="btScnOrdT"></div>';
     }
     function scnHeroAccelHtml(n, s) {
+        // пилюли — СНАРУЖИ #btScnChart: линия-режим меняет его innerHTML
+        // на каждом тике и снесла бы их
         return '<div class="bts-hero bts-hero-x">' +
             '<div class="pp-row" id="btScnTabs">' + scnTabsHtml() + '</div>' +
             '<div class="ih" id="btScnHead">' + scnHeadHtml(s) + '</div>' +
             '<div class="price-row" id="btScnPrice">' + scnPriceHtml(s) + '</div>' +
             '<div class="bts-plane">' +
-                '<div class="bts-chart bts-chart-x" id="btScnChart">' + scnChartBody(s) + '</div>' +
+                '<div class="bts-chart bts-chart-x">' +
+                    '<div class="chart-pills">' + scnPillsHtml() + '</div>' +
+                    '<div class="bts-chart-in" id="btScnChart">' + scnChartBody(s) + '</div>' +
+                '</div>' +
                 '<div class="depth depth-fused" id="btScnDepth">' + scnDepthHtml(s) + '</div>' +
             '</div>' +
             '<div class="tape" id="btScnTape">' + scnTapeHtml(s) + '</div>' +
@@ -4997,17 +5006,34 @@
                 lines: [{ color: nightMode ? '#7c8cff' : '#4453ef' }]
             },
             xAxis: { axisLine: { color: line }, tickLine: { color: line }, tickText: { color: txt } },
-            // ось цены и кроссхейр — слои «Контроля» (мокап 06, пин 7): без них
-            // «клик по уровню» неточен. На «Разгоне» оси нет — цену ведёт ярлык
-            // последней свечи (priceMark.last)
-            yAxis: { show: stageObj().stage === 'control',
+            // ось цены и кроссхейр — на ВСЕХ ступенях (владелец 2026-07-23
+            // поверх мокапов 03/04: изначально были слоями «Контроля»);
+            // сторона оси — scnAxisPos: слева на «Старте»/«Разгоне»
+            yAxis: { show: true,
                 axisLine: { color: line }, tickLine: { color: line }, tickText: { color: txt } },
             separator: { color: line },
-            crosshair: { show: stageObj().stage === 'control',
+            crosshair: { show: true,
                 horizontal: { line: { color: txt }, text: { backgroundColor: chipBg } },
                 vertical: { line: { color: txt }, text: { backgroundColor: chipBg } }
             }
         };
+    }
+    // сторона оси цены: на «Старте»/«Разгоне» — слева (правый край холста
+    // занят тикетом/стаканом), на «Контроле» — справа (мокап 06)
+    function scnAxisPos() { return stageObj().stage === 'control' ? 'right' : 'left'; }
+    // ЛОВУШКА движка: сторона оси задаётся ТОЛЬКО при init (layout.yAxis.
+    // position); setPaneOptions мержит опцию, но виджет оси не переезжает
+    // даже после resize() — проверено на живом инстансе. Поэтому смена
+    // ступени с другой стороной оси пересоздаёт график целиком (редкий путь)
+    function scnKDispose() {
+        try { if (K.ro) K.ro.disconnect(); } catch (e) {}
+        K.ro = null; K.roRaf = 0;
+        if (K.timer) { clearInterval(K.timer); K.timer = null; }
+        try { window.klinecharts.dispose(K.host); } catch (e) {}
+        if (K.host && K.host.parentNode) K.host.parentNode.removeChild(K.host);
+        K.chart = null; K.host = null; K.liveCb = null;
+        K.uid = ''; K.perKey = ''; K.styleKey = '';
+        Object.keys(K_ORD).forEach(function (id) { delete K_ORD[id]; });
     }
     // загрузчик в модели движка v10: init отдаёт окно периода, forward — ещё
     // одно окно влево, вправо будущих свечей не существует
@@ -5075,6 +5101,8 @@
         if (!mount || !candlesOn()) return;
         var s = S(sxSlot());
         if (!s.uid || !s.meta) return;
+        // ступень сменила сторону оси — движок пересоздаётся (см. scnKDispose)
+        if (K.chart && K.axisPos !== scnAxisPos()) scnKDispose();
         if (K.chart) {
             // ре-рендер собрал якорь заново — живой узел просто переезжает
             if (K.host.parentNode !== mount) {
@@ -5100,9 +5128,11 @@
             host.className = 'bts-khost';
             m2.appendChild(host);
             var chart = window.klinecharts.init(host, {
-                locale: 'ru-RU', timezone: 'Europe/Moscow', styles: scnKStyles()
+                locale: 'ru-RU', timezone: 'Europe/Moscow', styles: scnKStyles(),
+                layout: { yAxis: { position: scnAxisPos() } }
             });
             if (!chart) return;
+            K.axisPos = scnAxisPos();
             if (PF.pfcZoomFix) PF.pfcZoomFix(chart);
             K.chart = chart; K.host = host;
             chart.setDataLoader(scnKLoader());
