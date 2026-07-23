@@ -400,7 +400,23 @@
     display: flex; align-items: center; gap: 9px; z-index: 25; min-height: 0;
 }
 .bts .pos-strip:empty { display: none; }
-.bts .ps-t { flex: none; font: 800 10.5px var(--font-ui); letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); }
+/* ярлыки полосы — ручки ростка: клик раскрывает панель вверх */
+.bts .ps-t { flex: none; font: 800 10.5px var(--font-ui); letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); cursor: pointer; user-select: none; }
+.bts .ps-t:hover { color: var(--ink); }
+.bts .ps-t i { font-style: normal; font-size: 9px; }
+.bts .ps-none { font: 400 11px var(--font-ui); font-style: normal; color: var(--dim); }
+.bts .ps-ord {
+    flex: none; display: inline-flex; align-items: center; gap: 5px;
+    font: 800 10.5px var(--font-ui); letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--dim); border: 0; background: none; cursor: pointer; user-select: none;
+}
+.bts .ps-ord:hover { color: var(--ink); }
+.bts .ps-ord b {
+    font: 700 10px var(--font-num); color: var(--acc); letter-spacing: 0;
+    background: color-mix(in srgb, var(--acc) 12%, transparent);
+    border-radius: 6px; padding: 1px 6px;
+}
+.bts .ps-ord i { font-style: normal; font-size: 9px; }
 .bts .ps-chip {
     display: inline-flex; align-items: center; gap: 8px;
     border: 1px solid var(--line); background: var(--card);
@@ -429,31 +445,6 @@
 .bts .ps-sum { margin-left: auto; font: 600 11.5px var(--font-ui); color: var(--dim); white-space: nowrap; }
 .bts .ps-sum b { font: 600 11.5px var(--font-num); color: var(--mut); }
 
-/* ---------- пилюля насыщенности ---------- */
-.bts-pillw { position: absolute; right: 20px; bottom: 16px; z-index: 35; }
-.bts .stage-pill {
-    display: inline-flex; align-items: center; gap: 8px;
-    font: 600 11.5px var(--font-ui); color: var(--dim);
-    border: 1px solid var(--line); border-radius: 999px;
-    padding: 6px 12px; background: var(--card); cursor: pointer;
-}
-.bts .stage-pill b { color: var(--mut); }
-.bts .stage-pill s { text-decoration: none; color: var(--acc); }
-.bts-stmenu {
-    position: absolute; right: 0; bottom: 36px; min-width: 200px;
-    background: var(--card); border: 1px solid var(--line); border-radius: 13px;
-    padding: 6px; z-index: 60; box-shadow: 0 24px 54px -26px rgba(15, 23, 42, 0.5);
-}
-.bts-stmenu button {
-    display: block; width: 100%; text-align: left; border: 0; background: none;
-    font: 600 12px var(--font-ui); color: var(--ink);
-    border-radius: 8px; padding: 8px 10px; cursor: pointer;
-}
-.bts-stmenu button:hover { background: color-mix(in srgb, var(--acc) 8%, transparent); }
-.bts-stmenu button.on { color: var(--acc); }
-.bts-stmenu button.on::after { content: ' ✓'; }
-.bts-stnote { font: 400 10px/1.4 var(--font-ui); color: var(--dim); padding: 6px 10px 4px; border-top: 1px solid var(--hair); margin-top: 4px; }
-
 /* ---------- пустая сцена (бумага не выбрана) ---------- */
 .bts-hello {
     position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%);
@@ -470,37 +461,6 @@
 }
 .bts-hello button svg { width: 14px; height: 14px; }
 
-/* ═══════ ступень «Разгон» (экран 04) ═══════ */
-/* герой чуть выше — сверху ряд вкладок бумаг */
-.bts[data-stage="accel"] .bts-hero, .bts[data-stage="control"] .bts-hero { top: 100px; }
-.bts[data-stage="accel"] .tkt, .bts[data-stage="control"] .tkt { top: 114px; }
-.bts .pp-row { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
-.bts .pp {
-    display: inline-flex; align-items: center; gap: 8px;
-    border: 1px solid var(--line); background: var(--card);
-    border-radius: 11px; padding: 7px 13px;
-    font: 600 12px var(--font-ui); color: var(--mut); cursor: pointer; user-select: none;
-}
-.bts .pp em { font: 400 10.5px var(--font-num); font-style: normal; }
-.bts .pp .pup { color: var(--grn); }
-.bts .pp .pdn { color: var(--red); }
-.bts .pp .up::before { content: '▲ '; }
-.bts .pp .dn::before { content: '▼ '; }
-.bts .pp.on {
-    border-color: color-mix(in srgb, var(--acc) 50%, transparent); color: var(--ink);
-    box-shadow: 0 6px 18px -12px color-mix(in srgb, var(--acc) 70%, transparent);
-}
-.bts .pp-add {
-    width: 30px; height: 30px; border-radius: 10px;
-    border: 1px dashed var(--line); background: none;
-    display: grid; place-items: center; color: var(--dim); cursor: pointer;
-}
-/* одна плоскость: график + стакан под общей шапкой бумаги */
-.bts-plane { flex: 1; min-height: 0; display: flex; gap: 20px; margin-top: 16px; }
-.bts-chart-x { margin-top: 0; position: relative; }
-/* пилюли + звоночек «Разгона» — в шапке, но прижаты к правому краю ГРАФИКА:
-   252px стакан + 20px зазор (владелец 2026-07-23 — над стаканом им не место) */
-.bts .bts-hero-x .ih-r { margin-right: 272px; }
 .bts-kmount { position: relative; flex: 1; min-height: 0; }
 .bts-khost { position: absolute; inset: 0; }
 /* индикаторы: кнопка у пилюль шапки + попап-реестр двумя группами
@@ -595,12 +555,6 @@
 .bts .prot-tag u { display: none; text-decoration: none; cursor: pointer; font: 600 11px var(--font-ui); }
 .bts .prot-tag:hover em, .bts .prot-tag:hover u { display: inline; }
 .bts .prot-tag u:hover { opacity: 0.65; }
-/* стакан-глубина: правый край графика — волосяная линия вместо рамки */
-.bts .depth-fused {
-    width: 252px; flex: none; display: flex; flex-direction: column;
-    padding: 0 0 0 20px; border-left: 1px solid var(--hair);
-    overflow: hidden;
-}
 .bts .d-h { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
 .bts .d-h b { font: 400 14px var(--font-title); }
 .bts .d-h em { font: 400 10.5px var(--font-ui); font-style: normal; color: var(--dim); margin-left: auto; }
@@ -626,6 +580,12 @@
 .bts .d-row .pr { font-weight: 600; position: relative; }
 .bts .d-ask .pr { color: var(--red); }
 .bts .d-bid .pr { color: var(--grn); }
+/* уровень с ВАШЕЙ заявкой: точка у цены + акцентная кромка слева */
+.bts .d-row.d-mine { box-shadow: inset 2px 0 0 var(--acc); }
+.bts .d-mine .pr::after {
+    content: '●'; font-size: 7px; color: var(--acc);
+    vertical-align: 2px; margin-left: 5px;
+}
 .bts .d-best .pr { font-weight: 700; font-size: 12.5px; }
 .bts .d-vol { color: var(--dim); text-align: right; position: relative; font-variant-numeric: tabular-nums; }
 .bts .d-big .d-vol { color: var(--ink); font-weight: 600; }
@@ -636,19 +596,6 @@
     background: color-mix(in srgb, var(--card) 60%, transparent);
 }
 .bts .d-spread i { flex: 1; height: 1px; background: var(--line); }
-.bts .d-spread b { font: 600 9.5px var(--font-num); color: var(--mut); }
-/* лента-пульс: строка, не панель */
-.bts .tape {
-    display: flex; align-items: center; gap: 14px;
-    font: 400 10.5px var(--font-num); color: var(--dim);
-    border-top: 1px solid var(--hair); padding-top: 9px; margin-top: 9px;
-    overflow: hidden; white-space: nowrap;
-}
-.bts .tape:empty { display: none; border: 0; padding: 0; margin: 0; }
-.bts .tape b { font-weight: 600; color: var(--mut); }
-.bts .tape .tup { color: var(--grn); }
-.bts .tape .tdn { color: var(--red); }
-.bts .tape-lab { flex: none; font: 800 9px var(--font-ui); letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); }
 /* строка цены тикета: рынок ⇄ лимит */
 .bts .fld-price { display: flex; align-items: center; gap: 8px; }
 .bts .fld-price .mkt {
@@ -676,25 +623,6 @@
 .bts .know u, .bts .know-close { text-decoration: none; margin-left: auto; color: var(--acc); font-weight: 600; cursor: pointer; }
 .bts .know-close { font: 600 10px var(--font-ui); }
 /* карточка-предложение порога: тихо у края, не модал */
-.bts-unlock { position: absolute; left: 56px; bottom: 66px; z-index: 45; }
-.bts-unlock:empty { display: none; }
-.bts .unlock {
-    display: flex; gap: 12px; align-items: flex-start; width: 330px;
-    background: var(--card); border: 1px solid color-mix(in srgb, var(--acc) 40%, transparent);
-    border-radius: 15px; padding: 13px 15px; backdrop-filter: blur(16px);
-    box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.35);
-}
-.bts .unlock .uic {
-    flex: none; width: 32px; height: 32px; border-radius: 11px;
-    background: color-mix(in srgb, var(--acc) 18%, transparent);
-    display: grid; place-items: center; color: var(--acc); font-size: 14px;
-}
-.bts .unlock h5 { font: 700 12.5px var(--font-ui); margin: 0 0 3px; }
-.bts .unlock p { font: 400 11px/1.5 var(--font-ui); color: var(--mut); margin: 0; }
-.bts .ub-row { display: flex; gap: 7px; margin-top: 9px; }
-.bts .ub { font: 700 11px var(--font-ui); border-radius: 9px; padding: 6px 12px; border: 0; cursor: pointer; }
-.bts .ub.pri { background: var(--acc); color: #fff; }
-.bts .ub.gh { border: 1px solid var(--line); color: var(--mut); background: none; }
 /* поповер звоночка: подписка на достижение цены */
 .bts .bellpop {
     position: absolute; right: 0; top: 44px; width: 252px;
@@ -730,54 +658,11 @@
 .bts .bp-cta { border: 0; border-radius: 11px; text-align: center; font: 700 12px var(--font-ui); color: var(--bg); background: var(--ink); padding: 9px 0; cursor: pointer; }
 .bts .bp-note { font: 400 10px/1.45 var(--font-ui); color: var(--dim); }
 
-/* ═══════ ступень «Контроль» (экран 06) ═══════ */
-/* панели плавают на холсте с воздухом; тикет и панели делят низ с доком.
-   Низ — от ФАКТИЧЕСКОЙ высоты дока (--bts-dock ставит scnDockFit): высота
-   дока живёт контентом, а зазор к нему обязан оставаться воздухом 12px,
-   не дырой в пол-экрана */
-.bts[data-stage="control"] .tkt { top: 72px; right: 20px; bottom: var(--bts-dock, 196px); }
-.bts-ctl {
-    position: absolute; left: 20px; right: 456px; top: 84px;
-    bottom: var(--bts-dock, 196px);
-    display: flex; flex-direction: column; gap: 12px; z-index: 5;
-}
-.bts .pane {
-    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
-    padding: 12px 14px; display: flex; flex-direction: column; min-height: 0;
-    backdrop-filter: blur(14px);
-}
-.bts .pane-main { flex: 1.7; }
-.bts .pane-body { flex: 1; display: flex; gap: 18px; min-height: 0; }
-.bts .pane-h { display: flex; align-items: center; gap: 9px; margin-bottom: 6px; flex: none; }
-.bts .pane-h .pm {
-    width: 26px; height: 26px; border-radius: 9px;
-    font: 700 10px var(--font-num); color: #fff;
-    display: grid; place-items: center; flex: none;
-}
-.bts .pane-h b { font: 700 13px var(--font-ui); }
-.bts .pane-px .num { font: 600 12px var(--font-num); }
-.bts .pane-px .up { color: var(--grn); }
-.bts .pane-px .dn { color: var(--red); }
-.bts .pane-r { margin-left: auto; display: flex; align-items: center; gap: 6px; }
-.bts .pane-ic {
-    width: 22px; height: 22px; border-radius: 7px; border: 1px solid var(--line);
-    background: none; display: grid; place-items: center;
-    color: var(--dim); font-size: 10px; cursor: pointer;
-}
-.bts .pane-ic svg { width: 11px; height: 11px; }
-.bts .pane-ic.on, .bts .pane-ic:hover { color: var(--acc); border-color: color-mix(in srgb, var(--acc) 45%, transparent); }
-.bts-row2 { display: flex; gap: 12px; flex: 1; min-height: 0; }
-.bts .pane-2 { flex: 1.6; }
-.bts .pane-line { flex: 1; min-height: 0; position: relative; }
-.bts .pane-line svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.bts .pane-tape { flex: 1; overflow: hidden; }
 .bts .d-row.d-t { display: grid; grid-template-columns: 62px 1fr 52px; gap: 8px; cursor: default; }
 .bts .d-row.d-t:hover { background: none; }
 .bts .d-t .tt { color: var(--dim); }
 .bts .d-t .pr.g { color: var(--grn); }
 .bts .d-t .pr.r { color: var(--red); }
-/* «Контроль» — плоскость внутри главной панели, стакан у её края */
-.bts[data-stage="control"] .depth-fused { width: 230px; }
 /* тейк/стоп вне видимого диапазона — метки у края со стрелкой */
 .bts .ord-off {
     position: absolute; right: 34px;
@@ -786,14 +671,6 @@
 }
 .bts .ord-off.up { color: var(--grn); background: color-mix(in srgb, var(--grn) 10%, var(--card)); }
 .bts .ord-off.dn { color: var(--red); background: color-mix(in srgb, var(--red) 10%, var(--card)); }
-/* призрак-черновик по клику на уровень: «лимитка или алерт» */
-.bts .ord-ghost {
-    position: absolute; display: inline-flex; align-items: center; gap: 5px;
-    font: 600 10px var(--font-ui); color: var(--mut);
-    background: var(--card); border: 1px dashed var(--dim); border-radius: 7px;
-    padding: 3px 9px; z-index: 8; white-space: nowrap;
-}
-.bts .ord-ghost u { text-decoration: none; color: var(--acc); font-weight: 700; cursor: pointer; }
 /* строка защиты в тикете */
 .bts .prot { display: flex; align-items: center; gap: 8px; font: 400 12.5px var(--font-ui); color: var(--mut); }
 .bts .prot b { color: var(--ink); font: 600 12.5px var(--font-num); }
@@ -805,12 +682,20 @@
     background: none; padding: 0; font: 600 13px var(--font-num); color: var(--ink);
 }
 .bts .prot-e input:focus { outline: none; border-bottom-color: var(--acc); }
-/* док: Заявки · Позиции · История · Алерты */
+/* док-«росток» (вариант А, владелец 2026-07-23): вырастает ВВЕРХ из полосы
+   позиций в колонке героя, герой поджимается по высоте (--bts-dock ставит
+   scnDockFit); пустой узел — свёрнутое состояние, полоса и есть его ярлык */
 .bts .dock {
-    position: absolute; left: 20px; right: 20px; bottom: 14px;
+    position: absolute; left: 56px; right: 488px; bottom: 52px;
     background: var(--card); border: 1px solid var(--line); border-radius: 16px;
     padding: 10px 16px 12px; z-index: 25; backdrop-filter: blur(16px);
+    box-shadow: 0 24px 54px -30px rgba(24, 38, 60, 0.45);
+    animation: btDeckUp 0.45s cubic-bezier(0.25, 0.9, 0.3, 1) backwards;
 }
+.bts .dock:empty { display: none; animation: none; }
+@keyframes btDeckUp { from { opacity: 0; transform: translateY(14px); } }
+.bts-hero { transition: right 0.45s cubic-bezier(0.25, 0.9, 0.3, 1), bottom 0.45s cubic-bezier(0.25, 0.9, 0.3, 1); }
+.bts[data-deck="1"] .bts-hero { bottom: var(--bts-dock, 262px); }
 .bts .dock-tabs { display: flex; align-items: center; gap: 18px; border-bottom: 1px solid var(--hair); padding-bottom: 8px; }
 .bts .dock-tabs span[role="tab"] {
     font: 600 12.5px var(--font-ui); color: var(--dim);
@@ -963,43 +848,15 @@
 .bts-fail-raw { margin-top: 10px; font: 400 11px var(--font-ui); color: var(--dim, #94a3b8); }
 .bts-fail-raw summary { cursor: pointer; }
 .bts-fail-raw code { display: block; margin-top: 6px; font: 400 10.5px var(--font-num); word-break: break-all; opacity: 0.8; }
-/* рост ступени: подсветка новых слоёв + тост с откатом (один показ) */
-.bts .grow {
-    position: absolute; z-index: 47; pointer-events: none;
-    border: 1.5px dashed color-mix(in srgb, var(--acc) 55%, transparent);
-    border-radius: 14px;
-    background: color-mix(in srgb, var(--acc) 6%, transparent);
-}
-.bts .grow span {
-    position: absolute; left: 8px; top: -9px;
-    font: 700 10px var(--font-ui); color: var(--acc);
-    background: var(--card); border-radius: 5px; padding: 1px 7px;
-}
-.bts .grow-toast {
-    position: absolute; left: 50%; bottom: 70px; transform: translateX(-50%);
-    width: 400px; background: var(--card);
-    border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px;
-    z-index: 48; text-align: center;
-    box-shadow: 0 28px 64px -28px rgba(24, 38, 60, 0.5);
-}
-.bts .grow-toast b { font: 400 17px var(--font-title); }
-.bts .grow-toast p { font: 400 11.5px/1.55 var(--font-ui); color: var(--mut); margin: 6px 0 10px; }
-.bts .grow-toast .ub-row { justify-content: center; margin-top: 0; }
 
 /* ---------- узкие десктопы ----------
-   Зазор тикет↔сцена держим ЯВНО на каждой ступени: right героя = right тикета
-   + его ширина + гэп. На «Разгоне» тикет шире (400), и без своей пары правил
-   стакан прижимался к тикету вплотную (оставалось 4px). */
+   Зазор тикет↔сцена держим ЯВНО: right героя = right тикета + ширина + гэп */
 @media (max-width: 1360px) {
     .bts-hero { left: 32px; right: 468px; }                     /* Старт: 24+400+44 */
     .bts .tkt { right: 24px; }
-    .bts[data-stage="accel"] .bts-hero,
-    .bts[data-stage="control"] .bts-hero { right: 448px; }      /* 24+400+24 */
-    .bts[data-stage="accel"] .tkt,
-    .bts[data-stage="control"] .tkt { right: 24px; width: 400px; }
     .bts .pos-strip { right: 300px; }
+    .bts .dock { left: 32px; right: 468px; }
     .bts-omni { width: 340px; }
-    .bts-ctl { right: 448px; }      /* 24 + 400 + 24 */
     /* сплит «Старта» на узком: 280 стакан + 14 + 400 заявка */
     .bts[data-stage="start"][data-tkt="split"] .tkt { width: 694px; }
     .bts[data-stage="start"][data-tkt="split"] .bts-hero { right: 762px; }   /* 24+694+44 */

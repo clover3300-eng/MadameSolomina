@@ -217,17 +217,10 @@
     function liveSlots() {
         // Сцена «Эволюции» рисует не карточки терминала, а один герой — но цена
         // ей нужна та же и берётся тем же стаканом, значит слот у неё живой.
-        // На «Старте» бумага одна; с «Разгона» опрашиваются ВСЕ бумаги вкладок
-        // (живая дельта в ряду) — активная первой, потолок прежний, 4 на экран
+        // Бумага на сцене одна: опрашивается только активный слот
         if (sceneLive()) {
-            if (stageObj().stage === 'start') {
-                var one = sxSlot();
-                return S(one).uid ? [one] : [];
-            }
-            var act = sxSlot(), all = [];
-            slotNums().forEach(function (k) { if (S(k).uid) all.push(k); });
-            all.sort(function (a, b) { return (a === act ? 0 : 1) - (b === act ? 0 : 1); });
-            return all.slice(0, MAX_SLOTS_SCREEN);
+            var one = sxSlot();
+            return S(one).uid ? [one] : [];
         }
         var out = [], seen = {};
         var els = document.querySelectorAll('#panel-portfolios.active .btr-card[data-slot]');
@@ -2723,9 +2716,7 @@
         // ей нужны те же — стакан для цены, портфель для чипов позиций
         if (sceneLive()) {
             sxWire(); scnFit(); startPolling();
-            scnKMount();   // свечи сцены (все ступени): движок и канвас переживают ре-рендер
-            // подсветка роста — после раскладки: рамки меряются от живых элементов
-            if (scnGrowFrom) requestAnimationFrame(scnGrowPaint);
+            scnKMount();   // свечи сцены: движок и канвас переживают ре-рендер
             return;
         }
         var live = document.querySelector('#panel-portfolios.active .btr-card');
@@ -3578,94 +3569,30 @@
         PF.pftLoadPlan([{ ticker: String(ticker), side: side === 'sell' ? 'sell' : 'buy', qty: 0 }]);
     };
 
-    // ================= СЦЕНА «ЭВОЛЮЦИЯ» · СТУПЕНЬ И ТЕМА (раунд 2) =================
+    // ================= СЦЕНА «ЭВОЛЮЦИЯ» · СОСТОЯНИЕ И ТЕМА (раунд 2) =================
     // Раунд 1 (полноэкранная сетка bt_fs_v1 + отдельный режим «Просто»
-    // bt_simple_v1) отвергнут владельцем: два мира вместо одного. Вместо
-    // режимов — ОДНА сцена, которая растёт ступенями насыщенности
-    // (Старт → Разгон → Контроль): слои добавляются, ничего не перестраивается.
+    // bt_simple_v1) отвергнут владельцем: два мира вместо одного. Ступени
+    // насыщенности (Старт → Разгон → Контроль) тоже прожили недолго: «Старт»
+    // дорос до полноценного терминала, остальные владелец 2026-07-23 удалил.
     // Сцена всегда полноэкранная; конструктор .pfd-grid на «Торговле» больше
     // не используется. Гейт CSS остался прежним — body:has(#pftBar), id несёт
     // строка среды (см. envRowHtml ниже).
     var STAGE_KEY = 'bt_stage_v1';
-    var STAGES = [['start', 'Старт'], ['accel', 'Разгон'], ['control', 'Контроль']];
-    var stageState = null;   // {stage, layers}; layers — ручные флаги слоёв (этапы «Разгона»/«Контроля»)
-    function stageName(k) {
-        for (var i = 0; i < STAGES.length; i++) if (STAGES[i][0] === k) return STAGES[i][1];
-        return '';
-    }
+    var stageState = null;   // {stage:'start', layers}; layers — ручные флаги слоёв сцены
     function saveStageRaw(o) { try { localStorage.setItem(STAGE_KEY, JSON.stringify(o)); } catch (e) {} }
-    // Миграция с раунда 1: явный выбор терминала (bt_simple_v1 = '0') →
-    // «Контроль», всё остальное — в том числе отсутствие ключа (новичок,
-    // дефолтом раунда 1 был «Просто») → «Старт». bt_fs_v1 стирается не глядя:
-    // сцена всегда полноэкранная, флагу отвечать больше не на что.
+    // Ступеней больше нет (владелец 2026-07-23): «Старт» дорос до полноценного
+    // терминала, «Разгон» и «Контроль» удалены вместе с переходами. Ключ живёт
+    // ради layers; чужой stage из старых сессий молча приводится к start.
     function stageObj() {
         if (stageState) return stageState;
         var o = null;
         try { o = JSON.parse(localStorage.getItem(STAGE_KEY) || 'null'); } catch (e) {}
-        if (!o || typeof o !== 'object' || !stageName(o.stage)) {
-            var simple = null;
-            try { simple = localStorage.getItem('bt_simple_v1'); } catch (e) {}
-            o = { stage: simple === '0' ? 'control' : 'start', layers: {} };
-            saveStageRaw(o);
-        }
+        if (!o || typeof o !== 'object') o = { stage: 'start', layers: {} };
         if (!o.layers || typeof o.layers !== 'object') o.layers = {};
+        if (o.stage !== 'start') { o.stage = 'start'; saveStageRaw(o); }
         try { localStorage.removeItem('bt_simple_v1'); localStorage.removeItem('bt_fs_v1'); } catch (e) {}
         stageState = o;
         return o;
-    }
-    // рост ступени (вверх) показывается один раз: подсветка новых слоёв +
-    // тост с честным откатом (экран 05). Отдельного ключа нет — флаг сессии,
-    // срабатывает на смену того же bt_stage_v1
-    var STAGE_ORDER = { start: 0, accel: 1, control: 2 };
-    var scnGrowFrom = '';
-    function setStage(k) {
-        if (!stageName(k)) return;
-        var o = stageObj();
-        if (o.stage === k) return;
-        scnGrowFrom = STAGE_ORDER[k] > STAGE_ORDER[o.stage] ? o.stage : '';
-        o.stage = k;
-        saveStageRaw(o);
-        if (PF.renderNoAnim) PF.renderNoAnim();
-    }
-    // подсветка живёт один показ: рамки считаются от ФАКТИЧЕСКИХ элементов
-    // (координаты в сцене), тост стоит внизу; «Хорошо» гасит, «Вернуть» —
-    // честный откат: слои гаснут, данные и заявки остаются
-    window.pftScGrowOk = function () {
-        scnGrowFrom = '';
-        var t = dq('btScnGrow'); if (t) t.remove();
-    };
-    window.pftScGrowBack = function () {
-        var back = scnGrowFrom || 'start';
-        scnGrowFrom = '';
-        setStage(back);
-    };
-    function scnGrowPaint() {
-        var old = dq('btScnGrow'); if (old) old.remove();
-        if (!scnGrowFrom) return;
-        var sc = dq('btScene'); if (!sc) return;
-        var st = stageObj().stage;
-        // новые слои ступени: что подсвечиваем и как зовём
-        var zones = st === 'accel'
-            ? [['btScnTabs', 'Вкладки бумаг'], ['btScnDepth', 'Стакан'], ['btScnPx', 'Строка цены']]
-            : [['btScnScr', 'Экраны'], ['btScnDock', 'Док: заявки и позиции'], ['btScnProt', 'Защита позиции']];
-        var scR = sc.getBoundingClientRect();
-        var marks = '';
-        zones.forEach(function (z) {
-            var el = dq(z[0]); if (!el) return;
-            var r = el.getBoundingClientRect();
-            if (!(r.width > 0)) return;
-            marks += '<div class="grow" style="left:' + Math.round(r.left - scR.left - 6) + 'px;top:' +
-                Math.round(r.top - scR.top - 6) + 'px;width:' + Math.round(r.width + 12) + 'px;height:' +
-                Math.round(r.height + 12) + 'px"><span>' + z[1] + '</span></div>';
-        });
-        var was = stageName(scnGrowFrom);
-        sc.insertAdjacentHTML('beforeend', '<div id="btScnGrow">' + marks +
-            '<div class="grow-toast"><b>Сцена выросла — это «' + stageName(st) + '»</b>' +
-            '<p>Новые места подсвечены. Всё, что вы знали со ступени «' + was + '», не сдвинулось ни на пиксель.</p>' +
-            '<div class="ub-row">' +
-            '<button type="button" class="ub pri" onclick="pftScGrowOk()">Хорошо</button>' +
-            '<button type="button" class="ub gh" onclick="pftScGrowBack()">Вернуть «' + was + '»</button>' +
-            '</div></div></div>');
     }
     // ТЕМА СЦЕНЫ — свой ключ, независимый от темы сайта (решение набора):
     // светлая по умолчанию, тёмная — вторая полноценная тема, не инверсия.
@@ -3750,17 +3677,14 @@
     }
     function envRowHtml() {
         var c = conn();
-        // экраны trading:N — вкладки строки среды: «Контроль» и «Старт»
-        // (владелец 2026-07-23); механика и хранилище раунда 1. С вкладками
-        // омнибокс уходит вправо (bts-omni-s) — середину держат вкладки
-        var stg = stageObj().stage;
-        var scr = stg === 'control' || stg === 'start';
+        // экраны trading:N — вкладки строки среды (механика и хранилище
+        // раунда 1); омнибокс справа (bts-omni-s) — середину держат вкладки
         return '<div class="bts-top" id="pftBar">' +
             '<button type="button" class="bts-back" onclick="pftSceneBack()">' + IC_BACK + '<span>Портфели</span></button>' +
-            (scr ? '<span class="sc-tabs" id="btScnScr">' + scnScreensHtml() + '</span>' : '') +
+            '<span class="sc-tabs" id="btScnScr">' + scnScreensHtml() + '</span>' +
             // омнибокс ⌘K (этап 6) пока открывает готовый поиск бумаг раунда 1
-            '<button type="button" class="bts-omni' + (scr ? ' bts-omni-s' : '') + '" onclick="pftFsSearch()" title="Найти бумагу">' + IC_LENS +
-                '<span>' + (scr ? 'Бумага или команда' : 'Бумага, команда или «сбер 30к»') + '</span><kbd>⌘K</kbd></button>' +
+            '<button type="button" class="bts-omni bts-omni-s" onclick="pftFsSearch()" title="Найти бумагу">' + IC_LENS +
+                '<span>Бумага или команда</span><kbd>⌘K</kbd></button>' +
             '<span class="bts-right">' +
                 scnLinkHtml() +
                 (c && c.sandbox ? '<span class="bts-sand">Песочница</span>' : '') +
@@ -3944,29 +3868,13 @@
     }
     // ---- реестр команд сцены: фильтр по вводу, полный список при пустом ----
     function omniCmds() {
-        var st = stageObj().stage;
         var out = [];
-        // «Старт» видит только простые команды — сложность растёт со ступенью
-        if (st === 'start') {
-            out.push({ ic: '〣', t: 'Открыть стакан', em: 'ступень «Разгон»', go: function () { setStage('accel'); } });
-        }
-        // тумблер холста — команда всех ступеней: свечи теперь дефолт и «Старта»
         out.push(candlesOn()
             ? { ic: '◫', t: 'Линия вместо свечей', em: 'холст', go: function () { window.pftScMode(0); } }
             : { ic: '◫', t: 'Свечи вместо линии', em: 'холст', go: function () { window.pftScMode(1); } });
         out.push({ ic: '◐', t: sceneNight() ? 'Светлая сцена' : 'Тёмная сцена',
             em: 'тумблер — и в строке среды', go: function () { window.pftSceneTheme(); } });
-        STAGES.forEach(function (x) {
-            if (x[0] === st) return;
-            // «Старт» видит только «Открыть стакан» выше: прыжок сразу в
-            // «Контроль» — не простая команда, сложность растёт со ступенью
-            if (st === 'start') return;
-            out.push({ ic: '▲', t: 'Насыщенность: ' + x[1], em: 'ступень',
-                go: (function (k) { return function () { setStage(k); }; })(x[0]) });
-        });
-        if (st === 'control') {
-            out.push({ ic: '＋', t: 'Новый экран', em: 'свои бумаги и раскладка', go: function () { window.pftScScreenAdd(); } });
-        }
+        out.push({ ic: '＋', t: 'Новый экран', em: 'свои бумаги и раскладка', go: function () { window.pftScScreenAdd(); } });
         var word = (omni.intent ? '' : String(omni.q).trim().toLowerCase());
         if (!word) return out;
         var hit = out.filter(function (c) { return c.t.toLowerCase().indexOf(word) >= 0; });
@@ -4174,8 +4082,7 @@
     }
     function scnTapeWants(n) {
         if (!sceneLive() || slotNo(n) !== sxSlot()) return false;
-        if (stageObj().stage !== 'start') return true;
-        // «Старт»: лента нужна раскрытому блоку «Последние сделки» в стакане карточки
+        // лента нужна раскрытому блоку «Последние сделки» в стакане карточки
         return scnTktView() !== 'deal' && !!stageObj().layers.depthTape;
     }
 
@@ -4376,20 +4283,7 @@
             '<div class="bts-ordt" id="btScnOrdT"></div>' +
             '<div class="bts-ordt" id="btScnCrossT"></div>';
     }
-    function scnHeroAccelHtml(n, s) {
-        return '<div class="bts-hero bts-hero-x">' +
-            '<div class="pp-row" id="btScnTabs">' + scnTabsHtml() + '</div>' +
-            '<div class="ih" id="btScnHead">' + scnHeadHtml(s) + '</div>' +
-            '<div class="price-row" id="btScnPrice">' + scnPriceHtml(s) + '</div>' +
-            '<div class="bts-plane">' +
-                '<div class="bts-chart bts-chart-x" id="btScnChart">' + scnChartBody(s) + '</div>' +
-                '<div class="depth depth-fused" id="btScnDepth">' + scnDepthHtml(s) + '</div>' +
-            '</div>' +
-            '<div class="tape" id="btScnTape">' + scnTapeHtml(s) + '</div>' +
-        '</div>';
-    }
-
-    // ---- тикет-колонка «Старта»: сумма в рублях, «что нужно знать» развёрнуто ----
+    // ---- тикет-колонка: сумма в рублях, «что нужно знать» свёрнуто ----
     // ---- состояние рынка: торги / аукцион / закрыто (экран 11) ----
     // GetTradingStatus уже опрашивается (pollStatus, s.status). Аукцион —
     // четвёртое состояние связи: не торги, не закрытие и не обрыв.
@@ -4716,7 +4610,6 @@
     // (владелец 2026-07-23): стакан приходит прямо в карточку, сплит
     // раздваивает её на стакан + заявку и поджимает герой слева
     function scnTktView() {
-        if (stageObj().stage !== 'start') return 'deal';
         var v = stageObj().layers.tktView;
         return v === 'depth' || v === 'split' ? v : 'deal';
     }
@@ -4744,9 +4637,8 @@
     };
     function scnTicketHtml(n) {
         var s = S(n), buy = s.side !== 'sell';
-        var start = stageObj().stage === 'start';
         var vw = scnTktView();
-        var head = '<div class="tkt-h">' + (start ? scnTktTabsHtml() : '<b>Сделка</b>') +
+        var head = '<div class="tkt-h">' + scnTktTabsHtml() +
             '<span class="freshw" id="btScnFresh">' + scnFreshInner() + '</span></div>';
         // стакан на всю карточку — глубже плоскости «Разгона»: высота позволяет
         if (vw === 'depth' && !isBond(s)) {
@@ -4832,7 +4724,19 @@
     var POS_CHIPS = 5;
     function scnPosInner() {
         var list = T.port.list || [];
-        if (!list.length) return '';
+        var nOrd = T.orders.length + T.stops.length;
+        // полоса — свёрнутое состояние ростка (вариант А): ярлык позиций и
+        // счётчик заявок раскрывают панель вверх, контент поджимается
+        var open = !!stageObj().layers.deck;
+        var lab = '<span class="ps-t" role="button" tabindex="0" onclick="pftScDeck(\'pos\')" ' +
+            'title="Развернуть позиции панелью">Мои позиции <i>' + (open && dockTab === 'pos' ? '▴' : '▾') + '</i></span>';
+        var ordBtn = '<button type="button" class="ps-ord" onclick="pftScDeck(\'orders\')" ' +
+            'title="Мои заявки панелью">заявки' + (nOrd ? ' <b>' + nOrd + '</b>' : '') +
+            ' <i>' + (open && dockTab === 'orders' ? '▴' : '▾') + '</i></button>';
+        if (!list.length) {
+            // позиций ещё нет, но росток должен быть достижим — полоса-минимум
+            return lab + '<em class="ps-none">пока пусто</em>' + '<span class="ps-sum">' + '</span>' + ordBtn;
+        }
         var chips = list.slice(0, POS_CHIPS).map(function (p) {
             var cl = (T.closes || {})[p.uid];
             var d = (cl > 0 && p.last > 0) ? (p.last / cl - 1) * 100 : null;
@@ -4851,8 +4755,9 @@
               'title="Полный разбор позиций — в «Портфелях»">ещё ' + (list.length - POS_CHIPS) + ' →</button>'
             : '';
         var val = portValue();
-        return '<span class="ps-t">Мои позиции</span>' + chips + more +
-            (val != null ? '<span class="ps-sum">портфель <b>' + fmtRub(val) + '</b></span>' : '');
+        return lab + chips + more +
+            (val != null ? '<span class="ps-sum">портфель <b>' + fmtRub(val) + '</b></span>' : '') +
+            ordBtn;
     }
     window.pftScChip = function (uid) {
         loadInstrument(sxSlot(), uid, function () {
@@ -4870,47 +4775,8 @@
         });
     };
 
-    // ---- пилюля насыщенности: честный указатель ступени + ручной переход ----
-    function stagePillHtml() {
-        var o = stageObj();
-        return '<div class="bts-pillw"><button type="button" class="stage-pill" onclick="pftStageMenu(event)" ' +
-            'aria-haspopup="true">Насыщенность: <b>' + stageName(o.stage) + '</b>' +
-            (o.stage !== 'control' ? ' · <s>открыть больше</s>' : '') + '</button></div>';
-    }
-    function scnMenuCloseAll() {
-        fsMenuClose();
-        var m = dq('btStageMenu'); if (m) m.remove();
-    }
-    window.pftStagePick = function (k) { scnMenuCloseAll(); setStage(k); };
-    window.pftStageMenu = function (ev) {
-        if (ev) ev.stopPropagation();
-        var old = dq('btStageMenu'); if (old) { old.remove(); return; }
-        var host = document.querySelector('#btScene .bts-pillw'); if (!host) return;
-        var o = stageObj();
-        host.insertAdjacentHTML('beforeend', '<div class="bts-stmenu" id="btStageMenu">' +
-            STAGES.map(function (x) {
-                return '<button type="button" class="' + (x[0] === o.stage ? 'on' : '') +
-                    '" onclick="pftStagePick(\'' + x[0] + '\')">' + x[1] + '</button>';
-            }).join('') +
-            '<div class="bts-stnote">Слои «Контроля» (сплит, док, экраны) — следующий этап сборки</div>' +
-        '</div>');
-        setTimeout(function () {
-            document.addEventListener('click', function once(e) {
-                if (e.target.closest && e.target.closest('#btStageMenu')) return;
-                document.removeEventListener('click', once);
-                var m = dq('btStageMenu'); if (m) m.remove();
-            });
-        }, 0);
-    };
-
-    // ================= СТУПЕНЬ «РАЗГОН» (экран 04) =================
-    // Та же сцена, слои ДОБАВИЛИСЬ — не перестроились: вкладки бумаг над
-    // героем, свечи по тумблеру со встроенными индикаторами, стакан-глубина
-    // правым краем самого графика (одна плоскость, волосяная линия вместо
-    // рамки), лента-пульс строкой, строка цены в тикете.
-    var scnFindTarget = 0;   // «＋» вкладок: слот, куда поиск положит бумагу
-    // свечи — дефолт ВСЕХ ступеней (владелец 2026-07-23: «Старту» тоже свечи
-    // с объёмом, как на «Разгоне»); линия остаётся по тумблеру
+    var scnFindTarget = 0;   // слот, куда поиск положит бумагу (0 = активный)
+    // свечи — дефолт сцены; линия остаётся по тумблеру
     function candlesOn() {
         return stageObj().layers.candles !== 0;
     }
@@ -4920,45 +4786,6 @@
         saveStageRaw(o);
         if (PF.renderNoAnim) PF.renderNoAnim();
     };
-    // ---- вкладки бумаг (≤4): прежние слоты, видимые по одному ----
-    function scnTabsHtml() {
-        var act = sxSlot();
-        var tabs = slotNums().filter(function (k) { return S(k).uid; }).slice(0, MAX_SLOTS_SCREEN)
-            .map(function (k) {
-                var s = S(k);
-                var d = '', last = s.ob ? A().q2n(s.ob.lastPrice) : 0, close = s.ob ? A().q2n(s.ob.closePrice) : 0;
-                if (last > 0 && close > 0) {
-                    var p = (last / close - 1) * 100, up = p >= 0;
-                    d = '<em class="' + (up ? 'pup up' : 'pdn dn') + '">' +
-                        Math.abs(p).toLocaleString('ru-RU', { maximumFractionDigits: 1 }) + ' %</em>';
-                }
-                return '<span class="pp' + (k === act ? ' on' : '') + '" role="tab" tabindex="0" ' +
-                    'aria-selected="' + (k === act) + '" onclick="pftScTab(' + k + ')">' +
-                    esc(s.meta.ticker) + d + '</span>';
-            }).join('');
-        var canAdd = slotNums().filter(function (k) { return S(k).uid; }).length < MAX_SLOTS_SCREEN && nextFreeSlot();
-        return tabs + (canAdd
-            ? '<button type="button" class="pp-add" onclick="pftScAddTab()" ' +
-              'title="Ещё одна бумага (до 4 на сцене)" aria-label="Добавить бумагу">＋</button>'
-            : '');
-    }
-    window.pftScTab = function (k) {
-        k = slotNo(k);
-        if (k === sxSlot()) return;
-        scnActive = k;
-        simpleSum = ''; scnUnit = ''; scnLim = 0;
-        if (PF.renderNoAnim) PF.renderNoAnim();
-    };
-    window.pftScAddTab = function () {
-        var f = nextFreeSlot();
-        if (!f || slotNums().filter(function (k) { return S(k).uid; }).length >= MAX_SLOTS_SCREEN) {
-            toast('На сцене помещается до ' + MAX_SLOTS_SCREEN + ' бумаг', true);
-            return;
-        }
-        scnFindTarget = f;
-        if (!omni.open) omniToggle();   // выбранная бумага встанет новой вкладкой
-    };
-
     // ---- свечи сцены: KLineChart (движок и патчи — экспорт portfolios-chart) ----
     var K = { chart: null, host: null, uid: null, perKey: '', liveCb: null, timer: null, ro: null };
     var SCN_PER = {
@@ -5013,26 +4840,22 @@
             yAxis: { show: true,
                 axisLine: { color: line }, tickLine: { color: line }, tickText: { color: txt } },
             separator: { color: line },
-            // чип цены кроссхейра НА ОСИ: слева (Старт/Разгон) — светлый,
-            // справа (Контроль) — тёмный акцент; противоположную сторону
-            // дорисовывает DOM-плашка scnKCross (то же правило свет/акцент).
+            // чип цены кроссхейра НА ОСИ (слева) — светлый; противоположную
+            // сторону дорисовывает DOM-плашка scnKCross (справа — акцент).
             // Геометрия чипа = геометрия DOM-плашек .px-tag: один размер
             crosshair: { show: true,
-                horizontal: { line: { color: txt }, text: stageObj().stage !== 'control'
-                    ? { backgroundColor: nightMode ? '#121722' : '#ffffff',
+                horizontal: { line: { color: txt }, text:
+                    { backgroundColor: nightMode ? '#121722' : '#ffffff',
                         color: nightMode ? '#e9eef8' : '#0f172a',
                         borderColor: nightMode ? 'rgba(255,255,255,0.16)' : 'rgba(15,23,42,0.14)',
                         borderSize: 1, size: 11, borderRadius: 6,
-                        paddingLeft: 7, paddingRight: 7, paddingTop: 4, paddingBottom: 4 }
-                    : { backgroundColor: chipBg, size: 11, borderRadius: 6,
                         paddingLeft: 7, paddingRight: 7, paddingTop: 4, paddingBottom: 4 } },
                 vertical: { line: { color: txt }, text: { backgroundColor: chipBg } }
             }
         };
     }
-    // сторона оси цены: на «Старте»/«Разгоне» — слева (правый край холста
-    // занят тикетом/стаканом), на «Контроле» — справа (мокап 06)
-    function scnAxisPos() { return stageObj().stage === 'control' ? 'right' : 'left'; }
+    // ось цены слева: правый край холста занят тикетом
+    function scnAxisPos() { return 'left'; }
     // ЛОВУШКА движка: сторона оси задаётся ТОЛЬКО при init (layout.yAxis.
     // position); setPaneOptions мержит опцию, но виджет оси не переезжает
     // даже после resize() — проверено на живом инстансе. Поэтому смена
@@ -5132,9 +4955,9 @@
                 mount.appendChild(K.host);
                 try { K.chart.resize(); } catch (e) {}
             }
-            // смена ступени или темы меняет стили движка (ось, кроссхейр,
-            // цвета) — но не каждый тик: setStyles дорог, ключ отсекает шум
-            var sk = stageObj().stage + '|' + (sceneNight() ? 'n' : 'd');
+            // смена темы меняет стили движка (ось, кроссхейр, цвета) —
+            // но не каждый тик: setStyles дорог, ключ отсекает шум
+            var sk = sceneNight() ? 'n' : 'd';
             if (K.styleKey !== sk) {
                 K.styleKey = sk;
                 try { K.chart.setStyles(scnKStyles()); } catch (e) {}
@@ -5160,29 +4983,9 @@
             if (PF.pfcZoomFix) PF.pfcZoomFix(chart);
             K.chart = chart; K.host = host;
             chart.setDataLoader(scnKLoader());
-            // клик по свече кладёт её закрытие лимиткой в тикет — жест
-            // раунда 1; на «Контроле» кликом занимается призрак (ниже)
+            // клик по свече кладёт её закрытие лимиткой в тикет — жест раунда 1
             chart.subscribeAction('onCandleBarClick', function (data) {
-                if (stageObj().stage === 'control') return;
                 if (data && data.close) window.pftScPickPx(data.close);
-            });
-            // «Контроль»: клик по пустому уровню — призрак-черновик «лимитка
-            // или алерт». Координаты — как в зум-патче движка: clientX в
-            // визуальных px, канва в layout px, делим на фактический zoom
-            host.addEventListener('click', function (e) {
-                if (stageObj().stage !== 'control') return;
-                if (e.target.closest && e.target.closest('#btScnGhost')) return;
-                var r = host.getBoundingClientRect();
-                var z = host.currentCSSZoom ||
-                    (r.width > 0 && host.offsetWidth > 0 ? r.width / host.offsetWidth : 1);
-                var x = (e.clientX - r.left) / z, y = (e.clientY - r.top) / z;
-                var v = 0;
-                try {
-                    var pt = K.chart.convertFromPixel({ x: x, y: y }, { paneId: 'candle_pane' });
-                    v = pt && +pt.value > 0 ? +pt.value : 0;
-                } catch (e2) {}
-                if (!(v > 0)) return;
-                scnGhostShow(x + 10, y - 12, scnSnap(v, S(sxSlot())));
             });
             // прокрутка/зум сдвигают шкалу — ярлыки заявок едут следом
             try { chart.subscribeAction('onVisibleRangeChange', function () { scnKTags(); }); } catch (e) {}
@@ -5443,10 +5246,12 @@
             var w = want[id];
             var y = pxToY(w.px);
             if (y == null || y < 8) return;
-            html += '<span class="ord-tag" style="top:' + Math.round(y) + 'px">' +
+            // клик по телу ярлыка — жест-вход в росток «Заявки» (вариант Г)
+            html += '<span class="ord-tag" role="button" tabindex="0" style="top:' + Math.round(y) + 'px" ' +
+                'onclick="pftScDeck(\'orders\')" title="Открыть панель заявок">' +
                 (w.buy ? 'ваша заявка · ' : 'ваша продажа · ') + fmtPx(w.px, s) + ' × ' +
                 (w.left * ((s.meta || {}).lot || 1)).toLocaleString('ru-RU') + ' шт' +
-                '<u onclick="pftScCancelPart(\'' + jsArg(id) + '\')" title="Снять заявку">✕</u></span>';
+                '<u onclick="event.stopPropagation();pftScCancelPart(\'' + jsArg(id) + '\')" title="Снять заявку">✕</u></span>';
         });
         // тейк/стоп: плашка уровня СПРАВА в цвет смысла (зелёный/красный —
         // владелец 2026-07-23, синие ценники движка убраны вместе с priceLine);
@@ -5469,15 +5274,20 @@
                 var hint = w.kind === 'draft' ? 'уйдёт со следующей заявкой · линию можно тащить'
                     : w.kind === 'pend' ? 'встанет, когда заявка исполнится'
                     : 'стоп-заявка на бирже';
-                html += '<span class="prot-tag ' + (w.tp ? 'tp' : 'sl') + ' ' + w.kind +
-                    '" style="top:' + Math.round(y) + 'px">' +
+                // ✕ есть у ВСЕХ видов (владелец 2026-07-23): черновик чистится,
+                // ждущая снимается из pendingProt, биржевая — CancelStopOrder;
+                // клик по телу «живой» плашки — жест-вход в росток «Заявки»
+                var x = w.kind === 'draft'
+                    ? '<u onclick="event.stopPropagation();pftScProtClr(\'' + (w.tp ? 'tp' : 'sl') + '\')" title="Убрать уровень">✕</u>'
+                    : w.kind === 'pend'
+                        ? '<u onclick="event.stopPropagation();pftScPendClr(\'' + jsArg(w.oid) + '\',\'' + (w.tp ? 'tp' : 'sl') + '\')" title="Отменить защиту">✕</u>'
+                        : '<u onclick="event.stopPropagation();pftCancelStop(\'' + jsArg(w.id) + '\')" title="Снять стоп-заявку">✕</u>';
+                html += '<span class="prot-tag ' + (w.tp ? 'tp' : 'sl') + ' ' + w.kind + '"' +
+                    (w.kind === 'live' ? ' role="button" tabindex="0" onclick="pftScDeck(\'orders\')"' : '') +
+                    ' style="top:' + Math.round(y) + 'px">' +
                     word + ' ' + fmtPx(w.px, s) +
                     (w.kind === 'live' && w.lots ? ' · ' + w.lots + ' лот' : '') +
-                    '<em>' + hint + '</em>' +
-                    (w.kind === 'live'
-                        ? '<u onclick="pftCancelStop(\'' + jsArg(w.id) + '\')" title="Снять стоп-заявку">✕</u>'
-                        : '') +
-                    '</span>';
+                    '<em>' + hint + '</em>' + x + '</span>';
             }
         });
         if (layer.__btHtml !== html) { layer.__btHtml = html; layer.innerHTML = html; }
@@ -5514,10 +5324,28 @@
         var maxLots = 1;
         asks.concat(bids).forEach(function (l) { if (l.lots > maxLots) maxLots = l.lots; });
         var lot = (s.meta && s.meta.lot) || 1;
+        // свои лимитки на уровнях книги (владелец 2026-07-23): точка-метка
+        // d-mine + лоты в подсказке — заявка видна прямо в стакане
+        var eps = ((s.meta && s.meta.minInc) || 0.01) / 2;
+        var mine = [];
+        T.orders.forEach(function (o) {
+            if (o.instrumentUid !== s.uid || o.orderType === 'ORDER_TYPE_MARKET') return;
+            var px = ordPx(o, s);
+            var left = Math.max(0, (+o.lotsRequested || 0) - (+o.lotsExecuted || 0));
+            if (px > 0 && left > 0) mine.push({ px: px, lots: left });
+        });
+        function myAt(px) {
+            var sum = 0;
+            mine.forEach(function (m) { if (Math.abs(m.px - px) <= eps) sum += m.lots; });
+            return sum;
+        }
         function dress(l, side, best) {
             l.w = Math.max(6, Math.round(Math.sqrt(l.lots / maxLots) * 100));
-            l.cls = 'd-row ' + side + (l.lots >= maxLots * 0.6 ? ' d-big' : '') + (best ? ' d-best' : '');
-            l.rub = '≈ ' + Math.round(l.px * l.lots * lot).toLocaleString('ru-RU') + ' ₽ на уровне';
+            var my = myAt(l.px);
+            l.cls = 'd-row ' + side + (l.lots >= maxLots * 0.6 ? ' d-big' : '') +
+                (best ? ' d-best' : '') + (my ? ' d-mine' : '');
+            l.rub = '≈ ' + Math.round(l.px * l.lots * lot).toLocaleString('ru-RU') + ' ₽ на уровне' +
+                (my ? ' · здесь ваша заявка × ' + my + ' лот' : '');
             return l;
         }
         // ЛОВУШКА мокапа: лучшая продажа стоит У СПРЕДА — аски в обратном
@@ -5640,43 +5468,6 @@
         scnDepthSet('btScnTkDepth', S(sxSlot()), tv === 'depth' ? 1 : 0, SCN_DEPTH_CARD);
         if (o.layers.depthTape) pollTape(sxSlot());   // свежий залп, не ждём тика
     };
-    // ---- лента-пульс: последние сделки одной строкой ----
-    function scnTapeHtml(s) {
-        var rows = (s.tape || []).slice(0, 7);
-        if (!rows.length) return '';
-        var q2n = A().q2n;
-        return '<span class="tape-lab">Пульс</span>' + rows.map(function (t) {
-            var px = q2n(t.price), buy = t.direction === 'TRADE_DIRECTION_BUY';
-            var tm = t.time ? new Date(t.time).toLocaleTimeString('ru-RU') : '';
-            return '<span>' + esc(tm) + ' <b class="' + (buy ? 'tup' : 'tdn') + '">' + fmtPx(px, s) + '</b>×' +
-                (+t.quantity || 0).toLocaleString('ru-RU') + '</span>';
-        }).join('');
-    }
-
-    // ---- карточка-предложение: механика эволюции, видимая глазами ----
-    // Порог — предложение, не замок: «Не сейчас» откладывает до новых сделок.
-    function unlockHtml() {
-        var o = stageObj();
-        if (o.stage !== 'start') return '';   // предложение «Контроля» придёт этапом 5
-        var d = dealsCount();
-        var dis = Math.max(0, Math.floor(+o.layers.unlockDismiss || 0));
-        if (d < 3 || d < dis + 3) return '';
-        return '<div class="unlock"><span class="uic">〣</span><div>' +
-            '<h5>Открыть стакан?</h5>' +
-            '<p>У вас уже ' + d + ' ' + PF.plural(d, 'сделка', 'сделки', 'сделок') +
-            '. «Разгон» добавит стакан, свечи и лимитные цены — всё со «Старта» останется на местах.</p>' +
-            '<div class="ub-row">' +
-            '<button type="button" class="ub pri" onclick="pftStagePick(\'accel\')">Открыть</button>' +
-            '<button type="button" class="ub gh" onclick="pftScUnlockNo()">Не сейчас</button>' +
-            '</div></div></div>';
-    }
-    window.pftScUnlockNo = function () {
-        var o = stageObj();
-        o.layers.unlockDismiss = dealsCount();
-        saveStageRaw(o);
-        scnSet('btScnUnlock', '');
-    };
-
     // ---- поповер звоночка: подписка на достижение цены ----
     // Хранение — прежний bt_alerts_v1, проверка — в идущем поллере стакана.
     // Доставка в звоночек сайта и пуш — этап уведомлений; пока announce().
@@ -5800,105 +5591,6 @@
         for (var i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 997;
         return SCN_HUES[h % SCN_HUES.length];
     }
-    function splitOn() {
-        var o = stageObj();
-        return o.stage === 'control' && o.layers.split !== 0;
-    }
-    window.pftScSplit = function (on) {
-        var o = stageObj();
-        o.layers.split = on ? 1 : 0;
-        saveStageRaw(o);
-        if (PF.renderNoAnim) PF.renderNoAnim();
-    };
-    // вторая бумага сплита: следующая вкладка после активной (свой пул не
-    // заводим — сплит показывает то, что уже стоит вкладками)
-    function scnSplitSlot() {
-        var act = sxSlot(), nums = slotNums().filter(function (k) { return S(k).uid && k !== act; });
-        return nums.length ? nums[0] : 0;
-    }
-    // цена в шапке панели — отдельным инером: живёт тиком стакана, а сама
-    // шапка с кнопками не пересобирается (ховер и фокус не сбрасываются)
-    function scnPaneInner(s) {
-        var last = sxPrice(s), close = s.ob ? A().q2n(s.ob.closePrice) : 0;
-        if (!(last > 0)) return '';
-        var up = !(close > 0) || last >= close;
-        var pct = close > 0 ? Math.abs(last / close - 1) * 100 : 0;
-        return '<span class="num ' + (up ? 'up' : 'dn') + '">' + fmtPx(last, s) +
-            (close > 0 ? ' · ' + (up ? '+' : '−') + pct.toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' %' : '') + '</span>';
-    }
-    function scnPaneHeadHtml(s, priceId, tools) {
-        var tk = s.meta.ticker;
-        return '<div class="pane-h">' +
-            '<span class="pm" style="background:' + scnHue(tk) + '">' + esc(tk.slice(0, 2).toUpperCase()) + '</span>' +
-            '<b>' + esc(s.meta.name || tk) + '</b>' +
-            '<span class="pane-px" id="' + priceId + '">' + scnPaneInner(s) + '</span>' +
-            '<span class="pane-r">' + (tools || '') + '</span></div>';
-    }
-    // линия второй бумаги: её дневные свечи из того же кэша
-    function scnMiniLine(uid, s2) {
-        var data = sxCandles[uid + '|day'];
-        if (!Array.isArray(data) || data.length < 2) {
-            return '<div class="bts-cnote">' + (data === 'err' ? 'График недоступен' : 'Загружаем…') + '</div>';
-        }
-        var W = 600, H = 150;
-        var vals = data.map(function (c) { return c.v; });
-        var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals);
-        var span = (max - min) || 1;
-        min -= span * 0.08; max += span * 0.08; span = max - min;
-        var line = data.map(function (c, i) {
-            return (i * (W / (data.length - 1))).toFixed(1) + ',' + (H - (c.v - min) / span * H).toFixed(1);
-        }).join(' ');
-        var area = 'M0,' + H + ' L' + line.split(' ').join(' L') + ' L' + W + ',' + H + ' Z';
-        return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="График второй бумаги">' +
-            '<path d="' + area + '" class="bts-area"/>' +
-            '<polyline points="' + line + '" class="bts-line"/></svg>';
-    }
-    // лента полной колонкой — рядом со второй бумагой (мокап 06)
-    function scnTapeColHtml(s) {
-        var rows = (s.tape || []).slice(0, 8);
-        var body = rows.length ? rows.map(function (t) {
-            var buy = t.direction === 'TRADE_DIRECTION_BUY';
-            var tm = t.time ? new Date(t.time).toLocaleTimeString('ru-RU') : '';
-            return '<div class="d-row d-t"><span class="tt">' + esc(tm) + '</span>' +
-                '<span class="pr ' + (buy ? 'g' : 'r') + '">' + fmtPx(A().q2n(t.price), s) + '</span>' +
-                '<span class="d-vol">×' + (+t.quantity || 0).toLocaleString('ru-RU') + '</span></div>';
-        }).join('') : '<div class="bts-cnote">Сделок пока нет</div>';
-        return '<div class="d-h"><b>Лента</b><em>' + esc(s.meta.ticker) + ' · все сделки</em></div>' + body;
-    }
-    function scnHeroControlHtml(n, s) {
-        var tools =
-            '<button type="button" class="pane-ic" onclick="pftScBell(event)" title="Алерт по цене">' + IC_BELL + '</button>' +
-            '<button type="button" class="pane-ic' + (splitOn() ? ' on' : '') + '" onclick="pftScSplit(' + (splitOn() ? 0 : 1) + ')" ' +
-                'title="' + (splitOn() ? 'Убрать сплит' : 'Сплит на две бумаги') + '">◱</button>';
-        var main = '<div class="pane pane-main">' +
-            scnPaneHeadHtml(s, 'btScnPaneP', tools) +
-            '<div class="pane-body">' +
-                '<div class="bts-chart bts-chart-x" id="btScnChart">' + scnChartBody(s) + '</div>' +
-                '<div class="depth depth-fused" id="btScnDepth">' + scnDepthHtml(s) + '</div>' +
-            '</div></div>';
-        var row2 = '';
-        if (splitOn()) {
-            var n2 = scnSplitSlot();
-            var second = '';
-            if (n2) {
-                var s2 = S(n2);
-                sxLoadCandles(s2.uid, 'day');
-                second = '<div class="pane pane-2">' +
-                    scnPaneHeadHtml(s2, 'btScnPane2P',
-                        '<button type="button" class="pane-ic" onclick="pftScTab(' + n2 + ')" title="Сделать бумагу активной">〣</button>' +
-                        '<button type="button" class="pane-ic" onclick="pftScSplit(0)" title="Закрыть сплит">✕</button>') +
-                    '<div class="pane-line" id="btScnMini">' + scnMiniLine(s2.uid, s2) + '</div></div>';
-            } else {
-                second = '<div class="pane pane-2"><div class="bts-cnote">Добавьте вторую бумагу вкладкой «＋» — сплит покажет её здесь</div></div>';
-            }
-            row2 = '<div class="bts-row2">' + second +
-                '<div class="pane pane-tape" id="btScnTapeCol">' + scnTapeColHtml(s) + '</div></div>';
-        }
-        // ряда вкладок бумаг на «Контроле» нет (мокап 06): бумаги видны
-        // панелями сплита, активную меняет кнопка 〣 второй панели или омнибокс
-        return '<div class="bts-ctl">' + main + row2 + '</div>';
-    }
-
     // ---- защита позиции: строка тикета И линии на графике ----
     var scnProtEdit = false;
     function protVals(s) {
@@ -5939,6 +5631,25 @@
         scnTicketRedraw(sxSlot());
         scnKProt();
     };
+    // ✕ на плашке черновика: убрать одну ногу защиты прямо с графика
+    window.pftScProtClr = function (k) {
+        var s = S(sxSlot());
+        s[k === 'tp' ? 'protTp' : 'protSl'] = '';
+        s.prot = (+s.protTp > 0 || +s.protSl > 0);
+        saveSlots();
+        var f = dq('btScnProt'); if (f) f.innerHTML = '<em>Защита позиции</em>' + scnProtInner(sxSlot());
+        scnKProt();
+    };
+    // ✕ на «ждёт исполнения»: защита ещё не на бирже (встанет из pendingProt
+    // после исполнения заявки) — снять её можно у нас, без брокера
+    window.pftScPendClr = function (oid, k) {
+        var p = pendingProt[oid];
+        if (!p) return;
+        p[k] = 0;
+        if (!(p.tp > 0) && !(p.sl > 0)) delete pendingProt[oid];
+        toast('Защита по заявке снята — ' + (k === 'tp' ? 'тейк' : 'стоп') + ' не выставится');
+        scnKProt();
+    };
     // все уровни защиты по бумаге в одном реестре (владелец 2026-07-23:
     // «должно быть понятно, по какой заявке эти тейк и стоп»):
     //   draft — черновик тикета (перетаскивается, уедет со СЛЕДУЮЩЕЙ заявкой),
@@ -5953,8 +5664,8 @@
         Object.keys(pendingProt).forEach(function (oid) {
             var p = pendingProt[oid];
             if (p.uid !== s.uid) return;
-            if (p.tp > 0) out.push({ key: 'pt:' + oid, px: p.tp, tp: 1, kind: 'pend' });
-            if (p.sl > 0) out.push({ key: 'ps:' + oid, px: p.sl, tp: 0, kind: 'pend' });
+            if (p.tp > 0) out.push({ key: 'pt:' + oid, px: p.tp, tp: 1, kind: 'pend', oid: oid });
+            if (p.sl > 0) out.push({ key: 'ps:' + oid, px: p.sl, tp: 0, kind: 'pend', oid: oid });
         });
         T.stops.forEach(function (o) {
             if (o.instrumentUid !== s.uid) return;
@@ -6009,45 +5720,26 @@
         scnKTags();
     }
 
-    // ---- призрак по клику на пустой уровень: «лимитка или алерт» (мокап 06) ----
-    function scnGhostClose() { var g = dq('btScnGhost'); if (g) g.remove(); }
-    function scnGhostShow(x, y, px) {
-        scnGhostClose();
-        var wrap = dq('btScnK');
-        if (!wrap) return;
-        var s = S(sxSlot());
-        wrap.insertAdjacentHTML('beforeend',
-            '<div class="ord-ghost" id="btScnGhost" style="left:' + Math.round(x) + 'px;top:' + Math.round(y) + 'px">＋ ' +
-            fmtPx(px, s) + ' · ' +
-            '<u role="button" tabindex="0" onclick="pftScGhostLim(' + px + ')">лимитка</u> или ' +
-            '<u role="button" tabindex="0" onclick="pftScGhostAlert(' + px + ')">алерт</u></div>');
-        setTimeout(function () {
-            document.addEventListener('click', function once(e) {
-                if (e.target.closest && e.target.closest('#btScnGhost')) return;
-                document.removeEventListener('click', once);
-                scnGhostClose();
-            });
-        }, 0);
-    }
-    window.pftScGhostLim = function (px) {
-        scnGhostClose();
-        window.pftScPickPx(px);
-    };
-    window.pftScGhostAlert = function (px) {
-        scnGhostClose();
-        var s = S(sxSlot());
-        var last = sxPrice(s);
-        if (!(px > 0) || !(last > 0) || !s.meta) return;
-        if (ALERTS.length >= ALERT_MAX) { toast('Больше ' + ALERT_MAX + ' алертов терминал не держит', true); return; }
-        ALERTS.push({ uid: s.uid, ticker: s.meta.ticker, px: +px, dir: px > last ? 'up' : 'down' });
-        saveAlerts();
-        toast('Алерт поставлен: ' + (px > last ? 'выше ' : 'ниже ') + fmtPx(px, s) + ' ₽');
-        scnSet('btScnHead', stageObj().stage === 'start' ? scnHeadHtml(s) : scnHeadHtml(s));
-        sxTick();
-    };
-
-    // ---- док: Заявки · Позиции · История · Алерты (низ сцены) ----
+    // ---- док-«росток»: Заявки · Позиции · История · Алерты ----
+    // Вариант А (владелец 2026-07-23): полоса позиций раскрывается ВВЕРХ в
+    // панель, герой с графиком поджимается по высоте (та же пружина, что у
+    // сплита стакана). Жест-вход Г: клик по плашке заявки на графике.
     var dockTab = 'orders';
+    window.pftScDeck = function (k) {
+        var o = stageObj();
+        var open = !!o.layers.deck;
+        if (open && (!k || dockTab === k)) o.layers.deck = 0;   // повторный клик закрывает
+        else {
+            o.layers.deck = 1;
+            if (k) dockTab = k;
+            if (dockTab === 'hist') loadHist();
+        }
+        saveStageRaw(o);
+        var sc = dq('btScene'); if (sc) sc.dataset.deck = o.layers.deck ? '1' : '0';
+        scnSet('btScnDock', scnDockHtml());
+        scnSet('btScnPos', scnPosInner());   // стрелки-ярлыки полосы
+        scnDockFit();
+    };
     window.pftScDockTab = function (k) {
         dockTab = k;
         if (k === 'hist') loadHist();   // тяжёлый метод — только по требованию
@@ -6055,10 +5747,7 @@
         scnDockFit();
     };
     window.pftScDockShev = function () {
-        // тумблер раунда 1 (bt_dock_v1): свернули — место уходит панелям само
-        if (window.pftDockToggle) pftDockToggle();
-        scnSet('btScnDock', scnDockHtml());
-        scnDockFit();
+        window.pftScDeck();   // шеврон — просто «закрыть росток»
     };
     window.pftScAlertDrop = function (i) {
         ALERTS.splice(i, 1);
@@ -6144,7 +5833,9 @@
         }).join('');
     }
     function scnDockHtml() {
-        var open = dockOpen();
+        // закрытый росток — пустой узел (.dock:empty спрятан): полоса позиций
+        // и есть его свёрнутое состояние
+        if (!stageObj().layers.deck) return '';
         function tab(k, lab, cnt) {
             return '<span class="' + (dockTab === k ? 'on' : '') + '" role="tab" tabindex="0" ' +
                 'aria-selected="' + (dockTab === k) + '" onclick="pftScDockTab(\'' + k + '\')">' + lab +
@@ -6156,9 +5847,7 @@
             tab('hist', 'История') +
             tab('alerts', 'Алерты', ALERTS.length) +
             '<button type="button" class="keys" onclick="pftFsKeys()">? клавиши</button>' +
-            '<button type="button" class="shev" onclick="pftScDockShev()" aria-label="' +
-                (open ? 'Свернуть док' : 'Развернуть док') + '">' + (open ? '⌄' : '⌃') + '</button></div>';
-        if (!open) return tabs;
+            '<button type="button" class="shev" onclick="pftScDockShev()" aria-label="Свернуть панель">⌄</button></div>';
         var body = dockTab === 'orders' ? dockOrdersRows()
             : dockTab === 'pos' ? dockPosRows()
             : dockTab === 'hist' ? dockHistRows()
@@ -6232,29 +5921,19 @@
         loadSlots();
         var st = stageObj();
         var n = sxSlot(), s = S(n);
-        if (s.uid) {
-            sxLoadCandles(s.uid);
-            sxLoadCandles(s.uid, 'day');   // дневки кормят мини-линии «Контроля»
-        }
-        // ступень решает состав героя: Старт — линия, Разгон — плоскость со
-        // стаканом, Контроль — панели сплита и док (позиции живут в доке,
-        // полоса чипов и карточка-предложение там не рисуются)
-        var ctl = st.stage === 'control';
-        var accel = st.stage === 'accel';
+        if (s.uid) sxLoadCandles(s.uid);
         var tktVw = scnTktView();
         var body = s.meta
-            ? (ctl ? scnHeroControlHtml(n, s) : accel ? scnHeroAccelHtml(n, s) : scnHeroHtml(n, s)) +
+            ? scnHeroHtml(n, s) +
               '<aside class="tkt' + (tktVw === 'split' ? ' tkt-x2' : '') + '" id="btScnTicket">' + scnTicketHtml(n) + '</aside>' +
-              (ctl ? '<div class="dock" id="btScnDock">' + scnDockHtml() + '</div>' : '')
+              '<div class="dock" id="btScnDock">' + scnDockHtml() + '</div>'
             : scnHelloHtml();
-        return '<div class="bts' + (sceneNight() ? ' night' : '') + '" id="btScene" data-stage="' + st.stage + '" ' +
-            'data-tkt="' + tktVw + '">' +
+        return '<div class="bts' + (sceneNight() ? ' night' : '') + '" id="btScene" data-stage="start" ' +
+            'data-tkt="' + tktVw + '" data-deck="' + (st.layers.deck ? 1 : 0) + '">' +
             envRowHtml() +
             '<div class="bts-glow"></div>' +
             body +
-            (ctl ? '' : '<div class="bts-unlock" id="btScnUnlock">' + (s.meta ? unlockHtml() : '') + '</div>' +
-                '<div class="pos-strip" id="btScnPos">' + scnPosInner() + '</div>') +
-            stagePillHtml() +
+            '<div class="pos-strip" id="btScnPos">' + scnPosInner() + '</div>' +
         '</div>';
     };
 
@@ -6267,49 +5946,22 @@
     function sxTick() {
         if (!sceneLive()) return;
         var n = sxSlot(), s = S(n);
-        var st = stageObj().stage;
         if (s.meta) {
             scnSet('btScnFresh', scnFreshInner());
             scnTicketBits();
-            if (st === 'control') {
-                scnDepthSet('btScnDepth', s);
-                // шапки панелей: цена активной и второй бумаги — точечно
-                var ph = dq('btScnPaneP');
-                if (ph) scnSet('btScnPaneP', scnPaneInner(s));
-                if (splitOn()) {
-                    var n2 = scnSplitSlot();
-                    if (n2) {
-                        scnSet('btScnPane2P', scnPaneInner(S(n2)));
-                        scnSet('btScnMini', scnMiniLine(S(n2).uid, S(n2)));
-                    }
-                    scnSet('btScnTapeCol', scnTapeColHtml(s));
-                }
-                if (candlesOn()) { scnKMount(); scnKTags(); }
-                else scnSet('btScnChart', scnChartHtml(s));
-                scnSet('btScnDock', scnDockHtml());
-                scnDockFit();
-            } else if (st === 'accel') {
-                scnSet('btScnPrice', scnPriceHtml(s));
-                scnSet('btScnTabs', scnTabsHtml());
-                scnDepthSet('btScnDepth', s);
-                scnSet('btScnTape', scnTapeHtml(s));
-                // свечи живут своим канвасом (движок), innerHTML их убил бы;
-                // линия — прежний точечный своп svg
-                if (candlesOn()) { scnKMount(); scnKTags(); }
-                else scnSet('btScnChart', scnChartHtml(s));
-            } else {
-                scnSet('btScnPrice', scnPriceHtml(s));
-                // свечи и на «Старте» живут своим канвасом — innerHTML их убил бы
-                if (candlesOn()) { scnKMount(); scnKTags(); }
-                else scnSet('btScnChart', scnChartHtml(s));
-                scnSet('btScnKnow', scnKnowHtml(n));
-                // стакан в карточке тикета (вид «Стакан»/«Сплит») — жив тиками
-                var tv = scnTktView();
-                if (tv !== 'deal') scnDepthSet('btScnTkDepth', s, tv === 'depth' ? 1 : 0, SCN_DEPTH_CARD);
-            }
-            if (st !== 'control') scnSet('btScnUnlock', unlockHtml());
+            scnSet('btScnPrice', scnPriceHtml(s));
+            // свечи живут своим канвасом (движок), innerHTML их убил бы;
+            // линия — прежний точечный своп svg
+            if (candlesOn()) { scnKMount(); scnKTags(); }
+            else scnSet('btScnChart', scnChartHtml(s));
+            scnSet('btScnKnow', scnKnowHtml(n));
+            // стакан в карточке тикета (вид «Стакан»/«Сплит») — жив тиками
+            var tv = scnTktView();
+            if (tv !== 'deal') scnDepthSet('btScnTkDepth', s, tv === 'depth' ? 1 : 0, SCN_DEPTH_CARD);
+            // открытый росток заявок/позиций — жив теми же тиками
+            if (stageObj().layers.deck) { scnSet('btScnDock', scnDockHtml()); scnDockFit(); }
         }
-        if (st !== 'control') scnSet('btScnPos', scnPosInner());
+        scnSet('btScnPos', scnPosInner());
     }
     // куски тикета, зависящие от суммы: сам инпут никогда не пересобирается —
     // каретка и фокус переживают любой тик котировок
@@ -6359,12 +6011,12 @@
         if (h > 480) el.style.height = h + 'px';
         scnDockFit();
     }
-    // низ панелей «Контроля» — от фактической высоты дока: она меняется
-    // вкладкой и шевроном, а зазор к ней обязан оставаться воздухом 12px
+    // низ героя — от фактической высоты открытого ростка: она меняется
+    // вкладкой дока, а зазор к ней обязан оставаться воздухом 12px
     function scnDockFit() {
         var el = dq('btScene'), d = dq('btScnDock');
         if (!el) return;
-        if (d) el.style.setProperty('--bts-dock', (d.offsetHeight + 14 + 12) + 'px');
+        if (d && d.childElementCount) el.style.setProperty('--bts-dock', (d.offsetHeight + 52 + 12) + 'px');
         else el.style.removeProperty('--bts-dock');
     }
     window.addEventListener('resize', scnFit);
