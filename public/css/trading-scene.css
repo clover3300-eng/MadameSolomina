@@ -292,40 +292,49 @@
 .bts .tkt-depth { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
 /* заголовок стакана в карточках — тем же кеглем, что вкладки заявки */
 .bts .tkt .d-h b, .bts .tkt-sub .d-h b { font-size: 16px; }
-/* виды карточного стакана (раунд 3): сегмент Лесенка / Лента / Кривая */
-.bts .d-seg {
-    display: flex; gap: 2px; border: 1px solid var(--line); border-radius: 10px;
-    padding: 3px; margin-bottom: 10px; flex: none;
-}
-.bts .d-seg span {
-    flex: 1; text-align: center; font: 600 11px var(--font-ui); color: var(--dim);
-    border-radius: 7px; padding: 5px 0; cursor: pointer; user-select: none;
-}
-.bts .d-seg span:hover { color: var(--mut); }
-.bts .d-seg span.on { background: color-mix(in srgb, var(--acc) 14%, transparent); color: var(--ink); }
-/* вид «Лента»: последние сделки во всю карточку */
-.bts .d-tape-full { flex: 1 1 auto; min-height: 0; overflow: hidden; }
 .bts .d-tape-b { margin-top: 2px; }
-/* лесенка уровней — свой блок: в «Лесенке» над мини-лентой, в «Кривой» под
-   горой; лишние ряды срезает overflow, счёт рядов ведёт scnDepthDeep */
-.bts .d-ladder { flex: 1 1 auto; min-height: 0; overflow: hidden; }
-/* «Лесенка»: мини-лента сделок пришита к низу карточки (владелец 2026-07-24:
-   «лесенка вместе с лентой, как было раньше») */
-.bts .d-tape-mini { flex: none; margin-top: auto; border-top: 1px dashed var(--line); padding-top: 7px; }
-.bts .d-tape-mini .d-tape-b { max-height: 144px; overflow: hidden; }
+/* ЛИНИЯ БАЛАНСА спроса/предложения над лесенкой (владелец 2026-07-24): гладкая
+   гора кумулятива на канве, спрос слева зелёным, предложение справа красным */
+.bts .d-bal {
+    position: relative; flex: none; height: 64px; margin-bottom: 4px;
+    border-bottom: 1px solid var(--hair);
+}
+.bts .d-bal canvas { display: block; width: 100%; height: 100%; }
+.bts .d-bal-t {
+    position: absolute; bottom: 4px; font: 700 10px var(--font-ui);
+    letter-spacing: 0.02em; pointer-events: none; white-space: nowrap;
+}
+.bts .d-bal-b { left: 2px; color: var(--grn); }
+.bts .d-bal-a { right: 2px; color: var(--red); }
+/* лесенка уровней — по высоте контента (flex:none): лента растёт СЛЕДОМ и
+   занимает низ, без большого пробела (владелец 2026-07-24) */
+.bts .d-ladder { flex: none; min-height: 0; }
+/* мини-лента сделок: прижата к лесенке, растёт вниз до дна карточки */
+.bts .d-tape-mini {
+    flex: 1 1 auto; min-height: 0; margin-top: 8px; display: flex; flex-direction: column;
+    border-top: 1px dashed var(--line); padding-top: 7px;
+}
+.bts .d-tape-mini .d-tape-b { flex: 1 1 auto; min-height: 0; overflow: hidden; }
 .bts .d-h2 {
     font: 700 10.5px var(--font-ui); letter-spacing: 0.09em; text-transform: uppercase;
-    color: var(--dim); margin-bottom: 3px;
+    color: var(--dim); margin-bottom: 3px; flex: none;
 }
-/* вид «Кривая»: гора кумулятивной глубины СВЕРХУ, лесенка под ней */
-.bts .d-curvew { position: relative; flex: 0 0 146px; min-height: 0; cursor: crosshair; }
-.bts .d-curvew canvas { display: block; width: 100%; height: 100%; }
-.bts .dc-x {
-    display: flex; align-items: baseline; justify-content: space-between;
-    font: 600 10px var(--font-num); color: var(--dim); padding: 6px 2px; flex: none;
-    border-bottom: 1px dashed var(--line); margin-bottom: 6px;
+/* плашка закреплённого свипа «до уровня» — сумма ушла в заявку */
+.bts .d-sweepw:empty { display: none; }
+.bts .d-sweep {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex: none;
+    font: 400 11px var(--font-ui); border-radius: 9px; padding: 6px 10px;
+    border: 1px solid var(--hair);
 }
-.bts .dc-x b { font: 600 10px var(--font-num); color: var(--mut); }
+.bts .d-sweep.buy { background: color-mix(in srgb, var(--grn) 12%, transparent); border-color: color-mix(in srgb, var(--grn) 32%, transparent); color: var(--ink); }
+.bts .d-sweep.sell { background: color-mix(in srgb, var(--red) 12%, transparent); border-color: color-mix(in srgb, var(--red) 32%, transparent); color: var(--ink); }
+.bts .d-sweep span { flex: 1; }
+.bts .d-sweep b { font-family: var(--font-num); font-weight: 700; }
+.bts .d-sweep u {
+    flex: none; cursor: pointer; text-decoration: none; color: var(--dim);
+    font-size: 13px; line-height: 1; padding: 2px 4px; border-radius: 6px;
+}
+.bts .d-sweep u:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, transparent); }
 /* сплит: карточка раздваивается на стакан + заявку; ширину контейнера и
    сжатие героя ведут transition (контент слева поджимается, как от сайдбара) */
 .bts .tkt { transition: width 0.45s cubic-bezier(0.25, 0.9, 0.3, 1), bottom 0.45s cubic-bezier(0.25, 0.9, 0.3, 1); }
@@ -990,13 +999,28 @@
 .bts .d-best .pr { font-weight: 700; font-size: 12.5px; }
 .bts .d-vol { color: var(--dim); text-align: right; position: relative; font-variant-numeric: tabular-nums; margin-left: auto; }
 .bts .d-big .d-vol { color: var(--ink); font-weight: 600; }
-.bts .d-spread { display: flex; align-items: center; gap: 10px; margin: 6px 0; font: 400 10px var(--font-ui); color: var(--dim); flex: none; }
-.bts .d-spread b {
-    font: 600 10px var(--font-num); color: var(--mut); white-space: nowrap;
-    border: 1px solid var(--hair); border-radius: 999px; padding: 2px 10px;
-    background: color-mix(in srgb, var(--card) 60%, transparent);
+/* СЕРЕДИНА СТЫКА (владелец 2026-07-24): не только спред — сама цена сделки
+   крупно со стрелкой направления, спред мелким подтекстом под ней */
+.bts .d-mid { display: flex; align-items: center; gap: 10px; margin: 7px 0; flex: none; }
+.bts .d-mid-r { flex: 1; height: 1px; background: var(--line); }
+.bts .d-mid-c {
+    flex: none; display: flex; flex-direction: column; align-items: center; gap: 1px;
+    text-align: center;
 }
-.bts .d-spread i { flex: 1; height: 1px; background: var(--line); }
+.bts .d-mid-px {
+    font: 700 16px var(--font-num); color: var(--ink); white-space: nowrap;
+    letter-spacing: -0.01em; line-height: 1.1;
+}
+.bts .d-mid-px.up { color: var(--grn); }
+.bts .d-mid-px.down { color: var(--red); }
+.bts .d-mid-c em { font: 400 10px var(--font-ui); font-style: normal; color: var(--dim); white-space: nowrap; }
+/* закреплённый свип «до сюда»: путь от спреда до уровня подсвечен акцентом */
+.bts .d-row.d-sel { background: color-mix(in srgb, var(--acc) 13%, transparent); }
+.bts .d-row.d-sel .pr { font-weight: 700; }
+.bts .d-row.d-sel::after {
+    content: ''; position: absolute; left: 0; top: 3px; bottom: 3px; width: 3px;
+    border-radius: 0 3px 3px 0; background: var(--acc);
+}
 /* строка цены тикета: рынок ⇄ лимит — мини-сегмент в идиоме тикета
    (владелец 2026-07-23 поверх мокапа: текстовые ссылки читались плохо) */
 .bts .fld-price { display: flex; align-items: center; gap: 10px; }

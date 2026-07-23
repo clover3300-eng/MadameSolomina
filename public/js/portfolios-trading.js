@@ -4247,9 +4247,9 @@
     }
     function scnTapeWants(n) {
         if (!sceneLive() || slotNo(n) !== sxSlot()) return false;
-        // лента нужна «Ленте» и «Лесенке» (у лесенки — мини-лента снизу,
-        // владелец 2026-07-24: «как было раньше»); «Кривой» сделки не нужны
-        return scnTktView() !== 'deal' && scnDepthView() !== 'curve';
+        // стакан всегда несёт мини-ленту снизу (владелец 2026-07-24: один
+        // вид — лесенка; отдельные «Лента»/«Кривая» убраны как бесполезные)
+        return scnTktView() !== 'deal';
     }
 
     // ---- график сцены: периоды, свечи периодов для фактов, линия-запаска ----
@@ -6576,15 +6576,60 @@
         saveSlots();
         scnTicketRedraw(n);
     };
-    // клик по СТРОКЕ стакана (владелец 2026-07-23): не только подставить цену,
-    // но и открыть саму заявку — вид «Стакан» на всю карточку прячет тикет,
-    // и лимитка вставала бы невидимкой. «Сплит» заявку уже показывает.
-    window.pftScRowPx = function (px) {
-        window.pftScPickPx(px);
-        if (scnTktView() === 'depth') window.pftScTkt('deal');
-        var i = dq('btScnLimIn');
-        if (i) try { i.focus(); i.select(); } catch (e) {}
+    // клик по СТРОКЕ стакана = ВЫБОР УРОВНЯ «до сюда» (владелец 2026-07-24):
+    // не одна цена, а весь путь книги от спреда до уровня. Подсветка держится
+    // (scnSweep), а общая сумма выкупа/продажи сразу падает в заявку — сторона,
+    // лимит по краю и сумма-нетто. Клик по тому же краю снимает выбор.
+    // scnSweep = { uid, side:'ask'|'bid', px } — закреплённый край книги
+    var scnSweep = null;
+    // деньги и лоты пути «от спреда до px» по одной стороне книги
+    function scnSweepCalc(s, side, px) {
+        var q2n = A().q2n, lot = (s.meta && s.meta.lot) || 1;
+        var arr = (s.ob && (side === 'ask' ? s.ob.asks : s.ob.bids)) || [];
+        var money = 0, lots = 0, edge = 0, eps = ((s.meta && s.meta.minInc) || 0.01) / 2;
+        arr.forEach(function (l) {
+            var p = q2n(l.price), q = +l.quantity || 0;
+            if (!(p > 0) || !(q > 0)) return;
+            // аски дорожают от лучшего — берём всё ДО px; биды дешевеют — от px
+            if (side === 'ask' ? p <= px + eps : p >= px - eps) {
+                money += p * q * lot; lots += q; if (side === 'ask' ? p > edge : (!edge || p < edge)) edge = p;
+            }
+        });
+        return { money: money, lots: lots, edge: edge || px, lot: lot };
+    }
+    window.pftScRowPx = function (px, ask) {
+        var n = sxSlot(), s = S(n);
+        var side = ask ? 'ask' : 'bid';
+        // повторный клик по тому же краю — снять выбор (и заявку не трогаем)
+        if (scnSweep && scnSweep.uid === s.uid && scnSweep.side === side &&
+            Math.abs(scnSweep.px - px) < 1e-9) { scnSweepClear(); return; }
+        var sw = scnSweepCalc(s, side, px);
+        scnSweep = { uid: s.uid, side: side, px: px };
+        // сторона + лимит по краю пути; сумма-нетто (без комиссии — её добавит
+        // строка «спишется») уходит в поле суммы заявки. Продажа считает по
+        // рублям и сама упрётся в размер позиции — гвардам ничего не ломаем
+        s.side = ask ? 'buy' : 'sell';
+        s.kind = 'limit';
+        s.price = String(scnSnap(sw.edge, s));
+        scnUnit = 'rub';
+        simpleSum = sw.money > 0 ? String(Math.round(sw.money)) : '';
+        saveSlots();
+        if (scnTktView() === 'depth') { window.pftScTkt('deal'); return; }  // redraw внутри
+        scnTicketRedraw(n);
+        scnDepthRepaint();
     };
+    function scnSweepClear() {
+        if (!scnSweep) return;
+        scnSweep = null;
+        scnDepthRepaint();
+    }
+    // перерисовать стакан по текущему тику (после смены выбора/стороны)
+    function scnDepthRepaint() {
+        var el = dq('btScnTkDepth'); if (!el) return;
+        el.__btDSig = null; el.__btHtml = null;
+        var tv = scnTktView();
+        scnDepthSet('btScnTkDepth', S(sxSlot()), tv === 'depth' ? 1 : 0, scnDepthDeep());
+    }
 
     // ---- стакан-глубина: правый край графика, одна плоскость ----
     // ЛОВУШКА мокапа: лучшая продажа стоит У СПРЕДА, дорогие аски — сверху.
@@ -6598,9 +6643,10 @@
     function scnDepthDeep() {
         var el = dq('btScnTkDepth');
         if (!el || !el.clientHeight) return SCN_DEPTH_CARD;
-        var v = scnDepthView();
-        var extra = v === 'ladder' ? 172 : v === 'curve' ? 178 : 0;
-        var per = Math.floor((el.clientHeight - 118 - extra) / 24 / 2);
+        // одна лесенка: сверху линия баланса (~64), середина стыка (~48),
+        // шапка (~40), а лента растёт снизу — оставляем ей минимум ~160.
+        // Лесенка занимает верх карточки по числу рядов, лишнее — ленте
+        var per = Math.floor((el.clientHeight - 40 - 64 - 48 - 160) / 24 / 2);
         return Math.max(3, Math.min(SCN_DEPTH_CARD, per));
     }
     // данные стакана для рендера И для точечного патча (scnDepthSet):
@@ -6633,13 +6679,19 @@
             mine.forEach(function (m) { if (Math.abs(m.px - px) <= eps) sum += m.lots; });
             return sum;
         }
+        // закреплённый свип: уровень попал в путь «от спреда до края» → d-sel
+        var swAsk = scnSweep && scnSweep.uid === s.uid && scnSweep.side === 'ask';
+        var swBid = scnSweep && scnSweep.uid === s.uid && scnSweep.side === 'bid';
+        var swEps = ((s.meta && s.meta.minInc) || 0.01) / 2;
         function dress(l, side, best) {
             l.w = Math.max(6, Math.round(Math.sqrt(l.lots / maxLots) * 100));
             // плашка «ваши N лот» с ОСТАТКОМ (req − исполнено): исполняется
             // заявка — число на плашке тает (владелец 2026-07-23)
             l.my = myAt(l.px);
+            var sel = (swAsk && side === 'd-ask' && l.px <= scnSweep.px + swEps) ||
+                      (swBid && side === 'd-bid' && l.px >= scnSweep.px - swEps);
             l.cls = 'd-row ' + side + (l.lots >= maxLots * 0.6 ? ' d-big' : '') +
-                (best ? ' d-best' : '') + (l.my ? ' d-mine' : '');
+                (best ? ' d-best' : '') + (l.my ? ' d-mine' : '') + (sel ? ' d-sel' : '');
             l.rub = '≈ ' + Math.round(l.px * l.lots * lot).toLocaleString('ru-RU') + ' ₽ на уровне' +
                 (l.my ? ' · ваша заявка: осталось ' + l.my + ' ' + PF.plural(l.my, 'лот', 'лота', 'лотов') : '');
             return l;
@@ -6650,7 +6702,12 @@
             return dress(l, 'd-ask', i === asks.length - 1);
         });
         var dispBids = bids.map(function (l, i) { return dress(l, 'd-bid', i === 0); });
-        return { asks: dispAsks, bids: dispBids, sp: spreadInfo(s) };
+        // баланс книги: сумма лотов сторон в ВИДИМОМ окне — для линии баланса
+        var askVol = 0, bidVol = 0;
+        asks.forEach(function (l) { askVol += l.lots; });
+        bids.forEach(function (l) { bidVol += l.lots; });
+        return { asks: dispAsks, bids: dispBids, sp: spreadInfo(s),
+                 askVol: askVol, bidVol: bidVol };
     }
     function scnSpreadTxt(s, sp) {
         if (!sp) return 'спред —';
@@ -6666,57 +6723,72 @@
         // тегами. Плашка своих лотов — СЛЕВА, у цены с воздухом (владелец
         // 2026-07-23: справа от объёма она жила один раунд)
         return '<div class="' + l.cls + '" role="button" tabindex="0" data-px="' + l.px + '" data-v="' + l.lots + '" ' +
-            'title="' + l.rub + '" onclick="pftScRowPx(+this.dataset.px)">' +
+            'title="' + l.rub + '" onclick="pftScRowPx(+this.dataset.px, ' +
+            (l.cls.indexOf('d-ask') >= 0 ? 1 : 0) + ')">' +
             '<i class="d-fill" style="width:' + l.w + '%"></i>' +
             '<span class="pr">' + fmtPx(l.px, s) + '</span>' +
             '<span class="d-my">' + (l.my ? l.my + ' ' + PF.plural(l.my, 'лот', 'лота', 'лотов') : '') + '</span>' +
             '<span class="d-vol">' + l.lots.toLocaleString('ru-RU') + '</span></div>';
     }
-    // ---- виды карточного стакана (раунд 3, пересборка 2026-07-24) ----
-    // Лесенка — уровни + мини-лента сделок снизу («как было раньше»);
-    // Лента — только сделки во всю карточку; Кривая — гора кумулятивной
-    // глубины СВЕРХУ и лесенка под ней (владелец: кривая без цифр — красиво,
-    // но торговать по ней нечем)
-    function scnDepthView() {
-        var v = stageObj().layers.depthView;
-        return v === 'tape' || v === 'curve' ? v : 'ladder';
+    // ---- карточный стакан: ОДНА лесенка (владелец 2026-07-24) ----
+    // Три вида (Лесенка/Лента/Кривая) убраны как бесполезные. Остаётся лесенка,
+    // но сверху — красивая ЛИНИЯ БАЛАНСА спроса и предложения (сглаженная гора
+    // кумулятива на канве), середина стыка показывает саму цену сделки, а лента
+    // сделок прижата к лесенке снизу. scnDepthView оставлен как заглушка —
+    // на него смотрит старый код тика, но значение всегда «лесенка».
+    function scnDepthView() { return 'ladder'; }
+    // подпись края книги для линии баланса: доля спроса/предложения по объёму
+    function scnBalTxt(d) {
+        var tot = (d.askVol || 0) + (d.bidVol || 0);
+        if (!(tot > 0)) return { bid: 50, ask: 50 };
+        var bp = Math.round(d.bidVol / tot * 100);
+        return { bid: bp, ask: 100 - bp };
     }
-    window.pftScDepthView = function (v) {
-        var o = stageObj();
-        if (scnDepthView() === v) return;
-        o.layers.depthView = v;
-        delete o.layers.depthTape;   // наследие: раскрываемая лента первой сборки
-        saveStageRaw(o);
-        var tv = scnTktView();
-        var el = dq('btScnTkDepth');
-        if (el) { el.__btDSig = null; el.__btHtml = null; }
-        scnDepthSet('btScnTkDepth', S(sxSlot()), tv === 'depth' ? 1 : 0, scnDepthDeep());
-        if (v !== 'curve') pollTape(sxSlot());   // свежий залп ленты, не ждём тика
-    };
-    function scnDepthSegHtml() {
-        var v = scnDepthView();
-        function b(k, lab) {
-            return '<span class="' + (v === k ? 'on' : '') + '" role="button" tabindex="0" ' +
-                'onclick="pftScDepthView(\'' + k + '\')">' + lab + '</span>';
-        }
-        return '<div class="d-seg">' + b('ladder', 'Лесенка') + b('tape', 'Лента') + b('curve', 'Кривая') + '</div>';
+    // середина стакана — «что на стыке»: последняя цена сделки крупно, со
+    // стрелкой направления (от ленты), спред — мелким подтекстом (владелец
+    // 2026-07-24: «раньше был только спред, непонятно какая цена»)
+    function scnMidBandInner(s, d) {
+        var last = sxPrice(s);
+        var t0 = (s.tape || [])[0];
+        var dir = t0 ? (t0.direction === 'TRADE_DIRECTION_BUY' ? 'up' : 'down') : '';
+        var arw = dir === 'up' ? '▲' : dir === 'down' ? '▼' : '·';
+        return '<i class="d-mid-r"></i>' +
+            '<span class="d-mid-c">' +
+                '<b class="d-mid-px ' + dir + '">' + arw + ' ' + (last > 0 ? fmtPx(last, s) : '—') + ' ₽</b>' +
+                '<em>' + scnSpreadTxt(s, d.sp) + '</em>' +
+            '</span>' +
+            '<i class="d-mid-r"></i>';
     }
+    // плашка закреплённого свипа: «выкупить/продать до X ₽ — N лотов ≈ M ₽»
+    function scnSweepBar(s) {
+        if (!scnSweep || scnSweep.uid !== s.uid || !s.ob) return '';
+        var sw = scnSweepCalc(s, scnSweep.side, scnSweep.px);
+        if (!(sw.lots > 0)) return '';
+        var buy = scnSweep.side === 'ask';
+        return '<div class="d-sweep ' + (buy ? 'buy' : 'sell') + '">' +
+            '<span>' + (buy ? 'Выкупить до ' : 'Продать до ') + '<b>' + fmtPx(sw.edge, s) + ' ₽</b>' +
+            ' · ' + Math.round(sw.lots).toLocaleString('ru-RU') + ' ' +
+            PF.plural(Math.round(sw.lots), 'лот', 'лота', 'лотов') +
+            ' ≈ <b>' + scnMoneyShort(sw.money) + '</b> — в заявке</span>' +
+            '<u role="button" tabindex="0" onclick="pftScSweepOff()">✕</u></div>';
+    }
+    window.pftScSweepOff = function () { scnSweepClear(); };
     function scnDepthHtml(s, slim, deep) {
         // slim — стакан внутри карточки тикета «Старта»: слово «Стакан» уже
         // на вкладке карточки, остаётся только подсказка жеста.
         // deep — уровней на сторону: карточной высоте есть куда расти
-        var v = scnDepthView();
-        var hint = v === 'ladder' ? 'клик — лимитка'
-            : v === 'tape' ? 'все сделки рынка' : 'гора — вся книга разом';
-        var head = (slim
-            ? '<div class="d-h"><em>' + hint + '</em></div>'
-            : '<div class="d-h"><b>Стакан</b><em>' + hint + '</em></div>') +
-            scnDepthSegHtml();
+        var head = slim
+            ? '<div class="d-h"><em>клик — выбрать уровень «до сюда»</em></div>'
+            : '<div class="d-h"><b>Стакан</b><em>клик — выбрать уровень «до сюда»</em></div>';
         if (!s.ob) return head + '<div class="bts-cnote">Ждём стакан…</div>';
-        if (v === 'tape') {
-            return head + '<div class="d-tape-full"><div class="d-tape-b">' + scnTkTapeRows(s, 20) + '</div></div>';
-        }
         var d = scnDepthData(s, deep || SCN_DEPTH);
+        var bal = scnBalTxt(d);
+        // линия баланса спроса/предложения: канва-гора + подписи долей
+        var balStrip = '<div class="d-bal" id="btScnBal">' +
+            '<canvas id="btScnBalCv"></canvas>' +
+            '<span class="d-bal-t d-bal-b" id="btScnBalB">спрос ' + bal.bid + '%</span>' +
+            '<span class="d-bal-t d-bal-a" id="btScnBalA">' + bal.ask + '% предложение</span>' +
+        '</div>';
         // пустую сторону неликвида показываем, не прячем (экран 11): рыночной
         // цены без неё не существует — кнопку тикета гасит scnSubmitBlock
         var askPart = d.asks.length
@@ -6726,17 +6798,13 @@
             ? d.bids.map(function (l) { return scnDepthRow(l, s); }).join('')
             : '<div class="eg-empty">покупателей сейчас нет — спред не определён</div>';
         var ladder = '<div class="d-ladder">' + askPart +
-            '<div class="d-spread"><i></i><b>' + scnSpreadTxt(s, d.sp) + '</b><i></i></div>' +
+            '<div class="d-mid" id="btScnMid">' + scnMidBandInner(s, d) + '</div>' +
             bidPart + '</div>';
-        if (v === 'curve') {
-            return head + '<div class="d-curvew" id="btScnCurveW" ' +
-                'onmousemove="pftScCurveHov(event)" onmouseleave="pftScCurveHovOff()">' +
-                '<canvas id="btScnCurve"></canvas></div>' +
-                '<div class="dc-x" id="btScnCurveX"></div>' + ladder;
-        }
-        return head + ladder +
+        return head + balStrip +
+            '<div class="d-sweepw" id="btScnSweep">' + scnSweepBar(s) + '</div>' +
+            ladder +
             '<div class="d-tape-mini"><div class="d-h2">Лента сделок</div>' +
-            '<div class="d-tape-b">' + scnTkTapeRows(s, 6) + '</div></div>';
+            '<div class="d-tape-b">' + scnTkTapeRows(s, 24) + '</div></div>';
     }
     // тик стакана: та же структура — патчим ЖИВЫЕ узлы (цены, лоты, ширины
     // заливок), а не innerHTML: css-transition ширины даёт стакану «дышать».
@@ -6744,32 +6812,15 @@
     function scnDepthSet(id, s, slim, deep) {
         var el = dq(id);
         if (!el) return;
-        var view = scnDepthView();
-        // «Лента» живёт своим обновлением: структура постоянна
-        if (view === 'tape') {
-            var sigV = [slim ? 1 : 0, view, s.ob ? 1 : 0].join('|');
-            if (el.__btDSig !== sigV) {
-                el.__btDSig = sigV;
-                el.__btHtml = null;
-                el.innerHTML = scnDepthHtml(s, slim, deep);
-                return;
-            }
-            if (!s.ob) return;
-            var tb0 = el.querySelector('.d-tape-b');
-            if (tb0) {
-                var th0 = scnTkTapeRows(s, 20);
-                if (tb0.__btHtml !== th0) { tb0.__btHtml = th0; tb0.innerHTML = th0; }
-            }
-            return;
-        }
-        // «Лесенка» и «Кривая» несут лесенку уровней: общий патч строк
+        // одна лесенка: линия баланса + середина стыка + ряды + мини-лента
         var d = s.ob ? scnDepthData(s, deep || SCN_DEPTH) : null;
-        var sig = [slim ? 1 : 0, view, deep || 0, d ? d.asks.length : -1, d ? d.bids.length : -1].join('|');
+        var sig = [slim ? 1 : 0, deep || 0, d ? d.asks.length : -1, d ? d.bids.length : -1,
+                   scnSweep && scnSweep.uid === s.uid ? scnSweep.side + scnSweep.px : '0'].join('|');
         if (el.__btDSig !== sig) {
             el.__btDSig = sig;
             el.__btHtml = null;   // после патчей строковый кэш scnSet врал бы
             el.innerHTML = scnDepthHtml(s, slim, deep);
-            if (view === 'curve') requestAnimationFrame(function () { scnCurveDraw(s); });
+            if (d) requestAnimationFrame(function () { scnBalDraw(s, d); });
             return;
         }
         if (!d) return;
@@ -6804,19 +6855,29 @@
             var w = l.w + '%';
             if (r.firstChild.style.width !== w) r.firstChild.style.width = w;
         });
-        var spb = el.querySelector('.d-spread b');
-        if (spb) {
-            var st = scnSpreadTxt(s, d.sp);
-            if (spb.textContent !== st) spb.textContent = st;
+        // середина стыка: цена сделки + стрелка + спред — целиком тем же тиком
+        var mid = el.querySelector('.d-mid');
+        if (mid) {
+            var mh = scnMidBandInner(s, d);
+            if (mid.__btHtml !== mh) { mid.__btHtml = mh; mid.innerHTML = mh; }
         }
-        if (view === 'curve') scnCurveDraw(s);
-        else {
-            // лесенка: мини-лента сделок снизу живёт теми же тиками
-            var tb = el.querySelector('.d-tape-b');
-            if (tb) {
-                var th = scnTkTapeRows(s, 6);
-                if (tb.__btHtml !== th) { tb.__btHtml = th; tb.innerHTML = th; }
-            }
+        // линия баланса: перерисовать канву + подписи долей
+        scnBalDraw(s, d);
+        var bal = scnBalTxt(d);
+        var bb = el.querySelector('#btScnBalB'), ba = el.querySelector('#btScnBalA');
+        if (bb) { var bbt = 'спрос ' + bal.bid + '%'; if (bb.textContent !== bbt) bb.textContent = bbt; }
+        if (ba) { var bat = bal.ask + '% предложение'; if (ba.textContent !== bat) ba.textContent = bat; }
+        // плашка свипа: сумма пути живёт тиком (лоты у уровня меняются)
+        var swW = el.querySelector('#btScnSweep');
+        if (swW) {
+            var swh = scnSweepBar(s);
+            if (swW.__btHtml !== swh) { swW.__btHtml = swh; swW.innerHTML = swh; }
+        }
+        // мини-лента сделок снизу живёт теми же тиками
+        var tb = el.querySelector('.d-tape-b');
+        if (tb) {
+            var th = scnTkTapeRows(s, 24);
+            if (tb.__btHtml !== th) { tb.__btHtml = th; tb.innerHTML = th; }
         }
     }
     function scnTkTapeRows(s, lim) {
@@ -6832,33 +6893,28 @@
                 '<span class="d-vol">×' + (+t.quantity || 0).toLocaleString('ru-RU') + '</span></div>';
         }).join('');
     }
-    // ---- кривая глубины (раунд 3): кумулятив обеих сторон на канвасе ----
-    // Х — цена (пропорционально), Y — накопленные лоты от спреда наружу.
-    // Рисуем от живого s.ob на каждом тике: канвас дешевле патча DOM-строк
+    // ---- линия баланса спроса и предложения (владелец 2026-07-24) ----
+    // Сглаженная гора кумулятива над лесенкой: спрос слева зелёным, предложение
+    // справа красным, встречаются на спреде. Х — цена, Y — накопленные лоты.
+    // Рисуем на канве от живого s.ob каждым тиком (дешевле патча DOM). Кривая
+    // сглажена монотонным бензье — «красиво», не ступеньками
     function scnCurvePalette() {
         var night = sceneNight();
         return {
             grn: night ? '#34d399' : '#16a34a',
             red: night ? '#f87171' : '#dc2626',
-            hair: night ? 'rgba(255,255,255,0.10)' : 'rgba(15,23,42,0.10)',
+            hair: night ? 'rgba(255,255,255,0.14)' : 'rgba(15,23,42,0.12)',
             mut: night ? '#93a1b8' : '#64748b'
         };
     }
-    // геометрия последней отрисовки — для ховера (без пересчёта книги)
-    var CURVE = null;
-    function scnCurveDraw(s) {
-        var cv = dq('btScnCurve'), box = dq('btScnCurveW');
-        if (!cv || !box || !s.ob) { CURVE = null; return; }
-        var q2n = A().q2n;
-        function take(arr) {
-            return (arr || []).map(function (l) {
-                return { px: q2n(l.price), lots: +l.quantity || 0 };
-            }).filter(function (l) { return l.px > 0 && l.lots > 0; });
-        }
-        var asks = take(s.ob.asks), bids = take(s.ob.bids);
-        if (!asks.length && !bids.length) { CURVE = null; return; }
+    function scnBalDraw(s, d) {
+        var cv = dq('btScnBalCv'), box = dq('btScnBal');
+        if (!cv || !box || !s.ob) return;
+        var asks = (d.asks || []).slice().reverse();   // экранный порядок — обратно к лучшему
+        var bids = (d.bids || []);
+        if (!asks.length && !bids.length) return;
         var W = box.clientWidth, H = box.clientHeight;
-        if (!(W > 40) || !(H > 40)) { CURVE = null; return; }
+        if (!(W > 30) || !(H > 20)) return;
         var dpr = window.devicePixelRatio || 1;
         if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) {
             cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
@@ -6866,88 +6922,65 @@
         var ctx = cv.getContext('2d');
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.clearRect(0, 0, W, H);
-        // кумулятив от лучшей цены наружу; Х — цена в общем диапазоне книги
-        var pmin = bids.length ? bids[bids.length - 1].px : asks[0].px;
-        var pmax = asks.length ? asks[asks.length - 1].px : bids[0].px;
+        var pal = scnCurvePalette();
+        // общий диапазон цен книги; спред — по центру X
+        var bestBid = bids.length ? bids[0].px : 0;
+        var bestAsk = asks.length ? asks[0].px : 0;
+        var pmin = bids.length ? bids[bids.length - 1].px : bestAsk;
+        var pmax = asks.length ? asks[asks.length - 1].px : bestBid;
         if (!(pmax > pmin)) { pmax = pmin + ((s.meta && s.meta.minInc) || 0.01); }
-        var cum = 0, bidPts = [], askPts = [], maxCum = 1;
+        var maxCum = 1, cum;
+        var bidPts = []; cum = 0;
         bids.forEach(function (l) { cum += l.lots; bidPts.push({ px: l.px, c: cum }); });
         maxCum = Math.max(maxCum, cum);
-        cum = 0;
+        var askPts = []; cum = 0;
         asks.forEach(function (l) { cum += l.lots; askPts.push({ px: l.px, c: cum }); });
         maxCum = Math.max(maxCum, cum);
-        var padT = 10, padB = 4;
+        var padT = 8, padB = 2;
         function X(px) { return (px - pmin) / (pmax - pmin) * (W - 2) + 1; }
         function Y(c) { return H - padB - c / maxCum * (H - padT - padB); }
-        var pal = scnCurvePalette();
-        function mountain(pts, basePx, col) {
-            // ступени: горизонталь на прежнем кумулятиве, вертикаль на уровне
+        // гладкая гора: базовая точка у спреда, сглаживание монотонным бензье
+        function smooth(pts, basePx, col) {
+            var P = [{ x: X(basePx), y: Y(0) }];
+            pts.forEach(function (p) { P.push({ x: X(p.px), y: Y(p.c) }); });
             ctx.beginPath();
-            ctx.moveTo(X(basePx), Y(0));
-            var pc = 0;
-            pts.forEach(function (p) {
-                ctx.lineTo(X(p.px), Y(pc));
-                ctx.lineTo(X(p.px), Y(p.c));
-                pc = p.c;
-            });
-            ctx.lineTo(X(pts[pts.length - 1].px), Y(0));
+            ctx.moveTo(P[0].x, P[0].y);
+            for (var i = 0; i < P.length - 1; i++) {
+                var a = P[i], b = P[i + 1];
+                var mx = (a.x + b.x) / 2;
+                ctx.bezierCurveTo(mx, a.y, mx, b.y, b.x, b.y);
+            }
+            var grad = ctx.createLinearGradient(0, padT, 0, H);
+            grad.addColorStop(0, col + '55');
+            grad.addColorStop(1, col + '08');
+            // заливка под кривой до дна
+            ctx.lineTo(P[P.length - 1].x, Y(0));
+            ctx.lineTo(P[0].x, Y(0));
             ctx.closePath();
-            ctx.globalAlpha = 0.14; ctx.fillStyle = col; ctx.fill();
-            ctx.globalAlpha = 0.75; ctx.strokeStyle = col; ctx.lineWidth = 1.6; ctx.stroke();
-            ctx.globalAlpha = 1;
+            ctx.fillStyle = grad; ctx.fill();
+            // сама линия — поверх заливки, без нижней кромки
+            ctx.beginPath();
+            ctx.moveTo(P[0].x, P[0].y);
+            for (i = 0; i < P.length - 1; i++) {
+                var a2 = P[i], b2 = P[i + 1], mx2 = (a2.x + b2.x) / 2;
+                ctx.bezierCurveTo(mx2, a2.y, mx2, b2.y, b2.x, b2.y);
+            }
+            ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+            ctx.shadowColor = col + '66'; ctx.shadowBlur = 6; ctx.shadowOffsetY = 1;
+            ctx.stroke();
+            ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
         }
-        if (bidPts.length) mountain(bidPts, bids[0].px, pal.grn);
-        if (askPts.length) mountain(askPts, asks[0].px, pal.red);
-        // серединка спреда — волосяная вертикаль
-        if (bids.length && asks.length) {
-            var mid = (bids[0].px + asks[0].px) / 2;
+        if (bidPts.length) smooth(bidPts, bestBid, pal.grn);
+        if (askPts.length) smooth(askPts, bestAsk, pal.red);
+        // спред — волосяная вертикаль по центру стыка
+        if (bestBid && bestAsk) {
+            var mid = (bestBid + bestAsk) / 2;
             ctx.strokeStyle = pal.hair; ctx.lineWidth = 1;
-            ctx.setLineDash([3, 4]);
-            ctx.beginPath(); ctx.moveTo(X(mid), padT); ctx.lineTo(X(mid), H - padB); ctx.stroke();
+            ctx.setLineDash([2, 3]);
+            ctx.beginPath(); ctx.moveTo(X(mid), padT - 4); ctx.lineTo(X(mid), H); ctx.stroke();
             ctx.setLineDash([]);
         }
-        CURVE = { W: W, H: H, pmin: pmin, pmax: pmax, bids: bids, asks: asks,
-                  bestBid: bids.length ? bids[0].px : 0, bestAsk: asks.length ? asks[0].px : 0 };
-        // подписи оси: край книги слева и справа, спред в центре
-        var ax = dq('btScnCurveX');
-        if (ax) {
-            var h2 = '<span>' + fmtPx(pmin, s) + '</span><b>' + scnSpreadTxt(s, spreadInfo(s)) + '</b>' +
-                '<span>' + fmtPx(pmax, s) + '</span>';
-            if (ax.__btHtml !== h2) { ax.__btHtml = h2; ax.innerHTML = h2; }
-        }
     }
-    // ховер кривой: вертикаль + «скупить/продать до X — ≈ Y ₽» (язык
-    // кумулятивного ховера лесенки — один и тот же ответ деньгами)
-    window.pftScCurveHov = function (ev) {
-        var box = dq('btScnCurveW');
-        if (!box || !CURVE) return;
-        var r = box.getBoundingClientRect();
-        var x = (ev.clientX - r.left) / (r.width || 1);
-        var px = CURVE.pmin + x * (CURVE.pmax - CURVE.pmin);
-        var s = S(sxSlot());
-        var lot = (s.meta && s.meta.lot) || 1;
-        var ask = CURVE.bestAsk > 0 && px >= (CURVE.bestBid + CURVE.bestAsk) / 2;
-        var money = 0, edge = 0;
-        (ask ? CURVE.asks : CURVE.bids).forEach(function (l) {
-            if (ask ? l.px <= px : l.px >= px) { money += l.px * l.lots * lot; edge = l.px; }
-        });
-        var tip = dq('btScnCurveTip');
-        if (!tip) {
-            tip = document.createElement('div');
-            tip.id = 'btScnCurveTip'; tip.className = 'd-cumtip';
-            box.appendChild(tip);
-        }
-        if (!(money > 0) || !(edge > 0)) { tip.remove(); return; }
-        tip.textContent = (ask ? 'скупить до ' : 'продать до ') + fmtPx(edge, s) +
-            ' ₽ — ≈ ' + scnMoneyShort(money);
-        tip.classList.toggle('sell', !ask);
-        var left = Math.min(Math.max(4, ev.clientX - r.left + 10), r.width - 150);
-        tip.style.left = left + 'px';
-        tip.style.top = Math.max(2, ev.clientY - r.top - 30) + 'px';
-    };
-    window.pftScCurveHovOff = function () {
-        var tip = dq('btScnCurveTip'); if (tip) tip.remove();
-    };
     // ---- кумулятивная глубина по ховеру (владелец 2026-07-23) ----
     // Навёл на уровень — тихо подсвечиваются все уровни между спредом и ним,
     // чип называет ёмкость: «скупить до N ₽ — ≈ M ₽». Помогает ставить
@@ -7822,6 +7855,7 @@
         simpleSum = '';
         scnUnit = '';
         scnLim = 0;
+        scnSweep = null;   // ручная смена стороны отменяет выбранный свип
         saveSlots();
         var el = dq('btScnTicket');
         if (el) { el.innerHTML = scnTicketHtml(n); sxWire(); }
