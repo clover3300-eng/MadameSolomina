@@ -186,6 +186,16 @@
 .bts .day-chip em { font: 600 10px var(--font-ui); font-style: normal; color: var(--mut); }
 /* факты дня — тихая строка под ценой, наполняет «Старт» без карточек */
 .bts .facts { display: flex; gap: 30px; margin-top: 20px; min-height: 34px; }
+/* тихая строка фактов ПОД графиком: компактнее и не спорит с ценой */
+.bts .facts-quiet {
+    margin-top: 10px; min-height: 0; gap: 22px; align-items: baseline;
+    border-top: 1px solid var(--hair); padding-top: 9px; flex: none;
+    overflow: hidden; white-space: nowrap;
+}
+.bts .facts-quiet .fact { display: inline-flex; align-items: baseline; gap: 6px; }
+.bts .facts-quiet .fact em { font-size: 8.5px; }
+.bts .facts-quiet .fact b { font: 600 11.5px var(--font-num); color: var(--mut); }
+.bts .facts-quiet:empty { display: none; }
 .bts .fact em {
     display: block; font-style: normal;
     font: 800 9px var(--font-ui); letter-spacing: 0.09em; text-transform: uppercase;
@@ -254,6 +264,18 @@
 .bts .tkt-tabs .tt.grn { color: var(--grn); }
 /* стакан на всю карточку (вид «Стакан») */
 .bts .tkt-depth { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+/* заголовок стакана в карточках — тем же кеглем, что вкладки заявки */
+.bts .tkt .d-h b, .bts .tkt-sub .d-h b { font-size: 16px; }
+/* раскрываемые «Последние сделки» — занимают пустой низ карточки стакана */
+.bts .d-tapew { margin-top: auto; border-top: 1px solid var(--hair); padding-top: 8px; flex: none; }
+.bts .d-tape-h {
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; user-select: none; color: var(--dim);
+}
+.bts .d-tape-h b { font: 400 14px var(--font-title); color: var(--mut); }
+.bts .d-tape-h i { font-style: normal; font-size: 10px; }
+.bts .d-tape-h:hover b { color: var(--ink); }
+.bts .d-tape-b { margin-top: 6px; }
 /* сплит: карточка раздваивается на стакан + заявку; ширину контейнера и
    сжатие героя ведут transition (контент слева поджимается, как от сайдбара) */
 .bts .tkt { transition: width 0.45s cubic-bezier(0.25, 0.9, 0.3, 1); }
@@ -525,10 +547,11 @@
 .bts .ord-tag u { text-decoration: none; color: var(--dim); font: 400 11px var(--font-ui); cursor: pointer; }
 .bts .ord-tag u:hover { color: var(--red); }
 /* плашки цены по краям линий (последняя цена, кроссхейр): правило сторон
-   одно — слева светлая, справа акцентная (владелец 2026-07-23) */
+   одно — слева светлая, справа акцентная (владелец 2026-07-23).
+   Геометрия левой = геометрии чипа движка на оси (size 11 / 7×4 / r6) */
 .bts .px-tag {
     position: absolute; transform: translateY(-50%);
-    font: 600 10.5px var(--font-num); padding: 3px 7px; border-radius: 6px;
+    font: 600 11px var(--font-num); padding: 4px 7px; border-radius: 6px;
     white-space: nowrap; pointer-events: none; z-index: 7;
 }
 .bts .px-tag.l {
@@ -536,6 +559,9 @@
     border: 1px solid var(--line);
     box-shadow: 0 6px 14px -8px rgba(15, 23, 42, 0.4);
 }
+/* левая плашка последней цены — в тон свече дня, не выбивается из графика */
+.bts .px-tag.l.up { color: var(--grn); border-color: color-mix(in srgb, var(--grn) 40%, transparent); }
+.bts .px-tag.l.dn { color: var(--red); border-color: color-mix(in srgb, var(--red) 40%, transparent); }
 .bts .px-tag.r { right: 0; color: #fff; background: var(--mut); }
 .bts .px-tag.acc.up { background: var(--grn); }
 .bts .px-tag.acc.dn { background: var(--red); }

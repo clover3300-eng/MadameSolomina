@@ -4158,7 +4158,10 @@
         return nums[0] || 1;
     }
     function scnTapeWants(n) {
-        return sceneLive() && stageObj().stage !== 'start' && slotNo(n) === sxSlot();
+        if (!sceneLive() || slotNo(n) !== sxSlot()) return false;
+        if (stageObj().stage !== 'start') return true;
+        // «Старт»: лента нужна раскрытому блоку «Последние сделки» в стакане карточки
+        return scnTktView() !== 'deal' && !!stageObj().layers.depthTape;
     }
 
     // ---- график сцены: периоды, свечи периодов для фактов, линия-запаска ----
@@ -4395,11 +4398,13 @@
         return f('Открытие', open) + f('Диапазон дня', range) + f('Объём', vol) + f('За год', yr) + f('Дивиденд', div);
     }
     function scnHeroHtml(n, s) {
+        // факты дня — тихой строкой ПОД графиком (владелец 2026-07-23:
+        // между ценой и холстом они шумели), место ленты «Разгона»
         return '<div class="bts-hero">' +
             '<div class="ih" id="btScnHead">' + scnHeadHtml(s) + '</div>' +
             '<div class="price-row" id="btScnPrice">' + scnPriceHtml(s) + '</div>' +
-            '<div class="facts" id="btScnFacts">' + scnFactsHtml(s) + '</div>' +
             '<div class="bts-chart" id="btScnChart">' + scnChartBody(s) + '</div>' +
+            '<div class="facts facts-quiet" id="btScnFacts">' + scnFactsHtml(s) + '</div>' +
         '</div>';
     }
     // тело холста: свечи движка (все ступени, дефолт) либо линия по тумблеру;
@@ -5050,14 +5055,17 @@
             separator: { color: line },
             // чип цены кроссхейра НА ОСИ: слева (Старт/Разгон) — светлый,
             // справа (Контроль) — тёмный акцент; противоположную сторону
-            // дорисовывает DOM-плашка scnKCross (то же правило свет/акцент)
+            // дорисовывает DOM-плашка scnKCross (то же правило свет/акцент).
+            // Геометрия чипа = геометрия DOM-плашек .px-tag: один размер
             crosshair: { show: true,
                 horizontal: { line: { color: txt }, text: stageObj().stage !== 'control'
                     ? { backgroundColor: nightMode ? '#121722' : '#ffffff',
                         color: nightMode ? '#e9eef8' : '#0f172a',
                         borderColor: nightMode ? 'rgba(255,255,255,0.16)' : 'rgba(15,23,42,0.14)',
-                        borderSize: 1 }
-                    : { backgroundColor: chipBg } },
+                        borderSize: 1, size: 11, borderRadius: 6,
+                        paddingLeft: 7, paddingRight: 7, paddingTop: 4, paddingBottom: 4 }
+                    : { backgroundColor: chipBg, size: 11, borderRadius: 6,
+                        paddingLeft: 7, paddingRight: 7, paddingTop: 4, paddingBottom: 4 } },
                 vertical: { line: { color: txt }, text: { backgroundColor: chipBg } }
             }
         };
@@ -5075,7 +5083,7 @@
         if (K.timer) { clearInterval(K.timer); K.timer = null; }
         try { window.klinecharts.dispose(K.host); } catch (e) {}
         if (K.host && K.host.parentNode) K.host.parentNode.removeChild(K.host);
-        K.chart = null; K.host = null; K.liveCb = null;
+        K.chart = null; K.host = null; K.liveCb = null; K.lastClose = 0;
         K.uid = ''; K.perKey = ''; K.styleKey = '';
         Object.keys(K_ORD).forEach(function (id) { delete K_ORD[id]; });
     }
@@ -5105,7 +5113,12 @@
                     }
                     p.callback(rows, { forward: rows.length > 0, backward: false });
                     // линии заявок — после первой загрузки: до неё нет ценовой шкалы
-                    if (p.type === 'init') scnKOrders(true);
+                    if (p.type === 'init') {
+                        // плашки цены живут закрытием последней свечи (ровно
+                        // там же, где пунктир движка) — а не ценой стакана
+                        if (rows.length) { K.lastClose = rows[rows.length - 1].close; scnKTags(); }
+                        scnKOrders(true);
+                    }
                 }, function () { p.callback([], { forward: false, backward: false }); });
             },
             subscribeBar: function (p) { K.liveCb = p.callback; scnKLive(); },
@@ -5136,7 +5149,13 @@
                 if (!c) return;
                 var bar = { timestamp: Date.parse(c.time), open: q2n(c.open), high: q2n(c.high),
                             low: q2n(c.low), close: q2n(c.close), volume: +c.volume || 0 };
-                if (bar.timestamp && bar.close > 0) K.liveCb(bar);
+                if (bar.timestamp && bar.close > 0) {
+                    K.liveCb(bar);
+                    // плашки цены ведёт та же свеча, что и пунктир движка —
+                    // и сразу, не дожидаясь тика стакана (иначе отстают)
+                    K.lastClose = bar.close;
+                    scnKTags();
+                }
             }).catch(function () {});
         }, SCN_LIVE[sxPer()[0]] || 30000);
     }
@@ -5234,6 +5253,7 @@
         var newSym = K.uid !== s.uid;
         var newPer = K.perKey !== perKey;
         if (!fresh && !newSym && !newPer) return;
+        if (newSym) K.lastClose = 0;   // чужое закрытие не должно пережить смену бумаги
         K.uid = s.uid; K.perKey = perKey;
         try {
             var cur = K.chart.getPeriod();
@@ -5413,10 +5433,12 @@
         var s = S(sxSlot());
         var want = K.ordWant || {};
         var html = '';
-        // последняя цена — ДВЕ плашки по краям линии движка: слева светлая,
-        // справа акцентная цветом дня (ярлык самого движка скрыт в стилях)
+        // последняя цена — ДВЕ плашки по краям линии движка: слева светлая
+        // в тон дня, справа акцентная (ярлык самого движка скрыт в стилях).
+        // Цену ведёт закрытие последней СВЕЧИ (K.lastClose) — ровно уровень
+        // пунктира движка; цена стакана опережала бы линию (плашка «не успевала»)
         if (s.uid === K.uid) {
-            var lastPx = sxPrice(s);
+            var lastPx = K.lastClose > 0 ? K.lastClose : sxPrice(s);
             var lH = layer.clientHeight || 0;
             if (lastPx > 0) {
                 var lyy = pxToY(lastPx);
@@ -5424,7 +5446,7 @@
                     var cls = s.ob && A().q2n(s.ob.closePrice) > 0 ? A().q2n(s.ob.closePrice) : 0;
                     var dir = cls > 0 ? (lastPx >= cls ? ' up' : ' dn') : '';
                     var lyr = Math.round(lyy);
-                    html += '<span class="px-tag l" style="top:' + lyr + 'px">' + fmtPx(lastPx, s) + '</span>' +
+                    html += '<span class="px-tag l' + dir + '" style="top:' + lyr + 'px">' + fmtPx(lastPx, s) + '</span>' +
                         '<span class="px-tag r acc' + dir + '" style="top:' + lyr + 'px">' + fmtPx(lastPx, s) + '</span>';
                 }
             }
@@ -5509,10 +5531,41 @@
         var bidPart = bids.length
             ? bids.map(function (l) { return row(l, 'd-bid'); }).join('')
             : '<div class="eg-empty">покупателей сейчас нет — спред не определён</div>';
+        // карточная высота (deep): пустой низ занимает раскрываемый блок
+        // «Последние сделки» — та же лента, что кормит «Разгон»
+        var tape = '';
+        if (deep) {
+            var tOpen = !!stageObj().layers.depthTape;
+            tape = '<div class="d-tapew">' +
+                '<div class="d-tape-h" role="button" tabindex="0" aria-expanded="' + tOpen + '" ' +
+                    'onclick="pftScTapeTgl()"><b>Последние сделки</b><i>' + (tOpen ? '▴' : '▾') + '</i></div>' +
+                (tOpen ? '<div class="d-tape-b">' + scnTkTapeRows(s) + '</div>' : '') +
+            '</div>';
+        }
         return head + askPart +
             '<div class="d-spread"><i></i><b>' + (sp ? 'спред ' + fmtPx(sp.ask - sp.bid, s) : 'спред —') + '</b><i></i></div>' +
-            bidPart;
+            bidPart + tape;
     }
+    function scnTkTapeRows(s) {
+        var rows = (s.tape || []).slice(0, 9);
+        if (!rows.length) return '<div class="bts-cnote">Сделки подтянутся через секунду…</div>';
+        var q2n = A().q2n;
+        return rows.map(function (t) {
+            var buy = t.direction === 'TRADE_DIRECTION_BUY';
+            var tm = t.time ? new Date(t.time).toLocaleTimeString('ru-RU') : '';
+            return '<div class="d-row d-t"><span class="tt">' + esc(tm) + '</span>' +
+                '<span class="pr ' + (buy ? 'g' : 'r') + '">' + fmtPx(q2n(t.price), s) + '</span>' +
+                '<span class="d-vol">×' + (+t.quantity || 0).toLocaleString('ru-RU') + '</span></div>';
+        }).join('');
+    }
+    window.pftScTapeTgl = function () {
+        var o = stageObj();
+        o.layers.depthTape = o.layers.depthTape ? 0 : 1;
+        saveStageRaw(o);
+        var tv = scnTktView();
+        scnSet('btScnTkDepth', scnDepthHtml(S(sxSlot()), tv === 'depth' ? 1 : 0, SCN_DEPTH_CARD));
+        if (o.layers.depthTape) pollTape(sxSlot());   // свежий залп, не ждём тика
+    };
     // ---- лента-пульс: последние сделки одной строкой ----
     function scnTapeHtml(s) {
         var rows = (s.tape || []).slice(0, 7);
