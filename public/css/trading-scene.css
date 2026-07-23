@@ -691,10 +691,10 @@
 .bts .d-row .pr { font-weight: 600; position: relative; }
 .bts .d-ask .pr { color: var(--red); }
 .bts .d-bid .pr { color: var(--grn); }
-/* уровень с ВАШЕЙ заявкой — плашка с остатком лотов СПРАВА от объёма
-   (владелец 2026-07-24), со склонением; исполняется — число тает */
+/* уровень с ВАШЕЙ заявкой — плашка с остатком лотов СЛЕВА, у цены с
+   воздухом (владелец 2026-07-23), со склонением; исполняется — число тает */
 .bts .d-my {
-    position: relative; margin-left: 8px; flex: none;
+    position: relative; margin-left: 14px; flex: none;
     font: 700 10px var(--font-num); color: var(--acc); white-space: nowrap;
     background: color-mix(in srgb, var(--acc) 12%, var(--card));
     border: 1px solid color-mix(in srgb, var(--acc) 40%, transparent);

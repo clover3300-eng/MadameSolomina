@@ -5725,13 +5725,14 @@
         // длиннее заливка → крупнее уровень, стена подсвечена гуще (d-big)
         // узел d-my ВСЕГДА в строке (пустой спрятан CSS :empty) — точечный
         // патч scnDepthSet ходит по цепочке firstChild БЕЗ пробелов между
-        // тегами. Плашка своих лотов — СПРАВА от объёма (владелец 2026-07-24)
+        // тегами. Плашка своих лотов — СЛЕВА, у цены с воздухом (владелец
+        // 2026-07-23: справа от объёма она жила один раунд)
         return '<div class="' + l.cls + '" role="button" tabindex="0" data-px="' + l.px + '" data-v="' + l.lots + '" ' +
             'title="' + l.rub + '" onclick="pftScRowPx(+this.dataset.px)">' +
             '<i class="d-fill" style="width:' + l.w + '%"></i>' +
             '<span class="pr">' + fmtPx(l.px, s) + '</span>' +
-            '<span class="d-vol">' + l.lots.toLocaleString('ru-RU') + '</span>' +
-            '<span class="d-my">' + (l.my ? l.my + ' ' + PF.plural(l.my, 'лот', 'лота', 'лотов') : '') + '</span></div>';
+            '<span class="d-my">' + (l.my ? l.my + ' ' + PF.plural(l.my, 'лот', 'лота', 'лотов') : '') + '</span>' +
+            '<span class="d-vol">' + l.lots.toLocaleString('ru-RU') + '</span></div>';
     }
     function scnDepthHtml(s, slim, deep) {
         // slim — стакан внутри карточки тикета «Старта»: слово «Стакан» уже
@@ -5795,7 +5796,7 @@
             if (r.dataset.px !== String(l.px)) r.dataset.px = l.px;
             if (r.dataset.v !== String(l.lots)) r.dataset.v = l.lots;
             if (r.title !== l.rub) r.title = l.rub;
-            var pr = r.firstChild.nextSibling, vol = pr.nextSibling, my = vol.nextSibling;
+            var pr = r.firstChild.nextSibling, my = pr.nextSibling, vol = my.nextSibling;
             var pt = fmtPx(l.px, s), vt = l.lots.toLocaleString('ru-RU');
             var mt = l.my ? l.my + ' ' + PF.plural(l.my, 'лот', 'лота', 'лотов') : '';
             if (pr.textContent !== pt) pr.textContent = pt;
