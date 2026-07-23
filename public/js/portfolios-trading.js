@@ -2721,7 +2721,7 @@
         // ей нужны те же — стакан для цены, портфель для чипов позиций
         if (sceneLive()) {
             sxWire(); scnFit(); startPolling();
-            scnKMount();   // свечи «Разгона»: движок и канвас переживают ре-рендер
+            scnKMount();   // свечи сцены (все ступени): движок и канвас переживают ре-рендер
             // подсветка роста — после раскладки: рамки меряются от живых элементов
             if (scnGrowFrom) requestAnimationFrame(scnGrowPaint);
             return;
@@ -3932,11 +3932,11 @@
         // «Старт» видит только простые команды — сложность растёт со ступенью
         if (st === 'start') {
             out.push({ ic: '〣', t: 'Открыть стакан', em: 'ступень «Разгон»', go: function () { setStage('accel'); } });
-        } else {
-            out.push(candlesOn()
-                ? { ic: '◫', t: 'Линия вместо свечей', em: 'холст', go: function () { window.pftScMode(0); } }
-                : { ic: '◫', t: 'Свечи вместо линии', em: 'холст', go: function () { window.pftScMode(1); } });
         }
+        // тумблер холста — команда всех ступеней: свечи теперь дефолт и «Старта»
+        out.push(candlesOn()
+            ? { ic: '◫', t: 'Линия вместо свечей', em: 'холст', go: function () { window.pftScMode(0); } }
+            : { ic: '◫', t: 'Свечи вместо линии', em: 'холст', go: function () { window.pftScMode(1); } });
         out.push({ ic: '◐', t: sceneNight() ? 'Светлая сцена' : 'Тёмная сцена',
             em: 'тумблер — и в строке среды', go: function () { window.pftSceneTheme(); } });
         STAGES.forEach(function (x) {
@@ -4159,9 +4159,9 @@
         return sceneLive() && stageObj().stage !== 'start' && slotNo(n) === sxSlot();
     }
 
-    // ---- график сцены: линия во весь холст ----
-    // Свечи и индикаторы придут со ступенью «Разгон» (KLineChart); на «Старте»
-    // линия чистая — форма и срок, ничего больше (мокап 03).
+    // ---- график сцены: периоды, свечи периодов для фактов, линия-запаска ----
+    // Свечи движка (KLineChart) — дефолт всех ступеней, включая «Старт»
+    // (владелец 2026-07-23 поверх мокапа 03); линия остаётся видом по тумблеру.
     var SX_PERIODS = [
         ['day', 'Д', 'CANDLE_INTERVAL_15_MIN', 1],
         ['week', 'Н', 'CANDLE_INTERVAL_HOUR', 7],
@@ -4330,13 +4330,11 @@
     function scnHeadHtml(s) {
         var m = s.meta;
         var al = alertsFor(s.uid).length;
-        var accel = stageObj().stage !== 'start';
-        // тумблер Линия/Свечи — только с «Разгона»: на «Старте» линия чистая
-        var mode = accel
-            ? '<span class="ih-per"><span class="' + (candlesOn() ? '' : 'on') + '" role="button" tabindex="0" ' +
-                  'onclick="pftScMode(0)">Линия</span><span class="' + (candlesOn() ? 'on' : '') + '" role="button" ' +
-                  'tabindex="0" onclick="pftScMode(1)">Свечи</span></span>'
-            : '';
+        // тумблер Линия/Свечи — на всех ступенях: свечи с объёмом теперь
+        // дефолт и «Старта» (владелец 2026-07-23), линия — запасной вид
+        var mode = '<span class="ih-per"><span class="' + (candlesOn() ? '' : 'on') + '" role="button" tabindex="0" ' +
+                'onclick="pftScMode(0)">Линия</span><span class="' + (candlesOn() ? 'on' : '') + '" role="button" ' +
+                'tabindex="0" onclick="pftScMode(1)">Свечи</span></span>';
         return '<span class="ih-nm"><h3>' + esc(m.name || m.ticker) + '</h3>' +
             '<em>' + esc(m.ticker) + ' · MOEX · лот ' + m.lot + ' шт</em></span>' +
             '<span class="ih-r">' + mode + perPillsHtml() +
@@ -4393,11 +4391,11 @@
             '<div class="ih" id="btScnHead">' + scnHeadHtml(s) + '</div>' +
             '<div class="price-row" id="btScnPrice">' + scnPriceHtml(s) + '</div>' +
             '<div class="facts" id="btScnFacts">' + scnFactsHtml(s) + '</div>' +
-            '<div class="bts-chart" id="btScnChart">' + scnChartHtml(s) + '</div>' +
+            '<div class="bts-chart" id="btScnChart">' + scnChartBody(s) + '</div>' +
         '</div>';
     }
-    // герой «Разгона»: вкладки бумаг, общая шапка, одна плоскость
-    // «график + стакан», лента-пульс строкой (мокап 04)
+    // тело холста: свечи движка (все ступени, дефолт) либо линия по тумблеру;
+    // на «Разгоне»+ вокруг добавляются стакан и лента (мокап 04)
     function scnChartBody(s) {
         if (!candlesOn()) return scnChartHtml(s);
         return '<div class="ind-row" id="btScnInd">' + scnIndRow() + '</div>' +
@@ -4904,9 +4902,10 @@
     // правым краем самого графика (одна плоскость, волосяная линия вместо
     // рамки), лента-пульс строкой, строка цены в тикете.
     var scnFindTarget = 0;   // «＋» вкладок: слот, куда поиск положит бумагу
+    // свечи — дефолт ВСЕХ ступеней (владелец 2026-07-23: «Старту» тоже свечи
+    // с объёмом, как на «Разгоне»); линия остаётся по тумблеру
     function candlesOn() {
-        var o = stageObj();
-        return o.stage !== 'start' && o.layers.candles !== 0;
+        return stageObj().layers.candles !== 0;
     }
     window.pftScMode = function (candles) {
         var o = stageObj();
@@ -5345,11 +5344,18 @@
         }
         if (layer.__btHtml !== html) { layer.__btHtml = html; layer.innerHTML = html; }
     }
-    // клик по цене (стакан, свеча, drag линии) подставляет её лимиткой в тикет
+    // клик по цене (стакан, свеча, drag линии) подставляет её лимиткой в тикет.
+    // На «Старте» строки цены в тикете нет — лимитка ложится в сессионный
+    // scnLim (писать s.price нельзя: тикет «Старта» его не читает — ловушка sxPrice)
     window.pftScPickPx = function (px) {
         px = +px;
         if (!(px > 0)) return;
         var n = sxSlot(), s = S(n);
+        if (stageObj().stage === 'start') {
+            scnLim = scnSnap(px, s);
+            scnTicketBits();
+            return;
+        }
         s.kind = 'limit';
         s.price = String(scnSnap(px, s));
         saveSlots();
@@ -6021,7 +6027,9 @@
             } else {
                 scnSet('btScnPrice', scnPriceHtml(s));
                 scnSet('btScnFacts', scnFactsHtml(s));
-                scnSet('btScnChart', scnChartHtml(s));
+                // свечи и на «Старте» живут своим канвасом — innerHTML их убил бы
+                if (candlesOn()) { scnKMount(); scnKTags(); }
+                else scnSet('btScnChart', scnChartHtml(s));
                 scnSet('btScnKnow', scnKnowHtml(n));
             }
             if (st !== 'control') scnSet('btScnUnlock', unlockHtml());
