@@ -246,6 +246,14 @@
 .bts[data-acct="1"] .tkt .knowx,
 .bts[data-acct="1"] .tkt .apx,
 .bts[data-acct="1"] .tkt .tkt-space { display: none; }
+/* сплит + счёт: жмётся ТОЛЬКО карточка сделки — стакан держит полную
+   высоту, дыры под ним нет (владелец 2026-07-24, скрин). Высота сделки =
+   контейнер минус счёт с зазором (--bts-acct = высота счёта + 96 + 12) */
+.bts[data-acct="1"][data-tkt="split"] .tkt { bottom: 96px; overflow: visible; }
+.bts[data-acct="1"][data-tkt="split"] .tkt-sub-deal {
+    height: calc(100% - var(--bts-acct, 330px) + 96px);
+    align-self: flex-start; overflow: hidden;
+}
 .bts.night .tkt { box-shadow: 0 24px 60px -30px rgba(0, 0, 0, 0.55); background: color-mix(in srgb, var(--card) 92%, transparent); }
 .bts .tkt-h { display: flex; align-items: center; gap: 9px; }
 .bts .tkt-h b { font: 400 16px var(--font-title); }
