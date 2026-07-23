@@ -4580,10 +4580,15 @@
         var ctx = cv.getContext('2d');
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.clearRect(0, 0, W, H);
-        var bars = [];
-        try { bars = K.chart.getDataList() || []; } catch (e) {}
+        var bars = [], vr = null;
+        try { bars = K.chart.getDataList() || []; vr = K.chart.getVisibleRange(); } catch (e) {}
+        // база — ЛЕВЫЙ КРАЙ ВИДИМОГО окна (владелец 2026-07-24: якорь на
+        // начале ЗАГРУЖЕННОЙ истории уезжал за экран, и наложение «ничего
+        // непонятно»). Сдвинули график — базы пересчитались, как в TradingView
+        var visFrom = vr && isFinite(vr.from) ? Math.max(0, Math.floor(vr.from)) : 0;
+        var visTo = vr && isFinite(vr.to) ? Math.min(bars.length, Math.ceil(vr.to)) : bars.length;
         var s = S(sxSlot());
-        var chips = '';
+        var chips = '', tags = [];
         function chip(col, c2, pct, txt) {
             return '<span class="cmp-chip"><i style="background:' + col + '"></i><b>' + esc(c2.label) + '</b>' +
                 (txt != null ? '<em>' + txt + '</em>'
@@ -4596,20 +4601,22 @@
             var col = CMP_COLORS[ci % CMP_COLORS.length];
             var rows = cmpCache[cmpKey(c)];
             if (!rows || rows === 'busy') { chips += chip(col, c, null, 'считаем…'); return; }
-            if (rows === 'err' || rows.length < 2 || bars.length < 2) {
+            if (rows === 'err' || rows.length < 2 || visTo - visFrom < 2) {
                 chips += chip(col, c, null, 'нет данных за срок'); return;
             }
-            // общее начало окна: календари у серий разные (ISS против брокера)
-            var t0 = Math.max(bars[0].timestamp, rows[0].t);
-            var bi0 = 0; while (bi0 < bars.length - 1 && bars[bi0].timestamp < t0) bi0++;
-            var ri0 = 0; while (ri0 < rows.length - 1 && rows[ri0].t < t0) ri0++;
+            // якорь: первый ВИДИМЫЙ бар, на котором серия уже существует
+            var bi0 = visFrom;
+            while (bi0 < visTo - 1 && bars[bi0].timestamp < rows[0].t) bi0++;
+            if (bars[bi0].timestamp < rows[0].t) { chips += chip(col, c, null, 'нет данных за срок'); return; }
+            var ri0 = 0;
+            while (ri0 < rows.length - 1 && rows[ri0 + 1].t <= bars[bi0].timestamp) ri0++;
             var heroBase = bars[bi0].close, base = rows[ri0].v;
             if (!(heroBase > 0) || !(base > 0)) { chips += chip(col, c, null, 'нет данных за срок'); return; }
             ctx.beginPath();
-            var ri = ri0, started = false, lastV = base;
-            for (var i = bi0; i < bars.length; i++) {
+            var ri = ri0, started = false, lastV = base, lastP = null;
+            for (var i = bi0; i < visTo; i++) {
                 while (ri < rows.length - 1 && rows[ri + 1].t <= bars[i].timestamp) ri++;
-                if (rows[ri].t > bars[i].timestamp) continue;   // серия ещё не началась
+                if (rows[ri].t > bars[i].timestamp) continue;
                 lastV = rows[ri].v;
                 var p = null;
                 try {
@@ -4619,22 +4626,43 @@
                 if (!p || !isFinite(p.x) || !isFinite(p.y)) continue;
                 if (!started) { ctx.moveTo(p.x, p.y); started = true; }
                 else ctx.lineTo(p.x, p.y);
+                lastP = p;
             }
+            var pct = (lastV / base - 1) * 100;
             if (started) {
                 ctx.strokeStyle = col; ctx.lineWidth = 1.6;
                 ctx.lineJoin = 'round'; ctx.globalAlpha = 0.9;
                 ctx.stroke(); ctx.globalAlpha = 1;
+                if (lastP) tags.push({ y: lastP.y, col: col, txt: c.label + ' ' + cmpDeltaTxt(pct) });
             }
-            chips += chip(col, c, (lastV / base - 1) * 100, null);
+            chips += chip(col, c, pct, null);
         });
+        // плашки серий у правого края (владелец 2026-07-24): имя + % на цвете
+        // линии, раздвинуты по вертикали, чтобы не слипались
+        if (tags.length) {
+            tags.sort(function (a, b) { return a.y - b.y; });
+            for (var ti = 1; ti < tags.length; ti++) {
+                if (tags[ti].y - tags[ti - 1].y < 19) tags[ti].y = tags[ti - 1].y + 19;
+            }
+            ctx.font = '700 10.5px ' + (getComputedStyle(document.body).getPropertyValue('--font-num') || 'monospace');
+            tags.forEach(function (tg) {
+                var tw = ctx.measureText(tg.txt).width;
+                var x = W - tw - 16, y = Math.max(9, Math.min(H - 9, tg.y));
+                ctx.fillStyle = tg.col;
+                scnRoundRect(ctx, x - 7, y - 9, tw + 14, 18, 9);
+                ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.fillText(tg.txt, x, y + 3.5);
+            });
+        }
         if (leg) {
             var hero = '';
-            if (bars.length > 1 && s.meta) {
-                var hPct = (bars[bars.length - 1].close / bars[0].close - 1) * 100;
+            if (visTo - visFrom > 1 && s.meta && bars[visFrom]) {
+                var hPct = (bars[visTo - 1].close / bars[visFrom].close - 1) * 100;
                 hero = '<span class="cmp-chip hero"><i></i><b>' + esc(s.meta.ticker) + '</b>' +
                     '<u class="' + (hPct >= 0 ? 'g' : 'r') + '">' + cmpDeltaTxt(hPct) + '</u></span>';
             }
-            var lh = hero + chips + '<em>каждая линия приведена к цене бумаги на общем начале окна</em>';
+            var lh = hero + chips + '<em>рост в % от левого края окна — сдвиньте график, база пересчитается</em>';
             if (leg.__btHtml !== lh) { leg.__btHtml = lh; leg.innerHTML = lh; }
         }
     }
@@ -5279,7 +5307,7 @@
     // данные); выход одной кнопкой возвращает живую сцену нетронутой.
     var RP = null;   // {uid, rows[{t,v}], i, speed, playing, timer, money, qty, cost, fills, label, done}
     var RP_START = 1000000;
-    var RP_SPEED = { 1: 1400, 5: 320, 20: 80 };
+    var RP_SPEED = { 1: 1400, 5: 320, 20: 80, 50: 32 };
     function rpPx() { return RP ? RP.rows[Math.min(RP.i, RP.rows.length - 1)].v : 0; }
     window.pftScReplay = function () {
         var n = sxSlot(), s = S(n);
@@ -5305,7 +5333,9 @@
                     interval: 'CANDLE_INTERVAL_5_MIN'
                 }, { interactive: false }).then(function (d) {
                     return acc.concat(((d && d.candles) || []).map(function (c) {
-                        return { t: Date.parse(c.time), v: q2n(c.close) * bk };
+                        // полный OHLC: плёнка рисуется свечами (владелец 2026-07-24)
+                        return { t: Date.parse(c.time), v: q2n(c.close) * bk,
+                                 o: q2n(c.open) * bk, h: q2n(c.high) * bk, l: q2n(c.low) * bk };
                     }).filter(function (x) { return x.t && x.v > 0; }));
                 }, function () { return acc; });
             });
@@ -5321,9 +5351,11 @@
                 days[4].toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' });
             // старт — с интро-карточки на паузе (владелец 2026-07-24: «не понял,
             // что даёт режим» — тренажёр обязан представиться до первой свечи)
+            rows.sort(function (a, b) { return a.t - b.t; });   // страховка порядка
             RP = { uid: uid, rows: rows, i: Math.min(24, rows.length - 1), speed: 5, playing: false,
                    timer: null, money: RP_START, qty: 0, cost: 0, fills: [], label: lbl,
                    done: false, intro: true };
+            rpBuckets();   // сетка получасовых свечей плёнки — один раз
             rpRun();
             if (PF.renderNoAnim) PF.renderNoAnim();
         });
@@ -5354,6 +5386,7 @@
     window.pftScRpPlay = function () {
         if (!RP || RP.done) return;
         RP.playing = !RP.playing;
+        RP.lastT = 0;   // после паузы догон не должен глотать плёнку скачком
         rpBarPatch();
     };
     window.pftScRpSpeed = function (k) {
@@ -5365,12 +5398,19 @@
     function rpRun() {
         if (!RP) return;
         if (RP.timer) clearInterval(RP.timer);
+        RP.lastT = 0;
         RP.timer = setInterval(rpStep, RP_SPEED[RP.speed] || 320);
     }
     function rpStep() {
         if (!RP || !RP.playing || RP.done) return;
-        if (!sceneLive() || document.visibilityState !== 'visible') return;   // плёнка ждёт зрителя
-        RP.i++;
+        if (!sceneLive() || document.visibilityState !== 'visible') { RP.lastT = 0; return; }   // плёнка ждёт зрителя
+        // темп — по настенным часам: браузер душит таймеры фоновых вкладок до
+        // секунды, без догона ×50 полз бы как ×1 (найдено на прогоне 2026-07-24)
+        var ms = RP_SPEED[RP.speed] || 320;
+        var now = Date.now(), n = 1;
+        if (RP.lastT) n = Math.max(1, Math.min(60, Math.round((now - RP.lastT) / ms)));
+        RP.lastT = now;
+        RP.i += n;
         if (RP.i >= RP.rows.length - 1) {
             RP.i = RP.rows.length - 1;
             RP.done = true; RP.playing = false;
@@ -5400,10 +5440,31 @@
         RP.fills.push({ i: RP.i, px: c.px, qty: c.qty, buy: buy });
         simpleSum = '';
         var inp = dq('btSxSum'); if (inp) inp.value = '';
-        toast((buy ? 'Куплено' : 'Продано') + ' в реплее: ' + c.qty.toLocaleString('ru-RU') +
-            ' × ' + fmtPx(c.px, S(n)) + ' ₽ — деньги виртуальные');
+        rpFlash(buy, c, S(n));
         sxTick();
         rpBarPatch();
+    }
+    // квитанция сделки плёнки — крупной карточкой над графиком (владелец
+    // 2026-07-24: тост снизу «вообще непонятно и не видно»)
+    function rpFlash(buy, c, s) {
+        var sc = dq('btScene');
+        if (!sc) return;
+        var el = dq('btScnRpFlash');
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'btScnRpFlash';
+            sc.appendChild(el);
+        }
+        el.className = 'rp-flash ' + (buy ? 'b' : 's');
+        el.innerHTML = '<i>' + (buy ? '▲' : '▼') + '</i><span><b>' +
+            (buy ? 'Куплено' : 'Продано') + ' ' + c.qty.toLocaleString('ru-RU') + ' шт × ' +
+            fmtPx(c.px, s) + ' ₽</b><em>' + (buy ? 'списано ' : 'на счёт ') + fmtKop(c.total) +
+            ' · комиссия настоящая, деньги виртуальные</em></span>';
+        el.classList.remove('show');
+        void el.offsetWidth;   // рестарт анимации
+        el.classList.add('show');
+        clearTimeout(rpFlash._t);
+        rpFlash._t = setTimeout(function () { el.classList.remove('show'); }, 3200);
     }
     // итог: свой результат против «просто держал бумагу всю неделю»
     function rpEquity() { return RP ? RP.money + RP.qty * rpPx() : 0; }
@@ -5414,14 +5475,17 @@
         return rpDoneHtml();
     }
     function rpIntroHtml() {
-        return '<div class="rp-veil"></div><div class="rp-done">' +
+        return '<div class="rp-veil"></div><div class="rp-done rp-hello">' +
             '<h4>Реплей · ' + esc(RP.label) + '</h4>' +
-            '<p>Тренажёр на настоящей истории: сцена уехала в случайную неделю прошлого, ' +
-            'свечи будут приходить в темпе плёнки, будущее скрыто.<br>' +
-            'Счёт виртуальный — <b>' + fmtRub(RP_START) + '</b>, но комиссия и лоты настоящие: ' +
-            'покупайте и продавайте той же кнопкой тикета, что и вживую.<br>' +
-            '<em>скорость ×1/×5/×20 и пауза — на планке снизу · в конце недели итог ' +
-            'против «просто держать бумагу»</em></p>' +
+            '<p>Тренажёр на настоящей истории: сцена уехала в случайную неделю прошлого. ' +
+            'Свечи приходят в темпе плёнки, будущее скрыто. Счёт виртуальный — <b>' +
+            fmtRub(RP_START) + '</b>, но комиссия и лоты настоящие.</p>' +
+            '<div class="rp-how">' +
+            '<span><i>1</i>Смотрите плёнку — скорость ×1…×50 на планке снизу</span>' +
+            '<span><i>2</i>Увидели момент — жмите <b>❚❚ паузу</b> и делайте сделку той же кнопкой тикета: тренируются и <b>покупка</b>, и <b>продажа</b></span>' +
+            '<span><i>3</i>Снова <b>▶</b> — плёнка покажет, чем обернулось; результат считается онлайн на планке</span>' +
+            '</div>' +
+            '<p><em>в конце недели — итог против «просто держать бумагу»</em></p>' +
             '<div class="rp-row">' +
             '<button type="button" class="ub pri" onclick="pftScRpGo()">Поехали</button>' +
             '<button type="button" class="ub gh" onclick="pftScReplay()">Другая неделя</button>' +
@@ -5447,7 +5511,24 @@
             '<button type="button" class="ub gh" onclick="pftScRpExit()">Выйти</button>' +
             '</div></div>';
     }
-    // плёнка: график released-части недели своим svg (движок тут ни при чём)
+    // сетка плёнки: пятиминутки складываются в ПОЛУЧАСОВЫЕ свечи (владелец
+    // 2026-07-24: «в реплее нужны свечи, а не линия»). Ординаты корзин — один
+    // раз на плёнку: released-часть растёт по ним слева направо, будущие
+    // корзины держат место (будущее скрыто, но ось не прыгает)
+    var RP_BSTEP = 30 * 60000;
+    function rpBuckets() {
+        if (!RP) return;
+        var map = {}, ord = 0;
+        RP.rows.forEach(function (r) {
+            var k = Math.floor(r.t / RP_BSTEP);
+            if (!(k in map)) map[k] = ord++;
+        });
+        RP.bmap = map;
+        RP.totalB = ord;
+    }
+    function rpBucketX(t) { return RP.bmap[Math.floor(t / RP_BSTEP)] || 0; }
+    // плёнка: получасовые свечи released-части своим svg (движок ни при чём);
+    // последняя свеча дорастает на глазах с каждой пятиминуткой
     function rpChartHtml(s) {
         if (!RP) return '';
         var rows = RP.rows, i = RP.i;
@@ -5455,6 +5536,8 @@
         var min = Infinity, max = -Infinity;
         // масштаб — по УЖЕ ПОКАЗАННОЙ части: будущее не подглядывает даже осью
         for (var k = 0; k <= i; k++) {
+            if (rows[k].l > 0 && rows[k].l < min) min = rows[k].l;
+            if (rows[k].h > max) max = rows[k].h;
             if (rows[k].v < min) min = rows[k].v;
             if (rows[k].v > max) max = rows[k].v;
         }
@@ -5462,20 +5545,46 @@
         var span0 = max - min;
         min -= span0 * 0.08; max += span0 * 0.08;
         var span = max - min;
-        function X(k2) { return k2 / (rows.length - 1) * W; }
+        var totalB = Math.max(2, RP.totalB || 2);
+        var bw = W / totalB;                         // шаг корзины
+        var cw = Math.max(3, bw * 0.62);             // тело свечи
+        function XB(b) { return b * bw + bw / 2; }   // центр корзины
         function Y(v) { return H - (v - min) / span * H; }
-        var line = '';
-        for (var k3 = 0; k3 <= i; k3++) line += (line ? ' ' : '') + X(k3).toFixed(1) + ',' + Y(rows[k3].v).toFixed(1);
-        var nowX = X(i);
+        // released-часть → свечи корзин
+        var buckets = [];
+        var cur = null, curKey = null;
+        for (var k3 = 0; k3 <= i; k3++) {
+            var r = rows[k3], bk2 = Math.floor(r.t / RP_BSTEP);
+            if (bk2 !== curKey) {
+                curKey = bk2;
+                cur = { b: RP.bmap[bk2] || 0, o: r.o || r.v, h: r.h || r.v, l: r.l || r.v, c: r.v };
+                buckets.push(cur);
+            } else {
+                if ((r.h || r.v) > cur.h) cur.h = r.h || r.v;
+                if ((r.l || r.v) < cur.l && (r.l || r.v) > 0) cur.l = r.l || r.v;
+                cur.c = r.v;
+            }
+        }
+        var cnds = '';
+        buckets.forEach(function (b) {
+            var up = b.c >= b.o;
+            var x = XB(b.b), yO = Y(b.o), yC = Y(b.c);
+            var top = Math.min(yO, yC), hh = Math.max(1.6, Math.abs(yO - yC));
+            cnds += '<line x1="' + x.toFixed(1) + '" y1="' + Y(b.h).toFixed(1) + '" x2="' + x.toFixed(1) +
+                '" y2="' + Y(b.l).toFixed(1) + '" class="rp-wick ' + (up ? 'g' : 'r') + '"/>' +
+                '<rect x="' + (x - cw / 2).toFixed(1) + '" y="' + top.toFixed(1) + '" width="' + cw.toFixed(1) +
+                '" height="' + hh.toFixed(1) + '" class="rp-cnd ' + (up ? 'g' : 'r') + '"/>';
+        });
+        var nowX = XB(rpBucketX(rows[i].t));
         var marks = '';
         RP.fills.forEach(function (f) {
-            marks += '<circle cx="' + X(f.i).toFixed(1) + '" cy="' + Y(f.px).toFixed(1) + '" r="4" ' +
-                'class="rp-fill ' + (f.buy ? 'g' : 'r') + '"/>';
+            marks += '<circle cx="' + XB(rpBucketX(rows[f.i].t)).toFixed(1) + '" cy="' + Y(f.px).toFixed(1) +
+                '" r="5" class="rp-fill ' + (f.buy ? 'g' : 'r') + '"/>';
         });
         var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" ' +
             'aria-label="Плёнка реплея">' +
             '<line x1="' + nowX.toFixed(1) + '" y1="0" x2="' + nowX.toFixed(1) + '" y2="' + H + '" class="rp-now"/>' +
-            '<polyline points="' + line + '" class="bts-line"/>' + marks +
+            cnds + marks +
         '</svg>';
         var ptag = '<span class="ptag" style="top:' +
             Math.min(97, Math.max(2, (max - rpPx()) / span * 100)).toFixed(1) + '%">' + fmtPx(rpPx(), s) + '</span>';
@@ -5499,14 +5608,17 @@
             return '<span class="' + (RP.speed === k ? 'on' : '') + '" role="button" tabindex="0" ' +
                 'onclick="pftScRpSpeed(' + k + ')">×' + k + '</span>';
         }
-        var pnl = (rpEquity() / RP_START - 1) * 100;
+        // результат — онлайн, деньгами И процентом (владелец 2026-07-24)
+        var pnlRub = rpEquity() - RP_START;
+        var pnl = pnlRub / RP_START * 100;
+        var sgn = pnlRub >= 0 ? '+' : '−';
         return '<button type="button" class="rp-play" onclick="pftScRpPlay()" ' +
                 'aria-label="' + (RP.playing ? 'Пауза' : 'Дальше') + '">' + (RP.playing ? '❚❚' : '▶') + '</button>' +
-            '<span class="rp-sp">' + sp(1) + sp(5) + sp(20) + '</span>' +
+            '<span class="rp-sp">' + sp(1) + sp(5) + sp(20) + sp(50) + '</span>' +
             '<span class="rp-tl"><i style="width:' + pct + '%"></i></span>' +
-            '<span class="rp-info">счёт <b>' + fmtRub(rpEquity()) + '</b> · <u class="' +
-                (pnl >= 0 ? 'g' : 'r') + '">' + (pnl >= 0 ? '+' : '−') +
-                Math.abs(pnl).toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' %</u></span>' +
+            '<span class="rp-info">счёт <b>' + fmtRub(rpEquity()) + '</b>' +
+                '<u class="rp-res ' + (pnlRub >= 0 ? 'g' : 'r') + '">' + sgn + fmtRub(Math.abs(pnlRub)) +
+                ' · ' + sgn + Math.abs(pnl).toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' %</u></span>' +
             '<span class="rp-dt">' + esc(RP.label) + '</span>' +
             '<button type="button" class="rp-exit" onclick="pftScRpExit()">выйти из реплея</button>';
     }
@@ -5526,11 +5638,39 @@
         } catch (e) { return []; }
     }
     function wlOn() { return !!stageObj().layers.wl; }
+    // рейка двигает левый край героя (CSS-transition): движку свечей нужен
+    // resize ПОСЛЕ переезда, иначе холст остаётся сдвинутым (владелец
+    // 2026-07-24, скрин со смещённым графиком)
+    function scnKResizeSoon() {
+        clearTimeout(scnKResizeSoon._t);
+        scnKResizeSoon._t = setTimeout(function () {
+            try { if (K.chart) { K.chart.resize(); scnKTags(); scnKProfile(); scnKCmp(); } } catch (e) {}
+        }, 520);
+    }
+    // закрытие — ТОЛЬКО кликом вне рейки (владелец 2026-07-24: выбор бумаги
+    // рейку не сворачивает — листать избранное можно подряд)
+    function wlOutside(e) {
+        if (!wlOn()) { document.removeEventListener('click', wlOutside, true); return; }
+        var t = e.target;
+        if (t && t.closest && (t.closest('#btScnWl') || t.closest('.bts-wlb'))) return;
+        document.removeEventListener('click', wlOutside, true);
+        var o = stageObj();
+        o.layers.wl = 0;
+        saveStageRaw(o);
+        if (PF.renderNoAnim) PF.renderNoAnim();
+        scnKResizeSoon();
+    }
     window.pftScWl = function () {
         var o = stageObj();
         o.layers.wl = o.layers.wl ? 0 : 1;
         saveStageRaw(o);
+        document.removeEventListener('click', wlOutside, true);
+        if (o.layers.wl) {
+            // capture: клики по холсту глушатся движком — снаружи всё равно услышим
+            setTimeout(function () { document.addEventListener('click', wlOutside, true); }, 0);
+        }
         if (PF.renderNoAnim) PF.renderNoAnim();
+        scnKResizeSoon();
     };
     var wlData = {};   // ticker -> {last, d, closes[]} | 'busy' | 'err'
     var wlUid = {};    // ticker -> uid брокера (для загрузки в сцену)
@@ -5627,11 +5767,10 @@
             loadInstrument(sxSlot(), uid, function () {
                 simpleSum = ''; scnUnit = ''; scnLim = 0;
                 scnActive = sxSlot();
-                // выбор сделан — рейка закрывается сама (владелец 2026-07-24):
-                // бумага уже в сцене, полоса рядом больше не нужна
-                var o = stageObj();
-                if (o.layers.wl) { o.layers.wl = 0; saveStageRaw(o); }
+                // рейка ОСТАЁТСЯ (владелец 2026-07-24: листать избранное можно
+                // подряд; закрывает только клик вне рейки — wlOutside)
                 if (PF.renderNoAnim) PF.renderNoAnim();
+                scnKResizeSoon();   // смена бумаги при открытой рейке: холст по месту
             });
         }
         if (wlUid[tk]) { go(wlUid[tk]); return; }
@@ -6103,14 +6242,26 @@
         var pocPx = min + (poc + 0.5) / BINS * (max - min);
         var pocY = pxToY(pocPx);
         if (pocY != null) {
-            ctx.strokeStyle = night ? 'rgba(147,161,184,0.4)' : 'rgba(100,116,139,0.4)';
+            ctx.strokeStyle = night ? 'rgba(147,161,184,0.5)' : 'rgba(100,116,139,0.5)';
             ctx.lineWidth = 1;
             ctx.setLineDash([2, 5]);
             ctx.beginPath(); ctx.moveTo(x0, pocY); ctx.lineTo(W, pocY); ctx.stroke();
             ctx.setLineDash([]);
-            ctx.font = '600 10px ' + (getComputedStyle(document.body).getPropertyValue('--font-num') || 'monospace');
-            ctx.fillStyle = night ? '#93a1b8' : '#64748b';
-            ctx.fillText(fmtPx(pocPx, s) + ' — пик объёма', x0 + maxW + 14, pocY - 4);
+            // подпись пика — плашкой-карточкой (владелец 2026-07-24: голый
+            // текст поверх свечей не читался)
+            var txt = fmtPx(pocPx, s) + ' — пик объёма';
+            ctx.font = '700 10.5px ' + (getComputedStyle(document.body).getPropertyValue('--font-num') || 'monospace');
+            var tw = ctx.measureText(txt).width;
+            var tx = x0 + maxW + 16, ty = Math.max(11, Math.min(H - 11, pocY));
+            ctx.fillStyle = night ? 'rgba(24,32,48,0.94)' : 'rgba(255,255,255,0.94)';
+            scnRoundRect(ctx, tx - 8, ty - 10, tw + 16, 20, 7);
+            ctx.fill();
+            ctx.strokeStyle = night ? 'rgba(124,140,255,0.5)' : 'rgba(68,83,239,0.4)';
+            ctx.lineWidth = 1;
+            scnRoundRect(ctx, tx - 8, ty - 10, tw + 16, 20, 7);
+            ctx.stroke();
+            ctx.fillStyle = night ? '#e7ecf5' : '#0f172a';
+            ctx.fillText(txt, tx, ty + 3.5);
         }
     }
     function scnRoundRect(ctx, x, y, w, h, r) {

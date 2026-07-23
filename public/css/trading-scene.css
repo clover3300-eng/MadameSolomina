@@ -268,16 +268,26 @@
 .bts .tkt-h b { font: 400 16px var(--font-title); }
 .bts .freshw { margin-left: auto; }
 /* вкладки карточки «Старта»: Сделка / Стакан / Сплит — СЕГМЕНТОМ в идиоме
-   «Купить/Продать» ниже (владелец 2026-07-24: слова через дробь не читались
-   кнопками); активный «Стакан» остаётся зелёным */
-.bts .tkt-tabs { display: inline-flex; gap: 2px; border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
+   «Купить/Продать» ниже. Они основные (владелец 2026-07-24) — сегмент
+   растянут на ширину, вкладки равные и крупные, активная с заливкой */
+.bts .tkt-tabs {
+    flex: 1 1 auto; display: inline-flex; gap: 3px;
+    border: 1px solid var(--line); border-radius: 11px; padding: 3px;
+}
 .bts .tkt-tabs .tt {
-    font: 600 11.5px var(--font-ui); color: var(--dim); border-radius: 7px;
-    padding: 5px 11px; cursor: pointer; user-select: none; white-space: nowrap;
+    flex: 1; text-align: center;
+    font: 700 12.5px var(--font-ui); color: var(--dim); border-radius: 8px;
+    padding: 7px 0; cursor: pointer; user-select: none; white-space: nowrap;
 }
 .bts .tkt-tabs .tt:hover { color: var(--mut); }
-.bts .tkt-tabs .tt.on { background: color-mix(in srgb, var(--acc) 14%, transparent); color: var(--ink); }
-.bts .tkt-tabs .tt.grn.on { background: color-mix(in srgb, var(--grn) 15%, transparent); color: var(--grn); }
+.bts .tkt-tabs .tt.on {
+    background: color-mix(in srgb, var(--acc) 14%, transparent); color: var(--acc);
+    box-shadow: 0 1px 6px -2px color-mix(in srgb, var(--acc) 35%, transparent);
+}
+.bts .tkt-tabs .tt.grn.on {
+    background: color-mix(in srgb, var(--grn) 15%, transparent); color: var(--grn);
+    box-shadow: 0 1px 6px -2px color-mix(in srgb, var(--grn) 35%, transparent);
+}
 /* стакан на всю карточку (вид «Стакан») */
 .bts .tkt-depth { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
 /* заголовок стакана в карточках — тем же кеглем, что вкладки заявки */
@@ -556,18 +566,28 @@
 .bts .rp-sp span.on { background: color-mix(in srgb, var(--amb) 16%, transparent); color: var(--amb); }
 .bts .rp-tl { flex: 1; position: relative; height: 6px; border-radius: 99px; background: var(--hair); overflow: hidden; }
 .bts .rp-tl i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 99px; background: var(--amb); transition: width 0.2s linear; }
-.bts .rp-info { flex: none; font: 400 11px var(--font-ui); color: var(--mut); white-space: nowrap; }
-.bts .rp-info b { font: 600 11px var(--font-num); color: var(--ink); }
+.bts .rp-info { flex: none; display: inline-flex; align-items: center; gap: 8px; font: 400 11.5px var(--font-ui); color: var(--mut); white-space: nowrap; }
+.bts .rp-info b { font: 600 12px var(--font-num); color: var(--ink); }
 .bts .rp-info u { text-decoration: none; font: 600 11px var(--font-num); }
 .bts .rp-info u.g { color: var(--grn); }
 .bts .rp-info u.r { color: var(--red); }
+/* результат плёнки онлайн — деньгами и процентом, чипом (владелец 2026-07-24) */
+.bts .rp-res { font: 700 12px var(--font-num); border-radius: 8px; padding: 3px 9px; }
+.bts .rp-res.g { background: color-mix(in srgb, var(--grn) 12%, transparent); }
+.bts .rp-res.r { background: color-mix(in srgb, var(--red) 10%, transparent); }
 .bts .rp-dt { flex: none; font: 500 10.5px var(--font-num); color: var(--dim); white-space: nowrap; }
 .bts .rp-exit {
     flex: none; border: 0; background: none; font: 700 11px var(--font-ui);
     color: var(--acc); cursor: pointer; white-space: nowrap; padding: 4px 2px;
 }
-/* график плёнки: линия «сейчас», скрытое будущее, точки сделок */
+/* график плёнки: получасовые свечи (рост залит, падение полым контуром —
+   язык сцены), линия «сейчас», скрытое будущее, точки сделок */
 .bts .rp-now { stroke: var(--amb); stroke-width: 1.5; }
+.bts .rp-cnd.g { fill: var(--grn); stroke: none; }
+.bts .rp-cnd.r { fill: var(--bg); stroke: var(--red); stroke-width: 1.2; }
+.bts .rp-wick { stroke-width: 1; }
+.bts .rp-wick.g { stroke: var(--grn); }
+.bts .rp-wick.r { stroke: var(--red); }
 .bts .rp-void {
     position: absolute; top: 42%; font: 400 11px var(--font-ui); color: var(--dim);
     line-height: 1.5; max-width: 220px;
@@ -575,6 +595,26 @@
 .bts .rp-fill { stroke-width: 2.5; fill: var(--card); }
 .bts .rp-fill.g { stroke: var(--grn); }
 .bts .rp-fill.r { stroke: var(--red); }
+/* квитанция сделки плёнки — крупная карточка над холстом (тост снизу
+   владелец 2026-07-24 назвал невидимым) */
+.bts .rp-flash {
+    position: absolute; left: 40%; top: 118px; transform: translateX(-50%) translateY(-8px);
+    display: flex; align-items: center; gap: 12px; z-index: 44;
+    background: var(--card); border: 1.5px solid var(--line); border-radius: 15px;
+    padding: 13px 18px; box-shadow: 0 26px 60px -26px rgba(24, 38, 60, 0.55);
+    opacity: 0; pointer-events: none; transition: opacity 0.25s, transform 0.25s;
+}
+.bts .rp-flash.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.bts .rp-flash.b { border-color: color-mix(in srgb, var(--grn) 55%, transparent); }
+.bts .rp-flash.s { border-color: color-mix(in srgb, var(--red) 50%, transparent); }
+.bts .rp-flash i {
+    font-style: normal; font-size: 13px; width: 30px; height: 30px;
+    border-radius: 10px; display: grid; place-items: center; flex: none;
+}
+.bts .rp-flash.b i { background: color-mix(in srgb, var(--grn) 14%, transparent); color: var(--grn); }
+.bts .rp-flash.s i { background: color-mix(in srgb, var(--red) 12%, transparent); color: var(--red); }
+.bts .rp-flash b { display: block; font: 700 14px var(--font-num); color: var(--ink); }
+.bts .rp-flash em { display: block; font: 400 11px var(--font-ui); font-style: normal; color: var(--mut); margin-top: 2px; }
 /* итог недели: вуаль + карточка в языке подтверждения сцены */
 .bts .rp-donew:empty { display: none; }
 .bts .rp-veil { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.34); backdrop-filter: blur(4px); z-index: 45; }
@@ -591,6 +631,20 @@
 .bts .rp-done p b.g { color: var(--grn); }
 .bts .rp-done p b.r { color: var(--red); }
 .bts .rp-done p em { font: 400 10.5px var(--font-ui); font-style: normal; color: var(--dim); }
+/* интро плёнки: шаги «смотри → пауза+сделка → снова плей» списком слева */
+.bts .rp-hello { width: 490px; }
+.bts .rp-how { display: flex; flex-direction: column; gap: 9px; margin: 12px 0 6px; text-align: left; }
+.bts .rp-how span {
+    display: flex; align-items: flex-start; gap: 10px;
+    font: 400 12.5px var(--font-ui); color: var(--mut); line-height: 1.55;
+}
+.bts .rp-how span b { font-weight: 700; color: var(--ink); }
+.bts .rp-how i {
+    flex: none; font-style: normal; width: 20px; height: 20px; margin-top: 1px;
+    border-radius: 7px; display: grid; place-items: center;
+    font: 700 10.5px var(--font-num); color: var(--amb);
+    background: color-mix(in srgb, var(--amb) 14%, transparent);
+}
 .bts .rp-row { display: flex; gap: 8px; justify-content: center; margin-top: 14px; }
 .bts .ub { font: 700 11.5px var(--font-ui); border-radius: 10px; padding: 9px 14px; cursor: pointer; }
 .bts .ub.pri { background: var(--acc); color: #fff; border: 0; }
@@ -617,12 +671,13 @@
    одинокая сумма у правого нижнего угла была не к месту) */
 /* пилюли-ручки ростка (раунд 3): постоянный ряд у нижнего края — клик
    открывает панель сразу на нужной вкладке, активная подсвечена */
-.bts .ps-pills { flex: none; display: inline-flex; gap: 6px; }
+.bts .ps-pills { flex: none; display: inline-flex; gap: 7px; }
+/* кегль полосы поднят (владелец 2026-07-24: «на десктопе плохо видно») */
 .bts .ps-pill {
-    flex: none; display: inline-flex; align-items: center; gap: 6px;
-    font: 700 10.5px var(--font-ui); color: var(--mut);
+    flex: none; display: inline-flex; align-items: center; gap: 7px;
+    font: 700 12px var(--font-ui); color: var(--mut);
     border: 1px solid var(--line); background: var(--card);
-    border-radius: 10px; padding: 6px 11px; backdrop-filter: blur(10px);
+    border-radius: 11px; padding: 8px 14px; backdrop-filter: blur(10px);
     cursor: pointer; user-select: none; white-space: nowrap;
 }
 .bts .ps-pill:hover {
@@ -634,23 +689,23 @@
     border-color: color-mix(in srgb, var(--acc) 50%, transparent);
     background: color-mix(in srgb, var(--acc) 7%, var(--card));
 }
-.bts .ps-pill b { font: 600 10.5px var(--font-num); color: var(--mut); }
+.bts .ps-pill b { font: 600 12px var(--font-num); color: var(--mut); }
 .bts .ps-pill.on b { color: var(--ink); }
 .bts .ps-pill em {
-    font: 700 10px var(--font-num); font-style: normal; color: var(--acc);
+    font: 700 11px var(--font-num); font-style: normal; color: var(--acc);
     background: color-mix(in srgb, var(--acc) 12%, transparent);
-    border-radius: 6px; padding: 1px 6px;
+    border-radius: 6px; padding: 1px 7px;
 }
-.bts .ps-none { font: 400 11px var(--font-ui); font-style: normal; color: var(--dim); }
+.bts .ps-none { font: 400 12px var(--font-ui); font-style: normal; color: var(--dim); }
 /* «счёт» один у правого края, под своей картой — ЧИПОМ в идиоме плиток
    позиций (владелец 2026-07-24: голый текст в углу не смотрелся):
    карточка-кнопка со свободными деньгами, открытый — акцентная рамка */
 .bts .ps-acct {
     flex: none;
-    display: inline-flex; align-items: center; gap: 6px;
-    font: 800 10.5px var(--font-ui); letter-spacing: 0.1em; text-transform: uppercase;
+    display: inline-flex; align-items: center; gap: 7px;
+    font: 800 11.5px var(--font-ui); letter-spacing: 0.1em; text-transform: uppercase;
     color: var(--dim); border: 1px solid var(--line); background: var(--card);
-    border-radius: 11px; padding: 7px 12px; backdrop-filter: blur(10px);
+    border-radius: 12px; padding: 8px 14px; backdrop-filter: blur(10px);
     cursor: pointer; user-select: none; white-space: nowrap;
 }
 .bts .ps-acct:hover {
@@ -664,23 +719,23 @@
     background: color-mix(in srgb, var(--acc) 7%, var(--card));
 }
 .bts .ps-acct u {
-    text-decoration: none; font: 400 10px var(--font-ui);
+    text-decoration: none; font: 400 11px var(--font-ui);
     letter-spacing: 0.02em; text-transform: none; color: var(--dim);
 }
 .bts .ps-acct b {
-    font: 600 11px var(--font-num); color: var(--mut); letter-spacing: 0;
+    font: 600 12.5px var(--font-num); color: var(--mut); letter-spacing: 0;
     background: none; border-radius: 0; padding: 0;
 }
 .bts .ps-acct.on b { color: var(--ink); }
-.bts .ps-acct i { font-style: normal; font-size: 9px; }
+.bts .ps-acct i { font-style: normal; font-size: 10px; }
 .bts .ps-chip {
     display: inline-flex; align-items: center; gap: 8px;
     border: 1px solid var(--line); background: var(--card);
-    border-radius: 11px; padding: 7px 12px;
+    border-radius: 12px; padding: 8px 14px;
     backdrop-filter: blur(10px); cursor: pointer; white-space: nowrap;
 }
-.bts .ps-chip b { font: 700 12px var(--font-num); }
-.bts .ps-chip em { font: 600 11px var(--font-num); font-style: normal; }
+.bts .ps-chip b { font: 700 13.5px var(--font-num); }
+.bts .ps-chip em { font: 600 12px var(--font-num); font-style: normal; }
 .bts .ps-chip .pup { color: var(--grn); }
 .bts .ps-chip .pdn { color: var(--red); }
 .bts .ps-chip .up::before { content: '▲ '; }
