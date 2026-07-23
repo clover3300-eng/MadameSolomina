@@ -6582,6 +6582,11 @@
     // лимит по краю и сумма-нетто. Клик по тому же краю снимает выбор.
     // scnSweep = { uid, side:'ask'|'bid', px } — закреплённый край книги
     var scnSweep = null;
+    // ховер-подсветка «до сюда» закреплена по ГЛУБИНЕ (число уровней от спреда),
+    // а не по цене: цены тикают, но «первые N уровней» остаются теми же — сумма
+    // пересчитывается сама, подсветка не сбрасывается (владелец 2026-07-24)
+    // scnHov = { uid, side:'ask'|'bid', depth:N }
+    var scnHov = null;
     // деньги и лоты пути «от спреда до px» по одной стороне книги
     function scnSweepCalc(s, side, px) {
         var q2n = A().q2n, lot = (s.meta && s.meta.lot) || 1;
@@ -6820,6 +6825,7 @@
             el.__btDSig = sig;
             el.__btHtml = null;   // после патчей строковый кэш scnSet врал бы
             el.innerHTML = scnDepthHtml(s, slim, deep);
+            scnApplyHov(el, s);   // подсветка ховера переживает полный ре-рендер
             if (d) requestAnimationFrame(function () { scnBalDraw(s, d); });
             return;
         }
@@ -6879,6 +6885,9 @@
             var th = scnTkTapeRows(s, 24);
             if (tb.__btHtml !== th) { tb.__btHtml = th; tb.innerHTML = th; }
         }
+        // ховер «до сюда»: патч выше стёр .d-cum (className=l.cls) — вернуть его
+        // на закреплённые уровни и пересчитать сумму по свежим ценам
+        scnApplyHov(el, s);
     }
     function scnTkTapeRows(s, lim) {
         // рядов с запасом на весь пробел карточки; лишнее срежет overflow
@@ -6930,54 +6939,64 @@
         var pmax = asks.length ? asks[asks.length - 1].px : bestBid;
         if (!(pmax > pmin)) { pmax = pmin + ((s.meta && s.meta.minInc) || 0.01); }
         var maxCum = 1, cum;
+        // кумулятив от лучшей цены наружу (у спреда — 0, к краю книги — весь объём)
         var bidPts = []; cum = 0;
         bids.forEach(function (l) { cum += l.lots; bidPts.push({ px: l.px, c: cum }); });
         maxCum = Math.max(maxCum, cum);
         var askPts = []; cum = 0;
         asks.forEach(function (l) { cum += l.lots; askPts.push({ px: l.px, c: cum }); });
         maxCum = Math.max(maxCum, cum);
-        var padT = 8, padB = 2;
+        var padT = 9, padB = 1;
         function X(px) { return (px - pmin) / (pmax - pmin) * (W - 2) + 1; }
         function Y(c) { return H - padB - c / maxCum * (H - padT - padB); }
-        // гладкая гора: базовая точка у спреда, сглаживание монотонным бензье
-        function smooth(pts, basePx, col) {
-            var P = [{ x: X(basePx), y: Y(0) }];
-            pts.forEach(function (p) { P.push({ x: X(p.px), y: Y(p.c) }); });
-            ctx.beginPath();
+        // ОДНА непрерывная линия слева направо по возрастанию цены: спрос
+        // спускается от левого края (весь объём вверху) к стыку (0 внизу), потом
+        // предложение поднимается к правому краю. Долина = красивая линия баланса
+        var mid = bestBid && bestAsk ? (bestBid + bestAsk) / 2 : (bestBid || bestAsk);
+        var midX = X(mid);
+        var P = [];
+        // биды по возрастанию цены = от дальнего (полный кумулятив) к лучшему (0)
+        for (var bi = bidPts.length - 1; bi >= 0; bi--) P.push({ x: X(bidPts[bi].px), y: Y(bidPts[bi].c) });
+        if (bidPts.length) P.push({ x: midX, y: Y(0) });          // спуск к стыку
+        if (askPts.length) P.push({ x: midX, y: Y(0) });          // подъём от стыка
+        for (var ai = 0; ai < askPts.length; ai++) P.push({ x: X(askPts[ai].px), y: Y(askPts[ai].c) });
+        if (P.length < 2) return;
+        // сглаженный путь (половинками — мягко, без выбросов)
+        function trace() {
             ctx.moveTo(P[0].x, P[0].y);
             for (var i = 0; i < P.length - 1; i++) {
-                var a = P[i], b = P[i + 1];
-                var mx = (a.x + b.x) / 2;
+                var a = P[i], b = P[i + 1], mx = (a.x + b.x) / 2;
                 ctx.bezierCurveTo(mx, a.y, mx, b.y, b.x, b.y);
             }
-            var grad = ctx.createLinearGradient(0, padT, 0, H);
-            grad.addColorStop(0, col + '55');
-            grad.addColorStop(1, col + '08');
-            // заливка под кривой до дна
-            ctx.lineTo(P[P.length - 1].x, Y(0));
-            ctx.lineTo(P[0].x, Y(0));
-            ctx.closePath();
-            ctx.fillStyle = grad; ctx.fill();
-            // сама линия — поверх заливки, без нижней кромки
-            ctx.beginPath();
-            ctx.moveTo(P[0].x, P[0].y);
-            for (i = 0; i < P.length - 1; i++) {
-                var a2 = P[i], b2 = P[i + 1], mx2 = (a2.x + b2.x) / 2;
-                ctx.bezierCurveTo(mx2, a2.y, mx2, b2.y, b2.x, b2.y);
-            }
-            ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.lineJoin = 'round';
-            ctx.shadowColor = col + '66'; ctx.shadowBlur = 6; ctx.shadowOffsetY = 1;
-            ctx.stroke();
-            ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
         }
-        if (bidPts.length) smooth(bidPts, bestBid, pal.grn);
-        if (askPts.length) smooth(askPts, bestAsk, pal.red);
-        // спред — волосяная вертикаль по центру стыка
+        // мягкая заливка под линией до дна
+        ctx.beginPath(); trace();
+        ctx.lineTo(P[P.length - 1].x, H); ctx.lineTo(P[0].x, H); ctx.closePath();
+        var fill = ctx.createLinearGradient(0, 0, W, 0);
+        var cf = Math.max(0.02, Math.min(0.98, midX / W));
+        fill.addColorStop(0, pal.grn + '2e');
+        fill.addColorStop(Math.max(0, cf - 0.02), pal.grn + '12');
+        fill.addColorStop(Math.min(1, cf + 0.02), pal.red + '12');
+        fill.addColorStop(1, pal.red + '2e');
+        ctx.fillStyle = fill; ctx.fill();
+        // сама линия — гладкая, с мягким свечением; зелёная слева, красная справа
+        var line = ctx.createLinearGradient(0, 0, W, 0);
+        line.addColorStop(0, pal.grn);
+        line.addColorStop(Math.max(0, cf - 0.015), pal.grn);
+        line.addColorStop(Math.min(1, cf + 0.015), pal.red);
+        line.addColorStop(1, pal.red);
+        ctx.beginPath(); trace();
+        ctx.strokeStyle = line; ctx.lineWidth = 2.2; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+        ctx.shadowColor = (bestBid ? pal.grn : pal.red) + '55'; ctx.shadowBlur = 7; ctx.shadowOffsetY = 1;
+        ctx.stroke();
+        ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+        // точка стыка — маленький маркер на дне долины
         if (bestBid && bestAsk) {
-            var mid = (bestBid + bestAsk) / 2;
+            ctx.beginPath(); ctx.arc(midX, Y(0), 2.2, 0, Math.PI * 2);
+            ctx.fillStyle = pal.mut; ctx.fill();
             ctx.strokeStyle = pal.hair; ctx.lineWidth = 1;
             ctx.setLineDash([2, 3]);
-            ctx.beginPath(); ctx.moveTo(X(mid), padT - 4); ctx.lineTo(X(mid), H); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(midX, padT - 5); ctx.lineTo(midX, H); ctx.stroke();
             ctx.setLineDash([]);
         }
     }
@@ -7000,35 +7019,49 @@
         var i = rows.indexOf(r);
         if (i < 0) return;
         // аски на экране в обратном порядке (лучший — ПОСЛЕДНИЙ, у спреда),
-        // биды — лучший первый: диапазон всегда «от спреда до наведённого»
-        var range = ask ? rows.slice(i) : rows.slice(0, i + 1);
+        // биды — лучший первый. Глубина = число уровней от спреда до наведённого:
+        // цены сменятся, а «первые N» останутся — подсветка и сумма не сбросятся
+        var depth = ask ? rows.length - i : i + 1;
         var s = S(sxSlot());
-        var lot = (s.meta && s.meta.lot) || 1;
-        var money = 0;
-        // чистим ОБЕ стороны: ховер перешёл с асков на биды — старую
-        // подсветку снять некому, кроме нас
+        scnHov = { uid: s.uid, side: ask ? 'ask' : 'bid', depth: depth };
+        scnApplyHov(box, s);
+    };
+    window.pftScDepthHovOff = function () {
+        scnHov = null;
+        var box = dq('btScnTkDepth');
+        if (box) scnApplyHov(box, S(sxSlot()));
+    };
+    // подсветить закреплённые ховером «первые N уровней» и пересчитать сумму —
+    // зовётся и на ховер, и КАЖДЫМ тиком из scnDepthSet (иначе патч строк
+    // затирал бы .d-cum, а меняющиеся цены сбрасывали бы выделение)
+    function scnApplyHov(box, s) {
+        if (!box) return;
         box.querySelectorAll('.d-cum').forEach(function (x) { x.classList.remove('d-cum'); });
+        var tip = dq('btScnCumTip');
+        if (!scnHov || !s || scnHov.uid !== s.uid) { if (tip) tip.remove(); return; }
+        var ask = scnHov.side === 'ask';
+        var rows = Array.prototype.slice.call(box.querySelectorAll(ask ? '.d-row.d-ask' : '.d-row.d-bid'));
+        if (!rows.length) { if (tip) tip.remove(); return; }
+        var depth = Math.min(scnHov.depth, rows.length);
+        // от спреда: аски — ПОСЛЕДНИЕ N (лучший у спреда — последний), биды — первые N
+        var range = ask ? rows.slice(rows.length - depth) : rows.slice(0, depth);
+        // край «до сюда» — дальний от спреда уровень диапазона
+        var edge = ask ? range[0] : range[range.length - 1];
+        var lot = (s.meta && s.meta.lot) || 1, money = 0;
         range.forEach(function (x) {
             x.classList.add('d-cum');
             money += (+x.dataset.px || 0) * (+x.dataset.v || 0) * lot;
         });
-        var tip = dq('btScnCumTip');
         if (!tip) {
             tip = document.createElement('div');
             tip.id = 'btScnCumTip'; tip.className = 'd-cumtip';
             box.appendChild(tip);
         }
-        tip.textContent = (ask ? 'скупить до ' : 'продать до ') + fmtPx(+r.dataset.px || 0, s) +
+        tip.textContent = (ask ? 'скупить до ' : 'продать до ') + fmtPx(+edge.dataset.px || 0, s) +
             ' ₽ — ≈ ' + scnMoneyShort(money);
         tip.classList.toggle('sell', !ask);
-        // чип над строкой, у правого края; выше первого ряда не выпрыгивает
-        tip.style.top = Math.max(2, r.offsetTop - 24) + 'px';
-    };
-    window.pftScDepthHovOff = function () {
-        var box = dq('btScnTkDepth');
-        if (box) box.querySelectorAll('.d-cum').forEach(function (x) { x.classList.remove('d-cum'); });
-        var tip = dq('btScnCumTip'); if (tip) tip.remove();
-    };
+        tip.style.top = Math.max(2, edge.offsetTop - 24) + 'px';
+    }
     // ---- поповер звоночка: подписка на достижение цены ----
     // Хранение — прежний bt_alerts_v1, проверка — в идущем поллере стакана.
     // Доставка в звоночек сайта и пуш — этап уведомлений; пока announce().
