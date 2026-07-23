@@ -4338,10 +4338,12 @@
     function scnHeadHtml(s) {
         var m = s.meta;
         var al = alertsFor(s.uid).length;
-        var pills = stageObj().stage === 'start' ? scnPillsHtml() : '';
+        // пилюли + звоночек — в шапке на всех ступенях; на «Разгоне» блок
+        // прижат к правому краю ГРАФИКА, не героя (CSS-сдвиг .bts-hero-x
+        // .ih-r: над стаканом ему не место — владелец 2026-07-23)
         return '<span class="ih-nm"><h3>' + esc(m.name || m.ticker) + '</h3>' +
             '<em>' + esc(m.ticker) + ' · MOEX · лот ' + m.lot + ' шт</em></span>' +
-            '<span class="ih-r">' + pills +
+            '<span class="ih-r">' + scnPillsHtml() +
             '<button type="button" class="ih-bell' + (al ? ' on' : '') + '" onclick="pftScBell(event)" ' +
                 'title="Уведомить о цене" aria-label="Алерт по цене" aria-haspopup="true">' + IC_BELL + '</button></span>';
     }
@@ -4404,20 +4406,16 @@
         if (!candlesOn()) return scnChartHtml(s);
         return '<div class="ind-row" id="btScnInd">' + scnIndRow() + '</div>' +
             '<div class="bts-kmount" id="btScnK"></div>' +
-            '<div class="bts-ordt" id="btScnOrdT"></div>';
+            '<div class="bts-ordt" id="btScnOrdT"></div>' +
+            '<div class="bts-ordt" id="btScnCrossT"></div>';
     }
     function scnHeroAccelHtml(n, s) {
-        // пилюли — СНАРУЖИ #btScnChart: линия-режим меняет его innerHTML
-        // на каждом тике и снесла бы их
         return '<div class="bts-hero bts-hero-x">' +
             '<div class="pp-row" id="btScnTabs">' + scnTabsHtml() + '</div>' +
             '<div class="ih" id="btScnHead">' + scnHeadHtml(s) + '</div>' +
             '<div class="price-row" id="btScnPrice">' + scnPriceHtml(s) + '</div>' +
             '<div class="bts-plane">' +
-                '<div class="bts-chart bts-chart-x">' +
-                    '<div class="chart-pills">' + scnPillsHtml() + '</div>' +
-                    '<div class="bts-chart-in" id="btScnChart">' + scnChartBody(s) + '</div>' +
-                '</div>' +
+                '<div class="bts-chart bts-chart-x" id="btScnChart">' + scnChartBody(s) + '</div>' +
                 '<div class="depth depth-fused" id="btScnDepth">' + scnDepthHtml(s) + '</div>' +
             '</div>' +
             '<div class="tape" id="btScnTape">' + scnTapeHtml(s) + '</div>' +
@@ -4992,8 +4990,11 @@
                 },
                 priceMark: {
                     high: { color: txt }, low: { color: txt },
+                    // ярлык последней цены у движка СКРЫТ: цену несут ДВЕ
+                    // DOM-плашки по краям (слева светлая, справа акцентная —
+                    // владелец 2026-07-23, scnKTags); линия движка остаётся
                     last: { upColor: up, downColor: down, noChangeColor: txt,
-                        line: { show: true }, text: { color: nightMode ? '#0a0e15' : '#fff' } }
+                        line: { show: true }, text: { show: false } }
                 },
                 // легенда — только под кроссхейром: постоянная строка OHLC
                 // спорила бы с чипами индикаторов за верх холста (мокап 04)
@@ -5012,8 +5013,16 @@
             yAxis: { show: true,
                 axisLine: { color: line }, tickLine: { color: line }, tickText: { color: txt } },
             separator: { color: line },
+            // чип цены кроссхейра НА ОСИ: слева (Старт/Разгон) — светлый,
+            // справа (Контроль) — тёмный акцент; противоположную сторону
+            // дорисовывает DOM-плашка scnKCross (то же правило свет/акцент)
             crosshair: { show: true,
-                horizontal: { line: { color: txt }, text: { backgroundColor: chipBg } },
+                horizontal: { line: { color: txt }, text: stageObj().stage !== 'control'
+                    ? { backgroundColor: nightMode ? '#121722' : '#ffffff',
+                        color: nightMode ? '#e9eef8' : '#0f172a',
+                        borderColor: nightMode ? 'rgba(255,255,255,0.16)' : 'rgba(15,23,42,0.14)',
+                        borderSize: 1 }
+                    : { backgroundColor: chipBg } },
                 vertical: { line: { color: txt }, text: { backgroundColor: chipBg } }
             }
         };
@@ -5162,6 +5171,8 @@
             });
             // прокрутка/зум сдвигают шкалу — ярлыки заявок едут следом
             try { chart.subscribeAction('onVisibleRangeChange', function () { scnKTags(); }); } catch (e) {}
+            // плашка цены кроссхейра на стороне, противоположной оси
+            try { chart.subscribeAction('onCrosshairChange', function (d) { scnKCross(d); }); } catch (e) {}
             try {
                 K.ro = new ResizeObserver(function () {
                     if (K.roRaf) return;
@@ -5340,12 +5351,49 @@
             return pt && isFinite(pt.y) ? pt.y : null;
         } catch (e) { return null; }
     }
+    // чип кроссхейра на оси рисует движок; противоположный край — DOM.
+    // Правило сторон одно: слева светлая плашка, справа акцентная.
+    // d — сырой кроссхейр из onCrosshairChange ({x,y,paneId}; пустой объект =
+    // курсор ушёл): getCrosshair есть только у стора, наружу он не торчит
+    function scnKCross(d) {
+        var el = dq('btScnCrossT');
+        if (!el || !K.chart) return;
+        var html = '';
+        try {
+            if (d && d.paneId === 'candle_pane' && isFinite(d.y)) {
+                var pt = K.chart.convertFromPixel({ x: d.x || 0, y: d.y }, { paneId: 'candle_pane' });
+                var v = pt && +pt.value > 0 ? +pt.value : 0;
+                if (v > 0) {
+                    var side = scnAxisPos() === 'left' ? 'r acc-ink' : 'l';
+                    html = '<span class="px-tag ' + side + '" style="top:' + Math.round(d.y) + 'px">' +
+                        fmtPx(v, S(sxSlot())) + '</span>';
+                }
+            }
+        } catch (e) {}
+        if (el.__btHtml !== html) { el.__btHtml = html; el.innerHTML = html; }
+    }
     function scnKTags() {
         var layer = dq('btScnOrdT');
         if (!layer || !K.chart) return;
         var s = S(sxSlot());
         var want = K.ordWant || {};
         var html = '';
+        // последняя цена — ДВЕ плашки по краям линии движка: слева светлая,
+        // справа акцентная цветом дня (ярлык самого движка скрыт в стилях)
+        if (s.uid === K.uid) {
+            var lastPx = sxPrice(s);
+            var lH = layer.clientHeight || 0;
+            if (lastPx > 0) {
+                var lyy = pxToY(lastPx);
+                if (lyy != null && lyy >= 8 && (!lH || lyy <= lH - 12)) {
+                    var cls = s.ob && A().q2n(s.ob.closePrice) > 0 ? A().q2n(s.ob.closePrice) : 0;
+                    var dir = cls > 0 ? (lastPx >= cls ? ' up' : ' dn') : '';
+                    var lyr = Math.round(lyy);
+                    html += '<span class="px-tag l" style="top:' + lyr + 'px">' + fmtPx(lastPx, s) + '</span>' +
+                        '<span class="px-tag r acc' + dir + '" style="top:' + lyr + 'px">' + fmtPx(lastPx, s) + '</span>';
+                }
+            }
+        }
         Object.keys(want).forEach(function (id) {
             var w = want[id];
             var y = pxToY(w.px);
