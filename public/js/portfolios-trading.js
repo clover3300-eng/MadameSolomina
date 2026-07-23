@@ -3735,15 +3735,17 @@
     }
     function envRowHtml() {
         var c = conn();
-        // «Контроль»: экраны trading:N переезжают в строку среды вкладками —
-        // механика и хранилище раунда 1, исчезла только плавающая полоса
-        var ctl = stageObj().stage === 'control';
+        // экраны trading:N — вкладки строки среды: «Контроль» и «Старт»
+        // (владелец 2026-07-23); механика и хранилище раунда 1. С вкладками
+        // омнибокс уходит вправо (bts-omni-s) — середину держат вкладки
+        var stg = stageObj().stage;
+        var scr = stg === 'control' || stg === 'start';
         return '<div class="bts-top" id="pftBar">' +
             '<button type="button" class="bts-back" onclick="pftSceneBack()">' + IC_BACK + '<span>Портфели</span></button>' +
-            (ctl ? '<span class="sc-tabs" id="btScnScr">' + scnScreensHtml() + '</span>' : '') +
+            (scr ? '<span class="sc-tabs" id="btScnScr">' + scnScreensHtml() + '</span>' : '') +
             // омнибокс ⌘K (этап 6) пока открывает готовый поиск бумаг раунда 1
-            '<button type="button" class="bts-omni' + (ctl ? ' bts-omni-s' : '') + '" onclick="pftFsSearch()" title="Найти бумагу">' + IC_LENS +
-                '<span>' + (ctl ? 'Бумага или команда' : 'Бумага, команда или «сбер 30к»') + '</span><kbd>⌘K</kbd></button>' +
+            '<button type="button" class="bts-omni' + (scr ? ' bts-omni-s' : '') + '" onclick="pftFsSearch()" title="Найти бумагу">' + IC_LENS +
+                '<span>' + (scr ? 'Бумага или команда' : 'Бумага, команда или «сбер 30к»') + '</span><kbd>⌘K</kbd></button>' +
             '<span class="bts-right">' +
                 scnLinkHtml() +
                 (c && c.sandbox ? '<span class="bts-sand">Песочница</span>' : '') +
@@ -4497,11 +4499,11 @@
     // по ней — ровно ловушка sxPrice, уже пойманная однажды. Гаснет при смене
     // бумаги и стороны.
     var scnLim = 0;
-    // Действующая лимитная цена сцены. С «Разгона» её несёт видимая строка
-    // цены тикета (s.kind + s.price — слот, как в раунде 1: цена на глазах);
-    // на «Старте» строки нет, и лимитка гварда живёт сессионно (scnLim).
+    // Действующая лимитная цена сцены: её несёт видимая строка цены тикета
+    // (s.kind + s.price — слот, как в раунде 1: цена на глазах). Строка цены
+    // теперь на всех ступенях — сессионный scnLim остался запасным каналом
     function scnLimPx(s) {
-        if (stageObj().stage !== 'start' && s.kind === 'limit' && +s.price > 0) return +s.price;
+        if (s.kind === 'limit' && +s.price > 0) return +s.price;
         return scnLim > 0 ? scnLim : 0;
     }
     function scnExecPx(s, buy) {
@@ -4623,13 +4625,9 @@
     function scnWarnHtml(n) {
         var s = S(n), buy = s.side !== 'sell';
         var lim0 = scnLimPx(s);
-        // на «Разгоне»+ лимитку видно в строке цены тикета — вторая строка о ней
-        // была бы дублем; напоминание оставляем только «Старту» (строки цены нет)
-        if (lim0 > 0) {
-            if (stageObj().stage !== 'start') return '';
-            return '<span>Лимитка <b>' + fmtPx(lim0, s) + ' ₽</b> — исполнится, когда цена дойдёт</span>' +
-                '<u onclick="pftScMarket()">по рынку</u>';
-        }
+        // лимитку видно в строке цены тикета (теперь на всех ступенях) —
+        // вторая строка о ней была бы дублем
+        if (lim0 > 0) return '';
         var sp = spreadInfo(s);
         var c = scnCalc(n);
         if (!sp || sp.pct < SPREAD_WARN || !c || !c.lots || scnShortfall(n) > 0) return '';
@@ -4645,22 +4643,17 @@
     window.pftScLimit = function (px) {
         if (!(px > 0)) return;
         var n = sxSlot(), s = S(n);
-        if (stageObj().stage !== 'start') {
-            // с «Разгона» лимитка встаёт в видимую строку цены тикета
-            s.kind = 'limit';
-            s.price = String(scnSnap(+px, s));
-            saveSlots();
-            scnTicketRedraw(n);
-        } else {
-            scnLim = +px;
-            scnTicketBits();
-        }
+        // лимитка встаёт в видимую строку цены тикета (теперь она везде)
+        s.kind = 'limit';
+        s.price = String(scnSnap(+px, s));
+        saveSlots();
+        scnTicketRedraw(n);
         toast('Лимитка у спреда: заявка встанет по вашей цене — отправка всё равно только кнопкой');
     };
     window.pftScMarket = function () {
         scnLim = 0;
         var n = sxSlot(), s = S(n);
-        if (stageObj().stage !== 'start' && s.kind === 'limit') {
+        if (s.kind === 'limit') {
             s.kind = 'market';
             saveSlots();
             scnTicketRedraw(n);
@@ -4790,9 +4783,9 @@
         var vw = scnTktView();
         var head = '<div class="tkt-h">' + (start ? scnTktTabsHtml() : '<b>Сделка</b>') +
             '<span class="freshw" id="btScnFresh">' + scnFreshInner() + '</span></div>';
-        // стакан на всю карточку — той же глубиной, что «Разгон»
+        // стакан на всю карточку — глубже плоскости «Разгона»: высота позволяет
         if (vw === 'depth' && !isBond(s)) {
-            return head + '<div class="tkt-depth" id="btScnTkDepth">' + scnDepthHtml(s, 1) + '</div>';
+            return head + '<div class="tkt-depth" id="btScnTkDepth">' + scnDepthHtml(s, 1, SCN_DEPTH_CARD) + '</div>';
         }
         // облигации в тикет не пущены (хвост набора): котировка в % от номинала,
         // рубли без проверки единиц на живом счёте были бы гаданием
@@ -4809,14 +4802,11 @@
         var unit = unitOf(s);
         var uTxt = unit === 'rub' ? '₽'
             : (buy ? 'шт · лот ' + ((s.meta && s.meta.lot) || 1) : 'шт из ' + have.toLocaleString('ru-RU'));
-        var accel = stageObj().stage !== 'start';
-        var ctl = stageObj().stage === 'control';
-        // строка цены появляется на «Разгоне» со значением «По рынку» —
-        // лимитка в одном касании, но по умолчанию ничего не усложняет
-        var priceRow = accel ? '<div class="fld fld-p" id="btScnPx">' + scnPriceRowInner(n) + '</div>' : '';
-        // защита позиции — строка тикета «Контроля»; линии на графике ведёт
-        // scnKProt, изменение здесь — изменение там (одна сущность)
-        var protRow = ctl ? '<div class="fld fld-p" id="btScnProt"><em>Защита позиции</em>' + scnProtInner(n) + '</div>' : '';
+        // блок заявки един на всех ступенях как на «Контроле» (владелец
+        // 2026-07-23): строка цены «По рынку ⇄ лимит» со значением на глазах
+        // и защита позиции; линии на графике ведёт scnKProt — одна сущность
+        var priceRow = '<div class="fld fld-p" id="btScnPx">' + scnPriceRowInner(n) + '</div>';
+        var protRow = '<div class="fld fld-p" id="btScnProt"><em>Защита позиции</em>' + scnProtInner(n) + '</div>';
         var deal = head +
             '<div class="seg">' +
                 '<span class="' + (buy ? 'on' : '') + '" role="button" tabindex="0" onclick="pftSxSide(\'buy\')">Купить</span>' +
@@ -4836,12 +4826,11 @@
             protRow +
             '<div class="warn" id="btScnWarn">' + scnWarnHtml(n) + '</div>' +
             '<div class="tkt-space"></div>' +
-            // «Старт»: «что нужно знать» развёрнуто держит середину колонки;
-            // с «Разгона» середину занимают строки цены — блок сворачивается
-            // в тихую строку-ссылку (мокап 04)
-            (!accel || scnKnowOpen
+            // «что нужно знать» — тихая строка-ссылка на всех ступенях
+            // (середину колонки заняли строки цены и защиты, как на «Контроле»)
+            (scnKnowOpen
                 ? '<div class="knowx" id="btScnKnow">' + scnKnowHtml(n) +
-                  (accel ? '<u class="know-close" role="button" tabindex="0" onclick="pftScKnow()">Свернуть</u>' : '') + '</div>'
+                  '<u class="know-close" role="button" tabindex="0" onclick="pftScKnow()">Свернуть</u></div>'
                 : '<div class="know">🛈 Что нужно знать перед ' + (buy ? 'покупкой' : 'продажей') +
                   '<u role="button" tabindex="0" onclick="pftScKnow()">Открыть</u></div>') +
             '<div class="rest" id="btScnRest">' + scnRestHtml(n) + '</div>' +
@@ -4850,7 +4839,7 @@
         // ширину контейнера и сжатие героя анимирует CSS (data-tkt на сцене)
         if (vw === 'split') {
             return '<div class="tkt-sub tkt-sub-depth"><div class="tkt-depth" id="btScnTkDepth">' +
-                    scnDepthHtml(s) + '</div></div>' +
+                    scnDepthHtml(s, 0, SCN_DEPTH_CARD) + '</div></div>' +
                 '<div class="tkt-sub tkt-sub-deal">' + deal + '</div>';
         }
         return deal;
@@ -5450,7 +5439,7 @@
                 '<u onclick="pftScCancelPart(\'' + jsArg(id) + '\')" title="Снять заявку">✕</u></span>';
         });
         // тейк/стоп: в диапазоне их держат линии-оверлеи, вне — метки у края
-        if (stageObj().stage === 'control' && s.uid === K.uid) {
+        if (s.uid === K.uid) {
             var h = layer.clientHeight || 0;
             var v = protVals(s);
             [['tp', v.tp, 'тейк'], ['sl', v.sl, 'стоп']].forEach(function (row) {
@@ -5468,18 +5457,12 @@
         }
         if (layer.__btHtml !== html) { layer.__btHtml = html; layer.innerHTML = html; }
     }
-    // клик по цене (стакан, свеча, drag линии) подставляет её лимиткой в тикет.
-    // На «Старте» строки цены в тикете нет — лимитка ложится в сессионный
-    // scnLim (писать s.price нельзя: тикет «Старта» его не читает — ловушка sxPrice)
+    // клик по цене (стакан, свеча, drag линии) подставляет её лимиткой в
+    // видимую строку цены тикета — она теперь на всех ступенях, цена на глазах
     window.pftScPickPx = function (px) {
         px = +px;
         if (!(px > 0)) return;
         var n = sxSlot(), s = S(n);
-        if (stageObj().stage === 'start') {
-            scnLim = scnSnap(px, s);
-            scnTicketBits();
-            return;
-        }
         s.kind = 'limit';
         s.price = String(scnSnap(px, s));
         saveSlots();
@@ -5489,17 +5472,21 @@
     // ---- стакан-глубина: правый край графика, одна плоскость ----
     // ЛОВУШКА мокапа: лучшая продажа стоит У СПРЕДА, дорогие аски — сверху.
     // Брокер отдаёт аски от лучшего — на экран идут в ОБРАТНОМ порядке.
-    var SCN_DEPTH = 6;
-    function scnDepthHtml(s, slim) {
+    var SCN_DEPTH = 6;        // плоскость «Разгона»/«Контроля»: высота делится с графиком
+    var SCN_DEPTH_CARD = 10;  // стакан карточной высоты («Стакан»/«Сплит» на «Старте»)
+    function scnDepthHtml(s, slim, deep) {
         // slim — стакан внутри карточки тикета «Старта»: слово «Стакан» уже
-        // на вкладке карточки, остаётся только подсказка жеста
+        // на вкладке карточки, остаётся только подсказка жеста.
+        // deep — уровней на сторону: 6 в плоскости «Разгона»/«Контроля»
+        // (высота делится с графиком), карточной высоте есть куда расти
         var head = slim
             ? '<div class="d-h"><em>клик по цене — лимитка</em></div>'
             : '<div class="d-h"><b>Стакан</b><em>клик — лимитка</em></div>';
         if (!s.ob) return head + '<div class="bts-cnote">Ждём стакан…</div>';
         var q2n = A().q2n;
+        var lim = deep || SCN_DEPTH;
         function take(arr) {
-            return (arr || []).slice(0, SCN_DEPTH).map(function (l) {
+            return (arr || []).slice(0, lim).map(function (l) {
                 return { px: q2n(l.price), lots: +l.quantity || 0 };
             }).filter(function (l) { return l.px > 0; });
         }
@@ -5831,9 +5818,10 @@
     function scnKProt() {
         if (!K.chart) return;
         var s = S(sxSlot());
-        var control = stageObj().stage === 'control';
+        // строка «Защита позиции» теперь на всех ступенях — линии тоже
+        var mine = s.uid === K.uid;
         var v = protVals(s);
-        var wantAll = { tp: control && s.uid === K.uid ? v.tp : 0, sl: control && s.uid === K.uid ? v.sl : 0 };
+        var wantAll = { tp: mine ? v.tp : 0, sl: mine ? v.sl : 0 };
         ['tp', 'sl'].forEach(function (k) {
             var px = wantAll[k];
             if (K_PROT[k]) { try { K.chart.removeOverlay({ id: K_PROT[k] }); } catch (e) {} K_PROT[k] = null; }
@@ -6163,7 +6151,7 @@
                 scnSet('btScnKnow', scnKnowHtml(n));
                 // стакан в карточке тикета (вид «Стакан»/«Сплит») — жив тиками
                 var tv = scnTktView();
-                if (tv !== 'deal') scnSet('btScnTkDepth', scnDepthHtml(s, tv === 'depth' ? 1 : 0));
+                if (tv !== 'deal') scnSet('btScnTkDepth', scnDepthHtml(s, tv === 'depth' ? 1 : 0, SCN_DEPTH_CARD));
             }
             if (st !== 'control') scnSet('btScnUnlock', unlockHtml());
         }

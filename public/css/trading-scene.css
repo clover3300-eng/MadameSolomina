@@ -42,27 +42,27 @@
 
 /* ---------- строка среды 52px ---------- */
 .bts-top {
-    position: absolute; left: 0; right: 0; top: 0; height: 52px;
-    display: flex; align-items: center; gap: 14px;
-    padding: 0 20px; z-index: 30;
+    position: absolute; left: 0; right: 0; top: 0; height: 64px;
+    display: flex; align-items: center; gap: 16px;
+    padding: 0 24px; z-index: 30;
 }
 .bts-back {
-    display: inline-flex; align-items: center; gap: 7px;
-    font: 600 13px var(--font-ui); color: var(--mut);
-    border: 1px solid var(--line); border-radius: 10px;
-    padding: 7px 12px; background: var(--card); cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px;
+    font: 600 13.5px var(--font-ui); color: var(--mut);
+    border: 1px solid var(--line); border-radius: 11px;
+    padding: 9px 14px; background: var(--card); cursor: pointer;
 }
-.bts-back svg { width: 13px; height: 13px; }
+.bts-back svg { width: 15px; height: 15px; }
 .bts-back:hover { color: var(--ink); }
 .bts-omni {
     flex: none; width: 430px; margin: 0 auto;
     display: flex; align-items: center; gap: 9px;
     border: 1px solid var(--line); background: var(--card);
-    border-radius: 12px; padding: 8px 12px;
+    border-radius: 12px; padding: 10px 14px;
     font: 400 13.5px var(--font-ui); color: var(--dim);
     cursor: pointer; text-align: left;
 }
-.bts-omni svg { width: 13px; height: 13px; flex: none; }
+.bts-omni svg { width: 15px; height: 15px; flex: none; }
 .bts-omni span { flex: 1; overflow: hidden; white-space: nowrap; }
 .bts-omni kbd {
     font: 400 10.5px var(--font-num);
@@ -71,45 +71,45 @@
 }
 .bts-omni.on, .bts-omni:hover { border-color: color-mix(in srgb, var(--acc) 45%, transparent); }
 .bts-right { display: flex; align-items: center; gap: 13px; }
-.bts-link { display: inline-flex; align-items: center; gap: 6px; font: 600 11.5px var(--font-ui); color: var(--grn); white-space: nowrap; }
+.bts-link { display: inline-flex; align-items: center; gap: 7px; font: 600 12px var(--font-ui); color: var(--grn); white-space: nowrap; }
 .bts-link i { width: 6px; height: 6px; border-radius: 50%; background: var(--grn); box-shadow: 0 0 0 3px color-mix(in srgb, var(--grn) 18%, transparent); }
 .bts-link.wait { color: var(--amb); }
 .bts-link.wait i { background: var(--amb); box-shadow: 0 0 0 3px color-mix(in srgb, var(--amb) 18%, transparent); }
 .bts-link.stale { color: var(--red); }
 .bts-link.stale i { background: var(--red); box-shadow: 0 0 0 3px color-mix(in srgb, var(--red) 18%, transparent); }
 .bts-sand {
-    font: 800 9.5px var(--font-ui); letter-spacing: 0.07em; text-transform: uppercase;
+    font: 800 10.5px var(--font-ui); letter-spacing: 0.07em; text-transform: uppercase;
     color: var(--amb); border: 1px solid color-mix(in srgb, var(--amb) 45%, transparent);
-    border-radius: 999px; padding: 3px 8px;
+    border-radius: 999px; padding: 4px 10px;
 }
 .bts-th {
     display: inline-flex; gap: 1px; border: 1px solid var(--line);
     border-radius: 999px; padding: 2px; background: var(--card); cursor: pointer;
 }
 .bts-th i {
-    width: 21px; height: 21px; border-radius: 50%;
+    width: 25px; height: 25px; border-radius: 50%;
     display: grid; place-items: center;
-    font-style: normal; font-size: 11.5px; color: var(--dim);
+    font-style: normal; font-size: 12.5px; color: var(--dim);
 }
 .bts-th i.on { background: var(--ink); color: var(--bg); }
 .bts-dots {
-    width: 28px; height: 28px; border-radius: 9px;
+    width: 34px; height: 34px; border-radius: 10px;
     border: 1px solid var(--line); background: none;
     display: grid; place-items: center; color: var(--dim); cursor: pointer;
 }
-.bts-dots svg { width: 15px; height: 15px; }
+.bts-dots svg { width: 17px; height: 17px; }
 .bts-dots.on, .bts-dots:hover { color: var(--ink); border-color: var(--dim); }
 .bts-av {
-    width: 28px; height: 28px; border-radius: 50%; border: 0; cursor: pointer;
+    width: 36px; height: 36px; border-radius: 50%; border: 0; cursor: pointer;
     background: linear-gradient(135deg, #7c8cff, #4453ef);
-    color: #fff; font: 700 11px var(--font-ui);
+    color: #fff; font: 700 13px var(--font-ui);
     display: grid; place-items: center; overflow: hidden; position: relative;
 }
 .bts-av img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 
 /* меню «⋯» строки среды */
 .bts-menu {
-    position: absolute; right: 20px; top: 50px;
+    position: absolute; right: 24px; top: 62px;
     min-width: 218px; background: var(--card);
     border: 1px solid var(--line); border-radius: 14px; padding: 6px;
     z-index: 80; box-shadow: 0 24px 54px -26px rgba(15, 23, 42, 0.5);
@@ -129,7 +129,7 @@
 
 /* поиск бумаги под омнибоксом (стили broker.css переопределены под сцену) */
 .bts-top .pftb-find {
-    position: absolute; left: 50%; top: 58px; transform: translateX(-50%);
+    position: absolute; left: 50%; top: 70px; transform: translateX(-50%);
     width: 460px; background: var(--card);
     border: 1px solid var(--line); border-radius: 14px; padding: 10px;
     z-index: 80; box-shadow: 0 30px 70px -30px rgba(15, 23, 42, 0.5);
@@ -146,7 +146,7 @@
 
 /* ---------- герой бумаги ---------- */
 .bts-hero {
-    position: absolute; left: 56px; right: 456px; top: 96px; bottom: 96px;
+    position: absolute; left: 56px; right: 488px; top: 108px; bottom: 96px;
     display: flex; flex-direction: column; z-index: 5;
 }
 .bts .ih { display: flex; align-items: center; gap: 14px; }
@@ -234,7 +234,7 @@
 
 /* ---------- тикет-колонка ---------- */
 .bts .tkt {
-    position: absolute; right: 36px; top: 110px; bottom: 96px; width: 368px;
+    position: absolute; right: 36px; top: 122px; bottom: 96px; width: 400px;
     background: var(--card); border: 1px solid var(--line); border-radius: 18px;
     padding: 20px; display: flex; flex-direction: column; gap: 13px;
     backdrop-filter: blur(14px);
@@ -259,12 +259,12 @@
 .bts .tkt { transition: width 0.45s cubic-bezier(0.25, 0.9, 0.3, 1); }
 .bts-hero { transition: right 0.45s cubic-bezier(0.25, 0.9, 0.3, 1); }
 .bts[data-stage="start"][data-tkt="split"] .tkt {
-    width: 642px;                          /* 260 стакан + 14 + 368 заявка */
+    width: 714px;                          /* 300 стакан + 14 + 400 заявка */
     background: none; border: 0; padding: 0;
     box-shadow: none; backdrop-filter: none; overflow: visible;
     flex-direction: row; justify-content: flex-end; gap: 14px;
 }
-.bts[data-stage="start"][data-tkt="split"] .bts-hero { right: 730px; }   /* 36+642+52 */
+.bts[data-stage="start"][data-tkt="split"] .bts-hero { right: 802px; }   /* 36+714+52 */
 .bts .tkt-sub {
     background: var(--card); border: 1px solid var(--line); border-radius: 18px;
     padding: 20px; display: flex; flex-direction: column; gap: 13px;
@@ -273,7 +273,7 @@
 }
 .bts.night .tkt-sub { box-shadow: 0 24px 60px -30px rgba(0, 0, 0, 0.55); background: color-mix(in srgb, var(--card) 92%, transparent); }
 /* заявка держит свою ширину у правого края; стакан вырастает слева из-под неё */
-.bts .tkt-sub-deal { flex: 0 0 368px; }
+.bts .tkt-sub-deal { flex: 0 0 400px; min-width: 0; }   /* min-content шире 400 — не даём распухать */
 .bts .tkt-sub-depth { flex: 1 1 auto; min-width: 0; overflow: hidden; animation: btSplitIn 0.5s cubic-bezier(0.25, 0.9, 0.3, 1) backwards; }
 @keyframes btSplitIn { from { opacity: 0; } 40% { opacity: 0; } }
 .bts .fresh { display: inline-flex; align-items: center; gap: 6px; font: 600 10px var(--font-ui); color: var(--grn); white-space: nowrap; }
@@ -461,8 +461,8 @@
 
 /* ═══════ ступень «Разгон» (экран 04) ═══════ */
 /* герой чуть выше — сверху ряд вкладок бумаг */
-.bts[data-stage="accel"] .bts-hero, .bts[data-stage="control"] .bts-hero { top: 88px; }
-.bts[data-stage="accel"] .tkt, .bts[data-stage="control"] .tkt { top: 102px; width: 400px; }
+.bts[data-stage="accel"] .bts-hero, .bts[data-stage="control"] .bts-hero { top: 100px; }
+.bts[data-stage="accel"] .tkt, .bts[data-stage="control"] .tkt { top: 114px; }
 .bts .pp-row { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
 .bts .pp {
     display: inline-flex; align-items: center; gap: 8px;
@@ -667,7 +667,7 @@
    не дырой в пол-экрана */
 .bts[data-stage="control"] .tkt { top: 72px; right: 20px; bottom: var(--bts-dock, 196px); }
 .bts-ctl {
-    position: absolute; left: 20px; right: 456px; top: 72px;
+    position: absolute; left: 20px; right: 456px; top: 84px;
     bottom: var(--bts-dock, 196px);
     display: flex; flex-direction: column; gap: 12px; z-index: 5;
 }
@@ -782,8 +782,8 @@
 /* экраны trading:N — вкладки в строке среды */
 .bts .sc-tabs { display: flex; align-items: center; gap: 6px; margin-right: auto; }
 .bts .sct {
-    font: 600 12px var(--font-ui); color: var(--dim);
-    border: 1px solid transparent; border-radius: 9px; padding: 5px 11px;
+    font: 600 12.5px var(--font-ui); color: var(--dim);
+    border: 1px solid transparent; border-radius: 10px; padding: 7px 13px;
     cursor: pointer; user-select: none; white-space: nowrap;
 }
 .bts .sct.on { color: var(--ink); border-color: var(--line); background: var(--card); }
@@ -921,8 +921,8 @@
    + его ширина + гэп. На «Разгоне» тикет шире (400), и без своей пары правил
    стакан прижимался к тикету вплотную (оставалось 4px). */
 @media (max-width: 1360px) {
-    .bts-hero { left: 32px; right: 428px; }                     /* Старт: 24+360+44 */
-    .bts .tkt { right: 24px; width: 360px; }
+    .bts-hero { left: 32px; right: 468px; }                     /* Старт: 24+400+44 */
+    .bts .tkt { right: 24px; }
     .bts[data-stage="accel"] .bts-hero,
     .bts[data-stage="control"] .bts-hero { right: 448px; }      /* 24+400+24 */
     .bts[data-stage="accel"] .tkt,
@@ -931,8 +931,7 @@
     .bts-omni { width: 340px; }
     .bts .facts { gap: 20px; }
     .bts-ctl { right: 448px; }      /* 24 + 400 + 24 */
-    /* сплит «Старта» на узком: 240 стакан + 14 + 360 заявка */
-    .bts[data-stage="start"][data-tkt="split"] .tkt { width: 614px; }
-    .bts[data-stage="start"][data-tkt="split"] .bts-hero { right: 682px; }   /* 24+614+44 */
-    .bts .tkt-sub-deal { flex-basis: 360px; }
+    /* сплит «Старта» на узком: 280 стакан + 14 + 400 заявка */
+    .bts[data-stage="start"][data-tkt="split"] .tkt { width: 694px; }
+    .bts[data-stage="start"][data-tkt="split"] .bts-hero { right: 762px; }   /* 24+694+44 */
 }
