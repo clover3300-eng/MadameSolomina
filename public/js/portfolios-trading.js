@@ -4518,10 +4518,14 @@
                 return c.qty.toLocaleString('ru-RU') + ' ' + unitWord(s, c.qty) +
                     ' = <b>' + fmtKop(c.gross) + '</b> по ' + (scnLimPx(s) > 0 ? 'лимиту' : 'рынку') +
                     aciTxt + ' · комиссия ' + fmtKop(c.fee);
-            return '≈ <b>' + c.qty.toLocaleString('ru-RU') + ' ' + unitWord(s, c.qty) + '</b>' +
+            // итог слева, лотность — тихим хвостом у правого края (владелец
+            // 2026-07-24: тире-простыня «— 3 лота по 10 шт» не читалась)
+            return '<span class="apx-flex"><span>≈ <b>' + c.qty.toLocaleString('ru-RU') + ' ' +
+                unitWord(s, c.qty) + '</b>' + aciTxt + '</span>' +
                 (lot > 1
-                    ? ' — ' + glLot(s, c.lots.toLocaleString('ru-RU') + ' ' + PF.plural(c.lots, 'лот', 'лота', 'лотов')) + ' по ' + lot + ' шт'
-                    : '') + aciTxt;
+                    ? '<span class="apx-r">' + glLot(s, c.lots.toLocaleString('ru-RU') + ' ' +
+                      PF.plural(c.lots, 'лот', 'лота', 'лотов')) + ' × ' + lot + ' шт</span>'
+                    : '') + '</span>';
         }
         var have = haveQty(s), p = posOf(s.uid);
         if (!(have > 0)) return '<span class="mut">Этой бумаги у вас нет — продавать нечего.</span>';
@@ -4809,6 +4813,8 @@
             'title="Развернуть позиции панелью">Мои позиции' +
             (val != null ? ' <b>' + fmtRub(val) + '</b>' : '') +
             ' <i>' + (open && dockTab === 'pos' ? '▴' : '▾') + '</i></span>';
+        // «заявки» стоят РЯДОМ с «Моими позициями» (владелец 2026-07-24: у
+        // правого края кнопка была не на месте) — обе ручки одной панели слева
         var ordBtn = '<button type="button" class="ps-ord" onclick="pftScDeck(\'orders\')" ' +
             'title="Мои заявки панелью">заявки' + (nOrd ? ' <b>' + nOrd + '</b>' : '') +
             ' <i>' + (open && dockTab === 'orders' ? '▴' : '▾') + '</i></button>';
@@ -4817,7 +4823,7 @@
             'title="Деньги и итог счёта">счёт <i>' + (stageObj().layers.acct ? '▴' : '▾') + '</i></button>';
         if (!list.length) {
             // позиций ещё нет, но росток должен быть достижим — полоса-минимум
-            return lab + '<em class="ps-none">пока пусто</em>' + ordBtn + acctBtn;
+            return lab + ordBtn + '<em class="ps-none">пока пусто</em>' + acctBtn;
         }
         var chips = list.slice(0, POS_CHIPS).map(function (p) {
             var cl = (T.closes || {})[p.uid];
@@ -4836,7 +4842,7 @@
             ? '<button type="button" class="ps-more" onclick="pftSceneBack()" ' +
               'title="Полный разбор позиций — в «Портфелях»">ещё ' + (list.length - POS_CHIPS) + ' →</button>'
             : '';
-        return lab + chips + more + ordBtn + acctBtn;
+        return lab + ordBtn + chips + more + acctBtn;
     }
     window.pftScChip = function (uid) {
         loadInstrument(sxSlot(), uid, function () {
@@ -5487,7 +5493,7 @@
             l.cls = 'd-row ' + side + (l.lots >= maxLots * 0.6 ? ' d-big' : '') +
                 (best ? ' d-best' : '') + (l.my ? ' d-mine' : '');
             l.rub = '≈ ' + Math.round(l.px * l.lots * lot).toLocaleString('ru-RU') + ' ₽ на уровне' +
-                (l.my ? ' · ваша заявка: осталось ' + l.my + ' лот' : '');
+                (l.my ? ' · ваша заявка: осталось ' + l.my + ' ' + PF.plural(l.my, 'лот', 'лота', 'лотов') : '');
             return l;
         }
         // ЛОВУШКА мокапа: лучшая продажа стоит У СПРЕДА — аски в обратном
@@ -5508,13 +5514,14 @@
         // заливка — мягкий градиент ЗА числом лотов, без серых подложек:
         // длиннее заливка → крупнее уровень, стена подсвечена гуще (d-big)
         // узел d-my ВСЕГДА в строке (пустой спрятан CSS :empty) — точечный
-        // патч scnDepthSet ходит по цепочке firstChild БЕЗ пробелов между тегами
+        // патч scnDepthSet ходит по цепочке firstChild БЕЗ пробелов между
+        // тегами. Плашка своих лотов — СПРАВА от объёма (владелец 2026-07-24)
         return '<div class="' + l.cls + '" role="button" tabindex="0" data-px="' + l.px + '" ' +
             'title="' + l.rub + '" onclick="pftScRowPx(+this.dataset.px)">' +
             '<i class="d-fill" style="width:' + l.w + '%"></i>' +
             '<span class="pr">' + fmtPx(l.px, s) + '</span>' +
-            '<span class="d-my">' + (l.my ? l.my + ' лот' : '') + '</span>' +
-            '<span class="d-vol">' + l.lots.toLocaleString('ru-RU') + '</span></div>';
+            '<span class="d-vol">' + l.lots.toLocaleString('ru-RU') + '</span>' +
+            '<span class="d-my">' + (l.my ? l.my + ' ' + PF.plural(l.my, 'лот', 'лота', 'лотов') : '') + '</span></div>';
     }
     function scnDepthHtml(s, slim, deep) {
         // slim — стакан внутри карточки тикета «Старта»: слово «Стакан» уже
@@ -5574,9 +5581,9 @@
             if (r.className !== l.cls) r.className = l.cls;
             if (r.dataset.px !== String(l.px)) r.dataset.px = l.px;
             if (r.title !== l.rub) r.title = l.rub;
-            var pr = r.firstChild.nextSibling, my = pr.nextSibling, vol = my.nextSibling;
+            var pr = r.firstChild.nextSibling, vol = pr.nextSibling, my = vol.nextSibling;
             var pt = fmtPx(l.px, s), vt = l.lots.toLocaleString('ru-RU');
-            var mt = l.my ? l.my + ' лот' : '';
+            var mt = l.my ? l.my + ' ' + PF.plural(l.my, 'лот', 'лота', 'лотов') : '';
             if (pr.textContent !== pt) pr.textContent = pt;
             if (my.textContent !== mt) my.textContent = mt;
             if (vol.textContent !== vt) vol.textContent = vt;
@@ -6067,9 +6074,19 @@
         var o = stageObj();
         o.layers.acct = o.layers.acct ? 0 : 1;
         saveStageRaw(o);
+        var sc = dq('btScene'); if (sc) sc.dataset.acct = o.layers.acct ? '1' : '0';
         scnSet('btScnAcct', scnAcctHtml());
         scnSet('btScnPos', scnPosInner());   // стрелка на ручке
+        scnAcctFit();
     };
+    // карточка сделки поджимается вверх над открытым «Счётом» (владелец
+    // 2026-07-24) — та же механика, что у героя над ростком (scnDockFit)
+    function scnAcctFit() {
+        var el = dq('btScene'), a = dq('btScnAcct');
+        if (!el) return;
+        if (a && a.childElementCount) el.style.setProperty('--bts-acct', (a.offsetHeight + 96 + 12) + 'px');
+        else el.style.removeProperty('--bts-acct');
+    }
 
     // ---- экраны trading:N — вкладки в строке среды (механика раунда 1) ----
     var SCN_SCREENS_MAX = 8;
@@ -6141,7 +6158,8 @@
               '<div class="acct" id="btScnAcct">' + scnAcctHtml() + '</div>'
             : scnHelloHtml();
         return '<div class="bts' + (sceneNight() ? ' night' : '') + '" id="btScene" data-stage="start" ' +
-            'data-tkt="' + tktVw + '" data-deck="' + (st.layers.deck ? 1 : 0) + '">' +
+            'data-tkt="' + tktVw + '" data-deck="' + (st.layers.deck ? 1 : 0) + '" ' +
+            'data-acct="' + (st.layers.acct ? 1 : 0) + '">' +
             envRowHtml() +
             '<div class="bts-glow"></div>' +
             body +
@@ -6173,7 +6191,7 @@
             // открытый росток заявок/позиций — жив теми же тиками
             if (stageObj().layers.deck) { scnSet('btScnDock', scnDockHtml()); scnDockFit(); }
             // открытый «Счёт» — деньги и итог дня живут тиками
-            if (stageObj().layers.acct) scnSet('btScnAcct', scnAcctHtml());
+            if (stageObj().layers.acct) { scnSet('btScnAcct', scnAcctHtml()); scnAcctFit(); }
         }
         scnSet('btScnPos', scnPosInner());
     }
@@ -6225,6 +6243,7 @@
         var h = (window.innerHeight - el.getBoundingClientRect().top) / z;
         if (h > 480) el.style.height = h + 'px';
         scnDockFit();
+        scnAcctFit();
     }
     // низ героя — от фактической высоты открытого ростка: она меняется
     // вкладкой дока, а зазор к ней обязан оставаться воздухом 12px
