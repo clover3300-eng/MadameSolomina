@@ -6099,6 +6099,9 @@
             try { chart.subscribeAction('onVisibleRangeChange', function () { scnKTags(); scnKProfile(); scnKCmp(); }); } catch (e) {}
             // плашка цены кроссхейра на стороне, противоположной оси
             try { chart.subscribeAction('onCrosshairChange', function (d) { scnKCross(d); scnKOhlc(d); scnKFillHover(d); }); } catch (e) {}
+            // курсор УШЁЛ с холста: движок onCrosshairChange «пусто» не шлёт —
+            // плашка цены/OHLC зависали. Чистим руками по mouseleave (владелец 2026-07-24)
+            try { host.addEventListener('mouseleave', function () { scnKCross({}); scnKOhlc({}); scnKFillHover({}); }); } catch (e) {}
             try {
                 K.ro = new ResizeObserver(function () {
                     if (K.roRaf) return;
@@ -7186,7 +7189,7 @@
     // (владелец 2026-07-24: капслок-строка выбивалась из карточки). Живёт
     // отдельным хелпером: pftScProtClr пересобирает #btScnProt руками
     function scnProtHead() {
-        return '<div class="protb-h">Защита позиции<em>тейк-профит и стоп-лосс</em></div>';
+        return '<div class="protb-h">Защита позиции</div>';
     }
     // чипы в цвет плашек графика (владелец 2026-07-23 поверх мокапа: серая
     // строка «тейк · стоп» не читалась) — одна сущность = один язык цвета

@@ -1048,6 +1048,10 @@
 .bts .d-h { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
 .bts .d-h b { font: 400 14px var(--font-title); }
 .bts .d-h em { font: 400 10.5px var(--font-ui); font-style: normal; color: var(--dim); margin-left: auto; }
+/* в сплите заголовок «Стакан» — на одном уровне с «Заявка»: высоту той шапки
+   задаёт переключатель (~38px), центруем и роняем «Стакан» под неё (влад. 2026-07-24) */
+.bts .tkt-sub-depth .d-h { min-height: 38px; align-items: center; }
+.bts .tkt-sub-depth .d-h b { font-size: 17px; }
 /* стакан без серых подложек (владелец 2026-07-23 «раздражает»): объём —
    мягкий градиент ЗА числом лотов, крупная стена (d-big) гуще и жирнее,
    лучшие цены у спреда (d-best) — акцентом. Ширина по sqrt-шкале, тик
