@@ -242,10 +242,11 @@
    («что нужно знать», разбивка, средняя, распорка) прячутся — деньги,
    цена, защита и кнопка остаются (владелец 2026-07-24) */
 .bts[data-acct="1"] .tkt { bottom: var(--bts-acct, 330px); overflow: hidden; }
+/* распорка ОСТАЁТСЯ: кнопка прижата к низу карточки, не висит в середине
+   (владелец 2026-07-24); при нехватке высоты flex сожмёт её сам */
 .bts[data-acct="1"] .tkt .know,
 .bts[data-acct="1"] .tkt .knowx,
-.bts[data-acct="1"] .tkt .apx,
-.bts[data-acct="1"] .tkt .tkt-space { display: none; }
+.bts[data-acct="1"] .tkt .apx { display: none; }
 /* сплит + счёт: жмётся ТОЛЬКО карточка сделки — стакан держит полную
    высоту, дыры под ним нет (владелец 2026-07-24, скрин). Высота сделки =
    контейнер минус счёт с зазором (--bts-acct = высота счёта + 96 + 12) */
@@ -451,10 +452,27 @@
     border-radius: 6px; padding: 1px 6px;
 }
 .bts .ps-ord i { font-style: normal; font-size: 9px; }
-/* обе ручки ростка слева у «Моих позиций»; «счёт» один у правого края,
-   под своей картой (владелец 2026-07-24) — со свободными деньгами, чтобы
-   не стоял голым словом: ровня ярлыку позиций с итогом портфеля */
-.bts .ps-acct { margin-left: auto; }
+/* «счёт» один у правого края, под своей картой — ЧИПОМ в идиоме плиток
+   позиций (владелец 2026-07-24: голый текст в углу не смотрелся):
+   карточка-кнопка со свободными деньгами, открытый — акцентная рамка */
+.bts .ps-acct {
+    flex: none; margin-left: auto;
+    display: inline-flex; align-items: center; gap: 6px;
+    font: 800 10.5px var(--font-ui); letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--dim); border: 1px solid var(--line); background: var(--card);
+    border-radius: 11px; padding: 7px 12px; backdrop-filter: blur(10px);
+    cursor: pointer; user-select: none; white-space: nowrap;
+}
+.bts .ps-acct:hover {
+    color: var(--ink);
+    border-color: color-mix(in srgb, var(--acc) 40%, transparent);
+    box-shadow: 0 10px 24px -12px rgba(15, 23, 42, 0.35);
+}
+.bts .ps-acct.on {
+    color: var(--ink);
+    border-color: color-mix(in srgb, var(--acc) 50%, transparent);
+    background: color-mix(in srgb, var(--acc) 7%, var(--card));
+}
 .bts .ps-acct u {
     text-decoration: none; font: 400 10px var(--font-ui);
     letter-spacing: 0.02em; text-transform: none; color: var(--dim);
@@ -463,6 +481,8 @@
     font: 600 11px var(--font-num); color: var(--mut); letter-spacing: 0;
     background: none; border-radius: 0; padding: 0;
 }
+.bts .ps-acct.on b { color: var(--ink); }
+.bts .ps-acct i { font-style: normal; font-size: 9px; }
 .bts .ps-chip {
     display: inline-flex; align-items: center; gap: 8px;
     border: 1px solid var(--line); background: var(--card);

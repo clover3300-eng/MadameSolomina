@@ -4822,10 +4822,11 @@
         // деньгами (владелец 2026-07-24: голое слово «счёт» стояло одиноко) —
         // ровня ярлыку «Мои позиции» с итогом портфеля
         var free = T.pos.money;
-        var acctBtn = '<button type="button" class="ps-ord ps-acct" onclick="pftScAcct()" ' +
+        var acctOn = !!stageObj().layers.acct;
+        var acctBtn = '<button type="button" class="ps-acct' + (acctOn ? ' on' : '') + '" onclick="pftScAcct()" ' +
             'title="Деньги и итог счёта">счёт' +
             (free != null ? ' <u>свободно</u> <b>' + fmtRub(free) + '</b>' : '') +
-            ' <i>' + (stageObj().layers.acct ? '▴' : '▾') + '</i></button>';
+            ' <i>' + (acctOn ? '▴' : '▾') + '</i></button>';
         if (!list.length) {
             // позиций ещё нет, но росток должен быть достижим — полоса-минимум
             return lab + ordBtn + '<em class="ps-none">пока пусто</em>' + acctBtn;
@@ -6108,6 +6109,7 @@
             var lim = el.clientHeight - 122 - TKT_MIN_H;   // тикету — минимум
             el.style.setProperty('--bts-acct', Math.max(96 + 12, Math.min(want, lim)) + 'px');
         } else el.style.removeProperty('--bts-acct');
+        scnDockFit();   // высота счёта — минимум высоты ростка (верхи вровень)
         // глубина карточного стакана зависит от высоты — пересчитать после пружины
         clearTimeout(scnAcctFit._t);
         scnAcctFit._t = setTimeout(function () {
@@ -6281,8 +6283,17 @@
         var el = dq('btScene'), d = dq('btScnDock');
         if (!el) return;
         // 96 — низ ростка выровнен с низом карточки сделки (владелец 2026-07-23)
-        if (d && d.childElementCount) el.style.setProperty('--bts-dock', (d.offsetHeight + 96 + 12) + 'px');
-        else el.style.removeProperty('--bts-dock');
+        if (d && d.childElementCount) {
+            // при открытом «Счёте» верх ростка — на линии верха его карточки
+            // (владелец 2026-07-24): низы у обоих 96, равняем высоты
+            var a = dq('btScnAcct');
+            var ah = a && a.childElementCount ? a.offsetHeight : 0;
+            d.style.minHeight = ah ? ah + 'px' : '';
+            el.style.setProperty('--bts-dock', (d.offsetHeight + 96 + 12) + 'px');
+        } else {
+            if (d) d.style.minHeight = '';
+            el.style.removeProperty('--bts-dock');
+        }
     }
     window.addEventListener('resize', scnFit);
     var sxT = null;
