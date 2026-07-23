@@ -288,6 +288,32 @@
     background: color-mix(in srgb, var(--grn) 15%, transparent); color: var(--grn);
     box-shadow: 0 1px 6px -2px color-mix(in srgb, var(--grn) 35%, transparent);
 }
+/* ИКОНОЧНЫЙ переключатель (владелец 2026-07-24): заголовок слева называет режим,
+   значки справа; активный залит акцентом, стакан — зелёным. .freshw уже
+   margin-left:auto (см. выше) — заголовок слева, чип+значки прижаты вправо */
+.bts .tkt-h .tkt-title { font: 400 17px var(--font-title); letter-spacing: -0.01em; }
+.bts .tkt-h .iseg { margin-left: 6px; }
+.bts .iseg {
+    display: inline-flex; gap: 3px; flex: none;
+    border: 1px solid var(--line); border-radius: 11px; padding: 3px; background: var(--bg);
+}
+.bts .iseg .it {
+    width: 34px; height: 30px; display: grid; place-items: center;
+    border-radius: 8px; color: var(--mut); cursor: pointer;
+    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+}
+.bts .iseg .it .ico { width: 18px; height: 18px; display: grid; place-items: center; }
+.bts .iseg .it .ico svg { width: 18px; height: 18px; display: block; }
+.bts .iseg .it:hover { color: var(--ink); background: var(--hair); }
+.bts .iseg .it.on {
+    background: var(--acc); color: #fff;
+    box-shadow: 0 5px 13px -6px color-mix(in srgb, var(--acc) 90%, transparent);
+}
+.bts .iseg .it.on:hover { background: var(--acc); color: #fff; }
+.bts .iseg .it.on.book {
+    background: var(--grn);
+    box-shadow: 0 5px 13px -6px color-mix(in srgb, var(--grn) 90%, transparent);
+}
 /* стакан на всю карточку (вид «Стакан») */
 .bts .tkt-depth { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
 /* заголовок стакана в карточках — тем же кеглем, что вкладки заявки */
@@ -1059,7 +1085,41 @@
     font: 400 12.5px var(--font-ui); color: var(--mut);
     border-top: 1px solid var(--hair); padding-top: 10px;
 }
+.bts .know { cursor: pointer; }
 .bts .know u { text-decoration: none; margin-left: auto; color: var(--acc); font-weight: 600; cursor: pointer; }
+/* «что нужно знать» РАСКРЫТО — три факта с иконками (владелец 2026-07-24):
+   короткий жирный вывод + тихая расшифровка, глаз цепляет за секунду */
+.bts .know2 {
+    border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+    background: color-mix(in srgb, var(--acc) 4%, var(--card));
+}
+.bts .know2-h {
+    display: flex; align-items: center; gap: 8px; padding: 11px 14px 9px;
+    font: 400 13.5px var(--font-title); color: var(--ink);
+}
+.bts .know2-h .k2q, .bts .know .k2q {
+    flex: none; width: 22px; height: 22px; border-radius: 7px;
+    background: color-mix(in srgb, var(--acc) 12%, transparent); color: var(--acc);
+    display: grid; place-items: center;
+}
+.bts .know2-h .k2q svg, .bts .know .k2q svg { width: 13px; height: 13px; }
+.bts .know2-h .know-x {
+    margin-left: auto; font: 600 11px var(--font-ui); font-style: normal;
+    color: var(--dim); cursor: pointer; padding: 2px 7px; border-radius: 7px;
+}
+.bts .know2-h .know-x:hover { background: var(--hair); color: var(--ink); }
+.bts .know2-b { display: flex; flex-direction: column; padding: 0 14px 6px; }
+.bts .k2 { display: flex; gap: 12px; align-items: flex-start; padding: 9px 0; }
+.bts .k2 + .k2 { border-top: 1px solid var(--hair); }
+.bts .k2ic {
+    flex: none; width: 28px; height: 28px; border-radius: 9px;
+    background: var(--card); border: 1px solid var(--line);
+    display: grid; place-items: center; color: var(--acc);
+}
+.bts .k2ic svg { width: 16px; height: 16px; }
+.bts .k2t > b { display: block; font: 600 12.5px var(--font-ui); color: var(--ink); margin-bottom: 1px; }
+.bts .k2t > span { font: 400 12px/1.45 var(--font-ui); color: var(--mut); }
+.bts .k2t > span b { font: 600 12px var(--font-num); color: var(--ink); }
 /* карточка-предложение порога: тихо у края, не модал */
 /* поповер звоночка: подписка на достижение цены */
 .bts .bellpop {

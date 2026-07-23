@@ -5088,26 +5088,36 @@
         // первая строка обязана видеть лимитку (владелец 2026-07-23: тикет с
         // лимиткой говорил «по рыночной цене» — враньё), lim — цена слота
         var lim = s.kind === 'limit' && +s.price > 0 ? fmtPx(+s.price, s) + ' ₽' : '';
-        var first = buy
-            ? (lim ? 'Купится по вашей лимитной цене <b>' + lim + '</b> или дешевле — дороже никогда.'
-                : 'Купится по рыночной цене — сейчас <b>' + px + '</b> за ' + (isBond(s) ? 'облигацию' : 'акцию') + '.')
-            : (lim ? 'Продастся по вашей лимитной цене <b>' + lim + '</b> или дороже — дешевле никогда.'
-                : 'Продастся по рыночной цене — сейчас <b>' + px + '</b> за ' + (isBond(s) ? 'облигацию' : 'акцию') + '.');
-        var rows = buy ? [
-            first,
-            'Комиссия ' + feeTxt() + ' % уже в сумме кнопки — списаний сверх неё не будет.',
-            'Передумать можно, пока заявка не исполнена.'
-        ] : [
-            first,
-            'Комиссия ' + feeTxt() + ' % уже вычтена из суммы кнопки.',
-            'Если продаёте с прибылью, налог 13 % удержат по итогам года.'
-        ];
-        // ✕ живёт ВНУТРИ scnKnowHtml: тик сцены (scnSet btScnKnow) переписывает
-        // содержимое карточки, и вынесенная наружу ссылка «Свернуть» умирала
-        // с первым же тиком (владелец 2026-07-23: «блок нельзя закрыть»)
-        return '<em>Что нужно знать<i class="know-x" role="button" tabindex="0" aria-label="Свернуть" ' +
-            'onclick="pftScKnow()">✕</i></em>' +
-            rows.map(function (r) { return '<span>' + r + '</span>'; }).join('');
+        // три факта с иконками (владелец 2026-07-24): цена / комиссия / отмена(налог).
+        // Первый факт видит лимитку; жирным — числа. ✕ живёт ВНУТРИ (тик сцены
+        // scnSet btScnKnow переписывает содержимое — вынесенная наружу ссылка
+        // «Свернуть» умирала с первым тиком, владелец 2026-07-23)
+        var unit = isBond(s) ? 'облигацию' : 'акцию';
+        var f1t = lim ? 'Цена — ваша лимитная' : 'Цена — рыночная';
+        var f1 = buy
+            ? (lim ? 'купится по <b>' + lim + '</b> или дешевле — дороже никогда.'
+                : 'сейчас <b>' + px + '</b> за ' + unit + '; купится по ней или дешевле, дороже — никогда.')
+            : (lim ? 'продастся по <b>' + lim + '</b> или дороже — дешевле никогда.'
+                : 'сейчас <b>' + px + '</b> за ' + unit + '; продастся по ней или дороже, дешевле — никогда.');
+        var f2 = buy
+            ? '<b>' + feeTxt() + ' %</b> зашиты в кнопку — сверх «спишется» ничего не снимут.'
+            : '<b>' + feeTxt() + ' %</b> уже вычтены из суммы кнопки.';
+        var f3t = buy ? 'Можно передумать' : 'Налог — по итогам года';
+        var f3 = buy
+            ? 'пока заявка не исполнена — отмена бесплатна и мгновенна.'
+            : 'если продаёте с прибылью, 13 % удержат по итогам года.';
+        function k2(ic, t, d) {
+            return '<div class="k2"><span class="k2ic">' + ic + '</span>' +
+                '<span class="k2t"><b>' + t + '</b><span>' + d + '</span></span></div>';
+        }
+        return '<div class="know2-h"><span class="k2q">' + IC_KINFO + '</span>Что нужно знать перед ' +
+            (buy ? 'покупкой' : 'продажей') +
+            '<i class="know-x" role="button" tabindex="0" aria-label="Свернуть" onclick="pftScKnow()">свернуть</i></div>' +
+            '<div class="know2-b">' +
+                k2(IC_KTAG, f1t, f1) +
+                k2(IC_KPCT, 'Комиссия уже в сумме', f2) +
+                k2(buy ? IC_KUNDO : IC_KYEAR, f3t, f3) +
+            '</div>';
     }
     // ---- вид карточки тикета «Старта»: Сделка / Стакан / Сплит ----
     // (владелец 2026-07-23): стакан приходит прямо в карточку, сплит
@@ -5116,16 +5126,30 @@
         var v = stageObj().layers.tktView;
         return v === 'depth' || v === 'split' ? v : 'deal';
     }
+    // иконки переключателя (владелец 2026-07-24: три слова были шумом → значки,
+    // активный залит акцентом, стакан — зелёным). Заголовок слева называет режим:
+    // «Заявка» для сделки И сплита, «Стакан» только когда книга во всю карточку —
+    // слова «Сплит» заголовком нет
+    var IC_FORM = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3.2" width="12" height="13.6" rx="2.6"/><line x1="6.8" y1="7.3" x2="13.2" y2="7.3"/><line x1="6.8" y1="9.9" x2="11" y2="9.9"/><rect x="6.6" y="12.3" width="6.8" height="2.1" rx="1.05" fill="currentColor" stroke="none"/></svg>';
+    var IC_BOOK = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><line x1="6" y1="4.6" x2="15" y2="4.6"/><line x1="9.6" y1="7.3" x2="15" y2="7.3"/><line x1="9.6" y1="12.7" x2="15" y2="12.7"/><line x1="5" y1="15.4" x2="15" y2="15.4"/></svg>';
+    var IC_SPLIT = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.4" y="3.4" width="13.2" height="13.2" rx="2.8"/><line x1="9.7" y1="3.6" x2="9.7" y2="16.4"/><line x1="5.6" y1="7.2" x2="7.9" y2="7.2"/><line x1="5.6" y1="10" x2="7.9" y2="10"/><line x1="5.6" y1="12.8" x2="7.9" y2="12.8"/><line x1="11.6" y1="8" x2="14.6" y2="8"/><line x1="11.6" y1="11.4" x2="13.8" y2="11.4"/></svg>';
+    // иконки блока «что нужно знать»: инфо, ценник, процент, отмена, календарь(налог)
+    var IC_KINFO = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="10" cy="10" r="7"/><line x1="10" y1="9.4" x2="10" y2="13.4"/><circle cx="10" cy="6.7" r="0.5" fill="currentColor" stroke="currentColor" stroke-width="1.3"/></svg>';
+    var IC_KTAG = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3H16A1 1 0 0 1 17 4V9L9 17A1.4 1.4 0 0 1 7 17L3 13A1.4 1.4 0 0 1 3 11L11 3Z"/><circle cx="13" cy="6.9" r="1" fill="currentColor" stroke="none"/></svg>';
+    var IC_KPCT = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><line x1="5.5" y1="14.5" x2="14.5" y2="5.5"/><circle cx="7.1" cy="7.1" r="1.7"/><circle cx="12.9" cy="12.9" r="1.7"/></svg>';
+    var IC_KUNDO = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 8H12.3A3.6 3.6 0 0 1 12.3 15.2H8"/><polyline points="9 5 5.6 8 9 11"/></svg>';
+    var IC_KYEAR = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="13" height="12" rx="2.2"/><line x1="3.5" y1="8" x2="16.5" y2="8"/><line x1="7" y1="3" x2="7" y2="5.5"/><line x1="13" y1="3" x2="13" y2="5.5"/></svg>';
     function scnTktTabsHtml() {
-        // сегмент, как «Купить/Продать» ниже (владелец 2026-07-24: слова
-        // через дробь не читались кнопками — было непонятно, что жмётся)
         var v = scnTktView();
-        function tb(k, lab, cls) {
-            return '<b class="tt' + cls + (v === k ? ' on' : '') + '" role="tab" tabindex="0" ' +
-                'aria-selected="' + (v === k) + '" onclick="pftScTkt(\'' + k + '\')">' + lab + '</b>';
+        function it(k, icon, cls, tip) {
+            return '<span class="it' + (v === k ? ' on' + cls : '') + '" role="tab" tabindex="0" ' +
+                'aria-selected="' + (v === k) + '" title="' + tip + '" onclick="pftScTkt(\'' + k + '\')">' +
+                '<span class="ico">' + icon + '</span></span>';
         }
-        return '<span class="tkt-tabs" role="tablist">' + tb('deal', 'Сделка', '') +
-            tb('depth', 'Стакан', ' grn') + tb('split', 'Сплит', '') + '</span>';
+        return '<span class="iseg" role="tablist">' +
+            it('deal', IC_FORM, '', 'Заявка') +
+            it('depth', IC_BOOK, ' book', 'Стакан — книга во всю карточку') +
+            it('split', IC_SPLIT, '', 'Заявка со стаканом рядом') + '</span>';
     }
     window.pftScTkt = function (k) {
         var o = stageObj();
@@ -5144,8 +5168,13 @@
     function scnTicketHtml(n) {
         var s = S(n), buy = s.side !== 'sell';
         var vw = RP ? 'deal' : scnTktView();   // в реплее только «Сделка»
-        var head = '<div class="tkt-h">' + scnTktTabsHtml() +
-            '<span class="freshw" id="btScnFresh">' + scnFreshInner() + '</span></div>';
+        // заголовок называет режим: «Заявка» для сделки и сплита (в сплите ты
+        // всё ещё оформляешь заявку, книга рядом), «Стакан» — только когда книга
+        // занимает всю карточку; слова «Сплит» заголовком нет (владелец 2026-07-24)
+        var title = vw === 'depth' ? 'Стакан' : 'Заявка';
+        var head = '<div class="tkt-h"><b class="tkt-title">' + title + '</b>' +
+            '<span class="freshw" id="btScnFresh">' + scnFreshInner() + '</span>' +
+            scnTktTabsHtml() + '</div>';
         // стакан на всю карточку — глубже плоскости «Разгона»: высота позволяет
         if (vw === 'depth') {
             return head + '<div class="tkt-depth" id="btScnTkDepth" onmouseover="pftScDepthHov(event)" ' +
@@ -5192,9 +5221,10 @@
             // «что нужно знать» — тихая строка-ссылка на всех ступенях
             // (середину колонки заняли строки цены и защиты, как на «Контроле»)
             (scnKnowOpen
-                ? '<div class="knowx" id="btScnKnow">' + scnKnowHtml(n) + '</div>'
-                : '<div class="know">🛈 Что нужно знать перед ' + (buy ? 'покупкой' : 'продажей') +
-                  '<u role="button" tabindex="0" onclick="pftScKnow()">Открыть</u></div>') +
+                ? '<div class="know2" id="btScnKnow">' + scnKnowHtml(n) + '</div>'
+                : '<div class="know" role="button" tabindex="0" onclick="pftScKnow()">' +
+                  '<span class="k2q">' + IC_KINFO + '</span>Что нужно знать перед ' + (buy ? 'покупкой' : 'продажей') +
+                  '<u>3 факта ›</u></div>') +
             '<div class="rest" id="btScnRest">' + scnRestHtml(n) + '</div>' +
             '<div class="ctaw" id="btScnCta">' + scnCtaHtml(n) + '</div>';
         // сплит: карточка раздваивается — стакан слева, заявка справа;
