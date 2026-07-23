@@ -253,6 +253,9 @@
 /* распорка ОСТАЁТСЯ: кнопка прижата к низу карточки, не висит в середине
    (владелец 2026-07-24); при нехватке высоты flex сожмёт её сам */
 .bts[data-acct="1"] .tkt .know,
+.bts[data-acct="1"] .tkt .know2,
+.bts[data-acct="1"] .tkt .sum,
+.bts[data-acct="1"] .tkt .protb,
 .bts[data-acct="1"] .tkt .knowx,
 .bts[data-acct="1"] .tkt .apx { display: none; }
 /* сплит + счёт: жмётся ТОЛЬКО карточка сделки — стакан держит полную

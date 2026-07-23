@@ -5057,7 +5057,19 @@
     // полная пересборка тикета (строки добавились/ушли) + повторная привязка полей
     function scnTicketRedraw(n) {
         var el = dq('btScnTicket');
-        if (el) { el.innerHTML = scnTicketHtml(n); sxWire(); }
+        if (!el) return;
+        // в сплите обычная перерисовка трогает ТОЛЬКО карточку сделки (#btScnDeal):
+        // карточка стакана рядом не моргает и не переанимируется от кнопок сделки
+        // (владелец 2026-07-24). Смена самого вида (pftScTkt) меняет scnTktView до
+        // редрава → #btScnDeal либо ещё нет, либо вид уже не split → полный рендер
+        var deal = dq('btScnDeal');
+        if (deal && scnTktView() === 'split') {
+            deal.innerHTML = scnDealHtml(n);
+            sxWire();
+            return;
+        }
+        el.innerHTML = scnTicketHtml(n);
+        sxWire();
     }
     function scnPresetsHtml(n) {
         var s = S(n), buy = s.side !== 'sell';
@@ -5214,38 +5226,24 @@
         if (el) el.classList.toggle('tkt-x2', k === 'split');
         scnTicketRedraw(sxSlot());
     };
-    function scnTicketHtml(n) {
+    // тело карточки СДЕЛКИ (заголовок «Заявка» + всё до кнопки). Вынесено в
+    // отдельную функцию (владелец 2026-07-24): в сплите перерисовка сделки не
+    // должна трогать карточку стакана рядом — scnTicketRedraw патчит #btScnDeal
+    function scnDealHtml(n) {
         var s = S(n), buy = s.side !== 'sell';
-        var vw = RP ? 'deal' : scnTktView();   // в реплее только «Сделка»
-        // заголовок называет режим: «Заявка» для сделки и сплита (в сплите ты
-        // всё ещё оформляешь заявку, книга рядом), «Стакан» — только когда книга
-        // занимает всю карточку; слова «Сплит» заголовком нет (владелец 2026-07-24)
-        var title = vw === 'depth' ? 'Стакан' : 'Заявка';
-        var head = '<div class="tkt-h"><b class="tkt-title">' + title + '</b>' +
+        var head = '<div class="tkt-h"><b class="tkt-title">Заявка</b>' +
             '<span class="freshw" id="btScnFresh">' + scnFreshInner() + '</span>' +
             scnTktTabsHtml() + '</div>';
-        // стакан на всю карточку — глубже плоскости «Разгона»: высота позволяет
-        if (vw === 'depth') {
-            return head + '<div class="tkt-depth" id="btScnTkDepth" onmouseover="pftScDepthHov(event)" ' +
-                'onmouseleave="pftScDepthHovOff()">' + scnDepthHtml(s, 1, scnDepthDeep()) + '</div>';
-        }
-        // облигации ПУЩЕНЫ в тикет (владелец 2026-07-23): вся сцена живёт в
-        // рублях (bondKOf на границах данных), НКД уже в расчёте simpleBuyCalc/
-        // simpleSellCalc (aci за штуку) — «спишется» честно включает купон.
-        // Единицы на живом счёте всё же сверить при первой реальной сделке.
-        // «свободно» живёт у поля суммы (решение набора). Обёртка с id всегда
-        // на месте: деньги приходят ПОЗЖЕ первого рендера (pollPos), и без неё
-        // подпись не появлялась бы до полной перерисовки сцены
+        // облигации ПУЩЕНЫ в тикет (владелец 2026-07-23): вся сцена в рублях
+        // (bondKOf на границах), НКД в simpleBuyCalc. «свободно» живёт у поля
+        // суммы; обёртка с id всегда на месте (деньги приходят позже, pollPos)
         var cap = buy ? '<span class="fld-cap" id="btScnCap">' + scnCapInner() + '</span>' : '';
         var have = haveQty(s);
         var unit = unitOf(s);
         var uTxt = unit === 'rub' ? '₽'
             : (buy ? 'шт · лот ' + ((s.meta && s.meta.lot) || 1) : 'шт из ' + have.toLocaleString('ru-RU'));
-        // «Сколько и почём» — цена и сумма ОДНИМ блоком с делителем (владелец
-        // 2026-07-24): это один вопрос, а не два поля. Строка цены — верхний ряд
-        // (лимит редактируется #btScnLimIn), сумма — нижний со слайдером доли и
-        // пресетами. Защита позиции (живые стоп-заявки) — ниже квитанции; в
-        // реплее её нет. Линии на графике ведёт scnKProt — одна сущность
+        // «Сколько и почём» — цена и сумма ОДНИМ блоком с делителем: строка цены
+        // (лимит редактируется #btScnLimIn), сумма со слайдером доли и пресетами
         var priceRow = '<div class="row" id="btScnPx">' + scnPriceRowInner(n) + '</div>';
         var sumRow = '<div class="row" id="btScnFld">' +
             '<div class="lab">' + (unit === 'rub' ? 'Сумма' : 'Количество') + cap + '</div>' +
@@ -5263,7 +5261,7 @@
         // защита позиции — про живые стоп-заявки брокера: в реплее её нет
         var protRow = RP ? '' :
             '<div class="protb" id="btScnProt">' + scnProtHead() + scnProtInner(n) + '</div>';
-        var deal = head +
+        return head +
             '<div class="seg">' +
                 '<span class="' + (buy ? 'on' : '') + '" role="button" tabindex="0" onclick="pftSxSide(\'buy\')">Купить</span>' +
                 '<span class="' + (buy ? '' : 'on sell') + '" role="button" tabindex="0" onclick="pftSxSide(\'sell\')">Продать</span></div>' +
@@ -5273,23 +5271,33 @@
             protRow +
             '<div class="warn" id="btScnWarn">' + scnWarnHtml(n) + '</div>' +
             '<div class="tkt-space"></div>' +
-            // «что нужно знать» — тихая строка-ссылка на всех ступенях
-            // (середину колонки заняли строки цены и защиты, как на «Контроле»)
             (scnKnowOpen
                 ? '<div class="know2" id="btScnKnow">' + scnKnowHtml(n) + '</div>'
                 : '<div class="know" role="button" tabindex="0" onclick="pftScKnow()">' +
                   '<span class="k2q">' + IC_KINFO + '</span>Что нужно знать перед ' + (buy ? 'покупкой' : 'продажей') +
                   '<u>3 факта ›</u></div>') +
             '<div class="ctaw" id="btScnCta">' + scnCtaHtml(n) + '</div>';
-        // сплит: карточка раздваивается — стакан слева, заявка справа;
-        // ширину контейнера и сжатие героя анимирует CSS (data-tkt на сцене)
+    }
+    function scnTicketHtml(n) {
+        var s = S(n);
+        var vw = RP ? 'deal' : scnTktView();   // в реплее только «Сделка»
+        // стакан на всю карточку — заголовок «Стакан» в шапке (слова «Сплит» нет)
+        if (vw === 'depth') {
+            var head = '<div class="tkt-h"><b class="tkt-title">Стакан</b>' +
+                '<span class="freshw" id="btScnFresh">' + scnFreshInner() + '</span>' +
+                scnTktTabsHtml() + '</div>';
+            return head + '<div class="tkt-depth" id="btScnTkDepth" onmouseover="pftScDepthHov(event)" ' +
+                'onmouseleave="pftScDepthHovOff()">' + scnDepthHtml(s, 1, scnDepthDeep()) + '</div>';
+        }
+        // сплит: стакан слева (своя карточка), заявка справа с id #btScnDeal —
+        // именно её точечно перерисовывает scnTicketRedraw, стакан не моргает
         if (vw === 'split') {
             return '<div class="tkt-sub tkt-sub-depth"><div class="tkt-depth" id="btScnTkDepth" ' +
                     'onmouseover="pftScDepthHov(event)" onmouseleave="pftScDepthHovOff()">' +
                     scnDepthHtml(s, 0, scnDepthDeep()) + '</div></div>' +
-                '<div class="tkt-sub tkt-sub-deal">' + deal + '</div>';
+                '<div class="tkt-sub tkt-sub-deal" id="btScnDeal">' + scnDealHtml(n) + '</div>';
         }
-        return deal;
+        return scnDealHtml(n);
     }
 
     // ---- полоса позиций: чипы вместо таблицы (мокап 03, пины 6–7) ----
