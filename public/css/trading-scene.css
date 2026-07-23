@@ -604,21 +604,37 @@
 .bts .d-h { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
 .bts .d-h b { font: 400 14px var(--font-title); }
 .bts .d-h em { font: 400 10.5px var(--font-ui); font-style: normal; color: var(--dim); margin-left: auto; }
+/* стакан без серых подложек (владелец 2026-07-23 «раздражает»): объём —
+   мягкий градиент ЗА числом лотов, крупная стена (d-big) гуще и жирнее,
+   лучшие цены у спреда (d-best) — акцентом. Ширина по sqrt-шкале, тик
+   патчит живые узлы — transition даёт стакану «дышать» */
 .bts .d-row {
-    display: grid; grid-template-columns: 62px 1fr 50px;
-    align-items: center; gap: 8px; height: 24px; flex: none;
-    font: 400 12px var(--font-num); cursor: pointer; border-radius: 5px;
+    position: relative; display: flex; align-items: center; justify-content: space-between;
+    height: 24px; flex: none; padding: 0 8px; overflow: hidden;
+    font: 400 12px var(--font-num); cursor: pointer; border-radius: 6px;
 }
-.bts .d-row:hover { background: color-mix(in srgb, var(--acc) 7%, transparent); }
-.bts .d-row .pr { font-weight: 600; }
+.bts .d-row:hover { background: color-mix(in srgb, var(--acc) 8%, transparent); }
+.bts .d-fill {
+    position: absolute; top: 3px; bottom: 3px; right: 0;
+    border-radius: 4px 0 0 4px; pointer-events: none;
+    transition: width 0.6s ease;
+}
+.bts .d-ask .d-fill { background: linear-gradient(to left, color-mix(in srgb, var(--red) 15%, transparent), transparent); }
+.bts .d-bid .d-fill { background: linear-gradient(to left, color-mix(in srgb, var(--grn) 15%, transparent), transparent); }
+.bts .d-ask.d-big .d-fill { background: linear-gradient(to left, color-mix(in srgb, var(--red) 30%, transparent), color-mix(in srgb, var(--red) 4%, transparent)); }
+.bts .d-bid.d-big .d-fill { background: linear-gradient(to left, color-mix(in srgb, var(--grn) 30%, transparent), color-mix(in srgb, var(--grn) 4%, transparent)); }
+.bts .d-row .pr { font-weight: 600; position: relative; }
 .bts .d-ask .pr { color: var(--red); }
 .bts .d-bid .pr { color: var(--grn); }
-.bts .d-bar { position: relative; height: 14px; border-radius: 4px; overflow: hidden; background: var(--hair); }
-.bts .d-bar i { position: absolute; top: 0; bottom: 0; border-radius: 4px; }
-.bts .d-ask .d-bar i { right: 0; background: color-mix(in srgb, var(--red) 30%, transparent); }
-.bts .d-bid .d-bar i { left: 0; background: color-mix(in srgb, var(--grn) 30%, transparent); }
-.bts .d-vol { color: var(--dim); text-align: right; }
-.bts .d-spread { display: flex; align-items: center; gap: 8px; margin: 5px 0; font: 400 10px var(--font-ui); color: var(--dim); flex: none; }
+.bts .d-best .pr { font-weight: 700; font-size: 12.5px; }
+.bts .d-vol { color: var(--dim); text-align: right; position: relative; font-variant-numeric: tabular-nums; }
+.bts .d-big .d-vol { color: var(--ink); font-weight: 600; }
+.bts .d-spread { display: flex; align-items: center; gap: 10px; margin: 6px 0; font: 400 10px var(--font-ui); color: var(--dim); flex: none; }
+.bts .d-spread b {
+    font: 600 10px var(--font-num); color: var(--mut); white-space: nowrap;
+    border: 1px solid var(--hair); border-radius: 999px; padding: 2px 10px;
+    background: color-mix(in srgb, var(--card) 60%, transparent);
+}
 .bts .d-spread i { flex: 1; height: 1px; background: var(--line); }
 .bts .d-spread b { font: 600 9.5px var(--font-num); color: var(--mut); }
 /* лента-пульс: строка, не панель */
@@ -755,7 +771,7 @@
 .bts .pane-line { flex: 1; min-height: 0; position: relative; }
 .bts .pane-line svg { position: absolute; inset: 0; width: 100%; height: 100%; }
 .bts .pane-tape { flex: 1; overflow: hidden; }
-.bts .d-row.d-t { grid-template-columns: 62px 1fr 52px; cursor: default; }
+.bts .d-row.d-t { display: grid; grid-template-columns: 62px 1fr 52px; gap: 8px; cursor: default; }
 .bts .d-row.d-t:hover { background: none; }
 .bts .d-t .tt { color: var(--dim); }
 .bts .d-t .pr.g { color: var(--grn); }

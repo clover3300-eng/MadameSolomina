@@ -5499,6 +5499,50 @@
     // Брокер отдаёт аски от лучшего — на экран идут в ОБРАТНОМ порядке.
     var SCN_DEPTH = 6;        // плоскость «Разгона»/«Контроля»: высота делится с графиком
     var SCN_DEPTH_CARD = 10;  // стакан карточной высоты («Стакан»/«Сплит» на «Старте»)
+    // данные стакана для рендера И для точечного патча (scnDepthSet):
+    // sqrt-шкала ширины (видны и средние объёмы, не только «стена»),
+    // d-big — крупная стена (≥60% максимума), d-best — цены у спреда,
+    // title — цена уровня в рублях (px · лоты · лот)
+    function scnDepthData(s, lim) {
+        var q2n = A().q2n;
+        function take(arr) {
+            return (arr || []).slice(0, lim).map(function (l) {
+                return { px: q2n(l.price), lots: +l.quantity || 0 };
+            }).filter(function (l) { return l.px > 0; });
+        }
+        var asks = take(s.ob.asks), bids = take(s.ob.bids);
+        var maxLots = 1;
+        asks.concat(bids).forEach(function (l) { if (l.lots > maxLots) maxLots = l.lots; });
+        var lot = (s.meta && s.meta.lot) || 1;
+        function dress(l, side, best) {
+            l.w = Math.max(6, Math.round(Math.sqrt(l.lots / maxLots) * 100));
+            l.cls = 'd-row ' + side + (l.lots >= maxLots * 0.6 ? ' d-big' : '') + (best ? ' d-best' : '');
+            l.rub = '≈ ' + Math.round(l.px * l.lots * lot).toLocaleString('ru-RU') + ' ₽ на уровне';
+            return l;
+        }
+        // ЛОВУШКА мокапа: лучшая продажа стоит У СПРЕДА — аски в обратном
+        // порядке, их «лучший» на экране ПОСЛЕДНИЙ; у бидов — первый
+        var dispAsks = asks.slice().reverse().map(function (l, i) {
+            return dress(l, 'd-ask', i === asks.length - 1);
+        });
+        var dispBids = bids.map(function (l, i) { return dress(l, 'd-bid', i === 0); });
+        return { asks: dispAsks, bids: dispBids, sp: spreadInfo(s) };
+    }
+    function scnSpreadTxt(s, sp) {
+        if (!sp) return 'спред —';
+        var pct = sp.pct * 100;
+        return 'спред ' + fmtPx(sp.ask - sp.bid, s) + ' · ' +
+            (pct < 0.005 ? '<0,01' : pct.toLocaleString('ru-RU', { maximumFractionDigits: 2 })) + ' %';
+    }
+    function scnDepthRow(l, s) {
+        // заливка — мягкий градиент ЗА числом лотов, без серых подложек:
+        // длиннее заливка → крупнее уровень, стена подсвечена гуще (d-big)
+        return '<div class="' + l.cls + '" role="button" tabindex="0" data-px="' + l.px + '" ' +
+            'title="' + l.rub + '" onclick="pftScPickPx(+this.dataset.px)">' +
+            '<i class="d-fill" style="width:' + l.w + '%"></i>' +
+            '<span class="pr">' + fmtPx(l.px, s) + '</span>' +
+            '<span class="d-vol">' + l.lots.toLocaleString('ru-RU') + '</span></div>';
+    }
     function scnDepthHtml(s, slim, deep) {
         // slim — стакан внутри карточки тикета «Старта»: слово «Стакан» уже
         // на вкладке карточки, остаётся только подсказка жеста.
@@ -5508,31 +5552,14 @@
             ? '<div class="d-h"><em>клик по цене — лимитка</em></div>'
             : '<div class="d-h"><b>Стакан</b><em>клик — лимитка</em></div>';
         if (!s.ob) return head + '<div class="bts-cnote">Ждём стакан…</div>';
-        var q2n = A().q2n;
-        var lim = deep || SCN_DEPTH;
-        function take(arr) {
-            return (arr || []).slice(0, lim).map(function (l) {
-                return { px: q2n(l.price), lots: +l.quantity || 0 };
-            }).filter(function (l) { return l.px > 0; });
-        }
-        var asks = take(s.ob.asks), bids = take(s.ob.bids);
-        var maxLots = 1;
-        asks.concat(bids).forEach(function (l) { if (l.lots > maxLots) maxLots = l.lots; });
-        function row(l, cls) {
-            return '<div class="d-row ' + cls + '" role="button" tabindex="0" ' +
-                'onclick="pftScPickPx(' + l.px + ')">' +
-                '<span class="pr">' + fmtPx(l.px, s) + '</span>' +
-                '<span class="d-bar"><i style="width:' + Math.max(4, Math.round(l.lots / maxLots * 100)) + '%"></i></span>' +
-                '<span class="d-vol">' + l.lots.toLocaleString('ru-RU') + '</span></div>';
-        }
+        var d = scnDepthData(s, deep || SCN_DEPTH);
         // пустую сторону неликвида показываем, не прячем (экран 11): рыночной
         // цены без неё не существует — кнопку тикета гасит scnSubmitBlock
-        var sp = spreadInfo(s);
-        var askPart = asks.length
-            ? asks.slice().reverse().map(function (l) { return row(l, 'd-ask'); }).join('')
+        var askPart = d.asks.length
+            ? d.asks.map(function (l) { return scnDepthRow(l, s); }).join('')
             : '<div class="eg-empty">продавцов сейчас нет — спред не определён</div>';
-        var bidPart = bids.length
-            ? bids.map(function (l) { return row(l, 'd-bid'); }).join('')
+        var bidPart = d.bids.length
+            ? d.bids.map(function (l) { return scnDepthRow(l, s); }).join('')
             : '<div class="eg-empty">покупателей сейчас нет — спред не определён</div>';
         // карточная высота (deep): пустой низ занимает раскрываемый блок
         // «Последние сделки» — та же лента, что кормит «Разгон»; открытый
@@ -5547,8 +5574,50 @@
             '</div>';
         }
         return head + askPart +
-            '<div class="d-spread"><i></i><b>' + (sp ? 'спред ' + fmtPx(sp.ask - sp.bid, s) : 'спред —') + '</b><i></i></div>' +
+            '<div class="d-spread"><i></i><b>' + scnSpreadTxt(s, d.sp) + '</b><i></i></div>' +
             bidPart + tape;
+    }
+    // тик стакана: та же структура — патчим ЖИВЫЕ узлы (цены, лоты, ширины
+    // заливок), а не innerHTML: css-transition ширины даёт стакану «дышать».
+    // Структура сменилась (число уровней, лента, пустая сторона) — полный рендер
+    function scnDepthSet(id, s, slim, deep) {
+        var el = dq(id);
+        if (!el) return;
+        var d = s.ob ? scnDepthData(s, deep || SCN_DEPTH) : null;
+        var sig = [slim ? 1 : 0, deep || 0, d ? d.asks.length : -1, d ? d.bids.length : -1,
+            deep && stageObj().layers.depthTape ? 1 : 0].join('|');
+        if (el.__btDSig !== sig) {
+            el.__btDSig = sig;
+            el.__btHtml = null;   // после патчей строковый кэш scnSet врал бы
+            el.innerHTML = scnDepthHtml(s, slim, deep);
+            return;
+        }
+        if (!d) return;
+        var rows = el.querySelectorAll('.d-row:not(.d-t)');
+        var list = d.asks.concat(d.bids);
+        if (rows.length !== list.length) { el.__btDSig = null; scnDepthSet(id, s, slim, deep); return; }
+        list.forEach(function (l, i) {
+            var r = rows[i];
+            if (r.className !== l.cls) r.className = l.cls;
+            if (r.dataset.px !== String(l.px)) r.dataset.px = l.px;
+            if (r.title !== l.rub) r.title = l.rub;
+            var pr = r.firstChild.nextSibling, vol = pr.nextSibling;
+            var pt = fmtPx(l.px, s), vt = l.lots.toLocaleString('ru-RU');
+            if (pr.textContent !== pt) pr.textContent = pt;
+            if (vol.textContent !== vt) vol.textContent = vt;
+            var w = l.w + '%';
+            if (r.firstChild.style.width !== w) r.firstChild.style.width = w;
+        });
+        var spb = el.querySelector('.d-spread b');
+        if (spb) {
+            var st = scnSpreadTxt(s, d.sp);
+            if (spb.textContent !== st) spb.textContent = st;
+        }
+        var tb = el.querySelector('.d-tape-b');
+        if (tb) {
+            var th = scnTkTapeRows(s);
+            if (tb.__btHtml !== th) { tb.__btHtml = th; tb.innerHTML = th; }
+        }
     }
     function scnTkTapeRows(s) {
         // рядов с запасом на весь пробел карточки; лишнее срежет overflow
@@ -5568,7 +5637,7 @@
         o.layers.depthTape = o.layers.depthTape ? 0 : 1;
         saveStageRaw(o);
         var tv = scnTktView();
-        scnSet('btScnTkDepth', scnDepthHtml(S(sxSlot()), tv === 'depth' ? 1 : 0, SCN_DEPTH_CARD));
+        scnDepthSet('btScnTkDepth', S(sxSlot()), tv === 'depth' ? 1 : 0, SCN_DEPTH_CARD);
         if (o.layers.depthTape) pollTape(sxSlot());   // свежий залп, не ждём тика
     };
     // ---- лента-пульс: последние сделки одной строкой ----
@@ -6203,7 +6272,7 @@
             scnSet('btScnFresh', scnFreshInner());
             scnTicketBits();
             if (st === 'control') {
-                scnSet('btScnDepth', scnDepthHtml(s));
+                scnDepthSet('btScnDepth', s);
                 // шапки панелей: цена активной и второй бумаги — точечно
                 var ph = dq('btScnPaneP');
                 if (ph) scnSet('btScnPaneP', scnPaneInner(s));
@@ -6222,7 +6291,7 @@
             } else if (st === 'accel') {
                 scnSet('btScnPrice', scnPriceHtml(s));
                 scnSet('btScnTabs', scnTabsHtml());
-                scnSet('btScnDepth', scnDepthHtml(s));
+                scnDepthSet('btScnDepth', s);
                 scnSet('btScnTape', scnTapeHtml(s));
                 // свечи живут своим канвасом (движок), innerHTML их убил бы;
                 // линия — прежний точечный своп svg
@@ -6236,7 +6305,7 @@
                 scnSet('btScnKnow', scnKnowHtml(n));
                 // стакан в карточке тикета (вид «Стакан»/«Сплит») — жив тиками
                 var tv = scnTktView();
-                if (tv !== 'deal') scnSet('btScnTkDepth', scnDepthHtml(s, tv === 'depth' ? 1 : 0, SCN_DEPTH_CARD));
+                if (tv !== 'deal') scnDepthSet('btScnTkDepth', s, tv === 'depth' ? 1 : 0, SCN_DEPTH_CARD);
             }
             if (st !== 'control') scnSet('btScnUnlock', unlockHtml());
         }
