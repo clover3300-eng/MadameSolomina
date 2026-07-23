@@ -237,8 +237,15 @@
        (владелец 2026-07-24); поджатый тикет прячет лишнее сам (data-acct) */
     z-index: 10; overflow: visible;
 }
-/* открытый «Счёт» поджимает карточку сделки вверх (низ ведёт scnAcctFit) */
+/* открытый «Счёт» поджимает карточку сделки вверх (низ ведёт scnAcctFit).
+   Кнопка «Купить» обязана остаться видимой и рабочей: вторичные строки
+   («что нужно знать», разбивка, средняя, распорка) прячутся — деньги,
+   цена, защита и кнопка остаются (владелец 2026-07-24) */
 .bts[data-acct="1"] .tkt { bottom: var(--bts-acct, 330px); overflow: hidden; }
+.bts[data-acct="1"] .tkt .know,
+.bts[data-acct="1"] .tkt .knowx,
+.bts[data-acct="1"] .tkt .apx,
+.bts[data-acct="1"] .tkt .tkt-space { display: none; }
 .bts.night .tkt { box-shadow: 0 24px 60px -30px rgba(0, 0, 0, 0.55); background: color-mix(in srgb, var(--card) 92%, transparent); }
 .bts .tkt-h { display: flex; align-items: center; gap: 9px; }
 .bts .tkt-h b { font: 400 16px var(--font-title); }
@@ -437,8 +444,17 @@
 }
 .bts .ps-ord i { font-style: normal; font-size: 9px; }
 /* обе ручки ростка слева у «Моих позиций»; «счёт» один у правого края,
-   под своей картой (владелец 2026-07-24) */
+   под своей картой (владелец 2026-07-24) — со свободными деньгами, чтобы
+   не стоял голым словом: ровня ярлыку позиций с итогом портфеля */
 .bts .ps-acct { margin-left: auto; }
+.bts .ps-acct u {
+    text-decoration: none; font: 400 10px var(--font-ui);
+    letter-spacing: 0.02em; text-transform: none; color: var(--dim);
+}
+.bts .ps-acct b {
+    font: 600 11px var(--font-num); color: var(--mut); letter-spacing: 0;
+    background: none; border-radius: 0; padding: 0;
+}
 .bts .ps-chip {
     display: inline-flex; align-items: center; gap: 8px;
     border: 1px solid var(--line); background: var(--card);

@@ -4723,7 +4723,7 @@
             '<span class="freshw" id="btScnFresh">' + scnFreshInner() + '</span></div>';
         // стакан на всю карточку — глубже плоскости «Разгона»: высота позволяет
         if (vw === 'depth') {
-            return head + '<div class="tkt-depth" id="btScnTkDepth">' + scnDepthHtml(s, 1, SCN_DEPTH_CARD) + '</div>';
+            return head + '<div class="tkt-depth" id="btScnTkDepth">' + scnDepthHtml(s, 1, scnDepthDeep()) + '</div>';
         }
         // облигации ПУЩЕНЫ в тикет (владелец 2026-07-23): вся сцена живёт в
         // рублях (bondKOf на границах данных), НКД уже в расчёте simpleBuyCalc/
@@ -4774,7 +4774,7 @@
         // ширину контейнера и сжатие героя анимирует CSS (data-tkt на сцене)
         if (vw === 'split') {
             return '<div class="tkt-sub tkt-sub-depth"><div class="tkt-depth" id="btScnTkDepth">' +
-                    scnDepthHtml(s, 0, SCN_DEPTH_CARD) + '</div></div>' +
+                    scnDepthHtml(s, 0, scnDepthDeep()) + '</div></div>' +
                 '<div class="tkt-sub tkt-sub-deal">' + deal + '</div>';
         }
         return deal;
@@ -4818,9 +4818,14 @@
         var ordBtn = '<button type="button" class="ps-ord" onclick="pftScDeck(\'orders\')" ' +
             'title="Мои заявки панелью">заявки' + (nOrd ? ' <b>' + nOrd + '</b>' : '') +
             ' <i>' + (open && dockTab === 'orders' ? '▴' : '▾') + '</i></button>';
-        // ручка «Счёта» — у правого края, под своей картой (правый нижний угол)
+        // ручка «Счёта» — у правого края, под своей картой; со свободными
+        // деньгами (владелец 2026-07-24: голое слово «счёт» стояло одиноко) —
+        // ровня ярлыку «Мои позиции» с итогом портфеля
+        var free = T.pos.money;
         var acctBtn = '<button type="button" class="ps-ord ps-acct" onclick="pftScAcct()" ' +
-            'title="Деньги и итог счёта">счёт <i>' + (stageObj().layers.acct ? '▴' : '▾') + '</i></button>';
+            'title="Деньги и итог счёта">счёт' +
+            (free != null ? ' <u>свободно</u> <b>' + fmtRub(free) + '</b>' : '') +
+            ' <i>' + (stageObj().layers.acct ? '▴' : '▾') + '</i></button>';
         if (!list.length) {
             // позиций ещё нет, но росток должен быть достижим — полоса-минимум
             return lab + ordBtn + '<em class="ps-none">пока пусто</em>' + acctBtn;
@@ -5455,6 +5460,15 @@
     // Брокер отдаёт аски от лучшего — на экран идут в ОБРАТНОМ порядке.
     var SCN_DEPTH = 6;        // плоскость «Разгона»/«Контроля»: высота делится с графиком
     var SCN_DEPTH_CARD = 10;  // стакан карточной высоты («Стакан»/«Сплит» на «Старте»)
+    // уровней на сторону — ПО ФАКТИЧЕСКОЙ высоте карточного стакана: поджатый
+    // «Счётом» тикет не должен ни резать ряды, ни оставлять пустоту (владелец
+    // 2026-07-24). ~96px — шапка + спред + свёрнутая лента, ряд 24px
+    function scnDepthDeep() {
+        var el = dq('btScnTkDepth');
+        if (!el || !el.clientHeight) return SCN_DEPTH_CARD;
+        var per = Math.floor((el.clientHeight - 96) / 24 / 2);
+        return Math.max(4, Math.min(SCN_DEPTH_CARD, per));
+    }
     // данные стакана для рендера И для точечного патча (scnDepthSet):
     // sqrt-шкала ширины (видны и средние объёмы, не только «стена»),
     // d-big — крупная стена (≥60% максимума), d-best — цены у спреда,
@@ -5619,7 +5633,7 @@
         o.layers.depthTape = o.layers.depthTape ? 0 : 1;
         saveStageRaw(o);
         var tv = scnTktView();
-        scnDepthSet('btScnTkDepth', S(sxSlot()), tv === 'depth' ? 1 : 0, SCN_DEPTH_CARD);
+        scnDepthSet('btScnTkDepth', S(sxSlot()), tv === 'depth' ? 1 : 0, scnDepthDeep());
         if (o.layers.depthTape) pollTape(sxSlot());   // свежий залп, не ждём тика
     };
     // ---- поповер звоночка: подписка на достижение цены ----
@@ -6080,12 +6094,28 @@
         scnAcctFit();
     };
     // карточка сделки поджимается вверх над открытым «Счётом» (владелец
-    // 2026-07-24) — та же механика, что у героя над ростком (scnDockFit)
+    // 2026-07-24) — та же механика, что у героя над ростком (scnDockFit).
+    // Кнопка «Купить» обязана остаться на экране (закон «контент виджета
+    // подстраивается»): вторичные строки прячет CSS [data-acct], а если сцене
+    // не хватает высоты — счёт частично накрывает тикет (z-index), но тикету
+    // гарантирован минимум высоты под рабочие строки
+    var TKT_MIN_H = 540;
     function scnAcctFit() {
         var el = dq('btScene'), a = dq('btScnAcct');
         if (!el) return;
-        if (a && a.childElementCount) el.style.setProperty('--bts-acct', (a.offsetHeight + 96 + 12) + 'px');
-        else el.style.removeProperty('--bts-acct');
+        if (a && a.childElementCount) {
+            var want = a.offsetHeight + 96 + 12;
+            var lim = el.clientHeight - 122 - TKT_MIN_H;   // тикету — минимум
+            el.style.setProperty('--bts-acct', Math.max(96 + 12, Math.min(want, lim)) + 'px');
+        } else el.style.removeProperty('--bts-acct');
+        // глубина карточного стакана зависит от высоты — пересчитать после пружины
+        clearTimeout(scnAcctFit._t);
+        scnAcctFit._t = setTimeout(function () {
+            var tv = scnTktView();
+            if (tv !== 'deal' && sceneLive()) {
+                scnDepthSet('btScnTkDepth', S(sxSlot()), tv === 'depth' ? 1 : 0, scnDepthDeep());
+            }
+        }, 520);
     }
 
     // ---- экраны trading:N — вкладки в строке среды (механика раунда 1) ----
@@ -6187,7 +6217,7 @@
             scnSet('btScnKnow', scnKnowHtml(n));
             // стакан в карточке тикета (вид «Стакан»/«Сплит») — жив тиками
             var tv = scnTktView();
-            if (tv !== 'deal') scnDepthSet('btScnTkDepth', s, tv === 'depth' ? 1 : 0, SCN_DEPTH_CARD);
+            if (tv !== 'deal') scnDepthSet('btScnTkDepth', s, tv === 'depth' ? 1 : 0, scnDepthDeep());
             // открытый росток заявок/позиций — жив теми же тиками
             if (stageObj().layers.deck) { scnSet('btScnDock', scnDockHtml()); scnDockFit(); }
             // открытый «Счёт» — деньги и итог дня живут тиками
