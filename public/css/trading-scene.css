@@ -270,22 +270,33 @@
 .bts .tkt-depth { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
 /* заголовок стакана в карточках — тем же кеглем, что вкладки заявки */
 .bts .tkt .d-h b, .bts .tkt-sub .d-h b { font-size: 16px; }
-/* раскрываемые «Последние сделки» — занимают пустой низ карточки стакана:
-   свёрнутые жмутся к низу, открытые растягиваются на ВЕСЬ пробел */
-.bts .d-tapew { margin-top: auto; border-top: 1px solid var(--hair); padding-top: 8px; flex: none; }
-.bts .d-tapew.open {
-    flex: 1 1 auto; min-height: 0; margin-top: 10px;
-    display: flex; flex-direction: column;
+/* виды карточного стакана (раунд 3): сегмент Лесенка / Лента / Кривая */
+.bts .d-seg {
+    display: flex; gap: 2px; border: 1px solid var(--line); border-radius: 10px;
+    padding: 3px; margin-bottom: 10px; flex: none;
 }
-.bts .d-tape-h {
-    display: flex; align-items: center; justify-content: space-between;
-    cursor: pointer; user-select: none; color: var(--dim); flex: none;
+.bts .d-seg span {
+    flex: 1; text-align: center; font: 600 11px var(--font-ui); color: var(--dim);
+    border-radius: 7px; padding: 5px 0; cursor: pointer; user-select: none;
 }
-.bts .d-tape-h b { font: 400 14px var(--font-title); color: var(--mut); }
-.bts .d-tape-h i { font-style: normal; font-size: 10px; }
-.bts .d-tape-h:hover b { color: var(--ink); }
-.bts .d-tape-b { margin-top: 6px; }
-.bts .d-tapew.open .d-tape-b { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+.bts .d-seg span:hover { color: var(--mut); }
+.bts .d-seg span.on { background: color-mix(in srgb, var(--acc) 14%, transparent); color: var(--ink); }
+/* вид «Лента»: последние сделки во всю карточку */
+.bts .d-tape-full { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+.bts .d-tape-b { margin-top: 2px; }
+/* вид «Кривая»: канвас кумулятивной глубины */
+.bts .d-curvew { position: relative; flex: 1 1 auto; min-height: 0; cursor: crosshair; }
+.bts .d-curvew canvas { display: block; width: 100%; height: 100%; }
+.bts .dc-x {
+    display: flex; align-items: baseline; justify-content: space-between;
+    font: 600 10px var(--font-num); color: var(--dim); padding: 6px 2px 0; flex: none;
+}
+.bts .dc-x b { font: 600 10px var(--font-num); color: var(--mut); }
+.bts .dc-note {
+    font: 400 11px var(--font-ui); color: var(--mut); line-height: 1.5;
+    border-top: 1px dashed var(--line); padding-top: 9px; margin-top: 10px; flex: none;
+}
+.bts .dc-note b { font-weight: 600; color: var(--ink); }
 /* сплит: карточка раздваивается на стакан + заявку; ширину контейнера и
    сжатие героя ведут transition (контент слева поджимается, как от сайдбара) */
 .bts .tkt { transition: width 0.45s cubic-bezier(0.25, 0.9, 0.3, 1), bottom 0.45s cubic-bezier(0.25, 0.9, 0.3, 1); }
@@ -434,6 +445,139 @@
 .bts .cta.dis::before { display: none; }
 .bts .fee { font: 400 10px var(--font-ui); color: var(--dim); text-align: center; }
 
+/* ---------- полоса избранного (раунд 3): рейка слева на клавише F ---------- */
+.bts .bts-wlb {
+    flex: none; width: 34px; height: 34px; display: grid; place-items: center;
+    font-size: 14px; color: var(--dim); border: 1px solid var(--line);
+    border-radius: 10px; background: var(--card); cursor: pointer;
+}
+.bts .bts-wlb:hover { color: var(--amb); }
+.bts .bts-wlb.on { color: var(--amb); border-color: color-mix(in srgb, var(--amb) 45%, transparent); }
+.bts-wl {
+    position: absolute; left: 20px; top: 64px; bottom: 64px; width: 238px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    padding: 12px; display: flex; flex-direction: column; gap: 3px; z-index: 26;
+    box-shadow: 0 20px 44px -26px rgba(24, 38, 60, 0.4);
+    overflow: hidden;
+}
+.bts.night .bts-wl { box-shadow: 0 20px 44px -26px rgba(0, 0, 0, 0.55); }
+.bts-wl:empty { display: none; }
+/* герой и полоса позиций уступают рейке место */
+.bts[data-wl="1"] .bts-hero { left: 290px; }
+.bts[data-wl="1"] .pos-strip { left: 270px; }
+.bts .wl-h { display: flex; align-items: center; gap: 8px; padding: 2px 6px 8px; flex: none; }
+.bts .wl-h b { font: 400 15px var(--font-title); }
+.bts .wl-h kbd {
+    font: 600 9.5px var(--font-num); color: var(--dim);
+    border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px;
+}
+.bts .wl-x {
+    margin-left: auto; border: 0; background: none; color: var(--dim);
+    font-size: 11px; cursor: pointer; padding: 2px 4px;
+}
+.bts .wl-x:hover { color: var(--ink); }
+.bts .wl-none { font: 400 11.5px var(--font-ui); color: var(--mut); line-height: 1.55; padding: 4px 6px; }
+.bts .wl-r {
+    display: flex; align-items: center; gap: 8px; border-radius: 10px;
+    padding: 7px 8px; cursor: pointer; flex: none;
+}
+.bts .wl-r:hover { background: color-mix(in srgb, var(--acc) 6%, transparent); }
+.bts .wl-r.on {
+    background: color-mix(in srgb, var(--acc) 8%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--acc) 35%, transparent);
+}
+.bts .wl-r kbd {
+    flex: none; width: 16px; height: 16px; border-radius: 5px;
+    border: 1px solid var(--line); font: 500 9px var(--font-num); color: var(--dim);
+    display: grid; place-items: center;
+}
+.bts .wl-r .tk { width: 78px; min-width: 0; }
+.bts .wl-r .tk b { display: block; font: 700 10.5px var(--font-num); }
+.bts .wl-r .tk em {
+    display: block; font: 400 8.5px var(--font-ui); font-style: normal; color: var(--dim);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bts .wl-sp { flex: none; }
+.bts .wl-sp polyline { fill: none; stroke-width: 1.5; stroke-linejoin: round; opacity: 0.75; }
+.bts .wl-sp polyline.g { stroke: var(--grn); }
+.bts .wl-sp polyline.r { stroke: var(--red); }
+.bts .wl-r .pd { margin-left: auto; font: 600 9.5px var(--font-num); text-align: right; white-space: nowrap; }
+.bts .wl-r .pd b { display: block; font-size: 10px; color: var(--ink); }
+.bts .wl-r .pd i { font-style: normal; }
+.bts .wl-r .pd i.g { color: var(--grn); }
+.bts .wl-r .pd i.r { color: var(--red); }
+.bts .wl-ft {
+    margin-top: auto; font: 400 9.5px var(--font-ui); color: var(--dim); line-height: 1.45;
+    border-top: 1px solid var(--hair); padding: 9px 6px 0; flex: none;
+}
+
+/* ---------- реплей (раунд 3): плёнка-бар, вуаль и итог недели ---------- */
+.bts .bts-sand.rp {
+    color: #fff; background: var(--amb);
+    border-color: var(--amb);
+}
+.bts .rp-bar {
+    position: absolute; left: 56px; right: 488px; bottom: 16px;
+    display: flex; align-items: center; gap: 12px; z-index: 26;
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 9px 14px; box-shadow: 0 18px 40px -24px rgba(24, 38, 60, 0.4);
+}
+.bts.night .rp-bar { box-shadow: 0 18px 40px -24px rgba(0, 0, 0, 0.55); }
+.bts .rp-bar:empty { display: none; }
+.bts .rp-play {
+    flex: none; width: 34px; height: 34px; border-radius: 11px; border: 0;
+    background: var(--ink); color: var(--bg); font-size: 11px; cursor: pointer;
+    display: grid; place-items: center;
+}
+.bts .rp-sp { flex: none; display: inline-flex; gap: 2px; border: 1px solid var(--line); border-radius: 9px; padding: 2px; }
+.bts .rp-sp span {
+    font: 700 10px var(--font-num); color: var(--dim); border-radius: 7px;
+    padding: 4px 8px; cursor: pointer; user-select: none;
+}
+.bts .rp-sp span.on { background: color-mix(in srgb, var(--amb) 16%, transparent); color: var(--amb); }
+.bts .rp-tl { flex: 1; position: relative; height: 6px; border-radius: 99px; background: var(--hair); overflow: hidden; }
+.bts .rp-tl i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 99px; background: var(--amb); transition: width 0.2s linear; }
+.bts .rp-info { flex: none; font: 400 11px var(--font-ui); color: var(--mut); white-space: nowrap; }
+.bts .rp-info b { font: 600 11px var(--font-num); color: var(--ink); }
+.bts .rp-info u { text-decoration: none; font: 600 11px var(--font-num); }
+.bts .rp-info u.g { color: var(--grn); }
+.bts .rp-info u.r { color: var(--red); }
+.bts .rp-dt { flex: none; font: 500 10.5px var(--font-num); color: var(--dim); white-space: nowrap; }
+.bts .rp-exit {
+    flex: none; border: 0; background: none; font: 700 11px var(--font-ui);
+    color: var(--acc); cursor: pointer; white-space: nowrap; padding: 4px 2px;
+}
+/* график плёнки: линия «сейчас», скрытое будущее, точки сделок */
+.bts .rp-now { stroke: var(--amb); stroke-width: 1.5; }
+.bts .rp-void {
+    position: absolute; top: 42%; font: 400 11px var(--font-ui); color: var(--dim);
+    line-height: 1.5; max-width: 220px;
+}
+.bts .rp-fill { stroke-width: 2.5; fill: var(--card); }
+.bts .rp-fill.g { stroke: var(--grn); }
+.bts .rp-fill.r { stroke: var(--red); }
+/* итог недели: вуаль + карточка в языке подтверждения сцены */
+.bts .rp-donew:empty { display: none; }
+.bts .rp-veil { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.34); backdrop-filter: blur(4px); z-index: 45; }
+.bts.night .rp-veil { background: rgba(4, 7, 12, 0.6); }
+.bts .rp-done {
+    position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%);
+    width: 440px; background: var(--card); border: 1px solid var(--line);
+    border-radius: 18px; padding: 22px 24px; z-index: 46; text-align: center;
+    box-shadow: 0 34px 80px -30px rgba(24, 38, 60, 0.55);
+}
+.bts .rp-done h4 { font: 400 20px var(--font-title); margin: 0; }
+.bts .rp-done p { font: 400 12.5px var(--font-ui); color: var(--mut); line-height: 1.7; margin: 10px 0 4px; }
+.bts .rp-done p b { font: 700 12.5px var(--font-num); color: var(--ink); }
+.bts .rp-done p b.g { color: var(--grn); }
+.bts .rp-done p b.r { color: var(--red); }
+.bts .rp-done p em { font: 400 10.5px var(--font-ui); font-style: normal; color: var(--dim); }
+.bts .rp-row { display: flex; gap: 8px; justify-content: center; margin-top: 14px; }
+.bts .ub { font: 700 11.5px var(--font-ui); border-radius: 10px; padding: 9px 14px; cursor: pointer; }
+.bts .ub.pri { background: var(--acc); color: #fff; border: 0; }
+.bts .ub.gh { border: 1px solid var(--line); background: none; color: var(--mut); }
+.bts .ub.gh:hover { color: var(--ink); }
+
 /* ---------- полоса позиций ---------- */
 .bts .pos-strip {
     position: absolute; left: 20px; right: 320px; bottom: 14px;
@@ -443,23 +587,33 @@
 /* ярлыки полосы — ручки ростка: клик раскрывает панель вверх.
    Итог портфеля живёт в ярлыке «Мои позиции» (владелец 2026-07-23:
    одинокая сумма у правого нижнего угла была не к месту) */
-.bts .ps-t { flex: none; font: 800 10.5px var(--font-ui); letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); cursor: pointer; user-select: none; }
-.bts .ps-t:hover { color: var(--ink); }
-.bts .ps-t i { font-style: normal; font-size: 9px; }
-.bts .ps-t b { font: 600 11px var(--font-num); color: var(--mut); letter-spacing: 0; margin-left: 3px; }
-.bts .ps-none { font: 400 11px var(--font-ui); font-style: normal; color: var(--dim); }
-.bts .ps-ord {
-    flex: none; display: inline-flex; align-items: center; gap: 5px;
-    font: 800 10.5px var(--font-ui); letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--dim); border: 0; background: none; cursor: pointer; user-select: none;
+/* пилюли-ручки ростка (раунд 3): постоянный ряд у нижнего края — клик
+   открывает панель сразу на нужной вкладке, активная подсвечена */
+.bts .ps-pills { flex: none; display: inline-flex; gap: 6px; }
+.bts .ps-pill {
+    flex: none; display: inline-flex; align-items: center; gap: 6px;
+    font: 700 10.5px var(--font-ui); color: var(--mut);
+    border: 1px solid var(--line); background: var(--card);
+    border-radius: 10px; padding: 6px 11px; backdrop-filter: blur(10px);
+    cursor: pointer; user-select: none; white-space: nowrap;
 }
-.bts .ps-ord:hover { color: var(--ink); }
-.bts .ps-ord b {
-    font: 700 10px var(--font-num); color: var(--acc); letter-spacing: 0;
+.bts .ps-pill:hover {
+    color: var(--ink);
+    border-color: color-mix(in srgb, var(--acc) 40%, transparent);
+}
+.bts .ps-pill.on {
+    color: var(--acc);
+    border-color: color-mix(in srgb, var(--acc) 50%, transparent);
+    background: color-mix(in srgb, var(--acc) 7%, var(--card));
+}
+.bts .ps-pill b { font: 600 10.5px var(--font-num); color: var(--mut); }
+.bts .ps-pill.on b { color: var(--ink); }
+.bts .ps-pill em {
+    font: 700 10px var(--font-num); font-style: normal; color: var(--acc);
     background: color-mix(in srgb, var(--acc) 12%, transparent);
     border-radius: 6px; padding: 1px 6px;
 }
-.bts .ps-ord i { font-style: normal; font-size: 9px; }
+.bts .ps-none { font: 400 11px var(--font-ui); font-style: normal; color: var(--dim); }
 /* «счёт» один у правого края, под своей картой — ЧИПОМ в идиоме плиток
    позиций (владелец 2026-07-24: голый текст в углу не смотрелся):
    карточка-кнопка со свободными деньгами, открытый — акцентная рамка */
@@ -602,11 +756,59 @@
 .bts-indmenu button:hover { background: color-mix(in srgb, var(--acc) 8%, transparent); }
 .bts-indmenu button.on b { color: var(--acc); }
 .bts-indmenu button.on i { visibility: visible; }
+/* ---------- сравнение (раунд 3) ---------- */
+.bts-cmpmenu { width: 262px; }
+.bts-cmpmenu .cmp-find { padding: 2px 3px 6px; }
+.bts-cmpmenu .cmp-find input {
+    width: 100%; border: 1px solid var(--line); border-radius: 9px;
+    background: var(--bg); color: var(--ink); font: 500 12px var(--font-ui);
+    padding: 7px 10px; outline: none;
+}
+.bts-cmpmenu .cmp-find input:focus { border-color: color-mix(in srgb, var(--acc) 50%, transparent); }
+.bts-cmpmenu .cmp-off {
+    display: block; width: 100%; text-align: center; margin-top: 6px;
+    border: 0; background: none; border-radius: 9px; padding: 8px 0;
+    font: 700 11px var(--font-ui); color: var(--red); cursor: pointer;
+}
+.bts-cmpmenu .cmp-off:hover { background: color-mix(in srgb, var(--red) 8%, transparent); }
+/* холст сравнения: сетка «красивых» процентов, вторая серия пунктиром */
+.bts .cmp-grid { stroke: var(--hair); stroke-width: 1; }
+.bts .cmp-grid.zero { stroke: color-mix(in srgb, var(--mut) 40%, transparent); }
+.bts .cmp-axt { fill: var(--dim); font: 600 10px var(--font-num); text-anchor: end; }
+.bts .cmp-line-b {
+    fill: none; stroke: var(--mut); stroke-width: 1.8;
+    stroke-dasharray: 5 5; opacity: 0.6;
+    stroke-linejoin: round; stroke-linecap: round;
+}
+.bts .cmp-leg {
+    position: absolute; left: 2px; top: 2px; z-index: 7;
+    display: flex; align-items: center; gap: 8px;
+}
+.bts .cmp-chip {
+    display: inline-flex; align-items: center; gap: 7px;
+    font: 600 10.5px var(--font-num); color: var(--mut);
+    border: 1px solid var(--line); background: var(--card);
+    border-radius: 8px; padding: 4px 9px; white-space: nowrap;
+}
+.bts .cmp-chip i { width: 14px; border-top: 2px solid var(--acc); font-style: normal; flex: none; }
+.bts .cmp-chip.ix i { border-top-style: dashed; border-top-color: var(--mut); }
+.bts .cmp-chip b { font: 700 10.5px var(--font-num); color: var(--ink); }
+.bts .cmp-chip u { text-decoration: none; }
+.bts .cmp-chip u.g { color: var(--grn); }
+.bts .cmp-chip u.r { color: var(--red); }
+.bts .cmp-chip s {
+    text-decoration: none; color: var(--dim); cursor: pointer;
+    margin-left: 2px; padding: 0 2px;
+}
+.bts .cmp-chip s:hover { color: var(--red); }
+.bts .cmp-leg em { font: 400 10px var(--font-ui); font-style: normal; color: var(--dim); white-space: nowrap; }
 /* ярлыки заявок поверх холста: линия — оверлей движка, ярлык — DOM.
    Слой ярлыков ВЫШЕ слоя кроссхейра, а ховер по ярлыку гасит плашку цены
    кроссхейра (владелец 2026-07-23: она замирала ровно на «✕» стопа и не
    давала его снять — курсор уходит с холста, движок перестаёт получать
    события, и последняя позиция плашки застывала поверх ярлыка) */
+/* профиль объёма (раунд 3): канвас-тень между свечами и ярлыками заявок */
+.bts-prof { position: absolute; inset: 0; pointer-events: none; z-index: 5; width: 100%; height: 100%; }
 .bts-ordt { position: absolute; inset: 0; pointer-events: none; z-index: 6; }
 .bts #btScnOrdT { z-index: 8; }
 .bts .bts-ordt:hover + .bts-ordt { opacity: 0; }

@@ -3737,6 +3737,7 @@
         var th = document.querySelector('#pftBar .bts-th'); if (th) th.outerHTML = scnThemeHtml();
         // свечи движка перекрашиваются своими стилями — токены сцены, не сайта
         if (K.chart) { try { K.chart.setStyles(scnKStyles()); } catch (e) {} }
+        scnKProfile();   // тень профиля объёма — в цвета новой темы
     };
     // Раунд 1 умер, но его вопросы задают соседние модули (portfolios-dash,
     // portfolios-chart) — отвечаем «нет»: полноэкранной СЕТКИ больше не бывает
@@ -3811,13 +3812,18 @@
         // раунда 1); омнибокс справа (bts-omni-s) — середину держат вкладки
         return '<div class="bts-top" id="pftBar">' +
             '<button type="button" class="bts-back" onclick="pftSceneBack()">' + IC_BACK + '<span>Портфели</span></button>' +
+            // звезда — рейка избранного (раунд 3); та же клавиша F
+            '<button type="button" class="bts-wlb' + (wlOn() ? ' on' : '') + '" onclick="pftScWl()" ' +
+                'title="Полоса избранного — клавиша F" aria-label="Полоса избранного" ' +
+                'aria-pressed="' + wlOn() + '">★</button>' +
             '<span class="sc-tabs" id="btScnScr">' + scnScreensHtml() + '</span>' +
             // омнибокс ⌘K (этап 6) пока открывает готовый поиск бумаг раунда 1
             '<button type="button" class="bts-omni bts-omni-s" onclick="pftFsSearch()" title="Найти бумагу">' + IC_LENS +
                 '<span>Бумага или команда</span><kbd>⌘K</kbd></button>' +
             '<span class="bts-right">' +
                 scnLinkHtml() +
-                (c && c.sandbox ? '<span class="bts-sand">Песочница</span>' : '') +
+                (RP ? '<span class="bts-sand rp">Реплей · ' + esc(RP.label) + '</span>'
+                    : (c && c.sandbox ? '<span class="bts-sand">Песочница</span>' : '')) +
                 scnThemeHtml() +
                 '<button type="button" class="bts-dots" onclick="pftFsMenu(event)" ' +
                     'aria-label="Меню сцены" aria-haspopup="true">' + IC_DOTS3 + '</button>' +
@@ -4015,6 +4021,16 @@
         out.push({ ic: '◐', t: sceneNight() ? 'Светлая сцена' : 'Тёмная сцена',
             em: 'тумблер — и в строке среды', go: function () { window.pftSceneTheme(); } });
         out.push({ ic: '＋', t: 'Новый экран', em: 'свои бумаги и раскладка', go: function () { window.pftScScreenAdd(); } });
+        out.push(scnCmpGet()
+            ? { ic: '⊕', t: 'Убрать сравнение', em: 'вернуть свечи', go: function () { window.pftScCmpOff(); } }
+            : { ic: '⊕', t: 'Сравнить с индексом', em: 'IMOEX поверх бумаги, шкала в %',
+                go: function () { window.pftScCmpSet('index', 'IMOEX', 'IMOEX'); } });
+        out.push({ ic: '★', t: wlOn() ? 'Скрыть полосу избранного' : 'Полоса избранного',
+            em: 'клавиша F · бумаги на цифрах 1–9', go: function () { window.pftScWl(); } });
+        out.push(RP
+            ? { ic: '⏵', t: 'Выйти из реплея', em: 'вернуть живую сцену', go: function () { window.pftScRpExit(); } }
+            : { ic: '⏵', t: 'Реплей: неделя из прошлого', em: 'тренажёр — настоящая история, виртуальные деньги',
+                go: function () { window.pftScReplay(); } });
         var word = (omni.intent ? '' : String(omni.q).trim().toLowerCase());
         if (!word) return out;
         var hit = out.filter(function (c) { return c.t.toLowerCase().indexOf(word) >= 0; });
@@ -4158,6 +4174,8 @@
     // разбивке и в заголовке было ОДНО число (спред покрыт предупреждением
     // «цена может немного отличаться»).
     function sxPrice(s) {
+        // реплей: цена сцены — цена плёнки, не живого стакана
+        if (RP && s && s.uid === RP.uid) return rpPx();
         if (s.ob) {
             var last = A().q2n(s.ob.lastPrice) || 0;
             if (last > 0) return last;
@@ -4211,6 +4229,7 @@
     }
     // сколько этих бумаг у человека на руках (для продажи и долей)
     function haveQty(s) {
+        if (RP && s && s.uid === RP.uid) return RP.qty;   // позиция реплея
         var secs = (T.pos && T.pos.secs) || {};
         var v = secs[s.uid];
         if (v == null && s.meta && s.meta.figi) v = secs[s.meta.figi];
@@ -4227,8 +4246,8 @@
     }
     function scnTapeWants(n) {
         if (!sceneLive() || slotNo(n) !== sxSlot()) return false;
-        // лента нужна раскрытому блоку «Последние сделки» в стакане карточки
-        return scnTktView() !== 'deal' && !!stageObj().layers.depthTape;
+        // лента нужна виду «Лента» карточного стакана (раунд 3)
+        return scnTktView() !== 'deal' && scnDepthView() === 'tape';
     }
 
     // ---- график сцены: периоды, свечи периодов для фактов, линия-запаска ----
@@ -4375,15 +4394,224 @@
         return '<div class="bts-canvas">' + svg + ptag + marks + '</div><div class="ax-dates">' + dts + '</div>';
     }
 
+    // ---- сравнение (раунд 3): бумага против индекса или другой бумаги ----
+    // Два ряда в рублях сравнивать нельзя — обе серии приводятся к % от
+    // начала периода и рисуются линиями своим рендером. Движок свечей в
+    // сравнении не участвует (при входе — scnKDispose), выход возвращает всё.
+    var CMP_IDX = [
+        ['IMOEX', 'IMOEX', 'индекс МосБиржи'],
+        ['RTSI', 'РТС', 'долларовый индекс'],
+        ['MOEX10', 'MOEX10', 'десять самых ликвидных']
+    ];
+    function scnCmpGet() {
+        var c = stageObj().layers.cmp;
+        return c && c.key ? c : null;
+    }
+    var cmpCache = {};   // kind:key|period -> [{t,v}] | 'busy' | 'err'
+    function cmpKey(c) { return c.kind + ':' + c.key + '|' + sxPer()[0]; }
+    // время ISS без зоны — всегда московское: без +03:00 свечи уехали бы на 3 часа
+    function cmpMoexTime(v) {
+        var t = Date.parse(String(v || '').replace(' ', 'T') + '+03:00');
+        return isNaN(t) ? 0 : t;
+    }
+    function cmpLoad(c) {
+        var key = cmpKey(c);
+        if (cmpCache[key]) return;
+        cmpCache[key] = 'busy';
+        var per = sxPer();
+        function fail() { cmpCache[key] = 'err'; sxTick(); }
+        function ok(rows) { cmpCache[key] = rows; sxTick(); }
+        if (c.kind === 'index') {
+            // индексы — MOEX ISS (карта рынка уже ходит туда же, CORS открыт)
+            var iv = { day: 10, week: 60, month: 24, year: 24, all: 7 }[per[0]] || 24;
+            var from = new Date(Date.now() - per[3] * 86400000).toISOString().slice(0, 10);
+            fetch('https://iss.moex.com/iss/engines/stock/markets/index/securities/' +
+                encodeURIComponent(c.key) + '/candles.json?iss.meta=off&interval=' + iv + '&from=' + from,
+                { credentials: 'omit' })
+                .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+                .then(function (j) {
+                    var cd = j && j.candles, cols = (cd && cd.columns) || [], data = (cd && cd.data) || [];
+                    var iB = cols.indexOf('begin'), iC = cols.indexOf('close');
+                    if (iB < 0 || iC < 0) return fail();
+                    ok(data.map(function (r2) { return { t: cmpMoexTime(r2[iB]), v: +r2[iC] || 0 }; })
+                        .filter(function (x) { return x.t && x.v > 0; }));
+                }, fail).catch(fail);
+            return;
+        }
+        // бумага — свечи брокера, тем же методом, что и герой
+        A().call('GetCandles', {
+            instrumentId: c.key,
+            from: new Date(Date.now() - per[3] * 86400000).toISOString(),
+            to: new Date().toISOString(),
+            interval: per[2]
+        }, { interactive: false }).then(function (d) {
+            var q2n = A().q2n;
+            ok(((d && d.candles) || []).map(function (x) {
+                return { t: Date.parse(x.time), v: q2n(x.close) };
+            }).filter(function (x) { return x.t && x.v > 0; }));
+        }, fail);
+    }
+    window.pftScCmpSet = function (kind, key, label) {
+        var o = stageObj();
+        o.layers.cmp = { kind: kind, key: key, label: label };
+        saveStageRaw(o);
+        scnKDispose();   // сцена уходит в %-линии: живой движок тут молча глохнет
+        scnCmpMenuClose();
+        if (PF.renderNoAnim) PF.renderNoAnim();
+    };
+    window.pftScCmpOff = function () {
+        var o = stageObj();
+        delete o.layers.cmp;
+        saveStageRaw(o);
+        scnCmpMenuClose();
+        if (PF.renderNoAnim) PF.renderNoAnim();
+    };
+    // поповер «Сравнить с…»: индексы списком + поиск любой бумаги брокера
+    function scnCmpMenuClose() {
+        var m = dq('btScnCmpMenu'); if (m) m.remove();
+    }
+    window.pftScCmpMenu = function (ev) {
+        if (ev) ev.stopPropagation();
+        var old = dq('btScnCmpMenu'); if (old) { old.remove(); return; }
+        var btn = dq('btScnCmpBtn'); if (!btn) return;
+        var cur = scnCmpGet();
+        var rows = CMP_IDX.map(function (x) {
+            var on = cur && cur.kind === 'index' && cur.key === x[0];
+            return '<button type="button" class="' + (on ? 'on' : '') + '" ' +
+                'onclick="pftScCmpSet(\'index\',\'' + x[0] + '\',\'' + x[1] + '\')">' +
+                '<b>' + x[1] + '</b><em>' + x[2] + '</em><i>✓</i></button>';
+        }).join('');
+        btn.insertAdjacentHTML('afterend',
+            '<div class="bts-indmenu bts-cmpmenu" id="btScnCmpMenu">' +
+            '<div class="im-sec"><span class="im-cap">Индексы</span>' + rows + '</div>' +
+            '<div class="im-sec"><span class="im-cap">Бумага</span>' +
+            '<div class="cmp-find"><input id="btScnCmpQ" type="text" autocomplete="off" spellcheck="false" ' +
+                'placeholder="Тикер или название…" aria-label="Бумага для сравнения"></div>' +
+            '<div id="btScnCmpRes"></div></div>' +
+            (cur ? '<button type="button" class="cmp-off" onclick="pftScCmpOff()">Убрать сравнение</button>' : '') +
+            '</div>');
+        var q = dq('btScnCmpQ');
+        if (q) {
+            var tt = null;
+            q.addEventListener('input', function () {
+                clearTimeout(tt);
+                var v = q.value.trim();
+                tt = setTimeout(function () {
+                    if (v.length < 2) { var r0 = dq('btScnCmpRes'); if (r0) r0.innerHTML = ''; return; }
+                    PF.pftFindInstruments(v).then(function (list) {
+                        var box = dq('btScnCmpRes');
+                        if (!box) return;
+                        box.innerHTML = (list || []).slice(0, 5).map(function (p) {
+                            return '<button type="button" onclick="pftScCmpSet(\'paper\',\'' + jsArg(p.uid) +
+                                '\',\'' + jsArg(p.ticker) + '\')"><b>' + esc(p.ticker) + '</b><em>' +
+                                esc(p.name || '') + '</em><i>✓</i></button>';
+                        }).join('') || '<div class="bts-cnote">Не нашлось</div>';
+                    }).catch(function () {});
+                }, 250);
+            });
+            q.addEventListener('keydown', function (e) { e.stopPropagation(); });
+            try { q.focus(); } catch (e) {}
+        }
+        setTimeout(function () {
+            document.addEventListener('click', function once(e) {
+                if (e.target.closest && e.target.closest('#btScnCmpMenu')) return;
+                document.removeEventListener('click', once);
+                scnCmpMenuClose();
+            });
+        }, 0);
+    };
+    // рендер сравнения: обе серии в % от общего начала окна
+    function scnCmpChartHtml(s) {
+        var c = scnCmpGet();
+        if (!c) return '';
+        var p = sxPer();
+        var main = sxCandles[s.uid + '|' + p[0]];
+        cmpLoad(c);
+        var other = cmpCache[cmpKey(c)];
+        if (!main || main === 'busy' || other === 'busy')
+            return '<div class="bts-cnote">Считаем сравнение…</div>';
+        if (main === 'err' || other === 'err' || main.length < 2 || !other || other.length < 2)
+            return '<div class="bts-cnote">Сравнение за этот срок недоступно — попробуйте другой период</div>';
+        // общее окно: у серий разные календари (индекс ISS против брокера) —
+        // базой служит первая точка КАЖДОЙ серии внутри пересечения по времени
+        var t0 = Math.max(main[0].t, other[0].t);
+        var a = main.filter(function (x) { return x.t >= t0; });
+        var b = other.filter(function (x) { return x.t >= t0; });
+        if (a.length < 2 || b.length < 2)
+            return '<div class="bts-cnote">Серии почти не пересекаются — попробуйте другой период</div>';
+        function pct(list) {
+            var base = list[0].v;
+            return list.map(function (x) { return { t: x.t, p: (x.v / base - 1) * 100 }; });
+        }
+        var pa = pct(a), pb = pct(b);
+        var min = Infinity, max = -Infinity;
+        pa.concat(pb).forEach(function (x) { if (x.p < min) min = x.p; if (x.p > max) max = x.p; });
+        if (!(max > min)) { max = min + 0.1; }
+        var span0 = max - min;
+        min -= span0 * 0.08; max += span0 * 0.08;
+        var span = max - min;
+        var W = 1000, H = 520;
+        var tMin = t0, tMax = Math.max(pa[pa.length - 1].t, pb[pb.length - 1].t);
+        function X(t) { return (t - tMin) / ((tMax - tMin) || 1) * W; }
+        function Y(v) { return H - (v - min) / span * H; }
+        function line(list) {
+            return list.map(function (x) { return X(x.t).toFixed(1) + ',' + Y(x.p).toFixed(1); }).join(' ');
+        }
+        // сетка по «красивым» процентам + ярлыки шкалы у правого края
+        var step = span > 8 ? 2 : span > 4 ? 1 : span > 2 ? 0.5 : span > 0.8 ? 0.25 : 0.1;
+        var grid = '', labs = '';
+        for (var g = Math.ceil(min / step) * step; g <= max; g += step) {
+            var gy = Y(g).toFixed(1);
+            grid += '<line x1="0" y1="' + gy + '" x2="' + W + '" y2="' + gy + '" class="cmp-grid' +
+                (Math.abs(g) < step / 4 ? ' zero' : '') + '"/>';
+            labs += '<text x="' + (W - 6) + '" y="' + (gy - 4) + '" class="cmp-axt">' +
+                (g > 0 ? '+' : '') + g.toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' %</text>';
+        }
+        var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" ' +
+            'aria-label="Сравнение в процентах от начала периода">' + grid + labs +
+            '<polyline points="' + line(pb) + '" class="cmp-line-b"/>' +
+            '<polyline points="' + line(pa) + '" class="bts-line"/>' +
+        '</svg>';
+        function dTxt(v) {
+            return (v >= 0 ? '+' : '−') + Math.abs(v).toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' %';
+        }
+        var da = pa[pa.length - 1].p, db = pb[pb.length - 1].p;
+        var leg = '<div class="cmp-leg">' +
+            '<span class="cmp-chip"><i></i><b>' + esc(s.meta.ticker) + '</b><u class="' + (da >= 0 ? 'g' : 'r') + '">' + dTxt(da) + '</u></span>' +
+            '<span class="cmp-chip ix"><i></i><b>' + esc(c.label) + '</b><u class="' + (db >= 0 ? 'g' : 'r') + '">' + dTxt(db) + '</u>' +
+                '<s role="button" tabindex="0" onclick="pftScCmpOff()" title="Убрать сравнение" aria-label="Убрать сравнение">✕</s></span>' +
+            '<em>шкала — в % от начала периода · разрыв ' + dTxt(da - db) + '</em>' +
+        '</div>';
+        var cnt = p[0] === 'day' ? 7 : 5, dts = '';
+        for (var k = 0; k < cnt; k++) {
+            var idx = Math.round(k * (pa.length - 1) / (cnt - 1));
+            var d2 = new Date(pa[idx].t);
+            var lab = p[0] === 'day'
+                ? d2.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+                : (p[0] === 'week' || p[0] === 'month')
+                    ? d2.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+                    : d2.toLocaleDateString('ru-RU', { month: 'short', year: '2-digit' });
+            dts += '<span>' + esc(lab) + '</span>';
+        }
+        return '<div class="bts-canvas">' + svg + leg + '</div><div class="ax-dates">' + dts + '</div>';
+    }
+
     // ---- герой бумаги: шапка без монограммы, цена 58px ----
     // тумблер Линия/Свечи + периоды — одним блоком: на «Старте» в шапке,
     // на «Разгоне» — в зоне графика (шапка героя тянется и над стаканом,
     // и пилюли висели бы над ним, а не над холстом — владелец 2026-07-23)
     function scnPillsHtml() {
+        // при живом сравнении холст — %-линии: тумблер вида и индикаторы
+        // не действуют и убраны, остаются периоды и сама кнопка «Сравнить»
+        var cmp = scnCmpGet();
+        var cmpBtn = '<span class="ih-ind' + (cmp ? ' on' : '') + '" id="btScnCmpBtn" role="button" tabindex="0" ' +
+            'onclick="pftScCmpMenu(event)" aria-haspopup="true" title="Наложить индекс или другую бумагу">' +
+            '⊕ Сравнить' + (cmp ? '<i>' + esc(cmp.label) + '</i>' : '') + '</span>';
+        if (cmp) return perPillsHtml() + cmpBtn;
         return '<span class="ih-per"><span class="' + (candlesOn() ? '' : 'on') + '" role="button" tabindex="0" ' +
                 'onclick="pftScMode(0)">Линия</span><span class="' + (candlesOn() ? 'on' : '') + '" role="button" ' +
                 'tabindex="0" onclick="pftScMode(1)">Свечи</span></span>' + perPillsHtml() +
-            (candlesOn() ? scnIndBtnHtml() : '');
+            cmpBtn + (candlesOn() ? scnIndBtnHtml() : '');
     }
     function scnHeadHtml(s) {
         var m = s.meta;
@@ -4399,13 +4627,15 @@
     }
     function scnPriceHtml(s) {
         var last = sxPrice(s);
-        var close = s.ob ? A().q2n(s.ob.closePrice) : 0;
+        // реплей: дельта — от начала плёнки, не от вчерашнего живого закрытия
+        var close = RP && s.uid === RP.uid ? RP.rows[0].v : (s.ob ? A().q2n(s.ob.closePrice) : 0);
         var chip = '';
         if (last > 0 && close > 0 && Math.abs(last - close) > 1e-9) {
             var d = last - close, up = d >= 0, pct = Math.abs(d / close * 100);
             chip = '<span class="day-chip' + (up ? '' : ' dn') + '">' + (up ? '▲ +' : '▼ −') +
                 fmtPx(Math.abs(d), s) + ' · ' + (up ? '+' : '−') +
-                pct.toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' % <em>сегодня</em></span>';
+                pct.toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' % <em>' +
+                (RP && s.uid === RP.uid ? 'с начала плёнки' : 'сегодня') + '</em></span>';
         }
         return '<span class="price-big">' + (last > 0 ? fmtPx(last, s) : '—') + '<small> ₽</small></span>' + chip;
     }
@@ -4421,10 +4651,13 @@
     // тело холста: свечи движка (все ступени, дефолт) либо линия по тумблеру;
     // на «Разгоне»+ вокруг добавляются стакан и лента (мокап 04)
     function scnChartBody(s) {
+        if (RP) return rpChartHtml(s);
+        if (scnCmpGet()) return scnCmpChartHtml(s);
         if (!candlesOn()) return scnChartHtml(s);
         // чипы индикаторов с холста ушли (владелец 2026-07-23): их место —
         // кнопка «Индикаторы» в шапке рядом с пилюлями (scnIndBtnHtml)
         return '<div class="bts-kmount" id="btScnK"></div>' +
+            '<canvas class="bts-prof" id="btScnProf"></canvas>' +
             '<div class="bts-ordt" id="btScnOrdT"></div>' +
             '<div class="bts-ordt" id="btScnCrossT"></div>' +
             '<div class="bts-ohlc" id="btScnOhlc"></div>';
@@ -4442,6 +4675,7 @@
         return 'closed';
     }
     function scnFreshInner() {
+        if (RP) return '<span class="fresh amber"><i></i>реплей · счёт виртуальный</span>';
         var s = S(sxSlot());
         var l = linkState(s);
         // закрытая биржа — не обрыв: стакан отвечает, но это цена закрытия
@@ -4455,6 +4689,10 @@
     // причина, по которой кнопку сцены жать нельзя (поверх гварда свежести)
     function scnSubmitBlock(n) {
         var s = S(n);
+        // реплей: биржа и связь настоящего мира не при чём — плёнка сама решает
+        if (RP && s.uid === RP.uid) {
+            return RP.done ? 'Неделя закончилась — итог на экране' : '';
+        }
         var l = linkState(s).state;
         if (l === 'wait') return 'Ждём данные от брокера';
         if (l === 'stale') return 'Ждём связь…';
@@ -4495,6 +4733,8 @@
         return (arr && arr.length) ? A().q2n(arr[0].price) : 0;
     }
     function spreadInfo(s) {
+        // в реплее живой книги нет: исполнение по цене плёнки, гвард молчит
+        if (RP && s && s.uid === RP.uid) return null;
         var ask = bestPx(s, 'ask'), bid = bestPx(s, 'bid');
         if (!(ask > 0) || !(bid > 0) || ask <= bid) return null;
         return { ask: ask, bid: bid, pct: (ask - bid) / ((ask + bid) / 2) };
@@ -4564,11 +4804,14 @@
         lots = Math.min(lots, Math.floor(haveQty(s) / lot));
         return simpleSellCalc(s, Math.max(0, lots) * lot, px);
     }
+    // свободные деньги сцены: в реплее — виртуальный счёт, вне его — брокер.
+    // ЕДИНСТВЕННАЯ точка правды для тикета: все строки денег ходят сюда
+    function scnFree() { return RP ? RP.money : T.pos.money; }
     // недостача: введённая сумма против свободных (рубли) или итог против них (штуки)
     function scnShortfall(n) {
         var s = S(n);
         if (s.side === 'sell') return 0;
-        var free = T.pos.money;
+        var free = scnFree();
         if (free == null) return 0;
         if (unitOf(s) === 'rub') { var v = +simpleSum || 0; return v > free ? v - free : 0; }
         var c = scnCalc(n);
@@ -4583,7 +4826,7 @@
             // «не хватает»: недостача словами + честный «Максимум» (экран 09)
             var short = scnShortfall(n);
             if (short > 0) {
-                var mx = simpleBuyCalc(s, T.pos.money, scnExecPx(s, 1));
+                var mx = simpleBuyCalc(s, scnFree(), scnExecPx(s, 1));
                 return 'Не хватает <b>' + fmtRub(short) + '</b>.' + (mx && mx.lots
                     ? ' «Максимум» — ' + mx.qty.toLocaleString('ru-RU') + ' ' +
                       unitWord(s, mx.qty) + ' за <b>' + fmtKop(mx.total) + '</b> с комиссией'
@@ -4621,6 +4864,7 @@
     // средняя после докупки — та же средняя, что видит брокер (GetPortfolio)
     function scnAvgHtml(n) {
         var s = S(n);
+        if (RP) return '';   // средняя живой позиции в реплее только путала бы
         if (s.side === 'sell') return '';
         var c = scnCalc(n);
         var p = posOf(s.uid);
@@ -4690,7 +4934,7 @@
                 '" role="button" tabindex="0" onclick="' + fn + '">' + lab + '</span>';
         }
         if (buy) {
-            var free = T.pos.money;
+            var free = scnFree();
             return pch('5 000', 5000, 'pftSxQuick(5000)') +
                 pch('15 000', 15000, 'pftSxQuick(15000)') +
                 pch('30 000', 30000, 'pftSxQuick(30000)') +
@@ -4706,7 +4950,7 @@
     function scnRestHtml(n) {
         var s = S(n), buy = s.side !== 'sell';
         var c = scnCalc(n);
-        var free = T.pos.money;
+        var free = scnFree();
         if (free == null || !c || !c.lots || scnShortfall(n) > 0) return '';
         return '<span>' + (buy ? 'Останется свободно' : 'Станет свободно') + '</span><b>' +
             fmtRub(buy ? free - c.total : free + c.total) + '</b>';
@@ -4737,11 +4981,14 @@
         else if (!c || !c.lots) {
             label = buy ? 'Мало для одного лота' : 'Меньше одного лота';
             if (buy && c && c.need > 0) note = 'Кнопка оживёт от ' + fmtRub(Math.ceil(c.need));
-        } else if (auction) {
+        } else if (auction && !RP) {
             // рыночной заявки в аукционе не существует: уйдёт лимитка по
             // индикативной цене, исполнение дешевле лимита возможно — «до»
             label = 'В аукцион — спишется до ' + fmtKop(c.total);
             note = 'Аукцион: лимитка по индикативной цене, дешевле — можно, дороже — никогда';
+        } else if (RP) {
+            label = (buy ? 'Купить в реплее на ' : 'Продать в реплее на ') + fmtKop(c.total);
+            note = 'Деньги виртуальные · комиссия ' + feeTxt() + ' % как настоящая';
         } else label = (buy ? 'Купить на ' : 'Продать на ') + fmtKop(c.total);
         return '<button type="button" class="cta' + (buy ? '' : ' sell') + (can ? '' : ' dis') + '" ' +
             (can ? '' : 'disabled ') + 'onclick="pftSxGo()">' + label + '</button>' +
@@ -4794,6 +5041,7 @@
     }
     window.pftScTkt = function (k) {
         var o = stageObj();
+        if (RP && k !== 'deal') { toast('В реплее стакана нет — только цена плёнки', true); return; }
         if (scnTktView() === k) return;
         o.layers.tktView = k;
         saveStageRaw(o);
@@ -4807,7 +5055,7 @@
     };
     function scnTicketHtml(n) {
         var s = S(n), buy = s.side !== 'sell';
-        var vw = scnTktView();
+        var vw = RP ? 'deal' : scnTktView();   // в реплее только «Сделка»
         var head = '<div class="tkt-h">' + scnTktTabsHtml() +
             '<span class="freshw" id="btScnFresh">' + scnFreshInner() + '</span></div>';
         // стакан на всю карточку — глубже плоскости «Разгона»: высота позволяет
@@ -4831,7 +5079,9 @@
         // 2026-07-23): строка цены «По рынку ⇄ лимит» со значением на глазах
         // и защита позиции; линии на графике ведёт scnKProt — одна сущность
         var priceRow = '<div class="fld fld-p" id="btScnPx">' + scnPriceRowInner(n) + '</div>';
-        var protRow = '<div class="fld fld-p" id="btScnProt"><em>Защита позиции</em>' + scnProtInner(n) + '</div>';
+        // защита позиции — про живые стоп-заявки брокера: в реплее её нет
+        var protRow = RP ? '' :
+            '<div class="fld fld-p" id="btScnProt"><em>Защита позиции</em>' + scnProtInner(n) + '</div>';
         var deal = head +
             '<div class="seg">' +
                 '<span class="' + (buy ? 'on' : '') + '" role="button" tabindex="0" onclick="pftSxSide(\'buy\')">Купить</span>' +
@@ -4893,24 +5143,27 @@
     function scnPosInner() {
         var list = T.port.list || [];
         var nOrd = T.orders.length + T.stops.length;
-        // полоса — свёрнутое состояние ростка (вариант А): ярлык позиций и
-        // счётчик заявок раскрывают панель вверх, контент поджимается
+        // полоса — свёрнутое состояние ростка (вариант А): ряд пилюль-ручек
+        // (раунд 3, мокап 03 понравился владельцу) раскрывает панель вверх
+        // сразу на нужной вкладке; повторный клик по активной — закрывает
         var open = !!stageObj().layers.deck;
-        // итог портфеля живёт В ЯРЛЫКЕ «Мои позиции» (владелец 2026-07-23:
+        // итог портфеля живёт в пилюле «Позиции» (владелец 2026-07-23:
         // одинокая сумма у правого нижнего угла смотрелась не к месту)
         var val = portValue();
-        var lab = '<span class="ps-t" role="button" tabindex="0" onclick="pftScDeck(\'pos\')" ' +
-            'title="Развернуть позиции панелью">Мои позиции' +
-            (val != null ? ' <b>' + fmtRub(val) + '</b>' : '') +
-            ' <i>' + (open && dockTab === 'pos' ? '▴' : '▾') + '</i></span>';
-        // «заявки» стоят РЯДОМ с «Моими позициями» (владелец 2026-07-24: у
-        // правого края кнопка была не на месте) — обе ручки одной панели слева
-        var ordBtn = '<button type="button" class="ps-ord" onclick="pftScDeck(\'orders\')" ' +
-            'title="Мои заявки панелью">заявки' + (nOrd ? ' <b>' + nOrd + '</b>' : '') +
-            ' <i>' + (open && dockTab === 'orders' ? '▴' : '▾') + '</i></button>';
+        function pill(k, lab2, extra, title) {
+            var on = open && dockTab === k;
+            return '<button type="button" class="ps-pill' + (on ? ' on' : '') + '" ' +
+                'aria-expanded="' + on + '" title="' + title + '" ' +
+                'onclick="pftScDeck(\'' + k + '\')">' + lab2 + (extra || '') + '</button>';
+        }
+        var pills = '<span class="ps-pills">' +
+            pill('pos', 'Позиции', val != null ? ' <b>' + fmtRub(val) + '</b>' : '', 'Позиции панелью') +
+            pill('orders', 'Заявки', nOrd ? ' <em>' + nOrd + '</em>' : '', 'Заявки и стопы панелью') +
+            pill('hist', 'История', '', 'Исполненные сделки') +
+            pill('alerts', 'Алерты', ALERTS.length ? ' <em>' + ALERTS.length + '</em>' : '', 'Подписки на цену') +
+            '</span>';
         // ручка «Счёта» — у правого края, под своей картой; со свободными
-        // деньгами (владелец 2026-07-24: голое слово «счёт» стояло одиноко) —
-        // ровня ярлыку «Мои позиции» с итогом портфеля
+        // деньгами (владелец 2026-07-24: голое слово «счёт» стояло одиноко)
         var free = T.pos.money;
         var acctOn = !!stageObj().layers.acct;
         var acctBtn = '<button type="button" class="ps-acct' + (acctOn ? ' on' : '') + '" onclick="pftScAcct()" ' +
@@ -4919,7 +5172,7 @@
             ' <i>' + (acctOn ? '▴' : '▾') + '</i></button>';
         if (!list.length) {
             // позиций ещё нет, но росток должен быть достижим — полоса-минимум
-            return lab + ordBtn + '<em class="ps-none">пока пусто</em>' + acctBtn;
+            return pills + '<em class="ps-none">пока пусто</em>' + acctBtn;
         }
         var chips = list.slice(0, POS_CHIPS).map(function (p) {
             var cl = (T.closes || {})[p.uid];
@@ -4938,7 +5191,7 @@
             ? '<button type="button" class="ps-more" onclick="pftSceneBack()" ' +
               'title="Полный разбор позиций — в «Портфелях»">ещё ' + (list.length - POS_CHIPS) + ' →</button>'
             : '';
-        return lab + ordBtn + chips + more + acctBtn;
+        return pills + chips + more + acctBtn;
     }
     window.pftScChip = function (uid) {
         loadInstrument(sxSlot(), uid, function () {
@@ -4954,6 +5207,328 @@
             saveSlots();
             if (PF.renderNoAnim) PF.renderNoAnim();
         });
+    };
+
+    // ================= РЕПЛЕЙ (раунд 3): песочница-тренажёр =================
+    // Сцена уезжает в прошлое: настоящие пятиминутки случайной недели, будущее
+    // скрыто, счёт виртуальный. Тот же тикет и та же кнопка — тренируется рука.
+    // Состояние живёт ТОЛЬКО в сессии (никакого localStorage: тренировка — не
+    // данные); выход одной кнопкой возвращает живую сцену нетронутой.
+    var RP = null;   // {uid, rows[{t,v}], i, speed, playing, timer, money, qty, cost, fills, label, done}
+    var RP_START = 1000000;
+    var RP_SPEED = { 1: 1400, 5: 320, 20: 80 };
+    function rpPx() { return RP ? RP.rows[Math.min(RP.i, RP.rows.length - 1)].v : 0; }
+    window.pftScReplay = function () {
+        var n = sxSlot(), s = S(n);
+        if (!s.uid || !s.meta) { toast('Сначала выберите бумагу — реплей идёт по ней', true); return; }
+        rpHalt();
+        // случайная неделя: 60–560 дней назад, от понедельника; пятиминутки
+        // брокер отдаёт максимум сутками — неделя собирается пятью запросами
+        var back = 60 + Math.floor(Math.random() * 500);
+        var d0 = new Date(Date.now() - back * 86400000);
+        while (d0.getDay() !== 1) d0 = new Date(d0.getTime() - 86400000);
+        d0.setHours(3, 0, 0, 0);
+        var days = [];
+        for (var k = 0; k < 5; k++) days.push(new Date(d0.getTime() + k * 86400000));
+        toast('Собираем плёнку недели…');
+        var uid = s.uid, bk = bondK(s), q2n = A().q2n;
+        var chain = Promise.resolve([]);
+        days.forEach(function (day) {
+            chain = chain.then(function (acc) {
+                return A().call('GetCandles', {
+                    instrumentId: uid,
+                    from: day.toISOString(),
+                    to: new Date(day.getTime() + 86400000).toISOString(),
+                    interval: 'CANDLE_INTERVAL_5_MIN'
+                }, { interactive: false }).then(function (d) {
+                    return acc.concat(((d && d.candles) || []).map(function (c) {
+                        return { t: Date.parse(c.time), v: q2n(c.close) * bk };
+                    }).filter(function (x) { return x.t && x.v > 0; }));
+                }, function () { return acc; });
+            });
+        });
+        chain.then(function (rows) {
+            if (S(sxSlot()).uid !== uid) return;   // бумагу уже сменили
+            if (rows.length < 60) {
+                toast('За выпавшую неделю плёнки не нашлось — попробуйте ещё раз', true);
+                return;
+            }
+            scnKDispose();   // движок свечей в реплее не участвует
+            var lbl = days[0].toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) + ' — ' +
+                days[4].toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' });
+            RP = { uid: uid, rows: rows, i: Math.min(24, rows.length - 1), speed: 5, playing: true,
+                   timer: null, money: RP_START, qty: 0, cost: 0, fills: [], label: lbl, done: false };
+            rpRun();
+            if (PF.renderNoAnim) PF.renderNoAnim();
+        });
+    };
+    function rpHalt() {
+        if (RP && RP.timer) clearInterval(RP.timer);
+        RP = null;
+    }
+    window.pftScRpExit = function () {
+        rpHalt();
+        if (PF.renderNoAnim) PF.renderNoAnim();
+    };
+    window.pftScRpAgain = function () {
+        if (!RP) return;
+        RP.i = Math.min(24, RP.rows.length - 1);
+        RP.money = RP_START; RP.qty = 0; RP.cost = 0; RP.fills = [];
+        RP.done = false; RP.playing = true;
+        rpRun();
+        if (PF.renderNoAnim) PF.renderNoAnim();
+    };
+    window.pftScRpPlay = function () {
+        if (!RP || RP.done) return;
+        RP.playing = !RP.playing;
+        rpBarPatch();
+    };
+    window.pftScRpSpeed = function (k) {
+        if (!RP) return;
+        RP.speed = RP_SPEED[k] ? k : 5;
+        rpRun();
+        rpBarPatch();
+    };
+    function rpRun() {
+        if (!RP) return;
+        if (RP.timer) clearInterval(RP.timer);
+        RP.timer = setInterval(rpStep, RP_SPEED[RP.speed] || 320);
+    }
+    function rpStep() {
+        if (!RP || !RP.playing || RP.done) return;
+        if (!sceneLive() || document.visibilityState !== 'visible') return;   // плёнка ждёт зрителя
+        RP.i++;
+        if (RP.i >= RP.rows.length - 1) {
+            RP.i = RP.rows.length - 1;
+            RP.done = true; RP.playing = false;
+            scnSet('btScnRpDone', rpDoneHtml());
+        }
+        var s = S(sxSlot());
+        scnSet('btScnChart', rpChartHtml(s));
+        scnSet('btScnPrice', scnPriceHtml(s));
+        scnSet('btScnFresh', scnFreshInner());
+        scnTicketBits();
+        rpBarPatch();
+    }
+    // покупка/продажа в реплее: исполняется мгновенно по цене плёнки, деньги
+    // виртуальные — но комиссия и лотность считаются как настоящие (scnCalc)
+    function rpTrade(n, c, buy) {
+        if (!RP || RP.done) return;
+        if (buy) {
+            RP.money -= c.total;
+            RP.cost += c.px * c.qty;
+            RP.qty += c.qty;
+        } else {
+            RP.money += c.total;
+            var avg = RP.qty > 0 ? RP.cost / RP.qty : c.px;
+            RP.cost = Math.max(0, RP.cost - avg * c.qty);
+            RP.qty = Math.max(0, RP.qty - c.qty);
+        }
+        RP.fills.push({ i: RP.i, px: c.px, qty: c.qty, buy: buy });
+        simpleSum = '';
+        var inp = dq('btSxSum'); if (inp) inp.value = '';
+        toast((buy ? 'Куплено' : 'Продано') + ' в реплее: ' + c.qty.toLocaleString('ru-RU') +
+            ' × ' + fmtPx(c.px, S(n)) + ' ₽ — деньги виртуальные');
+        sxTick();
+        rpBarPatch();
+    }
+    // итог: свой результат против «просто держал бумагу всю неделю»
+    function rpEquity() { return RP ? RP.money + RP.qty * rpPx() : 0; }
+    function rpDoneHtml() {
+        if (!RP || !RP.done) return '';
+        var res = (rpEquity() / RP_START - 1) * 100;
+        var hold = (RP.rows[RP.rows.length - 1].v / RP.rows[0].v - 1) * 100;
+        function pctTxt(v) {
+            return (v >= 0 ? '+' : '−') + Math.abs(v).toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' %';
+        }
+        return '<div class="rp-veil"></div><div class="rp-done">' +
+            '<h4>Неделя пройдена</h4>' +
+            '<p>' + RP.fills.length + ' ' + PF.plural(RP.fills.length, 'сделка', 'сделки', 'сделок') +
+            ' · ваш результат <b class="' + (res >= 0 ? 'g' : 'r') + '">' + pctTxt(res) + '</b><br>' +
+            'если бы просто держали бумагу — <b>' + pctTxt(hold) + '</b><br>' +
+            '<em>комиссии учтены как настоящие · деньги виртуальные</em></p>' +
+            '<div class="rp-row">' +
+            '<button type="button" class="ub pri" onclick="pftScRpAgain()">Ещё раз эту неделю</button>' +
+            '<button type="button" class="ub gh" onclick="pftScReplay()">Другая неделя</button>' +
+            '<button type="button" class="ub gh" onclick="pftScRpExit()">Выйти</button>' +
+            '</div></div>';
+    }
+    // плёнка: график released-части недели своим svg (движок тут ни при чём)
+    function rpChartHtml(s) {
+        if (!RP) return '';
+        var rows = RP.rows, i = RP.i;
+        var W = 1000, H = 520;
+        var min = Infinity, max = -Infinity;
+        // масштаб — по УЖЕ ПОКАЗАННОЙ части: будущее не подглядывает даже осью
+        for (var k = 0; k <= i; k++) {
+            if (rows[k].v < min) min = rows[k].v;
+            if (rows[k].v > max) max = rows[k].v;
+        }
+        if (!(max > min)) max = min + 0.01;
+        var span0 = max - min;
+        min -= span0 * 0.08; max += span0 * 0.08;
+        var span = max - min;
+        function X(k2) { return k2 / (rows.length - 1) * W; }
+        function Y(v) { return H - (v - min) / span * H; }
+        var line = '';
+        for (var k3 = 0; k3 <= i; k3++) line += (line ? ' ' : '') + X(k3).toFixed(1) + ',' + Y(rows[k3].v).toFixed(1);
+        var nowX = X(i);
+        var marks = '';
+        RP.fills.forEach(function (f) {
+            marks += '<circle cx="' + X(f.i).toFixed(1) + '" cy="' + Y(f.px).toFixed(1) + '" r="4" ' +
+                'class="rp-fill ' + (f.buy ? 'g' : 'r') + '"/>';
+        });
+        var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" ' +
+            'aria-label="Плёнка реплея">' +
+            '<line x1="' + nowX.toFixed(1) + '" y1="0" x2="' + nowX.toFixed(1) + '" y2="' + H + '" class="rp-now"/>' +
+            '<polyline points="' + line + '" class="bts-line"/>' + marks +
+        '</svg>';
+        var ptag = '<span class="ptag" style="top:' +
+            Math.min(97, Math.max(2, (max - rpPx()) / span * 100)).toFixed(1) + '%">' + fmtPx(rpPx(), s) + '</span>';
+        var voidNote = i < rows.length - 6
+            ? '<span class="rp-void" style="left:' + Math.min(86, nowX / W * 100 + 4).toFixed(1) + '%">' +
+              'будущее скрыто — свечи приходят в темпе плёнки</span>'
+            : '';
+        var dts = '';
+        for (var k4 = 0; k4 < 5; k4++) {
+            var idx = Math.round(k4 * (rows.length - 1) / 4);
+            dts += '<span>' + new Date(rows[idx].t).toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric' }) + '</span>';
+        }
+        return '<div class="bts-canvas">' + svg + ptag + voidNote + '</div><div class="ax-dates">' + dts + '</div>';
+    }
+    // плёнка-бар: play/пауза, скорость, прогресс, выход — низ сцены вместо
+    // полосы позиций (позиции и счёт в реплее — виртуальные, живой брокер спит)
+    function rpBarHtml() {
+        if (!RP) return '';
+        var pct = Math.round(RP.i / (RP.rows.length - 1) * 100);
+        function sp(k) {
+            return '<span class="' + (RP.speed === k ? 'on' : '') + '" role="button" tabindex="0" ' +
+                'onclick="pftScRpSpeed(' + k + ')">×' + k + '</span>';
+        }
+        var pnl = (rpEquity() / RP_START - 1) * 100;
+        return '<button type="button" class="rp-play" onclick="pftScRpPlay()" ' +
+                'aria-label="' + (RP.playing ? 'Пауза' : 'Дальше') + '">' + (RP.playing ? '❚❚' : '▶') + '</button>' +
+            '<span class="rp-sp">' + sp(1) + sp(5) + sp(20) + '</span>' +
+            '<span class="rp-tl"><i style="width:' + pct + '%"></i></span>' +
+            '<span class="rp-info">счёт <b>' + fmtRub(rpEquity()) + '</b> · <u class="' +
+                (pnl >= 0 ? 'g' : 'r') + '">' + (pnl >= 0 ? '+' : '−') +
+                Math.abs(pnl).toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' %</u></span>' +
+            '<span class="rp-dt">' + esc(RP.label) + '</span>' +
+            '<button type="button" class="rp-exit" onclick="pftScRpExit()">выйти из реплея</button>';
+    }
+    function rpBarPatch() {
+        scnSet('btScnRp', rpBarHtml());
+    }
+
+    // ---- полоса избранного (раунд 3): рейка на F, бумаги на цифрах 1–9 ----
+    // Тот же стор, что у «Избранного» Портфелей и «Рынка» (stk_fav_v1):
+    // звезда, поставленная где угодно, сразу видна и здесь. Цены и
+    // спарклайны — дневки MOEX ISS, как у виджета «Избранное».
+    function wlList() {
+        try {
+            return (typeof window.stkGetFavorites === 'function')
+                ? window.stkGetFavorites()
+                : (JSON.parse(localStorage.getItem('stk_fav_v1')) || []);
+        } catch (e) { return []; }
+    }
+    function wlOn() { return !!stageObj().layers.wl; }
+    window.pftScWl = function () {
+        var o = stageObj();
+        o.layers.wl = o.layers.wl ? 0 : 1;
+        saveStageRaw(o);
+        if (PF.renderNoAnim) PF.renderNoAnim();
+    };
+    var wlData = {};   // ticker -> {last, d, closes[]} | 'busy' | 'err'
+    var wlUid = {};    // ticker -> uid брокера (для загрузки в сцену)
+    function wlLoad(tk) {
+        if (wlData[tk]) return;
+        wlData[tk] = 'busy';
+        var from = new Date(Date.now() - 45 * 86400000).toISOString().slice(0, 10);
+        fetch('https://iss.moex.com/iss/engines/stock/markets/shares/securities/' + encodeURIComponent(tk) +
+            '/candles.json?iss.meta=off&interval=24&from=' + from, { credentials: 'omit' })
+            .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+            .then(function (j) {
+                var cd = j && j.candles, cols = (cd && cd.columns) || [], data = (cd && cd.data) || [];
+                var iC = cols.indexOf('close');
+                var closes = iC < 0 ? [] : data.map(function (r2) { return +r2[iC] || 0; })
+                    .filter(function (v) { return v > 0; });
+                if (closes.length < 2) { wlData[tk] = 'err'; wlPaint(); return; }
+                wlData[tk] = {
+                    last: closes[closes.length - 1],
+                    d: (closes[closes.length - 1] / closes[closes.length - 2] - 1) * 100,
+                    closes: closes.slice(-30)
+                };
+                wlPaint();
+            }, function () { wlData[tk] = 'err'; wlPaint(); })
+            .catch(function () { wlData[tk] = 'err'; wlPaint(); });
+    }
+    function wlSpark(closes, up) {
+        var W = 46, H = 20;
+        var min = Math.min.apply(null, closes), max = Math.max.apply(null, closes);
+        var span = (max - min) || 1;
+        var pts = closes.map(function (v, i) {
+            return (i * W / (closes.length - 1)).toFixed(1) + ',' +
+                (H - 2 - (v - min) / span * (H - 4)).toFixed(1);
+        }).join(' ');
+        return '<svg class="wl-sp" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true">' +
+            '<polyline points="' + pts + '" class="' + (up ? 'g' : 'r') + '"/></svg>';
+    }
+    function scnWlHtml() {
+        if (!wlOn()) return '';
+        var favs = wlList().slice(0, 9);
+        var s = S(sxSlot());
+        var head = '<div class="wl-h"><b>Избранное</b><kbd>F</kbd>' +
+            '<button type="button" class="wl-x" onclick="pftScWl()" aria-label="Свернуть полосу">✕</button></div>';
+        if (!favs.length) {
+            return head + '<div class="wl-none">Пока пусто. Ставьте звёздочки на «Рынке» или в «Избранном» ' +
+                'Портфелей — бумаги появятся здесь и получат клавиши 1–9.</div>';
+        }
+        var rows = favs.map(function (tk, i) {
+            wlLoad(tk);
+            var d = wlData[tk];
+            var nm = '';
+            try { var c = window.stkFindCompany && window.stkFindCompany(tk); nm = (c && (c.name || c['Компания'])) || ''; } catch (e) {}
+            var on = s.meta && s.meta.ticker === tk;
+            var right = '';
+            if (d && d !== 'busy' && d !== 'err') {
+                var up = d.d >= 0;
+                right = wlSpark(d.closes, up) +
+                    '<span class="pd"><b>' + d.last.toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + '</b>' +
+                    '<i class="' + (up ? 'g' : 'r') + '">' + (up ? '+' : '−') +
+                    Math.abs(d.d).toLocaleString('ru-RU', { maximumFractionDigits: 1 }) + ' %</i></span>';
+            } else if (d === 'err') right = '<span class="pd"><i>—</i></span>';
+            return '<div class="wl-r' + (on ? ' on' : '') + '" role="button" tabindex="0" ' +
+                'onclick="pftScWlGo(\'' + jsArg(tk) + '\')" title="В сцену — клавиша ' + (i + 1) + '">' +
+                '<kbd>' + (i + 1) + '</kbd>' +
+                '<span class="tk"><b>' + esc(tk) + '</b>' + (nm ? '<em>' + esc(nm) + '</em>' : '') + '</span>' +
+                right + '</div>';
+        }).join('');
+        return head + rows +
+            '<div class="wl-ft">то же «Избранное», что в Портфелях и на «Рынке» · клавиши 1–9 работают и при закрытой рейке</div>';
+    }
+    function wlPaint() {
+        if (sceneLive()) scnSet('btScnWl', scnWlHtml());
+    }
+    // клик или цифра: тикер превращается в uid брокера один раз, дальше кэш
+    window.pftScWlGo = function (tk) {
+        function go(uid) {
+            loadInstrument(sxSlot(), uid, function () {
+                simpleSum = ''; scnUnit = ''; scnLim = 0;
+                scnActive = sxSlot();
+                if (PF.renderNoAnim) PF.renderNoAnim();
+            });
+        }
+        if (wlUid[tk]) { go(wlUid[tk]); return; }
+        PF.pftFindInstruments(tk).then(function (list) {
+            var hit = null;
+            (list || []).forEach(function (p) {
+                if (!hit && String(p.ticker).toUpperCase() === String(tk).toUpperCase()) hit = p;
+            });
+            hit = hit || (list && list[0]);
+            if (!hit || !hit.uid) { toast('Бумага ' + tk + ' у брокера не нашлась', true); return; }
+            wlUid[tk] = hit.uid;
+            go(hit.uid);
+        }).catch(function () { toast('Бумага ' + tk + ' у брокера не нашлась', true); });
     };
 
     var scnFindTarget = 0;   // слот, куда поиск положит бумагу (0 = активный)
@@ -5181,8 +5756,8 @@
             chart.subscribeAction('onCandleBarClick', function (data) {
                 if (data && data.close) window.pftScPickPx(data.close);
             });
-            // прокрутка/зум сдвигают шкалу — ярлыки заявок едут следом
-            try { chart.subscribeAction('onVisibleRangeChange', function () { scnKTags(); }); } catch (e) {}
+            // прокрутка/зум сдвигают шкалу — ярлыки заявок и профиль едут следом
+            try { chart.subscribeAction('onVisibleRangeChange', function () { scnKTags(); scnKProfile(); }); } catch (e) {}
             // плашка цены кроссхейра на стороне, противоположной оси
             try { chart.subscribeAction('onCrosshairChange', function (d) { scnKCross(d); scnKOhlc(d); scnKFillHover(d); }); } catch (e) {}
             try {
@@ -5229,7 +5804,10 @@
     var SCN_IND_ON_CANDLE = [
         ['MA', 'MA 20', 'скользящая средняя'],
         ['EMA', 'EMA', 'экспоненциальная средняя'],
-        ['BOLL', 'Боллинджер', 'полосы волатильности']
+        ['BOLL', 'Боллинджер', 'полосы волатильности'],
+        // «Профиль» — не индикатор движка, а свой канвас-слой (scnKProfile):
+        // горизонтальная тень у левого края — где наторговано больше всего
+        ['PROFILE', 'Профиль объёма', 'где наторговано больше всего']
     ];
     var SCN_IND_PANE = [
         ['VOL', 'Объём', 'гистограмма сделок'],
@@ -5315,12 +5893,14 @@
         var haveN = have.map(function (i) { return i.name; });
         want.forEach(function (name) {
             if (haveN.indexOf(name) >= 0) return;
+            if (name === 'PROFILE') return;   // свой канвас-слой, движку не знаком
             var mk = { name: name };
             if (name === 'VOL') mk.calcParams = [];      // голая гистограмма, без своих MA
             if (name === 'MA') mk.calcParams = [20];     // чип и обещает «MA 20»
             if (SCN_IND_OVER[name]) mk.paneId = 'candle_pane';
             try { K.chart.createIndicator(mk, true); } catch (e) {}
         });
+        scnKProfile();
         // осцилляторам — небольшая доля холста, свечам всегда большая часть
         try {
             var panes = (K.chart.getPaneOptions() || []).filter(function (p) {
@@ -5332,6 +5912,93 @@
                 K.chart.setPaneOptions({ id: p.id, height: each, minHeight: 28 });
             });
         } catch (e) {}
+    }
+    // ---- профиль объёма (раунд 3): канвас-слой поверх свечей ----
+    // Горизонтальная тень у левого края: на каких ценах наторговано больше
+    // всего. Считается из ВИДИМЫХ баров движка (двигаешь график — профиль
+    // пересчитывается), пик подписан фактом. Движок про слой не знает:
+    // перерисовка на тиках, скролле и смене темы.
+    function scnKProfile() {
+        var cv = dq('btScnProf');
+        if (!cv) return;
+        var on = K.chart && candlesOn() && scnInds().indexOf('PROFILE') >= 0;
+        var box = cv.parentElement;
+        if (!on || !box) { cv.style.display = 'none'; return; }
+        cv.style.display = '';
+        var list = [], vr = null;
+        try { list = K.chart.getDataList() || []; vr = K.chart.getVisibleRange(); } catch (e) {}
+        var from = vr && isFinite(vr.from) ? Math.max(0, Math.floor(vr.from)) : 0;
+        var to = vr && isFinite(vr.to) ? Math.min(list.length, Math.ceil(vr.to)) : list.length;
+        var bars = list.slice(from, to);
+        var W = box.clientWidth, H = box.clientHeight;
+        var dpr = window.devicePixelRatio || 1;
+        if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) {
+            cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+        }
+        var ctx = cv.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, W, H);
+        if (bars.length < 4) return;
+        var min = Infinity, max = -Infinity, anyVol = false;
+        bars.forEach(function (b) {
+            if (b.low > 0 && b.low < min) min = b.low;
+            if (b.high > max) max = b.high;
+            if (b.volume > 0) anyVol = true;
+        });
+        if (!(max > min) || !anyVol) return;
+        var BINS = Math.max(14, Math.min(28, Math.floor(H / 26)));
+        var vols = new Array(BINS);
+        for (var i = 0; i < BINS; i++) vols[i] = 0;
+        bars.forEach(function (b) {
+            var typ = (b.high + b.low + b.close) / 3;
+            var bi = Math.min(BINS - 1, Math.max(0, Math.floor((typ - min) / (max - min) * BINS)));
+            vols[bi] += +b.volume || 0;
+        });
+        var maxV = 0, poc = 0;
+        vols.forEach(function (v, i) { if (v > maxV) { maxV = v; poc = i; } });
+        if (!(maxV > 0)) return;
+        // левый край области свечей — x первого видимого бара (ось слева
+        // занимает свои пиксели, тень не должна ложиться на цифры шкалы)
+        var x0 = 0;
+        try {
+            var p0 = K.chart.convertToPixel({ dataIndex: from, value: bars[0].close }, { paneId: 'candle_pane' });
+            if (p0 && isFinite(p0.x)) x0 = Math.max(0, p0.x - 4);
+        } catch (e) {}
+        var night = sceneNight();
+        var acc = night ? '#7c8cff' : '#4453ef';
+        var maxW = Math.min(220, W * 0.2);
+        var s = S(sxSlot());
+        for (var b2 = 0; b2 < BINS; b2++) {
+            if (!(vols[b2] > 0)) continue;
+            var pTop = min + (b2 + 1) / BINS * (max - min);
+            var pBot = min + b2 / BINS * (max - min);
+            var yT = pxToY(pTop), yB = pxToY(pBot);
+            if (yT == null || yB == null) continue;
+            var hh = Math.max(2, Math.abs(yB - yT) - 3);
+            var ww = Math.max(3, vols[b2] / maxV * maxW);
+            ctx.globalAlpha = b2 === poc ? 0.26 : 0.11;
+            ctx.fillStyle = acc;
+            scnRoundRect(ctx, x0, Math.min(yT, yB) + 1.5, ww, hh, 2);
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+        // пик объёма: волосяной пунктир через холст + тихая подпись фактом
+        var pocPx = min + (poc + 0.5) / BINS * (max - min);
+        var pocY = pxToY(pocPx);
+        if (pocY != null) {
+            ctx.strokeStyle = night ? 'rgba(147,161,184,0.4)' : 'rgba(100,116,139,0.4)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([2, 5]);
+            ctx.beginPath(); ctx.moveTo(x0, pocY); ctx.lineTo(W, pocY); ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.font = '600 10px ' + (getComputedStyle(document.body).getPropertyValue('--font-num') || 'monospace');
+            ctx.fillStyle = night ? '#93a1b8' : '#64748b';
+            ctx.fillText(fmtPx(pocPx, s) + ' — пик объёма', x0 + maxW + 14, pocY - 4);
+        }
+    }
+    function scnRoundRect(ctx, x, y, w, h, r) {
+        if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); return; }
+        ctx.beginPath(); ctx.rect(x, y, w, h);
     }
     // ---- заявки линиями на графике: одна сущность, два представления ----
     // Линия — оверлей движка (drag двигает ЧЕРНОВИК цены в тикете, не заявку:
@@ -5658,11 +6325,11 @@
     var SCN_DEPTH_CARD = 10;  // стакан карточной высоты («Стакан»/«Сплит» на «Старте»)
     // уровней на сторону — ПО ФАКТИЧЕСКОЙ высоте карточного стакана: поджатый
     // «Счётом» тикет не должен ни резать ряды, ни оставлять пустоту (владелец
-    // 2026-07-24). ~96px — шапка + спред + свёрнутая лента, ряд 24px
+    // 2026-07-24). ~118px — шапка + сегмент видов + спред, ряд 24px
     function scnDepthDeep() {
         var el = dq('btScnTkDepth');
         if (!el || !el.clientHeight) return SCN_DEPTH_CARD;
-        var per = Math.floor((el.clientHeight - 96) / 24 / 2);
+        var per = Math.floor((el.clientHeight - 118) / 24 / 2);
         return Math.max(4, Math.min(SCN_DEPTH_CARD, per));
     }
     // данные стакана для рендера И для точечного патча (scnDepthSet):
@@ -5734,15 +6401,57 @@
             '<span class="d-my">' + (l.my ? l.my + ' ' + PF.plural(l.my, 'лот', 'лота', 'лотов') : '') + '</span>' +
             '<span class="d-vol">' + l.lots.toLocaleString('ru-RU') + '</span></div>';
     }
+    // ---- виды карточного стакана (раунд 3): Лесенка / Лента / Кривая ----
+    // Лесенка — прежние уровни; Лента — последние сделки во всю карточку;
+    // Кривая — кумулятивная глубина обеих сторон одним взглядом (перекос
+    // спроса и предложения виден без чтения цифр, ховер отвечает деньгами)
+    function scnDepthView() {
+        var v = stageObj().layers.depthView;
+        return v === 'tape' || v === 'curve' ? v : 'ladder';
+    }
+    window.pftScDepthView = function (v) {
+        var o = stageObj();
+        if (scnDepthView() === v) return;
+        o.layers.depthView = v;
+        delete o.layers.depthTape;   // раскрываемая лента лесенки ушла в свой вид
+        saveStageRaw(o);
+        var tv = scnTktView();
+        var el = dq('btScnTkDepth');
+        if (el) { el.__btDSig = null; el.__btHtml = null; }
+        scnDepthSet('btScnTkDepth', S(sxSlot()), tv === 'depth' ? 1 : 0, scnDepthDeep());
+        if (v === 'tape') pollTape(sxSlot());   // свежий залп, не ждём тика
+    };
+    function scnDepthSegHtml() {
+        var v = scnDepthView();
+        function b(k, lab) {
+            return '<span class="' + (v === k ? 'on' : '') + '" role="button" tabindex="0" ' +
+                'onclick="pftScDepthView(\'' + k + '\')">' + lab + '</span>';
+        }
+        return '<div class="d-seg">' + b('ladder', 'Лесенка') + b('tape', 'Лента') + b('curve', 'Кривая') + '</div>';
+    }
     function scnDepthHtml(s, slim, deep) {
         // slim — стакан внутри карточки тикета «Старта»: слово «Стакан» уже
         // на вкладке карточки, остаётся только подсказка жеста.
-        // deep — уровней на сторону: 6 в плоскости «Разгона»/«Контроля»
-        // (высота делится с графиком), карточной высоте есть куда расти
-        var head = slim
-            ? '<div class="d-h"><em>клик по цене — лимитка</em></div>'
-            : '<div class="d-h"><b>Стакан</b><em>клик — лимитка</em></div>';
+        // deep — уровней на сторону: карточной высоте есть куда расти
+        var v = scnDepthView();
+        var hint = v === 'ladder' ? 'клик — лимитка'
+            : v === 'tape' ? 'все сделки рынка' : 'вся книга одним взглядом';
+        var head = (slim
+            ? '<div class="d-h"><em>' + hint + '</em></div>'
+            : '<div class="d-h"><b>Стакан</b><em>' + hint + '</em></div>') +
+            scnDepthSegHtml();
         if (!s.ob) return head + '<div class="bts-cnote">Ждём стакан…</div>';
+        if (v === 'tape') {
+            return head + '<div class="d-tape-full"><div class="d-tape-b">' + scnTkTapeRows(s) + '</div></div>';
+        }
+        if (v === 'curve') {
+            return head + '<div class="d-curvew" id="btScnCurveW" ' +
+                'onmousemove="pftScCurveHov(event)" onmouseleave="pftScCurveHovOff()">' +
+                '<canvas id="btScnCurve"></canvas></div>' +
+                '<div class="dc-x" id="btScnCurveX"></div>' +
+                '<div class="dc-note">Зелёная гора — сколько хотят <b>купить</b> дешевле текущей цены, ' +
+                'красная — <b>продать</b> дороже. Чем круче гора, тем плотнее заявки.</div>';
+        }
         var d = scnDepthData(s, deep || SCN_DEPTH);
         // пустую сторону неликвида показываем, не прячем (экран 11): рыночной
         // цены без неё не существует — кнопку тикета гасит scnSubmitBlock
@@ -5752,21 +6461,9 @@
         var bidPart = d.bids.length
             ? d.bids.map(function (l) { return scnDepthRow(l, s); }).join('')
             : '<div class="eg-empty">покупателей сейчас нет — спред не определён</div>';
-        // карточная высота (deep): пустой низ занимает раскрываемый блок
-        // «Последние сделки» — та же лента, что кормит «Разгон»; открытый
-        // растягивается на ВЕСЬ пробел (класс open), а не жмётся к низу
-        var tape = '';
-        if (deep) {
-            var tOpen = !!stageObj().layers.depthTape;
-            tape = '<div class="d-tapew' + (tOpen ? ' open' : '') + '">' +
-                '<div class="d-tape-h" role="button" tabindex="0" aria-expanded="' + tOpen + '" ' +
-                    'onclick="pftScTapeTgl()"><b>Последние сделки</b><i>' + (tOpen ? '▴' : '▾') + '</i></div>' +
-                (tOpen ? '<div class="d-tape-b">' + scnTkTapeRows(s) + '</div>' : '') +
-            '</div>';
-        }
         return head + askPart +
             '<div class="d-spread"><i></i><b>' + scnSpreadTxt(s, d.sp) + '</b><i></i></div>' +
-            bidPart + tape;
+            bidPart;
     }
     // тик стакана: та же структура — патчим ЖИВЫЕ узлы (цены, лоты, ширины
     // заливок), а не innerHTML: css-transition ширины даёт стакану «дышать».
@@ -5774,9 +6471,29 @@
     function scnDepthSet(id, s, slim, deep) {
         var el = dq(id);
         if (!el) return;
+        var view = scnDepthView();
+        // «Лента» и «Кривая» живут своим обновлением: структура постоянна
+        if (view !== 'ladder') {
+            var sigV = [slim ? 1 : 0, view, s.ob ? 1 : 0].join('|');
+            if (el.__btDSig !== sigV) {
+                el.__btDSig = sigV;
+                el.__btHtml = null;
+                el.innerHTML = scnDepthHtml(s, slim, deep);
+                if (view === 'curve') requestAnimationFrame(function () { scnCurveDraw(s); });
+                return;
+            }
+            if (!s.ob) return;
+            if (view === 'tape') {
+                var tb0 = el.querySelector('.d-tape-b');
+                if (tb0) {
+                    var th0 = scnTkTapeRows(s);
+                    if (tb0.__btHtml !== th0) { tb0.__btHtml = th0; tb0.innerHTML = th0; }
+                }
+            } else scnCurveDraw(s);
+            return;
+        }
         var d = s.ob ? scnDepthData(s, deep || SCN_DEPTH) : null;
-        var sig = [slim ? 1 : 0, deep || 0, d ? d.asks.length : -1, d ? d.bids.length : -1,
-            deep && stageObj().layers.depthTape ? 1 : 0].join('|');
+        var sig = [slim ? 1 : 0, deep || 0, d ? d.asks.length : -1, d ? d.bids.length : -1].join('|');
         if (el.__btDSig !== sig) {
             el.__btDSig = sig;
             el.__btHtml = null;   // после патчей строковый кэш scnSet врал бы
@@ -5820,15 +6537,10 @@
             var st = scnSpreadTxt(s, d.sp);
             if (spb.textContent !== st) spb.textContent = st;
         }
-        var tb = el.querySelector('.d-tape-b');
-        if (tb) {
-            var th = scnTkTapeRows(s);
-            if (tb.__btHtml !== th) { tb.__btHtml = th; tb.innerHTML = th; }
-        }
     }
     function scnTkTapeRows(s) {
         // рядов с запасом на весь пробел карточки; лишнее срежет overflow
-        var rows = (s.tape || []).slice(0, 16);
+        var rows = (s.tape || []).slice(0, 20);
         if (!rows.length) return '<div class="bts-cnote">Сделки подтянутся через секунду…</div>';
         var q2n = A().q2n, bk = bondK(s);   // облигации: % → ₽
         return rows.map(function (t) {
@@ -5839,13 +6551,121 @@
                 '<span class="d-vol">×' + (+t.quantity || 0).toLocaleString('ru-RU') + '</span></div>';
         }).join('');
     }
-    window.pftScTapeTgl = function () {
-        var o = stageObj();
-        o.layers.depthTape = o.layers.depthTape ? 0 : 1;
-        saveStageRaw(o);
-        var tv = scnTktView();
-        scnDepthSet('btScnTkDepth', S(sxSlot()), tv === 'depth' ? 1 : 0, scnDepthDeep());
-        if (o.layers.depthTape) pollTape(sxSlot());   // свежий залп, не ждём тика
+    // ---- кривая глубины (раунд 3): кумулятив обеих сторон на канвасе ----
+    // Х — цена (пропорционально), Y — накопленные лоты от спреда наружу.
+    // Рисуем от живого s.ob на каждом тике: канвас дешевле патча DOM-строк
+    function scnCurvePalette() {
+        var night = sceneNight();
+        return {
+            grn: night ? '#34d399' : '#16a34a',
+            red: night ? '#f87171' : '#dc2626',
+            hair: night ? 'rgba(255,255,255,0.10)' : 'rgba(15,23,42,0.10)',
+            mut: night ? '#93a1b8' : '#64748b'
+        };
+    }
+    // геометрия последней отрисовки — для ховера (без пересчёта книги)
+    var CURVE = null;
+    function scnCurveDraw(s) {
+        var cv = dq('btScnCurve'), box = dq('btScnCurveW');
+        if (!cv || !box || !s.ob) { CURVE = null; return; }
+        var q2n = A().q2n;
+        function take(arr) {
+            return (arr || []).map(function (l) {
+                return { px: q2n(l.price), lots: +l.quantity || 0 };
+            }).filter(function (l) { return l.px > 0 && l.lots > 0; });
+        }
+        var asks = take(s.ob.asks), bids = take(s.ob.bids);
+        if (!asks.length && !bids.length) { CURVE = null; return; }
+        var W = box.clientWidth, H = box.clientHeight;
+        if (!(W > 40) || !(H > 40)) { CURVE = null; return; }
+        var dpr = window.devicePixelRatio || 1;
+        if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) {
+            cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+        }
+        var ctx = cv.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, W, H);
+        // кумулятив от лучшей цены наружу; Х — цена в общем диапазоне книги
+        var pmin = bids.length ? bids[bids.length - 1].px : asks[0].px;
+        var pmax = asks.length ? asks[asks.length - 1].px : bids[0].px;
+        if (!(pmax > pmin)) { pmax = pmin + ((s.meta && s.meta.minInc) || 0.01); }
+        var cum = 0, bidPts = [], askPts = [], maxCum = 1;
+        bids.forEach(function (l) { cum += l.lots; bidPts.push({ px: l.px, c: cum }); });
+        maxCum = Math.max(maxCum, cum);
+        cum = 0;
+        asks.forEach(function (l) { cum += l.lots; askPts.push({ px: l.px, c: cum }); });
+        maxCum = Math.max(maxCum, cum);
+        var padT = 10, padB = 4;
+        function X(px) { return (px - pmin) / (pmax - pmin) * (W - 2) + 1; }
+        function Y(c) { return H - padB - c / maxCum * (H - padT - padB); }
+        var pal = scnCurvePalette();
+        function mountain(pts, basePx, col) {
+            // ступени: горизонталь на прежнем кумулятиве, вертикаль на уровне
+            ctx.beginPath();
+            ctx.moveTo(X(basePx), Y(0));
+            var pc = 0;
+            pts.forEach(function (p) {
+                ctx.lineTo(X(p.px), Y(pc));
+                ctx.lineTo(X(p.px), Y(p.c));
+                pc = p.c;
+            });
+            ctx.lineTo(X(pts[pts.length - 1].px), Y(0));
+            ctx.closePath();
+            ctx.globalAlpha = 0.14; ctx.fillStyle = col; ctx.fill();
+            ctx.globalAlpha = 0.75; ctx.strokeStyle = col; ctx.lineWidth = 1.6; ctx.stroke();
+            ctx.globalAlpha = 1;
+        }
+        if (bidPts.length) mountain(bidPts, bids[0].px, pal.grn);
+        if (askPts.length) mountain(askPts, asks[0].px, pal.red);
+        // серединка спреда — волосяная вертикаль
+        if (bids.length && asks.length) {
+            var mid = (bids[0].px + asks[0].px) / 2;
+            ctx.strokeStyle = pal.hair; ctx.lineWidth = 1;
+            ctx.setLineDash([3, 4]);
+            ctx.beginPath(); ctx.moveTo(X(mid), padT); ctx.lineTo(X(mid), H - padB); ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        CURVE = { W: W, H: H, pmin: pmin, pmax: pmax, bids: bids, asks: asks,
+                  bestBid: bids.length ? bids[0].px : 0, bestAsk: asks.length ? asks[0].px : 0 };
+        // подписи оси: край книги слева и справа, спред в центре
+        var ax = dq('btScnCurveX');
+        if (ax) {
+            var h2 = '<span>' + fmtPx(pmin, s) + '</span><b>' + scnSpreadTxt(s, spreadInfo(s)) + '</b>' +
+                '<span>' + fmtPx(pmax, s) + '</span>';
+            if (ax.__btHtml !== h2) { ax.__btHtml = h2; ax.innerHTML = h2; }
+        }
+    }
+    // ховер кривой: вертикаль + «скупить/продать до X — ≈ Y ₽» (язык
+    // кумулятивного ховера лесенки — один и тот же ответ деньгами)
+    window.pftScCurveHov = function (ev) {
+        var box = dq('btScnCurveW');
+        if (!box || !CURVE) return;
+        var r = box.getBoundingClientRect();
+        var x = (ev.clientX - r.left) / (r.width || 1);
+        var px = CURVE.pmin + x * (CURVE.pmax - CURVE.pmin);
+        var s = S(sxSlot());
+        var lot = (s.meta && s.meta.lot) || 1;
+        var ask = CURVE.bestAsk > 0 && px >= (CURVE.bestBid + CURVE.bestAsk) / 2;
+        var money = 0, edge = 0;
+        (ask ? CURVE.asks : CURVE.bids).forEach(function (l) {
+            if (ask ? l.px <= px : l.px >= px) { money += l.px * l.lots * lot; edge = l.px; }
+        });
+        var tip = dq('btScnCurveTip');
+        if (!tip) {
+            tip = document.createElement('div');
+            tip.id = 'btScnCurveTip'; tip.className = 'd-cumtip';
+            box.appendChild(tip);
+        }
+        if (!(money > 0) || !(edge > 0)) { tip.remove(); return; }
+        tip.textContent = (ask ? 'скупить до ' : 'продать до ') + fmtPx(edge, s) +
+            ' ₽ — ≈ ' + scnMoneyShort(money);
+        tip.classList.toggle('sell', !ask);
+        var left = Math.min(Math.max(4, ev.clientX - r.left + 10), r.width - 150);
+        tip.style.left = left + 'px';
+        tip.style.top = Math.max(2, ev.clientY - r.top - 30) + 'px';
+    };
+    window.pftScCurveHovOff = function () {
+        var tip = dq('btScnCurveTip'); if (tip) tip.remove();
     };
     // ---- кумулятивная глубина по ховеру (владелец 2026-07-23) ----
     // Навёл на уровень — тихо подсвечиваются все уровни между спредом и ним,
@@ -6554,20 +7374,26 @@
         var st = stageObj();
         var n = sxSlot(), s = S(n);
         if (s.uid) sxLoadCandles(s.uid);
-        var tktVw = scnTktView();
+        var tktVw = RP ? 'deal' : scnTktView();
         var body = s.meta
             ? scnHeroHtml(n, s) +
               '<aside class="tkt' + (tktVw === 'split' ? ' tkt-x2' : '') + '" id="btScnTicket">' + scnTicketHtml(n) + '</aside>' +
-              '<div class="dock" id="btScnDock">' + scnDockHtml() + '</div>' +
-              '<div class="acct" id="btScnAcct">' + scnAcctHtml() + '</div>'
+              (RP ? '' : '<div class="dock" id="btScnDock">' + scnDockHtml() + '</div>' +
+                         '<div class="acct" id="btScnAcct">' + scnAcctHtml() + '</div>')
             : scnHelloHtml();
+        // реплей: полосу позиций подменяет плёнка-бар (живой брокер спит),
+        // росток и «Счёт» закрыты — их данные из настоящего, не из прошлого
         return '<div class="bts' + (sceneNight() ? ' night' : '') + '" id="btScene" data-stage="start" ' +
-            'data-tkt="' + tktVw + '" data-deck="' + (st.layers.deck ? 1 : 0) + '" ' +
-            'data-acct="' + (st.layers.acct ? 1 : 0) + '">' +
+            'data-tkt="' + tktVw + '" data-deck="' + (!RP && st.layers.deck ? 1 : 0) + '" ' +
+            'data-acct="' + (!RP && st.layers.acct ? 1 : 0) + '" data-wl="' + (st.layers.wl ? 1 : 0) + '">' +
             envRowHtml() +
             '<div class="bts-glow"></div>' +
+            '<aside class="bts-wl" id="btScnWl">' + scnWlHtml() + '</aside>' +
             body +
-            '<div class="pos-strip" id="btScnPos">' + scnPosInner() + '</div>' +
+            (RP
+                ? '<div class="rp-bar" id="btScnRp">' + rpBarHtml() + '</div>' +
+                  '<div class="rp-donew" id="btScnRpDone">' + rpDoneHtml() + '</div>'
+                : '<div class="pos-strip" id="btScnPos">' + scnPosInner() + '</div>') +
         '</div>';
     };
 
@@ -6580,13 +7406,17 @@
     function sxTick() {
         if (!sceneLive()) return;
         var n = sxSlot(), s = S(n);
+        // бумагу сцены сменили под живым реплеем — плёнка честно выключается
+        if (RP && s.uid !== RP.uid) rpHalt();
         if (s.meta) {
             scnSet('btScnFresh', scnFreshInner());
             scnTicketBits();
             scnSet('btScnPrice', scnPriceHtml(s));
             // свечи живут своим канвасом (движок), innerHTML их убил бы;
             // линия — прежний точечный своп svg
-            if (candlesOn()) { scnKMount(); scnKTags(); scnKFills(); }
+            if (RP) scnSet('btScnChart', rpChartHtml(s));
+            else if (scnCmpGet()) scnSet('btScnChart', scnCmpChartHtml(s));
+            else if (candlesOn()) { scnKMount(); scnKTags(); scnKFills(); scnKProfile(); }
             else scnSet('btScnChart', scnChartHtml(s));
             scnSet('btScnKnow', scnKnowHtml(n));
             // стакан в карточке тикета (вид «Стакан»/«Сплит») — жив тиками
@@ -6598,11 +7428,13 @@
             if (stageObj().layers.acct) { scnSet('btScnAcct', scnAcctHtml()); scnAcctFit(); }
         }
         scnSet('btScnPos', scnPosInner());
+        wlPaint();   // активная строка рейки избранного ходит за бумагой сцены
     }
     // куски тикета, зависящие от суммы: сам инпут никогда не пересобирается —
     // каретка и фокус переживают любой тик котировок
     function scnCapInner() {
-        var free = T.pos.money;
+        var free = scnFree();
+        if (RP) return 'виртуально ' + fmtRub(free);
         return free != null ? 'свободно ' + fmtRub(free) : '';
     }
     // баннер обрыва (экран 11): честно называем возраст данных на экране.
@@ -6718,7 +7550,7 @@
         scnTicketBits();
     };
     window.pftSxMax = function () {
-        var free = T.pos.money;
+        var free = scnFree();
         if (!(free > 0)) { toast('Свободные деньги ещё не пришли от брокера — секунду', true); return; }
         window.pftSxQuick(Math.floor(free));
     };
@@ -6731,6 +7563,8 @@
         if (scnShortfall(n) > 0 || (!buy && c.qty > haveQty(s))) return;   // кнопка и так гашена с причиной
         var stop = scnSubmitBlock(n);
         if (stop) { toast(stop, true); return; }
+        // реплей: сделка виртуальная и мгновенная — по цене плёнки, без брокера
+        if (RP) { rpTrade(n, c, buy); return; }
         if (velBlock()) return;
         s.lots = c.lots;
         // лимитка сцены (строка цены «Разгона» или гвард «Старта») — уважаем;
@@ -6920,6 +7754,16 @@
             return;
         }
         if (typing) return;                        // в поле клавиши принадлежат полю
+        // рейка избранного (раунд 3): F — открыть/закрыть, цифры 1–9 — бумага
+        // в сцену; работают и при закрытой рейке, бумага в слоте не обязательна
+        if (scene && e.code === 'KeyF' && !e.shiftKey) {
+            e.preventDefault(); window.pftScWl(); return;
+        }
+        if (scene && /^Digit[1-9]$/.test(e.code)) {
+            var favs = wlList(), fi = +e.code.slice(5) - 1;
+            if (favs[fi]) { e.preventDefault(); window.pftScWlGo(favs[fi]); }
+            return;
+        }
         var n = scene ? sxSlot() : hotSlot, s = S(n);
         if (!s.uid) return;
         if (e.code === 'KeyB' || e.code === 'KeyS') {
