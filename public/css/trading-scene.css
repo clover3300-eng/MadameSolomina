@@ -1138,12 +1138,16 @@
 .bts .know u { text-decoration: none; margin-left: auto; color: var(--acc); font-weight: 600; cursor: pointer; }
 /* «что нужно знать» РАСКРЫТО — три факта с иконками (владелец 2026-07-24):
    короткий жирный вывод + тихая расшифровка, глаз цепляет за секунду */
+/* know2 — flex-колонка: при нехватке высоты сжимается ЗА СЧЁТ прокрутки фактов
+   (know2-b), а не клиппинга последнего (владелец 2026-07-24: в сплите с активной
+   кнопкой последний факт срезался). Кнопка и квитанция остаются целыми */
 .bts .know2 {
     border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
     background: color-mix(in srgb, var(--acc) 4%, var(--card));
+    display: flex; flex-direction: column; min-height: 0;
 }
 .bts .know2-h {
-    display: flex; align-items: center; gap: 8px; padding: 11px 14px 9px;
+    display: flex; align-items: center; gap: 8px; padding: 11px 14px 9px; flex: none;
     font: 400 13.5px var(--font-title); color: var(--ink);
 }
 .bts .know2-h .k2q, .bts .know .k2q {
@@ -1157,7 +1161,7 @@
     color: var(--dim); cursor: pointer; padding: 2px 7px; border-radius: 7px;
 }
 .bts .know2-h .know-x:hover { background: var(--hair); color: var(--ink); }
-.bts .know2-b { display: flex; flex-direction: column; padding: 0 14px 6px; }
+.bts .know2-b { display: flex; flex-direction: column; padding: 0 14px 6px; flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
 .bts .k2 { display: flex; gap: 12px; align-items: flex-start; padding: 9px 0; }
 .bts .k2 + .k2 { border-top: 1px solid var(--hair); }
 .bts .k2ic {

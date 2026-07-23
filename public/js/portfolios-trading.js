@@ -7214,9 +7214,16 @@
         }
         return '<div class="prot">' + chip('tp', v.tp) + chip('sl', v.sl) + '</div>';
     }
+    // точечный ре-рендер ТОЛЬКО блока защиты (владелец 2026-07-24: полный
+    // scnTicketRedraw в сплите пересобирал и карточку стакана — она моргала и
+    // перезапускала анимацию входа). Тик #btScnProt не трогает, поля правки живут
+    function scnProtRedraw() {
+        var f = dq('btScnProt');
+        if (f) f.innerHTML = scnProtHead() + scnProtInner(sxSlot());
+    }
     window.pftScProtEdit = function (k) {
         scnProtEdit = true;
-        scnTicketRedraw(sxSlot());
+        scnProtRedraw();
         var i = dq(k === 'sl' ? 'btScnProtSl' : 'btScnProtTp');
         if (i) try { i.focus(); } catch (e) {}
     };
@@ -7229,7 +7236,7 @@
         if (sl) s.protSl = numStr(sl.value.replace(',', '.'));
         s.prot = (+s.protTp > 0 || +s.protSl > 0);
         saveSlots();
-        scnTicketRedraw(sxSlot());
+        scnProtRedraw();
         scnKProt();
     };
     // ✕ на плашке черновика: убрать одну ногу защиты прямо с графика
@@ -7238,7 +7245,7 @@
         s[k === 'tp' ? 'protTp' : 'protSl'] = '';
         s.prot = (+s.protTp > 0 || +s.protSl > 0);
         saveSlots();
-        var f = dq('btScnProt'); if (f) f.innerHTML = scnProtHead() + scnProtInner(sxSlot());
+        scnProtRedraw();
         scnKProt();
     };
     // ✕ на «ждёт исполнения»: защита ещё не на бирже (встанет из pendingProt
