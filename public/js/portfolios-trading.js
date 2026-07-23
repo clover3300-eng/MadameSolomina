@@ -4754,12 +4754,50 @@
         ];
         return '<em>Что нужно знать</em>' + rows.map(function (r) { return '<span>' + r + '</span>'; }).join('');
     }
+    // ---- вид карточки тикета «Старта»: Сделка / Стакан / Сплит ----
+    // (владелец 2026-07-23): стакан приходит прямо в карточку, сплит
+    // раздваивает её на стакан + заявку и поджимает герой слева
+    function scnTktView() {
+        if (stageObj().stage !== 'start') return 'deal';
+        var v = stageObj().layers.tktView;
+        return v === 'depth' || v === 'split' ? v : 'deal';
+    }
+    function scnTktTabsHtml() {
+        var v = scnTktView();
+        function tb(k, lab, cls) {
+            return '<b class="tt' + cls + (v === k ? ' on' : '') + '" role="tab" tabindex="0" ' +
+                'aria-selected="' + (v === k) + '" onclick="pftScTkt(\'' + k + '\')">' + lab + '</b>';
+        }
+        return '<span class="tkt-tabs">' + tb('deal', 'Сделка', '') + '<i>/</i>' +
+            tb('depth', 'Стакан', ' grn') + '<i>/</i>' + tb('split', 'Сплит', '') + '</span>';
+    }
+    window.pftScTkt = function (k) {
+        var o = stageObj();
+        if (scnTktView() === k) return;
+        o.layers.tktView = k;
+        saveStageRaw(o);
+        // класс и атрибут — ДО перерисовки: ширину карточки и сжатие героя
+        // ведёт CSS-transition, содержимое меняется мгновенно
+        var sc = dq('btScene');
+        if (sc) sc.setAttribute('data-tkt', k);
+        var el = dq('btScnTicket');
+        if (el) el.classList.toggle('tkt-x2', k === 'split');
+        scnTicketRedraw(sxSlot());
+    };
     function scnTicketHtml(n) {
         var s = S(n), buy = s.side !== 'sell';
+        var start = stageObj().stage === 'start';
+        var vw = scnTktView();
+        var head = '<div class="tkt-h">' + (start ? scnTktTabsHtml() : '<b>Сделка</b>') +
+            '<span class="freshw" id="btScnFresh">' + scnFreshInner() + '</span></div>';
+        // стакан на всю карточку — той же глубиной, что «Разгон»
+        if (vw === 'depth' && !isBond(s)) {
+            return head + '<div class="tkt-depth" id="btScnTkDepth">' + scnDepthHtml(s, 1) + '</div>';
+        }
         // облигации в тикет не пущены (хвост набора): котировка в % от номинала,
         // рубли без проверки единиц на живом счёте были бы гаданием
         if (isBond(s)) {
-            return '<div class="tkt-h"><b>Сделка</b></div>' +
+            return (start ? head : '<div class="tkt-h"><b>Сделка</b></div>') +
                 '<div class="apx"><span class="mut">' + esc(s.meta.ticker) + ' — облигация: цена в процентах от ' +
                 'номинала. Тикет откроется после проверки единиц на живом счёте; пока облигации живут в «Портфелях».</span></div>';
         }
@@ -4779,7 +4817,7 @@
         // защита позиции — строка тикета «Контроля»; линии на графике ведёт
         // scnKProt, изменение здесь — изменение там (одна сущность)
         var protRow = ctl ? '<div class="fld fld-p" id="btScnProt"><em>Защита позиции</em>' + scnProtInner(n) + '</div>' : '';
-        return '<div class="tkt-h"><b>Сделка</b><span class="freshw" id="btScnFresh">' + scnFreshInner() + '</span></div>' +
+        var deal = head +
             '<div class="seg">' +
                 '<span class="' + (buy ? 'on' : '') + '" role="button" tabindex="0" onclick="pftSxSide(\'buy\')">Купить</span>' +
                 '<span class="' + (buy ? '' : 'on sell') + '" role="button" tabindex="0" onclick="pftSxSide(\'sell\')">Продать</span></div>' +
@@ -4808,6 +4846,14 @@
                   '<u role="button" tabindex="0" onclick="pftScKnow()">Открыть</u></div>') +
             '<div class="rest" id="btScnRest">' + scnRestHtml(n) + '</div>' +
             '<div class="ctaw" id="btScnCta">' + scnCtaHtml(n) + '</div>';
+        // сплит: карточка раздваивается — стакан слева, заявка справа;
+        // ширину контейнера и сжатие героя анимирует CSS (data-tkt на сцене)
+        if (vw === 'split') {
+            return '<div class="tkt-sub tkt-sub-depth"><div class="tkt-depth" id="btScnTkDepth">' +
+                    scnDepthHtml(s) + '</div></div>' +
+                '<div class="tkt-sub tkt-sub-deal">' + deal + '</div>';
+        }
+        return deal;
     }
 
     // ---- полоса позиций: чипы вместо таблицы (мокап 03, пины 6–7) ----
@@ -5444,8 +5490,12 @@
     // ЛОВУШКА мокапа: лучшая продажа стоит У СПРЕДА, дорогие аски — сверху.
     // Брокер отдаёт аски от лучшего — на экран идут в ОБРАТНОМ порядке.
     var SCN_DEPTH = 6;
-    function scnDepthHtml(s) {
-        var head = '<div class="d-h"><b>Стакан</b><em>клик — лимитка</em></div>';
+    function scnDepthHtml(s, slim) {
+        // slim — стакан внутри карточки тикета «Старта»: слово «Стакан» уже
+        // на вкладке карточки, остаётся только подсказка жеста
+        var head = slim
+            ? '<div class="d-h"><em>клик по цене — лимитка</em></div>'
+            : '<div class="d-h"><b>Стакан</b><em>клик — лимитка</em></div>';
         if (!s.ob) return head + '<div class="bts-cnote">Ждём стакан…</div>';
         var q2n = A().q2n;
         function take(arr) {
@@ -6048,12 +6098,14 @@
         // полоса чипов и карточка-предложение там не рисуются)
         var ctl = st.stage === 'control';
         var accel = st.stage === 'accel';
+        var tktVw = scnTktView();
         var body = s.meta
             ? (ctl ? scnHeroControlHtml(n, s) : accel ? scnHeroAccelHtml(n, s) : scnHeroHtml(n, s)) +
-              '<aside class="tkt" id="btScnTicket">' + scnTicketHtml(n) + '</aside>' +
+              '<aside class="tkt' + (tktVw === 'split' ? ' tkt-x2' : '') + '" id="btScnTicket">' + scnTicketHtml(n) + '</aside>' +
               (ctl ? '<div class="dock" id="btScnDock">' + scnDockHtml() + '</div>' : '')
             : scnHelloHtml();
-        return '<div class="bts' + (sceneNight() ? ' night' : '') + '" id="btScene" data-stage="' + st.stage + '">' +
+        return '<div class="bts' + (sceneNight() ? ' night' : '') + '" id="btScene" data-stage="' + st.stage + '" ' +
+            'data-tkt="' + tktVw + '">' +
             envRowHtml() +
             '<div class="bts-glow"></div>' +
             body +
@@ -6109,6 +6161,9 @@
                 if (candlesOn()) { scnKMount(); scnKTags(); }
                 else scnSet('btScnChart', scnChartHtml(s));
                 scnSet('btScnKnow', scnKnowHtml(n));
+                // стакан в карточке тикета (вид «Стакан»/«Сплит») — жив тиками
+                var tv = scnTktView();
+                if (tv !== 'deal') scnSet('btScnTkDepth', scnDepthHtml(s, tv === 'depth' ? 1 : 0));
             }
             if (st !== 'control') scnSet('btScnUnlock', unlockHtml());
         }

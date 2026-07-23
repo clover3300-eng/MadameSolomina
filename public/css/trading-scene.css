@@ -245,6 +245,37 @@
 .bts .tkt-h { display: flex; align-items: center; gap: 9px; }
 .bts .tkt-h b { font: 400 16px var(--font-title); }
 .bts .freshw { margin-left: auto; }
+/* вкладки карточки «Старта»: Сделка / Стакан / Сплит (стакан — зелёный) */
+.bts .tkt-tabs { display: inline-flex; align-items: baseline; gap: 8px; }
+.bts .tkt-tabs i { font-style: normal; color: var(--dim); opacity: 0.55; }
+.bts .tkt-tabs .tt { font: 400 16px var(--font-title); color: var(--ink); opacity: 0.38; cursor: pointer; user-select: none; white-space: nowrap; }
+.bts .tkt-tabs .tt:hover { opacity: 0.72; }
+.bts .tkt-tabs .tt.on { opacity: 1; }
+.bts .tkt-tabs .tt.grn { color: var(--grn); }
+/* стакан на всю карточку (вид «Стакан») */
+.bts .tkt-depth { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+/* сплит: карточка раздваивается на стакан + заявку; ширину контейнера и
+   сжатие героя ведут transition (контент слева поджимается, как от сайдбара) */
+.bts .tkt { transition: width 0.45s cubic-bezier(0.25, 0.9, 0.3, 1); }
+.bts-hero { transition: right 0.45s cubic-bezier(0.25, 0.9, 0.3, 1); }
+.bts[data-stage="start"][data-tkt="split"] .tkt {
+    width: 642px;                          /* 260 стакан + 14 + 368 заявка */
+    background: none; border: 0; padding: 0;
+    box-shadow: none; backdrop-filter: none; overflow: visible;
+    flex-direction: row; justify-content: flex-end; gap: 14px;
+}
+.bts[data-stage="start"][data-tkt="split"] .bts-hero { right: 730px; }   /* 36+642+52 */
+.bts .tkt-sub {
+    background: var(--card); border: 1px solid var(--line); border-radius: 18px;
+    padding: 20px; display: flex; flex-direction: column; gap: 13px;
+    backdrop-filter: blur(14px); min-height: 0;
+    box-shadow: 0 24px 54px -30px rgba(24, 38, 60, 0.45);
+}
+.bts.night .tkt-sub { box-shadow: 0 24px 60px -30px rgba(0, 0, 0, 0.55); background: color-mix(in srgb, var(--card) 92%, transparent); }
+/* заявка держит свою ширину у правого края; стакан вырастает слева из-под неё */
+.bts .tkt-sub-deal { flex: 0 0 368px; }
+.bts .tkt-sub-depth { flex: 1 1 auto; min-width: 0; overflow: hidden; animation: btSplitIn 0.5s cubic-bezier(0.25, 0.9, 0.3, 1) backwards; }
+@keyframes btSplitIn { from { opacity: 0; } 40% { opacity: 0; } }
 .bts .fresh { display: inline-flex; align-items: center; gap: 6px; font: 600 10px var(--font-ui); color: var(--grn); white-space: nowrap; }
 .bts .fresh i { width: 6px; height: 6px; border-radius: 50%; background: var(--grn); }
 .bts .fresh.amber { color: var(--amb); }
@@ -900,4 +931,8 @@
     .bts-omni { width: 340px; }
     .bts .facts { gap: 20px; }
     .bts-ctl { right: 448px; }      /* 24 + 400 + 24 */
+    /* сплит «Старта» на узком: 240 стакан + 14 + 360 заявка */
+    .bts[data-stage="start"][data-tkt="split"] .tkt { width: 614px; }
+    .bts[data-stage="start"][data-tkt="split"] .bts-hero { right: 682px; }   /* 24+614+44 */
+    .bts .tkt-sub-deal { flex-basis: 360px; }
 }
