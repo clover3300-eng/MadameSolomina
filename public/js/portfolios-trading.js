@@ -4595,12 +4595,20 @@
         var s = S(n), buy = s.side !== 'sell';
         var last = sxPrice(s);
         var px = last > 0 ? fmtPx(last, s) + ' ₽' : '—';
+        // первая строка обязана видеть лимитку (владелец 2026-07-23: тикет с
+        // лимиткой говорил «по рыночной цене» — враньё), lim — цена слота
+        var lim = s.kind === 'limit' && +s.price > 0 ? fmtPx(+s.price, s) + ' ₽' : '';
+        var first = buy
+            ? (lim ? 'Купится по вашей лимитной цене <b>' + lim + '</b> или дешевле — дороже никогда.'
+                : 'Купится по рыночной цене — сейчас <b>' + px + '</b> за акцию.')
+            : (lim ? 'Продастся по вашей лимитной цене <b>' + lim + '</b> или дороже — дешевле никогда.'
+                : 'Продастся по рыночной цене — сейчас <b>' + px + '</b> за акцию.');
         var rows = buy ? [
-            'Купится по рыночной цене — сейчас <b>' + px + '</b> за акцию.',
+            first,
             'Комиссия ' + feeTxt() + ' % уже в сумме кнопки — списаний сверх неё не будет.',
             'Передумать можно, пока заявка не исполнена.'
         ] : [
-            'Продастся по рыночной цене — сейчас <b>' + px + '</b> за акцию.',
+            first,
             'Комиссия ' + feeTxt() + ' % уже вычтена из суммы кнопки.',
             'Если продаёте с прибылью, налог 13 % удержат по итогам года.'
         ];
@@ -4728,14 +4736,19 @@
         // полоса — свёрнутое состояние ростка (вариант А): ярлык позиций и
         // счётчик заявок раскрывают панель вверх, контент поджимается
         var open = !!stageObj().layers.deck;
+        // итог портфеля живёт В ЯРЛЫКЕ «Мои позиции» (владелец 2026-07-23:
+        // одинокая сумма у правого нижнего угла смотрелась не к месту)
+        var val = portValue();
         var lab = '<span class="ps-t" role="button" tabindex="0" onclick="pftScDeck(\'pos\')" ' +
-            'title="Развернуть позиции панелью">Мои позиции <i>' + (open && dockTab === 'pos' ? '▴' : '▾') + '</i></span>';
+            'title="Развернуть позиции панелью">Мои позиции' +
+            (val != null ? ' <b>' + fmtRub(val) + '</b>' : '') +
+            ' <i>' + (open && dockTab === 'pos' ? '▴' : '▾') + '</i></span>';
         var ordBtn = '<button type="button" class="ps-ord" onclick="pftScDeck(\'orders\')" ' +
             'title="Мои заявки панелью">заявки' + (nOrd ? ' <b>' + nOrd + '</b>' : '') +
             ' <i>' + (open && dockTab === 'orders' ? '▴' : '▾') + '</i></button>';
         if (!list.length) {
             // позиций ещё нет, но росток должен быть достижим — полоса-минимум
-            return lab + '<em class="ps-none">пока пусто</em>' + '<span class="ps-sum">' + '</span>' + ordBtn;
+            return lab + '<em class="ps-none">пока пусто</em>' + ordBtn;
         }
         var chips = list.slice(0, POS_CHIPS).map(function (p) {
             var cl = (T.closes || {})[p.uid];
@@ -4754,10 +4767,7 @@
             ? '<button type="button" class="ps-more" onclick="pftSceneBack()" ' +
               'title="Полный разбор позиций — в «Портфелях»">ещё ' + (list.length - POS_CHIPS) + ' →</button>'
             : '';
-        var val = portValue();
-        return lab + chips + more +
-            (val != null ? '<span class="ps-sum">портфель <b>' + fmtRub(val) + '</b></span>' : '') +
-            ordBtn;
+        return lab + chips + more + ordBtn;
     }
     window.pftScChip = function (uid) {
         loadInstrument(sxSlot(), uid, function () {
@@ -4823,12 +4833,25 @@
                     last: { upColor: up, downColor: down, noChangeColor: txt,
                         line: { show: true }, text: { show: false } }
                 },
-                // легенда — только под кроссхейром: постоянная строка OHLC
-                // спорила бы с чипами индикаторов за верх холста (мокап 04)
-                tooltip: { showRule: 'follow_cross', title: { color: txt }, legend: { color: txt } }
+                // легенда — только под кроссхейром, и В ПЛАШКЕ (showType rect,
+                // владелец 2026-07-23): голые цифры терялись под линиями
+                // кроссхейра, карточка-подложка отделяет данные от сетки
+                tooltip: { showRule: 'follow_cross', showType: 'rect',
+                    title: { color: txt, size: 11 },
+                    legend: { color: nightMode ? '#e9eef8' : '#0f172a', size: 11.5,
+                        marginLeft: 10, marginTop: 6, marginBottom: 2 },
+                    rect: {
+                        color: nightMode ? 'rgba(18,23,34,0.94)' : 'rgba(255,255,255,0.94)',
+                        borderColor: nightMode ? 'rgba(255,255,255,0.14)' : 'rgba(15,23,42,0.12)',
+                        borderSize: 1, borderRadius: 10,
+                        paddingLeft: 12, paddingRight: 12, paddingTop: 8, paddingBottom: 8,
+                        offsetLeft: 10, offsetTop: 10, offsetRight: 10, offsetBottom: 10
+                    } }
             },
             indicator: {
-                tooltip: { showRule: 'follow_cross', legend: { color: txt } },
+                // rect и у индикаторов: их легенда живёт в той же плашке
+                tooltip: { showRule: 'follow_cross', showType: 'rect',
+                    legend: { color: nightMode ? '#e9eef8' : '#0f172a', size: 11.5 } },
                 ohlc: { upColor: up, downColor: down, noChangeColor: txt },
                 bars: [{ upColor: 'rgba(22,163,74,0.45)', downColor: 'rgba(220,38,38,0.45)', noChangeColor: txt }],
                 lines: [{ color: nightMode ? '#7c8cff' : '#4453ef' }]
@@ -4843,14 +4866,19 @@
             // чип цены кроссхейра НА ОСИ (слева) — светлый; противоположную
             // сторону дорисовывает DOM-плашка scnKCross (справа — акцент).
             // Геометрия чипа = геометрия DOM-плашек .px-tag: один размер
+            // линии кроссхейра — пунктир полутоном (владелец 2026-07-23:
+            // сплошные линии мешали читать цифры легенды)
             crosshair: { show: true,
-                horizontal: { line: { color: txt }, text:
+                horizontal: { line: { style: 'dashed', dashedValue: [3, 4],
+                    color: nightMode ? 'rgba(147,161,184,0.45)' : 'rgba(100,116,139,0.45)' }, text:
                     { backgroundColor: nightMode ? '#121722' : '#ffffff',
                         color: nightMode ? '#e9eef8' : '#0f172a',
                         borderColor: nightMode ? 'rgba(255,255,255,0.16)' : 'rgba(15,23,42,0.14)',
                         borderSize: 1, size: 11, borderRadius: 6,
                         paddingLeft: 7, paddingRight: 7, paddingTop: 4, paddingBottom: 4 } },
-                vertical: { line: { color: txt }, text: { backgroundColor: chipBg } }
+                vertical: { line: { style: 'dashed', dashedValue: [3, 4],
+                    color: nightMode ? 'rgba(147,161,184,0.45)' : 'rgba(100,116,139,0.45)' },
+                    text: { backgroundColor: chipBg } }
             }
         };
     }
@@ -5303,6 +5331,15 @@
         saveSlots();
         scnTicketRedraw(n);
     };
+    // клик по СТРОКЕ стакана (владелец 2026-07-23): не только подставить цену,
+    // но и открыть саму заявку — вид «Стакан» на всю карточку прячет тикет,
+    // и лимитка вставала бы невидимкой. «Сплит» заявку уже показывает.
+    window.pftScRowPx = function (px) {
+        window.pftScPickPx(px);
+        if (scnTktView() === 'depth') window.pftScTkt('deal');
+        var i = dq('btScnLimIn');
+        if (i) try { i.focus(); i.select(); } catch (e) {}
+    };
 
     // ---- стакан-глубина: правый край графика, одна плоскость ----
     // ЛОВУШКА мокапа: лучшая продажа стоит У СПРЕДА, дорогие аски — сверху.
@@ -5366,7 +5403,7 @@
         // заливка — мягкий градиент ЗА числом лотов, без серых подложек:
         // длиннее заливка → крупнее уровень, стена подсвечена гуще (d-big)
         return '<div class="' + l.cls + '" role="button" tabindex="0" data-px="' + l.px + '" ' +
-            'title="' + l.rub + '" onclick="pftScPickPx(+this.dataset.px)">' +
+            'title="' + l.rub + '" onclick="pftScRowPx(+this.dataset.px)">' +
             '<i class="d-fill" style="width:' + l.w + '%"></i>' +
             '<span class="pr">' + fmtPx(l.px, s) + '</span>' +
             '<span class="d-vol">' + l.lots.toLocaleString('ru-RU') + '</span></div>';
@@ -5542,21 +5579,25 @@
 
     // ---- строка цены тикета («Разгон»+): рынок ⇄ лимит ----
     var scnKnowOpen = false;   // «что нужно знать» на «Разгоне» свёрнуто в строку
+    // рынок ⇄ лимит — мини-сегмент в идиоме тикета (владелец 2026-07-23
+    // поверх мокапа: текстовые ссылки читались плохо); значение цены — рядом
     function scnPriceRowInner(n) {
         var s = S(n);
         var lim = s.kind === 'limit' && +s.price > 0;
         var last = sxPrice(s);
+        var seg = '<span class="px-seg">' +
+            '<span class="' + (lim ? '' : 'on') + '" role="button" tabindex="0" onclick="pftScKind(0)">По рынку</span>' +
+            '<span class="' + (lim ? 'on' : '') + '" role="button" tabindex="0" onclick="pftScKind(1)">Лимит</span></span>';
         if (!lim) {
-            return '<em>Цена</em><div class="fld-price">' +
-                '<span class="mkt" role="button" tabindex="0" onclick="pftScKind(1)">По рынку ▾</span>' +
-                '<span class="lim" role="button" tabindex="0" onclick="pftScKind(1)">или укажите лимит</span></div>';
+            return '<em>Цена</em><div class="fld-price">' + seg +
+                '<span class="px-now" id="btScnPxNow">' +
+                (last > 0 ? 'сейчас ' + fmtPx(last, s) + ' ₽' : '') + '</span></div>';
         }
-        return '<em>Цена</em><div class="fld-price">' +
-            '<span class="mkt on">Лимит</span>' +
+        return '<em>Цена</em><div class="fld-price">' + seg +
             '<span class="lim-edit"><input id="btScnLimIn" type="text" inputmode="decimal" autocomplete="off" ' +
                 'spellcheck="false" value="' + esc(String(s.price)) + '" aria-label="Лимитная цена"><u>₽</u></span>' +
-            '<span class="lim" role="button" tabindex="0" onclick="pftScKind(0)">' +
-                '<i id="btScnPxNow">' + (last > 0 ? 'сейчас ' + fmtPx(last, s) + ' · ' : '') + '</i>по рынку</span></div>';
+            '<span class="px-now" id="btScnPxNow">' +
+                (last > 0 ? 'сейчас ' + fmtPx(last, s) : '') + '</span></div>';
     }
     window.pftScKind = function (toLim) {
         var n = sxSlot(), s = S(n);
@@ -5596,6 +5637,8 @@
     function protVals(s) {
         return { tp: +s.protTp || 0, sl: +s.protSl || 0 };
     }
+    // чипы в цвет плашек графика (владелец 2026-07-23 поверх мокапа: серая
+    // строка «тейк · стоп» не читалась) — одна сущность = один язык цвета
     function scnProtInner(n) {
         var s = S(n), v = protVals(s);
         if (scnProtEdit) {
@@ -5606,18 +5649,25 @@
                     esc(s.protSl || '') + '" placeholder="—"></label>' +
                 '<u role="button" tabindex="0" onclick="pftScProtDone()">готово</u></div>';
         }
-        return '<div class="prot"><b>' +
-            (v.tp > 0 || v.sl > 0
-                ? (v.tp > 0 ? 'тейк ' + fmtPx(v.tp, s) + ' ₽' : '') +
-                  (v.tp > 0 && v.sl > 0 ? ' · ' : '') +
-                  (v.sl > 0 ? 'стоп ' + fmtPx(v.sl, s) + ' ₽' : '')
-                : 'не задана') +
-            '</b><u role="button" tabindex="0" onclick="pftScProtEdit()">изменить</u></div>';
+        // пусто — два «призрака» зовут добавить ногу; задана — чип с ✕
+        function chip(k, val) {
+            var word = k === 'tp' ? 'тейк' : 'стоп';
+            if (!(val > 0)) {
+                return '<span class="prot-add ' + k + '" role="button" tabindex="0" ' +
+                    'onclick="pftScProtEdit(\'' + k + '\')">+ ' + word + '</span>';
+            }
+            return '<span class="prot-chip ' + k + '" role="button" tabindex="0" ' +
+                'onclick="pftScProtEdit(\'' + k + '\')" title="Изменить уровень">' + word +
+                ' <b>' + fmtPx(val, s) + ' ₽</b>' +
+                '<u onclick="event.stopPropagation();pftScProtClr(\'' + k + '\')" title="Убрать уровень">✕</u></span>';
+        }
+        return '<div class="prot">' + chip('tp', v.tp) + chip('sl', v.sl) + '</div>';
     }
-    window.pftScProtEdit = function () {
+    window.pftScProtEdit = function (k) {
         scnProtEdit = true;
         scnTicketRedraw(sxSlot());
-        var i = dq('btScnProtTp'); if (i) try { i.focus(); } catch (e) {}
+        var i = dq(k === 'sl' ? 'btScnProtSl' : 'btScnProtTp');
+        if (i) try { i.focus(); } catch (e) {}
     };
     window.pftScProtDone = function () {
         scnProtEdit = false;
@@ -5798,8 +5848,8 @@
             return '<div class="dk-r dk-pos" role="button" tabindex="0" onclick="pftScChip(\'' + jsArg(p.uid) + '\')">' +
                 '<b>' + esc(p.ticker) + '</b>' +
                 '<span>' + p.qty.toLocaleString('ru-RU') + ' шт</span>' +
-                '<span>по <b>' + fmtPx(p.avg, { meta: p.meta }) + ' ₽</b></span>' +
-                '<span>сейчас <b>' + fmtPx(p.last, { meta: p.meta }) + ' ₽</b></span>' +
+                '<span><b>' + fmtPx(p.avg, { meta: p.meta }) + ' ₽</b></span>' +
+                '<span><b>' + fmtPx(p.last, { meta: p.meta }) + ' ₽</b></span>' +
                 '<span class="' + (up ? 'g' : 'r') + '">' + (up ? '+' : '−') + fmtKop(Math.abs(p.pnl)) + '</span>' +
                 '<span class="' + (up ? 'g' : 'r') + '">' + (up ? '+' : '−') +
                     pct.toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' %</span>' +
@@ -5993,11 +6043,12 @@
         // поле краснеет вместе с недостачей (мокап 08, состояние «не хватает»)
         var fld = dq('btScnFld');
         if (fld) fld.classList.toggle('err', scnShortfall(n) > 0);
-        // «сейчас X ₽» в строке лимита живёт тиком, сам инпут цены — нет
+        // «сейчас X ₽» в строке цены живёт тиком, сам инпут цены — нет
         var now = dq('btScnPxNow');
         if (now) {
             var s = S(n), last = sxPrice(s);
-            var t = last > 0 ? 'сейчас ' + fmtPx(last, s) + ' · ' : '';
+            var lim = s.kind === 'limit' && +s.price > 0;
+            var t = last > 0 ? 'сейчас ' + fmtPx(last, s) + (lim ? '' : ' ₽') : '';
             if (now.textContent !== t) now.textContent = t;
         }
     }
@@ -6016,7 +6067,8 @@
     function scnDockFit() {
         var el = dq('btScene'), d = dq('btScnDock');
         if (!el) return;
-        if (d && d.childElementCount) el.style.setProperty('--bts-dock', (d.offsetHeight + 52 + 12) + 'px');
+        // 96 — низ ростка выровнен с низом карточки сделки (владелец 2026-07-23)
+        if (d && d.childElementCount) el.style.setProperty('--bts-dock', (d.offsetHeight + 96 + 12) + 'px');
         else el.style.removeProperty('--bts-dock');
     }
     window.addEventListener('resize', scnFit);
