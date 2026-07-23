@@ -326,6 +326,22 @@
         var nm = c && typeof c.name === 'string' ? c.name.trim() : '';
         return nm || ('Экран ' + pfxTradeNo(t));
     }
+    // переименовать экран «Торговли» (владелец 2026-07-23): имя живёт в самом
+    // конфиге раскладки (normTabCfg.name), поэтому уезжает в облако вместе с
+    // ней (pf_dash_tabs_v1 в cloud-sync.WATCH). Пустое имя возвращает подпись
+    // «Экран N» по умолчанию — см. pfxTradeName выше
+    PF.pfxRenameTrade = function (t, name) {
+        if (!pfxIsTradeTab(t)) return false;
+        var c = dashCfgFor(t);                    // создаст сид, если конфига ещё нет
+        c.name = String(name == null ? '' : name).trim().slice(0, 40);
+        if (PF.dashTab === t) saveDashCfg();      // активный экран — штатный путь
+        else {
+            // неактивный: PF.dashCfg чужой, пишем карту вкладок напрямую
+            pfTabsStore[t] = c;
+            try { localStorage.setItem(DASH_TABS_KEY, JSON.stringify(pfTabsStore)); } catch (e) {}
+        }
+        return true;
+    };
     // удалить раскладку подвкладки (экран «Торговли», вкладка-портфель): из памяти,
     // из хранилища и из localStorage. Тот же порядок, что у pfxDropPfTab
     function pfxDropTabCfg(t) {

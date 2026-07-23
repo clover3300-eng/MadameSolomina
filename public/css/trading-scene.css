@@ -561,13 +561,25 @@
 .bts-indmenu {
     position: absolute; right: 0; top: calc(100% + 10px); z-index: 40;
     background: var(--card); border: 1px solid var(--line); border-radius: 14px;
-    padding: 8px; width: 236px; box-shadow: 0 24px 54px -24px rgba(24, 38, 60, 0.5);
+    padding: 6px; width: 246px; box-shadow: 0 24px 54px -24px rgba(24, 38, 60, 0.5);
 }
 .bts.night .bts-indmenu { box-shadow: 0 24px 54px -24px rgba(0, 0, 0, 0.6); }
-.bts-indmenu .im-cap {
-    display: block; font: 700 8.5px var(--font-ui); letter-spacing: 0.09em;
-    text-transform: uppercase; color: var(--dim); padding: 7px 9px 3px;
+/* группы «На свечах» / «Отдельной панелью» — двумя карточками с пиктограммой
+   (владелец 2026-07-23: голые подписи сливались со строками индикаторов) */
+.bts-indmenu .im-sec {
+    background: color-mix(in srgb, var(--ink) 4%, transparent);
+    border-radius: 10px; padding: 3px 3px 4px;
 }
+.bts-indmenu .im-sec + .im-sec { margin-top: 6px; }
+.bts-indmenu .im-cap {
+    display: flex; align-items: center; gap: 7px;
+    font: 700 9px var(--font-ui); letter-spacing: 0.09em;
+    text-transform: uppercase; color: var(--dim); padding: 6px 8px 4px;
+}
+.bts-indmenu .im-cap svg { width: 14px; height: 14px; flex: none; }
+.bts-indmenu .im-cap svg .c { fill: currentColor; opacity: 0.45; }
+.bts-indmenu .im-cap svg .a { fill: none; stroke: var(--acc); stroke-width: 1.5; stroke-linecap: round; }
+.bts-indmenu .im-cap svg .af { fill: var(--acc); opacity: 0.85; }
 .bts-indmenu button {
     display: grid; grid-template-columns: auto 1fr auto; align-items: baseline;
     column-gap: 8px; width: 100%; text-align: left; border: 0; background: none;
@@ -928,6 +940,12 @@
     cursor: pointer; user-select: none; white-space: nowrap;
 }
 .bts .sct.on { color: var(--ink); border-color: var(--line); background: var(--card); }
+/* инлайн-переименование экрана: вкладка на время ввода — поле (владелец 2026-07-23) */
+.bts .sct.ren { padding: 0; border-color: var(--acc); }
+.bts .sct.ren input {
+    font: 600 12.5px var(--font-ui); color: var(--ink); caret-color: var(--acc);
+    background: none; border: 0; outline: 0; padding: 7px 13px; width: 15ch; min-width: 0;
+}
 .bts .bts-omni-s { width: 280px; margin: 0; }
 
 /* ═══════ омнибокс ⌘K (экран 07) ═══════ */

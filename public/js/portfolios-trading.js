@@ -3755,6 +3755,7 @@
         return '<div class="bts-menu" id="pftbMenu">' +
             item('pftFsSums()', IC_EYE, 'Скрывать суммы', '', hid) +
             item('pftFsKeys()', IC_KEYS, 'Клавиши терминала', '?') +
+            item('pftScScreenRenCur()', IC_PEN, 'Переименовать экран', '') +
             '<div class="bts-msep"></div>' +
             item('pftSceneBack()', IC_OUT, 'В «Портфели»', '') +
         '</div>';
@@ -3804,6 +3805,7 @@
     var IC_EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7"/><circle cx="12" cy="12" r="3"/></svg>';
     var IC_KEYS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg>';
     var IC_OUT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17l5-5-5-5M20 12H9M11 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5"/></svg>';
+    var IC_PEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.8 2.8 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg>';
     var IC_BACK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>';
 
     // ---------- ОМНИБОКС ⌘K (этап 6, экран 07) ----------
@@ -5169,6 +5171,15 @@
         var box = dq('btScnIndMenu');
         if (box) box.outerHTML = scnIndMenuHtml();
     };
+    // пиктограммы групп меню: линия ЛОЖИТСЯ на свечи / осциллятор занимает
+    // СВОЮ полосу под свечами — глазами видно, куда встанет индикатор
+    var IM_IC_OVER = '<svg viewBox="0 0 14 14" aria-hidden="true">' +
+        '<rect x="2.4" y="4.4" width="2.6" height="6.4" rx="0.8" class="c"/>' +
+        '<rect x="9" y="2.6" width="2.6" height="6.4" rx="0.8" class="c"/>' +
+        '<path d="M1 8.8 C4 3.4, 10 11.4, 13 5.2" class="a"/></svg>';
+    var IM_IC_PANE = '<svg viewBox="0 0 14 14" aria-hidden="true">' +
+        '<rect x="1.4" y="1.4" width="11.2" height="6.6" rx="1.4" class="c"/>' +
+        '<rect x="1.4" y="10" width="11.2" height="2.8" rx="1.2" class="af"/></svg>';
     function scnIndMenuHtml() {
         var inds = scnInds();
         function item(x) {
@@ -5176,9 +5187,14 @@
             return '<button type="button" class="' + (on ? 'on' : '') + '" onclick="pftScInd(\'' + x[0] + '\')">' +
                 '<b>' + x[1] + '</b><em>' + x[2] + '</em><i>✓</i></button>';
         }
+        // группы — двумя карточками с пиктограммами (владелец 2026-07-23:
+        // голые подписи сливались со строками индикаторов)
+        function sec(ic, cap, arr) {
+            return '<div class="im-sec"><span class="im-cap">' + ic + cap + '</span>' + arr.map(item).join('') + '</div>';
+        }
         return '<div class="bts-indmenu" id="btScnIndMenu">' +
-            '<span class="im-cap">На свечах</span>' + SCN_IND_ON_CANDLE.map(item).join('') +
-            '<span class="im-cap">Отдельной панелью</span>' + SCN_IND_PANE.map(item).join('') +
+            sec(IM_IC_OVER, 'На свечах', SCN_IND_ON_CANDLE) +
+            sec(IM_IC_PANE, 'Отдельной панелью', SCN_IND_PANE) +
         '</div>';
     }
     window.pftScIndMenu = function (ev) {
@@ -6127,8 +6143,14 @@
         var cur = PF.pfxTab;
         var html = tabs.map(function (t) {
             var name = (PF.pfxTradeName && PF.pfxTradeName(t)) || 'Основной';
-            return '<span class="sct' + (t === cur ? ' on' : '') + '" role="tab" tabindex="0" ' +
-                'aria-selected="' + (t === cur) + '" onclick="pftScScreenGo(\'' + jsArg(t) + '\')">' + esc(name) + '</span>';
+            var on = t === cur;
+            // переименование — двойным кликом, но только на АКТИВНОЙ вкладке:
+            // клик по чужой переключает экран с полной перерисовкой, и второй
+            // клик двойного пришёлся бы в мёртвый узел (владелец 2026-07-23)
+            return '<span class="sct' + (on ? ' on' : '') + '" role="tab" tabindex="0" ' +
+                'aria-selected="' + on + '" onclick="pftScScreenGo(\'' + jsArg(t) + '\')"' +
+                (on ? ' ondblclick="pftScScreenRen(event,\'' + jsArg(t) + '\')" title="Двойной клик — переименовать экран"' : '') +
+                '>' + esc(name) + '</span>';
         }).join('');
         if (tabs.length < SCN_SCREENS_MAX) {
             html += '<span class="sct" role="button" tabindex="0" onclick="pftScScreenAdd()" ' +
@@ -6158,6 +6180,40 @@
             toast('Новый экран — найдите бумагу через ⌘K');
             return;
         }
+    };
+    // инлайн-переименование активного экрана (владелец 2026-07-23): вкладка
+    // на время ввода становится полем, Enter/уход сохраняет, Esc отменяет.
+    // Имя живёт в конфиге раскладки и едет в облако (PF.pfxRenameTrade)
+    window.pftScScreenRen = function (ev, t) {
+        if (ev && ev.preventDefault) { ev.preventDefault(); ev.stopPropagation(); }
+        var tab = ev && ev.target && ev.target.closest ? ev.target.closest('.sct') : null;
+        if (!tab || tab.querySelector('input')) return;
+        var was = (PF.pfxTradeName && PF.pfxTradeName(t)) || '';
+        tab.classList.add('ren');
+        tab.innerHTML = '<input maxlength="40" value="' + esc(was) + '" aria-label="Имя экрана">';
+        var inp = tab.querySelector('input');
+        inp.focus(); inp.select();
+        var did = false;
+        function done(save) {
+            if (did) return; did = true;
+            if (save && PF.pfxRenameTrade) PF.pfxRenameTrade(t, inp.value);
+            // мимо кэша scnSet: innerHTML вкладки правился руками, кэш врёт
+            var el = dq('btScnScr');
+            if (el) { el.__btHtml = null; el.innerHTML = scnScreensHtml(); }
+        }
+        // стоп всплытию: пока имя набирается, клавиши сцены (⌘K и др.) молчат
+        inp.addEventListener('keydown', function (e) {
+            e.stopPropagation();
+            if (e.key === 'Enter') done(true);
+            else if (e.key === 'Escape') done(false);
+        });
+        inp.addEventListener('blur', function () { done(true); });
+    };
+    // тот же ввод из меню «⋯» — для тех, кто не догадается о двойном клике
+    window.pftScScreenRenCur = function () {
+        var el = document.querySelector('#btScnScr .sct.on');
+        if (!el) return;
+        window.pftScScreenRen({ target: el }, PF.pfxTab);
     };
 
     // ---- сцена целиком ----
