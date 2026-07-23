@@ -3388,7 +3388,9 @@
     // fat-finger на новую цену, снап к шагу инструмента, idempotency-ключ.
     // Осознанно НЕ сделано перетаскивание метки в стакане: случайный драг по
     // живой заявке двигал бы реальные деньги без подтверждения.
-    window.pftMove = function (orderId) {
+    // presetPx (владелец 2026-07-23) — цена, принесённая драгом линии на
+    // графике: диалог открывается с ней вместо текущей, деньги двигает кнопка
+    window.pftMove = function (orderId, presetPx) {
         var c = conn(); if (!c) return;
         if (!tradeReady()) { toast('Торговля сейчас недоступна', true); return; }
         var o = null;
@@ -3405,7 +3407,8 @@
             '<div class="bk-kv"><span>Заявка</span><b>' + (buy ? 'покупка' : 'продажа') + ' ' + left + ' лот</b></div>' +
             '<div class="bk-kv"><span>Сейчас</span><b class="bk-mono">' + fmtPx(cur, ms) + ' ₽</b></div>' +
             '<div class="ph-field"><label class="ph-lab" for="btMvPx">Новая цена · шаг ' + fmtPx(inc, ms) + '</label>' +
-            '<input class="ph-input" id="btMvPx" type="number" step="' + inc + '" min="0" value="' + esc(String(cur)) + '"></div>' +
+            '<input class="ph-input" id="btMvPx" type="number" step="' + inc + '" min="0" value="' +
+                esc(String(presetPx > 0 ? presetPx : cur)) + '"></div>' +
             '<div class="btr-warns" id="btMvWarn"></div>' +
             '<div class="bk-foot"><button type="button" class="bk-btn" id="btCfNo">Отмена</button>' +
             '<button type="button" class="bk-btn bk-btn-pri" id="btCfYes">Перенести</button></div></div>' });
@@ -3455,6 +3458,85 @@
             }, function (e) {
                 A().logEvent('order_error', tk + ' · перенос: ' + (e.message || '').slice(0, 120));
                 toast(e.message || 'Перенести заявку не удалось', true);
+            });
+        });
+    };
+
+    // ---------- перенос стоп-заявки (владелец 2026-07-23) ----------
+    // ReplaceOrder для стопов у брокера нет — переносим парой «снять + выставить
+    // заново» (очередь стоп не держит, терять нечего). Диалог тот же, что у
+    // лимиток: детали, поле цены, снап к шагу; открывает его драг линии на
+    // графике. Если стоп — нога пары BRACKETS, id в паре обновляется, иначе
+    // reconcileBrackets принял бы перенос за сработавшую защиту и снял бы парную
+    window.pftMoveStop = function (stopOrderId, presetPx) {
+        var c = conn(); if (!c) return;
+        if (!tradeReady()) { toast('Торговля сейчас недоступна', true); return; }
+        var o = null;
+        T.stops.forEach(function (x) { if (x.stopOrderId === stopOrderId) o = x; });
+        if (!o) { toast('Стоп-заявка уже сработала или снята', true); return; }
+        var ms = metaSlot(o.instrumentUid);
+        var inc = (ms.meta && ms.meta.minInc) || 0.01;
+        var bk = bondKUid(o.instrumentUid);   // облигации: % ⇄ ₽
+        var cur = A().q2n(o.stopPrice) * bk;
+        var lots = +o.lotsRequested || 0;
+        var buy = o.direction === 'STOP_ORDER_DIRECTION_BUY';
+        var tp = o.stopOrderType === 'STOP_ORDER_TYPE_TAKE_PROFIT';
+        var lim = o.stopOrderType === 'STOP_ORDER_TYPE_STOP_LIMIT';
+        var tk = (instrMem[o.instrumentUid] || {}).ticker || '';
+        var m = openModal({ id: 'btConfirmOv', card: '<div class="bk-card bk-card-pin btr-cf" role="alertdialog" aria-modal="true">' +
+            '<div class="bk-title">Перенести ' + (tp ? 'тейк' : 'стоп') + ' · ' + esc(tk) + '</div>' +
+            '<div class="bk-kv"><span>Заявка</span><b>' + (buy ? 'покупка' : 'продажа') + ' ' + lots + ' ' +
+                PF.plural(lots, 'лот', 'лота', 'лотов') + '</b></div>' +
+            '<div class="bk-kv"><span>Сейчас</span><b class="bk-mono">' + fmtPx(cur, ms) + ' ₽</b></div>' +
+            '<div class="ph-field"><label class="ph-lab" for="btMvSPx">Новая цена · шаг ' + fmtPx(inc, ms) + '</label>' +
+            '<input class="ph-input" id="btMvSPx" type="number" step="' + inc + '" min="0" value="' +
+                esc(String(presetPx > 0 ? presetPx : cur)) + '"></div>' +
+            '<div class="btr-warns"><div class="btr-note">Стоп пересоздаётся: снимем и сразу выставим на новой цене.</div></div>' +
+            '<div class="bk-foot"><button type="button" class="bk-btn" id="btCfNo">Отмена</button>' +
+            '<button type="button" class="bk-btn bk-btn-pri" id="btCfYes">Перенести</button></div></div>' });
+        var ov = m.el, closeCf = m.close;
+        ov.querySelector('#btCfNo').addEventListener('click', closeCf);
+        var inp = dq('btMvSPx');
+        setTimeout(function () { try { inp.focus(); inp.select(); } catch (e) {} }, 30);
+        ov.querySelector('#btCfYes').addEventListener('click', function () {
+            var v = +inp.value || 0;
+            if (!(v > 0)) { toast('Укажите новую цену', true); return; }
+            var snapped = +(Math.round(v / inc) * inc).toFixed(6);
+            if (Math.abs(snapped - cur) < 1e-9) { toast('Цена та же — переносить нечего', true); return; }
+            if (velBlock()) return;
+            closeCf();
+            var body = {
+                accountId: c.accountId, instrumentId: o.instrumentUid,
+                quantity: String(lots), direction: o.direction,
+                stopPrice: A().n2q(snapped / bk), stopOrderType: o.stopOrderType,
+                expirationType: 'STOP_ORDER_EXPIRATION_TYPE_GOOD_TILL_CANCEL'
+            };
+            // у стоп-лимита цена заявки сдвигается на ту же величину, что и активация
+            if (lim) body.price = A().n2q((A().q2n(o.price) * bk + (snapped - cur)) / bk);
+            A().call('CancelStopOrder', { accountId: c.accountId, stopOrderId: stopOrderId }).then(function () {
+                return A().call('PostStopOrder', body).then(function (r) {
+                    T.sent.push(Date.now());
+                    var nid = String((r && r.stopOrderId) || '');
+                    // нога пары BRACKETS — обновляем id, чтобы пара пережила перенос
+                    BRACKETS.forEach(function (b) {
+                        if (b.slId === stopOrderId) b.slId = nid;
+                        if (b.tpId === stopOrderId) b.tpId = nid;
+                    });
+                    saveBrackets();
+                    A().logEvent('order_replace', tk + ' · ' + (tp ? 'тейк' : 'стоп') + ' ' +
+                        fmtPx(cur, ms) + ' → ' + fmtPx(snapped, ms));
+                    toast((tp ? 'Тейк' : 'Стоп') + ' перенесён на ' + fmtPx(snapped, ms) + ' ₽');
+                    pollOrders();
+                }, function (e) {
+                    // снятый, но не выставленный стоп — позиция БЕЗ защиты: кричим
+                    A().logEvent('order_error', tk + ' · перенос стопа: ' + (e.message || '').slice(0, 120));
+                    toast('Стоп снят, но выставить на новой цене не удалось — позиция без защиты! ' +
+                        'Поставьте заново из тикета. ' + (e.message || ''), true);
+                    pollOrders();
+                });
+            }, function (e) {
+                A().logEvent('order_error', tk + ' · перенос стопа: ' + (e.message || '').slice(0, 120));
+                toast(e.message || 'Снять стоп-заявку не удалось — перенос отменён', true);
             });
         });
     };
@@ -4687,7 +4769,12 @@
             'Комиссия ' + feeTxt() + ' % уже вычтена из суммы кнопки.',
             'Если продаёте с прибылью, налог 13 % удержат по итогам года.'
         ];
-        return '<em>Что нужно знать</em>' + rows.map(function (r) { return '<span>' + r + '</span>'; }).join('');
+        // ✕ живёт ВНУТРИ scnKnowHtml: тик сцены (scnSet btScnKnow) переписывает
+        // содержимое карточки, и вынесенная наружу ссылка «Свернуть» умирала
+        // с первым же тиком (владелец 2026-07-23: «блок нельзя закрыть»)
+        return '<em>Что нужно знать<i class="know-x" role="button" tabindex="0" aria-label="Свернуть" ' +
+            'onclick="pftScKnow()">✕</i></em>' +
+            rows.map(function (r) { return '<span>' + r + '</span>'; }).join('');
     }
     // ---- вид карточки тикета «Старта»: Сделка / Стакан / Сплит ----
     // (владелец 2026-07-23): стакан приходит прямо в карточку, сплит
@@ -4725,7 +4812,8 @@
             '<span class="freshw" id="btScnFresh">' + scnFreshInner() + '</span></div>';
         // стакан на всю карточку — глубже плоскости «Разгона»: высота позволяет
         if (vw === 'depth') {
-            return head + '<div class="tkt-depth" id="btScnTkDepth">' + scnDepthHtml(s, 1, scnDepthDeep()) + '</div>';
+            return head + '<div class="tkt-depth" id="btScnTkDepth" onmouseover="pftScDepthHov(event)" ' +
+                'onmouseleave="pftScDepthHovOff()">' + scnDepthHtml(s, 1, scnDepthDeep()) + '</div>';
         }
         // облигации ПУЩЕНЫ в тикет (владелец 2026-07-23): вся сцена живёт в
         // рублях (bondKOf на границах данных), НКД уже в расчёте simpleBuyCalc/
@@ -4766,8 +4854,7 @@
             // «что нужно знать» — тихая строка-ссылка на всех ступенях
             // (середину колонки заняли строки цены и защиты, как на «Контроле»)
             (scnKnowOpen
-                ? '<div class="knowx" id="btScnKnow">' + scnKnowHtml(n) +
-                  '<u class="know-close" role="button" tabindex="0" onclick="pftScKnow()">Свернуть</u></div>'
+                ? '<div class="knowx" id="btScnKnow">' + scnKnowHtml(n) + '</div>'
                 : '<div class="know">🛈 Что нужно знать перед ' + (buy ? 'покупкой' : 'продажей') +
                   '<u role="button" tabindex="0" onclick="pftScKnow()">Открыть</u></div>') +
             '<div class="rest" id="btScnRest">' + scnRestHtml(n) + '</div>' +
@@ -4775,7 +4862,8 @@
         // сплит: карточка раздваивается — стакан слева, заявка справа;
         // ширину контейнера и сжатие героя анимирует CSS (data-tkt на сцене)
         if (vw === 'split') {
-            return '<div class="tkt-sub tkt-sub-depth"><div class="tkt-depth" id="btScnTkDepth">' +
+            return '<div class="tkt-sub tkt-sub-depth"><div class="tkt-depth" id="btScnTkDepth" ' +
+                    'onmouseover="pftScDepthHov(event)" onmouseleave="pftScDepthHovOff()">' +
                     scnDepthHtml(s, 0, scnDepthDeep()) + '</div></div>' +
                 '<div class="tkt-sub tkt-sub-deal">' + deal + '</div>';
         }
@@ -4970,6 +5058,7 @@
         if (K.host && K.host.parentNode) K.host.parentNode.removeChild(K.host);
         K.chart = null; K.host = null; K.liveCb = null; K.lastClose = 0;
         K.uid = ''; K.perKey = ''; K.styleKey = '';
+        K.fillIds = []; K.fillPts = [];   // метки исполнений умерли вместе с движком
         Object.keys(K_ORD).forEach(function (id) { delete K_ORD[id]; });
     }
     // загрузчик в модели движка v10: init отдаёт окно периода, forward — ещё
@@ -5054,21 +5143,22 @@
         // ступень сменила сторону оси — движок пересоздаётся (см. scnKDispose)
         if (K.chart && K.axisPos !== scnAxisPos()) scnKDispose();
         if (K.chart) {
-            // ре-рендер собрал якорь заново — живой узел просто переезжает
-            if (K.host.parentNode !== mount) {
-                mount.appendChild(K.host);
-                try { K.chart.resize(); } catch (e) {}
+            // ре-рендер собрал якорь заново: движок ПЕРЕСОЗДАЁТСЯ, а не
+            // переезжает живым узлом — после appendChild инстанс молча глохнет
+            // (события кроссхейра и оверлеи мертвы), владелец 2026-07-23
+            if (K.host.parentNode !== mount) scnKDispose();
+            else {
+                // смена темы меняет стили движка (ось, кроссхейр, цвета) —
+                // но не каждый тик: setStyles дорог, ключ отсекает шум
+                var sk = sceneNight() ? 'n' : 'd';
+                if (K.styleKey !== sk) {
+                    K.styleKey = sk;
+                    try { K.chart.setStyles(scnKStyles()); } catch (e) {}
+                }
+                scnKSync();
+                scnKProt();
+                return;
             }
-            // смена темы меняет стили движка (ось, кроссхейр, цвета) —
-            // но не каждый тик: setStyles дорог, ключ отсекает шум
-            var sk = sceneNight() ? 'n' : 'd';
-            if (K.styleKey !== sk) {
-                K.styleKey = sk;
-                try { K.chart.setStyles(scnKStyles()); } catch (e) {}
-            }
-            scnKSync();
-            scnKProt();
-            return;
         }
         if (!PF.pfcEngineReady) return;
         PF.pfcEngineReady().then(function (ok) {
@@ -5094,7 +5184,7 @@
             // прокрутка/зум сдвигают шкалу — ярлыки заявок едут следом
             try { chart.subscribeAction('onVisibleRangeChange', function () { scnKTags(); }); } catch (e) {}
             // плашка цены кроссхейра на стороне, противоположной оси
-            try { chart.subscribeAction('onCrosshairChange', function (d) { scnKCross(d); scnKOhlc(d); }); } catch (e) {}
+            try { chart.subscribeAction('onCrosshairChange', function (d) { scnKCross(d); scnKOhlc(d); scnKFillHover(d); }); } catch (e) {}
             try {
                 K.ro = new ResizeObserver(function () {
                     if (K.roRaf) return;
@@ -5264,6 +5354,27 @@
                 return [{ type: 'line', attrs: { coordinates: [{ x: 0, y: c.y }, { x: o.bounding.width, y: c.y }] } }];
             }
         });
+        // метка своего исполнения (владелец 2026-07-23, мокап «сделки на
+        // графике»): покупка — ▲ под точкой сделки, продажа — ▼ над ней,
+        // цвет в extendData (посчитан от темы при создании)
+        window.klinecharts.registerOverlay({
+            name: 'btFillMark',
+            totalStep: 2,
+            needDefaultPointFigure: false,
+            needDefaultXAxisFigure: false,
+            needDefaultYAxisFigure: false,
+            createPointFigures: function (o) {
+                var c = o.coordinates && o.coordinates[0];
+                var x = o.overlay && o.overlay.extendData;
+                if (!c || !isFinite(c.y) || !x) return [];
+                var s = 5.2;   // полуширина треугольника
+                var pts = x.buy
+                    ? [{ x: c.x, y: c.y + 4 }, { x: c.x - s, y: c.y + 4 + s * 1.6 }, { x: c.x + s, y: c.y + 4 + s * 1.6 }]
+                    : [{ x: c.x, y: c.y - 4 }, { x: c.x - s, y: c.y - 4 - s * 1.6 }, { x: c.x + s, y: c.y - 4 - s * 1.6 }];
+                return [{ type: 'polygon', attrs: { coordinates: pts },
+                    styles: { style: 'stroke_fill', color: x.color, borderColor: x.ring, borderSize: 1 } }];
+            }
+        });
     }
     var K_ORD = {};   // orderId -> id оверлея
     function scnKOrders(force) {
@@ -5294,9 +5405,13 @@
                     onPressedMoveEnd: function (ev) {
                         var v = ev && ev.overlay && ev.overlay.points &&
                             ev.overlay.points[0] && +ev.overlay.points[0].value;
-                        if (v > 0) window.pftScPickPx(v);
-                        // линия — представление ЖИВОЙ заявки: возвращаем её на место
+                        // линия — представление ЖИВОЙ заявки: возвращаем её на
+                        // место, а новую цену несём в диалог переноса (владелец
+                        // 2026-07-23 поверх мокапа: раньше драг лишь заполнял
+                        // черновик тикета; деньги по-прежнему двигает кнопка —
+                        // ReplaceOrder уйдёт только по «Перенести»)
                         scnKOrders(true);
+                        if (v > 0) window.pftMove(id, scnSnap(v, S(sxSlot())));
                         return false;
                     }
                 });
@@ -5305,6 +5420,70 @@
         });
         K.ordWant = want;
         scnKTags();
+    }
+    // ---- свои исполнения на свечах (владелец 2026-07-23): ▲ купил / ▼ продал.
+    // Данные — журнал FILLS (сегодняшние сделки); ts исполнения снапится к
+    // ближайшей свече слева: точку между барами движок не понимает. Полная
+    // пересборка на каждый вызов — как у scnKProt: движок молча сносит оверлеи
+    // при перезагрузке данных (смена бумаги/периода, возврат с другого экрана),
+    // и любой кэш-гвард на этом рано или поздно врёт. Меток ≤ 30 — дёшево
+    function scnKFills() {
+        if (!K.chart || !K.uid) return;
+        var want = FILLS.filter(function (f) { return f.uid === K.uid; });
+        var list = [];
+        try { list = K.chart.getDataList() || []; } catch (e) {}
+        if (!list.length) return;
+        (K.fillIds || []).forEach(function (id) { try { K.chart.removeOverlay({ id: id }); } catch (e) {} });
+        K.fillIds = [];
+        var night = sceneNight();
+        K.fillPts = [];
+        want.forEach(function (f) {
+            var idx = 0;
+            for (var i = 0; i < list.length; i++) { if (list[i].timestamp <= f.ts) idx = i; else break; }
+            K.fillPts.push({ idx: idx, px: f.px, buy: f.buy, qty: f.qty, ts: f.ts });
+            try {
+                var oid = K.chart.createOverlay({
+                    name: 'btFillMark', lock: true,
+                    points: [{ timestamp: list[idx].timestamp, value: f.px }],
+                    extendData: {
+                        buy: f.buy,
+                        color: f.buy ? (night ? '#34d399' : '#16a34a') : (night ? '#f87171' : '#dc2626'),
+                        ring: night ? '#0b1220' : '#ffffff'
+                    }
+                });
+                if (oid) K.fillIds.push(Array.isArray(oid) ? oid[0] : oid);
+            } catch (e) {}
+        });
+    }
+    // подсказка метки — по близости кроссхейра (lock-оверлей событий мыши не
+    // отдаёт): зовётся из onCrosshairChange, сравнивает курсор с точками сделок
+    function scnKFillHover(d) {
+        var anchor = dq('btScnOrdT');
+        var el = dq('btScnFillTip');
+        var pts = K.fillPts || [];
+        if (!anchor || !K.chart || !pts.length || !d || !isFinite(d.x) || !isFinite(d.y)) {
+            if (el) el.remove(); return;
+        }
+        var hit = null, hp = null;
+        pts.forEach(function (f) {
+            if (hit) return;
+            var pt = null;
+            try { pt = K.chart.convertToPixel({ dataIndex: f.idx, value: f.px }, { paneId: 'candle_pane' }); } catch (e) {}
+            if (pt && isFinite(pt.x) && Math.abs(pt.x - d.x) < 14 && Math.abs(pt.y - d.y) < 18) { hit = f; hp = pt; }
+        });
+        if (!hit) { if (el) el.remove(); return; }
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'btScnFillTip'; el.className = 'bts-filltip';
+            anchor.parentNode.appendChild(el);
+        }
+        var s = S(sxSlot());
+        el.innerHTML = 'вы ' + (hit.buy ? 'купили' : 'продали') + ' · <b>' + fmtPx(hit.px, s) + ' ₽</b> × ' +
+            (+hit.qty).toLocaleString('ru-RU') + ' · ' +
+            new Date(hit.ts).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        el.classList.toggle('sell', !hit.buy);
+        el.style.left = Math.round(hp.x) + 'px';
+        el.style.top = Math.round(hp.y + (hit.buy ? 20 : -36)) + 'px';
     }
     // ярлыки заявок и защиты: позиция из convertToPixel, пересчёт на каждый
     // тик/скролл. Уровень вне видимого диапазона — метка у края со стрелкой
@@ -5547,7 +5726,7 @@
         // узел d-my ВСЕГДА в строке (пустой спрятан CSS :empty) — точечный
         // патч scnDepthSet ходит по цепочке firstChild БЕЗ пробелов между
         // тегами. Плашка своих лотов — СПРАВА от объёма (владелец 2026-07-24)
-        return '<div class="' + l.cls + '" role="button" tabindex="0" data-px="' + l.px + '" ' +
+        return '<div class="' + l.cls + '" role="button" tabindex="0" data-px="' + l.px + '" data-v="' + l.lots + '" ' +
             'title="' + l.rub + '" onclick="pftScRowPx(+this.dataset.px)">' +
             '<i class="d-fill" style="width:' + l.w + '%"></i>' +
             '<span class="pr">' + fmtPx(l.px, s) + '</span>' +
@@ -5609,14 +5788,28 @@
         if (rows.length !== list.length) { el.__btDSig = null; scnDepthSet(id, s, slim, deep); return; }
         list.forEach(function (l, i) {
             var r = rows[i];
+            // та же цена в той же строке — значит, перемены на ней ЖИВЫЕ:
+            // тающая плашка своих лотов получает вспышку (владелец 2026-07-23)
+            var samePx = r.dataset.px === String(l.px);
             if (r.className !== l.cls) r.className = l.cls;
             if (r.dataset.px !== String(l.px)) r.dataset.px = l.px;
+            if (r.dataset.v !== String(l.lots)) r.dataset.v = l.lots;
             if (r.title !== l.rub) r.title = l.rub;
             var pr = r.firstChild.nextSibling, vol = pr.nextSibling, my = vol.nextSibling;
             var pt = fmtPx(l.px, s), vt = l.lots.toLocaleString('ru-RU');
             var mt = l.my ? l.my + ' ' + PF.plural(l.my, 'лот', 'лота', 'лотов') : '';
             if (pr.textContent !== pt) pr.textContent = pt;
-            if (my.textContent !== mt) my.textContent = mt;
+            if (my.textContent !== mt) {
+                // исполнение: остаток на плашке уменьшился (или плашка исчезла)
+                var was = parseInt(my.textContent, 10) || 0, now = parseInt(mt, 10) || 0;
+                my.textContent = mt;
+                if (samePx && was > 0 && now < was) {
+                    r.classList.remove('d-hit'); void r.offsetWidth;   // рестарт анимации
+                    r.classList.add('d-hit');
+                    my.classList.remove('d-bump'); void my.offsetWidth;
+                    my.classList.add('d-bump');
+                }
+            }
             if (vol.textContent !== vt) vol.textContent = vt;
             var w = l.w + '%';
             if (r.firstChild.style.width !== w) r.firstChild.style.width = w;
@@ -5652,6 +5845,54 @@
         var tv = scnTktView();
         scnDepthSet('btScnTkDepth', S(sxSlot()), tv === 'depth' ? 1 : 0, scnDepthDeep());
         if (o.layers.depthTape) pollTape(sxSlot());   // свежий залп, не ждём тика
+    };
+    // ---- кумулятивная глубина по ховеру (владелец 2026-07-23) ----
+    // Навёл на уровень — тихо подсвечиваются все уровни между спредом и ним,
+    // чип называет ёмкость: «скупить до N ₽ — ≈ M ₽». Помогает ставить
+    // лимитку осознанно: видно, сколько денег стоит дорога до этой цены
+    function scnMoneyShort(v) {
+        if (v >= 1e6) return (v / 1e6).toLocaleString('ru-RU', { maximumFractionDigits: 1 }) + ' млн ₽';
+        if (v >= 1e3) return Math.round(v / 1e3).toLocaleString('ru-RU') + ' тыс ₽';
+        return Math.round(v).toLocaleString('ru-RU') + ' ₽';
+    }
+    window.pftScDepthHov = function (ev) {
+        var r = ev && ev.target && ev.target.closest ? ev.target.closest('.d-row') : null;
+        var box = dq('btScnTkDepth');
+        if (!box) return;
+        if (!r || r.classList.contains('d-t') || !box.contains(r)) { window.pftScDepthHovOff(); return; }
+        var ask = r.classList.contains('d-ask');
+        var rows = Array.prototype.slice.call(box.querySelectorAll(ask ? '.d-row.d-ask' : '.d-row.d-bid'));
+        var i = rows.indexOf(r);
+        if (i < 0) return;
+        // аски на экране в обратном порядке (лучший — ПОСЛЕДНИЙ, у спреда),
+        // биды — лучший первый: диапазон всегда «от спреда до наведённого»
+        var range = ask ? rows.slice(i) : rows.slice(0, i + 1);
+        var s = S(sxSlot());
+        var lot = (s.meta && s.meta.lot) || 1;
+        var money = 0;
+        // чистим ОБЕ стороны: ховер перешёл с асков на биды — старую
+        // подсветку снять некому, кроме нас
+        box.querySelectorAll('.d-cum').forEach(function (x) { x.classList.remove('d-cum'); });
+        range.forEach(function (x) {
+            x.classList.add('d-cum');
+            money += (+x.dataset.px || 0) * (+x.dataset.v || 0) * lot;
+        });
+        var tip = dq('btScnCumTip');
+        if (!tip) {
+            tip = document.createElement('div');
+            tip.id = 'btScnCumTip'; tip.className = 'd-cumtip';
+            box.appendChild(tip);
+        }
+        tip.textContent = (ask ? 'скупить до ' : 'продать до ') + fmtPx(+r.dataset.px || 0, s) +
+            ' ₽ — ≈ ' + scnMoneyShort(money);
+        tip.classList.toggle('sell', !ask);
+        // чип над строкой, у правого края; выше первого ряда не выпрыгивает
+        tip.style.top = Math.max(2, r.offsetTop - 24) + 'px';
+    };
+    window.pftScDepthHovOff = function () {
+        var box = dq('btScnTkDepth');
+        if (box) box.querySelectorAll('.d-cum').forEach(function (x) { x.classList.remove('d-cum'); });
+        var tip = dq('btScnCumTip'); if (tip) tip.remove();
     };
     // ---- поповер звоночка: подписка на достижение цены ----
     // Хранение — прежний bt_alerts_v1, проверка — в идущем поллере стакана.
@@ -5890,7 +6131,10 @@
             var opt = {
                 name: 'btLevel',
                 points: [{ value: w.px }],
-                lock: !w.drag,
+                // биржевой стоп тоже тянется (владелец 2026-07-23): линия
+                // вернётся на место, а цена уедет в диалог переноса — деньги
+                // двигает кнопка, как и у лимиток
+                lock: !w.drag && w.kind !== 'live',
                 // черновик — пунктир (ещё не деньги), биржевой стоп — сплошная
                 styles: { line: {
                     color: w.tp ? (sceneNight() ? '#34d399' : '#16a34a') : (sceneNight() ? '#f87171' : '#dc2626'),
@@ -5908,6 +6152,13 @@
                     var f = dq('btScnProt'); if (f) f.innerHTML = '<em>Защита позиции</em>' + scnProtInner(sxSlot());
                 }
                 scnKProt();
+                return false;
+            };
+            else if (w.kind === 'live') opt.onPressedMoveEnd = function (ev) {
+                var nv = ev && ev.overlay && ev.overlay.points &&
+                    ev.overlay.points[0] && +ev.overlay.points[0].value;
+                scnKProt();   // линия — представление биржевого стопа: на место
+                if (nv > 0) window.pftMoveStop(w.id, scnSnap(nv, S(sxSlot())));
                 return false;
             };
             try {
@@ -5985,11 +6236,18 @@
                 '<span class="dk-st act">Активна</span>' +
                 '<span class="dk-x" role="button" tabindex="0" onclick="pftCancelStop(\'' + jsArg(o.stopOrderId) + '\')">Отменить</span></div>');
         });
-        return rows.length ? rows.join('') : '<div class="dk-empty">Активных заявок нет</div>';
+        // пустое состояние — приглашение с действием, не голая констатация
+        // (владелец 2026-07-23): ссылка ведёт в тикет с готовой лимиткой
+        return rows.length ? rows.join('')
+            : '<div class="dk-empty">Активных заявок нет — поставьте лимитку, она появится здесь и в стакане' +
+              '<u role="button" tabindex="0" onclick="pftScDockLim()">Поставить лимитку</u></div>';
     }
     function dockPosRows() {
         var list = T.port.list || [];
-        if (!list.length) return '<div class="dk-empty">' + (T.port.ts ? 'Позиций нет' : 'Загружаем…') + '</div>';
+        if (!list.length) return '<div class="dk-empty">' + (T.port.ts
+            ? 'Позиций нет — купленное появится здесь' +
+              '<u role="button" tabindex="0" onclick="pftScDockBuy()">К покупке</u>'
+            : 'Загружаем…') + '</div>';
         return list.map(function (p) {
             var up = p.pnl >= 0;
             var pct = p.avg > 0 ? Math.abs(p.last / p.avg - 1) * 100 : 0;
@@ -6020,8 +6278,18 @@
                 '<span></span></div>';
         }).join('');
     }
+    // из пустого состояния — сразу к делу: тикет с лимиткой или полем суммы
+    window.pftScDockLim = function () {
+        if (scnTktView() === 'depth') window.pftScTkt('deal');
+        window.pftScKind(1);   // переключит на лимит и сфокусирует поле цены
+    };
+    window.pftScDockBuy = function () {
+        if (scnTktView() === 'depth') window.pftScTkt('deal');
+        var i = dq('btSxSum'); if (i) try { i.focus(); } catch (e) {}
+    };
     function dockAlertRows() {
-        if (!ALERTS.length) return '<div class="dk-empty">Алертов нет — звоночек в шапке бумаги поставит первый</div>';
+        if (!ALERTS.length) return '<div class="dk-empty">Алертов нет — звоночек в шапке бумаги следит за ценой' +
+            '<u role="button" tabindex="0" onclick="event.stopPropagation(); pftScBell()">Поставить алерт</u></div>';
         return ALERTS.map(function (a, i) {
             return '<div class="dk-r"><b>' + esc(a.ticker || '—') + '</b>' +
                 '<span>' + (a.dir === 'up' ? 'выше' : 'ниже') + '</span>' +
@@ -6146,11 +6414,20 @@
             var on = t === cur;
             // переименование — двойным кликом, но только на АКТИВНОЙ вкладке:
             // клик по чужой переключает экран с полной перерисовкой, и второй
-            // клик двойного пришёлся бы в мёртвый узел (владелец 2026-07-23)
-            return '<span class="sct' + (on ? ' on' : '') + '" role="tab" tabindex="0" ' +
-                'aria-selected="' + on + '" onclick="pftScScreenGo(\'' + jsArg(t) + '\')"' +
+            // клик двойного пришёлся бы в мёртвый узел (владелец 2026-07-23).
+            // Перетаскивание — механика pfxReorderTrade полосы раунда 1; ✕ на
+            // ховере (кроме первого экрана) удаляет экран в два клика
+            var x = t !== 'trading'
+                ? '<i class="sct-x" role="button" tabindex="0" aria-label="Удалить экран" ' +
+                  'onclick="pftScScreenDel(event,\'' + jsArg(t) + '\')">✕</i>'
+                : '';
+            return '<span class="sct' + (on ? ' on' : '') + '" role="tab" tabindex="0" draggable="true" ' +
+                'aria-selected="' + on + '" onclick="pftScScreenGo(\'' + jsArg(t) + '\')" ' +
+                'ondragstart="pftScScreenDrag(event,\'' + jsArg(t) + '\')" ' +
+                'ondragover="event.preventDefault()" ' +
+                'ondrop="pftScScreenDrop(event,\'' + jsArg(t) + '\')"' +
                 (on ? ' ondblclick="pftScScreenRen(event,\'' + jsArg(t) + '\')" title="Двойной клик — переименовать экран"' : '') +
-                '>' + esc(name) + '</span>';
+                '><b class="sct-l">' + esc(name) + '</b>' + x + '</span>';
         }).join('');
         if (tabs.length < SCN_SCREENS_MAX) {
             html += '<span class="sct" role="button" tabindex="0" onclick="pftScScreenAdd()" ' +
@@ -6215,6 +6492,46 @@
         if (!el) return;
         window.pftScScreenRen({ target: el }, PF.pfxTab);
     };
+    // перестановка вкладок — жест drag поверх механики pfxReorderTrade
+    // (владелец 2026-07-23): порядок общий с полосой раунда 1 (pf_trade_order_v1)
+    var scnScrDrag = '';
+    window.pftScScreenDrag = function (ev, t) {
+        scnScrDrag = t;
+        try { ev.dataTransfer.setData('text/plain', t); ev.dataTransfer.effectAllowed = 'move'; } catch (e) {}
+    };
+    window.pftScScreenDrop = function (ev, t) {
+        if (ev) ev.preventDefault();
+        var d = scnScrDrag; scnScrDrag = '';
+        if (!d || d === t || !PF.pfxReorderTrade) return;
+        if (PF.pfxReorderTrade(d, t)) {
+            var el = dq('btScnScr');
+            if (el) { el.__btHtml = null; el.innerHTML = scnScreensHtml(); }
+        }
+    };
+    // удаление экрана — в два клика (владелец 2026-07-23): первый клик по ✕
+    // взводит «удалить?», второй в течение 3 секунд удаляет раскладку экрана
+    // (pfxDropTabCfg). Первый экран не удаляется — он и есть «Торговля»
+    window.pftScScreenDel = function (ev, t) {
+        if (ev) ev.stopPropagation();
+        var x = ev && ev.target && ev.target.closest ? ev.target.closest('.sct-x') : null;
+        if (!x || t === 'trading') return;
+        if (!x.classList.contains('arm')) {
+            x.classList.add('arm');
+            x.textContent = 'удалить?';
+            setTimeout(function () {
+                if (x.isConnected) { x.classList.remove('arm'); x.textContent = '✕'; }
+            }, 3000);
+            return;
+        }
+        var wasCur = PF.pfxTab === t;
+        if (PF.pfxDropTabCfg) PF.pfxDropTabCfg(t);
+        toast('Экран удалён — бумаги остались в слотах');
+        if (wasCur && window.pfxGoTab) window.pfxGoTab('trading');
+        else {
+            var el = dq('btScnScr');
+            if (el) { el.__btHtml = null; el.innerHTML = scnScreensHtml(); }
+        }
+    };
 
     // ---- сцена целиком ----
     // пустая сцена: токен есть, бумага ещё не выбрана (онбординг этапа «край
@@ -6226,11 +6543,9 @@
             '<h3>Одна бумага — в центре сцены</h3>' +
             '<p>Найдите её по названию или тикеру: цена встанет крупно, график займёт весь холст. ' +
             'Остальное появится по мере опыта.</p>' +
+            // ниже кнопки — ничего: приглашение заканчивается действием
+            // (владелец 2026-07-23, шпаргалка из трёх строк удалена)
             '<button type="button" onclick="pftFsSearch()">' + IC_LENS + '<span>Найти первую бумагу</span><kbd>⌘K</kbd></button>' +
-            '<div class="eg-steps">' +
-            '<span><b>Тикет считает сам:</b> вы называете сумму в рублях, лоты и комиссию он объяснит словами.</span>' +
-            '<span><b>Итог списания — только в кнопке,</b> с копейками. Ни одна клавиша не отправляет заявку.</span>' +
-            '<span><b>Передумать можно,</b> пока заявка не исполнена.</span></div>' +
         '</div>';
     }
     PF.pftSceneHtml = function () {
@@ -6270,7 +6585,7 @@
             scnSet('btScnPrice', scnPriceHtml(s));
             // свечи живут своим канвасом (движок), innerHTML их убил бы;
             // линия — прежний точечный своп svg
-            if (candlesOn()) { scnKMount(); scnKTags(); }
+            if (candlesOn()) { scnKMount(); scnKTags(); scnKFills(); }
             else scnSet('btScnChart', scnChartHtml(s));
             scnSet('btScnKnow', scnKnowHtml(n));
             // стакан в карточке тикета (вид «Стакан»/«Сплит») — жив тиками
@@ -6430,7 +6745,73 @@
     };
     loadFills();
 
+    // подтверждение — карточка САМОЙ СЦЕНЫ (владелец 2026-07-23: язык сцены,
+    // не модалка раунда 1): вуаль + карточка в темах сцены, полная сумма с
+    // копейками, НКД, комиссия и «что произойдёт» словами. Конструкторный
+    // тикет вне сцены живёт прежней модалкой (sxConfirmModal ниже)
     function sxConfirm(n, s, c, buy) {
+        var sc = dq('btScene');
+        if (!sc) { sxConfirmModal(n, s, c, buy); return; }
+        var cn = conn() || {};
+        var free = T.pos.money;
+        var old = dq('btScnCfV'); if (old) old.remove();
+        var oldC = dq('btScnCf'); if (oldC) oldC.remove();
+        var kindRow = s.kind === 'limit'
+            ? '<span>По лимиту</span><b>' + fmtPx(c.px, s) + ' ₽ за штуку</b>'
+            : '<span>Примерно по</span><b>' + fmtPx(c.px, s) + ' ₽ за штуку</b>';
+        sc.insertAdjacentHTML('beforeend',
+            '<div class="veil" id="btScnCfV"></div>' +
+            '<div class="cf2" id="btScnCf" role="dialog" aria-modal="true" aria-label="Проверьте заказ">' +
+                '<h3>Проверьте заказ</h3>' +
+                '<div class="cf2-sub">' + (buy ? 'Покупка' : 'Продажа') + ' · ' +
+                    esc(s.meta.name || s.meta.ticker) +
+                    (cn.sandbox ? '<i>песочница</i>' : '') + '</div>' +
+                '<div class="cf2-rows">' +
+                    '<div><span>Бумага</span><b>' + esc(s.meta.ticker) + '</b></div>' +
+                    '<div><span>Сколько</span><b>' + c.qty.toLocaleString('ru-RU') + ' шт · ' +
+                        c.lots + ' ' + PF.plural(c.lots, 'лот', 'лота', 'лотов') + '</b></div>' +
+                    '<div>' + kindRow + '</div>' +
+                    (c.aci > 0 ? '<div><span>Накопленный купон</span><b>' + (buy ? '' : '+') + fmtKop(c.aci) + '</b></div>' : '') +
+                    '<div><span>Комиссия брокера</span><b>' + fmtKop(c.fee) + '</b></div>' +
+                '</div>' +
+                '<div class="cf2-tot"><span>' + (buy ? 'Спишется со счёта' : 'Придёт на счёт') + '</span><b>' +
+                    fmtKop(c.total) + '</b></div>' +
+                (free != null ? '<div class="cf2-rest">' + (buy ? 'останется' : 'станет') + ' свободно ' +
+                    fmtKop(buy ? free - c.total : free + c.total) + '</div>' : '') +
+                '<div class="cf2-know">' + (s.kind === 'limit'
+                    ? 'Исполнится по вашей цене или лучше — когда рынок до неё дойдёт. Пока заявка ждёт, деньги заблокированы; отменить можно в любой момент.'
+                    : 'Исполнится по лучшей цене на бирже в этот момент — обычно разница в копейки, на редких бумагах бывает заметнее.') + '</div>' +
+                '<div class="cf2-act">' +
+                    '<button type="button" class="cf2-no" id="btScnCfNo">Отмена</button>' +
+                    '<button type="button" class="cf2-go' + (buy ? '' : ' sell') + '" id="btScnCfYes">' +
+                        (buy ? 'Купить' : 'Продать') + '</button>' +
+                '</div>' +
+            '</div>');
+        function closeCf() {
+            var v = dq('btScnCfV'), k = dq('btScnCf');
+            if (v) v.remove(); if (k) k.remove();
+            document.removeEventListener('keydown', onKey, true);
+        }
+        function onKey(e) {
+            if (e.key === 'Escape') { e.stopPropagation(); closeCf(); }
+        }
+        document.addEventListener('keydown', onKey, true);
+        dq('btScnCfV').addEventListener('click', closeCf);
+        dq('btScnCfNo').addEventListener('click', closeCf);
+        dq('btScnCfYes').addEventListener('click', function () {
+            // связь могла умереть, пока читали заказ, — гвард свежести
+            // продублирован в карточке (закон раунда 1)
+            var late = scnSubmitBlock(n);
+            if (late) { closeCf(); toast(late + ': проверьте цену заново, заявка не отправлена', true); return; }
+            closeCf();
+            submitOrder(n, c.lots, c.px, c.total);
+        });
+        setTimeout(function () {
+            var f = dq('btScnCfYes');
+            if (f) try { f.focus(); } catch (e) {}
+        }, 30);
+    }
+    function sxConfirmModal(n, s, c, buy) {
         var cn = conn() || {};
         var free = T.pos.money;
         var m = openModal({ id: 'btSxCfOv', className: 'bk-ov sx-cf-ov', card: '<div class="bk-card sx-cf">' +

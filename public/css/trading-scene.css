@@ -397,9 +397,17 @@
     border: 1px solid var(--hair); border-radius: 12px; padding: 12px 14px;
 }
 .bts .knowx em {
+    display: flex; align-items: center;
     font-style: normal; font: 700 10px var(--font-ui);
     letter-spacing: 0.09em; text-transform: uppercase; color: var(--dim);
 }
+/* ✕ в шапке карточки — закрытие переживает тики (владелец 2026-07-23) */
+.bts .knowx .know-x {
+    margin-left: auto; font: 600 11px var(--font-ui); font-style: normal;
+    letter-spacing: 0; color: var(--dim); cursor: pointer;
+    padding: 2px 7px; border-radius: 7px;
+}
+.bts .knowx .know-x:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 7%, transparent); }
 .bts .knowx > span { position: relative; padding-left: 14px; }
 .bts .knowx > span::before {
     content: ''; position: absolute; left: 0; top: 0.62em;
@@ -732,8 +740,7 @@
     font: 400 12.5px var(--font-ui); color: var(--mut);
     border-top: 1px solid var(--hair); padding-top: 10px;
 }
-.bts .know u, .bts .know-close { text-decoration: none; margin-left: auto; color: var(--acc); font-weight: 600; cursor: pointer; }
-.bts .know-close { font: 600 10px var(--font-ui); }
+.bts .know u { text-decoration: none; margin-left: auto; color: var(--acc); font-weight: 600; cursor: pointer; }
 /* карточка-предложение порога: тихо у края, не модал */
 /* поповер звоночка: подписка на достижение цены */
 .bts .bellpop {
@@ -1037,12 +1044,6 @@
     border: 1px solid color-mix(in srgb, var(--bg) 35%, transparent);
     border-radius: 6px; padding: 2px 6px; margin-left: 4px;
 }
-.bts-hello .eg-steps {
-    margin-top: 26px; text-align: left;
-    display: flex; flex-direction: column; gap: 7px;
-    font: 400 11.5px/1.5 var(--font-ui); color: var(--mut);
-}
-.bts-hello .eg-steps b { color: var(--ink); font-weight: 600; }
 /* отказ брокера словами */
 .bts-fail-ic, .btr-cf .bts-fail-ic {
     width: 44px; height: 44px; border-radius: 50%; margin: 4px auto 10px;
@@ -1067,3 +1068,106 @@
     .bts[data-stage="start"][data-tkt="split"] .bts-hero { right: 798px; }   /* 24+730+44 */
     .bts[data-tkt="split"] .dock { right: 798px; }
 }
+
+/* ═══════ полировка №8 (владелец 2026-07-23) ═══════ */
+/* подтверждение заказа — карточка сцены (не модалка раунда 1) */
+.bts .cf2 {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    z-index: 60; width: 430px; max-width: calc(100% - 48px);
+    background: var(--card); border: 1px solid var(--line); border-radius: 20px;
+    padding: 24px 26px 22px; box-shadow: 0 42px 90px -38px rgba(15, 23, 42, 0.5);
+}
+.bts.night .cf2 { box-shadow: 0 42px 90px -38px rgba(0, 0, 0, 0.75); }
+.bts .cf2 h3 { font: 400 24px/1.1 var(--font-title); margin: 0 0 4px; color: var(--ink); }
+.bts .cf2-sub { font: 400 13px var(--font-ui); color: var(--mut); margin-bottom: 14px; }
+.bts .cf2-sub i {
+    font-style: normal; font: 700 9px var(--font-ui); letter-spacing: 0.08em;
+    text-transform: uppercase; color: #b45309; margin-left: 8px;
+    background: color-mix(in srgb, #f59e0b 14%, transparent);
+    border-radius: 6px; padding: 2px 7px; vertical-align: 1px;
+}
+.bts .cf2-rows > div {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 14px;
+    padding: 8px 0; border-top: 1px solid var(--hair);
+}
+.bts .cf2-rows > div:first-child { border-top: 0; }
+.bts .cf2-rows span { font: 400 13px var(--font-ui); color: var(--mut); }
+.bts .cf2-rows b { font: 600 13.5px var(--font-num); color: var(--ink); text-align: right; }
+.bts .cf2-tot {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 14px;
+    border-top: 1px solid var(--line); margin-top: 2px; padding: 12px 0 2px;
+}
+.bts .cf2-tot span { font: 600 13.5px var(--font-ui); color: var(--ink); }
+.bts .cf2-tot b { font: 700 19px var(--font-num); color: var(--ink); }
+.bts .cf2-rest { font: 400 12px var(--font-ui); color: var(--dim); text-align: right; margin-top: 2px; }
+.bts .cf2-know {
+    font: 400 12.5px/1.55 var(--font-ui); color: var(--mut);
+    background: color-mix(in srgb, var(--acc) 5%, transparent);
+    border-radius: 11px; padding: 10px 13px; margin: 12px 0 16px;
+}
+.bts .cf2-act { display: flex; gap: 10px; }
+.bts .cf2-no {
+    flex: 0 0 auto; border: 1px solid var(--line); background: none; color: var(--mut);
+    font: 600 13.5px var(--font-ui); border-radius: 12px; padding: 12px 18px; cursor: pointer;
+}
+.bts .cf2-no:hover { color: var(--ink); }
+.bts .cf2-go {
+    flex: 1; border: 0; border-radius: 12px; cursor: pointer;
+    font: 700 14px var(--font-ui); color: var(--bg); background: var(--ink);
+    padding: 12px 18px; box-shadow: 0 16px 30px -18px rgba(15, 23, 42, 0.55);
+}
+.bts .cf2-go.sell { background: #b3452e; color: #fff; }
+
+/* подсказка метки исполнения на свечах (▲/▼ рисует оверлей движка) */
+.bts .bts-filltip {
+    position: absolute; transform: translateX(-50%); z-index: 9;
+    background: var(--card); border: 1px solid var(--line); border-radius: 9px;
+    padding: 5px 10px; font: 400 11.5px var(--font-num); color: var(--mut);
+    white-space: nowrap; pointer-events: none;
+    box-shadow: 0 10px 24px -14px rgba(15, 23, 42, 0.4);
+}
+.bts .bts-filltip b { font-weight: 700; color: #16a34a; }
+.bts .bts-filltip.sell b { color: #dc2626; }
+.bts.night .bts-filltip b { color: #34d399; }
+.bts.night .bts-filltip.sell b { color: #f87171; }
+
+/* кумулятивная глубина по ховеру: диапазон до спреда + чип ёмкости */
+.bts .tkt-depth { position: relative; }
+.bts .d-row.d-cum { background: color-mix(in srgb, var(--acc) 7%, transparent); }
+.bts .d-cumtip {
+    position: absolute; right: 10px; z-index: 6; pointer-events: none;
+    background: var(--ink); color: var(--bg); border-radius: 8px;
+    padding: 3px 9px; font: 600 10.5px var(--font-num); white-space: nowrap;
+    box-shadow: 0 10px 22px -12px rgba(15, 23, 42, 0.5);
+}
+
+/* исполнение: вспышка строки + подпрыгнувшая плашка остатка */
+@keyframes btRowHit {
+    0% { background: color-mix(in srgb, #16a34a 22%, transparent); }
+    100% { background: transparent; }
+}
+.bts .d-row.d-hit { animation: btRowHit 0.9s ease-out; }
+@keyframes btMyBump {
+    0% { transform: scale(1.35); }
+    100% { transform: scale(1); }
+}
+.bts .d-my.d-bump { animation: btMyBump 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.3); }
+
+/* пустые состояния дока — приглашение с действием */
+.bts .dk-empty u {
+    display: inline-block; text-decoration: none; cursor: pointer;
+    font: 600 12px var(--font-ui); color: var(--acc); margin-left: 12px;
+}
+.bts .dk-empty u:hover { text-decoration: underline; }
+
+/* вкладки экранов: ✕ на ховере (двухшаговое удаление) */
+.bts .sct { display: inline-flex; align-items: center; gap: 6px; }
+.bts .sct .sct-l { font-weight: 600; }
+.bts .sct .sct-x {
+    font-style: normal; font: 600 10px var(--font-ui); color: var(--dim);
+    border-radius: 6px; padding: 1px 4px; cursor: pointer;
+    opacity: 0; transition: opacity 0.15s;
+}
+.bts .sct:hover .sct-x { opacity: 1; }
+.bts .sct .sct-x:hover { color: #b3452e; background: color-mix(in srgb, #b3452e 10%, transparent); }
+.bts .sct .sct-x.arm { opacity: 1; color: #fff; background: #b3452e; }
