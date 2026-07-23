@@ -6648,10 +6648,10 @@
     function scnDepthDeep() {
         var el = dq('btScnTkDepth');
         if (!el || !el.clientHeight) return SCN_DEPTH_CARD;
-        // одна лесенка: сверху линия баланса (~64), середина стыка (~48),
+        // одна лесенка: сверху полоса баланса (~44), середина стыка (~48),
         // шапка (~40), а лента растёт снизу — оставляем ей минимум ~160.
         // Лесенка занимает верх карточки по числу рядов, лишнее — ленте
-        var per = Math.floor((el.clientHeight - 40 - 64 - 48 - 160) / 24 / 2);
+        var per = Math.floor((el.clientHeight - 40 - 44 - 48 - 160) / 24 / 2);
         return Math.max(3, Math.min(SCN_DEPTH_CARD, per));
     }
     // данные стакана для рендера И для точечного патча (scnDepthSet):
@@ -6697,8 +6697,6 @@
                       (swBid && side === 'd-bid' && l.px >= scnSweep.px - swEps);
             l.cls = 'd-row ' + side + (l.lots >= maxLots * 0.6 ? ' d-big' : '') +
                 (best ? ' d-best' : '') + (l.my ? ' d-mine' : '') + (sel ? ' d-sel' : '');
-            l.rub = '≈ ' + Math.round(l.px * l.lots * lot).toLocaleString('ru-RU') + ' ₽ на уровне' +
-                (l.my ? ' · ваша заявка: осталось ' + l.my + ' ' + PF.plural(l.my, 'лот', 'лота', 'лотов') : '');
             return l;
         }
         // ЛОВУШКА мокапа: лучшая продажа стоит У СПРЕДА — аски в обратном
@@ -6728,7 +6726,7 @@
         // тегами. Плашка своих лотов — СЛЕВА, у цены с воздухом (владелец
         // 2026-07-23: справа от объёма она жила один раунд)
         return '<div class="' + l.cls + '" role="button" tabindex="0" data-px="' + l.px + '" data-v="' + l.lots + '" ' +
-            'title="' + l.rub + '" onclick="pftScRowPx(+this.dataset.px, ' +
+            'onclick="pftScRowPx(+this.dataset.px, ' +
             (l.cls.indexOf('d-ask') >= 0 ? 1 : 0) + ')">' +
             '<i class="d-fill" style="width:' + l.w + '%"></i>' +
             '<span class="pr">' + fmtPx(l.px, s) + '</span>' +
@@ -6788,11 +6786,13 @@
         if (!s.ob) return head + '<div class="bts-cnote">Ждём стакан…</div>';
         var d = scnDepthData(s, deep || SCN_DEPTH);
         var bal = scnBalTxt(d);
-        // линия баланса спроса/предложения: канва-гора + подписи долей
-        var balStrip = '<div class="d-bal" id="btScnBal">' +
-            '<canvas id="btScnBalCv"></canvas>' +
-            '<span class="d-bal-t d-bal-b" id="btScnBalB">спрос ' + bal.bid + '%</span>' +
-            '<span class="d-bal-t d-bal-a" id="btScnBalA">' + bal.ask + '% предложение</span>' +
+        // ЛИНИЯ БАЛАНСА спроса/предложения (владелец 2026-07-24: не горы, а
+        // одна красивая линия): тонкая мерная полоса — зелёная слева по доле
+        // спроса, красная справа, стык на балансе; доли подписаны по краям
+        var balStrip = '<div class="d-bal">' +
+            '<div class="d-bal-cap"><span class="d-bal-b">спрос <b id="btScnBalB">' + bal.bid + '%</b></span>' +
+            '<span class="d-bal-a"><b id="btScnBalA">' + bal.ask + '%</b> предложение</span></div>' +
+            '<div class="d-balbar" id="btScnBalBar" style="--split:' + bal.bid + '%"></div>' +
         '</div>';
         // пустую сторону неликвида показываем, не прячем (экран 11): рыночной
         // цены без неё не существует — кнопку тикета гасит scnSubmitBlock
@@ -6826,7 +6826,6 @@
             el.__btHtml = null;   // после патчей строковый кэш scnSet врал бы
             el.innerHTML = scnDepthHtml(s, slim, deep);
             scnApplyHov(el, s);   // подсветка ховера переживает полный ре-рендер
-            if (d) requestAnimationFrame(function () { scnBalDraw(s, d); });
             return;
         }
         if (!d) return;
@@ -6841,7 +6840,6 @@
             if (r.className !== l.cls) r.className = l.cls;
             if (r.dataset.px !== String(l.px)) r.dataset.px = l.px;
             if (r.dataset.v !== String(l.lots)) r.dataset.v = l.lots;
-            if (r.title !== l.rub) r.title = l.rub;
             var pr = r.firstChild.nextSibling, my = pr.nextSibling, vol = my.nextSibling;
             var pt = fmtPx(l.px, s), vt = l.lots.toLocaleString('ru-RU');
             var mt = l.my ? l.my + ' ' + PF.plural(l.my, 'лот', 'лота', 'лотов') : '';
@@ -6867,12 +6865,13 @@
             var mh = scnMidBandInner(s, d);
             if (mid.__btHtml !== mh) { mid.__btHtml = mh; mid.innerHTML = mh; }
         }
-        // линия баланса: перерисовать канву + подписи долей
-        scnBalDraw(s, d);
+        // линия баланса: доля спроса → ширина зелёной части + подписи
         var bal = scnBalTxt(d);
-        var bb = el.querySelector('#btScnBalB'), ba = el.querySelector('#btScnBalA');
-        if (bb) { var bbt = 'спрос ' + bal.bid + '%'; if (bb.textContent !== bbt) bb.textContent = bbt; }
-        if (ba) { var bat = bal.ask + '% предложение'; if (ba.textContent !== bat) ba.textContent = bat; }
+        var bb = el.querySelector('#btScnBalB'), ba = el.querySelector('#btScnBalA'),
+            bar = el.querySelector('#btScnBalBar');
+        if (bb) { var bbt = bal.bid + '%'; if (bb.textContent !== bbt) bb.textContent = bbt; }
+        if (ba) { var bat = bal.ask + '%'; if (ba.textContent !== bat) ba.textContent = bat; }
+        if (bar) { var sp2 = bal.bid + '%'; if (bar.style.getPropertyValue('--split') !== sp2) bar.style.setProperty('--split', sp2); }
         // плашка свипа: сумма пути живёт тиком (лоты у уровня меняются)
         var swW = el.querySelector('#btScnSweep');
         if (swW) {
@@ -6901,104 +6900,6 @@
                 '<span class="pr ' + (buy ? 'g' : 'r') + '">' + fmtPx(q2n(t.price) * bk, s) + '</span>' +
                 '<span class="d-vol">×' + (+t.quantity || 0).toLocaleString('ru-RU') + '</span></div>';
         }).join('');
-    }
-    // ---- линия баланса спроса и предложения (владелец 2026-07-24) ----
-    // Сглаженная гора кумулятива над лесенкой: спрос слева зелёным, предложение
-    // справа красным, встречаются на спреде. Х — цена, Y — накопленные лоты.
-    // Рисуем на канве от живого s.ob каждым тиком (дешевле патча DOM). Кривая
-    // сглажена монотонным бензье — «красиво», не ступеньками
-    function scnCurvePalette() {
-        var night = sceneNight();
-        return {
-            grn: night ? '#34d399' : '#16a34a',
-            red: night ? '#f87171' : '#dc2626',
-            hair: night ? 'rgba(255,255,255,0.14)' : 'rgba(15,23,42,0.12)',
-            mut: night ? '#93a1b8' : '#64748b'
-        };
-    }
-    function scnBalDraw(s, d) {
-        var cv = dq('btScnBalCv'), box = dq('btScnBal');
-        if (!cv || !box || !s.ob) return;
-        var asks = (d.asks || []).slice().reverse();   // экранный порядок — обратно к лучшему
-        var bids = (d.bids || []);
-        if (!asks.length && !bids.length) return;
-        var W = box.clientWidth, H = box.clientHeight;
-        if (!(W > 30) || !(H > 20)) return;
-        var dpr = window.devicePixelRatio || 1;
-        if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) {
-            cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
-        }
-        var ctx = cv.getContext('2d');
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        ctx.clearRect(0, 0, W, H);
-        var pal = scnCurvePalette();
-        // общий диапазон цен книги; спред — по центру X
-        var bestBid = bids.length ? bids[0].px : 0;
-        var bestAsk = asks.length ? asks[0].px : 0;
-        var pmin = bids.length ? bids[bids.length - 1].px : bestAsk;
-        var pmax = asks.length ? asks[asks.length - 1].px : bestBid;
-        if (!(pmax > pmin)) { pmax = pmin + ((s.meta && s.meta.minInc) || 0.01); }
-        var maxCum = 1, cum;
-        // кумулятив от лучшей цены наружу (у спреда — 0, к краю книги — весь объём)
-        var bidPts = []; cum = 0;
-        bids.forEach(function (l) { cum += l.lots; bidPts.push({ px: l.px, c: cum }); });
-        maxCum = Math.max(maxCum, cum);
-        var askPts = []; cum = 0;
-        asks.forEach(function (l) { cum += l.lots; askPts.push({ px: l.px, c: cum }); });
-        maxCum = Math.max(maxCum, cum);
-        var padT = 9, padB = 1;
-        function X(px) { return (px - pmin) / (pmax - pmin) * (W - 2) + 1; }
-        function Y(c) { return H - padB - c / maxCum * (H - padT - padB); }
-        // ОДНА непрерывная линия слева направо по возрастанию цены: спрос
-        // спускается от левого края (весь объём вверху) к стыку (0 внизу), потом
-        // предложение поднимается к правому краю. Долина = красивая линия баланса
-        var mid = bestBid && bestAsk ? (bestBid + bestAsk) / 2 : (bestBid || bestAsk);
-        var midX = X(mid);
-        var P = [];
-        // биды по возрастанию цены = от дальнего (полный кумулятив) к лучшему (0)
-        for (var bi = bidPts.length - 1; bi >= 0; bi--) P.push({ x: X(bidPts[bi].px), y: Y(bidPts[bi].c) });
-        if (bidPts.length) P.push({ x: midX, y: Y(0) });          // спуск к стыку
-        if (askPts.length) P.push({ x: midX, y: Y(0) });          // подъём от стыка
-        for (var ai = 0; ai < askPts.length; ai++) P.push({ x: X(askPts[ai].px), y: Y(askPts[ai].c) });
-        if (P.length < 2) return;
-        // сглаженный путь (половинками — мягко, без выбросов)
-        function trace() {
-            ctx.moveTo(P[0].x, P[0].y);
-            for (var i = 0; i < P.length - 1; i++) {
-                var a = P[i], b = P[i + 1], mx = (a.x + b.x) / 2;
-                ctx.bezierCurveTo(mx, a.y, mx, b.y, b.x, b.y);
-            }
-        }
-        // мягкая заливка под линией до дна
-        ctx.beginPath(); trace();
-        ctx.lineTo(P[P.length - 1].x, H); ctx.lineTo(P[0].x, H); ctx.closePath();
-        var fill = ctx.createLinearGradient(0, 0, W, 0);
-        var cf = Math.max(0.02, Math.min(0.98, midX / W));
-        fill.addColorStop(0, pal.grn + '2e');
-        fill.addColorStop(Math.max(0, cf - 0.02), pal.grn + '12');
-        fill.addColorStop(Math.min(1, cf + 0.02), pal.red + '12');
-        fill.addColorStop(1, pal.red + '2e');
-        ctx.fillStyle = fill; ctx.fill();
-        // сама линия — гладкая, с мягким свечением; зелёная слева, красная справа
-        var line = ctx.createLinearGradient(0, 0, W, 0);
-        line.addColorStop(0, pal.grn);
-        line.addColorStop(Math.max(0, cf - 0.015), pal.grn);
-        line.addColorStop(Math.min(1, cf + 0.015), pal.red);
-        line.addColorStop(1, pal.red);
-        ctx.beginPath(); trace();
-        ctx.strokeStyle = line; ctx.lineWidth = 2.2; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-        ctx.shadowColor = (bestBid ? pal.grn : pal.red) + '55'; ctx.shadowBlur = 7; ctx.shadowOffsetY = 1;
-        ctx.stroke();
-        ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
-        // точка стыка — маленький маркер на дне долины
-        if (bestBid && bestAsk) {
-            ctx.beginPath(); ctx.arc(midX, Y(0), 2.2, 0, Math.PI * 2);
-            ctx.fillStyle = pal.mut; ctx.fill();
-            ctx.strokeStyle = pal.hair; ctx.lineWidth = 1;
-            ctx.setLineDash([2, 3]);
-            ctx.beginPath(); ctx.moveTo(midX, padT - 5); ctx.lineTo(midX, H); ctx.stroke();
-            ctx.setLineDash([]);
-        }
     }
     // ---- кумулятивная глубина по ховеру (владелец 2026-07-23) ----
     // Навёл на уровень — тихо подсвечиваются все уровни между спредом и ним,

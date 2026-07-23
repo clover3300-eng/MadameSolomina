@@ -293,19 +293,28 @@
 /* заголовок стакана в карточках — тем же кеглем, что вкладки заявки */
 .bts .tkt .d-h b, .bts .tkt-sub .d-h b { font-size: 16px; }
 .bts .d-tape-b { margin-top: 2px; }
-/* ЛИНИЯ БАЛАНСА спроса/предложения над лесенкой (владелец 2026-07-24): гладкая
-   гора кумулятива на канве, спрос слева зелёным, предложение справа красным */
-.bts .d-bal {
-    position: relative; flex: none; height: 64px; margin-bottom: 4px;
-    border-bottom: 1px solid var(--hair);
+/* ЛИНИЯ БАЛАНСА спроса/предложения над лесенкой (владелец 2026-07-24): не горы,
+   а одна тонкая мерная полоса — зелёная слева по доле спроса, красная справа,
+   стык на балансе; доли подписаны по краям */
+.bts .d-bal { flex: none; margin-bottom: 10px; display: flex; flex-direction: column; gap: 5px; }
+.bts .d-bal-cap { display: flex; justify-content: space-between; font: 400 10.5px var(--font-ui); color: var(--dim); }
+.bts .d-bal-cap b { font: 700 11px var(--font-num); }
+.bts .d-bal-b { color: var(--grn); }
+.bts .d-bal-a { color: var(--red); }
+.bts .d-balbar {
+    position: relative; height: 8px; border-radius: 999px; overflow: hidden;
+    background: linear-gradient(90deg,
+        color-mix(in srgb, var(--grn) 82%, transparent) 0 var(--split),
+        color-mix(in srgb, var(--red) 82%, transparent) var(--split) 100%);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 6%, transparent);
+    transition: none;
 }
-.bts .d-bal canvas { display: block; width: 100%; height: 100%; }
-.bts .d-bal-t {
-    position: absolute; bottom: 4px; font: 700 10px var(--font-ui);
-    letter-spacing: 0.02em; pointer-events: none; white-space: nowrap;
+/* мягкий стык-делитель на балансе */
+.bts .d-balbar::after {
+    content: ''; position: absolute; top: -2px; bottom: -2px; left: var(--split);
+    width: 2px; transform: translateX(-50%);
+    background: var(--card); box-shadow: 0 0 4px color-mix(in srgb, var(--ink) 25%, transparent);
 }
-.bts .d-bal-b { left: 2px; color: var(--grn); }
-.bts .d-bal-a { right: 2px; color: var(--red); }
 /* лесенка уровней — по высоте контента (flex:none): лента растёт СЛЕДОМ и
    занимает низ, без большого пробела (владелец 2026-07-24) */
 .bts .d-ladder { flex: none; min-height: 0; }
