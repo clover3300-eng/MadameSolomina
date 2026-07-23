@@ -325,7 +325,8 @@
 .bts .pair .lab { display: flex; align-items: center; font: 600 11px var(--font-ui); color: var(--mut); margin-bottom: 4px; }
 .bts .pair .row.err .lab { color: var(--red); }
 .bts .pair .big { display: flex; align-items: baseline; gap: 6px; }
-.bts .pair .big .big-v { font: 600 20px var(--font-num); color: var(--ink); }
+/* «По рынку» — не число, а фраза: серифом, как заголовки (владелец 2026-07-24) */
+.bts .pair .big .big-v { font: 400 22px var(--font-title); letter-spacing: -0.01em; color: var(--ink); }
 .bts .pair .big .big-in { min-width: 0; border: 0; background: none; padding: 0; color: var(--ink); font: 700 20px var(--font-num); font-variant-numeric: tabular-nums; }
 .bts .pair .big #btSxSum { flex: 1; }
 .bts .pair .big #btScnLimIn { width: 5.5em; }
@@ -1220,15 +1221,29 @@
 /* строка защиты в тикете: чипы в ЦВЕТ плашек графика (владелец 2026-07-23
    поверх мокапа) — тейк зелёный, стоп красный, одна сущность = один язык.
    Пусто — «призраки» + тейк / + стоп зовут добавить ногу */
+/* блок защиты — в языке карточки: серифная подпись + мягкая подложка,
+   ноги-призраки с цветной точкой (владелец 2026-07-24: капслок-строка в рамке
+   выбивалась) */
+.bts .protb {
+    display: flex; flex-direction: column; gap: 9px;
+    border: 1px solid var(--hair); border-radius: 12px; padding: 11px 13px;
+    background: color-mix(in srgb, var(--ink) 2%, transparent);
+}
+.bts .protb-h { display: flex; align-items: baseline; gap: 8px; font: 400 12.5px var(--font-title); color: var(--mut); }
+.bts .protb-h em { font-style: normal; margin-left: auto; font: 400 10.5px var(--font-ui); color: var(--dim); }
 .bts .prot { display: flex; align-items: center; gap: 8px; font: 400 12.5px var(--font-ui); color: var(--mut); }
 .bts .prot-add {
-    display: inline-flex; align-items: center;
-    font: 600 12px var(--font-ui); color: var(--dim);
-    border: 1px dashed var(--line); border-radius: 9px; padding: 5px 11px;
+    display: inline-flex; align-items: center; gap: 7px;
+    font: 600 12px var(--font-ui); color: var(--mut);
+    border: 1px dashed var(--line); border-radius: 10px; padding: 7px 12px;
     cursor: pointer; user-select: none; white-space: nowrap;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
-.bts .prot-add.tp:hover { color: var(--grn); border-color: color-mix(in srgb, var(--grn) 55%, transparent); }
-.bts .prot-add.sl:hover { color: var(--red); border-color: color-mix(in srgb, var(--red) 55%, transparent); }
+.bts .prot-add::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--dim); flex: none; }
+.bts .prot-add.tp::before { background: var(--grn); }
+.bts .prot-add.sl::before { background: var(--red); }
+.bts .prot-add.tp:hover { color: var(--grn); border-color: color-mix(in srgb, var(--grn) 50%, transparent); background: color-mix(in srgb, var(--grn) 7%, transparent); }
+.bts .prot-add.sl:hover { color: var(--red); border-color: color-mix(in srgb, var(--red) 50%, transparent); background: color-mix(in srgb, var(--red) 7%, transparent); }
 .bts .prot-chip {
     display: inline-flex; align-items: center; gap: 6px;
     font: 600 12px var(--font-ui); border-radius: 9px; padding: 5px 11px;

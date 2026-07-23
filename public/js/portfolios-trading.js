@@ -5262,7 +5262,7 @@
             '<div class="pair">' + priceRow + sumRow + '</div></div>';
         // защита позиции — про живые стоп-заявки брокера: в реплее её нет
         var protRow = RP ? '' :
-            '<div class="fld fld-p" id="btScnProt"><em>Защита позиции</em>' + scnProtInner(n) + '</div>';
+            '<div class="protb" id="btScnProt">' + scnProtHead() + scnProtInner(n) + '</div>';
         var deal = head +
             '<div class="seg">' +
                 '<span class="' + (buy ? 'on' : '') + '" role="button" tabindex="0" onclick="pftSxSide(\'buy\')">Купить</span>' +
@@ -7182,6 +7182,12 @@
     function protVals(s) {
         return { tp: +s.protTp || 0, sl: +s.protSl || 0 };
     }
+    // шапка блока защиты — серифная подпись в языке «Сколько и почём»
+    // (владелец 2026-07-24: капслок-строка выбивалась из карточки). Живёт
+    // отдельным хелпером: pftScProtClr пересобирает #btScnProt руками
+    function scnProtHead() {
+        return '<div class="protb-h">Защита позиции<em>тейк-профит и стоп-лосс</em></div>';
+    }
     // чипы в цвет плашек графика (владелец 2026-07-23 поверх мокапа: серая
     // строка «тейк · стоп» не читалась) — одна сущность = один язык цвета
     function scnProtInner(n) {
@@ -7196,10 +7202,10 @@
         }
         // пусто — два «призрака» зовут добавить ногу; задана — чип с ✕
         function chip(k, val) {
-            var word = k === 'tp' ? 'тейк' : 'стоп';
+            var word = k === 'tp' ? 'тейк-профит' : 'стоп-лосс';
             if (!(val > 0)) {
                 return '<span class="prot-add ' + k + '" role="button" tabindex="0" ' +
-                    'onclick="pftScProtEdit(\'' + k + '\')">+ ' + word + '</span>';
+                    'onclick="pftScProtEdit(\'' + k + '\')">' + word + '</span>';
             }
             return '<span class="prot-chip ' + k + '" role="button" tabindex="0" ' +
                 'onclick="pftScProtEdit(\'' + k + '\')" title="Изменить уровень">' + word +
@@ -7232,7 +7238,7 @@
         s[k === 'tp' ? 'protTp' : 'protSl'] = '';
         s.prot = (+s.protTp > 0 || +s.protSl > 0);
         saveSlots();
-        var f = dq('btScnProt'); if (f) f.innerHTML = '<em>Защита позиции</em>' + scnProtInner(sxSlot());
+        var f = dq('btScnProt'); if (f) f.innerHTML = scnProtHead() + scnProtInner(sxSlot());
         scnKProt();
     };
     // ✕ на «ждёт исполнения»: защита ещё не на бирже (встанет из pendingProt
