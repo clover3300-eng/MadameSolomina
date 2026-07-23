@@ -1,0 +1,550 @@
+<title>Торговля · заявка / стакан / сплит — редизайн</title>
+<style>
+:root{
+  --fT:Georgia,'Times New Roman',serif;
+  --fU:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --fN:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+  --doc-dim:#94a3b8; --doc-line:#dfe4ec; --doc-acc:#4453ef;
+}
+@media (prefers-color-scheme:dark){
+  :root{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+         --doc-dim:#5e6c84; --doc-line:#232c3a; --doc-acc:#8b98ff; }
+}
+:root[data-theme="dark"]{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+         --doc-dim:#5e6c84; --doc-line:#232c3a; --doc-acc:#8b98ff; }
+:root[data-theme="light"]{ --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+         --doc-dim:#94a3b8; --doc-line:#dfe4ec; --doc-acc:#4453ef; }
+
+*{box-sizing:border-box}
+body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);
+     padding:44px 20px 96px;-webkit-font-smoothing:antialiased;margin:0}
+.page{width:min(1180px,100%);margin:0 auto}
+
+/* ---------- документ-обёртка ---------- */
+.doc-h{margin-bottom:14px}
+.doc-kicker{font-family:var(--fN);font-size:11px;font-weight:700;letter-spacing:.14em;
+     text-transform:uppercase;color:var(--doc-acc);margin-bottom:10px}
+.doc-h h1{font-family:var(--fT);font-weight:400;font-size:40px;line-height:1.12;
+     letter-spacing:-.01em;text-wrap:balance;margin:0}
+.doc-h p{margin-top:14px;font-size:15.5px;line-height:1.65;color:var(--doc-mut);max-width:820px}
+.verdict{margin-top:22px;display:flex;gap:14px;align-items:flex-start;background:var(--doc-panel);
+     border:1px solid var(--doc-line);border-left:3px solid var(--doc-acc);border-radius:14px;
+     padding:16px 20px;max-width:900px}
+.verdict b{font-family:var(--fT);font-weight:400;font-size:16px}
+.verdict p{margin:5px 0 0;font-size:13.5px;line-height:1.6;color:var(--doc-mut)}
+
+.mk{margin-top:56px}
+.mk-h{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.mk-n{font-family:var(--fN);font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--doc-dim)}
+.mk-h h2{font-family:var(--fT);font-weight:400;font-size:26px;margin:0}
+.mk-tag{font-family:var(--fU);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+     padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--doc-acc) 14%,transparent);color:var(--doc-acc)}
+.mk-tag.mute{background:color-mix(in srgb,var(--doc-mut) 16%,transparent);color:var(--doc-mut)}
+.mk-sub{font-size:14px;color:var(--doc-mut);line-height:1.65;max-width:900px;margin:2px 0 20px}
+.mk-sub b{color:var(--doc-ink);font-weight:600}
+
+.board{display:flex;justify-content:center;overflow-x:auto;padding:2px}
+
+/* ---------- экран терминала ---------- */
+.scr{--ink:#0f172a; --mut:#64748b; --dim:#94a3b8; --line:#e7ecf3; --hair:rgba(15,23,42,.07);
+     --bg:#f4f6fa; --card:#fff; --acc:#4453ef; --grn:#16a34a; --red:#dc2626; --amb:#d97706;
+     --grnw:color-mix(in srgb,var(--grn) 13%,transparent);
+     --redw:color-mix(in srgb,var(--red) 12%,transparent);
+     position:relative;background:var(--bg);color:var(--ink);border-radius:20px;
+     border:1px solid var(--line);padding:26px;flex:none;
+     box-shadow:0 40px 90px -60px rgba(15,23,42,.5),0 2px 0 rgba(255,255,255,.6) inset;
+     font-family:var(--fU)}
+.scr.night{--ink:#e9eef8; --mut:#93a1b8; --dim:#5e6c84; --line:rgba(255,255,255,.08); --hair:rgba(255,255,255,.06);
+     --bg:#0a0e15; --card:#121722; --acc:#7c8cff; --grn:#34d399; --red:#f87171; --amb:#f0a63a;
+     --grnw:color-mix(in srgb,var(--grn) 16%,transparent);
+     --redw:color-mix(in srgb,var(--red) 15%,transparent);
+     box-shadow:0 46px 100px -60px rgba(0,0,0,.75)}
+.num{font-family:var(--fN);font-variant-numeric:tabular-nums}
+
+/* заголовок-хром бумаги внутри экрана */
+.scr-head{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.scr-mono{width:38px;height:38px;border-radius:11px;background:var(--acc);color:#fff;flex:none;
+     display:grid;place-items:center;font-family:var(--fT);font-size:17px;
+     box-shadow:0 10px 22px -12px color-mix(in srgb,var(--acc) 80%,transparent)}
+.scr-nm{line-height:1.1}
+.scr-nm b{font-family:var(--fT);font-weight:400;font-size:20px;display:block}
+.scr-nm em{font-style:normal;font-family:var(--fN);font-size:10px;color:var(--dim);letter-spacing:.05em}
+.scr-live{margin-left:auto;display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:600;color:var(--grn)}
+.scr-live i{width:6px;height:6px;border-radius:50%;background:var(--grn);
+     box-shadow:0 0 0 3px color-mix(in srgb,var(--grn) 20%,transparent)}
+.scr-live.amber{color:var(--amb)}.scr-live.amber i{background:var(--amb);box-shadow:0 0 0 3px color-mix(in srgb,var(--amb) 20%,transparent)}
+
+/* ============ СТАКАН · «Глубина» ============ */
+.ob{width:400px;background:var(--card);border:1px solid var(--line);border-radius:18px;
+     padding:16px 16px 14px;box-shadow:0 24px 60px -44px rgba(15,23,42,.5)}
+.scr.night .ob{background:color-mix(in srgb,var(--card) 92%,transparent)}
+.ob-top{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+.ob-top b{font-family:var(--fT);font-weight:400;font-size:17px}
+.ob-top em{font-style:normal;font-size:10.5px;color:var(--dim)}
+.ob-seg{margin-left:auto;display:inline-flex;gap:1px;border:1px solid var(--line);border-radius:9px;padding:2px;background:var(--bg)}
+.ob-seg span{font-size:10.5px;font-weight:600;color:var(--dim);padding:4px 9px;border-radius:7px;cursor:pointer}
+.ob-seg span.on{background:color-mix(in srgb,var(--acc) 14%,transparent);color:var(--ink)}
+
+/* баланс спрос/предложение */
+.ob-bal{height:5px;border-radius:999px;overflow:hidden;display:flex;background:var(--hair);margin-bottom:5px}
+.ob-bal i{height:100%}.ob-bal i.g{background:color-mix(in srgb,var(--grn) 62%,transparent)}
+.ob-bal i.r{background:color-mix(in srgb,var(--red) 55%,transparent)}
+.ob-ballab{display:flex;justify-content:space-between;font-family:var(--fN);font-size:9.5px;
+     font-weight:700;letter-spacing:.02em;margin-bottom:12px}
+.ob-ballab .g{color:var(--grn)}.ob-ballab .r{color:var(--red)}
+
+.ob-side{display:flex;flex-direction:column;gap:3px}
+.ob-row{position:relative;display:flex;align-items:center;height:26px;padding:0 10px;border-radius:7px;
+     cursor:pointer;isolation:isolate}
+.ob-row:hover{background:var(--hair)}
+.ob-cum,.ob-fill{position:absolute;right:0;top:0;bottom:0;border-radius:7px;z-index:-1}
+.ob-row.ask .ob-cum{background:color-mix(in srgb,var(--red) 7%,transparent)}
+.ob-row.bid .ob-cum{background:color-mix(in srgb,var(--grn) 8%,transparent)}
+.ob-row.ask .ob-fill{background:linear-gradient(90deg,transparent,var(--redw))}
+.ob-row.bid .ob-fill{background:linear-gradient(90deg,transparent,var(--grnw))}
+.ob-px{font-family:var(--fN);font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.ob-row.ask .ob-px{color:var(--red)}.ob-row.bid .ob-px{color:var(--grn)}
+.ob-lot{margin-left:auto;font-family:var(--fN);font-size:12px;color:var(--mut);font-variant-numeric:tabular-nums}
+.ob-row.big .ob-px,.ob-row.big .ob-lot{font-weight:700}
+.ob-row.big .ob-lot{color:var(--ink)}
+.ob-row.best .ob-px{font-weight:700}
+.ob-my{margin-left:9px;font-family:var(--fN);font-size:9.5px;font-weight:700;color:var(--acc);
+     background:color-mix(in srgb,var(--acc) 12%,transparent);border-radius:6px;padding:1px 6px}
+/* ховер-подсказка кумулятивной глубины */
+.ob-row.hov{background:color-mix(in srgb,var(--acc) 7%,transparent)}
+.ob-cumtip{position:absolute;left:10px;top:-30px;z-index:8;font-family:var(--fN);font-size:10px;font-weight:600;
+     background:var(--ink);color:var(--bg);padding:5px 9px;border-radius:8px;white-space:nowrap;
+     box-shadow:0 12px 24px -14px rgba(0,0,0,.6)}
+.ob-cumtip::after{content:'';position:absolute;left:22px;bottom:-4px;width:8px;height:8px;background:var(--ink);transform:rotate(45deg)}
+
+/* спред-хребет */
+.ob-spread{display:flex;align-items:center;gap:12px;margin:7px 0;padding:9px 12px;border-radius:12px;
+     background:linear-gradient(180deg,var(--redw),transparent 45%,var(--grnw));
+     border:1px solid var(--line)}
+.ob-mid{font-family:var(--fN);font-weight:700;font-size:22px;line-height:1;letter-spacing:-.01em}
+.ob-mid small{font-size:11px;color:var(--mut);font-weight:600;margin-left:2px}
+.ob-sprd{font-family:var(--fN);font-size:10.5px;color:var(--mut);line-height:1.4}
+.ob-sprd b{color:var(--ink);font-weight:700}
+.ob-last{margin-left:auto;font-family:var(--fN);font-size:10.5px;font-weight:700;color:var(--grn);text-align:right}
+.ob-last.dn{color:var(--red)}
+.ob-last em{display:block;font-style:normal;font-size:9px;color:var(--dim);font-weight:600}
+
+/* ============ ЗАЯВКА · «Итог» ============ */
+.tk{width:380px;background:var(--card);border:1px solid var(--line);border-radius:18px;
+     padding:16px;box-shadow:0 24px 60px -44px rgba(15,23,42,.5);display:flex;flex-direction:column;gap:12px}
+.scr.night .tk{background:color-mix(in srgb,var(--card) 92%,transparent)}
+.tk-tabs{display:flex;gap:2px;border:1px solid var(--line);border-radius:11px;padding:3px;background:var(--bg)}
+.tk-tabs b{flex:1;text-align:center;font-family:var(--fU);font-weight:600;font-size:12.5px;color:var(--dim);
+     padding:7px 0;border-radius:8px;cursor:pointer}
+.tk-tabs b.on{background:var(--card);color:var(--ink);box-shadow:0 2px 8px -4px rgba(15,23,42,.25)}
+.tk-tabs b.grn.on{color:var(--grn)}
+.tk-fresh{margin-left:auto}
+
+.seg{display:flex;gap:3px;border:1px solid var(--line);border-radius:12px;padding:3px;background:var(--bg)}
+.seg span{flex:1;text-align:center;font-weight:700;font-size:14px;padding:10px 0;border-radius:9px;color:var(--mut);cursor:pointer}
+.seg span.on{background:color-mix(in srgb,var(--grn) 14%,transparent);color:var(--grn)}
+.seg span.on.sell{background:color-mix(in srgb,var(--red) 12%,transparent);color:var(--red)}
+
+.fld{border:1px solid var(--line);border-radius:13px;padding:9px 13px;background:var(--card)}
+.fld em{font-style:normal;font-size:11px;font-weight:600;color:var(--mut);display:flex;align-items:center}
+.fld-cap{margin-left:auto;font-family:var(--fN);font-size:11px;color:var(--mut);font-weight:600}
+.fld-cap b{color:var(--ink)}
+.fld-in{display:flex;align-items:baseline;gap:6px;margin-top:3px}
+.fld-in input{font-family:var(--fN);font-size:20px;font-weight:700;border:0;background:transparent;
+     color:var(--ink);width:100%;padding:0;font-variant-numeric:tabular-nums}
+.fld-in u{text-decoration:none;font-size:12.5px;color:var(--mut);white-space:nowrap}
+.fld-sw{margin-left:auto;font-size:11px;font-weight:600;color:var(--acc);white-space:nowrap;cursor:pointer}
+
+/* строка цены — рынок / лимит со степпером */
+.px-seg{display:inline-flex;gap:1px;border:1px solid var(--line);border-radius:8px;padding:2px;background:var(--bg);margin-left:auto}
+.px-seg span{font-size:10.5px;font-weight:600;color:var(--dim);padding:3px 9px;border-radius:6px;cursor:pointer}
+.px-seg span.on{background:var(--card);color:var(--ink);box-shadow:0 1px 4px -2px rgba(15,23,42,.3)}
+.px-step{display:flex;align-items:center;gap:8px;margin-top:6px}
+.px-step .val{font-family:var(--fN);font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.px-step .val small{font-size:11px;color:var(--mut);font-weight:600}
+.px-step button{width:28px;height:28px;border-radius:9px;border:1px solid var(--line);background:var(--card);
+     color:var(--mut);font-size:16px;cursor:pointer;display:grid;place-items:center}
+.px-ghost{margin-left:auto;font-family:var(--fN);font-size:10px;color:var(--dim)}
+
+/* слайдер % от свободного */
+.tk-slider{height:6px;border-radius:999px;background:var(--hair);position:relative;margin:3px 2px}
+.tk-slider i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:var(--acc);width:23%}
+.tk-slider b{position:absolute;top:50%;width:16px;height:16px;border-radius:50%;background:var(--card);
+     border:2px solid var(--acc);transform:translate(-50%,-50%);left:23%;box-shadow:0 3px 8px -3px rgba(0,0,0,.4)}
+.presets{display:flex;gap:6px}
+.presets span{flex:1;text-align:center;font-family:var(--fN);font-size:11px;font-weight:600;color:var(--mut);
+     border:1px solid var(--line);border-radius:9px;padding:6px 0;cursor:pointer;background:var(--card)}
+.presets span.on{border-color:color-mix(in srgb,var(--acc) 45%,transparent);color:var(--acc);
+     background:color-mix(in srgb,var(--acc) 8%,transparent)}
+
+/* КВИТАНЦИЯ «Итог» */
+.receipt{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--bg)}
+.rc-head{padding:12px 14px 10px}
+.rc-lead{font-family:var(--fT);font-weight:400;font-size:18px}
+.rc-lead b{font-family:var(--fN);font-weight:700}
+.rc-sub{font-size:11px;color:var(--mut);margin-top:2px}
+.rc-lines{padding:2px 14px 4px}
+.rc-line{display:flex;align-items:baseline;gap:8px;padding:5px 0;font-size:12.5px}
+.rc-line .k{color:var(--mut)}
+.rc-line .v{margin-left:auto;font-family:var(--fN);font-weight:600;font-variant-numeric:tabular-nums}
+.rc-line .hint{font-size:10.5px;color:var(--dim)}
+.rc-div{height:1px;background:var(--line);margin:2px 14px}
+.rc-total{display:flex;align-items:baseline;gap:8px;padding:10px 14px;background:color-mix(in srgb,var(--grn) 7%,transparent)}
+.scr .receipt .rc-total.sell{background:color-mix(in srgb,var(--red) 7%,transparent)}
+.rc-total .k{font-size:12px;color:var(--mut);font-weight:600}
+.rc-total .v{margin-left:auto;font-family:var(--fN);font-weight:700;font-size:19px;font-variant-numeric:tabular-nums}
+.rc-avg{display:flex;align-items:baseline;gap:6px;padding:0 14px 11px;font-size:11px;color:var(--mut)}
+.rc-avg b{font-family:var(--fN);color:var(--ink);font-weight:700}
+.rc-avg s{text-decoration:none;color:var(--dim)}
+
+/* защита ghost-чипы */
+.prot{display:flex;gap:8px}
+.prot span{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;
+     border:1px dashed var(--line);border-radius:11px;padding:8px 0;font-size:12px;font-weight:600;
+     color:var(--mut);cursor:pointer}
+.prot span .d{width:6px;height:6px;border-radius:50%}
+.prot span.tp .d{background:var(--grn)}.prot span.sl .d{background:var(--red)}
+
+.cta{width:100%;border:0;border-radius:13px;padding:14px 0;font-family:var(--fU);font-weight:700;font-size:15px;
+     color:#fff;background:var(--grn);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;
+     box-shadow:0 16px 34px -18px color-mix(in srgb,var(--grn) 90%,transparent)}
+.cta::before{content:'';width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.9)}
+.cta.sell{background:var(--red);box-shadow:0 16px 34px -18px color-mix(in srgb,var(--red) 90%,transparent)}
+.tk-know{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--mut);justify-content:center}
+.tk-know u{text-decoration:none;color:var(--acc);font-weight:600;cursor:pointer}
+
+/* ============ СПЛИТ · «Мост» ============ */
+.sp{position:relative;display:flex;gap:0;align-items:stretch;background:var(--card);border:1px solid var(--line);
+     border-radius:20px;padding:16px;box-shadow:0 30px 70px -46px rgba(15,23,42,.55)}
+.scr.night .sp{background:color-mix(in srgb,var(--card) 92%,transparent)}
+.sp .ob,.sp .tk{box-shadow:none;border:0;border-radius:0;background:transparent;padding:0}
+.sp-col-ob{width:340px;padding-right:22px;border-right:1px solid var(--line)}
+.sp-col-tk{width:360px;padding-left:22px}
+.sp .tk{gap:11px}
+.sp-note{position:absolute;left:50%;top:14px;transform:translateX(-50%);font-family:var(--fN);font-size:10px;
+     font-weight:700;letter-spacing:.06em;color:var(--acc);background:color-mix(in srgb,var(--acc) 10%,transparent);
+     padding:4px 12px;border-radius:999px}
+/* подсвеченный уровень и коннектор в лимит */
+.ob-row.picked{background:color-mix(in srgb,var(--acc) 12%,transparent);
+     box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--acc) 45%,transparent)}
+.ob-row.picked .ob-px{color:var(--acc);font-weight:700}
+.sp-wire{position:absolute;pointer-events:none;overflow:visible;z-index:5}
+.sp-wire path{stroke:var(--acc);stroke-width:1.6;fill:none;stroke-dasharray:4 4}
+.sp-wire circle{fill:var(--acc)}
+.fld-p.lit{border-color:color-mix(in srgb,var(--acc) 55%,transparent);
+     box-shadow:0 0 0 4px color-mix(in srgb,var(--acc) 12%,transparent)}
+
+/* мини-набор для тёмного экрана */
+.trio{display:flex;gap:22px;align-items:flex-start}
+
+/* «что нового» подписи под экраном */
+.whats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:22px;max-width:1000px}
+.whats>div{background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:12px;padding:14px 16px}
+.whats h4{margin:0 0 6px;font-family:var(--fU);font-size:12px;font-weight:700;
+     display:flex;align-items:center;gap:8px}
+.whats h4 i{width:20px;height:20px;border-radius:6px;background:color-mix(in srgb,var(--doc-acc) 14%,transparent);
+     color:var(--doc-acc);font-style:normal;font-family:var(--fN);font-size:11px;font-weight:700;display:grid;place-items:center}
+.whats p{margin:0;font-size:12.5px;line-height:1.55;color:var(--doc-mut)}
+.whats p b{color:var(--doc-ink);font-weight:600}
+
+/* таблица «улучшение → в код» */
+.map{margin-top:26px;width:100%;border-collapse:collapse;font-size:13px}
+.map th,.map td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--doc-line);vertical-align:top}
+.map th{font-family:var(--fN);font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--doc-dim)}
+.map td{color:var(--doc-mut);line-height:1.5}
+.map td b{color:var(--doc-ink);font-weight:600}
+.map code{font-family:var(--fN);font-size:11.5px;background:color-mix(in srgb,var(--doc-acc) 9%,transparent);
+     color:var(--doc-acc);padding:1px 5px;border-radius:5px}
+@media (max-width:820px){ .whats{grid-template-columns:1fr} }
+</style>
+
+<div class="page">
+  <div class="doc-h">
+    <div class="doc-kicker">Торговля · сцена · раунд 4</div>
+    <h1>Заявка, стакан и сплит — чище, глубже, связнее</h1>
+    <p>Три блока, которые новичок открывает первыми. Ничего не ломаем в механике сцены: те же поля,
+       та же математика <b>simpleBuyCalc</b>, тот же клик по уровню в цену. Меняем подачу — стакан получает
+       ценовой хребет и стену глубины, заявка сворачивается в честную квитанцию «Итог», а сплит рисует
+       живой мост между уровнем и ценой.</p>
+    <div class="verdict">
+      <div>
+        <b>Один язык на все три блока</b>
+        <p>Спред — общий центр тяжести: в стакане это хребет, в заявке — призрак «рынок», в сплите — мост.
+           Цифры моноширинные и выровнены по разряду, зелёное/красное несут смысл, акцент — только на действии.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 01 · СТАКАН ============ -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">01</span><h2>Стакан · «Глубина»</h2><span class="mk-tag">центральный блок</span></div>
+    <p class="mk-sub">Спред — не пилюля где-то сбоку, а <b>хребет</b> посреди книги: крупная средняя цена, спред в ₽ и %,
+       последняя сделка со стрелкой. За каждым уровнем — две заливки: <b>своя</b> (объём уровня) и <b>стена</b>
+       (кумулятив от спреда наружу) — видно и отдельную заявку, и куда упрётся рыночный ордер. Сверху — баланс
+       спроса и предложения одной полосой. Ховер отвечает деньгами.</p>
+    <div class="board">
+      <div class="scr">
+        <div class="scr-head">
+          <div class="scr-mono">С</div>
+          <div class="scr-nm"><b>Сбербанк</b><em>SBER · лот 10</em></div>
+          <div class="scr-live"><i></i>цена живая</div>
+        </div>
+        <div class="ob">
+          <div class="ob-top"><b>Стакан</b><em>клик — лимитка</em>
+            <div class="ob-seg"><span class="on">Лесенка</span><span>Лента</span><span>Кривая</span></div>
+          </div>
+          <div class="ob-bal"><i class="g" style="width:53%"></i><i class="r" style="width:47%"></i></div>
+          <div class="ob-ballab"><span class="g">спрос 53%</span><span class="r">47% предложение</span></div>
+
+          <div class="ob-side">
+            <div class="ob-row ask"><span class="ob-cum" style="width:100%"></span><span class="ob-fill" style="width:42%"></span><span class="ob-px">318,72</span><span class="ob-lot">1 840</span></div>
+            <div class="ob-row ask"><span class="ob-cum" style="width:78%"></span><span class="ob-fill" style="width:24%"></span><span class="ob-px">318,71</span><span class="ob-lot">920</span></div>
+            <div class="ob-row ask big"><span class="ob-cum" style="width:72%"></span><span class="ob-fill" style="width:82%"></span><span class="ob-px">318,70</span><span class="ob-lot">3 210</span></div>
+            <div class="ob-row ask"><span class="ob-cum" style="width:40%"></span><span class="ob-fill" style="width:18%"></span><span class="ob-px">318,69</span><span class="ob-lot">640</span></div>
+            <div class="ob-row ask hov"><span class="ob-cumtip">скупить до 318,68 — 1 790 лотов ≈ 5,70 млн ₽</span><span class="ob-cum" style="width:34%"></span><span class="ob-fill" style="width:30%"></span><span class="ob-px">318,68</span><span class="ob-lot">1 120</span></div>
+            <div class="ob-row ask"><span class="ob-cum" style="width:22%"></span><span class="ob-fill" style="width:12%"></span><span class="ob-px">318,67</span><span class="ob-lot">410</span></div>
+            <div class="ob-row ask best"><span class="ob-cum" style="width:16%"></span><span class="ob-fill" style="width:9%"></span><span class="ob-px">318,66</span><span class="ob-lot">260</span></div>
+          </div>
+
+          <div class="ob-spread">
+            <div class="ob-mid">318,65<small>₽</small></div>
+            <div class="ob-sprd">спред <b>0,02 ₽</b><br>0,01 %</div>
+            <div class="ob-last up">▲ 318,64<em>последняя</em></div>
+          </div>
+
+          <div class="ob-side">
+            <div class="ob-row bid best"><span class="ob-cum" style="width:4%"></span><span class="ob-fill" style="width:11%"></span><span class="ob-px">318,64</span><span class="ob-my">моя 5</span><span class="ob-lot">400</span></div>
+            <div class="ob-row bid"><span class="ob-cum" style="width:20%"></span><span class="ob-fill" style="width:36%"></span><span class="ob-px">318,63</span><span class="ob-lot">1 470</span></div>
+            <div class="ob-row bid"><span class="ob-cum" style="width:30%"></span><span class="ob-fill" style="width:23%"></span><span class="ob-px">318,62</span><span class="ob-lot">890</span></div>
+            <div class="ob-row bid big"><span class="ob-cum" style="width:73%"></span><span class="ob-fill" style="width:100%"></span><span class="ob-px">318,61</span><span class="ob-lot">4 050</span></div>
+            <div class="ob-row bid"><span class="ob-cum" style="width:81%"></span><span class="ob-fill" style="width:19%"></span><span class="ob-px">318,60</span><span class="ob-lot">720</span></div>
+            <div class="ob-row bid"><span class="ob-cum" style="width:94%"></span><span class="ob-fill" style="width:32%"></span><span class="ob-px">318,59</span><span class="ob-lot">1 260</span></div>
+            <div class="ob-row bid"><span class="ob-cum" style="width:100%"></span><span class="ob-fill" style="width:15%"></span><span class="ob-px">318,58</span><span class="ob-lot">540</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="whats">
+      <div><h4><i>1</i>Хребет спреда</h4><p>Средняя цена крупно, спред в <b>₽ и %</b>, последняя сделка со стрелкой. Центр книги притягивает взгляд, а не пилюля сбоку.</p></div>
+      <div><h4><i>2</i>Стена глубины</h4><p>За объёмом уровня — вторая, бледная заливка <b>кумулятива</b> от спреда. Видно, где настоящая стена, до того как по ней ударить.</p></div>
+      <div><h4><i>3</i>Баланс сил</h4><p>Полоса «спрос / предложение» одной цифрой отвечает «кого сейчас больше» — факт из уже загруженной книги, без совета.</p></div>
+    </div>
+  </section>
+
+  <!-- ============ 02 · ЗАЯВКА ============ -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">02</span><h2>Заявка · квитанция «Итог»</h2><span class="mk-tag mute">меньше строк</span></div>
+    <p class="mk-sub">Было — россыпь строк: «≈ N акций», «средняя станет», «комиссия», «спишется». Стало — одна
+       <b>квитанция</b>, которая читается как чек: сколько бумаг, по какой цене, комиссия отдельной строкой,
+       итог крупно, средняя тихим хвостом. Цена — «рынок ⇄ лимит» со степпером и призраком рыночной рядом.
+       Защита — два ghost-чипа, раскрываются по клику.</p>
+    <div class="board">
+      <div class="scr">
+        <div class="scr-head">
+          <div class="scr-mono">С</div>
+          <div class="scr-nm"><b>Сбербанк</b><em>SBER · лот 10</em></div>
+          <div class="scr-live"><i></i>цена живая</div>
+        </div>
+        <div class="tk">
+          <div class="tk-tabs"><b class="on">Сделка</b><b class="grn">Стакан</b><b>Сплит</b></div>
+          <div class="seg"><span class="on">Купить</span><span>Продать</span></div>
+
+          <div class="fld fld-p">
+            <em>Цена<div class="px-seg"><span>По рынку</span><span class="on">Лимит</span></div></em>
+            <div class="px-step">
+              <button>−</button>
+              <div class="val">318,60<small> ₽</small></div>
+              <button>+</button>
+              <span class="px-ghost">рынок 318,64</span>
+            </div>
+          </div>
+
+          <div class="fld">
+            <em>Сумма<span class="fld-cap">свободно <b>214 300 ₽</b></span></em>
+            <div class="fld-in"><input value="50 000" readonly><u>₽</u><span class="fld-sw">в лотах ⇄</span></div>
+          </div>
+          <div class="tk-slider"><i></i><b></b></div>
+          <div class="presets"><span>25%</span><span class="on">50%</span><span>Макс</span></div>
+
+          <div class="receipt">
+            <div class="rc-head">
+              <div class="rc-lead">Купите <b>≈ 150 акций</b></div>
+              <div class="rc-sub">15 лотов × 10 шт · по лимиту 318,60 ₽ или дешевле</div>
+            </div>
+            <div class="rc-lines">
+              <div class="rc-line"><span class="k">Бумаги</span><span class="hint">150 × 318,60</span><span class="v">47 790 ₽</span></div>
+              <div class="rc-line"><span class="k">Комиссия</span><span class="hint">0,3 %</span><span class="v">143 ₽</span></div>
+            </div>
+            <div class="rc-div"></div>
+            <div class="rc-total"><span class="k">Спишется</span><span class="v">47 933 ₽</span></div>
+            <div class="rc-avg">Средняя станет <b>313,50 ₽</b> <s>было 305,00</s></div>
+          </div>
+
+          <div class="prot"><span class="tp"><i class="d"></i>+ тейк-профит</span><span class="sl"><i class="d"></i>+ стоп-лосс</span></div>
+          <button class="cta">Купить на 47 933 ₽</button>
+          <div class="tk-know">🛈 Что нужно знать перед покупкой <u>Открыть</u></div>
+        </div>
+      </div>
+    </div>
+    <div class="whats">
+      <div><h4><i>1</i>Квитанция вместо россыпи</h4><p>Бумаги, комиссия, итог и средняя — в одном чеке с разделителем. Итог крупно и в цвет стороны, глазу некуда деться.</p></div>
+      <div><h4><i>2</i>Цена честнее</h4><p>«Лимит» показывает степпер и <b>призрак рыночной</b> рядом — новичок видит, чем лимит отличается от рынка, не гадая.</p></div>
+      <div><h4><i>3</i>Слайдер + пресеты</h4><p>Дорожка «% от свободного» под суммой: тянуть приятнее, чем печатать; пресеты остаются для точных 25/50/Макс.</p></div>
+    </div>
+  </section>
+
+  <!-- ============ 03 · СПЛИТ ============ -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">03</span><h2>Сплит · «Мост»</h2><span class="mk-tag">стакан + заявка</span></div>
+    <p class="mk-sub">Клик по уровню и раньше клал цену в заявку — но связь была невидимой. Теперь между
+       выбранным уровнем стакана и полем цены протянут <b>мост</b>: уровень подсвечен акцентом, поле цены
+       загорается той же рамкой, пунктир соединяет их. Видно причину и следствие. Спред-хребет — общая ось
+       для обеих колонок.</p>
+    <div class="board">
+      <div class="scr">
+        <div class="scr-head">
+          <div class="scr-mono">С</div>
+          <div class="scr-nm"><b>Сбербанк</b><em>SBER · лот 10</em></div>
+          <div class="scr-live"><i></i>цена живая</div>
+        </div>
+        <div class="sp">
+          <div class="sp-note">клик по уровню → цена заявки</div>
+          <!-- коннектор -->
+          <svg class="sp-wire" style="left:340px;top:150px;width:60px;height:40px" viewBox="0 0 60 40">
+            <path d="M0 6 C 28 6, 32 30, 60 30"></path>
+            <circle cx="0" cy="6" r="3"></circle>
+            <circle cx="60" cy="30" r="3"></circle>
+          </svg>
+          <div class="sp-col-ob">
+            <div class="ob-top"><b>Стакан</b><em>клик — лимитка</em></div>
+            <div class="ob-side">
+              <div class="ob-row ask"><span class="ob-cum" style="width:100%"></span><span class="ob-fill" style="width:42%"></span><span class="ob-px">318,72</span><span class="ob-lot">1 840</span></div>
+              <div class="ob-row ask big"><span class="ob-cum" style="width:72%"></span><span class="ob-fill" style="width:82%"></span><span class="ob-px">318,70</span><span class="ob-lot">3 210</span></div>
+              <div class="ob-row ask picked"><span class="ob-cum" style="width:40%"></span><span class="ob-fill" style="width:18%"></span><span class="ob-px">318,69</span><span class="ob-lot">640</span></div>
+              <div class="ob-row ask"><span class="ob-cum" style="width:34%"></span><span class="ob-fill" style="width:30%"></span><span class="ob-px">318,68</span><span class="ob-lot">1 120</span></div>
+              <div class="ob-row ask best"><span class="ob-cum" style="width:16%"></span><span class="ob-fill" style="width:9%"></span><span class="ob-px">318,66</span><span class="ob-lot">260</span></div>
+            </div>
+            <div class="ob-spread">
+              <div class="ob-mid">318,65<small>₽</small></div>
+              <div class="ob-sprd">спред <b>0,02 ₽</b><br>0,01 %</div>
+              <div class="ob-last up">▲ 318,64<em>последняя</em></div>
+            </div>
+            <div class="ob-side">
+              <div class="ob-row bid best"><span class="ob-cum" style="width:4%"></span><span class="ob-fill" style="width:11%"></span><span class="ob-px">318,64</span><span class="ob-my">моя 5</span><span class="ob-lot">400</span></div>
+              <div class="ob-row bid"><span class="ob-cum" style="width:30%"></span><span class="ob-fill" style="width:23%"></span><span class="ob-px">318,62</span><span class="ob-lot">890</span></div>
+              <div class="ob-row bid big"><span class="ob-cum" style="width:73%"></span><span class="ob-fill" style="width:100%"></span><span class="ob-px">318,61</span><span class="ob-lot">4 050</span></div>
+              <div class="ob-row bid"><span class="ob-cum" style="width:94%"></span><span class="ob-fill" style="width:32%"></span><span class="ob-px">318,59</span><span class="ob-lot">1 260</span></div>
+            </div>
+          </div>
+          <div class="sp-col-tk">
+            <div class="tk">
+              <div class="seg"><span class="on">Купить</span><span>Продать</span></div>
+              <div class="fld fld-p lit">
+                <em>Цена<div class="px-seg"><span>По рынку</span><span class="on">Лимит</span></div></em>
+                <div class="px-step">
+                  <button>−</button><div class="val">318,69<small> ₽</small></div><button>+</button>
+                  <span class="px-ghost">из стакана</span>
+                </div>
+              </div>
+              <div class="fld">
+                <em>Сумма<span class="fld-cap">свободно <b>214 300 ₽</b></span></em>
+                <div class="fld-in"><input value="50 000" readonly><u>₽</u><span class="fld-sw">в лотах ⇄</span></div>
+              </div>
+              <div class="presets"><span>25%</span><span class="on">50%</span><span>Макс</span></div>
+              <div class="receipt">
+                <div class="rc-head">
+                  <div class="rc-lead">Купите <b>≈ 150 акций</b></div>
+                  <div class="rc-sub">15 лотов × 10 шт · по лимиту 318,69 ₽ или дешевле</div>
+                </div>
+                <div class="rc-div"></div>
+                <div class="rc-total"><span class="k">Спишется</span><span class="v">47 947 ₽</span></div>
+                <div class="rc-avg">Средняя станет <b>313,55 ₽</b> <s>было 305,00</s></div>
+              </div>
+              <button class="cta">Купить на 47 947 ₽</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 04 · ТЁМНАЯ ТЕМА ============ -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">04</span><h2>Тёмная тема</h2><span class="mk-tag mute">.night</span></div>
+    <p class="mk-sub">Те же токены, ночной набор: хребет спреда и стена глубины читаются на тёмном ровно так же —
+       акцент светлеет, зелёное/красное держат контраст, квитанция остаётся спокойной.</p>
+    <div class="board">
+      <div class="scr night">
+        <div class="scr-head">
+          <div class="scr-mono">С</div>
+          <div class="scr-nm"><b>Сбербанк</b><em>SBER · лот 10</em></div>
+          <div class="scr-live amber"><i></i>аукцион</div>
+        </div>
+        <div class="trio">
+          <div class="ob" style="width:340px">
+            <div class="ob-top"><b>Стакан</b><em>клик — лимитка</em></div>
+            <div class="ob-bal"><i class="g" style="width:53%"></i><i class="r" style="width:47%"></i></div>
+            <div class="ob-ballab"><span class="g">спрос 53%</span><span class="r">47% предложение</span></div>
+            <div class="ob-side">
+              <div class="ob-row ask"><span class="ob-cum" style="width:100%"></span><span class="ob-fill" style="width:42%"></span><span class="ob-px">318,72</span><span class="ob-lot">1 840</span></div>
+              <div class="ob-row ask big"><span class="ob-cum" style="width:72%"></span><span class="ob-fill" style="width:82%"></span><span class="ob-px">318,70</span><span class="ob-lot">3 210</span></div>
+              <div class="ob-row ask"><span class="ob-cum" style="width:34%"></span><span class="ob-fill" style="width:30%"></span><span class="ob-px">318,68</span><span class="ob-lot">1 120</span></div>
+              <div class="ob-row ask best"><span class="ob-cum" style="width:16%"></span><span class="ob-fill" style="width:9%"></span><span class="ob-px">318,66</span><span class="ob-lot">260</span></div>
+            </div>
+            <div class="ob-spread">
+              <div class="ob-mid">318,65<small>₽</small></div>
+              <div class="ob-sprd">спред <b>0,02 ₽</b><br>0,01 %</div>
+              <div class="ob-last up">▲ 318,64<em>последняя</em></div>
+            </div>
+            <div class="ob-side">
+              <div class="ob-row bid best"><span class="ob-cum" style="width:4%"></span><span class="ob-fill" style="width:11%"></span><span class="ob-px">318,64</span><span class="ob-my">моя 5</span><span class="ob-lot">400</span></div>
+              <div class="ob-row bid big"><span class="ob-cum" style="width:73%"></span><span class="ob-fill" style="width:100%"></span><span class="ob-px">318,61</span><span class="ob-lot">4 050</span></div>
+              <div class="ob-row bid"><span class="ob-cum" style="width:94%"></span><span class="ob-fill" style="width:32%"></span><span class="ob-px">318,59</span><span class="ob-lot">1 260</span></div>
+            </div>
+          </div>
+          <div class="tk" style="width:340px">
+            <div class="seg"><span>Купить</span><span class="on sell">Продать</span></div>
+            <div class="fld fld-p">
+              <em>Цена<div class="px-seg"><span class="on">По рынку</span><span>Лимит</span></div></em>
+              <div class="px-step"><div class="val">318,64<small> ₽</small></div><span class="px-ghost">лучший спрос</span></div>
+            </div>
+            <div class="fld">
+              <em>Количество<span class="fld-cap">у вас <b>240 шт</b></span></em>
+              <div class="fld-in"><input value="90" readonly><u>шт</u><span class="fld-sw">в рублях ⇄</span></div>
+            </div>
+            <div class="presets"><span>25%</span><span>50%</span><span class="on">Всё</span></div>
+            <div class="receipt">
+              <div class="rc-head">
+                <div class="rc-lead">Продадите <b>90 акций</b></div>
+                <div class="rc-sub">9 лотов × 10 шт · по рынку ≈ 318,64 ₽</div>
+              </div>
+              <div class="rc-div"></div>
+              <div class="rc-total sell"><span class="k">Получите</span><span class="v">28 592 ₽</span></div>
+              <div class="rc-avg">Прибыль <b>+1 228 ₽</b> <s>+4,5 %</s></div>
+            </div>
+            <button class="cta sell">Продать на 28 592 ₽</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- таблица «в код» -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">05</span><h2>Как это ложится в сцену</h2></div>
+    <p class="mk-sub">Ни одной новой панели и ни одного нового запроса — данные для всего уже собираются.
+       Меняется разметка существующих функций.</p>
+    <table class="map">
+      <thead><tr><th>Улучшение</th><th>Где живёт</th><th>Данные</th></tr></thead>
+      <tbody>
+        <tr><td><b>Хребет спреда</b> в центре книги</td><td><code>scnDepthHtml</code> — блок между аскми и бидами вместо пилюли <code>scnSpreadTxt</code></td><td>уже есть: <code>s.ob</code> (лучшие bid/ask), <code>closePrice</code>, последняя сделка ленты</td></tr>
+        <tr><td><b>Стена глубины</b> — второй бледный слой заливки</td><td><code>scnDepthRow</code> — рядом с <code>.d-fill</code> добавить <code>.d-cum</code> (кумулятив уже считается для ховера <code>pftScDepthHov</code>)</td><td>уже есть: <code>scnDepthData</code> с накоплением по сторонам</td></tr>
+        <tr><td><b>Баланс спрос/предложение</b></td><td>шапка стакана <code>scnDepthHtml</code></td><td>уже есть: Σ лотов bids vs asks из <code>s.ob</code></td></tr>
+        <tr><td><b>Квитанция «Итог»</b></td><td>слить <code>scnApxHtml</code> + <code>scnAvgHtml</code> + строку комиссии из <code>scnCtaHtml</code> в один блок <code>.receipt</code></td><td>уже есть: <code>scnCalc</code> (лоты, сумма, комиссия), <code>T.port.list</code> для средней</td></tr>
+        <tr><td><b>Призрак рыночной</b> у лимит-степпера</td><td><code>scnPriceRowInner</code></td><td>уже есть: <code>sxPrice(s)</code></td></tr>
+        <tr><td><b>Мост</b> уровень → цена в сплите</td><td>подсветка <code>.picked</code> в <code>scnDepthRow</code> + SVG-коннектор поверх <code>.tkt-x2</code>; поле <code>#btScnPx</code> класс <code>.lit</code></td><td>уже есть: <code>pftScRowPx</code> уже кладёт цену — добавить визуальную связь</td></tr>
+      </tbody>
+    </table>
+  </section>
+</div>
