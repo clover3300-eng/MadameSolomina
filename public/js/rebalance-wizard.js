@@ -83,7 +83,9 @@
         var marketOfz = ys.length ? ys.reduce(function (a, b) { return a + b; }, 0) / ys.length : null;
         return { coupYear: coupYear, yieldPct: yieldPct, marketOfz: marketOfz, value: c.value };
     }
-    function portfolios() { return ((PF.store && PF.store.items) || []).filter(function (p) { return !p.hidden; }); }
+    // ВСЕ портфели (в т.ч. скрытые и брокерские): скрытие прячет карточку только
+    // из «Обзора», но НЕ из перечней/выбора (правило проекта hide-scope-overview-only)
+    function portfolios() { return ((PF.store && PF.store.items) || []).slice(); }
     function curPf() { return rbw.pid ? PF.findPf(rbw.pid) : null; }
     function plur(n, one, few, many) {
         n = Math.abs(n) % 100; var n1 = n % 10;
@@ -435,9 +437,10 @@
             body = '<div class="rbw-pflist">' + rows.map(function (r) {
                 var p = r.p, sel = p.id === rbw.pid, d = driftBadge(r.c, r.tb, driftThr(p));
                 var cnt = (p.holdings || []).length;
+                var tags = (p.broker ? '<span class="rbw-pf-tag brk">брокер</span>' : '') + (p.hidden ? '<span class="rbw-pf-tag hid">скрыт</span>' : '');
                 return '<div class="rbw-pf' + (sel ? ' sel' : '') + '" onclick="rbwPickPf(\'' + p.id + '\')">'
                     + '<div class="rbw-pf-radio"></div>'
-                    + '<div class="rbw-pf-id"><b>' + esc(p.name) + '</b><em>' + cnt + ' ' + plur(cnt, 'позиция', 'позиции', 'позиций') + ' · цель ' + (100 - r.tb) + ' / ' + r.tb + '</em></div>'
+                    + '<div class="rbw-pf-id"><b>' + esc(p.name) + tags + '</b><em>' + cnt + ' ' + plur(cnt, 'позиция', 'позиции', 'позиций') + ' · цель ' + (100 - r.tb) + ' / ' + r.tb + '</em></div>'
                     + '<div class="rbw-pf-alloc"><div class="rbw-pf-bar"><i class="st" style="width:' + r.stockPct + '%"></i><i class="bd" style="width:' + r.bondPct + '%"></i></div>'
                     + '<div class="rbw-pf-lg"><span class="a">Акции ' + r.stockPct + '%</span><span class="b">Облигации ' + r.bondPct + '%</span></div></div>'
                     + '<div class="rbw-pf-right"><span class="rbw-pf-val">' + fmtRub(r.c.value) + '</span><span class="rbw-pf-drift ' + d.cls + '">' + d.txt + '</span></div></div>';
