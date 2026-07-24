@@ -657,17 +657,22 @@
 .bts .wl-sec span { font: 400 12.5px var(--font-title); color: var(--ink); }
 .bts .wl-sec i { font: 400 9px var(--font-ui); font-style: normal; color: var(--dim); margin-left: auto; letter-spacing: 0.02em; }
 .bts .wl-none-s { padding: 2px 6px 6px; }
-/* строка «Списка»: имя тянется, справа — метрика (потенциал / доходность) */
+/* строка «Списка»: имя тянется на всю ширину (значка эшелона в строке нет),
+   справа — метрика (потенциал / доходность) */
 .bts .wl-rl { cursor: pointer; }
 .bts .wl-rl .tk { flex: 1 1 auto; width: auto; min-width: 0; }
-.bts .wl-ech {
-    flex: none; width: 22px; text-align: center; font: 700 9px var(--font-num); color: var(--dim);
-    border: 1px solid var(--line); border-radius: 6px; padding: 2px 0;
+/* заголовок группы-эшелона: римская цифра + имя эшелона, между группами —
+   тонкая линия-разделитель (первая группа отделена уже шапкой «Акции») */
+.bts .wl-eh {
+    display: flex; align-items: baseline; gap: 6px; flex: none;
+    padding: 9px 6px 4px; font: 700 9px var(--font-num);
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink);
 }
-.bts .wl-ech.tier-1 { color: #5B7C99; border-color: color-mix(in srgb, #5B7C99 42%, transparent); }
-.bts .wl-ech.tier-2 { color: #4f9b7a; border-color: color-mix(in srgb, #4f9b7a 42%, transparent); }
-.bts .wl-ech.tier-3 { color: #c2952f; border-color: color-mix(in srgb, #c2952f 44%, transparent); }
-.bts .wl-ech.tier-4 { color: var(--red); border-color: color-mix(in srgb, var(--red) 40%, transparent); }
+.bts .wl-eh:not(:first-of-type) { margin-top: 4px; border-top: 1px solid var(--hair); }
+.bts .wl-eh i {
+    font: 400 9.5px var(--font-ui); font-style: normal;
+    text-transform: none; letter-spacing: 0; color: var(--mut);
+}
 /* потенциал (акции) и доходность (облигации): зелёная цифра, а ОТТЕНОК зелёного
    отражает величину внутри секции (ступени wlg0..wlg4: бледнее = меньше,
    насыщеннее = больше) — цвет помогает сходу увидеть, где значение выше */

@@ -5911,6 +5911,7 @@
     // и bonds ({t,n,p,y}); ссылаемся по имени (typeof-гард — таблица может ещё
     // грузиться, тогда короткий поллинг, как в блоке ребаланса дашборда).
     var WL_ECH_ROMAN = ['I', 'II', 'III', 'IV'];
+    var WL_ECH_NAME = ['Надёжные', 'Стабильные', 'Рисковые', 'Венчурные'];
     // число из ячейки таблицы («390», «8 200», «13,8%», «—») → Number|null
     function wlNum(s) {
         if (s == null) return null;
@@ -5948,24 +5949,34 @@
         wlAllTries = 0;
         var stockRows = '';
         if (haveS) {
-            // плоский список акций в порядке эшелонов + ступени зелёного по потенциалу
+            // плоский список акций в порядке эшелонов + сквозные ступени зелёного
+            // по потенциалу (ранг по всему списку — цвет сравним между эшелонами)
             var st = [];
             echelonTableData.forEach(function (col, ci) {
                 (col || []).forEach(function (a) { if (a && a.t) st.push({ a: a, ci: ci }); });
             });
             var stTiers = wlGreenTiers(st.map(function (x) { return wlNum(x.a.target); }));
-            stockRows = st.map(function (x, i) {
-                var a = x.a;
-                var raw = (a.target == null) ? '' : String(a.target).replace(/\s*₽/, '').trim();
-                var pot = (raw && raw !== '—')
-                    ? '<b class="wlg' + (stTiers[i] == null ? 2 : stTiers[i]) + '">' + esc(raw) + '</b>'
-                    : '<i class="mut">—</i>';
-                return '<div class="wl-r wl-rl" role="button" tabindex="0" ' +
-                    'onclick="pftScWlGo(\'' + jsArg(a.t) + '\')" title="В сцену: ' + esc(a.t) + '">' +
-                    '<span class="wl-ech tier-' + (x.ci + 1) + '" title="Эшелон ' + WL_ECH_ROMAN[x.ci] + '">' + WL_ECH_ROMAN[x.ci] + '</span>' +
-                    '<span class="tk"><b>' + esc(a.t) + '</b>' + (a.n && a.n !== a.t ? '<em>' + esc(a.n) + '</em>' : '') + '</span>' +
-                    '<span class="pd wl-pot">' + pot + '</span></div>';
-            }).join('');
+            // эшелон вынесен в подзаголовок группы — в строках слева больше нет
+            // значка (владелец: бейджи съедали место), имя занимает всю ширину
+            var byEch = [[], [], [], []];
+            st.forEach(function (x, i) { byEch[x.ci].push({ a: x.a, tier: stTiers[i] }); });
+            var parts = [];
+            byEch.forEach(function (group, ci) {
+                if (!group.length) return;
+                parts.push('<div class="wl-eh">' + WL_ECH_ROMAN[ci] + ' эшелон<i>' + WL_ECH_NAME[ci] + '</i></div>');
+                group.forEach(function (g) {
+                    var a = g.a;
+                    var raw = (a.target == null) ? '' : String(a.target).replace(/\s*₽/, '').trim();
+                    var pot = (raw && raw !== '—')
+                        ? '<b class="wlg' + (g.tier == null ? 2 : g.tier) + '">' + esc(raw) + '</b>'
+                        : '<i class="mut">—</i>';
+                    parts.push('<div class="wl-r wl-rl" role="button" tabindex="0" ' +
+                        'onclick="pftScWlGo(\'' + jsArg(a.t) + '\')" title="В сцену: ' + esc(a.t) + '">' +
+                        '<span class="tk"><b>' + esc(a.t) + '</b>' + (a.n && a.n !== a.t ? '<em>' + esc(a.n) + '</em>' : '') + '</span>' +
+                        '<span class="pd wl-pot">' + pot + '</span></div>');
+                });
+            });
+            stockRows = parts.join('');
         }
         var bondRows = '';
         if (haveB) {
@@ -5983,7 +5994,7 @@
             }).join('');
         }
         return '<div class="wl-scroll">' +
-            '<div class="wl-sec"><span>Акции</span><i>потенциал · эшелон</i></div>' +
+            '<div class="wl-sec"><span>Акции</span><i>по эшелонам · потенциал</i></div>' +
             (stockRows || '<div class="wl-none wl-none-s">нет данных</div>') +
             '<div class="wl-sec wl-sec-b"><span>Облигации</span><i>доходность</i></div>' +
             (bondRows || '<div class="wl-none wl-none-s">нет данных</div>') +
