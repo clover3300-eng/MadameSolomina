@@ -22,6 +22,7 @@
         autoIdx: null,           // выбранный вариант в режиме «Авто»
         ord: { sell: 'market', buy: 'limit' }, // тип заявки в корзине
         cart: [],                // корзина обменов (мультизаявка): снимки сделок
+        whatIf: false,           // открыт предпросмотр «Что если»
         receipt: null,           // результат исполнения
         executing: false
     };
@@ -612,7 +613,8 @@
         }
         var body = '<div class="rbw-ds">' + why + card + out + '</div>';
         var title = isAnnual ? 'Один обмен возвращает доли к цели' : (ctx.cls === 'bond' ? '«Машина денег»: продали ' + d.qty + ' — купили ' + d.buyQty : 'Обмен по потенциалу');
-        var back = '<button type="button" class="rbw-btn rbw-btn-ghost" onclick="rbwGoStep(2)">← Назад · режим</button>';
+        var back = '<button type="button" class="rbw-btn rbw-btn-ghost" onclick="rbwGoStep(2)">← Назад · режим</button>'
+            + '<button type="button" class="rbw-btn rbw-btn-ghost" onclick="rbwWhatIf()">👁 Что если</button>';
         var nDeals = effectiveDeals().length;
         var foot = footHtml(back, 'Клик по бумаге открывает пикер · «＋ Ещё обмен» копит корзину', { label: 'В корзину заявок' + (nDeals > 1 ? ' · ' + nDeals + ' ' + plur(nDeals, 'обмен', 'обмена', 'обменов') : '') + ' <i>→</i>', onclick: 'rbwToBasket()' });
         return mainHtml('Шаг 3 из 4 · ' + (isAnnual ? 'Годовая' : 'В моменте'), title, '', body, foot);
@@ -642,7 +644,7 @@
         var buyUnit = ctx.buyClass === 'bond' ? ctx.buy.unit : ctx.buy.price;
         return {
             kind: ctx.kind, cls: ctx.cls, sellClass: ctx.sellClass, buyClass: ctx.buyClass,
-            sell: { id: ctx.sell.id, isin: ctx.sell.isin, ticker: ctx.sell.ticker, name: ctx.sell.name, price: ctx.sell.price, nkd: ctx.sell.nkd, unit: sellUnit, buy: ctx.sell.buy, det: ctx.sell.det, t: ctx.sell.t },
+            sell: { id: ctx.sell.id, isin: ctx.sell.isin, ticker: ctx.sell.ticker, name: ctx.sell.name, price: ctx.sell.price, nkd: ctx.sell.nkd, unit: sellUnit, buy: ctx.sell.buy, det: ctx.sell.det, t: ctx.sell.t, coupon: ctx.sell.coupon, freq: ctx.sell.freq },
             buy: { isin: ctx.buy.isin, ticker: ctx.buy.ticker, name: ctx.buy.name, price: ctx.buy.price, nkd: ctx.buy.nkd, unit: buyUnit, coupon: ctx.buy.coupon, freq: ctx.buy.freq, pot: ctx.buy.pot, t: ctx.buy.t, det: ctx.buy.det },
             qty: d.qty, buyQty: d.buyQty, proceeds: d.proceeds, rest: d.rest, coupDelta: d.coupDelta, potDelta: d.potDelta
         };
@@ -730,6 +732,47 @@
         var tot = bondV + stockV;
         return { bondPct: tot > 0 ? bondV / tot * 100 : 0, stockPct: tot > 0 ? stockV / tot * 100 : 0 };
     }
+    /* №7 «Что если»: предпросмотр эффекта БЕЗ применения (портфель не трогаем) */
+    function buildWhatIf(p, deals) {
+        var c = PF.calcPf(p), ft = feeTax();
+        var before = { stockPct: c.stockPct, bondPct: c.bondPct };
+        var after = allocAfterCart(p, deals);
+        var coupBefore = heldBonds(p).reduce(function (s, x) { return s + x.coupYear; }, 0), coupAfter = coupBefore;
+        var proceeds = 0, spend = 0, rest = 0, tax = 0;
+        deals.forEach(function (dl) {
+            proceeds += dl.proceeds; spend += dl.buyQty * dl.buy.unit; rest += dl.rest; tax += saleTax(dl.sell, dl.qty);
+            var addC = dl.buyClass === 'bond' ? dl.buyQty * (dl.buy.coupon || 0) * (dl.buy.freq || 0) : 0;
+            var subC = dl.sellClass === 'bond' ? dl.qty * (dl.sell.coupon || 0) * (dl.sell.freq || 0) : 0;
+            coupAfter += (addC - subC);
+        });
+        return { before: before, after: after, coupBefore: coupBefore, coupAfter: coupAfter,
+            proceeds: proceeds, spend: spend, rest: rest, fee: (proceeds + spend) * ft.fee, tax: tax, value: c.value };
+    }
+    function baMini(before, after) {
+        function bar(a) { return '<div class="rbw-ba-mini"><i class="st" style="width:' + Math.round(a.stockPct) + '%"></i><i class="bd" style="width:' + Math.round(a.bondPct) + '%"></i></div>'
+            + '<div class="rbw-ba-cap"><span>Акции ' + Math.round(a.stockPct) + '</span><span>Обл. ' + Math.round(a.bondPct) + '</span></div>'; }
+        return '<div class="rbw-ba"><div class="rbw-ba-b"><em>сейчас</em>' + bar(before) + '</div><div class="rbw-ba-ar">→</div><div class="rbw-ba-a"><em>станет</em>' + bar(after) + '</div></div>';
+    }
+    function whatIfHtml() {
+        var p = curPf(); if (!p) return '';
+        var deals = effectiveDeals(); if (!deals.length) return '';
+        var w = buildWhatIf(p, deals);
+        var coupCard = (w.coupAfter > w.coupBefore + 0.5)
+            ? '<div class="rbw-done-c"><em>Купоны · доход в год</em><div class="rbw-mmini"><div class="rbw-mm-big">+' + fmtRub(w.coupAfter - w.coupBefore) + '</div>'
+                + '<div class="rbw-mm-t">' + fmtRub(w.coupBefore) + ' → <b>' + fmtRub(w.coupAfter) + '</b> в год</div></div></div>' : '';
+        return '<div class="rbw-wi-back" onclick="rbwWhatIfClose()"></div>'
+            + '<div class="rbw-wi"><div class="rbw-wi-h"><b>Что если применить?</b><span class="rbw-wi-x" onclick="rbwWhatIfClose()">✕</span></div>'
+            + '<p class="rbw-wi-sub">Предпросмотр эффекта — портфель <b>не меняется</b>, ничего не выставляется.</p>'
+            + '<div class="rbw-wi-cards"><div class="rbw-done-c"><em>Доли по классам</em>' + baMini(w.before, w.after) + '</div>' + coupCard + '</div>'
+            + '<div class="rbw-wi-tot">'
+            + '<span><em>Оборот</em><b>' + fmtRub(w.proceeds + w.spend) + '</b></span>'
+            + '<span><em>Остаток</em><b>' + fmtRub(w.rest) + '</b></span>'
+            + '<span><em>Комиссия</em><b>≈ ' + fmtRub(w.fee) + '</b></span>'
+            + (w.tax > 0.5 ? '<span><em>Налог</em><b>≈ ' + fmtRub(w.tax) + '</b></span>' : '')
+            + '</div>'
+            + '<div class="rbw-wi-foot"><button type="button" class="rbw-btn rbw-btn-ghost" onclick="rbwWhatIfClose()">Закрыть</button>'
+            + '<button type="button" class="rbw-btn rbw-btn-dark" onclick="rbwWhatIfClose();rbwGoStep(4)">К заявке →</button></div></div>';
+    }
     function stepBasket() {
         var p = curPf(); if (!p) { rbw.step = 1; return stepPortfolio(); }
         var deals = effectiveDeals();
@@ -771,7 +814,8 @@
                 ? '<div class="rbw-nwarn">' + IC.warn + '<span>Это <b>зеркало брокерского счёта</b>. По кнопке уйдут <b>реальные заявки</b> брокеру Т-Инвестиций (' + nLegs + ' шт). Спросим подтверждение. Состав обновится синком.</span></div>'
                 : '<div class="rbw-ninfo">' + IC.info + '<span>Это <b>зеркало брокерского счёта</b>, а торгующее подключение не активно. Мастер подготовит тикеты в терминале Т-Инвестиций — там один тап на отправку.</span></div>');
         var body = '<div class="rbw-bskt">' + bar + chips + legs + sum + warns + note + '</div>';
-        var back = '<button type="button" class="rbw-btn rbw-btn-ghost" onclick="rbwGoStep(3)">← Назад · расчёт</button>';
+        var back = '<button type="button" class="rbw-btn rbw-btn-ghost" onclick="rbwGoStep(3)">← Назад · расчёт</button>'
+            + '<button type="button" class="rbw-btn rbw-btn-ghost" onclick="rbwWhatIf()">👁 Что если</button>';
         var primaryLabel = rbw.executing ? 'Отправляем…' : (broker ? (canTr ? 'Выставить заявки брокеру <i>→</i>' : 'Открыть в терминале <i>→</i>') : 'Применить ' + (deals.length > 1 ? deals.length + ' ' + plur(deals.length, 'обмен', 'обмена', 'обменов') : 'обмен') + ' <i>→</i>');
         var hint = broker ? (canTr ? 'Реальные сделки — с подтверждением' : 'Заявки не отправятся сами') : 'Применится к портфелю с записью в историю';
         var foot = footHtml(back, hint, { label: primaryLabel, onclick: 'rbwExecute()' }, rbw.executing);
@@ -867,7 +911,8 @@
         // плавное появление контента ТОЛЬКО при смене шага/режима (не на каждый ре-рендер пикера/кол-ва)
         var key = String(rbw.step) + '|' + String(rbw.mode) + '|' + String(rbw.cls);
         if (key !== rbwLastKey) { main = main.replace('class="rbw-main"', 'class="rbw-main rbw-anim"'); rbwLastKey = key; }
-        return '<div class="rbw" id="rbwBar" onclick="rbwClosePicker()">' + railHtml() + main + '</div>';
+        var overlay = (rbw.whatIf && (rbw.step === 3 || rbw.step === 4)) ? whatIfHtml() : '';
+        return '<div class="rbw" id="rbwBar" onclick="rbwClosePicker()">' + railHtml() + main + overlay + '</div>';
     };
 
     PF.rbwReady = function () {
@@ -955,7 +1000,7 @@
         if (n === 2 && !curPf()) return;
         if (n >= 3 && !rbw.mode) { rbw.step = 2; rerender(); return; }
         if (n < rbw.step && n <= 2) { resetPicks(); rbw.cart = []; }
-        rbw.step = n; rbw.picker = null; rerender();
+        rbw.step = n; rbw.picker = null; rbw.whatIf = false; rerender();
     };
     window.rbwSetMode = function (m) { if (m !== rbw.mode) rbw.cart = []; rbw.mode = m; resetPicks(); if (m === 'moment') { var p = curPf(); if (p) { var c = PF.calcPf(p); rbw.cls = c.bondVal > 0 ? 'bond' : 'stock'; } } rerender(); };
     window.rbwSetCls = function (cls) { rbw.cls = cls; resetPicks(); rerender(); };
@@ -1169,8 +1214,10 @@
         if (rbw.cart.some(function (x) { return sameDeal(x, dr); })) { toast('Такой обмен уже в корзине'); return; }
         rbw.cart.push(dr); resetPicks(); toast('В корзине обменов: ' + rbw.cart.length); rerender();
     };
-    window.rbwToBasket = function () { if (!effectiveDeals().length) { toast('Сначала соберите обмен'); return; } rbw.step = 4; rbw.picker = null; rerender(); };
+    window.rbwToBasket = function () { if (!effectiveDeals().length) { toast('Сначала соберите обмен'); return; } rbw.step = 4; rbw.picker = null; rbw.whatIf = false; rerender(); };
     window.rbwCartDel = function (i) { rbw.cart.splice(i, 1); rerender(); };
+    window.rbwWhatIf = function () { if (!effectiveDeals().length) { toast('Сначала соберите обмен'); return; } rbw.whatIf = true; rbw.picker = null; rerender(); };
+    window.rbwWhatIfClose = function () { rbw.whatIf = false; rerender(); };
     window.rbwQtyLive = function (v) { var el = document.querySelector('.rbw-qty-v'); if (el) el.textContent = fmtQty(+v) + ' шт'; };
 
     /* №5: разовое напоминание о наступившей годовой сверке */

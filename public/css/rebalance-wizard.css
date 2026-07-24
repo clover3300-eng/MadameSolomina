@@ -529,6 +529,27 @@ body:has(#rbwBar) #pfWrap { gap: 0; }
     .rbw-btn-dark:hover, .rbw-pf:hover, .rbw-modec:hover, .rbw-autoc:hover { transform: none; }
 }
 
+/* ── «Что если»: предпросмотр эффекта (оверлей) ── */
+@keyframes rbw-fade { from { opacity: 0; } to { opacity: 1; } }
+.rbw-wi-back { position: absolute; inset: 0; background: rgba(16, 24, 40, 0.5); backdrop-filter: blur(3px); z-index: 80; animation: rbw-fade .18s ease both; }
+.rbw-wi { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 81; width: 660px; max-width: 92%;
+    background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 26px 30px;
+    box-shadow: 0 44px 100px -34px rgba(0, 0, 0, 0.55); animation: rbw-pop .2s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.rbw-wi-h { display: flex; align-items: center; }
+.rbw-wi-h b { font-family: var(--fT); font-weight: 400; font-size: 22px; }
+.rbw-wi-x { margin-left: auto; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; color: var(--mut); cursor: pointer; border: 1px solid var(--line); }
+.rbw-wi-x:hover { color: var(--ink); border-color: var(--acc); }
+.rbw-wi-sub { font-size: 13px; color: var(--mut); margin: 8px 0 18px; line-height: 1.5; }
+.rbw-wi-sub b { color: var(--ink); }
+.rbw-wi-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.rbw-wi-cards .rbw-done-c:only-child { grid-column: 1 / -1; }
+.rbw-wi-tot { display: flex; gap: 24px; flex-wrap: wrap; margin: 18px 0; padding: 14px 0; border-top: 1px dashed var(--line); border-bottom: 1px dashed var(--line); }
+.rbw-wi-tot > span { display: flex; flex-direction: column; gap: 3px; }
+.rbw-wi-tot em { font-style: normal; font-size: 9px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
+.rbw-wi-tot b { font-family: var(--fN); font-size: 15px; font-weight: 700; }
+.rbw-wi-foot { display: flex; gap: 12px; justify-content: flex-end; }
+.rbw-wi-foot .rbw-btn-dark { margin-left: 0; }
+
 /* ═══════════ КРУПНЫЙ ЭКРАН: контент дышит и растёт (мокап был 1440, под zoom 0.9 места больше) ═══════════ */
 @media (min-width: 1500px) {
     .rbw-main { padding: 40px 60px 0; }
