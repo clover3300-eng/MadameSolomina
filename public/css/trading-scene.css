@@ -614,34 +614,34 @@
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--acc) 35%, transparent);
 }
 .bts .wl-r kbd {
-    flex: none; width: 16px; height: 16px; border-radius: 5px;
-    border: 1px solid var(--line); font: 500 9px var(--font-num); color: var(--dim);
+    flex: none; width: 18px; height: 18px; border-radius: 5px;
+    border: 1px solid var(--line); font: 500 10.5px var(--font-num); color: var(--dim);
     display: grid; place-items: center;
 }
-.bts .wl-r .tk { width: 78px; min-width: 0; }
-.bts .wl-r .tk b { display: block; font: 700 10.5px var(--font-num); }
+.bts .wl-r .tk { width: 92px; min-width: 0; }
+.bts .wl-r .tk b { display: block; font: 700 12.5px var(--font-num); }
 .bts .wl-r .tk em {
-    display: block; font: 400 8.5px var(--font-ui); font-style: normal; color: var(--dim);
+    display: block; font: 400 10px var(--font-ui); font-style: normal; color: var(--dim);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .bts .wl-sp { flex: none; }
 .bts .wl-sp polyline { fill: none; stroke-width: 1.5; stroke-linejoin: round; opacity: 0.75; }
 .bts .wl-sp polyline.g { stroke: var(--grn); }
 .bts .wl-sp polyline.r { stroke: var(--red); }
-.bts .wl-r .pd { margin-left: auto; font: 600 9.5px var(--font-num); text-align: right; white-space: nowrap; }
-.bts .wl-r .pd b { display: block; font-size: 10px; color: var(--ink); }
+.bts .wl-r .pd { margin-left: auto; font: 600 11px var(--font-num); text-align: right; white-space: nowrap; }
+.bts .wl-r .pd b { display: block; font-size: 12.5px; color: var(--ink); }
 .bts .wl-r .pd i { font-style: normal; }
 .bts .wl-r .pd i.g { color: var(--grn); }
 .bts .wl-r .pd i.r { color: var(--red); }
 .bts .wl-ft {
-    margin-top: auto; font: 400 9.5px var(--font-ui); color: var(--dim); line-height: 1.45;
+    margin-top: auto; font: 400 10.5px var(--font-ui); color: var(--dim); line-height: 1.45;
     border-top: 1px solid var(--hair); padding: 9px 6px 0; flex: none;
 }
 /* тумблер «Избранное / Список» в шапке рейки + прокрутка длинного списка */
-.bts .wl-seg { display: inline-flex; gap: 2px; padding: 2px; border: 1px solid var(--line); border-radius: 9px; }
+.bts .wl-seg { display: inline-flex; gap: 3px; padding: 3px; border: 1px solid var(--line); border-radius: 11px; }
 .bts .wl-seg-b {
-    border: 0; background: none; font: 600 10.5px var(--font-ui); color: var(--dim);
-    padding: 4px 9px; border-radius: 7px; cursor: pointer; white-space: nowrap;
+    border: 0; background: none; font: 600 12.5px var(--font-ui); color: var(--dim);
+    padding: 6px 12px; border-radius: 8px; cursor: pointer; white-space: nowrap;
 }
 .bts .wl-seg-b:hover { color: var(--ink); }
 .bts .wl-seg-b.on { background: color-mix(in srgb, var(--acc) 12%, transparent); color: var(--acc); }
@@ -654,8 +654,8 @@
 /* заголовок секции внутри «Списка» (Акции / Облигации) */
 .bts .wl-sec { display: flex; align-items: baseline; gap: 8px; padding: 8px 6px 4px; flex: none; }
 .bts .wl-sec.wl-sec-b { margin-top: 4px; border-top: 1px solid var(--hair); }
-.bts .wl-sec span { font: 400 12.5px var(--font-title); color: var(--ink); }
-.bts .wl-sec i { font: 400 9px var(--font-ui); font-style: normal; color: var(--dim); margin-left: auto; letter-spacing: 0.02em; }
+.bts .wl-sec span { font: 400 14px var(--font-title); color: var(--ink); }
+.bts .wl-sec i { font: 400 9.5px var(--font-ui); font-style: normal; color: var(--dim); margin-left: auto; letter-spacing: 0.02em; }
 .bts .wl-none-s { padding: 2px 6px 6px; }
 /* строка «Списка»: имя тянется на всю ширину (значка эшелона в строке нет),
    справа — метрика (потенциал / доходность) */
@@ -665,12 +665,12 @@
    тонкая линия-разделитель (первая группа отделена уже шапкой «Акции») */
 .bts .wl-eh {
     display: flex; align-items: baseline; gap: 6px; flex: none;
-    padding: 9px 6px 4px; font: 700 9px var(--font-num);
+    padding: 9px 6px 4px; font: 700 10px var(--font-num);
     letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink);
 }
 .bts .wl-eh:not(:first-of-type) { margin-top: 4px; border-top: 1px solid var(--hair); }
 .bts .wl-eh i {
-    font: 400 9.5px var(--font-ui); font-style: normal;
+    font: 400 10.5px var(--font-ui); font-style: normal;
     text-transform: none; letter-spacing: 0; color: var(--mut);
 }
 /* потенциал (акции) и доходность (облигации): зелёная цифра, а ОТТЕНОК зелёного
