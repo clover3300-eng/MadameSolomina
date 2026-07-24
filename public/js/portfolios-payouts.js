@@ -216,10 +216,10 @@
     // расписаний (pumpSchedQueue в ядре и ensureAllBondDetails ниже дёргают
     // PF.softRerender) — это СТРУКТУРНЫЕ перерисовки (спиннер → список, новые
     // строки), их полный рендер в softRerender обязан сохраниться.
-    function paymentCalendarHtml(asCell, span, forceFull) {
+    function paymentCalendarHtml(asCell, span) {
         if (!PF.store.items.length) return '';
         var SUB = 'купоны, дивиденды и погашения на год вперёд';
-        var cls = 'dash2-card pf-card2 pf-paycal' + (asCell ? ' pf-paycal--cell' : '') + (asCell && span === 2 ? ' pf-paycal--span2' : '') + (forceFull ? ' pf-paycal--page' : '');
+        var cls = 'dash2-card pf-card2 pf-paycal' + (asCell ? ' pf-paycal--cell' : '') + (asCell && span === 2 ? ' pf-paycal--span2' : '');
         var held = allHeldBonds(), heldS = allHeldStocks();
         var head = PF.pfCardHead('', 'Календарь выплат', SUB, '<div class="pfpc-head-r">' + calFilterHtml() + '</div>');
         if (!held.length && !heldS.length) return '<div class="' + cls + '">' + head + payCalStateHtml('nobonds') + '</div>';

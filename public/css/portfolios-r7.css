@@ -505,9 +505,6 @@ body.dark-mode #panel-portfolios .pfpc-soon-l { background: rgba(255, 255, 255, 
 #panel-portfolios .pfpc-mon span {
     font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #119d5c;
 }
-/* полноэкранный календарь подвкладки «Дивиденды» — список без внутреннего лимита */
-.pf-paycal--page .pfpc-body { max-height: none; }
-
 /* ============ 9. «История операций» ============ */
 .pft-kinds { display: inline-flex; gap: 4px; padding: 3px; background: #f1f5f9; border-radius: 11px; }
 body.dark-mode .pft-kinds { background: rgba(255, 255, 255, 0.06); }

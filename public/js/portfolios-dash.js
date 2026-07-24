@@ -205,7 +205,6 @@
         ports: [['plist', 1, 12], ['pdetail', 1, 12]],
         analytics: [['cap', 1, 8], ['alloc', 9, 4], ['yield', 1, 4], ['movers', 5, 4], ['conc', 9, 4], ['assets', 1, 8], ['idx', 9, 4]],
         reports: [['reports', 1, 6], ['snaps', 7, 6]],
-        divs: [['divs', 1, 4], ['kpi:next', 5, 4], ['passive', 9, 4], ['cal', 1, 8], ['calm', 9, 4]],
         ops: [['trades', 1, 12]],
         settings: [['set:corner', 1, 6], ['set:bg', 7, 6], ['set:vis', 1, 6], ['set:layout', 7, 6], ['reports', 1, 6]],
         // «Торговля» (2026-07-19): график — ГЛАВНЫЙ, слева вверху и с заданной
@@ -884,7 +883,7 @@
             var tp = findPf(PF.dashTab.slice(3));
             if (tp && tp.hidden) blocks.push({ id: 'pf:' + tp.id, name: tp.name, htmlFn: function () { return PF.cardHtml(tp); }, span: defSpan });
         }
-        blocks.push({ id: 'cal', name: noBonds ? 'Ставки' : 'Календарь выплат', htmlFn: function () { return noBonds ? PF.ratesStackHtml(true, 1, true, 'cal') : PF.paymentCalendarHtml(true, 1, PF.dashTab === 'divs'); }, span: defSpan });
+        blocks.push({ id: 'cal', name: noBonds ? 'Ставки' : 'Календарь выплат', htmlFn: function () { return noBonds ? PF.ratesStackHtml(true, 1, true, 'cal') : PF.paymentCalendarHtml(true, 1); }, span: defSpan });
         // обёртка .pf-topgrid-fav сохраняет прицельные стили правой колонки
         // (одноколоночный .pff-grid и т.п.) и в свободной сетке
         blocks.push({ id: 'fav', name: 'Избранное', htmlFn: function () { return '<div class="pf-topgrid-fav pfd-favwrap">' + favStr + '</div>'; }, span: defSpan });
