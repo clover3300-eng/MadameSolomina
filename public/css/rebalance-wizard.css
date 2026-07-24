@@ -529,6 +529,17 @@ body:has(#rbwBar) #pfWrap { gap: 0; }
     .rbw-btn-dark:hover, .rbw-pf:hover, .rbw-modec:hover, .rbw-autoc:hover { transform: none; }
 }
 
+/* ── микрокопия: термины с тултипом, подсказки ── */
+.rbw-gl { border-bottom: 1px dotted currentColor; cursor: help; position: relative; outline: none; }
+.rbw-gl-tip { display: none; position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(100% + 9px); width: 250px; max-width: 46vw; z-index: 90;
+    background: var(--ink); color: var(--bg); font-family: var(--fU); font-weight: 500; font-size: 11.5px; line-height: 1.5;
+    letter-spacing: 0; text-transform: none; text-align: left; border-radius: 11px; padding: 10px 13px; box-shadow: 0 20px 44px -18px rgba(0, 0, 0, 0.55); }
+.rbw-gl:hover .rbw-gl-tip, .rbw-gl:focus .rbw-gl-tip, .rbw-gl:focus-visible .rbw-gl-tip { display: block; }
+.rbw-gl-tip::after { content: ''; position: absolute; left: 50%; transform: translateX(-50%); top: 100%; border: 6px solid transparent; border-top-color: var(--ink); }
+.rbw-mc-hint { font-family: var(--fU); font-size: 9.5px; font-weight: 700; letter-spacing: 0.01em; text-transform: none; color: var(--acc);
+    background: color-mix(in srgb, var(--acc) 13%, transparent); border-radius: 99px; padding: 3px 9px; vertical-align: middle; margin-left: 8px; }
+.rbw-pick .rbw-pk-cv { font-size: 9.5px; color: var(--acc); font-weight: 700; white-space: nowrap; }
+
 /* ── «Что если»: предпросмотр эффекта (оверлей) ── */
 @keyframes rbw-fade { from { opacity: 0; } to { opacity: 1; } }
 .rbw-wi-back { position: absolute; inset: 0; background: rgba(16, 24, 40, 0.5); backdrop-filter: blur(3px); z-index: 80; animation: rbw-fade .18s ease both; }
