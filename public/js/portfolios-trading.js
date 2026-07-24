@@ -5846,15 +5846,42 @@
         return '<svg class="wl-sp" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true">' +
             '<polyline points="' + pts + '" class="' + (up ? 'g' : 'r') + '"/></svg>';
     }
+    // Рейка F знает два режима: «Избранное» (стор stk_fav_v1) и «Список» —
+    // все бумаги из таблицы вкладки «Расчёт» (глобали bonds/echelonTableData,
+    // загруженные data.js): акции с потенциалом и эшелоном, облигации с
+    // доходностью. Режим персистится, тумблер живёт в шапке панели.
+    var WL_MODE_KEY = 'bts_wl_mode';
+    var wlMode = (function () {
+        try { return localStorage.getItem(WL_MODE_KEY) === 'all' ? 'all' : 'fav'; }
+        catch (e) { return 'fav'; }
+    })();
+    window.pftScWlMode = function (m) {
+        m = (m === 'all') ? 'all' : 'fav';
+        if (wlMode === m) return;
+        wlMode = m;
+        try { localStorage.setItem(WL_MODE_KEY, m); } catch (e) {}
+        wlPaint();
+    };
+    function wlHeadHtml() {
+        return '<div class="wl-h">' +
+            '<div class="wl-seg" role="tablist" aria-label="Что показывать в рейке">' +
+                '<button type="button" class="wl-seg-b' + (wlMode === 'fav' ? ' on' : '') + '" role="tab" ' +
+                    'aria-selected="' + (wlMode === 'fav') + '" onclick="pftScWlMode(\'fav\')">Избранное</button>' +
+                '<button type="button" class="wl-seg-b' + (wlMode === 'all' ? ' on' : '') + '" role="tab" ' +
+                    'aria-selected="' + (wlMode === 'all') + '" onclick="pftScWlMode(\'all\')">Список</button>' +
+            '</div>' +
+            '<button type="button" class="wl-x" onclick="pftScWl()" aria-label="Свернуть полосу">✕</button></div>';
+    }
     function scnWlHtml() {
         if (!wlOn()) return '';
+        return wlHeadHtml() + (wlMode === 'all' ? scnWlAllHtml() : scnWlFavHtml());
+    }
+    function scnWlFavHtml() {
         var favs = wlList().slice(0, 9);
         var s = S(sxSlot());
-        var head = '<div class="wl-h"><b>Избранное</b><kbd>F</kbd>' +
-            '<button type="button" class="wl-x" onclick="pftScWl()" aria-label="Свернуть полосу">✕</button></div>';
         if (!favs.length) {
-            return head + '<div class="wl-none">Пока пусто. Жмите звезду ☆ у имени бумаги в сцене ' +
-                '(или на «Рынке» и в «Избранном» Портфелей) — бумаги появятся здесь и получат клавиши 1–9.</div>';
+            return '<div class="wl-scroll"><div class="wl-none">Пока пусто. Жмите звезду ☆ у имени бумаги в сцене ' +
+                '(или на «Рынке» и в «Избранном» Портфелей) — бумаги появятся здесь и получат клавиши 1–9.</div></div>';
         }
         var rows = favs.map(function (tk, i) {
             wlLoad(tk);
@@ -5876,8 +5903,63 @@
                 '<span class="tk"><b>' + esc(tk) + '</b>' + (nm ? '<em>' + esc(nm) + '</em>' : '') + '</span>' +
                 right + '</div>';
         }).join('');
-        return head + rows +
+        return '<div class="wl-scroll">' + rows + '</div>' +
             '<div class="wl-ft">звезда ☆ у имени бумаги добавляет её сюда · клавиши 1–9 работают и при закрытой рейке</div>';
+    }
+    // «Список»: акции и облигации из таблицы вкладки «Расчёт». data.js кладёт
+    // их в глобали echelonTableData ([[I],[II],[III],[IV]], элемент {t,n,target})
+    // и bonds ({t,n,p,y}); ссылаемся по имени (typeof-гард — таблица может ещё
+    // грузиться, тогда короткий поллинг, как в блоке ребаланса дашборда).
+    var WL_ECH_ROMAN = ['I', 'II', 'III', 'IV'];
+    var wlAllTries = 0;
+    function wlAllRetry() {
+        if (wlAllTries >= 8) return;
+        wlAllTries++;
+        setTimeout(function () { if (wlOn() && wlMode === 'all') wlPaint(); }, 700);
+    }
+    function scnWlAllHtml() {
+        var haveS = (typeof echelonTableData !== 'undefined') && echelonTableData &&
+            echelonTableData.some(function (c) { return c && c.length; });
+        var haveB = (typeof bonds !== 'undefined') && bonds && bonds.length;
+        if (!haveS && !haveB) {
+            wlAllRetry();
+            return '<div class="wl-scroll"><div class="wl-none">Загрузка списка из таблицы «Расчёта»…</div></div>';
+        }
+        wlAllTries = 0;
+        var stockRows = '';
+        if (haveS) {
+            echelonTableData.forEach(function (col, ci) {
+                (col || []).forEach(function (a) {
+                    if (!a || !a.t) return;
+                    var raw = (a.target == null) ? '' : String(a.target).replace(/\s*₽/, '').trim();
+                    var pot = (raw && raw !== '—')
+                        ? '<b>' + esc(raw) + '</b><i>₽</i>' : '<i class="mut">—</i>';
+                    stockRows += '<div class="wl-r wl-rl" role="button" tabindex="0" ' +
+                        'onclick="pftScWlGo(\'' + jsArg(a.t) + '\')" title="В сцену: ' + esc(a.t) + '">' +
+                        '<span class="wl-ech tier-' + (ci + 1) + '" title="Эшелон ' + WL_ECH_ROMAN[ci] + '">' + WL_ECH_ROMAN[ci] + '</span>' +
+                        '<span class="tk"><b>' + esc(a.t) + '</b>' + (a.n && a.n !== a.t ? '<em>' + esc(a.n) + '</em>' : '') + '</span>' +
+                        '<span class="pd wl-pot">' + pot + '</span></div>';
+                });
+            });
+        }
+        var bondRows = '';
+        if (haveB) {
+            bonds.forEach(function (b) {
+                if (!b || !b.t) return;
+                var y = (b.y != null && String(b.y) !== '') ? String(b.y).trim() : '—';
+                bondRows += '<div class="wl-r wl-rl" role="button" tabindex="0" ' +
+                    'onclick="pftScWlGo(\'' + jsArg(b.t) + '\')" title="В сцену: ' + esc(b.t) + '">' +
+                    '<span class="tk"><b>' + esc(b.n || b.t) + '</b><em>' + esc(b.t) + '</em></span>' +
+                    '<span class="pd wl-yield"><b>' + esc(y) + '</b></span></div>';
+            });
+        }
+        return '<div class="wl-scroll">' +
+            '<div class="wl-sec"><span>Акции</span><i>потенциал · эшелон</i></div>' +
+            (stockRows || '<div class="wl-none wl-none-s">нет данных</div>') +
+            '<div class="wl-sec wl-sec-b"><span>Облигации</span><i>доходность</i></div>' +
+            (bondRows || '<div class="wl-none wl-none-s">нет данных</div>') +
+        '</div>' +
+        '<div class="wl-ft">список из таблицы вкладки «Расчёт» · клик — бумага в сцену</div>';
     }
     // звезда в шапке бумаги: тумблер того же стора stk_fav_v1 (через терминал
     // «Рынка», если он уже загружен — его state не должен разъехаться)

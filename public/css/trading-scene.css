@@ -635,6 +635,41 @@
     margin-top: auto; font: 400 9.5px var(--font-ui); color: var(--dim); line-height: 1.45;
     border-top: 1px solid var(--hair); padding: 9px 6px 0; flex: none;
 }
+/* тумблер «Избранное / Список» в шапке рейки + прокрутка длинного списка */
+.bts .wl-seg { display: inline-flex; gap: 2px; padding: 2px; border: 1px solid var(--line); border-radius: 9px; }
+.bts .wl-seg-b {
+    border: 0; background: none; font: 600 10.5px var(--font-ui); color: var(--dim);
+    padding: 4px 9px; border-radius: 7px; cursor: pointer; white-space: nowrap;
+}
+.bts .wl-seg-b:hover { color: var(--ink); }
+.bts .wl-seg-b.on { background: color-mix(in srgb, var(--acc) 12%, transparent); color: var(--acc); }
+.bts .wl-scroll {
+    flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column;
+    gap: 3px; margin: 0 -4px; padding: 0 4px;
+}
+.bts .wl-scroll::-webkit-scrollbar { width: 6px; }
+.bts .wl-scroll::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--ink) 16%, transparent); border-radius: 99px; }
+/* заголовок секции внутри «Списка» (Акции / Облигации) */
+.bts .wl-sec { display: flex; align-items: baseline; gap: 8px; padding: 8px 6px 4px; flex: none; }
+.bts .wl-sec.wl-sec-b { margin-top: 4px; border-top: 1px solid var(--hair); }
+.bts .wl-sec span { font: 400 12.5px var(--font-title); color: var(--ink); }
+.bts .wl-sec i { font: 400 9px var(--font-ui); font-style: normal; color: var(--dim); margin-left: auto; letter-spacing: 0.02em; }
+.bts .wl-none-s { padding: 2px 6px 6px; }
+/* строка «Списка»: имя тянется, справа — метрика (потенциал / доходность) */
+.bts .wl-rl { cursor: pointer; }
+.bts .wl-rl .tk { flex: 1 1 auto; width: auto; min-width: 0; }
+.bts .wl-ech {
+    flex: none; width: 22px; text-align: center; font: 700 9px var(--font-num); color: var(--dim);
+    border: 1px solid var(--line); border-radius: 6px; padding: 2px 0;
+}
+.bts .wl-ech.tier-1 { color: #5B7C99; border-color: color-mix(in srgb, #5B7C99 42%, transparent); }
+.bts .wl-ech.tier-2 { color: #4f9b7a; border-color: color-mix(in srgb, #4f9b7a 42%, transparent); }
+.bts .wl-ech.tier-3 { color: #c2952f; border-color: color-mix(in srgb, #c2952f 44%, transparent); }
+.bts .wl-ech.tier-4 { color: var(--red); border-color: color-mix(in srgb, var(--red) 40%, transparent); }
+.bts .wl-pot b { color: var(--ink); }
+.bts .wl-pot i { font-style: normal; color: var(--dim); font-weight: 600; margin-left: 2px; }
+.bts .wl-pot i.mut { color: var(--mut); }
+.bts .wl-yield b { color: var(--grn); }
 
 /* ---------- реплей (раунд 3): плёнка-бар, вуаль и итог недели ---------- */
 .bts .bts-sand.rp {
