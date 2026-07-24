@@ -659,10 +659,10 @@
         var buyUnit = ctx.buyClass === 'bond' ? ctx.buy.unit : ctx.buy.price;
         var proceeds = d.proceeds, spend = d.buyQty * buyUnit;
         var ft = feeTax(), fee = (proceeds + spend) * ft.fee;
-        var broker = !!p.broker;
+        var broker = !!p.broker, canTr = broker && brokerCanTrade();
         var c = PF.calcPf(p), cash = p.cash || 0;
         var bar = '<div class="rbw-bskt-bar"><div class="rbw-bb-t">Расчёт собран в <b>2 ' + plur(2, 'заявку', 'заявки', 'заявок') + '</b> · продажа и покупка</div>'
-            + '<div class="rbw-bb-link">' + IC.term + ' ' + (broker ? 'уходит в терминал Т-Инвестиций' : 'применится к портфелю') + '</div></div>';
+            + '<div class="rbw-bb-link">' + IC.term + ' ' + (broker ? (canTr ? 'уйдёт брокеру Т-Инвестиций' : 'подготовим тикеты в терминале') : 'применится к портфелю') + '</div></div>';
         var legs = '<div class="rbw-legs">'
             + legHtml('sell', ctx.sellClass, ctx.sell, d.qty, sellUnit, 'освободится', '+' + fmtRub(proceeds), rbw.ord.sell)
             + legHtml('buy', ctx.buyClass, ctx.buy, d.buyQty, buyUnit, 'спишется', '−' + fmtRub(spend), rbw.ord.buy) + '</div>';
@@ -672,15 +672,18 @@
             + '<div class="rbw-bs-i"><em>После обмена</em><b class="' + (d.rest >= 0 ? 'up' : 'dn') + '">' + (d.rest >= 0 ? '+' : '') + fmtRub(d.rest) + '</b></div><div class="rbw-bs-sep"></div>'
             + '<div class="rbw-bs-i"><em>Комиссия</em><b>≈ ' + fmtRub(fee) + '</b></div><div class="rbw-bs-sep"></div>'
             + '<div class="rbw-bs-i"><em>Доли станут</em><b>' + Math.round(aa.stockPct) + ' / ' + Math.round(aa.bondPct) + '</b></div></div>';
-        var note = broker
-            ? '<div class="rbw-ninfo">' + IC.info + '<span>Это <b>зеркало брокерского счёта</b> — боевые заявки выставляются у брокера. Мастер подготовит тикеты в терминале Т-Инвестиций (один тап на отправку); состав придёт синком.</span></div>'
-            : '<div class="rbw-ninfo">' + IC.info + '<span>Обмен <b>применится к портфелю сразу</b> и попадёт в историю сделок — его можно будет отменить. Реальные заявки брокеру идут только у портфелей, подключённых к счёту.</span></div>';
+        var note = !broker
+            ? '<div class="rbw-ninfo">' + IC.info + '<span>Обмен <b>применится к портфелю сразу</b> и попадёт в историю сделок — его можно будет отменить. Реальные заявки брокеру идут только у портфелей, подключённых к счёту.</span></div>'
+            : (canTr
+                ? '<div class="rbw-nwarn">' + IC.warn + '<span>Это <b>зеркало брокерского счёта</b>. По кнопке уйдут <b>реальные заявки</b> брокеру Т-Инвестиций (' + fmtQty(d.qty) + ' на продажу, ' + fmtQty(d.buyQty) + ' на покупку). Спросим подтверждение. Состав обновится синком.</span></div>'
+                : '<div class="rbw-ninfo">' + IC.info + '<span>Это <b>зеркало брокерского счёта</b>, а торгующее подключение не активно. Мастер подготовит тикеты в терминале Т-Инвестиций — там один тап на отправку.</span></div>');
         var body = '<div class="rbw-bskt">' + bar + legs + sum + note + '</div>';
         var back = '<button type="button" class="rbw-btn rbw-btn-ghost" onclick="rbwGoStep(3)">← Назад · расчёт</button>';
-        var primaryLabel = broker ? 'Открыть заявки в терминале <i>→</i>' : 'Применить обмен · ' + fmtRub(proceeds + spend) + ' <i>→</i>';
-        var foot = footHtml(back, 'Спишется ровно столько, сколько в кнопке', { label: primaryLabel, onclick: 'rbwExecute()' });
-        return mainHtml('Шаг 4 из 4', broker ? 'Заявки готовы к отправке' : 'Обмен готов к применению',
-            'Продажа и покупка собраны в корзину. ' + (broker ? 'Отправьте их в терминал, не покидая мастер.' : 'Примените — портфель выровняется, запись ляжет в историю.'), body, foot);
+        var primaryLabel = rbw.executing ? 'Отправляем…' : (broker ? (canTr ? 'Выставить заявки брокеру <i>→</i>' : 'Открыть в терминале <i>→</i>') : 'Применить обмен · ' + fmtRub(proceeds + spend) + ' <i>→</i>');
+        var hint = broker ? (canTr ? 'Реальные сделки — с подтверждением' : 'Заявки не отправятся сами') : 'Спишется ровно столько, сколько в кнопке';
+        var foot = footHtml(back, hint, { label: primaryLabel, onclick: 'rbwExecute()' }, rbw.executing);
+        return mainHtml('Шаг 4 из 4', broker ? (canTr ? 'Заявки готовы к отправке брокеру' : 'Заявки готовы для терминала') : 'Обмен готов к применению',
+            'Продажа и покупка собраны в корзину. ' + (broker ? (canTr ? 'Уйдут брокеру по кнопке, не покидая мастер.' : 'Подготовим тикеты в терминале.') : 'Примените — портфель выровняется, запись ляжет в историю.'), body, foot);
     }
     function legHtml(side, cls, x, qty, unit, sumLbl, sumVal, ordType) {
         var name = cls === 'bond' ? x.name : x.ticker;
@@ -701,7 +704,7 @@
         var r = rbw.receipt; if (!r) { rbw.step = 4; return stepBasket(); }
         var d = new Date(), tm = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
         var rows = r.legs.map(function (l) {
-            return '<div class="rbw-rcp-l"><div class="rbw-rl-st ' + l.st + '">' + (l.st === 'done' ? 'исполнено' : l.st === 'part' ? 'частично' : 'в терминал') + '</div>'
+            return '<div class="rbw-rcp-l"><div class="rbw-rl-st ' + l.st + '">' + (l.st === 'done' ? 'исполнено' : l.st === 'part' ? 'частично' : l.st === 'rej' ? 'отклонено' : 'в очереди') + '</div>'
                 + '<div class="rbw-rl-nm"><b>' + (l.side === 'sell' ? 'Продать' : 'Купить') + ' ' + l.qty + ' × ' + esc(l.name) + '</b><em>' + esc(l.sub) + '</em></div>'
                 + '<div class="rbw-rl-v">' + l.val + '<s>' + esc(l.note) + '</s></div></div>';
         }).join('');
@@ -837,6 +840,7 @@
     window.rbwOrd = function (side, type) { rbw.ord[side] = type; rerender(); };
 
     window.rbwExecute = function () {
+        if (rbw.executing) return;
         var p = curPf(); if (!p) return;
         var ctx = dealCtx(); if (!ctx || !ctx.deal || !(ctx.deal.buyQty > 0)) { toast('Нечего исполнять'); return; }
         if (p.broker) { return execBroker(p, ctx); }
@@ -908,20 +912,64 @@
         rbw.step = 'receipt'; rerender();
     }
 
+    function brokerCanTrade() { var A = window.brokerApi; return !!(A && A.canTrade && A.canTrade()); }
+    function brokerLegTicker(cls, side, x) {
+        if (cls === 'bond') return (side === 'buy' && x.t) ? x.t : ((PF.fullBondId && PF.fullBondId(x.isin)) || x.isin);
+        return x.ticker;
+    }
     function execBroker(p, ctx) {
-        // боевой счёт: подготовить тикеты терминала (безопасный мост), не переписывая логику submitOrder
         var d = ctx.deal;
         var legs = [
-            { ticker: ctx.sellClass === 'bond' ? isinKey(ctx.sell.isin) : ctx.sell.ticker, side: 'sell', qty: d.qty },
-            { ticker: ctx.buyClass === 'bond' ? isinKey(ctx.buy.isin) : ctx.buy.ticker, side: 'buy', qty: d.buyQty }
+            { ticker: brokerLegTicker(ctx.sellClass, 'sell', ctx.sell), side: 'sell', qty: d.qty, orderType: rbw.ord.sell, price: ctx.sell.price },
+            { ticker: brokerLegTicker(ctx.buyClass, 'buy', ctx.buy), side: 'buy', qty: d.buyQty, orderType: rbw.ord.buy, price: ctx.buy.price }
         ];
-        if (PF.pftLoadPlan) {
-            try { PF.pftLoadPlan(legs); } catch (e) {}
-            toast('Заявки загружены в терминал — проверьте и отправьте');
-            if (window.pfxGoTrading) window.pfxGoTrading();
+        // нет торгующего подключения → безопасный мост: грузим тикеты в терминал (заявки НЕ шлём)
+        if (!brokerCanTrade() || !PF.pftPlaceOrders) {
+            if (PF.pftLoadPlan) { try { PF.pftLoadPlan(legs.map(function (l) { return { ticker: l.ticker, side: l.side, qty: l.qty }; })); } catch (e) {} }
+            else toast('Подключите брокера в «Торговле», чтобы выставить заявки', true);
             return;
         }
-        toast('Подключите брокера в «Торговле», чтобы выставить заявки', true);
+        var fire = function () {
+            rbw.executing = true; rerender();
+            PF.pftPlaceOrders(legs).then(function (results) {
+                rbw.executing = false;
+                buildBrokerReceipt(p, ctx, results);
+                var okN = results.filter(function (r) { return r.ok; }).length;
+                if (window.msNotify && window.msNotify.local) window.msNotify.local(okN ? 'success' : 'warn', 'Заявки ребаланса', okN + ' из ' + results.length + ' отправлено брокеру Т-Инвестиций');
+                rbw.step = 'receipt'; rerender();
+            }, function (e) {
+                rbw.executing = false; rerender();
+                toast((e && e.message) || 'Не удалось выставить заявки', true);
+            });
+        };
+        if (window.pfConfirm) window.pfConfirm('Выставить 2 заявки брокеру Т-Инвестиций? Это реальные сделки на вашем счёте.', fire);
+        else if (!window.confirm || window.confirm('Выставить реальные заявки брокеру?')) fire();
+    }
+    function buildBrokerReceipt(p, ctx, results) {
+        function statusOf(r) {
+            if (!r.ok) return { st: 'rej', note: r.error || 'отклонено' };
+            var resp = r.resp || {}, req = +resp.lotsRequested || r.lots, exe = +resp.lotsExecuted || 0;
+            var rej = /REJECT/i.test(resp.executionReportStatus || '');
+            var st = rej ? 'rej' : (exe >= req && req > 0 ? 'done' : 'part');
+            var reqSh = req * r.lot, exeSh = exe * r.lot;
+            return { st: st, note: rej ? (r.error || 'отклонено') : (st === 'done' ? reqSh + ' из ' + reqSh + ' шт' : exeSh + ' из ' + reqSh + ' шт · в очереди') };
+        }
+        var friendly = [ctx.sellClass === 'bond' ? ctx.sell.name : ctx.sell.ticker, ctx.buyClass === 'bond' ? ctx.buy.name : ctx.buy.ticker];
+        var legsR = results.map(function (r, i) {
+            var s = statusOf(r), isSell = r.leg.side === 'sell';
+            return { st: s.st, side: r.leg.side, qty: r.leg.qty, name: friendly[i] || r.leg.ticker,
+                sub: (isSell ? 'продажа' : 'покупка') + (r.ok ? ' · ' + r.lots + ' лот' : ''), val: '', note: s.note };
+        });
+        var anyOk = results.some(function (r) { return r.ok; });
+        rbw.receipt = {
+            title: anyOk ? 'Заявки приняты' : 'Заявки не прошли',
+            sub: anyOk ? 'Отправлены брокеру Т-Инвестиций; исполнение придёт синком со счёта' : 'Проверьте подключение брокера и попробуйте снова',
+            legs: legsR,
+            tot: [['Счёт', 'Т-Инвестиции'], ['Статус', anyOk ? 'у брокера' : 'ошибка'], ['Записей', 'по синку']],
+            foot: 'Это зеркало брокерского счёта — «бумажная» запись не создаётся. Состав обновится синком, а о закрытии заявок придёт звоночек сайта.',
+            alloc: null, coup: null,
+            doneText: 'Заявки ушли брокеру — состав портфеля обновится, как счёт синхронизируется.'
+        };
     }
 
     window.rbwGoDone = function () { rbw.step = 'done'; rerender(); };

@@ -3690,6 +3690,53 @@
         });
     };
 
+    // БОЕВАЯ постановка заявок ПРЯМО из мастера ребаланса, минуя сцену терминала.
+    // legs: [{ticker, side:'buy'|'sell', qty (в ШТУКАХ), orderType:'market'|'limit', price (₽, для лимитной)}]
+    // Переиспользует протестированные findByTicker/fetchMeta/brokerApi.call, каждая
+    // заявка со своим idempotency-ключом. Возвращает промис массива результатов
+    // {leg, ok, lots, meta, resp|error}. Резолв цены/лотов/облигационного % — как в submitOrder.
+    // ВНИМАНИЕ: это реальные сделки на счёте — вызывающий обязан спросить подтверждение.
+    PF.pftPlaceOrders = function (legs) {
+        if (!tradeReady()) return Promise.reject(new Error('Брокер не подключён или торговля недоступна'));
+        var c = conn(); if (!c || !c.accountId) return Promise.reject(new Error('Нет счёта брокера'));
+        legs = (legs || []).filter(function (l) { return l && l.ticker && (+l.qty) > 0; });
+        if (!legs.length) return Promise.resolve([]);
+        var results = [], chain = Promise.resolve();
+        legs.forEach(function (l) {
+            chain = chain.then(function () {
+                return findByTicker(l.ticker).then(function (ins) {
+                    if (!ins || !ins.uid) { results.push({ leg: l, ok: false, error: 'не найдена у брокера' }); return; }
+                    return fetchMeta(ins.uid).then(function (m) {
+                        var lot = (m && m.lot) || 1;
+                        var lots = Math.max(1, Math.floor((+l.qty || 0) / lot));
+                        var bk = bondKOf(m);
+                        var isLimit = l.orderType === 'limit' && (+l.price) > 0;
+                        var body = {
+                            accountId: c.accountId, instrumentId: ins.uid, quantity: String(lots),
+                            direction: l.side === 'sell' ? 'ORDER_DIRECTION_SELL' : 'ORDER_DIRECTION_BUY',
+                            orderType: isLimit ? 'ORDER_TYPE_LIMIT' : 'ORDER_TYPE_MARKET',
+                            orderId: genOrderId()
+                        };
+                        if (isLimit) {
+                            var step = (m && m.minInc) || 0.01;
+                            var px = Math.round((+l.price) / step) * step;   // снап к шагу цены
+                            body.price = A().n2q(px / bk);                    // облигации: ₽ → % номинала
+                        }
+                        return A().call('PostOrder', body).then(function (resp) {
+                            T.sent.push(Date.now());
+                            try { A().logEvent('order_submit', l.ticker + ' ' + l.side + ' ' + lots + ' лот (мастер ребаланса)'); } catch (e) {}
+                            results.push({ leg: l, ok: true, uid: ins.uid, lot: lot, lots: lots, meta: m, resp: resp || {} });
+                        }, function (e) {
+                            try { A().logEvent('order_error', l.ticker + ': ' + (e && e.message)); } catch (e2) {}
+                            results.push({ leg: l, ok: false, error: (e && e.message) || 'заявка не прошла' });
+                        });
+                    }, function () { results.push({ leg: l, ok: false, error: 'нет паспорта бумаги' }); });
+                }, function () { results.push({ leg: l, ok: false, error: 'не найдена у брокера' }); });
+            });
+        });
+        return chain.then(function () { return results; });
+    };
+
     // Короткий путь к сделке из «Рынок · Акции» и из «Избранного»: до этого от
     // акции в таблице до тикета было четыре шага (запомнить тикер → «Портфели»
     // → «Торговля» → лупа → набрать → выбрать). Объём НЕ подставляем — сделку

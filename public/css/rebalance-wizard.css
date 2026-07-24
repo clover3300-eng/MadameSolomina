@@ -18,6 +18,10 @@
     --acc: #4453ef; --grn: #16a34a; --red: #dc2626; --amb: #d97706;
     --bond: #5f7fa8; --bond-s: #eef3f9; --stock: #c9683f; --stock-s: #fbf1ea;
     --quote: #334155;
+    /* «чернильные» инвертируемые элементы (кнопка/бейдж/активные чипы): в светлой
+       теме — тёмный фон, белый текст; в тёмной инвертируются (см. body.dark-mode ниже) */
+    --chip-bg: var(--ink); --chip-fg: #fff;
+    --warn-ink: #6b4700; --warn-t: #8a5a00;
     position: relative; display: flex;
     height: var(--real-vh, 100vh); min-height: 520px; overflow: hidden;
     background: var(--bg); color: var(--ink);
@@ -26,6 +30,20 @@
 /* zoom:0.9 (desktop-zoom.css) сжимает px — полноэкранную высоту делим обратно,
    как #appShell. Только ≥1024px, где включён zoom. */
 @media (min-width: 1024px) { .rbw { height: calc(var(--real-vh, 100vh) / 0.9); } }
+
+/* ── тёмная тема: следует за body.dark-mode сайта (палитра по образцу сцены торговли) ── */
+body.dark-mode .rbw {
+    --ink: #e9eef8; --mut: #93a1b8; --dim: #5e6c84;
+    --line: rgba(255, 255, 255, 0.09); --hair: rgba(255, 255, 255, 0.06);
+    --bg: #0a0e15; --card: #121722;
+    --acc: #7c8cff; --grn: #34d399; --red: #f87171; --amb: #f0a63a;
+    --bond: #7f9bc4; --bond-s: rgba(127, 155, 196, 0.16); --stock: #d98a63; --stock-s: rgba(217, 138, 99, 0.15);
+    --quote: #c2ccdb;
+    --chip-bg: #e9eef8; --chip-fg: #0a0e15;               /* чернильные чипы инвертируются */
+    --warn-t: #f0c17c; --warn-ink: #f6d9a8;
+}
+body.dark-mode .rbw .rbw-swap i { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 16px 30px -14px rgba(0, 0, 0, 0.6); }
+body.dark-mode .rbw .rbw-mach { border-color: rgba(255, 255, 255, 0.08); }
 .rbw .num { font-family: var(--fN); font-variant-numeric: tabular-nums; }
 
 /* ── полноэкранный гейт (как body:has(#pftBar) для «Торговли») ── */
@@ -60,7 +78,7 @@ body:has(#rbwBar) #pfWrap { gap: 0; }
 .rbw-rs-i { flex: none; width: 29px; height: 29px; border-radius: 50%; display: grid; place-items: center;
     font-family: var(--fN); font-size: 12px; font-weight: 700; border: 1.5px solid var(--line);
     color: var(--dim); background: var(--card); position: relative; z-index: 2; }
-.rbw-rs.on .rbw-rs-i { background: var(--ink); border-color: var(--ink); color: #fff; }
+.rbw-rs.on .rbw-rs-i { background: var(--chip-bg); border-color: var(--chip-bg); color: var(--chip-fg); }
 .rbw-rs.done .rbw-rs-i { background: color-mix(in srgb, var(--grn) 14%, transparent);
     border-color: color-mix(in srgb, var(--grn) 40%, transparent); color: var(--grn); }
 .rbw-rs-t { padding-top: 3px; }
@@ -98,7 +116,7 @@ body:has(#rbwBar) #pfWrap { gap: 0; }
     border-radius: 12px; padding: 11px 18px; cursor: pointer; border: 1px solid transparent; background: none; font-family: var(--fU); }
 .rbw-btn-ghost { color: var(--mut); border-color: var(--line); background: var(--card); }
 .rbw-btn-ghost:hover { color: var(--ink); }
-.rbw-btn-dark { color: #fff; background: var(--ink); box-shadow: 0 14px 30px -18px rgba(16, 24, 40, 0.6); margin-left: auto; }
+.rbw-btn-dark { color: var(--chip-fg); background: var(--chip-bg); box-shadow: 0 14px 30px -18px rgba(16, 24, 40, 0.6); margin-left: auto; }
 .rbw-btn-dark.wide { padding: 13px 26px; font-size: 13.5px; }
 .rbw-btn-dark:disabled { opacity: 0.5; cursor: not-allowed; }
 .rbw-btn-dark i { font-style: normal; font-family: var(--fN); opacity: 0.7; }
@@ -161,7 +179,7 @@ body:has(#rbwBar) #pfWrap { gap: 0; }
     color: var(--acc); font-style: normal; font-family: var(--fN); font-size: 9px; font-weight: 700; display: grid; place-items: center; }
 .rbw-mc-pick { margin-top: 2px; display: flex; align-items: center; justify-content: center; gap: 8px;
     font-size: 12.5px; font-weight: 600; border-radius: 11px; padding: 10px 0; border: 1px solid var(--line); color: var(--mut); }
-.rbw-modec.sel .rbw-mc-pick { background: var(--ink); color: #fff; border-color: var(--ink); }
+.rbw-modec.sel .rbw-mc-pick { background: var(--chip-bg); color: var(--chip-fg); border-color: var(--chip-bg); }
 
 /* ── шаг 3 · сцена-сделка ── */
 .rbw-ds { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; min-height: 100%; justify-content: center; }
@@ -188,7 +206,7 @@ body:has(#rbwBar) #pfWrap { gap: 0; }
     padding: 34px 40px 28px; box-shadow: 0 30px 66px -38px rgba(24, 38, 60, 0.4); }
 .rbw-badge { position: absolute; left: 50%; top: -15px; transform: translateX(-50%); display: inline-flex;
     align-items: center; gap: 8px; font-size: 11px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;
-    color: #fff; background: var(--ink); border-radius: 99px; padding: 7px 16px; box-shadow: 0 12px 26px -14px rgba(16, 24, 40, 0.6); white-space: nowrap; }
+    color: var(--chip-fg); background: var(--chip-bg); border-radius: 99px; padding: 7px 16px; box-shadow: 0 12px 26px -14px rgba(16, 24, 40, 0.6); white-space: nowrap; }
 .rbw-badge b { font-family: var(--fN); color: #7ee2a8; }
 .rbw-ex { display: grid; grid-template-columns: 1fr 96px 1fr; align-items: start; }
 .rbw-leg { display: flex; flex-direction: column; gap: 14px; }
@@ -284,7 +302,7 @@ body:has(#rbwBar) #pfWrap { gap: 0; }
 /* класс-тумблер ОФЗ/Акции (в моменте) */
 .rbw-cls { flex: none; display: inline-flex; gap: 2px; border: 1px solid var(--line); border-radius: 10px; padding: 3px; background: var(--bg); align-self: center; }
 .rbw-cls span { font-size: 11px; font-weight: 600; color: var(--dim); border-radius: 7px; padding: 6px 13px; cursor: pointer; }
-.rbw-cls span.on { color: #fff; background: var(--ink); font-weight: 700; }
+.rbw-cls span.on { color: var(--chip-fg); background: var(--chip-bg); font-weight: 700; }
 
 /* ── шаг 3 · авто ── */
 .rbw-autolist { display: flex; flex-direction: column; gap: 13px; }
@@ -304,7 +322,7 @@ body:has(#rbwBar) #pfWrap { gap: 0; }
 .rbw-auto-gain b { font-family: var(--fN); font-size: 19px; font-weight: 700; color: var(--grn); }
 .rbw-auto-gain u { text-decoration: none; font-size: 11px; color: var(--mut); }
 .rbw-auto-pick { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12.5px; font-weight: 600; border-radius: 11px; padding: 11px 0; border: 1px solid var(--line); color: var(--mut); }
-.rbw-autoc.sel .rbw-auto-pick { background: var(--ink); color: #fff; border-color: var(--ink); }
+.rbw-autoc.sel .rbw-auto-pick { background: var(--chip-bg); color: var(--chip-fg); border-color: var(--chip-bg); }
 
 /* ── шаг 4 · корзина заявок ── */
 .rbw-bskt { display: flex; flex-direction: column; gap: 13px; }
@@ -324,7 +342,7 @@ body:has(#rbwBar) #pfWrap { gap: 0; }
 .rbw-lg-ord { display: flex; flex-direction: column; gap: 7px; }
 .rbw-lg-seg { display: inline-flex; gap: 3px; border: 1px solid var(--line); border-radius: 9px; padding: 3px; width: fit-content; }
 .rbw-lg-seg span { font-size: 10.5px; font-weight: 600; color: var(--dim); border-radius: 6px; padding: 5px 11px; cursor: pointer; }
-.rbw-lg-seg span.on { background: var(--ink); color: #fff; }
+.rbw-lg-seg span.on { background: var(--chip-bg); color: var(--chip-fg); }
 .rbw-lg-px { font-family: var(--fN); font-size: 11px; color: var(--mut); }
 .rbw-lg-px b { color: var(--ink); font-weight: 600; }
 .rbw-lg-sum { text-align: right; }
@@ -342,10 +360,10 @@ body:has(#rbwBar) #pfWrap { gap: 0; }
     background: color-mix(in srgb, var(--acc) 6%, transparent); border: 1px solid color-mix(in srgb, var(--acc) 25%, transparent); border-radius: 12px; padding: 12px 15px; }
 .rbw-ninfo svg { flex: none; width: 17px; height: 17px; color: var(--acc); margin-top: 1px; }
 .rbw-ninfo b { color: var(--ink); }
-.rbw-nwarn { display: flex; align-items: flex-start; gap: 10px; font-size: 12px; line-height: 1.5; color: #8a5a00;
+.rbw-nwarn { display: flex; align-items: flex-start; gap: 10px; font-size: 12px; line-height: 1.5; color: var(--warn-t);
     background: color-mix(in srgb, var(--amb) 9%, transparent); border: 1px solid color-mix(in srgb, var(--amb) 30%, transparent); border-radius: 12px; padding: 12px 15px; }
 .rbw-nwarn svg { flex: none; width: 17px; height: 17px; color: var(--amb); margin-top: 1px; }
-.rbw-nwarn b { color: #6b4700; }
+.rbw-nwarn b { color: var(--warn-ink); }
 .rbw-nwarn u { text-decoration: none; margin-left: auto; font-weight: 700; color: var(--acc); white-space: nowrap; cursor: pointer; }
 
 /* ── квитанция ── */
