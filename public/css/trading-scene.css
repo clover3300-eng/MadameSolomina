@@ -668,21 +668,25 @@
 .bts .wl-ech.tier-2 { color: #4f9b7a; border-color: color-mix(in srgb, #4f9b7a 42%, transparent); }
 .bts .wl-ech.tier-3 { color: #c2952f; border-color: color-mix(in srgb, #c2952f 44%, transparent); }
 .bts .wl-ech.tier-4 { color: var(--red); border-color: color-mix(in srgb, var(--red) 40%, transparent); }
-/* потенциал: крупная зелёная цифра с градацией (светлый → глубокий зелёный) */
-.bts .wl-pot { align-self: center; }
-.bts .wl-r .wl-pot b {
-    font: 800 15px/1 var(--font-num);
-    background: linear-gradient(155deg, #34d27a 0%, #12924e 100%);
-    -webkit-background-clip: text; background-clip: text;
-    -webkit-text-fill-color: transparent; color: #159a53;
-}
-.bts.night .wl-r .wl-pot b {
-    background: linear-gradient(155deg, #6cf0a4 0%, #22b866 100%);
-    -webkit-background-clip: text; background-clip: text;
-    -webkit-text-fill-color: transparent; color: #3fd489;
-}
-.bts .wl-pot i.mut { font-style: normal; color: var(--mut); font-weight: 600; font-size: 12px; }
-.bts .wl-yield b { color: var(--grn); }
+/* потенциал (акции) и доходность (облигации): зелёная цифра, а ОТТЕНОК зелёного
+   отражает величину внутри секции (ступени wlg0..wlg4: бледнее = меньше,
+   насыщеннее = больше) — цвет помогает сходу увидеть, где значение выше */
+.bts .wl-pot, .bts .wl-yield { align-self: center; }
+.bts .wl-r .wl-pot b { font: 800 15px/1 var(--font-num); }
+.bts .wl-r .wl-yield b { font: 800 14px/1 var(--font-num); }
+.bts .wl-pot i.mut, .bts .wl-yield i.mut { font-style: normal; color: var(--mut); font-weight: 600; font-size: 12px; }
+/* светлая тема — на белом «больше» = глубже и насыщеннее */
+.bts .wl-r .pd b.wlg0 { color: #96c3a9; }
+.bts .wl-r .pd b.wlg1 { color: #5fb082; }
+.bts .wl-r .pd b.wlg2 { color: #2ea15d; }
+.bts .wl-r .pd b.wlg3 { color: #138b43; }
+.bts .wl-r .pd b.wlg4 { color: #097331; }
+/* тёмная тема — на тёмном «больше» = ярче */
+.bts.night .wl-r .pd b.wlg0 { color: #5f8570; }
+.bts.night .wl-r .pd b.wlg1 { color: #46a56f; }
+.bts.night .wl-r .pd b.wlg2 { color: #31c47f; }
+.bts.night .wl-r .pd b.wlg3 { color: #29dd8b; }
+.bts.night .wl-r .pd b.wlg4 { color: #23f28f; }
 
 /* ---------- реплей (раунд 3): плёнка-бар, вуаль и итог недели ---------- */
 .bts .bts-sand.rp {
