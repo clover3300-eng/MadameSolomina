@@ -1593,4 +1593,20 @@
     // его читает каркас рендера.
     PF.collectTrades = collectTrades; PF.hasAnyTrades = hasAnyTrades; PF.pfInvalidateCharts = pfInvalidateCharts; PF.rebalRepaint = rebalRepaint;
     PF.tradesHtml = tradesHtml;
+
+    // ── ЕДИНЫЙ РАСЧЁТНЫЙ МОДУЛЬ: стейтлес-примитивы «машины денег» для мастера
+    // ребаланса (rebalance-wizard.js). Один источник формул — чтобы карточка rb5
+    // и мастер НЕ разъезжались. Все читают комиссию/налог из этих же rebalFee/rebalTax
+    // (загружены из pf_rebal_params на инициализации модуля).
+    PF.rbBondEconAt = bondEconAt;            // прибыль облигации до погашения → {perDay, annual, days}
+    PF.rbBondQtyFor1More = bondQtyFor1More;  // «продать N → купить N+1» (10→11)
+    PF.rbOfzMarket = ofzMarket;              // кандидаты-облигации с живой ценой/НКД
+    PF.rbOfzCand = ofzCand;
+    PF.rbStockCands = stockCands;            // кандидаты-акции по эшелону
+    PF.rbEchelonOf = echelonOf;
+    PF.rbLivePotential = livePotential;
+    PF.rbStkPriceOf = stkPriceOf;
+    PF.rbIsinKey = isinKey;
+    PF.rbFee = function () { return rebalFee || 0; };
+    PF.rbTax = function () { return rebalTax || 0; };
 })();

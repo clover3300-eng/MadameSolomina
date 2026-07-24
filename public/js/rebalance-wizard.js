@@ -57,9 +57,12 @@
     function pp(n) { return (n >= 0 ? '+' : '−') + d1(Math.abs(n)) + ' п.п.'; }                              // «+6,8 п.п.»
     function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
     function isinKey(t) { return String(t || '').split('RMFS')[0]; }
+    // комиссия/налог — из ЕДИНОГО источника rb5 (PF.rbFee/rbTax читают те же rebalFee/rebalTax,
+    // что и карточка ребаланса); фолбэк на ключ pf_rebal_params, если модуль ещё не отдал экспорт
     function feeTax() {
+        if (PF.rbFee && PF.rbTax) return { fee: PF.rbFee(), tax: PF.rbTax() };
         var p = {}; try { p = JSON.parse(localStorage.getItem('pf_rebal_params') || '{}') || {}; } catch (e) {}
-        return { fee: (p.fee != null && isFinite(+p.fee)) ? +p.fee : 0.0005, tax: (p.tax != null && isFinite(+p.tax)) ? +p.tax : 0 };
+        return { fee: (p.fee != null && isFinite(+p.fee)) ? +p.fee : 0, tax: (p.tax != null && isFinite(+p.tax)) ? +p.tax : 0 };
     }
     // bonds/echelonTableData объявлены в data.js как ЛЕКСИЧЕСКИЕ глобалы (let/const):
     // доступны по «голому» имени из classic-скрипта, но НЕ как window.bonds.
@@ -113,31 +116,18 @@
         return s.replace(/[^A-Za-zА-Яа-я]/g, '').slice(0, 2).toUpperCase();
     }
 
-    /* ═══════════ РАСЧЁТ (дубль локальной логики rb5) ═══════════ */
+    /* ═══════════ РАСЧЁТ ═══════════
+       Ядро формул («машина денег») — из ЕДИНОГО модуля rb5 через PF.rb* (см.
+       portfolios-trades.js), чтобы карточка и мастер не разъезжались. Здесь —
+       только оркестровка (списки кандидатов/held, qty-aware обёртки). */
     function bondYieldOf(isin, det) {
         var bs = allBonds();
         for (var i = 0; i < bs.length; i++) if (isinKey(bs[i].t) === isinKey(isin)) { var y = toNum(bs[i].y); if (isFinite(y)) return y; }
         if (det && det.couponYield != null) { var y2 = toNum(det.couponYield); if (isFinite(y2)) return y2; }
         return null;
     }
-    function bondEconAt(det, costUnit, nkdNow, face) {
-        var ft = feeTax();
-        if (!det || !(costUnit > 0)) return null;
-        var mat = PF.parseBondDate ? PF.parseBondDate(det.matDate) : null; if (!mat) return null;
-        var days = (mat.getTime() - Date.now()) / 86400000; if (!(days > 0)) return null;
-        var nominal = (det.face > 0) ? +det.face : (face > 0 ? face : 1000);
-        var cost = costUnit * (1 + ft.fee);
-        var income = (+det.couponValue || 0) * (+det.freq || 0) * days / 365 + nominal + (nkdNow || 0);
-        var tax = Math.max(0, income - cost) * ft.tax;
-        var profit = income - cost - tax;
-        return { perDay: profit / days, days: Math.round(days), matDate: det.matDate };
-    }
-    function bondQtyFor1More(unitS, unitB, maxQty) {
-        var f = feeTax().fee, net = unitS * (1 - f), gross = unitB * (1 + f);
-        if (!(net > 0) || !(gross > 0) || net <= gross) return null;
-        for (var n = 1; n <= maxQty; n++) if (Math.floor(n * net / gross) >= n + 1) return n;
-        return null;
-    }
+    function bondEconAt(det, costUnit, nkdNow, face) { return PF.rbBondEconAt ? PF.rbBondEconAt(det, costUnit, nkdNow, face) : null; }
+    function bondQtyFor1More(unitS, unitB, maxQty) { return PF.rbBondQtyFor1More ? PF.rbBondQtyFor1More(unitS, unitB, maxQty) : null; }
     /* мои облигации портфеля */
     function heldBonds(p) {
         var c = PF.calcPf(p), out = [];
@@ -175,28 +165,21 @@
         c.hs.forEach(function (x) {
             if (x.h.type === 'bond') return;
             var h = x.h, ck = x.c;
-            var pot = (PF.potentialOf ? PF.potentialOf(h.ticker) : null);
+            var pot = PF.rbLivePotential ? PF.rbLivePotential(h) : (PF.potentialOf ? PF.potentialOf(h.ticker) : null);
             out.push({ h: h, id: h.id, ticker: h.ticker, name: h.name || h.ticker, qty: ck.qty,
                 price: ck.cur || 0, pot: pot, ech: echelonOf(h.ticker), val: ck.value, pnlPct: ck.pnlPct, buy: ck.buy });
         });
         return out;
     }
+    // эшелон/цена акции — из единого модуля rb5 (PF.rb*); фолбэк — те же глобалы
     function echelonOf(ticker) {
-        var ed = allEch();
-        if (ed && ed.length) for (var e = 0; e < ed.length; e++) {
-            var arr = ed[e] || []; for (var i = 0; i < arr.length; i++) if (String(arr[i].t) === String(ticker)) return e + 1;
-        }
-        if (typeof window.stkFindCompany === 'function') {
-            var co = window.stkFindCompany(ticker);
-            if (co && co.main) { var n = toNum(co.main['ЭШЕЛОН']); if (isFinite(n)) return n; }
-        }
+        if (PF.rbEchelonOf) return PF.rbEchelonOf(ticker);
+        if (typeof window.stkFindCompany === 'function') { var co = window.stkFindCompany(ticker); if (co && co.main) { var n = toNum(co.main['ЭШЕЛОН']); if (isFinite(n)) return n; } }
         return 0;
     }
     function stkPriceOf(tk) {
-        if (typeof window.stkFindCompany === 'function') {
-            var co = window.stkFindCompany(tk);
-            if (co && co.main) { var n = toNum(co.main['Текущая Цена']); if (isFinite(n) && n > 0) return n; }
-        }
+        if (PF.rbStkPriceOf) return PF.rbStkPriceOf(tk);
+        if (typeof window.stkFindCompany === 'function') { var co = window.stkFindCompany(tk); if (co && co.main) { var n = toNum(co.main['Текущая Цена']); if (isFinite(n) && n > 0) return n; } }
         return 0;
     }
     function stockCandsFor(ech) {
