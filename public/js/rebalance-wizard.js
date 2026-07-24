@@ -603,9 +603,10 @@
             title = 'Обменять акцию на более перспективную';
             sub = esc(sellNm) + ' по ожидаемому росту слабее другой бумаги того же уровня. Доля акций та же.';
         }
-        // ── ЛЕВО: сама сделка простыми словами ──
+        // ── тумблер класса — во всю ширину над сеткой (чтобы верх сделки и панели совпали)
         var clsBar = (!isAnnual) ? '<div class="rbw-c2-clsbar"><span class="rbw-c2-clslbl">Работаем с:</span>' + clsToggle() + '</div>' : '';
-        var left = '<div class="rbw-c2-left">' + clsBar
+        // ── ЛЕВО: сама сделка простыми словами ──
+        var left = '<div class="rbw-c2-left">'
             + '<div class="rbw-c2-deal">'
             + c2Row('sell', ctx, d)
             + '<div class="rbw-c2-arrow" title="меняем одно на другое">' + IC.swap + '</div>'
@@ -616,7 +617,7 @@
             + '<span class="rbw-c2-hint">' + calcNote(ctx) + '</span></div></div>';
         // ── ПРАВО: что изменится (наглядно) ──
         var right = '<div class="rbw-c2-right">' + c2Panel(ctx, d) + '</div>';
-        var body = '<div class="rbw-calc2">' + left + right + '</div>';
+        var body = clsBar + '<div class="rbw-calc2">' + left + right + '</div>' + c2Compare(ctx, d);
         var back = '<button type="button" class="rbw-btn rbw-btn-ghost" onclick="rbwGoStep(2)">← Назад</button>'
             + '<button type="button" class="rbw-btn rbw-btn-ghost" onclick="rbwWhatIf()">👁 Что если</button>';
         var nDeals = effectiveDeals().length;
@@ -689,6 +690,82 @@
             + (tax > 0.5 ? '<div class="rbw-c2-n"><em>Налог (НДФЛ)</em><b>≈ ' + fmtRub(tax) + '</b></div>' : '')
             + '</div>';
         return '<div class="rbw-c2-panel"><div class="rbw-c2-panel-h"><i>' + IC.info + '</i>Что изменится</div>' + viz + nums + '</div>';
+    }
+    // ── ПРОЗРАЧНОСТЬ ВЫБОРА: слева «что продать» (все ваши бумаги), справа «варианты покупки».
+    //    Выбранная строка подсвечена — видно, почему мастер взял именно её, и есть чем заменить.
+    function cmpRow(side, id, cur, mono, nm, sub, vTop, vBot, tone) {
+        return '<div class="rbw-cmp-row ' + side + (cur ? ' sel' : '') + '" title="Выбрать эту бумагу" onclick="rbwChoose(\'' + side + '\',\'' + esc(id) + '\')">'
+            + '<div class="rbw-cmp-mono">' + mono + '</div>'
+            + '<div class="rbw-cmp-nm"><b>' + nm + '</b><em>' + sub + '</em></div>'
+            + '<div class="rbw-cmp-v' + (tone || '') + '"><b>' + vTop + '</b><em>' + vBot + '</em></div>'
+            + '<div class="rbw-cmp-ck">' + (cur ? '✓' : '') + '</div></div>';
+    }
+    function c2Compare(ctx, d) {
+        var p = ctx.p, f = feeTax().fee, empty = '<div class="rbw-cmp-empty">данные подгружаются…</div>';
+        // ЛЕВО — что продать (все ваши бумаги нужного класса, отсортированы по критерию продажи)
+        var sellRows, sellHint;
+        if (ctx.sellClass === 'bond') {
+            sellHint = 'сверху — сильнее выросла в цене, её выгоднее продать и забрать прибыль';
+            var hb = heldBonds(p).slice().sort(function (a, b) { return (b.momYield || -1e9) - (a.momYield || -1e9); });
+            sellRows = hb.map(function (x) {
+                var cur = ctx.sell && isinKey(ctx.sell.isin) === isinKey(x.isin);
+                var pl = (x.val != null && x.buy != null) ? x.val - x.buy : null;
+                var plStr = pl != null ? (pl >= 0 ? '+' : '−') + fmtRub(Math.abs(pl)) : '—';
+                return cmpRow('sell', x.id, cur, mono2(x.name), esc(x.name),
+                    x.qty + ' шт · принесла ' + plStr,
+                    (x.momYield != null ? (x.momYield >= 0 ? '+' : '') + d1(x.momYield) + '%' : '—'), 'рост, годовых',
+                    (x.momYield >= 0 ? ' up' : ' dn'));
+            }).join('');
+        } else {
+            sellHint = 'сверху — меньше потенциал роста, её логичнее продать';
+            var hs = heldStocks(p).slice().sort(function (a, b) { return (a.pot || 1e9) - (b.pot || 1e9); });
+            sellRows = hs.map(function (x) {
+                var cur = ctx.sell && ctx.sell.ticker === x.ticker;
+                var pl = (x.val != null && x.buy != null) ? x.val - x.buy : null;
+                var plStr = pl != null ? (pl >= 0 ? '+' : '−') + fmtRub(Math.abs(pl)) : '—';
+                return cmpRow('sell', x.id, cur, mono2(x.ticker), esc(x.ticker),
+                    x.qty + ' шт · принесла ' + plStr,
+                    (x.pot != null ? fmtPct(x.pot) : '—'), 'потенциал');
+            }).join('');
+        }
+        // ПРАВО — куда переложить (варианты, отсортированы по критерию покупки; «бумаг» на текущую выручку)
+        var buyRows, buyHint, proceeds = d ? d.proceeds : 0, sellQ = d ? d.qty : 0;
+        if (ctx.buyClass === 'bond') {
+            buyHint = 'сверху — доходнее к погашению; «+N» — столько бумаг сверх проданных на ту же сумму';
+            var held = {}; heldBonds(p).forEach(function (b) { held[isinKey(b.isin)] = 1; });
+            var cands = bondCands().filter(function (x) { return !ctx.sell || isinKey(x.isin) !== isinKey(ctx.sell.isin); })
+                .sort(function (a, b) { return (b.yield || -1e9) - (a.yield || -1e9); }).slice(0, 6);
+            buyRows = cands.map(function (x) {
+                var cur = ctx.buy && isinKey(ctx.buy.isin) === isinKey(x.isin);
+                var n = x.unit > 0 ? Math.floor(proceeds / (x.unit * (1 + f))) : 0;
+                var more = n - sellQ, own = held[isinKey(x.isin)];
+                var badge = more > 0 ? ' <span class="rbw-cmp-more">+' + more + '</span>' : (n > 0 && more < 0 ? ' <span class="rbw-cmp-less">' + more + '</span>' : '');
+                return cmpRow('buy', x.isin, cur, mono2(x.name), esc(x.name) + badge + (own ? ' <span class="rbw-own">в портф.</span>' : ''),
+                    f2(x.price) + ' ₽ · ' + n + ' шт на вашу сумму',
+                    (x.yield != null ? fmtPct(x.yield) : '—'), 'к погашению', ' up');
+            }).join('');
+        } else {
+            buyHint = ctx.kind === 'annual' ? 'сверху — выше потенциал роста' : 'сверху — выше потенциал роста; того же уровня (эшелона), что и проданная';
+            var ech = ctx.sell ? ctx.sell.ech : 0;
+            var sc = stockCandsFor(ech >= 1 ? ech : 0); if (!sc.length) sc = stockCandsFor(0);
+            sc = sc.filter(function (x) { return !ctx.sell || x.ticker !== ctx.sell.ticker; }).slice(0, 6);
+            buyRows = sc.map(function (x) {
+                var cur = ctx.buy && ctx.buy.ticker === x.ticker;
+                var pr = x.price > 0 ? x.price : stkPriceOf(x.ticker);
+                var n = pr > 0 ? Math.floor(proceeds / (pr * (1 + f))) : 0;
+                return cmpRow('buy', x.ticker, cur, mono2(x.ticker), esc(x.ticker),
+                    esc(x.name || '') + ' · ' + n + ' шт',
+                    (x.pot != null ? fmtPct(x.pot) : '—'), 'потенциал', ' up');
+            }).join('');
+        }
+        var sL = ctx.sellClass === 'bond' ? 'облигации' : 'акции';
+        return '<div class="rbw-cmp"><div class="rbw-cmp-cap"><i>' + IC.info + '</i>Почему эти бумаги — сравните сами. Любую строку можно выбрать.</div>'
+            + '<div class="rbw-cmp-grid">'
+            + '<div class="rbw-cmp-col"><div class="rbw-cmp-h"><b>Ваши ' + sL + '</b><span class="rbw-cmp-tag sell">что продать</span></div>'
+            + '<div class="rbw-cmp-sub">' + sellHint + '</div><div class="rbw-cmp-list">' + (sellRows || empty) + '</div></div>'
+            + '<div class="rbw-cmp-col"><div class="rbw-cmp-h"><b>Куда переложить</b><span class="rbw-cmp-tag buy">варианты покупки</span></div>'
+            + '<div class="rbw-cmp-sub">' + buyHint + '</div><div class="rbw-cmp-list">' + (buyRows || empty) + '</div></div>'
+            + '</div></div>';
     }
     function allocRow(cls, lbl, cur, tgt) {
         var dev = cur - tgt;
