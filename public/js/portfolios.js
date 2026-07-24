@@ -209,6 +209,13 @@
                 body = (PF.pftTradeReady && PF.pftTradeReady() && PF.pftSceneHtml)
                     ? PF.pftSceneHtml()
                     : wrapPanel(PF.pfxTradingHtml());
+            } else if (pfxEffTab() === 'rebal') {
+                // «Ребаланс» — пошаговый мастер (rebalance-wizard.js): подписчику
+                // (в демо-режиме — всем) полноэкранная сцена #rbwBar со своим хромом;
+                // гостю — карточка-гейт «войдите». См. PF.rbwSceneHtml/rbwGateHtml.
+                body = (PF.rbwReady && PF.rbwReady() && PF.rbwSceneHtml)
+                    ? PF.rbwSceneHtml()
+                    : wrapPanel(PF.rbwGateHtml ? PF.rbwGateHtml() : '');
             } else if (pfxEffTab() !== 'overview') {
                 body = wrapPanel(pfdBodyHtml(favStr, noBonds));
             } else if (pfdActive()) {
@@ -274,6 +281,7 @@
             PF.renderBrokerPos();   // блок «Позиции у брокера»: догрузка из API (no-op без виджета)
             brokerPfSync();         // карточка-портфель счёта Т-Инвестиций: тихий синк (троттл 60с, no-op без карточки)
             if (PF.pftAfterRender) PF.pftAfterRender();   // терминал «Торговли»: поллинг только на живой подвкладке
+            if (PF.rbwAfterRender) PF.rbwAfterRender();   // мастер «Ребаланс»: Esc-навигация на живой сцене
             if (PF.pfcAfterRender) PF.pfcAfterRender();   // график свечей: живой canvas переезжает в свежий якорь
             if (PF.pftScreensSync) PF.pftScreensSync();   // парящая полоса экранов «Торговли» (в body, см. модуль)
             // блок «Карта рынка»: живые плитки СИНХРОННО, до пейнта — иначе бокс
