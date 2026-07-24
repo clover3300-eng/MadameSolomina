@@ -625,47 +625,51 @@
             title = 'Обменять акцию на более перспективную';
             sub = esc(sellNm) + ' по ожидаемому росту слабее другой бумаги того же уровня. Доля акций та же.';
         }
-        // ── тумблер класса — во всю ширину над сеткой (чтобы верх сделки и панели совпали)
-        var clsBar = (!isAnnual) ? '<div class="rbw-c2-clsbar"><span class="rbw-c2-clslbl">Работаем с:</span>' + clsToggle() + '</div>' : '';
-        // ── ЛЕВО: сама сделка простыми словами ──
-        var left = '<div class="rbw-c2-left">'
-            + '<div class="rbw-c2-deal">'
-            + c2Row('sell', ctx, d)
-            + '<div class="rbw-c2-arrow" title="меняем одно на другое">' + IC.swap + '</div>'
-            + c2Row('buy', ctx, d) + '</div>'
-            + qtyCtrl(ctx, d)
-            + '<div class="rbw-c2-actions"><button type="button" class="rbw-c2-act" onclick="rbwAuto()">✦ Подобрать выгоднее</button>'
+        // ── ЛЕВО: карточка обмена (в стиле «Что изменится») + действия ──
+        var left = '<div class="rbw-c2-left">' + swapCard(ctx, d)
+            + '<div class="rbw-c2-actions"><button type="button" class="rbw-c2-act primary" onclick="rbwAuto()">' + IC.spark + ' Подобрать выгоднее</button>'
             + '<button type="button" class="rbw-c2-act" onclick="rbwCartAdd()">＋ Ещё обмен' + (rbw.cart.length ? ' (' + rbw.cart.length + ')' : '') + '</button>'
             + '<span class="rbw-c2-hint">' + calcNote(ctx) + '</span></div></div>';
         // ── ПРАВО: что изменится (наглядно) ──
         var right = '<div class="rbw-c2-right">' + c2Panel(ctx, d) + '</div>';
-        var body = clsBar + '<div class="rbw-calc2">' + left + right + '</div>' + c2Compare(ctx, d);
+        var body = '<div class="rbw-calc2">' + left + right + '</div>' + c2Compare(ctx, d);
         var back = '<button type="button" class="rbw-btn rbw-btn-ghost" onclick="rbwGoStep(2)">← Назад</button>'
             + '<button type="button" class="rbw-btn rbw-btn-ghost" onclick="rbwWhatIf()">👁 Что если</button>';
         var nDeals = effectiveDeals().length;
         var foot = footHtml(back, '', { label: 'Дальше — оформить заявку' + (nDeals > 1 ? ' (' + nDeals + ')' : '') + ' <i>→</i>', onclick: 'rbwToBasket()' });
         return mainHtml('Шаг 3 из 4 · ' + (isAnnual ? 'Годовая' : 'В моменте'), title, sub, body, foot);
     }
-    // строка сделки: сторона · бумага (сменить) · количество · сумма
-    function c2Row(side, ctx, d) {
+    // карточка обмена: шапка (+тумблер класса) · нога «Отдаём» · свап · нога «Получаем» · слайдер
+    function swapCard(ctx, d) {
+        var toggle = (ctx.kind !== 'annual') ? clsToggle() : '';
+        return '<div class="rbw-swap">'
+            + '<div class="rbw-swap-h"><i>' + IC.coin + '</i><b>Обмен</b>' + toggle + '</div>'
+            + swapLeg('sell', ctx, d)
+            + '<div class="rbw-swap-div"><span class="rbw-swap-fab" title="меняем одно на другое">' + IC.swap + '</span></div>'
+            + swapLeg('buy', ctx, d)
+            + qtyCtrl(ctx, d) + '</div>';
+    }
+    // нога сделки: сторона + кол-во | бумага (сменить) | сумма
+    function swapLeg(side, ctx, d) {
         var isSell = side === 'sell', cls = isSell ? ctx.sellClass : ctx.buyClass, x = isSell ? ctx.sell : ctx.buy;
         var qty = isSell ? d.qty : d.buyQty, unit = cls === 'bond' ? x.unit : x.price;
         var sum = isSell ? d.proceeds : d.buyQty * unit;
         var name = cls === 'bond' ? x.name : x.ticker;
         var own = '';
         if (!isSell && cls === 'bond') { var h = {}; heldBonds(ctx.p).forEach(function (b) { h[isinKey(b.isin)] = 1; }); if (h[isinKey(x.isin)]) own = ' <span class="rbw-own">уже есть</span>'; }
-        var px = cls === 'bond' ? ('по ' + f2(x.price) + ' ₽' + (x.nkd ? ' + ' + gl('НКД', TIP.nkd) + ' ' + f2(x.nkd) : '')
-            + (isSell && ctx.kind !== 'annual' && x.momYield != null ? ' · вырос ≈ ' + d1(x.momYield) + '%/год' : '')
-            + (!isSell && x.yield != null ? ' · доходность ' + fmtPct(x.yield) : '')) : ('по ' + f2(x.price) + ' ₽ за штуку');
+        var meta = cls === 'bond' ? ('по ' + f2(x.price) + ' ₽' + (x.nkd ? ' + ' + gl('НКД', TIP.nkd) + ' ' + f2(x.nkd) : '')
+            + (isSell && ctx.kind !== 'annual' && x.momYield != null ? ' · вырос ' + (x.momYield >= 0 ? '+' : '') + d1(x.momYield) + '%/год' : '')
+            + (!isSell && x.yield != null ? ' · к погашению ' + fmtPct(x.yield) : '')) : ('по ' + f2(x.price) + ' ₽/шт');
         var open = rbw.picker === side;
-        return '<div class="rbw-c2-row ' + side + '"><div class="rbw-c2-side">' + (isSell ? 'Продаём' : 'Покупаем') + '</div>'
-            + '<div class="rbw-c2-inst' + (open ? ' open' : '') + '" title="Нажмите, чтобы выбрать другую бумагу" onclick="event.stopPropagation();rbwOpenPicker(\'' + side + '\')">'
-            + '<div class="rbw-c2-mono">' + mono2(name) + '</div>'
-            + '<div class="rbw-c2-nm"><b>' + esc(name) + own + '</b><em>' + px + '</em></div>'
-            + '<span class="rbw-c2-chg">сменить ▾</span>'
+        return '<div class="rbw-leg ' + side + '">'
+            + '<div class="rbw-leg-top"><span class="rbw-leg-side">' + (isSell ? 'Отдаём' : 'Получаем') + '</span>'
+            + '<span class="rbw-leg-qty"><b>' + (isSell ? '−' : '+') + fmtQty(qty) + '</b> шт</span></div>'
+            + '<div class="rbw-leg-inst' + (open ? ' open' : '') + '" title="Нажмите, чтобы выбрать другую бумагу" onclick="event.stopPropagation();rbwOpenPicker(\'' + side + '\')">'
+            + '<div class="rbw-leg-mono">' + mono2(name) + '</div>'
+            + '<div class="rbw-leg-nm"><b>' + esc(name) + own + '</b><em>' + meta + '</em></div>'
+            + '<span class="rbw-leg-chg">сменить ▾</span>'
             + (open ? pickerHtml(ctx, side) : '') + '</div>'
-            + '<div class="rbw-c2-num"><b>' + (isSell ? '−' : '+') + fmtQty(qty) + '</b><span>шт</span></div>'
-            + '<div class="rbw-c2-money"><u>' + (isSell ? 'освободится' : 'спишется') + '</u><b>' + fmtRub(sum) + '</b></div></div>';
+            + '<div class="rbw-leg-foot"><u>' + (isSell ? 'освободится' : 'спишется') + '</u><b>' + fmtRub(sum) + '</b></div></div>';
     }
     function c2BaRow(lbl, sPct, bPct, tb, on) {
         return '<div class="rbw-c2-ba-row' + (on ? ' on' : '') + '"><div class="rbw-c2-ba-lbl">' + lbl + '</div>'

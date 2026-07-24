@@ -284,9 +284,44 @@ body:has(#rbwBar) #pfWrap { gap: 0; }
 .rbw-c2-arrow svg { width: 20px; height: 20px; }
 .rbw-c2-left .rbw-qty { margin-top: 0; padding-top: 0; border-top: 0; }
 .rbw-c2-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 4px; padding-top: 8px; }
-.rbw-c2-act { font-size: 12px; font-weight: 700; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 9px 14px; cursor: pointer; transition: border-color .15s ease, color .15s ease; }
+.rbw-c2-act { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 9px 14px; cursor: pointer; transition: border-color .15s ease, color .15s ease, background .15s ease; }
+.rbw-c2-act svg { width: 14px; height: 14px; }
 .rbw-c2-act:hover { border-color: color-mix(in srgb, var(--acc) 45%, transparent); color: var(--acc); }
+.rbw-c2-act.primary { color: var(--acc); border-color: color-mix(in srgb, var(--acc) 40%, transparent); background: color-mix(in srgb, var(--acc) 7%, transparent); }
+.rbw-c2-act.primary:hover { background: color-mix(in srgb, var(--acc) 12%, transparent); }
 .rbw-c2-hint { flex: 1 1 100%; font-size: 12px; line-height: 1.5; color: var(--mut); margin-top: 2px; }
+
+/* ── карточка «Обмен» (левая колонка) — в языке правой панели «Что изменится» ── */
+.rbw-swap { border: 1px solid var(--line); border-radius: 20px; padding: 20px 22px; background: var(--card); display: flex; flex-direction: column; gap: 12px;
+    box-shadow: 0 24px 54px -38px rgba(24, 38, 60, 0.34); }
+.rbw-swap-h { display: flex; align-items: center; gap: 9px; }
+.rbw-swap-h i { display: grid; place-items: center; color: var(--acc); } .rbw-swap-h svg { width: 18px; height: 18px; }
+.rbw-swap-h b { font-family: var(--fT); font-weight: 400; font-size: 19px; }
+.rbw-swap-h .rbw-cls { margin-left: auto; }
+.rbw-leg { border: 1px solid var(--line); border-radius: 16px; padding: 13px 16px; background: var(--bg); position: relative; }
+.rbw-leg.sell { border-left: 3px solid var(--stock); } .rbw-leg.buy { border-left: 3px solid var(--bond); }
+.rbw-leg-top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 9px; }
+.rbw-leg-side { font-size: 11px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+.rbw-leg.sell .rbw-leg-side { color: var(--stock); } .rbw-leg.buy .rbw-leg-side { color: var(--bond); }
+.rbw-leg-qty { font-family: var(--fN); font-size: 12px; color: var(--dim); }
+.rbw-leg-qty b { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+.rbw-leg.sell .rbw-leg-qty b { color: var(--stock); } .rbw-leg.buy .rbw-leg-qty b { color: var(--bond); }
+.rbw-leg-inst { display: flex; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: 12px; padding: 9px 12px; background: var(--card); cursor: pointer; position: relative; min-width: 0; transition: border-color .15s ease, box-shadow .15s ease; }
+.rbw-leg-inst:hover, .rbw-leg-inst.open { border-color: color-mix(in srgb, var(--acc) 50%, transparent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--acc) 12%, transparent); }
+.rbw-leg-mono { flex: none; width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; font-family: var(--fN); font-weight: 700; font-size: 12px; color: #fff; }
+.rbw-leg.sell .rbw-leg-mono { background: var(--stock); } .rbw-leg.buy .rbw-leg-mono { background: var(--bond); }
+.rbw-leg-nm { min-width: 0; flex: 1; }
+.rbw-leg-nm b { display: flex; align-items: center; gap: 7px; font-size: 15px; font-weight: 600; white-space: nowrap; }
+.rbw-leg-nm em { font-style: normal; display: block; font-family: var(--fN); font-size: 11px; color: var(--mut); margin-top: 3px; line-height: 1.4; }
+.rbw-leg-chg { flex: none; align-self: center; font-size: 10px; font-weight: 700; color: var(--acc); white-space: nowrap; }
+.rbw-leg-foot { display: flex; align-items: baseline; justify-content: space-between; margin-top: 10px; }
+.rbw-leg-foot u { text-decoration: none; font-size: 9px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); }
+.rbw-leg-foot b { font-family: var(--fN); font-size: 17px; font-weight: 700; }
+.rbw-swap-div { position: relative; height: 8px; display: grid; place-items: center; margin: -4px 0; }
+.rbw-swap-div::before { content: ''; position: absolute; left: 10px; right: 10px; top: 50%; height: 1px; background: var(--line); }
+.rbw-swap-fab { position: relative; z-index: 1; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--card); border: 1px solid var(--line); color: var(--acc); box-shadow: 0 6px 16px -8px rgba(16, 24, 40, 0.35); }
+.rbw-swap-fab svg { width: 19px; height: 19px; }
+.rbw-swap .rbw-qty { margin-top: 4px; padding-top: 14px; border-top: 1px dashed var(--line); }
 
 /* правая панель «Что изменится» */
 .rbw-c2-right { display: flex; }
