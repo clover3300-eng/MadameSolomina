@@ -104,7 +104,11 @@ body:has(#rbwBar) #pfWrap { gap: 0; }
 
 /* ═══════ рабочая область ═══════ */
 .rbw-main { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 30px 38px 0; }
-.rbw-mh { margin-bottom: 22px; }
+.rbw-mh { margin-bottom: 22px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px 24px; flex-wrap: wrap; }
+.rbw-mh-t { min-width: 0; }
+.rbw-mh-r { flex: none; padding-top: 4px; }
+.rbw-clswrap { display: inline-flex; align-items: center; gap: 10px; }
+.rbw-clslbl { font-size: 11px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--dim); }
 .rbw-mh em { font-style: normal; font-family: var(--fN); font-size: 10.5px; font-weight: 700;
     letter-spacing: 0.12em; text-transform: uppercase; color: var(--acc); }
 .rbw-mh h3 { font-family: var(--fT); font-weight: 400; font-size: 29px; line-height: 1.15; margin-top: 7px; }
@@ -256,7 +260,6 @@ body:has(#rbwBar) #pfWrap { gap: 0; }
 /* колонки-списки бумаг (главный элемент выбора) */
 .rbw-pk-col { border: 1px solid var(--line); border-radius: 20px; padding: 16px 16px 12px; background: var(--card); display: flex; flex-direction: column; min-width: 0;
     box-shadow: 0 24px 54px -40px rgba(24, 38, 60, 0.3); }
-.rbw-pk-col.sell { border-top: 3px solid var(--stock); } .rbw-pk-col.buy { border-top: 3px solid var(--bond); }
 .rbw-pk-h { display: flex; align-items: center; gap: 10px; }
 .rbw-pk-h b { font-family: var(--fT); font-weight: 400; font-size: 17px; }
 .rbw-pk-tag { font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; border-radius: 99px; padding: 3px 9px; }
@@ -268,15 +271,23 @@ body:has(#rbwBar) #pfWrap { gap: 0; }
 .rbw-pk-empty { font-size: 12px; color: var(--dim); padding: 16px 8px; }
 /* колонка результата */
 .rbw-rc { display: flex; flex-direction: column; gap: 16px; }
-.rbw-swm { border: 1px solid var(--line); border-radius: 16px; padding: 13px 15px; background: var(--card); display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 10px; align-items: center; }
-.rbw-swm-leg { min-width: 0; }
-.rbw-swm-leg.buy { text-align: right; }
-.rbw-swm-leg span { display: block; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
-.rbw-swm-leg.sell span { color: var(--stock); } .rbw-swm-leg.buy span { color: var(--bond); }
-.rbw-swm-leg b { display: block; font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 2px 0; }
-.rbw-swm-leg em { font-style: normal; font-family: var(--fN); font-size: 11px; color: var(--mut); }
-.rbw-swm-ar { flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--line); color: var(--acc); background: var(--bg); }
-.rbw-swm-ar svg { width: 16px; height: 16px; }
+.rbw-swm { border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; background: var(--card); }
+.rbw-swm-hd { display: flex; align-items: center; gap: 8px; font-size: 10px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: var(--dim); margin-bottom: 12px; }
+.rbw-swm-hd i { display: grid; place-items: center; color: var(--acc); } .rbw-swm-hd svg { width: 14px; height: 14px; }
+.rbw-swm-row { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto auto; gap: 11px; align-items: center; }
+.rbw-swm-mono { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; font-family: var(--fN); font-weight: 700; font-size: 11px; color: #fff; }
+.rbw-swm-row.sell .rbw-swm-mono { background: var(--stock); } .rbw-swm-row.buy .rbw-swm-mono { background: var(--bond); }
+.rbw-swm-nm { min-width: 0; }
+.rbw-swm-nm em { font-style: normal; display: block; font-size: 9.5px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 2px; }
+.rbw-swm-row.sell .rbw-swm-nm em { color: var(--stock); } .rbw-swm-row.buy .rbw-swm-nm em { color: var(--bond); }
+.rbw-swm-nm b { display: block; font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rbw-swm-q { font-family: var(--fN); font-size: 11px; color: var(--dim); white-space: nowrap; }
+.rbw-swm-q b { font-size: 19px; font-weight: 700; letter-spacing: -0.02em; }
+.rbw-swm-row.sell .rbw-swm-q b { color: var(--stock); } .rbw-swm-row.buy .rbw-swm-q b { color: var(--bond); }
+.rbw-swm-sum { font-family: var(--fN); font-size: 15px; font-weight: 700; text-align: right; white-space: nowrap; }
+.rbw-swm-conn { display: flex; align-items: center; gap: 10px; margin: 9px 0 9px 45px; }
+.rbw-swm-conn::before, .rbw-swm-conn::after { content: ''; height: 1px; background: var(--line); flex: 1; }
+.rbw-swm-conn span { font-size: 9.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--dim); }
 .rbw-rc .rbw-qty { margin-top: 0; padding-top: 0; border-top: 0; }
 .rbw-rc .rbw-c2-actions { margin-top: 0; }
 

@@ -438,9 +438,10 @@
             + '<div class="rbw-brand"><em>Мастер</em><b>Ребаланс</b></div>'
             + '<div class="rbw-steps">' + rows + '</div>' + ctx + '</div>';
     }
-    function mainHtml(kicker, title, sub, body, footHtml) {
-        return '<div class="rbw-main"><div class="rbw-mh"><em>' + kicker + '</em><h3>' + title + '</h3>'
-            + (sub ? '<p>' + sub + '</p>' : '') + '</div>'
+    function mainHtml(kicker, title, sub, body, footHtml, headRight) {
+        return '<div class="rbw-main"><div class="rbw-mh">'
+            + '<div class="rbw-mh-t"><em>' + kicker + '</em><h3>' + title + '</h3>' + (sub ? '<p>' + sub + '</p>' : '') + '</div>'
+            + (headRight ? '<div class="rbw-mh-r">' + headRight + '</div>' : '') + '</div>'
             + '<div class="rbw-body">' + body + '</div>' + (footHtml || '') + '</div>';
     }
     function footHtml(left, hint, primary, primaryDisabled) {
@@ -636,18 +637,24 @@
             + '<button type="button" class="rbw-btn rbw-btn-ghost" onclick="rbwWhatIf()">👁 Что если</button>';
         var nDeals = effectiveDeals().length;
         var foot = footHtml(back, '', { label: 'Дальше — оформить заявку' + (nDeals > 1 ? ' (' + nDeals + ')' : '') + ' <i>→</i>', onclick: 'rbwToBasket()' });
-        return mainHtml('Шаг 3 из 4 · ' + (isAnnual ? 'Годовая' : 'В моменте'), title, sub, body, foot);
+        // тумблер класса — в правый верх шапки (только «В моменте»: годовой всегда акции↔облигации)
+        var headRight = (!isAnnual) ? '<div class="rbw-clswrap"><span class="rbw-clslbl">Меняем</span>' + clsToggle() + '</div>' : '';
+        return mainHtml('Шаг 3 из 4 · ' + (isAnnual ? 'Годовая' : 'В моменте'), title, sub, body, foot, headRight);
     }
-    // компактная сводка обмена в колонке результата: Отдаём → Получаем (кол-во + сумма)
+    // сводка обмена (над «Что изменится»): две строки-квитанции Отдаём / Получаем
     function swapMini(ctx, d) {
-        function leg(side) {
+        function row(side) {
             var isSell = side === 'sell', cls = isSell ? ctx.sellClass : ctx.buyClass, x = isSell ? ctx.sell : ctx.buy;
             var name = cls === 'bond' ? x.name : x.ticker, qty = isSell ? d.qty : d.buyQty;
             var unit = cls === 'bond' ? x.unit : x.price, sum = isSell ? d.proceeds : d.buyQty * unit;
-            return '<div class="rbw-swm-leg ' + side + '"><span>' + (isSell ? 'Отдаём' : 'Получаем') + '</span>'
-                + '<b>' + esc(name) + '</b><em>' + (isSell ? '−' : '+') + fmtQty(qty) + ' шт · ' + fmtRub(sum) + '</em></div>';
+            return '<div class="rbw-swm-row ' + side + '">'
+                + '<div class="rbw-swm-mono">' + mono2(name) + '</div>'
+                + '<div class="rbw-swm-nm"><em>' + (isSell ? 'Отдаём' : 'Получаем') + '</em><b>' + esc(name) + '</b></div>'
+                + '<div class="rbw-swm-q"><b>' + (isSell ? '−' : '+') + fmtQty(qty) + '</b> шт</div>'
+                + '<div class="rbw-swm-sum">' + fmtRub(sum) + '</div></div>';
         }
-        return '<div class="rbw-swm">' + leg('sell') + '<div class="rbw-swm-ar" title="меняем одно на другое">' + IC.swap + '</div>' + leg('buy') + '</div>';
+        return '<div class="rbw-swm"><div class="rbw-swm-hd"><i>' + IC.swap + '</i>Ваш обмен</div>'
+            + row('sell') + '<div class="rbw-swm-conn"><span>меняем на</span></div>' + row('buy') + '</div>';
     }
     function c2BaRow(lbl, sPct, bPct, tb, on) {
         return '<div class="rbw-c2-ba-row' + (on ? ' on' : '') + '"><div class="rbw-c2-ba-lbl">' + lbl + '</div>'
@@ -791,7 +798,7 @@
             + '<b>' + d1(cur) + '<s>' + (dev >= 0 ? '+' : '−') + d1(Math.abs(dev)) + '</s></b></div>';
     }
     function clsToggle() {
-        return '<div class="rbw-cls"><span class="' + (rbw.cls === 'bond' ? 'on' : '') + '" onclick="rbwSetCls(\'bond\')">ОФЗ</span>'
+        return '<div class="rbw-cls"><span class="' + (rbw.cls === 'bond' ? 'on' : '') + '" onclick="rbwSetCls(\'bond\')">Облигации</span>'
             + '<span class="' + (rbw.cls === 'stock' ? 'on' : '') + '" onclick="rbwSetCls(\'stock\')">Акции</span></div>';
     }
     function qtyCtrl(ctx, d) {
