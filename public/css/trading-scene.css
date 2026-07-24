@@ -579,7 +579,7 @@
 .bts .bts-wlb:hover { color: var(--amb); }
 .bts .bts-wlb.on { color: var(--amb); border-color: color-mix(in srgb, var(--amb) 45%, transparent); }
 .bts-wl {
-    position: absolute; left: 20px; top: 64px; bottom: 64px; width: 238px;
+    position: absolute; left: 20px; top: 64px; bottom: 64px; width: 262px;
     background: var(--card); border: 1px solid var(--line); border-radius: 16px;
     padding: 12px; display: flex; flex-direction: column; gap: 3px; z-index: 26;
     box-shadow: 0 20px 44px -26px rgba(24, 38, 60, 0.4);
@@ -587,9 +587,11 @@
 }
 .bts.night .bts-wl { box-shadow: 0 20px 44px -26px rgba(0, 0, 0, 0.55); }
 .bts-wl:empty { display: none; }
-/* герой и полоса позиций уступают рейке место */
-.bts[data-wl="1"] .bts-hero { left: 290px; }
-.bts[data-wl="1"] .pos-strip { left: 270px; }
+/* герой, полоса позиций и росток-«карточка позиций» уступают рейке место —
+   .dock тоже сдвигается влево, иначе рейка на него наезжает (левый край 56) */
+.bts[data-wl="1"] .bts-hero { left: 314px; }
+.bts[data-wl="1"] .dock { left: 314px; }
+.bts[data-wl="1"] .pos-strip { left: 294px; }
 .bts .wl-h { display: flex; align-items: center; gap: 8px; padding: 2px 6px 8px; flex: none; }
 .bts .wl-h b { font: 400 15px var(--font-title); }
 .bts .wl-h kbd {
@@ -666,9 +668,20 @@
 .bts .wl-ech.tier-2 { color: #4f9b7a; border-color: color-mix(in srgb, #4f9b7a 42%, transparent); }
 .bts .wl-ech.tier-3 { color: #c2952f; border-color: color-mix(in srgb, #c2952f 44%, transparent); }
 .bts .wl-ech.tier-4 { color: var(--red); border-color: color-mix(in srgb, var(--red) 40%, transparent); }
-.bts .wl-pot b { color: var(--ink); }
-.bts .wl-pot i { font-style: normal; color: var(--dim); font-weight: 600; margin-left: 2px; }
-.bts .wl-pot i.mut { color: var(--mut); }
+/* потенциал: крупная зелёная цифра с градацией (светлый → глубокий зелёный) */
+.bts .wl-pot { align-self: center; }
+.bts .wl-r .wl-pot b {
+    font: 800 15px/1 var(--font-num);
+    background: linear-gradient(155deg, #34d27a 0%, #12924e 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: #159a53;
+}
+.bts.night .wl-r .wl-pot b {
+    background: linear-gradient(155deg, #6cf0a4 0%, #22b866 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: #3fd489;
+}
+.bts .wl-pot i.mut { font-style: normal; color: var(--mut); font-weight: 600; font-size: 12px; }
 .bts .wl-yield b { color: var(--grn); }
 
 /* ---------- реплей (раунд 3): плёнка-бар, вуаль и итог недели ---------- */

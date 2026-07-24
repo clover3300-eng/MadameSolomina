@@ -5933,7 +5933,7 @@
                     if (!a || !a.t) return;
                     var raw = (a.target == null) ? '' : String(a.target).replace(/\s*₽/, '').trim();
                     var pot = (raw && raw !== '—')
-                        ? '<b>' + esc(raw) + '</b><i>₽</i>' : '<i class="mut">—</i>';
+                        ? '<b>' + esc(raw) + '</b>' : '<i class="mut">—</i>';
                     stockRows += '<div class="wl-r wl-rl" role="button" tabindex="0" ' +
                         'onclick="pftScWlGo(\'' + jsArg(a.t) + '\')" title="В сцену: ' + esc(a.t) + '">' +
                         '<span class="wl-ech tier-' + (ci + 1) + '" title="Эшелон ' + WL_ECH_ROMAN[ci] + '">' + WL_ECH_ROMAN[ci] + '</span>' +
