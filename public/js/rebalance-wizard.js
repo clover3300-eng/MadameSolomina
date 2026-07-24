@@ -109,7 +109,8 @@
         info: ico('<circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/>', 1.8),
         warn: ico('<path d="M12 3l9 16H3z"/><path d="M12 9v5M12 17h.01"/>', 1.8),
         bell: ico('<path d="M6 8a6 6 0 0112 0c0 7 3 7 3 9H3c0-2 3-2 3-9zM10 21a2 2 0 004 0"/>', 1.8),
-        lock: ico('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/>', 1.8)
+        lock: ico('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/>', 1.8),
+        swap: ico('<path d="M8 4v16M8 4L5 7M8 4l3 3M16 20V4M16 20l-3-3M16 20l3-3"/>')
     };
     function mono2(name) {
         var s = String(name || '').replace(/^ОФЗ\s*/i, '');
@@ -488,7 +489,7 @@
     /* ── шаг 3 · пикер ── */
     function pickerHtml(ctx, side) {
         var cls = side === 'sell' ? ctx.sellClass : ctx.buyClass;
-        var pos = side === 'sell' ? 'left:0;top:150px' : 'right:0;top:150px';
+        var pos = 'left:0;top:calc(100% + 10px)';   // якорится под строкой сделки (.rbw-c2-inst — relative)
         var rows = '', p = ctx.p;
         if (side === 'sell') {
             var list = cls === 'bond' ? heldBonds(p) : heldStocks(p);
@@ -528,7 +529,7 @@
         }
         if (!rows) rows = '<div class="rbw-pop-empty">Кандидатов пока нет — данные подгружаются.</div>';
         var sortTxt = cls === 'bond' ? 'доходность ↓' : 'потенциал ↓';
-        return '<div class="rbw-pop' + (side === 'sell' ? ' left' : '') + '" style="' + pos + '" onclick="event.stopPropagation()">'
+        return '<div class="rbw-pop left" style="' + pos + '" onclick="event.stopPropagation()">'
             + '<div class="rbw-pop-search">' + IC.search + '<input class="rbw-pop-inp" type="text" placeholder="Поиск ' + (cls === 'bond' ? 'выпуска ОФЗ' : 'акции') + '…" value="' + esc(rbw.pickerQ) + '" oninput="rbwPickerFilter(this.value)" onkeydown="rbwPickerKey(event)"></div>'
             + '<div class="rbw-pop-sort">Сортировка: <b>' + sortTxt + '</b> · ↑↓ выбор, Enter — взять</div>'
             + '<div class="rbw-pop-scroll">' + rows + '</div></div>';
@@ -557,76 +558,97 @@
             return mainHtml('Шаг 3 из 4', 'Расчёт', '', body0,
                 footHtml('<button type="button" class="rbw-btn rbw-btn-ghost" onclick="rbwGoStep(2)">← Назад · режим</button>', '', null));
         }
-        var d = ctx.deal, sellName = ctx.sellClass === 'bond' ? ctx.sell.name : ctx.sell.ticker, buyName = ctx.buyClass === 'bond' ? ctx.buy.name : ctx.buy.ticker;
-        var isAnnual = ctx.kind === 'annual';
-        // «зачем»
-        var why;
+        var d = ctx.deal, isAnnual = ctx.kind === 'annual';
+        var sellNm = ctx.sellClass === 'bond' ? ctx.sell.name : ctx.sell.ticker;
+        // заголовок + подзаголовок (плейн, «зачем» одной фразой)
+        var title, sub, c;
         if (isAnnual) {
-            var c = ctx.c, tb = ctx.tb, stockPct = c.stockPct, bondPct = c.bondPct;
-            var devA = c.stockPct - (100 - tb);
-            why = '<div class="rbw-why warn"><div class="rbw-w-ic">' + IC.scale + '</div>'
-                + '<div class="rbw-w-t">' + (ctx.over === 'stock' ? 'Акций стало больше цели на <b>' + d1(Math.abs(devA)) + '%</b>' : 'Облигаций стало больше цели на <b>' + d1(Math.abs(c.bondPct - tb)) + '%</b>') + '. Чтобы вернуть портфель к цели <u>' + (100 - tb) + ' / ' + tb + '</u> — переложить <b>≈ ' + fmtRub(ctx.move) + '</b> из ' + (ctx.over === 'stock' ? 'акций в облигации' : 'облигаций в акции') + '.</div>'
-                + '<div class="rbw-w-alloc">'
-                + allocRow('st', 'Акции', stockPct, 100 - tb)
-                + allocRow('bd', 'Обл.', bondPct, tb) + '</div></div>';
+            c = ctx.c; var over = ctx.over, dev = over === 'stock' ? (c.stockPct - (100 - ctx.tb)) : (c.bondPct - ctx.tb);
+            title = 'Переложить ≈ ' + fmtRub(ctx.move) + ' из ' + (over === 'stock' ? 'акций в облигации' : 'облигаций в акции');
+            sub = (over === 'stock' ? 'Акций' : 'Облигаций') + ' стало больше цели на ' + d1(Math.abs(dev)) + '% — этот обмен вернёт портфель к цели ' + (100 - ctx.tb) + ' / ' + ctx.tb + '. Всё можно поправить: бумагу, количество.';
+        } else if (ctx.cls === 'bond') {
+            title = d.more > 0 ? 'На те же деньги — больше облигаций: ' + d.qty + ' → ' + d.buyQty : 'Обменять на более доходную облигацию';
+            sub = esc(sellNm) + ' стоит дорого, а приносит меньше другого выпуска. Продаём и берём облигацию дешевле и с бо́льшим купоном. Доли акций и облигаций не меняются.';
         } else {
-            var cls = ctx.cls;
-            why = '<div class="rbw-why spark"><div class="rbw-w-ic">' + IC.spark + '</div>'
-                + '<div class="rbw-w-t"><b>' + esc(sellName) + '</b> ' + (cls === 'bond' ? 'стоит дорого, а приносит меньше, чем другой выпуск. Продаём её и на всю выручку берём облигацию подешевле и с бо́льшим купоном.' : 'по ожидаемому росту слабее другой бумаги того же уровня. Меняем на более перспективную.') + ' <u>Сколько у вас акций и облигаций — не меняется.</u></div>'
-                + '<div class="rbw-w-alloc" style="width:auto">' + clsToggle() + '</div></div>';
+            title = 'Обменять акцию на более перспективную';
+            sub = esc(sellNm) + ' по ожидаемому росту слабее другой бумаги того же уровня. Доля акций та же.';
         }
-        // бейдж
-        var badge = isAnnual ? 'возврат к цели <b>' + (100 - ctx.tb) + ' / ' + ctx.tb + '</b>'
-            : (ctx.cls === 'bond' && d.more > 0 ? 'на те же деньги <b>' + d.qty + ' → ' + d.buyQty + '</b> бумаг' : (ctx.cls === 'bond' ? 'то же вложение — доходнее' : 'потенциал роста выше'));
-        // ноги
-        var sellUnit = ctx.sellClass === 'bond' ? ctx.sell.unit : ctx.sell.price;
-        var buyUnit = ctx.buyClass === 'bond' ? ctx.buy.unit : ctx.buy.price;
-        var sellSub = ctx.sellClass === 'bond' ? ('за ' + f2(ctx.sell.price) + ' ₽' + (ctx.sell.nkd ? ' + ' + gl('НКД', TIP.nkd) + ' ' + f2(ctx.sell.nkd) : '') + ' за шт') : ('по ' + f2(ctx.sell.price) + ' ₽ за акцию');
-        var buySub = ctx.buyClass === 'bond' ? ('за ' + f2(ctx.buy.price) + ' ₽' + (ctx.buy.nkd ? ' + ' + gl('НКД', TIP.nkd) + ' ' + f2(ctx.buy.nkd) : '') + (ctx.buy.coupon ? ' · купон ' + f2(ctx.buy.coupon) + ' ₽' : '')) : ('по ' + f2(ctx.buy.price) + ' ₽ за акцию');
-        var card = '<div class="rbw-card"><div class="rbw-badge">' + badge + '</div><div class="rbw-ex">'
-            + '<div class="rbw-leg sell"><span class="rbw-side">Продать · ' + (ctx.sellClass === 'bond' ? 'облигации' : 'акции') + '</span>'
-            + pickHtml(ctx, 'sell')
-            + '<div class="rbw-qbig">−' + fmtQty(d.qty) + ' <small>шт</small></div>'
-            + '<div class="rbw-qsub">' + sellSub + '</div>'
-            + '<div class="rbw-dsum"><em>освободит</em><b>' + fmtRub(d.proceeds) + '</b></div></div>'
-            + '<div class="rbw-swap"><i>⇄</i></div>'
-            + '<div class="rbw-leg buy"><span class="rbw-side">Купить · ' + (ctx.buyClass === 'bond' ? 'облигации' : 'акции') + '</span>'
-            + pickHtml(ctx, 'buy')
-            + '<div class="rbw-qbig">+' + fmtQty(d.buyQty) + ' <small>шт</small></div>'
-            + '<div class="rbw-qsub">' + buySub + '</div>'
-            + '<div class="rbw-dsum"><em>спишет</em><b>' + fmtRub(d.buyQty * buyUnit) + '</b></div></div>'
-            + '</div>'
+        // ── ЛЕВО: сама сделка простыми словами ──
+        var clsBar = (!isAnnual) ? '<div class="rbw-c2-clsbar"><span class="rbw-c2-clslbl">Работаем с:</span>' + clsToggle() + '</div>' : '';
+        var left = '<div class="rbw-c2-left">' + clsBar
+            + '<div class="rbw-c2-deal">'
+            + c2Row('sell', ctx, d)
+            + '<div class="rbw-c2-arrow" title="меняем одно на другое">' + IC.swap + '</div>'
+            + c2Row('buy', ctx, d) + '</div>'
             + qtyCtrl(ctx, d)
-            + '<div class="rbw-cfoot"><span class="rbw-df-auto" onclick="rbwAuto()">✦ <b>Подобрать</b> за меня</span>'
-            + '<span class="rbw-df-note">' + calcNote(ctx) + '</span>'
-            + '<span class="rbw-df-add" onclick="rbwCartAdd()">＋ Ещё обмен' + (rbw.cart.length ? ' · в корзине ' + rbw.cart.length : '') + '</span></div>'
-            + (rbw.picker ? pickerHtml(ctx, rbw.picker) : '') + '</div>';
-        // налог с прибыли (НДФЛ) — показываем только если ставка задана
-        var tax = saleTax(ctx.sell, d.qty), taxStr = tax > 0.5 ? ' · налог ≈ <b>' + fmtRub(tax) + '</b>' : '';
-        // итог
-        var out;
-        if (ctx.cls === 'bond' && !isAnnual) {
-            out = '<div class="rbw-mach"><div class="rbw-m-ic">' + IC.coin + '</div>'
-                + '<div class="rbw-m-t"><em>Купонов в год после обмена · платят ' + d.buyQty + ' ' + plur(d.buyQty, 'бумага', 'бумаги', 'бумаг') + '</em><b>' + f2(d.coupAfter) + ' <small>₽ · было ' + f2(d.coupBefore) + '</small></b></div>'
-                + '<div class="rbw-m-delta">▲ +' + f2(d.coupDelta) + ' ₽/год</div>'
-                + '<div class="rbw-m-rest">останется ' + fmtRub(d.rest) + (tax > 0.5 ? ' · налог ' + fmtRub(tax) : '') + '</div></div>';
-        } else {
-            var aa = allocAfter(p, ctx);
-            var txt = isAnnual
-                ? 'Доли вернутся к <b>' + d1(aa.stockPct) + ' / ' + d1(aa.bondPct) + '</b> — портфель снова в цели.' + taxStr
-                : (d.potDelta != null ? 'Ожидаемый рост станет выше на <b>' + d1(d.potDelta) + '%</b>. Доли акций и облигаций не меняются.' + taxStr : 'Обмен внутри одного типа бумаг.');
-            out = '<div class="rbw-result"><div class="rbw-result-ic">✓</div>'
-                + '<div class="rbw-result-t">' + txt + '</div>'
-                + '<div class="rbw-rest">останется <b>' + fmtRub(d.rest) + '</b></div></div>';
-        }
-        var body = '<div class="rbw-ds">' + why + card + out + '</div>';
-        var title = isAnnual ? 'Один обмен возвращает доли к цели'
-            : (ctx.cls === 'bond' ? (d.more > 0 ? 'На те же деньги — больше бумаг: ' + d.qty + ' → ' + d.buyQty : 'Меняем на более доходную облигацию') : 'Меняем на бумагу с бо́льшим потенциалом');
-        var back = '<button type="button" class="rbw-btn rbw-btn-ghost" onclick="rbwGoStep(2)">← Назад · режим</button>'
+            + '<div class="rbw-c2-actions"><button type="button" class="rbw-c2-act" onclick="rbwAuto()">✦ Подобрать выгоднее</button>'
+            + '<button type="button" class="rbw-c2-act" onclick="rbwCartAdd()">＋ Ещё обмен' + (rbw.cart.length ? ' (' + rbw.cart.length + ')' : '') + '</button>'
+            + '<span class="rbw-c2-hint">' + calcNote(ctx) + '</span></div></div>';
+        // ── ПРАВО: что изменится (наглядно) ──
+        var right = '<div class="rbw-c2-right">' + c2Panel(ctx, d) + '</div>';
+        var body = '<div class="rbw-calc2">' + left + right + '</div>';
+        var back = '<button type="button" class="rbw-btn rbw-btn-ghost" onclick="rbwGoStep(2)">← Назад</button>'
             + '<button type="button" class="rbw-btn rbw-btn-ghost" onclick="rbwWhatIf()">👁 Что если</button>';
         var nDeals = effectiveDeals().length;
-        var foot = footHtml(back, 'Не та бумага? Нажмите на неё · «＋ Ещё обмен» — добавить второй', { label: 'Дальше — оформить заявку' + (nDeals > 1 ? ' (' + nDeals + ')' : '') + ' <i>→</i>', onclick: 'rbwToBasket()' });
-        return mainHtml('Шаг 3 из 4 · ' + (isAnnual ? 'Годовая' : 'В моменте'), title, '', body, foot);
+        var foot = footHtml(back, '', { label: 'Дальше — оформить заявку' + (nDeals > 1 ? ' (' + nDeals + ')' : '') + ' <i>→</i>', onclick: 'rbwToBasket()' });
+        return mainHtml('Шаг 3 из 4 · ' + (isAnnual ? 'Годовая' : 'В моменте'), title, sub, body, foot);
+    }
+    // строка сделки: сторона · бумага (сменить) · количество · сумма
+    function c2Row(side, ctx, d) {
+        var isSell = side === 'sell', cls = isSell ? ctx.sellClass : ctx.buyClass, x = isSell ? ctx.sell : ctx.buy;
+        var qty = isSell ? d.qty : d.buyQty, unit = cls === 'bond' ? x.unit : x.price;
+        var sum = isSell ? d.proceeds : d.buyQty * unit;
+        var name = cls === 'bond' ? x.name : x.ticker;
+        var own = '';
+        if (!isSell && cls === 'bond') { var h = {}; heldBonds(ctx.p).forEach(function (b) { h[isinKey(b.isin)] = 1; }); if (h[isinKey(x.isin)]) own = ' <span class="rbw-own">уже есть</span>'; }
+        var px = cls === 'bond' ? ('по ' + f2(x.price) + ' ₽' + (x.nkd ? ' + ' + gl('НКД', TIP.nkd) + ' ' + f2(x.nkd) : '') + (x.coupon && !isSell ? ' · купон ' + f2(x.coupon) + ' ₽' : '')) : ('по ' + f2(x.price) + ' ₽ за штуку');
+        var open = rbw.picker === side;
+        return '<div class="rbw-c2-row ' + side + '"><div class="rbw-c2-side">' + (isSell ? 'Продаём' : 'Покупаем') + '</div>'
+            + '<div class="rbw-c2-inst' + (open ? ' open' : '') + '" title="Нажмите, чтобы выбрать другую бумагу" onclick="event.stopPropagation();rbwOpenPicker(\'' + side + '\')">'
+            + '<div class="rbw-c2-mono">' + mono2(name) + '</div>'
+            + '<div class="rbw-c2-nm"><b>' + esc(name) + own + '</b><em>' + px + '</em></div>'
+            + '<span class="rbw-c2-chg">сменить ▾</span>'
+            + (open ? pickerHtml(ctx, side) : '') + '</div>'
+            + '<div class="rbw-c2-num"><b>' + (isSell ? '−' : '+') + fmtQty(qty) + '</b><span>шт</span></div>'
+            + '<div class="rbw-c2-money"><u>' + (isSell ? 'освободится' : 'спишется') + '</u><b>' + fmtRub(sum) + '</b></div></div>';
+    }
+    function c2BaRow(lbl, sPct, bPct, tb, on) {
+        return '<div class="rbw-c2-ba-row' + (on ? ' on' : '') + '"><div class="rbw-c2-ba-lbl">' + lbl + '</div>'
+            + '<div class="rbw-c2-ba-bar"><i class="st" style="width:' + clamp(sPct, 0, 100) + '%"></i><i class="bd" style="width:' + clamp(bPct, 0, 100) + '%"></i>'
+            + (tb != null ? '<u style="left:' + clamp(100 - tb, 0, 100) + '%"></u>' : '') + '</div>'
+            + '<div class="rbw-c2-ba-v">' + Math.round(sPct) + ' / ' + Math.round(bPct) + '</div></div>';
+    }
+    // правая панель «Что изменится»
+    function c2Panel(ctx, d) {
+        var p = ctx.p, isAnnual = ctx.kind === 'annual';
+        var spend = d.buyQty * (ctx.buyClass === 'bond' ? ctx.buy.unit : ctx.buy.price);
+        var tax = saleTax(ctx.sell, d.qty), fee = (d.proceeds + spend) * feeTax().fee;
+        var viz;
+        if (isAnnual) {
+            var c = PF.calcPf(p), aa = allocAfter(p, ctx), tb = ctx.tb;
+            viz = '<div class="rbw-c2-ba">'
+                + c2BaRow('Сейчас', c.stockPct, c.bondPct, tb, false)
+                + '<div class="rbw-c2-ba-mid"><span>вернём к цели ' + (100 - tb) + ' / ' + tb + '</span></div>'
+                + c2BaRow('Станет', aa.stockPct, aa.bondPct, tb, true) + '</div>'
+                + '<div class="rbw-c2-legend"><span><i class="st"></i>Акции</span><span><i class="bd"></i>Облигации</span><span><i class="tg"></i>Цель</span></div>';
+        } else if (ctx.cls === 'bond') {
+            var sy = ctx.sell.yield, by = ctx.buy.yield, dy = (sy != null && by != null) ? by - sy : null;
+            viz = '<div class="rbw-c2-shift"><em>Годовая доходность бумаги</em>'
+                + '<div class="rbw-c2-shift-r"><s>' + (sy != null ? fmtPct(sy) : '—') + '</s><span class="ar">→</span><b>' + (by != null ? fmtPct(by) : '—') + '</b></div>'
+                + (dy != null && dy > 0.05 ? '<div class="rbw-c2-shift-d up">▲ +' + d1(dy) + '% годовых</div>' : '')
+                + '<p>Берём облигацию, которая приносит больше — это и есть выгода обмена.' + (d.coupDelta >= 0.5 ? ' Купонов в год тоже больше: +' + f2(d.coupDelta) + ' ₽.' : '') + ' Доли акций и облигаций не меняются.</p></div>';
+        } else {
+            viz = '<div class="rbw-c2-shift"><em>Ожидаемый рост</em>'
+                + '<div class="rbw-c2-shift-r"><s>' + (d.potFrom != null ? fmtPct(d.potFrom) : '—') + '</s><span class="ar">→</span><b>' + (d.potTo != null ? fmtPct(d.potTo) : '—') + '</b></div>'
+                + (d.potDelta != null ? '<div class="rbw-c2-shift-d up">▲ +' + d1(d.potDelta) + '%</div>' : '')
+                + '<p>Меняем на более перспективную бумагу того же уровня. Доля акций та же.</p></div>';
+        }
+        var nums = '<div class="rbw-c2-nums">'
+            + '<div class="rbw-c2-n"><em>Останется свободно</em><b>' + fmtRub(d.rest) + '</b></div>'
+            + '<div class="rbw-c2-n"><em>Комиссия</em><b>≈ ' + fmtRub(fee) + '</b></div>'
+            + (tax > 0.5 ? '<div class="rbw-c2-n"><em>Налог (НДФЛ)</em><b>≈ ' + fmtRub(tax) + '</b></div>' : '')
+            + '</div>';
+        return '<div class="rbw-c2-panel"><div class="rbw-c2-panel-h"><i>' + IC.info + '</i>Что изменится</div>' + viz + nums + '</div>';
     }
     function allocRow(cls, lbl, cur, tgt) {
         var dev = cur - tgt;

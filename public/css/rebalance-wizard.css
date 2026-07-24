@@ -251,6 +251,79 @@ body:has(#rbwBar) #pfWrap { gap: 0; }
 .rbw-move b { font-family: var(--fN); color: var(--ink); font-weight: 700; }
 .rbw-mv-ar { color: var(--acc); font-weight: 700; }
 
+/* ═══════════ шаг 3 · РАСЧЁТ — двухпанельная раскладка (слева сделка, справа результат) ═══════════ */
+.rbw-calc2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 440px); gap: 24px; min-height: 100%; align-items: stretch; }
+.rbw-c2-left { display: flex; flex-direction: column; gap: 18px; }
+.rbw-c2-clsbar { display: flex; align-items: center; gap: 12px; }
+.rbw-c2-clslbl { font-size: 12.5px; font-weight: 700; color: var(--mut); }
+.rbw-c2-deal { display: flex; flex-direction: column; }
+.rbw-c2-row { display: grid; grid-template-columns: 100px minmax(0, 1fr) 96px 150px; gap: 16px; align-items: center;
+    border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; background: var(--card); position: relative; }
+.rbw-c2-row.sell { border-left: 4px solid var(--stock); }
+.rbw-c2-row.buy { border-left: 4px solid var(--bond); }
+.rbw-c2-side { font-size: 13px; font-weight: 800; letter-spacing: 0.02em; }
+.rbw-c2-row.sell .rbw-c2-side { color: var(--stock); }
+.rbw-c2-row.buy .rbw-c2-side { color: var(--bond); }
+.rbw-c2-inst { display: flex; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; background: var(--bg); cursor: pointer; position: relative; min-width: 0; transition: border-color .15s ease; }
+.rbw-c2-inst:hover, .rbw-c2-inst.open { border-color: color-mix(in srgb, var(--acc) 50%, transparent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--acc) 12%, transparent); }
+.rbw-c2-mono { flex: none; width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; font-family: var(--fN); font-weight: 700; font-size: 12px; color: #fff; }
+.rbw-c2-row.sell .rbw-c2-mono { background: var(--stock); } .rbw-c2-row.buy .rbw-c2-mono { background: var(--bond); }
+.rbw-c2-nm { min-width: 0; }
+.rbw-c2-nm b { display: flex; align-items: center; gap: 7px; font-size: 15px; font-weight: 600; white-space: nowrap; }
+.rbw-c2-nm em { font-style: normal; display: block; font-family: var(--fN); font-size: 11px; color: var(--mut); margin-top: 2px; }
+.rbw-c2-chg { margin-left: auto; flex: none; font-size: 10px; font-weight: 700; color: var(--acc); white-space: nowrap; }
+.rbw-c2-num { text-align: center; }
+.rbw-c2-num b { font-family: var(--fN); font-size: 30px; font-weight: 700; line-height: 1; letter-spacing: -0.02em; }
+.rbw-c2-row.sell .rbw-c2-num b { color: var(--stock); } .rbw-c2-row.buy .rbw-c2-num b { color: var(--bond); }
+.rbw-c2-num span { font-family: var(--fN); font-size: 11px; color: var(--dim); }
+.rbw-c2-money { text-align: right; }
+.rbw-c2-money u { display: block; text-decoration: none; font-size: 9px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: var(--dim); margin-bottom: 3px; }
+.rbw-c2-money b { font-family: var(--fN); font-size: 16px; font-weight: 700; }
+.rbw-c2-arrow { align-self: center; margin: -8px 0; z-index: 2; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--card); border: 1px solid var(--line); color: var(--acc); box-shadow: 0 6px 16px -8px rgba(16, 24, 40, 0.35); }
+.rbw-c2-arrow svg { width: 20px; height: 20px; }
+.rbw-c2-left .rbw-qty { margin-top: 0; padding-top: 0; border-top: 0; }
+.rbw-c2-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: auto; padding-top: 8px; }
+.rbw-c2-act { font-size: 12px; font-weight: 700; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 9px 14px; cursor: pointer; transition: border-color .15s ease, color .15s ease; }
+.rbw-c2-act:hover { border-color: color-mix(in srgb, var(--acc) 45%, transparent); color: var(--acc); }
+.rbw-c2-hint { flex: 1 1 100%; font-size: 12px; line-height: 1.5; color: var(--mut); margin-top: 2px; }
+
+/* правая панель «Что изменится» */
+.rbw-c2-right { display: flex; }
+.rbw-c2-panel { flex: 1; border: 1px solid var(--line); border-radius: 20px; padding: 22px 24px; display: flex; flex-direction: column; gap: 18px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--acc) 4%, var(--card)), var(--card)); box-shadow: 0 24px 54px -34px rgba(24, 38, 60, 0.4); }
+.rbw-c2-panel-h { display: flex; align-items: center; gap: 9px; font-family: var(--fT); font-weight: 400; font-size: 19px; }
+.rbw-c2-panel-h i { display: grid; place-items: center; color: var(--acc); }
+.rbw-c2-panel-h svg { width: 18px; height: 18px; }
+.rbw-c2-ba { display: flex; flex-direction: column; gap: 4px; }
+.rbw-c2-ba-row { display: grid; grid-template-columns: 62px 1fr 58px; gap: 12px; align-items: center; padding: 8px 0; }
+.rbw-c2-ba-lbl { font-size: 11px; font-weight: 700; color: var(--mut); text-transform: uppercase; letter-spacing: 0.05em; }
+.rbw-c2-ba-row.on .rbw-c2-ba-lbl { color: var(--ink); }
+.rbw-c2-ba-bar { position: relative; height: 28px; border-radius: 8px; overflow: hidden; display: flex; background: var(--hair); }
+.rbw-c2-ba-bar .st { background: var(--stock); } .rbw-c2-ba-bar .bd { background: var(--bond); }
+.rbw-c2-ba-bar u { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); z-index: 2; }
+.rbw-c2-ba-v { font-family: var(--fN); font-size: 13px; font-weight: 700; text-align: right; }
+.rbw-c2-ba-mid { display: flex; justify-content: center; padding: 2px 0; }
+.rbw-c2-ba-mid span { font-size: 10.5px; font-weight: 700; color: var(--acc); background: color-mix(in srgb, var(--acc) 10%, transparent); border-radius: 99px; padding: 4px 12px; }
+.rbw-c2-legend { display: flex; gap: 16px; }
+.rbw-c2-legend span { display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; color: var(--mut); }
+.rbw-c2-legend i { width: 10px; height: 10px; border-radius: 3px; }
+.rbw-c2-legend i.st { background: var(--stock); } .rbw-c2-legend i.bd { background: var(--bond); }
+.rbw-c2-legend i.tg { width: 2px; height: 12px; border-radius: 2px; background: var(--ink); }
+.rbw-c2-shift { text-align: center; padding: 10px 0; }
+.rbw-c2-shift em { font-style: normal; font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
+.rbw-c2-shift-r { display: flex; align-items: baseline; justify-content: center; gap: 12px; margin: 10px 0; font-family: var(--fN); }
+.rbw-c2-shift-r s { text-decoration: none; font-size: 18px; color: var(--mut); }
+.rbw-c2-shift-r .ar { color: var(--dim); font-size: 16px; }
+.rbw-c2-shift-r b { font-size: 32px; font-weight: 700; color: var(--grn); }
+.rbw-c2-shift-d { font-family: var(--fN); font-size: 13px; font-weight: 700; }
+.rbw-c2-shift-d.up { color: var(--grn); } .rbw-c2-shift-d.dn { color: var(--red); }
+.rbw-c2-shift p { font-size: 12px; color: var(--mut); line-height: 1.5; margin-top: 12px; }
+.rbw-c2-nums { display: flex; flex-direction: column; gap: 2px; border-top: 1px dashed var(--line); padding-top: 14px; margin-top: auto; }
+.rbw-c2-n { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; }
+.rbw-c2-n em { font-style: normal; font-size: 12.5px; color: var(--mut); }
+.rbw-c2-n b { font-family: var(--fN); font-size: 15px; font-weight: 700; }
+
 /* пикер бумаги */
 .rbw-pop { position: absolute; width: 352px; background: var(--card); border: 1px solid var(--line); border-radius: 16px;
     box-shadow: 0 34px 72px -26px rgba(24, 38, 60, 0.5); padding: 9px; z-index: 30; }
@@ -587,6 +660,13 @@ body:has(#rbwBar) #pfWrap { gap: 0; }
     .rbw-modec h4 { font-size: 21px; }
     .rbw-mc-d { font-size: 13px; }
     .rbw-mc-ic { width: 50px; height: 50px; }
+    .rbw-calc2 { gap: 30px; grid-template-columns: minmax(0, 1fr) minmax(380px, 480px); }
+    .rbw-c2-row { padding: 19px 22px; }
+    .rbw-c2-num b { font-size: 34px; }
+    .rbw-c2-mono { width: 42px; height: 42px; }
+    .rbw-c2-panel { padding: 26px 28px; }
+    .rbw-c2-ba-bar { height: 32px; }
+    .rbw-c2-shift-r b { font-size: 36px; }
     .rbw-pf { padding: 18px 22px; grid-template-columns: 28px 1fr 300px 180px; }
     .rbw-pf-id b { font-size: 16.5px; }
     .rbw-autoc { padding: 20px 24px; grid-template-columns: 54px 1fr 240px 150px; }
@@ -605,11 +685,10 @@ body:has(#rbwBar) #pfWrap { gap: 0; }
 }
 
 /* адаптив: узкие экраны */
-@media (max-width: 1180px) {
+@media (max-width: 1240px) {
     .rbw-modes { grid-template-columns: 1fr; }
-    .rbw-why { flex-wrap: wrap; }
-    .rbw-w-alloc { width: 100%; border-left: 0; padding-left: 0; border-top: 1px dashed var(--hair); padding-top: 10px; flex-direction: row; }
-    .rbw-al { flex: 1; }
+    .rbw-calc2 { grid-template-columns: 1fr; }
+    .rbw-c2-right { order: -1; }             /* результат — над сделкой, когда в столбик */
 }
 @media (max-width: 900px) {
     .rbw-pf { grid-template-columns: 22px 1fr 120px; }
@@ -618,4 +697,7 @@ body:has(#rbwBar) #pfWrap { gap: 0; }
     .rbw-auto-pick { display: none; }
     .rbw-oleg { grid-template-columns: 76px 1fr 130px; }
     .rbw-lg-ord { display: none; }
+    .rbw-c2-row { grid-template-columns: 1fr auto; row-gap: 10px; }
+    .rbw-c2-side { grid-column: 1 / -1; }
+    .rbw-c2-money { grid-column: 1 / -1; text-align: left; }
 }
