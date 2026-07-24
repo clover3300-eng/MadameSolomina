@@ -151,8 +151,11 @@
             var coupon = +det.couponValue || 0, freq = +det.freq || 0;
             // «доходность в моменте в пересчёте на годовые» = насколько бумага выросла с покупки, годовых.
             // Продаём ту, где она максимальна (рывок цены — фиксируем прибыль).
-            var momYield = (ck.annual != null && isFinite(ck.annual)) ? ck.annual
-                : (ck.days > 0 && ck.pnlPct != null ? ck.pnlPct * 365 / ck.days : (ck.pnlPct || 0));
+            // «Доходность в моменте, годовых» — по формуле владельца (та же форма, что в карточке):
+            //   прибыль ÷ дней держания = прибыль/день; × 365 = прибыль/год; ÷ вложено × 100 = годовых.
+            var momYield = (ck.days > 0 && ck.invested > 0)
+                ? (ck.pnl / ck.days) * 365 / ck.invested * 100
+                : (ck.pnlPct || 0);
             // Доходность к погашению «в моменте» и прибыль в день — ТА ЖЕ формула bondEconAt,
             // что в карточке, но от ТЕКУЩЕЙ цены (price+nkd), а НЕ от цены покупки. Иначе бумага,
             // купленная дёшево, показывала бы фантомные 85% (мой локнутый YTM) против рыночных
@@ -161,7 +164,7 @@
             var ytm = (econ && isFinite(econ.annual)) ? econ.annual : bondYieldOf(isin, det);
             out.push({ h: h, id: h.id, isin: isin, name: h.name || isin, qty: ck.qty, price: price, nkd: nkd,
                 unit: price + nkd, yield: ytm, econ: econ, det: det, face: face, coupon: coupon, freq: freq,
-                coupYear: coupon * freq * ck.qty, val: ck.value, buy: ck.buy, momYield: momYield });
+                coupYear: coupon * freq * ck.qty, val: ck.value, buy: ck.buy, pnl: ck.pnl, invested: ck.invested, momYield: momYield });
         });
         return out;
     }
@@ -200,7 +203,8 @@
             var h = x.h, ck = x.c;
             var pot = PF.rbLivePotential ? PF.rbLivePotential(h) : (PF.potentialOf ? PF.potentialOf(h.ticker) : null);
             out.push({ h: h, id: h.id, ticker: h.ticker, name: h.name || h.ticker, qty: ck.qty,
-                price: ck.cur || 0, pot: pot, ech: echelonOf(h.ticker), val: ck.value, pnlPct: ck.pnlPct, buy: ck.buy });
+                price: ck.cur || 0, pot: pot, ech: echelonOf(h.ticker), val: ck.value, pnlPct: ck.pnlPct, buy: ck.buy,
+                pnl: ck.pnl, invested: ck.invested });
         });
         return out;
     }
@@ -738,7 +742,7 @@
             var hb = heldBonds(p).slice().sort(function (a, b) { return (b.momYield || -1e9) - (a.momYield || -1e9); });
             sellRows = hb.map(function (x) {
                 var cur = ctx.sell && isinKey(ctx.sell.isin) === isinKey(x.isin);
-                var pl = (x.val != null && x.buy != null) ? x.val - x.buy : null;
+                var pl = (x.pnl != null && isFinite(x.pnl)) ? x.pnl : null;
                 var plStr = pl != null ? (pl >= 0 ? '+' : '−') + fmtRub(Math.abs(pl)) : '—';
                 return cmpRow('sell', x.id, cur, mono2(x.name), esc(x.name),
                     x.qty + ' шт · принесла ' + plStr,
@@ -750,7 +754,7 @@
             var hs = heldStocks(p).slice().sort(function (a, b) { return (a.pot || 1e9) - (b.pot || 1e9); });
             sellRows = hs.map(function (x) {
                 var cur = ctx.sell && ctx.sell.ticker === x.ticker;
-                var pl = (x.val != null && x.buy != null) ? x.val - x.buy : null;
+                var pl = (x.pnl != null && isFinite(x.pnl)) ? x.pnl : null;
                 var plStr = pl != null ? (pl >= 0 ? '+' : '−') + fmtRub(Math.abs(pl)) : '—';
                 return cmpRow('sell', x.id, cur, mono2(x.ticker), esc(x.ticker),
                     x.qty + ' шт · принесла ' + plStr,
