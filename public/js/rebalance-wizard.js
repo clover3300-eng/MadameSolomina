@@ -153,14 +153,33 @@
             // Продаём ту, где она максимальна (рывок цены — фиксируем прибыль).
             var momYield = (ck.annual != null && isFinite(ck.annual)) ? ck.annual
                 : (ck.days > 0 && ck.pnlPct != null ? ck.pnlPct * 365 / ck.days : (ck.pnlPct || 0));
+            // Доходность к погашению «в моменте» и прибыль в день — ТА ЖЕ формула bondEconAt,
+            // что в карточке, но от ТЕКУЩЕЙ цены (price+nkd), а НЕ от цены покупки. Иначе бумага,
+            // купленная дёшево, показывала бы фантомные 85% (мой локнутый YTM) против рыночных
+            // 13% у кандидатов — несравнимо. От текущей цены обе стороны в одной системе координат.
+            var econ = bondEconAt(det, price + nkd, nkd, face);
+            var ytm = (econ && isFinite(econ.annual)) ? econ.annual : bondYieldOf(isin, det);
             out.push({ h: h, id: h.id, isin: isin, name: h.name || isin, qty: ck.qty, price: price, nkd: nkd,
-                unit: price + nkd, yield: bondYieldOf(isin, det), det: det, face: face, coupon: coupon, freq: freq,
+                unit: price + nkd, yield: ytm, econ: econ, det: det, face: face, coupon: coupon, freq: freq,
                 coupYear: coupon * freq * ck.qty, val: ck.value, buy: ck.buy, momYield: momYield });
         });
         return out;
     }
     function bondCands() {
-        var bs = allBonds(), out = [];
+        // источник и экономика — ТЕ ЖЕ, что в карточке rb5: ofzMarket()+ofzCand() дают
+        // годовую доходность к погашению (econ.annual) и прибыль в день (econ.perDay).
+        if (PF.rbOfzMarket && PF.rbOfzCand) {
+            var mk = PF.rbOfzMarket() || [], out = [];
+            mk.forEach(function (b) {
+                if (!(b.price > 0)) return;
+                var cd = PF.rbOfzCand(b), det = (PF.bondDetail ? PF.bondDetail(isinKey(b.t)) : null) || {};
+                var yv = (cd.econ && isFinite(cd.econ.annual)) ? cd.econ.annual : toNum(b.sheetYield);
+                out.push({ t: b.t, isin: isinKey(b.t), name: b.n || b.t, price: b.price, nkd: b.nkd, unit: cd.unit,
+                    yield: yv, econ: cd.econ, coupon: +det.couponValue || 0, freq: +det.freq || 2 });
+            });
+            return out;
+        }
+        var bs = allBonds(), out2 = [];
         bs.forEach(function (b) {
             var isin = isinKey(b.t), lv = (PF.liveBond ? PF.liveBond(isin) : null) || {};
             var price = lv.price > 0 ? lv.price : (+b.p || 0);
@@ -168,10 +187,10 @@
             var det = (PF.bondDetail ? PF.bondDetail(isin) : null) || {};
             var coupon = +det.couponValue || 0, freq = +det.freq || 2;
             if (!(price > 0)) return;
-            out.push({ t: b.t, isin: isin, name: b.n || isin, price: price, nkd: nkd, unit: price + nkd,
-                yield: toNum(b.y), coupon: coupon, freq: freq });
+            out2.push({ t: b.t, isin: isin, name: b.n || isin, price: price, nkd: nkd, unit: price + nkd,
+                yield: toNum(b.y), econ: null, coupon: coupon, freq: freq });
         });
-        return out;
+        return out2;
     }
     /* мои акции */
     function heldStocks(p) {
@@ -592,13 +611,12 @@
             title = 'Переложить ≈ ' + fmtRub(ctx.move) + ' из ' + (over === 'stock' ? 'акций в облигации' : 'облигаций в акции');
             sub = (over === 'stock' ? 'Акций' : 'Облигаций') + ' стало больше цели на ' + d1(Math.abs(dev)) + '% — этот обмен вернёт портфель к цели ' + (100 - ctx.tb) + ' / ' + ctx.tb + '. Всё можно поправить: бумагу, количество.';
         } else if (ctx.cls === 'bond') {
-            var sMom = ctx.sell.momYield, momStr = (sMom != null && isFinite(sMom)) ? ' (это ≈ ' + d1(sMom) + '% годовых)' : '';
+            var sMom = ctx.sell.momYield, momStr = (sMom != null && isFinite(sMom)) ? ' (≈ ' + d1(sMom) + '% годовых)' : '';
             var betterY = (ctx.sell.yield != null && ctx.buy.yield != null && ctx.buy.yield > ctx.sell.yield), moreB = d.more > 0;
-            title = moreB ? 'Продать выросшую, купить доходную: облигаций ' + d.qty + ' → ' + d.buyQty
-                : (betterY ? 'Обменять на более доходную облигацию' : 'Обмен внутри облигаций');
-            sub = esc(sellNm) + ' сильнее других выросла в цене' + momStr + ' — сейчас её выгодно продать и забрать прибыль. На всю выручку берём '
-                + (betterY ? '<b>более доходную (' + fmtPct(ctx.buy.yield) + ' против ' + fmtPct(ctx.sell.yield) + ')</b>' : 'другую') + ' облигацию'
-                + (moreB ? ', и её выходит больше — ' + d.qty + ' → ' + d.buyQty : '') + '. Доли акций и облигаций не меняются.';
+            title = betterY ? 'Продать выросшую — купить доходнее' : 'Обмен внутри облигаций';
+            sub = 'Продаём ' + esc(sellNm) + ': она выросла в цене' + momStr + ', выгодно зафиксировать. На выручку берём '
+                + (betterY ? 'бумагу доходнее к погашению' : 'выбранную бумагу')
+                + (moreB ? ' — и её выходит больше' : '') + '. Прибыль в день растёт, доли акций и облигаций те же.';
         } else {
             title = 'Обменять акцию на более перспективную';
             sub = esc(sellNm) + ' по ожидаемому росту слабее другой бумаги того же уровня. Доля акций та же.';
@@ -651,6 +669,17 @@
             + (tb != null ? '<u style="left:' + clamp(100 - tb, 0, 100) + '%"></u>' : '') + '</div>'
             + '<div class="rbw-c2-ba-v">' + Math.round(sPct) + ' / ' + Math.round(bPct) + '</div></div>';
     }
+    // «машина денег»: суммарная прибыль в день по облигациям ДО и ПОСЛЕ обмена
+    // (та же экономика, что в карточке rb5 — прибыль в день по каждой бумаге × кол-во)
+    function bondDay(ctx, d) {
+        var sP = (ctx.sell.econ && isFinite(ctx.sell.econ.perDay)) ? ctx.sell.econ.perDay : null;
+        var bP = (ctx.buy.econ && isFinite(ctx.buy.econ.perDay)) ? ctx.buy.econ.perDay : null;
+        if (sP == null || bP == null) return null;
+        var before = 0, full = true;
+        heldBonds(ctx.p).forEach(function (x) { if (x.econ && isFinite(x.econ.perDay)) before += x.econ.perDay * x.qty; else full = false; });
+        var after = before - d.qty * sP + d.buyQty * bP;
+        return { before: before, after: after, delta: after - before, full: full, perSell: sP, perBuy: bP };
+    }
     // правая панель «Что изменится»
     function c2Panel(ctx, d) {
         var p = ctx.p, isAnnual = ctx.kind === 'annual';
@@ -665,19 +694,19 @@
                 + c2BaRow('Станет', aa.stockPct, aa.bondPct, tb, true) + '</div>'
                 + '<div class="rbw-c2-legend"><span><i class="st"></i>Акции</span><span><i class="bd"></i>Облигации</span><span><i class="tg"></i>Цель</span></div>';
         } else if (ctx.cls === 'bond') {
-            var by = ctx.buy.yield, sMom2 = ctx.sell.momYield;
-            if (d.more > 0) {
-                viz = '<div class="rbw-c2-shift"><em>Облигаций станет</em>'
-                    + '<div class="rbw-c2-shift-r"><s>' + d.qty + ' шт</s><span class="ar">→</span><b>' + d.buyQty + ' шт</b></div>'
-                    + '<div class="rbw-c2-shift-d up">▲ +' + d.more + ' ' + plur(d.more, 'бумага', 'бумаги', 'бумаг') + ' на ту же сумму</div>'
-                    + '<p>Продаём выросшую в цене' + (sMom2 != null ? ' (≈ ' + d1(sMom2) + '% годовых)' : '') + ' и берём ' + (by != null ? 'доходнее (' + fmtPct(by) + ' к погашению) и ' : '') + 'дешевле — поэтому бумаг больше.' + (d.coupDelta >= 0.5 ? ' Купонов в год: +' + f2(d.coupDelta) + ' ₽.' : '') + '</p></div>';
-            } else {
-                var betterY3 = (ctx.sell.yield != null && by != null && by > ctx.sell.yield);
-                viz = '<div class="rbw-c2-shift"><em>Годовая доходность к погашению</em>'
-                    + '<div class="rbw-c2-shift-r"><s>' + (ctx.sell.yield != null ? fmtPct(ctx.sell.yield) : '—') + '</s><span class="ar">→</span><b>' + (by != null ? fmtPct(by) : '—') + '</b></div>'
-                    + (betterY3 ? '<div class="rbw-c2-shift-d up">▲ +' + d1(by - ctx.sell.yield) + '% годовых</div>' : '')
-                    + '<p>' + (betterY3 ? 'Берём облигацию доходнее к погашению.' : 'Меняем на выбранную облигацию.') + ' Доли акций и облигаций не меняются.</p></div>';
-            }
+            var by = ctx.buy.yield, sy = ctx.sell.yield, day = bondDay(ctx, d);
+            var upDay = day && day.delta > 0.005;
+            // герой — прибыль в день (машина денег), как в карточке
+            var hero = day
+                ? '<div class="rbw-c2-shift"><em>Прибыль в день · по облигациям</em>'
+                    + '<div class="rbw-c2-shift-r"><s>' + f2(day.before) + ' ₽</s><span class="ar">→</span><b class="' + (upDay ? '' : 'flat') + '">' + f2(day.after) + ' ₽</b></div>'
+                    + '<div class="rbw-c2-shift-d ' + (upDay ? 'up' : '') + '">' + (upDay ? '▲ +' + f2(day.delta) + ' ₽/день · +' + f2(day.delta * 30) + ' ₽/мес' : 'без роста прибыли в день') + '</div></div>'
+                : '<div class="rbw-c2-shift"><em>Прибыль в день</em><div class="rbw-c2-shift-r"><b>—</b></div><div class="rbw-c2-shift-d">купоны ещё грузятся…</div></div>';
+            // компактные метрики: бумаг и доходность к погашению
+            var chips = '<div class="rbw-c2-mini">'
+                + '<div class="rbw-c2-mi"><em>Облигаций</em><b>' + d.qty + ' <i>→</i> ' + d.buyQty + (d.more > 0 ? ' <u class="up">+' + d.more + '</u>' : '') + '</b></div>'
+                + '<div class="rbw-c2-mi"><em>Доходность к погашению</em><b>' + (sy != null ? fmtPct(sy) : '—') + ' <i>→</i> ' + (by != null ? fmtPct(by) : '—') + (by != null && sy != null && by > sy ? ' <u class="up">+' + d1(by - sy) + '</u>' : '') + '</b></div></div>';
+            viz = hero + chips;
         } else {
             viz = '<div class="rbw-c2-shift"><em>Ожидаемый рост</em>'
                 + '<div class="rbw-c2-shift-r"><s>' + (d.potFrom != null ? fmtPct(d.potFrom) : '—') + '</s><span class="ar">→</span><b>' + (d.potTo != null ? fmtPct(d.potTo) : '—') + '</b></div>'
@@ -740,8 +769,9 @@
                 var n = x.unit > 0 ? Math.floor(proceeds / (x.unit * (1 + f))) : 0;
                 var more = n - sellQ, own = held[isinKey(x.isin)];
                 var badge = more > 0 ? ' <span class="rbw-cmp-more">+' + more + '</span>' : (n > 0 && more < 0 ? ' <span class="rbw-cmp-less">' + more + '</span>' : '');
+                var pd = (x.econ && isFinite(x.econ.perDay)) ? ' · ' + f2(x.econ.perDay) + ' ₽/дн·шт' : '';
                 return cmpRow('buy', x.isin, cur, mono2(x.name), esc(x.name) + badge + (own ? ' <span class="rbw-own">в портф.</span>' : ''),
-                    f2(x.price) + ' ₽ · ' + n + ' шт на вашу сумму',
+                    n + ' шт' + pd,
                     (x.yield != null ? fmtPct(x.yield) : '—'), 'к погашению', ' up');
             }).join('');
         } else {
