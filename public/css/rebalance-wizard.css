@@ -447,6 +447,85 @@ body:has(#rbwBar) #pfWrap { gap: 0; }
 .rbw-review svg { flex: none; width: 17px; height: 17px; color: var(--amb); }
 .rbw-review b { color: var(--ink); }
 
+/* ═══════════ ВИЗУАЛЬНЫЙ ПОЛИШ ═══════════ */
+/* мягкое фоновое свечение под рабочей областью — глубина без шума */
+.rbw-main { position: relative; }
+.rbw-main::before { content: ''; position: absolute; left: 8%; top: -6%; width: 640px; height: 420px; border-radius: 50%;
+    pointer-events: none; z-index: 0; opacity: .7;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--acc) 8%, transparent), transparent 72%); }
+.rbw-mh, .rbw-body, .rbw-foot { position: relative; z-index: 1; }
+
+/* фокус-кольца (доступность + аккуратность) */
+.rbw button:focus-visible, .rbw .rbw-pf:focus-visible, .rbw .rbw-pick:focus-visible, .rbw .rbw-pop-row:focus-visible,
+.rbw .rbw-modec:focus-visible, .rbw .rbw-autoc:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--acc) 60%, transparent); outline-offset: 2px; }
+
+/* плавность интерактива */
+.rbw-btn, .rbw-exit, .rbw-pf, .rbw-modec, .rbw-autoc, .rbw-oleg, .rbw-pick, .rbw-cchip, .rbw-df-auto, .rbw-df-add,
+.rbw-thr-b, .rbw-qty-b, .rbw-lg-seg span, .rbw-cls span, .rbw-mc-pick, .rbw-auto-pick, .rbw-rs, .rbw-pop-row, .rbw-nwarn u, .rbw-rl-cancel {
+    transition: border-color .15s ease, box-shadow .16s ease, transform .15s ease, background .15s ease, color .14s ease; }
+.rbw-btn-dark:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 18px 36px -16px rgba(16, 24, 40, 0.62); }
+.rbw-btn-dark:active:not(:disabled) { transform: translateY(0); box-shadow: 0 8px 18px -12px rgba(16, 24, 40, 0.6); }
+.rbw-exit:hover { background: var(--bg); }
+
+/* карточки выбора: ховер-приподнятие для НЕвыбранных */
+.rbw-pf:not(.sel):hover, .rbw-modec:not(.sel):not(.dis):hover, .rbw-autoc:not(.sel):hover {
+    border-color: color-mix(in srgb, var(--acc) 32%, transparent); transform: translateY(-1px);
+    box-shadow: 0 12px 28px -18px rgba(24, 38, 60, 0.4); }
+.rbw-pf.sel, .rbw-modec.sel, .rbw-autoc.sel { background: color-mix(in srgb, var(--acc) 3.5%, var(--card)); }
+.rbw-pick:hover { border-color: color-mix(in srgb, var(--acc) 45%, transparent); }
+.rbw-oleg:hover { border-color: color-mix(in srgb, var(--acc) 22%, transparent); box-shadow: 0 8px 22px -18px rgba(24, 38, 60, 0.35); }
+.rbw-df-auto:hover, .rbw-thr-b:hover, .rbw-qty-b:hover { border-color: color-mix(in srgb, var(--acc) 50%, transparent); color: var(--acc); }
+.rbw-nwarn u:hover, .rbw-rl-cancel:hover { text-decoration: underline; }
+
+/* активный шаг рельсы — мягкое кольцо */
+.rbw-rs.on .rbw-rs-i { box-shadow: 0 0 0 4px color-mix(in srgb, var(--ink) 12%, transparent); }
+.rbw-rs.done:hover .rbw-rs-t b { color: var(--ink); }
+
+/* обогащённая карточка портфеля в рельсе (низ) */
+.rbw-rc-drift { margin-left: auto; font-family: var(--fN); font-size: 9px; font-weight: 700; border-radius: 7px; padding: 3px 7px; white-space: nowrap; }
+.rbw-rc-drift.hi { color: var(--amb); background: color-mix(in srgb, var(--amb) 14%, transparent); }
+.rbw-rc-drift.ok { color: var(--grn); background: color-mix(in srgb, var(--grn) 13%, transparent); }
+.rbw-rc-drift.mid { color: var(--mut); background: var(--hair); }
+.rbw-rc-val { display: block; font-family: var(--fN); font-size: 18px; font-weight: 700; letter-spacing: -0.01em; margin: 9px 0 11px; }
+.rbw-rc-bar { height: 7px; border-radius: 99px; overflow: hidden; display: flex; background: var(--hair); }
+.rbw-rc-bar .st { background: var(--stock); } .rbw-rc-bar .bd { background: var(--bond); }
+.rbw-rc-lg { display: flex; justify-content: space-between; font-family: var(--fN); font-size: 9px; color: var(--mut); margin-top: 6px; }
+.rbw-rc-lg .a { color: var(--stock); } .rbw-rc-lg .b { color: var(--bond); }
+
+/* слайдер количества — кастомный (нативный выбивался из языка) */
+.rbw-qty-in { -webkit-appearance: none; appearance: none; height: 6px; border-radius: 99px; background: var(--hair); outline: none; }
+.rbw-qty-in::-webkit-slider-runnable-track { height: 6px; border-radius: 99px; }
+.rbw-qty-in::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%;
+    background: var(--card); border: 2px solid var(--acc); margin-top: -6px; box-shadow: 0 2px 7px rgba(16, 24, 40, 0.28); cursor: pointer; transition: transform .12s ease; }
+.rbw-qty-in::-webkit-slider-thumb:hover { transform: scale(1.14); }
+.rbw-qty-in::-moz-range-track { height: 6px; border-radius: 99px; background: var(--hair); }
+.rbw-qty-in::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--card); border: 2px solid var(--acc); box-shadow: 0 2px 7px rgba(16, 24, 40, 0.28); cursor: pointer; }
+
+/* тонкие скроллбары */
+.rbw-body::-webkit-scrollbar, .rbw-pop-scroll::-webkit-scrollbar { width: 9px; }
+.rbw-body::-webkit-scrollbar-thumb, .rbw-pop-scroll::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--mut) 28%, transparent); border-radius: 99px; border: 3px solid transparent; background-clip: padding-box; }
+.rbw-body::-webkit-scrollbar-thumb:hover, .rbw-pop-scroll::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--mut) 45%, transparent); background-clip: padding-box; }
+.rbw-body, .rbw-pop-scroll { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--mut) 30%, transparent) transparent; }
+
+/* появление контента при смене шага */
+@keyframes rbw-in { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: none; } }
+.rbw-main.rbw-anim .rbw-mh { animation: rbw-in .3s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.rbw-main.rbw-anim .rbw-body { animation: rbw-in .36s cubic-bezier(0.2, 0.7, 0.3, 1) .05s both; }
+
+/* попап-пикер и виджет-«машина» — плавный вход */
+@keyframes rbw-pop { from { opacity: 0; transform: translateY(-6px) scale(.985); } to { opacity: 1; transform: none; } }
+.rbw-pop { transform-origin: top center; animation: rbw-pop .16s ease both; }
+.rbw-swap i { transition: transform .25s cubic-bezier(0.34, 1.4, 0.5, 1), box-shadow .25s ease; }
+.rbw-card:hover .rbw-swap i { transform: scale(1.09); box-shadow: 0 18px 34px -14px rgba(16, 24, 40, 0.6); }
+
+@media (prefers-reduced-motion: reduce) {
+    .rbw-main.rbw-anim .rbw-mh, .rbw-main.rbw-anim .rbw-body, .rbw-pop, .rbw-swap i { animation: none; transition: none; }
+    .rbw-btn-dark:hover, .rbw-pf:hover, .rbw-modec:hover, .rbw-autoc:hover { transform: none; }
+}
+
 /* адаптив: узкие экраны */
 @media (max-width: 1180px) {
     .rbw-modes { grid-template-columns: 1fr; }

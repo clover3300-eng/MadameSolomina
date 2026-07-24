@@ -373,12 +373,20 @@
         });
         var p = curPf(), ctx = '';
         if (p && rbw.step >= 2) {
-            var c = PF.calcPf(p);
+            var c = PF.calcPf(p), tb = targetBond(p);
+            var stockPct = Math.round(c.stockPct), bondPct = 100 - stockPct;
+            var oneClass = (c.stockVal <= 0 || c.bondVal <= 0), dev = c.bondPct - tb;
+            var drift = oneClass ? '<span class="rbw-rc-drift mid">один класс</span>'
+                : (Math.abs(dev) < driftThr(p) ? '<span class="rbw-rc-drift ok">в норме</span>'
+                    : '<span class="rbw-rc-drift hi">' + (dev >= 0 ? '+' : '−') + d1(Math.abs(dev)) + ' п.п.</span>');
+            var bar = oneClass ? '' : '<div class="rbw-rc-bar"><i class="st" style="width:' + stockPct + '%"></i><i class="bd" style="width:' + bondPct + '%"></i></div>'
+                + '<div class="rbw-rc-lg"><span class="a">Акции ' + stockPct + '</span><span class="b">Обл. ' + bondPct + '</span></div>';
             var modeLbl = { annual: 'Годовая', moment: 'В моменте', auto: 'Авто' }[rbw.mode];
             var modeSub = rbw.mode === 'moment' ? (rbw.cls === 'bond' ? 'внутри ОФЗ' : 'внутри акций') : (rbw.mode === 'annual' ? 'между классами' : 'система выбрала');
             ctx = '<div class="rbw-ctx"><em>Портфель</em>'
                 + '<div class="rbw-rc-r"><span class="rbw-rc-dot" style="background:' + esc(p.color || '#5f7fa8') + '"></span>'
-                + '<b>' + esc(p.name) + '</b><u>' + fmtRub(c.value) + '</u></div>'
+                + '<b>' + esc(p.name) + '</b>' + drift + '</div>'
+                + '<u class="rbw-rc-val">' + fmtRub(c.value) + '</u>' + bar
                 + (rbw.mode && rbw.step >= 3 ? '<div class="rbw-rc-mode"><i>' + modeLbl + '</i><span>' + modeSub + '</span></div>' : '')
                 + '</div>';
         } else {
@@ -855,6 +863,7 @@
     }
 
     /* ═══════════ ГЛАВНЫЙ РЕНДЕР ═══════════ */
+    var rbwLastKey = null;
     PF.rbwSceneHtml = function () {
         var main;
         try {
@@ -869,6 +878,9 @@
             main = mainHtml('Ошибка', 'Что-то пошло не так', esc(e && e.message), '<div class="rbw-empty">Обновите страницу и попробуйте снова.</div>', '');
             if (window.console) console.error('[rbw]', e);
         }
+        // плавное появление контента ТОЛЬКО при смене шага/режима (не на каждый ре-рендер пикера/кол-ва)
+        var key = String(rbw.step) + '|' + String(rbw.mode) + '|' + String(rbw.cls);
+        if (key !== rbwLastKey) { main = main.replace('class="rbw-main"', 'class="rbw-main rbw-anim"'); rbwLastKey = key; }
         return '<div class="rbw" id="rbwBar" onclick="rbwClosePicker()">' + railHtml() + main + '</div>';
     };
 
