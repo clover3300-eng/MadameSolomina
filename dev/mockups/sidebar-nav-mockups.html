@@ -238,8 +238,8 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 
 /* ════════════════ Д · ЦИФЕРБЛАТЫ И ИСКРЫ ════════════════ */
 .nD{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:12px 12px 6px}
-.nD .cell{position:relative;padding:9px 4px 8px;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:7px;
-  font-size:11px;font-weight:600;color:var(--mut);text-align:center}
+.nD .cell{position:relative;padding:8px 2px 7px;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:6px;
+  font-size:10.5px;font-weight:600;color:var(--mut);text-align:center}
 .nD .cell .circ{width:34px;height:34px;position:relative}
 .nD .cell .circ svg.ic{width:17px;height:17px}
 .nD .cell span{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
@@ -288,7 +288,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   font-size:10.5px;font-weight:700;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nJ .seg b.on{background:var(--card);color:var(--ink);box-shadow:0 2px 8px -4px rgba(16,24,40,.45)}
 .sc.dark .nJ .seg b.on{box-shadow:none;background:#1B2434}
-.nJ .seg b .mk{display:inline-block;width:5px;height:5px;border-radius:50%;background:#c2760a;margin-left:5px;vertical-align:middle}
+.nJ .seg b .pt{display:inline-block;width:5px;height:5px;border-radius:50%;background:#c2760a;margin-left:5px;vertical-align:middle}
 .nJ .list{margin-top:6px;display:flex;flex-direction:column;gap:1px}
 .nJ .row{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:10px;font-size:12.5px;font-weight:600;color:var(--mut)}
 .nJ .row svg{width:16px;height:16px;flex:none;opacity:.7}
@@ -335,6 +335,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   <div class="verdict">
     <p><b>Что не так сегодня.</b> Разделов пять («Расчёт», «Портфели», «Ребаланс», «Рынок», «Тест»; «Админка» — только у админа), а колонок четыре: второй ряд состоит из одной ячейки, и справа от неё зияет пустая половина. Подпись живёт в 63px — «Ребаланс» помещается впритык, а переименованный из админки раздел уже режется многоточием. И главное: сетка занимает 160px и не говорит <em>ничего</em>, кроме имени, — единственный носитель состояния во всей панели это красный бейдж дрейфа на «Ребалансе».</p>
     <p><b>Что предлагают варианты.</b> А — выровнять ряды по смыслу (3 колонки, две названные группы). Б — те же 3 колонки, но каждая ячейка несёт живое число. В — вернуть строки, где число стоит справа от имени. Г — сжать разделы в одну полосу и отдать 100px второму уровню. Ни один не меняет состав разделов и не трогает рейку 84px — про неё отдельная врезка в конце.</p>
+    <p><b>Часть 2 спорит уже не о раскладке.</b> Д — состояние прямо в кольце иконки, ноль лишней высоты. Е — «Портфели» вбирают табло и становятся крупной плиткой. Ж — сегмент групп сверху, разделы строками внутри. З — полоса иконок со строкой-статусом под ней. Два из них трогают соседей: Е забирает табло, Ж вбирает часть второго уровня.</p>
   </div>
 </div>
 
@@ -610,6 +611,251 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   </div>
 </div>
 
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">·</span><h2>Часть 2: варианты, которые меняют не раскладку, а договор</h2></div>
+  <div class="mk-sub">А–Г спорят о том, сколько колонок и строк. Следующие четыре спорят о другом: <b>чем вообще является панель разделов</b> — витриной состояния (Д), главным экраном с одним большим разделом (Е), двухэтажным переключателем (Ж) или строкой с бегущей подписью (З). Два из них трогают соседей — Е забирает табло, Ж вбирает в себя часть второго уровня; это названо в минусах честно.</div>
+</div>
+
+<!-- ═══════════════════ Д ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">Д</span><h2>Циферблаты: состояние в кольце иконки, ноль лишних пикселей</h2><span class="mk-tag ok">не растёт вообще</span></div>
+  <div class="mk-sub">Единственный вариант, который добавляет панели смысл, <b>не добавив высоты</b> — 156px против нынешних 160. Кружок раздела перестаёт быть просто иконкой: вокруг него идёт <b>дуга-циферблат</b> — сколько пройдено до предела. У «Ребаланса» предел — порог дрейфа <code>PF.DRIFT_THR = 3</code>: дуга растёт вместе с расхождением долей и <b>замыкается в кольцо ровно тогда, когда пора ребалансировать</b>. Правило жёсткое: <b>дуга есть только там, где у величины есть предел</b>. У дня рынка предела нет, шкала соврала бы — там ставится <b>искра</b>, точка знака: зелёная или красная, без числа. У «Расчёта» и «Теста» нет ни того, ни другого — и не рисуем ничего.</div>
+  <div class="scroller"><div class="strip">
+    <div>
+      <div class="sc solo" style="height:320px">
+        <div class="bx">
+          <div class="bx-head"><div class="mark">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
+          <div class="nD" style="margin-top:14px">
+            <div class="cell on"><i class="circ on"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg><b class="spark"></b></i><span>Портфели</span></div>
+            <div class="cell"><i class="circ"><svg class="ring" viewBox="0 0 44 44"><circle class="trk" cx="22" cy="22" r="20"/><circle class="arc" cx="22" cy="22" r="20" stroke-dasharray="125.6 0"/></svg><svg class="ic" viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></i><span>Ребаланс</span></div>
+            <div class="cell"><i class="circ"><svg class="ic" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><b class="spark"></b></i><span>Рынок</span></div>
+            <div class="cell"><i class="circ"><svg class="ic" viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span>Расчёт</span></div>
+            <div class="cell"><i class="circ"><svg class="ic" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></i><span>Тест</span></div>
+            <div class="cell"><i class="circ"><svg class="ic" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></i><span>Админка</span></div>
+          </div>
+        </div>
+        <div class="tip" style="left:100px;top:120px">Дрейф 4,1 п.п. из 3 — кольцо замкнулось</div>
+      </div>
+      <div class="spec-cap"><b>Д · порог пройден</b>Кольцо «Ребаланса» замкнуто — расхождение долей достигло порога. Искры на «Портфелях» и «Рынке» говорят только знак дня: зелёная точка вместо зелёного числа.</div>
+    </div>
+
+    <div>
+      <div class="sc solo" style="height:320px">
+        <div class="bx">
+          <div class="bx-head"><div class="mark">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
+          <div class="nD" style="margin-top:14px">
+            <div class="cell"><i class="circ"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg><b class="spark neg"></b></i><span>Портфели</span></div>
+            <div class="cell"><i class="circ"><svg class="ring" viewBox="0 0 44 44"><circle class="trk" cx="22" cy="22" r="20"/><circle class="arc pos" cx="22" cy="22" r="20" stroke-dasharray="46 125.6"/></svg><svg class="ic" viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></i><span>Ребаланс</span></div>
+            <div class="cell"><i class="circ"><svg class="ic" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><b class="spark neg"></b></i><span>Рынок</span></div>
+            <div class="cell on"><i class="circ on"><svg class="ic" viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span>Расчёт</span></div>
+            <div class="cell"><i class="circ"><svg class="ic" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></i><span>Тест</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="spec-cap"><b>Д · дрейф 1,1 п.п.</b>Дуга прошла треть — до порога далеко, и это видно, не читая. День красный: обе искры красные. Высота панели ровно та же, что в проде.</div>
+    </div>
+
+    <div>
+      <div class="sc solo dark" style="height:320px">
+        <div class="bx">
+          <div class="bx-head"><div class="mark">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
+          <div class="nD" style="margin-top:14px">
+            <div class="cell"><i class="circ"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></i><span>Портфели</span></div>
+            <div class="cell"><i class="circ"><svg class="ic" viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></i><span>Ребаланс</span></div>
+            <div class="cell"><i class="circ"><svg class="ic" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></i><span>Рынок</span></div>
+            <div class="cell on"><i class="circ on"><svg class="ic" viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span>Расчёт</span></div>
+            <div class="cell"><i class="circ"><svg class="ic" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></i><span>Тест</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="spec-cap"><b>Д · первый день, тёмная</b>Целей нет, вчерашнего снимка нет — ни дуг, ни искр. Панель выглядит ровно как сегодняшняя: пустое состояние ничего не ломает, потому что украшений нет вовсе.</div>
+    </div>
+  </div></div>
+  <div class="notes">
+    <div class="note ok"><i>+</i><span><b>Ноль цены по высоте.</b> Дуга идёт снаружи кружка, в те пиксели, что и так пустуют между ячейками: замер — 156px против нынешних 160.</span></div>
+    <div class="note ok"><i>+</i><span><b>Порог становится зримым.</b> «4,1 п.п.» надо прочитать и сравнить с тройкой в голове; замкнутое кольцо сравнивать не надо — оно и есть сравнение.</span></div>
+    <div class="note ok"><i>+</i><span><b>Ложится слоем на А, Б, Г.</b> Это не раскладка, а язык ячейки: кольцо можно надеть на любую из них — и на рейку 84px тоже.</span></div>
+    <div class="note"><i>i</i><span><b>Правило шкалы записано в дизайне.</b> Дуга — только для величины с пределом. Это защита от соблазна нарисовать дугой «день рынка», у которого предела нет.</span></div>
+    <div class="note no"><i>−</i><span><b>Точных чисел не появляется.</b> «Насколько именно» по-прежнему живёт в подсказке и в «Пульсе дня»; панель говорит «близко / пора», а не «4,1».</span></div>
+    <div class="note no"><i>−</i><span><b>Кольцо и активная заливка спорят.</b> У активного раздела кружок уже залит зелёным — дуга на нём читается хуже, для активной ячейки нужен свой тон трека.</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ Е ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">Е</span><h2>Бенто: «Портфели» вбирают табло и становятся плиткой</h2><span class="mk-tag warn">трогает табло</span></div>
+  <div class="mk-sub">Наблюдение, из которого растёт вариант: <b>табло и раздел «Портфели» — это одно и то же</b>, нарисованное дважды. Табло показывает капитал по всем портфелям и по клику ведёт на «Обзор»; ячейка «Портфели» ведёт туда же, но молчит. Здесь они <b>сливаются в одну плитку 2×2</b> — капитал, день, линия дня, — а остальные разделы становятся мелкими ячейками вокруг. Ячейки перестают быть одинаковыми, и это главное: <b>площадь наконец отражает частоту</b>. Верх колонки: было табло 111px + сетка 160px = 271px, стало 241px одним блоком.</div>
+  <div class="scroller"><div class="strip">
+    <div>
+      <div class="sc solo" style="height:330px">
+        <div class="bx">
+          <div class="bx-head"><div class="mark">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
+          <div class="nE" style="margin-top:14px">
+            <div class="big">
+              <div class="hd"><i class="circ on"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></i><span class="nm">Портфели</span></div>
+              <div class="vl num">1 462 380 ₽</div>
+              <div class="sub num">+11 640 ₽ · +0,8% за сегодня</div>
+              <svg class="spk" viewBox="0 0 200 18" preserveAspectRatio="none"><path d="M0 13 L26 11 L52 15 L78 7 L104 10 L130 4 L156 6 L200 2" stroke-width="1.6" vector-effect="non-scaling-stroke"/></svg>
+            </div>
+            <div class="cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></i><span class="nm">Ребаланс</span><span class="vl warn num">4,1 п.п.</span></div>
+            <div class="cell"><i class="circ"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></i><span class="nm">Рынок</span><span class="vl pos num">+0,6%</span></div>
+            <div class="cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span class="nm">Расчёт</span></div>
+            <div class="cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></i><span class="nm">Тест</span></div>
+            <div class="cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></i><span class="nm">Админка</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="spec-cap"><b>Е · бенто</b>Табло больше нет отдельным блоком: капитал живёт внутри «Портфелей», куда он и ведёт. Плитка — самая крупная мишень колонки, мелкие ячейки — 30px кружок и подпись.</div>
+    </div>
+
+    <div>
+      <div class="sc solo" style="height:330px">
+        <div class="bx">
+          <div class="bx-head"><div class="mark">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
+          <div class="nE" style="margin-top:14px">
+            <div class="big">
+              <div class="hd"><i class="circ"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></i><span class="nm">Портфели</span></div>
+              <div class="vl" style="font-size:13px;color:var(--mut);font-family:var(--fU);font-weight:600;letter-spacing:0">Портфелей пока нет</div>
+              <div class="sub" style="color:var(--dim);font-weight:500">Создать первый</div>
+            </div>
+            <div class="cell on"><i class="circ on"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></i><span class="nm">Ребаланс</span></div>
+            <div class="cell"><i class="circ"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></i><span class="nm">Рынок</span><span class="vl pos num">+0,6%</span></div>
+            <div class="cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span class="nm">Расчёт</span></div>
+            <div class="cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></i><span class="nm">Тест</span></div>
+            <div class="cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></i><span class="nm">Админка</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="spec-cap"><b>Е · пустое состояние</b>Плитка не схлопывается в дыру, а становится входом — ровно как <code>{empty:'new'}</code> в нынешнем табло. Пустое состояние уже описано в модели, переносить нечего.</div>
+    </div>
+  </div></div>
+  <div class="notes">
+    <div class="note ok"><i>+</i><span><b>−30px у верха колонки.</b> Табло и «Портфели» перестают дублировать друг друга: 271px схлопываются в 241px, и всё это уходит второму уровню.</span></div>
+    <div class="note ok"><i>+</i><span><b>Иерархия видна геометрией.</b> Раздел, где живёт 80% времени, крупнее остальных в четыре раза — это читается раньше, чем подписи.</span></div>
+    <div class="note ok"><i>+</i><span><b>Клик по капиталу становится честным.</b> Сейчас табло ведёт на «Обзор» и это надо знать; плитка называет себя «Портфели» и ведёт туда же.</span></div>
+    <div class="note"><i>i</i><span><b>Модель уже готова.</b> <code>PF.sbCapModel</code> отдаёт капитал, день, спарклайн и оба пустых состояния — плитке нужен ровно он, новых источников нет.</span></div>
+    <div class="note no"><i>−</i><span><b>Пересматривает решение раунда 4.</b> Табло только что доводили: линия дня во всю ширину, возраст цен, маска сумм. Всё это переезжает в плитку — работа не пропадает, но решение меняется.</span></div>
+    <div class="note no"><i>−</i><span><b>Сетка перестаёт быть сеткой.</b> Ячейки разного размера ломают клавиатурный ход: <code>onSbKey</code> считает колонки из <code>offsetTop</code>, а здесь у плитки два ряда сразу.</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ Ж ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">Ж</span><h2>Два этажа: сегмент сверху, разделы строками внутри него</h2><span class="mk-tag warn">+1 клик</span></div>
+  <div class="mk-sub">Разделов пять, но одновременно нужны редко больше двух. Верх панели — <b>сегментный переключатель на три группы</b> («Деньги · Рынок · Мастерская»), под ним строками — только разделы выбранной группы, с именами целиком и значением справа. Сегмент запоминается (как <code>sb_more_v1</code>) и сам переключается, когда ты уходишь в раздел из другой группы. Точка на сегменте говорит, что там что-то требует внимания, — не открывая его. Панель <b>ниже нынешней</b>: 29px сегмента + две-три строки вместо шести ячеек.</div>
+  <div class="scroller"><div class="strip">
+    <div>
+      <div class="sc solo" style="height:300px">
+        <div class="bx">
+          <div class="bx-head"><div class="mark">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
+          <div class="nJ" style="margin-top:14px">
+            <div class="seg"><b class="on">Деньги</b><b>Рынок</b><b>Мастерская</b></div>
+            <div class="list">
+              <div class="row on"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg><span class="tx">Портфели</span><span class="vl num">3</span></div>
+              <div class="row"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg><span class="tx">Ребаланс</span><span class="vl warn num">4,1 п.п.</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="spec-cap"><b>Ж · группа «Деньги»</b>Две строки вместо шести ячеек — 114px против 160. Имена целиком, значение справа, ходить по ним стрелками естественнее, чем по сетке.</div>
+    </div>
+
+    <div>
+      <div class="sc solo" style="height:300px">
+        <div class="bx">
+          <div class="bx-head"><div class="mark">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
+          <div class="nJ" style="margin-top:14px">
+            <div class="seg"><b>Деньги<i class="pt"></i></b><b class="on">Рынок</b><b>Мастерская</b></div>
+            <div class="list">
+              <div class="row on"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="tx">Рынок</span><span class="vl pos num">+0,6%</span></div>
+              <div class="row"><svg viewBox="0 0 24 24"><rect x="3.5" y="8" width="6" height="9" rx="1.5"/><path d="M6.5 4v4M6.5 17v3"/><rect x="14.5" y="5" width="6" height="10" rx="1.5"/><path d="M17.5 3v2M17.5 15v6"/></svg><span class="tx">Терминал</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="spec-cap"><b>Ж · группа «Рынок»</b>Точка на сегменте «Деньги» — там дрейф за порогом; чтобы это узнать, открывать группу не надо. Второй уровень «Рынка» («Терминал») поднимается сюда же — этаж один, а не два.</div>
+    </div>
+
+    <div>
+      <div class="sc solo dark" style="height:300px">
+        <div class="bx">
+          <div class="bx-head"><div class="mark">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
+          <div class="nJ" style="margin-top:14px">
+            <div class="seg"><b>Деньги<i class="pt"></i></b><b>Рынок</b><b class="on">Мастерская</b></div>
+            <div class="list">
+              <div class="row on"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg><span class="tx">Расчёт портфеля</span></div>
+              <div class="row"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg><span class="tx">Тест портфеля</span><span class="vl num">12</span></div>
+              <div class="row"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span class="tx">Админка</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="spec-cap"><b>Ж · «Мастерская», тёмная</b>Длинные имена перестают быть проблемой навсегда: «Академия Ребалансировки» встанет строкой целиком. Цена — раздел из закрытой группы теперь в два клика.</div>
+    </div>
+  </div></div>
+  <div class="notes">
+    <div class="note ok"><i>+</i><span><b>Панель ниже, чем сегодня.</b> 114–145px против 160 — и это при именах целиком и значениях справа.</span></div>
+    <div class="note ok"><i>+</i><span><b>Группы становятся явными.</b> В А они были подписями над рядами; здесь — переключателем, и «Терминал» с «Рынком» наконец стоят рядом.</span></div>
+    <div class="note ok"><i>+</i><span><b>Точка на закрытой группе.</b> Единственный вариант, который умеет сказать о состоянии того, что сейчас не показано.</span></div>
+    <div class="note no"><i>−</i><span><b>+1 клик и подвижное положение.</b> Разделы перестают быть на одном месте всегда — «Верстак» выбирали именно за неподвижность.</span></div>
+    <div class="note no"><i>−</i><span><b>Три уровня превращаются в четыре.</b> Сегмент → раздел → второй уровень → третий («Торговля»). Для колонки это много.</span></div>
+    <div class="note no"><i>−</i><span><b>Свёрнутая рейка не складывается.</b> В 84px сегментам места нет — придётся держать для рейки отдельный язык, ровно то, от чего ушли.</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ З ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">З</span><h2>Полоса со строкой-статусом: Г, у которого вернулись имена</h2><span class="mk-tag">доводка Г</span></div>
+  <div class="mk-sub">Главный минус Г — пять безымянных иконок. Здесь под полосой стоит <b>одна строка-статус</b>: она называет раздел, на котором стоит курсор или фокус, и его показание. Не навёл — строка показывает активный раздел. Имя всегда есть, просто оно <b>одно на всю панель</b>, а не пять сразу. Справа — подсказка горячих клавиш: полоса из пяти позиций естественно ложится на <code>⌘1…⌘5</code>, чего сетка 4×2 никогда не давала. Итого 79px против 160 — половина панели возвращается второму уровню.</div>
+  <div class="scroller"><div class="strip">
+    <div>
+      <div class="sc solo" style="height:300px">
+        <div class="bx">
+          <div class="bx-head"><div class="mark">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
+          <div class="nZ" style="margin-top:14px">
+            <div class="strip2">
+              <div class="cell on"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></div>
+              <div class="cell"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg><i class="dotm"></i></div>
+              <div class="cell"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+              <div class="cell"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></div>
+              <div class="cell"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></div>
+            </div>
+            <div class="st"><b>Портфели</b><span class="vl num">3 портфеля · 24 позиции</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="spec-cap"><b>З · покой</b>Строка называет активный раздел и его показание. Точка на «Ребалансе» — то же, что нынешний бейдж, только спокойнее.</div>
+    </div>
+
+    <div>
+      <div class="sc solo" style="height:300px">
+        <div class="bx">
+          <div class="bx-head"><div class="mark">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
+          <div class="nZ" style="margin-top:14px">
+            <div class="strip2">
+              <div class="cell on"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></div>
+              <div class="cell hov"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg><i class="dotm"></i></div>
+              <div class="cell"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+              <div class="cell"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></div>
+              <div class="cell"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></div>
+            </div>
+            <div class="st"><b>Ребаланс</b><span class="vl warn num">дрейф 4,1 п.п.</span><span class="hint num">⌘2</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="spec-cap"><b>З · курсор на «Ребалансе»</b>Строка переключилась на раздел под курсором, показав и величину дрейфа, и горячую клавишу. Пять позиций — пять клавиш, чего в сетке 4×2 не построить.</div>
+    </div>
+  </div></div>
+  <div class="notes">
+    <div class="note ok"><i>+</i><span><b>81px второму уровню.</b> Половина панели уходит туда, где действительно кончается место, — в список открытых портфелей.</span></div>
+    <div class="note ok"><i>+</i><span><b>Имя есть всегда — но одно.</b> Ответ на минус Г без возврата к пяти подписям; заодно строка вмещает то, что в ячейку не влезало («3 портфеля · 24 позиции»).</span></div>
+    <div class="note ok"><i>+</i><span><b>Горячие клавиши напрашиваются сами.</b> Позиция в полосе = цифра; подсказка живёт в той же строке, учить нечего.</span></div>
+    <div class="note"><i>i</i><span><b>Клавиатура получает подпись.</b> <code>onSbKey</code> ходит влево-вправо, и строка следует за фокусом — то, чего Г не умел.</span></div>
+    <div class="note no"><i>−</i><span><b>Строка живёт от курсора.</b> На тач-экранах и без мыши подписи неактивных нет вовсе — на мобиле панель работает иначе (там своя шторка, но это надо помнить).</span></div>
+    <div class="note no"><i>−</i><span><b>Мишень мельче.</b> 51×38 против 65×67 — вдвое меньше площади у главного переключателя разделов.</span></div>
+  </div>
+</div>
+
 <!-- ═══════════════════ СВОДКА ═══════════════════ -->
 <div class="mk">
   <div class="mk-h"><span class="mk-n">·</span><h2>Сводка</h2></div>
@@ -620,12 +866,17 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <tr><td><b>Б · приборная сетка</b></td><td>184px</td><td>86px</td><td class="yes">счёт, дрейф, индекс</td><td>+24px, источник индекса</td></tr>
     <tr><td><b>В · строки</b></td><td>232px</td><td>150px</td><td class="yes">счёт, дрейф, индекс</td><td>−72px второму уровню, откат к списку</td></tr>
     <tr><td><b>Г · полоса</b></td><td>58px</td><td>только у активного</td><td class="no">точечные метки</td><td>имена исчезают</td></tr>
+    <tr><td><b>Д · циферблаты</b></td><td>156px</td><td>86px</td><td class="yes">дуга к порогу, искра дня</td><td>чисел нет, спор с активной заливкой</td></tr>
+    <tr><td><b>Е · бенто</b></td><td>241px <i>вместо табло + сетки</i></td><td>86px у мелких</td><td class="yes">капитал, день, дрейф, индекс</td><td>пересматривает табло, ломает ход стрелками</td></tr>
+    <tr><td><b>Ж · два этажа</b></td><td>114–145px</td><td>целиком</td><td class="yes">значения + точка на закрытой группе</td><td>+1 клик, рейка не складывается</td></tr>
+    <tr><td><b>З · полоса + статус</b></td><td>79px</td><td>одно имя за раз</td><td class="yes">строка под курсором</td><td>мишень 51×38, подпись от курсора</td></tr>
   </table>
   <div class="rec">
-    <h3>Рекомендация — Б, с оговоркой</h3>
-    <p><b>Б «Приборная сетка»</b> закрывает оба дефекта разом: ряды становятся ровными (3 колонки берут 5 пунктов как 3+2), а панель перестаёт быть единственным молчащим куском колонки. Она остаётся сеткой — то есть «Верстак» не пересматривается, — складывается в рейку 84px без нового языка и стоит всего +24px высоты.</p>
-    <p><b>Оговорка одна: источники.</b> Из четырёх значений три уже есть в коде (<code>PF.store.items.length</code>, порог и агрегат дрейфа из <code>rebalance-wizard.js</code>, история бэктестов), а котировка индекса для «Рынка» — нет. Пока её не подтянули, ячейка «Рынок» просто без значения — это допустимое состояние, а не заглушка с прочерком.</p>
-    <p><b>Если высоту трогать нельзя вовсе</b> — брать <b>А</b>: одна строка CSS и два заголовка, дырка уходит, состояние остаётся на потом. <b>Г</b> стоит держать в уме как ответ на вопрос «что делать, когда открытых портфелей станет 8» — но не как замену: пять безымянных иконок мы уже пробовали в рейке 76px и сняли.</p>
+    <h3>Рекомендация — Д, а дальше по аппетиту</h3>
+    <p>После второй части выбор перестаёт быть «сколько колонок» и становится «сколько мы готовы пересматривать». <b>Д «Циферблаты»</b> — лучший размен: панель начинает говорить о самом важном (дошёл ли дрейф до порога, куда идёт день), не забирая ни высоты, ни решений соседей, и <b>ложится слоем на любую другую раскладку</b> — на Б, на Г, на рейку 84px. Если брать что-то одно, брать это.</p>
+    <p><b>Д + Б</b> — полный ответ на «панель молчит»: кольцо говорит «пора», число говорит «4,1». Цена — +24px и один новый источник (котировка индекса).</p>
+    <p><b>Е «Бенто»</b> — самый интересный по идее и самый дорогой по последствиям: он замечает, что табло и «Портфели» дублируют друг друга, и сливает их. Брать, если готовы пересмотреть решение раунда 4; выигрыш — 30px и честная иерархия, потеря — ровная сетка и простой ход стрелками.</p>
+    <p><b>Ж</b> и <b>З</b> — про экономию высоты (114 и 79px против 160) и оба стоят одного и того же: раздел перестаёт быть всегда на виду. Ж вдобавок не складывается в рейку 84px, и это его тихий убийца. Держать как ответ на вопрос «что делать, когда открытых портфелей станет 8», — но сперва попробовать Д, которое ничего не отнимает.</p>
   </div>
 </div>
 
@@ -637,6 +888,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <b>Подвал</b> — аватар, звоночек, лупа, шестерёнка стоят как стоят.
     <b>Рейка 84px</b> — во всех вариантах, кроме Г, складывается ровно как сегодня (столбец Л1); в Б значение в рейку не переезжает — ширины на «4,1 п.п.» под иконкой там нет.
     <b>Состав разделов</b> — ни один пункт не добавлен и не убран; «Главная» по-прежнему живёт в имени в шапке.
+    <br><br><b>Исключения названы прямо:</b> Е забирает табло внутрь плитки «Портфели» (это пересмотр раунда 4), Ж поднимает в панель «Терминал» — часть второго уровня «Рынка». Оба выбора не «мимоходом», а предмет решения; остальные шесть вариантов границу держат.
   </div>
 </div>
 
