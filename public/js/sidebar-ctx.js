@@ -128,12 +128,9 @@
         return { title: 'Расчёт', solo: true, groups: groups };
     }
 
-    // У КАКИХ разделов колонка есть в принципе — знание статическое, и это важно:
-    // «Портфели» грузятся лениво (#pfLazySrc), их модель приходит через полсекунды
-    // после первого пейнта. Не зная заранее, что колонка будет, мы бы отдали ширину
-    // контенту и через мгновение отняли — вкладка дёргалась бы на каждой прямой
-    // загрузке /portfolios. Поэтому ширину резервируем сразу, а содержимое
-    // дорисовываем, когда модель появится.
+    // У каких разделов второй уровень есть в принципе. Ширину он больше не
+    // двигает (колонка всегда 268px), так что резервировать нечего — карта
+    // осталась ответом на вопрос «есть ли у раздела что раскрывать».
     var COL_TITLE = {
         portfolios: 'Портфели',
         calc: 'Расчёт', portfolio: 'Расчёт', monthly: 'Расчёт',
@@ -172,29 +169,54 @@
             '<span class="sbc-tx">' + esc(it.tx) + '</span>' + right +
         '</button>';
     }
-    function headHtml(m) {
-        var cap = '';
-        if (m.cap) {
-            cap = '<div class="sbc-cap">' + esc(m.cap) +
-                (m.chip ? '<span class="sbc-chip' + (m.chip.neg ? ' neg' : '') + '">' + esc(m.chip.tx) + '</span>' : '') +
-                '</div>';
-        }
-        return '<div class="sbc-head' + (cap ? '' : ' solo') + '"><h4>' + esc(m.title) + '</h4>' + cap + '</div>';
-    }
+    // Шапки у блока больше нет: он лежит ПОД строкой своего раздела, и имя
+    // раздела написано прямо над ним (мокап Г1). Модельные title/cap/chip
+    // остаются — их отдаёт PF.sbSideModel, просто здесь они не рисуются.
     function listHtml(m) {
-        var h = '';
+        var h = '', first = true;
         (m.groups || []).forEach(function (g) {
             if (!g.items || !g.items.length) return;
-            if (g.label) h += '<div class="sbc-grp"><span>' + esc(g.label) + '</span></div>';
+            // Подпись ПЕРВОЙ группы не рисуем: блок и так стоит под строкой
+            // своего раздела, и «Разделы» сразу под «Портфелями» — заголовок
+            // ни о чём (мокап Г1). У следующих групп подпись несёт смысл.
+            if (g.label && !first) h += '<div class="sbc-grp"><span>' + esc(g.label) + '</span></div>';
             h += g.items.map(itemHtml).join('');
+            first = false;
         });
         return '<div class="sbc-list">' + h + '</div>';
     }
-    function footHtml(m) {
-        var left = m.foot ? itemHtml(m.foot) : '<span style="flex:1"></span>';
-        return '<div class="sbc-foot">' + left +
-            '<button type="button" class="sbc-btn" data-act="collapse" data-key="" title="Свернуть колонку" ' +
-            'aria-label="Свернуть колонку">' + svg(IC.collapse) + '</button></div>';
+    // ---------- подвал ----------
+    // «Настройки» раздела живут ВНИЗУ колонки, а не в конце списка: список
+    // раскрывается под активным разделом, и подвал, приклеенный к нему, висел бы
+    // посреди навигации. Кнопка схлопывания уже стоит в разметке #sbRailFoot —
+    // сюда дорисовывается только левый слот.
+    function footSync(m) {
+        var host = document.getElementById('sbRailFoot');
+        if (!host) return;
+        var slot = host.querySelector('.sbf-slot');
+        if (!slot) {
+            slot = document.createElement('div');
+            slot.className = 'sbf-slot';
+            host.insertBefore(slot, host.firstChild);
+        }
+        var html = (m && m.foot && wide()) ? itemHtml(m.foot) : '';
+        if (slot.__sbfHtml !== html) { slot.innerHTML = html; slot.__sbfHtml = html; }
+    }
+
+    // ---------- место блока в разметке ----------
+    // #sbCtx переезжает внутрь #sbNav и встаёт сразу за активным разделом (или
+    // за его .sb-group). Так второй уровень раскрывается ПОД своим разделом, а
+    // ссылки разделов остаются настоящими <a href> — их никто не дублирует.
+    function placeCtx(host) {
+        var nav = document.getElementById('sbNav');
+        if (!nav) return;
+        var act = nav.querySelector('.sb-item.active');
+        var anchor = act ? (act.closest('.sb-group') || act) : null;
+        if (!anchor) {
+            if (host.parentNode !== nav) nav.appendChild(host);
+            return;
+        }
+        if (anchor.nextSibling !== host) anchor.parentNode.insertBefore(host, anchor.nextSibling);
     }
 
     // ---------- рендер ----------
@@ -206,24 +228,16 @@
         var tab = (typeof currentTab !== 'undefined' && currentTab) ? currentTab : 'home';
         var m = null;
         try { m = modelFor(tab); } catch (e) { m = null; }
-        var collapsed = document.body.classList.contains('sb-collapsed');
-        var expect = wide() && !!COL_TITLE[tab];
-        // sb-hascol — «у раздела второй уровень ЕСТЬ» (независимо от того,
-        // свёрнут он или нет). По нему CSS решает, показывать ли кнопку
-        // разворота внизу рейки: на «Главной» и «Тесте» разворачивать нечего,
-        // и кнопка там была бы мёртвой.
-        document.body.classList.toggle('sb-hascol', expect);
-        document.body.classList.toggle('sb-ctx', expect && !collapsed);
-        if (!m) {
-            // раздел с колонкой, но модель ещё не приехала — держим шапку с именем
-            // раздела: пустая колонка честнее скачка ширины
-            if (!expect) {
-                if (host.__sbcHtml) { host.innerHTML = ''; host.__sbcHtml = ''; }
-                return;
-            }
-            m = { title: COL_TITLE[tab], solo: true, groups: [] };
+        // рейка (свёрнуто или «Главная») второго уровня не показывает
+        var rail = document.body.classList.contains('sb-rail');
+        var expect = wide() && !rail && !!COL_TITLE[tab];
+        document.body.classList.toggle('sb-ctx', expect);
+        footSync(expect ? m : null);
+        if (!expect || !m) {
+            if (host.__sbcHtml) { host.innerHTML = ''; host.__sbcHtml = ''; }
+            return;
         }
-        var html = headHtml(m) + listHtml(m) + footHtml(m);
+        var html = listHtml(m);
         if (host.__sbcHtml !== html) {
             var ae = document.activeElement;
             var keepKey = ae && host.contains(ae) && ae.getAttribute ? ae.getAttribute('data-key') : null;
@@ -234,9 +248,7 @@
                 if (back) { try { back.focus(); } catch (e) {} }
             }
         }
-        // растворение у нижней кромки — только когда список честно не помещается
-        var list = host.querySelector('.sbc-list');
-        if (list) list.classList.toggle('is-scroll', list.scrollHeight - list.clientHeight > 2);
+        placeCtx(host);
     }
     window.sbCtxSync = sbCtxSync;
 
@@ -287,6 +299,11 @@
             host.addEventListener('click', onClick);
             host.addEventListener('keydown', onKey);
         }
+        // подвал теперь снаружи блока — его слот слушаем отдельно (кнопка
+        // схлопывания в разметке идёт своим onclick и до onClick не доходит:
+        // у неё нет data-act)
+        var foot = document.getElementById('sbRailFoot');
+        if (foot) foot.addEventListener('click', onClick);
         sbCtxSync();
     });
     // ширина рейки меняется вместе с колонкой — пересобираем на кроссинге брейкпоинта

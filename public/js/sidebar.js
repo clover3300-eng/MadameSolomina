@@ -9,17 +9,33 @@
         });
     }
 
-    // Состояние по умолчанию. С переходом на рейку «Подъём» (мокап В3-б) смысл
-    // sb-collapsed изменился: это больше не «узкая рейка против широкой панели»,
-    // а «спрятана ли КОЛОНКА второго уровня» — сама рейка 76px видна всегда.
-    // Поэтому по умолчанию сайдбар РАЗВЁРНУТ: колонка и есть навигация раздела,
-    // прятать её по умолчанию значило бы прятать подвкладки. Явный выбор
-    // пользователя (localStorage) по-прежнему старше умолчания.
+    // ---- Два состояния сайдбара (мокап Г1 «Мастер») ----
+    // sb-collapsed — выбор пользователя: колонка 268px или рейка 76px.
+    // sb-rail — ПРОИЗВОДНЫЙ признак «сейчас показана рейка», по нему живёт весь
+    // css/sidebar-rail.css. Кроме свёрнутого состояния в него попадает
+    // «Главная»: колонка во всю высоту поверх манифеста с живой картой читалась
+    // бы чужой, там сайдбар остаётся компактной карточкой, как и был.
+    // На первом кадре sb-rail для Главной ставит инлайн-скрипт под <body> —
+    // иначе колонка мелькала бы во всю ширину до DCL.
+    function sbIsHome() {
+        if (document.body.classList.contains('tab-home')) return true;
+        return typeof currentTab !== 'undefined' && currentTab === 'home';
+    }
+    function sbRailSync() {
+        var rail = document.body.classList.contains('sb-collapsed') || sbIsHome();
+        document.body.classList.toggle('sb-rail', rail);
+    }
+    window.sbRailSync = sbRailSync;
+
+    // Умолчание — РАЗВЁРНУТО: колонка и есть навигация раздела, прятать её по
+    // умолчанию значило бы прятать второй уровень. Явный выбор пользователя
+    // (localStorage) старше умолчания.
     function applySidebarDefault() {
         try {
             var stored = localStorage.getItem('sbCollapsed');
             document.body.classList.toggle('sb-collapsed', stored === '1');
         } catch (e) {}
+        sbRailSync();
         if (window.updateCollapseLabel) window.updateCollapseLabel();
         if (window.sbCtxSync) window.sbCtxSync();
     }
@@ -41,12 +57,20 @@
     // Keep the footer toggle's label honest: collapsed → it pins the menu open,
     // expanded → it collapses back to the icon rail.
     function updateCollapseLabel() {
-        var btn = document.getElementById('sbCollapseBtn');
-        if (!btn) return;
         var collapsed = document.body.classList.contains('sb-collapsed');
-        var lbl = btn.querySelector('.sb-label');
-        if (lbl) lbl.textContent = collapsed ? 'Закрепить' : 'Свернуть';
-        btn.title = collapsed ? 'Закрепить меню' : 'Свернуть меню';
+        var btn = document.getElementById('sbCollapseBtn');
+        if (btn) {
+            var lbl = btn.querySelector('.sb-label');
+            if (lbl) lbl.textContent = collapsed ? 'Закрепить' : 'Свернуть';
+            btn.title = collapsed ? 'Закрепить меню' : 'Свернуть меню';
+        }
+        // та же кнопка внизу колонки: подпись обязана говорить, что произойдёт
+        var rb = document.querySelector('#sbRailFoot .sbc-btn');
+        if (rb) {
+            var t = collapsed ? 'Развернуть меню' : 'Свернуть в рейку';
+            rb.title = t;
+            rb.setAttribute('aria-label', t);
+        }
     }
     window.updateCollapseLabel = updateCollapseLabel;
 
@@ -54,6 +78,7 @@
         var collapsed = document.body.classList.toggle('sb-collapsed');
         document.body.classList.remove('sb-peek');
         try { localStorage.setItem('sbCollapsed', collapsed ? '1' : '0'); } catch (e) {}
+        sbRailSync();
         updateCollapseLabel();
         if (window.sbCtxSync) window.sbCtxSync();   // колонка второго уровня прячется/возвращается
         // ширина сайдбара изменилась → пересчитываем левый край портфеля
@@ -181,18 +206,19 @@
         return !!(e && (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey ||
             (typeof e.button === 'number' && e.button !== 0)));
     }
-    // ---- Клик по разделу управляет колонкой второго уровня ----
+    // ---- Клик по разделу управляет вторым уровнем ----
     // Чужой раздел: переходим и РАЗВОРАЧИВАЕМ колонку — нажатие на раздел это
     // запрос «покажи, что внутри», отвечать на него одной сменой контента,
-    // оставляя навигацию раздела спрятанной, неправильно.
-    // Свой (уже активный) раздел: клик работает переключателем колонки —
-    // показать/спрятать. Перехода при этом НЕ делаем: мы уже здесь, а лишний
-    // switchTab перерисовал бы вкладку впустую.
+    // оставляя второй уровень спрятанным, неправильно.
+    // Свой (уже активный) раздел: клик схлопывает колонку в рейку и обратно.
+    // Перехода при этом НЕ делаем: мы уже здесь, а лишний switchTab перерисовал
+    // бы вкладку впустую.
     // На мобиле не трогаем ничего: колонки там нет, а флаг общий.
     function sbSectionOf(tab) { return SB_GROUP_OF[tab] || tab; }
     function sbSetCollapsed(on) {
         document.body.classList.toggle('sb-collapsed', !!on);
         try { localStorage.setItem('sbCollapsed', on ? '1' : '0'); } catch (e) {}
+        sbRailSync();
         updateCollapseLabel();
         if (window.sbCtxSync) window.sbCtxSync();
     }
@@ -239,8 +265,11 @@
         document.querySelectorAll('.sb-sub').forEach(function(s) {
             s.classList.toggle('active', !!activeSub && s.getAttribute('data-sub') === activeSub);
         });
-        // Колонка второго уровня зеркалит эти же .sb-sub («Расчёт»/«Рынок») и
-        // спрашивает PF о «Портфелях» — пересобирается ПОСЛЕ простановки .active
+        // «Главная» показывает рейку, остальные разделы — колонку
+        sbRailSync();
+        // Второй уровень зеркалит эти же .sb-sub («Расчёт»/«Рынок») и спрашивает
+        // PF о «Портфелях» — пересобирается ПОСЛЕ простановки .active, а ещё он
+        // встаёт в разметку сразу за активным разделом (см. placeCtx)
         if (window.sbCtxSync) window.sbCtxSync();
     }
     window.sbSyncActive = sbSyncActive;

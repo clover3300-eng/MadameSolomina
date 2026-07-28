@@ -1,141 +1,469 @@
 /* =====================================================================
-   САЙДБАР «ПОДЪЁМ» (мокап В3-б, dev/mockups/sidebar-mockups.html)
+   САЙДБАР «МАСТЕР» (мокап Г1, dev/mockups/sidebar-rbw-mockups.html)
    =====================================================================
-   Навигация разъезжается на два столбца:
-     • рейка 76px  — разделы иконкой с микроподписью (#sbNav);
-     • колонка 212px — второй уровень активного раздела (#sbCtx),
-       её наполняет js/sidebar-ctx.js.
-   Язык выбора — ПОДЪЁМ, а не заливка: активный пункт колонки становится
-   белой карточкой на тонированном поле, зелёный остаётся только риске
-   активного раздела на рейке и живым числам.
+   Навигация — ОДНА колонка 268px на языке левой рейки визарда «Ребаланс»
+   (.rbw-rail в css/rebalance-wizard.css):
+     • корпус во всю высоту экрана, без скругления и тени, волосяная
+       линия справа — сайдбар стоит НА краю экрана, а не лежит на нём;
+     • шапка «надстрочник + Georgia»;
+     • раздел = кружок-иконка 29px + имя + пояснение;
+     • второй уровень раскрывается ПОД активным разделом, вложенность
+       держит волосяная линия от кружка (#sbCtx переезжает в #sbNav);
+     • подвал: «Настройки» раздела + схлопывание.
 
-   Рейка СВЕТЛАЯ В ОБЕИХ ТЕМАХ — прежняя инверсия (тёмная в светлой теме,
-   белая в тёмной) отменена, поэтому здесь всё перебивает и базовые
-   правила site-layout.css, и его блок body.dark-mode. Селекторы с id
-   (#sbNav .sb-item) выигрывают у классовых dark-mode-правил без
-   единого !important.
+   ЧЕГО ИЗ ВИЗАРДА НЕТ НАМЕРЕННО:
+     • цифр в кружках и сплошной линии между разделами — в визарде это
+       последовательность шагов, у разделов её нет, линия соврала бы;
+     • нижней карточки контекста .rbw-ctx — в сайдбаре это второй «Обзор»
+       под навигацией, а низ колонки она забирала целиком;
+     • «подъёма» из В3-б (белая карточка выбора на тонированном поле):
+       поле само стало белым, выбор — тонированная пилюля с риской.
+
+   ДВА СОСТОЯНИЯ, признак — body.sb-rail (ставит js/sidebar.js, а на первом
+   кадре — инлайн-скрипт под <body>):
+     • нет sb-rail — колонка 268px (умолчание);
+     • есть sb-rail — прежняя рейка 76px: иконки с микроподписями, второго
+       уровня нет. Сюда попадают «свёрнуто» и «Главная» (на манифесте
+       поверх живой карты колонка во всю высоту читалась бы чужой).
 
    ФАЙЛ ЦЕЛИКОМ В ДЕСКТОПНОЙ МЕДИА: мобильная шторка остаётся прежней
    (см. css/mobile.css, он идёт последним в каскаде).
    ===================================================================== */
 
-/* Колонка второго уровня и подвал рейки существуют в разметке всегда, но на
-   мобиле их нет: шторка видит прежнюю плоскую структуру — #sbRail отдаёт своих
-   детей родителю через display:contents */
-#sbCtx, #sbRailFoot { display: none; }
+/* Колонка второго уровня, подвал рейки и пояснения под разделами существуют в
+   разметке всегда, но на мобиле их нет: шторка видит прежнюю плоскую структуру
+   — #sbRail отдаёт своих детей родителю через display:contents. Пояснение в
+   строке шторки было бы новым текстом, которого там не было. */
+#sbCtx, #sbRailFoot, #sbNav .sb-cap { display: none; }
 #sbRail { display: contents; }
 
 @media (min-width: 1024px) {
     :root {
-        --sbr-rail: #FFFFFF;      /* рейка */
-        --sbr-ctx:  #E9EEF6;      /* поле колонки — темнее рейки, чтобы белое читалось подъёмом */
-        --sbr-ink:  #1F2637;
-        --sbr-acc:  #2F6B4F;      /* тёмно-зелёный: контраст к полю 5,9:1 */
-        --sbr-line: rgba(20, 27, 45, 0.09);
-        --sbr-rail-w: 76px;
-        --sbr-ctx-w: 212px;
+        --sbr-w:      268px;       /* колонка */
+        --sbr-rail-w:  76px;       /* свёрнутая рейка */
+        --sbr-card:  #FFFFFF;      /* поле колонки */
+        --sbr-page:  #F4F6FA;      /* цвет страницы = фон выбранной пилюли */
+        --sbr-ink:   #101828;
+        --sbr-mut:   #64748B;
+        --sbr-dim:   #98A4B4;
+        --sbr-line:  #E7ECF3;
+        --sbr-acc:   #4453EF;      /* надстрочник марки — акцент визарда */
+        --sbr-sel:   #2F6B4F;      /* активный раздел */
+        --sbr-sel-ic:#FFFFFF;      /* иконка внутри активного кружка */
+    }
+    /* Тёмная тема — палитра самого визарда (body.dark-mode .rbw). Прежняя
+       инверсия «светлый сайдбар в обеих темах» снята: светлая рейка 76px
+       читалась кантом, светлая колонка 268px во всю высоту — белой стеной.
+       Зелёный не меняется, а поднимается: #2F6B4F на #121722 даёт 2,8:1,
+       #4FB98C — 7,4:1. */
+    body.dark-mode {
+        --sbr-card:  #121722;
+        --sbr-page:  #0A0E15;
+        --sbr-ink:   #E9EEF8;
+        --sbr-mut:   #93A1B8;
+        --sbr-dim:   #5E6C84;
+        --sbr-line:  rgba(255, 255, 255, 0.09);
+        --sbr-acc:   #7C8CFF;
+        --sbr-sel:   #4FB98C;
+        --sbr-sel-ic:#0A0E15;
     }
 
-    /* ---------- Оболочка: три состояния ширины вместо двух ----------
-       76 (одна рейка) / 288 (рейка + колонка). Hover-peek отменён: рейка
-       и так читаема, «подглядывание» существовало ради подписей разделов.
-       Отступа-жёлоба вокруг сайдбара БОЛЬШЕ НЕТ (см. «Сплошная колонка» ниже) —
-       навигация занимает ровно свою ширину, остальное уходит странице. */
-    body:not(.sb-ctx) #appShell,
+    /* ---------- Оболочка ---------- */
+    body:not(.sb-collapsed) #appShell,
     body.sb-collapsed #appShell,
     body.sb-collapsed.sb-peek #appShell {
+        grid-template-columns: var(--sbr-w) minmax(0, 1fr);
+    }
+    body.sb-rail #appShell {
         grid-template-columns: var(--sbr-rail-w) minmax(0, 1fr);
     }
-    body.sb-ctx #appShell,
-    body.sb-ctx.sb-collapsed #appShell {
-        grid-template-columns: calc(var(--sbr-rail-w) + var(--sbr-ctx-w)) minmax(0, 1fr);
-    }
-    body:not(.sb-ctx) { --sb-w: var(--sbr-rail-w); }
-    body.sb-ctx { --sb-w: calc(var(--sbr-rail-w) + var(--sbr-ctx-w)); }
+    body:not(.sb-collapsed),
+    body.sb-collapsed { --sb-w: var(--sbr-w); }
+    body.sb-rail { --sb-w: var(--sbr-rail-w); }
 
-    /* ---------- Сплошная колонка вместо парящей карточки ----------
-       Образец — рейка визарда «Ребаланс» (.rbw-rail, css/rebalance-wizard.css):
-       навигация стоит НА краю экрана, во всю его высоту, отделена от контента
-       волосяной линией. Карточка со скруглением, тенью и жёлобом 14px читалась
-       «панелькой, положенной на страницу»; сплошная колонка читается корпусом
-       приложения — и отдаёт странице 28px по горизонтали. */
-    #sideBar { padding: 0; }
+    /* Сайдбар печатается поверх контента. 60 — выше карточек вкладок и ниже
+       FAB-ов/шторок (1250+). Селектор в два id намеренно: свои 50 сайдбару уже
+       назначают tab-gates.css и home-register.css (`body.gx-on #sideBar`). */
+    #appShell > #sideBar { position: relative; z-index: 60; padding: 0; }
+
+    /* ---------- Корпус ----------
+       Сплошная колонка на краю экрана, без скругления и тени: карточка с
+       жёлобом читалась «панелькой, положенной на страницу». */
     #sbPanel {
         flex-direction: row;
-        background: var(--sbr-rail);
+        width: var(--sbr-w);
+        flex: 1 1 auto;
+        height: 100%;
+        background: var(--sbr-card);
         border-radius: 0;
         border-right: 1px solid var(--sbr-line);
         box-shadow: none;
-        overflow: hidden;               /* колонка скроллится сама, корпус — нет */
-        transition: width 0.28s ease;
-        /* во всю высоту экрана: подвал колонки («Настройки» и «Свернуть») обязан
-           стоять внизу, а прежний hug-to-content оставлял его висеть посреди
-           экрана сразу под последним пунктом */
-        flex: 1 1 auto;
-        height: 100%;
+        overflow: hidden;
+        transition: width 0.26s ease;
+        color: var(--sbr-ink);
+        font-family: var(--font-ui, 'Inter', sans-serif);
     }
-    body.dark-mode #sbPanel { background: var(--sbr-rail); }
-
-    /* «Главная» (она же экран «Добро пожаловать» с регистрацией) — исключение:
-       второго уровня у неё нет, а на манифесте поверх живой карты сплошная белая
-       полоса во весь экран читалась бы чужой. Здесь навигация остаётся компактной
-       парящей карточкой по содержимому — ровно как была. */
-    body.tab-home #appShell {
-        grid-template-columns: calc(var(--sbr-rail-w) + 14px) minmax(0, 1fr);
-    }
-    body.tab-home #sideBar { padding: 14px 0 14px 14px; }
-    body.tab-home #sbPanel {
-        flex: 0 1 auto;
-        height: auto;
-        border-radius: 20px;
-        border-right: 0;
-        box-shadow: 0 10px 30px rgba(20, 27, 45, 0.10);
-    }
-    body.dark-mode.tab-home #sbPanel { box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45); }
-    body:not(.sb-ctx) #sbPanel,
+    body.dark-mode #sbPanel { background: var(--sbr-card); }
+    body.sb-rail #sbPanel { width: var(--sbr-rail-w); }
+    body:not(.sb-collapsed) #sbPanel,
     body.sb-collapsed #sbPanel,
-    body.sb-collapsed.sb-peek #sbPanel { width: var(--sbr-rail-w); }
-    body.sb-ctx #sbPanel,
-    body.sb-ctx.sb-collapsed #sbPanel { width: calc(var(--sbr-rail-w) + var(--sbr-ctx-w)); }
+    body.sb-collapsed.sb-peek #sbPanel { width: var(--sbr-w); }
+    body.sb-rail #sbPanel { width: var(--sbr-rail-w); }
 
-    /* нижняя карточка-подвал десктопу больше не нужна: «Свернуть» живёт в
-       подвале колонки, а без колонки — внизу самой рейки (#sbRailFoot) */
+    /* нижняя карточка-подвал десктопу не нужна: подвал живёт внизу колонки */
     #sbFoot { display: none; }
 
-    /* ---------- Рейка ---------- */
     #sbRail {
         display: flex;
         flex-direction: column;
-        width: var(--sbr-rail-w);
-        flex: 0 0 auto;
+        box-sizing: border-box;
+        width: auto;
+        flex: 1 1 auto;
         min-height: 0;
     }
-    #sbNav {
+    #sbNav, #sbHead { box-sizing: border-box; }
+
+    /* ---------- Шапка: надстрочник + Georgia ----------
+       Разметка не трогается: .sb-logo-name уже состоит из двух span'ов
+       («Madame » + «Solomi'na»), их достаточно поставить в колонку. Инлайновые
+       font-weight в разметке перебиваем !important — переписывать их в HTML
+       ради двух правил незачем. */
+    #sbHead {
         flex: 0 0 auto;
+        padding: 22px 20px 24px;
+        border-bottom: 0;
+        margin-bottom: 0;
+        justify-content: flex-start;
+    }
+    #sbHead #sbLogo { display: flex; align-items: center; gap: 11px; min-width: 0; }
+    #sbHead .sb-logo-mark,
+    body.dark-mode #sbHead .sb-logo-mark {
+        flex: none;
+        width: 34px; height: 34px;
+        border-radius: 11px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(180deg, #232B3B 0%, #141A26 100%);
+        color: #F1F6FB;
+        font-family: var(--font-title, Georgia, serif);
+        font-size: 17px;
+        font-weight: 400;
+    }
+    /* тёмная: тёмный знак на тёмном поле пропадает — инвертируем */
+    body.dark-mode #sbHead .sb-logo-mark {
+        background: #E9EEF8;
+        color: #0A0E15;
+    }
+    #sbHead .sb-logo-text { display: block; opacity: 1 !important; min-width: 0; }
+    #sbHead .sb-logo-name { display: flex; flex-direction: column; gap: 1px; }
+    #sbHead .sb-logo-name > span:first-child {
+        font-family: var(--font-num, 'JetBrains Mono', monospace);
+        font-size: 9px;
+        font-weight: 700 !important;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--sbr-acc);
+    }
+    #sbHead .sb-logo-name > span:last-child {
+        font-family: var(--font-title, Georgia, serif);
+        font-size: 19px;
+        font-weight: 400 !important;
+        letter-spacing: -0.01em;
+        line-height: 1.1;
+        color: var(--sbr-ink);
+    }
+    #sbHead .sb-logo-sub { display: none; }
+
+    /* ---------- Разделы ---------- */
+    #sbNav {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        scrollbar-width: none;
+        align-items: stretch;
+        gap: 1px;
+        padding: 0 20px 10px;
+    }
+    #sbNav::-webkit-scrollbar { display: none; }
+
+    /* строка раздела: кружок 29px + имя + пояснение второй строкой.
+       Пояснение — обычный сосед .sb-label (обёртки нет намеренно: вкладки,
+       созданные из админки, собираются как иконка + .sb-label и обёртки не
+       знают), на свою строку его уводит flex-wrap. */
+    #sbNav .sb-item,
+    body.dark-mode #sbNav .sb-item {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: flex-start;
+        column-gap: 13px;
+        row-gap: 2px;
+        width: 100%;
+        padding: 8px 0;
+        border-radius: 0;
+        background: transparent;
+        color: var(--sbr-dim);
+        font-family: var(--font-ui, 'Inter', sans-serif);
+        font-size: 13.5px;
+        font-weight: 600;
+        letter-spacing: 0;
+        text-align: left;
+    }
+    /* кружок делает сама иконка: padding+border+radius на <svg> работают,
+       viewBox масштабируется внутрь content-box */
+    #sbNav .sb-item > svg {
+        flex: none;
+        box-sizing: border-box;
+        width: 29px; height: 29px;
+        padding: 6.5px;
+        border: 1.5px solid var(--sbr-line);
+        border-radius: 50%;
+        background: var(--sbr-card);
+        color: var(--sbr-dim);
+    }
+    #sbNav .sb-label {
+        flex: 1 1 0;
+        min-width: 0;
+        opacity: 1 !important;          /* фейд подписей был механикой peek */
+        padding-top: 5px;
+        white-space: normal;
+        line-height: 1.22;
+        color: inherit;
+    }
+    #sbNav .sb-cap {
+        display: block;
+        flex: 0 0 auto;
+        width: calc(100% - 42px);
+        margin-left: 42px;
+        font-size: 10.5px;
+        font-weight: 500;
+        line-height: 1.3;
+        color: var(--sbr-dim);
+        opacity: 0.75;
+    }
+    /* риска активного раздела была языком рейки; здесь маркер — сам кружок */
+    #sbNav .sb-item::before { display: none; }
+    #sbNav .sb-item:hover,
+    body.dark-mode #sbNav .sb-item:hover { background: transparent; }
+    #sbNav .sb-item:hover .sb-label { color: var(--sbr-mut); }
+    #sbNav .sb-item:hover > svg { border-color: var(--sbr-dim); }
+    #sbNav .sb-item.active,
+    body.dark-mode #sbNav .sb-item.active { background: transparent; }
+    #sbNav .sb-item.active > svg {
+        background: var(--sbr-sel);
+        border-color: var(--sbr-sel);
+        color: var(--sbr-sel-ic);
+    }
+    #sbNav .sb-item.active .sb-label { color: var(--sbr-ink); font-weight: 700; }
+    #sbNav .sb-item.active .sb-cap { color: var(--sbr-mut); opacity: 1; }
+    /* второй уровень уехал в #sbCtx — шевроны и inline-подпункты не нужны */
+    #sbNav .sb-chev,
+    #sbNav .sb-subs { display: none; }
+
+    /* ---------- Второй уровень: блок ПОД активным разделом ----------
+       Узел #sbCtx переставляет js/sidebar-ctx.js — он живёт внутри #sbNav
+       сразу за активным разделом (или за его .sb-group). */
+    #sbCtx {
+        display: none;
+        position: relative;
+        margin: 2px 0 8px;
+        padding-left: 42px;
+        font-family: var(--font-ui, 'Inter', sans-serif);
+        color: var(--sbr-ink);
+    }
+    body.sb-ctx #sbCtx { display: block; }
+    /* вложенность держит волосяная линия от кружка вниз — это НЕ связь
+       последовательности из визарда, а именно вложенность */
+    #sbCtx::before {
+        content: '';
+        position: absolute;
+        left: 14px; top: -6px; bottom: 14px;
+        width: 1.5px;
+        background: var(--sbr-line);
+    }
+    /* шапка колонки не рендерится (имя раздела написано строкой выше),
+       подвал уехал в #sbRailFoot — на случай старой разметки глушим */
+    #sbCtx .sbc-head, #sbCtx .sbc-foot { display: none; }
+    #sbCtx .sbc-list {
+        overflow: visible;               /* прокручивается весь #sbNav целиком */
+        padding: 0;
+        -webkit-mask-image: none;
+    }
+
+    .sbc-it {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        width: 100%;
+        margin: 0;
+        padding: 7px 10px;
+        border: 0;
+        border-radius: 9px;
+        background: transparent;
+        font-family: var(--font-ui, 'Inter', sans-serif);
+        font-size: 12.5px;
+        font-weight: 500;
+        letter-spacing: 0.01em;
+        line-height: 1.2;
+        text-align: left;
+        text-decoration: none;
+        color: var(--sbr-mut);
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+    .sbc-it > svg {
+        width: 14px; height: 14px; flex: none;
+        fill: none; stroke: currentColor; stroke-width: 1.8;
+        stroke-linecap: round; stroke-linejoin: round;
+        opacity: 0.65;
+    }
+    .sbc-tx { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sbc-it:hover { background: var(--sbr-page); color: var(--sbr-ink); }
+    /* ВЫБОР = тонированная пилюля цвета страницы + отвод от линии вложенности */
+    .sbc-it.on {
+        background: var(--sbr-page);
+        color: var(--sbr-ink);
+        font-weight: 600;
+        box-shadow: none;
+    }
+    .sbc-it.on::before {
+        content: '';
+        position: absolute;
+        left: -28px; top: 50%;
+        width: 12px; height: 1.5px;
+        background: var(--sbr-sel);
+    }
+    .sbc-it.on > svg { opacity: 1; color: var(--sbr-sel); }
+    .sbc-it:focus-visible { outline: 2px solid var(--sbr-sel); outline-offset: -2px; }
+
+    /* счётчик — справка, не акцент */
+    .sbc-n {
+        margin-left: auto;
+        flex: none;
+        font-family: var(--font-num, 'JetBrains Mono', monospace);
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--sbr-dim);
+    }
+    .sbc-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; margin: 0 3px; }
+    /* дневное изменение — единственное цветное число в навигации; по наведению
+       уступает место крестику (данных нет — просто пусто, ничего не выдумываем) */
+    .sbc-chg {
+        margin-left: auto;
+        flex: none;
+        font-family: var(--font-num, 'JetBrains Mono', monospace);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        color: #16A34A;
+    }
+    .sbc-chg.neg { color: #DC2626; }
+    body.dark-mode .sbc-chg { color: #34D399; }
+    body.dark-mode .sbc-chg.neg { color: #F87171; }
+    .sbc-x {
+        margin-left: auto;
+        flex: none;
+        width: 18px; height: 18px;
+        display: none;
+        place-items: center;
+        border-radius: 6px;
+        color: var(--sbr-dim);
+    }
+    .sbc-x svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
+    .sbc-x:hover { background: var(--sbr-line); color: var(--sbr-ink); }
+    .sbc-it:hover .sbc-x { display: grid; }
+    .sbc-it:hover .sbc-chg { display: none; }
+    .sbc-it.gh { color: var(--sbr-dim); font-weight: 600; }
+    .sbc-it.dim .sbc-tx { opacity: 0.6; }
+
+    /* подпись группы держит волосяную линию */
+    .sbc-grp {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 12px 10px 5px;
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+        color: var(--sbr-dim);
+    }
+    .sbc-grp::after { content: ''; flex: 1; height: 1px; background: var(--sbr-line); }
+
+    /* третий уровень — экраны «Торговли»: вложенность даёт отступ, не заливка */
+    .sbc-it.lvl3 {
+        margin-left: 22px;
+        width: calc(100% - 22px);
+        padding-left: 12px;
+        font-size: 11.5px;
+    }
+    .sbc-it.lvl3::after {
+        content: '';
+        position: absolute;
+        left: 0; top: 7px; bottom: 7px;
+        width: 1.5px;
+        border-radius: 1px;
+        background: var(--sbr-line);
+    }
+    .sbc-it.lvl3.on::after { background: var(--sbr-sel); }
+    .sbc-it.lvl3.on::before { display: none; }   /* отвод рисуется только у второго уровня */
+
+    /* ---------- Подвал: «Настройки» раздела + схлопывание ---------- */
+    #sbRailFoot {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        box-sizing: border-box;      /* иначе паддинги вылезают за корпус */
+        width: auto;
+        margin-top: auto;
+        flex: 0 0 auto;
+        padding: 10px 20px 16px;
+        border-top: 1px solid var(--sbr-line);
+    }
+    #sbRailFoot .sbf-slot { flex: 1 1 auto; min-width: 0; }
+    #sbRailFoot .sbf-slot:empty { flex: 1 1 auto; }
+    #sbRailFoot .sbc-it { font-size: 12px; }
+    .sbc-btn {
+        width: 32px; height: 32px;
+        flex: none;
+        display: grid;
+        place-items: center;
+        border: 0;
+        border-radius: 9px;
+        background: transparent;
+        color: var(--sbr-dim);
+        cursor: pointer;
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+    .sbc-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+    .sbc-btn:hover { background: var(--sbr-page); color: var(--sbr-ink); }
+    .sbc-btn:focus-visible { outline: 2px solid var(--sbr-sel); outline-offset: 2px; }
+    /* шеврон смотрит туда, куда поедет колонка */
+    body:not(.sb-rail) #sbRailFoot .sbc-btn svg { transform: rotate(180deg); }
+
+    /* =================================================================
+       СВЁРНУТОЕ СОСТОЯНИЕ — прежняя рейка 76px.
+       Сюда же попадает «Главная»: колонка во всю высоту на манифесте
+       поверх живой карты читалась бы чужой (признак ставит sidebar.js).
+       ================================================================= */
+    body.sb-rail #sbHead { padding: 18px 0 12px; justify-content: center; }
+    body.sb-rail #sbHead #sbLogo { justify-content: center; gap: 0; }
+    body.sb-rail #sbHead .sb-logo-text { display: none; }
+    body.sb-rail #sbNav {
+        flex: 0 0 auto;
+        overflow: visible;
         align-items: center;
         gap: 2px;
         padding: 6px 8px 10px;
-        overflow: visible;
     }
-    #sbHead {
-        flex: 0 0 auto;
-        padding: 18px 0 12px;
-        justify-content: center;
-        border-bottom: 0;
-        margin-bottom: 0;
-    }
-    #sbHead .sb-logo-text { display: none; }
-    /* марка тёмная на белом — в ОБЕИХ темах */
-    #sbHead .sb-logo-mark,
-    body.dark-mode #sbHead .sb-logo-mark {
-        background: linear-gradient(180deg, #232B3B 0%, #141A26 100%);
-        color: #F1F6FB;
-    }
-
-    /* пункт рейки: иконка + микроподпись */
-    #sbNav .sb-item,
-    body.dark-mode #sbNav .sb-item {
+    body.sb-rail #sbNav .sb-item {
         flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: center;
         justify-content: center;
         gap: 5px;
         width: 60px;
@@ -146,269 +474,74 @@
         letter-spacing: 0.005em;
         text-align: center;
         color: rgba(31, 38, 55, 0.58);
-        background: transparent;
     }
-    #sbNav .sb-item svg { width: 20px; height: 20px; }
+    body.dark-mode.sb-rail #sbNav .sb-item { color: rgba(233, 238, 248, 0.55); }
+    body.sb-rail #sbNav .sb-item > svg {
+        width: 20px; height: 20px;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        color: inherit;
+    }
+    body.sb-rail #sbNav .sb-cap { display: none; }
     /* Подпись раздела. NB: имя вкладки МОЖНО ПЕРЕИМЕНОВАТЬ из админки
        (js/tab-gates.js), и в проде уже есть «Академия Ребалансировки» — в 60px
-       такое не влезает никак. Поэтому не nowrap, а две строки с многоточием:
-       короткие подписи остаются в одну строку и ничего не теряют, длинная
-       ужимается внутрь рейки вместо того, чтобы вылезать за карточку. */
-    #sbNav .sb-label {
-        opacity: 1 !important;         /* фейд подписей был механикой peek */
+       такое не влезает никак. Две строки с многоточием. */
+    body.sb-rail #sbNav .sb-label {
+        flex: none;
+        padding-top: 0;
         display: -webkit-box;
         -webkit-box-orient: vertical;
         -webkit-line-clamp: 2;
-        white-space: normal;
         line-height: 1.18;
         max-width: 100%;
         overflow: hidden;
         word-break: break-word;
     }
-    #sbNav .sb-item:hover,
-    body.dark-mode #sbNav .sb-item:hover {
+    body.sb-rail #sbNav .sb-item:hover {
         background: rgba(31, 38, 55, 0.05);
         color: rgba(31, 38, 55, 0.92);
     }
-    /* активный раздел: риска и зелёные чернила, БЕЗ пилюли (язык «Подъёма») */
-    #sbNav .sb-item.active,
-    body.dark-mode #sbNav .sb-item.active {
-        background: transparent;
-        color: var(--sbr-acc);
-        font-weight: 700;
+    body.dark-mode.sb-rail #sbNav .sb-item:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: rgba(233, 238, 248, 0.92);
     }
-    #sbNav .sb-item.active::before {
+    body.sb-rail #sbNav .sb-item:hover .sb-label { color: inherit; }
+    body.sb-rail #sbNav .sb-item.active { color: var(--sbr-sel); font-weight: 700; }
+    body.sb-rail #sbNav .sb-item.active .sb-label { color: inherit; font-weight: 700; }
+    body.sb-rail #sbNav .sb-item.active > svg { background: transparent; border: 0; color: inherit; }
+    body.sb-rail #sbNav .sb-item::before {
+        display: block;
         left: -8px;
         width: 3px;
         height: 34px;
-        background: var(--sbr-acc);
-        border-radius: 0 3px 3px 0;
+        background: transparent;
     }
-    /* второй уровень уехал в колонку — шевроны и inline-подпункты не нужны */
-    #sbNav .sb-chev,
-    #sbNav .sb-subs { display: none; }
-
-    /* «Развернуть» внизу рейки — ТОЛЬКО там, где есть что разворачивать:
-       раздел со вторым уровнем, и он сейчас свёрнут. На «Главной», «Тесте»,
-       «Ребалансе» колонки не бывает вовсе — кнопка там была бы мёртвой
-       (когда колонка раскрыта, «Свернуть» живёт в её подвале). */
-    body.sb-hascol:not(.sb-ctx) #sbRailFoot {
-        margin-top: auto;
-        display: flex;
+    body.sb-rail #sbNav .sb-item.active::before { background: var(--sbr-sel); border-radius: 0 3px 3px 0; }
+    body.sb-rail #sbCtx { display: none; }
+    body.sb-rail #sbRailFoot {
         justify-content: center;
         padding: 6px 0 10px;
-        width: 100%;
+        border-top: 0;
     }
+    body.sb-rail #sbRailFoot .sbf-slot { display: none; }
 
-    /* ---------- Колонка второго уровня ---------- */
-    #sbCtx {
-        display: none;
-        width: var(--sbr-ctx-w);
-        flex: 0 0 auto;
-        min-width: 0;
-        flex-direction: column;
-        background: var(--sbr-ctx);
-        color: var(--sbr-ink);
-        font-family: 'Inter', sans-serif;
+    /* «Главная» (экран «Добро пожаловать») — рейка остаётся компактной парящей
+       карточкой по содержимому, ровно как была: сплошная полоса во весь экран
+       поверх манифеста читалась чужой. */
+    body.tab-home #appShell {
+        grid-template-columns: calc(var(--sbr-rail-w) + 14px) minmax(0, 1fr);
     }
-    body.sb-ctx #sbCtx { display: flex; }
-
-    /* шапка колонки: главное — число, название раздела подписью над ним
-       (имя раздела уже написано на рейке в 76px левее) */
-    .sbc-head {
-        flex: 0 0 auto;
-        padding: 15px 16px 14px;
-        border-bottom: 1px solid var(--sbr-line);
+    body.tab-home #appShell > #sideBar { padding: 14px 0 14px 14px; }
+    body.tab-home #sbPanel {
+        flex: 0 1 auto;
+        height: auto;
+        border-radius: 20px;
+        border-right: 0;
+        box-shadow: 0 10px 30px rgba(20, 27, 45, 0.10);
     }
-    .sbc-head h4 {
-        margin: 0;
-        font-size: 15px;
-        font-weight: 600;
-        letter-spacing: -0.01em;
-        line-height: 1.2;
-        color: rgba(31, 38, 55, 0.60);
-    }
-    /* у раздела без своего числа (Расчёт, Рынок) подпись и есть заголовок —
-       мельчить её незачем, второй строки под ней не будет */
-    .sbc-head.solo h4 { font-size: 17px; font-weight: 600; color: var(--sbr-ink); }
-    .sbc-cap {
-        margin-top: 7px;
-        display: flex;
-        align-items: baseline;
-        gap: 8px;
-        font-family: 'JetBrains Mono', ui-monospace, monospace;
-        font-size: 15px;
-        font-weight: 700;
-        letter-spacing: -0.02em;
-        color: var(--sbr-ink);
-    }
-    .sbc-chip {
-        padding: 2px 6px;
-        border-radius: 6px;
-        font-size: 10px;
-        font-weight: 700;
-        background: rgba(23, 122, 79, 0.13);
-        color: #177A4F;
-    }
-    .sbc-chip.neg { background: rgba(192, 54, 44, 0.13); color: #C0362C; }
-
-    /* список */
-    .sbc-list {
-        flex: 1 1 auto;
-        min-height: 0;
-        overflow-y: auto;
-        overflow-x: hidden;
-        scrollbar-width: none;
-        padding: 6px 0 8px;
-    }
-    .sbc-list::-webkit-scrollbar { display: none; }
-    /* растворение у нижней кромки вместо полосы прокрутки — ставит класс
-       js/sidebar-ctx.js, когда список честно не помещается */
-    .sbc-list.is-scroll { -webkit-mask-image: linear-gradient(180deg, #000 88%, transparent); }
-
-    /* подпись группы держит волосяную линию: разделитель и заголовок — один элемент */
-    .sbc-grp {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 14px 16px 6px;
-        font-size: 9.5px;
-        font-weight: 800;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        color: rgba(31, 38, 55, 0.44);
-    }
-    .sbc-grp::after { content: ''; flex: 1; height: 1px; background: var(--sbr-line); }
-    .sbc-list > .sbc-grp:first-child { padding-top: 8px; }
-
-    /* пункт колонки */
-    .sbc-it {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        width: calc(100% - 16px);
-        margin: 0 8px;
-        padding: 9px 10px;
-        border: 0;
-        border-radius: 10px;
-        background: transparent;
-        position: relative;
-        font-family: 'Inter', sans-serif;
-        font-size: 13px;
-        font-weight: 500;
-        letter-spacing: 0.01em;
-        line-height: 1.25;
-        text-align: left;
-        text-decoration: none;
-        color: rgba(31, 38, 55, 0.66);
-        cursor: pointer;
-        -webkit-tap-highlight-color: transparent;
-        transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
-    }
-    .sbc-it > svg {
-        width: 15px; height: 15px; flex: none;
-        fill: none; stroke: currentColor; stroke-width: 1.8;
-        stroke-linecap: round; stroke-linejoin: round;
-        opacity: 0.72;
-    }
-    .sbc-tx { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .sbc-it:hover { background: rgba(31, 38, 55, 0.05); color: rgba(31, 38, 55, 0.94); }
-    /* ВЫБОР = ПОДЪЁМ: белая карточка над полем, зелёного в колонке нет */
-    .sbc-it.on {
-        background: var(--sbr-rail);
-        color: var(--sbr-ink);
-        font-weight: 600;
-        box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.07),
-                    0 1px 1px rgba(15, 23, 42, 0.04),
-                    0 10px 20px -14px rgba(24, 38, 60, 0.55);
-    }
-    .sbc-it.on > svg { opacity: 1; color: var(--sbr-acc); }
-    .sbc-it:focus-visible { outline: 2px solid var(--sbr-acc); outline-offset: -2px; }
-
-    /* счётчик — справка, не акцент */
-    .sbc-n {
-        margin-left: auto;
-        flex: none;
-        font-family: 'JetBrains Mono', ui-monospace, monospace;
-        font-size: 10.5px;
-        font-weight: 600;
-        color: rgba(31, 38, 55, 0.42);
-    }
-    .sbc-it.on .sbc-n { color: rgba(31, 38, 55, 0.46); }
-
-    /* точка портфеля */
-    .sbc-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; margin: 0 3px; }
-    /* дневное изменение — единственное цветное число в навигации; по наведению
-       уступает место крестику (данных нет — просто пусто, ничего не выдумываем) */
-    .sbc-chg {
-        margin-left: auto;
-        flex: none;
-        font-family: 'JetBrains Mono', ui-monospace, monospace;
-        font-size: 10.5px;
-        font-weight: 700;
-        letter-spacing: -0.01em;
-        color: #177A4F;
-    }
-    .sbc-chg.neg { color: #C0362C; }
-    .sbc-x {
-        margin-left: auto;
-        flex: none;
-        width: 18px; height: 18px;
-        display: none;
-        place-items: center;
-        border-radius: 6px;
-        color: rgba(31, 38, 55, 0.40);
-    }
-    .sbc-x svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
-    .sbc-x:hover { background: rgba(31, 38, 55, 0.08); color: var(--sbr-ink); }
-    .sbc-it:hover .sbc-x { display: grid; }
-    .sbc-it:hover .sbc-chg { display: none; }
-    /* строка-«призрак»: «Открыть портфель» — действие, а не раздел */
-    .sbc-it.gh { color: rgba(31, 38, 55, 0.46); font-weight: 600; }
-    .sbc-it.dim .sbc-tx { opacity: 0.6; }
-
-    /* третий уровень — экраны «Торговли»: вложенность даёт отступ, не заливка */
-    .sbc-it.lvl3 {
-        margin-left: 34px;
-        width: calc(100% - 42px);
-        padding-left: 14px;
-        font-size: 12px;
-    }
-    .sbc-it.lvl3::after {
-        content: '';
-        position: absolute;
-        left: 0; top: 7px; bottom: 7px;
-        width: 1px;
-        border-radius: 1px;
-        background: rgba(31, 38, 55, 0.18);
-    }
-    .sbc-it.lvl3.on::after { width: 2px; background: var(--sbr-acc); }
-
-    /* подвал колонки: «Настройки» подписью, «Свернуть» иконкой справа */
-    .sbc-foot {
-        flex: 0 0 auto;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        padding: 8px;
-        border-top: 1px solid var(--sbr-line);
-    }
-    .sbc-foot .sbc-it { margin: 0; width: auto; flex: 1 1 auto; }
-    .sbc-btn {
-        width: 34px; height: 34px;
-        flex: none;
-        display: grid;
-        place-items: center;
-        border: 0;
-        border-radius: 9px;
-        background: transparent;
-        color: rgba(31, 38, 55, 0.46);
-        cursor: pointer;
-        transition: background 0.15s ease, color 0.15s ease;
-    }
-    .sbc-btn svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
-    .sbc-btn:hover { background: rgba(31, 38, 55, 0.05); color: rgba(31, 38, 55, 0.90); }
-    .sbc-btn:focus-visible { outline: 2px solid var(--sbr-acc); outline-offset: 2px; }
+    body.dark-mode.tab-home #sbPanel { box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45); }
 
     /* ---------- Шапка сайта: ряд подвкладок «Портфелей» уехал в колонку ---------- */
     /* Слот середины больше не наполняется (см. renderTopBarMarket) — глушим,
