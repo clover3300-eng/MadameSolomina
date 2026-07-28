@@ -27,6 +27,19 @@
     }
     window.sbRailSync = sbRailSync;
 
+    // В рейке 84px подпись раздела обрезается многоточием (переименованная из
+    // админки «Академия Ребалансировки» просит 185px), и целиком имя показывает
+    // только подсказка. Статический title из разметки после переименования врал
+    // бы — держим его равным тому, что реально написано в подписи.
+    function sbTitleSync() {
+        document.querySelectorAll('#sbNav .sb-item[data-tab]').forEach(function (it) {
+            var lbl = it.querySelector('.sb-label');
+            var tx = lbl ? lbl.textContent.trim() : '';
+            if (tx && it.getAttribute('title') !== tx) it.setAttribute('title', tx);
+        });
+    }
+    window.sbTitleSync = sbTitleSync;
+
     // Умолчание — РАЗВЁРНУТО: колонка и есть навигация раздела, прятать её по
     // умолчанию значило бы прятать второй уровень. Явный выбор пользователя
     // (localStorage) старше умолчания.
@@ -36,6 +49,7 @@
             document.body.classList.toggle('sb-collapsed', stored === '1');
         } catch (e) {}
         sbRailSync();
+        sbTitleSync();
         if (window.updateCollapseLabel) window.updateCollapseLabel();
         if (window.sbCtxSync) window.sbCtxSync();
     }
@@ -266,6 +280,7 @@
         });
         // «Главная» показывает рейку, остальные разделы — колонку
         sbRailSync();
+        sbTitleSync();   // подпись могли переименовать из админки — подсказка следом
         // Второй уровень зеркалит эти же .sb-sub («Расчёт»/«Рынок») и спрашивает
         // PF о «Портфелях» — пересобирается ПОСЛЕ простановки .active, а ещё он
         // встаёт в разметку сразу за активным разделом (см. placeCtx)

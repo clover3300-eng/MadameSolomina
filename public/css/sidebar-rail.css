@@ -23,7 +23,7 @@
    ДВА СОСТОЯНИЯ, признак — body.sb-rail (ставит js/sidebar.js, а на первом
    кадре — инлайн-скрипт под <body>):
      • нет sb-rail — колонка 288px (умолчание);
-     • есть sb-rail — прежняя рейка 76px: иконки с микроподписями, второго
+     • есть sb-rail — рейка 84px: кружок-иконка с подписью, второго
        уровня нет. Сюда попадают «свёрнуто» и «Главная» (на манифесте
        поверх живой карты колонка во всю высоту читалась бы чужой).
 
@@ -45,7 +45,7 @@
            уводила подпись во вторую строку. 288 даёт 20px запаса и заодно
            повторяет прежнюю сумму двух столбцов (76 + 212). */
         --sbr-w:      288px;       /* колонка */
-        --sbr-rail-w:  76px;       /* свёрнутая рейка */
+        --sbr-rail-w:  84px;       /* свёрнутая рейка (мокап Л1) */
         --sbr-card:  #FFFFFF;      /* поле колонки */
         --sbr-page:  #F4F6FA;      /* цвет страницы = фон выбранной пилюли */
         --sbr-ink:   #101828;
@@ -441,9 +441,15 @@
     body:not(.sb-rail) #sbRailFoot .sbc-btn svg { transform: rotate(180deg); }
 
     /* =================================================================
-       СВЁРНУТОЕ СОСТОЯНИЕ — прежняя рейка 76px.
+       СВЁРНУТОЕ СОСТОЯНИЕ — рейка 84px (мокап Л1 «Кружок + подпись»).
        Сюда же попадает «Главная»: колонка во всю высоту на манифесте
        поверх живой карты читалась бы чужой (признак ставит sidebar.js).
+
+       Рейка говорит ЯЗЫКОМ КОЛОНКИ: раздел — тот же кружок-иконка, только
+       36px вместо 29, активный помечен той же зелёной заливкой. Прежняя
+       рейка меняла язык на голые иконки, и свёртка читалась не сужением
+       меню, а другим меню. Риска у левого края экрана снята: метка обязана
+       принадлежать пункту, а не краю окна.
        ================================================================= */
     body.sb-rail #sbHead { padding: 18px 0 12px; justify-content: center; }
     body.sb-rail #sbHead #sbLogo { justify-content: center; gap: 0; }
@@ -453,71 +459,99 @@
         overflow: visible;
         align-items: center;
         gap: 2px;
-        padding: 6px 8px 10px;
+        padding: 6px 4px 10px;
     }
-    body.sb-rail #sbNav .sb-item {
+    body.sb-rail #sbNav .sb-item,
+    body.dark-mode.sb-rail #sbNav .sb-item {
         flex-direction: column;
         flex-wrap: nowrap;
         align-items: center;
         justify-content: center;
-        gap: 5px;
-        width: 60px;
-        padding: 8px 0 6px;
-        border-radius: 12px;
-        font-size: 9.5px;
+        gap: 7px;
+        width: 76px;
+        padding: 7px 0 8px;
+        border-radius: 14px;
+        font-size: 11px;
         font-weight: 600;
-        letter-spacing: 0.005em;
+        letter-spacing: 0;
         text-align: center;
-        color: rgba(31, 38, 55, 0.58);
-    }
-    body.dark-mode.sb-rail #sbNav .sb-item { color: rgba(233, 238, 248, 0.55); }
-    body.sb-rail #sbNav .sb-item > svg {
-        width: 20px; height: 20px;
-        padding: 0;
-        border: 0;
-        border-radius: 0;
+        color: var(--sbr-mut);
         background: transparent;
-        color: inherit;
+    }
+    /* кружок 36px: 36 − 2×1,5 обводки − 2×7,5 паддинга = иконка 18px */
+    body.sb-rail #sbNav .sb-item > svg {
+        width: 36px; height: 36px;
+        padding: 7.5px;
+        border: 1.5px solid var(--sbr-line);
+        border-radius: 50%;
+        background: var(--sbr-card);
+        color: var(--sbr-dim);
     }
     /* Подпись раздела. NB: имя вкладки МОЖНО ПЕРЕИМЕНОВАТЬ из админки
-       (js/tab-gates.js), и в проде уже есть «Академия Ребалансировки» — в 60px
-       такое не влезает никак. Две строки с многоточием. */
+       (js/tab-gates.js), и в проде уже есть «Академия Ребалансировки» — она
+       просит 185px и не влезает ни в какую рейку. Раньше её ломало на две
+       строки, отчего ряд скакал по высоте; теперь честное многоточие в одну
+       строку, а целиком имя показывает подсказка (title синхронизирует
+       sbTitleSync в sidebar.js — статический title после переименования врал). */
     body.sb-rail #sbNav .sb-label {
         flex: none;
-        padding-top: 0;
-        display: -webkit-box;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 2;
-        line-height: 1.18;
+        display: block;
         max-width: 100%;
+        padding: 0 4px;
+        line-height: 1.2;
+        white-space: nowrap;
         overflow: hidden;
-        word-break: break-word;
+        text-overflow: ellipsis;
+        color: inherit;
     }
-    body.sb-rail #sbNav .sb-item:hover {
-        background: rgba(31, 38, 55, 0.05);
-        color: rgba(31, 38, 55, 0.92);
-    }
+    body.sb-rail #sbNav .sb-item:hover,
     body.dark-mode.sb-rail #sbNav .sb-item:hover {
-        background: rgba(255, 255, 255, 0.05);
-        color: rgba(233, 238, 248, 0.92);
+        background: transparent;
+        color: var(--sbr-ink);
+    }
+    body.sb-rail #sbNav .sb-item:hover > svg {
+        border-color: var(--sbr-dim);
+        background: var(--sbr-page);
+        color: var(--sbr-ink);
     }
     body.sb-rail #sbNav .sb-item:hover .sb-label { color: inherit; }
     body.sb-rail #sbNav .sb-item.active { color: var(--sbr-sel); font-weight: 700; }
     body.sb-rail #sbNav .sb-item.active .sb-label { color: inherit; font-weight: 700; }
-    body.sb-rail #sbNav .sb-item.active > svg { background: transparent; border: 0; color: inherit; }
-    body.sb-rail #sbNav .sb-item::before {
-        display: block;
-        left: -8px;
-        width: 3px;
-        height: 34px;
-        background: transparent;
+    body.sb-rail #sbNav .sb-item.active > svg {
+        background: var(--sbr-sel);
+        border-color: var(--sbr-sel);
+        color: var(--sbr-sel-ic);
     }
-    body.sb-rail #sbNav .sb-item.active::before { background: var(--sbr-sel); border-radius: 0 3px 3px 0; }
+    body.sb-rail #sbNav .sb-item::before { display: none; }
     body.sb-rail #sbCtx { display: none; }
+    /* подвал: волосяная черта и тот же кружок, что у разделов — колонка
+       читается единым ритмом сверху донизу */
     body.sb-rail #sbRailFoot {
+        position: relative;
         justify-content: center;
-        padding: 6px 0 10px;
+        padding: 13px 0 14px;
         border-top: 0;
+    }
+    body.sb-rail #sbRailFoot::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 50%;
+        transform: translateX(-50%);
+        width: 28px; height: 1px;
+        background: var(--sbr-line);
+    }
+    body.sb-rail #sbRailFoot .sbc-btn {
+        width: 36px; height: 36px;
+        border: 1.5px solid var(--sbr-line);
+        border-radius: 50%;
+        background: var(--sbr-card);
+        color: var(--sbr-dim);
+    }
+    body.sb-rail #sbRailFoot .sbc-btn svg { width: 18px; height: 18px; }
+    body.sb-rail #sbRailFoot .sbc-btn:hover {
+        border-color: var(--sbr-dim);
+        background: var(--sbr-page);
+        color: var(--sbr-ink);
     }
     body.sb-rail #sbRailFoot .sbf-slot { display: none; }
 
