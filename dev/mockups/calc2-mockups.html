@@ -271,6 +271,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .col .base{background:color-mix(in srgb,var(--ink) 11%,transparent)}
 .col .base.top{border-radius:6px 6px 0 0}
 .col .y{font-family:var(--fN);font-size:10px;font-weight:600;color:var(--mut);padding-top:8px}
+.col .v.q{visibility:hidden}
 .legend{flex:none;display:flex;gap:18px;margin-top:16px;font-family:var(--fN);font-size:9.5px;font-weight:700;color:var(--mut)}
 .legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:-1px}
 .legend .b1{background:color-mix(in srgb,var(--ink) 11%,transparent)}
@@ -458,12 +459,9 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   </div>
   <div class="dials">
     <span class="dial">Имён на странице: <b>1</b></span>
-    <span class="dial">Скругления <b>18 / 12 / 10 / 6</b></span>
-    <span class="dial">Синий = <b>облигации</b>, охра = <b>акции</b></span>
-    <span class="dial">Зелёный — <b>только сайдбару</b></span>
-    <span class="dial">Выбор = <b>подъём</b></span>
-    <span class="dial">Контрол на экране: <b>не больше трёх в ряд</b></span>
-    <span class="dial">Сцена <b>1400 × 748</b>, колонка <b>288</b></span>
+    <span class="dial">Каждый факт — <b>ровно в одном месте</b></span>
+    <span class="dial">Кнопка на экране <b>одна</b>, остальное — тихие ссылки</span>
+    <span class="dial">Синий = <b>облигации</b>, охра = <b>акции</b>, зелёный — <b>сайдбару</b></span>
   </div>
 </div>
 
@@ -481,9 +479,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
           <div class="bx-cap">
             <div class="top"><em>Капитал · все портфели</em></div>
             <div class="v"><b class="num">1 462 380 ₽</b><span class="chg num">+0,8%</span></div>
-            <div class="day num">+11 640 ₽ за сегодня</div>
-            <div class="bar"><i style="width:62%;background:#c9683f"></i><i style="width:38%;background:#5f7fa8"></i><span class="tick" style="left:58%"></span></div>
-            <div class="lg"><span class="num">Акции <b>62</b> · цель 58</span><span class="num">Облигации <b>38</b> · цель 42</span></div>
+            <div class="day num">+11 640 ₽<i>сегодня</i></div>
+            <div class="spk">
+              <svg class="ln" viewBox="0 0 200 24" preserveAspectRatio="none"><path d="M0 18 L14 15 L28 19 L42 12 L56 14 L70 8 L84 11 L98 6 L112 9 L126 5 L140 3 L154 6 L168 5 L182 9 L200 10"/></svg>
+              <span class="go"><svg viewBox="0 0 24 24"><polyline points="9 5 16 12 9 19"/></svg></span>
+            </div>
           </div>
           <div class="bx-grid">
             <div class="bx-cell on"><i class="circ on"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span>Расчёт</span></div>
@@ -572,9 +572,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
           <div class="bx-cap">
             <div class="top"><em>Капитал · все портфели</em></div>
             <div class="v"><b class="num">1 462 380 ₽</b><span class="chg num">+0,8%</span></div>
-            <div class="day num">+11 640 ₽ за сегодня</div>
-            <div class="bar"><i style="width:62%;background:#c9683f"></i><i style="width:38%;background:#5f7fa8"></i><span class="tick" style="left:58%"></span></div>
-            <div class="lg"><span class="num">Акции <b>62</b> · цель 58</span><span class="num">Облигации <b>38</b> · цель 42</span></div>
+            <div class="day num">+11 640 ₽<i>сегодня</i></div>
+            <div class="spk">
+              <svg class="ln" viewBox="0 0 200 24" preserveAspectRatio="none"><path d="M0 18 L14 15 L28 19 L42 12 L56 14 L70 8 L84 11 L98 6 L112 9 L126 5 L140 3 L154 6 L168 5 L182 9 L200 10"/></svg>
+              <span class="go"><svg viewBox="0 0 24 24"><polyline points="9 5 16 12 9 19"/></svg></span>
+            </div>
           </div>
           <div class="bx-grid">
             <div class="bx-cell on"><i class="circ on"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span>Расчёт</span></div>
@@ -685,9 +687,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
           <div class="bx-cap">
             <div class="top"><em>Капитал · все портфели</em></div>
             <div class="v"><b class="num">1 462 380 ₽</b><span class="chg num">+0,8%</span></div>
-            <div class="day num">+11 640 ₽ за сегодня</div>
-            <div class="bar"><i style="width:62%;background:#c9683f"></i><i style="width:38%;background:#5f7fa8"></i><span class="tick" style="left:58%"></span></div>
-            <div class="lg"><span class="num">Акции <b>62</b> · цель 58</span><span class="num">Облигации <b>38</b> · цель 42</span></div>
+            <div class="day num">+11 640 ₽<i>сегодня</i></div>
+            <div class="spk">
+              <svg class="ln" viewBox="0 0 200 24" preserveAspectRatio="none"><path d="M0 18 L14 15 L28 19 L42 12 L56 14 L70 8 L84 11 L98 6 L112 9 L126 5 L140 3 L154 6 L168 5 L182 9 L200 10"/></svg>
+              <span class="go"><svg viewBox="0 0 24 24"><polyline points="9 5 16 12 9 19"/></svg></span>
+            </div>
           </div>
           <div class="bx-grid">
             <div class="bx-cell on"><i class="circ on"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span>Расчёт</span></div>
@@ -720,7 +724,6 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
               <div class="v"><b class="num">1 000 000</b><span class="num">₽</span></div>
             </div>
             <div class="chips">
-              <span class="chip wide"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>Из портфелей · 1,46 млн</span>
               <span class="chip wide">Срок <b class="num" style="margin-left:2px;color:var(--ink)">3 года</b><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
               <span class="chip wide">Комиссия <b class="num" style="margin-left:2px;color:var(--ink)">0,3%</b><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
             </div>
@@ -731,25 +734,23 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
             <div class="cd">
               <div class="cd-hd"><h4>Ваш портфель через 3 года</h4><span class="aside">сценарий 1.32 млн – 1.61 млн</span></div>
               <div class="lead"><span class="ap">≈</span><span class="num">1.46</span><span class="u">млн ₽ через 3 года</span></div>
-              <div class="sub">облигации <b class="cb">50%</b> · акции <b class="ce">50%</b> · доходность <b>13,5% годовых</b></div>
+              <div class="sub">стратегия <b>«Гармония»</b> · <b>13,5% годовых</b></div>
               <div class="cols">
                 <div class="col"><span class="v num">1.00 млн</span><div class="stack"><i class="base top" style="height:61%"></i></div><span class="y num">сегодня</span></div>
-                <div class="col"><span class="v num">1.13 млн</span><div class="stack"><i class="eq" style="height:3%"></i><i class="bo" style="height:4%"></i><i class="base" style="height:61%"></i></div><span class="y num">2027</span></div>
-                <div class="col"><span class="v num">1.29 млн</span><div class="stack"><i class="eq" style="height:7%"></i><i class="bo" style="height:10%"></i><i class="base" style="height:61%"></i></div><span class="y num">2028</span></div>
+                <div class="col"><span class="v num q">1.13 млн</span><div class="stack"><i class="eq" style="height:3%"></i><i class="bo" style="height:4%"></i><i class="base" style="height:61%"></i></div><span class="y num">2027</span></div>
+                <div class="col"><span class="v num q">1.29 млн</span><div class="stack"><i class="eq" style="height:7%"></i><i class="bo" style="height:10%"></i><i class="base" style="height:61%"></i></div><span class="y num">2028</span></div>
                 <div class="col"><span class="v num">1.46 млн</span><div class="stack"><i class="eq" style="height:11%"></i><i class="bo" style="height:16%"></i><i class="base" style="height:61%"></i></div><span class="y num">2029</span></div>
               </div>
               <div class="legend"><span><i class="b1"></i>вложено</span><span><i class="b2"></i>облигации</span><span><i class="b3"></i>акции</span></div>
               <div class="facts">
-                <div class="fact"><span class="l">Доход в месяц</span><span class="v o num">≈ 7 243 ₽</span></div>
                 <div class="fact"><span class="l">Прибыль за 3 года</span><span class="v g num">+ 461 380 ₽</span></div>
               </div>
               <div class="cta">
                 <span class="btn">Создать портфель<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
-                <span class="btn ghost">Сохранить расчёт</span>
               </div>
             </div>
             <div class="cd">
-              <div class="cd-hd"><h4>Стратегия</h4><span class="aside"><i class="d1"></i>обл.<i class="d2"></i>акц.</span></div>
+              <div class="cd-hd"><h4>Стратегия</h4></div>
               <div class="strat">
                 <div class="srow"><i class="wf" style="background:linear-gradient(180deg,var(--bond) 0 70%,var(--eq) 70% 100%)"></i><div class="n"><b>Депозит</b><i>Защита капитала</i></div><div class="mix"><em class="b num">Обл. 70%</em><em class="s num">Акц. 30%</em></div></div>
                 <div class="srow"><i class="wf" style="background:linear-gradient(180deg,var(--bond) 0 60%,var(--eq) 60% 100%)"></i><div class="n"><b>Баланс</b><i>Умеренный риск</i></div><div class="mix"><em class="b num">Обл. 60%</em><em class="s num">Акц. 40%</em></div></div>
@@ -788,9 +789,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
           <div class="bx-cap">
             <div class="top"><em>Капитал · все портфели</em></div>
             <div class="v"><b class="num">1 462 380 ₽</b><span class="chg num">+0,8%</span></div>
-            <div class="day num">+11 640 ₽ за сегодня</div>
-            <div class="bar"><i style="width:62%;background:#c9683f"></i><i style="width:38%;background:#5f7fa8"></i><span class="tick" style="left:58%"></span></div>
-            <div class="lg"><span class="num">Акции <b>62</b> · цель 58</span><span class="num">Облигации <b>38</b> · цель 42</span></div>
+            <div class="day num">+11 640 ₽<i>сегодня</i></div>
+            <div class="spk">
+              <svg class="ln" viewBox="0 0 200 24" preserveAspectRatio="none"><path d="M0 18 L14 15 L28 19 L42 12 L56 14 L70 8 L84 11 L98 6 L112 9 L126 5 L140 3 L154 6 L168 5 L182 9 L200 10"/></svg>
+              <span class="go"><svg viewBox="0 0 24 24"><polyline points="9 5 16 12 9 19"/></svg></span>
+            </div>
           </div>
           <div class="bx-grid">
             <div class="bx-cell on"><i class="circ on"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span>Расчёт</span></div>
@@ -830,30 +833,25 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
             <div class="l">
               <em>Ваш портфель через 3 года</em>
               <div class="big"><span class="ap">≈</span><span class="num">1,46</span><span class="u">млн ₽</span></div>
-              <div class="sub">стратегия <b>«Гармония»</b> · облигации <b class="cb">50%</b> · акции <b class="ce">50%</b> · <b>13,5% годовых</b> · сценарий 1,32 – 1,61 млн</div>
+              <div class="sub">стратегия <b>«Гармония»</b> · <b>13,5% годовых</b></div>
             </div>
             <div class="r">
-              <div class="fact"><span class="l">Вложено</span><span class="v num">1 000 000 ₽</span></div>
               <div class="fact"><span class="l">Прибыль за 3 года</span><span class="v g num">+ 461 380 ₽</span></div>
-              <div class="fact"><span class="l">Доход в месяц</span><span class="v o num">≈ 7 243 ₽</span></div>
             </div>
           </div>
           <div class="gr g2">
             <div class="cd">
-              <div class="cd-hd"><h4>По годам</h4><span class="aside"><i class="d0"></i>вложено<i class="d1"></i>облигации<i class="d2"></i>акции</span></div>
+              <div class="cd-hd"><h4>По годам</h4></div>
               <div class="cols">
                 <div class="col"><span class="v num">1.00 млн</span><div class="stack"><i class="base top" style="height:61%"></i></div><span class="y num">сегодня</span></div>
-                <div class="col"><span class="v num">1.13 млн</span><div class="stack"><i class="eq" style="height:3%"></i><i class="bo" style="height:4%"></i><i class="base" style="height:61%"></i></div><span class="y num">2027</span></div>
-                <div class="col"><span class="v num">1.29 млн</span><div class="stack"><i class="eq" style="height:7%"></i><i class="bo" style="height:10%"></i><i class="base" style="height:61%"></i></div><span class="y num">2028</span></div>
+                <div class="col"><span class="v num q">1.13 млн</span><div class="stack"><i class="eq" style="height:3%"></i><i class="bo" style="height:4%"></i><i class="base" style="height:61%"></i></div><span class="y num">2027</span></div>
+                <div class="col"><span class="v num q">1.29 млн</span><div class="stack"><i class="eq" style="height:7%"></i><i class="bo" style="height:10%"></i><i class="base" style="height:61%"></i></div><span class="y num">2028</span></div>
                 <div class="col"><span class="v num">1.46 млн</span><div class="stack"><i class="eq" style="height:11%"></i><i class="bo" style="height:16%"></i><i class="base" style="height:61%"></i></div><span class="y num">2029</span></div>
               </div>
-              <div class="facts" style="padding-top:12px">
-                <div class="fact"><span class="l">Прибыль облигаций</span><span class="v num" style="color:var(--bondtx)">+ 271 200 ₽</span></div>
-                <div class="fact"><span class="l">Прибыль акций</span><span class="v num" style="color:var(--eqtx)">+ 190 180 ₽</span></div>
-              </div>
+              <div class="legend"><span><i class="b1"></i>вложено</span><span><i class="b2"></i>облигации</span><span><i class="b3"></i>акции</span></div>
             </div>
             <div class="cd">
-              <div class="cd-hd"><h4>Стратегия</h4><span class="aside">доля акций задаёт риск</span></div>
+              <div class="cd-hd"><h4>Стратегия</h4></div>
               <div class="strat">
                 <div class="srow"><i class="wf" style="background:linear-gradient(180deg,var(--bond) 0 70%,var(--eq) 70% 100%)"></i><div class="n"><b>Депозит</b><i>Защита капитала</i></div><div class="mix"><em class="b num">Обл. 70%</em><em class="s num">Акц. 30%</em></div></div>
                 <div class="srow"><i class="wf" style="background:linear-gradient(180deg,var(--bond) 0 60%,var(--eq) 60% 100%)"></i><div class="n"><b>Баланс</b><i>Умеренный риск</i></div><div class="mix"><em class="b num">Обл. 60%</em><em class="s num">Акц. 40%</em></div></div>
@@ -866,7 +864,6 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
           </div>
           <div class="cta">
             <span class="btn">Создать портфель<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
-            <span class="btn ghost">Сохранить расчёт</span>
             <span class="sp"></span>
             <span class="qlink" style="margin-top:0">
               <span>Не знаете, какую стратегию выбрать?</span><b>Тест риск-профиля</b><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
@@ -884,9 +881,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
           <div class="bx-cap">
             <div class="top"><em>Капитал · все портфели</em></div>
             <div class="v"><b class="num">1 462 380 ₽</b><span class="chg num">+0,8%</span></div>
-            <div class="day num">+11 640 ₽ за сегодня</div>
-            <div class="bar"><i style="width:62%;background:#c9683f"></i><i style="width:38%;background:#5f7fa8"></i><span class="tick" style="left:58%"></span></div>
-            <div class="lg"><span class="num">Акции <b>62</b> · цель 58</span><span class="num">Облигации <b>38</b> · цель 42</span></div>
+            <div class="day num">+11 640 ₽<i>сегодня</i></div>
+            <div class="spk">
+              <svg class="ln" viewBox="0 0 200 24" preserveAspectRatio="none"><path d="M0 18 L14 15 L28 19 L42 12 L56 14 L70 8 L84 11 L98 6 L112 9 L126 5 L140 3 L154 6 L168 5 L182 9 L200 10"/></svg>
+              <span class="go"><svg viewBox="0 0 24 24"><polyline points="9 5 16 12 9 19"/></svg></span>
+            </div>
           </div>
           <div class="bx-grid">
             <div class="bx-cell on"><i class="circ on"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span>Расчёт</span></div>
@@ -926,17 +925,15 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
             <div class="l">
               <em>Купоны приходят каждый месяц</em>
               <div class="big"><span class="ap">≈</span><span class="num">8 686</span><span class="u">₽ в месяц</span></div>
-              <div class="sub">104 230 ₽ в год · <b>10,4% годовых</b> · после НДФЛ 13% · 6 выпусков ОФЗ, 12 выплат</div>
+              <div class="sub">104 230 ₽ в год · <b>10,4% годовых</b></div>
             </div>
             <div class="r">
-              <div class="fact"><span class="l">Вложено</span><span class="v num">1 000 000 ₽</span></div>
-              <div class="fact"><span class="l">Ближайшая выплата</span><span class="v o num">+ 8 168 ₽</span></div>
-              <div class="fact"><span class="l">ОФЗ 26240</span><span class="v num">12 авг</span></div>
+              <div class="fact"><span class="l">Ближайшая выплата · 12 августа</span><span class="v o num">+ 8 168 ₽</span></div>
             </div>
           </div>
           <div class="gr g2">
             <div class="cd">
-              <div class="cd-hd"><h4>Корзина ОФЗ</h4><span class="aside">выпуски подобраны по месяцам купона</span></div>
+              <div class="cd-hd"><h4>Корзина ОФЗ</h4></div>
               <div class="th"><span class="a">Облигация</span><span class="b">Доходность</span><span class="c">Кол-во</span></div>
               <div class="brows">
                 <div class="brow"><span class="a"><b>ОФЗ 26240</b><i>купоны · фев и авг</i></span><span class="b num">17,90%</span><span class="stp"><span class="k">−</span><span class="q num">269</span><span class="k">+</span></span></div>
@@ -949,7 +946,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
               <div class="bfoot"><span class="l">Свободный остаток<b class="num">4 120 ₽</b></span><span class="v num">1 000 000 ₽</span></div>
             </div>
             <div class="cd">
-              <div class="cd-hd"><h4>Выплаты по месяцам</h4><span class="aside">после НДФЛ 13%</span></div>
+              <div class="cd-hd"><h4>Выплаты по месяцам</h4></div>
               <div class="mbars">
                 <div class="mb hi"><i style="height:92%"></i><b>АВГ</b></div>
                 <div class="mb"><i style="height:74%"></i><b>СЕН</b></div>
@@ -964,14 +961,13 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
                 <div class="mb"><i style="height:84%"></i><b>ИЮН</b></div>
                 <div class="mb"><i style="height:68%"></i><b>ИЮЛ</b></div>
               </div>
-              <div class="bfoot"><span class="l">Самый тихий месяц<b class="num">май · 6 940 ₽</b></span><span class="v num">104 230 ₽ за год</span></div>
+              <div class="bfoot"><span class="v num">104 230 ₽ за год</span></div>
             </div>
           </div>
           <div class="cta">
             <span class="btn">Создать портфель<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
-            <span class="btn ghost">Подробный график выплат</span>
             <span class="sp"></span>
-            <span class="hint">Купоны и НКД — по данным MOEX, 12:04</span>
+            <span class="qlink" style="margin-top:0"><b>Подробный график выплат</b><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
           </div>
         </div>
       </div>
@@ -998,9 +994,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
           <div class="bx-cap">
             <div class="top"><em>Капитал · все портфели</em></div>
             <div class="v"><b class="num">1 462 380 ₽</b><span class="chg num">+0,8%</span></div>
-            <div class="day num">+11 640 ₽ за сегодня</div>
-            <div class="bar"><i style="width:62%;background:#c9683f"></i><i style="width:38%;background:#5f7fa8"></i><span class="tick" style="left:58%"></span></div>
-            <div class="lg"><span class="num">Акции <b>62</b> · цель 58</span><span class="num">Облигации <b>38</b> · цель 42</span></div>
+            <div class="day num">+11 640 ₽<i>сегодня</i></div>
+            <div class="spk">
+              <svg class="ln" viewBox="0 0 200 24" preserveAspectRatio="none"><path d="M0 18 L14 15 L28 19 L42 12 L56 14 L70 8 L84 11 L98 6 L112 9 L126 5 L140 3 L154 6 L168 5 L182 9 L200 10"/></svg>
+              <span class="go"><svg viewBox="0 0 24 24"><polyline points="9 5 16 12 9 19"/></svg></span>
+            </div>
           </div>
           <div class="bx-grid">
             <div class="bx-cell on"><i class="circ on"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span>Расчёт</span></div>
@@ -1032,7 +1030,6 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
               <div class="v"><b class="num">1 000 000</b><span class="num">₽</span></div>
             </div>
             <div class="chips">
-              <span class="chip wide"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>Из портфелей · 1,46 млн</span>
               <span class="chip wide">Срок <b class="num" style="margin-left:2px;color:var(--ink)">3 года</b><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
               <span class="chip wide">Комиссия <b class="num" style="margin-left:2px;color:var(--ink)">0,3%</b><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
             </div>
@@ -1043,11 +1040,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
             <div class="cd">
               <div class="cd-hd"><h4>Рост капитала</h4><span class="aside">через 3 года</span></div>
               <div class="lead"><span class="ap">≈</span><span class="num">1.46</span><span class="u">млн ₽</span></div>
-              <div class="sub">«Гармония» · обл. <b class="cb">50%</b> · акц. <b class="ce">50%</b> · <b>13,5% годовых</b></div>
+              <div class="sub">«Гармония» · <b>13,5% годовых</b></div>
               <div class="cols">
                 <div class="col"><span class="v num">1.00</span><div class="stack"><i class="base top" style="height:61%"></i></div><span class="y num">сегодня</span></div>
-                <div class="col"><span class="v num">1.13</span><div class="stack"><i class="eq" style="height:3%"></i><i class="bo" style="height:4%"></i><i class="base" style="height:61%"></i></div><span class="y num">2027</span></div>
-                <div class="col"><span class="v num">1.29</span><div class="stack"><i class="eq" style="height:7%"></i><i class="bo" style="height:10%"></i><i class="base" style="height:61%"></i></div><span class="y num">2028</span></div>
+                <div class="col"><span class="v num q">1.13</span><div class="stack"><i class="eq" style="height:3%"></i><i class="bo" style="height:4%"></i><i class="base" style="height:61%"></i></div><span class="y num">2027</span></div>
+                <div class="col"><span class="v num q">1.29</span><div class="stack"><i class="eq" style="height:7%"></i><i class="bo" style="height:10%"></i><i class="base" style="height:61%"></i></div><span class="y num">2028</span></div>
                 <div class="col"><span class="v num">1.46</span><div class="stack"><i class="eq" style="height:11%"></i><i class="bo" style="height:16%"></i><i class="base" style="height:61%"></i></div><span class="y num">2029</span></div>
               </div>
               <div class="legend"><span><i class="b1"></i>вложено</span><span><i class="b2"></i>обл.</span><span><i class="b3"></i>акц.</span></div>
@@ -1074,125 +1071,21 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
               <em>Второй ответ</em>
               <h4>Ежемесячный доход</h4>
               <div class="n"><span class="ap">≈</span><span class="num">8 686</span><span class="u">₽/мес</span></div>
-              <div class="d">104 230 ₽ в год<br>10,4% годовых<br>после НДФЛ 13%</div>
+              <div class="d">104 230 ₽ в год · 10,4% годовых</div>
               <div class="mini">
                 <i style="height:70%"></i><i style="height:66%"></i><i style="height:78%"></i><i style="height:88%"></i>
                 <i style="height:62%"></i><i style="height:84%"></i><i style="height:68%"></i><i class="hi" style="height:92%"></i>
                 <i style="height:74%"></i><i style="height:80%"></i><i style="height:64%"></i><i style="height:86%"></i>
               </div>
-              <div class="lnf">6 выпусков ОФЗ · 12 выплат в год · ближайшая 12 августа, +8 168 ₽</div>
+              <div class="lnf">6 выпусков ОФЗ · ближайшая 12 августа</div>
               <div class="open">Показать крупно<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></div>
             </div>
           </div>
         </div>
       </div>
-      <div class="spec-cap"><b>В · фокус на росте</b>Пункт колонки не переключает экран, а решает, какая половина раскрыта. Свёрнутая стоит 248px и не мешает работать: она не спрашивает, а сообщает — «эта же сумма даёт 8 686 ₽ в месяц». Ровно то, ради чего был нужен чузер.</div>
+      <div class="spec-cap"><b>В · фокус на росте</b>Пункт колонки не переключает экран, а решает, какая половина раскрыта. Свёрнутая стоит 248px и не спрашивает, а сообщает: «эта же сумма даёт 8 686 ₽ в месяц». Фокус на доходе — зеркало: полоса уезжает влево, на её место встают корзина и выплаты.</div>
     </div>
 
-    <div>
-      <div class="sc">
-        <div class="bx">
-          <div class="bx-head"><div class="mark sm">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
-          <div class="bx-cap">
-            <div class="top"><em>Капитал · все портфели</em></div>
-            <div class="v"><b class="num">1 462 380 ₽</b><span class="chg num">+0,8%</span></div>
-            <div class="day num">+11 640 ₽ за сегодня</div>
-            <div class="bar"><i style="width:62%;background:#c9683f"></i><i style="width:38%;background:#5f7fa8"></i><span class="tick" style="left:58%"></span></div>
-            <div class="lg"><span class="num">Акции <b>62</b> · цель 58</span><span class="num">Облигации <b>38</b> · цель 42</span></div>
-          </div>
-          <div class="bx-grid">
-            <div class="bx-cell on"><i class="circ on"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span>Расчёт</span></div>
-            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></i><span>Портфели</span></div>
-            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></i><span>Академия</span></div>
-            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></i><span>Рынок</span></div>
-            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></i><span>Тест</span></div>
-            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></i><span>Админка</span></div>
-          </div>
-          <div class="bx-hr"></div>
-          <div class="bx-ctx">
-            <div class="grp">Показать крупно</div>
-            <div class="bx-sub"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><polyline points="15 7 21 7 21 13"/></svg><span class="tx">Рост капитала</span></div>
-            <div class="bx-sub on"><svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg><span class="tx">Ежемесячный доход</span></div>
-            <div class="grp">Готовый расчёт</div>
-            <div class="bx-sub"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span class="tx">Корзина ОФЗ</span><span class="cnt">6</span></div>
-            <div class="grp">Подбор</div>
-            <div class="bx-sub"><svg viewBox="0 0 24 24"><path d="M9.5 17h5"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 1 3.5 10.9V17h-7v-3.1A6 6 0 0 1 12 3z"/></svg><span class="tx">Тест риск-профиля</span><span class="cnt">11</span></div>
-          </div>
-          <div class="bx-foot">
-            <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></span>
-            <span class="sbtn"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-2 8-2 8h16s-2-1-2-8"/><path d="M10.3 20a2 2 0 0 0 3.4 0"/></svg></span>
-            <span class="sp"></span>
-            <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>
-          </div>
-        </div>
-        <div class="pg">
-          <div class="cxb">
-            <div class="fld">
-              <em>Сумма инвестиций</em>
-              <div class="v"><b class="num">1 000 000</b><span class="num">₽</span></div>
-            </div>
-            <div class="chips">
-              <span class="chip wide"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>Из портфелей · 1,46 млн</span>
-              <span class="chip wide">Налог <b class="num" style="margin-left:2px;color:var(--ink)">НДФЛ 13%</b><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
-            </div>
-            <div class="sp"></div>
-            <div class="src">Купоны и НКД · MOEX <b>12:04</b></div>
-          </div>
-          <div class="gr g3r">
-            <div class="fold">
-              <em>Второй ответ</em>
-              <h4>Рост капитала</h4>
-              <div class="n"><span class="ap">≈</span><span class="num">1.46</span><span class="u">млн ₽</span></div>
-              <div class="d">через 3 года<br>«Гармония» · 50 / 50<br>13,5% годовых</div>
-              <div class="mini bond">
-                <i style="height:38%"></i><i style="height:46%"></i><i style="height:52%"></i><i style="height:58%"></i>
-                <i style="height:63%"></i><i style="height:70%"></i><i style="height:76%"></i><i style="height:82%"></i>
-                <i style="height:88%"></i><i style="height:92%"></i><i style="height:96%"></i><i class="hi" style="height:100%"></i>
-              </div>
-              <div class="lnf">Прибыль за 3 года +461 380 ₽ · доход в месяц ≈7 243 ₽</div>
-              <div class="open">Показать крупно<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></div>
-            </div>
-            <div class="cd">
-              <div class="cd-hd"><h4>Корзина ОФЗ</h4><span class="aside">6 выпусков</span></div>
-              <div class="th"><span class="a">Облигация</span><span class="b">Доходность</span><span class="c">Кол-во</span></div>
-              <div class="brows">
-                <div class="brow"><span class="a"><b>ОФЗ 26240</b><i>фев и авг</i></span><span class="b num">17,90%</span><span class="stp"><span class="k">−</span><span class="q num">269</span><span class="k">+</span></span></div>
-                <div class="brow"><span class="a"><b>ОФЗ 26230</b><i>мар и сен</i></span><span class="b num">18,03%</span><span class="stp"><span class="k">−</span><span class="q num">273</span><span class="k">+</span></span></div>
-                <div class="brow"><span class="a"><b>ОФЗ 26245</b><i>апр и окт</i></span><span class="b num">15,55%</span><span class="stp"><span class="k">−</span><span class="q num">188</span><span class="k">+</span></span></div>
-                <div class="brow"><span class="a"><b>ОФЗ 26225</b><i>май и ноя</i></span><span class="b num">17,73%</span><span class="stp"><span class="k">−</span><span class="q num">251</span><span class="k">+</span></span></div>
-                <div class="brow"><span class="a"><b>ОФЗ 26238</b><i>июн и дек</i></span><span class="b num">18,74%</span><span class="stp"><span class="k">−</span><span class="q num">305</span><span class="k">+</span></span></div>
-                <div class="brow"><span class="a"><b>ОФЗ 26233</b><i>янв и июл</i></span><span class="b num">19,18%</span><span class="stp"><span class="k">−</span><span class="q num">293</span><span class="k">+</span></span></div>
-              </div>
-              <div class="bfoot"><span class="l">Свободный остаток<b class="num">4 120 ₽</b></span><span class="v num">1 000 000 ₽</span></div>
-            </div>
-            <div class="cd">
-              <div class="cd-hd"><h4>Купоны каждый месяц</h4></div>
-              <div class="lead"><span class="ap">≈</span><span class="num">8 686</span><span class="u">₽ в месяц</span></div>
-              <div class="sub">104 230 ₽ в год · <b>10,4% годовых</b> · после НДФЛ 13%</div>
-              <div class="mbars">
-                <div class="mb hi"><i style="height:92%"></i><b>АВГ</b></div>
-                <div class="mb"><i style="height:74%"></i><b>СЕН</b></div>
-                <div class="mb"><i style="height:80%"></i><b>ОКТ</b></div>
-                <div class="mb"><i style="height:64%"></i><b>НОЯ</b></div>
-                <div class="mb"><i style="height:86%"></i><b>ДЕК</b></div>
-                <div class="mb"><i style="height:70%"></i><b>ЯНВ</b></div>
-                <div class="mb"><i style="height:66%"></i><b>ФЕВ</b></div>
-                <div class="mb"><i style="height:78%"></i><b>МАР</b></div>
-                <div class="mb"><i style="height:88%"></i><b>АПР</b></div>
-                <div class="mb"><i style="height:62%"></i><b>МАЙ</b></div>
-                <div class="mb"><i style="height:84%"></i><b>ИЮН</b></div>
-                <div class="mb"><i style="height:68%"></i><b>ИЮЛ</b></div>
-              </div>
-              <div class="facts">
-                <div class="fact"><span class="l">Ближайшая выплата</span><span class="v o num">+ 8 168 ₽ · 12 авг</span></div>
-              </div>
-              <div class="cta"><span class="btn">Создать портфель<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span></div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="spec-cap"><b>В · фокус на доходе</b>Зеркальная раскладка. Свёрнутая половина всегда стоит с той стороны, откуда пришёл фокус, — страница не перепрыгивает, а сдвигается.</div>
-    </div>
 
   </div></div>
   <div class="notes">
@@ -1214,9 +1107,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
           <div class="bx-cap">
             <div class="top"><em>Капитал · все портфели</em></div>
             <div class="v"><b class="num">1 462 380 ₽</b><span class="chg num">+0,8%</span></div>
-            <div class="day num">+11 640 ₽ за сегодня</div>
-            <div class="bar"><i style="width:62%;background:#c9683f"></i><i style="width:38%;background:#5f7fa8"></i><span class="tick" style="left:58%"></span></div>
-            <div class="lg"><span class="num">Акции <b>62</b> · цель 58</span><span class="num">Облигации <b>38</b> · цель 42</span></div>
+            <div class="day num">+11 640 ₽<i>сегодня</i></div>
+            <div class="spk">
+              <svg class="ln" viewBox="0 0 200 24" preserveAspectRatio="none"><path d="M0 18 L14 15 L28 19 L42 12 L56 14 L70 8 L84 11 L98 6 L112 9 L126 5 L140 3 L154 6 L168 5 L182 9 L200 10"/></svg>
+              <span class="go"><svg viewBox="0 0 24 24"><polyline points="9 5 16 12 9 19"/></svg></span>
+            </div>
           </div>
           <div class="bx-grid">
             <div class="bx-cell on"><i class="circ on"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span>Расчёт</span></div>
@@ -1262,37 +1157,31 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
           <div class="tiles">
             <div class="tile">
               <div class="t"><b>Депозит</b><i><em>70</em><s>30</s></i></div>
-              <div class="cap">Защита капитала</div>
               <div class="ln"><svg viewBox="0 0 200 60" preserveAspectRatio="none"><path d="M2 52 L198 30" stroke="#3B7AD1" stroke-width="2"/><path d="M2 52 L198 30 L198 60 L2 60 Z" fill="rgba(59,122,209,.09)" stroke="none"/></svg></div>
               <div class="out"><b class="num">1,41 млн</b><span>12,1% годовых</span></div>
             </div>
             <div class="tile">
               <div class="t"><b>Баланс</b><i><em>60</em><s>40</s></i></div>
-              <div class="cap">Умеренный риск</div>
               <div class="ln"><svg viewBox="0 0 200 60" preserveAspectRatio="none"><path d="M2 52 L198 25" stroke="#3B7AD1" stroke-width="2"/><path d="M2 52 L198 25 L198 60 L2 60 Z" fill="rgba(59,122,209,.09)" stroke="none"/></svg></div>
               <div class="out"><b class="num">1,44 млн</b><span>12,8% годовых</span></div>
             </div>
             <div class="tile on">
               <div class="t"><b>Гармония</b><i><em>50</em><s>50</s></i></div>
-              <div class="cap">Классический баланс</div>
               <div class="ln"><svg viewBox="0 0 200 60" preserveAspectRatio="none"><path d="M2 52 L198 20" stroke="#3B7AD1" stroke-width="2.4"/><path d="M2 52 L198 20 L198 60 L2 60 Z" fill="rgba(59,122,209,.13)" stroke="none"/><circle cx="198" cy="20" r="3.5" fill="#3B7AD1" stroke="none"/></svg></div>
               <div class="out"><b class="num">1,46 млн</b><span>13,5% годовых</span></div>
             </div>
             <div class="tile">
               <div class="t"><b>Умеренная</b><i><em>40</em><s>60</s></i></div>
-              <div class="cap">Баланс роста</div>
               <div class="ln"><svg viewBox="0 0 200 60" preserveAspectRatio="none"><path d="M2 52 L198 15" stroke="#D08A3C" stroke-width="2"/><path d="M2 52 L198 15 L198 60 L2 60 Z" fill="rgba(208,138,60,.10)" stroke="none"/></svg></div>
               <div class="out"><b class="num">1,49 млн</b><span>14,2% годовых</span></div>
             </div>
             <div class="tile">
               <div class="t"><b>Агрессивная</b><i><em>30</em><s>70</s></i></div>
-              <div class="cap">Максимальный рост</div>
               <div class="ln"><svg viewBox="0 0 200 60" preserveAspectRatio="none"><path d="M2 52 L198 9" stroke="#D08A3C" stroke-width="2"/><path d="M2 52 L198 9 L198 60 L2 60 Z" fill="rgba(208,138,60,.10)" stroke="none"/></svg></div>
               <div class="out"><b class="num">1,52 млн</b><span>14,9% годовых</span></div>
             </div>
             <div class="tile">
               <div class="t"><b>Своя</b><i style="color:var(--dim)">задать доли</i></div>
-              <div class="cap">Настроить вручную</div>
               <div class="ln" style="display:grid;place-items:center">
                 <span class="pen" style="width:34px;height:34px;border-radius:11px"><svg viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span>
               </div>
@@ -1303,7 +1192,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
             <span class="btn ghost">Назад</span>
             <span class="btn">Дальше — портфель<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
             <span class="sp"></span>
-            <span class="hint">Не уверены? <b style="color:var(--ink)">Тест риск-профиля</b> подберёт за 2 минуты</span>
+            <span class="qlink" style="margin-top:0"><b>Тест риск-профиля</b><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
           </div>
         </div>
       </div>
@@ -1317,9 +1206,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
           <div class="bx-cap">
             <div class="top"><em>Капитал · все портфели</em></div>
             <div class="v"><b class="num">1 462 380 ₽</b><span class="chg num">+0,8%</span></div>
-            <div class="day num">+11 640 ₽ за сегодня</div>
-            <div class="bar"><i style="width:62%;background:#c9683f"></i><i style="width:38%;background:#5f7fa8"></i><span class="tick" style="left:58%"></span></div>
-            <div class="lg"><span class="num">Акции <b>62</b> · цель 58</span><span class="num">Облигации <b>38</b> · цель 42</span></div>
+            <div class="day num">+11 640 ₽<i>сегодня</i></div>
+            <div class="spk">
+              <svg class="ln" viewBox="0 0 200 24" preserveAspectRatio="none"><path d="M0 18 L14 15 L28 19 L42 12 L56 14 L70 8 L84 11 L98 6 L112 9 L126 5 L140 3 L154 6 L168 5 L182 9 L200 10"/></svg>
+              <span class="go"><svg viewBox="0 0 24 24"><polyline points="9 5 16 12 9 19"/></svg></span>
+            </div>
           </div>
           <div class="bx-grid">
             <div class="bx-cell on"><i class="circ on"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span>Расчёт</span></div>
@@ -1366,21 +1257,20 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
             <div class="cd">
               <div class="cd-hd"><h4>Что получится</h4><span class="aside">сценарий 1,32 – 1,61 млн</span></div>
               <div class="lead"><span class="ap">≈</span><span class="num">1.46</span><span class="u">млн ₽ через 3 года</span></div>
-              <div class="sub">облигации <b class="cb">50%</b> · акции <b class="ce">50%</b> · доходность <b>13,5% годовых</b></div>
+              <div class="sub">стратегия <b>«Гармония»</b> · <b>13,5% годовых</b></div>
               <div class="cols">
                 <div class="col"><span class="v num">1.00 млн</span><div class="stack"><i class="base top" style="height:61%"></i></div><span class="y num">сегодня</span></div>
-                <div class="col"><span class="v num">1.13 млн</span><div class="stack"><i class="eq" style="height:3%"></i><i class="bo" style="height:4%"></i><i class="base" style="height:61%"></i></div><span class="y num">2027</span></div>
-                <div class="col"><span class="v num">1.29 млн</span><div class="stack"><i class="eq" style="height:7%"></i><i class="bo" style="height:10%"></i><i class="base" style="height:61%"></i></div><span class="y num">2028</span></div>
+                <div class="col"><span class="v num q">1.13 млн</span><div class="stack"><i class="eq" style="height:3%"></i><i class="bo" style="height:4%"></i><i class="base" style="height:61%"></i></div><span class="y num">2027</span></div>
+                <div class="col"><span class="v num q">1.29 млн</span><div class="stack"><i class="eq" style="height:7%"></i><i class="bo" style="height:10%"></i><i class="base" style="height:61%"></i></div><span class="y num">2028</span></div>
                 <div class="col"><span class="v num">1.46 млн</span><div class="stack"><i class="eq" style="height:11%"></i><i class="bo" style="height:16%"></i><i class="base" style="height:61%"></i></div><span class="y num">2029</span></div>
               </div>
               <div class="legend"><span><i class="b1"></i>вложено</span><span><i class="b2"></i>облигации</span><span><i class="b3"></i>акции</span></div>
               <div class="facts">
                 <div class="fact"><span class="l">Прибыль за 3 года</span><span class="v g num">+ 461 380 ₽</span></div>
-                <div class="fact"><span class="l">Доход в месяц</span><span class="v o num">≈ 7 243 ₽</span></div>
               </div>
             </div>
             <div class="cd">
-              <div class="cd-hd"><h4>Состав</h4><span class="aside"><i class="d1"></i>облигации 50%<i class="d2"></i>акции 50%</span></div>
+              <div class="cd-hd"><h4>Состав</h4></div>
               <div class="mixbar"><i style="width:50%;background:var(--bond)"></i><i style="width:50%;background:var(--eq)"></i></div>
               <div class="plist">
                 <div class="prow"><i class="dot" style="background:var(--bond)"></i><span class="a"><b>ОФЗ 26238</b><i>погашение 2041 · купон 18,74%</i></span><span class="w num">17%</span><span class="s num">170 000 ₽</span></div>
@@ -1396,8 +1286,6 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
           <div class="wfoot">
             <span class="btn ghost">Назад</span>
             <span class="btn">Создать портфель<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
-            <span class="sp"></span>
-            <span class="hint">Портфель появится в разделе «Портфели» — оттуда его можно вести и ребалансировать</span>
           </div>
         </div>
       </div>
@@ -1423,9 +1311,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
           <div class="bx-cap">
             <div class="top"><em>Капитал · все портфели</em></div>
             <div class="v"><b class="num">1 462 380 ₽</b><span class="chg num">+0,8%</span></div>
-            <div class="day num">+11 640 ₽ за сегодня</div>
-            <div class="bar"><i style="width:62%;background:#c9683f"></i><i style="width:38%;background:#5f7fa8"></i><span class="tick" style="left:58%"></span></div>
-            <div class="lg"><span class="num">Акции <b>62</b> · цель 58</span><span class="num">Облигации <b>38</b> · цель 42</span></div>
+            <div class="day num">+11 640 ₽<i>сегодня</i></div>
+            <div class="spk">
+              <svg class="ln" viewBox="0 0 200 24" preserveAspectRatio="none"><path d="M0 18 L14 15 L28 19 L42 12 L56 14 L70 8 L84 11 L98 6 L112 9 L126 5 L140 3 L154 6 L168 5 L182 9 L200 10"/></svg>
+              <span class="go"><svg viewBox="0 0 24 24"><polyline points="9 5 16 12 9 19"/></svg></span>
+            </div>
           </div>
           <div class="bx-grid">
             <div class="bx-cell on"><i class="circ on"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span>Расчёт</span></div>
@@ -1465,30 +1355,25 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
             <div class="l">
               <em>Ваш портфель через 3 года</em>
               <div class="big"><span class="ap">≈</span><span class="num">1,46</span><span class="u">млн ₽</span></div>
-              <div class="sub">стратегия <b>«Гармония»</b> · облигации <b class="cb">50%</b> · акции <b class="ce">50%</b> · <b>13,5% годовых</b> · сценарий 1,32 – 1,61 млн</div>
+              <div class="sub">стратегия <b>«Гармония»</b> · <b>13,5% годовых</b></div>
             </div>
             <div class="r">
-              <div class="fact"><span class="l">Вложено</span><span class="v num">1 000 000 ₽</span></div>
               <div class="fact"><span class="l">Прибыль за 3 года</span><span class="v g num">+ 461 380 ₽</span></div>
-              <div class="fact"><span class="l">Доход в месяц</span><span class="v o num">≈ 7 243 ₽</span></div>
             </div>
           </div>
           <div class="gr g2">
             <div class="cd">
-              <div class="cd-hd"><h4>По годам</h4><span class="aside"><i class="d0"></i>вложено<i class="d1"></i>облигации<i class="d2"></i>акции</span></div>
+              <div class="cd-hd"><h4>По годам</h4></div>
               <div class="cols">
                 <div class="col"><span class="v num">1.00 млн</span><div class="stack"><i class="base top" style="height:61%"></i></div><span class="y num">сегодня</span></div>
-                <div class="col"><span class="v num">1.13 млн</span><div class="stack"><i class="eq" style="height:3%"></i><i class="bo" style="height:4%"></i><i class="base" style="height:61%"></i></div><span class="y num">2027</span></div>
-                <div class="col"><span class="v num">1.29 млн</span><div class="stack"><i class="eq" style="height:7%"></i><i class="bo" style="height:10%"></i><i class="base" style="height:61%"></i></div><span class="y num">2028</span></div>
+                <div class="col"><span class="v num q">1.13 млн</span><div class="stack"><i class="eq" style="height:3%"></i><i class="bo" style="height:4%"></i><i class="base" style="height:61%"></i></div><span class="y num">2027</span></div>
+                <div class="col"><span class="v num q">1.29 млн</span><div class="stack"><i class="eq" style="height:7%"></i><i class="bo" style="height:10%"></i><i class="base" style="height:61%"></i></div><span class="y num">2028</span></div>
                 <div class="col"><span class="v num">1.46 млн</span><div class="stack"><i class="eq" style="height:11%"></i><i class="bo" style="height:16%"></i><i class="base" style="height:61%"></i></div><span class="y num">2029</span></div>
               </div>
-              <div class="facts" style="padding-top:12px">
-                <div class="fact"><span class="l">Прибыль облигаций</span><span class="v num" style="color:var(--bondtx)">+ 271 200 ₽</span></div>
-                <div class="fact"><span class="l">Прибыль акций</span><span class="v num" style="color:var(--eqtx)">+ 190 180 ₽</span></div>
-              </div>
+              <div class="legend"><span><i class="b1"></i>вложено</span><span><i class="b2"></i>облигации</span><span><i class="b3"></i>акции</span></div>
             </div>
             <div class="cd">
-              <div class="cd-hd"><h4>Стратегия</h4><span class="aside">доля акций задаёт риск</span></div>
+              <div class="cd-hd"><h4>Стратегия</h4></div>
               <div class="strat">
                 <div class="srow"><i class="wf" style="background:linear-gradient(180deg,var(--bond) 0 70%,var(--eq) 70% 100%)"></i><div class="n"><b>Депозит</b><i>Защита капитала</i></div><div class="mix"><em class="b num">Обл. 70%</em><em class="s num">Акц. 30%</em></div></div>
                 <div class="srow"><i class="wf" style="background:linear-gradient(180deg,var(--bond) 0 60%,var(--eq) 60% 100%)"></i><div class="n"><b>Баланс</b><i>Умеренный риск</i></div><div class="mix"><em class="b num">Обл. 60%</em><em class="s num">Акц. 40%</em></div></div>
@@ -1501,9 +1386,6 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
           </div>
           <div class="cta">
             <span class="btn">Создать портфель<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
-            <span class="btn ghost">Сохранить расчёт</span>
-            <span class="sp"></span>
-            <span class="hint">Цены акций и облигаций — MOEX, 12:04</span>
           </div>
         </div>
       </div>
