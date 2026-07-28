@@ -1,11 +1,17 @@
-// ===== КОЛОНКА ВТОРОГО УРОВНЯ (сайдбар «Подъём», мокап В3-б) =====
-// Рейка слева держит разделы, эта колонка — второй уровень АКТИВНОГО раздела:
-// подвкладки «Портфелей» (жили в середине шапки), экраны «Торговли» третьим
-// уровнем, открытые вкладки-портфели (жили в попапе на пилюле) и подвал
-// с «Настройками» и «Свернуть».
+// ===== ДИНАМИКА КОЛОНКИ САЙДБАРА (мокап Б «Верстак») =====
+// Модуль наполняет три узла:
+//   #sbCap  — капитал и день по ВСЕМ портфелям (PF.sbCapModel), виден на любой
+//             вкладке; пока «Портфели» не загружены лениво, узел пуст;
+//   #sbCtx  — второй уровень АКТИВНОГО раздела: подвкладки «Портфелей», экраны
+//             «Торговли» третьим уровнем и открытые вкладки-портфели;
+//   бейдж на «Ребалансе» в сетке разделов — сколько портфелей просят ребаланса.
 //
-// Разделы без второго уровня колонки не получают вовсе — она просто не
-// показывается, и 212px уходят контенту (класс body.sb-ctx ставит sbCtxSync).
+// Блок второго уровня стоит ПОД СЕТКОЙ разделов, а не под своей строкой:
+// в сетке 4×2 у пункта нет «своего» кружка, от которого можно вести линию
+// вложенности, — раздел называет первый заголовок блока.
+//
+// Разделы без второго уровня блока не получают вовсе — он просто не
+// показывается (класс body.sb-ctx ставит sbCtxSync).
 //
 // Данные не выдумываются: модель «Портфелей» отдаёт PF.sbSideModel()
 // (portfolios-tabs.js) и она же решает, есть ли честное число под шапку;
@@ -35,6 +41,7 @@
         settings:  '<circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.1a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4z"/>',
         plus:      '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
         collapse:  '<polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/>',
+        chev:      '<polyline points="6 9 12 15 18 9"/>',
         // подвкладки «Расчёта» и «Рынка» — по data-sub
         'calc-portfolio': '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
         'calc-mix':       '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
@@ -156,6 +163,10 @@
         // не отдать (экраны «Торговли» — третий уровень, там её и не должно быть)
         var icon = it.icon || IC[it.iconKey] || (it.act === 'pfx' || it.act === 'trading' ? IC[it.key] : null);
         var right = '';
+        // сумма и дневное изменение стоят рядом: сумма — где портфель сейчас,
+        // изменение — куда он идёт. Под курсором изменение уступает крестику
+        // (css), сумма остаётся: закрывая вкладку, полезно видеть, что закрываешь
+        if (it.val) right += '<span class="sbc-val">' + esc(it.val) + '</span>';
         if (it.chg) right += '<span class="sbc-chg' + (it.chg.neg ? ' neg' : '') + '">' + esc(it.chg.tx) + '</span>';
         else if (it.n != null) right += '<span class="sbc-n">' + esc(it.n) + '</span>';
         if (it.close) {
@@ -169,21 +180,81 @@
             '<span class="sbc-tx">' + esc(it.tx) + '</span>' + right +
         '</button>';
     }
-    // Шапки у блока больше нет: он лежит ПОД строкой своего раздела, и имя
-    // раздела написано прямо над ним (мокап Г1). Модельные title/cap/chip
-    // остаются — их отдаёт PF.sbSideModel, просто здесь они не рисуются.
-    function listHtml(m) {
+    // ---- свёртка длинного списка ----
+    // «Портфели» отдают семь разделов подряд, и низ колонки они забирают
+    // целиком. Прячем ВТОРОСТЕПЕННЫЕ — те, за которыми ходят реже всего
+    // (мокап Б оставляет на виду Обзор · Мои портфели · Аналитика · Операции ·
+    // Торговля). Прятать «последние N» было бы проще, но «Торговля» стоит в
+    // списке последней, и её как раз открывают чаще всего.
+    var SECONDARY = { reports: 1, rebal: 1 };
+    // Раскрытие ЗАПОМИНАЕТСЯ (раунд 4): кто ходит в «Отчёты» каждый день,
+    // раскрывает список один раз. Ключ зеркалится в облако как позиция UI
+    // (см. WATCH в js/cloud-sync.js) — на втором устройстве список тот же.
+    var MORE_KEY = 'sb_more_v1';
+    var moreOpen = (function () {
+        try { return localStorage.getItem(MORE_KEY) === '1'; } catch (e) { return false; }
+    })();
+    // Хвост сворачиваем только когда прятать есть что И список действительно
+    // длинный: у трёх пунктов «Ещё» само стало бы четвёртым.
+    function splitMore(items) {
+        var hid = [];
+        if (items.length <= 5) return { show: items, hid: hid };
+        var show = items.filter(function (it) {
+            // активный пункт и его третий уровень не прячем никогда: список
+            // обязан показывать, где ты стоишь
+            if (!SECONDARY[it.key] || it.on || it.cls === 'lvl3') return true;
+            hid.push(it);
+            return false;
+        });
+        return { show: show, hid: hid };
+    }
+    function moreHtml(hid) {
+        // Строка НАЗЫВАЕТ скрытое, а не прячет его за глухим «Ещё»: сколько бы
+        // имён ни влезло, информационный след остаётся, а счётчик справа держит
+        // точное число — его многоточие не съест.
+        var tx = moreOpen ? 'Свернуть' : ('Ещё · ' + hid.map(function (it) { return it.tx; }).join(', '));
+        return '<button type="button" class="sbc-it more' + (moreOpen ? ' open' : '') + '" data-act="ctxmore" data-key=""' +
+            ' aria-expanded="' + (moreOpen ? 'true' : 'false') + '">' + svg(IC.chev) +
+            '<span class="sbc-tx">' + esc(tx) + '</span>' +
+            (moreOpen ? '' : '<span class="sbc-n">' + hid.length + '</span>') + '</button>';
+    }
+    // Шапки-карточки у блока нет: раздел называет ПЕРВЫЙ заголовок группы.
+    // Модельные cap/chip остаются — их отдаёт PF.sbSideModel, но капитал теперь
+    // рисует свой узел #sbCap (он виден на любой вкладке, а не только здесь).
+    function listHtml(m, tab) {
         var h = '', first = true;
         (m.groups || []).forEach(function (g) {
             if (!g.items || !g.items.length) return;
-            // Подпись ПЕРВОЙ группы не рисуем: блок и так стоит под строкой
-            // своего раздела, и «Разделы» сразу под «Портфелями» — заголовок
-            // ни о чём (мокап Г1). У следующих групп подпись несёт смысл.
-            if (g.label && !first) h += '<div class="sbc-grp"><span>' + esc(g.label) + '</span></div>';
-            h += g.items.map(itemHtml).join('');
+            var items = g.items, tailHtml = '';
+            var lab = g.label;
+            if (first) {
+                // «Разделы» — служебное имя группы; вслух блок называется именем
+                // раздела, а его могли переименовать из админки (js/tab-gates.js)
+                if (!lab || lab === 'Разделы') lab = tabName(SEC_OF[tab] || tab) || m.title || '';
+                var sp = splitMore(items);
+                items = sp.show;
+                if (sp.hid.length) tailHtml = moreHtml(sp.hid);
+                if (moreOpen && sp.hid.length) items = g.items;
+            }
+            if (lab) h += '<div class="sbc-grp"><span>' + esc(lab) + '</span></div>';
+            h += items.map(itemHtml).join('') + tailHtml;
             first = false;
         });
         return '<div class="sbc-list">' + h + '</div>';
+    }
+    // Имя раздела для заголовка блока: переименование из админки старше словаря
+    // моделей. Спрашиваем именно ВЕРХНИЙ раздел, а не текущую вкладку: у
+    // 'market-stocks' своё имя («Терминал»), и заголовком группы оно соврало бы.
+    var SEC_OF = {
+        portfolios: 'portfolios',
+        calc: 'calc', portfolio: 'calc', monthly: 'calc',
+        market: 'market', 'market-stocks': 'market', 'market-bonds': 'market'
+    };
+    function tabName(tab) {
+        try {
+            if (window.tabGates && window.tabGates.titleOf) return window.tabGates.titleOf(tab) || '';
+        } catch (e) {}
+        return '';
     }
     // ---------- подвал ----------
     // «Настройки» раздела живут ВНИЗУ колонки, а не в конце списка: список
@@ -203,26 +274,148 @@
         if (slot.__sbfHtml !== html) { slot.innerHTML = html; slot.__sbfHtml = html; }
     }
 
+    // ---------- КАПИТАЛ (#sbCap) ----------
+    // Единственные числа навигации. Виден на ЛЮБОЙ вкладке, поэтому и модель
+    // своя (PF.sbCapModel), а не кусок sbSideModel: тот собирается только для
+    // «Портфелей». Пока цепочка #pfLazySrc не загружена, PF нет вовсе — узел
+    // остаётся пустым, и CSS (#sbCap:empty) убирает его вместе с отступами.
+    // Маскировать суммы не наше дело: sums-privacy.js сам находит лист с «₽».
+    // ---- интрадей-ряд для мини-спарклайна ----
+    // Готового ряда «капитал в течение дня» в проекте нет: снимки пишутся раз в
+    // сутки. Собираем свой — точка не чаще раза в минуту, ключ живёт один день
+    // (в облако НЕ зеркалим: это данные устройства за сегодня, а не позиция UI).
+    // Пока точек меньше трёх — линия соврала бы формой, спарклайна просто нет.
+    var SERIES_KEY = 'sb_day_series', SERIES_MIN_MS = 60000, SERIES_MAX = 300;
+    function today() {
+        var d = new Date();
+        return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+    }
+    function series(total) {
+        var s = null;
+        try { s = JSON.parse(localStorage.getItem(SERIES_KEY) || 'null'); } catch (e) {}
+        if (!s || s.d !== today() || !Array.isArray(s.v)) s = { d: today(), v: [], t: 0 };
+        var now = Date.now();
+        if (total > 0 && (now - (s.t || 0) >= SERIES_MIN_MS)) {
+            s.v.push(Math.round(total));
+            if (s.v.length > SERIES_MAX) s.v = s.v.slice(-SERIES_MAX);
+            s.t = now;
+            try { localStorage.setItem(SERIES_KEY, JSON.stringify(s)); } catch (e) {}
+        }
+        return s.v;
+    }
+    function sparkHtml(v, neg) {
+        if (!v || v.length < 3) return '';
+        var min = Math.min.apply(null, v), max = Math.max.apply(null, v);
+        var span = max - min;
+        var W = 58, H = 18;
+        var pts = v.map(function (n, i) {
+            var x = v.length > 1 ? (i / (v.length - 1) * W) : 0;
+            // плоский день — линия ровно посередине, а не по верхнему краю
+            var y = span > 0 ? (H - (n - min) / span * H) : H / 2;
+            return x.toFixed(1) + ',' + y.toFixed(1);
+        }).join(' ');
+        return '<svg class="sbcap-spark' + (neg ? ' neg' : '') + '" viewBox="0 0 ' + W + ' ' + H +
+            '" preserveAspectRatio="none" aria-hidden="true"><polyline points="' + pts + '"/></svg>';
+    }
+    // Табло: капитал, день в рублях и процентах, спарклайн, полоса классов с
+    // насечкой цели. Клик ведёт на «Обзор» — там капитал разобран по полочкам.
+    // Полоса и легенда идут ОТДЕЛЬНЫМИ строками: в одну строку «Акции 62 · цель
+    // 58 [полоса] Обл. 38 · цель 42» не влезает — легенда ломалась пополам, а
+    // полосу выжимало в ноль.
+    function capHtml(m, total) {
+        var h = '<div class="sbcap-top"><span class="sbcap-l">Капитал · все портфели</span>' +
+            (m.chip ? sparkHtml(series(total), m.chip.neg) : '') + '</div>' +
+            '<div class="sbcap-v"><span class="sbcap-n">' + esc(m.cap) + '</span>' +
+            (m.chip ? '<span class="sbcap-d' + (m.chip.neg ? ' neg' : '') + '">' + esc(m.chip.tx) + '</span>' : '') +
+            '</div>';
+        if (m.dayRub && m.chip) {
+            // Две редакции строки дня в разметке, выбирает CSS по body.sums-hidden:
+            // под маской «Скрывать суммы» рубли не размываются, а уступают место
+            // процентам (мокап Б+2б) — размытая «•• ••• ₽ за сегодня» читалась бы
+            // сломанной строкой, а не защищённой.
+            h += '<div class="sbcap-day' + (m.chip.neg ? ' neg' : '') + '">' +
+                '<span class="sbcap-rub">' + esc(m.dayRub) + ' за сегодня</span>' +
+                '<span class="sbcap-pct">' + esc(m.chip.tx) + ' за сегодня</span></div>';
+        } else {
+            // снимка ещё нет — ни дня, ни спарклайна, ни прочерков: одна подпись
+            h += '<div class="sbcap-day mut">День появится после второго снимка</div>';
+        }
+        if (m.mix) {
+            // проценты считаем ОДИН раз и второй получаем вычитанием: округление
+            // каждого по отдельности давало бы «62% / 39%»
+            var st = Math.round(m.mix.stock), bd = 100 - st;
+            var tg = m.target, tSt = tg ? Math.round(tg.stock) : null;
+            h += '<div class="sbcap-bar" aria-hidden="true">' +
+                '<i class="eq" style="width:' + m.mix.stock.toFixed(1) + '%"></i>' +
+                '<i class="bd" style="width:' + m.mix.bond.toFixed(1) + '%"></i>' +
+                (tg ? '<i class="tg" style="left:' + tg.stock.toFixed(1) + '%"></i>' : '') +
+                '</div>' +
+                '<div class="sbcap-lg"><span>Акции <b>' + st + '</b>' + (tg ? ' · цель ' + tSt : '') + '</span>' +
+                '<span>Обл. <b>' + bd + '</b>' + (tg ? ' · цель ' + (100 - tSt) : '') + '</span></div>';
+        }
+        return '<button type="button" class="sbcap-btn" data-act="capgo" data-key=""' +
+            ' title="Открыть «Обзор»">' + h + '</button>';
+    }
+    // Чип свёрнутой рейки: тот же капитал компактом + день. Знака ₽ в «1,46 млн»
+    // может не быть, а маскировать его надо — помечаем data-money явно.
+    function capRailHtml(m) {
+        return '<button type="button" class="sbcap-chip" data-act="capexpand" data-key=""' +
+            ' title="Развернуть колонку"><span class="sbcap-cn" data-money>' + esc(m.capShort) + '</span>' +
+            (m.chip ? '<span class="sbcap-cd' + (m.chip.neg ? ' neg' : '') + '">' + esc(m.chip.tx) + '</span>' : '') +
+            '</button>';
+    }
+    // Бейдж «сколько портфелей просят ребаланса» на кружке раздела. Правило
+    // порога живёт в мастере (PF.pfDriftCount) — здесь только показ.
+    function plural(n, one, few, many) {
+        var m10 = n % 10, m100 = n % 100;
+        if (m10 === 1 && m100 !== 11) return one;
+        if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
+        return many;
+    }
+    function badgeSync(n) {
+        var it = document.querySelector('#sbNav .sb-item[data-tab="rebalance"]');
+        if (!it) return;
+        var b = it.querySelector('.sb-badge');
+        if (!(n > 0) || !wide()) { if (b) b.remove(); return; }
+        if (!b) {
+            b = document.createElement('span');
+            b.className = 'sb-badge';
+            it.appendChild(b);
+        }
+        var tx = String(n);
+        if (b.textContent !== tx) b.textContent = tx;
+        var lbl = n + ' ' + plural(n, 'портфель просит', 'портфеля просят', 'портфелей просят') + ' ребаланса';
+        if (b.getAttribute('aria-label') !== lbl) b.setAttribute('aria-label', lbl);
+    }
+    function capSync() {
+        var host = document.getElementById('sbCap');
+        var m = null;
+        try { m = (wide() && window.PF && PF.sbCapModel) ? PF.sbCapModel() : null; } catch (e) { m = null; }
+        if (host) {
+            // в рейке 84px табло не поместиться («1 462 380 ₽» просит 118px) —
+            // там от него остаётся чип «1,46 млн / +0,8%»
+            var rail = document.body.classList.contains('sb-rail');
+            var html = !m ? '' : (rail ? capRailHtml(m) : capHtml(m, m.total));
+            if (host.__sbcapHtml !== html) { host.innerHTML = html; host.__sbcapHtml = html; }
+        }
+        badgeSync(m ? m.drift : 0);
+    }
+
     // ---------- место блока в разметке ----------
-    // #sbCtx переезжает внутрь #sbNav и встаёт сразу за активным разделом (или
-    // за его .sb-group). Так второй уровень раскрывается ПОД своим разделом, а
-    // ссылки разделов остаются настоящими <a href> — их никто не дублирует.
+    // #sbCtx встаёт сразу ЗА сеткой разделов (#sbNav), внутрь неё не лезет:
+    // #sbNav — грид, и блок стал бы его ячейкой. В разметке узел лежит снаружи
+    // #sbRail, поэтому переставляем его при первом же рендере.
     function placeCtx(host) {
         var nav = document.getElementById('sbNav');
-        if (!nav) return;
-        var act = nav.querySelector('.sb-item.active');
-        var anchor = act ? (act.closest('.sb-group') || act) : null;
-        if (!anchor) {
-            if (host.parentNode !== nav) nav.appendChild(host);
-            return;
-        }
-        if (anchor.nextSibling !== host) anchor.parentNode.insertBefore(host, anchor.nextSibling);
+        if (!nav || !nav.parentNode) return;
+        if (nav.nextSibling !== host) nav.parentNode.insertBefore(host, nav.nextSibling);
     }
 
     // ---------- рендер ----------
     // Своп только при изменении HTML: фоновый тик котировок пересобирает модель
     // каждую секунду, а живой :hover и фокус в колонке рвать нельзя.
     function sbCtxSync() {
+        capSync();                                  // капитал живёт и без второго уровня
         var host = document.getElementById('sbCtx');
         if (!host) return;
         var tab = (typeof currentTab !== 'undefined' && currentTab) ? currentTab : 'home';
@@ -237,7 +430,7 @@
             if (host.__sbcHtml) { host.innerHTML = ''; host.__sbcHtml = ''; }
             return;
         }
-        var html = listHtml(m);
+        var html = listHtml(m, tab);
         if (host.__sbcHtml !== html) {
             var ae = document.activeElement;
             var keepKey = ae && host.contains(ae) && ae.getAttribute ? ae.getAttribute('data-key') : null;
@@ -262,6 +455,21 @@
         e.preventDefault();
         e.stopPropagation();
         if (act === 'collapse') { if (window.toggleSidebarCollapse) window.toggleSidebarCollapse(); return; }
+        if (act === 'ctxmore') {
+            moreOpen = !moreOpen;
+            try { localStorage.setItem(MORE_KEY, moreOpen ? '1' : '0'); } catch (e) {}
+            sbCtxSync();
+            return;
+        }
+        // табло — самый крупный таргет колонки; ведёт туда, где капитал разобран
+        if (act === 'capgo') {
+            if (typeof currentTab === 'undefined' || currentTab !== 'portfolios') {
+                if (window.switchTab) window.switchTab('portfolios');
+            }
+            if (window.pfxGoTab) window.pfxGoTab('overview');
+            return;
+        }
+        if (act === 'capexpand') { if (window.toggleSidebarCollapse) window.toggleSidebarCollapse(); return; }
         if (act === 'sub') { if (window.sbNavSub) window.sbNavSub(key, e); return; }
         // тип портфеля: вкладка могла быть не «Расчёт» (пришли с /portfolio)
         if (act === 'cxmode') {
@@ -304,6 +512,9 @@
         // у неё нет data-act)
         var foot = document.getElementById('sbRailFoot');
         if (foot) foot.addEventListener('click', onClick);
+        // табло живёт выше сетки и в блок второго уровня не входит — свой слушатель
+        var cap = document.getElementById('sbCap');
+        if (cap) cap.addEventListener('click', onClick);
         sbCtxSync();
     });
     // ширина рейки меняется вместе с колонкой — пересобираем на кроссинге брейкпоинта

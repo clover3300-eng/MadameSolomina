@@ -1,41 +1,51 @@
 /* =====================================================================
-   САЙДБАР «МАСТЕР» (мокап Г1, dev/mockups/sidebar-rbw-mockups.html)
+   САЙДБАР «ВЕРСТАК» (мокап Б, dev/mockups/sidebar-rethink-mockups.html)
    =====================================================================
-   Навигация — ОДНА колонка 288px на языке левой рейки визарда «Ребаланс»
-   (.rbw-rail в css/rebalance-wizard.css):
-     • корпус во всю высоту экрана, без скругления и тени, волосяная
-       линия справа — сайдбар стоит НА краю экрана, а не лежит на нём;
+   Колонка 288px, которая ПЕРЕСТАЛА БЫТЬ СПИСКОМ. Прежний Г1 был
+   оглавлением: второй уровень раскрывался под активным разделом и
+   расталкивал остальные — «Тест» и «Админка» уезжали за нижний край, а
+   позиция раздела зависела от того, где ты сейчас. Здесь наоборот:
      • шапка: квадрат-марка (клик — обновление страницы) + имя Georgia
        в одну строку;
-     • раздел = кружок-иконка 29px + имя;
-     • второй уровень раскрывается ПОД активным разделом, вложенность
-       держит волосяная линия от кружка (#sbCtx переезжает в #sbNav);
-     • подвал: «Настройки» раздела + схлопывание.
+     • КАПИТАЛ и день по всем портфелям (#sbCap) — единственные числа
+       навигации; модель их и раньше считала, а колонка выбрасывала;
+     • разделы — СЕТКА 4×2 (#sbNav): все семь на виду и НИКОГДА не
+       двигаются, ~150px вместо 320;
+     • под волосяной чертой — второй уровень активного раздела (#sbCtx),
+       у «Портфелей» шесть строк и «Ещё»;
+     • подвал: «Настройки» раздела + схлопывание — как было.
 
-   ЧЕГО ИЗ ВИЗАРДА НЕТ НАМЕРЕННО:
-     • цифр в кружках и сплошной линии между разделами — в визарде это
-       последовательность шагов, у разделов её нет, линия соврала бы;
-     • нижней карточки контекста .rbw-ctx — в сайдбаре это второй «Обзор»
-       под навигацией, а низ колонки она забирала целиком;
-     • «подъёма» из В3-б (белая карточка выбора на тонированном поле):
-       поле само стало белым, выбор — тонированная пилюля с риской.
+   ЧЕГО ЗДЕСЬ НЕТ НАМЕРЕННО:
+     • аватара, имени, звоночка и переключателя темы в подвале — кабинет,
+       уведомления и тема остаются там, где живут (решение владельца:
+       колонка про деньги и разделы, а не про кабинет);
+     • вложенности «второй уровень под своим разделом» — в сетке у строки
+       нет «своего» кружка, под который её можно подвесить, поэтому линии
+       вложенности и отвода-риски у выбранного пункта сняты;
+     • нижней карточки контекста .rbw-ctx из визарда — в сайдбаре это
+       второй «Обзор» под навигацией, а низ колонки она забирала целиком.
 
    ДВА СОСТОЯНИЯ, признак — body.sb-rail (ставит js/sidebar.js, а на первом
    кадре — инлайн-скрипт под <body>):
      • нет sb-rail — колонка 288px (умолчание);
-     • есть sb-rail — рейка 84px: кружок-иконка с подписью, второго
-       уровня нет. Сюда попадают «свёрнуто» и «Главная» (на манифесте
-       поверх живой карты колонка во всю высоту читалась бы чужой).
+     • есть sb-rail — рейка 84px: кружок-иконка с подписью, ни капитала,
+       ни второго уровня. Сюда попадают «свёрнуто» и «Главная» (на
+       манифесте поверх живой карты колонка во всю высоту читалась бы
+       чужой). Сетку разделов рейка НЕ повторяет: в 84px колонка одна,
+       и сетка из одного столбца — это тот же вертикальный список.
 
    ФАЙЛ ЦЕЛИКОМ В ДЕСКТОПНОЙ МЕДИА: мобильная шторка остаётся прежней
    (см. css/mobile.css, он идёт последним в каскаде).
    ===================================================================== */
 
-/* Колонка второго уровня и подвал рейки существуют в разметке всегда, но на
-   мобиле их нет: шторка видит прежнюю плоскую структуру — #sbRail отдаёт своих
-   детей родителю через display:contents */
-#sbCtx, #sbRailFoot { display: none; }
+/* Блок капитала, колонка второго уровня и подвал рейки существуют в разметке
+   всегда, но на мобиле их нет: шторка видит прежнюю плоскую структуру —
+   #sbRail отдаёт своих детей родителю через display:contents */
+#sbCap, #sbCtx, #sbRailFoot { display: none; }
 #sbRail { display: contents; }
+/* бейдж дрейфа — деталь сетки разделов; в мобильной шторке строки плоские,
+   и метка встала бы обычным текстом в конце строки */
+#sbNav .sb-badge { display: none; }
 
 @media (min-width: 1024px) {
     :root {
@@ -136,7 +146,7 @@
        («Madame » + «Solomi'na») — им достаточно сменить кегль и тон. */
     #sbHead {
         flex: 0 0 auto;
-        padding: 22px 20px 24px;
+        padding: 20px 18px 0;
         border-bottom: 0;
         margin-bottom: 0;
         justify-content: flex-start;
@@ -187,102 +197,289 @@
     #sbHead .sb-logo-mark:active { transform: translateY(0); }
     #sbHead .sb-logo-mark:focus-visible { outline: 2px solid var(--sbr-sel); outline-offset: 2px; }
 
-    /* ---------- Разделы ---------- */
-    #sbNav {
-        flex: 1 1 auto;
-        min-height: 0;
-        overflow-y: auto;
-        overflow-x: hidden;
-        scrollbar-width: none;
-        align-items: stretch;
-        gap: 1px;
-        padding: 0 20px 10px;
+    /* ---------- ТАБЛО: капитал, день, доли (мокап Б+1) ----------
+       Наполняет js/sidebar-ctx.js из PF.sbCapModel(). Пока «Портфели» не
+       загружены лениво (#pfLazySrc), источника нет — узел пуст и не
+       занимает места: :empty гасит его целиком. Ничего не выдумываем.
+       Табло — кнопка: клик ведёт на «Обзор», где капитал разобран по полочкам. */
+    #sbCap {
+        display: block;
+        flex: 0 0 auto;
+        margin: 15px 18px 0;
+        font-family: var(--font-ui, 'Inter', sans-serif);
     }
-    #sbNav::-webkit-scrollbar { display: none; }
+    #sbCap:empty { display: none; }
+    .sbcap-btn {
+        display: block;
+        width: 100%;
+        margin: 0;
+        padding: 12px 14px 11px;
+        border: 0;
+        border-radius: 14px;
+        background: var(--sbr-page);
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        transition: background 0.15s ease;
+    }
+    .sbcap-btn:hover { background: color-mix(in srgb, var(--sbr-sel) 8%, var(--sbr-page)); }
+    .sbcap-btn:focus-visible { outline: 2px solid var(--sbr-sel); outline-offset: 2px; }
+    .sbcap-top { display: flex; align-items: center; gap: 8px; }
+    .sbcap-l {
+        flex: 1 1 auto;
+        min-width: 0;
+        font-size: 8.5px;
+        font-weight: 800;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+        color: var(--sbr-dim);
+    }
+    .sbcap-v { display: flex; align-items: baseline; gap: 8px; margin-top: 4px; }
+    .sbcap-n {
+        font-family: var(--font-num, 'JetBrains Mono', monospace);
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: -0.025em;
+        color: var(--sbr-ink);
+    }
+    .sbcap-d {
+        font-family: var(--font-num, 'JetBrains Mono', monospace);
+        font-size: 11px;
+        font-weight: 700;
+        color: #16A34A;
+    }
+    .sbcap-d.neg { color: #DC2626; }
+    body.dark-mode .sbcap-d { color: #34D399; }
+    body.dark-mode .sbcap-d.neg { color: #F87171; }
 
-    /* строка раздела: кружок 29px + имя */
+    /* Строка дня: рубли + спарклайн. Под «Скрывать суммы» рубли не размываются,
+       а уступают место процентам — размытая «•• ••• ₽ за сегодня» читалась бы
+       сломанной строкой, а не защищённой (мокап Б+2б). Обе редакции лежат в
+       разметке, выбирает CSS: JS о настройке приватности ничего не знает. */
+    .sbcap-day {
+        margin-top: 2px;
+        font-family: var(--font-num, 'JetBrains Mono', monospace);
+        font-size: 10.5px;
+        font-weight: 600;
+        color: #16A34A;
+    }
+    .sbcap-day.neg { color: #DC2626; }
+    body.dark-mode .sbcap-day { color: #34D399; }
+    body.dark-mode .sbcap-day.neg { color: #F87171; }
+    /* Первый день: снимка нет — ни дня, ни спарклайна, ни прочерков. Одна
+       спокойная подпись вместо «0,0%», который читался бы данными. */
+    .sbcap-day.mut,
+    body.dark-mode .sbcap-day.mut {
+        font-family: var(--font-ui, 'Inter', sans-serif);
+        font-size: 10px;
+        font-weight: 500;
+        line-height: 1.3;
+        color: var(--sbr-dim);
+    }
+    .sbcap-pct { display: none; }
+    body.sums-hidden .sbcap-rub { display: none; }
+    body.sums-hidden .sbcap-pct { display: inline; }
+    .sbcap-spark { flex: none; width: 58px; height: 18px; opacity: 0.8; color: #16A34A; }
+    .sbcap-spark.neg { color: #DC2626; }
+    body.dark-mode .sbcap-spark { color: #34D399; }
+    body.dark-mode .sbcap-spark.neg { color: #F87171; }
+    .sbcap-spark polyline { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    /* Доли классов. Цвета НЕ свои: синий облигаций и охра акций взяты из
+       «Расчёта» (--cx-bond / --cx-eq в css/calc-r7.css) — один и тот же
+       смысл обязан быть одного цвета по всему сайту. */
+    .sbcap-bar {
+        position: relative;
+        margin-top: 10px;
+        height: 5px;
+        border-radius: 3px;
+        display: flex;
+        background: var(--sbr-line);
+    }
+    .sbcap-bar i { display: block; height: 100%; }
+    .sbcap-bar i.eq { border-radius: 3px 0 0 3px; }
+    .sbcap-bar i.bd { border-radius: 0 3px 3px 0; }
+    /* Легенда отдельной строкой под полосой: «Акции 62 · цель 58» и
+       «Обл. 38 · цель 42» рядом с полосой в 288px не помещаются. */
+    .sbcap-lg {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: 6px;
+        font-family: var(--font-num, 'JetBrains Mono', monospace);
+        font-size: 9.5px;
+        white-space: nowrap;
+        color: var(--sbr-dim);
+    }
+    .sbcap-lg b { font-weight: 700; color: var(--sbr-mut); }
+    .sbcap-bar i.eq { background: #D08A3C; }
+    .sbcap-bar i.bd { background: #3B7AD1; }
+    body.dark-mode .sbcap-bar i.eq { background: #E8A05A; }
+    body.dark-mode .sbcap-bar i.bd { background: #6BA4F5; }
+    /* НАСЕЧКА ЦЕЛИ. Расхождение полосы и чёрточки — это и есть дрейф, о котором
+       бейджем говорит «Ребаланс»: то же событие, тот же порог, только здесь оно
+       показано геометрией. Цвет чернильный, чтобы читаться на обоих сегментах. */
+    .sbcap-bar i.tg {
+        position: absolute;
+        top: -3px; bottom: -3px;
+        width: 1.5px;
+        height: auto;
+        margin-left: -0.75px;
+        border-radius: 1px;
+        background: var(--sbr-ink);
+    }
+
+    /* ---------- Разделы: сетка 4 в ряд ----------
+       Сетка, а не список: семь разделов занимают две строки (~150px) вместо
+       семи (~320px), и — главное — НЕ ДВИГАЮТСЯ при смене активного, потому
+       что второй уровень больше не раскрывается между ними.
+       .sb-group отдаёт своего .sb-parent прямо в сетку (display:contents):
+       иначе «Расчёт» и «Рынок» были бы вложены в лишнюю ячейку-обёртку. */
+    #sbNav {
+        position: relative;
+        flex: 0 0 auto;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        align-items: start;
+        gap: 2px;
+        overflow: visible;
+        padding: 14px 12px 10px;
+    }
+    #sbNav .sb-group { display: contents; }
+    /* волосяная черта между сеткой и вторым уровнем — только когда второй
+       уровень есть; абсолютная, чтобы не стать ячейкой сетки */
+    body.sb-ctx #sbNav::after {
+        content: '';
+        position: absolute;
+        left: 18px; right: 18px; bottom: 0;
+        height: 1px;
+        background: var(--sbr-line);
+    }
+
+    /* ячейка раздела: кружок 34px + подпись 9,5px */
     #sbNav .sb-item,
     body.dark-mode #sbNav .sb-item {
         display: flex;
-        flex-direction: row;
+        flex-direction: column;
         flex-wrap: nowrap;
         align-items: center;
         justify-content: flex-start;
-        gap: 13px;
-        width: 100%;
-        padding: 8px 0;
-        border-radius: 0;
+        gap: 6px;
+        width: auto;
+        min-width: 0;
+        padding: 8px 2px 7px;
+        border-radius: 12px;
         background: transparent;
-        color: var(--sbr-dim);
+        color: var(--sbr-mut);
         font-family: var(--font-ui, 'Inter', sans-serif);
-        font-size: 13.5px;
+        font-size: 10px;
         font-weight: 600;
         letter-spacing: 0;
-        text-align: left;
+        text-align: center;
     }
     /* кружок делает сама иконка: padding+border+radius на <svg> работают,
        viewBox масштабируется внутрь content-box */
     #sbNav .sb-item > svg {
         flex: none;
         box-sizing: border-box;
-        width: 29px; height: 29px;
-        padding: 6.5px;
+        width: 34px; height: 34px;
+        padding: 8px;
         border: 1.5px solid var(--sbr-line);
         border-radius: 50%;
         background: var(--sbr-card);
         color: var(--sbr-dim);
     }
+    /* Подпись в 64px ячейки. Имя вкладки МОЖНО ПЕРЕИМЕНОВАТЬ из админки
+       (js/tab-gates.js), и «Академия Ребалансировки» не влезет ни в какую
+       ячейку — честное многоточие в одну строку, полное имя даёт подсказка
+       (sbTitleSync держит title равным тексту подписи). */
     #sbNav .sb-label {
-        flex: 1 1 0;
+        flex: none;
+        display: block;
+        max-width: 100%;
         min-width: 0;
+        padding: 0 2px;
         opacity: 1 !important;          /* фейд подписей был механикой peek */
-        white-space: normal;
-        line-height: 1.22;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
         color: inherit;
     }
     /* риска активного раздела была языком рейки; здесь маркер — сам кружок */
     #sbNav .sb-item::before { display: none; }
     #sbNav .sb-item:hover,
-    body.dark-mode #sbNav .sb-item:hover { background: transparent; }
-    #sbNav .sb-item:hover .sb-label { color: var(--sbr-mut); }
-    #sbNav .sb-item:hover > svg { border-color: var(--sbr-dim); }
+    body.dark-mode #sbNav .sb-item:hover { background: transparent; color: var(--sbr-ink); }
+    #sbNav .sb-item:hover > svg { border-color: var(--sbr-dim); background: var(--sbr-page); color: var(--sbr-ink); }
+    /* Активная ячейка — пилюля того же тона, что у активной подвкладки и табло:
+       три уровня выделения в колонке говорят на одном языке (раунд 4). */
     #sbNav .sb-item.active,
-    body.dark-mode #sbNav .sb-item.active { background: transparent; }
+    body.dark-mode #sbNav .sb-item.active { background: var(--sbr-page); }
     #sbNav .sb-item.active > svg {
         background: var(--sbr-sel);
         border-color: var(--sbr-sel);
         color: var(--sbr-sel-ic);
     }
     #sbNav .sb-item.active .sb-label { color: var(--sbr-ink); font-weight: 700; }
+    #sbNav .sb-item.active { color: var(--sbr-ink); }
     /* второй уровень уехал в #sbCtx — шевроны и inline-подпункты не нужны */
     #sbNav .sb-chev,
     #sbNav .sb-subs { display: none; }
 
-    /* ---------- Второй уровень: блок ПОД активным разделом ----------
-       Узел #sbCtx переставляет js/sidebar-ctx.js — он живёт внутри #sbNav
-       сразу за активным разделом (или за его .sb-group). */
+    /* Бейдж на кружке (дрейф долей за порогом у «Ребаланса»). Кружок —
+       .sb-item > svg, у <svg> потомков-элементов разметки нет, поэтому метка
+       живёт отдельным узлом и позиционируется от ячейки. */
+    #sbNav .sb-item { position: relative; }
+    #sbNav .sb-badge {
+        display: block;            /* базовое правило выше гасит метку на мобиле */
+        position: absolute;
+        /* якорь — правый верхний угол кружка. У <svg> нет потомков-элементов,
+           поэтому метку кладём в ячейку и считаем от её центра: кружок 34px ⇒
+           правый край на 50% + 17, метка шириной 15 начинается на 50% + 6 */
+        top: 5px; left: 50%;
+        margin-left: 6px;
+        min-width: 15px; height: 15px;
+        padding: 0 3px;
+        box-sizing: border-box;
+        border: 2px solid var(--sbr-card);
+        border-radius: 8px;
+        background: #DC2626;
+        color: #fff;
+        font-family: var(--font-num, 'JetBrains Mono', monospace);
+        font-size: 9px;
+        font-weight: 700;
+        line-height: 11px;
+        text-align: center;
+    }
+    body.dark-mode #sbNav .sb-badge { background: #F87171; color: #1A0B0B; }
+    /* на активной ячейке обводка метки берёт цвет пилюли, а не поля */
+    #sbNav .sb-item.active .sb-badge { border-color: var(--sbr-page); }
+
+    /* ---------- Второй уровень: блок ПОД СЕТКОЙ ----------
+       Узел #sbCtx ставит js/sidebar-ctx.js сразу за #sbNav (в разметке он
+       лежит снаружи #sbRail). Под активный раздел он больше НЕ подвешен: в
+       сетке у строки нет своего кружка, от которого можно было бы вести
+       линию вложенности, — заголовок блока называет раздел словом.
+       Прокручивается здесь именно он: сетка выше зафиксирована. */
     #sbCtx {
         display: none;
         position: relative;
-        margin: 2px 0 8px;
-        padding-left: 42px;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        scrollbar-width: none;
+        margin: 0;
+        padding: 0 12px 6px;
         font-family: var(--font-ui, 'Inter', sans-serif);
         color: var(--sbr-ink);
     }
+    #sbCtx::-webkit-scrollbar { display: none; }
     body.sb-ctx #sbCtx { display: block; }
-    /* вложенность держит волосяная линия от кружка вниз — это НЕ связь
-       последовательности из визарда, а именно вложенность */
-    #sbCtx::before {
-        content: '';
-        position: absolute;
-        left: 14px; top: -6px; bottom: 14px;
-        width: 1.5px;
-        background: var(--sbr-line);
-    }
-    /* шапка блока не рендерится (имя раздела написано строкой выше),
+    /* шапка блока не рендерится (имя раздела пишет первая .sbc-grp),
        подвал уехал в #sbRailFoot — см. js/sidebar-ctx.js */
     #sbCtx .sbc-list {
-        overflow: visible;               /* прокручивается весь #sbNav целиком */
+        overflow: visible;
         padding: 0;
         -webkit-mask-image: none;
     }
@@ -318,19 +515,13 @@
     }
     .sbc-tx { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .sbc-it:hover { background: var(--sbr-page); color: var(--sbr-ink); }
-    /* ВЫБОР = тонированная пилюля цвета страницы + отвод от линии вложенности */
+    /* ВЫБОР = тонированная пилюля цвета страницы. Отвод-риска к линии
+       вложенности снят вместе с самой линией: подвешивать не к чему. */
     .sbc-it.on {
         background: var(--sbr-page);
         color: var(--sbr-ink);
         font-weight: 600;
         box-shadow: none;
-    }
-    .sbc-it.on::before {
-        content: '';
-        position: absolute;
-        left: -28px; top: 50%;
-        width: 12px; height: 1.5px;
-        background: var(--sbr-sel);
     }
     .sbc-it.on > svg { opacity: 1; color: var(--sbr-sel); }
     .sbc-it:focus-visible { outline: 2px solid var(--sbr-sel); outline-offset: -2px; }
@@ -344,6 +535,16 @@
         font-weight: 600;
         color: var(--sbr-dim);
     }
+    /* сумма портфеля: раньше уходила только в title подсказки */
+    .sbc-val {
+        margin-left: auto;
+        flex: none;
+        font-family: var(--font-num, 'JetBrains Mono', monospace);
+        font-size: 10.5px;
+        font-weight: 500;
+        color: var(--sbr-mut);
+    }
+    .sbc-val + .sbc-chg { margin-left: 6px; }
     .sbc-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; margin: 0 3px; }
     /* дневное изменение — единственное цветное число в навигации; по наведению
        уступает место крестику (данных нет — просто пусто, ничего не выдумываем) */
@@ -374,6 +575,11 @@
     .sbc-it:hover .sbc-chg { display: none; }
     .sbc-it.gh { color: var(--sbr-dim); font-weight: 600; }
     .sbc-it.dim .sbc-tx { opacity: 0.6; }
+    /* «Ещё: …» — свёрнутый хвост длинного списка. Тише пунктов: это не пункт,
+       а обещание показать остальные; шеврон разворачивается вместе со списком */
+    .sbc-it.more { color: var(--sbr-dim); font-weight: 500; }
+    .sbc-it.more > svg { transition: transform 0.16s ease; }
+    .sbc-it.more.open > svg { transform: rotate(180deg); }
 
     /* подпись группы держит волосяную линию */
     .sbc-grp {
@@ -405,7 +611,6 @@
         background: var(--sbr-line);
     }
     .sbc-it.lvl3.on::after { background: var(--sbr-sel); }
-    .sbc-it.lvl3.on::before { display: none; }   /* отвод рисуется только у второго уровня */
 
     /* ---------- Подвал: «Настройки» раздела + схлопывание ---------- */
     #sbRailFoot {
@@ -454,13 +659,58 @@
     body.sb-rail #sbHead { padding: 18px 0 12px; justify-content: center; }
     body.sb-rail #sbHead #sbLogo { justify-content: center; gap: 0; }
     body.sb-rail #sbHead .sb-logo-text { display: none; }
+    /* Табло в 84px не живёт («1 462 380 ₽» просит 118px) — от него остаётся
+       ЧИП ДНЯ: компакт-капитал и процент, клик разворачивает колонку. Состояние
+       переживает свёртку: «Верстак» не превращается обратно в оглавление. */
+    body.sb-rail #sbCap { margin: 0 6px 2px; }
+    .sbcap-chip {
+        display: block;
+        width: 100%;
+        margin: 0;
+        padding: 5px 4px 6px;
+        border: 0;
+        border-radius: 11px;
+        background: var(--sbr-page);
+        font: inherit;
+        text-align: center;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .sbcap-chip:hover { background: color-mix(in srgb, var(--sbr-sel) 10%, var(--sbr-page)); }
+    .sbcap-chip:focus-visible { outline: 2px solid var(--sbr-sel); outline-offset: 2px; }
+    .sbcap-cn {
+        display: block;
+        font-family: var(--font-num, 'JetBrains Mono', monospace);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        line-height: 1.25;
+        color: var(--sbr-ink);
+    }
+    .sbcap-cd {
+        display: block;
+        font-family: var(--font-num, 'JetBrains Mono', monospace);
+        font-size: 9.5px;
+        font-weight: 700;
+        line-height: 1.25;
+        color: #16A34A;
+    }
+    .sbcap-cd.neg { color: #DC2626; }
+    body.dark-mode .sbcap-cd { color: #34D399; }
+    body.dark-mode .sbcap-cd.neg { color: #F87171; }
+    /* сетка разворачивается обратно в столбец: в 84px «сетка» из одного
+       столбца — это и есть вертикальный список, только с лишним понятием */
     body.sb-rail #sbNav {
+        display: flex;
+        flex-direction: column;
         flex: 0 0 auto;
         overflow: visible;
         align-items: center;
         gap: 2px;
         padding: 6px 4px 10px;
     }
+    body.sb-rail #sbNav::after { display: none; }
+    body.sb-rail #sbNav .sb-badge { top: 6px; margin-left: 10px; }
     body.sb-rail #sbNav .sb-item,
     body.dark-mode.sb-rail #sbNav .sb-item {
         flex-direction: column;

@@ -50,6 +50,54 @@
     /* порог дрейфа (п.п.) — из портфеля, дефолт 3 */
     function driftThr(p) { return (p && p.driftThreshold != null && isFinite(+p.driftThreshold)) ? clamp(+p.driftThreshold, 0, 50) : 3; }
 
+    /* ЦЕЛЬ ЯВНАЯ, а не дефолтная. targetBond(p) отвечает 40 и портфелю, которому
+       цель никто не ставил, — визарду так удобно (ему всегда есть от чего
+       считать). Сайдбару нельзя: насечка «цель 58» на полосе классов и бейдж
+       дрейфа обязаны молчать, пока цели нет, иначе первый же день покажет
+       выдуманное расхождение (мокап Б+2в, раунд 4). */
+    function hasTarget(p) { return !!p && p.targetBond != null && isFinite(+p.targetBond); }
+
+    /* ПОРОГ ДРЕЙФА ОДИН НА ПРОЕКТ — 3 п.п. (раунд 4). Персональный
+       p.driftThreshold остаётся языком визарда: там пользователь настраивает
+       чувствительность КОНКРЕТНОГО портфеля. Бейдж в сайдбаре и «Пульс дня» на
+       «Обзоре» говорят об одном и том же событии, поэтому считают по общему
+       порогу — иначе колонка и страница противоречили бы друг другу. */
+    PF.DRIFT_THR = 3;
+
+    /* Сколько портфелей просят ребаланса — для бейджа на «Ребалансе» в сайдбаре
+       («Верстак», js/sidebar-ctx.js). Портфель из одного класса не дрейфует по
+       определению: менять внутри класса нечего, обмена между классами нет. */
+    PF.pfDriftCount = function () {
+        try {
+            return ((PF.store && PF.store.items) || []).filter(function (p) {
+                if (!hasTarget(p)) return false;
+                var c = PF.calcPf(p);
+                if (!(c.stockVal > 0 && c.bondVal > 0)) return false;
+                return Math.abs(c.bondPct - targetBond(p)) >= PF.DRIFT_THR;
+            }).length;
+        } catch (e) { return 0; }
+    };
+
+    /* Целевые доли классов по ВСЕМ портфелям — насечка на полосе табло.
+       Взвешиваем по стоимости: цель портфеля на 900 тысяч весит больше цели
+       портфеля на 30. Считаем только по тем, у кого цель задана, и от их же
+       суммы: подмешивать бесцелевой портфель в знаменатель значит занижать
+       цель тем сильнее, чем больше денег лежит вне мастера. */
+    PF.pfTargetMix = function () {
+        try {
+            var base = 0, tb = 0;
+            ((PF.store && PF.store.items) || []).forEach(function (p) {
+                if (!hasTarget(p)) return;
+                var v = PF.calcPf(p).value;
+                if (!(v > 0)) return;
+                base += v; tb += v * targetBond(p) / 100;
+            });
+            if (!(base > 0)) return null;
+            var bond = tb / base * 100;
+            return { bond: bond, stock: 100 - bond };
+        } catch (e) { return null; }
+    };
+
     /* ─────────── форматтеры / утилиты (переиспользуем PF) ─────────── */
     var fmtRub = PF.fmtRub, fmtPrice = PF.fmtPrice, fmtPct = PF.fmtPct, fmtQty = PF.fmtQty;
     var toNum = PF.toNum, clamp = PF.clamp;

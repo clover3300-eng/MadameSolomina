@@ -36,6 +36,7 @@
         'pf_rebal_params',      // параметры ребаланса (налог/комиссия/период)
         'sl_checked_v1',        // отмеченные строки покупок
         'nw_read_v1',           // прочитанные новости «Новостей по позициям» (Д2, пишет portfolios-widgets.js)
+        'sb_more_v1',           // раскрыт ли хвост «Ещё» во втором уровне сайдбара (js/sidebar-ctx.js)
         'invest_settings',      // параметры расчёта
         'portfolio_snapshot',   // рассчитанный портфель
         'msolominа_state'       // состояние калькулятора (app-state.js)

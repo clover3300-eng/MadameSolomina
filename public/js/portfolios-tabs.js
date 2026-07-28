@@ -252,6 +252,60 @@
         if (!isFinite(pct)) return null;
         return { tx: (pct >= 0 ? '+' : '−') + Math.abs(pct).toFixed(1).replace('.', ',') + '%', neg: pct < 0 };
     }
+    // ---- КАПИТАЛ ДЛЯ ШАПКИ КОЛОНКИ (сайдбар «Верстак», мокап Б) ----
+    // Отдельно от sbSideModel: блок капитала висит в сайдбаре на ЛЮБОЙ вкладке,
+    // а модель второго уровня собирается только для «Портфелей».
+    // Суммируем ВСЕ портфели, включая скрытые: p.hidden прячет карточку на
+    // «Обзоре», но не деньги (см. память hide-scope-overview-only).
+    // Дневное изменение — только при вчерашнем снимке: dayDelta вернул null у
+    // всех ⇒ chip остаётся null и в разметке его просто нет.
+    PF.sbCapModel = function () {
+        if (!pfxWide()) return null;
+        var items = (PF.store && PF.store.items) || [];
+        if (!items.length) return null;
+        var total = 0, day = 0, dayKnown = false, bond = 0, stock = 0;
+        items.forEach(function (p) {
+            var c = calcPf(p);
+            total += c.value;
+            bond += c.bondVal; stock += c.stockVal;
+            var d = dayDelta(p, c.value);
+            if (d != null) { day += d; dayKnown = true; }
+        });
+        if (!(total > 0)) return null;
+        var chip = null, dayRub = null;
+        if (dayKnown && total - day > 0) {
+            var pct = day / (total - day) * 100;
+            if (isFinite(pct)) chip = { tx: (pct >= 0 ? '+' : '−') + Math.abs(pct).toFixed(1).replace('.', ',') + '%', neg: pct < 0 };
+            // день В РУБЛЯХ — из тех же снимков, что дают dayDelta; отдельного
+            // расчёта не нужно, только знак и формат (раунд 4)
+            dayRub = (day >= 0 ? '+' : '−') + fmtRub(Math.abs(day));
+        }
+        var mixBase = bond + stock;
+        return {
+            total: total,                 // сырое число — под интрадей-ряд спарклайна
+            cap: fmtRub(total),
+            // «1,46 млн» для чипа свёрнутой рейки: точность теряем намеренно —
+            // полные рубли показывает развёрнутая колонка
+            capShort: capCompact(total),
+            chip: chip,
+            dayRub: dayRub,
+            // доли считаем от суммы классов, а не от total: деньги вне бумаг
+            // (если появятся) не должны молча уезжать в облигации
+            mix: mixBase > 0 ? { stock: stock / mixBase * 100, bond: bond / mixBase * 100 } : null,
+            // насечка цели: null, пока цели не задана ни одному портфелю
+            target: (PF.pfTargetMix ? PF.pfTargetMix() : null),
+            drift: (PF.pfDriftCount ? PF.pfDriftCount() : 0)
+        };
+    };
+    // Компакт капитала для рейки: «1,46 млн» (мокап Б+3). Знака ₽ нет — в 84px
+    // он лишний, а маскировать строку «Скрывать суммы» всё равно будет по явной
+    // пометке data-money, а не по знаку валюты. Intl умеет компакт сам; на
+    // старых движках без notation:'compact' падать нельзя — отдаём обычный формат.
+    function capCompact(v) {
+        try {
+            return new Intl.NumberFormat('ru', { notation: 'compact', maximumFractionDigits: 2 }).format(v);
+        } catch (e) { return fmtRub(v); }
+    }
     PF.sbSideModel = function () {
         if (!pfxWide()) return null;              // на мобиле колонки нет вовсе
         var eff = pfxEffTab();
@@ -301,6 +355,9 @@
                 act: 'pf', key: p.id, tx: p.name, dot: colorVal(p.color),
                 on: curPid === p.id, cls: p.hidden ? 'dim' : '',
                 title: p.name + ' · ' + fmtRub(c.value),
+                // сумма портфеля жила только в подсказке — «Верстак» пишет её
+                // строкой: колонка обязана показывать состояние, а не оглавление
+                val: c.value > 0 ? fmtRub(c.value) : null,
                 chg: pfxSideDay(p, c.value),
                 close: { act: 'pf-close', key: p.id }
             };
