@@ -168,6 +168,60 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .r3-grp{padding:11px 14px 4px;font-size:9px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
 .r3-dot{width:8px;height:8px;border-radius:50%;flex:none;margin:0 3px}
 
+
+/* ════════ раунд 2 · подписи остаются ════════ */
+.l-hr{width:28px;height:1px;background:var(--line);margin:0 auto 14px;flex:none}
+
+/* Л1 · кружок + подпись */
+.l1{width:84px;padding:18px 0 12px}
+.l1 .rl-mark{margin-bottom:16px}
+.l1-i{position:relative;width:76px;padding:7px 0 8px;margin-bottom:2px;flex:none;display:flex;flex-direction:column;
+  align-items:center;gap:7px;border-radius:14px;cursor:pointer;transition:background .15s}
+.l1-c{width:36px;height:36px;display:grid;place-items:center;border-radius:50%;border:1.5px solid var(--line);
+  background:var(--card);color:var(--dim);transition:border-color .15s,background .15s,color .15s}
+.l1-c svg{width:18px;height:18px}
+.l1-i em{font-style:normal;max-width:100%;padding:0 4px;font-size:11px;font-weight:600;line-height:1.2;
+  color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.l1-i:hover .l1-c{border-color:var(--dim);background:var(--bg);color:var(--ink)}
+.l1-i:hover em{color:var(--ink)}
+.l1-i.on .l1-c{background:var(--sel);border-color:var(--sel);color:#fff}
+.sc.dk .l1-i.on .l1-c{color:#0A0E15}
+.l1-i.on em{color:var(--sel);font-weight:700}
+
+/* Л2 · пилюля */
+.l2{width:84px;padding:18px 0 12px}
+.l2 .rl-mark{margin-bottom:16px}
+.l2-i{position:relative;width:76px;height:56px;margin-bottom:2px;flex:none;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:6px;border-radius:13px;cursor:pointer;
+  color:var(--mut);transition:background .15s,color .15s}
+.l2-i svg{width:20px;height:20px}
+.l2-i em{font-style:normal;max-width:100%;padding:0 5px;font-size:11px;font-weight:600;line-height:1.2;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.l2-i:hover{background:var(--bg);color:var(--ink)}
+.l2-i.on{background:color-mix(in srgb,var(--sel) 12%,transparent);color:var(--sel);font-weight:700}
+
+/* Л3 · подпись сбоку (узкая колонка) */
+.l3{width:132px;padding:18px 12px 12px;align-items:stretch}
+.l3 .rl-mark{margin:0 auto 16px}
+.l3-i{position:relative;display:flex;align-items:center;gap:11px;padding:6px 8px;margin-bottom:1px;flex:none;
+  border-radius:11px;cursor:pointer;min-width:0;transition:background .15s}
+.l3-c{flex:none;width:29px;height:29px;display:grid;place-items:center;border-radius:50%;
+  border:1.5px solid var(--line);background:var(--card);color:var(--dim);transition:border-color .15s,background .15s,color .15s}
+.l3-c svg{width:15px;height:15px}
+.l3-i em{font-style:normal;min-width:0;font-size:12px;font-weight:600;line-height:1.2;color:var(--mut);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.l3-i:hover{background:var(--bg)}
+.l3-i:hover em{color:var(--ink)}
+.l3-i.on .l3-c{background:var(--sel);border-color:var(--sel);color:#fff}
+.sc.dk .l3-i.on .l3-c{color:#0A0E15}
+.l3-i.on em{color:var(--ink);font-weight:700}
+
+/* линейка кеглей */
+.sz{display:flex;align-items:flex-end;gap:26px}
+.sz div{text-align:center}
+.sz b{display:block;font-weight:600;color:var(--ink);line-height:1.2}
+.sz span{display:block;margin-top:6px;font-family:var(--fN);font-size:9.5px;color:var(--doc-dim)}
+
 /* ── образцы ── */
 .st{
   --ink:#101828;--mut:#64748b;--dim:#98a4b4;--line:#e7ecf3;--bg:#f4f6fa;--card:#fff;--sel:#2F6B4F;
@@ -399,6 +453,119 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <div class="note no"><i>5</i><span><b>Нужна возня с наведением.</b> Задержка на открытие и на уход, чтобы карточка не мигала при проходе курсора вдоль рейки.</span></div>
     <div class="note no"><i>6</i><span><b>Дороже всех.</b> Р1 и Р2 — правки CSS; здесь нужен ещё и рендер карточки с позиционированием по кружку.</span></div>
   </div>
+</div>
+
+<!-- ═══════════════════ РАУНД 2 · подписи остаются ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h">
+    <span class="mk-n">Л</span>
+    <h2>Раунд 2: подписи остаются, но выглядят иначе</h2>
+    <span class="mk-tag warn">Р1 и Р3 в иконочном виде отпали</span>
+  </div>
+  <p class="mk-sub">Подписи нужны — значит вопрос не «оставить ли их», а «как сделать их приличными».
+  Три вещи чиню во всех трёх вариантах сразу: кегль <span class="num" style="font-family:var(--fN)">9,5 → 11–12px</span>,
+  строка строго одна (перенос заменён многоточием, ряд перестаёт скакать) и цвет
+  <span style="font-family:var(--fN)">rgba(.58) → --mut</span>. Различаются варианты тем, как подпись
+  уживается с иконкой.</p>
+
+  <div class="scroller"><div class="strip">
+
+  <!-- Л1 -->
+  <div>
+  <div class="sc">
+    <div class="rl l1">
+      <div class="rl-mark">M</div>
+      <div class="l1-i"><span class="l1-c"><svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/></svg></span><em>Главная</em></div>
+      <div class="l1-i"><span class="l1-c"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></span><em>Расчёт</em></div>
+      <div class="l1-i on"><span class="l1-c"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="13" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></span><em>Портфели</em></div>
+      <div class="l1-i"><span class="l1-c"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></span><em>Академия…</em></div>
+      <div class="l1-i"><span class="l1-c"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span><em>Рынок</em></div>
+      <div class="l1-i"><span class="l1-c"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></span><em>Тест</em></div>
+      <div class="rl-sp"></div>
+      <div class="l-hr"></div>
+      <div class="l1-i" style="margin-bottom:0"><span class="l1-c"><svg viewBox="0 0 24 24"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg></span></div>
+    </div>
+    <div class="pg">
+      <div class="pg-top"><div class="pg-pill"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="13" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>Портфели</div><div class="sp"></div><div class="pg-chip"></div><div class="pg-chip rnd"></div></div>
+      <div class="pg-hero"><b>Обзор портфелей</b><span>карточки, избранное, новости</span></div>
+      <div class="pg-kpis"><div class="pg-kpi"><em>Ключевая</em><b>21.0%</b></div><div class="pg-kpi"><em>Вклады</em><b>21.5%</b></div><div class="pg-kpi"><em>Инфляция</em><b>9.1%</b></div></div>
+      <div class="pg-card"><h4>Избранное</h4><div class="pg-rows"><div class="pg-row"></div><div class="pg-row"></div><div class="pg-row"></div></div></div>
+    </div>
+  </div>
+  <div class="spec-cap" style="max-width:760px"><b>Л1 «Кружок + подпись» · рейка 84px · рекомендую</b>Кружок 36px берётся из колонки (там он 29px) — свёртка наконец читается сужением, а не сменой меню. Активный помечен заливкой кружка, а не риской у края экрана. Подпись 11px в одну строку, строка 71px.</div>
+  </div>
+
+  <!-- Л2 -->
+  <div>
+  <div class="sc">
+    <div class="rl l2">
+      <div class="rl-mark">M</div>
+      <div class="l2-i"><svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/></svg><em>Главная</em></div>
+      <div class="l2-i"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg><em>Расчёт</em></div>
+      <div class="l2-i on"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="13" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg><em>Портфели</em></div>
+      <div class="l2-i"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg><em>Академия…</em></div>
+      <div class="l2-i"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><em>Рынок</em></div>
+      <div class="l2-i"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg><em>Тест</em></div>
+      <div class="rl-sp"></div>
+      <div class="r0-foot"><svg viewBox="0 0 24 24"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg></div>
+    </div>
+    <div class="pg">
+      <div class="pg-top"><div class="pg-pill"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="13" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>Портфели</div><div class="sp"></div><div class="pg-chip"></div><div class="pg-chip rnd"></div></div>
+      <div class="pg-hero"><b>Обзор портфелей</b><span>карточки, избранное, новости</span></div>
+      <div class="pg-kpis"><div class="pg-kpi"><em>Ключевая</em><b>21.0%</b></div><div class="pg-kpi"><em>Вклады</em><b>21.5%</b></div><div class="pg-kpi"><em>Инфляция</em><b>9.1%</b></div></div>
+      <div class="pg-card"><h4>Избранное</h4><div class="pg-rows"><div class="pg-row"></div><div class="pg-row"></div><div class="pg-row"></div></div></div>
+    </div>
+  </div>
+  <div class="spec-cap" style="max-width:760px"><b>Л2 «Пилюля» · рейка 84px</b>Кружка нет, зато весь пункт — пилюля: активный залит зелёным на 12%, подпись зелёная. Легче Л1 и ближе к нынешнему виду, строка 56px. Но с колонкой по-прежнему не рифмуется.</div>
+  </div>
+
+  <!-- Л3 -->
+  <div>
+  <div class="sc">
+    <div class="rl l3">
+      <div class="rl-mark">M</div>
+      <div class="l3-i"><span class="l3-c"><svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/></svg></span><em>Главная</em></div>
+      <div class="l3-i"><span class="l3-c"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></span><em>Расчёт</em></div>
+      <div class="l3-i on"><span class="l3-c"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="13" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></span><em>Портфели</em></div>
+      <div class="l3-i"><span class="l3-c"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></span><em>Академия Реб…</em></div>
+      <div class="l3-i"><span class="l3-c"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span><em>Рынок</em></div>
+      <div class="l3-i"><span class="l3-c"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></span><em>Тест</em></div>
+      <div class="rl-sp"></div>
+      <div class="l3-i" style="margin-bottom:0"><span class="l3-c"><svg viewBox="0 0 24 24"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg></span><em>Развернуть</em></div>
+    </div>
+    <div class="pg">
+      <div class="pg-top"><div class="pg-pill"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="13" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>Портфели</div><div class="sp"></div><div class="pg-chip"></div><div class="pg-chip rnd"></div></div>
+      <div class="pg-hero"><b>Обзор портфелей</b><span>карточки, избранное, новости</span></div>
+      <div class="pg-kpis"><div class="pg-kpi"><em>Ключевая</em><b>21.0%</b></div><div class="pg-kpi"><em>Вклады</em><b>21.5%</b></div><div class="pg-kpi"><em>Инфляция</em><b>9.1%</b></div></div>
+      <div class="pg-card"><h4>Избранное</h4><div class="pg-rows"><div class="pg-row"></div><div class="pg-row"></div><div class="pg-row"></div></div></div>
+    </div>
+  </div>
+  <div class="spec-cap" style="max-width:760px"><b>Л3 «Подпись сбоку» · колонка 132px</b>Строка та же, что в развёрнутом сайдбаре, только без второго уровня: кружок 29px и подпись 12px рядом. Подпись самая читаемая из трёх, строка самая низкая (41px), «Развернуть» получает имя. Но 132px — это уже не рейка, а узкая колонка.</div>
+  </div>
+
+  </div></div>
+
+  <div class="notes">
+    <div class="note ok"><i>1</i><span><b>Ряд перестаёт скакать во всех трёх.</b> Одна строка вместо двух: «Академия Ребалансировки» честно обрезается многоточием, а не ломается пополам. Высота строк одинаковая.</span></div>
+    <div class="note ok"><i>2</i><span><b>Кегль честный.</b> 11px в Л1/Л2 и 12px в Л3 против нынешних 9,5 — на экране это 9,9 / 10,8 против 8,6.</span></div>
+    <div class="note"><i>3</i><span><b>Ширина: 84 / 84 / 132px</b> против нынешних 76. Подписи приличного размера стоят места — бесплатно их не бывает.</span></div>
+    <div class="note"><i>4</i><span><b>Рифма с колонкой — только у Л1 и Л3.</b> Кружок там тот же, что у раздела в развёрнутом сайдбаре, и активный помечен так же — заливкой.</span></div>
+    <div class="note no"><i>5</i><span><b>Длинное имя всё равно обрезается везде.</b> «Академия Ребалансировки» просит 185px даже 11-м кеглем: целиком она влезает только в развёрнутую колонку. Подсказка по наведению нужна во всех трёх.</span></div>
+    <div class="note no"><i>6</i><span><b>Тупик не чинится ни одним.</b> Второй уровень по-прежнему исчезает при свёртке — если это важно, к выбранному варианту добавляется вылет из Р3.</span></div>
+  </div>
+
+  <table class="map">
+    <thead><tr><th>&nbsp;</th><th>00 · сейчас</th><th>Л1 · кружок + подпись</th><th>Л2 · пилюля</th><th>Л3 · подпись сбоку</th></tr></thead>
+    <tbody>
+      <tr><td><b>Ширина</b></td><td>76px</td><td>84px</td><td>84px</td><td class="no">132px</td></tr>
+      <tr><td><b>Кегль подписи</b></td><td class="no">9,5px</td><td class="ok">11px</td><td class="ok">11px</td><td class="ok">12px</td></tr>
+      <tr><td><b>Высота строки</b></td><td class="no">50 и 61px</td><td class="ok">71px, ровно</td><td class="ok">56px, ровно</td><td class="ok">41px, ровно</td></tr>
+      <tr><td><b>Метка активного</b></td><td class="no">риска у края экрана</td><td class="ok">заливка кружка</td><td>зелёная пилюля</td><td class="ok">заливка кружка</td></tr>
+      <tr><td><b>Рифма с колонкой</b></td><td class="no">нет</td><td class="ok">полная</td><td class="no">нет</td><td class="ok">полная</td></tr>
+      <tr><td><b>Влезает знаков</b></td><td>~9 в две строки</td><td>~10</td><td>~10</td><td class="ok">~13</td></tr>
+      <tr><td><b>Цена работы</b></td><td>—</td><td>CSS + обёртка кружка</td><td class="ok">только CSS</td><td>CSS + обёртка кружка</td></tr>
+    </tbody>
+  </table>
 </div>
 
 <!-- ═══════════════════ состояния ═══════════════════ -->
