@@ -31,14 +31,54 @@
     // админки «Академия Ребалансировки» просит 185px), и целиком имя показывает
     // только подсказка. Статический title из разметки после переименования врал
     // бы — держим его равным тому, что реально написано в подписи.
+    // Подсказка называет ещё и ВЕЛИЧИНУ события, если у раздела горит метка:
+    // «Ребаланс · дрейф 4,1 п.п. в 1 портфеле». Точное число — единственное,
+    // чего сетке не сказать: панель остаётся навигацией, а «насколько»
+    // отвечает по наведению. Текст кладёт badgeSync (js/sidebar-ctx.js) в
+    // data-sb-note, чтобы у title остался ОДИН владелец — иначе после
+    // switchTab подсказка затирала бы сама себя.
     function sbTitleSync() {
         document.querySelectorAll('#sbNav .sb-item[data-tab]').forEach(function (it) {
             var lbl = it.querySelector('.sb-label');
             var tx = lbl ? lbl.textContent.trim() : '';
-            if (tx && it.getAttribute('title') !== tx) it.setAttribute('title', tx);
+            if (!tx) return;
+            var note = it.getAttribute('data-sb-note');
+            var full = note ? (tx + ' · ' + note) : tx;
+            if (it.getAttribute('title') !== full) it.setAttribute('title', full);
         });
     }
     window.sbTitleSync = sbTitleSync;
+
+    // ЧИСЛО КОЛОНОК СЕТКИ — из числа ВИДИМЫХ разделов, а не из разметки:
+    // «Админка» появляется по роли (gateNav в js/admin.js), а tab-gates умеет
+    // добавлять свои вкладки и прятать штатные. Пять-шесть ложатся в три
+    // колонки (3+2 и 3+3), семь и больше — в четыре; ряды всегда полные.
+    // Ширины и высоты держит css/sidebar-rail.css по признаку data-cols.
+    function sbNavColsSync() {
+        var nav = document.getElementById('sbNav');
+        if (!nav) return;
+        var n = 0;
+        nav.querySelectorAll('.sb-item[data-tab]').forEach(function (it) {
+            if (it.hidden || (it.style && it.style.display === 'none')) return;
+            n++;
+        });
+        var cols = (n > 0 && n <= 6) ? '3' : '4';
+        if (nav.getAttribute('data-cols') !== cols) nav.setAttribute('data-cols', cols);
+    }
+    window.sbNavColsSync = sbNavColsSync;
+    // Состав сетки меняют чужие модули (роль admin, переименование и свои
+    // вкладки из админки), и звать их всех сюда пришлось бы руками. Наблюдатель
+    // ловит и добавление ячейки, и её скрытие через style/hidden; пересчёт
+    // стоит один проход по шести узлам и меняет атрибут только при разнице,
+    // так что собственных мутаций он не порождает.
+    (function watchNav() {
+        var nav = document.getElementById('sbNav');
+        if (!nav || typeof MutationObserver !== 'function') return;
+        new MutationObserver(sbNavColsSync).observe(nav, {
+            childList: true, subtree: true, attributes: true,
+            attributeFilter: ['style', 'hidden', 'class']
+        });
+    })();
 
     // Умолчание — РАЗВЁРНУТО: колонка и есть навигация раздела, прятать её по
     // умолчанию значило бы прятать второй уровень. Явный выбор пользователя
@@ -50,6 +90,7 @@
         } catch (e) {}
         sbRailSync();
         sbTitleSync();
+        sbNavColsSync();
         if (window.sbPersonalSync) window.sbPersonalSync();
         if (window.updateCollapseLabel) window.updateCollapseLabel();
         if (window.sbCtxSync) window.sbCtxSync();

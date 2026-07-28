@@ -447,11 +447,22 @@
         if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
         return many;
     }
+    // Подсказка раздела собирается в js/sidebar.js (sbTitleSync) — у title
+    // один владелец, иначе следующий switchTab затёр бы дописанное здесь.
+    // Наше дело — положить примечание и позвать пересборку.
+    function noteSync(it, note) {
+        if (note) {
+            if (it.getAttribute('data-sb-note') !== note) it.setAttribute('data-sb-note', note);
+        } else if (it.hasAttribute('data-sb-note')) {
+            it.removeAttribute('data-sb-note');
+        } else return;
+        if (window.sbTitleSync) window.sbTitleSync();
+    }
     function badgeSync(n) {
         var it = document.querySelector('#sbNav .sb-item[data-tab="rebalance"]');
         if (!it) return;
         var b = it.querySelector('.sb-badge');
-        if (!(n > 0) || !wide()) { if (b) b.remove(); return; }
+        if (!(n > 0) || !wide()) { if (b) b.remove(); noteSync(it, ''); return; }
         if (!b) {
             b = document.createElement('span');
             b.className = 'sb-badge';
@@ -461,6 +472,15 @@
         if (b.textContent !== tx) b.textContent = tx;
         var lbl = n + ' ' + plural(n, 'портфель просит', 'портфеля просят', 'портфелей просят') + ' ребаланса';
         if (b.getAttribute('aria-label') !== lbl) b.setAttribute('aria-label', lbl);
+        // Величину дрейфа метка не носит (в 15px её не написать) — её называет
+        // подсказка. Если максимума почему-то нет, примечание остаётся счётным:
+        // выдумывать число ради красивой строки нельзя.
+        var d = null;
+        try { d = (window.PF && PF.pfDriftMax) ? PF.pfDriftMax() : null; } catch (e) { d = null; }
+        var where = n + ' ' + plural(n, 'портфеле', 'портфелях', 'портфелях');
+        noteSync(it, d != null
+            ? ('дрейф ' + d.toFixed(1).replace('.', ',') + ' п.п. в ' + where)
+            : ('дрейф в ' + where));
     }
     function capSync() {
         var host = document.getElementById('sbCap');
