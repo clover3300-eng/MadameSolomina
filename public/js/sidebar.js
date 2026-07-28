@@ -181,9 +181,23 @@
         return !!(e && (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey ||
             (typeof e.button === 'number' && e.button !== 0)));
     }
+    // Клик по разделу на рейке ВОЗВРАЩАЕТ свёрнутую колонку второго уровня:
+    // нажатие на раздел — это запрос «покажи, что внутри», и отвечать на него
+    // одной сменой контента, оставляя навигацию раздела спрятанной, неправильно.
+    // «Свернуть» остаётся способом убрать колонку с глаз — до следующего захода
+    // в раздел. На мобиле не трогаем: там колонки нет вовсе, а флаг общий.
+    function sbOpenColumnFor(tab) {
+        if (!sbIsDesktop()) return;
+        if (!window.sbCtxHas || !window.sbCtxHas(tab)) return;
+        if (!document.body.classList.contains('sb-collapsed')) return;
+        document.body.classList.remove('sb-collapsed');
+        try { localStorage.setItem('sbCollapsed', '0'); } catch (e) {}
+        updateCollapseLabel();
+    }
     window.sbGo = function(e, tab) {
         if (sbModClick(e)) return true;
         if (e) e.preventDefault();
+        sbOpenColumnFor(tab);
         if (tab === 'home' && typeof window.goHome === 'function') window.goHome();
         else switchTab(tab);
         return false;
@@ -191,6 +205,7 @@
     window.sbGoParent = function(e, group) {
         if (sbModClick(e)) return true;
         if (e) e.preventDefault();
+        sbOpenColumnFor(group);
         window.sbNavParent(group, e);
         return false;
     };

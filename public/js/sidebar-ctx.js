@@ -78,6 +78,9 @@
         calc: 'Расчёт', portfolio: 'Расчёт', monthly: 'Расчёт',
         market: 'Рынок', 'market-stocks': 'Рынок', 'market-bonds': 'Рынок'
     };
+    // есть ли у раздела второй уровень — спрашивает sidebar.js, чтобы клик по
+    // разделу возвращал свёрнутую колонку
+    window.sbCtxHas = function (tab) { return !!COL_TITLE[tab]; };
     function modelFor(tab) {
         if (!wide()) return null;
         if (tab === 'portfolios') {
