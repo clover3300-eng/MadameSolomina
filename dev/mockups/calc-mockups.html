@@ -76,6 +76,10 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   --grn:#177A4F; --red:#C0362C;
   /* акцент режима: ОДИН на экран */
   --acc:#3B7AD1; --acc-tx:#2F63AC; --acc-soft:rgba(59,122,209,.12);
+  /* Второй цвет данных, НЕ второй акцент интерфейса: оранжевый закреплён за
+     акциями и за деньгами, которые приходят на счёт. Синий — за облигациями и
+     накопленным капиталом. Кнопки, ссылки и состояния его не берут никогда. */
+  --eq:#D08A3C; --eq-tx:#96591A;
   /* сайдбар — светлый в ОБЕИХ темах (css/sidebar-rail.css) */
   --rail:#FFFFFF; --ctx:#E9EEF6; --sb-ink:#1F2637; --sb-acc:#2F6B4F; --sb-line:rgba(20,27,45,.09);
   /* ЗАМОК ФОРМЫ: карточка 18 · блок 12 · контрол 10 · чип 6 */
@@ -89,7 +93,8 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .app.inc,.inc{--acc:#D08A3C; --acc-tx:#96591A; --acc-soft:rgba(208,138,60,.14)}
 .app.dark.inc,.app.dark .inc{--acc:#E8A05A; --acc-tx:#EFBC85; --acc-soft:rgba(232,160,90,.16)}
 .app.dark{--ink:#E8EEF7;--mut:#9AA7BB;--dim:#8794A8;--line:rgba(255,255,255,.09);--bg:#0C1016;--card:#151B25;
-          --sunk:#1B222E;--acc:#6BA4F5;--acc-tx:#8FBBF8;--acc-soft:rgba(107,164,245,.14);--grn:#3FBF87;--red:#E0796E}
+          --sunk:#1B222E;--acc:#6BA4F5;--acc-tx:#8FBBF8;--acc-soft:rgba(107,164,245,.14);
+          --eq:#E8A05A;--eq-tx:#EFBC85;--grn:#3FBF87;--red:#E0796E}
 .ic{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 
 /* ---------- РЕЙКА 76px ---------- */
@@ -117,20 +122,14 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
         font-size:13px;font-weight:500;line-height:1.25;color:rgba(31,38,55,.66)}
 .ctx-it .ic{width:15px;height:15px;opacity:.72}
 .ctx-tx{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Справа только СЧЁТЧИКИ (сколько выпусков, сколько вопросов) — их колонка
+   показывает и в «Портфелях». Денег в навигации нет: сумма и прогноз живут на
+   рабочей площади, и дублировать их в рейке значит спорить с ней за внимание. */
 .ctx-n{font-family:var(--fN);font-size:10.5px;font-weight:600;color:rgba(31,38,55,.42)}
-/* пункт режима: имя строкой, живое число второй строкой — в 212px они не
-   умещаются рядом, а число здесь несёт смысл сравнения, не справки */
-.ctx-it.two{align-items:flex-start;padding:8px 10px 9px}
-.ctx-it.two .ic{margin-top:1px}
-.ctx-it.two .col2{flex:1;min-width:0}
-.ctx-it.two .col2 span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ctx-it.two .col2 em{display:block;font-style:normal;font-family:var(--fN);font-size:10.5px;font-weight:600;
-                     letter-spacing:-.01em;color:rgba(31,38,55,.44);margin-top:3px}
 .ctx-it.on{background:var(--rail);color:var(--sb-ink);font-weight:600;
            box-shadow:inset 0 0 0 1px rgba(15,23,42,.07),0 1px 1px rgba(15,23,42,.04),0 10px 20px -14px rgba(24,38,60,.55)}
 .ctx-it.on .ic{opacity:1;color:var(--sb-acc)}
 .ctx-it.on .ctx-n{color:rgba(31,38,55,.55)}
-.ctx-it.on .col2 em{color:var(--sb-acc);font-weight:700}
 .ctx-it.dis{opacity:.45}
 .ctx-foot{display:flex;align-items:center;gap:4px;padding:8px;border-top:1px solid var(--sb-line)}
 .ctx-foot .ctx-it{margin:0;width:auto;flex:1}
@@ -164,7 +163,8 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .wh-k{font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--mut)}
 .wh-sum{display:flex;align-items:baseline;justify-content:flex-end;gap:7px;margin-top:7px;padding-bottom:7px;
         border-bottom:2px solid var(--acc);font-family:var(--fN);font-size:32px;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
-.wh-sum span{font-size:22px;color:var(--acc-tx)}
+.wh-sum span{font-size:22px;color:var(--eq-tx)}
+.fact .v.o,.kv .v.o{color:var(--eq-tx)}
 .wh-cur{margin-top:7px;font-size:11.5px;color:var(--mut)}
 
 /* ---------- КАРТОЧКИ ---------- */
@@ -185,6 +185,12 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .lead .ap{font-size:24px;color:var(--dim)}
 .sub{margin-top:8px;font-family:var(--fN);font-size:11.5px;line-height:1.55;color:var(--mut);letter-spacing:-.005em}
 .sub b{color:var(--ink);font-weight:700}
+.sub b.cb{color:var(--acc-tx)}
+.sub b.ce{color:var(--eq-tx)}
+/* легенда полосы прямо в шапке карточки «Стратегия» */
+.card-hd .aside i{display:inline-block;width:8px;height:8px;border-radius:3px;margin:0 4px 0 0;vertical-align:0}
+.card-hd .aside i.d1{background:var(--acc)}
+.card-hd .aside i.d2{background:var(--eq);margin-left:9px}
 
 /* Столбики прогноза. Высоты — ПРОЦЕНТЫ от поля графика, а не пиксели: карточка
    переживает любой рост содержимого над ней и столбики не наезжают на подпись. */
@@ -192,6 +198,10 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .col{flex:1;min-width:0;display:grid;grid-template-rows:auto 1fr auto;justify-items:center}
 .col .v{font-family:var(--fN);font-size:12px;font-weight:700;color:var(--ink);padding-bottom:6px}
 .col .stack{width:100%;max-width:86px;height:100%;display:flex;flex-direction:column;justify-content:flex-end}
+/* Прибыль делится на ту, что дали облигации, и ту, что дали акции: обе половины
+   растут своей ставкой, и столбик показывает, кто именно двигает капитал. */
+.col .eq{background:var(--eq);border-radius:6px 6px 0 0}
+.col .bo{background:var(--acc)}
 .col .gain{background:var(--acc);border-radius:6px 6px 0 0}
 .col .base{background:color-mix(in srgb,var(--ink) 11%,transparent)}
 .col .y{font-family:var(--fN);font-size:10px;font-weight:600;color:var(--dim);padding-top:8px}
@@ -199,6 +209,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:-1px}
 .legend .b1{background:color-mix(in srgb,var(--ink) 11%,transparent)}
 .legend .b2{background:var(--acc)}
+.legend .b3{background:var(--eq)}
 
 /* факты */
 .facts{display:flex;gap:26px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
@@ -229,8 +240,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .srow .mix{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:5px}
 .srow .mix em{font-style:normal;font-family:var(--fN);font-size:11px;font-weight:700;color:var(--mut);letter-spacing:-.01em}
 .bar{width:72px;height:6px;border-radius:3px;overflow:hidden;display:flex;background:color-mix(in srgb,var(--ink) 9%,transparent)}
-.bar .b{background:color-mix(in srgb,var(--ink) 30%,transparent)}
-.bar .s{background:var(--acc)}
+/* Полоса стратегии = те же два цвета данных: слева облигации, справа акции.
+   Раньше акции были просто «акцентом», а облигации — серым фоном; теперь обе
+   доли названы цветом, и полоса читается без подписи. */
+.bar .b{background:var(--acc)}
+.bar .s{background:var(--eq)}
 .srow.on{background:var(--card);box-shadow:inset 0 0 0 1px rgba(15,23,42,.07),0 1px 1px rgba(15,23,42,.04),
           0 10px 20px -14px rgba(24,38,60,.55)}
 .app.dark .srow.on{box-shadow:inset 0 0 0 1px rgba(255,255,255,.10),0 10px 22px -14px rgba(0,0,0,.8)}
@@ -379,14 +393,21 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
      типа в колонку, снимает тёмную плиту и заново раскладывает рабочую площадь.</p>
   <div class="verdict">
     <p><b>Главный ход.</b> Два режима («Рост капитала» и «Ежемесячный доход») становятся пунктами колонки
-       сайдбара — и несут живые числа под текущую сумму: <b>1.46 млн</b> и <b>8 714 ₽</b>. Колонка перестаёт
-       пустовать и работает вечным сравнением двух сценариев, а вкладка теряет крошку, кнопку «назад» и
-       253px тёмного героя. Экран выбора остаётся первым входом — он объясняет разницу, но повторное
-       переключение идёт сайдбаром.</p>
-    <p><b>Что фиксируем замками.</b> Один акцент на экран (синий у роста, охра у дохода, зелёный остаётся
-       сайдбару и только ему). Одна шкала скруглений: карточка 18 · блок 12 · контрол 10 · чип 6.
+       сайдбара, а вместе с ними туда переезжают разделы результата и тест. Вкладка теряет крошку, кнопку
+       «назад» и 253px тёмного героя. Экран выбора остаётся первым входом — он объясняет разницу, но
+       повторное переключение идёт сайдбаром.</p>
+    <p><b>Денег в навигации нет.</b> Справа у пунктов колонки живут только счётчики (сколько выпусков в
+       корзине, сколько вопросов в тесте) — ровно то, что колонка показывает и в «Портфелях». Суммы и
+       прогноз остаются на рабочей площади: продублированные в рейке, они спорили бы с ней за внимание.</p>
+    <p><b>Два цвета данных вместо одного акцента.</b> Синий закреплён за <b>облигациями и накопленным
+       капиталом</b>, оранжевый — за <b>акциями и деньгами, которые приходят на счёт</b>. Полоса стратегии
+       называет обе доли цветом и читается без подписи; столбик прогноза делится на прибыль от облигаций и
+       прибыль от акций, и сразу видно, кто двигает капитал. Кнопки, ссылки и состояния этих цветов не
+       берут никогда — они остаются графитовыми, поэтому «второго акцента интерфейса» не возникает.
+       Зелёный по-прежнему только сайдбару.</p>
+    <p><b>Что ещё фиксируем замками.</b> Одна шкала скруглений: карточка 18 · блок 12 · контрол 10 · чип 6.
        Кикеров-капслоков было двенадцать на экран, остаётся один. Выбор везде — <b>подъём</b>, тот же язык,
-       что у колонки: белая карточка над тонированным полем, никакой заливки акцентом.</p>
+       что у колонки: белая карточка над тонированным полем, никакой заливки.</p>
     <p><b>Побочная находка.</b> Проектный серый вторичных подписей <code style="font-family:var(--fN);font-size:12.5px">#97A3B4</code>
        даёт на белом <b>2,3:1</b>, и им покрашены не декорации, а текст: кикер суммы, годы под столбиками,
        легенда графика, заголовки колонок корзины, буквы месяцев. В макетах он поднят до
@@ -524,8 +545,8 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
       <div class="ctx-head"><h4>Расчёт</h4></div>
       <div class="ctx-list">
         <div class="ctx-grp"><span>Тип портфеля</span></div>
-        <div class="ctx-it two on"><svg class="ic" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><polyline points="15 7 21 7 21 13"/></svg><span class="col2"><span>Рост капитала</span><em>1.46 млн через 3 года</em></span></div>
-        <div class="ctx-it two"><svg class="ic" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg><span class="col2"><span>Ежемесячный доход</span><em>8 714 ₽ в месяц</em></span></div>
+        <div class="ctx-it on"><svg class="ic" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><polyline points="15 7 21 7 21 13"/></svg><span class="ctx-tx">Рост капитала</span></div>
+        <div class="ctx-it"><svg class="ic" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg><span class="ctx-tx">Ежемесячный доход</span></div>
         <div class="ctx-grp"><span>Готовый расчёт</span></div>
         <div class="ctx-it"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="ctx-tx">Смешанный портфель</span></div>
         <div class="ctx-it dis"><svg class="ic" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span class="ctx-tx">Корзина ОФЗ</span></div>
@@ -561,16 +582,16 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
           <div class="card">
             <div class="card-hd"><h3>Ваш портфель через 3 года</h3><span class="aside">сценарий 1.32 - 1.61 млн</span></div>
             <div class="lead"><span class="ap">≈</span>1.46<span class="u">млн ₽</span></div>
-            <div class="sub">облигации <b>50%</b> · акции <b>50%</b> · доходность <b>13,5% годовых</b></div>
+            <div class="sub">облигации <b class="cb">50%</b> · акции <b class="ce">50%</b> · доходность <b>13,5% годовых</b></div>
             <div class="cols">
               <div class="col"><div class="v">1.00 млн</div><div class="stack"><div class="base" style="height:62%"></div></div><div class="y">сегодня</div></div>
-              <div class="col"><div class="v">1.14 млн</div><div class="stack"><div class="gain" style="height:9%"></div><div class="base" style="height:62%"></div></div><div class="y">2027</div></div>
-              <div class="col"><div class="v">1.29 млн</div><div class="stack"><div class="gain" style="height:18%"></div><div class="base" style="height:62%"></div></div><div class="y">2028</div></div>
-              <div class="col"><div class="v">1.46 млн</div><div class="stack"><div class="gain" style="height:29%"></div><div class="base" style="height:62%"></div></div><div class="y">2029</div></div>
+              <div class="col"><div class="v">1.14 млн</div><div class="stack"><div class="eq" style="height:5%"></div><div class="bo" style="height:4%"></div><div class="base" style="height:62%"></div></div><div class="y">2027</div></div>
+              <div class="col"><div class="v">1.29 млн</div><div class="stack"><div class="eq" style="height:10%"></div><div class="bo" style="height:8%"></div><div class="base" style="height:62%"></div></div><div class="y">2028</div></div>
+              <div class="col"><div class="v">1.46 млн</div><div class="stack"><div class="eq" style="height:16%"></div><div class="bo" style="height:13%"></div><div class="base" style="height:62%"></div></div><div class="y">2029</div></div>
             </div>
-            <div class="legend"><span><i class="b1"></i>вложено</span><span><i class="b2"></i>прибыль</span></div>
+            <div class="legend"><span><i class="b1"></i>вложено</span><span><i class="b2"></i>облигации</span><span><i class="b3"></i>акции</span></div>
             <div class="facts">
-              <div class="fact"><span class="l">Доход в месяц</span><span class="v">≈ 7 257 ₽</span></div>
+              <div class="fact"><span class="l">Доход в месяц</span><span class="v o">≈ 7 257 ₽</span></div>
               <div class="fact"><span class="l">Прибыль за 3 года</span><span class="v g">+ 460 000 ₽</span></div>
             </div>
             <div class="cta">
@@ -579,7 +600,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
             </div>
           </div>
           <div class="card">
-            <div class="card-hd"><h3>Стратегия</h3><span class="aside">обл. / акции</span></div>
+            <div class="card-hd"><h3>Стратегия</h3><span class="aside"><i class="d1"></i>облигации <i class="d2"></i>акции</span></div>
             <div class="strat">
               <div class="srow"><span class="n"><b>Депозит</b><i>Защита капитала</i></span><span class="mix"><span class="bar"><span class="b" style="width:70%"></span><span class="s" style="width:30%"></span></span><em>70 / 30</em></span></div>
               <div class="srow"><span class="n"><b>Баланс</b><i>Умеренный риск</i></span><span class="mix"><span class="bar"><span class="b" style="width:60%"></span><span class="s" style="width:40%"></span></span><em>60 / 40</em></span></div>
@@ -598,11 +619,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     </div>
   </div></div>
   <div class="notes">
-    <div class="note ok"><i>1</i><span><b>Колонка работает сравнением.</b> Оба режима видны всегда, каждый с живым числом под текущую сумму. Переключение — один клик, без возврата на чузер.</span></div>
+    <div class="note ok"><i>1</i><span><b>Колонка держит весь второй уровень.</b> Оба режима, разделы результата и тест. Переключение — один клик, без возврата на чузер; денег в навигации нет, справа только счётчики.</span></div>
     <div class="note ok"><i>2</i><span><b>Шапка 104px вместо 253px.</b> Плита ушла, освободившиеся ~150px забрали карточки: столбики прогноза стали читаемее.</span></div>
     <div class="note ok"><i>3</i><span><b>Пропорция 1.28 / 1.</b> Прогноз — то, ради чего пришли, у него больше площади; список стратегий уплотнился до одной строки на пункт.</span></div>
-    <div class="note ok"><i>4</i><span><b>Полоса долей вместо «Обл. 50% / Акц. 50%».</b> Две строки текста и радиокружок заменены одной полосой и мono-парой «50 / 50».</span></div>
-    <div class="note ok"><i>5</i><span><b>Выбор = подъём.</b> Тот же приём, что в колонке: белая карточка над тонированным полем. Акцентом залито только то, что данные, — доля акций в полосе.</span></div>
+    <div class="note ok"><i>4</i><span><b>Полоса долей вместо «Обл. 50% / Акц. 50%».</b> Две строки текста и радиокружок заменены полосой, где облигации синие, а акции оранжевые, и моно-парой «50 / 50».</span></div>
+    <div class="note ok"><i>5</i><span><b>Столбик прогноза назвал источники.</b> Серое основание — вложенное, синяя часть — прибыль от облигаций, оранжевая — от акций. Половины растут своими ставками: 12% и 15% при смешанных 13,5%.</span></div>
     <div class="note ok"><i>6</i><span><b>CTA честная.</b> Тёмная кнопка «Рассчитать портфель» (контраст 14:1), комиссия рядом отдельным контролом с уже выбранным значением.</span></div>
   </div>
 </div>
@@ -626,8 +647,8 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
       <div class="ctx-head"><h4>Расчёт</h4></div>
       <div class="ctx-list">
         <div class="ctx-grp"><span>Тип портфеля</span></div>
-        <div class="ctx-it two"><svg class="ic" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><polyline points="15 7 21 7 21 13"/></svg><span class="col2"><span>Рост капитала</span><em>1.46 млн через 3 года</em></span></div>
-        <div class="ctx-it two"><svg class="ic" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg><span class="col2"><span>Ежемесячный доход</span><em>8 714 ₽ в месяц</em></span></div>
+        <div class="ctx-it"><svg class="ic" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><polyline points="15 7 21 7 21 13"/></svg><span class="ctx-tx">Рост капитала</span></div>
+        <div class="ctx-it"><svg class="ic" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg><span class="ctx-tx">Ежемесячный доход</span></div>
         <div class="ctx-grp"><span>Подбор</span></div>
         <div class="ctx-it"><svg class="ic" viewBox="0 0 24 24"><path d="M9.5 17h5"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 1 3.5 10.9V17h-7v-3.1A6 6 0 0 1 12 3z"/></svg><span class="ctx-tx">Тест риск-профиля</span><span class="ctx-n">11</span></div>
       </div>
@@ -730,8 +751,8 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
       <div class="ctx-head"><h4>Расчёт</h4></div>
       <div class="ctx-list">
         <div class="ctx-grp"><span>Тип портфеля</span></div>
-        <div class="ctx-it two"><svg class="ic" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><polyline points="15 7 21 7 21 13"/></svg><span class="col2"><span>Рост капитала</span><em>1.46 млн через 3 года</em></span></div>
-        <div class="ctx-it two on"><svg class="ic" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg><span class="col2"><span>Ежемесячный доход</span><em>8 714 ₽ в месяц</em></span></div>
+        <div class="ctx-it"><svg class="ic" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><polyline points="15 7 21 7 21 13"/></svg><span class="ctx-tx">Рост капитала</span></div>
+        <div class="ctx-it on"><svg class="ic" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg><span class="ctx-tx">Ежемесячный доход</span></div>
         <div class="ctx-grp"><span>Готовый расчёт</span></div>
         <div class="ctx-it dis"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="ctx-tx">Смешанный портфель</span></div>
         <div class="ctx-it"><svg class="ic" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span class="ctx-tx">Корзина ОФЗ</span><span class="ctx-n">6</span></div>
@@ -836,8 +857,8 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
       <div class="ctx-head"><h4>Расчёт</h4></div>
       <div class="ctx-list">
         <div class="ctx-grp"><span>Тип портфеля</span></div>
-        <div class="ctx-it two on"><svg class="ic" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><polyline points="15 7 21 7 21 13"/></svg><span class="col2"><span>Рост капитала</span><em>1.46 млн через 3 года</em></span></div>
-        <div class="ctx-it two"><svg class="ic" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg><span class="col2"><span>Ежемесячный доход</span><em>8 714 ₽ в месяц</em></span></div>
+        <div class="ctx-it on"><svg class="ic" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><polyline points="15 7 21 7 21 13"/></svg><span class="ctx-tx">Рост капитала</span></div>
+        <div class="ctx-it"><svg class="ic" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg><span class="ctx-tx">Ежемесячный доход</span></div>
         <div class="ctx-grp"><span>Готовый расчёт</span></div>
         <div class="ctx-it"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="ctx-tx">Смешанный портфель</span></div>
         <div class="ctx-it dis"><svg class="ic" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span class="ctx-tx">Корзина ОФЗ</span></div>
@@ -886,7 +907,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
               <div class="lead" style="margin-top:12px"><span class="ap">≈</span>1.46<span class="u">млн ₽</span></div>
               <div class="kv"><span class="l">Коридор сценариев</span><span class="v">1.32 - 1.61 млн</span></div>
               <div class="kv"><span class="l">Доходность</span><span class="v">13,5% годовых</span></div>
-              <div class="kv"><span class="l">Доход в месяц</span><span class="v">≈ 7 257 ₽</span></div>
+              <div class="kv"><span class="l">Доход в месяц</span><span class="v o">≈ 7 257 ₽</span></div>
               <div class="kv"><span class="l">Прибыль за 3 года</span><span class="v" style="color:var(--grn)">+ 460 000 ₽</span></div>
               <div class="cta" style="margin-top:auto">
                 <div class="btn">Рассчитать портфель <svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></div>
@@ -896,11 +917,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
             <div class="rgt">
               <div class="cols" style="margin-top:0;padding-top:8px">
                 <div class="col"><div class="v">1.00 млн</div><div class="stack"><div class="base" style="height:62%"></div></div><div class="y">сегодня</div></div>
-                <div class="col"><div class="v">1.14 млн</div><div class="stack"><div class="gain" style="height:9%"></div><div class="base" style="height:62%"></div></div><div class="y">2027</div></div>
-                <div class="col"><div class="v">1.29 млн</div><div class="stack"><div class="gain" style="height:18%"></div><div class="base" style="height:62%"></div></div><div class="y">2028</div></div>
-                <div class="col"><div class="v">1.46 млн</div><div class="stack"><div class="gain" style="height:29%"></div><div class="base" style="height:62%"></div></div><div class="y">2029</div></div>
+                <div class="col"><div class="v">1.14 млн</div><div class="stack"><div class="eq" style="height:5%"></div><div class="bo" style="height:4%"></div><div class="base" style="height:62%"></div></div><div class="y">2027</div></div>
+                <div class="col"><div class="v">1.29 млн</div><div class="stack"><div class="eq" style="height:10%"></div><div class="bo" style="height:8%"></div><div class="base" style="height:62%"></div></div><div class="y">2028</div></div>
+                <div class="col"><div class="v">1.46 млн</div><div class="stack"><div class="eq" style="height:16%"></div><div class="bo" style="height:13%"></div><div class="base" style="height:62%"></div></div><div class="y">2029</div></div>
               </div>
-              <div class="legend"><span><i class="b1"></i>вложено</span><span><i class="b2"></i>прибыль</span></div>
+              <div class="legend"><span><i class="b1"></i>вложено</span><span><i class="b2"></i>облигации</span><span><i class="b3"></i>акции</span></div>
             </div>
           </div>
         </div>
@@ -933,8 +954,8 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
       <div class="ctx-head"><h4>Расчёт</h4></div>
       <div class="ctx-list">
         <div class="ctx-grp"><span>Тип портфеля</span></div>
-        <div class="ctx-it two on"><svg class="ic" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><polyline points="15 7 21 7 21 13"/></svg><span class="col2"><span>Рост капитала</span><em>1.46 млн через 3 года</em></span></div>
-        <div class="ctx-it two"><svg class="ic" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg><span class="col2"><span>Ежемесячный доход</span><em>8 714 ₽ в месяц</em></span></div>
+        <div class="ctx-it on"><svg class="ic" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><polyline points="15 7 21 7 21 13"/></svg><span class="ctx-tx">Рост капитала</span></div>
+        <div class="ctx-it"><svg class="ic" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg><span class="ctx-tx">Ежемесячный доход</span></div>
         <div class="ctx-grp"><span>Готовый расчёт</span></div>
         <div class="ctx-it"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="ctx-tx">Смешанный портфель</span></div>
         <div class="ctx-it dis"><svg class="ic" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span class="ctx-tx">Корзина ОФЗ</span></div>
@@ -970,16 +991,16 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
           <div class="card">
             <div class="card-hd"><h3>Ваш портфель через 3 года</h3><span class="aside">сценарий 1.32 - 1.61 млн</span></div>
             <div class="lead"><span class="ap">≈</span>1.46<span class="u">млн ₽</span></div>
-            <div class="sub">облигации <b>50%</b> · акции <b>50%</b> · доходность <b>13,5% годовых</b></div>
+            <div class="sub">облигации <b class="cb">50%</b> · акции <b class="ce">50%</b> · доходность <b>13,5% годовых</b></div>
             <div class="cols">
               <div class="col"><div class="v">1.00 млн</div><div class="stack"><div class="base" style="height:62%"></div></div><div class="y">сегодня</div></div>
-              <div class="col"><div class="v">1.14 млн</div><div class="stack"><div class="gain" style="height:9%"></div><div class="base" style="height:62%"></div></div><div class="y">2027</div></div>
-              <div class="col"><div class="v">1.29 млн</div><div class="stack"><div class="gain" style="height:18%"></div><div class="base" style="height:62%"></div></div><div class="y">2028</div></div>
-              <div class="col"><div class="v">1.46 млн</div><div class="stack"><div class="gain" style="height:29%"></div><div class="base" style="height:62%"></div></div><div class="y">2029</div></div>
+              <div class="col"><div class="v">1.14 млн</div><div class="stack"><div class="eq" style="height:5%"></div><div class="bo" style="height:4%"></div><div class="base" style="height:62%"></div></div><div class="y">2027</div></div>
+              <div class="col"><div class="v">1.29 млн</div><div class="stack"><div class="eq" style="height:10%"></div><div class="bo" style="height:8%"></div><div class="base" style="height:62%"></div></div><div class="y">2028</div></div>
+              <div class="col"><div class="v">1.46 млн</div><div class="stack"><div class="eq" style="height:16%"></div><div class="bo" style="height:13%"></div><div class="base" style="height:62%"></div></div><div class="y">2029</div></div>
             </div>
-            <div class="legend"><span><i class="b1"></i>вложено</span><span><i class="b2"></i>прибыль</span></div>
+            <div class="legend"><span><i class="b1"></i>вложено</span><span><i class="b2"></i>облигации</span><span><i class="b3"></i>акции</span></div>
             <div class="facts">
-              <div class="fact"><span class="l">Доход в месяц</span><span class="v">≈ 7 257 ₽</span></div>
+              <div class="fact"><span class="l">Доход в месяц</span><span class="v o">≈ 7 257 ₽</span></div>
               <div class="fact"><span class="l">Прибыль за 3 года</span><span class="v g">+ 460 000 ₽</span></div>
             </div>
             <div class="cta">
@@ -988,7 +1009,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
             </div>
           </div>
           <div class="card">
-            <div class="card-hd"><h3>Стратегия</h3><span class="aside">обл. / акции</span></div>
+            <div class="card-hd"><h3>Стратегия</h3><span class="aside"><i class="d1"></i>облигации <i class="d2"></i>акции</span></div>
             <div class="strat">
               <div class="srow"><span class="n"><b>Депозит</b><i>Защита капитала</i></span><span class="mix"><span class="bar"><span class="b" style="width:70%"></span><span class="s" style="width:30%"></span></span><em>70 / 30</em></span></div>
               <div class="srow"><span class="n"><b>Баланс</b><i>Умеренный риск</i></span><span class="mix"><span class="bar"><span class="b" style="width:60%"></span><span class="s" style="width:40%"></span></span><em>60 / 40</em></span></div>
@@ -1016,7 +1037,8 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   <table class="map">
     <tr><th>Элемент макета</th><th>Где живёт сейчас</th><th>Что делаем</th><th>Объём</th></tr>
     <tr><td>Пункты «Рост капитала» / «Ежемесячный доход» в колонке</td><td><code>subsModel('calc')</code> в <code>sidebar-ctx.js</code> зеркалит <code>.sb-sub</code></td><td>Своя модель для «Расчёта»: два пункта режима + группа результатов + тест. Клик зовёт <code>cxSetMode</code></td><td class="no">средне</td></tr>
-    <tr><td>Живые числа под пунктами (1.46 млн / 8 714 ₽)</td><td>считаются в <code>calc-r6.js</code>: <code>simGrowth</code> / <code>simIncome</code></td><td>Отдать наружу и звать <code>sbCtxSync()</code> из <code>recalc</code>. Данные уже честные, выдумывать нечего</td><td class="ok">мало</td></tr>
+    <tr><td>Счётчики у пунктов колонки (6 выпусков, 11 вопросов)</td><td>колонка умеет это в «Портфелях»: <code>it.n</code> в <code>sidebar-ctx.js</code></td><td>Отдать в модель длину корзины и <code>VG_Q.length</code>. Сумм и прогноза в навигации нет</td><td class="ok">мало</td></tr>
+    <tr><td>Прибыль облигаций и акций отдельно в столбике</td><td><code>simGrowth</code> считает одну смешанную ставку <code>r</code></td><td>Вернуть ещё две: <code>rB</code> для облигаций и <code>rB+EQ_PREM</code> для акций — обе уже участвуют в формуле, их только не разделяют. <code>colsSVG</code> рисует третий сегмент</td><td class="no">средне</td></tr>
     <tr><td>Рабочая шапка вместо <code>#cxHero</code></td><td><code>buildHero</code> + <code>#cxHero</code> в <code>calc-r6.css</code></td><td>Тот же узел, новая покраска: светлый фон, 104px, без водяного «₽» и без крошки. <code>#ndInputHero</code> остаётся на месте</td><td class="no">средне</td></tr>
     <tr><td>Крошка «← Расчёт» и кнопка «назад»</td><td><code>CRUMB</code> / <code>#cxHeroBack</code> / <code>#cxBack</code></td><td>Снять: назад ведёт колонка сайдбара</td><td class="ok">мало</td></tr>
     <tr><td>Водяные «01» / «02» на карточках</td><td><code>.pk-card .wm</code> в <code>calc-r5.css</code></td><td>Убрать. Нумерация шагов не нужна там, где шага два</td><td class="ok">мало</td></tr>
@@ -1025,7 +1047,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <tr><td>«Выберите комиссию»</td><td><code>#calcCtaBar .nd-btn-cta-g</code></td><td>Тёмная кнопка «Рассчитать портфель»; комиссия — отдельный контрол с выбранным значением</td><td class="ok">мало</td></tr>
     <tr><td>Слияние баннера и графика выплат</td><td><code>#miBannerCard</code> + <code>#miSchCard</code>, тумблер <code>toggleScheduleView</code></td><td>Одна карточка «Купоны каждый месяц»; «Подробный график» — отдельный экран. Хвост из <code>monthly-income-r5</code></td><td class="no">много</td></tr>
     <tr><td>Ось месяцев ЯНВ…ДЕК</td><td><code>#miMonthlyChart</code>, подписи по одной букве</td><td>Трёхбуквенные из <code>MONS</code> (в <code>calc-r6.js</code> массив уже есть)</td><td class="ok">мало</td></tr>
-    <tr><td>Акцент режима <code>--cx-acc</code></td><td>литералы <code>#4a8df0</code> / <code>#f08c3a</code> по трём css</td><td>Две переменные на <code>.cx-rows.r5</code>, значение переключает класс режима <code>body.cxm-*</code></td><td class="no">средне</td></tr>
+    <tr><td>Два цвета данных <code>--cx-bond</code> / <code>--cx-eq</code></td><td>литералы <code>#4a8df0</code> / <code>#f08c3a</code> разбросаны по трём css без общего правила</td><td>Пара переменных на <code>.cx-rows.r5</code>: синий — облигации и капитал, оранжевый — акции и выплаты. Кнопкам и ссылкам они запрещены</td><td class="no">средне</td></tr>
     <tr><td>Замок скруглений 18 / 12 / 10 / 6</td><td><code>--r5-radius: 22px</code> + пилюли + 6/10/12 вперемешку</td><td>Одна шкала на скоуп «Расчёта»</td><td class="ok">мало</td></tr>
     <tr><td>Вторичный серый до AA</td><td><code>--r5-muted: #97A3B4</code> и <code>--c-th: #94A3B8</code> — 2,3:1 на белом</td><td>В скоупе «Расчёта» <code>#66748A</code> / <code>#8794A8</code>. Общие токены не трогаем: это отдельная задача по всему сайту</td><td class="ok">мало</td></tr>
   </table>
