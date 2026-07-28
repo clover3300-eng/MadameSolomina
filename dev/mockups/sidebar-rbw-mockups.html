@@ -216,6 +216,31 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
      font-size:9px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
 .g2c-grp::after{content:'';flex:1;height:1px;background:var(--line)}
 
+/* ════════ тёмная тема ════════
+   Палитра — та же, что у body.dark-mode .rbw в css/rebalance-wizard.css:
+   язык переносим целиком, включая его собственную тёмную сторону. */
+.sc.dk{
+  --ink:#e9eef8; --mut:#93a1b8; --dim:#5e6c84;
+  --line:rgba(255,255,255,.09); --hair:rgba(255,255,255,.06);
+  --bg:#0a0e15; --card:#121722;
+  --acc:#7c8cff; --grn:#34d399; --red:#f87171;
+  --bond:#7f9bc4; --stock:#d98a63;
+  --sbacc:#4FB98C;                    /* тот же зелёный, поднятый до контраста на тёмном */
+}
+.sc.dk .g1-mark,.sc.dk .g2r-mark{background:#E9EEF8;color:#0A0E15}
+.sc.dk .g1-s.on .g1-i{color:#0A0E15}
+.sc.dk .pg-pill,.sc.dk .pg-chip,.sc.dk .pg-hero,.sc.dk .pg-kpi,.sc.dk .pg-card{box-shadow:0 10px 26px -20px rgba(0,0,0,.8)}
+.sc.dk .g2r-i{color:rgba(233,238,248,.55)}
+.sc.dk .g2r-i:hover{background:rgba(255,255,255,.05);color:rgba(233,238,248,.92)}
+/* «остаётся светлым» — тот же столбец, но со светлыми токенами на тёмной странице */
+.g1.lite{
+  --ink:#101828; --mut:#64748b; --dim:#98a4b4; --line:#e7ecf3;
+  --bg:#f4f6fa; --card:#fff; --acc:#4453ef; --grn:#16a34a; --sbacc:#2F6B4F;
+  color:var(--ink)
+}
+.sc.dk .g1.lite .g1-mark{background:linear-gradient(180deg,#232B3B 0%,#141A26 100%);color:#F1F6FB}
+.sc.dk .g1.lite .g1-s.on .g1-i{color:#fff}
+
 /* ════════ образцы состояний ════════ */
 .st-wrap{
   --ink:#101828;--mut:#64748b;--dim:#98a4b4;--line:#e7ecf3;--bg:#f4f6fa;--card:#fff;
@@ -359,6 +384,158 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <div class="note no"><i>4</i><span><b>268px постоянно.</b> Сегодня без колонки страница получает 76px — здесь узкого состояния нет, кроме полного схлопывания в иконки.</span></div>
     <div class="note no"><i>5</i><span><b>На коротком окне разделы уходят под скролл.</b> Замерено: раскрытый второй уровень «Портфелей» просит <span class="num">628px</span>. На этом макете (<span class="num">648px</span>) списку достаётся <span class="num">505px</span> — не хватает <span class="num">123px</span>. На окне 900px сайдбару остаётся около <span class="num">1000</span> CSS-px (zoom 0,9) и всё влезает с запасом; скролл возвращается на низких окнах и когда открыто много портфелей.</span></div>
     <div class="note no"><i>6</i><span><b>Пояснения — лишние чернила.</b> В визарде их 4 штуки на экран-мастер; в сайдбаре 6 подписей висят перед глазами всегда.</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ Т · тёмная тема ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h">
+    <span class="mk-n">Т</span>
+    <h2>Г1 в тёмной теме</h2>
+    <span class="mk-tag ok">сайдбар темнеет вместе с темой</span>
+  </div>
+  <p class="mk-sub">Палитра взята у самого визарда — <code style="font-family:var(--fN);font-size:13px">body.dark-mode .rbw</code>:
+  поле <span class="num">#121722</span>, страница <span class="num">#0A0E15</span>, линии
+  <span class="num">rgba(255,255,255,.09)</span>. Язык переносим целиком, вместе с его собственной
+  тёмной стороной. Справа — альтернатива: колонка остаётся светлой, как сайдбар сегодня.</p>
+
+  <div class="scroller"><div class="strip">
+
+  <div>
+  <div class="sc dk">
+    <div class="g1">
+      <div class="g1-brand">
+        <div class="g1-mark">M</div>
+        <div class="g1-bt"><em>Madame</em><b>Solomi'na</b></div>
+      </div>
+      <div class="g1-secs">
+        <div class="g1-s">
+          <div class="g1-i"><svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/></svg></div>
+          <div class="g1-t"><b>Главная</b><em>манифест и живая карта</em></div>
+        </div>
+        <div class="g1-s">
+          <div class="g1-i"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></div>
+          <div class="g1-t"><b>Расчёт</b><em>портфель из ОФЗ и акций</em></div>
+        </div>
+        <div class="g1-s on">
+          <div class="g1-i"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="13" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></div>
+          <div class="g1-t"><b>Портфели</b><em>трекер, сделки, ребаланс</em></div>
+        </div>
+        <div class="g1-subs">
+          <div class="g1-sub on"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Обзор</span></div>
+          <div class="g1-sub"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg><span>Мои портфели</span><u>3</u></div>
+          <div class="g1-sub"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg><span>Аналитика</span></div>
+          <div class="g1-sub"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span>Отчёты</span></div>
+          <div class="g1-sub"><svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg><span>Операции</span><u>24</u></div>
+          <div class="g1-sub"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M5 7h14"/><path d="M8 7l-4 7h8z"/><path d="M16 7l-4 7h8z"/></svg><span>Ребаланс</span></div>
+          <div class="g1-sub"><svg viewBox="0 0 24 24"><rect x="3.5" y="8" width="6" height="9" rx="1.5"/><path d="M6.5 4v4M6.5 17v3"/><rect x="14.5" y="5" width="6" height="10" rx="1.5"/><path d="M17.5 3v2M17.5 15v6"/></svg><span>Торговля</span><u>2</u></div>
+          <div class="g1-grp"><span>Открытые</span></div>
+          <div class="g1-sub"><span class="dot" style="background:#7f9bc4"></span><span>Пенсия-2045</span><u style="color:#34d399">+0,9%</u></div>
+          <div class="g1-sub"><span class="dot" style="background:#d98a63"></span><span>Дивидендный</span><u style="color:#f87171">−0,4%</u></div>
+          <div class="g1-sub gh"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Новый портфель</span></div>
+        </div>
+        <div class="g1-s">
+          <div class="g1-i"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
+          <div class="g1-t"><b>Академия Ребалансировки</b><em>зачем и как выравнивать</em></div>
+        </div>
+        <div class="g1-s">
+          <div class="g1-i"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+          <div class="g1-t"><b>Рынок</b><em>дашборд и терминал</em></div>
+        </div>
+        <div class="g1-s">
+          <div class="g1-i"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></div>
+          <div class="g1-t"><b>Тест</b><em>портфель на истории</em></div>
+        </div>
+      </div>
+      <div class="g1-foot">
+        <div class="g1-fbtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.1a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4z"/></svg>Настройки</div>
+        <div class="g1-ficon"><svg viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg></div>
+      </div>
+    </div>
+
+    <div class="pg">
+      <div class="pg-top">
+        <div class="pg-brand">Madame <b>Solomi'na</b></div>
+        <div class="pg-pill"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="13" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>Портфели</div>
+        <div class="sp"></div>
+        <div class="pg-chip"></div><div class="pg-chip rnd"></div>
+      </div>
+      <div class="pg-hero">
+        <i><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="13" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></i>
+        <b>Обзор портфелей</b><span>карточки, избранное, новости</span>
+      </div>
+      <div class="pg-kpis">
+        <div class="pg-kpi"><em>Ключевая ставка</em><b>21.0%</b></div>
+        <div class="pg-kpi"><em>Ставка по вкладам</em><b>21.5%</b></div>
+        <div class="pg-kpi"><em>Инфляция, год</em><b>9.1%</b></div>
+        <div class="pg-kpi"><em>Доходность ОФЗ</em><b>14.2%</b></div>
+      </div>
+      <div class="pg-card">
+        <h4>Избранное</h4><p>главное по вашим акциям: потенциал аналитиков и свежие новости</p>
+        <div class="pg-rows"><div class="pg-row"></div><div class="pg-row"></div><div class="pg-row"></div><div class="pg-row"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="spec-cap" style="max-width:1180px"><b>Тёмная · рекомендую</b>Структура ровно та же, что в светлой: зелёный кружок активного раздела (поднят до <span class="num">#4FB98C</span> ради контраста на тёмном поле), выбранный пункт — пилюля цвета страницы, то есть темнее колонки. Ничего не переставляется, меняются только токены.</div>
+  </div>
+
+  <div>
+  <div class="sc dk small">
+    <div class="g1 lite">
+      <div class="g1-brand">
+        <div class="g1-mark">M</div>
+        <div class="g1-bt"><em>Madame</em><b>Solomi'na</b></div>
+      </div>
+      <div class="g1-secs">
+        <div class="g1-s">
+          <div class="g1-i"><svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/></svg></div>
+          <div class="g1-t"><b>Главная</b><em>манифест и живая карта</em></div>
+        </div>
+        <div class="g1-s">
+          <div class="g1-i"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></div>
+          <div class="g1-t"><b>Расчёт</b><em>портфель из ОФЗ и акций</em></div>
+        </div>
+        <div class="g1-s on">
+          <div class="g1-i"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="13" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></div>
+          <div class="g1-t"><b>Портфели</b><em>трекер, сделки, ребаланс</em></div>
+        </div>
+        <div class="g1-subs">
+          <div class="g1-sub on"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Обзор</span></div>
+          <div class="g1-sub"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg><span>Мои портфели</span><u>3</u></div>
+          <div class="g1-sub"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg><span>Аналитика</span></div>
+          <div class="g1-sub"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span>Отчёты</span></div>
+          <div class="g1-sub"><svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg><span>Операции</span><u>24</u></div>
+          <div class="g1-sub"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M5 7h14"/><path d="M8 7l-4 7h8z"/><path d="M16 7l-4 7h8z"/></svg><span>Ребаланс</span></div>
+          <div class="g1-sub"><svg viewBox="0 0 24 24"><rect x="3.5" y="8" width="6" height="9" rx="1.5"/><path d="M6.5 4v4M6.5 17v3"/><rect x="14.5" y="5" width="6" height="10" rx="1.5"/><path d="M17.5 3v2M17.5 15v6"/></svg><span>Торговля</span><u>2</u></div>
+        </div>
+        <div class="g1-s">
+          <div class="g1-i"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+          <div class="g1-t"><b>Рынок</b><em>дашборд и терминал</em></div>
+        </div>
+      </div>
+      <div class="g1-foot">
+        <div class="g1-fbtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.1a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4z"/></svg>Настройки</div>
+        <div class="g1-ficon"><svg viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg></div>
+      </div>
+    </div>
+    <div class="pg" style="padding:0 12px">
+      <div class="pg-top"><div class="pg-chip"></div></div>
+      <div class="pg-hero" style="height:120px"><b>Обзор</b></div>
+      <div class="pg-card"><div class="pg-rows"><div class="pg-row"></div><div class="pg-row"></div><div class="pg-row"></div></div></div>
+    </div>
+  </div>
+  <div class="spec-cap"><b>Альтернатива: остаётся светлым</b>Так сайдбар устроен сегодня — светлый в обеих темах. На 76px рейки это читалось спокойно; на 268px во всю высоту получается белая стена рядом с тёмной страницей.</div>
+  </div>
+
+  </div></div>
+
+  <div class="notes">
+    <div class="note ok"><i>1</i><span><b>Требование раунда 2 не нарушается.</b> Просили «чтобы в СВЕТЛОЙ теме сайдбар тоже был светлым» — он и остаётся светлым. Тёмным он становится только когда тёмная вся страница.</span></div>
+    <div class="note ok"><i>2</i><span><b>Дело в масштабе.</b> Светлая рейка 76px рядом с тёмной страницей читается кантом; светлая колонка 268px во всю высоту — это уже пятая часть экрана, и она перетягивает взгляд на навигацию.</span></div>
+    <div class="note"><i>3</i><span><b>Зелёный поднимается, а не меняется.</b> Светлый <span class="num">#2F6B4F</span> на поле <span class="num">#121722</span> даёт контраст <span class="num">2,8:1</span> — кружок почти тонет. Тёмная берёт <span class="num">#4FB98C</span>: тот же тон, другая светлота, <span class="num">7,4:1</span> к полю. Иконка внутри становится тёмной — <span class="num">8,0:1</span> к заливке.</span></div>
+    <div class="note"><i>4</i><span><b>Визард решает иначе.</b> У него активный кружок в тёмной инвертируется в белый чип (<code style="font-family:var(--fN);font-size:12px">--chip-bg:#e9eef8</code>). Мы оставляем зелёный: это цвет активного раздела во всём сайдбаре, и терять его на половине тем не хочется.</span></div>
+    <div class="note no"><i>5</i><span><b>Марка инвертируется.</b> Тёмный знак «M» на тёмном поле пропадает — в тёмной теме он становится светлым с тёмной буквой. Это единственный элемент, который меняет не только токен.</span></div>
+    <div class="note no"><i>6</i><span><b>Тем становится две.</b> Сегодня сайдбар один на обе; после этого его палитру придётся держать в двух состояниях, как у визарда.</span></div>
   </div>
 </div>
 
