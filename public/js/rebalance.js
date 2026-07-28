@@ -88,6 +88,105 @@ function updateRebalanceStats() {
     if (oc) oc.textContent = arr.length || '\u2014';
     const sc = document.getElementById('stocksCount');
     if (sc) sc.textContent = all.length || '\u2014';
+
+    rbxTopSync();
+}
+
+/* ===== ВИТРИНА ВКЛАДКИ (#rbxTop) =====
+   Заменила тёмный герой «Умная замена»: после сноса шапки сайта с десктопа
+   плита осталась экспонатом между светлой колонкой и белыми карточками, а её
+   KPI дублировали счётчики списков. Здесь — имя вкладки и ОДИН абзац; счётчики
+   и средние живут в витринах своих списков (.rbx-bh).
+
+   Абзац и кнопка зависят от входа, и это ДВА РАЗНЫХ ТЕКСТА, а не один с
+   подстановкой: гостю «когда придёт время выравнивать доли» — правда, вошедшему
+   с дрейфом время уже пришло, и ему обещают не помощь, а сделку из этих бумаг.
+   Обещание живёт в КОНЦЕ абзаца, а не подписью у кнопки: два серых текста по
+   краям витрины читались как два разных сообщения.
+
+   Статус справа (сколько портфелей просят ребаланса) показываем ТОЛЬКО когда
+   цепочка #pfLazySrc уже загружена: своих источников у вкладки нет, а тянуть
+   модуль «Портфелей» ради одной строки — платить 236КБ за подпись. Ровно так же
+   ведёт себя табло капитала в колонке (#sbCap пуст без PF). */
+function rbxAuthed() {
+    try { return !!(window.supa && window.supa.enabled && window.supa.isAuthed()); } catch (e) { return false; }
+}
+function rbxDriftCount() {
+    try { return (window.PF && PF.pfDriftCount) ? PF.pfDriftCount() : 0; } catch (e) { return 0; }
+}
+function rbxPlural(n, one, few, many) {
+    const m10 = n % 10, m100 = n % 100;
+    if (m10 === 1 && m100 !== 11) return one;
+    if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
+    return many;
+}
+const RBX_LEAD_BASE = 'Недооценённые бумаги рынка: ОФЗ с самой высокой доходностью и акции с наибольшим потенциалом роста';
+// Вход в академию стоит во втором уровне колонки, но её нет ни в рейке 84px, ни
+// на мобиле — там кнопка возвращается сюда. Прячет её CSS по body.sb-ctx, а не
+// JS: признак ставит sbCtxSync, и держать на него подписку было бы лишней связью.
+const RBX_ACAD_BTN =
+    '<button type="button" class="rbx-top-btn ghost rbx-acad-btn" onclick="rbxAcademyOpen()">' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M21.4 10.9a1 1 0 0 0 0-1.8l-8.5-3.9a2 2 0 0 0-1.7 0L2.7 9.1a1 1 0 0 0 0 1.8l8.5 3.9a2 2 0 0 0 1.7 0z"/>' +
+    '<path d="M6 12.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-3.5"/></svg>Академия</button>';
+
+function rbxTopSync() {
+    const lead = document.getElementById('rbxTopLead');
+    const act = document.getElementById('rbxTopAct');
+    if (!lead || !act) return;
+
+    let leadHtml, actHtml;
+    if (rbxAuthed()) {
+        leadHtml = RBX_LEAD_BASE + '. <b>Из них мастер и соберёт сделку для ваших портфелей.</b>';
+        const n = rbxDriftCount();
+        const status = n > 0
+            ? '<span class="rbx-top-state"><i></i>' + n + ' ' +
+              rbxPlural(n, 'портфель просит', 'портфеля просят', 'портфелей просят') + ' ребаланса</span>'
+            : '';
+        actHtml = RBX_ACAD_BTN + status +
+            '<button type="button" class="rbx-top-btn" onclick="rbxGoWizard()">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>' +
+            '<polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>Провести ребалансировку</button>';
+    } else {
+        leadHtml = RBX_LEAD_BASE + ' — кандидаты на покупку, когда придёт время выравнивать доли. ' +
+            '<b>Поможем провести её грамотно.</b>';
+        // одна кнопка в пустом углу читалась сиротой; «Войти» — не третий рассказ
+        // о продукте, а вторая половина того же выбора
+        actHtml = RBX_ACAD_BTN +
+            '<button type="button" class="rbx-top-quiet" onclick="rbxGoRegister()">Уже есть аккаунт? <b>Войти</b></button>' +
+            '<button type="button" class="rbx-top-btn big" onclick="rbxGoRegister()">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/>' +
+            '<line x1="15" y1="12" x2="3" y2="12"/></svg>Зарегистрироваться</button>';
+    }
+    if (lead.__h !== leadHtml) { lead.innerHTML = leadHtml; lead.__h = leadHtml; }
+    if (act.__h !== actHtml) { act.innerHTML = actHtml; act.__h = actHtml; }
+}
+window.rbxTopSync = rbxTopSync;
+
+// Вход и регистрация живут в карточке Главной (#homeRegister) — своей формы у
+// вкладки нет и быть не должно: пароль вводят в одном месте на весь сайт.
+function rbxGoRegister() {
+    if (window.switchTab) window.switchTab('home');
+    setTimeout(function () {
+        const card = document.getElementById('homeRegister');
+        if (!card) return;
+        card.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        const inp = card.querySelector('input:not([type=hidden])');
+        if (inp) { try { inp.focus(); } catch (e) {} }
+    }, 220);
+}
+// Мастер ребаланса — подвкладка «Портфелей» (ключ 'rebal', НЕ 'rebalance').
+// Модуль ленивый: switchTab поднимет цепочку, но pfxGoTab появится только после
+// неё — поэтому переход подвкладки ждём колбэка ensurePortfoliosJs.
+function rbxGoWizard() {
+    if (window.switchTab) window.switchTab('portfolios');
+    if (window.ensurePortfoliosJs) {
+        window.ensurePortfoliosJs(function () { if (window.pfxGoTab) window.pfxGoTab('rebal'); });
+    } else if (window.pfxGoTab) {
+        window.pfxGoTab('rebal');
+    }
 }
 
 // Совместимость: переключателя ОФЗ/Акции больше нет — обе секции на одном экране

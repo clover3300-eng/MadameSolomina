@@ -718,6 +718,123 @@
     }
     .sbc-it.lvl3.on::after { background: var(--sbr-sel); }
 
+    /* ---------- МАНИФЕСТ «ЗАЧЕМ РЕБАЛАНСИРОВАТЬ» («Академия») ----------
+       Единственный второй уровень, где не список, а текст: у раздела нет
+       подвкладок, и слот пустовал, а на странице манифест теснил списки.
+       Разметку рисует whyHtml (js/sidebar-ctx.js) — там же и почему голосов
+       ровно четыре. Блок тянется на всю высоту слота, карточка-вход прижата к
+       низу: воздух собирается между тезисами и действием. */
+    .sbc-why {
+        display: flex;
+        flex-direction: column;
+        min-height: 100%;
+        padding: 0 6px 2px;
+    }
+    .sbc-why-t {
+        /* шрифт — из общего списка заголовков typography-tokens.css */
+        margin: 15px 4px 0;
+        font-size: 16px;
+        font-weight: 400;
+        line-height: 1.2;
+        letter-spacing: -0.01em;
+        color: var(--sbr-ink);
+    }
+    .sbc-why-rule {
+        width: 30px; height: 1px;
+        margin: 11px 4px;
+        background: var(--sbr-ink);
+        opacity: 0.5;
+    }
+    .sbc-why-lead {
+        margin: 0 4px 12px;
+        font-size: 11.5px;
+        line-height: 1.5;
+        color: var(--sbr-mut);
+    }
+    .sbc-th {
+        flex: none;
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        padding: 10px 4px;
+        border-top: 1px solid var(--sbr-line);
+    }
+    .sbc-th .n {
+        flex: none;
+        width: 16px;
+        /* римская цифра — серифом, как в манифесте: она часть типографики */
+        font-family: var(--font-title, Georgia, serif);
+        font-size: 11px;
+        letter-spacing: 0.06em;
+        color: var(--sbr-dim);
+    }
+    .sbc-th b {
+        font-size: 12px;
+        font-weight: 600;
+        line-height: 1.32;
+        color: var(--sbr-ink);
+    }
+    /* вход в шторку — карточка в языке табло капитала (.sbcap-btn): тот же фон,
+       тот же радиус. Тихую строку с шевроном можно было вовсе не заметить, а
+       это единственный вход в академию, пока колонка развёрнута. */
+    .sbc-acad {
+        flex: none;
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        width: calc(100% - 4px);
+        margin: auto 2px 2px;
+        padding: 10px 12px 10px 10px;
+        border: 0;
+        border-radius: 14px;
+        background: var(--sbr-page);
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+        transition: background 0.15s ease;
+    }
+    .sbc-acad:hover { background: color-mix(in srgb, var(--sbr-sel) 8%, var(--sbr-page)); }
+    .sbc-acad:focus-visible { outline: 2px solid var(--sbr-sel); outline-offset: 2px; }
+    .sbc-acad .ic {
+        flex: none;
+        display: grid;
+        place-items: center;
+        width: 34px; height: 34px;
+        border-radius: 11px;
+        background: var(--sbr-sel);
+        color: #ffffff;
+    }
+    body.dark-mode .sbc-acad .ic { color: #0A0E15; }
+    .sbc-acad .ic svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .sbc-acad .tx { flex: 1 1 auto; min-width: 0; }
+    .sbc-acad b {
+        display: block;
+        font-size: 12.5px;
+        font-weight: 700;
+        line-height: 1.25;
+        color: var(--sbr-ink);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    /* стрелка стоит в подписи, а не отдельным шевроном справа: рядом с именем
+       ей не хватало 17px, и «Академия ребалансировки» обрезалась */
+    .sbc-acad i {
+        display: block;
+        margin-top: 2px;
+        font-style: normal;
+        font-size: 10.5px;
+        line-height: 1.35;
+        color: var(--sbr-dim);
+    }
+    .sbc-acad i svg {
+        width: 11px; height: 11px;
+        margin-left: 3px;
+        vertical-align: -1px;
+        fill: none; stroke: var(--sbr-sel); stroke-width: 2.2;
+        stroke-linecap: round; stroke-linejoin: round;
+    }
+
     /* ---------- Подвал: раздел + ЛИЧНОЕ ----------
        Две строки: сверху «Настройки» раздела и свёртка (как было), снизу —
        аватар кабинета, звоночек и поиск, приехавшие из снятой шапки сайта. */

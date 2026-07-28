@@ -165,14 +165,14 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .bx-void b{position:absolute;left:18px;right:18px;top:14px;height:1px;background:repeating-linear-gradient(90deg,var(--line) 0 6px,transparent 6px 12px)}
 
 /* ── МАНИФЕСТ В КОЛОНКЕ (варианты В · Г · Д) ── */
-.bx-why{padding:0 6px}
+.bx-why{padding:0 6px 2px;flex:1;min-height:0;display:flex;flex-direction:column}
 .bx-why .ep{margin:2px 4px 10px;padding-left:10px;border-left:2px solid var(--line);
   font-family:var(--fT);font-style:italic;font-size:11.5px;line-height:1.5;color:var(--mut)}
-.bx-th{display:flex;gap:10px;padding:8px 4px;border-top:1px solid var(--line)}
+.bx-th{flex:none;display:flex;align-items:baseline;gap:10px;padding:10px 4px;border-top:1px solid var(--line)}
 .bx-th:first-of-type{border-top:0}
 .bx-th .n{flex:none;width:14px;font-family:var(--fT);font-size:11px;color:var(--dim);letter-spacing:.06em;line-height:1.45}
 .bx-th .tx{min-width:0}
-.bx-th b{display:block;font-size:12px;font-weight:700;color:var(--ink);line-height:1.3}
+.bx-th b{display:block;font-size:12px;font-weight:600;color:var(--ink);line-height:1.32}
 .bx-th i{display:block;font-style:normal;margin-top:2px;font-size:11px;line-height:1.42;color:var(--mut)}
 .bx-why .go{margin:11px 4px 0;height:31px;display:flex;align-items:center;justify-content:center;gap:8px;
   border-radius:5px;background:var(--ink);color:var(--card);
@@ -186,17 +186,45 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .pg{flex:1;min-width:0;display:flex;flex-direction:column;padding:0 24px 18px;min-height:0}
 
 /* витрина вкладки — светлая замена тёмному герою */
-.ac-head{flex:none;display:flex;align-items:flex-end;gap:22px;padding:20px 2px 12px;border-bottom:1px solid var(--line)}
+.ac-head{flex:none;display:flex;align-items:flex-end;gap:26px;padding:18px 2px 14px;border-bottom:1px solid var(--line)}
 .ac-head .t{flex:1;min-width:0}
 .ac-head em{font-style:normal;display:block;font-size:9px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
-.ac-head h3{margin-top:5px;font-family:var(--fT);font-weight:400;font-size:23px;line-height:1.1;letter-spacing:-.01em}
+.ac-head h3{margin-top:0;font-family:var(--fT);font-weight:400;font-size:24px;line-height:1.1;letter-spacing:-.01em}
 .ac-head .st{margin-top:7px;display:flex;align-items:center;gap:9px;font-size:11px;color:var(--mut)}
 .ac-head .st b{font-family:var(--fN);font-size:11.5px;font-weight:700;color:var(--ink)}
 .ac-head .st s{text-decoration:none;color:var(--line)}
+.ac-head .lead{margin-top:9px;max-width:545px;font-size:12px;line-height:1.55;color:var(--mut)}
+.ac-head .lead b{font-weight:700;color:var(--ink)}
+.ac-act{flex:none;display:flex;align-items:center;gap:15px;padding-bottom:2px}
+.ac-act .hint{font-size:11px;line-height:1.4;color:var(--dim);white-space:nowrap}
+.ac-act .hint b{font-family:var(--fN);font-weight:700;color:var(--mut)}
+.ac-act .hint .d{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--red);margin-right:8px}
+.bx-wt{margin:15px 4px 0;font-family:var(--fT);font-weight:400;font-size:16px;line-height:1.2;letter-spacing:-.01em;color:var(--ink)}
+.bx-wr{width:30px;height:1px;background:var(--ink);opacity:.5;margin:11px 4px}
+.bx-wl{margin:0 4px 12px;font-size:11.5px;line-height:1.5;color:var(--mut)}
+.bx-acad{flex:none;margin:auto 2px 2px;display:flex;align-items:center;gap:11px;padding:10px 12px 10px 10px;
+  border-radius:14px;background:var(--bg)}
+.bx-acad .ic{flex:none;width:34px;height:34px;border-radius:11px;display:grid;place-items:center;
+  background:var(--sbacc);color:#fff}
+.bx-acad .ic svg{width:17px;height:17px}
+.bx-acad .tx{flex:1;min-width:0}
+.bx-acad b{display:block;font-size:12.5px;font-weight:700;line-height:1.25;color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bx-acad i{display:block;font-style:normal;margin-top:2px;font-size:10.5px;line-height:1.35;color:var(--dim)}
+.bx-acad .cv{width:11px;height:11px;vertical-align:-1px;margin-left:3px;color:var(--sbacc)}
+.sc.dark .bx-acad .ic{color:#0A0E15}
+.bx-cap.emp{display:flex;align-items:center;gap:10px;padding:11px 12px}
+.bx-cap.emp .pl{flex:none;width:28px;height:28px;border-radius:9px;display:grid;place-items:center;background:var(--card);border:1px solid var(--line);color:var(--sbacc)}
+.bx-cap.emp .pl svg{width:15px;height:15px}
+.bx-cap.emp b{display:block;font-size:12.5px;font-weight:700}
+.bx-cap.emp i{display:block;font-style:normal;margin-top:1px;font-size:10.5px;color:var(--dim)}
 .ac-cta{flex:none;height:33px;padding:0 15px;border-radius:5px;display:flex;align-items:center;gap:8px;
   background:var(--ink);color:var(--card);font-size:9.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
 .ac-cta svg{width:13px;height:13px}
 .ac-cta.ghost{background:transparent;color:var(--mut);border:1px solid var(--line)}
+.ac-cta.big{height:38px;padding:0 18px;font-size:10px;letter-spacing:.14em}
+.ac-quiet{background:none;border:0;font-family:inherit;font-size:11.5px;font-weight:500;color:var(--dim);white-space:nowrap}
+.ac-quiet b{font-weight:700;color:var(--ink);border-bottom:1px solid var(--line);padding-bottom:1px}
 
 /* тёмный герой — как сегодня (только вариант Г) */
 .ac-hero{flex:none;position:relative;overflow:hidden;margin-top:16px;display:flex;align-items:center;gap:22px;
@@ -220,7 +248,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 /* сетка вкладки */
 .ac-grid{flex:1;min-height:0;display:grid;gap:12px;margin-top:12px}
 .ac-grid.g3{grid-template-columns:minmax(0,1.28fr) minmax(0,1.42fr) minmax(0,1.85fr)}
-.ac-grid.g2{grid-template-columns:minmax(0,1fr) minmax(0,1.32fr)}
+.ac-grid.g2{grid-template-columns:minmax(0,.85fr) minmax(0,1.55fr)}
 .ac-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 15px;min-width:0;display:flex;flex-direction:column;overflow:hidden}
 
 /* витрина списка */
@@ -262,6 +290,36 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .ac-tile .bar i{display:block;height:100%;border-radius:2px;background:var(--grn);opacity:.55}
 
 /* манифест на странице */
+.ac-hints{flex:none;display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.ac-hint{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:7px;
+  font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);
+  background:none;border:0;font-family:inherit}
+.ac-hint svg{flex:none;width:12px;height:12px;opacity:.75}
+.ac-hint.on{color:var(--ink);background:var(--bg)}
+
+/* поповер — по лекалу .ech-pop (js/init.js) */
+.pops{width:auto;height:auto;display:flex;gap:24px;align-items:flex-start;padding:26px}
+.ac-pop{position:relative;width:380px;flex:none;padding:18px 18px 20px;border-radius:18px;
+  background:var(--card);border:1px solid var(--line);box-shadow:0 20px 54px -22px rgba(20,30,50,.4)}
+.ac-pop::before{content:'';position:absolute;left:34px;bottom:-7px;width:12px;height:12px;transform:rotate(45deg);
+  background:var(--card);border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+.ac-pop .hd{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ac-pop h4{font-size:16px;font-weight:800;letter-spacing:-.01em;color:var(--ink)}
+.ac-pop .x{font-size:22px;line-height:1;color:var(--dim)}
+.ac-pop .sb{margin:4px 0 14px;font-size:12.5px;font-weight:600;color:var(--mut)}
+.ac-pop .bd{display:flex;flex-direction:column;gap:9px}
+.ac-pop .row{display:flex;gap:12px;align-items:flex-start;padding:11px 12px;border-radius:13px;
+  background:var(--bg);border:1px solid var(--line)}
+.ac-pop .bg{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;margin-top:1px;
+  font-family:var(--fN);font-size:12px;font-weight:800;border:2px solid;background:var(--card)}
+.ac-pop .bg.e1{color:#10B981;border-color:#10B981}
+.ac-pop .bg.e2{color:#3B82F6;border-color:#3B82F6}
+.ac-pop .bg.e3{color:#F59E0B;border-color:#F59E0B}
+.ac-pop .bg.e4{color:#EF4444;border-color:#EF4444}
+.ac-pop .bg.nt{color:var(--mut);border-color:var(--line);font-size:10px}
+.ac-pop .bg.wn{color:#F59E0B;border-color:#F59E0B}
+.ac-pop .row b{display:block;font-size:14px;font-weight:700;color:var(--ink);margin-bottom:3px}
+.ac-pop .row p{font-size:12.5px;line-height:1.4;color:var(--mut)}
 .ac-why{min-width:0;display:flex;flex-direction:column}
 .ac-why .eb{font-size:9px;font-weight:800;letter-spacing:.26em;text-transform:uppercase;color:var(--dim)}
 .ac-why h4{margin-top:8px;font-family:var(--fT);font-weight:400;font-size:22px;line-height:1.15;letter-spacing:-.01em}
@@ -321,7 +379,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 <div class="page">
 
 <div class="doc-h">
-  <div class="doc-kicker">Академия · раунд 1 «Под Верстак»</div>
+  <div class="doc-kicker">Академия · раунд 1 «Под Верстак» · выбран вариант В</div>
   <h1>«Академия» после сайдбара: пять раскладок, тёмный герой на весах</h1>
   <p>Вкладку не трогали с R7 (15 июля), а под ней с тех пор поменялось основание: шапки сайта на десктопе больше нет, слева стоит «Верстак» 288px с табло капитала и сеткой разделов. Вкладка осталась с тёмной плитой во всю ширину и тремя колонками, а второй уровень колонки у неё <b>пустой</b> — <code>modelFor()</code> в <code>sidebar-ctx.js</code> отвечает <code>null</code> для <code>rebalance</code>. Пять вариантов ниже отвечают на два вопроса владельца: можно ли без тёмного блока и можно ли унести «Зачем ребалансировать» в колонку.</p>
   <div class="verdict">
@@ -512,14 +570,14 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
             <div class="ac-card">
               <div class="ac-bh"><span class="t">Облигации</span><span class="cnt">8</span><span class="kpi">средняя доходность<b>17,64%</b></span></div>
               <div class="ac-colhead"><span></span><span>Инструмент</span><span>Доходность</span><span>Цена</span><span></span></div>
-              <div class="ac-row"><span class="rk num">#1</span><span class="nm">ОФЗ 26238 · погашение 05.2041</span><span class="yl num">19,04%</span><span class="pr num">571,11 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#2</span><span class="nm">ОФЗ 26248 · погашение 05.2040</span><span class="yl num">18,63%</span><span class="pr num">548,66 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#3</span><span class="nm">ОФЗ 26247 · погашение 05.2039</span><span class="yl num">17,86%</span><span class="pr num">613,34 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#4</span><span class="nm">ОФЗ 26243 · погашение 05.2038</span><span class="yl num">17,83%</span><span class="pr num">622,18 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#5</span><span class="nm">ОФЗ 26240 · погашение 07.2036</span><span class="yl num">17,71%</span><span class="pr num">663,29 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#6</span><span class="nm">ОФЗ 26233 · погашение 07.2035</span><span class="yl num">16,96%</span><span class="pr num">723,30 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#7</span><span class="nm">ОФЗ 26230 · погашение 03.2039</span><span class="yl num">16,60%</span><span class="pr num">730,30 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#8</span><span class="nm">ОФЗ 26244 · погашение 03.2034</span><span class="yl num">16,50%</span><span class="pr num">737,20 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#1</span><span class="nm">ОФЗ 26238</span><span class="yl num">19,04%</span><span class="pr num">571,11 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#2</span><span class="nm">ОФЗ 26248</span><span class="yl num">18,63%</span><span class="pr num">548,66 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#3</span><span class="nm">ОФЗ 26247</span><span class="yl num">17,86%</span><span class="pr num">613,34 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#4</span><span class="nm">ОФЗ 26243</span><span class="yl num">17,83%</span><span class="pr num">622,18 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#5</span><span class="nm">ОФЗ 26240</span><span class="yl num">17,71%</span><span class="pr num">663,29 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#6</span><span class="nm">ОФЗ 26233</span><span class="yl num">16,96%</span><span class="pr num">723,30 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#7</span><span class="nm">ОФЗ 26230</span><span class="yl num">16,60%</span><span class="pr num">730,30 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#8</span><span class="nm">ОФЗ 26244</span><span class="yl num">16,50%</span><span class="pr num">737,20 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
               <div class="ac-foot">Цена указана с учётом НКД · нажмите строку — детали выпуска</div>
             </div>
             <div class="ac-card">
@@ -562,7 +620,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
           </div>
         </div>
       </div>
-      <div class="spec-cap"><b>Б · «Манифест вместо героя»</b>Полка занимает ровно ту высоту, что тёмная плита, но говорит по делу. Ниже — две карточки: у ОФЗ появилась ширина под полное имя выпуска (и, если захочется, под колонку «Погашение», которую удаляли в июле именно из-за тесноты).</div>
+      <div class="spec-cap"><b>Б · «Манифест вместо героя»</b>Полка занимает ровно ту высоту, что тёмная плита, но говорит по делу. Ниже — две карточки: списки перестают тесниться, но и лишнего в строку не добавляем — дата погашения остаётся в раскрытых деталях выпуска (решение по итогам показа).</div>
     </div>
   </div></div>
   <div class="notes">
@@ -577,37 +635,40 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 
 <!-- ═══════════════════ В ═══════════════════ -->
 <div class="mk">
-  <div class="mk-h"><span class="mk-n">В</span><h2>«Зачем» — в колонке, страница отдана спискам</h2><span class="mk-tag ok">прямой ответ на вопрос</span></div>
-  <div class="mk-sub">Манифест уезжает во <b>второй уровень сайдбара</b> — в тот самый слот, где у «Портфелей» стоят подвкладки, а у «Академии» сегодня пусто. Формат под 288px: эпиграф серифным курсивом у вертикальной черты, три тезиса с римскими цифрами (заголовок + одна строка расшифровки), внизу — плоская кнопка «Академия ребалансировки», открывающая шторку. Тёмного блока нет: страница начинается витриной, дальше — две карточки списков во всю ширину. <b>Колонка получает смысл на этой вкладке</b>: у «Портфелей» слева навигация, у «Академии» — тезис.</div>
+  <div class="mk-h"><span class="mk-n">В</span><h2>«Зачем» — в колонке, страница отдана спискам</h2><span class="mk-tag ok">выбран · доработан</span></div>
+  <div class="mk-sub">Манифест уезжает во <b>второй уровень сайдбара</b> — в тот самый слот, где у «Портфелей» стоят подвкладки, а у «Академии» сегодня пусто. Блок собран <b>в три голоса, не в семь</b>: метка группы «Философия капитала» (её волосяная линия и есть черта — отдельную убрал) → серифное «Зачем ребалансировать» → одна строка-пояснение Inter → три тезиса <b>по одной строке</b>, разделённые волосяными линиями. Ушли: серифный курсив эпиграфа (второй серифный голос вплотную к серифному заголовку и давал кашу), вторые строки у каждого тезиса (шесть чередующихся строк в 288px читались шумом — расшифровки живут в шторке) и цитата-подпись внизу.<br><br><b>Вход в академию — карточка, а не строка.</b> Тихая строка с иконкой и шевроном не читалась как кнопка вовсе: её можно было не заметить. Вход стал <b>карточкой в языке табло капитала</b> — та же пилюля на фоне <code>--bg</code>, тот же радиус 14px, — но с <b>зелёным залитым квадратом-иконкой</b>, то есть с тем же сигналом, что у активного раздела в сетке. Колонка получает две карточки, одна под другой: сверху деньги, снизу знание. Прижата к низу (<code>margin-top:auto</code>) — воздух между тезисами и действием читается как разрядка, а не как дыра. Тёмного блока нет: страница начинается витриной, дальше — две карточки списков.<br><br><b>Внизу карточки «Акции» — две кнопки-подсказки:</b> «Что такое эшелоны» и «Как считается потенциал». Не блоки текста — <b>кнопки, объясняющие поповером</b>: постоянный текст в карточке со списком конкурировал бы с самими бумагами, а спрашивают об этом один раз. Механика уже есть в проекте — чип «по эшелонам риска» открывает <code>.ech-pop</code> (<code>toggleEchelonGuide</code> в <code>js/init.js</code>): «Эшелоны» переиспользуют этот поповер целиком, «Потенциал» — новый на том же движке. Тексты взяты дословно из кода: I Надёжный · II Стабильный · III Рисковый · IV Венчурный и «потенциал носит условный характер и служит мерой приоритета одной акции над другой, а не прогнозом доходности».
+  <br><br><b>Что доработано после первого показа.</b> Дата погашения ушла из строки ОФЗ — она живёт в раскрытых деталях выпуска, а таблица от неё только тяжелела; облигациям вернули узкую колонку, освободившуюся ширину забрали акции. Вместо счётчиков «8 выпусков ОФЗ · 23 акции · цены МосБиржи» витрина теперь <b>объясняет, что это за списки</b>: недооценённые бумаги — ОФЗ с самой высокой доходностью и акции с наибольшим потенциалом. Счётчики никуда не делись — они и так стоят в витринах списков, а свежесть цен переехала в подпись под таблицей. <b>Надзаголовок «Философия капитала · практика» снят</b>: он ничего не добавлял к серифному имени вкладки прямо под ним, только шумел.
+  <br><br><b>Два состояния правого края.</b> Страница открыта <b>и гостю</b> (это витрина продукта: списки видно, портфеля нет), поэтому кнопка меняется вместе с пользователем: гостю — «Зарегистрироваться», вошедшему — <b>«Провести ребалансировку»</b>, ведущая в мастер («Портфели · Ребаланс», ключ <code>rebal</code>). Подпись рядом — <b>одна строка без переносов, в одну линию с кнопкой</b>: столбик из рваной серой строки над двумя кнопками распадался на три разных элемента и спорил с лидом слева. Осталось по одному факту, и <b>у гостя это уже не текст рядом с кнопкой</b>: два серых абзаца по краям витрины смотрелись как два разных сообщения, поэтому обещание «поможем провести её грамотно» переехало в <b>конец того же лида</b> и выделено тоном — одна мысль, один абзац. Кнопка при этом не осталась одна в пустом углу: рядом встал тихий <b>«Уже есть аккаунт? Войти»</b> — не третий рассказ о продукте, а вторая половина того же выбора, и два контрола читаются группой. Сама кнопка подросла до 38px: это главное действие экрана. <b>У вошедшего свои тексты:</b> «когда придёт время выравнивать доли» ему уже неправда — время пришло, поэтому абзац заканчивается <b>«Из них мастер и соберёт сделку для ваших портфелей»</b>. Справа не сообщение, а <b>состояние</b>: красная точка и «2 портфеля просят ребаланса» (формулировка из <code>sidebar-ctx.js</code>, та же, что в подсказке бейджа) — состояние с абзацем не спорит. Вторая кнопка «Академия» из витрины убрана: вход в академию теперь стоит в колонке карточкой, а на странице он появляется только там, где второго уровня нет — в рейке 84px и на мобиле.</div>
   <div class="scroller"><div class="strip">
     <div>
       <div class="sc">
         <div class="bx">
           <div class="bx-head"><div class="mark sm">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
-          <div class="bx-cap">
-            <div class="top"><em>Капитал · все портфели</em></div>
-            <div class="v"><b class="num">1 462 380 ₽</b><span class="chg num">+0,8%</span></div>
-            <div class="day num">+11 640 ₽ за сегодня</div>
-            <div class="bar"><i style="width:62%;background:#c9683f"></i><i style="width:38%;background:#5f7fa8"></i><span class="tick" style="left:58%"></span></div>
-            <div class="lg"><span class="num">Акции <b>62</b> · цель 58</span><span class="num">Облигации <b>38</b> · цель 42</span></div>
+          <div class="bx-cap emp">
+            <span class="pl"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+            <span><b>Создать портфель</b><i>Капитал и день появятся здесь</i></span>
           </div>
           <div class="bx-grid">
             <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span>Расчёт</span></div>
             <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></i><span>Портфели</span></div>
-            <div class="bx-cell on"><i class="circ on"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg><b class="bdg num">1</b></i><span>Академия</span></div>
+            <div class="bx-cell on"><i class="circ on"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></i><span>Академия</span></div>
             <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></i><span>Рынок</span></div>
             <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></i><span>Тест</span></div>
             <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></i><span>Админка</span></div>
           </div>
           <div class="bx-hr"></div>
           <div class="bx-ctx">
-            <div class="grp"><span>Философия капитала</span></div>
             <div class="bx-why">
-              <div class="ep">Портфель — не памятник. Рынок незаметно переписывает доли, и риск появляется там, где вы его не заказывали.</div>
-              <div class="bx-th"><span class="n">I</span><span class="tx"><b>Фиксируем прибыль</b><i>Продаём выросшее, пока оно дорогое</i></span></div>
-              <div class="bx-th"><span class="n">II</span><span class="tx"><b>Докупаем недооценённое</b><i>Возвращаем структуру к целевой</i></span></div>
-              <div class="bx-th"><span class="n">III</span><span class="tx"><b>Держим риск по плану</b><i>Доли — ваши, а не выбранные рынком</i></span></div>
-              <div class="go">Академия<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></div>
+              <h5 class="bx-wt">Зачем ребалансировать</h5>
+              <div class="bx-wr"></div>
+              <p class="bx-wl">Рынок незаметно переписывает доли: выросшее начинает весить больше положенного.</p>
+              <div class="bx-th"><span class="n">I</span><b>Фиксируем прибыль</b></div>
+              <div class="bx-th"><span class="n">II</span><b>Докупаем недооценённое</b></div>
+              <div class="bx-th"><span class="n">III</span><b>Держим риск по плану</b></div>
+              <div class="bx-acad">
+                <span class="ic"><svg viewBox="0 0 24 24"><path d="M21.4 10.9a1 1 0 0 0 0-1.8l-8.5-3.9a2 2 0 0 0-1.7 0L2.7 9.1a1 1 0 0 0 0 1.8l8.5 3.9a2 2 0 0 0 1.7 0z"/><path d="M6 12.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-3.5"/></svg></span>
+                <span class="tx"><b>Академия ребалансировки</b><i>Три разбора с примерами <svg class="cv" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></i></span>
+              </div>
             </div>
           </div>
           <div class="bx-foot">
@@ -620,26 +681,27 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
         <div class="pg">
           <div class="ac-head">
             <div class="t">
-              <em>Философия капитала · практика</em>
               <h3>Академия ребалансировки</h3>
-              <div class="st"><span>8 выпусков ОФЗ</span><s>·</s><span>23 акции</span><s>·</s><span>цены МосБиржи, <b>12:04</b></span></div>
+              <p class="lead">Недооценённые бумаги рынка: ОФЗ с самой высокой доходностью и акции с наибольшим потенциалом роста — кандидаты на покупку, когда придёт время выравнивать доли. <b>Поможем провести её грамотно.</b></p>
             </div>
-            <div class="ac-cta ghost"><svg viewBox="0 0 24 24"><path d="M21.4 10.9a1 1 0 0 0 0-1.8l-8.5-3.9a2 2 0 0 0-1.7 0L2.7 9.1a1 1 0 0 0 0 1.8l8.5 3.9a2 2 0 0 0 1.7 0z"/><path d="M6 12.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-3.5"/></svg>Академия</div>
-            <div class="ac-cta"><svg viewBox="0 0 24 24"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>Рассчитать портфель</div>
+            <div class="ac-act">
+              <button type="button" class="ac-quiet">Уже есть аккаунт? <b>Войти</b></button>
+              <div class="ac-cta big"><svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>Зарегистрироваться</div>
+            </div>
           </div>
           <div class="ac-grid g2">
             <div class="ac-card">
               <div class="ac-bh"><span class="t">Облигации</span><span class="cnt">8</span><span class="kpi">средняя доходность<b>17,64%</b></span></div>
               <div class="ac-colhead"><span></span><span>Инструмент</span><span>Доходность</span><span>Цена</span><span></span></div>
-              <div class="ac-row"><span class="rk num">#1</span><span class="nm">ОФЗ 26238 · погашение 05.2041</span><span class="yl num">19,04%</span><span class="pr num">571,11 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#2</span><span class="nm">ОФЗ 26248 · погашение 05.2040</span><span class="yl num">18,63%</span><span class="pr num">548,66 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#3</span><span class="nm">ОФЗ 26247 · погашение 05.2039</span><span class="yl num">17,86%</span><span class="pr num">613,34 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#4</span><span class="nm">ОФЗ 26243 · погашение 05.2038</span><span class="yl num">17,83%</span><span class="pr num">622,18 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#5</span><span class="nm">ОФЗ 26240 · погашение 07.2036</span><span class="yl num">17,71%</span><span class="pr num">663,29 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#6</span><span class="nm">ОФЗ 26233 · погашение 07.2035</span><span class="yl num">16,96%</span><span class="pr num">723,30 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#7</span><span class="nm">ОФЗ 26230 · погашение 03.2039</span><span class="yl num">16,60%</span><span class="pr num">730,30 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#8</span><span class="nm">ОФЗ 26244 · погашение 03.2034</span><span class="yl num">16,50%</span><span class="pr num">737,20 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-foot">Цена указана с учётом НКД · нажмите строку — детали выпуска</div>
+              <div class="ac-row"><span class="rk num">#1</span><span class="nm">ОФЗ 26238</span><span class="yl num">19,04%</span><span class="pr num">571,11 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#2</span><span class="nm">ОФЗ 26248</span><span class="yl num">18,63%</span><span class="pr num">548,66 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#3</span><span class="nm">ОФЗ 26247</span><span class="yl num">17,86%</span><span class="pr num">613,34 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#4</span><span class="nm">ОФЗ 26243</span><span class="yl num">17,83%</span><span class="pr num">622,18 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#5</span><span class="nm">ОФЗ 26240</span><span class="yl num">17,71%</span><span class="pr num">663,29 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#6</span><span class="nm">ОФЗ 26233</span><span class="yl num">16,96%</span><span class="pr num">723,30 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#7</span><span class="nm">ОФЗ 26230</span><span class="yl num">16,60%</span><span class="pr num">730,30 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#8</span><span class="nm">ОФЗ 26244</span><span class="yl num">16,50%</span><span class="pr num">737,20 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-foot">Цена с учётом НКД · цены МосБиржи, 12:04 · нажмите строку — детали выпуска и дата погашения</div>
             </div>
             <div class="ac-card">
               <div class="ac-bh"><span class="t">Акции</span><span class="cnt">23</span><span class="kpi">средний потенциал<b>+88,9%</b></span></div>
@@ -677,20 +739,161 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
                   <div class="ac-tile"><div class="tt"><b>ABRD</b><span class="num">+37,4%</span></div><div class="nm">Абрау-Дюрсо</div><div class="bar"><i style="width:13%"></i></div></div>
                 </div>
               </div>
+              <div class="ac-hints">
+                <button type="button" class="ac-hint"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle cx="12" cy="8" r="0.5"/></svg>Что такое эшелоны</button>
+                <button type="button" class="ac-hint"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle cx="12" cy="8" r="0.5"/></svg>Как считается потенциал</button>
+              </div>
             </div>
           </div>
         </div>
       </div>
-      <div class="spec-cap"><b>В · «Зачем в колонке»</b>Пустой слот второго уровня занят по назначению: у «Портфелей» там навигация, у «Академии» — тезис. Страница целиком отдана спискам, кнопка «Академия» продублирована в витрине — она обязана быть на странице ради рейки и мобилы.</div>
+      <div class="spec-cap"><b>В-1 · Гость</b>Табло капитала показывает вход «Создать портфель» — портфелей ещё нет. Правый край зовёт зарегистрироваться и честно говорит, что списки открыты и так. Манифест в колонке для гостя работает лучше всего: он объясняет, зачем вообще этот экран, а карточка внизу зовёт разобрать механику на примерах. «Войти» и «Зарегистрироваться» стоят парой — правый край читается как один выбор, а не как одинокая кнопка в пустом углу.</div>
+    </div>
+    <div>
+      <div class="sc">
+        <div class="bx">
+          <div class="bx-head"><div class="mark sm">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
+          <div class="bx-cap">
+            <div class="top"><em>Капитал · все портфели</em></div>
+            <div class="v"><b class="num">1 462 380 ₽</b><span class="chg num">+0,8%</span></div>
+            <div class="day num">+11 640 ₽ за сегодня</div>
+            <div class="bar"><i style="width:62%;background:#c9683f"></i><i style="width:38%;background:#5f7fa8"></i><span class="tick" style="left:58%"></span></div>
+            <div class="lg"><span class="num">Акции <b>62</b> · цель 58</span><span class="num">Облигации <b>38</b> · цель 42</span></div>
+          </div>
+          <div class="bx-grid">
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span>Расчёт</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></i><span>Портфели</span></div>
+            <div class="bx-cell on"><i class="circ on"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg><b class="bdg num">2</b></i><span>Академия</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></i><span>Рынок</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></i><span>Тест</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></i><span>Админка</span></div>
+          </div>
+          <div class="bx-hr"></div>
+          <div class="bx-ctx">
+            <div class="bx-why">
+              <h5 class="bx-wt">Зачем ребалансировать</h5>
+              <div class="bx-wr"></div>
+              <p class="bx-wl">Рынок незаметно переписывает доли: выросшее начинает весить больше положенного.</p>
+              <div class="bx-th"><span class="n">I</span><b>Фиксируем прибыль</b></div>
+              <div class="bx-th"><span class="n">II</span><b>Докупаем недооценённое</b></div>
+              <div class="bx-th"><span class="n">III</span><b>Держим риск по плану</b></div>
+              <div class="bx-acad">
+                <span class="ic"><svg viewBox="0 0 24 24"><path d="M21.4 10.9a1 1 0 0 0 0-1.8l-8.5-3.9a2 2 0 0 0-1.7 0L2.7 9.1a1 1 0 0 0 0 1.8l8.5 3.9a2 2 0 0 0 1.7 0z"/><path d="M6 12.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-3.5"/></svg></span>
+                <span class="tx"><b>Академия ребалансировки</b><i>Три разбора с примерами <svg class="cv" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></i></span>
+              </div>
+            </div>
+          </div>
+          <div class="bx-foot">
+            <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></span>
+            <span class="sbtn"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-2 8-2 8h16s-2-1-2-8"/><path d="M10.3 20a2 2 0 0 0 3.4 0"/></svg></span>
+            <span class="sp"></span>
+            <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>
+          </div>
+        </div>
+        <div class="pg">
+          <div class="ac-head">
+            <div class="t">
+              <h3>Академия ребалансировки</h3>
+              <p class="lead">Недооценённые бумаги рынка: ОФЗ с самой высокой доходностью и акции с наибольшим потенциалом роста. <b>Из них мастер и соберёт сделку для ваших портфелей.</b></p>
+            </div>
+            <div class="ac-act">
+              <span class="hint"><i class="d"></i><b>2</b> портфеля просят ребаланса</span>
+              <div class="ac-cta"><svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>Провести ребалансировку</div>
+            </div>
+          </div>
+          <div class="ac-grid g2">
+            <div class="ac-card">
+              <div class="ac-bh"><span class="t">Облигации</span><span class="cnt">8</span><span class="kpi">средняя доходность<b>17,64%</b></span></div>
+              <div class="ac-colhead"><span></span><span>Инструмент</span><span>Доходность</span><span>Цена</span><span></span></div>
+              <div class="ac-row"><span class="rk num">#1</span><span class="nm">ОФЗ 26238</span><span class="yl num">19,04%</span><span class="pr num">571,11 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#2</span><span class="nm">ОФЗ 26248</span><span class="yl num">18,63%</span><span class="pr num">548,66 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#3</span><span class="nm">ОФЗ 26247</span><span class="yl num">17,86%</span><span class="pr num">613,34 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#4</span><span class="nm">ОФЗ 26243</span><span class="yl num">17,83%</span><span class="pr num">622,18 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#5</span><span class="nm">ОФЗ 26240</span><span class="yl num">17,71%</span><span class="pr num">663,29 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#6</span><span class="nm">ОФЗ 26233</span><span class="yl num">16,96%</span><span class="pr num">723,30 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#7</span><span class="nm">ОФЗ 26230</span><span class="yl num">16,60%</span><span class="pr num">730,30 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#8</span><span class="nm">ОФЗ 26244</span><span class="yl num">16,50%</span><span class="pr num">737,20 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-foot">Цена с учётом НКД · цены МосБиржи, 12:04 · нажмите строку — детали выпуска и дата погашения</div>
+            </div>
+            <div class="ac-card">
+              <div class="ac-bh"><span class="t">Акции</span><span class="cnt">23</span><span class="kpi">средний потенциал<b>+88,9%</b></span></div>
+              <div class="ac-esh">
+                <div class="ac-ecol">
+                  <div class="ac-ehd">I</div>
+                  <div class="ac-tile"><div class="tt"><b>SBER</b><span class="num">+81,5%</span></div><div class="nm">Сбербанк</div><div class="bar"><i style="width:30%"></i></div></div>
+                  <div class="ac-tile"><div class="tt"><b>GAZP</b><span class="num">+95,4%</span></div><div class="nm">Газпром</div><div class="bar"><i style="width:35%"></i></div></div>
+                  <div class="ac-tile"><div class="tt"><b>MBNK</b><span class="num">+121,2%</span></div><div class="nm">МТС-Банк</div><div class="bar"><i style="width:44%"></i></div></div>
+                  <div class="ac-tile"><div class="tt"><b>T</b><span class="num">+75,6%</span></div><div class="nm">Т-Техно</div><div class="bar"><i style="width:27%"></i></div></div>
+                  <div class="ac-tile"><div class="tt"><b>LKOH</b><span class="num">+38,2%</span></div><div class="nm">Лукойл</div><div class="bar"><i style="width:14%"></i></div></div>
+                </div>
+                <div class="ac-ecol">
+                  <div class="ac-ehd e2">II</div>
+                  <div class="ac-tile"><div class="tt"><b>MRKC</b><span class="num">+122,5%</span></div><div class="nm">Россети Ц</div><div class="bar"><i style="width:44%"></i></div></div>
+                  <div class="ac-tile"><div class="tt"><b>ZAYM</b><span class="num">+94,1%</span></div><div class="nm">Займер</div><div class="bar"><i style="width:34%"></i></div></div>
+                  <div class="ac-tile"><div class="tt"><b>BSPB</b><span class="num">+91,7%</span></div><div class="nm">Банк СПб</div><div class="bar"><i style="width:33%"></i></div></div>
+                  <div class="ac-tile"><div class="tt"><b>MRKU</b><span class="num">+78,1%</span></div><div class="nm">Россети Урал</div><div class="bar"><i style="width:28%"></i></div></div>
+                  <div class="ac-tile"><div class="tt"><b>UPRO</b><span class="num">+52,4%</span></div><div class="nm">Юнипро</div><div class="bar"><i style="width:19%"></i></div></div>
+                </div>
+                <div class="ac-ecol">
+                  <div class="ac-ehd e3">III</div>
+                  <div class="ac-tile"><div class="tt"><b>ELFV</b><span class="num">+261,3%</span></div><div class="nm">ЭЛ5-Энерго</div><div class="bar"><i style="width:95%"></i></div></div>
+                  <div class="ac-tile"><div class="tt"><b>MGTSP</b><span class="num">+85,0%</span></div><div class="nm">МГТС ао</div><div class="bar"><i style="width:31%"></i></div></div>
+                  <div class="ac-tile"><div class="tt"><b>MGKL</b><span class="num">+67,1%</span></div><div class="nm">МГКЛ</div><div class="bar"><i style="width:24%"></i></div></div>
+                  <div class="ac-tile"><div class="tt"><b>APRI</b><span class="num">+41,1%</span></div><div class="nm">Группа Апри</div><div class="bar"><i style="width:15%"></i></div></div>
+                  <div class="ac-tile"><div class="tt"><b>GEMC</b><span class="num">+37,5%</span></div><div class="nm">Группа Аспект</div><div class="bar"><i style="width:13%"></i></div></div>
+                </div>
+                <div class="ac-ecol">
+                  <div class="ac-ehd e4">IV</div>
+                  <div class="ac-tile"><div class="tt"><b>SLEN</b><span class="num">+275,8%</span></div><div class="nm">Соллерс</div><div class="bar"><i style="width:100%"></i></div></div>
+                  <div class="ac-tile"><div class="tt"><b>SLAV</b><span class="num">+57,5%</span></div><div class="nm">Славнефть</div><div class="bar"><i style="width:21%"></i></div></div>
+                  <div class="ac-tile"><div class="tt"><b>LPSB</b><span class="num">+49,6%</span></div><div class="nm">Липецкая ЭСК</div><div class="bar"><i style="width:18%"></i></div></div>
+                  <div class="ac-tile"><div class="tt"><b>RTSB</b><span class="num">+43,9%</span></div><div class="nm">B2B-РТС</div><div class="bar"><i style="width:16%"></i></div></div>
+                  <div class="ac-tile"><div class="tt"><b>ABRD</b><span class="num">+37,4%</span></div><div class="nm">Абрау-Дюрсо</div><div class="bar"><i style="width:13%"></i></div></div>
+                </div>
+              </div>
+              <div class="ac-hints">
+                <button type="button" class="ac-hint"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle cx="12" cy="8" r="0.5"/></svg>Что такое эшелоны</button>
+                <button type="button" class="ac-hint"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle cx="12" cy="8" r="0.5"/></svg>Как считается потенциал</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="spec-cap"><b>В-2 · Вошёл, есть дрейф</b>Табло с капиталом и насечкой цели, бейдж на «Академии». Кнопка сменилась на «Провести ребалансировку» и ведёт в мастер; подпись слева от неё называет повод и держит красную точку — тот же сигнал, что бейдж на кружке, из одного порога <code>PF.DRIFT_THR</code>.</div>
+    </div>
+    <div>
+      <div class="sc pops">
+        <div class="ac-pop">
+          <div class="hd"><h4>Стратегия эшелонов</h4><span class="x">&times;</span></div>
+          <div class="sb">Группы акций по надёжности выплат и потенциалу роста</div>
+          <div class="bd">
+            <div class="row"><span class="bg e1">I</span><div><b>Надёжный</b><p>Платят дивиденды и стараются их повышать</p></div></div>
+            <div class="row"><span class="bg e2">II</span><div><b>Стабильный</b><p>Платят дивиденды, но размер выплат меняется</p></div></div>
+            <div class="row"><span class="bg e3">III</span><div><b>Рисковый</b><p>Могут платить, но реинвестируют прибыль в рост</p></div></div>
+            <div class="row"><span class="bg e4">IV</span><div><b>Венчурный</b><p>Не платят дивидендов, но имеют большой потенциал</p></div></div>
+          </div>
+        </div>
+        <div class="ac-pop">
+          <div class="hd"><h4>Потенциал</h4><span class="x">&times;</span></div>
+          <div class="sb">Мера приоритета, а не прогноз доходности</div>
+          <div class="bd">
+            <div class="row"><span class="bg nt">36м</span><div><b>Горизонт до 36 месяцев</b><p>Оценка строится на этом сроке, а не на ближайших неделях</p></div></div>
+            <div class="row"><span class="bg wn">!</span><div><b>Это не обещание доходности</b><p>Потенциал носит условный характер и служит мерой приоритета одной акции над другой</p></div></div>
+            <div class="row"><span class="bg nt">=</span><div><b>Сравниваем внутри эшелона</b><p>Бумагу меняем на бумагу того же эшелона: у разных эшелонов разный риск</p></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="spec-cap"><b>Поповеры кнопок</b>Оба — по лекалу существующего <code>.ech-pop</code> (<code>toggleEchelonGuide</code> в js/init.js): та же карточка 380px, те же кружки-бейджи эшелонов, Esc и клик мимо закрывают. «Эшелоны» переиспользуют готовый поповер целиком, «Потенциал» — новый на том же движке.</div>
     </div>
   </div></div>
   <div class="notes">
     <div class="note ok"><i>+</i><div><b>Пустоты нет ни слева, ни справа.</b> Единственный вариант, где обе половины экрана работают.</div></div>
-    <div class="note ok"><i>+</i><div><b>Манифест всегда на виду.</b> Он перестаёт быть блоком, который проматывают, и становится постоянным контекстом вкладки.</div></div>
-    <div class="note ok"><i>+</i><div><b>Списки получают всю ширину</b> — как в Б, но без полки сверху.</div></div>
-    <div class="note no"><i>−</i><div><b>Только десктоп.</b> В рейке 84px и на мобиле блока нет вовсе — философия остаётся лишь в шторке. Отсюда дубль кнопки в витрине.</div></div>
-    <div class="note no"><i>−</i><div><b>288px ужимают текст.</b> Три пункта живут одной строкой расшифровки вместо двух-трёх; полная редакция — в шторке.</div></div>
-    <div class="note no"><i>−</i><div><b>Колонка становится разной.</b> До сих пор второй уровень везде был списком-навигацией; здесь впервые это текст.</div></div>
+    <div class="note ok"><i>+</i><div><b>Страница объясняет себя.</b> Первая строка говорит, что это за бумаги и зачем они здесь, — раньше на её месте стояли счётчики, дублирующие витрины списков.</div></div>
+    <div class="note ok"><i>+</i><div><b>Одна кнопка — один следующий шаг.</b> Гостю регистрация, вошедшему мастер. «Рассчитать портфель» уходит: с этого экрана логичнее выравнивать имеющееся, а не считать заново.</div></div>
+    <div class="note no"><i>−</i><div><b>Только десктоп.</b> В рейке 84px и на мобиле второго уровня нет — там философия остаётся в шторке, и кнопка «Академия» возвращается в витрину. Значит у витрины два состояния и по этой оси тоже.</div></div>
+    <div class="note no"><i>−</i><div><b>288px ужимают текст.</b> От тезисов остались одни заголовки — «что делаем», без «почему». Полная редакция живёт в шторке, и карточка-вход в неё стоит внизу той же колонки.</div></div>
+    <div class="note ok"><i>+</i><div><b>Объяснения по требованию.</b> Эшелоны и потенциал объясняются кнопкой, а не абзацем: карточка остаётся списком бумаг, а не учебником.</div></div>
+    <div class="note"><i>?</i><div><b>Состояние «вошёл, дрейфа нет».</b> Третье состояние кнопки не нарисовано: либо та же кнопка с подписью «доли в порядке», либо «Собрать портфель» — решить до вёрстки.</div></div>
   </div>
 </div>
 
@@ -720,13 +923,17 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
           </div>
           <div class="bx-hr"></div>
           <div class="bx-ctx">
-            <div class="grp"><span>Философия капитала</span></div>
             <div class="bx-why">
-              <div class="ep">Портфель — не памятник. Рынок незаметно переписывает доли, и риск появляется там, где вы его не заказывали.</div>
-              <div class="bx-th"><span class="n">I</span><span class="tx"><b>Фиксируем прибыль</b><i>Продаём выросшее, пока оно дорогое</i></span></div>
-              <div class="bx-th"><span class="n">II</span><span class="tx"><b>Докупаем недооценённое</b><i>Возвращаем структуру к целевой</i></span></div>
-              <div class="bx-th"><span class="n">III</span><span class="tx"><b>Держим риск по плану</b><i>Доли — ваши, а не выбранные рынком</i></span></div>
-              <div class="go">Академия<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></div>
+              <h5 class="bx-wt">Зачем ребалансировать</h5>
+              <div class="bx-wr"></div>
+              <p class="bx-wl">Рынок незаметно переписывает доли: выросшее начинает весить больше положенного.</p>
+              <div class="bx-th"><span class="n">I</span><b>Фиксируем прибыль</b></div>
+              <div class="bx-th"><span class="n">II</span><b>Докупаем недооценённое</b></div>
+              <div class="bx-th"><span class="n">III</span><b>Держим риск по плану</b></div>
+              <div class="bx-acad">
+                <span class="ic"><svg viewBox="0 0 24 24"><path d="M21.4 10.9a1 1 0 0 0 0-1.8l-8.5-3.9a2 2 0 0 0-1.7 0L2.7 9.1a1 1 0 0 0 0 1.8l8.5 3.9a2 2 0 0 0 1.7 0z"/><path d="M6 12.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-3.5"/></svg></span>
+                <span class="tx"><b>Академия ребалансировки</b><i>Три разбора с примерами <svg class="cv" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></i></span>
+              </div>
             </div>
           </div>
           <div class="bx-foot">
@@ -753,13 +960,13 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
             <div class="ac-card">
               <div class="ac-bh"><span class="t">Облигации</span><span class="cnt">8</span><span class="tool">доходность <b>↓</b> · цена</span></div>
               <div class="ac-colhead"><span></span><span>Инструмент</span><span>Доходность</span><span>Цена</span><span></span></div>
-              <div class="ac-row"><span class="rk num">#1</span><span class="nm">ОФЗ 26238 · погашение 05.2041</span><span class="yl num">19,04%</span><span class="pr num">571,11 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#2</span><span class="nm">ОФЗ 26248 · погашение 05.2040</span><span class="yl num">18,63%</span><span class="pr num">548,66 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#3</span><span class="nm">ОФЗ 26247 · погашение 05.2039</span><span class="yl num">17,86%</span><span class="pr num">613,34 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#4</span><span class="nm">ОФЗ 26243 · погашение 05.2038</span><span class="yl num">17,83%</span><span class="pr num">622,18 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#5</span><span class="nm">ОФЗ 26240 · погашение 07.2036</span><span class="yl num">17,71%</span><span class="pr num">663,29 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#6</span><span class="nm">ОФЗ 26233 · погашение 07.2035</span><span class="yl num">16,96%</span><span class="pr num">723,30 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#7</span><span class="nm">ОФЗ 26230 · погашение 03.2039</span><span class="yl num">16,60%</span><span class="pr num">730,30 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#1</span><span class="nm">ОФЗ 26238</span><span class="yl num">19,04%</span><span class="pr num">571,11 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#2</span><span class="nm">ОФЗ 26248</span><span class="yl num">18,63%</span><span class="pr num">548,66 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#3</span><span class="nm">ОФЗ 26247</span><span class="yl num">17,86%</span><span class="pr num">613,34 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#4</span><span class="nm">ОФЗ 26243</span><span class="yl num">17,83%</span><span class="pr num">622,18 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#5</span><span class="nm">ОФЗ 26240</span><span class="yl num">17,71%</span><span class="pr num">663,29 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#6</span><span class="nm">ОФЗ 26233</span><span class="yl num">16,96%</span><span class="pr num">723,30 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#7</span><span class="nm">ОФЗ 26230</span><span class="yl num">16,60%</span><span class="pr num">730,30 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
               <div class="ac-foot">Цена указана с учётом НКД · нажмите строку — детали выпуска</div>
             </div>
             <div class="ac-card">
@@ -883,12 +1090,12 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
             <div class="ac-card">
               <div class="ac-bh"><span class="t">Облигации</span><span class="cnt">8</span><span class="kpi">средняя доходность<b>17,64%</b></span></div>
               <div class="ac-colhead"><span></span><span>Инструмент</span><span>Доходность</span><span>Цена</span><span></span></div>
-              <div class="ac-row"><span class="rk num">#1</span><span class="nm">ОФЗ 26238 · погашение 05.2041</span><span class="yl num">19,04%</span><span class="pr num">571,11 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#2</span><span class="nm">ОФЗ 26248 · погашение 05.2040</span><span class="yl num">18,63%</span><span class="pr num">548,66 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#3</span><span class="nm">ОФЗ 26247 · погашение 05.2039</span><span class="yl num">17,86%</span><span class="pr num">613,34 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#4</span><span class="nm">ОФЗ 26243 · погашение 05.2038</span><span class="yl num">17,83%</span><span class="pr num">622,18 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#5</span><span class="nm">ОФЗ 26240 · погашение 07.2036</span><span class="yl num">17,71%</span><span class="pr num">663,29 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#6</span><span class="nm">ОФЗ 26233 · погашение 07.2035</span><span class="yl num">16,96%</span><span class="pr num">723,30 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#1</span><span class="nm">ОФЗ 26238</span><span class="yl num">19,04%</span><span class="pr num">571,11 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#2</span><span class="nm">ОФЗ 26248</span><span class="yl num">18,63%</span><span class="pr num">548,66 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#3</span><span class="nm">ОФЗ 26247</span><span class="yl num">17,86%</span><span class="pr num">613,34 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#4</span><span class="nm">ОФЗ 26243</span><span class="yl num">17,83%</span><span class="pr num">622,18 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#5</span><span class="nm">ОФЗ 26240</span><span class="yl num">17,71%</span><span class="pr num">663,29 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#6</span><span class="nm">ОФЗ 26233</span><span class="yl num">16,96%</span><span class="pr num">723,30 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
               <div class="ac-foot">Цена указана с учётом НКД · нажмите строку — детали выпуска</div>
             </div>
             <div class="ac-card">
@@ -991,12 +1198,12 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
             <div class="ac-card">
               <div class="ac-bh"><span class="t">Облигации</span><span class="cnt">8</span><span class="kpi">средняя доходность<b>17,64%</b></span></div>
               <div class="ac-colhead"><span></span><span>Инструмент</span><span>Доходность</span><span>Цена</span><span></span></div>
-              <div class="ac-row"><span class="rk num">#1</span><span class="nm">ОФЗ 26238 · погашение 05.2041</span><span class="yl num">19,04%</span><span class="pr num">571,11 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#2</span><span class="nm">ОФЗ 26248 · погашение 05.2040</span><span class="yl num">18,63%</span><span class="pr num">548,66 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#3</span><span class="nm">ОФЗ 26247 · погашение 05.2039</span><span class="yl num">17,86%</span><span class="pr num">613,34 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#4</span><span class="nm">ОФЗ 26243 · погашение 05.2038</span><span class="yl num">17,83%</span><span class="pr num">622,18 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#5</span><span class="nm">ОФЗ 26240 · погашение 07.2036</span><span class="yl num">17,71%</span><span class="pr num">663,29 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
-              <div class="ac-row"><span class="rk num">#6</span><span class="nm">ОФЗ 26233 · погашение 07.2035</span><span class="yl num">16,96%</span><span class="pr num">723,30 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#1</span><span class="nm">ОФЗ 26238</span><span class="yl num">19,04%</span><span class="pr num">571,11 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#2</span><span class="nm">ОФЗ 26248</span><span class="yl num">18,63%</span><span class="pr num">548,66 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#3</span><span class="nm">ОФЗ 26247</span><span class="yl num">17,86%</span><span class="pr num">613,34 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#4</span><span class="nm">ОФЗ 26243</span><span class="yl num">17,83%</span><span class="pr num">622,18 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#5</span><span class="nm">ОФЗ 26240</span><span class="yl num">17,71%</span><span class="pr num">663,29 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
+              <div class="ac-row"><span class="rk num">#6</span><span class="nm">ОФЗ 26233</span><span class="yl num">16,96%</span><span class="pr num">723,30 ₽</span><span class="ar"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span></div>
               <div class="ac-foot">Цена указана с учётом НКД · нажмите строку — детали выпуска</div>
             </div>
             <div class="ac-card">
@@ -1051,7 +1258,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <tr><th>Вариант</th><th>Тёмный блок</th><th>«Зачем»</th><th>Пустота в колонке</th><th>Ширина таблиц</th><th>Цена</th></tr>
     <tr><td><b>А · Витрина</b></td><td class="yes">снят</td><td>колонка страницы (как сейчас)</td><td class="no">осталась</td><td>как сейчас</td><td>шапка + 2 витрины</td></tr>
     <tr><td><b>Б · Манифест-полка</b></td><td class="yes">снят</td><td>полка во всю ширину</td><td class="no">осталась</td><td class="yes">две широкие</td><td>+ перевёрстка манифеста</td></tr>
-    <tr><td><b>В · Зачем в колонке</b></td><td class="yes">снят</td><td class="yes">второй уровень сайдбара</td><td class="yes">закрыта</td><td class="yes">две широкие</td><td>+ модель <code>sbCtx</code></td></tr>
+    <tr><td><b>В · Зачем в колонке</b> <span class="mk-tag ok" style="margin-left:4px">выбран</span></td><td class="yes">снят</td><td class="yes">второй уровень сайдбара, свой заголовок</td><td class="yes">закрыта</td><td class="yes">две, ОФЗ без «Погашения»</td><td>+ модель <code>sbCtx</code> + два состояния кнопки</td></tr>
     <tr><td><b>Г · Колонка + герой</b></td><td class="no">остаётся</td><td class="yes">второй уровень сайдбара</td><td class="yes">закрыта</td><td class="yes">две широкие</td><td>+ модель <code>sbCtx</code></td></tr>
     <tr><td><b>Д · Смешанный</b></td><td class="yes">снят</td><td class="yes">тезисы в колонке + полка на странице</td><td class="yes">закрыта навигацией</td><td class="yes">две широкие</td><td>подвкладки + разбор шторки</td></tr>
   </table>
@@ -1059,7 +1266,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <h3>Что рекомендую</h3>
     <p><b>Да, тёмный блок можно снять — и, судя по Г, нужно.</b> После того как шапка сайта ушла с десктопа, плита перестала быть частью хрома и стала одиноким экспонатом между светлой колонкой и белыми карточками. Всё, что она несла, раскладывается без потерь: имя — в витрину вкладки, KPI — в витрины списков (там они впервые встают рядом с числами, которые описывают), кнопка — в правый край витрины. Единственная настоящая потеря — поток «продаём → покупаем» с бегущими точками; он декоративен, и если жаль — его место в шторке академии, в разделе «Внутри классов», где он буквально иллюстрирует механику.</p>
     <p><b>Да, «Зачем» можно унести в колонку — с одной оговоркой.</b> Слот второго уровня у «Академии» пустует буквально: <code>modelFor()</code> отвечает <code>null</code>, и под чертой остаётся ~360px белого. Но второй уровень не существует в рейке 84px и на мобиле, поэтому манифест в колонке — это <b>добавка, а не переезд</b>: вход в философию обязан остаться и на странице.</p>
-    <p><b>Если брать один вариант — Д.</b> Он единственный чинит настоящую проблему вкладки: она называется «Академией», а академия в ней спрятана за кнопкой в конце третьей колонки. Если браться дорого и хочется результата за один вечер — <b>В</b>: те же две широкие таблицы и занятая колонка, но без разбора шторки на подвкладки, и он потом честно дорастает до Д.</p>
+    <p><b>Выбран вариант В</b> (решение владельца после первого показа) и доработан на месте: заголовок у блока в колонке, дата погашения из строки ОФЗ убрана, вместо счётчиков — объяснение, что это списки недооценённых бумаг, и правый край получил два состояния — «Зарегистрироваться» гостю и «Провести ребалансировку» вошедшему. <b>Д остаётся следующим шагом:</b> он не отменяет В, а продолжает его — разбирает шторку <code>#rbxAcademy</code> на подвкладки второго уровня. Всё, что делает В, внутри Д работает без переделки.</p>
     <p><b>Отдельно, вне выбора:</b> в трёх колонках у списка ОФЗ имя выпуска режется до «О…», а заголовки «Инструмент» и «Доходность» наезжают друг на друга — это видно на боевом экране при 1440px. Любой из вариантов Б·В·Г·Д чинит это шириной; вариант А — нет.</p>
   </div>
 </div>

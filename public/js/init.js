@@ -334,8 +334,40 @@ initSwipeBack();
  // var (не let): верхний уровень init.js может прерваться раньше из-за loadData(),
  // поэтому используем hoisted-объявление без TDZ, доступное из функций ниже.
  var echPopTrigger = null;
+ // Содержимое текущего поповера. Их два («Стратегия эшелонов» и «Потенциал»),
+ // корпус, позиционирование и закрытие у них общие — различаются только тексты,
+ // поэтому оболочка одна, а контент подставляют toggle-функции ниже.
+ var echPopTitle = '', echPopSub = '', echPopBody = '';
 
  function toggleEchelonGuide(show, context = 'rebalance', triggerEl = null) {
+     if (!show) { echPopShow(false); return; }
+     echPopTitle = 'Стратегия эшелонов';
+     echPopSub = 'Группы акций по надёжности выплат и потенциалу роста';
+     echPopBody =
+         createEchelonItem('I', 'Надёжный', 'Платят дивиденды и стараются их повышать', 'e1') +
+         createEchelonItem('II', 'Стабильный', 'Платят дивиденды, но размер выплат меняется', 'e2') +
+         createEchelonItem('III', 'Рисковый', 'Могут платить, но реинвестируют прибыль в рост', 'e3') +
+         createEchelonItem('IV', 'Венчурный', 'Не платят дивидендов, но имеют большой потенциал', 'e4');
+     echPopShow(true, triggerEl);
+ }
+
+ /* Поповер «Потенциал» — вторая кнопка-подсказка внизу карточки «Акции»
+    («Академия», index.html). Тексты — те же, что в шторке тикера
+    (sd-pot-note в js/rebalance.js): потенциал НЕ прогноз доходности, а порядок,
+    в котором мы смотрим бумаги при замене, и меряется он внутри эшелона —
+    у разных эшелонов разный риск, сравнивать их между собой нечего. */
+ function togglePotentialGuide(show, triggerEl = null) {
+     if (!show) { echPopShow(false); return; }
+     echPopTitle = 'Потенциал';
+     echPopSub = 'Мера приоритета, а не прогноз доходности';
+     echPopBody =
+         createEchelonItem('36м', 'Горизонт до 36 месяцев', 'Оценка строится на этом сроке, а не на ближайших неделях', 'nt') +
+         createEchelonItem('!', 'Это не обещание доходности', 'Потенциал носит условный характер и служит мерой приоритета одной акции над другой', 'wn') +
+         createEchelonItem('=', 'Сравниваем внутри эшелона', 'Бумагу меняем на бумагу того же эшелона: у разных эшелонов разный риск', 'nt');
+     echPopShow(true, triggerEl);
+ }
+
+ function echPopShow(show, triggerEl = null) {
      const ID = 'rebalance-info-modal';
      const existing = document.getElementById(ID);
 
@@ -361,19 +393,14 @@ initSwipeBack();
      pop.id = ID;
      pop.className = 'ech-pop';
      pop.setAttribute('role', 'dialog');
-     pop.setAttribute('aria-label', 'Стратегия эшелонов');
+     pop.setAttribute('aria-label', echPopTitle);
      pop.innerHTML = `
          <div class="ech-pop-head">
-             <h3>Стратегия эшелонов</h3>
+             <h3>${echPopTitle}</h3>
              <button type="button" class="ech-pop-close" aria-label="Закрыть" onclick="toggleEchelonGuide(false)">&times;</button>
          </div>
-         <div class="ech-pop-sub">Группы акций по надёжности выплат и потенциалу роста</div>
-         <div class="ech-pop-body">
-             ${createEchelonItem('I', 'Надёжный', 'Платят дивиденды и стараются их повышать', 'e1')}
-             ${createEchelonItem('II', 'Стабильный', 'Платят дивиденды, но размер выплат меняется', 'e2')}
-             ${createEchelonItem('III', 'Рисковый', 'Могут платить, но реинвестируют прибыль в рост', 'e3')}
-             ${createEchelonItem('IV', 'Венчурный', 'Не платят дивидендов, но имеют большой потенциал', 'e4')}
-         </div>
+         <div class="ech-pop-sub">${echPopSub}</div>
+         <div class="ech-pop-body">${echPopBody}</div>
      `;
      document.body.appendChild(pop);
 
@@ -489,6 +516,11 @@ initSwipeBack();
      .ech-pop .modal-badge.e2 { color:#3B82F6; border-color:#3B82F6; }
      .ech-pop .modal-badge.e3 { color:#F59E0B; border-color:#F59E0B; }
      .ech-pop .modal-badge.e4 { color:#EF4444; border-color:#EF4444; }
+     /* поповер «Потенциал»: у его строк не эшелоны, а пометки — нейтральная и
+        предупреждающая. «36м» длиннее римской цифры, поэтому кегль мельче */
+     .ech-pop .modal-badge.nt { color:#64748b; border-color:#dbe3ec; font-size:9.5px; }
+     body.dark-mode .ech-pop .modal-badge.nt { color:#9aa7ba; border-color: rgba(255,255,255,.14); }
+     .ech-pop .modal-badge.wn { color:#F59E0B; border-color:#F59E0B; }
      @media (max-width: 1023px) { .ech-pop { width: calc(100vw - 24px); } }
      `;
      document.head.appendChild(style);

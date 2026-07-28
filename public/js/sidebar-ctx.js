@@ -45,6 +45,9 @@
         warn:      '<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/>',
         collapse:  '<polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/>',
         chev:      '<polyline points="6 9 12 15 18 9"/>',
+        // академическая шапочка — вход в шторку #rbxAcademy из блока «Академии»
+        cap:       '<path d="M21.4 10.9a1 1 0 0 0 0-1.8l-8.5-3.9a2 2 0 0 0-1.7 0L2.7 9.1a1 1 0 0 0 0 1.8l8.5 3.9a2 2 0 0 0 1.7 0z"/><path d="M6 12.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-3.5"/>',
+        arrow:     '<path d="M5 12h14"/><path d="M13 6l6 6-6 6"/>',
         // подвкладки «Расчёта» и «Рынка» — по data-sub
         'calc-portfolio': '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
         'calc-mix':       '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
@@ -144,7 +147,9 @@
     var COL_TITLE = {
         portfolios: 'Портфели',
         calc: 'Расчёт', portfolio: 'Расчёт', monthly: 'Расчёт',
-        market: 'Рынок', 'market-stocks': 'Рынок', 'market-bonds': 'Рынок'
+        market: 'Рынок', 'market-stocks': 'Рынок', 'market-bonds': 'Рынок',
+        // «Академия»: второй уровень тут не список, а МАНИФЕСТ — см. whyHtml
+        rebalance: 'Академия'
     };
     // есть ли у раздела второй уровень — спрашивает sidebar.js, чтобы клик по
     // разделу возвращал свёрнутую колонку
@@ -156,7 +161,48 @@
         }
         if (tab === 'calc' || tab === 'portfolio' || tab === 'monthly') return calcModel();
         if (tab === 'market' || tab === 'market-stocks' || tab === 'market-bonds') return subsModel('market', 'Рынок');
+        // «Академия» — единственный раздел без подвкладок: у него второй уровень
+        // не навигация, а текст. Модель-флаг, содержимое статично (whyHtml).
+        if (tab === 'rebalance') return { why: true };
         return null;
+    }
+
+    /* ---------- МАНИФЕСТ «ЗАЧЕМ РЕБАЛАНСИРОВАТЬ» (только «Академия») ----------
+       Слот второго уровня у этого раздела пустовал, а на странице манифест
+       занимал треть ширины и теснил списки. Здесь он и живёт — но это ДОБАВКА,
+       а не переезд: в рейке 84px и на мобиле второго уровня нет, поэтому вход в
+       шторку дублируется в витрине вкладки (rbxTopSync в js/rebalance.js).
+
+       Голосов ровно столько, сколько нужно, чтобы блок не превратился в кашу:
+       серифный заголовок → волосяная черта → одна строка Inter → три тезиса ПО
+       ОДНОЙ строке. Метки группы над заголовком НЕТ (два заголовка подряд
+       смотрелись скомканно), эпиграфа серифным курсивом — тоже: второй серифный
+       голос вплотную к заголовку и создавал ту самую кашу. Расшифровки тезисов
+       и цитата живут в шторке — здесь для них нет ширины.
+       Вход — КАРТОЧКА в языке табло капитала (та же пилюля, тот же радиус, но с
+       зелёным квадратом-иконкой): тихую строку с шевроном можно было вовсе не
+       заметить, а это единственный вход в академию на десктопе. Прижата к низу
+       (margin-top:auto в css) — воздух между тезисами и действием читается как
+       разрядка, а не как дыра. */
+    var WHY = [
+        ['I', 'Фиксируем прибыль'],
+        ['II', 'Докупаем недооценённое'],
+        ['III', 'Держим риск по плану']
+    ];
+    function whyHtml() {
+        var h = '<div class="sbc-why">' +
+            '<h3 class="sbc-why-t">Зачем ребалансировать</h3>' +
+            '<div class="sbc-why-rule" aria-hidden="true"></div>' +
+            '<p class="sbc-why-lead">Рынок незаметно переписывает доли: выросшее начинает весить больше положенного.</p>';
+        WHY.forEach(function (w) {
+            h += '<div class="sbc-th"><span class="n">' + w[0] + '</span><b>' + esc(w[1]) + '</b></div>';
+        });
+        h += '<button type="button" class="sbc-acad" data-act="acad" data-key=""' +
+            ' title="Открыть академию ребалансировки">' +
+            '<span class="ic">' + svg(IC.cap) + '</span>' +
+            '<span class="tx"><b>Академия ребалансировки</b>' +
+            '<i>Три разбора с примерами' + svg(IC.arrow) + '</i></span></button>';
+        return h + '</div>';
     }
 
     // ---------- разметка ----------
@@ -436,7 +482,7 @@
             if (host.__sbcHtml) { host.innerHTML = ''; host.__sbcHtml = ''; }
             return;
         }
-        var html = listHtml(m, tab);
+        var html = m.why ? whyHtml() : listHtml(m, tab);
         if (host.__sbcHtml !== html) {
             var ae = document.activeElement;
             var keepKey = ae && host.contains(ae) && ae.getAttribute ? ae.getAttribute('data-key') : null;
@@ -485,6 +531,16 @@
             // и добавляют, а не заводим второй пустой
             if (act === 'capfill') { if (window.pfxGoTab) window.pfxGoTab('ports'); return; }
             if (window.pfAddPortfolio) window.pfAddPortfolio();
+            return;
+        }
+        // карточка манифеста → шторка академии. Разметка шторки лежит внутри
+        // вкладки, поэтому на всякий случай сначала возвращаемся на неё: блок
+        // виден только на «Академии», но клавиатурный фокус мог пережить уход
+        if (act === 'acad') {
+            if (typeof currentTab === 'undefined' || currentTab !== 'rebalance') {
+                if (window.switchTab) window.switchTab('rebalance');
+            }
+            if (window.rbxAcademyOpen) window.rbxAcademyOpen();
             return;
         }
         if (act === 'sub') { if (window.sbNavSub) window.sbNavSub(key, e); return; }

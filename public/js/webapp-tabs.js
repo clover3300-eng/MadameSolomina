@@ -823,6 +823,9 @@ function switchTab(tabId) {
     if (tabId === 'rebalance') {
         renderAuroraStocksTable();
         renderAuroraOfzList();
+        // витрина зависит от входа и дрейфа, а не от списков: списки могли не
+        // перерисоваться (данные уже в памяти), а состояние аккаунта — смениться
+        if (window.rbxTopSync) window.rbxTopSync();
         setTimeout(updateRebalanceTabCounts, 300);
     }
     if (tabId === 'portfolio' && window.v3SyncCapHeight) {

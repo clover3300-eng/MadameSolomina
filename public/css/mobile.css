@@ -452,26 +452,26 @@
 }
 
 /* ============================================================
-   РЕБАЛАНС R6 (≤1023px): герой в столбик, секции одна под другой
+   АКАДЕМИЯ (≤1023px): витрина в столбик, секции одна под другой
    ============================================================ */
 @media (max-width: 1023px) {
     #rebalancePanelContent { display: flex; flex-direction: column; gap: 14px; }
 
-    /* герой: идентити → KPI-ряд → кнопка на всю ширину */
-    .rbx-hero { padding: 18px 16px; gap: 14px 18px; border-radius: 20px; }
-    .rbx-hero-title { font-size: 19px; }
-    .rbx-flow { flex-wrap: wrap; white-space: normal; row-gap: 4px; }
-    .rbx-hero-kpis { margin-left: 0; width: 100%; justify-content: space-between; gap: 14px; }
-    .rbx-kpi .num b { font-size: 25px; }
-    .rbx-hero-cta { width: 100%; justify-content: center; }
+    /* витрина: имя → абзац → действия своей строкой во всю ширину.
+       Второго уровня сайдбара на мобиле нет, поэтому кнопка «Академия»
+       здесь ЖИВА (её прячет только body.sb-ctx — см. rebalance-r6.css). */
+    .rbx-top { flex-wrap: wrap; gap: 12px; padding: 2px 2px 13px; }
+    .rbx-top-title { font-size: 21px; }
+    .rbx-top-lead { max-width: none; }
+    .rbx-top-act { width: 100%; flex-wrap: wrap; gap: 10px 12px; }
+    .rbx-top-btn.big { height: 36px; }
 
-    /* блоки стопкой (R7: карточка «Зачем» + карточка кандидатов с подвкладками) */
+    /* блоки стопкой */
     .rbx-grid { display: flex; flex-direction: column; gap: 12px; margin-top: 0; }
     .rbx-block-cands { padding: 10px 12px 14px; }
-    /* манифест-колонка: на телефоне она не тянется на высоту ряда, поля скромнее */
-    .rbx-block-why { align-self: auto; padding: 24px 18px 20px; }
-    .rbx-wc-title { font-size: 23px; }
-    .rbx-wc-btn { letter-spacing: 0.18em; }
+    /* KPI витрины списка: на 375px он в строке третий и уводит инструменты за
+       край — уходит под название вместе с ними */
+    .rbx-kpi-in { margin-left: 0; }
     /* заголовок таблицы: название и инструменты не влезают в строку на 375px —
        инструменты уходят под название */
     .rbx-bh { flex-wrap: wrap; row-gap: 8px; padding: 0 0 10px; margin-bottom: 12px; }
@@ -489,11 +489,11 @@
     .rbx-esh-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 }
 
-/* совсем узко: KPI-подписи в приоритете, эквалайзер прячем */
+/* совсем узко: кнопки витрины во всю ширину, «Войти» отдельной строкой */
 @media (max-width: 520px) {
-    .rbx-eq { display: none; }
-    .rbx-kpi { min-width: 0; }
-    .rbx-kpi .sub { font-size: 11px; white-space: normal; line-height: 1.35; }
+    .rbx-top-act { gap: 10px; }
+    .rbx-top-quiet { order: 3; width: 100%; text-align: center; }
+    .rbx-top-btn { flex: 1 1 auto; justify-content: center; }
 }
 
 /* Портфель: кнопка «Детали» героя — только десктоп (на мобиле карточка

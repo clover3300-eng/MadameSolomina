@@ -256,8 +256,8 @@
     <link rel="stylesheet" href="css/notifications.css?v=3">
     <link rel="stylesheet" href="css/tab-gates.css?v=4">
     <link rel="stylesheet" href="css/admin.css?v=13">
-    <link rel="stylesheet" href="css/rebalance-r6.css?v=11">
-    <link rel="stylesheet" href="css/typography-tokens.css?v=14">
+    <link rel="stylesheet" href="css/rebalance-r6.css?v=16">
+    <link rel="stylesheet" href="css/typography-tokens.css?v=15">
     <link rel="stylesheet" href="css/portfolios-r7.css?v=72">
     <link rel="stylesheet" href="css/broker.css?v=66">
     <link rel="stylesheet" href="css/trading-scene.css?v=46">
@@ -266,9 +266,9 @@
     <!-- Сайдбар «Подъём»: рейка 76px + колонка второго уровня (мокап В3-б).
          Идёт ПОСЛЕ site-layout.css — перебивает и его базовые правила рейки,
          и блок body.dark-mode (рейка светлая в обеих темах), но ДО mobile.css -->
-    <link rel="stylesheet" href="css/sidebar-rail.css?v=20">
+    <link rel="stylesheet" href="css/sidebar-rail.css?v=21">
     <!-- Мобильный слой (≤1023px) — всегда ПОСЛЕДНИЙ, перебивает всё -->
-    <link rel="stylesheet" href="css/mobile.css?v=26">
+    <link rel="stylesheet" href="css/mobile.css?v=27">
     
     <!-- ВСЕ скрипты здесь — defer, и это несущее требование, а не уборка.
          Без defer классический <script> в <head> ПАРСЕР-БЛОКИРУЮЩИЙ: браузер
@@ -1852,94 +1852,35 @@
     </div>
     <div class="noise-overlay"></div>
     
-    <!-- ===== R6: шапка «Умная замена» — тёмный герой на всю ширину ===== -->
-    <div class="rbx-hero" id="rbxHero">
-        <div class="rbx-fx" aria-hidden="true"><i class="g1"></i><i class="g2"></i><i class="mesh"></i></div>
-        <div class="rbx-hero-id">
-            <div class="rbx-hero-ico">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 3l1.7 5.1a3 3 0 0 0 1.9 1.9L20.7 11.7l-5.1 1.7a3 3 0 0 0-1.9 1.9L12 20.4l-1.7-5.1a3 3 0 0 0-1.9-1.9L3.3 11.7l5.1-1.7a3 3 0 0 0 1.9-1.9z"/>
-                    <path d="M19 3.5l.6 1.8 1.8.6-1.8.6-.6 1.8-.6-1.8-1.8-.6 1.8-.6z"/>
-                </svg>
-            </div>
-            <div class="rbx-hero-t">
-                <div class="rbx-hero-title">Умная замена</div>
-                <div class="rbx-flow">
-                    <span class="side sell"><i></i>Продаём выросшее</span>
-                    <span class="track" aria-hidden="true"><b></b><b></b><b></b></span>
-                    <span class="side buy"><i></i>Покупаем недооценённое</span>
-                </div>
-            </div>
+    <!-- ===== ВИТРИНА ВКЛАДКИ (раунд «Под Верстак», 2026-07-28) =====
+         Тёмный герой «Умная замена» снят: шапки сайта на десктопе больше нет, и
+         плита осталась без опоры между светлой колонкой и белыми карточками.
+         Всё, что она несла, разошлось по местам: имя — сюда, KPI (средняя
+         доходность / средний потенциал) — в витрины СВОИХ списков, где стоят
+         рядом с числами, которые описывают. Надзаголовка нет намеренно — он
+         ничего не добавлял к серифному имени прямо под ним.
+         Абзац и кнопка справа зависят от входа — рисует rbxTopSync (rebalance.js). ===== -->
+    <div class="rbx-top" id="rbxTop">
+        <div class="rbx-top-t">
+            <h2 class="rbx-top-title">Академия ребалансировки</h2>
+            <p class="rbx-top-lead" id="rbxTopLead"></p>
         </div>
-        <div class="rbx-hero-kpis">
-            <div class="rbx-kpi">
-                <div class="num"><b id="rbxOfzNum">—</b><span>ОФЗ</span></div>
-                <div class="sub">средняя доходность <b id="rbxOfzAvg">—</b></div>
-            </div>
-            <div class="rbx-eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
-            <div class="rbx-kpi">
-                <div class="num"><b id="rbxStNum">—</b><span>акции</span></div>
-                <div class="sub">средний потенциал <b id="rbxStAvg">—</b></div>
-            </div>
-        </div>
-        <button type="button" class="rbx-hero-cta" onclick="switchTab('calc')">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>
-            Рассчитать портфель
-        </button>
+        <div class="rbx-top-act" id="rbxTopAct"></div>
     </div>
 
-    <!-- ===== R7: два блока — «Зачем ребалансировать» и кандидаты (ОФЗ/Акции
-         подвкладками по лекалу «Теста»: .rbr-tabs + .rbr-sub).
-         Карточки в языке карточки регистрации Главной (.hg-auth): белые, радиус 14px,
-         тонкая рамка. Кнопка «Подробнее» открывает Академию ребалансировки (#rbxAcademy). ===== -->
-    <!-- ===== R7: три колонки — манифест, кандидаты·облигации, кандидаты·акции.
-         Переключателя нет: у каждой таблицы свой заголовок-«витрина» (.rbx-bh) —
-         серифное название, тихий счётчик и инструменты списка справа. ===== -->
+    <!-- ===== ДВЕ КОЛОНКИ: кандидаты·облигации и кандидаты·акции.
+         Манифест «Зачем ребалансировать» ПЕРЕЕХАЛ во второй уровень сайдбара
+         (#sbCtx, рисует js/sidebar-ctx.js): у «Академии» этот слот пустовал, а
+         страница от третьей колонки только теснилась. Он там — ДОБАВКА, а не
+         переезд: в рейке 84px и на мобиле второго уровня нет, поэтому вход в
+         шторку #rbxAcademy возвращается в витрину вкладки (см. rbxTopSync).
+         У каждой таблицы свой заголовок-«витрина» (.rbx-bh): серифное название,
+         тихий счётчик, KPI из бывшего героя и инструменты списка справа. ===== -->
     <div class="rbx-grid">
-        <!-- Манифест-колонка (первая): намеренно монохромная и «журнальная» — серифный
-             заголовок, волосяные линии, римская нумерация, разрядка. Акцентный
-             зелёный сюда не заходит: в этом блоке работает только типографика. -->
-        <section class="rbx-block rbx-block-why">
-            <div class="rbx-wc-eyebrow">Философия капитала</div>
-            <h2 class="rbx-wc-title">Зачем нужно ребалансировать</h2>
-            <div class="rbx-wc-rule" aria-hidden="true"></div>
-            <p class="rbx-wc-lead">Портфель — не памятник. Рынок незаметно переписывает доли: то, что выросло, начинает весить больше положенного, и риск появляется там, где вы его не заказывали.</p>
-
-            <ol class="rbx-wc-list">
-                <li>
-                    <span class="n">I</span>
-                    <div class="tx">
-                        <b>Фиксируем прибыль</b>
-                        <p>Продаём выросшее, пока оно дорогое, — и превращаем бумажный рост в настоящий.</p>
-                    </div>
-                </li>
-                <li>
-                    <span class="n">II</span>
-                    <div class="tx">
-                        <b>Докупаем недооценённое</b>
-                        <p>Возвращаем структуру портфеля к целевой, забирая то, что рынок пока не разглядел.</p>
-                    </div>
-                </li>
-                <li>
-                    <span class="n">III</span>
-                    <div class="tx">
-                        <b>Держим риск по плану</b>
-                        <p>Доли остаются теми, на которые согласились вы, а не теми, что выбрал за вас рынок.</p>
-                    </div>
-                </li>
-            </ol>
-
-            <blockquote class="rbx-wc-quote">Дисциплина вместо настроения: дорого продать, дёшево купить — по правилам.</blockquote>
-
-            <button type="button" class="rbx-wc-btn" onclick="rbxAcademyOpen()">
-                <span>Подробнее</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
-            </button>
-        </section>
-
         <section class="rbx-block rbx-block-cands rbx-cands-ofz">
             <div class="rbx-bh">
                 <span class="t">Облигации</span><span class="cnt" id="ofzCount">—</span>
+                <span class="rbx-kpi-in">в среднем <b id="rbxOfzAvg">—</b></span>
             <div class="rbx-sort" id="rbxToolsOfz" role="group" aria-label="Сортировка списка">
                 <button type="button" class="rbx-sc act desc" id="ofzSortYield" onclick="setOfzSort('yield')" title="Сортировать по доходности">
                     Доходность
@@ -1980,10 +1921,7 @@
         <section class="rbx-block rbx-block-cands rbx-cands-st">
             <div class="rbx-bh">
                 <span class="t">Акции</span><span class="cnt" id="stocksCount">—</span>
-                <button type="button" class="rbx-esh-hint" onclick="toggleEchelonGuide(true,'rebalance',this)">
-                    по эшелонам риска
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle cx="12" cy="8" r="0.5"/></svg>
-                </button>
+                <span class="rbx-kpi-in">средний потенциал <b id="rbxStAvg">—</b></span>
             </div>
             <div id="stocks-aurora-body" class="rbx-esh-grid">
                 <!-- Skeleton для акций -->
@@ -2008,6 +1946,20 @@
                     </div>
                 </div>
                 <!-- Динамически заполняется через JS -->
+            </div>
+            <!-- Объяснения по требованию, а не абзацем: постоянный текст спорил бы
+                 со списком бумаг, а спрашивают об этом один раз. Обе — поповер
+                 .ech-pop (js/init.js): «эшелоны» переиспользуют готовый, «потенциал»
+                 живёт на том же движке. -->
+            <div class="rbx-hints">
+                <button type="button" class="rbx-hint" onclick="toggleEchelonGuide(true,'rebalance',this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle cx="12" cy="8" r="0.5"/></svg>
+                    Что такое эшелоны
+                </button>
+                <button type="button" class="rbx-hint" onclick="togglePotentialGuide(true,this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle cx="12" cy="8" r="0.5"/></svg>
+                    Как считается потенциал
+                </button>
             </div>
         </section>
     </div>
@@ -2789,14 +2741,14 @@
 <script src="js/core.js?v=15" defer></script>
 <script src="js/calculator-ui.js?v=5" defer></script>
 <script src="js/data.js?v=11" defer></script>
-<script src="js/rebalance.js?v=13" defer></script>
+<script src="js/rebalance.js?v=14" defer></script>
 <script src="js/company.js?v=2" defer></script>
 <script src="js/portfolio.js?v=17" defer></script>
-<script src="js/init.js?v=6" defer></script>
+<script src="js/init.js?v=7" defer></script>
 <script src="js/registration.js?v=3" defer></script>
 <script src="js/menu-controller.js?v=1" defer></script>
 <script src="js/vanguard-test.js?v=1" defer></script>
-<script src="js/webapp-tabs.js?v=38" defer></script>
+<script src="js/webapp-tabs.js?v=39" defer></script>
 <script src="js/top-search.js?v=2" defer></script>
 <script src="js/income-chart.js?v=1" defer></script>
 <script src="js/backtest.js?v=11" defer></script>
@@ -2809,7 +2761,7 @@
 <script src="js/sidebar.js?v=18" defer></script>
 <!-- Колонка второго уровня: строго ПОСЛЕ sidebar.js (пользуется sbNavSub и
      дёргается из его sbSyncActive) -->
-<script src="js/sidebar-ctx.js?v=11" defer></script>
+<script src="js/sidebar-ctx.js?v=12" defer></script>
 <script src="js/stock-terminal.js?v=13" defer></script>
 <script src="js/bond-terminal.js?v=10" defer></script>
 <script src="js/table-tooltip.js?v=1" defer></script>
